@@ -26,12 +26,12 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
   add_test(format_test format_test)
 endif ()
 
-# Speed test.
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tinyformat/tinyformat_test.cpp)
   add_executable(tinyformat_speed_test tinyformat/tinyformat_test.cpp)
   target_link_libraries(tinyformat_speed_test format)
   set_target_properties(tinyformat_speed_test
     PROPERTIES COMPILE_DEFINITIONS "SPEED_TEST;HAVE_FORMAT")
+
   add_custom_target(speed_test
     COMMAND @echo running speed tests...
     COMMAND @echo printf timings:
@@ -44,4 +44,18 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tinyformat/tinyformat_test.cpp)
     COMMAND @time -p ./tinyformat_speed_test tinyformat > /dev/null
     COMMAND @echo boost timings:
     COMMAND @time -p ./tinyformat_speed_test boost > /dev/null)
+
+  add_custom_target(bloat_test
+    COMMAND echo running bloat tests...
+    COMMAND echo printf results:
+    COMMAND ./bloat_test.sh
+    COMMAND echo iostreams results:
+    COMMAND ./bloat_test.sh -DUSE_IOSTREAMS
+    COMMAND echo format results:
+    COMMAND ./bloat_test.sh -DUSE_FORMAT -L.. -lformat
+    COMMAND echo tinyformat results:
+    COMMAND ./bloat_test.sh -DUSE_TINYFORMAT
+    COMMAND echo boost results:
+    COMMAND ./bloat_test.sh -DUSE_BOOST
+    WORKING_DIRECTORY tinyformat)
 endif ()
