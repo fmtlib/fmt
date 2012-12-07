@@ -1,3 +1,6 @@
 [submodule "gtest"]
 	path = gtest
 	url = git://github.com/vitaut/gtest.git
+[submodule "tinyformat"]
+	path = tinyformat
+	url = git://github.com/vitaut/tinyformat.git
