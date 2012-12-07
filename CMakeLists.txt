@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 2.6)
 project(FORMAT)
 
+# Set the default CMAKE_BUILD_TYPE to Release.
+# This should be done before the project command since the latter can set
+# CMAKE_BUILD_TYPE itself (it does so for nmake).
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING
+    "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
+endif ()
+
 add_library(format format.cc)
 
 # We compile Google Test ourselves instead of using pre-compiled libraries.
@@ -15,4 +23,21 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
   add_executable(format_test format_test.cc gtest/src/gtest_main.cc)
   target_link_libraries(format_test format gtest)
   add_test(format_test format_test)
+endif ()
+
+# Speed test.
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tinyformat/tinyformat_test.cpp)
+  add_executable(tinyformat_speed_test tinyformat/tinyformat_test.cpp)
+  set_target_properties(tinyformat_speed_test
+    PROPERTIES COMPILE_DEFINITIONS SPEED_TEST)
+  add_custom_target(speed_test
+    COMMAND @echo running speed tests...
+    COMMAND @echo printf timings:
+    COMMAND @time -p ./tinyformat_speed_test printf > /dev/null
+    COMMAND @echo iostreams timings:
+    COMMAND @time -p ./tinyformat_speed_test iostreams > /dev/null
+    COMMAND @echo tinyformat timings:
+    COMMAND @time -p ./tinyformat_speed_test tinyformat > /dev/null
+    COMMAND @echo boost timings:
+    COMMAND @time -p ./tinyformat_speed_test boost > /dev/null)
 endif ()
