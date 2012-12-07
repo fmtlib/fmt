@@ -1,7 +1,25 @@
 format
 ======
 
-Small, safe and fast printf-like formatting library for C++
+Format is a C++ library that provides printf-like formatting functionality.
+
+Features
+--------
+
+* Format string syntax similar to the one used by `str.format
+  <http://docs.python.org/2/library/stdtypes.html#str.format>`__ in Python.
+* High speed: performance of the current proof-of-concept implementation
+  is close to that of iostreams (see Benchmarks).
+* Small code size both in terms of source code (format consists of a single
+  header file and a single source file) and compiled code (see Benchmarks).
+* Easy deployment: small self-contained code base, no external dependencies,
+  permissive license.
+* Support for user-defined types.
+
+Example
+-------
+
+fmt::Print("Hello, {0}!") << "world";
 
 Benchmarks
 ----------
@@ -45,8 +63,8 @@ Printf and std::ostream win here which is not surprising considering
 that they are included in the standard library. Tinyformat has somewhat
 slower compilation times compared to format. Interestingly optimized
 executable size is smaller with tinyformat then with format and for
-non-optimized build its vice versa. Boost::format has by far the
-largest overheads.
+non-optimized build its the other way around. Boost::format has by far
+the largest overheads.
 
 Speed tests
 ~~~~~~~~~~~
