@@ -46,18 +46,33 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tinyformat/tinyformat_test.cpp)
     COMMAND @time -p ./tinyformat_speed_test boost > /dev/null
     DEPENDS tinyformat_speed_test)
 
-  add_custom_target(bloat_test
+  add_custom_target(bloat_test_debug
     COMMAND echo running bloat tests...
     COMMAND echo printf results:
     COMMAND ./bloat_test.sh
     COMMAND echo iostreams results:
     COMMAND ./bloat_test.sh -DUSE_IOSTREAMS
     COMMAND echo format results:
-    COMMAND ./bloat_test.sh -DUSE_FORMAT -L.. -lformat
+    COMMAND ./bloat_test.sh -DUSE_FORMAT
     COMMAND echo tinyformat results:
     COMMAND ./bloat_test.sh -DUSE_TINYFORMAT
     COMMAND echo boost results:
     COMMAND ./bloat_test.sh -DUSE_BOOST
+    WORKING_DIRECTORY tinyformat
+    DEPENDS format)
+
+  add_custom_target(bloat_test_optimized
+    COMMAND echo running bloat tests...
+    COMMAND echo printf results:
+    COMMAND ./bloat_test.sh -O3
+    COMMAND echo iostreams results:
+    COMMAND ./bloat_test.sh -O3 -DUSE_IOSTREAMS
+    COMMAND echo format results:
+    COMMAND ./bloat_test.sh -O3 -DUSE_FORMAT
+    COMMAND echo tinyformat results:
+    COMMAND ./bloat_test.sh -O3 -DUSE_TINYFORMAT
+    COMMAND echo boost results:
+    COMMAND ./bloat_test.sh -O3 -DUSE_BOOST
     WORKING_DIRECTORY tinyformat
     DEPENDS format)
 endif ()
