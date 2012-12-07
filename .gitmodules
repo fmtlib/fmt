@@ -1,0 +1,3 @@
+[submodule "gtest"]
+	path = gtest
+	url = git@github.com:vitaut/gtest.git
