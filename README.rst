@@ -9,9 +9,10 @@ Features
 * Format string syntax similar to the one used by `str.format
   <http://docs.python.org/2/library/stdtypes.html#str.format>`__ in Python.
 * High speed: performance of the current proof-of-concept implementation
-  is close to that of iostreams (see `Benchmarks`_).
+  is close to that of iostreams (see `Speed tests`_).
 * Small code size both in terms of source code (format consists of a single
-  header file and a single source file) and compiled code (see `Benchmarks`_).
+  header file and a single source file) and compiled code
+  (see `Compile time and code bloat`_).
 * Easy deployment: small self-contained code base, no external dependencies,
   permissive license.
 * Support for user-defined types.
