@@ -73,6 +73,8 @@ As you can see boost::format is much slower than the alternative methods; this
 is confirmed by `other tests <http://accu.org/index.php/journals/1539>`__.
 Tinyformat is quite good coming close to iostreams.  Unfortunately tinyformat
 cannot be faster than the iostreams because it uses them internally.
+Performance of format is close to that of std::ostream but there is a room for
+improvement since format is not based on iostreams.
 
 Running the tests
 ~~~~~~~~~~~~~~~~~
@@ -81,7 +83,8 @@ To run the tests you first need to get the format repository with submodules::
 
     $ git clone --recursive git://github.com/vitaut/format.git
 
-Then go to the format directory and generate Makefiles with CMake::
+Then go to the format directory and generate Makefiles with
+`CMake <http://www.cmake.org/>`__::
 
     $ cd format
     $ cmake .
@@ -100,5 +103,7 @@ Acknowledgments
 The benchmark section of this readme file and the performance tests are taken
 from the excellent `tinyformat <https://github.com/c42f/tinyformat>`__ library
 written by Chris Foster.  boost::format is acknowledged transitively since
-it had some influence on tinyformat.
-TODO: SafeFormat, Clang DiagnosticHandler
+it had some influence on tinyformat.  Some ideas used in the implementation
+are borrowed from `Loki <http://loki-lib.sourceforge.net/>`__ SafeFormat and
+`Diagnostic API <http://clang.llvm.org/doxygen/classclang_1_1Diagnostic.html>`__
+in `Clang <http://clang.llvm.org/>`__.
