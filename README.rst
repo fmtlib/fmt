@@ -10,7 +10,7 @@ Features
   <http://docs.python.org/2/library/stdtypes.html#str.format>`__ in Python.
 * Support for user-defined types.
 * High speed: performance of the current proof-of-concept implementation
-  is close to that of iostreams (see `Speed tests`_).
+  is close to that of IOStreams (see `Speed tests`_).
 * Small code size both in terms of source code (format consists of a single
   header file and a single source file) and compiled code
   (see `Compile time and code bloat`_).
@@ -20,9 +20,89 @@ Features
 Examples
 --------
 
-This prints "Hello, world!" to stdout:
+This prints "Hello, world!" to stdout::
 
     fmt::Print("Hello, {0}!") << "world";
+
+Motivation
+----------
+
+So why yet another formatting library?
+
+There are plenty of methods for doing this task, from standard ones like
+the printf family of function and IOStreams to Boost Format library and
+FastFormat. The reason for creating a new library is that every existing
+solution that I found either had serious issues or didn't provide
+all the features I needed.
+
+Printf
+~~~~~~
+
+The good thing about printf is that it is very fast and readily available
+being the part of the C standard library. The main drawbacks are that it
+doesn't support user-defined types, it is unsafe although the latter
+problem is mostly solved with `__attribute__ ((format (printf, ...))
+<http://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html>`__ in GCC
+and it doesn't support positional arguments required for `i18n
+<http://en.wikipedia.org/wiki/Internationalization_and_localization>`__.
+
+IOStreams
+~~~~~~~~~
+
+The main issue with IOStreams is best illustrated with an example::
+
+    std::cout << std::setprecision(2) << std::fixed << 1.23456 << "\n";
+
+which is a lot of typing compared to printf::
+
+    printf("%.2f\n", 1.23456);
+
+Matthew Wilson, the author of FastFormat referred to this situations with
+IOStreams as ``chevron hell``.
+As with printf, there is no chance to support i18n.
+
+The good part is that IOStreams supports user-defined types and is safe
+although error reporting is awkward.
+
+Boost Format library
+~~~~~~~~~~~~~~~~~~~~
+
+This is a very powerful library which supports both printf-like format
+strings and positional arguments. The main its drawback is performance.
+According to various benchmarks it is so slow that I wouldn't recommend
+it for purposes other than occasional message reporting in small to medium
+size projects that are not performance-critical. It also has excessive
+build times and severe code bloat issues (see `Benchmarks`_).
+
+FastFormat
+~~~~~~~~~~
+
+This is an interesting library which is fast, safe and has positional
+arguments. However it has significant limitations, citing its author:
+
+    Three features that have no hope of being accommodated within the
+    current design are:
+
+    * Leading zeros (or any other non-space padding)
+    * Octal/hexadecimal encoding
+    * Runtime width/alignment specification
+
+It is also quite big and has a heavy dependency, STLSoft, which might be
+too restrictive for using it in some projects.
+
+Loki SafeFormat
+~~~~~~~~~~~~~~~
+
+TODO
+
+Tinyformat
+~~~~~~~~~~
+
+This library supports printf-like format strings and is very small and
+fast. Unfortunately it doesn't support positional arguments and wrapping
+it in C++98 is somewhat difficult.  However if you only need a type-safe
+printf replacement with support for user-defined types, I highly recommend
+this library.
 
 Benchmarks
 ----------
@@ -53,10 +133,10 @@ boost::format  10.40s
 
 As you can see boost::format is much slower than the alternative methods; this
 is confirmed by `other tests <http://accu.org/index.php/journals/1539>`__.
-Tinyformat is quite good coming close to iostreams.  Unfortunately tinyformat
-cannot be faster than the iostreams because it uses them internally.
+Tinyformat is quite good coming close to IOStreams.  Unfortunately tinyformat
+cannot be faster than the IOStreams because it uses them internally.
 Performance of format is close to that of std::ostream but there is a room for
-improvement since format is not based on iostreams.
+improvement since format is not based on IOStreams.
 
 The script ``bloat_test.sh`` from the `tinyformat
 <https://github.com/c42f/tinyformat>`__ repository tests compile time and
