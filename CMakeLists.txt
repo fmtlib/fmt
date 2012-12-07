@@ -28,14 +28,17 @@ endif ()
 # Speed test.
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tinyformat/tinyformat_test.cpp)
   add_executable(tinyformat_speed_test tinyformat/tinyformat_test.cpp)
+  target_link_libraries(tinyformat_speed_test format)
   set_target_properties(tinyformat_speed_test
-    PROPERTIES COMPILE_DEFINITIONS SPEED_TEST)
+    PROPERTIES COMPILE_DEFINITIONS "SPEED_TEST;HAVE_FORMAT")
   add_custom_target(speed_test
     COMMAND @echo running speed tests...
     COMMAND @echo printf timings:
     COMMAND @time -p ./tinyformat_speed_test printf > /dev/null
     COMMAND @echo iostreams timings:
     COMMAND @time -p ./tinyformat_speed_test iostreams > /dev/null
+    COMMAND @echo format timings:
+    COMMAND @time -p ./tinyformat_speed_test format > /dev/null
     COMMAND @echo tinyformat timings:
     COMMAND @time -p ./tinyformat_speed_test tinyformat > /dev/null
     COMMAND @echo boost timings:
