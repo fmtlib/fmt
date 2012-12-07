@@ -58,7 +58,7 @@ which is a lot of typing compared to printf::
     printf("%.2f\n", 1.23456);
 
 Matthew Wilson, the author of FastFormat referred to this situations with
-IOStreams as ``chevron hell``.
+IOStreams as "chevron hell".
 As with printf, there is no chance to support i18n.
 
 The good part is that IOStreams supports user-defined types and is safe
