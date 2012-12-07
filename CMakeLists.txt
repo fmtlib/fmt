@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 2.6)
-project(FORMAT)
 
 # Set the default CMAKE_BUILD_TYPE to Release.
 # This should be done before the project command since the latter can set
@@ -8,6 +7,8 @@ if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING
     "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif ()
+
+project(FORMAT)
 
 add_library(format format.cc)
 
