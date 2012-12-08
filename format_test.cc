@@ -68,14 +68,31 @@ TEST(FormatterTest, FormatArgs) {
   EXPECT_EQ("abracadabra", str(Format("{0}{1}{0}") << "abra" << "cad"));
 }
 
-TEST(FormatterTest, InvalidFormat) {
+TEST(FormatterTest, FormatErrors) {
   //Format("{");
+  EXPECT_THROW_MSG(Format("{"), FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(Format("{}"), FormatError,
       "missing argument index in format string");
-  EXPECT_THROW_MSG(Format("{"), FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(Format("{0"), FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(Format("{0}"), std::out_of_range,
       "argument index is out of range in format");
+  char format[256];
+  std::sprintf(format, "{%u", UINT_MAX);
+  EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
+  std::sprintf(format, "{%u}", UINT_MAX);
+  EXPECT_THROW_MSG(Format(format), std::out_of_range,
+      "argument index is out of range in format");
+  if (ULONG_MAX > UINT_MAX) {
+    std::sprintf(format, "{%lu", UINT_MAX + 1l);
+    EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
+    std::sprintf(format, "{%lu}", UINT_MAX + 1l);
+    EXPECT_THROW_MSG(Format(format), FormatError, "argument index is too big");
+  } else {
+    std::sprintf(format, "{%u0", UINT_MAX);
+    EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
+    std::sprintf(format, "{%u0}", UINT_MAX);
+    EXPECT_THROW_MSG(Format(format), FormatError, "argument index is too big");
+  }
   // TODO
 }
 

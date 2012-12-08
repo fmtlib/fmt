@@ -31,7 +31,8 @@ class Formatter {
   std::vector<char> buffer_;  // Output buffer.
 
   enum Type {
-    CHAR, INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE, STRING, WSTRING, POINTER
+    CHAR, INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE,
+    STRING, WSTRING, POINTER, OTHER
   };
 
   struct Arg {
@@ -46,6 +47,10 @@ class Formatter {
       const char *string_value;
       const wchar_t *wstring_value;
       const void *pointer_value;
+      struct {
+        const void *other_value;
+        void (Formatter::*format)(const void *value);
+      };
     };
 
     explicit Arg(char value) : type(CHAR), int_value(value) {}
@@ -59,6 +64,8 @@ class Formatter {
     explicit Arg(const char *value) : type(STRING), string_value(value) {}
     explicit Arg(const wchar_t *value) : type(WSTRING), wstring_value(value) {}
     explicit Arg(const void *value) : type(POINTER), pointer_value(value) {}
+    explicit Arg(const void *value, void (Formatter::*format)(const void *))
+    : type(OTHER), format(format) {}
   };
 
   std::vector<Arg> args_;
@@ -76,6 +83,12 @@ class Formatter {
   template <typename T>
   void FormatArg(const char *format, const T &arg, int width, int precision);
 
+  template <typename T>
+  void FormatOtherArg(const void *value) {
+    const T &typed_value = *static_cast<const T*>(value);
+    // TODO: format value
+  }
+
   void Format();
 
  public:
@@ -88,7 +101,19 @@ class Formatter {
 
   const char *c_str() const { return &buffer_[0]; }
   std::size_t size() const { return buffer_.size() - 1; }
+
+  void Swap(Formatter &f) {
+    buffer_.swap(f.buffer_);
+    args_.swap(f.args_);
+  }
 };
+
+template <typename T>
+struct AddPtrConst { typedef T Value; };
+
+// Convert "T*" into "const T*".
+template <typename T>
+struct AddPtrConst<T*> { typedef const T* Value; };
 
 class ArgFormatter {
  private:
@@ -177,6 +202,15 @@ class ArgFormatter {
   // arbitrary pointers. If you want to output a pointer cast it to void*.
   template <typename T>
   ArgFormatter &operator<<(const T *value);
+
+  // If T is a pointer type, say "U*", AddPtrConst<T>::Value will be
+  // "const U*". This additional const ensures that operator<<(const void *)
+  // and not this method is called both for "const void*" and "void*".
+  template <typename T>
+  ArgFormatter &operator<<(const typename AddPtrConst<T>::Value &value) {
+    formatter_->Add(Formatter::Arg(&value, &Formatter::FormatOtherArg<T>));
+    return *this;
+  }
 };
 
 template <typename Callback>
@@ -203,23 +237,28 @@ Formatter::FormatWithCallback(const char *format) {
   return ArgFormatterWithCallback<Callback>(*this);
 }
 
-class Format : public ArgFormatter {
+class FullFormat : public ArgFormatter {
  private:
-  Formatter formatter_;
+  mutable Formatter formatter_;
 
   // Do not implement.
-  Format(const Format&);
-  Format& operator=(const Format&);
+  FullFormat& operator=(const FullFormat&);
 
  public:
-  explicit Format(const char *format) : ArgFormatter(formatter_) {
+  explicit FullFormat(const char *format) : ArgFormatter(formatter_) {
     ArgFormatter::operator=(formatter_(format));
   }
 
-  ~Format() {
+  FullFormat(const FullFormat& other) : ArgFormatter(other) {
+    formatter_.Swap(other.formatter_);
+  }
+
+  ~FullFormat() {
     FinishFormatting();
   }
 };
+
+inline FullFormat Format(const char *format) { return FullFormat(format); }
 
 class Print : public ArgFormatter {
  private:

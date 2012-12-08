@@ -6,16 +6,22 @@
 #include "format.h"
 
 #include <cassert>
+#include <climits>
 #include <cstring>
 #include <algorithm>
 
 using std::size_t;
 
-static void CheckClosingBrace(const char *s) {
+// Throws Exception(message) if s contains '}' and FormatError reporting
+// unmatched '{' otherwise. The idea is that unmatched '{' should override
+// other errors.
+template <typename Exception>
+static void Throw(const char *s, const char *message) {
   while (*s && *s != '}')
     ++s;
   if (!*s)
     throw fmt::FormatError("unmatched '{' in format");
+  throw Exception(message);
 }
 
 template <typename T>
@@ -54,18 +60,17 @@ void fmt::Formatter::Format() {
     // Parse argument index.
     unsigned arg_index = 0;
     if ('0' <= *s && *s <= '9') {
-      // TODO: check overflow
       do {
-        arg_index = arg_index * 10 + (*s++ - '0');
+        unsigned index = arg_index * 10 + (*s++ - '0');
+        if (index < arg_index)  // Check if index wrapped around.
+          Throw<FormatError>(s, "argument index is too big"); // TODO: test
+        arg_index = index;
       } while ('0' <= *s && *s <= '9');
     } else {
-      CheckClosingBrace(s);
-      throw FormatError("missing argument index in format string");
+      Throw<FormatError>(s, "missing argument index in format string");
     }
-    if (arg_index >= args_.size()) {
-      CheckClosingBrace(s);
-      throw std::out_of_range("argument index is out of range in format");
-    }
+    if (arg_index >= args_.size())
+      Throw<std::out_of_range>(s, "argument index is out of range in format");
 
     char arg_format[8];  // longest format: %+0*.*ld
     char *arg_format_ptr = arg_format;
@@ -86,6 +91,7 @@ void fmt::Formatter::Format() {
         *arg_format_ptr++ = '*';
         width = 0;
         do {
+          // TODO: check overflow
           width = width * 10 + (*s++ - '0');
         } while ('0' <= *s && *s <= '9');
       }
@@ -98,6 +104,7 @@ void fmt::Formatter::Format() {
         precision = 0;
         if ('0' <= *s && *s <= '9') {
           do {
+            // TODO: check overflow
             precision = precision * 10 + (*s++ - '0');
           } while ('0' <= *s && *s <= '9');
         } else {
@@ -180,6 +187,9 @@ void fmt::Formatter::Format() {
       *arg_format_ptr = '\0';
       FormatArg(arg_format, arg.pointer_value, width, precision);
       break;
+    case OTHER:
+      (this->*arg.format)(arg.other_value);
+      break;
     default:
       assert(false);
       break;
@@ -192,4 +202,3 @@ fmt::ArgFormatter::~ArgFormatter() {
   if (!formatter_) return;
   FinishFormatting();
 }
-
