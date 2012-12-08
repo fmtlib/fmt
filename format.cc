@@ -11,6 +11,13 @@
 
 using std::size_t;
 
+static void CheckClosingBrace(const char *s) {
+  while (*s && *s != '}')
+    ++s;
+  if (!*s)
+    throw fmt::FormatError("unmatched '{' in format");
+}
+
 template <typename T>
 void fmt::Formatter::FormatArg(
     const char *format, const T &arg, int width, int precision) {
@@ -40,21 +47,25 @@ void fmt::Formatter::Format() {
   buffer_.reserve(500);
   const char *start = format_;
   const char *s = start;
-  for (; *s; ++s) {
-    if (*s != '{') continue;
-    buffer_.insert(buffer_.end(), start, s);
-    ++s;
+  while (*s) {
+    if (*s++ != '{') continue;
+    buffer_.insert(buffer_.end(), start, s - 1);
 
     // Parse argument index.
     unsigned arg_index = 0;
     if ('0' <= *s && *s <= '9') {
+      // TODO: check overflow
       do {
         arg_index = arg_index * 10 + (*s++ - '0');
       } while ('0' <= *s && *s <= '9');
     } else {
+      CheckClosingBrace(s);
       throw FormatError("missing argument index in format string");
     }
-    // TODO: check if argument index is correct
+    if (arg_index >= args_.size()) {
+      CheckClosingBrace(s);
+      throw std::out_of_range("argument index is out of range in format");
+    }
 
     char arg_format[8];  // longest format: %+0*.*ld
     char *arg_format_ptr = arg_format;

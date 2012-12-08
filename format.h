@@ -28,7 +28,7 @@ class ArgFormatterWithCallback;
 // fit all the output.
 class Formatter {
  private:
-  std::vector<char> buffer_;
+  std::vector<char> buffer_;  // Output buffer.
 
   enum Type {
     CHAR, INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE, STRING, WSTRING, POINTER
@@ -63,8 +63,7 @@ class Formatter {
 
   std::vector<Arg> args_;
 
-  // Pointer to the part of the format string that hasn't been written yet.
-  const char *format_;
+  const char *format_;  // Format string.
 
   friend class ArgFormatter;
 

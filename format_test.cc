@@ -14,29 +14,81 @@ using std::sprintf;
 
 using fmt::Formatter;
 using fmt::Format;
+using fmt::FormatError;
+
+#define FORMAT_TEST_THROW_(statement, expected_exception, message, fail) \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
+  if (::testing::internal::ConstCharPtr gtest_msg = "") { \
+    bool gtest_caught_expected = false; \
+    std::string actual_message; \
+    try { \
+      GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
+    } \
+    catch (expected_exception const& e) { \
+      gtest_caught_expected = true; \
+      actual_message = e.what(); \
+    } \
+    catch (...) { \
+      gtest_msg.value = \
+          "Expected: " #statement " throws an exception of type " \
+          #expected_exception ".\n  Actual: it throws a different type."; \
+      goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
+    } \
+    if (!gtest_caught_expected) { \
+      gtest_msg.value = \
+          "Expected: " #statement " throws an exception of type " \
+          #expected_exception ".\n  Actual: it throws nothing."; \
+      goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
+    } else if (actual_message != message) {\
+      gtest_msg.value = \
+          "Expected: " #statement " throws an exception of type " \
+          #expected_exception " with message \"" message "\"."; \
+      goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
+    } \
+  } else \
+    GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__): \
+      fail(gtest_msg.value)
+
+#define EXPECT_THROW_MSG(statement, expected_exception, expected_message) \
+  FORMAT_TEST_THROW_(statement, expected_exception, expected_message, \
+      GTEST_NONFATAL_FAILURE_)
 
 TEST(FormatterTest, FormatNoArgs) {
-  Formatter format;
-  format("test");
-  EXPECT_STREQ("test", format.c_str());
+  EXPECT_EQ("abracadabra", str(Format("{0}{1}{0}") << "abra" << "cad"));
+  EXPECT_EQ("test", str(Format("test")));
 }
 
-TEST(FormatterTest, FormatComplex) {
-  EXPECT_STREQ("1.2340000000:0042:+3.13:str:0x3e8:X:%",
-      c_str(Format("{0:0.10f}:{1:04}:{2:+g}:{3}:{4}:{5}:%")
-          << 1.234 << 42 << 3.13 << "str" << reinterpret_cast<void*>(1000)
-          << 'X'));
-  printf("%0.*f:%04d:%+g:%s:%p:%c:%%\n",
-                  10, 1.234, 42, 3.13, "str", (void*)1000, (int)'X');
-  printf("%0.10f:%04d:%+g:%s:%p:%c:%%\n",
-                  1.234, 42, 3.13, "str", (void*)1000, (int)'X');
+TEST(FormatterTest, FormatArgs) {
+  EXPECT_EQ("42", str(Format("{0}") << 42));
+  EXPECT_EQ("before 42", str(Format("before {0}") << 42));
+  EXPECT_EQ("42 after", str(Format("{0} after") << 42));
+  EXPECT_EQ("before 42 after", str(Format("before {0} after") << 42));
+  EXPECT_EQ("answer = 42", str(Format("{0} = {1}") << "answer" << 42));
+  EXPECT_EQ("42 is the answer", str(Format("{1} is the {0}") << "answer" << 42));
+  EXPECT_EQ("abracadabra", str(Format("{0}{1}{0}") << "abra" << "cad"));
+}
+
+TEST(FormatterTest, InvalidFormat) {
+  //Format("{");
+  EXPECT_THROW_MSG(Format("{}"), FormatError,
+      "missing argument index in format string");
+  EXPECT_THROW_MSG(Format("{"), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0"), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0}"), std::out_of_range,
+      "argument index is out of range in format");
+  // TODO
+}
+
+TEST(FormatterTest, FormatBig) {
+  EXPECT_EQ("1.2340000000:0042:+3.13:str:0x3e8:X:%",
+      str(Format("{0:0.10f}:{1:04}:{2:+g}:{3}:{4}:{5}:%")
+          << 1.234 << 42 << 3.13 << "str"
+          << reinterpret_cast<void*>(1000) << 'X'));
 }
 
 TEST(FormatterTest, FormatInt) {
-  EXPECT_STREQ("42", c_str(Format("{0}") << 42));
-  EXPECT_STREQ("before 42 after", c_str(Format("before {0} after") << 42));
-  printf("%0.10f:%04d:%+g:%s:%p:%c:%%\n",
-                  1.234, 42, 3.13, "str", (void*)1000, (int)'X');
+  EXPECT_EQ("42", str(Format("{0}") << 42));
+  EXPECT_EQ("before 42 after", str(Format("before {0} after") << 42));
 }
 
 // TODO
