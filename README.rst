@@ -39,12 +39,14 @@ Printf
 ~~~~~~
 
 The good thing about printf is that it is very fast and readily available
-being the part of the C standard library. The main drawbacks are that it
-doesn't support user-defined types, it is unsafe although the latter
-problem is mostly solved with `__attribute__ ((format (printf, ...))
-<http://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html>`__ in GCC
-and it doesn't support positional arguments required for `i18n
-<http://en.wikipedia.org/wiki/Internationalization_and_localization>`__.
+being the part of the C standard library. The main drawback is that it
+doesn't support user-defined types. Printf also has safety issues although
+they are mostly solved with `__attribute__ ((format (printf, ...))
+<http://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html>`__ in GCC.
+There is a POSIX extension that adds positional arguments required for
+`i18n <http://en.wikipedia.org/wiki/Internationalization_and_localization>`__
+to printf but it is not a part of C99 and may not be available on some
+platforms.
 
 IOStreams
 ~~~~~~~~~
@@ -58,8 +60,8 @@ which is a lot of typing compared to printf::
     printf("%.2f\n", 1.23456);
 
 Matthew Wilson, the author of FastFormat referred to this situations with
-IOStreams as "chevron hell".
-As with printf, there is no chance to support i18n.
+IOStreams as "chevron hell". IOStreams doesn't support positional arguments
+by design.
 
 The good part is that IOStreams supports user-defined types and is safe
 although error reporting is awkward.
@@ -69,10 +71,9 @@ Boost Format library
 
 This is a very powerful library which supports both printf-like format
 strings and positional arguments. The main its drawback is performance.
-According to various benchmarks it is so slow that I wouldn't recommend
-it for purposes other than occasional message reporting in small to medium
-size projects that are not performance-critical. It also has excessive
-build times and severe code bloat issues (see `Benchmarks`_).
+According to various benchmarks it is much slower than other methods
+considered here. Boost Format also has excessive build times and severe
+code bloat issues (see `Benchmarks`_).
 
 FastFormat
 ~~~~~~~~~~
@@ -203,8 +204,9 @@ Acknowledgments
 
 The benchmark section of this readme file and the performance tests are taken
 from the excellent `tinyformat <https://github.com/c42f/tinyformat>`__ library
-written by Chris Foster.  boost::format is acknowledged transitively since
-it had some influence on tinyformat.  Some ideas used in the implementation
-are borrowed from `Loki <http://loki-lib.sourceforge.net/>`__ SafeFormat and
-`Diagnostic API <http://clang.llvm.org/doxygen/classclang_1_1Diagnostic.html>`__
-in `Clang <http://clang.llvm.org/>`__.
+written by Chris Foster.  Boost Format library is acknowledged transitively
+since it had some influence on tinyformat.
+Some ideas used in the implementation are borrowed from `Loki
+<http://loki-lib.sourceforge.net/>`__ SafeFormat and `Diagnostic API
+<http://clang.llvm.org/doxygen/classclang_1_1Diagnostic.html>`__ in
+`Clang <http://clang.llvm.org/>`__.
