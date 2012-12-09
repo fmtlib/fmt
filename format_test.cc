@@ -117,23 +117,25 @@ TEST(FormatterTest, PlusFlag) {
   EXPECT_EQ("+42", str(Format("{0:+}") << 42));
   EXPECT_EQ("-42", str(Format("{0:+}") << -42));
   EXPECT_EQ("+42", str(Format("{0:+}") << 42));
-  EXPECT_EQ("+42", str(Format("{0:+}") << 42u));
+  EXPECT_THROW_MSG(Format("{0:+}") << 42u,
+      FormatError, "format specifier '+' requires signed argument");
   EXPECT_EQ("+42", str(Format("{0:+}") << 42l));
-  EXPECT_EQ("+42", str(Format("{0:+}") << 42ul));
+  EXPECT_THROW_MSG(Format("{0:+}") << 42ul,
+      FormatError, "format specifier '+' requires signed argument");
   EXPECT_EQ("+42", str(Format("{0:+}") << 42.0));
   EXPECT_EQ("+42", str(Format("{0:+}") << 42.0l));
-  EXPECT_EQ("+0x42",
-      str(Format("{0:+}") << reinterpret_cast<void*>(0x42)));
   EXPECT_THROW_MSG(Format("{0:+") << 'c',
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(Format("{0:+}") << 'c',
-      FormatError, "format specifier '+' used with non-numeric type");
+      FormatError, "format specifier '+' requires numeric argument");
   EXPECT_THROW_MSG(Format("{0:+}") << "abc",
-      FormatError, "format specifier '+' used with non-numeric type");
+      FormatError, "format specifier '+' requires numeric argument");
   EXPECT_THROW_MSG(Format("{0:+}") << L"abc",
-      FormatError, "format specifier '+' used with non-numeric type");
+      FormatError, "format specifier '+' requires numeric argument");
+  EXPECT_THROW_MSG(Format("{0:+}") << reinterpret_cast<void*>(0x42),
+      FormatError, "format specifier '+' requires numeric argument");
   EXPECT_THROW_MSG(Format("{0:+}") << TestString(),
-      FormatError, "format specifier '+' used with non-numeric type");
+      FormatError, "format specifier '+' requires numeric argument");
 }
 
 TEST(FormatterTest, ZeroFlag) {
@@ -144,18 +146,18 @@ TEST(FormatterTest, ZeroFlag) {
   EXPECT_EQ("00042", str(Format("{0:05}") << 42ul));
   EXPECT_EQ("-0042", str(Format("{0:05}") << -42.0));
   EXPECT_EQ("-0042", str(Format("{0:05}") << -42.0l));
-  EXPECT_EQ("0x0042",
-      str(Format("{0:06}") << reinterpret_cast<void*>(0x42)));
   EXPECT_THROW_MSG(Format("{0:0") << 'c',
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(Format("{0:05}") << 'c',
-      FormatError, "format specifier '0' used with non-numeric type");
+      FormatError, "format specifier '0' requires numeric argument");
   EXPECT_THROW_MSG(Format("{0:05}") << "abc",
-      FormatError, "format specifier '0' used with non-numeric type");
+      FormatError, "format specifier '0' requires numeric argument");
   EXPECT_THROW_MSG(Format("{0:05}") << L"abc",
-      FormatError, "format specifier '0' used with non-numeric type");
+      FormatError, "format specifier '0' requires numeric argument");
+  EXPECT_THROW_MSG(Format("{0:05}") << reinterpret_cast<void*>(0x42),
+      FormatError, "format specifier '0' requires numeric argument");
   EXPECT_THROW_MSG(Format("{0:05}") << TestString(),
-      FormatError, "format specifier '0' used with non-numeric type");
+      FormatError, "format specifier '0' requires numeric argument");
 }
 
 TEST(FormatterTest, Width) {
@@ -181,7 +183,7 @@ TEST(FormatterTest, Width) {
   EXPECT_EQ(" -42", str(Format("{0:4}") << -42));
   EXPECT_EQ("   42", str(Format("{0:5}") << 42u));
   EXPECT_EQ("   -42", str(Format("{0:6}") << -42l));
-  EXPECT_EQ("     42", str(Format("{0:7}") << 42lu));
+  EXPECT_EQ("     42", str(Format("{0:7}") << 42ul));
   EXPECT_EQ("   -1.23", str(Format("{0:8}") << -1.23));
   EXPECT_EQ("    -1.23", str(Format("{0:9}") << -1.23l));
   EXPECT_EQ("    0xcafe",
@@ -190,6 +192,76 @@ TEST(FormatterTest, Width) {
   EXPECT_EQ("narrow      ", str(Format("{0:12}") << "narrow"));
   EXPECT_EQ("wide         ", str(Format("{0:13}") << L"wide"));
   EXPECT_EQ("test          ", str(Format("{0:14}") << TestString("test")));
+}
+
+TEST(FormatterTest, Precision) {
+  char format[256];
+  if (ULONG_MAX > UINT_MAX) {
+    std::sprintf(format, "{0:.%lu", INT_MAX + 1l);
+    EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
+    std::sprintf(format, "{0:.%lu}", UINT_MAX + 1l);
+    EXPECT_THROW_MSG(Format(format) << 0,
+        FormatError, "number is too big in format");
+  } else {
+    std::sprintf(format, "{0:.%u0", UINT_MAX);
+    EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
+    std::sprintf(format, "{0:.%u0}", UINT_MAX);
+    EXPECT_THROW_MSG(Format(format) << 0,
+        FormatError, "number is too big in format");
+  }
+
+  std::sprintf(format, "{0:.%u", INT_MAX + 1u);
+  EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
+  std::sprintf(format, "{0:.%u}", INT_MAX + 1u);
+  EXPECT_THROW_MSG(Format(format) << 0,
+      FormatError, "number is too big in format");
+
+  EXPECT_THROW_MSG(Format("{0:.") << 0,
+      FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0:.}") << 0,
+      FormatError, "missing precision in format");
+  EXPECT_THROW_MSG(Format("{0:.2") << 0,
+      FormatError, "unmatched '{' in format");
+
+  EXPECT_THROW_MSG(Format("{0:.2}") << 42,
+      FormatError, "precision specifier requires floating-point type");
+  EXPECT_EQ("42.00", str(Format("{0:.2f}") << 42));
+  EXPECT_THROW_MSG(Format("{0:.2}") << 42u,
+      FormatError, "precision specifier requires floating-point type");
+  EXPECT_EQ("42.00", str(Format("{0:.2f}") << 42u));
+  EXPECT_THROW_MSG(Format("{0:.2}") << 42l,
+      FormatError, "precision specifier requires floating-point type");
+  EXPECT_EQ("42.00", str(Format("{0:.2f}") << 42l));
+  EXPECT_THROW_MSG(Format("{0:.2}") << 42ul,
+      FormatError, "precision specifier requires floating-point type");
+  EXPECT_EQ("42.00", str(Format("{0:.2f}") << 42ul));
+  EXPECT_EQ("1.2", str(Format("{0:.2}") << 1.2345));
+  EXPECT_EQ("1.2", str(Format("{0:.2}") << 1.2345l));
+
+  EXPECT_THROW_MSG(Format("{0:.2}") << reinterpret_cast<void*>(0xcafe),
+      FormatError, "precision specifier requires floating-point type");
+  EXPECT_THROW_MSG(Format("{0:.2f}") << reinterpret_cast<void*>(0xcafe),
+      FormatError, "precision specifier requires floating-point type");
+
+  EXPECT_THROW_MSG(Format("{0:.2}") << 'x',
+      FormatError, "precision specifier requires floating-point type");
+  EXPECT_THROW_MSG(Format("{0:.2f}") << 'x',
+      FormatError, "precision specifier requires floating-point type");
+
+  EXPECT_THROW_MSG(Format("{0:.2}") << "str",
+      FormatError, "precision specifier requires floating-point type");
+  EXPECT_THROW_MSG(Format("{0:.2f}") << "str",
+      FormatError, "precision specifier requires floating-point type");
+
+  EXPECT_THROW_MSG(Format("{0:.2}") << L"str",
+      FormatError, "precision specifier requires floating-point type");
+  EXPECT_THROW_MSG(Format("{0:.2f}") << L"str",
+      FormatError, "precision specifier requires floating-point type");
+
+  EXPECT_THROW_MSG(Format("{0:.2}") << TestString(),
+      FormatError, "precision specifier requires floating-point type");
+  EXPECT_THROW_MSG(Format("{0:.2f}") << TestString(),
+      FormatError, "precision specifier requires floating-point type");
 }
 
 TEST(FormatterTest, FormatInt) {

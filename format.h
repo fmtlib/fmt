@@ -33,8 +33,9 @@ class Formatter {
 
   enum Type {
     // Numeric types should go first.
-    INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE, POINTER,
-    LAST_NUMERIC_TYPE = POINTER, CHAR, STRING, WSTRING, CUSTOM
+    INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE,
+    LAST_NUMERIC_TYPE = LONG_DOUBLE,
+    CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
 
   typedef void (Formatter::*FormatFunc)(const void *arg, int width);
@@ -63,7 +64,6 @@ class Formatter {
       };
     };
 
-    explicit Arg(char value) : type(CHAR), int_value(value) {}
     explicit Arg(int value) : type(INT), int_value(value) {}
     explicit Arg(unsigned value) : type(UINT), uint_value(value) {}
     explicit Arg(long value) : type(LONG), long_value(value) {}
@@ -71,6 +71,7 @@ class Formatter {
     explicit Arg(double value) : type(DOUBLE), double_value(value) {}
     explicit Arg(long double value)
     : type(LONG_DOUBLE), long_double_value(value) {}
+    explicit Arg(char value) : type(CHAR), int_value(value) {}
     explicit Arg(const char *value, std::size_t size = 0)
     : type(STRING), string_value(value), size(size) {}
     explicit Arg(const wchar_t *value) : type(WSTRING), wstring_value(value) {}
@@ -158,11 +159,6 @@ class ArgFormatter {
     return af.FinishFormatting()->c_str();
   }
 
-  ArgFormatter &operator<<(char value) {
-    formatter_->Add(Formatter::Arg(value));
-    return *this;
-  }
-
   ArgFormatter &operator<<(int value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
@@ -189,6 +185,11 @@ class ArgFormatter {
   }
 
   ArgFormatter &operator<<(long double value) {
+    formatter_->Add(Formatter::Arg(value));
+    return *this;
+  }
+
+  ArgFormatter &operator<<(char value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
   }
