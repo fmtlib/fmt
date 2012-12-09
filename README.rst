@@ -24,7 +24,7 @@ This prints "Hello, world!" to stdout::
 
     fmt::Print("Hello, {0}!") << "world";
 
-Arguments are accessed by position and arguments' indices can be repeated:
+Arguments are accessed by position and arguments' indices can be repeated::
 
     std::string s = str(fmt::Format("{0}{1}{0}") << "abra" << "cad");
     // s == "abracadabra"
