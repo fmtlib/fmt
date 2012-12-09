@@ -108,13 +108,6 @@ class Formatter {
   }
 };
 
-template <typename T>
-struct AddPtrConst { typedef T Value; };
-
-// Convert "T*" into "const T*".
-template <typename T>
-struct AddPtrConst<T*> { typedef const T* Value; };
-
 class ArgFormatter {
  private:
   friend class Formatter;
@@ -193,6 +186,11 @@ class ArgFormatter {
     return *this;
   }
 
+  ArgFormatter &operator<<(const wchar_t *value) {
+    formatter_->Add(Formatter::Arg(value));
+    return *this;
+  }
+
   ArgFormatter &operator<<(const void *value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
@@ -203,11 +201,17 @@ class ArgFormatter {
   template <typename T>
   ArgFormatter &operator<<(const T *value);
 
+  template <typename T>
+  ArgFormatter &operator<<(T *value) {
+    const T *const_value = value;
+    return *this << const_value;
+  }
+
   // If T is a pointer type, say "U*", AddPtrConst<T>::Value will be
   // "const U*". This additional const ensures that operator<<(const void *)
   // and not this method is called both for "const void*" and "void*".
   template <typename T>
-  ArgFormatter &operator<<(const typename AddPtrConst<T>::Value &value) {
+  ArgFormatter &operator<<(const T &value) {
     formatter_->Add(Formatter::Arg(&value, &Formatter::FormatOtherArg<T>));
     return *this;
   }

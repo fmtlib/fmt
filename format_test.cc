@@ -68,8 +68,7 @@ TEST(FormatterTest, FormatArgs) {
   EXPECT_EQ("abracadabra", str(Format("{0}{1}{0}") << "abra" << "cad"));
 }
 
-TEST(FormatterTest, FormatErrors) {
-  //Format("{");
+TEST(FormatterTest, FormatArgErrors) {
   EXPECT_THROW_MSG(Format("{"), FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(Format("{}"), FormatError,
       "missing argument index in format string");
@@ -86,14 +85,62 @@ TEST(FormatterTest, FormatErrors) {
     std::sprintf(format, "{%lu", UINT_MAX + 1l);
     EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
     std::sprintf(format, "{%lu}", UINT_MAX + 1l);
-    EXPECT_THROW_MSG(Format(format), FormatError, "argument index is too big");
+    EXPECT_THROW_MSG(Format(format),
+        FormatError, "number is too big in format");
   } else {
     std::sprintf(format, "{%u0", UINT_MAX);
     EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
     std::sprintf(format, "{%u0}", UINT_MAX);
-    EXPECT_THROW_MSG(Format(format), FormatError, "argument index is too big");
+    EXPECT_THROW_MSG(Format(format),
+        FormatError, "number is too big in format");
   }
-  // TODO
+}
+
+struct UDT {};
+
+TEST(FormatterTest, FormatPlusFlag) {
+  EXPECT_EQ("+42", str(Format("{0:+}") << 42));
+  EXPECT_EQ("-42", str(Format("{0:+}") << -42));
+  EXPECT_THROW_MSG(Format("{0:+") << 'c',
+      FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0:+}") << 'c',
+      FormatError, "format specifier '+' used with non-numeric type");
+  EXPECT_EQ("+42", str(Format("{0:+}") << 42));
+  EXPECT_EQ("+42", str(Format("{0:+}") << 42u));
+  EXPECT_EQ("+42", str(Format("{0:+}") << 42l));
+  EXPECT_EQ("+42", str(Format("{0:+}") << 42ul));
+  EXPECT_EQ("+42", str(Format("{0:+}") << 42.0));
+  EXPECT_EQ("+42", str(Format("{0:+}") << 42.0l));
+  EXPECT_THROW_MSG(Format("{0:+}") << "abc",
+      FormatError, "format specifier '+' used with non-numeric type");
+  EXPECT_THROW_MSG(Format("{0:+}") << L"abc",
+      FormatError, "format specifier '+' used with non-numeric type");
+  EXPECT_THROW_MSG(Format("{0:+}") << static_cast<const void*>("abc"),
+      FormatError, "format specifier '+' used with non-numeric type");
+  EXPECT_THROW_MSG(Format("{0:+}") << UDT(),
+      FormatError, "format specifier '+' used with non-numeric type");
+}
+
+TEST(FormatterTest, FormatZeroFlag) {
+  EXPECT_EQ("42", str(Format("{0:0}") << 42));
+  EXPECT_THROW_MSG(Format("{0:0") << 'c',
+      FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0:05}") << 'c',
+      FormatError, "format specifier '0' used with non-numeric type");
+  EXPECT_EQ("-0042", str(Format("{0:05}") << -42));
+  EXPECT_EQ("00042", str(Format("{0:05}") << 42u));
+  EXPECT_EQ("-0042", str(Format("{0:05}") << -42l));
+  EXPECT_EQ("00042", str(Format("{0:05}") << 42ul));
+  EXPECT_EQ("-0042", str(Format("{0:05}") << -42.0));
+  EXPECT_EQ("-0042", str(Format("{0:05}") << -42.0l));
+  EXPECT_THROW_MSG(Format("{0:05}") << "abc",
+      FormatError, "format specifier '0' used with non-numeric type");
+  EXPECT_THROW_MSG(Format("{0:05}") << L"abc",
+      FormatError, "format specifier '0' used with non-numeric type");
+  EXPECT_THROW_MSG(Format("{0:05}") << static_cast<const void*>("abc"),
+      FormatError, "format specifier '0' used with non-numeric type");
+  EXPECT_THROW_MSG(Format("{0:05}") << UDT(),
+      FormatError, "format specifier '0' used with non-numeric type");
 }
 
 TEST(FormatterTest, FormatBig) {
