@@ -39,20 +39,6 @@ unsigned ParseUInt(const char *&s) {
   } while ('0' <= *s && *s <= '9');
   return value;
 }
-
-// Flags.
-enum {
-  PLUS_FLAG = 1,
-  ZERO_FLAG = 2
-};
-
-void CheckFlags(unsigned flags) {
-  if (flags == 0) return;
-  if ((flags & PLUS_FLAG) != 0)
-    throw fmt::FormatError("format specifier '+' used with non-numeric type");
-  if ((flags & ZERO_FLAG) != 0)
-    throw fmt::FormatError("format specifier '0' used with non-numeric type");
-}
 }
 
 template <typename T>
@@ -94,33 +80,42 @@ void fmt::Formatter::Format() {
     unsigned arg_index = ParseUInt(s);
     if (arg_index >= args_.size())
       Throw<std::out_of_range>(s, "argument index is out of range in format");
+    Arg &arg = args_[arg_index];
 
-    enum { MAX_FORMAT_SIZE = 9}; // longest format: %+0*.*ld
+    enum { MAX_FORMAT_SIZE = 10}; // longest format: %+0-*.*ld
     char arg_format[MAX_FORMAT_SIZE];
     char *arg_format_ptr = arg_format;
     *arg_format_ptr++ = '%';
 
-    unsigned flags = 0;
     int width = -1;
     int precision = -1;
     char type = 0;
     if (*s == ':') {
       ++s;
       if (*s == '+') {
-        flags |= PLUS_FLAG;
+        if (arg.type > LAST_NUMERIC_TYPE) {
+          Throw<FormatError>(s,
+              "format specifier '+' used with non-numeric type");
+        }
         *arg_format_ptr++ = *s++;
       }
       if (*s == '0') {
-        flags |= ZERO_FLAG;
+        if (arg.type > LAST_NUMERIC_TYPE) {
+          Throw<FormatError>(s,
+              "format specifier '0' used with non-numeric type");
+        }
         *arg_format_ptr++ = *s++;
       }
 
       // Parse width.
       if ('0' <= *s && *s <= '9') {
+        if (arg.type > LAST_NUMERIC_TYPE)
+          *arg_format_ptr++ = '-';
         *arg_format_ptr++ = '*';
-        unsigned number = ParseUInt(s);
-        if (number > INT_MAX) ; // TODO: error
-        width = number;
+        unsigned value = ParseUInt(s);
+        if (value > INT_MAX)
+          Throw<FormatError>(s, "number is too big in format");
+        width = value;
       }
 
       // Parse precision.
@@ -130,10 +125,10 @@ void fmt::Formatter::Format() {
         ++s;
         precision = 0;
         if ('0' <= *s && *s <= '9') {
-          do {
-            // TODO: check overflow
-            precision = precision * 10 + (*s++ - '0');
-          } while ('0' <= *s && *s <= '9');
+          unsigned value = ParseUInt(s);
+          if (value > INT_MAX)
+            Throw<FormatError>(s, "number is too big in format"); // TODO: test
+          precision = value;
         } else {
           // TODO: error
         }
@@ -149,10 +144,8 @@ void fmt::Formatter::Format() {
     start = s;
 
     // Format argument.
-    Arg &arg = args_[arg_index];
     switch (arg.type) {
     case CHAR:
-      CheckFlags(flags);
       if (width == -1 && precision == -1) {
         buffer_.push_back(arg.int_value);
         break;
@@ -195,12 +188,13 @@ void fmt::Formatter::Format() {
       FormatBuiltinArg(arg_format, arg.long_double_value, width, precision);
       break;
     case STRING:
-      CheckFlags(flags);
+      // TODO: align string left by default
       if (width == -1 && precision == -1) {
         const char *str = arg.string_value;
         std::size_t size = arg.size;
         if (size == 0 && *str)
           size = std::strlen(str);
+        buffer_.reserve(buffer_.size() + size + 1);
         buffer_.insert(buffer_.end(), str, str + size);
         break;
       }
@@ -209,21 +203,18 @@ void fmt::Formatter::Format() {
       FormatBuiltinArg(arg_format, arg.string_value, width, precision);
       break;
     case WSTRING:
-      CheckFlags(flags);
       *arg_format_ptr++ = 'l';
       *arg_format_ptr++ = 's';
       *arg_format_ptr = '\0';
       FormatBuiltinArg(arg_format, arg.wstring_value, width, precision);
       break;
     case POINTER:
-      CheckFlags(flags);
       *arg_format_ptr++ = 'p';
       *arg_format_ptr = '\0';
       FormatBuiltinArg(arg_format, arg.pointer_value, width, precision);
       break;
     case CUSTOM:
-      CheckFlags(flags);
-      (this->*arg.format)(arg.custom_value);
+      (this->*arg.format)(arg.custom_value, width);
       break;
     default:
       assert(false);

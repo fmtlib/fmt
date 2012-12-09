@@ -32,9 +32,12 @@ class Formatter {
   std::vector<char> buffer_;  // Output buffer.
 
   enum Type {
-    CHAR, INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE,
-    STRING, WSTRING, POINTER, CUSTOM
+    // Numeric types should go first.
+    INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE, POINTER,
+    LAST_NUMERIC_TYPE = POINTER, CHAR, STRING, WSTRING, CUSTOM
   };
+
+  typedef void (Formatter::*FormatFunc)(const void *arg, int width);
 
   // An argument.
   struct Arg {
@@ -56,7 +59,7 @@ class Formatter {
       };
       struct {
         const void *custom_value;
-        void (Formatter::*format)(const void *value);
+        FormatFunc format;
       };
     };
 
@@ -72,8 +75,8 @@ class Formatter {
     : type(STRING), string_value(value), size(size) {}
     explicit Arg(const wchar_t *value) : type(WSTRING), wstring_value(value) {}
     explicit Arg(const void *value) : type(POINTER), pointer_value(value) {}
-    explicit Arg(const void *value, void (Formatter::*format)(const void *))
-    : type(CUSTOM), custom_value(value), format(format) {}
+    explicit Arg(const void *value, FormatFunc f)
+    : type(CUSTOM), custom_value(value), format(f) {}
   };
 
   std::vector<Arg> args_;
@@ -95,7 +98,7 @@ class Formatter {
 
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
-  void FormatCustomArg(const void *arg);
+  void FormatCustomArg(const void *arg, int width);
 
   void Format();
 
@@ -244,14 +247,18 @@ class ArgFormatterWithCallback : public ArgFormatter {
 };
 
 template <typename T>
-void Formatter::FormatCustomArg(const void *arg) {
+void Formatter::FormatCustomArg(const void *arg, int width) {
   const T &value = *static_cast<const T*>(arg);
   std::ostringstream os;
   os << value;
   std::string str(os.str());
-  // Extra char is reserved for terminating '\0'.
-  buffer_.reserve(buffer_.size() + str.size() + 1);
-  buffer_.insert(buffer_.end(), str.begin(), str.end());
+  if (width < 0) {
+    // Extra char is reserved for terminating '\0'.
+    buffer_.reserve(buffer_.size() + str.size() + 1);
+    buffer_.insert(buffer_.end(), str.begin(), str.end());
+    return;
+  }
+  FormatBuiltinArg("%-*s", str.c_str(), width, -1);
 }
 
 inline ArgFormatter Formatter::operator()(const char *format) {
