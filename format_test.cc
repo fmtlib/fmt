@@ -53,6 +53,19 @@ using fmt::FormatError;
   FORMAT_TEST_THROW_(statement, expected_exception, expected_message, \
       GTEST_NONFATAL_FAILURE_)
 
+class TestString {
+ private:
+  std::string value_;
+
+ public:
+  explicit TestString(const char *value = "") : value_(value) {}
+
+  friend std::ostream &operator<<(std::ostream &os, const TestString &s) {
+    os << s.value_;
+    return os;
+  }
+};
+
 TEST(FormatterTest, FormatNoArgs) {
   EXPECT_EQ("abracadabra", str(Format("{0}{1}{0}") << "abra" << "cad"));
   EXPECT_EQ("test", str(Format("test")));
@@ -96,8 +109,6 @@ TEST(FormatterTest, FormatArgErrors) {
   }
 }
 
-struct UDT {};
-
 TEST(FormatterTest, FormatPlusFlag) {
   EXPECT_EQ("+42", str(Format("{0:+}") << 42));
   EXPECT_EQ("-42", str(Format("{0:+}") << -42));
@@ -117,7 +128,7 @@ TEST(FormatterTest, FormatPlusFlag) {
       FormatError, "format specifier '+' used with non-numeric type");
   EXPECT_THROW_MSG(Format("{0:+}") << static_cast<const void*>("abc"),
       FormatError, "format specifier '+' used with non-numeric type");
-  EXPECT_THROW_MSG(Format("{0:+}") << UDT(),
+  EXPECT_THROW_MSG(Format("{0:+}") << TestString(),
       FormatError, "format specifier '+' used with non-numeric type");
 }
 
@@ -139,20 +150,42 @@ TEST(FormatterTest, FormatZeroFlag) {
       FormatError, "format specifier '0' used with non-numeric type");
   EXPECT_THROW_MSG(Format("{0:05}") << static_cast<const void*>("abc"),
       FormatError, "format specifier '0' used with non-numeric type");
-  EXPECT_THROW_MSG(Format("{0:05}") << UDT(),
+  EXPECT_THROW_MSG(Format("{0:05}") << TestString(),
       FormatError, "format specifier '0' used with non-numeric type");
 }
 
-TEST(FormatterTest, FormatBig) {
+TEST(FormatterTest, FormatWidth) {
+  // TODO
+}
+
+TEST(FormatterTest, FormatChar) {
+  EXPECT_EQ("a*b", str(Format("{0}{1}{2}") << 'a' << '*' << 'b'));
+}
+
+TEST(FormatterTest, FormatInt) {
+  EXPECT_EQ("42", str(Format("{0}") << 42));
+  EXPECT_EQ("-1234", str(Format("{0}") << -1234));
+  std::ostringstream os;
+  os << INT_MIN;
+  EXPECT_EQ(os.str(), str(Format("{0}") << INT_MIN));
+  os.str(std::string());
+  os << INT_MAX;
+  EXPECT_EQ(os.str(), str(Format("{0}") << INT_MAX));
+}
+
+TEST(FormatterTest, FormatString) {
+  EXPECT_EQ("test", str(Format("{0}") << std::string("test")));
+}
+
+TEST(FormatterTest, FormatCustomArg) {
+  EXPECT_EQ("a string", str(Format("{0}") << TestString("a string")));
+}
+
+TEST(FormatterTest, FormatStringFromSpeedTest) {
   EXPECT_EQ("1.2340000000:0042:+3.13:str:0x3e8:X:%",
       str(Format("{0:0.10f}:{1:04}:{2:+g}:{3}:{4}:{5}:%")
           << 1.234 << 42 << 3.13 << "str"
           << reinterpret_cast<void*>(1000) << 'X'));
 }
 
-TEST(FormatterTest, FormatInt) {
-  EXPECT_EQ("42", str(Format("{0}") << 42));
-  EXPECT_EQ("before 42 after", str(Format("before {0} after") << 42));
-}
-
-// TODO
+// TODO: more tests

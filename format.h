@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <string>
+#include <sstream>
 #include <vector>
 
 namespace format {
@@ -32,9 +33,10 @@ class Formatter {
 
   enum Type {
     CHAR, INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE,
-    STRING, WSTRING, POINTER, OTHER
+    STRING, WSTRING, POINTER, CUSTOM
   };
 
+  // An argument.
   struct Arg {
     Type type;
     union {
@@ -44,11 +46,16 @@ class Formatter {
       long long_value;
       unsigned long ulong_value;
       long double long_double_value;
-      const char *string_value;
-      const wchar_t *wstring_value;
-      const void *pointer_value;
       struct {
-        const void *other_value;
+        union {
+          const char *string_value;
+          const wchar_t *wstring_value;
+          const void *pointer_value;
+        };
+        std::size_t size;
+      };
+      struct {
+        const void *custom_value;
         void (Formatter::*format)(const void *value);
       };
     };
@@ -61,11 +68,12 @@ class Formatter {
     explicit Arg(double value) : type(DOUBLE), double_value(value) {}
     explicit Arg(long double value)
     : type(LONG_DOUBLE), long_double_value(value) {}
-    explicit Arg(const char *value) : type(STRING), string_value(value) {}
+    explicit Arg(const char *value, std::size_t size = 0)
+    : type(STRING), string_value(value), size(size) {}
     explicit Arg(const wchar_t *value) : type(WSTRING), wstring_value(value) {}
     explicit Arg(const void *value) : type(POINTER), pointer_value(value) {}
     explicit Arg(const void *value, void (Formatter::*format)(const void *))
-    : type(OTHER), format(format) {}
+    : type(CUSTOM), custom_value(value), format(format) {}
   };
 
   std::vector<Arg> args_;
@@ -80,14 +88,14 @@ class Formatter {
     args_.push_back(arg);
   }
 
+  // Formats an argument of a built-in type, such as "int" or "double".
   template <typename T>
-  void FormatArg(const char *format, const T &arg, int width, int precision);
+  void FormatBuiltinArg(
+      const char *format, const T &arg, int width, int precision);
 
+  // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
-  void FormatOtherArg(const void *value) {
-    const T &typed_value = *static_cast<const T*>(value);
-    // TODO: format value
-  }
+  void FormatCustomArg(const void *arg);
 
   void Format();
 
@@ -100,7 +108,8 @@ class Formatter {
   ArgFormatterWithCallback<Callback> FormatWithCallback(const char *format);
 
   const char *c_str() const { return &buffer_[0]; }
-  std::size_t size() const { return buffer_.size() - 1; }
+  const char *data() const { return &buffer_[0]; }
+  std::size_t size() const { return buffer_.size(); }
 
   void Swap(Formatter &f) {
     buffer_.swap(f.buffer_);
@@ -191,6 +200,11 @@ class ArgFormatter {
     return *this;
   }
 
+  ArgFormatter &operator<<(const std::string &value) {
+    formatter_->Add(Formatter::Arg(value.c_str(), value.size()));
+    return *this;
+  }
+
   ArgFormatter &operator<<(const void *value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
@@ -212,7 +226,7 @@ class ArgFormatter {
   // and not this method is called both for "const void*" and "void*".
   template <typename T>
   ArgFormatter &operator<<(const T &value) {
-    formatter_->Add(Formatter::Arg(&value, &Formatter::FormatOtherArg<T>));
+    formatter_->Add(Formatter::Arg(&value, &Formatter::FormatCustomArg<T>));
     return *this;
   }
 };
@@ -228,6 +242,17 @@ class ArgFormatterWithCallback : public ArgFormatter {
     callback(*formatter_);
   }
 };
+
+template <typename T>
+void Formatter::FormatCustomArg(const void *arg) {
+  const T &value = *static_cast<const T*>(arg);
+  std::ostringstream os;
+  os << value;
+  std::string str(os.str());
+  // Extra char is reserved for terminating '\0'.
+  buffer_.reserve(buffer_.size() + str.size() + 1);
+  buffer_.insert(buffer_.end(), str.begin(), str.end());
+}
 
 inline ArgFormatter Formatter::operator()(const char *format) {
   format_ = format;
@@ -279,7 +304,7 @@ class Print : public ArgFormatter {
 
   ~Print() {
     FinishFormatting();
-    std::fwrite(formatter_.c_str(), 1, formatter_.size(), stdout);
+    std::fwrite(formatter_.data(), 1, formatter_.size(), stdout);
   }
 };
 }
