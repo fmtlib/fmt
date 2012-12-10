@@ -46,6 +46,23 @@ An object of any user-defined type for which there is an overloaded
     std::string s = str(fmt::Format("The date is {0}") << Date(2012, 12, 9));
     // s == "The date is 2012-12-9"
 
+Format string syntax
+--------------------
+
+A format string can contain "replacement fields" delimited by curly
+braces ``{}``.  Text outside of braces is copied unchanged to the output.
+If you need to include a brace character in the literal text, it can be
+escaped by doubling: ``{{`` and ``}}``.
+
+The grammar for a replacement field is as follows::
+
+   replacement_field: "{" arg_index [":" format_spec] "}"
+   arg_index: integer
+   format_spec: ["+"]["0"][width]["." precision][type]
+   width: integer
+   precision: integer
+   type: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "s" | "x" | "X"
+
 Motivation
 ----------
 
