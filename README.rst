@@ -29,6 +29,23 @@ Arguments are accessed by position and arguments' indices can be repeated::
     std::string s = str(fmt::Format("{0}{1}{0}") << "abra" << "cad");
     // s == "abracadabra"
 
+Any user-defined type for which there is an overloaded ``std::ostream``
+insertion operator (``operator<<``) can be formatted::
+
+    class Date {
+      int year_, month_, day_;
+     public:
+      Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
+
+      friend std::ostream &operator<<(std::ostream &os, const Date &d) {
+        os << d.year_ << '-' << d.month_ << '-' << d.day_;
+        return os;
+      }
+    };
+
+    std::string s = fmt::Format("The date is {0}") << Date(2012, 12, 9))
+    // s == "The date is 2012-12-9"
+
 Motivation
 ----------
 
