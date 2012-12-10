@@ -312,6 +312,27 @@ TEST(FormatterTest, FormatHex) {
   EXPECT_EQ(buffer, str(Format("{0:x}") << ULONG_MAX));
 }
 
+TEST(FormatterTest, FormatOct) {
+  EXPECT_EQ("0", str(Format("{0:o}") << 0));
+  EXPECT_EQ("42", str(Format("{0:o}") << 042));
+  EXPECT_EQ("42", str(Format("{0:o}") << 042u));
+  EXPECT_EQ("-42", str(Format("{0:o}") << -042));
+  EXPECT_EQ("12345670", str(Format("{0:o}") << 012345670));
+  char buffer[256];
+  sprintf(buffer, "-%o", 0u - INT_MIN);
+  EXPECT_EQ(buffer, str(Format("{0:o}") << INT_MIN));
+  sprintf(buffer, "%o", INT_MAX);
+  EXPECT_EQ(buffer, str(Format("{0:o}") << INT_MAX));
+  sprintf(buffer, "%o", UINT_MAX);
+  EXPECT_EQ(buffer, str(Format("{0:o}") << UINT_MAX));
+  sprintf(buffer, "-%lo", 0ul - LONG_MIN);
+  EXPECT_EQ(buffer, str(Format("{0:o}") << LONG_MIN));
+  sprintf(buffer, "%lo", LONG_MAX);
+  EXPECT_EQ(buffer, str(Format("{0:o}") << LONG_MAX));
+  sprintf(buffer, "%lo", ULONG_MAX);
+  EXPECT_EQ(buffer, str(Format("{0:o}") << ULONG_MAX));
+}
+
 TEST(FormatterTest, FormatChar) {
   EXPECT_EQ("a*b", str(Format("{0}{1}{2}") << 'a' << '*' << 'b'));
 }
