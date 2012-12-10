@@ -157,11 +157,14 @@ void fmt::Formatter::FormatDouble(
     T value, unsigned flags, int width, int precision, char type) {
   // Check type.
   switch (type) {
+  case 0:
+    type = 'g';
+    break;
   case 'e': case 'E': case 'f': case 'F': case 'g': case 'G':
     break;
   default:
-    // TODO: error
-    break;
+    throw FormatError(
+        str(fmt::Format("unknown format code '{0}' for double") << type));
   }
 
   // Build format string.
@@ -181,7 +184,7 @@ void fmt::Formatter::FormatDouble(
   }
   if (IsLongDouble<T>::VALUE)
     *format_ptr++ = 'L';
-  *format_ptr++ = type ? type : 'g';
+  *format_ptr++ = type;
   *format_ptr = '\0';
 
   // Format using snprintf.

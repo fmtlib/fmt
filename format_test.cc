@@ -258,11 +258,19 @@ TEST(FormatterTest, Precision) {
       FormatError, "precision specifier requires floating-point argument");
 }
 
-TEST(FormatterTest, Type) {
+TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(Format("{0:v") << 42,
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(Format("{0:v}") << 42,
       FormatError, "unknown format code 'v' for integer");
+  EXPECT_THROW_MSG(Format("{0:c}") << 42,
+      FormatError, "unknown format code 'c' for integer");
+  EXPECT_THROW_MSG(Format("{0:e}") << 42,
+      FormatError, "unknown format code 'e' for integer");
+  EXPECT_THROW_MSG(Format("{0:f}") << 42,
+      FormatError, "unknown format code 'f' for integer");
+  EXPECT_THROW_MSG(Format("{0:g}") << 42,
+      FormatError, "unknown format code 'g' for integer");
 }
 
 TEST(FormatterTest, FormatDec) {
@@ -331,6 +339,40 @@ TEST(FormatterTest, FormatOct) {
   EXPECT_EQ(buffer, str(Format("{0:o}") << LONG_MAX));
   sprintf(buffer, "%lo", ULONG_MAX);
   EXPECT_EQ(buffer, str(Format("{0:o}") << ULONG_MAX));
+}
+
+TEST(FormatterTest, FormatDouble) {
+  EXPECT_THROW_MSG(Format("{0:c}") << 1.2,
+      FormatError, "unknown format code 'c' for double");
+  EXPECT_THROW_MSG(Format("{0:d}") << 1.2,
+      FormatError, "unknown format code 'd' for double");
+  EXPECT_THROW_MSG(Format("{0:o}") << 1.2,
+      FormatError, "unknown format code 'o' for double");
+  EXPECT_THROW_MSG(Format("{0:x}") << 1.2,
+      FormatError, "unknown format code 'x' for double");
+  EXPECT_EQ("0", str(Format("{0:}") << 0.0));
+  EXPECT_EQ("0.000000", str(Format("{0:f}") << 0.0));
+  EXPECT_EQ("392.65", str(Format("{0:}") << 392.65));
+  EXPECT_EQ("392.65", str(Format("{0:g}") << 392.65));
+  EXPECT_EQ("392.65", str(Format("{0:G}") << 392.65));
+  EXPECT_EQ("392.650000", str(Format("{0:f}") << 392.65));
+  EXPECT_EQ("392.650000", str(Format("{0:F}") << 392.65));
+  EXPECT_EQ("3.926500e+02", str(Format("{0:e}") << 392.65));
+  EXPECT_EQ("3.926500E+02", str(Format("{0:E}") << 392.65));
+  EXPECT_EQ("+0000392.6", str(Format("{0:+010.4g}") << 392.65));
+}
+
+TEST(FormatterTest, FormatLongDouble) {
+  EXPECT_EQ("0", str(Format("{0:}") << 0.0l));
+  EXPECT_EQ("0.000000", str(Format("{0:f}") << 0.0l));
+  EXPECT_EQ("392.65", str(Format("{0:}") << 392.65l));
+  EXPECT_EQ("392.65", str(Format("{0:g}") << 392.65l));
+  EXPECT_EQ("392.65", str(Format("{0:G}") << 392.65l));
+  EXPECT_EQ("392.650000", str(Format("{0:f}") << 392.65l));
+  EXPECT_EQ("392.650000", str(Format("{0:F}") << 392.65l));
+  EXPECT_EQ("3.926500e+02", str(Format("{0:e}") << 392.65l));
+  EXPECT_EQ("3.926500E+02", str(Format("{0:E}") << 392.65l));
+  EXPECT_EQ("+0000392.6", str(Format("{0:+010.4g}") << 392.65l));
 }
 
 TEST(FormatterTest, FormatChar) {
