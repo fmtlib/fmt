@@ -53,7 +53,6 @@ class Formatter {
       struct {
         union {
           const char *string_value;
-          const wchar_t *wstring_value;
           const void *pointer_value;
         };
         std::size_t size;
@@ -74,7 +73,6 @@ class Formatter {
     explicit Arg(char value) : type(CHAR), int_value(value) {}
     explicit Arg(const char *value, std::size_t size = 0)
     : type(STRING), string_value(value), size(size) {}
-    explicit Arg(const wchar_t *value) : type(WSTRING), wstring_value(value) {}
     explicit Arg(const void *value) : type(POINTER), pointer_value(value) {}
     explicit Arg(const void *value, FormatFunc f)
     : type(CUSTOM), custom_value(value), format(f) {}
@@ -92,10 +90,14 @@ class Formatter {
     args_.push_back(arg);
   }
 
-  // Formats an argument of a built-in type, such as "int" or "double".
+  // Formats an integer.
   template <typename T>
-  void FormatBuiltinArg(
-      const char *format, const T &arg, int width, int precision);
+  void FormatInt(T value, unsigned flags, int width, char type);
+
+  // Formats a floating point number.
+  template <typename T>
+  void FormatDouble(
+      T value, unsigned flags, int width, int precision, char type);
 
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
@@ -199,11 +201,6 @@ class ArgFormatter {
     return *this;
   }
 
-  ArgFormatter &operator<<(const wchar_t *value) {
-    formatter_->Add(Formatter::Arg(value));
-    return *this;
-  }
-
   ArgFormatter &operator<<(const std::string &value) {
     formatter_->Add(Formatter::Arg(value.c_str(), value.size()));
     return *this;
@@ -214,10 +211,16 @@ class ArgFormatter {
     return *this;
   }
 
-  // This method is not implemented intentionally to disallow output of
+  // This method contains a deliberate error to disallow formatting
   // arbitrary pointers. If you want to output a pointer cast it to void*.
   template <typename T>
-  ArgFormatter &operator<<(const T *value);
+  ArgFormatter &operator<<(const T *value) {
+    "Formatting arbitrary pointers is not allowed" = value;
+  }
+
+  // This method is not implemented intentionally to disallow formatting
+  // wide characters.
+  ArgFormatter &operator<<(wchar_t value);
 
   template <typename T>
   ArgFormatter &operator<<(T *value) {
@@ -253,13 +256,10 @@ void Formatter::FormatCustomArg(const void *arg, int width) {
   std::ostringstream os;
   os << value;
   std::string str(os.str());
-  if (width < 0) {
-    // Extra char is reserved for terminating '\0'.
-    buffer_.reserve(buffer_.size() + str.size() + 1);
-    buffer_.insert(buffer_.end(), str.begin(), str.end());
-    return;
-  }
-  FormatBuiltinArg("%-*s", str.c_str(), width, -1);
+  buffer_.reserve(buffer_.size() + std::max<std::size_t>(width, str.size()));
+  buffer_.insert(buffer_.end(), str.begin(), str.end());
+  if (width > str.size())
+    buffer_.resize(buffer_.size() + width - str.size(), ' ');
 }
 
 inline ArgFormatter Formatter::operator()(const char *format) {
