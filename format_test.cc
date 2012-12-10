@@ -42,7 +42,7 @@ using fmt::FormatError;
     } else if (actual_message != message) {\
       gtest_msg.value = \
           "Expected: " #statement " throws an exception of type " \
-          #expected_exception " with message \"" message "\"."; \
+          #expected_exception "."; \
       goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
     } \
   } else \
@@ -258,19 +258,27 @@ TEST(FormatterTest, Precision) {
       FormatError, "precision specifier requires floating-point argument");
 }
 
+template <typename T>
+void CheckUnknownTypes(
+    const T &value, const char *types, const char *type_name) {
+  char format[256], message[256];
+  const char *special = ".0123456789}";
+  for (int c = CHAR_MIN; c <= CHAR_MAX; ++c) {
+    if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
+    sprintf(format, "{0:1%c}", c, type_name);
+    if (std::isprint(c))
+      sprintf(message, "unknown format code '%c' for %s", c, type_name);
+    else
+      sprintf(message, "unknown format code '\\x%02x' for %s", c, type_name);
+    EXPECT_THROW_MSG(Format(format) << value, FormatError, message)
+      << format << " " << message;
+  }
+}
+
 TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(Format("{0:v") << 42,
       FormatError, "unmatched '{' in format");
-  EXPECT_THROW_MSG(Format("{0:v}") << 42,
-      FormatError, "unknown format code 'v' for integer");
-  EXPECT_THROW_MSG(Format("{0:c}") << 42,
-      FormatError, "unknown format code 'c' for integer");
-  EXPECT_THROW_MSG(Format("{0:e}") << 42,
-      FormatError, "unknown format code 'e' for integer");
-  EXPECT_THROW_MSG(Format("{0:f}") << 42,
-      FormatError, "unknown format code 'f' for integer");
-  EXPECT_THROW_MSG(Format("{0:g}") << 42,
-      FormatError, "unknown format code 'g' for integer");
+  CheckUnknownTypes(42, "doxX", "integer");
 }
 
 TEST(FormatterTest, FormatDec) {
@@ -342,14 +350,7 @@ TEST(FormatterTest, FormatOct) {
 }
 
 TEST(FormatterTest, FormatDouble) {
-  EXPECT_THROW_MSG(Format("{0:c}") << 1.2,
-      FormatError, "unknown format code 'c' for double");
-  EXPECT_THROW_MSG(Format("{0:d}") << 1.2,
-      FormatError, "unknown format code 'd' for double");
-  EXPECT_THROW_MSG(Format("{0:o}") << 1.2,
-      FormatError, "unknown format code 'o' for double");
-  EXPECT_THROW_MSG(Format("{0:x}") << 1.2,
-      FormatError, "unknown format code 'x' for double");
+  CheckUnknownTypes(1.2, "eEfFgG", "double");
   EXPECT_EQ("0", str(Format("{0:}") << 0.0));
   EXPECT_EQ("0.000000", str(Format("{0:f}") << 0.0));
   EXPECT_EQ("392.65", str(Format("{0:}") << 392.65));
@@ -376,15 +377,26 @@ TEST(FormatterTest, FormatLongDouble) {
 }
 
 TEST(FormatterTest, FormatChar) {
-  EXPECT_EQ("a*b", str(Format("{0}{1}{2}") << 'a' << '*' << 'b'));
+  CheckUnknownTypes('a', "c", "char");
+  EXPECT_EQ("a", str(Format("{0}") << 'a'));
+  EXPECT_EQ("z", str(Format("{0:c}") << 'z'));
+}
+
+TEST(FormatterTest, FormatCString) {
+  CheckUnknownTypes("test", "s", "string");
+  EXPECT_EQ("test", str(Format("{0}") << "test"));
+  EXPECT_EQ("test", str(Format("{0:s}") << "test"));
+}
+
+TEST(FormatterTest, FormatPointer) {
+  CheckUnknownTypes(reinterpret_cast<void*>(0x1234), "p", "pointer");
+  EXPECT_EQ("0x0", str(Format("{0}") << reinterpret_cast<void*>(0)));
+  EXPECT_EQ("0x1234", str(Format("{0}") << reinterpret_cast<void*>(0x1234)));
+  EXPECT_EQ("0x1234", str(Format("{0:p}") << reinterpret_cast<void*>(0x1234)));
 }
 
 TEST(FormatterTest, FormatString) {
   EXPECT_EQ("test", str(Format("{0}") << std::string("test")));
-}
-
-TEST(FormatterTest, FormatPointer) {
-  EXPECT_EQ("0x0", str(Format("{0}") << reinterpret_cast<void*>(0)));
 }
 
 class Date {
@@ -398,10 +410,12 @@ class Date {
   }
 };
 
-TEST(FormatterTest, FormatCustomArg) {
+TEST(FormatterTest, FormatCustom) {
   EXPECT_EQ("a string", str(Format("{0}") << TestString("a string")));
   std::string s = str(fmt::Format("The date is {0}") << Date(2012, 12, 9));
   EXPECT_EQ("The date is 2012-12-9", s);
+  Date date(2012, 12, 9);
+  CheckUnknownTypes(date, "", "object");
 }
 
 TEST(FormatterTest, FormatStringFromSpeedTest) {

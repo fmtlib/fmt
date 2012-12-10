@@ -28,6 +28,16 @@ void ReportError(const char *s, const std::string &message) {
   throw fmt::FormatError(*s ? message : std::string("unmatched '{' in format"));
 }
 
+void ReportUnknownType(char code, const char *type) {
+  if (std::isprint(code)) {
+    throw fmt::FormatError(
+        str(fmt::Format("unknown format code '{0}' for {1}") << code << type));
+  }
+  throw fmt::FormatError(
+      str(fmt::Format("unknown format code '\\x{0:02x}' for {1}")
+        << static_cast<unsigned>(code) << type));
+}
+
 // Parses an unsigned integer advancing s to the end of the parsed input.
 // This function assumes that the first character of s is a digit.
 unsigned ParseUInt(const char *&s) {
@@ -141,8 +151,8 @@ void fmt::Formatter::FormatInt(T value, unsigned flags, int width, char type) {
     break;
   }
   default:
-    throw FormatError(
-        str(fmt::Format("unknown format code '{0}' for integer") << type));
+    ReportUnknownType(type, "integer");
+    break;
   }
   if (sign) {
     if ((flags & ZERO_FLAG) != 0)
@@ -163,8 +173,8 @@ void fmt::Formatter::FormatDouble(
   case 'e': case 'E': case 'f': case 'F': case 'g': case 'G':
     break;
   default:
-    throw FormatError(
-        str(fmt::Format("unknown format code '{0}' for double") << type));
+    ReportUnknownType(type, "double");
+    break;
   }
 
   // Build format string.
@@ -306,13 +316,16 @@ void fmt::Formatter::Format() {
       FormatDouble(arg.long_double_value, flags, width, precision, type);
       break;
     case CHAR:
-      // TODO: check if type is 'c' or none
+      if (type && type != 'c')
+        ReportUnknownType(type, "char");
       buffer_.reserve(std::max(width, 1));
       buffer_.push_back(arg.int_value);
       if (width > 1)
         buffer_.resize(buffer_.size() + width - 1, ' ');
       break;
     case STRING: {
+      if (type && type != 's')
+        ReportUnknownType(type, "string");
       const char *str = arg.string_value;
       size_t size = arg.size;
       if (size == 0 && *str)
@@ -324,12 +337,14 @@ void fmt::Formatter::Format() {
       break;
     }
     case POINTER:
-      // TODO: don't allow type specifiers other than 'p'
+      if (type && type != 'p')
+        ReportUnknownType(type, "pointer");
       FormatInt(reinterpret_cast<uintptr_t>(
           arg.pointer_value), HEX_PREFIX_FLAG, width, 'x');
       break;
     case CUSTOM:
-      // TODO: check if type is 's' or none
+      if (type)
+        ReportUnknownType(type, "object");
       (this->*arg.format)(arg.custom_value, width);
       break;
     default:
