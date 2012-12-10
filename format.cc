@@ -23,9 +23,15 @@ enum { PLUS_FLAG = 1, ZERO_FLAG = 2, HEX_PREFIX_FLAG = 4 };
 // FormatError reporting unmatched '{'. The idea is that unmatched '{'
 // should override other errors.
 void ReportError(const char *s, const std::string &message) {
-  while (*s && *s != '}')
-    ++s;
-  throw fmt::FormatError(*s ? message : std::string("unmatched '{' in format"));
+  for (int num_open_braces = 1; *s; ++s) {
+    if (*s == '{') {
+      ++num_open_braces;
+    } else if (*s == '}') {
+      if (--num_open_braces == 0)
+        throw fmt::FormatError(message);
+    }
+  }
+  throw fmt::FormatError("unmatched '{' in format");
 }
 
 void ReportUnknownType(char code, const char *type) {
@@ -225,8 +231,15 @@ void fmt::Formatter::Format() {
   const char *start = format_;
   const char *s = start;
   while (*s) {
-    if (*s++ != '{') continue;
-    // TODO: handle escape sequence
+    char c = *s++;
+    if (c != '{' && c != '}') continue;
+    if (*s == c) {
+      buffer_.insert(buffer_.end(), start, s);
+      start = ++s;
+      continue;
+    }
+    if (c == '}')
+      throw FormatError("unmatched '}' in format");
     buffer_.insert(buffer_.end(), start, s - 1);
 
     // Parse argument index.

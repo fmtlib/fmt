@@ -78,7 +78,7 @@ class Formatter {
     : type(CUSTOM), custom_value(value), format(f) {}
   };
 
-  std::vector<Arg> args_;
+  std::vector<Arg> args_;  // Format arguments.
 
   const char *format_;  // Format string.
 
@@ -94,7 +94,7 @@ class Formatter {
   template <typename T>
   void FormatInt(T value, unsigned flags, int width, char type);
 
-  // Formats a floating point number.
+  // Formats a floating point number (double or long double).
   template <typename T>
   void FormatDouble(
       T value, unsigned flags, int width, int precision, char type);
@@ -126,6 +126,16 @@ class Formatter {
 class ArgFormatter {
  private:
   friend class Formatter;
+
+  // This method is private to disallow formatting of arbitrary pointers.
+  // If you want to output a pointer cast it to void*. Do not implement!
+  template <typename T>
+  ArgFormatter &operator<<(const T *value);
+
+  // This method is private to disallow formatting of wide characters.
+  // If you want to output a wide character cast it to integer type.
+  // Do not implement!
+  ArgFormatter &operator<<(wchar_t value);
 
  protected:
   mutable Formatter *formatter_;
@@ -210,17 +220,6 @@ class ArgFormatter {
     formatter_->Add(Formatter::Arg(value));
     return *this;
   }
-
-  // This method contains a deliberate error to disallow formatting
-  // arbitrary pointers. If you want to output a pointer cast it to void*.
-  template <typename T>
-  ArgFormatter &operator<<(const T *value) {
-    "Formatting arbitrary pointers is not allowed" = value;
-  }
-
-  // This method is not implemented intentionally to disallow formatting
-  // wide characters.
-  ArgFormatter &operator<<(wchar_t value);
 
   template <typename T>
   ArgFormatter &operator<<(T *value) {

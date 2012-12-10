@@ -66,8 +66,28 @@ class TestString {
   }
 };
 
+TEST(FormatterTest, Escape) {
+  EXPECT_EQ("{", str(Format("{{")));
+  EXPECT_EQ("before {", str(Format("before {{")));
+  EXPECT_EQ("{ after", str(Format("{{ after")));
+  EXPECT_EQ("before { after", str(Format("before {{ after")));
+
+  EXPECT_EQ("}", str(Format("}}")));
+  EXPECT_EQ("before }", str(Format("before }}")));
+  EXPECT_EQ("} after", str(Format("}} after")));
+  EXPECT_EQ("before } after", str(Format("before }} after")));
+
+  EXPECT_EQ("{}", str(Format("{{}}")));
+  EXPECT_EQ("{42}", str(Format("{{{0}}}") << 42));
+}
+
+TEST(FormatterTest, UnmatchedBraces) {
+  EXPECT_THROW_MSG(Format("{"), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("}"), FormatError, "unmatched '}' in format");
+  EXPECT_THROW_MSG(Format("{0{}"), FormatError, "unmatched '{' in format");
+}
+
 TEST(FormatterTest, NoArgs) {
-  EXPECT_EQ("abracadabra", str(Format("{0}{1}{0}") << "abra" << "cad"));
   EXPECT_EQ("test", str(Format("test")));
 }
 
@@ -77,7 +97,8 @@ TEST(FormatterTest, ArgsInDifferentPositions) {
   EXPECT_EQ("42 after", str(Format("{0} after") << 42));
   EXPECT_EQ("before 42 after", str(Format("before {0} after") << 42));
   EXPECT_EQ("answer = 42", str(Format("{0} = {1}") << "answer" << 42));
-  EXPECT_EQ("42 is the answer", str(Format("{1} is the {0}") << "answer" << 42));
+  EXPECT_EQ("42 is the answer",
+      str(Format("{1} is the {0}") << "answer" << 42));
   EXPECT_EQ("abracadabra", str(Format("{0}{1}{0}") << "abra" << "cad"));
 }
 
@@ -424,5 +445,3 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
           << 1.234 << 42 << 3.13 << "str"
           << reinterpret_cast<void*>(1000) << 'X'));
 }
-
-// TODO: more tests
