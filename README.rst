@@ -29,8 +29,8 @@ Arguments are accessed by position and arguments' indices can be repeated::
     std::string s = str(fmt::Format("{0}{1}{0}") << "abra" << "cad");
     // s == "abracadabra"
 
-Any user-defined type for which there is an overloaded ``std::ostream``
-insertion operator (``operator<<``) can be formatted::
+An object of any user-defined type for which there is an overloaded
+``std::ostream`` insertion operator (``operator<<``) can be formatted::
 
     class Date {
       int year_, month_, day_;
