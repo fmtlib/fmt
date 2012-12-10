@@ -61,7 +61,7 @@ The grammar for a replacement field is as follows::
    format_spec: ["+"]["0"][width]["." precision][type]
    width: integer
    precision: integer
-   type: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "s" | "x" | "X"
+   type: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | "s" | "x" | "X"
 
 Motivation
 ----------
