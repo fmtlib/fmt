@@ -113,8 +113,7 @@ void fmt::Formatter::FormatInt(T value, unsigned flags, int width, char type) {
       ++size;
     } while ((n /= 10) != 0);
     width = std::max(width, size);
-    buffer_.resize(buffer_.size() + width);
-    p = &buffer_.back();
+    p = GrowBuffer(width) + width - 1;
     n = abs_value;
     do {
       *p-- = '0' + (n % 10);
@@ -129,8 +128,7 @@ void fmt::Formatter::FormatInt(T value, unsigned flags, int width, char type) {
       ++size;
     } while ((n >>= 4) != 0);
     width = std::max(width, size);
-    buffer_.resize(buffer_.size() + width);
-    p = &buffer_.back();
+    p = GrowBuffer(width) + width - 1;
     n = abs_value;
     const char *digits = type == 'x' ? "0123456789abcdef" : "0123456789ABCDEF";
     do {
@@ -148,8 +146,7 @@ void fmt::Formatter::FormatInt(T value, unsigned flags, int width, char type) {
       ++size;
     } while ((n >>= 3) != 0);
     width = std::max(width, size);
-    buffer_.resize(buffer_.size() + width);
-    p = &buffer_.back();
+    p = GrowBuffer(width) + width - 1;
     n = abs_value;
     do {
       *p-- = '0' + (n & 7);
@@ -219,7 +216,7 @@ void fmt::Formatter::FormatDouble(
           snprintf(&buffer_[offset], size, format, width, precision, value);
     }
     if (n >= 0 && offset + n < buffer_.capacity()) {
-      buffer_.resize(offset + n);
+      GrowBuffer(n);
       return;
     }
     buffer_.reserve(n >= 0 ? offset + n + 1 : 2 * buffer_.capacity());
@@ -330,9 +327,7 @@ void fmt::Formatter::Format() {
     case CHAR: {
       if (type && type != 'c')
         ReportUnknownType(type, "char");
-      std::size_t offset = buffer_.size();
-      buffer_.resize(offset + std::max(width, 1));
-      char *out = &buffer_[offset];
+      char *out = GrowBuffer(std::max(width, 1));
       *out++ = arg.int_value;
       if (width > 1)
         std::fill_n(out, width - 1, ' ');
@@ -345,12 +340,10 @@ void fmt::Formatter::Format() {
       size_t size = arg.size;
       if (size == 0 && *str)
         size = std::strlen(str);
-      size_t offset = buffer_.size();
-      buffer_.resize(offset + std::max<size_t>(width, size));
-      char *out = &buffer_[offset];
-      std::copy(str, str + size, out);
+      char *out = GrowBuffer(std::max<size_t>(width, size));
+      out = std::copy(str, str + size, out);
       if (width > size)
-        std::fill_n(out + size, width - size, ' ');
+        std::fill_n(out, width - size, ' ');
       break;
     }
     case POINTER:

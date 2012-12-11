@@ -34,14 +34,7 @@ class Buffer {
   T *ptr_;
   T data_[SIZE];
 
-  void Grow(std::size_t size) {
-    capacity_ = std::max(size, capacity_ + capacity_ / 2);
-    T *p = new T[capacity_];
-    std::copy(ptr_, ptr_ + size_, p);
-    if (ptr_ != data_)
-      delete [] ptr_;
-    ptr_ = p;
-  }
+  void Grow(std::size_t size);
 
   // Do not implement!
   Buffer(const Buffer &);
@@ -56,15 +49,15 @@ class Buffer {
   std::size_t size() const { return size_; }
   std::size_t capacity() const { return capacity_; }
 
-  void resize(std::size_t size) {
-    if (size > capacity_)
-      Grow(size);
-    size_ = size;
+  void resize(std::size_t new_size) {
+    if (new_size > capacity_)
+      Grow(new_size);
+    size_ = new_size;
   }
 
   void reserve(std::size_t capacity) {
-    if (capacity < capacity_)
-      Grow(capacity - capacity_);
+    if (capacity > capacity_)
+      Grow(capacity);
   }
 
   void push_back(const T &value) {
@@ -73,35 +66,32 @@ class Buffer {
     ptr_[size_++] = value;
   }
 
-  void append(const T *begin, const T *end) {
-    std::ptrdiff_t size = end - begin;
-    if (size_ + size > capacity_)
-      Grow(size);
-    std::copy(begin, end, ptr_ + size_);
-    size_ += size;
-  }
+  void append(const T *begin, const T *end);
 
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
 
-  const T &back() const { return ptr_[size_ - 1]; }
-  T &back() { return ptr_[size_ - 1]; }
-
   void clear() { size_ = 0; }
-
-  void Take(Buffer &other) {
-    if (ptr_ != data_)
-      delete [] ptr_;
-    size_ = other.size_;
-    if (other.ptr_ != data_) {
-      ptr_ = other.ptr_;
-      other.ptr_ = 0;
-    } else {
-      ptr_ = data_;
-      std::copy(other.ptr_, other.ptr_ + size_, data_);
-    }
-  }
 };
+
+template <typename T, std::size_t SIZE>
+void Buffer<T, SIZE>::Grow(std::size_t size) {
+  capacity_ = std::max(size, capacity_ + capacity_ / 2);
+  T *p = new T[capacity_];
+  std::copy(ptr_, ptr_ + size_, p);
+  if (ptr_ != data_)
+    delete [] ptr_;
+  ptr_ = p;
+}
+
+template <typename T, std::size_t SIZE>
+void Buffer<T, SIZE>::append(const T *begin, const T *end) {
+  std::ptrdiff_t num_elements = end - begin;
+  if (size_ + num_elements > capacity_)
+    Grow(num_elements);
+  std::copy(begin, end, ptr_ + size_);
+  size_ += num_elements;
+}
 
 // A sprintf-like formatter that automatically allocates enough storage to
 // fit all the output.
@@ -181,9 +171,12 @@ class Formatter {
 
   void Format();
 
-  void Take(Formatter &f) {
-    buffer_.Take(f.buffer_);
-    args_.Take(f.args_);
+  // Grows the buffer by n characters and returns a pointer to the newly
+  // allocated area.
+  char *GrowBuffer(std::size_t n) {
+    std::size_t size = buffer_.size();
+    buffer_.resize(size + n);
+    return &buffer_[size];
   }
 
  public:
@@ -332,9 +325,7 @@ void Formatter::FormatCustomArg(const void *arg, int width) {
   std::ostringstream os;
   os << value;
   std::string str(os.str());
-  std::size_t offset = buffer_.size();
-  buffer_.resize(offset + std::max<std::size_t>(width, str.size()));
-  char *out = &buffer_[offset];
+  char *out = GrowBuffer(std::max<std::size_t>(width, str.size()));
   std::copy(str.begin(), str.end(), out);
   if (width > str.size())
     std::fill_n(out + str.size(), width - str.size(), ' ');
@@ -366,9 +357,7 @@ class FullFormat : public ArgFormatter {
     ArgFormatter::operator=(formatter_(format));
   }
 
-  FullFormat(const FullFormat& other) : ArgFormatter(other) {
-    formatter_.Take(other.formatter_);
-  }
+  FullFormat(const FullFormat& other) : ArgFormatter(other) {}
 
   ~FullFormat() {
     FinishFormatting();
