@@ -48,7 +48,7 @@ An object of any user-defined type for which there is an overloaded
 
 You can use ``fmt::ActiveFormatter`` to create your own functions
 similar to ``fmt::Format`` and ``fmt::Print`` with an arbitrary action
-performed when formatting is complete:
+performed when formatting is complete::
 
     struct PrintError {
       void operator()(const fmt::Formatter &f) const {
