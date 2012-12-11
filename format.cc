@@ -113,7 +113,7 @@ void fmt::Formatter::FormatInt(T value, unsigned flags, int width, char type) {
       ++size;
     } while ((n /= 10) != 0);
     width = std::max(width, size);
-    buffer_.resize(buffer_.size() + width, fill);
+    buffer_.resize(buffer_.size() + width);
     p = &buffer_.back();
     n = abs_value;
     do {
@@ -129,7 +129,7 @@ void fmt::Formatter::FormatInt(T value, unsigned flags, int width, char type) {
       ++size;
     } while ((n >>= 4) != 0);
     width = std::max(width, size);
-    buffer_.resize(buffer_.size() + width, fill);
+    buffer_.resize(buffer_.size() + width);
     p = &buffer_.back();
     n = abs_value;
     const char *digits = type == 'x' ? "0123456789abcdef" : "0123456789ABCDEF";
@@ -148,7 +148,7 @@ void fmt::Formatter::FormatInt(T value, unsigned flags, int width, char type) {
       ++size;
     } while ((n >>= 3) != 0);
     width = std::max(width, size);
-    buffer_.resize(buffer_.size() + width, fill);
+    buffer_.resize(buffer_.size() + width);
     p = &buffer_.back();
     n = abs_value;
     do {
@@ -162,10 +162,11 @@ void fmt::Formatter::FormatInt(T value, unsigned flags, int width, char type) {
   }
   if (sign) {
     if ((flags & ZERO_FLAG) != 0)
-      buffer_[start] = sign;
+      buffer_[start++] = sign;
     else
-      *p = sign;
+      *p-- = sign;
   }
+  std::fill(&buffer_[start], p + 1, fill);
 }
 
 template <typename T>
@@ -205,9 +206,8 @@ void fmt::Formatter::FormatDouble(
 
   // Format using snprintf.
   size_t offset = buffer_.size();
-  buffer_.resize(buffer_.capacity());
   for (;;) {
-    size_t size = buffer_.size() - offset;
+    size_t size = buffer_.capacity() - offset;
     int n = 0;
     if (width <= 0) {
       n = precision < 0 ?
@@ -218,29 +218,28 @@ void fmt::Formatter::FormatDouble(
           snprintf(&buffer_[offset], size, format, width, value) :
           snprintf(&buffer_[offset], size, format, width, precision, value);
     }
-    if (n >= 0 && offset + n < buffer_.size()) {
+    if (n >= 0 && offset + n < buffer_.capacity()) {
       buffer_.resize(offset + n);
       return;
     }
-    buffer_.resize(n >= 0 ? offset + n + 1 : 2 * buffer_.size());
+    buffer_.reserve(n >= 0 ? offset + n + 1 : 2 * buffer_.capacity());
   }
 }
 
 void fmt::Formatter::Format() {
-  buffer_.reserve(500);
   const char *start = format_;
   const char *s = start;
   while (*s) {
     char c = *s++;
     if (c != '{' && c != '}') continue;
     if (*s == c) {
-      buffer_.insert(buffer_.end(), start, s);
+      buffer_.append(start, s);
       start = ++s;
       continue;
     }
     if (c == '}')
       throw FormatError("unmatched '}' in format");
-    buffer_.insert(buffer_.end(), start, s - 1);
+    buffer_.append(start, s - 1);
 
     // Parse argument index.
     if (*s < '0' || *s > '9')
@@ -248,7 +247,7 @@ void fmt::Formatter::Format() {
     unsigned arg_index = ParseUInt(s);
     if (arg_index >= args_.size())
       ReportError(s, "argument index is out of range in format");
-    Arg &arg = args_[arg_index];
+    const Arg &arg = args_[arg_index];
 
     unsigned flags = 0;
     int width = 0;
@@ -328,14 +327,17 @@ void fmt::Formatter::Format() {
     case LONG_DOUBLE:
       FormatDouble(arg.long_double_value, flags, width, precision, type);
       break;
-    case CHAR:
+    case CHAR: {
       if (type && type != 'c')
         ReportUnknownType(type, "char");
-      buffer_.reserve(std::max(width, 1));
-      buffer_.push_back(arg.int_value);
+      std::size_t offset = buffer_.size();
+      buffer_.resize(offset + std::max(width, 1));
+      char *out = &buffer_[offset];
+      *out++ = arg.int_value;
       if (width > 1)
-        buffer_.resize(buffer_.size() + width - 1, ' ');
+        std::fill_n(out, width - 1, ' ');
       break;
+    }
     case STRING: {
       if (type && type != 's')
         ReportUnknownType(type, "string");
@@ -343,10 +345,12 @@ void fmt::Formatter::Format() {
       size_t size = arg.size;
       if (size == 0 && *str)
         size = std::strlen(str);
-      buffer_.reserve(buffer_.size() + std::max<size_t>(width, size));
-      buffer_.insert(buffer_.end(), str, str + size);
+      size_t offset = buffer_.size();
+      buffer_.resize(offset + std::max<size_t>(width, size));
+      char *out = &buffer_[offset];
+      std::copy(str, str + size, out);
       if (width > size)
-        buffer_.resize(buffer_.size() + width - size, ' ');
+        std::fill_n(out + size, width - size, ' ');
       break;
     }
     case POINTER:
@@ -365,7 +369,7 @@ void fmt::Formatter::Format() {
       break;
     }
   }
-  buffer_.insert(buffer_.end(), start, s + 1);
+  buffer_.append(start, s + 1);
 }
 
 fmt::ArgFormatter::~ArgFormatter() {
