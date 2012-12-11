@@ -244,7 +244,7 @@ void fmt::Formatter::Format() {
     unsigned arg_index = ParseUInt(s);
     if (arg_index >= args_.size())
       ReportError(s, "argument index is out of range in format");
-    const Arg &arg = args_[arg_index];
+    const Arg &arg = *args_[arg_index];
 
     unsigned flags = 0;
     int width = 0;

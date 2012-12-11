@@ -15,13 +15,6 @@
 
 namespace format {
 
-class FormatError : public std::runtime_error {
- public:
-  FormatError(const std::string &message) : std::runtime_error(message) {}
-};
-
-class BasicArgFormatter;
-
 // A buffer with the first SIZE elements stored in the object itself.
 template <typename T, std::size_t SIZE>
 class Buffer {
@@ -95,6 +88,13 @@ void Buffer<T, SIZE>::append(const T *begin, const T *end) {
   size_ += num_elements;
 }
 
+class FormatError : public std::runtime_error {
+ public:
+  FormatError(const std::string &message) : std::runtime_error(message) {}
+};
+
+class BasicArgFormatter;
+
 // Formatter provides string formatting functionality similar to Python's
 // str.format. The output is stored in a memory buffer that grows dynamically.
 // Usage:
@@ -124,7 +124,24 @@ class Formatter {
   typedef void (Formatter::*FormatFunc)(const void *arg, int width);
 
   // A format argument.
-  struct Arg {
+  class Arg {
+   private:
+    // This method is private to disallow formatting of arbitrary pointers.
+    // If you want to output a pointer cast it to const void*. Do not implement!
+    template <typename T>
+    Arg(const T *value);
+
+    // This method is private to disallow formatting of arbitrary pointers.
+    // If you want to output a pointer cast it to void*. Do not implement!
+    template <typename T>
+    Arg(T *value);
+
+    // This method is private to disallow formatting of wide characters.
+    // If you want to output a wide character cast it to integer type.
+    // Do not implement!
+    Arg(wchar_t value);
+
+   public:
     Type type;
     union {
       int int_value;
@@ -143,32 +160,55 @@ class Formatter {
         FormatFunc format;
       };
     };
+    mutable Formatter **formatter;
 
-    Arg() {}
-    explicit Arg(int value) : type(INT), int_value(value) {}
-    explicit Arg(unsigned value) : type(UINT), uint_value(value) {}
-    explicit Arg(long value) : type(LONG), long_value(value) {}
-    explicit Arg(unsigned long value) : type(ULONG), ulong_value(value) {}
-    explicit Arg(double value) : type(DOUBLE), double_value(value) {}
-    explicit Arg(long double value)
-    : type(LONG_DOUBLE), long_double_value(value) {}
-    explicit Arg(char value) : type(CHAR), int_value(value) {}
-    explicit Arg(const char *value, std::size_t size = 0)
-    : type(STRING), string_value(value), size(size) {}
-    explicit Arg(const void *value) : type(POINTER), pointer_value(value) {}
-    explicit Arg(const void *value, FormatFunc f)
-    : type(CUSTOM), custom_value(value), format(f) {}
+    Arg(int value) : type(INT), int_value(value) {}
+    Arg(unsigned value) : type(UINT), uint_value(value) {}
+    Arg(long value) : type(LONG), long_value(value) {}
+    Arg(unsigned long value) : type(ULONG), ulong_value(value) {}
+    Arg(double value) : type(DOUBLE), double_value(value) {}
+    Arg(long double value) : type(LONG_DOUBLE), long_double_value(value) {}
+    Arg(char value) : type(CHAR), int_value(value) {}
+    Arg(const char *value) : type(STRING), string_value(value), size(0) {}
+    Arg(char *value) : type(STRING), string_value(value), size(0) {}
+    Arg(const void *value) : type(POINTER), pointer_value(value) {}
+    Arg(void *value) : type(POINTER), pointer_value(value) {}
+    Arg(const std::string &value)
+    : type(STRING), string_value(value.c_str()), size(value.size()) {}
+
+    template <typename T>
+    Arg(const T &value)
+    : type(CUSTOM), custom_value(&value),
+      format(&Formatter::FormatCustomArg<T>) {}
+
+    ~Arg() {
+      // Format is called here to make sure that the argument object
+      // referred to is still alive, for example:
+      //
+      //   Print("{0}") << std::string("test");
+      //
+      // Here an Arg object refers to a temporary std::string which is
+      // destroyed at the end of the statement. Since the string object is
+      // constructed before the Arg object, it will be destroyed after,
+      // so it will be alive in the Arg's destructor when Format is called.
+      // Note that the string object will not necessarily be alive when
+      // the destructor of BasicArgFormatter is called.
+      if (*formatter) {
+        (*formatter)->Format();
+        *formatter = 0;
+      }
+    }
   };
 
   enum { NUM_INLINE_ARGS = 10 };
-  Buffer<Arg, NUM_INLINE_ARGS> args_;  // Format arguments.
+  Buffer<const Arg*, NUM_INLINE_ARGS> args_;  // Format arguments.
 
   const char *format_;  // Format string.
 
   friend class BasicArgFormatter;
 
   void Add(const Arg &arg) {
-    args_.push_back(arg);
+    args_.push_back(&arg);
   }
 
   // Formats an integer.
@@ -216,16 +256,6 @@ class BasicArgFormatter {
  private:
   friend class Formatter;
 
-  // This method is private to disallow formatting of arbitrary pointers.
-  // If you want to output a pointer cast it to void*. Do not implement!
-  template <typename T>
-  BasicArgFormatter &operator<<(const T *value);
-
-  // This method is private to disallow formatting of wide characters.
-  // If you want to output a wide character cast it to integer type.
-  // Do not implement!
-  BasicArgFormatter &operator<<(wchar_t value);
-
  protected:
   mutable Formatter *formatter_;
 
@@ -253,74 +283,18 @@ class BasicArgFormatter {
   explicit BasicArgFormatter(Formatter &f) : formatter_(&f) {}
   ~BasicArgFormatter();
 
+  BasicArgFormatter &operator<<(const Formatter::Arg &arg) {
+    arg.formatter = &formatter_;
+    formatter_->Add(arg);
+    return *this;
+  }
+
   friend const char *c_str(const BasicArgFormatter &af) {
     return af.FinishFormatting()->c_str();
   }
 
   friend std::string str(const BasicArgFormatter &af) {
     return af.FinishFormatting()->c_str();
-  }
-
-  BasicArgFormatter &operator<<(int value) {
-    formatter_->Add(Formatter::Arg(value));
-    return *this;
-  }
-
-  BasicArgFormatter &operator<<(unsigned value) {
-    formatter_->Add(Formatter::Arg(value));
-    return *this;
-  }
-
-  BasicArgFormatter &operator<<(long value) {
-    formatter_->Add(Formatter::Arg(value));
-    return *this;
-  }
-
-  BasicArgFormatter &operator<<(unsigned long value) {
-    formatter_->Add(Formatter::Arg(value));
-    return *this;
-  }
-
-  BasicArgFormatter &operator<<(double value) {
-    formatter_->Add(Formatter::Arg(value));
-    return *this;
-  }
-
-  BasicArgFormatter &operator<<(long double value) {
-    formatter_->Add(Formatter::Arg(value));
-    return *this;
-  }
-
-  BasicArgFormatter &operator<<(char value) {
-    formatter_->Add(Formatter::Arg(value));
-    return *this;
-  }
-
-  BasicArgFormatter &operator<<(const char *value) {
-    formatter_->Add(Formatter::Arg(value));
-    return *this;
-  }
-
-  BasicArgFormatter &operator<<(const std::string &value) {
-    formatter_->Add(Formatter::Arg(value.c_str(), value.size()));
-    return *this;
-  }
-
-  BasicArgFormatter &operator<<(const void *value) {
-    formatter_->Add(Formatter::Arg(value));
-    return *this;
-  }
-
-  template <typename T>
-  BasicArgFormatter &operator<<(T *value) {
-    const T *const_value = value;
-    return *this << const_value;
-  }
-
-  template <typename T>
-  BasicArgFormatter &operator<<(const T &value) {
-    formatter_->Add(Formatter::Arg(&value, &Formatter::FormatCustomArg<T>));
-    return *this;
   }
 };
 
