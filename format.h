@@ -20,10 +20,7 @@ class FormatError : public std::runtime_error {
   FormatError(const std::string &message) : std::runtime_error(message) {}
 };
 
-class ArgFormatter;
-
-template <typename Callback>
-class ArgFormatterWithCallback;
+class BasicArgFormatter;
 
 // A buffer with the first SIZE elements stored in the object itself.
 template <typename T, std::size_t SIZE>
@@ -168,7 +165,7 @@ class Formatter {
 
   const char *format_;  // Format string.
 
-  friend class ArgFormatter;
+  friend class BasicArgFormatter;
 
   void Add(const Arg &arg) {
     args_.push_back(arg);
@@ -200,10 +197,10 @@ class Formatter {
  public:
   Formatter() : format_(0) {}
 
-  ArgFormatter operator()(const char *format);
-
-  template <typename Callback>
-  ArgFormatterWithCallback<Callback> FormatWithCallback(const char *format);
+  // Formats a string appending the output to the internal buffer.
+  // Arguments are accepted through the returned BasicArgFormatter object
+  // using inserter operator<<.
+  BasicArgFormatter operator()(const char *format);
 
   std::size_t size() const { return buffer_.size(); }
 
@@ -211,28 +208,33 @@ class Formatter {
   const char *c_str() const { return &buffer_[0]; }
 };
 
-class ArgFormatter {
+// Argument formatter. This is a transient object that normally exists
+// only as a temporary returned by one of the formatting functions.
+// It stores a reference to a formatter and provides operators <<
+// that feed arguments to the formatter.
+class BasicArgFormatter {
  private:
   friend class Formatter;
 
   // This method is private to disallow formatting of arbitrary pointers.
   // If you want to output a pointer cast it to void*. Do not implement!
   template <typename T>
-  ArgFormatter &operator<<(const T *value);
+  BasicArgFormatter &operator<<(const T *value);
 
   // This method is private to disallow formatting of wide characters.
   // If you want to output a wide character cast it to integer type.
   // Do not implement!
-  ArgFormatter &operator<<(wchar_t value);
+  BasicArgFormatter &operator<<(wchar_t value);
 
  protected:
   mutable Formatter *formatter_;
 
-  ArgFormatter(const ArgFormatter& other) : formatter_(other.formatter_) {
+  BasicArgFormatter(BasicArgFormatter& other)
+  : formatter_(other.formatter_) {
     other.formatter_ = 0;
   }
 
-  ArgFormatter& operator=(const ArgFormatter& other) {
+  BasicArgFormatter& operator=(const BasicArgFormatter& other) {
     formatter_ = other.formatter_;
     other.formatter_ = 0;
     return *this;
@@ -248,86 +250,86 @@ class ArgFormatter {
   }
 
  public:
-  explicit ArgFormatter(Formatter &f) : formatter_(&f) {}
-  ~ArgFormatter();
+  explicit BasicArgFormatter(Formatter &f) : formatter_(&f) {}
+  ~BasicArgFormatter();
 
-  friend const char *c_str(const ArgFormatter &af) {
+  friend const char *c_str(const BasicArgFormatter &af) {
     return af.FinishFormatting()->c_str();
   }
 
-  friend std::string str(const ArgFormatter &af) {
+  friend std::string str(const BasicArgFormatter &af) {
     return af.FinishFormatting()->c_str();
   }
 
-  ArgFormatter &operator<<(int value) {
+  BasicArgFormatter &operator<<(int value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
   }
 
-  ArgFormatter &operator<<(unsigned value) {
+  BasicArgFormatter &operator<<(unsigned value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
   }
 
-  ArgFormatter &operator<<(long value) {
+  BasicArgFormatter &operator<<(long value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
   }
 
-  ArgFormatter &operator<<(unsigned long value) {
+  BasicArgFormatter &operator<<(unsigned long value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
   }
 
-  ArgFormatter &operator<<(double value) {
+  BasicArgFormatter &operator<<(double value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
   }
 
-  ArgFormatter &operator<<(long double value) {
+  BasicArgFormatter &operator<<(long double value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
   }
 
-  ArgFormatter &operator<<(char value) {
+  BasicArgFormatter &operator<<(char value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
   }
 
-  ArgFormatter &operator<<(const char *value) {
+  BasicArgFormatter &operator<<(const char *value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
   }
 
-  ArgFormatter &operator<<(const std::string &value) {
+  BasicArgFormatter &operator<<(const std::string &value) {
     formatter_->Add(Formatter::Arg(value.c_str(), value.size()));
     return *this;
   }
 
-  ArgFormatter &operator<<(const void *value) {
+  BasicArgFormatter &operator<<(const void *value) {
     formatter_->Add(Formatter::Arg(value));
     return *this;
   }
 
   template <typename T>
-  ArgFormatter &operator<<(T *value) {
+  BasicArgFormatter &operator<<(T *value) {
     const T *const_value = value;
     return *this << const_value;
   }
 
   template <typename T>
-  ArgFormatter &operator<<(const T &value) {
+  BasicArgFormatter &operator<<(const T &value) {
     formatter_->Add(Formatter::Arg(&value, &Formatter::FormatCustomArg<T>));
     return *this;
   }
 };
 
 template <typename Callback>
-class ArgFormatterWithCallback : public ArgFormatter {
+class ArgFormatter : public BasicArgFormatter {
  public:
-  explicit ArgFormatterWithCallback(Formatter &f) : ArgFormatter(f) {}
+  explicit ArgFormatter(Formatter &f) : BasicArgFormatter(f) {}
 
-  ~ArgFormatterWithCallback() {
+  ~ArgFormatter() {
     if (!formatter_) return;
     Callback callback;
     callback(*formatter_);
@@ -346,21 +348,14 @@ void Formatter::FormatCustomArg(const void *arg, int width) {
     std::fill_n(out + str.size(), width - str.size(), ' ');
 }
 
-inline ArgFormatter Formatter::operator()(const char *format) {
+inline BasicArgFormatter Formatter::operator()(const char *format) {
+  BasicArgFormatter formatter(*this);
   format_ = format;
   args_.clear();
-  return ArgFormatter(*this);
+  return formatter;
 }
 
-template <typename Callback>
-ArgFormatterWithCallback<Callback>
-Formatter::FormatWithCallback(const char *format) {
-  format_ = format;
-  args_.clear();
-  return ArgFormatterWithCallback<Callback>(*this);
-}
-
-class FullFormat : public ArgFormatter {
+class FullFormat : public BasicArgFormatter {
  private:
   mutable Formatter formatter_;
 
@@ -368,20 +363,23 @@ class FullFormat : public ArgFormatter {
   FullFormat& operator=(const FullFormat&);
 
  public:
-  explicit FullFormat(const char *format) : ArgFormatter(formatter_) {
-    ArgFormatter::operator=(formatter_(format));
+  explicit FullFormat(const char *format) : BasicArgFormatter(formatter_) {
+    BasicArgFormatter::operator=(formatter_(format));
   }
 
-  FullFormat(const FullFormat& other) : ArgFormatter(other) {}
+  FullFormat(FullFormat& other) : BasicArgFormatter(other) {}
 
   ~FullFormat() {
     FinishFormatting();
   }
 };
 
-inline FullFormat Format(const char *format) { return FullFormat(format); }
+inline FullFormat Format(const char *format) {
+  FullFormat ff(format);
+  return ff;
+}
 
-class Print : public ArgFormatter {
+class Print : public BasicArgFormatter {
  private:
   Formatter formatter_;
 
@@ -390,8 +388,8 @@ class Print : public ArgFormatter {
   Print& operator=(const Print&);
 
  public:
-  explicit Print(const char *format) : ArgFormatter(formatter_) {
-    ArgFormatter::operator=(formatter_(format));
+  explicit Print(const char *format) : BasicArgFormatter(formatter_) {
+    BasicArgFormatter::operator=(formatter_(format));
   }
 
   ~Print() {

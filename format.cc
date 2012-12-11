@@ -366,7 +366,7 @@ void fmt::Formatter::Format() {
   buffer_.resize(buffer_.size() - 1);  // Don't count the terminating zero.
 }
 
-fmt::ArgFormatter::~ArgFormatter() {
+fmt::BasicArgFormatter::~BasicArgFormatter() {
   if (!formatter_) return;
   FinishFormatting();
 }
