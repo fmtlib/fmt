@@ -94,7 +94,7 @@ class FormatError : public std::runtime_error {
   FormatError(const std::string &message) : std::runtime_error(message) {}
 };
 
-class BasicArgFormatter;
+class ArgFormatter;
 
 // Formatter provides string formatting functionality similar to Python's
 // str.format. The output is stored in a memory buffer that grows dynamically.
@@ -183,17 +183,17 @@ class Formatter {
       format(&Formatter::FormatCustomArg<T>) {}
 
     ~Arg() {
-      // Format is called here to make sure that the argument object
-      // referred to is still alive, for example:
+      // Format is called here to make sure that a referred object is
+      // still alive, for example:
       //
       //   Print("{0}") << std::string("test");
       //
       // Here an Arg object refers to a temporary std::string which is
       // destroyed at the end of the statement. Since the string object is
       // constructed before the Arg object, it will be destroyed after,
-      // so it will be alive in the Arg's destructor when Format is called.
+      // so it will be alive in the Arg's destructor where Format is called.
       // Note that the string object will not necessarily be alive when
-      // the destructor of BasicArgFormatter is called.
+      // the destructor of ArgFormatter is called.
       formatter->Format();
     }
   };
@@ -203,7 +203,7 @@ class Formatter {
 
   const char *format_;  // Format string.
 
-  friend class BasicArgFormatter;
+  friend class ArgFormatter;
 
   void Add(const Arg &arg) {
     args_.push_back(&arg);
@@ -238,36 +238,38 @@ class Formatter {
   }
 
  public:
-  Formatter() : format_(0) {}
+  Formatter() : format_(0) { buffer_[0] = 0; }
 
   // Formats a string appending the output to the internal buffer.
-  // Arguments are accepted through the returned BasicArgFormatter object
+  // Arguments are accepted through the returned ArgFormatter object
   // using inserter operator<<.
-  BasicArgFormatter operator()(const char *format);
+  ArgFormatter operator()(const char *format);
 
   std::size_t size() const { return buffer_.size(); }
 
   const char *data() const { return &buffer_[0]; }
   const char *c_str() const { return &buffer_[0]; }
+
+  std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
 };
 
 // Argument formatter. This is a transient object that normally exists
 // only as a temporary returned by one of the formatting functions.
-// It stores a reference to a formatter and provides operators <<
-// that feed arguments to the formatter.
-class BasicArgFormatter {
+// It stores a reference to a formatter and provides operator<<
+// that feeds arguments to the formatter.
+class ArgFormatter {
  private:
   friend class Formatter;
 
  protected:
   mutable Formatter *formatter_;
 
-  BasicArgFormatter(BasicArgFormatter& other)
+  ArgFormatter(ArgFormatter& other)
   : formatter_(other.formatter_) {
     other.formatter_ = 0;
   }
 
-  BasicArgFormatter& operator=(const BasicArgFormatter& other) {
+  ArgFormatter& operator=(const ArgFormatter& other) {
     formatter_ = other.formatter_;
     other.formatter_ = 0;
     return *this;
@@ -283,33 +285,24 @@ class BasicArgFormatter {
   }
 
  public:
-  explicit BasicArgFormatter(Formatter &f) : formatter_(&f) {}
-  ~BasicArgFormatter();
+  explicit ArgFormatter(Formatter &f) : formatter_(&f) {}
+  ~ArgFormatter() { FinishFormatting(); }
 
-  BasicArgFormatter &operator<<(const Formatter::Arg &arg) {
+  // Feeds an argument to a formatter.
+  ArgFormatter &operator<<(const Formatter::Arg &arg) {
     arg.formatter = formatter_;
     formatter_->Add(arg);
     return *this;
   }
 
-  friend const char *c_str(const BasicArgFormatter &af) {
+  // Performs formatting and returns a C string with the output.
+  friend const char *c_str(const ArgFormatter &af) {
     return af.FinishFormatting()->c_str();
   }
 
-  friend std::string str(const BasicArgFormatter &af) {
-    return af.FinishFormatting()->c_str();
-  }
-};
-
-template <typename Callback>
-class ArgFormatter : public BasicArgFormatter {
- public:
-  explicit ArgFormatter(Formatter &f) : BasicArgFormatter(f) {}
-
-  ~ArgFormatter() {
-    if (!formatter_) return;
-    Callback callback;
-    callback(*formatter_);
+  // Performs formatting and returns a std::string with the output.
+  friend std::string str(const ArgFormatter &af) {
+    return af.FinishFormatting()->str();
   }
 };
 
@@ -325,55 +318,53 @@ void Formatter::FormatCustomArg(const void *arg, int width) {
     std::fill_n(out + str.size(), width - str.size(), ' ');
 }
 
-inline BasicArgFormatter Formatter::operator()(const char *format) {
-  BasicArgFormatter formatter(*this);
+inline ArgFormatter Formatter::operator()(const char *format) {
+  ArgFormatter formatter(*this);
   format_ = format;
   args_.clear();
   return formatter;
 }
 
-class FullFormat : public BasicArgFormatter {
+// A formatter with an action performed when formatting is complete.
+template <typename Action>
+class ActiveFormatter : public ArgFormatter {
  private:
   mutable Formatter formatter_;
 
   // Do not implement.
-  FullFormat& operator=(const FullFormat&);
+  ActiveFormatter& operator=(const ActiveFormatter&);
 
  public:
-  explicit FullFormat(const char *format) : BasicArgFormatter(formatter_) {
-    BasicArgFormatter::operator=(formatter_(format));
+  explicit ActiveFormatter(const char *format) : ArgFormatter(formatter_) {
+    ArgFormatter::operator=(formatter_(format));
   }
 
-  FullFormat(FullFormat& other) : BasicArgFormatter(other) {}
+  ActiveFormatter(ActiveFormatter& other) : ArgFormatter(other) {}
 
-  ~FullFormat() {
-    FinishFormatting();
+  ~ActiveFormatter() {
+    Action()(*FinishFormatting());
   }
 };
 
-inline FullFormat Format(const char *format) {
-  FullFormat ff(format);
-  return ff;
+struct Ignore {
+  void operator()(Formatter &) const {}
+};
+
+inline ActiveFormatter<Ignore> Format(const char *format) {
+  ActiveFormatter<Ignore> af(format);
+  return af;
 }
 
-class Print : public BasicArgFormatter {
- private:
-  Formatter formatter_;
-
-  // Do not implement.
-  Print(const Print&);
-  Print& operator=(const Print&);
-
- public:
-  explicit Print(const char *format) : BasicArgFormatter(formatter_) {
-    BasicArgFormatter::operator=(formatter_(format));
-  }
-
-  ~Print() {
-    FinishFormatting();
-    std::fwrite(formatter_.data(), 1, formatter_.size(), stdout);
+struct Write {
+  void operator()(Formatter &f) const {
+    std::fwrite(f.data(), 1, f.size(), stdout);
   }
 };
+
+inline ActiveFormatter<Write> Print(const char *format) {
+  ActiveFormatter<Write> af(format);
+  return af;
+}
 }
 
 namespace fmt = format;

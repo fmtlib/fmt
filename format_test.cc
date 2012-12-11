@@ -525,18 +525,58 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
 TEST(FormatterTest, ArgLifetime) {
   // The following code is for testing purposes only. It is a definite abuse
   // of the API and shouldn't be used in real applications.
-  const fmt::BasicArgFormatter &af = fmt::Format("{0}");
-  const_cast<fmt::BasicArgFormatter&>(af) << std::string("test");
+  const fmt::ArgFormatter &af = fmt::Format("{0}");
+  const_cast<fmt::ArgFormatter&>(af) << std::string("test");
   // String object passed as an argument to Print has been destroyed,
   // but BasicArgFormatter dtor hasn't been called yet.
   EXPECT_EQ("test", str(af));
 }
 
-TEST(FormatterTest, Formatter) {
+TEST(FormatterTest, FormatterCtor) {
+  Formatter format;
+  EXPECT_EQ(0, format.size());
+  EXPECT_STREQ("", format.data());
+  EXPECT_STREQ("", format.c_str());
+  EXPECT_EQ("", format.str());
+  format("part{0}") << 1;
+  format("part{0}") << 2;
+  EXPECT_EQ("part1part2", format.str());
+}
+
+TEST(FormatterTest, FormatterAppend) {
+  Formatter format;
+  format("part{0}") << 1;
+  EXPECT_EQ(strlen("part1"), format.size());
+  EXPECT_STREQ("part1", format.c_str());
+  EXPECT_STREQ("part1", format.data());
+  EXPECT_EQ("part1", format.str());
+  format("part{0}") << 2;
+  EXPECT_EQ(strlen("part1part2"), format.size());
+  EXPECT_STREQ("part1part2", format.c_str());
+  EXPECT_STREQ("part1part2", format.data());
+  EXPECT_EQ("part1part2", format.str());
+}
+
+TEST(FormatterTest, FormatterExample) {
   Formatter format;
   format("Current point:\n");
   format("({0:+f}, {1:+f})\n") << -3.14 << 3.14;
-  EXPECT_STREQ("Current point:\n(-3.140000, +3.140000)\n", format.c_str());
+  EXPECT_EQ("Current point:\n(-3.140000, +3.140000)\n", format.str());
 }
 
-// TODO: test API
+struct PrintError {
+  void operator()(const fmt::Formatter &f) const {
+    std::cerr << "Error: " << f.str() << std::endl;
+  }
+};
+
+fmt::ActiveFormatter<PrintError> ReportError(const char *format) {
+  fmt::ActiveFormatter<PrintError> af(format);
+  return af;
+}
+
+TEST(FormatterTest, ArgFormatter) {
+  std::string path = "somefile";
+  ReportError("File not found: {0}") << path;
+}
+// TODO: test ArgFormatter
