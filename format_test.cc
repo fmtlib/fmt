@@ -445,3 +445,12 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
           << 1.234 << 42 << 3.13 << "str"
           << reinterpret_cast<void*>(1000) << 'X'));
 }
+
+TEST(FormatterTest, Formatter) {
+  Formatter format;
+  format("Current point:\n");
+  format("({0:+f}, {1:+f})\n") << -3.14 << 3.14;
+  EXPECT_STREQ("Current point:\n(-3.140000, +3.140000)\n", format.c_str());
+}
+
+// TODO: test Buffer

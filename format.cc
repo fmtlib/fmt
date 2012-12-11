@@ -1,5 +1,5 @@
 /*
- Small, safe and fast printf-like formatting library for C++
+ Small, safe and fast string formatting library for C++
  Author: Victor Zverovich
  */
 
@@ -363,6 +363,7 @@ void fmt::Formatter::Format() {
     }
   }
   buffer_.append(start, s + 1);
+  buffer_.resize(buffer_.size() - 1);  // Don't count the terminating zero.
 }
 
 fmt::ArgFormatter::~ArgFormatter() {

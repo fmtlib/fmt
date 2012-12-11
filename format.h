@@ -1,5 +1,5 @@
 /*
- Small, safe and fast printf-like formatting library for C++
+ Small, safe and fast string formatting library for C++
  Author: Victor Zverovich
  */
 
@@ -46,9 +46,13 @@ class Buffer {
     if (ptr_ != data_) delete [] ptr_;
   }
 
+  // Returns the size of this buffer.
   std::size_t size() const { return size_; }
+
+  // Returns the capacity of this buffer.
   std::size_t capacity() const { return capacity_; }
 
+  // Resizes the buffer. If T is a POD type new elements are not initialized.
   void resize(std::size_t new_size) {
     if (new_size > capacity_)
       Grow(new_size);
@@ -60,18 +64,19 @@ class Buffer {
       Grow(capacity);
   }
 
+  void clear() { size_ = 0; }
+
   void push_back(const T &value) {
     if (size_ == capacity_)
       Grow(size_ + 1);
     ptr_[size_++] = value;
   }
 
+  // Appends data to the end of the buffer.
   void append(const T *begin, const T *end);
 
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
-
-  void clear() { size_ = 0; }
 };
 
 template <typename T, std::size_t SIZE>
@@ -93,11 +98,24 @@ void Buffer<T, SIZE>::append(const T *begin, const T *end) {
   size_ += num_elements;
 }
 
-// A sprintf-like formatter that automatically allocates enough storage to
-// fit all the output.
+// Formatter provides string formatting functionality similar to Python's
+// str.format. The output is stored in a memory buffer that grows dynamically.
+// Usage:
+//
+//   Formatter out;
+//   out("Current point:\n");
+//   out("(-{:+f}, {:+f})") << 3.14 << -3.14;
+//
+// This will populate the buffer of the out object with the following output:
+//
+//   Current point:
+//   (-3.140000, +3.140000)
+//
+// The buffer can be accessed using Formatter::data() or Formatter::c_str().
 class Formatter {
  private:
-  Buffer<char, 500> buffer_;  // Output buffer.
+  enum { INLINE_BUFFER_SIZE = 500 };
+  Buffer<char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
 
   enum Type {
     // Numeric types should go first.
@@ -108,7 +126,6 @@ class Formatter {
 
   typedef void (Formatter::*FormatFunc)(const void *arg, int width);
 
- public:
   // A format argument.
   struct Arg {
     Type type;
@@ -146,7 +163,8 @@ class Formatter {
     : type(CUSTOM), custom_value(value), format(f) {}
   };
 
-  Buffer<Arg, 10> args_;  // Format arguments.
+  enum { NUM_INLINE_ARGS = 10 };
+  Buffer<Arg, NUM_INLINE_ARGS> args_;  // Format arguments.
 
   const char *format_;  // Format string.
 
@@ -297,9 +315,6 @@ class ArgFormatter {
     return *this << const_value;
   }
 
-  // If T is a pointer type, say "U*", AddPtrConst<T>::Value will be
-  // "const U*". This additional const ensures that operator<<(const void *)
-  // and not this method is called both for "const void*" and "void*".
   template <typename T>
   ArgFormatter &operator<<(const T &value) {
     formatter_->Add(Formatter::Arg(&value, &Formatter::FormatCustomArg<T>));
