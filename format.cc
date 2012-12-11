@@ -223,8 +223,9 @@ void fmt::Formatter::FormatDouble(
   }
 }
 
-void fmt::Formatter::Format() {
+void fmt::Formatter::DoFormat() {
   const char *start = format_;
+  format_ = 0;
   const char *s = start;
   while (*s) {
     char c = *s++;

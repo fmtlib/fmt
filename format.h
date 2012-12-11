@@ -15,9 +15,10 @@
 
 namespace format {
 
-// A buffer with the first SIZE elements stored in the object itself.
+// A simple array for POD types with the first SIZE elements stored in
+// the object itself. It supports a subset of std::vector's operations.
 template <typename T, std::size_t SIZE>
-class Buffer {
+class Array {
  private:
   std::size_t size_;
   std::size_t capacity_;
@@ -27,22 +28,22 @@ class Buffer {
   void Grow(std::size_t size);
 
   // Do not implement!
-  Buffer(const Buffer &);
-  void operator=(const Buffer &);
+  Array(const Array &);
+  void operator=(const Array &);
 
  public:
-  Buffer() : size_(0), capacity_(SIZE), ptr_(data_) {}
-  ~Buffer() {
+  Array() : size_(0), capacity_(SIZE), ptr_(data_) {}
+  ~Array() {
     if (ptr_ != data_) delete [] ptr_;
   }
 
-  // Returns the size of this buffer.
+  // Returns the size of this array.
   std::size_t size() const { return size_; }
 
-  // Returns the capacity of this buffer.
+  // Returns the capacity of this array.
   std::size_t capacity() const { return capacity_; }
 
-  // Resizes the buffer. If T is a POD type new elements are not initialized.
+  // Resizes the array. If T is a POD type new elements are not initialized.
   void resize(std::size_t new_size) {
     if (new_size > capacity_)
       Grow(new_size);
@@ -62,7 +63,7 @@ class Buffer {
     ptr_[size_++] = value;
   }
 
-  // Appends data to the end of the buffer.
+  // Appends data to the end of the array.
   void append(const T *begin, const T *end);
 
   T &operator[](std::size_t index) { return ptr_[index]; }
@@ -70,7 +71,7 @@ class Buffer {
 };
 
 template <typename T, std::size_t SIZE>
-void Buffer<T, SIZE>::Grow(std::size_t size) {
+void Array<T, SIZE>::Grow(std::size_t size) {
   capacity_ = std::max(size, capacity_ + capacity_ / 2);
   T *p = new T[capacity_];
   std::copy(ptr_, ptr_ + size_, p);
@@ -80,7 +81,7 @@ void Buffer<T, SIZE>::Grow(std::size_t size) {
 }
 
 template <typename T, std::size_t SIZE>
-void Buffer<T, SIZE>::append(const T *begin, const T *end) {
+void Array<T, SIZE>::append(const T *begin, const T *end) {
   std::ptrdiff_t num_elements = end - begin;
   if (size_ + num_elements > capacity_)
     Grow(num_elements);
@@ -112,7 +113,7 @@ class BasicArgFormatter;
 class Formatter {
  private:
   enum { INLINE_BUFFER_SIZE = 500 };
-  Buffer<char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
+  Array<char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
 
   enum Type {
     // Numeric types should go first.
@@ -160,7 +161,7 @@ class Formatter {
         FormatFunc format;
       };
     };
-    mutable Formatter **formatter;
+    mutable Formatter *formatter;
 
     Arg(int value) : type(INT), int_value(value) {}
     Arg(unsigned value) : type(UINT), uint_value(value) {}
@@ -193,15 +194,12 @@ class Formatter {
       // so it will be alive in the Arg's destructor when Format is called.
       // Note that the string object will not necessarily be alive when
       // the destructor of BasicArgFormatter is called.
-      if (*formatter) {
-        (*formatter)->Format();
-        *formatter = 0;
-      }
+      formatter->Format();
     }
   };
 
   enum { NUM_INLINE_ARGS = 10 };
-  Buffer<const Arg*, NUM_INLINE_ARGS> args_;  // Format arguments.
+  Array<const Arg*, NUM_INLINE_ARGS> args_;  // Format arguments.
 
   const char *format_;  // Format string.
 
@@ -224,7 +222,12 @@ class Formatter {
   template <typename T>
   void FormatCustomArg(const void *arg, int width);
 
-  void Format();
+  void DoFormat();
+
+  void Format() {
+    if (!format_) return;
+    DoFormat();
+  }
 
   // Grows the buffer by n characters and returns a pointer to the newly
   // allocated area.
@@ -284,7 +287,7 @@ class BasicArgFormatter {
   ~BasicArgFormatter();
 
   BasicArgFormatter &operator<<(const Formatter::Arg &arg) {
-    arg.formatter = &formatter_;
+    arg.formatter = formatter_;
     formatter_->Add(arg);
     return *this;
   }

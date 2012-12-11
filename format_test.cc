@@ -66,6 +66,82 @@ class TestString {
   }
 };
 
+TEST(ArrayTest, Ctor) {
+  fmt::Array<char, 123> array;
+  EXPECT_EQ(0, array.size());
+  EXPECT_EQ(123, array.capacity());
+}
+
+TEST(ArrayTest, Access) {
+  fmt::Array<char, 10> array;
+  array[0] = 11;
+  EXPECT_EQ(11, array[0]);
+  array[3] = 42;
+  EXPECT_EQ(42, *(&array[0] + 3));
+  const fmt::Array<char, 10> &carray = array;
+  EXPECT_EQ(42, carray[3]);
+}
+
+TEST(ArrayTest, Resize) {
+  fmt::Array<char, 123> array;
+  array[10] = 42;
+  EXPECT_EQ(42, array[10]);
+  array.resize(20);
+  EXPECT_EQ(20, array.size());
+  EXPECT_EQ(123, array.capacity());
+  EXPECT_EQ(42, array[10]);
+  array.resize(5);
+  EXPECT_EQ(5, array.size());
+  EXPECT_EQ(123, array.capacity());
+  EXPECT_EQ(42, array[10]);
+}
+
+TEST(ArrayTest, Grow) {
+  fmt::Array<int, 10> array;
+  array.resize(10);
+  for (int i = 0; i < 10; ++i)
+    array[i] = i * i;
+  array.resize(20);
+  EXPECT_EQ(20, array.size());
+  EXPECT_EQ(20, array.capacity());
+  for (int i = 0; i < 10; ++i)
+    EXPECT_EQ(i * i, array[i]);
+}
+
+TEST(ArrayTest, Clear) {
+  fmt::Array<char, 10> array;
+  array.resize(20);
+  array.clear();
+  EXPECT_EQ(0, array.size());
+  EXPECT_EQ(20, array.capacity());
+}
+
+TEST(ArrayTest, PushBack) {
+  fmt::Array<int, 10> array;
+  array.push_back(11);
+  EXPECT_EQ(11, array[0]);
+  EXPECT_EQ(1, array.size());
+  array.resize(10);
+  array.push_back(22);
+  EXPECT_EQ(22, array[10]);
+  EXPECT_EQ(11, array.size());
+  EXPECT_EQ(15, array.capacity());
+}
+
+TEST(ArrayTest, Append) {
+  fmt::Array<char, 10> array;
+  const char *test = "test";
+  array.append(test, test + 5);
+  EXPECT_STREQ("test", &array[0]);
+  EXPECT_EQ(5, array.size());
+  array.resize(10);
+  array.append(test, test + 2);
+  EXPECT_EQ('t', array[10]);
+  EXPECT_EQ('e', array[11]);
+  EXPECT_EQ(12, array.size());
+  EXPECT_EQ(15, array.capacity());
+}
+
 TEST(FormatterTest, Escape) {
   EXPECT_EQ("{", str(Format("{{")));
   EXPECT_EQ("before {", str(Format("before {{")));
@@ -446,6 +522,16 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
           << reinterpret_cast<void*>(1000) << 'X'));
 }
 
+TEST(FormatterTest, ArgLifetime) {
+  // The following code is for testing purposes only. It is a definite abuse
+  // of the API and shouldn't be used in real applications.
+  const fmt::BasicArgFormatter &af = fmt::Format("{0}");
+  const_cast<fmt::BasicArgFormatter&>(af) << std::string("test");
+  // String object passed as an argument to Print has been destroyed,
+  // but BasicArgFormatter dtor hasn't been called yet.
+  EXPECT_EQ("test", str(af));
+}
+
 TEST(FormatterTest, Formatter) {
   Formatter format;
   format("Current point:\n");
@@ -453,4 +539,4 @@ TEST(FormatterTest, Formatter) {
   EXPECT_STREQ("Current point:\n(-3.140000, +3.140000)\n", format.c_str());
 }
 
-// TODO: test Buffer
+// TODO: test API
