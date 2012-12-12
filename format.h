@@ -237,6 +237,10 @@ class Formatter {
       return f;
     }
 
+    Formatter *formatter() const { return formatter_; }
+
+    void ResetFormatter() { formatter_ = 0; }
+
    public:
     ~ArgInserter() {
       if (formatter_)
@@ -329,6 +333,8 @@ inline Formatter::ArgInserter Formatter::operator()(const char *format) {
 }
 
 // A formatter with an action performed when formatting is complete.
+// This is a transient object that normally exists only as a temporary
+// returned by one of the formatting functions.
 template <typename Action>
 class ActiveFormatter : public Formatter::ArgInserter {
  private:
@@ -348,10 +354,19 @@ class ActiveFormatter : public Formatter::ArgInserter {
     ArgInserter::operator=(formatter_(format));
   }
 
-  ActiveFormatter(ActiveFormatter& other) : ArgInserter(other) {}
+  // Creates an active formatter with the same format string and action
+  // as other has and modifies other so that it doesn't call action in
+  // destructor. Note that the buffer content is not copied because the
+  // the buffer in ActiveFormatter is populated when all the arguments
+  // are provided.
+  ActiveFormatter(ActiveFormatter &other) : action_(other.action_) {
+    other.ResetFormatter();
+    ArgInserter::operator=(formatter_(other.formatter_.format_));
+  }
 
   ~ActiveFormatter() {
-    action_(*Format());
+    if (formatter())
+      action_(*Format());
   }
 };
 
