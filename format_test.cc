@@ -522,16 +522,6 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
           << reinterpret_cast<void*>(1000) << 'X'));
 }
 
-TEST(FormatterTest, ArgLifetime) {
-  // The following code is for testing purposes only. It is a definite abuse
-  // of the API and shouldn't be used in real applications.
-  const fmt::ArgFormatter &af = fmt::Format("{0}");
-  const_cast<fmt::ArgFormatter&>(af) << std::string("test");
-  // String object passed as an argument to Print has been destroyed,
-  // but BasicArgFormatter dtor hasn't been called yet.
-  EXPECT_EQ("test", str(af));
-}
-
 TEST(FormatterTest, FormatterCtor) {
   Formatter format;
   EXPECT_EQ(0, format.size());
@@ -564,9 +554,44 @@ TEST(FormatterTest, FormatterExample) {
   EXPECT_EQ("Current point:\n(-3.140000, +3.140000)\n", format.str());
 }
 
+TEST(FormatterTest, ArgInserter) {
+  Formatter format;
+  EXPECT_EQ("1", str(format("{0}") << 1));
+  EXPECT_STREQ("12", c_str(format("{0}") << 2));
+}
+
+struct CallCheck {
+  bool &called;
+
+  CallCheck(bool &called) : called(called) {}
+
+  void operator()(const Formatter &) const {
+    called = true;
+  }
+};
+
+TEST(ActiveFormatterTest, Action) {
+  bool called = false;
+  {
+    fmt::ActiveFormatter<CallCheck> af("test", CallCheck(called));
+    EXPECT_FALSE(called);
+  }
+  EXPECT_TRUE(called);
+}
+
+TEST(ActiveFormatterTest, ArgLifetime) {
+  // The following code is for testing purposes only. It is a definite abuse
+  // of the API and shouldn't be used in real applications.
+  const fmt::ActiveFormatter<fmt::Ignore> &af = fmt::Format("{0}");
+  const_cast<fmt::ActiveFormatter<fmt::Ignore>&>(af) << std::string("test");
+  // String object passed as an argument to Print has been destroyed,
+  // but ArgInserter dtor hasn't been called yet.
+  EXPECT_EQ("test", str(af));
+}
+
 struct PrintError {
   void operator()(const fmt::Formatter &f) const {
-    std::cerr << "Error: " << f.str() << std::endl;
+    //std::cerr << "Error: " << f.str() << std::endl;
   }
 };
 
@@ -575,8 +600,7 @@ fmt::ActiveFormatter<PrintError> ReportError(const char *format) {
   return af;
 }
 
-TEST(FormatterTest, ArgFormatter) {
+TEST(ActiveFormatterTest, Example) {
   std::string path = "somefile";
   ReportError("File not found: {0}") << path;
 }
-// TODO: test ArgFormatter

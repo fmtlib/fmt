@@ -94,8 +94,6 @@ class FormatError : public std::runtime_error {
   FormatError(const std::string &message) : std::runtime_error(message) {}
 };
 
-class ArgFormatter;
-
 // Formatter provides string formatting functionality similar to Python's
 // str.format. The output is stored in a memory buffer that grows dynamically.
 // Usage:
@@ -193,7 +191,7 @@ class Formatter {
       // constructed before the Arg object, it will be destroyed after,
       // so it will be alive in the Arg's destructor where Format is called.
       // Note that the string object will not necessarily be alive when
-      // the destructor of ArgFormatter is called.
+      // the destructor of ArgInserter is called.
       formatter->Format();
     }
   };
@@ -203,7 +201,65 @@ class Formatter {
 
   const char *format_;  // Format string.
 
-  friend class ArgFormatter;
+  template <typename Action>
+  friend class ActiveFormatter;
+
+  // This is a transient object that normally exists only as a temporary
+  // returned by one of the formatting functions. It stores a reference
+  // to a formatter and provides operator<< that feeds arguments to the
+  // formatter.
+  class ArgInserter {
+   private:
+    mutable Formatter *formatter_;
+
+    friend class Formatter;
+
+   protected:
+    explicit ArgInserter(Formatter *f = 0) : formatter_(f) {}
+
+    ArgInserter(ArgInserter& other)
+    : formatter_(other.formatter_) {
+      other.formatter_ = 0;
+    }
+
+    ArgInserter& operator=(const ArgInserter& other) {
+      formatter_ = other.formatter_;
+      other.formatter_ = 0;
+      return *this;
+    }
+
+    const Formatter *Format() const {
+      Formatter *f = formatter_;
+      if (f) {
+        formatter_ = 0;
+        f->Format();
+      }
+      return f;
+    }
+
+   public:
+    ~ArgInserter() {
+      if (formatter_)
+        formatter_->Format();
+    }
+
+    // Feeds an argument to a formatter.
+    ArgInserter &operator<<(const Formatter::Arg &arg) {
+      arg.formatter = formatter_;
+      formatter_->Add(arg);
+      return *this;
+    }
+
+    // Performs formatting and returns a C string with the output.
+    friend const char *c_str(const ArgInserter &af) {
+      return af.Format()->c_str();
+    }
+
+    // Performs formatting and returns a std::string with the output.
+    friend std::string str(const ArgInserter &af) {
+      return af.Format()->str();
+    }
+  };
 
   void Add(const Arg &arg) {
     args_.push_back(&arg);
@@ -241,9 +297,9 @@ class Formatter {
   Formatter() : format_(0) { buffer_[0] = 0; }
 
   // Formats a string appending the output to the internal buffer.
-  // Arguments are accepted through the returned ArgFormatter object
+  // Arguments are accepted through the returned ArgInserter object
   // using inserter operator<<.
-  ArgFormatter operator()(const char *format);
+  ArgInserter operator()(const char *format);
 
   std::size_t size() const { return buffer_.size(); }
 
@@ -251,59 +307,6 @@ class Formatter {
   const char *c_str() const { return &buffer_[0]; }
 
   std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
-};
-
-// Argument formatter. This is a transient object that normally exists
-// only as a temporary returned by one of the formatting functions.
-// It stores a reference to a formatter and provides operator<<
-// that feeds arguments to the formatter.
-class ArgFormatter {
- private:
-  friend class Formatter;
-
- protected:
-  mutable Formatter *formatter_;
-
-  ArgFormatter(ArgFormatter& other)
-  : formatter_(other.formatter_) {
-    other.formatter_ = 0;
-  }
-
-  ArgFormatter& operator=(const ArgFormatter& other) {
-    formatter_ = other.formatter_;
-    other.formatter_ = 0;
-    return *this;
-  }
-
-  Formatter *FinishFormatting() const {
-    Formatter *f = formatter_;
-    if (f) {
-      formatter_ = 0;
-      f->Format();
-    }
-    return f;
-  }
-
- public:
-  explicit ArgFormatter(Formatter &f) : formatter_(&f) {}
-  ~ArgFormatter() { FinishFormatting(); }
-
-  // Feeds an argument to a formatter.
-  ArgFormatter &operator<<(const Formatter::Arg &arg) {
-    arg.formatter = formatter_;
-    formatter_->Add(arg);
-    return *this;
-  }
-
-  // Performs formatting and returns a C string with the output.
-  friend const char *c_str(const ArgFormatter &af) {
-    return af.FinishFormatting()->c_str();
-  }
-
-  // Performs formatting and returns a std::string with the output.
-  friend std::string str(const ArgFormatter &af) {
-    return af.FinishFormatting()->str();
-  }
 };
 
 template <typename T>
@@ -318,8 +321,8 @@ void Formatter::FormatCustomArg(const void *arg, int width) {
     std::fill_n(out + str.size(), width - str.size(), ' ');
 }
 
-inline ArgFormatter Formatter::operator()(const char *format) {
-  ArgFormatter formatter(*this);
+inline Formatter::ArgInserter Formatter::operator()(const char *format) {
+  ArgInserter formatter(this);
   format_ = format;
   args_.clear();
   return formatter;
@@ -327,40 +330,54 @@ inline ArgFormatter Formatter::operator()(const char *format) {
 
 // A formatter with an action performed when formatting is complete.
 template <typename Action>
-class ActiveFormatter : public ArgFormatter {
+class ActiveFormatter : public Formatter::ArgInserter {
  private:
-  mutable Formatter formatter_;
+  Formatter formatter_;
+  Action action_;
 
   // Do not implement.
   ActiveFormatter& operator=(const ActiveFormatter&);
 
  public:
-  explicit ActiveFormatter(const char *format) : ArgFormatter(formatter_) {
-    ArgFormatter::operator=(formatter_(format));
+  // Creates an active formatter with a format string and an action.
+  // Action should be an unary function object that takes a const
+  // reference to Formatter as an argument. See Ignore and Write
+  // for examples of action classes.
+  explicit ActiveFormatter(const char *format, Action a = Action())
+  : action_(a) {
+    ArgInserter::operator=(formatter_(format));
   }
 
-  ActiveFormatter(ActiveFormatter& other) : ArgFormatter(other) {}
+  ActiveFormatter(ActiveFormatter& other) : ArgInserter(other) {}
 
   ~ActiveFormatter() {
-    Action()(*FinishFormatting());
+    action_(*Format());
   }
 };
 
+// A formatting action that does nothing.
 struct Ignore {
-  void operator()(Formatter &) const {}
+  void operator()(const Formatter &) const {}
 };
 
+// Formats a string.
+// Example:
+//   std::string s = str(Format("Elapsed time: {0:.2f} seconds") << 1.23);
 inline ActiveFormatter<Ignore> Format(const char *format) {
   ActiveFormatter<Ignore> af(format);
   return af;
 }
 
+// A formatting action that writes formatted output to stdout.
 struct Write {
-  void operator()(Formatter &f) const {
+  void operator()(const Formatter &f) const {
     std::fwrite(f.data(), 1, f.size(), stdout);
   }
 };
 
+// Formats a string and prints it to stdout.
+// Example:
+//   Print("Elapsed time: {0:.2f} seconds") << 1.23;
 inline ActiveFormatter<Write> Print(const char *format) {
   ActiveFormatter<Write> af(format);
   return af;
