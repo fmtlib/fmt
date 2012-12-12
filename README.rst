@@ -1,7 +1,10 @@
 format
 ======
 
-Format is a C++ library that provides printf-like formatting functionality.
+Format is an open-source C++ library that provides
+string formatting functionality similar to `str.format
+<http://docs.python.org/2/library/stdtypes.html#str.format>`__
+in Python.
 
 Features
 --------
