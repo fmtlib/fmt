@@ -79,14 +79,20 @@ braces ``{}``.  Text outside of braces is copied unchanged to the output.
 If you need to include a brace character in the literal text, it can be
 escaped by doubling: ``{{`` and ``}}``.
 
-The grammar for a replacement field is as follows::
+The grammar for a replacement field is as follows:
 
-   replacement_field: "{" arg_index [":" format_spec] "}"
-   arg_index: integer
-   format_spec: ["+"]["0"][width]["." precision][type]
-   width: integer
-   precision: integer
-   type: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | "s" | "x" | "X"
+.. parsed-literal::
+
+  _`replacement_field`: "{" `arg_index`_ [":" `format_spec`_] "}"
+  _`arg_index`: integer
+  _`format_spec`: ["+"]["0"][`width`_]["." `precision`_][`type`_]
+  _`width`: integer
+  _`precision`: integer | "{" `arg_index`_ "}"
+  _`type`: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | "s" | "x" | "X"
+
+Preceding the `width`_ field with ``0`` makes the padding to be placed
+after the sign (if any) but before the digits. This is used for printing
+fields in the form ``+000000120``. This option is only valid for numeric types.
 
 Motivation
 ----------
