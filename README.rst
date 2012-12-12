@@ -6,11 +6,11 @@ Format is a C++ library that provides printf-like formatting functionality.
 Features
 --------
 
-* Format string syntax similar to the one used by `str.format
+* `Format string syntax`_ similar to the one used by `str.format
   <http://docs.python.org/2/library/stdtypes.html#str.format>`__ in Python.
 * Support for user-defined types.
 * High speed: performance of the current implementation is close to that of
-  ``printf``. See `Speed tests`_.
+  ``printf`` and much better than IOStreams. See `Speed tests`_.
 * Small code size both in terms of source code (format consists of a single
   header file and a single source file) and compiled code.
   See `Compile time and code bloat`_.
@@ -186,11 +186,11 @@ further details see the `source
 ============== ========
 test name      run time
 ============== ========
-libc printf     1.26s
-std::ostream    2.02s
-format          2.20s
-tinyformat      2.51s
-boost::format  10.40s
+libc printf     1.27s
+std::ostream    2.10s
+format          1.36s
+tinyformat      2.63s
+boost::format  10.36s
 ============== ========
 
 As you can see boost::format is much slower than the alternative methods; this
