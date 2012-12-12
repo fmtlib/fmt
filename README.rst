@@ -9,12 +9,16 @@ Features
 * Format string syntax similar to the one used by `str.format
   <http://docs.python.org/2/library/stdtypes.html#str.format>`__ in Python.
 * Support for user-defined types.
-* High speed: performance of the current proof-of-concept implementation
-  is close to that of IOStreams (see `Speed tests`_).
+* High speed: performance of the current implementation is close to that of
+  ``printf``. See `Speed tests`_.
 * Small code size both in terms of source code (format consists of a single
-  header file and a single source file) and compiled code
-  (see `Compile time and code bloat`_).
-* Easy deployment: small self-contained code base, no external dependencies,
+  header file and a single source file) and compiled code.
+  See `Compile time and code bloat`_.
+* Reliability: the library has an extensive set of `unit tests
+  <https://github.com/vitaut/format/blob/master/format_test.cc>`__.
+* Safety: the library is fully type safe, errors in format strings are
+  reported using exceptions.
+* Ease of use: small self-contained code base, no external dependencies,
   permissive license.
 
 Examples
