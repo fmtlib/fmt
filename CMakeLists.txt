@@ -21,7 +21,10 @@ endif ()
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
-  set(gtest_force_shared_crt ON)
+  option(
+    gtest_force_shared_crt
+    "Use shared (DLL) run-time lib even when Google Test is built as static lib."
+    ON)
   add_subdirectory(gtest)
   include_directories(gtest/include)
   link_directories(${CMAKE_CURRENT_BINARY_DIR}/gtest)
