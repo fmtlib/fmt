@@ -13,7 +13,7 @@ Features
   <http://docs.python.org/2/library/stdtypes.html#str.format>`__ in Python.
 * Support for user-defined types.
 * High speed: performance of the current implementation is close to that of
-  ``printf`` and much better than IOStreams. See `Speed tests`_.
+  ``printf`` and better than performance of IOStreams. See `Speed tests`_.
 * Small code size both in terms of source code (format consists of a single
   header file and a single source file) and compiled code.
   See `Compile time and code bloat`_.
@@ -22,7 +22,7 @@ Features
 * Safety: the library is fully type safe, errors in format strings are
   reported using exceptions.
 * Ease of use: small self-contained code base, no external dependencies,
-  permissive license.
+  permissive BSD `license`_.
 
 Examples
 --------
@@ -262,6 +262,32 @@ Next use the following commands to run the speed test::
 or the bloat test::
 
     $ make bloat_test
+
+License
+-------
+
+Copyright (c) 2012, Victor Zverovich
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Acknowledgments
 ---------------
