@@ -30,6 +30,7 @@
 #include <stdint.h>
 
 #include <cassert>
+#include <cctype>
 #include <climits>
 #include <cstring>
 #include <algorithm>
