@@ -83,11 +83,11 @@ The grammar for a replacement field is as follows:
 
 .. parsed-literal::
 
-  _`replacement_field`: "{" `arg_index`_ [":" `format_spec`_] "}"
+  _`replacement_field`: "{" arg_index_ [":" format_spec_] "}"
   _`arg_index`: integer
-  _`format_spec`: ["+"]["0"][`width`_]["." `precision`_][`type`_]
+  _`format_spec`: ["+"]["0"][width_]["." precision_][type_]
   _`width`: integer
-  _`precision`: integer | "{" `arg_index`_ "}"
+  _`precision`: integer | "{" arg_index_ "}"
   _`type`: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | "s" | "x" | "X"
 
 Preceding the `width`_ field with ``0`` makes the padding to be placed
