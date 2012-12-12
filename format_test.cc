@@ -6,6 +6,7 @@
 #include <cfloat>
 #include <climits>
 #include <cstring>
+#include <memory>
 #include <gtest/gtest.h>
 #include "format.h"
 
@@ -560,23 +561,47 @@ TEST(FormatterTest, ArgInserter) {
   EXPECT_STREQ("12", c_str(format("{0}") << 2));
 }
 
-struct CallCheck {
-  bool &called;
+struct CountCalls {
+  int &num_calls;
 
-  CallCheck(bool &called) : called(called) {}
+  CountCalls(int &num_calls) : num_calls(num_calls) {}
 
   void operator()(const Formatter &) const {
-    called = true;
+    ++num_calls;
   }
 };
 
 TEST(ActiveFormatterTest, Action) {
-  bool called = false;
+  int num_calls = 0;
   {
-    fmt::ActiveFormatter<CallCheck> af("test", CallCheck(called));
-    EXPECT_FALSE(called);
+    fmt::ActiveFormatter<CountCalls> af("test", CountCalls(num_calls));
+    EXPECT_EQ(0, num_calls);
   }
-  EXPECT_TRUE(called);
+  EXPECT_EQ(1, num_calls);
+}
+
+TEST(ActiveFormatterTest, Copy) {
+  int num_calls = 0;
+  typedef fmt::ActiveFormatter<CountCalls> AF;
+  std::auto_ptr<AF> af(new AF("test", CountCalls(num_calls)));
+  EXPECT_EQ(0, num_calls);
+  {
+    AF copy(*af);
+    EXPECT_EQ(0, num_calls);
+    af.reset();
+    EXPECT_EQ(0, num_calls);
+  }
+  EXPECT_EQ(1, num_calls);
+}
+
+TEST(ActiveFormatterTest, ActionNotCalledOnError) {
+  int num_calls = 0;
+  {
+    EXPECT_THROW(
+        fmt::ActiveFormatter<CountCalls> af("{0", CountCalls(num_calls)),
+        FormatError);
+  }
+  EXPECT_EQ(0, num_calls);
 }
 
 TEST(ActiveFormatterTest, ArgLifetime) {
