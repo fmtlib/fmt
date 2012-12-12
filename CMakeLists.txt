@@ -39,6 +39,11 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
 endif ()
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tinyformat/tinyformat_test.cpp)
+  find_package(Boost)
+  if (Boost_FOUND)
+    add_definitions(-DHAVE_BOOST)
+  endif ()
+
   add_executable(tinyformat_speed_test tinyformat/tinyformat_test.cpp)
   target_link_libraries(tinyformat_speed_test format)
   set_target_properties(tinyformat_speed_test
