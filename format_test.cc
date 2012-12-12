@@ -45,13 +45,13 @@ using fmt::FormatError;
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
   if (::testing::internal::ConstCharPtr gtest_msg = "") { \
     bool gtest_caught_expected = false; \
-    std::string actual_message; \
     try { \
       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
     } \
     catch (expected_exception const& e) { \
       gtest_caught_expected = true; \
-      actual_message = e.what(); \
+      if (std::strcmp(message, e.what()) != 0) \
+        throw; \
     } \
     catch (...) { \
       gtest_msg.value = \
@@ -63,11 +63,6 @@ using fmt::FormatError;
       gtest_msg.value = \
           "Expected: " #statement " throws an exception of type " \
           #expected_exception ".\n  Actual: it throws nothing."; \
-      goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
-    } else if (actual_message != message) {\
-      gtest_msg.value = \
-          "Expected: " #statement " throws an exception of type " \
-          #expected_exception "."; \
       goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
     } \
   } else \
@@ -377,6 +372,99 @@ TEST(FormatterTest, Precision) {
   EXPECT_THROW_MSG(Format("{0:.2}") << TestString(),
       FormatError, "precision specifier requires floating-point argument");
   EXPECT_THROW_MSG(Format("{0:.2f}") << TestString(),
+      FormatError, "precision specifier requires floating-point argument");
+}
+
+TEST(FormatterTest, RuntimePrecision) {
+  char format[256];
+  if (ULONG_MAX > UINT_MAX) {
+    std::sprintf(format, "{0:.{%lu", INT_MAX + 1l);
+    EXPECT_THROW_MSG(Format(format) << 0,
+        FormatError, "unmatched '{' in format");
+    std::sprintf(format, "{0:.{%lu}", INT_MAX + 1l);
+    EXPECT_THROW_MSG(Format(format) << 0,
+        FormatError, "unmatched '{' in format");
+    std::sprintf(format, "{0:.{%lu}}", UINT_MAX + 1l);
+    EXPECT_THROW_MSG(Format(format) << 0,
+        FormatError, "number is too big in format");
+  } else {
+    std::sprintf(format, "{0:.{%u0", UINT_MAX);
+    EXPECT_THROW_MSG(Format(format) << 0,
+        FormatError, "unmatched '{' in format");
+    std::sprintf(format, "{0:.{%u0}", UINT_MAX);
+    EXPECT_THROW_MSG(Format(format) << 0,
+        FormatError, "unmatched '{' in format");
+    std::sprintf(format, "{0:.{%u0}}", UINT_MAX);
+    EXPECT_THROW_MSG(Format(format) << 0,
+        FormatError, "number is too big in format");
+  }
+
+  EXPECT_THROW_MSG(Format("{0:.{") << 0,
+      FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0:.{}") << 0,
+      FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0:.{}}") << 0,
+      FormatError, "missing argument index in format string");
+  EXPECT_THROW_MSG(Format("{0:.{1}") << 0 << 0,
+      FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 0,
+      FormatError, "argument index is out of range in format");
+
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 0 << -1,
+      FormatError, "negative precision in format");
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 0 << (INT_MAX + 1u),
+      FormatError, "number is too big in format");
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 0 << -1l,
+      FormatError, "negative precision in format");
+  if (sizeof(long) > sizeof(int)) {
+    EXPECT_THROW_MSG(Format("{0:.{1}}") << 0 << (INT_MAX + 1l),
+        FormatError, "number is too big in format");
+  }
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 0 << (INT_MAX + 1ul),
+      FormatError, "number is too big in format");
+
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 0 << '0',
+      FormatError, "precision is not integer");
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 0 << 0.0,
+      FormatError, "precision is not integer");
+
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 42 << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_THROW_MSG(Format("{0:.{1}f}") << 42 << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 42u << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_THROW_MSG(Format("{0:.{1}f}") << 42u << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 42l << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_THROW_MSG(Format("{0:.{1}f}") << 42l << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 42ul << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_THROW_MSG(Format("{0:.{1}f}") << 42ul << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_EQ("1.2", str(Format("{0:.{1}}") << 1.2345 << 2));
+  EXPECT_EQ("1.2", str(Format("{1:.{0}}") << 2 << 1.2345l));
+
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << reinterpret_cast<void*>(0xcafe) << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_THROW_MSG(Format("{0:.{1}f}") << reinterpret_cast<void*>(0xcafe) << 2,
+      FormatError, "precision specifier requires floating-point argument");
+
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << 'x' << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_THROW_MSG(Format("{0:.{1}f}") << 'x' << 2,
+      FormatError, "precision specifier requires floating-point argument");
+
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << "str" << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_THROW_MSG(Format("{0:.{1}f}") << "str" << 2,
+      FormatError, "precision specifier requires floating-point argument");
+
+  EXPECT_THROW_MSG(Format("{0:.{1}}") << TestString() << 2,
+      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_THROW_MSG(Format("{0:.{1}f}") << TestString() << 2,
       FormatError, "precision specifier requires floating-point argument");
 }
 

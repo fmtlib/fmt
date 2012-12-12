@@ -244,12 +244,15 @@ class Formatter {
   internal::Array<const Arg*, NUM_INLINE_ARGS> args_;  // Format arguments.
 
   const char *format_;  // Format string.
+  int num_open_braces_;
 
   friend class internal::ArgInserter;
 
   void Add(const Arg &arg) {
     args_.push_back(&arg);
   }
+
+  void ReportError(const char *s, const std::string &message) const;
 
   // Formats an integer.
   template <typename T>
@@ -263,6 +266,11 @@ class Formatter {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   void FormatCustomArg(const void *arg, int width);
+
+  unsigned ParseUInt(const char *&s) const;
+
+  // Parses argument index and returns an argument with this index.
+  const Arg &ParseArgIndex(const char *&s) const;
 
   void DoFormat();
 

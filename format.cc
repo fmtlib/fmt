@@ -36,6 +36,7 @@
 #include <algorithm>
 
 using std::size_t;
+using fmt::Formatter;
 
 #if _MSC_VER
 # define snprintf _snprintf
@@ -46,21 +47,6 @@ namespace {
 // Flags.
 enum { PLUS_FLAG = 1, ZERO_FLAG = 2, HEX_PREFIX_FLAG = 4 };
 
-// Throws Exception(message) if format contains '}', otherwise throws
-// FormatError reporting unmatched '{'. The idea is that unmatched '{'
-// should override other errors.
-void ReportError(const char *s, const std::string &message) {
-  for (int num_open_braces = 1; *s; ++s) {
-    if (*s == '{') {
-      ++num_open_braces;
-    } else if (*s == '}') {
-      if (--num_open_braces == 0)
-        throw fmt::FormatError(message);
-    }
-  }
-  throw fmt::FormatError("unmatched '{' in format");
-}
-
 void ReportUnknownType(char code, const char *type) {
   if (std::isprint(code)) {
     throw fmt::FormatError(
@@ -69,20 +55,6 @@ void ReportUnknownType(char code, const char *type) {
   throw fmt::FormatError(
       str(fmt::Format("unknown format code '\\x{0:02x}' for {1}")
         << static_cast<unsigned>(code) << type));
-}
-
-// Parses an unsigned integer advancing s to the end of the parsed input.
-// This function assumes that the first character of s is a digit.
-unsigned ParseUInt(const char *&s) {
-  assert('0' <= *s && *s <= '9');
-  unsigned value = 0;
-  do {
-    unsigned new_value = value * 10 + (*s++ - '0');
-    if (new_value < value)  // Check if value wrapped around.
-      ReportError(s, "number is too big in format");
-    value = new_value;
-  } while ('0' <= *s && *s <= '9');
-  return value;
 }
 
 // Information about an integer type.
@@ -111,8 +83,23 @@ template <>
 struct IsLongDouble<long double> { enum {VALUE = 1}; };
 }
 
+// Throws Exception(message) if format contains '}', otherwise throws
+// FormatError reporting unmatched '{'. The idea is that unmatched '{'
+// should override other errors.
+void Formatter::ReportError(const char *s, const std::string &message) const {
+  for (int num_open_braces = num_open_braces_; *s; ++s) {
+    if (*s == '{') {
+      ++num_open_braces;
+    } else if (*s == '}') {
+      if (--num_open_braces == 0)
+        throw fmt::FormatError(message);
+    }
+  }
+  throw fmt::FormatError("unmatched '{' in format");
+}
+
 template <typename T>
-void fmt::Formatter::FormatInt(T value, unsigned flags, int width, char type) {
+void Formatter::FormatInt(T value, unsigned flags, int width, char type) {
   int size = 0;
   char sign = 0;
   typedef typename IntTraits<T>::UnsignedType UnsignedType;
@@ -189,7 +176,7 @@ void fmt::Formatter::FormatInt(T value, unsigned flags, int width, char type) {
 }
 
 template <typename T>
-void fmt::Formatter::FormatDouble(
+void Formatter::FormatDouble(
     T value, unsigned flags, int width, int precision, char type) {
   // Check type.
   switch (type) {
@@ -199,7 +186,10 @@ void fmt::Formatter::FormatDouble(
   case 'e': case 'E': case 'f': case 'g': case 'G':
     break;
   case 'F':
+#ifdef _MSC_VER
+    // MSVC's printf doesn't support 'F'.
     type = 'f';
+#endif
     break;
   default:
     ReportUnknownType(type, "double");
@@ -248,7 +238,30 @@ void fmt::Formatter::FormatDouble(
   }
 }
 
-void fmt::Formatter::DoFormat() {
+// Parses an unsigned integer advancing s to the end of the parsed input.
+// This function assumes that the first character of s is a digit.
+unsigned Formatter::ParseUInt(const char *&s) const {
+  assert('0' <= *s && *s <= '9');
+  unsigned value = 0;
+  do {
+    unsigned new_value = value * 10 + (*s++ - '0');
+    if (new_value < value)  // Check if value wrapped around.
+      ReportError(s, "number is too big in format");
+    value = new_value;
+  } while ('0' <= *s && *s <= '9');
+  return value;
+}
+
+const Formatter::Arg &Formatter::ParseArgIndex(const char *&s) const {
+  if (*s < '0' || *s > '9')
+    ReportError(s, "missing argument index in format string");
+  unsigned arg_index = ParseUInt(s);
+  if (arg_index >= args_.size())
+    ReportError(s, "argument index is out of range in format");
+  return *args_[arg_index];
+}
+
+void Formatter::DoFormat() {
   const char *start = format_;
   format_ = 0;
   const char *s = start;
@@ -262,15 +275,10 @@ void fmt::Formatter::DoFormat() {
     }
     if (c == '}')
       throw FormatError("unmatched '}' in format");
+    num_open_braces_= 1;
     buffer_.append(start, s - 1);
 
-    // Parse argument index.
-    if (*s < '0' || *s > '9')
-      ReportError(s, "missing argument index in format string");
-    unsigned arg_index = ParseUInt(s);
-    if (arg_index >= args_.size())
-      ReportError(s, "argument index is out of range in format");
-    const Arg &arg = *args_[arg_index];
+    const Arg &arg = ParseArgIndex(s);
 
     unsigned flags = 0;
     int width = 0;
@@ -312,6 +320,37 @@ void fmt::Formatter::DoFormat() {
           if (value > INT_MAX)
             ReportError(s, "number is too big in format");
           precision = value;
+        } else if (*s == '{') {
+          ++s;
+          ++num_open_braces_;
+          const Arg &precision_arg = ParseArgIndex(s);
+          unsigned long value = 0;
+          switch (precision_arg.type) {
+          case INT:
+            if (precision_arg.int_value < 0)
+              ReportError(s, "negative precision in format");
+            value = precision_arg.int_value;
+            break;
+          case UINT:
+            value = precision_arg.uint_value;
+            break;
+          case LONG:
+            if (precision_arg.long_value < 0)
+              ReportError(s, "negative precision in format");
+            value = precision_arg.long_value;
+            break;
+          case ULONG:
+            value = precision_arg.ulong_value;
+            break;
+          default:
+            ReportError(s, "precision is not integer");
+          }
+          if (value > INT_MAX)
+            ReportError(s, "number is too big in format");
+          precision = value;
+          if (*s++ != '}')
+            throw FormatError("unmatched '{' in format");
+          --num_open_braces_;
         } else {
           ReportError(s, "missing precision in format");
         }
