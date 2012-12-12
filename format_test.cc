@@ -480,8 +480,11 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ("392.65", str(Format("{0:G}") << 392.65));
   EXPECT_EQ("392.650000", str(Format("{0:f}") << 392.65));
   EXPECT_EQ("392.650000", str(Format("{0:F}") << 392.65));
-  EXPECT_EQ("3.926500e+02", str(Format("{0:e}") << 392.65));
-  EXPECT_EQ("3.926500E+02", str(Format("{0:E}") << 392.65));
+  char buffer[256];
+  sprintf(buffer, "%e", 392.65);
+  EXPECT_EQ(buffer, str(Format("{0:e}") << 392.65));
+  sprintf(buffer, "%E", 392.65);
+  EXPECT_EQ(buffer, str(Format("{0:E}") << 392.65));
   EXPECT_EQ("+0000392.6", str(Format("{0:+010.4g}") << 392.65));
 }
 
@@ -493,8 +496,10 @@ TEST(FormatterTest, FormatLongDouble) {
   EXPECT_EQ("392.65", str(Format("{0:G}") << 392.65l));
   EXPECT_EQ("392.650000", str(Format("{0:f}") << 392.65l));
   EXPECT_EQ("392.650000", str(Format("{0:F}") << 392.65l));
-  EXPECT_EQ("3.926500e+02", str(Format("{0:e}") << 392.65l));
-  EXPECT_EQ("3.926500E+02", str(Format("{0:E}") << 392.65l));
+  char buffer[256];
+  sprintf(buffer, "%Le", 392.65);
+  EXPECT_EQ(buffer, str(Format("{0:e}") << 392.65));
+  sprintf(buffer, "%LE", 392.65);
   EXPECT_EQ("+0000392.6", str(Format("{0:+010.4g}") << 392.65l));
 }
 

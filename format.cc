@@ -196,7 +196,10 @@ void fmt::Formatter::FormatDouble(
   case 0:
     type = 'g';
     break;
-  case 'e': case 'E': case 'f': case 'F': case 'g': case 'G':
+  case 'e': case 'E': case 'f': case 'g': case 'G':
+    break;
+  case 'F':
+    type = 'f';
     break;
   default:
     ReportUnknownType(type, "double");
