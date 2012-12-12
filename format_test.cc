@@ -69,8 +69,8 @@ class TestString {
 
 TEST(ArrayTest, Ctor) {
   fmt::Array<char, 123> array;
-  EXPECT_EQ(0, array.size());
-  EXPECT_EQ(123, array.capacity());
+  EXPECT_EQ(0u, array.size());
+  EXPECT_EQ(123u, array.capacity());
 }
 
 TEST(ArrayTest, Access) {
@@ -88,12 +88,12 @@ TEST(ArrayTest, Resize) {
   array[10] = 42;
   EXPECT_EQ(42, array[10]);
   array.resize(20);
-  EXPECT_EQ(20, array.size());
-  EXPECT_EQ(123, array.capacity());
+  EXPECT_EQ(20u, array.size());
+  EXPECT_EQ(123u, array.capacity());
   EXPECT_EQ(42, array[10]);
   array.resize(5);
-  EXPECT_EQ(5, array.size());
-  EXPECT_EQ(123, array.capacity());
+  EXPECT_EQ(5u, array.size());
+  EXPECT_EQ(123u, array.capacity());
   EXPECT_EQ(42, array[10]);
 }
 
@@ -103,8 +103,8 @@ TEST(ArrayTest, Grow) {
   for (int i = 0; i < 10; ++i)
     array[i] = i * i;
   array.resize(20);
-  EXPECT_EQ(20, array.size());
-  EXPECT_EQ(20, array.capacity());
+  EXPECT_EQ(20u, array.size());
+  EXPECT_EQ(20u, array.capacity());
   for (int i = 0; i < 10; ++i)
     EXPECT_EQ(i * i, array[i]);
 }
@@ -113,20 +113,20 @@ TEST(ArrayTest, Clear) {
   fmt::Array<char, 10> array;
   array.resize(20);
   array.clear();
-  EXPECT_EQ(0, array.size());
-  EXPECT_EQ(20, array.capacity());
+  EXPECT_EQ(0u, array.size());
+  EXPECT_EQ(20u, array.capacity());
 }
 
 TEST(ArrayTest, PushBack) {
   fmt::Array<int, 10> array;
   array.push_back(11);
   EXPECT_EQ(11, array[0]);
-  EXPECT_EQ(1, array.size());
+  EXPECT_EQ(1u, array.size());
   array.resize(10);
   array.push_back(22);
   EXPECT_EQ(22, array[10]);
-  EXPECT_EQ(11, array.size());
-  EXPECT_EQ(15, array.capacity());
+  EXPECT_EQ(11u, array.size());
+  EXPECT_EQ(15u, array.capacity());
 }
 
 TEST(ArrayTest, Append) {
@@ -134,13 +134,13 @@ TEST(ArrayTest, Append) {
   const char *test = "test";
   array.append(test, test + 5);
   EXPECT_STREQ("test", &array[0]);
-  EXPECT_EQ(5, array.size());
+  EXPECT_EQ(5u, array.size());
   array.resize(10);
   array.append(test, test + 2);
   EXPECT_EQ('t', array[10]);
   EXPECT_EQ('e', array[11]);
-  EXPECT_EQ(12, array.size());
-  EXPECT_EQ(15, array.capacity());
+  EXPECT_EQ(12u, array.size());
+  EXPECT_EQ(15u, array.capacity());
 }
 
 TEST(FormatterTest, Escape) {
@@ -363,7 +363,7 @@ void CheckUnknownTypes(
   const char *special = ".0123456789}";
   for (int c = CHAR_MIN; c <= CHAR_MAX; ++c) {
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
-    sprintf(format, "{0:1%c}", c, type_name);
+    sprintf(format, "{0:1%c}", c);
     if (std::isprint(c))
       sprintf(message, "unknown format code '%c' for %s", c, type_name);
     else
@@ -525,7 +525,7 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
 
 TEST(FormatterTest, FormatterCtor) {
   Formatter format;
-  EXPECT_EQ(0, format.size());
+  EXPECT_EQ(0u, format.size());
   EXPECT_STREQ("", format.data());
   EXPECT_STREQ("", format.c_str());
   EXPECT_EQ("", format.str());
@@ -618,7 +618,7 @@ TEST(ActiveFormatterTest, ArgLifetime) {
 
 struct PrintError {
   void operator()(const fmt::Formatter &f) const {
-    //std::cerr << "Error: " << f.str() << std::endl;
+    std::cerr << "Error: " << f.str() << std::endl;
   }
 };
 

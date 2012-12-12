@@ -58,28 +58,23 @@ unsigned ParseUInt(const char *&s) {
   return value;
 }
 
-// Maps an integer type T to its unsigned counterpart.
+// Information about an integer type.
 template <typename T>
-struct GetUnsigned;
-
-template <>
-struct GetUnsigned<int> {
-  typedef unsigned Type;
+struct IntTraits {
+  typedef T UnsignedType;
+  static bool IsNegative(T) { return false; }
 };
 
 template <>
-struct GetUnsigned<unsigned> {
-  typedef unsigned Type;
+struct IntTraits<int> {
+  typedef unsigned UnsignedType;
+  static bool IsNegative(int value) { return value < 0; }
 };
 
 template <>
-struct GetUnsigned<long> {
-  typedef unsigned long Type;
-};
-
-template <>
-struct GetUnsigned<unsigned long> {
-  typedef unsigned long Type;
+struct IntTraits<long> {
+  typedef unsigned long UnsignedType;
+  static bool IsNegative(long value) { return value < 0; }
 };
 
 template <typename T>
@@ -93,9 +88,9 @@ template <typename T>
 void fmt::Formatter::FormatInt(T value, unsigned flags, int width, char type) {
   int size = 0;
   char sign = 0;
-  typedef typename GetUnsigned<T>::Type UnsignedType;
+  typedef typename IntTraits<T>::UnsignedType UnsignedType;
   UnsignedType abs_value = value;
-  if (value < 0) {
+  if (IntTraits<T>::IsNegative(value)) {
     sign = '-';
     ++size;
     abs_value = -value;
@@ -337,13 +332,13 @@ void fmt::Formatter::DoFormat() {
     case STRING: {
       if (type && type != 's')
         ReportUnknownType(type, "string");
-      const char *str = arg.string_value;
-      size_t size = arg.size;
+      const char *str = arg.string.value;
+      size_t size = arg.string.size;
       if (size == 0 && *str)
         size = std::strlen(str);
       char *out = GrowBuffer(std::max<size_t>(width, size));
       out = std::copy(str, str + size, out);
-      if (width > size)
+      if (static_cast<unsigned>(width) > size)
         std::fill_n(out, width - size, ' ');
       break;
     }
@@ -356,7 +351,7 @@ void fmt::Formatter::DoFormat() {
     case CUSTOM:
       if (type)
         ReportUnknownType(type, "object");
-      (this->*arg.format)(arg.custom_value, width);
+      (this->*arg.custom.format)(arg.custom.value, width);
       break;
     default:
       assert(false);

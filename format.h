@@ -151,34 +151,50 @@ class Formatter {
       long double long_double_value;
       const void *pointer_value;
       struct {
-        const char *string_value;
+        const char *value;
         std::size_t size;
-      };
+      } string;
       struct {
-        const void *custom_value;
+        const void *value;
         FormatFunc format;
-      };
+      } custom;
     };
     mutable Formatter *formatter;
 
-    Arg(int value) : type(INT), int_value(value) {}
-    Arg(unsigned value) : type(UINT), uint_value(value) {}
-    Arg(long value) : type(LONG), long_value(value) {}
-    Arg(unsigned long value) : type(ULONG), ulong_value(value) {}
-    Arg(double value) : type(DOUBLE), double_value(value) {}
-    Arg(long double value) : type(LONG_DOUBLE), long_double_value(value) {}
-    Arg(char value) : type(CHAR), int_value(value) {}
-    Arg(const char *value) : type(STRING), string_value(value), size(0) {}
-    Arg(char *value) : type(STRING), string_value(value), size(0) {}
-    Arg(const void *value) : type(POINTER), pointer_value(value) {}
-    Arg(void *value) : type(POINTER), pointer_value(value) {}
-    Arg(const std::string &value)
-    : type(STRING), string_value(value.c_str()), size(value.size()) {}
+    Arg(int value) : type(INT), int_value(value), formatter(0) {}
+    Arg(unsigned value) : type(UINT), uint_value(value), formatter(0) {}
+    Arg(long value) : type(LONG), long_value(value), formatter(0) {}
+    Arg(unsigned long value) : type(ULONG), ulong_value(value), formatter(0) {}
+    Arg(double value) : type(DOUBLE), double_value(value), formatter(0) {}
+    Arg(long double value)
+    : type(LONG_DOUBLE), long_double_value(value), formatter(0) {}
+    Arg(char value) : type(CHAR), int_value(value), formatter(0) {}
+
+    Arg(const char *value) : type(STRING), formatter(0) {
+      string.value = value;
+      string.size = 0;
+    }
+
+    Arg(char *value) : type(STRING), formatter(0) {
+      string.value = value;
+      string.size = 0;
+    }
+
+    Arg(const void *value)
+    : type(POINTER), pointer_value(value), formatter(0) {}
+
+    Arg(void *value) : type(POINTER), pointer_value(value), formatter(0) {}
+
+    Arg(const std::string &value) : type(STRING), formatter(0) {
+      string.value = value.c_str();
+      string.size = value.size();
+    }
 
     template <typename T>
-    Arg(const T &value)
-    : type(CUSTOM), custom_value(&value),
-      format(&Formatter::FormatCustomArg<T>) {}
+    Arg(const T &value) : type(CUSTOM), formatter(0) {
+      custom.value = &value;
+      custom.format = &Formatter::FormatCustomArg<T>;
+    }
 
     ~Arg() {
       // Format is called here to make sure that a referred object is
@@ -321,7 +337,7 @@ void Formatter::FormatCustomArg(const void *arg, int width) {
   std::string str(os.str());
   char *out = GrowBuffer(std::max<std::size_t>(width, str.size()));
   std::copy(str.begin(), str.end(), out);
-  if (width > str.size())
+  if (static_cast<unsigned>(width) > str.size())
     std::fill_n(out + str.size(), width - str.size(), ' ');
 }
 
@@ -359,7 +375,8 @@ class ActiveFormatter : public Formatter::ArgInserter {
   // destructor. Note that the buffer content is not copied because the
   // the buffer in ActiveFormatter is populated when all the arguments
   // are provided.
-  ActiveFormatter(ActiveFormatter &other) : action_(other.action_) {
+  ActiveFormatter(ActiveFormatter &other)
+  : ArgInserter(0), action_(other.action_) {
     other.ResetFormatter();
     ArgInserter::operator=(formatter_(other.formatter_.format_));
   }

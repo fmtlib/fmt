@@ -11,6 +11,10 @@ endif ()
 project(FORMAT)
 
 add_library(format format.cc)
+if (CMAKE_COMPILER_IS_GNUCXX)
+  set_target_properties(format PROPERTIES COMPILE_FLAGS
+    "-Wall -Wextra -pedantic")
+endif ()
 
 # We compile Google Test ourselves instead of using pre-compiled libraries.
 # See the Google Test FAQ "Why is it not recommended to install a
@@ -23,6 +27,10 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
   enable_testing()
   add_executable(format_test format_test.cc gtest/src/gtest_main.cc)
   target_link_libraries(format_test format gtest)
+  if (CMAKE_COMPILER_IS_GNUCXX)
+    set_target_properties(format_test PROPERTIES COMPILE_FLAGS
+      "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
+  endif ()
   add_test(format_test format_test)
 endif ()
 
