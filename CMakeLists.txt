@@ -21,12 +21,13 @@ endif ()
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
+  set(gtest_force_shared_crt ON)
   add_subdirectory(gtest)
   include_directories(gtest/include)
   link_directories(${CMAKE_CURRENT_BINARY_DIR}/gtest)
   enable_testing()
-  add_executable(format_test format.cc format_test.cc gtest/src/gtest_main.cc)
-  target_link_libraries(format_test gtest)
+  add_executable(format_test format_test.cc gtest/src/gtest_main.cc)
+  target_link_libraries(format_test format gtest)
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(format_test PROPERTIES COMPILE_FLAGS
       "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
