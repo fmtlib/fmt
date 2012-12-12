@@ -37,6 +37,8 @@
 
 namespace format {
 
+namespace internal {
+
 // A simple array for POD types with the first SIZE elements stored in
 // the object itself. It supports a subset of std::vector's operations.
 template <typename T, std::size_t SIZE>
@@ -111,6 +113,9 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
   size_ += num_elements;
 }
 
+class ArgInserter;
+}
+
 class FormatError : public std::runtime_error {
  public:
   explicit FormatError(const std::string &message)
@@ -134,7 +139,7 @@ class FormatError : public std::runtime_error {
 class Formatter {
  private:
   enum { INLINE_BUFFER_SIZE = 500 };
-  Array<char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
+  internal::Array<char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
 
   enum Type {
     // Numeric types should go first.
@@ -236,73 +241,11 @@ class Formatter {
   };
 
   enum { NUM_INLINE_ARGS = 10 };
-  Array<const Arg*, NUM_INLINE_ARGS> args_;  // Format arguments.
+  internal::Array<const Arg*, NUM_INLINE_ARGS> args_;  // Format arguments.
 
   const char *format_;  // Format string.
 
-  template <typename Action>
-  friend class ActiveFormatter;
-
-  // This is a transient object that normally exists only as a temporary
-  // returned by one of the formatting functions. It stores a reference
-  // to a formatter and provides operator<< that feeds arguments to the
-  // formatter.
-  class ArgInserter {
-   private:
-    mutable Formatter *formatter_;
-
-    friend class Formatter;
-
-   protected:
-    explicit ArgInserter(Formatter *f = 0) : formatter_(f) {}
-
-    ArgInserter(ArgInserter& other)
-    : formatter_(other.formatter_) {
-      other.formatter_ = 0;
-    }
-
-    ArgInserter& operator=(const ArgInserter& other) {
-      formatter_ = other.formatter_;
-      other.formatter_ = 0;
-      return *this;
-    }
-
-    const Formatter *Format() const {
-      Formatter *f = formatter_;
-      if (f) {
-        formatter_ = 0;
-        f->Format();
-      }
-      return f;
-    }
-
-    Formatter *formatter() const { return formatter_; }
-
-    void ResetFormatter() { formatter_ = 0; }
-
-   public:
-    ~ArgInserter() {
-      if (formatter_)
-        formatter_->Format();
-    }
-
-    // Feeds an argument to a formatter.
-    ArgInserter &operator<<(const Formatter::Arg &arg) {
-      arg.formatter = formatter_;
-      formatter_->Add(arg);
-      return *this;
-    }
-
-    // Performs formatting and returns a C string with the output.
-    friend const char *c_str(const ArgInserter &af) {
-      return af.Format()->c_str();
-    }
-
-    // Performs formatting and returns a std::string with the output.
-    friend std::string str(const ArgInserter &af) {
-      return af.Format()->str();
-    }
-  };
+  friend class internal::ArgInserter;
 
   void Add(const Arg &arg) {
     args_.push_back(&arg);
@@ -342,7 +285,7 @@ class Formatter {
   // Formats a string appending the output to the internal buffer.
   // Arguments are accepted through the returned ArgInserter object
   // using inserter operator<<.
-  ArgInserter operator()(const char *format);
+  internal::ArgInserter operator()(const char *format);
 
   std::size_t size() const { return buffer_.size(); }
 
@@ -351,6 +294,71 @@ class Formatter {
 
   std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
 };
+
+namespace internal {
+
+// This is a transient object that normally exists only as a temporary
+// returned by one of the formatting functions. It stores a reference
+// to a formatter and provides operator<< that feeds arguments to the
+// formatter.
+class ArgInserter {
+ private:
+  mutable Formatter *formatter_;
+
+  friend class format::Formatter;
+
+ protected:
+  explicit ArgInserter(Formatter *f = 0) : formatter_(f) {}
+
+  ArgInserter(ArgInserter& other)
+  : formatter_(other.formatter_) {
+    other.formatter_ = 0;
+  }
+
+  ArgInserter& operator=(const ArgInserter& other) {
+    formatter_ = other.formatter_;
+    other.formatter_ = 0;
+    return *this;
+  }
+
+  const Formatter *Format() const {
+    Formatter *f = formatter_;
+    if (f) {
+      formatter_ = 0;
+      f->Format();
+    }
+    return f;
+  }
+
+  Formatter *formatter() const { return formatter_; }
+  const char *format() const { return formatter_->format_; }
+
+  void ResetFormatter() { formatter_ = 0; }
+
+ public:
+  ~ArgInserter() {
+    if (formatter_)
+      formatter_->Format();
+  }
+
+  // Feeds an argument to a formatter.
+  ArgInserter &operator<<(const Formatter::Arg &arg) {
+    arg.formatter = formatter_;
+    formatter_->Add(arg);
+    return *this;
+  }
+
+  // Performs formatting and returns a C string with the output.
+  friend const char *c_str(const ArgInserter &af) {
+    return af.Format()->c_str();
+  }
+
+  // Performs formatting and returns a std::string with the output.
+  friend std::string str(const ArgInserter &af) {
+    return af.Format()->str();
+  }
+};
+}
 
 template <typename T>
 void Formatter::FormatCustomArg(const void *arg, int width) {
@@ -364,8 +372,8 @@ void Formatter::FormatCustomArg(const void *arg, int width) {
     std::fill_n(out + str.size(), width - str.size(), ' ');
 }
 
-inline Formatter::ArgInserter Formatter::operator()(const char *format) {
-  ArgInserter formatter(this);
+inline internal::ArgInserter Formatter::operator()(const char *format) {
+  internal::ArgInserter formatter(this);
   format_ = format;
   args_.clear();
   return formatter;
@@ -375,7 +383,7 @@ inline Formatter::ArgInserter Formatter::operator()(const char *format) {
 // This is a transient object that normally exists only as a temporary
 // returned by one of the formatting functions.
 template <typename Action>
-class ActiveFormatter : public Formatter::ArgInserter {
+class ActiveFormatter : public internal::ArgInserter {
  private:
   Formatter formatter_;
   Action action_;
@@ -400,8 +408,8 @@ class ActiveFormatter : public Formatter::ArgInserter {
   // are provided.
   ActiveFormatter(ActiveFormatter &other)
   : ArgInserter(0), action_(other.action_) {
+    ArgInserter::operator=(formatter_(other.format()));
     other.ResetFormatter();
-    ArgInserter::operator=(formatter_(other.formatter_.format_));
   }
 
   ~ActiveFormatter() {

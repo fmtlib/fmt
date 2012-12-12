@@ -35,6 +35,7 @@
 using std::size_t;
 using std::sprintf;
 
+using fmt::internal::Array;
 using fmt::Formatter;
 using fmt::Format;
 using fmt::FormatError;
@@ -90,23 +91,23 @@ class TestString {
 };
 
 TEST(ArrayTest, Ctor) {
-  fmt::Array<char, 123> array;
+  Array<char, 123> array;
   EXPECT_EQ(0u, array.size());
   EXPECT_EQ(123u, array.capacity());
 }
 
 TEST(ArrayTest, Access) {
-  fmt::Array<char, 10> array;
+  Array<char, 10> array;
   array[0] = 11;
   EXPECT_EQ(11, array[0]);
   array[3] = 42;
   EXPECT_EQ(42, *(&array[0] + 3));
-  const fmt::Array<char, 10> &carray = array;
+  const Array<char, 10> &carray = array;
   EXPECT_EQ(42, carray[3]);
 }
 
 TEST(ArrayTest, Resize) {
-  fmt::Array<char, 123> array;
+  Array<char, 123> array;
   array[10] = 42;
   EXPECT_EQ(42, array[10]);
   array.resize(20);
@@ -120,7 +121,7 @@ TEST(ArrayTest, Resize) {
 }
 
 TEST(ArrayTest, Grow) {
-  fmt::Array<int, 10> array;
+  Array<int, 10> array;
   array.resize(10);
   for (int i = 0; i < 10; ++i)
     array[i] = i * i;
@@ -132,7 +133,7 @@ TEST(ArrayTest, Grow) {
 }
 
 TEST(ArrayTest, Clear) {
-  fmt::Array<char, 10> array;
+  Array<char, 10> array;
   array.resize(20);
   array.clear();
   EXPECT_EQ(0u, array.size());
@@ -140,7 +141,7 @@ TEST(ArrayTest, Clear) {
 }
 
 TEST(ArrayTest, PushBack) {
-  fmt::Array<int, 10> array;
+  Array<int, 10> array;
   array.push_back(11);
   EXPECT_EQ(11, array[0]);
   EXPECT_EQ(1u, array.size());
@@ -152,7 +153,7 @@ TEST(ArrayTest, PushBack) {
 }
 
 TEST(ArrayTest, Append) {
-  fmt::Array<char, 10> array;
+  Array<char, 10> array;
   const char *test = "test";
   array.append(test, test + 5);
   EXPECT_STREQ("test", &array[0]);
