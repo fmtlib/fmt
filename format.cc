@@ -37,6 +37,10 @@
 
 using std::size_t;
 
+#if _MSC_VER
+# define snprintf _snprintf
+#endif
+
 namespace {
 
 // Flags.
