@@ -1,6 +1,8 @@
 format
 ======
 
+.. highlight:: c++
+
 Format is an open-source C++ library that provides
 string formatting functionality similar to `str.format
 <http://docs.python.org/2/library/stdtypes.html#str.format>`__
