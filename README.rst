@@ -27,7 +27,9 @@ Features
 Examples
 --------
 
-This prints "Hello, world!" to stdout::
+This prints "Hello, world!" to stdout:
+
+.. code-block:: c++
 
     fmt::Print("Hello, {0}!") << "world";
 
@@ -90,7 +92,7 @@ The grammar for a replacement field is as follows:
   `precision`: integer | "{" `arg_index` "}"
   `type`: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | "s" | "x" | "X"
 
-Preceding the `width` field with ``0`` makes the padding to be placed
+Preceding the `width` field with ``0`` forces the padding to be placed
 after the sign (if any) but before the digits. This is used for printing
 fields in the form ``+000000120``. This option is only valid for numeric types.
 
@@ -306,3 +308,5 @@ Some ideas used in the implementation are borrowed from `Loki
 <http://loki-lib.sourceforge.net/>`__ SafeFormat and `Diagnostic API
 <http://clang.llvm.org/doxygen/classclang_1_1Diagnostic.html>`__ in
 `Clang <http://clang.llvm.org/>`__.
+Format string syntax is based on Python's `str.format
+<http://docs.python.org/2/library/stdtypes.html#str.format>`__.
