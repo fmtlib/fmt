@@ -665,11 +665,19 @@ TEST(FormatterTest, FormatterAppend) {
   EXPECT_EQ("part1part2", format.str());
 }
 
-TEST(FormatterTest, FormatterExample) {
+TEST(FormatterTest, FormatterExamples) {
   Formatter format;
   format("Current point:\n");
   format("({0:+f}, {1:+f})\n") << -3.14 << 3.14;
   EXPECT_EQ("Current point:\n(-3.140000, +3.140000)\n", format.str());
+
+  {
+    fmt::Formatter format;
+    for (int i = 0; i < 10; i++)
+      format("{0}") << i;
+    std::string s = format.str(); // s == 0123456789
+    EXPECT_EQ("0123456789", s);
+  }
 }
 
 TEST(FormatterTest, ArgInserter) {
