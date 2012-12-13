@@ -1,8 +1,6 @@
 format
 ======
 
-.. highlight:: c++
-
 Format is an open-source C++ library that provides
 string formatting functionality similar to `str.format
 <http://docs.python.org/2/library/stdtypes.html#str.format>`__
@@ -29,19 +27,23 @@ Features
 Examples
 --------
 
-This prints "Hello, world!" to stdout:
+This prints ``Hello, world!`` to stdout:
 
 .. code-block:: c++
 
     fmt::Print("Hello, {0}!") << "world";
 
-Arguments are accessed by position and arguments' indices can be repeated::
+Arguments are accessed by position and arguments' indices can be repeated:
+
+.. code-block:: c++
 
     std::string s = str(fmt::Format("{0}{1}{0}") << "abra" << "cad");
     // s == "abracadabra"
 
 An object of any user-defined type for which there is an overloaded
-``std::ostream`` insertion operator (``operator<<``) can be formatted::
+``std::ostream`` insertion operator (``operator<<``) can be formatted:
+
+.. code-block:: c++
 
     class Date {
       int year_, month_, day_;
@@ -59,7 +61,9 @@ An object of any user-defined type for which there is an overloaded
 
 You can use ``fmt::ActiveFormatter`` to create your own functions
 similar to ``fmt::Format`` and ``fmt::Print`` with an arbitrary action
-performed when formatting is complete::
+performed when formatting is complete:
+
+.. code-block:: c++
 
     struct PrintError {
       void operator()(const fmt::Formatter &f) const {
@@ -125,11 +129,15 @@ platforms.
 IOStreams
 ~~~~~~~~~
 
-The main issue with IOStreams is best illustrated with an example::
+The main issue with IOStreams is best illustrated with an example:
+
+.. code-block:: c++
 
     std::cout << std::setprecision(2) << std::fixed << 1.23456 << "\n";
 
-which is a lot of typing compared to printf::
+which is a lot of typing compared to printf:
+
+.. code-block:: c++
 
     printf("%.2f\n", 1.23456);
 
