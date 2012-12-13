@@ -81,16 +81,16 @@ escaped by doubling: ``{{`` and ``}}``.
 
 The grammar for a replacement field is as follows:
 
-.. productionlist::
+.. parsed-literal::
 
-  replacement_field: "{" `arg_index` [":" `format_spec`] "}"
-  arg_index: integer
-  format_spec: ["+"]["0"][`width`]["." `precision`][`type`]
-  width: integer
-  precision: integer | "{" `arg_index` "}"
-  type: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | "s" | "x" | "X"
+  `replacement_field`: "{" `arg_index` [":" `format_spec`] "}"
+  `arg_index`: integer
+  `format_spec`: ["+"]["0"][`width`]["." `precision`][`type`]
+  `width`: integer
+  `precision`: integer | "{" `arg_index` "}"
+  `type`: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | "s" | "x" | "X"
 
-Preceding the `width`_ field with ``0`` makes the padding to be placed
+Preceding the `width` field with ``0`` makes the padding to be placed
 after the sign (if any) but before the digits. This is used for printing
 fields in the form ``+000000120``. This option is only valid for numeric types.
 
