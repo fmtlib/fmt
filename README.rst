@@ -207,11 +207,11 @@ further details see the `source
 ============== ========
 test name      run time
 ============== ========
-libc printf     1.27s
-std::ostream    2.10s
-format          1.36s
-tinyformat      2.63s
-boost::format  10.36s
+libc printf     1.28s
+std::ostream    2.09s
+format          1.32s
+tinyformat      2.55s
+boost::format  10.42s
 ============== ========
 
 As you can see boost::format is much slower than the alternative methods; this
