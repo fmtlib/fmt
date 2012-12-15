@@ -303,6 +303,9 @@ class Formatter {
   std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
 };
 
+template <typename Action>
+class ActiveFormatter;
+
 namespace internal {
 
 // This is a transient object that normally exists only as a temporary
@@ -315,18 +318,21 @@ class ArgInserter {
 
   friend class format::Formatter;
 
+  // Do not implement.
+  void operator=(const ArgInserter& other);
+
  protected:
   explicit ArgInserter(Formatter *f = 0) : formatter_(f) {}
 
-  ArgInserter(ArgInserter& other)
-  : formatter_(other.formatter_) {
+  void Init(Formatter &f, const char *format) {
+    const ArgInserter &other = f(format);
+    formatter_ = other.formatter_;
     other.formatter_ = 0;
   }
 
-  ArgInserter& operator=(const ArgInserter& other) {
-    formatter_ = other.formatter_;
+  ArgInserter(const ArgInserter& other)
+  : formatter_(other.formatter_) {
     other.formatter_ = 0;
-    return *this;
   }
 
   const Formatter *Format() const {
@@ -341,7 +347,7 @@ class ArgInserter {
   Formatter *formatter() const { return formatter_; }
   const char *format() const { return formatter_->format_; }
 
-  void ResetFormatter() { formatter_ = 0; }
+  void ResetFormatter() const { formatter_ = 0; }
 
  public:
   ~ArgInserter() {
@@ -406,7 +412,7 @@ class ActiveFormatter : public internal::ArgInserter {
   // for examples of action classes.
   explicit ActiveFormatter(const char *format, Action a = Action())
   : action_(a) {
-    ArgInserter::operator=(formatter_(format));
+    Init(formatter_, format);
   }
 
   // Creates an active formatter with the same format string and action
@@ -414,9 +420,9 @@ class ActiveFormatter : public internal::ArgInserter {
   // destructor. Note that the buffer content is not copied because the
   // the buffer in ActiveFormatter is populated when all the arguments
   // are provided.
-  ActiveFormatter(ActiveFormatter &other)
+  ActiveFormatter(const ActiveFormatter &other)
   : ArgInserter(0), action_(other.action_) {
-    ArgInserter::operator=(formatter_(other.format()));
+    Init(formatter_, other.format());
     other.ResetFormatter();
   }
 
