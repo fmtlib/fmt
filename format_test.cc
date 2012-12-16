@@ -722,8 +722,8 @@ TEST(ActiveFormatterTest, ActionNotCalledOnError) {
 }
 
 // The test doesn't compile on older compilers which follow C++03 and
-// require an accessible copy ctor when binding a temporary to a const
-// reference.
+// require an accessible copy constructor when binding a temporary to
+// a const reference.
 #if __GNUC__ >= 4 && __GNUC_MINOR__ >= 7
 TEST(ActiveFormatterTest, ArgLifetime) {
   // The following code is for testing purposes only. It is a definite abuse
