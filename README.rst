@@ -23,6 +23,7 @@ Features
   reported using exceptions.
 * Ease of use: small self-contained code base, no external dependencies,
   permissive BSD `license`_.
+* `Portability`_
 
 Examples
 --------
@@ -280,6 +281,17 @@ Next use the following commands to run the speed test::
 or the bloat test::
 
     $ make bloat_test
+
+Portability
+-----------
+
+The format library has been tested on the following systems and compilers:
+
+1. 64-bit (amd64) GNU/Linux with GCC 4.6.3
+2. 32-bit (i386) GNU/Linux with GCC 4.6.3
+3. Mac OS X with GCC 4.2.1
+5. 64-bit Windows with Visual C++ 2010
+4. 32-bit Windows with Visual C++ 2010
 
 License
 -------
