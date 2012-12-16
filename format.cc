@@ -25,6 +25,9 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// Disable useless MSVC warnings.
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "format.h"
 
 #include <stdint.h>
