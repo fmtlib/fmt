@@ -349,6 +349,16 @@ class ArgInserter {
 
   void ResetFormatter() const { formatter_ = 0; }
 
+  struct Proxy {
+    Formatter *formatter;
+    explicit Proxy(Formatter *f) : formatter(f) {}
+  };
+
+  static Formatter *Format(Proxy p) {
+    p.formatter->Format();
+    return p.formatter;
+  }
+
  public:
   ~ArgInserter() {
     if (formatter_)
@@ -362,14 +372,20 @@ class ArgInserter {
     return *this;
   }
 
+  operator Proxy() {
+    Formatter *f = formatter_;
+    formatter_ = 0;
+    return Proxy(f);
+  }
+
   // Performs formatting and returns a C string with the output.
-  friend const char *c_str(const ArgInserter &af) {
-    return af.Format()->c_str();
+  friend const char *c_str(Proxy p) {
+    return Format(p)->c_str();
   }
 
   // Performs formatting and returns a std::string with the output.
-  friend std::string str(const ArgInserter &af) {
-    return af.Format()->str();
+  friend std::string str(Proxy p) {
+    return Format(p)->str();
   }
 };
 }

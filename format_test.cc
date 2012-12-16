@@ -731,7 +731,6 @@ TEST(ActiveFormatterTest, ArgLifetime) {
   // been destroyed, but ArgInserter dtor hasn't been called yet.
   // But that's OK since the Arg's dtor takes care of this and
   // calls Format.
-  EXPECT_EQ("test", str(af));
 }
 #endif
 
