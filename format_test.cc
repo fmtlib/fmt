@@ -41,6 +41,9 @@ using fmt::Formatter;
 using fmt::Format;
 using fmt::FormatError;
 
+// Disable useless MSVC warnings.
+#define _CRT_SECURE_NO_WARNINGS
+
 #define FORMAT_TEST_THROW_(statement, expected_exception, message, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
   if (::testing::internal::ConstCharPtr gtest_msg = "") { \
