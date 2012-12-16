@@ -483,7 +483,7 @@ void CheckUnknownTypes(
     char c = i;
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
     sprintf(format, "{0:1%c}", c);
-    if (std::isprint(c))
+    if (std::isprint(static_cast<unsigned char>(c)))
       sprintf(message, "unknown format code '%c' for %s", c, type_name);
     else
       sprintf(message, "unknown format code '\\x%02x' for %s", c, type_name);
