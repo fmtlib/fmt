@@ -29,7 +29,7 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
   include_directories(gtest/include)
   link_directories(${CMAKE_CURRENT_BINARY_DIR}/gtest)
   enable_testing()
-  add_executable(format_test format_test.cc gtest/src/gtest_main.cc)
+  add_executable(format_test format_test.cc)
   target_link_libraries(format_test format gtest)
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(format_test PROPERTIES COMPILE_FLAGS
