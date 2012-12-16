@@ -731,8 +731,8 @@ TEST(ActiveFormatterTest, ArgLifetime) {
   const fmt::ActiveFormatter<fmt::Ignore> &af = fmt::Format("{0}");
   const_cast<fmt::ActiveFormatter<fmt::Ignore>&>(af) << std::string("test");
   // String object passed as an argument to ActiveFormatter has
-  // been destroyed, but ArgInserter destructor hasn't been called yet.
-  // But that's OK since the Arg's destructor takes care of this and
+  // been destroyed, but ArgInserter dtor hasn't been called yet.
+  // But that's OK since the Arg's dtor takes care of this and
   // calls Format.
 }
 #endif
