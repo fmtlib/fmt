@@ -718,6 +718,10 @@ TEST(ActiveFormatterTest, ActionNotCalledOnError) {
   EXPECT_EQ(0, num_calls);
 }
 
+// The test doesn't compile on MSVC because the latter follows C++03 and
+// requires an accessible copy ctor when binding a temporary to a const
+// reference.
+#ifndef _MSC_VER
 TEST(ActiveFormatterTest, ArgLifetime) {
   // The following code is for testing purposes only. It is a definite abuse
   // of the API and shouldn't be used in real applications.
@@ -729,6 +733,7 @@ TEST(ActiveFormatterTest, ArgLifetime) {
   // calls Format.
   EXPECT_EQ("test", str(af));
 }
+#endif
 
 struct PrintError {
   void operator()(const fmt::Formatter &f) const {
