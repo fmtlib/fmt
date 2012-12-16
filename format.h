@@ -402,8 +402,18 @@ class ActiveFormatter : public internal::ArgInserter {
   Formatter formatter_;
   Action action_;
 
+  // Forbid copying other than from a temporary. Do not implement.
+  ActiveFormatter(ActiveFormatter &);
+
   // Do not implement.
-  ActiveFormatter& operator=(const ActiveFormatter&);
+  ActiveFormatter& operator=(const ActiveFormatter &);
+
+  struct Proxy {
+    const char *format;
+    Action action;
+
+    Proxy(const char *fmt, Action a) : format(fmt), action(a) {}
+  };
 
  public:
   // Creates an active formatter with a format string and an action.
@@ -415,20 +425,20 @@ class ActiveFormatter : public internal::ArgInserter {
     Init(formatter_, format);
   }
 
-  // Creates an active formatter with the same format string and action
-  // as other has and modifies other so that it doesn't call action in
-  // destructor. Note that the buffer content is not copied because the
-  // the buffer in ActiveFormatter is populated when all the arguments
-  // are provided.
-  ActiveFormatter(const ActiveFormatter &other)
-  : ArgInserter(0), action_(other.action_) {
-    Init(formatter_, other.format());
-    other.ResetFormatter();
+  ActiveFormatter(const Proxy &p)
+  : ArgInserter(0), action_(p.action) {
+    Init(formatter_, p.format);
   }
 
   ~ActiveFormatter() {
     if (formatter())
       action_(*Format());
+  }
+
+  operator Proxy() {
+    const char *fmt = format();
+    ResetFormatter();
+    return Proxy(fmt, action_);
   }
 };
 
@@ -441,8 +451,7 @@ struct Ignore {
 // Example:
 //   std::string s = str(Format("Elapsed time: {0:.2f} seconds") << 1.23);
 inline ActiveFormatter<Ignore> Format(const char *format) {
-  ActiveFormatter<Ignore> af(format);
-  return af;
+  return ActiveFormatter<Ignore>(format);
 }
 
 // A formatting action that writes formatted output to stdout.
@@ -456,8 +465,7 @@ struct Write {
 // Example:
 //   Print("Elapsed time: {0:.2f} seconds") << 1.23;
 inline ActiveFormatter<Write> Print(const char *format) {
-  ActiveFormatter<Write> af(format);
-  return af;
+  return ActiveFormatter<Write>(format);
 }
 }
 

@@ -708,20 +708,6 @@ TEST(ActiveFormatterTest, Action) {
   EXPECT_EQ(1, num_calls);
 }
 
-TEST(ActiveFormatterTest, Copy) {
-  int num_calls = 0;
-  typedef fmt::ActiveFormatter<CountCalls> AF;
-  std::auto_ptr<AF> af(new AF("test", CountCalls(num_calls)));
-  EXPECT_EQ(0, num_calls);
-  {
-    AF copy(*af);
-    EXPECT_EQ(0, num_calls);
-    af.reset();
-    EXPECT_EQ(0, num_calls);
-  }
-  EXPECT_EQ(1, num_calls);
-}
-
 TEST(ActiveFormatterTest, ActionNotCalledOnError) {
   int num_calls = 0;
   {
@@ -751,8 +737,7 @@ struct PrintError {
 };
 
 fmt::ActiveFormatter<PrintError> ReportError(const char *format) {
-  fmt::ActiveFormatter<PrintError> af(format);
-  return af;
+  return fmt::ActiveFormatter<PrintError>(format);
 }
 
 TEST(ActiveFormatterTest, Example) {
