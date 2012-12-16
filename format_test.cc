@@ -25,6 +25,9 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// Disable useless MSVC warnings.
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <cctype>
 #include <cfloat>
 #include <climits>
@@ -40,9 +43,6 @@ using fmt::internal::Array;
 using fmt::Formatter;
 using fmt::Format;
 using fmt::FormatError;
-
-// Disable useless MSVC warnings.
-#define _CRT_SECURE_NO_WARNINGS
 
 #define FORMAT_TEST_THROW_(statement, expected_exception, message, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
