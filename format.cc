@@ -51,7 +51,7 @@ namespace {
 enum { PLUS_FLAG = 1, ZERO_FLAG = 2, HEX_PREFIX_FLAG = 4 };
 
 void ReportUnknownType(char code, const char *type) {
-  if (std::isprint(code)) {
+  if (std::isprint(static_cast<unsigned char>(code))) {
     throw fmt::FormatError(
         str(fmt::Format("unknown format code '{0}' for {1}") << code << type));
   }
