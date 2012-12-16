@@ -479,7 +479,8 @@ void CheckUnknownTypes(
     const T &value, const char *types, const char *type_name) {
   char format[256], message[256];
   const char *special = ".0123456789}";
-  for (int c = CHAR_MIN; c <= CHAR_MAX; ++c) {
+  for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
+    char c = i;
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
     sprintf(format, "{0:1%c}", c);
     if (std::isprint(c))
