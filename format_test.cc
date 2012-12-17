@@ -621,6 +621,27 @@ TEST(FormatterTest, FormatString) {
   EXPECT_EQ("test", str(Format("{0}") << std::string("test")));
 }
 
+TEST(FormatterTest, Write) {
+  Formatter format;
+  format.Write("12", 2);
+  EXPECT_EQ("12", format.str());
+  format.Write("34", 4);
+  EXPECT_EQ("1234  ", format.str());
+  format.Write("56", 0);
+  EXPECT_EQ("1234  56", format.str());
+}
+
+TEST(ArgFormatterTest, Write) {
+  Formatter formatter;
+  fmt::ArgFormatter format(formatter);
+  format.Write("12", 2);
+  EXPECT_EQ("12", formatter.str());
+  format.Write("34", 4);
+  EXPECT_EQ("1234  ", formatter.str());
+  format.Write("56", 0);
+  EXPECT_EQ("1234  56", formatter.str());
+}
+
 class Date {
   int year_, month_, day_;
  public:
@@ -632,12 +653,22 @@ class Date {
   }
 };
 
-TEST(FormatterTest, FormatCustom) {
+TEST(FormatterTest, FormatUsingIOStreams) {
   EXPECT_EQ("a string", str(Format("{0}") << TestString("a string")));
   std::string s = str(fmt::Format("The date is {0}") << Date(2012, 12, 9));
   EXPECT_EQ("The date is 2012-12-9", s);
   Date date(2012, 12, 9);
   CheckUnknownTypes(date, "", "object");
+}
+
+class Answer {};
+
+void Format(fmt::ArgFormatter &af, unsigned width, Answer) {
+  af.Write("42", width);
+}
+
+TEST(FormatterTest, CustomFormat) {
+  EXPECT_EQ("42", str(Format("{0}") << Answer()));
 }
 
 TEST(FormatterTest, FormatStringFromSpeedTest) {

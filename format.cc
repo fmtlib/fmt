@@ -433,3 +433,10 @@ void Formatter::DoFormat() {
   buffer_.append(start, s + 1);
   buffer_.resize(buffer_.size() - 1);  // Don't count the terminating zero.
 }
+
+void Formatter::Write(const std::string &s, unsigned width) {
+  char *out = GrowBuffer(std::max<std::size_t>(width, s.size()));
+  std::copy(s.begin(), s.end(), out);
+  if (width > s.size())
+    std::fill_n(out + s.size(), width - s.size(), ' ');
+}

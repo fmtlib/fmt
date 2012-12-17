@@ -148,7 +148,7 @@ class Formatter {
     CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
 
-  typedef void (Formatter::*FormatFunc)(const void *arg, int width);
+  typedef void (Formatter::*FormatFunc)(const void *arg, unsigned width);
 
   // A format argument.
   class Arg {
@@ -236,7 +236,7 @@ class Formatter {
       // so it will be alive in the Arg's destructor where Format is called.
       // Note that the string object will not necessarily be alive when
       // the destructor of ArgInserter is called.
-      formatter->Format();
+      formatter->CompleteFormatting();
     }
   };
 
@@ -247,6 +247,7 @@ class Formatter {
   int num_open_braces_;
 
   friend class internal::ArgInserter;
+  friend class ArgFormatter;
 
   void Add(const Arg &arg) {
     args_.push_back(&arg);
@@ -265,7 +266,7 @@ class Formatter {
 
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
-  void FormatCustomArg(const void *arg, int width);
+  void FormatCustomArg(const void *arg, unsigned width);
 
   unsigned ParseUInt(const char *&s) const;
 
@@ -274,7 +275,7 @@ class Formatter {
 
   void DoFormat();
 
-  void Format() {
+  void CompleteFormatting() {
     if (!format_) return;
     DoFormat();
   }
@@ -301,6 +302,10 @@ class Formatter {
   const char *c_str() const { return &buffer_[0]; }
 
   std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
+
+  // Writes a string to the output buffer padding with spaces if
+  // necessary to achieve the desired width.
+  void Write(const std::string &s, unsigned width);
 };
 
 namespace internal {
@@ -336,7 +341,7 @@ class ArgInserter {
     Formatter *f = formatter_;
     if (f) {
       formatter_ = 0;
-      f->Format();
+      f->CompleteFormatting();
     }
     return f;
   }
@@ -352,14 +357,14 @@ class ArgInserter {
   };
 
   static Formatter *Format(Proxy p) {
-    p.formatter->Format();
+    p.formatter->CompleteFormatting();
     return p.formatter;
   }
 
  public:
   ~ArgInserter() {
     if (formatter_)
-      formatter_->Format();
+      formatter_->CompleteFormatting();
   }
 
   // Feeds an argument to a formatter.
@@ -387,16 +392,34 @@ class ArgInserter {
 };
 }
 
+// ArgFormatter provides access to the format buffer within custom
+// Format functions. It is not desirable to pass Formatter to these
+// functions because Formatter::operator() is not reentrant and
+// therefore can't be used for argument formatting.
+class ArgFormatter {
+ private:
+  Formatter &formatter_;
+
+ public:
+  explicit ArgFormatter(Formatter &f) : formatter_(f) {}
+
+  void Write(const std::string &s, unsigned width) {
+    formatter_.Write(s, width);
+  }
+};
+
+// The default formatting function.
 template <typename T>
-void Formatter::FormatCustomArg(const void *arg, int width) {
-  const T &value = *static_cast<const T*>(arg);
+void Format(ArgFormatter &af, unsigned width, const T &value) {
   std::ostringstream os;
   os << value;
-  std::string str(os.str());
-  char *out = GrowBuffer(std::max<std::size_t>(width, str.size()));
-  std::copy(str.begin(), str.end(), out);
-  if (static_cast<unsigned>(width) > str.size())
-    std::fill_n(out + str.size(), width - str.size(), ' ');
+  af.Write(os.str(), width);
+}
+
+template <typename T>
+void Formatter::FormatCustomArg(const void *arg, unsigned width) {
+  ArgFormatter af(*this);
+  Format(af, width, *static_cast<const T*>(arg));
 }
 
 inline internal::ArgInserter Formatter::operator()(const char *format) {
