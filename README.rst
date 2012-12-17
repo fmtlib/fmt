@@ -179,7 +179,7 @@ Loki SafeFormat
 
 SafeFormat is a formatting library which uses printf-like format strings
 and is type safe. It doesn't support user-defined types or positional
-arguments. It makes unconventional use of `operator()` for passing
+arguments. It makes unconventional use of ``operator()`` for passing
 format arguments.
 
 Tinyformat
