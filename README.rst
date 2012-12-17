@@ -287,11 +287,11 @@ Portability
 
 The format library has been tested on the following systems and compilers:
 
-1. 64-bit (amd64) GNU/Linux with GCC 4.6.3
+1. 64-bit (amd64) GNU/Linux with GCC 4.6.3 and 4.7.2
 2. 32-bit (i386) GNU/Linux with GCC 4.6.3
 3. Mac OS X with GCC 4.2.1
-5. 64-bit Windows with Visual C++ 2010
-4. 32-bit Windows with Visual C++ 2010
+4. 64-bit Windows with Visual C++ 2010
+5. 32-bit Windows with Visual C++ 2010
 
 License
 -------
