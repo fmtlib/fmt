@@ -26,6 +26,7 @@
  */
 
 // Disable useless MSVC warnings.
+#undef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "format.h"
@@ -42,6 +43,7 @@ using std::size_t;
 using fmt::Formatter;
 
 #if _MSC_VER
+# undef snprintf
 # define snprintf _snprintf
 #endif
 
