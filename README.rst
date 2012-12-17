@@ -74,8 +74,7 @@ performed when formatting is complete:
 
     // Formats an error message and prints it to std::cerr.
     fmt::ActiveFormatter<PrintError> ReportError(const char *format) {
-      fmt::ActiveFormatter<PrintError> af(format);
-      return af;
+      return fmt::ActiveFormatter<PrintError>(format);
     }
 
     ReportError("File not found: {0}") << path;
