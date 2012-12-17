@@ -177,7 +177,10 @@ too restrictive for using it in some projects.
 Loki SafeFormat
 ~~~~~~~~~~~~~~~
 
-TODO
+SafeFormat is a formatting library which uses printf-like format strings
+and is type safe. It doesn't support user-defined types or positional
+arguments. It makes unconventional use of `operator()` for passing
+format arguments.
 
 Tinyformat
 ~~~~~~~~~~
@@ -287,11 +290,11 @@ Portability
 
 The format library has been tested on the following systems and compilers:
 
-1. 64-bit (amd64) GNU/Linux with GCC 4.6.3 and 4.7.2
-2. 32-bit (i386) GNU/Linux with GCC 4.6.3
-3. Mac OS X with GCC 4.2.1
-4. 64-bit Windows with Visual C++ 2010
-5. 32-bit Windows with Visual C++ 2010
+* 64-bit (amd64) GNU/Linux with GCC 4.6.3 and 4.7.2
+* 32-bit (i386) GNU/Linux with GCC 4.6.3
+* Mac OS X with GCC 4.2.1
+* 64-bit Windows with Visual C++ 2010
+* 32-bit Windows with Visual C++ 2010
 
 License
 -------
