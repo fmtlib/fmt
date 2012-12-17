@@ -703,20 +703,20 @@ struct CountCalls {
   }
 };
 
-TEST(ActiveFormatterTest, Action) {
+TEST(TempFormatterTest, Action) {
   int num_calls = 0;
   {
-    fmt::ActiveFormatter<CountCalls> af("test", CountCalls(num_calls));
+    fmt::TempFormatter<CountCalls> af("test", CountCalls(num_calls));
     EXPECT_EQ(0, num_calls);
   }
   EXPECT_EQ(1, num_calls);
 }
 
-TEST(ActiveFormatterTest, ActionNotCalledOnError) {
+TEST(TempFormatterTest, ActionNotCalledOnError) {
   int num_calls = 0;
   {
     EXPECT_THROW(
-        fmt::ActiveFormatter<CountCalls> af("{0", CountCalls(num_calls)),
+        fmt::TempFormatter<CountCalls> af("{0", CountCalls(num_calls)),
         FormatError);
   }
   EXPECT_EQ(0, num_calls);
@@ -726,12 +726,12 @@ TEST(ActiveFormatterTest, ActionNotCalledOnError) {
 // require an accessible copy constructor when binding a temporary to
 // a const reference.
 #if __GNUC__ >= 4 && __GNUC_MINOR__ >= 7
-TEST(ActiveFormatterTest, ArgLifetime) {
+TEST(TempFormatterTest, ArgLifetime) {
   // The following code is for testing purposes only. It is a definite abuse
   // of the API and shouldn't be used in real applications.
-  const fmt::ActiveFormatter<fmt::Ignore> &af = fmt::Format("{0}");
-  const_cast<fmt::ActiveFormatter<fmt::Ignore>&>(af) << std::string("test");
-  // String object passed as an argument to ActiveFormatter has
+  const fmt::TempFormatter<fmt::Ignore> &af = fmt::Format("{0}");
+  const_cast<fmt::TempFormatter<fmt::Ignore>&>(af) << std::string("test");
+  // String object passed as an argument to TempFormatter has
   // been destroyed, but ArgInserter dtor hasn't been called yet.
   // But that's OK since the Arg's dtor takes care of this and
   // calls Format.
@@ -744,11 +744,11 @@ struct PrintError {
   }
 };
 
-fmt::ActiveFormatter<PrintError> ReportError(const char *format) {
-  return fmt::ActiveFormatter<PrintError>(format);
+fmt::TempFormatter<PrintError> ReportError(const char *format) {
+  return fmt::TempFormatter<PrintError>(format);
 }
 
-TEST(ActiveFormatterTest, Example) {
+TEST(TempFormatterTest, Example) {
   std::string path = "somefile";
   ReportError("File not found: {0}") << path;
 }

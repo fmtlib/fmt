@@ -60,7 +60,7 @@ An object of any user-defined type for which there is an overloaded
     std::string s = str(fmt::Format("The date is {0}") << Date(2012, 12, 9));
     // s == "The date is 2012-12-9"
 
-You can use ``fmt::ActiveFormatter`` to create your own functions
+You can use ``fmt::TempFormatter`` to create your own functions
 similar to ``fmt::Format`` and ``fmt::Print`` with an arbitrary action
 performed when formatting is complete:
 
@@ -73,8 +73,8 @@ performed when formatting is complete:
     };
 
     // Formats an error message and prints it to std::cerr.
-    fmt::ActiveFormatter<PrintError> ReportError(const char *format) {
-      return fmt::ActiveFormatter<PrintError>(format);
+    fmt::TempFormatter<PrintError> ReportError(const char *format) {
+      return fmt::TempFormatter<PrintError>(format);
     }
 
     ReportError("File not found: {0}") << path;

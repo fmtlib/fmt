@@ -303,9 +303,6 @@ class Formatter {
   std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
 };
 
-template <typename Action>
-class ActiveFormatter;
-
 namespace internal {
 
 // This is a transient object that normally exists only as a temporary
@@ -410,19 +407,19 @@ inline internal::ArgInserter Formatter::operator()(const char *format) {
 }
 
 // A formatter with an action performed when formatting is complete.
-// This is a transient object that normally exists only as a temporary
-// returned by one of the formatting functions.
+// Objects of this class normally exist only as temporaries returned
+// by one of the formatting functions, thus the name.
 template <typename Action>
-class ActiveFormatter : public internal::ArgInserter {
+class TempFormatter : public internal::ArgInserter {
  private:
   Formatter formatter_;
   Action action_;
 
   // Forbid copying other than from a temporary. Do not implement.
-  ActiveFormatter(ActiveFormatter &);
+  TempFormatter(TempFormatter &);
 
   // Do not implement.
-  ActiveFormatter& operator=(const ActiveFormatter &);
+  TempFormatter& operator=(const TempFormatter &);
 
   struct Proxy {
     const char *format;
@@ -436,17 +433,17 @@ class ActiveFormatter : public internal::ArgInserter {
   // Action should be an unary function object that takes a const
   // reference to Formatter as an argument. See Ignore and Write
   // for examples of action classes.
-  explicit ActiveFormatter(const char *format, Action a = Action())
+  explicit TempFormatter(const char *format, Action a = Action())
   : action_(a) {
     Init(formatter_, format);
   }
 
-  ActiveFormatter(const Proxy &p)
+  TempFormatter(const Proxy &p)
   : ArgInserter(0), action_(p.action) {
     Init(formatter_, p.format);
   }
 
-  ~ActiveFormatter() {
+  ~TempFormatter() {
     if (formatter())
       action_(*Format());
   }
@@ -466,8 +463,8 @@ struct Ignore {
 // Formats a string.
 // Example:
 //   std::string s = str(Format("Elapsed time: {0:.2f} seconds") << 1.23);
-inline ActiveFormatter<Ignore> Format(const char *format) {
-  return ActiveFormatter<Ignore>(format);
+inline TempFormatter<Ignore> Format(const char *format) {
+  return TempFormatter<Ignore>(format);
 }
 
 // A formatting action that writes formatted output to stdout.
@@ -480,8 +477,8 @@ struct Write {
 // Formats a string and prints it to stdout.
 // Example:
 //   Print("Elapsed time: {0:.2f} seconds") << 1.23;
-inline ActiveFormatter<Write> Print(const char *format) {
-  return ActiveFormatter<Write>(format);
+inline TempFormatter<Write> Print(const char *format) {
+  return TempFormatter<Write>(format);
 }
 }
 
