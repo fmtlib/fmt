@@ -29,7 +29,7 @@
 #define FORMAT_H_
 
 #include <cstddef>
-#include <cstdio>>
+#include <cstdio>
 #include <cstring>
 #include <stdexcept>
 #include <string>
