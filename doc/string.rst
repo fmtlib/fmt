@@ -169,27 +169,23 @@ Format Specification Mini-Language
 
 "Format specifications" are used within replacement fields contained within a
 format string to define how individual values are presented (see
-:ref:`formatstrings`).  They can also be passed directly to the built-in
-:func:`format` function.  Each formattable type may define how the format
+:ref:`formatstrings`).  They can also be passed directly to the
+:func:`Format` function.  Each formattable type may define how the format
 specification is to be interpreted.
 
 Most built-in types implement the following options for format specifications,
 although some of the formatting options are only supported by the numeric types.
 
-A general convention is that an empty format string (``""``) produces
-the same result as if you had called :func:`str` on the value. A
-non-empty format string typically modifies the result.
-
 The general form of a *standard format specifier* is:
 
 .. productionlist:: sf
-   format_spec: [[`fill`]`align`][`sign`][#][0][`width`][,][.`precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`]["#"]["0"][`width`]["." `precision`][`type`]
    fill: <a character other than '{' or '}'>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
    width: `integer`
    precision: `integer`
-   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
+   type: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | s" | "x" | "X"
 
 The *fill* character can be any character other than '{' or '}'.  The presence
 of a fill character is signaled by the character following it, which must be
@@ -240,22 +236,21 @@ following:
 
 The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
-types.  This option is only valid for integer, float, complex and
-Decimal types. For integers, when binary, octal, or hexadecimal output
-is used, this option adds the prefix respective ``'0b'``, ``'0o'``, or
-``'0x'`` to the output value. For floats, complex and Decimal the
+types.  This option is only valid for integer and floating-point types.
+For integers, when octal, or hexadecimal output
+is used, this option adds the prefix respective ``'0'``, or
+``'0x'`` to the output value. For floating-point numbers the
 alternate form causes the result of the conversion to always contain a
 decimal-point character, even if no digits follow it. Normally, a
 decimal-point character appears in the result of these conversions
 only if a digit follows it. In addition, for ``'g'`` and ``'G'``
 conversions, trailing zeros are not removed from the result.
 
-The ``','`` option signals the use of a comma for a thousands separator.
-For a locale aware separator, use the ``'n'`` integer presentation type
-instead.
+.. ifconfig:: False
 
-.. versionchanged:: 3.1
-   Added the ``','`` option (see also :pep:`378`).
+   The ``','`` option signals the use of a comma for a thousands separator.
+   For a locale aware separator, use the ``'n'`` integer presentation type
+   instead.
 
 *width* is a decimal integer defining the minimum field width.  If not
 specified, then the field width will be determined by the content.
@@ -281,7 +276,18 @@ The available string presentation types are:
    | ``'s'`` | String format. This is the default type for strings and  |
    |         | may be omitted.                                          |
    +---------+----------------------------------------------------------+
-   | None    | The same as ``'s'``.                                     |
+   | none    | The same as ``'s'``.                                     |
+   +---------+----------------------------------------------------------+
+
+The available character presentation types are:
+
+   +---------+----------------------------------------------------------+
+   | Type    | Meaning                                                  |
+   +=========+==========================================================+
+   | ``'c'`` | Character format. This is the default type for           |
+   |         | characters and may be omitted.                           |
+   +---------+----------------------------------------------------------+
+   | none    | The same as ``'c'``.                                     |
    +---------+----------------------------------------------------------+
 
 The available integer presentation types are:
@@ -289,11 +295,6 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | Type    | Meaning                                                  |
    +=========+==========================================================+
-   | ``'b'`` | Binary format. Outputs the number in base 2.             |
-   +---------+----------------------------------------------------------+
-   | ``'c'`` | Character. Converts the integer to the corresponding     |
-   |         | unicode character before printing.                       |
-   +---------+----------------------------------------------------------+
    | ``'d'`` | Decimal Integer. Outputs the number in base 10.          |
    +---------+----------------------------------------------------------+
    | ``'o'`` | Octal format. Outputs the number in base 8.              |
@@ -304,16 +305,12 @@ The available integer presentation types are:
    | ``'X'`` | Hex format. Outputs the number in base 16, using upper-  |
    |         | case letters for the digits above 9.                     |
    +---------+----------------------------------------------------------+
-   | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
-   |         | the current locale setting to insert the appropriate     |
-   |         | number separator characters.                             |
-   +---------+----------------------------------------------------------+
-   | None    | The same as ``'d'``.                                     |
+   | none    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
 
 In addition to the above presentation types, integers can be formatted
 with the floating point presentation types listed below (except
-``'n'`` and None). When doing so, :func:`float` is used to convert the
+``'n'`` and none). When doing so, :func:`float` is used to convert the
 integer to a floating point number before formatting.
 
 The available presentation types for floating point and decimal values are:
@@ -361,14 +358,7 @@ The available presentation types for floating point and decimal values are:
    |         | ``'E'`` if the number gets too large. The                |
    |         | representations of infinity and NaN are uppercased, too. |
    +---------+----------------------------------------------------------+
-   | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
-   |         | the current locale setting to insert the appropriate     |
-   |         | number separator characters.                             |
-   +---------+----------------------------------------------------------+
-   | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
-   |         | in fixed (``'f'``) format, followed by a percent sign.   |
-   +---------+----------------------------------------------------------+
-   | None    | Similar to ``'g'``, except with at least one digit past  |
+   | none    | Similar to ``'g'``, except with at least one digit past  |
    |         | the decimal point and a default precision of 12. This is |
    |         | intended to match :func:`str`, except you can add the    |
    |         | other format modifiers.                                  |
@@ -411,31 +401,11 @@ Accessing arguments by name::
    >>> 'Coordinates: {latitude}, {longitude}'.format(**coord)
    'Coordinates: 37.24N, -115.81W'
 
-Accessing arguments' attributes::
-
-   >>> c = 3-5j
-   >>> ('The complex number {0} is formed from the real part {0.real} '
-   ...  'and the imaginary part {0.imag}.').format(c)
-   'The complex number (3-5j) is formed from the real part 3.0 and the imaginary part -5.0.'
-   >>> class Point:
-   ...     def __init__(self, x, y):
-   ...         self.x, self.y = x, y
-   ...     def __str__(self):
-   ...         return 'Point({self.x}, {self.y})'.format(self=self)
-   ...
-   >>> str(Point(4, 2))
-   'Point(4, 2)'
-
 Accessing arguments' items::
 
    >>> coord = (3, 5)
    >>> 'X: {0[0]};  Y: {0[1]}'.format(coord)
    'X: 3;  Y: 5'
-
-Replacing ``%s`` and ``%r``::
-
-   >>> "repr() shows quotes: {!r}; str() doesn't: {!s}".format('test1', 'test2')
-   "repr() shows quotes: 'test1'; str() doesn't: test2"
 
 Aligning the text and specifying a width::
 
