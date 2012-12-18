@@ -44,6 +44,7 @@ using fmt::internal::Array;
 using fmt::Formatter;
 using fmt::Format;
 using fmt::FormatError;
+using fmt::StringRef;
 
 #define FORMAT_TEST_THROW_(statement, expected_exception, message, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
@@ -732,6 +733,17 @@ TEST(FormatterTest, ArgInserter) {
 TEST(FormatterTest, StrNamespace) {
   fmt::str(Format(""));
   fmt::c_str(Format(""));
+}
+
+TEST(FormatterTest, StringRef) {
+  EXPECT_STREQ("abc", StringRef("abc").c_str());
+  EXPECT_EQ(3u, StringRef("abc").size());
+
+  EXPECT_STREQ("defg", StringRef(std::string("defg")).c_str());
+  EXPECT_EQ(4u, StringRef(std::string("defg")).size());
+
+  EXPECT_STREQ("hijkl", StringRef(Format("hi{0}kl") << 'j').c_str());
+  EXPECT_EQ(5u, StringRef(Format("hi{0}kl") << 'j').size());
 }
 
 struct CountCalls {
