@@ -140,8 +140,8 @@ automatically inserted in that order.
 
 Some simple format string examples::
 
-   "First, thou shalt count to {0}" // References first positional argument
-   "Bring me a {}"                  // Implicitly references the first positional argument
+   "First, thou shalt count to {0}" // References the first argument
+   "Bring me a {}"                  // Implicitly references the first argument
    "From {} to {}"                  // Same as "From {0} to {1}"
 
 The *format_spec* field contains a specification of how the value should be
