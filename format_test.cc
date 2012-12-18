@@ -729,6 +729,11 @@ TEST(FormatterTest, ArgInserter) {
   EXPECT_STREQ("12", c_str(format("{0}") << 2));
 }
 
+TEST(FormatterTest, StrNamespace) {
+  fmt::str(Format(""));
+  fmt::c_str(Format(""));
+}
+
 struct CountCalls {
   int &num_calls;
 
@@ -791,7 +796,7 @@ TEST(TempFormatterTest, Example) {
 
 template <typename T>
 std::string str(const T &value) {
-  return (fmt::Format("{0}") << value).str();
+  return fmt::str(fmt::Format("{0}") << value);
 }
 
 TEST(StrTest, Convert) {

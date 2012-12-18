@@ -380,19 +380,23 @@ class ArgInserter {
     return Proxy(f);
   }
 
-  std::string str() const { return Format()->str(); }
+  // Performs formatting and returns a std::string with the output.
+  friend std::string str(Proxy p) {
+    return Format(p)->str();
+  }
 
   // Performs formatting and returns a C string with the output.
   friend const char *c_str(Proxy p) {
     return Format(p)->c_str();
   }
-
-  // Performs formatting and returns a std::string with the output.
-  friend std::string str(Proxy p) {
-    return Format(p)->str();
-  }
 };
+
+const char *c_str(ArgInserter::Proxy p);
+std::string str(ArgInserter::Proxy p);
 }
+
+using format::internal::c_str;
+using format::internal::str;
 
 // ArgFormatter provides access to the format buffer within custom
 // Format functions. It is not desirable to pass Formatter to these
