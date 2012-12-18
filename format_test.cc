@@ -609,6 +609,10 @@ TEST(FormatterTest, FormatCString) {
   CheckUnknownTypes("test", "s", "string");
   EXPECT_EQ("test", str(Format("{0}") << "test"));
   EXPECT_EQ("test", str(Format("{0:s}") << "test"));
+  char nonconst[] = "nonconst";
+  EXPECT_EQ("nonconst", str(Format("{0}") << nonconst));
+  EXPECT_THROW_MSG(Format("{0}") << reinterpret_cast<const char*>(0),
+      FormatError, "string pointer is null");
 }
 
 TEST(FormatterTest, FormatPointer) {

@@ -408,8 +408,12 @@ void Formatter::DoFormat() {
         ReportUnknownType(type, "string");
       const char *str = arg.string.value;
       size_t size = arg.string.size;
-      if (size == 0 && *str)
-        size = std::strlen(str);
+      if (size == 0) {
+        if (!str)
+          throw FormatError("string pointer is null");
+        if (*str)
+          size = std::strlen(str);
+      }
       char *out = GrowBuffer(std::max<size_t>(width, size));
       out = std::copy(str, str + size, out);
       if (static_cast<unsigned>(width) > size)
