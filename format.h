@@ -380,6 +380,8 @@ class ArgInserter {
     return Proxy(f);
   }
 
+  std::string str() const { return Format()->str(); }
+
   // Performs formatting and returns a C string with the output.
   friend const char *c_str(Proxy p) {
     return Format(p)->c_str();
