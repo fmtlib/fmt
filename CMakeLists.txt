@@ -16,6 +16,8 @@ if (CMAKE_COMPILER_IS_GNUCXX)
     "-Wall -Wextra -pedantic")
 endif ()
 
+add_subdirectory(doc)
+
 # We compile Google Test ourselves instead of using pre-compiled libraries.
 # See the Google Test FAQ "Why is it not recommended to install a
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
