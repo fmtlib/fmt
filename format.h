@@ -309,7 +309,32 @@ class Formatter {
   void Write(const std::string &s, unsigned width);
 };
 
-class StringRef;
+// A reference to a string. It can be constructed from a C string,
+// std::string or as a result of a formatting operation. It is most useful
+// as a parameter type to allow passing different types of strings in a
+// function, for example:
+//   void SetName(StringRef s) {
+//     std::string name = s;
+//     ...
+//   }
+class StringRef {
+ private:
+  const char *data_;
+  mutable std::size_t size_;
+
+ public:
+  StringRef(const char *s, std::size_t size = 0) : data_(s), size_(size) {}
+  StringRef(const std::string &s) : data_(s.c_str()), size_(s.size()) {}
+
+  operator std::string() const { return std::string(data_, size()); }
+
+  const char *c_str() const { return data_; }
+
+  std::size_t size() const {
+    if (size_ == 0) size_ = std::strlen(data_);
+    return size_;
+  }
+};
 
 namespace internal {
 
@@ -384,6 +409,11 @@ class ArgInserter {
     return Proxy(f);
   }
 
+  operator StringRef() {
+    const Formatter *f = Format();
+    return StringRef(f->c_str(), f->size());
+  }
+
   // Performs formatting and returns a std::string with the output.
   friend std::string str(Proxy p) {
     return p.Format()->str();
@@ -401,39 +431,6 @@ const char *c_str(ArgInserter::Proxy p);
 
 using format::internal::str;
 using format::internal::c_str;
-
-// A reference to a string. It can be constructed from a C string,
-// std::string or as a result of a formatting operation. It is most useful
-// as a parameter type to allow passing different types of strings in a
-// function, for example:
-//   void SetName(StringRef s) {
-//     std::string name = s;
-//     ...
-//   }
-class StringRef {
- private:
-  const char *data_;
-  mutable std::size_t size_;
-
- public:
-  StringRef(const char *s) : data_(s), size_(0) {}
-  StringRef(const std::string &s) : data_(s.c_str()), size_(s.size()) {}
-
-  StringRef(internal::ArgInserter::Proxy p) {
-    Formatter *f = p.Format();
-    data_ = f->c_str();
-    size_ = f->size();
-  }
-
-  operator std::string() const { return std::string(data_, size_); }
-
-  const char *c_str() const { return data_; }
-
-  std::size_t size() const {
-    if (size_ == 0) size_ = std::strlen(data_);
-    return size_;
-  }
-};
 
 // ArgFormatter provides access to the format buffer within custom
 // Format functions. It is not desirable to pass Formatter to these

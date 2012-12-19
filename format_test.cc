@@ -735,15 +735,17 @@ TEST(FormatterTest, StrNamespace) {
   fmt::c_str(Format(""));
 }
 
-TEST(FormatterTest, StringRef) {
+TEST(StringRefTest, Ctor) {
   EXPECT_STREQ("abc", StringRef("abc").c_str());
   EXPECT_EQ(3u, StringRef("abc").size());
 
   EXPECT_STREQ("defg", StringRef(std::string("defg")).c_str());
   EXPECT_EQ(4u, StringRef(std::string("defg")).size());
+}
 
-  EXPECT_STREQ("hijkl", StringRef(Format("hi{0}kl") << 'j').c_str());
-  EXPECT_EQ(5u, StringRef(Format("hi{0}kl") << 'j').size());
+TEST(StringRefTest, ConvertToString) {
+  std::string s = StringRef("abc");
+  EXPECT_EQ("abc", s);
 }
 
 struct CountCalls {
@@ -790,6 +792,11 @@ TEST(TempFormatterTest, ArgLifetime) {
   // calls Format.
 }
 #endif
+
+TEST(TempFormatterTest, ConvertToStringRef) {
+  EXPECT_STREQ("abc", StringRef(Format("a{0}c") << 'b').c_str());
+  EXPECT_EQ(3u, StringRef(Format("a{0}c") << 'b').size());
+}
 
 struct PrintError {
   void operator()(const fmt::Formatter &f) const {
