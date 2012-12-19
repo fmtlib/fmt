@@ -11,7 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   string
+   format
 
 Indices and tables
 ==================
