@@ -9,7 +9,7 @@
 
    The built-in string class provides the ability to do complex variable
    substitutions and value formatting via the :func:`format` method described in
-   :pep:`3101`.  The :class:`Formatter` class in the :mod:`string` module allows
+   :pep:`3101`.  The :class:`Formatter` class in the :mod:`format` module allows
    you to create and customize your own string formatting behaviors using the same
    implementation as the built-in :meth:`format` method.
 
