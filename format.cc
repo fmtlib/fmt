@@ -120,7 +120,7 @@ void Formatter::FormatInt(T value, FormatSpec spec) {
   if (IntTraits<T>::IsNegative(value)) {
     sign = '-';
     ++size;
-    abs_value = -value;
+    abs_value = -abs_value;
   } else if ((spec.flags & PLUS_FLAG) != 0) {
     sign = '+';
     ++size;
