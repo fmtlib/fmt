@@ -128,6 +128,8 @@ struct FormatSpec {
   unsigned width;
   char type;
   char fill;
+
+  FormatSpec() : flags(0), width(0), type(0), fill(' ') {}
 };
 
 // Formatter provides string formatting functionality similar to Python's
@@ -266,7 +268,7 @@ class Formatter {
 
   // Formats an integer.
   template <typename T>
-  void FormatInt(T value, const FormatSpec &spec);
+  void FormatInt(T value, FormatSpec spec);
 
   // Formats a floating point number (double or long double).
   template <typename T>

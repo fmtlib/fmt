@@ -52,6 +52,11 @@ namespace {
 // Flags.
 enum { PLUS_FLAG = 1, ZERO_FLAG = 2, HEX_PREFIX_FLAG = 4 };
 
+// Alignment.
+enum Alignment {
+  ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
+};
+
 void ReportUnknownType(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
     throw fmt::FormatError(
@@ -104,7 +109,7 @@ void Formatter::ReportError(const char *s, const std::string &message) const {
 }
 
 template <typename T>
-void Formatter::FormatInt(T value, const FormatSpec &spec) {
+void Formatter::FormatInt(T value, FormatSpec spec) {
   unsigned size = 0;
   char sign = 0;
   typedef typename IntTraits<T>::UnsignedType UnsignedType;
@@ -117,7 +122,7 @@ void Formatter::FormatInt(T value, const FormatSpec &spec) {
     sign = '+';
     ++size;
   }
-  size_t start = buffer_.size();
+  size_t offset = buffer_.size();
   char *p = 0;
   switch (spec.type) {
   case 0: case 'd': {
@@ -173,11 +178,13 @@ void Formatter::FormatInt(T value, const FormatSpec &spec) {
   }
   if (sign) {
     if ((spec.flags & ZERO_FLAG) != 0)
-      buffer_[start++] = sign;
+      buffer_[offset++] = sign;
     else
       *p-- = sign;
   }
-  std::fill(&buffer_[start], p + 1, spec.fill);
+  char *start = &buffer_[offset];
+  if (start != p)
+    std::fill(start, p + 1, spec.fill);
 }
 
 template <typename T>
@@ -238,8 +245,10 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
           snprintf(start, size, format, width, precision, value);
     }
     if (n >= 0 && offset + n < buffer_.capacity()) {
-      while (*start == ' ')
-        *start++ = spec.fill;
+      if (spec.fill != ' ') {
+        while (*start == ' ')
+          *start++ = spec.fill;
+      }
       GrowBuffer(n);
       return;
     }
@@ -289,21 +298,41 @@ void Formatter::DoFormat() {
 
     const Arg &arg = ParseArgIndex(s);
 
-    FormatSpec spec = {};
-    spec.fill = ' ';
+    FormatSpec spec;
     int precision = -1;
     if (*s == ':') {
       ++s;
+
+      // Parse fill and alignment.
       if (char c = *s) {
-        switch (s[1]) {
-        case '<': case '>': case '=': case '^':
-          if (c != '{' && c != '}') {
-            s += 2;
-            spec.fill = c;
+        const char *p = s + 1;
+        Alignment align = ALIGN_DEFAULT;
+        do {
+          switch (*p) {
+          case '<':
+            align = ALIGN_LEFT;
+            break;
+          case '>':
+            align = ALIGN_RIGHT;
+            break;
+          case '=':
+            align = ALIGN_NUMERIC;
+            break;
+          case '^':
+            align = ALIGN_CENTER;
+            break;
           }
-          break;
-        }
+          if (align != ALIGN_DEFAULT) {
+            if (p != s && c != '{' && c != '}') {
+              s += 2;
+              spec.fill = c;
+            } else ++s;
+            break;
+          }
+        } while (--p >= s);
       }
+
+      // Parse sign.
       if (*s == '+') {
         ++s;
         if (arg.type > LAST_NUMERIC_TYPE)
@@ -314,16 +343,17 @@ void Formatter::DoFormat() {
         }
         spec.flags |= PLUS_FLAG;
       }
-      if (*s == '0') {
-        ++s;
-        if (arg.type > LAST_NUMERIC_TYPE)
-          ReportError(s, "format specifier '0' requires numeric argument");
-        spec.flags |= ZERO_FLAG;
-        spec.fill = '0';
-      }
 
-      // Parse width.
+      // Parse width and zero flag.
       if ('0' <= *s && *s <= '9') {
+        if (*s == '0') {
+          if (arg.type > LAST_NUMERIC_TYPE)
+            ReportError(s, "format specifier '0' requires numeric argument");
+          spec.flags |= ZERO_FLAG;
+          spec.fill = '0';
+        }
+        // Zero may be parsed again as a part of the width, but it is simpler
+        // and more efficient than checking if the next char is a digit.
         unsigned value = ParseUInt(s);
         if (value > INT_MAX)
           ReportError(s, "number is too big in format");

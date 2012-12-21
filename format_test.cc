@@ -257,6 +257,22 @@ TEST(FormatterTest, EmptySpecs) {
   EXPECT_EQ("42", str(Format("{0:}") << 42));
 }
 
+TEST(FormatterTest, Align) {
+  // TODO
+  EXPECT_EQ("  42", str(Format("{0:>4}") << 42));
+  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42));
+  EXPECT_EQ("   42", str(Format("{0:>5}") << 42u));
+  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42l));
+  EXPECT_EQ("   42", str(Format("{0:>5}") << 42ul));
+  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42.0));
+  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42.0l));
+  EXPECT_EQ("c    ", str(Format("{0:<5}") << 'c'));
+  EXPECT_EQ("abc  ", str(Format("{0:<5}") << "abc"));
+  EXPECT_EQ("  0xface",
+      str(Format("{0:>8}") << reinterpret_cast<void*>(0xface)));
+  EXPECT_EQ("def  ", str(Format("{0:<5}") << TestString("def")));
+}
+
 TEST(FormatterTest, Fill) {
   EXPECT_EQ("**42", str(Format("{0:*>4}") << 42));
   EXPECT_EQ("**-42", str(Format("{0:*>5}") << -42));
@@ -644,8 +660,7 @@ TEST(FormatterTest, FormatString) {
 
 TEST(FormatterTest, Write) {
   Formatter format;
-  fmt::FormatSpec spec = {};
-  spec.fill = ' ';
+  fmt::FormatSpec spec;
   spec.width = 2;
   format.Write("12", spec);
   EXPECT_EQ("12", format.str());
@@ -660,8 +675,7 @@ TEST(FormatterTest, Write) {
 TEST(ArgFormatterTest, Write) {
   Formatter formatter;
   fmt::ArgFormatter format(formatter);
-  fmt::FormatSpec spec = {};
-  spec.fill = ' ';
+  fmt::FormatSpec spec;
   spec.width = 2;
   format.Write("12", spec);
   EXPECT_EQ("12", formatter.str());
