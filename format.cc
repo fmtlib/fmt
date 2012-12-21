@@ -123,7 +123,7 @@ void Formatter::FormatInt(T value, FormatSpec spec) {
     sign = '+';
     ++size;
   }
-  size_t offset = buffer_.size();
+  size_t start = buffer_.size();
   char *p = 0;
   switch (spec.type) {
   case 0: case 'd': {
@@ -179,13 +179,11 @@ void Formatter::FormatInt(T value, FormatSpec spec) {
   }
   if (sign) {
     if ((spec.flags & ZERO_FLAG) != 0)
-      buffer_[offset++] = sign;
+      buffer_[start++] = sign;
     else
       *p-- = sign;
   }
-  char *start = &buffer_[offset];
-  if (start != p)
-    std::fill(start, p + 1, spec.fill);
+  std::fill(&buffer_[start], p + 1, spec.fill);
 }
 
 template <typename T>
