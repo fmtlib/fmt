@@ -257,6 +257,21 @@ TEST(FormatterTest, EmptySpecs) {
   EXPECT_EQ("42", str(Format("{0:}") << 42));
 }
 
+TEST(FormatterTest, Fill) {
+  EXPECT_EQ("**42", str(Format("{0:*>4}") << 42));
+  EXPECT_EQ("**-42", str(Format("{0:*>5}") << -42));
+  EXPECT_EQ("***42", str(Format("{0:*>5}") << 42u));
+  EXPECT_EQ("**-42", str(Format("{0:*>5}") << -42l));
+  EXPECT_EQ("***42", str(Format("{0:*>5}") << 42ul));
+  EXPECT_EQ("**-42", str(Format("{0:*>5}") << -42.0));
+  EXPECT_EQ("**-42", str(Format("{0:*>5}") << -42.0l));
+  EXPECT_EQ("c****", str(Format("{0:*<5}") << 'c'));
+  EXPECT_EQ("abc**", str(Format("{0:*<5}") << "abc"));
+  EXPECT_EQ("**0xface", str(Format("{0:*>8}")
+      << reinterpret_cast<void*>(0xface)));
+  EXPECT_EQ("def**", str(Format("{0:*<5}") << TestString("def")));
+}
+
 TEST(FormatterTest, PlusFlag) {
   EXPECT_EQ("+42", str(Format("{0:+}") << 42));
   EXPECT_EQ("-42", str(Format("{0:+}") << -42));
@@ -484,7 +499,7 @@ void CheckUnknownTypes(
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
     char c = i;
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
-    sprintf(format, "{0:1%c}", c);
+    sprintf(format, "{0:10%c}", c);
     if (std::isprint(static_cast<unsigned char>(c)))
       sprintf(message, "unknown format code '%c' for %s", c, type_name);
     else
@@ -629,22 +644,32 @@ TEST(FormatterTest, FormatString) {
 
 TEST(FormatterTest, Write) {
   Formatter format;
-  format.Write("12", 2);
+  fmt::FormatSpec spec = {};
+  spec.fill = ' ';
+  spec.width = 2;
+  format.Write("12", spec);
   EXPECT_EQ("12", format.str());
-  format.Write("34", 4);
+  spec.width = 4;
+  format.Write("34", spec);
   EXPECT_EQ("1234  ", format.str());
-  format.Write("56", 0);
+  spec.width = 0;
+  format.Write("56", spec);
   EXPECT_EQ("1234  56", format.str());
 }
 
 TEST(ArgFormatterTest, Write) {
   Formatter formatter;
   fmt::ArgFormatter format(formatter);
-  format.Write("12", 2);
+  fmt::FormatSpec spec = {};
+  spec.fill = ' ';
+  spec.width = 2;
+  format.Write("12", spec);
   EXPECT_EQ("12", formatter.str());
-  format.Write("34", 4);
+  spec.width = 4;
+  format.Write("34", spec);
   EXPECT_EQ("1234  ", formatter.str());
-  format.Write("56", 0);
+  spec.width = 0;
+  format.Write("56", spec);
   EXPECT_EQ("1234  56", formatter.str());
 }
 
@@ -669,8 +694,8 @@ TEST(FormatterTest, FormatUsingIOStreams) {
 
 class Answer {};
 
-void Format(fmt::ArgFormatter &af, unsigned width, Answer) {
-  af.Write("42", width);
+void Format(fmt::ArgFormatter &af, const fmt::FormatSpec &spec, Answer) {
+  af.Write("42", spec);
 }
 
 TEST(FormatterTest, CustomFormat) {

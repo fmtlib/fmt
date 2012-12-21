@@ -104,8 +104,8 @@ void Formatter::ReportError(const char *s, const std::string &message) const {
 }
 
 template <typename T>
-void Formatter::FormatInt(T value, unsigned flags, int width, char type) {
-  int size = 0;
+void Formatter::FormatInt(T value, const FormatSpec &spec) {
+  unsigned size = 0;
   char sign = 0;
   typedef typename IntTraits<T>::UnsignedType UnsignedType;
   UnsignedType abs_value = value;
@@ -113,20 +113,19 @@ void Formatter::FormatInt(T value, unsigned flags, int width, char type) {
     sign = '-';
     ++size;
     abs_value = -value;
-  } else if ((flags & PLUS_FLAG) != 0) {
+  } else if ((spec.flags & PLUS_FLAG) != 0) {
     sign = '+';
     ++size;
   }
-  char fill = (flags & ZERO_FLAG) != 0 ? '0' : ' ';
   size_t start = buffer_.size();
   char *p = 0;
-  switch (type) {
+  switch (spec.type) {
   case 0: case 'd': {
     UnsignedType n = abs_value;
     do {
       ++size;
     } while ((n /= 10) != 0);
-    width = std::max(width, size);
+    unsigned width = std::max(spec.width, size);
     p = GrowBuffer(width) + width - 1;
     n = abs_value;
     do {
@@ -136,20 +135,21 @@ void Formatter::FormatInt(T value, unsigned flags, int width, char type) {
   }
   case 'x': case 'X': {
     UnsignedType n = abs_value;
-    bool print_prefix = (flags & HEX_PREFIX_FLAG) != 0;
+    bool print_prefix = (spec.flags & HEX_PREFIX_FLAG) != 0;
     if (print_prefix) size += 2;
     do {
       ++size;
     } while ((n >>= 4) != 0);
-    width = std::max(width, size);
+    unsigned width = std::max(spec.width, size);
     p = GrowBuffer(width) + width - 1;
     n = abs_value;
-    const char *digits = type == 'x' ? "0123456789abcdef" : "0123456789ABCDEF";
+    const char *digits = spec.type == 'x' ?
+        "0123456789abcdef" : "0123456789ABCDEF";
     do {
       *p-- = digits[n & 0xf];
     } while ((n >>= 4) != 0);
     if (print_prefix) {
-      *p-- = type;
+      *p-- = spec.type;
       *p-- = '0';
     }
     break;
@@ -159,7 +159,7 @@ void Formatter::FormatInt(T value, unsigned flags, int width, char type) {
     do {
       ++size;
     } while ((n >>= 3) != 0);
-    width = std::max(width, size);
+    unsigned width = std::max(spec.width, size);
     p = GrowBuffer(width) + width - 1;
     n = abs_value;
     do {
@@ -168,22 +168,22 @@ void Formatter::FormatInt(T value, unsigned flags, int width, char type) {
     break;
   }
   default:
-    ReportUnknownType(type, "integer");
+    ReportUnknownType(spec.type, "integer");
     break;
   }
   if (sign) {
-    if ((flags & ZERO_FLAG) != 0)
+    if ((spec.flags & ZERO_FLAG) != 0)
       buffer_[start++] = sign;
     else
       *p-- = sign;
   }
-  std::fill(&buffer_[start], p + 1, fill);
+  std::fill(&buffer_[start], p + 1, spec.fill);
 }
 
 template <typename T>
-void Formatter::FormatDouble(
-    T value, unsigned flags, int width, int precision, char type) {
+void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
   // Check type.
+  char type = spec.type;
   switch (type) {
   case 0:
     type = 'g';
@@ -205,12 +205,13 @@ void Formatter::FormatDouble(
   enum { MAX_FORMAT_SIZE = 9}; // longest format: %+0*.*Lg
   char format[MAX_FORMAT_SIZE];
   char *format_ptr = format;
+  unsigned width = spec.width;
   *format_ptr++ = '%';
-  if ((flags & PLUS_FLAG) != 0)
+  if ((spec.flags & PLUS_FLAG) != 0)
     *format_ptr++ = '+';
-  if ((flags & ZERO_FLAG) != 0)
+  if ((spec.flags & ZERO_FLAG) != 0)
     *format_ptr++ = '0';
-  if (width > 0)
+  if (width != 0)
     *format_ptr++ = '*';
   if (precision >= 0) {
     *format_ptr++ = '.';
@@ -226,16 +227,19 @@ void Formatter::FormatDouble(
   for (;;) {
     size_t size = buffer_.capacity() - offset;
     int n = 0;
-    if (width <= 0) {
+    char *start = &buffer_[offset];
+    if (width == 0) {
       n = precision < 0 ?
-          snprintf(&buffer_[offset], size, format, value) :
-          snprintf(&buffer_[offset], size, format, precision, value);
+          snprintf(start, size, format, value) :
+          snprintf(start, size, format, precision, value);
     } else {
       n = precision < 0 ?
-          snprintf(&buffer_[offset], size, format, width, value) :
-          snprintf(&buffer_[offset], size, format, width, precision, value);
+          snprintf(start, size, format, width, value) :
+          snprintf(start, size, format, width, precision, value);
     }
     if (n >= 0 && offset + n < buffer_.capacity()) {
+      while (*start == ' ')
+        *start++ = spec.fill;
       GrowBuffer(n);
       return;
     }
@@ -285,12 +289,21 @@ void Formatter::DoFormat() {
 
     const Arg &arg = ParseArgIndex(s);
 
-    unsigned flags = 0;
-    int width = 0;
+    FormatSpec spec = {};
+    spec.fill = ' ';
     int precision = -1;
-    char type = 0;
     if (*s == ':') {
       ++s;
+      if (char c = *s) {
+        switch (s[1]) {
+        case '<': case '>': case '=': case '^':
+          if (c != '{' && c != '}') {
+            s += 2;
+            spec.fill = c;
+          }
+          break;
+        }
+      }
       if (*s == '+') {
         ++s;
         if (arg.type > LAST_NUMERIC_TYPE)
@@ -299,13 +312,14 @@ void Formatter::DoFormat() {
           ReportError(s,
               "format specifier '+' requires signed argument");
         }
-        flags |= PLUS_FLAG;
+        spec.flags |= PLUS_FLAG;
       }
       if (*s == '0') {
         ++s;
         if (arg.type > LAST_NUMERIC_TYPE)
           ReportError(s, "format specifier '0' requires numeric argument");
-        flags |= ZERO_FLAG;
+        spec.flags |= ZERO_FLAG;
+        spec.fill = '0';
       }
 
       // Parse width.
@@ -313,7 +327,7 @@ void Formatter::DoFormat() {
         unsigned value = ParseUInt(s);
         if (value > INT_MAX)
           ReportError(s, "number is too big in format");
-        width = value;
+        spec.width = value;
       }
 
       // Parse precision.
@@ -367,7 +381,7 @@ void Formatter::DoFormat() {
 
       // Parse type.
       if (*s != '}' && *s)
-        type = *s++;
+        spec.type = *s++;
     }
 
     if (*s++ != '}')
@@ -377,35 +391,35 @@ void Formatter::DoFormat() {
     // Format argument.
     switch (arg.type) {
     case INT:
-      FormatInt(arg.int_value, flags, width, type);
+      FormatInt(arg.int_value, spec);
       break;
     case UINT:
-      FormatInt(arg.uint_value, flags, width, type);
+      FormatInt(arg.uint_value, spec);
       break;
     case LONG:
-      FormatInt(arg.long_value, flags, width, type);
+      FormatInt(arg.long_value, spec);
       break;
     case ULONG:
-      FormatInt(arg.ulong_value, flags, width, type);
+      FormatInt(arg.ulong_value, spec);
       break;
     case DOUBLE:
-      FormatDouble(arg.double_value, flags, width, precision, type);
+      FormatDouble(arg.double_value, spec, precision);
       break;
     case LONG_DOUBLE:
-      FormatDouble(arg.long_double_value, flags, width, precision, type);
+      FormatDouble(arg.long_double_value, spec, precision);
       break;
     case CHAR: {
-      if (type && type != 'c')
-        ReportUnknownType(type, "char");
-      char *out = GrowBuffer(std::max(width, 1));
+      if (spec.type && spec.type != 'c')
+        ReportUnknownType(spec.type, "char");
+      char *out = GrowBuffer(std::max(spec.width, 1u));
       *out++ = arg.int_value;
-      if (width > 1)
-        std::fill_n(out, width - 1, ' ');
+      if (spec.width > 1)
+        std::fill_n(out, spec.width - 1, spec.fill);
       break;
     }
     case STRING: {
-      if (type && type != 's')
-        ReportUnknownType(type, "string");
+      if (spec.type && spec.type != 's')
+        ReportUnknownType(spec.type, "string");
       const char *str = arg.string.value;
       size_t size = arg.string.size;
       if (size == 0) {
@@ -414,22 +428,23 @@ void Formatter::DoFormat() {
         if (*str)
           size = std::strlen(str);
       }
-      char *out = GrowBuffer(std::max<size_t>(width, size));
+      char *out = GrowBuffer(std::max<size_t>(spec.width, size));
       out = std::copy(str, str + size, out);
-      if (static_cast<unsigned>(width) > size)
-        std::fill_n(out, width - size, ' ');
+      if (spec.width > size)
+        std::fill_n(out, spec.width - size, spec.fill);
       break;
     }
     case POINTER:
-      if (type && type != 'p')
-        ReportUnknownType(type, "pointer");
-      FormatInt(reinterpret_cast<uintptr_t>(
-          arg.pointer_value), HEX_PREFIX_FLAG, width, 'x');
+      if (spec.type && spec.type != 'p')
+        ReportUnknownType(spec.type, "pointer");
+      spec.flags = HEX_PREFIX_FLAG;
+      spec.type = 'x';
+      FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
       break;
     case CUSTOM:
-      if (type)
-        ReportUnknownType(type, "object");
-      (this->*arg.custom.format)(arg.custom.value, width);
+      if (spec.type)
+        ReportUnknownType(spec.type, "object");
+      (this->*arg.custom.format)(arg.custom.value, spec);
       break;
     default:
       assert(false);
@@ -440,9 +455,9 @@ void Formatter::DoFormat() {
   buffer_.resize(buffer_.size() - 1);  // Don't count the terminating zero.
 }
 
-void Formatter::Write(const std::string &s, unsigned width) {
-  char *out = GrowBuffer(std::max<std::size_t>(width, s.size()));
+void Formatter::Write(const std::string &s, const FormatSpec &spec) {
+  char *out = GrowBuffer(std::max<std::size_t>(spec.width, s.size()));
   std::copy(s.begin(), s.end(), out);
-  if (width > s.size())
-    std::fill_n(out + s.size(), width - s.size(), ' ');
+  if (spec.width > s.size())
+    std::fill_n(out + s.size(), spec.width - s.size(), spec.fill);
 }
