@@ -28,6 +28,8 @@
 // Disable useless MSVC warnings.
 #undef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#undef _SCL_SECURE_NO_WARNINGS
+#define _SCL_SECURE_NO_WARNINGS
 
 #include <cctype>
 #include <cfloat>
@@ -456,7 +458,8 @@ TEST(FormatterTest, RuntimePrecision) {
   EXPECT_THROW_MSG(Format("{0:.{1}}") << 0 << -1l,
       FormatError, "negative precision in format");
   if (sizeof(long) > sizeof(int)) {
-    EXPECT_THROW_MSG(Format("{0:.{1}}") << 0 << (INT_MAX + 1l),
+    long value = INT_MAX;
+    EXPECT_THROW_MSG(Format("{0:.{1}}") << 0 << (value + 1),
         FormatError, "number is too big in format");
   }
   EXPECT_THROW_MSG(Format("{0:.{1}}") << 0 << (INT_MAX + 1ul),
