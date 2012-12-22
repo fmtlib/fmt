@@ -53,12 +53,7 @@ using fmt::FormatSpec;
 namespace {
 
 // Flags.
-enum { PLUS_FLAG = 1, ZERO_FLAG = 2, HEX_PREFIX_FLAG = 4 };
-
-// Alignment.
-enum Alignment {
-  ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
-};
+enum { PLUS_FLAG = 1, HEX_PREFIX_FLAG = 2 };
 
 void ReportUnknownType(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
@@ -111,6 +106,34 @@ void Formatter::ReportError(const char *s, const std::string &message) const {
   throw fmt::FormatError("unmatched '{' in format");
 }
 
+char *Formatter::PrepareFilledBuffer(
+    unsigned size, FormatSpec spec, char sign) {
+  if (spec.width <= size) {
+    char *p = GrowBuffer(size);
+    *p = sign;
+    return p + size - 1;
+  }
+  char *p = GrowBuffer(spec.width);
+  char *end = p + spec.width;
+  if (spec.align == ALIGN_LEFT) {
+    *p = sign;
+    p += size;
+    std::fill(p, end, spec.fill);
+  } else if (spec.align == ALIGN_NUMERIC) {
+    if (sign) {
+      *p++ = sign;
+      --size;
+    }
+    std::fill(p, end - size, spec.fill);
+    p = end;
+  } else {
+    *(end - size) = sign;
+    std::fill(p, end - size, spec.fill);
+    p = end;
+  }
+  return p - 1;
+}
+
 template <typename T>
 void Formatter::FormatInt(T value, FormatSpec spec) {
   unsigned size = 0;
@@ -125,16 +148,13 @@ void Formatter::FormatInt(T value, FormatSpec spec) {
     sign = '+';
     ++size;
   }
-  size_t start = buffer_.size();
-  char *p = 0;
   switch (spec.type) {
   case 0: case 'd': {
     UnsignedType n = abs_value;
     do {
       ++size;
     } while ((n /= 10) != 0);
-    unsigned width = std::max(spec.width, size);
-    p = GrowBuffer(width) + width - 1;
+    char *p = PrepareFilledBuffer(size, spec, sign);
     n = abs_value;
     do {
       *p-- = '0' + (n % 10);
@@ -148,8 +168,7 @@ void Formatter::FormatInt(T value, FormatSpec spec) {
     do {
       ++size;
     } while ((n >>= 4) != 0);
-    unsigned width = std::max(spec.width, size);
-    p = GrowBuffer(width) + width - 1;
+    char *p = PrepareFilledBuffer(size, spec, sign);
     n = abs_value;
     const char *digits = spec.type == 'x' ?
         "0123456789abcdef" : "0123456789ABCDEF";
@@ -167,8 +186,7 @@ void Formatter::FormatInt(T value, FormatSpec spec) {
     do {
       ++size;
     } while ((n >>= 3) != 0);
-    unsigned width = std::max(spec.width, size);
-    p = GrowBuffer(width) + width - 1;
+    char *p = PrepareFilledBuffer(size, spec, sign);
     n = abs_value;
     do {
       *p-- = '0' + (n & 7);
@@ -179,13 +197,6 @@ void Formatter::FormatInt(T value, FormatSpec spec) {
     ReportUnknownType(spec.type, "integer");
     break;
   }
-  if (sign) {
-    if ((spec.flags & ZERO_FLAG) != 0)
-      buffer_[start++] = sign;
-    else
-      *p-- = sign;
-  }
-  std::fill(&buffer_[start], p + 1, spec.fill);
 }
 
 template <typename T>
@@ -210,14 +221,16 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
   }
 
   // Build format string.
-  enum { MAX_FORMAT_SIZE = 9}; // longest format: %+0*.*Lg
+  enum { MAX_FORMAT_SIZE = 10}; // longest format: %+0*.*Lg
   char format[MAX_FORMAT_SIZE];
   char *format_ptr = format;
   unsigned width = spec.width;
   *format_ptr++ = '%';
   if ((spec.flags & PLUS_FLAG) != 0)
     *format_ptr++ = '+';
-  if ((spec.flags & ZERO_FLAG) != 0)
+  if (spec.align == ALIGN_LEFT)
+    *format_ptr++ = '-';
+  else if (spec.align == ALIGN_NUMERIC)
     *format_ptr++ = '0';
   if (width != 0)
     *format_ptr++ = '*';
@@ -307,23 +320,23 @@ void Formatter::DoFormat() {
       // Parse fill and alignment.
       if (char c = *s) {
         const char *p = s + 1;
-        Alignment align = ALIGN_DEFAULT;
+        spec.align = ALIGN_DEFAULT;
         do {
           switch (*p) {
           case '<':
-            align = ALIGN_LEFT;
+            spec.align = ALIGN_LEFT;
             break;
           case '>':
-            align = ALIGN_RIGHT;
+            spec.align = ALIGN_RIGHT;
             break;
           case '=':
-            align = ALIGN_NUMERIC;
+            spec.align = ALIGN_NUMERIC;
             break;
           case '^':
-            align = ALIGN_CENTER;
+            spec.align = ALIGN_CENTER;
             break;
           }
-          if (align != ALIGN_DEFAULT) {
+          if (spec.align != ALIGN_DEFAULT) {
             if (p != s && c != '{' && c != '}') {
               s += 2;
               spec.fill = c;
@@ -350,7 +363,7 @@ void Formatter::DoFormat() {
         if (*s == '0') {
           if (arg.type > LAST_NUMERIC_TYPE)
             ReportError(s, "format specifier '0' requires numeric argument");
-          spec.flags |= ZERO_FLAG;
+          spec.align = ALIGN_NUMERIC;
           spec.fill = '0';
         }
         // Zero may be parsed again as a part of the width, but it is simpler

@@ -123,13 +123,18 @@ class FormatError : public std::runtime_error {
   : std::runtime_error(message) {}
 };
 
+enum Alignment {
+  ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
+};
+
 struct FormatSpec {
+  Alignment align;
   unsigned flags;
   unsigned width;
   char type;
   char fill;
 
-  FormatSpec() : flags(0), width(0), type(0), fill(' ') {}
+  FormatSpec() : align(ALIGN_DEFAULT), flags(0), width(0), type(0), fill(' ') {}
 };
 
 // Formatter provides string formatting functionality similar to Python's
@@ -265,6 +270,8 @@ class Formatter {
   }
 
   void ReportError(const char *s, const std::string &message) const;
+
+  char *PrepareFilledBuffer(unsigned size, FormatSpec spec, char sign);
 
   // Formats an integer.
   template <typename T>
