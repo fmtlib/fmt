@@ -48,8 +48,8 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tinyformat/tinyformat_test.cpp)
 
   add_executable(tinyformat_speed_test tinyformat/tinyformat_test.cpp)
   target_link_libraries(tinyformat_speed_test format)
-  set_target_properties(tinyformat_speed_test
-    PROPERTIES COMPILE_DEFINITIONS "SPEED_TEST;HAVE_FORMAT")
+  set_target_properties(tinyformat_speed_test PROPERTIES COMPILE_DEFINITIONS
+    "SPEED_TEST;HAVE_FORMAT;_SCL_SECURE_NO_WARNINGS")
 
   add_custom_target(speed_test
     COMMAND @echo running speed tests...
