@@ -10,7 +10,9 @@
 #include <sstream>
 #include <boost/format.hpp>
 
-#include "../high_resolution_timer.hpp"
+#include "high_resolution_timer.hpp"
+
+#include "../format.h"
 
 //  This value specifies, how to unroll the integer string generation loop in 
 //  Karma.
@@ -48,10 +50,10 @@ int main()
     std::vector<int> v (MAX_ITERATION);
     std::generate(v.begin(), v.end(), random_fill()); // randomly fill the vector
 
-    // test the C libraries ltoa function (the most low level function for
+    // test the C libraries sprintf function (the most low level function for
     // string conversion available)
     {
-        //[karma_int_performance_ltoa
+        //[karma_int_performance_sprintf
         char buffer[65]; // we don't expect more than 64 bytes to be generated here
         //<-
         std::string str;
@@ -59,14 +61,14 @@ int main()
         //->
         for (int i = 0; i < MAX_ITERATION; ++i)
         {
-            ltoa(v[i], buffer, 10);
+            sprintf(buffer, "%d", v[i]);
             //<-
             str = buffer;      // compensate for string ops in other benchmarks
             //->
         }
         //]
 
-        cout << "ltoa:\t\t" << t.elapsed() << " [s]" << flush << endl;
+        cout << "sprintf:\t\t" << t.elapsed() << " [s]" << flush << endl;
     }
 
     // test the iostreams library
@@ -88,7 +90,7 @@ int main()
 
     // test the Boost.Format library
     {
-        //[karma_int_performance_format
+        //[karma_int_performance_boost
         std::string str;
         boost::format int_format("%d");
         //<-
@@ -122,6 +124,25 @@ int main()
         //]
 
         cout << "int_:\t\t" << t.elapsed() << " [s]" << flush << endl;
+    }
+
+    // test the format library
+    {
+        std::string str;
+        util::high_resolution_timer t;
+
+        //[karma_int_performance_format
+        for (int i = 0; i < MAX_ITERATION; ++i)
+        {
+            fmt::Formatter format;
+            format << v[i];
+            //<-
+            str = format.c_str();      // compensate for string ops in other benchmarks
+            //->
+        }
+        //]
+
+        cout << "format:\t\t" << t.elapsed() << " [s]" << flush << endl;
     }
 
     return 0;

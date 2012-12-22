@@ -306,6 +306,10 @@ class Formatter {
   // using inserter operator<<.
   internal::ArgInserter operator()(const char *format);
 
+  void operator<<(int value) {
+    FormatInt(value, FormatSpec());
+  }
+
   std::size_t size() const { return buffer_.size(); }
 
   const char *data() const { return &buffer_[0]; }
