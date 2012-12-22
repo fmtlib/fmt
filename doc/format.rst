@@ -124,7 +124,6 @@ The grammar for a replacement field is as follows:
    .. productionlist:: sf
       replacement_field: "{" [`arg_index`] [":" `format_spec`] "}"
       arg_index: `integer`
-      format_spec: <described in the next section>
 
 In less formal terms, the replacement field can start with an *arg_index*
 that specifies the argument whose value is to be formatted and inserted into
