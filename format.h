@@ -281,6 +281,8 @@ class Formatter {
   template <typename T>
   void FormatDouble(T value, const FormatSpec &spec, int precision);
 
+  void FormatString(const char *s, std::size_t size, const FormatSpec &spec);
+
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   void FormatCustomArg(const void *arg, const FormatSpec &spec);
@@ -323,10 +325,6 @@ class Formatter {
   const char *c_str() const { return &buffer_[0]; }
 
   std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
-
-  // Writes a string to the output buffer padding with spaces if
-  // necessary to achieve the desired width.
-  void Write(const std::string &s, const FormatSpec &spec);
 };
 
 // A reference to a string. It can be constructed from a C string,
@@ -464,7 +462,7 @@ class ArgFormatter {
   explicit ArgFormatter(Formatter &f) : formatter_(f) {}
 
   void Write(const std::string &s, const FormatSpec &spec) {
-    formatter_.Write(s, spec);
+    formatter_.FormatString(s.data(), s.size(), spec);
   }
 };
 

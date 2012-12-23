@@ -119,15 +119,15 @@ char *Formatter::PrepareFilledBuffer(
     *p = sign;
     p += size;
     std::fill(p, end, spec.fill);
-  } else if (spec.align == ALIGN_NUMERIC) {
-    if (sign) {
-      *p++ = sign;
-      --size;
-    }
-    std::fill(p, end - size, spec.fill);
-    p = end;
   } else {
-    *(end - size) = sign;
+    if (spec.align == ALIGN_NUMERIC) {
+      if (sign) {
+        *p++ = sign;
+        --size;
+      }
+    } else {
+      *(end - size) = sign;
+    }
     std::fill(p, end - size, spec.fill);
     p = end;
   }
@@ -268,6 +268,21 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
     }
     buffer_.reserve(n >= 0 ? offset + n + 1 : 2 * buffer_.capacity());
   }
+}
+
+void Formatter::FormatString(
+    const char *s, std::size_t size, const FormatSpec &spec) {
+  char *out = 0;
+  if (spec.width > size) {
+    out = GrowBuffer(spec.width);
+    if (spec.align == ALIGN_RIGHT)
+      out = std::fill_n(out, spec.width - size, spec.fill);
+    else
+      std::fill_n(out + size, spec.width - size, spec.fill);
+  } else {
+    out = GrowBuffer(size);
+  }
+  std::copy(s, s + size, out);
 }
 
 // Parses an unsigned integer advancing s to the end of the parsed input.
@@ -455,10 +470,17 @@ void Formatter::DoFormat() {
     case CHAR: {
       if (spec.type && spec.type != 'c')
         ReportUnknownType(spec.type, "char");
-      char *out = GrowBuffer(std::max(spec.width, 1u));
-      *out++ = arg.int_value;
-      if (spec.width > 1)
-        std::fill_n(out, spec.width - 1, spec.fill);
+      char *out = 0;
+      if (spec.width > 1) {
+        out = GrowBuffer(spec.width);
+        if (spec.align == ALIGN_RIGHT)
+          out = std::fill_n(out, spec.width - 1, spec.fill);
+        else
+          std::fill_n(out + 1, spec.width - 1, spec.fill);
+      } else {
+        out = GrowBuffer(1);
+      }
+      *out = arg.int_value;
       break;
     }
     case STRING: {
@@ -472,10 +494,7 @@ void Formatter::DoFormat() {
         if (*str)
           size = std::strlen(str);
       }
-      char *out = GrowBuffer(std::max<size_t>(spec.width, size));
-      out = std::copy(str, str + size, out);
-      if (spec.width > size)
-        std::fill_n(out, spec.width - size, spec.fill);
+      FormatString(str, size, spec);
       break;
     }
     case POINTER:
@@ -497,11 +516,4 @@ void Formatter::DoFormat() {
   }
   buffer_.append(start, s + 1);
   buffer_.resize(buffer_.size() - 1);  // Don't count the terminating zero.
-}
-
-void Formatter::Write(const std::string &s, const FormatSpec &spec) {
-  char *out = GrowBuffer(std::max<std::size_t>(spec.width, s.size()));
-  std::copy(s.begin(), s.end(), out);
-  if (spec.width > s.size())
-    std::fill_n(out + s.size(), spec.width - s.size(), spec.fill);
 }

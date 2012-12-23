@@ -276,6 +276,23 @@ TEST(FormatterTest, LeftAlign) {
   EXPECT_EQ("def  ", str(Format("{0:<5}") << TestString("def")));
 }
 
+TEST(FormatterTest, RightAlign) {
+  EXPECT_EQ("  42", str(Format("{0:>4}") << 42));
+  EXPECT_EQ("  42", str(Format("{0:>4o}") << 042));
+  EXPECT_EQ("  42", str(Format("{0:>4x}") << 0x42));
+  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42));
+  EXPECT_EQ("   42", str(Format("{0:>5}") << 42u));
+  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42l));
+  EXPECT_EQ("   42", str(Format("{0:>5}") << 42ul));
+  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42.0));
+  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42.0l));
+  EXPECT_EQ("    c", str(Format("{0:>5}") << 'c'));
+  EXPECT_EQ("  abc", str(Format("{0:>5}") << "abc"));
+  EXPECT_EQ("  0xface",
+      str(Format("{0:>8}") << reinterpret_cast<void*>(0xface)));
+  EXPECT_EQ("  def", str(Format("{0:>5}") << TestString("def")));
+}
+
 TEST(FormatterTest, Fill) {
   EXPECT_EQ("**42", str(Format("{0:*>4}") << 42));
   EXPECT_EQ("**-42", str(Format("{0:*>5}") << -42));
@@ -660,20 +677,6 @@ TEST(FormatterTest, FormatPointer) {
 
 TEST(FormatterTest, FormatString) {
   EXPECT_EQ("test", str(Format("{0}") << std::string("test")));
-}
-
-TEST(FormatterTest, Write) {
-  Formatter format;
-  fmt::FormatSpec spec;
-  spec.width = 2;
-  format.Write("12", spec);
-  EXPECT_EQ("12", format.str());
-  spec.width = 4;
-  format.Write("34", spec);
-  EXPECT_EQ("1234  ", format.str());
-  spec.width = 0;
-  format.Write("56", spec);
-  EXPECT_EQ("1234  56", format.str());
 }
 
 TEST(ArgFormatterTest, Write) {
