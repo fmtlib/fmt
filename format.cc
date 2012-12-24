@@ -173,7 +173,7 @@ void Formatter::FormatInt(T value, const FormatSpec &spec) {
       p[count--] = '0' + (n % 10);
       n /= 10;
     }
-    *p = '0' + n;
+    *p = static_cast<char>('0' + n);
     break;
   }
   case 'x': case 'X': {
