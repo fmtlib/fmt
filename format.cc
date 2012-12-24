@@ -89,6 +89,21 @@ struct IsLongDouble { enum {VALUE = 0}; };
 
 template <>
 struct IsLongDouble<long double> { enum {VALUE = 1}; };
+
+inline unsigned CountDigits(unsigned long n) {
+  unsigned count = 1;
+  for (;;) {
+    // Integer division is slow so do it for a group of four digits instead
+    // of for every digit. The idea comes from the talk by Alexandrescu
+    // "Three Optimization Tips for C++". See speed-test for a comparison.
+    if (n < 10) return count;
+    if (n < 100) return count + 1;
+    if (n < 1000) return count + 2;
+    if (n < 10000) return count + 3;
+    n /= 10000u;
+    count += 4;
+  }
+}
 }
 
 // Throws Exception(message) if format contains '}', otherwise throws
@@ -107,7 +122,7 @@ void Formatter::ReportError(const char *s, const std::string &message) const {
 }
 
 char *Formatter::PrepareFilledBuffer(
-    unsigned size, FormatSpec spec, char sign) {
+    unsigned size, const FormatSpec &spec, char sign) {
   if (spec.width <= size) {
     char *p = GrowBuffer(size);
     *p = sign;
@@ -115,11 +130,7 @@ char *Formatter::PrepareFilledBuffer(
   }
   char *p = GrowBuffer(spec.width);
   char *end = p + spec.width;
-  if (spec.align == ALIGN_LEFT) {
-    *p = sign;
-    p += size;
-    std::fill(p, end, spec.fill);
-  } else {
+  if (spec.align != ALIGN_LEFT) {
     if (spec.align == ALIGN_NUMERIC) {
       if (sign) {
         *p++ = sign;
@@ -130,12 +141,16 @@ char *Formatter::PrepareFilledBuffer(
     }
     std::fill(p, end - size, spec.fill);
     p = end;
+  } else {
+    *p = sign;
+    p += size;
+    std::fill(p, end, spec.fill);
   }
   return p - 1;
 }
 
 template <typename T>
-void Formatter::FormatInt(T value, FormatSpec spec) {
+void Formatter::FormatInt(T value, const FormatSpec &spec) {
   unsigned size = 0;
   char sign = 0;
   typedef typename IntTraits<T>::UnsignedType UnsignedType;
@@ -150,15 +165,15 @@ void Formatter::FormatInt(T value, FormatSpec spec) {
   }
   switch (spec.type) {
   case 0: case 'd': {
+    unsigned count = CountDigits(abs_value);
+    char *p = PrepareFilledBuffer(size + count, spec, sign) - count + 1;
+    --count;
     UnsignedType n = abs_value;
-    do {
-      ++size;
-    } while ((n /= 10) != 0);
-    char *p = PrepareFilledBuffer(size, spec, sign);
-    n = abs_value;
-    do {
-      *p-- = '0' + (n % 10);
-    } while ((n /= 10) != 0);
+    while (count != 0) {
+      p[count--] = '0' + (n % 10);
+      n /= 10;
+    }
+    *p = '0' + n;
     break;
   }
   case 'x': case 'X': {
@@ -220,18 +235,29 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
     break;
   }
 
+  char sign = 0;
+  if (value < 0) {
+    sign = '-';
+    value = -value;
+  } else if ((spec.flags & PLUS_FLAG) != 0) {
+    sign = '+';
+  }
+  size_t offset = buffer_.size();
+  unsigned width = spec.width;
+  if (sign) {
+    buffer_.reserve(buffer_.size() + std::max(width, 1u));
+    if (width > 0)
+      --width;
+    ++offset;
+  }
+
   // Build format string.
   enum { MAX_FORMAT_SIZE = 10}; // longest format: %+0*.*Lg
   char format[MAX_FORMAT_SIZE];
   char *format_ptr = format;
-  unsigned width = spec.width;
   *format_ptr++ = '%';
-  if ((spec.flags & PLUS_FLAG) != 0)
-    *format_ptr++ = '+';
   if (spec.align == ALIGN_LEFT)
     *format_ptr++ = '-';
-  else if (spec.align == ALIGN_NUMERIC)
-    *format_ptr++ = '0';
   if (width != 0)
     *format_ptr++ = '*';
   if (precision >= 0) {
@@ -244,7 +270,6 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
   *format_ptr = '\0';
 
   // Format using snprintf.
-  size_t offset = buffer_.size();
   for (;;) {
     size_t size = buffer_.capacity() - offset;
     int n = 0;
@@ -259,9 +284,21 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
           snprintf(start, size, format, width, precision, value);
     }
     if (n >= 0 && offset + n < buffer_.capacity()) {
-      if (spec.fill != ' ') {
+      if (sign) {
+        if ((spec.align != ALIGN_RIGHT && spec.align != ALIGN_DEFAULT) ||
+            *start != ' ') {
+          *(start - 1) = sign;
+          sign = 0;
+        } else {
+          *(start - 1) = spec.fill;
+        }
+        ++n;
+      }
+      if (spec.fill != ' ' || sign) {
         while (*start == ' ')
           *start++ = spec.fill;
+        if (sign)
+          *(start - 1) = sign;
       }
       GrowBuffer(n);
       return;
@@ -352,10 +389,15 @@ void Formatter::DoFormat() {
             break;
           }
           if (spec.align != ALIGN_DEFAULT) {
-            if (p != s && c != '{' && c != '}') {
+            if (p != s) {
+              if (c == '}') break;
+              if (c == '{')
+                ReportError(s, "invalid fill character '{'");
               s += 2;
               spec.fill = c;
             } else ++s;
+            if (spec.align == ALIGN_NUMERIC && arg.type > LAST_NUMERIC_TYPE)
+              ReportError(s, "format specifier '=' requires numeric argument");
             break;
           }
         } while (--p >= s);

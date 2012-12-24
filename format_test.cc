@@ -293,7 +293,36 @@ TEST(FormatterTest, RightAlign) {
   EXPECT_EQ("  def", str(Format("{0:>5}") << TestString("def")));
 }
 
+TEST(FormatterTest, NumericAlign) {
+  EXPECT_EQ("  42", str(Format("{0:=4}") << 42));
+  EXPECT_EQ("+ 42", str(Format("{0:=+4}") << 42));
+  EXPECT_EQ("  42", str(Format("{0:=4o}") << 042));
+  EXPECT_EQ("+ 42", str(Format("{0:=+4o}") << 042));
+  EXPECT_EQ("  42", str(Format("{0:=4x}") << 0x42));
+  EXPECT_EQ("+ 42", str(Format("{0:=+4x}") << 0x42));
+  EXPECT_EQ("-  42", str(Format("{0:=5}") << -42));
+  EXPECT_EQ("   42", str(Format("{0:=5}") << 42u));
+  EXPECT_EQ("-  42", str(Format("{0:=5}") << -42l));
+  EXPECT_EQ("   42", str(Format("{0:=5}") << 42ul));
+  EXPECT_EQ("-  42", str(Format("{0:=5}") << -42.0));
+  EXPECT_EQ("-  42", str(Format("{0:=5}") << -42.0l));
+  EXPECT_THROW_MSG(Format("{0:=5") << 'c',
+      FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0:=5}") << 'c',
+      FormatError, "format specifier '=' requires numeric argument");
+  EXPECT_THROW_MSG(Format("{0:=5}") << "abc",
+      FormatError, "format specifier '=' requires numeric argument");
+  EXPECT_THROW_MSG(Format("{0:=8}") << reinterpret_cast<void*>(0xface),
+      FormatError, "format specifier '=' requires numeric argument");
+  EXPECT_THROW_MSG(Format("{0:=5}") << TestString("def"),
+      FormatError, "format specifier '=' requires numeric argument");
+}
+
 TEST(FormatterTest, Fill) {
+  EXPECT_THROW_MSG(Format("{0:{<5}") << 'c',
+      FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0:{<5}}") << 'c',
+      FormatError, "invalid fill character '{'");
   EXPECT_EQ("**42", str(Format("{0:*>4}") << 42));
   EXPECT_EQ("**-42", str(Format("{0:*>5}") << -42));
   EXPECT_EQ("***42", str(Format("{0:*>5}") << 42u));

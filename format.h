@@ -271,11 +271,11 @@ class Formatter {
 
   void ReportError(const char *s, const std::string &message) const;
 
-  char *PrepareFilledBuffer(unsigned size, FormatSpec spec, char sign);
+  char *PrepareFilledBuffer(unsigned size, const FormatSpec &spec, char sign);
 
   // Formats an integer.
   template <typename T>
-  void FormatInt(T value, FormatSpec spec);
+  void FormatInt(T value, const FormatSpec &spec);
 
   // Formats a floating point number (double or long double).
   template <typename T>
