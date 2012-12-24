@@ -312,10 +312,12 @@ void Formatter::FormatString(
   char *out = 0;
   if (spec.width > size) {
     out = GrowBuffer(spec.width);
-    if (spec.align == ALIGN_RIGHT)
-      out = std::fill_n(out, spec.width - size, spec.fill);
-    else
+    if (spec.align == ALIGN_RIGHT) {
+      std::fill_n(out, spec.width - size, spec.fill);
+      out += spec.width - size;
+    } else {
       std::fill_n(out + size, spec.width - size, spec.fill);
+    }
   } else {
     out = GrowBuffer(size);
   }
