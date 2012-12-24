@@ -39,6 +39,8 @@
 #include <gtest/gtest.h>
 #include "format.h"
 
+#include <stdint.h>
+
 using std::size_t;
 using std::sprintf;
 
@@ -702,6 +704,8 @@ TEST(FormatterTest, FormatPointer) {
   EXPECT_EQ("0x0", str(Format("{0}") << reinterpret_cast<void*>(0)));
   EXPECT_EQ("0x1234", str(Format("{0}") << reinterpret_cast<void*>(0x1234)));
   EXPECT_EQ("0x1234", str(Format("{0:p}") << reinterpret_cast<void*>(0x1234)));
+  EXPECT_EQ("0x" + std::string(sizeof(void*) * CHAR_BIT / 4, 'f'),
+      str(Format("{0}") << reinterpret_cast<void*>(~uintptr_t())));
 }
 
 TEST(FormatterTest, FormatString) {
