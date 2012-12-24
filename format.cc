@@ -517,10 +517,12 @@ void Formatter::DoFormat() {
       char *out = 0;
       if (spec.width > 1) {
         out = GrowBuffer(spec.width);
-        if (spec.align == ALIGN_RIGHT)
-          out = std::fill_n(out, spec.width - 1, spec.fill);
-        else
+        if (spec.align == ALIGN_RIGHT) {
+          std::fill_n(out, spec.width - 1, spec.fill);
+          out += spec.width - 1;
+        } else {
           std::fill_n(out + 1, spec.width - 1, spec.fill);
+        }
       } else {
         out = GrowBuffer(1);
       }
