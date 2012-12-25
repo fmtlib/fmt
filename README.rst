@@ -169,6 +169,13 @@ it in C++98 is somewhat difficult.  However if you only need a type-safe
 printf replacement with support for user-defined types, I highly recommend
 this library.
 
+Boost Spirit.Karma
+~~~~~~~~~~~~~~~~~~
+
+This is not really a formatting library but I decided to include it here
+for completeness. As IOStreams it suffers from the problem of mixing
+verbatim text with arguments, but is faster.
+
 Benchmarks
 ----------
 
