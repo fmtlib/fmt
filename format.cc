@@ -137,7 +137,7 @@ void FormatDecimal(char *buffer, uint64_t value, unsigned num_digits) {
 // Throws Exception(message) if format contains '}', otherwise throws
 // FormatError reporting unmatched '{'. The idea is that unmatched '{'
 // should override other errors.
-void Formatter::ReportError(const char *s, const std::string &message) const {
+void Formatter::ReportError(const char *s, StringRef message) const {
   for (int num_open_braces = num_open_braces_; *s; ++s) {
     if (*s == '{') {
       ++num_open_braces;
@@ -459,15 +459,21 @@ void Formatter::DoFormat() {
       }
 
       // Parse sign.
-      if (*s == '+') {
-        ++s;
-        if (arg.type > LAST_NUMERIC_TYPE)
-          ReportError(s, "format specifier '+' requires numeric argument");
+      switch (*s) {
+      case '+':
+        spec.flags |= PLUS_FLAG;
+        // Fall through.
+      case '-':
+        if (arg.type > LAST_NUMERIC_TYPE) {
+          ReportError(s,
+              Format("format specifier '{0}' requires numeric argument") << *s);
+        }
         if (arg.type == UINT || arg.type == ULONG) {
           ReportError(s,
-              "format specifier '+' requires signed argument");
+              Format("format specifier '{0}' requires signed argument") << *s);
         }
-        spec.flags |= PLUS_FLAG;
+        ++s;
+        break;
       }
 
       // Parse width and zero flag.

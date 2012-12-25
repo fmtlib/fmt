@@ -117,6 +117,33 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
 class ArgInserter;
 }
 
+// A reference to a string. It can be constructed from a C string,
+// std::string or as a result of a formatting operation. It is most useful
+// as a parameter type to allow passing different types of strings in a
+// function, for example:
+//   void SetName(StringRef s) {
+//     std::string name = s;
+//     ...
+//   }
+class StringRef {
+ private:
+  const char *data_;
+  mutable std::size_t size_;
+
+ public:
+  StringRef(const char *s, std::size_t size = 0) : data_(s), size_(size) {}
+  StringRef(const std::string &s) : data_(s.c_str()), size_(s.size()) {}
+
+  operator std::string() const { return std::string(data_, size()); }
+
+  const char *c_str() const { return data_; }
+
+  std::size_t size() const {
+    if (size_ == 0) size_ = std::strlen(data_);
+    return size_;
+  }
+};
+
 class FormatError : public std::runtime_error {
  public:
   explicit FormatError(const std::string &message)
@@ -269,7 +296,7 @@ class Formatter {
     args_.push_back(&arg);
   }
 
-  void ReportError(const char *s, const std::string &message) const;
+  void ReportError(const char *s, StringRef message) const;
 
   char *PrepareFilledBuffer(unsigned size, const FormatSpec &spec, char sign);
 
@@ -323,33 +350,6 @@ class Formatter {
   const char *c_str() const { return &buffer_[0]; }
 
   std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
-};
-
-// A reference to a string. It can be constructed from a C string,
-// std::string or as a result of a formatting operation. It is most useful
-// as a parameter type to allow passing different types of strings in a
-// function, for example:
-//   void SetName(StringRef s) {
-//     std::string name = s;
-//     ...
-//   }
-class StringRef {
- private:
-  const char *data_;
-  mutable std::size_t size_;
-
- public:
-  StringRef(const char *s, std::size_t size = 0) : data_(s), size_(size) {}
-  StringRef(const std::string &s) : data_(s.c_str()), size_(s.size()) {}
-
-  operator std::string() const { return std::string(data_, size()); }
-
-  const char *c_str() const { return data_; }
-
-  std::size_t size() const {
-    if (size_ == 0) size_ = std::strlen(data_);
-    return size_;
-  }
 };
 
 namespace internal {
