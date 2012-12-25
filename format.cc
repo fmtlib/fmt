@@ -90,7 +90,7 @@ struct IsLongDouble { enum {VALUE = 0}; };
 template <>
 struct IsLongDouble<long double> { enum {VALUE = 1}; };
 
-inline unsigned CountDigits(unsigned long n) {
+inline unsigned CountDigits(uint64_t n) {
   unsigned count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
