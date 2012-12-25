@@ -319,6 +319,8 @@ class Formatter {
   // Parses argument index and returns an argument with this index.
   const Arg &ParseArgIndex(const char *&s) const;
 
+  void CheckSign(const char *&s, const Arg &arg);
+
   void DoFormat();
 
   void CompleteFormatting() {

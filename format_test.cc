@@ -402,6 +402,29 @@ TEST(FormatterTest, MinusSign) {
       FormatError, "format specifier '-' requires numeric argument");
 }
 
+TEST(FormatterTest, SpaceSign) {
+  EXPECT_EQ(" 42", str(Format("{0: }") << 42));
+  EXPECT_EQ("-42", str(Format("{0: }") << -42));
+  EXPECT_EQ(" 42", str(Format("{0: }") << 42));
+  EXPECT_THROW_MSG(Format("{0: }") << 42u,
+      FormatError, "format specifier ' ' requires signed argument");
+  EXPECT_EQ(" 42", str(Format("{0: }") << 42l));
+  EXPECT_THROW_MSG(Format("{0: }") << 42ul,
+      FormatError, "format specifier ' ' requires signed argument");
+  EXPECT_EQ(" 42", str(Format("{0: }") << 42.0));
+  EXPECT_EQ(" 42", str(Format("{0: }") << 42.0l));
+  EXPECT_THROW_MSG(Format("{0: ") << 'c',
+      FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0: }") << 'c',
+      FormatError, "format specifier ' ' requires numeric argument");
+  EXPECT_THROW_MSG(Format("{0: }") << "abc",
+      FormatError, "format specifier ' ' requires numeric argument");
+  EXPECT_THROW_MSG(Format("{0: }") << reinterpret_cast<void*>(0x42),
+      FormatError, "format specifier ' ' requires numeric argument");
+  EXPECT_THROW_MSG(Format("{0: }") << TestString(),
+      FormatError, "format specifier ' ' requires numeric argument");
+}
+
 TEST(FormatterTest, ZeroFlag) {
   EXPECT_EQ("42", str(Format("{0:0}") << 42));
   EXPECT_EQ("-0042", str(Format("{0:05}") << -42));

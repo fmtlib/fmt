@@ -54,7 +54,7 @@ using fmt::StringRef;
 namespace {
 
 // Flags.
-enum { PLUS_FLAG = 1, HEX_PREFIX_FLAG = 2 };
+enum { SIGN_FLAG = 1, PLUS_FLAG = 2, HEX_PREFIX_FLAG = 4 };
 
 void ReportUnknownType(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
@@ -129,7 +129,7 @@ void FormatDecimal(char *buffer, uint64_t value, unsigned num_digits) {
     *buffer = static_cast<char>('0' + value);
     return;
   }
-  unsigned index = value * 2;
+  unsigned index = static_cast<unsigned>(value * 2);
   buffer[1] = DIGITS[index + 1];
   buffer[0] = DIGITS[index];
 }
@@ -205,8 +205,8 @@ void Formatter::FormatInt(T value, const FormatSpec &spec) {
     sign = '-';
     ++size;
     abs_value = 0 - abs_value;
-  } else if ((spec.flags & PLUS_FLAG) != 0) {
-    sign = '+';
+  } else if ((spec.flags & SIGN_FLAG) != 0) {
+    sign = (spec.flags & PLUS_FLAG) != 0 ? '+' : ' ';
     ++size;
   }
   switch (spec.type) {
@@ -280,8 +280,8 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
   if (value < 0) {
     sign = '-';
     value = -value;
-  } else if ((spec.flags & PLUS_FLAG) != 0) {
-    sign = '+';
+  } else if ((spec.flags & SIGN_FLAG) != 0) {
+    sign = (spec.flags & PLUS_FLAG) != 0 ? '+' : ' ';
   }
   size_t offset = buffer_.size();
   unsigned width = spec.width;
@@ -401,6 +401,18 @@ const Formatter::Arg &Formatter::ParseArgIndex(const char *&s) const {
   return *args_[arg_index];
 }
 
+void Formatter::CheckSign(const char *&s, const Arg &arg) {
+  if (arg.type > LAST_NUMERIC_TYPE) {
+    ReportError(s,
+        Format("format specifier '{0}' requires numeric argument") << *s);
+  }
+  if (arg.type == UINT || arg.type == ULONG) {
+    ReportError(s,
+        Format("format specifier '{0}' requires signed argument") << *s);
+  }
+  ++s;
+}
+
 void Formatter::DoFormat() {
   const char *start = format_;
   format_ = 0;
@@ -462,18 +474,15 @@ void Formatter::DoFormat() {
       // Parse sign.
       switch (*s) {
       case '+':
-        spec.flags |= PLUS_FLAG;
-        // Fall through.
+        CheckSign(s, arg);
+        spec.flags |= SIGN_FLAG | PLUS_FLAG;
+        break;
       case '-':
-        if (arg.type > LAST_NUMERIC_TYPE) {
-          ReportError(s,
-              Format("format specifier '{0}' requires numeric argument") << *s);
-        }
-        if (arg.type == UINT || arg.type == ULONG) {
-          ReportError(s,
-              Format("format specifier '{0}' requires signed argument") << *s);
-        }
-        ++s;
+        CheckSign(s, arg);
+        break;
+      case ' ':
+        CheckSign(s, arg);
+        spec.flags |= SIGN_FLAG;
         break;
       }
 
