@@ -81,29 +81,6 @@ performed when formatting is complete:
 
     ReportError("File not found: {0}") << path;
 
-Format string syntax
---------------------
-
-A format string can contain "replacement fields" delimited by curly
-braces ``{}``.  Text outside of braces is copied unchanged to the output.
-If you need to include a brace character in the literal text, it can be
-escaped by doubling: ``{{`` and ``}}``.
-
-The grammar for a replacement field is as follows:
-
-.. parsed-literal::
-
-  `replacement_field`: "{" `arg_index` [":" `format_spec`] "}"
-  `arg_index`: integer
-  `format_spec`: ["+"]["0"][`width`]["." `precision`][`type`]
-  `width`: integer
-  `precision`: integer | "{" `arg_index` "}"
-  `type`: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | "s" | "x" | "X"
-
-Preceding the `width` field with ``0`` forces the padding to be placed
-after the sign (if any) but before the digits. This is used for printing
-fields in the form ``+000000120``. This option is only valid for numeric types.
-
 Motivation
 ----------
 
