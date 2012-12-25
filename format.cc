@@ -121,6 +121,19 @@ void Formatter::ReportError(const char *s, const std::string &message) const {
   throw fmt::FormatError("unmatched '{' in format");
 }
 
+// Fills the padding around the content and returns the pointer to the
+// content area.
+char *FillPadding(char *buffer,
+    unsigned total_size, unsigned content_size, char fill) {
+  unsigned padding = total_size - content_size;
+  unsigned left_padding = padding / 2;
+  std::fill_n(buffer, left_padding, fill);
+  buffer += left_padding;
+  char *content = buffer;
+  std::fill_n(buffer + content_size, padding - left_padding, fill);
+  return content;
+}
+
 char *Formatter::PrepareFilledBuffer(
     unsigned size, const FormatSpec &spec, char sign) {
   if (spec.width <= size) {
@@ -130,7 +143,15 @@ char *Formatter::PrepareFilledBuffer(
   }
   char *p = GrowBuffer(spec.width);
   char *end = p + spec.width;
-  if (spec.align != ALIGN_LEFT) {
+  if (spec.align == ALIGN_LEFT) {
+    *p = sign;
+    p += size;
+    std::fill(p, end, spec.fill);
+  } else if (spec.align == ALIGN_CENTER) {
+    p = FillPadding(p, spec.width, size, spec.fill);
+    *p = sign;
+    p += size;
+  } else {
     if (spec.align == ALIGN_NUMERIC) {
       if (sign) {
         *p++ = sign;
@@ -141,10 +162,6 @@ char *Formatter::PrepareFilledBuffer(
     }
     std::fill(p, end - size, spec.fill);
     p = end;
-  } else {
-    *p = sign;
-    p += size;
-    std::fill(p, end, spec.fill);
   }
   return p - 1;
 }
@@ -256,10 +273,15 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
   char format[MAX_FORMAT_SIZE];
   char *format_ptr = format;
   *format_ptr++ = '%';
-  if (spec.align == ALIGN_LEFT)
-    *format_ptr++ = '-';
-  if (width != 0)
-    *format_ptr++ = '*';
+  unsigned width_for_sprintf = width;
+  if (spec.align == ALIGN_CENTER) {
+    width_for_sprintf = 0;
+  } else {
+    if (spec.align == ALIGN_LEFT)
+      *format_ptr++ = '-';
+    if (width != 0)
+      *format_ptr++ = '*';
+  }
   if (precision >= 0) {
     *format_ptr++ = '.';
     *format_ptr++ = '*';
@@ -274,14 +296,14 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
     size_t size = buffer_.capacity() - offset;
     int n = 0;
     char *start = &buffer_[offset];
-    if (width == 0) {
+    if (width_for_sprintf == 0) {
       n = precision < 0 ?
           snprintf(start, size, format, value) :
           snprintf(start, size, format, precision, value);
     } else {
       n = precision < 0 ?
-          snprintf(start, size, format, width, value) :
-          snprintf(start, size, format, width, precision, value);
+          snprintf(start, size, format, width_for_sprintf, value) :
+          snprintf(start, size, format, width_for_sprintf, precision, value);
     }
     if (n >= 0 && offset + n < buffer_.capacity()) {
       if (sign) {
@@ -293,6 +315,12 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
           *(start - 1) = spec.fill;
         }
         ++n;
+      }
+      if (spec.align == ALIGN_CENTER && spec.width > static_cast<unsigned>(n)) {
+        char *p = GrowBuffer(spec.width);
+        std::copy(p, p + n, p + (spec.width - n) / 2);
+        FillPadding(p, spec.width, n, spec.fill);
+        return;
       }
       if (spec.fill != ' ' || sign) {
         while (*start == ' ')
@@ -315,6 +343,8 @@ void Formatter::FormatString(
     if (spec.align == ALIGN_RIGHT) {
       std::fill_n(out, spec.width - size, spec.fill);
       out += spec.width - size;
+    } else if (spec.align == ALIGN_CENTER) {
+      out = FillPadding(out, spec.width, size, spec.fill);
     } else {
       std::fill_n(out + size, spec.width - size, spec.fill);
     }
@@ -520,6 +550,8 @@ void Formatter::DoFormat() {
         if (spec.align == ALIGN_RIGHT) {
           std::fill_n(out, spec.width - 1, spec.fill);
           out += spec.width - 1;
+        } else if (spec.align == ALIGN_CENTER) {
+          out = FillPadding(out, spec.width, 1, spec.fill);
         } else {
           std::fill_n(out + 1, spec.width - 1, spec.fill);
         }

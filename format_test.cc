@@ -320,6 +320,23 @@ TEST(FormatterTest, NumericAlign) {
       FormatError, "format specifier '=' requires numeric argument");
 }
 
+TEST(FormatterTest, CenterAlign) {
+  EXPECT_EQ(" 42  ", str(Format("{0:^5}") << 42));
+  EXPECT_EQ(" 42  ", str(Format("{0:^5o}") << 042));
+  EXPECT_EQ(" 42  ", str(Format("{0:^5x}") << 0x42));
+  EXPECT_EQ(" -42 ", str(Format("{0:^5}") << -42));
+  EXPECT_EQ(" 42  ", str(Format("{0:^5}") << 42u));
+  EXPECT_EQ(" -42 ", str(Format("{0:^5}") << -42l));
+  EXPECT_EQ(" 42  ", str(Format("{0:^5}") << 42ul));
+  EXPECT_EQ(" -42  ", str(Format("{0:^6}") << -42.0));
+  EXPECT_EQ(" -42 ", str(Format("{0:^5}") << -42.0l));
+  EXPECT_EQ("  c  ", str(Format("{0:^5}") << 'c'));
+  EXPECT_EQ(" abc  ", str(Format("{0:^6}") << "abc"));
+  EXPECT_EQ(" 0xface ",
+      str(Format("{0:^8}") << reinterpret_cast<void*>(0xface)));
+  EXPECT_EQ(" def ", str(Format("{0:^5}") << TestString("def")));
+}
+
 TEST(FormatterTest, Fill) {
   EXPECT_THROW_MSG(Format("{0:{<5}") << 'c',
       FormatError, "unmatched '{' in format");
