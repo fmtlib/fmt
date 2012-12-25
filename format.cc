@@ -44,6 +44,7 @@
 using std::size_t;
 using fmt::Formatter;
 using fmt::FormatSpec;
+using fmt::StringRef;
 
 #if _MSC_VER
 # undef snprintf
