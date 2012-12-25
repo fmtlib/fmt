@@ -104,6 +104,34 @@ inline unsigned CountDigits(uint64_t n) {
     count += 4;
   }
 }
+
+const char DIGITS[] =
+    "0001020304050607080910111213141516171819"
+    "2021222324252627282930313233343536373839"
+    "4041424344454647484950515253545556575859"
+    "6061626364656667686970717273747576777879"
+    "8081828384858687888990919293949596979899";
+
+void FormatDecimal(char *buffer, uint64_t value, unsigned num_digits) {
+  --num_digits;
+  while (value >= 100) {
+    // Integer division is slow so do it for a group of two digits instead
+    // of for every digit. The idea comes from the talk by Alexandrescu
+    // "Three Optimization Tips for C++". See speed-test for a comparison.
+    unsigned index = (value % 100) * 2;
+    value /= 100;
+    buffer[num_digits] = DIGITS[index + 1];
+    buffer[num_digits - 1] = DIGITS[index];
+    num_digits -= 2;
+  }
+  if (value < 10) {
+    *buffer = static_cast<char>('0' + value);
+    return;
+  }
+  unsigned index = value * 2;
+  buffer[1] = DIGITS[index + 1];
+  buffer[0] = DIGITS[index];
+}
 }
 
 // Throws Exception(message) if format contains '}', otherwise throws
@@ -182,15 +210,10 @@ void Formatter::FormatInt(T value, const FormatSpec &spec) {
   }
   switch (spec.type) {
   case 0: case 'd': {
-    unsigned count = CountDigits(abs_value);
-    char *p = PrepareFilledBuffer(size + count, spec, sign) - count + 1;
-    --count;
-    UnsignedType n = abs_value;
-    while (count != 0) {
-      p[count--] = '0' + (n % 10);
-      n /= 10;
-    }
-    *p = static_cast<char>('0' + n);
+    unsigned num_digits = CountDigits(abs_value);
+    char *p = PrepareFilledBuffer(size + num_digits, spec, sign)
+        - num_digits + 1;
+    FormatDecimal(p, abs_value, num_digits);
     break;
   }
   case 'x': case 'X': {
@@ -594,4 +617,20 @@ void Formatter::DoFormat() {
   }
   buffer_.append(start, s + 1);
   buffer_.resize(buffer_.size() - 1);  // Don't count the terminating zero.
+}
+
+void Formatter::operator<<(int value) {
+  unsigned abs_value = value;
+  unsigned num_digits = 0;
+  char *out = 0;
+  if (value >= 0) {
+    num_digits = CountDigits(abs_value);
+    out = GrowBuffer(num_digits);
+  } else {
+    abs_value = 0 - abs_value;
+    num_digits = CountDigits(abs_value);
+    out = GrowBuffer(num_digits + 1);
+    *out++ = '-';
+  }
+  FormatDecimal(out, abs_value, num_digits);
 }

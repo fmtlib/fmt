@@ -315,9 +315,7 @@ class Formatter {
   // using inserter operator<<.
   internal::ArgInserter operator()(const char *format);
 
-  void operator<<(int value) {
-    FormatInt(value, FormatSpec());
-  }
+  void operator<<(int value);
 
   std::size_t size() const { return buffer_.size(); }
 
