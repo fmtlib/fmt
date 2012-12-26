@@ -42,6 +42,7 @@
 #include <algorithm>
 
 using std::size_t;
+using fmt::BasicFormatter;
 using fmt::Formatter;
 using fmt::FormatSpec;
 using fmt::StringRef;
@@ -135,6 +136,22 @@ void FormatDecimal(char *buffer, uint64_t value, unsigned num_digits) {
 }
 }
 
+void BasicFormatter::operator<<(int value) {
+  unsigned abs_value = value;
+  unsigned num_digits = 0;
+  char *out = 0;
+  if (value >= 0) {
+    num_digits = CountDigits(abs_value);
+    out = GrowBuffer(num_digits);
+  } else {
+    abs_value = 0 - abs_value;
+    num_digits = CountDigits(abs_value);
+    out = GrowBuffer(num_digits + 1);
+    *out++ = '-';
+  }
+  FormatDecimal(out, abs_value, num_digits);
+}
+
 // Throws Exception(message) if format contains '}', otherwise throws
 // FormatError reporting unmatched '{'. The idea is that unmatched '{'
 // should override other errors.
@@ -153,7 +170,7 @@ void Formatter::ReportError(const char *s, StringRef message) const {
 // Fills the padding around the content and returns the pointer to the
 // content area.
 char *FillPadding(char *buffer,
-    unsigned total_size, unsigned content_size, char fill) {
+    unsigned total_size, std::size_t content_size, char fill) {
   unsigned padding = total_size - content_size;
   unsigned left_padding = padding / 2;
   std::fill_n(buffer, left_padding, fill);
@@ -633,20 +650,4 @@ void Formatter::DoFormat() {
   }
   buffer_.append(start, s + 1);
   buffer_.resize(buffer_.size() - 1);  // Don't count the terminating zero.
-}
-
-void Formatter::operator<<(int value) {
-  unsigned abs_value = value;
-  unsigned num_digits = 0;
-  char *out = 0;
-  if (value >= 0) {
-    num_digits = CountDigits(abs_value);
-    out = GrowBuffer(num_digits);
-  } else {
-    abs_value = 0 - abs_value;
-    num_digits = CountDigits(abs_value);
-    out = GrowBuffer(num_digits + 1);
-    *out++ = '-';
-  }
-  FormatDecimal(out, abs_value, num_digits);
 }

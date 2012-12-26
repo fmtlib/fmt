@@ -164,6 +164,23 @@ struct FormatSpec {
   FormatSpec() : align(ALIGN_DEFAULT), flags(0), width(0), type(0), fill(' ') {}
 };
 
+class BasicFormatter {
+ protected:
+  enum { INLINE_BUFFER_SIZE = 500 };
+  internal::Array<char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
+
+  // Grows the buffer by n characters and returns a pointer to the newly
+  // allocated area.
+  char *GrowBuffer(std::size_t n) {
+    std::size_t size = buffer_.size();
+    buffer_.resize(size + n);
+    return &buffer_[size];
+  }
+
+ public:
+  void operator<<(int value);
+};
+
 // Formatter provides string formatting functionality similar to Python's
 // str.format. The output is stored in a memory buffer that grows dynamically.
 // Usage:
@@ -178,11 +195,7 @@ struct FormatSpec {
 //   (-3.140000, +3.140000)
 //
 // The buffer can be accessed using Formatter::data() or Formatter::c_str().
-class Formatter {
- private:
-  enum { INLINE_BUFFER_SIZE = 500 };
-  internal::Array<char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
-
+class Formatter : public BasicFormatter {
   enum Type {
     // Numeric types should go first.
     INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE,
@@ -328,14 +341,6 @@ class Formatter {
     DoFormat();
   }
 
-  // Grows the buffer by n characters and returns a pointer to the newly
-  // allocated area.
-  char *GrowBuffer(std::size_t n) {
-    std::size_t size = buffer_.size();
-    buffer_.resize(size + n);
-    return &buffer_[size];
-  }
-
  public:
   Formatter() : format_(0) { buffer_[0] = 0; }
 
@@ -343,8 +348,6 @@ class Formatter {
   // Arguments are accepted through the returned ArgInserter object
   // using inserter operator<<.
   internal::ArgInserter operator()(const char *format);
-
-  void operator<<(int value);
 
   std::size_t size() const { return buffer_.size(); }
 
