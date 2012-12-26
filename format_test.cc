@@ -425,6 +425,39 @@ TEST(FormatterTest, SpaceSign) {
       FormatError, "format specifier ' ' requires numeric argument");
 }
 
+TEST(FormatterTest, HashFlag) {
+  // TODO
+  EXPECT_EQ("42", str(Format("{0:#}") << 42));
+  EXPECT_EQ("-42", str(Format("{0:#}") << -42));
+  EXPECT_EQ("0x42", str(Format("{0:#x}") << 0x42));
+  EXPECT_EQ("-0x42", str(Format("{0:#x}") << -0x42));
+  EXPECT_EQ("042", str(Format("{0:#o}") << 042));
+  EXPECT_EQ("-042", str(Format("{0:#o}") << -042));
+  EXPECT_EQ("42", str(Format("{0:#}") << 42u));
+  EXPECT_EQ("0x42", str(Format("{0:#x}") << 0x42u));
+  EXPECT_EQ("042", str(Format("{0:#o}") << 042u));
+  EXPECT_EQ("-42", str(Format("{0:#}") << -42l));
+  EXPECT_EQ("0x42", str(Format("{0:#x}") << 0x42l));
+  EXPECT_EQ("-0x42", str(Format("{0:#x}") << -0x42l));
+  EXPECT_EQ("042", str(Format("{0:#o}") << 042l));
+  EXPECT_EQ("-042", str(Format("{0:#o}") << -042l));
+  EXPECT_EQ("42", str(Format("{0:#}") << 42ul));
+  EXPECT_EQ("0x42", str(Format("{0:#x}") << 0x42ul));
+  EXPECT_EQ("042", str(Format("{0:#o}") << 042ul));
+  EXPECT_EQ("-42.0000", str(Format("{0:#}") << -42.0));
+  EXPECT_EQ("-42.0000", str(Format("{0:#}") << -42.0l));
+  EXPECT_THROW_MSG(Format("{0:#") << 'c',
+      FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(Format("{0:#}") << 'c',
+      FormatError, "format specifier '#' requires numeric argument");
+  EXPECT_THROW_MSG(Format("{0:#}") << "abc",
+      FormatError, "format specifier '#' requires numeric argument");
+  EXPECT_THROW_MSG(Format("{0:#}") << reinterpret_cast<void*>(0x42),
+      FormatError, "format specifier '#' requires numeric argument");
+  EXPECT_THROW_MSG(Format("{0:#}") << TestString(),
+      FormatError, "format specifier '#' requires numeric argument");
+}
+
 TEST(FormatterTest, ZeroFlag) {
   EXPECT_EQ("42", str(Format("{0:0}") << 42));
   EXPECT_EQ("-0042", str(Format("{0:05}") << -42));

@@ -55,7 +55,7 @@ using fmt::StringRef;
 namespace {
 
 // Flags.
-enum { SIGN_FLAG = 1, PLUS_FLAG = 2, HEX_PREFIX_FLAG = 4 };
+enum { SIGN_FLAG = 1, PLUS_FLAG = 2, HASH_FLAG = 4 };
 
 void ReportUnknownType(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
@@ -236,7 +236,7 @@ void Formatter::FormatInt(T value, const FormatSpec &spec) {
   }
   case 'x': case 'X': {
     UnsignedType n = abs_value;
-    bool print_prefix = (spec.flags & HEX_PREFIX_FLAG) != 0;
+    bool print_prefix = (spec.flags & HASH_FLAG) != 0;
     if (print_prefix) size += 2;
     do {
       ++size;
@@ -250,12 +250,14 @@ void Formatter::FormatInt(T value, const FormatSpec &spec) {
     } while ((n >>= 4) != 0);
     if (print_prefix) {
       *p-- = spec.type;
-      *p-- = '0';
+      *p = '0';
     }
     break;
   }
   case 'o': {
     UnsignedType n = abs_value;
+    bool print_prefix = (spec.flags & HASH_FLAG) != 0;
+    if (print_prefix) ++size;
     do {
       ++size;
     } while ((n >>= 3) != 0);
@@ -264,6 +266,8 @@ void Formatter::FormatInt(T value, const FormatSpec &spec) {
     do {
       *p-- = '0' + (n & 7);
     } while ((n >>= 3) != 0);
+    if (print_prefix)
+      *p = '0';
     break;
   }
   default:
@@ -310,11 +314,13 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
   }
 
   // Build format string.
-  enum { MAX_FORMAT_SIZE = 10}; // longest format: %+0*.*Lg
+  enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
   char format[MAX_FORMAT_SIZE];
   char *format_ptr = format;
   *format_ptr++ = '%';
   unsigned width_for_sprintf = width;
+  if ((spec.flags & HASH_FLAG) != 0)
+    *format_ptr++ = '#';
   if (spec.align == ALIGN_CENTER) {
     width_for_sprintf = 0;
   } else {
@@ -503,6 +509,13 @@ void Formatter::DoFormat() {
         break;
       }
 
+      if (*s == '#') {
+        if (arg.type > LAST_NUMERIC_TYPE)
+          ReportError(s, "format specifier '#' requires numeric argument");
+        spec.flags |= HASH_FLAG;
+        ++s;
+      }
+
       // Parse width and zero flag.
       if ('0' <= *s && *s <= '9') {
         if (*s == '0') {
@@ -634,7 +647,7 @@ void Formatter::DoFormat() {
     case POINTER:
       if (spec.type && spec.type != 'p')
         ReportUnknownType(spec.type, "pointer");
-      spec.flags = HEX_PREFIX_FLAG;
+      spec.flags = HASH_FLAG;
       spec.type = 'x';
       FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
       break;
