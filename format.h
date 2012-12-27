@@ -301,6 +301,7 @@ class Formatter : public BasicFormatter {
 
   const char *format_;  // Format string.
   int num_open_braces_;
+  int next_arg_index_;
 
   friend class internal::ArgInserter;
   friend class ArgFormatter;
@@ -330,7 +331,7 @@ class Formatter : public BasicFormatter {
   unsigned ParseUInt(const char *&s) const;
 
   // Parses argument index and returns an argument with this index.
-  const Arg &ParseArgIndex(const char *&s) const;
+  const Arg &ParseArgIndex(const char *&s);
 
   void CheckSign(const char *&s, const Arg &arg);
 

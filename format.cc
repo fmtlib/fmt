@@ -171,8 +171,8 @@ void Formatter::ReportError(const char *s, StringRef message) const {
 // content area.
 char *FillPadding(char *buffer,
     unsigned total_size, std::size_t content_size, char fill) {
-  unsigned padding = total_size - content_size;
-  unsigned left_padding = padding / 2;
+  std::size_t padding = total_size - content_size;
+  std::size_t left_padding = padding / 2;
   std::fill_n(buffer, left_padding, fill);
   buffer += left_padding;
   char *content = buffer;
@@ -415,12 +415,26 @@ unsigned Formatter::ParseUInt(const char *&s) const {
   return value;
 }
 
-const Formatter::Arg &Formatter::ParseArgIndex(const char *&s) const {
-  if (*s < '0' || *s > '9')
-    ReportError(s, "missing argument index in format string");
-  unsigned arg_index = ParseUInt(s);
-  if (arg_index >= args_.size())
-    ReportError(s, "argument index is out of range in format");
+const Formatter::Arg &Formatter::ParseArgIndex(const char *&s) {
+  unsigned arg_index = 0;
+  if (*s < '0' || *s > '9') {
+    if (*s != '}' && *s != ':')
+      ReportError(s, "invalid argument index in format string");
+    if (next_arg_index_ < 0) {
+      ReportError(s,
+          "cannot switch from manual to automatic argument indexing");
+    }
+    arg_index = next_arg_index_++;
+  } else {
+    if (next_arg_index_ > 0) {
+      ReportError(s,
+          "cannot switch from automatic to manual argument indexing");
+    }
+    next_arg_index_ = -1;
+    arg_index = ParseUInt(s);
+    if (arg_index >= args_.size())
+      ReportError(s, "argument index is out of range in format");
+  }
   return *args_[arg_index];
 }
 
@@ -439,6 +453,7 @@ void Formatter::CheckSign(const char *&s, const Arg &arg) {
 void Formatter::DoFormat() {
   const char *start = format_;
   format_ = 0;
+  next_arg_index_ = 0;
   const char *s = start;
   while (*s) {
     char c = *s++;

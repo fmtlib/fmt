@@ -235,8 +235,8 @@ TEST(FormatterTest, ArgsInDifferentPositions) {
 
 TEST(FormatterTest, ArgErrors) {
   EXPECT_THROW_MSG(Format("{"), FormatError, "unmatched '{' in format");
-  EXPECT_THROW_MSG(Format("{}"), FormatError,
-      "missing argument index in format string");
+  EXPECT_THROW_MSG(Format("{x}"), FormatError,
+      "invalid argument index in format string");
   EXPECT_THROW_MSG(Format("{0"), FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(Format("{0}"), FormatError,
       "argument index is out of range in format");
@@ -255,6 +255,19 @@ TEST(FormatterTest, ArgErrors) {
   format[size] = '}';
   format[size + 1] = 0;
   EXPECT_THROW_MSG(Format(format), FormatError, "number is too big in format");
+}
+
+TEST(FormatterTest, AutoArgIndex) {
+  EXPECT_EQ("abc", str(Format("{}{}{}") << 'a' << 'b' << 'c'));
+  EXPECT_THROW_MSG(Format("{0}{}") << 'a' << 'b',
+      FormatError, "cannot switch from manual to automatic argument indexing");
+  EXPECT_THROW_MSG(Format("{}{0}") << 'a' << 'b',
+      FormatError, "cannot switch from automatic to manual argument indexing");
+  EXPECT_EQ("1.2", str(Format("{:.{}}") << 1.2345 << 2));
+  EXPECT_THROW_MSG(Format("{0}:.{}") << 1.2345 << 2,
+      FormatError, "cannot switch from manual to automatic argument indexing");
+  EXPECT_THROW_MSG(Format("{:.{0}}") << 1.2345 << 2,
+      FormatError, "cannot switch from automatic to manual argument indexing");
 }
 
 TEST(FormatterTest, EmptySpecs) {
@@ -426,7 +439,6 @@ TEST(FormatterTest, SpaceSign) {
 }
 
 TEST(FormatterTest, HashFlag) {
-  // TODO
   EXPECT_EQ("42", str(Format("{0:#}") << 42));
   EXPECT_EQ("-42", str(Format("{0:#}") << -42));
   EXPECT_EQ("0x42", str(Format("{0:#x}") << 0x42));
@@ -589,8 +601,8 @@ TEST(FormatterTest, RuntimePrecision) {
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(Format("{0:.{}") << 0,
       FormatError, "unmatched '{' in format");
-  EXPECT_THROW_MSG(Format("{0:.{}}") << 0,
-      FormatError, "missing argument index in format string");
+  EXPECT_THROW_MSG(Format("{0:.{x}}") << 0,
+      FormatError, "invalid argument index in format string");
   EXPECT_THROW_MSG(Format("{0:.{1}") << 0 << 0,
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(Format("{0:.{1}}") << 0,
