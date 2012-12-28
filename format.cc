@@ -322,7 +322,7 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
     sign = (spec.flags & PLUS_FLAG) != 0 ? '+' : ' ';
   }
 
-  if (isnan(value)) {
+  if (value != value) {
     // Format NaN ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t size = 4;
