@@ -33,6 +33,7 @@
 
 #include "format.h"
 
+#include <math.h>
 #include <stdint.h>
 
 #include <cassert>
@@ -280,17 +281,21 @@ template <typename T>
 void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
   // Check type.
   char type = spec.type;
+  bool upper = false;
   switch (type) {
   case 0:
     type = 'g';
     break;
-  case 'e': case 'E': case 'f': case 'g': case 'G':
+  case 'e': case 'f': case 'g':
     break;
   case 'F':
 #ifdef _MSC_VER
     // MSVC's printf doesn't support 'F'.
     type = 'f';
 #endif
+    // Fall through.
+  case 'E': case 'G':
+    upper = true;
     break;
   default:
     ReportUnknownType(type, "double");
@@ -298,12 +303,30 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
   }
 
   char sign = 0;
-  if (value < 0) {
+  // Use signbit instead of value < 0 because the latter is always
+  // false for NaN.
+  if (signbit(value)) {
     sign = '-';
     value = -value;
   } else if ((spec.flags & SIGN_FLAG) != 0) {
     sign = (spec.flags & PLUS_FLAG) != 0 ? '+' : ' ';
   }
+
+  if (isnan(value)) {
+    // Format NaN ourselves because sprintf's output is not consistent
+    // across platforms.
+    std::size_t size = 4;
+    const char *nan = upper ? " NAN" : " nan";
+    if (!sign) {
+      --size;
+      ++nan;
+    }
+    char *out = FormatString(nan, size, spec);
+    if (sign)
+      *out = sign;
+    return;
+  }
+
   size_t offset = buffer_.size();
   unsigned width = spec.width;
   if (sign) {
@@ -382,7 +405,7 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
   }
 }
 
-void Formatter::FormatString(
+char *Formatter::FormatString(
     const char *s, std::size_t size, const FormatSpec &spec) {
   char *out = 0;
   if (spec.width > size) {
@@ -399,6 +422,7 @@ void Formatter::FormatString(
     out = GrowBuffer(size);
   }
   std::copy(s, s + size, out);
+  return out;
 }
 
 // Parses an unsigned integer advancing s to the end of the parsed input.

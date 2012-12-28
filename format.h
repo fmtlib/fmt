@@ -322,7 +322,7 @@ class Formatter : public BasicFormatter {
   template <typename T>
   void FormatDouble(T value, const FormatSpec &spec, int precision);
 
-  void FormatString(const char *s, std::size_t size, const FormatSpec &spec);
+  char *FormatString(const char *s, std::size_t size, const FormatSpec &spec);
 
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
