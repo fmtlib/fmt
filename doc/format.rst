@@ -395,7 +395,7 @@ Accessing arguments by position::
    // Result: "a, b, c"
    Format("{2}, {1}, {0}") << 'a' << 'b' << 'c';
    // Result: "c, b, a"
-   Format("{0}{1}{0}" << "abra" << "cad";  // arguments' indices can be repeated
+   Format("{0}{1}{0}") << "abra" << "cad";  // arguments' indices can be repeated
    // Result: "abracadabra"
 
 Aligning the text and specifying a width::
