@@ -135,6 +135,16 @@ void FormatDecimal(char *buffer, uint64_t value, unsigned num_digits) {
   buffer[1] = DIGITS[index + 1];
   buffer[0] = DIGITS[index];
 }
+
+#ifdef _MSC_VER
+int signbit(double value) {
+  if (value < 0) return 1;
+  if (!isnan(value)) return 0;
+  int dec = 0, sign = 0;
+  ecvt(value, 0, &dec, &sign);
+  return sign;
+}
+#endif
 }
 
 void BasicFormatter::operator<<(int value) {
