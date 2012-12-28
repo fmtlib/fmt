@@ -139,7 +139,7 @@ void FormatDecimal(char *buffer, uint64_t value, unsigned num_digits) {
 #ifdef _MSC_VER
 int signbit(double value) {
   if (value < 0) return 1;
-  if (!isnan(value)) return 0;
+  if (value == value) return 0;
   int dec = 0, sign = 0;
   ecvt(value, 0, &dec, &sign);
   return sign;
