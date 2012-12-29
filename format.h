@@ -181,21 +181,32 @@ class BasicFormatter {
   void operator<<(int value);
 };
 
-// Formatter provides string formatting functionality similar to Python's
-// str.format. The output is stored in a memory buffer that grows dynamically.
-// Usage:
-//
-//   Formatter out;
-//   out("Current point:\n");
-//   out("(-{:+f}, {:+f})") << 3.14 << -3.14;
-//
-// This will populate the buffer of the out object with the following output:
-//
-//   Current point:
-//   (-3.140000, +3.140000)
-//
-// The buffer can be accessed using Formatter::data() or Formatter::c_str().
+/**
+  \rst
+  The :class:`Formatter` class provides string formatting
+  functionality similar to Python's `str.format
+  <http://docs.python.org/3/library/stdtypes.html#str.format>`__.
+  The output is stored in a memory buffer that grows dynamically.
+
+  Usage::
+
+     Formatter out;
+     out("Current point:\n");
+     out("(-{:+f}, {:+f})") << 3.14 << -3.14;
+
+  This will populate the buffer of the ``out`` object with the following
+  output:
+
+  .. code-block:: none
+
+     Current point:
+     (-3.140000, +3.140000)
+
+  The buffer can be accessed using :meth:`data` or :meth:`c_str`.
+  \endrst
+ */
 class Formatter : public BasicFormatter {
+ private:
   enum Type {
     // Numeric types should go first.
     INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE,
@@ -345,10 +356,10 @@ class Formatter : public BasicFormatter {
  public:
   Formatter() : format_(0) { buffer_[0] = 0; }
 
-  // Formats a string appending the output to the internal buffer.
-  // Arguments are accepted through the returned ArgInserter object
-  // using inserter operator<<.
-  internal::ArgInserter operator()(const char *format);
+  /// Formats a string appending the output to the internal buffer.
+  /// Arguments are accepted through the returned ArgInserter object
+  /// using inserter operator<<.
+  internal::ArgInserter operator()(StringRef format);
 
   std::size_t size() const { return buffer_.size(); }
 
@@ -484,9 +495,9 @@ void Formatter::FormatCustomArg(const void *arg, const FormatSpec &spec) {
   Format(af, spec, *static_cast<const T*>(arg));
 }
 
-inline internal::ArgInserter Formatter::operator()(const char *format) {
+inline internal::ArgInserter Formatter::operator()(StringRef format) {
   internal::ArgInserter formatter(this);
-  format_ = format;
+  format_ = format.c_str();
   args_.clear();
   return formatter;
 }
