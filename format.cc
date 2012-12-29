@@ -141,7 +141,7 @@ int signbit(double value) {
   if (value < 0) return 1;
   if (value == value) return 0;
   int dec = 0, sign = 0;
-  ecvt(value, 0, &dec, &sign);
+  _ecvt(value, 0, &dec, &sign);
   return sign;
 }
 #endif
@@ -332,6 +332,21 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
       ++nan;
     }
     char *out = FormatString(nan, size, spec);
+    if (sign)
+      *out = sign;
+    return;
+  }
+
+  if (isinf(value)) {
+    // Format infinity ourselves because sprintf's output is not consistent
+    // across platforms.
+    std::size_t size = 4;
+    const char *inf = upper ? " INF" : " inf";
+    if (!sign) {
+      --size;
+      ++inf;
+    }
+    char *out = FormatString(inf, size, spec);
     if (sign)
       *out = sign;
     return;

@@ -774,10 +774,6 @@ TEST(FormatterTest, FormatDouble) {
   sprintf(buffer, "%E", 392.65);
   EXPECT_EQ(buffer, str(Format("{0:E}") << 392.65));
   EXPECT_EQ("+0000392.6", str(Format("{0:+010.4g}") << 392.65));
-  double inf = std::numeric_limits<double>::infinity();
-  EXPECT_EQ("inf", str(Format("{}") << inf));
-  EXPECT_EQ("-inf", str(Format("{}") << -inf));
-  EXPECT_EQ("INF", str(Format("{:F}") << inf));
 }
 
 TEST(FormatterTest, FormatNaN) {
@@ -790,6 +786,18 @@ TEST(FormatterTest, FormatNaN) {
   EXPECT_EQ("nan    ", str(Format("{:<7}") << nan));
   EXPECT_EQ("  nan  ", str(Format("{:^7}") << nan));
   EXPECT_EQ("    nan", str(Format("{:>7}") << nan));
+}
+
+TEST(FormatterTest, FormatInfinity) {
+  double inf = std::numeric_limits<double>::infinity();
+  EXPECT_EQ("inf", str(Format("{}") << inf));
+  EXPECT_EQ("+inf", str(Format("{:+}") << inf));
+  EXPECT_EQ("-inf", str(Format("{}") << -inf));
+  EXPECT_EQ(" inf", str(Format("{: }") << inf));
+  EXPECT_EQ("INF", str(Format("{:F}") << inf));
+  EXPECT_EQ("inf    ", str(Format("{:<7}") << inf));
+  EXPECT_EQ("  inf  ", str(Format("{:^7}") << inf));
+  EXPECT_EQ("    inf", str(Format("{:>7}") << inf));
 }
 
 TEST(FormatterTest, FormatLongDouble) {

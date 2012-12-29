@@ -25,7 +25,8 @@ Features
   reported using exceptions.
 * Ease of use: small self-contained code base, no external dependencies,
   permissive BSD `license`_.
-* `Portability`_ and support for older compilers.
+* `Portability`_ with consistent output across platforms and support
+  for older compilers.
 
 Examples
 --------
