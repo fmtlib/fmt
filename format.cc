@@ -51,6 +51,7 @@ using fmt::StringRef;
 #if _MSC_VER
 # undef snprintf
 # define snprintf _snprintf
+# define isinf(x) (!_finite(x))
 #endif
 
 namespace {
