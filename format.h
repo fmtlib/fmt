@@ -183,12 +183,12 @@ class BasicFormatter {
 
 /**
   \rst
-  The :class:`Formatter` class provides string formatting
+  The :cpp:class:`format::Formatter` class provides string formatting
   functionality similar to Python's `str.format
   <http://docs.python.org/3/library/stdtypes.html#str.format>`__.
   The output is stored in a memory buffer that grows dynamically.
 
-  Usage::
+  **Example**::
 
      Formatter out;
      out("Current point:\n");
@@ -502,10 +502,15 @@ inline internal::ArgInserter Formatter::operator()(StringRef format) {
   return formatter;
 }
 
+// A formatting action that does nothing.
+struct NoAction {
+  void operator()(const Formatter &) const {}
+};
+
 // A formatter with an action performed when formatting is complete.
 // Objects of this class normally exist only as temporaries returned
 // by one of the formatting functions, thus the name.
-template <typename Action>
+template <typename Action = NoAction>
 class TempFormatter : public internal::ArgInserter {
  private:
   Formatter formatter_;
@@ -529,9 +534,9 @@ class TempFormatter : public internal::ArgInserter {
   // Action should be an unary function object that takes a const
   // reference to Formatter as an argument. See Ignore and Write
   // for examples of action classes.
-  explicit TempFormatter(const char *format, Action a = Action())
+  explicit TempFormatter(StringRef format, Action a = Action())
   : action_(a) {
-    Init(formatter_, format);
+    Init(formatter_, format.c_str());
   }
 
   TempFormatter(const Proxy &p)
@@ -551,16 +556,25 @@ class TempFormatter : public internal::ArgInserter {
   }
 };
 
-// A formatting action that does nothing.
-struct Ignore {
-  void operator()(const Formatter &) const {}
-};
+/**
+  \rst
+  Formats a string. Returns a temporary formatter object that accepts
+  arguments via operator ``<<``. *format* is a format string that contains
+  literal text and replacement fields surrounded by braces ``{}``.
+  The formatter object replaces the fields with formatted arguments
+  and stores the output in a memory buffer. The content of the buffer can
+  be converted to ``std::string`` with :meth:`str` or accessed as a C string
+  with :meth:`c_str`.
 
-// Formats a string.
-// Example:
-//   std::string s = str(Format("Elapsed time: {0:.2f} seconds") << 1.23);
-inline TempFormatter<Ignore> Format(const char *format) {
-  return TempFormatter<Ignore>(format);
+  **Example**::
+
+    std::string message = str(Format("Elapsed time: {0:.2f} seconds") << 1.23);
+
+  See also `Format String Syntax`_.
+  \endrst
+*/
+inline TempFormatter<> Format(StringRef format) {
+  return TempFormatter<>(format);
 }
 
 // A formatting action that writes formatted output to stdout.
@@ -573,7 +587,7 @@ struct Write {
 // Formats a string and prints it to stdout.
 // Example:
 //   Print("Elapsed time: {0:.2f} seconds") << 1.23;
-inline TempFormatter<Write> Print(const char *format) {
+inline TempFormatter<Write> Print(StringRef format) {
   return TempFormatter<Write>(format);
 }
 }

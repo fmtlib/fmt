@@ -1,38 +1,18 @@
 .. highlight:: c++
 
+.. _string-formatting:
+
+String Formatting
+-----------------
+
+.. doxygenfunction:: format::Format(StringRef)
+
+.. doxygenclass:: format::Formatter
+   :members:
+
 .. ifconfig:: False
 
-   .. _string-formatting:
-
-   String Formatting
-   -----------------
-
-   The built-in string class provides the ability to do complex variable
-   substitutions and value formatting via the :func:`format` method described in
-   :pep:`3101`.  The :class:`Formatter` class in the :mod:`format` module allows
-   you to create and customize your own string formatting behaviors using the same
-   implementation as the built-in :meth:`format` method.
-
-
    .. class:: Formatter
-
-      The :class:`Formatter` class has the following public methods:
-
-      .. method:: format(format_string, *args, **kwargs)
-
-         :meth:`format` is the primary API method.  It takes a format string and
-         an arbitrary set of positional and keyword arguments.
-         :meth:`format` is just a wrapper that calls :meth:`vformat`.
-
-      .. method:: vformat(format_string, args, kwargs)
-
-         This function does the actual work of formatting.  It is exposed as a
-         separate function for cases where you want to pass in a predefined
-         dictionary of arguments, rather than unpacking and repacking the
-         dictionary as individual arguments using the ``*args`` and ``**kwds``
-         syntax.  :meth:`vformat` does the work of breaking up the format string
-         into character data and replacement fields.  It calls the various
-         methods described below.
 
       In addition, the :class:`Formatter` defines a number of methods that are
       intended to be replaced by subclasses:
@@ -111,8 +91,8 @@
 Format String Syntax
 --------------------
 
-The :meth:`Format` function and the :class:`Formatter` class share the same
-syntax for format strings.
+The :cpp:func:`format::Format()` function and the :cpp:class:`format::Formatter`
+class share the same syntax for format strings.
 
 Format strings contain "replacement fields" surrounded by curly braces ``{}``.
 Anything that is not contained in braces is considered literal text, which is

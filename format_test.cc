@@ -995,8 +995,8 @@ TEST(TempFormatterTest, ActionNotCalledOnError) {
 TEST(TempFormatterTest, ArgLifetime) {
   // The following code is for testing purposes only. It is a definite abuse
   // of the API and shouldn't be used in real applications.
-  const fmt::TempFormatter<fmt::Ignore> &af = fmt::Format("{0}");
-  const_cast<fmt::TempFormatter<fmt::Ignore>&>(af) << std::string("test");
+  const fmt::TempFormatter<> &af = fmt::Format("{0}");
+  const_cast<fmt::TempFormatter<>&>(af) << std::string("test");
   // String object passed as an argument to TempFormatter has
   // been destroyed, but ArgInserter dtor hasn't been called yet.
   // But that's OK since the Arg's dtor takes care of this and
