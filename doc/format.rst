@@ -10,6 +10,9 @@ String Formatting
 .. doxygenclass:: format::Formatter
    :members:
 
+.. doxygenclass:: format::StringRef
+   :members:
+
 .. ifconfig:: False
 
    .. class:: Formatter

@@ -117,14 +117,15 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
 class ArgInserter;
 }
 
-// A reference to a string. It can be constructed from a C string,
-// std::string or as a result of a formatting operation. It is most useful
-// as a parameter type to allow passing different types of strings in a
-// function, for example:
-//   void SetName(StringRef s) {
-//     std::string name = s;
-//     ...
-//   }
+/**
+  \rst
+  A string reference. It can be constructed from a C string, ``std::string``
+  or as a result of a formatting operation. It is most useful as a parameter
+  type to allow passing different types of strings in a function, for example::
+
+    TempFormatter<> Format(StringRef format);
+  \endrst
+*/
 class StringRef {
  private:
   const char *data_;
@@ -354,18 +355,50 @@ class Formatter : public BasicFormatter {
   }
 
  public:
+  /**
+    \rst
+    Constructs a formatter with an empty output buffer.
+    \endrst
+   */
   Formatter() : format_(0) { buffer_[0] = 0; }
 
-  /// Formats a string appending the output to the internal buffer.
-  /// Arguments are accepted through the returned ArgInserter object
-  /// using inserter operator<<.
+  /**
+    \rst
+    Formats a string appending the output to the internal buffer.
+    Arguments are accepted through the returned ``ArgInserter`` object
+    using inserter operator ``<<``.
+    \endrst
+  */
   internal::ArgInserter operator()(StringRef format);
 
+  /**
+    \rst
+    Returns the number of characters written to the output buffer.
+    \endrst
+   */
   std::size_t size() const { return buffer_.size(); }
 
+  /**
+    \rst
+    Returns a pointer to the output buffer content. No terminating null
+    character is appended.
+    \endrst
+   */
   const char *data() const { return &buffer_[0]; }
+
+  /**
+    \rst
+    Returns a pointer to the output buffer content with terminating null
+    character appended.
+    \endrst
+   */
   const char *c_str() const { return &buffer_[0]; }
 
+  /**
+    \rst
+    Returns the content of the output buffer as an ``std::string``.
+    \endrst
+   */
   std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
 };
 
