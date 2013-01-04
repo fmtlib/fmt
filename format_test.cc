@@ -898,7 +898,6 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
 TEST(FormatterTest, FormatterCtor) {
   Formatter format;
   EXPECT_EQ(0u, format.size());
-  EXPECT_STREQ("", format.data());
   EXPECT_STREQ("", format.c_str());
   EXPECT_EQ("", format.str());
   format("part{0}") << 1;
@@ -921,6 +920,10 @@ TEST(FormatterTest, FormatterAppend) {
 }
 
 TEST(FormatterTest, FormatterExamples) {
+  EXPECT_EQ("42", str(Format("{}") << 42));
+  EXPECT_EQ("42", str(Format(std::string("{}")) << 42));
+  EXPECT_EQ("42", str(Format(Format("{{}}")) << 42));
+
   Formatter format;
   format("Current point:\n");
   format("({0:+f}, {1:+f})\n") << -3.14 << 3.14;

@@ -124,6 +124,10 @@ class ArgInserter;
   type to allow passing different types of strings in a function, for example::
 
     TempFormatter<> Format(StringRef format);
+
+    Format("{}") << 42;
+    Format(std::string("{}")) << 42;
+    Format(Format("{{}}")) << 42;
   \endrst
 */
 class StringRef {
@@ -162,13 +166,14 @@ struct FormatSpec {
   char type;
   char fill;
 
-  FormatSpec() : align(ALIGN_DEFAULT), flags(0), width(0), type(0), fill(' ') {}
+  FormatSpec(unsigned width = 0, char type = 0, char fill = ' ')
+  : align(ALIGN_DEFAULT), flags(0), width(width), type(type), fill(fill) {}
 };
 
 class BasicFormatter {
  protected:
   enum { INLINE_BUFFER_SIZE = 500 };
-  internal::Array<char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
+  mutable internal::Array<char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
 
   // Grows the buffer by n characters and returns a pointer to the newly
   // allocated area.
@@ -178,8 +183,69 @@ class BasicFormatter {
     return &buffer_[size];
   }
 
+  char *PrepareFilledBuffer(unsigned size, const FormatSpec &spec, char sign);
+
+  // Formats an integer.
+  template <typename T>
+  void FormatInt(T value, const FormatSpec &spec);
+
+  // Formats a floating point number (double or long double).
+  template <typename T>
+  void FormatDouble(T value, const FormatSpec &spec, int precision);
+
+  char *FormatString(const char *s, std::size_t size, const FormatSpec &spec);
+
  public:
+  /**
+    \rst
+    Returns the number of characters written to the output buffer.
+    \endrst
+   */
+  std::size_t size() const { return buffer_.size(); }
+
+  /**
+    \rst
+    Returns a pointer to the output buffer content. No terminating null
+    character is appended.
+    \endrst
+   */
+  const char *data() const { return &buffer_[0]; }
+
+  /**
+    \rst
+    Returns a pointer to the output buffer content with terminating null
+    character appended.
+    \endrst
+   */
+  const char *c_str() const {
+    std::size_t size = buffer_.size();
+    buffer_.reserve(size + 1);
+    buffer_[size] = '\0';
+    return &buffer_[0];
+  }
+
+  /**
+    \rst
+    Returns the content of the output buffer as an ``std::string``.
+    \endrst
+   */
+  std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
+
   void operator<<(int value);
+
+  void operator<<(char value) {
+    *GrowBuffer(1) = value;
+  }
+
+  void operator<<(const char *value) {
+    std::size_t size = std::strlen(value);
+    std::strncpy(GrowBuffer(size), value, size);
+  }
+
+  BasicFormatter &Write(int value, const FormatSpec &spec) {
+    FormatInt(value, spec);
+    return *this;
+  }
 };
 
 /**
@@ -324,18 +390,6 @@ class Formatter : public BasicFormatter {
 
   void ReportError(const char *s, StringRef message) const;
 
-  char *PrepareFilledBuffer(unsigned size, const FormatSpec &spec, char sign);
-
-  // Formats an integer.
-  template <typename T>
-  void FormatInt(T value, const FormatSpec &spec);
-
-  // Formats a floating point number (double or long double).
-  template <typename T>
-  void FormatDouble(T value, const FormatSpec &spec, int precision);
-
-  char *FormatString(const char *s, std::size_t size, const FormatSpec &spec);
-
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   void FormatCustomArg(const void *arg, const FormatSpec &spec);
@@ -360,7 +414,7 @@ class Formatter : public BasicFormatter {
     Constructs a formatter with an empty output buffer.
     \endrst
    */
-  Formatter() : format_(0) { buffer_[0] = 0; }
+  Formatter() : format_(0) {}
 
   /**
     \rst
@@ -370,36 +424,6 @@ class Formatter : public BasicFormatter {
     \endrst
   */
   internal::ArgInserter operator()(StringRef format);
-
-  /**
-    \rst
-    Returns the number of characters written to the output buffer.
-    \endrst
-   */
-  std::size_t size() const { return buffer_.size(); }
-
-  /**
-    \rst
-    Returns a pointer to the output buffer content. No terminating null
-    character is appended.
-    \endrst
-   */
-  const char *data() const { return &buffer_[0]; }
-
-  /**
-    \rst
-    Returns a pointer to the output buffer content with terminating null
-    character appended.
-    \endrst
-   */
-  const char *c_str() const { return &buffer_[0]; }
-
-  /**
-    \rst
-    Returns the content of the output buffer as an ``std::string``.
-    \endrst
-   */
-  std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
 };
 
 namespace internal {
@@ -540,9 +564,13 @@ struct NoAction {
   void operator()(const Formatter &) const {}
 };
 
-// A formatter with an action performed when formatting is complete.
-// Objects of this class normally exist only as temporaries returned
-// by one of the formatting functions, thus the name.
+/**
+  \rst
+  A formatter with an action performed when formatting is complete.
+  Objects of this class normally exist only as temporaries returned
+  by one of the formatting functions which explains the name.
+  \endrst
+ */
 template <typename Action = NoAction>
 class TempFormatter : public internal::ArgInserter {
  private:

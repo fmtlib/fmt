@@ -137,48 +137,6 @@ void FormatDecimal(char *buffer, uint64_t value, unsigned num_digits) {
   buffer[0] = DIGITS[index];
 }
 
-#ifdef _MSC_VER
-int signbit(double value) {
-  if (value < 0) return 1;
-  if (value == value) return 0;
-  int dec = 0, sign = 0;
-  _ecvt(value, 0, &dec, &sign);
-  return sign;
-}
-#endif
-}
-
-void BasicFormatter::operator<<(int value) {
-  unsigned abs_value = value;
-  unsigned num_digits = 0;
-  char *out = 0;
-  if (value >= 0) {
-    num_digits = CountDigits(abs_value);
-    out = GrowBuffer(num_digits);
-  } else {
-    abs_value = 0 - abs_value;
-    num_digits = CountDigits(abs_value);
-    out = GrowBuffer(num_digits + 1);
-    *out++ = '-';
-  }
-  FormatDecimal(out, abs_value, num_digits);
-}
-
-// Throws Exception(message) if format contains '}', otherwise throws
-// FormatError reporting unmatched '{'. The idea is that unmatched '{'
-// should override other errors.
-void Formatter::ReportError(const char *s, StringRef message) const {
-  for (int num_open_braces = num_open_braces_; *s; ++s) {
-    if (*s == '{') {
-      ++num_open_braces;
-    } else if (*s == '}') {
-      if (--num_open_braces == 0)
-        throw fmt::FormatError(message);
-    }
-  }
-  throw fmt::FormatError("unmatched '{' in format");
-}
-
 // Fills the padding around the content and returns the pointer to the
 // content area.
 char *FillPadding(char *buffer,
@@ -192,7 +150,18 @@ char *FillPadding(char *buffer,
   return content;
 }
 
-char *Formatter::PrepareFilledBuffer(
+#ifdef _MSC_VER
+int signbit(double value) {
+  if (value < 0) return 1;
+  if (value == value) return 0;
+  int dec = 0, sign = 0;
+  _ecvt(value, 0, &dec, &sign);
+  return sign;
+}
+#endif
+}
+
+char *BasicFormatter::PrepareFilledBuffer(
     unsigned size, const FormatSpec &spec, char sign) {
   if (spec.width <= size) {
     char *p = GrowBuffer(size);
@@ -225,7 +194,7 @@ char *Formatter::PrepareFilledBuffer(
 }
 
 template <typename T>
-void Formatter::FormatInt(T value, const FormatSpec &spec) {
+void BasicFormatter::FormatInt(T value, const FormatSpec &spec) {
   unsigned size = 0;
   char sign = 0;
   typedef typename IntTraits<T>::UnsignedType UnsignedType;
@@ -289,7 +258,8 @@ void Formatter::FormatInt(T value, const FormatSpec &spec) {
 }
 
 template <typename T>
-void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
+void BasicFormatter::FormatDouble(
+    T value, const FormatSpec &spec, int precision) {
   // Check type.
   char type = spec.type;
   bool upper = false;
@@ -431,7 +401,7 @@ void Formatter::FormatDouble(T value, const FormatSpec &spec, int precision) {
   }
 }
 
-char *Formatter::FormatString(
+char *BasicFormatter::FormatString(
     const char *s, std::size_t size, const FormatSpec &spec) {
   char *out = 0;
   if (spec.width > size) {
@@ -451,6 +421,37 @@ char *Formatter::FormatString(
   return out;
 }
 
+void BasicFormatter::operator<<(int value) {
+  unsigned abs_value = value;
+  unsigned num_digits = 0;
+  char *out = 0;
+  if (value >= 0) {
+    num_digits = CountDigits(abs_value);
+    out = GrowBuffer(num_digits);
+  } else {
+    abs_value = 0 - abs_value;
+    num_digits = CountDigits(abs_value);
+    out = GrowBuffer(num_digits + 1);
+    *out++ = '-';
+  }
+  FormatDecimal(out, abs_value, num_digits);
+}
+
+// Throws Exception(message) if format contains '}', otherwise throws
+// FormatError reporting unmatched '{'. The idea is that unmatched '{'
+// should override other errors.
+void Formatter::ReportError(const char *s, StringRef message) const {
+  for (int num_open_braces = num_open_braces_; *s; ++s) {
+    if (*s == '{') {
+      ++num_open_braces;
+    } else if (*s == '}') {
+      if (--num_open_braces == 0)
+        throw fmt::FormatError(message);
+    }
+  }
+  throw fmt::FormatError("unmatched '{' in format");
+}
+
 // Parses an unsigned integer advancing s to the end of the parsed input.
 // This function assumes that the first character of s is a digit.
 unsigned Formatter::ParseUInt(const char *&s) const {
@@ -465,7 +466,7 @@ unsigned Formatter::ParseUInt(const char *&s) const {
   return value;
 }
 
-const Formatter::Arg &Formatter::ParseArgIndex(const char *&s) {
+inline const Formatter::Arg &Formatter::ParseArgIndex(const char *&s) {
   unsigned arg_index = 0;
   if (*s < '0' || *s > '9') {
     if (*s != '}' && *s != ':')
@@ -726,6 +727,5 @@ void Formatter::DoFormat() {
       break;
     }
   }
-  buffer_.append(start, s + 1);
-  buffer_.resize(buffer_.size() - 1);  // Don't count the terminating zero.
+  buffer_.append(start, s);
 }
