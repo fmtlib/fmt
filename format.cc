@@ -34,7 +34,6 @@
 #include "format.h"
 
 #include <math.h>
-#include <stdint.h>
 
 #include <cassert>
 #include <cctype>
@@ -44,8 +43,10 @@
 
 using std::size_t;
 using fmt::BasicFormatter;
+using fmt::IntFormatter;
 using fmt::Formatter;
 using fmt::FormatSpec;
+using fmt::WidthSpec;
 using fmt::StringRef;
 
 #if _MSC_VER
@@ -56,58 +57,11 @@ using fmt::StringRef;
 
 namespace {
 
-// Flags.
-enum { SIGN_FLAG = 1, PLUS_FLAG = 2, HASH_FLAG = 4 };
-
-void ReportUnknownType(char code, const char *type) {
-  if (std::isprint(static_cast<unsigned char>(code))) {
-    throw fmt::FormatError(
-        str(fmt::Format("unknown format code '{0}' for {1}") << code << type));
-  }
-  throw fmt::FormatError(
-      str(fmt::Format("unknown format code '\\x{0:02x}' for {1}")
-        << static_cast<unsigned>(code) << type));
-}
-
-// Information about an integer type.
-template <typename T>
-struct IntTraits {
-  typedef T UnsignedType;
-  static bool IsNegative(T) { return false; }
-};
-
-template <>
-struct IntTraits<int> {
-  typedef unsigned UnsignedType;
-  static bool IsNegative(int value) { return value < 0; }
-};
-
-template <>
-struct IntTraits<long> {
-  typedef unsigned long UnsignedType;
-  static bool IsNegative(long value) { return value < 0; }
-};
-
 template <typename T>
 struct IsLongDouble { enum {VALUE = 0}; };
 
 template <>
 struct IsLongDouble<long double> { enum {VALUE = 1}; };
-
-inline unsigned CountDigits(uint64_t n) {
-  unsigned count = 1;
-  for (;;) {
-    // Integer division is slow so do it for a group of four digits instead
-    // of for every digit. The idea comes from the talk by Alexandrescu
-    // "Three Optimization Tips for C++". See speed-test for a comparison.
-    if (n < 10) return count;
-    if (n < 100) return count + 1;
-    if (n < 1000) return count + 2;
-    if (n < 10000) return count + 3;
-    n /= 10000u;
-    count += 4;
-  }
-}
 
 const char DIGITS[] =
     "0001020304050607080910111213141516171819"
@@ -115,27 +69,6 @@ const char DIGITS[] =
     "4041424344454647484950515253545556575859"
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
-
-void FormatDecimal(char *buffer, uint64_t value, unsigned num_digits) {
-  --num_digits;
-  while (value >= 100) {
-    // Integer division is slow so do it for a group of two digits instead
-    // of for every digit. The idea comes from the talk by Alexandrescu
-    // "Three Optimization Tips for C++". See speed-test for a comparison.
-    unsigned index = (value % 100) * 2;
-    value /= 100;
-    buffer[num_digits] = DIGITS[index + 1];
-    buffer[num_digits - 1] = DIGITS[index];
-    num_digits -= 2;
-  }
-  if (value < 10) {
-    *buffer = static_cast<char>('0' + value);
-    return;
-  }
-  unsigned index = static_cast<unsigned>(value * 2);
-  buffer[1] = DIGITS[index + 1];
-  buffer[0] = DIGITS[index];
-}
 
 // Fills the padding around the content and returns the pointer to the
 // content area.
@@ -161,25 +94,59 @@ int signbit(double value) {
 #endif
 }
 
+void BasicFormatter::FormatDecimal(
+    char *buffer, uint64_t value, unsigned num_digits) {
+  --num_digits;
+  while (value >= 100) {
+    // Integer division is slow so do it for a group of two digits instead
+    // of for every digit. The idea comes from the talk by Alexandrescu
+    // "Three Optimization Tips for C++". See speed-test for a comparison.
+    unsigned index = (value % 100) * 2;
+    value /= 100;
+    buffer[num_digits] = DIGITS[index + 1];
+    buffer[num_digits - 1] = DIGITS[index];
+    num_digits -= 2;
+  }
+  if (value < 10) {
+    *buffer = static_cast<char>('0' + value);
+    return;
+  }
+  unsigned index = static_cast<unsigned>(value * 2);
+  buffer[1] = DIGITS[index + 1];
+  buffer[0] = DIGITS[index];
+}
+
+void BasicFormatter::ReportUnknownType(char code, const char *type) {
+  if (std::isprint(static_cast<unsigned char>(code))) {
+    throw fmt::FormatError(fmt::str(
+        fmt::Format("unknown format code '{0}' for {1}") << code << type));
+  }
+  throw fmt::FormatError(
+      fmt::str(fmt::Format("unknown format code '\\x{0:02x}' for {1}")
+        << static_cast<unsigned>(code) << type));
+}
+
 char *BasicFormatter::PrepareFilledBuffer(
-    unsigned size, const FormatSpec &spec, char sign) {
-  if (spec.width <= size) {
+    unsigned size, const AlignSpec &spec, char sign) {
+  unsigned width = spec.width();
+  if (width <= size) {
     char *p = GrowBuffer(size);
     *p = sign;
     return p + size - 1;
   }
-  char *p = GrowBuffer(spec.width);
-  char *end = p + spec.width;
-  if (spec.align == ALIGN_LEFT) {
+  char *p = GrowBuffer(width);
+  char *end = p + width;
+  Alignment align = spec.align();
+  if (align == ALIGN_LEFT) {
     *p = sign;
     p += size;
-    std::fill(p, end, spec.fill);
-  } else if (spec.align == ALIGN_CENTER) {
-    p = FillPadding(p, spec.width, size, spec.fill);
+    std::fill(p, end, spec.fill());
+  } else if (align == ALIGN_CENTER) {
+    p = FillPadding(p, width, size, spec.fill());
     *p = sign;
     p += size;
   } else {
-    if (spec.align == ALIGN_NUMERIC) {
+    if (align == ALIGN_NUMERIC) {
       if (sign) {
         *p++ = sign;
         --size;
@@ -187,81 +154,17 @@ char *BasicFormatter::PrepareFilledBuffer(
     } else {
       *(end - size) = sign;
     }
-    std::fill(p, end - size, spec.fill);
+    std::fill(p, end - size, spec.fill());
     p = end;
   }
   return p - 1;
 }
 
 template <typename T>
-void BasicFormatter::FormatInt(T value, const FormatSpec &spec) {
-  unsigned size = 0;
-  char sign = 0;
-  typedef typename IntTraits<T>::UnsignedType UnsignedType;
-  UnsignedType abs_value = value;
-  if (IntTraits<T>::IsNegative(value)) {
-    sign = '-';
-    ++size;
-    abs_value = 0 - abs_value;
-  } else if ((spec.flags & SIGN_FLAG) != 0) {
-    sign = (spec.flags & PLUS_FLAG) != 0 ? '+' : ' ';
-    ++size;
-  }
-  switch (spec.type) {
-  case 0: case 'd': {
-    unsigned num_digits = CountDigits(abs_value);
-    char *p = PrepareFilledBuffer(size + num_digits, spec, sign)
-        - num_digits + 1;
-    FormatDecimal(p, abs_value, num_digits);
-    break;
-  }
-  case 'x': case 'X': {
-    UnsignedType n = abs_value;
-    bool print_prefix = (spec.flags & HASH_FLAG) != 0;
-    if (print_prefix) size += 2;
-    do {
-      ++size;
-    } while ((n >>= 4) != 0);
-    char *p = PrepareFilledBuffer(size, spec, sign);
-    n = abs_value;
-    const char *digits = spec.type == 'x' ?
-        "0123456789abcdef" : "0123456789ABCDEF";
-    do {
-      *p-- = digits[n & 0xf];
-    } while ((n >>= 4) != 0);
-    if (print_prefix) {
-      *p-- = spec.type;
-      *p = '0';
-    }
-    break;
-  }
-  case 'o': {
-    UnsignedType n = abs_value;
-    bool print_prefix = (spec.flags & HASH_FLAG) != 0;
-    if (print_prefix) ++size;
-    do {
-      ++size;
-    } while ((n >>= 3) != 0);
-    char *p = PrepareFilledBuffer(size, spec, sign);
-    n = abs_value;
-    do {
-      *p-- = '0' + (n & 7);
-    } while ((n >>= 3) != 0);
-    if (print_prefix)
-      *p = '0';
-    break;
-  }
-  default:
-    ReportUnknownType(spec.type, "integer");
-    break;
-  }
-}
-
-template <typename T>
 void BasicFormatter::FormatDouble(
     T value, const FormatSpec &spec, int precision) {
   // Check type.
-  char type = spec.type;
+  char type = spec.type();
   bool upper = false;
   switch (type) {
   case 0:
@@ -289,8 +192,8 @@ void BasicFormatter::FormatDouble(
   if (signbit(value)) {
     sign = '-';
     value = -value;
-  } else if ((spec.flags & SIGN_FLAG) != 0) {
-    sign = (spec.flags & PLUS_FLAG) != 0 ? '+' : ' ';
+  } else if (spec.sign_flag()) {
+    sign = spec.plus_flag() ? '+' : ' ';
   }
 
   if (value != value) {
@@ -324,7 +227,7 @@ void BasicFormatter::FormatDouble(
   }
 
   size_t offset = buffer_.size();
-  unsigned width = spec.width;
+  unsigned width = spec.width();
   if (sign) {
     buffer_.reserve(buffer_.size() + std::max(width, 1u));
     if (width > 0)
@@ -338,12 +241,12 @@ void BasicFormatter::FormatDouble(
   char *format_ptr = format;
   *format_ptr++ = '%';
   unsigned width_for_sprintf = width;
-  if ((spec.flags & HASH_FLAG) != 0)
+  if (spec.hash_flag())
     *format_ptr++ = '#';
-  if (spec.align == ALIGN_CENTER) {
+  if (spec.align() == ALIGN_CENTER) {
     width_for_sprintf = 0;
   } else {
-    if (spec.align == ALIGN_LEFT)
+    if (spec.align() == ALIGN_LEFT)
       *format_ptr++ = '-';
     if (width != 0)
       *format_ptr++ = '*';
@@ -373,24 +276,25 @@ void BasicFormatter::FormatDouble(
     }
     if (n >= 0 && offset + n < buffer_.capacity()) {
       if (sign) {
-        if ((spec.align != ALIGN_RIGHT && spec.align != ALIGN_DEFAULT) ||
+        if ((spec.align() != ALIGN_RIGHT && spec.align() != ALIGN_DEFAULT) ||
             *start != ' ') {
           *(start - 1) = sign;
           sign = 0;
         } else {
-          *(start - 1) = spec.fill;
+          *(start - 1) = spec.fill();
         }
         ++n;
       }
-      if (spec.align == ALIGN_CENTER && spec.width > static_cast<unsigned>(n)) {
-        char *p = GrowBuffer(spec.width);
-        std::copy(p, p + n, p + (spec.width - n) / 2);
-        FillPadding(p, spec.width, n, spec.fill);
+      if (spec.align() == ALIGN_CENTER &&
+          spec.width() > static_cast<unsigned>(n)) {
+        char *p = GrowBuffer(spec.width());
+        std::copy(p, p + n, p + (spec.width() - n) / 2);
+        FillPadding(p, spec.width(), n, spec.fill());
         return;
       }
-      if (spec.fill != ' ' || sign) {
+      if (spec.fill() != ' ' || sign) {
         while (*start == ' ')
-          *start++ = spec.fill;
+          *start++ = spec.fill();
         if (sign)
           *(start - 1) = sign;
       }
@@ -404,37 +308,21 @@ void BasicFormatter::FormatDouble(
 char *BasicFormatter::FormatString(
     const char *s, std::size_t size, const FormatSpec &spec) {
   char *out = 0;
-  if (spec.width > size) {
-    out = GrowBuffer(spec.width);
-    if (spec.align == ALIGN_RIGHT) {
-      std::fill_n(out, spec.width - size, spec.fill);
-      out += spec.width - size;
-    } else if (spec.align == ALIGN_CENTER) {
-      out = FillPadding(out, spec.width, size, spec.fill);
+  if (spec.width() > size) {
+    out = GrowBuffer(spec.width());
+    if (spec.align() == ALIGN_RIGHT) {
+      std::fill_n(out, spec.width() - size, spec.fill());
+      out += spec.width() - size;
+    } else if (spec.align() == ALIGN_CENTER) {
+      out = FillPadding(out, spec.width(), size, spec.fill());
     } else {
-      std::fill_n(out + size, spec.width - size, spec.fill);
+      std::fill_n(out + size, spec.width() - size, spec.fill());
     }
   } else {
     out = GrowBuffer(size);
   }
   std::copy(s, s + size, out);
   return out;
-}
-
-void BasicFormatter::operator<<(int value) {
-  unsigned abs_value = value;
-  unsigned num_digits = 0;
-  char *out = 0;
-  if (value >= 0) {
-    num_digits = CountDigits(abs_value);
-    out = GrowBuffer(num_digits);
-  } else {
-    abs_value = 0 - abs_value;
-    num_digits = CountDigits(abs_value);
-    out = GrowBuffer(num_digits + 1);
-    *out++ = '-';
-  }
-  FormatDecimal(out, abs_value, num_digits);
 }
 
 // Throws Exception(message) if format contains '}', otherwise throws
@@ -529,31 +417,31 @@ void Formatter::DoFormat() {
       // Parse fill and alignment.
       if (char c = *s) {
         const char *p = s + 1;
-        spec.align = ALIGN_DEFAULT;
+        spec.align_ = ALIGN_DEFAULT;
         do {
           switch (*p) {
           case '<':
-            spec.align = ALIGN_LEFT;
+            spec.align_ = ALIGN_LEFT;
             break;
           case '>':
-            spec.align = ALIGN_RIGHT;
+            spec.align_ = ALIGN_RIGHT;
             break;
           case '=':
-            spec.align = ALIGN_NUMERIC;
+            spec.align_ = ALIGN_NUMERIC;
             break;
           case '^':
-            spec.align = ALIGN_CENTER;
+            spec.align_ = ALIGN_CENTER;
             break;
           }
-          if (spec.align != ALIGN_DEFAULT) {
+          if (spec.align_ != ALIGN_DEFAULT) {
             if (p != s) {
               if (c == '}') break;
               if (c == '{')
                 ReportError(s, "invalid fill character '{'");
               s += 2;
-              spec.fill = c;
+              spec.fill_ = c;
             } else ++s;
-            if (spec.align == ALIGN_NUMERIC && arg.type > LAST_NUMERIC_TYPE)
+            if (spec.align_ == ALIGN_NUMERIC && arg.type > LAST_NUMERIC_TYPE)
               ReportError(s, "format specifier '=' requires numeric argument");
             break;
           }
@@ -564,21 +452,21 @@ void Formatter::DoFormat() {
       switch (*s) {
       case '+':
         CheckSign(s, arg);
-        spec.flags |= SIGN_FLAG | PLUS_FLAG;
+        spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
         break;
       case '-':
         CheckSign(s, arg);
         break;
       case ' ':
         CheckSign(s, arg);
-        spec.flags |= SIGN_FLAG;
+        spec.flags_ |= SIGN_FLAG;
         break;
       }
 
       if (*s == '#') {
         if (arg.type > LAST_NUMERIC_TYPE)
           ReportError(s, "format specifier '#' requires numeric argument");
-        spec.flags |= HASH_FLAG;
+        spec.flags_ |= HASH_FLAG;
         ++s;
       }
 
@@ -587,15 +475,15 @@ void Formatter::DoFormat() {
         if (*s == '0') {
           if (arg.type > LAST_NUMERIC_TYPE)
             ReportError(s, "format specifier '0' requires numeric argument");
-          spec.align = ALIGN_NUMERIC;
-          spec.fill = '0';
+          spec.align_ = ALIGN_NUMERIC;
+          spec.fill_ = '0';
         }
         // Zero may be parsed again as a part of the width, but it is simpler
         // and more efficient than checking if the next char is a digit.
         unsigned value = ParseUInt(s);
         if (value > INT_MAX)
           ReportError(s, "number is too big in format");
-        spec.width = value;
+        spec.width_ = value;
       }
 
       // Parse precision.
@@ -649,7 +537,7 @@ void Formatter::DoFormat() {
 
       // Parse type.
       if (*s != '}' && *s)
-        spec.type = *s++;
+        spec.type_ = *s++;
     }
 
     if (*s++ != '}')
@@ -677,18 +565,18 @@ void Formatter::DoFormat() {
       FormatDouble(arg.long_double_value, spec, precision);
       break;
     case CHAR: {
-      if (spec.type && spec.type != 'c')
-        ReportUnknownType(spec.type, "char");
+      if (spec.type_ && spec.type_ != 'c')
+        ReportUnknownType(spec.type_, "char");
       char *out = 0;
-      if (spec.width > 1) {
-        out = GrowBuffer(spec.width);
-        if (spec.align == ALIGN_RIGHT) {
-          std::fill_n(out, spec.width - 1, spec.fill);
-          out += spec.width - 1;
-        } else if (spec.align == ALIGN_CENTER) {
-          out = FillPadding(out, spec.width, 1, spec.fill);
+      if (spec.width_ > 1) {
+        out = GrowBuffer(spec.width_);
+        if (spec.align_ == ALIGN_RIGHT) {
+          std::fill_n(out, spec.width_ - 1, spec.fill_);
+          out += spec.width_ - 1;
+        } else if (spec.align_ == ALIGN_CENTER) {
+          out = FillPadding(out, spec.width_, 1, spec.fill_);
         } else {
-          std::fill_n(out + 1, spec.width - 1, spec.fill);
+          std::fill_n(out + 1, spec.width_ - 1, spec.fill_);
         }
       } else {
         out = GrowBuffer(1);
@@ -697,8 +585,8 @@ void Formatter::DoFormat() {
       break;
     }
     case STRING: {
-      if (spec.type && spec.type != 's')
-        ReportUnknownType(spec.type, "string");
+      if (spec.type_ && spec.type_ != 's')
+        ReportUnknownType(spec.type_, "string");
       const char *str = arg.string.value;
       size_t size = arg.string.size;
       if (size == 0) {
@@ -711,15 +599,15 @@ void Formatter::DoFormat() {
       break;
     }
     case POINTER:
-      if (spec.type && spec.type != 'p')
-        ReportUnknownType(spec.type, "pointer");
-      spec.flags = HASH_FLAG;
-      spec.type = 'x';
+      if (spec.type_ && spec.type_ != 'p')
+        ReportUnknownType(spec.type_, "pointer");
+      spec.flags_= HASH_FLAG;
+      spec.type_ = 'x';
       FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
       break;
     case CUSTOM:
-      if (spec.type)
-        ReportUnknownType(spec.type, "object");
+      if (spec.type_)
+        ReportUnknownType(spec.type_, "object");
       (this->*arg.custom.format)(arg.custom.value, spec);
       break;
     default:

@@ -45,10 +45,15 @@ using std::size_t;
 using std::sprintf;
 
 using fmt::internal::Array;
+using fmt::BasicFormatter;
 using fmt::Formatter;
 using fmt::Format;
 using fmt::FormatError;
 using fmt::StringRef;
+using fmt::hex;
+using fmt::hexu;
+using fmt::oct;
+using fmt::pad;
 
 #define FORMAT_TEST_THROW_(statement, expected_exception, message, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
@@ -844,21 +849,6 @@ TEST(FormatterTest, FormatString) {
   EXPECT_EQ("test", str(Format("{0}") << std::string("test")));
 }
 
-TEST(ArgFormatterTest, Write) {
-  Formatter formatter;
-  fmt::ArgFormatter format(formatter);
-  fmt::FormatSpec spec;
-  spec.width = 2;
-  format.Write("12", spec);
-  EXPECT_EQ("12", formatter.str());
-  spec.width = 4;
-  format.Write("34", spec);
-  EXPECT_EQ("1234  ", formatter.str());
-  spec.width = 0;
-  format.Write("56", spec);
-  EXPECT_EQ("1234  56", formatter.str());
-}
-
 class Date {
   int year_, month_, day_;
  public:
@@ -880,8 +870,8 @@ TEST(FormatterTest, FormatUsingIOStreams) {
 
 class Answer {};
 
-void Format(fmt::ArgFormatter &af, const fmt::FormatSpec &spec, Answer) {
-  af.Write("42", spec);
+void Format(fmt::BasicFormatter &f, const fmt::FormatSpec &spec, Answer) {
+  f.Write("42", spec);
 }
 
 TEST(FormatterTest, CustomFormat) {
@@ -1061,6 +1051,33 @@ TEST(TempFormatterTest, Examples) {
 
   std::string path = "somefile";
   ReportError("File not found: {0}") << path;
+}
+
+TEST(StrTest, oct) {
+  BasicFormatter f;
+  f << oct(042);
+  EXPECT_EQ("42", f.str());
+}
+
+TEST(StrTest, hex) {
+  BasicFormatter f;
+  f << hex(0xbeef);
+  EXPECT_EQ("beef", f.str());
+}
+
+TEST(StrTest, hexu) {
+  BasicFormatter f;
+  f << hexu(0xbabe);
+  EXPECT_EQ("BABE", f.str());
+}
+
+TEST(StrTest, pad) {
+  BasicFormatter f;
+  f << pad(hex(0xbeef), 8);
+  EXPECT_EQ("    beef", f.str());
+  f.Clear();
+  f << pad(42, 5, '0');
+  EXPECT_EQ("00042", f.str());
 }
 
 template <typename T>

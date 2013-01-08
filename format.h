@@ -28,6 +28,8 @@
 #ifndef FORMAT_H_
 #define FORMAT_H_
 
+#include <stdint.h>
+
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
@@ -114,6 +116,25 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
   size_ += num_elements;
 }
 
+// Information about an integer type.
+template <typename T>
+struct IntTraits {
+  typedef T UnsignedType;
+  static bool IsNegative(T) { return false; }
+};
+
+template <>
+struct IntTraits<int> {
+  typedef unsigned UnsignedType;
+  static bool IsNegative(int value) { return value < 0; }
+};
+
+template <>
+struct IntTraits<long> {
+  typedef unsigned long UnsignedType;
+  static bool IsNegative(long value) { return value < 0; }
+};
+
 class ArgInserter;
 }
 
@@ -159,19 +180,129 @@ enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
 };
 
-struct FormatSpec {
-  Alignment align;
-  unsigned flags;
-  unsigned width;
-  char type;
-  char fill;
+// Flags.
+enum { SIGN_FLAG = 1, PLUS_FLAG = 2, HASH_FLAG = 4 };
 
-  FormatSpec(unsigned width = 0, char type = 0, char fill = ' ')
-  : align(ALIGN_DEFAULT), flags(0), width(width), type(type), fill(fill) {}
+struct Spec {};
+
+template <char TYPE>
+struct TypeSpec : Spec {
+  Alignment align() const { return ALIGN_DEFAULT; }
+  unsigned width() const { return 0; }
+
+  bool sign_flag() const { return false; }
+  bool plus_flag() const { return false; }
+  bool hash_flag() const { return false; }
+
+  char type() const { return TYPE; }
+  char fill() const { return ' '; }
 };
 
+struct WidthSpec {
+  unsigned width_;
+  char fill_;
+
+  WidthSpec(unsigned width, char fill) : width_(width), fill_(fill) {}
+
+  unsigned width() const { return width_; }
+  char fill() const { return fill_; }
+};
+
+struct AlignSpec : WidthSpec {
+  Alignment align_;
+
+  AlignSpec(unsigned width, char fill)
+  : WidthSpec(width, fill), align_(ALIGN_DEFAULT) {}
+
+  Alignment align() const { return align_; }
+};
+
+template <char TYPE>
+struct AlignTypeSpec : AlignSpec {
+  AlignTypeSpec(unsigned width, char fill) : AlignSpec(width, fill) {}
+
+  bool sign_flag() const { return false; }
+  bool plus_flag() const { return false; }
+  bool hash_flag() const { return false; }
+
+  char type() const { return TYPE; }
+};
+
+struct FormatSpec : AlignSpec {
+  unsigned flags_;
+  char type_;
+
+  FormatSpec(unsigned width = 0, char type = 0, char fill = ' ')
+  : AlignSpec(width, fill), flags_(0), type_(type) {}
+
+  Alignment align() const { return align_; }
+
+  bool sign_flag() const { return (flags_ & SIGN_FLAG) != 0; }
+  bool plus_flag() const { return (flags_ & PLUS_FLAG) != 0; }
+  bool hash_flag() const { return (flags_ & HASH_FLAG) != 0; }
+
+  char type() const { return type_; }
+};
+
+template <typename T, typename Spec>
+class IntFormatter : public Spec {
+ private:
+  T value_;
+
+ public:
+  IntFormatter(T value, const Spec &spec = Spec())
+  : Spec(spec), value_(value) {}
+
+  T value() const { return value_; }
+};
+
+inline IntFormatter<int, TypeSpec<'o'> > oct(int value) {
+  return IntFormatter<int, TypeSpec<'o'> >(value, TypeSpec<'o'>());
+}
+
+inline IntFormatter<int, TypeSpec<'x'> > hex(int value) {
+  return IntFormatter<int, TypeSpec<'x'> >(value, TypeSpec<'x'>());
+}
+
+inline IntFormatter<int, TypeSpec<'X'> > hexu(int value) {
+  return IntFormatter<int, TypeSpec<'X'> >(value, TypeSpec<'X'>());
+}
+
+template <char TYPE>
+inline IntFormatter<int, AlignTypeSpec<TYPE> > pad(
+    IntFormatter<int, TypeSpec<TYPE> > f, unsigned width, char fill = ' ') {
+  return IntFormatter<int, AlignTypeSpec<TYPE> >(
+      f.value(), AlignTypeSpec<TYPE>(width, fill));
+}
+
+inline IntFormatter<int, AlignTypeSpec<0> > pad(
+    int value, unsigned width, char fill = ' ') {
+  return IntFormatter<int, AlignTypeSpec<0> >(
+      value, AlignTypeSpec<0>(width, fill));
+}
+
 class BasicFormatter {
+ private:
+  static unsigned CountDigits(uint64_t n) {
+    unsigned count = 1;
+    for (;;) {
+      // Integer division is slow so do it for a group of four digits instead
+      // of for every digit. The idea comes from the talk by Alexandrescu
+      // "Three Optimization Tips for C++". See speed-test for a comparison.
+      if (n < 10) return count;
+      if (n < 100) return count + 1;
+      if (n < 1000) return count + 2;
+      if (n < 10000) return count + 3;
+      n /= 10000u;
+      count += 4;
+    }
+  }
+
+  static void FormatDecimal(char *buffer, uint64_t value, unsigned num_digits);
+
  protected:
+  static void ReportUnknownType(char code, const char *type);
+
   enum { INLINE_BUFFER_SIZE = 500 };
   mutable internal::Array<char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
 
@@ -183,11 +314,19 @@ class BasicFormatter {
     return &buffer_[size];
   }
 
-  char *PrepareFilledBuffer(unsigned size, const FormatSpec &spec, char sign);
+  char *PrepareFilledBuffer(unsigned size, const Spec &, char sign) {
+    char *p = GrowBuffer(size);
+    *p = sign;
+    return p + size - 1;
+  }
+
+  char *PrepareFilledBuffer(unsigned size, const AlignSpec &spec, char sign);
 
   // Formats an integer.
   template <typename T>
-  void FormatInt(T value, const FormatSpec &spec);
+  void FormatInt(T value, const FormatSpec &spec) {
+    *this << IntFormatter<T, FormatSpec>(value, spec);
+  }
 
   // Formats a floating point number (double or long double).
   template <typename T>
@@ -231,22 +370,102 @@ class BasicFormatter {
    */
   std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
 
-  void operator<<(int value);
+  BasicFormatter &operator<<(int value) {
+    return *this << IntFormatter<int, TypeSpec<0> >(value, TypeSpec<0>());
+  }
+  BasicFormatter &operator<<(unsigned value) {
+    return *this << IntFormatter<unsigned, TypeSpec<0> >(value, TypeSpec<0>());
+  }
 
-  void operator<<(char value) {
+  BasicFormatter &operator<<(char value) {
     *GrowBuffer(1) = value;
-  }
-
-  void operator<<(const char *value) {
-    std::size_t size = std::strlen(value);
-    std::strncpy(GrowBuffer(size), value, size);
-  }
-
-  BasicFormatter &Write(int value, const FormatSpec &spec) {
-    FormatInt(value, spec);
     return *this;
   }
+
+  BasicFormatter &operator<<(const char *value) {
+    std::size_t size = std::strlen(value);
+    std::strncpy(GrowBuffer(size), value, size);
+    return *this;
+  }
+
+  template <typename T, typename Spec>
+  BasicFormatter &operator<<(const IntFormatter<T, Spec> &f);
+
+  void Write(const std::string &s, const FormatSpec &spec) {
+    FormatString(s.data(), s.size(), spec);
+  }
+
+  void Clear() {
+    buffer_.clear();
+  }
 };
+
+template <typename T, typename Spec>
+BasicFormatter &BasicFormatter::operator<<(const IntFormatter<T, Spec> &f) {
+  T value = f.value();
+  unsigned size = 0;
+  char sign = 0;
+  typedef typename internal::IntTraits<T>::UnsignedType UnsignedType;
+  UnsignedType abs_value = value;
+  if (internal::IntTraits<T>::IsNegative(value)) {
+    sign = '-';
+    ++size;
+    abs_value = 0 - abs_value;
+  } else if (f.sign_flag()) {
+    sign = f.plus_flag() ? '+' : ' ';
+    ++size;
+  }
+  switch (f.type()) {
+  case 0: case 'd': {
+    unsigned num_digits = BasicFormatter::CountDigits(abs_value);
+    char *p = PrepareFilledBuffer(size + num_digits, f, sign)
+        - num_digits + 1;
+    BasicFormatter::FormatDecimal(p, abs_value, num_digits);
+    break;
+  }
+  case 'x': case 'X': {
+    UnsignedType n = abs_value;
+    bool print_prefix = f.hash_flag();
+    if (print_prefix) size += 2;
+    do {
+      ++size;
+    } while ((n >>= 4) != 0);
+    char *p = PrepareFilledBuffer(size, f, sign);
+    n = abs_value;
+    const char *digits = f.type() == 'x' ?
+        "0123456789abcdef" : "0123456789ABCDEF";
+    do {
+      *p-- = digits[n & 0xf];
+    } while ((n >>= 4) != 0);
+    if (print_prefix) {
+      *p-- = f.type();
+      *p = '0';
+    }
+    break;
+  }
+  case 'o': {
+    UnsignedType n = abs_value;
+    bool print_prefix = f.hash_flag();
+    if (print_prefix) ++size;
+    do {
+      ++size;
+    } while ((n >>= 3) != 0);
+    char *p = PrepareFilledBuffer(size, f, sign);
+    n = abs_value;
+    do {
+      *p-- = '0' + (n & 7);
+    } while ((n >>= 3) != 0);
+    if (print_prefix)
+      *p = '0';
+    break;
+  }
+  default:
+    BasicFormatter::ReportUnknownType(f.type(), "integer");
+    break;
+  }
+  return *this;
+}
+
 
 /**
   \rst
@@ -382,7 +601,6 @@ class Formatter : public BasicFormatter {
   int next_arg_index_;
 
   friend class internal::ArgInserter;
-  friend class ArgFormatter;
 
   void Add(const Arg &arg) {
     args_.push_back(&arg);
@@ -522,34 +740,18 @@ const char *c_str(ArgInserter::Proxy p);
 using format::internal::str;
 using format::internal::c_str;
 
-// ArgFormatter provides access to the format buffer within custom
-// Format functions. It is not desirable to pass Formatter to these
-// functions because Formatter::operator() is not reentrant and
-// therefore can't be used for argument formatting.
-class ArgFormatter {
- private:
-  Formatter &formatter_;
-
- public:
-  explicit ArgFormatter(Formatter &f) : formatter_(f) {}
-
-  void Write(const std::string &s, const FormatSpec &spec) {
-    formatter_.FormatString(s.data(), s.size(), spec);
-  }
-};
-
 // The default formatting function.
 template <typename T>
-void Format(ArgFormatter &af, const FormatSpec &spec, const T &value) {
+void Format(BasicFormatter &f, const FormatSpec &spec, const T &value) {
   std::ostringstream os;
   os << value;
-  af.Write(os.str(), spec);
+  f.Write(os.str(), spec);
 }
 
 template <typename T>
 void Formatter::FormatCustomArg(const void *arg, const FormatSpec &spec) {
-  ArgFormatter af(*this);
-  Format(af, spec, *static_cast<const T*>(arg));
+  BasicFormatter &f = *this;
+  Format(f, spec, *static_cast<const T*>(arg));
 }
 
 inline internal::ArgInserter Formatter::operator()(StringRef format) {
