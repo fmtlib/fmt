@@ -180,9 +180,6 @@ verbatim text with arguments, but is faster.
 Benchmarks
 ----------
 
-Compile time and code bloat
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 Speed tests
 ~~~~~~~~~~~
 
@@ -210,6 +207,9 @@ Tinyformat is quite good coming close to IOStreams.  Unfortunately tinyformat
 cannot be faster than the IOStreams because it uses them internally.
 Performance of format is close to that of std::ostream but there is a room for
 improvement since format is not based on IOStreams.
+
+Compile time and code bloat
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The script ``bloat_test.sh`` from the `tinyformat
 <https://github.com/c42f/tinyformat>`__ repository tests compile time and
