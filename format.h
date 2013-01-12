@@ -244,14 +244,14 @@ struct FormatSpec : AlignSpec {
   char type() const { return type_; }
 };
 
-template <typename T, typename Spec>
-class IntFormatter : public Spec {
+template <typename T, typename SpecT>
+class IntFormatter : public SpecT {
  private:
   T value_;
 
  public:
-  IntFormatter(T value, const Spec &spec = Spec())
-  : Spec(spec), value_(value) {}
+  IntFormatter(T value, const SpecT &spec = SpecT())
+  : SpecT(spec), value_(value) {}
 
   T value() const { return value_; }
 };
