@@ -10,6 +10,11 @@ String Formatting
 .. doxygenclass:: format::Formatter
    :members:
 
+.. doxygenclass:: format::TempFormatter
+   :members:
+
+.. doxygenstruct:: format::NoAction
+
 .. doxygenclass:: format::StringRef
    :members:
 

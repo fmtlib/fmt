@@ -761,8 +761,11 @@ inline internal::ArgInserter Formatter::operator()(StringRef format) {
   return formatter;
 }
 
-// A formatting action that does nothing.
+/**
+  A formatting action that does nothing.
+ */
 struct NoAction {
+  /** Does nothing. */
   void operator()(const Formatter &) const {}
 };
 
@@ -793,25 +796,39 @@ class TempFormatter : public internal::ArgInserter {
   };
 
  public:
-  // Creates an active formatter with a format string and an action.
-  // Action should be an unary function object that takes a const
-  // reference to Formatter as an argument. See Ignore and Write
-  // for examples of action classes.
+  /**
+    \rst
+    Constructs a temporary formatter with a format string and an action.
+    The action should be an unary function object that takes a const
+    reference to :cpp:class:`format::Formatter` as an argument.
+    See :cpp:class:`format::NoAction` and :cpp:class:`format::Write` for
+    examples of action classes.
+    \endrst
+  */
   explicit TempFormatter(StringRef format, Action a = Action())
   : action_(a) {
     Init(formatter_, format.c_str());
   }
 
+  /**
+    Constructs a temporary formatter from a proxy object.
+   */
   TempFormatter(const Proxy &p)
   : ArgInserter(0), action_(p.action) {
     Init(formatter_, p.format);
   }
 
+  /**
+    Performs the actual formatting, invokes the action and destroys the object.
+   */
   ~TempFormatter() {
     if (formatter())
       action_(*Format());
   }
 
+  /**
+    Converts a temporary formatter into a proxy object.
+   */
   operator Proxy() {
     const char *fmt = format();
     ResetFormatter();
@@ -831,7 +848,7 @@ class TempFormatter : public internal::ArgInserter {
 
   **Example**::
 
-    std::string message = str(Format("Elapsed time: {0:.2f} seconds") << 1.23);
+    std::string message = str(Format("The answer is {}") << 42);
 
   See also `Format String Syntax`_.
   \endrst
