@@ -45,6 +45,7 @@ using std::size_t;
 using fmt::BasicFormatter;
 using fmt::IntFormatter;
 using fmt::Formatter;
+using fmt::AlignSpec;
 using fmt::FormatSpec;
 using fmt::WidthSpec;
 using fmt::StringRef;
