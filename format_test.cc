@@ -854,9 +854,17 @@ class Date {
  public:
   Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
 
+  int year() const { return year_; }
+  int month() const { return month_; }
+  int day() const { return day_; }
+
   friend std::ostream &operator<<(std::ostream &os, const Date &d) {
     os << d.year_ << '-' << d.month_ << '-' << d.day_;
     return os;
+  }
+
+  friend BasicFormatter &operator<<(BasicFormatter &f, const Date &d) {
+    return f << d.year_ << '-' << d.month_ << '-' << d.day_;
   }
 };
 
@@ -910,6 +918,9 @@ TEST(FormatterTest, FormatterAppend) {
 }
 
 TEST(FormatterTest, FormatterExamples) {
+  std::string message = str(Format("The answer is {}") << 42);
+  EXPECT_EQ("The answer is 42", message);
+
   EXPECT_EQ("42", str(Format("{}") << 42));
   EXPECT_EQ("42", str(Format(std::string("{}")) << 42));
   EXPECT_EQ("42", str(Format(Format("{{}}")) << 42));
@@ -1071,6 +1082,21 @@ TEST(StrTest, hexu) {
   EXPECT_EQ("BABE", f.str());
 }
 
+class ISO8601DateFormatter {
+ const Date *date_;
+
+public:
+  ISO8601DateFormatter(const Date &d) : date_(&d) {}
+
+  friend BasicFormatter &operator<<(
+      BasicFormatter &f, const ISO8601DateFormatter &d) {
+    return f << pad(d.date_->year(), 4, '0') << '-'
+        << pad(d.date_->month(), 2, '0') << '-' << pad(d.date_->day(), 2, '0');
+  }
+};
+
+ISO8601DateFormatter iso8601(const Date &d) { return ISO8601DateFormatter(d); }
+
 TEST(StrTest, pad) {
   BasicFormatter f;
   f << pad(hex(0xbeef), 8);
@@ -1078,6 +1104,12 @@ TEST(StrTest, pad) {
   f.Clear();
   f << pad(42, 5, '0');
   EXPECT_EQ("00042", f.str());
+  f.Clear();
+  f << Date(2012, 12, 9);
+  EXPECT_EQ("2012-12-9", f.str());
+  f.Clear();
+  f << iso8601(Date(2012, 1, 9));
+  EXPECT_EQ("2012-01-09", f.str());
 }
 
 template <typename T>
