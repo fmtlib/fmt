@@ -124,14 +124,12 @@ struct IntTraits {};
 
 template <typename T, typename UnsignedT>
 struct SignedIntTraits {
-  typedef T Type;
   typedef UnsignedT UnsignedType;
   static bool IsNegative(T value) { return value < 0; }
 };
 
 template <typename T>
 struct UnsignedIntTraits {
-  typedef T Type;
   typedef T UnsignedType;
   static bool IsNegative(T) { return false; }
 };
@@ -143,10 +141,10 @@ template <>
 struct IntTraits<unsigned> : UnsignedIntTraits<unsigned> {};
 
 template <>
-struct IntTraits<int64_t> : SignedIntTraits<int64_t, uint64_t> {};
+struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
 
 template <>
-struct IntTraits<uint64_t> : UnsignedIntTraits<uint64_t> {};
+struct IntTraits<unsigned long> : UnsignedIntTraits<unsigned long> {};
 
 class ArgInserter;
 class FormatterProxy;
@@ -288,42 +286,38 @@ class IntFormatter : public SpecT {
   T value() const { return value_; }
 };
 
-// Returns an integer formatter that formats value in the octal base.
-// internal::IntTraits<T>::Type is used instead of T to avoid instantiating
-// the function for types smaller than int similarly to enable_if.
-template <typename T>
-inline IntFormatter<
-    typename internal::IntTraits<T>::Type, TypeSpec<'o'> > oct(T value) {
-  return IntFormatter<T, TypeSpec<'o'> >(value, TypeSpec<'o'>());
+#define DEFINE_INT_FORMATTERS(TYPE) \
+/* Returns an integer formatter that formats value in the octal base. */ \
+inline IntFormatter<TYPE, TypeSpec<'o'> > oct(TYPE value) { \
+  return IntFormatter<TYPE, TypeSpec<'o'> >(value, TypeSpec<'o'>()); \
+} \
+ \
+inline IntFormatter<TYPE, TypeSpec<'x'> > hex(TYPE value) { \
+  return IntFormatter<TYPE, TypeSpec<'x'> >(value, TypeSpec<'x'>()); \
+} \
+ \
+inline IntFormatter<TYPE, TypeSpec<'X'> > hexu(TYPE value) { \
+  return IntFormatter<TYPE, TypeSpec<'X'> >(value, TypeSpec<'X'>()); \
+} \
+ \
+template <char TYPE_CODE> \
+inline IntFormatter<TYPE, AlignTypeSpec<TYPE_CODE> > pad( \
+    IntFormatter<TYPE, TypeSpec<TYPE_CODE> > f, \
+    unsigned width, char fill = ' ') { \
+  return IntFormatter<TYPE, AlignTypeSpec<TYPE_CODE> >( \
+      f.value(), AlignTypeSpec<TYPE_CODE>(width, fill)); \
+} \
+ \
+inline IntFormatter<TYPE, AlignTypeSpec<0> > pad( \
+    TYPE value, unsigned width, char fill = ' ') { \
+  return IntFormatter<TYPE, AlignTypeSpec<0> >( \
+      value, AlignTypeSpec<0>(width, fill)); \
 }
 
-template <typename T>
-inline IntFormatter<
-    typename internal::IntTraits<T>::Type, TypeSpec<'x'> > hex(T value) {
-  return IntFormatter<T, TypeSpec<'x'> >(value, TypeSpec<'x'>());
-}
-
-template <typename T>
-inline IntFormatter<
-    typename internal::IntTraits<T>::Type, TypeSpec<'X'> > hexu(T value) {
-  return IntFormatter<T, TypeSpec<'X'> >(value, TypeSpec<'X'>());
-}
-
-template <typename T, char TYPE>
-inline IntFormatter<
-    typename internal::IntTraits<T>::Type, AlignTypeSpec<TYPE> > pad(
-    IntFormatter<T, TypeSpec<TYPE> > f, unsigned width, char fill = ' ') {
-  return IntFormatter<T, AlignTypeSpec<TYPE> >(
-      f.value(), AlignTypeSpec<TYPE>(width, fill));
-}
-
-template <typename T>
-inline IntFormatter<
-    typename internal::IntTraits<T>::Type, AlignTypeSpec<0> > pad(
-    T value, unsigned width, char fill = ' ') {
-  return IntFormatter<T, AlignTypeSpec<0> >(
-      value, AlignTypeSpec<0>(width, fill));
-}
+DEFINE_INT_FORMATTERS(int)
+DEFINE_INT_FORMATTERS(long)
+DEFINE_INT_FORMATTERS(unsigned)
+DEFINE_INT_FORMATTERS(unsigned long)
 
 class BasicFormatter {
  private:
@@ -570,8 +564,8 @@ class Formatter : public BasicFormatter {
       int int_value;
       unsigned uint_value;
       double double_value;
-      int64_t long_value;
-      uint64_t ulong_value;
+      long long_value;
+      unsigned long ulong_value;
       long double long_double_value;
       const void *pointer_value;
       struct {

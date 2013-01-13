@@ -1065,10 +1065,11 @@ TEST(TempFormatterTest, Examples) {
 }
 
 TEST(StrTest, oct) {
+  EXPECT_EQ("12", (BasicFormatter() << oct(static_cast<short>(012))).str());
   EXPECT_EQ("12", (BasicFormatter() << oct(012)).str());
-  EXPECT_EQ("34", (BasicFormatter() << oct(034)).str());
-  EXPECT_EQ("56", (BasicFormatter() << oct(056)).str());
-  EXPECT_EQ("70", (BasicFormatter() << oct(070)).str());
+  EXPECT_EQ("34", (BasicFormatter() << oct(034u)).str());
+  EXPECT_EQ("56", (BasicFormatter() << oct(056l)).str());
+  EXPECT_EQ("70", (BasicFormatter() << oct(070ul)).str());
 }
 
 TEST(StrTest, hex) {
