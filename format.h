@@ -570,8 +570,8 @@ class Formatter : public BasicFormatter {
       int int_value;
       unsigned uint_value;
       double double_value;
-      long long_value;
-      unsigned long ulong_value;
+      int64_t long_value;
+      uint64_t ulong_value;
       long double long_double_value;
       const void *pointer_value;
       struct {
