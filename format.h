@@ -149,6 +149,7 @@ template <>
 struct IntTraits<unsigned long> : UnsignedIntTraits<unsigned long> {};
 
 class ArgInserter;
+class FormatterProxy;
 }
 
 /**
@@ -287,6 +288,7 @@ class IntFormatter : public SpecT {
   T value() const { return value_; }
 };
 
+// Returns an integer formatter that formats value in the octal base.
 // internal::IntTraits<T>::Type is used instead of T to avoid instantiating
 // the function for types smaller than int similarly to enable_if.
 template <typename T>
@@ -500,6 +502,13 @@ BasicFormatter &BasicFormatter::operator<<(const IntFormatter<T, Spec> &f) {
   return *this;
 }
 
+// The default formatting function.
+template <typename T>
+void Format(BasicFormatter &f, const FormatSpec &spec, const T &value) {
+  std::ostringstream os;
+  os << value;
+  f.Write(os.str(), spec);
+}
 
 /**
   \rst
@@ -635,6 +644,7 @@ class Formatter : public BasicFormatter {
   int next_arg_index_;
 
   friend class internal::ArgInserter;
+  friend class internal::FormatterProxy;
 
   void Add(const Arg &arg) {
     args_.push_back(&arg);
@@ -644,7 +654,10 @@ class Formatter : public BasicFormatter {
 
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
-  void FormatCustomArg(const void *arg, const FormatSpec &spec);
+  void FormatCustomArg(const void *arg, const FormatSpec &spec) {
+    BasicFormatter &f = *this;
+    Format(f, spec, *static_cast<const T*>(arg));
+  }
 
   unsigned ParseUInt(const char *&s) const;
 
@@ -674,7 +687,23 @@ class Formatter : public BasicFormatter {
   internal::ArgInserter operator()(StringRef format);
 };
 
+std::string str(internal::FormatterProxy p);
+const char *c_str(internal::FormatterProxy p);
+
 namespace internal {
+
+using format::str;
+using format::c_str;
+
+struct FormatterProxy {
+  Formatter *formatter;
+  explicit FormatterProxy(Formatter *f) : formatter(f) {}
+
+  Formatter *Format() {
+    formatter->CompleteFormatting();
+    return formatter;
+  }
+};
 
 // This is a transient object that normally exists only as a temporary
 // returned by one of the formatting functions. It stores a reference
@@ -718,16 +747,6 @@ class ArgInserter {
 
   void ResetFormatter() const { formatter_ = 0; }
 
-  struct Proxy {
-    Formatter *formatter;
-    explicit Proxy(Formatter *f) : formatter(f) {}
-
-    Formatter *Format() {
-      formatter->CompleteFormatting();
-      return formatter;
-    }
-  };
-
  public:
   ~ArgInserter() {
     if (formatter_)
@@ -741,47 +760,32 @@ class ArgInserter {
     return *this;
   }
 
-  operator Proxy() {
+  operator FormatterProxy() {
     Formatter *f = formatter_;
     formatter_ = 0;
-    return Proxy(f);
+    return FormatterProxy(f);
   }
 
   operator StringRef() {
     const Formatter *f = Format();
     return StringRef(f->c_str(), f->size());
   }
-
-  // Performs formatting and returns a std::string with the output.
-  friend std::string str(Proxy p) {
-    return p.Format()->str();
-  }
-
-  // Performs formatting and returns a C string with the output.
-  friend const char *c_str(Proxy p) {
-    return p.Format()->c_str();
-  }
 };
-
-std::string str(ArgInserter::Proxy p);
-const char *c_str(ArgInserter::Proxy p);
 }
 
-using format::internal::str;
-using format::internal::c_str;
-
-// The default formatting function.
-template <typename T>
-void Format(BasicFormatter &f, const FormatSpec &spec, const T &value) {
-  std::ostringstream os;
-  os << value;
-  f.Write(os.str(), spec);
+/**
+  Returns the content of the output buffer as an `std::string`.
+ */
+inline std::string str(internal::FormatterProxy p) {
+  return p.Format()->str();
 }
 
-template <typename T>
-void Formatter::FormatCustomArg(const void *arg, const FormatSpec &spec) {
-  BasicFormatter &f = *this;
-  Format(f, spec, *static_cast<const T*>(arg));
+/**
+  Returns a pointer to the output buffer content with terminating null
+  character appended.
+ */
+inline const char *c_str(internal::FormatterProxy p) {
+  return p.Format()->c_str();
 }
 
 inline internal::ArgInserter Formatter::operator()(StringRef format) {
@@ -872,8 +876,8 @@ class TempFormatter : public internal::ArgInserter {
   literal text and replacement fields surrounded by braces ``{}``.
   The formatter object replaces the fields with formatted arguments
   and stores the output in a memory buffer. The content of the buffer can
-  be converted to ``std::string`` with :meth:`str` or accessed as a C string
-  with :meth:`c_str`.
+  be converted to ``std::string`` with :cpp:func:`format::str()` or
+  accessed as a C string with :cpp:func:`format::c_str()`.
 
   **Example**::
 
