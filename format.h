@@ -117,23 +117,36 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
 }
 
 // Information about an integer type.
+// IntTraits is not specialized for integer types smaller than int,
+// since these are promoted to int.
 template <typename T>
-struct IntTraits {
+struct IntTraits {};
+
+template <typename T, typename UnsignedT>
+struct SignedIntTraits {
+  typedef T Type;
+  typedef UnsignedT UnsignedType;
+  static bool IsNegative(T value) { return value < 0; }
+};
+
+template <typename T>
+struct UnsignedIntTraits {
+  typedef T Type;
   typedef T UnsignedType;
   static bool IsNegative(T) { return false; }
 };
 
 template <>
-struct IntTraits<int> {
-  typedef unsigned UnsignedType;
-  static bool IsNegative(int value) { return value < 0; }
-};
+struct IntTraits<int> : SignedIntTraits<int, unsigned> {};
 
 template <>
-struct IntTraits<long> {
-  typedef unsigned long UnsignedType;
-  static bool IsNegative(long value) { return value < 0; }
-};
+struct IntTraits<unsigned> : UnsignedIntTraits<unsigned> {};
+
+template <>
+struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
+
+template <>
+struct IntTraits<unsigned long> : UnsignedIntTraits<unsigned long> {};
 
 class ArgInserter;
 }
@@ -157,13 +170,31 @@ class StringRef {
   mutable std::size_t size_;
 
  public:
+  /**
+    Constructs a string reference object from a C string and a size.
+    If `size` is zero, which is the default, the size is computed with
+    `strlen`.
+   */
   StringRef(const char *s, std::size_t size = 0) : data_(s), size_(size) {}
+
+  /**
+    Constructs a string reference from an `std::string` object.
+   */
   StringRef(const std::string &s) : data_(s.c_str()), size_(s.size()) {}
 
+  /**
+    Converts a string reference to an `std::string` object.
+   */
   operator std::string() const { return std::string(data_, size()); }
 
+  /**
+    Returns the pointer to a C string.
+   */
   const char *c_str() const { return data_; }
 
+  /**
+    Returns the string size.
+   */
   std::size_t size() const {
     if (size_ == 0) size_ = std::strlen(data_);
     return size_;
@@ -256,28 +287,39 @@ class IntFormatter : public SpecT {
   T value() const { return value_; }
 };
 
-inline IntFormatter<int, TypeSpec<'o'> > oct(int value) {
-  return IntFormatter<int, TypeSpec<'o'> >(value, TypeSpec<'o'>());
+// internal::IntTraits<T>::Type is used instead of T to avoid instantiating
+// the function for types smaller than int similarly to enable_if.
+template <typename T>
+inline IntFormatter<
+    typename internal::IntTraits<T>::Type, TypeSpec<'o'> > oct(T value) {
+  return IntFormatter<T, TypeSpec<'o'> >(value, TypeSpec<'o'>());
 }
 
-inline IntFormatter<int, TypeSpec<'x'> > hex(int value) {
-  return IntFormatter<int, TypeSpec<'x'> >(value, TypeSpec<'x'>());
+template <typename T>
+inline IntFormatter<
+    typename internal::IntTraits<T>::Type, TypeSpec<'x'> > hex(T value) {
+  return IntFormatter<T, TypeSpec<'x'> >(value, TypeSpec<'x'>());
 }
 
-inline IntFormatter<int, TypeSpec<'X'> > hexu(int value) {
-  return IntFormatter<int, TypeSpec<'X'> >(value, TypeSpec<'X'>());
+template <typename T>
+inline IntFormatter<
+    typename internal::IntTraits<T>::Type, TypeSpec<'X'> > hexu(T value) {
+  return IntFormatter<T, TypeSpec<'X'> >(value, TypeSpec<'X'>());
 }
 
-template <char TYPE>
-inline IntFormatter<int, AlignTypeSpec<TYPE> > pad(
-    IntFormatter<int, TypeSpec<TYPE> > f, unsigned width, char fill = ' ') {
-  return IntFormatter<int, AlignTypeSpec<TYPE> >(
+template <typename T, char TYPE>
+inline IntFormatter<
+    typename internal::IntTraits<T>::Type, AlignTypeSpec<TYPE> > pad(
+    IntFormatter<T, TypeSpec<TYPE> > f, unsigned width, char fill = ' ') {
+  return IntFormatter<T, AlignTypeSpec<TYPE> >(
       f.value(), AlignTypeSpec<TYPE>(width, fill));
 }
 
-inline IntFormatter<int, AlignTypeSpec<0> > pad(
-    int value, unsigned width, char fill = ' ') {
-  return IntFormatter<int, AlignTypeSpec<0> >(
+template <typename T>
+inline IntFormatter<
+    typename internal::IntTraits<T>::Type, AlignTypeSpec<0> > pad(
+    T value, unsigned width, char fill = ' ') {
+  return IntFormatter<T, AlignTypeSpec<0> >(
       value, AlignTypeSpec<0>(width, fill));
 }
 
@@ -336,25 +378,19 @@ class BasicFormatter {
 
  public:
   /**
-    \rst
     Returns the number of characters written to the output buffer.
-    \endrst
    */
   std::size_t size() const { return buffer_.size(); }
 
   /**
-    \rst
     Returns a pointer to the output buffer content. No terminating null
     character is appended.
-    \endrst
    */
   const char *data() const { return &buffer_[0]; }
 
   /**
-    \rst
     Returns a pointer to the output buffer content with terminating null
     character appended.
-    \endrst
    */
   const char *c_str() const {
     std::size_t size = buffer_.size();
@@ -364,9 +400,7 @@ class BasicFormatter {
   }
 
   /**
-    \rst
-    Returns the content of the output buffer as an ``std::string``.
-    \endrst
+    Returns the content of the output buffer as an `std::string`.
    */
   std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
 
@@ -628,18 +662,14 @@ class Formatter : public BasicFormatter {
 
  public:
   /**
-    \rst
     Constructs a formatter with an empty output buffer.
-    \endrst
    */
   Formatter() : format_(0) {}
 
   /**
-    \rst
     Formats a string appending the output to the internal buffer.
-    Arguments are accepted through the returned ``ArgInserter`` object
-    using inserter operator ``<<``.
-    \endrst
+    Arguments are accepted through the returned `ArgInserter` object
+    using inserter operator `<<`.
   */
   internal::ArgInserter operator()(StringRef format);
 };
@@ -764,17 +794,16 @@ inline internal::ArgInserter Formatter::operator()(StringRef format) {
 /**
   A formatting action that does nothing.
  */
-struct NoAction {
+class NoAction {
+ public:
   /** Does nothing. */
   void operator()(const Formatter &) const {}
 };
 
 /**
-  \rst
   A formatter with an action performed when formatting is complete.
   Objects of this class normally exist only as temporaries returned
   by one of the formatting functions which explains the name.
-  \endrst
  */
 template <typename Action = NoAction>
 class TempFormatter : public internal::ArgInserter {

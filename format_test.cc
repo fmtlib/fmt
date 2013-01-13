@@ -1065,21 +1065,29 @@ TEST(TempFormatterTest, Examples) {
 }
 
 TEST(StrTest, oct) {
-  BasicFormatter f;
-  f << oct(042);
-  EXPECT_EQ("42", f.str());
+  EXPECT_EQ("12", (BasicFormatter() << oct(012)).str());
+  EXPECT_EQ("34", (BasicFormatter() << oct(034)).str());
+  EXPECT_EQ("56", (BasicFormatter() << oct(056)).str());
+  EXPECT_EQ("70", (BasicFormatter() << oct(070)).str());
 }
 
 TEST(StrTest, hex) {
-  BasicFormatter f;
-  f << hex(0xbeef);
-  EXPECT_EQ("beef", f.str());
+  fmt::IntFormatter<int, fmt::TypeSpec<'x'> > (*phex)(int value) = hex;
+  phex(42);
+  // This shouldn't compile:
+  //fmt::IntFormatter<short, fmt::TypeSpec<'x'> > (*phex2)(short value) = hex;
+
+  EXPECT_EQ("cafe", (BasicFormatter() << hex(0xcafe)).str());
+  EXPECT_EQ("babe", (BasicFormatter() << hex(0xbabeu)).str());
+  EXPECT_EQ("dead", (BasicFormatter() << hex(0xdeadl)).str());
+  EXPECT_EQ("beef", (BasicFormatter() << hex(0xbeeful)).str());
 }
 
 TEST(StrTest, hexu) {
-  BasicFormatter f;
-  f << hexu(0xbabe);
-  EXPECT_EQ("BABE", f.str());
+  EXPECT_EQ("CAFE", (BasicFormatter() << hexu(0xcafe)).str());
+  EXPECT_EQ("BABE", (BasicFormatter() << hexu(0xbabeu)).str());
+  EXPECT_EQ("DEAD", (BasicFormatter() << hexu(0xdeadl)).str());
+  EXPECT_EQ("BEEF", (BasicFormatter() << hexu(0xbeeful)).str());
 }
 
 class ISO8601DateFormatter {
@@ -1098,9 +1106,17 @@ public:
 ISO8601DateFormatter iso8601(const Date &d) { return ISO8601DateFormatter(d); }
 
 TEST(StrTest, pad) {
+  EXPECT_EQ("    cafe", (BasicFormatter() << pad(hex(0xcafe), 8)).str());
+  EXPECT_EQ("    babe", (BasicFormatter() << pad(hex(0xbabeu), 8)).str());
+  EXPECT_EQ("    dead", (BasicFormatter() << pad(hex(0xdeadl), 8)).str());
+  EXPECT_EQ("    beef", (BasicFormatter() << pad(hex(0xbeeful), 8)).str());
+
+  EXPECT_EQ("     11", (BasicFormatter() << pad(11, 7)).str());
+  EXPECT_EQ("     22", (BasicFormatter() << pad(22u, 7)).str());
+  EXPECT_EQ("     33", (BasicFormatter() << pad(33l, 7)).str());
+  EXPECT_EQ("     44", (BasicFormatter() << pad(44lu, 7)).str());
+
   BasicFormatter f;
-  f << pad(hex(0xbeef), 8);
-  EXPECT_EQ("    beef", f.str());
   f.Clear();
   f << pad(42, 5, '0');
   EXPECT_EQ("00042", f.str());

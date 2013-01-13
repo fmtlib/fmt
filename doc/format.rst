@@ -13,7 +13,8 @@ String Formatting
 .. doxygenclass:: format::TempFormatter
    :members:
 
-.. doxygenstruct:: format::NoAction
+.. doxygenclass:: format::NoAction
+   :members:
 
 .. doxygenclass:: format::StringRef
    :members:
