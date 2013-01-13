@@ -143,10 +143,10 @@ template <>
 struct IntTraits<unsigned> : UnsignedIntTraits<unsigned> {};
 
 template <>
-struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
+struct IntTraits<int64_t> : SignedIntTraits<int64_t, uint64_t> {};
 
 template <>
-struct IntTraits<unsigned long> : UnsignedIntTraits<unsigned long> {};
+struct IntTraits<uint64_t> : UnsignedIntTraits<uint64_t> {};
 
 class ArgInserter;
 class FormatterProxy;
