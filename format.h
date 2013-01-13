@@ -120,7 +120,10 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
 // IntTraits is not specialized for integer types smaller than int,
 // since these are promoted to int.
 template <typename T>
-struct IntTraits {};
+struct IntTraits {
+  typedef T UnsignedType;
+  static bool IsNegative(T) { return false; }
+};
 
 template <typename T, typename UnsignedT>
 struct SignedIntTraits {
@@ -128,23 +131,11 @@ struct SignedIntTraits {
   static bool IsNegative(T value) { return value < 0; }
 };
 
-template <typename T>
-struct UnsignedIntTraits {
-  typedef T UnsignedType;
-  static bool IsNegative(T) { return false; }
-};
-
 template <>
 struct IntTraits<int> : SignedIntTraits<int, unsigned> {};
 
 template <>
-struct IntTraits<unsigned> : UnsignedIntTraits<unsigned> {};
-
-template <>
 struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
-
-template <>
-struct IntTraits<unsigned long> : UnsignedIntTraits<unsigned long> {};
 
 class ArgInserter;
 class FormatterProxy;
