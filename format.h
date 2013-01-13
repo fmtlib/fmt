@@ -680,13 +680,16 @@ namespace internal {
 using format::str;
 using format::c_str;
 
-struct FormatterProxy {
-  Formatter *formatter;
-  explicit FormatterProxy(Formatter *f) : formatter(f) {}
+class FormatterProxy {
+ private:
+  Formatter *formatter_;
+
+ public:
+  explicit FormatterProxy(Formatter *f) : formatter_(f) {}
 
   Formatter *Format() {
-    formatter->CompleteFormatting();
-    return formatter;
+    formatter_->CompleteFormatting();
+    return formatter_;
   }
 };
 
