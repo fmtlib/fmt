@@ -9,7 +9,8 @@ in Python.
 Features
 --------
 
-* `Format string syntax <http://vitaut.github.com/format/format.html>`__
+* `Format string syntax
+  <http://vitaut.github.com/format/format.html#format-string-syntax>`__
   similar to the one used by `str.format
   <http://docs.python.org/2/library/stdtypes.html#str.format>`__ in Python.
 * Support for user-defined types.
@@ -312,7 +313,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Documentation License
 ---------------------
 
-The `Format String Syntax <http://vitaut.github.com/format/format.html>`__
+The `Format String Syntax
+<http://vitaut.github.com/format/format.html#format-string-syntax>`__
 section in the documentation is based on the one from Python `string module
 documentation <http://docs.python.org/3/library/string.html#module-string>`__
 adapted for the current library. For this reason the documentation is
