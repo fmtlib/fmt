@@ -309,6 +309,17 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+Documentation License
+---------------------
+
+The `Format string syntax <http://vitaut.github.com/format/format.html>`__
+section in the documentation is based on the one from Python `string module
+documentation <http://docs.python.org/3/library/string.html#module-string>`
+adapted for the current library. For this reason the documentation is
+distributed under the Python Software Foundation license available in
+`doc/LICENSE.python
+<https://raw.github.com/vitaut/format/master/doc/LICENSE.python>`__.
+
 Acknowledgments
 ---------------
 
@@ -320,5 +331,7 @@ Some ideas used in the implementation are borrowed from `Loki
 <http://loki-lib.sourceforge.net/>`__ SafeFormat and `Diagnostic API
 <http://clang.llvm.org/doxygen/classclang_1_1Diagnostic.html>`__ in
 `Clang <http://clang.llvm.org/>`__.
-Format string syntax is based on Python's `str.format
+Format string syntax and the documentation are based on Python's `str.format
 <http://docs.python.org/2/library/stdtypes.html#str.format>`__.
+Thanks `Doug Turnbull <https://github.com/softwaredoug>`__ for his valuable
+comments and contribution to the design of the type-safe API.
