@@ -31,9 +31,15 @@
 #undef _SCL_SECURE_NO_WARNINGS
 #define _SCL_SECURE_NO_WARNINGS
 
-#include "format.h"
-
 #include <math.h>
+
+// Wrap signbit because when compiled in C++11 mode signbit is no longer a
+// macro but a function defined in namespace std and the macro is undefined.
+#ifndef _MSC_VER
+inline int SignBit(double value) { return signbit(value); }
+#endif
+
+#include "format.h"
 
 #include <cassert>
 #include <cctype>
@@ -85,7 +91,7 @@ char *FillPadding(char *buffer,
 }
 
 #ifdef _MSC_VER
-int signbit(double value) {
+int SignBit(double value) {
   if (value < 0) return 1;
   if (value == value) return 0;
   int dec = 0, sign = 0;
@@ -188,9 +194,9 @@ void BasicFormatter::FormatDouble(
   }
 
   char sign = 0;
-  // Use signbit instead of value < 0 because the latter is always
+  // Use SignBit instead of value < 0 because the latter is always
   // false for NaN.
-  if (signbit(value)) {
+  if (SignBit(value)) {
     sign = '-';
     value = -value;
   } else if (spec.sign_flag()) {
