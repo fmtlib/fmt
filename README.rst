@@ -312,9 +312,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Documentation License
 ---------------------
 
-The `Format string syntax <http://vitaut.github.com/format/format.html>`__
+The `Format String Syntax <http://vitaut.github.com/format/format.html>`__
 section in the documentation is based on the one from Python `string module
-documentation <http://docs.python.org/3/library/string.html#module-string>`
+documentation <http://docs.python.org/3/library/string.html#module-string>`__
 adapted for the current library. For this reason the documentation is
 distributed under the Python Software Foundation license available in
 `doc/LICENSE.python
