@@ -4,3 +4,6 @@
 [submodule "tinyformat"]
 	path = tinyformat
 	url = git://github.com/vitaut/tinyformat.git
+[submodule "breathe"]
+	path = breathe
+	url = git://github.com/vitaut/breathe.git
