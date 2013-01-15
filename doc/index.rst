@@ -1,9 +1,9 @@
 .. highlight:: c++
 
-.. _string-formatting:
+.. _string-formatting-api:
 
-String Formatting
------------------
+String Formatting API
+---------------------
 
 .. doxygenfunction:: format::Format(StringRef)
 
