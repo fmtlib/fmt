@@ -29,6 +29,8 @@ Features
 * `Portability`_ with consistent output across platforms and support
   for older compilers.
 
+See the `documentation <http://vitaut.github.com/format/>`__ for more details.
+
 Examples
 --------
 
