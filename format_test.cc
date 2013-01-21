@@ -35,6 +35,7 @@
 #include <cfloat>
 #include <climits>
 #include <cstring>
+#include <iomanip>
 #include <memory>
 #include <gtest/gtest.h>
 #include "format.h"
@@ -50,9 +51,7 @@ using fmt::Formatter;
 using fmt::Format;
 using fmt::FormatError;
 using fmt::StringRef;
-using fmt::hex;
 using fmt::hexu;
-using fmt::oct;
 using fmt::pad;
 
 #define FORMAT_TEST_THROW_(statement, expected_exception, message, fail) \
@@ -1065,6 +1064,7 @@ TEST(TempFormatterTest, Examples) {
 }
 
 TEST(StrTest, oct) {
+  using fmt::oct;
   EXPECT_EQ("12", (BasicFormatter() << oct(static_cast<short>(012))).str());
   EXPECT_EQ("12", (BasicFormatter() << oct(012)).str());
   EXPECT_EQ("34", (BasicFormatter() << oct(034u)).str());
@@ -1073,6 +1073,7 @@ TEST(StrTest, oct) {
 }
 
 TEST(StrTest, hex) {
+  using fmt::hex;
   fmt::IntFormatter<int, fmt::TypeSpec<'x'> > (*phex)(int value) = hex;
   phex(42);
   // This shouldn't compile:
@@ -1107,6 +1108,7 @@ public:
 ISO8601DateFormatter iso8601(const Date &d) { return ISO8601DateFormatter(d); }
 
 TEST(StrTest, pad) {
+  using fmt::hex;
   EXPECT_EQ("    cafe", (BasicFormatter() << pad(hex(0xcafe), 8)).str());
   EXPECT_EQ("    babe", (BasicFormatter() << pad(hex(0xbabeu), 8)).str());
   EXPECT_EQ("    dead", (BasicFormatter() << pad(hex(0xdeadl), 8)).str());
@@ -1127,6 +1129,13 @@ TEST(StrTest, pad) {
   f.Clear();
   f << iso8601(Date(2012, 1, 9));
   EXPECT_EQ("2012-01-09", f.str());
+}
+
+TEST(StrTest, NoConflictWithIOManip) {
+  using namespace std;
+  using namespace fmt;
+  EXPECT_EQ("cafe", (BasicFormatter() << hex(0xcafe)).str());
+  EXPECT_EQ("12", (BasicFormatter() << oct(012)).str());
 }
 
 template <typename T>
