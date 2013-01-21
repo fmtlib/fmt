@@ -1,20 +1,23 @@
 format
 ======
 
-Format is an open-source C++ library that provides
-string formatting functionality similar to `str.format
-<http://docs.python.org/2/library/stdtypes.html#str.format>`__
-in Python.
+Format is an open-source string formatting library for C++.
+It can be used as a type-safe alternative to `printf` or as a fast
+alternative to IOStreams.
 
 Features
 --------
 
-* `Format string syntax
+* Two APIs: faster concatenation-based write API and slower (but still fast)
+  replacement-based format API with positional arguments for localization.
+* Write API similar to the one used by IOStreams but much faster and more
+  consistent.
+* Format API with `format string syntax
   <http://vitaut.github.com/format#format-string-syntax>`__
   similar to the one used by `str.format
   <http://docs.python.org/2/library/stdtypes.html#str.format>`__ in Python.
 * Support for user-defined types.
-* High speed: performance of the current implementation is close to that of
+* High speed: performance of the format API is close to that of
   glibc's ``printf`` and better than performance of IOStreams. See
   `Speed tests`_.
 * Small code size both in terms of source code (format consists of a single
