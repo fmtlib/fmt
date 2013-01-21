@@ -5,30 +5,30 @@
 String Formatting API
 ---------------------
 
-.. doxygenfunction:: format::Format(StringRef)
+.. doxygenfunction:: fmt::Format(StringRef)
 
-.. doxygenclass:: format::Formatter
+.. doxygenclass:: fmt::Formatter
    :members:
 
-.. doxygenclass:: format::TempFormatter
+.. doxygenclass:: fmt::TempFormatter
    :members:
 
-.. doxygenclass:: format::NoAction
+.. doxygenclass:: fmt::NoAction
    :members:
 
-.. doxygenclass:: format::StringRef
+.. doxygenclass:: fmt::StringRef
    :members:
 
-.. doxygenfunction:: format::str
+.. doxygenfunction:: fmt::str
 
-.. doxygenfunction:: format::c_str
+.. doxygenfunction:: fmt::c_str
 
 .. _formatstrings:
 
 Format String Syntax
 --------------------
 
-The :cpp:func:`format::Format()` function and the :cpp:class:`format::Formatter`
+The :cpp:func:`fmt::Format()` function and the :cpp:class:`fmt::Formatter`
 class share the same syntax for format strings.
 
 Format strings contain "replacement fields" surrounded by curly braces ``{}``.

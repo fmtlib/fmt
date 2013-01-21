@@ -38,7 +38,7 @@
 #include <sstream>
 #include <vector>
 
-namespace format {
+namespace fmt {
 
 namespace internal {
 
@@ -439,8 +439,7 @@ BasicFormatter &BasicFormatter::operator<<(const IntFormatter<T, Spec> &f) {
   switch (f.type()) {
   case 0: case 'd': {
     unsigned num_digits = BasicFormatter::CountDigits(abs_value);
-    char *p = PrepareFilledBuffer(size + num_digits, f, sign)
-        - num_digits + 1;
+    char *p = PrepareFilledBuffer(size + num_digits, f, sign) - num_digits + 1;
     BasicFormatter::FormatDecimal(p, abs_value, num_digits);
     break;
   }
@@ -497,7 +496,7 @@ void Format(BasicFormatter &f, const FormatSpec &spec, const T &value) {
 
 /**
   \rst
-  The :cpp:class:`format::Formatter` class provides string formatting
+  The :cpp:class:`fmt::Formatter` class provides string formatting
   functionality similar to Python's `str.format
   <http://docs.python.org/3/library/stdtypes.html#str.format>`__.
   The output is stored in a memory buffer that grows dynamically.
@@ -677,8 +676,8 @@ const char *c_str(internal::FormatterProxy p);
 
 namespace internal {
 
-using format::str;
-using format::c_str;
+using fmt::str;
+using fmt::c_str;
 
 class FormatterProxy {
  private:
@@ -701,8 +700,8 @@ class ArgInserter {
  private:
   mutable Formatter *formatter_;
 
-  friend class format::Formatter;
-  friend class format::StringRef;
+  friend class fmt::Formatter;
+  friend class fmt::StringRef;
 
   // Do not implement.
   void operator=(const ArgInserter& other);
@@ -821,8 +820,8 @@ class TempFormatter : public internal::ArgInserter {
     \rst
     Constructs a temporary formatter with a format string and an action.
     The action should be an unary function object that takes a const
-    reference to :cpp:class:`format::Formatter` as an argument.
-    See :cpp:class:`format::NoAction` and :cpp:class:`format::Write` for
+    reference to :cpp:class:`fmt::Formatter` as an argument.
+    See :cpp:class:`fmt::NoAction` and :cpp:class:`fmt::Write` for
     examples of action classes.
     \endrst
   */
@@ -864,8 +863,8 @@ class TempFormatter : public internal::ArgInserter {
   literal text and replacement fields surrounded by braces ``{}``.
   The formatter object replaces the fields with formatted arguments
   and stores the output in a memory buffer. The content of the buffer can
-  be converted to ``std::string`` with :cpp:func:`format::str()` or
-  accessed as a C string with :cpp:func:`format::c_str()`.
+  be converted to ``std::string`` with :cpp:func:`fmt::str()` or
+  accessed as a C string with :cpp:func:`fmt::c_str()`.
 
   **Example**::
 
@@ -892,7 +891,5 @@ inline TempFormatter<Write> Print(StringRef format) {
   return TempFormatter<Write>(format);
 }
 }
-
-namespace fmt = format;
 
 #endif  // FORMAT_H_
