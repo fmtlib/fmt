@@ -23,6 +23,17 @@ String Formatting API
 
 .. doxygenfunction:: fmt::c_str
 
+Write API
+---------
+
+.. doxygenfunction:: fmt::oct
+
+.. doxygenfunction:: fmt::hex
+
+.. doxygenfunction:: fmt::hexu
+
+.. doxygenfunction:: fmt::pad
+
 .. _formatstrings:
 
 Format String Syntax

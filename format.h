@@ -36,7 +36,6 @@
 #include <stdexcept>
 #include <string>
 #include <sstream>
-#include <vector>
 
 namespace fmt {
 
@@ -277,8 +276,40 @@ class IntFormatter : public SpecT {
   T value() const { return value_; }
 };
 
+/**
+  Returns an integer formatter that formats the value in base 8.
+  */
+IntFormatter<int, TypeSpec<'o'> > oct(int value);
+
+/**
+  Returns an integer formatter that formats the value in base 16 using
+  lower-case letters for the digits above 9.
+ */
+IntFormatter<int, TypeSpec<'x'> > hex(int value);
+
+/**
+  Returns an integer formatter that formats the value in base 16 using
+  upper-case letters for the digits above 9.
+ */
+IntFormatter<int, TypeSpec<'X'> > hexu(int value);
+
+/**
+  \rst
+  Returns an integer formatter that pads the formatted argument with the fill
+  character to the specified width using the default (right) alignment.
+
+  **Example**::
+
+    std::string s = str(BasicFormatter() << pad(hex(0xcafe), 8, '0'));
+    // s == "0000cafe"
+
+  \endrst
+ */
+template <char TYPE_CODE>
+IntFormatter<int, AlignTypeSpec<TYPE_CODE> > pad(
+    int value, unsigned width, char fill = ' ');
+
 #define DEFINE_INT_FORMATTERS(TYPE) \
-/* Returns an integer formatter that formats value in the octal base. */ \
 inline IntFormatter<TYPE, TypeSpec<'o'> > oct(TYPE value) { \
   return IntFormatter<TYPE, TypeSpec<'o'> >(value, TypeSpec<'o'>()); \
 } \
@@ -312,6 +343,8 @@ DEFINE_INT_FORMATTERS(unsigned long)
 
 class BasicFormatter {
  private:
+  // Returns the number of decimal digits in n. Trailing zeros are not counted
+  // except for n == 0 in which case CountDigits returns 1.
   static unsigned CountDigits(uint64_t n) {
     unsigned count = 1;
     for (;;) {
@@ -670,6 +703,9 @@ class Formatter : public BasicFormatter {
   */
   internal::ArgInserter operator()(StringRef format);
 };
+
+inline std::string str(const BasicFormatter &f) { return f.str(); }
+inline const char *c_str(const BasicFormatter &f) { return f.c_str(); }
 
 std::string str(internal::FormatterProxy p);
 const char *c_str(internal::FormatterProxy p);

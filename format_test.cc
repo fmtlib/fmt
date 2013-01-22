@@ -917,6 +917,9 @@ TEST(FormatterTest, FormatterAppend) {
 }
 
 TEST(FormatterTest, FormatterExamples) {
+  using fmt::hex;
+  EXPECT_EQ("0000cafe", str(BasicFormatter() << pad(hex(0xcafe), 8, '0')));
+
   std::string message = str(Format("The answer is {}") << 42);
   EXPECT_EQ("The answer is 42", message);
 
