@@ -64,32 +64,6 @@ using fmt::StringRef;
 
 namespace {
 
-template <typename T>
-struct IsLongDouble { enum {VALUE = 0}; };
-
-template <>
-struct IsLongDouble<long double> { enum {VALUE = 1}; };
-
-const char DIGITS[] =
-    "0001020304050607080910111213141516171819"
-    "2021222324252627282930313233343536373839"
-    "4041424344454647484950515253545556575859"
-    "6061626364656667686970717273747576777879"
-    "8081828384858687888990919293949596979899";
-
-// Fills the padding around the content and returns the pointer to the
-// content area.
-char *FillPadding(char *buffer,
-    unsigned total_size, std::size_t content_size, char fill) {
-  std::size_t padding = total_size - content_size;
-  std::size_t left_padding = padding / 2;
-  std::fill_n(buffer, left_padding, fill);
-  buffer += left_padding;
-  char *content = buffer;
-  std::fill_n(buffer + content_size, padding - left_padding, fill);
-  return content;
-}
-
 #ifdef _MSC_VER
 int SignBit(double value) {
   if (value < 0) return 1;
@@ -101,235 +75,21 @@ int SignBit(double value) {
 #endif
 }
 
-void BasicFormatter::FormatDecimal(
-    char *buffer, uint64_t value, unsigned num_digits) {
-  --num_digits;
-  while (value >= 100) {
-    // Integer division is slow so do it for a group of two digits instead
-    // of for every digit. The idea comes from the talk by Alexandrescu
-    // "Three Optimization Tips for C++". See speed-test for a comparison.
-    unsigned index = (value % 100) * 2;
-    value /= 100;
-    buffer[num_digits] = DIGITS[index + 1];
-    buffer[num_digits - 1] = DIGITS[index];
-    num_digits -= 2;
-  }
-  if (value < 10) {
-    *buffer = static_cast<char>('0' + value);
-    return;
-  }
-  unsigned index = static_cast<unsigned>(value * 2);
-  buffer[1] = DIGITS[index + 1];
-  buffer[0] = DIGITS[index];
-}
+const char fmt::internal::DIGITS[] =
+    "0001020304050607080910111213141516171819"
+    "2021222324252627282930313233343536373839"
+    "4041424344454647484950515253545556575859"
+    "6061626364656667686970717273747576777879"
+    "8081828384858687888990919293949596979899";
 
-void BasicFormatter::ReportUnknownType(char code, const char *type) {
+void fmt::internal::ReportUnknownType(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
     throw fmt::FormatError(fmt::str(
-        fmt::Format("unknown format code '{0}' for {1}") << code << type));
+        fmt::Format("unknown format code '{}' for {}") << code << type));
   }
   throw fmt::FormatError(
-      fmt::str(fmt::Format("unknown format code '\\x{0:02x}' for {1}")
+      fmt::str(fmt::Format("unknown format code '\\x{:02x}' for {}")
         << static_cast<unsigned>(code) << type));
-}
-
-char *BasicFormatter::PrepareFilledBuffer(
-    unsigned size, const AlignSpec &spec, char sign) {
-  unsigned width = spec.width();
-  if (width <= size) {
-    char *p = GrowBuffer(size);
-    *p = sign;
-    return p + size - 1;
-  }
-  char *p = GrowBuffer(width);
-  char *end = p + width;
-  Alignment align = spec.align();
-  if (align == ALIGN_LEFT) {
-    *p = sign;
-    p += size;
-    std::fill(p, end, spec.fill());
-  } else if (align == ALIGN_CENTER) {
-    p = FillPadding(p, width, size, spec.fill());
-    *p = sign;
-    p += size;
-  } else {
-    if (align == ALIGN_NUMERIC) {
-      if (sign) {
-        *p++ = sign;
-        --size;
-      }
-    } else {
-      *(end - size) = sign;
-    }
-    std::fill(p, end - size, spec.fill());
-    p = end;
-  }
-  return p - 1;
-}
-
-template <typename T>
-void BasicFormatter::FormatDouble(
-    T value, const FormatSpec &spec, int precision) {
-  // Check type.
-  char type = spec.type();
-  bool upper = false;
-  switch (type) {
-  case 0:
-    type = 'g';
-    break;
-  case 'e': case 'f': case 'g':
-    break;
-  case 'F':
-#ifdef _MSC_VER
-    // MSVC's printf doesn't support 'F'.
-    type = 'f';
-#endif
-    // Fall through.
-  case 'E': case 'G':
-    upper = true;
-    break;
-  default:
-    ReportUnknownType(type, "double");
-    break;
-  }
-
-  char sign = 0;
-  // Use SignBit instead of value < 0 because the latter is always
-  // false for NaN.
-  if (SignBit(value)) {
-    sign = '-';
-    value = -value;
-  } else if (spec.sign_flag()) {
-    sign = spec.plus_flag() ? '+' : ' ';
-  }
-
-  if (value != value) {
-    // Format NaN ourselves because sprintf's output is not consistent
-    // across platforms.
-    std::size_t size = 4;
-    const char *nan = upper ? " NAN" : " nan";
-    if (!sign) {
-      --size;
-      ++nan;
-    }
-    char *out = FormatString(nan, size, spec);
-    if (sign)
-      *out = sign;
-    return;
-  }
-
-  if (isinf(value)) {
-    // Format infinity ourselves because sprintf's output is not consistent
-    // across platforms.
-    std::size_t size = 4;
-    const char *inf = upper ? " INF" : " inf";
-    if (!sign) {
-      --size;
-      ++inf;
-    }
-    char *out = FormatString(inf, size, spec);
-    if (sign)
-      *out = sign;
-    return;
-  }
-
-  size_t offset = buffer_.size();
-  unsigned width = spec.width();
-  if (sign) {
-    buffer_.reserve(buffer_.size() + std::max(width, 1u));
-    if (width > 0)
-      --width;
-    ++offset;
-  }
-
-  // Build format string.
-  enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
-  char format[MAX_FORMAT_SIZE];
-  char *format_ptr = format;
-  *format_ptr++ = '%';
-  unsigned width_for_sprintf = width;
-  if (spec.hash_flag())
-    *format_ptr++ = '#';
-  if (spec.align() == ALIGN_CENTER) {
-    width_for_sprintf = 0;
-  } else {
-    if (spec.align() == ALIGN_LEFT)
-      *format_ptr++ = '-';
-    if (width != 0)
-      *format_ptr++ = '*';
-  }
-  if (precision >= 0) {
-    *format_ptr++ = '.';
-    *format_ptr++ = '*';
-  }
-  if (IsLongDouble<T>::VALUE)
-    *format_ptr++ = 'L';
-  *format_ptr++ = type;
-  *format_ptr = '\0';
-
-  // Format using snprintf.
-  for (;;) {
-    size_t size = buffer_.capacity() - offset;
-    int n = 0;
-    char *start = &buffer_[offset];
-    if (width_for_sprintf == 0) {
-      n = precision < 0 ?
-          snprintf(start, size, format, value) :
-          snprintf(start, size, format, precision, value);
-    } else {
-      n = precision < 0 ?
-          snprintf(start, size, format, width_for_sprintf, value) :
-          snprintf(start, size, format, width_for_sprintf, precision, value);
-    }
-    if (n >= 0 && offset + n < buffer_.capacity()) {
-      if (sign) {
-        if ((spec.align() != ALIGN_RIGHT && spec.align() != ALIGN_DEFAULT) ||
-            *start != ' ') {
-          *(start - 1) = sign;
-          sign = 0;
-        } else {
-          *(start - 1) = spec.fill();
-        }
-        ++n;
-      }
-      if (spec.align() == ALIGN_CENTER &&
-          spec.width() > static_cast<unsigned>(n)) {
-        char *p = GrowBuffer(spec.width());
-        std::copy(p, p + n, p + (spec.width() - n) / 2);
-        FillPadding(p, spec.width(), n, spec.fill());
-        return;
-      }
-      if (spec.fill() != ' ' || sign) {
-        while (*start == ' ')
-          *start++ = spec.fill();
-        if (sign)
-          *(start - 1) = sign;
-      }
-      GrowBuffer(n);
-      return;
-    }
-    buffer_.reserve(n >= 0 ? offset + n + 1 : 2 * buffer_.capacity());
-  }
-}
-
-char *BasicFormatter::FormatString(
-    const char *s, std::size_t size, const FormatSpec &spec) {
-  char *out = 0;
-  if (spec.width() > size) {
-    out = GrowBuffer(spec.width());
-    if (spec.align() == ALIGN_RIGHT) {
-      std::fill_n(out, spec.width() - size, spec.fill());
-      out += spec.width() - size;
-    } else if (spec.align() == ALIGN_CENTER) {
-      out = FillPadding(out, spec.width(), size, spec.fill());
-    } else {
-      std::fill_n(out + size, spec.width() - size, spec.fill());
-    }
-  } else {
-    out = GrowBuffer(size);
-  }
-  std::copy(s, s + size, out);
-  return out;
 }
 
 // Throws Exception(message) if format contains '}', otherwise throws
@@ -573,7 +333,7 @@ void Formatter::DoFormat() {
       break;
     case CHAR: {
       if (spec.type_ && spec.type_ != 'c')
-        ReportUnknownType(spec.type_, "char");
+        internal::ReportUnknownType(spec.type_, "char");
       char *out = 0;
       if (spec.width_ > 1) {
         out = GrowBuffer(spec.width_);
@@ -593,7 +353,7 @@ void Formatter::DoFormat() {
     }
     case STRING: {
       if (spec.type_ && spec.type_ != 's')
-        ReportUnknownType(spec.type_, "string");
+        internal::ReportUnknownType(spec.type_, "string");
       const char *str = arg.string.value;
       size_t size = arg.string.size;
       if (size == 0) {
@@ -607,14 +367,14 @@ void Formatter::DoFormat() {
     }
     case POINTER:
       if (spec.type_ && spec.type_ != 'p')
-        ReportUnknownType(spec.type_, "pointer");
+        internal::ReportUnknownType(spec.type_, "pointer");
       spec.flags_= HASH_FLAG;
       spec.type_ = 'x';
       FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
       break;
     case CUSTOM:
       if (spec.type_)
-        ReportUnknownType(spec.type_, "object");
+        internal::ReportUnknownType(spec.type_, "object");
       (this->*arg.custom.format)(arg.custom.value, spec);
       break;
     default:

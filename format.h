@@ -136,6 +136,16 @@ struct IntTraits<int> : SignedIntTraits<int, unsigned> {};
 template <>
 struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
 
+template <typename T>
+struct IsLongDouble { enum {VALUE = 0}; };
+
+template <>
+struct IsLongDouble<long double> { enum {VALUE = 1}; };
+
+extern const char DIGITS[];
+
+void ReportUnknownType(char code, const char *type);
+
 class ArgInserter;
 class FormatterProxy;
 }
@@ -341,6 +351,7 @@ DEFINE_INT_FORMATTERS(long)
 DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
 
+template <typename Char>
 class BasicFormatter {
  private:
   // Returns the number of decimal digits in n. Trailing zeros are not counted
@@ -360,29 +371,30 @@ class BasicFormatter {
     }
   }
 
-  static void FormatDecimal(char *buffer, uint64_t value, unsigned num_digits);
+  static void FormatDecimal(Char *buffer, uint64_t value, unsigned num_digits);
 
  protected:
-  static void ReportUnknownType(char code, const char *type);
+  static Char *FillPadding(Char *buffer,
+      unsigned total_size, std::size_t content_size, char fill);
 
   enum { INLINE_BUFFER_SIZE = 500 };
-  mutable internal::Array<char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
+  mutable internal::Array<Char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
 
   // Grows the buffer by n characters and returns a pointer to the newly
   // allocated area.
-  char *GrowBuffer(std::size_t n) {
+  Char *GrowBuffer(std::size_t n) {
     std::size_t size = buffer_.size();
     buffer_.resize(size + n);
     return &buffer_[size];
   }
 
-  char *PrepareFilledBuffer(unsigned size, const Spec &, char sign) {
-    char *p = GrowBuffer(size);
+  Char *PrepareFilledBuffer(unsigned size, const Spec &, char sign) {
+    Char *p = GrowBuffer(size);
     *p = sign;
     return p + size - 1;
   }
 
-  char *PrepareFilledBuffer(unsigned size, const AlignSpec &spec, char sign);
+  Char *PrepareFilledBuffer(unsigned size, const AlignSpec &spec, char sign);
 
   // Formats an integer.
   template <typename T>
@@ -406,13 +418,13 @@ class BasicFormatter {
     Returns a pointer to the output buffer content. No terminating null
     character is appended.
    */
-  const char *data() const { return &buffer_[0]; }
+  const Char *data() const { return &buffer_[0]; }
 
   /**
     Returns a pointer to the output buffer content with terminating null
     character appended.
    */
-  const char *c_str() const {
+  const Char *c_str() const {
     std::size_t size = buffer_.size();
     buffer_.reserve(size + 1);
     buffer_[size] = '\0';
@@ -422,7 +434,9 @@ class BasicFormatter {
   /**
     Returns the content of the output buffer as an `std::string`.
    */
-  std::string str() const { return std::string(&buffer_[0], buffer_.size()); }
+  std::basic_string<Char> str() const {
+    return std::basic_string<Char>(&buffer_[0], buffer_.size());
+  }
 
   BasicFormatter &operator<<(int value) {
     return *this << IntFormatter<int, TypeSpec<0> >(value, TypeSpec<0>());
@@ -431,12 +445,12 @@ class BasicFormatter {
     return *this << IntFormatter<unsigned, TypeSpec<0> >(value, TypeSpec<0>());
   }
 
-  BasicFormatter &operator<<(char value) {
+  BasicFormatter &operator<<(Char value) {
     *GrowBuffer(1) = value;
     return *this;
   }
 
-  BasicFormatter &operator<<(const char *value) {
+  BasicFormatter &operator<<(const Char *value) {
     std::size_t size = std::strlen(value);
     std::strncpy(GrowBuffer(size), value, size);
     return *this;
@@ -445,7 +459,7 @@ class BasicFormatter {
   template <typename T, typename Spec>
   BasicFormatter &operator<<(const IntFormatter<T, Spec> &f);
 
-  void Write(const std::string &s, const FormatSpec &spec) {
+  void Write(const std::basic_string<char> &s, const FormatSpec &spec) {
     FormatString(s.data(), s.size(), spec);
   }
 
@@ -454,8 +468,249 @@ class BasicFormatter {
   }
 };
 
+// Fills the padding around the content and returns the pointer to the
+// content area.
+template <typename Char>
+Char *BasicFormatter<Char>::FillPadding(Char *buffer,
+    unsigned total_size, std::size_t content_size, char fill) {
+  std::size_t padding = total_size - content_size;
+  std::size_t left_padding = padding / 2;
+  std::fill_n(buffer, left_padding, fill);
+  buffer += left_padding;
+  char *content = buffer;
+  std::fill_n(buffer + content_size, padding - left_padding, fill);
+  return content;
+}
+
+template <typename Char>
+void BasicFormatter<Char>::FormatDecimal(
+    Char *buffer, uint64_t value, unsigned num_digits) {
+  --num_digits;
+  while (value >= 100) {
+    // Integer division is slow so do it for a group of two digits instead
+    // of for every digit. The idea comes from the talk by Alexandrescu
+    // "Three Optimization Tips for C++". See speed-test for a comparison.
+    unsigned index = (value % 100) * 2;
+    value /= 100;
+    buffer[num_digits] = internal::DIGITS[index + 1];
+    buffer[num_digits - 1] = internal::DIGITS[index];
+    num_digits -= 2;
+  }
+  if (value < 10) {
+    *buffer = static_cast<char>('0' + value);
+    return;
+  }
+  unsigned index = static_cast<unsigned>(value * 2);
+  buffer[1] = internal::DIGITS[index + 1];
+  buffer[0] = internal::DIGITS[index];
+}
+
+template <typename Char>
+Char *BasicFormatter<Char>::PrepareFilledBuffer(
+    unsigned size, const AlignSpec &spec, char sign) {
+  unsigned width = spec.width();
+  if (width <= size) {
+    char *p = GrowBuffer(size);
+    *p = sign;
+    return p + size - 1;
+  }
+  char *p = GrowBuffer(width);
+  char *end = p + width;
+  Alignment align = spec.align();
+  if (align == ALIGN_LEFT) {
+    *p = sign;
+    p += size;
+    std::fill(p, end, spec.fill());
+  } else if (align == ALIGN_CENTER) {
+    p = FillPadding(p, width, size, spec.fill());
+    *p = sign;
+    p += size;
+  } else {
+    if (align == ALIGN_NUMERIC) {
+      if (sign) {
+        *p++ = sign;
+        --size;
+      }
+    } else {
+      *(end - size) = sign;
+    }
+    std::fill(p, end - size, spec.fill());
+    p = end;
+  }
+  return p - 1;
+}
+
+template <typename Char>
+template <typename T>
+void BasicFormatter<Char>::FormatDouble(
+    T value, const FormatSpec &spec, int precision) {
+  // Check type.
+  char type = spec.type();
+  bool upper = false;
+  switch (type) {
+  case 0:
+    type = 'g';
+    break;
+  case 'e': case 'f': case 'g':
+    break;
+  case 'F':
+#ifdef _MSC_VER
+    // MSVC's printf doesn't support 'F'.
+    type = 'f';
+#endif
+    // Fall through.
+  case 'E': case 'G':
+    upper = true;
+    break;
+  default:
+    internal::ReportUnknownType(type, "double");
+    break;
+  }
+
+  char sign = 0;
+  // Use SignBit instead of value < 0 because the latter is always
+  // false for NaN.
+  if (SignBit(value)) {
+    sign = '-';
+    value = -value;
+  } else if (spec.sign_flag()) {
+    sign = spec.plus_flag() ? '+' : ' ';
+  }
+
+  if (value != value) {
+    // Format NaN ourselves because sprintf's output is not consistent
+    // across platforms.
+    std::size_t size = 4;
+    const char *nan = upper ? " NAN" : " nan";
+    if (!sign) {
+      --size;
+      ++nan;
+    }
+    char *out = FormatString(nan, size, spec);
+    if (sign)
+      *out = sign;
+    return;
+  }
+
+  if (isinf(value)) {
+    // Format infinity ourselves because sprintf's output is not consistent
+    // across platforms.
+    std::size_t size = 4;
+    const char *inf = upper ? " INF" : " inf";
+    if (!sign) {
+      --size;
+      ++inf;
+    }
+    char *out = FormatString(inf, size, spec);
+    if (sign)
+      *out = sign;
+    return;
+  }
+
+  size_t offset = buffer_.size();
+  unsigned width = spec.width();
+  if (sign) {
+    buffer_.reserve(buffer_.size() + std::max(width, 1u));
+    if (width > 0)
+      --width;
+    ++offset;
+  }
+
+  // Build format string.
+  enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
+  char format[MAX_FORMAT_SIZE];
+  char *format_ptr = format;
+  *format_ptr++ = '%';
+  unsigned width_for_sprintf = width;
+  if (spec.hash_flag())
+    *format_ptr++ = '#';
+  if (spec.align() == ALIGN_CENTER) {
+    width_for_sprintf = 0;
+  } else {
+    if (spec.align() == ALIGN_LEFT)
+      *format_ptr++ = '-';
+    if (width != 0)
+      *format_ptr++ = '*';
+  }
+  if (precision >= 0) {
+    *format_ptr++ = '.';
+    *format_ptr++ = '*';
+  }
+  if (internal::IsLongDouble<T>::VALUE)
+    *format_ptr++ = 'L';
+  *format_ptr++ = type;
+  *format_ptr = '\0';
+
+  // Format using snprintf.
+  for (;;) {
+    size_t size = buffer_.capacity() - offset;
+    int n = 0;
+    char *start = &buffer_[offset];
+    if (width_for_sprintf == 0) {
+      n = precision < 0 ?
+          snprintf(start, size, format, value) :
+          snprintf(start, size, format, precision, value);
+    } else {
+      n = precision < 0 ?
+          snprintf(start, size, format, width_for_sprintf, value) :
+          snprintf(start, size, format, width_for_sprintf, precision, value);
+    }
+    if (n >= 0 && offset + n < buffer_.capacity()) {
+      if (sign) {
+        if ((spec.align() != ALIGN_RIGHT && spec.align() != ALIGN_DEFAULT) ||
+            *start != ' ') {
+          *(start - 1) = sign;
+          sign = 0;
+        } else {
+          *(start - 1) = spec.fill();
+        }
+        ++n;
+      }
+      if (spec.align() == ALIGN_CENTER &&
+          spec.width() > static_cast<unsigned>(n)) {
+        char *p = GrowBuffer(spec.width());
+        std::copy(p, p + n, p + (spec.width() - n) / 2);
+        FillPadding(p, spec.width(), n, spec.fill());
+        return;
+      }
+      if (spec.fill() != ' ' || sign) {
+        while (*start == ' ')
+          *start++ = spec.fill();
+        if (sign)
+          *(start - 1) = sign;
+      }
+      GrowBuffer(n);
+      return;
+    }
+    buffer_.reserve(n >= 0 ? offset + n + 1 : 2 * buffer_.capacity());
+  }
+}
+
+template <typename Char>
+char *BasicFormatter<Char>::FormatString(
+    const char *s, std::size_t size, const FormatSpec &spec) {
+  char *out = 0;
+  if (spec.width() > size) {
+    out = GrowBuffer(spec.width());
+    if (spec.align() == ALIGN_RIGHT) {
+      std::fill_n(out, spec.width() - size, spec.fill());
+      out += spec.width() - size;
+    } else if (spec.align() == ALIGN_CENTER) {
+      out = FillPadding(out, spec.width(), size, spec.fill());
+    } else {
+      std::fill_n(out + size, spec.width() - size, spec.fill());
+    }
+  } else {
+    out = GrowBuffer(size);
+  }
+  std::copy(s, s + size, out);
+  return out;
+}
+
+template <typename Char>
 template <typename T, typename Spec>
-BasicFormatter &BasicFormatter::operator<<(const IntFormatter<T, Spec> &f) {
+BasicFormatter<Char> &BasicFormatter<Char>::operator<<(
+    const IntFormatter<T, Spec> &f) {
   T value = f.value();
   unsigned size = 0;
   char sign = 0;
@@ -472,7 +727,7 @@ BasicFormatter &BasicFormatter::operator<<(const IntFormatter<T, Spec> &f) {
   switch (f.type()) {
   case 0: case 'd': {
     unsigned num_digits = BasicFormatter::CountDigits(abs_value);
-    char *p = PrepareFilledBuffer(size + num_digits, f, sign) - num_digits + 1;
+    Char *p = PrepareFilledBuffer(size + num_digits, f, sign) - num_digits + 1;
     BasicFormatter::FormatDecimal(p, abs_value, num_digits);
     break;
   }
@@ -483,7 +738,7 @@ BasicFormatter &BasicFormatter::operator<<(const IntFormatter<T, Spec> &f) {
     do {
       ++size;
     } while ((n >>= 4) != 0);
-    char *p = PrepareFilledBuffer(size, f, sign);
+    Char *p = PrepareFilledBuffer(size, f, sign);
     n = abs_value;
     const char *digits = f.type() == 'x' ?
         "0123456789abcdef" : "0123456789ABCDEF";
@@ -503,7 +758,7 @@ BasicFormatter &BasicFormatter::operator<<(const IntFormatter<T, Spec> &f) {
     do {
       ++size;
     } while ((n >>= 3) != 0);
-    char *p = PrepareFilledBuffer(size, f, sign);
+    Char *p = PrepareFilledBuffer(size, f, sign);
     n = abs_value;
     do {
       *p-- = '0' + (n & 7);
@@ -513,16 +768,16 @@ BasicFormatter &BasicFormatter::operator<<(const IntFormatter<T, Spec> &f) {
     break;
   }
   default:
-    BasicFormatter::ReportUnknownType(f.type(), "integer");
+    internal::ReportUnknownType(f.type(), "integer");
     break;
   }
   return *this;
 }
 
 // The default formatting function.
-template <typename T>
-void Format(BasicFormatter &f, const FormatSpec &spec, const T &value) {
-  std::ostringstream os;
+template <typename Char, typename T>
+void Format(BasicFormatter<Char> &f, const FormatSpec &spec, const T &value) {
+  std::basic_ostringstream<Char> os;
   os << value;
   f.Write(os.str(), spec);
 }
@@ -551,7 +806,7 @@ void Format(BasicFormatter &f, const FormatSpec &spec, const T &value) {
   The buffer can be accessed using :meth:`data` or :meth:`c_str`.
   \endrst
  */
-class Formatter : public BasicFormatter {
+class Formatter : public BasicFormatter<char> {
  private:
   enum Type {
     // Numeric types should go first.
@@ -704,8 +959,13 @@ class Formatter : public BasicFormatter {
   internal::ArgInserter operator()(StringRef format);
 };
 
-inline std::string str(const BasicFormatter &f) { return f.str(); }
-inline const char *c_str(const BasicFormatter &f) { return f.c_str(); }
+template <typename Char>
+inline std::basic_string<Char> str(const BasicFormatter<Char> &f) {
+  return f.str();
+}
+
+template <typename Char>
+inline const Char *c_str(const BasicFormatter<Char> &f) { return f.c_str(); }
 
 std::string str(internal::FormatterProxy p);
 const char *c_str(internal::FormatterProxy p);
