@@ -48,7 +48,6 @@ inline int SignBit(double value) { return signbit(value); }
 #include <algorithm>
 
 using std::size_t;
-using fmt::BasicFormatter;
 using fmt::IntFormatter;
 using fmt::Formatter;
 using fmt::AlignSpec;

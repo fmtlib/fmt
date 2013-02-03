@@ -310,7 +310,7 @@ IntFormatter<int, TypeSpec<'X'> > hexu(int value);
 
   **Example**::
 
-    std::string s = str(BasicFormatter() << pad(hex(0xcafe), 8, '0'));
+    std::string s = str(BasicWriter() << pad(hex(0xcafe), 8, '0'));
     // s == "0000cafe"
 
   \endrst
@@ -352,7 +352,7 @@ DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
 
 template <typename Char>
-class BasicFormatter {
+class BasicWriter {
  private:
   // Returns the number of decimal digits in n. Trailing zeros are not counted
   // except for n == 0 in which case CountDigits returns 1.
@@ -438,26 +438,26 @@ class BasicFormatter {
     return std::basic_string<Char>(&buffer_[0], buffer_.size());
   }
 
-  BasicFormatter &operator<<(int value) {
+  BasicWriter &operator<<(int value) {
     return *this << IntFormatter<int, TypeSpec<0> >(value, TypeSpec<0>());
   }
-  BasicFormatter &operator<<(unsigned value) {
+  BasicWriter &operator<<(unsigned value) {
     return *this << IntFormatter<unsigned, TypeSpec<0> >(value, TypeSpec<0>());
   }
 
-  BasicFormatter &operator<<(Char value) {
+  BasicWriter &operator<<(Char value) {
     *GrowBuffer(1) = value;
     return *this;
   }
 
-  BasicFormatter &operator<<(const Char *value) {
+  BasicWriter &operator<<(const Char *value) {
     std::size_t size = std::strlen(value);
     std::strncpy(GrowBuffer(size), value, size);
     return *this;
   }
 
   template <typename T, typename Spec>
-  BasicFormatter &operator<<(const IntFormatter<T, Spec> &f);
+  BasicWriter &operator<<(const IntFormatter<T, Spec> &f);
 
   void Write(const std::basic_string<char> &s, const FormatSpec &spec) {
     FormatString(s.data(), s.size(), spec);
@@ -471,7 +471,7 @@ class BasicFormatter {
 // Fills the padding around the content and returns the pointer to the
 // content area.
 template <typename Char>
-Char *BasicFormatter<Char>::FillPadding(Char *buffer,
+Char *BasicWriter<Char>::FillPadding(Char *buffer,
     unsigned total_size, std::size_t content_size, char fill) {
   std::size_t padding = total_size - content_size;
   std::size_t left_padding = padding / 2;
@@ -483,7 +483,7 @@ Char *BasicFormatter<Char>::FillPadding(Char *buffer,
 }
 
 template <typename Char>
-void BasicFormatter<Char>::FormatDecimal(
+void BasicWriter<Char>::FormatDecimal(
     Char *buffer, uint64_t value, unsigned num_digits) {
   --num_digits;
   while (value >= 100) {
@@ -506,7 +506,7 @@ void BasicFormatter<Char>::FormatDecimal(
 }
 
 template <typename Char>
-Char *BasicFormatter<Char>::PrepareFilledBuffer(
+Char *BasicWriter<Char>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign) {
   unsigned width = spec.width();
   if (width <= size) {
@@ -542,7 +542,7 @@ Char *BasicFormatter<Char>::PrepareFilledBuffer(
 
 template <typename Char>
 template <typename T>
-void BasicFormatter<Char>::FormatDouble(
+void BasicWriter<Char>::FormatDouble(
     T value, const FormatSpec &spec, int precision) {
   // Check type.
   char type = spec.type();
@@ -687,7 +687,7 @@ void BasicFormatter<Char>::FormatDouble(
 }
 
 template <typename Char>
-char *BasicFormatter<Char>::FormatString(
+char *BasicWriter<Char>::FormatString(
     const char *s, std::size_t size, const FormatSpec &spec) {
   char *out = 0;
   if (spec.width() > size) {
@@ -709,7 +709,7 @@ char *BasicFormatter<Char>::FormatString(
 
 template <typename Char>
 template <typename T, typename Spec>
-BasicFormatter<Char> &BasicFormatter<Char>::operator<<(
+BasicWriter<Char> &BasicWriter<Char>::operator<<(
     const IntFormatter<T, Spec> &f) {
   T value = f.value();
   unsigned size = 0;
@@ -726,9 +726,9 @@ BasicFormatter<Char> &BasicFormatter<Char>::operator<<(
   }
   switch (f.type()) {
   case 0: case 'd': {
-    unsigned num_digits = BasicFormatter::CountDigits(abs_value);
+    unsigned num_digits = BasicWriter::CountDigits(abs_value);
     Char *p = PrepareFilledBuffer(size + num_digits, f, sign) - num_digits + 1;
-    BasicFormatter::FormatDecimal(p, abs_value, num_digits);
+    BasicWriter::FormatDecimal(p, abs_value, num_digits);
     break;
   }
   case 'x': case 'X': {
@@ -774,9 +774,12 @@ BasicFormatter<Char> &BasicFormatter<Char>::operator<<(
   return *this;
 }
 
+typedef BasicWriter<char> Writer;
+typedef BasicWriter<wchar_t> WWriter;
+
 // The default formatting function.
 template <typename Char, typename T>
-void Format(BasicFormatter<Char> &f, const FormatSpec &spec, const T &value) {
+void Format(BasicWriter<Char> &f, const FormatSpec &spec, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
   f.Write(os.str(), spec);
@@ -806,7 +809,7 @@ void Format(BasicFormatter<Char> &f, const FormatSpec &spec, const T &value) {
   The buffer can be accessed using :meth:`data` or :meth:`c_str`.
   \endrst
  */
-class Formatter : public BasicFormatter<char> {
+class Formatter : public BasicWriter<char> {
  private:
   enum Type {
     // Numeric types should go first.
@@ -927,7 +930,7 @@ class Formatter : public BasicFormatter<char> {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   void FormatCustomArg(const void *arg, const FormatSpec &spec) {
-    BasicFormatter &f = *this;
+    BasicWriter &f = *this;
     Format(f, spec, *static_cast<const T*>(arg));
   }
 
@@ -960,12 +963,12 @@ class Formatter : public BasicFormatter<char> {
 };
 
 template <typename Char>
-inline std::basic_string<Char> str(const BasicFormatter<Char> &f) {
+inline std::basic_string<Char> str(const BasicWriter<Char> &f) {
   return f.str();
 }
 
 template <typename Char>
-inline const Char *c_str(const BasicFormatter<Char> &f) { return f.c_str(); }
+inline const Char *c_str(const BasicWriter<Char> &f) { return f.c_str(); }
 
 std::string str(internal::FormatterProxy p);
 const char *c_str(internal::FormatterProxy p);
