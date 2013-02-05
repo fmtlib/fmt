@@ -30,6 +30,9 @@
 
 #include <stdint.h>
 
+#include <cassert>
+#include <climits>
+#include <cmath>
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
@@ -146,7 +149,44 @@ extern const char DIGITS[];
 
 void ReportUnknownType(char code, const char *type);
 
+// Returns the number of decimal digits in n. Trailing zeros are not counted
+// except for n == 0 in which case CountDigits returns 1.
+inline unsigned CountDigits(uint64_t n) {
+  unsigned count = 1;
+  for (;;) {
+    // Integer division is slow so do it for a group of four digits instead
+    // of for every digit. The idea comes from the talk by Alexandrescu
+    // "Three Optimization Tips for C++". See speed-test for a comparison.
+    if (n < 10) return count;
+    if (n < 100) return count + 1;
+    if (n < 1000) return count + 2;
+    if (n < 10000) return count + 3;
+    n /= 10000u;
+    count += 4;
+  }
+}
+
+#ifndef _MSC_VER
+inline int SignBit(double value) {
+  // When compiled in C++11 mode signbit is no longer a macro but a function
+  // defined in namespace std and the macro is undefined.
+  using namespace std;
+  return signbit(value);
+}
+#else
+inline int SignBit(double value) {
+  if (value < 0) return 1;
+  if (value == value) return 0;
+  int dec = 0, sign = 0;
+  _ecvt(value, 0, &dec, &sign);
+  return sign;
+}
+#endif
+
+template <typename Char>
 class ArgInserter;
+
+template <typename Char>
 class FormatterProxy;
 }
 
@@ -354,23 +394,6 @@ DEFINE_INT_FORMATTERS(unsigned long)
 template <typename Char>
 class BasicWriter {
  private:
-  // Returns the number of decimal digits in n. Trailing zeros are not counted
-  // except for n == 0 in which case CountDigits returns 1.
-  static unsigned CountDigits(uint64_t n) {
-    unsigned count = 1;
-    for (;;) {
-      // Integer division is slow so do it for a group of four digits instead
-      // of for every digit. The idea comes from the talk by Alexandrescu
-      // "Three Optimization Tips for C++". See speed-test for a comparison.
-      if (n < 10) return count;
-      if (n < 100) return count + 1;
-      if (n < 1000) return count + 2;
-      if (n < 10000) return count + 3;
-      n /= 10000u;
-      count += 4;
-    }
-  }
-
   static void FormatDecimal(Char *buffer, uint64_t value, unsigned num_digits);
 
  protected:
@@ -477,7 +500,7 @@ Char *BasicWriter<Char>::FillPadding(Char *buffer,
   std::size_t left_padding = padding / 2;
   std::fill_n(buffer, left_padding, fill);
   buffer += left_padding;
-  char *content = buffer;
+  Char *content = buffer;
   std::fill_n(buffer + content_size, padding - left_padding, fill);
   return content;
 }
@@ -510,7 +533,7 @@ Char *BasicWriter<Char>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign) {
   unsigned width = spec.width();
   if (width <= size) {
-    char *p = GrowBuffer(size);
+    Char *p = GrowBuffer(size);
     *p = sign;
     return p + size - 1;
   }
@@ -570,7 +593,7 @@ void BasicWriter<Char>::FormatDouble(
   char sign = 0;
   // Use SignBit instead of value < 0 because the latter is always
   // false for NaN.
-  if (SignBit(value)) {
+  if (internal::SignBit(value)) {
     sign = '-';
     value = -value;
   } else if (spec.sign_flag()) {
@@ -607,7 +630,7 @@ void BasicWriter<Char>::FormatDouble(
     return;
   }
 
-  size_t offset = buffer_.size();
+  std::size_t offset = buffer_.size();
   unsigned width = spec.width();
   if (sign) {
     buffer_.reserve(buffer_.size() + std::max(width, 1u));
@@ -643,9 +666,9 @@ void BasicWriter<Char>::FormatDouble(
 
   // Format using snprintf.
   for (;;) {
-    size_t size = buffer_.capacity() - offset;
+    std::size_t size = buffer_.capacity() - offset;
     int n = 0;
-    char *start = &buffer_[offset];
+    Char *start = &buffer_[offset];
     if (width_for_sprintf == 0) {
       n = precision < 0 ?
           snprintf(start, size, format, value) :
@@ -726,7 +749,7 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
   }
   switch (f.type()) {
   case 0: case 'd': {
-    unsigned num_digits = BasicWriter::CountDigits(abs_value);
+    unsigned num_digits = internal::CountDigits(abs_value);
     Char *p = PrepareFilledBuffer(size + num_digits, f, sign) - num_digits + 1;
     BasicWriter::FormatDecimal(p, abs_value, num_digits);
     break;
@@ -787,7 +810,7 @@ void Format(BasicWriter<Char> &f, const FormatSpec &spec, const T &value) {
 
 /**
   \rst
-  The :cpp:class:`fmt::Formatter` class provides string formatting
+  The :cpp:class:`fmt::BasicFormatter` template provides string formatting
   functionality similar to Python's `str.format
   <http://docs.python.org/3/library/stdtypes.html#str.format>`__.
   The output is stored in a memory buffer that grows dynamically.
@@ -809,7 +832,8 @@ void Format(BasicWriter<Char> &f, const FormatSpec &spec, const T &value) {
   The buffer can be accessed using :meth:`data` or :meth:`c_str`.
   \endrst
  */
-class Formatter : public BasicWriter<char> {
+template <typename Char>
+class BasicFormatter : public BasicWriter<Char> {
  private:
   enum Type {
     // Numeric types should go first.
@@ -818,7 +842,7 @@ class Formatter : public BasicWriter<char> {
     CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
 
-  typedef void (Formatter::*FormatFunc)(
+  typedef void (BasicFormatter::*FormatFunc)(
       const void *arg, const FormatSpec &spec);
 
   // A format argument.
@@ -858,7 +882,7 @@ class Formatter : public BasicWriter<char> {
         FormatFunc format;
       } custom;
     };
-    mutable Formatter *formatter;
+    mutable BasicFormatter *formatter;
 
     Arg(int value) : type(INT), int_value(value), formatter(0) {}
     Arg(unsigned value) : type(UINT), uint_value(value), formatter(0) {}
@@ -892,7 +916,7 @@ class Formatter : public BasicWriter<char> {
     template <typename T>
     Arg(const T &value) : type(CUSTOM), formatter(0) {
       custom.value = &value;
-      custom.format = &Formatter::FormatCustomArg<T>;
+      custom.format = &BasicFormatter::FormatCustomArg<T>;
     }
 
     ~Arg() {
@@ -914,12 +938,12 @@ class Formatter : public BasicWriter<char> {
   enum { NUM_INLINE_ARGS = 10 };
   internal::Array<const Arg*, NUM_INLINE_ARGS> args_;  // Format arguments.
 
-  const char *format_;  // Format string.
+  const Char *format_;  // Format string.
   int num_open_braces_;
   int next_arg_index_;
 
-  friend class internal::ArgInserter;
-  friend class internal::FormatterProxy;
+  friend class internal::ArgInserter<Char>;
+  friend class internal::FormatterProxy<Char>;
 
   void Add(const Arg &arg) {
     args_.push_back(&arg);
@@ -930,7 +954,7 @@ class Formatter : public BasicWriter<char> {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   void FormatCustomArg(const void *arg, const FormatSpec &spec) {
-    BasicWriter &f = *this;
+    BasicWriter<Char> &f = *this;
     Format(f, spec, *static_cast<const T*>(arg));
   }
 
@@ -952,15 +976,18 @@ class Formatter : public BasicWriter<char> {
   /**
     Constructs a formatter with an empty output buffer.
    */
-  Formatter() : format_(0) {}
+  BasicFormatter() : format_(0) {}
 
   /**
     Formats a string appending the output to the internal buffer.
     Arguments are accepted through the returned `ArgInserter` object
     using inserter operator `<<`.
   */
-  internal::ArgInserter operator()(StringRef format);
+  internal::ArgInserter<Char> operator()(StringRef format);
 };
+
+typedef BasicFormatter<char> Formatter;
+typedef BasicFormatter<wchar_t> WFormatter;
 
 template <typename Char>
 inline std::basic_string<Char> str(const BasicWriter<Char> &f) {
@@ -970,22 +997,23 @@ inline std::basic_string<Char> str(const BasicWriter<Char> &f) {
 template <typename Char>
 inline const Char *c_str(const BasicWriter<Char> &f) { return f.c_str(); }
 
-std::string str(internal::FormatterProxy p);
-const char *c_str(internal::FormatterProxy p);
+std::string str(internal::FormatterProxy<char> p);
+const char *c_str(internal::FormatterProxy<char> p);
 
 namespace internal {
 
 using fmt::str;
 using fmt::c_str;
 
+template <typename Char>
 class FormatterProxy {
  private:
-  Formatter *formatter_;
+  BasicFormatter<Char> *formatter_;
 
  public:
-  explicit FormatterProxy(Formatter *f) : formatter_(f) {}
+  explicit FormatterProxy(BasicFormatter<Char> *f) : formatter_(f) {}
 
-  Formatter *Format() {
+  BasicFormatter<Char> *Format() {
     formatter_->CompleteFormatting();
     return formatter_;
   }
@@ -995,20 +1023,21 @@ class FormatterProxy {
 // returned by one of the formatting functions. It stores a reference
 // to a formatter and provides operator<< that feeds arguments to the
 // formatter.
+template <typename Char>
 class ArgInserter {
  private:
-  mutable Formatter *formatter_;
+  mutable BasicFormatter<Char> *formatter_;
 
-  friend class fmt::Formatter;
+  friend class fmt::BasicFormatter<Char>;
   friend class fmt::StringRef;
 
   // Do not implement.
   void operator=(const ArgInserter& other);
 
  protected:
-  explicit ArgInserter(Formatter *f = 0) : formatter_(f) {}
+  explicit ArgInserter(BasicFormatter<Char> *f = 0) : formatter_(f) {}
 
-  void Init(Formatter &f, const char *format) {
+  void Init(BasicFormatter<Char> &f, const char *format) {
     const ArgInserter &other = f(format);
     formatter_ = other.formatter_;
     other.formatter_ = 0;
@@ -1019,8 +1048,8 @@ class ArgInserter {
     other.formatter_ = 0;
   }
 
-  const Formatter *Format() const {
-    Formatter *f = formatter_;
+  const BasicFormatter<Char> *Format() const {
+    BasicFormatter<Char> *f = formatter_;
     if (f) {
       formatter_ = 0;
       f->CompleteFormatting();
@@ -1028,7 +1057,7 @@ class ArgInserter {
     return f;
   }
 
-  Formatter *formatter() const { return formatter_; }
+  BasicFormatter<Char> *formatter() const { return formatter_; }
   const char *format() const { return formatter_->format_; }
 
   void ResetFormatter() const { formatter_ = 0; }
@@ -1040,20 +1069,20 @@ class ArgInserter {
   }
 
   // Feeds an argument to a formatter.
-  ArgInserter &operator<<(const Formatter::Arg &arg) {
+  ArgInserter &operator<<(const typename BasicFormatter<Char>::Arg &arg) {
     arg.formatter = formatter_;
     formatter_->Add(arg);
     return *this;
   }
 
-  operator FormatterProxy() {
-    Formatter *f = formatter_;
+  operator FormatterProxy<Char>() {
+    BasicFormatter<Char> *f = formatter_;
     formatter_ = 0;
-    return FormatterProxy(f);
+    return FormatterProxy<Char>(f);
   }
 
   operator StringRef() {
-    const Formatter *f = Format();
+    const BasicFormatter<Char> *f = Format();
     return StringRef(f->c_str(), f->size());
   }
 };
@@ -1062,7 +1091,7 @@ class ArgInserter {
 /**
   Returns the content of the output buffer as an `std::string`.
  */
-inline std::string str(internal::FormatterProxy p) {
+inline std::string str(internal::FormatterProxy<char> p) {
   return p.Format()->str();
 }
 
@@ -1070,15 +1099,17 @@ inline std::string str(internal::FormatterProxy p) {
   Returns a pointer to the output buffer content with terminating null
   character appended.
  */
-inline const char *c_str(internal::FormatterProxy p) {
+inline const char *c_str(internal::FormatterProxy<char> p) {
   return p.Format()->c_str();
 }
 
-inline internal::ArgInserter Formatter::operator()(StringRef format) {
-  internal::ArgInserter formatter(this);
+template <typename Char>
+inline internal::ArgInserter<Char>
+BasicFormatter<Char>::operator()(StringRef format) {
+  internal::ArgInserter<Char> inserter(this);
   format_ = format.c_str();
   args_.clear();
-  return formatter;
+  return inserter;
 }
 
 /**
@@ -1087,7 +1118,8 @@ inline internal::ArgInserter Formatter::operator()(StringRef format) {
 class NoAction {
  public:
   /** Does nothing. */
-  void operator()(const Formatter &) const {}
+  template <typename Char>
+  void operator()(const BasicFormatter<Char> &) const {}
 };
 
 /**
@@ -1095,10 +1127,10 @@ class NoAction {
   Objects of this class normally exist only as temporaries returned
   by one of the formatting functions which explains the name.
  */
-template <typename Action = NoAction>
-class TempFormatter : public internal::ArgInserter {
+template <typename Char, typename Action = NoAction>
+class TempFormatter : public internal::ArgInserter<Char> {
  private:
-  Formatter formatter_;
+  BasicFormatter<Char> formatter_;
   Action action_;
 
   // Forbid copying other than from a temporary. Do not implement.
@@ -1119,38 +1151,38 @@ class TempFormatter : public internal::ArgInserter {
     \rst
     Constructs a temporary formatter with a format string and an action.
     The action should be an unary function object that takes a const
-    reference to :cpp:class:`fmt::Formatter` as an argument.
+    reference to :cpp:class:`fmt::BasicFormatter` as an argument.
     See :cpp:class:`fmt::NoAction` and :cpp:class:`fmt::Write` for
     examples of action classes.
     \endrst
   */
   explicit TempFormatter(StringRef format, Action a = Action())
   : action_(a) {
-    Init(formatter_, format.c_str());
+    this->Init(formatter_, format.c_str());
   }
 
   /**
     Constructs a temporary formatter from a proxy object.
    */
   TempFormatter(const Proxy &p)
-  : ArgInserter(0), action_(p.action) {
-    Init(formatter_, p.format);
+  : internal::ArgInserter<Char>(0), action_(p.action) {
+    this->Init(formatter_, p.format);
   }
 
   /**
     Performs the actual formatting, invokes the action and destroys the object.
    */
   ~TempFormatter() {
-    if (formatter())
-      action_(*Format());
+    if (this->formatter())
+      action_(*this->Format());
   }
 
   /**
     Converts a temporary formatter into a proxy object.
    */
   operator Proxy() {
-    const char *fmt = format();
-    ResetFormatter();
+    const char *fmt = this->format();
+    this->ResetFormatter();
     return Proxy(fmt, action_);
   }
 };
@@ -1172,13 +1204,13 @@ class TempFormatter : public internal::ArgInserter {
   See also `Format String Syntax`_.
   \endrst
 */
-inline TempFormatter<> Format(StringRef format) {
-  return TempFormatter<>(format);
+inline TempFormatter<char> Format(StringRef format) {
+  return TempFormatter<char>(format);
 }
 
 // A formatting action that writes formatted output to stdout.
 struct Write {
-  void operator()(const Formatter &f) const {
+  void operator()(const BasicFormatter<char> &f) const {
     std::fwrite(f.data(), 1, f.size(), stdout);
   }
 };
@@ -1186,8 +1218,307 @@ struct Write {
 // Formats a string and prints it to stdout.
 // Example:
 //   Print("Elapsed time: {0:.2f} seconds") << 1.23;
-inline TempFormatter<Write> Print(StringRef format) {
-  return TempFormatter<Write>(format);
+inline TempFormatter<char, Write> Print(StringRef format) {
+  return TempFormatter<char, Write>(format);
+}
+
+// Throws Exception(message) if format contains '}', otherwise throws
+// FormatError reporting unmatched '{'. The idea is that unmatched '{'
+// should override other errors.
+template <typename Char>
+void BasicFormatter<Char>::ReportError(const char *s, StringRef message) const {
+  for (int num_open_braces = num_open_braces_; *s; ++s) {
+    if (*s == '{') {
+      ++num_open_braces;
+    } else if (*s == '}') {
+      if (--num_open_braces == 0)
+        throw fmt::FormatError(message);
+    }
+  }
+  throw fmt::FormatError("unmatched '{' in format");
+}
+
+// Parses an unsigned integer advancing s to the end of the parsed input.
+// This function assumes that the first character of s is a digit.
+template <typename Char>
+unsigned BasicFormatter<Char>::ParseUInt(const char *&s) const {
+  assert('0' <= *s && *s <= '9');
+  unsigned value = 0;
+  do {
+    unsigned new_value = value * 10 + (*s++ - '0');
+    if (new_value < value)  // Check if value wrapped around.
+      ReportError(s, "number is too big in format");
+    value = new_value;
+  } while ('0' <= *s && *s <= '9');
+  return value;
+}
+
+template <typename Char>
+inline const typename BasicFormatter<Char>::Arg
+    &BasicFormatter<Char>::ParseArgIndex(const char *&s) {
+  unsigned arg_index = 0;
+  if (*s < '0' || *s > '9') {
+    if (*s != '}' && *s != ':')
+      ReportError(s, "invalid argument index in format string");
+    if (next_arg_index_ < 0) {
+      ReportError(s,
+          "cannot switch from manual to automatic argument indexing");
+    }
+    arg_index = next_arg_index_++;
+  } else {
+    if (next_arg_index_ > 0) {
+      ReportError(s,
+          "cannot switch from automatic to manual argument indexing");
+    }
+    next_arg_index_ = -1;
+    arg_index = ParseUInt(s);
+    if (arg_index >= args_.size())
+      ReportError(s, "argument index is out of range in format");
+  }
+  return *args_[arg_index];
+}
+
+template <typename Char>
+void BasicFormatter<Char>::CheckSign(const char *&s, const Arg &arg) {
+  if (arg.type > LAST_NUMERIC_TYPE) {
+    ReportError(s,
+        Format("format specifier '{0}' requires numeric argument") << *s);
+  }
+  if (arg.type == UINT || arg.type == ULONG) {
+    ReportError(s,
+        Format("format specifier '{0}' requires signed argument") << *s);
+  }
+  ++s;
+}
+
+template <typename Char>
+void BasicFormatter<Char>::DoFormat() {
+  const Char *start = format_;
+  format_ = 0;
+  next_arg_index_ = 0;
+  const Char *s = start;
+  while (*s) {
+    char c = *s++;
+    if (c != '{' && c != '}') continue;
+    if (*s == c) {
+      this->buffer_.append(start, s);
+      start = ++s;
+      continue;
+    }
+    if (c == '}')
+      throw FormatError("unmatched '}' in format");
+    num_open_braces_= 1;
+    this->buffer_.append(start, s - 1);
+
+    const Arg &arg = ParseArgIndex(s);
+
+    FormatSpec spec;
+    int precision = -1;
+    if (*s == ':') {
+      ++s;
+
+      // Parse fill and alignment.
+      if (char c = *s) {
+        const char *p = s + 1;
+        spec.align_ = ALIGN_DEFAULT;
+        do {
+          switch (*p) {
+          case '<':
+            spec.align_ = ALIGN_LEFT;
+            break;
+          case '>':
+            spec.align_ = ALIGN_RIGHT;
+            break;
+          case '=':
+            spec.align_ = ALIGN_NUMERIC;
+            break;
+          case '^':
+            spec.align_ = ALIGN_CENTER;
+            break;
+          }
+          if (spec.align_ != ALIGN_DEFAULT) {
+            if (p != s) {
+              if (c == '}') break;
+              if (c == '{')
+                ReportError(s, "invalid fill character '{'");
+              s += 2;
+              spec.fill_ = c;
+            } else ++s;
+            if (spec.align_ == ALIGN_NUMERIC && arg.type > LAST_NUMERIC_TYPE)
+              ReportError(s, "format specifier '=' requires numeric argument");
+            break;
+          }
+        } while (--p >= s);
+      }
+
+      // Parse sign.
+      switch (*s) {
+      case '+':
+        CheckSign(s, arg);
+        spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
+        break;
+      case '-':
+        CheckSign(s, arg);
+        break;
+      case ' ':
+        CheckSign(s, arg);
+        spec.flags_ |= SIGN_FLAG;
+        break;
+      }
+
+      if (*s == '#') {
+        if (arg.type > LAST_NUMERIC_TYPE)
+          ReportError(s, "format specifier '#' requires numeric argument");
+        spec.flags_ |= HASH_FLAG;
+        ++s;
+      }
+
+      // Parse width and zero flag.
+      if ('0' <= *s && *s <= '9') {
+        if (*s == '0') {
+          if (arg.type > LAST_NUMERIC_TYPE)
+            ReportError(s, "format specifier '0' requires numeric argument");
+          spec.align_ = ALIGN_NUMERIC;
+          spec.fill_ = '0';
+        }
+        // Zero may be parsed again as a part of the width, but it is simpler
+        // and more efficient than checking if the next char is a digit.
+        unsigned value = ParseUInt(s);
+        if (value > INT_MAX)
+          ReportError(s, "number is too big in format");
+        spec.width_ = value;
+      }
+
+      // Parse precision.
+      if (*s == '.') {
+        ++s;
+        precision = 0;
+        if ('0' <= *s && *s <= '9') {
+          unsigned value = ParseUInt(s);
+          if (value > INT_MAX)
+            ReportError(s, "number is too big in format");
+          precision = value;
+        } else if (*s == '{') {
+          ++s;
+          ++num_open_braces_;
+          const Arg &precision_arg = ParseArgIndex(s);
+          unsigned long value = 0;
+          switch (precision_arg.type) {
+          case INT:
+            if (precision_arg.int_value < 0)
+              ReportError(s, "negative precision in format");
+            value = precision_arg.int_value;
+            break;
+          case UINT:
+            value = precision_arg.uint_value;
+            break;
+          case LONG:
+            if (precision_arg.long_value < 0)
+              ReportError(s, "negative precision in format");
+            value = precision_arg.long_value;
+            break;
+          case ULONG:
+            value = precision_arg.ulong_value;
+            break;
+          default:
+            ReportError(s, "precision is not integer");
+          }
+          if (value > INT_MAX)
+            ReportError(s, "number is too big in format");
+          precision = value;
+          if (*s++ != '}')
+            throw FormatError("unmatched '{' in format");
+          --num_open_braces_;
+        } else {
+          ReportError(s, "missing precision in format");
+        }
+        if (arg.type != DOUBLE && arg.type != LONG_DOUBLE) {
+          ReportError(s,
+              "precision specifier requires floating-point argument");
+        }
+      }
+
+      // Parse type.
+      if (*s != '}' && *s)
+        spec.type_ = *s++;
+    }
+
+    if (*s++ != '}')
+      throw FormatError("unmatched '{' in format");
+    start = s;
+
+    // Format argument.
+    switch (arg.type) {
+    case INT:
+      this->FormatInt(arg.int_value, spec);
+      break;
+    case UINT:
+      this->FormatInt(arg.uint_value, spec);
+      break;
+    case LONG:
+      this->FormatInt(arg.long_value, spec);
+      break;
+    case ULONG:
+      this->FormatInt(arg.ulong_value, spec);
+      break;
+    case DOUBLE:
+      this->FormatDouble(arg.double_value, spec, precision);
+      break;
+    case LONG_DOUBLE:
+      this->FormatDouble(arg.long_double_value, spec, precision);
+      break;
+    case CHAR: {
+      if (spec.type_ && spec.type_ != 'c')
+        internal::ReportUnknownType(spec.type_, "char");
+      char *out = 0;
+      if (spec.width_ > 1) {
+        out = this->GrowBuffer(spec.width_);
+        if (spec.align_ == ALIGN_RIGHT) {
+          std::fill_n(out, spec.width_ - 1, spec.fill_);
+          out += spec.width_ - 1;
+        } else if (spec.align_ == ALIGN_CENTER) {
+          out = this->FillPadding(out, spec.width_, 1, spec.fill_);
+        } else {
+          std::fill_n(out + 1, spec.width_ - 1, spec.fill_);
+        }
+      } else {
+        out = this->GrowBuffer(1);
+      }
+      *out = arg.int_value;
+      break;
+    }
+    case STRING: {
+      if (spec.type_ && spec.type_ != 's')
+        internal::ReportUnknownType(spec.type_, "string");
+      const char *str = arg.string.value;
+      std::size_t size = arg.string.size;
+      if (size == 0) {
+        if (!str)
+          throw FormatError("string pointer is null");
+        if (*str)
+          size = std::strlen(str);
+      }
+      this->FormatString(str, size, spec);
+      break;
+    }
+    case POINTER:
+      if (spec.type_ && spec.type_ != 'p')
+        internal::ReportUnknownType(spec.type_, "pointer");
+      spec.flags_= HASH_FLAG;
+      spec.type_ = 'x';
+      this->FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
+      break;
+    case CUSTOM:
+      if (spec.type_)
+        internal::ReportUnknownType(spec.type_, "object");
+      (this->*arg.custom.format)(arg.custom.value, spec);
+      break;
+    default:
+      assert(false);
+      break;
+    }
+  }
+  this->buffer_.append(start, s);
 }
 }
 
