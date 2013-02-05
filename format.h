@@ -181,6 +181,9 @@ inline int SignBit(double value) {
   _ecvt(value, 0, &dec, &sign);
   return sign;
 }
+inline int isinf(double x) { return !_finite(x); }
+# undef snprintf
+# define snprintf _snprintf
 #endif
 
 template <typename Char>

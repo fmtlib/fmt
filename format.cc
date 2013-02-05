@@ -31,19 +31,9 @@
 #undef _SCL_SECURE_NO_WARNINGS
 #define _SCL_SECURE_NO_WARNINGS
 
-#include <math.h>
-
 #include "format.h"
 
 #include <cctype>
-#include <cstring>
-#include <algorithm>
-
-#if _MSC_VER
-# undef snprintf
-# define snprintf _snprintf
-# define isinf(x) (!_finite(x))
-#endif
 
 const char fmt::internal::DIGITS[] =
     "0001020304050607080910111213141516171819"
