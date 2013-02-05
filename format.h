@@ -811,6 +811,15 @@ void Format(BasicWriter<Char> &f, const FormatSpec &spec, const T &value) {
   f.Write(os.str(), spec);
 }
 
+namespace internal {
+// Formats an argument of a custom type, such as a user-defined class.
+template <typename Char, typename T>
+void FormatCustomArg(
+    BasicWriter<Char> &w, const void *arg, const FormatSpec &spec) {
+  Format(w, spec, *static_cast<const T*>(arg));
+}
+}
+
 /**
   \rst
   The :cpp:class:`fmt::BasicFormatter` template provides string formatting
@@ -845,8 +854,8 @@ class BasicFormatter : public BasicWriter<Char> {
     CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
 
-  typedef void (BasicFormatter::*FormatFunc)(
-      const void *arg, const FormatSpec &spec);
+  typedef void (*FormatFunc)(
+      BasicWriter<Char> &w, const void *arg, const FormatSpec &spec);
 
   // A format argument.
   class Arg {
@@ -919,7 +928,7 @@ class BasicFormatter : public BasicWriter<Char> {
     template <typename T>
     Arg(const T &value) : type(CUSTOM), formatter(0) {
       custom.value = &value;
-      custom.format = &BasicFormatter<Char>::FormatCustomArg<T>;
+      custom.format = &internal::FormatCustomArg<Char, T>;
     }
 
     ~Arg() {
@@ -953,13 +962,6 @@ class BasicFormatter : public BasicWriter<Char> {
   }
 
   void ReportError(const char *s, StringRef message) const;
-
-  // Formats an argument of a custom type, such as a user-defined class.
-  template <typename T>
-  void FormatCustomArg(const void *arg, const FormatSpec &spec) {
-    BasicWriter<Char> &f = *this;
-    Format(f, spec, *static_cast<const T*>(arg));
-  }
 
   unsigned ParseUInt(const char *&s) const;
 
@@ -1514,7 +1516,7 @@ void BasicFormatter<Char>::DoFormat() {
     case CUSTOM:
       if (spec.type_)
         internal::ReportUnknownType(spec.type_, "object");
-      (this->*arg.custom.format)(arg.custom.value, spec);
+      arg.custom.format(*this, arg.custom.value, spec);
       break;
     default:
       assert(false);
