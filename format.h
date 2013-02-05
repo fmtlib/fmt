@@ -181,9 +181,9 @@ inline int SignBit(double value) {
   _ecvt(value, 0, &dec, &sign);
   return sign;
 }
-inline int isinf(double x) { return !_finite(x); }
 # undef snprintf
 # define snprintf _snprintf
+# define isinf(x) (!_finite(x))
 #endif
 
 template <typename Char>
@@ -919,7 +919,7 @@ class BasicFormatter : public BasicWriter<Char> {
     template <typename T>
     Arg(const T &value) : type(CUSTOM), formatter(0) {
       custom.value = &value;
-      custom.format = &BasicFormatter::FormatCustomArg<T>;
+      custom.format = &BasicFormatter<Char>::FormatCustomArg<T>;
     }
 
     ~Arg() {
