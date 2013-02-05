@@ -167,13 +167,21 @@ inline unsigned CountDigits(uint64_t n) {
 }
 
 #ifndef _MSC_VER
+
 inline int SignBit(double value) {
   // When compiled in C++11 mode signbit is no longer a macro but a function
   // defined in namespace std and the macro is undefined.
   using namespace std;
   return signbit(value);
 }
+
+inline int IsInf(double x) {
+  using namespace std;
+  return isinf(x);
+}
+
 #else
+
 inline int SignBit(double value) {
   if (value < 0) return 1;
   if (value == value) return 0;
@@ -181,9 +189,12 @@ inline int SignBit(double value) {
   _ecvt(value, 0, &dec, &sign);
   return sign;
 }
+
+inline int IsInf(double x) { return !_finite(x); }
+
 # undef snprintf
 # define snprintf _snprintf
-# define isinf(x) (!_finite(x))
+
 #endif
 
 template <typename Char>
@@ -618,7 +629,7 @@ void BasicWriter<Char>::FormatDouble(
     return;
   }
 
-  if (isinf(value)) {
+  if (internal::IsInf(value)) {
     // Format infinity ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t size = 4;
