@@ -176,8 +176,11 @@ inline int SignBit(double value) {
 }
 
 inline int IsInf(double x) {
-  using namespace std;
-  return ::isinf(x);
+#ifdef isinf
+  return isinf(x);
+#else
+  return std::isinf(x);
+#endif
 }
 
 #else
@@ -816,10 +819,10 @@ typedef BasicWriter<wchar_t> WWriter;
 
 // The default formatting function.
 template <typename Char, typename T>
-void Format(BasicWriter<Char> &f, const FormatSpec &spec, const T &value) {
+void Format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
-  f.Write(os.str(), spec);
+  w.Write(os.str(), spec);
 }
 
 namespace internal {
