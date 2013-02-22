@@ -177,7 +177,7 @@ inline int SignBit(double value) {
 
 inline int IsInf(double x) {
   using namespace std;
-  return isinf(x);
+  return ::isinf(x);
 }
 
 #else
