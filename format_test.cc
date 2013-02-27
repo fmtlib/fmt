@@ -28,6 +28,7 @@
 #include <cctype>
 #include <cfloat>
 #include <climits>
+#include <cstdarg>
 #include <cstring>
 #include <iomanip>
 #include <memory>
@@ -37,7 +38,6 @@
 #include <stdint.h>
 
 using std::size_t;
-using std::sprintf;
 
 using fmt::internal::Array;
 using fmt::BasicWriter;
@@ -89,6 +89,13 @@ void Increment(char *s) {
     }
     s[i] = '0';
   }
+}
+
+void SPrintf(char *buffer, const char *format, ...) {
+  std::va_list args;
+  va_start(args, format);
+  std::vsprintf(buffer, format, args);
+  va_end(args);
 }
 
 TEST(UtilTest, Increment) {
@@ -351,13 +358,13 @@ TEST(FormatterTest, ArgErrors) {
       "argument index is out of range in format");
 
   char format[256];
-  std::sprintf(format, "{%u", UINT_MAX);
+  SPrintf(format, "{%u", UINT_MAX);
   EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
-  std::sprintf(format, "{%u}", UINT_MAX);
+  SPrintf(format, "{%u}", UINT_MAX);
   EXPECT_THROW_MSG(Format(format), FormatError,
       "argument index is out of range in format");
 
-  std::sprintf(format, "{%u", UINT_MAX);
+  SPrintf(format, "{%u", UINT_MAX);
   Increment(format + 1);
   EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
   std::size_t size = std::strlen(format);
@@ -603,7 +610,7 @@ TEST(FormatterTest, ZeroFlag) {
 
 TEST(FormatterTest, Width) {
   char format[256];
-  std::sprintf(format, "{0:%u", UINT_MAX);
+  SPrintf(format, "{0:%u", UINT_MAX);
   Increment(format + 3);
   EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
   std::size_t size = std::strlen(format);
@@ -612,9 +619,9 @@ TEST(FormatterTest, Width) {
   EXPECT_THROW_MSG(Format(format) << 0,
       FormatError, "number is too big in format");
 
-  std::sprintf(format, "{0:%u", INT_MAX + 1u);
+  SPrintf(format, "{0:%u", INT_MAX + 1u);
   EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
-  std::sprintf(format, "{0:%u}", INT_MAX + 1u);
+  SPrintf(format, "{0:%u}", INT_MAX + 1u);
   EXPECT_THROW_MSG(Format(format) << 0,
       FormatError, "number is too big in format");
   EXPECT_EQ(" -42", str(Format("{0:4}") << -42));
@@ -632,7 +639,7 @@ TEST(FormatterTest, Width) {
 
 TEST(FormatterTest, Precision) {
   char format[256];
-  std::sprintf(format, "{0:.%u", UINT_MAX);
+  SPrintf(format, "{0:.%u", UINT_MAX);
   Increment(format + 4);
   EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
   std::size_t size = std::strlen(format);
@@ -641,9 +648,9 @@ TEST(FormatterTest, Precision) {
   EXPECT_THROW_MSG(Format(format) << 0,
       FormatError, "number is too big in format");
 
-  std::sprintf(format, "{0:.%u", INT_MAX + 1u);
+  SPrintf(format, "{0:.%u", INT_MAX + 1u);
   EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
-  std::sprintf(format, "{0:.%u}", INT_MAX + 1u);
+  SPrintf(format, "{0:.%u}", INT_MAX + 1u);
   EXPECT_THROW_MSG(Format(format) << 0,
       FormatError, "number is too big in format");
 
@@ -696,7 +703,7 @@ TEST(FormatterTest, Precision) {
 
 TEST(FormatterTest, RuntimePrecision) {
   char format[256];
-  std::sprintf(format, "{0:.{%u", UINT_MAX);
+  SPrintf(format, "{0:.{%u", UINT_MAX);
   Increment(format + 4);
   EXPECT_THROW_MSG(Format(format), FormatError, "unmatched '{' in format");
   std::size_t size = std::strlen(format);
@@ -786,11 +793,11 @@ void CheckUnknownTypes(
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
     char c = i;
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
-    sprintf(format, "{0:10%c}", c);
+    SPrintf(format, "{0:10%c}", c);
     if (std::isprint(static_cast<unsigned char>(c)))
-      sprintf(message, "unknown format code '%c' for %s", c, type_name);
+      SPrintf(message, "unknown format code '%c' for %s", c, type_name);
     else
-      sprintf(message, "unknown format code '\\x%02x' for %s", c, type_name);
+      SPrintf(message, "unknown format code '\\x%02x' for %s", c, type_name);
     EXPECT_THROW_MSG(Format(format) << value, FormatError, message)
       << format << " " << message;
   }
@@ -811,17 +818,17 @@ TEST(FormatterTest, FormatDec) {
   EXPECT_EQ("12345", str(Format("{0}") << 12345));
   EXPECT_EQ("67890", str(Format("{0}") << 67890));
   char buffer[256];
-  sprintf(buffer, "%d", INT_MIN);
+  SPrintf(buffer, "%d", INT_MIN);
   EXPECT_EQ(buffer, str(Format("{0}") << INT_MIN));
-  sprintf(buffer, "%d", INT_MAX);
+  SPrintf(buffer, "%d", INT_MAX);
   EXPECT_EQ(buffer, str(Format("{0}") << INT_MAX));
-  sprintf(buffer, "%u", UINT_MAX);
+  SPrintf(buffer, "%u", UINT_MAX);
   EXPECT_EQ(buffer, str(Format("{0}") << UINT_MAX));
-  sprintf(buffer, "%ld", 0 - static_cast<unsigned long>(LONG_MIN));
+  SPrintf(buffer, "%ld", 0 - static_cast<unsigned long>(LONG_MIN));
   EXPECT_EQ(buffer, str(Format("{0}") << LONG_MIN));
-  sprintf(buffer, "%ld", LONG_MAX);
+  SPrintf(buffer, "%ld", LONG_MAX);
   EXPECT_EQ(buffer, str(Format("{0}") << LONG_MAX));
-  sprintf(buffer, "%lu", ULONG_MAX);
+  SPrintf(buffer, "%lu", ULONG_MAX);
   EXPECT_EQ(buffer, str(Format("{0}") << ULONG_MAX));
 }
 
@@ -835,17 +842,17 @@ TEST(FormatterTest, FormatHex) {
   EXPECT_EQ("12345678", str(Format("{0:X}") << 0x12345678));
   EXPECT_EQ("90ABCDEF", str(Format("{0:X}") << 0x90ABCDEF));
   char buffer[256];
-  sprintf(buffer, "-%x", 0 - static_cast<unsigned>(INT_MIN));
+  SPrintf(buffer, "-%x", 0 - static_cast<unsigned>(INT_MIN));
   EXPECT_EQ(buffer, str(Format("{0:x}") << INT_MIN));
-  sprintf(buffer, "%x", INT_MAX);
+  SPrintf(buffer, "%x", INT_MAX);
   EXPECT_EQ(buffer, str(Format("{0:x}") << INT_MAX));
-  sprintf(buffer, "%x", UINT_MAX);
+  SPrintf(buffer, "%x", UINT_MAX);
   EXPECT_EQ(buffer, str(Format("{0:x}") << UINT_MAX));
-  sprintf(buffer, "-%lx", 0 - static_cast<unsigned long>(LONG_MIN));
+  SPrintf(buffer, "-%lx", 0 - static_cast<unsigned long>(LONG_MIN));
   EXPECT_EQ(buffer, str(Format("{0:x}") << LONG_MIN));
-  sprintf(buffer, "%lx", LONG_MAX);
+  SPrintf(buffer, "%lx", LONG_MAX);
   EXPECT_EQ(buffer, str(Format("{0:x}") << LONG_MAX));
-  sprintf(buffer, "%lx", ULONG_MAX);
+  SPrintf(buffer, "%lx", ULONG_MAX);
   EXPECT_EQ(buffer, str(Format("{0:x}") << ULONG_MAX));
 }
 
@@ -856,17 +863,17 @@ TEST(FormatterTest, FormatOct) {
   EXPECT_EQ("-42", str(Format("{0:o}") << -042));
   EXPECT_EQ("12345670", str(Format("{0:o}") << 012345670));
   char buffer[256];
-  sprintf(buffer, "-%o", 0 - static_cast<unsigned>(INT_MIN));
+  SPrintf(buffer, "-%o", 0 - static_cast<unsigned>(INT_MIN));
   EXPECT_EQ(buffer, str(Format("{0:o}") << INT_MIN));
-  sprintf(buffer, "%o", INT_MAX);
+  SPrintf(buffer, "%o", INT_MAX);
   EXPECT_EQ(buffer, str(Format("{0:o}") << INT_MAX));
-  sprintf(buffer, "%o", UINT_MAX);
+  SPrintf(buffer, "%o", UINT_MAX);
   EXPECT_EQ(buffer, str(Format("{0:o}") << UINT_MAX));
-  sprintf(buffer, "-%lo", 0 - static_cast<unsigned long>(LONG_MIN));
+  SPrintf(buffer, "-%lo", 0 - static_cast<unsigned long>(LONG_MIN));
   EXPECT_EQ(buffer, str(Format("{0:o}") << LONG_MIN));
-  sprintf(buffer, "%lo", LONG_MAX);
+  SPrintf(buffer, "%lo", LONG_MAX);
   EXPECT_EQ(buffer, str(Format("{0:o}") << LONG_MAX));
-  sprintf(buffer, "%lo", ULONG_MAX);
+  SPrintf(buffer, "%lo", ULONG_MAX);
   EXPECT_EQ(buffer, str(Format("{0:o}") << ULONG_MAX));
 }
 
@@ -880,9 +887,9 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ("392.650000", str(Format("{0:f}") << 392.65));
   EXPECT_EQ("392.650000", str(Format("{0:F}") << 392.65));
   char buffer[256];
-  sprintf(buffer, "%e", 392.65);
+  SPrintf(buffer, "%e", 392.65);
   EXPECT_EQ(buffer, str(Format("{0:e}") << 392.65));
-  sprintf(buffer, "%E", 392.65);
+  SPrintf(buffer, "%E", 392.65);
   EXPECT_EQ(buffer, str(Format("{0:E}") << 392.65));
   EXPECT_EQ("+0000392.6", str(Format("{0:+010.4g}") << 392.65));
 }
@@ -920,9 +927,9 @@ TEST(FormatterTest, FormatLongDouble) {
   EXPECT_EQ("392.650000", str(Format("{0:f}") << 392.65l));
   EXPECT_EQ("392.650000", str(Format("{0:F}") << 392.65l));
   char buffer[256];
-  sprintf(buffer, "%Le", 392.65l);
+  SPrintf(buffer, "%Le", 392.65l);
   EXPECT_EQ(buffer, str(Format("{0:e}") << 392.65l));
-  sprintf(buffer, "%LE", 392.65l);
+  SPrintf(buffer, "%LE", 392.65l);
   EXPECT_EQ("+0000392.6", str(Format("{0:+010.4g}") << 392.65l));
 }
 
@@ -1127,7 +1134,7 @@ TEST(TempFormatterTest, Examples) {
   EXPECT_EQ("From 1 to 3", str(Format("From {} to {}") << 1 << 3));
 
   char buffer[256];
-  sprintf(buffer, "%03.2f", -1.2);
+  SPrintf(buffer, "%03.2f", -1.2);
   EXPECT_EQ(buffer, str(Format("{:03.2f}") << -1.2));
 
   EXPECT_EQ("a, b, c", str(Format("{0}, {1}, {2}") << 'a' << 'b' << 'c'));
