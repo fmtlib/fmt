@@ -40,11 +40,6 @@
 #include <string>
 #include <sstream>
 
-#ifndef _CRT_SECURE_NO_WARNINGS
-# define _CRT_SECURE_NO_WARNINGS
-# define FMT_RESTORE_WARNINGS
-#endif
-
 namespace fmt {
 
 namespace internal {
@@ -188,6 +183,8 @@ inline int IsInf(double x) {
 #endif
 }
 
+#define FMT_SNPRINTF snprintf
+
 #else
 
 inline int SignBit(double value) {
@@ -200,8 +197,7 @@ inline int SignBit(double value) {
 
 inline int IsInf(double x) { return !_finite(x); }
 
-# undef snprintf
-# define snprintf _snprintf
+#define FMT_SNPRINTF sprintf_s
 
 #endif
 
@@ -698,12 +694,13 @@ void BasicWriter<Char>::FormatDouble(
     Char *start = &buffer_[offset];
     if (width_for_sprintf == 0) {
       n = precision < 0 ?
-          snprintf(start, size, format, value) :
-          snprintf(start, size, format, precision, value);
+          FMT_SNPRINTF(start, size, format, value) :
+          FMT_SNPRINTF(start, size, format, precision, value);
     } else {
       n = precision < 0 ?
-          snprintf(start, size, format, width_for_sprintf, value) :
-          snprintf(start, size, format, width_for_sprintf, precision, value);
+          FMT_SNPRINTF(start, size, format, width_for_sprintf, value) :
+          FMT_SNPRINTF(start, size, format, width_for_sprintf,
+              precision, value);
     }
     if (n >= 0 && offset + n < buffer_.capacity()) {
       if (sign) {
@@ -1551,9 +1548,5 @@ void BasicFormatter<Char>::DoFormat() {
   this->buffer_.append(start, s);
 }
 }
-
-#ifndef FMT_RESTORE_WARNINGS
-# undef _CRT_SECURE_NO_WARNINGS
-#endif
 
 #endif  // FORMAT_H_
