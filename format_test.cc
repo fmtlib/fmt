@@ -94,7 +94,7 @@ void Increment(char *s) {
 enum {BUFFER_SIZE = 256};
 
 #ifdef _MSC_VER
-# define vsnprintf _vsprintf_s
+# define vsnprintf vsprintf_s
 #endif
 
 void SPrintf(char *buffer, const char *format, ...) {
