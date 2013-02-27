@@ -485,6 +485,11 @@ class BasicWriter {
     return *this << IntFormatter<unsigned, TypeSpec<0> >(value, TypeSpec<0>());
   }
 
+  BasicWriter &operator<<(double value) {
+    FormatDouble(value, FormatSpec(), -1);
+    return *this;
+  }
+
   BasicWriter &operator<<(Char value) {
     *GrowBuffer(1) = value;
     return *this;
@@ -957,7 +962,8 @@ class BasicFormatter : public BasicWriter<Char> {
       // so it will be alive in the Arg's destructor where Format is called.
       // Note that the string object will not necessarily be alive when
       // the destructor of ArgInserter is called.
-      formatter->CompleteFormatting();
+      if (formatter)
+        formatter->CompleteFormatting();
     }
   };
 
@@ -1291,9 +1297,9 @@ inline const typename BasicFormatter<Char>::Arg
     }
     next_arg_index_ = -1;
     arg_index = ParseUInt(s);
-    if (arg_index >= args_.size())
-      ReportError(s, "argument index is out of range in format");
   }
+  if (arg_index >= args_.size())
+    ReportError(s, "argument index is out of range in format");
   return *args_[arg_index];
 }
 

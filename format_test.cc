@@ -45,7 +45,7 @@ using fmt::Formatter;
 using fmt::Format;
 using fmt::FormatError;
 using fmt::StringRef;
-using fmt::hexu;
+using fmt::Writer;
 using fmt::pad;
 
 #define FORMAT_TEST_THROW_(statement, expected_exception, message, fail) \
@@ -195,6 +195,117 @@ TEST(ArrayTest, Append) {
   EXPECT_EQ(15u, array.capacity());
 }
 
+TEST(WriterTest, WriteInt) {
+  EXPECT_EQ("42", str(Writer() << 42));
+  EXPECT_EQ("-42", str(Writer() << -42));
+}
+
+TEST(WriterTest, oct) {
+  using fmt::oct;
+  EXPECT_EQ("12", str(Writer() << oct(static_cast<short>(012))));
+  EXPECT_EQ("12", str(Writer() << oct(012)));
+  EXPECT_EQ("34", str(Writer() << oct(034u)));
+  EXPECT_EQ("56", str(Writer() << oct(056l)));
+  EXPECT_EQ("70", str(Writer() << oct(070ul)));
+}
+
+TEST(WriterTest, hex) {
+  using fmt::hex;
+  fmt::IntFormatter<int, fmt::TypeSpec<'x'> > (*phex)(int value) = hex;
+  phex(42);
+  // This shouldn't compile:
+  //fmt::IntFormatter<short, fmt::TypeSpec<'x'> > (*phex2)(short value) = hex;
+
+  EXPECT_EQ("cafe", str(Writer() << hex(0xcafe)));
+  EXPECT_EQ("babe", str(Writer() << hex(0xbabeu)));
+  EXPECT_EQ("dead", str(Writer() << hex(0xdeadl)));
+  EXPECT_EQ("beef", str(Writer() << hex(0xbeeful)));
+}
+
+TEST(WriterTest, hexu) {
+  using fmt::hexu;
+  EXPECT_EQ("CAFE", str(Writer() << hexu(0xcafe)));
+  EXPECT_EQ("BABE", str(Writer() << hexu(0xbabeu)));
+  EXPECT_EQ("DEAD", str(Writer() << hexu(0xdeadl)));
+  EXPECT_EQ("BEEF", str(Writer() << hexu(0xbeeful)));
+}
+
+TEST(WriterTest, WriteDouble) {
+  EXPECT_EQ("4.2", str(Writer() << 4.2));
+  EXPECT_EQ("-4.2", str(Writer() << -4.2));
+}
+
+class Date {
+  int year_, month_, day_;
+ public:
+  Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
+
+  int year() const { return year_; }
+  int month() const { return month_; }
+  int day() const { return day_; }
+
+  friend std::ostream &operator<<(std::ostream &os, const Date &d) {
+    os << d.year_ << '-' << d.month_ << '-' << d.day_;
+    return os;
+  }
+
+  template <typename Char>
+  friend BasicWriter<Char> &operator<<(BasicWriter<Char> &f, const Date &d) {
+    return f << d.year_ << '-' << d.month_ << '-' << d.day_;
+  }
+};
+
+class ISO8601DateFormatter {
+ const Date *date_;
+
+public:
+  ISO8601DateFormatter(const Date &d) : date_(&d) {}
+
+  template <typename Char>
+  friend BasicWriter<Char> &operator<<(
+      BasicWriter<Char> &w, const ISO8601DateFormatter &d) {
+    return w << pad(d.date_->year(), 4, '0') << '-'
+        << pad(d.date_->month(), 2, '0') << '-' << pad(d.date_->day(), 2, '0');
+  }
+};
+
+ISO8601DateFormatter iso8601(const Date &d) { return ISO8601DateFormatter(d); }
+
+TEST(WriterTest, pad) {
+  using fmt::hex;
+  EXPECT_EQ("    cafe", str(Writer() << pad(hex(0xcafe), 8)));
+  EXPECT_EQ("    babe", str(Writer() << pad(hex(0xbabeu), 8)));
+  EXPECT_EQ("    dead", str(Writer() << pad(hex(0xdeadl), 8)));
+  EXPECT_EQ("    beef", str(Writer() << pad(hex(0xbeeful), 8)));
+
+  EXPECT_EQ("     11", str(Writer() << pad(11, 7)));
+  EXPECT_EQ("     22", str(Writer() << pad(22u, 7)));
+  EXPECT_EQ("     33", str(Writer() << pad(33l, 7)));
+  EXPECT_EQ("     44", str(Writer() << pad(44lu, 7)));
+
+  BasicWriter<char> f;
+  f.Clear();
+  f << pad(42, 5, '0');
+  EXPECT_EQ("00042", f.str());
+  f.Clear();
+  f << Date(2012, 12, 9);
+  EXPECT_EQ("2012-12-9", f.str());
+  f.Clear();
+  f << iso8601(Date(2012, 1, 9));
+  EXPECT_EQ("2012-01-09", f.str());
+}
+
+TEST(WriterTest, NoConflictWithIOManip) {
+  using namespace std;
+  using namespace fmt;
+  EXPECT_EQ("cafe", str(Writer() << hex(0xcafe)));
+  EXPECT_EQ("12", str(Writer() << oct(012)));
+}
+
+TEST(WriterTest, WWriter) {
+  EXPECT_EQ(L"cafe", str(fmt::WWriter() << fmt::hex(0xcafe)));
+}
+
 TEST(FormatterTest, Escape) {
   EXPECT_EQ("{", str(Format("{{")));
   EXPECT_EQ("before {", str(Format("before {{")));
@@ -266,6 +377,8 @@ TEST(FormatterTest, AutoArgIndex) {
       FormatError, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(Format("{:.{0}}") << 1.2345 << 2,
       FormatError, "cannot switch from automatic to manual argument indexing");
+  EXPECT_THROW_MSG(Format("{}"), FormatError,
+      "argument index is out of range in format");
 }
 
 TEST(FormatterTest, EmptySpecs) {
@@ -842,26 +955,6 @@ TEST(FormatterTest, FormatString) {
   EXPECT_EQ("test", str(Format("{0}") << std::string("test")));
 }
 
-class Date {
-  int year_, month_, day_;
- public:
-  Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
-
-  int year() const { return year_; }
-  int month() const { return month_; }
-  int day() const { return day_; }
-
-  friend std::ostream &operator<<(std::ostream &os, const Date &d) {
-    os << d.year_ << '-' << d.month_ << '-' << d.day_;
-    return os;
-  }
-
-  template <typename Char>
-  friend BasicWriter<Char> &operator<<(BasicWriter<Char> &f, const Date &d) {
-    return f << d.year_ << '-' << d.month_ << '-' << d.day_;
-  }
-};
-
 TEST(FormatterTest, FormatUsingIOStreams) {
   EXPECT_EQ("a string", str(Format("{0}") << TestString("a string")));
   std::string s = str(fmt::Format("The date is {0}") << Date(2012, 12, 9));
@@ -946,6 +1039,12 @@ TEST(FormatterTest, ArgInserter) {
 TEST(FormatterTest, StrNamespace) {
   fmt::str(Format(""));
   fmt::c_str(Format(""));
+}
+
+TEST(FormatterTest, ExceptionInNestedFormat) {
+  // Exception in nested format may cause Arg's destructor be called before
+  // the argument has been attached to a Formatter object.
+  EXPECT_THROW(Format(Format("{}")) << 42;, FormatError);
 }
 
 TEST(StringRefTest, Ctor) {
@@ -1059,86 +1158,6 @@ TEST(TempFormatterTest, Examples) {
 
   std::string path = "somefile";
   ReportError("File not found: {0}") << path;
-}
-
-TEST(StrTest, oct) {
-  using fmt::oct;
-  EXPECT_EQ("12", str(BasicWriter<char>() << oct(static_cast<short>(012))));
-  EXPECT_EQ("12", str(BasicWriter<char>() << oct(012)));
-  EXPECT_EQ("34", str(BasicWriter<char>() << oct(034u)));
-  EXPECT_EQ("56", str(BasicWriter<char>() << oct(056l)));
-  EXPECT_EQ("70", str(BasicWriter<char>() << oct(070ul)));
-}
-
-TEST(StrTest, hex) {
-  using fmt::hex;
-  fmt::IntFormatter<int, fmt::TypeSpec<'x'> > (*phex)(int value) = hex;
-  phex(42);
-  // This shouldn't compile:
-  //fmt::IntFormatter<short, fmt::TypeSpec<'x'> > (*phex2)(short value) = hex;
-
-  EXPECT_EQ("cafe", str(BasicWriter<char>() << hex(0xcafe)));
-  EXPECT_EQ("babe", str(BasicWriter<char>() << hex(0xbabeu)));
-  EXPECT_EQ("dead", str(BasicWriter<char>() << hex(0xdeadl)));
-  EXPECT_EQ("beef", str(BasicWriter<char>() << hex(0xbeeful)));
-}
-
-TEST(StrTest, hexu) {
-  EXPECT_EQ("CAFE", str(BasicWriter<char>() << hexu(0xcafe)));
-  EXPECT_EQ("BABE", str(BasicWriter<char>() << hexu(0xbabeu)));
-  EXPECT_EQ("DEAD", str(BasicWriter<char>() << hexu(0xdeadl)));
-  EXPECT_EQ("BEEF", str(BasicWriter<char>() << hexu(0xbeeful)));
-}
-
-class ISO8601DateFormatter {
- const Date *date_;
-
-public:
-  ISO8601DateFormatter(const Date &d) : date_(&d) {}
-
-  template <typename Char>
-  friend BasicWriter<Char> &operator<<(
-      BasicWriter<Char> &f, const ISO8601DateFormatter &d) {
-    return f << pad(d.date_->year(), 4, '0') << '-'
-        << pad(d.date_->month(), 2, '0') << '-' << pad(d.date_->day(), 2, '0');
-  }
-};
-
-ISO8601DateFormatter iso8601(const Date &d) { return ISO8601DateFormatter(d); }
-
-TEST(StrTest, pad) {
-  using fmt::hex;
-  EXPECT_EQ("    cafe", str(BasicWriter<char>() << pad(hex(0xcafe), 8)));
-  EXPECT_EQ("    babe", str(BasicWriter<char>() << pad(hex(0xbabeu), 8)));
-  EXPECT_EQ("    dead", str(BasicWriter<char>() << pad(hex(0xdeadl), 8)));
-  EXPECT_EQ("    beef", str(BasicWriter<char>() << pad(hex(0xbeeful), 8)));
-
-  EXPECT_EQ("     11", str(BasicWriter<char>() << pad(11, 7)));
-  EXPECT_EQ("     22", str(BasicWriter<char>() << pad(22u, 7)));
-  EXPECT_EQ("     33", str(BasicWriter<char>() << pad(33l, 7)));
-  EXPECT_EQ("     44", str(BasicWriter<char>() << pad(44lu, 7)));
-
-  BasicWriter<char> f;
-  f.Clear();
-  f << pad(42, 5, '0');
-  EXPECT_EQ("00042", f.str());
-  f.Clear();
-  f << Date(2012, 12, 9);
-  EXPECT_EQ("2012-12-9", f.str());
-  f.Clear();
-  f << iso8601(Date(2012, 1, 9));
-  EXPECT_EQ("2012-01-09", f.str());
-}
-
-TEST(StrTest, NoConflictWithIOManip) {
-  using namespace std;
-  using namespace fmt;
-  EXPECT_EQ("cafe", str(BasicWriter<char>() << hex(0xcafe)));
-  EXPECT_EQ("12", str(BasicWriter<char>() << oct(012)));
-}
-
-TEST(StrTest, BasicWriterWChar) {
-  EXPECT_EQ(L"cafe", str(BasicWriter<wchar_t>() << fmt::hex(0xcafe)));
 }
 
 template <typename T>
