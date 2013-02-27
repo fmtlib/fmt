@@ -40,6 +40,11 @@
 #include <string>
 #include <sstream>
 
+#ifndef _CRT_SECURE_NO_WARNINGS
+# define _CRT_SECURE_NO_WARNINGS
+# define FMT_RESTORE_WARNINGS
+#endif
+
 namespace fmt {
 
 namespace internal {
@@ -1546,5 +1551,9 @@ void BasicFormatter<Char>::DoFormat() {
   this->buffer_.append(start, s);
 }
 }
+
+#ifndef FMT_RESTORE_WARNINGS
+# undef _CRT_SECURE_NO_WARNINGS
+#endif
 
 #endif  // FORMAT_H_
