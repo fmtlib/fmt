@@ -191,7 +191,8 @@ inline int SignBit(double value) {
   if (value < 0) return 1;
   if (value == value) return 0;
   int dec = 0, sign = 0;
-  _ecvt(value, 0, &dec, &sign);
+  char dummy;
+  _ecvt_s(&dummy, 1, value, 0, &dec, &sign);
   return sign;
 }
 
