@@ -1,15 +1,16 @@
 format
 ======
 
-Format is an open-source string formatting library for C++.
+Format is an open-source formatting library for C++.
 It can be used as a type-safe alternative to `printf` or as a fast
 alternative to IOStreams.
 
 Features
 --------
 
-* Two APIs: faster concatenation-based write API and slower (but still fast)
-  replacement-based format API with positional arguments for localization.
+* Two APIs: faster concatenation-based write API and slower (but still
+  very fast) replacement-based format API with positional arguments for
+  localization.
 * Write API similar to the one used by IOStreams but much faster and more
   consistent.
 * Format API with `format string syntax
@@ -69,9 +70,10 @@ An object of any user-defined type for which there is an overloaded
     std::string s = str(fmt::Format("The date is {0}") << Date(2012, 12, 9));
     // s == "The date is 2012-12-9"
 
-You can use ``fmt::TempFormatter`` to create your own functions
-similar to ``fmt::Format`` and ``fmt::Print`` with an arbitrary action
-performed when formatting is complete:
+You can use ```fmt::TempFormatter``
+<http://zverovich.net/format/#project0classfmt_1_1_temp_formatter>`
+to create your own functions similar to ``fmt::Format`` and ``fmt::Print``
+with an arbitrary action performed when formatting is complete:
 
 .. code-block:: c++
 
