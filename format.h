@@ -192,7 +192,7 @@ inline int SignBit(double value) {
   if (value == value) return 0;
   int dec = 0, sign = 0;
   char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
-  _ecvt_s(&buffer, sizeof(buffer), value, 0, &dec, &sign);
+  _ecvt_s(buffer, sizeof(buffer), value, 0, &dec, &sign);
   return sign;
 }
 
