@@ -70,9 +70,9 @@ An object of any user-defined type for which there is an overloaded
     std::string s = str(fmt::Format("The date is {0}") << Date(2012, 12, 9));
     // s == "The date is 2012-12-9"
 
-You can use ```fmt::TempFormatter``
+You can use ` ``fmt::TempFormatter``
 <http://zverovich.net/format/#project0classfmt_1_1_temp_formatter>`__
-to create your own functions similar to ```fmt::Format``
+to create your own functions similar to ` ``fmt::Format``
 <http://zverovich.net/format/#fmt::Format__StringRef>`__ and ``fmt::Print``
 with an arbitrary action performed when formatting is complete:
 
