@@ -1086,7 +1086,7 @@ struct CountCalls {
 TEST(TempFormatterTest, Action) {
   int num_calls = 0;
   {
-    fmt::TempFormatter<char, CountCalls> af("test", CountCalls(num_calls));
+    fmt::TempFormatter<CountCalls> af("test", CountCalls(num_calls));
     EXPECT_EQ(0, num_calls);
   }
   EXPECT_EQ(1, num_calls);
@@ -1095,7 +1095,7 @@ TEST(TempFormatterTest, Action) {
 TEST(TempFormatterTest, ActionNotCalledOnError) {
   int num_calls = 0;
   {
-    typedef fmt::TempFormatter<char, CountCalls> TestFormatter;
+    typedef fmt::TempFormatter<CountCalls> TestFormatter;
     EXPECT_THROW(TestFormatter af("{0", CountCalls(num_calls)), FormatError);
   }
   EXPECT_EQ(0, num_calls);
@@ -1108,8 +1108,8 @@ TEST(TempFormatterTest, ActionNotCalledOnError) {
 TEST(TempFormatterTest, ArgLifetime) {
   // The following code is for testing purposes only. It is a definite abuse
   // of the API and shouldn't be used in real applications.
-  const fmt::TempFormatter<char> &af = fmt::Format("{0}");
-  const_cast<fmt::TempFormatter<char>&>(af) << std::string("test");
+  const fmt::TempFormatter<> &af = fmt::Format("{0}");
+  const_cast<fmt::TempFormatter<>&>(af) << std::string("test");
   // String object passed as an argument to TempFormatter has
   // been destroyed, but ArgInserter dtor hasn't been called yet.
   // But that's OK since the Arg's dtor takes care of this and
@@ -1128,8 +1128,8 @@ struct PrintError {
   }
 };
 
-fmt::TempFormatter<char, PrintError> ReportError(const char *format) {
-  return fmt::TempFormatter<char, PrintError>(format);
+fmt::TempFormatter<PrintError> ReportError(const char *format) {
+  return fmt::TempFormatter<PrintError>(format);
 }
 
 TEST(TempFormatterTest, Examples) {

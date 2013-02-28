@@ -191,8 +191,8 @@ inline int SignBit(double value) {
   if (value < 0) return 1;
   if (value == value) return 0;
   int dec = 0, sign = 0;
-  char dummy;
-  _ecvt_s(&dummy, 1, value, 0, &dec, &sign);
+  char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
+  _ecvt_s(&buffer, sizeof(buffer), value, 0, &dec, &sign);
   return sign;
 }
 
@@ -1155,7 +1155,7 @@ class NoAction {
   Objects of this class normally exist only as temporaries returned
   by one of the formatting functions which explains the name.
  */
-template <typename Char, typename Action = NoAction>
+template <typename Action = NoAction, typename Char = char>
 class TempFormatter : public internal::ArgInserter<Char> {
  private:
   BasicFormatter<Char> formatter_;
@@ -1232,8 +1232,8 @@ class TempFormatter : public internal::ArgInserter<Char> {
   See also `Format String Syntax`_.
   \endrst
 */
-inline TempFormatter<char> Format(StringRef format) {
-  return TempFormatter<char>(format);
+inline TempFormatter<> Format(StringRef format) {
+  return TempFormatter<>(format);
 }
 
 // A formatting action that writes formatted output to stdout.
@@ -1246,8 +1246,8 @@ struct Write {
 // Formats a string and prints it to stdout.
 // Example:
 //   Print("Elapsed time: {0:.2f} seconds") << 1.23;
-inline TempFormatter<char, Write> Print(StringRef format) {
-  return TempFormatter<char, Write>(format);
+inline TempFormatter<Write> Print(StringRef format) {
+  return TempFormatter<Write>(format);
 }
 
 // Throws Exception(message) if format contains '}', otherwise throws
