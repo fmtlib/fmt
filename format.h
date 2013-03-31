@@ -918,10 +918,13 @@ class BasicFormatter : public BasicWriter<Char> {
     };
     mutable BasicFormatter *formatter;
 
+    Arg(short value) : type(INT), int_value(value), formatter(0) {}
+    Arg(unsigned short value) : type(UINT), int_value(value), formatter(0) {}
     Arg(int value) : type(INT), int_value(value), formatter(0) {}
     Arg(unsigned value) : type(UINT), uint_value(value), formatter(0) {}
     Arg(long value) : type(LONG), long_value(value), formatter(0) {}
     Arg(unsigned long value) : type(ULONG), ulong_value(value), formatter(0) {}
+    Arg(float value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(double value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(long double value)
     : type(LONG_DOUBLE), long_double_value(value), formatter(0) {}

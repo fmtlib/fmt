@@ -809,6 +809,13 @@ void CheckUnknownTypes(
   }
 }
 
+TEST(FormatterTest, FormatShort) {
+  short s = 42;
+  EXPECT_EQ("42", str(Format("{0:d}") << s));
+  unsigned short us = 42;
+  EXPECT_EQ("42", str(Format("{0:d}") << us));
+}
+
 TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(Format("{0:v") << 42,
       FormatError, "unmatched '{' in format");
@@ -881,6 +888,10 @@ TEST(FormatterTest, FormatOct) {
   EXPECT_EQ(buffer, str(Format("{0:o}") << LONG_MAX));
   SPrintf(buffer, "%lo", ULONG_MAX);
   EXPECT_EQ(buffer, str(Format("{0:o}") << ULONG_MAX));
+}
+
+TEST(FormatterTest, FormatFloat) {
+  EXPECT_EQ("392.500000", str(Format("{0:f}") << 392.5f));
 }
 
 TEST(FormatterTest, FormatDouble) {
