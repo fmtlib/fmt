@@ -100,9 +100,6 @@ class Array {
   const T &operator[](std::size_t index) const { return ptr_[index]; }
 };
 
-#pragma warning(push)
-#pragma warning(disable: 4996)
-
 template <typename T, std::size_t SIZE>
 void Array<T, SIZE>::Grow(std::size_t size) {
   capacity_ = (std::max)(size, capacity_ + capacity_ / 2);
@@ -121,8 +118,6 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
   std::copy(begin, end, ptr_ + size_);
   size_ += num_elements;
 }
-
-#pragma warning(pop)
 
 // Information about an integer type.
 // IntTraits is not specialized for integer types smaller than int,
