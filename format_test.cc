@@ -33,6 +33,12 @@
 #include <iomanip>
 #include <memory>
 #include <gtest/gtest.h>
+
+// Check if format.h compiles with windows.h included.
+#ifdef WIN32
+# include <windows.h>
+#endif
+
 #include "format.h"
 
 #include <stdint.h>
