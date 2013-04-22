@@ -101,7 +101,7 @@ class Array {
 
 template <typename T, std::size_t SIZE>
 void Array<T, SIZE>::Grow(std::size_t size) {
-  capacity_ = std::max(size, capacity_ + capacity_ / 2);
+  capacity_ = (std::max)(size, capacity_ + capacity_ / 2);
   T *p = new T[capacity_];
   std::copy(ptr_, ptr_ + size_, p);
   if (ptr_ != data_)
@@ -657,7 +657,7 @@ void BasicWriter<Char>::FormatDouble(
   std::size_t offset = buffer_.size();
   unsigned width = spec.width();
   if (sign) {
-    buffer_.reserve(buffer_.size() + std::max(width, 1u));
+    buffer_.reserve(buffer_.size() + (std::max)(width, 1u));
     if (width > 0)
       --width;
     ++offset;
