@@ -7,7 +7,7 @@ String Formatting API
 
 .. doxygenfunction:: fmt::Format(StringRef)
 
-.. doxygenclass:: fmt::Formatter
+.. doxygenclass:: fmt::BasicFormatter
    :members:
 
 .. doxygenclass:: fmt::TempFormatter
