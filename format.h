@@ -41,10 +41,17 @@
 #include <string>
 #include <sstream>
 
+// Compatibility with compilers other than clang.
+#ifndef __has_feature
+# define __has_feature(x) 0
+#endif
+
 // Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
 #if FMT_USE_NOEXCEPT || \
     (defined(__has_feature) && __has_feature(cxx_noexcept))
 # define FMT_NOEXCEPT(expr) noexcept(expr)
+#else
+# define FMT_NOEXCEPT(expr)
 #endif
 
 namespace fmt {
