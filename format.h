@@ -41,6 +41,12 @@
 #include <string>
 #include <sstream>
 
+// Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
+#if FMT_USE_NOEXCEPT || \
+    (defined(__has_feature) && __has_feature(cxx_noexcept))
+# define FMT_NOEXCEPT(expr) noexcept(expr)
+#endif
+
 namespace fmt {
 
 namespace internal {
@@ -957,7 +963,7 @@ class BasicFormatter : public BasicWriter<Char> {
       custom.format = &internal::FormatCustomArg<Char, T>;
     }
 
-    ~Arg() {
+    ~Arg() FMT_NOEXCEPT(false) {
       // Format is called here to make sure that a referred object is
       // still alive, for example:
       //
@@ -1204,7 +1210,7 @@ class TempFormatter : public internal::ArgInserter<Char> {
   /**
     Performs the actual formatting, invokes the action and destroys the object.
    */
-  ~TempFormatter() {
+  ~TempFormatter() FMT_NOEXCEPT(false) {
     if (this->formatter())
       action_(*this->Format());
   }
