@@ -867,7 +867,7 @@ void FormatCustomArg(
 
      Formatter out;
      out("Current point:\n");
-     out("(-{:+f}, {:+f})") << 3.14 << -3.14;
+     out("({:+f}, {:+f})") << -3.14 << 3.14;
 
   This will populate the buffer of the ``out`` object with the following
   output:
