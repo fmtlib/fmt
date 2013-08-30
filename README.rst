@@ -130,7 +130,7 @@ which is a lot of typing compared to printf:
 
     printf("%.2f\n", 1.23456);
 
-Matthew Wilson, the author of FastFormat referred to this situations with
+Matthew Wilson, the author of FastFormat referred to this situation with
 IOStreams as "chevron hell". IOStreams doesn't support positional arguments
 by design.
 
