@@ -163,7 +163,7 @@ extern const char DIGITS[];
 
 void ReportUnknownType(char code, const char *type);
 
-// Returns the number of decimal digits in n. Trailing zeros are not counted
+// Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case CountDigits returns 1.
 inline unsigned CountDigits(uint64_t n) {
   unsigned count = 1;
