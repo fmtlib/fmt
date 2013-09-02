@@ -132,12 +132,13 @@ int main()
         util::high_resolution_timer t;
 
         //[karma_int_performance_format
+        fmt::Writer writer;
         for (int i = 0; i < MAX_ITERATION; ++i)
         {
-            fmt::Formatter format;
-            format << v[i];
+            writer.Clear();
+            writer << v[i];
             //<-
-            str = format.c_str();      // compensate for string ops in other benchmarks
+            str = writer.c_str();      // compensate for string ops in other benchmarks
             //->
         }
         //]
