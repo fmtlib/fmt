@@ -42,9 +42,9 @@ This prints ``Hello, world!`` to stdout:
 
 .. code-block:: c++
 
-    fmt::Print("Hello, {0}!") << "world";
+    fmt::Print("Hello, {}!") << "world";
 
-Arguments are accessed by position and arguments' indices can be repeated:
+Arguments can be accessed by position and arguments' indices can be repeated:
 
 .. code-block:: c++
 
@@ -130,7 +130,7 @@ which is a lot of typing compared to printf:
 
     printf("%.2f\n", 1.23456);
 
-Matthew Wilson, the author of FastFormat referred to this situation with
+Matthew Wilson, the author of FastFormat, referred to this situation with
 IOStreams as "chevron hell". IOStreams doesn't support positional arguments
 by design.
 
