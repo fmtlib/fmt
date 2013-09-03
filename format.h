@@ -59,17 +59,50 @@ namespace fmt {
 
 namespace internal {
 
-#ifdef _MSC_VER
+#if _SECURE_SCL
 template <typename T>
-inline stdext::checked_array_iterator<T*>
-    CheckIterator(T *ptr, std::size_t size) {
+inline stdext::checked_array_iterator<T*> CheckPtr(T *ptr, std::size_t size) {
   return stdext::checked_array_iterator<T*>(ptr, size);
 }
 #else
 template <typename T>
-inline T *CheckIterator(T *ptr, std::size_t) {
-  return ptr;
+inline T *CheckPtr(T *ptr, std::size_t) { return ptr; }
+#endif
+
+#ifndef _MSC_VER
+
+inline int SignBit(double value) {
+  // When compiled in C++11 mode signbit is no longer a macro but a function
+  // defined in namespace std and the macro is undefined.
+  using namespace std;
+  return signbit(value);
 }
+
+inline int IsInf(double x) {
+#ifdef isinf
+  return isinf(x);
+#else
+  return std::isinf(x);
+#endif
+}
+
+#define FMT_SNPRINTF snprintf
+
+#else
+
+inline int SignBit(double value) {
+  if (value < 0) return 1;
+  if (value == value) return 0;
+  int dec = 0, sign = 0;
+  char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
+  _ecvt_s(buffer, sizeof(buffer), value, 0, &dec, &sign);
+  return sign;
+}
+
+inline int IsInf(double x) { return !_finite(x); }
+
+#define FMT_SNPRINTF sprintf_s
+
 #endif  // _MSC_VER
 
 // A simple array for POD types with the first SIZE elements stored in
@@ -131,7 +164,7 @@ template <typename T, std::size_t SIZE>
 void Array<T, SIZE>::Grow(std::size_t size) {
   capacity_ = (std::max)(size, capacity_ + capacity_ / 2);
   T *p = new T[capacity_];
-  std::copy(ptr_, ptr_ + size_, CheckIterator(p, capacity_));
+  std::copy(ptr_, ptr_ + size_, CheckPtr(p, capacity_));
   if (ptr_ != data_)
     delete [] ptr_;
   ptr_ = p;
@@ -142,7 +175,7 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
   std::ptrdiff_t num_elements = end - begin;
   if (size_ + num_elements > capacity_)
     Grow(num_elements);
-  std::copy(begin, end, CheckIterator(ptr_ + size_, capacity_ - size_));
+  std::copy(begin, end, CheckPtr(ptr_, capacity_) + size_);
   size_ += num_elements;
 }
 
@@ -193,42 +226,6 @@ inline unsigned CountDigits(uint64_t n) {
     count += 4;
   }
 }
-
-#ifndef _MSC_VER
-
-inline int SignBit(double value) {
-  // When compiled in C++11 mode signbit is no longer a macro but a function
-  // defined in namespace std and the macro is undefined.
-  using namespace std;
-  return signbit(value);
-}
-
-inline int IsInf(double x) {
-#ifdef isinf
-  return isinf(x);
-#else
-  return std::isinf(x);
-#endif
-}
-
-#define FMT_SNPRINTF snprintf
-
-#else
-
-inline int SignBit(double value) {
-  if (value < 0) return 1;
-  if (value == value) return 0;
-  int dec = 0, sign = 0;
-  char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
-  _ecvt_s(buffer, sizeof(buffer), value, 0, &dec, &sign);
-  return sign;
-}
-
-inline int IsInf(double x) { return !_finite(x); }
-
-#define FMT_SNPRINTF sprintf_s
-
-#endif
 
 template <typename Char>
 class ArgInserter;
@@ -440,11 +437,21 @@ DEFINE_INT_FORMATTERS(unsigned long)
 
 template <typename Char>
 class BasicWriter {
- private:
-  static void FormatDecimal(Char *buffer, uint64_t value, unsigned num_digits);
+ protected:
+#if _SECURE_SCL
+  typedef stdext::checked_array_iterator<Char*> CharPtr;
+  static Char *GetBase(CharPtr p) { return p.base(); }
+#else
+  typedef Char *CharPtr;
+  static Char *GetBase(Char *p) { return p; }
+#endif
+
+private:
+  static void FormatDecimal(
+      CharPtr buffer, uint64_t value, unsigned num_digits);
 
  protected:
-  static Char *FillPadding(Char *buffer,
+  static CharPtr FillPadding(CharPtr buffer,
       unsigned total_size, std::size_t content_size, char fill);
 
   enum { INLINE_BUFFER_SIZE = 500 };
@@ -452,19 +459,19 @@ class BasicWriter {
 
   // Grows the buffer by n characters and returns a pointer to the newly
   // allocated area.
-  Char *GrowBuffer(std::size_t n) {
+  CharPtr GrowBuffer(std::size_t n) {
     std::size_t size = buffer_.size();
     buffer_.resize(size + n);
-    return &buffer_[size];
+    return internal::CheckPtr(&buffer_[size], n);
   }
 
-  Char *PrepareFilledBuffer(unsigned size, const Spec &, char sign) {
-    Char *p = GrowBuffer(size);
+  CharPtr PrepareFilledBuffer(unsigned size, const Spec &, char sign) {
+    CharPtr p = GrowBuffer(size);
     *p = sign;
     return p + size - 1;
   }
 
-  Char *PrepareFilledBuffer(unsigned size, const AlignSpec &spec, char sign);
+  CharPtr PrepareFilledBuffer(unsigned size, const AlignSpec &spec, char sign);
 
   // Formats an integer.
   template <typename T>
@@ -476,7 +483,7 @@ class BasicWriter {
   template <typename T>
   void FormatDouble(T value, const FormatSpec &spec, int precision);
 
-  char *FormatString(const char *s, std::size_t size, const FormatSpec &spec);
+  CharPtr FormatString(const char *s, std::size_t size, const FormatSpec &spec);
 
  public:
   /**
@@ -546,20 +553,20 @@ class BasicWriter {
 // Fills the padding around the content and returns the pointer to the
 // content area.
 template <typename Char>
-Char *BasicWriter<Char>::FillPadding(Char *buffer,
-    unsigned total_size, std::size_t content_size, char fill) {
+typename BasicWriter<Char>::CharPtr BasicWriter<Char>::FillPadding(
+    CharPtr buffer, unsigned total_size, std::size_t content_size, char fill) {
   std::size_t padding = total_size - content_size;
   std::size_t left_padding = padding / 2;
   std::fill_n(buffer, left_padding, fill);
   buffer += left_padding;
-  Char *content = buffer;
+  CharPtr content = buffer;
   std::fill_n(buffer + content_size, padding - left_padding, fill);
   return content;
 }
 
 template <typename Char>
 void BasicWriter<Char>::FormatDecimal(
-    Char *buffer, uint64_t value, unsigned num_digits) {
+    CharPtr buffer, uint64_t value, unsigned num_digits) {
   --num_digits;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
@@ -581,16 +588,16 @@ void BasicWriter<Char>::FormatDecimal(
 }
 
 template <typename Char>
-Char *BasicWriter<Char>::PrepareFilledBuffer(
+typename BasicWriter<Char>::CharPtr BasicWriter<Char>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign) {
   unsigned width = spec.width();
   if (width <= size) {
-    Char *p = GrowBuffer(size);
+    CharPtr p = GrowBuffer(size);
     *p = sign;
     return p + size - 1;
   }
-  char *p = GrowBuffer(width);
-  char *end = p + width;
+  CharPtr p = GrowBuffer(width);
+  CharPtr end = p + width;
   Alignment align = spec.align();
   if (align == ALIGN_LEFT) {
     *p = sign;
@@ -661,7 +668,7 @@ void BasicWriter<Char>::FormatDouble(
       --size;
       ++nan;
     }
-    char *out = FormatString(nan, size, spec);
+    CharPtr out = FormatString(nan, size, spec);
     if (sign)
       *out = sign;
     return;
@@ -676,7 +683,7 @@ void BasicWriter<Char>::FormatDouble(
       --size;
       ++inf;
     }
-    char *out = FormatString(inf, size, spec);
+    CharPtr out = FormatString(inf, size, spec);
     if (sign)
       *out = sign;
     return;
@@ -744,8 +751,9 @@ void BasicWriter<Char>::FormatDouble(
       }
       if (spec.align() == ALIGN_CENTER &&
           spec.width() > static_cast<unsigned>(n)) {
-        char *p = GrowBuffer(spec.width());
-        std::copy(p, p + n, p + (spec.width() - n) / 2);
+        unsigned width = spec.width();
+        CharPtr p = GrowBuffer(width);
+        std::copy(p, p + n, p + (width - n) / 2);
         FillPadding(p, spec.width(), n, spec.fill());
         return;
       }
@@ -763,9 +771,9 @@ void BasicWriter<Char>::FormatDouble(
 }
 
 template <typename Char>
-char *BasicWriter<Char>::FormatString(
+typename BasicWriter<Char>::CharPtr BasicWriter<Char>::FormatString(
     const char *s, std::size_t size, const FormatSpec &spec) {
-  char *out = 0;
+  CharPtr out = CharPtr();
   if (spec.width() > size) {
     out = GrowBuffer(spec.width());
     if (spec.align() == ALIGN_RIGHT) {
@@ -803,7 +811,8 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
   switch (f.type()) {
   case 0: case 'd': {
     unsigned num_digits = internal::CountDigits(abs_value);
-    Char *p = PrepareFilledBuffer(size + num_digits, f, sign) - num_digits + 1;
+    CharPtr p =
+        PrepareFilledBuffer(size + num_digits, f, sign) + 1 - num_digits;
     BasicWriter::FormatDecimal(p, abs_value, num_digits);
     break;
   }
@@ -814,7 +823,7 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
     do {
       ++size;
     } while ((n >>= 4) != 0);
-    Char *p = PrepareFilledBuffer(size, f, sign);
+    Char *p = GetBase(PrepareFilledBuffer(size, f, sign));
     n = abs_value;
     const char *digits = f.type() == 'x' ?
         "0123456789abcdef" : "0123456789ABCDEF";
@@ -834,7 +843,7 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
     do {
       ++size;
     } while ((n >>= 3) != 0);
-    Char *p = PrepareFilledBuffer(size, f, sign);
+    Char *p = GetBase(PrepareFilledBuffer(size, f, sign));
     n = abs_value;
     do {
       *p-- = '0' + (n & 7);
@@ -1529,12 +1538,12 @@ void BasicFormatter<Char>::DoFormat() {
     case CHAR: {
       if (spec.type_ && spec.type_ != 'c')
         internal::ReportUnknownType(spec.type_, "char");
-      char *out = 0;
+      typedef typename BasicWriter<Char>::CharPtr CharPtr;
+      CharPtr out = CharPtr();
       if (spec.width_ > 1) {
         out = this->GrowBuffer(spec.width_);
         if (spec.align_ == ALIGN_RIGHT) {
-          std::fill_n(internal::CheckIterator(out, spec.width_),
-              spec.width_ - 1, spec.fill_);
+          std::fill_n(out, spec.width_ - 1, spec.fill_);
           out += spec.width_ - 1;
         } else if (spec.align_ == ALIGN_CENTER) {
           out = this->FillPadding(out, spec.width_, 1, spec.fill_);
