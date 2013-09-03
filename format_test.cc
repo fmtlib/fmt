@@ -254,6 +254,10 @@ TEST(WriterTest, WriteDouble) {
   EXPECT_EQ("-4.2", str(Writer() << -4.2));
 }
 
+TEST(WriterTest, WriteString) {
+  EXPECT_EQ("abc", str(Writer() << "abc"));
+}
+
 class Date {
   int year_, month_, day_;
  public:
