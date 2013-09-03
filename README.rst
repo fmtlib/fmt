@@ -54,7 +54,7 @@ Arguments can be accessed by position and arguments' indices can be repeated:
     // s == "abracadabra"
 
 An object of any user-defined type for which there is an overloaded
-``std::ostream`` insertion operator (``operator<<``) can be formatted:
+:code:`std::ostream` insertion operator (``operator<<``) can be formatted:
 
 .. code-block:: c++
 
