@@ -32,6 +32,7 @@ Features
   permissive BSD `license`_.
 * `Portability`_ with consistent output across platforms and support
   for older compilers.
+* Clean warning-free codebase even on high warning levels (``-Wall -Wextra -pedantic``).
 
 See the `documentation <http://vitaut.github.com/format/>`__ for more details.
 
@@ -287,7 +288,7 @@ The format library has been tested on the following systems and compilers:
 
 * 64-bit (amd64) GNU/Linux with GCC 4.6.3 and 4.7.2
 * 32-bit (i386) GNU/Linux with GCC 4.6.3
-* Mac OS X with GCC 4.2.1
+* Mac OS X with GCC 4.2.1 and Clang
 * 64-bit Windows with Visual C++ 2010
 * 32-bit Windows with Visual C++ 2010
 
