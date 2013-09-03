@@ -2,7 +2,7 @@ format
 ======
 
 Format is an open-source formatting library for C++.
-It can be used as a type-safe alternative to `printf` or as a fast
+It can be used as a type-safe alternative to printf or as a fast
 alternative to IOStreams.
 
 Features
@@ -19,8 +19,8 @@ Features
   <http://docs.python.org/2/library/stdtypes.html#str.format>`__ in Python.
 * Support for user-defined types.
 * High speed: performance of the format API is close to that of
-  glibc's ``printf`` and better than performance of IOStreams. See
-  `Speed tests`_.
+  glibc's `printf <http://en.cppreference.com/w/cpp/io/c/fprintf>`__
+  and better than performance of IOStreams. See `Speed tests`_.
 * Small code size both in terms of source code (format consists of a single
   header file and a single source file) and compiled code.
   See `Compile time and code bloat`_.
@@ -32,7 +32,8 @@ Features
   permissive BSD `license`_.
 * `Portability`_ with consistent output across platforms and support
   for older compilers.
-* Clean warning-free codebase even on high warning levels (``-Wall -Wextra -pedantic``).
+* Clean warning-free codebase even on high warning levels
+  (-Wall -Wextra -pedantic).
 
 See the `documentation <http://vitaut.github.com/format/>`__ for more details.
 
