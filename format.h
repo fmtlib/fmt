@@ -142,7 +142,7 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
   std::ptrdiff_t num_elements = end - begin;
   if (size_ + num_elements > capacity_)
     Grow(num_elements);
-  std::copy(begin, end, ptr_ + size_);
+  std::copy(begin, end, CheckIterator(ptr_ + size_, capacity_ - size_));
   size_ += num_elements;
 }
 
@@ -1533,7 +1533,8 @@ void BasicFormatter<Char>::DoFormat() {
       if (spec.width_ > 1) {
         out = this->GrowBuffer(spec.width_);
         if (spec.align_ == ALIGN_RIGHT) {
-          std::fill_n(out, spec.width_ - 1, spec.fill_);
+          std::fill_n(internal::CheckIterator(out, spec.width_),
+              spec.width_ - 1, spec.fill_);
           out += spec.width_ - 1;
         } else if (spec.align_ == ALIGN_CENTER) {
           out = this->FillPadding(out, spec.width_, 1, spec.fill_);
