@@ -534,7 +534,7 @@ private:
 
   BasicWriter &operator<<(const Char *value) {
     std::size_t size = std::strlen(value);
-    std::strncpy(GrowBuffer(size), value, size);
+    std::copy(value, value + size, GrowBuffer(size));
     return *this;
   }
 
