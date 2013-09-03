@@ -54,6 +54,12 @@
 # define FMT_NOEXCEPT(expr)
 #endif
 
+// Disable MSVC "secure" warnings.
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4996)
+#endif
+
 namespace fmt {
 
 namespace internal {
@@ -1566,5 +1572,10 @@ void BasicFormatter<Char>::DoFormat() {
   this->buffer_.append(start, s);
 }
 }
+
+// Restore MSVC "secure" warnings.
+#ifdef FMT_RESTORE_SECURE_WARNINGS
+# pragma warning(pop)
+#endif
 
 #endif  // FORMAT_H_
