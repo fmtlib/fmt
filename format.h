@@ -37,6 +37,7 @@
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <sstream>
@@ -54,15 +55,22 @@
 # define FMT_NOEXCEPT(expr)
 #endif
 
-// Disable MSVC "secure" warnings.
-#ifdef _MSC_VER
-# pragma warning(push)
-# pragma warning(disable: 4996)
-#endif
-
 namespace fmt {
 
 namespace internal {
+
+#ifdef _MSC_VER
+template <typename T>
+inline stdext::checked_array_iterator<T*>
+    CheckIterator(T *ptr, std::size_t size) {
+  return stdext::checked_array_iterator<T*>(ptr, size);
+}
+#else
+template <typename T>
+inline T *CheckIterator(T *ptr, std::size_t) {
+  return ptr;
+}
+#endif  // _MSC_VER
 
 // A simple array for POD types with the first SIZE elements stored in
 // the object itself. It supports a subset of std::vector's operations.
@@ -123,7 +131,7 @@ template <typename T, std::size_t SIZE>
 void Array<T, SIZE>::Grow(std::size_t size) {
   capacity_ = (std::max)(size, capacity_ + capacity_ / 2);
   T *p = new T[capacity_];
-  std::copy(ptr_, ptr_ + size_, p);
+  std::copy(ptr_, ptr_ + size_, CheckIterator(p, capacity_));
   if (ptr_ != data_)
     delete [] ptr_;
   ptr_ = p;
@@ -1572,10 +1580,5 @@ void BasicFormatter<Char>::DoFormat() {
   this->buffer_.append(start, s);
 }
 }
-
-// Restore MSVC "secure" warnings.
-#ifdef FMT_RESTORE_SECURE_WARNINGS
-# pragma warning(pop)
-#endif
 
 #endif  // FORMAT_H_
