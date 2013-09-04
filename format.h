@@ -228,9 +228,6 @@ inline unsigned CountDigits(uint64_t n) {
 }
 
 template <typename Char>
-class ArgInserter;
-
-template <typename Char>
 class FormatterProxy;
 }
 
@@ -435,6 +432,22 @@ DEFINE_INT_FORMATTERS(long)
 DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
 
+template <typename Action>
+class BasicFormatter;
+
+template <typename Action, typename Char>
+class TempFormatter;
+
+/**
+  A formatting action that does nothing.
+ */
+class NoAction {
+ public:
+  /** Does nothing. */
+  template <typename Char>
+  void operator()(const BasicFormatter<Char> &) const {}
+};
+
 template <typename Char>
 class BasicWriter {
  protected:
@@ -543,6 +556,15 @@ private:
 
   void Write(const std::basic_string<char> &s, const FormatSpec &spec) {
     FormatString(s.data(), s.size(), spec);
+  }
+
+  /**
+    Formats a string appending the output to the internal buffer.
+    Arguments are accepted through the returned `TempFormatter` object
+    using inserter operator `<<`.
+  */
+  TempFormatter<NoAction, Char> Format(StringRef format) {
+    return TempFormatter<NoAction, Char>(format);
   }
 
   void Clear() {
@@ -1004,7 +1026,7 @@ class BasicFormatter : public BasicWriter<Char> {
       // constructed before the Arg object, it will be destroyed after,
       // so it will be alive in the Arg's destructor where Format is called.
       // Note that the string object will not necessarily be alive when
-      // the destructor of ArgInserter is called.
+      // the destructor of TempFormatter is called.
       if (formatter)
         formatter->CompleteFormatting();
     }
@@ -1017,7 +1039,9 @@ class BasicFormatter : public BasicWriter<Char> {
   int num_open_braces_;
   int next_arg_index_;
 
-  friend class internal::ArgInserter<Char>;
+  template <typename Action, typename CharT>
+  friend class TempFormatter; // TODO
+
   friend class internal::FormatterProxy<Char>;
 
   void Add(const Arg &arg) {
@@ -1044,14 +1068,7 @@ class BasicFormatter : public BasicWriter<Char> {
   /**
     Constructs a formatter with an empty output buffer.
    */
-  BasicFormatter() : format_(0) {}
-
-  /**
-    Formats a string appending the output to the internal buffer.
-    Arguments are accepted through the returned `ArgInserter` object
-    using inserter operator `<<`.
-  */
-  internal::ArgInserter<Char> operator()(StringRef format);
+  BasicFormatter(const Char *format = 0) : format_(format) {}
 };
 
 typedef BasicFormatter<char> Formatter;
@@ -1093,66 +1110,6 @@ class FormatterProxy {
 // formatter.
 template <typename Char>
 class ArgInserter {
- private:
-  mutable BasicFormatter<Char> *formatter_;
-
-  friend class fmt::BasicFormatter<Char>;
-  friend class fmt::StringRef;
-
-  // Do not implement.
-  void operator=(const ArgInserter& other);
-
- protected:
-  explicit ArgInserter(BasicFormatter<Char> *f = 0) : formatter_(f) {}
-
-  void Init(BasicFormatter<Char> &f, const char *format) {
-    const ArgInserter &other = f(format);
-    formatter_ = other.formatter_;
-    other.formatter_ = 0;
-  }
-
-  ArgInserter(const ArgInserter& other)
-  : formatter_(other.formatter_) {
-    other.formatter_ = 0;
-  }
-
-  const BasicFormatter<Char> *Format() const {
-    BasicFormatter<Char> *f = formatter_;
-    if (f) {
-      formatter_ = 0;
-      f->CompleteFormatting();
-    }
-    return f;
-  }
-
-  BasicFormatter<Char> *formatter() const { return formatter_; }
-  const char *format() const { return formatter_->format_; }
-
-  void ResetFormatter() const { formatter_ = 0; }
-
- public:
-  ~ArgInserter() {
-    if (formatter_)
-      formatter_->CompleteFormatting();
-  }
-
-  // Feeds an argument to a formatter.
-  ArgInserter &operator<<(const typename BasicFormatter<Char>::Arg &arg) {
-    arg.formatter = formatter_;
-    formatter_->Add(arg);
-    return *this;
-  }
-
-  operator FormatterProxy<Char>() {
-    BasicFormatter<Char> *f = formatter_;
-    formatter_ = 0;
-    return FormatterProxy<Char>(f);
-  }
-
-  operator StringRef() {
-    const BasicFormatter<Char> *f = Format();
-    return StringRef(f->c_str(), f->size());
-  }
 };
 }
 
@@ -1171,35 +1128,21 @@ inline const char *c_str(internal::FormatterProxy<char> p) {
   return p.Format()->c_str();
 }
 
-template <typename Char>
-inline internal::ArgInserter<Char>
-BasicFormatter<Char>::operator()(StringRef format) {
-  internal::ArgInserter<Char> inserter(this);
-  format_ = format.c_str();
-  args_.clear();
-  return inserter;
-}
-
-/**
-  A formatting action that does nothing.
- */
-class NoAction {
- public:
-  /** Does nothing. */
-  template <typename Char>
-  void operator()(const BasicFormatter<Char> &) const {}
-};
-
 /**
   A formatter with an action performed when formatting is complete.
   Objects of this class normally exist only as temporaries returned
   by one of the formatting functions which explains the name.
  */
 template <typename Action = NoAction, typename Char = char>
-class TempFormatter : public internal::ArgInserter<Char> {
+class TempFormatter {
+private:
+ friend class fmt::BasicFormatter<Char>;
+ friend class fmt::StringRef;
+
  private:
   BasicFormatter<Char> formatter_;
   Action action_;
+  bool inactive_;
 
   // Forbid copying other than from a temporary. Do not implement.
   TempFormatter(TempFormatter &);
@@ -1225,33 +1168,47 @@ class TempFormatter : public internal::ArgInserter<Char> {
     \endrst
   */
   explicit TempFormatter(StringRef format, Action a = Action())
-  : action_(a) {
-    this->Init(formatter_, format.c_str());
+  : formatter_(format.c_str()), action_(a), inactive_(false) {
   }
 
   /**
     Constructs a temporary formatter from a proxy object.
    */
   TempFormatter(const Proxy &p)
-  : internal::ArgInserter<Char>(0), action_(p.action) {
-    this->Init(formatter_, p.format);
-  }
+  : formatter_(p.format), action_(p.action), inactive_(false) {}
 
   /**
     Performs the actual formatting, invokes the action and destroys the object.
    */
   ~TempFormatter() FMT_NOEXCEPT(false) {
-    if (this->formatter())
-      action_(*this->Format());
+    if (!inactive_) {
+      formatter_.CompleteFormatting();
+      action_(formatter_);
+    }
   }
 
   /**
     Converts a temporary formatter into a proxy object.
    */
   operator Proxy() {
-    const char *fmt = this->format();
-    this->ResetFormatter();
-    return Proxy(fmt, action_);
+    inactive_ = true;
+    return Proxy(formatter_.format_, action_);
+  }
+
+  // Feeds an argument to a formatter.
+  TempFormatter &operator<<(const typename BasicFormatter<Char>::Arg &arg) {
+    arg.formatter = &formatter_;
+    formatter_.Add(arg);
+    return *this;
+  }
+
+  operator internal::FormatterProxy<Char>() {
+    return internal::FormatterProxy<Char>(&formatter_);
+  }
+
+  operator StringRef() {
+    formatter_.CompleteFormatting();
+    return StringRef(formatter_.c_str(), formatter_.size());
   }
 };
 
