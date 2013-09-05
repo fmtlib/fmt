@@ -10,7 +10,7 @@ String Formatting API
 .. doxygenclass:: fmt::BasicFormatter
    :members:
 
-.. doxygenclass:: fmt::TempFormatter
+.. doxygenclass:: fmt::Formatter
    :members:
 
 .. doxygenclass:: fmt::NoAction
