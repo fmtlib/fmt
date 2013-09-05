@@ -1123,7 +1123,7 @@ class BasicFormatter {
   }
 
   // Constructs a formatter from a proxy object.
-  BasicFormatter(const Proxy &p) : BasicFormatter<Char>(*p.writer, p.format) {}
+  BasicFormatter(const Proxy &p) : writer_(p.writer), format_(p.format) {}
 
   operator Proxy() {
     const Char *format = format_;
