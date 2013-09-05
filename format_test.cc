@@ -47,7 +47,6 @@ using std::size_t;
 
 using fmt::internal::Array;
 using fmt::BasicWriter;
-using fmt::Formatter;
 using fmt::Format;
 using fmt::FormatError;
 using fmt::StringRef;
@@ -214,6 +213,13 @@ TEST(ArrayTest, Append) {
   EXPECT_EQ(15u, array.capacity());
 }
 
+TEST(WriterTest, WriterCtor) {
+  Writer w;
+  EXPECT_EQ(0u, w.size());
+  EXPECT_STREQ("", w.c_str());
+  EXPECT_EQ("", w.str());
+}
+
 TEST(WriterTest, WriteInt) {
   EXPECT_EQ("42", str(Writer() << 42));
   EXPECT_EQ("-42", str(Writer() << -42));
@@ -323,6 +329,20 @@ TEST(WriterTest, NoConflictWithIOManip) {
   using namespace fmt;
   EXPECT_EQ("cafe", str(Writer() << hex(0xcafe)));
   EXPECT_EQ("12", str(Writer() << oct(012)));
+}
+
+TEST(WriterTest, Format) {
+  Writer w;
+  w.Format("part{0}") << 1;
+  EXPECT_EQ(strlen("part1"), w.size());
+  EXPECT_STREQ("part1", w.c_str());
+  EXPECT_STREQ("part1", w.data());
+  EXPECT_EQ("part1", w.str());
+  w.Format("part{0}") << 2;
+  EXPECT_EQ(strlen("part1part2"), w.size());
+  EXPECT_STREQ("part1part2", w.c_str());
+  EXPECT_STREQ("part1part2", w.data());
+  EXPECT_EQ("part1part2", w.str());
 }
 
 TEST(WriterTest, WWriter) {
@@ -1015,31 +1035,13 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
           << reinterpret_cast<void*>(1000) << 'X'));
 }
 
-TEST(WriterTest, WriterCtor) {
+TEST(FormatterTest, StringAccess) {
   Writer w;
-  EXPECT_EQ(0u, w.size());
-  EXPECT_STREQ("", w.c_str());
-  EXPECT_EQ("", w.str());
-  w.Format("part{0}") << 1;
-  w.Format("part{0}") << 2;
-  EXPECT_EQ("part1part2", w.str());
+  EXPECT_EQ("1", str(w.Format("{0}") << 1));
+  EXPECT_STREQ("12", c_str(w.Format("{0}") << 2));
 }
 
-/*TEST(FormatterTest, FormatterAppend) {
-  Formatter format;
-  format("part{0}") << 1;
-  EXPECT_EQ(strlen("part1"), format.size());
-  EXPECT_STREQ("part1", format.c_str());
-  EXPECT_STREQ("part1", format.data());
-  EXPECT_EQ("part1", format.str());
-  format("part{0}") << 2;
-  EXPECT_EQ(strlen("part1part2"), format.size());
-  EXPECT_STREQ("part1part2", format.c_str());
-  EXPECT_STREQ("part1part2", format.data());
-  EXPECT_EQ("part1part2", format.str());
-}*/
-
-TEST(FormatTest, FormatExamples) {
+TEST(FormatterTest, FormatExamples) {
   using fmt::hex;
   EXPECT_EQ("0000cafe", str(BasicWriter<char>() << pad(hex(0xcafe), 8, '0')));
 
@@ -1050,31 +1052,23 @@ TEST(FormatTest, FormatExamples) {
   EXPECT_EQ("42", str(Format(std::string("{}")) << 42));
   EXPECT_EQ("42", str(Format(Format("{{}}")) << 42));
 
-  // TODO
-  /*Formatter format;
-  format("Current point:\n");
-  format("({0:+f}, {1:+f})\n") << -3.14 << 3.14;
-  EXPECT_EQ("Current point:\n(-3.140000, +3.140000)\n", format.str());
+  Writer writer;
+  writer.Format("Current point:\n");
+  writer.Format("({0:+f}, {1:+f})\n") << -3.14 << 3.14;
+  EXPECT_EQ("Current point:\n(-3.140000, +3.140000)\n", writer.str());
 
   {
-    fmt::Formatter format;
+    fmt::Writer writer;
     for (int i = 0; i < 10; i++)
-      format("{0}") << i;
-    std::string s = format.str(); // s == 0123456789
+      writer.Format("{}") << i;
+    std::string s = writer.str(); // s == 0123456789
     EXPECT_EQ("0123456789", s);
-  }*/
+  }
 }
 
-// TODO
-/*TEST(FormatterTest, ArgInserter) {
-  Formatter format;
-  EXPECT_EQ("1", str(format("{0}") << 1));
-  EXPECT_STREQ("12", c_str(format("{0}") << 2));
-}*/
-
 TEST(FormatterTest, StrNamespace) {
-  fmt::str(Format(""));
-  fmt::c_str(Format(""));
+  str(Format(""));
+  c_str(Format(""));
 }
 
 TEST(FormatterTest, ExceptionInNestedFormat) {
@@ -1101,7 +1095,7 @@ struct CountCalls {
 
   CountCalls(int &num_calls) : num_calls(num_calls) {}
 
-  void operator()(const Formatter &) const {
+  void operator()(const Writer &) const {
     ++num_calls;
   }
 };
@@ -1109,7 +1103,7 @@ struct CountCalls {
 TEST(TempFormatterTest, Action) {
   int num_calls = 0;
   {
-    fmt::TempFormatter<CountCalls> af("test", CountCalls(num_calls));
+    fmt::Formatter<CountCalls> af("test", CountCalls(num_calls));
     EXPECT_EQ(0, num_calls);
   }
   EXPECT_EQ(1, num_calls);
@@ -1118,7 +1112,7 @@ TEST(TempFormatterTest, Action) {
 TEST(TempFormatterTest, ActionNotCalledOnError) {
   int num_calls = 0;
   {
-    typedef fmt::TempFormatter<CountCalls> TestFormatter;
+    typedef fmt::Formatter<CountCalls> TestFormatter;
     EXPECT_THROW(TestFormatter af("{0", CountCalls(num_calls)), FormatError);
   }
   EXPECT_EQ(0, num_calls);
@@ -1131,8 +1125,8 @@ TEST(TempFormatterTest, ActionNotCalledOnError) {
 TEST(TempFormatterTest, ArgLifetime) {
   // The following code is for testing purposes only. It is a definite abuse
   // of the API and shouldn't be used in real applications.
-  const fmt::TempFormatter<> &af = fmt::Format("{0}");
-  const_cast<fmt::TempFormatter<>&>(af) << std::string("test");
+  const fmt::Formatter<> &af = fmt::Format("{0}");
+  const_cast<fmt::Formatter<>&>(af) << std::string("test");
   // String object passed as an argument to TempFormatter has
   // been destroyed, but ArgInserter dtor hasn't been called yet.
   // But that's OK since the Arg's dtor takes care of this and
@@ -1146,13 +1140,13 @@ TEST(TempFormatterTest, ConvertToStringRef) {
 }
 
 struct PrintError {
-  void operator()(const fmt::Formatter &f) const {
-    std::cerr << "Error: " << f.str() << std::endl;
+  void operator()(const fmt::Writer &w) const {
+    std::cerr << "Error: " << w.str() << std::endl;
   }
 };
 
-fmt::TempFormatter<PrintError> ReportError(const char *format) {
-  return fmt::TempFormatter<PrintError>(format);
+fmt::Formatter<PrintError> ReportError(const char *format) {
+  return fmt::Formatter<PrintError>(format);
 }
 
 TEST(TempFormatterTest, Examples) {

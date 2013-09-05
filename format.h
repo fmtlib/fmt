@@ -237,7 +237,7 @@ class FormatterProxy;
   or as a result of a formatting operation. It is most useful as a parameter
   type to allow passing different types of strings in a function, for example::
 
-    TempFormatter<> Format(StringRef format);
+    Formatter<> Format(StringRef format);
 
     Format("{}") << 42;
     Format(std::string("{}")) << 42;
@@ -432,25 +432,17 @@ DEFINE_INT_FORMATTERS(long)
 DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
 
-template <typename Action>
+template <typename Char>
 class BasicFormatter;
-
-template <typename Action, typename Char>
-class TempFormatter;
-
-/**
-  A formatting action that does nothing.
- */
-class NoAction {
- public:
-  /** Does nothing. */
-  template <typename Char>
-  void operator()(const BasicFormatter<Char> &) const {}
-};
 
 template <typename Char>
 class BasicWriter {
- protected:
+ private:
+  enum { INLINE_BUFFER_SIZE = 500 };
+  mutable internal::Array<Char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
+
+  friend class BasicFormatter<Char>;
+
 #if _SECURE_SCL
   typedef stdext::checked_array_iterator<Char*> CharPtr;
   static Char *GetBase(CharPtr p) { return p.base(); }
@@ -459,16 +451,11 @@ class BasicWriter {
   static Char *GetBase(Char *p) { return p; }
 #endif
 
-private:
   static void FormatDecimal(
       CharPtr buffer, uint64_t value, unsigned num_digits);
 
- protected:
   static CharPtr FillPadding(CharPtr buffer,
       unsigned total_size, std::size_t content_size, char fill);
-
-  enum { INLINE_BUFFER_SIZE = 500 };
-  mutable internal::Array<Char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
 
   // Grows the buffer by n characters and returns a pointer to the newly
   // allocated area.
@@ -560,12 +547,10 @@ private:
 
   /**
     Formats a string appending the output to the internal buffer.
-    Arguments are accepted through the returned `TempFormatter` object
+    Arguments are accepted through the returned `BasicFormatter` object
     using inserter operator `<<`.
   */
-  TempFormatter<NoAction, Char> Format(StringRef format) {
-    return TempFormatter<NoAction, Char>(format);
-  }
+  BasicFormatter<Char> Format(StringRef format);
 
   void Clear() {
     buffer_.clear();
@@ -881,6 +866,11 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
   return *this;
 }
 
+template <typename Char>
+BasicFormatter<Char> BasicWriter<Char>::Format(StringRef format) {
+  return BasicFormatter<Char>(*this, format.c_str());
+}
+
 typedef BasicWriter<char> Writer;
 typedef BasicWriter<wchar_t> WWriter;
 
@@ -907,6 +897,7 @@ void FormatCustomArg(
   functionality similar to Python's `str.format
   <http://docs.python.org/3/library/stdtypes.html#str.format>`__.
   The output is stored in a memory buffer that grows dynamically.
+  The class provides operator<< for feeding formatting arguments.
 
   **Example**::
 
@@ -923,11 +914,16 @@ void FormatCustomArg(
      (-3.140000, +3.140000)
 
   The buffer can be accessed using :meth:`data` or :meth:`c_str`.
+
+  Objects of this class normally exists only as temporaries returned
+  by one of the formatting functions.
   \endrst
  */
 template <typename Char>
-class BasicFormatter : public BasicWriter<Char> {
+class BasicFormatter {
  private:
+  BasicWriter<Char> *writer_;
+
   enum Type {
     // Numeric types should go first.
     INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE,
@@ -1026,7 +1022,7 @@ class BasicFormatter : public BasicWriter<Char> {
       // constructed before the Arg object, it will be destroyed after,
       // so it will be alive in the Arg's destructor where Format is called.
       // Note that the string object will not necessarily be alive when
-      // the destructor of TempFormatter is called.
+      // the destructor of BasicFormatter is called.
       if (formatter)
         formatter->CompleteFormatting();
     }
@@ -1039,10 +1035,11 @@ class BasicFormatter : public BasicWriter<Char> {
   int num_open_braces_;
   int next_arg_index_;
 
-  template <typename Action, typename CharT>
-  friend class TempFormatter; // TODO
-
   friend class internal::FormatterProxy<Char>;
+
+  // Forbid copying other than from a temporary. Do not implement.
+  BasicFormatter(BasicFormatter &);
+  BasicFormatter& operator=(const BasicFormatter &);
 
   void Add(const Arg &arg) {
     args_.push_back(&arg);
@@ -1059,6 +1056,20 @@ class BasicFormatter : public BasicWriter<Char> {
 
   void DoFormat();
 
+  struct Proxy {
+    BasicWriter<Char> *writer;
+    const Char *format;
+
+    Proxy(BasicWriter<Char> *w, const Char *fmt) : writer(w), format(fmt) {}
+  };
+
+ protected:
+  const Char *TakeFormatString() {
+    const Char *format = this->format_;
+    this->format_ = 0;
+    return format;
+  }
+
   void CompleteFormatting() {
     if (!format_) return;
     DoFormat();
@@ -1068,11 +1079,40 @@ class BasicFormatter : public BasicWriter<Char> {
   /**
     Constructs a formatter with an empty output buffer.
    */
-  BasicFormatter(const Char *format = 0) : format_(format) {}
-};
+  BasicFormatter(BasicWriter<Char> &w, const Char *format = 0)
+  : writer_(&w), format_(format) {}
 
-typedef BasicFormatter<char> Formatter;
-typedef BasicFormatter<wchar_t> WFormatter;
+  ~BasicFormatter() {
+    CompleteFormatting();
+  }
+
+  /**
+    Constructs a formatter from a proxy object.
+   */
+  BasicFormatter(const Proxy &p) : BasicFormatter<Char>(*p.writer, p.format) {}
+
+  operator Proxy() {
+    const Char *format = format_;
+    format_ = 0;
+    return Proxy(writer_, format);
+  }
+
+  // Feeds an argument to a formatter.
+  BasicFormatter &operator<<(const Arg &arg) {
+    arg.formatter = this;
+    Add(arg);
+    return *this;
+  }
+
+  operator internal::FormatterProxy<Char>() {
+    return internal::FormatterProxy<Char>(this);
+  }
+
+  operator StringRef() {
+    CompleteFormatting();
+    return StringRef(writer_->c_str(), writer_->size());
+  }
+};
 
 template <typename Char>
 inline std::basic_string<Char> str(const BasicWriter<Char> &f) {
@@ -1098,18 +1138,10 @@ class FormatterProxy {
  public:
   explicit FormatterProxy(BasicFormatter<Char> *f) : formatter_(f) {}
 
-  BasicFormatter<Char> *Format() {
+  BasicWriter<Char> *Format() {
     formatter_->CompleteFormatting();
-    return formatter_;
+    return formatter_->writer_;
   }
-};
-
-// This is a transient object that normally exists only as a temporary
-// returned by one of the formatting functions. It stores a reference
-// to a formatter and provides operator<< that feeds arguments to the
-// formatter.
-template <typename Char>
-class ArgInserter {
 };
 }
 
@@ -1129,26 +1161,33 @@ inline const char *c_str(internal::FormatterProxy<char> p) {
 }
 
 /**
+  A formatting action that does nothing.
+ */
+class NoAction {
+ public:
+  /** Does nothing. */
+  template <typename Char>
+  void operator()(const BasicWriter<Char> &) const {}
+};
+
+/**
   A formatter with an action performed when formatting is complete.
   Objects of this class normally exist only as temporaries returned
-  by one of the formatting functions which explains the name.
+  by one of the formatting functions.
  */
 template <typename Action = NoAction, typename Char = char>
-class TempFormatter {
-private:
- friend class fmt::BasicFormatter<Char>;
- friend class fmt::StringRef;
+class Formatter : private Action, public BasicFormatter<Char> {
+ private:
+  friend class fmt::BasicFormatter<Char>;
+  friend class fmt::StringRef;
 
  private:
-  BasicFormatter<Char> formatter_;
-  Action action_;
+  BasicWriter<Char> writer_;
   bool inactive_;
 
   // Forbid copying other than from a temporary. Do not implement.
-  TempFormatter(TempFormatter &);
-
-  // Do not implement.
-  TempFormatter& operator=(const TempFormatter &);
+  Formatter(Formatter &);
+  Formatter& operator=(const Formatter &);
 
   struct Proxy {
     const char *format;
@@ -1160,55 +1199,42 @@ private:
  public:
   /**
     \rst
-    Constructs a temporary formatter with a format string and an action.
+    Constructs a formatter with a format string and an action.
     The action should be an unary function object that takes a const
     reference to :cpp:class:`fmt::BasicFormatter` as an argument.
     See :cpp:class:`fmt::NoAction` and :cpp:class:`fmt::Write` for
     examples of action classes.
     \endrst
   */
-  explicit TempFormatter(StringRef format, Action a = Action())
-  : formatter_(format.c_str()), action_(a), inactive_(false) {
+  explicit Formatter(StringRef format, Action a = Action())
+  : Action(a), BasicFormatter<Char>(writer_, format.c_str()),
+    inactive_(false) {
   }
 
   /**
-    Constructs a temporary formatter from a proxy object.
+    Constructs a formatter from a proxy object.
    */
-  TempFormatter(const Proxy &p)
-  : formatter_(p.format), action_(p.action), inactive_(false) {}
+  Formatter(const Proxy &p)
+  : Action(p.action), BasicFormatter<Char>(writer_, p.format),
+    inactive_(false) {
+  }
 
   /**
     Performs the actual formatting, invokes the action and destroys the object.
    */
-  ~TempFormatter() FMT_NOEXCEPT(false) {
+  ~Formatter() FMT_NOEXCEPT(false) {
     if (!inactive_) {
-      formatter_.CompleteFormatting();
-      action_(formatter_);
+      this->CompleteFormatting();
+      (*this)(writer_);
     }
   }
 
   /**
-    Converts a temporary formatter into a proxy object.
+    Converts the formatter into a proxy object.
    */
   operator Proxy() {
     inactive_ = true;
-    return Proxy(formatter_.format_, action_);
-  }
-
-  // Feeds an argument to a formatter.
-  TempFormatter &operator<<(const typename BasicFormatter<Char>::Arg &arg) {
-    arg.formatter = &formatter_;
-    formatter_.Add(arg);
-    return *this;
-  }
-
-  operator internal::FormatterProxy<Char>() {
-    return internal::FormatterProxy<Char>(&formatter_);
-  }
-
-  operator StringRef() {
-    formatter_.CompleteFormatting();
-    return StringRef(formatter_.c_str(), formatter_.size());
+    return Proxy(this->TakeFormatString(), *this);
   }
 };
 
@@ -1229,22 +1255,22 @@ private:
   See also `Format String Syntax`_.
   \endrst
 */
-inline TempFormatter<> Format(StringRef format) {
-  return TempFormatter<>(format);
+inline Formatter<> Format(StringRef format) {
+  return Formatter<>(format);
 }
 
 // A formatting action that writes formatted output to stdout.
 struct Write {
-  void operator()(const BasicFormatter<char> &f) const {
-    std::fwrite(f.data(), 1, f.size(), stdout);
+  void operator()(const BasicWriter<char> &w) const {
+    std::fwrite(w.data(), 1, w.size(), stdout);
   }
 };
 
 // Formats a string and prints it to stdout.
 // Example:
 //   Print("Elapsed time: {0:.2f} seconds") << 1.23;
-inline TempFormatter<Write> Print(StringRef format) {
-  return TempFormatter<Write>(format);
+inline Formatter<Write> Print(StringRef format) {
+  return Formatter<Write>(format);
 }
 
 // Throws Exception(message) if format contains '}', otherwise throws
@@ -1322,18 +1348,20 @@ void BasicFormatter<Char>::DoFormat() {
   format_ = 0;
   next_arg_index_ = 0;
   const Char *s = start;
+  typedef internal::Array<Char, BasicWriter<Char>::INLINE_BUFFER_SIZE> Buffer;
+  Writer &writer = *writer_;
   while (*s) {
     char c = *s++;
     if (c != '{' && c != '}') continue;
     if (*s == c) {
-      this->buffer_.append(start, s);
+      writer.buffer_.append(start, s);
       start = ++s;
       continue;
     }
     if (c == '}')
       throw FormatError("unmatched '}' in format");
     num_open_braces_= 1;
-    this->buffer_.append(start, s - 1);
+    writer.buffer_.append(start, s - 1);
 
     const Arg &arg = ParseArgIndex(s);
 
@@ -1475,22 +1503,22 @@ void BasicFormatter<Char>::DoFormat() {
     // Format argument.
     switch (arg.type) {
     case INT:
-      this->FormatInt(arg.int_value, spec);
+      writer.FormatInt(arg.int_value, spec);
       break;
     case UINT:
-      this->FormatInt(arg.uint_value, spec);
+      writer.FormatInt(arg.uint_value, spec);
       break;
     case LONG:
-      this->FormatInt(arg.long_value, spec);
+      writer.FormatInt(arg.long_value, spec);
       break;
     case ULONG:
-      this->FormatInt(arg.ulong_value, spec);
+      writer.FormatInt(arg.ulong_value, spec);
       break;
     case DOUBLE:
-      this->FormatDouble(arg.double_value, spec, precision);
+      writer.FormatDouble(arg.double_value, spec, precision);
       break;
     case LONG_DOUBLE:
-      this->FormatDouble(arg.long_double_value, spec, precision);
+      writer.FormatDouble(arg.long_double_value, spec, precision);
       break;
     case CHAR: {
       if (spec.type_ && spec.type_ != 'c')
@@ -1498,17 +1526,17 @@ void BasicFormatter<Char>::DoFormat() {
       typedef typename BasicWriter<Char>::CharPtr CharPtr;
       CharPtr out = CharPtr();
       if (spec.width_ > 1) {
-        out = this->GrowBuffer(spec.width_);
+        out = writer.GrowBuffer(spec.width_);
         if (spec.align_ == ALIGN_RIGHT) {
           std::fill_n(out, spec.width_ - 1, spec.fill_);
           out += spec.width_ - 1;
         } else if (spec.align_ == ALIGN_CENTER) {
-          out = this->FillPadding(out, spec.width_, 1, spec.fill_);
+          out = writer.FillPadding(out, spec.width_, 1, spec.fill_);
         } else {
           std::fill_n(out + 1, spec.width_ - 1, spec.fill_);
         }
       } else {
-        out = this->GrowBuffer(1);
+        out = writer.GrowBuffer(1);
       }
       *out = arg.int_value;
       break;
@@ -1524,7 +1552,7 @@ void BasicFormatter<Char>::DoFormat() {
         if (*str)
           size = std::strlen(str);
       }
-      this->FormatString(str, size, spec);
+      writer.FormatString(str, size, spec);
       break;
     }
     case POINTER:
@@ -1532,19 +1560,19 @@ void BasicFormatter<Char>::DoFormat() {
         internal::ReportUnknownType(spec.type_, "pointer");
       spec.flags_= HASH_FLAG;
       spec.type_ = 'x';
-      this->FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
+      writer.FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
       break;
     case CUSTOM:
       if (spec.type_)
         internal::ReportUnknownType(spec.type_, "object");
-      arg.custom.format(*this, arg.custom.value, spec);
+      arg.custom.format(writer, arg.custom.value, spec);
       break;
     default:
       assert(false);
       break;
     }
   }
-  this->buffer_.append(start, s);
+  writer.buffer_.append(start, s);
 }
 }
 
