@@ -81,8 +81,8 @@ with an arbitrary action performed when formatting is complete:
 .. code-block:: c++
 
     struct PrintError {
-      void operator()(const fmt::Formatter &f) const {
-        std::cerr << "Error: " << f.str() << std::endl;
+      void operator()(const fmt::Writer &w) const {
+        std::cerr << "Error: " << w.str() << std::endl;
       }
     };
 

@@ -243,7 +243,7 @@ class FormatterProxy;
     Format(std::string("{}")) << 42;
     Format(Format("{{}}")) << 42;
   \endrst
-*/
+ */
 class StringRef {
  private:
   const char *data_;
@@ -369,7 +369,7 @@ class IntFormatter : public SpecT {
 
 /**
   Returns an integer formatter that formats the value in base 8.
-  */
+ */
 IntFormatter<int, TypeSpec<'o'> > oct(int value);
 
 /**
@@ -391,7 +391,7 @@ IntFormatter<int, TypeSpec<'X'> > hexu(int value);
 
   **Example**::
 
-    std::string s = str(BasicWriter() << pad(hex(0xcafe), 8, '0'));
+    std::string s = str(Writer() << pad(hex(0xcafe), 8, '0'));
     // s == "0000cafe"
 
   \endrst
@@ -435,6 +435,11 @@ DEFINE_INT_FORMATTERS(unsigned long)
 template <typename Char>
 class BasicFormatter;
 
+/**
+  This template provides operations for formatting and writing data into
+  a character stream. The output is stored in a memory buffer that grows
+  dynamically.
+ */
 template <typename Char>
 class BasicWriter {
  private:
@@ -546,10 +551,27 @@ class BasicWriter {
   }
 
   /**
-    Formats a string appending the output to the internal buffer.
-    Arguments are accepted through the returned `BasicFormatter` object
-    using inserter operator `<<`.
-  */
+    \rst
+    Formats a string sending the output to the writer. Arguments are
+    accepted through the returned `BasicFormatter` object using inserter
+    operator `<<`.
+
+    **Example**::
+
+       Writer out;
+       out.Format("Current point:\n");
+       out.Format("({:+f}, {:+f})") << -3.14 << 3.14;
+
+    This will write the following output to the ``out`` object:
+
+    .. code-block:: none
+
+       Current point:
+       (-3.140000, +3.140000)
+
+    The output can be accessed using :meth:`data` or :meth:`c_str`.
+    \endrst
+   */
   BasicFormatter<Char> Format(StringRef format);
 
   void Clear() {
@@ -896,27 +918,8 @@ void FormatCustomArg(
   The :cpp:class:`fmt::BasicFormatter` template provides string formatting
   functionality similar to Python's `str.format
   <http://docs.python.org/3/library/stdtypes.html#str.format>`__.
-  The output is stored in a memory buffer that grows dynamically.
-  The class provides operator<< for feeding formatting arguments.
-
-  **Example**::
-
-     Formatter out;
-     out("Current point:\n");
-     out("({:+f}, {:+f})") << -3.14 << 3.14;
-
-  This will populate the buffer of the ``out`` object with the following
-  output:
-
-  .. code-block:: none
-
-     Current point:
-     (-3.140000, +3.140000)
-
-  The buffer can be accessed using :meth:`data` or :meth:`c_str`.
-
-  Objects of this class normally exists only as temporaries returned
-  by one of the formatting functions.
+  The class provides operator<< for feeding formatting arguments and all
+  the output is sent to a :cpp:class:`fmt::Writer` object.
   \endrst
  */
 template <typename Char>
@@ -1076,9 +1079,8 @@ class BasicFormatter {
   }
 
  public:
-  /**
-    Constructs a formatter with an empty output buffer.
-   */
+  // Constructs a formatter with a writer to be used for output and a format
+  // format string.
   BasicFormatter(BasicWriter<Char> &w, const Char *format = 0)
   : writer_(&w), format_(format) {}
 
@@ -1086,9 +1088,7 @@ class BasicFormatter {
     CompleteFormatting();
   }
 
-  /**
-    Constructs a formatter from a proxy object.
-   */
+  // Constructs a formatter from a proxy object.
   BasicFormatter(const Proxy &p) : BasicFormatter<Char>(*p.writer, p.format) {}
 
   operator Proxy() {
@@ -1171,16 +1171,30 @@ class NoAction {
 };
 
 /**
+  \rst
   A formatter with an action performed when formatting is complete.
   Objects of this class normally exist only as temporaries returned
-  by one of the formatting functions.
+  by one of the formatting functions. You can use this class to create
+  your own functions similar to :cpp:func:`fmt::Format()`.
+
+  **Example**::
+
+    struct PrintError {
+      void operator()(const fmt::Writer &w) const {
+        std::cerr << "Error: " << w.str() << std::endl;
+      }
+    };
+
+    // Formats an error message and prints it to std::cerr.
+    fmt::Formatter<PrintError> ReportError(const char *format) {
+      return fmt::Formatter<PrintError>(format);
+    }
+
+    ReportError("File not found: {}") << path;
+  \endrst
  */
 template <typename Action = NoAction, typename Char = char>
 class Formatter : private Action, public BasicFormatter<Char> {
- private:
-  friend class fmt::BasicFormatter<Char>;
-  friend class fmt::StringRef;
-
  private:
   BasicWriter<Char> writer_;
   bool inactive_;
@@ -1201,7 +1215,7 @@ class Formatter : private Action, public BasicFormatter<Char> {
     \rst
     Constructs a formatter with a format string and an action.
     The action should be an unary function object that takes a const
-    reference to :cpp:class:`fmt::BasicFormatter` as an argument.
+    reference to :cpp:class:`fmt::BasicWriter` as an argument.
     See :cpp:class:`fmt::NoAction` and :cpp:class:`fmt::Write` for
     examples of action classes.
     \endrst
@@ -1240,13 +1254,17 @@ class Formatter : private Action, public BasicFormatter<Char> {
 
 /**
   \rst
-  Formats a string. Returns a temporary formatter object that accepts
-  arguments via operator ``<<``. *format* is a format string that contains
-  literal text and replacement fields surrounded by braces ``{}``.
-  The formatter object replaces the fields with formatted arguments
-  and stores the output in a memory buffer. The content of the buffer can
-  be converted to ``std::string`` with :cpp:func:`fmt::str()` or
-  accessed as a C string with :cpp:func:`fmt::c_str()`.
+  Formats a string similarly to Python's `str.format
+  <http://docs.python.org/3/library/stdtypes.html#str.format>`__.
+  Returns a temporary formatter object that accepts arguments via
+  operator ``<<``.
+
+  *format* is a format string that contains literal text and replacement
+  fields surrounded by braces ``{}``. The formatter object replaces the
+  fields with formatted arguments and stores the output in a memory buffer.
+  The content of the buffer can be converted to ``std::string`` with
+  :cpp:func:`fmt::str()` or accessed as a C string with
+  :cpp:func:`fmt::c_str()`.
 
   **Example**::
 
@@ -1259,8 +1277,10 @@ inline Formatter<> Format(StringRef format) {
   return Formatter<>(format);
 }
 
-// A formatting action that writes formatted output to stdout.
-struct Write {
+/** A formatting action that writes formatted output to stdout. */
+class Write {
+ public:
+  /** Write the output to stdout. */
   void operator()(const BasicWriter<char> &w) const {
     std::fwrite(w.data(), 1, w.size(), stdout);
   }
