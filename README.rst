@@ -34,6 +34,7 @@ Features
   for older compilers.
 * Clean warning-free codebase even on high warning levels
   (-Wall -Wextra -pedantic).
+* Support for wide strings.
 
 See the `documentation <http://vitaut.github.com/format/>`__ for more details.
 

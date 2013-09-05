@@ -105,6 +105,41 @@ inline int IsInf(double x) { return !_finite(x); }
 
 #endif  // _MSC_VER
 
+template <typename Char>
+struct CharTraits;
+
+template <>
+struct CharTraits<char> {
+  template <typename T>
+  static int FormatFloat(char *buffer, std::size_t size,
+      const char *format, unsigned width, int precision, T value) {
+    if (width == 0) {
+      return precision < 0 ?
+          FMT_SNPRINTF(buffer, size, format, value) :
+          FMT_SNPRINTF(buffer, size, format, precision, value);
+    }
+    return precision < 0 ?
+        FMT_SNPRINTF(buffer, size, format, width, value) :
+        FMT_SNPRINTF(buffer, size, format, width, precision, value);
+  }
+};
+
+template <>
+struct CharTraits<wchar_t> {
+  template <typename T>
+  static int FormatFloat(wchar_t *buffer, std::size_t size,
+      const wchar_t *format, unsigned width, int precision, T value) {
+    if (width == 0) {
+      return precision < 0 ?
+          swprintf(buffer, size, format, value) :
+          swprintf(buffer, size, format, precision, value);
+    }
+    return precision < 0 ?
+        swprintf(buffer, size, format, width, value) :
+        swprintf(buffer, size, format, width, precision, value);
+  }
+};
+
 // A simple array for POD types with the first SIZE elements stored in
 // the object itself. It supports a subset of std::vector's operations.
 template <typename T, std::size_t SIZE>
@@ -244,9 +279,10 @@ class FormatterProxy;
     Format(Format("{{}}")) << 42;
   \endrst
  */
-class StringRef {
+template <typename Char>
+class BasicStringRef {
  private:
-  const char *data_;
+  const Char *data_;
   mutable std::size_t size_;
 
  public:
@@ -255,31 +291,37 @@ class StringRef {
     If `size` is zero, which is the default, the size is computed with
     `strlen`.
    */
-  StringRef(const char *s, std::size_t size = 0) : data_(s), size_(size) {}
+  BasicStringRef(const Char *s, std::size_t size = 0) : data_(s), size_(size) {}
 
   /**
     Constructs a string reference from an `std::string` object.
    */
-  StringRef(const std::string &s) : data_(s.c_str()), size_(s.size()) {}
+  BasicStringRef(const std::basic_string<Char> &s)
+  : data_(s.c_str()), size_(s.size()) {}
 
   /**
     Converts a string reference to an `std::string` object.
    */
-  operator std::string() const { return std::string(data_, size()); }
+  operator std::basic_string<Char>() const {
+    return std::basic_string<Char>(data_, size());
+  }
 
   /**
     Returns the pointer to a C string.
    */
-  const char *c_str() const { return data_; }
+  const Char *c_str() const { return data_; }
 
   /**
     Returns the string size.
    */
   std::size_t size() const {
-    if (size_ == 0) size_ = std::strlen(data_);
+    if (size_ == 0) size_ = std::char_traits<Char>::length(data_);
     return size_;
   }
 };
+
+typedef BasicStringRef<char> StringRef;
+typedef BasicStringRef<wchar_t> WStringRef;
 
 class FormatError : public std::runtime_error {
  public:
@@ -729,8 +771,8 @@ void BasicWriter<Char>::FormatDouble(
 
   // Build format string.
   enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
-  char format[MAX_FORMAT_SIZE];
-  char *format_ptr = format;
+  Char format[MAX_FORMAT_SIZE];
+  Char *format_ptr = format;
   *format_ptr++ = '%';
   unsigned width_for_sprintf = width;
   if (spec.hash_flag())
@@ -755,18 +797,9 @@ void BasicWriter<Char>::FormatDouble(
   // Format using snprintf.
   for (;;) {
     std::size_t size = buffer_.capacity() - offset;
-    int n = 0;
     Char *start = &buffer_[offset];
-    if (width_for_sprintf == 0) {
-      n = precision < 0 ?
-          FMT_SNPRINTF(start, size, format, value) :
-          FMT_SNPRINTF(start, size, format, precision, value);
-    } else {
-      n = precision < 0 ?
-          FMT_SNPRINTF(start, size, format, width_for_sprintf, value) :
-          FMT_SNPRINTF(start, size, format, width_for_sprintf,
-              precision, value);
-    }
+    int n = internal::CharTraits<Char>::FormatFloat(
+        start, size, format, width_for_sprintf, precision, value);
     if (n >= 0 && offset + n < buffer_.capacity()) {
       if (sign) {
         if ((spec.align() != ALIGN_RIGHT && spec.align() != ALIGN_DEFAULT) ||
@@ -953,7 +986,8 @@ class BasicFormatter {
     // This method is private to disallow formatting of wide characters.
     // If you want to output a wide character cast it to integer type.
     // Do not implement!
-    Arg(wchar_t value);
+    // TODO
+    //Arg(wchar_t value);
 
    public:
     Type type;
@@ -1048,14 +1082,14 @@ class BasicFormatter {
     args_.push_back(&arg);
   }
 
-  void ReportError(const char *s, StringRef message) const;
+  void ReportError(const Char *s, StringRef message) const;
 
-  unsigned ParseUInt(const char *&s) const;
+  unsigned ParseUInt(const Char *&s) const;
 
   // Parses argument index and returns an argument with this index.
-  const Arg &ParseArgIndex(const char *&s);
+  const Arg &ParseArgIndex(const Char *&s);
 
-  void CheckSign(const char *&s, const Arg &arg);
+  void CheckSign(const Char *&s, const Arg &arg);
 
   void DoFormat();
 
@@ -1122,13 +1156,7 @@ inline std::basic_string<Char> str(const BasicWriter<Char> &f) {
 template <typename Char>
 inline const Char *c_str(const BasicWriter<Char> &f) { return f.c_str(); }
 
-std::string str(internal::FormatterProxy<char> p);
-const char *c_str(internal::FormatterProxy<char> p);
-
 namespace internal {
-
-using fmt::str;
-using fmt::c_str;
 
 template <typename Char>
 class FormatterProxy {
@@ -1160,6 +1188,14 @@ inline const char *c_str(internal::FormatterProxy<char> p) {
   return p.Format()->c_str();
 }
 
+inline std::wstring str(internal::FormatterProxy<wchar_t> p) {
+  return p.Format()->str();
+}
+
+inline const wchar_t *c_str(internal::FormatterProxy<wchar_t> p) {
+  return p.Format()->c_str();
+}
+
 /**
   A formatting action that does nothing.
  */
@@ -1181,7 +1217,7 @@ class NoAction {
 
     struct PrintError {
       void operator()(const fmt::Writer &w) const {
-        std::cerr << "Error: " << w.str() << std::endl;
+        fmt::Print("Error: {}\n") << w.str();
       }
     };
 
@@ -1204,10 +1240,10 @@ class Formatter : private Action, public BasicFormatter<Char> {
   Formatter& operator=(const Formatter &);
 
   struct Proxy {
-    const char *format;
+    const Char *format;
     Action action;
 
-    Proxy(const char *fmt, Action a) : format(fmt), action(a) {}
+    Proxy(const Char *fmt, Action a) : format(fmt), action(a) {}
   };
 
  public:
@@ -1220,7 +1256,7 @@ class Formatter : private Action, public BasicFormatter<Char> {
     examples of action classes.
     \endrst
   */
-  explicit Formatter(StringRef format, Action a = Action())
+  explicit Formatter(BasicStringRef<Char> format, Action a = Action())
   : Action(a), BasicFormatter<Char>(writer_, format.c_str()),
     inactive_(false) {
   }
@@ -1277,6 +1313,10 @@ inline Formatter<> Format(StringRef format) {
   return Formatter<>(format);
 }
 
+inline Formatter<NoAction, wchar_t> Format(WStringRef format) {
+  return Formatter<NoAction, wchar_t>(format);
+}
+
 /** A formatting action that writes formatted output to stdout. */
 class Write {
  public:
@@ -1297,7 +1337,7 @@ inline Formatter<Write> Print(StringRef format) {
 // FormatError reporting unmatched '{'. The idea is that unmatched '{'
 // should override other errors.
 template <typename Char>
-void BasicFormatter<Char>::ReportError(const char *s, StringRef message) const {
+void BasicFormatter<Char>::ReportError(const Char *s, StringRef message) const {
   for (int num_open_braces = num_open_braces_; *s; ++s) {
     if (*s == '{') {
       ++num_open_braces;
@@ -1312,7 +1352,7 @@ void BasicFormatter<Char>::ReportError(const char *s, StringRef message) const {
 // Parses an unsigned integer advancing s to the end of the parsed input.
 // This function assumes that the first character of s is a digit.
 template <typename Char>
-unsigned BasicFormatter<Char>::ParseUInt(const char *&s) const {
+unsigned BasicFormatter<Char>::ParseUInt(const Char *&s) const {
   assert('0' <= *s && *s <= '9');
   unsigned value = 0;
   do {
@@ -1326,7 +1366,7 @@ unsigned BasicFormatter<Char>::ParseUInt(const char *&s) const {
 
 template <typename Char>
 inline const typename BasicFormatter<Char>::Arg
-    &BasicFormatter<Char>::ParseArgIndex(const char *&s) {
+    &BasicFormatter<Char>::ParseArgIndex(const Char *&s) {
   unsigned arg_index = 0;
   if (*s < '0' || *s > '9') {
     if (*s != '}' && *s != ':')
@@ -1350,7 +1390,7 @@ inline const typename BasicFormatter<Char>::Arg
 }
 
 template <typename Char>
-void BasicFormatter<Char>::CheckSign(const char *&s, const Arg &arg) {
+void BasicFormatter<Char>::CheckSign(const Char *&s, const Arg &arg) {
   if (arg.type > LAST_NUMERIC_TYPE) {
     ReportError(s,
         Format("format specifier '{0}' requires numeric argument") << *s);
@@ -1369,7 +1409,7 @@ void BasicFormatter<Char>::DoFormat() {
   next_arg_index_ = 0;
   const Char *s = start;
   typedef internal::Array<Char, BasicWriter<Char>::INLINE_BUFFER_SIZE> Buffer;
-  Writer &writer = *writer_;
+  BasicWriter<Char> &writer = *writer_;
   while (*s) {
     char c = *s++;
     if (c != '{' && c != '}') continue;
@@ -1392,7 +1432,7 @@ void BasicFormatter<Char>::DoFormat() {
 
       // Parse fill and alignment.
       if (char c = *s) {
-        const char *p = s + 1;
+        const Char *p = s + 1;
         spec.align_ = ALIGN_DEFAULT;
         do {
           switch (*p) {

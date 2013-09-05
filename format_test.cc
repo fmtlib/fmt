@@ -1028,6 +1028,10 @@ TEST(FormatterTest, CustomFormat) {
   EXPECT_EQ("42", str(Format("{0}") << Answer()));
 }
 
+TEST(FormatterTest, WideFormatString) {
+  EXPECT_EQ(L"42", str(Format(L"{}") << 42));
+}
+
 TEST(FormatterTest, FormatStringFromSpeedTest) {
   EXPECT_EQ("1.2340000000:0042:+3.13:str:0x3e8:X:%",
       str(Format("{0:0.10f}:{1:04}:{2:+g}:{3}:{4}:{5}:%")
