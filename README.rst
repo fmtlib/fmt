@@ -60,6 +60,7 @@ Format can be used as a safe portable replacement to ``itoa``:
 
     fmt::Writer w;
     w << 42; // replaces itoa(42, buffer, 10)
+    // access the string using w.str() or w.c_str()
 
 An object of any user-defined type for which there is an overloaded
 :code:`std::ostream` insertion operator (``operator<<``) can be formatted:
