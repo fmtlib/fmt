@@ -54,6 +54,13 @@ Arguments can be accessed by position and arguments' indices can be repeated:
     std::string s = str(fmt::Format("{0}{1}{0}") << "abra" << "cad");
     // s == "abracadabra"
 
+Format can be used as a safe portable replacement to ``itoa``:
+
+.. code-block:: c++
+
+    fmt::Writer w;
+    w << 42; // replaces itoa(42, buffer, 10)
+
 An object of any user-defined type for which there is an overloaded
 :code:`std::ostream` insertion operator (``operator<<``) can be formatted:
 
