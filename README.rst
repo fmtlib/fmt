@@ -59,7 +59,8 @@ Format can be used as a safe portable replacement to ``itoa``:
 .. code-block:: c++
 
     fmt::Writer w;
-    w << 42; // replaces itoa(42, buffer, 10)
+    w << 42;           // replaces itoa(42, buffer, 10)
+    w << fmt::hex(42); // replaces itoa(42, buffer, 16)
     // access the string using w.str() or w.c_str()
 
 An object of any user-defined type for which there is an overloaded
