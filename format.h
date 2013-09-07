@@ -530,7 +530,9 @@ class BasicWriter {
   template <typename T>
   void FormatDouble(T value, const FormatSpec &spec, int precision);
 
-  CharPtr FormatString(const char *s, std::size_t size, const FormatSpec &spec);
+  template <typename StringChar>
+  CharPtr FormatString(const StringChar *s,
+      std::size_t size, const FormatSpec &spec);
 
  public:
   /**
@@ -833,8 +835,9 @@ void BasicWriter<Char>::FormatDouble(
 }
 
 template <typename Char>
+template <typename StringChar>
 typename BasicWriter<Char>::CharPtr BasicWriter<Char>::FormatString(
-    const char *s, std::size_t size, const FormatSpec &spec) {
+    const StringChar *s, std::size_t size, const FormatSpec &spec) {
   CharPtr out = CharPtr();
   if (spec.width() > size) {
     out = GrowBuffer(spec.width());
@@ -1000,7 +1003,7 @@ class BasicFormatter {
       long double long_double_value;
       const void *pointer_value;
       struct {
-        const char *value;
+        const Char *value;
         std::size_t size;
       } string;
       struct {
@@ -1022,12 +1025,12 @@ class BasicFormatter {
     : type(LONG_DOUBLE), long_double_value(value), formatter(0) {}
     Arg(char value) : type(CHAR), int_value(value), formatter(0) {}
 
-    Arg(const char *value) : type(STRING), formatter(0) {
+    Arg(const Char *value) : type(STRING), formatter(0) {
       string.value = value;
       string.size = 0;
     }
 
-    Arg(char *value) : type(STRING), formatter(0) {
+    Arg(Char *value) : type(STRING), formatter(0) {
       string.value = value;
       string.size = 0;
     }
@@ -1604,13 +1607,13 @@ void BasicFormatter<Char>::DoFormat() {
     case STRING: {
       if (spec.type_ && spec.type_ != 's')
         internal::ReportUnknownType(spec.type_, "string");
-      const char *str = arg.string.value;
+      const Char *str = arg.string.value;
       std::size_t size = arg.string.size;
       if (size == 0) {
         if (!str)
           throw FormatError("string pointer is null");
         if (*str)
-          size = std::strlen(str);
+          size = std::char_traits<Char>::length(str);
       }
       writer.FormatString(str, size, spec);
       break;

@@ -1030,6 +1030,8 @@ TEST(FormatterTest, CustomFormat) {
 
 TEST(FormatterTest, WideFormatString) {
   EXPECT_EQ(L"42", str(Format(L"{}") << 42));
+  EXPECT_EQ(L"4.2", str(Format(L"{}") << 4.2));
+  EXPECT_EQ(L"abc", str(Format(L"{}") << L"abc"));
 }
 
 TEST(FormatterTest, FormatStringFromSpeedTest) {
@@ -1104,7 +1106,7 @@ struct CountCalls {
   }
 };
 
-TEST(TempFormatterTest, Action) {
+TEST(FormatterTest, Action) {
   int num_calls = 0;
   {
     fmt::Formatter<CountCalls> af("test", CountCalls(num_calls));
@@ -1113,7 +1115,7 @@ TEST(TempFormatterTest, Action) {
   EXPECT_EQ(1, num_calls);
 }
 
-TEST(TempFormatterTest, ActionNotCalledOnError) {
+TEST(FormatterTest, ActionNotCalledOnError) {
   int num_calls = 0;
   {
     typedef fmt::Formatter<CountCalls> TestFormatter;
@@ -1126,19 +1128,18 @@ TEST(TempFormatterTest, ActionNotCalledOnError) {
 // require an accessible copy constructor when binding a temporary to
 // a const reference.
 #if __GNUC__ >= 4 && __GNUC_MINOR__ >= 7
-TEST(TempFormatterTest, ArgLifetime) {
+TEST(FormatterTest, ArgLifetime) {
   // The following code is for testing purposes only. It is a definite abuse
   // of the API and shouldn't be used in real applications.
   const fmt::Formatter<> &af = fmt::Format("{0}");
   const_cast<fmt::Formatter<>&>(af) << std::string("test");
-  // String object passed as an argument to TempFormatter has
-  // been destroyed, but ArgInserter dtor hasn't been called yet.
-  // But that's OK since the Arg's dtor takes care of this and
-  // calls Format.
+  // String object passed as an argument to Formatter has been destroyed,
+  // but Formatter's dtor hasn't been called yet. That's OK since the Arg's
+  // dtor takes care of this and calls Format.
 }
 #endif
 
-TEST(TempFormatterTest, ConvertToStringRef) {
+TEST(FormatterTest, ConvertToStringRef) {
   EXPECT_STREQ("abc", StringRef(Format("a{0}c") << 'b').c_str());
   EXPECT_EQ(3u, StringRef(Format("a{0}c") << 'b').size());
 }
@@ -1153,7 +1154,7 @@ fmt::Formatter<PrintError> ReportError(const char *format) {
   return fmt::Formatter<PrintError>(format);
 }
 
-TEST(TempFormatterTest, Examples) {
+TEST(FormatterTest, Examples) {
   EXPECT_EQ("First, thou shalt count to three",
       str(Format("First, thou shalt count to {0}") << "three"));
   EXPECT_EQ("Bring me a shrubbery",
