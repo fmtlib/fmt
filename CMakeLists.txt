@@ -78,7 +78,7 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tinyformat/tinyformat_test.cpp)
     COMMAND echo iostreams results:
     COMMAND ./bloat_test.sh -DUSE_IOSTREAMS
     COMMAND echo format results:
-    COMMAND ./bloat_test.sh -DUSE_FORMAT
+    COMMAND ./bloat_test.sh -DUSE_FORMAT -L.. -lformat
     COMMAND echo tinyformat results:
     COMMAND ./bloat_test.sh -DUSE_TINYFORMAT
     COMMAND echo boost results:
@@ -93,7 +93,7 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tinyformat/tinyformat_test.cpp)
     COMMAND echo iostreams results:
     COMMAND ./bloat_test.sh -O3 -DUSE_IOSTREAMS
     COMMAND echo format results:
-    COMMAND ./bloat_test.sh -O3 -DUSE_FORMAT
+    COMMAND ./bloat_test.sh -O3 -DUSE_FORMAT -L.. -lformat
     COMMAND echo tinyformat results:
     COMMAND ./bloat_test.sh -O3 -DUSE_TINYFORMAT
     COMMAND echo boost results:
