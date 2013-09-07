@@ -419,7 +419,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
   typedef internal::Array<Char, BasicWriter<Char>::INLINE_BUFFER_SIZE> Buffer;
   BasicWriter<Char> &writer = *writer_;
   while (*s) {
-    char c = *s++;
+    Char c = *s++;
     if (c != '{' && c != '}') continue;
     if (*s == c) {
       writer.buffer_.append(start, s);
@@ -439,7 +439,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
       ++s;
 
       // Parse fill and alignment.
-      if (char c = *s) {
+      if (Char c = *s) {
         const Char *p = s + 1;
         spec.align_ = ALIGN_DEFAULT;
         do {
@@ -561,7 +561,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
 
       // Parse type.
       if (*s != '}' && *s)
-        spec.type_ = *s++;
+        spec.type_ = static_cast<char>(*s++);
     }
 
     if (*s++ != '}')
