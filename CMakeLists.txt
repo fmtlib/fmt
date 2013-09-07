@@ -12,7 +12,9 @@ project(FORMAT)
 
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
-add_definitions(-std=c++11)
+if (HAVE_STD_CPP11_FLAG)
+  add_definitions(-std=c++11)
+endif ()
 
 add_library(format format.cc)
 if (CMAKE_COMPILER_IS_GNUCXX)
