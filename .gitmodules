@@ -1,9 +1,9 @@
 [submodule "gtest"]
 	path = gtest
 	url = git://github.com/vitaut/gtest.git
-[submodule "tinyformat"]
-	path = tinyformat
-	url = git://github.com/vitaut/tinyformat.git
+[submodule "format-benchmark"]
+	path = format-benchmark
+	url = git://github.com/vitaut/format-benchmark.git
 [submodule "breathe"]
 	path = breathe
 	url = git://github.com/vitaut/breathe.git
