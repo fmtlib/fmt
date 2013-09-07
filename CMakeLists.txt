@@ -40,9 +40,10 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
   add_test(format_test format_test)
 endif ()
 
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/format-benchmark/tinyformat_test.cpp)
+  add_subdirectory(format-benchmark)
 
-if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tinyformat/tinyformat_test.cpp)
-  add_executable(tinyformat_speed_test tinyformat/tinyformat_test.cpp)
+  add_executable(tinyformat_speed_test format-benchmark/tinyformat_test.cpp)
   target_link_libraries(tinyformat_speed_test format)
   set_target_properties(tinyformat_speed_test PROPERTIES COMPILE_DEFINITIONS
     "SPEED_TEST;HAVE_FORMAT;_SCL_SECURE_NO_WARNINGS")
