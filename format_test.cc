@@ -1032,6 +1032,7 @@ TEST(FormatterTest, WideFormatString) {
   EXPECT_EQ(L"42", str(Format(L"{}") << 42));
   EXPECT_EQ(L"4.2", str(Format(L"{}") << 4.2));
   EXPECT_EQ(L"abc", str(Format(L"{}") << L"abc"));
+  EXPECT_EQ(L"z", str(Format(L"{}") << L'z'));
 }
 
 TEST(FormatterTest, FormatStringFromSpeedTest) {

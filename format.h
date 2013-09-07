@@ -1023,7 +1023,7 @@ class BasicFormatter {
     Arg(double value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(long double value)
     : type(LONG_DOUBLE), long_double_value(value), formatter(0) {}
-    Arg(char value) : type(CHAR), int_value(value), formatter(0) {}
+    Arg(Char value) : type(CHAR), int_value(value), formatter(0) {}
 
     Arg(const Char *value) : type(STRING), formatter(0) {
       string.value = value;
