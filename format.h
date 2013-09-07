@@ -32,7 +32,6 @@
 
 #include <cassert>
 #include <climits>
-#include <cmath>
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
@@ -68,77 +67,6 @@ inline stdext::checked_array_iterator<T*> CheckPtr(T *ptr, std::size_t size) {
 template <typename T>
 inline T *CheckPtr(T *ptr, std::size_t) { return ptr; }
 #endif
-
-#ifndef _MSC_VER
-
-inline int SignBit(double value) {
-  // When compiled in C++11 mode signbit is no longer a macro but a function
-  // defined in namespace std and the macro is undefined.
-  using namespace std;
-  return signbit(value);
-}
-
-inline int IsInf(double x) {
-#ifdef isinf
-  return isinf(x);
-#else
-  return std::isinf(x);
-#endif
-}
-
-#define FMT_SNPRINTF snprintf
-
-#else
-
-inline int SignBit(double value) {
-  if (value < 0) return 1;
-  if (value == value) return 0;
-  int dec = 0, sign = 0;
-  char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
-  _ecvt_s(buffer, sizeof(buffer), value, 0, &dec, &sign);
-  return sign;
-}
-
-inline int IsInf(double x) { return !_finite(x); }
-
-#define FMT_SNPRINTF sprintf_s
-
-#endif  // _MSC_VER
-
-template <typename Char>
-struct CharTraits;
-
-template <>
-struct CharTraits<char> {
-  template <typename T>
-  static int FormatFloat(char *buffer, std::size_t size,
-      const char *format, unsigned width, int precision, T value) {
-    if (width == 0) {
-      return precision < 0 ?
-          FMT_SNPRINTF(buffer, size, format, value) :
-          FMT_SNPRINTF(buffer, size, format, precision, value);
-    }
-    return precision < 0 ?
-        FMT_SNPRINTF(buffer, size, format, width, value) :
-        FMT_SNPRINTF(buffer, size, format, width, precision, value);
-  }
-};
-
-template <>
-struct CharTraits<wchar_t> {
-  template <typename T>
-  static int FormatFloat(wchar_t *buffer, std::size_t size,
-      const wchar_t *format, unsigned width, int precision, T value) {
-    if (width == 0) {
-      return precision < 0 ?
-          swprintf(buffer, size, format, value) :
-          swprintf(buffer, size, format, precision, value);
-    }
-    return precision < 0 ?
-        swprintf(buffer, size, format, width, value) :
-        swprintf(buffer, size, format, width, precision, value);
-  }
-};
 
 // A simple array for POD types with the first SIZE elements stored in
 // the object itself. It supports a subset of std::vector's operations.

@@ -34,6 +34,81 @@
 #include "format.h"
 
 #include <cctype>
+#include <cmath>
+
+namespace {
+
+#ifndef _MSC_VER
+
+inline int SignBit(double value) {
+  // When compiled in C++11 mode signbit is no longer a macro but a function
+  // defined in namespace std and the macro is undefined.
+  using namespace std;
+  return signbit(value);
+}
+
+inline int IsInf(double x) {
+#ifdef isinf
+  return isinf(x);
+#else
+  return std::isinf(x);
+#endif
+}
+
+#define FMT_SNPRINTF snprintf
+
+#else
+
+inline int SignBit(double value) {
+  if (value < 0) return 1;
+  if (value == value) return 0;
+  int dec = 0, sign = 0;
+  char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
+  _ecvt_s(buffer, sizeof(buffer), value, 0, &dec, &sign);
+  return sign;
+}
+
+inline int IsInf(double x) { return !_finite(x); }
+
+#define FMT_SNPRINTF sprintf_s
+
+#endif  // _MSC_VER
+
+template <typename Char>
+struct CharTraits;
+
+template <>
+struct CharTraits<char> {
+  template <typename T>
+  static int FormatFloat(char *buffer, std::size_t size,
+      const char *format, unsigned width, int precision, T value) {
+    if (width == 0) {
+      return precision < 0 ?
+          FMT_SNPRINTF(buffer, size, format, value) :
+          FMT_SNPRINTF(buffer, size, format, precision, value);
+    }
+    return precision < 0 ?
+        FMT_SNPRINTF(buffer, size, format, width, value) :
+        FMT_SNPRINTF(buffer, size, format, width, precision, value);
+  }
+};
+
+template <>
+struct CharTraits<wchar_t> {
+  template <typename T>
+  static int FormatFloat(wchar_t *buffer, std::size_t size,
+      const wchar_t *format, unsigned width, int precision, T value) {
+    if (width == 0) {
+      return precision < 0 ?
+          swprintf(buffer, size, format, value) :
+          swprintf(buffer, size, format, precision, value);
+    }
+    return precision < 0 ?
+        swprintf(buffer, size, format, width, value) :
+        swprintf(buffer, size, format, width, precision, value);
+  }
+};
+}
 
 const char fmt::internal::DIGITS[] =
     "0001020304050607080910111213141516171819"
@@ -156,7 +231,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
   char sign = 0;
   // Use SignBit instead of value < 0 because the latter is always
   // false for NaN.
-  if (internal::SignBit(value)) {
+  if (SignBit(value)) {
     sign = '-';
     value = -value;
   } else if (spec.sign_flag()) {
@@ -178,7 +253,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
     return;
   }
 
-  if (internal::IsInf(value)) {
+  if (IsInf(value)) {
     // Format infinity ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t size = 4;
@@ -231,7 +306,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
   for (;;) {
     std::size_t size = buffer_.capacity() - offset;
     Char *start = &buffer_[offset];
-    int n = internal::CharTraits<Char>::FormatFloat(
+    int n = CharTraits<Char>::FormatFloat(
         start, size, format, width_for_sprintf, precision, value);
     if (n >= 0 && offset + n < buffer_.capacity()) {
       if (sign) {
@@ -568,44 +643,66 @@ void fmt::BasicFormatter<Char>::DoFormat() {
   writer.buffer_.append(start, s);
 }
 
+// Explicit instantiations for char.
+
 template void fmt::BasicWriter<char>::FormatDouble<double>(
     double value, const FormatSpec &spec, int precision);
+
 template void fmt::BasicWriter<char>::FormatDouble<long double>(
     long double value, const FormatSpec &spec, int precision);
+
 template fmt::BasicWriter<char>::CharPtr fmt::BasicWriter<char>::FillPadding(
     CharPtr buffer, unsigned total_size, std::size_t content_size, char fill);
+
 template void fmt::BasicWriter<char>::FormatDecimal(
     CharPtr buffer, uint64_t value, unsigned num_digits);
+
 template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign);
+
 template void fmt::BasicFormatter<char>::ReportError(
     const char *s, StringRef message) const;
+
 template unsigned fmt::BasicFormatter<char>::ParseUInt(const char *&s) const;
+
 template const fmt::BasicFormatter<char>::Arg
     &fmt::BasicFormatter<char>::ParseArgIndex(const char *&s);
+
 template void fmt::BasicFormatter<char>::CheckSign(
     const char *&s, const Arg &arg);
+
 template void fmt::BasicFormatter<char>::DoFormat();
+
+// Explicit instantiations for wchar_t.
 
 template void fmt::BasicWriter<wchar_t>::FormatDouble<double>(
     double value, const FormatSpec &spec, int precision);
+
 template void fmt::BasicWriter<wchar_t>::FormatDouble<long double>(
     long double value, const FormatSpec &spec, int precision);
+
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::FillPadding(
     CharPtr buffer, unsigned total_size, std::size_t content_size, char fill);
+
 template void fmt::BasicWriter<wchar_t>::FormatDecimal(
     CharPtr buffer, uint64_t value, unsigned num_digits);
+
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign);
+
 template void fmt::BasicFormatter<wchar_t>::ReportError(
     const wchar_t *s, StringRef message) const;
+
 template unsigned fmt::BasicFormatter<wchar_t>::ParseUInt(
     const wchar_t *&s) const;
+
 template const fmt::BasicFormatter<wchar_t>::Arg
     &fmt::BasicFormatter<wchar_t>::ParseArgIndex(const wchar_t *&s);
+
 template void fmt::BasicFormatter<wchar_t>::CheckSign(
     const wchar_t *&s, const Arg &arg);
+
 template void fmt::BasicFormatter<wchar_t>::DoFormat();
