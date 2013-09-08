@@ -136,10 +136,11 @@ typename fmt::BasicWriter<Char>::CharPtr
     unsigned total_size, std::size_t content_size, wchar_t fill) {
   std::size_t padding = total_size - content_size;
   std::size_t left_padding = padding / 2;
-  std::fill_n(buffer, left_padding, fill);
+  Char fill_char = static_cast<Char>(fill);
+  std::fill_n(buffer, left_padding, fill_char);
   buffer += left_padding;
   CharPtr content = buffer;
-  std::fill_n(buffer + content_size, padding - left_padding, fill);
+  std::fill_n(buffer + content_size, padding - left_padding, fill_char);
   return content;
 }
 
@@ -179,12 +180,13 @@ typename fmt::BasicWriter<Char>::CharPtr
   CharPtr p = GrowBuffer(width);
   CharPtr end = p + width;
   Alignment align = spec.align();
+  Char fill = static_cast<Char>(spec.fill());
   if (align == ALIGN_LEFT) {
     *p = sign;
     p += size;
-    std::fill(p, end, spec.fill());
+    std::fill(p, end, fill);
   } else if (align == ALIGN_CENTER) {
-    p = FillPadding(p, width, size, spec.fill());
+    p = FillPadding(p, width, size, fill);
     *p = sign;
     p += size;
   } else {
@@ -196,7 +198,7 @@ typename fmt::BasicWriter<Char>::CharPtr
     } else {
       *(end - size) = sign;
     }
-    std::fill(p, end - size, spec.fill());
+    std::fill(p, end - size, fill);
     p = end;
   }
   return p - 1;

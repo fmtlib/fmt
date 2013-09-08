@@ -558,13 +558,14 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::FormatString(
   CharPtr out = CharPtr();
   if (spec.width() > size) {
     out = GrowBuffer(spec.width());
+    Char fill = static_cast<Char>(spec.fill());
     if (spec.align() == ALIGN_RIGHT) {
-      std::fill_n(out, spec.width() - size, spec.fill());
+      std::fill_n(out, spec.width() - size, fill);
       out += spec.width() - size;
     } else if (spec.align() == ALIGN_CENTER) {
-      out = FillPadding(out, spec.width(), size, spec.fill());
+      out = FillPadding(out, spec.width(), size, fill);
     } else {
-      std::fill_n(out + size, spec.width() - size, spec.fill());
+      std::fill_n(out + size, spec.width() - size, fill);
     }
   } else {
     out = GrowBuffer(size);
