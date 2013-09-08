@@ -19,7 +19,7 @@ String Formatting API
 .. doxygenclass:: fmt::Write
    :members:
 
-.. doxygenclass:: fmt::StringRef
+.. doxygenclass:: fmt::BasicStringRef
    :members:
 
 .. doxygenfunction:: fmt::str
@@ -190,8 +190,8 @@ sign-aware zero-padding for numeric types.  This is equivalent to a *fill*
 character of ``'0'`` with an *alignment* type of ``'='``.
 
 The *precision* is a decimal number indicating how many digits should be
-displayed after the decimal point for a floating point value formatted with
-``'f'`` and ``'F'``, or before and after the decimal point for a floating point
+displayed after the decimal point for a floating-point value formatted with
+``'f'`` and ``'F'``, or before and after the decimal point for a floating-point
 value formatted with ``'g'`` or ``'G'``.  For non-number types the field
 indicates the maximum field size - in other words, how many characters will be
 used from the field content. The *precision* is not allowed for integer values.
@@ -225,7 +225,7 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | Type    | Meaning                                                  |
    +=========+==========================================================+
-   | ``'d'`` | Decimal Integer. Outputs the number in base 10.          |
+   | ``'d'`` | Decimal integer. Outputs the number in base 10.          |
    +---------+----------------------------------------------------------+
    | ``'o'`` | Octal format. Outputs the number in base 8.              |
    +---------+----------------------------------------------------------+
@@ -238,7 +238,7 @@ The available integer presentation types are:
    | none    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
 
-The available presentation types for floating point values are:
+The available presentation types for floating-point values are:
 
    +---------+----------------------------------------------------------+
    | Type    | Meaning                                                  |

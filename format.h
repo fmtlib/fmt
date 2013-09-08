@@ -214,7 +214,7 @@ class BasicStringRef {
  public:
   /**
     Constructs a string reference object from a C string and a size.
-    If `size` is zero, which is the default, the size is computed with
+    If *size* is zero, which is the default, the size is computed with
     `strlen`.
    */
   BasicStringRef(const Char *s, std::size_t size = 0) : data_(s), size_(size) {}
@@ -406,9 +406,37 @@ template <typename Char>
 class BasicFormatter;
 
 /**
+  \rst
   This template provides operations for formatting and writing data into
   a character stream. The output is stored in a memory buffer that grows
   dynamically.
+
+  You can use one of the following typedefs for common character types:
+
+  +---------+----------------------+
+  | Type    | Definition           |
+  +=========+======================+
+  | Writer  | BasicWriter<char>    |
+  +---------+----------------------+
+  | WWriter | BasicWriter<wchar_t> |
+  +---------+----------------------+
+
+  **Example**::
+
+     Writer out;
+     out << "The answer is " << 42 << "\n";
+     out.Format("({:+f}, {:+f})") << -3.14 << 3.14;
+
+  This will write the following output to the ``out`` object:
+
+  .. code-block:: none
+
+     The answer is 42
+     (-3.140000, +3.140000)
+
+  The output can be converted to an ``std::string`` with ``out.str()`` or
+  accessed as a C string with ``out.c_str()``.
+  \endrst
  */
 template <typename Char>
 class BasicWriter {
@@ -454,7 +482,7 @@ class BasicWriter {
     *this << IntFormatter<T, FormatSpec>(value, spec);
   }
 
-  // Formats a floating point number (double or long double).
+  // Formats a floating-point number (double or long double).
   template <typename T>
   void FormatDouble(T value, const FormatSpec &spec, int precision);
 
@@ -492,6 +520,32 @@ class BasicWriter {
     return std::basic_string<Char>(&buffer_[0], buffer_.size());
   }
 
+  /**
+    \rst
+    Formats a string sending the output to the writer. Arguments are
+    accepted through the returned ``BasicFormatter`` object using inserter
+    operator ``<<``.
+
+    **Example**::
+
+       Writer out;
+       out.Format("Current point:\n");
+       out.Format("({:+f}, {:+f})") << -3.14 << 3.14;
+
+    This will write the following output to the ``out`` object:
+
+    .. code-block:: none
+
+       Current point:
+       (-3.140000, +3.140000)
+
+    The output can be accessed using :meth:`data` or :meth:`c_str`.
+
+    See also `Format String Syntax`_.
+    \endrst
+   */
+  BasicFormatter<Char> Format(StringRef format);
+
   BasicWriter &operator<<(int value) {
     return *this << IntFormatter<int, TypeSpec<0> >(value, TypeSpec<0>());
   }
@@ -502,11 +556,19 @@ class BasicWriter {
   BasicWriter &operator<<(long value) {
     return *this << IntFormatter<long, TypeSpec<0> >(value, TypeSpec<0>());
   }
+
+  /**
+   Formats *value* and writes it to the stream.
+   */
   BasicWriter &operator<<(unsigned long value) {
     return *this <<
         IntFormatter<unsigned long, TypeSpec<0> >(value, TypeSpec<0>());
   }
 
+  /**
+   Formats *value* using the general format for floating-point numbers
+   (``'g'``) and writes it to the stream.
+   */
   BasicWriter &operator<<(double value) {
     FormatDouble(value, FormatSpec(), -1);
     return *this;
@@ -529,30 +591,6 @@ class BasicWriter {
   void Write(const std::basic_string<char> &s, const FormatSpec &spec) {
     FormatString(s.data(), s.size(), spec);
   }
-
-  /**
-    \rst
-    Formats a string sending the output to the writer. Arguments are
-    accepted through the returned `BasicFormatter` object using inserter
-    operator `<<`.
-
-    **Example**::
-
-       Writer out;
-       out.Format("Current point:\n");
-       out.Format("({:+f}, {:+f})") << -3.14 << 3.14;
-
-    This will write the following output to the ``out`` object:
-
-    .. code-block:: none
-
-       Current point:
-       (-3.140000, +3.140000)
-
-    The output can be accessed using :meth:`data` or :meth:`c_str`.
-    \endrst
-   */
-  BasicFormatter<Char> Format(StringRef format);
 
   void Clear() {
     buffer_.clear();
@@ -990,9 +1028,7 @@ class Formatter : private Action, public BasicFormatter<Char> {
     inactive_(false) {
   }
 
-  /**
-    Constructs a formatter from a proxy object.
-   */
+  // Constructs a formatter from a proxy object.
   Formatter(const Proxy &p)
   : Action(p.action), BasicFormatter<Char>(writer_, p.format),
     inactive_(false) {
@@ -1008,9 +1044,7 @@ class Formatter : private Action, public BasicFormatter<Char> {
     }
   }
 
-  /**
-    Converts the formatter into a proxy object.
-   */
+  // Converts the formatter into a proxy object.
   operator Proxy() {
     inactive_ = true;
     return Proxy(this->TakeFormatString(), *this);
