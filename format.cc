@@ -108,14 +108,14 @@ struct CharTraits<wchar_t> {
         swprintf(buffer, size, format, width, precision, value);
   }
 };
-}
 
-const char fmt::internal::DIGITS[] =
+const char DIGITS[] =
     "0001020304050607080910111213141516171819"
     "2021222324252627282930313233343536373839"
     "4041424344454647484950515253545556575859"
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
+}
 
 void fmt::internal::ReportUnknownType(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
@@ -131,8 +131,9 @@ void fmt::internal::ReportUnknownType(char code, const char *type) {
 // Fills the padding around the content and returns the pointer to the
 // content area.
 template <typename Char>
-typename fmt::BasicWriter<Char>::CharPtr fmt::BasicWriter<Char>::FillPadding(
-    CharPtr buffer, unsigned total_size, std::size_t content_size, char fill) {
+typename fmt::BasicWriter<Char>::CharPtr
+  fmt::BasicWriter<Char>::FillPadding(CharPtr buffer,
+    unsigned total_size, std::size_t content_size, wchar_t fill) {
   std::size_t padding = total_size - content_size;
   std::size_t left_padding = padding / 2;
   std::fill_n(buffer, left_padding, fill);
@@ -152,8 +153,8 @@ void fmt::BasicWriter<Char>::FormatDecimal(
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     unsigned index = (value % 100) * 2;
     value /= 100;
-    buffer[num_digits] = internal::DIGITS[index + 1];
-    buffer[num_digits - 1] = internal::DIGITS[index];
+    buffer[num_digits] = DIGITS[index + 1];
+    buffer[num_digits - 1] = DIGITS[index];
     num_digits -= 2;
   }
   if (value < 10) {
@@ -161,8 +162,8 @@ void fmt::BasicWriter<Char>::FormatDecimal(
     return;
   }
   unsigned index = static_cast<unsigned>(value * 2);
-  buffer[1] = internal::DIGITS[index + 1];
-  buffer[0] = internal::DIGITS[index];
+  buffer[1] = DIGITS[index + 1];
+  buffer[0] = DIGITS[index];
 }
 
 template <typename Char>
@@ -651,8 +652,9 @@ template void fmt::BasicWriter<char>::FormatDouble<double>(
 template void fmt::BasicWriter<char>::FormatDouble<long double>(
     long double value, const FormatSpec &spec, int precision);
 
-template fmt::BasicWriter<char>::CharPtr fmt::BasicWriter<char>::FillPadding(
-    CharPtr buffer, unsigned total_size, std::size_t content_size, char fill);
+template fmt::BasicWriter<char>::CharPtr
+  fmt::BasicWriter<char>::FillPadding(CharPtr buffer,
+    unsigned total_size, std::size_t content_size, wchar_t fill);
 
 template void fmt::BasicWriter<char>::FormatDecimal(
     CharPtr buffer, uint64_t value, unsigned num_digits);
@@ -683,8 +685,8 @@ template void fmt::BasicWriter<wchar_t>::FormatDouble<long double>(
     long double value, const FormatSpec &spec, int precision);
 
 template fmt::BasicWriter<wchar_t>::CharPtr
-  fmt::BasicWriter<wchar_t>::FillPadding(
-    CharPtr buffer, unsigned total_size, std::size_t content_size, char fill);
+  fmt::BasicWriter<wchar_t>::FillPadding(CharPtr buffer,
+      unsigned total_size, std::size_t content_size, wchar_t fill);
 
 template void fmt::BasicWriter<wchar_t>::FormatDecimal(
     CharPtr buffer, uint64_t value, unsigned num_digits);

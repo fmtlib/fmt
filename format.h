@@ -169,8 +169,6 @@ struct IsLongDouble { enum {VALUE = 0}; };
 template <>
 struct IsLongDouble<long double> { enum {VALUE = 1}; };
 
-extern const char DIGITS[];
-
 void ReportUnknownType(char code, const char *type);
 
 // Returns the number of decimal digits in n. Leading zeros are not counted
@@ -281,18 +279,20 @@ struct TypeSpec : Spec {
 
 struct WidthSpec {
   unsigned width_;
-  char fill_;
+  // Fill is always wchar_t and cast to char if necessary to avoid having
+  // two specialization of WidthSpec and its subclasses.
+  wchar_t fill_;
 
-  WidthSpec(unsigned width, char fill) : width_(width), fill_(fill) {}
+  WidthSpec(unsigned width, wchar_t fill) : width_(width), fill_(fill) {}
 
   unsigned width() const { return width_; }
-  char fill() const { return fill_; }
+  wchar_t fill() const { return fill_; }
 };
 
 struct AlignSpec : WidthSpec {
   Alignment align_;
 
-  AlignSpec(unsigned width, char fill)
+  AlignSpec(unsigned width, wchar_t fill)
   : WidthSpec(width, fill), align_(ALIGN_DEFAULT) {}
 
   Alignment align() const { return align_; }
@@ -300,7 +300,7 @@ struct AlignSpec : WidthSpec {
 
 template <char TYPE>
 struct AlignTypeSpec : AlignSpec {
-  AlignTypeSpec(unsigned width, char fill) : AlignSpec(width, fill) {}
+  AlignTypeSpec(unsigned width, wchar_t fill) : AlignSpec(width, fill) {}
 
   bool sign_flag() const { return false; }
   bool plus_flag() const { return false; }
@@ -313,7 +313,7 @@ struct FormatSpec : AlignSpec {
   unsigned flags_;
   char type_;
 
-  FormatSpec(unsigned width = 0, char type = 0, char fill = ' ')
+  FormatSpec(unsigned width = 0, char type = 0, wchar_t fill = ' ')
   : AlignSpec(width, fill), flags_(0), type_(type) {}
 
   Alignment align() const { return align_; }
@@ -368,7 +368,7 @@ IntFormatter<int, TypeSpec<'X'> > hexu(int value);
  */
 template <char TYPE_CODE>
 IntFormatter<int, AlignTypeSpec<TYPE_CODE> > pad(
-    int value, unsigned width, char fill = ' ');
+    int value, unsigned width, wchar_t fill = ' ');
 
 #define DEFINE_INT_FORMATTERS(TYPE) \
 inline IntFormatter<TYPE, TypeSpec<'o'> > oct(TYPE value) { \
@@ -386,13 +386,13 @@ inline IntFormatter<TYPE, TypeSpec<'X'> > hexu(TYPE value) { \
 template <char TYPE_CODE> \
 inline IntFormatter<TYPE, AlignTypeSpec<TYPE_CODE> > pad( \
     IntFormatter<TYPE, TypeSpec<TYPE_CODE> > f, \
-    unsigned width, char fill = ' ') { \
+    unsigned width, wchar_t fill = ' ') { \
   return IntFormatter<TYPE, AlignTypeSpec<TYPE_CODE> >( \
       f.value(), AlignTypeSpec<TYPE_CODE>(width, fill)); \
 } \
  \
 inline IntFormatter<TYPE, AlignTypeSpec<0> > pad( \
-    TYPE value, unsigned width, char fill = ' ') { \
+    TYPE value, unsigned width, wchar_t fill = ' ') { \
   return IntFormatter<TYPE, AlignTypeSpec<0> >( \
       value, AlignTypeSpec<0>(width, fill)); \
 }
@@ -430,7 +430,7 @@ class BasicWriter {
       CharPtr buffer, uint64_t value, unsigned num_digits);
 
   static CharPtr FillPadding(CharPtr buffer,
-      unsigned total_size, std::size_t content_size, char fill);
+      unsigned total_size, std::size_t content_size, wchar_t fill);
 
   // Grows the buffer by n characters and returns a pointer to the newly
   // allocated area.
