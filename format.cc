@@ -598,14 +598,15 @@ void fmt::BasicFormatter<Char>::DoFormat() {
       typedef typename BasicWriter<Char>::CharPtr CharPtr;
       CharPtr out = CharPtr();
       if (spec.width_ > 1) {
+        Char fill = static_cast<Char>(spec.fill());
         out = writer.GrowBuffer(spec.width_);
         if (spec.align_ == ALIGN_RIGHT) {
-          std::fill_n(out, spec.width_ - 1, spec.fill_);
+          std::fill_n(out, spec.width_ - 1, fill);
           out += spec.width_ - 1;
         } else if (spec.align_ == ALIGN_CENTER) {
-          out = writer.FillPadding(out, spec.width_, 1, spec.fill_);
+          out = writer.FillPadding(out, spec.width_, 1, fill);
         } else {
-          std::fill_n(out + 1, spec.width_ - 1, spec.fill_);
+          std::fill_n(out + 1, spec.width_ - 1, fill);
         }
       } else {
         out = writer.GrowBuffer(1);
