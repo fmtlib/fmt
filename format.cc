@@ -304,6 +304,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
   *format_ptr = '\0';
 
   // Format using snprintf.
+  Char fill = static_cast<Char>(spec.fill());
   for (;;) {
     std::size_t size = buffer_.capacity() - offset;
     Char *start = &buffer_[offset];
@@ -316,7 +317,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
           *(start - 1) = sign;
           sign = 0;
         } else {
-          *(start - 1) = spec.fill();
+          *(start - 1) = fill;
         }
         ++n;
       }
@@ -325,12 +326,12 @@ void fmt::BasicWriter<Char>::FormatDouble(
         unsigned width = spec.width();
         CharPtr p = GrowBuffer(width);
         std::copy(p, p + n, p + (width - n) / 2);
-        FillPadding(p, spec.width(), n, spec.fill());
+        FillPadding(p, spec.width(), n, fill);
         return;
       }
       if (spec.fill() != ' ' || sign) {
         while (*start == ' ')
-          *start++ = spec.fill();
+          *start++ = fill;
         if (sign)
           *(start - 1) = sign;
       }
