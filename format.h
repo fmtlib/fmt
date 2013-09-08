@@ -499,6 +499,14 @@ class BasicWriter {
     return *this << IntFormatter<unsigned, TypeSpec<0> >(value, TypeSpec<0>());
   }
 
+  BasicWriter &operator<<(long value) {
+    return *this << IntFormatter<long, TypeSpec<0> >(value, TypeSpec<0>());
+  }
+  BasicWriter &operator<<(unsigned long value) {
+    return *this <<
+        IntFormatter<unsigned long, TypeSpec<0> >(value, TypeSpec<0>());
+  }
+
   BasicWriter &operator<<(double value) {
     FormatDouble(value, FormatSpec(), -1);
     return *this;

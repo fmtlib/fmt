@@ -220,9 +220,33 @@ TEST(WriterTest, WriterCtor) {
   EXPECT_EQ("", w.str());
 }
 
+TEST(WriterTest, WriterData) {
+  Writer w;
+  w << 42;
+  EXPECT_EQ("42", std::string(w.data(), w.size()));
+}
+
 TEST(WriterTest, WriteInt) {
   EXPECT_EQ("42", str(Writer() << 42));
   EXPECT_EQ("-42", str(Writer() << -42));
+  EXPECT_EQ("12", str(Writer() << static_cast<short>(12)));
+  EXPECT_EQ("34", str(Writer() << 34u));
+  EXPECT_EQ("56", str(Writer() << 56l));
+  EXPECT_EQ("78", str(Writer() << 78ul));
+
+  char buffer[BUFFER_SIZE];
+  SPrintf(buffer, "%d", INT_MIN);
+  EXPECT_EQ(buffer, str(Writer() << INT_MIN));
+  SPrintf(buffer, "%d", INT_MAX);
+  EXPECT_EQ(buffer, str(Writer() << INT_MAX));
+  SPrintf(buffer, "%u", UINT_MAX);
+  EXPECT_EQ(buffer, str(Writer() << UINT_MAX));
+  SPrintf(buffer, "%ld", 0 - static_cast<unsigned long>(LONG_MIN));
+  EXPECT_EQ(buffer, str(Writer() << LONG_MIN));
+  SPrintf(buffer, "%ld", LONG_MAX);
+  EXPECT_EQ(buffer, str(Writer() << LONG_MAX));
+  SPrintf(buffer, "%lu", ULONG_MAX);
+  EXPECT_EQ(buffer, str(Writer() << ULONG_MAX));
 }
 
 TEST(WriterTest, oct) {
