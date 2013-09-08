@@ -27,7 +27,8 @@ Features
 * Reliability: the library has an extensive set of `unit tests
   <https://github.com/vitaut/format/blob/master/format_test.cc>`__.
 * Safety: the library is fully type safe, errors in format strings are
-  reported using exceptions.
+  reported using exceptions, automatic memory management prevents buffer
+  overflow errors.
 * Ease of use: small self-contained code base, no external dependencies,
   permissive BSD `license`_.
 * `Portability`_ with consistent output across platforms and support
@@ -74,12 +75,11 @@ An object of any user-defined type for which there is an overloaded
       Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
 
       friend std::ostream &operator<<(std::ostream &os, const Date &d) {
-        os << d.year_ << '-' << d.month_ << '-' << d.day_;
-        return os;
+        return os << d.year_ << '-' << d.month_ << '-' << d.day_;
       }
     };
 
-    std::string s = str(fmt::Format("The date is {0}") << Date(2012, 12, 9));
+    std::string s = str(fmt::Format("The date is {}") << Date(2012, 12, 9));
     // s == "The date is 2012-12-9"
 
 You can use `fmt::Formatter
