@@ -213,14 +213,14 @@ TEST(ArrayTest, Append) {
   EXPECT_EQ(15u, array.capacity());
 }
 
-TEST(WriterTest, WriterCtor) {
+TEST(WriterTest, Ctor) {
   Writer w;
   EXPECT_EQ(0u, w.size());
   EXPECT_STREQ("", w.c_str());
   EXPECT_EQ("", w.str());
 }
 
-TEST(WriterTest, WriterData) {
+TEST(WriterTest, Data) {
   Writer w;
   w << 42;
   EXPECT_EQ("42", std::string(w.data(), w.size()));
@@ -247,6 +247,17 @@ TEST(WriterTest, WriteInt) {
   EXPECT_EQ(buffer, str(Writer() << LONG_MAX));
   SPrintf(buffer, "%lu", ULONG_MAX);
   EXPECT_EQ(buffer, str(Writer() << ULONG_MAX));
+}
+
+
+TEST(WriterTest, WriteDouble) {
+  EXPECT_EQ("4.2", str(Writer() << 4.2));
+  EXPECT_EQ("-4.2", str(Writer() << -4.2));
+  EXPECT_EQ("4.2", str(Writer() << 4.2l));
+}
+
+TEST(WriterTest, WriteString) {
+  EXPECT_EQ("abc", str(Writer() << "abc"));
 }
 
 TEST(WriterTest, oct) {
@@ -277,15 +288,6 @@ TEST(WriterTest, hexu) {
   EXPECT_EQ("BABE", str(Writer() << hexu(0xbabeu)));
   EXPECT_EQ("DEAD", str(Writer() << hexu(0xdeadl)));
   EXPECT_EQ("BEEF", str(Writer() << hexu(0xbeeful)));
-}
-
-TEST(WriterTest, WriteDouble) {
-  EXPECT_EQ("4.2", str(Writer() << 4.2));
-  EXPECT_EQ("-4.2", str(Writer() << -4.2));
-}
-
-TEST(WriterTest, WriteString) {
-  EXPECT_EQ("abc", str(Writer() << "abc"));
 }
 
 class Date {

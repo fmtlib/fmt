@@ -552,24 +552,28 @@ class BasicWriter {
   BasicWriter &operator<<(unsigned value) {
     return *this << IntFormatter<unsigned, TypeSpec<0> >(value, TypeSpec<0>());
   }
-
   BasicWriter &operator<<(long value) {
     return *this << IntFormatter<long, TypeSpec<0> >(value, TypeSpec<0>());
   }
 
   /**
-   Formats *value* and writes it to the stream.
+    Formats *value* and writes it to the stream.
    */
   BasicWriter &operator<<(unsigned long value) {
     return *this <<
         IntFormatter<unsigned long, TypeSpec<0> >(value, TypeSpec<0>());
   }
 
-  /**
-   Formats *value* using the general format for floating-point numbers
-   (``'g'``) and writes it to the stream.
-   */
   BasicWriter &operator<<(double value) {
+    FormatDouble(value, FormatSpec(), -1);
+    return *this;
+  }
+
+  /**
+    Formats *value* using the general format for floating-point numbers
+    (``'g'``) and writes it to the stream.
+   */
+  BasicWriter &operator<<(long double value) {
     FormatDouble(value, FormatSpec(), -1);
     return *this;
   }
