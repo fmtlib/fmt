@@ -46,6 +46,10 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
   add_test(format_test format_test)
 endif ()
 
+find_package(Boost)
+if (Boost_FOUND)
+  add_definitions(-DHAVE_BOOST)
+endif ()
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/format-benchmark/tinyformat_test.cpp)
   add_subdirectory(format-benchmark)
 
