@@ -44,6 +44,9 @@
 
 #include <stdint.h>
 
+#undef min
+#undef max
+
 using std::size_t;
 
 using fmt::internal::Array;
