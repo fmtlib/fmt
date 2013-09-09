@@ -55,8 +55,10 @@
 # define FMT_NOEXCEPT(expr)
 #endif
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wlong-long"
+#ifdef __GNUC__
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wlong-long"
+#endif
 
 namespace fmt {
 
@@ -1168,6 +1170,8 @@ inline Formatter<Write> Print(StringRef format) {
 }
 }
 
-#pragma GCC diagnostic pop
+#ifdef __GNUC__
+# pragma GCC diagnostic pop
+#endif
 
 #endif  // FORMAT_H_
