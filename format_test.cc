@@ -32,6 +32,7 @@
 #include <cstring>
 #include <iomanip>
 #include <memory>
+#include <sstream>
 #include <gtest/gtest.h>
 
 // Check if format.h compiles with windows.h included.
@@ -84,6 +85,23 @@ using fmt::pad;
 #define EXPECT_THROW_MSG(statement, expected_exception, expected_message) \
   FORMAT_TEST_THROW_(statement, expected_exception, expected_message, \
       GTEST_NONFATAL_FAILURE_)
+
+struct WriteChecker {
+  template <typename T>
+  ::testing::AssertionResult operator()(const char *, const T &value) const {
+    std::ostringstream os;
+    os << value;
+    std::string expected = os.str(), actual = str(Writer() << value);
+    if (expected == actual)
+      return ::testing::AssertionSuccess();
+    return ::testing::AssertionFailure()
+        << "Value of: str(Writer() << value)\n"
+        << "  Actual: " << actual << "\n"
+        << "Expected: " << expected << "\n";
+  }
+};
+
+#define CHECK_WRITE(value) ASSERT_PRED_FORMAT1(WriteChecker(), value)
 
 // Increment a number in a string.
 void Increment(char *s) {
@@ -227,37 +245,39 @@ TEST(WriterTest, Data) {
 }
 
 TEST(WriterTest, WriteInt) {
-  EXPECT_EQ("42", str(Writer() << 42));
-  EXPECT_EQ("-42", str(Writer() << -42));
-  EXPECT_EQ("12", str(Writer() << static_cast<short>(12)));
-  EXPECT_EQ("34", str(Writer() << 34u));
-  EXPECT_EQ("56", str(Writer() << 56l));
-  EXPECT_EQ("78", str(Writer() << 78ul));
-
-  char buffer[BUFFER_SIZE];
-  SPrintf(buffer, "%d", INT_MIN);
-  EXPECT_EQ(buffer, str(Writer() << INT_MIN));
-  SPrintf(buffer, "%d", INT_MAX);
-  EXPECT_EQ(buffer, str(Writer() << INT_MAX));
-  SPrintf(buffer, "%u", UINT_MAX);
-  EXPECT_EQ(buffer, str(Writer() << UINT_MAX));
-  SPrintf(buffer, "%ld", 0 - static_cast<unsigned long>(LONG_MIN));
-  EXPECT_EQ(buffer, str(Writer() << LONG_MIN));
-  SPrintf(buffer, "%ld", LONG_MAX);
-  EXPECT_EQ(buffer, str(Writer() << LONG_MAX));
-  SPrintf(buffer, "%lu", ULONG_MAX);
-  EXPECT_EQ(buffer, str(Writer() << ULONG_MAX));
+  CHECK_WRITE(42);
+  CHECK_WRITE(-42);
+  CHECK_WRITE(static_cast<short>(12));
+  CHECK_WRITE(34u);
+  CHECK_WRITE(std::numeric_limits<int>::min());
+  CHECK_WRITE(std::numeric_limits<int>::max());
+  CHECK_WRITE(std::numeric_limits<unsigned>::max());
 }
 
+TEST(WriterTest, WriteLong) {
+  CHECK_WRITE(56l);
+  CHECK_WRITE(78ul);
+  CHECK_WRITE(std::numeric_limits<long>::min());
+  CHECK_WRITE(std::numeric_limits<long>::max());
+  CHECK_WRITE(std::numeric_limits<unsigned long>::max());
+}
+
+TEST(WriterTest, WriteLongLong) {
+  CHECK_WRITE(56ll);
+  CHECK_WRITE(78ull);
+  CHECK_WRITE(std::numeric_limits<long long>::min());
+  CHECK_WRITE(std::numeric_limits<long long>::max());
+  CHECK_WRITE(std::numeric_limits<unsigned long long>::max());
+}
 
 TEST(WriterTest, WriteDouble) {
-  EXPECT_EQ("4.2", str(Writer() << 4.2));
-  EXPECT_EQ("-4.2", str(Writer() << -4.2));
-  EXPECT_EQ("4.2", str(Writer() << 4.2l));
+  CHECK_WRITE(4.2);
+  CHECK_WRITE(-4.2);
+  CHECK_WRITE(4.2l);
 }
 
 TEST(WriterTest, WriteString) {
-  EXPECT_EQ("abc", str(Writer() << "abc"));
+  CHECK_WRITE("abc");
 }
 
 TEST(WriterTest, oct) {
@@ -1220,6 +1240,10 @@ TEST(FormatterTest, Examples) {
 
   std::string path = "somefile";
   ReportError("File not found: {0}") << path;
+}
+
+TEST(FormatIntTest, FormatInt) {
+  EXPECT_EQ("42", fmt::FormatInt(42).str());
 }
 
 template <typename T>

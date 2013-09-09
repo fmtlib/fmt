@@ -558,13 +558,20 @@ class BasicWriter {
   BasicWriter &operator<<(long value) {
     return *this << IntFormatter<long, TypeSpec<0> >(value, TypeSpec<0>());
   }
+  BasicWriter &operator<<(unsigned long value) {
+    return *this <<
+        IntFormatter<unsigned long, TypeSpec<0> >(value, TypeSpec<0>());
+  }
+  BasicWriter &operator<<(long long value) {
+    return *this << IntFormatter<long long, TypeSpec<0> >(value, TypeSpec<0>());
+  }
 
   /**
     Formats *value* and writes it to the stream.
    */
-  BasicWriter &operator<<(unsigned long value) {
+  BasicWriter &operator<<(unsigned long long value) {
     return *this <<
-        IntFormatter<unsigned long, TypeSpec<0> >(value, TypeSpec<0>());
+        IntFormatter<unsigned long long, TypeSpec<0> >(value, TypeSpec<0>());
   }
 
   BasicWriter &operator<<(double value) {
@@ -586,9 +593,10 @@ class BasicWriter {
     return *this;
   }
 
-  BasicWriter &operator<<(const Char *value) {
-    std::size_t size = std::strlen(value);
-    std::copy(value, value + size, GrowBuffer(size));
+  BasicWriter &operator<<(const fmt::StringRef value) {
+    const char *str = value.c_str();
+    std::size_t size = value.size();
+    std::copy(str, str + size, GrowBuffer(size));
     return *this;
   }
 
