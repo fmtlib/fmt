@@ -37,6 +37,7 @@
 #include <cstring>
 #include <algorithm>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <sstream>
