@@ -188,6 +188,8 @@ inline unsigned CountDigits(uint64_t n) {
   }
 }
 
+extern const char DIGITS[];
+
 template <typename Char>
 class FormatterProxy;
 }
@@ -1053,6 +1055,56 @@ class Formatter : private Action, public BasicFormatter<Char> {
     inactive_ = true;
     return Proxy(this->TakeFormatString(), *this);
   }
+};
+
+/**
+  Fast integer formatter.
+ */
+class FormatInt {
+ private:
+  // Buffer should be large enough to hold all digits (digits10 + 1),
+  // a sign and a null character.
+  enum {BUFFER_SIZE = std::numeric_limits<uint64_t>::digits10 + 3};
+  char buffer_[BUFFER_SIZE];
+  char *str_;
+
+  // Formats value in reverse and returns the number of digits.
+  char *FormatDecimal(uint64_t value) {
+    char *buffer_end = buffer_ + BUFFER_SIZE;
+    *--buffer_end = '\0';
+    while (value >= 100) {
+      // Integer division is slow so do it for a group of two digits instead
+      // of for every digit. The idea comes from the talk by Alexandrescu
+      // "Three Optimization Tips for C++". See speed-test for a comparison.
+      unsigned index = (value % 100) * 2;
+      value /= 100;
+      *--buffer_end = internal::DIGITS[index + 1];
+      *--buffer_end = internal::DIGITS[index];
+    }
+    if (value < 10) {
+      *--buffer_end = static_cast<char>('0' + value);
+      return buffer_end;
+    }
+    unsigned index = static_cast<unsigned>(value * 2);
+    *--buffer_end = internal::DIGITS[index + 1];
+    *--buffer_end = internal::DIGITS[index];
+    return buffer_end;
+  }
+
+ public:
+  explicit FormatInt(int value) {
+    uint64_t abs_value = value;
+    bool negative = value < 0;
+    if (negative)
+      abs_value = 0 - value;
+    str_ = FormatDecimal(abs_value);
+    if (negative)
+      *--str_ = '-';
+  }
+  explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
+
+  const char *c_str() const { return str_; }
+  std::string str() const { return str_; }
 };
 
 /**

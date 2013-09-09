@@ -108,14 +108,14 @@ struct CharTraits<wchar_t> {
         swprintf(buffer, size, format, width, precision, value);
   }
 };
+}
 
-const char DIGITS[] =
+const char fmt::internal::DIGITS[] =
     "0001020304050607080910111213141516171819"
     "2021222324252627282930313233343536373839"
     "4041424344454647484950515253545556575859"
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
-}
 
 void fmt::internal::ReportUnknownType(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
@@ -154,8 +154,8 @@ void fmt::BasicWriter<Char>::FormatDecimal(
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     unsigned index = (value % 100) * 2;
     value /= 100;
-    buffer[num_digits] = DIGITS[index + 1];
-    buffer[num_digits - 1] = DIGITS[index];
+    buffer[num_digits] = internal::DIGITS[index + 1];
+    buffer[num_digits - 1] = internal::DIGITS[index];
     num_digits -= 2;
   }
   if (value < 10) {
@@ -163,8 +163,8 @@ void fmt::BasicWriter<Char>::FormatDecimal(
     return;
   }
   unsigned index = static_cast<unsigned>(value * 2);
-  buffer[1] = DIGITS[index + 1];
-  buffer[0] = DIGITS[index];
+  buffer[1] = internal::DIGITS[index + 1];
+  buffer[0] = internal::DIGITS[index];
 }
 
 template <typename Char>
