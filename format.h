@@ -164,6 +164,9 @@ struct IntTraits<int> : SignedIntTraits<int, unsigned> {};
 template <>
 struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
 
+template <>
+struct IntTraits<long long> : SignedIntTraits<long long, unsigned long long> {};
+
 template <typename T>
 struct IsLongDouble { enum {VALUE = 0}; };
 
