@@ -628,6 +628,9 @@ class BasicWriter {
     return *this;
   }
 
+  /**
+    Writes *value* to the stream.
+   */
   BasicWriter &operator<<(const fmt::BasicStringRef<Char> value) {
     const Char *str = value.c_str();
     std::size_t size = value.size();
@@ -1038,7 +1041,7 @@ class NoAction {
       }
     };
 
-    // Formats an error message and prints it to std::cerr.
+    // Formats an error message and prints it to stdout.
     fmt::Formatter<PrintError> ReportError(const char *format) {
       return fmt::Formatter<PrintError>(format);
     }
@@ -1183,7 +1186,7 @@ inline Formatter<NoAction, wchar_t> Format(WStringRef format) {
 /** A formatting action that writes formatted output to stdout. */
 class Write {
  public:
-  /** Write the output to stdout. */
+  /** Writes the output to stdout. */
   void operator()(const BasicWriter<char> &w) const {
     std::fwrite(w.data(), 1, w.size(), stdout);
   }
