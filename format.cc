@@ -73,41 +73,34 @@ inline int IsInf(double x) { return !_finite(x); }
 #define FMT_SNPRINTF sprintf_s
 
 #endif  // _MSC_VER
+}
 
-template <typename Char>
-struct CharTraits;
-
-template <>
-struct CharTraits<char> {
-  template <typename T>
-  static int FormatFloat(char *buffer, std::size_t size,
-      const char *format, unsigned width, int precision, T value) {
-    if (width == 0) {
-      return precision < 0 ?
-          FMT_SNPRINTF(buffer, size, format, value) :
-          FMT_SNPRINTF(buffer, size, format, precision, value);
-    }
+template <typename T>
+int fmt::internal::CharTraits<char>::FormatFloat(
+    char *buffer, std::size_t size, const char *format,
+    unsigned width, int precision, T value) {
+  if (width == 0) {
     return precision < 0 ?
-        FMT_SNPRINTF(buffer, size, format, width, value) :
-        FMT_SNPRINTF(buffer, size, format, width, precision, value);
+        FMT_SNPRINTF(buffer, size, format, value) :
+        FMT_SNPRINTF(buffer, size, format, precision, value);
   }
-};
+  return precision < 0 ?
+      FMT_SNPRINTF(buffer, size, format, width, value) :
+      FMT_SNPRINTF(buffer, size, format, width, precision, value);
+}
 
-template <>
-struct CharTraits<wchar_t> {
-  template <typename T>
-  static int FormatFloat(wchar_t *buffer, std::size_t size,
-      const wchar_t *format, unsigned width, int precision, T value) {
-    if (width == 0) {
-      return precision < 0 ?
-          swprintf(buffer, size, format, value) :
-          swprintf(buffer, size, format, precision, value);
-    }
+template <typename T>
+int fmt::internal::CharTraits<wchar_t>::FormatFloat(
+    wchar_t *buffer, std::size_t size, const wchar_t *format,
+    unsigned width, int precision, T value) {
+  if (width == 0) {
     return precision < 0 ?
-        swprintf(buffer, size, format, width, value) :
-        swprintf(buffer, size, format, width, precision, value);
+        swprintf(buffer, size, format, value) :
+        swprintf(buffer, size, format, precision, value);
   }
-};
+  return precision < 0 ?
+      swprintf(buffer, size, format, width, value) :
+      swprintf(buffer, size, format, width, precision, value);
 }
 
 const char fmt::internal::DIGITS[] =
@@ -310,7 +303,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
   for (;;) {
     std::size_t size = buffer_.capacity() - offset;
     Char *start = &buffer_[offset];
-    int n = CharTraits<Char>::FormatFloat(
+    int n = internal::CharTraits<Char>::FormatFloat(
         start, size, format, width_for_sprintf, precision, value);
     if (n >= 0 && offset + n < buffer_.capacity()) {
       if (sign) {

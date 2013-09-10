@@ -148,6 +148,27 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
   size_ += num_elements;
 }
 
+template <typename Char>
+struct CharTraits;
+
+template <>
+struct CharTraits<char> {
+  typedef wchar_t UnsupportedType;
+
+  template <typename T>
+  static int FormatFloat(char *buffer, std::size_t size,
+      const char *format, unsigned width, int precision, T value);
+};
+
+template <>
+struct CharTraits<wchar_t> {
+  typedef char UnsupportedType;
+
+  template <typename T>
+  static int FormatFloat(wchar_t *buffer, std::size_t size,
+      const wchar_t *format, unsigned width, int precision, T value);
+};
+
 // Information about an integer type.
 // IntTraits is not specialized for integer types smaller than int,
 // since these are promoted to int.
@@ -501,6 +522,12 @@ class BasicWriter {
   CharPtr FormatString(const StringChar *s,
       std::size_t size, const FormatSpec &spec);
 
+  // This method is private to disallow writing a wide string to a
+  // char stream and vice versa. If you want to print a wide string
+  // as a pointer as std::ostream does, cast it to const void*.
+  // Do not implement!
+  void operator<<(const typename internal::CharTraits<Char>::UnsupportedType *);
+
  public:
   /**
     Returns the number of characters written to the output buffer.
@@ -596,13 +623,13 @@ class BasicWriter {
     return *this;
   }
 
-  BasicWriter &operator<<(Char value) {
+  BasicWriter &operator<<(char value) {
     *GrowBuffer(1) = value;
     return *this;
   }
 
-  BasicWriter &operator<<(const fmt::StringRef value) {
-    const char *str = value.c_str();
+  BasicWriter &operator<<(const fmt::BasicStringRef<Char> value) {
+    const Char *str = value.c_str();
     std::size_t size = value.size();
     std::copy(str, str + size, GrowBuffer(size));
     return *this;
