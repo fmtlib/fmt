@@ -1140,7 +1140,7 @@ class FormatInt {
 
  public:
   explicit FormatInt(int value) {
-    uint64_t abs_value = value;
+    unsigned abs_value = value;
     bool negative = value < 0;
     if (negative)
       abs_value = 0 - value;

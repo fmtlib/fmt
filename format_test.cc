@@ -1287,6 +1287,7 @@ TEST(FormatterTest, Examples) {
 
 TEST(FormatIntTest, FormatInt) {
   EXPECT_EQ("42", fmt::FormatInt(42).str());
+  EXPECT_EQ("-42", fmt::FormatInt(-42).str());
 }
 
 template <typename T>
