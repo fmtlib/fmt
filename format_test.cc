@@ -167,7 +167,6 @@ TEST(UtilTest, Increment) {
   EXPECT_STREQ("129", s);
   Increment(s);
   EXPECT_STREQ("130", s);
-  EXPECT_STREQ("130", s);
   s[1] = s[2] = '9';
   Increment(s);
   EXPECT_STREQ("200", s);
@@ -332,6 +331,15 @@ TEST(WriterTest, oct) {
   EXPECT_EQ("70", str(Writer() << oct(070ul)));
 }
 
+TEST(WriterTest, bin) {
+  using fmt::bin;
+  EXPECT_EQ("1100101011111110", str(Writer() << bin(0xcafe)));
+  EXPECT_EQ("1011101010111110", str(Writer() << bin(0xbabeu)));
+  EXPECT_EQ("1101111010101101", str(Writer() << bin(0xdeadl)));
+  EXPECT_EQ("1011111011101111", str(Writer() << bin(0xbeeful)));
+  EXPECT_EQ("1111111111111111111111111111111111111111111111111111111111111111", str(Writer() << bin(0xffffffffffffffffull)));
+}
+
 TEST(WriterTest, hex) {
   using fmt::hex;
   fmt::IntFormatter<int, fmt::TypeSpec<'x'> > (*phex)(int value) = hex;
@@ -343,6 +351,8 @@ TEST(WriterTest, hex) {
   EXPECT_EQ("babe", str(Writer() << hex(0xbabeu)));
   EXPECT_EQ("dead", str(Writer() << hex(0xdeadl)));
   EXPECT_EQ("beef", str(Writer() << hex(0xbeeful)));
+  EXPECT_EQ("beefbeefbeefbeef", str(Writer() << hex(0xbeefbeefbeefbeefull)));
+  EXPECT_EQ("ffffffffffffffff", str(Writer() << hex(0xffffffffffffffffull)));
 }
 
 TEST(WriterTest, hexu) {
@@ -351,6 +361,7 @@ TEST(WriterTest, hexu) {
   EXPECT_EQ("BABE", str(Writer() << hexu(0xbabeu)));
   EXPECT_EQ("DEAD", str(Writer() << hexu(0xdeadl)));
   EXPECT_EQ("BEEF", str(Writer() << hexu(0xbeeful)));
+  EXPECT_EQ("FFFFFFFFFFFFFFFF", str(Writer() << hexu(0xffffffffffffffffull)));
 }
 
 class Date {
@@ -938,7 +949,7 @@ TEST(FormatterTest, FormatShort) {
 TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(Format("{0:v") << 42,
       FormatError, "unmatched '{' in format");
-  CheckUnknownTypes(42, "doxX", "integer");
+  CheckUnknownTypes(42, "doxXbB", "integer");
 }
 
 TEST(FormatterTest, FormatDec) {
@@ -973,6 +984,9 @@ TEST(FormatterTest, FormatHex) {
   EXPECT_EQ("90abcdef", str(Format("{0:x}") << 0x90abcdef));
   EXPECT_EQ("12345678", str(Format("{0:X}") << 0x12345678));
   EXPECT_EQ("90ABCDEF", str(Format("{0:X}") << 0x90ABCDEF));
+  EXPECT_EQ("10010001101000101011001111000", str(Format("{0:b}") << 0x12345678));
+  EXPECT_EQ("10010000101010111100110111101111", str(Format("{0:B}") << 0x90ABCDEF));
+
   char buffer[BUFFER_SIZE];
   SPrintf(buffer, "-%x", 0 - static_cast<unsigned>(INT_MIN));
   EXPECT_EQ(buffer, str(Format("{0:x}") << INT_MIN));
@@ -986,6 +1000,8 @@ TEST(FormatterTest, FormatHex) {
   EXPECT_EQ(buffer, str(Format("{0:x}") << LONG_MAX));
   SPrintf(buffer, "%lx", ULONG_MAX);
   EXPECT_EQ(buffer, str(Format("{0:x}") << ULONG_MAX));
+  SPrintf(buffer, "%llx", ULLONG_MAX);
+  EXPECT_EQ(buffer, str(Format("{0:x}") << ULLONG_MAX));
 }
 
 TEST(FormatterTest, FormatOct) {

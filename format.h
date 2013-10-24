@@ -370,6 +370,16 @@ class IntFormatter : public SpecT {
 };
 
 /**
+  Returns an integer formatter that formats the value in base 2.
+ */
+IntFormatter<int, TypeSpec<'b'> > bin(int value);
+
+/**
+  Returns an integer formatter that formats the value in base 2.
+ */
+IntFormatter<int, TypeSpec<'B'> > binu(int value);
+
+/**
   Returns an integer formatter that formats the value in base 8.
  */
 IntFormatter<int, TypeSpec<'o'> > oct(int value);
@@ -403,6 +413,12 @@ IntFormatter<int, AlignTypeSpec<TYPE_CODE> > pad(
     int value, unsigned width, wchar_t fill = ' ');
 
 #define DEFINE_INT_FORMATTERS(TYPE) \
+inline IntFormatter<TYPE, TypeSpec<'b'> > bin(TYPE value) { \
+  return IntFormatter<TYPE, TypeSpec<'b'> >(value, TypeSpec<'b'>()); \
+} \
+inline IntFormatter<TYPE, TypeSpec<'B'> > binu(TYPE value) { \
+  return IntFormatter<TYPE, TypeSpec<'B'> >(value, TypeSpec<'B'>()); \
+} \
 inline IntFormatter<TYPE, TypeSpec<'o'> > oct(TYPE value) { \
   return IntFormatter<TYPE, TypeSpec<'o'> >(value, TypeSpec<'o'>()); \
 } \
@@ -433,6 +449,7 @@ DEFINE_INT_FORMATTERS(int)
 DEFINE_INT_FORMATTERS(long)
 DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
+DEFINE_INT_FORMATTERS(unsigned long long)
 
 template <typename Char>
 class BasicFormatter;
@@ -473,7 +490,7 @@ class BasicFormatter;
 template <typename Char>
 class BasicWriter {
  private:
-  enum { INLINE_BUFFER_SIZE = 500 };
+  enum { INLINE_BUFFER_SIZE = 512 };
   mutable internal::Array<Char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
 
   friend class BasicFormatter<Char>;
@@ -712,6 +729,25 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
     do {
       *p-- = digits[n & 0xf];
     } while ((n >>= 4) != 0);
+    if (print_prefix) {
+      *p-- = f.type();
+      *p = '0';
+    }
+    break;
+  }
+  case 'b': case 'B': {
+    UnsignedType n = abs_value;
+    bool print_prefix = f.hash_flag();
+    if (print_prefix) size += 2;
+    do {
+      ++size;
+    } while ((n >>= 1) != 0);
+    Char *p = GetBase(PrepareFilledBuffer(size, f, sign));
+    n = abs_value;
+    const char *digits = "01";
+    do {
+      *p-- = digits[n & 0x1];
+    } while ((n >>= 1) != 0);
     if (print_prefix) {
       *p-- = f.type();
       *p = '0';
