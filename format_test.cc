@@ -1091,6 +1091,10 @@ TEST(FormatterTest, FormatString) {
   EXPECT_EQ("test", str(Format("{0}") << std::string("test")));
 }
 
+TEST(FormatterTest, FormatStringRef) {
+  EXPECT_EQ("test", str(Format("{0}") << StringRef("test")));
+}
+
 TEST(FormatterTest, FormatUsingIOStreams) {
   EXPECT_EQ("a string", str(Format("{0}") << TestString("a string")));
   std::string s = str(fmt::Format("The date is {0}") << Date(2012, 12, 9));

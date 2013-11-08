@@ -862,6 +862,11 @@ class BasicFormatter {
       string.size = value.size();
     }
 
+    Arg(StringRef value) : type(STRING), formatter(0) {
+      string.value = value.c_str();
+      string.size = value.size();
+    }
+
     template <typename T>
     Arg(const T &value) : type(CUSTOM), formatter(0) {
       custom.value = &value;
