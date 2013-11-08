@@ -113,26 +113,20 @@ struct AnyWriteChecker {
   }
 };
 
-struct CharWriteChecker {
+template <typename Char>
+struct WriteChecker {
   template <typename T>
   ::testing::AssertionResult operator()(const char *, const T &value) const {
-    return CheckWrite<char>(value, "char");
-  }
-};
-
-struct WCharWriteChecker {
-  template <typename T>
-  ::testing::AssertionResult operator()(const char *, const T &value) const {
-    return CheckWrite<wchar_t>(value, "char");
+    return CheckWrite<Char>(value, "char");
   }
 };
 
 // Checks if writing value to BasicWriter produces the same result
 // as writing it to std::ostringstream both for char and wchar_t.
-#define CHECK_WRITE(value) ASSERT_PRED_FORMAT1(AnyWriteChecker(), value)
+#define CHECK_WRITE(value) EXPECT_PRED_FORMAT1(AnyWriteChecker(), value)
 
-#define CHECK_WRITE_CHAR(value) ASSERT_PRED_FORMAT1(CharWriteChecker(), value)
-#define CHECK_WRITE_WCHAR(value) ASSERT_PRED_FORMAT1(WCharWriteChecker(), value)
+#define CHECK_WRITE_CHAR(value) EXPECT_PRED_FORMAT1(WriteChecker<char>(), value)
+#define CHECK_WRITE_WCHAR(value) EXPECT_PRED_FORMAT1(WriteChecker<wchar_t>(), value)
 
 // Increment a number in a string.
 void Increment(char *s) {
@@ -166,7 +160,6 @@ TEST(UtilTest, Increment) {
   Increment(s);
   EXPECT_STREQ("129", s);
   Increment(s);
-  EXPECT_STREQ("130", s);
   EXPECT_STREQ("130", s);
   s[1] = s[2] = '9';
   Increment(s);
