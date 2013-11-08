@@ -36,7 +36,7 @@
 #include <gtest/gtest.h>
 
 // Check if format.h compiles with windows.h included.
-#ifdef WIN32
+#ifdef _WIN32
 # include <windows.h>
 #endif
 
