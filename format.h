@@ -56,8 +56,10 @@
 #endif
 
 #ifdef __GNUC__
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wlong-long"
+#endif
 #endif
 
 namespace fmt {
@@ -1185,9 +1187,10 @@ class FormatInt {
       *--str_ = '-';
   }
   explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
+  explicit FormatInt(uint64_t value) : str_(FormatDecimal(value)) {}
 
-  const char *c_str() const { return str_; }
-  std::string str() const { return str_; }
+  inline const char *c_str() const { return str_; }
+  inline std::string str() const { return str_; }
 };
 
 /**
@@ -1237,7 +1240,9 @@ inline Formatter<Write> Print(StringRef format) {
 }
 
 #ifdef __GNUC__
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 # pragma GCC diagnostic pop
+#endif
 #endif
 
 #endif  // FORMAT_H_
