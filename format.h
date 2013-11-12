@@ -56,10 +56,8 @@
 #endif
 
 #ifdef __GNUC__
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wlong-long"
-#endif
 #endif
 
 namespace fmt {
@@ -451,7 +449,6 @@ DEFINE_INT_FORMATTERS(int)
 DEFINE_INT_FORMATTERS(long)
 DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
-DEFINE_INT_FORMATTERS(unsigned long long)
 
 template <typename Char>
 class BasicFormatter;
@@ -492,7 +489,7 @@ class BasicFormatter;
 template <typename Char>
 class BasicWriter {
  private:
-  enum { INLINE_BUFFER_SIZE = 512 };
+  enum { INLINE_BUFFER_SIZE = 500 };
   mutable internal::Array<Char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
 
   friend class BasicFormatter<Char>;
@@ -1187,7 +1184,6 @@ class FormatInt {
       *--str_ = '-';
   }
   explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
-  explicit FormatInt(uint64_t value) : str_(FormatDecimal(value)) {}
 
   inline const char *c_str() const { return str_; }
   inline std::string str() const { return str_; }
@@ -1240,9 +1236,7 @@ inline Formatter<Write> Print(StringRef format) {
 }
 
 #ifdef __GNUC__
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 # pragma GCC diagnostic pop
-#endif
 #endif
 
 #endif  // FORMAT_H_
