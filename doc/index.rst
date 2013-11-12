@@ -236,10 +236,10 @@ The available integer presentation types are:
    |         | upper-case letters for the digits above 9.               |
    +---------+----------------------------------------------------------+
    | ``'b'`` | Binary format. Outputs the number in base 2, using       |
-   |         | a upper-case 0B if a prefix is requested.                |
+   |         | a lower-case 0b if a prefix is requested.                |
    +---------+----------------------------------------------------------+
    | ``'B'`` | Binary format. Outputs the number in base 2, using       |
-   |         | a lower-case 0b if a prefix is requested.                |
+   |         | a upper-case 0B if a prefix is requested.                |
    +---------+----------------------------------------------------------+
    | none    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
