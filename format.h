@@ -49,7 +49,8 @@
 
 // Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
 #if FMT_USE_NOEXCEPT || \
-    (defined(__has_feature) && __has_feature(cxx_noexcept))
+    (defined(__has_feature) && __has_feature(cxx_noexcept)) || \
+    (__GNUC__ >= 4 && __GNUC_MINOR__ >= 8)
 # define FMT_NOEXCEPT(expr) noexcept(expr)
 #else
 # define FMT_NOEXCEPT(expr)
@@ -375,11 +376,6 @@ class IntFormatter : public SpecT {
 IntFormatter<int, TypeSpec<'b'> > bin(int value);
 
 /**
-  Returns an integer formatter that formats the value in base 2.
- */
-IntFormatter<int, TypeSpec<'B'> > binu(int value);
-
-/**
   Returns an integer formatter that formats the value in base 8.
  */
 IntFormatter<int, TypeSpec<'o'> > oct(int value);
@@ -416,9 +412,7 @@ IntFormatter<int, AlignTypeSpec<TYPE_CODE> > pad(
 inline IntFormatter<TYPE, TypeSpec<'b'> > bin(TYPE value) { \
   return IntFormatter<TYPE, TypeSpec<'b'> >(value, TypeSpec<'b'>()); \
 } \
-inline IntFormatter<TYPE, TypeSpec<'B'> > binu(TYPE value) { \
-  return IntFormatter<TYPE, TypeSpec<'B'> >(value, TypeSpec<'B'>()); \
-} \
+ \
 inline IntFormatter<TYPE, TypeSpec<'o'> > oct(TYPE value) { \
   return IntFormatter<TYPE, TypeSpec<'o'> >(value, TypeSpec<'o'>()); \
 } \
@@ -734,7 +728,7 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
     }
     break;
   }
-  case 'b': case 'B': {
+  case 'b': {
     UnsignedType n = abs_value;
     bool print_prefix = f.hash_flag();
     if (print_prefix) size += 2;
@@ -743,12 +737,11 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
     } while ((n >>= 1) != 0);
     Char *p = GetBase(PrepareFilledBuffer(size, f, sign));
     n = abs_value;
-    const char *digits = "01";
     do {
-      *p-- = digits[n & 0x1];
+      *p-- = '0' + (n & 1);
     } while ((n >>= 1) != 0);
     if (print_prefix) {
-      *p-- = f.type();
+      *p-- = 'b';
       *p = '0';
     }
     break;
@@ -1190,8 +1183,8 @@ class FormatInt {
   }
   explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
 
-  inline const char *c_str() const { return str_; }
-  inline std::string str() const { return str_; }
+  const char *c_str() const { return str_; }
+  std::string str() const { return str_; }
 };
 
 /**
