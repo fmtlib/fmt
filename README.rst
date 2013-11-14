@@ -356,4 +356,6 @@ Some ideas used in the implementation are borrowed from `Loki
 Format string syntax and the documentation are based on Python's `str.format
 <http://docs.python.org/2/library/stdtypes.html#str.format>`__.
 Thanks `Doug Turnbull <https://github.com/softwaredoug>`__ for his valuable
-comments and contribution to the design of the type-safe API.
+comments and contribution to the design of the type-safe API and
+`Gregory Czajkowski <https://github.com/gcflymoto>`__ for implementing binary
+formatting.
