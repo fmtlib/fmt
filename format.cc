@@ -413,7 +413,6 @@ void fmt::BasicFormatter<Char>::DoFormat() {
   format_ = 0;
   next_arg_index_ = 0;
   const Char *s = start;
-  typedef internal::Array<Char, BasicWriter<Char>::INLINE_BUFFER_SIZE> Buffer;
   BasicWriter<Char> &writer = *writer_;
   while (*s) {
     Char c = *s++;
