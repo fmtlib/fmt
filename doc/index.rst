@@ -115,7 +115,7 @@ The general form of a *standard format specifier* is:
    sign: "+" | "-" | " "
    width: `integer`
    precision: `integer` | "{" `arg_index` "}"
-   type: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | s" | "x" | "X"
+   type: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | s" | "x" | "X" | "b" | "B"
 
 The *fill* character can be any character other than '{' or '}'.  The presence
 of a fill character is signaled by the character following it, which must be
@@ -167,9 +167,9 @@ following:
 The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
 types.  This option is only valid for integer and floating-point types.
-For integers, when octal, or hexadecimal output
+For integers, when octal, or hexadecimal, or binary output
 is used, this option adds the prefix respective ``'0'``, or
-``'0x'`` to the output value. For floating-point numbers the
+``'0x'``, or ``'0b'`` to the output value. For floating-point numbers the
 alternate form causes the result of the conversion to always contain a
 decimal-point character, even if no digits follow it. Normally, a
 decimal-point character appears in the result of these conversions
@@ -234,6 +234,12 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'X'`` | Hex format. Outputs the number in base 16, using         |
    |         | upper-case letters for the digits above 9.               |
+   +---------+----------------------------------------------------------+
+   | ``'b'`` | Binary format. Outputs the number in base 2, using       |
+   |         | a lower-case 0b if a prefix is requested.                |
+   +---------+----------------------------------------------------------+
+   | ``'B'`` | Binary format. Outputs the number in base 2, using       |
+   |         | a upper-case 0B if a prefix is requested.                |
    +---------+----------------------------------------------------------+
    | none    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
@@ -349,13 +355,13 @@ Replacing ``%+f``, ``%-f``, and ``% f`` and specifying a sign::
    Format("{:-f}; {:-f}") << 3.14 << -3.14;  // show only the minus -- same as '{:f}; {:f}'
    // Result: "3.140000; -3.140000"
 
-Replacing ``%x`` and ``%o`` and converting the value to different bases::
+Replacing ``%x`` and ``%o`` and ``%b`` and converting the value to different bases::
 
-   Format("int: {0:d};  hex: {0:x};  oct: {0:o}") << 42;
-   // Result: "int: 42;  hex: 2a;  oct: 52"
-   // with 0x or 0 as prefix:
-   Format("int: {0:d};  hex: {0:#x};  oct: {0:#o}") << 42;
-   // Result: "int: 42;  hex: 0x2a;  oct: 052"
+   Format("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}") << 42;
+   // Result: "int: 42;  hex: 2a;  oct: 52; bin: 101010"
+   // with 0x or 0 or 0b as prefix:
+   Format("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}") << 42;
+   // Result: "int: 42;  hex: 0x2a;  oct: 052;  bin: 0b101010"
 
 .. ifconfig:: False
 
