@@ -33,6 +33,7 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
     gtest_force_shared_crt
     "Use shared (DLL) run-time lib even when Google Test is built as static lib."
     ON)
+  add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
   add_subdirectory(gtest)
   include_directories(gtest/include)
   link_directories(${CMAKE_CURRENT_BINARY_DIR}/gtest)
