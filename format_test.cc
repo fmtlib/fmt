@@ -952,8 +952,6 @@ TEST(FormatterTest, FormatBin) {
   EXPECT_EQ("10010000101010111100110111101111", str(Format("{0:b}") << 0x90ABCDEF));
   EXPECT_EQ("11111111111111111111111111111111",
             str(Format("{0:b}") << std::numeric_limits<uint32_t>::max()));
-  EXPECT_EQ("1111111111111111111111111111111111111111111111111111111111111111",
-            str(Format("{0:b}") << std::numeric_limits<uint64_t>::max()));
 }
 
 TEST(FormatterTest, FormatDec) {
