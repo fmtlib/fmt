@@ -13,7 +13,7 @@ project(FORMAT)
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
 if (HAVE_STD_CPP11_FLAG)
-  add_definitions(-std=c++11)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif ()
 
 add_library(format format.cc)
