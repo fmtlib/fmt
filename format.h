@@ -50,7 +50,7 @@
 // Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
 #if FMT_USE_NOEXCEPT || \
     (defined(__has_feature) && __has_feature(cxx_noexcept)) || \
-    (__GNUC__ >= 4 && __GNUC_MINOR__ >= 8)
+    (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
 # define FMT_NOEXCEPT(expr) noexcept(expr)
 #else
 # define FMT_NOEXCEPT(expr)
