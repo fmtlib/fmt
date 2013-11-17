@@ -685,9 +685,9 @@ TEST(FormatterTest, SpaceSign) {
 TEST(FormatterTest, HashFlag) {
   EXPECT_EQ("42", str(Format("{0:#}") << 42));
   EXPECT_EQ("-42", str(Format("{0:#}") << -42));
-  EXPECT_EQ("0b101010", str(Format("{0:#b}") << 0x42));
-  EXPECT_EQ("0B101010", str(Format("{0:#B}") << 0x42));
-  EXPECT_EQ("-0b101010", str(Format("{0:#b}") << -0x42));
+  EXPECT_EQ("0b101010", str(Format("{0:#b}") << 42));
+  EXPECT_EQ("0B101010", str(Format("{0:#B}") << 42));
+  EXPECT_EQ("-0b101010", str(Format("{0:#b}") << -42));
   EXPECT_EQ("0x42", str(Format("{0:#x}") << 0x42));
   EXPECT_EQ("0X42", str(Format("{0:#X}") << 0x42));
   EXPECT_EQ("-0x42", str(Format("{0:#x}") << -0x42));
