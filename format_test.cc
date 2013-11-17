@@ -943,7 +943,7 @@ TEST(FormatterTest, FormatShort) {
 TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(Format("{0:v") << 42,
       FormatError, "unmatched '{' in format");
-  CheckUnknownTypes(42, "doxXb", "integer");
+  CheckUnknownTypes(42, "bBdoxX", "integer");
 }
 
 TEST(FormatterTest, FormatBin) {
