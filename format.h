@@ -729,7 +729,7 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
     }
     break;
   }
-  case 'b': {
+  case 'b': case 'B': {
     UnsignedType n = abs_value;
     bool print_prefix = f.hash_flag();
     if (print_prefix) size += 2;
@@ -742,7 +742,7 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
       *p-- = '0' + (n & 1);
     } while ((n >>= 1) != 0);
     if (print_prefix) {
-      *p-- = 'b';
+      *p-- = f.type();
       *p = '0';
     }
     break;

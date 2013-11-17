@@ -316,6 +316,14 @@ TEST(WriterTest, WriteWideString) {
   //fmt::WWriter() << "abc";
 }
 
+TEST(WriterTest, bin) {
+  using fmt::bin;
+  EXPECT_EQ("1100101011111110", str(Writer() << bin(0xcafe)));
+  EXPECT_EQ("1011101010111110", str(Writer() << bin(0xbabeu)));
+  EXPECT_EQ("1101111010101101", str(Writer() << bin(0xdeadl)));
+  EXPECT_EQ("1011111011101111", str(Writer() << bin(0xbeeful)));
+}
+
 TEST(WriterTest, oct) {
   using fmt::oct;
   EXPECT_EQ("12", str(Writer() << oct(static_cast<short>(012))));
@@ -323,14 +331,6 @@ TEST(WriterTest, oct) {
   EXPECT_EQ("34", str(Writer() << oct(034u)));
   EXPECT_EQ("56", str(Writer() << oct(056l)));
   EXPECT_EQ("70", str(Writer() << oct(070ul)));
-}
-
-TEST(WriterTest, bin) {
-  using fmt::bin;
-  EXPECT_EQ("1100101011111110", str(Writer() << bin(0xcafe)));
-  EXPECT_EQ("1011101010111110", str(Writer() << bin(0xbabeu)));
-  EXPECT_EQ("1101111010101101", str(Writer() << bin(0xdeadl)));
-  EXPECT_EQ("1011111011101111", str(Writer() << bin(0xbeeful)));
 }
 
 TEST(WriterTest, hex) {
@@ -685,6 +685,9 @@ TEST(FormatterTest, SpaceSign) {
 TEST(FormatterTest, HashFlag) {
   EXPECT_EQ("42", str(Format("{0:#}") << 42));
   EXPECT_EQ("-42", str(Format("{0:#}") << -42));
+  EXPECT_EQ("0b101010", str(Format("{0:#b}") << 0x42));
+  EXPECT_EQ("0B101010", str(Format("{0:#B}") << 0x42));
+  EXPECT_EQ("-0b101010", str(Format("{0:#b}") << -0x42));
   EXPECT_EQ("0x42", str(Format("{0:#x}") << 0x42));
   EXPECT_EQ("0X42", str(Format("{0:#X}") << 0x42));
   EXPECT_EQ("-0x42", str(Format("{0:#x}") << -0x42));
