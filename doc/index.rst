@@ -172,7 +172,7 @@ option adds the prefix respective ``"0b"`` (``"0B"``), ``"0"``, or
 ``"0x"`` (``"0X"``) to the output value.  Whether the prefix is
 lower-case or upper-case is determined by the case of the type
 specifier, for example, the prefix ``"0x"`` is used for the type ``'x'``
- and ``"0X"`` is used for ``'X'``.  For floating-point numbers the
+and ``"0X"`` is used for ``'X'``.  For floating-point numbers the
 alternate form causes the result of the conversion to always contain a
 decimal-point character, even if no digits follow it. Normally, a
 decimal-point character appears in the result of these conversions
