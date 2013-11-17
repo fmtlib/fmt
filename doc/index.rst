@@ -115,7 +115,7 @@ The general form of a *standard format specifier* is:
    sign: "+" | "-" | " "
    width: `integer`
    precision: `integer` | "{" `arg_index` "}"
-   type: "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | s" | "x" | "X" | "b" | "B"
+   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | s" | "x" | "X"
 
 The *fill* character can be any character other than '{' or '}'.  The presence
 of a fill character is signaled by the character following it, which must be
@@ -167,9 +167,12 @@ following:
 The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
 types.  This option is only valid for integer and floating-point types.
-For integers, when octal, or hexadecimal, or binary output
-is used, this option adds the prefix respective ``'0'``, or
-``'0x'``, or ``'0b'`` to the output value. For floating-point numbers the
+For integers, when binary, octal, or hexadecimal output is used, this
+option adds the prefix respective ``"0b"`` (``"0B"``), ``"0"``, or
+``"0x"`` (``"0X"``) to the output value.  Whether the prefix is
+lower-case or upper-case is determined by the case of the type
+specifier, for example, the prefix ``"0x"`` is used for the type ``'x'``
+ and ``"0X"`` is used for ``'X'``.  For floating-point numbers the
 alternate form causes the result of the conversion to always contain a
 decimal-point character, even if no digits follow it. Normally, a
 decimal-point character appears in the result of these conversions
@@ -225,21 +228,21 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | Type    | Meaning                                                  |
    +=========+==========================================================+
+   | ``'b'`` | Binary format. Outputs the number in base 2.             |
+   +---------+----------------------------------------------------------+
    | ``'d'`` | Decimal integer. Outputs the number in base 10.          |
    +---------+----------------------------------------------------------+
    | ``'o'`` | Octal format. Outputs the number in base 8.              |
    +---------+----------------------------------------------------------+
    | ``'x'`` | Hex format. Outputs the number in base 16, using         |
-   |         | lower-case letters for the digits above 9.               |
+   |         | lower-case letters for the digits above 9. Using the     |
+   |         | ``'#'`` option with this type adds the prefix ``"0x"``   |
+   |         | to the output value.                                     |
    +---------+----------------------------------------------------------+
    | ``'X'`` | Hex format. Outputs the number in base 16, using         |
-   |         | upper-case letters for the digits above 9.               |
-   +---------+----------------------------------------------------------+
-   | ``'b'`` | Binary format. Outputs the number in base 2, using       |
-   |         | a lower-case 0b if a prefix is requested.                |
-   +---------+----------------------------------------------------------+
-   | ``'B'`` | Binary format. Outputs the number in base 2, using       |
-   |         | a upper-case 0B if a prefix is requested.                |
+   |         | upper-case letters for the digits above 9. Using the     |
+   |         | ``'#'`` option with this type adds the prefix ``"0X"``   |
+   |         | to the output value.                                     |
    +---------+----------------------------------------------------------+
    | none    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
@@ -355,7 +358,7 @@ Replacing ``%+f``, ``%-f``, and ``% f`` and specifying a sign::
    Format("{:-f}; {:-f}") << 3.14 << -3.14;  // show only the minus -- same as '{:f}; {:f}'
    // Result: "3.140000; -3.140000"
 
-Replacing ``%x`` and ``%o`` and ``%b`` and converting the value to different bases::
+Replacing ``%x`` and ``%o`` and converting the value to different bases::
 
    Format("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}") << 42;
    // Result: "int: 42;  hex: 2a;  oct: 52; bin: 101010"
