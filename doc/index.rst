@@ -228,7 +228,13 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | Type    | Meaning                                                  |
    +=========+==========================================================+
-   | ``'b'`` | Binary format. Outputs the number in base 2.             |
+   | ``'b'`` | Binary format. Outputs the number in base 2. Using the   |
+   |         | ``'#'`` option with this type adds the prefix ``"0b"``   |
+   |         | to the output value.                                     |
+   +---------+----------------------------------------------------------+
+   | ``'B'`` | Binary format. Outputs the number in base 2. Using the   |
+   |         | ``'#'`` option with this type adds the prefix ``"0B"``   |
+   |         | to the output value.                                     |
    +---------+----------------------------------------------------------+
    | ``'d'`` | Decimal integer. Outputs the number in base 10.          |
    +---------+----------------------------------------------------------+
