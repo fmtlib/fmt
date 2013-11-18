@@ -110,14 +110,15 @@ const char fmt::internal::DIGITS[] =
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
 
-void fmt::internal::ReportUnknownType(char code, const char *type) {
+template <typename Char>
+void fmt::internal::ReportUnknownType(const Char *format, char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
     throw fmt::FormatError(fmt::str(
-        fmt::Format("unknown format code '{}' for {}") << code << type));
+      fmt::Format("unknown format code '{}' for {} while parsing {}") << code << type << format));
   }
   throw fmt::FormatError(
-      fmt::str(fmt::Format("unknown format code '\\x{:02x}' for {}")
-        << static_cast<unsigned>(code) << type));
+      fmt::str(fmt::Format("unknown format code '\\x{:02x}' for {} while parsing {}")
+        << static_cast<unsigned>(code) << type << format));
 }
 
 
@@ -200,7 +201,7 @@ typename fmt::BasicWriter<Char>::CharPtr
 template <typename Char>
 template <typename T>
 void fmt::BasicWriter<Char>::FormatDouble(
-    T value, const FormatSpec &spec, int precision) {
+    T value, const FormatSpec<Char> &spec, int precision) {
   // Check type.
   char type = spec.type();
   bool upper = false;
@@ -220,7 +221,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
     upper = true;
     break;
   default:
-    internal::ReportUnknownType(type, "double");
+    internal::ReportUnknownType<Char>(spec.format(), type, "double");
     break;
   }
 
@@ -430,7 +431,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
 
     const Arg &arg = ParseArgIndex(s);
 
-    FormatSpec spec;
+    FormatSpec<Char> spec(format_);
     int precision = -1;
     if (*s == ':') {
       ++s;
@@ -587,7 +588,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
       break;
     case CHAR: {
       if (spec.type_ && spec.type_ != 'c')
-        internal::ReportUnknownType(spec.type_, "char");
+        internal::ReportUnknownType<Char>(spec.format_, spec.type_, "char");
       typedef typename BasicWriter<Char>::CharPtr CharPtr;
       CharPtr out = CharPtr();
       if (spec.width_ > 1) {
@@ -609,7 +610,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
     }
     case STRING: {
       if (spec.type_ && spec.type_ != 's')
-        internal::ReportUnknownType(spec.type_, "string");
+        internal::ReportUnknownType<Char>(spec.format_, spec.type_, "string");
       const Char *str = arg.string.value;
       std::size_t size = arg.string.size;
       if (size == 0) {
@@ -623,14 +624,14 @@ void fmt::BasicFormatter<Char>::DoFormat() {
     }
     case POINTER:
       if (spec.type_ && spec.type_ != 'p')
-        internal::ReportUnknownType(spec.type_, "pointer");
+        internal::ReportUnknownType<Char>(spec.format_, spec.type_, "pointer");
       spec.flags_= HASH_FLAG;
       spec.type_ = 'x';
       writer.FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
       break;
     case CUSTOM:
       if (spec.type_)
-        internal::ReportUnknownType(spec.type_, "object");
+        internal::ReportUnknownType<Char>(spec.format_, spec.type_, "object");
       arg.custom.format(writer, arg.custom.value, spec);
       break;
     default:
@@ -643,11 +644,14 @@ void fmt::BasicFormatter<Char>::DoFormat() {
 
 // Explicit instantiations for char.
 
+template void fmt::internal::ReportUnknownType<char>(
+    const char *format, char code, const char *type);
+
 template void fmt::BasicWriter<char>::FormatDouble<double>(
-    double value, const FormatSpec &spec, int precision);
+    double value, const FormatSpec<char> &spec, int precision);
 
 template void fmt::BasicWriter<char>::FormatDouble<long double>(
-    long double value, const FormatSpec &spec, int precision);
+    long double value, const FormatSpec<char> &spec, int precision);
 
 template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::FillPadding(CharPtr buffer,
@@ -675,11 +679,14 @@ template void fmt::BasicFormatter<char>::DoFormat();
 
 // Explicit instantiations for wchar_t.
 
+template void fmt::internal::ReportUnknownType<wchar_t>(
+    const wchar_t *format, char code, const char *type);
+
 template void fmt::BasicWriter<wchar_t>::FormatDouble<double>(
-    double value, const FormatSpec &spec, int precision);
+    double value, const FormatSpec<wchar_t> &spec, int precision);
 
 template void fmt::BasicWriter<wchar_t>::FormatDouble<long double>(
-    long double value, const FormatSpec &spec, int precision);
+    long double value, const FormatSpec<wchar_t> &spec, int precision);
 
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::FillPadding(CharPtr buffer,
@@ -705,3 +712,5 @@ template void fmt::BasicFormatter<wchar_t>::CheckSign(
     const wchar_t *&s, const Arg &arg);
 
 template void fmt::BasicFormatter<wchar_t>::DoFormat();
+
+//template fmt::BasicFormatter<char>::Arg::Arg(wchar_t const*);

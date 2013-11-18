@@ -201,7 +201,8 @@ struct IsLongDouble { enum {VALUE = 0}; };
 template <>
 struct IsLongDouble<long double> { enum {VALUE = 1}; };
 
-void ReportUnknownType(char code, const char *type);
+template <typename Char>
+void ReportUnknownType(const Char *format, char code, const char *type);
 
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case CountDigits returns 1.
@@ -343,12 +344,14 @@ struct AlignTypeSpec : AlignSpec {
   char type() const { return TYPE; }
 };
 
+template <typename Char>
 struct FormatSpec : AlignSpec {
   unsigned flags_;
   char type_;
+  const Char *format_;
 
-  FormatSpec(unsigned width = 0, char type = 0, wchar_t fill = ' ')
-  : AlignSpec(width, fill), flags_(0), type_(type) {}
+  FormatSpec(const Char *format, unsigned width = 0, char type = 0, wchar_t fill = ' ')
+    : AlignSpec(width, fill), flags_(0), type_(type), format_(format) {}
 
   Alignment align() const { return align_; }
 
@@ -357,6 +360,7 @@ struct FormatSpec : AlignSpec {
   bool hash_flag() const { return (flags_ & HASH_FLAG) != 0; }
 
   char type() const { return type_; }
+  const Char* format() const { return format_; }
 };
 
 template <typename T, typename SpecT>
@@ -528,17 +532,17 @@ class BasicWriter {
 
   // Formats an integer.
   template <typename T>
-  void FormatInt(T value, const FormatSpec &spec) {
-    *this << IntFormatter<T, FormatSpec>(value, spec);
+  void FormatInt(T value, const FormatSpec<Char> &spec) {
+    *this << IntFormatter<T, FormatSpec<Char> >(value, spec);
   }
 
   // Formats a floating-point number (double or long double).
   template <typename T>
-  void FormatDouble(T value, const FormatSpec &spec, int precision);
+  void FormatDouble(T value, const FormatSpec<Char> &spec, int precision);
 
   template <typename StringChar>
   CharPtr FormatString(const StringChar *s,
-      std::size_t size, const FormatSpec &spec);
+      std::size_t size, const FormatSpec<Char> &spec);
 
   // This method is private to disallow writing a wide string to a
   // char stream and vice versa. If you want to print a wide string
@@ -628,7 +632,7 @@ class BasicWriter {
   }
 
   BasicWriter &operator<<(double value) {
-    FormatDouble(value, FormatSpec(), -1);
+    FormatDouble(value, FormatSpec<Char>(""), -1);
     return *this;
   }
 
@@ -637,7 +641,7 @@ class BasicWriter {
     (``'g'``) and writes it to the stream.
    */
   BasicWriter &operator<<(long double value) {
-    FormatDouble(value, FormatSpec(), -1);
+    FormatDouble(value, FormatSpec<Char>(""), -1);
     return *this;
   }
 
@@ -659,7 +663,7 @@ class BasicWriter {
   template <typename T, typename Spec>
   BasicWriter &operator<<(const IntFormatter<T, Spec> &f);
 
-  void Write(const std::basic_string<char> &s, const FormatSpec &spec) {
+  void Write(const std::basic_string<char> &s, const FormatSpec<char> &spec) {
     FormatString(s.data(), s.size(), spec);
   }
 
@@ -671,7 +675,7 @@ class BasicWriter {
 template <typename Char>
 template <typename StringChar>
 typename BasicWriter<Char>::CharPtr BasicWriter<Char>::FormatString(
-    const StringChar *s, std::size_t size, const FormatSpec &spec) {
+    const StringChar *s, std::size_t size, const FormatSpec<Char> &spec) {
   CharPtr out = CharPtr();
   if (spec.width() > size) {
     out = GrowBuffer(spec.width());
@@ -772,7 +776,7 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
     break;
   }
   default:
-    internal::ReportUnknownType(f.type(), "integer");
+    internal::ReportUnknownType<Char>(f.format(), f.type(), "integer");
     break;
   }
   return *this;
@@ -788,7 +792,7 @@ typedef BasicWriter<wchar_t> WWriter;
 
 // The default formatting function.
 template <typename Char, typename T>
-void Format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value) {
+void Format(BasicWriter<Char> &w, const FormatSpec<Char> &spec, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
   w.Write(os.str(), spec);
@@ -798,7 +802,7 @@ namespace internal {
 // Formats an argument of a custom type, such as a user-defined class.
 template <typename Char, typename T>
 void FormatCustomArg(
-    BasicWriter<Char> &w, const void *arg, const FormatSpec &spec) {
+    BasicWriter<Char> &w, const void *arg, const FormatSpec<Char> &spec) {
   Format(w, spec, *static_cast<const T*>(arg));
 }
 }
@@ -825,7 +829,7 @@ class BasicFormatter {
   };
 
   typedef void (*FormatFunc)(
-      BasicWriter<Char> &w, const void *arg, const FormatSpec &spec);
+      BasicWriter<Char> &w, const void *arg, const FormatSpec<Char> &spec);
 
   // A format argument.
   class Arg {
