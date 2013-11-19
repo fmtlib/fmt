@@ -29,6 +29,8 @@ String Formatting API
 Write API
 ---------
 
+.. doxygenfunction:: fmt::bin
+
 .. doxygenfunction:: fmt::oct
 
 .. doxygenfunction:: fmt::hex
@@ -115,7 +117,8 @@ The general form of a *standard format specifier* is:
    sign: "+" | "-" | " "
    width: `integer`
    precision: `integer` | "{" `arg_index` "}"
-   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "o" | "p" | s" | "x" | "X"
+   type: `int_type` | "c" | "e" | "E" | "f" | "F" | "g" | "G" | "p" | s"
+   int_type: "b" | "B" | "d" | "o" | "x" | "X"
 
 The *fill* character can be any character other than '{' or '}'.  The presence
 of a fill character is signaled by the character following it, which must be
