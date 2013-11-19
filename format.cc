@@ -400,7 +400,7 @@ void fmt::BasicFormatter<Char>::CheckSign(const Char *&s, const Arg &arg) {
     ReportError(s,
         Format("format specifier '{0}' requires numeric argument") << *s);
   }
-  if (arg.type == UINT || arg.type == ULONG) {
+  if (arg.type == UINT || arg.type == ULONG || arg.type == ULLONG) {
     ReportError(s,
         Format("format specifier '{0}' requires signed argument") << *s);
   }
@@ -520,7 +520,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
           ++s;
           ++num_open_braces_;
           const Arg &precision_arg = ParseArgIndex(s);
-          unsigned long value = 0;
+          unsigned long long value = 0;
           switch (precision_arg.type) {
           case INT:
             if (precision_arg.int_value < 0)
@@ -538,12 +538,15 @@ void fmt::BasicFormatter<Char>::DoFormat() {
           case ULONG:
             value = precision_arg.ulong_value;
             break;
+          case ULLONG:
+            value = precision_arg.ulong_long_value;
+            break;            
           default:
             ReportError(s, "precision is not integer");
           }
           if (value > INT_MAX)
             ReportError(s, "number is too big in format");
-          precision = value;
+          precision = static_cast<int>(value);
           if (*s++ != '}')
             throw FormatError("unmatched '{' in format");
           --num_open_braces_;
@@ -579,6 +582,9 @@ void fmt::BasicFormatter<Char>::DoFormat() {
     case ULONG:
       writer.FormatInt(arg.ulong_value, spec);
       break;
+    case ULLONG:
+      writer.FormatInt(arg.ulong_long_value, spec);
+      break;      
     case DOUBLE:
       writer.FormatDouble(arg.double_value, spec, precision);
       break;

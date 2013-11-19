@@ -190,6 +190,9 @@ template <>
 struct IntTraits<int> : SignedIntTraits<int, unsigned> {};
 
 template <>
+struct IntTraits<uint32_t> : SignedIntTraits<uint32_t, unsigned> {};
+
+template <>
 struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
 
 template <>
@@ -451,6 +454,7 @@ DEFINE_INT_FORMATTERS(int)
 DEFINE_INT_FORMATTERS(long)
 DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
+DEFINE_INT_FORMATTERS(unsigned long long)
 
 template <typename Char>
 class BasicFormatter;
@@ -819,7 +823,7 @@ class BasicFormatter {
 
   enum Type {
     // Numeric types should go first.
-    INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE,
+    INT, UINT, LONG, ULONG, ULLONG, DOUBLE, LONG_DOUBLE,
     LAST_NUMERIC_TYPE = LONG_DOUBLE,
     CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
@@ -854,6 +858,7 @@ class BasicFormatter {
       double double_value;
       long long_value;
       unsigned long ulong_value;
+      unsigned long long ulong_long_value;
       long double long_double_value;
       const void *pointer_value;
       struct {
@@ -873,6 +878,7 @@ class BasicFormatter {
     Arg(unsigned value) : type(UINT), uint_value(value), formatter(0) {}
     Arg(long value) : type(LONG), long_value(value), formatter(0) {}
     Arg(unsigned long value) : type(ULONG), ulong_value(value), formatter(0) {}
+    Arg(unsigned long long value) : type(ULLONG), ulong_long_value(value), formatter(0) {}
     Arg(float value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(double value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(long double value)
@@ -1151,7 +1157,7 @@ class FormatInt {
   enum {BUFFER_SIZE = std::numeric_limits<uint64_t>::digits10 + 3};
   char buffer_[BUFFER_SIZE];
   char *str_;
-
+ 
   // Formats value in reverse and returns the number of digits.
   char *FormatDecimal(uint64_t value) {
     char *buffer_end = buffer_ + BUFFER_SIZE;
@@ -1186,6 +1192,7 @@ class FormatInt {
       *--str_ = '-';
   }
   explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
+  explicit FormatInt(uint64_t value) : str_(FormatDecimal(value)) {}
 
   inline const char *c_str() const { return str_; }
   inline std::string str() const { return str_; }
