@@ -292,16 +292,6 @@ class FormatError : public std::runtime_error {
   : std::runtime_error(message) {}
 };
 
-template <typename Char>
-class BasicFormatError : public std::runtime_error {
-private:
-    std::basic_string<Char> format_;
-public:
-    explicit BasicFormatError(const std::string &message, const Char *format);
-    virtual ~BasicFormatError() throw();    
-    const Char *format() const { return format_.c_str(); }
-};
-
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
 };
@@ -520,6 +510,9 @@ class BasicWriter {
 
   static void FormatDecimal(
       CharPtr buffer, uint64_t value, unsigned num_digits);
+
+  static void FormatDecimal(
+      CharPtr buffer, unsigned long long value, unsigned num_digits);  
 
   static CharPtr FillPadding(CharPtr buffer,
       unsigned total_size, std::size_t content_size, wchar_t fill);
@@ -1203,6 +1196,7 @@ class FormatInt {
   }
   explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
   explicit FormatInt(uint64_t value) : str_(FormatDecimal(value)) {}
+  explicit FormatInt(unsigned long long value) : str_(FormatDecimal(value)) {}
 
   inline const char *c_str() const { return str_; }
   inline std::string str() const { return str_; }
