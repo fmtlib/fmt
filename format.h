@@ -190,6 +190,9 @@ template <>
 struct IntTraits<int> : SignedIntTraits<int, unsigned> {};
 
 template <>
+struct IntTraits<uint32_t> : SignedIntTraits<uint32_t, unsigned> {};
+
+template <>
 struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
 
 template <>
@@ -289,6 +292,16 @@ class FormatError : public std::runtime_error {
   : std::runtime_error(message) {}
 };
 
+template <typename Char>
+class BasicFormatError : public std::runtime_error {
+private:
+    std::basic_string<Char> format_;
+public:
+    explicit BasicFormatError(const std::string &message, const Char *format);
+    virtual ~BasicFormatError() throw();    
+    const Char *format() const { return format_.c_str(); }
+};
+
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
 };
@@ -348,7 +361,7 @@ struct FormatSpec : AlignSpec {
   char type_;
 
   FormatSpec(unsigned width = 0, char type = 0, wchar_t fill = ' ')
-  : AlignSpec(width, fill), flags_(0), type_(type) {}
+    : AlignSpec(width, fill), flags_(0), type_(type) {}
 
   Alignment align() const { return align_; }
 
@@ -1148,7 +1161,7 @@ class FormatInt {
   enum {BUFFER_SIZE = std::numeric_limits<uint64_t>::digits10 + 3};
   char buffer_[BUFFER_SIZE];
   char *str_;
-
+ 
   // Formats value in reverse and returns the number of digits.
   char *FormatDecimal(uint64_t value) {
     char *buffer_end = buffer_ + BUFFER_SIZE;
