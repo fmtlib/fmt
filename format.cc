@@ -110,15 +110,14 @@ const char fmt::internal::DIGITS[] =
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
 
-template <typename Char>
-void fmt::internal::ReportUnknownType(const Char *format, char code, const char *type) {
+void fmt::internal::ReportUnknownType(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
     throw fmt::FormatError(fmt::str(
-      fmt::Format("unknown format code '{}' for {} while parsing {}") << code << type << format));
+        fmt::Format("unknown format code '{}' for {}") << code << type));
   }
   throw fmt::FormatError(
-      fmt::str(fmt::Format("unknown format code '\\x{:02x}' for {} while parsing {}")
-        << static_cast<unsigned>(code) << type << format));
+      fmt::str(fmt::Format("unknown format code '\\x{:02x}' for {}")
+        << static_cast<unsigned>(code) << type));
 }
 
 
@@ -201,7 +200,7 @@ typename fmt::BasicWriter<Char>::CharPtr
 template <typename Char>
 template <typename T>
 void fmt::BasicWriter<Char>::FormatDouble(
-    T value, const FormatSpec<Char> &spec, int precision) {
+    T value, const FormatSpec &spec, int precision) {
   // Check type.
   char type = spec.type();
   bool upper = false;
@@ -221,7 +220,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
     upper = true;
     break;
   default:
-    internal::ReportUnknownType<Char>(spec.format(), type, "double");
+    internal::ReportUnknownType(type, "double");
     break;
   }
 
@@ -411,247 +410,251 @@ void fmt::BasicFormatter<Char>::CheckSign(const Char *&s, const Arg &arg) {
 template <typename Char>
 void fmt::BasicFormatter<Char>::DoFormat() {
   const Char *start = format_;
+  const Char *original = format_; // capture the format string before it is reset
   format_ = 0;
   next_arg_index_ = 0;
   const Char *s = start;
   typedef internal::Array<Char, BasicWriter<Char>::INLINE_BUFFER_SIZE> Buffer;
   BasicWriter<Char> &writer = *writer_;
-  while (*s) {
-    Char c = *s++;
-    if (c != '{' && c != '}') continue;
-    if (*s == c) {
-      writer.buffer_.append(start, s);
-      start = ++s;
-      continue;
-    }
-    if (c == '}')
-      throw FormatError("unmatched '}' in format");
-    num_open_braces_= 1;
-    writer.buffer_.append(start, s - 1);
-
-    const Arg &arg = ParseArgIndex(s);
-
-    FormatSpec<Char> spec(format_);
-    int precision = -1;
-    if (*s == ':') {
-      ++s;
-
-      // Parse fill and alignment.
-      if (Char c = *s) {
-        const Char *p = s + 1;
-        spec.align_ = ALIGN_DEFAULT;
-        do {
-          switch (*p) {
-          case '<':
-            spec.align_ = ALIGN_LEFT;
-            break;
-          case '>':
-            spec.align_ = ALIGN_RIGHT;
-            break;
-          case '=':
-            spec.align_ = ALIGN_NUMERIC;
-            break;
-          case '^':
-            spec.align_ = ALIGN_CENTER;
-            break;
-          }
-          if (spec.align_ != ALIGN_DEFAULT) {
-            if (p != s) {
-              if (c == '}') break;
-              if (c == '{')
-                ReportError(s, "invalid fill character '{'");
-              s += 2;
-              spec.fill_ = c;
-            } else ++s;
-            if (spec.align_ == ALIGN_NUMERIC && arg.type > LAST_NUMERIC_TYPE)
-              ReportError(s, "format specifier '=' requires numeric argument");
-            break;
-          }
-        } while (--p >= s);
+  try {
+    while (*s) {
+      Char c = *s++;
+      if (c != '{' && c != '}') continue;
+      if (*s == c) {
+        writer.buffer_.append(start, s);
+        start = ++s;
+        continue;
       }
+      if (c == '}')
+        throw FormatError("unmatched '}' in format");
+      num_open_braces_= 1;
+      writer.buffer_.append(start, s - 1);
 
-      // Parse sign.
-      switch (*s) {
-      case '+':
-        CheckSign(s, arg);
-        spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
-        break;
-      case '-':
-        CheckSign(s, arg);
-        break;
-      case ' ':
-        CheckSign(s, arg);
-        spec.flags_ |= SIGN_FLAG;
-        break;
-      }
+      const Arg &arg = ParseArgIndex(s);
 
-      if (*s == '#') {
-        if (arg.type > LAST_NUMERIC_TYPE)
-          ReportError(s, "format specifier '#' requires numeric argument");
-        spec.flags_ |= HASH_FLAG;
+      FormatSpec spec;
+      int precision = -1;
+      if (*s == ':') {
         ++s;
-      }
 
-      // Parse width and zero flag.
-      if ('0' <= *s && *s <= '9') {
-        if (*s == '0') {
-          if (arg.type > LAST_NUMERIC_TYPE)
-            ReportError(s, "format specifier '0' requires numeric argument");
-          spec.align_ = ALIGN_NUMERIC;
-          spec.fill_ = '0';
+        // Parse fill and alignment.
+        if (Char c = *s) {
+          const Char *p = s + 1;
+          spec.align_ = ALIGN_DEFAULT;
+          do {
+            switch (*p) {
+            case '<':
+              spec.align_ = ALIGN_LEFT;
+              break;
+            case '>':
+              spec.align_ = ALIGN_RIGHT;
+              break;
+            case '=':
+              spec.align_ = ALIGN_NUMERIC;
+              break;
+            case '^':
+              spec.align_ = ALIGN_CENTER;
+              break;
+            }
+            if (spec.align_ != ALIGN_DEFAULT) {
+              if (p != s) {
+                if (c == '}') break;
+                if (c == '{')
+                  ReportError(s, "invalid fill character '{'");
+                s += 2;
+                spec.fill_ = c;
+              } else ++s;
+              if (spec.align_ == ALIGN_NUMERIC && arg.type > LAST_NUMERIC_TYPE)
+                ReportError(s, "format specifier '=' requires numeric argument");
+              break;
+            }
+          } while (--p >= s);
         }
-        // Zero may be parsed again as a part of the width, but it is simpler
-        // and more efficient than checking if the next char is a digit.
-        unsigned value = ParseUInt(s);
-        if (value > INT_MAX)
-          ReportError(s, "number is too big in format");
-        spec.width_ = value;
-      }
 
-      // Parse precision.
-      if (*s == '.') {
-        ++s;
-        precision = 0;
+        // Parse sign.
+        switch (*s) {
+        case '+':
+          CheckSign(s, arg);
+          spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
+          break;
+        case '-':
+          CheckSign(s, arg);
+          break;
+        case ' ':
+          CheckSign(s, arg);
+          spec.flags_ |= SIGN_FLAG;
+          break;
+        }
+
+        if (*s == '#') {
+          if (arg.type > LAST_NUMERIC_TYPE)
+            ReportError(s, "format specifier '#' requires numeric argument");
+          spec.flags_ |= HASH_FLAG;
+          ++s;
+        }
+
+        // Parse width and zero flag.
         if ('0' <= *s && *s <= '9') {
+          if (*s == '0') {
+            if (arg.type > LAST_NUMERIC_TYPE)
+              ReportError(s, "format specifier '0' requires numeric argument");
+            spec.align_ = ALIGN_NUMERIC;
+            spec.fill_ = '0';
+          }
+          // Zero may be parsed again as a part of the width, but it is simpler
+          // and more efficient than checking if the next char is a digit.
           unsigned value = ParseUInt(s);
           if (value > INT_MAX)
             ReportError(s, "number is too big in format");
-          precision = value;
-        } else if (*s == '{') {
+          spec.width_ = value;
+        }
+
+        // Parse precision.
+        if (*s == '.') {
           ++s;
-          ++num_open_braces_;
-          const Arg &precision_arg = ParseArgIndex(s);
-          unsigned long value = 0;
-          switch (precision_arg.type) {
-          case INT:
-            if (precision_arg.int_value < 0)
-              ReportError(s, "negative precision in format");
-            value = precision_arg.int_value;
-            break;
-          case UINT:
-            value = precision_arg.uint_value;
-            break;
-          case LONG:
-            if (precision_arg.long_value < 0)
-              ReportError(s, "negative precision in format");
-            value = precision_arg.long_value;
-            break;
-          case ULONG:
-            value = precision_arg.ulong_value;
-            break;
-          default:
-            ReportError(s, "precision is not integer");
+          precision = 0;
+          if ('0' <= *s && *s <= '9') {
+            unsigned value = ParseUInt(s);
+            if (value > INT_MAX)
+              ReportError(s, "number is too big in format");
+            precision = value;
+          } else if (*s == '{') {
+            ++s;
+            ++num_open_braces_;
+            const Arg &precision_arg = ParseArgIndex(s);
+            unsigned long value = 0;
+            switch (precision_arg.type) {
+            case INT:
+              if (precision_arg.int_value < 0)
+                ReportError(s, "negative precision in format");
+              value = precision_arg.int_value;
+              break;
+            case UINT:
+              value = precision_arg.uint_value;
+              break;
+            case LONG:
+              if (precision_arg.long_value < 0)
+                ReportError(s, "negative precision in format");
+              value = precision_arg.long_value;
+              break;
+            case ULONG:
+              value = precision_arg.ulong_value;
+              break;
+            default:
+              ReportError(s, "precision is not integer");
+            }
+            if (value > INT_MAX)
+              ReportError(s, "number is too big in format");
+            precision = static_cast<int>(value);
+            if (*s++ != '}')
+              throw FormatError("unmatched '{' in format");
+            --num_open_braces_;
+          } else {
+            ReportError(s, "missing precision in format");
           }
-          if (value > INT_MAX)
-            ReportError(s, "number is too big in format");
-          precision = value;
-          if (*s++ != '}')
-            throw FormatError("unmatched '{' in format");
-          --num_open_braces_;
+          if (arg.type != DOUBLE && arg.type != LONG_DOUBLE) {
+            ReportError(s,
+                "precision specifier requires floating-point argument");
+          }
+        }
+
+        // Parse type.
+        if (*s != '}' && *s)
+          spec.type_ = static_cast<char>(*s++);
+      }
+
+      if (*s++ != '}')
+        throw FormatError("unmatched '{' in format");
+      start = s;
+
+      // Format argument.
+      switch (arg.type) {
+      case INT:
+        writer.FormatInt(arg.int_value, spec);
+        break;
+      case UINT:
+        writer.FormatInt(arg.uint_value, spec);
+        break;
+      case LONG:
+        writer.FormatInt(arg.long_value, spec);
+        break;
+      case ULONG:
+        writer.FormatInt(arg.ulong_value, spec);
+        break;
+      case DOUBLE:
+        writer.FormatDouble(arg.double_value, spec, precision);
+        break;
+      case LONG_DOUBLE:
+        writer.FormatDouble(arg.long_double_value, spec, precision);
+        break;
+      case CHAR: {
+        if (spec.type_ && spec.type_ != 'c')
+          internal::ReportUnknownType(spec.type_, "char");
+        typedef typename BasicWriter<Char>::CharPtr CharPtr;
+        CharPtr out = CharPtr();
+        if (spec.width_ > 1) {
+          Char fill = static_cast<Char>(spec.fill());
+          out = writer.GrowBuffer(spec.width_);
+          if (spec.align_ == ALIGN_RIGHT) {
+            std::fill_n(out, spec.width_ - 1, fill);
+            out += spec.width_ - 1;
+          } else if (spec.align_ == ALIGN_CENTER) {
+            out = writer.FillPadding(out, spec.width_, 1, fill);
+          } else {
+            std::fill_n(out + 1, spec.width_ - 1, fill);
+          }
         } else {
-          ReportError(s, "missing precision in format");
+          out = writer.GrowBuffer(1);
         }
-        if (arg.type != DOUBLE && arg.type != LONG_DOUBLE) {
-          ReportError(s,
-              "precision specifier requires floating-point argument");
+        *out = arg.int_value;
+        break;
+      }
+      case STRING: {
+        if (spec.type_ && spec.type_ != 's')
+          internal::ReportUnknownType(spec.type_, "string");
+        const Char *str = arg.string.value;
+        std::size_t size = arg.string.size;
+        if (size == 0) {
+          if (!str)
+            throw FormatError("string pointer is null");
+          if (*str)
+            size = std::char_traits<Char>::length(str);
         }
+        writer.FormatString(str, size, spec);
+        break;
       }
-
-      // Parse type.
-      if (*s != '}' && *s)
-        spec.type_ = static_cast<char>(*s++);
-    }
-
-    if (*s++ != '}')
-      throw FormatError("unmatched '{' in format");
-    start = s;
-
-    // Format argument.
-    switch (arg.type) {
-    case INT:
-      writer.FormatInt(arg.int_value, spec);
-      break;
-    case UINT:
-      writer.FormatInt(arg.uint_value, spec);
-      break;
-    case LONG:
-      writer.FormatInt(arg.long_value, spec);
-      break;
-    case ULONG:
-      writer.FormatInt(arg.ulong_value, spec);
-      break;
-    case DOUBLE:
-      writer.FormatDouble(arg.double_value, spec, precision);
-      break;
-    case LONG_DOUBLE:
-      writer.FormatDouble(arg.long_double_value, spec, precision);
-      break;
-    case CHAR: {
-      if (spec.type_ && spec.type_ != 'c')
-        internal::ReportUnknownType<Char>(spec.format_, spec.type_, "char");
-      typedef typename BasicWriter<Char>::CharPtr CharPtr;
-      CharPtr out = CharPtr();
-      if (spec.width_ > 1) {
-        Char fill = static_cast<Char>(spec.fill());
-        out = writer.GrowBuffer(spec.width_);
-        if (spec.align_ == ALIGN_RIGHT) {
-          std::fill_n(out, spec.width_ - 1, fill);
-          out += spec.width_ - 1;
-        } else if (spec.align_ == ALIGN_CENTER) {
-          out = writer.FillPadding(out, spec.width_, 1, fill);
-        } else {
-          std::fill_n(out + 1, spec.width_ - 1, fill);
-        }
-      } else {
-        out = writer.GrowBuffer(1);
+      case POINTER:
+        if (spec.type_ && spec.type_ != 'p')
+          internal::ReportUnknownType(spec.type_, "pointer");
+        spec.flags_= HASH_FLAG;
+        spec.type_ = 'x';
+        writer.FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
+        break;
+      case CUSTOM:
+        if (spec.type_)
+          internal::ReportUnknownType(spec.type_, "object");
+        arg.custom.format(writer, arg.custom.value, spec);
+        break;
+      default:
+        assert(false);
+        break;
       }
-      *out = arg.int_value;
-      break;
-    }
-    case STRING: {
-      if (spec.type_ && spec.type_ != 's')
-        internal::ReportUnknownType<Char>(spec.format_, spec.type_, "string");
-      const Char *str = arg.string.value;
-      std::size_t size = arg.string.size;
-      if (size == 0) {
-        if (!str)
-          throw FormatError("string pointer is null");
-        if (*str)
-          size = std::char_traits<Char>::length(str);
-      }
-      writer.FormatString(str, size, spec);
-      break;
-    }
-    case POINTER:
-      if (spec.type_ && spec.type_ != 'p')
-        internal::ReportUnknownType<Char>(spec.format_, spec.type_, "pointer");
-      spec.flags_= HASH_FLAG;
-      spec.type_ = 'x';
-      writer.FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
-      break;
-    case CUSTOM:
-      if (spec.type_)
-        internal::ReportUnknownType<Char>(spec.format_, spec.type_, "object");
-      arg.custom.format(writer, arg.custom.value, spec);
-      break;
-    default:
-      assert(false);
-      break;
-    }
+    }  
+  } catch (const FormatError &e) {
+    // rethrow FormatError with the format string pointed to by start
+    throw BasicFormatError<Char>(e.what(), original);
   }
+  
   writer.buffer_.append(start, s);
 }
 
 // Explicit instantiations for char.
 
-template void fmt::internal::ReportUnknownType<char>(
-    const char *format, char code, const char *type);
-
 template void fmt::BasicWriter<char>::FormatDouble<double>(
-    double value, const FormatSpec<char> &spec, int precision);
+    double value, const FormatSpec &spec, int precision);
 
 template void fmt::BasicWriter<char>::FormatDouble<long double>(
-    long double value, const FormatSpec<char> &spec, int precision);
+    long double value, const FormatSpec &spec, int precision);
 
 template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::FillPadding(CharPtr buffer,
@@ -677,16 +680,20 @@ template void fmt::BasicFormatter<char>::CheckSign(
 
 template void fmt::BasicFormatter<char>::DoFormat();
 
+template<> fmt::BasicFormatError<char>::BasicFormatError(const std::string &message, const char *format)
+    : std::runtime_error(message), format_(format) {}
+
+template<> fmt::BasicFormatError<char>::~BasicFormatError() {
+    std::runtime_error::~runtime_error();
+}
+
 // Explicit instantiations for wchar_t.
 
-template void fmt::internal::ReportUnknownType<wchar_t>(
-    const wchar_t *format, char code, const char *type);
-
 template void fmt::BasicWriter<wchar_t>::FormatDouble<double>(
-    double value, const FormatSpec<wchar_t> &spec, int precision);
+    double value, const FormatSpec &spec, int precision);
 
 template void fmt::BasicWriter<wchar_t>::FormatDouble<long double>(
-    long double value, const FormatSpec<wchar_t> &spec, int precision);
+    long double value, const FormatSpec &spec, int precision);
 
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::FillPadding(CharPtr buffer,
@@ -713,4 +720,9 @@ template void fmt::BasicFormatter<wchar_t>::CheckSign(
 
 template void fmt::BasicFormatter<wchar_t>::DoFormat();
 
-//template fmt::BasicFormatter<char>::Arg::Arg(wchar_t const*);
+template<> fmt::BasicFormatError<wchar_t>::BasicFormatError(const std::string &message, const wchar_t *format)
+    : std::runtime_error(message), format_(format){}
+
+template<> fmt::BasicFormatError<wchar_t>::~BasicFormatError() {
+    std::runtime_error::~runtime_error();
+}
