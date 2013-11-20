@@ -292,6 +292,16 @@ class FormatError : public std::runtime_error {
   : std::runtime_error(message) {}
 };
 
+template <typename Char>
+class BasicFormatError : public std::runtime_error {
+private:
+    std::basic_string<Char> format_;
+public:
+    explicit BasicFormatError(const std::string &message, const Char *format);
+    virtual ~BasicFormatError() throw();    
+    const Char *format() const { return format_.c_str(); }
+};
+
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
 };
