@@ -1,9 +1,11 @@
-/CMakeFiles
-/Testing
 /CMakeCache.txt
+/CMakeFiles
 /cmake_install.cmake
 /CTestTestfile.cmake
+/doc/doxyxml
 /format_test
+/html
 /libformat.a
 /Makefile
+/Testing
 *~
