@@ -190,9 +190,6 @@ template <>
 struct IntTraits<int> : SignedIntTraits<int, unsigned> {};
 
 template <>
-struct IntTraits<uint32_t> : SignedIntTraits<uint32_t, unsigned> {};
-
-template <>
 struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
 
 template <>
@@ -815,7 +812,7 @@ class BasicFormatter {
 
   enum Type {
     // Numeric types should go first.
-    INT, UINT, LONG, ULONG, ULLONG, DOUBLE, LONG_DOUBLE,
+    INT, UINT, LONG, ULONG, ULONG_LONG, DOUBLE, LONG_DOUBLE,
     LAST_NUMERIC_TYPE = LONG_DOUBLE,
     CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
@@ -870,7 +867,8 @@ class BasicFormatter {
     Arg(unsigned value) : type(UINT), uint_value(value), formatter(0) {}
     Arg(long value) : type(LONG), long_value(value), formatter(0) {}
     Arg(unsigned long value) : type(ULONG), ulong_value(value), formatter(0) {}
-    Arg(unsigned long long value) : type(ULLONG), ulong_long_value(value), formatter(0) {}
+    Arg(unsigned long long value)
+    : type(ULONG_LONG), ulong_long_value(value), formatter(0) {}
     Arg(float value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(double value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(long double value)
@@ -1154,7 +1152,7 @@ class FormatInt {
   enum {BUFFER_SIZE = std::numeric_limits<uint64_t>::digits10 + 3};
   char buffer_[BUFFER_SIZE];
   char *str_;
- 
+
   // Formats value in reverse and returns the number of digits.
   char *FormatDecimal(uint64_t value) {
     char *buffer_end = buffer_ + BUFFER_SIZE;

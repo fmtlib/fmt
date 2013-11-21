@@ -400,7 +400,7 @@ void fmt::BasicFormatter<Char>::CheckSign(const Char *&s, const Arg &arg) {
     ReportError(s,
         Format("format specifier '{0}' requires numeric argument") << *s);
   }
-  if (arg.type == UINT || arg.type == ULONG || arg.type == ULLONG) {
+  if (arg.type == UINT || arg.type == ULONG || arg.type == ULONG_LONG) {
     ReportError(s,
         Format("format specifier '{0}' requires signed argument") << *s);
   }
@@ -537,9 +537,9 @@ void fmt::BasicFormatter<Char>::DoFormat() {
           case ULONG:
             value = precision_arg.ulong_value;
             break;
-          case ULLONG:
+          case ULONG_LONG:
             value = precision_arg.ulong_long_value;
-            break;            
+            break;
           default:
             ReportError(s, "precision is not integer");
           }
@@ -581,9 +581,9 @@ void fmt::BasicFormatter<Char>::DoFormat() {
     case ULONG:
       writer.FormatInt(arg.ulong_value, spec);
       break;
-    case ULLONG:
+    case ULONG_LONG:
       writer.FormatInt(arg.ulong_long_value, spec);
-      break;      
+      break;
     case DOUBLE:
       writer.FormatDouble(arg.double_value, spec, precision);
       break;
