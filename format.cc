@@ -161,6 +161,12 @@ void fmt::BasicWriter<Char>::FormatDecimal(
 }
 
 template <typename Char>
+void fmt::BasicWriter<Char>::FormatDecimal(
+    CharPtr buffer, unsigned long long value, unsigned num_digits) {
+    return fmt::BasicWriter<Char>::FormatDecimal(buffer, static_cast<uint64_t>(value), num_digits);
+}
+
+template <typename Char>
 typename fmt::BasicWriter<Char>::CharPtr
   fmt::BasicWriter<Char>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign) {
@@ -400,7 +406,7 @@ void fmt::BasicFormatter<Char>::CheckSign(const Char *&s, const Arg &arg) {
     ReportError(s,
         Format("format specifier '{0}' requires numeric argument") << *s);
   }
-  if (arg.type == UINT || arg.type == ULONG) {
+  if (arg.type == UINT || arg.type == ULONG || arg.type == ULLONG) {
     ReportError(s,
         Format("format specifier '{0}' requires signed argument") << *s);
   }
@@ -519,7 +525,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
           ++s;
           ++num_open_braces_;
           const Arg &precision_arg = ParseArgIndex(s);
-          unsigned long value = 0;
+          unsigned long long value = 0;
           switch (precision_arg.type) {
           case INT:
             if (precision_arg.int_value < 0)
@@ -537,6 +543,9 @@ void fmt::BasicFormatter<Char>::DoFormat() {
           case ULONG:
             value = precision_arg.ulong_value;
             break;
+          case ULLONG:
+            value = precision_arg.ulong_long_value;
+            break;            
           default:
             ReportError(s, "precision is not integer");
           }
@@ -578,6 +587,9 @@ void fmt::BasicFormatter<Char>::DoFormat() {
     case ULONG:
       writer.FormatInt(arg.ulong_value, spec);
       break;
+    case ULLONG:
+      writer.FormatInt(arg.ulong_long_value, spec);
+      break;      
     case DOUBLE:
       writer.FormatDouble(arg.double_value, spec, precision);
       break;
@@ -655,6 +667,9 @@ template fmt::BasicWriter<char>::CharPtr
 template void fmt::BasicWriter<char>::FormatDecimal(
     CharPtr buffer, uint64_t value, unsigned num_digits);
 
+template void fmt::BasicWriter<char>::FormatDecimal(
+    CharPtr buffer, unsigned long long value, unsigned num_digits);
+
 template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign);
@@ -686,6 +701,9 @@ template fmt::BasicWriter<wchar_t>::CharPtr
 
 template void fmt::BasicWriter<wchar_t>::FormatDecimal(
     CharPtr buffer, uint64_t value, unsigned num_digits);
+
+template void fmt::BasicWriter<wchar_t>::FormatDecimal(
+    CharPtr buffer, unsigned long long value, unsigned num_digits);
 
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::PrepareFilledBuffer(
