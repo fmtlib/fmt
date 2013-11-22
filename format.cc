@@ -537,6 +537,11 @@ void fmt::BasicFormatter<Char>::DoFormat() {
           case ULONG:
             value = precision_arg.ulong_value;
             break;
+          case LONG_LONG:
+            if (precision_arg.long_long_value < 0)
+              ReportError(s, "negative precision in format");
+            value = precision_arg.long_long_value;
+            break;
           case ULONG_LONG:
             value = precision_arg.ulong_long_value;
             break;
@@ -580,6 +585,9 @@ void fmt::BasicFormatter<Char>::DoFormat() {
       break;
     case ULONG:
       writer.FormatInt(arg.ulong_value, spec);
+      break;
+    case LONG_LONG:
+      writer.FormatInt(arg.long_long_value, spec);
       break;
     case ULONG_LONG:
       writer.FormatInt(arg.ulong_long_value, spec);

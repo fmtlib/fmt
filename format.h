@@ -444,6 +444,7 @@ DEFINE_INT_FORMATTERS(int)
 DEFINE_INT_FORMATTERS(long)
 DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
+DEFINE_INT_FORMATTERS(long long)
 DEFINE_INT_FORMATTERS(unsigned long long)
 
 template <typename Char>
@@ -812,7 +813,7 @@ class BasicFormatter {
 
   enum Type {
     // Numeric types should go first.
-    INT, UINT, LONG, ULONG, ULONG_LONG, DOUBLE, LONG_DOUBLE,
+    INT, UINT, LONG, ULONG, LONG_LONG, ULONG_LONG, DOUBLE, LONG_DOUBLE,
     LAST_NUMERIC_TYPE = LONG_DOUBLE,
     CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
@@ -847,6 +848,7 @@ class BasicFormatter {
       double double_value;
       long long_value;
       unsigned long ulong_value;
+      long long long_long_value;
       unsigned long long ulong_long_value;
       long double long_double_value;
       const void *pointer_value;
@@ -867,6 +869,8 @@ class BasicFormatter {
     Arg(unsigned value) : type(UINT), uint_value(value), formatter(0) {}
     Arg(long value) : type(LONG), long_value(value), formatter(0) {}
     Arg(unsigned long value) : type(ULONG), ulong_value(value), formatter(0) {}
+    Arg(long long value)
+    : type(LONG_LONG), long_long_value(value), formatter(0) {}
     Arg(unsigned long long value)
     : type(ULONG_LONG), ulong_long_value(value), formatter(0) {}
     Arg(float value) : type(DOUBLE), double_value(value), formatter(0) {}
