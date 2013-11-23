@@ -292,13 +292,17 @@ class FormatError : public std::runtime_error {
   : std::runtime_error(message) {}
 };
 
+std::string FormatErrorMessage(const std::string &message, const char *format);
+std::string FormatErrorMessage(const std::string &message, const wchar_t *format);
+
 template <typename Char>
 class BasicFormatError : public std::runtime_error {
 private:
     std::basic_string<Char> format_;
 public:
-    explicit BasicFormatError(const std::string &message, const Char *format);
-    virtual ~BasicFormatError() throw();    
+    explicit BasicFormatError(const std::string &message, const Char *format)
+        : std::runtime_error(fmt::FormatErrorMessage(message, format)), format_(format){}
+    virtual ~BasicFormatError() throw() {}
     const Char *format() const { return format_.c_str(); }
 };
 
@@ -361,7 +365,7 @@ struct FormatSpec : AlignSpec {
   char type_;
 
   FormatSpec(unsigned width = 0, char type = 0, wchar_t fill = ' ')
-    : AlignSpec(width, fill), flags_(0), type_(type) {}
+  : AlignSpec(width, fill), flags_(0), type_(type) {}
 
   Alignment align() const { return align_; }
 
@@ -464,6 +468,7 @@ DEFINE_INT_FORMATTERS(int)
 DEFINE_INT_FORMATTERS(long)
 DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
+DEFINE_INT_FORMATTERS(unsigned long long)
 
 template <typename Char>
 class BasicFormatter;
@@ -832,7 +837,7 @@ class BasicFormatter {
 
   enum Type {
     // Numeric types should go first.
-    INT, UINT, LONG, ULONG, DOUBLE, LONG_DOUBLE,
+    INT, UINT, LONG, ULONG, ULLONG, DOUBLE, LONG_DOUBLE,
     LAST_NUMERIC_TYPE = LONG_DOUBLE,
     CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
@@ -867,6 +872,7 @@ class BasicFormatter {
       double double_value;
       long long_value;
       unsigned long ulong_value;
+      unsigned long long ulong_long_value;
       long double long_double_value;
       const void *pointer_value;
       struct {
@@ -886,6 +892,7 @@ class BasicFormatter {
     Arg(unsigned value) : type(UINT), uint_value(value), formatter(0) {}
     Arg(long value) : type(LONG), long_value(value), formatter(0) {}
     Arg(unsigned long value) : type(ULONG), ulong_value(value), formatter(0) {}
+    Arg(unsigned long long value) : type(ULLONG), ulong_long_value(value), formatter(0) {}
     Arg(float value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(double value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(long double value)
@@ -1199,6 +1206,7 @@ class FormatInt {
       *--str_ = '-';
   }
   explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
+  explicit FormatInt(uint64_t value) : str_(FormatDecimal(value)) {}
 
   inline const char *c_str() const { return str_; }
   inline std::string str() const { return str_; }

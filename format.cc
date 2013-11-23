@@ -400,7 +400,7 @@ void fmt::BasicFormatter<Char>::CheckSign(const Char *&s, const Arg &arg) {
     ReportError(s,
         Format("format specifier '{0}' requires numeric argument") << *s);
   }
-  if (arg.type == UINT || arg.type == ULONG) {
+  if (arg.type == UINT || arg.type == ULONG || arg.type == ULLONG) {
     ReportError(s,
         Format("format specifier '{0}' requires signed argument") << *s);
   }
@@ -522,7 +522,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
             ++s;
             ++num_open_braces_;
             const Arg &precision_arg = ParseArgIndex(s);
-            unsigned long value = 0;
+            unsigned long long value = 0;
             switch (precision_arg.type) {
             case INT:
               if (precision_arg.int_value < 0)
@@ -540,6 +540,9 @@ void fmt::BasicFormatter<Char>::DoFormat() {
             case ULONG:
               value = precision_arg.ulong_value;
               break;
+            case ULLONG:
+              value = precision_arg.ulong_long_value;
+              break;            
             default:
               ReportError(s, "precision is not integer");
             }
@@ -581,6 +584,9 @@ void fmt::BasicFormatter<Char>::DoFormat() {
       case ULONG:
         writer.FormatInt(arg.ulong_value, spec);
         break;
+      case ULLONG:
+        writer.FormatInt(arg.ulong_long_value, spec);
+        break;      
       case DOUBLE:
         writer.FormatDouble(arg.double_value, spec, precision);
         break;
@@ -680,12 +686,17 @@ template void fmt::BasicFormatter<char>::CheckSign(
 
 template void fmt::BasicFormatter<char>::DoFormat();
 
-template<> fmt::BasicFormatError<char>::BasicFormatError(const std::string &message, const char *format)
-    : std::runtime_error(message), format_(format) {}
-
-template<> fmt::BasicFormatError<char>::~BasicFormatError() {
-    std::runtime_error::~runtime_error();
+#ifdef FMT_FORMAT_STRING_IN_ERRORS
+std::string fmt::FormatErrorMessage(const std::string &message, const char *format) {
+    fmt::Writer w;    
+    w << "error: " << message << " while parsing format string " << format;
+    return w.str();
 }
+#else
+std::string fmt::FormatErrorMessage(const std::string &message, const char *format) {
+    return message;
+}
+#endif
 
 // Explicit instantiations for wchar_t.
 
@@ -720,9 +731,20 @@ template void fmt::BasicFormatter<wchar_t>::CheckSign(
 
 template void fmt::BasicFormatter<wchar_t>::DoFormat();
 
-template<> fmt::BasicFormatError<wchar_t>::BasicFormatError(const std::string &message, const wchar_t *format)
-    : std::runtime_error(message), format_(format){}
+#ifdef FMT_FORMAT_STRING_IN_ERRORS
+std::string fmt::FormatErrorMessage(const std::string &message, const wchar_t *format) {
 
-template<> fmt::BasicFormatError<wchar_t>::~BasicFormatError() {
-    std::runtime_error::~runtime_error();
+    int size = FMT_SNPRINTF(NULL, 0, "%ls", format);
+    char* buf = (char*)malloc(size+1);
+    FMT_SNPRINTF(buf, size+1, "%ls", format);
+    
+    fmt::Writer w;    
+    w << "error: " << message << " while parsing format string " << buf;
+    free(buf);
+    return w.str();
 }
+#else
+std::string fmt::FormatErrorMessage(const std::string &message, const wchar_t *format) {
+    return message;
+}
+#endif

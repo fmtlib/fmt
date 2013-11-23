@@ -16,6 +16,11 @@ if (HAVE_STD_CPP11_FLAG)
   add_definitions(-std=c++11)
 endif ()
 
+option(FORMAT_STRING_IN_ERRORS "Report format string in errors" OFF)
+if (FORMAT_STRING_IN_ERRORS)
+  add_definitions(-DFMT_FORMAT_STRING_IN_ERRORS=1)
+endif ()
+
 add_library(format format.cc)
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
