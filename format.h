@@ -953,6 +953,8 @@ class BasicFormatter {
 
   void CheckSign(const Char *&s, const Arg &arg);
 
+  // Parses the format string and performs the actual formatting,
+  // writing the output to writer_.
   void DoFormat();
 
   struct Proxy {
@@ -976,10 +978,12 @@ class BasicFormatter {
 
  public:
   // Constructs a formatter with a writer to be used for output and a format
-  // format string.
+  // string.
   BasicFormatter(BasicWriter<Char> &w, const Char *format = 0)
   : writer_(&w), format_(format) {}
 
+  // Perfoms formatting if the format string is non-null. The format string
+  // can be null if its ownership has been transferred to another formatter.
   ~BasicFormatter() {
     CompleteFormatting();
   }
