@@ -774,7 +774,8 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
 
 template <typename Char>
 BasicFormatter<Char> BasicWriter<Char>::Format(StringRef format) {
-  return BasicFormatter<Char>(*this, format.c_str());
+  BasicFormatter<Char> f(*this, format.c_str());
+  return f;
 }
 
 typedef BasicWriter<char> Writer;
@@ -936,8 +937,12 @@ class BasicFormatter {
 
   friend class internal::FormatterProxy<Char>;
 
-  // Forbid copying other than from a temporary. Do not implement.
-  BasicFormatter(BasicFormatter &);
+  // Forbid copying from a temporary as in the following example:
+  //   fmt::Formatter<> f = Format("test"); // not allowed
+  // This is done because BasicFormatter objects should normally exist
+  // only as temporaries returned by one of the formatting functions.
+  // Do not implement.
+  BasicFormatter(const BasicFormatter &);
   BasicFormatter& operator=(const BasicFormatter &);
 
   void Add(const Arg &arg) {
@@ -988,13 +993,8 @@ class BasicFormatter {
     CompleteFormatting();
   }
 
-  // Constructs a formatter from a proxy object.
-  BasicFormatter(const Proxy &p) : writer_(p.writer), format_(p.format) {}
-
-  operator Proxy() {
-    const Char *format = format_;
-    format_ = 0;
-    return Proxy(writer_, format);
+  BasicFormatter(BasicFormatter &f) : writer_(f.writer_), format_(f.format_) {
+    f.format_ = 0;
   }
 
   // Feeds an argument to a formatter.
@@ -1089,7 +1089,7 @@ class NoAction {
 
     // Formats an error message and prints it to stdout.
     fmt::Formatter<PrintError> ReportError(const char *format) {
-      return fmt::Formatter<PrintError>(format);
+      return Move(fmt::Formatter<PrintError>(format));
     }
 
     ReportError("File not found: {}") << path;
@@ -1102,15 +1102,8 @@ class Formatter : private Action, public BasicFormatter<Char> {
   bool inactive_;
 
   // Forbid copying other than from a temporary. Do not implement.
-  Formatter(Formatter &);
+  Formatter(const Formatter &);
   Formatter& operator=(const Formatter &);
-
-  struct Proxy {
-    const Char *format;
-    Action action;
-
-    Proxy(const Char *fmt, Action a) : format(fmt), action(a) {}
-  };
 
  public:
   /**
@@ -1127,10 +1120,10 @@ class Formatter : private Action, public BasicFormatter<Char> {
     inactive_(false) {
   }
 
-  // Constructs a formatter from a proxy object.
-  Formatter(const Proxy &p)
-  : Action(p.action), BasicFormatter<Char>(writer_, p.format),
+  Formatter(Formatter &f)
+  : Action(f), BasicFormatter<Char>(writer_, f.TakeFormatString()),
     inactive_(false) {
+    f.inactive_ = true;
   }
 
   /**
@@ -1142,13 +1135,13 @@ class Formatter : private Action, public BasicFormatter<Char> {
       (*this)(writer_);
     }
   }
-
-  // Converts the formatter into a proxy object.
-  operator Proxy() {
-    inactive_ = true;
-    return Proxy(this->TakeFormatString(), *this);
-  }
 };
+
+// Removes a const qualifier from a formatter object making it moveable.
+template <typename Action, typename Char>
+Formatter<Action, Char> &Move(const Formatter<Action, Char> &f) {
+  return const_cast<Formatter<Action, Char> &>(f);
+}
 
 /**
   Fast integer formatter.
@@ -1223,11 +1216,11 @@ class FormatInt {
   \endrst
 */
 inline Formatter<> Format(StringRef format) {
-  return Formatter<>(format);
+  return Move(Formatter<>(format));
 }
 
 inline Formatter<NoAction, wchar_t> Format(WStringRef format) {
-  return Formatter<NoAction, wchar_t>(format);
+  return Move(Formatter<NoAction, wchar_t>(format));
 }
 
 /** A formatting action that writes formatted output to stdout. */
@@ -1243,7 +1236,7 @@ class Write {
 // Example:
 //   Print("Elapsed time: {0:.2f} seconds") << 1.23;
 inline Formatter<Write> Print(StringRef format) {
-  return Formatter<Write>(format);
+  return Move(Formatter<Write>(format));
 }
 }
 
