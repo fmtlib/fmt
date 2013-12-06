@@ -999,6 +999,7 @@ class BasicFormatter {
   BasicFormatter(BasicWriter<Char> &w,
       const Char *format, std::initializer_list<Arg> args)
   : writer_(&w), format_(format) {
+    args_.reserve(args.size());
     for (const Arg &arg: args)
       Add(arg);
   }
