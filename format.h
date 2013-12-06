@@ -62,6 +62,10 @@
 # pragma GCC diagnostic ignored "-Wlong-long"
 #endif
 
+#if _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4521)
+#endif
 namespace fmt {
 
 namespace internal {
@@ -1242,6 +1246,10 @@ inline Formatter<Write> Print(StringRef format) {
 
 #ifdef FMT_GCC_DIAGNOSTIC
 # pragma GCC diagnostic pop
+#endif
+
+#if _MSC_VER
+# pragma warning(pop)
 #endif
 
 #endif  // FORMAT_H_
