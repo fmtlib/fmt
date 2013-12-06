@@ -98,7 +98,7 @@ with an arbitrary action performed when formatting is complete:
 
     // Formats an error message and prints it to std::cerr.
     fmt::Formatter<PrintError> ReportError(const char *format) {
-      return fmt::Formatter<PrintError>(format);
+      return Move(fmt::Formatter<PrintError>(format));
     }
 
     ReportError("File not found: {}") << path;
