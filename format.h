@@ -36,6 +36,7 @@
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
+#include <initializer_list>
 #include <iterator>
 #include <limits>
 #include <stdexcept>
@@ -993,6 +994,14 @@ class BasicFormatter {
   // string.
   BasicFormatter(BasicWriter<Char> &w, const Char *format = 0)
   : writer_(&w), format_(format) {}
+
+  // Constructs a formatter with formatting arguments.
+  BasicFormatter(BasicWriter<Char> &w,
+      const Char *format, std::initializer_list<Arg> args)
+  : writer_(&w), format_(format) {
+    for (const Arg &arg: args)
+      Add(arg);
+  }
 
   // Perfoms formatting if the format string is non-null. The format string
   // can be null if its ownership has been transferred to another formatter.
