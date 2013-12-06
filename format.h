@@ -66,6 +66,7 @@
 # pragma warning(push)
 # pragma warning(disable: 4521)
 #endif
+
 namespace fmt {
 
 namespace internal {
@@ -938,6 +939,8 @@ class BasicFormatter {
   const Char *format_;  // Format string.
   int num_open_braces_;
   int next_arg_index_;
+
+  typedef unsigned long long ULongLong;
 
   friend class internal::FormatterProxy<Char>;
 

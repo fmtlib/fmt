@@ -519,7 +519,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
           ++s;
           ++num_open_braces_;
           const Arg &precision_arg = ParseArgIndex(s);
-          unsigned long long value = 0;
+          ULongLong value = 0;
           switch (precision_arg.type) {
           case INT:
             if (precision_arg.int_value < 0)
