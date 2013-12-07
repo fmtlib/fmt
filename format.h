@@ -953,10 +953,6 @@ class BasicFormatter {
   BasicFormatter(const BasicFormatter &);
   BasicFormatter& operator=(const BasicFormatter &);
 
-  void Add(const Arg &arg) {
-    args_.push_back(&arg);
-  }
-
   void ReportError(const Char *s, StringRef message) const;
 
   unsigned ParseUInt(const Char *&s) const;
@@ -1001,7 +997,7 @@ class BasicFormatter {
   : writer_(&w), format_(format) {
     args_.reserve(args.size());
     for (const Arg &arg: args)
-      Add(arg);
+      args_.push_back(&arg);
   }
 
   // Perfoms formatting if the format string is non-null. The format string
@@ -1017,7 +1013,7 @@ class BasicFormatter {
   // Feeds an argument to a formatter.
   BasicFormatter &operator<<(const Arg &arg) {
     arg.formatter = this;
-    Add(arg);
+    args_.push_back(&arg);
     return *this;
   }
 
