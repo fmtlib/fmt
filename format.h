@@ -157,11 +157,16 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
 }
 
 template <typename Char>
-struct CharTraits;
+class CharTraits;
 
 template <>
-struct CharTraits<char> {
-  typedef wchar_t UnsupportedType;
+class CharTraits<char> {
+ private:
+  // Conversion from wchar_t to char is not supported.
+  static char ConvertWChar(wchar_t);
+
+ public:
+  typedef const wchar_t *UnsupportedStrType;
 
   template <typename T>
   static int FormatFloat(char *buffer, std::size_t size,
@@ -169,8 +174,11 @@ struct CharTraits<char> {
 };
 
 template <>
-struct CharTraits<wchar_t> {
-  typedef char UnsupportedType;
+class CharTraits<wchar_t> {
+ public:
+  typedef const char *UnsupportedStrType;
+
+  static wchar_t ConvertWChar(wchar_t value) { return value; }
 
   template <typename T>
   static int FormatFloat(wchar_t *buffer, std::size_t size,
@@ -545,7 +553,7 @@ class BasicWriter {
   // char stream and vice versa. If you want to print a wide string
   // as a pointer as std::ostream does, cast it to const void*.
   // Do not implement!
-  void operator<<(const typename internal::CharTraits<Char>::UnsupportedType *);
+  void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
 
  public:
   /**
@@ -841,12 +849,6 @@ class BasicFormatter {
     template <typename T>
     Arg(T *value);
 
-    // This method is private to disallow formatting of wide characters.
-    // If you want to output a wide character cast it to integer type.
-    // Do not implement!
-    // TODO
-    //Arg(wchar_t value);
-
    public:
     Type type;
     union {
@@ -884,7 +886,10 @@ class BasicFormatter {
     Arg(double value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(long double value)
     : type(LONG_DOUBLE), long_double_value(value), formatter(0) {}
-    Arg(Char value) : type(CHAR), int_value(value), formatter(0) {}
+    Arg(char value) : type(CHAR), int_value(value), formatter(0) {}
+    Arg(wchar_t value)
+    : type(CHAR), int_value(internal::CharTraits<Char>::ConvertWChar(value)),
+      formatter(0) {}
 
     Arg(const Char *value) : type(STRING), formatter(0) {
       string.value = value;

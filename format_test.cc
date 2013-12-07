@@ -304,6 +304,13 @@ TEST(WriterTest, WriteChar) {
   CHECK_WRITE('a');
 }
 
+TEST(WriterTest, WriteWideChar) {
+  // TODO
+  //CHECK_WRITE_WCHAR(L'a');
+  // The following line shouldn't compile:
+  CHECK_WRITE_CHAR(L'a');
+}
+
 TEST(WriterTest, WriteString) {
   CHECK_WRITE_CHAR("abc");
   // The following line shouldn't compile:
@@ -1155,6 +1162,13 @@ TEST(FormatterTest, FormatChar) {
   CheckUnknownTypes('a', "c", "char");
   EXPECT_EQ("a", str(Format("{0}") << 'a'));
   EXPECT_EQ("z", str(Format("{0:c}") << 'z'));
+  EXPECT_EQ(L"a", str(Format(L"{0}") << 'a'));
+}
+
+TEST(FormatterTest, FormatWChar) {
+  EXPECT_EQ(L"a", str(Format(L"{0}") << L'a'));
+  // This shouldn't compile:
+  //Format("{0}") << L'a';
 }
 
 TEST(FormatterTest, FormatCString) {
