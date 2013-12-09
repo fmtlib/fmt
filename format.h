@@ -36,12 +36,15 @@
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
-#include <initializer_list>
 #include <iterator>
 #include <limits>
 #include <stdexcept>
 #include <string>
 #include <sstream>
+
+#if FMT_USE_CXX11
+# include <initializer_list>
+#endif
 
 // Compatibility with compilers other than clang.
 #ifndef __has_feature
@@ -996,6 +999,7 @@ class BasicFormatter {
   BasicFormatter(BasicWriter<Char> &w, const Char *format = 0)
   : writer_(&w), format_(format) {}
 
+#if FMT_USE_CXX11
   // Constructs a formatter with formatting arguments.
   BasicFormatter(BasicWriter<Char> &w,
       const Char *format, std::initializer_list<Arg> args)
@@ -1004,6 +1008,7 @@ class BasicFormatter {
     for (const Arg &arg: args)
       args_.push_back(&arg);
   }
+#endif
 
   // Performs formatting if the format string is non-null. The format string
   // can be null if its ownership has been transferred to another formatter.
