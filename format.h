@@ -1005,7 +1005,7 @@ class BasicFormatter {
       args_.push_back(&arg);
   }
 
-  // Perfoms formatting if the format string is non-null. The format string
+  // Performs formatting if the format string is non-null. The format string
   // can be null if its ownership has been transferred to another formatter.
   ~BasicFormatter() {
     CompleteFormatting();
