@@ -42,8 +42,8 @@
 #include <string>
 #include <sstream>
 
-#if FMT_USE_CXX11
-# include <initializer_list>
+#ifdef __GNUC__
+# define FMG_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #endif
 
 // Compatibility with compilers other than clang.
@@ -51,16 +51,22 @@
 # define __has_feature(x) 0
 #endif
 
+#define FMT_USE_INITIALIZER_LIST \
+  (__has_feature(cxx_generalized_initializers) || \
+      FMG_GCC_VERSION >= 404 || _MSC_VER >= 1700)
+
+#if FMT_USE_INITIALIZER_LIST
+# include <initializer_list>
+#endif
+
 // Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
-#if FMT_USE_NOEXCEPT || \
-    (defined(__has_feature) && __has_feature(cxx_noexcept)) || \
-    (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+#if FMT_USE_NOEXCEPT || __has_feature(cxx_noexcept) || FMG_GCC_VERSION >= 408
 # define FMT_NOEXCEPT(expr) noexcept(expr)
 #else
 # define FMT_NOEXCEPT(expr)
 #endif
 
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#if FMG_GCC_VERSION >= 406
 # define FMT_GCC_DIAGNOSTIC
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wlong-long"
@@ -999,7 +1005,7 @@ class BasicFormatter {
   BasicFormatter(BasicWriter<Char> &w, const Char *format = 0)
   : writer_(&w), format_(format) {}
 
-#if FMT_USE_CXX11
+#if FMT_USE_INITIALIZER_LIST
   // Constructs a formatter with formatting arguments.
   BasicFormatter(BasicWriter<Char> &w,
       const Char *format, std::initializer_list<Arg> args)
