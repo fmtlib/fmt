@@ -49,17 +49,22 @@
 
 // Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
 #if FMT_USE_NOEXCEPT || \
-    (defined(__has_feature) && __has_feature(cxx_noexcept))
+    (defined(__has_feature) && __has_feature(cxx_noexcept)) || \
+    (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
 # define FMT_NOEXCEPT(expr) noexcept(expr)
 #else
 # define FMT_NOEXCEPT(expr)
 #endif
 
-#ifdef __GNUC__
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+# define FMT_GCC_DIAGNOSTIC
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wlong-long"
 #endif
+
+#if _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4521)
 #endif
 
 namespace fmt {
@@ -188,9 +193,6 @@ struct SignedIntTraits {
 
 template <>
 struct IntTraits<int> : SignedIntTraits<int, unsigned> {};
-
-template <>
-struct IntTraits<uint32_t> : SignedIntTraits<uint32_t, unsigned> {};
 
 template <>
 struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
@@ -468,6 +470,7 @@ DEFINE_INT_FORMATTERS(int)
 DEFINE_INT_FORMATTERS(long)
 DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
+DEFINE_INT_FORMATTERS(long long)
 DEFINE_INT_FORMATTERS(unsigned long long)
 
 template <typename Char>
@@ -763,9 +766,8 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
     } while ((n >>= 1) != 0);
     Char *p = GetBase(PrepareFilledBuffer(size, f, sign));
     n = abs_value;
-    const char *digits = "01";
     do {
-      *p-- = digits[n & 0x1];
+      *p-- = '0' + (n & 1);
     } while ((n >>= 1) != 0);
     if (print_prefix) {
       *p-- = f.type();
@@ -798,7 +800,8 @@ BasicWriter<Char> &BasicWriter<Char>::operator<<(
 
 template <typename Char>
 BasicFormatter<Char> BasicWriter<Char>::Format(StringRef format) {
-  return BasicFormatter<Char>(*this, format.c_str());
+  BasicFormatter<Char> f(*this, format.c_str());
+  return f;
 }
 
 typedef BasicWriter<char> Writer;
@@ -837,7 +840,7 @@ class BasicFormatter {
 
   enum Type {
     // Numeric types should go first.
-    INT, UINT, LONG, ULONG, ULLONG, DOUBLE, LONG_DOUBLE,
+    INT, UINT, LONG, ULONG, LONG_LONG, ULONG_LONG, DOUBLE, LONG_DOUBLE,
     LAST_NUMERIC_TYPE = LONG_DOUBLE,
     CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
@@ -872,6 +875,7 @@ class BasicFormatter {
       double double_value;
       long long_value;
       unsigned long ulong_value;
+      long long long_long_value;
       unsigned long long ulong_long_value;
       long double long_double_value;
       const void *pointer_value;
@@ -892,7 +896,10 @@ class BasicFormatter {
     Arg(unsigned value) : type(UINT), uint_value(value), formatter(0) {}
     Arg(long value) : type(LONG), long_value(value), formatter(0) {}
     Arg(unsigned long value) : type(ULONG), ulong_value(value), formatter(0) {}
-    Arg(unsigned long long value) : type(ULLONG), ulong_long_value(value), formatter(0) {}
+    Arg(long long value)
+    : type(LONG_LONG), long_long_value(value), formatter(0) {}
+    Arg(unsigned long long value)
+    : type(ULONG_LONG), ulong_long_value(value), formatter(0) {}
     Arg(float value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(double value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(long double value)
@@ -915,6 +922,11 @@ class BasicFormatter {
     Arg(void *value) : type(POINTER), pointer_value(value), formatter(0) {}
 
     Arg(const std::string &value) : type(STRING), formatter(0) {
+      string.value = value.c_str();
+      string.size = value.size();
+    }
+
+    Arg(StringRef value) : type(STRING), formatter(0) {
       string.value = value.c_str();
       string.size = value.size();
     }
@@ -949,10 +961,16 @@ class BasicFormatter {
   int num_open_braces_;
   int next_arg_index_;
 
+  typedef unsigned long long ULongLong;
+
   friend class internal::FormatterProxy<Char>;
 
-  // Forbid copying other than from a temporary. Do not implement.
-  BasicFormatter(BasicFormatter &);
+  // Forbid copying from a temporary as in the following example:
+  //   fmt::Formatter<> f = Format("test"); // not allowed
+  // This is done because BasicFormatter objects should normally exist
+  // only as temporaries returned by one of the formatting functions.
+  // Do not implement.
+  BasicFormatter(const BasicFormatter &);
   BasicFormatter& operator=(const BasicFormatter &);
 
   void Add(const Arg &arg) {
@@ -968,6 +986,8 @@ class BasicFormatter {
 
   void CheckSign(const Char *&s, const Arg &arg);
 
+  // Parses the format string and performs the actual formatting,
+  // writing the output to writer_.
   void DoFormat();
 
   struct Proxy {
@@ -991,21 +1011,18 @@ class BasicFormatter {
 
  public:
   // Constructs a formatter with a writer to be used for output and a format
-  // format string.
+  // string.
   BasicFormatter(BasicWriter<Char> &w, const Char *format = 0)
   : writer_(&w), format_(format) {}
 
+  // Performs formatting if the format string is non-null. The format string
+  // can be null if its ownership has been transferred to another formatter.
   ~BasicFormatter() {
     CompleteFormatting();
   }
 
-  // Constructs a formatter from a proxy object.
-  BasicFormatter(const Proxy &p) : writer_(p.writer), format_(p.format) {}
-
-  operator Proxy() {
-    const Char *format = format_;
-    format_ = 0;
-    return Proxy(writer_, format);
+  BasicFormatter(BasicFormatter &f) : writer_(f.writer_), format_(f.format_) {
+    f.format_ = 0;
   }
 
   // Feeds an argument to a formatter.
@@ -1100,7 +1117,7 @@ class NoAction {
 
     // Formats an error message and prints it to stdout.
     fmt::Formatter<PrintError> ReportError(const char *format) {
-      return fmt::Formatter<PrintError>(format);
+      return Move(fmt::Formatter<PrintError>(format));
     }
 
     ReportError("File not found: {}") << path;
@@ -1113,15 +1130,8 @@ class Formatter : private Action, public BasicFormatter<Char> {
   bool inactive_;
 
   // Forbid copying other than from a temporary. Do not implement.
-  Formatter(Formatter &);
+  Formatter(const Formatter &);
   Formatter& operator=(const Formatter &);
-
-  struct Proxy {
-    const Char *format;
-    Action action;
-
-    Proxy(const Char *fmt, Action a) : format(fmt), action(a) {}
-  };
 
  public:
   /**
@@ -1138,10 +1148,10 @@ class Formatter : private Action, public BasicFormatter<Char> {
     inactive_(false) {
   }
 
-  // Constructs a formatter from a proxy object.
-  Formatter(const Proxy &p)
-  : Action(p.action), BasicFormatter<Char>(writer_, p.format),
+  Formatter(Formatter &f)
+  : Action(f), BasicFormatter<Char>(writer_, f.TakeFormatString()),
     inactive_(false) {
+    f.inactive_ = true;
   }
 
   /**
@@ -1153,13 +1163,13 @@ class Formatter : private Action, public BasicFormatter<Char> {
       (*this)(writer_);
     }
   }
-
-  // Converts the formatter into a proxy object.
-  operator Proxy() {
-    inactive_ = true;
-    return Proxy(this->TakeFormatString(), *this);
-  }
 };
+
+// Removes a const qualifier from a formatter object making it moveable.
+template <typename Action, typename Char>
+Formatter<Action, Char> &Move(const Formatter<Action, Char> &f) {
+  return const_cast<Formatter<Action, Char> &>(f);
+}
 
 /**
   Fast integer formatter.
@@ -1171,7 +1181,7 @@ class FormatInt {
   enum {BUFFER_SIZE = std::numeric_limits<uint64_t>::digits10 + 3};
   char buffer_[BUFFER_SIZE];
   char *str_;
- 
+
   // Formats value in reverse and returns the number of digits.
   char *FormatDecimal(uint64_t value) {
     char *buffer_end = buffer_ + BUFFER_SIZE;
@@ -1208,8 +1218,8 @@ class FormatInt {
   explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
   explicit FormatInt(uint64_t value) : str_(FormatDecimal(value)) {}
 
-  inline const char *c_str() const { return str_; }
-  inline std::string str() const { return str_; }
+  const char *c_str() const { return str_; }
+  std::string str() const { return str_; }
 };
 
 /**
@@ -1234,11 +1244,11 @@ class FormatInt {
   \endrst
 */
 inline Formatter<> Format(StringRef format) {
-  return Formatter<>(format);
+  return Move(Formatter<>(format));
 }
 
 inline Formatter<NoAction, wchar_t> Format(WStringRef format) {
-  return Formatter<NoAction, wchar_t>(format);
+  return Move(Formatter<NoAction, wchar_t>(format));
 }
 
 /** A formatting action that writes formatted output to stdout. */
@@ -1254,14 +1264,16 @@ class Write {
 // Example:
 //   Print("Elapsed time: {0:.2f} seconds") << 1.23;
 inline Formatter<Write> Print(StringRef format) {
-  return Formatter<Write>(format);
+  return Move(Formatter<Write>(format));
 }
 }
 
-#ifdef __GNUC__
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#ifdef FMT_GCC_DIAGNOSTIC
 # pragma GCC diagnostic pop
 #endif
+
+#if _MSC_VER
+# pragma warning(pop)
 #endif
 
 #endif  // FORMAT_H_
