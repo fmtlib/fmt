@@ -396,7 +396,7 @@ inline const typename fmt::BasicFormatter<Char>::Arg
 
 template <typename Char>
 void fmt::BasicFormatter<Char>::CheckSign(const Char *&s, const Arg &arg) {
-  char sign = *s;
+  char sign = static_cast<char>(*s);
   if (arg.type > LAST_NUMERIC_TYPE) {
     ReportError(s,
         Format("format specifier '{}' requires numeric argument") << sign);
