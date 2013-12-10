@@ -396,13 +396,14 @@ inline const typename fmt::BasicFormatter<Char>::Arg
 
 template <typename Char>
 void fmt::BasicFormatter<Char>::CheckSign(const Char *&s, const Arg &arg) {
+  char sign = static_cast<char>(*s);
   if (arg.type > LAST_NUMERIC_TYPE) {
     ReportError(s,
-        Format("format specifier '{0}' requires numeric argument") << *s);
+        Format("format specifier '{}' requires numeric argument") << sign);
   }
   if (arg.type == UINT || arg.type == ULONG || arg.type == ULONG_LONG) {
     ReportError(s,
-        Format("format specifier '{0}' requires signed argument") << *s);
+        Format("format specifier '{}' requires signed argument") << sign);
   }
   ++s;
 }
@@ -521,7 +522,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
             ++s;
             ++num_open_braces_;
             const Arg &precision_arg = ParseArgIndex(s);
-            unsigned long long value = 0;
+            ULongLong value = 0;
             switch (precision_arg.type) {
             case INT:
               if (precision_arg.int_value < 0)
