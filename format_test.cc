@@ -1341,7 +1341,8 @@ struct PrintError {
 };
 
 fmt::Formatter<PrintError> ReportError(const char *format) {
-  return Move(fmt::Formatter<PrintError>(format));
+  fmt::Formatter<PrintError> f(format);
+  return f;
 }
 
 TEST(FormatterTest, Examples) {

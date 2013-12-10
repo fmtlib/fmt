@@ -1121,7 +1121,8 @@ class NoAction {
 
     // Formats an error message and prints it to stdout.
     fmt::Formatter<PrintError> ReportError(const char *format) {
-      return Move(fmt::Formatter<PrintError>(format));
+      fmt::Formatter f<PrintError>(format);
+      return f;
     }
 
     ReportError("File not found: {}") << path;
@@ -1168,12 +1169,6 @@ class Formatter : private Action, public BasicFormatter<Char> {
     }
   }
 };
-
-// Removes a const qualifier from a formatter object making it moveable.
-template <typename Action, typename Char>
-Formatter<Action, Char> &Move(const Formatter<Action, Char> &f) {
-  return const_cast<Formatter<Action, Char> &>(f);
-}
 
 /**
   Fast integer formatter.
@@ -1248,11 +1243,13 @@ class FormatInt {
   \endrst
 */
 inline Formatter<> Format(StringRef format) {
-  return Move(Formatter<>(format));
+  Formatter<> f(format);
+  return f;
 }
 
 inline Formatter<NoAction, wchar_t> Format(WStringRef format) {
-  return Move(Formatter<NoAction, wchar_t>(format));
+  Formatter<NoAction, wchar_t> f(format);
+  return f;
 }
 
 /** A formatting action that writes formatted output to stdout. */
@@ -1268,7 +1265,8 @@ class Write {
 // Example:
 //   Print("Elapsed time: {0:.2f} seconds") << 1.23;
 inline Formatter<Write> Print(StringRef format) {
-  return Move(Formatter<Write>(format));
+  Formatter<Write> f(format);
+  return f;
 }
 }
 
