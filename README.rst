@@ -55,7 +55,7 @@ Arguments can be accessed by position and arguments' indices can be repeated:
     std::string s = str(fmt::Format("{0}{1}{0}") << "abra" << "cad");
     // s == "abracadabra"
 
-Format can be used as a safe portable replacement to ``itoa``:
+Format can be used as a safe portable replacement for ``itoa``:
 
 .. code-block:: c++
 
