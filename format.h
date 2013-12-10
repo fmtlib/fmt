@@ -51,16 +51,19 @@
 # define __has_feature(x) 0
 #endif
 
-#define FMT_USE_INITIALIZER_LIST \
-  (__has_feature(cxx_generalized_initializers) || \
-      FMG_GCC_VERSION >= 404 || _MSC_VER >= 1700)
+#ifndef FMT_USE_INITIALIZER_LIST
+# define FMT_USE_INITIALIZER_LIST \
+   (__has_feature(cxx_generalized_initializers) || \
+       (FMG_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1700)
+#endif
 
 #if FMT_USE_INITIALIZER_LIST
 # include <initializer_list>
 #endif
 
 // Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
-#if FMT_USE_NOEXCEPT || __has_feature(cxx_noexcept) || FMG_GCC_VERSION >= 408
+#if FMT_USE_NOEXCEPT || __has_feature(cxx_noexcept) || \
+  (FMG_GCC_VERSION >= 408 && __cplusplus >= 201103)
 # define FMT_NOEXCEPT(expr) noexcept(expr)
 #else
 # define FMT_NOEXCEPT(expr)
