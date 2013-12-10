@@ -12,14 +12,16 @@ project(FORMAT)
 
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
-if (HAVE_STD_CPP11_FLAG)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-endif ()
 
 add_library(format format.cc)
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -pedantic")
+endif ()
+if (HAVE_STD_CPP11_FLAG)
+  set_target_properties(format PROPERTIES COMPILE_FLAGS "-std=c++11")
+  # Test compilation with default flags.
+  add_library(testformat format.cc)
 endif ()
 
 add_subdirectory(doc)
@@ -47,6 +49,9 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
       "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
   endif ()
   add_test(format_test format_test)
+  if (HAVE_STD_CPP11_FLAG)
+    set_target_properties(format_test PROPERTIES COMPILE_FLAGS "-std=c++11")
+  endif ()
 endif ()
 
 find_package(Boost)
@@ -61,6 +66,9 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/format-benchmark/tinyformat_test.cpp)
   target_link_libraries(tinyformat_speed_test format)
   set_target_properties(tinyformat_speed_test PROPERTIES COMPILE_DEFINITIONS
     "SPEED_TEST;HAVE_FORMAT;_SCL_SECURE_NO_WARNINGS")
+  if (HAVE_STD_CPP11_FLAG)
+    set_target_properties(tinyformat_speed_test PROPERTIES COMPILE_FLAGS "-std=c++11")
+  endif ()
 
   add_custom_target(speed_test
     COMMAND @echo running speed tests...
