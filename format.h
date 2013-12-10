@@ -43,7 +43,7 @@
 #include <sstream>
 
 #ifdef __GNUC__
-# define FMG_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
+# define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #endif
 
 // Compatibility with compilers other than clang.
@@ -54,7 +54,7 @@
 #ifndef FMT_USE_INITIALIZER_LIST
 # define FMT_USE_INITIALIZER_LIST \
    (__has_feature(cxx_generalized_initializers) || \
-       (FMG_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1700)
+       (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1700)
 #endif
 
 #if FMT_USE_INITIALIZER_LIST
@@ -63,13 +63,13 @@
 
 // Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
 #if FMT_USE_NOEXCEPT || __has_feature(cxx_noexcept) || \
-  (FMG_GCC_VERSION >= 408 && __cplusplus >= 201103)
+  (FMT_GCC_VERSION >= 408 && __cplusplus >= 201103)
 # define FMT_NOEXCEPT(expr) noexcept(expr)
 #else
 # define FMT_NOEXCEPT(expr)
 #endif
 
-#if FMG_GCC_VERSION >= 406
+#if FMT_GCC_VERSION >= 406
 # define FMT_GCC_DIAGNOSTIC
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wlong-long"
