@@ -315,6 +315,20 @@ class FormatError : public std::runtime_error {
   : std::runtime_error(message) {}
 };
 
+std::string FormatErrorMessage(const std::string &message, const char *format);
+std::string FormatErrorMessage(const std::string &message, const wchar_t *format);
+
+template <typename Char>
+class BasicFormatError : public std::runtime_error {
+private:
+    std::basic_string<Char> format_;
+public:
+    explicit BasicFormatError(const std::string &message, const Char *format)
+        : std::runtime_error(fmt::FormatErrorMessage(message, format)), format_(format){}
+    virtual ~BasicFormatError() throw() {}
+    const Char *format() const { return format_.c_str(); }
+};
+
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
 };
@@ -403,6 +417,11 @@ class IntFormatter : public SpecT {
 IntFormatter<int, TypeSpec<'b'> > bin(int value);
 
 /**
+  Returns an integer formatter that formats the value in base 2.
+ */
+IntFormatter<int, TypeSpec<'B'> > binu(int value);
+
+/**
   Returns an integer formatter that formats the value in base 8.
  */
 IntFormatter<int, TypeSpec<'o'> > oct(int value);
@@ -439,7 +458,9 @@ IntFormatter<int, AlignTypeSpec<TYPE_CODE> > pad(
 inline IntFormatter<TYPE, TypeSpec<'b'> > bin(TYPE value) { \
   return IntFormatter<TYPE, TypeSpec<'b'> >(value, TypeSpec<'b'>()); \
 } \
- \
+inline IntFormatter<TYPE, TypeSpec<'B'> > binu(TYPE value) { \
+  return IntFormatter<TYPE, TypeSpec<'B'> >(value, TypeSpec<'B'>()); \
+} \
 inline IntFormatter<TYPE, TypeSpec<'o'> > oct(TYPE value) { \
   return IntFormatter<TYPE, TypeSpec<'o'> >(value, TypeSpec<'o'>()); \
 } \
