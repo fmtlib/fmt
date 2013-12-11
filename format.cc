@@ -161,12 +161,6 @@ void fmt::BasicWriter<Char>::FormatDecimal(
 }
 
 template <typename Char>
-void fmt::BasicWriter<Char>::FormatDecimal(
-    CharPtr buffer, unsigned long long value, unsigned num_digits) {
-    return fmt::BasicWriter<Char>::FormatDecimal(buffer, static_cast<uint64_t>(value), num_digits);
-}
-
-template <typename Char>
 typename fmt::BasicWriter<Char>::CharPtr
   fmt::BasicWriter<Char>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign) {
@@ -402,13 +396,14 @@ inline const typename fmt::BasicFormatter<Char>::Arg
 
 template <typename Char>
 void fmt::BasicFormatter<Char>::CheckSign(const Char *&s, const Arg &arg) {
+  char sign = static_cast<char>(*s);
   if (arg.type > LAST_NUMERIC_TYPE) {
     ReportError(s,
-        Format("format specifier '{0}' requires numeric argument") << *s);
+        Format("format specifier '{}' requires numeric argument") << sign);
   }
-  if (arg.type == UINT || arg.type == ULONG || arg.type == ULLONG) {
+  if (arg.type == UINT || arg.type == ULONG || arg.type == ULONG_LONG) {
     ReportError(s,
-        Format("format specifier '{0}' requires signed argument") << *s);
+        Format("format specifier '{}' requires signed argument") << sign);
   }
   ++s;
 }
@@ -419,7 +414,6 @@ void fmt::BasicFormatter<Char>::DoFormat() {
   format_ = 0;
   next_arg_index_ = 0;
   const Char *s = start;
-  typedef internal::Array<Char, BasicWriter<Char>::INLINE_BUFFER_SIZE> Buffer;
   BasicWriter<Char> &writer = *writer_;
   while (*s) {
     Char c = *s++;
@@ -526,7 +520,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
           ++s;
           ++num_open_braces_;
           const Arg &precision_arg = ParseArgIndex(s);
-          unsigned long long value = 0;
+          ULongLong value = 0;
           switch (precision_arg.type) {
           case INT:
             if (precision_arg.int_value < 0)
@@ -544,15 +538,20 @@ void fmt::BasicFormatter<Char>::DoFormat() {
           case ULONG:
             value = precision_arg.ulong_value;
             break;
-          case ULLONG:
+          case LONG_LONG:
+            if (precision_arg.long_long_value < 0)
+              ReportError(s, "negative precision in format");
+            value = precision_arg.long_long_value;
+            break;
+          case ULONG_LONG:
             value = precision_arg.ulong_long_value;
-            break;            
+            break;
           default:
             ReportError(s, "precision is not integer");
           }
           if (value > INT_MAX)
             ReportError(s, "number is too big in format");
-          precision = value;
+          precision = static_cast<int>(value);
           if (*s++ != '}')
             throw FormatError("unmatched '{' in format");
           --num_open_braces_;
@@ -588,9 +587,12 @@ void fmt::BasicFormatter<Char>::DoFormat() {
     case ULONG:
       writer.FormatInt(arg.ulong_value, spec);
       break;
-    case ULLONG:
+    case LONG_LONG:
+      writer.FormatInt(arg.long_long_value, spec);
+      break;
+    case ULONG_LONG:
       writer.FormatInt(arg.ulong_long_value, spec);
-      break;      
+      break;
     case DOUBLE:
       writer.FormatDouble(arg.double_value, spec, precision);
       break;
@@ -668,9 +670,6 @@ template fmt::BasicWriter<char>::CharPtr
 template void fmt::BasicWriter<char>::FormatDecimal(
     CharPtr buffer, uint64_t value, unsigned num_digits);
 
-template void fmt::BasicWriter<char>::FormatDecimal(
-    CharPtr buffer, unsigned long long value, unsigned num_digits);
-
 template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign);
@@ -702,9 +701,6 @@ template fmt::BasicWriter<wchar_t>::CharPtr
 
 template void fmt::BasicWriter<wchar_t>::FormatDecimal(
     CharPtr buffer, uint64_t value, unsigned num_digits);
-
-template void fmt::BasicWriter<wchar_t>::FormatDecimal(
-    CharPtr buffer, unsigned long long value, unsigned num_digits);
 
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::PrepareFilledBuffer(
