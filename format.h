@@ -861,6 +861,16 @@ class BasicFormatter {
     template <typename T>
     Arg(T *value);
 
+    struct StringValue {
+      const Char *value;
+      std::size_t size;
+    };
+
+    struct CustomValue {
+      const void *value;
+      FormatFunc format;
+    };
+
    public:
     Type type;
     union {
@@ -873,14 +883,8 @@ class BasicFormatter {
       unsigned long long ulong_long_value;
       long double long_double_value;
       const void *pointer_value;
-      struct {
-        const Char *value;
-        std::size_t size;
-      } string;
-      struct {
-        const void *value;
-        FormatFunc format;
-      } custom;
+      StringValue string;
+      CustomValue custom;
     };
     mutable BasicFormatter *formatter;
 
