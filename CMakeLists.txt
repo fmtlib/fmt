@@ -10,6 +10,8 @@ endif ()
 
 project(FORMAT)
 
+set(PROFILE FALSE CACHE BOOL "Enable profiling using gperftools.")
+
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
 
@@ -64,8 +66,12 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/format-benchmark/tinyformat_test.cpp)
 
   add_executable(tinyformat_speed_test format-benchmark/tinyformat_test.cpp)
   target_link_libraries(tinyformat_speed_test format)
+  if (PROFILE)
+    target_link_libraries(tinyformat_speed_test profiler)
+    set(PROFILE_DEFS ";FMT_PROFILE")
+  endif ()
   set_target_properties(tinyformat_speed_test PROPERTIES COMPILE_DEFINITIONS
-    "SPEED_TEST;HAVE_FORMAT;_SCL_SECURE_NO_WARNINGS")
+    "SPEED_TEST;HAVE_FORMAT;_SCL_SECURE_NO_WARNINGS;${PROFILE_DEFS}")
   if (HAVE_STD_CPP11_FLAG)
     set_target_properties(tinyformat_speed_test PROPERTIES COMPILE_FLAGS "-std=c++11")
   endif ()
