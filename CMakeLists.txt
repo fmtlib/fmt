@@ -10,8 +10,6 @@ endif ()
 
 project(FORMAT)
 
-set(PROFILE FALSE CACHE BOOL "Enable profiling using gperftools.")
-
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
 
@@ -56,6 +54,13 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
   endif ()
 endif ()
 
+find_library(PROFILER_LIB profiler)
+find_path(PROFILER_INCLUDE_DIR gperftools/profiler.h)
+if (PROFILER_LIB AND PROFILER_INCLUDE_DIR)
+  include_directories(${PROFILER_INCLUDE_DIR})
+  set(HAVE_PROFILER TRUE)
+endif ()
+
 find_package(Boost)
 if (Boost_FOUND)
   add_definitions(-DHAVE_BOOST)
@@ -66,8 +71,8 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/format-benchmark/tinyformat_test.cpp)
 
   add_executable(tinyformat_speed_test format-benchmark/tinyformat_test.cpp)
   target_link_libraries(tinyformat_speed_test format)
-  if (PROFILE)
-    target_link_libraries(tinyformat_speed_test profiler)
+  if (HAVE_PROFILER)
+    target_link_libraries(tinyformat_speed_test ${PROFILER_LIB})
     set(PROFILE_DEFS ";FMT_PROFILE")
   endif ()
   set_target_properties(tinyformat_speed_test PROPERTIES COMPILE_DEFINITIONS
