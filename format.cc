@@ -35,6 +35,7 @@
 
 #include <cctype>
 #include <cmath>
+#include <cstdarg>
 
 namespace {
 
@@ -57,7 +58,7 @@ inline int IsInf(double x) {
 
 #define FMT_SNPRINTF snprintf
 
-#else
+#else  // _MSC_VER
 
 inline int SignBit(double value) {
   if (value < 0) return 1;
@@ -70,7 +71,13 @@ inline int SignBit(double value) {
 
 inline int IsInf(double x) { return !_finite(x); }
 
-#define FMT_SNPRINTF sprintf_s
+inline int FMT_SNPRINTF(char *buffer, size_t size, const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  int result = vsnprintf_s(buffer, size, _TRUNCATE, format, args);
+  va_end(args);
+  return result;
+}
 
 #endif  // _MSC_VER
 }
