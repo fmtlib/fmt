@@ -302,11 +302,8 @@ TEST(WriterTest, WriteDouble) {
 
 TEST(WriterTest, WriteDoubleAtBufferBoundary) {
   fmt::Writer writer;
-  int i = 0;
-  while (i++ < 130) {
-    std::cout << i << std::endl;
-    writer << 1.01;
-  }
+  for (int i = 0; i < 100; ++i)
+    writer << 1.23456789;
 }
 
 TEST(WriterTest, WriteChar) {
