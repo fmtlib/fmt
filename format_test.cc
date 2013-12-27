@@ -300,6 +300,15 @@ TEST(WriterTest, WriteDouble) {
   CHECK_WRITE(4.2l);
 }
 
+TEST(WriterTest, WriteDoubleAtBufferBoundary) {
+  fmt::Writer writer;
+  int i = 0;
+  while (i++ < 130) {
+    std::cout << i << std::endl;
+    writer << 1.01;
+  }
+}
+
 TEST(WriterTest, WriteChar) {
   CHECK_WRITE('a');
 }
