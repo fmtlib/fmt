@@ -322,8 +322,10 @@ enum Alignment {
 // Flags.
 enum { SIGN_FLAG = 1, PLUS_FLAG = 2, HASH_FLAG = 4 };
 
+// Formatting specifier.
 struct Spec {};
 
+// Formatting type specifier.
 template <char TYPE>
 struct TypeSpec : Spec {
   Alignment align() const { return ALIGN_DEFAULT; }
@@ -337,6 +339,7 @@ struct TypeSpec : Spec {
   char fill() const { return ' '; }
 };
 
+// Formatting width specifier.
 struct WidthSpec {
   unsigned width_;
   // Fill is always wchar_t and cast to char if necessary to avoid having
@@ -349,6 +352,7 @@ struct WidthSpec {
   wchar_t fill() const { return fill_; }
 };
 
+// Formatting alignment specifier.
 struct AlignSpec : WidthSpec {
   Alignment align_;
 
@@ -358,6 +362,7 @@ struct AlignSpec : WidthSpec {
   Alignment align() const { return align_; }
 };
 
+// Formatting specifier that provides both alignment and type.
 template <char TYPE>
 struct AlignTypeSpec : AlignSpec {
   AlignTypeSpec(unsigned width, wchar_t fill) : AlignSpec(width, fill) {}
@@ -369,6 +374,7 @@ struct AlignTypeSpec : AlignSpec {
   char type() const { return TYPE; }
 };
 
+// Full formatting specifier.
 struct FormatSpec : AlignSpec {
   unsigned flags_;
   char type_;
