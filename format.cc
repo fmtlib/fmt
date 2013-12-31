@@ -583,22 +583,22 @@ void fmt::BasicFormatter<Char>::DoFormat() {
     // Format argument.
     switch (arg.type) {
     case INT:
-      writer.FormatInt(arg.int_value, spec);
+      FormatInt(arg.int_value, spec);
       break;
     case UINT:
-      writer.FormatInt(arg.uint_value, spec);
+      FormatInt(arg.uint_value, spec);
       break;
     case LONG:
-      writer.FormatInt(arg.long_value, spec);
+      FormatInt(arg.long_value, spec);
       break;
     case ULONG:
-      writer.FormatInt(arg.ulong_value, spec);
+      FormatInt(arg.ulong_value, spec);
       break;
     case LONG_LONG:
-      writer.FormatInt(arg.long_long_value, spec);
+      FormatInt(arg.long_long_value, spec);
       break;
     case ULONG_LONG:
-      writer.FormatInt(arg.ulong_long_value, spec);
+      FormatInt(arg.ulong_long_value, spec);
       break;
     case DOUBLE:
       writer.FormatDouble(arg.double_value, spec, precision);
@@ -647,7 +647,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
         internal::ReportUnknownType(spec.type_, "pointer");
       spec.flags_= HASH_FLAG;
       spec.type_ = 'x';
-      writer.FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
+      FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
       break;
     case CUSTOM:
       if (spec.type_)

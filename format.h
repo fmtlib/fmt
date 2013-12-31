@@ -397,6 +397,18 @@ class IntFormatter : public SpecT {
   T value() const { return value_; }
 };
 
+template <typename T>
+class StrFormatter : public AlignSpec {
+ private:
+  const T *str_;
+
+ public:
+  StrFormatter(const T *str, const AlignSpec &spec = AlignSpec())
+  : AlignSpec(spec), str_(str) {}
+
+  const T *str() const { return str_; }
+};
+
 /**
   Returns an integer formatter that formats the value in base 2.
  */
@@ -422,7 +434,7 @@ IntFormatter<int, TypeSpec<'X'> > hexu(int value);
 /**
   \rst
   Returns an integer formatter that pads the formatted argument with the fill
-  character to the specified width using the default (right) alignment.
+  character to the specified width using the default (right) numeric alignment.
 
   **Example**::
 
@@ -472,6 +484,23 @@ DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
 DEFINE_INT_FORMATTERS(long long)
 DEFINE_INT_FORMATTERS(unsigned long long)
+
+/**
+  \rst
+  Returns a string formatter that pads the formatted argument with the fill
+  character to the specified width using the default (left) string alignment.
+
+  **Example**::
+
+    std::string s = str(Writer() << pad("abc", 8));
+    // s == "abc     "
+
+  \endrst
+ */
+inline StrFormatter<char> pad(
+    const char *str, unsigned width, wchar_t fill = ' ') {
+  return StrFormatter<char>(str, AlignSpec(width, fill));
+}
 
 template <typename Char>
 class BasicFormatter;
@@ -547,19 +576,13 @@ class BasicWriter {
 
   CharPtr PrepareFilledBuffer(unsigned size, const AlignSpec &spec, char sign);
 
-  // Formats an integer.
-  template <typename T>
-  void FormatInt(T value, const FormatSpec &spec) {
-    *this << IntFormatter<T, FormatSpec>(value, spec);
-  }
-
   // Formats a floating-point number (double or long double).
   template <typename T>
   void FormatDouble(T value, const FormatSpec &spec, int precision);
 
   template <typename StringChar>
-  CharPtr FormatString(const StringChar *s,
-      std::size_t size, const FormatSpec &spec);
+  CharPtr FormatString(
+      const StringChar *s, std::size_t size, const AlignSpec &spec);
 
   // This method is private to disallow writing a wide string to a
   // char stream and vice versa. If you want to print a wide string
@@ -680,6 +703,13 @@ class BasicWriter {
   template <typename T, typename Spec>
   BasicWriter &operator<<(const IntFormatter<T, Spec> &f);
 
+  template <typename T>
+  BasicWriter &operator<<(const StrFormatter<T> &f) {
+    const char *s = f.str();
+    FormatString(s, std::strlen(s), f);
+    return *this;
+  }
+
   void Write(const std::basic_string<char> &s, const FormatSpec &spec) {
     FormatString(s.data(), s.size(), spec);
   }
@@ -692,7 +722,7 @@ class BasicWriter {
 template <typename Char>
 template <typename StringChar>
 typename BasicWriter<Char>::CharPtr BasicWriter<Char>::FormatString(
-    const StringChar *s, std::size_t size, const FormatSpec &spec) {
+    const StringChar *s, std::size_t size, const AlignSpec &spec) {
   CharPtr out = CharPtr();
   if (spec.width() > size) {
     out = GrowBuffer(spec.width());
@@ -986,6 +1016,12 @@ class BasicFormatter {
   // Parses the format string and performs the actual formatting,
   // writing the output to writer_.
   void DoFormat();
+
+  // Formats an integer.
+  template <typename T>
+  void FormatInt(T value, const FormatSpec &spec) {
+    *writer_ << IntFormatter<T, FormatSpec>(value, spec);
+  }
 
   struct Proxy {
     BasicWriter<Char> *writer;

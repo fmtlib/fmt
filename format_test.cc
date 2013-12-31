@@ -442,6 +442,10 @@ TEST(WriterTest, pad) {
   EXPECT_EQ("2012-01-09", f.str());
 }
 
+TEST(WriterTest, PadString) {
+  EXPECT_EQ("test    ", str(Writer() << pad("test", 8)));
+}
+
 TEST(WriterTest, NoConflictWithIOManip) {
   using namespace std;
   using namespace fmt;
