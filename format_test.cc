@@ -355,10 +355,10 @@ TEST(WriterTest, oct) {
 
 TEST(WriterTest, hex) {
   using fmt::hex;
-  fmt::IntFormatter<int, fmt::TypeSpec<'x'> > (*phex)(int value) = hex;
+  fmt::IntFormatSpec<int, fmt::TypeSpec<'x'> > (*phex)(int value) = hex;
   phex(42);
   // This shouldn't compile:
-  //fmt::IntFormatter<short, fmt::TypeSpec<'x'> > (*phex2)(short value) = hex;
+  //fmt::IntFormatSpec<short, fmt::TypeSpec<'x'> > (*phex2)(short value) = hex;
 
   EXPECT_EQ("cafe", str(Writer() << hex(0xcafe)));
   EXPECT_EQ("babe", str(Writer() << hex(0xbabeu)));
