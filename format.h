@@ -402,13 +402,14 @@ class IntFormatSpec : public SpecT {
   T value() const { return value_; }
 };
 
+// A string format specifier.
 template <typename T>
-class StrFormatter : public AlignSpec {
+class StrFormatSpec : public AlignSpec {
  private:
   const T *str_;
 
  public:
-  StrFormatter(const T *str, const AlignSpec &spec = AlignSpec())
+  StrFormatSpec(const T *str, const AlignSpec &spec = AlignSpec())
   : AlignSpec(spec), str_(str) {}
 
   const T *str() const { return str_; }
@@ -503,9 +504,9 @@ DEFINE_INT_FORMATTERS(unsigned long long)
 
   \endrst
  */
-inline StrFormatter<char> pad(
+inline StrFormatSpec<char> pad(
     const char *str, unsigned width, wchar_t fill = ' ') {
-  return StrFormatter<char>(str, AlignSpec(width, fill));
+  return StrFormatSpec<char>(str, AlignSpec(width, fill));
 }
 
 template <typename Char>
@@ -712,9 +713,9 @@ class BasicWriter {
   BasicWriter &operator<<(const IntFormatSpec<T, Spec> &spec);
 
   template <typename T>
-  BasicWriter &operator<<(const StrFormatter<T> &f) {
-    const char *s = f.str();
-    FormatString(s, std::strlen(s), f);
+  BasicWriter &operator<<(const StrFormatSpec<T> &spec) {
+    const char *s = spec.str();
+    FormatString(s, std::strlen(s), spec);
     return *this;
   }
 
