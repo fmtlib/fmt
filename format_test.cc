@@ -127,8 +127,10 @@ struct WriteChecker {
 // as writing it to std::ostringstream both for char and wchar_t.
 #define CHECK_WRITE(value) EXPECT_PRED_FORMAT1(AnyWriteChecker(), value)
 
-#define CHECK_WRITE_CHAR(value) EXPECT_PRED_FORMAT1(WriteChecker<char>(), value)
-#define CHECK_WRITE_WCHAR(value) EXPECT_PRED_FORMAT1(WriteChecker<wchar_t>(), value)
+#define CHECK_WRITE_CHAR(value) \
+  EXPECT_PRED_FORMAT1(WriteChecker<char>(), value)
+#define CHECK_WRITE_WCHAR(value) \
+  EXPECT_PRED_FORMAT1(WriteChecker<wchar_t>(), value)
 
 // Increment a number in a string.
 void Increment(char *s) {
