@@ -56,6 +56,7 @@ using fmt::Format;
 using fmt::FormatError;
 using fmt::StringRef;
 using fmt::Writer;
+using fmt::WWriter;
 using fmt::pad;
 
 #define FORMAT_TEST_THROW_(statement, expected_exception, message, fail) \
@@ -445,6 +446,12 @@ TEST(WriterTest, pad) {
 TEST(WriterTest, PadString) {
   EXPECT_EQ("test    ", str(Writer() << pad("test", 8)));
   EXPECT_EQ("test******", str(Writer() << pad("test", 10, '*')));
+}
+
+TEST(WriterTest, PadWString) {
+  EXPECT_EQ(L"test    ", str(WWriter() << pad(L"test", 8)));
+  EXPECT_EQ(L"test******", str(WWriter() << pad(L"test", 10, '*')));
+  EXPECT_EQ(L"test******", str(WWriter() << pad(L"test", 10, L'*')));
 }
 
 TEST(WriterTest, NoConflictWithIOManip) {

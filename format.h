@@ -504,9 +504,15 @@ DEFINE_INT_FORMATTERS(unsigned long long)
 
   \endrst
  */
-inline StrFormatSpec<char> pad(
-    const char *str, unsigned width, wchar_t fill = ' ') {
-  return StrFormatSpec<char>(str, AlignSpec(width, fill));
+template <typename Char>
+inline StrFormatSpec<Char> pad(
+    const Char *str, unsigned width, Char fill = ' ') {
+  return StrFormatSpec<Char>(str, AlignSpec(width, fill));
+}
+
+inline StrFormatSpec<wchar_t> pad(
+    const wchar_t *str, unsigned width, char fill = ' ') {
+  return StrFormatSpec<wchar_t>(str, AlignSpec(width, fill));
 }
 
 template <typename Char>
@@ -712,10 +718,10 @@ class BasicWriter {
   template <typename T, typename Spec>
   BasicWriter &operator<<(const IntFormatSpec<T, Spec> &spec);
 
-  template <typename T>
-  BasicWriter &operator<<(const StrFormatSpec<T> &spec) {
-    const char *s = spec.str();
-    FormatString(s, std::strlen(s), spec);
+  template <typename StringChar>
+  BasicWriter &operator<<(const StrFormatSpec<StringChar> &spec) {
+    const StringChar *s = spec.str();
+    FormatString(s, std::char_traits<Char>::length(s), spec);
     return *this;
   }
 
