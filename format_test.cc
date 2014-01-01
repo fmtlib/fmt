@@ -444,6 +444,7 @@ TEST(WriterTest, pad) {
 
 TEST(WriterTest, PadString) {
   EXPECT_EQ("test    ", str(Writer() << pad("test", 8)));
+  EXPECT_EQ("test******", str(Writer() << pad("test", 10, '*')));
 }
 
 TEST(WriterTest, NoConflictWithIOManip) {

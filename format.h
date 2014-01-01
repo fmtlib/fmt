@@ -322,12 +322,12 @@ enum Alignment {
 // Flags.
 enum { SIGN_FLAG = 1, PLUS_FLAG = 2, HASH_FLAG = 4 };
 
-// Formatting specifier.
-struct Spec {};
+// An empty format specifier.
+struct EmptySpec {};
 
-// Formatting type specifier.
+// A type specifier.
 template <char TYPE>
-struct TypeSpec : Spec {
+struct TypeSpec : EmptySpec {
   Alignment align() const { return ALIGN_DEFAULT; }
   unsigned width() const { return 0; }
 
@@ -339,7 +339,7 @@ struct TypeSpec : Spec {
   char fill() const { return ' '; }
 };
 
-// Formatting width specifier.
+// A width specifier.
 struct WidthSpec {
   unsigned width_;
   // Fill is always wchar_t and cast to char if necessary to avoid having
@@ -352,17 +352,17 @@ struct WidthSpec {
   wchar_t fill() const { return fill_; }
 };
 
-// Formatting alignment specifier.
+// An alignment specifier.
 struct AlignSpec : WidthSpec {
   Alignment align_;
 
-  AlignSpec(unsigned width, wchar_t fill)
-  : WidthSpec(width, fill), align_(ALIGN_DEFAULT) {}
+  AlignSpec(unsigned width, wchar_t fill, Alignment align = ALIGN_DEFAULT)
+  : WidthSpec(width, fill), align_(align) {}
 
   Alignment align() const { return align_; }
 };
 
-// Formatting specifier that provides both alignment and type.
+// An alignment and type specifier.
 template <char TYPE>
 struct AlignTypeSpec : AlignSpec {
   AlignTypeSpec(unsigned width, wchar_t fill) : AlignSpec(width, fill) {}
@@ -374,15 +374,13 @@ struct AlignTypeSpec : AlignSpec {
   char type() const { return TYPE; }
 };
 
-// Full formatting specifier.
+// A full format specifier.
 struct FormatSpec : AlignSpec {
   unsigned flags_;
   char type_;
 
   FormatSpec(unsigned width = 0, char type = 0, wchar_t fill = ' ')
   : AlignSpec(width, fill), flags_(0), type_(type) {}
-
-  Alignment align() const { return align_; }
 
   bool sign_flag() const { return (flags_ & SIGN_FLAG) != 0; }
   bool plus_flag() const { return (flags_ & PLUS_FLAG) != 0; }
@@ -574,7 +572,7 @@ class BasicWriter {
     return internal::CheckPtr(&buffer_[size], n);
   }
 
-  CharPtr PrepareFilledBuffer(unsigned size, const Spec &, char sign) {
+  CharPtr PrepareFilledBuffer(unsigned size, const EmptySpec &, char sign) {
     CharPtr p = GrowBuffer(size);
     *p = sign;
     return p + size - 1;
