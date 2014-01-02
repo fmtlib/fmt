@@ -700,8 +700,16 @@ class BasicWriter {
     return *this;
   }
 
+  /**
+   * Writes a character to the stream.
+   */
   BasicWriter &operator<<(char value) {
     *GrowBuffer(1) = value;
+    return *this;
+  }
+
+  BasicWriter &operator<<(wchar_t value) {
+    *GrowBuffer(1) = internal::CharTraits<Char>::ConvertWChar(value);
     return *this;
   }
 

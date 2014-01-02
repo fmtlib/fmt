@@ -315,10 +315,7 @@ TEST(WriterTest, WriteChar) {
 }
 
 TEST(WriterTest, WriteWideChar) {
-  // TODO
-  //CHECK_WRITE_WCHAR(L'a');
-  // The following line shouldn't compile:
-  CHECK_WRITE_CHAR(L'a');
+  CHECK_WRITE_WCHAR(L'a');
 }
 
 TEST(WriterTest, WriteString) {
@@ -1422,6 +1419,20 @@ TEST(StrTest, Convert) {
   std::string s = str(Date(2012, 12, 9));
   EXPECT_EQ("2012-12-9", s);
 }
+
+#if FMT_USE_INITIALIZER_LIST
+template<typename... Args>
+inline std::string Format(const StringRef &format, const Args & ... args) {
+  Writer w;
+  fmt::BasicFormatter<char> f(w, format.c_str(), {args...});
+  return fmt::str(f);
+}
+
+TEST(FormatTest, Variadic) {
+  Writer w;
+  EXPECT_EQ("Hello, world!1", str(Format("Hello, {}!{}", "world", 1)));
+}
+#endif  // FMT_USE_INITIALIZER_LIST
 
 int main(int argc, char **argv) {
 #ifdef _WIN32
