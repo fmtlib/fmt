@@ -409,7 +409,7 @@ class StrFormatSpec : public AlignSpec {
   const T *str_;
 
  public:
-  StrFormatSpec(const T *str, const AlignSpec &spec = AlignSpec())
+  StrFormatSpec(const T *str, const AlignSpec &spec)
   : AlignSpec(spec), str_(str) {}
 
   const T *str() const { return str_; }
@@ -1076,6 +1076,7 @@ class BasicFormatter {
   BasicFormatter(BasicWriter<Char> &w,
       const Char *format, std::initializer_list<Arg> args)
   : writer_(&w), format_(format) {
+    // TODO: don't copy arguments
     args_.reserve(args.size());
     for (const Arg &arg: args)
       args_.push_back(&arg);
