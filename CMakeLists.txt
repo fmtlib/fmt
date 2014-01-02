@@ -26,6 +26,21 @@ endif ()
 
 add_subdirectory(doc)
 
+enable_testing()
+
+# Remove the CMake cache in the test directory so that CMake
+# performed full configuration. Otherwise compile-test will
+# just used cached information.
+add_test(prepare-test ${CMAKE_COMMAND}
+  -E remove ${CMAKE_CURRENT_BINARY_DIR}/test/CMakeCache.txt)
+
+add_test(compile-test ${CMAKE_CTEST_COMMAND}
+  --build-and-test
+  "${CMAKE_CURRENT_SOURCE_DIR}/test"
+  "${CMAKE_CURRENT_BINARY_DIR}/test"
+  --build-generator ${CMAKE_GENERATOR}
+  --build-makeprogram ${CMAKE_MAKE_PROGRAM})
+
 # We compile Google Test ourselves instead of using pre-compiled libraries.
 # See the Google Test FAQ "Why is it not recommended to install a
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
@@ -38,19 +53,20 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gtest/CMakeLists.txt)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
   endif ()
+  
   add_subdirectory(gtest)
   include_directories(gtest/include)
   link_directories(${CMAKE_CURRENT_BINARY_DIR}/gtest)
-  enable_testing()
-  add_executable(format_test format_test.cc)
-  target_link_libraries(format_test format gtest)
+
+  add_executable(format-test format-test.cc)
+  target_link_libraries(format-test format gtest)
   if (CMAKE_COMPILER_IS_GNUCXX)
-    set_target_properties(format_test PROPERTIES COMPILE_FLAGS
+    set_target_properties(format-test PROPERTIES COMPILE_FLAGS
       "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
   endif ()
-  add_test(format_test format_test)
+  add_test(format-test format-test)
   if (HAVE_STD_CPP11_FLAG)
-    set_target_properties(format_test PROPERTIES COMPILE_FLAGS "-std=c++11")
+    set_target_properties(format-test PROPERTIES COMPILE_FLAGS "-std=c++11")
   endif ()
 endif ()
 
