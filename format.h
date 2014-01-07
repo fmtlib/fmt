@@ -409,8 +409,8 @@ class StrFormatSpec : public AlignSpec {
   const T *str_;
 
  public:
-  StrFormatSpec(const T *str, const AlignSpec &spec)
-  : AlignSpec(spec), str_(str) {}
+  StrFormatSpec(const T *str, unsigned width, wchar_t fill)
+  : AlignSpec(width, fill), str_(str) {}
 
   const T *str() const { return str_; }
 };
@@ -507,12 +507,12 @@ DEFINE_INT_FORMATTERS(unsigned long long)
 template <typename Char>
 inline StrFormatSpec<Char> pad(
     const Char *str, unsigned width, Char fill = ' ') {
-  return StrFormatSpec<Char>(str, AlignSpec(width, fill));
+  return StrFormatSpec<Char>(str, width, fill);
 }
 
 inline StrFormatSpec<wchar_t> pad(
     const wchar_t *str, unsigned width, char fill = ' ') {
-  return StrFormatSpec<wchar_t>(str, AlignSpec(width, fill));
+  return StrFormatSpec<wchar_t>(str, width, fill);
 }
 
 template <typename Char>
