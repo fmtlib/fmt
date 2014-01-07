@@ -28,12 +28,6 @@ add_subdirectory(doc)
 
 enable_testing()
 
-# Remove the CMake cache in the test directory so that CMake
-# performed full configuration. Otherwise compile-test will
-# just used cached information.
-add_test(prepare-test ${CMAKE_COMMAND}
-  -E remove ${CMAKE_CURRENT_BINARY_DIR}/test/CMakeCache.txt)
-
 add_test(compile-test ${CMAKE_CTEST_COMMAND}
   --build-and-test
   "${CMAKE_CURRENT_SOURCE_DIR}/test"

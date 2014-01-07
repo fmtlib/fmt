@@ -10,10 +10,13 @@ function (expect_compile_error code)
     ${code}
   }
   " compiles)
-  if (compiles)
+  set (does_compile ${compiles})
+  # Unset the CMake cache variable compiles. Otherwise the compile test will
+  # just used cached information next time it runs.
+  unset(compiles CACHE)
+  if (does_compile)
     error("No compile error for: ${code}")
   endif ()
-  unset(compiles CACHE)
 endfunction ()
 
 # Writing a wide character to a character stream Writer is forbidden.
