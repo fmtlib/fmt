@@ -12,7 +12,7 @@ function (expect_compile_error code)
   " compiles)
   set (does_compile ${compiles})
   # Unset the CMake cache variable compiles. Otherwise the compile test will
-  # just used cached information next time it runs.
+  # just use cached information next time it runs.
   unset(compiles CACHE)
   if (does_compile)
     error("No compile error for: ${code}")
