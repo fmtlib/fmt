@@ -1,5 +1,7 @@
 # Test if compile errors are produced where necessary.
 
+cmake_minimum_required(VERSION 2.8)
+
 include(CheckCXXSourceCompiles)
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
