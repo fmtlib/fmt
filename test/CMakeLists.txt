@@ -17,7 +17,7 @@ function (expect_compile_error code)
   # just use cached information next time it runs.
   unset(compiles CACHE)
   if (does_compile)
-    error("No compile error for: ${code}")
+    message(FATAL_ERROR "No compile error for: ${code}")
   endif ()
 endfunction ()
 
