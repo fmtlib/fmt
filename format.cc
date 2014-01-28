@@ -170,7 +170,7 @@ void fmt::BasicWriter<Char>::FormatDecimal(
 template <typename Char>
 typename fmt::BasicWriter<Char>::CharPtr
   fmt::BasicWriter<Char>::PrepareFilledBuffer(
-    unsigned size, const AlignSpec<Char> &spec, char sign) {
+    unsigned size, const AlignSpec &spec, char sign) {
   unsigned width = spec.width();
   if (width <= size) {
     CharPtr p = GrowBuffer(size);
@@ -208,7 +208,7 @@ typename fmt::BasicWriter<Char>::CharPtr
 template <typename Char>
 template <typename T>
 void fmt::BasicWriter<Char>::FormatDouble(
-    T value, const FormatSpec<Char> &spec, int precision) {
+    T value, const FormatSpec &spec, int precision) {
   // Check type.
   char type = spec.type();
   bool upper = false;
@@ -438,7 +438,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
 
     const Arg &arg = ParseArgIndex(s);
 
-    FormatSpec<Char> spec;
+    FormatSpec spec;
     int precision = -1;
     if (*s == ':') {
       ++s;
@@ -666,10 +666,10 @@ void fmt::BasicFormatter<Char>::DoFormat() {
 // Explicit instantiations for char.
 
 template void fmt::BasicWriter<char>::FormatDouble<double>(
-    double value, const FormatSpec<char> &spec, int precision);
+    double value, const FormatSpec &spec, int precision);
 
 template void fmt::BasicWriter<char>::FormatDouble<long double>(
-    long double value, const FormatSpec<char> &spec, int precision);
+    long double value, const FormatSpec &spec, int precision);
 
 template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::FillPadding(CharPtr buffer,
@@ -680,7 +680,7 @@ template void fmt::BasicWriter<char>::FormatDecimal(
 
 template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::PrepareFilledBuffer(
-    unsigned size, const AlignSpec<char> &spec, char sign);
+    unsigned size, const AlignSpec &spec, char sign);
 
 template void fmt::BasicFormatter<char>::ReportError(
     const char *s, StringRef message) const;
@@ -698,10 +698,10 @@ template void fmt::BasicFormatter<char>::DoFormat();
 // Explicit instantiations for wchar_t.
 
 template void fmt::BasicWriter<wchar_t>::FormatDouble<double>(
-    double value, const FormatSpec<wchar_t> &spec, int precision);
+    double value, const FormatSpec &spec, int precision);
 
 template void fmt::BasicWriter<wchar_t>::FormatDouble<long double>(
-    long double value, const FormatSpec<wchar_t> &spec, int precision);
+    long double value, const FormatSpec &spec, int precision);
 
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::FillPadding(CharPtr buffer,
@@ -712,7 +712,7 @@ template void fmt::BasicWriter<wchar_t>::FormatDecimal(
 
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::PrepareFilledBuffer(
-    unsigned size, const AlignSpec<wchar_t> &spec, char sign);
+    unsigned size, const AlignSpec &spec, char sign);
 
 template void fmt::BasicFormatter<wchar_t>::ReportError(
     const wchar_t *s, StringRef message) const;

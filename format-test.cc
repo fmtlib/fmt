@@ -1227,7 +1227,7 @@ TEST(FormatterTest, FormatUsingIOStreams) {
 class Answer {};
 
 template <typename Char>
-void Format(BasicWriter<Char> &f, const fmt::FormatSpec<Char> &spec, Answer) {
+void Format(BasicWriter<Char> &f, const fmt::FormatSpec &spec, Answer) {
   f.Write("42", spec);
 }
 
