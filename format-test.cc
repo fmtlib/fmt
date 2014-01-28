@@ -1022,6 +1022,10 @@ void CheckUnknownTypes(
   }
 }
 
+TEST(FormatterTest, FormatBool) {
+  EXPECT_EQ(L"1", str(Format(L"{}") << true));
+}
+
 TEST(FormatterTest, FormatShort) {
   short s = 42;
   EXPECT_EQ("42", str(Format("{0:d}") << s));

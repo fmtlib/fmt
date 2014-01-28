@@ -760,7 +760,7 @@ class BasicWriter {
     return *this;
   }
 
-  void Write(const std::basic_string<char> &s, const FormatSpec &spec) {
+  void Write(const std::basic_string<Char> &s, const FormatSpec &spec) {
     FormatString(s.data(), s.size(), spec);
   }
 
