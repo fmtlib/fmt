@@ -104,6 +104,20 @@ with an arbitrary action performed when formatting is complete:
 
     ReportError("File not found: {}") << path;
 
+Projects using this library
+---------------------------
+
+* `AMPL <https://github.com/ampl/ampl>`__:
+  Open-source AMPL solver interface, solver connections, table handlers
+  and examples
+
+* `Saddy <https://code.google.com/p/saddy/>`__:
+  Small crossplatform 2D graphic engine
+
+If you are aware of other projects using ``format``, please let me know
+by `email <mailto:victor.zverovich@gmail.com>`__ or by submitting an
+`issue <https://github.com/vitaut/format/issues>`__.
+
 Motivation
 ----------
 
