@@ -1292,10 +1292,9 @@ class FormatInt {
     *--buffer_end = internal::DIGITS[index];
     return buffer_end;
   }
-
- public:
-  explicit FormatInt(int value) {
-    unsigned abs_value = value;
+  
+  void FormatSigned(int64_t value) {
+    uint64_t abs_value = value;
     bool negative = value < 0;
     if (negative)
       abs_value = 0 - value;
@@ -1303,6 +1302,10 @@ class FormatInt {
     if (negative)
       *--str_ = '-';
   }
+
+ public:
+  explicit FormatInt(int value) { FormatSigned(value); }
+  explicit FormatInt(int64_t value) { FormatSigned(value); }
   explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
   explicit FormatInt(uint64_t value) : str_(FormatDecimal(value)) {}
 

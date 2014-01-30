@@ -1411,6 +1411,9 @@ TEST(FormatterTest, Examples) {
 TEST(FormatIntTest, FormatInt) {
   EXPECT_EQ("42", fmt::FormatInt(42).str());
   EXPECT_EQ("-42", fmt::FormatInt(-42).str());
+  std::ostringstream os;
+  os << std::numeric_limits<int64_t>::max();
+  EXPECT_EQ(os.str(), fmt::FormatInt(std::numeric_limits<int64_t>::max()).str());
 }
 
 template <typename T>
