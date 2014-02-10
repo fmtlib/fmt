@@ -856,7 +856,7 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
   case 'o': {
     UnsignedType n = abs_value;
     bool print_prefix = spec.hash_flag();
-    if (print_prefix) ++size;
+    if (print_prefix) size+=2;
     do {
       ++size;
     } while ((n >>= 3) != 0);
@@ -865,8 +865,10 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
     do {
       *p-- = '0' + (n & 7);
     } while ((n >>= 3) != 0);
-    if (print_prefix)
+    if (print_prefix){
+      *p-- = spec.type();
       *p = '0';
+      }
     break;
   }
   default:
@@ -1292,7 +1294,7 @@ class FormatInt {
     *--buffer_end = internal::DIGITS[index];
     return buffer_end;
   }
-  
+
   void FormatSigned(int64_t value) {
     uint64_t abs_value = value;
     bool negative = value < 0;
