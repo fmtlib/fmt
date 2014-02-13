@@ -1266,12 +1266,12 @@ class FormatInt {
  private:
   // Buffer should be large enough to hold all digits (digits10 + 1),
   // a sign and a null character.
-  enum {BUFFER_SIZE = std::numeric_limits<uint64_t>::digits10 + 3};
+  enum {BUFFER_SIZE = std::numeric_limits<unsigned long long>::digits10 + 3};
   char buffer_[BUFFER_SIZE];
   char *str_;
 
   // Formats value in reverse and returns the number of digits.
-  char *FormatDecimal(uint64_t value) {
+  char *FormatDecimal(unsigned long long value) {
     char *buffer_end = buffer_ + BUFFER_SIZE;
     *--buffer_end = '\0';
     while (value >= 100) {
@@ -1293,8 +1293,8 @@ class FormatInt {
     return buffer_end;
   }
   
-  void FormatSigned(int64_t value) {
-    uint64_t abs_value = value;
+  void FormatSigned(long long value) {
+    unsigned long long abs_value = value;
     bool negative = value < 0;
     if (negative)
       abs_value = 0 - value;
@@ -1305,12 +1305,15 @@ class FormatInt {
 
  public:
   explicit FormatInt(int value) { FormatSigned(value); }
-  explicit FormatInt(int64_t value) { FormatSigned(value); }
+  explicit FormatInt(long value) { FormatSigned(value); }
+  explicit FormatInt(long long value) { FormatSigned(value); }
   explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
-  explicit FormatInt(uint64_t value) : str_(FormatDecimal(value)) {}
+  explicit FormatInt(unsigned long value) : str_(FormatDecimal(value)) {}
+  explicit FormatInt(unsigned long long value) : str_(FormatDecimal(value)) {}
 
   const char *c_str() const { return str_; }
   std::string str() const { return str_; }
+  std::size_t size() const { return buffer_ - str_ + BUFFER_SIZE - 1; }
 };
 
 /**
