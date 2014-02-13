@@ -20,7 +20,9 @@ Features
 * Support for user-defined types.
 * High speed: performance of the format API is close to that of
   glibc's `printf <http://en.cppreference.com/w/cpp/io/c/fprintf>`__
-  and better than performance of IOStreams. See `Speed tests`_.
+  and better than performance of IOStreams. See `Speed tests`_ and the
+  `Fast integer to string conversion in C++
+  <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 * Small code size both in terms of source code (format consists of a single
   header file and a single source file) and compiled code.
   See `Compile time and code bloat`_.
@@ -211,7 +213,10 @@ Boost Spirit.Karma
 
 This is not really a formatting library but I decided to include it here
 for completeness. As IOStreams it suffers from the problem of mixing
-verbatim text with arguments, but is faster.
+verbatim text with arguments. The library is pretty fast, but slower
+on integer formatting than ``fmt::Writer`` on Karma's own benchmark,
+see `Fast integer to string conversion in C++
+<http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`__.
 
 Benchmarks
 ----------
