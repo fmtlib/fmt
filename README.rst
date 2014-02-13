@@ -20,7 +20,7 @@ Features
 * Support for user-defined types.
 * High speed: performance of the format API is close to that of
   glibc's `printf <http://en.cppreference.com/w/cpp/io/c/fprintf>`__
-  and better than performance of IOStreams. See `Speed tests`_ and the
+  and better than performance of IOStreams. See `Speed tests`_ and
   `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 * Small code size both in terms of source code (format consists of a single
