@@ -249,7 +249,7 @@ extern const uint64_t POWERS_OF_10[];
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case CountDigits returns 1.
 inline unsigned CountDigits(uint64_t n) {
-#if FMT_GCC_VERSION >= 400 or __has_builtin(__builtin_clzll)
+#if FMT_GCC_VERSION >= 400 || __has_builtin(__builtin_clzll)
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
   uint64_t t = (64 - __builtin_clzll(n | 1)) * 1233 >> 12;
