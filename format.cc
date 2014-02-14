@@ -116,6 +116,29 @@ const char fmt::internal::DIGITS[] =
     "4041424344454647484950515253545556575859"
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
+    
+const uint64_t fmt::internal::POWERS_OF_10[] = {
+  0,
+  10,
+  100,
+  1000,
+  10000,
+  100000,
+  1000000,
+  10000000,
+  100000000,
+  1000000000,
+  10000000000,
+  100000000000,
+  1000000000000,
+  10000000000000,
+  100000000000000,
+  1000000000000000,
+  10000000000000000,
+  100000000000000000,
+  1000000000000000000,
+  10000000000000000000u
+};
 
 void fmt::internal::ReportUnknownType(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
@@ -145,8 +168,8 @@ typename fmt::BasicWriter<Char>::CharPtr
 }
 
 template <typename Char>
-void fmt::BasicWriter<Char>::FormatDecimal(
-    CharPtr buffer, uint64_t value, unsigned num_digits) {
+void fmt::internal::FormatDecimal(
+    Char *buffer, uint64_t value, unsigned num_digits) {
   --num_digits;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
@@ -675,8 +698,8 @@ template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::FillPadding(CharPtr buffer,
     unsigned total_size, std::size_t content_size, wchar_t fill);
 
-template void fmt::BasicWriter<char>::FormatDecimal(
-    CharPtr buffer, uint64_t value, unsigned num_digits);
+template void fmt::internal::FormatDecimal<char>(
+    char *buffer, uint64_t value, unsigned num_digits);
 
 template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::PrepareFilledBuffer(
@@ -707,8 +730,8 @@ template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::FillPadding(CharPtr buffer,
       unsigned total_size, std::size_t content_size, wchar_t fill);
 
-template void fmt::BasicWriter<wchar_t>::FormatDecimal(
-    CharPtr buffer, uint64_t value, unsigned num_digits);
+template void fmt::internal::FormatDecimal<wchar_t>(
+    wchar_t *buffer, uint64_t value, unsigned num_digits);
 
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::PrepareFilledBuffer(

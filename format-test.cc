@@ -1422,6 +1422,20 @@ TEST(FormatIntTest, FormatInt) {
   EXPECT_EQ(os.str(), fmt::FormatInt(std::numeric_limits<int64_t>::max()).str());
 }
 
+TEST(FormatIntTest, FormatDec) {
+  char buffer[10];
+  char *ptr = buffer;
+  fmt::FormatDec(ptr, 42);
+  EXPECT_EQ(buffer + 2, ptr);
+  *ptr = '\0';
+  EXPECT_STREQ("42", buffer);
+  ptr = buffer;
+  fmt::FormatDec(ptr, -42);
+  *ptr = '\0';
+  EXPECT_EQ(buffer + 3, ptr);
+  EXPECT_STREQ("-42", buffer);
+}
+
 template <typename T>
 std::string str(const T &value) {
   return fmt::str(fmt::Format("{0}") << value);

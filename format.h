@@ -49,6 +49,7 @@
 // Compatibility with compilers other than clang.
 #ifndef __has_feature
 # define __has_feature(x) 0
+# define __has_builtin(x) 0
 #endif
 
 #ifndef FMT_USE_INITIALIZER_LIST
@@ -171,8 +172,18 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
 template <typename Char>
 class CharTraits;
 
+template <typename Char>
+class BasicCharTraits {
+ public:
+#if _SECURE_SCL
+  typedef stdext::checked_array_iterator<Char*> CharPtr;
+#else
+  typedef Char *CharPtr;
+#endif
+};
+
 template <>
-class CharTraits<char> {
+class CharTraits<char> : public BasicCharTraits<char> {
  private:
   // Conversion from wchar_t to char is not supported.
   // TODO: rename to ConvertChar
@@ -189,7 +200,7 @@ class CharTraits<char> {
 };
 
 template <>
-class CharTraits<wchar_t> {
+class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
  public:
   typedef const char *UnsupportedStrType;
 
@@ -233,9 +244,17 @@ struct IsLongDouble<long double> { enum {VALUE = 1}; };
 
 void ReportUnknownType(char code, const char *type);
 
+extern const uint64_t POWERS_OF_10[];
+
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case CountDigits returns 1.
 inline unsigned CountDigits(uint64_t n) {
+#if FMT_GCC_VERSION >= 400 or __has_builtin(__builtin_clzll)
+  // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
+  // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
+  uint64_t t = (64 - __builtin_clzll(n | 1)) * 1233 >> 12;
+  return t - (n < POWERS_OF_10[t]) + 1;
+#else
   unsigned count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
@@ -248,12 +267,16 @@ inline unsigned CountDigits(uint64_t n) {
     n /= 10000u;
     count += 4;
   }
+#endif
 }
 
 extern const char DIGITS[];
 
 template <typename Char>
 class FormatterProxy;
+
+template <typename Char>
+void FormatDecimal(Char *buffer, uint64_t value, unsigned num_digits);
 }
 
 /**
@@ -581,16 +604,13 @@ class BasicWriter {
 
   friend class BasicFormatter<Char>;
 
+  typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
+
 #if _SECURE_SCL
-  typedef stdext::checked_array_iterator<Char*> CharPtr;
   static Char *GetBase(CharPtr p) { return p.base(); }
 #else
-  typedef Char *CharPtr;
   static Char *GetBase(Char *p) { return p; }
 #endif
-
-  static void FormatDecimal(
-      CharPtr buffer, uint64_t value, unsigned num_digits);
 
   static CharPtr FillPadding(CharPtr buffer,
       unsigned total_size, std::size_t content_size, wchar_t fill);
@@ -812,7 +832,7 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
     unsigned num_digits = internal::CountDigits(abs_value);
     CharPtr p =
         PrepareFilledBuffer(size + num_digits, spec, sign) + 1 - num_digits;
-    BasicWriter::FormatDecimal(p, abs_value, num_digits);
+    internal::FormatDecimal(GetBase(p), abs_value, num_digits);
     break;
   }
   case 'x': case 'X': {
@@ -1315,6 +1335,22 @@ class FormatInt {
   std::string str() const { return str_; }
   std::size_t size() const { return buffer_ - str_ + BUFFER_SIZE - 1; }
 };
+
+// Formats a decimal integer value writing into buffer and returns
+// a pointer to the end of the formatted string. This function doesn't
+// write a terminating null character.
+template <typename T>
+inline void FormatDec(char *&buffer, T value) {
+  typedef typename internal::IntTraits<T>::UnsignedType UnsignedType;
+  UnsignedType abs_value = value;
+  if (internal::IntTraits<T>::IsNegative(value)) {
+    *buffer++ = '-';
+    abs_value = 0 - abs_value;
+  }
+  unsigned num_digits = internal::CountDigits(abs_value);
+  internal::FormatDecimal(buffer, abs_value, num_digits);
+  buffer += num_digits;
+}
 
 /**
   \rst
