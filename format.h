@@ -1330,12 +1330,30 @@ class FormatInt {
   explicit FormatInt(unsigned long value) : str_(FormatDecimal(value)) {}
   explicit FormatInt(unsigned long long value) : str_(FormatDecimal(value)) {}
 
+  /**
+    Returns the number of characters written to the output buffer.
+   */
+  std::size_t size() const { return buffer_ - str_ + BUFFER_SIZE - 1; }
+
+  /**
+    Returns a pointer to the output buffer content. No terminating null
+    character is appended.
+   */
+  const char *data() const { return str_; }
+
+  /**
+    Returns a pointer to the output buffer content with terminating null
+    character appended.
+   */
   const char *c_str() const {
     buffer_[BUFFER_SIZE - 1] = '\0';
     return str_;
   }
+
+  /**
+    Returns the content of the output buffer as an `std::string`.
+   */
   std::string str() const { return std::string(str_, size()); }
-  std::size_t size() const { return buffer_ - str_ + BUFFER_SIZE - 1; }
 };
 
 // Formats a decimal integer value writing into buffer and returns

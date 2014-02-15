@@ -1408,6 +1408,11 @@ TEST(FormatterTest, Examples) {
   ReportError("File not found: {0}") << path;
 }
 
+TEST(FormatIntTest, Data) {
+  fmt::FormatInt format_int(42);
+  EXPECT_EQ("42", std::string(format_int.data(), format_int.size()));
+}
+
 TEST(FormatIntTest, FormatInt) {
   EXPECT_EQ("42", fmt::FormatInt(42).str());
   EXPECT_EQ(2, fmt::FormatInt(42).size());
