@@ -70,12 +70,6 @@
 # define FMT_NOEXCEPT(expr)
 #endif
 
-#if FMT_GCC_VERSION >= 406
-# define FMT_GCC_DIAGNOSTIC
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wlong-long"
-#endif
-
 #if _MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4521)
@@ -87,8 +81,10 @@ namespace fmt {
 // that don't support the diagnostic pragma.
 #ifdef __GNUC__
 __extension__ typedef long long LongLong;
+__extension__ typedef unsigned long long ULongLong;
 #else
 typedef long long LongLong;
+typedef unsigned long long ULongLong;
 #endif
 
 namespace internal {
@@ -241,7 +237,7 @@ template <>
 struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
 
 template <>
-struct IntTraits<LongLong> : SignedIntTraits<LongLong, unsigned long long> {};
+struct IntTraits<LongLong> : SignedIntTraits<LongLong, ULongLong> {};
 
 template <typename T>
 struct IsLongDouble { enum {VALUE = 0}; };
@@ -542,7 +538,7 @@ DEFINE_INT_FORMATTERS(long)
 DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
 DEFINE_INT_FORMATTERS(LongLong)
-DEFINE_INT_FORMATTERS(unsigned long long)
+DEFINE_INT_FORMATTERS(ULongLong)
 
 /**
   \rst
@@ -732,8 +728,8 @@ class BasicWriter {
   /**
     Formats *value* and writes it to the stream.
    */
-  BasicWriter &operator<<(unsigned long long value) {
-    return *this << IntFormatSpec<unsigned long long>(value);
+  BasicWriter &operator<<(ULongLong value) {
+    return *this << IntFormatSpec<ULongLong>(value);
   }
 
   BasicWriter &operator<<(double value) {
@@ -984,7 +980,7 @@ class BasicFormatter {
       long long_value;
       unsigned long ulong_value;
       LongLong long_long_value;
-      unsigned long long ulong_long_value;
+      ULongLong ulong_long_value;
       long double long_double_value;
       const void *pointer_value;
       StringValue string;
@@ -1000,7 +996,7 @@ class BasicFormatter {
     Arg(unsigned long value) : type(ULONG), ulong_value(value), formatter(0) {}
     Arg(LongLong value)
     : type(LONG_LONG), long_long_value(value), formatter(0) {}
-    Arg(unsigned long long value)
+    Arg(ULongLong value)
     : type(ULONG_LONG), ulong_long_value(value), formatter(0) {}
     Arg(float value) : type(DOUBLE), double_value(value), formatter(0) {}
     Arg(double value) : type(DOUBLE), double_value(value), formatter(0) {}
@@ -1065,8 +1061,6 @@ class BasicFormatter {
   const Char *format_;  // Format string.
   int num_open_braces_;
   int next_arg_index_;
-
-  typedef unsigned long long ULongLong;
 
   friend class internal::FormatterProxy<Char>;
 
@@ -1293,12 +1287,12 @@ class FormatInt {
  private:
   // Buffer should be large enough to hold all digits (digits10 + 1),
   // a sign and a null character.
-  enum {BUFFER_SIZE = std::numeric_limits<unsigned long long>::digits10 + 3};
+  enum {BUFFER_SIZE = std::numeric_limits<ULongLong>::digits10 + 3};
   mutable char buffer_[BUFFER_SIZE];
   char *str_;
 
   // Formats value in reverse and returns the number of digits.
-  char *FormatDecimal(unsigned long long value) {
+  char *FormatDecimal(ULongLong value) {
     char *buffer_end = buffer_ + BUFFER_SIZE - 1;
     while (value >= 100) {
       // Integer division is slow so do it for a group of two digits instead
@@ -1320,7 +1314,7 @@ class FormatInt {
   }
   
   void FormatSigned(LongLong value) {
-    unsigned long long abs_value = value;
+    ULongLong abs_value = value;
     bool negative = value < 0;
     if (negative)
       abs_value = 0 - value;
@@ -1335,7 +1329,7 @@ class FormatInt {
   explicit FormatInt(LongLong value) { FormatSigned(value); }
   explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
   explicit FormatInt(unsigned long value) : str_(FormatDecimal(value)) {}
-  explicit FormatInt(unsigned long long value) : str_(FormatDecimal(value)) {}
+  explicit FormatInt(ULongLong value) : str_(FormatDecimal(value)) {}
 
   /**
     Returns the number of characters written to the output buffer.
@@ -1427,10 +1421,6 @@ inline Formatter<Write> Print(StringRef format) {
   return f;
 }
 }
-
-#ifdef FMT_GCC_DIAGNOSTIC
-# pragma GCC diagnostic pop
-#endif
 
 #if _MSC_VER
 # pragma warning(pop)
