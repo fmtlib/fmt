@@ -117,7 +117,7 @@ const char fmt::internal::DIGITS[] =
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
     
-const uint64_t fmt::internal::POWERS_OF_10[] = {
+FMT_GCC_EXTENSION const uint64_t fmt::internal::POWERS_OF_10[] = {
   0,
   10,
   100,

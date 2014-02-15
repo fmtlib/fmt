@@ -44,6 +44,7 @@
 
 #ifdef __GNUC__
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
+# define FMT_GCC_EXTENSION __extension__
 #endif
 
 // Compatibility with compilers other than clang.
@@ -79,13 +80,8 @@ namespace fmt {
 
 // Fix the warning about long long on older versions of GCC
 // that don't support the diagnostic pragma.
-#ifdef __GNUC__
-__extension__ typedef long long LongLong;
-__extension__ typedef unsigned long long ULongLong;
-#else
-typedef long long LongLong;
-typedef unsigned long long ULongLong;
-#endif
+FMT_GCC_EXTENSION typedef long long LongLong;
+FMT_GCC_EXTENSION typedef unsigned long long ULongLong;
 
 namespace internal {
 
