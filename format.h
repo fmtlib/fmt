@@ -1287,13 +1287,12 @@ class FormatInt {
   // Buffer should be large enough to hold all digits (digits10 + 1),
   // a sign and a null character.
   enum {BUFFER_SIZE = std::numeric_limits<unsigned long long>::digits10 + 3};
-  char buffer_[BUFFER_SIZE];
+  mutable char buffer_[BUFFER_SIZE];
   char *str_;
 
   // Formats value in reverse and returns the number of digits.
   char *FormatDecimal(unsigned long long value) {
-    char *buffer_end = buffer_ + BUFFER_SIZE;
-    *--buffer_end = '\0';
+    char *buffer_end = buffer_ + BUFFER_SIZE - 1;
     while (value >= 100) {
       // Integer division is slow so do it for a group of two digits instead
       // of for every digit. The idea comes from the talk by Alexandrescu
@@ -1331,8 +1330,11 @@ class FormatInt {
   explicit FormatInt(unsigned long value) : str_(FormatDecimal(value)) {}
   explicit FormatInt(unsigned long long value) : str_(FormatDecimal(value)) {}
 
-  const char *c_str() const { return str_; }
-  std::string str() const { return str_; }
+  const char *c_str() const {
+    buffer_[BUFFER_SIZE - 1] = '\0';
+    return str_;
+  }
+  std::string str() const { return std::string(str_, size()); }
   std::size_t size() const { return buffer_ - str_ + BUFFER_SIZE - 1; }
 };
 
