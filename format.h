@@ -910,6 +910,14 @@ void FormatCustomArg(
   the output is sent to a :cpp:class:`fmt::Writer` object.
   \endrst
  */
+
+
+enum Colours{black=30,red,green,yellow,blue,Magenta,cyan,white};
+
+ void colour(Colours);
+
+
+
 template <typename Char>
 class BasicFormatter {
  private:
@@ -1359,8 +1367,12 @@ class Write {
 inline Formatter<Write> Print(StringRef format) {
   Formatter<Write> f(format);
   return f;
-}
-}
+
+
+  
+
+}//end namespace internal (?)
+}//end namespace format (?)
 
 #ifdef FMT_GCC_DIAGNOSTIC
 # pragma GCC diagnostic pop
