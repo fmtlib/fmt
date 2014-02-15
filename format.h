@@ -83,6 +83,14 @@
 
 namespace fmt {
 
+// Fix the warning about long long on older versions of GCC
+// that don't support the diagnostic pragma.
+#ifdef __GNUC__
+__extension__ typedef long long LongLong;
+#else
+typedef long long LongLong;
+#endif
+
 namespace internal {
 
 #if _SECURE_SCL
@@ -233,7 +241,7 @@ template <>
 struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
 
 template <>
-struct IntTraits<long long> : SignedIntTraits<long long, unsigned long long> {};
+struct IntTraits<LongLong> : SignedIntTraits<LongLong, unsigned long long> {};
 
 template <typename T>
 struct IsLongDouble { enum {VALUE = 0}; };
@@ -533,7 +541,7 @@ DEFINE_INT_FORMATTERS(int)
 DEFINE_INT_FORMATTERS(long)
 DEFINE_INT_FORMATTERS(unsigned)
 DEFINE_INT_FORMATTERS(unsigned long)
-DEFINE_INT_FORMATTERS(long long)
+DEFINE_INT_FORMATTERS(LongLong)
 DEFINE_INT_FORMATTERS(unsigned long long)
 
 /**
@@ -717,8 +725,8 @@ class BasicWriter {
   BasicWriter &operator<<(unsigned long value) {
     return *this << IntFormatSpec<unsigned long>(value);
   }
-  BasicWriter &operator<<(long long value) {
-    return *this << IntFormatSpec<long long>(value);
+  BasicWriter &operator<<(LongLong value) {
+    return *this << IntFormatSpec<LongLong>(value);
   }
 
   /**
@@ -975,7 +983,7 @@ class BasicFormatter {
       double double_value;
       long long_value;
       unsigned long ulong_value;
-      long long long_long_value;
+      LongLong long_long_value;
       unsigned long long ulong_long_value;
       long double long_double_value;
       const void *pointer_value;
@@ -990,7 +998,7 @@ class BasicFormatter {
     Arg(unsigned value) : type(UINT), uint_value(value), formatter(0) {}
     Arg(long value) : type(LONG), long_value(value), formatter(0) {}
     Arg(unsigned long value) : type(ULONG), ulong_value(value), formatter(0) {}
-    Arg(long long value)
+    Arg(LongLong value)
     : type(LONG_LONG), long_long_value(value), formatter(0) {}
     Arg(unsigned long long value)
     : type(ULONG_LONG), ulong_long_value(value), formatter(0) {}
@@ -1311,7 +1319,7 @@ class FormatInt {
     return buffer_end;
   }
   
-  void FormatSigned(long long value) {
+  void FormatSigned(LongLong value) {
     unsigned long long abs_value = value;
     bool negative = value < 0;
     if (negative)
@@ -1324,7 +1332,7 @@ class FormatInt {
  public:
   explicit FormatInt(int value) { FormatSigned(value); }
   explicit FormatInt(long value) { FormatSigned(value); }
-  explicit FormatInt(long long value) { FormatSigned(value); }
+  explicit FormatInt(LongLong value) { FormatSigned(value); }
   explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
   explicit FormatInt(unsigned long value) : str_(FormatDecimal(value)) {}
   explicit FormatInt(unsigned long long value) : str_(FormatDecimal(value)) {}
