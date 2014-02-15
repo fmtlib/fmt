@@ -45,6 +45,8 @@
 #ifdef __GNUC__
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 # define FMT_GCC_EXTENSION __extension__
+#else
+# define FMT_GCC_EXTENSION
 #endif
 
 // Compatibility with compilers other than clang.
