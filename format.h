@@ -186,13 +186,12 @@ template <>
 class CharTraits<char> : public BasicCharTraits<char> {
  private:
   // Conversion from wchar_t to char is not supported.
-  // TODO: rename to ConvertChar
-  static char ConvertWChar(wchar_t);
+  static char ConvertChar(wchar_t);
 
  public:
   typedef const wchar_t *UnsupportedStrType;
 
-  static char ConvertWChar(char value) { return value; }
+  static char ConvertChar(char value) { return value; }
 
   template <typename T>
   static int FormatFloat(char *buffer, std::size_t size,
@@ -204,8 +203,8 @@ class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
  public:
   typedef const char *UnsupportedStrType;
 
-  static wchar_t ConvertWChar(char value) { return value; }
-  static wchar_t ConvertWChar(wchar_t value) { return value; }
+  static wchar_t ConvertChar(char value) { return value; }
+  static wchar_t ConvertChar(wchar_t value) { return value; }
 
   template <typename T>
   static int FormatFloat(wchar_t *buffer, std::size_t size,
@@ -752,7 +751,7 @@ class BasicWriter {
   }
 
   BasicWriter &operator<<(wchar_t value) {
-    *GrowBuffer(1) = internal::CharTraits<Char>::ConvertWChar(value);
+    *GrowBuffer(1) = internal::CharTraits<Char>::ConvertChar(value);
     return *this;
   }
 
@@ -768,7 +767,7 @@ class BasicWriter {
 
   template <typename T, typename Spec, typename FillChar>
   BasicWriter &operator<<(const IntFormatSpec<T, Spec, FillChar> &spec) {
-    internal::CharTraits<Char>::ConvertWChar(FillChar());
+    internal::CharTraits<Char>::ConvertChar(FillChar());
     FormatInt(spec.value(), spec);
     return *this;
   }
@@ -1001,7 +1000,7 @@ class BasicFormatter {
     : type(LONG_DOUBLE), long_double_value(value), formatter(0) {}
     Arg(char value) : type(CHAR), int_value(value), formatter(0) {}
     Arg(wchar_t value)
-    : type(CHAR), int_value(internal::CharTraits<Char>::ConvertWChar(value)),
+    : type(CHAR), int_value(internal::CharTraits<Char>::ConvertChar(value)),
       formatter(0) {}
 
     Arg(const Char *value) : type(STRING), formatter(0) {
