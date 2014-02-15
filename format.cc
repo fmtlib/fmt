@@ -37,6 +37,8 @@
 #include <cmath>
 #include <cstdarg>
 
+using fmt::ULongLong;
+
 namespace {
 
 #ifndef _MSC_VER
