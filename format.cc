@@ -139,7 +139,7 @@ const uint64_t fmt::internal::POWERS_OF_10[] = {
   ULongLong(1000000000) * 10000000,
   ULongLong(1000000000) * 100000000,
   ULongLong(1000000000) * 1000000000,
-  ULongLong(1000000000) * 10000000000
+  ULongLong(1000000000) * ULongLong(1000000000) * 10
 };
 
 void fmt::internal::ReportUnknownType(char code, const char *type) {

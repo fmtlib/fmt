@@ -1415,9 +1415,9 @@ TEST(FormatIntTest, Data) {
 
 TEST(FormatIntTest, FormatInt) {
   EXPECT_EQ("42", fmt::FormatInt(42).str());
-  EXPECT_EQ(2, fmt::FormatInt(42).size());
+  EXPECT_EQ(2u, fmt::FormatInt(42).size());
   EXPECT_EQ("-42", fmt::FormatInt(-42).str());
-  EXPECT_EQ(3, fmt::FormatInt(-42).size());
+  EXPECT_EQ(3u, fmt::FormatInt(-42).size());
   EXPECT_EQ("42", fmt::FormatInt(42ul).str());
   EXPECT_EQ("-42", fmt::FormatInt(-42l).str());
   EXPECT_EQ("42", fmt::FormatInt(42ull).str());
