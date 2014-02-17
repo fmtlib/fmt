@@ -170,29 +170,6 @@ typename fmt::BasicWriter<Char>::CharPtr
 }
 
 template <typename Char>
-void fmt::internal::FormatDecimal(
-    Char *buffer, uint64_t value, unsigned num_digits) {
-  --num_digits;
-  while (value >= 100) {
-    // Integer division is slow so do it for a group of two digits instead
-    // of for every digit. The idea comes from the talk by Alexandrescu
-    // "Three Optimization Tips for C++". See speed-test for a comparison.
-    unsigned index = (value % 100) * 2;
-    value /= 100;
-    buffer[num_digits] = internal::DIGITS[index + 1];
-    buffer[num_digits - 1] = internal::DIGITS[index];
-    num_digits -= 2;
-  }
-  if (value < 10) {
-    *buffer = static_cast<char>('0' + value);
-    return;
-  }
-  unsigned index = static_cast<unsigned>(value * 2);
-  buffer[1] = internal::DIGITS[index + 1];
-  buffer[0] = internal::DIGITS[index];
-}
-
-template <typename Char>
 typename fmt::BasicWriter<Char>::CharPtr
   fmt::BasicWriter<Char>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign) {
@@ -700,9 +677,6 @@ template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::FillPadding(CharPtr buffer,
     unsigned total_size, std::size_t content_size, wchar_t fill);
 
-template void fmt::internal::FormatDecimal<char>(
-    char *buffer, uint64_t value, unsigned num_digits);
-
 template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign);
@@ -731,9 +705,6 @@ template void fmt::BasicWriter<wchar_t>::FormatDouble<long double>(
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::FillPadding(CharPtr buffer,
       unsigned total_size, std::size_t content_size, wchar_t fill);
-
-template void fmt::internal::FormatDecimal<wchar_t>(
-    wchar_t *buffer, uint64_t value, unsigned num_digits);
 
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::PrepareFilledBuffer(

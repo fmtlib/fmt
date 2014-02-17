@@ -276,8 +276,28 @@ extern const char DIGITS[];
 template <typename Char>
 class FormatterProxy;
 
-template <typename Char>
-void FormatDecimal(Char *buffer, uint64_t value, unsigned num_digits);
+// Formats a decimal unsigned integer value writing into buffer.
+template <typename UInt, typename Char>
+void FormatDecimal(Char *buffer, UInt value, unsigned num_digits) {
+    --num_digits;
+  while (value >= 100) {
+    // Integer division is slow so do it for a group of two digits instead
+    // of for every digit. The idea comes from the talk by Alexandrescu
+    // "Three Optimization Tips for C++". See speed-test for a comparison.
+    unsigned index = (value % 100) * 2;
+    value /= 100;
+    buffer[num_digits] = internal::DIGITS[index + 1];
+    buffer[num_digits - 1] = internal::DIGITS[index];
+    num_digits -= 2;
+  }
+  if (value < 10) {
+    *buffer = static_cast<char>('0' + value);
+    return;
+  }
+  unsigned index = static_cast<unsigned>(value * 2);
+  buffer[1] = internal::DIGITS[index + 1];
+  buffer[0] = internal::DIGITS[index];
+}
 }
 
 /**
