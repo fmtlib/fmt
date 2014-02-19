@@ -377,4 +377,6 @@ Format string syntax and the documentation are based on Python's `str.format
 Thanks `Doug Turnbull <https://github.com/softwaredoug>`__ for his valuable
 comments and contribution to the design of the type-safe API and
 `Gregory Czajkowski <https://github.com/gcflymoto>`__ for implementing binary
-formatting.
+formatting. Thanks `Ruslan Baratov <https://github.com/ruslo>`__ for comprehensive
+`comparison of integer formatting algorithms <https://github.com/ruslo/int-dec-format-tests>`__
+and useful comments regarding performance.
