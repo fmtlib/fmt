@@ -119,22 +119,24 @@ const char fmt::internal::DIGITS[] =
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
 
-#define FMT_POWERS_OF_10(prefix) \
-  prefix 10, \
-  prefix 100, \
-  prefix 1000, \
-  prefix 10000, \
-  prefix 100000, \
-  prefix 1000000, \
-  prefix 10000000, \
-  prefix 100000000, \
-  prefix 1000000000
+#define FMT_POWERS_OF_10(factor) \
+  factor * 10, \
+  factor * 100, \
+  factor * 1000, \
+  factor * 10000, \
+  factor * 100000, \
+  factor * 1000000, \
+  factor * 10000000, \
+  factor * 100000000, \
+  factor * 1000000000
 
-const uint32_t fmt::internal::POWERS_OF_10_32[] = {0, FMT_POWERS_OF_10()};
+const uint32_t fmt::internal::POWERS_OF_10_32[] = {0, FMT_POWERS_OF_10(1)};
 const uint64_t fmt::internal::POWERS_OF_10_64[] = {
   0,
-  FMT_POWERS_OF_10(),
-  FMT_POWERS_OF_10(ULongLong(1000000000) *),
+  FMT_POWERS_OF_10(1),
+  FMT_POWERS_OF_10(ULongLong(1000000000)),
+  // Multiply several constants instead of using a single long long constants
+  // to avoid warnings about C++98 not supporting long long.
   ULongLong(1000000000) * ULongLong(1000000000) * 10
 };
 
