@@ -174,7 +174,7 @@ TEST(UtilTest, Increment) {
 template <typename Int>
 void TestCountDigits(Int) {
   for (Int i = 0; i < 10; ++i)
-    EXPECT_EQ(1, fmt::internal::CountDigits(i));
+    EXPECT_EQ(1u, fmt::internal::CountDigits(i));
   for (Int i = 1, n = 1,
        end = std::numeric_limits<Int>::max() / 10; n <= end; ++i) {
     n *= 10;
