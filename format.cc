@@ -423,6 +423,9 @@ void fmt::BasicFormatter<Char>::DoFormat() {
   next_arg_index_ = 0;
   const Char *s = start;
   BasicWriter<Char> &writer = *writer_;
+
+  //  fmt::colour(fmt::Red);
+
   while (*s) {
     Char c = *s++;
     if (c != '{' && c != '}') continue;
@@ -721,3 +724,11 @@ template void fmt::BasicFormatter<wchar_t>::CheckSign(
     const wchar_t *&s, const Arg &arg);
 
 template void fmt::BasicFormatter<wchar_t>::DoFormat();
+
+
+
+
+ void fmt::colour(Colours col)
+{
+  printf("\033[0;%dm",col);
+}
