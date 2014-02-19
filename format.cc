@@ -118,27 +118,23 @@ const char fmt::internal::DIGITS[] =
     "4041424344454647484950515253545556575859"
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
-    
-const uint64_t fmt::internal::POWERS_OF_10[] = {
+
+#define FMT_POWERS_OF_10(prefix) \
+  prefix 10, \
+  prefix 100, \
+  prefix 1000, \
+  prefix 10000, \
+  prefix 100000, \
+  prefix 1000000, \
+  prefix 10000000, \
+  prefix 100000000, \
+  prefix 1000000000
+
+const uint32_t fmt::internal::POWERS_OF_10_32[] = {0, FMT_POWERS_OF_10()};
+const uint64_t fmt::internal::POWERS_OF_10_64[] = {
   0,
-  10,
-  100,
-  1000,
-  10000,
-  100000,
-  1000000,
-  10000000,
-  100000000,
-  1000000000,
-  ULongLong(1000000000) * 10,
-  ULongLong(1000000000) * 100,
-  ULongLong(1000000000) * 1000,
-  ULongLong(1000000000) * 10000,
-  ULongLong(1000000000) * 100000,
-  ULongLong(1000000000) * 1000000,
-  ULongLong(1000000000) * 10000000,
-  ULongLong(1000000000) * 100000000,
-  ULongLong(1000000000) * 1000000000,
+  FMT_POWERS_OF_10(),
+  FMT_POWERS_OF_10(ULongLong(1000000000) *),
   ULongLong(1000000000) * ULongLong(1000000000) * 10
 };
 

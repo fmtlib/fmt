@@ -213,17 +213,32 @@ class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
       const wchar_t *format, unsigned width, int precision, T value);
 };
 
+// Selects uint32_t if FitsIn32Bits is true, uint64_t otherwise.
+template <bool FitsIn32Bits>
+struct TypeSelector { typedef uint32_t Type; };
+
+template <>
+struct TypeSelector<false> { typedef uint64_t Type; };
+
+template <typename T>
+struct IntTraitsBase {
+  // Smallest of uint32_t and uint64_t that is large enough to represent
+  // all values of T.
+  typedef typename
+    TypeSelector<std::numeric_limits<T>::digits <= 32>::Type MainType;
+};
+
 // Information about an integer type.
 // IntTraits is not specialized for integer types smaller than int,
 // since these are promoted to int.
 template <typename T>
-struct IntTraits {
+struct IntTraits : IntTraitsBase<T> {
   typedef T UnsignedType;
   static bool IsNegative(T) { return false; }
 };
 
 template <typename T, typename UnsignedT>
-struct SignedIntTraits {
+struct SignedIntTraits : IntTraitsBase<T> {
   typedef UnsignedT UnsignedType;
   static bool IsNegative(T value) { return value < 0; }
 };
@@ -245,17 +260,28 @@ struct IsLongDouble<long double> { enum {VALUE = 1}; };
 
 void ReportUnknownType(char code, const char *type);
 
-extern const uint64_t POWERS_OF_10[];
+extern const uint32_t POWERS_OF_10_32[];
+extern const uint64_t POWERS_OF_10_64[];
 
+#if FMT_GCC_VERSION >= 400 || __has_builtin(__builtin_clzll)
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case CountDigits returns 1.
 inline unsigned CountDigits(uint64_t n) {
-#if FMT_GCC_VERSION >= 400 || __has_builtin(__builtin_clzll)
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
   uint64_t t = (64 - __builtin_clzll(n | 1)) * 1233 >> 12;
-  return t - (n < POWERS_OF_10[t]) + 1;
+  return t - (n < POWERS_OF_10_64[t]) + 1;
+}
+# if FMT_GCC_VERSION >= 400 || __has_builtin(__builtin_clz)
+// Optional version of CountDigits for better performance on 32-bit platforms.
+inline unsigned CountDigits(uint32_t n) {
+  uint32_t t = (32 - __builtin_clz(n | 1)) * 1233 >> 12;
+  return t - (n < POWERS_OF_10_32[t]) + 1;
+}
+# endif
 #else
+// Slower version of CountDigits used when __builtin_clz is not available.
+inline unsigned CountDigits(uint64_t n) {
   unsigned count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
@@ -268,8 +294,8 @@ inline unsigned CountDigits(uint64_t n) {
     n /= 10000u;
     count += 4;
   }
-#endif
 }
+#endif
 
 extern const char DIGITS[];
 
@@ -838,7 +864,7 @@ template <typename T, typename Spec>
 void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
   unsigned size = 0;
   char sign = 0;
-  typedef typename internal::IntTraits<T>::UnsignedType UnsignedType;
+  typedef typename internal::IntTraits<T>::MainType UnsignedType;
   UnsignedType abs_value = value;
   if (internal::IntTraits<T>::IsNegative(value)) {
     sign = '-';
@@ -850,7 +876,8 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
   }
   switch (spec.type()) {
   case 0: case 'd': {
-    unsigned num_digits = internal::CountDigits(abs_value);
+    typename internal::IntTraits<T>::MainType normalized_value = abs_value;
+    unsigned num_digits = internal::CountDigits(normalized_value);
     CharPtr p =
         PrepareFilledBuffer(size + num_digits, spec, sign) + 1 - num_digits;
     internal::FormatDecimal(GetBase(p), abs_value, num_digits);
@@ -1380,7 +1407,7 @@ class FormatInt {
 // write a terminating null character.
 template <typename T>
 inline void FormatDec(char *&buffer, T value) {
-  typedef typename internal::IntTraits<T>::UnsignedType UnsignedType;
+  typedef typename internal::IntTraits<T>::MainType UnsignedType;
   UnsignedType abs_value = value;
   if (internal::IntTraits<T>::IsNegative(value)) {
     *buffer++ = '-';

@@ -170,6 +170,24 @@ TEST(UtilTest, Increment) {
   EXPECT_STREQ("200", s);
 }
 
+// Tests fmt::internal::CountDigits for integer type Int.
+template <typename Int>
+void TestCountDigits(Int) {
+  for (Int i = 0; i < 10; ++i)
+    EXPECT_EQ(1, fmt::internal::CountDigits(i));
+  for (Int i = 1, n = 1,
+       end = std::numeric_limits<Int>::max() / 10; n <= end; ++i) {
+    n *= 10;
+    EXPECT_EQ(i, fmt::internal::CountDigits(n - 1));
+    EXPECT_EQ(i + 1, fmt::internal::CountDigits(n));
+  }
+}
+
+TEST(UtilTest, CountDigits) {
+  TestCountDigits(uint32_t());
+  TestCountDigits(uint64_t());
+}
+
 class TestString {
  private:
   std::string value_;
@@ -1427,18 +1445,21 @@ TEST(FormatIntTest, FormatInt) {
   EXPECT_EQ(os.str(), fmt::FormatInt(std::numeric_limits<int64_t>::max()).str());
 }
 
-TEST(FormatIntTest, FormatDec) {
+template <typename T>
+std::string FormatDec(T value) {
   char buffer[10];
   char *ptr = buffer;
-  fmt::FormatDec(ptr, 42);
-  EXPECT_EQ(buffer + 2, ptr);
-  *ptr = '\0';
-  EXPECT_STREQ("42", buffer);
-  ptr = buffer;
-  fmt::FormatDec(ptr, -42);
-  *ptr = '\0';
-  EXPECT_EQ(buffer + 3, ptr);
-  EXPECT_STREQ("-42", buffer);
+  fmt::FormatDec(ptr, value);
+  return std::string(buffer, ptr);
+}
+
+TEST(FormatIntTest, FormatDec) {
+  EXPECT_EQ("42", FormatDec(42));
+  EXPECT_EQ("-42", FormatDec(-42));
+  EXPECT_EQ("42", FormatDec(42l));
+  EXPECT_EQ("42", FormatDec(42ul));
+  EXPECT_EQ("42", FormatDec(42ll));
+  EXPECT_EQ("42", FormatDec(42ull));
 }
 
 template <typename T>
