@@ -1472,19 +1472,12 @@ enum Color {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE};
 class ColorWriter {
  private:
   Color color_;
-  static const char RESET[];
 
  public:
   explicit ColorWriter(Color c) : color_(c) {}
 
   /** Writes the colored output to stdout. */
-  void operator()(const BasicWriter<char> &w) const {
-    char escape[] = "\x1b[30m";
-    escape[3] = '0' + color_;
-    std::fputs(escape, stdout);
-    std::fwrite(w.data(), 1, w.size(), stdout);
-    std::fputs(RESET, stdout);
-  }
+  void operator()(const BasicWriter<char> &w) const;
 };
 
 // Formats a string and prints it to stdout with the given color.
