@@ -1462,6 +1462,11 @@ TEST(FormatIntTest, FormatDec) {
   EXPECT_EQ("42", FormatDec(42ull));
 }
 
+TEST(ColorTest, PrintColored) {
+  fmt::PrintColored(fmt::RED, "Hello, {}!\n") << "world";
+  // TODO
+}
+
 template <typename T>
 std::string str(const T &value) {
   return fmt::str(fmt::Format("{0}") << value);

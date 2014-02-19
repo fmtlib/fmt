@@ -1465,6 +1465,35 @@ inline Formatter<Write> Print(StringRef format) {
   Formatter<Write> f(format);
   return f;
 }
+
+enum Color {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE};
+
+/** A formatting action that writes colored output to stdout. */
+class ColorWriter {
+ private:
+  Color color_;
+  static const char RESET[];
+
+ public:
+  explicit ColorWriter(Color c) : color_(c) {}
+
+  /** Writes the colored output to stdout. */
+  void operator()(const BasicWriter<char> &w) const {
+    char escape[] = "\x1b[30m";
+    escape[3] = '0' + color_;
+    std::fputs(escape, stdout);
+    std::fwrite(w.data(), 1, w.size(), stdout);
+    std::fputs(RESET, stdout);
+  }
+};
+
+// Formats a string and prints it to stdout with the given color.
+// Example:
+//   PrintColored(fmt::RED, "Elapsed time: {0:.2f} seconds") << 1.23;
+inline Formatter<ColorWriter> PrintColored(Color c, StringRef format) {
+  Formatter<ColorWriter> f(format, ColorWriter(c));
+  return f;
+}
 }
 
 #if _MSC_VER

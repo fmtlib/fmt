@@ -663,6 +663,8 @@ void fmt::BasicFormatter<Char>::DoFormat() {
   writer.buffer_.append(start, s);
 }
 
+const char fmt::ColorWriter::RESET[] = "\x1b[0m";
+
 // Explicit instantiations for char.
 
 template void fmt::BasicWriter<char>::FormatDouble<double>(
