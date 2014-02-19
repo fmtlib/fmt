@@ -246,8 +246,7 @@ As you can see boost::format is much slower than the alternative methods; this
 is confirmed by `other tests <http://accu.org/index.php/journals/1539>`__.
 Tinyformat is quite good coming close to IOStreams.  Unfortunately tinyformat
 cannot be faster than the IOStreams because it uses them internally.
-Performance of format is close to that of std::ostream but there is a room for
-improvement since format is not based on IOStreams.
+Performance of format is close to that of printf.
 
 Compile time and code bloat
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
