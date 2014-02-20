@@ -220,38 +220,33 @@ struct TypeSelector { typedef uint32_t Type; };
 template <>
 struct TypeSelector<false> { typedef uint64_t Type; };
 
+// Checks if a number is negative - used to avoid warnings.
+template <bool IsSigned>
+struct SignChecker {
+  template <typename T>
+  static bool IsNegative(T value) { return false; }
+};
+
+template <>
+struct SignChecker<true> {
+  template <typename T>
+  static bool IsNegative(T value) { return value < 0; }
+};
+
+// Returns true if value is negative, false otherwise.
+// Same as (value < 0) but doesn't produce warnings if T is an unsigned type.
 template <typename T>
-struct IntTraitsBase {
+inline bool IsNegative(T value) {
+  return SignChecker<std::numeric_limits<T>::is_signed>::IsNegative(value);
+}
+
+template <typename T>
+struct IntTraits {
   // Smallest of uint32_t and uint64_t that is large enough to represent
   // all values of T.
   typedef typename
     TypeSelector<std::numeric_limits<T>::digits <= 32>::Type MainType;
 };
-
-// Information about an integer type.
-template <typename T>
-struct IntTraits : IntTraitsBase<T> {
-  typedef T UnsignedType;
-  static bool IsNegative(T) { return false; }
-};
-
-template <typename T, typename UnsignedT>
-struct SignedIntTraits : IntTraitsBase<T> {
-  typedef UnsignedT UnsignedType;
-  static bool IsNegative(T value) { return value < 0; }
-};
-
-#define FMT_INT_TRAIT(Type) \
-  template <> \
-  struct IntTraits<Type> : SignedIntTraits<Type, unsigned Type> {};
-
-FMT_INT_TRAIT(char)
-FMT_INT_TRAIT(short)
-FMT_INT_TRAIT(int)
-FMT_INT_TRAIT(long)
-
-template <>
-struct IntTraits<LongLong> : SignedIntTraits<LongLong, ULongLong> {};
 
 template <typename T>
 struct IsLongDouble { enum {VALUE = 0}; };
@@ -867,7 +862,7 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
   char sign = 0;
   typedef typename internal::IntTraits<T>::MainType UnsignedType;
   UnsignedType abs_value = value;
-  if (internal::IntTraits<T>::IsNegative(value)) {
+  if (value < 0) {
     sign = '-';
     ++size;
     abs_value = 0 - abs_value;
@@ -877,8 +872,7 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
   }
   switch (spec.type()) {
   case 0: case 'd': {
-    typename internal::IntTraits<T>::MainType normalized_value = abs_value;
-    unsigned num_digits = internal::CountDigits(normalized_value);
+    unsigned num_digits = internal::CountDigits(abs_value);
     CharPtr p =
         PrepareFilledBuffer(size + num_digits, spec, sign) + 1 - num_digits;
     internal::FormatDecimal(GetBase(p), abs_value, num_digits);
@@ -1409,7 +1403,7 @@ class FormatInt {
 template <typename T>
 inline void FormatDec(char *&buffer, T value) {
   typename internal::IntTraits<T>::MainType abs_value = value;
-  if (internal::IntTraits<T>::IsNegative(value)) {
+  if (internal::IsNegative(value)) {
     *buffer++ = '-';
     abs_value = 0 - abs_value;
   }
