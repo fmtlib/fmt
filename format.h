@@ -862,7 +862,7 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
   char sign = 0;
   typedef typename internal::IntTraits<T>::MainType UnsignedType;
   UnsignedType abs_value = value;
-  if (value < 0) {
+  if (internal::IsNegative(value)) {
     sign = '-';
     ++size;
     abs_value = 0 - abs_value;
