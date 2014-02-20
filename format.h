@@ -229,8 +229,6 @@ struct IntTraitsBase {
 };
 
 // Information about an integer type.
-// IntTraits is not specialized for integer types smaller than int,
-// since these are promoted to int.
 template <typename T>
 struct IntTraits : IntTraitsBase<T> {
   typedef T UnsignedType;
@@ -243,11 +241,14 @@ struct SignedIntTraits : IntTraitsBase<T> {
   static bool IsNegative(T value) { return value < 0; }
 };
 
-template <>
-struct IntTraits<int> : SignedIntTraits<int, unsigned> {};
+#define FMT_INT_TRAIT(Type) \
+  template <> \
+  struct IntTraits<Type> : SignedIntTraits<Type, unsigned Type> {};
 
-template <>
-struct IntTraits<long> : SignedIntTraits<long, unsigned long> {};
+FMT_INT_TRAIT(char)
+FMT_INT_TRAIT(short)
+FMT_INT_TRAIT(int)
+FMT_INT_TRAIT(long)
 
 template <>
 struct IntTraits<LongLong> : SignedIntTraits<LongLong, ULongLong> {};
@@ -1407,8 +1408,7 @@ class FormatInt {
 // write a terminating null character.
 template <typename T>
 inline void FormatDec(char *&buffer, T value) {
-  typedef typename internal::IntTraits<T>::MainType UnsignedType;
-  UnsignedType abs_value = value;
+  typename internal::IntTraits<T>::MainType abs_value = value;
   if (internal::IntTraits<T>::IsNegative(value)) {
     *buffer++ = '-';
     abs_value = 0 - abs_value;
