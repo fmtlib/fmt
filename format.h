@@ -224,7 +224,7 @@ struct TypeSelector<false> { typedef uint64_t Type; };
 template <bool IsSigned>
 struct SignChecker {
   template <typename T>
-  static bool IsNegative(T value) { return false; }
+  static bool IsNegative(T) { return false; }
 };
 
 template <>
