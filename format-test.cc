@@ -1459,6 +1459,8 @@ TEST(FormatIntTest, FormatDec) {
   std::ostringstream os;
   os << std::numeric_limits<unsigned short>::max();
   EXPECT_EQ(os.str(), FormatDec(std::numeric_limits<unsigned short>::max()));
+  EXPECT_EQ("1", FormatDec(1));
+  EXPECT_EQ("-1", FormatDec(-1));
   EXPECT_EQ("42", FormatDec(42));
   EXPECT_EQ("-42", FormatDec(-42));
   EXPECT_EQ("42", FormatDec(42l));

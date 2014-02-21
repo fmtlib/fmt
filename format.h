@@ -301,7 +301,7 @@ class FormatterProxy;
 // Formats a decimal unsigned integer value writing into buffer.
 template <typename UInt, typename Char>
 void FormatDecimal(Char *buffer, UInt value, unsigned num_digits) {
-    --num_digits;
+  --num_digits;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
@@ -1406,6 +1406,16 @@ inline void FormatDec(char *&buffer, T value) {
   if (internal::IsNegative(value)) {
     *buffer++ = '-';
     abs_value = 0 - abs_value;
+  }
+  if (abs_value < 100) {
+    if (abs_value < 10) {
+      *buffer++ = static_cast<char>('0' + abs_value);
+      return;
+    }
+    unsigned index = static_cast<unsigned>(abs_value * 2);
+    *buffer++ = internal::DIGITS[index];
+    *buffer++ = internal::DIGITS[index + 1];
+    return;
   }
   unsigned num_digits = internal::CountDigits(abs_value);
   internal::FormatDecimal(buffer, abs_value, num_digits);
