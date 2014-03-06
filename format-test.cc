@@ -1485,19 +1485,12 @@ TEST(StrTest, Convert) {
   EXPECT_EQ("2012-12-9", s);
 }
 
-#if FMT_USE_INITIALIZER_LIST
-template<typename... Args>
-inline std::string Format(const StringRef &format, const Args & ... args) {
-  Writer w;
-  fmt::BasicFormatter<char> f(w, format.c_str(), {args...});
-  return fmt::str(f);
-}
-
+#if FMT_USE_INITIALIZER_LIST && FMT_USE_VARIADIC_TEMPLATES
 TEST(FormatTest, Variadic) {
-  Writer w;
-  EXPECT_EQ("Hello, world!1", str(Format("Hello, {}!{}", "world", 1)));
+  EXPECT_EQ("Hello, world!1", Format("Hello, {}!{}", "world", 1));
+  EXPECT_EQ(L"Hello, world!1", Format(L"Hello, {}!{}", L"world", 1));
 }
-#endif  // FMT_USE_INITIALIZER_LIST
+#endif  // FMT_USE_INITIALIZER_LIST && FMT_USE_VARIADIC_TEMPLATES
 
 int main(int argc, char **argv) {
 #ifdef _WIN32

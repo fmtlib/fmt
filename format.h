@@ -61,6 +61,12 @@
        (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1800)
 #endif
 
+#ifndef FMT_USE_VARIADIC_TEMPLATES
+# define FMT_USE_VARIADIC_TEMPLATES \
+   (__has_feature(cxx_variadic_templates) || \
+       (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1800)
+#endif
+
 #if FMT_USE_INITIALIZER_LIST
 # include <initializer_list>
 #endif
@@ -1491,6 +1497,23 @@ inline Formatter<ColorWriter> PrintColored(Color c, StringRef format) {
   Formatter<ColorWriter> f(format, ColorWriter(c));
   return f;
 }
+
+#if FMT_USE_INITIALIZER_LIST && FMT_USE_VARIADIC_TEMPLATES
+template<typename... Args>
+std::string Format(const StringRef &format, const Args & ... args) {
+  Writer w;
+  BasicFormatter<char> f(w, format.c_str(), { args... });
+  return fmt::str(f);
+}
+
+template<typename... Args>
+std::wstring Format(const WStringRef &format, const Args & ... args) {
+  WWriter w;
+  BasicFormatter<wchar_t> f(w, format.c_str(), { args... });
+  return fmt::str(f);
+}
+#endif  // FMT_USE_INITIALIZER_LIST && FMT_USE_VARIADIC_TEMPLATES
+
 }
 
 #if _MSC_VER
