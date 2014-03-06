@@ -1062,12 +1062,12 @@ class BasicFormatter {
 
     Arg(void *value) : type(POINTER), pointer_value(value), formatter(0) {}
 
-    Arg(const std::string &value) : type(STRING), formatter(0) {
+    Arg(const std::basic_string<Char> &value) : type(STRING), formatter(0) {
       string.value = value.c_str();
       string.size = value.size();
     }
 
-    Arg(StringRef value) : type(STRING), formatter(0) {
+    Arg(BasicStringRef<Char> value) : type(STRING), formatter(0) {
       string.value = value.c_str();
       string.size = value.size();
     }
