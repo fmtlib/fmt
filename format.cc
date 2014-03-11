@@ -633,7 +633,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
       } else {
         out = writer.GrowBuffer(1);
       }
-      *out = static_cast<char>(arg.int_value);
+      *out = static_cast<Char>(arg.int_value);
       break;
     }
     case STRING: {
