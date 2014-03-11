@@ -39,6 +39,11 @@
 
 using fmt::ULongLong;
 
+#if _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4127) // conditional expression is constant
+#endif
+
 namespace {
 
 #ifndef _MSC_VER
@@ -237,7 +242,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
   char sign = 0;
   // Use SignBit instead of value < 0 because the latter is always
   // false for NaN.
-  if (SignBit(value)) {
+  if (SignBit(static_cast<double>(value))) {
     sign = '-';
     value = -value;
   } else if (spec.sign_flag()) {
@@ -259,7 +264,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
     return;
   }
 
-  if (IsInf(value)) {
+  if (IsInf(static_cast<double>(value))) {
     // Format infinity ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t size = 4;
@@ -628,7 +633,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
       } else {
         out = writer.GrowBuffer(1);
       }
-      *out = arg.int_value;
+      *out = static_cast<char>(arg.int_value);
       break;
     }
     case STRING: {
@@ -667,7 +672,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
 
 void fmt::ColorWriter::operator()(const fmt::BasicWriter<char> &w) const {
   char escape[] = "\x1b[30m";
-  escape[3] = '0' + color_;
+  escape[3] = '0' + static_cast<char>(color_);
   std::fputs(escape, stdout);
   std::fwrite(w.data(), 1, w.size(), stdout);
   std::fputs(RESET_COLOR, stdout);
@@ -731,3 +736,7 @@ template void fmt::BasicFormatter<wchar_t>::CheckSign(
     const wchar_t *&s, const Arg &arg);
 
 template void fmt::BasicFormatter<wchar_t>::DoFormat();
+
+#if _MSC_VER
+# pragma warning(pop)
+#endif
