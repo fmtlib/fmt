@@ -81,7 +81,7 @@
 
 #if _MSC_VER
 # pragma warning(push)
-# pragma warning(disable: 4521)
+# pragma warning(disable: 4521) // 'class' : multiple copy constructors specified
 #endif
 
 namespace fmt {
