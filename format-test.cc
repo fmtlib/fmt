@@ -334,6 +334,7 @@ TEST(WriterTest, WriteDoubleWithFilledBuffer) {
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
     writer << ' ';
   writer << 1.2;
+  EXPECT_STREQ("1.2", writer.c_str() + fmt::internal::INLINE_BUFFER_SIZE);
 }
 
 TEST(WriterTest, WriteChar) {
