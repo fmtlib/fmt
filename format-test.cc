@@ -328,6 +328,14 @@ TEST(WriterTest, WriteDoubleAtBufferBoundary) {
     writer << 1.23456789;
 }
 
+TEST(WriterTest, WriteDoubleWithFilledBuffer) {
+  fmt::Writer writer;
+  // Fill the buffer.
+  for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
+    writer << ' ';
+  writer << 1.2;
+}
+
 TEST(WriterTest, WriteChar) {
   CHECK_WRITE('a');
 }

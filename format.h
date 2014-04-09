@@ -92,6 +92,8 @@ FMT_GCC_EXTENSION typedef long long LongLong;
 FMT_GCC_EXTENSION typedef unsigned long long ULongLong;
 
 namespace internal {
+  
+enum { INLINE_BUFFER_SIZE = 500 };
 
 #if _SECURE_SCL
 template <typename T>
@@ -648,8 +650,7 @@ class BasicFormatter;
 template <typename Char>
 class BasicWriter {
  private:
-  enum { INLINE_BUFFER_SIZE = 500 };
-  mutable internal::Array<Char, INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
+  mutable internal::Array<Char, internal::INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
 
   friend class BasicFormatter<Char>;
 
