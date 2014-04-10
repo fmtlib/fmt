@@ -51,8 +51,11 @@ namespace {
 inline int SignBit(double value) {
   // When compiled in C++11 mode signbit is no longer a macro but a function
   // defined in namespace std and the macro is undefined.
-  using namespace std;
+#ifdef signbit
   return signbit(value);
+#else
+  return std::signbit(value);
+#endif
 }
 
 inline int IsInf(double x) {
