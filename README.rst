@@ -27,7 +27,7 @@ Features
   header file and a single source file) and compiled code.
   See `Compile time and code bloat`_.
 * Reliability: the library has an extensive set of `unit tests
-  <https://github.com/cppformat/format/blob/master/format_test.cc>`__.
+  <https://github.com/cppformat/format/blob/master/format-test.cc>`__.
 * Safety: the library is fully type safe, errors in format strings are
   reported using exceptions, automatic memory management prevents buffer
   overflow errors.
