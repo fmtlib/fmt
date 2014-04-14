@@ -135,3 +135,26 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/format-benchmark/tinyformat_test.cpp)
     WORKING_DIRECTORY tinyformat
     DEPENDS format)
 endif ()
+
+if (EXISTS .gitignore)
+  # Get the list of ignored files from .gitignore.
+  file (STRINGS ".gitignore" lines)
+  LIST(REMOVE_ITEM lines /doc/html)
+  foreach (line ${lines})
+    string(REPLACE "*" ".*" line "${line}")
+    set(ignored_files ${ignored_files} "${line}$" "${line}/")
+  endforeach ()
+  set(ignored_files ${ignored_files} /.git /breathe /format-benchmark /gtest)
+
+  set(CPACK_SOURCE_GENERATOR ZIP)
+  set(CPACK_SOURCE_IGNORE_FILES ${ignored_files})
+  set(CPACK_PACKAGE_VERSION_MAJOR 0)
+  set(CPACK_PACKAGE_VERSION_MINOR 8)
+  set(CPACK_PACKAGE_VERSION_PATCH 0)
+  set(CPACK_SOURCE_PACKAGE_FILE_NAME
+    format-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}-src)
+  set(CPACK_RESOURCE_FILE_README ${FORMAT_SOURCE_DIR}/README.rst)
+  include(CPack)
+endif ()
+
+configure_file(doc/conf.py.in doc/conf.py @ONLY)
