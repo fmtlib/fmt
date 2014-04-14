@@ -2,8 +2,8 @@
 
 .. _string-formatting-api:
 
-String Formatting API
----------------------
+C++ Format Library API
+----------------------
 
 .. doxygenfunction:: fmt::Format(StringRef)
 
