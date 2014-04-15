@@ -1,6 +1,9 @@
 format
 ======
 
+.. image:: https://travis-ci.org/cppformat/format.png?branch=master
+  :target: https://travis-ci.org/cppformat/format
+
 Format is an open-source formatting library for C++.
 It can be used as a type-safe alternative to printf or as a fast
 alternative to IOStreams.
