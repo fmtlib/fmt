@@ -1,5 +1,9 @@
 language: cpp
 
+before_install:
+  - git submodule update --init
+
 script:
   - cmake .
   - make
+  - make test
