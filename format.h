@@ -45,6 +45,12 @@
 #ifdef __GNUC__
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 # define FMT_GCC_EXTENSION __extension__
+// Disable warning about "long long" which is sometimes reported even
+// when using __extension__.
+# if FMT_GCC_VERSION >= 406
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wlong-long"
+# endif
 #else
 # define FMT_GCC_EXTENSION
 #endif
@@ -1517,7 +1523,10 @@ std::wstring Format(const WStringRef &format, const Args & ... args) {
 
 }
 
-#if _MSC_VER
+// Restore warnings.
+#if FMT_GCC_VERSION >= 406
+# pragma GCC diagnostic pop
+#elif _MSC_VER
 # pragma warning(pop)
 #endif
 
