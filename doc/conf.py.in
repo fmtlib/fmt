@@ -46,15 +46,15 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'format'
-copyright = u'1990-2012, Python Software Foundation'
+project = u'C++ Format'
+copyright = u'2012-2014, Victor Zverovich'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = '@CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@'
+version = '@CPPFORMAT_VERSION@'
 # The full version, including alpha/beta/rc tags.
 release = version
 
