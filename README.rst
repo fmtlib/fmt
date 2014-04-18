@@ -310,7 +310,11 @@ Then go to the format directory and generate Makefiles with
     $ cd format
     $ cmake .
 
-Next use the following commands to run the speed test::
+Next use the following commands to run the unit tests::
+
+    $ make test
+
+the speed test::
 
     $ make speed_test
 
