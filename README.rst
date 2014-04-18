@@ -296,9 +296,13 @@ the largest overheads.
 Running the tests
 ~~~~~~~~~~~~~~~~~
 
-To run the tests you first need to get the format repository with submodules::
+To run the tests you first need to get the source code by cloning the
+repository::
 
-    $ git clone --recursive git://github.com/cppformat/format.git
+    $ git clone git://github.com/cppformat/cppformat.git
+
+or downloading a package from
+`Releases <https://github.com/cppformat/cppformat/releases>`__.
 
 Then go to the format directory and generate Makefiles with
 `CMake <http://www.cmake.org/>`__::
