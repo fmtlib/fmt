@@ -1433,6 +1433,10 @@ TEST(FormatterTest, Examples) {
 
   std::string path = "somefile";
   ReportError("File not found: {0}") << path;
+  
+  EXPECT_THROW_MSG(
+    Format("The answer is {:d}", "forty-two"), FormatError,
+    "unknown format code 'd' for string");
 }
 
 TEST(FormatIntTest, Data) {
