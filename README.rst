@@ -1,10 +1,10 @@
-format
-======
+C++ Format
+==========
 
-.. image:: https://travis-ci.org/cppformat/format.png?branch=master
-  :target: https://travis-ci.org/cppformat/format
+.. image:: https://travis-ci.org/cppformat/cppformat.png?branch=master
+  :target: https://travis-ci.org/cppformat/cppformat
 
-Format is an open-source formatting library for C++.
+C++ Format is an open-source formatting library for C++.
 It can be used as a type-safe alternative to printf or as a fast
 alternative to IOStreams.
 
@@ -42,7 +42,7 @@ Features
   (-Wall -Wextra -pedantic).
 * Support for wide strings.
 
-See the `documentation <http://cppformat.github.io/format/>`__ for more details.
+See the `documentation <http://cppformat.github.io/cppformat/>`__ for more details.
 
 Examples
 --------
@@ -60,7 +60,7 @@ Arguments can be accessed by position and arguments' indices can be repeated:
     std::string s = str(fmt::Format("{0}{1}{0}") << "abra" << "cad");
     // s == "abracadabra"
 
-Format can be used as a safe portable replacement for ``itoa``:
+C++ Format can be used as a safe portable replacement for ``itoa``:
 
 .. code-block:: c++
 
