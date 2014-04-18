@@ -17,7 +17,7 @@ Features
 * Write API similar to the one used by IOStreams but much faster and more
   consistent.
 * Format API with `format string syntax
-  <http://cppformat.github.io/format#format-string-syntax>`__
+  <http://cppformat.github.io/doc/latest#format-string-syntax>`__
   similar to the one used by `str.format
   <http://docs.python.org/2/library/stdtypes.html#str.format>`__ in Python.
 * Support for user-defined types.
@@ -30,7 +30,7 @@ Features
   header file and a single source file) and compiled code.
   See `Compile time and code bloat`_.
 * Reliability: the library has an extensive set of `unit tests
-  <https://github.com/cppformat/format/blob/master/format-test.cc>`__.
+  <https://github.com/cppformat/cppformat/blob/master/format-test.cc>`__.
 * Safety: the library is fully type safe, errors in format strings are
   reported using exceptions, automatic memory management prevents buffer
   overflow errors.
@@ -42,7 +42,7 @@ Features
   (-Wall -Wextra -pedantic).
 * Support for wide strings.
 
-See the `documentation <http://cppformat.github.io/cppformat/>`__ for more details.
+See the `documentation <http://cppformat.github.io/doc/latest>`__ for more details.
 
 Examples
 --------
@@ -88,9 +88,9 @@ An object of any user-defined type for which there is an overloaded
     // s == "The date is 2012-12-9"
 
 You can use `fmt::Formatter
-<http://cppformat.github.io/format/#project0classfmt_1_1_formatter>`__
+<http://cppformat.github.io/doc/latest/#project0classfmt_1_1_formatter>`__
 to create your own functions similar to `fmt::Format
-<http://cppformat.github.io/format/#fmt::Format__StringRef>`__ and ``fmt::Print``
+<http://cppformat.github.io/doc/latest#fmt::Format__StringRef>`__ and ``fmt::Print``
 with an arbitrary action performed when formatting is complete:
 
 .. code-block:: c++
@@ -121,7 +121,7 @@ Projects using this library
 
 If you are aware of other projects using ``format``, please let me know
 by `email <mailto:victor.zverovich@gmail.com>`__ or by submitting an
-`issue <https://github.com/cppformat/format/issues>`__.
+`issue <https://github.com/cppformat/cppformat/issues>`__.
 
 Motivation
 ----------
@@ -364,13 +364,13 @@ Documentation License
 ---------------------
 
 The `Format String Syntax
-<http://cppformat.github.io/format#format-string-syntax>`__
+<http://cppformat.github.io/doc/latest#format-string-syntax>`__
 section in the documentation is based on the one from Python `string module
 documentation <http://docs.python.org/3/library/string.html#module-string>`__
 adapted for the current library. For this reason the documentation is
 distributed under the Python Software Foundation license available in
 `doc/LICENSE.python
-<https://raw.github.com/cppformat/format/master/doc/LICENSE.python>`__.
+<https://raw.github.com/cppformat/cppformat/master/doc/LICENSE.python>`__.
 
 Acknowledgments
 ---------------
