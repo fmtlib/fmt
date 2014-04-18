@@ -1433,10 +1433,12 @@ TEST(FormatterTest, Examples) {
 
   std::string path = "somefile";
   ReportError("File not found: {0}") << path;
-  
+
+#ifdef FMT_USE_INITIALIZER_LIST
   EXPECT_THROW_MSG(
     Format("The answer is {:d}", "forty-two"), FormatError,
     "unknown format code 'd' for string");
+#endif
 }
 
 TEST(FormatIntTest, Data) {
