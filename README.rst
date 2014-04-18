@@ -36,8 +36,8 @@ Features
   overflow errors.
 * Ease of use: small self-contained code base, no external dependencies,
   permissive BSD `license`_.
-* `Portability`_ with consistent output across platforms and support
-  for older compilers.
+* `Portability <http://cppformat.github.io#portability>`__ with consistent output
+  across platforms and support for older compilers.
 * Clean warning-free codebase even on high warning levels
   (-Wall -Wextra -pedantic).
 * Support for wide strings.
@@ -321,17 +321,6 @@ the speed test::
 or the bloat test::
 
     $ make bloat_test
-
-Portability
------------
-
-The format library has been tested on the following systems and compilers:
-
-* 64-bit (amd64) GNU/Linux with GCC 4.6.3, 4.7.2 and Intel C++ Compiler (ICC) 14.0.2
-* 32-bit (i386) GNU/Linux with GCC 4.6.3
-* Mac OS X with GCC 4.2.1 and Clang 4.2
-* 64-bit Windows with Visual C++ 2010
-* 32-bit Windows with Visual C++ 2010
 
 License
 -------
