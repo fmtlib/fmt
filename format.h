@@ -1138,13 +1138,6 @@ class BasicFormatter {
   // writing the output to writer_.
   void DoFormat();
 
-  // Formats an integer.
-  // TODO: remove
-  template <typename T>
-  void FormatInt(T value, const FormatSpec &spec) {
-    *writer_ << IntFormatSpec<T, FormatSpec>(value, spec);
-  }
-
   struct Proxy {
     BasicWriter<Char> *writer;
     const Char *format;
