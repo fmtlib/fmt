@@ -5,6 +5,10 @@
 C++ Format Library API
 ----------------------
 
+All functions and classes provided by the C++ Format library reside
+in namespace ``fmt`` and macros have prefix ``FMT_``. For brevity the
+namespace is often omitted in examples.
+
 .. doxygenfunction:: fmt::Format(StringRef)
 
 .. doxygenclass:: fmt::BasicWriter
