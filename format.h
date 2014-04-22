@@ -1001,30 +1001,19 @@ class BasicFormatter {
   typedef void (*FormatFunc)(
       BasicWriter<Char> &w, const void *arg, const FormatSpec &spec);
 
-  // A format argument.
-  class Arg {
-   private:
-    // This method is private to disallow formatting of arbitrary pointers.
-    // If you want to output a pointer cast it to const void*. Do not implement!
-    template <typename T>
-    Arg(const T *value);
+  struct StringValue {
+    const Char *value;
+    std::size_t size;
+  };
 
-    // This method is private to disallow formatting of arbitrary pointers.
-    // If you want to output a pointer cast it to void*. Do not implement!
-    template <typename T>
-    Arg(T *value);
+  struct CustomValue {
+    const void *value;
+    FormatFunc format;
+  };
 
-    struct StringValue {
-      const Char *value;
-      std::size_t size;
-    };
-
-    struct CustomValue {
-      const void *value;
-      FormatFunc format;
-    };
-
-   public:
+  // Information about a format argument. It is a POD type to allow
+  // storage in internal::Array.
+  struct ArgInfo {
     Type type;
     union {
       int int_value;
@@ -1039,56 +1028,90 @@ class BasicFormatter {
       StringValue string;
       CustomValue custom;
     };
+  };
+
+  // A wrapper around a format argument used to ensure that the formatting
+  // is performed before the argument is destroyed.
+  class Arg : public ArgInfo {
+   private:
+    // This method is private to disallow formatting of arbitrary pointers.
+    // If you want to output a pointer cast it to const void*. Do not implement!
+    template <typename T>
+    Arg(const T *value);
+
+    // This method is private to disallow formatting of arbitrary pointers.
+    // If you want to output a pointer cast it to void*. Do not implement!
+    template <typename T>
+    Arg(T *value);
+
+   public:
     mutable BasicFormatter *formatter;
+    using ArgInfo::type;
 
-    Arg(short value) : type(INT), int_value(value), formatter(0) {}
-    Arg(unsigned short value) : type(UINT), int_value(value), formatter(0) {}
-    Arg(int value) : type(INT), int_value(value), formatter(0) {}
-    Arg(unsigned value) : type(UINT), uint_value(value), formatter(0) {}
-    Arg(long value) : type(LONG), long_value(value), formatter(0) {}
-    Arg(unsigned long value) : type(ULONG), ulong_value(value), formatter(0) {}
+    Arg(short value) : formatter(0) { type = INT; this->int_value = value; }
+    Arg(unsigned short value)
+    : formatter(0) { type = UINT; this->int_value = value; }
+    Arg(int value) : formatter(0) { type = INT; this->int_value = value; }
+    Arg(unsigned value)
+    : formatter(0) { type = UINT; this->uint_value = value; }
+    Arg(long value) : formatter(0) { type = LONG; this->long_value = value; }
+    Arg(unsigned long value)
+    : formatter(0) { type = ULONG; this->ulong_value = value; }
     Arg(LongLong value)
-    : type(LONG_LONG), long_long_value(value), formatter(0) {}
+    : formatter(0) { type = LONG_LONG; this->long_long_value = value; }
     Arg(ULongLong value)
-    : type(ULONG_LONG), ulong_long_value(value), formatter(0) {}
-    Arg(float value) : type(DOUBLE), double_value(value), formatter(0) {}
-    Arg(double value) : type(DOUBLE), double_value(value), formatter(0) {}
+    : formatter(0) { type = ULONG_LONG; this->ulong_long_value = value; }
+    Arg(float value)
+    : formatter(0) { type = DOUBLE; this->double_value = value; }
+    Arg(double value)
+    : formatter(0) { type = DOUBLE; this->double_value = value; }
     Arg(long double value)
-    : type(LONG_DOUBLE), long_double_value(value), formatter(0) {}
-    Arg(char value) : type(CHAR), int_value(value), formatter(0) {}
-    Arg(wchar_t value)
-    : type(CHAR), int_value(internal::CharTraits<Char>::ConvertChar(value)),
-      formatter(0) {}
-
-    Arg(const Char *value) : type(STRING), formatter(0) {
-      string.value = value;
-      string.size = 0;
+    : formatter(0) { type = LONG_DOUBLE; this->long_double_value = value; }
+    Arg(char value) : formatter(0) { type = CHAR; this->int_value = value; }
+    Arg(wchar_t value) : formatter(0) {
+      type = CHAR;
+      this->int_value = internal::CharTraits<Char>::ConvertChar(value);
     }
 
-    Arg(Char *value) : type(STRING), formatter(0) {
-      string.value = value;
-      string.size = 0;
+    Arg(const Char *value) : formatter(0) {
+      type = STRING;
+      this->string.value = value;
+      this->string.size = 0;
     }
 
-    Arg(const void *value)
-    : type(POINTER), pointer_value(value), formatter(0) {}
-
-    Arg(void *value) : type(POINTER), pointer_value(value), formatter(0) {}
-
-    Arg(const std::basic_string<Char> &value) : type(STRING), formatter(0) {
-      string.value = value.c_str();
-      string.size = value.size();
+    Arg(Char *value) : formatter(0) {
+      type = STRING;
+      this->string.value = value;
+      this->string.size = 0;
     }
 
-    Arg(BasicStringRef<Char> value) : type(STRING), formatter(0) {
-      string.value = value.c_str();
-      string.size = value.size();
+    Arg(const void *value) : formatter(0) {
+      type = POINTER;
+      this->pointer_value = value;
+    }
+
+    Arg(void *value) : formatter(0) {
+      type = POINTER;
+      this->pointer_value = value;
+    }
+
+    Arg(const std::basic_string<Char> &value) : formatter(0) {
+      type = STRING;
+      this->string.value = value.c_str();
+      this->string.size = value.size();
+    }
+
+    Arg(BasicStringRef<Char> value) : formatter(0) {
+      type = STRING;
+      this->string.value = value.c_str();
+      this->string.size = value.size();
     }
 
     template <typename T>
-    Arg(const T &value) : type(CUSTOM), formatter(0) {
-      custom.value = &value;
-      custom.format = &internal::FormatCustomArg<Char, T>;
+    Arg(const T &value) : formatter(0) {
+      type = CUSTOM;
+      this->custom.value = &value;
+      this->custom.format = &internal::FormatCustomArg<Char, T>;
     }
 
     ~Arg() FMT_NOEXCEPT(false) {
