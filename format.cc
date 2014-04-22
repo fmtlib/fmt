@@ -388,7 +388,7 @@ unsigned fmt::BasicFormatter<Char>::ParseUInt(const Char *&s) const {
 }
 
 template <typename Char>
-inline const typename fmt::BasicFormatter<Char>::Arg
+inline const typename fmt::BasicFormatter<Char>::ArgInfo
     &fmt::BasicFormatter<Char>::ParseArgIndex(const Char *&s) {
   unsigned arg_index = 0;
   if (*s < '0' || *s > '9') {
@@ -409,11 +409,11 @@ inline const typename fmt::BasicFormatter<Char>::Arg
   }
   if (arg_index >= args_.size())
     ReportError(s, "argument index is out of range in format");
-  return *args_[arg_index];
+  return args_[arg_index];
 }
 
 template <typename Char>
-void fmt::BasicFormatter<Char>::CheckSign(const Char *&s, const Arg &arg) {
+void fmt::BasicFormatter<Char>::CheckSign(const Char *&s, const ArgInfo &arg) {
   char sign = static_cast<char>(*s);
   if (arg.type > LAST_NUMERIC_TYPE) {
     ReportError(s,
@@ -446,7 +446,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
     num_open_braces_= 1;
     writer.buffer_.append(start, s - 1);
 
-    const Arg &arg = ParseArgIndex(s);
+    const ArgInfo &arg = ParseArgIndex(s);
 
     FormatSpec spec;
     int precision = -1;
@@ -537,7 +537,7 @@ void fmt::BasicFormatter<Char>::DoFormat() {
         } else if (*s == '{') {
           ++s;
           ++num_open_braces_;
-          const Arg &precision_arg = ParseArgIndex(s);
+          const ArgInfo &precision_arg = ParseArgIndex(s);
           ULongLong value = 0;
           switch (precision_arg.type) {
           case INT:
@@ -702,11 +702,11 @@ template void fmt::BasicFormatter<char>::ReportError(
 
 template unsigned fmt::BasicFormatter<char>::ParseUInt(const char *&s) const;
 
-template const fmt::BasicFormatter<char>::Arg
+template const fmt::BasicFormatter<char>::ArgInfo
     &fmt::BasicFormatter<char>::ParseArgIndex(const char *&s);
 
 template void fmt::BasicFormatter<char>::CheckSign(
-    const char *&s, const Arg &arg);
+    const char *&s, const ArgInfo &arg);
 
 template void fmt::BasicFormatter<char>::DoFormat();
 
@@ -732,11 +732,11 @@ template void fmt::BasicFormatter<wchar_t>::ReportError(
 template unsigned fmt::BasicFormatter<wchar_t>::ParseUInt(
     const wchar_t *&s) const;
 
-template const fmt::BasicFormatter<wchar_t>::Arg
+template const fmt::BasicFormatter<wchar_t>::ArgInfo
     &fmt::BasicFormatter<wchar_t>::ParseArgIndex(const wchar_t *&s);
 
 template void fmt::BasicFormatter<wchar_t>::CheckSign(
-    const wchar_t *&s, const Arg &arg);
+    const wchar_t *&s, const ArgInfo &arg);
 
 template void fmt::BasicFormatter<wchar_t>::DoFormat();
 

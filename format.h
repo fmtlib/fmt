@@ -1031,7 +1031,15 @@ class BasicFormatter {
   };
 
   // A wrapper around a format argument used to ensure that the formatting
-  // is performed before the argument is destroyed.
+  // is performed before the argument is destroyed. It is private so that
+  // its objects are only created by automatic conversions and not by users.
+  // Example:
+  //
+  //   Format("{}") << std::string("test");
+  //
+  // Here an Arg object that wraps a temporary string is automatically
+  // created. It triggers formatting when destroyed which makes sure that
+  // the temporary string is still alive at the time of the formatting.
   class Arg : public ArgInfo {
    private:
     // This method is private to disallow formatting of arbitrary pointers.
@@ -1118,7 +1126,7 @@ class BasicFormatter {
       // Format is called here to make sure that a referred object is
       // still alive, for example:
       //
-      //   Print("{0}") << std::string("test");
+      //   Print("{}") << std::string("test");
       //
       // Here an Arg object refers to a temporary std::string which is
       // destroyed at the end of the statement. Since the string object is
@@ -1132,7 +1140,7 @@ class BasicFormatter {
   };
 
   enum { NUM_INLINE_ARGS = 10 };
-  internal::Array<const Arg*, NUM_INLINE_ARGS> args_;  // Format arguments.
+  internal::Array<ArgInfo, NUM_INLINE_ARGS> args_;  // Format arguments.
 
   const Char *format_;  // Format string.
   int num_open_braces_;
@@ -1153,9 +1161,9 @@ class BasicFormatter {
   unsigned ParseUInt(const Char *&s) const;
 
   // Parses argument index and returns an argument with this index.
-  const Arg &ParseArgIndex(const Char *&s);
+  const ArgInfo &ParseArgIndex(const Char *&s);
 
-  void CheckSign(const Char *&s, const Arg &arg);
+  void CheckSign(const Char *&s, const ArgInfo &arg);
 
   // Parses the format string and performs the actual formatting,
   // writing the output to writer_.
@@ -1194,7 +1202,7 @@ class BasicFormatter {
     // TODO: don't copy arguments
     args_.reserve(args.size());
     for (const Arg &arg: args)
-      args_.push_back(&arg);
+      args_.push_back(arg);
   }
 #endif
 
@@ -1211,7 +1219,7 @@ class BasicFormatter {
   // Feeds an argument to a formatter.
   BasicFormatter &operator<<(const Arg &arg) {
     arg.formatter = this;
-    args_.push_back(&arg);
+    args_.push_back(arg);
     return *this;
   }
 
