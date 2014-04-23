@@ -1,3 +1,3 @@
-before_build: cmake -G "Visual Studio 10" .
+before_build: cmake -G "Visual Studio 11" .
 build:
   project: FORMAT.sln
