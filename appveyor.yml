@@ -1,2 +1,2 @@
 before_build: cmake .
-build_script: C:\Program Files\MSBuild\12.0\bin\msbuild.exe
+build_script: "C:\Program Files\MSBuild\12.0\bin\msbuild.exe"
