@@ -87,6 +87,14 @@ namespace fmt {
 FMT_GCC_EXTENSION typedef long long LongLong;
 FMT_GCC_EXTENSION typedef unsigned long long ULongLong;
 
+template <typename Char>
+class BasicWriter;
+
+template <typename Char>
+class BasicFormatter;
+
+struct FormatSpec;
+
 namespace internal {
   
 enum { INLINE_BUFFER_SIZE = 500 };
@@ -324,6 +332,10 @@ void FormatDecimal(Char *buffer, UInt value, unsigned num_digits) {
   buffer[1] = internal::DIGITS[index + 1];
   buffer[0] = internal::DIGITS[index];
 }
+
+template <typename Char, typename T>
+void FormatCustomArg(
+  BasicWriter<Char> &w, const void *arg, const FormatSpec &spec);
 }
 
 /**
@@ -607,9 +619,6 @@ inline StrFormatSpec<wchar_t> pad(
   return StrFormatSpec<wchar_t>(str, width, fill);
 }
 
-template <typename Char>
-class BasicFormatter;
-
 /**
   \rst
   This template provides operations for formatting and writing data into
@@ -696,7 +705,176 @@ class BasicWriter {
   // Do not implement!
   void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
 
- public:
+  enum Type {
+    // Numeric types should go first.
+    INT, UINT, LONG, ULONG, LONG_LONG, ULONG_LONG, DOUBLE, LONG_DOUBLE,
+    LAST_NUMERIC_TYPE = LONG_DOUBLE,
+    CHAR, STRING, WSTRING, POINTER, CUSTOM
+  };
+
+  struct StringValue {
+    const Char *value;
+    std::size_t size;
+  };
+
+  typedef void (*FormatFunc)(
+    BasicWriter<Char> &w, const void *arg, const FormatSpec &spec);
+
+  struct CustomValue {
+    const void *value;
+    FormatFunc format;
+  };
+
+  // Information about a format argument. It is a POD type to allow
+  // storage in internal::Array.
+  struct ArgInfo {
+    Type type;
+    union {
+      int int_value;
+      unsigned uint_value;
+      double double_value;
+      long long_value;
+      unsigned long ulong_value;
+      LongLong long_long_value;
+      ULongLong ulong_long_value;
+      long double long_double_value;
+      const void *pointer_value;
+      StringValue string;
+      CustomValue custom;
+    };
+  };
+
+  // A wrapper around a format argument used to ensure that the formatting
+  // is performed before the argument is destroyed. It is private so that
+  // its objects are only created by automatic conversions and not by users.
+  // Example:
+  //
+  //   Format("{}") << std::string("test");
+  //
+  // Here an Arg object that wraps a temporary string is automatically
+  // created. It triggers formatting when destroyed which makes sure that
+  // the temporary string is still alive at the time of the formatting.
+  class Arg : public ArgInfo {
+   private:
+    // This method is private to disallow formatting of arbitrary pointers.
+    // If you want to output a pointer cast it to const void*. Do not implement!
+    template <typename T>
+    Arg(const T *value);
+
+    // This method is private to disallow formatting of arbitrary pointers.
+    // If you want to output a pointer cast it to void*. Do not implement!
+    template <typename T>
+    Arg(T *value);
+
+   public:
+    mutable BasicFormatter<Char> *formatter;
+    using ArgInfo::type;
+
+    Arg(short value) : formatter(0) { type = INT; this->int_value = value; }
+    Arg(unsigned short value)
+            : formatter(0) { type = UINT; this->int_value = value; }
+    Arg(int value) : formatter(0) { type = INT; this->int_value = value; }
+    Arg(unsigned value)
+            : formatter(0) { type = UINT; this->uint_value = value; }
+    Arg(long value) : formatter(0) { type = LONG; this->long_value = value; }
+    Arg(unsigned long value)
+            : formatter(0) { type = ULONG; this->ulong_value = value; }
+    Arg(LongLong value)
+            : formatter(0) { type = LONG_LONG; this->long_long_value = value; }
+    Arg(ULongLong value)
+            : formatter(0) { type = ULONG_LONG; this->ulong_long_value = value; }
+    Arg(float value)
+            : formatter(0) { type = DOUBLE; this->double_value = value; }
+    Arg(double value)
+            : formatter(0) { type = DOUBLE; this->double_value = value; }
+    Arg(long double value)
+            : formatter(0) { type = LONG_DOUBLE; this->long_double_value = value; }
+    Arg(char value) : formatter(0) { type = CHAR; this->int_value = value; }
+    Arg(wchar_t value) : formatter(0) {
+      type = CHAR;
+      this->int_value = internal::CharTraits<Char>::ConvertChar(value);
+    }
+
+    Arg(const Char *value) : formatter(0) {
+      type = STRING;
+      this->string.value = value;
+      this->string.size = 0;
+    }
+
+    Arg(Char *value) : formatter(0) {
+      type = STRING;
+      this->string.value = value;
+      this->string.size = 0;
+    }
+
+    Arg(const void *value) : formatter(0) {
+      type = POINTER;
+      this->pointer_value = value;
+    }
+
+    Arg(void *value) : formatter(0) {
+      type = POINTER;
+      this->pointer_value = value;
+    }
+
+    Arg(const std::basic_string<Char> &value) : formatter(0) {
+      type = STRING;
+      this->string.value = value.c_str();
+      this->string.size = value.size();
+    }
+
+    Arg(BasicStringRef<Char> value) : formatter(0) {
+      type = STRING;
+      this->string.value = value.c_str();
+      this->string.size = value.size();
+    }
+
+    template <typename T>
+    Arg(const T &value) : formatter(0) {
+      type = CUSTOM;
+      this->custom.value = &value;
+      this->custom.format = &internal::FormatCustomArg<Char, T>;
+    }
+
+    ~Arg() FMT_NOEXCEPT(false) {
+      // Format is called here to make sure that a referred object is
+      // still alive, for example:
+      //
+      //   Print("{}") << std::string("test");
+      //
+      // Here an Arg object refers to a temporary std::string which is
+      // destroyed at the end of the statement. Since the string object is
+      // constructed before the Arg object, it will be destroyed after,
+      // so it will be alive in the Arg's destructor where Format is called.
+      // Note that the string object will not necessarily be alive when
+      // the destructor of BasicFormatter is called.
+      if (formatter)
+        formatter->CompleteFormatting();
+    }
+  };
+
+  class FormatParser {
+   private:
+    std::size_t num_args_;
+    const ArgInfo *args_;
+    int num_open_braces_;
+    int next_arg_index_;
+
+    void ReportError(const Char *s, StringRef message) const;
+
+    unsigned ParseUInt(const Char *&s) const;
+
+    // Parses argument index and returns an argument with this index.
+    const ArgInfo &ParseArgIndex(const Char *&s);
+
+    void CheckSign(const Char *&s, const ArgInfo &arg);
+
+   public:
+    void Format(BasicWriter<Char> &writer,
+      BasicStringRef<Char> format, std::size_t num_args, const ArgInfo *args);
+  };
+
+  public:
   /**
     Returns the number of characters written to the output buffer.
    */
@@ -751,6 +929,20 @@ class BasicWriter {
     \endrst
    */
   BasicFormatter<Char> Format(StringRef format);
+
+  // TODO: ArgInfo should be made public for this to be usable
+  inline void VFormat(BasicStringRef<Char> format,
+      std::size_t num_args, const ArgInfo *args) {
+    FormatParser().Format(*this, format, num_args, args);
+  }
+
+#if FMT_USE_VARIADIC_TEMPLATES
+  template<typename... Args>
+  void Format(BasicStringRef<Char> format, const Args & ... args) {
+    Arg arg_array[] = {args...};
+    VFormat(format, sizeof...(Args), arg_array);
+  }
+#endif
 
   BasicWriter &operator<<(int value) {
     return *this << IntFormatSpec<int>(value);
@@ -981,162 +1173,15 @@ class BasicFormatter {
  private:
   BasicWriter<Char> *writer_;
 
-  enum Type {
-    // Numeric types should go first.
-    INT, UINT, LONG, ULONG, LONG_LONG, ULONG_LONG, DOUBLE, LONG_DOUBLE,
-    LAST_NUMERIC_TYPE = LONG_DOUBLE,
-    CHAR, STRING, WSTRING, POINTER, CUSTOM
-  };
-
-  typedef void (*FormatFunc)(
-      BasicWriter<Char> &w, const void *arg, const FormatSpec &spec);
-
-  struct StringValue {
-    const Char *value;
-    std::size_t size;
-  };
-
-  struct CustomValue {
-    const void *value;
-    FormatFunc format;
-  };
-
-  // Information about a format argument. It is a POD type to allow
-  // storage in internal::Array.
-  struct ArgInfo {
-    Type type;
-    union {
-      int int_value;
-      unsigned uint_value;
-      double double_value;
-      long long_value;
-      unsigned long ulong_value;
-      LongLong long_long_value;
-      ULongLong ulong_long_value;
-      long double long_double_value;
-      const void *pointer_value;
-      StringValue string;
-      CustomValue custom;
-    };
-  };
-
-  // A wrapper around a format argument used to ensure that the formatting
-  // is performed before the argument is destroyed. It is private so that
-  // its objects are only created by automatic conversions and not by users.
-  // Example:
-  //
-  //   Format("{}") << std::string("test");
-  //
-  // Here an Arg object that wraps a temporary string is automatically
-  // created. It triggers formatting when destroyed which makes sure that
-  // the temporary string is still alive at the time of the formatting.
-  class Arg : public ArgInfo {
-   private:
-    // This method is private to disallow formatting of arbitrary pointers.
-    // If you want to output a pointer cast it to const void*. Do not implement!
-    template <typename T>
-    Arg(const T *value);
-
-    // This method is private to disallow formatting of arbitrary pointers.
-    // If you want to output a pointer cast it to void*. Do not implement!
-    template <typename T>
-    Arg(T *value);
-
-   public:
-    mutable BasicFormatter *formatter;
-    using ArgInfo::type;
-
-    Arg(short value) : formatter(0) { type = INT; this->int_value = value; }
-    Arg(unsigned short value)
-    : formatter(0) { type = UINT; this->int_value = value; }
-    Arg(int value) : formatter(0) { type = INT; this->int_value = value; }
-    Arg(unsigned value)
-    : formatter(0) { type = UINT; this->uint_value = value; }
-    Arg(long value) : formatter(0) { type = LONG; this->long_value = value; }
-    Arg(unsigned long value)
-    : formatter(0) { type = ULONG; this->ulong_value = value; }
-    Arg(LongLong value)
-    : formatter(0) { type = LONG_LONG; this->long_long_value = value; }
-    Arg(ULongLong value)
-    : formatter(0) { type = ULONG_LONG; this->ulong_long_value = value; }
-    Arg(float value)
-    : formatter(0) { type = DOUBLE; this->double_value = value; }
-    Arg(double value)
-    : formatter(0) { type = DOUBLE; this->double_value = value; }
-    Arg(long double value)
-    : formatter(0) { type = LONG_DOUBLE; this->long_double_value = value; }
-    Arg(char value) : formatter(0) { type = CHAR; this->int_value = value; }
-    Arg(wchar_t value) : formatter(0) {
-      type = CHAR;
-      this->int_value = internal::CharTraits<Char>::ConvertChar(value);
-    }
-
-    Arg(const Char *value) : formatter(0) {
-      type = STRING;
-      this->string.value = value;
-      this->string.size = 0;
-    }
-
-    Arg(Char *value) : formatter(0) {
-      type = STRING;
-      this->string.value = value;
-      this->string.size = 0;
-    }
-
-    Arg(const void *value) : formatter(0) {
-      type = POINTER;
-      this->pointer_value = value;
-    }
-
-    Arg(void *value) : formatter(0) {
-      type = POINTER;
-      this->pointer_value = value;
-    }
-
-    Arg(const std::basic_string<Char> &value) : formatter(0) {
-      type = STRING;
-      this->string.value = value.c_str();
-      this->string.size = value.size();
-    }
-
-    Arg(BasicStringRef<Char> value) : formatter(0) {
-      type = STRING;
-      this->string.value = value.c_str();
-      this->string.size = value.size();
-    }
-
-    template <typename T>
-    Arg(const T &value) : formatter(0) {
-      type = CUSTOM;
-      this->custom.value = &value;
-      this->custom.format = &internal::FormatCustomArg<Char, T>;
-    }
-
-    ~Arg() FMT_NOEXCEPT(false) {
-      // Format is called here to make sure that a referred object is
-      // still alive, for example:
-      //
-      //   Print("{}") << std::string("test");
-      //
-      // Here an Arg object refers to a temporary std::string which is
-      // destroyed at the end of the statement. Since the string object is
-      // constructed before the Arg object, it will be destroyed after,
-      // so it will be alive in the Arg's destructor where Format is called.
-      // Note that the string object will not necessarily be alive when
-      // the destructor of BasicFormatter is called.
-      if (formatter)
-        formatter->CompleteFormatting();
-    }
-  };
+  typedef typename BasicWriter<Char>::ArgInfo ArgInfo;
 
   enum { NUM_INLINE_ARGS = 10 };
   internal::Array<ArgInfo, NUM_INLINE_ARGS> args_;  // Format arguments.
 
   const Char *format_;  // Format string.
-  int num_open_braces_;
-  int next_arg_index_;
 
   friend class internal::FormatterProxy<Char>;
+  friend class BasicWriter<Char>::Arg; // TODO: remove (currently used for CompleteFormatting to be accessible)
 
   // Forbid copying from a temporary as in the following example:
   //   fmt::Formatter<> f = Format("test"); // not allowed
@@ -1145,19 +1190,6 @@ class BasicFormatter {
   // Do not implement.
   BasicFormatter(const BasicFormatter &);
   BasicFormatter& operator=(const BasicFormatter &);
-
-  void ReportError(const Char *s, StringRef message) const;
-
-  unsigned ParseUInt(const Char *&s) const;
-
-  // Parses argument index and returns an argument with this index.
-  const ArgInfo &ParseArgIndex(const Char *&s);
-
-  void CheckSign(const Char *&s, const ArgInfo &arg);
-
-  // Parses the format string and performs the actual formatting,
-  // writing the output to writer_.
-  void DoFormat();
 
   struct Proxy {
     BasicWriter<Char> *writer;
@@ -1175,7 +1207,9 @@ class BasicFormatter {
 
   void CompleteFormatting() {
     if (!format_) return;
-    DoFormat();
+    const Char *format = format_;
+    format_ = 0;
+    writer_->VFormat(format, args_.size(), &args_[0]);
   }
 
  public:
@@ -1183,21 +1217,6 @@ class BasicFormatter {
   // string.
   BasicFormatter(BasicWriter<Char> &w, const Char *format = 0)
   : writer_(&w), format_(format) {}
-
-#if FMT_USE_VARIADIC_TEMPLATES
-  // Constructs a formatter with variable number of arguments.
-  template<typename... Args>
-  BasicFormatter(
-      BasicWriter<Char> &w, const Char *format, const Args & ... args)
-  : writer_(&w), format_(format) {
-    std::size_t num_args = sizeof...(Args);
-    Arg arg_array[] = {args...};
-    // TODO: use array directly instead of copying
-    args_.reserve(num_args);
-    for (std::size_t i = 0; i < num_args; ++i)
-      args_.push_back(arg_array[i]);
-  }
-#endif
 
   // Performs formatting if the format string is non-null. The format string
   // can be null if its ownership has been transferred to another formatter.
@@ -1210,7 +1229,7 @@ class BasicFormatter {
   }
 
   // Feeds an argument to a formatter.
-  BasicFormatter &operator<<(const Arg &arg) {
+  BasicFormatter &operator<<(const typename BasicWriter<Char>::Arg &arg) {
     arg.formatter = this;
     args_.push_back(arg);
     return *this;
@@ -1526,15 +1545,15 @@ inline Formatter<ColorWriter> PrintColored(Color c, StringRef format) {
 template<typename... Args>
 inline std::string Format(const StringRef &format, const Args & ... args) {
   Writer w;
-  BasicFormatter<char> f(w, format.c_str(), args...);
-  return fmt::str(f);
+  w.Format(format, args...);
+  return fmt::str(w);
 }
 
 template<typename... Args>
 inline std::wstring Format(const WStringRef &format, const Args & ... args) {
   WWriter w;
-  BasicFormatter<wchar_t> f(w, format.c_str(), args...);
-  return fmt::str(f);
+  w.Format(format, args...);
+  return fmt::str(w);
 }
 #endif  // FMT_USE_VARIADIC_TEMPLATES
 

@@ -359,7 +359,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
 // FormatError reporting unmatched '{'. The idea is that unmatched '{'
 // should override other errors.
 template <typename Char>
-void fmt::BasicFormatter<Char>::ReportError(
+void fmt::BasicWriter<Char>::FormatParser::ReportError(
     const Char *s, StringRef message) const {
   for (int num_open_braces = num_open_braces_; *s; ++s) {
     if (*s == '{') {
@@ -375,7 +375,7 @@ void fmt::BasicFormatter<Char>::ReportError(
 // Parses an unsigned integer advancing s to the end of the parsed input.
 // This function assumes that the first character of s is a digit.
 template <typename Char>
-unsigned fmt::BasicFormatter<Char>::ParseUInt(const Char *&s) const {
+unsigned fmt::BasicWriter<Char>::FormatParser::ParseUInt(const Char *&s) const {
   assert('0' <= *s && *s <= '9');
   unsigned value = 0;
   do {
@@ -388,8 +388,8 @@ unsigned fmt::BasicFormatter<Char>::ParseUInt(const Char *&s) const {
 }
 
 template <typename Char>
-inline const typename fmt::BasicFormatter<Char>::ArgInfo
-    &fmt::BasicFormatter<Char>::ParseArgIndex(const Char *&s) {
+inline const typename fmt::BasicWriter<Char>::ArgInfo
+    &fmt::BasicWriter<Char>::FormatParser::ParseArgIndex(const Char *&s) {
   unsigned arg_index = 0;
   if (*s < '0' || *s > '9') {
     if (*s != '}' && *s != ':')
@@ -407,32 +407,35 @@ inline const typename fmt::BasicFormatter<Char>::ArgInfo
     next_arg_index_ = -1;
     arg_index = ParseUInt(s);
   }
-  if (arg_index >= args_.size())
+  if (arg_index >= num_args_)
     ReportError(s, "argument index is out of range in format");
   return args_[arg_index];
 }
 
 template <typename Char>
-void fmt::BasicFormatter<Char>::CheckSign(const Char *&s, const ArgInfo &arg) {
+void fmt::BasicWriter<Char>::FormatParser::CheckSign(
+    const Char *&s, const ArgInfo &arg) {
   char sign = static_cast<char>(*s);
   if (arg.type > LAST_NUMERIC_TYPE) {
     ReportError(s,
-        Format("format specifier '{}' requires numeric argument") << sign);
+        fmt::Format("format specifier '{}' requires numeric argument") << sign);
   }
   if (arg.type == UINT || arg.type == ULONG || arg.type == ULONG_LONG) {
     ReportError(s,
-        Format("format specifier '{}' requires signed argument") << sign);
+        fmt::Format("format specifier '{}' requires signed argument") << sign);
   }
   ++s;
 }
 
 template <typename Char>
-void fmt::BasicFormatter<Char>::DoFormat() {
-  const Char *start = format_;
-  format_ = 0;
+void fmt::BasicWriter<Char>::FormatParser::Format(
+    BasicWriter<Char> &writer, BasicStringRef<Char> format,
+    std::size_t num_args, const ArgInfo *args) {
+  const Char *start = format.c_str();
+  num_args_ = num_args;
+  args_ = args;
   next_arg_index_ = 0;
   const Char *s = start;
-  BasicWriter<Char> &writer = *writer_;
   while (*s) {
     Char c = *s++;
     if (c != '{' && c != '}') continue;
@@ -697,18 +700,21 @@ template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign);
 
-template void fmt::BasicFormatter<char>::ReportError(
+template void fmt::BasicWriter<char>::FormatParser::ReportError(
     const char *s, StringRef message) const;
 
-template unsigned fmt::BasicFormatter<char>::ParseUInt(const char *&s) const;
+template unsigned fmt::BasicWriter<char>::FormatParser::ParseUInt(
+    const char *&s) const;
 
-template const fmt::BasicFormatter<char>::ArgInfo
-    &fmt::BasicFormatter<char>::ParseArgIndex(const char *&s);
+template const fmt::BasicWriter<char>::ArgInfo
+    &fmt::BasicWriter<char>::FormatParser::ParseArgIndex(const char *&s);
 
-template void fmt::BasicFormatter<char>::CheckSign(
+template void fmt::BasicWriter<char>::FormatParser::CheckSign(
     const char *&s, const ArgInfo &arg);
 
-template void fmt::BasicFormatter<char>::DoFormat();
+template void fmt::BasicWriter<char>::FormatParser::Format(
+  BasicWriter<char> &writer, BasicStringRef<char> format,
+  std::size_t num_args, const ArgInfo *args);
 
 // Explicit instantiations for wchar_t.
 
@@ -726,19 +732,21 @@ template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::PrepareFilledBuffer(
     unsigned size, const AlignSpec &spec, char sign);
 
-template void fmt::BasicFormatter<wchar_t>::ReportError(
+template void fmt::BasicWriter<wchar_t>::FormatParser::ReportError(
     const wchar_t *s, StringRef message) const;
 
-template unsigned fmt::BasicFormatter<wchar_t>::ParseUInt(
+template unsigned fmt::BasicWriter<wchar_t>::FormatParser::ParseUInt(
     const wchar_t *&s) const;
 
-template const fmt::BasicFormatter<wchar_t>::ArgInfo
-    &fmt::BasicFormatter<wchar_t>::ParseArgIndex(const wchar_t *&s);
+template const fmt::BasicWriter<wchar_t>::ArgInfo
+    &fmt::BasicWriter<wchar_t>::FormatParser::ParseArgIndex(const wchar_t *&s);
 
-template void fmt::BasicFormatter<wchar_t>::CheckSign(
+template void fmt::BasicWriter<wchar_t>::FormatParser::CheckSign(
     const wchar_t *&s, const ArgInfo &arg);
 
-template void fmt::BasicFormatter<wchar_t>::DoFormat();
+template void fmt::BasicWriter<wchar_t>::FormatParser::Format(
+        BasicWriter<wchar_t> &writer, BasicStringRef<wchar_t> format,
+        std::size_t num_args, const ArgInfo *args);
 
 #if _MSC_VER
 # pragma warning(pop)
