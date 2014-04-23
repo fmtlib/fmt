@@ -657,6 +657,7 @@ class BasicWriter {
  private:
   mutable internal::Array<Char, internal::INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
 
+  // Make BasicFormatter a friend so that it can access ArgInfo and Arg.
   friend class BasicFormatter<Char>;
 
   typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
@@ -744,115 +745,99 @@ class BasicWriter {
     };
   };
 
-  // A wrapper around a format argument used to ensure that the formatting
-  // is performed before the argument is destroyed. It is private so that
-  // its objects are only created by automatic conversions and not by users.
-  // Example:
-  //
-  //   Format("{}") << std::string("test");
-  //
-  // Here an Arg object that wraps a temporary string is automatically
-  // created. It triggers formatting when destroyed which makes sure that
-  // the temporary string is still alive at the time of the formatting.
-  class Arg : public ArgInfo {
+  // Argument action that does nothing.
+  struct EmptyArgAction {
+    void operator()() const {}
+  };
+
+  // A wrapper around a format argument.
+  template <typename Action = EmptyArgAction>
+  class BasicArg : public Action, public ArgInfo {
    private:
     // This method is private to disallow formatting of arbitrary pointers.
     // If you want to output a pointer cast it to const void*. Do not implement!
     template <typename T>
-    Arg(const T *value);
+    BasicArg(const T *value);
 
     // This method is private to disallow formatting of arbitrary pointers.
     // If you want to output a pointer cast it to void*. Do not implement!
     template <typename T>
-    Arg(T *value);
+    BasicArg(T *value);
 
    public:
-    mutable BasicFormatter<Char> *formatter;
     using ArgInfo::type;
 
-    Arg(short value) : formatter(0) { type = INT; this->int_value = value; }
-    Arg(unsigned short value)
-            : formatter(0) { type = UINT; this->int_value = value; }
-    Arg(int value) : formatter(0) { type = INT; this->int_value = value; }
-    Arg(unsigned value)
-            : formatter(0) { type = UINT; this->uint_value = value; }
-    Arg(long value) : formatter(0) { type = LONG; this->long_value = value; }
-    Arg(unsigned long value)
-            : formatter(0) { type = ULONG; this->ulong_value = value; }
-    Arg(LongLong value)
-            : formatter(0) { type = LONG_LONG; this->long_long_value = value; }
-    Arg(ULongLong value)
-            : formatter(0) { type = ULONG_LONG; this->ulong_long_value = value; }
-    Arg(float value)
-            : formatter(0) { type = DOUBLE; this->double_value = value; }
-    Arg(double value)
-            : formatter(0) { type = DOUBLE; this->double_value = value; }
-    Arg(long double value)
-            : formatter(0) { type = LONG_DOUBLE; this->long_double_value = value; }
-    Arg(char value) : formatter(0) { type = CHAR; this->int_value = value; }
-    Arg(wchar_t value) : formatter(0) {
+    BasicArg(short value) { type = INT; this->int_value = value; }
+    BasicArg(unsigned short value) { type = UINT; this->int_value = value; }
+    BasicArg(int value) { type = INT; this->int_value = value; }
+    BasicArg(unsigned value) { type = UINT; this->uint_value = value; }
+    BasicArg(long value) { type = LONG; this->long_value = value; }
+    BasicArg(unsigned long value) { type = ULONG; this->ulong_value = value; }
+    BasicArg(LongLong value) {
+      type = LONG_LONG;
+      this->long_long_value = value;
+    }
+    BasicArg(ULongLong value) {
+      type = ULONG_LONG;
+      this->ulong_long_value = value;
+    }
+    BasicArg(float value) { type = DOUBLE; this->double_value = value; }
+    BasicArg(double value) { type = DOUBLE; this->double_value = value; }
+    BasicArg(long double value) {
+      type = LONG_DOUBLE;
+      this->long_double_value = value;
+    }
+    BasicArg(char value) { type = CHAR; this->int_value = value; }
+    BasicArg(wchar_t value) {
       type = CHAR;
       this->int_value = internal::CharTraits<Char>::ConvertChar(value);
     }
 
-    Arg(const Char *value) : formatter(0) {
+    BasicArg(const Char *value) {
       type = STRING;
       this->string.value = value;
       this->string.size = 0;
     }
 
-    Arg(Char *value) : formatter(0) {
+    BasicArg(Char *value) {
       type = STRING;
       this->string.value = value;
       this->string.size = 0;
     }
 
-    Arg(const void *value) : formatter(0) {
-      type = POINTER;
-      this->pointer_value = value;
-    }
+    BasicArg(const void *value) { type = POINTER; this->pointer_value = value; }
+    BasicArg(void *value) { type = POINTER; this->pointer_value = value; }
 
-    Arg(void *value) : formatter(0) {
-      type = POINTER;
-      this->pointer_value = value;
-    }
-
-    Arg(const std::basic_string<Char> &value) : formatter(0) {
+    BasicArg(const std::basic_string<Char> &value) {
       type = STRING;
       this->string.value = value.c_str();
       this->string.size = value.size();
     }
 
-    Arg(BasicStringRef<Char> value) : formatter(0) {
+    BasicArg(BasicStringRef<Char> value) {
       type = STRING;
       this->string.value = value.c_str();
       this->string.size = value.size();
     }
 
     template <typename T>
-    Arg(const T &value) : formatter(0) {
+    BasicArg(const T &value) {
       type = CUSTOM;
       this->custom.value = &value;
       this->custom.format = &internal::FormatCustomArg<Char, T>;
     }
 
-    ~Arg() FMT_NOEXCEPT(false) {
-      // Format is called here to make sure that a referred object is
-      // still alive, for example:
-      //
-      //   Print("{}") << std::string("test");
-      //
-      // Here an Arg object refers to a temporary std::string which is
-      // destroyed at the end of the statement. Since the string object is
-      // constructed before the Arg object, it will be destroyed after,
-      // so it will be alive in the Arg's destructor where Format is called.
-      // Note that the string object will not necessarily be alive when
-      // the destructor of BasicFormatter is called.
-      if (formatter)
-        formatter->CompleteFormatting();
+    // The destructor is declared noexcept(false) because the action may throw
+    // an exception.
+    ~BasicArg() FMT_NOEXCEPT(false) {
+      // Invoke the action.
+      (*this)();
     }
   };
 
+  typedef BasicArg<> Arg;
+
+  // Format string parser.
   class FormatParser {
    private:
     std::size_t num_args_;
@@ -1173,7 +1158,32 @@ class BasicFormatter {
  private:
   BasicWriter<Char> *writer_;
 
+  // An action used to ensure that formatting is performed before the
+  // argument is destroyed.
+  // Example:
+  //
+  //   Format("{}") << std::string("test");
+  //
+  // Here an Arg object wraps a temporary std::string which is destroyed at
+  // the end of the full expression. Since the string object is constructed
+  // before the Arg object, it will be destroyed after, so it will be alive
+  // in the Arg's destructor where the action is called.
+  // Note that the string object will not necessarily be alive when the
+  // destructor of BasicFormatter is called. Otherwise we wouldn't need
+  // this class.
+  struct ArgAction {
+    mutable BasicFormatter *formatter;
+
+    ArgAction() : formatter(0) {}
+
+    void operator()() const {
+      if (formatter)
+        formatter->CompleteFormatting();
+    }
+  };
+
   typedef typename BasicWriter<Char>::ArgInfo ArgInfo;
+  typedef typename BasicWriter<Char>::template BasicArg<ArgAction> Arg;
 
   enum { NUM_INLINE_ARGS = 10 };
   internal::Array<ArgInfo, NUM_INLINE_ARGS> args_;  // Format arguments.
@@ -1181,7 +1191,6 @@ class BasicFormatter {
   const Char *format_;  // Format string.
 
   friend class internal::FormatterProxy<Char>;
-  friend class BasicWriter<Char>::Arg; // TODO: remove (currently used for CompleteFormatting to be accessible)
 
   // Forbid copying from a temporary as in the following example:
   //   fmt::Formatter<> f = Format("test"); // not allowed
@@ -1229,7 +1238,7 @@ class BasicFormatter {
   }
 
   // Feeds an argument to a formatter.
-  BasicFormatter &operator<<(const typename BasicWriter<Char>::Arg &arg) {
+  BasicFormatter &operator<<(const Arg &arg) {
     arg.formatter = this;
     args_.push_back(arg);
     return *this;
