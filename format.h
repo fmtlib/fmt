@@ -61,20 +61,10 @@
 # define __has_builtin(x) 0
 #endif
 
-#ifndef FMT_USE_INITIALIZER_LIST
-# define FMT_USE_INITIALIZER_LIST \
-   (__has_feature(cxx_generalized_initializers) || \
-       (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1800)
-#endif
-
 #ifndef FMT_USE_VARIADIC_TEMPLATES
 # define FMT_USE_VARIADIC_TEMPLATES \
    (__has_feature(cxx_variadic_templates) || \
        (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1800)
-#endif
-
-#if FMT_USE_INITIALIZER_LIST
-# include <initializer_list>
 #endif
 
 // Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
@@ -1194,15 +1184,18 @@ class BasicFormatter {
   BasicFormatter(BasicWriter<Char> &w, const Char *format = 0)
   : writer_(&w), format_(format) {}
 
-#if FMT_USE_INITIALIZER_LIST
-  // Constructs a formatter with formatting arguments.
-  BasicFormatter(BasicWriter<Char> &w,
-      const Char *format, std::initializer_list<Arg> args)
+#if FMT_USE_VARIADIC_TEMPLATES
+  // Constructs a formatter with variable number of arguments.
+  template<typename... Args>
+  BasicFormatter(
+      BasicWriter<Char> &w, const Char *format, const Args & ... args)
   : writer_(&w), format_(format) {
-    // TODO: don't copy arguments
-    args_.reserve(args.size());
-    for (const Arg &arg: args)
-      args_.push_back(arg);
+    std::size_t num_args = sizeof...(Args);
+    Arg arg_array[] = {args...};
+    // TODO: use array directly instead of copying
+    args_.reserve(num_args);
+    for (std::size_t i = 0; i < num_args; ++i)
+      args_.push_back(arg_array[i]);
   }
 #endif
 
@@ -1529,21 +1522,21 @@ inline Formatter<ColorWriter> PrintColored(Color c, StringRef format) {
   return f;
 }
 
-#if FMT_USE_INITIALIZER_LIST && FMT_USE_VARIADIC_TEMPLATES
+#if FMT_USE_VARIADIC_TEMPLATES
 template<typename... Args>
-std::string Format(const StringRef &format, const Args & ... args) {
+inline std::string Format(const StringRef &format, const Args & ... args) {
   Writer w;
-  BasicFormatter<char> f(w, format.c_str(), { args... });
+  BasicFormatter<char> f(w, format.c_str(), args...);
   return fmt::str(f);
 }
 
 template<typename... Args>
-std::wstring Format(const WStringRef &format, const Args & ... args) {
+inline std::wstring Format(const WStringRef &format, const Args & ... args) {
   WWriter w;
-  BasicFormatter<wchar_t> f(w, format.c_str(), { args... });
+  BasicFormatter<wchar_t> f(w, format.c_str(), args...);
   return fmt::str(f);
 }
-#endif  // FMT_USE_INITIALIZER_LIST && FMT_USE_VARIADIC_TEMPLATES
+#endif  // FMT_USE_VARIADIC_TEMPLATES
 
 }
 

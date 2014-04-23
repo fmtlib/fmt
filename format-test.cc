@@ -1434,7 +1434,7 @@ TEST(FormatterTest, Examples) {
   std::string path = "somefile";
   ReportError("File not found: {0}") << path;
 
-#if FMT_USE_INITIALIZER_LIST
+#if FMT_USE_VARIADIC_TEMPLATES
   EXPECT_THROW_MSG(
     Format("The answer is {:d}", "forty-two"), FormatError,
     "unknown format code 'd' for string");
@@ -1501,12 +1501,12 @@ TEST(StrTest, Convert) {
   EXPECT_EQ("2012-12-9", s);
 }
 
-#if FMT_USE_INITIALIZER_LIST && FMT_USE_VARIADIC_TEMPLATES
+#if FMT_USE_VARIADIC_TEMPLATES
 TEST(FormatTest, Variadic) {
   EXPECT_EQ("Hello, world!1", Format("Hello, {}!{}", "world", 1));
   EXPECT_EQ(L"Hello, world!1", Format(L"Hello, {}!{}", L"world", 1));
 }
-#endif  // FMT_USE_INITIALIZER_LIST && FMT_USE_VARIADIC_TEMPLATES
+#endif  // FMT_USE_VARIADIC_TEMPLATES
 
 int main(int argc, char **argv) {
 #ifdef _WIN32
