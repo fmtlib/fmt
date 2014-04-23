@@ -1,3 +1,3 @@
-before_build: cmake -G "Visual Studio 11" .
+before_build: cmake .
 build:
-  project: FORMAT.sln
+  project: C:\Program Files\MSBuild\12.0\bin\msbuild FORMAT.sln
