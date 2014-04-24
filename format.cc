@@ -320,6 +320,15 @@ void fmt::BasicWriter<Char>::FormatDouble(
   Char fill = static_cast<Char>(spec.fill());
   for (;;) {
     std::size_t size = buffer_.capacity() - offset;
+#if _MSC_VER
+    // MSVC's vsnprintf_s doesn't work with zero size, so reserve
+    // space for at least one extra character to make the size non-zero.
+    // Note that the buffer's capacity will increase by more than 1.
+    if (size == 0) {
+      buffer_.reserve(offset + 1);
+      size = buffer_.capacity() - offset;
+    }
+#endif
     Char *start = &buffer_[offset];
     int n = internal::CharTraits<Char>::FormatFloat(
         start, size, format, width_for_sprintf, precision, value);
