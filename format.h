@@ -1219,7 +1219,9 @@ class BasicFormatter {
   friend class internal::FormatterProxy<Char>;
 
   // Forbid copying from a temporary as in the following example:
+  //
   //   fmt::Formatter<> f = Format("test"); // not allowed
+  //
   // This is done because BasicFormatter objects should normally exist
   // only as temporaries returned by one of the formatting functions.
   // Do not implement.
