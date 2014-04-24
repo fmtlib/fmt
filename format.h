@@ -1571,22 +1571,21 @@ inline Formatter<ColorWriter> PrintColored(Color c, StringRef format) {
   return f;
 }
 
-#if FMT_USE_VARIADIC_TEMPLATES
+#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 template<typename... Args>
-inline std::string Format(const StringRef &format, const Args & ... args) {
+inline Writer Format(const StringRef &format, const Args & ... args) {
   Writer w;
   w.Format(format, args...);
-  return str(w);
+  return std::move(w);
 }
 
 template<typename... Args>
-inline std::wstring Format(const WStringRef &format, const Args & ... args) {
+inline WWriter Format(const WStringRef &format, const Args & ... args) {
   WWriter w;
   w.Format(format, args...);
-  return str(w);
+  return std::move(w);
 }
-#endif  // FMT_USE_VARIADIC_TEMPLATES
-
+#endif  // FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 }
 
 // Restore warnings.
