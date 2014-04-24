@@ -1203,13 +1203,6 @@ class BasicFormatter {
   BasicFormatter(const BasicFormatter &);
   BasicFormatter& operator=(const BasicFormatter &);
 
-  struct Proxy {
-    BasicWriter<Char> *writer;
-    const Char *format;
-
-    Proxy(BasicWriter<Char> *w, const Char *fmt) : writer(w), format(fmt) {}
-  };
-
  protected:
   const Char *TakeFormatString() {
     const Char *format = this->format_;
