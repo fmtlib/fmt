@@ -65,6 +65,9 @@
 #endif
 
 #ifndef FMT_USE_VARIADIC_TEMPLATES
+// Variadic templates are available in GCC since version 4.4
+// (http://gcc.gnu.org/projects/cxx0x.html) and in Visual C++
+// since version 2013.
 # define FMT_USE_VARIADIC_TEMPLATES \
    (FMT_HAS_FEATURE(cxx_variadic_templates) || \
        (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1800)
