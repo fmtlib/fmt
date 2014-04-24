@@ -307,7 +307,7 @@ or downloading a package from
 Then go to the format directory and generate Makefiles with
 `CMake <http://www.cmake.org/>`__::
 
-    $ cd format
+    $ cd cppformat
     $ cmake .
 
 Next use the following commands to run the unit tests::
