@@ -360,7 +360,9 @@ void fmt::BasicWriter<Char>::FormatDouble(
       GrowBuffer(n);
       return;
     }
-    buffer_.reserve(n >= 0 ? offset + n + 1 : 2 * buffer_.capacity());
+    // If n is negative we ask to increase the capacity by at least 1,
+    // but as std::vector, the buffer grows exponentially.
+    buffer_.reserve(n >= 0 ? offset + n + 1 : buffer_.capacity() + 1);
   }
 }
 
