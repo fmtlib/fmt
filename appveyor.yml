@@ -2,3 +2,6 @@ install:
   - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%
 
 before_build: cmake .
+
+build:
+  project: FORMAT.sln
