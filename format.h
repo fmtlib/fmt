@@ -1558,14 +1558,14 @@ template<typename... Args>
 inline std::string Format(const StringRef &format, const Args & ... args) {
   Writer w;
   w.Format(format, args...);
-  return fmt::str(w);
+  return str(w);
 }
 
 template<typename... Args>
 inline std::wstring Format(const WStringRef &format, const Args & ... args) {
   WWriter w;
   w.Format(format, args...);
-  return fmt::str(w);
+  return str(w);
 }
 #endif  // FMT_USE_VARIADIC_TEMPLATES
 
