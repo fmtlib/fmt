@@ -73,6 +73,12 @@
        (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1800)
 #endif
 
+#ifndef FMT_USE_RVALUE_REFERENCES
+# define FMT_USE_RVALUE_REFERENCES \
+   (FMT_HAS_FEATURE(cxx_rvalue_references) || \
+       (FMT_GCC_VERSION >= 403 && __cplusplus >= 201103) || _MSC_VER >= 1600)
+#endif
+
 // Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
 #if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
   (FMT_GCC_VERSION >= 408 && __cplusplus >= 201103)
@@ -136,6 +142,20 @@ class Array {
   ~Array() {
     if (ptr_ != data_) delete [] ptr_;
   }
+
+#if FMT_USE_RVALUE_REFERENCES
+  Array(Array &&other)
+  : size_(other.size_),
+    capacity_(other.capacity_) {
+    if (other.ptr_ == other.data_) {
+      ptr_ = data_;
+      std::copy(other.data_, other.data_ + size_, CheckPtr(data_, capacity_));
+    } else {
+      ptr_ = other.ptr_;
+      other.ptr_ = 0;
+    }
+  }
+#endif
 
   // Returns the size of this array.
   std::size_t size() const { return size_; }
