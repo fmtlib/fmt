@@ -25,8 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef FORMAT_H_
-#define FORMAT_H_
+#ifndef FMT_FORMAT_H_
+#define FMT_FORMAT_H_
 
 #include <stdint.h>
 
@@ -56,19 +56,22 @@
 #endif
 
 // Compatibility with compilers other than clang.
-#ifndef __has_feature
-# define __has_feature(x) 0
-# define __has_builtin(x) 0
+#ifdef __has_feature
+# define FMT_HAS_FEATURE(x) __has_feature(x)
+# define FMT_HAS_BUILTIN(x) __has_builtin(x)
+#else
+# define FMT_HAS_FEATURE(x) 0
+# define FMT_HAS_BUILTIN(x) 0
 #endif
 
 #ifndef FMT_USE_VARIADIC_TEMPLATES
 # define FMT_USE_VARIADIC_TEMPLATES \
-   (__has_feature(cxx_variadic_templates) || \
+   (FMT_HAS_FEATURE(cxx_variadic_templates) || \
        (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1800)
 #endif
 
 // Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
-#if FMT_USE_NOEXCEPT || __has_feature(cxx_noexcept) || \
+#if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
   (FMT_GCC_VERSION >= 408 && __cplusplus >= 201103)
 # define FMT_NOEXCEPT(expr) noexcept(expr)
 #else
@@ -271,7 +274,7 @@ void ReportUnknownType(char code, const char *type);
 extern const uint32_t POWERS_OF_10_32[];
 extern const uint64_t POWERS_OF_10_64[];
 
-#if FMT_GCC_VERSION >= 400 || __has_builtin(__builtin_clzll)
+#if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case CountDigits returns 1.
 inline unsigned CountDigits(uint64_t n) {
@@ -280,7 +283,7 @@ inline unsigned CountDigits(uint64_t n) {
   uint64_t t = (64 - __builtin_clzll(n | 1)) * 1233 >> 12;
   return t - (n < POWERS_OF_10_64[t]) + 1;
 }
-# if FMT_GCC_VERSION >= 400 || __has_builtin(__builtin_clz)
+# if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
 // Optional version of CountDigits for better performance on 32-bit platforms.
 inline unsigned CountDigits(uint32_t n) {
   uint32_t t = (32 - __builtin_clz(n | 1)) * 1233 >> 12;
@@ -540,7 +543,7 @@ template <char TYPE_CODE, typename Char>
 IntFormatSpec<int, AlignTypeSpec<TYPE_CODE>, Char> pad(
     int value, unsigned width, Char fill = ' ');
 
-#define DEFINE_INT_FORMATTERS(TYPE) \
+#define FMT_DEFINE_INT_FORMATTERS(TYPE) \
 inline IntFormatSpec<TYPE, TypeSpec<'b'> > bin(TYPE value) { \
   return IntFormatSpec<TYPE, TypeSpec<'b'> >(value, TypeSpec<'b'>()); \
 } \
@@ -589,12 +592,12 @@ inline IntFormatSpec<TYPE, AlignTypeSpec<0>, Char> pad( \
      value, AlignTypeSpec<0>(width, fill)); \
 }
 
-DEFINE_INT_FORMATTERS(int)
-DEFINE_INT_FORMATTERS(long)
-DEFINE_INT_FORMATTERS(unsigned)
-DEFINE_INT_FORMATTERS(unsigned long)
-DEFINE_INT_FORMATTERS(LongLong)
-DEFINE_INT_FORMATTERS(ULongLong)
+FMT_DEFINE_INT_FORMATTERS(int)
+FMT_DEFINE_INT_FORMATTERS(long)
+FMT_DEFINE_INT_FORMATTERS(unsigned)
+FMT_DEFINE_INT_FORMATTERS(unsigned long)
+FMT_DEFINE_INT_FORMATTERS(LongLong)
+FMT_DEFINE_INT_FORMATTERS(ULongLong)
 
 /**
   \rst
@@ -1575,4 +1578,4 @@ inline std::wstring Format(const WStringRef &format, const Args & ... args) {
 # pragma warning(pop)
 #endif
 
-#endif  // FORMAT_H_
+#endif  // FMT_FORMAT_H_
