@@ -207,6 +207,39 @@ TEST(ArrayTest, Ctor) {
   EXPECT_EQ(123u, array.capacity());
 }
 
+#if FMT_USE_RVALUE_REFERENCES
+
+TEST(ArrayTest, MoveCtor) {
+  Array<char, 5> array;
+  const char test[] = "test";
+  array.append(test, test + 4);
+  {
+    Array<char, 5> array2(std::move(array));
+    // Moving shouldn't destroy the inline content of the first array.
+    EXPECT_EQ(test, std::string(&array[0], array.size()));
+    EXPECT_EQ(test, std::string(&array2[0], array2.size()));
+    EXPECT_EQ(5, array2.capacity());
+  }
+  array.push_back('a');
+  {
+    Array<char, 5> array2(std::move(array));
+    // Moving shouldn't destroy the inline content of the first array.
+    EXPECT_EQ("testa", std::string(&array[0], array.size()));
+    EXPECT_EQ("testa", std::string(&array2[0], array2.size()));
+    EXPECT_EQ(5, array2.capacity());
+  }
+  array.push_back('b');
+  {
+    Array<char, 5> array2(std::move(array));
+    // Moving should rip the guts of the first array.
+    EXPECT_TRUE(!&array[0]);
+    EXPECT_EQ("testab", std::string(&array2[0], array2.size()));
+    EXPECT_GT(array2.capacity(), 5);
+  }
+}
+
+#endif  // FMT_USE_RVALUE_REFERENCES
+
 TEST(ArrayTest, Access) {
   Array<char, 10> array;
   array[0] = 11;
