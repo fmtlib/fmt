@@ -52,6 +52,10 @@
 # define FMT_GCC_EXTENSION
 #endif
 
+#if defined(__GNUC_LIBSTD__) && defined (__GNUC_LIBSTD_MINOR__)
+# define FMT_GNUC_LIBSTD_VERSION (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
+#endif
+
 // Compatibility with compilers other than clang.
 #ifdef __has_feature
 # define FMT_HAS_FEATURE(x) __has_feature(x)
@@ -74,6 +78,11 @@
 # define FMT_USE_RVALUE_REFERENCES \
    (FMT_HAS_FEATURE(cxx_rvalue_references) || \
        (FMT_GCC_VERSION >= 403 && __cplusplus >= 201103) || _MSC_VER >= 1600)
+// Don't use rvalue references when compiling with clang and an old libstdc++
+// as the latter doesn't provide std::move.
+# ifdef FMT_GNUC_LIBSTD_VERSION <= 402
+#  define FMT_USE_RVALUE_REFERENCES 0
+# endif
 #endif
 
 #if FMT_USE_RVALUE_REFERENCES
