@@ -13,6 +13,23 @@ project(FORMAT)
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+if (CMAKE_GENERATOR MATCHES "Visual Studio")
+  # If Microsoft SDK is installed create script run-msbuild.bat that
+  # calls SetEnv.cmd to to set up build environment and runs msbuild.
+  # It is useful when building Visual Studio projects with the SDK
+  # toolchain rather than Visual Studio.
+  include(FindSetEnv)
+  if (WINSDK_SETENV)
+    set(MSBUILD_SETUP "call \"${WINSDK_SETENV}\"")
+  endif ()
+  file(WRITE run-msbuild.bat "
+    ${MSBUILD_SETUP}
+    ${CMAKE_MAKE_PROGRAM} %*")
+endif ()
+
 add_library(format format.cc)
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
