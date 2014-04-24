@@ -80,7 +80,7 @@
        (FMT_GCC_VERSION >= 403 && __cplusplus >= 201103) || _MSC_VER >= 1600)
 // Don't use rvalue references when compiling with clang and an old libstdc++
 // as the latter doesn't provide std::move.
-# if FMT_GNUC_LIBSTD_VERSION <= 402
+# if defined(FMT_GNUC_LIBSTD_VERSION) && FMT_GNUC_LIBSTD_VERSION <= 402
 #  define FMT_USE_RVALUE_REFERENCES 0
 # endif
 #endif
