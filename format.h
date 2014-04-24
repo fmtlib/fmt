@@ -30,11 +30,8 @@
 
 #include <stdint.h>
 
-#include <cassert>
-#include <climits>
-#include <cstddef>
+#include <cstddef>  // for std::ptrdiff_t
 #include <cstdio>
-#include <cstring>
 #include <algorithm>
 #include <iterator>
 #include <limits>
@@ -77,6 +74,10 @@
 # define FMT_USE_RVALUE_REFERENCES \
    (FMT_HAS_FEATURE(cxx_rvalue_references) || \
        (FMT_GCC_VERSION >= 403 && __cplusplus >= 201103) || _MSC_VER >= 1600)
+#endif
+
+#if FMT_USE_RVALUE_REFERENCES
+# include <utility>  // for std::move
 #endif
 
 // Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
