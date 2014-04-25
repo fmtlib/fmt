@@ -693,7 +693,8 @@ inline StrFormatSpec<wchar_t> pad(
 template <typename Char>
 class BasicWriter {
  private:
-  mutable internal::Array<Char, internal::INLINE_BUFFER_SIZE> buffer_;  // Output buffer.
+  // Output buffer.
+  mutable internal::Array<Char, internal::INLINE_BUFFER_SIZE> buffer_;
 
   // Make BasicFormatter a friend so that it can access ArgInfo and Arg.
   friend class BasicFormatter<Char>;
@@ -897,7 +898,13 @@ class BasicWriter {
       BasicStringRef<Char> format, std::size_t num_args, const ArgInfo *args);
   };
 
-  public:
+ public:
+  BasicWriter() {}
+
+#if FMT_USE_RVALUE_REFERENCES
+  BasicWriter(BasicWriter &&other) : buffer_(std::move(other.buffer_)) {}
+#endif
+
   /**
     Returns the number of characters written to the output buffer.
    */

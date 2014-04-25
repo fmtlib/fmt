@@ -209,33 +209,31 @@ TEST(ArrayTest, Ctor) {
 
 #if FMT_USE_RVALUE_REFERENCES
 
+void CheckMoveArray(const char *str, Array<char, 5> &array) {
+  Array<char, 5> array2(std::move(array));
+  // Move shouldn't destroy the inline content of the first array.
+  EXPECT_EQ(str, std::string(&array[0], array.size()));
+  EXPECT_EQ(str, std::string(&array2[0], array2.size()));
+  EXPECT_EQ(5, array2.capacity());
+}
+
 TEST(ArrayTest, MoveCtor) {
   Array<char, 5> array;
   const char test[] = "test";
   array.append(test, test + 4);
-  {
-    Array<char, 5> array2(std::move(array));
-    // Moving shouldn't destroy the inline content of the first array.
-    EXPECT_EQ(test, std::string(&array[0], array.size()));
-    EXPECT_EQ(test, std::string(&array2[0], array2.size()));
-    EXPECT_EQ(5, array2.capacity());
-  }
+  CheckMoveArray("test", array);
+  // Adding one more character fills the inline buffer, but doesn't cause
+  // dynamic allocation.
   array.push_back('a');
-  {
-    Array<char, 5> array2(std::move(array));
-    // Moving shouldn't destroy the inline content of the first array.
-    EXPECT_EQ("testa", std::string(&array[0], array.size()));
-    EXPECT_EQ("testa", std::string(&array2[0], array2.size()));
-    EXPECT_EQ(5, array2.capacity());
-  }
+  CheckMoveArray("testa", array);
+  // Adding one more character causes the content to move from the inline to
+  // a dynamically allocated buffer.
   array.push_back('b');
-  {
-    Array<char, 5> array2(std::move(array));
-    // Moving should rip the guts of the first array.
-    EXPECT_TRUE(!&array[0]);
-    EXPECT_EQ("testab", std::string(&array2[0], array2.size()));
-    EXPECT_GT(array2.capacity(), 5);
-  }
+  Array<char, 5> array2(std::move(array));
+  // Move should rip the guts of the first array.
+  EXPECT_TRUE(!&array[0]);
+  EXPECT_EQ("testab", std::string(&array2[0], array2.size()));
+  EXPECT_GT(array2.capacity(), 5);
 }
 
 #endif  // FMT_USE_RVALUE_REFERENCES
@@ -316,6 +314,37 @@ TEST(WriterTest, Ctor) {
   EXPECT_STREQ("", w.c_str());
   EXPECT_EQ("", w.str());
 }
+
+#if FMT_USE_RVALUE_REFERENCES
+
+void CheckMoveWriter(const std::string &str, Writer &w) {
+  Writer w2(std::move(w));
+  // Move shouldn't destroy the inline content of the first writer.
+  EXPECT_EQ(str, w.str());
+  EXPECT_EQ(str, w2.str());
+}
+
+TEST(WriterTest, MoveCtor) {
+  Writer w;
+  w << "test";
+  CheckMoveWriter("test", w);
+  // This fills the inline buffer, but doesn't cause dynamic allocation.
+  std::string s;
+  for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
+    s += '*';
+  w.Clear();
+  w << s;
+  CheckMoveWriter(s, w);
+  // Adding one more character causes the content to move from the inline to
+  // a dynamically allocated buffer.
+  w << '*';
+  Writer w2(std::move(w));
+  // Move should rip the guts of the first writer.
+  EXPECT_TRUE(!w.data());
+  EXPECT_EQ(s + '*', w2.str());
+}
+
+#endif  // FMT_USE_RVALUE_REFERENCES
 
 TEST(WriterTest, Data) {
   Writer w;
