@@ -21,6 +21,14 @@ function (expect_compile_error code)
   endif ()
 endfunction ()
 
+# Array is noncopyable.
+expect_compile_error("fmt::internal::Array<char, 5> a, b(a);")
+expect_compile_error("fmt::internal::Array<char, 5> a, b; b = a;")
+
+# Writer is noncopyable.
+expect_compile_error("fmt::Writer a, b(a);")
+expect_compile_error("fmt::Writer a, b; b = a;")
+
 # Writing a wide character to a character stream Writer is forbidden.
 expect_compile_error("fmt::Writer() << L'a';")
 expect_compile_error("fmt::Writer() << fmt::pad(\"abc\", 5, L' ');")
