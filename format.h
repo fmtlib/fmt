@@ -30,6 +30,7 @@
 
 #include <stdint.h>
 
+#include <cassert>
 #include <cstddef>  // for std::ptrdiff_t
 #include <cstdio>
 #include <algorithm>
@@ -143,30 +144,47 @@ class Array {
 
   void Grow(std::size_t size);
 
+  // Free memory allocated by the array.
+  void Free() {
+    if (ptr_ != data_) delete [] ptr_;
+  }
+
+  // Move data from other to this array.
+  void Move(Array &other) {
+    size_ = other.size_;
+    capacity_ = other.capacity_;
+    if (other.ptr_ == other.data_) {
+      ptr_ = data_;
+      std::copy(other.data_, other.data_ + size_, CheckPtr(data_, capacity_));
+    } else {
+      ptr_ = other.ptr_;
+      // Set pointer to the inline array so that delete is not called
+      // when freeing.
+      other.ptr_ = other.data_;
+    }
+  }
+
   // Do not implement!
   Array(const Array &);
   void operator=(const Array &);
 
  public:
   Array() : size_(0), capacity_(SIZE), ptr_(data_) {}
-  ~Array() {
-    if (ptr_ != data_) delete [] ptr_;
-  }
+  ~Array() { Free(); }
 
 #if FMT_USE_RVALUE_REFERENCES
-  Array(Array &&other)
-  : size_(other.size_),
-    capacity_(other.capacity_) {
-    if (other.ptr_ == other.data_) {
-      ptr_ = data_;
-      std::copy(other.data_, other.data_ + size_, CheckPtr(data_, capacity_));
-    } else {
-      ptr_ = other.ptr_;
-      other.ptr_ = 0;
-    }
+
+  Array(Array &&other) {
+    Move(other);
   }
 
-  // TODO: move assignment operator
+  Array& operator=(Array&& other) {
+    assert(this != &other);
+    Free();
+    Move(other);
+    return *this;
+  }
+
 #endif
 
   // Returns the size of this array.

@@ -226,12 +226,13 @@ TEST(ArrayTest, MoveCtor) {
   // dynamic allocation.
   array.push_back('a');
   CheckMoveArray("testa", array);
+  const char *inline_buffer_ptr = &array[0];
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
   array.push_back('b');
   Array<char, 5> array2(std::move(array));
   // Move should rip the guts of the first array.
-  EXPECT_TRUE(!&array[0]);
+  EXPECT_EQ(inline_buffer_ptr, &array[0]);
   EXPECT_EQ("testab", std::string(&array2[0], array2.size()));
   EXPECT_GT(array2.capacity(), 5);
 }
@@ -335,12 +336,13 @@ TEST(WriterTest, MoveCtor) {
   w.Clear();
   w << s;
   CheckMoveWriter(s, w);
+  const char *inline_buffer_ptr = w.data();
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
   w << '*';
   Writer w2(std::move(w));
   // Move should rip the guts of the first writer.
-  EXPECT_TRUE(!w.data());
+  EXPECT_EQ(inline_buffer_ptr, w.data());
   EXPECT_EQ(s + '*', w2.str());
 }
 
