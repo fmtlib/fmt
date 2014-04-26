@@ -237,6 +237,36 @@ TEST(ArrayTest, MoveCtor) {
   EXPECT_GT(array2.capacity(), 5);
 }
 
+void CheckMoveAssignArray(const char *str, Array<char, 5> &array) {
+  Array<char, 5> array2;
+  array2 = std::move(array);
+  // Move shouldn't destroy the inline content of the first array.
+  EXPECT_EQ(str, std::string(&array[0], array.size()));
+  EXPECT_EQ(str, std::string(&array2[0], array2.size()));
+  EXPECT_EQ(5, array2.capacity());
+}
+
+TEST(ArrayTest, MoveAssignment) {
+  Array<char, 5> array;
+  const char test[] = "test";
+  array.append(test, test + 4);
+  CheckMoveAssignArray("test", array);
+  // Adding one more character fills the inline buffer, but doesn't cause
+  // dynamic allocation.
+  array.push_back('a');
+  CheckMoveAssignArray("testa", array);
+  const char *inline_buffer_ptr = &array[0];
+  // Adding one more character causes the content to move from the inline to
+  // a dynamically allocated buffer.
+  array.push_back('b');
+  Array<char, 5> array2;
+  array2 = std::move(array);
+  // Move should rip the guts of the first array.
+  EXPECT_EQ(inline_buffer_ptr, &array[0]);
+  EXPECT_EQ("testab", std::string(&array2[0], array2.size()));
+  EXPECT_GT(array2.capacity(), 5);
+}
+
 #endif  // FMT_USE_RVALUE_REFERENCES
 
 TEST(ArrayTest, Access) {
