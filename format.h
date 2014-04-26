@@ -174,18 +174,16 @@ class Array {
   ~Array() { Free(); }
 
 #if FMT_USE_RVALUE_REFERENCES
-
   Array(Array &&other) {
     Move(other);
   }
 
-  Array& operator=(Array&& other) {
+  Array& operator=(Array &&other) {
     assert(this != &other);
     Free();
     Move(other);
     return *this;
   }
-
 #endif
 
   // Returns the size of this array.
@@ -922,6 +920,12 @@ class BasicWriter {
 
 #if FMT_USE_RVALUE_REFERENCES
   BasicWriter(BasicWriter &&other) : buffer_(std::move(other.buffer_)) {}
+
+  BasicWriter& operator=(BasicWriter &&other) {
+    assert(this != &other);
+    buffer_ = std::move(other.buffer_);
+    return *this;
+  }
 #endif
 
   /**

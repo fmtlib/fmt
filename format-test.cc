@@ -376,6 +376,36 @@ TEST(WriterTest, MoveCtor) {
   EXPECT_EQ(s + '*', w2.str());
 }
 
+void CheckMoveAssignWriter(const std::string &str, Writer &w) {
+  Writer w2;
+  w2 = std::move(w);
+  // Move shouldn't destroy the inline content of the first writer.
+  EXPECT_EQ(str, w.str());
+  EXPECT_EQ(str, w2.str());
+}
+
+TEST(WriterTest, MoveAssignment) {
+  Writer w;
+  w << "test";
+  CheckMoveAssignWriter("test", w);
+  // This fills the inline buffer, but doesn't cause dynamic allocation.
+  std::string s;
+  for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
+    s += '*';
+  w.Clear();
+  w << s;
+  CheckMoveAssignWriter(s, w);
+  const char *inline_buffer_ptr = w.data();
+  // Adding one more character causes the content to move from the inline to
+  // a dynamically allocated buffer.
+  w << '*';
+  Writer w2;
+  w2 = std::move(w);
+  // Move should rip the guts of the first writer.
+  EXPECT_EQ(inline_buffer_ptr, w.data());
+  EXPECT_EQ(s + '*', w2.str());
+}
+
 #endif  // FMT_USE_RVALUE_REFERENCES
 
 TEST(WriterTest, Data) {
