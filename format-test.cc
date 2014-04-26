@@ -264,7 +264,7 @@ TEST(ArrayTest, MoveAssignment) {
   // Move should rip the guts of the first array.
   EXPECT_EQ(inline_buffer_ptr, &array[0]);
   EXPECT_EQ("testab", std::string(&array2[0], array2.size()));
-  EXPECT_GT(array2.capacity(), 5);
+  EXPECT_GT(array2.capacity(), 5u);
 }
 
 #endif  // FMT_USE_RVALUE_REFERENCES
