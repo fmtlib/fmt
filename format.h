@@ -1591,7 +1591,7 @@ inline Formatter<Write> Print(StringRef format) {
   return f;
 }
 
-enum Color {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE};
+enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
 /** A formatting action that writes colored output to stdout. */
 class ColorWriter {
