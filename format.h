@@ -99,6 +99,12 @@
 # define FMT_NOEXCEPT(expr)
 #endif
 
+// A macro to disallow the copy constructor and operator= functions
+// This should be used in the private: declarations for a class
+#define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+  TypeName(const TypeName&); \
+  void operator=(const TypeName&)
+
 #if _MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4521) // 'class' : multiple copy constructors specified
@@ -165,9 +171,7 @@ class Array {
     }
   }
 
-  // Do not implement!
-  Array(const Array &);
-  void operator=(const Array &);
+  FMT_DISALLOW_COPY_AND_ASSIGN(Array);
 
  public:
   Array() : size_(0), capacity_(SIZE), ptr_(data_) {}
@@ -1266,9 +1270,7 @@ class BasicFormatter {
   //
   // This is done because BasicFormatter objects should normally exist
   // only as temporaries returned by one of the formatting functions.
-  // Do not implement.
-  BasicFormatter(const BasicFormatter &);
-  BasicFormatter& operator=(const BasicFormatter &);
+  FMT_DISALLOW_COPY_AND_ASSIGN(BasicFormatter);
 
  protected:
   const Char *TakeFormatString() {
@@ -1405,9 +1407,7 @@ class Formatter : private Action, public BasicFormatter<Char> {
   BasicWriter<Char> writer_;
   bool inactive_;
 
-  // Forbid copying other than from a temporary. Do not implement.
-  Formatter(const Formatter &);
-  Formatter& operator=(const Formatter &);
+  FMT_DISALLOW_COPY_AND_ASSIGN(Formatter);
 
  public:
   /**

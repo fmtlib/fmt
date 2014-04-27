@@ -1634,8 +1634,7 @@ TEST(FormatIntTest, FormatDec) {
 class File {
  private:
   int fd_;
-  File(const File &);
-  void operator=(const File &);
+  FMT_DISALLOW_COPY_AND_ASSIGN(File);
  public:
   File(int fd) : fd_(fd) {}
   ~File() { close(fd_); }
