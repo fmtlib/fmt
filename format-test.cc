@@ -43,12 +43,16 @@
 #endif
 
 #if FMT_USE_DUP
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <fcntl.h>
 # ifdef _WIN32
 #  include <io.h>
+#  define O_WRONLY _O_WRONLY
+#  define O_CREAT _O_CREAT
+#  define S_IRUSR _S_IREAD
+#  define S_IWUSR _S_IWRITE
 # else
-#  include <sys/types.h>
-#  include <sys/stat.h>
-#  include <fcntl.h>
 #  include <unistd.h>
 # endif
 #endif
