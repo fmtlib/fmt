@@ -33,3 +33,6 @@ expect_compile_error("fmt::Writer a, b; b = a;")
 expect_compile_error("fmt::Writer() << L'a';")
 expect_compile_error("fmt::Writer() << fmt::pad(\"abc\", 5, L' ');")
 expect_compile_error("fmt::Writer() << fmt::pad(42, 5, L' ');")
+
+# Formatting a wide character with a narrow format string is forbidden.
+expect_compile_error("Format(\"{}\") << L'a';")

@@ -30,6 +30,7 @@
 #include <climits>
 #include <cstdarg>
 #include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <memory>
 #include <sstream>
@@ -39,6 +40,17 @@
 #ifdef _WIN32
 # include <windows.h>
 # include <crtdbg.h>
+#endif
+
+#if FMT_USE_DUP
+# ifdef _WIN32
+#  include <io.h>
+# else
+#  include <sys/types.h>
+#  include <sys/stat.h>
+#  include <fcntl.h>
+#  include <unistd.h>
+# endif
 #endif
 
 #include "format.h"
@@ -1341,7 +1353,7 @@ TEST(FormatterTest, FormatChar) {
 TEST(FormatterTest, FormatWChar) {
   EXPECT_EQ(L"a", str(Format(L"{0}") << L'a'));
   // This shouldn't compile:
-  //Format("{0}") << L'a';
+  //Format("{}") << L'a';
 }
 
 TEST(FormatterTest, FormatCString) {
@@ -1490,7 +1502,7 @@ TEST(FormatterTest, ActionNotCalledOnError) {
 // The test doesn't compile on older compilers which follow C++03 and
 // require an accessible copy constructor when binding a temporary to
 // a const reference.
-#if __GNUC__ >= 4 && __GNUC_MINOR__ >= 7
+#if FMT_GCC_VERSION >= 407
 TEST(FormatterTest, ArgLifetime) {
   // The following code is for testing purposes only. It is a definite abuse
   // of the API and shouldn't be used in real applications.
@@ -1609,10 +1621,38 @@ TEST(FormatIntTest, FormatDec) {
   EXPECT_EQ("42", FormatDec(42ull));
 }
 
+#ifdef FMT_USE_DUP
+
+class File {
+ private:
+  int fd_;
+  File(const File &);
+  void operator=(const File &);
+ public:
+  File(int fd) : fd_(fd) {}
+  ~File() { close(fd_); }
+  int fd() const { return fd_; }
+};
+
 TEST(ColorTest, PrintColored) {
+  std::fflush(stdout);
+  File saved_stdio(dup(1));
+  EXPECT_NE(-1, saved_stdio.fd());
+  {
+    File out(open("out", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR));
+    EXPECT_NE(-1, out.fd());
+    EXPECT_NE(-1, dup2(out.fd(), 1));
+  }
   fmt::PrintColored(fmt::RED, "Hello, {}!\n") << "world";
-  // TODO
+  std::fflush(stdout);
+  EXPECT_NE(-1, dup2(saved_stdio.fd(), 1));
+  std::ifstream out("out");
+  std::stringstream content;
+  content << out.rdbuf();
+  EXPECT_EQ("\x1b[31mHello, world!\n\x1b[0m", content.str());
 }
+
+#endif
 
 template <typename T>
 std::string str(const T &value) {

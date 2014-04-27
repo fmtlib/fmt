@@ -63,6 +63,16 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
 endif ()
 
+include(CheckSymbolExists)
+if (WIN32)
+  check_symbol_exists(dup io.h HAVE_DUP)
+else ()
+  check_symbol_exists(dup unistd.h HAVE_DUP)
+endif ()
+if (HAVE_DUP)
+  add_definitions(-DFMT_USE_DUP=1)
+endif ()
+
 add_library(gtest gtest/gtest-all.cc)
 
 find_package(Threads)
