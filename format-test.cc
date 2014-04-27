@@ -52,6 +52,10 @@
 #  define O_CREAT _O_CREAT
 #  define S_IRUSR _S_IREAD
 #  define S_IWUSR _S_IWRITE
+#  define open _open
+#  define close _close
+#  define dup _dup
+#  define dup2 _dup2
 # else
 #  include <unistd.h>
 # endif
