@@ -1479,32 +1479,43 @@ TEST(StringRefTest, ConvertToString) {
   EXPECT_EQ("abc", s);
 }
 
-struct CountCalls {
-  int &num_calls;
+TEST(FormatterTest, Ctor) {
+  fmt::Formatter<> f1("test");
+  fmt::Formatter<> f1copy(f1);
+  fmt::Formatter<> f2("test", fmt::NullSink());
+  fmt::Formatter<fmt::NullSink> f3("test");
+  fmt::Formatter<fmt::NullSink, wchar_t> f4(L"test");
+  fmt::Formatter<fmt::NullSink, wchar_t> f4copy(f4);
+  fmt::Formatter<fmt::NullSink, wchar_t> f5(L"test", fmt::NullSink());
+}
 
-  CountCalls(int &num_calls) : num_calls(num_calls) {}
+// A sink that counts the number of times the output is written to it.
+struct CountingSink {
+  int &num_writes;
+
+  explicit CountingSink(int &num_calls) : num_writes(num_writes) {}
 
   void operator()(const Writer &) const {
-    ++num_calls;
+    ++num_writes;
   }
 };
 
-TEST(FormatterTest, Action) {
-  int num_calls = 0;
+TEST(FormatterTest, Sink) {
+  int num_writes = 0;
   {
-    fmt::Formatter<CountCalls> af("test", CountCalls(num_calls));
-    EXPECT_EQ(0, num_calls);
+    fmt::Formatter<CountingSink> f("test", CountingSink(num_writes));
+    EXPECT_EQ(0, num_writes);
   }
-  EXPECT_EQ(1, num_calls);
+  EXPECT_EQ(1, num_writes);
 }
 
-TEST(FormatterTest, ActionNotCalledOnError) {
-  int num_calls = 0;
+TEST(FormatterTest, OutputNotWrittenOnError) {
+  int num_writes = 0;
   {
-    typedef fmt::Formatter<CountCalls> TestFormatter;
-    EXPECT_THROW(TestFormatter af("{0", CountCalls(num_calls)), FormatError);
+    typedef fmt::Formatter<CountingSink> TestFormatter;
+    EXPECT_THROW(TestFormatter f("{0", CountingSink(num_writes)), FormatError);
   }
-  EXPECT_EQ(0, num_calls);
+  EXPECT_EQ(0, num_writes);
 }
 
 // The test doesn't compile on older compilers which follow C++03 and
@@ -1641,7 +1652,7 @@ class File {
   int fd() const { return fd_; }
 };
 
-TEST(ColorTest, PrintColored) {
+TEST(FormatTest, PrintColored) {
   std::fflush(stdout);
   File saved_stdio(dup(1));
   EXPECT_NE(-1, saved_stdio.fd());
@@ -1661,6 +1672,13 @@ TEST(ColorTest, PrintColored) {
 
 #endif
 
+#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
+TEST(FormatTest, Variadic) {
+  EXPECT_EQ("Hello, world!1", str(Format("Hello, {}!{}", "world", 1)));
+  EXPECT_EQ(L"Hello, world!1", str(Format(L"Hello, {}!{}", L"world", 1)));
+}
+#endif  // FMT_USE_VARIADIC_TEMPLATES
+
 template <typename T>
 std::string str(const T &value) {
   return fmt::str(fmt::Format("{0}") << value);
@@ -1671,13 +1689,6 @@ TEST(StrTest, Convert) {
   std::string s = str(Date(2012, 12, 9));
   EXPECT_EQ("2012-12-9", s);
 }
-
-#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
-TEST(FormatTest, Variadic) {
-  EXPECT_EQ("Hello, world!1", str(Format("Hello, {}!{}", "world", 1)));
-  EXPECT_EQ(L"Hello, world!1", str(Format(L"Hello, {}!{}", L"world", 1)));
-}
-#endif  // FMT_USE_VARIADIC_TEMPLATES
 
 int main(int argc, char **argv) {
 #ifdef _WIN32

@@ -805,13 +805,13 @@ class BasicWriter {
     };
   };
 
-  // Argument action that does nothing.
-  struct EmptyArgAction {
+  // An argument action that does nothing.
+  struct NullArgAction {
     void operator()() const {}
   };
 
   // A wrapper around a format argument.
-  template <typename Action = EmptyArgAction>
+  template <typename Action = NullArgAction>
   class BasicArg : public Action, public ArgInfo {
    private:
     // This method is private to disallow formatting of arbitrary pointers.
@@ -1039,7 +1039,7 @@ class BasicWriter {
   }
 
   /**
-   * Writes a character to the stream.
+    Writes a character to the stream.
    */
   BasicWriter &operator<<(char value) {
     *GrowBuffer(1) = value;
@@ -1239,7 +1239,7 @@ class BasicFormatter {
   // Here an Arg object wraps a temporary std::string which is destroyed at
   // the end of the full expression. Since the string object is constructed
   // before the Arg object, it will be destroyed after, so it will be alive
-  // in the Arg's destructor where the action is called.
+  // in the Arg's destructor where the action is invoked.
   // Note that the string object will not necessarily be alive when the
   // destructor of BasicFormatter is called. Otherwise we wouldn't need
   // this class.
@@ -1368,41 +1368,41 @@ inline const wchar_t *c_str(internal::FormatterProxy<wchar_t> p) {
 }
 
 /**
-  A formatting action that does nothing.
+  A sink that ignores output.
  */
-class NoAction {
+class NullSink {
  public:
-  /** Does nothing. */
+  /** Ignores the output. */
   template <typename Char>
   void operator()(const BasicWriter<Char> &) const {}
 };
 
 /**
   \rst
-  A formatter with an action performed when formatting is complete.
-  Objects of this class normally exist only as temporaries returned
-  by one of the formatting functions. You can use this class to create
-  your own functions similar to :cpp:func:`fmt::Format()`.
+  A formatter that sends output to a sink. Objects of this class normally
+  exist only as temporaries returned by one of the formatting functions.
+  You can use this class to create your own functions similar to
+  :cpp:func:`fmt::Format()`.
 
   **Example**::
 
-    struct PrintError {
+    struct ErrorSink {
       void operator()(const fmt::Writer &w) const {
         fmt::Print("Error: {}\n") << w.str();
       }
     };
 
     // Formats an error message and prints it to stdout.
-    fmt::Formatter<PrintError> ReportError(const char *format) {
-      fmt::Formatter f<PrintError>(format);
+    fmt::Formatter<ErrorSink> ReportError(const char *format) {
+      fmt::Formatter f<ErrorSink>(format);
       return f;
     }
 
     ReportError("File not found: {}") << path;
   \endrst
  */
-template <typename Action = NoAction, typename Char = char>
-class Formatter : private Action, public BasicFormatter<Char> {
+template <typename Sink = NullSink, typename Char = char>
+class Formatter : private Sink, public BasicFormatter<Char> {
  private:
   BasicWriter<Char> writer_;
   bool inactive_;
@@ -1412,26 +1412,44 @@ class Formatter : private Action, public BasicFormatter<Char> {
  public:
   /**
     \rst
-    Constructs a formatter with a format string and an action.
-    The action should be an unary function object that takes a const
-    reference to :cpp:class:`fmt::BasicWriter` as an argument.
-    See :cpp:class:`fmt::NoAction` and :cpp:class:`fmt::Write` for
-    examples of action classes.
+    Constructs a formatter with a format string and a sink.
+    The sink should be an unary function object that takes a const
+    reference to :cpp:class:`fmt::BasicWriter`, representing the
+    formatting output, as an argument. See :cpp:class:`fmt::NullSink`
+    and :cpp:class:`fmt::FileSink` for examples of sink classes.
     \endrst
   */
-  explicit Formatter(BasicStringRef<Char> format, Action a = Action())
-  : Action(a), BasicFormatter<Char>(writer_, format.c_str()),
+  explicit Formatter(BasicStringRef<Char> format, Sink s = Sink())
+  : Sink(s), BasicFormatter<Char>(writer_, format.c_str()),
     inactive_(false) {
-  }
-
-  Formatter(Formatter &f)
-  : Action(f), BasicFormatter<Char>(writer_, f.TakeFormatString()),
-    inactive_(false) {
-    f.inactive_ = true;
   }
 
   /**
-    Performs the actual formatting, invokes the action and destroys the object.
+    \rst
+    A "move" constructor. Constructs a formatter transferring the format
+    string from other to this object. This constructor is used to return
+    a formatter object from a formatting function since the copy constructor
+    taking a const reference is disabled to prevent misuse of the API.
+    It is not implemented as a move constructor for compatibility with
+    pre-C++11 compilers, but should be treated as such.
+
+    **Example**::
+
+      fmt::Formatter<> Format(fmt::StringRef format) {
+        fmt::Formatter<> f(format);
+        return f;
+      }
+    \endrst
+   */
+  Formatter(Formatter &other)
+  : Sink(other), BasicFormatter<Char>(writer_, other.TakeFormatString()),
+    inactive_(false) {
+    other.inactive_ = true;
+  }
+
+  /**
+    Performs the formatting, sends the output to the sink and destroys
+    the object.
    */
   ~Formatter() FMT_NOEXCEPT(false) {
     if (!inactive_) {
@@ -1440,6 +1458,118 @@ class Formatter : private Action, public BasicFormatter<Char> {
     }
   }
 };
+
+/**
+  \rst
+  Formats a string similarly to Python's `str.format
+  <http://docs.python.org/3/library/stdtypes.html#str.format>`__.
+  Returns a temporary formatter object that accepts arguments via
+  operator ``<<``.
+
+  *format* is a format string that contains literal text and replacement
+  fields surrounded by braces ``{}``. The formatter object replaces the
+  fields with formatted arguments and stores the output in a memory buffer.
+  The content of the buffer can be converted to ``std::string`` with
+  :cpp:func:`fmt::str()` or accessed as a C string with
+  :cpp:func:`fmt::c_str()`.
+
+  **Example**::
+
+    std::string message = str(Format("The answer is {}") << 42);
+
+  See also `Format String Syntax`_.
+  \endrst
+*/
+inline Formatter<> Format(StringRef format) {
+  Formatter<> f(format);
+  return f;
+}
+
+inline Formatter<NullSink, wchar_t> Format(WStringRef format) {
+  Formatter<NullSink, wchar_t> f(format);
+  return f;
+}
+
+/** A sink that writes output to a file. */
+class FileSink {
+ private:
+  std::FILE *file_;
+
+ public:
+  FileSink(std::FILE *f) : file_(f) {}
+
+  /** Writes the output to a file. */
+  void operator()(const BasicWriter<char> &w) const {
+    // TODO: check error
+    std::fwrite(w.data(), w.size(), 1, file_);
+  }
+};
+
+// Formats a string and prints it to stdout.
+// Example:
+//   Print("Elapsed time: {0:.2f} seconds") << 1.23;
+// TODO: wchar overload
+inline Formatter<FileSink> Print(StringRef format) {
+  Formatter<FileSink> f(format, stdout);
+  return f;
+}
+
+enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
+
+/**
+  A sink that writes output to a terminal using ANSI escape sequences
+  to specify color.
+ */
+class ANSITerminalSink {
+ private:
+  std::FILE *file_;
+  Color color_;
+
+ public:
+  ANSITerminalSink(std::FILE *f, Color c) : file_(f), color_(c) {}
+
+  /**
+    Writes the output to a terminal using ANSI escape sequences to
+    specify color.
+   */
+  void operator()(const BasicWriter<char> &w) const;
+};
+
+/**
+  Formats a string and prints it to stdout using ANSI escape sequences
+  to specify color (experimental).
+  Example:
+    PrintColored(fmt::RED, "Elapsed time: {0:.2f} seconds") << 1.23;
+ */
+inline Formatter<ANSITerminalSink> PrintColored(Color c, StringRef format) {
+  Formatter<ANSITerminalSink> f(format, ANSITerminalSink(stdout, c));
+  return f;
+}
+
+#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
+
+template<typename... Args>
+inline Writer Format(const StringRef &format, const Args & ... args) {
+  Writer w;
+  w.Format(format, args...);
+  return std::move(w);
+}
+
+template<typename... Args>
+inline WWriter Format(const WStringRef &format, const Args & ... args) {
+  WWriter w;
+  w.Format(format, args...);
+  return std::move(w);
+}
+
+template<typename... Args>
+void Print(StringRef format, const Args & ... args) {
+  Writer w;
+  w.Format(format, args...);
+  std::fwrite(w.data(), 1, w.size(), stdout);
+}
+
+#endif  // FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 
 /**
   Fast integer formatter.
@@ -1473,7 +1603,7 @@ class FormatInt {
     *--buffer_end = internal::DIGITS[index];
     return buffer_end;
   }
-  
+
   void FormatSigned(LongLong value) {
     ULongLong abs_value = value;
     bool negative = value < 0;
@@ -1542,92 +1672,6 @@ inline void FormatDec(char *&buffer, T value) {
   internal::FormatDecimal(buffer, abs_value, num_digits);
   buffer += num_digits;
 }
-
-/**
-  \rst
-  Formats a string similarly to Python's `str.format
-  <http://docs.python.org/3/library/stdtypes.html#str.format>`__.
-  Returns a temporary formatter object that accepts arguments via
-  operator ``<<``.
-
-  *format* is a format string that contains literal text and replacement
-  fields surrounded by braces ``{}``. The formatter object replaces the
-  fields with formatted arguments and stores the output in a memory buffer.
-  The content of the buffer can be converted to ``std::string`` with
-  :cpp:func:`fmt::str()` or accessed as a C string with
-  :cpp:func:`fmt::c_str()`.
-
-  **Example**::
-
-    std::string message = str(Format("The answer is {}") << 42);
-
-  See also `Format String Syntax`_.
-  \endrst
-*/
-inline Formatter<> Format(StringRef format) {
-  Formatter<> f(format);
-  return f;
-}
-
-inline Formatter<NoAction, wchar_t> Format(WStringRef format) {
-  Formatter<NoAction, wchar_t> f(format);
-  return f;
-}
-
-/** A formatting action that writes formatted output to stdout. */
-class Write {
- public:
-  /** Writes the output to stdout. */
-  void operator()(const BasicWriter<char> &w) const {
-    std::fwrite(w.data(), 1, w.size(), stdout);
-  }
-};
-
-// Formats a string and prints it to stdout.
-// Example:
-//   Print("Elapsed time: {0:.2f} seconds") << 1.23;
-inline Formatter<Write> Print(StringRef format) {
-  Formatter<Write> f(format);
-  return f;
-}
-
-enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
-
-/** A formatting action that writes colored output to stdout. */
-class ColorWriter {
- private:
-  Color color_;
-
- public:
-  explicit ColorWriter(Color c) : color_(c) {}
-
-  /** Writes the colored output to stdout. */
-  void operator()(const BasicWriter<char> &w) const;
-};
-
-// Formats a string and prints it to stdout with the given color.
-// Example:
-//   PrintColored(fmt::RED, "Elapsed time: {0:.2f} seconds") << 1.23;
-inline Formatter<ColorWriter> PrintColored(Color c, StringRef format) {
-  Formatter<ColorWriter> f(format, ColorWriter(c));
-  return f;
-}
-
-#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
-template<typename... Args>
-inline Writer Format(const StringRef &format, const Args & ... args) {
-  Writer w;
-  w.Format(format, args...);
-  return std::move(w);
-}
-
-template<typename... Args>
-inline WWriter Format(const WStringRef &format, const Args & ... args) {
-  WWriter w;
-  w.Format(format, args...);
-  return std::move(w);
-}
-#endif  // FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 }
 
 // Restore warnings.
