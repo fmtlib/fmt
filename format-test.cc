@@ -50,6 +50,7 @@
 #  include <io.h>
 #  define O_WRONLY _O_WRONLY
 #  define O_CREAT _O_CREAT
+#  define O_TRUNC _O_TRUNC
 #  define S_IRUSR _S_IREAD
 #  define S_IWUSR _S_IWRITE
 #  define open _open
@@ -1658,7 +1659,7 @@ TEST(FormatTest, PrintColored) {
   File saved_stdio(dup(1));
   EXPECT_NE(-1, saved_stdio.fd());
   {
-    File out(open("out", O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR));
+    File out(open("out", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR));
     EXPECT_NE(-1, out.fd());
     EXPECT_NE(-1, dup2(out.fd(), 1));
   }
