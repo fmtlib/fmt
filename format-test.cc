@@ -1593,7 +1593,8 @@ TEST(FormatterTest, Examples) {
   EXPECT_THROW_MSG(
     Format("The answer is {:d}", "forty-two"), FormatError,
     "unknown format code 'd' for string");
-  EXPECT_EQ(L"Cyrillic letter ю", str(Format(L"Cyrillic letter {}", L'ю')));
+  EXPECT_EQ(L"Cyrillic letter \x42e",
+    str(Format(L"Cyrillic letter {}", L'\x42e')));
 #endif
 }
 
