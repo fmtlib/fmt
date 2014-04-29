@@ -1655,6 +1655,7 @@ TEST(FormatIntTest, FormatDec) {
 
 #ifdef FMT_USE_DUP
 
+// RAII for file descriptors.
 class File {
  private:
   int fd_;
@@ -1666,6 +1667,8 @@ class File {
 };
 
 TEST(FormatTest, PrintColored) {
+  // Temporarily redirect stdout to a file and check if PrintColored adds
+  // necessary ANSI escape sequences.
   std::fflush(stdout);
   File saved_stdio(dup(1));
   EXPECT_NE(-1, saved_stdio.fd());
