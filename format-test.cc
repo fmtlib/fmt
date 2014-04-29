@@ -1521,6 +1521,19 @@ TEST(FormatterTest, Sink) {
   EXPECT_EQ(1, num_writes);
 }
 
+TEST(FormatterTest, Move) {
+  // Test if formatting is performed once if we "move" a formatter.
+  int num_writes = 0;
+  {
+    typedef fmt::Formatter<CountingSink> TestFormatter;
+    TestFormatter *f = new TestFormatter("test", CountingSink(num_writes));
+    TestFormatter f2(*f);
+    delete f;
+    EXPECT_EQ(0, num_writes);
+  }
+  EXPECT_EQ(1, num_writes);
+}
+
 TEST(FormatterTest, OutputNotWrittenOnError) {
   int num_writes = 0;
   {
