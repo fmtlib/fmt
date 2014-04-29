@@ -5,3 +5,6 @@ before_build: cmake .
 
 build:
   project: FORMAT.sln
+
+test_script:
+  - msbuild RUN_TESTS.vcxproj
