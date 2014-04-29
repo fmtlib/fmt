@@ -57,7 +57,6 @@
 #  define O_TRUNC _O_TRUNC
 #  define S_IRUSR _S_IREAD
 #  define S_IWUSR _S_IWRITE
-#  define open _open
 #  define close _close
 #  define dup _dup
 #  define dup2 _dup2
