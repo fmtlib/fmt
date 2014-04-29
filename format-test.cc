@@ -43,11 +43,15 @@
 #endif
 
 #if FMT_USE_DUP
+
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <fcntl.h>
+
 # ifdef _WIN32
+
 #  include <io.h>
+
 #  define O_WRONLY _O_WRONLY
 #  define O_CREAT _O_CREAT
 #  define O_TRUNC _O_TRUNC
@@ -57,6 +61,13 @@
 #  define close _close
 #  define dup _dup
 #  define dup2 _dup2
+
+namespace {
+int open(const char *path, int oflag, int pmode) {
+  _sopen_s(fd, path, oflag, _SH_DENYNO, pmode);
+  return fd;
+}
+}
 # else
 #  include <unistd.h>
 # endif
