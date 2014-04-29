@@ -126,10 +126,13 @@ class BasicFormatter;
 struct FormatSpec;
 
 namespace internal {
-  
+
+// The number of characters to store in the Array object, representing the
+// output buffer, itself to avoid dynamic memory allocation.
 enum { INLINE_BUFFER_SIZE = 500 };
 
 #if _SECURE_SCL
+// Use checked iterator to avoid warnings on MSVC.
 template <typename T>
 inline stdext::checked_array_iterator<T*> CheckPtr(T *ptr, std::size_t size) {
   return stdext::checked_array_iterator<T*>(ptr, size);
@@ -203,6 +206,7 @@ class Array {
     size_ = new_size;
   }
 
+  // Reserves space to store at least capacity elements.
   void reserve(std::size_t capacity) {
     if (capacity > capacity_)
       Grow(capacity);
