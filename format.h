@@ -1549,14 +1549,14 @@ inline Formatter<ANSITerminalSink> PrintColored(Color c, StringRef format) {
 #if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 
 template<typename... Args>
-inline Writer Format(const StringRef &format, const Args & ... args) {
+inline Writer Format(StringRef format, const Args & ... args) {
   Writer w;
   w.Format(format, args...);
   return std::move(w);
 }
 
 template<typename... Args>
-inline WWriter Format(const WStringRef &format, const Args & ... args) {
+inline WWriter Format(WStringRef format, const Args & ... args) {
   WWriter w;
   w.Format(format, args...);
   return std::move(w);
