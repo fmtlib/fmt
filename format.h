@@ -370,9 +370,6 @@ inline unsigned CountDigits(uint64_t n) {
 
 extern const char DIGITS[];
 
-template <typename Char>
-class FormatterProxy;
-
 // Formats a decimal unsigned integer value writing into buffer.
 template <typename UInt, typename Char>
 void FormatDecimal(Char *buffer, UInt value, unsigned num_digits) {
@@ -1266,8 +1263,6 @@ class BasicFormatter {
 
   const Char *format_;  // Format string.
 
-  friend class internal::FormatterProxy<Char>;
-
   // Forbid copying from a temporary as in the following example:
   //
   //   fmt::Formatter<> f = Format("test"); // not allowed
@@ -1313,13 +1308,9 @@ class BasicFormatter {
     return *this;
   }
 
-  operator internal::FormatterProxy<Char>() {
-    return internal::FormatterProxy<Char>(this);
-  }
-
-  operator StringRef() {
+  operator BasicStringRef<Char>() {
     CompleteFormatting();
-    return StringRef(writer_->c_str(), writer_->size());
+    return BasicStringRef<Char>(writer_->c_str(), writer_->size());
   }
 };
 
@@ -1331,44 +1322,27 @@ inline std::basic_string<Char> str(const BasicWriter<Char> &f) {
 template <typename Char>
 inline const Char *c_str(const BasicWriter<Char> &f) { return f.c_str(); }
 
-namespace internal {
-
-template <typename Char>
-class FormatterProxy {
- private:
-  BasicFormatter<Char> *formatter_;
-
- public:
-  explicit FormatterProxy(BasicFormatter<Char> *f) : formatter_(f) {}
-
-  BasicWriter<Char> *Format() {
-    formatter_->CompleteFormatting();
-    return formatter_->writer_;
-  }
-};
-}
-
 /**
   Returns the content of the output buffer as an `std::string`.
  */
-inline std::string str(internal::FormatterProxy<char> p) {
-  return p.Format()->str();
+inline std::string str(StringRef s) {
+  return std::string(s.c_str(), s.size());
 }
 
 /**
   Returns a pointer to the output buffer content with terminating null
   character appended.
  */
-inline const char *c_str(internal::FormatterProxy<char> p) {
-  return p.Format()->c_str();
+inline const char *c_str(StringRef s) {
+  return s.c_str();
 }
 
-inline std::wstring str(internal::FormatterProxy<wchar_t> p) {
-  return p.Format()->str();
+inline std::wstring str(WStringRef s) {
+  return std::wstring(s.c_str(), s.size());
 }
 
-inline const wchar_t *c_str(internal::FormatterProxy<wchar_t> p) {
-  return p.Format()->c_str();
+inline const wchar_t *c_str(WStringRef s) {
+  return s.c_str();
 }
 
 /**
