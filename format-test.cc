@@ -1493,7 +1493,7 @@ TEST(FormatterTest, Ctor) {
 struct CountingSink {
   int &num_writes;
 
-  explicit CountingSink(int &num_calls) : num_writes(num_writes) {}
+  explicit CountingSink(int &num_writes) : num_writes(num_writes) {}
 
   void operator()(const Writer &) const {
     ++num_writes;
