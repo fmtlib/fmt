@@ -1368,11 +1368,11 @@ inline const wchar_t *c_str(internal::FormatterProxy<wchar_t> p) {
 }
 
 /**
-  A sink that ignores output.
+  A sink that discards all output written to it.
  */
 class NullSink {
  public:
-  /** Ignores the output. */
+  /** Discards the output. */
   template <typename Char>
   void operator()(const BasicWriter<Char> &) const {}
 };
