@@ -12,6 +12,9 @@ project(FORMAT)
 
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
+if (NOT HAVE_STD_CPP11_FLAG)
+  check_cxx_compiler_flag(-std=c++0x HAVE_STD_CPP11_FLAG)
+endif ()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
