@@ -64,7 +64,8 @@
 
 namespace {
 int open(const char *path, int oflag, int pmode) {
-  _sopen_s(fd, path, oflag, _SH_DENYNO, pmode);
+  int fd = -1;
+  _sopen_s(&fd, path, oflag, _SH_DENYNO, pmode);
   return fd;
 }
 }
