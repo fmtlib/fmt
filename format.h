@@ -1500,7 +1500,7 @@ class FileSink {
   std::FILE *file_;
 
  public:
-  FileSink(std::FILE *f) : file_(f) {}
+  explicit FileSink(std::FILE *f) : file_(f) {}
 
   /** Writes the output to a file. */
   void operator()(const BasicWriter<char> &w) const {
@@ -1514,7 +1514,7 @@ class FileSink {
 //   Print("Elapsed time: {0:.2f} seconds") << 1.23;
 // TODO: wchar overload
 inline Formatter<FileSink> Print(StringRef format) {
-  Formatter<FileSink> f(format, stdout);
+  Formatter<FileSink> f(format, FileSink(stdout));
   return f;
 }
 

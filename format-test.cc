@@ -123,6 +123,8 @@ using fmt::pad;
   FORMAT_TEST_THROW_(statement, expected_exception, expected_message, \
       GTEST_NONFATAL_FAILURE_)
 
+namespace {
+
 // Checks if writing value to BasicWriter<Char> produces the same result
 // as writing it to std::basic_ostringstream<Char>.
 template <typename Char, typename T>
@@ -186,6 +188,14 @@ void SPrintf(char *buffer, const char *format, ...) {
   va_start(args, format);
   vsnprintf(buffer, BUFFER_SIZE, format, args);
   va_end(args);
+}
+
+std::string ReadFile(fmt::StringRef filename) {
+  std::ifstream out(filename.c_str());
+  std::stringstream content;
+  content << out.rdbuf();
+  return content.str();
+}
 }
 
 TEST(UtilTest, Increment) {
@@ -1543,6 +1553,14 @@ TEST(FormatterTest, OutputNotWrittenOnError) {
   EXPECT_EQ(0, num_writes);
 }
 
+TEST(FormatterTest, FileSink) {
+  FILE *f = std::fopen("out", "w");
+  fmt::FileSink fs(f);
+  fs(Writer() << "test");
+  std::fclose(f);
+  EXPECT_EQ("test", ReadFile("out"));
+}
+
 // The test doesn't compile on older compilers which follow C++03 and
 // require an accessible copy constructor when binding a temporary to
 // a const reference.
@@ -1668,35 +1686,21 @@ TEST(FormatIntTest, FormatDec) {
 
 #ifdef FMT_USE_DUP
 
-// RAII for file descriptors.
-class File {
- private:
-  int fd_;
-  FMT_DISALLOW_COPY_AND_ASSIGN(File);
- public:
-  File(int fd) : fd_(fd) {}
-  ~File() { close(fd_); }
-  int fd() const { return fd_; }
-};
-
 TEST(FormatTest, PrintColored) {
   // Temporarily redirect stdout to a file and check if PrintColored adds
   // necessary ANSI escape sequences.
   std::fflush(stdout);
-  File saved_stdio(dup(1));
-  EXPECT_NE(-1, saved_stdio.fd());
-  {
-    File out(open("out", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR));
-    EXPECT_NE(-1, out.fd());
-    EXPECT_NE(-1, dup2(out.fd(), 1));
-  }
+  int saved_stdio = dup(1);
+  EXPECT_NE(-1, saved_stdio);
+  int out = open("out", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  EXPECT_NE(-1, out);
+  EXPECT_NE(-1, dup2(out, 1));
+  close(out);
   fmt::PrintColored(fmt::RED, "Hello, {}!\n") << "world";
   std::fflush(stdout);
-  EXPECT_NE(-1, dup2(saved_stdio.fd(), 1));
-  std::ifstream out("out");
-  std::stringstream content;
-  content << out.rdbuf();
-  EXPECT_EQ("\x1b[31mHello, world!\n\x1b[0m", content.str());
+  EXPECT_NE(-1, dup2(saved_stdio, 1));
+  close(saved_stdio);
+  EXPECT_EQ("\x1b[31mHello, world!\n\x1b[0m", ReadFile("out"));
 }
 
 #endif
