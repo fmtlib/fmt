@@ -33,10 +33,16 @@
 
 #include "format.h"
 
+#include <string.h>
+
 #include <cctype>
 #include <climits>
 #include <cmath>
 #include <cstdarg>
+
+#ifdef _WIN32
+# include <windows.h>
+#endif
 
 using fmt::ULongLong;
 
@@ -161,6 +167,55 @@ void fmt::internal::ReportUnknownType(char code, const char *type) {
         << static_cast<unsigned>(code) << type));
 }
 
+void fmt::internal::FormatSystemErrorMessage(
+    fmt::Writer &out, int error_code, fmt::StringRef message) {
+#ifndef _WIN32
+  Array<char, INLINE_BUFFER_SIZE> buffer;
+  buffer.resize(INLINE_BUFFER_SIZE);
+  char *system_message = 0;
+  for (;;) {
+    errno = 0;
+# ifdef _GNU_SOURCE
+    system_message = strerror_r(error_code, &buffer[0], buffer.size());
+# else
+    strerror_r(error_code, system_message = &buffer[0], buffer.size());
+# endif
+    if (errno == 0)
+      break;
+    if (errno != ERANGE) {
+      // Can't get error message, report error code instead.
+      out << message << ": error code = " << error_code;
+      return;
+    }
+    buffer.resize(buffer.size() * 2);
+  }
+  out << message << ": " << system_message;
+#else
+  class String {
+   private:
+    LPWSTR str_;
+
+   public:
+    String() : str_() {}
+    ~String() { LocalFree(str_); }
+    LPWSTR *ptr() { return &str_; }
+    LPCWSTR c_str() const { return str_; }
+  };
+  String system_message;
+  if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
+      error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      reinterpret_cast<LPWSTR>(system_message.ptr()), 0, 0)) {
+    UTF16ToUTF8 utf8_message;
+    if (!utf8_message.Convert(system_message.c_str())) {
+      out << message << ": " << utf8_message;
+      return;
+    }
+  }
+  // Can't get error message, report error code instead.
+  out << message << ": error code = " << error_code;
+#endif
+}
 
 // Fills the padding around the content and returns the pointer to the
 // content area.
@@ -686,6 +741,12 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
     }
   }
   writer.buffer_.append(start, s);
+}
+
+void fmt::SystemErrorSink::operator()(const fmt::Writer &w) const {
+  Writer message;
+  internal::FormatSystemErrorMessage(message, error_code_, w.c_str());
+  throw SystemError(message.c_str(), error_code_);
 }
 
 void fmt::ANSITerminalSink::operator()(

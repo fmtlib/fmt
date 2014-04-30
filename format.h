@@ -31,6 +31,7 @@
 #include <stdint.h>
 
 #include <cassert>
+#include <cerrno>
 #include <cstddef>  // for std::ptrdiff_t
 #include <cstdio>
 #include <algorithm>
@@ -120,10 +121,70 @@ FMT_GCC_EXTENSION typedef unsigned long long ULongLong;
 template <typename Char>
 class BasicWriter;
 
+typedef BasicWriter<char> Writer;
+typedef BasicWriter<wchar_t> WWriter;
+
 template <typename Char>
 class BasicFormatter;
 
 struct FormatSpec;
+
+/**
+  \rst
+  A string reference. It can be constructed from a C string, ``std::string``
+  or as a result of a formatting operation. It is most useful as a parameter
+  type to allow passing different types of strings in a function, for example::
+
+    Formatter<> Format(StringRef format);
+
+    Format("{}") << 42;
+    Format(std::string("{}")) << 42;
+    Format(Format("{{}}")) << 42;
+  \endrst
+ */
+template <typename Char>
+class BasicStringRef {
+ private:
+  const Char *data_;
+  mutable std::size_t size_;
+
+ public:
+  /**
+    Constructs a string reference object from a C string and a size.
+    If *size* is zero, which is the default, the size is computed with
+    `strlen`.
+   */
+  BasicStringRef(const Char *s, std::size_t size = 0) : data_(s), size_(size) {}
+
+  /**
+    Constructs a string reference from an `std::string` object.
+   */
+  BasicStringRef(const std::basic_string<Char> &s)
+  : data_(s.c_str()), size_(s.size()) {}
+
+  /**
+    Converts a string reference to an `std::string` object.
+   */
+  operator std::basic_string<Char>() const {
+    return std::basic_string<Char>(data_, size());
+  }
+
+  /**
+    Returns the pointer to a C string.
+   */
+  const Char *c_str() const { return data_; }
+
+  /**
+    Returns the string size.
+   */
+  std::size_t size() const {
+    if (size_ == 0) size_ = std::char_traits<Char>::length(data_);
+    return size_;
+  }
+};
+
+typedef BasicStringRef<char> StringRef;
+typedef BasicStringRef<wchar_t> WStringRef;
 
 namespace internal {
 
@@ -396,69 +457,34 @@ void FormatDecimal(Char *buffer, UInt value, unsigned num_digits) {
 template <typename Char, typename T>
 void FormatCustomArg(
   BasicWriter<Char> &w, const void *arg, const FormatSpec &spec);
-}
+
+// Formats a system error message writing the output to out.
+void FormatSystemErrorMessage(Writer &out, int error_code, StringRef message);
+
+}  // namespace internal
 
 /**
-  \rst
-  A string reference. It can be constructed from a C string, ``std::string``
-  or as a result of a formatting operation. It is most useful as a parameter
-  type to allow passing different types of strings in a function, for example::
-
-    Formatter<> Format(StringRef format);
-
-    Format("{}") << 42;
-    Format(std::string("{}")) << 42;
-    Format(Format("{{}}")) << 42;
-  \endrst
+  A formatting error such as invalid format string.
  */
-template <typename Char>
-class BasicStringRef {
- private:
-  const Char *data_;
-  mutable std::size_t size_;
-
- public:
-  /**
-    Constructs a string reference object from a C string and a size.
-    If *size* is zero, which is the default, the size is computed with
-    `strlen`.
-   */
-  BasicStringRef(const Char *s, std::size_t size = 0) : data_(s), size_(size) {}
-
-  /**
-    Constructs a string reference from an `std::string` object.
-   */
-  BasicStringRef(const std::basic_string<Char> &s)
-  : data_(s.c_str()), size_(s.size()) {}
-
-  /**
-    Converts a string reference to an `std::string` object.
-   */
-  operator std::basic_string<Char>() const {
-    return std::basic_string<Char>(data_, size());
-  }
-
-  /**
-    Returns the pointer to a C string.
-   */
-  const Char *c_str() const { return data_; }
-
-  /**
-    Returns the string size.
-   */
-  std::size_t size() const {
-    if (size_ == 0) size_ = std::char_traits<Char>::length(data_);
-    return size_;
-  }
-};
-
-typedef BasicStringRef<char> StringRef;
-typedef BasicStringRef<wchar_t> WStringRef;
-
 class FormatError : public std::runtime_error {
  public:
   explicit FormatError(const std::string &message)
   : std::runtime_error(message) {}
+};
+
+/**
+  An error returned by the operating system or the language runtime,
+  for example a file opening error.
+ */
+class SystemError : public std::runtime_error {
+ private:
+  int error_code_;
+
+ public:
+  SystemError(StringRef message, int error_code)
+  : std::runtime_error(message), error_code_(error_code) {}
+
+  int error_code() const { return error_code_; }
 };
 
 enum Alignment {
@@ -1197,9 +1223,6 @@ BasicFormatter<Char> BasicWriter<Char>::Format(StringRef format) {
   return f;
 }
 
-typedef BasicWriter<char> Writer;
-typedef BasicWriter<wchar_t> WWriter;
-
 // The default formatting function.
 template <typename Char, typename T>
 void Format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value) {
@@ -1323,15 +1346,14 @@ template <typename Char>
 inline const Char *c_str(const BasicWriter<Char> &f) { return f.c_str(); }
 
 /**
-  Returns the content of the output buffer as an `std::string`.
+  Converts a string reference an `std::string`.
  */
 inline std::string str(StringRef s) {
   return std::string(s.c_str(), s.size());
 }
 
 /**
-  Returns a pointer to the output buffer content with terminating null
-  character appended.
+  Returns the pointer to a C string.
  */
 inline const char *c_str(StringRef s) {
   return s.c_str();
@@ -1468,6 +1490,28 @@ inline Formatter<NullSink, wchar_t> Format(WStringRef format) {
   return f;
 }
 
+
+/**
+  A sink that gets the system error message corresponding to the error code
+  and throws SystemError.
+ */
+class SystemErrorSink {
+ private:
+  int error_code_;
+
+ public:
+  explicit SystemErrorSink(int error_code) : error_code_(error_code) {}
+
+  void operator()(const Writer &w) const;
+};
+
+/** Throws SystemError with a code and a formatted message. */
+inline Formatter<SystemErrorSink> ThrowSystemError(
+    int error_code, StringRef format) {
+  Formatter<SystemErrorSink> f(format, SystemErrorSink(error_code));
+  return f;
+}
+
 /** A sink that writes output to a file. */
 class FileSink {
  private:
@@ -1478,8 +1522,8 @@ class FileSink {
 
   /** Writes the output to a file. */
   void operator()(const BasicWriter<char> &w) const {
-    // TODO: check error
-    std::fwrite(w.data(), w.size(), 1, file_);
+    if (std::fwrite(w.data(), w.size(), 1, file_) == 0)
+      ThrowSystemError(errno, "cannot write to file");
   }
 };
 

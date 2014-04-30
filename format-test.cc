@@ -100,7 +100,7 @@ using fmt::pad;
     } \
     catch (expected_exception const& e) { \
       gtest_caught_expected = true; \
-      if (std::strcmp(message, e.what()) != 0) \
+      if (std::string(message) != e.what()) \
         throw; \
     } \
     catch (...) { \
@@ -1559,6 +1559,18 @@ TEST(FormatterTest, FileSink) {
   fs(Writer() << "test");
   std::fclose(f);
   EXPECT_EQ("test", ReadFile("out"));
+}
+
+TEST(FormatterTest, FileSinkWriteError) {
+  FILE *f = std::fopen("out", "r");
+  fmt::FileSink fs(f);
+  int result = std::fwrite(" ", 1, 1, f);
+  int error_code = errno;
+  EXPECT_EQ(0, result);
+  std::string error_message =
+      str(Format("{}: {}") << "cannot write to file" << strerror(error_code));
+  EXPECT_THROW_MSG(fs(Writer() << "test"), fmt::SystemError, error_message);
+  std::fclose(f);
 }
 
 // The test doesn't compile on older compilers which follow C++03 and
