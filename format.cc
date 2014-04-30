@@ -101,7 +101,7 @@ inline int FMT_SNPRINTF(char *buffer, size_t size, const char *format, ...) {
 
 const char RESET_COLOR[] = "\x1b[0m";
 
-void FormatCErrorMessage(
+void FormatSystemErrorMessage(
     fmt::Writer &out, int error_code, fmt::StringRef message) {
   fmt::internal::Array<char, fmt::internal::INLINE_BUFFER_SIZE> buffer;
   buffer.resize(fmt::internal::INLINE_BUFFER_SIZE);
@@ -122,11 +122,9 @@ void FormatCErrorMessage(
   out << message << ": " << system_message;
 }
 
-void FormatSystemErrorMessage(
+#ifdef _WIN32
+void FormatWinErrorMessage(
     fmt::Writer &out, int error_code, fmt::StringRef message) {
-#ifndef _WIN32
-  FormatCErrorMessage(out, error_code, message);
-#else
   class String {
    private:
     LPWSTR str_;
@@ -150,8 +148,8 @@ void FormatSystemErrorMessage(
   }
   // Can't get error message, report error code instead.
   out << message << ": error code = " << error_code;
-#endif
 }
+#endif
 }
 
 template <typename T>
@@ -811,11 +809,13 @@ void fmt::SystemErrorSink::operator()(const fmt::Writer &w) const {
   throw SystemError(message.c_str(), error_code_);
 }
 
-void fmt::CErrorSink::operator()(const Writer &w) const {
+#ifdef _WIN32
+void fmt::WinErrorSink::operator()(const Writer &w) const {
   Writer message;
-  FormatCErrorMessage(message, error_code_, w.c_str());
+  FormatWinErrorMessage(message, error_code_, w.c_str());
   throw SystemError(message.c_str(), error_code_);
 }
+#endif
 
 void fmt::ANSITerminalSink::operator()(
     const fmt::BasicWriter<char> &w) const {

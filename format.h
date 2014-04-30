@@ -1531,7 +1531,7 @@ inline Formatter<NullSink, wchar_t> Format(WStringRef format) {
 
 /**
   A sink that gets the error message corresponding to a system error code
-  and throws SystemError.
+  as given by errno and throws SystemError.
  */
 class SystemErrorSink {
  private:
@@ -1547,8 +1547,7 @@ class SystemErrorSink {
   Formats a message and throws SystemError with the description of the form
   "<message>: <system-message>", where <message> is the formatted message and
   <system-message> is the system message corresponding to the error code.
-  error_code is a system error code as given by errno for POSIX and
-  GetLastError for Windows.
+  error_code is a system error code as given by errno.
  */
 inline Formatter<SystemErrorSink> ThrowSystemError(
     int error_code, StringRef format) {
@@ -1557,15 +1556,15 @@ inline Formatter<SystemErrorSink> ThrowSystemError(
 }
 
 /**
-  A sink that gets the error message corresponding to a standard C library
-  error code as given by errno and throws SystemError.
+  A sink that gets the error message corresponding to a Windows error code
+  as given by GetLastError and throws SystemError.
  */
-class CErrorSink {
+class WinErrorSink {
  private:
   int error_code_;
 
  public:
-  explicit CErrorSink(int error_code) : error_code_(error_code) {}
+  explicit WinErrorSink(int error_code) : error_code_(error_code) {}
 
   void operator()(const Writer &w) const;
 };
@@ -1574,11 +1573,10 @@ class CErrorSink {
   Formats a message and throws SystemError with the description of the form
   "<message>: <system-message>", where <message> is the formatted message and
   <system-message> is the system message corresponding to the error code.
-  error_code is an error code as given by errno after calling a C library
-  function.
+  error_code is a Windows error code as given by GetLastError.
  */
-inline Formatter<CErrorSink> ThrowCError(int error_code, StringRef format) {
-  Formatter<CErrorSink> f(format, CErrorSink(error_code));
+inline Formatter<WinErrorSink> ThrowWinError(int error_code, StringRef format) {
+  Formatter<WinErrorSink> f(format, WinErrorSink(error_code));
   return f;
 }
 
@@ -1593,7 +1591,7 @@ class FileSink {
   /** Writes the output to a file. */
   void operator()(const BasicWriter<char> &w) const {
     if (std::fwrite(w.data(), w.size(), 1, file_) == 0)
-      ThrowCError(errno, "cannot write to file");
+      ThrowSystemError(errno, "cannot write to file");
   }
 };
 

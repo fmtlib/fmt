@@ -1555,6 +1555,11 @@ TEST(FormatterTest, FormatExamples) {
     std::string s = writer.str(); // s == 0123456789
     EXPECT_EQ("0123456789", s);
   }
+
+  const char *filename = "nonexistent";
+  FILE *f = fopen(filename, "r");
+  if (!f)
+    fmt::ThrowSystemError(errno, "Cannot open file '{}'") << filename;
 }
 
 TEST(FormatterTest, StrNamespace) {
@@ -1653,7 +1658,7 @@ TEST(FormatterTest, FileSinkWriteError) {
   std::fclose(f);
 }
 
-// TODO: test SystemErrorSink, ThrowSystemError, CErrorSink, ThrowCError.
+// TODO: test SystemErrorSink, ThrowSystemError, CErrorSink, ThrowWinError.
 
 // The test doesn't compile on older compilers which follow C++03 and
 // require an accessible copy constructor when binding a temporary to
