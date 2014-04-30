@@ -214,7 +214,7 @@ char *fmt::internal::StrError(
     errno = ERANGE;  // The buffer is full so the message is probably truncated.
   return message;
 #elif _WIN32
-  errno = strerror_s(buffer, buflen, error_code);
+  errno = strerror_s(buffer, buffer_size, error_code);
   if (errno == 0 && std::strlen(buffer) == buffer_size - 1)
     errno = ERANGE;  // The buffer is full so the message is probably truncated.
   return buffer;
