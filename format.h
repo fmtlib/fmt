@@ -500,6 +500,14 @@ class UTF16ToUTF8 {
 // Buffer should be at least of size 1.
 int StrError(int error_code, char *&buffer, std::size_t buffer_size);
 
+void FormatSystemErrorMessage(
+    fmt::Writer &out, int error_code, fmt::StringRef message);
+
+#ifdef _WIN32
+void FormatWinErrorMessage(
+    fmt::Writer &out, int error_code, fmt::StringRef message);
+#endif
+
 }  // namespace internal
 
 /**
