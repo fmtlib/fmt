@@ -1556,10 +1556,12 @@ TEST(FormatterTest, FormatExamples) {
     EXPECT_EQ("0123456789", s);
   }
 
-  const char *filename = "nonexistent";
-  FILE *f = fopen(filename, "r");
-  if (!f)
-    fmt::ThrowSystemError(errno, "Cannot open file '{}'") << filename;
+  EXPECT_THROW({
+    const char *filename = "nonexistent";
+    FILE *f = fopen(filename, "r");
+    if (!f)
+      fmt::ThrowSystemError(errno, "Cannot open file '{}'") << filename;
+  }, fmt::SystemError);
 }
 
 TEST(FormatterTest, StrNamespace) {
