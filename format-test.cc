@@ -268,7 +268,7 @@ TEST(UtilTest, StrError) {
   EXPECT_STREQ("", message);
   result = StrError(error_code, message = buffer, BUFFER_SIZE);
   EXPECT_EQ(0, result);
-  EXPECT_GE(BUFFER_SIZE - 1, std::strlen(message));
+  EXPECT_GE(BUFFER_SIZE - 1u, std::strlen(message));
   EXPECT_STREQ(strerror(error_code), message);
   result = StrError(error_code, message = buffer, std::strlen(message));
   EXPECT_EQ(ERANGE, result);
