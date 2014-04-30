@@ -251,9 +251,11 @@ TEST(UtilTest, UTF8ToUTF16) {
 TEST(UtilTest, StrError) {
   using fmt::internal::StrError;
   char *message = 0;
-  EXPECT_DEBUG_DEATH(StrError(EDOM, message = 0, 0), "Assertion");
   char buffer[BUFFER_SIZE];
+#ifndef NDEBUG
+  EXPECT_DEBUG_DEATH(StrError(EDOM, message = 0, 0), "Assertion");
   EXPECT_DEBUG_DEATH(StrError(EDOM, message = buffer, 0), "Assertion");
+#endif
   buffer[0] = 'x';
 #ifdef _GNU_SOURCE
   // Use invalid error code to make sure that StrError returns an error
