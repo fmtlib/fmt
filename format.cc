@@ -224,19 +224,13 @@ char *fmt::internal::StrError(
 #endif
 }
 
-void fmt::internal::FormatSystemErrorMessage(
+void fmt::internal::FormatCErrorMessage(
     fmt::Writer &out, int error_code, fmt::StringRef message) {
-#ifndef _WIN32
   Array<char, INLINE_BUFFER_SIZE> buffer;
   buffer.resize(INLINE_BUFFER_SIZE);
   char *system_message = 0;
   for (;;) {
-    errno = 0;
-# ifdef _GNU_SOURCE
-    system_message = strerror_r(error_code, &buffer[0], buffer.size());
-# else
-    strerror_r(error_code, system_message = &buffer[0], buffer.size());
-# endif
+    system_message = StrError(error_code, &buffer[0], buffer.size());
     if (errno == 0)
       break;
     if (errno != ERANGE) {
@@ -247,6 +241,12 @@ void fmt::internal::FormatSystemErrorMessage(
     buffer.resize(buffer.size() * 2);
   }
   out << message << ": " << system_message;
+}
+
+void fmt::internal::FormatSystemErrorMessage(
+    fmt::Writer &out, int error_code, fmt::StringRef message) {
+#ifndef _WIN32
+  FormatCErrorMessage(out, error_code, message);
 #else
   class String {
    private:
@@ -803,6 +803,12 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
 void fmt::SystemErrorSink::operator()(const fmt::Writer &w) const {
   Writer message;
   internal::FormatSystemErrorMessage(message, error_code_, w.c_str());
+  throw SystemError(message.c_str(), error_code_);
+}
+
+void fmt::CErrorSink::operator()(const Writer &w) const {
+  Writer message;
+  internal::FormatCErrorMessage(message, error_code_, w.c_str());
   throw SystemError(message.c_str(), error_code_);
 }
 

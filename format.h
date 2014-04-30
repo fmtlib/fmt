@@ -499,6 +499,9 @@ class UTF16ToUTF8 {
 // Buffer should be at least of size 1.
 char *StrError(int error_code, char *buffer, std::size_t buffer_size);
 
+// Formats a standard C library error message writing the output to out.
+void FormatCErrorMessage(Writer &out, int error_code, StringRef message);
+
 // Formats a system error message writing the output to out.
 void FormatSystemErrorMessage(Writer &out, int error_code, StringRef message);
 
@@ -1520,7 +1523,7 @@ class Formatter : private Sink, public BasicFormatter<Char> {
 
   See also `Format String Syntax`_.
   \endrst
-*/
+ */
 inline Formatter<> Format(StringRef format) {
   Formatter<> f(format);
   return f;
@@ -1532,7 +1535,7 @@ inline Formatter<NullSink, wchar_t> Format(WStringRef format) {
 }
 
 /**
-  A sink that gets the system error message corresponding to the error code
+  A sink that gets the error message corresponding to a system error code
   and throws SystemError.
  */
 class SystemErrorSink {
@@ -1545,10 +1548,42 @@ class SystemErrorSink {
   void operator()(const Writer &w) const;
 };
 
-/** Throws SystemError with a code and a formatted message. */
+/**
+  Formats a message and throws SystemError with the description of the form
+  "<message>: <system-message>", where <message> is the formatted message and
+  <system-message> is the system message corresponding to the error code.
+  error_code is a system error code as given by errno for POSIX and
+  GetLastError for Windows.
+ */
 inline Formatter<SystemErrorSink> ThrowSystemError(
-    int error_code, StringRef format = 0) {
+    int error_code, StringRef format) {
   Formatter<SystemErrorSink> f(format, SystemErrorSink(error_code));
+  return f;
+}
+
+/**
+  A sink that gets the error message corresponding to a standard C library
+  error code as given by errno and throws SystemError.
+ */
+class CErrorSink {
+ private:
+  int error_code_;
+
+ public:
+  explicit CErrorSink(int error_code) : error_code_(error_code) {}
+
+  void operator()(const Writer &w) const;
+};
+
+/**
+  Formats a message and throws SystemError with the description of the form
+  "<message>: <system-message>", where <message> is the formatted message and
+  <system-message> is the system message corresponding to the error code.
+  error_code is an error code as given by errno after calling a C library
+  function.
+ */
+inline Formatter<CErrorSink> ThrowCError(int error_code, StringRef format) {
+  Formatter<CErrorSink> f(format, CErrorSink(error_code));
   return f;
 }
 
@@ -1563,7 +1598,7 @@ class FileSink {
   /** Writes the output to a file. */
   void operator()(const BasicWriter<char> &w) const {
     if (std::fwrite(w.data(), w.size(), 1, file_) == 0)
-      ThrowSystemError(errno, "cannot write to file");
+      ThrowCError(errno, "cannot write to file");
   }
 };
 
