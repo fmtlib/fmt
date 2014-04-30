@@ -301,7 +301,7 @@ TEST(UtilTest, ThrowWinError) {
   const int TEST_ERROR = ERROR_FILE_EXISTS;
   fmt::SystemError error("", 0);
   try {
-    fmt::ThrowSystemError(TEST_ERROR, "test {}") << "error";
+    fmt::ThrowWinError(TEST_ERROR, "test {}") << "error";
   } catch (const fmt::SystemError &e) {
     error = e;
   }
