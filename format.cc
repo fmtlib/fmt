@@ -142,9 +142,9 @@ void FormatSystemErrorMessage(
       FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
       error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       reinterpret_cast<LPWSTR>(system_message.ptr()), 0, 0)) {
-    UTF16ToUTF8 utf8_message;
+    fmt::internal::UTF16ToUTF8 utf8_message;
     if (!utf8_message.Convert(system_message.c_str())) {
-      out << message << ": " << c_str(utf8_message);
+      out << message << ": " << fmt::c_str(utf8_message);
       return;
     }
   }
