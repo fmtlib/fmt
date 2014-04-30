@@ -167,6 +167,42 @@ void fmt::internal::ReportUnknownType(char code, const char *type) {
         << static_cast<unsigned>(code) << type));
 }
 
+#ifdef _WIN32
+
+fmt::internal::UTF8ToUTF16::UTF8ToUTF16(fmt::StringRef s) {
+  int length = MultiByteToWideChar(
+      CP_UTF8, MB_ERR_INVALID_CHARS, s.c_str(), -1, 0, 0);
+  static const char ERROR[] = "cannot convert string from UTF-8 to UTF-16";
+  if (length == 0)
+    ThrowSystemError(GetLastError(), ERROR);
+  buffer_.resize(length);
+  length = MultiByteToWideChar(
+    CP_UTF8, MB_ERR_INVALID_CHARS, s.c_str(), -1, &buffer_[0], length);
+  if (length == 0)
+    ThrowSystemError(GetLastError(), ERROR);
+}
+
+fmt::internal::UTF16ToUTF8::UTF16ToUTF8(fmt::WStringRef s) {
+  if (int error_code = Convert(s)) {
+    ThrowSystemError(GetLastError(),
+        "cannot convert string from UTF-16 to UTF-8");
+  }
+}
+
+int fmt::internal::UTF16ToUTF8::Convert(fmt::WStringRef s) {
+  int length = WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, 0, 0, 0, 0);
+  if (length == 0)
+    return GetLastError();
+  buffer_.resize(length);
+  length = WideCharToMultiByte(
+    CP_UTF8, 0, s.c_str(), -1, &buffer_[0], length, 0, 0);
+  if (length == 0)
+    return GetLastError();
+  return 0;
+}
+
+#endif
+
 void fmt::internal::FormatSystemErrorMessage(
     fmt::Writer &out, int error_code, fmt::StringRef message) {
 #ifndef _WIN32

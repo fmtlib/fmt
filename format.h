@@ -458,6 +458,37 @@ template <typename Char, typename T>
 void FormatCustomArg(
   BasicWriter<Char> &w, const void *arg, const FormatSpec &spec);
 
+#ifdef _WIN32
+// A converter from UTF-8 to UTF-16.
+// It is only provided for Windows since other systems use UTF-8.
+class UTF8ToUTF16 {
+ private:
+  Array<wchar_t, INLINE_BUFFER_SIZE> buffer_;
+
+ public:
+  explicit UTF8ToUTF16(StringRef s);
+  operator const wchar_t*() const { return &buffer_[0]; }
+  size_t size() const { return buffer_.size() - 1; }
+};
+
+// A converter from UTF-16 to UTF-8.
+// It is only provided for Windows since other systems use UTF-8.
+class UTF16ToUTF8 {
+ private:
+  Array<char, INLINE_BUFFER_SIZE> buffer_;
+
+ public:
+  UTF16ToUTF8() {}
+  explicit UTF16ToUTF8(WStringRef s);
+  operator const char*() const { return &buffer_[0]; }
+  size_t size() const { return buffer_.size() - 1; }
+
+  // Performs conversion returning a system error code instead of
+  // throwing exception on error.
+  int Convert(WStringRef s);
+};
+#endif
+
 // Formats a system error message writing the output to out.
 void FormatSystemErrorMessage(Writer &out, int error_code, StringRef message);
 
@@ -1507,7 +1538,7 @@ class SystemErrorSink {
 
 /** Throws SystemError with a code and a formatted message. */
 inline Formatter<SystemErrorSink> ThrowSystemError(
-    int error_code, StringRef format) {
+    int error_code, StringRef format = 0) {
   Formatter<SystemErrorSink> f(format, SystemErrorSink(error_code));
   return f;
 }
