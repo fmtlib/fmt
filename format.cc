@@ -42,6 +42,7 @@
 
 #ifdef _WIN32
 # include <windows.h>
+# undef ERROR
 #endif
 
 using fmt::ULongLong;
