@@ -489,6 +489,16 @@ class UTF16ToUTF8 {
 };
 #endif
 
+// Portable thread-safe version of strerror.
+// Returns a pointer to a string describing the error code. This can be
+// either a pointer to a string stored in buffer, or a pointer to some
+// static immutable string. Sets errno to one of the following values:
+//   0      - success
+//   ERANGE - buffer is not large enough to store the error message
+//   other  - failure
+// Buffer should be at least of size 1.
+char *StrError(int error_code, char *buffer, std::size_t buffer_size);
+
 // Formats a system error message writing the output to out.
 void FormatSystemErrorMessage(Writer &out, int error_code, StringRef message);
 
@@ -1520,7 +1530,6 @@ inline Formatter<NullSink, wchar_t> Format(WStringRef format) {
   Formatter<NullSink, wchar_t> f(format);
   return f;
 }
-
 
 /**
   A sink that gets the system error message corresponding to the error code

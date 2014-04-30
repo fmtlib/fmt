@@ -248,6 +248,22 @@ TEST(UtilTest, UTF8ToUTF16) {
 // TODO: test UTF16ToUTF8::Convert
 #endif  // _WIN32
 
+TEST(UtilTest, StrError) {
+  using fmt::internal::StrError;
+  EXPECT_DEBUG_DEATH(StrError(EDOM, 0, 0), "Assertion");
+  char buffer[BUFFER_SIZE];
+  EXPECT_DEBUG_DEATH(StrError(EDOM, buffer, 0), "Assertion");
+  buffer[0] = 'x';
+  const char *message = StrError(-1, buffer, 1);
+  EXPECT_EQ(ERANGE, errno);
+  EXPECT_STREQ("", message);
+  message = StrError(-1, buffer, BUFFER_SIZE);
+  EXPECT_EQ(0, errno);
+  EXPECT_GE(BUFFER_SIZE - 1, std::strlen(message));
+  message = StrError(-1, buffer, std::strlen(message));
+  EXPECT_EQ(ERANGE, errno);
+}
+
 class TestString {
  private:
   std::string value_;

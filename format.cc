@@ -204,6 +204,26 @@ int fmt::internal::UTF16ToUTF8::Convert(fmt::WStringRef s) {
 
 #endif
 
+char *fmt::internal::StrError(
+    int error_code, char *buffer, std::size_t buffer_size) {
+  assert(buffer != 0 && buffer_size != 0);
+  errno = 0;
+#ifdef _GNU_SOURCE
+  char *message = strerror_r(error_code, buffer, buffer_size);
+  if (message == buffer && strlen(buffer) == buffer_size - 1)
+    errno = ERANGE;  // The buffer is full so the message is probably truncated.
+  return message;
+#elif _WIN32
+  errno = strerror_s(buffer, buflen, error_code);
+  if (errno == 0 && std::strlen(buffer) == buffer_size - 1)
+    errno = ERANGE;  // The buffer is full so the message is probably truncated.
+  return buffer;
+#else
+  strerror_r(error_code, buffer, buffer_size);
+  return buffer;
+#endif
+}
+
 void fmt::internal::FormatSystemErrorMessage(
     fmt::Writer &out, int error_code, fmt::StringRef message) {
 #ifndef _WIN32
