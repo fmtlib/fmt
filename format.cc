@@ -244,7 +244,7 @@ void fmt::internal::FormatSystemErrorMessage(
       reinterpret_cast<LPWSTR>(system_message.ptr()), 0, 0)) {
     UTF16ToUTF8 utf8_message;
     if (!utf8_message.Convert(system_message.c_str())) {
-      out << message << ": " << utf8_message;
+      out << message << ": " << c_str(utf8_message);
       return;
     }
   }

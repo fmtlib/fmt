@@ -467,7 +467,7 @@ class UTF8ToUTF16 {
 
  public:
   explicit UTF8ToUTF16(StringRef s);
-  operator const wchar_t*() const { return &buffer_[0]; }
+  operator WStringRef() const { return WStringRef(&buffer_[0], size()); }
   size_t size() const { return buffer_.size() - 1; }
 };
 
@@ -480,7 +480,7 @@ class UTF16ToUTF8 {
  public:
   UTF16ToUTF8() {}
   explicit UTF16ToUTF8(WStringRef s);
-  operator const char*() const { return &buffer_[0]; }
+  operator StringRef() const { return StringRef(&buffer_[0], size()); }
   size_t size() const { return buffer_.size() - 1; }
 
   // Performs conversion returning a system error code instead of

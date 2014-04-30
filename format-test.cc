@@ -230,6 +230,24 @@ TEST(UtilTest, CountDigits) {
   TestCountDigits(uint64_t());
 }
 
+#ifdef _WIN32
+TEST(UtilTest, UTF16ToUTF8) {
+  std::string s = "ёжик";
+  UTF16ToUTF8 u(L"\x0451\x0436\x0438\x043A");
+  EXPECT_EQ(s, str(u));
+  EXPECT_EQ(s.size(), u.size());
+}
+
+TEST(UtilTest, UTF8ToUTF16) {
+  std::string s = "лошадка";
+  UTF8ToUTF16 u(s.c_str());
+  EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", str(u));
+  EXPECT_EQ(7, u.size());
+}
+
+// TODO: test UTF16ToUTF8::Convert
+#endif  // _WIN32
+
 class TestString {
  private:
   std::string value_;
