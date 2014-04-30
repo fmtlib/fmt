@@ -601,7 +601,6 @@ class GTestFlagSaver {
   bool list_tests_;
   String output_;
   bool print_time_;
-  bool pretty_;
   internal::Int32 random_seed_;
   internal::Int32 repeat_;
   bool shuffle_;
@@ -7497,7 +7496,6 @@ namespace internal {
 // of them.
 const char kPathSeparator = '\\';
 const char kAlternatePathSeparator = '/';
-const char kPathSeparatorString[] = "\\";
 const char kAlternatePathSeparatorString[] = "/";
 # if GTEST_OS_WINDOWS_MOBILE
 // Windows CE doesn't have a current directory. You should not use
@@ -7511,7 +7509,6 @@ const char kCurrentDirectoryString[] = ".\\";
 # endif  // GTEST_OS_WINDOWS_MOBILE
 #else
 const char kPathSeparator = '/';
-const char kPathSeparatorString[] = "/";
 const char kCurrentDirectoryString[] = "./";
 #endif  // GTEST_OS_WINDOWS
 
@@ -7849,6 +7846,7 @@ void FilePath::Normalize() {
 # include <io.h>
 # include <sys/stat.h>
 #else
+# include <dirent.h>
 # include <unistd.h>
 #endif  // GTEST_OS_WINDOWS_MOBILE
 
@@ -7898,6 +7896,22 @@ size_t GetThreadCount() {
   } else {
     return 0;
   }
+}
+
+#elif GTEST_OS_LINUX
+
+// Returns the number of threads running in the process, or 0 to indicate that
+// we cannot detect it.
+size_t GetThreadCount() {
+  size_t thread_count = 0;
+  if (DIR *dir = opendir("/proc/self/task")) {
+    while (dirent *entry = readdir(dir)) {
+      if (entry->d_name[0] != '.')
+        ++thread_count;
+    }
+    closedir(dir);
+  }
+  return thread_count;
 }
 
 #else
