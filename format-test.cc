@@ -254,14 +254,21 @@ TEST(UtilTest, StrError) {
   char buffer[BUFFER_SIZE];
   EXPECT_DEBUG_DEATH(StrError(EDOM, buffer, 0), "Assertion");
   buffer[0] = 'x';
-  const char *message = StrError(-1, buffer, 1);
+#ifdef _GNU_SOURCE
+  // Use invalid error code to make sure that StrError returns an error
+  // message in the buffer rather than a pointer to a static string.
+  int error_code = -1;
+#else
+  int error_code = EDOM;
+#endif
+  const char *message = StrError(error_code, buffer, 1);
   EXPECT_EQ(ERANGE, errno);
   EXPECT_STREQ("", message);
-  message = StrError(-1, buffer, BUFFER_SIZE);
+  message = StrError(error_code, buffer, BUFFER_SIZE);
   EXPECT_EQ(0, errno);
   EXPECT_GE(BUFFER_SIZE - 1, std::strlen(message));
-  EXPECT_STREQ(strerror(-1), message);
-  message = StrError(-1, buffer, std::strlen(message));
+  EXPECT_STREQ(strerror(error_code), message);
+  message = StrError(error_code, buffer, std::strlen(message));
   EXPECT_EQ(ERANGE, errno);
 }
 
