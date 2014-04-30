@@ -281,12 +281,28 @@ TEST(UtilTest, SystemError) {
   EXPECT_EQ(42, e.error_code());
 }
 
-#ifndef _WIN32
-const int TEST_ERROR = EDOM;
-std::string GetTestErrorMessage() { return strerror(TEST_ERROR); }
-#else
-const int TEST_ERROR = ERROR_FILE_EXISTS;
-std::string GetTestErrorMessage() {
+TEST(UtilTest, ThrowSystemError) {
+  const int TEST_ERROR = EDOM;
+  fmt::SystemError error("", 0);
+  try {
+    fmt::ThrowSystemError(TEST_ERROR, "test {}") << "error";
+  } catch (const fmt::SystemError &e) {
+    error = e;
+  }
+  EXPECT_EQ(str(fmt::Format("test error: {}") << strerror(TEST_ERROR)),
+      error.what());
+  EXPECT_EQ(TEST_ERROR, error.error_code());
+}
+
+#ifdef _WIN32
+TEST(UtilTest, ThrowWinError) {
+  const int TEST_ERROR = ERROR_FILE_EXISTS;
+  fmt::SystemError error("", 0);
+  try {
+    fmt::ThrowSystemError(TEST_ERROR, "test {}") << "error";
+  } catch (const fmt::SystemError &e) {
+    error = e;
+  }
   LPWSTR message = 0;
   FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
       FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
@@ -294,21 +310,11 @@ std::string GetTestErrorMessage() {
       reinterpret_cast<LPWSTR>(&message), 0, 0);
   fmt::internal::UTF16ToUTF8 utf8_message(message);
   LocalFree(message);
-  return fmt::str(utf8_message);
-}
-#endif
-
-TEST(UtilTest, ThrowSystemError) {
-  fmt::SystemError error("", 0);
-  try {
-    fmt::ThrowSystemError(TEST_ERROR, "test {}") << "error";
-  } catch (const fmt::SystemError &e) {
-    error = e;
-  }
-  EXPECT_EQ(str(fmt::Format("test error: {}") << GetTestErrorMessage()),
+  EXPECT_EQ(str(fmt::Format("test error: {}") << fmt::str(utf8_message)),
       error.what());
   EXPECT_EQ(TEST_ERROR, error.error_code());
 }
+#endif
 
 class TestString {
  private:
