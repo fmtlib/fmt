@@ -100,6 +100,58 @@ inline int FMT_SNPRINTF(char *buffer, size_t size, const char *format, ...) {
 #endif  // _MSC_VER
 
 const char RESET_COLOR[] = "\x1b[0m";
+
+void FormatCErrorMessage(
+    fmt::Writer &out, int error_code, fmt::StringRef message) {
+  fmt::internal::Array<char, fmt::internal::INLINE_BUFFER_SIZE> buffer;
+  buffer.resize(fmt::internal::INLINE_BUFFER_SIZE);
+  char *system_message = 0;
+  for (;;) {
+    system_message = &buffer[0];
+    int result = fmt::internal::StrError(
+        error_code, system_message, buffer.size());
+    if (result == 0)
+      break;
+    if (result != ERANGE) {
+      // Can't get error message, report error code instead.
+      out << message << ": error code = " << error_code;
+      return;
+    }
+    buffer.resize(buffer.size() * 2);
+  }
+  out << message << ": " << system_message;
+}
+
+void FormatSystemErrorMessage(
+    fmt::Writer &out, int error_code, fmt::StringRef message) {
+#ifndef _WIN32
+  FormatCErrorMessage(out, error_code, message);
+#else
+  class String {
+   private:
+    LPWSTR str_;
+
+   public:
+    String() : str_() {}
+    ~String() { LocalFree(str_); }
+    LPWSTR *ptr() { return &str_; }
+    LPCWSTR c_str() const { return str_; }
+  };
+  String system_message;
+  if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
+      error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      reinterpret_cast<LPWSTR>(system_message.ptr()), 0, 0)) {
+    UTF16ToUTF8 utf8_message;
+    if (!utf8_message.Convert(system_message.c_str())) {
+      out << message << ": " << c_str(utf8_message);
+      return;
+    }
+  }
+  // Can't get error message, report error code instead.
+  out << message << ": error code = " << error_code;
+#endif
+}
 }
 
 template <typename T>
@@ -204,74 +256,27 @@ int fmt::internal::UTF16ToUTF8::Convert(fmt::WStringRef s) {
 
 #endif
 
-char *fmt::internal::StrError(
-    int error_code, char *buffer, std::size_t buffer_size) {
+int fmt::internal::StrError(
+    int error_code, char *&buffer, std::size_t buffer_size) {
   assert(buffer != 0 && buffer_size != 0);
-  errno = 0;
+  int result = 0;
 #ifdef _GNU_SOURCE
   char *message = strerror_r(error_code, buffer, buffer_size);
+  // If the buffer is full then the message is probably truncated.
   if (message == buffer && strlen(buffer) == buffer_size - 1)
-    errno = ERANGE;  // The buffer is full so the message is probably truncated.
-  return message;
+    result = ERANGE;
+  buffer = message;
 #elif _WIN32
-  errno = strerror_s(buffer, buffer_size, error_code);
-  if (errno == 0 && std::strlen(buffer) == buffer_size - 1)
-    errno = ERANGE;  // The buffer is full so the message is probably truncated.
-  return buffer;
+  result = strerror_s(buffer, buffer_size, error_code);
+  // If the buffer is full then the message is probably truncated.
+  if (result == 0 && std::strlen(buffer) == buffer_size - 1)
+    result = ERANGE;
 #else
-  strerror_r(error_code, buffer, buffer_size);
-  return buffer;
+  result = strerror_r(error_code, buffer, buffer_size);
+  if (result == -1)
+    result = errno;  // glibc versions before 2.13 return result in errno.
 #endif
-}
-
-void fmt::internal::FormatCErrorMessage(
-    fmt::Writer &out, int error_code, fmt::StringRef message) {
-  Array<char, INLINE_BUFFER_SIZE> buffer;
-  buffer.resize(INLINE_BUFFER_SIZE);
-  char *system_message = 0;
-  for (;;) {
-    system_message = StrError(error_code, &buffer[0], buffer.size());
-    if (errno == 0)
-      break;
-    if (errno != ERANGE) {
-      // Can't get error message, report error code instead.
-      out << message << ": error code = " << error_code;
-      return;
-    }
-    buffer.resize(buffer.size() * 2);
-  }
-  out << message << ": " << system_message;
-}
-
-void fmt::internal::FormatSystemErrorMessage(
-    fmt::Writer &out, int error_code, fmt::StringRef message) {
-#ifndef _WIN32
-  FormatCErrorMessage(out, error_code, message);
-#else
-  class String {
-   private:
-    LPWSTR str_;
-
-   public:
-    String() : str_() {}
-    ~String() { LocalFree(str_); }
-    LPWSTR *ptr() { return &str_; }
-    LPCWSTR c_str() const { return str_; }
-  };
-  String system_message;
-  if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
-      error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-      reinterpret_cast<LPWSTR>(system_message.ptr()), 0, 0)) {
-    UTF16ToUTF8 utf8_message;
-    if (!utf8_message.Convert(system_message.c_str())) {
-      out << message << ": " << c_str(utf8_message);
-      return;
-    }
-  }
-  // Can't get error message, report error code instead.
-  out << message << ": error code = " << error_code;
-#endif
+  return result;
 }
 
 // Fills the padding around the content and returns the pointer to the
@@ -802,13 +807,13 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
 
 void fmt::SystemErrorSink::operator()(const fmt::Writer &w) const {
   Writer message;
-  internal::FormatSystemErrorMessage(message, error_code_, w.c_str());
+  FormatSystemErrorMessage(message, error_code_, w.c_str());
   throw SystemError(message.c_str(), error_code_);
 }
 
 void fmt::CErrorSink::operator()(const Writer &w) const {
   Writer message;
-  internal::FormatCErrorMessage(message, error_code_, w.c_str());
+  FormatCErrorMessage(message, error_code_, w.c_str());
   throw SystemError(message.c_str(), error_code_);
 }
 

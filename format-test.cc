@@ -250,9 +250,10 @@ TEST(UtilTest, UTF8ToUTF16) {
 
 TEST(UtilTest, StrError) {
   using fmt::internal::StrError;
-  EXPECT_DEBUG_DEATH(StrError(EDOM, 0, 0), "Assertion");
+  char *message = 0;
+  EXPECT_DEBUG_DEATH(StrError(EDOM, message = 0, 0), "Assertion");
   char buffer[BUFFER_SIZE];
-  EXPECT_DEBUG_DEATH(StrError(EDOM, buffer, 0), "Assertion");
+  EXPECT_DEBUG_DEATH(StrError(EDOM, message = buffer, 0), "Assertion");
   buffer[0] = 'x';
 #ifdef _GNU_SOURCE
   // Use invalid error code to make sure that StrError returns an error
@@ -261,16 +262,16 @@ TEST(UtilTest, StrError) {
 #else
   int error_code = EDOM;
 #endif
-  const char *message = StrError(error_code, buffer, 1);
+  int result = StrError(error_code, message = buffer, 1);
   EXPECT_EQ(buffer, message);  // Message should point to buffer.
-  EXPECT_EQ(ERANGE, errno);
+  EXPECT_EQ(ERANGE, result);
   EXPECT_STREQ("", message);
-  message = StrError(error_code, buffer, BUFFER_SIZE);
-  EXPECT_EQ(0, errno);
+  result = StrError(error_code, message = buffer, BUFFER_SIZE);
+  EXPECT_EQ(0, result);
   EXPECT_GE(BUFFER_SIZE - 1, std::strlen(message));
   EXPECT_STREQ(strerror(error_code), message);
-  message = StrError(error_code, buffer, std::strlen(message));
-  EXPECT_EQ(ERANGE, errno);
+  result = StrError(error_code, message = buffer, std::strlen(message));
+  EXPECT_EQ(ERANGE, result);
 }
 
 TEST(UtilTest, SystemError) {
@@ -1650,6 +1651,8 @@ TEST(FormatterTest, FileSinkWriteError) {
   EXPECT_THROW_MSG(fs(Writer() << "test"), fmt::SystemError, error_message);
   std::fclose(f);
 }
+
+// TODO: test SystemErrorSink, ThrowSystemError, CErrorSink, ThrowCError.
 
 // The test doesn't compile on older compilers which follow C++03 and
 // require an accessible copy constructor when binding a temporary to
