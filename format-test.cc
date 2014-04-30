@@ -262,6 +262,7 @@ TEST(UtilTest, StrError) {
   int error_code = EDOM;
 #endif
   const char *message = StrError(error_code, buffer, 1);
+  EXPECT_EQ(buffer, message);  // Message should point to buffer.
   EXPECT_EQ(ERANGE, errno);
   EXPECT_STREQ("", message);
   message = StrError(error_code, buffer, BUFFER_SIZE);
@@ -270,6 +271,41 @@ TEST(UtilTest, StrError) {
   EXPECT_STREQ(strerror(error_code), message);
   message = StrError(error_code, buffer, std::strlen(message));
   EXPECT_EQ(ERANGE, errno);
+}
+
+TEST(UtilTest, SystemError) {
+  fmt::SystemError e(fmt::StringRef("test"), 42);
+  EXPECT_STREQ("test", e.what());
+  EXPECT_EQ(42, e.error_code());
+}
+
+#ifndef _WIN32
+const int TEST_ERROR = EDOM;
+std::string GetTestErrorMessage() { return strerror(TEST_ERROR); }
+#else
+const int TEST_ERROR = ERROR_FILE_EXISTS;
+std::string GetTestErrorMessage() {
+  LPWSTR message = 0;
+  FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
+      ERROR_FILE_EXISTS, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      reinterpret_cast<LPWSTR>(&message), 0, 0);
+  ampl::UTF16ToUTF8 utf8_message(message);
+  LocalFree(message);
+  return std::string(utf8_message);
+}
+#endif
+
+TEST(UtilTest, ThrowSystemError) {
+  fmt::SystemError error("", 0);
+  try {
+    fmt::ThrowSystemError(TEST_ERROR, "test {}") << "error";
+  } catch (const fmt::SystemError &e) {
+    error = e;
+  }
+  EXPECT_EQ(str(fmt::Format("test error: {}") << GetTestErrorMessage()),
+      error.what());
+  EXPECT_EQ(TEST_ERROR, error.error_code());
 }
 
 class TestString {
