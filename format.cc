@@ -185,7 +185,7 @@ fmt::internal::UTF8ToUTF16::UTF8ToUTF16(fmt::StringRef s) {
 
 fmt::internal::UTF16ToUTF8::UTF16ToUTF8(fmt::WStringRef s) {
   if (int error_code = Convert(s)) {
-    ThrowSystemError(GetLastError(),
+    ThrowWinError(GetLastError(),
         "cannot convert string from UTF-16 to UTF-8");
   }
 }
