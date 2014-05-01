@@ -310,6 +310,23 @@ TEST(UtilTest, SystemError) {
   EXPECT_EQ(42, e.error_code());
 }
 
+// TODO: test WinErrorSink, FormatSystemErrorMessage, FormatWinErrorMessage
+
+TEST(UtilTest, SystemErrorSink) {
+  const int TEST_ERROR = EDOM;
+  fmt::SystemError error("", 0);
+  fmt::SystemErrorSink sink(TEST_ERROR);
+  fmt::Writer w;
+  w << "test";
+  try {
+    sink(w);
+  } catch (const fmt::SystemError &e) {
+    error = e;
+  }
+  EXPECT_EQ(str(fmt::Format("test: {}") << strerror(TEST_ERROR)), error.what());
+  EXPECT_EQ(TEST_ERROR, error.error_code());
+}
+
 TEST(UtilTest, ThrowSystemError) {
   const int TEST_ERROR = EDOM;
   fmt::SystemError error("", 0);
@@ -1694,8 +1711,6 @@ TEST(FormatterTest, FileSinkWriteError) {
   EXPECT_THROW_MSG(fs(Writer() << "test"), fmt::SystemError, error_message);
   std::fclose(f);
 }
-
-// TODO: test SystemErrorSink, ThrowSystemError, CErrorSink, ThrowWinError.
 
 // The test doesn't compile on older compilers which follow C++03 and
 // require an accessible copy constructor when binding a temporary to
