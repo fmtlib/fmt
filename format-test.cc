@@ -269,7 +269,10 @@ TEST(UtilTest, UTF8ToUTF16Error) {
       "cannot convert string from UTF-8 to UTF-16");
 }
 
-// TODO: test UTF16ToUTF8::Convert
+TEST(UtilTest, UTF16ToUTF8Convert) {
+  fmt::internal::UTF16ToUTF8 u;
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.Convert(0));
+}
 #endif  // _WIN32
 
 TEST(UtilTest, StrError) {
