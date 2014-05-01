@@ -238,6 +238,20 @@ TEST(UtilTest, UTF16ToUTF8) {
   EXPECT_EQ(s.size(), u.size());
 }
 
+TEST(UtilTest, UTF16ToUTF8Error) {
+  fmt::Writer message;
+  fmt::internal::FormatWinErrorMessage(message,
+      ERROR_INVALID_PARAMETER, "cannot convert string from UTF-16 to UTF-8");
+  fmt::SystemError error("", 0);
+  try {
+    fmt::internal::UTF16ToUTF8 u(0);
+  } catch (const fmt::SystemError &e) {
+    error = e;
+  }
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, error.error_code());
+  EXPECT_EQ(message.str(), error.what());
+}
+
 TEST(UtilTest, UTF8ToUTF16) {
   std::string s = "лошадка";
   fmt::internal::UTF8ToUTF16 u(s.c_str());
