@@ -85,7 +85,7 @@ add_library(gtest gtest/gtest-all.cc)
 find_package(Threads)
 target_link_libraries(gtest ${CMAKE_THREAD_LIBS_INIT})
 
-add_executable(format-test format-test.cc)
+add_executable(format-test test/format-test.cc)
 target_link_libraries(format-test format gtest)
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format-test PROPERTIES COMPILE_FLAGS

@@ -1,7 +1,7 @@
 /*
  Formatting library tests.
 
- Copyright (c) 2012, Victor Zverovich
+ Copyright (c) 2012-2014, Victor Zverovich
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -25,6 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "format-test.h"
+
 #include <cctype>
 #include <cfloat>
 #include <climits>
@@ -34,7 +36,6 @@
 #include <iomanip>
 #include <memory>
 #include <sstream>
-#include <gtest/gtest.h>
 
 // Check if format.h compiles with windows.h included.
 #ifdef _WIN32
@@ -90,38 +91,6 @@ using fmt::StringRef;
 using fmt::Writer;
 using fmt::WWriter;
 using fmt::pad;
-
-#define FORMAT_TEST_THROW_(statement, expected_exception, message, fail) \
-  GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
-  if (::testing::internal::ConstCharPtr gtest_msg = "") { \
-    bool gtest_caught_expected = false; \
-    try { \
-      GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
-    } \
-    catch (expected_exception const& e) { \
-      gtest_caught_expected = true; \
-      if (std::string(message) != e.what()) \
-        throw; \
-    } \
-    catch (...) { \
-      gtest_msg.value = \
-          "Expected: " #statement " throws an exception of type " \
-          #expected_exception ".\n  Actual: it throws a different type."; \
-      goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
-    } \
-    if (!gtest_caught_expected) { \
-      gtest_msg.value = \
-          "Expected: " #statement " throws an exception of type " \
-          #expected_exception ".\n  Actual: it throws nothing."; \
-      goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
-    } \
-  } else \
-    GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__): \
-      fail(gtest_msg.value)
-
-#define EXPECT_THROW_MSG(statement, expected_exception, expected_message) \
-  FORMAT_TEST_THROW_(statement, expected_exception, expected_message, \
-      GTEST_NONFATAL_FAILURE_)
 
 namespace {
 
@@ -1864,6 +1833,8 @@ TEST(FormatIntTest, FormatDec) {
 }
 
 #ifdef FMT_USE_DUP
+
+// TODO: implement EXPECT_PRINT
 
 TEST(FormatTest, PrintColored) {
   // Temporarily redirect stdout to a file and check if PrintColored adds
