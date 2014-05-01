@@ -238,25 +238,35 @@ TEST(UtilTest, UTF16ToUTF8) {
   EXPECT_EQ(s.size(), u.size());
 }
 
-TEST(UtilTest, UTF16ToUTF8Error) {
-  fmt::Writer message;
-  fmt::internal::FormatWinErrorMessage(message,
-      ERROR_INVALID_PARAMETER, "cannot convert string from UTF-16 to UTF-8");
-  fmt::SystemError error("", 0);
-  try {
-    fmt::internal::UTF16ToUTF8 u(0);
-  } catch (const fmt::SystemError &e) {
-    error = e;
-  }
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, error.error_code());
-  EXPECT_EQ(message.str(), error.what());
-}
-
 TEST(UtilTest, UTF8ToUTF16) {
   std::string s = "лошадка";
   fmt::internal::UTF8ToUTF16 u(s.c_str());
   EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", fmt::str(u));
   EXPECT_EQ(7, u.size());
+}
+
+template <typename Converter>
+void CheckUTFConversionError(const char *message) {
+  fmt::Writer out;
+  fmt::internal::FormatWinErrorMessage(out, ERROR_INVALID_PARAMETER, message);
+  fmt::SystemError error("", 0);
+  try {
+    Converter(0);
+  } catch (const fmt::SystemError &e) {
+    error = e;
+  }
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, error.error_code());
+  EXPECT_EQ(out.str(), error.what());
+}
+
+TEST(UtilTest, UTF16ToUTF8Error) {
+  CheckUTFConversionError<fmt::internal::UTF16ToUTF8>(
+      "cannot convert string from UTF-16 to UTF-8");
+}
+
+TEST(UtilTest, UTF8ToUTF16Error) {
+  CheckUTFConversionError<fmt::internal::UTF8ToUTF16>(
+      "cannot convert string from UTF-8 to UTF-16");
 }
 
 // TODO: test UTF16ToUTF8::Convert
