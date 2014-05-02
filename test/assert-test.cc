@@ -1,5 +1,5 @@
 /*
- Tests of custom gtest assertions.
+ Tests of custom Google Test assertions.
 
  Copyright (c) 2012-2014, Victor Zverovich
  All rights reserved.
@@ -25,7 +25,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "format-test.h"
+#include "gtest-extra.h"
 
 #include <stdexcept>
 #include <gtest/gtest-spi.h>

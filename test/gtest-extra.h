@@ -1,5 +1,5 @@
 /*
- Formatting library tests.
+ Custom Google Test assertions.
 
  Copyright (c) 2012-2014, Victor Zverovich
  All rights reserved.
@@ -24,6 +24,9 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#ifndef FMT_GTEST_EXTRA_H
+#define FMT_GTEST_EXTRA_H
 
 #include <gtest/gtest.h>
 
@@ -65,3 +68,5 @@
 #define EXPECT_THROW_MSG(statement, expected_exception, expected_message) \
   FMT_TEST_THROW_(statement, expected_exception, \
       expected_message, GTEST_NONFATAL_FAILURE_)
+
+#endif  // FMT_GTEST_EXTRA_H

@@ -25,8 +25,6 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "format-test.h"
-
 #include <cctype>
 #include <cfloat>
 #include <climits>
@@ -74,6 +72,7 @@ int open(const char *path, int oflag, int pmode) {
 #endif
 
 #include "format.h"
+#include "gtest-extra.h"
 
 #include <stdint.h>
 
