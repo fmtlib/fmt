@@ -55,6 +55,11 @@ add_subdirectory(doc)
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
 
+# GTest doesn't detect <tuple> with clang.
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
+endif ()
+
 include_directories(gtest/include)
 add_subdirectory(gtest)
 
