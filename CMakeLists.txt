@@ -50,8 +50,6 @@ endif ()
 
 add_subdirectory(doc)
 
-enable_testing()
-
 add_test(compile-test ${CMAKE_CTEST_COMMAND}
   --build-and-test
   "${CMAKE_CURRENT_SOURCE_DIR}/test"
@@ -80,6 +78,8 @@ endif ()
 if (HAVE_DUP)
   add_definitions(-DFMT_USE_DUP=1)
 endif ()
+
+enable_testing()
 
 include_directories(.)
 add_executable(format-test test/format-test.cc)
