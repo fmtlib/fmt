@@ -50,13 +50,6 @@ endif ()
 
 add_subdirectory(doc)
 
-add_test(compile-test ${CMAKE_CTEST_COMMAND}
-  --build-and-test
-  "${CMAKE_CURRENT_SOURCE_DIR}/test"
-  "${CMAKE_CURRENT_BINARY_DIR}/test"
-  --build-generator ${CMAKE_GENERATOR}
-  --build-makeprogram ${CMAKE_MAKE_PROGRAM})
-
 # We compile Google Test ourselves instead of using pre-compiled libraries.
 # See the Google Test FAQ "Why is it not recommended to install a
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
@@ -94,6 +87,13 @@ endif ()
 if (HAVE_STD_CPP11_FLAG)
   set_target_properties(format-test PROPERTIES COMPILE_FLAGS "-std=c++11")
 endif ()
+
+add_test(compile-test ${CMAKE_CTEST_COMMAND}
+  --build-and-test
+  "${CMAKE_CURRENT_SOURCE_DIR}/test"
+  "${CMAKE_CURRENT_BINARY_DIR}/test"
+  --build-generator ${CMAKE_GENERATOR}
+  --build-makeprogram ${CMAKE_MAKE_PROGRAM})
 
 find_library(PROFILER_LIB profiler)
 find_path(PROFILER_INCLUDE_DIR gperftools/profiler.h)
