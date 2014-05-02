@@ -64,7 +64,8 @@ add_test(compile-test ${CMAKE_CTEST_COMMAND}
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
 
-include_directories(.)
+include_directories(gtest/include)
+add_subdirectory(gtest)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
@@ -80,11 +81,7 @@ if (HAVE_DUP)
   add_definitions(-DFMT_USE_DUP=1)
 endif ()
 
-add_library(gtest gtest/gtest-all.cc)
-
-find_package(Threads)
-target_link_libraries(gtest ${CMAKE_THREAD_LIBS_INIT})
-
+include_directories(.)
 add_executable(format-test test/format-test.cc)
 target_link_libraries(format-test format gtest)
 if (CMAKE_COMPILER_IS_GNUCXX)
