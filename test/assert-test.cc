@@ -44,6 +44,8 @@ class SingleEvaluationTest : public ::testing::Test {
 
 int SingleEvaluationTest::a_;
 
+void ThrowNothing() {}
+
 void ThrowException() {
   throw std::runtime_error("test");
 }
@@ -77,6 +79,52 @@ TEST_F(SingleEvaluationTest, ExceptionTests) {
   EXPECT_EQ(4, a_);
 }
 
-// TODO: more tests
+// Tests that the compiler will not complain about unreachable code in the
+// EXPECT_THROW_MSG macro.
+TEST(ExpectThrowTest, DoesNotGenerateUnreachableCodeWarning) {
+  int n = 0;
+  using std::runtime_error;
+  EXPECT_THROW_MSG(throw runtime_error(""), runtime_error, "");
+  EXPECT_NONFATAL_FAILURE(EXPECT_THROW_MSG(n++, runtime_error, ""), "");
+  EXPECT_NONFATAL_FAILURE(EXPECT_THROW_MSG(throw 1, runtime_error, ""), "");
+  EXPECT_NONFATAL_FAILURE(EXPECT_THROW_MSG(
+      throw runtime_error("a"), runtime_error, "b"), "");
+}
+
+TEST(AssertionSyntaxTest, ExceptionAssertionsBehavesLikeSingleStatement) {
+  if (::testing::internal::AlwaysFalse())
+    EXPECT_THROW_MSG(ThrowNothing(), std::exception, "");
+
+  if (::testing::internal::AlwaysTrue())
+    EXPECT_THROW_MSG(ThrowException(), std::exception, "test");
+  else
+    ;  // NOLINT
+}
+
+// Tests EXPECT_THROW_MSG.
+TEST(ExpectTest, EXPECT_THROW_MSG) {
+  EXPECT_THROW_MSG(ThrowException(), std::exception, "test");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THROW_MSG(ThrowException(), std::logic_error, "test"),
+      "Expected: ThrowException() throws an exception of "
+      "type std::logic_error.\n  Actual: it throws a different type.");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THROW_MSG(ThrowNothing(), std::exception, "test"),
+      "Expected: ThrowNothing() throws an exception of type std::exception.\n"
+      "  Actual: it throws nothing.");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THROW_MSG(ThrowException(), std::exception, "other"),
+      "ThrowException() throws an exception with a different message.\n"
+      "Expected: other\n"
+      "  Actual: test");
+}
+
+TEST(StreamingAssertionsTest, ThrowMsg) {
+  EXPECT_THROW_MSG(ThrowException(), std::exception, "test")
+      << "unexpected failure";
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THROW_MSG(ThrowException(), std::exception, "other")
+      << "expected failure", "expected failure");
+}
 
 }  // namespace

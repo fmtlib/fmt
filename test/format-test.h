@@ -36,9 +36,10 @@
     } \
     catch (expected_exception const& e) { \
       if (expected_message != std::string(e.what())) { \
-        gtest_ar << "Statement throws an exception with a different message\n" \
+        gtest_ar \
+          << #statement " throws an exception with a different message.\n" \
           << "Expected: " << expected_message << "\n" \
-          << "  Actual: " << e.what() << "\n"; \
+          << "  Actual: " << e.what(); \
         goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
       } \
       gtest_caught_expected = true; \
