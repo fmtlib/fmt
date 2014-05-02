@@ -29,36 +29,38 @@
 
 #define FMT_TEST_THROW_(statement, expected_exception, expected_message, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
-  if (::testing::internal::ConstCharPtr gtest_msg = "") { \
+  if (::testing::AssertionResult gtest_ar = ::testing::AssertionSuccess()) { \
     bool gtest_caught_expected = false; \
     try { \
       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
     } \
     catch (expected_exception const& e) { \
+      if (expected_message != std::string(e.what())) { \
+        gtest_ar << "Statement throws an exception with a different message\n" \
+          << "Expected: " << expected_message << "\n" \
+          << "  Actual: " << e.what() << "\n"; \
+        goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
+      } \
       gtest_caught_expected = true; \
-      EXPECT_EQ(expected_message, std::string(e.what())); \
     } \
     catch (...) { \
-      gtest_msg.value = \
+      gtest_ar << \
           "Expected: " #statement " throws an exception of type " \
           #expected_exception ".\n  Actual: it throws a different type."; \
       goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
     } \
     if (!gtest_caught_expected) { \
-      gtest_msg.value = \
+      gtest_ar << \
           "Expected: " #statement " throws an exception of type " \
           #expected_exception ".\n  Actual: it throws nothing."; \
       goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
     } \
   } else \
     GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__): \
-      fail(gtest_msg.value)
+      fail(gtest_ar.failure_message())
 
 // Tests that the statement throws the expected exception and the exception's
 // what() method returns expected message.
 #define EXPECT_THROW_MSG(statement, expected_exception, expected_message) \
   FMT_TEST_THROW_(statement, expected_exception, \
       expected_message, GTEST_NONFATAL_FAILURE_)
-
-// TODO: test
-

@@ -40,7 +40,6 @@
 // Check if format.h compiles with windows.h included.
 #ifdef _WIN32
 # include <windows.h>
-# include <crtdbg.h>
 #endif
 
 #if FMT_USE_DUP
@@ -1871,16 +1870,4 @@ TEST(StrTest, Convert) {
   EXPECT_EQ("42", str(42));
   std::string s = str(Date(2012, 12, 9));
   EXPECT_EQ("2012-12-9", s);
-}
-
-int main(int argc, char **argv) {
-#ifdef _WIN32
-  // Disable message boxes on assertion failures.
-  _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
-  _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
-  _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
-  _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
-#endif
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }

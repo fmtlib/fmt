@@ -82,13 +82,15 @@ endif ()
 enable_testing()
 
 include_directories(.)
-add_executable(format-test test/format-test.cc)
-target_link_libraries(format-test format gtest)
+
+add_library(test-main test/test-main.cc)
+
+cxx_test(assert-test "gtest;test-main")
+cxx_test(format-test "format;gtest;test-main")
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format-test PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
 endif ()
-add_test(format-test format-test)
 if (HAVE_STD_CPP11_FLAG)
   set_target_properties(format-test PROPERTIES COMPILE_FLAGS "-std=c++11")
 endif ()
