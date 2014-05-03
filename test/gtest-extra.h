@@ -28,6 +28,10 @@
 #ifndef FMT_GTEST_EXTRA_H
 #define FMT_GTEST_EXTRA_H
 
+#include <cstddef>
+#include <ios>
+#include <string>
+
 #if FMT_USE_FILE_DESCRIPTORS
 # include <fcntl.h>
 #endif
@@ -189,6 +193,10 @@ class FileDescriptor {
 
   // Returns the file descriptor.
   int get() const FMT_NOEXCEPT(true) { return fd_; }
+
+  // Attempts to read count chars from the file associated with this file
+  // descriptor into the specified buffer.
+  std::streamsize read(void *buffer, std::size_t count);
 
   // Duplicates a file descriptor with the dup function and returns
   // the duplicate. Throws fmt::SystemError on error.

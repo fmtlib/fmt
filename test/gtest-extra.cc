@@ -43,9 +43,6 @@
 # define S_IRUSR _S_IREAD
 # define S_IWUSR _S_IWRITE
 
-// The read function is defined as returning int on Windows.
-typedef int ssize_t;
-
 #endif  // _WIN32
 
 // Retries the expression while it evaluates to -1 and error equals to EINTR.
@@ -73,6 +70,14 @@ void FileDescriptor::close() {
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
   if (::FMT_POSIX(close(fd_)) != 0)
     fmt::ReportSystemError(errno, "cannot close file");
+}
+
+std::streamsize FileDescriptor::read(void *buffer, std::size_t count) {
+  std::streamsize result = 0;
+  FMT_RETRY(result, ::read(fd_, buffer, count));
+  if (result == -1)
+    fmt::ThrowSystemError(errno, "cannot read from file");
+  return result;
 }
 
 FileDescriptor FileDescriptor::dup(int fd) {
@@ -110,6 +115,7 @@ void FileDescriptor::pipe(FileDescriptor &read_fd, FileDescriptor &write_fd) {
   enum { DEFAULT_CAPACITY = 65536 };
   int result = _pipe(fds, DEFAULT_CAPACITY, _O_BINARY);
 #else
+  // The pipe function doesn't return EINTR, so no need to retry.
   int result = ::pipe(fds);
 #endif
   if (result != 0)
@@ -145,14 +151,16 @@ std::string OutputRedirector::Read() {
     fmt::ThrowSystemError(errno, "cannot flush stream");
   saved_fd_.dup2(fileno(file_));
 
-  // TODO: move to FileDescriptor
-  enum { BUFFER_SIZE = 100 };
+  // Read everything from the pipe.
+  std::string content;
+  enum { BUFFER_SIZE = 4096 };
   char buffer[BUFFER_SIZE];
-  ssize_t result = read(read_fd_.get(), buffer, BUFFER_SIZE);
-  if (result == -1)
-    fmt::ThrowSystemError(errno, "cannot read file");
-  buffer[std::min<ssize_t>(BUFFER_SIZE - 1, result)] = '\0';
-  return buffer;
+  std::streamsize count = 0;
+  do {
+    count = read_fd_.read(buffer, BUFFER_SIZE);
+    content.append(buffer, count);
+  } while (count != 0);
+  return content;
 }
 
 // TODO: test EXPECT_STDOUT and EXPECT_STDERR
