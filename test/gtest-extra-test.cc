@@ -27,6 +27,7 @@
 
 #include "gtest-extra.h"
 
+#include <cstring>
 #include <algorithm>
 #include <stdexcept>
 #include <gtest/gtest-spi.h>
@@ -151,11 +152,14 @@ TEST(FileTest, DefaultCtor) {
 }
 
 // Checks if the file is open by reading one character from it.
+// Note that IsOpen is not equivalent to !IsClosed.
 bool IsOpen(int fd) {
   char buffer;
   return read(fd, &buffer, 1) == 1;
 }
 
+// Checks if the file is closed.
+// Note that IsClosed is not equivalent to !IsOpen.
 bool IsClosed(int fd) {
   char buffer;
   std::streamsize result = read(fd, &buffer, 1);
@@ -251,19 +255,24 @@ TEST(FileTest, CloseError) {
     FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 }
 
-std::string ReadLine(File &f) {
-  enum { BUFFER_SIZE = 100 };
-  char buffer[BUFFER_SIZE];
-  std::streamsize result = f.read(buffer, BUFFER_SIZE);
-  buffer[std::min<std::streamsize>(BUFFER_SIZE - 1, result)] = '\0';
-  if (char *end = strchr(buffer, '\n'))
-    *end = '\0';
+// Attempts to read count characters from the file.
+std::string Read(File &f, std::size_t count) {
+  std::string buffer(count, '\0');
+  std::streamsize offset = 0, n = 0;
+  do {
+    n = f.read(&buffer[offset], count - offset);
+    offset += n;
+  } while (offset < count && n != 0);
+  buffer.resize(offset);
   return buffer;
 }
 
+#define EXPECT_READ(file, expected_content) \
+  EXPECT_EQ(expected_content, Read(f, std::strlen(expected_content)))
+
 TEST(FileTest, Read) {
   File f(".travis.yml", File::RDONLY);
-  EXPECT_EQ("language: cpp", ReadLine(f));
+  EXPECT_READ(f, "language: cpp");
 }
 
 TEST(FileTest, ReadError) {
@@ -272,11 +281,28 @@ TEST(FileTest, ReadError) {
   EXPECT_SYSTEM_ERROR(f.read(&buf, 1), EBADF, "cannot read from file");
 }
 
+TEST(FileTest, Write) {
+  // TODO: use pipes
+  const char EXPECTED[] = "test";
+  {
+    File f("out", File::WRONLY);
+    enum { SIZE = sizeof(EXPECTED) - 1 };
+    std::streamsize offset = 0, count = 0;
+    do {
+      count = f.write(EXPECTED + offset, SIZE - offset);
+      offset += count;
+    } while (offset < SIZE && count != 0);
+  }
+  File f("out", File::RDONLY);
+  EXPECT_READ(f, EXPECTED);
+}
+
 TEST(FileTest, Dup) {
   File f(".travis.yml", File::RDONLY);
   File dup = File::dup(f.get());
   EXPECT_NE(f.get(), dup.get());
-  EXPECT_EQ("language: cpp", ReadLine(dup));
+  const char EXPECTED[] = "language: cpp";
+  EXPECT_EQ(EXPECTED, Read(dup, sizeof(EXPECTED) - 1));
 }
 
 TEST(FileTest, DupError) {
@@ -289,14 +315,13 @@ TEST(FileTest, Dup2) {
   File dup("CMakeLists.txt", File::RDONLY);
   f.dup2(dup.get());
   EXPECT_NE(f.get(), dup.get());
-  EXPECT_EQ("language: cpp", ReadLine(dup));
+  EXPECT_READ(dup, "language: cpp");
 }
 
 TEST(FileTest, Dup2Error) {
   File f(".travis.yml", File::RDONLY);
   EXPECT_SYSTEM_ERROR(f.dup2(-1), EBADF,
       fmt::Format("cannot duplicate file descriptor {} to -1") << f.get());
-
 }
 
 TEST(FileTest, Dup2NoExcept) {
@@ -306,7 +331,7 @@ TEST(FileTest, Dup2NoExcept) {
   f.dup2(dup.get(), ec);
   EXPECT_EQ(0, ec.get());
   EXPECT_NE(f.get(), dup.get());
-  EXPECT_EQ("language: cpp", ReadLine(dup));
+  EXPECT_READ(dup, "language: cpp");
 }
 
 TEST(FileTest, Dup2NoExceptError) {
