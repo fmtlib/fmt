@@ -95,17 +95,25 @@ void FileDescriptor::dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT(true) {
     ec = ErrorCode(errno);
 }
 
-void FileDescriptor::pipe(FileDescriptor &read, FileDescriptor &write) {
+void FileDescriptor::pipe(FileDescriptor &read_fd, FileDescriptor &write_fd) {
   // Close the descriptors first to make sure that assignments don't throw
   // and there are no leaks.
-  read.close();
-  write.close();
+  read_fd.close();
+  write_fd.close();
   int fds[2] = {};
-  if (::pipe(fds) != 0)
+#ifdef _WIN32
+  // Make the default pipe capacity same as on Linux 2.6.11+.
+  enum { DEFAULT_CAPACITY = 65536 };
+  int result = _pipe(fds, DEFAULT_CAPACITY, _O_BINARY);
+#else
+  int result = ::pipe(fds);
+#endif
+  if (result != 0)
     fmt::ThrowSystemError(errno, "cannot create pipe");
-  // The following assignments don't throw because read and write are closed.
-  read = FileDescriptor(fds[0]);
-  write = FileDescriptor(fds[1]);
+  // The following assignments don't throw because read_fd and write_fd
+  // are closed.
+  read_fd = FileDescriptor(fds[0]);
+  write_fd = FileDescriptor(fds[1]);
 }
 
 OutputRedirector::OutputRedirector(FILE *file) : file_(file) {

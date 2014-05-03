@@ -204,7 +204,7 @@ class FileDescriptor {
 
   // Creates a pipe setting up read and write file descriptors for reading
   // and writing respecively. Throws fmt::SystemError on error.
-  static void pipe(FileDescriptor &read, FileDescriptor &write);
+  static void pipe(FileDescriptor &read_fd, FileDescriptor &write_fd);
 };
 
 #if !FMT_USE_RVALUE_REFERENCES
