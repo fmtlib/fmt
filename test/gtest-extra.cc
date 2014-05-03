@@ -42,6 +42,10 @@
 # define O_TRUNC _O_TRUNC
 # define S_IRUSR _S_IREAD
 # define S_IWUSR _S_IWRITE
+
+// The read function is defined as returning int on Windows.
+typedef int ssize_t;
+
 #endif  // _WIN32
 
 // Retries the expression while it evaluates to -1 and error equals to EINTR.
