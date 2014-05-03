@@ -42,9 +42,6 @@
 # define O_TRUNC _O_TRUNC
 # define S_IRUSR _S_IREAD
 # define S_IWUSR _S_IWRITE
-# define close _close
-# define dup _dup
-# define dup2 _dup2
 #endif  // _WIN32
 
 // Retries the expression while it evaluates to -1 and error equals to EINTR.
@@ -57,7 +54,7 @@ FileDescriptor::FileDescriptor(const char *path, int oflag) {
   int mode = S_IRUSR | S_IWUSR;
 #ifdef _WIN32
   fd_ = -1;
-  _sopen_s(&fd, path, oflag, _SH_DENYNO, mode);
+  _sopen_s(&fd_, path, oflag, _SH_DENYNO, mode);
 #else
   FMT_RETRY(fd_, open(path, oflag, mode));
 #endif
@@ -70,13 +67,13 @@ void FileDescriptor::close() {
     return;
   // Don't need to retry close in case of EINTR.
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
-  if (::close(fd_) != 0)
+  if (::FMT_POSIX(close(fd_)) != 0)
     fmt::ReportSystemError(errno, "cannot close file");
 }
 
 FileDescriptor FileDescriptor::dup(int fd) {
   int new_fd = 0;
-  FMT_RETRY(new_fd, ::dup(fd));
+  FMT_RETRY(new_fd, ::FMT_POSIX(dup(fd)));
   if (new_fd == -1)
     fmt::ThrowSystemError(errno, "cannot duplicate file descriptor {}") << fd;
   return FileDescriptor(new_fd);
@@ -84,7 +81,7 @@ FileDescriptor FileDescriptor::dup(int fd) {
 
 void FileDescriptor::dup2(int fd) {
   int result = 0;
-  FMT_RETRY(result, ::dup2(fd_, fd));
+  FMT_RETRY(result, ::FMT_POSIX(dup2(fd_, fd)));
   if (result == -1) {
     fmt::ThrowSystemError(errno,
         "cannot duplicate file descriptor {} to {}") << fd_ << fd;
@@ -93,23 +90,22 @@ void FileDescriptor::dup2(int fd) {
 
 void FileDescriptor::dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT(true) {
   int result = 0;
-  FMT_RETRY(result, ::dup2(fd_, fd));
+  FMT_RETRY(result, ::FMT_POSIX(dup2(fd_, fd)));
   if (result == -1)
     ec = ErrorCode(errno);
 }
 
-void FileDescriptor::pipe(FileDescriptor &read_fd, FileDescriptor &write_fd) {
+void FileDescriptor::pipe(FileDescriptor &read, FileDescriptor &write) {
   // Close the descriptors first to make sure that assignments don't throw
   // and there are no leaks.
-  read_fd.close();
-  write_fd.close();
+  read.close();
+  write.close();
   int fds[2] = {};
   if (::pipe(fds) != 0)
     fmt::ThrowSystemError(errno, "cannot create pipe");
-  // The following assignments don't throw because read_fd and write_fd
-  // are closed.
-  read_fd = FileDescriptor(fds[0]);
-  write_fd = FileDescriptor(fds[1]);
+  // The following assignments don't throw because read and write are closed.
+  read = FileDescriptor(fds[0]);
+  write = FileDescriptor(fds[1]);
 }
 
 OutputRedirector::OutputRedirector(FILE *file) : file_(file) {
