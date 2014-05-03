@@ -167,7 +167,7 @@ bool IsClosedInternal(int fd) {
 // Checks if the file is closed.
 # define EXPECT_CLOSED(fd) EXPECT_TRUE(IsClosedInternal(fd))
 #else
-# define EXPECT_CLOSED(fd) EXPECT_DEATH(IsClosedInternal(fd))
+# define EXPECT_CLOSED(fd) EXPECT_DEATH(IsClosedInternal(fd), "")
 #endif
 
 TEST(FileTest, OpenFileInCtor) {
