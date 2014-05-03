@@ -32,7 +32,17 @@
 #include <gtest/gtest-spi.h>
 
 namespace {
-  
+
+std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message) {
+  fmt::Writer out;
+  fmt::internal::FormatSystemErrorMessage(out, error_code, message);
+  return str(out);
+}
+
+#define EXPECT_SYSTEM_ERROR(statement, error_code, message) \
+  EXPECT_THROW_MSG(statement, fmt::SystemError, \
+      FormatSystemErrorMessage(error_code, message))
+
 // Tests that assertion macros evaluate their arguments exactly once.
 class SingleEvaluationTest : public ::testing::Test {
  protected:
@@ -154,11 +164,9 @@ TEST(FileDescriptorTest, OpenFileInCtor) {
 }
 
 TEST(FileDescriptorTest, OpenFileError) {
-  fmt::Writer message;
-  fmt::internal::FormatSystemErrorMessage(
-      message, ENOENT, "cannot open file nonexistent");
-  EXPECT_THROW_MSG(FileDescriptor("nonexistent", FileDescriptor::RDONLY),
-      fmt::SystemError, str(message));
+  EXPECT_SYSTEM_ERROR(
+      FileDescriptor("nonexistent", FileDescriptor::RDONLY), ENOENT,
+      "cannot open file nonexistent");
 }
 
 TEST(FileDescriptorTest, MoveCtor) {
@@ -181,8 +189,8 @@ TEST(FileDescriptorTest, MoveAssignment) {
 }
 
 bool IsClosed(int fd) {
-  char buffer[1];
-  ssize_t result = read(fd, buffer, sizeof(buffer));
+  char buffer;
+  ssize_t result = read(fd, &buffer, 1);
   return result == -1 && errno == EBADF;
 }
 
@@ -238,21 +246,29 @@ TEST(FileDescriptorTest, CloseFileInDtor) {
 TEST(FileDescriptorTest, CloseError) {
   FileDescriptor *fd =
       new FileDescriptor(".travis.yml", FileDescriptor::RDONLY);
-  fmt::Writer message;
-  fmt::internal::FormatSystemErrorMessage(message, EBADF, "cannot close file");
-  EXPECT_STDERR(close(fd->get()); delete fd, str(message) + "\n");
+  EXPECT_STDERR(close(fd->get()); delete fd,
+    FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 }
 
 std::string ReadLine(FileDescriptor &fd) {
   enum { BUFFER_SIZE = 100 };
   char buffer[BUFFER_SIZE];
-  ssize_t result = read(fd.get(), buffer, BUFFER_SIZE);
-  if (result == -1)
-    fmt::ThrowSystemError(errno, "cannot read file");
-  buffer[std::min<ssize_t>(BUFFER_SIZE - 1, result)] = '\0';
+  std::streamsize result = fd.read(buffer, BUFFER_SIZE);
+  buffer[std::min<std::streamsize>(BUFFER_SIZE - 1, result)] = '\0';
   if (char *end = strchr(buffer, '\n'))
     *end = '\0';
   return buffer;
+}
+
+TEST(FileDescriptorTest, Read) {
+  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
+  EXPECT_EQ("language: cpp", ReadLine(fd));
+}
+
+TEST(FileDescriptorTest, ReadError) {
+  FileDescriptor fd;
+  char buf;
+  EXPECT_SYSTEM_ERROR(fd.read(&buf, 1), EBADF, "cannot read from file");
 }
 
 TEST(FileDescriptorTest, Dup) {
@@ -263,10 +279,8 @@ TEST(FileDescriptorTest, Dup) {
 }
 
 TEST(FileDescriptorTest, DupError) {
-  fmt::Writer message;
-  fmt::internal::FormatSystemErrorMessage(
-      message, EBADF, "cannot duplicate file descriptor -1");
-  EXPECT_THROW_MSG(FileDescriptor::dup(-1), fmt::SystemError, str(message));
+  EXPECT_SYSTEM_ERROR(FileDescriptor::dup(-1),
+      EBADF, "cannot duplicate file descriptor -1");
 }
 
 TEST(FileDescriptorTest, Dup2) {
@@ -279,10 +293,9 @@ TEST(FileDescriptorTest, Dup2) {
 
 TEST(FileDescriptorTest, Dup2Error) {
   FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-  fmt::Writer message;
-  fmt::internal::FormatSystemErrorMessage(message, EBADF,
+  EXPECT_SYSTEM_ERROR(fd.dup2(-1), EBADF,
       fmt::Format("cannot duplicate file descriptor {} to -1") << fd.get());
-  EXPECT_THROW_MSG(fd.dup2(-1), fmt::SystemError, str(message));
+
 }
 
 TEST(FileDescriptorTest, Dup2NoExcept) {
@@ -302,7 +315,17 @@ TEST(FileDescriptorTest, Dup2NoExceptError) {
   EXPECT_EQ(EBADF, ec.get());
 }
 
+TEST(FileDescriptorTest, Pipe) {
+  FileDescriptor read_fd, write_fd;
+  FileDescriptor::pipe(read_fd, write_fd);
+  EXPECT_NE(-1, read_fd.get());
+  EXPECT_NE(-1, write_fd.get());
+  // TODO: try writing to write_fd and reading from read_fd
+}
+
 // TODO: test pipe
+
+// TODO: test FileDescriptor::read
 
 // TODO: compile both with C++11 & C++98 mode
 
