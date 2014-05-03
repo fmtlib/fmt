@@ -167,6 +167,7 @@ bool IsClosedInternal(int fd) {
 // Checks if the file is closed.
 # define EXPECT_CLOSED(fd) EXPECT_TRUE(IsClosedInternal(fd))
 #else
+// Reading from a closed file causes death on Windows.
 # define EXPECT_CLOSED(fd) EXPECT_DEATH(IsClosedInternal(fd), "")
 #endif
 
@@ -245,11 +246,17 @@ TEST(FileTest, CloseFileInDtor) {
 
 TEST(FileTest, DtorCloseError) {
   File *f = new File(".travis.yml", File::RDONLY);
+#ifndef _WIN32
   // The close function must be called inside EXPECT_STDERR, otherwise
   // the system may allocate freed file descriptor when redirecting the
   // output in EXPECT_STDERR.
   EXPECT_STDERR(FMT_POSIX(close(f->descriptor())); delete f,
     FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
+#else
+  close(f->descriptor());
+  // Closing file twice causes death on Windows.
+  EXPECT_DEATH(delete f, "");
+#endif
 }
 
 TEST(FileTest, Close) {
