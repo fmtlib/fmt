@@ -268,7 +268,7 @@ std::string Read(File &f, std::size_t count) {
 }
 
 #define EXPECT_READ(file, expected_content) \
-  EXPECT_EQ(expected_content, Read(f, std::strlen(expected_content)))
+  EXPECT_EQ(expected_content, Read(file, std::strlen(expected_content)))
 
 TEST(FileTest, Read) {
   File f(".travis.yml", File::RDONLY);
@@ -282,19 +282,19 @@ TEST(FileTest, ReadError) {
 }
 
 TEST(FileTest, Write) {
-  // TODO: use pipes
-  const char EXPECTED[] = "test";
+  const char MESSAGE[] = "test";
+  File read_end;
   {
-    File f("out", File::WRONLY);
-    enum { SIZE = sizeof(EXPECTED) - 1 };
+    File write_end;
+    File::pipe(read_end, write_end);
+    enum { SIZE = sizeof(MESSAGE) - 1 };
     std::streamsize offset = 0, count = 0;
     do {
-      count = f.write(EXPECTED + offset, SIZE - offset);
+      count = write_end.write(MESSAGE + offset, SIZE - offset);
       offset += count;
     } while (offset < SIZE && count != 0);
   }
-  File f("out", File::RDONLY);
-  EXPECT_READ(f, EXPECTED);
+  EXPECT_READ(read_end, MESSAGE);
 }
 
 TEST(FileTest, Dup) {
