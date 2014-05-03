@@ -154,12 +154,12 @@ TEST(FileTest, DefaultCtor) {
 // Checks if the file is open by reading one character from it.
 bool IsOpen(int fd) {
   char buffer;
-  return read(fd, &buffer, 1) == 1;
+  return FMT_POSIX(read(fd, &buffer, 1)) == 1;
 }
 
 bool IsClosedInternal(int fd) {
   char buffer;
-  std::streamsize result = read(fd, &buffer, 1);
+  std::streamsize result = FMT_POSIX(read(fd, &buffer, 1));
   return result == -1 && errno == EBADF;
 }
 
@@ -248,7 +248,7 @@ TEST(FileTest, DtorCloseError) {
   // The close function must be called inside EXPECT_STDERR, otherwise
   // the system may allocate freed file descriptor when redirecting the
   // output in EXPECT_STDERR.
-  EXPECT_STDERR(close(f->descriptor()); delete f,
+  EXPECT_STDERR(FMT_POSIX(close(f->descriptor())); delete f,
     FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 }
 

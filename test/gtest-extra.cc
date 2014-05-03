@@ -165,7 +165,7 @@ std::string OutputRedirector::Read() {
   // Restore output.
   if (std::fflush(file_) != 0)
     fmt::ThrowSystemError(errno, "cannot flush stream");
-  saved_.dup2(fileno(file_));
+  saved_.dup2(FMT_POSIX(fileno(file_)));
 
   // Read everything from the pipe.
   std::string content;
@@ -174,7 +174,7 @@ std::string OutputRedirector::Read() {
   std::streamsize count = 0;
   do {
     count = read_end_.read(buffer, BUFFER_SIZE);
-    content.append(buffer, count);
+    content.append(buffer, static_cast<std::size_t>(count));
   } while (count != 0);
   return content;
 }
