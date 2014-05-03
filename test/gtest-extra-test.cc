@@ -204,7 +204,7 @@ TEST(FileTest, MoveAssignmentClosesFile) {
   File f2("CMakeLists.txt", File::RDONLY);
   int old_fd = f2.descriptor();
   f2 = std::move(f);
-  EXPECT_TRUE(IsClosedInternal(old_fd));
+  EXPECT_CLOSED(old_fd);
 }
 
 File OpenFile(int &fd) {

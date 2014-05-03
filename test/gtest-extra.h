@@ -177,7 +177,8 @@ class File {
     other.fd_ = -1;
   }
 
-  File& operator=(File &&other) FMT_NOEXCEPT(true) {
+  File& operator=(File &&other) {
+    close();
     fd_ = other.fd_;
     other.fd_ = -1;
     return *this;
