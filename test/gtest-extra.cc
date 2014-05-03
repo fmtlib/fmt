@@ -82,7 +82,7 @@ void File::close() {
 
 std::streamsize File::read(void *buffer, std::size_t count) {
   std::streamsize result = 0;
-  FMT_RETRY(result, ::read(fd_, buffer, count));
+  FMT_RETRY(result, ::FMT_POSIX(read(fd_, buffer, count)));
   if (result == -1)
     fmt::ThrowSystemError(errno, "cannot read from file");
   return result;
@@ -90,7 +90,7 @@ std::streamsize File::read(void *buffer, std::size_t count) {
 
 std::streamsize File::write(const void *buffer, std::size_t count) {
   std::streamsize result = 0;
-  FMT_RETRY(result, ::write(fd_, buffer, count));
+  FMT_RETRY(result, ::FMT_POSIX(write(fd_, buffer, count)));
   if (result == -1)
     fmt::ThrowSystemError(errno, "cannot write to file");
   return result;
@@ -145,7 +145,7 @@ void File::pipe(File &read_end, File &write_end) {
 OutputRedirector::OutputRedirector(FILE *file) : file_(file) {
   if (std::fflush(file) != 0)
     fmt::ThrowSystemError(errno, "cannot flush stream");
-  int fd = fileno(file);
+  int fd = FMT_POSIX(fileno(file));
   saved_ = File::dup(fd);
   File write_end;
   File::pipe(read_end_, write_end);
@@ -156,7 +156,7 @@ OutputRedirector::~OutputRedirector() {
   if (std::fflush(file_) != 0)
     fmt::ReportSystemError(errno, "cannot flush stream");
   ErrorCode ec;
-  saved_.dup2(fileno(file_), ec);
+  saved_.dup2(FMT_POSIX(fileno(file_)), ec);
   if (ec.get())
     fmt::ReportSystemError(errno, "cannot restore output");
 }

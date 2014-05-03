@@ -204,7 +204,7 @@ TEST(FileTest, MoveAssignmentClosesFile) {
   File f2("CMakeLists.txt", File::RDONLY);
   int old_fd = f2.descriptor();
   f2 = std::move(f);
-  EXPECT_CLOSED(old_fd);
+  EXPECT_TRUE(IsClosedInternal(old_fd));
 }
 
 File OpenFile(int &fd) {
@@ -272,7 +272,7 @@ TEST(FileTest, CloseError) {
   EXPECT_EQ(message, error.what());
 }
 
-// Attempts to read count characters from the file.
+// Attempts to read count characters from a file.
 std::string Read(File &f, std::size_t count) {
   std::string buffer(count, '\0');
   std::streamsize offset = 0, n = 0;
@@ -282,6 +282,17 @@ std::string Read(File &f, std::size_t count) {
   } while (offset < count && n != 0);
   buffer.resize(offset);
   return buffer;
+}
+
+// Attempts to write a string to a file.
+void Write(File &f, fmt::StringRef s) {
+  std::size_t num_chars_left = s.size();
+  const char *ptr = s.c_str();
+  do {
+    std::streamsize count = f.write(ptr, num_chars_left);
+    ptr += count;
+    num_chars_left -= count;
+  } while (num_chars_left != 0);
 }
 
 #define EXPECT_READ(file, expected_content) \
@@ -299,17 +310,11 @@ TEST(FileTest, ReadError) {
 }
 
 TEST(FileTest, Write) {
-  const char MESSAGE[] = "test";
   File read_end, write_end;
   File::pipe(read_end, write_end);
-  enum { SIZE = sizeof(MESSAGE) - 1 };
-  std::streamsize offset = 0, count = 0;
-  do {
-    count = write_end.write(MESSAGE + offset, SIZE - offset);
-    offset += count;
-  } while (offset < SIZE && count != 0);
-  write_end = File();  // Close file.
-  EXPECT_READ(read_end, MESSAGE);
+  Write(write_end, "test");
+  write_end.close();
+  EXPECT_READ(read_end, "test");
 }
 
 TEST(FileTest, WriteError) {
@@ -341,7 +346,7 @@ TEST(FileTest, Dup2) {
 TEST(FileTest, Dup2Error) {
   File f(".travis.yml", File::RDONLY);
   EXPECT_SYSTEM_ERROR(f.dup2(-1), EBADF,
-      fmt::Format("cannot duplicate file descriptor {} to -1") << f.descriptor());
+    fmt::Format("cannot duplicate file descriptor {} to -1") << f.descriptor());
 }
 
 TEST(FileTest, Dup2NoExcept) {
@@ -366,7 +371,8 @@ TEST(FileTest, Pipe) {
   File::pipe(read_end, write_end);
   EXPECT_NE(-1, read_end.descriptor());
   EXPECT_NE(-1, write_end.descriptor());
-  // TODO: try writing to write_end and reading from read_end
+  Write(write_end, "test");
+  EXPECT_READ(read_end, "test");
 }
 
 // TODO: test pipe
