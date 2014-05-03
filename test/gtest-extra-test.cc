@@ -286,7 +286,7 @@ TEST(FileTest, CloseError) {
 #else
   close(f->descriptor());
   // Closing file twice causes death on Windows.
-  f->close();
+  EXPECT_DEATH(f->close(), "");
   delete f;
 #endif
 }
