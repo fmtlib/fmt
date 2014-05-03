@@ -108,9 +108,6 @@ class File {
  private:
   int fd_;  // File descriptor.
 
-  // Closes the file if its descriptor is not -1.
-  void close();
-
   // Constructs a File object with a given descriptor.
   explicit File(int fd) : fd_(fd) {}
 
@@ -188,11 +185,14 @@ class File {
 #endif
 
   // Destroys the object closing the file it represents if any.
-  ~File() { close(); }
+  ~File();
 
   // Returns the file descriptor.
-  // TODO: rename
+  // TODO: rename to descriptor
   int get() const FMT_NOEXCEPT(true) { return fd_; }
+
+  // Closes the file if its descriptor is not -1.
+  void close();
 
   // Attempts to read count bytes from the file into the specified buffer.
   std::streamsize read(void *buffer, std::size_t count);

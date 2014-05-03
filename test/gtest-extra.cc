@@ -63,13 +63,21 @@ File::File(const char *path, int oflag) {
     fmt::ThrowSystemError(errno, "cannot open file {}") << path;
 }
 
+File::~File() {
+  // Don't need to retry close in case of EINTR.
+  // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
+  if (fd_ != -1 && ::FMT_POSIX(close(fd_)) != 0)
+    fmt::ReportSystemError(errno, "cannot close file");
+}
+
 void File::close() {
   if (fd_ == -1)
     return;
   // Don't need to retry close in case of EINTR.
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
   if (::FMT_POSIX(close(fd_)) != 0)
-    fmt::ReportSystemError(errno, "cannot close file");
+    fmt::ThrowSystemError(errno, "cannot close file");
+  fd_ = -1;
 }
 
 std::streamsize File::read(void *buffer, std::size_t count) {

@@ -171,13 +171,8 @@ bool IsClosedInternal(int fd) {
 #endif
 
 TEST(FileTest, OpenFileInCtor) {
-  int fd = 0;
-  {
-    File f(".travis.yml", File::RDONLY);
-    fd = f.get();
-    ASSERT_TRUE(IsOpen(fd));
-  }
-  EXPECT_CLOSED(fd);
+  File f(".travis.yml", File::RDONLY);
+  ASSERT_TRUE(IsOpen(f.get()));
 }
 
 TEST(FileTest, OpenFileError) {
@@ -245,18 +240,36 @@ TEST(FileTest, CloseFileInDtor) {
     File f(".travis.yml", File::RDONLY);
     fd = f.get();
   }
-  FILE *f = fdopen(fd, "r");
-  int error_code = errno;
-  if (f)
-    fclose(f);
-  EXPECT_TRUE(f == 0);
-  EXPECT_EQ(EBADF, error_code);
+  EXPECT_CLOSED(fd);
+}
+
+TEST(FileTest, DtorCloseError) {
+  File *f = new File(".travis.yml", File::RDONLY);
+  // The close function must be called inside EXPECT_STDERR, otherwise
+  // the system may allocate freed file descriptor when redirecting the
+  // output in EXPECT_STDERR.
+  EXPECT_STDERR(close(f->get()); delete f,
+    FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
+}
+
+TEST(FileTest, Close) {
+  File f(".travis.yml", File::RDONLY);
+  int fd = f.get();
+  f.close();
+  EXPECT_EQ(-1, f.get());
+  EXPECT_CLOSED(fd);
 }
 
 TEST(FileTest, CloseError) {
-  File *fd = new File(".travis.yml", File::RDONLY);
-  EXPECT_STDERR(close(fd->get()); delete fd,
-    FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
+  File *f = new File(".travis.yml", File::RDONLY);
+  fmt::SystemError error("", 0);
+  std::string message = FormatSystemErrorMessage(EBADF, "cannot close file");
+  EXPECT_STDERR(
+    close(f->get());
+    try { f->close(); } catch (const fmt::SystemError &e) { error = e; }
+    delete f,
+    message + "\n");
+  EXPECT_EQ(message, error.what());
 }
 
 // Attempts to read count characters from the file.
@@ -287,17 +300,15 @@ TEST(FileTest, ReadError) {
 
 TEST(FileTest, Write) {
   const char MESSAGE[] = "test";
-  File read_end;
-  {
-    File write_end;
-    File::pipe(read_end, write_end);
-    enum { SIZE = sizeof(MESSAGE) - 1 };
-    std::streamsize offset = 0, count = 0;
-    do {
-      count = write_end.write(MESSAGE + offset, SIZE - offset);
-      offset += count;
-    } while (offset < SIZE && count != 0);
-  }
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  enum { SIZE = sizeof(MESSAGE) - 1 };
+  std::streamsize offset = 0, count = 0;
+  do {
+    count = write_end.write(MESSAGE + offset, SIZE - offset);
+    offset += count;
+  } while (offset < SIZE && count != 0);
+  write_end = File();  // Close file.
   EXPECT_READ(read_end, MESSAGE);
 }
 
@@ -355,7 +366,7 @@ TEST(FileTest, Pipe) {
   File::pipe(read_end, write_end);
   EXPECT_NE(-1, read_end.get());
   EXPECT_NE(-1, write_end.get());
-  // TODO: try writing to write_fd and reading from read_fd
+  // TODO: try writing to write_end and reading from read_end
 }
 
 // TODO: test pipe
