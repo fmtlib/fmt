@@ -145,15 +145,15 @@ TEST(ErrorCodeTest, Ctor) {
   EXPECT_EQ(42, ErrorCode(42).get());
 }
 
-TEST(FileDescriptorTest, DefaultCtor) {
-  FileDescriptor fd;
-  EXPECT_EQ(-1, fd.get());
+TEST(FileTest, DefaultCtor) {
+  File f;
+  EXPECT_EQ(-1, f.get());
 }
 
-TEST(FileDescriptorTest, OpenFileInCtor) {
+TEST(FileTest, OpenFileInCtor) {
   FILE *f = 0;
   {
-    FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
+    File fd(".travis.yml", File::RDONLY);
     f = fdopen(fd.get(), "r");
     ASSERT_TRUE(f != 0);
   }
@@ -163,29 +163,28 @@ TEST(FileDescriptorTest, OpenFileInCtor) {
   fclose(f);
 }
 
-TEST(FileDescriptorTest, OpenFileError) {
-  EXPECT_SYSTEM_ERROR(
-      FileDescriptor("nonexistent", FileDescriptor::RDONLY), ENOENT,
-      "cannot open file nonexistent");
+TEST(FileTest, OpenFileError) {
+  EXPECT_SYSTEM_ERROR(File("nonexistent", File::RDONLY),
+      ENOENT, "cannot open file nonexistent");
 }
 
-TEST(FileDescriptorTest, MoveCtor) {
-  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-  int fd_value = fd.get();
-  EXPECT_NE(-1, fd_value);
-  FileDescriptor fd2(std::move(fd));
-  EXPECT_EQ(fd_value, fd2.get());
-  EXPECT_EQ(-1, fd.get());
+TEST(FileTest, MoveCtor) {
+  File f(".travis.yml", File::RDONLY);
+  int fd = f.get();
+  EXPECT_NE(-1, fd);
+  File f2(std::move(f));
+  EXPECT_EQ(fd, f2.get());
+  EXPECT_EQ(-1, f.get());
 }
 
-TEST(FileDescriptorTest, MoveAssignment) {
-  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-  int fd_value = fd.get();
-  EXPECT_NE(-1, fd_value);
-  FileDescriptor fd2;
-  fd2 = std::move(fd);
-  EXPECT_EQ(fd_value, fd2.get());
-  EXPECT_EQ(-1, fd.get());
+TEST(FileTest, MoveAssignment) {
+  File f(".travis.yml", File::RDONLY);
+  int fd = f.get();
+  EXPECT_NE(-1, fd);
+  File f2;
+  f2 = std::move(f);
+  EXPECT_EQ(fd, f2.get());
+  EXPECT_EQ(-1, f.get());
 }
 
 bool IsClosed(int fd) {
@@ -194,48 +193,48 @@ bool IsClosed(int fd) {
   return result == -1 && errno == EBADF;
 }
 
-TEST(FileDescriptorTest, MoveAssignmentClosesFile) {
-  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-  FileDescriptor fd2("CMakeLists.txt", FileDescriptor::RDONLY);
-  int old_fd = fd2.get();
-  fd2 = std::move(fd);
+TEST(FileTest, MoveAssignmentClosesFile) {
+  File f(".travis.yml", File::RDONLY);
+  File f2("CMakeLists.txt", File::RDONLY);
+  int old_fd = f2.get();
+  f2 = std::move(f);
   EXPECT_TRUE(IsClosed(old_fd));
 }
 
-FileDescriptor OpenFile(int &fd_value) {
-  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-  fd_value = fd.get();
-  return std::move(fd);
+File OpenFile(int &fd) {
+  File f(".travis.yml", File::RDONLY);
+  fd = f.get();
+  return std::move(f);
 }
 
-TEST(FileDescriptorTest, MoveFromTemporaryInCtor) {
-  int fd_value = 0xdeadbeef;
-  FileDescriptor fd(OpenFile(fd_value));
-  EXPECT_EQ(fd_value, fd.get());
+TEST(FileTest, MoveFromTemporaryInCtor) {
+  int fd = 0xdeadbeef;
+  File f(OpenFile(fd));
+  EXPECT_EQ(fd, f.get());
 }
 
-TEST(FileDescriptorTest, MoveFromTemporaryInAssignment) {
-  int fd_value = 0xdeadbeef;
-  FileDescriptor fd;
-  fd = OpenFile(fd_value);
-  EXPECT_EQ(fd_value, fd.get());
+TEST(FileTest, MoveFromTemporaryInAssignment) {
+  int fd = 0xdeadbeef;
+  File f;
+  f = OpenFile(fd);
+  EXPECT_EQ(fd, f.get());
 }
 
-TEST(FileDescriptorTest, MoveFromTemporaryInAssignmentClosesFile) {
-  int fd_value = 0xdeadbeef;
-  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-  int old_fd = fd.get();
-  fd = OpenFile(fd_value);
+TEST(FileTest, MoveFromTemporaryInAssignmentClosesFile) {
+  int fd = 0xdeadbeef;
+  File f(".travis.yml", File::RDONLY);
+  int old_fd = f.get();
+  f = OpenFile(fd);
   EXPECT_TRUE(IsClosed(old_fd));
 }
 
-TEST(FileDescriptorTest, CloseFileInDtor) {
-  int fd_value = 0;
+TEST(FileTest, CloseFileInDtor) {
+  int fd = 0;
   {
-    FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-    fd_value = fd.get();
+    File f(".travis.yml", File::RDONLY);
+    fd = f.get();
   }
-  FILE *f = fdopen(fd_value, "r");
+  FILE *f = fdopen(fd, "r");
   int error_code = errno;
   if (f)
     fclose(f);
@@ -243,89 +242,88 @@ TEST(FileDescriptorTest, CloseFileInDtor) {
   EXPECT_EQ(EBADF, error_code);
 }
 
-TEST(FileDescriptorTest, CloseError) {
-  FileDescriptor *fd =
-      new FileDescriptor(".travis.yml", FileDescriptor::RDONLY);
+TEST(FileTest, CloseError) {
+  File *fd = new File(".travis.yml", File::RDONLY);
   EXPECT_STDERR(close(fd->get()); delete fd,
     FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 }
 
-std::string ReadLine(FileDescriptor &fd) {
+std::string ReadLine(File &f) {
   enum { BUFFER_SIZE = 100 };
   char buffer[BUFFER_SIZE];
-  std::streamsize result = fd.read(buffer, BUFFER_SIZE);
+  std::streamsize result = f.read(buffer, BUFFER_SIZE);
   buffer[std::min<std::streamsize>(BUFFER_SIZE - 1, result)] = '\0';
   if (char *end = strchr(buffer, '\n'))
     *end = '\0';
   return buffer;
 }
 
-TEST(FileDescriptorTest, Read) {
-  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-  EXPECT_EQ("language: cpp", ReadLine(fd));
+TEST(FileTest, Read) {
+  File f(".travis.yml", File::RDONLY);
+  EXPECT_EQ("language: cpp", ReadLine(f));
 }
 
-TEST(FileDescriptorTest, ReadError) {
-  FileDescriptor fd;
+TEST(FileTest, ReadError) {
+  File f;
   char buf;
-  EXPECT_SYSTEM_ERROR(fd.read(&buf, 1), EBADF, "cannot read from file");
+  EXPECT_SYSTEM_ERROR(f.read(&buf, 1), EBADF, "cannot read from file");
 }
 
-TEST(FileDescriptorTest, Dup) {
-  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-  FileDescriptor dup = FileDescriptor::dup(fd.get());
-  EXPECT_NE(fd.get(), dup.get());
+TEST(FileTest, Dup) {
+  File f(".travis.yml", File::RDONLY);
+  File dup = File::dup(f.get());
+  EXPECT_NE(f.get(), dup.get());
   EXPECT_EQ("language: cpp", ReadLine(dup));
 }
 
-TEST(FileDescriptorTest, DupError) {
-  EXPECT_SYSTEM_ERROR(FileDescriptor::dup(-1),
+TEST(FileTest, DupError) {
+  EXPECT_SYSTEM_ERROR(File::dup(-1),
       EBADF, "cannot duplicate file descriptor -1");
 }
 
-TEST(FileDescriptorTest, Dup2) {
-  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-  FileDescriptor dup("CMakeLists.txt", FileDescriptor::RDONLY);
-  fd.dup2(dup.get());
-  EXPECT_NE(fd.get(), dup.get());
+TEST(FileTest, Dup2) {
+  File f(".travis.yml", File::RDONLY);
+  File dup("CMakeLists.txt", File::RDONLY);
+  f.dup2(dup.get());
+  EXPECT_NE(f.get(), dup.get());
   EXPECT_EQ("language: cpp", ReadLine(dup));
 }
 
-TEST(FileDescriptorTest, Dup2Error) {
-  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-  EXPECT_SYSTEM_ERROR(fd.dup2(-1), EBADF,
-      fmt::Format("cannot duplicate file descriptor {} to -1") << fd.get());
+TEST(FileTest, Dup2Error) {
+  File f(".travis.yml", File::RDONLY);
+  EXPECT_SYSTEM_ERROR(f.dup2(-1), EBADF,
+      fmt::Format("cannot duplicate file descriptor {} to -1") << f.get());
 
 }
 
-TEST(FileDescriptorTest, Dup2NoExcept) {
-  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
-  FileDescriptor dup("CMakeLists.txt", FileDescriptor::RDONLY);
+TEST(FileTest, Dup2NoExcept) {
+  File f(".travis.yml", File::RDONLY);
+  File dup("CMakeLists.txt", File::RDONLY);
   ErrorCode ec;
-  fd.dup2(dup.get(), ec);
+  f.dup2(dup.get(), ec);
   EXPECT_EQ(0, ec.get());
-  EXPECT_NE(fd.get(), dup.get());
+  EXPECT_NE(f.get(), dup.get());
   EXPECT_EQ("language: cpp", ReadLine(dup));
 }
 
-TEST(FileDescriptorTest, Dup2NoExceptError) {
-  FileDescriptor fd(".travis.yml", FileDescriptor::RDONLY);
+TEST(FileTest, Dup2NoExceptError) {
+  File f(".travis.yml", File::RDONLY);
   ErrorCode ec;
-  fd.dup2(-1, ec);
+  f.dup2(-1, ec);
   EXPECT_EQ(EBADF, ec.get());
 }
 
-TEST(FileDescriptorTest, Pipe) {
-  FileDescriptor read_fd, write_fd;
-  FileDescriptor::pipe(read_fd, write_fd);
-  EXPECT_NE(-1, read_fd.get());
-  EXPECT_NE(-1, write_fd.get());
+TEST(FileTest, Pipe) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  EXPECT_NE(-1, read_end.get());
+  EXPECT_NE(-1, write_end.get());
   // TODO: try writing to write_fd and reading from read_fd
 }
 
 // TODO: test pipe
 
-// TODO: test FileDescriptor::read
+// TODO: test File::read
 
 // TODO: compile both with C++11 & C++98 mode
 

@@ -51,7 +51,7 @@
     result = (expression); \
   } while (result == -1 && errno == EINTR)
 
-FileDescriptor::FileDescriptor(const char *path, int oflag) {
+File::File(const char *path, int oflag) {
   int mode = S_IRUSR | S_IWUSR;
 #ifdef _WIN32
   fd_ = -1;
@@ -63,7 +63,7 @@ FileDescriptor::FileDescriptor(const char *path, int oflag) {
     fmt::ThrowSystemError(errno, "cannot open file {}") << path;
 }
 
-void FileDescriptor::close() {
+void File::close() {
   if (fd_ == -1)
     return;
   // Don't need to retry close in case of EINTR.
@@ -72,7 +72,7 @@ void FileDescriptor::close() {
     fmt::ReportSystemError(errno, "cannot close file");
 }
 
-std::streamsize FileDescriptor::read(void *buffer, std::size_t count) {
+std::streamsize File::read(void *buffer, std::size_t count) {
   std::streamsize result = 0;
   FMT_RETRY(result, ::read(fd_, buffer, count));
   if (result == -1)
@@ -80,7 +80,7 @@ std::streamsize FileDescriptor::read(void *buffer, std::size_t count) {
   return result;
 }
 
-std::streamsize FileDescriptor::write(const void *buffer, std::size_t count) {
+std::streamsize File::write(const void *buffer, std::size_t count) {
   std::streamsize result = 0;
   FMT_RETRY(result, ::write(fd_, buffer, count));
   if (result == -1)
@@ -88,15 +88,15 @@ std::streamsize FileDescriptor::write(const void *buffer, std::size_t count) {
   return result;
 }
 
-FileDescriptor FileDescriptor::dup(int fd) {
+File File::dup(int fd) {
   int new_fd = 0;
   FMT_RETRY(new_fd, ::FMT_POSIX(dup(fd)));
   if (new_fd == -1)
     fmt::ThrowSystemError(errno, "cannot duplicate file descriptor {}") << fd;
-  return FileDescriptor(new_fd);
+  return File(new_fd);
 }
 
-void FileDescriptor::dup2(int fd) {
+void File::dup2(int fd) {
   int result = 0;
   FMT_RETRY(result, ::FMT_POSIX(dup2(fd_, fd)));
   if (result == -1) {
@@ -105,18 +105,18 @@ void FileDescriptor::dup2(int fd) {
   }
 }
 
-void FileDescriptor::dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT(true) {
+void File::dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT(true) {
   int result = 0;
   FMT_RETRY(result, ::FMT_POSIX(dup2(fd_, fd)));
   if (result == -1)
     ec = ErrorCode(errno);
 }
 
-void FileDescriptor::pipe(FileDescriptor &read_fd, FileDescriptor &write_fd) {
+void File::pipe(File &read_end, File &write_end) {
   // Close the descriptors first to make sure that assignments don't throw
   // and there are no leaks.
-  read_fd.close();
-  write_fd.close();
+  read_end.close();
+  write_end.close();
   int fds[2] = {};
 #ifdef _WIN32
   // Make the default pipe capacity same as on Linux 2.6.11+.
@@ -130,25 +130,25 @@ void FileDescriptor::pipe(FileDescriptor &read_fd, FileDescriptor &write_fd) {
     fmt::ThrowSystemError(errno, "cannot create pipe");
   // The following assignments don't throw because read_fd and write_fd
   // are closed.
-  read_fd = FileDescriptor(fds[0]);
-  write_fd = FileDescriptor(fds[1]);
+  read_end = File(fds[0]);
+  write_end = File(fds[1]);
 }
 
 OutputRedirector::OutputRedirector(FILE *file) : file_(file) {
   if (std::fflush(file) != 0)
     fmt::ThrowSystemError(errno, "cannot flush stream");
   int fd = fileno(file);
-  saved_fd_ = FileDescriptor::dup(fd);
-  FileDescriptor write_fd;
-  FileDescriptor::pipe(read_fd_, write_fd);
-  write_fd.dup2(fd);
+  saved_ = File::dup(fd);
+  File write_end;
+  File::pipe(read_end_, write_end);
+  write_end.dup2(fd);
 }
 
 OutputRedirector::~OutputRedirector() {
   if (std::fflush(file_) != 0)
     fmt::ReportSystemError(errno, "cannot flush stream");
   ErrorCode ec;
-  saved_fd_.dup2(fileno(file_), ec);
+  saved_.dup2(fileno(file_), ec);
   if (ec.get())
     fmt::ReportSystemError(errno, "cannot restore output");
 }
@@ -157,7 +157,7 @@ std::string OutputRedirector::Read() {
   // Restore output.
   if (std::fflush(file_) != 0)
     fmt::ThrowSystemError(errno, "cannot flush stream");
-  saved_fd_.dup2(fileno(file_));
+  saved_.dup2(fileno(file_));
 
   // Read everything from the pipe.
   std::string content;
@@ -165,7 +165,7 @@ std::string OutputRedirector::Read() {
   char buffer[BUFFER_SIZE];
   std::streamsize count = 0;
   do {
-    count = read_fd_.read(buffer, BUFFER_SIZE);
+    count = read_end_.read(buffer, BUFFER_SIZE);
     content.append(buffer, count);
   } while (count != 0);
   return content;

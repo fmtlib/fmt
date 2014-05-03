@@ -103,16 +103,16 @@ class ErrorCode {
   int get() const FMT_NOEXCEPT(true) { return value_; }
 };
 
-// A RAII class for file descriptors.
-class FileDescriptor {
+// A file.
+class File {
  private:
-  int fd_;
+  int fd_;  // File descriptor.
 
   // Closes the file if its descriptor is not -1.
   void close();
 
-  // Constructs a FileDescriptor object with a given descriptor.
-  explicit FileDescriptor(int fd) : fd_(fd) {}
+  // Constructs a File object with a given descriptor.
+  explicit File(int fd) : fd_(fd) {}
 
  public:
   // Possible values for the oflag argument to the constructor.
@@ -122,13 +122,12 @@ class FileDescriptor {
     RDWR   = FMT_POSIX(O_RDWR)    // Open for reading and writing.
   };
 
-  // Constructs a FileDescriptor object with a descriptor of -1 which
-  // is ignored by the destructor.
-  FileDescriptor() FMT_NOEXCEPT(true) : fd_(-1) {}
+  // Constructs a File object which doesn't represent any file.
+  File() FMT_NOEXCEPT(true) : fd_(-1) {}
 
-  // Opens a file and constructs a FileDescriptor object with the descriptor
-  // of the opened file. Throws fmt::SystemError on error.
-  FileDescriptor(const char *path, int oflag);
+  // Opens a file and constructs a File object representing this file.
+  // Throws fmt::SystemError on error.
+  File(const char *path, int oflag);
 
 #if !FMT_USE_RVALUE_REFERENCES
   // Emulate a move constructor and a move assignment operator if rvalue
@@ -143,22 +142,22 @@ class FileDescriptor {
 
  public:
   // A "move" constructor for moving from a temporary.
-  FileDescriptor(Proxy p) FMT_NOEXCEPT(true) : fd_(p.fd) {}
+  File(Proxy p) FMT_NOEXCEPT(true) : fd_(p.fd) {}
 
   // A "move" constructor for for moving from an lvalue.
-  FileDescriptor(FileDescriptor &other) FMT_NOEXCEPT(true) : fd_(other.fd_) {
+  File(File &other) FMT_NOEXCEPT(true) : fd_(other.fd_) {
     other.fd_ = -1;
   }
 
   // A "move" assignment operator for moving from a temporary.
-  FileDescriptor &operator=(Proxy p) {
+  File &operator=(Proxy p) {
     close();
     fd_ = p.fd;
     return *this;
   }
 
   // A "move" assignment operator for moving from an lvalue.
-  FileDescriptor &operator=(FileDescriptor &other) {
+  File &operator=(File &other) {
     close();
     fd_ = other.fd_;
     other.fd_ = -1;
@@ -166,7 +165,7 @@ class FileDescriptor {
   }
 
   // Returns a proxy object for moving from a temporary:
-  //   FileDescriptor fd = FileDescriptor(...);
+  //   File file = File(...);
   operator Proxy() FMT_NOEXCEPT(true) {
     Proxy p = {fd_};
     fd_ = -1;
@@ -174,37 +173,36 @@ class FileDescriptor {
   }
 #else
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(FileDescriptor);
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(File);
 
  public:
-  FileDescriptor(FileDescriptor &&other) FMT_NOEXCEPT(true) : fd_(other.fd_) {
+  File(File &&other) FMT_NOEXCEPT(true) : fd_(other.fd_) {
     other.fd_ = -1;
   }
 
-  FileDescriptor& operator=(FileDescriptor &&other) FMT_NOEXCEPT(true) {
+  File& operator=(File &&other) FMT_NOEXCEPT(true) {
     fd_ = other.fd_;
     other.fd_ = -1;
     return *this;
   }
 #endif
 
-  // Closes the file if its descriptor is not -1 and destroys the object.
-  ~FileDescriptor() { close(); }
+  // Destroys the object closing the file it represents if any.
+  ~File() { close(); }
 
   // Returns the file descriptor.
+  // TODO: rename
   int get() const FMT_NOEXCEPT(true) { return fd_; }
 
-  // Attempts to read count bytes from the file associated with this file
-  // descriptor into the specified buffer.
+  // Attempts to read count bytes from the file into the specified buffer.
   std::streamsize read(void *buffer, std::size_t count);
 
-  // Attempts to write count bytes from the specified buffer to the file
-  // associated with this file descriptor.
+  // Attempts to write count bytes from the specified buffer to the file.
   std::streamsize write(const void *buffer, std::size_t count);
 
   // Duplicates a file descriptor with the dup function and returns
-  // the duplicate. Throws fmt::SystemError on error.
-  static FileDescriptor dup(int fd);
+  // the duplicate as a file object. Throws fmt::SystemError on error.
+  static File dup(int fd);
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary. Throws fmt::SystemError on error.
@@ -214,15 +212,15 @@ class FileDescriptor {
   // necessary.
   void dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT(true);
 
-  // Creates a pipe setting up read and write file descriptors for reading
-  // and writing respecively. Throws fmt::SystemError on error.
-  static void pipe(FileDescriptor &read_fd, FileDescriptor &write_fd);
+  // Creates a pipe setting up read_end and write_end file objects for reading
+  // and writing respectively. Throws fmt::SystemError on error.
+  static void pipe(File &read_end, File &write_end);
 };
 
 #if !FMT_USE_RVALUE_REFERENCES
 namespace std {
 // For compatibility with C++98.
-inline FileDescriptor &move(FileDescriptor &fd) { return fd; }
+inline File &move(File &f) { return f; }
 }
 #endif
 
@@ -230,9 +228,8 @@ inline FileDescriptor &move(FileDescriptor &fd) { return fd; }
 class OutputRedirector {
  private:
   FILE *file_;
-  FileDescriptor saved_fd_;  // Saved file descriptor created with dup.
-  FileDescriptor read_fd_;   // Read end of the pipe where the output is
-                             // redirected.
+  File saved_;     // Saved file created with dup.
+  File read_end_;  // Read end of the pipe where the output is redirected.
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(OutputRedirector);
 
