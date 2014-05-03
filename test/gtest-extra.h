@@ -194,9 +194,13 @@ class FileDescriptor {
   // Returns the file descriptor.
   int get() const FMT_NOEXCEPT(true) { return fd_; }
 
-  // Attempts to read count chars from the file associated with this file
+  // Attempts to read count bytes from the file associated with this file
   // descriptor into the specified buffer.
   std::streamsize read(void *buffer, std::size_t count);
+
+  // Attempts to write count bytes from the specified buffer to the file
+  // associated with this file descriptor.
+  std::streamsize write(const void *buffer, std::size_t count);
 
   // Duplicates a file descriptor with the dup function and returns
   // the duplicate. Throws fmt::SystemError on error.

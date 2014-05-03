@@ -80,6 +80,14 @@ std::streamsize FileDescriptor::read(void *buffer, std::size_t count) {
   return result;
 }
 
+std::streamsize FileDescriptor::write(const void *buffer, std::size_t count) {
+  std::streamsize result = 0;
+  FMT_RETRY(result, ::write(fd_, buffer, count));
+  if (result == -1)
+    fmt::ThrowSystemError(errno, "cannot write to file");
+  return result;
+}
+
 FileDescriptor FileDescriptor::dup(int fd) {
   int new_fd = 0;
   FMT_RETRY(new_fd, ::FMT_POSIX(dup(fd)));
