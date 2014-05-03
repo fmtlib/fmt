@@ -185,11 +185,10 @@ class File {
 #endif
 
   // Destroys the object closing the file it represents if any.
-  ~File();
+  ~File() FMT_NOEXCEPT(true);
 
   // Returns the file descriptor.
-  // TODO: rename to descriptor
-  int get() const FMT_NOEXCEPT(true) { return fd_; }
+  int descriptor() const FMT_NOEXCEPT(true) { return fd_; }
 
   // Closes the file if its descriptor is not -1.
   void close();

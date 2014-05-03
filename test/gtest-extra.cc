@@ -63,7 +63,7 @@ File::File(const char *path, int oflag) {
     fmt::ThrowSystemError(errno, "cannot open file {}") << path;
 }
 
-File::~File() {
+File::~File() FMT_NOEXCEPT(true) {
   // Don't need to retry close in case of EINTR.
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
   if (fd_ != -1 && ::FMT_POSIX(close(fd_)) != 0)
