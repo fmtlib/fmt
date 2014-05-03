@@ -132,6 +132,18 @@ std::string ReadFile(fmt::StringRef filename) {
   content << out.rdbuf();
   return content.str();
 }
+
+std::string GetSystemErrorMessage(int error_code) {
+#ifndef _WIN32
+  return strerror(error_code);
+#else
+  enum { BUFFER_SIZE = 200 };
+  char buffer[BUFFER_SIZE];
+  EXPECT_EQ(0, strerror_s(buffer, BUFFER_SIZE, error_code));
+  EXPECT_LT(std::strlen(buffer), BUFFER_SIZE - 1);
+  return buffer;
+#endif
+}
 }
 
 TEST(UtilTest, Increment) {
@@ -235,7 +247,7 @@ TEST(UtilTest, StrError) {
   EXPECT_EQ(0, result);
   std::size_t message_size = std::strlen(message);
   EXPECT_GE(BUFFER_SIZE - 1u, message_size);
-  EXPECT_STREQ(strerror(error_code), message);
+  EXPECT_EQ(GetSystemErrorMessage(error_code), message);
   result = StrError(error_code, message = buffer, message_size);
   EXPECT_EQ(ERANGE, result);
 }
@@ -284,7 +296,8 @@ void CheckThrowError(int error_code, FormatErrorMessage format,
 TEST(UtilTest, FormatSystemErrorMessage) {
   fmt::Writer message;
   fmt::internal::FormatSystemErrorMessage(message, EDOM, "test");
-  EXPECT_EQ(str(fmt::Format("test: {}") << strerror(EDOM)), fmt::str(message));
+  EXPECT_EQ(str(fmt::Format("test: {}")
+    << GetSystemErrorMessage(EDOM)), fmt::str(message));
 }
 
 TEST(UtilTest, SystemErrorSink) {
