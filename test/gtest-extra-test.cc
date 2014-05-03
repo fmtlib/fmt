@@ -150,17 +150,26 @@ TEST(FileTest, DefaultCtor) {
   EXPECT_EQ(-1, f.get());
 }
 
+// Checks if the file is open by reading one character from it.
+bool IsOpen(int fd) {
+  char buffer;
+  return read(fd, &buffer, 1) == 1;
+}
+
+bool IsClosed(int fd) {
+  char buffer;
+  std::streamsize result = read(fd, &buffer, 1);
+  return result == -1 && errno == EBADF;
+}
+
 TEST(FileTest, OpenFileInCtor) {
-  FILE *f = 0;
+  int fd = 0;
   {
-    File fd(".travis.yml", File::RDONLY);
-    f = fdopen(fd.get(), "r");
-    ASSERT_TRUE(f != 0);
+    File f(".travis.yml", File::RDONLY);
+    fd = f.get();
+    ASSERT_TRUE(IsOpen(fd));
   }
-  // Make sure fclose is called after the file descriptor is destroyed.
-  // Otherwise the destructor will report an error because fclose has
-  // already closed the file.
-  fclose(f);
+  ASSERT_TRUE(IsClosed(fd));
 }
 
 TEST(FileTest, OpenFileError) {
@@ -185,12 +194,6 @@ TEST(FileTest, MoveAssignment) {
   f2 = std::move(f);
   EXPECT_EQ(fd, f2.get());
   EXPECT_EQ(-1, f.get());
-}
-
-bool IsClosed(int fd) {
-  char buffer;
-  std::streamsize result = read(fd, &buffer, 1);
-  return result == -1 && errno == EBADF;
 }
 
 TEST(FileTest, MoveAssignmentClosesFile) {
