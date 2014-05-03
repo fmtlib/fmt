@@ -28,7 +28,13 @@
 #ifndef FMT_GTEST_EXTRA_H
 #define FMT_GTEST_EXTRA_H
 
+#if FMT_USE_FILE_DESCRIPTORS
+# include <fcntl.h>
+#endif
+
 #include <gtest/gtest.h>
+
+#include "format.h"
 
 #define FMT_TEST_THROW_(statement, expected_exception, expected_message, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
@@ -68,5 +74,189 @@
 #define EXPECT_THROW_MSG(statement, expected_exception, expected_message) \
   FMT_TEST_THROW_(statement, expected_exception, \
       expected_message, GTEST_NONFATAL_FAILURE_)
+
+#ifndef FMT_USE_FILE_DESCRIPTORS
+# define FMT_USE_FILE_DESCRIPTORS 0
+#endif
+
+#if FMT_USE_FILE_DESCRIPTORS
+
+#ifdef _WIN32
+// Fix warnings about deprecated symbols.
+# define FMT_POSIX(name) _##name
+#else
+# define FMT_POSIX(name) name
+#endif
+
+// An error code.
+class ErrorCode {
+ private:
+  int value_;
+
+ public:
+  explicit ErrorCode(int value = 0) FMT_NOEXCEPT(true) : value_(value) {}
+
+  int get() const FMT_NOEXCEPT(true) { return value_; }
+};
+
+// A RAII class for file descriptors.
+class FileDescriptor {
+ private:
+  int fd_;
+
+  // Closes the file if its descriptor is not -1.
+  void close();
+
+  // Constructs a FileDescriptor object with a given descriptor.
+  explicit FileDescriptor(int fd) : fd_(fd) {}
+
+ public:
+  // Possible values for the oflag argument to the constructor.
+  enum {
+    RDONLY = FMT_POSIX(O_RDONLY), // Open for reading only.
+    WRONLY = FMT_POSIX(O_WRONLY), // Open for writing only.
+    RDWR   = FMT_POSIX(O_RDWR)    // Open for reading and writing.
+  };
+
+  // Constructs a FileDescriptor object with a descriptor of -1 which
+  // is ignored by the destructor.
+  FileDescriptor() FMT_NOEXCEPT(true) : fd_(-1) {}
+
+  // Opens a file and constructs a FileDescriptor object with the descriptor
+  // of the opened file. Throws fmt::SystemError on error.
+  FileDescriptor(const char *path, int oflag);
+
+#if !FMT_USE_RVALUE_REFERENCES
+  // Emulate a move constructor and a move assignment operator if rvalue
+  // references are not supported.
+
+ private:
+  // A proxy object to emulate a move constructor.
+  // It is private to make it impossible call operator Proxy directly.
+  struct Proxy {
+    int fd;
+  };
+
+ public:
+  // A "move" constructor for moving from a temporary.
+  FileDescriptor(Proxy p) FMT_NOEXCEPT(true) : fd_(p.fd) {}
+
+  // A "move" constructor for for moving from an lvalue.
+  FileDescriptor(FileDescriptor &other) FMT_NOEXCEPT(true) : fd_(other.fd_) {
+    other.fd_ = -1;
+  }
+
+  // A "move" assignment operator for moving from a temporary.
+  FileDescriptor &operator=(Proxy p) {
+    close();
+    fd_ = p.fd;
+    return *this;
+  }
+
+  // A "move" assignment operator for moving from an lvalue.
+  FileDescriptor &operator=(FileDescriptor &other) {
+    close();
+    fd_ = other.fd_;
+    other.fd_ = -1;
+    return *this;
+  }
+
+  // Returns a proxy object for moving from a temporary:
+  //   FileDescriptor fd = FileDescriptor(...);
+  operator Proxy() FMT_NOEXCEPT(true) {
+    Proxy p = {fd_};
+    fd_ = -1;
+    return p;
+  }
+#else
+ private:
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(FileDescriptor);
+
+ public:
+  FileDescriptor(FileDescriptor &&other) FMT_NOEXCEPT(true) : fd_(other.fd_) {
+    other.fd_ = -1;
+  }
+
+  FileDescriptor& operator=(FileDescriptor &&other) FMT_NOEXCEPT(true) {
+    fd_ = other.fd_;
+    other.fd_ = -1;
+    return *this;
+  }
+#endif
+
+  // Closes the file if its descriptor is not -1 and destroys the object.
+  ~FileDescriptor() { close(); }
+
+  // Returns the file descriptor.
+  int get() const FMT_NOEXCEPT(true) { return fd_; }
+
+  // Duplicates a file descriptor with the dup function and returns
+  // the duplicate. Throws fmt::SystemError on error.
+  static FileDescriptor dup(int fd);
+
+  // Makes fd be the copy of this file descriptor, closing fd first if
+  // necessary. Throws fmt::SystemError on error.
+  void dup2(int fd);
+
+  // Makes fd be the copy of this file descriptor, closing fd first if
+  // necessary.
+  void dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT(true);
+
+  static void pipe(FileDescriptor &read_fd, FileDescriptor &write_fd);
+};
+
+#if !FMT_USE_RVALUE_REFERENCES
+namespace std {
+// For compatibility with C++98.
+inline FileDescriptor &move(FileDescriptor &fd) { return fd; }
+}
+#endif
+
+// Redirect file output to a pipe.
+class OutputRedirector {
+ private:
+  FILE *file_;
+  FileDescriptor saved_fd_;  // Saved file descriptor created with dup.
+  FileDescriptor read_fd_;   // Read end of the pipe where the output is
+                             // redirected.
+
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(OutputRedirector);
+
+ public:
+  explicit OutputRedirector(FILE *file);
+  ~OutputRedirector();
+
+  std::string Read();
+};
+
+#define FMT_TEST_PRINT_(statement, expected_output, file, fail) \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
+  if (::testing::AssertionResult gtest_ar = ::testing::AssertionSuccess()) { \
+    std::string output; \
+    { \
+      OutputRedirector redir(file); \
+      GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
+      output = redir.Read(); \
+    } \
+    if (output != expected_output) { \
+      gtest_ar \
+        << #statement " produces different output.\n" \
+        << "Expected: " << expected_output << "\n" \
+        << "  Actual: " << output; \
+      goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
+    } \
+  } else \
+    GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__): \
+      fail(gtest_ar.failure_message())
+
+// Tests that the statement prints the expected output to stdout.
+#define EXPECT_STDOUT(statement, expected_output) \
+    FMT_TEST_PRINT_(statement, expected_output, stdout, GTEST_NONFATAL_FAILURE_)
+
+// Tests that the statement prints the expected output to stderr.
+#define EXPECT_STDERR(statement, expected_output) \
+    FMT_TEST_PRINT_(statement, expected_output, stderr, GTEST_NONFATAL_FAILURE_)
+
+#endif  // FMT_USE_FILE_DESCRIPTORS
 
 #endif  // FMT_GTEST_EXTRA_H

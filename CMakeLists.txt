@@ -69,22 +69,24 @@ endif ()
 
 include(CheckSymbolExists)
 if (WIN32)
-  check_symbol_exists(dup io.h HAVE_DUP)
+  check_symbol_exists(open io.h HAVE_OPEN)
 else ()
-  check_symbol_exists(dup unistd.h HAVE_DUP)
+  check_symbol_exists(open fcntl.h HAVE_OPEN)
 endif ()
-if (HAVE_DUP)
-  add_definitions(-DFMT_USE_DUP=1)
+if (HAVE_OPEN)
+  add_definitions(-DFMT_USE_FILE_DESCRIPTORS=1)
 endif ()
 
 enable_testing()
 
 include_directories(.)
 
-add_library(test-main test/test-main.cc)
+add_library(test-main
+  test/test-main.cc test/gtest-extra.cc test/gtest-extra.h)
+target_link_libraries(test-main gtest format)
 
-cxx_test(assert-test "gtest;test-main")
-cxx_test(format-test "format;gtest;test-main")
+cxx_test(gtest-extra-test test-main)
+cxx_test(format-test test-main)
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format-test PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")

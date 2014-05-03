@@ -1,5 +1,5 @@
 /*
- String formatting library for C++
+ Formatting library for C++
 
  Copyright (c) 2012, Victor Zverovich
  All rights reserved.
@@ -101,7 +101,19 @@ inline int FMT_SNPRINTF(char *buffer, size_t size, const char *format, ...) {
 #endif  // _MSC_VER
 
 const char RESET_COLOR[] = "\x1b[0m";
+
+typedef void (*FormatFunc)(fmt::Writer &, int , fmt::StringRef);
+
+void ReportError(FormatFunc func,
+    int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
+  try {
+    fmt::Writer full_message;
+    func(full_message, error_code, message); // TODO: this may throw?
+    std::fwrite(full_message.c_str(), full_message.size(), 1, stderr);
+    std::fputc('\n', stderr);
+  } catch (...) {}
 }
+}  // namespace
 
 template <typename T>
 int fmt::internal::CharTraits<char>::FormatFloat(
@@ -206,7 +218,7 @@ int fmt::internal::UTF16ToUTF8::Convert(fmt::WStringRef s) {
 #endif
 
 int fmt::internal::StrError(
-    int error_code, char *&buffer, std::size_t buffer_size) {
+    int error_code, char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT(true) {
   assert(buffer != 0 && buffer_size != 0);
   int result = 0;
 #ifdef _GNU_SOURCE
@@ -809,11 +821,23 @@ void fmt::SystemErrorSink::operator()(const fmt::Writer &w) const {
   throw SystemError(message.c_str(), error_code_);
 }
 
+void fmt::ReportSystemError(
+    int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
+  // FIXME: FormatSystemErrorMessage may throw
+  ReportError(internal::FormatSystemErrorMessage, error_code, message);
+}
+
 #ifdef _WIN32
 void fmt::WinErrorSink::operator()(const Writer &w) const {
   Writer message;
   internal::FormatWinErrorMessage(message, error_code_, w.c_str());
   throw SystemError(message.c_str(), error_code_);
+}
+
+void fmt::ReportWinError(
+    int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
+  // FIXME: FormatWinErrorMessage may throw
+  ReportError(internal::FormatWinErrorMessage, error_code, message);
 }
 #endif
 

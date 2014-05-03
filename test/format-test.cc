@@ -40,37 +40,6 @@
 # include <windows.h>
 #endif
 
-#if FMT_USE_DUP
-
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <fcntl.h>
-
-# ifdef _WIN32
-
-#  include <io.h>
-
-#  define O_WRONLY _O_WRONLY
-#  define O_CREAT _O_CREAT
-#  define O_TRUNC _O_TRUNC
-#  define S_IRUSR _S_IREAD
-#  define S_IWUSR _S_IWRITE
-#  define close _close
-#  define dup _dup
-#  define dup2 _dup2
-
-namespace {
-int open(const char *path, int oflag, int pmode) {
-  int fd = -1;
-  _sopen_s(&fd, path, oflag, _SH_DENYNO, pmode);
-  return fd;
-}
-}
-# else
-#  include <unistd.h>
-# endif
-#endif
-
 #include "format.h"
 #include "gtest-extra.h"
 
@@ -1830,25 +1799,12 @@ TEST(FormatIntTest, FormatDec) {
   EXPECT_EQ("42", FormatDec(42ull));
 }
 
-#ifdef FMT_USE_DUP
-
-// TODO: implement EXPECT_PRINT
+#ifdef FMT_USE_FILE_DESCRIPTORS
 
 TEST(FormatTest, PrintColored) {
-  // Temporarily redirect stdout to a file and check if PrintColored adds
-  // necessary ANSI escape sequences.
-  std::fflush(stdout);
-  int saved_stdio = dup(1);
-  EXPECT_NE(-1, saved_stdio);
-  int out = open("out", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-  EXPECT_NE(-1, out);
-  EXPECT_NE(-1, dup2(out, 1));
-  close(out);
-  fmt::PrintColored(fmt::RED, "Hello, {}!\n") << "world";
-  std::fflush(stdout);
-  EXPECT_NE(-1, dup2(saved_stdio, 1));
-  close(saved_stdio);
-  EXPECT_EQ("\x1b[31mHello, world!\n\x1b[0m", ReadFile("out"));
+  EXPECT_STDOUT(
+      fmt::PrintColored(fmt::RED, "Hello, {}!\n") << "world",
+      "\x1b[31mHello, world!\n\x1b[0m");
 }
 
 #endif

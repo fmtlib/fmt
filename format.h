@@ -1,5 +1,5 @@
 /*
- String formatting library for C++
+ Formatting library for C++
 
  Copyright (c) 2012, Victor Zverovich
  All rights reserved.
@@ -498,7 +498,8 @@ class UTF16ToUTF8 {
 //   ERANGE - buffer is not large enough to store the error message
 //   other  - failure
 // Buffer should be at least of size 1.
-int StrError(int error_code, char *&buffer, std::size_t buffer_size);
+int StrError(int error_code,
+    char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT(true);
 
 void FormatSystemErrorMessage(
     fmt::Writer &out, int error_code, fmt::StringRef message);
@@ -1563,6 +1564,12 @@ inline Formatter<SystemErrorSink> ThrowSystemError(
   return f;
 }
 
+// Reports a system error without throwing an exception.
+// Can be used to report errors from destructors.
+void ReportSystemError(int error_code, StringRef message) FMT_NOEXCEPT(true);
+
+#ifdef _WIN32
+
 /**
   A sink that gets the error message corresponding to a Windows error code
   as given by GetLastError and throws SystemError.
@@ -1587,6 +1594,12 @@ inline Formatter<WinErrorSink> ThrowWinError(int error_code, StringRef format) {
   Formatter<WinErrorSink> f(format, WinErrorSink(error_code));
   return f;
 }
+
+// Reports a Windows error without throwing an exception.
+// Can be used to report errors from destructors.
+void ReportWinError(int error_code, StringRef message) FMT_NOEXCEPT(true);
+
+#endif
 
 /** A sink that writes output to a file. */
 class FileSink {
