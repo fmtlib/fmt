@@ -190,7 +190,7 @@ TEST(FileDescriptorTest, MoveAssignment) {
 
 bool IsClosed(int fd) {
   char buffer;
-  ssize_t result = read(fd, &buffer, 1);
+  std::streamsize result = read(fd, &buffer, 1);
   return result == -1 && errno == EBADF;
 }
 
