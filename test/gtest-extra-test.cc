@@ -248,8 +248,9 @@ TEST(FileTest, DtorCloseError) {
   File *f = new File(".travis.yml", File::RDONLY);
 #ifndef _WIN32
   // The close function must be called inside EXPECT_STDERR, otherwise
-  // the system may allocate freed file descriptor when redirecting the
-  // output in EXPECT_STDERR.
+  // the system may recycle closed file descriptor when redirecting the
+  // output in EXPECT_STDERR and the second close will break output
+  // redirection.
   EXPECT_STDERR(FMT_POSIX(close(f->descriptor())); delete f,
     FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 #else
@@ -269,14 +270,25 @@ TEST(FileTest, Close) {
 
 TEST(FileTest, CloseError) {
   File *f = new File(".travis.yml", File::RDONLY);
+#ifndef _WIN32
   fmt::SystemError error("", 0);
   std::string message = FormatSystemErrorMessage(EBADF, "cannot close file");
+  // The close function must be called inside EXPECT_STDERR, otherwise
+  // the system may recycle closed file descriptor when redirecting the
+  // output in EXPECT_STDERR and the second close will break output
+  // redirection.
   EXPECT_STDERR(
     close(f->descriptor());
     try { f->close(); } catch (const fmt::SystemError &e) { error = e; }
     delete f,
     message + "\n");
   EXPECT_EQ(message, error.what());
+#else
+  close(f->descriptor());
+  // Closing file twice causes death on Windows.
+  f->close();
+  delete f;
+#endif
 }
 
 // Attempts to read count characters from a file.
@@ -382,11 +394,10 @@ TEST(FileTest, Pipe) {
   EXPECT_READ(read_end, "test");
 }
 
-// TODO: test pipe
-
 // TODO: compile both with C++11 & C++98 mode
 #endif
 
 // TODO: test OutputRedirector
+// TODO: test EXPECT_STDOUT and EXPECT_STDERR
 
 }  // namespace

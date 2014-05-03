@@ -224,19 +224,24 @@ inline File &move(File &f) { return f; }
 }
 #endif
 
-// Redirect file output to a pipe.
+// Captures file output by redirecting it to a pipe.
+// The output it can handle is limited by the pipe capacity.
 class OutputRedirector {
  private:
   FILE *file_;
-  File saved_;     // Saved file created with dup.
+  File original_;  // Original file passed to redirector.
   File read_end_;  // Read end of the pipe where the output is redirected.
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(OutputRedirector);
 
+  void Restore();
+
  public:
   explicit OutputRedirector(FILE *file);
-  ~OutputRedirector();
+  ~OutputRedirector() FMT_NOEXCEPT(true);
 
+  // Restores the original file, reads output from the pipe into a string
+  // and returns it.
   std::string Read();
 };
 

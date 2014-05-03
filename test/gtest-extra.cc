@@ -146,26 +146,33 @@ OutputRedirector::OutputRedirector(FILE *file) : file_(file) {
   if (std::fflush(file) != 0)
     fmt::ThrowSystemError(errno, "cannot flush stream");
   int fd = FMT_POSIX(fileno(file));
-  saved_ = File::dup(fd);
+  // Save the original file.
+  original_ = File::dup(fd);
+  // Create a pipe.
   File write_end;
   File::pipe(read_end_, write_end);
+  // Connect the write end to the passed FILE object.
   write_end.dup2(fd);
 }
 
-OutputRedirector::~OutputRedirector() {
+OutputRedirector::~OutputRedirector() FMT_NOEXCEPT(true) {
+  try {
+    Restore();
+  } catch (const std::exception &e) {
+    // TODO: report
+  }
+}
+
+void OutputRedirector::Restore() {
   if (std::fflush(file_) != 0)
-    fmt::ReportSystemError(errno, "cannot flush stream");
-  ErrorCode ec;
-  saved_.dup2(FMT_POSIX(fileno(file_)), ec);
-  if (ec.get())
-    fmt::ReportSystemError(errno, "cannot restore output");
+    fmt::ThrowSystemError(errno, "cannot flush stream");
+  // Restore the original file.
+  original_.dup2(FMT_POSIX(fileno(file_)));
 }
 
 std::string OutputRedirector::Read() {
   // Restore output.
-  if (std::fflush(file_) != 0)
-    fmt::ThrowSystemError(errno, "cannot flush stream");
-  saved_.dup2(FMT_POSIX(fileno(file_)));
+  Restore();
 
   // Read everything from the pipe.
   std::string content;
@@ -178,7 +185,5 @@ std::string OutputRedirector::Read() {
   } while (count != 0);
   return content;
 }
-
-// TODO: test EXPECT_STDOUT and EXPECT_STDERR
 
 #endif  // FMT_USE_FILE_DESCRIPTORS
