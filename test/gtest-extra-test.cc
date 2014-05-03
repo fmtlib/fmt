@@ -152,19 +152,23 @@ TEST(FileTest, DefaultCtor) {
 }
 
 // Checks if the file is open by reading one character from it.
-// Note that IsOpen is not equivalent to !IsClosed.
 bool IsOpen(int fd) {
   char buffer;
   return read(fd, &buffer, 1) == 1;
 }
 
-// Checks if the file is closed.
-// Note that IsClosed is not equivalent to !IsOpen.
-bool IsClosed(int fd) {
+bool IsClosedInternal(int fd) {
   char buffer;
   std::streamsize result = read(fd, &buffer, 1);
   return result == -1 && errno == EBADF;
 }
+
+#ifndef _WIN32
+// Checks if the file is closed.
+# define EXPECT_CLOSED(fd) EXPECT_TRUE(IsClosedInternal(fd))
+#else
+# define EXPECT_CLOSED(fd) EXPECT_DEATH(IsClosedInternal(fd))
+#endif
 
 TEST(FileTest, OpenFileInCtor) {
   int fd = 0;
@@ -173,7 +177,7 @@ TEST(FileTest, OpenFileInCtor) {
     fd = f.get();
     ASSERT_TRUE(IsOpen(fd));
   }
-  ASSERT_TRUE(IsClosed(fd));
+  EXPECT_CLOSED(fd);
 }
 
 TEST(FileTest, OpenFileError) {
@@ -205,7 +209,7 @@ TEST(FileTest, MoveAssignmentClosesFile) {
   File f2("CMakeLists.txt", File::RDONLY);
   int old_fd = f2.get();
   f2 = std::move(f);
-  EXPECT_TRUE(IsClosed(old_fd));
+  EXPECT_CLOSED(old_fd);
 }
 
 File OpenFile(int &fd) {
@@ -232,7 +236,7 @@ TEST(FileTest, MoveFromTemporaryInAssignmentClosesFile) {
   File f(".travis.yml", File::RDONLY);
   int old_fd = f.get();
   f = OpenFile(fd);
-  EXPECT_TRUE(IsClosed(old_fd));
+  EXPECT_CLOSED(old_fd);
 }
 
 TEST(FileTest, CloseFileInDtor) {
@@ -297,6 +301,11 @@ TEST(FileTest, Write) {
   EXPECT_READ(read_end, MESSAGE);
 }
 
+TEST(FileTest, WriteError) {
+  File f;
+  EXPECT_SYSTEM_ERROR(f.write(" ", 1), EBADF, "cannot write to file");
+}
+
 TEST(FileTest, Dup) {
   File f(".travis.yml", File::RDONLY);
   File dup = File::dup(f.get());
@@ -350,8 +359,6 @@ TEST(FileTest, Pipe) {
 }
 
 // TODO: test pipe
-
-// TODO: test File::read
 
 // TODO: compile both with C++11 & C++98 mode
 
