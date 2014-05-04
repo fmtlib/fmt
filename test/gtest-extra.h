@@ -338,17 +338,17 @@ class OutputRedirect {
 #define FMT_TEST_PRINT_(statement, expected_output, file, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
   if (::testing::AssertionResult gtest_ar = ::testing::AssertionSuccess()) { \
-    std::string output; \
+    std::string gtest_output; \
     { \
-      OutputRedirect redir(file); \
+      OutputRedirect gtest_redir(file); \
       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
-      output = redir.RestoreAndRead(); \
+      gtest_output = gtest_redir.RestoreAndRead(); \
     } \
-    if (output != expected_output) { \
+    if (gtest_output != expected_output) { \
       gtest_ar \
         << #statement " produces different output.\n" \
         << "Expected: " << expected_output << "\n" \
-        << "  Actual: " << output; \
+        << "  Actual: " << gtest_output; \
       goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
     } \
   } else \

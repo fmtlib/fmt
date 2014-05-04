@@ -174,9 +174,12 @@ void OutputRedirect::Flush() {
 }
 
 void OutputRedirect::Restore() {
+  if (original_.descriptor() == -1)
+    return;  // Already restored.
   Flush();
   // Restore the original file.
   original_.dup2(FMT_POSIX(fileno(file_)));
+  original_.close();
 }
 
 OutputRedirect::OutputRedirect(std::FILE *file) : file_(file) {
@@ -195,7 +198,7 @@ OutputRedirect::~OutputRedirect() FMT_NOEXCEPT(true) {
   try {
     Restore();
   } catch (const std::exception &e) {
-    // TODO: report
+    std::fputs(e.what(), stderr);
   }
 }
 
@@ -205,6 +208,8 @@ std::string OutputRedirect::RestoreAndRead() {
 
   // Read everything from the pipe.
   std::string content;
+  if (read_end_.descriptor() == -1)
+    return content;  // Already read.
   enum { BUFFER_SIZE = 4096 };
   char buffer[BUFFER_SIZE];
   std::streamsize count = 0;
@@ -212,6 +217,7 @@ std::string OutputRedirect::RestoreAndRead() {
     count = read_end_.read(buffer, BUFFER_SIZE);
     content.append(buffer, static_cast<std::size_t>(count));
   } while (count != 0);
+  read_end_.close();
   return content;
 }
 

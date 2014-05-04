@@ -243,7 +243,7 @@ TEST(BufferedFileTest, CloseFileInDtor) {
   EXPECT_CLOSED(fd);
 }
 
-TEST(BufferedFileTest, DtorCloseError) {
+TEST(BufferedFileTest, CloseErrorInDtor) {
   BufferedFile *f = new BufferedFile(OpenFile(".travis.yml"));
 #ifndef _WIN32
   // The close function must be called inside EXPECT_STDERR, otherwise
@@ -337,7 +337,7 @@ TEST(FileTest, CloseFileInDtor) {
   EXPECT_CLOSED(fd);
 }
 
-TEST(FileTest, DtorCloseError) {
+TEST(FileTest, CloseErrorInDtor) {
   File *f = new File(".travis.yml", File::RDONLY);
 #ifndef _WIN32
   // The close function must be called inside EXPECT_STDERR, otherwise
@@ -507,7 +507,7 @@ TEST(OutputRedirectTest, ScopedRedirect) {
 }
 
 // Test that OutputRedirect handles errors in flush correctly.
-TEST(OutputRedirectTest, ErrorInFlushBeforeRedirect) {
+TEST(OutputRedirectTest, FlushErrorInCtor) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
@@ -523,7 +523,7 @@ TEST(OutputRedirectTest, ErrorInFlushBeforeRedirect) {
   write_dup.dup2(write_fd);  // "undo" close or dtor will fail
 }
 
-TEST(OutputRedirectTest, DupError) {
+TEST(OutputRedirectTest, DupErrorInCtor) {
   BufferedFile f = OpenFile(".travis.yml");
   int fd = fileno(f.get());
   File dup = File::dup(fd);
@@ -548,7 +548,42 @@ TEST(OutputRedirectTest, RestoreAndRead) {
   EXPECT_READ(read_end, "[[[]]]");
 }
 
-// TODO: test OutputRedirect - dtor error
+// Test that OutputRedirect handles errors in flush correctly.
+TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  int write_fd = write_end.descriptor();
+  File write_dup = write_end.dup(write_fd);
+  BufferedFile f = write_end.fdopen("w");
+  OutputRedirect redir(f.get());
+  // Put a character in a file buffer.
+  EXPECT_EQ('x', fputc('x', f.get()));
+  close(write_fd);
+  EXPECT_SYSTEM_ERROR_OR_DEATH(redir.RestoreAndRead(),
+      EBADF, fmt::Format("cannot flush stream"));
+  write_dup.dup2(write_fd);  // "undo" close or dtor will fail
+}
+
+TEST(OutputRedirectTest, ErrorInDtor) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  int write_fd = write_end.descriptor();
+  File write_dup = write_end.dup(write_fd);
+  BufferedFile f = write_end.fdopen("w");
+  OutputRedirect *redir = new OutputRedirect(f.get());
+  // Put a character in a file buffer.
+  EXPECT_EQ('x', fputc('x', f.get()));
+  // The close function must be called inside EXPECT_STDERR, otherwise
+  // the system may recycle closed file descriptor when redirecting the
+  // output in EXPECT_STDERR and the second close will break output
+  // redirection.
+  EXPECT_STDERR(close(write_fd); delete redir,
+      FormatSystemErrorMessage(EBADF, "cannot flush stream"));
+  write_dup.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
+}
+
+// TODO: test calling RestoreAndRead multiple times
+
 // TODO: test EXPECT_STDOUT and EXPECT_STDERR
 
 // TODO: compile both with C++11 & C++98 mode
