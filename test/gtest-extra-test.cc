@@ -44,6 +44,14 @@ std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message) {
   EXPECT_THROW_MSG(statement, fmt::SystemError, \
       FormatSystemErrorMessage(error_code, message))
 
+#ifndef _WIN32
+# define EXPECT_SYSTEM_ERROR_OR_DEATH(statement, error_code, message) \
+    EXPECT_SYSTEM_ERROR(statement, error_code, message)
+#else
+# define EXPECT_SYSTEM_ERROR_OR_DEATH(statement, error_code, message) \
+    EXPECT_DEATH(statement, "")
+#endif
+
 // Tests that assertion macros evaluate their arguments exactly once.
 class SingleEvaluationTest : public ::testing::Test {
  protected:
@@ -327,7 +335,7 @@ TEST(FileTest, Read) {
 TEST(FileTest, ReadError) {
   File f;
   char buf;
-  EXPECT_SYSTEM_ERROR(f.read(&buf, 1), EBADF, "cannot read from file");
+  EXPECT_SYSTEM_ERROR_OR_DEATH(f.read(&buf, 1), EBADF, "cannot read from file");
 }
 
 TEST(FileTest, Write) {
@@ -340,7 +348,7 @@ TEST(FileTest, Write) {
 
 TEST(FileTest, WriteError) {
   File f;
-  EXPECT_SYSTEM_ERROR(f.write(" ", 1), EBADF, "cannot write to file");
+  EXPECT_SYSTEM_ERROR_OR_DEATH(f.write(" ", 1), EBADF, "cannot write to file");
 }
 
 TEST(FileTest, Dup) {
