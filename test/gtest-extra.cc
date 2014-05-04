@@ -51,6 +51,20 @@
     result = (expression); \
   } while (result == -1 && errno == EINTR)
 
+BufferedFile::~BufferedFile() FMT_NOEXCEPT(true) {
+  if (file_ && std::fclose(file_) != 0)
+    fmt::ReportSystemError(errno, "cannot close file");
+}
+
+void BufferedFile::close() {
+  if (!file_)
+    return;
+  int result = std::fclose(file_);
+  file_ = 0;
+  if (result != 0)
+    fmt::ThrowSystemError(errno, "cannot close file");
+}
+
 File::File(const char *path, int oflag) {
   int mode = S_IRUSR | S_IWUSR;
 #ifdef _WIN32
@@ -73,11 +87,12 @@ File::~File() FMT_NOEXCEPT(true) {
 void File::close() {
   if (fd_ == -1)
     return;
-  // Don't need to retry close in case of EINTR.
+  // Don't retry close in case of EINTR!
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
-  if (::FMT_POSIX(close(fd_)) != 0)
-    fmt::ThrowSystemError(errno, "cannot close file");
+  int result = ::FMT_POSIX(close(fd_));
   fd_ = -1;
+  if (result != 0)
+    fmt::ThrowSystemError(errno, "cannot close file");
 }
 
 std::streamsize File::read(void *buffer, std::size_t count) {
@@ -142,7 +157,13 @@ void File::pipe(File &read_end, File &write_end) {
   write_end = File(fds[1]);
 }
 
-OutputRedirector::OutputRedirector(FILE *file) : file_(file) {
+BufferedFile File::fdopen(const char *mode) {
+  BufferedFile f(::fdopen(fd_, mode));
+  fd_ = -1;
+  return f;
+}
+
+OutputRedirect::OutputRedirect(FILE *file) : file_(file) {
   if (std::fflush(file) != 0)
     fmt::ThrowSystemError(errno, "cannot flush stream");
   int fd = FMT_POSIX(fileno(file));
@@ -155,7 +176,7 @@ OutputRedirector::OutputRedirector(FILE *file) : file_(file) {
   write_end.dup2(fd);
 }
 
-OutputRedirector::~OutputRedirector() FMT_NOEXCEPT(true) {
+OutputRedirect::~OutputRedirect() FMT_NOEXCEPT(true) {
   try {
     Restore();
   } catch (const std::exception &e) {
@@ -163,14 +184,14 @@ OutputRedirector::~OutputRedirector() FMT_NOEXCEPT(true) {
   }
 }
 
-void OutputRedirector::Restore() {
+void OutputRedirect::Restore() {
   if (std::fflush(file_) != 0)
     fmt::ThrowSystemError(errno, "cannot flush stream");
   // Restore the original file.
   original_.dup2(FMT_POSIX(fileno(file_)));
 }
 
-std::string OutputRedirector::Read() {
+std::string OutputRedirect::Read() {
   // Restore output.
   Restore();
 

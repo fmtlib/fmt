@@ -27,6 +27,7 @@
 
 #include "gtest-extra.h"
 
+#include <cstdio>
 #include <cstring>
 #include <algorithm>
 #include <stdexcept>
@@ -43,6 +44,26 @@ std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message) {
 #define EXPECT_SYSTEM_ERROR(statement, error_code, message) \
   EXPECT_THROW_MSG(statement, fmt::SystemError, \
       FormatSystemErrorMessage(error_code, message))
+
+// Checks if the file is open by reading one character from it.
+bool IsOpen(int fd) {
+  char buffer;
+  return FMT_POSIX(read(fd, &buffer, 1)) == 1;
+}
+
+bool IsClosedInternal(int fd) {
+  char buffer;
+  std::streamsize result = FMT_POSIX(read(fd, &buffer, 1));
+  return result == -1 && errno == EBADF;
+}
+
+#ifndef _WIN32
+// Checks if the file is closed.
+# define EXPECT_CLOSED(fd) EXPECT_TRUE(IsClosedInternal(fd))
+#else
+// Reading from a closed file causes death on Windows.
+# define EXPECT_CLOSED(fd) EXPECT_DEATH(IsClosedInternal(fd), "")
+#endif
 
 #ifndef _WIN32
 # define EXPECT_SYSTEM_ERROR_OR_DEATH(statement, error_code, message) \
@@ -154,30 +175,94 @@ TEST(ErrorCodeTest, Ctor) {
   EXPECT_EQ(42, ErrorCode(42).get());
 }
 
+TEST(BufferedFileTest, DefaultCtor) {
+  BufferedFile f;
+  EXPECT_TRUE(f.get() == 0);
+}
+
+BufferedFile OpenFile(const char *name, FILE **fp = 0) {
+  BufferedFile f = File(".travis.yml", File::RDONLY).fdopen("r");
+  if (fp)
+    *fp = f.get();
+  return f;
+}
+
+TEST(BufferedFileTest, MoveCtor) {
+  BufferedFile bf = OpenFile(".travis.yml");
+  FILE *fp = bf.get();
+  EXPECT_TRUE(fp != 0);
+  BufferedFile bf2(std::move(bf));
+  EXPECT_EQ(fp, bf2.get());
+  EXPECT_TRUE(bf.get() == 0);
+}
+
+TEST(BufferedFileTest, MoveAssignment) {
+  BufferedFile bf = OpenFile(".travis.yml");
+  FILE *fp = bf.get();
+  EXPECT_TRUE(fp != 0);
+  BufferedFile bf2;
+  bf2 = std::move(bf);
+  EXPECT_EQ(fp, bf2.get());
+  EXPECT_TRUE(bf.get() == 0);
+}
+
+TEST(BufferedFileTest, MoveAssignmentClosesFile) {
+  BufferedFile bf = OpenFile(".travis.yml");
+  BufferedFile bf2 = OpenFile("CMakeLists.txt");
+  int old_fd = fileno(bf2.get());
+  bf2 = std::move(bf);
+  EXPECT_CLOSED(old_fd);
+}
+
+TEST(BufferedFileTest, MoveFromTemporaryInCtor) {
+  FILE *fp = 0;
+  BufferedFile f(OpenFile(".travis.yml", &fp));
+  EXPECT_EQ(fp, f.get());
+}
+
+TEST(BufferedFileTest, MoveFromTemporaryInAssignment) {
+  FILE *fp = 0;
+  BufferedFile f;
+  f = OpenFile(".travis.yml", &fp);
+  EXPECT_EQ(fp, f.get());
+}
+
+TEST(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
+  BufferedFile f = OpenFile(".travis.yml");
+  int old_fd = fileno(f.get());
+  f = OpenFile(".travis.yml");
+  EXPECT_CLOSED(old_fd);
+}
+
+TEST(BufferedFileTest, CloseFileInDtor) {
+  int fd = 0;
+  {
+    BufferedFile f = OpenFile(".travis.yml");
+    fd = fileno(f.get());
+  }
+  EXPECT_CLOSED(fd);
+}
+
+TEST(BufferedFileTest, DtorCloseError) {
+  BufferedFile *f = new BufferedFile(OpenFile(".travis.yml"));
+#ifndef _WIN32
+  // The close function must be called inside EXPECT_STDERR, otherwise
+  // the system may recycle closed file descriptor when redirecting the
+  // output in EXPECT_STDERR and the second close will break output
+  // redirection.
+  EXPECT_STDERR(close(fileno(f->get())); delete f,
+    FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
+#else
+  FMT_POSIX(close(fileno(f->get())));
+  // Closing file twice causes death on Windows.
+  EXPECT_DEATH(delete f, "");
+#endif
+}
+
 TEST(FileTest, DefaultCtor) {
   File f;
   EXPECT_EQ(-1, f.descriptor());
 }
-
-// Checks if the file is open by reading one character from it.
-bool IsOpen(int fd) {
-  char buffer;
-  return FMT_POSIX(read(fd, &buffer, 1)) == 1;
-}
-
-bool IsClosedInternal(int fd) {
-  char buffer;
-  std::streamsize result = FMT_POSIX(read(fd, &buffer, 1));
-  return result == -1 && errno == EBADF;
-}
-
-#ifndef _WIN32
-// Checks if the file is closed.
-# define EXPECT_CLOSED(fd) EXPECT_TRUE(IsClosedInternal(fd))
-#else
-// Reading from a closed file causes death on Windows.
-# define EXPECT_CLOSED(fd) EXPECT_DEATH(IsClosedInternal(fd), "")
-#endif
 
 TEST(FileTest, OpenFileInCtor) {
   File f(".travis.yml", File::RDONLY);
@@ -277,27 +362,22 @@ TEST(FileTest, Close) {
 }
 
 TEST(FileTest, CloseError) {
-  File *f = new File(".travis.yml", File::RDONLY);
+  File f(".travis.yml", File::RDONLY);
 #ifndef _WIN32
-  fmt::SystemError error("", 0);
-  std::string message = FormatSystemErrorMessage(EBADF, "cannot close file");
   // The close function must be called inside EXPECT_STDERR, otherwise
   // the system may recycle closed file descriptor when redirecting the
   // output in EXPECT_STDERR and the second close will break output
   // redirection.
-  EXPECT_STDERR(
-    close(f->descriptor());
-    try { f->close(); } catch (const fmt::SystemError &e) { error = e; }
-    delete f,
-    message + "\n");
-  EXPECT_EQ(message, error.what());
+  close(f.descriptor());
+  EXPECT_SYSTEM_ERROR(f.close(), EBADF, "cannot close file");
+  EXPECT_EQ(-1, f.descriptor());
 #else
+  // Open other before closing f or the descriptor may be recycled.
   File other(".travis.yml", File::RDONLY);
-  close(f->descriptor());
+  close(f.descriptor());
   // Closing file twice causes death on Windows.
-  EXPECT_DEATH(f->close(), "");
-  other.dup2(f->descriptor());  // "undo" close or delete will fail
-  delete f;
+  EXPECT_DEATH(f.close(), "");
+  other.dup2(f.descriptor());  // "undo" close or dtor will fail
 #endif
 }
 
@@ -412,10 +492,25 @@ TEST(FileTest, Pipe) {
   EXPECT_READ(read_end, "test");
 }
 
+TEST(OutputRedirectTest, ScopedRedirect) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  {
+    BufferedFile file(write_end.fdopen("w"));
+    std::fprintf(file.get(), "[[[");
+    {
+      OutputRedirect redir(file.get());
+      std::fprintf(file.get(), "censored");
+    }
+    std::fprintf(file.get(), "]]]");
+  }
+  EXPECT_READ(read_end, "[[[]]]");
+}
+
+// TODO: test OutputRedirect
+// TODO: test EXPECT_STDOUT and EXPECT_STDERR
+
 // TODO: compile both with C++11 & C++98 mode
 #endif
-
-// TODO: test OutputRedirector
-// TODO: test EXPECT_STDOUT and EXPECT_STDERR
 
 }  // namespace

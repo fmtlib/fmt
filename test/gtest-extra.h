@@ -103,7 +103,91 @@ class ErrorCode {
   int get() const FMT_NOEXCEPT(true) { return value_; }
 };
 
+// A buffered file.
+class BufferedFile {
+ private:
+  FILE *file_;
+
+  friend class File;
+
+  explicit BufferedFile(FILE *f) : file_(f) {}
+
+  void close();
+
+ public:
+  // Constructs a BufferedFile object which doesn't represent any file.
+  BufferedFile() FMT_NOEXCEPT(true) : file_(0) {}
+
+  // Destroys the object closing the file it represents if any.
+  ~BufferedFile() FMT_NOEXCEPT(true);
+
+#if !FMT_USE_RVALUE_REFERENCES
+  // Emulate a move constructor and a move assignment operator if rvalue
+  // references are not supported.
+
+ private:
+  // A proxy object to emulate a move constructor.
+  // It is private to make it impossible call operator Proxy directly.
+  struct Proxy {
+    FILE *file;
+  };
+
+ public:
+  // A "move constructor" for moving from a temporary.
+  BufferedFile(Proxy p) FMT_NOEXCEPT(true) : file_(p.file) {}
+
+  // A "move constructor" for for moving from an lvalue.
+  BufferedFile(BufferedFile &f) FMT_NOEXCEPT(true) : file_(f.file_) {
+    f.file_ = 0;
+  }
+
+  // A "move assignment operator" for moving from a temporary.
+  BufferedFile &operator=(Proxy p) {
+    close();
+    file_ = p.file;
+    return *this;
+  }
+
+  // A "move assignment operator" for moving from an lvalue.
+  BufferedFile &operator=(BufferedFile &other) {
+    close();
+    file_ = other.file_;
+    other.file_ = 0;
+    return *this;
+  }
+
+  // Returns a proxy object for moving from a temporary:
+  //   BufferedFile file = BufferedFile(...);
+  operator Proxy() FMT_NOEXCEPT(true) {
+    Proxy p = {file_};
+    file_ = 0;
+    return p;
+  }
+#else
+ private:
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(BufferedFile);
+
+ public:
+  BufferedFile(BufferedFile &&other) FMT_NOEXCEPT(true) : file_(other.file_) {
+    other.file_ = 0;
+  }
+
+  BufferedFile& operator=(BufferedFile &&other) {
+    close();
+    file_ = other.file_;
+    other.file_ = 0;
+    return *this;
+  }
+#endif
+
+  FILE *get() const { return file_; }
+};
+
 // A file.
+// Methods that are not declared with FMT_NOEXCEPT(true) may throw
+// fmt::SystemError in case of failure. Note that some errors such as
+// closing the file multiple times will cause a crash on Windows rather
+// than an exception.
 class File {
  private:
   int fd_;  // File descriptor.
@@ -123,7 +207,6 @@ class File {
   File() FMT_NOEXCEPT(true) : fd_(-1) {}
 
   // Opens a file and constructs a File object representing this file.
-  // Throws fmt::SystemError on error.
   File(const char *path, int oflag);
 
 #if !FMT_USE_RVALUE_REFERENCES
@@ -138,22 +221,22 @@ class File {
   };
 
  public:
-  // A "move" constructor for moving from a temporary.
+  // A "move constructor" for moving from a temporary.
   File(Proxy p) FMT_NOEXCEPT(true) : fd_(p.fd) {}
 
-  // A "move" constructor for for moving from an lvalue.
+  // A "move constructor" for for moving from an lvalue.
   File(File &other) FMT_NOEXCEPT(true) : fd_(other.fd_) {
     other.fd_ = -1;
   }
 
-  // A "move" assignment operator for moving from a temporary.
+  // A "move assignment operator" for moving from a temporary.
   File &operator=(Proxy p) {
     close();
     fd_ = p.fd;
     return *this;
   }
 
-  // A "move" assignment operator for moving from an lvalue.
+  // A "move assignment operator" for moving from an lvalue.
   File &operator=(File &other) {
     close();
     fd_ = other.fd_;
@@ -201,11 +284,11 @@ class File {
   std::streamsize write(const void *buffer, std::size_t count);
 
   // Duplicates a file descriptor with the dup function and returns
-  // the duplicate as a file object. Throws fmt::SystemError on error.
+  // the duplicate as a file object.
   static File dup(int fd);
 
   // Makes fd be the copy of this file descriptor, closing fd first if
-  // necessary. Throws fmt::SystemError on error.
+  // necessary.
   void dup2(int fd);
 
   // Makes fd be the copy of this file descriptor, closing fd first if
@@ -213,32 +296,35 @@ class File {
   void dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT(true);
 
   // Creates a pipe setting up read_end and write_end file objects for reading
-  // and writing respectively. Throws fmt::SystemError on error.
+  // and writing respectively.
   static void pipe(File &read_end, File &write_end);
+
+  BufferedFile fdopen(const char *mode);
 };
 
 #if !FMT_USE_RVALUE_REFERENCES
 namespace std {
 // For compatibility with C++98.
+inline BufferedFile &move(BufferedFile &f) { return f; }
 inline File &move(File &f) { return f; }
 }
 #endif
 
 // Captures file output by redirecting it to a pipe.
 // The output it can handle is limited by the pipe capacity.
-class OutputRedirector {
+class OutputRedirect {
  private:
   FILE *file_;
   File original_;  // Original file passed to redirector.
   File read_end_;  // Read end of the pipe where the output is redirected.
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(OutputRedirector);
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(OutputRedirect);
 
   void Restore();
 
  public:
-  explicit OutputRedirector(FILE *file);
-  ~OutputRedirector() FMT_NOEXCEPT(true);
+  explicit OutputRedirect(FILE *file);
+  ~OutputRedirect() FMT_NOEXCEPT(true);
 
   // Restores the original file, reads output from the pipe into a string
   // and returns it.
@@ -250,7 +336,7 @@ class OutputRedirector {
   if (::testing::AssertionResult gtest_ar = ::testing::AssertionSuccess()) { \
     std::string output; \
     { \
-      OutputRedirector redir(file); \
+      OutputRedirect redir(file); \
       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
       output = redir.Read(); \
     } \
