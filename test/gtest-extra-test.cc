@@ -336,6 +336,7 @@ TEST(FileTest, ReadError) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
   char buf;
+  // We intentionally read from write_end to cause error.
   EXPECT_SYSTEM_ERROR(write_end.read(&buf, 1), EBADF, "cannot read from file");
 }
 
@@ -348,8 +349,10 @@ TEST(FileTest, Write) {
 }
 
 TEST(FileTest, WriteError) {
-  File f;
-  EXPECT_SYSTEM_ERROR_OR_DEATH(f.write(" ", 1), EBADF, "cannot write to file");
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  // We intentionally write to read_end to cause error.
+  EXPECT_SYSTEM_ERROR(read_end.write(" ", 1), EBADF, "cannot write to file");
 }
 
 TEST(FileTest, Dup) {
