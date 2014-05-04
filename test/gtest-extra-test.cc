@@ -284,9 +284,11 @@ TEST(FileTest, CloseError) {
     message + "\n");
   EXPECT_EQ(message, error.what());
 #else
+  File other(".travis.yml", File::RDONLY);
   close(f->descriptor());
   // Closing file twice causes death on Windows.
   EXPECT_DEATH(f->close(), "");
+  other.dup2(f->descriptor());  // "undo" close or delete will fail
   delete f;
 #endif
 }
