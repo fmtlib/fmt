@@ -333,9 +333,10 @@ TEST(FileTest, Read) {
 }
 
 TEST(FileTest, ReadError) {
-  File f;
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
   char buf;
-  EXPECT_SYSTEM_ERROR_OR_DEATH(f.read(&buf, 1), EBADF, "cannot read from file");
+  EXPECT_SYSTEM_ERROR(write_end.read(&buf, 1), EBADF, "cannot read from file");
 }
 
 TEST(FileTest, Write) {
