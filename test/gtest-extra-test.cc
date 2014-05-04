@@ -391,8 +391,12 @@ TEST(FileTest, Dup2NoExcept) {
 TEST(FileTest, Dup2NoExceptError) {
   File f(".travis.yml", File::RDONLY);
   ErrorCode ec;
+#ifndef _WIN32
   f.dup2(-1, ec);
   EXPECT_EQ(EBADF, ec.get());
+#else
+  EXPECT_DEATH(f.dup2(-1, ec), "");
+#endif
 }
 
 TEST(FileTest, Pipe) {
