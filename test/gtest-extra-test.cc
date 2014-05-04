@@ -360,7 +360,7 @@ TEST(FileTest, Dup) {
 }
 
 TEST(FileTest, DupError) {
-  EXPECT_SYSTEM_ERROR(File::dup(-1),
+  EXPECT_SYSTEM_ERROR_OR_DEATH(File::dup(-1),
       EBADF, "cannot duplicate file descriptor -1");
 }
 
