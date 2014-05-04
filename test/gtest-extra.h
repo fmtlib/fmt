@@ -29,6 +29,7 @@
 #define FMT_GTEST_EXTRA_H
 
 #include <cstddef>
+#include <cstdio>
 #include <ios>
 #include <string>
 
@@ -106,11 +107,11 @@ class ErrorCode {
 // A buffered file.
 class BufferedFile {
  private:
-  FILE *file_;
+  std::FILE *file_;
 
   friend class File;
 
-  explicit BufferedFile(FILE *f) : file_(f) {}
+  explicit BufferedFile(std::FILE *f) : file_(f) {}
 
   void close();
 
@@ -129,7 +130,7 @@ class BufferedFile {
   // A proxy object to emulate a move constructor.
   // It is private to make it impossible call operator Proxy directly.
   struct Proxy {
-    FILE *file;
+    std::FILE *file;
   };
 
  public:
@@ -180,7 +181,7 @@ class BufferedFile {
   }
 #endif
 
-  FILE *get() const { return file_; }
+  std::FILE *get() const { return file_; }
 };
 
 // A file.
@@ -299,6 +300,8 @@ class File {
   // and writing respectively.
   static void pipe(File &read_end, File &write_end);
 
+  // Creates a BufferedFile object associated with this file and detaches
+  // this File object from the file.
   BufferedFile fdopen(const char *mode);
 };
 
@@ -314,21 +317,22 @@ inline File &move(File &f) { return f; }
 // The output it can handle is limited by the pipe capacity.
 class OutputRedirect {
  private:
-  FILE *file_;
+  std::FILE *file_;
   File original_;  // Original file passed to redirector.
   File read_end_;  // Read end of the pipe where the output is redirected.
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(OutputRedirect);
 
+  void Flush();
   void Restore();
 
  public:
-  explicit OutputRedirect(FILE *file);
+  explicit OutputRedirect(std::FILE *file);
   ~OutputRedirect() FMT_NOEXCEPT(true);
 
   // Restores the original file, reads output from the pipe into a string
   // and returns it.
-  std::string Read();
+  std::string RestoreAndRead();
 };
 
 #define FMT_TEST_PRINT_(statement, expected_output, file, fail) \
@@ -338,7 +342,7 @@ class OutputRedirect {
     { \
       OutputRedirect redir(file); \
       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
-      output = redir.Read(); \
+      output = redir.RestoreAndRead(); \
     } \
     if (output != expected_output) { \
       gtest_ar \

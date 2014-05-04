@@ -163,16 +163,31 @@ BufferedFile File::fdopen(const char *mode) {
   return f;
 }
 
-OutputRedirect::OutputRedirect(FILE *file) : file_(file) {
-  if (std::fflush(file) != 0)
+void OutputRedirect::Flush() {
+#if EOF != -1
+# error "FMT_RETRY assumes return value of -1 indicating failure"
+#endif
+  int result = 0;
+  FMT_RETRY(result, fflush(file_));
+  if (result != 0)
     fmt::ThrowSystemError(errno, "cannot flush stream");
+}
+
+void OutputRedirect::Restore() {
+  Flush();
+  // Restore the original file.
+  original_.dup2(FMT_POSIX(fileno(file_)));
+}
+
+OutputRedirect::OutputRedirect(std::FILE *file) : file_(file) {
+  Flush();
   int fd = FMT_POSIX(fileno(file));
-  // Save the original file.
+  // Create a File object referring to the original file.
   original_ = File::dup(fd);
   // Create a pipe.
   File write_end;
   File::pipe(read_end_, write_end);
-  // Connect the write end to the passed FILE object.
+  // Connect the passed FILE object to the write end of the pipe.
   write_end.dup2(fd);
 }
 
@@ -184,14 +199,7 @@ OutputRedirect::~OutputRedirect() FMT_NOEXCEPT(true) {
   }
 }
 
-void OutputRedirect::Restore() {
-  if (std::fflush(file_) != 0)
-    fmt::ThrowSystemError(errno, "cannot flush stream");
-  // Restore the original file.
-  original_.dup2(FMT_POSIX(fileno(file_)));
-}
-
-std::string OutputRedirect::Read() {
+std::string OutputRedirect::RestoreAndRead() {
   // Restore output.
   Restore();
 

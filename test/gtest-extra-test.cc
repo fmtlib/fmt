@@ -372,12 +372,11 @@ TEST(FileTest, CloseError) {
   EXPECT_SYSTEM_ERROR(f.close(), EBADF, "cannot close file");
   EXPECT_EQ(-1, f.descriptor());
 #else
-  // Open other before closing f or the descriptor may be recycled.
-  File other(".travis.yml", File::RDONLY);
+  File dup = f.dup(f.descriptor());
   close(f.descriptor());
   // Closing file twice causes death on Windows.
   EXPECT_DEATH(f.close(), "");
-  other.dup2(f.descriptor());  // "undo" close or dtor will fail
+  dup.dup2(f.descriptor());  // "undo" close or dtor will fail
 #endif
 }
 
@@ -507,7 +506,49 @@ TEST(OutputRedirectTest, ScopedRedirect) {
   EXPECT_READ(read_end, "[[[]]]");
 }
 
-// TODO: test OutputRedirect
+// Test that OutputRedirect handles errors in flush correctly.
+TEST(OutputRedirectTest, ErrorInFlushBeforeRedirect) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  int write_fd = write_end.descriptor();
+  File write_dup = write_end.dup(write_fd);
+  BufferedFile f = write_end.fdopen("w");
+  // Put a character in a file buffer.
+  EXPECT_EQ('x', fputc('x', f.get()));
+  close(write_fd);
+  OutputRedirect *redir = 0;
+  EXPECT_SYSTEM_ERROR_OR_DEATH(redir = new OutputRedirect(f.get()),
+      EBADF, fmt::Format("cannot flush stream"));
+  delete redir;
+  write_dup.dup2(write_fd);  // "undo" close or dtor will fail
+}
+
+TEST(OutputRedirectTest, DupError) {
+  BufferedFile f = OpenFile(".travis.yml");
+  int fd = fileno(f.get());
+  File dup = File::dup(fd);
+  close(fd);
+  OutputRedirect *redir = 0;
+  EXPECT_SYSTEM_ERROR_OR_DEATH(redir = new OutputRedirect(f.get()),
+      EBADF, fmt::Format("cannot duplicate file descriptor {}") << fd);
+  dup.dup2(fd);  // "undo" close or dtor will fail
+  delete redir;
+}
+
+TEST(OutputRedirectTest, RestoreAndRead) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  BufferedFile file(write_end.fdopen("w"));
+  std::fprintf(file.get(), "[[[");
+  OutputRedirect redir(file.get());
+  std::fprintf(file.get(), "censored");
+  EXPECT_EQ("censored", redir.RestoreAndRead());
+  std::fprintf(file.get(), "]]]");
+  file = BufferedFile();
+  EXPECT_READ(read_end, "[[[]]]");
+}
+
+// TODO: test OutputRedirect - dtor error
 // TODO: test EXPECT_STDOUT and EXPECT_STDERR
 
 // TODO: compile both with C++11 & C++98 mode
