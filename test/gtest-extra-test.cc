@@ -374,7 +374,7 @@ TEST(FileTest, Dup2) {
 
 TEST(FileTest, Dup2Error) {
   File f(".travis.yml", File::RDONLY);
-  EXPECT_SYSTEM_ERROR(f.dup2(-1), EBADF,
+  EXPECT_SYSTEM_ERROR_OR_DEATH(f.dup2(-1), EBADF,
     fmt::Format("cannot duplicate file descriptor {} to -1") << f.descriptor());
 }
 
