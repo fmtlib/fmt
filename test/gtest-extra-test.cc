@@ -83,17 +83,20 @@ class SingleEvaluationTest : public ::testing::Test {
   SingleEvaluationTest() {
     p_ = s_;
     a_ = 0;
+    b_ = 0;
   }
 
   static const char* const s_;
   static const char* p_;
 
   static int a_;
+  static int b_;
 };
 
 const char* const SingleEvaluationTest::s_ = "01234";
 const char* SingleEvaluationTest::p_;
 int SingleEvaluationTest::a_;
+int SingleEvaluationTest::b_;
 
 void ThrowNothing() {}
 
@@ -109,10 +112,11 @@ TEST_F(SingleEvaluationTest, FailedEXPECT_THROW_MSG) {
   EXPECT_EQ(s_ + 1, p_);
 }
 
-// Tests that when EXPECT_STDOUT fails, it evaluates its message argument
+// Tests that when EXPECT_WRITE fails, it evaluates its message argument
 // exactly once.
-TEST_F(SingleEvaluationTest, FailedEXPECT_STDOUT) {
-  EXPECT_NONFATAL_FAILURE(EXPECT_STDOUT(std::printf("test"), p_++), "01234");
+TEST_F(SingleEvaluationTest, FailedEXPECT_WRITE) {
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_WRITE(stdout, std::printf("test"), p_++), "01234");
   EXPECT_EQ(s_ + 1, p_);
 }
 
@@ -122,28 +126,54 @@ TEST_F(SingleEvaluationTest, ExceptionTests) {
   EXPECT_THROW_MSG({  // NOLINT
     a_++;
     ThrowException();
-  }, std::exception, "test");
+  }, std::exception, (b_++, "test"));
   EXPECT_EQ(1, a_);
+  EXPECT_EQ(1, b_);
 
   // failed EXPECT_THROW_MSG, throws different type
   EXPECT_NONFATAL_FAILURE(EXPECT_THROW_MSG({  // NOLINT
     a_++;
     ThrowException();
-  }, std::logic_error, "test"), "throws a different type");
+  }, std::logic_error, (b_++, "test")), "throws a different type");
   EXPECT_EQ(2, a_);
+  EXPECT_EQ(2, b_);
 
   // failed EXPECT_THROW_MSG, throws an exception with different message
   EXPECT_NONFATAL_FAILURE(EXPECT_THROW_MSG({  // NOLINT
     a_++;
     ThrowException();
-  }, std::exception, "other"), "throws an exception with a different message");
+  }, std::exception, (b_++, "other")),
+      "throws an exception with a different message");
   EXPECT_EQ(3, a_);
+  EXPECT_EQ(3, b_);
 
   // failed EXPECT_THROW_MSG, throws nothing
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THROW_MSG(a_++, std::exception, "test"), "throws nothing");
+      EXPECT_THROW_MSG(a_++, std::exception, (b_++, "test")), "throws nothing");
   EXPECT_EQ(4, a_);
+  EXPECT_EQ(4, b_);
 }
+
+// Tests that assertion arguments are evaluated exactly once.
+TEST_F(SingleEvaluationTest, WriteTests) {
+  // successful EXPECT_WRITE
+  EXPECT_WRITE(stdout, {  // NOLINT
+    a_++;
+    std::printf("test");
+  }, (b_++, "test"));
+  EXPECT_EQ(1, a_);
+  EXPECT_EQ(1, b_);
+
+  // failed EXPECT_WRITE
+  EXPECT_NONFATAL_FAILURE(EXPECT_WRITE(stdout, {  // NOLINT
+    a_++;
+    std::printf("test");
+  }, (b_++, "other")), "Actual: test");
+  EXPECT_EQ(2, a_);
+  EXPECT_EQ(2, b_);
+}
+
+// TODO: test EXPECT_STD*
 
 // Tests that the compiler will not complain about unreachable code in the
 // EXPECT_THROW_MSG macro.
@@ -291,11 +321,11 @@ TEST_F(BufferedFileTest, CloseFileInDtor) {
 
 TEST_F(BufferedFileTest, CloseErrorInDtor) {
   BufferedFile *f = new BufferedFile(OpenFile(".travis.yml"));
-  // The close function must be called inside EXPECT_STDERR, otherwise
+  // The close function must be called inside EXPECT_WRITE, otherwise
   // the system may recycle closed file descriptor when redirecting the
   // output in EXPECT_STDERR and the second close will break output
   // redirection.
-  EXPECT_STDERR(close(fileno(f->get())); delete f,
+  EXPECT_WRITE(stderr, close(fileno(f->get())); delete f,
     FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 }
 
@@ -380,11 +410,11 @@ TEST(FileTest, CloseFileInDtor) {
 TEST(FileTest, CloseErrorInDtor) {
   File *f = new File(".travis.yml", File::RDONLY);
 #ifndef _WIN32
-  // The close function must be called inside EXPECT_STDERR, otherwise
+  // The close function must be called inside EXPECT_WRITE, otherwise
   // the system may recycle closed file descriptor when redirecting the
   // output in EXPECT_STDERR and the second close will break output
   // redirection.
-  EXPECT_STDERR(FMT_POSIX(close(f->descriptor())); delete f,
+  EXPECT_WRITE(stderr, FMT_POSIX(close(f->descriptor())); delete f,
     FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 #else
   close(f->descriptor());
@@ -404,10 +434,6 @@ TEST(FileTest, Close) {
 TEST(FileTest, CloseError) {
   File f(".travis.yml", File::RDONLY);
 #ifndef _WIN32
-  // The close function must be called inside EXPECT_STDERR, otherwise
-  // the system may recycle closed file descriptor when redirecting the
-  // output in EXPECT_STDERR and the second close will break output
-  // redirection.
   close(f.descriptor());
   EXPECT_SYSTEM_ERROR(f.close(), EBADF, "cannot close file");
   EXPECT_EQ(-1, f.descriptor());
@@ -615,11 +641,11 @@ TEST(OutputRedirectTest, ErrorInDtor) {
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
 #ifndef _WIN32
-  // The close function must be called inside EXPECT_STDERR, otherwise
+  // The close function must be called inside EXPECT_WRITE, otherwise
   // the system may recycle closed file descriptor when redirecting the
   // output in EXPECT_STDERR and the second close will break output
   // redirection.
-  EXPECT_STDERR(close(write_fd); delete redir,
+  EXPECT_WRITE(stderr, close(write_fd); delete redir,
       FormatSystemErrorMessage(EBADF, "cannot flush stream"));
 #else
   close(write_fd);
@@ -627,8 +653,6 @@ TEST(OutputRedirectTest, ErrorInDtor) {
 #endif
   write_dup.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
 }
-
-// TODO: test EXPECT_STDOUT and EXPECT_STDERR
 
 // TODO: compile both in C++11 & C++98 mode
 #endif

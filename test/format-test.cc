@@ -1815,8 +1815,7 @@ TEST(FormatIntTest, FormatDec) {
 #ifdef FMT_USE_FILE_DESCRIPTORS
 
 TEST(FormatTest, PrintColored) {
-  EXPECT_STDOUT(
-      fmt::PrintColored(fmt::RED, "Hello, {}!\n") << "world",
+  EXPECT_WRITE(stdout, fmt::PrintColored(fmt::RED, "Hello, {}!\n") << "world",
       "\x1b[31mHello, world!\n\x1b[0m");
 }
 

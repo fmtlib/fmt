@@ -337,7 +337,7 @@ class OutputRedirect {
   std::string RestoreAndRead();
 };
 
-#define FMT_TEST_PRINT_(statement, expected_output, file, fail) \
+#define FMT_TEST_WRITE_(statement, expected_output, file, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
   if (::testing::AssertionResult gtest_ar = ::testing::AssertionSuccess()) { \
     std::string gtest_expected_output = expected_output; \
@@ -355,13 +355,9 @@ class OutputRedirect {
     GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__): \
       fail(gtest_ar.failure_message())
 
-// Tests that the statement prints the expected output to stdout.
-#define EXPECT_STDOUT(statement, expected_output) \
-    FMT_TEST_PRINT_(statement, expected_output, stdout, GTEST_NONFATAL_FAILURE_)
-
-// Tests that the statement prints the expected output to stderr.
-#define EXPECT_STDERR(statement, expected_output) \
-    FMT_TEST_PRINT_(statement, expected_output, stderr, GTEST_NONFATAL_FAILURE_)
+// Tests that the statement writes the expected output to file.
+#define EXPECT_WRITE(file, statement, expected_output) \
+    FMT_TEST_WRITE_(statement, expected_output, file, GTEST_NONFATAL_FAILURE_)
 
 #endif  // FMT_USE_FILE_DESCRIPTORS
 
