@@ -98,7 +98,7 @@ const char* SingleEvaluationTest::p_;
 int SingleEvaluationTest::a_;
 int SingleEvaluationTest::b_;
 
-void ThrowNothing() {}
+void DoNothing() {}
 
 void ThrowException() {
   throw std::runtime_error("test");
@@ -173,8 +173,6 @@ TEST_F(SingleEvaluationTest, WriteTests) {
   EXPECT_EQ(2, b_);
 }
 
-// TODO: test EXPECT_STD*
-
 // Tests that the compiler will not complain about unreachable code in the
 // EXPECT_THROW_MSG macro.
 TEST(ExpectThrowTest, DoesNotGenerateUnreachableCodeWarning) {
@@ -187,12 +185,22 @@ TEST(ExpectThrowTest, DoesNotGenerateUnreachableCodeWarning) {
       throw runtime_error("a"), runtime_error, "b"), "");
 }
 
-TEST(AssertionSyntaxTest, ExceptionAssertionsBehavesLikeSingleStatement) {
+TEST(AssertionSyntaxTest, ExceptionAssertionBehavesLikeSingleStatement) {
   if (::testing::internal::AlwaysFalse())
-    EXPECT_THROW_MSG(ThrowNothing(), std::exception, "");
+    EXPECT_THROW_MSG(DoNothing(), std::exception, "");
 
   if (::testing::internal::AlwaysTrue())
     EXPECT_THROW_MSG(ThrowException(), std::exception, "test");
+  else
+    ;  // NOLINT
+}
+
+TEST(AssertionSyntaxTest, WriteAssertionBehavesLikeSingleStatement) {
+  if (::testing::internal::AlwaysFalse())
+    EXPECT_WRITE(stdout, std::printf("x"), "x");
+
+  if (::testing::internal::AlwaysTrue())
+    EXPECT_WRITE(stdout, std::printf("x"), "x");
   else
     ;  // NOLINT
 }
@@ -205,8 +213,8 @@ TEST(ExpectTest, EXPECT_THROW_MSG) {
       "Expected: ThrowException() throws an exception of "
       "type std::logic_error.\n  Actual: it throws a different type.");
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THROW_MSG(ThrowNothing(), std::exception, "test"),
-      "Expected: ThrowNothing() throws an exception of type std::exception.\n"
+      EXPECT_THROW_MSG(DoNothing(), std::exception, "test"),
+      "Expected: DoNothing() throws an exception of type std::exception.\n"
       "  Actual: it throws nothing.");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_THROW_MSG(ThrowException(), std::exception, "other"),
@@ -215,7 +223,20 @@ TEST(ExpectTest, EXPECT_THROW_MSG) {
       "  Actual: test");
 }
 
-TEST(StreamingAssertionsTest, ThrowMsg) {
+// Tests EXPECT_WRITE.
+TEST(ExpectTest, EXPECT_WRITE) {
+  EXPECT_WRITE(stdout, DoNothing(), "");
+  EXPECT_WRITE(stdout, std::printf("test"), "test");
+  EXPECT_WRITE(stderr, std::fprintf(stderr, "test"), "test");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_WRITE(stdout, std::printf("that"), "this"),
+      "Expected: this\n"
+      "  Actual: that");
+}
+
+// TODO: test EXPECT_WRITE
+
+TEST(StreamingAssertionsTest, EXPECT_THROW_MSG) {
   EXPECT_THROW_MSG(ThrowException(), std::exception, "test")
       << "unexpected failure";
   EXPECT_NONFATAL_FAILURE(
@@ -230,7 +251,9 @@ TEST(ErrorCodeTest, Ctor) {
   EXPECT_EQ(42, ErrorCode(42).get());
 }
 
-class BufferedFileTest : public ::testing::Test {
+// Enables standard POSIX mode of handling errors, making functions return
+// proper error codes instead of crashing on Windows.
+class ScopedPOSIXMode {
 #ifdef _WIN32
  private:
   _invalid_parameter_handler original_handler_;
@@ -240,15 +263,19 @@ class BufferedFileTest : public ::testing::Test {
       const wchar_t *, const wchar_t *, unsigned , uintptr_t) {}
 
  public:
-  BufferedFileTest()
+  ScopedPOSIXMode()
   : original_handler_(_set_invalid_parameter_handler(InvalidParameterHandler)),
     original_report_mode_(_CrtSetReportMode(_CRT_ASSERT, 0)) {
   }
-  ~BufferedFileTest() {
+  ~ScopedPOSIXMode() {
     _set_invalid_parameter_handler(original_handler_);
     _CrtSetReportMode(_CRT_ASSERT, original_report_mode_);
   }
 #endif  // _WIN32
+};
+
+class BufferedFileTest : public ::testing::Test {
+  ScopedPOSIXMode mode_;
 };
 
 BufferedFile OpenFile(const char *name, FILE **fp = 0) {
