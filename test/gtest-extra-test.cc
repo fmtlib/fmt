@@ -229,7 +229,7 @@ TEST_F(BufferedFileTest, MoveAssignmentClosesFile) {
   BufferedFile bf2 = OpenFile("CMakeLists.txt");
   int old_fd = fileno(bf2.get());
   bf2 = std::move(bf);
-  EXPECT_CLOSED(old_fd);
+  EXPECT_TRUE(IsClosedInternal(old_fd));
 }
 
 TEST_F(BufferedFileTest, MoveFromTemporaryInCtor) {
@@ -249,7 +249,7 @@ TEST_F(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
   BufferedFile f = OpenFile(".travis.yml");
   int old_fd = fileno(f.get());
   f = OpenFile(".travis.yml");
-  EXPECT_CLOSED(old_fd);
+  EXPECT_TRUE(IsClosedInternal(old_fd));
 }
 
 TEST_F(BufferedFileTest, CloseFileInDtor) {
@@ -258,7 +258,7 @@ TEST_F(BufferedFileTest, CloseFileInDtor) {
     BufferedFile f = OpenFile(".travis.yml");
     fd = fileno(f.get());
   }
-  EXPECT_CLOSED(fd);
+  EXPECT_TRUE(IsClosedInternal(fd));
 }
 
 TEST_F(BufferedFileTest, CloseErrorInDtor) {
