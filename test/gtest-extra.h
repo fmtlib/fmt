@@ -44,15 +44,16 @@
 #define FMT_TEST_THROW_(statement, expected_exception, expected_message, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
   if (::testing::AssertionResult gtest_ar = ::testing::AssertionSuccess()) { \
+    std::string expected_message_str = expected_message; \
     bool gtest_caught_expected = false; \
     try { \
       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
     } \
     catch (expected_exception const& e) { \
-      if (expected_message != std::string(e.what())) { \
+      if (expected_message_str != e.what()) { \
         gtest_ar \
           << #statement " throws an exception with a different message.\n" \
-          << "Expected: " << expected_message << "\n" \
+          << "Expected: " << expected_message_str << "\n" \
           << "  Actual: " << e.what(); \
         goto GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__); \
       } \

@@ -77,18 +77,32 @@ bool IsClosedInternal(int fd) {
 class SingleEvaluationTest : public ::testing::Test {
  protected:
   SingleEvaluationTest() {
+    p_ = s_;
     a_ = 0;
   }
-  
+
+  static const char* const s_;
+  static const char* p_;
+
   static int a_;
 };
 
+const char* const SingleEvaluationTest::s_ = "01234";
+const char* SingleEvaluationTest::p_;
 int SingleEvaluationTest::a_;
 
 void ThrowNothing() {}
 
 void ThrowException() {
   throw std::runtime_error("test");
+}
+
+// Tests that when EXPECT_THROW_MSG fails, it evaluates its message argument
+// exactly once.
+TEST_F(SingleEvaluationTest, FailedASSERT_THROW_MSG) {
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THROW_MSG(ThrowException(), std::exception, p_++), "01234");
+  EXPECT_EQ(s_ + 1, p_);
 }
 
 // Tests that assertion arguments are evaluated exactly once.
