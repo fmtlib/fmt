@@ -569,6 +569,7 @@ TEST(OutputRedirectTest, RestoreAndRead) {
   OutputRedirect redir(file.get());
   std::fprintf(file.get(), "censored");
   EXPECT_EQ("censored", redir.RestoreAndRead());
+  EXPECT_EQ("", redir.RestoreAndRead());
   std::fprintf(file.get(), "]]]");
   file = BufferedFile();
   EXPECT_READ(read_end, "[[[]]]");
@@ -612,8 +613,6 @@ TEST(OutputRedirectTest, ErrorInDtor) {
 #endif
   write_dup.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
 }
-
-// TODO: test calling RestoreAndRead multiple times
 
 // TODO: test EXPECT_STDOUT and EXPECT_STDERR
 
