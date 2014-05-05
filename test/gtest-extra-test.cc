@@ -109,6 +109,13 @@ TEST_F(SingleEvaluationTest, FailedEXPECT_THROW_MSG) {
   EXPECT_EQ(s_ + 1, p_);
 }
 
+// Tests that when EXPECT_STDOUT fails, it evaluates its message argument
+// exactly once.
+TEST_F(SingleEvaluationTest, FailedEXPECT_STDOUT) {
+  EXPECT_NONFATAL_FAILURE(EXPECT_STDOUT(std::printf("test"), p_++), "01234");
+  EXPECT_EQ(s_ + 1, p_);
+}
+
 // Tests that assertion arguments are evaluated exactly once.
 TEST_F(SingleEvaluationTest, ExceptionTests) {
   // successful EXPECT_THROW_MSG
