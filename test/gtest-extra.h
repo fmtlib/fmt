@@ -188,7 +188,8 @@ class BufferedFile {
 // Methods that are not declared with FMT_NOEXCEPT(true) may throw
 // fmt::SystemError in case of failure. Note that some errors such as
 // closing the file multiple times will cause a crash on Windows rather
-// than an exception.
+// than an exception. You can get standard behavior by overriding the
+// invalid parameter handler with _set_invalid_parameter_handler.
 class File {
  private:
   int fd_;  // File descriptor.

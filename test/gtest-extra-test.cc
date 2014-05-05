@@ -175,10 +175,23 @@ TEST(ErrorCodeTest, Ctor) {
   EXPECT_EQ(42, ErrorCode(42).get());
 }
 
-TEST(BufferedFileTest, DefaultCtor) {
-  BufferedFile f;
-  EXPECT_TRUE(f.get() == 0);
-}
+class BufferedFileTest : public ::testing::Test {
+#ifdef _WIN32
+ private:
+  _invalid_parameter_handler original_handler_;
+
+  static void InvalidParameterHandler(const wchar_t *,
+      const wchar_t *, const wchar_t *, unsigned , uintptr_t) {}
+
+ public:
+  BufferedFileTest()
+  : original_handler_(_set_invalid_parameter_handler(InvalidParameterHandler)) {
+  }
+  ~BufferedFileTest() {
+    _set_invalid_parameter_handler(original_handler_);
+  }
+#endif  // _WIN32
+};
 
 BufferedFile OpenFile(const char *name, FILE **fp = 0) {
   BufferedFile f = File(".travis.yml", File::RDONLY).fdopen("r");
@@ -187,7 +200,12 @@ BufferedFile OpenFile(const char *name, FILE **fp = 0) {
   return f;
 }
 
-TEST(BufferedFileTest, MoveCtor) {
+TEST_F(BufferedFileTest, DefaultCtor) {
+  BufferedFile f;
+  EXPECT_TRUE(f.get() == 0);
+}
+
+TEST_F(BufferedFileTest, MoveCtor) {
   BufferedFile bf = OpenFile(".travis.yml");
   FILE *fp = bf.get();
   EXPECT_TRUE(fp != 0);
@@ -196,7 +214,7 @@ TEST(BufferedFileTest, MoveCtor) {
   EXPECT_TRUE(bf.get() == 0);
 }
 
-TEST(BufferedFileTest, MoveAssignment) {
+TEST_F(BufferedFileTest, MoveAssignment) {
   BufferedFile bf = OpenFile(".travis.yml");
   FILE *fp = bf.get();
   EXPECT_TRUE(fp != 0);
@@ -206,7 +224,7 @@ TEST(BufferedFileTest, MoveAssignment) {
   EXPECT_TRUE(bf.get() == 0);
 }
 
-TEST(BufferedFileTest, MoveAssignmentClosesFile) {
+TEST_F(BufferedFileTest, MoveAssignmentClosesFile) {
   BufferedFile bf = OpenFile(".travis.yml");
   BufferedFile bf2 = OpenFile("CMakeLists.txt");
   int old_fd = fileno(bf2.get());
@@ -214,27 +232,27 @@ TEST(BufferedFileTest, MoveAssignmentClosesFile) {
   EXPECT_CLOSED(old_fd);
 }
 
-TEST(BufferedFileTest, MoveFromTemporaryInCtor) {
+TEST_F(BufferedFileTest, MoveFromTemporaryInCtor) {
   FILE *fp = 0;
   BufferedFile f(OpenFile(".travis.yml", &fp));
   EXPECT_EQ(fp, f.get());
 }
 
-TEST(BufferedFileTest, MoveFromTemporaryInAssignment) {
+TEST_F(BufferedFileTest, MoveFromTemporaryInAssignment) {
   FILE *fp = 0;
   BufferedFile f;
   f = OpenFile(".travis.yml", &fp);
   EXPECT_EQ(fp, f.get());
 }
 
-TEST(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
+TEST_F(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
   BufferedFile f = OpenFile(".travis.yml");
   int old_fd = fileno(f.get());
   f = OpenFile(".travis.yml");
   EXPECT_CLOSED(old_fd);
 }
 
-TEST(BufferedFileTest, CloseFileInDtor) {
+TEST_F(BufferedFileTest, CloseFileInDtor) {
   int fd = 0;
   {
     BufferedFile f = OpenFile(".travis.yml");
@@ -243,20 +261,14 @@ TEST(BufferedFileTest, CloseFileInDtor) {
   EXPECT_CLOSED(fd);
 }
 
-TEST(BufferedFileTest, CloseErrorInDtor) {
+TEST_F(BufferedFileTest, CloseErrorInDtor) {
   BufferedFile *f = new BufferedFile(OpenFile(".travis.yml"));
-#ifndef _WIN32
   // The close function must be called inside EXPECT_STDERR, otherwise
   // the system may recycle closed file descriptor when redirecting the
   // output in EXPECT_STDERR and the second close will break output
   // redirection.
   EXPECT_STDERR(close(fileno(f->get())); delete f,
     FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
-#else
-  FMT_POSIX(close(fileno(f->get())));
-  // Closing file twice causes death on Windows.
-  EXPECT_DEATH(delete f, "");
-#endif
 }
 
 TEST(FileTest, DefaultCtor) {
@@ -591,7 +603,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
 
 // TODO: test EXPECT_STDOUT and EXPECT_STDERR
 
-// TODO: compile both with C++11 & C++98 mode
+// TODO: compile both in C++11 & C++98 mode
 #endif
 
 }  // namespace
