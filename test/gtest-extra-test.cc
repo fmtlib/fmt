@@ -573,12 +573,17 @@ TEST(OutputRedirectTest, ErrorInDtor) {
   OutputRedirect *redir = new OutputRedirect(f.get());
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
+#ifndef _WIN32
   // The close function must be called inside EXPECT_STDERR, otherwise
   // the system may recycle closed file descriptor when redirecting the
   // output in EXPECT_STDERR and the second close will break output
   // redirection.
   EXPECT_STDERR(close(write_fd); delete redir,
       FormatSystemErrorMessage(EBADF, "cannot flush stream"));
+#else
+  close(write_fd);
+  EXPECT_DEATH(delete redir, "");
+#endif
   write_dup.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
 }
 
