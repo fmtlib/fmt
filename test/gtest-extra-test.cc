@@ -33,6 +33,10 @@
 #include <stdexcept>
 #include <gtest/gtest-spi.h>
 
+#ifdef _WIN32
+# include <crtdbg.h>  // for _CrtSetReportMode
+#endif  // _WIN32
+
 namespace {
 
 std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message) {
@@ -99,7 +103,7 @@ void ThrowException() {
 
 // Tests that when EXPECT_THROW_MSG fails, it evaluates its message argument
 // exactly once.
-TEST_F(SingleEvaluationTest, FailedASSERT_THROW_MSG) {
+TEST_F(SingleEvaluationTest, FailedEXPECT_THROW_MSG) {
   EXPECT_NONFATAL_FAILURE(
       EXPECT_THROW_MSG(ThrowException(), std::exception, p_++), "01234");
   EXPECT_EQ(s_ + 1, p_);
@@ -193,16 +197,19 @@ class BufferedFileTest : public ::testing::Test {
 #ifdef _WIN32
  private:
   _invalid_parameter_handler original_handler_;
+  int original_report_mode_;
 
   static void InvalidParameterHandler(const wchar_t *,
       const wchar_t *, const wchar_t *, unsigned , uintptr_t) {}
 
  public:
   BufferedFileTest()
-  : original_handler_(_set_invalid_parameter_handler(InvalidParameterHandler)) {
+  : original_handler_(_set_invalid_parameter_handler(InvalidParameterHandler)),
+    original_report_mode_(_CrtSetReportMode(_CRT_ASSERT, 0)) {
   }
   ~BufferedFileTest() {
     _set_invalid_parameter_handler(original_handler_);
+    _CrtSetReportMode(_CRT_ASSERT, original_report_mode_);
   }
 #endif  // _WIN32
 };
