@@ -504,6 +504,28 @@ TEST(FileTest, Read) {
   EXPECT_READ(f, "language: cpp");
 }
 
+#ifdef _WIN32
+// The count argument to the read function is unsigned on Windows, so check
+// if integer overflow is handled properly.
+TEST(FileTest, ReadCountOverflow) {
+  if (sizeof(std::size_t) == sizeof(unsigned))
+    return;
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  Write(write_end, "test");
+  write_end.close();
+  char buffer[4];
+  std::size_t offset = 0;
+  std::size_t count = std::numeric_limits<unsigned>::max() + std::size_t(1);
+  std::streamsize n = 0;
+  do {
+    n = read_end.read(buffer + offset, count);
+    offset += n;
+  } while (n != 0);
+  EXPECT_EQ("test", std::string(buffer, offset));
+}
+#endif
+
 TEST(FileTest, ReadError) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
