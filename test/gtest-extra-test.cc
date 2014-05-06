@@ -387,8 +387,8 @@ TEST(BufferedFileTest, Fileno) {
   EXPECT_DEATH(f.fileno(), "");
   f = OpenFile(".travis.yml");
   EXPECT_TRUE(f.fileno() != -1);
-  File dup = File::dup(f.fileno());
-  EXPECT_READ(dup, "language: cpp");
+  File copy = File::dup(f.fileno());
+  EXPECT_READ(copy, "language: cpp");
 }
 
 TEST(FileTest, DefaultCtor) {
@@ -526,10 +526,10 @@ TEST(FileTest, WriteError) {
 
 TEST(FileTest, Dup) {
   File f(".travis.yml", File::RDONLY);
-  File dup = File::dup(f.descriptor());
-  EXPECT_NE(f.descriptor(), dup.descriptor());
+  File copy = File::dup(f.descriptor());
+  EXPECT_NE(f.descriptor(), copy.descriptor());
   const char EXPECTED[] = "language: cpp";
-  EXPECT_EQ(EXPECTED, Read(dup, sizeof(EXPECTED) - 1));
+  EXPECT_EQ(EXPECTED, Read(copy, sizeof(EXPECTED) - 1));
 }
 
 TEST(FileTest, DupError) {
@@ -597,7 +597,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
-  File write_dup = write_end.dup(write_fd);
+  File write_copy = write_end.dup(write_fd);
   BufferedFile f = write_end.fdopen("w");
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
@@ -606,18 +606,18 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
   EXPECT_SYSTEM_ERROR_NOASSERT(redir = new OutputRedirect(f.get()),
       EBADF, fmt::Format("cannot flush stream"));
   delete redir;
-  write_dup.dup2(write_fd);  // "undo" close or dtor will fail
+  write_copy.dup2(write_fd);  // "undo" close or dtor will fail
 }
 
 TEST(OutputRedirectTest, DupErrorInCtor) {
   BufferedFile f = OpenFile(".travis.yml");
   int fd = f.fileno();
-  File dup = File::dup(fd);
+  File copy = File::dup(fd);
   FMT_POSIX(close(fd));
   OutputRedirect *redir = 0;
   EXPECT_SYSTEM_ERROR_NOASSERT(redir = new OutputRedirect(f.get()),
       EBADF, fmt::Format("cannot duplicate file descriptor {}") << fd);
-  dup.dup2(fd);  // "undo" close or dtor will fail
+  copy.dup2(fd);  // "undo" close or dtor will fail
   delete redir;
 }
 
@@ -640,7 +640,7 @@ TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
-  File write_dup = write_end.dup(write_fd);
+  File write_copy = write_end.dup(write_fd);
   BufferedFile f = write_end.fdopen("w");
   OutputRedirect redir(f.get());
   // Put a character in a file buffer.
@@ -648,14 +648,14 @@ TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
   FMT_POSIX(close(write_fd));
   EXPECT_SYSTEM_ERROR_NOASSERT(redir.RestoreAndRead(),
       EBADF, fmt::Format("cannot flush stream"));
-  write_dup.dup2(write_fd);  // "undo" close or dtor will fail
+  write_copy.dup2(write_fd);  // "undo" close or dtor will fail
 }
 
 TEST(OutputRedirectTest, ErrorInDtor) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
-  File write_dup = write_end.dup(write_fd);
+  File write_copy = write_end.dup(write_fd);
   BufferedFile f = write_end.fdopen("w");
   OutputRedirect *redir = new OutputRedirect(f.get());
   // Put a character in a file buffer.
@@ -668,7 +668,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
       FMT_POSIX(close(write_fd));
       SUPPRESS_ASSERT(delete redir);
   }, FormatSystemErrorMessage(EBADF, "cannot flush stream"));
-  write_dup.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
+  write_copy.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
 }
 
 // TODO: test EXPECT_SYSTEM_ERROR
