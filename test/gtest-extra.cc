@@ -30,6 +30,7 @@
 #if FMT_USE_FILE_DESCRIPTORS
 
 #include <errno.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -50,6 +51,19 @@
   do { \
     result = (expression); \
   } while (result == -1 && errno == EINTR)
+
+namespace {
+// TODO: test
+#ifdef _WIN32
+// On Windows the count argument to read and write is unsigned, so convert
+// it from size_t preventing integer overflow.
+inline unsigned ConvertRWCount(std::size_t count) {
+  return count <= UINT_MAX ? count : UINT_MAX;
+}
+#else
+inline std::size_t ConvertRWCount(std::size_t count) { return count; }
+#endif
+}
 
 BufferedFile::~BufferedFile() FMT_NOEXCEPT(true) {
   if (file_ && std::fclose(file_) != 0)
@@ -102,16 +116,6 @@ void File::close() {
     fmt::ThrowSystemError(errno, "cannot close file");
 }
 
-#ifdef _WIN32
-// On Windows the count argument to read and write is unsigned, so convert
-// it from size_t preventing integer overflow.
-inline unsigned ConvertRWCount(std::size_t count) {
-  return count <= UINT_MAX ? count : UINT_MAX;
-}
-#else
-inline std::size_t ConvertRWCount(std::size_t count) { return count; }
-#endif
-
 std::streamsize File::read(void *buffer, std::size_t count) {
   std::streamsize result = 0;
   FMT_RETRY(result, ::FMT_POSIX(read(fd_, buffer, ConvertRWCount(count))));
@@ -122,7 +126,7 @@ std::streamsize File::read(void *buffer, std::size_t count) {
 
 std::streamsize File::write(const void *buffer, std::size_t count) {
   std::streamsize result = 0;
-  FMT_RETRY(result, ::FMT_POSIX(write(fd_, buffer, count)));
+  FMT_RETRY(result, ::FMT_POSIX(write(fd_, buffer, ConvertRWCount(count))));
   if (result == -1)
     fmt::ThrowSystemError(errno, "cannot write to file");
   return result;
