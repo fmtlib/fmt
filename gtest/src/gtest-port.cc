@@ -42,6 +42,7 @@
 # include <io.h>
 # include <sys/stat.h>
 #else
+# include <dirent.h>
 # include <unistd.h>
 #endif  // GTEST_OS_WINDOWS_MOBILE
 
@@ -96,6 +97,22 @@ size_t GetThreadCount() {
   } else {
     return 0;
   }
+}
+
+#elif GTEST_OS_LINUX
+
+// Returns the number of threads running in the process, or 0 to indicate that
+// we cannot detect it.
+size_t GetThreadCount() {
+  size_t thread_count = 0;
+  if (DIR *dir = opendir("/proc/self/task")) {
+    while (dirent *entry = readdir(dir)) {
+      if (entry->d_name[0] != '.')
+        ++thread_count;
+    }
+    closedir(dir);
+  }
+  return thread_count;
 }
 
 #else
