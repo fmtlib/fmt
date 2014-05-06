@@ -39,10 +39,11 @@
 
 namespace {
 
+#ifdef _WIN32
+
 // Suppresses Windows assertions on invalid file descriptors, making
 // POSIX functions return proper error codes instead of crashing on Windows.
 class SuppressAssert {
-#ifdef _WIN32
  private:
   _invalid_parameter_handler original_handler_;
   int original_report_mode_;
@@ -59,10 +60,12 @@ class SuppressAssert {
     _set_invalid_parameter_handler(original_handler_);
     _CrtSetReportMode(_CRT_ASSERT, original_report_mode_);
   }
-#endif  // _WIN32
 };
 
-#define SUPPRESS_ASSERT(statement) { SuppressAssert sa; statement; }
+# define SUPPRESS_ASSERT(statement) { SuppressAssert sa; statement; }
+#else
+# define SUPPRESS_ASSERT(statement) statement
+#endif  // _WIN32
 
 #define EXPECT_SYSTEM_ERROR_NOASSERT(statement, error_code, message) \
   EXPECT_SYSTEM_ERROR(SUPPRESS_ASSERT(statement), error_code, message)
@@ -182,7 +185,7 @@ TEST(AssertionSyntaxTest, ExceptionAssertionBehavesLikeSingleStatement) {
   if (::testing::internal::AlwaysTrue())
     EXPECT_THROW_MSG(ThrowException(), std::exception, "test");
   else
-    ;  // NOLINT
+    DoNothing();
 }
 
 TEST(AssertionSyntaxTest, WriteAssertionBehavesLikeSingleStatement) {
@@ -192,7 +195,7 @@ TEST(AssertionSyntaxTest, WriteAssertionBehavesLikeSingleStatement) {
   if (::testing::internal::AlwaysTrue())
     EXPECT_WRITE(stdout, std::printf("x"), "x");
   else
-    ;  // NOLINT
+    DoNothing();
 }
 
 // Tests EXPECT_THROW_MSG.
