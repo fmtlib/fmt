@@ -35,7 +35,6 @@
 
 #ifdef _WIN32
 # include <crtdbg.h>  // for _CrtSetReportMode
-# define close _close
 #endif  // _WIN32
 
 namespace {
@@ -363,7 +362,7 @@ TEST(BufferedFileTest, CloseErrorInDtor) {
       // the system may recycle closed file descriptor when redirecting the
       // output in EXPECT_STDERR and the second close will break output
       // redirection.
-      close(f->fileno());
+      FMT_POSIX(close(f->fileno()));
       SUPPRESS_ASSERT(delete f);
   }, FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 }
@@ -378,7 +377,7 @@ TEST(BufferedFileTest, Close) {
 
 TEST(BufferedFileTest, CloseError) {
   BufferedFile f = OpenFile(".travis.yml");
-  close(f.fileno());
+  FMT_POSIX(close(f.fileno()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_TRUE(f.get() == 0);
 }
@@ -492,7 +491,7 @@ TEST(FileTest, Close) {
 
 TEST(FileTest, CloseError) {
   File f(".travis.yml", File::RDONLY);
-  close(f.descriptor());
+  FMT_POSIX(close(f.descriptor()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_EQ(-1, f.descriptor());
 }
@@ -602,7 +601,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
   BufferedFile f = write_end.fdopen("w");
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
-  close(write_fd);
+  FMT_POSIX(close(write_fd));
   OutputRedirect *redir = 0;
   EXPECT_SYSTEM_ERROR_NOASSERT(redir = new OutputRedirect(f.get()),
       EBADF, fmt::Format("cannot flush stream"));
@@ -614,7 +613,7 @@ TEST(OutputRedirectTest, DupErrorInCtor) {
   BufferedFile f = OpenFile(".travis.yml");
   int fd = f.fileno();
   File dup = File::dup(fd);
-  close(fd);
+  FMT_POSIX(close(fd));
   OutputRedirect *redir = 0;
   EXPECT_SYSTEM_ERROR_NOASSERT(redir = new OutputRedirect(f.get()),
       EBADF, fmt::Format("cannot duplicate file descriptor {}") << fd);
@@ -646,7 +645,7 @@ TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
   OutputRedirect redir(f.get());
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
-  close(write_fd);
+  FMT_POSIX(close(write_fd));
   EXPECT_SYSTEM_ERROR_NOASSERT(redir.RestoreAndRead(),
       EBADF, fmt::Format("cannot flush stream"));
   write_dup.dup2(write_fd);  // "undo" close or dtor will fail
@@ -666,7 +665,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
       // the system may recycle closed file descriptor when redirecting the
       // output in EXPECT_STDERR and the second close will break output
       // redirection.
-      close(write_fd);
+      FMT_POSIX(close(write_fd));
       SUPPRESS_ASSERT(delete redir);
   }, FormatSystemErrorMessage(EBADF, "cannot flush stream"));
   write_dup.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
