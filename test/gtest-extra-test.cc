@@ -290,8 +290,24 @@ TEST(ErrorCodeTest, Ctor) {
   EXPECT_EQ(42, ErrorCode(42).get());
 }
 
-BufferedFile OpenFile(const char *name, FILE **fp = 0) {
-  BufferedFile f = File(".travis.yml", File::RDONLY).fdopen("r");
+const char FILE_CONTENT[] = "Don't panic!";
+
+// Opens a file for reading.
+File OpenFile() {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  write_end.write(FILE_CONTENT, sizeof(FILE_CONTENT) - 1);
+  write_end.close();
+  return read_end;
+}
+
+// Opens a buffered file for reading.
+BufferedFile OpenBufferedFile(FILE **fp = 0) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  write_end.write(FILE_CONTENT, sizeof(FILE_CONTENT) - 1);
+  write_end.close();
+  BufferedFile f = read_end.fdopen("r");
   if (fp)
     *fp = f.get();
   return f;
@@ -303,7 +319,7 @@ TEST(BufferedFileTest, DefaultCtor) {
 }
 
 TEST(BufferedFileTest, MoveCtor) {
-  BufferedFile bf = OpenFile(".travis.yml");
+  BufferedFile bf = OpenBufferedFile();
   FILE *fp = bf.get();
   EXPECT_TRUE(fp != 0);
   BufferedFile bf2(std::move(bf));
@@ -312,7 +328,7 @@ TEST(BufferedFileTest, MoveCtor) {
 }
 
 TEST(BufferedFileTest, MoveAssignment) {
-  BufferedFile bf = OpenFile(".travis.yml");
+  BufferedFile bf = OpenBufferedFile();
   FILE *fp = bf.get();
   EXPECT_TRUE(fp != 0);
   BufferedFile bf2;
@@ -322,8 +338,8 @@ TEST(BufferedFileTest, MoveAssignment) {
 }
 
 TEST(BufferedFileTest, MoveAssignmentClosesFile) {
-  BufferedFile bf = OpenFile(".travis.yml");
-  BufferedFile bf2 = OpenFile("CMakeLists.txt");
+  BufferedFile bf = OpenBufferedFile();
+  BufferedFile bf2 = OpenBufferedFile();
   int old_fd = bf2.fileno();
   bf2 = std::move(bf);
   EXPECT_TRUE(IsClosed(old_fd));
@@ -331,35 +347,35 @@ TEST(BufferedFileTest, MoveAssignmentClosesFile) {
 
 TEST(BufferedFileTest, MoveFromTemporaryInCtor) {
   FILE *fp = 0;
-  BufferedFile f(OpenFile(".travis.yml", &fp));
+  BufferedFile f(OpenBufferedFile(&fp));
   EXPECT_EQ(fp, f.get());
 }
 
 TEST(BufferedFileTest, MoveFromTemporaryInAssignment) {
   FILE *fp = 0;
   BufferedFile f;
-  f = OpenFile(".travis.yml", &fp);
+  f = OpenBufferedFile(&fp);
   EXPECT_EQ(fp, f.get());
 }
 
 TEST(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
-  BufferedFile f = OpenFile(".travis.yml");
+  BufferedFile f = OpenBufferedFile();
   int old_fd = f.fileno();
-  f = OpenFile(".travis.yml");
+  f = OpenBufferedFile();
   EXPECT_TRUE(IsClosed(old_fd));
 }
 
 TEST(BufferedFileTest, CloseFileInDtor) {
   int fd = 0;
   {
-    BufferedFile f = OpenFile(".travis.yml");
+    BufferedFile f = OpenBufferedFile();
     fd = f.fileno();
   }
   EXPECT_TRUE(IsClosed(fd));
 }
 
 TEST(BufferedFileTest, CloseErrorInDtor) {
-  BufferedFile *f = new BufferedFile(OpenFile(".travis.yml"));
+  BufferedFile *f = new BufferedFile(OpenBufferedFile());
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
@@ -371,7 +387,7 @@ TEST(BufferedFileTest, CloseErrorInDtor) {
 }
 
 TEST(BufferedFileTest, Close) {
-  BufferedFile f = OpenFile(".travis.yml");
+  BufferedFile f = OpenBufferedFile();
   int fd = f.fileno();
   f.close();
   EXPECT_TRUE(f.get() == 0);
@@ -379,7 +395,7 @@ TEST(BufferedFileTest, Close) {
 }
 
 TEST(BufferedFileTest, CloseError) {
-  BufferedFile f = OpenFile(".travis.yml");
+  BufferedFile f = OpenBufferedFile();
   FMT_POSIX(close(f.fileno()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_TRUE(f.get() == 0);
@@ -388,10 +404,10 @@ TEST(BufferedFileTest, CloseError) {
 TEST(BufferedFileTest, Fileno) {
   BufferedFile f;
   EXPECT_DEATH(f.fileno(), "");
-  f = OpenFile(".travis.yml");
+  f = OpenBufferedFile();
   EXPECT_TRUE(f.fileno() != -1);
   File copy = File::dup(f.fileno());
-  EXPECT_READ(copy, "language: cpp");
+  EXPECT_READ(copy, FILE_CONTENT);
 }
 
 TEST(FileTest, DefaultCtor) {
@@ -399,18 +415,21 @@ TEST(FileTest, DefaultCtor) {
   EXPECT_EQ(-1, f.descriptor());
 }
 
-TEST(FileTest, OpenFileInCtor) {
-  File f(".travis.yml", File::RDONLY);
+TEST(FileTest, OpenBufferedFileInCtor) {
+  FILE *pf = fopen("test-file", "w");
+  fprintf(pf, FILE_CONTENT);
+  fclose(pf);
+  File f("test-file", File::RDONLY);
   ASSERT_TRUE(IsOpen(f.descriptor()));
 }
 
-TEST(FileTest, OpenFileError) {
+TEST(FileTest, OpenBufferedFileError) {
   EXPECT_SYSTEM_ERROR(File("nonexistent", File::RDONLY),
       ENOENT, "cannot open file nonexistent");
 }
 
 TEST(FileTest, MoveCtor) {
-  File f(".travis.yml", File::RDONLY);
+  File f = OpenFile();
   int fd = f.descriptor();
   EXPECT_NE(-1, fd);
   File f2(std::move(f));
@@ -419,7 +438,7 @@ TEST(FileTest, MoveCtor) {
 }
 
 TEST(FileTest, MoveAssignment) {
-  File f(".travis.yml", File::RDONLY);
+  File f = OpenFile();
   int fd = f.descriptor();
   EXPECT_NE(-1, fd);
   File f2;
@@ -429,51 +448,51 @@ TEST(FileTest, MoveAssignment) {
 }
 
 TEST(FileTest, MoveAssignmentClosesFile) {
-  File f(".travis.yml", File::RDONLY);
-  File f2("CMakeLists.txt", File::RDONLY);
+  File f = OpenFile();
+  File f2 = OpenFile();
   int old_fd = f2.descriptor();
   f2 = std::move(f);
   EXPECT_TRUE(IsClosed(old_fd));
 }
 
-File OpenFile(int &fd) {
-  File f(".travis.yml", File::RDONLY);
+File OpenBufferedFile(int &fd) {
+  File f = OpenFile();
   fd = f.descriptor();
   return std::move(f);
 }
 
 TEST(FileTest, MoveFromTemporaryInCtor) {
   int fd = 0xdeadbeef;
-  File f(OpenFile(fd));
+  File f(OpenBufferedFile(fd));
   EXPECT_EQ(fd, f.descriptor());
 }
 
 TEST(FileTest, MoveFromTemporaryInAssignment) {
   int fd = 0xdeadbeef;
   File f;
-  f = OpenFile(fd);
+  f = OpenBufferedFile(fd);
   EXPECT_EQ(fd, f.descriptor());
 }
 
 TEST(FileTest, MoveFromTemporaryInAssignmentClosesFile) {
   int fd = 0xdeadbeef;
-  File f(".travis.yml", File::RDONLY);
+  File f = OpenFile();
   int old_fd = f.descriptor();
-  f = OpenFile(fd);
+  f = OpenBufferedFile(fd);
   EXPECT_TRUE(IsClosed(old_fd));
 }
 
 TEST(FileTest, CloseFileInDtor) {
   int fd = 0;
   {
-    File f(".travis.yml", File::RDONLY);
+    File f = OpenFile();
     fd = f.descriptor();
   }
   EXPECT_TRUE(IsClosed(fd));
 }
 
 TEST(FileTest, CloseErrorInDtor) {
-  File *f = new File(".travis.yml", File::RDONLY);
+  File *f = new File(OpenFile());
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
@@ -485,7 +504,7 @@ TEST(FileTest, CloseErrorInDtor) {
 }
 
 TEST(FileTest, Close) {
-  File f(".travis.yml", File::RDONLY);
+  File f = OpenFile();
   int fd = f.descriptor();
   f.close();
   EXPECT_EQ(-1, f.descriptor());
@@ -493,15 +512,15 @@ TEST(FileTest, Close) {
 }
 
 TEST(FileTest, CloseError) {
-  File f(".travis.yml", File::RDONLY);
+  File f = OpenFile();
   FMT_POSIX(close(f.descriptor()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_EQ(-1, f.descriptor());
 }
 
 TEST(FileTest, Read) {
-  File f(".travis.yml", File::RDONLY);
-  EXPECT_READ(f, "language: cpp");
+  File f = OpenFile();
+  EXPECT_READ(f, FILE_CONTENT);
 }
 
 TEST(FileTest, ReadError) {
@@ -528,11 +547,10 @@ TEST(FileTest, WriteError) {
 }
 
 TEST(FileTest, Dup) {
-  File f(".travis.yml", File::RDONLY);
+  File f = OpenFile();
   File copy = File::dup(f.descriptor());
   EXPECT_NE(f.descriptor(), copy.descriptor());
-  const char EXPECTED[] = "language: cpp";
-  EXPECT_EQ(EXPECTED, Read(copy, sizeof(EXPECTED) - 1));
+  EXPECT_EQ(FILE_CONTENT, Read(copy, sizeof(FILE_CONTENT) - 1));
 }
 
 TEST(FileTest, DupError) {
@@ -541,31 +559,31 @@ TEST(FileTest, DupError) {
 }
 
 TEST(FileTest, Dup2) {
-  File f(".travis.yml", File::RDONLY);
-  File dup("CMakeLists.txt", File::RDONLY);
-  f.dup2(dup.descriptor());
-  EXPECT_NE(f.descriptor(), dup.descriptor());
-  EXPECT_READ(dup, "language: cpp");
+  File f = OpenFile();
+  File copy = OpenFile();
+  f.dup2(copy.descriptor());
+  EXPECT_NE(f.descriptor(), copy.descriptor());
+  EXPECT_READ(copy, FILE_CONTENT);
 }
 
 TEST(FileTest, Dup2Error) {
-  File f(".travis.yml", File::RDONLY);
+  File f = OpenFile();
   EXPECT_SYSTEM_ERROR_NOASSERT(f.dup2(-1), EBADF,
     fmt::Format("cannot duplicate file descriptor {} to -1") << f.descriptor());
 }
 
 TEST(FileTest, Dup2NoExcept) {
-  File f(".travis.yml", File::RDONLY);
-  File dup("CMakeLists.txt", File::RDONLY);
+  File f = OpenFile();
+  File copy = OpenFile();
   ErrorCode ec;
-  f.dup2(dup.descriptor(), ec);
+  f.dup2(copy.descriptor(), ec);
   EXPECT_EQ(0, ec.get());
-  EXPECT_NE(f.descriptor(), dup.descriptor());
-  EXPECT_READ(dup, "language: cpp");
+  EXPECT_NE(f.descriptor(), copy.descriptor());
+  EXPECT_READ(copy, FILE_CONTENT);
 }
 
 TEST(FileTest, Dup2NoExceptError) {
-  File f(".travis.yml", File::RDONLY);
+  File f = OpenFile();
   ErrorCode ec;
   SUPPRESS_ASSERT(f.dup2(-1, ec));
   EXPECT_EQ(EBADF, ec.get());
@@ -613,7 +631,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
 }
 
 TEST(OutputRedirectTest, DupErrorInCtor) {
-  BufferedFile f = OpenFile(".travis.yml");
+  BufferedFile f = OpenBufferedFile();
   int fd = f.fileno();
   File copy = File::dup(fd);
   FMT_POSIX(close(fd));
