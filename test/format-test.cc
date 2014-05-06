@@ -1700,7 +1700,7 @@ TEST(FormatterTest, FileSinkWriteError) {
   fmt::FileSink fs(f.get());
   std::size_t result = std::fwrite(" ", 1, 1, f.get());
   int error_code = errno;
-  EXPECT_EQ(0, result);
+  EXPECT_EQ(0u, result);
   EXPECT_SYSTEM_ERROR(
       fs(Writer() << "test"), error_code, "cannot write to file");
 }
