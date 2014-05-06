@@ -114,8 +114,6 @@ class BufferedFile {
 
   explicit BufferedFile(std::FILE *f) : file_(f) {}
 
-  void close();
-
  public:
   // Constructs a BufferedFile object which doesn't represent any file.
   BufferedFile() FMT_NOEXCEPT(true) : file_(0) {}
@@ -182,10 +180,14 @@ class BufferedFile {
   }
 #endif
 
+  // Closes the file.
+  void close();
+
+  // Returns the pointer to a FILE object representing this file.
   std::FILE *get() const { return file_; }
 };
 
-// A file.
+// A file. Closed file is represented by a File object with descriptor -1.
 // Methods that are not declared with FMT_NOEXCEPT(true) may throw
 // fmt::SystemError in case of failure. Note that some errors such as
 // closing the file multiple times will cause a crash on Windows rather
@@ -277,7 +279,7 @@ class File {
   // Returns the file descriptor.
   int descriptor() const FMT_NOEXCEPT(true) { return fd_; }
 
-  // Closes the file if its descriptor is not -1.
+  // Closes the file.
   void close();
 
   // Attempts to read count bytes from the file into the specified buffer.

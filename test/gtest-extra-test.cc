@@ -350,6 +350,21 @@ TEST(BufferedFileTest, CloseErrorInDtor) {
   }, FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 }
 
+TEST(BufferedFileTest, Close) {
+  BufferedFile f = OpenFile(".travis.yml");
+  int fd = fileno(f.get());
+  f.close();
+  EXPECT_TRUE(f.get() == 0);
+  EXPECT_TRUE(IsClosed(fd));
+}
+
+TEST(BufferedFileTest, CloseError) {
+  BufferedFile f = OpenFile(".travis.yml");
+  close(fileno(f.get()));
+  EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
+  EXPECT_TRUE(f.get() == 0);
+}
+
 TEST(FileTest, DefaultCtor) {
   File f;
   EXPECT_EQ(-1, f.descriptor());
@@ -656,7 +671,8 @@ TEST(OutputRedirectTest, ErrorInDtor) {
   write_dup.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
 }
 
-// TODO: compile both in C++11 & C++98 mode
-#endif
+// TODO: test retry on EINTR
+
+#endif  // FMT_USE_FILE_DESCRIPTORS
 
 }  // namespace
