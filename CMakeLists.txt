@@ -45,7 +45,8 @@ endif ()
 if (HAVE_STD_CPP11_FLAG)
   set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   # Test compilation with default flags.
-  add_library(testformat format.cc)
+  file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)
+  add_library(testformat format.cc ${src})
 endif ()
 
 add_subdirectory(doc)
