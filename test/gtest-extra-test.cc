@@ -262,7 +262,8 @@ std::string Read(File &f, std::size_t count) {
   std::size_t offset = 0;
   do {
     n = f.read(&buffer[offset], count - offset);
-    offset += n;
+    // We can't read more than size_t bytes since count has type size_t.
+    offset += static_cast<std::size_t>(n);
   } while (offset < count && n != 0);
   buffer.resize(offset);
   return buffer;
@@ -275,7 +276,9 @@ void Write(File &f, fmt::StringRef s) {
   do {
     std::streamsize count = f.write(ptr, num_chars_left);
     ptr += count;
-    num_chars_left -= count;
+    // We can't write more than size_t bytes since num_chars_left
+    // has type size_t.
+    num_chars_left -= static_cast<std::size_t>(count);
   } while (num_chars_left != 0);
 }
 

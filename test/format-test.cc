@@ -148,7 +148,8 @@ std::string GetSystemErrorMessage(int error_code) {
   enum { BUFFER_SIZE = 200 };
   char buffer[BUFFER_SIZE];
   EXPECT_EQ(0, strerror_s(buffer, BUFFER_SIZE, error_code));
-  EXPECT_LT(std::strlen(buffer), BUFFER_SIZE - 1);
+  std::size_t max_len = BUFFER_SIZE - 1;
+  EXPECT_LT(std::strlen(buffer), max_len);
   return buffer;
 #endif
 }
