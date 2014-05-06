@@ -419,9 +419,9 @@ TEST(FileTest, DefaultCtor) {
 }
 
 TEST(FileTest, OpenBufferedFileInCtor) {
-  FILE *pf = fopen("test-file", "w");
-  fprintf(pf, FILE_CONTENT);
-  fclose(pf);
+  FILE *fp = std::fopen("test-file", "w");
+  std::fputs(FILE_CONTENT, fp);
+  std::fclose(fp);
   File f("test-file", File::RDONLY);
   ASSERT_TRUE(IsOpen(f.descriptor()));
 }
