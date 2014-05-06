@@ -1698,7 +1698,7 @@ TEST(FormatterTest, FileSinkWriteError) {
   File::pipe(read_end, write_end);
   BufferedFile f = read_end.fdopen("r");
   fmt::FileSink fs(f.get());
-  int result = std::fwrite(" ", 1, 1, f.get());
+  std::size_t result = std::fwrite(" ", 1, 1, f.get());
   int error_code = errno;
   EXPECT_EQ(0, result);
   EXPECT_SYSTEM_ERROR(
@@ -1859,7 +1859,6 @@ TEST(FormatTest, PrintColored) {
 TEST(FormatTest, Variadic) {
   EXPECT_EQ("abc1", str(Format("{}c{}", "ab", 1)));
   EXPECT_EQ(L"abc1", str(Format(L"{}c{}", L"ab", 1)));
-  EXPECT_WRITE(stdout, fmt::Print("So {}!", "variadic"), "So variadic!");
 }
 #endif  // FMT_USE_VARIADIC_TEMPLATES
 

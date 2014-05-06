@@ -58,7 +58,7 @@ namespace {
 // On Windows the count argument to read and write is unsigned, so convert
 // it from size_t preventing integer overflow.
 inline unsigned ConvertRWCount(std::size_t count) {
-  return count <= UINT_MAX ? count : UINT_MAX;
+  return count <= UINT_MAX ? static_cast<unsigned>(count) : UINT_MAX;
 }
 #else
 inline std::size_t ConvertRWCount(std::size_t count) { return count; }
