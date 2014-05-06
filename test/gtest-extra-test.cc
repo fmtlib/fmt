@@ -39,12 +39,6 @@
 
 namespace {
 
-std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message) {
-  fmt::Writer out;
-  fmt::internal::FormatSystemErrorMessage(out, error_code, message);
-  return str(out);
-}
-
 // Suppresses Windows assertions on invalid file descriptors, making
 // POSIX functions return proper error codes instead of crashing on Windows.
 class SuppressAssert {
@@ -70,25 +64,8 @@ class SuppressAssert {
 
 #define SUPPRESS_ASSERT(statement) { SuppressAssert sa; statement; }
 
-#define EXPECT_SYSTEM_ERROR(statement, error_code, message) \
-  EXPECT_THROW_MSG(statement, fmt::SystemError, \
-      FormatSystemErrorMessage(error_code, message))
-
 #define EXPECT_SYSTEM_ERROR_NOASSERT(statement, error_code, message) \
   EXPECT_SYSTEM_ERROR(SUPPRESS_ASSERT(statement), error_code, message)
-
-// Checks if the file is open by reading one character from it.
-bool IsOpen(int fd) {
-  char buffer;
-  return FMT_POSIX(read(fd, &buffer, 1)) == 1;
-}
-
-bool IsClosed(int fd) {
-  char buffer;
-  std::streamsize result = 0;
-  SUPPRESS_ASSERT(result = FMT_POSIX(read(fd, &buffer, 1)));
-  return result == -1 && errno == EBADF;
-}
 
 // Tests that assertion macros evaluate their arguments exactly once.
 class SingleEvaluationTest : public ::testing::Test {
@@ -264,6 +241,19 @@ TEST(StreamingAssertionsTest, EXPECT_WRITE) {
 }
 
 #if FMT_USE_FILE_DESCRIPTORS
+
+// Checks if the file is open by reading one character from it.
+bool IsOpen(int fd) {
+  char buffer;
+  return FMT_POSIX(read(fd, &buffer, 1)) == 1;
+}
+
+bool IsClosed(int fd) {
+  char buffer;
+  std::streamsize result = 0;
+  SUPPRESS_ASSERT(result = FMT_POSIX(read(fd, &buffer, 1)));
+  return result == -1 && errno == EBADF;
+}
 
 TEST(ErrorCodeTest, Ctor) {
   EXPECT_EQ(0, ErrorCode().get());
@@ -671,6 +661,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
   write_dup.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
 }
 
+// TODO: test EXPECT_SYSTEM_ERROR
 // TODO: test retry on EINTR
 
 #endif  // FMT_USE_FILE_DESCRIPTORS

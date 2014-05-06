@@ -81,6 +81,12 @@
   FMT_TEST_THROW_(statement, expected_exception, \
       expected_message, GTEST_NONFATAL_FAILURE_)
 
+std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message);
+
+#define EXPECT_SYSTEM_ERROR(statement, error_code, message) \
+  EXPECT_THROW_MSG(statement, fmt::SystemError, \
+      FormatSystemErrorMessage(error_code, message))
+
 #ifndef FMT_USE_FILE_DESCRIPTORS
 # define FMT_USE_FILE_DESCRIPTORS 0
 #endif

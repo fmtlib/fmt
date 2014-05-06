@@ -78,7 +78,7 @@ File::File(const char *path, int oflag) {
 }
 
 File::~File() FMT_NOEXCEPT(true) {
-  // Don't need to retry close in case of EINTR.
+  // Don't retry close in case of EINTR!
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
   if (fd_ != -1 && ::FMT_POSIX(close(fd_)) != 0)
     fmt::ReportSystemError(errno, "cannot close file");
@@ -158,7 +158,7 @@ void File::pipe(File &read_end, File &write_end) {
 }
 
 BufferedFile File::fdopen(const char *mode) {
-  BufferedFile f(::fdopen(fd_, mode));
+  BufferedFile f(::FMT_POSIX(fdopen(fd_, mode)));
   fd_ = -1;
   return f;
 }
@@ -222,3 +222,9 @@ std::string OutputRedirect::RestoreAndRead() {
 }
 
 #endif  // FMT_USE_FILE_DESCRIPTORS
+
+std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message) {
+  fmt::Writer out;
+  fmt::internal::FormatSystemErrorMessage(out, error_code, message);
+  return str(out);
+}

@@ -1587,7 +1587,7 @@ TEST(FormatterTest, FormatExamples) {
 
   EXPECT_THROW({
     const char *filename = "nonexistent";
-    FILE *f = fopen(filename, "r");
+    FILE *f = std::fopen(filename, "r");
     if (!f)
       fmt::ThrowSystemError(errno, "Cannot open file '{}'") << filename;
   }, fmt::SystemError);
@@ -1669,25 +1669,33 @@ TEST(FormatterTest, OutputNotWrittenOnError) {
   EXPECT_EQ(0, num_writes);
 }
 
+#if FMT_USE_FILE_DESCRIPTORS
+
 TEST(FormatterTest, FileSink) {
-  FILE *f = std::fopen("out", "w");
-  fmt::FileSink fs(f);
-  fs(Writer() << "test");
-  std::fclose(f);
-  EXPECT_EQ("test", ReadFile("out"));
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  BufferedFile f = write_end.fdopen("w");
+  EXPECT_WRITE(f.get(), {
+    fmt::FileSink fs(f.get());
+    fs(Writer() << "test");
+  }, "test");
 }
 
 TEST(FormatterTest, FileSinkWriteError) {
-  FILE *f = std::fopen("out", "r");
-  fmt::FileSink fs(f);
-  int result = std::fwrite(" ", 1, 1, f);
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  BufferedFile f = read_end.fdopen("r");
+  fmt::FileSink fs(f.get());
+  int result = std::fwrite(" ", 1, 1, f.get());
   int error_code = errno;
   EXPECT_EQ(0, result);
-  std::string error_message =
-      str(Format("{}: {}") << "cannot write to file" << strerror(error_code));
-  EXPECT_THROW_MSG(fs(Writer() << "test"), fmt::SystemError, error_message);
-  std::fclose(f);
+  EXPECT_SYSTEM_ERROR(
+      fs(Writer() << "test"), error_code, "cannot write to file");
 }
+
+#else
+# pragma message "warning: some tests are disabled"
+#endif
 
 // The test doesn't compile on older compilers which follow C++03 and
 // require an accessible copy constructor when binding a temporary to
@@ -1812,7 +1820,7 @@ TEST(FormatIntTest, FormatDec) {
   EXPECT_EQ("42", FormatDec(42ull));
 }
 
-#ifdef FMT_USE_FILE_DESCRIPTORS
+#if FMT_USE_FILE_DESCRIPTORS
 
 TEST(FormatTest, PrintColored) {
   EXPECT_WRITE(stdout, fmt::PrintColored(fmt::RED, "Hello, {}!\n") << "world",
