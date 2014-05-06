@@ -1062,7 +1062,6 @@ class BasicWriter {
    */
   BasicFormatter<Char> Format(StringRef format);
 
-  // TODO: ArgInfo should be made public for this to be usable
   inline void VFormat(BasicStringRef<Char> format,
       std::size_t num_args, const ArgInfo *args) {
     FormatParser().Format(*this, format, num_args, args);
@@ -1619,9 +1618,16 @@ class FileSink {
 // Formats a string and prints it to stdout.
 // Example:
 //   Print("Elapsed time: {0:.2f} seconds") << 1.23;
-// TODO: wchar overload
 inline Formatter<FileSink> Print(StringRef format) {
   Formatter<FileSink> f(format, FileSink(stdout));
+  return f;
+}
+
+// Formats a string and prints it to a file.
+// Example:
+//   Print(stderr, "Don't {}!") << "panic";
+inline Formatter<FileSink> Print(std::FILE *file, StringRef format) {
+  Formatter<FileSink> f(format, FileSink(file));
   return f;
 }
 
@@ -1678,6 +1684,13 @@ void Print(StringRef format, const Args & ... args) {
   Writer w;
   w.Format(format, args...);
   std::fwrite(w.data(), 1, w.size(), stdout);
+}
+
+template<typename... Args>
+void Print(std::FILE *f, StringRef format, const Args & ... args) {
+  Writer w;
+  w.Format(format, args...);
+  std::fwrite(w.data(), 1, w.size(), f);
 }
 
 #endif  // FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES

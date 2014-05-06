@@ -1833,6 +1833,20 @@ TEST(FormatIntTest, FormatDec) {
 
 #if FMT_USE_FILE_DESCRIPTORS
 
+TEST(FormatTest, Print) {
+  EXPECT_WRITE(stdout, fmt::Print("Don't {}!") << "panic", "Don't panic!");
+  EXPECT_WRITE(stderr,
+      fmt::Print(stderr, "Don't {}!") << "panic", "Don't panic!");
+}
+
+#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
+TEST(FormatTest, PrintVariadic) {
+  EXPECT_WRITE(stdout, fmt::Print("Don't {}!", "panic"), "Don't panic!");
+  EXPECT_WRITE(stderr,
+      fmt::Print(stderr, "Don't {}!", "panic"), "Don't panic!");
+}
+#endif  // FMT_USE_VARIADIC_TEMPLATES
+
 TEST(FormatTest, PrintColored) {
   EXPECT_WRITE(stdout, fmt::PrintColored(fmt::RED, "Hello, {}!\n") << "world",
       "\x1b[31mHello, world!\n\x1b[0m");
@@ -1842,8 +1856,9 @@ TEST(FormatTest, PrintColored) {
 
 #if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 TEST(FormatTest, Variadic) {
-  EXPECT_EQ("Hello, world!1", str(Format("Hello, {}!{}", "world", 1)));
-  EXPECT_EQ(L"Hello, world!1", str(Format(L"Hello, {}!{}", L"world", 1)));
+  EXPECT_EQ("abc1", str(Format("{}c{}", "ab", 1)));
+  EXPECT_EQ(L"abc1", str(Format(L"{}c{}", L"ab", 1)));
+  EXPECT_WRITE(stdout, fmt::Print("So {}!", "variadic"), "So variadic!");
 }
 #endif  // FMT_USE_VARIADIC_TEMPLATES
 
