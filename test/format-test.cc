@@ -38,6 +38,14 @@
 // Check if format.h compiles with windows.h included.
 #ifdef _WIN32
 # include <windows.h>
+
+// Fix MSVC warning about "unsafe" fopen.
+FILE *FOpen(const char *filename, const char *mode) {
+  FILE *f = 0;
+  errno = fopen_s(&f, filename, mode);
+  return f;
+}
+#define fopen FOpen
 #endif
 
 #include "format.h"
@@ -1585,12 +1593,15 @@ TEST(FormatterTest, FormatExamples) {
     EXPECT_EQ("0123456789", s);
   }
 
-  EXPECT_THROW({
-    const char *filename = "nonexistent";
-    FILE *f = std::fopen(filename, "r");
+  const char *filename = "nonexistent";
+  FILE *ftest = fopen(filename, "r");
+  int error_code = errno;
+  EXPECT_TRUE(ftest == 0);
+  EXPECT_SYSTEM_ERROR({
+    FILE *f = fopen(filename, "r");
     if (!f)
       fmt::ThrowSystemError(errno, "Cannot open file '{}'") << filename;
-  }, fmt::SystemError);
+  }, error_code, "Cannot open file 'nonexistent'");
 }
 
 TEST(FormatterTest, StrNamespace) {

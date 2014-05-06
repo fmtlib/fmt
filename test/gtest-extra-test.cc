@@ -35,6 +35,7 @@
 
 #ifdef _WIN32
 # include <crtdbg.h>  // for _CrtSetReportMode
+# define close _close
 #endif  // _WIN32
 
 namespace {
@@ -258,7 +259,8 @@ bool IsClosed(int fd) {
 // Attempts to read count characters from a file.
 std::string Read(File &f, std::size_t count) {
   std::string buffer(count, '\0');
-  std::streamsize offset = 0, n = 0;
+  std::streamsize n = 0;
+  std::size_t offset = 0;
   do {
     n = f.read(&buffer[offset], count - offset);
     offset += n;
