@@ -65,6 +65,13 @@ void BufferedFile::close() {
     fmt::ThrowSystemError(errno, "cannot close file");
 }
 
+int BufferedFile::fileno() const {
+  int fd = ::FMT_POSIX(fileno(file_));
+  if (fd == -1)
+    fmt::ThrowSystemError(errno, "cannot get file descriptor");
+  return fd;
+}
+
 File::File(const char *path, int oflag) {
   int mode = S_IRUSR | S_IWUSR;
 #ifdef _WIN32

@@ -255,6 +255,32 @@ bool IsClosed(int fd) {
   return result == -1 && errno == EBADF;
 }
 
+// Attempts to read count characters from a file.
+std::string Read(File &f, std::size_t count) {
+  std::string buffer(count, '\0');
+  std::streamsize offset = 0, n = 0;
+  do {
+    n = f.read(&buffer[offset], count - offset);
+    offset += n;
+  } while (offset < count && n != 0);
+  buffer.resize(offset);
+  return buffer;
+}
+
+// Attempts to write a string to a file.
+void Write(File &f, fmt::StringRef s) {
+  std::size_t num_chars_left = s.size();
+  const char *ptr = s.c_str();
+  do {
+    std::streamsize count = f.write(ptr, num_chars_left);
+    ptr += count;
+    num_chars_left -= count;
+  } while (num_chars_left != 0);
+}
+
+#define EXPECT_READ(file, expected_content) \
+  EXPECT_EQ(expected_content, Read(file, std::strlen(expected_content)))
+
 TEST(ErrorCodeTest, Ctor) {
   EXPECT_EQ(0, ErrorCode().get());
   EXPECT_EQ(42, ErrorCode(42).get());
@@ -294,7 +320,7 @@ TEST(BufferedFileTest, MoveAssignment) {
 TEST(BufferedFileTest, MoveAssignmentClosesFile) {
   BufferedFile bf = OpenFile(".travis.yml");
   BufferedFile bf2 = OpenFile("CMakeLists.txt");
-  int old_fd = fileno(bf2.get());
+  int old_fd = bf2.fileno();
   bf2 = std::move(bf);
   EXPECT_TRUE(IsClosed(old_fd));
 }
@@ -314,7 +340,7 @@ TEST(BufferedFileTest, MoveFromTemporaryInAssignment) {
 
 TEST(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
   BufferedFile f = OpenFile(".travis.yml");
-  int old_fd = fileno(f.get());
+  int old_fd = f.fileno();
   f = OpenFile(".travis.yml");
   EXPECT_TRUE(IsClosed(old_fd));
 }
@@ -323,7 +349,7 @@ TEST(BufferedFileTest, CloseFileInDtor) {
   int fd = 0;
   {
     BufferedFile f = OpenFile(".travis.yml");
-    fd = fileno(f.get());
+    fd = f.fileno();
   }
   EXPECT_TRUE(IsClosed(fd));
 }
@@ -335,14 +361,14 @@ TEST(BufferedFileTest, CloseErrorInDtor) {
       // the system may recycle closed file descriptor when redirecting the
       // output in EXPECT_STDERR and the second close will break output
       // redirection.
-      close(fileno(f->get()));
+      close(f->fileno());
       SUPPRESS_ASSERT(delete f);
   }, FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 }
 
 TEST(BufferedFileTest, Close) {
   BufferedFile f = OpenFile(".travis.yml");
-  int fd = fileno(f.get());
+  int fd = f.fileno();
   f.close();
   EXPECT_TRUE(f.get() == 0);
   EXPECT_TRUE(IsClosed(fd));
@@ -350,9 +376,18 @@ TEST(BufferedFileTest, Close) {
 
 TEST(BufferedFileTest, CloseError) {
   BufferedFile f = OpenFile(".travis.yml");
-  close(fileno(f.get()));
+  close(f.fileno());
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_TRUE(f.get() == 0);
+}
+
+TEST(BufferedFileTest, Fileno) {
+  BufferedFile f;
+  EXPECT_DEATH(f.fileno(), "");
+  f = OpenFile(".travis.yml");
+  EXPECT_TRUE(f.fileno() != -1);
+  File dup = File::dup(f.fileno());
+  EXPECT_READ(dup, "language: cpp");
 }
 
 TEST(FileTest, DefaultCtor) {
@@ -459,32 +494,6 @@ TEST(FileTest, CloseError) {
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_EQ(-1, f.descriptor());
 }
-
-// Attempts to read count characters from a file.
-std::string Read(File &f, std::size_t count) {
-  std::string buffer(count, '\0');
-  std::streamsize offset = 0, n = 0;
-  do {
-    n = f.read(&buffer[offset], count - offset);
-    offset += n;
-  } while (offset < count && n != 0);
-  buffer.resize(offset);
-  return buffer;
-}
-
-// Attempts to write a string to a file.
-void Write(File &f, fmt::StringRef s) {
-  std::size_t num_chars_left = s.size();
-  const char *ptr = s.c_str();
-  do {
-    std::streamsize count = f.write(ptr, num_chars_left);
-    ptr += count;
-    num_chars_left -= count;
-  } while (num_chars_left != 0);
-}
-
-#define EXPECT_READ(file, expected_content) \
-  EXPECT_EQ(expected_content, Read(file, std::strlen(expected_content)))
 
 TEST(FileTest, Read) {
   File f(".travis.yml", File::RDONLY);
@@ -601,7 +610,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
 
 TEST(OutputRedirectTest, DupErrorInCtor) {
   BufferedFile f = OpenFile(".travis.yml");
-  int fd = fileno(f.get());
+  int fd = f.fileno();
   File dup = File::dup(fd);
   close(fd);
   OutputRedirect *redir = 0;

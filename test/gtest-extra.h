@@ -191,6 +191,8 @@ class BufferedFile {
 
   // Returns the pointer to a FILE object representing this file.
   std::FILE *get() const { return file_; }
+
+  int fileno() const;
 };
 
 // A file. Closed file is represented by a File object with descriptor -1.
