@@ -45,9 +45,37 @@ std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message) {
   return str(out);
 }
 
+// Suppresses Windows assertions on invalid file descriptors, making
+// POSIX functions return proper error codes instead of crashing on Windows.
+class SuppressAssert {
+#ifdef _WIN32
+ private:
+  _invalid_parameter_handler original_handler_;
+  int original_report_mode_;
+
+  static void InvalidParameterHandler(const wchar_t *,
+      const wchar_t *, const wchar_t *, unsigned , uintptr_t) {}
+
+ public:
+  SuppressAssert()
+  : original_handler_(_set_invalid_parameter_handler(InvalidParameterHandler)),
+    original_report_mode_(_CrtSetReportMode(_CRT_ASSERT, 0)) {
+  }
+  ~SuppressAssert() {
+    _set_invalid_parameter_handler(original_handler_);
+    _CrtSetReportMode(_CRT_ASSERT, original_report_mode_);
+  }
+#endif  // _WIN32
+};
+
+#define SUPPRESS_ASSERT(statement) { SuppressAssert sa; statement; }
+
 #define EXPECT_SYSTEM_ERROR(statement, error_code, message) \
   EXPECT_THROW_MSG(statement, fmt::SystemError, \
       FormatSystemErrorMessage(error_code, message))
+
+#define EXPECT_SYSTEM_ERROR_NOASSERT(statement, error_code, message) \
+  EXPECT_SYSTEM_ERROR(SUPPRESS_ASSERT(statement), error_code, message)
 
 // Checks if the file is open by reading one character from it.
 bool IsOpen(int fd) {
@@ -55,27 +83,12 @@ bool IsOpen(int fd) {
   return FMT_POSIX(read(fd, &buffer, 1)) == 1;
 }
 
-bool IsClosedInternal(int fd) {
+bool IsClosed(int fd) {
   char buffer;
-  std::streamsize result = FMT_POSIX(read(fd, &buffer, 1));
+  std::streamsize result = 0;
+  SUPPRESS_ASSERT(result = FMT_POSIX(read(fd, &buffer, 1)));
   return result == -1 && errno == EBADF;
 }
-
-#ifndef _WIN32
-// Checks if the file is closed.
-# define EXPECT_CLOSED(fd) EXPECT_TRUE(IsClosedInternal(fd))
-#else
-// Reading from a closed file causes death on Windows.
-# define EXPECT_CLOSED(fd) EXPECT_DEATH(IsClosedInternal(fd), "")
-#endif
-
-#ifndef _WIN32
-# define EXPECT_SYSTEM_ERROR_OR_DEATH(statement, error_code, message) \
-    EXPECT_SYSTEM_ERROR(statement, error_code, message)
-#else
-# define EXPECT_SYSTEM_ERROR_OR_DEATH(statement, error_code, message) \
-    EXPECT_DEATH(statement, "")
-#endif
 
 // Tests that assertion macros evaluate their arguments exactly once.
 class SingleEvaluationTest : public ::testing::Test {
@@ -234,13 +247,19 @@ TEST(ExpectTest, EXPECT_WRITE) {
       "  Actual: that");
 }
 
-// TODO: test EXPECT_WRITE
-
 TEST(StreamingAssertionsTest, EXPECT_THROW_MSG) {
   EXPECT_THROW_MSG(ThrowException(), std::exception, "test")
       << "unexpected failure";
   EXPECT_NONFATAL_FAILURE(
       EXPECT_THROW_MSG(ThrowException(), std::exception, "other")
+      << "expected failure", "expected failure");
+}
+
+TEST(StreamingAssertionsTest, EXPECT_WRITE) {
+  EXPECT_WRITE(stdout, std::printf("test"), "test")
+      << "unexpected failure";
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_WRITE(stdout, std::printf("test"), "other")
       << "expected failure", "expected failure");
 }
 
@@ -251,33 +270,6 @@ TEST(ErrorCodeTest, Ctor) {
   EXPECT_EQ(42, ErrorCode(42).get());
 }
 
-// Enables standard POSIX mode of handling errors, making functions return
-// proper error codes instead of crashing on Windows.
-class ScopedPOSIXMode {
-#ifdef _WIN32
- private:
-  _invalid_parameter_handler original_handler_;
-  int original_report_mode_;
-
-  static void InvalidParameterHandler(const wchar_t *,
-      const wchar_t *, const wchar_t *, unsigned , uintptr_t) {}
-
- public:
-  ScopedPOSIXMode()
-  : original_handler_(_set_invalid_parameter_handler(InvalidParameterHandler)),
-    original_report_mode_(_CrtSetReportMode(_CRT_ASSERT, 0)) {
-  }
-  ~ScopedPOSIXMode() {
-    _set_invalid_parameter_handler(original_handler_);
-    _CrtSetReportMode(_CRT_ASSERT, original_report_mode_);
-  }
-#endif  // _WIN32
-};
-
-class BufferedFileTest : public ::testing::Test {
-  ScopedPOSIXMode mode_;
-};
-
 BufferedFile OpenFile(const char *name, FILE **fp = 0) {
   BufferedFile f = File(".travis.yml", File::RDONLY).fdopen("r");
   if (fp)
@@ -285,12 +277,12 @@ BufferedFile OpenFile(const char *name, FILE **fp = 0) {
   return f;
 }
 
-TEST_F(BufferedFileTest, DefaultCtor) {
+TEST(BufferedFileTest, DefaultCtor) {
   BufferedFile f;
   EXPECT_TRUE(f.get() == 0);
 }
 
-TEST_F(BufferedFileTest, MoveCtor) {
+TEST(BufferedFileTest, MoveCtor) {
   BufferedFile bf = OpenFile(".travis.yml");
   FILE *fp = bf.get();
   EXPECT_TRUE(fp != 0);
@@ -299,7 +291,7 @@ TEST_F(BufferedFileTest, MoveCtor) {
   EXPECT_TRUE(bf.get() == 0);
 }
 
-TEST_F(BufferedFileTest, MoveAssignment) {
+TEST(BufferedFileTest, MoveAssignment) {
   BufferedFile bf = OpenFile(".travis.yml");
   FILE *fp = bf.get();
   EXPECT_TRUE(fp != 0);
@@ -309,51 +301,53 @@ TEST_F(BufferedFileTest, MoveAssignment) {
   EXPECT_TRUE(bf.get() == 0);
 }
 
-TEST_F(BufferedFileTest, MoveAssignmentClosesFile) {
+TEST(BufferedFileTest, MoveAssignmentClosesFile) {
   BufferedFile bf = OpenFile(".travis.yml");
   BufferedFile bf2 = OpenFile("CMakeLists.txt");
   int old_fd = fileno(bf2.get());
   bf2 = std::move(bf);
-  EXPECT_TRUE(IsClosedInternal(old_fd));
+  EXPECT_TRUE(IsClosed(old_fd));
 }
 
-TEST_F(BufferedFileTest, MoveFromTemporaryInCtor) {
+TEST(BufferedFileTest, MoveFromTemporaryInCtor) {
   FILE *fp = 0;
   BufferedFile f(OpenFile(".travis.yml", &fp));
   EXPECT_EQ(fp, f.get());
 }
 
-TEST_F(BufferedFileTest, MoveFromTemporaryInAssignment) {
+TEST(BufferedFileTest, MoveFromTemporaryInAssignment) {
   FILE *fp = 0;
   BufferedFile f;
   f = OpenFile(".travis.yml", &fp);
   EXPECT_EQ(fp, f.get());
 }
 
-TEST_F(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
+TEST(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
   BufferedFile f = OpenFile(".travis.yml");
   int old_fd = fileno(f.get());
   f = OpenFile(".travis.yml");
-  EXPECT_TRUE(IsClosedInternal(old_fd));
+  EXPECT_TRUE(IsClosed(old_fd));
 }
 
-TEST_F(BufferedFileTest, CloseFileInDtor) {
+TEST(BufferedFileTest, CloseFileInDtor) {
   int fd = 0;
   {
     BufferedFile f = OpenFile(".travis.yml");
     fd = fileno(f.get());
   }
-  EXPECT_TRUE(IsClosedInternal(fd));
+  EXPECT_TRUE(IsClosed(fd));
 }
 
-TEST_F(BufferedFileTest, CloseErrorInDtor) {
+TEST(BufferedFileTest, CloseErrorInDtor) {
   BufferedFile *f = new BufferedFile(OpenFile(".travis.yml"));
-  // The close function must be called inside EXPECT_WRITE, otherwise
-  // the system may recycle closed file descriptor when redirecting the
-  // output in EXPECT_STDERR and the second close will break output
-  // redirection.
-  EXPECT_WRITE(stderr, close(fileno(f->get())); delete f,
-    FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
+  EXPECT_WRITE(stderr, {
+      // The close function must be called inside EXPECT_WRITE, otherwise
+      // the system may recycle closed file descriptor when redirecting the
+      // output in EXPECT_STDERR and the second close will break output
+      // redirection.
+      close(fileno(f->get()));
+      SUPPRESS_ASSERT(delete f);
+  }, FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 }
 
 TEST(FileTest, DefaultCtor) {
@@ -395,7 +389,7 @@ TEST(FileTest, MoveAssignmentClosesFile) {
   File f2("CMakeLists.txt", File::RDONLY);
   int old_fd = f2.descriptor();
   f2 = std::move(f);
-  EXPECT_CLOSED(old_fd);
+  EXPECT_TRUE(IsClosed(old_fd));
 }
 
 File OpenFile(int &fd) {
@@ -422,7 +416,7 @@ TEST(FileTest, MoveFromTemporaryInAssignmentClosesFile) {
   File f(".travis.yml", File::RDONLY);
   int old_fd = f.descriptor();
   f = OpenFile(fd);
-  EXPECT_CLOSED(old_fd);
+  EXPECT_TRUE(IsClosed(old_fd));
 }
 
 TEST(FileTest, CloseFileInDtor) {
@@ -431,23 +425,19 @@ TEST(FileTest, CloseFileInDtor) {
     File f(".travis.yml", File::RDONLY);
     fd = f.descriptor();
   }
-  EXPECT_CLOSED(fd);
+  EXPECT_TRUE(IsClosed(fd));
 }
 
 TEST(FileTest, CloseErrorInDtor) {
   File *f = new File(".travis.yml", File::RDONLY);
-#ifndef _WIN32
-  // The close function must be called inside EXPECT_WRITE, otherwise
-  // the system may recycle closed file descriptor when redirecting the
-  // output in EXPECT_STDERR and the second close will break output
-  // redirection.
-  EXPECT_WRITE(stderr, FMT_POSIX(close(f->descriptor())); delete f,
-    FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
-#else
-  close(f->descriptor());
-  // Closing file twice causes death on Windows.
-  EXPECT_DEATH(delete f, "");
-#endif
+  EXPECT_WRITE(stderr, {
+      // The close function must be called inside EXPECT_WRITE, otherwise
+      // the system may recycle closed file descriptor when redirecting the
+      // output in EXPECT_STDERR and the second close will break output
+      // redirection.
+      FMT_POSIX(close(f->descriptor()));
+      SUPPRESS_ASSERT(delete f);
+  }, FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
 }
 
 TEST(FileTest, Close) {
@@ -455,22 +445,14 @@ TEST(FileTest, Close) {
   int fd = f.descriptor();
   f.close();
   EXPECT_EQ(-1, f.descriptor());
-  EXPECT_CLOSED(fd);
+  EXPECT_TRUE(IsClosed(fd));
 }
 
 TEST(FileTest, CloseError) {
   File f(".travis.yml", File::RDONLY);
-#ifndef _WIN32
   close(f.descriptor());
-  EXPECT_SYSTEM_ERROR(f.close(), EBADF, "cannot close file");
+  EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_EQ(-1, f.descriptor());
-#else
-  File dup = f.dup(f.descriptor());
-  close(f.descriptor());
-  // Closing file twice causes death on Windows.
-  EXPECT_DEATH(f.close(), "");
-  dup.dup2(f.descriptor());  // "undo" close or dtor will fail
-#endif
 }
 
 // Attempts to read count characters from a file.
@@ -536,7 +518,7 @@ TEST(FileTest, Dup) {
 }
 
 TEST(FileTest, DupError) {
-  EXPECT_SYSTEM_ERROR_OR_DEATH(File::dup(-1),
+  EXPECT_SYSTEM_ERROR_NOASSERT(File::dup(-1),
       EBADF, "cannot duplicate file descriptor -1");
 }
 
@@ -550,7 +532,7 @@ TEST(FileTest, Dup2) {
 
 TEST(FileTest, Dup2Error) {
   File f(".travis.yml", File::RDONLY);
-  EXPECT_SYSTEM_ERROR_OR_DEATH(f.dup2(-1), EBADF,
+  EXPECT_SYSTEM_ERROR_NOASSERT(f.dup2(-1), EBADF,
     fmt::Format("cannot duplicate file descriptor {} to -1") << f.descriptor());
 }
 
@@ -567,12 +549,8 @@ TEST(FileTest, Dup2NoExcept) {
 TEST(FileTest, Dup2NoExceptError) {
   File f(".travis.yml", File::RDONLY);
   ErrorCode ec;
-#ifndef _WIN32
-  f.dup2(-1, ec);
+  SUPPRESS_ASSERT(f.dup2(-1, ec));
   EXPECT_EQ(EBADF, ec.get());
-#else
-  EXPECT_DEATH(f.dup2(-1, ec), "");
-#endif
 }
 
 TEST(FileTest, Pipe) {
@@ -610,7 +588,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
   EXPECT_EQ('x', fputc('x', f.get()));
   close(write_fd);
   OutputRedirect *redir = 0;
-  EXPECT_SYSTEM_ERROR_OR_DEATH(redir = new OutputRedirect(f.get()),
+  EXPECT_SYSTEM_ERROR_NOASSERT(redir = new OutputRedirect(f.get()),
       EBADF, fmt::Format("cannot flush stream"));
   delete redir;
   write_dup.dup2(write_fd);  // "undo" close or dtor will fail
@@ -622,7 +600,7 @@ TEST(OutputRedirectTest, DupErrorInCtor) {
   File dup = File::dup(fd);
   close(fd);
   OutputRedirect *redir = 0;
-  EXPECT_SYSTEM_ERROR_OR_DEATH(redir = new OutputRedirect(f.get()),
+  EXPECT_SYSTEM_ERROR_NOASSERT(redir = new OutputRedirect(f.get()),
       EBADF, fmt::Format("cannot duplicate file descriptor {}") << fd);
   dup.dup2(fd);  // "undo" close or dtor will fail
   delete redir;
@@ -653,7 +631,7 @@ TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   close(write_fd);
-  EXPECT_SYSTEM_ERROR_OR_DEATH(redir.RestoreAndRead(),
+  EXPECT_SYSTEM_ERROR_NOASSERT(redir.RestoreAndRead(),
       EBADF, fmt::Format("cannot flush stream"));
   write_dup.dup2(write_fd);  // "undo" close or dtor will fail
 }
@@ -667,17 +645,14 @@ TEST(OutputRedirectTest, ErrorInDtor) {
   OutputRedirect *redir = new OutputRedirect(f.get());
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
-#ifndef _WIN32
-  // The close function must be called inside EXPECT_WRITE, otherwise
-  // the system may recycle closed file descriptor when redirecting the
-  // output in EXPECT_STDERR and the second close will break output
-  // redirection.
-  EXPECT_WRITE(stderr, close(write_fd); delete redir,
-      FormatSystemErrorMessage(EBADF, "cannot flush stream"));
-#else
-  close(write_fd);
-  EXPECT_DEATH(delete redir, "");
-#endif
+  EXPECT_WRITE(stderr, {
+      // The close function must be called inside EXPECT_WRITE, otherwise
+      // the system may recycle closed file descriptor when redirecting the
+      // output in EXPECT_STDERR and the second close will break output
+      // redirection.
+      close(write_fd);
+      SUPPRESS_ASSERT(delete redir);
+  }, FormatSystemErrorMessage(EBADF, "cannot flush stream"));
   write_dup.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
 }
 
