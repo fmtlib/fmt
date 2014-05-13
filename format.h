@@ -996,11 +996,21 @@ class BasicWriter {
   };
 
  public:
+  /**
+    Constructs a ``BasicWriter`` object.
+   */
   BasicWriter() {}
 
 #if FMT_USE_RVALUE_REFERENCES
+  /**
+    Constructs a ``BasicWriter`` object moving the content of the other
+    object to it.
+   */
   BasicWriter(BasicWriter &&other) : buffer_(std::move(other.buffer_)) {}
 
+  /**
+    Moves the content of the other ``BasicWriter`` object to this one.
+   */
   BasicWriter& operator=(BasicWriter &&other) {
     assert(this != &other);
     buffer_ = std::move(other.buffer_);
@@ -1009,7 +1019,7 @@ class BasicWriter {
 #endif
 
   /**
-    Returns the number of characters written to the output buffer.
+    Returns the total number of characters written.
    */
   std::size_t size() const { return buffer_.size(); }
 
@@ -1037,11 +1047,16 @@ class BasicWriter {
     return std::basic_string<Char>(&buffer_[0], buffer_.size());
   }
 
+  inline void VFormat(BasicStringRef<Char> format,
+      std::size_t num_args, const ArgInfo *args) {
+    FormatParser().Format(*this, format, num_args, args);
+  }
+
   /**
     \rst
     Formats a string sending the output to the writer. Arguments are
-    accepted through the returned ``BasicFormatter`` object using inserter
-    operator ``<<``.
+    accepted through the returned :cpp:class:`fmt::BasicFormatter` object
+    using operator ``<<``.
 
     **Example**::
 
@@ -1056,22 +1071,22 @@ class BasicWriter {
        Current point:
        (-3.140000, +3.140000)
 
-    The output can be accessed using :meth:`data` or :meth:`c_str`.
+    The output can be accessed using :meth:`data`, :meth:`c_str` or :meth:`str`
+    methods.
 
     See also `Format String Syntax`_.
     \endrst
    */
   BasicFormatter<Char> Format(StringRef format);
 
-  inline void VFormat(BasicStringRef<Char> format,
-      std::size_t num_args, const ArgInfo *args) {
-    FormatParser().Format(*this, format, num_args, args);
-  }
-
 #if FMT_USE_VARIADIC_TEMPLATES
   /**
     \rst
     Formats a string sending the output to the writer.
+
+    This version of the Format method uses C++11 features such as
+    variadic templates and rvalue references. For C++98 version, see
+    the overload taking a single ``StringRef`` argument above.
 
     **Example**::
 
@@ -1086,7 +1101,8 @@ class BasicWriter {
        Current point:
        (-3.140000, +3.140000)
 
-    The output can be accessed using :meth:`data` or :meth:`c_str`.
+    The output can be accessed using :meth:`data`, :meth:`c_str` or :meth:`str`
+    methods.
 
     See also `Format String Syntax`_.
     \endrst
@@ -1312,11 +1328,8 @@ void FormatCustomArg(
 
 /**
   \rst
-  The :cpp:class:`fmt::BasicFormatter` template provides string formatting
-  functionality similar to Python's `str.format
-  <http://docs.python.org/3/library/stdtypes.html#str.format>`__ function.
-  The class provides operator<< for feeding formatting arguments and all
-  the output is sent to a :cpp:class:`fmt::Writer` object.
+  The :cpp:class:`fmt::BasicFormatter` template provides operator<< for
+  feeding arbitrary arguments to the :cpp:func:`fmt::Format()` function.
   \endrst
  */
 template <typename Char>
@@ -1532,9 +1545,9 @@ class Formatter : private Sink, public BasicFormatter<Char> {
 /**
   \rst
   Formats a string similarly to Python's `str.format
-  <http://docs.python.org/3/library/stdtypes.html#str.format>`__.
-  Returns a temporary formatter object that accepts arguments via
-  operator ``<<``.
+  <http://docs.python.org/3/library/stdtypes.html#str.format>`__ function.
+  Returns a temporary :cpp:class:`fmt::Formatter` object that accepts arguments
+  via operator ``<<``.
 
   *format* is a format string that contains literal text and replacement
   fields surrounded by braces ``{}``. The formatter object replaces the
@@ -1575,10 +1588,12 @@ class SystemErrorSink {
 };
 
 /**
+  \rst
   Formats a message and throws SystemError with the description of the form
   "<message>: <system-message>", where <message> is the formatted message and
   <system-message> is the system message corresponding to the error code.
   error_code is a system error code as given by errno.
+  \endrst
  */
 inline Formatter<SystemErrorSink> ThrowSystemError(
     int error_code, StringRef format) {
@@ -1688,6 +1703,30 @@ inline Formatter<ANSITerminalSink> PrintColored(Color c, StringRef format) {
 
 #if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 
+/**
+  \rst
+  Formats a string similarly to Python's `str.format
+  <http://docs.python.org/3/library/stdtypes.html#str.format>`__ function
+  and returns an :cpp:class:`fmt::BasicWriter` object containing the output.
+  
+  This version of the Format function uses C++11 features such as
+  variadic templates and rvalue references. For C++98 version, see
+  the :cpp:func:`fmt::Format()` overload above.
+
+  *format* is a format string that contains literal text and replacement
+  fields surrounded by braces ``{}``. The formatter object replaces the
+  fields with formatted arguments and stores the output in a memory buffer.
+  The content of the buffer can be converted to ``std::string`` with
+  :cpp:func:`fmt::str()` or accessed as a C string with
+  :cpp:func:`fmt::c_str()`.
+
+  **Example**::
+
+    std::string message = str(Format("The answer is {}", 42);
+
+  See also `Format String Syntax`_.
+  \endrst
+ */
 template<typename... Args>
 inline Writer Format(StringRef format, const Args & ... args) {
   Writer w;
