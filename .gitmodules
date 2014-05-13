@@ -3,4 +3,4 @@
 	url = git://github.com/vitaut/format-benchmark.git
 [submodule "doc/sphinx"]
 	path = doc/sphinx
-	url = git@github.com:cppformat/sphinx.git
+	url = git://github.com/cppformat/sphinx.git
