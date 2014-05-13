@@ -319,6 +319,16 @@ TEST(UtilTest, ThrowSystemError) {
       fmt::internal::FormatSystemErrorMessage, fmt::ThrowSystemError);
 }
 
+TEST(ErrorTest, ReportSystemError) {
+  // TODO
+  EXPECT_EXIT({
+    fmt::ReportSystemError(EDOM, "test error");
+    std::fprintf(stderr, "end\n");
+    std::exit(0);
+  }, ::testing::ExitedWithCode(0),
+      str(fmt::Format("test error: {}\nend\n") << strerror(EDOM)));
+}
+
 #ifdef _WIN32
 
 TEST(UtilTest, FormatWinErrorMessage) {
@@ -344,6 +354,18 @@ TEST(UtilTest, WinErrorSink) {
 TEST(UtilTest, ThrowWinError) {
   CheckThrowError(ERROR_FILE_EXISTS,
       fmt::internal::FormatWinErrorMessage, fmt::ThrowWinError);
+}
+
+TEST(ErrorTest, ReportWinError) {
+  // TODO
+  fmt::Writer message;
+  fmt::internal::FormatWinErrorMessage(
+      message, ERROR_FILE_EXISTS, "test error");
+  EXPECT_EXIT({
+    fmt::ReportWinError(ERROR_FILE_EXISTS, "test error");
+    std::fprintf(stderr, "end\n");
+    std::exit(0);
+  }, ::testing::ExitedWithCode(0), str(message));
 }
 
 #endif  // _WIN32
