@@ -1415,7 +1415,7 @@ template <typename Char>
 inline const Char *c_str(const BasicWriter<Char> &f) { return f.c_str(); }
 
 /**
-  Converts a string reference an `std::string`.
+  Converts a string reference to `std::string`.
  */
 inline std::string str(StringRef s) {
   return std::string(s.c_str(), s.size());

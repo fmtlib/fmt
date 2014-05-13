@@ -26,9 +26,9 @@ namespace is often omitted in examples.
 .. doxygenclass:: fmt::BasicStringRef
    :members:
 
-.. doxygenfunction:: fmt::str
+.. doxygenfunction:: fmt::str(StringRef)
 
-.. doxygenfunction:: fmt::c_str
+.. doxygenfunction:: fmt::c_str(StringRef)
 
 Write API
 ---------
