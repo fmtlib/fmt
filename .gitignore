@@ -3,14 +3,15 @@
 /doc/doxyxml
 /doc/html
 /Testing
-/*.cmake
-/format-test
+/*-test
 /install_manifest.txt
 /tinyformat_speed_test
 *~
 *.a
 *.zip
 cmake_install.cmake
+CPack*Config.cmake
+CTestTestfile.cmake
 CMakeCache.txt
 CMakeFiles
 Makefile
