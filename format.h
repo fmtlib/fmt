@@ -665,8 +665,9 @@ IntFormatSpec<int, TypeSpec<'X'> > hexu(int value);
 
   **Example**::
 
-    std::string s = str(Writer() << pad(hex(0xcafe), 8, '0'));
-    // s == "0000cafe"
+    Writer out;
+    out << pad(hex(0xcafe), 8, '0');
+    // out.str() == "0000cafe"
 
   \endrst
  */

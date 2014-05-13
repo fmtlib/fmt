@@ -41,7 +41,7 @@ Write API
 
 .. doxygenfunction:: fmt::hexu
 
-.. doxygenfunction:: fmt::pad
+.. doxygenfunction:: fmt::pad(int, unsigned, Char)
 
 .. _formatstrings:
 
