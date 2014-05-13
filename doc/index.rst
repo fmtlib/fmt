@@ -17,10 +17,10 @@ namespace is often omitted in examples.
 .. doxygenclass:: fmt::Formatter
    :members:
 
-.. doxygenclass:: fmt::NoAction
+.. doxygenclass:: fmt::NullSink
    :members:
 
-.. doxygenclass:: fmt::Write
+.. doxygenclass:: fmt::FileSink
    :members:
 
 .. doxygenclass:: fmt::BasicStringRef
