@@ -1068,6 +1068,28 @@ class BasicWriter {
   }
 
 #if FMT_USE_VARIADIC_TEMPLATES
+  /**
+    \rst
+    Formats a string sending the output to the writer.
+
+    **Example**::
+
+       Writer out;
+       out.Format("Current point:\n");
+       out.Format("({:+f}, {:+f})", -3.14, 3.14);
+
+    This will write the following output to the ``out`` object:
+
+    .. code-block:: none
+
+       Current point:
+       (-3.140000, +3.140000)
+
+    The output can be accessed using :meth:`data` or :meth:`c_str`.
+
+    See also `Format String Syntax`_.
+    \endrst
+   */
   template<typename... Args>
   void Format(BasicStringRef<Char> format, const Args & ... args) {
     Arg arg_array[] = {args...};
@@ -1291,7 +1313,7 @@ void FormatCustomArg(
   \rst
   The :cpp:class:`fmt::BasicFormatter` template provides string formatting
   functionality similar to Python's `str.format
-  <http://docs.python.org/3/library/stdtypes.html#str.format>`__.
+  <http://docs.python.org/3/library/stdtypes.html#str.format>`__ function.
   The class provides operator<< for feeding formatting arguments and all
   the output is sent to a :cpp:class:`fmt::Writer` object.
   \endrst
