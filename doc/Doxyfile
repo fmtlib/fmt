@@ -12,3 +12,4 @@ GENERATE_XML = YES
 XML_OUTPUT   = doxyxml
 ALIASES = "rst=\verbatim embed:rst"
 ALIASES += "endrst=\endverbatim"
+PREDEFINED = FMT_USE_VARIADIC_TEMPLATES
