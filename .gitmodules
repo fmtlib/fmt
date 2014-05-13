@@ -1,9 +1,6 @@
 [submodule "format-benchmark"]
 	path = format-benchmark
 	url = git://github.com/vitaut/format-benchmark.git
-[submodule "doc/breathe"]
-	path = doc/breathe
-	url = git://github.com/vitaut/breathe.git
 [submodule "doc/sphinx"]
 	path = doc/sphinx
 	url = git@github.com:cppformat/sphinx.git
