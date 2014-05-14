@@ -50,6 +50,13 @@ Write API
 
 .. _formatstrings:
 
+System Error Reporting
+----------------------
+
+.. doxygenfunction:: fmt::ThrowSystemError
+
+.. doxygenfunction:: fmt::ThrowWinError
+
 Format String Syntax
 --------------------
 

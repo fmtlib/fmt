@@ -1590,9 +1590,9 @@ class SystemErrorSink {
 /**
   \rst
   Formats a message and throws SystemError with the description of the form
-  "<message>: <system-message>", where <message> is the formatted message and
-  <system-message> is the system message corresponding to the error code.
-  error_code is a system error code as given by errno.
+  "<message>: <system-message>", where *<message>* is the formatted message
+  and *<system-message>* is the system message corresponding to the error code.
+  *error_code* is a system error code as given by ``errno``.
   \endrst
  */
 inline Formatter<SystemErrorSink> ThrowSystemError(
@@ -1622,10 +1622,14 @@ class WinErrorSink {
 };
 
 /**
+  \rst
   Formats a message and throws SystemError with the description of the form
-  "<message>: <system-message>", where <message> is the formatted message and
-  <system-message> is the system message corresponding to the error code.
-  error_code is a Windows error code as given by GetLastError.
+  "<message>: <system-message>", where *<message>* is the formatted message
+  and *<system-message>* is the system message corresponding to the error code.
+  *error_code* is a Windows error code as given by ``GetLastError``.
+
+  This function is only available on Windows.
+  \endrst
  */
 inline Formatter<WinErrorSink> ThrowWinError(int error_code, StringRef format) {
   Formatter<WinErrorSink> f(format, WinErrorSink(error_code));
