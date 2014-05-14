@@ -320,13 +320,10 @@ TEST(UtilTest, ThrowSystemError) {
 }
 
 TEST(ErrorTest, ReportSystemError) {
-  // TODO
-  EXPECT_EXIT({
-    fmt::ReportSystemError(EDOM, "test error");
-    std::fprintf(stderr, "end\n");
-    std::exit(0);
-  }, ::testing::ExitedWithCode(0),
-      str(fmt::Format("test error: {}\nend\n") << strerror(EDOM)));
+  fmt::Writer out;
+  fmt::internal::FormatSystemErrorMessage(out, EDOM, "test error");
+  out << '\n';
+  EXPECT_WRITE(stderr, fmt::ReportSystemError(EDOM, "test error"), out.str());
 }
 
 #ifdef _WIN32
@@ -357,15 +354,11 @@ TEST(UtilTest, ThrowWinError) {
 }
 
 TEST(ErrorTest, ReportWinError) {
-  // TODO
-  fmt::Writer message;
-  fmt::internal::FormatWinErrorMessage(
-      message, ERROR_FILE_EXISTS, "test error");
-  EXPECT_EXIT({
-    fmt::ReportWinError(ERROR_FILE_EXISTS, "test error");
-    std::fprintf(stderr, "end\n");
-    std::exit(0);
-  }, ::testing::ExitedWithCode(0), str(message));
+  fmt::Writer out;
+  fmt::internal::FormatWinErrorMessage(out, ERROR_FILE_EXISTS, "test error");
+  out << '\n';
+  EXPECT_WRITE(stderr,
+      fmt::ReportWinError(ERROR_FILE_EXISTS, "test error"), out.str());
 }
 
 #endif  // _WIN32
