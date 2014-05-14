@@ -27,7 +27,6 @@
 
 #include "gtest-extra.h"
 
-#include <cstdio>
 #include <cstring>
 #include <algorithm>
 #include <stdexcept>
@@ -63,8 +62,18 @@ class SuppressAssert {
 };
 
 # define SUPPRESS_ASSERT(statement) { SuppressAssert sa; statement; }
+
+// Fix "secure" warning about using fopen without defining
+// _CRT_SECURE_NO_WARNINGS.
+std::FILE *OpenFile(const char *filename, const char *mode) {
+  std::FILE *f = 0;
+  errno = fopen_s(&f, filename, mode);
+  return f;
+}
+#define fopen OpenFile
 #else
 # define SUPPRESS_ASSERT(statement) statement
+using std::fopen;
 #endif  // _WIN32
 
 #define EXPECT_SYSTEM_ERROR_NOASSERT(statement, error_code, message) \
@@ -419,7 +428,7 @@ TEST(FileTest, DefaultCtor) {
 }
 
 TEST(FileTest, OpenBufferedFileInCtor) {
-  FILE *fp = std::fopen("test-file", "w");
+  FILE *fp = fopen("test-file", "w");
   std::fputs(FILE_CONTENT, fp);
   std::fclose(fp);
   File f("test-file", File::RDONLY);
