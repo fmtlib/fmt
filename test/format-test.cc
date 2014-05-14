@@ -1796,6 +1796,7 @@ TEST(FormatterTest, Examples) {
   ReportError("File not found: {0}") << path;
 
 #if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
+  EXPECT_EQ("The answer is 42", str(Format("The answer is {}", 42)));
   EXPECT_THROW_MSG(
     Format("The answer is {:d}", "forty-two"), FormatError,
     "unknown format code 'd' for string");

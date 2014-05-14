@@ -1728,7 +1728,7 @@ inline Formatter<ANSITerminalSink> PrintColored(Color c, StringRef format) {
 
   **Example**::
 
-    std::string message = str(Format("The answer is {}", 42);
+    std::string message = str(Format("The answer is {}", 42));
 
   See also `Format String Syntax`_.
   \endrst
