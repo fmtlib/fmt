@@ -1808,6 +1808,9 @@ TEST(FormatterTest, Examples) {
     "unknown format code 'd' for string");
   EXPECT_EQ(L"Cyrillic letter \x42e",
     str(Format(L"Cyrillic letter {}", L'\x42e')));
+
+  EXPECT_WRITE(stdout,
+      fmt::Print("{}", std::numeric_limits<double>::infinity()), "inf");
 #endif
 }
 
