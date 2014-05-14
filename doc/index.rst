@@ -50,8 +50,11 @@ Write API
 
 .. _formatstrings:
 
-System Error Reporting
-----------------------
+System Errors
+-------------
+
+.. doxygenclass:: fmt::SystemError
+   :members:
 
 .. doxygenfunction:: fmt::ThrowSystemError
 

@@ -521,7 +521,7 @@ class FormatError : public std::runtime_error {
 };
 
 /**
-  An error returned by the operating system or the language runtime,
+  An error returned by an operating system or a language runtime,
   for example a file opening error.
  */
 class SystemError : public std::runtime_error {
@@ -1589,9 +1589,10 @@ class SystemErrorSink {
 
 /**
   \rst
-  Formats a message and throws SystemError with the description of the form
-  "<message>: <system-message>", where *<message>* is the formatted message
-  and *<system-message>* is the system message corresponding to the error code.
+  Formats a message and throws :cpp:class:`fmt::SystemError` with
+  the description of the form "*<message>*: *<system-message>*",
+  where *<message>* is the formatted message and *<system-message>*
+  is the system message corresponding to the error code.
   *error_code* is a system error code as given by ``errno``.
   \endrst
  */
@@ -1623,9 +1624,10 @@ class WinErrorSink {
 
 /**
   \rst
-  Formats a message and throws SystemError with the description of the form
-  "<message>: <system-message>", where *<message>* is the formatted message
-  and *<system-message>* is the system message corresponding to the error code.
+  Formats a message and throws :cpp:class:`fmt::SystemError` with
+  the description of the form "*<message>*: *<system-message>*",
+  where *<message>* is the formatted message and *<system-message>*
+  is the system message corresponding to the error code.
   *error_code* is a Windows error code as given by ``GetLastError``.
 
   This function is only available on Windows.
