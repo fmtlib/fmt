@@ -348,6 +348,12 @@ TEST(StreamingAssertionsTest, EXPECT_WRITE) {
       << "expected failure", "expected failure");
 }
 
+TEST(UtilTest, FormatSystemErrorMessage) {
+  fmt::Writer out;
+  fmt::internal::FormatSystemErrorMessage(out, EDOM, "test message");
+  EXPECT_EQ(out.str(), FormatSystemErrorMessage(EDOM, "test message"));
+}
+
 #if FMT_USE_FILE_DESCRIPTORS
 
 // Checks if the file is open by reading one character from it.
@@ -799,8 +805,6 @@ TEST(OutputRedirectTest, ErrorInDtor) {
   }, FormatSystemErrorMessage(EBADF, "cannot flush stream"));
   write_copy.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
 }
-
-// TODO: test retry on EINTR, test FormatSystemErrorMessage
 
 #endif  // FMT_USE_FILE_DESCRIPTORS
 

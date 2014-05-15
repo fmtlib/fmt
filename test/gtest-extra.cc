@@ -46,6 +46,10 @@
 
 #endif  // _WIN32
 
+#ifdef FMT_INCLUDE_POSIX_TEST
+# include "posix-test.h"
+#endif
+
 // Retries the expression while it evaluates to -1 and error equals to EINTR.
 #define FMT_RETRY(result, expression) \
   do { \
@@ -53,7 +57,6 @@
   } while (result == -1 && errno == EINTR)
 
 namespace {
-// TODO: test
 #ifdef _WIN32
 // On Windows the count argument to read and write is unsigned, so convert
 // it from size_t preventing integer overflow.

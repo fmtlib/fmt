@@ -82,8 +82,8 @@ enable_testing()
 
 include_directories(.)
 
-add_library(test-main
-  test/test-main.cc test/gtest-extra.cc test/gtest-extra.h)
+set(TEST_MAIN_SRC test/test-main.cc test/gtest-extra.cc test/gtest-extra.h)
+add_library(test-main ${TEST_MAIN_SRC})
 target_link_libraries(test-main gtest format)
 
 cxx_test(gtest-extra-test test-main)
@@ -94,6 +94,14 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 endif ()
 if (HAVE_STD_CPP11_FLAG)
   set_target_properties(format-test PROPERTIES COMPILE_FLAGS "-std=c++11")
+endif ()
+
+if (HAVE_OPEN)
+  add_executable(posix-test test/posix-test.cc ${TEST_MAIN_SRC})
+  set_target_properties(posix-test
+    PROPERTIES COMPILE_DEFINITIONS "FMT_INCLUDE_POSIX_TEST=1")
+  target_link_libraries(posix-test gtest format)
+  add_test(posix-test posix-test)
 endif ()
 
 add_test(compile-test ${CMAKE_CTEST_COMMAND}
