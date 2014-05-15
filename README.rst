@@ -10,7 +10,7 @@ C++ Format
   :height: 18px
 
 C++ Format is an open-source formatting library for C++.
-It can be used as a type-safe alternative to printf or as a fast
+It can be used as a safe alternative to printf or as a fast
 alternative to IOStreams.
 
 Features
@@ -92,10 +92,11 @@ An object of any user-defined type for which there is an overloaded
     std::string s = str(fmt::Format("The date is {}") << Date(2012, 12, 9));
     // s == "The date is 2012-12-9"
 
-You can use `fmt::Formatter
+You can use `Formatter
 <http://cppformat.github.io/doc/latest/#project0classfmt_1_1_formatter>`__
-to create your own functions similar to `fmt::Format
-<http://cppformat.github.io/doc/latest#fmt::Format__StringRef>`__ and ``fmt::Print``
+to create your own functions similar to `Format
+<http://cppformat.github.io/doc/latest#fmt::Format__StringRef>`__ and
+`Print <http://cppformat.github.io/doc/latest#fmt::Print__StringRef>`__
 with an arbitrary action performed when formatting is complete:
 
 .. code-block:: c++
@@ -143,7 +144,7 @@ Printf
 ~~~~~~
 
 The good thing about printf is that it is very fast and readily available
-being the part of the C standard library. The main drawback is that it
+being a part of the C standard library. The main drawback is that it
 doesn't support user-defined types. Printf also has safety issues although
 they are mostly solved with `__attribute__ ((format (printf, ...))
 <http://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html>`__ in GCC.
