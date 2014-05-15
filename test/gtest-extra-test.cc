@@ -65,8 +65,8 @@ class SuppressAssert {
 
 // Fix "secure" warning about using fopen without defining
 // _CRT_SECURE_NO_WARNINGS.
-std::FILE *OpenFile(const char *filename, const char *mode) {
-  std::FILE *f = 0;
+FILE *OpenFile(const char *filename, const char *mode) {
+  FILE *f = 0;
   errno = fopen_s(&f, filename, mode);
   return f;
 }

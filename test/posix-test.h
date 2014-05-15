@@ -29,17 +29,35 @@
 #define FMT_POSIX_TEST_H
 
 #include <errno.h>
+#include <stdio.h>
 
 namespace test {
 
 #ifndef _WIN32
+// Size type for read and write.
+typedef size_t size_t;
+typedef ssize_t ssize_t;
 int open(const char *path, int oflag, int mode);
-#define open test::open
 #else
-errno_t sopen_s(int* pfh, const char *filename, int oflag, int shflag, int pmode);
-#define _sopen_s test::sopen_s
+typedef unsigned size_t;
+typedef int ssize_t;
+errno_t sopen_s(
+    int* pfh, const char *filename, int oflag, int shflag, int pmode);
 #endif
 
+int close(int fildes);
+
+int dup(int fildes);
+int dup2(int fildes, int fildes2);
+
+FILE *fdopen(int fildes, const char *mode);
+int fileno(FILE *stream);
+
+ssize_t read(int fildes, void *buf, size_t nbyte);
+ssize_t write(int fildes, const void *buf, size_t nbyte);
+
 }  // namespace test
+
+#define FMT_POSIX_CALL(call) test::call
 
 #endif  // FMT_POSIX_TEST_H

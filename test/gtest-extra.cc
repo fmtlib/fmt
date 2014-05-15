@@ -46,10 +46,6 @@
 
 #endif  // _WIN32
 
-#ifdef FMT_INCLUDE_POSIX_TEST
-# include "posix-test.h"
-#endif
-
 // Retries the expression while it evaluates to -1 and error equals to EINTR.
 #define FMT_RETRY(result, expression) \
   do { \
@@ -60,6 +56,7 @@ namespace {
 #ifdef _WIN32
 // On Windows the count argument to read and write is unsigned, so convert
 // it from size_t preventing integer overflow.
+// TODO: test
 inline unsigned ConvertRWCount(std::size_t count) {
   return count <= UINT_MAX ? static_cast<unsigned>(count) : UINT_MAX;
 }
@@ -83,7 +80,7 @@ void BufferedFile::close() {
 }
 
 int BufferedFile::fileno() const {
-  int fd = ::FMT_POSIX(fileno(file_));
+  int fd = FMT_POSIX_CALL(fileno(file_));
   if (fd == -1)
     fmt::ThrowSystemError(errno, "cannot get file descriptor");
   return fd;
@@ -93,9 +90,9 @@ File::File(const char *path, int oflag) {
   int mode = S_IRUSR | S_IWUSR;
 #ifdef _WIN32
   fd_ = -1;
-  _sopen_s(&fd_, path, oflag, _SH_DENYNO, mode);
+  FMT_POSIX_CALL(sopen_s(&fd_, path, oflag, _SH_DENYNO, mode));
 #else
-  FMT_RETRY(fd_, open(path, oflag, mode));
+  FMT_RETRY(fd_, FMT_POSIX_CALL(open(path, oflag, mode)));
 #endif
   if (fd_ == -1)
     fmt::ThrowSystemError(errno, "cannot open file {}") << path;
@@ -104,7 +101,7 @@ File::File(const char *path, int oflag) {
 File::~File() FMT_NOEXCEPT(true) {
   // Don't retry close in case of EINTR!
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
-  if (fd_ != -1 && ::FMT_POSIX(close(fd_)) != 0)
+  if (fd_ != -1 && FMT_POSIX_CALL(close(fd_)) != 0)
     fmt::ReportSystemError(errno, "cannot close file");
 }
 
@@ -113,7 +110,7 @@ void File::close() {
     return;
   // Don't retry close in case of EINTR!
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
-  int result = ::FMT_POSIX(close(fd_));
+  int result = FMT_POSIX_CALL(close(fd_));
   fd_ = -1;
   if (result != 0)
     fmt::ThrowSystemError(errno, "cannot close file");
@@ -121,7 +118,7 @@ void File::close() {
 
 std::streamsize File::read(void *buffer, std::size_t count) {
   std::streamsize result = 0;
-  FMT_RETRY(result, ::FMT_POSIX(read(fd_, buffer, ConvertRWCount(count))));
+  FMT_RETRY(result, FMT_POSIX_CALL(read(fd_, buffer, ConvertRWCount(count))));
   if (result == -1)
     fmt::ThrowSystemError(errno, "cannot read from file");
   return result;
@@ -129,7 +126,7 @@ std::streamsize File::read(void *buffer, std::size_t count) {
 
 std::streamsize File::write(const void *buffer, std::size_t count) {
   std::streamsize result = 0;
-  FMT_RETRY(result, ::FMT_POSIX(write(fd_, buffer, ConvertRWCount(count))));
+  FMT_RETRY(result, FMT_POSIX_CALL(write(fd_, buffer, ConvertRWCount(count))));
   if (result == -1)
     fmt::ThrowSystemError(errno, "cannot write to file");
   return result;
@@ -137,7 +134,7 @@ std::streamsize File::write(const void *buffer, std::size_t count) {
 
 File File::dup(int fd) {
   int new_fd = 0;
-  FMT_RETRY(new_fd, ::FMT_POSIX(dup(fd)));
+  FMT_RETRY(new_fd, FMT_POSIX_CALL(dup(fd)));
   if (new_fd == -1)
     fmt::ThrowSystemError(errno, "cannot duplicate file descriptor {}") << fd;
   return File(new_fd);
@@ -145,7 +142,7 @@ File File::dup(int fd) {
 
 void File::dup2(int fd) {
   int result = 0;
-  FMT_RETRY(result, ::FMT_POSIX(dup2(fd_, fd)));
+  FMT_RETRY(result, FMT_POSIX_CALL(dup2(fd_, fd)));
   if (result == -1) {
     fmt::ThrowSystemError(errno,
         "cannot duplicate file descriptor {} to {}") << fd_ << fd;
@@ -154,7 +151,7 @@ void File::dup2(int fd) {
 
 void File::dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT(true) {
   int result = 0;
-  FMT_RETRY(result, ::FMT_POSIX(dup2(fd_, fd)));
+  FMT_RETRY(result, FMT_POSIX_CALL(dup2(fd_, fd)));
   if (result == -1)
     ec = ErrorCode(errno);
 }
@@ -182,7 +179,7 @@ void File::pipe(File &read_end, File &write_end) {
 }
 
 BufferedFile File::fdopen(const char *mode) {
-  BufferedFile f(::FMT_POSIX(fdopen(fd_, mode)));
+  BufferedFile f(FMT_POSIX_CALL(fdopen(fd_, mode)));
   fd_ = -1;
   return f;
 }
@@ -206,7 +203,7 @@ void OutputRedirect::Restore() {
   original_.close();
 }
 
-OutputRedirect::OutputRedirect(std::FILE *file) : file_(file) {
+OutputRedirect::OutputRedirect(FILE *file) : file_(file) {
   Flush();
   int fd = FMT_POSIX(fileno(file));
   // Create a File object referring to the original file.

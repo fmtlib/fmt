@@ -29,9 +29,10 @@
 #define FMT_GTEST_EXTRA_H
 
 #include <cstddef>
-#include <cstdio>
 #include <ios>
 #include <string>
+
+#include <stdio.h>
 
 #if FMT_USE_FILE_DESCRIPTORS
 # include <fcntl.h>
@@ -40,6 +41,10 @@
 #include <gtest/gtest.h>
 
 #include "format.h"
+
+#ifdef FMT_INCLUDE_POSIX_TEST
+# include "posix-test.h"
+#endif
 
 #define FMT_TEST_THROW_(statement, expected_exception, expected_message, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
@@ -93,11 +98,22 @@ std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message);
 
 #if FMT_USE_FILE_DESCRIPTORS
 
-#ifdef _WIN32
+#ifndef FMT_POSIX
+# ifdef _WIN32
 // Fix warnings about deprecated symbols.
-# define FMT_POSIX(name) _##name
-#else
-# define FMT_POSIX(name) name
+#  define FMT_POSIX(name) _##name
+# else
+#  define FMT_POSIX(name) name
+# endif
+#endif
+
+#ifndef FMT_POSIX_CALL
+# ifdef _WIN32
+// Fix warnings about deprecated symbols.
+#  define FMT_POSIX_CALL(name) ::_##name
+# else
+#  define FMT_POSIX_CALL(name) ::name
+# endif
 #endif
 
 // An error code.
@@ -114,11 +130,11 @@ class ErrorCode {
 // A buffered file.
 class BufferedFile {
  private:
-  std::FILE *file_;
+  FILE *file_;
 
   friend class File;
 
-  explicit BufferedFile(std::FILE *f) : file_(f) {}
+  explicit BufferedFile(FILE *f) : file_(f) {}
 
  public:
   // Constructs a BufferedFile object which doesn't represent any file.
@@ -135,7 +151,7 @@ class BufferedFile {
   // A proxy object to emulate a move constructor.
   // It is private to make it impossible call operator Proxy directly.
   struct Proxy {
-    std::FILE *file;
+    FILE *file;
   };
 
  public:
@@ -190,7 +206,7 @@ class BufferedFile {
   void close();
 
   // Returns the pointer to a FILE object representing this file.
-  std::FILE *get() const { return file_; }
+  FILE *get() const { return file_; }
 
   int fileno() const;
 };
@@ -329,7 +345,7 @@ inline File &move(File &f) { return f; }
 // The output it can handle is limited by the pipe capacity.
 class OutputRedirect {
  private:
-  std::FILE *file_;
+  FILE *file_;
   File original_;  // Original file passed to redirector.
   File read_end_;  // Read end of the pipe where the output is redirected.
 
@@ -339,7 +355,7 @@ class OutputRedirect {
   void Restore();
 
  public:
-  explicit OutputRedirect(std::FILE *file);
+  explicit OutputRedirect(FILE *file);
   ~OutputRedirect() FMT_NOEXCEPT(true);
 
   // Restores the original file, reads output from the pipe into a string
