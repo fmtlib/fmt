@@ -1,3 +1,7 @@
+platform:
+  - x86
+  - x64
+
 install:
   - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%
 
@@ -8,6 +12,5 @@ build:
 
 test_script:
   - msbuild RUN_TESTS.vcxproj
-
-artifacts:
-  - path: Testing/Temporary/LastTest.log
+  - appveyor PushArtifact Testing/Temporary/LastTest.log
+  - appveyor AddTest test
