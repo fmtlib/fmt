@@ -56,7 +56,6 @@ namespace {
 #ifdef _WIN32
 // On Windows the count argument to read and write is unsigned, so convert
 // it from size_t preventing integer overflow.
-// TODO: test
 inline unsigned ConvertRWCount(std::size_t count) {
   return count <= UINT_MAX ? static_cast<unsigned>(count) : UINT_MAX;
 }

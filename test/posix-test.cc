@@ -119,4 +119,28 @@ TEST(FileTest, OpenRetry) {
                open, "cannot open file CMakeLists.txt");
 }
 
+TEST(FileTest, CloseNoRetryInDtor) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  File *f = new File(std::move(read_end));
+  int saved_close_count = 0;
+  EXPECT_WRITE(stderr, {
+    close_count = 1;
+    delete f;
+    saved_close_count = close_count;
+    close_count = 0;
+  }, FormatSystemErrorMessage(EINTR, "cannot close file") + "\n");
+  EXPECT_EQ(2, saved_close_count);
+}
+
+TEST(FileTest, CloseNoRetry) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  close_count = 1;
+  EXPECT_SYSTEM_ERROR(read_end.close(), EINTR, "cannot close file");
+  EXPECT_EQ(2, close_count);
+  close_count = 0;
+}
+
 // TODO: test retry on EINTR
+// TODO: test ConvertRWCount
