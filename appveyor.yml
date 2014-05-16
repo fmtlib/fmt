@@ -8,3 +8,6 @@ build:
 
 test_script:
   - msbuild RUN_TESTS.vcxproj
+
+artifacts:
+  - path: Testing/Temporary/LastTest.log
