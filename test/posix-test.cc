@@ -107,13 +107,13 @@ test::ssize_t test::write(int fildes, const void *buf, test::size_t nbyte) {
     statement; \
     EXPECT_EQ(4, func##_count); \
     func##_count = 0;
-# define EXPECT_EQ_POSIX(expected, actual)
+# define EXPECT_EQ_POSIX(expected, actual) EXPECT_EQ(expected, actual)
 #else
 # define EXPECT_RETRY(statement, func, message) \
     func##_count = 1; \
     EXPECT_SYSTEM_ERROR(statement, EINTR, message); \
     func##_count = 0;
-# define EXPECT_EQ_POSIX(expected, actual) EXPECT_EQ(expected, actual)
+# define EXPECT_EQ_POSIX(expected, actual)
 #endif
 
 TEST(FileTest, OpenRetry) {
