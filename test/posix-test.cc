@@ -107,16 +107,24 @@ test::ssize_t test::write(int fildes, const void *buf, test::size_t nbyte) {
     statement; \
     EXPECT_EQ(4, func##_count); \
     func##_count = 0;
+# define EXPECT_EQ_POSIX(expected, actual)
 #else
 # define EXPECT_RETRY(statement, func, message) \
     func##_count = 1; \
     EXPECT_SYSTEM_ERROR(statement, EINTR, message); \
     func##_count = 0;
+# define EXPECT_EQ_POSIX(expected, actual) EXPECT_EQ(expected, actual)
 #endif
 
 TEST(FileTest, OpenRetry) {
-  EXPECT_RETRY(File file("CMakeLists.txt", File::RDONLY),
+  File *f = 0;
+  EXPECT_RETRY(f = new File("CMakeLists.txt", File::RDONLY),
                open, "cannot open file CMakeLists.txt");
+#ifndef _WIN32
+  char c = 0;
+  f->read(&c, 1);
+#endif
+  delete f;
 }
 
 TEST(FileTest, CloseNoRetryInDtor) {
@@ -142,5 +150,48 @@ TEST(FileTest, CloseNoRetry) {
   close_count = 0;
 }
 
-// TODO: test retry on EINTR
+TEST(FileTest, ReadRetry) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  enum { SIZE = 4 };
+  write_end.write("test", SIZE);
+  write_end.close();
+  char buffer[SIZE];
+  std::streamsize count = 0;
+  EXPECT_RETRY(count = read_end.read(buffer, SIZE),
+      read, "cannot read from file");
+  EXPECT_EQ_POSIX(SIZE, count);
+}
+
+TEST(FileTest, WriteRetry) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  enum { SIZE = 4 };
+  std::streamsize count = 0;
+  EXPECT_RETRY(count = write_end.write("test", SIZE),
+      write, "cannot write to file");
+  write_end.close();
+#ifndef _WIN32
+  EXPECT_EQ(SIZE, count);
+  char buffer[SIZE + 1];
+  read_end.read(buffer, SIZE);
+  buffer[SIZE] = '\0';
+  EXPECT_STREQ("test", buffer);
+#endif
+}
+
+TEST(FileTest, DupRetry) {
+  int stdout_fd = fileno(stdout);
+  EXPECT_RETRY(File::dup(stdout_fd), dup,
+      str(fmt::Format("cannot duplicate file descriptor {}") << stdout_fd));
+}
+
+TEST(FileTest, Dup2Retry) {
+  File f1 = File::dup(fileno(stdout)), f2 = File::dup(fileno(stdout));
+  EXPECT_RETRY(f1.dup2(f2.descriptor()), dup2,
+      str(fmt::Format("cannot duplicate file descriptor {} to {}")
+      << f1.descriptor() << f2.descriptor()));
+}
+
+// TODO: test retry on EINTR in dup2, pipe, fdopen
 // TODO: test ConvertRWCount
