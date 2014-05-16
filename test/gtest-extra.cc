@@ -47,10 +47,14 @@
 #endif  // _WIN32
 
 // Retries the expression while it evaluates to -1 and error equals to EINTR.
-#define FMT_RETRY(result, expression) \
+#ifndef _WIN32
+# define FMT_RETRY(result, expression) \
   do { \
     result = (expression); \
   } while (result == -1 && errno == EINTR)
+#else
+# define FMT_RETRY(result, expression) result = (expression)
+#endif
 
 namespace {
 #ifdef _WIN32
