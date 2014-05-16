@@ -1,6 +1,6 @@
-platform:
-  - x86
-  - x64
+configuration:
+  - Debug
+  - Release
 
 install:
   - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%
