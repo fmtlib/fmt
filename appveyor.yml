@@ -12,5 +12,7 @@ build:
 
 test_script:
   - msbuild RUN_TESTS.vcxproj
+
+on_failure:
   - appveyor PushArtifact Testing/Temporary/LastTest.log
   - appveyor AddTest test
