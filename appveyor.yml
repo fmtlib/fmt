@@ -7,8 +7,8 @@ install:
 
 before_build: cmake .
 
-build:
-  project: FORMAT.sln
+build_script:
+  - msbuild /m FORMAT.sln
 
 test_script:
   - msbuild RUN_TESTS.vcxproj
