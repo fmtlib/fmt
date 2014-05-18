@@ -1659,17 +1659,29 @@ class FileSink {
   }
 };
 
-// Formats a string and prints it to stdout.
-// Example:
-//   Print("Elapsed time: {0:.2f} seconds") << 1.23;
+/**
+  \rst
+  Formats a string and writes the result to ``stdout``.
+
+  **Example**::
+
+    Print("Elapsed time: {0:.2f} seconds") << 1.23;
+  \endrst
+ */
 inline Formatter<FileSink> Print(StringRef format) {
   Formatter<FileSink> f(format, FileSink(stdout));
   return f;
 }
 
-// Formats a string and prints it to a file.
-// Example:
-//   Print(stderr, "Don't {}!") << "panic";
+/**
+  \rst
+  Formats a string and writes the result to a file.
+
+  **Example**::
+
+    Print(stderr, "Don't {}!") << "panic";
+  \endrst
+ */
 inline Formatter<FileSink> Print(std::FILE *file, StringRef format) {
   Formatter<FileSink> f(format, FileSink(file));
   return f;

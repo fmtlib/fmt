@@ -13,6 +13,10 @@ namespace is usually omitted in examples.
 
 .. doxygenfunction:: fmt::Format(StringRef, const Args &...)
 
+.. doxygenfunction:: fmt::Print(StringRef)
+
+.. doxygenfunction:: fmt::Print(std::FILE *, StringRef)
+
 .. doxygenclass:: fmt::BasicWriter
    :members:
 
