@@ -56,6 +56,8 @@ int fileno(FILE *stream);
 ssize_t read(int fildes, void *buf, size_t nbyte);
 ssize_t write(int fildes, const void *buf, size_t nbyte);
 
+int pipe(int fildes[2]);
+
 }  // namespace test
 
 #define FMT_POSIX_CALL(call) test::call

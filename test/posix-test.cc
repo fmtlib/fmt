@@ -41,6 +41,7 @@ int fdopen_count;
 int fileno_count;
 int read_count;
 int write_count;
+int pipe_count;
 }
 
 #define EMULATE_EINTR(func, error_result) \
@@ -99,6 +100,11 @@ test::ssize_t test::read(int fildes, void *buf, test::size_t nbyte) {
 test::ssize_t test::write(int fildes, const void *buf, test::size_t nbyte) {
   EMULATE_EINTR(write, -1);
   return ::write(fildes, buf, nbyte);
+}
+
+int test::pipe(int fildes[2]) {
+  EMULATE_EINTR(pipe, -1);
+  return ::pipe(fildes);
 }
 
 #ifndef _WIN32
@@ -180,10 +186,12 @@ TEST(FileTest, WriteRetry) {
 #endif
 }
 
-TEST(FileTest, DupRetry) {
+TEST(FileTest, DupNoRetry) {
   int stdout_fd = fileno(stdout);
-  EXPECT_RETRY(File::dup(stdout_fd), dup,
+  dup_count = 1;
+  EXPECT_SYSTEM_ERROR(File::dup(stdout_fd), EINTR,
       str(fmt::Format("cannot duplicate file descriptor {}") << stdout_fd));
+  dup_count = 0;
 }
 
 TEST(FileTest, Dup2Retry) {
@@ -193,5 +201,35 @@ TEST(FileTest, Dup2Retry) {
       << f1.descriptor() << f2.descriptor()));
 }
 
-// TODO: test retry on EINTR in dup2, pipe, fdopen
+TEST(FileTest, Dup2NoExceptRetry) {
+  File f1 = File::dup(fileno(stdout)), f2 = File::dup(fileno(stdout));
+  ErrorCode ec;
+  dup2_count = 1;
+  f1.dup2(f2.descriptor(), ec);
+#ifndef _WIN32
+  EXPECT_EQ(4, dup2_count);
+#else
+  EXPECT_EQ(EINTR, ec.get());
+#endif
+  dup2_count = 0;
+}
+
+TEST(FileTest, PipeNoRetry) {
+  File read_end, write_end;
+  pipe_count = 1;
+  EXPECT_SYSTEM_ERROR(
+      File::pipe(read_end, write_end), EINTR, "cannot create pipe");
+  pipe_count = 0;
+}
+
+TEST(FileTest, FdopenNoRetry) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  fdopen_count = 1;
+  EXPECT_SYSTEM_ERROR(read_end.fdopen("r"),
+      EINTR, "cannot associate stream with file descriptor");
+  fdopen_count = 0;
+}
+
+// TODO: test retry on EINTR in fclose & fileno
 // TODO: test ConvertRWCount

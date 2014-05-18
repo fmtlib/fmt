@@ -136,8 +136,9 @@ std::streamsize File::write(const void *buffer, std::size_t count) {
 }
 
 File File::dup(int fd) {
-  int new_fd = 0;
-  FMT_RETRY(new_fd, FMT_POSIX_CALL(dup(fd)));
+  // Don't retry as dup doesn't return EINTR.
+  // http://pubs.opengroup.org/onlinepubs/009695399/functions/dup.html
+  int new_fd = FMT_POSIX_CALL(dup(fd));
   if (new_fd == -1)
     fmt::ThrowSystemError(errno, "cannot duplicate file descriptor {}") << fd;
   return File(new_fd);
@@ -168,10 +169,11 @@ void File::pipe(File &read_end, File &write_end) {
 #ifdef _WIN32
   // Make the default pipe capacity same as on Linux 2.6.11+.
   enum { DEFAULT_CAPACITY = 65536 };
-  int result = _pipe(fds, DEFAULT_CAPACITY, _O_BINARY);
+  int result = FMT_POSIX_CALL(pipe(fds, DEFAULT_CAPACITY, _O_BINARY));
 #else
-  // The pipe function doesn't return EINTR, so no need to retry.
-  int result = ::pipe(fds);
+  // Don't retry as the pipe function doesn't return EINTR.
+  // http://pubs.opengroup.org/onlinepubs/009696799/functions/pipe.html
+  int result = FMT_POSIX_CALL(pipe(fds));
 #endif
   if (result != 0)
     fmt::ThrowSystemError(errno, "cannot create pipe");
@@ -182,9 +184,15 @@ void File::pipe(File &read_end, File &write_end) {
 }
 
 BufferedFile File::fdopen(const char *mode) {
-  BufferedFile f(FMT_POSIX_CALL(fdopen(fd_, mode)));
+  // Don't retry as fdopen doesn't return EINTR.
+  FILE *f = FMT_POSIX_CALL(fdopen(fd_, mode));
+  if (!f) {
+    fmt::ThrowSystemError(errno,
+        "cannot associate stream with file descriptor");
+  }
+  BufferedFile file(f);
   fd_ = -1;
-  return f;
+  return file;
 }
 
 void OutputRedirect::Flush() {
