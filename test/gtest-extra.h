@@ -101,18 +101,21 @@ std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message);
 #ifndef FMT_POSIX
 # ifdef _WIN32
 // Fix warnings about deprecated symbols.
-#  define FMT_POSIX(name) _##name
+#  define FMT_POSIX(call) _##call
 # else
-#  define FMT_POSIX(name) name
+#  define FMT_POSIX(call) call
 # endif
 #endif
 
-#ifndef FMT_POSIX_CALL
+#ifdef FMT_SYSTEM
+# define FMT_POSIX_CALL(call) FMT_SYSTEM(call)
+#else
+# define FMT_SYSTEM(call) call
 # ifdef _WIN32
 // Fix warnings about deprecated symbols.
-#  define FMT_POSIX_CALL(name) ::_##name
+#  define FMT_POSIX_CALL(call) ::_##call
 # else
-#  define FMT_POSIX_CALL(name) ::name
+#  define FMT_POSIX_CALL(call) ::call
 # endif
 #endif
 

@@ -56,10 +56,16 @@ int fileno(FILE *stream);
 ssize_t read(int fildes, void *buf, size_t nbyte);
 ssize_t write(int fildes, const void *buf, size_t nbyte);
 
+#ifndef _WIN32
 int pipe(int fildes[2]);
+#else
+int pipe(int *pfds, unsigned psize, int textmode);
+#endif
+
+int fclose(FILE *stream);
 
 }  // namespace test
 
-#define FMT_POSIX_CALL(call) test::call
+#define FMT_SYSTEM(call) test::call
 
 #endif  // FMT_POSIX_TEST_H

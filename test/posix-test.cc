@@ -30,6 +30,10 @@
 #include <errno.h>
 #include <fcntl.h>
 
+#ifdef _WIN32
+# include <io.h>
+#endif
+
 #include "gtest-extra.h"
 
 namespace {
@@ -42,6 +46,7 @@ int fileno_count;
 int read_count;
 int write_count;
 int pipe_count;
+int fclose_count;
 }
 
 #define EMULATE_EINTR(func, error_result) \
@@ -102,9 +107,21 @@ test::ssize_t test::write(int fildes, const void *buf, test::size_t nbyte) {
   return ::write(fildes, buf, nbyte);
 }
 
+#ifndef _WIN32
 int test::pipe(int fildes[2]) {
   EMULATE_EINTR(pipe, -1);
   return ::pipe(fildes);
+}
+#else
+int test::pipe(int *pfds, unsigned psize, int textmode) {
+  EMULATE_EINTR(pipe, -1);
+  return _pipe(fildes, 256, O_BINARY);
+}
+#endif
+
+int test::fclose(FILE *stream) {
+  EMULATE_EINTR(fclose, EOF);
+  return ::fclose(stream);
 }
 
 #ifndef _WIN32
