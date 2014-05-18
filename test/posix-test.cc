@@ -115,7 +115,7 @@ int test::pipe(int fildes[2]) {
 #else
 int test::pipe(int *pfds, unsigned psize, int textmode) {
   EMULATE_EINTR(pipe, -1);
-  return _pipe(fildes, 256, O_BINARY);
+  return _pipe(pfds, psize, textmode);
 }
 #endif
 
