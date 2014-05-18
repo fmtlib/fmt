@@ -166,7 +166,7 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/format-benchmark/tinyformat_test.cpp)
     COMMAND ./bloat_test.sh -DUSE_TINYFORMAT
     COMMAND echo boost results:
     COMMAND ./bloat_test.sh -DUSE_BOOST
-    WORKING_DIRECTORY tinyformat
+    WORKING_DIRECTORY format-benchmark
     DEPENDS format)
 
   add_custom_target(bloat_test_optimized
@@ -181,7 +181,7 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/format-benchmark/tinyformat_test.cpp)
     COMMAND ./bloat_test.sh -O3 -DUSE_TINYFORMAT
     COMMAND echo boost results:
     COMMAND ./bloat_test.sh -O3 -DUSE_BOOST
-    WORKING_DIRECTORY tinyformat
+    WORKING_DIRECTORY format-benchmark
     DEPENDS format)
 endif ()
 
