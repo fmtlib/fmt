@@ -712,6 +712,19 @@ TEST(FileTest, Pipe) {
   EXPECT_READ(read_end, "test");
 }
 
+TEST(FileTest, Fdopen) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  int read_fd = read_end.descriptor();
+  EXPECT_EQ(read_fd, fileno(read_end.fdopen("r").get()));
+}
+
+TEST(FileTest, FdopenError) {
+  File f;
+  EXPECT_SYSTEM_ERROR_NOASSERT(
+      f.fdopen("r"), EBADF, "cannot associate stream with file descriptor");
+}
+
 TEST(OutputRedirectTest, ScopedRedirect) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
