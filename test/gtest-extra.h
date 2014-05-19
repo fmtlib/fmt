@@ -107,6 +107,7 @@ std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message);
 # endif
 #endif
 
+// Calls to system functions are wrapped in FMT_SYSTEM for testability.
 #ifdef FMT_SYSTEM
 # define FMT_POSIX_CALL(call) FMT_SYSTEM(call)
 #else
