@@ -49,6 +49,7 @@ int pipe_count;
 int fclose_count;
 int fileno_count;
 std::size_t read_nbyte;
+std::size_t write_nbyte;
 }
 
 #define EMULATE_EINTR(func, error_result) \
@@ -101,6 +102,7 @@ test::ssize_t test::read(int fildes, void *buf, test::size_t nbyte) {
 }
 
 test::ssize_t test::write(int fildes, const void *buf, test::size_t nbyte) {
+  write_nbyte = nbyte;
   EMULATE_EINTR(write, -1);
   return ::FMT_POSIX(write(fildes, buf, nbyte));
 }
@@ -208,19 +210,33 @@ TEST(FileTest, WriteRetry) {
 
 #ifdef _WIN32
 TEST(FileTest, ConvertReadCount) {
-  if (sizeof(unsigned) == sizeof(std::size_t))
-    return;
   File read_end, write_end;
   File::pipe(read_end, write_end);
   char c;
+  std::size_t size = UINT_MAX;
+  if (sizeof(unsigned) != sizeof(std::size_t))
+    ++size;
   read_count = 1;
-  EXPECT_THROW(read_end.read(&c, UINT_MAX + std::size_t(1)), fmt::SystemError);
+  read_nbyte = 0;
+  EXPECT_THROW(read_end.read(&c, size), fmt::SystemError);
   read_count = 0;
   EXPECT_EQ(UINT_MAX, read_nbyte);
 }
-#endif
 
-// TODO: test ConvertRWCount
+TEST(FileTest, ConvertWriteCount) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  char c;
+  std::size_t size = UINT_MAX;
+  if (sizeof(unsigned) != sizeof(std::size_t))
+    ++size;
+  write_count = 1;
+  write_nbyte = 0;
+  EXPECT_THROW(write_end.write(&c, size), fmt::SystemError);
+  write_count = 0;
+  EXPECT_EQ(UINT_MAX, write_nbyte);
+}
+#endif
 
 TEST(FileTest, DupNoRetry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
