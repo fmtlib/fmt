@@ -51,7 +51,6 @@ int dup(int fildes);
 int dup2(int fildes, int fildes2);
 
 FILE *fdopen(int fildes, const char *mode);
-int fileno(FILE *stream);
 
 ssize_t read(int fildes, void *buf, size_t nbyte);
 ssize_t write(int fildes, const void *buf, size_t nbyte);
@@ -63,6 +62,7 @@ int pipe(int *pfds, unsigned psize, int textmode);
 #endif
 
 int fclose(FILE *stream);
+int fileno(FILE *stream);
 
 }  // namespace test
 

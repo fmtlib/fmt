@@ -69,14 +69,14 @@ inline std::size_t ConvertRWCount(std::size_t count) { return count; }
 }
 
 BufferedFile::~BufferedFile() FMT_NOEXCEPT(true) {
-  if (file_ && std::fclose(file_) != 0)
+  if (file_ && FMT_SYSTEM(fclose(file_)) != 0)
     fmt::ReportSystemError(errno, "cannot close file");
 }
 
 void BufferedFile::close() {
   if (!file_)
     return;
-  int result = std::fclose(file_);
+  int result = FMT_SYSTEM(fclose(file_));
   file_ = 0;
   if (result != 0)
     fmt::ThrowSystemError(errno, "cannot close file");

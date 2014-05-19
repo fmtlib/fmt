@@ -42,11 +42,11 @@ int close_count;
 int dup_count;
 int dup2_count;
 int fdopen_count;
-int fileno_count;
 int read_count;
 int write_count;
 int pipe_count;
 int fclose_count;
+int fileno_count;
 }
 
 #define EMULATE_EINTR(func, error_result) \
@@ -72,39 +72,34 @@ errno_t test::sopen_s(
 
 int test::close(int fildes) {
   // Close the file first because close shouldn't be retried.
-  int result = ::close(fildes);
+  int result = ::FMT_POSIX(close(fildes));
   EMULATE_EINTR(close, -1);
   return result;
 }
 
 int test::dup(int fildes) {
   EMULATE_EINTR(dup, -1);
-  return ::dup(fildes);
+  return ::FMT_POSIX(dup(fildes));
 }
 
 int test::dup2(int fildes, int fildes2) {
   EMULATE_EINTR(dup2, -1);
-  return ::dup2(fildes, fildes2);
+  return ::FMT_POSIX(dup2(fildes, fildes2));
 }
 
 FILE *test::fdopen(int fildes, const char *mode) {
   EMULATE_EINTR(fdopen, 0);
-  return ::fdopen(fildes, mode);
-}
-
-int test::fileno(FILE *stream) {
-  EMULATE_EINTR(fileno, -1);
-  return ::fileno(stream);
+  return ::FMT_POSIX(fdopen(fildes, mode));
 }
 
 test::ssize_t test::read(int fildes, void *buf, test::size_t nbyte) {
   EMULATE_EINTR(read, -1);
-  return ::read(fildes, buf, nbyte);
+  return ::FMT_POSIX(read(fildes, buf, nbyte));
 }
 
 test::ssize_t test::write(int fildes, const void *buf, test::size_t nbyte) {
   EMULATE_EINTR(write, -1);
-  return ::write(fildes, buf, nbyte);
+  return ::FMT_POSIX(write(fildes, buf, nbyte));
 }
 
 #ifndef _WIN32
@@ -122,6 +117,11 @@ int test::pipe(int *pfds, unsigned psize, int textmode) {
 int test::fclose(FILE *stream) {
   EMULATE_EINTR(fclose, EOF);
   return ::fclose(stream);
+}
+
+int test::fileno(FILE *stream) {
+  EMULATE_EINTR(fileno, -1);
+  return ::fileno(stream);
 }
 
 #ifndef _WIN32
@@ -248,5 +248,38 @@ TEST(FileTest, FdopenNoRetry) {
   fdopen_count = 0;
 }
 
-// TODO: test retry on EINTR in fclose & fileno
+TEST(BufferedFileTest, CloseNoRetryInDtor) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  BufferedFile *f = new BufferedFile(read_end.fdopen("r"));
+  int saved_fclose_count = 0;
+  EXPECT_WRITE(stderr, {
+    fclose_count = 1;
+    delete f;
+    saved_fclose_count = fclose_count;
+    fclose_count = 0;
+  }, FormatSystemErrorMessage(EINTR, "cannot close file") + "\n");
+  EXPECT_EQ(2, saved_fclose_count);
+}
+
+TEST(BufferedFileTest, CloseNoRetry) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  BufferedFile f = read_end.fdopen("r");
+  fclose_count = 1;
+  EXPECT_SYSTEM_ERROR(f.close(), EINTR, "cannot close file");
+  EXPECT_EQ(2, fclose_count);
+  fclose_count = 0;
+}
+
+TEST(BufferedFileTest, FilenoNoRetry) {
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  BufferedFile f = read_end.fdopen("r");
+  fileno_count = 1;
+  EXPECT_SYSTEM_ERROR(f.fileno(), EINTR, "cannot get file descriptor");
+  EXPECT_EQ(2, fileno_count);
+  fileno_count = 0;
+}
+
 // TODO: test ConvertRWCount
