@@ -11,13 +11,15 @@ endif ()
 project(FORMAT)
 
 include(CheckCXXCompilerFlag)
-foreach (flag -std=c++11 -std=c++0x)
-  check_cxx_compiler_flag(${flag} HAVE_STD_CPP11_FLAG)
-  if (HAVE_STD_CPP11_FLAG)
-    set(CPP11_FLAG ${flag})
-    break ()
+check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
+if (HAVE_STD_CPP11_FLAG)
+  set(CPP11_FLAG -std=c++11)
+else ()
+  check_cxx_compiler_flag(-std=c++0x HAVE_STD_CPP0X_FLAG)
+  if (HAVE_STD_CPP0X_FLAG)
+    set(CPP11_FLAG -std=c++0x)
   endif ()
-endforeach ()
+endif ()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -42,7 +44,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -pedantic")
 endif ()
-if (HAVE_STD_CPP11_FLAG)
+if (CPP11_FLAG)
   set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   # Test compilation with default flags.
   file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)
@@ -92,8 +94,8 @@ if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format-test PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
 endif ()
-if (HAVE_STD_CPP11_FLAG)
-  set_target_properties(format-test PROPERTIES COMPILE_FLAGS "-std=c++11")
+if (CPP11_FLAG)
+  set_target_properties(format-test PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
 endif ()
 
 if (HAVE_OPEN)
@@ -134,8 +136,9 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/format-benchmark/tinyformat_test.cpp)
   endif ()
   set_target_properties(tinyformat_speed_test PROPERTIES COMPILE_DEFINITIONS
     "SPEED_TEST;HAVE_FORMAT;_SCL_SECURE_NO_WARNINGS;${PROFILE_DEFS}")
-  if (HAVE_STD_CPP11_FLAG)
-    set_target_properties(tinyformat_speed_test PROPERTIES COMPILE_FLAGS "-std=c++11")
+  if (CPP11_FLAG)
+    set_target_properties(tinyformat_speed_test
+      PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   endif ()
 
   add_custom_target(speed_test
