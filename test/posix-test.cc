@@ -121,7 +121,7 @@ int test::fclose(FILE *stream) {
 
 int test::fileno(FILE *stream) {
   EMULATE_EINTR(fileno, -1);
-  return ::fileno(stream);
+  return ::FMT_POSIX(fileno(stream));
 }
 
 #ifndef _WIN32
@@ -204,7 +204,7 @@ TEST(FileTest, WriteRetry) {
 }
 
 TEST(FileTest, DupNoRetry) {
-  int stdout_fd = fileno(stdout);
+  int stdout_fd = FMT_POSIX(fileno(stdout));
   dup_count = 1;
   EXPECT_SYSTEM_ERROR(File::dup(stdout_fd), EINTR,
       str(fmt::Format("cannot duplicate file descriptor {}") << stdout_fd));
@@ -212,14 +212,16 @@ TEST(FileTest, DupNoRetry) {
 }
 
 TEST(FileTest, Dup2Retry) {
-  File f1 = File::dup(fileno(stdout)), f2 = File::dup(fileno(stdout));
+  int stdout_fd = FMT_POSIX(fileno(stdout));
+  File f1 = File::dup(stdout_fd), f2 = File::dup(stdout_fd);
   EXPECT_RETRY(f1.dup2(f2.descriptor()), dup2,
       str(fmt::Format("cannot duplicate file descriptor {} to {}")
       << f1.descriptor() << f2.descriptor()));
 }
 
 TEST(FileTest, Dup2NoExceptRetry) {
-  File f1 = File::dup(fileno(stdout)), f2 = File::dup(fileno(stdout));
+  int stdout_fd = FMT_POSIX(fileno(stdout));
+  File f1 = File::dup(stdout_fd), f2 = File::dup(stdout_fd);
   ErrorCode ec;
   dup2_count = 1;
   f1.dup2(f2.descriptor(), ec);
