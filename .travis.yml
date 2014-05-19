@@ -5,5 +5,5 @@ before_install:
 
 script:
   - cmake .
-  - make
+  - make -j4
   - make test
