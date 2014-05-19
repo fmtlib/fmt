@@ -3,7 +3,11 @@ language: cpp
 before_install:
   - git submodule update --init
 
+env:
+  - BUILD_TYPE=Debug
+  - BUILD_TYPE=Release
+
 script:
-  - cmake .
+  - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE .
   - make -j4
   - make test
