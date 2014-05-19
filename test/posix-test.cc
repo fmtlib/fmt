@@ -29,6 +29,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <climits>
 
 #ifdef _WIN32
 # include <io.h>
@@ -47,6 +48,7 @@ int write_count;
 int pipe_count;
 int fclose_count;
 int fileno_count;
+std::size_t read_nbyte;
 }
 
 #define EMULATE_EINTR(func, error_result) \
@@ -93,6 +95,7 @@ FILE *test::fdopen(int fildes, const char *mode) {
 }
 
 test::ssize_t test::read(int fildes, void *buf, test::size_t nbyte) {
+  read_nbyte = nbyte;
   EMULATE_EINTR(read, -1);
   return ::FMT_POSIX(read(fildes, buf, nbyte));
 }
@@ -203,6 +206,22 @@ TEST(FileTest, WriteRetry) {
 #endif
 }
 
+#ifdef _WIN32
+TEST(FileTest, ConvertReadCount) {
+  if (sizeof(unsigned) == sizeof(std::size_t))
+    return;
+  File read_end, write_end;
+  File::pipe(read_end, write_end);
+  char c;
+  read_count = 1;
+  EXPECT_THROW(read_end.read(&c, UINT_MAX + std::size_t(1)), fmt::SystemError);
+  read_count = 0;
+  EXPECT_EQ(UINT_MAX, read_nbyte);
+}
+#endif
+
+// TODO: test ConvertRWCount
+
 TEST(FileTest, DupNoRetry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
   dup_count = 1;
@@ -283,5 +302,3 @@ TEST(BufferedFileTest, FilenoNoRetry) {
   EXPECT_EQ(2, fileno_count);
   fileno_count = 0;
 }
-
-// TODO: test ConvertRWCount
