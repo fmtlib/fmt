@@ -260,9 +260,10 @@ Performance of format is close to that of printf.
 Compile time and code bloat
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The script ``bloat_test.sh`` from the `tinyformat
-<https://github.com/c42f/tinyformat>`__ repository tests compile time and
-code bloat for nontrivial projects.  It generates 100 translation units
+The script `bloat_test.sh
+<https://github.com/cppformat/format-benchmark/blob/master/bloat_test.sh>`__
+from `tinyformat <https://github.com/c42f/tinyformat>`__ tests compile time
+and code bloat for nontrivial projects.  It generates 100 translation units
 and uses ``printf()`` or its alternative five times in each to simulate
 a medium sized project.  The resulting executable size and compile time
 (g++-4.7.2, Ubuntu GNU/Linux 12.10, best of three) is shown in the following
