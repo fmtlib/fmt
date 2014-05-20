@@ -1,6 +1,3 @@
-[submodule "format-benchmark"]
-	path = format-benchmark
-	url = git://github.com/vitaut/format-benchmark.git
 [submodule "sphinx"]
 	path = sphinx
 	url = git://github.com/cppformat/sphinx.git
