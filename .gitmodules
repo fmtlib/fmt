@@ -6,4 +6,4 @@
 	url = git://github.com/cppformat/breathe.git
 [submodule "format-benchmark"]
 	path = format-benchmark
-	url = git@github.com:cppformat/format-benchmark.git
+	url = git://github.com/cppformat/format-benchmark.git
