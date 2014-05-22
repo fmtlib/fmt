@@ -327,7 +327,7 @@ the speed test::
 
 or the bloat test::
 
-    $ make bloat_test
+    $ make bloat-test
 
 License
 -------
