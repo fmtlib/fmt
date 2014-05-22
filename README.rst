@@ -260,45 +260,45 @@ Performance of format is close to that of printf.
 Compile time and code bloat
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The script `bloat_test.sh
-<https://github.com/cppformat/format-benchmark/blob/master/bloat_test.sh>`__
-from `tinyformat <https://github.com/c42f/tinyformat>`__ tests compile time
-and code bloat for nontrivial projects.  It generates 100 translation units
-and uses ``printf()`` or its alternative five times in each to simulate
-a medium sized project.  The resulting executable size and compile time
-(g++-4.7.2, Ubuntu GNU/Linux 12.10, best of three) is shown in the following
-tables.
-
-**Non-optimized build**
-
-====================== ================== ==========================
-test name              total compile time executable size (stripped)
-====================== ================== ==========================
-libc printf            2.8s               44K  (32K)
-std::ostream           12.9s              84K  (60K)
-format                 16.0s              152K (128K)
-tinyformat             20.6s              240K (200K)
-boost::format          76.0s              888K (780K)
-====================== ================== ==========================
+The script `bloat_test.py
+<https://github.com/cppformat/format-benchmark/blob/master/bloat-test.py>`__
+from `format-benchmark <https://github.com/cppformat/format-benchmark>`__
+tests compile time and code bloat for nontrivial projects.
+It generates 100 translation units and uses ``printf()`` or its alternative
+five times in each to simulate a medium sized project.  The resulting
+executable size and compile time (g++-4.8.1, Ubuntu GNU/Linux 13.10,
+best of three) is shown in the following tables.
 
 **Optimized build (-O3)**
 
 ====================== ================== ==========================
 test name              total compile time executable size (stripped)
 ====================== ================== ==========================
-libc printf            3.5s               40K  (28K)
-std::ostream           14.1s              88K  (64K)
-format                 25.1s              552K (536K)
-tinyformat             56.3s              200K (164K)
-boost::format          169.4s             1.7M (1.6M)
+libc printf              2.5                42K  (31K)
+IOStreams               19.8                86K  (64K)
+C++ Format              48.8               103K  (84K)
+tinyformat              65.0               428K (396K)
+Boost Format           212.0              1014K (945K)
 ====================== ================== ==========================
 
-Printf and std::ostream win here which is not surprising considering
-that they are included in the standard library. Tinyformat has somewhat
-slower compilation times compared to format. Interestingly optimized
-executable size is smaller with tinyformat then with format and for
-non-optimized build its the other way around. Boost::format has by far
-the largest overheads.
+**Non-optimized build**
+
+====================== ================== ==========================
+test name              total compile time executable size (stripped)
+====================== ================== ==========================
+libc printf              2.1s              42K  (31K)
+IOStreams               17.3s              84K  (60K)
+C++ Format              42.7s             167K (138K)
+tinyformat              25.1s             239K (195K)
+Boost Format           110.2s             905K (781K)
+====================== ================== ==========================
+
+IOStreams and printf win here which is not surprising considering that
+they are included in the standard library. Tinyformat produces somewhat
+larger executable sizes compared to C++ Format. Interestingly optimized
+compile time is smaller for C++ Format than for tinyformat and its the
+other way around with non-optimized build. Boost Format has by far the
+largest overheads.
 
 Running the tests
 ~~~~~~~~~~~~~~~~~
