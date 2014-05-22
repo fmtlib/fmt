@@ -39,7 +39,12 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
     ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"C:\\Program Files\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v4.0\" %*")
 endif ()
 
-add_library(format format.cc format.h)
+option(FMT_SHARED "Build shared library instead of static one" OFF)
+if (FMT_SHARED)
+  set(shared SHARED)
+endif ()
+
+add_library(format ${shared} format.cc format.h)
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -pedantic")
