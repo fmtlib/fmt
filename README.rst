@@ -274,11 +274,11 @@ best of three) is shown in the following tables.
 ====================== ================== ==========================
 test name              total compile time executable size (stripped)
 ====================== ================== ==========================
-libc printf              2.5                42K  (31K)
-IOStreams               19.8                86K  (64K)
-C++ Format              48.8               103K  (84K)
-tinyformat              65.0               428K (396K)
-Boost Format           212.0              1014K (945K)
+libc printf              2.5s               42K  (31K)
+IOStreams               19.8s               86K  (64K)
+C++ Format              48.8s              103K  (84K)
+tinyformat              65.0s              428K (396K)
+Boost Format           212.0s             1014K (945K)
 ====================== ================== ==========================
 
 **Non-optimized build**
