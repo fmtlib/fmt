@@ -329,7 +329,7 @@ Now you can run the unit tests::
 Benchmarks reside in a separate repository,
 `format-benchmarks <https://github.com/cppformat/format-benchmark>`__,
 so to run the benchmarks you first need to clone this repository and
-build the code::
+generate Makefiles with CMake::
 
     $ git clone --recursive https://github.com/cppformat/format-benchmark.git
     $ cd format-benchmark
