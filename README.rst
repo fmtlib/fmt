@@ -260,7 +260,7 @@ Performance of format is close to that of printf.
 Compile time and code bloat
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The script `bloat_test.py
+The script `bloat-test.py
 <https://github.com/cppformat/format-benchmark/blob/master/bloat-test.py>`__
 from `format-benchmark <https://github.com/cppformat/format-benchmark>`__
 tests compile time and code bloat for nontrivial projects.
