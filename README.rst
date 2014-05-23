@@ -271,34 +271,31 @@ best of three) is shown in the following tables.
 
 **Optimized build (-O3)**
 
-====================== ================== ==========================
-test name              total compile time executable size (stripped)
-====================== ================== ==========================
-libc printf              2.5s               42K  (31K)
-IOStreams               19.8s               86K  (64K)
-C++ Format              48.8s              103K  (84K)
-tinyformat              65.0s              428K (396K)
-Boost Format           212.0s             1014K (945K)
-====================== ================== ==========================
+============ =============== ==================== ==================
+Method       Compile Time, s Executable size, KiB Stripped size, KiB
+============ =============== ==================== ==================
+printf                   2.6                   41                 30
+IOStreams               19.4                   92                 70
+C++ Format              46.8                   46                 34
+tinyformat              64.6                  418                386
+Boost Format           222.8                  990                923
+============ =============== ==================== ==================
+
+As you can see, C++ Format has 80% less overhead in terms of resulting
+code size compared to IOStreams and comes pretty close to ``printf``.
+Boost Format has by far the largest overheads.
 
 **Non-optimized build**
 
-====================== ================== ==========================
-test name              total compile time executable size (stripped)
-====================== ================== ==========================
-libc printf              2.1s              42K  (31K)
-IOStreams               17.3s              84K  (60K)
-C++ Format              42.7s             167K (138K)
-tinyformat              25.1s             239K (195K)
-Boost Format           110.2s             905K (781K)
-====================== ================== ==========================
-
-IOStreams and printf win here which is not surprising considering that
-they are included in the standard library. Tinyformat produces somewhat
-larger executable sizes compared to C++ Format. Interestingly optimized
-compile time is smaller for C++ Format than for tinyformat and its the
-other way around with non-optimized build. Boost Format has by far the
-largest overheads.
+============ =============== ==================== ==================
+Method       Compile Time, s Executable size, KiB Stripped size, KiB
+============ =============== ==================== ==================
+printf                   2.1                   41                 30
+IOStreams               19.7                   86                 62
+C++ Format              47.9                  108                 86
+tinyformat              27.7                  234                190
+Boost Format           122.6                  884                763
+============ =============== ==================== ==================
 
 ``libc``, ``libstdc++`` and ``libformat`` are all linked as shared
 libraries to compare formatting function overhead only. Boost Format
