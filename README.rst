@@ -300,30 +300,44 @@ compile time is smaller for C++ Format than for tinyformat and its the
 other way around with non-optimized build. Boost Format has by far the
 largest overheads.
 
+``libc``, ``libstdc++`` and ``libformat`` are all linked as shared
+libraries to compare formatting function overhead only. Boost Format
+and tinyformat are header-only libraries so they don't provide any
+linkage options.
+
 Running the tests
 ~~~~~~~~~~~~~~~~~
 
-To run the tests you first need to get the source code by cloning the
-repository::
+To run the unit tests first get the source code by cloning the repository::
 
-    $ git clone git://github.com/cppformat/cppformat.git
+    $ git clone https://github.com/cppformat/cppformat.git
 
 or downloading a package from
 `Releases <https://github.com/cppformat/cppformat/releases>`__.
 
-Then go to the format directory and generate Makefiles with
-`CMake <http://www.cmake.org/>`__::
+Then go to the cppformat directory, generate Makefiles with
+`CMake <http://www.cmake.org/>`__ and build the project::
 
     $ cd cppformat
     $ cmake .
+    $ make
 
-Next use the following commands to run the unit tests::
+Now you can run the unit tests::
 
     $ make test
 
-the speed test::
+Benchmarks reside in a separate repository,
+`format-benchmarks <https://github.com/cppformat/format-benchmark>`__,
+so to run the benchmarks you first need to clone this repository and
+build the code::
 
-    $ make speed_test
+    $ git clone --recursive https://github.com/cppformat/format-benchmark.git
+    $ cd format-benchmark
+    $ cmake .
+
+Then you can run the speed test::
+
+    $ make speed-test
 
 or the bloat test::
 
