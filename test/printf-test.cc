@@ -47,6 +47,17 @@ std::string GetBigNumber() {
 
 const unsigned BIG_NUM = INT_MAX + 1u;
 
+// Makes format string argument positional.
+std::string MakePositional(fmt::StringRef format) {
+  std::string s(format);
+  s.replace(s.find('%'), 1, "%1$");
+  return s;
+}
+
+#define EXPECT_PRINTF(expected_output, format, arg) \
+  EXPECT_EQ(expected_output, str(fmt::sprintf(format, arg))); \
+  EXPECT_EQ(expected_output, str(fmt::sprintf(MakePositional(format), arg)))
+
 TEST(PrintfTest, NoArgs) {
   EXPECT_EQ("test", str(fmt::sprintf("test")));
 }
@@ -118,8 +129,7 @@ TEST(PrintfTest, InvalidArgIndex) {
 }
 
 TEST(PrintfTest, Width) {
-  EXPECT_EQ("  abc", str(fmt::sprintf("%5s", "abc")));
-  EXPECT_EQ("  abc", str(fmt::sprintf("%1$5s", "abc")));
+  EXPECT_PRINTF("  abc", "%5s", "abc");
 
   // Width cannot be specified twice.
   EXPECT_THROW_MSG(fmt::sprintf("%5-5d", 42), FormatError,
@@ -132,19 +142,14 @@ TEST(PrintfTest, Width) {
 }
 
 TEST(PrintfTest, ZeroFlag) {
-  EXPECT_EQ("00042", str(fmt::sprintf("%05d", 42)));
-  EXPECT_EQ("00042", str(fmt::sprintf("%1$05d", 42)));
-  EXPECT_EQ("-0042", str(fmt::sprintf("%05d", -42)));
-  EXPECT_EQ("-0042", str(fmt::sprintf("%1$05d", -42)));
+  EXPECT_PRINTF("00042", "%05d", 42);
+  EXPECT_PRINTF("-0042", "%05d", -42);
 
-  EXPECT_EQ("00042", str(fmt::sprintf("%05d", 42)));
-  EXPECT_EQ("00042", str(fmt::sprintf("%1$05d", 42)));
-  EXPECT_EQ("-0042", str(fmt::sprintf("%05d", -42)));
-  EXPECT_EQ("-0042", str(fmt::sprintf("%1$05d", -42)));
-  EXPECT_EQ("-004.2", str(fmt::sprintf("%06g", -4.2)));
-  EXPECT_EQ("-004.2", str(fmt::sprintf("%1$06g", -4.2)));
+  EXPECT_PRINTF("00042", "%05d", 42);
+  EXPECT_PRINTF("-0042", "%05d", -42);
+  EXPECT_PRINTF("-004.2", "%06g", -4.2);
 
-  EXPECT_EQ("+00042", str(fmt::sprintf("%00+6d", 42)));
+  EXPECT_PRINTF("+00042", "%00+6d", 42);
 
   // TODO: test for error if argument is non-numeric
 }
