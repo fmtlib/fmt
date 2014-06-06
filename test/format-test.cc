@@ -49,6 +49,7 @@ FILE *FOpen(const char *filename, const char *mode) {
 #include "util.h"
 #include "gtest-extra.h"
 
+#include <math.h>
 #include <stdint.h>
 
 #undef min
@@ -1232,6 +1233,7 @@ TEST(FormatterTest, FormatNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ("nan", str(Format("{}") << nan));
   EXPECT_EQ("+nan", str(Format("{:+}") << nan));
+  EXPECT_EQ(1, signbit(-nan));
   EXPECT_EQ("-nan", str(Format("{}") << -nan));
   EXPECT_EQ(" nan", str(Format("{: }") << nan));
   EXPECT_EQ("NAN", str(Format("{:F}") << nan));
