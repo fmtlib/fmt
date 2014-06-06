@@ -91,19 +91,24 @@ enable_testing()
 
 include_directories(.)
 
-set(TEST_MAIN_SRC test/test-main.cc test/gtest-extra.cc test/gtest-extra.h)
+set(TEST_MAIN_SRC
+  test/test-main.cc test/gtest-extra.cc test/gtest-extra.h test/util.cc)
 add_library(test-main ${TEST_MAIN_SRC})
 target_link_libraries(test-main gtest format)
 
 cxx_test(gtest-extra-test test-main)
 cxx_test(format-test test-main)
-if (CMAKE_COMPILER_IS_GNUCXX)
-  set_target_properties(format-test PROPERTIES COMPILE_FLAGS
-    "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
-endif ()
-if (CPP11_FLAG)
-  set_target_properties(format-test PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
-endif ()
+cxx_test(printf-test test-main)
+foreach (target format-test printf-test)
+  if (CMAKE_COMPILER_IS_GNUCXX)
+    set_target_properties(${target} PROPERTIES COMPILE_FLAGS
+      "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
+  endif ()
+  if (CPP11_FLAG)
+    set_target_properties(${target} PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
+  endif ()
+endforeach ()
+cxx_test(util-test test-main)
 
 if (HAVE_OPEN)
   add_executable(posix-test test/posix-test.cc ${TEST_MAIN_SRC})

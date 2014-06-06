@@ -186,6 +186,15 @@ class BasicStringRef {
 typedef BasicStringRef<char> StringRef;
 typedef BasicStringRef<wchar_t> WStringRef;
 
+/**
+  A formatting error such as invalid format string.
+*/
+class FormatError : public std::runtime_error {
+public:
+  explicit FormatError(const std::string &message)
+  : std::runtime_error(message) {}
+};
+
 namespace internal {
 
 // The number of characters to store in the Array object, representing the
@@ -509,16 +518,28 @@ void FormatWinErrorMessage(
     fmt::Writer &out, int error_code, fmt::StringRef message);
 #endif
 
-}  // namespace internal
-
-/**
-  A formatting error such as invalid format string.
- */
-class FormatError : public std::runtime_error {
- public:
-  explicit FormatError(const std::string &message)
-  : std::runtime_error(message) {}
+struct SimpleErrorReporter {
+  void operator()(const void *, fmt::StringRef message) const {
+    throw fmt::FormatError(message);
+  }
 };
+
+// Throws Exception(message) if format contains '}', otherwise throws
+// FormatError reporting unmatched '{'. The idea is that unmatched '{'
+// should override other errors.
+template <typename Char>
+struct FormatErrorReporter {
+  int num_open_braces;
+  void operator()(const Char *s, fmt::StringRef message) const;
+};
+
+// Parses a nonnegative integer advancing s to the end of the parsed input.
+// This function assumes that the first character of s is a digit.
+template <typename Char>
+int ParseNonnegativeInt(
+  const Char *&s, const char *&error) FMT_NOEXCEPT(true);
+
+}  // namespace internal
 
 /**
   An error returned by an operating system or a language runtime,
@@ -881,6 +902,8 @@ class BasicWriter {
     };
   };
 
+  static const ArgInfo DUMMY_ARG;
+
   // An argument action that does nothing.
   struct NullArgAction {
     void operator()() const {}
@@ -978,12 +1001,8 @@ class BasicWriter {
    private:
     std::size_t num_args_;
     const ArgInfo *args_;
-    int num_open_braces_;
     int next_arg_index_;
-
-    void ReportError(const Char *s, StringRef message) const;
-
-    unsigned ParseUInt(const Char *&s) const;
+    fmt::internal::FormatErrorReporter<Char> report_error_;
 
     // Parses argument index and returns an argument with this index.
     const ArgInfo &ParseArgIndex(const Char *&s);
@@ -991,6 +1010,18 @@ class BasicWriter {
     void CheckSign(const Char *&s, const ArgInfo &arg);
 
    public:
+    void Format(BasicWriter<Char> &writer,
+      BasicStringRef<Char> format, std::size_t num_args, const ArgInfo *args);
+  };
+
+  // Printf format string parser.
+  class PrintfParser {
+   private:
+    std::size_t num_args_;
+    const ArgInfo *args_;
+    int next_arg_index_;
+
+  public:
     void Format(BasicWriter<Char> &writer,
       BasicStringRef<Char> format, std::size_t num_args, const ArgInfo *args);
   };
@@ -1052,6 +1083,11 @@ class BasicWriter {
     FormatParser().Format(*this, format, num_args, args);
   }
 
+  inline void vprintf(BasicStringRef<Char> format,
+      std::size_t num_args, const ArgInfo *args) {
+    PrintfParser().Format(*this, format, num_args, args);
+  }
+
   /**
     \rst
     Formats a string sending the output to the writer. Arguments are
@@ -1111,6 +1147,12 @@ class BasicWriter {
   void Format(BasicStringRef<Char> format, const Args & ... args) {
     Arg arg_array[] = {args...};
     VFormat(format, sizeof...(Args), arg_array);
+  }
+
+  template<typename... Args>
+  void printf(BasicStringRef<Char> format, const Args & ... args) {
+    Arg arg_array[] = {args...};
+    vprintf(format, sizeof...(Args), arg_array);
   }
 #endif
 
@@ -1726,7 +1768,7 @@ inline Formatter<ANSITerminalSink> PrintColored(Color c, StringRef format) {
   Formats a string similarly to Python's `str.format
   <http://docs.python.org/3/library/stdtypes.html#str.format>`__ function
   and returns an :cpp:class:`fmt::BasicWriter` object containing the output.
-  
+
   This version of the Format function uses C++11 features such as
   variadic templates and rvalue references. For C++98 version, see
   the :cpp:func:`fmt::Format()` overload above.
@@ -1771,6 +1813,20 @@ void Print(std::FILE *f, StringRef format, const Args & ... args) {
   Writer w;
   w.Format(format, args...);
   std::fwrite(w.data(), 1, w.size(), f);
+}
+
+template<typename... Args>
+inline Writer sprintf(StringRef format, const Args & ... args) {
+  Writer w;
+  w.printf(format, args...);
+  return std::move(w);
+}
+
+template<typename... Args>
+void printf(StringRef format, const Args & ... args) {
+  Writer w;
+  w.printf(format, args...);
+  std::fwrite(w.data(), 1, w.size(), stdout);
 }
 
 #endif  // FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
