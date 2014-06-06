@@ -5,6 +5,9 @@ os:
   - osx
 
 before_install:
+  - if [ $TRAVIS_OS_NAME == osx ]; then curl http://www.cmake.org/files/v2.8/cmake-2.8.12.2-Darwin64-universal.tar.gz -o cmake.tar.gz; fi
+  - if [ $TRAVIS_OS_NAME == osx ]; then tar xzf cmake.tar.gz; fi
+  - if [ $TRAVIS_OS_NAME == osx ]; then export PATH=$PATH:"cmake-2.8.12.2-Darwin64-universal/CMake 2.8-12.app/Contents/bin"; fi
   - git submodule update --init
 
 env:
