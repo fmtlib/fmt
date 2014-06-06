@@ -26,6 +26,7 @@
  */
 
 #include <cstring>
+#include <limits>
 #include "gtest-extra.h"
 #include "util.h"
 
