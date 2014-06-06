@@ -18,3 +18,6 @@ script:
   - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DFMT_EXTRA_TESTS=ON .
   - make -j4
   - make test
+
+after_failure:
+  - cat Testing/Temporary/LastTest.log
