@@ -8,6 +8,6 @@ env:
   - BUILD_TYPE=Release
 
 script:
-  - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE .
+  - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DFMT_EXTRA_TESTS=ON .
   - make -j4
   - make test

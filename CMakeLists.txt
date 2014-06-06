@@ -8,6 +8,8 @@ if (NOT CMAKE_BUILD_TYPE)
     "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif ()
 
+option(FMT_EXTRA_TESTS "Enable extra tests." OFF)
+
 project(FORMAT)
 
 include(CheckCXXCompilerFlag)
@@ -49,7 +51,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -pedantic")
 endif ()
-if (CPP11_FLAG)
+if (CPP11_FLAG AND FMT_EXTRA_TESTS)
   set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   # Test compilation with default flags.
   file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)

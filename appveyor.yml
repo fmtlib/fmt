@@ -5,7 +5,7 @@ configuration:
 install:
   - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%
 
-before_build: cmake .
+before_build: cmake -DFMT_EXTRA_TESTS=ON .
 
 build_script:
   - msbuild /m:4 FORMAT.sln
