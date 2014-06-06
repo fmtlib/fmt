@@ -450,8 +450,8 @@ void FormatDecimal(Char *buffer, UInt value, unsigned num_digits) {
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     unsigned index = (value % 100) * 2;
     value /= 100;
-    buffer[num_digits] = internal::DIGITS[index + 1];
-    buffer[num_digits - 1] = internal::DIGITS[index];
+    buffer[num_digits] = DIGITS[index + 1];
+    buffer[num_digits - 1] = DIGITS[index];
     num_digits -= 2;
   }
   if (value < 10) {
@@ -459,8 +459,8 @@ void FormatDecimal(Char *buffer, UInt value, unsigned num_digits) {
     return;
   }
   unsigned index = static_cast<unsigned>(value * 2);
-  buffer[1] = internal::DIGITS[index + 1];
-  buffer[0] = internal::DIGITS[index];
+  buffer[1] = DIGITS[index + 1];
+  buffer[0] = DIGITS[index];
 }
 
 template <typename Char, typename T>
