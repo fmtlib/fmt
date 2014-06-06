@@ -539,6 +539,17 @@ template <typename Char>
 int ParseNonnegativeInt(
   const Char *&s, const char *&error) FMT_NOEXCEPT(true);
 
+// Computes max(Arg, 1) at compile time. It is used to avoid errors about
+// allocating an array of 0 size.
+template <unsigned Arg>
+struct NonZero {
+  enum { VALUE = Arg };
+};
+
+template <>
+struct NonZero<0> {
+  enum { VALUE = 1 };
+};
 }  // namespace internal
 
 /**
@@ -926,6 +937,7 @@ class BasicWriter {
    public:
     using ArgInfo::type;
 
+    BasicArg() {}
     BasicArg(short value) { type = INT; this->int_value = value; }
     BasicArg(unsigned short value) { type = UINT; this->int_value = value; }
     BasicArg(int value) { type = INT; this->int_value = value; }
@@ -1151,7 +1163,7 @@ class BasicWriter {
 
   template<typename... Args>
   void printf(BasicStringRef<Char> format, const Args & ... args) {
-    Arg arg_array[] = {args...};
+    Arg arg_array[internal::NonZero<sizeof...(Args)>::VALUE] = {args...};
     vprintf(format, sizeof...(Args), arg_array);
   }
 #endif
