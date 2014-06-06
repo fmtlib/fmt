@@ -35,10 +35,7 @@
 #include <memory>
 #include <sstream>
 
-// Check if format.h compiles with windows.h included.
 #ifdef _WIN32
-# include <windows.h>
-
 // Fix MSVC warning about "unsafe" fopen.
 FILE *FOpen(const char *filename, const char *mode) {
   FILE *f = 0;

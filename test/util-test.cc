@@ -27,8 +27,14 @@
 
 #include <cstring>
 #include "gtest-extra.h"
-#include "format.h"
 #include "util.h"
+
+// Check if format.h compiles with windows.h included.
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
+#include "format.h"
 
 using fmt::StringRef;
 
