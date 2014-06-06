@@ -655,9 +655,10 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
 
     int precision = -1;
     switch (have_width) {
-    case false:
+    case false: {
       // TODO: parse optional flags
-      for (bool stop = false; !stop;) {
+      bool stop = false;
+      do {
         switch (*s) {
           case '-':
             ++s;
@@ -677,7 +678,7 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
           default:
             stop = true;
         }
-      }
+      } while (!stop);
 
       /*
       // Parse fill and alignment.
@@ -740,6 +741,7 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
       if (*s < '0' || *s > '9')
         break;
       spec.width_ = internal::ParseNonnegativeInt(s, error);
+    }
       // Fall through.
     default:
       if (spec.fill_ == '0') {
