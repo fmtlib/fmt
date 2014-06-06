@@ -124,13 +124,29 @@ TEST(PrintfTest, Width) {
   // Width cannot be specified twice.
   EXPECT_THROW_MSG(fmt::sprintf("%5-5d", 42), FormatError,
       "unknown format code '-' for integer");
-}
 
-TEST(PrintfTest, InvalidWidth) {
   EXPECT_THROW_MSG(fmt::sprintf(str(Format("%{}d", BIG_NUM)), 42),
       FormatError, "number is too big in format");
   EXPECT_THROW_MSG(fmt::sprintf(str(Format("%1${}d", BIG_NUM)), 42),
       FormatError, "number is too big in format");
+}
+
+TEST(PrintfTest, ZeroFlag) {
+  EXPECT_EQ("00042", str(fmt::sprintf("%05d", 42)));
+  EXPECT_EQ("00042", str(fmt::sprintf("%1$05d", 42)));
+  EXPECT_EQ("-0042", str(fmt::sprintf("%05d", -42)));
+  EXPECT_EQ("-0042", str(fmt::sprintf("%1$05d", -42)));
+
+  EXPECT_EQ("00042", str(fmt::sprintf("%05d", 42)));
+  EXPECT_EQ("00042", str(fmt::sprintf("%1$05d", 42)));
+  EXPECT_EQ("-0042", str(fmt::sprintf("%05d", -42)));
+  EXPECT_EQ("-0042", str(fmt::sprintf("%1$05d", -42)));
+  EXPECT_EQ("-004.2", str(fmt::sprintf("%06g", -4.2)));
+  EXPECT_EQ("-004.2", str(fmt::sprintf("%1$06g", -4.2)));
+
+  EXPECT_EQ("+00042", str(fmt::sprintf("%00+6d", 42)));
+
+  // TODO: test for error if argument is non-numeric
 }
 
 // TODO

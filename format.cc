@@ -611,12 +611,16 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
 
     unsigned arg_index = 0;
     bool have_width = false, have_arg_index = false;
-    if (*s >= '0' && *s <= '9') {
+    c = *s;
+    if (c >= '0' && c <= '9') {
       unsigned value = internal::ParseNonnegativeInt(s, error);
       if (*s != '$') {
-        // TODO: handle '0'
-        have_width = true;
-        spec.width_ = value;
+        if (c == '0')
+          spec.fill_ = '0';
+        if (value != 0) {
+          have_width = true;
+          spec.width_ = value;
+        }
       } else {
         ++s;
         if (next_arg_index_ <= 0) {
@@ -659,9 +663,11 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
           spec.align_ = ALIGN_LEFT;
           break;
         case '+':
+          // TODO
+          spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
         case ' ':
         case '#':
-          //++s;
+          ++s;
           break;
       }
 
@@ -725,17 +731,18 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
       // Parse width and zero flag.
       if (*s < '0' || *s > '9')
         break;
-      if (*s == '0') {
-        spec.align_ = ALIGN_NUMERIC;
+      if (*s == '0')
         spec.fill_ = '0';
-      }
       // Zero may be parsed again as a part of the width, but it is simpler
       // and more efficient than checking if the next char is a digit.
       spec.width_ = internal::ParseNonnegativeInt(s, error);
       // Fall through.
     default:
-      if (spec.fill_ == '0' && arg->type > LAST_NUMERIC_TYPE)
-        throw FormatError("format specifier '0' requires numeric argument");
+      if (spec.fill_ == '0') {
+        spec.align_ = ALIGN_NUMERIC;
+        if (arg->type > LAST_NUMERIC_TYPE)
+          throw FormatError("format specifier '0' requires numeric argument");
+      }
       break;
     }
 
