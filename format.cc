@@ -657,18 +657,26 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     switch (have_width) {
     case false:
       // TODO: parse optional flags
-      switch (*s) {
-        case '-':
-          ++s;
-          spec.align_ = ALIGN_LEFT;
-          break;
-        case '+':
-          // TODO
-          spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
-        case ' ':
-        case '#':
-          ++s;
-          break;
+      for (bool stop = false; !stop;) {
+        switch (*s) {
+          case '-':
+            ++s;
+            spec.align_ = ALIGN_LEFT;
+            break;
+          case '+':
+            // TODO
+            ++s;
+            spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
+            break;
+          case '0':
+            spec.fill_ = '0';
+          case ' ':
+          case '#':
+            ++s;
+            break;
+          default:
+            stop = true;
+        }
       }
 
       /*
@@ -731,10 +739,6 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
       // Parse width and zero flag.
       if (*s < '0' || *s > '9')
         break;
-      if (*s == '0')
-        spec.fill_ = '0';
-      // Zero may be parsed again as a part of the width, but it is simpler
-      // and more efficient than checking if the next char is a digit.
       spec.width_ = internal::ParseNonnegativeInt(s, error);
       // Fall through.
     default:
