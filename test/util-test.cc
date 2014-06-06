@@ -37,6 +37,8 @@
 
 #include "format.h"
 
+#undef max
+
 using fmt::StringRef;
 
 namespace {
