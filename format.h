@@ -847,13 +847,17 @@ class BasicWriter {
     return internal::CheckPtr(&buffer_[size], n);
   }
 
-  CharPtr PrepareFilledBuffer(unsigned size, const EmptySpec &, char sign) {
+  // Prepare a buffer for integer formatting.
+  CharPtr PrepareFilledBuffer(unsigned num_digits,
+      const EmptySpec &, const char *prefix, unsigned prefix_size) {
+    unsigned size = prefix_size + num_digits;
     CharPtr p = GrowBuffer(size);
-    *p = sign;
+    std::copy(prefix, prefix + prefix_size, p);
     return p + size - 1;
   }
 
-  CharPtr PrepareFilledBuffer(unsigned size, const AlignSpec &spec, char sign);
+  CharPtr PrepareFilledBuffer(unsigned num_digits,
+    const AlignSpec &spec, const char *prefix, unsigned prefix_size);
 
   // Formats an integer.
   template <typename T, typename Spec>
@@ -914,6 +918,8 @@ class BasicWriter {
   };
 
   static const ArgInfo DUMMY_ARG;
+
+  static ULongLong GetIntValue(const ArgInfo &arg);
 
   // An argument action that does nothing.
   struct NullArgAction {
@@ -1033,7 +1039,7 @@ class BasicWriter {
     const ArgInfo *args_;
     int next_arg_index_;
 
-    void ParseFlags(FormatSpec &spec, const Char *&s);
+    void ParseFlags(FormatSpec &spec, const Char *&s, const ArgInfo &arg);
 
    public:
     void Format(BasicWriter<Char> &writer,
@@ -1279,78 +1285,77 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::FormatString(
 template <typename Char>
 template <typename T, typename Spec>
 void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
-  unsigned size = 0;
-  char sign = 0;
+  unsigned prefix_size = 0;
   typedef typename internal::IntTraits<T>::MainType UnsignedType;
   UnsignedType abs_value = value;
+  char prefix[4] = "";
   if (internal::IsNegative(value)) {
-    sign = '-';
-    ++size;
+    prefix[0] = '-';
+    ++prefix_size;
     abs_value = 0 - abs_value;
   } else if (spec.sign_flag()) {
-    sign = spec.plus_flag() ? '+' : ' ';
-    ++size;
+    prefix[0] = spec.plus_flag() ? '+' : ' ';
+    ++prefix_size;
   }
   switch (spec.type()) {
   case 0: case 'd': {
     unsigned num_digits = internal::CountDigits(abs_value);
-    CharPtr p =
-        PrepareFilledBuffer(size + num_digits, spec, sign) + 1 - num_digits;
+    CharPtr p = PrepareFilledBuffer(
+      num_digits, spec, prefix, prefix_size) + 1 - num_digits;
     internal::FormatDecimal(GetBase(p), abs_value, num_digits);
     break;
   }
   case 'x': case 'X': {
     UnsignedType n = abs_value;
-    bool print_prefix = spec.hash_flag();
-    if (print_prefix) size += 2;
+    if (spec.hash_flag()) {
+      prefix[prefix_size++] = '0';
+      prefix[prefix_size++] = spec.type();
+    }
+    unsigned num_digits = 0;
     do {
-      ++size;
+      ++num_digits;
     } while ((n >>= 4) != 0);
-    Char *p = GetBase(PrepareFilledBuffer(size, spec, sign));
+    Char *p = GetBase(PrepareFilledBuffer(
+      num_digits, spec, prefix, prefix_size));
     n = abs_value;
     const char *digits = spec.type() == 'x' ?
         "0123456789abcdef" : "0123456789ABCDEF";
     do {
       *p-- = digits[n & 0xf];
     } while ((n >>= 4) != 0);
-    if (print_prefix) {
-      *p-- = spec.type();
-      *p = '0';
-    }
     break;
   }
   case 'b': case 'B': {
     UnsignedType n = abs_value;
-    bool print_prefix = spec.hash_flag();
-    if (print_prefix) size += 2;
+    if (spec.hash_flag()) {
+      prefix[prefix_size++] = '0';
+      prefix[prefix_size++] = spec.type();
+    }
+    unsigned num_digits = 0;
     do {
-      ++size;
+      ++num_digits;
     } while ((n >>= 1) != 0);
-    Char *p = GetBase(PrepareFilledBuffer(size, spec, sign));
+    Char *p = GetBase(PrepareFilledBuffer(num_digits, spec, prefix, prefix_size));
     n = abs_value;
     do {
       *p-- = '0' + (n & 1);
     } while ((n >>= 1) != 0);
-    if (print_prefix) {
-      *p-- = spec.type();
-      *p = '0';
-    }
     break;
   }
   case 'o': {
     UnsignedType n = abs_value;
-    bool print_prefix = spec.hash_flag();
-    if (print_prefix) ++size;
+    if (spec.hash_flag())
+      prefix[prefix_size++] = '0';
+    unsigned num_digits = 0;
     do {
-      ++size;
+      ++num_digits;
     } while ((n >>= 3) != 0);
-    Char *p = GetBase(PrepareFilledBuffer(size, spec, sign));
+    Char *p = GetBase(PrepareFilledBuffer(
+      num_digits, spec, prefix, prefix_size));
     n = abs_value;
     do {
       *p-- = '0' + (n & 7);
     } while ((n >>= 3) != 0);
-    if (print_prefix)
-      *p = '0';
     break;
   }
   default:

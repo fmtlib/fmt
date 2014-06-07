@@ -345,12 +345,13 @@ typename fmt::BasicWriter<Char>::CharPtr
 
 template <typename Char>
 typename fmt::BasicWriter<Char>::CharPtr
-  fmt::BasicWriter<Char>::PrepareFilledBuffer(
-    unsigned size, const AlignSpec &spec, char sign) {
+  fmt::BasicWriter<Char>::PrepareFilledBuffer(unsigned num_digits,
+    const AlignSpec &spec, const char *prefix, unsigned prefix_size) {
+  unsigned size = prefix_size + num_digits;
   unsigned width = spec.width();
   if (width <= size) {
     CharPtr p = GrowBuffer(size);
-    *p = sign;
+    std::copy(prefix, prefix + prefix_size, p);
     return p + size - 1;
   }
   CharPtr p = GrowBuffer(width);
@@ -359,21 +360,21 @@ typename fmt::BasicWriter<Char>::CharPtr
   // TODO: error if fill is not convertible to Char
   Char fill = static_cast<Char>(spec.fill());
   if (align == ALIGN_LEFT) {
-    *p = sign;
+    std::copy(prefix, prefix + prefix_size, p);
     p += size;
     std::fill(p, end, fill);
   } else if (align == ALIGN_CENTER) {
     p = FillPadding(p, width, size, fill);
-    *p = sign;
+    std::copy(prefix, prefix + prefix_size, p);
     p += size;
   } else {
     if (align == ALIGN_NUMERIC) {
-      if (sign) {
-        *p++ = sign;
-        --size;
+      if (prefix_size != 0) {
+        p = std::copy(prefix, prefix + prefix_size, p);
+        size -= prefix_size;
       }
     } else {
-      *(end - size) = sign;
+      std::copy(prefix, prefix + prefix_size, end - size);
     }
     std::fill(p, end - size, fill);
     p = end;
@@ -533,6 +534,26 @@ void fmt::BasicWriter<Char>::FormatDouble(
 }
 
 template <typename Char>
+fmt::ULongLong fmt::BasicWriter<Char>::GetIntValue(const ArgInfo &arg) {
+  switch (arg.type) {
+    case INT:
+      return arg.int_value;
+    case UINT:
+      return arg.uint_value;
+    case LONG:
+      return arg.long_value;
+    case ULONG:
+      return arg.ulong_value;
+    case LONG_LONG:
+      return arg.long_long_value;
+    case ULONG_LONG:
+      return arg.ulong_long_value;
+    default:
+      return -1;
+  }
+}
+
+template <typename Char>
 inline const typename fmt::BasicWriter<Char>::ArgInfo
     &fmt::BasicWriter<Char>::FormatParser::ParseArgIndex(const Char *&s) {
   unsigned arg_index = 0;
@@ -577,26 +598,28 @@ void fmt::BasicWriter<Char>::FormatParser::CheckSign(
 
 template <typename Char>
 void fmt::BasicWriter<Char>::PrintfParser::ParseFlags(
-    FormatSpec &spec, const Char *&s) {
-  // TODO: parse optional flags
+    FormatSpec &spec, const Char *&s, const ArgInfo &arg) {
   for (;;) {
-    switch (*s) {
+    switch (*s++) {
       case '-':
-        ++s;
         spec.align_ = ALIGN_LEFT;
         break;
       case '+':
-        // TODO
-        ++s;
         spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
         break;
       case '0':
         spec.fill_ = '0';
+        break;
       case ' ':
+        spec.flags_ |= SIGN_FLAG;
+        break;
       case '#':
-        ++s;
+        // TODO: handle floating-point args
+        if (GetIntValue(arg) != 0)
+           spec.flags_ |= HASH_FLAG;
         break;
       default:
+        --s;
         return;
     }
   }
@@ -682,58 +705,9 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     switch (spec.width_) {
     case UINT_MAX: {
       spec.width_ = 0;
-      ParseFlags(spec, s);
+      ParseFlags(spec, s, *arg);
 
       /*
-      // Parse fill and alignment.
-      if (Char c = *s) {
-        const Char *p = s + 1;
-        spec.align_ = ALIGN_DEFAULT;
-        do {
-          switch (*p) {
-          case '<':
-            spec.align_ = ALIGN_LEFT;
-            break;
-          case '>':
-            spec.align_ = ALIGN_RIGHT;
-            break;
-          case '=':
-            spec.align_ = ALIGN_NUMERIC;
-            break;
-          case '^':
-            spec.align_ = ALIGN_CENTER;
-            break;
-          }
-          if (spec.align_ != ALIGN_DEFAULT) {
-            if (p != s) {
-              if (c == '}') break;
-              if (c == '{')
-                ReportError(s, "invalid fill character '{'");
-              s += 2;
-              spec.fill_ = c;
-            } else ++s;
-            if (spec.align_ == ALIGN_NUMERIC && arg.type > LAST_NUMERIC_TYPE)
-              ReportError(s, "format specifier '=' requires numeric argument");
-            break;
-          }
-        } while (--p >= s);
-      }
-
-      // Parse sign.
-      switch (*s) {
-      case '+':
-        CheckSign(s, arg);
-        spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
-        break;
-      case '-':
-        CheckSign(s, arg);
-        break;
-      case ' ':
-        CheckSign(s, arg);
-        spec.flags_ |= SIGN_FLAG;
-        break;
-      }
-
       if (*s == '#') {
         if (arg.type > LAST_NUMERIC_TYPE)
           ReportError(s, "format specifier '#' requires numeric argument");
@@ -1195,8 +1169,8 @@ template fmt::BasicWriter<char>::CharPtr
     unsigned total_size, std::size_t content_size, wchar_t fill);
 
 template fmt::BasicWriter<char>::CharPtr
-  fmt::BasicWriter<char>::PrepareFilledBuffer(
-    unsigned size, const AlignSpec &spec, char sign);
+  fmt::BasicWriter<char>::PrepareFilledBuffer(unsigned num_digits,
+    const AlignSpec &spec, const char *prefix, unsigned prefix_size);
 
 template void fmt::BasicWriter<char>::FormatParser::Format(
   BasicWriter<char> &writer, BasicStringRef<char> format,
@@ -1213,8 +1187,8 @@ template fmt::BasicWriter<wchar_t>::CharPtr
     unsigned total_size, std::size_t content_size, wchar_t fill);
 
 template fmt::BasicWriter<wchar_t>::CharPtr
-  fmt::BasicWriter<wchar_t>::PrepareFilledBuffer(
-    unsigned size, const AlignSpec &spec, char sign);
+  fmt::BasicWriter<wchar_t>::PrepareFilledBuffer(unsigned num_digits,
+    const AlignSpec &spec, const char *prefix, unsigned prefix_size);
 
 template void fmt::BasicWriter<wchar_t>::FormatParser::Format(
     BasicWriter<wchar_t> &writer, BasicStringRef<wchar_t> format,
