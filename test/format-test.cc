@@ -1229,18 +1229,17 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ("+0000392.6", str(Format("{0:+010.4g}") << 392.65));
 }
 
-TEST(FormatterTest, SignBit) {
-#ifndef signbit
-# define signbit std::signbit
-#endif
-  EXPECT_EQ(1, signbit(-std::numeric_limits<double>::quiet_NaN()));
-}
-
 TEST(FormatterTest, FormatNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ("nan", str(Format("{}") << nan));
   EXPECT_EQ("+nan", str(Format("{:+}") << nan));
-  EXPECT_EQ("-nan", str(Format("{}") << -nan));
+#ifndef signbit
+# define signbit std::signbit
+#endif
+  if (signbit(-nan))
+    EXPECT_EQ("-nan", str(Format("{}") << -nan));
+  else
+    fmt::Print("Warning: compiler doesn't handle negative NaN correctly");
   EXPECT_EQ(" nan", str(Format("{: }") << nan));
   EXPECT_EQ("NAN", str(Format("{:F}") << nan));
   EXPECT_EQ("nan    ", str(Format("{:<7}") << nan));
