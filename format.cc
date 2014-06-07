@@ -594,7 +594,7 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     }
     writer.buffer_.append(start, s - 1);
 
-    FormatSpec spec;
+    FormatSpec spec(UINT_MAX);
     spec.align_ = ALIGN_RIGHT;
 
     // Reporting errors is delayed till the format specification is
@@ -610,17 +610,15 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     const char *error = 0;
 
     unsigned arg_index = 0;
-    bool have_width = false, have_arg_index = false;
+    bool have_arg_index = false;
     c = *s;
     if (c >= '0' && c <= '9') {
       unsigned value = internal::ParseNonnegativeInt(s, error);
       if (*s != '$') {
         if (c == '0')
           spec.fill_ = '0';
-        if (value != 0) {
-          have_width = true;
+        if (value != 0)
           spec.width_ = value;
-        }
       } else {
         ++s;
         if (next_arg_index_ <= 0) {
@@ -654,8 +652,9 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     }
 
     int precision = -1;
-    switch (have_width) {
-    case false: {
+    switch (spec.width_) {
+    case UINT_MAX: {
+      spec.width_ = 0;
       // TODO: parse optional flags
       bool stop = false;
       do {
@@ -742,7 +741,7 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
         break;
       spec.width_ = internal::ParseNonnegativeInt(s, error);
     }
-      // Fall through.
+    // Fall through.
     default:
       if (spec.fill_ == '0') {
         spec.align_ = ALIGN_NUMERIC;

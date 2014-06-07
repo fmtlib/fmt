@@ -188,7 +188,7 @@ TEST(FileTest, ReadRetry) {
   std::streamsize count = 0;
   EXPECT_RETRY(count = read_end.read(buffer, SIZE),
       read, "cannot read from file");
-  EXPECT_EQ_POSIX(SIZE, count);
+  EXPECT_EQ_POSIX(static_cast<std::streamsize>(SIZE), count);
 }
 
 TEST(FileTest, WriteRetry) {
@@ -200,7 +200,7 @@ TEST(FileTest, WriteRetry) {
       write, "cannot write to file");
   write_end.close();
 #ifndef _WIN32
-  EXPECT_EQ(SIZE, count);
+  EXPECT_EQ(static_cast<std::streamsize>(SIZE), count);
   char buffer[SIZE + 1];
   read_end.read(buffer, SIZE);
   buffer[SIZE] = '\0';
