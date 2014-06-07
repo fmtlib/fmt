@@ -576,6 +576,33 @@ void fmt::BasicWriter<Char>::FormatParser::CheckSign(
 }
 
 template <typename Char>
+void fmt::BasicWriter<Char>::PrintfParser::ParseFlags(
+    FormatSpec &spec, const Char *&s) {
+  // TODO: parse optional flags
+  for (;;) {
+    switch (*s) {
+      case '-':
+        ++s;
+        spec.align_ = ALIGN_LEFT;
+        break;
+      case '+':
+        // TODO
+        ++s;
+        spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
+        break;
+      case '0':
+        spec.fill_ = '0';
+      case ' ':
+      case '#':
+        ++s;
+        break;
+      default:
+        return;
+    }
+  }
+}
+
+template <typename Char>
 void fmt::BasicWriter<Char>::PrintfParser::Format(
     BasicWriter<Char> &writer, BasicStringRef<Char> format,
     std::size_t num_args, const ArgInfo *args) {
@@ -655,29 +682,7 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     switch (spec.width_) {
     case UINT_MAX: {
       spec.width_ = 0;
-      // TODO: parse optional flags
-      bool stop = false;
-      do {
-        switch (*s) {
-          case '-':
-            ++s;
-            spec.align_ = ALIGN_LEFT;
-            break;
-          case '+':
-            // TODO
-            ++s;
-            spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
-            break;
-          case '0':
-            spec.fill_ = '0';
-          case ' ':
-          case '#':
-            ++s;
-            break;
-          default:
-            stop = true;
-        }
-      } while (!stop);
+      ParseFlags(spec, s);
 
       /*
       // Parse fill and alignment.
@@ -744,9 +749,10 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     // Fall through.
     default:
       if (spec.fill_ == '0') {
-        spec.align_ = ALIGN_NUMERIC;
-        if (arg->type > LAST_NUMERIC_TYPE)
-          throw FormatError("format specifier '0' requires numeric argument");
+        if (arg->type <= LAST_NUMERIC_TYPE)
+          spec.align_ = ALIGN_NUMERIC;
+        else
+          spec.fill_ = ' ';  // Ignore '0' flag for non-numeric types.
       }
       break;
     }

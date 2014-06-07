@@ -1033,7 +1033,9 @@ class BasicWriter {
     const ArgInfo *args_;
     int next_arg_index_;
 
-  public:
+    void ParseFlags(FormatSpec &spec, const Char *&s);
+
+   public:
     void Format(BasicWriter<Char> &writer,
       BasicStringRef<Char> format, std::size_t num_args, const ArgInfo *args);
   };
