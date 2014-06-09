@@ -128,6 +128,11 @@ TEST(PrintfTest, InvalidArgIndex) {
       FormatError, "number is too big in format");
 }
 
+TEST(PrintfTest, DefaultAlignRight) {
+  EXPECT_PRINTF("   42", "%5d", 42);
+  EXPECT_PRINTF("  abc", "%5s", "abc");
+}
+
 TEST(PrintfTest, Width) {
   EXPECT_PRINTF("  abc", "%5s", "abc");
 
@@ -151,15 +156,48 @@ TEST(PrintfTest, ZeroFlag) {
 
   EXPECT_PRINTF("+00042", "%00+6d", 42);
 
-  // TODO: test for error if argument is non-numeric
+  // '0' flag is ignored for non-numeric types.
+  EXPECT_PRINTF("    x", "%05c", 'x');
 }
 
-// TODO
-
-TEST(PrintfTest, Align) {
-  EXPECT_EQ("  abc", str(fmt::sprintf("%5s", "abc")));
-  EXPECT_EQ("abc  ", str(fmt::sprintf("%-5s", "abc")));
+TEST(PrintfTest, PlusFlag) {
+  EXPECT_PRINTF("+42", "%+d", 42);
+  EXPECT_PRINTF("-42", "%+d", -42);
+  EXPECT_PRINTF("+0042", "%+05d", 42);
+  EXPECT_PRINTF("+0042", "%0++5d", 42);
 }
+
+TEST(PrintfTest, MinusFlag) {
+  EXPECT_PRINTF("abc  ", "%-5s", "abc");
+  EXPECT_PRINTF("abc  ", "%0--5s", "abc");
+}
+
+TEST(PrintfTest, SpaceFlag) {
+  EXPECT_PRINTF(" 42", "% d", 42);
+  EXPECT_PRINTF("-42", "% d", -42);
+  EXPECT_PRINTF(" 0042", "% 05d", 42);
+  EXPECT_PRINTF(" 0042", "%0  5d", 42);
+}
+
+TEST(PrintfTest, HashFlag) {
+  EXPECT_PRINTF("042", "%#o", 042);
+  EXPECT_PRINTF("-042", "%#o", -042);
+  EXPECT_PRINTF("0", "%#o", 0);
+
+  EXPECT_PRINTF("0x42", "%#x", 0x42);
+  EXPECT_PRINTF("0X42", "%#X", 0x42);
+  EXPECT_PRINTF("-0x42", "%#x", -0x42);
+  EXPECT_PRINTF("0", "%#x", 0);
+
+  EXPECT_PRINTF("0x0042", "%0##6x", 0x42);
+
+  EXPECT_PRINTF("-42.0000", "%#g", -42.0);
+  EXPECT_PRINTF("-4.200000e+01", "%#e", -42.0);
+
+  // TODO: more tests
+}
+
+// TODO: test '*' width, precision, length and type specifier
 
 #endif
 
