@@ -143,7 +143,7 @@ public:
 
 #else
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(BufferedFile);
+  FMT_DISALLOW_COPY_AND_ASSIGN(BufferedFile);
 
  public:
   BufferedFile(BufferedFile &&other) FMT_NOEXCEPT(true) : file_(other.file_) {
