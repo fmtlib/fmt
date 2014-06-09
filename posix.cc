@@ -27,7 +27,6 @@
 
 #include "posix.h"
 
-#include <errno.h>
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -44,16 +43,6 @@
 
 #endif  // _WIN32
 
-// Retries the expression while it evaluates to -1 and error equals to EINTR.
-#ifndef _WIN32
-# define FMT_RETRY(result, expression) \
-  do { \
-    result = (expression); \
-  } while (result == -1 && errno == EINTR)
-#else
-# define FMT_RETRY(result, expression) result = (expression)
-#endif
-
 namespace {
 #ifdef _WIN32
 // On Windows the count argument to read and write is unsigned, so convert
@@ -66,12 +55,12 @@ inline std::size_t ConvertRWCount(std::size_t count) { return count; }
 #endif
 }
 
-BufferedFile::~BufferedFile() FMT_NOEXCEPT(true) {
+fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT(true) {
   if (file_ && FMT_SYSTEM(fclose(file_)) != 0)
     fmt::ReportSystemError(errno, "cannot close file");
 }
 
-void BufferedFile::close() {
+void fmt::BufferedFile::close() {
   if (!file_)
     return;
   int result = FMT_SYSTEM(fclose(file_));
@@ -80,14 +69,14 @@ void BufferedFile::close() {
     fmt::ThrowSystemError(errno, "cannot close file");
 }
 
-int BufferedFile::fileno() const {
+int fmt::BufferedFile::fileno() const {
   int fd = FMT_POSIX_CALL(fileno(file_));
   if (fd == -1)
     fmt::ThrowSystemError(errno, "cannot get file descriptor");
   return fd;
 }
 
-File::File(const char *path, int oflag) {
+fmt::File::File(const char *path, int oflag) {
   int mode = S_IRUSR | S_IWUSR;
 #ifdef _WIN32
   fd_ = -1;
@@ -99,14 +88,14 @@ File::File(const char *path, int oflag) {
     fmt::ThrowSystemError(errno, "cannot open file {}") << path;
 }
 
-File::~File() FMT_NOEXCEPT(true) {
+fmt::File::~File() FMT_NOEXCEPT(true) {
   // Don't retry close in case of EINTR!
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
   if (fd_ != -1 && FMT_POSIX_CALL(close(fd_)) != 0)
     fmt::ReportSystemError(errno, "cannot close file");
 }
 
-void File::close() {
+void fmt::File::close() {
   if (fd_ == -1)
     return;
   // Don't retry close in case of EINTR!
@@ -117,7 +106,7 @@ void File::close() {
     fmt::ThrowSystemError(errno, "cannot close file");
 }
 
-std::streamsize File::read(void *buffer, std::size_t count) {
+std::streamsize fmt::File::read(void *buffer, std::size_t count) {
   std::streamsize result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(read(fd_, buffer, ConvertRWCount(count))));
   if (result == -1)
@@ -125,7 +114,7 @@ std::streamsize File::read(void *buffer, std::size_t count) {
   return result;
 }
 
-std::streamsize File::write(const void *buffer, std::size_t count) {
+std::streamsize fmt::File::write(const void *buffer, std::size_t count) {
   std::streamsize result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(write(fd_, buffer, ConvertRWCount(count))));
   if (result == -1)
@@ -133,7 +122,7 @@ std::streamsize File::write(const void *buffer, std::size_t count) {
   return result;
 }
 
-File File::dup(int fd) {
+fmt::File fmt::File::dup(int fd) {
   // Don't retry as dup doesn't return EINTR.
   // http://pubs.opengroup.org/onlinepubs/009695399/functions/dup.html
   int new_fd = FMT_POSIX_CALL(dup(fd));
@@ -142,7 +131,7 @@ File File::dup(int fd) {
   return File(new_fd);
 }
 
-void File::dup2(int fd) {
+void fmt::File::dup2(int fd) {
   int result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(dup2(fd_, fd)));
   if (result == -1) {
@@ -151,14 +140,14 @@ void File::dup2(int fd) {
   }
 }
 
-void File::dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT(true) {
+void fmt::File::dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT(true) {
   int result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(dup2(fd_, fd)));
   if (result == -1)
     ec = ErrorCode(errno);
 }
 
-void File::pipe(File &read_end, File &write_end) {
+void fmt::File::pipe(File &read_end, File &write_end) {
   // Close the descriptors first to make sure that assignments don't throw
   // and there are no leaks.
   read_end.close();
@@ -181,7 +170,7 @@ void File::pipe(File &read_end, File &write_end) {
   write_end = File(fds[1]);
 }
 
-BufferedFile File::fdopen(const char *mode) {
+fmt::BufferedFile fmt::File::fdopen(const char *mode) {
   // Don't retry as fdopen doesn't return EINTR.
   FILE *f = FMT_POSIX_CALL(fdopen(fd_, mode));
   if (!f) {

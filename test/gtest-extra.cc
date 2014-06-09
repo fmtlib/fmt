@@ -29,7 +29,7 @@
 
 #if FMT_USE_FILE_DESCRIPTORS
 
-#include "posix.cc"
+using fmt::File;
 
 void OutputRedirect::Flush() {
 #if EOF != -1

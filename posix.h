@@ -28,11 +28,14 @@
 #ifndef FMT_POSIX_H
 #define FMT_POSIX_H
 
-#include <stdio.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <stdio.h>
 
 #include <cstddef>
 #include <ios>
+
+#include "format.h"
 
 #ifndef FMT_POSIX
 # ifdef _WIN32
@@ -56,29 +59,41 @@
 # endif
 #endif
 
+// Retries the expression while it evaluates to -1 and error equals to EINTR.
+#ifndef _WIN32
+# define FMT_RETRY(result, expression) \
+  do { \
+    result = (expression); \
+  } while (result == -1 && errno == EINTR)
+#else
+# define FMT_RETRY(result, expression) result = (expression)
+#endif
+
+namespace fmt {
+
 // An error code.
 class ErrorCode {
- private:
+private:
   int value_;
 
- public:
-  explicit ErrorCode(int value = 0) FMT_NOEXCEPT(true) : value_(value) {}
+public:
+  explicit ErrorCode(int value = 0) FMT_NOEXCEPT(true) : value_(value) { }
 
   int get() const FMT_NOEXCEPT(true) { return value_; }
 };
 
 // A buffered file.
 class BufferedFile {
- private:
+private:
   FILE *file_;
 
   friend class File;
 
-  explicit BufferedFile(FILE *f) : file_(f) {}
+  explicit BufferedFile(FILE *f) : file_(f) { }
 
- public:
+public:
   // Constructs a BufferedFile object which doesn't represent any file.
-  BufferedFile() FMT_NOEXCEPT(true) : file_(0) {}
+  BufferedFile() FMT_NOEXCEPT(true) : file_(0) { }
 
   // Destroys the object closing the file it represents if any.
   ~BufferedFile() FMT_NOEXCEPT(true);
@@ -87,16 +102,16 @@ class BufferedFile {
   // Emulate a move constructor and a move assignment operator if rvalue
   // references are not supported.
 
- private:
+private:
   // A proxy object to emulate a move constructor.
   // It is private to make it impossible call operator Proxy directly.
   struct Proxy {
     FILE *file;
   };
 
- public:
+public:
   // A "move constructor" for moving from a temporary.
-  BufferedFile(Proxy p) FMT_NOEXCEPT(true) : file_(p.file) {}
+  BufferedFile(Proxy p) FMT_NOEXCEPT(true) : file_(p.file) { }
 
   // A "move constructor" for for moving from an lvalue.
   BufferedFile(BufferedFile &f) FMT_NOEXCEPT(true) : file_(f.file_) {
@@ -125,6 +140,7 @@ class BufferedFile {
     file_ = 0;
     return p;
   }
+
 #else
  private:
   GTEST_DISALLOW_COPY_AND_ASSIGN_(BufferedFile);
@@ -158,22 +174,22 @@ class BufferedFile {
 // than an exception. You can get standard behavior by overriding the
 // invalid parameter handler with _set_invalid_parameter_handler.
 class File {
- private:
+private:
   int fd_;  // File descriptor.
 
   // Constructs a File object with a given descriptor.
-  explicit File(int fd) : fd_(fd) {}
+  explicit File(int fd) : fd_(fd) { }
 
- public:
+public:
   // Possible values for the oflag argument to the constructor.
   enum {
     RDONLY = FMT_POSIX(O_RDONLY), // Open for reading only.
     WRONLY = FMT_POSIX(O_WRONLY), // Open for writing only.
-    RDWR   = FMT_POSIX(O_RDWR)    // Open for reading and writing.
+    RDWR = FMT_POSIX(O_RDWR)    // Open for reading and writing.
   };
 
   // Constructs a File object which doesn't represent any file.
-  File() FMT_NOEXCEPT(true) : fd_(-1) {}
+  File() FMT_NOEXCEPT(true) : fd_(-1) { }
 
   // Opens a file and constructs a File object representing this file.
   File(const char *path, int oflag);
@@ -182,16 +198,16 @@ class File {
   // Emulate a move constructor and a move assignment operator if rvalue
   // references are not supported.
 
- private:
+private:
   // A proxy object to emulate a move constructor.
   // It is private to make it impossible call operator Proxy directly.
   struct Proxy {
     int fd;
   };
 
- public:
+public:
   // A "move constructor" for moving from a temporary.
-  File(Proxy p) FMT_NOEXCEPT(true) : fd_(p.fd) {}
+  File(Proxy p) FMT_NOEXCEPT(true) : fd_(p.fd) { }
 
   // A "move constructor" for for moving from an lvalue.
   File(File &other) FMT_NOEXCEPT(true) : fd_(other.fd_) {
@@ -220,6 +236,7 @@ class File {
     fd_ = -1;
     return p;
   }
+
 #else
  private:
   GTEST_DISALLOW_COPY_AND_ASSIGN_(File);
@@ -273,11 +290,13 @@ class File {
   BufferedFile fdopen(const char *mode);
 };
 
+}
+
 #if !FMT_USE_RVALUE_REFERENCES
 namespace std {
 // For compatibility with C++98.
-inline BufferedFile &move(BufferedFile &f) { return f; }
-inline File &move(File &f) { return f; }
+inline fmt::BufferedFile &move(fmt::BufferedFile &f) { return f; }
+inline fmt::File &move(fmt::File &f) { return f; }
 }
 #endif
 

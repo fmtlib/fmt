@@ -356,6 +356,10 @@ TEST(UtilTest, FormatSystemErrorMessage) {
 
 #if FMT_USE_FILE_DESCRIPTORS
 
+using fmt::BufferedFile;
+using fmt::ErrorCode;
+using fmt::File;
+
 // Checks if the file is open by reading one character from it.
 bool IsOpen(int fd) {
   char buffer;

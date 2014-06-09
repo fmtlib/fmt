@@ -99,8 +99,8 @@ std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message);
 class OutputRedirect {
  private:
   FILE *file_;
-  File original_;  // Original file passed to redirector.
-  File read_end_;  // Read end of the pipe where the output is redirected.
+  fmt::File original_;  // Original file passed to redirector.
+  fmt::File read_end_;  // Read end of the pipe where the output is redirected.
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(OutputRedirect);
 

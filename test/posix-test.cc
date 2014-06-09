@@ -37,6 +37,10 @@
 
 #include "gtest-extra.h"
 
+using fmt::BufferedFile;
+using fmt::ErrorCode;
+using fmt::File;
+
 namespace {
 int open_count;
 int close_count;

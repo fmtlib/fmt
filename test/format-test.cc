@@ -1466,6 +1466,9 @@ TEST(FormatterTest, OutputNotWrittenOnError) {
 
 #if FMT_USE_FILE_DESCRIPTORS
 
+using fmt::BufferedFile;
+using fmt::File;
+
 TEST(FormatterTest, FileSink) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
