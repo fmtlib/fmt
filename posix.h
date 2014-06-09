@@ -37,6 +37,10 @@
 
 #include "format.h"
 
+#ifdef FMT_INCLUDE_POSIX_TEST
+# include "test/posix-test.h"
+#endif
+
 #ifndef FMT_POSIX
 # ifdef _WIN32
 // Fix warnings about deprecated symbols.

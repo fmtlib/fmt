@@ -29,14 +29,9 @@
 #define FMT_GTEST_EXTRA_H
 
 #include <string>
-
 #include <gtest/gtest.h>
 
 #include "format.h"
-
-#ifdef FMT_INCLUDE_POSIX_TEST
-# include "posix-test.h"
-#endif
 
 #ifndef FMT_USE_FILE_DESCRIPTORS
 # define FMT_USE_FILE_DESCRIPTORS 0

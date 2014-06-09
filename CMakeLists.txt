@@ -46,6 +46,8 @@ if (FMT_SHARED)
   set(shared SHARED)
 endif ()
 
+set(FMT_SOURCES format.cc format.h)
+
 include(CheckSymbolExists)
 if (WIN32)
   check_symbol_exists(open io.h HAVE_OPEN)
@@ -54,10 +56,10 @@ else ()
 endif ()
 if (HAVE_OPEN)
   add_definitions(-DFMT_USE_FILE_DESCRIPTORS=1)
-  set(FMT_POSIX_SRC posix.cc posix.h)
+  set(FMT_SOURCES ${FMT_SOURCES} posix.cc posix.h)
 endif ()
 
-add_library(format ${shared} format.cc format.h ${FMT_POSIX_SRC})
+add_library(format ${shared} ${FMT_SOURCES})
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -pedantic")
@@ -66,7 +68,7 @@ if (CPP11_FLAG AND FMT_EXTRA_TESTS)
   set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   # Test compilation with default flags.
   file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)
-  add_library(testformat format.cc ${FMT_POSIX_SRC} ${src})
+  add_library(testformat ${FMT_SOURCES} ${src})
 endif ()
 
 add_subdirectory(doc)
@@ -112,10 +114,10 @@ endforeach ()
 cxx_test(util-test test-main)
 
 if (HAVE_OPEN)
-  add_executable(posix-test test/posix-test.cc ${TEST_MAIN_SRC})
+  add_executable(posix-test test/posix-test.cc ${FMT_SOURCES} ${TEST_MAIN_SRC})
   set_target_properties(posix-test
     PROPERTIES COMPILE_DEFINITIONS "FMT_INCLUDE_POSIX_TEST=1")
-  target_link_libraries(posix-test gtest format)
+  target_link_libraries(posix-test gtest)
   add_test(posix-test posix-test)
 endif ()
 
