@@ -243,7 +243,7 @@ public:
 
 #else
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(File);
+  FMT_DISALLOW_COPY_AND_ASSIGN(File);
 
  public:
   File(File &&other) FMT_NOEXCEPT(true) : fd_(other.fd_) {
