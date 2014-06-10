@@ -1215,9 +1215,9 @@ TEST(FormatterTest, FormatDouble) {
   SPrintf(buffer, "%E", 392.65);
   EXPECT_EQ(buffer, str(Format("{0:E}") << 392.65));
   EXPECT_EQ("+0000392.6", str(Format("{0:+010.4g}") << 392.65));
-  SPrintf(buffer, "%a", -42);
+  SPrintf(buffer, "%a", -42.0);
   EXPECT_EQ(buffer, str(Format("{:a}") << -42.0));
-  SPrintf(buffer, "%A", -42);
+  SPrintf(buffer, "%A", -42.0);
   EXPECT_EQ(buffer, str(Format("{:A}") << -42.0));
 }
 
