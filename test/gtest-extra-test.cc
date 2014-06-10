@@ -32,13 +32,13 @@
 #include <stdexcept>
 #include <gtest/gtest-spi.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 # include <crtdbg.h>  // for _CrtSetReportMode
 #endif  // _WIN32
 
 namespace {
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 
 // Suppresses Windows assertions on invalid file descriptors, making
 // POSIX functions return proper error codes instead of crashing on Windows.
