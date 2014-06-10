@@ -27,5 +27,7 @@
 
 enum {BUFFER_SIZE = 256};
 
+void SPrintf(char *buffer, const char *format, ...);
+
 // Increment a number in a string.
 void Increment(char *s);

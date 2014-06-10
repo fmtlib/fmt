@@ -165,6 +165,9 @@ TEST(PrintfTest, PlusFlag) {
   EXPECT_PRINTF("-42", "%+d", -42);
   EXPECT_PRINTF("+0042", "%+05d", 42);
   EXPECT_PRINTF("+0042", "%0++5d", 42);
+
+  // '+' flag is ignored for non-numeric types.
+  EXPECT_PRINTF("x", "%+c", 'x');
 }
 
 TEST(PrintfTest, MinusFlag) {
@@ -177,6 +180,9 @@ TEST(PrintfTest, SpaceFlag) {
   EXPECT_PRINTF("-42", "% d", -42);
   EXPECT_PRINTF(" 0042", "% 05d", 42);
   EXPECT_PRINTF(" 0042", "%0  5d", 42);
+
+  // ' ' flag is ignored for non-numeric types.
+  EXPECT_PRINTF("x", "% c", 'x');
 }
 
 TEST(PrintfTest, HashFlag) {
@@ -189,15 +195,29 @@ TEST(PrintfTest, HashFlag) {
   EXPECT_PRINTF("-0x42", "%#x", -0x42);
   EXPECT_PRINTF("0", "%#x", 0);
 
+  EXPECT_PRINTF("0x0042", "%#06x", 0x42);
   EXPECT_PRINTF("0x0042", "%0##6x", 0x42);
 
-  EXPECT_PRINTF("-42.0000", "%#g", -42.0);
-  //EXPECT_PRINTF("-4.200000e+01", "%#e", -42.0);
+  EXPECT_PRINTF("-42.000000", "%#f", -42.0);
+  EXPECT_PRINTF("-42.000000", "%#F", -42.0);
 
-  // TODO: more tests
+  char buffer[BUFFER_SIZE];
+  SPrintf(buffer, "%#e", -42.0);
+  EXPECT_PRINTF(buffer, "%#e", -42.0);
+  SPrintf(buffer, "%#E", -42.0);
+  EXPECT_PRINTF(buffer, "%#E", -42.0);
+
+  EXPECT_PRINTF("-42.0000", "%#g", -42.0);
+  EXPECT_PRINTF("-42.0000", "%#G", -42.0);
+
+  // TODO
+  //EXPECT_PRINTF("-0x1.5p+5", "%#a", -42.0);
+  //EXPECT_PRINTF("-0x1.5A+5", "%#A", -42.0);
+
+  // '#' flag is ignored for non-numeric types.
+  EXPECT_PRINTF("x", "%#c", 'x');
 }
 
 // TODO: test '*' width, precision, length and type specifier
 
 #endif
-

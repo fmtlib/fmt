@@ -29,7 +29,6 @@
 #include <cfloat>
 #include <climits>
 #include <cmath>
-#include <cstdarg>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -108,17 +107,6 @@ struct WriteChecker {
   EXPECT_PRED_FORMAT1(WriteChecker<char>(), value)
 #define CHECK_WRITE_WCHAR(value) \
   EXPECT_PRED_FORMAT1(WriteChecker<wchar_t>(), value)
-
-#ifdef _MSC_VER
-# define vsnprintf vsprintf_s
-#endif
-
-void SPrintf(char *buffer, const char *format, ...) {
-  std::va_list args;
-  va_start(args, format);
-  vsnprintf(buffer, BUFFER_SIZE, format, args);
-  va_end(args);
-}
 
 std::string ReadFile(StringRef filename) {
   std::ifstream out(filename.c_str());
