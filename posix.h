@@ -25,8 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef FMT_POSIX_H
-#define FMT_POSIX_H
+#ifndef FMT_POSIX_H_
+#define FMT_POSIX_H_
 
 #include <errno.h>
 #include <fcntl.h>  // for O_RDONLY
@@ -81,7 +81,7 @@ private:
   int value_;
 
 public:
-  explicit ErrorCode(int value = 0) FMT_NOEXCEPT(true) : value_(value) { }
+  explicit ErrorCode(int value = 0) FMT_NOEXCEPT(true) : value_(value) {}
 
   int get() const FMT_NOEXCEPT(true) { return value_; }
 };
@@ -93,11 +93,11 @@ private:
 
   friend class File;
 
-  explicit BufferedFile(FILE *f) : file_(f) { }
+  explicit BufferedFile(FILE *f) : file_(f) {}
 
 public:
   // Constructs a BufferedFile object which doesn't represent any file.
-  BufferedFile() FMT_NOEXCEPT(true) : file_(0) { }
+  BufferedFile() FMT_NOEXCEPT(true) : file_(0) {}
 
   // Destroys the object closing the file it represents if any.
   ~BufferedFile() FMT_NOEXCEPT(true);
@@ -115,7 +115,7 @@ private:
 
 public:
   // A "move constructor" for moving from a temporary.
-  BufferedFile(Proxy p) FMT_NOEXCEPT(true) : file_(p.file) { }
+  BufferedFile(Proxy p) FMT_NOEXCEPT(true) : file_(p.file) {}
 
   // A "move constructor" for for moving from an lvalue.
   BufferedFile(BufferedFile &f) FMT_NOEXCEPT(true) : file_(f.file_) {
@@ -182,7 +182,7 @@ private:
   int fd_;  // File descriptor.
 
   // Constructs a File object with a given descriptor.
-  explicit File(int fd) : fd_(fd) { }
+  explicit File(int fd) : fd_(fd) {}
 
 public:
   // Possible values for the oflag argument to the constructor.
@@ -193,7 +193,7 @@ public:
   };
 
   // Constructs a File object which doesn't represent any file.
-  File() FMT_NOEXCEPT(true) : fd_(-1) { }
+  File() FMT_NOEXCEPT(true) : fd_(-1) {}
 
   // Opens a file and constructs a File object representing this file.
   File(const char *path, int oflag);
@@ -211,7 +211,7 @@ private:
 
 public:
   // A "move constructor" for moving from a temporary.
-  File(Proxy p) FMT_NOEXCEPT(true) : fd_(p.fd) { }
+  File(Proxy p) FMT_NOEXCEPT(true) : fd_(p.fd) {}
 
   // A "move constructor" for for moving from an lvalue.
   File(File &other) FMT_NOEXCEPT(true) : fd_(other.fd_) {
@@ -293,7 +293,6 @@ public:
   // this File object from the file.
   BufferedFile fdopen(const char *mode);
 };
-
 }
 
 #if !FMT_USE_RVALUE_REFERENCES
@@ -304,4 +303,4 @@ inline fmt::File &move(fmt::File &f) { return f; }
 }
 #endif
 
-#endif  // FMT_POSIX_H
+#endif  // FMT_POSIX_H_
