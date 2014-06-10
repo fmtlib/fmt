@@ -35,7 +35,7 @@
 #include <memory>
 #include <sstream>
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 // Fix MSVC warning about "unsafe" fopen.
 FILE *FOpen(const char *filename, const char *mode) {
   FILE *f = 0;
