@@ -393,7 +393,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
   case 0:
     type = 'g';
     break;
-  case 'e': case 'f': case 'g':
+  case 'e': case 'f': case 'g': case 'a':
     break;
   case 'F':
 #ifdef _MSC_VER
@@ -401,7 +401,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
     type = 'f';
 #endif
     // Fall through.
-  case 'E': case 'G':
+  case 'E': case 'G': case 'A':
     upper = true;
     break;
   default:
@@ -707,17 +707,11 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
       spec.width_ = 0;
       ParseFlags(spec, s, *arg);
 
-      /*
-      if (*s == '#') {
-        if (arg.type > LAST_NUMERIC_TYPE)
-          ReportError(s, "format specifier '#' requires numeric argument");
-        spec.flags_ |= HASH_FLAG;
-        ++s;
-      }*/
-
       // Parse width and zero flag.
-      if (*s < '0' || *s > '9')
+      if (*s < '0' || *s > '9') {
+        // TODO: parse '*' width
         break;
+      }
       spec.width_ = internal::ParseNonnegativeInt(s, error);
     }
     // Fall through.

@@ -210,9 +210,8 @@ TEST(PrintfTest, HashFlag) {
   EXPECT_PRINTF("-42.0000", "%#g", -42.0);
   EXPECT_PRINTF("-42.0000", "%#G", -42.0);
 
-  // TODO
-  //EXPECT_PRINTF("-0x1.5p+5", "%#a", -42.0);
-  //EXPECT_PRINTF("-0x1.5A+5", "%#A", -42.0);
+  EXPECT_PRINTF("0x1.p+4", "%#a", 16.0);
+  EXPECT_PRINTF("0X1.P+4", "%#A", 16.0);
 
   // '#' flag is ignored for non-numeric types.
   EXPECT_PRINTF("x", "%#c", 'x');

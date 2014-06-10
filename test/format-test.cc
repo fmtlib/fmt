@@ -1201,7 +1201,7 @@ TEST(FormatterTest, FormatFloat) {
 }
 
 TEST(FormatterTest, FormatDouble) {
-  CheckUnknownTypes(1.2, "eEfFgG", "double");
+  CheckUnknownTypes(1.2, "eEfFgGaA", "double");
   EXPECT_EQ("0", str(Format("{0:}") << 0.0));
   EXPECT_EQ("0.000000", str(Format("{0:f}") << 0.0));
   EXPECT_EQ("392.65", str(Format("{0:}") << 392.65));
@@ -1215,6 +1215,8 @@ TEST(FormatterTest, FormatDouble) {
   SPrintf(buffer, "%E", 392.65);
   EXPECT_EQ(buffer, str(Format("{0:E}") << 392.65));
   EXPECT_EQ("+0000392.6", str(Format("{0:+010.4g}") << 392.65));
+  EXPECT_EQ("-0x1.5p+5", str(Format("{:a}") << -42.0));
+  EXPECT_EQ("-0X1.5P+5", str(Format("{:A}") << -42.0));
 }
 
 TEST(FormatterTest, FormatNaN) {
