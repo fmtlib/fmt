@@ -29,7 +29,7 @@
 #define FMT_POSIX_H
 
 #include <errno.h>
-#include <fcntl.h>
+#include <fcntl.h>  // for O_RDONLY
 #include <stdio.h>
 
 #include <cstddef>
@@ -189,7 +189,7 @@ public:
   enum {
     RDONLY = FMT_POSIX(O_RDONLY), // Open for reading only.
     WRONLY = FMT_POSIX(O_WRONLY), // Open for writing only.
-    RDWR = FMT_POSIX(O_RDWR)    // Open for reading and writing.
+    RDWR   = FMT_POSIX(O_RDWR)    // Open for reading and writing.
   };
 
   // Constructs a File object which doesn't represent any file.
