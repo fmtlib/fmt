@@ -65,7 +65,7 @@
 # define FMT_HAS_FEATURE(x) 0
 #endif
 
-# ifdef __has_builtin
+#ifdef __has_builtin
 # define FMT_HAS_BUILTIN(x) __has_builtin(x)
 #else
 # define FMT_HAS_BUILTIN(x) 0
