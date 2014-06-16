@@ -267,6 +267,16 @@ TEST(ArrayTest, Append) {
   EXPECT_EQ(15u, array.capacity());
 }
 
+TEST(ArrayTest, AppendAllocatesEnoughStorage) {
+  Array<char, 10> array;
+  const char *test = "abcdefgh";
+  array.resize(10);
+  array.append(test, test + 9);
+  EXPECT_STREQ("test", &array[10]);
+  EXPECT_EQ(19u, array.size());
+  EXPECT_EQ(19u, array.capacity());
+}
+
 TEST(WriterTest, Ctor) {
   Writer w;
   EXPECT_EQ(0u, w.size());
