@@ -1039,6 +1039,7 @@ class BasicWriter {
     const ArgInfo *args_;
     int next_arg_index_;
 
+    unsigned ParseArgIndex(const Char *&s, const char *&error);
     void ParseFlags(FormatSpec &spec, const Char *&s, const ArgInfo &arg);
 
    public:

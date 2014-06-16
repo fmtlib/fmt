@@ -626,6 +626,33 @@ void fmt::BasicWriter<Char>::PrintfParser::ParseFlags(
 }
 
 template <typename Char>
+unsigned fmt::BasicWriter<Char>::PrintfParser::ParseArgIndex(
+    const Char *&s, const char *&error) {
+  Char c = *s;
+  unsigned value = 0;
+  if (c >= '0' && c <= '9') {
+    value = internal::ParseNonnegativeInt(s, error);
+    if (*s == '$') {
+      ++s;
+      if (next_arg_index_ <= 0) {
+        next_arg_index_ = -1;
+        return value - 1;
+      }
+      if (!error)
+        error = "cannot switch from automatic to manual argument indexing";
+    }
+  }
+  if (next_arg_index_ >= 0)
+    return next_arg_index_++;
+  // Don't check if the error has already been set because the argument
+  // index is semantically the first part of the format string, so
+  // indexing errors are reported first even though parsing width
+  // above can cause another error.
+  error = "cannot switch from manual to automatic argument indexing";
+  return value;
+}
+
+template <typename Char>
 void fmt::BasicWriter<Char>::PrintfParser::Format(
     BasicWriter<Char> &writer, BasicStringRef<Char> format,
     std::size_t num_args, const ArgInfo *args) {
@@ -659,37 +686,14 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     // is OK for both cases.
     const char *error = 0;
 
-    unsigned arg_index = 0;
-    bool have_arg_index = false;
     c = *s;
-    if (c >= '0' && c <= '9') {
-      unsigned value = internal::ParseNonnegativeInt(s, error);
-      if (*s != '$') {
-        if (c == '0')
-          spec.fill_ = '0';
-        if (value != 0)
-          spec.width_ = value;
-      } else {
-        ++s;
-        if (next_arg_index_ <= 0) {
-          have_arg_index = true;
-          next_arg_index_ = -1;
-          arg_index = value - 1;
-        } else if (!error) {
-          error = "cannot switch from automatic to manual argument indexing";
-        }
-      }
-    }
-    if (!have_arg_index) {
-      if (next_arg_index_ >= 0) {
-        arg_index = next_arg_index_++;
-      } else {
-        // We don't check if error has already been set because argument
-        // index is semantically the first part of the format string, so
-        // indexing errors are reported first even though parsing width
-        // above can cause another error.
-        error = "cannot switch from manual to automatic argument indexing";
-      }
+    unsigned arg_index = ParseArgIndex(s, error);
+    if (c >= '0' && c <= '9' && s[-1] != '$') { // TODO
+      if (c == '0')
+        spec.fill_ = '0';
+      if (arg_index != 0)
+        spec.width_ = arg_index + 1;
+      arg_index = 0;
     }
 
     const ArgInfo *arg = 0;
@@ -708,11 +712,13 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
       ParseFlags(spec, s, *arg);
 
       // Parse width and zero flag.
-      if (*s < '0' || *s > '9') {
-        // TODO: parse '*' width
+      if (*s >= '0' && *s <= '9') {
+        spec.width_ = internal::ParseNonnegativeInt(s, error);
+      } else if (*s == '*') {
+        ++s;
+        // TODO: parse arg index
+      } else
         break;
-      }
-      spec.width_ = internal::ParseNonnegativeInt(s, error);
     }
     // Fall through.
     default:
