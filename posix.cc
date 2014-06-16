@@ -41,6 +41,10 @@
 # define S_IRUSR _S_IREAD
 # define S_IWUSR _S_IWRITE
 
+# ifdef __MINGW32__
+#  define _SH_DENYNO 0x40
+# endif
+
 #endif  // _WIN32
 
 namespace {

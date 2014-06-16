@@ -43,7 +43,7 @@ using fmt::StringRef;
 
 namespace {
 std::string GetSystemErrorMessage(int error_code) {
-#ifndef _WIN32
+#if defined(__MINGW32__) || !defined(_WIN32)
   return strerror(error_code);
 #else
   enum { BUFFER_SIZE = 200 };

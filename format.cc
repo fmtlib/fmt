@@ -42,6 +42,9 @@
 
 #ifdef _WIN32
 # define WIN32_LEAN_AND_MEAN
+# ifdef __MINGW32__
+#  include <cstring>
+# endif
 # include <windows.h>
 # undef ERROR
 #endif
@@ -228,7 +231,11 @@ int fmt::internal::StrError(
     result = ERANGE;
   buffer = message;
 #elif _WIN32
+# ifdef __MINGW32__
+  strerror(result);
+# else
   result = strerror_s(buffer, buffer_size, error_code);
+# endif
   // If the buffer is full then the message is probably truncated.
   if (result == 0 && std::strlen(buffer) == buffer_size - 1)
     result = ERANGE;

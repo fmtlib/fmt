@@ -61,9 +61,13 @@
 // Compatibility with compilers other than clang.
 #ifdef __has_feature
 # define FMT_HAS_FEATURE(x) __has_feature(x)
-# define FMT_HAS_BUILTIN(x) __has_builtin(x)
 #else
 # define FMT_HAS_FEATURE(x) 0
+#endif
+
+#ifdef __has_builtin
+# define FMT_HAS_BUILTIN(x) __has_builtin(x)
+#else
 # define FMT_HAS_BUILTIN(x) 0
 #endif
 
@@ -311,7 +315,7 @@ template <typename T, std::size_t SIZE>
 void Array<T, SIZE>::append(const T *begin, const T *end) {
   std::ptrdiff_t num_elements = end - begin;
   if (size_ + num_elements > capacity_)
-    Grow(num_elements);
+    Grow(size_ + num_elements);
   std::copy(begin, end, CheckPtr(ptr_, capacity_) + size_);
   size_ += num_elements;
 }
