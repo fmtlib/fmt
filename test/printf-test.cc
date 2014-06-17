@@ -135,6 +135,7 @@ TEST(PrintfTest, DefaultAlignRight) {
 
 TEST(PrintfTest, Width) {
   EXPECT_PRINTF("  abc", "%5s", "abc");
+  EXPECT_EQ("   42", str(fmt::sprintf("%*d", 5, 42)));
 
   // Width cannot be specified twice.
   EXPECT_THROW_MSG(fmt::sprintf("%5-5d", 42), FormatError,

@@ -632,22 +632,17 @@ void fmt::BasicWriter<Char>::PrintfParser::ParseFlags(
   }
 }
 
+// FIXME: this doesnt' depend on template argument
 template <typename Char>
-unsigned fmt::BasicWriter<Char>::PrintfParser::ParseArgIndex(
-    const Char *&s, const char *&error) {
-  Char c = *s;
-  unsigned value = 0;
-  if (c >= '0' && c <= '9') {
-    value = internal::ParseNonnegativeInt(s, error);
-    if (*s == '$') {
-      ++s;
-      if (next_arg_index_ <= 0) {
-        next_arg_index_ = -1;
-        return value - 1;
-      }
-      if (!error)
-        error = "cannot switch from automatic to manual argument indexing";
+unsigned fmt::BasicWriter<Char>::PrintfParser::HandleArgIndex(
+    unsigned arg_index, const char *&error) {
+  if (arg_index != UINT_MAX) {
+    if (next_arg_index_ <= 0) {
+      next_arg_index_ = -1;
+      return arg_index - 1;
     }
+    if (!error)
+      error = "cannot switch from automatic to manual argument indexing";
   }
   if (next_arg_index_ >= 0)
     return next_arg_index_++;
@@ -656,7 +651,7 @@ unsigned fmt::BasicWriter<Char>::PrintfParser::ParseArgIndex(
   // indexing errors are reported first even though parsing width
   // above can cause another error.
   error = "cannot switch from manual to automatic argument indexing";
-  return value;
+  return 0;
 }
 
 template <typename Char>
@@ -694,15 +689,27 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     const char *error = 0;
 
     c = *s;
-    unsigned arg_index = ParseArgIndex(s, error);
-    if (c >= '0' && c <= '9' && s[-1] != '$') { // TODO
-      if (c == '0')
-        spec.fill_ = '0';
-      if (arg_index != 0)
-        spec.width_ = arg_index + 1;
-      arg_index = 0;
+    unsigned arg_index = UINT_MAX;
+    if (c >= '0' && c <= '9') {
+      unsigned value = internal::ParseNonnegativeInt(s, error);
+      if (*s != '$') {
+        if (c == '0')
+          spec.fill_ = '0';
+        if (value != 0)
+          spec.width_ = value;
+      } else {
+        ++s;
+        arg_index = value;
+      }
+    } else if (c == '*') {
+      ++s;
+      const ArgInfo &arg = args_[HandleArgIndex(UINT_MAX, error)];
+      // TODO: check if arg is integer
+      spec.width_ = GetIntValue(arg);
     }
+    arg_index = HandleArgIndex(arg_index, error);
 
+    // TODO: move to HandleArgIndex
     const ArgInfo *arg = 0;
     if (arg_index < num_args) {
       arg = &args_[arg_index];
