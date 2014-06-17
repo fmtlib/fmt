@@ -257,7 +257,7 @@ TEST(ArrayTest, Append) {
   Array<char, 10> array;
   const char *test = "test";
   array.append(test, test + 5);
-  EXPECT_STREQ("test", &array[0]);
+  EXPECT_STREQ(test, &array[0]);
   EXPECT_EQ(5u, array.size());
   array.resize(10);
   array.append(test, test + 2);
@@ -272,7 +272,7 @@ TEST(ArrayTest, AppendAllocatesEnoughStorage) {
   const char *test = "abcdefgh";
   array.resize(10);
   array.append(test, test + 9);
-  EXPECT_STREQ("test", &array[10]);
+  EXPECT_STREQ(test, &array[10]);
   EXPECT_EQ(19u, array.size());
   EXPECT_EQ(19u, array.capacity());
 }
