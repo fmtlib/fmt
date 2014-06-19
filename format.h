@@ -884,7 +884,9 @@ class BasicWriter {
 
   enum Type {
     // Numeric types should go first.
-    INT, UINT, LONG, ULONG, LONG_LONG, ULONG_LONG, DOUBLE, LONG_DOUBLE,
+    INT, UINT, LONG, ULONG, LONG_LONG, ULONG_LONG,
+    LAST_INTEGER_TYPE = ULONG_LONG,
+    DOUBLE, LONG_DOUBLE,
     LAST_NUMERIC_TYPE = LONG_DOUBLE,
     CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
@@ -1043,8 +1045,13 @@ class BasicWriter {
     const ArgInfo *args_;
     int next_arg_index_;
 
-    unsigned HandleArgIndex(unsigned arg_index, const char *&error);
-    void ParseFlags(FormatSpec &spec, const Char *&s, const ArgInfo &arg);
+    void ParseFlags(FormatSpec &spec, const Char *&s);
+
+    // Parses argument index, flags and width and returns the parsed
+    // argument index.
+    unsigned ParseHeader(const Char *&s, FormatSpec &spec, const char *&error);
+
+    const ArgInfo &HandleArgIndex(unsigned arg_index, const char *&error);
 
    public:
     void Format(BasicWriter<Char> &writer,

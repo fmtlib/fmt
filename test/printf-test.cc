@@ -96,7 +96,7 @@ TEST(PrintfTest, SwitchArgIndexing) {
   EXPECT_THROW_MSG(fmt::sprintf("%1$d%", 1, 2),
       FormatError, "invalid format string");
   EXPECT_THROW_MSG(fmt::sprintf(str(Format("%1$d%{}d", BIG_NUM)), 1, 2),
-      FormatError, "cannot switch from manual to automatic argument indexing");
+      FormatError, "number is too big in format");
   EXPECT_THROW_MSG(fmt::sprintf("%1$d%d", 1, 2),
       FormatError, "cannot switch from manual to automatic argument indexing");
 
@@ -109,9 +109,9 @@ TEST(PrintfTest, SwitchArgIndexing) {
 
   // Indexing errors override width errors.
   EXPECT_THROW_MSG(fmt::sprintf(str(Format("%d%1${}d", BIG_NUM)), 1, 2),
-      FormatError, "cannot switch from automatic to manual argument indexing");
+      FormatError, "number is too big in format");
   EXPECT_THROW_MSG(fmt::sprintf(str(Format("%1$d%{}d", BIG_NUM)), 1, 2),
-      FormatError, "cannot switch from manual to automatic argument indexing");
+      FormatError, "number is too big in format");
 }
 
 TEST(PrintfTest, InvalidArgIndex) {
@@ -135,7 +135,6 @@ TEST(PrintfTest, DefaultAlignRight) {
 
 TEST(PrintfTest, Width) {
   EXPECT_PRINTF("  abc", "%5s", "abc");
-  EXPECT_EQ("   42", str(fmt::sprintf("%*d", 5, 42)));
 
   // Width cannot be specified twice.
   EXPECT_THROW_MSG(fmt::sprintf("%5-5d", 42), FormatError,
@@ -145,6 +144,14 @@ TEST(PrintfTest, Width) {
       FormatError, "number is too big in format");
   EXPECT_THROW_MSG(fmt::sprintf(str(Format("%1${}d", BIG_NUM)), 42),
       FormatError, "number is too big in format");
+}
+
+TEST(PrintfTest, DynamicWidth) {
+  EXPECT_EQ("   42", str(fmt::sprintf("%*d", 5, 42)));
+  EXPECT_THROW_MSG(fmt::sprintf("%*d", 5.0, 42), FormatError,
+      "width is not integer");
+  EXPECT_THROW_MSG(fmt::sprintf("%*d"), FormatError,
+      "argument index is out of range in format");
 }
 
 TEST(PrintfTest, ZeroFlag) {

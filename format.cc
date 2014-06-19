@@ -605,7 +605,7 @@ void fmt::BasicWriter<Char>::FormatParser::CheckSign(
 
 template <typename Char>
 void fmt::BasicWriter<Char>::PrintfParser::ParseFlags(
-    FormatSpec &spec, const Char *&s, const ArgInfo &arg) {
+    FormatSpec &spec, const Char *&s) {
   for (;;) {
     switch (*s++) {
       case '-':
@@ -621,9 +621,7 @@ void fmt::BasicWriter<Char>::PrintfParser::ParseFlags(
         spec.flags_ |= SIGN_FLAG;
         break;
       case '#':
-        // TODO: handle floating-point args
-        if (GetIntValue(arg) != 0)
-           spec.flags_ |= HASH_FLAG;
+        spec.flags_ |= HASH_FLAG;
         break;
       default:
         --s;
@@ -632,26 +630,66 @@ void fmt::BasicWriter<Char>::PrintfParser::ParseFlags(
   }
 }
 
+template <typename Char>
+unsigned fmt::BasicWriter<Char>::PrintfParser::ParseHeader(
+  const Char *&s, FormatSpec &spec, const char *&error) {
+  unsigned arg_index = UINT_MAX;
+  Char c = *s;
+  if (c >= '0' && c <= '9') {
+    // Parse an argument index (if followed by '$') or a width possibly
+    // preceded with a '0' flag.
+    unsigned value = internal::ParseNonnegativeInt(s, error);
+    if (*s == '$') {  // value is an argument index
+      ++s;
+      arg_index = value;
+    } else {
+      if (c == '0')
+        spec.fill_ = '0';
+      if (value != 0) {
+        // Nonzero value means that we parsed width and don't need to
+        // parse it or flags again, so return now.
+        spec.width_ = value;
+        return arg_index;
+      }
+    }
+  }
+  // Parse flags and width.
+  ParseFlags(spec, s);
+  if (*s >= '0' && *s <= '9') {
+    spec.width_ = internal::ParseNonnegativeInt(s, error);
+  } else if (*s == '*') {
+    ++s;
+    const ArgInfo &arg = HandleArgIndex(UINT_MAX, error);
+    if (arg.type <= LAST_INTEGER_TYPE)
+      spec.width_ = GetIntValue(arg);
+    else if (!error)
+      error = "width is not integer";
+  }
+  return arg_index;
+}
+
 // FIXME: this doesnt' depend on template argument
 template <typename Char>
-unsigned fmt::BasicWriter<Char>::PrintfParser::HandleArgIndex(
+const typename fmt::BasicWriter<Char>::ArgInfo
+  &fmt::BasicWriter<Char>::PrintfParser::HandleArgIndex(
     unsigned arg_index, const char *&error) {
   if (arg_index != UINT_MAX) {
     if (next_arg_index_ <= 0) {
       next_arg_index_ = -1;
-      return arg_index - 1;
-    }
-    if (!error)
+      --arg_index;
+    } else if (!error) {
       error = "cannot switch from automatic to manual argument indexing";
+    }
+  } else if (next_arg_index_ >= 0) {
+    arg_index = next_arg_index_++;
+  } else if (!error) {
+    error = "cannot switch from manual to automatic argument indexing";
   }
-  if (next_arg_index_ >= 0)
-    return next_arg_index_++;
-  // Don't check if the error has already been set because the argument
-  // index is semantically the first part of the format string, so
-  // indexing errors are reported first even though parsing width
-  // above can cause another error.
-  error = "cannot switch from manual to automatic argument indexing";
-  return 0;
+  if (arg_index < num_args_)
+    return args_[arg_index];
+  if (!error)
+    error = "argument index is out of range in format";
+  return DUMMY_ARG;
 }
 
 template <typename Char>
@@ -673,7 +711,7 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     }
     writer.buffer_.append(start, s - 1);
 
-    FormatSpec spec(UINT_MAX);
+    FormatSpec spec;
     spec.align_ = ALIGN_RIGHT;
 
     // Reporting errors is delayed till the format specification is
@@ -689,63 +727,18 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     const char *error = 0;
 
     c = *s;
-    unsigned arg_index = UINT_MAX;
-    if (c >= '0' && c <= '9') {
-      unsigned value = internal::ParseNonnegativeInt(s, error);
-      if (*s != '$') {
-        if (c == '0')
-          spec.fill_ = '0';
-        if (value != 0)
-          spec.width_ = value;
-      } else {
-        ++s;
-        arg_index = value;
-      }
-    } else if (c == '*') {
-      ++s;
-      const ArgInfo &arg = args_[HandleArgIndex(UINT_MAX, error)];
-      // TODO: check if arg is integer
-      spec.width_ = GetIntValue(arg);
-    }
-    arg_index = HandleArgIndex(arg_index, error);
-
-    // TODO: move to HandleArgIndex
-    const ArgInfo *arg = 0;
-    if (arg_index < num_args) {
-      arg = &args_[arg_index];
-    } else {
-      arg = &DUMMY_ARG;
-      if (!error)
-        error = "argument index is out of range in format";
-    }
-
-    int precision = -1;
-    switch (spec.width_) {
-    case UINT_MAX: {
-      spec.width_ = 0;
-      ParseFlags(spec, s, *arg);
-
-      // Parse width and zero flag.
-      if (*s >= '0' && *s <= '9') {
-        spec.width_ = internal::ParseNonnegativeInt(s, error);
-      } else if (*s == '*') {
-        ++s;
-        // TODO: parse arg index
-      } else
-        break;
-    }
-    // Fall through.
-    default:
-      if (spec.fill_ == '0') {
-        if (arg->type <= LAST_NUMERIC_TYPE)
-          spec.align_ = ALIGN_NUMERIC;
-        else
-          spec.fill_ = ' ';  // Ignore '0' flag for non-numeric types.
-      }
-      break;
+    const ArgInfo &arg = HandleArgIndex(ParseHeader(s, spec, error), error);
+    if (spec.hash_flag() && GetIntValue(arg) == 0)
+      spec.flags_ &= ~HASH_FLAG;
+    if (spec.fill_ == '0') {
+      if (arg.type <= LAST_NUMERIC_TYPE)
+        spec.align_ = ALIGN_NUMERIC;
+      else
+        spec.fill_ = ' ';  // Ignore '0' flag for non-numeric types.
     }
 
     // Parse precision.
+    int precision = -1;
     /*if (*s == '.') {
       ++s;
       precision = 0;
@@ -812,30 +805,30 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     start = s;
 
     // Format argument.
-    switch (arg->type) {
+    switch (arg.type) {
     case INT:
-      writer.FormatInt(arg->int_value, spec);
+      writer.FormatInt(arg.int_value, spec);
       break;
     case UINT:
-      writer.FormatInt(arg->uint_value, spec);
+      writer.FormatInt(arg.uint_value, spec);
       break;
     case LONG:
-      writer.FormatInt(arg->long_value, spec);
+      writer.FormatInt(arg.long_value, spec);
       break;
     case ULONG:
-      writer.FormatInt(arg->ulong_value, spec);
+      writer.FormatInt(arg.ulong_value, spec);
       break;
     case LONG_LONG:
-      writer.FormatInt(arg->long_long_value, spec);
+      writer.FormatInt(arg.long_long_value, spec);
       break;
     case ULONG_LONG:
-      writer.FormatInt(arg->ulong_long_value, spec);
+      writer.FormatInt(arg.ulong_long_value, spec);
       break;
     case DOUBLE:
-      writer.FormatDouble(arg->double_value, spec, precision);
+      writer.FormatDouble(arg.double_value, spec, precision);
       break;
     case LONG_DOUBLE:
-      writer.FormatDouble(arg->long_double_value, spec, precision);
+      writer.FormatDouble(arg.long_double_value, spec, precision);
       break;
     case CHAR: {
       if (spec.type_ && spec.type_ != 'c')
@@ -856,14 +849,14 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
       } else {
         out = writer.GrowBuffer(1);
       }
-      *out = static_cast<Char>(arg->int_value);
+      *out = static_cast<Char>(arg.int_value);
       break;
     }
     case STRING: {
       if (spec.type_ && spec.type_ != 's')
         internal::ReportUnknownType(spec.type_, "string");
-      const Char *str = arg->string.value;
-      std::size_t size = arg->string.size;
+      const Char *str = arg.string.value;
+      std::size_t size = arg.string.size;
       if (size == 0) {
         if (!str)
           throw FormatError("string pointer is null");
@@ -878,12 +871,12 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
         internal::ReportUnknownType(spec.type_, "pointer");
       spec.flags_= HASH_FLAG;
       spec.type_ = 'x';
-      writer.FormatInt(reinterpret_cast<uintptr_t>(arg->pointer_value), spec);
+      writer.FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
       break;
     case CUSTOM:
       if (spec.type_)
         internal::ReportUnknownType(spec.type_, "object");
-      arg->custom.format(writer, arg->custom.value, spec);
+      arg.custom.format(writer, arg.custom.value, spec);
       break;
     default:
       assert(false);
