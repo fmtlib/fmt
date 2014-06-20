@@ -859,7 +859,7 @@ class BasicWriter {
   }
 
   // Prepare a buffer for integer formatting.
-  CharPtr PrepareFilledBuffer(unsigned num_digits,
+  CharPtr PrepareBufferForInt(unsigned num_digits,
       const EmptySpec &, const char *prefix, unsigned prefix_size) {
     unsigned size = prefix_size + num_digits;
     CharPtr p = GrowBuffer(size);
@@ -868,7 +868,7 @@ class BasicWriter {
   }
 
   template <typename Spec>
-  CharPtr PrepareFilledBuffer(unsigned num_digits,
+  CharPtr PrepareBufferForInt(unsigned num_digits,
     const Spec &spec, const char *prefix, unsigned prefix_size);
 
   // Formats an integer.
@@ -1306,7 +1306,7 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::FormatString(
 template <typename Char>
 template <typename Spec>
 typename fmt::BasicWriter<Char>::CharPtr
-  fmt::BasicWriter<Char>::PrepareFilledBuffer(
+  fmt::BasicWriter<Char>::PrepareBufferForInt(
     unsigned num_digits, const Spec &spec,
     const char *prefix, unsigned prefix_size) {
   unsigned width = spec.width();
@@ -1323,7 +1323,7 @@ typename fmt::BasicWriter<Char>::CharPtr
       std::fill(p, p + size, spec.fill());
       // TODO: take alignment into account
     }
-    return PrepareFilledBuffer(num_digits,
+    return PrepareBufferForInt(num_digits,
       AlignSpec(number_size, '0', ALIGN_NUMERIC), prefix, prefix_size);
   }
   unsigned size = prefix_size + num_digits;
@@ -1378,7 +1378,7 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
   switch (spec.type()) {
   case 0: case 'd': {
     unsigned num_digits = internal::CountDigits(abs_value);
-    CharPtr p = PrepareFilledBuffer(
+    CharPtr p = PrepareBufferForInt(
       num_digits, spec, prefix, prefix_size) + 1 - num_digits;
     internal::FormatDecimal(GetBase(p), abs_value, num_digits);
     break;
@@ -1393,7 +1393,7 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
     do {
       ++num_digits;
     } while ((n >>= 4) != 0);
-    Char *p = GetBase(PrepareFilledBuffer(
+    Char *p = GetBase(PrepareBufferForInt(
       num_digits, spec, prefix, prefix_size));
     n = abs_value;
     const char *digits = spec.type() == 'x' ?
@@ -1413,7 +1413,7 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
     do {
       ++num_digits;
     } while ((n >>= 1) != 0);
-    Char *p = GetBase(PrepareFilledBuffer(num_digits, spec, prefix, prefix_size));
+    Char *p = GetBase(PrepareBufferForInt(num_digits, spec, prefix, prefix_size));
     n = abs_value;
     do {
       *p-- = '0' + (n & 1);
@@ -1428,7 +1428,7 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
     do {
       ++num_digits;
     } while ((n >>= 3) != 0);
-    Char *p = GetBase(PrepareFilledBuffer(
+    Char *p = GetBase(PrepareBufferForInt(
       num_digits, spec, prefix, prefix_size));
     n = abs_value;
     do {
