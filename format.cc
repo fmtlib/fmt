@@ -351,45 +351,6 @@ typename fmt::BasicWriter<Char>::CharPtr
 }
 
 template <typename Char>
-typename fmt::BasicWriter<Char>::CharPtr
-  fmt::BasicWriter<Char>::PrepareFilledBuffer(unsigned num_digits,
-    const AlignSpec &spec, const char *prefix, unsigned prefix_size) {
-  unsigned size = prefix_size + num_digits;
-  unsigned width = spec.width();
-  if (width <= size) {
-    CharPtr p = GrowBuffer(size);
-    std::copy(prefix, prefix + prefix_size, p);
-    return p + size - 1;
-  }
-  CharPtr p = GrowBuffer(width);
-  CharPtr end = p + width;
-  Alignment align = spec.align();
-  // TODO: error if fill is not convertible to Char
-  Char fill = static_cast<Char>(spec.fill());
-  if (align == ALIGN_LEFT) {
-    std::copy(prefix, prefix + prefix_size, p);
-    p += size;
-    std::fill(p, end, fill);
-  } else if (align == ALIGN_CENTER) {
-    p = FillPadding(p, width, size, fill);
-    std::copy(prefix, prefix + prefix_size, p);
-    p += size;
-  } else {
-    if (align == ALIGN_NUMERIC) {
-      if (prefix_size != 0) {
-        p = std::copy(prefix, prefix + prefix_size, p);
-        size -= prefix_size;
-      }
-    } else {
-      std::copy(prefix, prefix + prefix_size, end - size);
-    }
-    std::fill(p, end - size, fill);
-    p = end;
-  }
-  return p - 1;
-}
-
-template <typename Char>
 template <typename T>
 void fmt::BasicWriter<Char>::FormatDouble(
     T value, const FormatSpec &spec, int precision) {
@@ -637,7 +598,7 @@ unsigned fmt::BasicWriter<Char>::PrintfParser::ParseHeader(
   Char c = *s;
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
-    // preceded with a '0' flag.
+    // preceded with '0' flag(s).
     unsigned value = internal::ParseNonnegativeInt(s, error);
     if (*s == '$') {  // value is an argument index
       ++s;
@@ -668,7 +629,7 @@ unsigned fmt::BasicWriter<Char>::PrintfParser::ParseHeader(
   return arg_index;
 }
 
-// FIXME: this doesnt' depend on template argument
+// TODO: move to a base class that doesn't depend on template argument
 template <typename Char>
 const typename fmt::BasicWriter<Char>::ArgInfo
   &fmt::BasicWriter<Char>::PrintfParser::HandleArgIndex(
@@ -738,16 +699,11 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     }
 
     // Parse precision.
-    int precision = -1;
-    /*if (*s == '.') {
+    if (*s == '.') {
       ++s;
-      precision = 0;
-      if ('0' <= *s && *s <= '9') {
-        unsigned value = ParseNonnegativeInt(s);
-        if (value > INT_MAX)
-          ReportError(s, "number is too big in format");
-        precision = value;
-      } else if (*s == '{') {
+      if ('0' <= *s && *s <= '9')
+        spec.precision_ = internal::ParseNonnegativeInt(s, error);
+      /*else if (*s == '*') {
         ++s;
         ++num_open_braces_;
         const ArgInfo &precision_arg = ParseArgIndex(s);
@@ -792,8 +748,8 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
       if (arg.type != DOUBLE && arg.type != LONG_DOUBLE) {
         ReportError(s,
             "precision specifier requires floating-point argument");
-      }
-    }*/
+      }*/
+    }
 
     // Parse type.
     if (!*s)
@@ -825,10 +781,10 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
       writer.FormatInt(arg.ulong_long_value, spec);
       break;
     case DOUBLE:
-      writer.FormatDouble(arg.double_value, spec, precision);
+      writer.FormatDouble(arg.double_value, spec, spec.precision_);
       break;
     case LONG_DOUBLE:
-      writer.FormatDouble(arg.long_double_value, spec, precision);
+      writer.FormatDouble(arg.long_double_value, spec, spec.precision_);
       break;
     case CHAR: {
       if (spec.type_ && spec.type_ != 'c')
@@ -1175,10 +1131,6 @@ template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::FillPadding(CharPtr buffer,
     unsigned total_size, std::size_t content_size, wchar_t fill);
 
-template fmt::BasicWriter<char>::CharPtr
-  fmt::BasicWriter<char>::PrepareFilledBuffer(unsigned num_digits,
-    const AlignSpec &spec, const char *prefix, unsigned prefix_size);
-
 template void fmt::BasicWriter<char>::FormatParser::Format(
   BasicWriter<char> &writer, BasicStringRef<char> format,
   std::size_t num_args, const ArgInfo *args);
@@ -1192,10 +1144,6 @@ template void fmt::BasicWriter<char>::PrintfParser::Format(
 template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::FillPadding(CharPtr buffer,
     unsigned total_size, std::size_t content_size, wchar_t fill);
-
-template fmt::BasicWriter<wchar_t>::CharPtr
-  fmt::BasicWriter<wchar_t>::PrepareFilledBuffer(unsigned num_digits,
-    const AlignSpec &spec, const char *prefix, unsigned prefix_size);
 
 template void fmt::BasicWriter<wchar_t>::FormatParser::Format(
     BasicWriter<wchar_t> &writer, BasicStringRef<wchar_t> format,

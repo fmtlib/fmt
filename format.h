@@ -586,6 +586,7 @@ template <char TYPE>
 struct TypeSpec : EmptySpec {
   Alignment align() const { return ALIGN_DEFAULT; }
   unsigned width() const { return 0; }
+  int precision() const { return -1; }
 
   bool sign_flag() const { return false; }
   bool plus_flag() const { return false; }
@@ -616,6 +617,8 @@ struct AlignSpec : WidthSpec {
   : WidthSpec(width, fill), align_(align) {}
 
   Alignment align() const { return align_; }
+
+  int precision() const { return -1; }
 };
 
 // An alignment and type specifier.
@@ -633,14 +636,18 @@ struct AlignTypeSpec : AlignSpec {
 // A full format specifier.
 struct FormatSpec : AlignSpec {
   unsigned flags_;
+  int precision_;
   char type_;
 
-  FormatSpec(unsigned width = 0, char type = 0, wchar_t fill = ' ')
-  : AlignSpec(width, fill), flags_(0), type_(type) {}
+  FormatSpec(
+    unsigned width = 0, char type = 0, wchar_t fill = ' ')
+  : AlignSpec(width, fill), flags_(0), precision_(-1), type_(type) {}
 
   bool sign_flag() const { return (flags_ & SIGN_FLAG) != 0; }
   bool plus_flag() const { return (flags_ & PLUS_FLAG) != 0; }
   bool hash_flag() const { return (flags_ & HASH_FLAG) != 0; }
+
+  int precision() const { return precision_; }
 
   char type() const { return type_; }
 };
@@ -860,14 +867,16 @@ class BasicWriter {
     return p + size - 1;
   }
 
+  template <typename Spec>
   CharPtr PrepareFilledBuffer(unsigned num_digits,
-    const AlignSpec &spec, const char *prefix, unsigned prefix_size);
+    const Spec &spec, const char *prefix, unsigned prefix_size);
 
   // Formats an integer.
   template <typename T, typename Spec>
   void FormatInt(T value, const Spec &spec);
 
   // Formats a floating-point number (double or long double).
+  // TODO: use precision from spec
   template <typename T>
   void FormatDouble(T value, const FormatSpec &spec, int precision);
 
@@ -1292,6 +1301,52 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::FormatString(
   }
   std::copy(s, s + size, out);
   return out;
+}
+
+template <typename Char>
+template <typename Spec>
+typename fmt::BasicWriter<Char>::CharPtr
+fmt::BasicWriter<Char>::PrepareFilledBuffer(unsigned num_digits,
+  const Spec &spec, const char *prefix, unsigned prefix_size) {
+  if (spec.precision() >= 0) {
+    // TODO: fill up to width if necessary
+    return PrepareFilledBuffer(num_digits,
+      AlignSpec(spec.precision() + prefix_size, '0', ALIGN_NUMERIC),
+      prefix, prefix_size);
+  }
+  unsigned size = prefix_size + num_digits;
+  unsigned width = spec.width();
+  if (width <= size) {
+    CharPtr p = GrowBuffer(size);
+    std::copy(prefix, prefix + prefix_size, p);
+    return p + size - 1;
+  }
+  CharPtr p = GrowBuffer(width);
+  CharPtr end = p + width;
+  Alignment align = spec.align();
+  // TODO: error if fill is not convertible to Char
+  Char fill = static_cast<Char>(spec.fill());
+  if (align == ALIGN_LEFT) {
+    std::copy(prefix, prefix + prefix_size, p);
+    p += size;
+    std::fill(p, end, fill);
+  } else if (align == ALIGN_CENTER) {
+    p = FillPadding(p, width, size, fill);
+    std::copy(prefix, prefix + prefix_size, p);
+    p += size;
+  } else {
+    if (align == ALIGN_NUMERIC) {
+      if (prefix_size != 0) {
+        p = std::copy(prefix, prefix + prefix_size, p);
+        size -= prefix_size;
+      }
+    } else {
+      std::copy(prefix, prefix + prefix_size, end - size);
+    }
+    std::fill(p, end - size, fill);
+    p = end;
+  }
+  return p - 1;
 }
 
 template <typename Char>

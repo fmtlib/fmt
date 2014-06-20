@@ -133,27 +133,6 @@ TEST(PrintfTest, DefaultAlignRight) {
   EXPECT_PRINTF("  abc", "%5s", "abc");
 }
 
-TEST(PrintfTest, Width) {
-  EXPECT_PRINTF("  abc", "%5s", "abc");
-
-  // Width cannot be specified twice.
-  EXPECT_THROW_MSG(fmt::sprintf("%5-5d", 42), FormatError,
-      "unknown format code '-' for integer");
-
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%{}d", BIG_NUM)), 42),
-      FormatError, "number is too big in format");
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%1${}d", BIG_NUM)), 42),
-      FormatError, "number is too big in format");
-}
-
-TEST(PrintfTest, DynamicWidth) {
-  EXPECT_EQ("   42", str(fmt::sprintf("%*d", 5, 42)));
-  EXPECT_THROW_MSG(fmt::sprintf("%*d", 5.0, 42), FormatError,
-      "width is not integer");
-  EXPECT_THROW_MSG(fmt::sprintf("%*d"), FormatError,
-      "argument index is out of range in format");
-}
-
 TEST(PrintfTest, ZeroFlag) {
   EXPECT_PRINTF("00042", "%05d", 42);
   EXPECT_PRINTF("-0042", "%05d", -42);
@@ -227,6 +206,31 @@ TEST(PrintfTest, HashFlag) {
   EXPECT_PRINTF("x", "%#c", 'x');
 }
 
-// TODO: test '*' width, precision, length and type specifier
+TEST(PrintfTest, Width) {
+  EXPECT_PRINTF("  abc", "%5s", "abc");
+
+  // Width cannot be specified twice.
+  EXPECT_THROW_MSG(fmt::sprintf("%5-5d", 42), FormatError,
+      "unknown format code '-' for integer");
+
+  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%{}d", BIG_NUM)), 42),
+      FormatError, "number is too big in format");
+  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%1${}d", BIG_NUM)), 42),
+      FormatError, "number is too big in format");
+}
+
+TEST(PrintfTest, DynamicWidth) {
+  EXPECT_EQ("   42", str(fmt::sprintf("%*d", 5, 42)));
+  EXPECT_THROW_MSG(fmt::sprintf("%*d", 5.0, 42), FormatError,
+      "width is not integer");
+  EXPECT_THROW_MSG(fmt::sprintf("%*d"), FormatError,
+      "argument index is out of range in format");
+}
+
+TEST(PrintfTest, Precision) {
+  EXPECT_PRINTF("00042", "%.5d", 42);
+}
+
+// TODO: test precision, length and type specifier
 
 #endif
