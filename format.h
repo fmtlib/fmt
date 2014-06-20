@@ -1306,16 +1306,27 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::FormatString(
 template <typename Char>
 template <typename Spec>
 typename fmt::BasicWriter<Char>::CharPtr
-fmt::BasicWriter<Char>::PrepareFilledBuffer(unsigned num_digits,
-  const Spec &spec, const char *prefix, unsigned prefix_size) {
-  if (spec.precision() >= 0) {
-    // TODO: fill up to width if necessary
+  fmt::BasicWriter<Char>::PrepareFilledBuffer(
+    unsigned num_digits, const Spec &spec,
+    const char *prefix, unsigned prefix_size) {
+  unsigned width = spec.width();
+  if (spec.precision() > static_cast<int>(num_digits)) {
+    // Octal prefix '0' is counted as a digit, so ignore it if precision
+    // is specified.
+    if (prefix_size == 1)
+      prefix_size = 0;
+    unsigned number_size = prefix_size + spec.precision();
+    if (number_size < width) {
+      buffer_.reserve(width);
+      unsigned size = width - number_size;
+      CharPtr p = GrowBuffer(size);
+      std::fill(p, p + size, spec.fill());
+      // TODO: take alignment into account
+    }
     return PrepareFilledBuffer(num_digits,
-      AlignSpec(spec.precision() + prefix_size, '0', ALIGN_NUMERIC),
-      prefix, prefix_size);
+      AlignSpec(number_size, '0', ALIGN_NUMERIC), prefix, prefix_size);
   }
   unsigned size = prefix_size + num_digits;
-  unsigned width = spec.width();
   if (width <= size) {
     CharPtr p = GrowBuffer(size);
     std::copy(prefix, prefix + prefix_size, p);
