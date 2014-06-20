@@ -229,6 +229,7 @@ TEST(PrintfTest, DynamicWidth) {
 
 TEST(PrintfTest, Precision) {
   EXPECT_PRINTF("00042", "%.5d", 42);
+  EXPECT_PRINTF("-00042", "%.5d", -42);
   EXPECT_PRINTF("00042", "%.5x", 0x42);
   EXPECT_PRINTF("0x00042", "%#.5x", 0x42);
   EXPECT_PRINTF("00042", "%.5o", 042);

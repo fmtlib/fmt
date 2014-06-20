@@ -1313,8 +1313,8 @@ typename fmt::BasicWriter<Char>::CharPtr
   if (spec.precision() > static_cast<int>(num_digits)) {
     // Octal prefix '0' is counted as a digit, so ignore it if precision
     // is specified.
-    if (prefix_size == 1)
-      prefix_size = 0;
+    if (prefix_size > 0 && prefix[prefix_size - 1] == '0')
+      --prefix_size;
     unsigned number_size = prefix_size + spec.precision();
     if (number_size < width) {
       buffer_.reserve(width);
