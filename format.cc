@@ -111,7 +111,7 @@ void ReportError(FormatFunc func,
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
   try {
     fmt::Writer full_message;
-    func(full_message, error_code, message); // TODO: this may throw?
+    func(full_message, error_code, message); // TODO: make sure this doesn't throw
     std::fwrite(full_message.c_str(), full_message.size(), 1, stderr);
     std::fputc('\n', stderr);
   } catch (...) {}
@@ -352,8 +352,7 @@ typename fmt::BasicWriter<Char>::CharPtr
 
 template <typename Char>
 template <typename T>
-void fmt::BasicWriter<Char>::FormatDouble(
-    T value, const FormatSpec &spec, int precision) {
+void fmt::BasicWriter<Char>::FormatDouble(T value, const FormatSpec &spec) {
   // Check type.
   char type = spec.type();
   bool upper = false;
@@ -442,7 +441,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
     if (width != 0)
       *format_ptr++ = '*';
   }
-  if (precision >= 0) {
+  if (spec.precision() >= 0) {
     *format_ptr++ = '.';
     *format_ptr++ = '*';
   }
@@ -466,7 +465,7 @@ void fmt::BasicWriter<Char>::FormatDouble(
 #endif
     Char *start = &buffer_[offset];
     int n = internal::CharTraits<Char>::FormatFloat(
-        start, size, format, width_for_sprintf, precision, value);
+        start, size, format, width_for_sprintf, spec.precision(), value);
     if (n >= 0 && offset + n < buffer_.capacity()) {
       if (sign) {
         if ((spec.align() != ALIGN_RIGHT && spec.align() != ALIGN_DEFAULT) ||
@@ -781,10 +780,10 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
       writer.FormatInt(arg.ulong_long_value, spec);
       break;
     case DOUBLE:
-      writer.FormatDouble(arg.double_value, spec, spec.precision_);
+      writer.FormatDouble(arg.double_value, spec);
       break;
     case LONG_DOUBLE:
-      writer.FormatDouble(arg.long_double_value, spec, spec.precision_);
+      writer.FormatDouble(arg.long_double_value, spec);
       break;
     case CHAR: {
       if (spec.type_ && spec.type_ != 'c')
@@ -868,7 +867,6 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
     const ArgInfo &arg = ParseArgIndex(s);
 
     FormatSpec spec;
-    int precision = -1;
     if (*s == ':') {
       ++s;
 
@@ -946,9 +944,9 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
       // Parse precision.
       if (*s == '.') {
         ++s;
-        precision = 0;
+        spec.precision_ = 0;
         if ('0' <= *s && *s <= '9') {
-          precision = internal::ParseNonnegativeInt(s, error);
+          spec.precision_ = internal::ParseNonnegativeInt(s, error);
           if (error)
             report_error_(s, error);
         } else if (*s == '{') {
@@ -986,7 +984,7 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
           }
           if (value > INT_MAX)
             report_error_(s, "number is too big in format");
-          precision = static_cast<int>(value);
+          spec.precision_ = static_cast<int>(value);
           if (*s++ != '}')
             throw FormatError("unmatched '{' in format");
           --report_error_.num_open_braces;
@@ -1029,10 +1027,10 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
       writer.FormatInt(arg.ulong_long_value, spec);
       break;
     case DOUBLE:
-      writer.FormatDouble(arg.double_value, spec, precision);
+      writer.FormatDouble(arg.double_value, spec);
       break;
     case LONG_DOUBLE:
-      writer.FormatDouble(arg.long_double_value, spec, precision);
+      writer.FormatDouble(arg.long_double_value, spec);
       break;
     case CHAR: {
       if (spec.type_ && spec.type_ != 'c')

@@ -876,9 +876,8 @@ class BasicWriter {
   void FormatInt(T value, const Spec &spec);
 
   // Formats a floating-point number (double or long double).
-  // TODO: use precision from spec
   template <typename T>
-  void FormatDouble(T value, const FormatSpec &spec, int precision);
+  void FormatDouble(T value, const FormatSpec &spec);
 
   // Formats a string.
   template <typename StringChar>
@@ -1221,7 +1220,7 @@ class BasicWriter {
   }
 
   BasicWriter &operator<<(double value) {
-    FormatDouble(value, FormatSpec(), -1);
+    FormatDouble(value, FormatSpec());
     return *this;
   }
 
@@ -1230,7 +1229,7 @@ class BasicWriter {
     (``'g'``) and writes it to the stream.
    */
   BasicWriter &operator<<(long double value) {
-    FormatDouble(value, FormatSpec(), -1);
+    FormatDouble(value, FormatSpec());
     return *this;
   }
 
