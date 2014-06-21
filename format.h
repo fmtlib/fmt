@@ -1310,21 +1310,28 @@ typename fmt::BasicWriter<Char>::CharPtr
     unsigned num_digits, const Spec &spec,
     const char *prefix, unsigned prefix_size) {
   unsigned width = spec.width();
+  Alignment align = spec.align();
   if (spec.precision() > static_cast<int>(num_digits)) {
     // Octal prefix '0' is counted as a digit, so ignore it if precision
     // is specified.
     if (prefix_size > 0 && prefix[prefix_size - 1] == '0')
       --prefix_size;
     unsigned number_size = prefix_size + spec.precision();
-    if (number_size < width) {
-      buffer_.reserve(width);
-      unsigned size = width - number_size;
-      CharPtr p = GrowBuffer(size);
-      std::fill(p, p + size, spec.fill());
-      // TODO: take alignment into account
+    AlignSpec subspec(number_size, '0', ALIGN_NUMERIC);
+    if (number_size >= width)
+      return PrepareBufferForInt(num_digits, subspec, prefix, prefix_size);
+    buffer_.reserve(width);
+    unsigned fill_size = width - number_size;
+    if (align != ALIGN_LEFT) {
+      CharPtr p = GrowBuffer(fill_size);
+      std::fill(p, p + fill_size, spec.fill());
     }
-    return PrepareBufferForInt(num_digits,
-      AlignSpec(number_size, '0', ALIGN_NUMERIC), prefix, prefix_size);
+    CharPtr result = PrepareBufferForInt(num_digits, subspec, prefix, prefix_size);
+    if (align == ALIGN_LEFT) {
+      CharPtr p = GrowBuffer(fill_size);
+      std::fill(p, p + fill_size, spec.fill());
+    }
+    return result;
   }
   unsigned size = prefix_size + num_digits;
   if (width <= size) {
@@ -1334,7 +1341,6 @@ typename fmt::BasicWriter<Char>::CharPtr
   }
   CharPtr p = GrowBuffer(width);
   CharPtr end = p + width;
-  Alignment align = spec.align();
   // TODO: error if fill is not convertible to Char
   Char fill = static_cast<Char>(spec.fill());
   if (align == ALIGN_LEFT) {

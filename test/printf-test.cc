@@ -241,7 +241,11 @@ TEST(PrintfTest, Precision) {
   EXPECT_PRINTF("  00042", "%7.5o", 042);
   EXPECT_PRINTF("     00042", "%#10.5o", 042);
 
-  // TODO: test left alignment
+  EXPECT_PRINTF("00042  ", "%-7.5d", 42);
+  EXPECT_PRINTF("00042  ", "%-7.5x", 0x42);
+  EXPECT_PRINTF("0x00042   ", "%-#10.5x", 0x42);
+  EXPECT_PRINTF("00042  ", "%-7.5o", 042);
+  EXPECT_PRINTF("00042     ", "%-#10.5o", 042);
 }
 
 // TODO: test length and type specifier
