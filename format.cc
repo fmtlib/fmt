@@ -507,10 +507,6 @@ fmt::ULongLong fmt::BasicWriter<Char>::GetIntValue(const ArgInfo &arg) {
       return arg.int_value;
     case UINT:
       return arg.uint_value;
-    case LONG:
-      return arg.long_value;
-    case ULONG:
-      return arg.ulong_value;
     case LONG_LONG:
       return arg.long_long_value;
     case ULONG_LONG:
@@ -556,7 +552,7 @@ void fmt::BasicWriter<Char>::FormatParser::CheckSign(
     report_error_(s,
         fmt::Format("format specifier '{}' requires numeric argument") << sign);
   }
-  if (arg.type == UINT || arg.type == ULONG || arg.type == ULONG_LONG) {
+  if (arg.type == UINT || arg.type == ULONG_LONG) {
     report_error_(s,
         fmt::Format("format specifier '{}' requires signed argument") << sign);
   }
@@ -767,12 +763,6 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     case UINT:
       writer.FormatInt(arg.uint_value, spec);
       break;
-    case LONG:
-      writer.FormatInt(arg.long_value, spec);
-      break;
-    case ULONG:
-      writer.FormatInt(arg.ulong_value, spec);
-      break;
     case LONG_LONG:
       writer.FormatInt(arg.long_long_value, spec);
       break;
@@ -963,14 +953,6 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
           case UINT:
             value = precision_arg.uint_value;
             break;
-          case LONG:
-            if (precision_arg.long_value < 0)
-              report_error_(s, "negative precision in format");
-            value = precision_arg.long_value;
-            break;
-          case ULONG:
-            value = precision_arg.ulong_value;
-            break;
           case LONG_LONG:
             if (precision_arg.long_long_value < 0)
               report_error_(s, "negative precision in format");
@@ -1013,12 +995,6 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
       break;
     case UINT:
       writer.FormatInt(arg.uint_value, spec);
-      break;
-    case LONG:
-      writer.FormatInt(arg.long_value, spec);
-      break;
-    case ULONG:
-      writer.FormatInt(arg.ulong_value, spec);
       break;
     case LONG_LONG:
       writer.FormatInt(arg.long_long_value, spec);

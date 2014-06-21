@@ -891,11 +891,10 @@ class BasicWriter {
   void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
 
   enum Type {
-    // Numeric types should go first.
-    INT, UINT, LONG, ULONG, LONG_LONG, ULONG_LONG,
-    LAST_INTEGER_TYPE = ULONG_LONG,
-    DOUBLE, LONG_DOUBLE,
-    LAST_NUMERIC_TYPE = LONG_DOUBLE,
+    // Integer types should go first,
+    INT, UINT, LONG_LONG, ULONG_LONG, LAST_INTEGER_TYPE = ULONG_LONG,
+    // followed by floating-point types.
+    DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
     CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
 
@@ -920,8 +919,6 @@ class BasicWriter {
       int int_value;
       unsigned uint_value;
       double double_value;
-      long long_value;
-      unsigned long ulong_value;
       LongLong long_long_value;
       ULongLong ulong_long_value;
       long double long_double_value;
@@ -962,8 +959,24 @@ class BasicWriter {
     BasicArg(unsigned short value) { type = UINT; this->int_value = value; }
     BasicArg(int value) { type = INT; this->int_value = value; }
     BasicArg(unsigned value) { type = UINT; this->uint_value = value; }
-    BasicArg(long value) { type = LONG; this->long_value = value; }
-    BasicArg(unsigned long value) { type = ULONG; this->ulong_value = value; }
+    BasicArg(long value) {
+      if (sizeof(long) == sizeof(int)) {
+        type = INT;
+        this->int_value = static_cast<int>(value);
+      } else {
+        type = LONG_LONG;
+        this->long_long_value = value;
+      }
+    }
+    BasicArg(unsigned long value) {
+      if (sizeof(unsigned long) == sizeof(unsigned)) {
+        type = UINT;
+        this->uint_value = static_cast<unsigned>(value);
+      } else {
+        type = ULONG_LONG;
+        this->ulong_long_value = value;
+      }
+    }
     BasicArg(LongLong value) {
       type = LONG_LONG;
       this->long_long_value = value;
