@@ -12,7 +12,8 @@ GENERATE_XML = YES
 XML_OUTPUT   = doxyxml
 ALIASES = "rst=\verbatim embed:rst"
 ALIASES += "endrst=\endverbatim"
-PREDEFINED = FMT_USE_VARIADIC_TEMPLATES=1 \
+PREDEFINED = _WIN32=1 \
+             FMT_USE_VARIADIC_TEMPLATES=1 \
              FMT_USE_RVALUE_REFERENCES=1
 EXCLUDE_SYMBOLS = fmt::internal::* VFormat ArgInfo BasicArg CustomValue FormatParser \
                   NullArgAction StringValue ArgAction
