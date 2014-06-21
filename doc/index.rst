@@ -6,7 +6,7 @@ Usage
 -----
 
 To use the C++ Format library, add ``format.h`` and ``format.cc`` from
-one of the `release archives <https://github.com/cppformat/cppformat/releases>`__
+a `release archive <https://github.com/cppformat/cppformat/releases/latest>`__
 or the `Git repository <https://github.com/cppformat/cppformat>`__ to your project.
 
 If you are using Visual Studio with precompiled headers, you might need to add
