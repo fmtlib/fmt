@@ -71,13 +71,19 @@
 # define FMT_HAS_BUILTIN(x) 0
 #endif
 
+#ifdef _MSC_VER
+# define FMT_MSC_VER _MSC_VER
+#else
+# define FMT_MSC_VER 0
+#endif
+
 #ifndef FMT_USE_VARIADIC_TEMPLATES
 // Variadic templates are available in GCC since version 4.4
 // (http://gcc.gnu.org/projects/cxx0x.html) and in Visual C++
 // since version 2013.
 # define FMT_USE_VARIADIC_TEMPLATES \
    (FMT_HAS_FEATURE(cxx_variadic_templates) || \
-       (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1800)
+       (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || FMT_MSC_VER >= 1800)
 #endif
 
 #ifndef FMT_USE_RVALUE_REFERENCES
@@ -88,7 +94,7 @@
 # else
 #  define FMT_USE_RVALUE_REFERENCES \
     (FMT_HAS_FEATURE(cxx_rvalue_references) || \
-        (FMT_GCC_VERSION >= 403 && __cplusplus >= 201103) || _MSC_VER >= 1600)
+        (FMT_GCC_VERSION >= 403 && __cplusplus >= 201103) || FMT_MSC_VER >= 1600)
 # endif
 #endif
 
@@ -110,7 +116,7 @@
   TypeName(const TypeName&); \
   void operator=(const TypeName&)
 
-#if _MSC_VER
+#if FMT_MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4521) // 'class' : multiple copy constructors specified
 #endif
@@ -2052,7 +2058,7 @@ inline void FormatDec(char *&buffer, T value) {
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406
 # pragma GCC diagnostic pop
-#elif _MSC_VER
+#elif FMT_MSC_VER
 # pragma warning(pop)
 #endif
 
