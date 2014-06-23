@@ -300,11 +300,18 @@ The available presentation types for floating-point values are:
    +---------+----------------------------------------------------------+
    | Type    | Meaning                                                  |
    +=========+==========================================================+
+   | ``'a'`` | Hexadecimal floating point format. Prints the number in  |
+   |         | base 16 with prefix ``"0x"`` and lower-case letters for  |
+   |         | digits above 9. Uses 'p' to indicate the exponent.       |
+   +---------+----------------------------------------------------------+
+   | ``'A'`` | Same as ``'a'`` except it uses upper-case letters for    |
+   |         | the prefix, digits above 9 and to indicate the exponent. |
+   +---------+----------------------------------------------------------+
    | ``'e'`` | Exponent notation. Prints the number in scientific       |
    |         | notation using the letter 'e' to indicate the exponent.  |
    +---------+----------------------------------------------------------+
    | ``'E'`` | Exponent notation. Same as ``'e'`` except it uses an     |
-   |         | upper case 'E' as the separator character.               |
+   |         | upper-case 'E' as the separator character.               |
    +---------+----------------------------------------------------------+
    | ``'f'`` | Fixed point. Displays the number as a fixed-point        |
    |         | number.                                                  |
