@@ -723,7 +723,6 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
           spec.precision_ = GetIntValue(arg);
         else if (!error)
           error = "precision is not integer";
-        // TODO: check for negative precision
       }
     }
 

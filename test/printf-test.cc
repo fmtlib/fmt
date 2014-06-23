@@ -266,11 +266,11 @@ TEST(PrintfTest, IgnorePrecisionForNonNumericArg) {
 
 TEST(PrintfTest, DynamicPrecision) {
   EXPECT_EQ("00042", str(fmt::sprintf("%.*d", 5, 42)));
+  EXPECT_EQ("42", str(fmt::sprintf("%.*d", -5, 42)));
   EXPECT_THROW_MSG(fmt::sprintf("%.*d", 5.0, 42), FormatError,
       "precision is not integer");
   EXPECT_THROW_MSG(fmt::sprintf("%.*d"), FormatError,
       "argument index is out of range in format");
-  // TODO: more tests
 }
 
 // TODO: test length and type specifier
