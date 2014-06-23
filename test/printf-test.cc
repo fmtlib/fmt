@@ -263,6 +263,11 @@ TEST(PrintfTest, IgnorePrecisionForNonNumericArg) {
   EXPECT_PRINTF("abc", "%.5s", "abc");
 }
 
+TEST(PrintfTest, DynamicPrecision) {
+  EXPECT_EQ("00042", str(fmt::sprintf("%.*d", 5, 42)));
+  // TODO: more tests
+}
+
 // TODO: test length and type specifier
 
 #endif

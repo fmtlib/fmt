@@ -620,6 +620,7 @@ unsigned fmt::BasicWriter<Char>::PrintfParser::ParseHeader(
       spec.width_ = GetIntValue(arg);
     else if (!error)
       error = "width is not integer";
+    // TODO: check for negative width
   }
   return arg_index;
 }
@@ -682,8 +683,26 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
     // is OK for both cases.
     const char *error = 0;
 
-    c = *s;
-    const ArgInfo &arg = HandleArgIndex(ParseHeader(s, spec, error), error);
+    // Parse argument index, flags and width.
+    unsigned arg_index = ParseHeader(s, spec, error);
+
+    // Parse precision.
+    if (*s == '.') {
+      ++s;
+      if ('0' <= *s && *s <= '9') {
+        spec.precision_ = internal::ParseNonnegativeInt(s, error);
+      } else if (*s == '*') {
+        ++s;
+        const ArgInfo &arg = HandleArgIndex(UINT_MAX, error);
+        if (arg.type <= LAST_INTEGER_TYPE)
+          spec.precision_ = GetIntValue(arg);
+        else if (!error)
+          error = "precision is not integer";
+        // TODO: check for negative precision
+      }
+    }
+
+    const ArgInfo &arg = HandleArgIndex(arg_index, error);
     if (spec.hash_flag() && GetIntValue(arg) == 0)
       spec.flags_ &= ~HASH_FLAG;
     if (spec.fill_ == '0') {
@@ -693,58 +712,7 @@ void fmt::BasicWriter<Char>::PrintfParser::Format(
         spec.fill_ = ' ';  // Ignore '0' flag for non-numeric types.
     }
 
-    // Parse precision.
-    if (*s == '.') {
-      ++s;
-      if ('0' <= *s && *s <= '9')
-        spec.precision_ = internal::ParseNonnegativeInt(s, error);
-      /*else if (*s == '*') {
-        ++s;
-        ++num_open_braces_;
-        const ArgInfo &precision_arg = ParseArgIndex(s);
-        ULongLong value = 0;
-        switch (precision_arg.type) {
-        case INT:
-          if (precision_arg.int_value < 0)
-            ReportError(s, "negative precision in format");
-          value = precision_arg.int_value;
-          break;
-        case UINT:
-          value = precision_arg.uint_value;
-          break;
-        case LONG:
-          if (precision_arg.long_value < 0)
-            ReportError(s, "negative precision in format");
-          value = precision_arg.long_value;
-          break;
-        case ULONG:
-          value = precision_arg.ulong_value;
-          break;
-        case LONG_LONG:
-          if (precision_arg.long_long_value < 0)
-            ReportError(s, "negative precision in format");
-          value = precision_arg.long_long_value;
-          break;
-        case ULONG_LONG:
-          value = precision_arg.ulong_long_value;
-          break;
-        default:
-          ReportError(s, "precision is not integer");
-        }
-        if (value > INT_MAX)
-          ReportError(s, "number is too big in format");
-        precision = static_cast<int>(value);
-        if (*s++ != '}')
-          throw FormatError("unmatched '{' in format");
-        --num_open_braces_;
-      } else {
-        ReportError(s, "missing precision in format");
-      }
-      if (arg.type != DOUBLE && arg.type != LONG_DOUBLE) {
-        ReportError(s,
-            "precision specifier requires floating-point argument");
-      }*/
-    }
+    // TODO: parse length
 
     // Parse type.
     if (!*s)
