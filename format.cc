@@ -609,18 +609,43 @@ unsigned fmt::BasicWriter<Char>::PrintfParser::ParseHeader(
       }
     }
   }
-  // Parse flags and width.
   ParseFlags(spec, s);
+  // Parse width.
   if (*s >= '0' && *s <= '9') {
     spec.width_ = internal::ParseNonnegativeInt(s, error);
   } else if (*s == '*') {
     ++s;
     const ArgInfo &arg = HandleArgIndex(UINT_MAX, error);
-    if (arg.type <= LAST_INTEGER_TYPE)
-      spec.width_ = GetIntValue(arg);
+    ULongLong width = 0;
+    switch (arg.type) {
+    case INT:
+      width = arg.int_value;
+      if (arg.int_value < 0) {
+        spec.align_ = ALIGN_LEFT;
+        width = -width;
+      }
+      break;
+    case UINT:
+      width = arg.uint_value;
+      break;
+    case LONG_LONG:
+      width = arg.long_long_value;
+      if (arg.long_long_value < 0) {
+        spec.align_ = ALIGN_LEFT;
+        width = -width;
+      }
+      break;
+    case ULONG_LONG:
+      width = arg.ulong_long_value;
+      break;
+    default:
+      if (!error)
+        error = "width is not integer";
+    }
+    if (width <= INT_MAX)
+      spec.width_ = static_cast<unsigned>(width);
     else if (!error)
-      error = "width is not integer";
-    // TODO: check for negative width
+      error = "number is too big in format";
   }
   return arg_index;
 }

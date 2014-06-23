@@ -221,6 +221,7 @@ TEST(PrintfTest, Width) {
 
 TEST(PrintfTest, DynamicWidth) {
   EXPECT_EQ("   42", str(fmt::sprintf("%*d", 5, 42)));
+  EXPECT_EQ("42   ", str(fmt::sprintf("%*d", -5, 42)));
   EXPECT_THROW_MSG(fmt::sprintf("%*d", 5.0, 42), FormatError,
       "width is not integer");
   EXPECT_THROW_MSG(fmt::sprintf("%*d"), FormatError,
