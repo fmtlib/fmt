@@ -227,7 +227,7 @@ TEST(PrintfTest, DynamicWidth) {
       "argument index is out of range in format");
 }
 
-TEST(PrintfTest, Precision) {
+TEST(PrintfTest, IntPrecision) {
   EXPECT_PRINTF("00042", "%.5d", 42);
   EXPECT_PRINTF("-00042", "%.5d", -42);
   EXPECT_PRINTF("00042", "%.5x", 0x42);
@@ -246,6 +246,21 @@ TEST(PrintfTest, Precision) {
   EXPECT_PRINTF("0x00042   ", "%-#10.5x", 0x42);
   EXPECT_PRINTF("00042  ", "%-7.5o", 042);
   EXPECT_PRINTF("00042     ", "%-#10.5o", 042);
+}
+
+TEST(PrintfTest, FloatPrecision) {
+  char buffer[BUFFER_SIZE];
+  SPrintf(buffer, "%.3e", 1234.5678);
+  EXPECT_PRINTF(buffer, "%.3e", 1234.5678);
+  EXPECT_PRINTF("1234.568", "%.3f", 1234.5678);
+  SPrintf(buffer, "%.3g", 1234.5678);
+  EXPECT_PRINTF(buffer, "%.3g", 1234.5678);
+  SPrintf(buffer, "%.3a", 1234.5678);
+  EXPECT_PRINTF(buffer, "%.3a", 1234.5678);
+}
+
+TEST(PrintfTest, IgnorePrecisionForNonNumericArg) {
+  EXPECT_PRINTF("abc", "%.5s", "abc");
 }
 
 // TODO: test length and type specifier
