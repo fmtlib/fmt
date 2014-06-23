@@ -35,11 +35,14 @@
 #include <cstddef>  // for std::ptrdiff_t
 #include <cstdio>
 #include <algorithm>
-#include <iterator>
 #include <limits>
 #include <stdexcept>
 #include <string>
 #include <sstream>
+
+#if _SECURE_SCL
+# include <iterator>
+#endif
 
 #ifdef __GNUC__
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
