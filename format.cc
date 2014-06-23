@@ -622,7 +622,7 @@ unsigned fmt::BasicWriter<Char>::PrintfParser::ParseHeader(
       width = arg.int_value;
       if (arg.int_value < 0) {
         spec.align_ = ALIGN_LEFT;
-        width = -width;
+        width = 0 - width;
       }
       break;
     case UINT:
@@ -632,7 +632,7 @@ unsigned fmt::BasicWriter<Char>::PrintfParser::ParseHeader(
       width = arg.long_long_value;
       if (arg.long_long_value < 0) {
         spec.align_ = ALIGN_LEFT;
-        width = -width;
+        width = 0 - width;
       }
       break;
     case ULONG_LONG:
