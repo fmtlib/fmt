@@ -1235,8 +1235,7 @@ TEST(FormatterTest, FormatNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ("nan", str(Format("{}") << nan));
   EXPECT_EQ("+nan", str(Format("{:+}") << nan));
-  using namespace std;
-  if (signbit(-nan))
+  if (fmt::internal::SignBitNoInline(-nan))
     EXPECT_EQ("-nan", str(Format("{}") << -nan));
   else
     fmt::Print("Warning: compiler doesn't handle negative NaN correctly");

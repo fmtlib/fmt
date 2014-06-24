@@ -399,6 +399,8 @@ inline bool IsNegative(T value) {
   return SignChecker<std::numeric_limits<T>::is_signed>::IsNegative(value);
 }
 
+int SignBitNoInline(double value);
+
 template <typename T>
 struct IntTraits {
   // Smallest of uint32_t and uint64_t that is large enough to represent

@@ -118,6 +118,8 @@ void ReportError(FormatFunc func,
 }
 }  // namespace
 
+int fmt::internal::SignBitNoInline(double value) { return SignBit(value); }
+
 template <typename T>
 int fmt::internal::CharTraits<char>::FormatFloat(
     char *buffer, std::size_t size, const char *format,
