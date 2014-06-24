@@ -1235,9 +1235,7 @@ TEST(FormatterTest, FormatNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ("nan", str(Format("{}") << nan));
   EXPECT_EQ("+nan", str(Format("{:+}") << nan));
-#ifndef signbit
-# define signbit std::signbit
-#endif
+  using namespace std;
   if (signbit(-nan))
     EXPECT_EQ("-nan", str(Format("{}") << -nan));
   else
