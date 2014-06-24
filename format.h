@@ -477,8 +477,7 @@ void FormatDecimal(Char *buffer, UInt value, unsigned num_digits) {
 }
 
 template <typename Char, typename T>
-void FormatCustomArg(
-  BasicWriter<Char> &w, const void *arg, const FormatSpec &spec);
+void FormatCustomArg(void *writer, const void *arg, const FormatSpec &spec);
 
 #ifdef _WIN32
 // A converter from UTF-8 to UTF-16.
@@ -562,6 +561,46 @@ struct NonZero {
 template <>
 struct NonZero<0> {
   enum { VALUE = 1 };
+};
+
+// Information about a format argument. It is a POD type to allow
+// storage in internal::Array.
+struct ArgInfo {
+  enum Type {
+    // Integer types should go first,
+    INT, UINT, LONG_LONG, ULONG_LONG, LAST_INTEGER_TYPE = ULONG_LONG,
+    // followed by floating-point types.
+    DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
+    CHAR, STRING, WSTRING, POINTER, CUSTOM
+  };
+  Type type;
+
+  template <typename Char>
+  struct StringValue {
+    const Char *value;
+    std::size_t size;
+  };
+
+  typedef void (*FormatFunc)(
+      void *writer, const void *arg, const FormatSpec &spec);
+
+  struct CustomValue {
+    const void *value;
+    FormatFunc format;
+  };
+
+  union {
+    int int_value;
+    unsigned uint_value;
+    double double_value;
+    LongLong long_long_value;
+    ULongLong ulong_long_value;
+    long double long_double_value;
+    const void *pointer_value;
+    StringValue<char> string;
+    StringValue<wchar_t> wstring;
+    CustomValue custom;
+  };
 };
 }  // namespace internal
 
@@ -806,6 +845,23 @@ inline StrFormatSpec<wchar_t> pad(
   return StrFormatSpec<wchar_t>(str, width, fill);
 }
 
+class ArgList {
+ private:
+  const internal::ArgInfo *args_;
+  std::size_t size_;
+
+public:
+  ArgList() : size_(0) {}
+  ArgList(const internal::ArgInfo *args, std::size_t size)
+  : args_(args), size_(size) {}
+
+  std::size_t size() const { return size_; }
+
+  const internal::ArgInfo &operator[](std::size_t index) const {
+    return args_[index];
+  }
+};
+
 /**
   \rst
   This template provides operations for formatting and writing data into
@@ -850,6 +906,10 @@ class BasicWriter {
 
   typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
 
+  typedef internal::ArgInfo Arg;
+
+  static const Arg DUMMY_ARG;
+
 #if _SECURE_SCL
   static Char *GetBase(CharPtr p) { return p.base(); }
 #else
@@ -893,53 +953,17 @@ class BasicWriter {
   CharPtr FormatString(
       const StringChar *s, std::size_t size, const AlignSpec &spec);
 
-  // This method is private to disallow writing a wide string to a
+  template <typename StringChar>
+  void FormatString(
+      const Arg::StringValue<StringChar> &str, const FormatSpec &spec);
+
+    // This method is private to disallow writing a wide string to a
   // char stream and vice versa. If you want to print a wide string
   // as a pointer as std::ostream does, cast it to const void*.
   // Do not implement!
   void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
 
-  enum Type {
-    // Integer types should go first,
-    INT, UINT, LONG_LONG, ULONG_LONG, LAST_INTEGER_TYPE = ULONG_LONG,
-    // followed by floating-point types.
-    DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
-    CHAR, STRING, WSTRING, POINTER, CUSTOM
-  };
-
-  struct StringValue {
-    const Char *value;
-    std::size_t size;
-  };
-
-  typedef void (*FormatFunc)(
-    BasicWriter<Char> &w, const void *arg, const FormatSpec &spec);
-
-  struct CustomValue {
-    const void *value;
-    FormatFunc format;
-  };
-
-  // Information about a format argument. It is a POD type to allow
-  // storage in internal::Array.
-  struct ArgInfo {
-    Type type;
-    union {
-      int int_value;
-      unsigned uint_value;
-      double double_value;
-      LongLong long_long_value;
-      ULongLong ulong_long_value;
-      long double long_double_value;
-      const void *pointer_value;
-      StringValue string;
-      CustomValue custom;
-    };
-  };
-
-  static const ArgInfo DUMMY_ARG;
-
-  static ULongLong GetIntValue(const ArgInfo &arg);
+  static ULongLong GetIntValue(const Arg &arg);
 
   // An argument action that does nothing.
   struct NullArgAction {
@@ -948,7 +972,7 @@ class BasicWriter {
 
   // A wrapper around a format argument.
   template <typename Action = NullArgAction>
-  class BasicArg : public Action, public ArgInfo {
+  class BasicArg : public Action, public Arg {
    private:
     // This method is private to disallow formatting of arbitrary pointers.
     // If you want to output a pointer cast it to const void*. Do not implement!
@@ -961,83 +985,96 @@ class BasicWriter {
     BasicArg(T *value);
 
    public:
-    using ArgInfo::type;
+    using Arg::type;
 
     BasicArg() {}
-    BasicArg(short value) { type = INT; this->int_value = value; }
-    BasicArg(unsigned short value) { type = UINT; this->int_value = value; }
-    BasicArg(int value) { type = INT; this->int_value = value; }
-    BasicArg(unsigned value) { type = UINT; this->uint_value = value; }
+    // TODO: unsigned char & signed char
+    BasicArg(short value) { type = Arg::INT; Arg::int_value = value; }
+    BasicArg(unsigned short value) {
+      type = Arg::UINT;
+      Arg::uint_value = value;
+    }
+    BasicArg(int value) { type = Arg::INT; Arg::int_value = value; }
+    BasicArg(unsigned value) { type = Arg::UINT; Arg::uint_value = value; }
     BasicArg(long value) {
       if (sizeof(long) == sizeof(int)) {
-        type = INT;
-        this->int_value = static_cast<int>(value);
+        type = Arg::INT;
+        Arg::int_value = static_cast<int>(value);
       } else {
-        type = LONG_LONG;
-        this->long_long_value = value;
+        type = Arg::LONG_LONG;
+        Arg::long_long_value = value;
       }
     }
     BasicArg(unsigned long value) {
       if (sizeof(unsigned long) == sizeof(unsigned)) {
-        type = UINT;
-        this->uint_value = static_cast<unsigned>(value);
+        type = Arg::UINT;
+        Arg::uint_value = static_cast<unsigned>(value);
       } else {
-        type = ULONG_LONG;
-        this->ulong_long_value = value;
+        type = Arg::ULONG_LONG;
+        Arg::ulong_long_value = value;
       }
     }
     BasicArg(LongLong value) {
-      type = LONG_LONG;
-      this->long_long_value = value;
+      type = Arg::LONG_LONG;
+      Arg::long_long_value = value;
     }
     BasicArg(ULongLong value) {
-      type = ULONG_LONG;
-      this->ulong_long_value = value;
+      type = Arg::ULONG_LONG;
+      Arg::ulong_long_value = value;
     }
-    BasicArg(float value) { type = DOUBLE; this->double_value = value; }
-    BasicArg(double value) { type = DOUBLE; this->double_value = value; }
+    BasicArg(float value) { type = Arg::DOUBLE; Arg::double_value = value; }
+    BasicArg(double value) { type = Arg::DOUBLE; Arg::double_value = value; }
     BasicArg(long double value) {
-      type = LONG_DOUBLE;
-      this->long_double_value = value;
+      type = Arg::LONG_DOUBLE;
+      Arg::long_double_value = value;
     }
-    BasicArg(char value) { type = CHAR; this->int_value = value; }
+    BasicArg(char value) { type = Arg::CHAR; Arg::int_value = value; }
     BasicArg(wchar_t value) {
-      type = CHAR;
-      this->int_value = internal::CharTraits<Char>::ConvertChar(value);
+      type = Arg::CHAR;
+      Arg::int_value = internal::CharTraits<Char>::ConvertChar(value);
     }
 
-    BasicArg(const Char *value) {
-      type = STRING;
-      this->string.value = value;
-      this->string.size = 0;
+    BasicArg(const char *value) {
+      type = Arg::STRING;
+      Arg::string.value = value;
+      Arg::string.size = 0;
+    }
+
+    BasicArg(const wchar_t *value) {
+      type = Arg::WSTRING;
+      Arg::wstring.value = value;
+      Arg::wstring.size = 0;
     }
 
     BasicArg(Char *value) {
-      type = STRING;
-      this->string.value = value;
-      this->string.size = 0;
+      type = Arg::STRING;
+      Arg::string.value = value;
+      Arg::string.size = 0;
     }
 
-    BasicArg(const void *value) { type = POINTER; this->pointer_value = value; }
-    BasicArg(void *value) { type = POINTER; this->pointer_value = value; }
+    BasicArg(const void *value) {
+      type = Arg::POINTER;
+      Arg::pointer_value = value;
+    }
+    BasicArg(void *value) { type = Arg::POINTER; Arg::pointer_value = value; }
 
     BasicArg(const std::basic_string<Char> &value) {
-      type = STRING;
-      this->string.value = value.c_str();
-      this->string.size = value.size();
+      type = Arg::STRING;
+      Arg::string.value = value.c_str();
+      Arg::string.size = value.size();
     }
 
     BasicArg(BasicStringRef<Char> value) {
-      type = STRING;
-      this->string.value = value.c_str();
-      this->string.size = value.size();
+      type = Arg::STRING;
+      Arg::string.value = value.c_str();
+      Arg::string.size = value.size();
     }
 
     template <typename T>
     BasicArg(const T &value) {
-      type = CUSTOM;
-      this->custom.value = &value;
-      this->custom.format = &internal::FormatCustomArg<Char, T>;
+      type = Arg::CUSTOM;
+      Arg::custom.value = &value;
+      Arg::custom.format = &internal::FormatCustomArg<Char, T>;
     }
 
     // The destructor is declared noexcept(false) because the action may throw
@@ -1048,31 +1085,27 @@ class BasicWriter {
     }
   };
 
-  typedef BasicArg<> Arg;
-
   // Format string parser.
   class FormatParser {
    private:
-    std::size_t num_args_;
-    const ArgInfo *args_;
+    ArgList args_;
     int next_arg_index_;
     fmt::internal::FormatErrorReporter<Char> report_error_;
 
     // Parses argument index and returns an argument with this index.
-    const ArgInfo &ParseArgIndex(const Char *&s);
+    const Arg &ParseArgIndex(const Char *&s);
 
-    void CheckSign(const Char *&s, const ArgInfo &arg);
+    void CheckSign(const Char *&s, const Arg &arg);
 
    public:
     void Format(BasicWriter<Char> &writer,
-      BasicStringRef<Char> format, std::size_t num_args, const ArgInfo *args);
+      BasicStringRef<Char> format, const ArgList &args);
   };
 
   // Printf format string parser.
   class PrintfParser {
    private:
-    std::size_t num_args_;
-    const ArgInfo *args_;
+    ArgList args_;
     int next_arg_index_;
 
     void ParseFlags(FormatSpec &spec, const Char *&s);
@@ -1081,11 +1114,11 @@ class BasicWriter {
     // argument index.
     unsigned ParseHeader(const Char *&s, FormatSpec &spec, const char *&error);
 
-    const ArgInfo &HandleArgIndex(unsigned arg_index, const char *&error);
+    const Arg &HandleArgIndex(unsigned arg_index, const char *&error);
 
    public:
     void Format(BasicWriter<Char> &writer,
-      BasicStringRef<Char> format, std::size_t num_args, const ArgInfo *args);
+      BasicStringRef<Char> format, const ArgList &args);
   };
 
  public:
@@ -1140,14 +1173,12 @@ class BasicWriter {
     return std::basic_string<Char>(&buffer_[0], buffer_.size());
   }
 
-  inline void VFormat(BasicStringRef<Char> format,
-      std::size_t num_args, const ArgInfo *args) {
-    FormatParser().Format(*this, format, num_args, args);
+  inline void format(BasicStringRef<Char> format, const ArgList &args) {
+    FormatParser().Format(*this, format, args);
   }
 
-  inline void vprintf(BasicStringRef<Char> format,
-      std::size_t num_args, const ArgInfo *args) {
-    PrintfParser().Format(*this, format, num_args, args);
+  inline void printf(BasicStringRef<Char> format, const ArgList &args) {
+    PrintfParser().Format(*this, format, args);
   }
 
   /**
@@ -1207,14 +1238,14 @@ class BasicWriter {
    */
   template<typename... Args>
   void Format(BasicStringRef<Char> format, const Args & ... args) {
-    Arg arg_array[] = {args...};
-    VFormat(format, sizeof...(Args), arg_array);
+    BasicArg<> arg_array[] = {args...};
+    this->format(format, ArgList(arg_array, sizeof...(Args)));
   }
 
   template<typename... Args>
   void printf(BasicStringRef<Char> format, const Args & ... args) {
-    Arg arg_array[internal::NonZero<sizeof...(Args)>::VALUE] = {args...};
-    vprintf(format, sizeof...(Args), arg_array);
+    BasicArg<> arg_array[internal::NonZero<sizeof...(Args)>::VALUE] = {args...};
+    this->printf(format, ArgList(arg_array, sizeof...(Args)));
   }
 #endif
 
@@ -1486,9 +1517,9 @@ void Format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value) {
 namespace internal {
 // Formats an argument of a custom type, such as a user-defined class.
 template <typename Char, typename T>
-void FormatCustomArg(
-    BasicWriter<Char> &w, const void *arg, const FormatSpec &spec) {
-  Format(w, spec, *static_cast<const T*>(arg));
+void FormatCustomArg(void *writer, const void *arg, const FormatSpec &spec) {
+  Format(*static_cast<BasicWriter<Char>*>(writer),
+      spec, *static_cast<const T*>(arg));
 }
 }
 
@@ -1527,7 +1558,7 @@ class BasicFormatter {
     }
   };
 
-  typedef typename BasicWriter<Char>::ArgInfo ArgInfo;
+  typedef typename internal::ArgInfo ArgInfo;
   typedef typename BasicWriter<Char>::template BasicArg<ArgAction> Arg;
 
   enum { NUM_INLINE_ARGS = 10 };
@@ -1554,7 +1585,7 @@ class BasicFormatter {
     if (!format_) return;
     const Char *format = format_;
     format_ = 0;
-    writer_->VFormat(format, args_.size(), &args_[0]);
+    writer_->format(format, ArgList(&args_[0], args_.size()));
   }
 
  public:
