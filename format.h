@@ -52,7 +52,6 @@
 # if FMT_GCC_VERSION >= 406
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wlong-long"
-#  pragma GCC diagnostic ignored "-Wvariadic-macros"
 # endif
 #else
 # define FMT_GCC_EXTENSION
@@ -2094,6 +2093,12 @@ inline void FormatDec(char *&buffer, T value) {
   buffer += num_digits;
 }
 }
+
+#if FMT_GCC_VERSION
+// Use the system_header pragma to suppress warnings about variadic macros
+// because suppressing -Wvariadic-macros with the diagnostic pragma doesn't work.
+# pragma GCC system_header
+#endif
 
 #define FMT_CONCATENATE(arg1, arg2)   FMT_CONCATENATE1(arg1, arg2)
 #define FMT_CONCATENATE1(arg1, arg2)  FMT_CONCATENATE2(arg1, arg2)
