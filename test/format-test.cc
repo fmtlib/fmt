@@ -1664,3 +1664,18 @@ TEST(StrTest, Convert) {
   std::string s = str(Date(2012, 12, 9));
   EXPECT_EQ("2012-12-9", s);
 }
+
+fmt::Writer test(int n, const char *format, const fmt::ArgList &args) {
+  fmt::Writer w;
+  w << n;
+  w.format(format, args);
+  return std::move(w);
+}
+
+FMT_VARIADIC(fmt::Writer, test, int, const char *)
+
+TEST(FormatTest, VariadicMacro) {
+  EXPECT_EQ("42 end", str(test(42, " end")));
+  EXPECT_EQ("42 abc", str(test(42, " {}", "abc")));
+  EXPECT_EQ("42 abc 1.2", str(test(42, " {} {}", "abc", 1.2)));
+}

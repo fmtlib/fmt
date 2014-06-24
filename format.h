@@ -52,6 +52,7 @@
 # if FMT_GCC_VERSION >= 406
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wlong-long"
+#  pragma GCC diagnostic ignored "-Wvariadic-macros"
 # endif
 #else
 # define FMT_GCC_EXTENSION
@@ -1249,6 +1250,9 @@ class BasicWriter {
   }
 #endif
 
+  template <typename T>
+  static Arg MakeArg(const T &arg) { return BasicArg<>(arg); }
+
   BasicWriter &operator<<(int value) {
     return *this << IntFormatSpec<int>(value);
   }
@@ -2088,6 +2092,87 @@ inline void FormatDec(char *&buffer, T value) {
   buffer += num_digits;
 }
 }
+
+#define FMT_CONCATENATE(arg1, arg2)   FMT_CONCATENATE1(arg1, arg2)
+#define FMT_CONCATENATE1(arg1, arg2)  FMT_CONCATENATE2(arg1, arg2)
+#define FMT_CONCATENATE2(arg1, arg2)  arg1##arg2
+
+#define FMT_FOR_EACH_1(func, x, ...) func(x, 1)
+#define FMT_FOR_EACH_2(func, x, ...) \
+  func(x, 2), FMT_FOR_EACH_1(func, __VA_ARGS__)
+#define FMT_FOR_EACH_3(func, x, ...) \
+  func(x, 3), FMT_FOR_EACH_2(func, __VA_ARGS__)
+#define FMT_FOR_EACH_4(func, x, ...) \
+  func(x, 4), FMT_FOR_EACH_3(func, __VA_ARGS__)
+#define FMT_FOR_EACH_5(func, x, ...) \
+  func(x, 5), FMT_FOR_EACH_4(func,  __VA_ARGS__)
+#define FMT_FOR_EACH_6(func, x, ...) \
+  func(x, 6), FMT_FOR_EACH_5(func, __VA_ARGS__)
+#define FMT_FOR_EACH_7(func, x, ...) \
+  func(x, 7), FMT_FOR_EACH_6(func, __VA_ARGS__)
+#define FMT_FOR_EACH_8(func, x, ...) \
+  func(x, 8), FMT_FOR_EACH_7(func, __VA_ARGS__)
+
+#define FMT_FOR_EACH_NARG(...) FMT_FOR_EACH_NARG_(__VA_ARGS__, FMT_FOR_EACH_RSEQ_N())
+#define FMT_FOR_EACH_NARG_(...) FMT_FOR_EACH_ARG_N(__VA_ARGS__)
+#define FMT_FOR_EACH_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
+#define FMT_FOR_EACH_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
+
+#define FMT_FOR_EACH_(N, func, ...) \
+  FMT_CONCATENATE(FMT_FOR_EACH_, N)(func, __VA_ARGS__)
+#define FMT_FOR_EACH(func, ...) \
+  FMT_FOR_EACH_(FMT_FOR_EACH_NARG(__VA_ARGS__), func, __VA_ARGS__)
+
+#define FMT_ADD_ARG_NAME(type, index) type arg##index
+#define FMT_GET_ARG_NAME(type, index) arg##index
+#define FMT_MAKE_ARG(arg, index) fmt::Writer::MakeArg(arg)
+
+#define FMT_VARIADIC(return_type, func_name, ...) \
+  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) { \
+    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+      fmt::ArgList()); \
+  } \
+  template <typename T1> \
+  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
+      const T1 &v1) { \
+    const fmt::internal::ArgInfo args[] = {FMT_FOR_EACH(FMT_MAKE_ARG, v1)}; \
+    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+  } \
+  template <typename T1, typename T2> \
+  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
+      const T1 &v1, const T2 &v2) { \
+    const fmt::internal::ArgInfo args[] = {FMT_FOR_EACH(FMT_MAKE_ARG, v1, v2)}; \
+    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+  } \
+  template <typename T1, typename T2, typename T3> \
+  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
+      const T1 &v1, const T2 &v2, const T3 &v3) { \
+    const fmt::internal::ArgInfo args[] = { \
+      FMT_FOR_EACH(FMT_MAKE_ARG, v1, v2, v3) \
+    }; \
+    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+  } \
+  template <typename T1, typename T2, typename T3, typename T4> \
+  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
+    const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4) { \
+    const fmt::internal::ArgInfo args[] = { \
+      FMT_FOR_EACH(FMT_MAKE_ARG, v1, v2, v3, v4) \
+    }; \
+    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+  } \
+  template <typename T1, typename T2, typename T3, typename T4, typename T5> \
+  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
+    const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5) { \
+    const fmt::internal::ArgInfo args[] = { \
+      FMT_FOR_EACH(FMT_MAKE_ARG, v1, v2, v3, v4, v5) \
+    }; \
+    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+  }
 
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406
