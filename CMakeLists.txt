@@ -113,6 +113,11 @@ foreach (target format-test printf-test)
 endforeach ()
 cxx_test(util-test test-main)
 
+add_executable(macro-test test/macro-test.cc ${FMT_SOURCES} ${TEST_MAIN_SRC})
+set_target_properties(macro-test
+  PROPERTIES COMPILE_DEFINITIONS "FMT_USE_VARIADIC_TEMPLATES=0")
+target_link_libraries(macro-test gtest)
+
 if (HAVE_OPEN)
   add_executable(posix-test test/posix-test.cc ${FMT_SOURCES} ${TEST_MAIN_SRC})
   set_target_properties(posix-test
