@@ -119,6 +119,14 @@
   TypeName(const TypeName&); \
   void operator=(const TypeName&)
 
+#ifdef __GNUC__
+# define FMT_DEPRECATED(func) func __attribute__((deprecated))
+#elif defined(_MSC_VER)
+# define FMT_DEPRECATED(func) __declspec(deprecated) func
+#else
+# define FMT_DEPRECATED(func) func
+#endif
+
 #if FMT_MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4521) // 'class' : multiple copy constructors specified
@@ -864,34 +872,47 @@ public:
   }
 };
 
-// Generates a comma-separated list by applying f to numbers 1..n.
-#define FMT_GEN(n, f) FMT_GEN##n(f)
-#define FMT_GEN1(f) f(1)
-#define FMT_GEN2(f) FMT_GEN1(f), f(2)
-#define FMT_GEN3(f) FMT_GEN2(f), f(3)
-#define FMT_GEN4(f) FMT_GEN3(f), f(4)
-#define FMT_GEN5(f) FMT_GEN4(f), f(5)
-#define FMT_GEN6(f) FMT_GEN5(f), f(6)
-#define FMT_GEN7(f) FMT_GEN6(f), f(7)
-#define FMT_GEN8(f) FMT_GEN7(f), f(8)
-#define FMT_GEN9(f) FMT_GEN8(f), f(9)
+#if FMT_USE_VARIADIC_TEMPLATES
+// Defines a variadic function returning void.
+# define FMT_VARIADIC_VOID(func, arg_type) \
+  template<typename... Args> \
+  void func(arg_type arg1, const Args & ... args) { \
+    const BasicArg<> \
+      arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = {args...}; \
+    func(arg1, ArgList(arg_array, sizeof...(Args))); \
+  }
+#else
+// Generates a comma-separated list with results of applying f to numbers 1..n.
+# define FMT_GEN(n, f) FMT_GEN##n(f)
+# define FMT_GEN1(f) f(1)
+# define FMT_GEN2(f) FMT_GEN1(f), f(2)
+# define FMT_GEN3(f) FMT_GEN2(f), f(3)
+# define FMT_GEN4(f) FMT_GEN3(f), f(4)
+# define FMT_GEN5(f) FMT_GEN4(f), f(5)
+# define FMT_GEN6(f) FMT_GEN5(f), f(6)
+# define FMT_GEN7(f) FMT_GEN6(f), f(7)
+# define FMT_GEN8(f) FMT_GEN7(f), f(8)
+# define FMT_GEN9(f) FMT_GEN8(f), f(9)
 
-#define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
-#define FMT_MAKE_ARG(n) const T##n &v##n
-#define FMT_MAKE_REF(n) MakeArg(v##n)
+# define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
+# define FMT_MAKE_ARG(n) const T##n &v##n
+# define FMT_MAKE_REF(n) fmt::Writer::MakeArg(v##n)
 
-#define FMT_TEMPLATE(func_name, n) \
+# define FMT_TEMPLATE(func, arg_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
-  inline void func_name(BasicStringRef<Char> format, FMT_GEN(n, FMT_MAKE_ARG)) { \
+  inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
     const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
-    func_name(format, fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+    func(arg1, fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
   }
 
-// Defines a variadic function returning void.
-#define FMT_VARIADIC_VOID(func_name) \
-  FMT_TEMPLATE(format, 1) FMT_TEMPLATE(format, 2) FMT_TEMPLATE(format, 3) \
-  FMT_TEMPLATE(format, 4) FMT_TEMPLATE(format, 5) FMT_TEMPLATE(format, 6) \
-  FMT_TEMPLATE(format, 7) FMT_TEMPLATE(format, 8) FMT_TEMPLATE(format, 9)
+// Emulates a variadic function returning void on a pre-C++11 compiler.
+# define FMT_VARIADIC_VOID(func, arg_type) \
+  FMT_TEMPLATE(func, arg_type, 1) FMT_TEMPLATE(func, arg_type, 2) \
+  FMT_TEMPLATE(func, arg_type, 3) FMT_TEMPLATE(func, arg_type, 4) \
+  FMT_TEMPLATE(func, arg_type, 5) FMT_TEMPLATE(func, arg_type, 6) \
+  FMT_TEMPLATE(func, arg_type, 7) FMT_TEMPLATE(func, arg_type, 8) \
+  FMT_TEMPLATE(func, arg_type, 9)
+#endif
 
 /**
   \rst
@@ -1204,13 +1225,39 @@ class BasicWriter {
     return std::basic_string<Char>(&buffer_[0], buffer_.size());
   }
 
+  /**
+    \rst
+    Formats a string sending the output to the writer. This function
+    takes variable number of arguments.
+
+    **Example**::
+
+       Writer out;
+       out.format("Current point:\n");
+       out.format("({:+f}, {:+f})", -3.14, 3.14);
+
+    This will write the following output to the ``out`` object:
+
+    .. code-block:: none
+
+       Current point:
+       (-3.140000, +3.140000)
+
+    The output can be accessed using :meth:`data`, :meth:`c_str` or :meth:`str`
+    methods.
+
+    See also `Format String Syntax`_.
+    \endrst
+   */
   inline void format(BasicStringRef<Char> format, const ArgList &args) {
     FormatParser().Format(*this, format, args);
   }
+  FMT_VARIADIC_VOID(format, fmt::BasicStringRef<Char>)
 
   inline void printf(BasicStringRef<Char> format, const ArgList &args) {
     PrintfParser().Format(*this, format, args);
   }
+  FMT_VARIADIC_VOID(printf, fmt::BasicStringRef<Char>)
 
   /**
     \rst
@@ -1240,47 +1287,9 @@ class BasicWriter {
   BasicFormatter<Char> Format(StringRef format);
 
 #if FMT_USE_VARIADIC_TEMPLATES
-  /**
-    \rst
-    Formats a string sending the output to the writer.
-
-    This version of the Format method uses C++11 features such as
-    variadic templates and rvalue references. For C++98 version, see
-    the overload taking a single ``StringRef`` argument above.
-
-    **Example**::
-
-       Writer out;
-       out.Format("Current point:\n");
-       out.Format("({:+f}, {:+f})", -3.14, 3.14);
-
-    This will write the following output to the ``out`` object:
-
-    .. code-block:: none
-
-       Current point:
-       (-3.140000, +3.140000)
-
-    The output can be accessed using :meth:`data`, :meth:`c_str` or :meth:`str`
-    methods.
-
-    See also `Format String Syntax`_.
-    \endrst
-   */
+  // This function is deprecated, use Writer::format instead.
   template<typename... Args>
-  void Format(BasicStringRef<Char> format, const Args & ... args) {
-    BasicArg<> arg_array[] = {args...};
-    this->format(format, ArgList(arg_array, sizeof...(Args)));
-  }
-
-  template<typename... Args>
-  void printf(BasicStringRef<Char> format, const Args & ... args) {
-    BasicArg<> arg_array[internal::NonZero<sizeof...(Args)>::VALUE] = {args...};
-    this->printf(format, ArgList(arg_array, sizeof...(Args)));
-  }
-  
-#else
-  FMT_VARIADIC_VOID(format)
+  FMT_DEPRECATED(void Format(BasicStringRef<Char> format, const Args & ... args));
 #endif
 
   template <typename T>
@@ -1955,6 +1964,13 @@ inline Formatter<ANSITerminalSink> PrintColored(Color c, StringRef format) {
 
 #if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 
+template <typename Char>
+template<typename... Args>
+void BasicWriter<Char>::Format(
+    BasicStringRef<Char> format, const Args & ... args) {
+  this->format(format, args...);
+}
+
 /**
   \rst
   Formats a string similarly to Python's `str.format
@@ -2165,7 +2181,7 @@ inline void FormatDec(char *&buffer, T value) {
 
 #define FMT_ADD_ARG_NAME(type, index) type arg##index
 #define FMT_GET_ARG_NAME(type, index) arg##index
-#define FMT_MAKE_ARG(arg, index) fmt::Writer::MakeArg(arg)
+#define FMT_MAKE_ARG2(arg, index) fmt::Writer::MakeArg(arg)
 
 #define FMT_VARIADIC(return_type, func_name, ...) \
   inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) { \
@@ -2175,14 +2191,14 @@ inline void FormatDec(char *&buffer, T value) {
   template <typename T1> \
   inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const T1 &v1) { \
-    const fmt::internal::ArgInfo args[] = {FMT_FOR_EACH(FMT_MAKE_ARG, v1)}; \
+    const fmt::internal::ArgInfo args[] = {FMT_FOR_EACH(FMT_MAKE_ARG2, v1)}; \
     return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
   } \
   template <typename T1, typename T2> \
   inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const T1 &v1, const T2 &v2) { \
-    const fmt::internal::ArgInfo args[] = {FMT_FOR_EACH(FMT_MAKE_ARG, v1, v2)}; \
+    const fmt::internal::ArgInfo args[] = {FMT_FOR_EACH(FMT_MAKE_ARG2, v1, v2)}; \
     return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
   } \
@@ -2190,7 +2206,7 @@ inline void FormatDec(char *&buffer, T value) {
   inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const T1 &v1, const T2 &v2, const T3 &v3) { \
     const fmt::internal::ArgInfo args[] = { \
-      FMT_FOR_EACH(FMT_MAKE_ARG, v1, v2, v3) \
+      FMT_FOR_EACH(FMT_MAKE_ARG2, v1, v2, v3) \
     }; \
     return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
@@ -2199,7 +2215,7 @@ inline void FormatDec(char *&buffer, T value) {
   inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
     const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4) { \
     const fmt::internal::ArgInfo args[] = { \
-      FMT_FOR_EACH(FMT_MAKE_ARG, v1, v2, v3, v4) \
+      FMT_FOR_EACH(FMT_MAKE_ARG2, v1, v2, v3, v4) \
     }; \
     return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
@@ -2208,7 +2224,7 @@ inline void FormatDec(char *&buffer, T value) {
   inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
     const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5) { \
     const fmt::internal::ArgInfo args[] = { \
-      FMT_FOR_EACH(FMT_MAKE_ARG, v1, v2, v3, v4, v5) \
+      FMT_FOR_EACH(FMT_MAKE_ARG2, v1, v2, v3, v4, v5) \
     }; \
     return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
