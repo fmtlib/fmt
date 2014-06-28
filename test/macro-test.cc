@@ -72,6 +72,8 @@ int result;
   }
 
 MAKE_TEST(TestFunc)
+
+typedef char Char;
 FMT_WRAP1(TestFunc, const char *, 1)
 
 TEST(UtilTest, Wrap1) {

@@ -156,16 +156,15 @@ struct FormatSpec;
 
 /**
   \rst
-  A string reference. It can be constructed from a C string, ``std::string``
-  or as a result of a formatting operation. It is most useful as a parameter
-  type to allow passing different types of strings in a function, for example::
+  A string reference. It can be constructed from a C string or
+  ``std::string``. It is most useful as a parameter type to allow
+  passing different types of strings in a function, for example::
 
     template<typename... Args>
     Writer format(StringRef format, const Args & ... args);
 
     format("{}", 42);
     format(std::string("{}"), 42);
-    format(format("{{}}"), 42);
   \endrst
  */
 template <typename Char>
@@ -893,7 +892,8 @@ public:
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
-# define FMT_MAKE_REF(n) fmt::Writer::MakeArg(v##n)
+# define FMT_MAKE_REF_char(n) fmt::Writer::MakeArg(v##n)
+# define FMT_MAKE_REF_wchar_t(n) fmt::WWriter::MakeArg(v##n)
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
@@ -905,6 +905,7 @@ public:
     func(arg1, ArgList(arg_array, sizeof...(Args))); \
   }
 #else
+# define FMT_MAKE_REF(n) fmt::BasicWriter<Char>::MakeArg(v##n)
 // Defines a wrapper for a function taking one argument of type arg_type
 // and n additional arguments of arbitrary types.
 # define FMT_WRAP1(func, arg_type, n) \
@@ -965,7 +966,7 @@ public:
 
      Writer out;
      out << "The answer is " << 42 << "\n";
-     out.Format("({:+f}, {:+f})") << -3.14 << 3.14;
+     out.format("({:+f}, {:+f})", -3.14, 3.14);
 
   This will write the following output to the ``out`` object:
 
@@ -1306,32 +1307,7 @@ class BasicWriter {
   }
   FMT_VARIADIC_VOID(printf, fmt::BasicStringRef<Char>)
 
-  /**
-    \rst
-    Formats a string sending the output to the writer. Arguments are
-    accepted through the returned :cpp:class:`fmt::BasicFormatter` object
-    using operator ``<<``.
-
-    **Example**::
-
-       Writer out;
-       out.Format("Current point:\n");
-       out.Format("({:+f}, {:+f})") << -3.14 << 3.14;
-
-    This will write the following output to the ``out`` object:
-
-    .. code-block:: none
-
-       Current point:
-       (-3.140000, +3.140000)
-
-    The output can be accessed using :meth:`data`, :meth:`c_str` or :meth:`str`
-    methods.
-
-    See also `Format String Syntax`_.
-    \endrst
-   */
-  BasicFormatter<Char> Format(StringRef format);
+  FMT_DEPRECATED(BasicFormatter<Char> Format(StringRef format));
 
 #if FMT_USE_VARIADIC_TEMPLATES
   // This function is deprecated, use Writer::format instead.
@@ -2035,6 +2011,12 @@ inline Writer format(StringRef format, const ArgList &args) {
   return move(w);
 }
 
+inline WWriter format(WStringRef format, const ArgList &args) {
+  WWriter w;
+  w.format(format, args);
+  return move(w);
+}
+
 #if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 
 template <typename Char>
@@ -2054,6 +2036,10 @@ inline Writer Format(StringRef format, const Args & ... args) {
   w.Format(format, args...);
   return std::move(w);
 }
+
+// This function is deprecated, use fmt::format instead.
+template<typename... Args>
+FMT_DEPRECATED(WWriter Format(WStringRef format, const Args & ... args));
 
 template<typename... Args>
 inline WWriter Format(WStringRef format, const Args & ... args) {
@@ -2239,12 +2225,14 @@ inline void FormatDec(char *&buffer, T value) {
     }
     FMT_VARIADIC(std::string, FormatMessage, int, const char *)
  */
-# define FMT_VARIADIC(return_type, func, ...) \
+# define FMT_VARIADIC_(Char, ReturnType, func, ...) \
   template<typename... Args> \
-  return_type func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
+  ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
     enum {N = fmt::internal::NonZero<sizeof...(Args)>::VALUE}; \
-    const fmt::internal::ArgInfo array[N] = {fmt::Writer::MakeArg(args)...}; \
+    const fmt::internal::ArgInfo array[N] = { \
+      fmt::BasicWriter<Char>::MakeArg(args)... \
+    }; \
     return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(array, sizeof...(Args))); \
   }
@@ -2253,33 +2241,42 @@ inline void FormatDec(char *&buffer, T value) {
 
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
 // and n additional arguments of arbitrary types.
-# define FMT_WRAP(return_type, func, n, ...) \
+# define FMT_WRAP(Char, ReturnType, func, n, ...) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
-  inline return_type func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
+  inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
     return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
   }
 
-# define FMT_VARIADIC(return_type, func, ...) \
-  inline return_type func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) { \
+# define FMT_VARIADIC_(Char, ReturnType, func, ...) \
+  inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) { \
     return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList()); \
   } \
-  FMT_WRAP(return_type, func, 1, __VA_ARGS__) \
-  FMT_WRAP(return_type, func, 2, __VA_ARGS__) \
-  FMT_WRAP(return_type, func, 3, __VA_ARGS__) \
-  FMT_WRAP(return_type, func, 4, __VA_ARGS__) \
-  FMT_WRAP(return_type, func, 5, __VA_ARGS__) \
-  FMT_WRAP(return_type, func, 6, __VA_ARGS__) \
-  FMT_WRAP(return_type, func, 7, __VA_ARGS__) \
-  FMT_WRAP(return_type, func, 8, __VA_ARGS__) \
-  FMT_WRAP(return_type, func, 9, __VA_ARGS__) \
-  FMT_WRAP(return_type, func, 10, __VA_ARGS__)
+  FMT_WRAP(Char, ReturnType, func, 1, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, 2, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, 3, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, 4, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, 5, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, 6, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, 7, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, 8, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, 9, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, 10, __VA_ARGS__)
 
 #endif  // FMT_USE_VARIADIC_TEMPLATES
 
+#define FMT_VARIADIC(ReturnType, func, ...) \
+  FMT_VARIADIC_(char, ReturnType, func, __VA_ARGS__)
+
+#define FMT_VARIADIC_W(ReturnType, func, ...) \
+  FMT_VARIADIC_(wchar_t, ReturnType, func, __VA_ARGS__)
+
+namespace fmt {
 FMT_VARIADIC(fmt::Writer, format, fmt::StringRef)
+FMT_VARIADIC_W(fmt::WWriter, format, fmt::WStringRef)
+}
 
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406
