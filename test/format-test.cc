@@ -1569,11 +1569,14 @@ TEST(FormatterTest, Examples) {
   EXPECT_THROW_MSG(
     format("The answer is {:d}", "forty-two"), FormatError,
     "unknown format code 'd' for string");
+
+#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
   EXPECT_EQ(L"Cyrillic letter \x42e",
     str(Format(L"Cyrillic letter {}", L'\x42e')));
 
   EXPECT_WRITE(stdout,
       fmt::Print("{}", std::numeric_limits<double>::infinity()), "inf");
+#endif
 }
 
 TEST(FormatIntTest, Data) {
