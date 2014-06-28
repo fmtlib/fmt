@@ -855,6 +855,7 @@ inline StrFormatSpec<wchar_t> pad(
   return StrFormatSpec<wchar_t>(str, width, fill);
 }
 
+// An argument list.
 class ArgList {
  private:
   const internal::ArgInfo *args_;
@@ -2170,6 +2171,8 @@ inline void FormatDec(char *&buffer, T value) {
 #if FMT_GCC_VERSION
 // Use the system_header pragma to suppress warnings about variadic macros
 // because suppressing -Wvariadic-macros with the diagnostic pragma doesn't work.
+// It is used at the end because we want to suppress as little warnings as
+// possible.
 # pragma GCC system_header
 #endif
 
@@ -2191,7 +2194,35 @@ inline void FormatDec(char *&buffer, T value) {
 
 #define FMT_ADD_ARG_NAME(type, index) type arg##index
 #define FMT_GET_ARG_NAME(type, index) arg##index
-#define FMT_MAKE_ARG2(arg, index) fmt::Writer::MakeArg(arg)
+
+#if FMT_USE_VARIADIC_TEMPLATES
+
+/**
+  Defines a variadic function with the specified return type and argument
+  types passed as variable arguments.
+
+  Example::
+
+    std::string FormatMessage(int id, const char *format,
+                              const fmt::ArgList &args) {
+      fmt::Writer w;
+      w.format("[{}] ", id);
+      w.format(format, args);
+      return w.str();
+    }
+    FMT_VARIADIC(std::string, FormatMessage, int, const char *)
+ */
+# define FMT_VARIADIC(return_type, func, ...) \
+  template<typename... Args> \
+  return_type func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
+      const Args & ... args) { \
+    enum {N = fmt::internal::NonZero<sizeof...(Args)>::VALUE}; \
+    const fmt::internal::ArgInfo array[N] = {fmt::Writer::MakeArg(args)...}; \
+    return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+      fmt::ArgList(array, sizeof...(Args))); \
+  }
+
+#else
 
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
 // and n additional arguments of arbitrary types.
@@ -2201,24 +2232,12 @@ inline void FormatDec(char *&buffer, T value) {
       FMT_GEN(n, FMT_MAKE_ARG)) { \
     const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
     return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-         fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
   }
 
-// Defines a variadic function with the specified return type and argument
-// types passed as variable arguments.
-// Example:
-//   std::string FormatMessage(const char *format, int id,
-//                             const fmt::ArgList &args) {
-//     fmt::Writer w;
-//     w.format("[{}] ", id);
-//     w.format(format, args);
-//     return w.str();
-//   }
-//   FMT_VARIADIC(std::string, FormatMessage, int, const char *)
-#define FMT_VARIADIC(return_type, func, ...) \
+# define FMT_VARIADIC(return_type, func, ...) \
   inline return_type func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) { \
-    return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList()); \
+    return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList()); \
   } \
   FMT_WRAP(return_type, func, 1, __VA_ARGS__) \
   FMT_WRAP(return_type, func, 2, __VA_ARGS__) \
@@ -2230,6 +2249,8 @@ inline void FormatDec(char *&buffer, T value) {
   FMT_WRAP(return_type, func, 8, __VA_ARGS__) \
   FMT_WRAP(return_type, func, 9, __VA_ARGS__) \
   FMT_WRAP(return_type, func, 10, __VA_ARGS__)
+
+#endif  // FMT_USE_VARIADIC_TEMPLATES
 
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406
