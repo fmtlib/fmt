@@ -45,12 +45,12 @@ int result;
       result += args[i].int_value; \
   }
 
-MAKE_TEST(TestTemplate)
-FMT_TEMPLATE(TestTemplate, const char *, 1)
+MAKE_TEST(TestFunc)
+FMT_WRAP(TestFunc, const char *, 1)
 
 TEST(UtilTest, Template) {
   result = 0;
-  TestTemplate("", 42);
+  TestFunc("", 42);
   EXPECT_EQ(42, result);
 }
 

@@ -884,21 +884,24 @@ public:
 #else
 // Generates a comma-separated list with results of applying f to numbers 1..n.
 # define FMT_GEN(n, f) FMT_GEN##n(f)
-# define FMT_GEN1(f) f(1)
-# define FMT_GEN2(f) FMT_GEN1(f), f(2)
-# define FMT_GEN3(f) FMT_GEN2(f), f(3)
-# define FMT_GEN4(f) FMT_GEN3(f), f(4)
-# define FMT_GEN5(f) FMT_GEN4(f), f(5)
-# define FMT_GEN6(f) FMT_GEN5(f), f(6)
-# define FMT_GEN7(f) FMT_GEN6(f), f(7)
-# define FMT_GEN8(f) FMT_GEN7(f), f(8)
-# define FMT_GEN9(f) FMT_GEN8(f), f(9)
+# define FMT_GEN1(f)  f(1)
+# define FMT_GEN2(f)  FMT_GEN1(f), f(2)
+# define FMT_GEN3(f)  FMT_GEN2(f), f(3)
+# define FMT_GEN4(f)  FMT_GEN3(f), f(4)
+# define FMT_GEN5(f)  FMT_GEN4(f), f(5)
+# define FMT_GEN6(f)  FMT_GEN5(f), f(6)
+# define FMT_GEN7(f)  FMT_GEN6(f), f(7)
+# define FMT_GEN8(f)  FMT_GEN7(f), f(8)
+# define FMT_GEN9(f)  FMT_GEN8(f), f(9)
+# define FMT_GEN10(f) FMT_GEN9(f), f(10)
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
 # define FMT_MAKE_REF(n) fmt::Writer::MakeArg(v##n)
 
-# define FMT_TEMPLATE(func, arg_type, n) \
+// Defines a wrapper for a function taking one argument of type arg_type
+// and n additional arguments of arbitrary types.
+# define FMT_WRAP(func, arg_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
     const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
@@ -907,11 +910,11 @@ public:
 
 // Emulates a variadic function returning void on a pre-C++11 compiler.
 # define FMT_VARIADIC_VOID(func, arg_type) \
-  FMT_TEMPLATE(func, arg_type, 1) FMT_TEMPLATE(func, arg_type, 2) \
-  FMT_TEMPLATE(func, arg_type, 3) FMT_TEMPLATE(func, arg_type, 4) \
-  FMT_TEMPLATE(func, arg_type, 5) FMT_TEMPLATE(func, arg_type, 6) \
-  FMT_TEMPLATE(func, arg_type, 7) FMT_TEMPLATE(func, arg_type, 8) \
-  FMT_TEMPLATE(func, arg_type, 9)
+  FMT_WRAP(func, arg_type, 1) FMT_WRAP(func, arg_type, 2) \
+  FMT_WRAP(func, arg_type, 3) FMT_WRAP(func, arg_type, 4) \
+  FMT_WRAP(func, arg_type, 5) FMT_WRAP(func, arg_type, 6) \
+  FMT_WRAP(func, arg_type, 7) FMT_WRAP(func, arg_type, 8) \
+  FMT_WRAP(func, arg_type, 9) FMT_WRAP(func, arg_type, 10)
 #endif
 
 /**
