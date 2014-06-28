@@ -2173,10 +2173,6 @@ inline void FormatDec(char *&buffer, T value) {
 # pragma GCC system_header
 #endif
 
-#define FMT_CONCATENATE(arg1, arg2)   FMT_CONCATENATE1(arg1, arg2)
-#define FMT_CONCATENATE1(arg1, arg2)  FMT_CONCATENATE2(arg1, arg2)
-#define FMT_CONCATENATE2(arg1, arg2)  arg1##arg2
-
 // This is used to work around VC++ bugs in handling variadic macros.
 #define FMT_EXPAND(args) args
 
@@ -2187,7 +2183,8 @@ inline void FormatDec(char *&buffer, T value) {
 #define FMT_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
 #define FMT_RSEQ_N() 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 
-#define FMT_FOR_EACH_(N, func, ...) FMT_CONCATENATE(FMT_FOR_EACH, N)(func, __VA_ARGS__)
+#define FMT_CONCAT(a, b) a##b
+#define FMT_FOR_EACH_(N, f, ...) FMT_CONCAT(FMT_FOR_EACH, N)(f, __VA_ARGS__)
 #define FMT_FOR_EACH(f, ...) \
   FMT_EXPAND(FMT_FOR_EACH_(FMT_NARG(__VA_ARGS__), f, __VA_ARGS__))
 
