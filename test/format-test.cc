@@ -1647,7 +1647,9 @@ TEST(FormatTest, PrintColored) {
 
 TEST(FormatTest, Variadic) {
   EXPECT_EQ("abc1", str(format("{}c{}", "ab", 1)));
+#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
   EXPECT_EQ(L"abc1", str(Format(L"{}c{}", L"ab", 1)));
+#endif
 }
 
 template <typename T>
