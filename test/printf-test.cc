@@ -86,31 +86,31 @@ TEST(PrintfTest, AutomaticArgIndexing) {
 }
 
 TEST(PrintfTest, NumberIsTooBigInArgIndex) {
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%{}$", BIG_NUM))),
+  EXPECT_THROW_MSG(fmt::sprintf(str(format("%{}$", BIG_NUM))),
       FormatError, "invalid format string");
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%{}$d", BIG_NUM))),
+  EXPECT_THROW_MSG(fmt::sprintf(str(format("%{}$d", BIG_NUM))),
       FormatError, "number is too big in format");
 }
 
 TEST(PrintfTest, SwitchArgIndexing) {
   EXPECT_THROW_MSG(fmt::sprintf("%1$d%", 1, 2),
       FormatError, "invalid format string");
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%1$d%{}d", BIG_NUM)), 1, 2),
+  EXPECT_THROW_MSG(fmt::sprintf(str(format("%1$d%{}d", BIG_NUM)), 1, 2),
       FormatError, "number is too big in format");
   EXPECT_THROW_MSG(fmt::sprintf("%1$d%d", 1, 2),
       FormatError, "cannot switch from manual to automatic argument indexing");
 
   EXPECT_THROW_MSG(fmt::sprintf("%d%1$", 1, 2),
       FormatError, "invalid format string");
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%d%{}$d", BIG_NUM)), 1, 2),
+  EXPECT_THROW_MSG(fmt::sprintf(str(format("%d%{}$d", BIG_NUM)), 1, 2),
       FormatError, "number is too big in format");
   EXPECT_THROW_MSG(fmt::sprintf("%d%1$d", 1, 2),
       FormatError, "cannot switch from automatic to manual argument indexing");
 
   // Indexing errors override width errors.
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%d%1${}d", BIG_NUM)), 1, 2),
+  EXPECT_THROW_MSG(fmt::sprintf(str(format("%d%1${}d", BIG_NUM)), 1, 2),
       FormatError, "number is too big in format");
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%1$d%{}d", BIG_NUM)), 1, 2),
+  EXPECT_THROW_MSG(fmt::sprintf(str(format("%1$d%{}d", BIG_NUM)), 1, 2),
       FormatError, "number is too big in format");
 }
 
@@ -119,12 +119,12 @@ TEST(PrintfTest, InvalidArgIndex) {
       "argument index is out of range in format");
   EXPECT_THROW_MSG(fmt::sprintf("%2$d", 42), FormatError,
       "argument index is out of range in format");
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%{}$d", INT_MAX)), 42),
+  EXPECT_THROW_MSG(fmt::sprintf(str(format("%{}$d", INT_MAX)), 42),
       FormatError, "argument index is out of range in format");
 
   EXPECT_THROW_MSG(fmt::sprintf("%2$", 42),
       FormatError, "invalid format string");
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%{}$d", BIG_NUM)), 42),
+  EXPECT_THROW_MSG(fmt::sprintf(str(format("%{}$d", BIG_NUM)), 42),
       FormatError, "number is too big in format");
 }
 
@@ -213,9 +213,9 @@ TEST(PrintfTest, Width) {
   EXPECT_THROW_MSG(fmt::sprintf("%5-5d", 42), FormatError,
       "unknown format code '-' for integer");
 
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%{}d", BIG_NUM)), 42),
+  EXPECT_THROW_MSG(fmt::sprintf(str(format("%{}d", BIG_NUM)), 42),
       FormatError, "number is too big in format");
-  EXPECT_THROW_MSG(fmt::sprintf(str(Format("%1${}d", BIG_NUM)), 42),
+  EXPECT_THROW_MSG(fmt::sprintf(str(format("%1${}d", BIG_NUM)), 42),
       FormatError, "number is too big in format");
 }
 
