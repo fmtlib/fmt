@@ -1689,5 +1689,5 @@ FMT_VARIADIC(std::string, FormatMessage, int, const char *)
 
 TEST(FormatTest, FormatMessageExample) {
   EXPECT_EQ("[42] something happened",
-    MyFormatError(42, "{} happened", "something"));
+      FormatMessage(42, "{} happened", "something"));
 }
