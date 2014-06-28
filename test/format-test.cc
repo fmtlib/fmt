@@ -579,29 +579,29 @@ TEST(FormatterTest, Escape) {
   EXPECT_EQ("} after", str(format("}} after")));
   EXPECT_EQ("before } after", str(format("before }} after")));
 
-  EXPECT_EQ("{}", str(Format("{{}}")));
-  EXPECT_EQ("{42}", str(Format("{{{0}}}") << 42));
+  EXPECT_EQ("{}", str(format("{{}}")));
+  EXPECT_EQ("{42}", str(format("{{{0}}}", 42)));
 }
 
 TEST(FormatterTest, UnmatchedBraces) {
-  EXPECT_THROW_MSG(Format("{"), FormatError, "unmatched '{' in format");
-  EXPECT_THROW_MSG(Format("}"), FormatError, "unmatched '}' in format");
-  EXPECT_THROW_MSG(Format("{0{}"), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format("{"), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format("}"), FormatError, "unmatched '}' in format");
+  EXPECT_THROW_MSG(format("{0{}"), FormatError, "unmatched '{' in format");
 }
 
 TEST(FormatterTest, NoArgs) {
-  EXPECT_EQ("test", str(Format("test")));
+  EXPECT_EQ("test", str(format("test")));
 }
 
 TEST(FormatterTest, ArgsInDifferentPositions) {
-  EXPECT_EQ("42", str(Format("{0}") << 42));
-  EXPECT_EQ("before 42", str(Format("before {0}") << 42));
-  EXPECT_EQ("42 after", str(Format("{0} after") << 42));
-  EXPECT_EQ("before 42 after", str(Format("before {0} after") << 42));
-  EXPECT_EQ("answer = 42", str(Format("{0} = {1}") << "answer" << 42));
+  EXPECT_EQ("42", str(format("{0}", 42)));
+  EXPECT_EQ("before 42", str(format("before {0}", 42)));
+  EXPECT_EQ("42 after", str(format("{0} after", 42)));
+  EXPECT_EQ("before 42 after", str(format("before {0} after", 42)));
+  EXPECT_EQ("answer = 42", str(format("{0} = {1}", "answer", 42)));
   EXPECT_EQ("42 is the answer",
-      str(Format("{1} is the {0}") << "answer" << 42));
-  EXPECT_EQ("abracadabra", str(Format("{0}{1}{0}") << "abra" << "cad"));
+      str(format("{1} is the {0}", "answer", 42)));
+  EXPECT_EQ("abracadabra", str(format("{0}{1}{0}", "abra", "cad")));
 }
 
 TEST(FormatterTest, ArgErrors) {
@@ -626,86 +626,86 @@ TEST(FormatterTest, ArgErrors) {
 }
 
 TEST(FormatterTest, AutoArgIndex) {
-  EXPECT_EQ("abc", str(Format("{}{}{}") << 'a' << 'b' << 'c'));
-  EXPECT_THROW_MSG(Format("{0}{}") << 'a' << 'b',
+  EXPECT_EQ("abc", str(format("{}{}{}", 'a', 'b', 'c')));
+  EXPECT_THROW_MSG(format("{0}{}", 'a', 'b'),
       FormatError, "cannot switch from manual to automatic argument indexing");
-  EXPECT_THROW_MSG(Format("{}{0}") << 'a' << 'b',
+  EXPECT_THROW_MSG(format("{}{0}", 'a', 'b'),
       FormatError, "cannot switch from automatic to manual argument indexing");
-  EXPECT_EQ("1.2", str(Format("{:.{}}") << 1.2345 << 2));
-  EXPECT_THROW_MSG(Format("{0}:.{}") << 1.2345 << 2,
+  EXPECT_EQ("1.2", str(format("{:.{}}", 1.2345, 2)));
+  EXPECT_THROW_MSG(format("{0}:.{}", 1.2345, 2),
       FormatError, "cannot switch from manual to automatic argument indexing");
-  EXPECT_THROW_MSG(Format("{:.{0}}") << 1.2345 << 2,
+  EXPECT_THROW_MSG(format("{:.{0}}", 1.2345, 2),
       FormatError, "cannot switch from automatic to manual argument indexing");
   EXPECT_THROW_MSG(Format("{}"), FormatError,
       "argument index is out of range in format");
 }
 
 TEST(FormatterTest, EmptySpecs) {
-  EXPECT_EQ("42", str(Format("{0:}") << 42));
+  EXPECT_EQ("42", str(format("{0:}", 42)));
 }
 
 TEST(FormatterTest, LeftAlign) {
-  EXPECT_EQ("42  ", str(Format("{0:<4}") << 42));
-  EXPECT_EQ("42  ", str(Format("{0:<4o}") << 042));
-  EXPECT_EQ("42  ", str(Format("{0:<4x}") << 0x42));
-  EXPECT_EQ("-42  ", str(Format("{0:<5}") << -42));
-  EXPECT_EQ("42   ", str(Format("{0:<5}") << 42u));
-  EXPECT_EQ("-42  ", str(Format("{0:<5}") << -42l));
-  EXPECT_EQ("42   ", str(Format("{0:<5}") << 42ul));
-  EXPECT_EQ("-42  ", str(Format("{0:<5}") << -42ll));
-  EXPECT_EQ("42   ", str(Format("{0:<5}") << 42ull));
-  EXPECT_EQ("-42  ", str(Format("{0:<5}") << -42.0));
-  EXPECT_EQ("-42  ", str(Format("{0:<5}") << -42.0l));
-  EXPECT_EQ("c    ", str(Format("{0:<5}") << 'c'));
-  EXPECT_EQ("abc  ", str(Format("{0:<5}") << "abc"));
+  EXPECT_EQ("42  ", str(format("{0:<4}", 42)));
+  EXPECT_EQ("42  ", str(format("{0:<4o}", 042)));
+  EXPECT_EQ("42  ", str(format("{0:<4x}", 0x42)));
+  EXPECT_EQ("-42  ", str(format("{0:<5}", -42)));
+  EXPECT_EQ("42   ", str(format("{0:<5}", 42u)));
+  EXPECT_EQ("-42  ", str(format("{0:<5}", -42l)));
+  EXPECT_EQ("42   ", str(format("{0:<5}", 42ul)));
+  EXPECT_EQ("-42  ", str(format("{0:<5}", -42ll)));
+  EXPECT_EQ("42   ", str(format("{0:<5}", 42ull)));
+  EXPECT_EQ("-42  ", str(format("{0:<5}", -42.0)));
+  EXPECT_EQ("-42  ", str(format("{0:<5}", -42.0l)));
+  EXPECT_EQ("c    ", str(format("{0:<5}", 'c')));
+  EXPECT_EQ("abc  ", str(format("{0:<5}", "abc")));
   EXPECT_EQ("0xface  ",
-      str(Format("{0:<8}") << reinterpret_cast<void*>(0xface)));
-  EXPECT_EQ("def  ", str(Format("{0:<5}") << TestString("def")));
+      str(format("{0:<8}", reinterpret_cast<void*>(0xface))));
+  EXPECT_EQ("def  ", str(format("{0:<5}", TestString("def"))));
 }
 
 TEST(FormatterTest, RightAlign) {
-  EXPECT_EQ("  42", str(Format("{0:>4}") << 42));
-  EXPECT_EQ("  42", str(Format("{0:>4o}") << 042));
-  EXPECT_EQ("  42", str(Format("{0:>4x}") << 0x42));
-  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42));
-  EXPECT_EQ("   42", str(Format("{0:>5}") << 42u));
-  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42l));
-  EXPECT_EQ("   42", str(Format("{0:>5}") << 42ul));
-  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42ll));
-  EXPECT_EQ("   42", str(Format("{0:>5}") << 42ull));
-  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42.0));
-  EXPECT_EQ("  -42", str(Format("{0:>5}") << -42.0l));
-  EXPECT_EQ("    c", str(Format("{0:>5}") << 'c'));
-  EXPECT_EQ("  abc", str(Format("{0:>5}") << "abc"));
+  EXPECT_EQ("  42", str(format("{0:>4}", 42)));
+  EXPECT_EQ("  42", str(format("{0:>4o}", 042)));
+  EXPECT_EQ("  42", str(format("{0:>4x}", 0x42)));
+  EXPECT_EQ("  -42", str(format("{0:>5}", -42)));
+  EXPECT_EQ("   42", str(format("{0:>5}", 42u)));
+  EXPECT_EQ("  -42", str(format("{0:>5}", -42l)));
+  EXPECT_EQ("   42", str(format("{0:>5}", 42ul)));
+  EXPECT_EQ("  -42", str(format("{0:>5}", -42ll)));
+  EXPECT_EQ("   42", str(format("{0:>5}", 42ull)));
+  EXPECT_EQ("  -42", str(format("{0:>5}", -42.0)));
+  EXPECT_EQ("  -42", str(format("{0:>5}", -42.0l)));
+  EXPECT_EQ("    c", str(format("{0:>5}", 'c')));
+  EXPECT_EQ("  abc", str(format("{0:>5}", "abc")));
   EXPECT_EQ("  0xface",
-      str(Format("{0:>8}") << reinterpret_cast<void*>(0xface)));
-  EXPECT_EQ("  def", str(Format("{0:>5}") << TestString("def")));
+      str(format("{0:>8}", reinterpret_cast<void*>(0xface))));
+  EXPECT_EQ("  def", str(format("{0:>5}", TestString("def"))));
 }
 
 TEST(FormatterTest, NumericAlign) {
-  EXPECT_EQ("  42", str(Format("{0:=4}") << 42));
-  EXPECT_EQ("+ 42", str(Format("{0:=+4}") << 42));
-  EXPECT_EQ("  42", str(Format("{0:=4o}") << 042));
-  EXPECT_EQ("+ 42", str(Format("{0:=+4o}") << 042));
-  EXPECT_EQ("  42", str(Format("{0:=4x}") << 0x42));
-  EXPECT_EQ("+ 42", str(Format("{0:=+4x}") << 0x42));
-  EXPECT_EQ("-  42", str(Format("{0:=5}") << -42));
-  EXPECT_EQ("   42", str(Format("{0:=5}") << 42u));
-  EXPECT_EQ("-  42", str(Format("{0:=5}") << -42l));
-  EXPECT_EQ("   42", str(Format("{0:=5}") << 42ul));
-  EXPECT_EQ("-  42", str(Format("{0:=5}") << -42ll));
-  EXPECT_EQ("   42", str(Format("{0:=5}") << 42ull));
-  EXPECT_EQ("-  42", str(Format("{0:=5}") << -42.0));
-  EXPECT_EQ("-  42", str(Format("{0:=5}") << -42.0l));
-  EXPECT_THROW_MSG(Format("{0:=5") << 'c',
+  EXPECT_EQ("  42", str(format("{0:=4}", 42)));
+  EXPECT_EQ("+ 42", str(format("{0:=+4}", 42)));
+  EXPECT_EQ("  42", str(format("{0:=4o}", 042)));
+  EXPECT_EQ("+ 42", str(format("{0:=+4o}", 042)));
+  EXPECT_EQ("  42", str(format("{0:=4x}", 0x42)));
+  EXPECT_EQ("+ 42", str(format("{0:=+4x}", 0x42)));
+  EXPECT_EQ("-  42", str(format("{0:=5}", -42)));
+  EXPECT_EQ("   42", str(format("{0:=5}", 42u)));
+  EXPECT_EQ("-  42", str(format("{0:=5}", -42l)));
+  EXPECT_EQ("   42", str(format("{0:=5}", 42ul)));
+  EXPECT_EQ("-  42", str(format("{0:=5}", -42ll)));
+  EXPECT_EQ("   42", str(format("{0:=5}", 42ull)));
+  EXPECT_EQ("-  42", str(format("{0:=5}", -42.0)));
+  EXPECT_EQ("-  42", str(format("{0:=5}", -42.0l)));
+  EXPECT_THROW_MSG(format("{0:=5", 'c'),
       FormatError, "unmatched '{' in format");
-  EXPECT_THROW_MSG(Format("{0:=5}") << 'c',
+  EXPECT_THROW_MSG(format("{0:=5}", 'c'),
       FormatError, "format specifier '=' requires numeric argument");
-  EXPECT_THROW_MSG(Format("{0:=5}") << "abc",
+  EXPECT_THROW_MSG(format("{0:=5}", "abc"),
       FormatError, "format specifier '=' requires numeric argument");
-  EXPECT_THROW_MSG(Format("{0:=8}") << reinterpret_cast<void*>(0xface),
+  EXPECT_THROW_MSG(format("{0:=8}", reinterpret_cast<void*>(0xface)),
       FormatError, "format specifier '=' requires numeric argument");
-  EXPECT_THROW_MSG(Format("{0:=5}") << TestString("def"),
+  EXPECT_THROW_MSG(format("{0:=5}", TestString("def")),
       FormatError, "format specifier '=' requires numeric argument");
 }
 
