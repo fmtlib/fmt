@@ -59,9 +59,9 @@ int result;
   }
 
 MAKE_TEST(TestFunc)
-FMT_WRAP(TestFunc, const char *, 1)
+FMT_WRAP1(TestFunc, const char *, 1)
 
-TEST(UtilTest, Template) {
+TEST(UtilTest, Wrap1) {
   result = 0;
   TestFunc("", 42);
   EXPECT_EQ(42, result);

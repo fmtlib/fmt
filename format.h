@@ -872,16 +872,6 @@ public:
   }
 };
 
-#if FMT_USE_VARIADIC_TEMPLATES
-// Defines a variadic function returning void.
-# define FMT_VARIADIC_VOID(func, arg_type) \
-  template<typename... Args> \
-  void func(arg_type arg1, const Args & ... args) { \
-    const BasicArg<> \
-      arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = {args...}; \
-    func(arg1, ArgList(arg_array, sizeof...(Args))); \
-  }
-#else
 // Generates a comma-separated list with results of applying f to numbers 0..n-1.
 # define FMT_GEN(n, f) FMT_GEN##n(f)
 # define FMT_GEN1(f)  f(0)
@@ -899,9 +889,19 @@ public:
 # define FMT_MAKE_ARG(n) const T##n &v##n
 # define FMT_MAKE_REF(n) fmt::Writer::MakeArg(v##n)
 
+#if FMT_USE_VARIADIC_TEMPLATES
+// Defines a variadic function returning void.
+# define FMT_VARIADIC_VOID(func, arg_type) \
+  template<typename... Args> \
+  void func(arg_type arg1, const Args & ... args) { \
+    const BasicArg<> \
+      arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = {args...}; \
+    func(arg1, ArgList(arg_array, sizeof...(Args))); \
+  }
+#else
 // Defines a wrapper for a function taking one argument of type arg_type
 // and n additional arguments of arbitrary types.
-# define FMT_WRAP(func, arg_type, n) \
+# define FMT_WRAP1(func, arg_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
     const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
@@ -910,11 +910,11 @@ public:
 
 // Emulates a variadic function returning void on a pre-C++11 compiler.
 # define FMT_VARIADIC_VOID(func, arg_type) \
-  FMT_WRAP(func, arg_type, 1) FMT_WRAP(func, arg_type, 2) \
-  FMT_WRAP(func, arg_type, 3) FMT_WRAP(func, arg_type, 4) \
-  FMT_WRAP(func, arg_type, 5) FMT_WRAP(func, arg_type, 6) \
-  FMT_WRAP(func, arg_type, 7) FMT_WRAP(func, arg_type, 8) \
-  FMT_WRAP(func, arg_type, 9) FMT_WRAP(func, arg_type, 10)
+  FMT_WRAP1(func, arg_type, 1) FMT_WRAP1(func, arg_type, 2) \
+  FMT_WRAP1(func, arg_type, 3) FMT_WRAP1(func, arg_type, 4) \
+  FMT_WRAP1(func, arg_type, 5) FMT_WRAP1(func, arg_type, 6) \
+  FMT_WRAP1(func, arg_type, 7) FMT_WRAP1(func, arg_type, 8) \
+  FMT_WRAP1(func, arg_type, 9) FMT_WRAP1(func, arg_type, 10)
 #endif
 
 // Generates a comma-separated list with results of applying f to pairs
@@ -2183,61 +2183,51 @@ inline void FormatDec(char *&buffer, T value) {
 #define FMT_FOR_EACH_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
 #define FMT_FOR_EACH_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
 
-#define FMT_FOR_EACH_(N, func, ...) \
-  FMT_CONCATENATE(FMT_FOR_EACH, N)(func, __VA_ARGS__)
-#define FMT_FOR_EACH(func, ...) \
-  FMT_EXPAND(FMT_FOR_EACH_(FMT_FOR_EACH_NARG(__VA_ARGS__), func, __VA_ARGS__))
+#define FMT_FOR_EACH_(N, func, ...) FMT_CONCATENATE(FMT_FOR_EACH, N)(func, __VA_ARGS__)
+#define FMT_FOR_EACH(f, ...) \
+  FMT_EXPAND(FMT_FOR_EACH_(FMT_FOR_EACH_NARG(__VA_ARGS__), f, __VA_ARGS__))
 
 #define FMT_ADD_ARG_NAME(type, index) type arg##index
 #define FMT_GET_ARG_NAME(type, index) arg##index
 #define FMT_MAKE_ARG2(arg, index) fmt::Writer::MakeArg(arg)
 
-#define FMT_VARIADIC(return_type, func_name, ...) \
-  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) { \
-    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+// Defines a wrapper for a function taking __VA_ARGS__ arguments
+// and n additional arguments of arbitrary types.
+# define FMT_WRAP(return_type, func, n, ...) \
+  template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
+  inline return_type func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
+                   FMT_GEN(n, FMT_MAKE_ARG)) { \
+    const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+         fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+  }
+
+// Defines a variadic function with the specified return type and argument
+// types passed as variable arguments.
+// Example:
+//   std::string FormatError(int error_code, const char *format,
+//                           const fmt::ArgList &args) {
+//     fmt::Writer w;
+//     w.format("Error {}: ", error_code);
+//     w.format(format, args);
+//     return w.str();
+//   }
+//   FMT_VARIADIC(std::string, FormatError, int, const char *)
+#define FMT_VARIADIC(return_type, func, ...) \
+  inline return_type func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) { \
+    return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList()); \
   } \
-  template <typename T1> \
-  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
-      const T1 &v1) { \
-    const fmt::internal::ArgInfo args[] = {FMT_FOR_EACH(FMT_MAKE_ARG2, v1)}; \
-    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
-  } \
-  template <typename T1, typename T2> \
-  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
-      const T1 &v1, const T2 &v2) { \
-    const fmt::internal::ArgInfo args[] = {FMT_FOR_EACH(FMT_MAKE_ARG2, v1, v2)}; \
-    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
-  } \
-  template <typename T1, typename T2, typename T3> \
-  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
-      const T1 &v1, const T2 &v2, const T3 &v3) { \
-    const fmt::internal::ArgInfo args[] = { \
-      FMT_FOR_EACH(FMT_MAKE_ARG2, v1, v2, v3) \
-    }; \
-    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
-  } \
-  template <typename T1, typename T2, typename T3, typename T4> \
-  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
-    const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4) { \
-    const fmt::internal::ArgInfo args[] = { \
-      FMT_FOR_EACH(FMT_MAKE_ARG2, v1, v2, v3, v4) \
-    }; \
-    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
-  } \
-  template <typename T1, typename T2, typename T3, typename T4, typename T5> \
-  inline return_type func_name(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
-    const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5) { \
-    const fmt::internal::ArgInfo args[] = { \
-      FMT_FOR_EACH(FMT_MAKE_ARG2, v1, v2, v3, v4, v5) \
-    }; \
-    return func_name(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
-  }
+  FMT_WRAP(return_type, func, 1, __VA_ARGS__) \
+  FMT_WRAP(return_type, func, 2, __VA_ARGS__) \
+  FMT_WRAP(return_type, func, 3, __VA_ARGS__) \
+  FMT_WRAP(return_type, func, 4, __VA_ARGS__) \
+  FMT_WRAP(return_type, func, 5, __VA_ARGS__) \
+  FMT_WRAP(return_type, func, 6, __VA_ARGS__) \
+  FMT_WRAP(return_type, func, 7, __VA_ARGS__) \
+  FMT_WRAP(return_type, func, 8, __VA_ARGS__) \
+  FMT_WRAP(return_type, func, 9, __VA_ARGS__) \
+  FMT_WRAP(return_type, func, 10, __VA_ARGS__)
 
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406
