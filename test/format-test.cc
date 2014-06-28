@@ -1677,7 +1677,7 @@ TEST(FormatTest, VariadicMacro) {
   EXPECT_EQ("42 abc 1.2", test(42, " {} {}", "abc", 1.2));
 }
 
-std::string FormatMessage(const char *format, int id,
+std::string FormatMessage(int id, const char *format,
     const fmt::ArgList &args) {
   fmt::Writer w;
   w.format("[{}] ", id);
