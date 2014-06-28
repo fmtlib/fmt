@@ -882,18 +882,18 @@ public:
     func(arg1, ArgList(arg_array, sizeof...(Args))); \
   }
 #else
-// Generates a comma-separated list with results of applying f to numbers 1..n.
+// Generates a comma-separated list with results of applying f to numbers 0..n-1.
 # define FMT_GEN(n, f) FMT_GEN##n(f)
-# define FMT_GEN1(f)  f(1)
-# define FMT_GEN2(f)  FMT_GEN1(f), f(2)
-# define FMT_GEN3(f)  FMT_GEN2(f), f(3)
-# define FMT_GEN4(f)  FMT_GEN3(f), f(4)
-# define FMT_GEN5(f)  FMT_GEN4(f), f(5)
-# define FMT_GEN6(f)  FMT_GEN5(f), f(6)
-# define FMT_GEN7(f)  FMT_GEN6(f), f(7)
-# define FMT_GEN8(f)  FMT_GEN7(f), f(8)
-# define FMT_GEN9(f)  FMT_GEN8(f), f(9)
-# define FMT_GEN10(f) FMT_GEN9(f), f(10)
+# define FMT_GEN1(f)  f(0)
+# define FMT_GEN2(f)  FMT_GEN1(f), f(1)
+# define FMT_GEN3(f)  FMT_GEN2(f), f(2)
+# define FMT_GEN4(f)  FMT_GEN3(f), f(3)
+# define FMT_GEN5(f)  FMT_GEN4(f), f(4)
+# define FMT_GEN6(f)  FMT_GEN5(f), f(5)
+# define FMT_GEN7(f)  FMT_GEN6(f), f(6)
+# define FMT_GEN8(f)  FMT_GEN7(f), f(7)
+# define FMT_GEN9(f)  FMT_GEN8(f), f(8)
+# define FMT_GEN10(f) FMT_GEN9(f), f(9)
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
@@ -916,6 +916,28 @@ public:
   FMT_WRAP(func, arg_type, 7) FMT_WRAP(func, arg_type, 8) \
   FMT_WRAP(func, arg_type, 9) FMT_WRAP(func, arg_type, 10)
 #endif
+
+// Generates a comma-separated list with results of applying f to pairs
+// (argument, index).
+#define FMT_FOR_EACH1(f, x0) f(x0, 0)
+#define FMT_FOR_EACH2(f, x0, x1) \
+  FMT_FOR_EACH1(f, x0), f(x1, 1)
+#define FMT_FOR_EACH3(f, x0, x1, x2) \
+  FMT_FOR_EACH2(f, x0 ,x1), f(x2, 2)
+#define FMT_FOR_EACH4(f, x0, x1, x2, x3) \
+  FMT_FOR_EACH3(f, x0, x1, x2), f(x3, 3)
+#define FMT_FOR_EACH5(f, x0, x1, x2, x3, x4) \
+  FMT_FOR_EACH4(f, x0, x1, x2, x3), f(x4, 4)
+#define FMT_FOR_EACH6(f, x0, x1, x2, x3, x4, x5) \
+  FMT_FOR_EACH5(f, x0, x1, x2, x3, x4), f(x5, 5)
+#define FMT_FOR_EACH7(f, x0, x1, x2, x3, x4, x5, x6) \
+  FMT_FOR_EACH6(f, x0, x1, x2, x3, x4, x5), f(x6, 6)
+#define FMT_FOR_EACH8(f, x0, x1, x2, x3, x4, x5, x6, x7) \
+  FMT_FOR_EACH7(f, x0, x1, x2, x3, x4, x5, x6), f(x7, 7)
+#define FMT_FOR_EACH9(f, x0, x1, x2, x3, x4, x5, x6, x7, x8) \
+  FMT_FOR_EACH8(f, x0, x1, x2, x3, x4, x5, x6, x7), f(x8, 8)
+#define FMT_FOR_EACH10(f, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) \
+  FMT_FOR_EACH9(f, x0, x1, x2, x3, x4, x5, x6, x7, x8), f(x9, 9)
 
 /**
   \rst
@@ -2156,29 +2178,13 @@ inline void FormatDec(char *&buffer, T value) {
 #define FMT_CONCATENATE2(arg1, arg2)  arg1##arg2
 
 #define FMT_EXPAND(args) args
-#define FMT_FOR_EACH_1(func, x, ...) func(x, 1)
-#define FMT_FOR_EACH_2(func, x, ...) \
-  func(x, 2), FMT_EXPAND(FMT_FOR_EACH_1(func, __VA_ARGS__))
-#define FMT_FOR_EACH_3(func, x, ...) \
-  func(x, 3), FMT_EXPAND(FMT_FOR_EACH_2(func, __VA_ARGS__))
-#define FMT_FOR_EACH_4(func, x, ...) \
-  func(x, 4), FMT_EXPAND(FMT_FOR_EACH_3(func, __VA_ARGS__))
-#define FMT_FOR_EACH_5(func, x, ...) \
-  func(x, 5), FMT_EXPAND(FMT_FOR_EACH_4(func, __VA_ARGS__))
-#define FMT_FOR_EACH_6(func, x, ...) \
-  func(x, 6), FMT_EXPAND(FMT_FOR_EACH_5(func, __VA_ARGS__))
-#define FMT_FOR_EACH_7(func, x, ...) \
-  func(x, 7), FMT_EXPAND(FMT_FOR_EACH_6(func, __VA_ARGS__))
-#define FMT_FOR_EACH_8(func, x, ...) \
-  func(x, 8), FMT_EXPAND(FMT_FOR_EACH_7(func, __VA_ARGS__))
-
 #define FMT_FOR_EACH_NARG(...) FMT_FOR_EACH_NARG_(__VA_ARGS__, FMT_FOR_EACH_RSEQ_N())
 #define FMT_FOR_EACH_NARG_(...) FMT_EXPAND(FMT_FOR_EACH_ARG_N(__VA_ARGS__))
 #define FMT_FOR_EACH_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
 #define FMT_FOR_EACH_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
 
 #define FMT_FOR_EACH_(N, func, ...) \
-  FMT_CONCATENATE(FMT_FOR_EACH_, N)(func, __VA_ARGS__)
+  FMT_CONCATENATE(FMT_FOR_EACH, N)(func, __VA_ARGS__)
 #define FMT_FOR_EACH(func, ...) \
   FMT_EXPAND(FMT_FOR_EACH_(FMT_FOR_EACH_NARG(__VA_ARGS__), func, __VA_ARGS__))
 

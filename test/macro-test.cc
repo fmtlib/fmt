@@ -25,15 +25,28 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <utility>
 #include <gtest/gtest.h>
 #include "format.h"
 
 #define IDENTITY(x) x
 
 TEST(UtilTest, Gen) {
-  int values[] = {FMT_GEN(9, IDENTITY)};
-  for (int i = 0; i < 9; ++i)
-    EXPECT_EQ(i + 1, values[i]);
+  int values[] = {FMT_GEN(10, IDENTITY)};
+  for (int i = 0; i < 10; ++i)
+    EXPECT_EQ(i, values[i]);
+}
+
+#define MAKE_PAIR(x, y) std::make_pair(x, y)
+
+TEST(UtilTest, ForEach) {
+  std::pair<char, int> values[] = {
+      FMT_FOR_EACH10(MAKE_PAIR, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j')
+  };
+  for (int i = 0; i < 10; ++i) {
+    EXPECT_EQ('a' + i, values[i].first);
+    EXPECT_EQ(i, values[i].second);
+  }
 }
 
 int result;
@@ -59,6 +72,6 @@ FMT_VARIADIC_VOID(TestVariadicVoid, const char *)
 
 TEST(UtilTest, VariadicVoid) {
   result = 0;
-  TestVariadicVoid("", 10, 20, 30, 40, 50, 60, 70, 80, 90);
-  EXPECT_EQ(450, result);
+  TestVariadicVoid("", 10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
+  EXPECT_EQ(550, result);
 }
