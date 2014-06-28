@@ -1677,17 +1677,17 @@ TEST(FormatTest, VariadicMacro) {
   EXPECT_EQ("42 abc 1.2", test(42, " {} {}", "abc", 1.2));
 }
 
-std::string FormatError(int error_code, const char *format,
+std::string FormatMessage(const char *format, int id,
     const fmt::ArgList &args) {
   fmt::Writer w;
-  w.format("Error {}: ", error_code);
+  w.format("[{}] ", id);
   w.format(format, args);
   return w.str();
 }
 
-FMT_VARIADIC(std::string, FormatError, int, const char *)
+FMT_VARIADIC(std::string, FormatMessage, int, const char *)
 
-TEST(FormatTest, FormatError) {
-  EXPECT_EQ("Error 42: something happened",
-    FormatError(42, "{} happened", "something"));
+TEST(FormatTest, FormatMessageExample) {
+  EXPECT_EQ("[42] something happened",
+    MyFormatError(42, "{} happened", "something"));
 }

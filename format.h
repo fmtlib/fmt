@@ -2184,7 +2184,8 @@ inline void FormatDec(char *&buffer, T value) {
 #define FMT_RSEQ_N() 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 
 #define FMT_CONCAT(a, b) a##b
-#define FMT_FOR_EACH_(N, f, ...) FMT_CONCAT(FMT_FOR_EACH, N)(f, __VA_ARGS__)
+#define FMT_FOR_EACH_(N, f, ...) \
+  FMT_EXPAND(FMT_CONCAT(FMT_FOR_EACH, N)(f, __VA_ARGS__))
 #define FMT_FOR_EACH(f, ...) \
   FMT_EXPAND(FMT_FOR_EACH_(FMT_NARG(__VA_ARGS__), f, __VA_ARGS__))
 
@@ -2194,26 +2195,26 @@ inline void FormatDec(char *&buffer, T value) {
 
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
 // and n additional arguments of arbitrary types.
-# define FMT_WRAP(return_type, func, n, ...) FMT_EXPAND( \
+# define FMT_WRAP(return_type, func, n, ...) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline return_type func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       FMT_GEN(n, FMT_MAKE_ARG)) { \
     const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
     return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
          fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
-  })
+  }
 
 // Defines a variadic function with the specified return type and argument
 // types passed as variable arguments.
 // Example:
-//   std::string FormatError(int error_code, const char *format,
-//                           const fmt::ArgList &args) {
+//   std::string FormatMessage(const char *format, int id,
+//                             const fmt::ArgList &args) {
 //     fmt::Writer w;
-//     w.format("Error {}: ", error_code);
+//     w.format("[{}] ", id);
 //     w.format(format, args);
 //     return w.str();
 //   }
-//   FMT_VARIADIC(std::string, FormatError, int, const char *)
+//   FMT_VARIADIC(std::string, FormatMessage, int, const char *)
 #define FMT_VARIADIC(return_type, func, ...) \
   inline return_type func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) { \
     return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
