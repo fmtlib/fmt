@@ -2177,12 +2177,13 @@ inline void FormatDec(char *&buffer, T value) {
 #define FMT_CONCATENATE1(arg1, arg2)  FMT_CONCATENATE2(arg1, arg2)
 #define FMT_CONCATENATE2(arg1, arg2)  arg1##arg2
 
+// This is used to work around VC++ bugs in handling variadic macros.
 #define FMT_EXPAND(args) args
 
 // Returns the number of arguments.
 // Based on https://groups.google.com/forum/#!topic/comp.std.c/d-6Mj5Lko_s.
 #define FMT_NARG(...) FMT_NARG_(__VA_ARGS__, FMT_RSEQ_N())
-#define FMT_NARG_(...) FMT_ARG_N(__VA_ARGS__)
+#define FMT_NARG_(...) FMT_EXPAND(FMT_ARG_N(__VA_ARGS__))
 #define FMT_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
 #define FMT_RSEQ_N() 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 
