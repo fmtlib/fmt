@@ -49,6 +49,19 @@ TEST(UtilTest, ForEach) {
   }
 }
 
+TEST(UtilTest, NArg) {
+  EXPECT_EQ(1, FMT_NARG(a));
+  EXPECT_EQ(2, FMT_NARG(a, b));
+  EXPECT_EQ(3, FMT_NARG(a, b, c));
+  EXPECT_EQ(4, FMT_NARG(a, b, c, d));
+  EXPECT_EQ(5, FMT_NARG(a, b, c, d, e));
+  EXPECT_EQ(6, FMT_NARG(a, b, c, d, e, f));
+  EXPECT_EQ(7, FMT_NARG(a, b, c, d, e, f, g));
+  EXPECT_EQ(8, FMT_NARG(a, b, c, d, e, f, g, h));
+  EXPECT_EQ(9, FMT_NARG(a, b, c, d, e, f, g, h, i));
+  EXPECT_EQ(10, FMT_NARG(a, b, c, d, e, f, g, h, i, j));
+}
+
 int result;
 
 #define MAKE_TEST(func) \
