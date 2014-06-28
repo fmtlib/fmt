@@ -2180,8 +2180,8 @@ inline void FormatDec(char *&buffer, T value) {
 #define FMT_EXPAND(args) args
 #define FMT_FOR_EACH_NARG(...) FMT_FOR_EACH_NARG_(__VA_ARGS__, FMT_FOR_EACH_RSEQ_N())
 #define FMT_FOR_EACH_NARG_(...) FMT_EXPAND(FMT_FOR_EACH_ARG_N(__VA_ARGS__))
-#define FMT_FOR_EACH_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
-#define FMT_FOR_EACH_RSEQ_N() 8, 7, 6, 5, 4, 3, 2, 1, 0
+#define FMT_FOR_EACH_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+#define FMT_FOR_EACH_RSEQ_N() 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 
 #define FMT_FOR_EACH_(N, func, ...) FMT_CONCATENATE(FMT_FOR_EACH, N)(func, __VA_ARGS__)
 #define FMT_FOR_EACH(f, ...) \
