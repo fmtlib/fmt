@@ -26,7 +26,7 @@ expect_compile_error("fmt::internal::Array<char, 5> a, b(a);")
 expect_compile_error("fmt::internal::Array<char, 5> a, b; b = a;")
 
 # Writer is noncopyable.
-expect_compile_error("fmt::Writer a, b(a);")
+expect_compile_error("const fmt::Writer a, b(a);")
 expect_compile_error("fmt::Writer a, b; b = a;")
 
 # Formatter is not copyable from a temporary.

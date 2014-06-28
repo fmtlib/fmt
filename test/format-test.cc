@@ -1359,9 +1359,9 @@ TEST(FormatterTest, FormatExamples) {
   std::string message = str(Format("The answer is {}") << 42);
   EXPECT_EQ("The answer is 42", message);
 
-  EXPECT_EQ("42", str(Format("{}") << 42));
-  EXPECT_EQ("42", str(Format(std::string("{}")) << 42));
-  EXPECT_EQ("42", str(Format(Format("{{}}")) << 42));
+  EXPECT_EQ("42", str(format("{}", 42)));
+  EXPECT_EQ("42", str(format(std::string("{}"), 42)));
+  EXPECT_EQ("42", str(format(Format("{{}}"), 42)));
 
   Writer writer;
   writer.Format("Current point:\n");
@@ -1565,17 +1565,15 @@ TEST(FormatterTest, Examples) {
   std::string path = "somefile";
   ReportError("File not found: {0}") << path;
 
-#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
-  EXPECT_EQ("The answer is 42", str(Format("The answer is {}", 42)));
+  EXPECT_EQ("The answer is 42", str(format("The answer is {}", 42)));
   EXPECT_THROW_MSG(
-    Format("The answer is {:d}", "forty-two"), FormatError,
+    format("The answer is {:d}", "forty-two"), FormatError,
     "unknown format code 'd' for string");
   EXPECT_EQ(L"Cyrillic letter \x42e",
     str(Format(L"Cyrillic letter {}", L'\x42e')));
 
   EXPECT_WRITE(stdout,
       fmt::Print("{}", std::numeric_limits<double>::infinity()), "inf");
-#endif
 }
 
 TEST(FormatIntTest, Data) {
@@ -1644,12 +1642,10 @@ TEST(FormatTest, PrintColored) {
 
 #endif
 
-#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 TEST(FormatTest, Variadic) {
-  EXPECT_EQ("abc1", str(Format("{}c{}", "ab", 1)));
+  EXPECT_EQ("abc1", str(format("{}c{}", "ab", 1)));
   EXPECT_EQ(L"abc1", str(Format(L"{}c{}", L"ab", 1)));
 }
-#endif  // FMT_USE_VARIADIC_TEMPLATES
 
 template <typename T>
 std::string str(const T &value) {

@@ -139,6 +139,10 @@ namespace fmt {
 FMT_GCC_EXTENSION typedef long long LongLong;
 FMT_GCC_EXTENSION typedef unsigned long long ULongLong;
 
+#if FMT_USE_RVALUE_REFERENCES
+using std::move;
+#endif
+
 template <typename Char>
 class BasicWriter;
 
@@ -156,11 +160,12 @@ struct FormatSpec;
   or as a result of a formatting operation. It is most useful as a parameter
   type to allow passing different types of strings in a function, for example::
 
-    Formatter<> Format(StringRef format);
+    template<typename... Args>
+    Writer format(StringRef format, const Args & ... args);
 
-    Format("{}") << 42;
-    Format(std::string("{}")) << 42;
-    Format(Format("{{}}")) << 42;
+    format("{}", 42);
+    format(std::string("{}"), 42);
+    format(format("{{}}"), 42);
   \endrst
  */
 template <typename Char>
@@ -250,8 +255,14 @@ class Array {
     if (ptr_ != data_) delete [] ptr_;
   }
 
+  FMT_DISALLOW_COPY_AND_ASSIGN(Array);
+
+ public:
+  Array() : size_(0), capacity_(SIZE), ptr_(data_) {}
+  ~Array() { Free(); }
+
   // Move data from other to this array.
-  void Move(Array &other) {
+  void move(Array &other) {
     size_ = other.size_;
     capacity_ = other.capacity_;
     if (other.ptr_ == other.data_) {
@@ -265,21 +276,15 @@ class Array {
     }
   }
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(Array);
-
- public:
-  Array() : size_(0), capacity_(SIZE), ptr_(data_) {}
-  ~Array() { Free(); }
-
 #if FMT_USE_RVALUE_REFERENCES
   Array(Array &&other) {
-    Move(other);
+    move(other);
   }
 
   Array& operator=(Array &&other) {
     assert(this != &other);
     Free();
-    Move(other);
+    move(other);
     return *this;
   }
 #endif
@@ -977,7 +982,8 @@ template <typename Char>
 class BasicWriter {
  private:
   // Output buffer.
-  mutable internal::Array<Char, internal::INLINE_BUFFER_SIZE> buffer_;
+  typedef internal::Array<Char, internal::INLINE_BUFFER_SIZE> Buffer;
+  mutable Buffer buffer_;
 
   // Make BasicFormatter a friend so that it can access ArgInfo and Arg.
   friend class BasicFormatter<Char>;
@@ -1220,6 +1226,21 @@ class BasicWriter {
     buffer_ = std::move(other.buffer_);
     return *this;
   }
+#else
+  friend inline BasicWriter &move(BasicWriter &w) { return w; }
+
+ private:
+  struct Proxy { Buffer *buffer; };
+
+ public:
+  operator Proxy() {
+    Proxy p = {&buffer_};
+    return p;
+  }
+
+  // "Move" constructors.
+  BasicWriter(BasicWriter &other) { buffer_.move(other.buffer_); }
+  BasicWriter(Proxy p) { buffer_.move(*p.buffer); }
 #endif
 
   /**
@@ -1988,24 +2009,11 @@ inline Formatter<ANSITerminalSink> PrintColored(Color c, StringRef format) {
   return f;
 }
 
-#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
-
-template <typename Char>
-template<typename... Args>
-void BasicWriter<Char>::Format(
-    BasicStringRef<Char> format, const Args & ... args) {
-  this->format(format, args...);
-}
-
 /**
   \rst
   Formats a string similarly to Python's `str.format
   <http://docs.python.org/3/library/stdtypes.html#str.format>`__ function
   and returns an :cpp:class:`fmt::BasicWriter` object containing the output.
-
-  This version of the Format function uses C++11 features such as
-  variadic templates and rvalue references. For C++98 version, see
-  the :cpp:func:`fmt::Format()` overload above.
 
   *format* is a format string that contains literal text and replacement
   fields surrounded by braces ``{}``. The formatter object replaces the
@@ -2016,11 +2024,30 @@ void BasicWriter<Char>::Format(
 
   **Example**::
 
-    std::string message = str(Format("The answer is {}", 42));
+    std::string message = str(format("The answer is {}", 42));
 
   See also `Format String Syntax`_.
   \endrst
- */
+*/
+inline Writer format(StringRef format, const ArgList &args) {
+  Writer w;
+  w.format(format, args);
+  return move(w);
+}
+
+#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
+
+template <typename Char>
+template<typename... Args>
+void BasicWriter<Char>::Format(
+    BasicStringRef<Char> format, const Args & ... args) {
+  this->format(format, args...);
+}
+
+// This function is deprecated, use fmt::format instead.
+template<typename... Args>
+FMT_DEPRECATED(Writer Format(StringRef format, const Args & ... args));
+
 template<typename... Args>
 inline Writer Format(StringRef format, const Args & ... args) {
   Writer w;
@@ -2038,7 +2065,7 @@ inline WWriter Format(WStringRef format, const Args & ... args) {
 template<typename... Args>
 void Print(StringRef format, const Args & ... args) {
   Writer w;
-  w.Format(format, args...);
+  w.format(format, args...);
   std::fwrite(w.data(), 1, w.size(), stdout);
 }
 
@@ -2251,6 +2278,8 @@ inline void FormatDec(char *&buffer, T value) {
   FMT_WRAP(return_type, func, 10, __VA_ARGS__)
 
 #endif  // FMT_USE_VARIADIC_TEMPLATES
+
+FMT_VARIADIC(fmt::Writer, format, fmt::StringRef)
 
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406
