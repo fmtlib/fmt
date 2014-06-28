@@ -2194,14 +2194,14 @@ inline void FormatDec(char *&buffer, T value) {
 
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
 // and n additional arguments of arbitrary types.
-# define FMT_WRAP(return_type, func, n, ...) \
+# define FMT_WRAP(return_type, func, n, ...) FMT_EXPAND( \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline return_type func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
-                   FMT_GEN(n, FMT_MAKE_ARG)) { \
+      FMT_GEN(n, FMT_MAKE_ARG)) { \
     const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
     return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
          fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
-  }
+  })
 
 // Defines a variadic function with the specified return type and argument
 // types passed as variable arguments.
