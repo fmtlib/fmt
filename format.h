@@ -1611,7 +1611,7 @@ template <typename Char, typename T>
 void format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
-  w.Write(os.str(), spec);
+  w.write(os.str(), spec);
 }
 
 namespace internal {

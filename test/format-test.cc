@@ -1324,7 +1324,7 @@ class Answer {};
 
 template <typename Char>
 void format(BasicWriter<Char> &w, const fmt::FormatSpec &spec, Answer) {
-  w.Write("42", spec);
+  w.write("42", spec);
 }
 
 TEST(FormatterTest, CustomFormat) {
