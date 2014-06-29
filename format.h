@@ -859,7 +859,9 @@ inline StrFormatSpec<wchar_t> pad(
   return StrFormatSpec<wchar_t>(str, width, fill);
 }
 
-// An argument list.
+/**
+  An argument list.
+ */
 class ArgList {
  private:
   const internal::ArgInfo *args_;
@@ -1398,16 +1400,20 @@ class BasicWriter {
 
   // This function is deprecated, use write instead.
   FMT_DEPRECATED(void Write(const std::basic_string<Char> &s, const FormatSpec &spec));
-  void Write(const std::basic_string<Char> &s, const FormatSpec &spec) {
-    write(s, spec);
-  }
   
   void clear() { buffer_.clear(); }
 
   // This function is deprecated, use clear instead.
   FMT_DEPRECATED(void Clear());
-  void Clear() { clear(); }
 };
+
+template <typename Char>
+inline void BasicWriter<Char>::Write(const std::basic_string<Char> &s, const FormatSpec &spec) {
+  write(s, spec);
+}
+
+template <typename Char>
+inline void BasicWriter<Char>::Clear() { clear(); }
 
 template <typename Char>
 template <typename StringChar>
@@ -1595,7 +1601,7 @@ namespace internal {
 // Formats an argument of a custom type, such as a user-defined class.
 template <typename Char, typename T>
 void FormatCustomArg(void *writer, const void *arg, const FormatSpec &spec) {
-  Format(*static_cast<BasicWriter<Char>*>(writer),
+  format(*static_cast<BasicWriter<Char>*>(writer),
       spec, *static_cast<const T*>(arg));
 }
 }
@@ -1823,9 +1829,8 @@ inline Formatter<> Format(StringRef format) {
   return f;
 }
 
-
 // This function is deprecated, use format instead.
-FMT_DEPRECATED(Formatter<NullSink, wchar_t> Format(WStringRef format));
+Formatter<NullSink, wchar_t> FMT_DEPRECATED(Format(WStringRef format));
 inline Formatter<NullSink, wchar_t> Format(WStringRef format) {
   Formatter<NullSink, wchar_t> f(format);
   return f;
