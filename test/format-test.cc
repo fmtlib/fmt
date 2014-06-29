@@ -301,7 +301,7 @@ TEST(WriterTest, MoveCtor) {
   std::string s;
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
     s += '*';
-  w.Clear();
+  w.clear();
   w << s;
   CheckMoveWriter(s, w);
   const char *inline_buffer_ptr = w.data();
@@ -330,7 +330,7 @@ TEST(WriterTest, MoveAssignment) {
   std::string s;
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
     s += '*';
-  w.Clear();
+  w.clear();
   w << s;
   CheckMoveAssignWriter(s, w);
   const char *inline_buffer_ptr = w.data();
@@ -519,16 +519,16 @@ TEST(WriterTest, pad) {
   EXPECT_EQ("     33", str(Writer() << pad(33ll, 7)));
   EXPECT_EQ("     44", str(Writer() << pad(44ull, 7)));
 
-  BasicWriter<char> f;
-  f.Clear();
-  f << pad(42, 5, '0');
-  EXPECT_EQ("00042", f.str());
-  f.Clear();
-  f << Date(2012, 12, 9);
-  EXPECT_EQ("2012-12-9", f.str());
-  f.Clear();
-  f << iso8601(Date(2012, 1, 9));
-  EXPECT_EQ("2012-01-09", f.str());
+  BasicWriter<char> w;
+  w.clear();
+  w << pad(42, 5, '0');
+  EXPECT_EQ("00042", w.str());
+  w.clear();
+  w << Date(2012, 12, 9);
+  EXPECT_EQ("2012-12-9", w.str());
+  w.clear();
+  w << iso8601(Date(2012, 1, 9));
+  EXPECT_EQ("2012-01-09", w.str());
 }
 
 TEST(WriterTest, PadString) {
@@ -1538,10 +1538,8 @@ TEST(FormatterTest, Examples) {
   EXPECT_EQ(L"Cyrillic letter \x42e",
     str(format(L"Cyrillic letter {}", L'\x42e')));
 
-#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
   EXPECT_WRITE(stdout,
-      fmt::Print("{}", std::numeric_limits<double>::infinity()), "inf");
-#endif
+      fmt::print("{}", std::numeric_limits<double>::infinity()), "inf");
 }
 
 TEST(FormatIntTest, Data) {
@@ -1590,14 +1588,13 @@ TEST(FormatIntTest, FormatDec) {
 #if FMT_USE_FILE_DESCRIPTORS
 
 TEST(FormatTest, Print) {
-  EXPECT_WRITE(stdout, fmt::Print("Don't {}!") << "panic", "Don't panic!");
+  EXPECT_WRITE(stdout, fmt::print("Don't {}!", "panic"), "Don't panic!");
   EXPECT_WRITE(stderr,
       fmt::Print(stderr, "Don't {}!") << "panic", "Don't panic!");
 }
 
 #if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 TEST(FormatTest, PrintVariadic) {
-  EXPECT_WRITE(stdout, fmt::Print("Don't {}!", "panic"), "Don't panic!");
   EXPECT_WRITE(stderr,
       fmt::Print(stderr, "Don't {}!", "panic"), "Don't panic!");
 }
