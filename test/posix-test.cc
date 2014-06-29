@@ -246,7 +246,7 @@ TEST(FileTest, DupNoRetry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
   dup_count = 1;
   EXPECT_SYSTEM_ERROR(File::dup(stdout_fd), EINTR,
-      str(fmt::Format("cannot duplicate file descriptor {}") << stdout_fd));
+      str(fmt::format("cannot duplicate file descriptor {}", stdout_fd)));
   dup_count = 0;
 }
 
@@ -254,8 +254,8 @@ TEST(FileTest, Dup2Retry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
   File f1 = File::dup(stdout_fd), f2 = File::dup(stdout_fd);
   EXPECT_RETRY(f1.dup2(f2.descriptor()), dup2,
-      str(fmt::Format("cannot duplicate file descriptor {} to {}")
-      << f1.descriptor() << f2.descriptor()));
+      str(fmt::format("cannot duplicate file descriptor {} to {}",
+      f1.descriptor(), f2.descriptor())));
 }
 
 TEST(FileTest, Dup2NoExceptRetry) {
