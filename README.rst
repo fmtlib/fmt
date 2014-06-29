@@ -103,7 +103,7 @@ which take arbitrary arguments:
     void ReportError(const char *format_str, const fmt::ArgList &args) {
       std::cerr << "Error: " << fmt::format(format_str, args) << std::endl;
     }
-    FMT_VARIADIC(void, ReportError)
+    FMT_VARIADIC(void, ReportError, const char *)
 
     ReportError("File not found: {}", path);
 
