@@ -123,6 +123,9 @@ Projects using this library
 * `Saddy <https://code.google.com/p/saddy/>`__:
   Small crossplatform 2D graphic engine
 
+* `HarpyWar/pvpgn <https://github.com/HarpyWar/pvpgn>`__:
+  Player vs Player Gaming Network with tweaks
+
 If you are aware of other projects using ``format``, please let me know
 by `email <mailto:victor.zverovich@gmail.com>`__ or by submitting an
 `issue <https://github.com/cppformat/cppformat/issues>`__.
