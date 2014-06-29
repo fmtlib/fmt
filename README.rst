@@ -108,7 +108,7 @@ which take arbitrary arguments:
     ReportError("File not found: {}", path);
 
 Note that you only need to define one function that takes ``const fmt::ArgList &``
-argument and `FMT_VARIADIC` automatically defines necessary wrappers that
+argument and ``FMT_VARIADIC`` automatically defines necessary wrappers that
 accept variable number of arguments. These wrappers are simple inline functions
 that are very fast and don't result in code bloat.
 
