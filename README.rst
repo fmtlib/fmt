@@ -99,13 +99,14 @@ which take arbitrary arguments:
 
 .. code-block:: c++
 
-    // Prints formatted error message to std::cerr.
-    void ReportError(const char *format_str, const fmt::ArgList &args) {
-      std::cerr << "Error: " << fmt::format(format_str, args) << std::endl;
+    // Prints formatted error message.
+    void report_error(const char *format, const fmt::ArgList &args) {
+      fmt::print("Error: {}");
+      fmt::print(format, args);
     }
-    FMT_VARIADIC(void, ReportError, const char *)
+    FMT_VARIADIC(void, report_error, const char *)
 
-    ReportError("File not found: {}", path);
+    report_error("file not found: {}", path);
 
 Note that you only need to define one function that takes ``const fmt::ArgList &``
 argument and ``FMT_VARIADIC`` automatically defines necessary wrappers that
