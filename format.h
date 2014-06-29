@@ -1392,13 +1392,21 @@ class BasicWriter {
     return *this;
   }
 
-  void Write(const std::basic_string<Char> &s, const FormatSpec &spec) {
+  void write(const std::basic_string<Char> &s, const FormatSpec &spec) {
     FormatString(s.data(), s.size(), spec);
   }
 
-  void Clear() {
-    buffer_.clear();
+  // This function is deprecated, use write instead.
+  FMT_DEPRECATED(void Write(const std::basic_string<Char> &s, const FormatSpec &spec));
+  void Write(const std::basic_string<Char> &s, const FormatSpec &spec) {
+    write(s, spec);
   }
+  
+  void clear() { buffer_.clear(); }
+
+  // This function is deprecated, use clear instead.
+  FMT_DEPRECATED(void Clear());
+  void Clear() { clear(); }
 };
 
 template <typename Char>
@@ -1577,7 +1585,7 @@ BasicFormatter<Char> BasicWriter<Char>::Format(StringRef format) {
 
 // The default formatting function.
 template <typename Char, typename T>
-void Format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value) {
+void format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
   w.Write(os.str(), spec);
@@ -1808,32 +1816,16 @@ class Formatter : private Sink, public BasicFormatter<Char> {
   }
 };
 
-/**
-  \rst
-  Formats a string similarly to Python's `str.format
-  <http://docs.python.org/3/library/stdtypes.html#str.format>`__ function.
-  Returns a temporary :cpp:class:`fmt::Formatter` object that accepts arguments
-  via operator ``<<``.
-
-  *format* is a format string that contains literal text and replacement
-  fields surrounded by braces ``{}``. The formatter object replaces the
-  fields with formatted arguments and stores the output in a memory buffer.
-  The content of the buffer can be converted to ``std::string`` with
-  :cpp:func:`fmt::str()` or accessed as a C string with
-  :cpp:func:`fmt::c_str()`.
-
-  **Example**::
-
-    std::string message = str(Format("The answer is {}") << 42);
-
-  See also `Format String Syntax`_.
-  \endrst
- */
+// This function is deprecated, use format instead.
+FMT_DEPRECATED(Formatter<> Format(StringRef format));
 inline Formatter<> Format(StringRef format) {
   Formatter<> f(format);
   return f;
 }
 
+
+// This function is deprecated, use format instead.
+FMT_DEPRECATED(Formatter<NullSink, wchar_t> Format(WStringRef format));
 inline Formatter<NullSink, wchar_t> Format(WStringRef format) {
   Formatter<NullSink, wchar_t> f(format);
   return f;
