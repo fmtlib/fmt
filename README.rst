@@ -87,7 +87,7 @@ An object of any user-defined type for which there is an overloaded
       }
     };
 
-    std::string s = str(fmt::format("The date is {}", Date(2012, 12, 9)));
+    std::string s = fmt::format("The date is {}", Date(2012, 12, 9));
     // s == "The date is 2012-12-9"
 
 You can use the `FMT_VARIADIC
