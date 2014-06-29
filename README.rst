@@ -54,13 +54,13 @@ This prints ``Hello, world!`` to stdout:
 
 .. code-block:: c++
 
-    fmt::Print("Hello, {}!") << "world";
+    fmt::print("Hello, {}!", "world");
 
 Arguments can be accessed by position and arguments' indices can be repeated:
 
 .. code-block:: c++
 
-    std::string s = str(fmt::format("{0}{1}{0}", "abra", "cad"));
+    std::string s = fmt::format("{0}{1}{0}", "abra", "cad");
     // s == "abracadabra"
 
 C++ Format can be used as a safe portable replacement for ``itoa``:
