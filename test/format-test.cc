@@ -1590,15 +1590,8 @@ TEST(FormatIntTest, FormatDec) {
 TEST(FormatTest, Print) {
   EXPECT_WRITE(stdout, fmt::print("Don't {}!", "panic"), "Don't panic!");
   EXPECT_WRITE(stderr,
-      fmt::Print(stderr, "Don't {}!") << "panic", "Don't panic!");
+      fmt::print(stderr, "Don't {}!", "panic"), "Don't panic!");
 }
-
-#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
-TEST(FormatTest, PrintVariadic) {
-  EXPECT_WRITE(stderr,
-      fmt::Print(stderr, "Don't {}!", "panic"), "Don't panic!");
-}
-#endif  // FMT_USE_VARIADIC_TEMPLATES
 
 TEST(FormatTest, PrintColored) {
   EXPECT_WRITE(stdout, fmt::PrintColored(fmt::RED, "Hello, {}!\n") << "world",

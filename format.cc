@@ -1111,6 +1111,18 @@ void fmt::print(StringRef format, const ArgList &args) {
   std::fwrite(w.data(), 1, w.size(), stdout);
 }
 
+void fmt::print(std::FILE *f, StringRef format, const ArgList &args) {
+  Writer w;
+  w.format(format, args);
+  std::fwrite(w.data(), 1, w.size(), f);
+}
+
+void fmt::printf(StringRef format, const ArgList &args) {
+  Writer w;
+  w.printf(format, args);
+  std::fwrite(w.data(), 1, w.size(), stdout);
+}
+
 // Explicit instantiations for char.
 
 template fmt::BasicWriter<char>::CharPtr

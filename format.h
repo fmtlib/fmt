@@ -1962,6 +1962,15 @@ inline WWriter format(WStringRef format, const ArgList &args) {
 }
 
 void print(StringRef format, const ArgList &args);
+void print(std::FILE *f, StringRef format, const ArgList &args);
+
+inline Writer sprintf(StringRef format, const ArgList &args) {
+  Writer w;
+  w.printf(format, args);
+  return move(w);
+}
+
+void printf(StringRef format, const ArgList &args);
 
 #if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 
@@ -2005,25 +2014,15 @@ void Print(StringRef format, const Args & ... args) {
   std::fwrite(w.data(), 1, w.size(), stdout);
 }
 
+// This function is deprecated, use fmt::print instead.
+template<typename... Args>
+FMT_DEPRECATED(void Print(std::FILE *f, StringRef format, const Args & ... args));
+
 template<typename... Args>
 void Print(std::FILE *f, StringRef format, const Args & ... args) {
   Writer w;
   w.Format(format, args...);
   std::fwrite(w.data(), 1, w.size(), f);
-}
-
-template<typename... Args>
-inline Writer sprintf(StringRef format, const Args & ... args) {
-  Writer w;
-  w.printf(format, args...);
-  return std::move(w);
-}
-
-template<typename... Args>
-void printf(StringRef format, const Args & ... args) {
-  Writer w;
-  w.printf(format, args...);
-  std::fwrite(w.data(), 1, w.size(), stdout);
 }
 
 #endif  // FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
@@ -2224,9 +2223,12 @@ inline void FormatDec(char *&buffer, T value) {
   FMT_VARIADIC_(wchar_t, ReturnType, func, __VA_ARGS__)
 
 namespace fmt {
-FMT_VARIADIC(fmt::Writer, format, fmt::StringRef)
-FMT_VARIADIC_W(fmt::WWriter, format, fmt::WStringRef)
-FMT_VARIADIC(void, print, fmt::StringRef)
+FMT_VARIADIC(Writer, format, StringRef)
+FMT_VARIADIC_W(WWriter, format, WStringRef)
+FMT_VARIADIC(void, print, StringRef)
+FMT_VARIADIC(void, print, std::FILE *, StringRef)
+FMT_VARIADIC(Writer, sprintf, StringRef)
+FMT_VARIADIC(void, printf, StringRef)
 }
 
 // Restore warnings.

@@ -32,8 +32,6 @@
 #include "gtest-extra.h"
 #include "util.h"
 
-#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
-
 using fmt::format;
 using fmt::FormatError;
 
@@ -283,5 +281,3 @@ TEST(PrintfTest, Length) {
 }
 
 // TODO: test type specifier
-
-#endif
