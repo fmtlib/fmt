@@ -60,7 +60,7 @@ Arguments can be accessed by position and arguments' indices can be repeated:
 
 .. code-block:: c++
 
-    std::string s = str(fmt::Format("{0}{1}{0}") << "abra" << "cad");
+    std::string s = str(fmt::format("{0}{1}{0}", "abra", "cad"));
     // s == "abracadabra"
 
 C++ Format can be used as a safe portable replacement for ``itoa``:
@@ -87,31 +87,30 @@ An object of any user-defined type for which there is an overloaded
       }
     };
 
-    std::string s = str(fmt::Format("The date is {}") << Date(2012, 12, 9));
+    std::string s = str(fmt::format("The date is {}", Date(2012, 12, 9)));
     // s == "The date is 2012-12-9"
 
-You can use `Formatter
-<http://cppformat.github.io/doc/latest/#project0classfmt_1_1_formatter>`__
-to create your own functions similar to `Format
-<http://cppformat.github.io/doc/latest#fmt::Format__StringRef>`__ and
-`Print <http://cppformat.github.io/doc/latest#fmt::Print__StringRef>`__
-with an arbitrary action performed when formatting is complete:
+You can use the `FMT_VARIADIC
+<http://cppformat.github.io/doc/latest/#project0format_8h_1a65215c7dfcc0e942cd0798860877e86b>`__
+macro to create your own functions similar to `format
+<http://cppformat.github.io/doc/latest#fmt::format__StringRef.ArgListCR>`__ and
+`print <http://cppformat.github.io/doc/latest#fmt::print__StringRef.ArgListCR>`__
+which take arbitrary arguments:
 
 .. code-block:: c++
 
-    struct PrintError {
-      void operator()(const fmt::Writer &w) const {
-        std::cerr << "Error: " << w.str() << std::endl;
-      }
-    };
-
-    // Formats an error message and prints it to std::cerr.
-    fmt::Formatter<PrintError> ReportError(const char *format) {
-      fmt::Formatter<PrintError> f(format);
-      return f;
+    // Prints formatted error message to std::cerr.
+    void ReportError(const char *format_str, const fmt::ArgList &args) {
+      std::cerr << "Error: " << fmt::format(format_str, args) << std::endl;
     }
+    FMT_VARIADIC(void, ReportError)
 
-    ReportError("File not found: {}") << path;
+    ReportError("File not found: {}", path);
+
+Note that you only need to define one function that takes `const fmt::ArgList &`
+argument and `FMT_VARIADIC` automatically defines necessary wrappers that
+accept variable number of arguments. These wrappers are simple inline functions
+that are very fast and don't result in code bloat.
 
 Projects using this library
 ---------------------------
@@ -126,7 +125,7 @@ Projects using this library
 * `HarpyWar/pvpgn <https://github.com/HarpyWar/pvpgn>`__:
   Player vs Player Gaming Network with tweaks
 
-If you are aware of other projects using ``format``, please let me know
+If you are aware of other projects using this library, please let me know
 by `email <mailto:victor.zverovich@gmail.com>`__ or by submitting an
 `issue <https://github.com/cppformat/cppformat/issues>`__.
 

@@ -9,7 +9,7 @@ To use the C++ Format library, add ``format.h`` and ``format.cc`` from
 a `release archive <https://github.com/cppformat/cppformat/releases/latest>`__
 or the `Git repository <https://github.com/cppformat/cppformat>`__ to your project.
 
-If you are using Visual Studio with precompiled headers, you might need to add
+If you are using Visual C++ with precompiled headers, you might need to add
 the line
 
 ::
@@ -25,35 +25,22 @@ All functions and classes provided by the C++ Format library reside
 in namespace ``fmt`` and macros have prefix ``FMT_``. For brevity the
 namespace is usually omitted in examples.
 
-.. doxygenfunction:: fmt::Format(StringRef)
+.. doxygenfunction:: fmt::format(StringRef, const ArgList &)
 
-.. doxygenfunction:: fmt::Format(StringRef, const Args &...)
+.. doxygenfunction:: fmt::print(StringRef, const ArgList &)
 
-.. doxygenfunction:: fmt::Print(StringRef)
+.. doxygenfunction:: fmt::print(std::FILE *, StringRef, const ArgList &)
 
-.. doxygenfunction:: fmt::Print(std::FILE *, StringRef)
+.. doxygendefine:: FMT_VARIADIC
 
 .. doxygenclass:: fmt::BasicWriter
    :members:
 
-.. doxygenclass:: fmt::BasicFormatter
-   :members:
-
-.. doxygenclass:: fmt::Formatter
-   :members:
-
-.. doxygenclass:: fmt::NullSink
-   :members:
-
-.. doxygenclass:: fmt::FileSink
+.. doxygenclass:: fmt::ArgList
    :members:
 
 .. doxygenclass:: fmt::BasicStringRef
    :members:
-
-.. doxygenfunction:: fmt::str(StringRef)
-
-.. doxygenfunction:: fmt::c_str(StringRef)
 
 Write API
 ---------
@@ -83,8 +70,8 @@ System Errors
 Format String Syntax
 --------------------
 
-The :cpp:func:`fmt::Format()` function and the :cpp:class:`fmt::Formatter`
-class share the same syntax for format strings.
+Formatting functions such as :cpp:func:`fmt::format()` and :cpp:func:`fmt::print()`
+use the same format string syntax described in this section.
 
 Format strings contain "replacement fields" surrounded by curly braces ``{}``.
 Anything that is not contained in braces is considered literal text, which is
@@ -140,9 +127,11 @@ Format Specification Mini-Language
 
 "Format specifications" are used within replacement fields contained within a
 format string to define how individual values are presented (see
-:ref:`formatstrings`).  They can also be passed directly to the
-:func:`Format` function.  Each formattable type may define how the format
+:ref:`formatstrings`).  Each formattable type may define how the format
 specification is to be interpreted.
+
+..
+  They can also be passed directly to the :func:`format` function.
 
 Most built-in types implement the following options for format specifications,
 although some of the formatting options are only supported by the numeric types.
@@ -384,48 +373,48 @@ following examples.
 
 Accessing arguments by position::
 
-   Format("{0}, {1}, {2}") << 'a' << 'b' << 'c';
+   format("{0}, {1}, {2}", 'a', 'b', 'c');
    // Result: "a, b, c"
-   Format("{}, {}, {}") << 'a' << 'b' << 'c';
+   format("{}, {}, {}", 'a', 'b', 'c)';
    // Result: "a, b, c"
-   Format("{2}, {1}, {0}") << 'a' << 'b' << 'c';
+   format("{2}, {1}, {0}", 'a', 'b', 'c');
    // Result: "c, b, a"
-   Format("{0}{1}{0}") << "abra" << "cad";  // arguments' indices can be repeated
+   format("{0}{1}{0}", "abra", "cad");  // arguments' indices can be repeated
    // Result: "abracadabra"
 
 Aligning the text and specifying a width::
 
-   Format("{:<30}") << "left aligned";
+   format("{:<30}", "left aligned");
    // Result: "left aligned                  "
-   Format("{:>30}") << "right aligned"
+   format("{:>30}", "right aligned");
    // Result: "                 right aligned"
-   Format("{:^30}") << "centered"
+   format("{:^30}", "centered");
    // Result: "           centered           "
-   Format("{:*^30}") << "centered"  // use '*' as a fill char
+   format("{:*^30}", "centered");  // use '*' as a fill char
    // Result: "***********centered***********"
 
 Replacing ``%+f``, ``%-f``, and ``% f`` and specifying a sign::
 
-   Format("{:+f}; {:+f}") << 3.14 << -3.14;  // show it always
+   format("{:+f}; {:+f}", 3.14, -3.14);  // show it always
    // Result: "+3.140000; -3.140000"
-   Format("{: f}; {: f}") << 3.14 << -3.14;  // show a space for positive numbers
+   format("{: f}; {: f}", 3.14, -3.14);  // show a space for positive numbers
    // Result: " 3.140000; -3.140000"
-   Format("{:-f}; {:-f}") << 3.14 << -3.14;  // show only the minus -- same as '{:f}; {:f}'
+   format("{:-f}; {:-f}", 3.14, -3.14);  // show only the minus -- same as '{:f}; {:f}'
    // Result: "3.140000; -3.140000"
 
 Replacing ``%x`` and ``%o`` and converting the value to different bases::
 
-   Format("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}") << 42;
+   format("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
    // Result: "int: 42;  hex: 2a;  oct: 52; bin: 101010"
    // with 0x or 0 or 0b as prefix:
-   Format("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}") << 42;
+   format("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}", 42);
    // Result: "int: 42;  hex: 0x2a;  oct: 052;  bin: 0b101010"
 
 .. ifconfig:: False
 
    Using the comma as a thousands separator::
 
-      Format("{:,}") << 1234567890)
+      format("{:,}", 1234567890);
       '1,234,567,890'
 
    Expressing a percentage::
