@@ -2195,14 +2195,12 @@ inline void FormatDec(char *&buffer, T value) {
 
   **Example**::
 
-    std::string FormatMessage(int id, const char *format,
-                              const fmt::ArgList &args) {
-      fmt::Writer w;
-      w.format("[{}] ", id);
-      w.format(format, args);
-      return w.str();
+    void print_error(const char *file, int line, const char *format,
+                     const fmt::ArgList &args) {
+      fmt::print("{}: {}: ", file, line);
+      fmt::print(format, args);
     }
-    FMT_VARIADIC(std::string, FormatMessage, int, const char *)
+    FMT_VARIADIC(void, print_error, const char *, int, const char *)
   \endrst
  */
 #define FMT_VARIADIC(ReturnType, func, ...) \
