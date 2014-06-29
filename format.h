@@ -1241,7 +1241,24 @@ class BasicWriter {
     return p;
   }
 
-  // "Move" constructors.
+  /**
+    \rst
+    A "move" constructor. Constructs a writer transferring the buffer
+    from other to this object. This constructor is used to return a
+    writer object from a formatting function since the copy constructor
+    taking a const reference is disabled to prevent misuse of the API.
+    It is not implemented as a move constructor for compatibility with
+    pre-C++11 compilers, but should be treated as such.
+
+    **Example**::
+
+      fmt::Writer format(fmt::StringRef format, const fmt::ArgList &args) {
+        fmt::Writer w;
+        w.format(format, args);
+        return move(w);
+      }
+    \endrst
+   */
   BasicWriter(BasicWriter &other) { buffer_.move(other.buffer_); }
   BasicWriter(Proxy p) { buffer_.move(*p.buffer); }
 #endif
@@ -1730,40 +1747,14 @@ inline const wchar_t *c_str(WStringRef s) {
   return s.c_str();
 }
 
-/**
-  A sink that discards all output written to it.
- */
+// This class is deprecated. Use variadic functions instead of sinks.
 class NullSink {
  public:
-  /** Discards the output. */
   template <typename Char>
   void operator()(const BasicWriter<Char> &) const {}
 };
 
-/**
-  \rst
-  A formatter that sends output to a sink. Objects of this class normally
-  exist only as temporaries returned by one of the formatting functions.
-  You can use this class to create your own functions similar to
-  :cpp:func:`fmt::Format()`.
-
-  **Example**::
-
-    struct ErrorSink {
-      void operator()(const fmt::Writer &w) const {
-        fmt::Print("Error: {}\n") << w.str();
-      }
-    };
-
-    // Formats an error message and prints it to stdout.
-    fmt::Formatter<ErrorSink> ReportError(const char *format) {
-      fmt::Formatter f<ErrorSink>(format);
-      return f;
-    }
-
-    ReportError("File not found: {}") << path;
-  \endrst
- */
+// This class is deprecated. Use variadic functions instead.
 template <typename Sink = NullSink, typename Char = char>
 class Formatter : private Sink, public BasicFormatter<Char> {
  private:
@@ -1773,47 +1764,17 @@ class Formatter : private Sink, public BasicFormatter<Char> {
   FMT_DISALLOW_COPY_AND_ASSIGN(Formatter);
 
  public:
-  /**
-    \rst
-    Constructs a formatter with a format string and a sink.
-    The sink should be an unary function object that takes a const
-    reference to :cpp:class:`fmt::BasicWriter`, representing the
-    formatting output, as an argument. See :cpp:class:`fmt::NullSink`
-    and :cpp:class:`fmt::FileSink` for examples of sink classes.
-    \endrst
-  */
   explicit Formatter(BasicStringRef<Char> format, Sink s = Sink())
   : Sink(s), BasicFormatter<Char>(writer_, format.c_str()),
     inactive_(false) {
   }
 
-  /**
-    \rst
-    A "move" constructor. Constructs a formatter transferring the format
-    string from other to this object. This constructor is used to return
-    a formatter object from a formatting function since the copy constructor
-    taking a const reference is disabled to prevent misuse of the API.
-    It is not implemented as a move constructor for compatibility with
-    pre-C++11 compilers, but should be treated as such.
-
-    **Example**::
-
-      fmt::Formatter<> Format(fmt::StringRef format) {
-        fmt::Formatter<> f(format);
-        return f;
-      }
-    \endrst
-   */
   Formatter(Formatter &other)
   : Sink(other), BasicFormatter<Char>(writer_, other.TakeFormatString()),
     inactive_(false) {
     other.inactive_ = true;
   }
 
-  /**
-    Performs the formatting, sends the output to the sink and destroys
-    the object.
-   */
   ~Formatter() FMT_NOEXCEPT(false) {
     if (!inactive_) {
       this->CompleteFormatting();
@@ -1836,10 +1797,7 @@ inline Formatter<NullSink, wchar_t> Format(WStringRef format) {
   return f;
 }
 
-/**
-  A sink that gets the error message corresponding to a system error code
-  as given by errno and throws SystemError.
- */
+// This class is deprecated. Use variadic functions instead of sinks.
 class SystemErrorSink {
  private:
   int error_code_;
@@ -1871,10 +1829,7 @@ void ReportSystemError(int error_code, StringRef message) FMT_NOEXCEPT(true);
 
 #ifdef _WIN32
 
-/**
-  A sink that gets the error message corresponding to a Windows error code
-  as given by GetLastError and throws SystemError.
- */
+// This class is deprecated. Use variadic functions instead of sinks.
 class WinErrorSink {
  private:
   int error_code_;
@@ -1907,7 +1862,7 @@ void ReportWinError(int error_code, StringRef message) FMT_NOEXCEPT(true);
 
 #endif
 
-/** A sink that writes output to a file. */
+// This class is deprecated. Use variadic functions instead of sinks.
 class FileSink {
  private:
   std::FILE *file_;
@@ -1915,7 +1870,6 @@ class FileSink {
  public:
   explicit FileSink(std::FILE *f) : file_(f) {}
 
-  /** Writes the output to a file. */
   void operator()(const BasicWriter<char> &w) const {
     if (std::fwrite(w.data(), w.size(), 1, file_) == 0)
       ThrowSystemError(errno, "cannot write to file");
@@ -1952,10 +1906,7 @@ inline Formatter<FileSink> Print(std::FILE *file, StringRef format) {
 
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
-/**
-  A sink that writes output to a terminal using ANSI escape sequences
-  to specify color.
- */
+// This class is deprecated. Use variadic functions instead of sinks.
 class ANSITerminalSink {
  private:
   std::FILE *file_;
@@ -1964,10 +1915,6 @@ class ANSITerminalSink {
  public:
   ANSITerminalSink(std::FILE *f, Color c) : file_(f), color_(c) {}
 
-  /**
-    Writes the output to a terminal using ANSI escape sequences to
-    specify color.
-   */
   void operator()(const BasicWriter<char> &w) const;
 };
 
@@ -2014,6 +1961,8 @@ inline WWriter format(WStringRef format, const ArgList &args) {
   return move(w);
 }
 
+void print(StringRef format, const ArgList &args);
+
 #if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 
 template <typename Char>
@@ -2044,6 +1993,10 @@ inline WWriter Format(WStringRef format, const Args & ... args) {
   w.Format(format, args...);
   return std::move(w);
 }
+
+// This function is deprecated, use fmt::print instead.
+template<typename... Args>
+FMT_DEPRECATED(void Print(StringRef format, const Args & ... args));
 
 template<typename... Args>
 void Print(StringRef format, const Args & ... args) {
@@ -2207,21 +2160,6 @@ inline void FormatDec(char *&buffer, T value) {
 
 #if FMT_USE_VARIADIC_TEMPLATES
 
-/**
-  Defines a variadic function with the specified return type and argument
-  types passed as variable arguments.
-
-  Example::
-
-    std::string FormatMessage(int id, const char *format,
-                              const fmt::ArgList &args) {
-      fmt::Writer w;
-      w.format("[{}] ", id);
-      w.format(format, args);
-      return w.str();
-    }
-    FMT_VARIADIC(std::string, FormatMessage, int, const char *)
- */
 # define FMT_VARIADIC_(Char, ReturnType, func, ...) \
   template<typename... Args> \
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
@@ -2264,6 +2202,21 @@ inline void FormatDec(char *&buffer, T value) {
 
 #endif  // FMT_USE_VARIADIC_TEMPLATES
 
+/**
+  Defines a variadic function with the specified return type and argument
+  types passed as variable arguments.
+
+  Example::
+
+    std::string FormatMessage(int id, const char *format,
+                              const fmt::ArgList &args) {
+      fmt::Writer w;
+      w.format("[{}] ", id);
+      w.format(format, args);
+      return w.str();
+    }
+    FMT_VARIADIC(std::string, FormatMessage, int, const char *)
+ */
 #define FMT_VARIADIC(ReturnType, func, ...) \
   FMT_VARIADIC_(char, ReturnType, func, __VA_ARGS__)
 
@@ -2273,6 +2226,7 @@ inline void FormatDec(char *&buffer, T value) {
 namespace fmt {
 FMT_VARIADIC(fmt::Writer, format, fmt::StringRef)
 FMT_VARIADIC_W(fmt::WWriter, format, fmt::WStringRef)
+FMT_VARIADIC(void, print, fmt::StringRef)
 }
 
 // Restore warnings.

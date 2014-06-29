@@ -1105,6 +1105,12 @@ void fmt::ANSITerminalSink::operator()(
   std::fputs(RESET_COLOR, file_);
 }
 
+void fmt::print(StringRef format, const ArgList &args) {
+  Writer w;
+  w.format(format, args);
+  std::fwrite(w.data(), 1, w.size(), stdout);
+}
+
 // Explicit instantiations for char.
 
 template fmt::BasicWriter<char>::CharPtr
