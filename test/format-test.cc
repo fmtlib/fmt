@@ -551,12 +551,12 @@ TEST(WriterTest, NoConflictWithIOManip) {
 
 TEST(WriterTest, Format) {
   Writer w;
-  w.format("part{0}", 1);
+  w.write("part{0}", 1);
   EXPECT_EQ(strlen("part1"), w.size());
   EXPECT_STREQ("part1", w.c_str());
   EXPECT_STREQ("part1", w.data());
   EXPECT_EQ("part1", w.str());
-  w.format("part{0}", 2);
+  w.write("part{0}", 2);
   EXPECT_EQ(strlen("part1part2"), w.size());
   EXPECT_STREQ("part1part2", w.c_str());
   EXPECT_STREQ("part1part2", w.data());
@@ -568,18 +568,18 @@ TEST(WriterTest, WWriter) {
 }
 
 TEST(FormatterTest, Escape) {
-  EXPECT_EQ("{", str(format("{{")));
-  EXPECT_EQ("before {", str(format("before {{")));
-  EXPECT_EQ("{ after", str(format("{{ after")));
-  EXPECT_EQ("before { after", str(format("before {{ after")));
+  EXPECT_EQ("{", format("{{"));
+  EXPECT_EQ("before {", format("before {{"));
+  EXPECT_EQ("{ after", format("{{ after"));
+  EXPECT_EQ("before { after", format("before {{ after"));
 
-  EXPECT_EQ("}", str(format("}}")));
-  EXPECT_EQ("before }", str(format("before }}")));
-  EXPECT_EQ("} after", str(format("}} after")));
-  EXPECT_EQ("before } after", str(format("before }} after")));
+  EXPECT_EQ("}", format("}}"));
+  EXPECT_EQ("before }", format("before }}"));
+  EXPECT_EQ("} after", format("}} after"));
+  EXPECT_EQ("before } after", format("before }} after"));
 
-  EXPECT_EQ("{}", str(format("{{}}")));
-  EXPECT_EQ("{42}", str(format("{{{0}}}", 42)));
+  EXPECT_EQ("{}", format("{{}}"));
+  EXPECT_EQ("{42}", format("{{{0}}}", 42));
 }
 
 TEST(FormatterTest, UnmatchedBraces) {
@@ -589,18 +589,17 @@ TEST(FormatterTest, UnmatchedBraces) {
 }
 
 TEST(FormatterTest, NoArgs) {
-  EXPECT_EQ("test", str(format("test")));
+  EXPECT_EQ("test", format("test"));
 }
 
 TEST(FormatterTest, ArgsInDifferentPositions) {
-  EXPECT_EQ("42", str(format("{0}", 42)));
-  EXPECT_EQ("before 42", str(format("before {0}", 42)));
-  EXPECT_EQ("42 after", str(format("{0} after", 42)));
-  EXPECT_EQ("before 42 after", str(format("before {0} after", 42)));
-  EXPECT_EQ("answer = 42", str(format("{0} = {1}", "answer", 42)));
-  EXPECT_EQ("42 is the answer",
-      str(format("{1} is the {0}", "answer", 42)));
-  EXPECT_EQ("abracadabra", str(format("{0}{1}{0}", "abra", "cad")));
+  EXPECT_EQ("42", format("{0}", 42));
+  EXPECT_EQ("before 42", format("before {0}", 42));
+  EXPECT_EQ("42 after", format("{0} after", 42));
+  EXPECT_EQ("before 42 after", format("before {0} after", 42));
+  EXPECT_EQ("answer = 42", format("{0} = {1}", "answer", 42));
+  EXPECT_EQ("42 is the answer", format("{1} is the {0}", "answer", 42));
+  EXPECT_EQ("abracadabra", format("{0}{1}{0}", "abra", "cad"));
 }
 
 TEST(FormatterTest, ArgErrors) {
@@ -625,12 +624,12 @@ TEST(FormatterTest, ArgErrors) {
 }
 
 TEST(FormatterTest, AutoArgIndex) {
-  EXPECT_EQ("abc", str(format("{}{}{}", 'a', 'b', 'c')));
+  EXPECT_EQ("abc", format("{}{}{}", 'a', 'b', 'c'));
   EXPECT_THROW_MSG(format("{0}{}", 'a', 'b'),
       FormatError, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{}{0}", 'a', 'b'),
       FormatError, "cannot switch from automatic to manual argument indexing");
-  EXPECT_EQ("1.2", str(format("{:.{}}", 1.2345, 2)));
+  EXPECT_EQ("1.2", format("{:.{}}", 1.2345, 2));
   EXPECT_THROW_MSG(format("{0}:.{}", 1.2345, 2),
       FormatError, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{:.{0}}", 1.2345, 2),
@@ -640,62 +639,60 @@ TEST(FormatterTest, AutoArgIndex) {
 }
 
 TEST(FormatterTest, EmptySpecs) {
-  EXPECT_EQ("42", str(format("{0:}", 42)));
+  EXPECT_EQ("42", format("{0:}", 42));
 }
 
 TEST(FormatterTest, LeftAlign) {
-  EXPECT_EQ("42  ", str(format("{0:<4}", 42)));
-  EXPECT_EQ("42  ", str(format("{0:<4o}", 042)));
-  EXPECT_EQ("42  ", str(format("{0:<4x}", 0x42)));
-  EXPECT_EQ("-42  ", str(format("{0:<5}", -42)));
-  EXPECT_EQ("42   ", str(format("{0:<5}", 42u)));
-  EXPECT_EQ("-42  ", str(format("{0:<5}", -42l)));
-  EXPECT_EQ("42   ", str(format("{0:<5}", 42ul)));
-  EXPECT_EQ("-42  ", str(format("{0:<5}", -42ll)));
-  EXPECT_EQ("42   ", str(format("{0:<5}", 42ull)));
-  EXPECT_EQ("-42  ", str(format("{0:<5}", -42.0)));
-  EXPECT_EQ("-42  ", str(format("{0:<5}", -42.0l)));
-  EXPECT_EQ("c    ", str(format("{0:<5}", 'c')));
-  EXPECT_EQ("abc  ", str(format("{0:<5}", "abc")));
-  EXPECT_EQ("0xface  ",
-      str(format("{0:<8}", reinterpret_cast<void*>(0xface))));
-  EXPECT_EQ("def  ", str(format("{0:<5}", TestString("def"))));
+  EXPECT_EQ("42  ", format("{0:<4}", 42));
+  EXPECT_EQ("42  ", format("{0:<4o}", 042));
+  EXPECT_EQ("42  ", format("{0:<4x}", 0x42));
+  EXPECT_EQ("-42  ", format("{0:<5}", -42));
+  EXPECT_EQ("42   ", format("{0:<5}", 42u));
+  EXPECT_EQ("-42  ", format("{0:<5}", -42l));
+  EXPECT_EQ("42   ", format("{0:<5}", 42ul));
+  EXPECT_EQ("-42  ", format("{0:<5}", -42ll));
+  EXPECT_EQ("42   ", format("{0:<5}", 42ull));
+  EXPECT_EQ("-42  ", format("{0:<5}", -42.0));
+  EXPECT_EQ("-42  ", format("{0:<5}", -42.0l));
+  EXPECT_EQ("c    ", format("{0:<5}", 'c'));
+  EXPECT_EQ("abc  ", format("{0:<5}", "abc"));
+  EXPECT_EQ("0xface  ", format("{0:<8}", reinterpret_cast<void*>(0xface)));
+  EXPECT_EQ("def  ", format("{0:<5}", TestString("def")));
 }
 
 TEST(FormatterTest, RightAlign) {
-  EXPECT_EQ("  42", str(format("{0:>4}", 42)));
-  EXPECT_EQ("  42", str(format("{0:>4o}", 042)));
-  EXPECT_EQ("  42", str(format("{0:>4x}", 0x42)));
-  EXPECT_EQ("  -42", str(format("{0:>5}", -42)));
-  EXPECT_EQ("   42", str(format("{0:>5}", 42u)));
-  EXPECT_EQ("  -42", str(format("{0:>5}", -42l)));
-  EXPECT_EQ("   42", str(format("{0:>5}", 42ul)));
-  EXPECT_EQ("  -42", str(format("{0:>5}", -42ll)));
-  EXPECT_EQ("   42", str(format("{0:>5}", 42ull)));
-  EXPECT_EQ("  -42", str(format("{0:>5}", -42.0)));
-  EXPECT_EQ("  -42", str(format("{0:>5}", -42.0l)));
-  EXPECT_EQ("    c", str(format("{0:>5}", 'c')));
-  EXPECT_EQ("  abc", str(format("{0:>5}", "abc")));
-  EXPECT_EQ("  0xface",
-      str(format("{0:>8}", reinterpret_cast<void*>(0xface))));
-  EXPECT_EQ("  def", str(format("{0:>5}", TestString("def"))));
+  EXPECT_EQ("  42", format("{0:>4}", 42));
+  EXPECT_EQ("  42", format("{0:>4o}", 042));
+  EXPECT_EQ("  42", format("{0:>4x}", 0x42));
+  EXPECT_EQ("  -42", format("{0:>5}", -42));
+  EXPECT_EQ("   42", format("{0:>5}", 42u));
+  EXPECT_EQ("  -42", format("{0:>5}", -42l));
+  EXPECT_EQ("   42", format("{0:>5}", 42ul));
+  EXPECT_EQ("  -42", format("{0:>5}", -42ll));
+  EXPECT_EQ("   42", format("{0:>5}", 42ull));
+  EXPECT_EQ("  -42", format("{0:>5}", -42.0));
+  EXPECT_EQ("  -42", format("{0:>5}", -42.0l));
+  EXPECT_EQ("    c", format("{0:>5}", 'c'));
+  EXPECT_EQ("  abc", format("{0:>5}", "abc"));
+  EXPECT_EQ("  0xface", format("{0:>8}", reinterpret_cast<void*>(0xface)));
+  EXPECT_EQ("  def", format("{0:>5}", TestString("def")));
 }
 
 TEST(FormatterTest, NumericAlign) {
-  EXPECT_EQ("  42", str(format("{0:=4}", 42)));
-  EXPECT_EQ("+ 42", str(format("{0:=+4}", 42)));
-  EXPECT_EQ("  42", str(format("{0:=4o}", 042)));
-  EXPECT_EQ("+ 42", str(format("{0:=+4o}", 042)));
-  EXPECT_EQ("  42", str(format("{0:=4x}", 0x42)));
-  EXPECT_EQ("+ 42", str(format("{0:=+4x}", 0x42)));
-  EXPECT_EQ("-  42", str(format("{0:=5}", -42)));
-  EXPECT_EQ("   42", str(format("{0:=5}", 42u)));
-  EXPECT_EQ("-  42", str(format("{0:=5}", -42l)));
-  EXPECT_EQ("   42", str(format("{0:=5}", 42ul)));
-  EXPECT_EQ("-  42", str(format("{0:=5}", -42ll)));
-  EXPECT_EQ("   42", str(format("{0:=5}", 42ull)));
-  EXPECT_EQ("-  42", str(format("{0:=5}", -42.0)));
-  EXPECT_EQ("-  42", str(format("{0:=5}", -42.0l)));
+  EXPECT_EQ("  42", format("{0:=4}", 42));
+  EXPECT_EQ("+ 42", format("{0:=+4}", 42));
+  EXPECT_EQ("  42", format("{0:=4o}", 042));
+  EXPECT_EQ("+ 42", format("{0:=+4o}", 042));
+  EXPECT_EQ("  42", format("{0:=4x}", 0x42));
+  EXPECT_EQ("+ 42", format("{0:=+4x}", 0x42));
+  EXPECT_EQ("-  42", format("{0:=5}", -42));
+  EXPECT_EQ("   42", format("{0:=5}", 42u));
+  EXPECT_EQ("-  42", format("{0:=5}", -42l));
+  EXPECT_EQ("   42", format("{0:=5}", 42ul));
+  EXPECT_EQ("-  42", format("{0:=5}", -42ll));
+  EXPECT_EQ("   42", format("{0:=5}", 42ull));
+  EXPECT_EQ("-  42", format("{0:=5}", -42.0));
+  EXPECT_EQ("-  42", format("{0:=5}", -42.0l));
   EXPECT_THROW_MSG(format("{0:=5", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0:=5}", 'c'),
@@ -709,22 +706,21 @@ TEST(FormatterTest, NumericAlign) {
 }
 
 TEST(FormatterTest, CenterAlign) {
-  EXPECT_EQ(" 42  ", str(format("{0:^5}", 42)));
-  EXPECT_EQ(" 42  ", str(format("{0:^5o}", 042)));
-  EXPECT_EQ(" 42  ", str(format("{0:^5x}", 0x42)));
-  EXPECT_EQ(" -42 ", str(format("{0:^5}", -42)));
-  EXPECT_EQ(" 42  ", str(format("{0:^5}", 42u)));
-  EXPECT_EQ(" -42 ", str(format("{0:^5}", -42l)));
-  EXPECT_EQ(" 42  ", str(format("{0:^5}", 42ul)));
-  EXPECT_EQ(" -42 ", str(format("{0:^5}", -42ll)));
-  EXPECT_EQ(" 42  ", str(format("{0:^5}", 42ull)));
-  EXPECT_EQ(" -42  ", str(format("{0:^6}", -42.0)));
-  EXPECT_EQ(" -42 ", str(format("{0:^5}", -42.0l)));
-  EXPECT_EQ("  c  ", str(format("{0:^5}", 'c')));
-  EXPECT_EQ(" abc  ", str(format("{0:^6}", "abc")));
-  EXPECT_EQ(" 0xface ",
-      str(format("{0:^8}", reinterpret_cast<void*>(0xface))));
-  EXPECT_EQ(" def ", str(format("{0:^5}", TestString("def"))));
+  EXPECT_EQ(" 42  ", format("{0:^5}", 42));
+  EXPECT_EQ(" 42  ", format("{0:^5o}", 042));
+  EXPECT_EQ(" 42  ", format("{0:^5x}", 0x42));
+  EXPECT_EQ(" -42 ", format("{0:^5}", -42));
+  EXPECT_EQ(" 42  ", format("{0:^5}", 42u));
+  EXPECT_EQ(" -42 ", format("{0:^5}", -42l));
+  EXPECT_EQ(" 42  ", format("{0:^5}", 42ul));
+  EXPECT_EQ(" -42 ", format("{0:^5}", -42ll));
+  EXPECT_EQ(" 42  ", format("{0:^5}", 42ull));
+  EXPECT_EQ(" -42  ", format("{0:^6}", -42.0));
+  EXPECT_EQ(" -42 ", format("{0:^5}", -42.0l));
+  EXPECT_EQ("  c  ", format("{0:^5}", 'c'));
+  EXPECT_EQ(" abc  ", format("{0:^6}", "abc"));
+  EXPECT_EQ(" 0xface ", format("{0:^8}", reinterpret_cast<void*>(0xface)));
+  EXPECT_EQ(" def ", format("{0:^5}", TestString("def")));
 }
 
 TEST(FormatterTest, Fill) {
@@ -732,35 +728,35 @@ TEST(FormatterTest, Fill) {
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0:{<5}}", 'c'),
       FormatError, "invalid fill character '{'");
-  EXPECT_EQ("**42", str(format("{0:*>4}", 42)));
-  EXPECT_EQ("**-42", str(format("{0:*>5}", -42)));
-  EXPECT_EQ("***42", str(format("{0:*>5}", 42u)));
-  EXPECT_EQ("**-42", str(format("{0:*>5}", -42l)));
-  EXPECT_EQ("***42", str(format("{0:*>5}", 42ul)));
-  EXPECT_EQ("**-42", str(format("{0:*>5}", -42ll)));
-  EXPECT_EQ("***42", str(format("{0:*>5}", 42ull)));
-  EXPECT_EQ("**-42", str(format("{0:*>5}", -42.0)));
-  EXPECT_EQ("**-42", str(format("{0:*>5}", -42.0l)));
-  EXPECT_EQ("c****", str(format("{0:*<5}", 'c')));
-  EXPECT_EQ("abc**", str(format("{0:*<5}", "abc")));
-  EXPECT_EQ("**0xface", str(format("{0:*>8}", reinterpret_cast<void*>(0xface))));
-  EXPECT_EQ("def**", str(format("{0:*<5}", TestString("def"))));
+  EXPECT_EQ("**42", format("{0:*>4}", 42));
+  EXPECT_EQ("**-42", format("{0:*>5}", -42));
+  EXPECT_EQ("***42", format("{0:*>5}", 42u));
+  EXPECT_EQ("**-42", format("{0:*>5}", -42l));
+  EXPECT_EQ("***42", format("{0:*>5}", 42ul));
+  EXPECT_EQ("**-42", format("{0:*>5}", -42ll));
+  EXPECT_EQ("***42", format("{0:*>5}", 42ull));
+  EXPECT_EQ("**-42", format("{0:*>5}", -42.0));
+  EXPECT_EQ("**-42", format("{0:*>5}", -42.0l));
+  EXPECT_EQ("c****", format("{0:*<5}", 'c'));
+  EXPECT_EQ("abc**", format("{0:*<5}", "abc"));
+  EXPECT_EQ("**0xface", format("{0:*>8}", reinterpret_cast<void*>(0xface)));
+  EXPECT_EQ("def**", format("{0:*<5}", TestString("def")));
 }
 
 TEST(FormatterTest, PlusSign) {
-  EXPECT_EQ("+42", str(format("{0:+}", 42)));
-  EXPECT_EQ("-42", str(format("{0:+}", -42)));
-  EXPECT_EQ("+42", str(format("{0:+}", 42)));
+  EXPECT_EQ("+42", format("{0:+}", 42));
+  EXPECT_EQ("-42", format("{0:+}", -42));
+  EXPECT_EQ("+42", format("{0:+}", 42));
   EXPECT_THROW_MSG(format("{0:+}", 42u),
       FormatError, "format specifier '+' requires signed argument");
-  EXPECT_EQ("+42", str(format("{0:+}", 42l)));
+  EXPECT_EQ("+42", format("{0:+}", 42l));
   EXPECT_THROW_MSG(format("{0:+}", 42ul),
       FormatError, "format specifier '+' requires signed argument");
-  EXPECT_EQ("+42", str(format("{0:+}", 42ll)));
+  EXPECT_EQ("+42", format("{0:+}", 42ll));
   EXPECT_THROW_MSG(format("{0:+}", 42ull),
       FormatError, "format specifier '+' requires signed argument");
-  EXPECT_EQ("+42", str(format("{0:+}", 42.0)));
-  EXPECT_EQ("+42", str(format("{0:+}", 42.0l)));
+  EXPECT_EQ("+42", format("{0:+}", 42.0));
+  EXPECT_EQ("+42", format("{0:+}", 42.0l));
   EXPECT_THROW_MSG(format("{0:+", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0:+}", 'c'),
@@ -774,19 +770,19 @@ TEST(FormatterTest, PlusSign) {
 }
 
 TEST(FormatterTest, MinusSign) {
-  EXPECT_EQ("42", str(format("{0:-}", 42)));
-  EXPECT_EQ("-42", str(format("{0:-}", -42)));
-  EXPECT_EQ("42", str(format("{0:-}", 42)));
+  EXPECT_EQ("42", format("{0:-}", 42));
+  EXPECT_EQ("-42", format("{0:-}", -42));
+  EXPECT_EQ("42", format("{0:-}", 42));
   EXPECT_THROW_MSG(format("{0:-}", 42u),
       FormatError, "format specifier '-' requires signed argument");
-  EXPECT_EQ("42", str(format("{0:-}", 42l)));
+  EXPECT_EQ("42", format("{0:-}", 42l));
   EXPECT_THROW_MSG(format("{0:-}", 42ul),
       FormatError, "format specifier '-' requires signed argument");
-  EXPECT_EQ("42", str(format("{0:-}", 42ll)));
+  EXPECT_EQ("42", format("{0:-}", 42ll));
   EXPECT_THROW_MSG(format("{0:-}", 42ull),
       FormatError, "format specifier '-' requires signed argument");
-  EXPECT_EQ("42", str(format("{0:-}", 42.0)));
-  EXPECT_EQ("42", str(format("{0:-}", 42.0l)));
+  EXPECT_EQ("42", format("{0:-}", 42.0));
+  EXPECT_EQ("42", format("{0:-}", 42.0l));
   EXPECT_THROW_MSG(format("{0:-", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0:-}", 'c'),
@@ -800,19 +796,19 @@ TEST(FormatterTest, MinusSign) {
 }
 
 TEST(FormatterTest, SpaceSign) {
-  EXPECT_EQ(" 42", str(format("{0: }", 42)));
-  EXPECT_EQ("-42", str(format("{0: }", -42)));
-  EXPECT_EQ(" 42", str(format("{0: }", 42)));
+  EXPECT_EQ(" 42", format("{0: }", 42));
+  EXPECT_EQ("-42", format("{0: }", -42));
+  EXPECT_EQ(" 42", format("{0: }", 42));
   EXPECT_THROW_MSG(format("{0: }", 42u),
       FormatError, "format specifier ' ' requires signed argument");
-  EXPECT_EQ(" 42", str(format("{0: }", 42l)));
+  EXPECT_EQ(" 42", format("{0: }", 42l));
   EXPECT_THROW_MSG(format("{0: }", 42ul),
       FormatError, "format specifier ' ' requires signed argument");
-  EXPECT_EQ(" 42", str(format("{0: }", 42ll)));
+  EXPECT_EQ(" 42", format("{0: }", 42ll));
   EXPECT_THROW_MSG(format("{0: }", 42ull),
       FormatError, "format specifier ' ' requires signed argument");
-  EXPECT_EQ(" 42", str(format("{0: }", 42.0)));
-  EXPECT_EQ(" 42", str(format("{0: }", 42.0l)));
+  EXPECT_EQ(" 42", format("{0: }", 42.0));
+  EXPECT_EQ(" 42", format("{0: }", 42.0l));
   EXPECT_THROW_MSG(format("{0: ", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0: }", 'c'),
@@ -826,40 +822,40 @@ TEST(FormatterTest, SpaceSign) {
 }
 
 TEST(FormatterTest, HashFlag) {
-  EXPECT_EQ("42", str(format("{0:#}", 42)));
-  EXPECT_EQ("-42", str(format("{0:#}", -42)));
-  EXPECT_EQ("0b101010", str(format("{0:#b}", 42)));
-  EXPECT_EQ("0B101010", str(format("{0:#B}", 42)));
-  EXPECT_EQ("-0b101010", str(format("{0:#b}", -42)));
-  EXPECT_EQ("0x42", str(format("{0:#x}", 0x42)));
-  EXPECT_EQ("0X42", str(format("{0:#X}", 0x42)));
-  EXPECT_EQ("-0x42", str(format("{0:#x}", -0x42)));
-  EXPECT_EQ("042", str(format("{0:#o}", 042)));
-  EXPECT_EQ("-042", str(format("{0:#o}", -042)));
-  EXPECT_EQ("42", str(format("{0:#}", 42u)));
-  EXPECT_EQ("0x42", str(format("{0:#x}", 0x42u)));
-  EXPECT_EQ("042", str(format("{0:#o}", 042u)));
+  EXPECT_EQ("42", format("{0:#}", 42));
+  EXPECT_EQ("-42", format("{0:#}", -42));
+  EXPECT_EQ("0b101010", format("{0:#b}", 42));
+  EXPECT_EQ("0B101010", format("{0:#B}", 42));
+  EXPECT_EQ("-0b101010", format("{0:#b}", -42));
+  EXPECT_EQ("0x42", format("{0:#x}", 0x42));
+  EXPECT_EQ("0X42", format("{0:#X}", 0x42));
+  EXPECT_EQ("-0x42", format("{0:#x}", -0x42));
+  EXPECT_EQ("042", format("{0:#o}", 042));
+  EXPECT_EQ("-042", format("{0:#o}", -042));
+  EXPECT_EQ("42", format("{0:#}", 42u));
+  EXPECT_EQ("0x42", format("{0:#x}", 0x42u));
+  EXPECT_EQ("042", format("{0:#o}", 042u));
 
-  EXPECT_EQ("-42", str(format("{0:#}", -42l)));
-  EXPECT_EQ("0x42", str(format("{0:#x}", 0x42l)));
-  EXPECT_EQ("-0x42", str(format("{0:#x}", -0x42l)));
-  EXPECT_EQ("042", str(format("{0:#o}", 042l)));
-  EXPECT_EQ("-042", str(format("{0:#o}", -042l)));
-  EXPECT_EQ("42", str(format("{0:#}", 42ul)));
-  EXPECT_EQ("0x42", str(format("{0:#x}", 0x42ul)));
-  EXPECT_EQ("042", str(format("{0:#o}", 042ul)));
+  EXPECT_EQ("-42", format("{0:#}", -42l));
+  EXPECT_EQ("0x42", format("{0:#x}", 0x42l));
+  EXPECT_EQ("-0x42", format("{0:#x}", -0x42l));
+  EXPECT_EQ("042", format("{0:#o}", 042l));
+  EXPECT_EQ("-042", format("{0:#o}", -042l));
+  EXPECT_EQ("42", format("{0:#}", 42ul));
+  EXPECT_EQ("0x42", format("{0:#x}", 0x42ul));
+  EXPECT_EQ("042", format("{0:#o}", 042ul));
 
-  EXPECT_EQ("-42", str(format("{0:#}", -42ll)));
-  EXPECT_EQ("0x42", str(format("{0:#x}", 0x42ll)));
-  EXPECT_EQ("-0x42", str(format("{0:#x}", -0x42ll)));
-  EXPECT_EQ("042", str(format("{0:#o}", 042ll)));
-  EXPECT_EQ("-042", str(format("{0:#o}", -042ll)));
-  EXPECT_EQ("42", str(format("{0:#}", 42ull)));
-  EXPECT_EQ("0x42", str(format("{0:#x}", 0x42ull)));
-  EXPECT_EQ("042", str(format("{0:#o}", 042ull)));
+  EXPECT_EQ("-42", format("{0:#}", -42ll));
+  EXPECT_EQ("0x42", format("{0:#x}", 0x42ll));
+  EXPECT_EQ("-0x42", format("{0:#x}", -0x42ll));
+  EXPECT_EQ("042", format("{0:#o}", 042ll));
+  EXPECT_EQ("-042", format("{0:#o}", -042ll));
+  EXPECT_EQ("42", format("{0:#}", 42ull));
+  EXPECT_EQ("0x42", format("{0:#x}", 0x42ull));
+  EXPECT_EQ("042", format("{0:#o}", 042ull));
 
-  EXPECT_EQ("-42.0000", str(format("{0:#}", -42.0)));
-  EXPECT_EQ("-42.0000", str(format("{0:#}", -42.0l)));
+  EXPECT_EQ("-42.0000", format("{0:#}", -42.0));
+  EXPECT_EQ("-42.0000", format("{0:#}", -42.0l));
   EXPECT_THROW_MSG(format("{0:#", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0:#}", 'c'),
@@ -873,15 +869,15 @@ TEST(FormatterTest, HashFlag) {
 }
 
 TEST(FormatterTest, ZeroFlag) {
-  EXPECT_EQ("42", str(format("{0:0}", 42)));
-  EXPECT_EQ("-0042", str(format("{0:05}", -42)));
-  EXPECT_EQ("00042", str(format("{0:05}", 42u)));
-  EXPECT_EQ("-0042", str(format("{0:05}", -42l)));
-  EXPECT_EQ("00042", str(format("{0:05}", 42ul)));
-  EXPECT_EQ("-0042", str(format("{0:05}", -42ll)));
-  EXPECT_EQ("00042", str(format("{0:05}", 42ull)));
-  EXPECT_EQ("-0042", str(format("{0:05}", -42.0)));
-  EXPECT_EQ("-0042", str(format("{0:05}", -42.0l)));
+  EXPECT_EQ("42", format("{0:0}", 42));
+  EXPECT_EQ("-0042", format("{0:05}", -42));
+  EXPECT_EQ("00042", format("{0:05}", 42u));
+  EXPECT_EQ("-0042", format("{0:05}", -42l));
+  EXPECT_EQ("00042", format("{0:05}", 42ul));
+  EXPECT_EQ("-0042", format("{0:05}", -42ll));
+  EXPECT_EQ("00042", format("{0:05}", 42ull));
+  EXPECT_EQ("-0042", format("{0:05}", -42.0));
+  EXPECT_EQ("-0042", format("{0:05}", -42.0l));
   EXPECT_THROW_MSG(format("{0:0", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0:05}", 'c'),
@@ -910,19 +906,18 @@ TEST(FormatterTest, Width) {
   SPrintf(format_str, "{0:%u}", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str, 0),
       FormatError, "number is too big in format");
-  EXPECT_EQ(" -42", str(format("{0:4}", -42)));
-  EXPECT_EQ("   42", str(format("{0:5}", 42u)));
-  EXPECT_EQ("   -42", str(format("{0:6}", -42l)));
-  EXPECT_EQ("     42", str(format("{0:7}", 42ul)));
-  EXPECT_EQ("   -42", str(format("{0:6}", -42ll)));
-  EXPECT_EQ("     42", str(format("{0:7}", 42ull)));
-  EXPECT_EQ("   -1.23", str(format("{0:8}", -1.23)));
-  EXPECT_EQ("    -1.23", str(format("{0:9}", -1.23l)));
-  EXPECT_EQ("    0xcafe",
-      str(format("{0:10}", reinterpret_cast<void*>(0xcafe))));
-  EXPECT_EQ("x          ", str(format("{0:11}", 'x')));
-  EXPECT_EQ("str         ", str(format("{0:12}", "str")));
-  EXPECT_EQ("test         ", str(format("{0:13}", TestString("test"))));
+  EXPECT_EQ(" -42", format("{0:4}", -42));
+  EXPECT_EQ("   42", format("{0:5}", 42u));
+  EXPECT_EQ("   -42", format("{0:6}", -42l));
+  EXPECT_EQ("     42", format("{0:7}", 42ul));
+  EXPECT_EQ("   -42", format("{0:6}", -42ll));
+  EXPECT_EQ("     42", format("{0:7}", 42ull));
+  EXPECT_EQ("   -1.23", format("{0:8}", -1.23));
+  EXPECT_EQ("    -1.23", format("{0:9}", -1.23l));
+  EXPECT_EQ("    0xcafe", format("{0:10}", reinterpret_cast<void*>(0xcafe)));
+  EXPECT_EQ("x          ", format("{0:11}", 'x'));
+  EXPECT_EQ("str         ", format("{0:12}", "str"));
+  EXPECT_EQ("test         ", format("{0:13}", TestString("test")));
 }
 
 TEST(FormatterTest, Precision) {
@@ -973,8 +968,8 @@ TEST(FormatterTest, Precision) {
       FormatError, "precision specifier requires floating-point argument");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ull),
       FormatError, "precision specifier requires floating-point argument");
-  EXPECT_EQ("1.2", str(format("{0:.2}", 1.2345)));
-  EXPECT_EQ("1.2", str(format("{0:.2}", 1.2345l)));
+  EXPECT_EQ("1.2", format("{0:.2}", 1.2345));
+  EXPECT_EQ("1.2", format("{0:.2}", 1.2345l));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
       FormatError, "precision specifier requires floating-point argument");
@@ -1065,8 +1060,8 @@ TEST(FormatterTest, RuntimePrecision) {
       FormatError, "precision specifier requires floating-point argument");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42ull, 2),
       FormatError, "precision specifier requires floating-point argument");
-  EXPECT_EQ("1.2", str(format("{0:.{1}}", 1.2345, 2)));
-  EXPECT_EQ("1.2", str(format("{1:.{0}}", 2, 1.2345l)));
+  EXPECT_EQ("1.2", format("{0:.{1}}", 1.2345, 2));
+  EXPECT_EQ("1.2", format("{1:.{0}}", 2, 1.2345l));
 
   EXPECT_THROW_MSG(format("{0:.{1}}", reinterpret_cast<void*>(0xcafe), 2),
       FormatError, "precision specifier requires floating-point argument");
@@ -1108,14 +1103,14 @@ void CheckUnknownTypes(
 }
 
 TEST(FormatterTest, FormatBool) {
-  EXPECT_EQ(L"1", str(format(L"{}", true)));
+  EXPECT_EQ(L"1", format(L"{}", true));
 }
 
 TEST(FormatterTest, FormatShort) {
   short s = 42;
-  EXPECT_EQ("42", str(format("{0:d}", s)));
+  EXPECT_EQ("42", format("{0:d}", s));
   unsigned short us = 42;
-  EXPECT_EQ("42", str(format("{0:d}", us)));
+  EXPECT_EQ("42", format("{0:d}", us));
 }
 
 TEST(FormatterTest, FormatInt) {
@@ -1125,196 +1120,196 @@ TEST(FormatterTest, FormatInt) {
 }
 
 TEST(FormatterTest, FormatBin) {
-  EXPECT_EQ("0", str(format("{0:b}", 0)));
-  EXPECT_EQ("101010", str(format("{0:b}", 42)));
-  EXPECT_EQ("101010", str(format("{0:b}", 42u)));
-  EXPECT_EQ("-101010", str(format("{0:b}", -42)));
-  EXPECT_EQ("11000000111001", str(format("{0:b}", 12345)));
-  EXPECT_EQ("10010001101000101011001111000", str(format("{0:b}", 0x12345678)));
-  EXPECT_EQ("10010000101010111100110111101111", str(format("{0:b}", 0x90ABCDEF)));
+  EXPECT_EQ("0", format("{0:b}", 0));
+  EXPECT_EQ("101010", format("{0:b}", 42));
+  EXPECT_EQ("101010", format("{0:b}", 42u));
+  EXPECT_EQ("-101010", format("{0:b}", -42));
+  EXPECT_EQ("11000000111001", format("{0:b}", 12345));
+  EXPECT_EQ("10010001101000101011001111000", format("{0:b}", 0x12345678));
+  EXPECT_EQ("10010000101010111100110111101111", format("{0:b}", 0x90ABCDEF));
   EXPECT_EQ("11111111111111111111111111111111",
-            str(format("{0:b}", std::numeric_limits<uint32_t>::max())));
+            format("{0:b}", std::numeric_limits<uint32_t>::max()));
 }
 
 TEST(FormatterTest, FormatDec) {
-  EXPECT_EQ("0", str(format("{0}", 0)));
-  EXPECT_EQ("42", str(format("{0}", 42)));
-  EXPECT_EQ("42", str(format("{0:d}", 42)));
-  EXPECT_EQ("42", str(format("{0}", 42u)));
-  EXPECT_EQ("-42", str(format("{0}", -42)));
-  EXPECT_EQ("12345", str(format("{0}", 12345)));
-  EXPECT_EQ("67890", str(format("{0}", 67890)));
+  EXPECT_EQ("0", format("{0}", 0));
+  EXPECT_EQ("42", format("{0}", 42));
+  EXPECT_EQ("42", format("{0:d}", 42));
+  EXPECT_EQ("42", format("{0}", 42u));
+  EXPECT_EQ("-42", format("{0}", -42));
+  EXPECT_EQ("12345", format("{0}", 12345));
+  EXPECT_EQ("67890", format("{0}", 67890));
   char buffer[BUFFER_SIZE];
   SPrintf(buffer, "%d", INT_MIN);
-  EXPECT_EQ(buffer, str(format("{0}", INT_MIN)));
+  EXPECT_EQ(buffer, format("{0}", INT_MIN));
   SPrintf(buffer, "%d", INT_MAX);
-  EXPECT_EQ(buffer, str(format("{0}", INT_MAX)));
+  EXPECT_EQ(buffer, format("{0}", INT_MAX));
   SPrintf(buffer, "%u", UINT_MAX);
-  EXPECT_EQ(buffer, str(format("{0}", UINT_MAX)));
+  EXPECT_EQ(buffer, format("{0}", UINT_MAX));
   SPrintf(buffer, "%ld", 0 - static_cast<unsigned long>(LONG_MIN));
-  EXPECT_EQ(buffer, str(format("{0}", LONG_MIN)));
+  EXPECT_EQ(buffer, format("{0}", LONG_MIN));
   SPrintf(buffer, "%ld", LONG_MAX);
-  EXPECT_EQ(buffer, str(format("{0}", LONG_MAX)));
+  EXPECT_EQ(buffer, format("{0}", LONG_MAX));
   SPrintf(buffer, "%lu", ULONG_MAX);
-  EXPECT_EQ(buffer, str(format("{0}", ULONG_MAX)));
+  EXPECT_EQ(buffer, format("{0}", ULONG_MAX));
 }
 
 TEST(FormatterTest, FormatHex) {
-  EXPECT_EQ("0", str(format("{0:x}", 0)));
-  EXPECT_EQ("42", str(format("{0:x}", 0x42)));
-  EXPECT_EQ("42", str(format("{0:x}", 0x42u)));
-  EXPECT_EQ("-42", str(format("{0:x}", -0x42)));
-  EXPECT_EQ("12345678", str(format("{0:x}", 0x12345678)));
-  EXPECT_EQ("90abcdef", str(format("{0:x}", 0x90abcdef)));
-  EXPECT_EQ("12345678", str(format("{0:X}", 0x12345678)));
-  EXPECT_EQ("90ABCDEF", str(format("{0:X}", 0x90ABCDEF)));
+  EXPECT_EQ("0", format("{0:x}", 0));
+  EXPECT_EQ("42", format("{0:x}", 0x42));
+  EXPECT_EQ("42", format("{0:x}", 0x42u));
+  EXPECT_EQ("-42", format("{0:x}", -0x42));
+  EXPECT_EQ("12345678", format("{0:x}", 0x12345678));
+  EXPECT_EQ("90abcdef", format("{0:x}", 0x90abcdef));
+  EXPECT_EQ("12345678", format("{0:X}", 0x12345678));
+  EXPECT_EQ("90ABCDEF", format("{0:X}", 0x90ABCDEF));
 
   char buffer[BUFFER_SIZE];
   SPrintf(buffer, "-%x", 0 - static_cast<unsigned>(INT_MIN));
-  EXPECT_EQ(buffer, str(format("{0:x}", INT_MIN)));
+  EXPECT_EQ(buffer, format("{0:x}", INT_MIN));
   SPrintf(buffer, "%x", INT_MAX);
-  EXPECT_EQ(buffer, str(format("{0:x}", INT_MAX)));
+  EXPECT_EQ(buffer, format("{0:x}", INT_MAX));
   SPrintf(buffer, "%x", UINT_MAX);
-  EXPECT_EQ(buffer, str(format("{0:x}", UINT_MAX)));
+  EXPECT_EQ(buffer, format("{0:x}", UINT_MAX));
   SPrintf(buffer, "-%lx", 0 - static_cast<unsigned long>(LONG_MIN));
-  EXPECT_EQ(buffer, str(format("{0:x}", LONG_MIN)));
+  EXPECT_EQ(buffer, format("{0:x}", LONG_MIN));
   SPrintf(buffer, "%lx", LONG_MAX);
-  EXPECT_EQ(buffer, str(format("{0:x}", LONG_MAX)));
+  EXPECT_EQ(buffer, format("{0:x}", LONG_MAX));
   SPrintf(buffer, "%lx", ULONG_MAX);
-  EXPECT_EQ(buffer, str(format("{0:x}", ULONG_MAX)));
+  EXPECT_EQ(buffer, format("{0:x}", ULONG_MAX));
 }
 
 TEST(FormatterTest, FormatOct) {
-  EXPECT_EQ("0", str(format("{0:o}", 0)));
-  EXPECT_EQ("42", str(format("{0:o}", 042)));
-  EXPECT_EQ("42", str(format("{0:o}", 042u)));
-  EXPECT_EQ("-42", str(format("{0:o}", -042)));
-  EXPECT_EQ("12345670", str(format("{0:o}", 012345670)));
+  EXPECT_EQ("0", format("{0:o}", 0));
+  EXPECT_EQ("42", format("{0:o}", 042));
+  EXPECT_EQ("42", format("{0:o}", 042u));
+  EXPECT_EQ("-42", format("{0:o}", -042));
+  EXPECT_EQ("12345670", format("{0:o}", 012345670));
   char buffer[BUFFER_SIZE];
   SPrintf(buffer, "-%o", 0 - static_cast<unsigned>(INT_MIN));
-  EXPECT_EQ(buffer, str(format("{0:o}", INT_MIN)));
+  EXPECT_EQ(buffer, format("{0:o}", INT_MIN));
   SPrintf(buffer, "%o", INT_MAX);
-  EXPECT_EQ(buffer, str(format("{0:o}", INT_MAX)));
+  EXPECT_EQ(buffer, format("{0:o}", INT_MAX));
   SPrintf(buffer, "%o", UINT_MAX);
-  EXPECT_EQ(buffer, str(format("{0:o}", UINT_MAX)));
+  EXPECT_EQ(buffer, format("{0:o}", UINT_MAX));
   SPrintf(buffer, "-%lo", 0 - static_cast<unsigned long>(LONG_MIN));
-  EXPECT_EQ(buffer, str(format("{0:o}", LONG_MIN)));
+  EXPECT_EQ(buffer, format("{0:o}", LONG_MIN));
   SPrintf(buffer, "%lo", LONG_MAX);
-  EXPECT_EQ(buffer, str(format("{0:o}", LONG_MAX)));
+  EXPECT_EQ(buffer, format("{0:o}", LONG_MAX));
   SPrintf(buffer, "%lo", ULONG_MAX);
-  EXPECT_EQ(buffer, str(format("{0:o}", ULONG_MAX)));
+  EXPECT_EQ(buffer, format("{0:o}", ULONG_MAX));
 }
 
 TEST(FormatterTest, FormatFloat) {
-  EXPECT_EQ("392.500000", str(format("{0:f}", 392.5f)));
+  EXPECT_EQ("392.500000", format("{0:f}", 392.5f));
 }
 
 TEST(FormatterTest, FormatDouble) {
   CheckUnknownTypes(1.2, "eEfFgGaA", "double");
-  EXPECT_EQ("0", str(format("{0:}", 0.0)));
-  EXPECT_EQ("0.000000", str(format("{0:f}", 0.0)));
-  EXPECT_EQ("392.65", str(format("{0:}", 392.65)));
-  EXPECT_EQ("392.65", str(format("{0:g}", 392.65)));
-  EXPECT_EQ("392.65", str(format("{0:G}", 392.65)));
-  EXPECT_EQ("392.650000", str(format("{0:f}", 392.65)));
-  EXPECT_EQ("392.650000", str(format("{0:F}", 392.65)));
+  EXPECT_EQ("0", format("{0:}", 0.0));
+  EXPECT_EQ("0.000000", format("{0:f}", 0.0));
+  EXPECT_EQ("392.65", format("{0:}", 392.65));
+  EXPECT_EQ("392.65", format("{0:g}", 392.65));
+  EXPECT_EQ("392.65", format("{0:G}", 392.65));
+  EXPECT_EQ("392.650000", format("{0:f}", 392.65));
+  EXPECT_EQ("392.650000", format("{0:F}", 392.65));
   char buffer[BUFFER_SIZE];
   SPrintf(buffer, "%e", 392.65);
-  EXPECT_EQ(buffer, str(format("{0:e}", 392.65)));
+  EXPECT_EQ(buffer, format("{0:e}", 392.65));
   SPrintf(buffer, "%E", 392.65);
-  EXPECT_EQ(buffer, str(format("{0:E}", 392.65)));
-  EXPECT_EQ("+0000392.6", str(format("{0:+010.4g}", 392.65)));
+  EXPECT_EQ(buffer, format("{0:E}", 392.65));
+  EXPECT_EQ("+0000392.6", format("{0:+010.4g}", 392.65));
   SPrintf(buffer, "%a", -42.0);
-  EXPECT_EQ(buffer, str(format("{:a}", -42.0)));
+  EXPECT_EQ(buffer, format("{:a}", -42.0));
   SPrintf(buffer, "%A", -42.0);
-  EXPECT_EQ(buffer, str(format("{:A}", -42.0)));
+  EXPECT_EQ(buffer, format("{:A}", -42.0));
 }
 
 TEST(FormatterTest, FormatNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
-  EXPECT_EQ("nan", str(format("{}", nan)));
-  EXPECT_EQ("+nan", str(format("{:+}", nan)));
+  EXPECT_EQ("nan", format("{}", nan));
+  EXPECT_EQ("+nan", format("{:+}", nan));
   if (fmt::internal::SignBitNoInline(-nan))
-    EXPECT_EQ("-nan", str(format("{}", -nan)));
+    EXPECT_EQ("-nan", format("{}", -nan));
   else
     fmt::Print("Warning: compiler doesn't handle negative NaN correctly");
-  EXPECT_EQ(" nan", str(format("{: }", nan)));
-  EXPECT_EQ("NAN", str(format("{:F}", nan)));
-  EXPECT_EQ("nan    ", str(format("{:<7}", nan)));
-  EXPECT_EQ("  nan  ", str(format("{:^7}", nan)));
-  EXPECT_EQ("    nan", str(format("{:>7}", nan)));
+  EXPECT_EQ(" nan", format("{: }", nan));
+  EXPECT_EQ("NAN", format("{:F}", nan));
+  EXPECT_EQ("nan    ", format("{:<7}", nan));
+  EXPECT_EQ("  nan  ", format("{:^7}", nan));
+  EXPECT_EQ("    nan", format("{:>7}", nan));
 }
 
 TEST(FormatterTest, FormatInfinity) {
   double inf = std::numeric_limits<double>::infinity();
-  EXPECT_EQ("inf", str(format("{}", inf)));
-  EXPECT_EQ("+inf", str(format("{:+}", inf)));
-  EXPECT_EQ("-inf", str(format("{}", -inf)));
-  EXPECT_EQ(" inf", str(format("{: }", inf)));
-  EXPECT_EQ("INF", str(format("{:F}", inf)));
-  EXPECT_EQ("inf    ", str(format("{:<7}", inf)));
-  EXPECT_EQ("  inf  ", str(format("{:^7}", inf)));
-  EXPECT_EQ("    inf", str(format("{:>7}", inf)));
+  EXPECT_EQ("inf", format("{}", inf));
+  EXPECT_EQ("+inf", format("{:+}", inf));
+  EXPECT_EQ("-inf", format("{}", -inf));
+  EXPECT_EQ(" inf", format("{: }", inf));
+  EXPECT_EQ("INF", format("{:F}", inf));
+  EXPECT_EQ("inf    ", format("{:<7}", inf));
+  EXPECT_EQ("  inf  ", format("{:^7}", inf));
+  EXPECT_EQ("    inf", format("{:>7}", inf));
 }
 
 TEST(FormatterTest, FormatLongDouble) {
-  EXPECT_EQ("0", str(format("{0:}", 0.0l)));
-  EXPECT_EQ("0.000000", str(format("{0:f}", 0.0l)));
-  EXPECT_EQ("392.65", str(format("{0:}", 392.65l)));
-  EXPECT_EQ("392.65", str(format("{0:g}", 392.65l)));
-  EXPECT_EQ("392.65", str(format("{0:G}", 392.65l)));
-  EXPECT_EQ("392.650000", str(format("{0:f}", 392.65l)));
-  EXPECT_EQ("392.650000", str(format("{0:F}", 392.65l)));
+  EXPECT_EQ("0", format("{0:}", 0.0l));
+  EXPECT_EQ("0.000000", format("{0:f}", 0.0l));
+  EXPECT_EQ("392.65", format("{0:}", 392.65l));
+  EXPECT_EQ("392.65", format("{0:g}", 392.65l));
+  EXPECT_EQ("392.65", format("{0:G}", 392.65l));
+  EXPECT_EQ("392.650000", format("{0:f}", 392.65l));
+  EXPECT_EQ("392.650000", format("{0:F}", 392.65l));
   char buffer[BUFFER_SIZE];
   SPrintf(buffer, "%Le", 392.65l);
-  EXPECT_EQ(buffer, str(format("{0:e}", 392.65l)));
+  EXPECT_EQ(buffer, format("{0:e}", 392.65l));
   SPrintf(buffer, "%LE", 392.65l);
-  EXPECT_EQ("+0000392.6", str(format("{0:+010.4g}", 392.65l)));
+  EXPECT_EQ("+0000392.6", format("{0:+010.4g}", 392.65l));
 }
 
 TEST(FormatterTest, FormatChar) {
   CheckUnknownTypes('a', "c", "char");
-  EXPECT_EQ("a", str(format("{0}", 'a')));
-  EXPECT_EQ("z", str(format("{0:c}", 'z')));
-  EXPECT_EQ(L"a", str(format(L"{0}", 'a')));
+  EXPECT_EQ("a", format("{0}", 'a'));
+  EXPECT_EQ("z", format("{0:c}", 'z'));
+  EXPECT_EQ(L"a", format(L"{0}", 'a'));
 }
 
 TEST(FormatterTest, FormatWChar) {
-  EXPECT_EQ(L"a", str(format(L"{0}", L'a')));
+  EXPECT_EQ(L"a", format(L"{0}", L'a'));
   // This shouldn't compile:
   //format("{}", L'a');
 }
 
 TEST(FormatterTest, FormatCString) {
   CheckUnknownTypes("test", "s", "string");
-  EXPECT_EQ("test", str(format("{0}", "test")));
-  EXPECT_EQ("test", str(format("{0:s}", "test")));
+  EXPECT_EQ("test", format("{0}", "test"));
+  EXPECT_EQ("test", format("{0:s}", "test"));
   char nonconst[] = "nonconst";
-  EXPECT_EQ("nonconst", str(format("{0}", nonconst)));
+  EXPECT_EQ("nonconst", format("{0}", nonconst));
   EXPECT_THROW_MSG(format("{0}", reinterpret_cast<const char*>(0)),
       FormatError, "string pointer is null");
 }
 
 TEST(FormatterTest, FormatPointer) {
   CheckUnknownTypes(reinterpret_cast<void*>(0x1234), "p", "pointer");
-  EXPECT_EQ("0x0", str(format("{0}", reinterpret_cast<void*>(0))));
-  EXPECT_EQ("0x1234", str(format("{0}", reinterpret_cast<void*>(0x1234))));
-  EXPECT_EQ("0x1234", str(format("{0:p}", reinterpret_cast<void*>(0x1234))));
+  EXPECT_EQ("0x0", format("{0}", reinterpret_cast<void*>(0)));
+  EXPECT_EQ("0x1234", format("{0}", reinterpret_cast<void*>(0x1234)));
+  EXPECT_EQ("0x1234", format("{0:p}", reinterpret_cast<void*>(0x1234)));
   EXPECT_EQ("0x" + std::string(sizeof(void*) * CHAR_BIT / 4, 'f'),
-      str(format("{0}", reinterpret_cast<void*>(~uintptr_t()))));
+      format("{0}", reinterpret_cast<void*>(~uintptr_t())));
 }
 
 TEST(FormatterTest, FormatString) {
-  EXPECT_EQ("test", str(format("{0}", std::string("test"))));
+  EXPECT_EQ("test", format("{0}", std::string("test")));
 }
 
 TEST(FormatterTest, FormatStringRef) {
-  EXPECT_EQ("test", str(format("{0}", StringRef("test"))));
+  EXPECT_EQ("test", format("{0}", StringRef("test")));
 }
 
 TEST(FormatterTest, FormatUsingIOStreams) {
-  EXPECT_EQ("a string", str(format("{0}", TestString("a string"))));
-  std::string s = str(format("The date is {0}", Date(2012, 12, 9)));
+  EXPECT_EQ("a string", format("{0}", TestString("a string")));
+  std::string s = format("The date is {0}", Date(2012, 12, 9));
   EXPECT_EQ("The date is 2012-12-9", s);
   Date date(2012, 12, 9);
   CheckUnknownTypes(date, "", "object");
@@ -1328,41 +1323,41 @@ void format(BasicWriter<Char> &w, const fmt::FormatSpec &spec, Answer) {
 }
 
 TEST(FormatterTest, CustomFormat) {
-  EXPECT_EQ("42", str(format("{0}", Answer())));
+  EXPECT_EQ("42", format("{0}", Answer()));
 }
 
 TEST(FormatterTest, WideFormatString) {
-  EXPECT_EQ(L"42", str(format(L"{}", 42)));
-  EXPECT_EQ(L"4.2", str(format(L"{}", 4.2)));
-  EXPECT_EQ(L"abc", str(format(L"{}", L"abc")));
-  EXPECT_EQ(L"z", str(format(L"{}", L'z')));
+  EXPECT_EQ(L"42", format(L"{}", 42));
+  EXPECT_EQ(L"4.2", format(L"{}", 4.2));
+  EXPECT_EQ(L"abc", format(L"{}", L"abc"));
+  EXPECT_EQ(L"z", format(L"{}", L'z'));
 }
 
 TEST(FormatterTest, FormatStringFromSpeedTest) {
   EXPECT_EQ("1.2340000000:0042:+3.13:str:0x3e8:X:%",
-      str(format("{0:0.10f}:{1:04}:{2:+g}:{3}:{4}:{5}:%",
-          1.234, 42, 3.13, "str", reinterpret_cast<void*>(1000), 'X')));
+      format("{0:0.10f}:{1:04}:{2:+g}:{3}:{4}:{5}:%",
+          1.234, 42, 3.13, "str", reinterpret_cast<void*>(1000), 'X'));
 }
 
 TEST(FormatterTest, FormatExamples) {
   using fmt::hex;
   EXPECT_EQ("0000cafe", str(BasicWriter<char>() << pad(hex(0xcafe), 8, '0')));
 
-  std::string message = str(format("The answer is {}", 42));
+  std::string message = format("The answer is {}", 42);
   EXPECT_EQ("The answer is 42", message);
 
-  EXPECT_EQ("42", str(format("{}", 42)));
-  EXPECT_EQ("42", str(format(std::string("{}"), 42)));
+  EXPECT_EQ("42", format("{}", 42));
+  EXPECT_EQ("42", format(std::string("{}"), 42));
 
   Writer out;
   out << "The answer is " << 42 << "\n";
-  out.format("({:+f}, {:+f})", -3.14, 3.14);
+  out.write("({:+f}, {:+f})", -3.14, 3.14);
   EXPECT_EQ("The answer is 42\n(-3.140000, +3.140000)", out.str());
 
   {
     fmt::Writer writer;
     for (int i = 0; i < 10; i++)
-      writer.format("{}", i);
+      writer.write("{}", i);
     std::string s = writer.str(); // s == 0123456789
     EXPECT_EQ("0123456789", s);
   }
@@ -1376,11 +1371,6 @@ TEST(FormatterTest, FormatExamples) {
     if (!f)
       fmt::ThrowSystemError(errno, "Cannot open file '{}'") << filename;
   }, error_code, "Cannot open file 'nonexistent'");
-}
-
-TEST(FormatterTest, StrNamespace) {
-  str(format(""));
-  c_str(format(""));
 }
 
 TEST(StringRefTest, Ctor) {
@@ -1492,51 +1482,51 @@ fmt::Formatter<PrintError> ReportError(const char *format) {
 
 TEST(FormatterTest, Examples) {
   EXPECT_EQ("First, thou shalt count to three",
-      str(format("First, thou shalt count to {0}", "three")));
+      format("First, thou shalt count to {0}", "three"));
   EXPECT_EQ("Bring me a shrubbery",
-      str(format("Bring me a {}", "shrubbery")));
-  EXPECT_EQ("From 1 to 3", str(format("From {} to {}", 1, 3)));
+      format("Bring me a {}", "shrubbery"));
+  EXPECT_EQ("From 1 to 3", format("From {} to {}", 1, 3));
 
   char buffer[BUFFER_SIZE];
   SPrintf(buffer, "%03.2f", -1.2);
-  EXPECT_EQ(buffer, str(format("{:03.2f}", -1.2)));
+  EXPECT_EQ(buffer, format("{:03.2f}", -1.2));
 
-  EXPECT_EQ("a, b, c", str(format("{0}, {1}, {2}", 'a', 'b', 'c')));
-  EXPECT_EQ("a, b, c", str(format("{}, {}, {}", 'a', 'b', 'c')));
-  EXPECT_EQ("c, b, a", str(format("{2}, {1}, {0}", 'a', 'b', 'c')));
-  EXPECT_EQ("abracadabra", str(format("{0}{1}{0}", "abra", "cad")));
+  EXPECT_EQ("a, b, c", format("{0}, {1}, {2}", 'a', 'b', 'c'));
+  EXPECT_EQ("a, b, c", format("{}, {}, {}", 'a', 'b', 'c'));
+  EXPECT_EQ("c, b, a", format("{2}, {1}, {0}", 'a', 'b', 'c'));
+  EXPECT_EQ("abracadabra", format("{0}{1}{0}", "abra", "cad"));
 
   EXPECT_EQ("left aligned                  ",
-      str(format("{:<30}", "left aligned")));
+      format("{:<30}", "left aligned"));
   EXPECT_EQ("                 right aligned",
-      str(format("{:>30}", "right aligned")));
+      format("{:>30}", "right aligned"));
   EXPECT_EQ("           centered           ",
-      str(format("{:^30}", "centered")));
+      format("{:^30}", "centered"));
   EXPECT_EQ("***********centered***********",
-      str(format("{:*^30}", "centered")));
+      format("{:*^30}", "centered"));
 
   EXPECT_EQ("+3.140000; -3.140000",
-      str(format("{:+f}; {:+f}", 3.14, -3.14)));
+      format("{:+f}; {:+f}", 3.14, -3.14));
   EXPECT_EQ(" 3.140000; -3.140000",
-      str(format("{: f}; {: f}", 3.14, -3.14)));
+      format("{: f}; {: f}", 3.14, -3.14));
   EXPECT_EQ("3.140000; -3.140000",
-      str(format("{:-f}; {:-f}", 3.14, -3.14)));
+      format("{:-f}; {:-f}", 3.14, -3.14));
 
   EXPECT_EQ("int: 42;  hex: 2a;  oct: 52",
-      str(format("int: {0:d};  hex: {0:x};  oct: {0:o}", 42)));
+      format("int: {0:d};  hex: {0:x};  oct: {0:o}", 42));
   EXPECT_EQ("int: 42;  hex: 0x2a;  oct: 052",
-      str(format("int: {0:d};  hex: {0:#x};  oct: {0:#o}", 42)));
+      format("int: {0:d};  hex: {0:#x};  oct: {0:#o}", 42));
 
   std::string path = "somefile";
   ReportError("File not found: {0}") << path;
 
-  EXPECT_EQ("The answer is 42", str(format("The answer is {}", 42)));
+  EXPECT_EQ("The answer is 42", format("The answer is {}", 42));
   EXPECT_THROW_MSG(
     format("The answer is {:d}", "forty-two"), FormatError,
     "unknown format code 'd' for string");
 
   EXPECT_EQ(L"Cyrillic letter \x42e",
-    str(format(L"Cyrillic letter {}", L'\x42e')));
+    format(L"Cyrillic letter {}", L'\x42e'));
 
   EXPECT_WRITE(stdout,
       fmt::print("{}", std::numeric_limits<double>::infinity()), "inf");
@@ -1601,8 +1591,8 @@ TEST(FormatTest, PrintColored) {
 #endif
 
 TEST(FormatTest, Variadic) {
-  EXPECT_EQ("abc1", str(format("{}c{}", "ab", 1)));
-  EXPECT_EQ(L"abc1", str(format(L"{}c{}", L"ab", 1)));
+  EXPECT_EQ("abc1", format("{}c{}", "ab", 1));
+  EXPECT_EQ(L"abc1", format(L"{}c{}", L"ab", 1));
 }
 
 template <typename T>
@@ -1619,8 +1609,8 @@ TEST(StrTest, Convert) {
 std::string FormatMessage(int id, const char *format,
     const fmt::ArgList &args) {
   fmt::Writer w;
-  w.format("[{}] ", id);
-  w.format(format, args);
+  w.write("[{}] ", id);
+  w.write(format, args);
   return w.str();
 }
 

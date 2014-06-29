@@ -206,8 +206,8 @@ void CheckThrowError(int error_code, FormatErrorMessage format,
 TEST(UtilTest, FormatSystemErrorMessage) {
   fmt::Writer message;
   fmt::internal::FormatSystemErrorMessage(message, EDOM, "test");
-  EXPECT_EQ(str(fmt::format("test: {}",
-          GetSystemErrorMessage(EDOM))), fmt::str(message));
+  EXPECT_EQ(fmt::format("test: {}",
+          GetSystemErrorMessage(EDOM)), fmt::str(message));
 }
 
 TEST(UtilTest, SystemErrorSink) {
@@ -240,7 +240,7 @@ TEST(UtilTest, FormatWinErrorMessage) {
   fmt::Writer actual_message;
   fmt::internal::FormatWinErrorMessage(
       actual_message, ERROR_FILE_EXISTS, "test");
-  EXPECT_EQ(str(fmt::format("test: {}", fmt::str(utf8_message))),
+  EXPECT_EQ(fmt::format("test: {}", fmt::str(utf8_message)),
       fmt::str(actual_message));
 }
 

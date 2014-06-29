@@ -1107,13 +1107,13 @@ void fmt::ANSITerminalSink::operator()(
 
 void fmt::print(StringRef format, const ArgList &args) {
   Writer w;
-  w.format(format, args);
+  w.write(format, args);
   std::fwrite(w.data(), 1, w.size(), stdout);
 }
 
 void fmt::print(std::FILE *f, StringRef format, const ArgList &args) {
   Writer w;
-  w.format(format, args);
+  w.write(format, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
 

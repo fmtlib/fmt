@@ -119,7 +119,9 @@
   TypeName(const TypeName&); \
   void operator=(const TypeName&)
 
-#ifdef __GNUC__
+#ifdef FMT_DEPRECATED
+// Do nothing.
+#elif defined(__GNUC__)
 # define FMT_DEPRECATED(func) func __attribute__((deprecated))
 #elif defined(_MSC_VER)
 # define FMT_DEPRECATED(func) __declspec(deprecated) func
@@ -157,8 +159,20 @@ struct FormatSpec;
 /**
   \rst
   A string reference. It can be constructed from a C string or
-  ``std::string``. It is most useful as a parameter type to allow
-  passing different types of strings in a function, for example::
+  ``std::string``.
+  
+  You can use one of the following typedefs for common character types:
+
+  +------------+-------------------------+
+  | Type       | Definition              |
+  +============+=========================+
+  | StringRef  | BasicStringRef<char>    |
+  +------------+-------------------------+
+  | WStringRef | BasicStringRef<wchar_t> |
+  +------------+-------------------------+
+
+  This class is most useful as a parameter type to allow passing
+  different types of strings to a function, for example::
 
     template<typename... Args>
     Writer format(StringRef format, const Args & ... args);
@@ -968,7 +982,7 @@ public:
 
      Writer out;
      out << "The answer is " << 42 << "\n";
-     out.format("({:+f}, {:+f})", -3.14, 3.14);
+     out.write("({:+f}, {:+f})", -3.14, 3.14);
 
   This will write the following output to the ``out`` object:
 
@@ -1229,38 +1243,6 @@ class BasicWriter {
     buffer_ = std::move(other.buffer_);
     return *this;
   }
-#else
-  friend inline BasicWriter &move(BasicWriter &w) { return w; }
-
- private:
-  struct Proxy { Buffer *buffer; };
-
- public:
-  operator Proxy() {
-    Proxy p = {&buffer_};
-    return p;
-  }
-
-  /**
-    \rst
-    A "move" constructor. Constructs a writer transferring the buffer
-    from other to this object. This constructor is used to return a
-    writer object from a formatting function since the copy constructor
-    taking a const reference is disabled to prevent misuse of the API.
-    It is not implemented as a move constructor for compatibility with
-    pre-C++11 compilers, but should be treated as such.
-
-    **Example**::
-
-      fmt::Writer format(fmt::StringRef format, const fmt::ArgList &args) {
-        fmt::Writer w;
-        w.format(format, args);
-        return move(w);
-      }
-    \endrst
-   */
-  BasicWriter(BasicWriter &other) { buffer_.move(other.buffer_); }
-  BasicWriter(Proxy p) { buffer_.move(*p.buffer); }
 #endif
 
   /**
@@ -1294,14 +1276,15 @@ class BasicWriter {
 
   /**
     \rst
-    Formats a string sending the output to the writer. This function
-    takes variable number of arguments.
+    Writes formatted data.
+    
+    *args* is an argument list representing arbitrary arguments.
 
     **Example**::
 
        Writer out;
-       out.format("Current point:\n");
-       out.format("({:+f}, {:+f})", -3.14, 3.14);
+       out.write("Current point:\n");
+       out.write("({:+f}, {:+f})", -3.14, 3.14);
 
     This will write the following output to the ``out`` object:
 
@@ -1316,23 +1299,15 @@ class BasicWriter {
     See also `Format String Syntax`_.
     \endrst
    */
-  inline void format(BasicStringRef<Char> format, const ArgList &args) {
+  inline void write(BasicStringRef<Char> format, const ArgList &args) {
     FormatParser().Format(*this, format, args);
   }
-  FMT_VARIADIC_VOID(format, fmt::BasicStringRef<Char>)
+  FMT_VARIADIC_VOID(write, fmt::BasicStringRef<Char>)
 
   inline void printf(BasicStringRef<Char> format, const ArgList &args) {
     PrintfParser().Format(*this, format, args);
   }
   FMT_VARIADIC_VOID(printf, fmt::BasicStringRef<Char>)
-
-  FMT_DEPRECATED(BasicFormatter<Char> Format(StringRef format));
-
-#if FMT_USE_VARIADIC_TEMPLATES
-  // This function is deprecated, use Writer::format instead.
-  template<typename... Args>
-  FMT_DEPRECATED(void Format(BasicStringRef<Char> format, const Args & ... args));
-#endif
 
   template <typename T>
   static Arg MakeArg(const T &arg) { return BasicArg<>(arg); }
@@ -1415,13 +1390,23 @@ class BasicWriter {
     FormatString(s.data(), s.size(), spec);
   }
 
-  // This function is deprecated, use write instead.
-  FMT_DEPRECATED(void Write(const std::basic_string<Char> &s, const FormatSpec &spec));
-  
   void clear() { buffer_.clear(); }
 
-  // This function is deprecated, use clear instead.
+#if !defined(FMT_NO_DEPRECATED)
+  FMT_DEPRECATED(BasicFormatter<Char> Format(StringRef format));
+
+#if FMT_USE_VARIADIC_TEMPLATES
+  // This function is deprecated. Use Writer::write instead.
+  template<typename... Args>
+  FMT_DEPRECATED(void Format(BasicStringRef<Char> format, const Args & ... args));
+#endif
+
+  // This function is deprecated. Use Writer::write instead.
+  FMT_DEPRECATED(void Write(const std::basic_string<Char> &s, const FormatSpec &spec));
+  
+  // This function is deprecated. Use Writer::clear instead.
   FMT_DEPRECATED(void Clear());
+#endif
 };
 
 template <typename Char>
@@ -1685,7 +1670,7 @@ class BasicFormatter {
     if (!format_) return;
     const Char *format = format_;
     format_ = 0;
-    writer_->format(format, ArgList(&args_[0], args_.size()));
+    writer_->write(format, ArgList(&args_[0], args_.size()));
   }
 
  public:
@@ -1783,14 +1768,15 @@ class Formatter : private Sink, public BasicFormatter<Char> {
   }
 };
 
-// This function is deprecated, use format instead.
+#if !defined(FMT_NO_DEPRECATED)
+// This function is deprecated. Use fmt::format instead.
 FMT_DEPRECATED(Formatter<> Format(StringRef format));
 inline Formatter<> Format(StringRef format) {
   Formatter<> f(format);
   return f;
 }
 
-// This function is deprecated, use format instead.
+// This function is deprecated. Use fmt::format instead.
 Formatter<NullSink, wchar_t> FMT_DEPRECATED(Format(WStringRef format));
 inline Formatter<NullSink, wchar_t> Format(WStringRef format) {
   Formatter<NullSink, wchar_t> f(format);
@@ -1807,6 +1793,7 @@ class SystemErrorSink {
 
   void operator()(const Writer &w) const;
 };
+#endif
 
 /**
   \rst
@@ -1876,29 +1863,11 @@ class FileSink {
   }
 };
 
-/**
-  \rst
-  Formats a string and writes the result to ``stdout``.
-
-  **Example**::
-
-    Print("Elapsed time: {0:.2f} seconds") << 1.23;
-  \endrst
- */
 inline Formatter<FileSink> Print(StringRef format) {
   Formatter<FileSink> f(format, FileSink(stdout));
   return f;
 }
 
-/**
-  \rst
-  Formats a string and writes the result to a file.
-
-  **Example**::
-
-    Print(stderr, "Don't {}!") << "panic";
-  \endrst
- */
 inline Formatter<FileSink> Print(std::FILE *file, StringRef format) {
   Formatter<FileSink> f(format, FileSink(file));
   return f;
@@ -1933,46 +1902,64 @@ inline Formatter<ANSITerminalSink> PrintColored(Color c, StringRef format) {
   \rst
   Formats a string similarly to Python's `str.format
   <http://docs.python.org/3/library/stdtypes.html#str.format>`__ function
-  and returns an :cpp:class:`fmt::BasicWriter` object containing the output.
+  and returns the result as a string.
 
-  *format* is a format string that contains literal text and replacement
-  fields surrounded by braces ``{}``. The formatter object replaces the
-  fields with formatted arguments and stores the output in a memory buffer.
-  The content of the buffer can be converted to ``std::string`` with
-  :cpp:func:`fmt::str()` or accessed as a C string with
-  :cpp:func:`fmt::c_str()`.
+  *format_str* is a format string that contains literal text and replacement
+  fields surrounded by braces ``{}``. The fields are replaced with formatted
+  arguments in the resulting string.
+  
+  *args* is an argument list representing arbitrary arguments.
 
   **Example**::
 
-    std::string message = str(format("The answer is {}", 42));
+    std::string message = format("The answer is {}", 42);
 
   See also `Format String Syntax`_.
   \endrst
 */
-inline Writer format(StringRef format, const ArgList &args) {
+inline std::string format(StringRef format_str, const ArgList &args) {
   Writer w;
-  w.format(format, args);
-  return move(w);
+  w.write(format_str, args);
+  return w.str();
 }
 
-inline WWriter format(WStringRef format, const ArgList &args) {
+inline std::wstring format(WStringRef format, const ArgList &args) {
   WWriter w;
-  w.format(format, args);
-  return move(w);
+  w.write(format, args);
+  return w.str();
 }
 
+/**
+  \rst
+  Prints formatted data to ``stdout``.
+
+  **Example**::
+
+    print("Elapsed time: {0:.2f} seconds", 1.23);
+  \endrst
+ */
 void print(StringRef format, const ArgList &args);
+
+/**
+  \rst
+  Prints formatted data to a file.
+
+  **Example**::
+
+    print(stderr, "Don't {}!", "panic");
+  \endrst
+ */
 void print(std::FILE *f, StringRef format, const ArgList &args);
 
-inline Writer sprintf(StringRef format, const ArgList &args) {
+inline std::string sprintf(StringRef format, const ArgList &args) {
   Writer w;
   w.printf(format, args);
-  return move(w);
+  return w.str();
 }
 
 void printf(StringRef format, const ArgList &args);
 
-#if FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
+#if !defined(FMT_NO_DEPRECATED) && FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 
 template <typename Char>
 template<typename... Args>
@@ -1981,7 +1968,7 @@ void BasicWriter<Char>::Format(
   this->format(format, args...);
 }
 
-// This function is deprecated, use fmt::format instead.
+// This function is deprecated. Use fmt::format instead.
 template<typename... Args>
 FMT_DEPRECATED(Writer Format(StringRef format, const Args & ... args));
 
@@ -1992,7 +1979,7 @@ inline Writer Format(StringRef format, const Args & ... args) {
   return std::move(w);
 }
 
-// This function is deprecated, use fmt::format instead.
+// This function is deprecated. Use fmt::format instead.
 template<typename... Args>
 FMT_DEPRECATED(WWriter Format(WStringRef format, const Args & ... args));
 
@@ -2003,18 +1990,18 @@ inline WWriter Format(WStringRef format, const Args & ... args) {
   return std::move(w);
 }
 
-// This function is deprecated, use fmt::print instead.
+// This function is deprecated. Use fmt::print instead.
 template<typename... Args>
 FMT_DEPRECATED(void Print(StringRef format, const Args & ... args));
 
 template<typename... Args>
 void Print(StringRef format, const Args & ... args) {
   Writer w;
-  w.format(format, args...);
+  w.write(format, args...);
   std::fwrite(w.data(), 1, w.size(), stdout);
 }
 
-// This function is deprecated, use fmt::print instead.
+// This function is deprecated. Use fmt::print instead.
 template<typename... Args>
 FMT_DEPRECATED(void Print(std::FILE *f, StringRef format, const Args & ... args));
 
@@ -2202,10 +2189,11 @@ inline void FormatDec(char *&buffer, T value) {
 #endif  // FMT_USE_VARIADIC_TEMPLATES
 
 /**
-  Defines a variadic function with the specified return type and argument
-  types passed as variable arguments.
+  \rst
+  Defines a variadic function with the specified return type, function name
+  and argument types passed as variable arguments to this macro.
 
-  Example::
+  **Example**::
 
     std::string FormatMessage(int id, const char *format,
                               const fmt::ArgList &args) {
@@ -2215,6 +2203,7 @@ inline void FormatDec(char *&buffer, T value) {
       return w.str();
     }
     FMT_VARIADIC(std::string, FormatMessage, int, const char *)
+  \endrst
  */
 #define FMT_VARIADIC(ReturnType, func, ...) \
   FMT_VARIADIC_(char, ReturnType, func, __VA_ARGS__)
@@ -2223,11 +2212,11 @@ inline void FormatDec(char *&buffer, T value) {
   FMT_VARIADIC_(wchar_t, ReturnType, func, __VA_ARGS__)
 
 namespace fmt {
-FMT_VARIADIC(Writer, format, StringRef)
-FMT_VARIADIC_W(WWriter, format, WStringRef)
+FMT_VARIADIC(std::string, format, StringRef)
+FMT_VARIADIC_W(std::wstring, format, WStringRef)
 FMT_VARIADIC(void, print, StringRef)
 FMT_VARIADIC(void, print, std::FILE *, StringRef)
-FMT_VARIADIC(Writer, sprintf, StringRef)
+FMT_VARIADIC(std::string, sprintf, StringRef)
 FMT_VARIADIC(void, printf, StringRef)
 }
 

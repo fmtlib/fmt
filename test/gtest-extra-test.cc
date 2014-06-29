@@ -305,12 +305,12 @@ TEST(ExpectTest, EXPECT_SYSTEM_ERROR) {
       "  Actual: it throws nothing.");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(ThrowSystemError(), EDOM, "other"),
-      str(fmt::format(
+      fmt::format(
           "ThrowSystemError() throws an exception with a different message.\n"
           "Expected: {}\n"
           "  Actual: {}",
           FormatSystemErrorMessage(EDOM, "other"),
-          FormatSystemErrorMessage(EDOM, "test"))));
+          FormatSystemErrorMessage(EDOM, "test")));
 }
 
 // Tests EXPECT_WRITE.
@@ -687,7 +687,7 @@ TEST(FileTest, Dup2) {
 TEST(FileTest, Dup2Error) {
   File f = OpenFile();
   EXPECT_SYSTEM_ERROR_NOASSERT(f.dup2(-1), EBADF,
-    str(fmt::format("cannot duplicate file descriptor {} to -1", f.descriptor())));
+    fmt::format("cannot duplicate file descriptor {} to -1", f.descriptor()));
 }
 
 TEST(FileTest, Dup2NoExcept) {
@@ -768,7 +768,7 @@ TEST(OutputRedirectTest, DupErrorInCtor) {
   FMT_POSIX(close(fd));
   OutputRedirect *redir = 0;
   EXPECT_SYSTEM_ERROR_NOASSERT(redir = new OutputRedirect(f.get()),
-      EBADF, str(fmt::format("cannot duplicate file descriptor {}", fd)));
+      EBADF, fmt::format("cannot duplicate file descriptor {}", fd));
   copy.dup2(fd);  // "undo" close or dtor will fail
   delete redir;
 }
