@@ -1435,7 +1435,7 @@ class BasicWriter {
     return *this;
   }
 
-  void write(const std::basic_string<Char> &s, const FormatSpec &spec) {
+  void write_str(const std::basic_string<Char> &s, const FormatSpec &spec) {
     write_str(s.data(), s.size(), spec);
   }
 
@@ -1645,7 +1645,7 @@ template <typename Char, typename T>
 void format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
-  w.write(os.str(), spec);
+  w.write_str(os.str(), spec);
 }
 
 namespace internal {
