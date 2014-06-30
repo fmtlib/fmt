@@ -116,6 +116,24 @@ void ReportError(FormatFunc func,
     std::fputc('\n', stderr);
   } catch (...) {}
 }
+
+const fmt::internal::ArgInfo DUMMY_ARG = {fmt::internal::ArgInfo::INT, 0};
+
+fmt::ULongLong GetIntValue(const fmt::internal::ArgInfo &arg) {
+  typedef fmt::internal::ArgInfo Arg;
+  switch (arg.type) {
+    case Arg::INT:
+      return arg.int_value;
+    case Arg::UINT:
+      return arg.uint_value;
+    case Arg::LONG_LONG:
+      return arg.long_long_value;
+    case Arg::ULONG_LONG:
+      return arg.ulong_long_value;
+    default:
+      return -1;
+  }
+}
 }  // namespace
 
 int fmt::internal::SignBitNoInline(double value) { return SignBit(value); }
@@ -332,10 +350,6 @@ int fmt::internal::ParseNonnegativeInt(
   return value;
 }
 
-template <typename Char>
-const typename fmt::internal::ArgInfo
-  fmt::BasicWriter<Char>::DUMMY_ARG = {fmt::internal::ArgInfo::INT, 0};
-
 // Fills the padding around the content and returns the pointer to the
 // content area.
 template <typename Char>
@@ -503,22 +517,6 @@ void fmt::BasicWriter<Char>::FormatDouble(T value, const FormatSpec &spec) {
 }
 
 template <typename Char>
-fmt::ULongLong fmt::BasicWriter<Char>::GetIntValue(const Arg &arg) {
-  switch (arg.type) {
-    case Arg::INT:
-      return arg.int_value;
-    case Arg::UINT:
-      return arg.uint_value;
-    case Arg::LONG_LONG:
-      return arg.long_long_value;
-    case Arg::ULONG_LONG:
-      return arg.ulong_long_value;
-    default:
-      return -1;
-  }
-}
-
-template <typename Char>
 template <typename StringChar>
 void fmt::BasicWriter<Char>::FormatString(
     const Arg::StringValue<StringChar> &str, const FormatSpec &spec) {
@@ -579,7 +577,7 @@ void fmt::BasicWriter<Char>::FormatParser::CheckSign(
 }
 
 template <typename Char>
-void fmt::BasicWriter<Char>::PrintfParser::ParseFlags(
+void fmt::internal::PrintfParser<Char>::ParseFlags(
     FormatSpec &spec, const Char *&s) {
   for (;;) {
     switch (*s++) {
@@ -606,7 +604,7 @@ void fmt::BasicWriter<Char>::PrintfParser::ParseFlags(
 }
 
 template <typename Char>
-unsigned fmt::BasicWriter<Char>::PrintfParser::ParseHeader(
+unsigned fmt::internal::PrintfParser<Char>::ParseHeader(
   const Char *&s, FormatSpec &spec, const char *&error) {
   unsigned arg_index = UINT_MAX;
   Char c = *s;
@@ -672,8 +670,8 @@ unsigned fmt::BasicWriter<Char>::PrintfParser::ParseHeader(
 
 // TODO: move to a base class that doesn't depend on template argument
 template <typename Char>
-const typename fmt::BasicWriter<Char>::Arg
-  &fmt::BasicWriter<Char>::PrintfParser::HandleArgIndex(
+const fmt::internal::ArgInfo
+  &fmt::internal::PrintfParser<Char>::HandleArgIndex(
     unsigned arg_index, const char *&error) {
   if (arg_index != UINT_MAX) {
     if (next_arg_index_ <= 0) {
@@ -695,7 +693,7 @@ const typename fmt::BasicWriter<Char>::Arg
 }
 
 template <typename Char>
-void fmt::BasicWriter<Char>::PrintfParser::Format(
+void fmt::internal::PrintfParser<Char>::Format(
     BasicWriter<Char> &writer, BasicStringRef<Char> format,
     const ArgList &args) {
   const Char *start = format.c_str();
@@ -1132,7 +1130,7 @@ template fmt::BasicWriter<char>::CharPtr
 template void fmt::BasicWriter<char>::FormatParser::Format(
   BasicWriter<char> &writer, BasicStringRef<char> format, const ArgList &args);
 
-template void fmt::BasicWriter<char>::PrintfParser::Format(
+template void fmt::internal::PrintfParser<char>::Format(
   BasicWriter<char> &writer, BasicStringRef<char> format, const ArgList &args);
 
 // Explicit instantiations for wchar_t.
@@ -1145,7 +1143,7 @@ template void fmt::BasicWriter<wchar_t>::FormatParser::Format(
     BasicWriter<wchar_t> &writer, BasicStringRef<wchar_t> format,
     const ArgList &args);
 
-template void fmt::BasicWriter<wchar_t>::PrintfParser::Format(
+template void fmt::internal::PrintfParser<wchar_t>::Format(
     BasicWriter<wchar_t> &writer, BasicStringRef<wchar_t> format,
     const ArgList &args);
 

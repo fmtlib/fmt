@@ -1008,6 +1008,30 @@ public:
   }
 };
 
+namespace internal {
+// Printf format string parser.
+template <typename Char>
+class PrintfParser {
+ private:
+  ArgList args_;
+  int next_arg_index_;
+  
+  typedef ArgInfo Arg;
+
+  void ParseFlags(FormatSpec &spec, const Char *&s);
+
+  // Parses argument index, flags and width and returns the parsed
+  // argument index.
+  unsigned ParseHeader(const Char *&s, FormatSpec &spec, const char *&error);
+
+  const ArgInfo &HandleArgIndex(unsigned arg_index, const char *&error);
+
+ public:
+  void Format(BasicWriter<Char> &writer,
+    BasicStringRef<Char> format, const ArgList &args);
+};
+}  // namespace internal
+
 // Generates a comma-separated list with results of applying f to numbers 0..n-1.
 # define FMT_GEN(n, f) FMT_GEN##n(f)
 # define FMT_GEN1(f)  f(0)
@@ -1125,8 +1149,6 @@ class BasicWriter {
 
   typedef internal::ArgInfo Arg;
 
-  static const Arg DUMMY_ARG;
-
 #if _SECURE_SCL
   static Char *GetBase(CharPtr p) { return p.base(); }
 #else
@@ -1180,8 +1202,6 @@ class BasicWriter {
   // Do not implement!
   void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
 
-  static ULongLong GetIntValue(const Arg &arg);
-
   // Format string parser.
   class FormatParser {
    private:
@@ -1199,24 +1219,7 @@ class BasicWriter {
       BasicStringRef<Char> format, const ArgList &args);
   };
 
-  // Printf format string parser.
-  class PrintfParser {
-   private:
-    ArgList args_;
-    int next_arg_index_;
-
-    void ParseFlags(FormatSpec &spec, const Char *&s);
-
-    // Parses argument index, flags and width and returns the parsed
-    // argument index.
-    unsigned ParseHeader(const Char *&s, FormatSpec &spec, const char *&error);
-
-    const Arg &HandleArgIndex(unsigned arg_index, const char *&error);
-
-   public:
-    void Format(BasicWriter<Char> &writer,
-      BasicStringRef<Char> format, const ArgList &args);
-  };
+  friend class internal::PrintfParser<Char>;
 
  public:
   /**
@@ -1302,7 +1305,7 @@ class BasicWriter {
 
   friend void printf(BasicWriter<Char> &w,
       BasicStringRef<Char> format, const ArgList &args) {
-    PrintfParser().Format(w, format, args);
+    internal::PrintfParser<Char>().Format(w, format, args);
   }
 
   BasicWriter &operator<<(int value) {
