@@ -1137,6 +1137,8 @@ class SystemError : public internal::SystemErrorBase {
  protected:
   int error_code_;
 
+  SystemError() {}
+
  public:
   /**
    \rst
