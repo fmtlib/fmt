@@ -995,8 +995,14 @@ public:
   ArgList(const internal::ArgInfo *args, std::size_t size)
   : args_(args), size_(size) {}
 
+  /**
+    Returns the list size (the number of arguments).
+   */
   std::size_t size() const { return size_; }
 
+  /**
+    Returns the argument at specified index.
+   */
   const internal::ArgInfo &operator[](std::size_t index) const {
     return args_[index];
   }
