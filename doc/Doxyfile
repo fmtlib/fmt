@@ -16,5 +16,5 @@ PREDEFINED = _WIN32=1 \
              FMT_NO_DEPRECATED=1 \
              FMT_USE_VARIADIC_TEMPLATES=1 \
              FMT_USE_RVALUE_REFERENCES=1
-EXCLUDE_SYMBOLS = fmt::internal::* VFormat ArgInfo BasicArg CustomValue FormatParser \
-                  NullArgAction StringValue ArgAction
+EXCLUDE_SYMBOLS = fmt::internal::* BasicArg FormatParser StringValue \
+                  write_str PrepareBufferForInt
