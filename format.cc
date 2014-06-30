@@ -1119,7 +1119,7 @@ void fmt::print(std::FILE *f, StringRef format, const ArgList &args) {
 
 void fmt::printf(StringRef format, const ArgList &args) {
   Writer w;
-  w.printf(format, args);
+  printf(w, format, args);
   std::fwrite(w.data(), 1, w.size(), stdout);
 }
 

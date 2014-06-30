@@ -908,8 +908,8 @@ public:
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
-# define FMT_MAKE_REF_char(n) fmt::Writer::MakeArg(v##n)
-# define FMT_MAKE_REF_wchar_t(n) fmt::WWriter::MakeArg(v##n)
+# define FMT_MAKE_REF_char(n) fmt::Writer::make_arg(v##n)
+# define FMT_MAKE_REF_wchar_t(n) fmt::WWriter::make_arg(v##n)
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
@@ -921,7 +921,7 @@ public:
     func(arg1, ArgList(arg_array, sizeof...(Args))); \
   }
 #else
-# define FMT_MAKE_REF(n) fmt::BasicWriter<Char>::MakeArg(v##n)
+# define FMT_MAKE_REF(n) fmt::BasicWriter<Char>::make_arg(v##n)
 // Defines a wrapper for a function taking one argument of type arg_type
 // and n additional arguments of arbitrary types.
 # define FMT_WRAP1(func, arg_type, n) \
@@ -1304,13 +1304,13 @@ class BasicWriter {
   }
   FMT_VARIADIC_VOID(write, fmt::BasicStringRef<Char>)
 
-  inline void printf(BasicStringRef<Char> format, const ArgList &args) {
-    PrintfParser().Format(*this, format, args);
+  friend void printf(BasicWriter<Char> &w,
+      BasicStringRef<Char> format, const ArgList &args) {
+    PrintfParser().Format(w, format, args);
   }
-  FMT_VARIADIC_VOID(printf, fmt::BasicStringRef<Char>)
 
   template <typename T>
-  static Arg MakeArg(const T &arg) { return BasicArg<>(arg); }
+  static Arg make_arg(const T &arg) { return BasicArg<>(arg); }
 
   BasicWriter &operator<<(int value) {
     return *this << IntFormatSpec<int>(value);
@@ -1953,7 +1953,7 @@ void print(std::FILE *f, StringRef format, const ArgList &args);
 
 inline std::string sprintf(StringRef format, const ArgList &args) {
   Writer w;
-  w.printf(format, args);
+  printf(w, format, args);
   return w.str();
 }
 
@@ -2152,7 +2152,7 @@ inline void FormatDec(char *&buffer, T value) {
       const Args & ... args) { \
     enum {N = fmt::internal::NonZero<sizeof...(Args)>::VALUE}; \
     const fmt::internal::ArgInfo array[N] = { \
-      fmt::BasicWriter<Char>::MakeArg(args)... \
+      fmt::BasicWriter<Char>::make_arg(args)... \
     }; \
     return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(array, sizeof...(Args))); \
