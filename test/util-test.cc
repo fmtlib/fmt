@@ -163,9 +163,9 @@ TEST(UtilTest, StrError) {
 }
 
 TEST(UtilTest, SystemError) {
-  fmt::SystemError e(StringRef("test"), 42);
-  EXPECT_STREQ("test", e.what());
-  EXPECT_EQ(42, e.error_code());
+  fmt::SystemError e(EDOM, "test");
+  EXPECT_EQ(fmt::format("test: {}", GetSystemErrorMessage(EDOM)), e.what());
+  EXPECT_EQ(EDOM, e.error_code());
 }
 
 typedef void (*FormatErrorMessage)(
@@ -173,7 +173,7 @@ typedef void (*FormatErrorMessage)(
 
 template <typename Sink>
 void CheckErrorSink(int error_code, FormatErrorMessage format) {
-  fmt::SystemError error("", 0);
+  fmt::SystemError error(0, "");
   Sink sink(error_code);
   fmt::Writer w;
   w << "test";
@@ -188,12 +188,11 @@ void CheckErrorSink(int error_code, FormatErrorMessage format) {
   EXPECT_EQ(error_code, error.error_code());
 }
 
-template <typename Sink>
-void CheckThrowError(int error_code, FormatErrorMessage format,
-        fmt::Formatter<Sink> (*throw_error)(int error_code, StringRef format)) {
-  fmt::SystemError error("", 0);
+template <typename Error>
+void CheckThrowError(int error_code, FormatErrorMessage format) {
+  fmt::SystemError error(0, "");
   try {
-    throw_error(error_code, "test {}") << "error";
+    throw Error(error_code, "test {}", "error");
   } catch (const fmt::SystemError &e) {
     error = e;
   }
@@ -216,8 +215,7 @@ TEST(UtilTest, SystemErrorSink) {
 }
 
 TEST(UtilTest, ThrowSystemError) {
-  CheckThrowError(EDOM,
-          fmt::internal::FormatSystemErrorMessage, fmt::ThrowSystemError);
+  CheckThrowError<fmt::SystemError>(EDOM, fmt::internal::FormatSystemErrorMessage);
 }
 
 TEST(UtilTest, ReportSystemError) {

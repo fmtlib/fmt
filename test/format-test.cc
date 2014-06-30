@@ -1369,7 +1369,7 @@ TEST(FormatterTest, FormatExamples) {
   EXPECT_SYSTEM_ERROR({
     FILE *f = fopen(filename, "r");
     if (!f)
-      fmt::ThrowSystemError(errno, "Cannot open file '{}'") << filename;
+      throw fmt::SystemError(errno, "Cannot open file '{}'", filename);
   }, error_code, "Cannot open file 'nonexistent'");
 }
 

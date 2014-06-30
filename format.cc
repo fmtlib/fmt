@@ -138,6 +138,15 @@ fmt::ULongLong GetIntValue(const fmt::internal::ArgInfo &arg) {
 
 int fmt::internal::SignBitNoInline(double value) { return SignBit(value); }
 
+void fmt::SystemError::init(
+    int error_code, StringRef format_str, const ArgList &args) {
+  error_code_ = error_code;
+  Writer w;
+  internal::FormatSystemErrorMessage(w, error_code, format(format_str, args));
+  std::runtime_error &base = *this;
+  base = std::runtime_error(w.str());
+}
+
 template <typename T>
 int fmt::internal::CharTraits<char>::FormatFloat(
     char *buffer, std::size_t size, const char *format,
@@ -236,6 +245,15 @@ int fmt::internal::UTF16ToUTF8::Convert(fmt::WStringRef s) {
   if (length == 0)
     return GetLastError();
   return 0;
+}
+
+void fmt::WindowsError::init(
+    int error_code, StringRef format_str, const ArgList &args) {
+  error_code_ = error_code;
+  Writer w;
+  internal::FormatWinErrorMessage(w, error_code, format(format_str, args));
+  std::runtime_error &base = *this;
+  base = std::runtime_error(w.str());
 }
 
 #endif
@@ -411,7 +429,7 @@ void fmt::BasicWriter<Char>::FormatDouble(T value, const FormatSpec &spec) {
       --size;
       ++nan;
     }
-    CharPtr out = FormatString(nan, size, spec);
+    CharPtr out = write_str(nan, size, spec);
     if (sign)
       *out = sign;
     return;
@@ -426,7 +444,7 @@ void fmt::BasicWriter<Char>::FormatDouble(T value, const FormatSpec &spec) {
       --size;
       ++inf;
     }
-    CharPtr out = FormatString(inf, size, spec);
+    CharPtr out = write_str(inf, size, spec);
     if (sign)
       *out = sign;
     return;
@@ -518,7 +536,7 @@ void fmt::BasicWriter<Char>::FormatDouble(T value, const FormatSpec &spec) {
 
 template <typename Char>
 template <typename StringChar>
-void fmt::BasicWriter<Char>::FormatString(
+void fmt::BasicWriter<Char>::write_str(
     const Arg::StringValue<StringChar> &str, const FormatSpec &spec) {
   if (spec.type_ && spec.type_ != 's')
     internal::ReportUnknownType(spec.type_, "string");
@@ -530,7 +548,7 @@ void fmt::BasicWriter<Char>::FormatString(
     if (*s)
       size = std::char_traits<StringChar>::length(s);
   }
-  FormatString(s, size, spec);
+  write_str(s, size, spec);
 }
 
 template <typename Char>
@@ -819,10 +837,10 @@ void fmt::internal::PrintfParser<Char>::Format(
       break;
     }
     case Arg::STRING:
-      writer.FormatString(arg.string, spec);
+      writer.write_str(arg.string, spec);
       break;
     case Arg::WSTRING:
-      writer.FormatString(arg.wstring, spec);
+      writer.write_str(arg.wstring, spec);
       break;
     case Arg::POINTER:
       if (spec.type_ && spec.type_ != 'p')
@@ -1043,10 +1061,10 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
       break;
     }
     case Arg::STRING:
-      writer.FormatString(arg.string, spec);
+      writer.write_str(arg.string, spec);
       break;
     case Arg::WSTRING:
-      writer.FormatString(arg.wstring, spec);
+      writer.write_str(arg.wstring, spec);
       break;
     case Arg::POINTER:
       if (spec.type_ && spec.type_ != 'p')
@@ -1066,12 +1084,6 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
     }
   }
   writer.buffer_.append(start, s);
-}
-
-void fmt::SystemErrorSink::operator()(const fmt::Writer &w) const {
-  Writer message;
-  internal::FormatSystemErrorMessage(message, error_code_, w.c_str());
-  throw SystemError(message.c_str(), error_code_);
 }
 
 void fmt::ReportSystemError(

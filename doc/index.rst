@@ -63,9 +63,8 @@ System Errors
 .. doxygenclass:: fmt::SystemError
    :members:
 
-.. doxygenfunction:: fmt::ThrowSystemError
-
-.. doxygenfunction:: fmt::ThrowWinError
+.. doxygenclass:: fmt::WindowsError
+   :members:
 
 Format String Syntax
 --------------------

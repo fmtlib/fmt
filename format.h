@@ -739,22 +739,62 @@ class BasicArg : public Action, public internal::ArgInfo {
 
 template <typename Char, typename T>
 inline ArgInfo make_arg(const T &arg) { return BasicArg<Char>(arg); }
+
+class SystemErrorBase : public std::runtime_error {
+public:
+  SystemErrorBase() : std::runtime_error("") {}
+};
 }  // namespace internal
 
 /**
-  An error returned by an operating system or a language runtime,
-  for example a file opening error.
+  An argument list.
  */
-class SystemError : public std::runtime_error {
+class ArgList {
  private:
-  int error_code_;
+  const internal::ArgInfo *args_;
+  std::size_t size_;
+
+public:
+  ArgList() : size_(0) {}
+  ArgList(const internal::ArgInfo *args, std::size_t size)
+  : args_(args), size_(size) {}
+
+  /**
+    Returns the list size (the number of arguments).
+   */
+  std::size_t size() const { return size_; }
+
+  /**
+    Returns the argument at specified index.
+   */
+  const internal::ArgInfo &operator[](std::size_t index) const {
+    return args_[index];
+  }
+};
+
+namespace internal {
+// Printf format string parser.
+template <typename Char>
+class PrintfParser {
+ private:
+  ArgList args_;
+  int next_arg_index_;
+  
+  typedef ArgInfo Arg;
+
+  void ParseFlags(FormatSpec &spec, const Char *&s);
+
+  // Parses argument index, flags and width and returns the parsed
+  // argument index.
+  unsigned ParseHeader(const Char *&s, FormatSpec &spec, const char *&error);
+
+  const ArgInfo &HandleArgIndex(unsigned arg_index, const char *&error);
 
  public:
-  SystemError(StringRef message, int error_code)
-  : std::runtime_error(message), error_code_(error_code) {}
-
-  int error_code() const { return error_code_; }
+  void Format(BasicWriter<Char> &writer,
+    BasicStringRef<Char> format, const ArgList &args);
 };
+}  // namespace internal
 
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
@@ -982,56 +1022,6 @@ inline StrFormatSpec<wchar_t> pad(
   return StrFormatSpec<wchar_t>(str, width, fill);
 }
 
-/**
-  An argument list.
- */
-class ArgList {
- private:
-  const internal::ArgInfo *args_;
-  std::size_t size_;
-
-public:
-  ArgList() : size_(0) {}
-  ArgList(const internal::ArgInfo *args, std::size_t size)
-  : args_(args), size_(size) {}
-
-  /**
-    Returns the list size (the number of arguments).
-   */
-  std::size_t size() const { return size_; }
-
-  /**
-    Returns the argument at specified index.
-   */
-  const internal::ArgInfo &operator[](std::size_t index) const {
-    return args_[index];
-  }
-};
-
-namespace internal {
-// Printf format string parser.
-template <typename Char>
-class PrintfParser {
- private:
-  ArgList args_;
-  int next_arg_index_;
-  
-  typedef ArgInfo Arg;
-
-  void ParseFlags(FormatSpec &spec, const Char *&s);
-
-  // Parses argument index, flags and width and returns the parsed
-  // argument index.
-  unsigned ParseHeader(const Char *&s, FormatSpec &spec, const char *&error);
-
-  const ArgInfo &HandleArgIndex(unsigned arg_index, const char *&error);
-
- public:
-  void Format(BasicWriter<Char> &writer,
-    BasicStringRef<Char> format, const ArgList &args);
-};
-}  // namespace internal
-
 // Generates a comma-separated list with results of applying f to numbers 0..n-1.
 # define FMT_GEN(n, f) FMT_GEN##n(f)
 # define FMT_GEN1(f)  f(0)
@@ -1060,7 +1050,19 @@ class PrintfParser {
     }; \
     func(arg1, ArgList(arg_array, sizeof...(Args))); \
   }
+
+// Defines a variadic constructor.
+# define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
+  template<typename... Args> \
+  ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
+    const internal::ArgInfo arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
+      fmt::internal::make_arg<Char>(args)... \
+    }; \
+    func(arg0, arg1, ArgList(arg_array, sizeof...(Args))); \
+  }
+
 #else
+
 # define FMT_MAKE_REF(n) fmt::internal::make_arg<Char>(v##n)
 // Defines a wrapper for a function taking one argument of type arg_type
 // and n additional arguments of arbitrary types.
@@ -1078,6 +1080,26 @@ class PrintfParser {
   FMT_WRAP1(func, arg_type, 5) FMT_WRAP1(func, arg_type, 6) \
   FMT_WRAP1(func, arg_type, 7) FMT_WRAP1(func, arg_type, 8) \
   FMT_WRAP1(func, arg_type, 9) FMT_WRAP1(func, arg_type, 10)
+
+# define FMT_CTOR(ctor, func, arg0_type, arg1_type, n) \
+  template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
+  ctor(arg0_type arg0, arg1_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
+    const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    func(arg0, arg1, fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+  }
+
+// Emulates a variadic function returning void on a pre-C++11 compiler.
+# define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
+  FMT_CTOR(ctor, func, arg0_type, arg1_type, 1) \
+  FMT_CTOR(ctor, func, arg0_type, arg1_type, 2) \
+  FMT_CTOR(ctor, func, arg0_type, arg1_type, 3) \
+  FMT_CTOR(ctor, func, arg0_type, arg1_type, 4) \
+  FMT_CTOR(ctor, func, arg0_type, arg1_type, 5) \
+  FMT_CTOR(ctor, func, arg0_type, arg1_type, 6) \
+  FMT_CTOR(ctor, func, arg0_type, arg1_type, 7) \
+  FMT_CTOR(ctor, func, arg0_type, arg1_type, 8) \
+  FMT_CTOR(ctor, func, arg0_type, arg1_type, 9) \
+  FMT_CTOR(ctor, func, arg0_type, arg1_type, 10)
 #endif
 
 // Generates a comma-separated list with results of applying f to pairs
@@ -1101,6 +1123,37 @@ class PrintfParser {
   FMT_FOR_EACH8(f, x0, x1, x2, x3, x4, x5, x6, x7), f(x8, 8)
 #define FMT_FOR_EACH10(f, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) \
   FMT_FOR_EACH9(f, x0, x1, x2, x3, x4, x5, x6, x7, x8), f(x9, 9)
+
+/**
+An error returned by an operating system or a language runtime,
+for example a file opening error.
+*/
+class SystemError : public internal::SystemErrorBase {
+ private:
+  typedef char Char;  // For FMT_VARIADIC_CTOR.
+
+  void init(int error_code, StringRef format_str, const ArgList &args);
+
+ protected:
+  int error_code_;
+
+ public:
+  /**
+   \rst
+   Constructs a :cpp:class:`fmt::SystemError` object with the description
+   of the form "*<message>*: *<system-message>*", where *<message>* is the
+   formatted message and *<system-message>* is the system message corresponding
+   to the error code.
+   *error_code* is a system error code as given by ``errno``.
+   \endrst
+  */
+  SystemError(int error_code, StringRef message) {
+    init(error_code, message, ArgList());
+  }
+  FMT_VARIADIC_CTOR(SystemError, init, int, StringRef)
+
+  int error_code() const { return error_code_; }
+};
 
 /**
   \rst
@@ -1187,13 +1240,13 @@ class BasicWriter {
   template <typename T>
   void FormatDouble(T value, const FormatSpec &spec);
 
-  // Formats a string.
+  // Writes a formatted string.
   template <typename StringChar>
-  CharPtr FormatString(
+  CharPtr write_str(
       const StringChar *s, std::size_t size, const AlignSpec &spec);
 
   template <typename StringChar>
-  void FormatString(
+  void write_str(
       const Arg::StringValue<StringChar> &str, const FormatSpec &spec);
 
     // This method is private to disallow writing a wide string to a
@@ -1378,12 +1431,12 @@ class BasicWriter {
   template <typename StringChar>
   BasicWriter &operator<<(const StrFormatSpec<StringChar> &spec) {
     const StringChar *s = spec.str();
-    FormatString(s, std::char_traits<Char>::length(s), spec);
+    write_str(s, std::char_traits<Char>::length(s), spec);
     return *this;
   }
 
   void write(const std::basic_string<Char> &s, const FormatSpec &spec) {
-    FormatString(s.data(), s.size(), spec);
+    write_str(s.data(), s.size(), spec);
   }
 
   void clear() { buffer_.clear(); }
@@ -1415,7 +1468,7 @@ inline void BasicWriter<Char>::Clear() { clear(); }
 
 template <typename Char>
 template <typename StringChar>
-typename BasicWriter<Char>::CharPtr BasicWriter<Char>::FormatString(
+typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
     const StringChar *s, std::size_t size, const AlignSpec &spec) {
   CharPtr out = CharPtr();
   if (spec.width() > size) {
@@ -1807,19 +1860,16 @@ class SystemErrorSink {
  public:
   explicit SystemErrorSink(int error_code) : error_code_(error_code) {}
 
-  void operator()(const Writer &w) const;
+  void operator()(const Writer &w) const {
+    throw SystemError(error_code_, "{}", w.c_str());
+  }
 };
 #endif
 
-/**
-  \rst
-  Formats a message and throws :cpp:class:`fmt::SystemError` with
-  the description of the form "*<message>*: *<system-message>*",
-  where *<message>* is the formatted message and *<system-message>*
-  is the system message corresponding to the error code.
-  *error_code* is a system error code as given by ``errno``.
-  \endrst
- */
+FMT_DEPRECATED(Formatter<SystemErrorSink> ThrowSystemError(
+    int error_code, StringRef format));
+
+// This function is deprecated. Use fmt::SystemError instead.
 inline Formatter<SystemErrorSink> ThrowSystemError(
     int error_code, StringRef format) {
   Formatter<SystemErrorSink> f(format, SystemErrorSink(error_code));
@@ -1844,16 +1894,31 @@ class WinErrorSink {
 };
 
 /**
-  \rst
-  Formats a message and throws :cpp:class:`fmt::SystemError` with
-  the description of the form "*<message>*: *<system-message>*",
-  where *<message>* is the formatted message and *<system-message>*
-  is the system message corresponding to the error code.
-  *error_code* is a Windows error code as given by ``GetLastError``.
+ A Windows error.
+*/
+class WindowsError : public SystemError {
+ private:
+  void init(int error_code, StringRef format_str, const ArgList &args);
 
-  This function is only available on Windows.
-  \endrst
- */
+ public:
+  /**
+   \rst
+   Constructs a :cpp:class:`fmt::WindowsError` object with the description
+   of the form "*<message>*: *<system-message>*", where *<message>* is the
+   formatted message and *<system-message>* is the system message corresponding
+   to the error code.
+   *error_code* is a Windows error code as given by ``GetLastError``.
+   \endrst
+  */
+  WindowsError(int error_code, StringRef message) {
+    init(error_code, message, ArgList());
+  }
+  FMT_VARIADIC_CTOR(WindowsError, init, int, StringRef)
+};
+
+FMT_DEPRECATED(Formatter<WinErrorSink> ThrowWinError(int error_code, StringRef format));
+
+// This function is deprecated. Use WindowsError instead.
 inline Formatter<WinErrorSink> ThrowWinError(int error_code, StringRef format) {
   Formatter<WinErrorSink> f(format, WinErrorSink(error_code));
   return f;
@@ -1875,7 +1940,7 @@ class FileSink {
 
   void operator()(const BasicWriter<char> &w) const {
     if (std::fwrite(w.data(), w.size(), 1, file_) == 0)
-      ThrowSystemError(errno, "cannot write to file");
+      throw SystemError(errno, "cannot write to file");
   }
 };
 

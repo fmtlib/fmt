@@ -107,7 +107,7 @@ void ThrowException() {
 }
 
 void ThrowSystemError() {
-  fmt::ThrowSystemError(EDOM, "test");
+  throw fmt::SystemError(EDOM, "test");
 }
 
 // Tests that when EXPECT_THROW_MSG fails, it evaluates its message argument
@@ -236,12 +236,11 @@ TEST(ExpectThrowTest, DoesNotGenerateUnreachableCodeWarning) {
 // EXPECT_SYSTEM_ERROR macro.
 TEST(ExpectSystemErrorTest, DoesNotGenerateUnreachableCodeWarning) {
   int n = 0;
-  EXPECT_SYSTEM_ERROR(throw fmt::SystemError(
-      FormatSystemErrorMessage(EDOM, "test"), EDOM), EDOM, "test");
+  EXPECT_SYSTEM_ERROR(throw fmt::SystemError(EDOM, "test"), EDOM, "test");
   EXPECT_NONFATAL_FAILURE(EXPECT_SYSTEM_ERROR(n++, EDOM, ""), "");
   EXPECT_NONFATAL_FAILURE(EXPECT_SYSTEM_ERROR(throw 1, EDOM, ""), "");
   EXPECT_NONFATAL_FAILURE(EXPECT_SYSTEM_ERROR(
-      throw fmt::SystemError("aaa", EDOM), EDOM, "bbb"), "");
+      throw fmt::SystemError(EDOM, "aaa"), EDOM, "bbb"), "");
 }
 
 TEST(AssertionSyntaxTest, ExceptionAssertionBehavesLikeSingleStatement) {

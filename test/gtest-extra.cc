@@ -38,7 +38,7 @@ void OutputRedirect::Flush() {
   int result = 0;
   FMT_RETRY(result, fflush(file_));
   if (result != 0)
-    fmt::ThrowSystemError(errno, "cannot flush stream");
+    throw fmt::SystemError(errno, "cannot flush stream");
 }
 
 void OutputRedirect::Restore() {

@@ -70,13 +70,13 @@ void fmt::BufferedFile::close() {
   int result = FMT_SYSTEM(fclose(file_));
   file_ = 0;
   if (result != 0)
-    fmt::ThrowSystemError(errno, "cannot close file");
+    throw SystemError(errno, "cannot close file");
 }
 
 int fmt::BufferedFile::fileno() const {
   int fd = FMT_POSIX_CALL(fileno(file_));
   if (fd == -1)
-    fmt::ThrowSystemError(errno, "cannot get file descriptor");
+    throw SystemError(errno, "cannot get file descriptor");
   return fd;
 }
 
@@ -89,7 +89,7 @@ fmt::File::File(const char *path, int oflag) {
   FMT_RETRY(fd_, FMT_POSIX_CALL(open(path, oflag, mode)));
 #endif
   if (fd_ == -1)
-    fmt::ThrowSystemError(errno, "cannot open file {}") << path;
+    throw SystemError(errno, "cannot open file {}", path);
 }
 
 fmt::File::~File() FMT_NOEXCEPT(true) {
@@ -107,14 +107,14 @@ void fmt::File::close() {
   int result = FMT_POSIX_CALL(close(fd_));
   fd_ = -1;
   if (result != 0)
-    fmt::ThrowSystemError(errno, "cannot close file");
+    throw SystemError(errno, "cannot close file");
 }
 
 std::streamsize fmt::File::read(void *buffer, std::size_t count) {
   std::streamsize result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(read(fd_, buffer, ConvertRWCount(count))));
   if (result == -1)
-    fmt::ThrowSystemError(errno, "cannot read from file");
+    throw SystemError(errno, "cannot read from file");
   return result;
 }
 
@@ -122,7 +122,7 @@ std::streamsize fmt::File::write(const void *buffer, std::size_t count) {
   std::streamsize result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(write(fd_, buffer, ConvertRWCount(count))));
   if (result == -1)
-    fmt::ThrowSystemError(errno, "cannot write to file");
+    throw SystemError(errno, "cannot write to file");
   return result;
 }
 
@@ -131,7 +131,7 @@ fmt::File fmt::File::dup(int fd) {
   // http://pubs.opengroup.org/onlinepubs/009695399/functions/dup.html
   int new_fd = FMT_POSIX_CALL(dup(fd));
   if (new_fd == -1)
-    fmt::ThrowSystemError(errno, "cannot duplicate file descriptor {}") << fd;
+    throw SystemError(errno, "cannot duplicate file descriptor {}", fd);
   return File(new_fd);
 }
 
@@ -139,8 +139,8 @@ void fmt::File::dup2(int fd) {
   int result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(dup2(fd_, fd)));
   if (result == -1) {
-    fmt::ThrowSystemError(errno,
-      "cannot duplicate file descriptor {} to {}") << fd_ << fd;
+    throw SystemError(errno,
+      "cannot duplicate file descriptor {} to {}", fd_, fd);
   }
 }
 
@@ -167,7 +167,7 @@ void fmt::File::pipe(File &read_end, File &write_end) {
   int result = FMT_POSIX_CALL(pipe(fds));
 #endif
   if (result != 0)
-    fmt::ThrowSystemError(errno, "cannot create pipe");
+    throw SystemError(errno, "cannot create pipe");
   // The following assignments don't throw because read_fd and write_fd
   // are closed.
   read_end = File(fds[0]);
@@ -177,10 +177,8 @@ void fmt::File::pipe(File &read_end, File &write_end) {
 fmt::BufferedFile fmt::File::fdopen(const char *mode) {
   // Don't retry as fdopen doesn't return EINTR.
   FILE *f = FMT_POSIX_CALL(fdopen(fd_, mode));
-  if (!f) {
-    fmt::ThrowSystemError(errno,
-      "cannot associate stream with file descriptor");
-  }
+  if (!f)
+    throw SystemError(errno, "cannot associate stream with file descriptor");
   BufferedFile file(f);
   fd_ = -1;
   return file;
