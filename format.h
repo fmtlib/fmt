@@ -630,6 +630,115 @@ struct ArgInfo {
     CustomValue custom;
   };
 };
+
+// An argument action that does nothing.
+struct NullArgAction {
+  void operator()() const {}
+};
+
+// A wrapper around a format argument.
+template <typename Char, typename Action = internal::NullArgAction>
+class BasicArg : public Action, public internal::ArgInfo {
+ private:
+  // This method is private to disallow formatting of arbitrary pointers.
+  // If you want to output a pointer cast it to const void*. Do not implement!
+  template <typename T>
+  BasicArg(const T *value);
+
+  // This method is private to disallow formatting of arbitrary pointers.
+  // If you want to output a pointer cast it to void*. Do not implement!
+  template <typename T>
+  BasicArg(T *value);
+
+ public:
+  using internal::ArgInfo::type;
+
+  BasicArg() {}
+  // TODO: unsigned char & signed char
+  BasicArg(short value) { type = INT; int_value = value; }
+  BasicArg(unsigned short value) { type = UINT; uint_value = value; }
+  BasicArg(int value) { type = INT; int_value = value; }
+  BasicArg(unsigned value) { type = UINT; uint_value = value; }
+  BasicArg(long value) {
+    if (sizeof(long) == sizeof(int)) {
+      type = INT;
+      int_value = static_cast<int>(value);
+    } else {
+      type = LONG_LONG;
+      long_long_value = value;
+    }
+  }
+  BasicArg(unsigned long value) {
+    if (sizeof(unsigned long) == sizeof(unsigned)) {
+      type = UINT;
+      uint_value = static_cast<unsigned>(value);
+    } else {
+      type = ULONG_LONG;
+      ulong_long_value = value;
+    }
+  }
+  BasicArg(LongLong value) { type = LONG_LONG; long_long_value = value; }
+  BasicArg(ULongLong value) { type = ULONG_LONG; ulong_long_value = value; }
+  BasicArg(float value) { type = DOUBLE; double_value = value; }
+  BasicArg(double value) { type = DOUBLE; double_value = value; }
+  BasicArg(long double value) { type = LONG_DOUBLE; long_double_value = value; }
+  BasicArg(char value) { type = CHAR; int_value = value; }
+  BasicArg(wchar_t value) {
+    type = CHAR;
+    int_value = internal::CharTraits<Char>::ConvertChar(value);
+  }
+
+  BasicArg(const char *value) {
+    type = STRING;
+    string.value = value;
+    string.size = 0;
+  }
+
+  BasicArg(const wchar_t *value) {
+    type = WSTRING;
+    wstring.value = value;
+    wstring.size = 0;
+  }
+
+  BasicArg(Char *value) {
+    type = STRING;
+    string.value = value;
+    string.size = 0;
+  }
+
+  BasicArg(const void *value) { type = POINTER; pointer_value = value;
+  }
+  BasicArg(void *value) { type = POINTER; pointer_value = value; }
+
+  BasicArg(const std::basic_string<Char> &value) {
+    type = STRING;
+    string.value = value.c_str();
+    string.size = value.size();
+  }
+
+  BasicArg(BasicStringRef<Char> value) {
+    type = STRING;
+    string.value = value.c_str();
+    string.size = value.size();
+  }
+
+  template <typename T>
+  BasicArg(const T &value) {
+    type = CUSTOM;
+    custom.value = &value;
+    custom.format = &internal::FormatCustomArg<Char, T>;
+  }
+
+  // The destructor is declared noexcept(false) because the action may throw
+  // an exception.
+  ~BasicArg() FMT_NOEXCEPT(false) {
+    // Invoke the action.
+    (*this)();
+  }
+};
+
+template <typename Char, typename T>
+inline ArgInfo make_arg(const T &arg) { return BasicArg<Char>(arg); }
 }  // namespace internal
 
 /**
@@ -908,20 +1017,21 @@ public:
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
-# define FMT_MAKE_REF_char(n) fmt::Writer::make_arg(v##n)
-# define FMT_MAKE_REF_wchar_t(n) fmt::WWriter::make_arg(v##n)
+# define FMT_MAKE_REF_char(n) fmt::internal::make_arg<char>(v##n)
+# define FMT_MAKE_REF_wchar_t(n) fmt::internal::make_arg<wchar_t>(v##n)
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template<typename... Args> \
   void func(arg_type arg1, const Args & ... args) { \
-    const BasicArg<> \
-      arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = {args...}; \
+    const internal::ArgInfo arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
+      fmt::internal::make_arg<Char>(args)... \
+    }; \
     func(arg1, ArgList(arg_array, sizeof...(Args))); \
   }
 #else
-# define FMT_MAKE_REF(n) fmt::BasicWriter<Char>::make_arg(v##n)
+# define FMT_MAKE_REF(n) fmt::internal::make_arg<Char>(v##n)
 // Defines a wrapper for a function taking one argument of type arg_type
 // and n additional arguments of arbitrary types.
 # define FMT_WRAP1(func, arg_type, n) \
@@ -1066,126 +1176,6 @@ class BasicWriter {
 
   static ULongLong GetIntValue(const Arg &arg);
 
-  // An argument action that does nothing.
-  struct NullArgAction {
-    void operator()() const {}
-  };
-
-  // A wrapper around a format argument.
-  template <typename Action = NullArgAction>
-  class BasicArg : public Action, public Arg {
-   private:
-    // This method is private to disallow formatting of arbitrary pointers.
-    // If you want to output a pointer cast it to const void*. Do not implement!
-    template <typename T>
-    BasicArg(const T *value);
-
-    // This method is private to disallow formatting of arbitrary pointers.
-    // If you want to output a pointer cast it to void*. Do not implement!
-    template <typename T>
-    BasicArg(T *value);
-
-   public:
-    using Arg::type;
-
-    BasicArg() {}
-    // TODO: unsigned char & signed char
-    BasicArg(short value) { type = Arg::INT; Arg::int_value = value; }
-    BasicArg(unsigned short value) {
-      type = Arg::UINT;
-      Arg::uint_value = value;
-    }
-    BasicArg(int value) { type = Arg::INT; Arg::int_value = value; }
-    BasicArg(unsigned value) { type = Arg::UINT; Arg::uint_value = value; }
-    BasicArg(long value) {
-      if (sizeof(long) == sizeof(int)) {
-        type = Arg::INT;
-        Arg::int_value = static_cast<int>(value);
-      } else {
-        type = Arg::LONG_LONG;
-        Arg::long_long_value = value;
-      }
-    }
-    BasicArg(unsigned long value) {
-      if (sizeof(unsigned long) == sizeof(unsigned)) {
-        type = Arg::UINT;
-        Arg::uint_value = static_cast<unsigned>(value);
-      } else {
-        type = Arg::ULONG_LONG;
-        Arg::ulong_long_value = value;
-      }
-    }
-    BasicArg(LongLong value) {
-      type = Arg::LONG_LONG;
-      Arg::long_long_value = value;
-    }
-    BasicArg(ULongLong value) {
-      type = Arg::ULONG_LONG;
-      Arg::ulong_long_value = value;
-    }
-    BasicArg(float value) { type = Arg::DOUBLE; Arg::double_value = value; }
-    BasicArg(double value) { type = Arg::DOUBLE; Arg::double_value = value; }
-    BasicArg(long double value) {
-      type = Arg::LONG_DOUBLE;
-      Arg::long_double_value = value;
-    }
-    BasicArg(char value) { type = Arg::CHAR; Arg::int_value = value; }
-    BasicArg(wchar_t value) {
-      type = Arg::CHAR;
-      Arg::int_value = internal::CharTraits<Char>::ConvertChar(value);
-    }
-
-    BasicArg(const char *value) {
-      type = Arg::STRING;
-      Arg::string.value = value;
-      Arg::string.size = 0;
-    }
-
-    BasicArg(const wchar_t *value) {
-      type = Arg::WSTRING;
-      Arg::wstring.value = value;
-      Arg::wstring.size = 0;
-    }
-
-    BasicArg(Char *value) {
-      type = Arg::STRING;
-      Arg::string.value = value;
-      Arg::string.size = 0;
-    }
-
-    BasicArg(const void *value) {
-      type = Arg::POINTER;
-      Arg::pointer_value = value;
-    }
-    BasicArg(void *value) { type = Arg::POINTER; Arg::pointer_value = value; }
-
-    BasicArg(const std::basic_string<Char> &value) {
-      type = Arg::STRING;
-      Arg::string.value = value.c_str();
-      Arg::string.size = value.size();
-    }
-
-    BasicArg(BasicStringRef<Char> value) {
-      type = Arg::STRING;
-      Arg::string.value = value.c_str();
-      Arg::string.size = value.size();
-    }
-
-    template <typename T>
-    BasicArg(const T &value) {
-      type = Arg::CUSTOM;
-      Arg::custom.value = &value;
-      Arg::custom.format = &internal::FormatCustomArg<Char, T>;
-    }
-
-    // The destructor is declared noexcept(false) because the action may throw
-    // an exception.
-    ~BasicArg() FMT_NOEXCEPT(false) {
-      // Invoke the action.
-      (*this)();
-    }
-  };
-
   // Format string parser.
   class FormatParser {
    private:
@@ -1308,9 +1298,6 @@ class BasicWriter {
       BasicStringRef<Char> format, const ArgList &args) {
     PrintfParser().Format(w, format, args);
   }
-
-  template <typename T>
-  static Arg make_arg(const T &arg) { return BasicArg<>(arg); }
 
   BasicWriter &operator<<(int value) {
     return *this << IntFormatSpec<int>(value);
@@ -1644,7 +1631,7 @@ class BasicFormatter {
   };
 
   typedef typename internal::ArgInfo ArgInfo;
-  typedef typename BasicWriter<Char>::template BasicArg<ArgAction> Arg;
+  typedef internal::BasicArg<Char, ArgAction> Arg;
 
   enum { NUM_INLINE_ARGS = 10 };
   internal::Array<ArgInfo, NUM_INLINE_ARGS> args_;  // Format arguments.
@@ -2152,7 +2139,7 @@ inline void FormatDec(char *&buffer, T value) {
       const Args & ... args) { \
     enum {N = fmt::internal::NonZero<sizeof...(Args)>::VALUE}; \
     const fmt::internal::ArgInfo array[N] = { \
-      fmt::BasicWriter<Char>::make_arg(args)... \
+      fmt::internal::make_arg<Char>(args)... \
     }; \
     return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(array, sizeof...(Args))); \
