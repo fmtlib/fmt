@@ -74,11 +74,11 @@ static ::testing::AssertionResult CheckWrite(const T &value, const char *type) {
   std::basic_ostringstream<Char> os;
   os << value;
   std::basic_string<Char> expected = os.str();
-  std::basic_string<Char> actual = str(BasicWriter<Char>() << value);
+  std::basic_string<Char> actual = (BasicWriter<Char>() << value).str();
   if (expected == actual)
     return ::testing::AssertionSuccess();
   return ::testing::AssertionFailure()
-      << "Value of: str(Writer<" << type << ">() << value)\n"
+      << "Value of: (Writer<" << type << ">() << value).str()\n"
       << "  Actual: " << actual << "\n"
       << "Expected: " << expected << "\n";
 }
@@ -421,25 +421,25 @@ TEST(WriterTest, WriteWideString) {
 
 TEST(WriterTest, bin) {
   using fmt::bin;
-  EXPECT_EQ("1100101011111110", str(Writer() << bin(0xcafe)));
-  EXPECT_EQ("1011101010111110", str(Writer() << bin(0xbabeu)));
-  EXPECT_EQ("1101111010101101", str(Writer() << bin(0xdeadl)));
-  EXPECT_EQ("1011111011101111", str(Writer() << bin(0xbeeful)));
+  EXPECT_EQ("1100101011111110", (Writer() << bin(0xcafe)).str());
+  EXPECT_EQ("1011101010111110", (Writer() << bin(0xbabeu)).str());
+  EXPECT_EQ("1101111010101101", (Writer() << bin(0xdeadl)).str());
+  EXPECT_EQ("1011111011101111", (Writer() << bin(0xbeeful)).str());
   EXPECT_EQ("11001010111111101011101010111110",
-            str(Writer() << bin(0xcafebabell)));
+            (Writer() << bin(0xcafebabell)).str());
   EXPECT_EQ("11011110101011011011111011101111",
-            str(Writer() << bin(0xdeadbeefull)));
+            (Writer() << bin(0xdeadbeefull)).str());
 }
 
 TEST(WriterTest, oct) {
   using fmt::oct;
-  EXPECT_EQ("12", str(Writer() << oct(static_cast<short>(012))));
-  EXPECT_EQ("12", str(Writer() << oct(012)));
-  EXPECT_EQ("34", str(Writer() << oct(034u)));
-  EXPECT_EQ("56", str(Writer() << oct(056l)));
-  EXPECT_EQ("70", str(Writer() << oct(070ul)));
-  EXPECT_EQ("1234", str(Writer() << oct(01234ll)));
-  EXPECT_EQ("5670", str(Writer() << oct(05670ull)));
+  EXPECT_EQ("12", (Writer() << oct(static_cast<short>(012))).str());
+  EXPECT_EQ("12", (Writer() << oct(012)).str());
+  EXPECT_EQ("34", (Writer() << oct(034u)).str());
+  EXPECT_EQ("56", (Writer() << oct(056l)).str());
+  EXPECT_EQ("70", (Writer() << oct(070ul)).str());
+  EXPECT_EQ("1234", (Writer() << oct(01234ll)).str());
+  EXPECT_EQ("5670", (Writer() << oct(05670ull)).str());
 }
 
 TEST(WriterTest, hex) {
@@ -449,22 +449,22 @@ TEST(WriterTest, hex) {
   // This shouldn't compile:
   //fmt::IntFormatSpec<short, fmt::TypeSpec<'x'> > (*phex2)(short value) = hex;
 
-  EXPECT_EQ("cafe", str(Writer() << hex(0xcafe)));
-  EXPECT_EQ("babe", str(Writer() << hex(0xbabeu)));
-  EXPECT_EQ("dead", str(Writer() << hex(0xdeadl)));
-  EXPECT_EQ("beef", str(Writer() << hex(0xbeeful)));
-  EXPECT_EQ("cafebabe", str(Writer() << hex(0xcafebabell)));
-  EXPECT_EQ("deadbeef", str(Writer() << hex(0xdeadbeefull)));
+  EXPECT_EQ("cafe", (Writer() << hex(0xcafe)).str());
+  EXPECT_EQ("babe", (Writer() << hex(0xbabeu)).str());
+  EXPECT_EQ("dead", (Writer() << hex(0xdeadl)).str());
+  EXPECT_EQ("beef", (Writer() << hex(0xbeeful)).str());
+  EXPECT_EQ("cafebabe", (Writer() << hex(0xcafebabell)).str());
+  EXPECT_EQ("deadbeef", (Writer() << hex(0xdeadbeefull)).str());
 }
 
 TEST(WriterTest, hexu) {
   using fmt::hexu;
-  EXPECT_EQ("CAFE", str(Writer() << hexu(0xcafe)));
-  EXPECT_EQ("BABE", str(Writer() << hexu(0xbabeu)));
-  EXPECT_EQ("DEAD", str(Writer() << hexu(0xdeadl)));
-  EXPECT_EQ("BEEF", str(Writer() << hexu(0xbeeful)));
-  EXPECT_EQ("CAFEBABE", str(Writer() << hexu(0xcafebabell)));
-  EXPECT_EQ("DEADBEEF", str(Writer() << hexu(0xdeadbeefull)));
+  EXPECT_EQ("CAFE", (Writer() << hexu(0xcafe)).str());
+  EXPECT_EQ("BABE", (Writer() << hexu(0xbabeu)).str());
+  EXPECT_EQ("DEAD", (Writer() << hexu(0xdeadl)).str());
+  EXPECT_EQ("BEEF", (Writer() << hexu(0xbeeful)).str());
+  EXPECT_EQ("CAFEBABE", (Writer() << hexu(0xcafebabell)).str());
+  EXPECT_EQ("DEADBEEF", (Writer() << hexu(0xdeadbeefull)).str());
 }
 
 class Date {
@@ -505,19 +505,19 @@ ISO8601DateFormatter iso8601(const Date &d) { return ISO8601DateFormatter(d); }
 
 TEST(WriterTest, pad) {
   using fmt::hex;
-  EXPECT_EQ("    cafe", str(Writer() << pad(hex(0xcafe), 8)));
-  EXPECT_EQ("    babe", str(Writer() << pad(hex(0xbabeu), 8)));
-  EXPECT_EQ("    dead", str(Writer() << pad(hex(0xdeadl), 8)));
-  EXPECT_EQ("    beef", str(Writer() << pad(hex(0xbeeful), 8)));
-  EXPECT_EQ("    dead", str(Writer() << pad(hex(0xdeadll), 8)));
-  EXPECT_EQ("    beef", str(Writer() << pad(hex(0xbeefull), 8)));
+  EXPECT_EQ("    cafe", (Writer() << pad(hex(0xcafe), 8)).str());
+  EXPECT_EQ("    babe", (Writer() << pad(hex(0xbabeu), 8)).str());
+  EXPECT_EQ("    dead", (Writer() << pad(hex(0xdeadl), 8)).str());
+  EXPECT_EQ("    beef", (Writer() << pad(hex(0xbeeful), 8)).str());
+  EXPECT_EQ("    dead", (Writer() << pad(hex(0xdeadll), 8)).str());
+  EXPECT_EQ("    beef", (Writer() << pad(hex(0xbeefull), 8)).str());
 
-  EXPECT_EQ("     11", str(Writer() << pad(11, 7)));
-  EXPECT_EQ("     22", str(Writer() << pad(22u, 7)));
-  EXPECT_EQ("     33", str(Writer() << pad(33l, 7)));
-  EXPECT_EQ("     44", str(Writer() << pad(44ul, 7)));
-  EXPECT_EQ("     33", str(Writer() << pad(33ll, 7)));
-  EXPECT_EQ("     44", str(Writer() << pad(44ull, 7)));
+  EXPECT_EQ("     11", (Writer() << pad(11, 7)).str());
+  EXPECT_EQ("     22", (Writer() << pad(22u, 7)).str());
+  EXPECT_EQ("     33", (Writer() << pad(33l, 7)).str());
+  EXPECT_EQ("     44", (Writer() << pad(44ul, 7)).str());
+  EXPECT_EQ("     33", (Writer() << pad(33ll, 7)).str());
+  EXPECT_EQ("     44", (Writer() << pad(44ull, 7)).str());
 
   BasicWriter<char> w;
   w.clear();
@@ -532,21 +532,21 @@ TEST(WriterTest, pad) {
 }
 
 TEST(WriterTest, PadString) {
-  EXPECT_EQ("test    ", str(Writer() << pad("test", 8)));
-  EXPECT_EQ("test******", str(Writer() << pad("test", 10, '*')));
+  EXPECT_EQ("test    ", (Writer() << pad("test", 8)).str());
+  EXPECT_EQ("test******", (Writer() << pad("test", 10, '*')).str());
 }
 
 TEST(WriterTest, PadWString) {
-  EXPECT_EQ(L"test    ", str(WWriter() << pad(L"test", 8)));
-  EXPECT_EQ(L"test******", str(WWriter() << pad(L"test", 10, '*')));
-  EXPECT_EQ(L"test******", str(WWriter() << pad(L"test", 10, L'*')));
+  EXPECT_EQ(L"test    ", (WWriter() << pad(L"test", 8)).str());
+  EXPECT_EQ(L"test******", (WWriter() << pad(L"test", 10, '*')).str());
+  EXPECT_EQ(L"test******", (WWriter() << pad(L"test", 10, L'*')).str());
 }
 
 TEST(WriterTest, NoConflictWithIOManip) {
   using namespace std;
   using namespace fmt;
-  EXPECT_EQ("cafe", str(Writer() << hex(0xcafe)));
-  EXPECT_EQ("12", str(Writer() << oct(012)));
+  EXPECT_EQ("cafe", (Writer() << hex(0xcafe)).str());
+  EXPECT_EQ("12", (Writer() << oct(012)).str());
 }
 
 TEST(WriterTest, Format) {
@@ -564,7 +564,7 @@ TEST(WriterTest, Format) {
 }
 
 TEST(WriterTest, WWriter) {
-  EXPECT_EQ(L"cafe", str(fmt::WWriter() << fmt::hex(0xcafe)));
+  EXPECT_EQ(L"cafe", (fmt::WWriter() << fmt::hex(0xcafe)).str());
 }
 
 TEST(FormatterTest, Escape) {
@@ -1341,7 +1341,7 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
 
 TEST(FormatterTest, FormatExamples) {
   using fmt::hex;
-  EXPECT_EQ("0000cafe", str(BasicWriter<char>() << pad(hex(0xcafe), 8, '0')));
+  EXPECT_EQ("0000cafe", (Writer() << pad(hex(0xcafe), 8, '0')).str());
 
   std::string message = format("The answer is {}", 42);
   EXPECT_EQ("The answer is 42", message);
@@ -1597,7 +1597,7 @@ TEST(FormatTest, Variadic) {
 
 template <typename T>
 std::string str(const T &value) {
-  return fmt::str(fmt::format("{0}", value));
+  return fmt::format("{}", value);
 }
 
 TEST(StrTest, Convert) {

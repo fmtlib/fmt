@@ -184,7 +184,7 @@ void CheckErrorSink(int error_code, FormatErrorMessage format) {
   }
   fmt::Writer message;
   format(message, error_code, "test");
-  EXPECT_EQ(str(message), error.what());
+  EXPECT_EQ(message.str(), error.what());
   EXPECT_EQ(error_code, error.error_code());
 }
 
@@ -199,7 +199,7 @@ void CheckThrowError(int error_code, FormatErrorMessage format,
   }
   fmt::Writer message;
   format(message, error_code, "test error");
-  EXPECT_EQ(str(message), error.what());
+  EXPECT_EQ(message.str(), error.what());
   EXPECT_EQ(error_code, error.error_code());
 }
 
@@ -207,7 +207,7 @@ TEST(UtilTest, FormatSystemErrorMessage) {
   fmt::Writer message;
   fmt::internal::FormatSystemErrorMessage(message, EDOM, "test");
   EXPECT_EQ(fmt::format("test: {}",
-          GetSystemErrorMessage(EDOM)), fmt::str(message));
+          GetSystemErrorMessage(EDOM)), message.str());
 }
 
 TEST(UtilTest, SystemErrorSink) {

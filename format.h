@@ -1696,31 +1696,51 @@ class BasicFormatter {
 };
 
 template <typename Char>
+FMT_DEPRECATED(std::basic_string<Char> str(const BasicWriter<Char> &f));
+
+// This function is deprecated. Use BasicWriter::str() instead.
+template <typename Char>
 inline std::basic_string<Char> str(const BasicWriter<Char> &f) {
   return f.str();
 }
 
 template <typename Char>
+FMT_DEPRECATED(const Char *c_str(const BasicWriter<Char> &f));
+
+// This function is deprecated. Use BasicWriter::c_str() instead.
+template <typename Char>
 inline const Char *c_str(const BasicWriter<Char> &f) { return f.c_str(); }
+
+FMT_DEPRECATED(std::string str(StringRef s));
 
 /**
   Converts a string reference to `std::string`.
  */
+// This function is deprecated. Use StringRef::c_str() instead.
 inline std::string str(StringRef s) {
   return std::string(s.c_str(), s.size());
 }
 
+FMT_DEPRECATED(const char *c_str(StringRef s));
+
 /**
   Returns the pointer to a C string.
  */
+// This function is deprecated. Use StringRef::c_str() instead.
 inline const char *c_str(StringRef s) {
   return s.c_str();
 }
 
+FMT_DEPRECATED(std::wstring str(WStringRef s));
+
+// This function is deprecated. Use WStringRef::c_str() instead.
 inline std::wstring str(WStringRef s) {
   return std::wstring(s.c_str(), s.size());
 }
 
+FMT_DEPRECATED(const wchar_t *c_str(WStringRef s));
+
+// This function is deprecated. Use WStringRef::c_str() instead.
 inline const wchar_t *c_str(WStringRef s) {
   return s.c_str();
 }

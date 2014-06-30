@@ -94,5 +94,5 @@ std::string OutputRedirect::RestoreAndRead() {
 std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message) {
   fmt::Writer out;
   fmt::internal::FormatSystemErrorMessage(out, error_code, message);
-  return str(out);
+  return out.str();
 }

@@ -178,12 +178,12 @@ const uint64_t fmt::internal::POWERS_OF_10_64[] = {
 
 void fmt::internal::ReportUnknownType(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
-    throw fmt::FormatError(fmt::str(
-        fmt::format("unknown format code '{}' for {}", code, type)));
+    throw fmt::FormatError(
+        fmt::format("unknown format code '{}' for {}", code, type));
   }
   throw fmt::FormatError(
-      fmt::str(fmt::format("unknown format code '\\x{:02x}' for {}",
-        static_cast<unsigned>(code), type)));
+      fmt::format("unknown format code '\\x{:02x}' for {}",
+        static_cast<unsigned>(code), type));
 }
 
 #ifdef _WIN32
@@ -569,11 +569,11 @@ void fmt::BasicWriter<Char>::FormatParser::CheckSign(
   char sign = static_cast<char>(*s);
   if (arg.type > Arg::LAST_NUMERIC_TYPE) {
     report_error_(s,
-        fmt::c_str(fmt::format("format specifier '{}' requires numeric argument", sign)));
+        fmt::format("format specifier '{}' requires numeric argument", sign).c_str());
   }
   if (arg.type == Arg::UINT || arg.type == Arg::ULONG_LONG) {
     report_error_(s,
-        fmt::c_str(fmt::format("format specifier '{}' requires signed argument", sign)));
+        fmt::format("format specifier '{}' requires signed argument", sign).c_str());
   }
   ++s;
 }
