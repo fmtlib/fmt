@@ -1096,7 +1096,7 @@ void fmt::ReportSystemError(
 void fmt::WinErrorSink::operator()(const Writer &w) const {
   Writer message;
   internal::FormatWinErrorMessage(message, error_code_, w.c_str());
-  throw SystemError(message.c_str(), error_code_);
+  throw SystemError(error_code_, message.c_str());
 }
 
 void fmt::ReportWinError(
