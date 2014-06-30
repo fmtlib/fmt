@@ -248,8 +248,8 @@ TEST(UtilTest, WinErrorSink) {
 }
 
 TEST(UtilTest, ThrowWinError) {
-  CheckThrowError(ERROR_FILE_EXISTS,
-      fmt::internal::FormatWinErrorMessage, fmt::ThrowWinError);
+  CheckThrowError<fmt::WindowsError>(
+      ERROR_FILE_EXISTS, fmt::internal::FormatWinErrorMessage);
 }
 
 TEST(UtilTest, ReportWinError) {
