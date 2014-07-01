@@ -92,14 +92,14 @@ TEST(UtilTest, CountDigits) {
 TEST(UtilTest, UTF16ToUTF8) {
   std::string s = "ёжик";
   fmt::internal::UTF16ToUTF8 u(L"\x0451\x0436\x0438\x043A");
-  EXPECT_EQ(s, fmt::str(u));
+  EXPECT_EQ(s, u.str());
   EXPECT_EQ(s.size(), u.size());
 }
 
 TEST(UtilTest, UTF8ToUTF16) {
   std::string s = "лошадка";
   fmt::internal::UTF8ToUTF16 u(s.c_str());
-  EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", fmt::str(u));
+  EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());
   EXPECT_EQ(7, u.size());
 }
 
