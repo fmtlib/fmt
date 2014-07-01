@@ -119,12 +119,6 @@
   TypeName(const TypeName&); \
   void operator=(const TypeName&)
 
-// TODO: remove
-#if FMT_MSC_VER
-# pragma warning(push)
-# pragma warning(disable: 4521) // 'class' : multiple copy constructors specified
-#endif
-
 namespace fmt {
 
 // Fix the warning about long long on older versions of GCC
@@ -631,14 +625,9 @@ struct ArgInfo {
   };
 };
 
-// An argument action that does nothing.
-struct NullArgAction {
-  void operator()() const {}
-};
-
 // A wrapper around a format argument.
-template <typename Char, typename Action = internal::NullArgAction>
-class BasicArg : public Action, public internal::ArgInfo {
+template <typename Char>
+class BasicArg : public internal::ArgInfo {
  private:
   // This method is private to disallow formatting of arbitrary pointers.
   // If you want to output a pointer cast it to const void*. Do not implement!
@@ -727,13 +716,6 @@ class BasicArg : public Action, public internal::ArgInfo {
     type = CUSTOM;
     custom.value = &value;
     custom.format = &internal::FormatCustomArg<Char, T>;
-  }
-
-  // The destructor is declared noexcept(false) because the action may throw
-  // an exception.
-  ~BasicArg() FMT_NOEXCEPT(false) {
-    // Invoke the action.
-    (*this)();
   }
 };
 
@@ -1629,100 +1611,6 @@ void FormatCustomArg(void *writer, const void *arg, const FormatSpec &spec) {
 }
 }
 
-/**
-  \rst
-  The :cpp:class:`fmt::BasicFormatter` template provides operator<< for
-  feeding arbitrary arguments to the :cpp:func:`fmt::Format()` function.
-  \endrst
- */
-template <typename Char>
-class BasicFormatter {
- private:
-  BasicWriter<Char> *writer_;
-
-  // An action used to ensure that formatting is performed before the
-  // argument is destroyed.
-  // Example:
-  //
-  //   Format("{}") << std::string("test");
-  //
-  // Here an Arg object wraps a temporary std::string which is destroyed at
-  // the end of the full expression. Since the string object is constructed
-  // before the Arg object, it will be destroyed after, so it will be alive
-  // in the Arg's destructor where the action is invoked.
-  // Note that the string object will not necessarily be alive when the
-  // destructor of BasicFormatter is called. Otherwise we wouldn't need
-  // this class.
-  struct ArgAction {
-    mutable BasicFormatter *formatter;
-
-    ArgAction() : formatter(0) {}
-
-    void operator()() const {
-      if (formatter)
-        formatter->CompleteFormatting();
-    }
-  };
-
-  typedef typename internal::ArgInfo ArgInfo;
-  typedef internal::BasicArg<Char, ArgAction> Arg;
-
-  enum { NUM_INLINE_ARGS = 10 };
-  internal::Array<ArgInfo, NUM_INLINE_ARGS> args_;  // Format arguments.
-
-  const Char *format_;  // Format string.
-
-  // Forbid copying from a temporary as in the following example:
-  //
-  //   fmt::Formatter<> f = Format("test"); // not allowed
-  //
-  // This is done because BasicFormatter objects should normally exist
-  // only as temporaries returned by one of the formatting functions.
-  FMT_DISALLOW_COPY_AND_ASSIGN(BasicFormatter);
-
- protected:
-  const Char *TakeFormatString() {
-    const Char *format = this->format_;
-    this->format_ = 0;
-    return format;
-  }
-
-  void CompleteFormatting() {
-    if (!format_) return;
-    const Char *format = format_;
-    format_ = 0;
-    writer_->write(format, ArgList(&args_[0], args_.size()));
-  }
-
- public:
-  // Constructs a formatter with a writer to be used for output and a format
-  // string.
-  BasicFormatter(BasicWriter<Char> &w, const Char *format = 0)
-  : writer_(&w), format_(format) {}
-
-  // Performs formatting if the format string is non-null. The format string
-  // can be null if its ownership has been transferred to another formatter.
-  ~BasicFormatter() {
-    CompleteFormatting();
-  }
-
-  BasicFormatter(BasicFormatter &f) : writer_(f.writer_), format_(f.format_) {
-    f.format_ = 0;
-  }
-
-  // Feeds an argument to a formatter.
-  BasicFormatter &operator<<(const Arg &arg) {
-    arg.formatter = this;
-    args_.push_back(arg);
-    return *this;
-  }
-
-  operator BasicStringRef<Char>() {
-    CompleteFormatting();
-    return BasicStringRef<Char>(writer_->c_str(), writer_->size());
-  }
-};
-
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
 void ReportSystemError(int error_code, StringRef message) FMT_NOEXCEPT(true);
@@ -2037,8 +1925,6 @@ FMT_VARIADIC(void, printf, StringRef)
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406
 # pragma GCC diagnostic pop
-#elif FMT_MSC_VER
-# pragma warning(pop)
 #endif
 
 #endif  // FMT_FORMAT_H_

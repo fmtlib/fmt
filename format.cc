@@ -1093,10 +1093,6 @@ void fmt::ReportSystemError(
 }
 
 #ifdef _WIN32
-void fmt::WinErrorSink::operator()(const Writer &w) const {
-  throw WindowsError(error_code_, w.c_str());
-}
-
 void fmt::ReportWinError(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
   // FIXME: FormatWinErrorMessage may throw
