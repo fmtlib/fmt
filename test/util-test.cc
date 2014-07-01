@@ -238,7 +238,7 @@ TEST(UtilTest, FormatWinErrorMessage) {
   fmt::Writer actual_message;
   fmt::internal::FormatWinErrorMessage(
       actual_message, ERROR_FILE_EXISTS, "test");
-  EXPECT_EQ(fmt::format("test: {}", fmt::str(utf8_message)),
+  EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
       actual_message.str());
 }
 
