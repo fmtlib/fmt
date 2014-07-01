@@ -220,17 +220,17 @@ fmt::internal::UTF8ToUTF16::UTF8ToUTF16(fmt::StringRef s) {
       CP_UTF8, MB_ERR_INVALID_CHARS, s.c_str(), -1, 0, 0);
   static const char ERROR[] = "cannot convert string from UTF-8 to UTF-16";
   if (length == 0)
-    ThrowWinError(GetLastError(), ERROR);
+    throw WindowsError(GetLastError(), ERROR);
   buffer_.resize(length);
   length = MultiByteToWideChar(
     CP_UTF8, MB_ERR_INVALID_CHARS, s.c_str(), -1, &buffer_[0], length);
   if (length == 0)
-    ThrowWinError(GetLastError(), ERROR);
+    throw WindowsError(GetLastError(), ERROR);
 }
 
 fmt::internal::UTF16ToUTF8::UTF16ToUTF8(fmt::WStringRef s) {
   if (int error_code = Convert(s)) {
-    ThrowWinError(GetLastError(),
+    throw WindowsError(GetLastError(),
         "cannot convert string from UTF-16 to UTF-8");
   }
 }
@@ -1094,9 +1094,7 @@ void fmt::ReportSystemError(
 
 #ifdef _WIN32
 void fmt::WinErrorSink::operator()(const Writer &w) const {
-  Writer message;
-  internal::FormatWinErrorMessage(message, error_code_, w.c_str());
-  throw SystemError(error_code_, message.c_str());
+  throw WindowsError(error_code_, w.c_str());
 }
 
 void fmt::ReportWinError(
