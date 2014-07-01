@@ -1130,12 +1130,12 @@ for example a file opening error.
 */
 class SystemError : public internal::SystemErrorBase {
  private:
-  typedef char Char;  // For FMT_VARIADIC_CTOR.
-
   void init(int error_code, StringRef format_str, const ArgList &args);
 
  protected:
   int error_code_;
+
+  typedef char Char;  // For FMT_VARIADIC_CTOR.
 
   SystemError() {}
 
