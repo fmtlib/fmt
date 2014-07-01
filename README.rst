@@ -101,7 +101,7 @@ which take arbitrary arguments:
 
     // Prints formatted error message.
     void report_error(const char *format, const fmt::ArgList &args) {
-      fmt::print("Error: {}");
+      fmt::print("Error: ");
       fmt::print(format, args);
     }
     FMT_VARIADIC(void, report_error, const char *)
