@@ -17,4 +17,4 @@ PREDEFINED = _WIN32=1 \
              FMT_USE_VARIADIC_TEMPLATES=1 \
              FMT_USE_RVALUE_REFERENCES=1
 EXCLUDE_SYMBOLS = fmt::internal::* BasicArg FormatParser StringValue \
-                  write_str PrepareBufferForInt
+                  write_str
