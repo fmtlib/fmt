@@ -171,23 +171,6 @@ TEST(UtilTest, SystemError) {
 typedef void (*FormatErrorMessage)(
         fmt::Writer &out, int error_code, StringRef message);
 
-template <typename Sink>
-void CheckErrorSink(int error_code, FormatErrorMessage format) {
-  fmt::SystemError error(0, "");
-  Sink sink(error_code);
-  fmt::Writer w;
-  w << "test";
-  try {
-    sink(w);
-  } catch (const fmt::SystemError &e) {
-    error = e;
-  }
-  fmt::Writer message;
-  format(message, error_code, "test");
-  EXPECT_EQ(message.str(), error.what());
-  EXPECT_EQ(error_code, error.error_code());
-}
-
 template <typename Error>
 void CheckThrowError(int error_code, FormatErrorMessage format) {
   fmt::SystemError error(0, "");
@@ -207,11 +190,6 @@ TEST(UtilTest, FormatSystemErrorMessage) {
   fmt::internal::FormatSystemErrorMessage(message, EDOM, "test");
   EXPECT_EQ(fmt::format("test: {}",
           GetSystemErrorMessage(EDOM)), message.str());
-}
-
-TEST(UtilTest, SystemErrorSink) {
-  CheckErrorSink<fmt::SystemErrorSink>(
-          EDOM, fmt::internal::FormatSystemErrorMessage);
 }
 
 TEST(UtilTest, ThrowSystemError) {
@@ -240,11 +218,6 @@ TEST(UtilTest, FormatWinErrorMessage) {
       actual_message, ERROR_FILE_EXISTS, "test");
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
       actual_message.str());
-}
-
-TEST(UtilTest, WinErrorSink) {
-  CheckErrorSink<fmt::WinErrorSink>(
-      ERROR_FILE_EXISTS, fmt::internal::FormatWinErrorMessage);
 }
 
 TEST(UtilTest, ThrowWinError) {
