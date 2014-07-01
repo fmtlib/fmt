@@ -840,7 +840,7 @@ void fmt::internal::PrintfParser<Char>::Format(
       writer.write_str(arg.string, spec);
       break;
     case Arg::WSTRING:
-      writer.write_str(arg.wstring, spec);
+      writer.write_str(internal::CharTraits<Char>::convert(arg.wstring), spec);
       break;
     case Arg::POINTER:
       if (spec.type_ && spec.type_ != 'p')
