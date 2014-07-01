@@ -239,7 +239,7 @@ TEST(UtilTest, FormatWinErrorMessage) {
   fmt::internal::FormatWinErrorMessage(
       actual_message, ERROR_FILE_EXISTS, "test");
   EXPECT_EQ(fmt::format("test: {}", fmt::str(utf8_message)),
-      fmt::str(actual_message));
+      actual_message.str());
 }
 
 TEST(UtilTest, WinErrorSink) {

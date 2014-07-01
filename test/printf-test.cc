@@ -38,7 +38,7 @@ using fmt::FormatError;
 // Returns a number UINT_MAX + 1 formatted as a string.
 std::string GetBigNumber() {
   char format[BUFFER_SIZE];
-  sprintf(format, "%u", UINT_MAX);
+  SPrintf(format, "%u", UINT_MAX);
   Increment(format + 1);
   return format;
 }
