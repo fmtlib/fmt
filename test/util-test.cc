@@ -107,7 +107,7 @@ template <typename Converter>
 void CheckUTFConversionError(const char *message) {
   fmt::Writer out;
   fmt::internal::FormatWinErrorMessage(out, ERROR_INVALID_PARAMETER, message);
-  fmt::SystemError error("", 0);
+  fmt::SystemError error(0, "");
   try {
     Converter(0);
   } catch (const fmt::SystemError &e) {
