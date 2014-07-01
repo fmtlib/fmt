@@ -31,7 +31,6 @@
 #include <stdint.h>
 
 #include <cassert>
-#include <cerrno>
 #include <cstddef>  // for std::ptrdiff_t
 #include <cstdio>
 #include <algorithm>
@@ -135,9 +134,6 @@ class BasicWriter;
 
 typedef BasicWriter<char> Writer;
 typedef BasicWriter<wchar_t> WWriter;
-
-template <typename Char>
-class BasicFormatter;
 
 struct FormatSpec;
 
@@ -253,12 +249,6 @@ class Array {
     if (ptr_ != data_) delete [] ptr_;
   }
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(Array);
-
- public:
-  Array() : size_(0), capacity_(SIZE), ptr_(data_) {}
-  ~Array() { Free(); }
-
   // Move data from other to this array.
   void move(Array &other) {
     size_ = other.size_;
@@ -273,6 +263,12 @@ class Array {
       other.ptr_ = other.data_;
     }
   }
+
+  FMT_DISALLOW_COPY_AND_ASSIGN(Array);
+
+ public:
+  Array() : size_(0), capacity_(SIZE), ptr_(data_) {}
+  ~Array() { Free(); }
 
 #if FMT_USE_RVALUE_REFERENCES
   Array(Array &&other) {
@@ -625,30 +621,30 @@ struct ArgInfo {
   };
 };
 
-// A wrapper around a format argument.
+// Makes an ArgInfo object from any type.
 template <typename Char>
-class BasicArg : public internal::ArgInfo {
+class MakeArg : public internal::ArgInfo {
  private:
   // This method is private to disallow formatting of arbitrary pointers.
   // If you want to output a pointer cast it to const void*. Do not implement!
   template <typename T>
-  BasicArg(const T *value);
+  MakeArg(const T *value);
 
   // This method is private to disallow formatting of arbitrary pointers.
   // If you want to output a pointer cast it to void*. Do not implement!
   template <typename T>
-  BasicArg(T *value);
+  MakeArg(T *value);
 
  public:
   using internal::ArgInfo::type;
 
-  BasicArg() {}
+  MakeArg() {}
   // TODO: unsigned char & signed char
-  BasicArg(short value) { type = INT; int_value = value; }
-  BasicArg(unsigned short value) { type = UINT; uint_value = value; }
-  BasicArg(int value) { type = INT; int_value = value; }
-  BasicArg(unsigned value) { type = UINT; uint_value = value; }
-  BasicArg(long value) {
+  MakeArg(short value) { type = INT; int_value = value; }
+  MakeArg(unsigned short value) { type = UINT; uint_value = value; }
+  MakeArg(int value) { type = INT; int_value = value; }
+  MakeArg(unsigned value) { type = UINT; uint_value = value; }
+  MakeArg(long value) {
     if (sizeof(long) == sizeof(int)) {
       type = INT;
       int_value = static_cast<int>(value);
@@ -657,7 +653,7 @@ class BasicArg : public internal::ArgInfo {
       long_long_value = value;
     }
   }
-  BasicArg(unsigned long value) {
+  MakeArg(unsigned long value) {
     if (sizeof(unsigned long) == sizeof(unsigned)) {
       type = UINT;
       uint_value = static_cast<unsigned>(value);
@@ -666,61 +662,57 @@ class BasicArg : public internal::ArgInfo {
       ulong_long_value = value;
     }
   }
-  BasicArg(LongLong value) { type = LONG_LONG; long_long_value = value; }
-  BasicArg(ULongLong value) { type = ULONG_LONG; ulong_long_value = value; }
-  BasicArg(float value) { type = DOUBLE; double_value = value; }
-  BasicArg(double value) { type = DOUBLE; double_value = value; }
-  BasicArg(long double value) { type = LONG_DOUBLE; long_double_value = value; }
-  BasicArg(char value) { type = CHAR; int_value = value; }
-  BasicArg(wchar_t value) {
+  MakeArg(LongLong value) { type = LONG_LONG; long_long_value = value; }
+  MakeArg(ULongLong value) { type = ULONG_LONG; ulong_long_value = value; }
+  MakeArg(float value) { type = DOUBLE; double_value = value; }
+  MakeArg(double value) { type = DOUBLE; double_value = value; }
+  MakeArg(long double value) { type = LONG_DOUBLE; long_double_value = value; }
+  MakeArg(char value) { type = CHAR; int_value = value; }
+  MakeArg(wchar_t value) {
     type = CHAR;
     int_value = internal::CharTraits<Char>::ConvertChar(value);
   }
 
-  BasicArg(const char *value) {
+  MakeArg(const char *value) {
     type = STRING;
     string.value = value;
     string.size = 0;
   }
 
-  BasicArg(const wchar_t *value) {
+  MakeArg(const wchar_t *value) {
     type = WSTRING;
     wstring.value = value;
     wstring.size = 0;
   }
 
-  BasicArg(Char *value) {
+  MakeArg(Char *value) {
     type = STRING;
     string.value = value;
     string.size = 0;
   }
 
-  BasicArg(const void *value) { type = POINTER; pointer_value = value;
-  }
-  BasicArg(void *value) { type = POINTER; pointer_value = value; }
+  MakeArg(const void *value) { type = POINTER; pointer_value = value; }
+  MakeArg(void *value) { type = POINTER; pointer_value = value; }
 
-  BasicArg(const std::basic_string<Char> &value) {
+  MakeArg(const std::basic_string<Char> &value) {
     type = STRING;
     string.value = value.c_str();
     string.size = value.size();
   }
 
-  BasicArg(BasicStringRef<Char> value) {
+  MakeArg(BasicStringRef<Char> value) {
     type = STRING;
     string.value = value.c_str();
     string.size = value.size();
   }
 
   template <typename T>
-  BasicArg(const T &value) {
+  MakeArg(const T &value) {
     type = CUSTOM;
     custom.value = &value;
     custom.format = &internal::FormatCustomArg<Char, T>;
   }
 };
-
-template <typename Char, typename T>
-inline ArgInfo make_arg(const T &arg) { return BasicArg<Char>(arg); }
 
 class SystemErrorBase : public std::runtime_error {
 public:
@@ -1019,8 +1011,8 @@ inline StrFormatSpec<wchar_t> pad(
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
-# define FMT_MAKE_REF_char(n) fmt::internal::make_arg<char>(v##n)
-# define FMT_MAKE_REF_wchar_t(n) fmt::internal::make_arg<wchar_t>(v##n)
+# define FMT_MAKE_REF_char(n) fmt::internal::MakeArg<char>(v##n)
+# define FMT_MAKE_REF_wchar_t(n) fmt::internal::MakeArg<wchar_t>(v##n)
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
@@ -1028,7 +1020,7 @@ inline StrFormatSpec<wchar_t> pad(
   template<typename... Args> \
   void func(arg_type arg1, const Args & ... args) { \
     const internal::ArgInfo arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
-      fmt::internal::make_arg<Char>(args)... \
+      fmt::internal::MakeArg<Char>(args)... \
     }; \
     func(arg1, ArgList(arg_array, sizeof...(Args))); \
   }
@@ -1038,14 +1030,14 @@ inline StrFormatSpec<wchar_t> pad(
   template<typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
     const internal::ArgInfo arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
-      fmt::internal::make_arg<Char>(args)... \
+      fmt::internal::MakeArg<Char>(args)... \
     }; \
     func(arg0, arg1, ArgList(arg_array, sizeof...(Args))); \
   }
 
 #else
 
-# define FMT_MAKE_REF(n) fmt::internal::make_arg<Char>(v##n)
+# define FMT_MAKE_REF(n) fmt::internal::MakeArg<Char>(v##n)
 // Defines a wrapper for a function taking one argument of type arg_type
 // and n additional arguments of arbitrary types.
 # define FMT_WRAP1(func, arg_type, n) \
@@ -1070,7 +1062,7 @@ inline StrFormatSpec<wchar_t> pad(
     func(arg0, arg1, fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
   }
 
-// Emulates a variadic function returning void on a pre-C++11 compiler.
+// Emulates a variadic constructor on a pre-C++11 compiler.
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   FMT_CTOR(ctor, func, arg0_type, arg1_type, 1) \
   FMT_CTOR(ctor, func, arg0_type, arg1_type, 2) \
@@ -1176,11 +1168,7 @@ template <typename Char>
 class BasicWriter {
  private:
   // Output buffer.
-  typedef internal::Array<Char, internal::INLINE_BUFFER_SIZE> Buffer;
-  mutable Buffer buffer_;
-
-  // Make BasicFormatter a friend so that it can access ArgInfo and Arg.
-  friend class BasicFormatter<Char>;
+  mutable internal::Array<Char, internal::INLINE_BUFFER_SIZE> buffer_;
 
   typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
 
@@ -1339,11 +1327,6 @@ class BasicWriter {
     FormatParser().Format(*this, format, args);
   }
   FMT_VARIADIC_VOID(write, fmt::BasicStringRef<Char>)
-
-  friend void printf(BasicWriter<Char> &w,
-      BasicStringRef<Char> format, const ArgList &args) {
-    internal::PrintfParser<Char>().Format(w, format, args);
-  }
 
   BasicWriter &operator<<(int value) {
     return *this << IntFormatSpec<int>(value);
@@ -1709,6 +1692,12 @@ void print(StringRef format, const ArgList &args);
  */
 void print(std::FILE *f, StringRef format, const ArgList &args);
 
+template <typename Char>
+void printf(BasicWriter<Char> &w,
+    BasicStringRef<Char> format, const ArgList &args) {
+  internal::PrintfParser<Char>().Format(w, format, args);
+}
+
 inline std::string sprintf(StringRef format, const ArgList &args) {
   Writer w;
   printf(w, format, args);
@@ -1848,47 +1837,43 @@ inline void FormatDec(char *&buffer, T value) {
 #define FMT_GET_ARG_NAME(type, index) arg##index
 
 #if FMT_USE_VARIADIC_TEMPLATES
-
-# define FMT_VARIADIC_(Char, ReturnType, func, ...) \
+# define FMT_VARIADIC_(Char, ReturnType, func, call, ...) \
   template<typename... Args> \
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
     enum {N = fmt::internal::NonZero<sizeof...(Args)>::VALUE}; \
     const fmt::internal::ArgInfo array[N] = { \
-      fmt::internal::make_arg<Char>(args)... \
+      fmt::internal::MakeArg<Char>(args)... \
     }; \
-    return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(array, sizeof...(Args))); \
   }
-
 #else
-
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
 // and n additional arguments of arbitrary types.
-# define FMT_WRAP(Char, ReturnType, func, n, ...) \
+# define FMT_WRAP(Char, ReturnType, func, call, n, ...) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       FMT_GEN(n, FMT_MAKE_ARG)) { \
     const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
-    return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
   }
 
-# define FMT_VARIADIC_(Char, ReturnType, func, ...) \
+# define FMT_VARIADIC_(Char, ReturnType, func, call, ...) \
   inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) { \
-    return func(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList()); \
+    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList()); \
   } \
-  FMT_WRAP(Char, ReturnType, func, 1, __VA_ARGS__) \
-  FMT_WRAP(Char, ReturnType, func, 2, __VA_ARGS__) \
-  FMT_WRAP(Char, ReturnType, func, 3, __VA_ARGS__) \
-  FMT_WRAP(Char, ReturnType, func, 4, __VA_ARGS__) \
-  FMT_WRAP(Char, ReturnType, func, 5, __VA_ARGS__) \
-  FMT_WRAP(Char, ReturnType, func, 6, __VA_ARGS__) \
-  FMT_WRAP(Char, ReturnType, func, 7, __VA_ARGS__) \
-  FMT_WRAP(Char, ReturnType, func, 8, __VA_ARGS__) \
-  FMT_WRAP(Char, ReturnType, func, 9, __VA_ARGS__) \
-  FMT_WRAP(Char, ReturnType, func, 10, __VA_ARGS__)
-
+  FMT_WRAP(Char, ReturnType, func, call, 1, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 2, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 3, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 4, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 5, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 6, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 7, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 8, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 9, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 10, __VA_ARGS__)
 #endif  // FMT_USE_VARIADIC_TEMPLATES
 
 /**
@@ -1907,10 +1892,10 @@ inline void FormatDec(char *&buffer, T value) {
   \endrst
  */
 #define FMT_VARIADIC(ReturnType, func, ...) \
-  FMT_VARIADIC_(char, ReturnType, func, __VA_ARGS__)
+  FMT_VARIADIC_(char, ReturnType, func, return func, __VA_ARGS__)
 
 #define FMT_VARIADIC_W(ReturnType, func, ...) \
-  FMT_VARIADIC_(wchar_t, ReturnType, func, __VA_ARGS__)
+  FMT_VARIADIC_(wchar_t, ReturnType, func, return func, __VA_ARGS__)
 
 namespace fmt {
 FMT_VARIADIC(std::string, format, StringRef)

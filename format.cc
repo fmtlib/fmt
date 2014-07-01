@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <cctype>
+#include <cerrno>
 #include <climits>
 #include <cmath>
 #include <cstdarg>
