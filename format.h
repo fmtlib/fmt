@@ -356,6 +356,12 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
 }
 
 template <typename Char>
+struct StringValue {
+  const Char *value;
+  std::size_t size;
+};
+
+template <typename Char>
 class CharTraits;
 
 template <typename Char>
@@ -379,6 +385,11 @@ class CharTraits<char> : public BasicCharTraits<char> {
 
   static char ConvertChar(char value) { return value; }
 
+  static StringValue<char> convert(StringValue<wchar_t>) {
+    StringValue<char> s = {"", 0};
+    return s;
+  }
+
   template <typename T>
   static int FormatFloat(char *buffer, std::size_t size,
       const char *format, unsigned width, int precision, T value);
@@ -391,6 +402,8 @@ class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
 
   static wchar_t ConvertChar(char value) { return value; }
   static wchar_t ConvertChar(wchar_t value) { return value; }
+
+  static StringValue<wchar_t> convert(StringValue<wchar_t> s) { return s; }
 
   template <typename T>
   static int FormatFloat(wchar_t *buffer, std::size_t size,
@@ -604,12 +617,6 @@ struct ArgInfo {
     CHAR, STRING, WSTRING, POINTER, CUSTOM
   };
   Type type;
-
-  template <typename Char>
-  struct StringValue {
-    const Char *value;
-    std::size_t size;
-  };
 
   typedef void (*FormatFunc)(
       void *writer, const void *arg, const FormatSpec &spec);
@@ -1251,7 +1258,7 @@ class BasicWriter {
 
   template <typename StringChar>
   void write_str(
-      const Arg::StringValue<StringChar> &str, const FormatSpec &spec);
+      const internal::StringValue<StringChar> &str, const FormatSpec &spec);
 
     // This method is private to disallow writing a wide string to a
   // char stream and vice versa. If you want to print a wide string

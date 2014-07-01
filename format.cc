@@ -537,7 +537,7 @@ void fmt::BasicWriter<Char>::FormatDouble(T value, const FormatSpec &spec) {
 template <typename Char>
 template <typename StringChar>
 void fmt::BasicWriter<Char>::write_str(
-    const Arg::StringValue<StringChar> &str, const FormatSpec &spec) {
+    const internal::StringValue<StringChar> &str, const FormatSpec &spec) {
   if (spec.type_ && spec.type_ != 's')
     internal::ReportUnknownType(spec.type_, "string");
   const StringChar *s = str.value;
@@ -1064,7 +1064,7 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
       writer.write_str(arg.string, spec);
       break;
     case Arg::WSTRING:
-      writer.write_str(arg.wstring, spec);
+      writer.write_str(internal::CharTraits<Char>::convert(arg.wstring), spec);
       break;
     case Arg::POINTER:
       if (spec.type_ && spec.type_ != 'p')
