@@ -119,16 +119,7 @@
   TypeName(const TypeName&); \
   void operator=(const TypeName&)
 
-#ifdef FMT_DEPRECATED
-// Do nothing.
-#elif defined(__GNUC__)
-# define FMT_DEPRECATED(func) func __attribute__((deprecated))
-#elif defined(_MSC_VER)
-# define FMT_DEPRECATED(func) __declspec(deprecated) func
-#else
-# define FMT_DEPRECATED(func) func
-#endif
-
+// TODO: remove
 #if FMT_MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4521) // 'class' : multiple copy constructors specified
@@ -175,7 +166,7 @@ struct FormatSpec;
   different types of strings to a function, for example::
 
     template<typename... Args>
-    Writer format(StringRef format, const Args & ... args);
+    std::string format(StringRef format, const Args & ... args);
 
     format("{}", 42);
     format(std::string("{}"), 42);
@@ -1451,31 +1442,7 @@ class BasicWriter {
   }
 
   void clear() { buffer_.clear(); }
-
-#if !defined(FMT_NO_DEPRECATED)
-  FMT_DEPRECATED(BasicFormatter<Char> Format(StringRef format));
-
-#if FMT_USE_VARIADIC_TEMPLATES
-  // This function is deprecated. Use Writer::write instead.
-  template<typename... Args>
-  FMT_DEPRECATED(void Format(BasicStringRef<Char> format, const Args & ... args));
-#endif
-
-  // This function is deprecated. Use Writer::write instead.
-  FMT_DEPRECATED(void Write(const std::basic_string<Char> &s, const FormatSpec &spec));
-  
-  // This function is deprecated. Use Writer::clear instead.
-  FMT_DEPRECATED(void Clear());
-#endif
 };
-
-template <typename Char>
-inline void BasicWriter<Char>::Write(const std::basic_string<Char> &s, const FormatSpec &spec) {
-  write(s, spec);
-}
-
-template <typename Char>
-inline void BasicWriter<Char>::Clear() { clear(); }
 
 template <typename Char>
 template <typename StringChar>
@@ -1645,12 +1612,6 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
   }
 }
 
-template <typename Char>
-BasicFormatter<Char> BasicWriter<Char>::Format(StringRef format) {
-  BasicFormatter<Char> f(*this, format.c_str());
-  return f;
-}
-
 // The default formatting function.
 template <typename Char, typename T>
 void format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value) {
@@ -1762,147 +1723,11 @@ class BasicFormatter {
   }
 };
 
-template <typename Char>
-FMT_DEPRECATED(std::basic_string<Char> str(const BasicWriter<Char> &f));
-
-// This function is deprecated. Use BasicWriter::str() instead.
-template <typename Char>
-inline std::basic_string<Char> str(const BasicWriter<Char> &f) {
-  return f.str();
-}
-
-template <typename Char>
-FMT_DEPRECATED(const Char *c_str(const BasicWriter<Char> &f));
-
-// This function is deprecated. Use BasicWriter::c_str() instead.
-template <typename Char>
-inline const Char *c_str(const BasicWriter<Char> &f) { return f.c_str(); }
-
-FMT_DEPRECATED(std::string str(StringRef s));
-
-/**
-  Converts a string reference to `std::string`.
- */
-// This function is deprecated. Use StringRef::c_str() instead.
-inline std::string str(StringRef s) {
-  return std::string(s.c_str(), s.size());
-}
-
-FMT_DEPRECATED(const char *c_str(StringRef s));
-
-/**
-  Returns the pointer to a C string.
- */
-// This function is deprecated. Use StringRef::c_str() instead.
-inline const char *c_str(StringRef s) {
-  return s.c_str();
-}
-
-FMT_DEPRECATED(std::wstring str(WStringRef s));
-
-// This function is deprecated. Use WStringRef::c_str() instead.
-inline std::wstring str(WStringRef s) {
-  return std::wstring(s.c_str(), s.size());
-}
-
-FMT_DEPRECATED(const wchar_t *c_str(WStringRef s));
-
-// This function is deprecated. Use WStringRef::c_str() instead.
-inline const wchar_t *c_str(WStringRef s) {
-  return s.c_str();
-}
-
-// This class is deprecated. Use variadic functions instead of sinks.
-class NullSink {
- public:
-  template <typename Char>
-  void operator()(const BasicWriter<Char> &) const {}
-};
-
-// This class is deprecated. Use variadic functions instead.
-template <typename Sink = NullSink, typename Char = char>
-class Formatter : private Sink, public BasicFormatter<Char> {
- private:
-  BasicWriter<Char> writer_;
-  bool inactive_;
-
-  FMT_DISALLOW_COPY_AND_ASSIGN(Formatter);
-
- public:
-  explicit Formatter(BasicStringRef<Char> format, Sink s = Sink())
-  : Sink(s), BasicFormatter<Char>(writer_, format.c_str()),
-    inactive_(false) {
-  }
-
-  Formatter(Formatter &other)
-  : Sink(other), BasicFormatter<Char>(writer_, other.TakeFormatString()),
-    inactive_(false) {
-    other.inactive_ = true;
-  }
-
-  ~Formatter() FMT_NOEXCEPT(false) {
-    if (!inactive_) {
-      this->CompleteFormatting();
-      (*this)(writer_);
-    }
-  }
-};
-
-#if !defined(FMT_NO_DEPRECATED)
-// This function is deprecated. Use fmt::format instead.
-FMT_DEPRECATED(Formatter<> Format(StringRef format));
-inline Formatter<> Format(StringRef format) {
-  Formatter<> f(format);
-  return f;
-}
-
-// This function is deprecated. Use fmt::format instead.
-Formatter<NullSink, wchar_t> FMT_DEPRECATED(Format(WStringRef format));
-inline Formatter<NullSink, wchar_t> Format(WStringRef format) {
-  Formatter<NullSink, wchar_t> f(format);
-  return f;
-}
-
-// This class is deprecated. Use variadic functions instead of sinks.
-class SystemErrorSink {
- private:
-  int error_code_;
-
- public:
-  explicit SystemErrorSink(int error_code) : error_code_(error_code) {}
-
-  void operator()(const Writer &w) const {
-    throw SystemError(error_code_, "{}", w.c_str());
-  }
-};
-#endif
-
-FMT_DEPRECATED(Formatter<SystemErrorSink> ThrowSystemError(
-    int error_code, StringRef format));
-
-// This function is deprecated. Use fmt::SystemError instead.
-inline Formatter<SystemErrorSink> ThrowSystemError(
-    int error_code, StringRef format) {
-  Formatter<SystemErrorSink> f(format, SystemErrorSink(error_code));
-  return f;
-}
-
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
 void ReportSystemError(int error_code, StringRef message) FMT_NOEXCEPT(true);
 
 #ifdef _WIN32
-
-// This class is deprecated. Use variadic functions instead of sinks.
-class WinErrorSink {
- private:
-  int error_code_;
-
- public:
-  explicit WinErrorSink(int error_code) : error_code_(error_code) {}
-
-  void operator()(const Writer &w) const;
-};
 
 /**
  A Windows error.
@@ -1927,57 +1752,13 @@ class WindowsError : public SystemError {
   FMT_VARIADIC_CTOR(WindowsError, init, int, StringRef)
 };
 
-FMT_DEPRECATED(Formatter<WinErrorSink> ThrowWinError(int error_code, StringRef format));
-
-// This function is deprecated. Use WindowsError instead.
-inline Formatter<WinErrorSink> ThrowWinError(int error_code, StringRef format) {
-  Formatter<WinErrorSink> f(format, WinErrorSink(error_code));
-  return f;
-}
-
 // Reports a Windows error without throwing an exception.
 // Can be used to report errors from destructors.
 void ReportWinError(int error_code, StringRef message) FMT_NOEXCEPT(true);
 
 #endif
 
-// This class is deprecated. Use variadic functions instead of sinks.
-class FileSink {
- private:
-  std::FILE *file_;
-
- public:
-  explicit FileSink(std::FILE *f) : file_(f) {}
-
-  void operator()(const BasicWriter<char> &w) const {
-    if (std::fwrite(w.data(), w.size(), 1, file_) == 0)
-      throw SystemError(errno, "cannot write to file");
-  }
-};
-
-inline Formatter<FileSink> Print(StringRef format) {
-  Formatter<FileSink> f(format, FileSink(stdout));
-  return f;
-}
-
-inline Formatter<FileSink> Print(std::FILE *file, StringRef format) {
-  Formatter<FileSink> f(format, FileSink(file));
-  return f;
-}
-
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
-
-// This class is deprecated. Use variadic functions instead of sinks.
-class ANSITerminalSink {
- private:
-  std::FILE *file_;
-  Color color_;
-
- public:
-  ANSITerminalSink(std::FILE *f, Color c) : file_(f), color_(c) {}
-
-  void operator()(const BasicWriter<char> &w) const;
-};
 
 /**
   Formats a string and prints it to stdout using ANSI escape sequences
@@ -1985,10 +1766,7 @@ class ANSITerminalSink {
   Example:
     PrintColored(fmt::RED, "Elapsed time: {0:.2f} seconds") << 1.23;
  */
-inline Formatter<ANSITerminalSink> PrintColored(Color c, StringRef format) {
-  Formatter<ANSITerminalSink> f(format, ANSITerminalSink(stdout, c));
-  return f;
-}
+void print_colored(Color c, StringRef format, const ArgList &args);
 
 /**
   \rst
@@ -2050,61 +1828,6 @@ inline std::string sprintf(StringRef format, const ArgList &args) {
 }
 
 void printf(StringRef format, const ArgList &args);
-
-#if !defined(FMT_NO_DEPRECATED) && FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
-
-template <typename Char>
-template<typename... Args>
-void BasicWriter<Char>::Format(
-    BasicStringRef<Char> format, const Args & ... args) {
-  this->format(format, args...);
-}
-
-// This function is deprecated. Use fmt::format instead.
-template<typename... Args>
-FMT_DEPRECATED(Writer Format(StringRef format, const Args & ... args));
-
-template<typename... Args>
-inline Writer Format(StringRef format, const Args & ... args) {
-  Writer w;
-  w.Format(format, args...);
-  return std::move(w);
-}
-
-// This function is deprecated. Use fmt::format instead.
-template<typename... Args>
-FMT_DEPRECATED(WWriter Format(WStringRef format, const Args & ... args));
-
-template<typename... Args>
-inline WWriter Format(WStringRef format, const Args & ... args) {
-  WWriter w;
-  w.Format(format, args...);
-  return std::move(w);
-}
-
-// This function is deprecated. Use fmt::print instead.
-template<typename... Args>
-FMT_DEPRECATED(void Print(StringRef format, const Args & ... args));
-
-template<typename... Args>
-void Print(StringRef format, const Args & ... args) {
-  Writer w;
-  w.write(format, args...);
-  std::fwrite(w.data(), 1, w.size(), stdout);
-}
-
-// This function is deprecated. Use fmt::print instead.
-template<typename... Args>
-FMT_DEPRECATED(void Print(std::FILE *f, StringRef format, const Args & ... args));
-
-template<typename... Args>
-void Print(std::FILE *f, StringRef format, const Args & ... args) {
-  Writer w;
-  w.Format(format, args...);
-  std::fwrite(w.data(), 1, w.size(), f);
-}
-
-#endif  // FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES
 
 /**
   Fast integer formatter.
@@ -2306,6 +2029,7 @@ FMT_VARIADIC(std::string, format, StringRef)
 FMT_VARIADIC_W(std::wstring, format, WStringRef)
 FMT_VARIADIC(void, print, StringRef)
 FMT_VARIADIC(void, print, std::FILE *, StringRef)
+FMT_VARIADIC(void, print_colored, Color, StringRef)
 FMT_VARIADIC(std::string, sprintf, StringRef)
 FMT_VARIADIC(void, printf, StringRef)
 }

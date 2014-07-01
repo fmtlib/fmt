@@ -1232,7 +1232,7 @@ TEST(FormatterTest, FormatNaN) {
   if (fmt::internal::SignBitNoInline(-nan))
     EXPECT_EQ("-nan", format("{}", -nan));
   else
-    fmt::Print("Warning: compiler doesn't handle negative NaN correctly");
+    fmt::print("Warning: compiler doesn't handle negative NaN correctly");
   EXPECT_EQ(" nan", format("{: }", nan));
   EXPECT_EQ("NAN", format("{:F}", nan));
   EXPECT_EQ("nan    ", format("{:<7}", nan));
@@ -1386,100 +1386,6 @@ TEST(StringRefTest, ConvertToString) {
   EXPECT_EQ("abc", s);
 }
 
-TEST(FormatterTest, Ctor) {
-  fmt::Formatter<> f1("test");
-  fmt::Formatter<> f1copy(f1);
-  fmt::Formatter<> f2("test", fmt::NullSink());
-  fmt::Formatter<fmt::NullSink> f3("test");
-  fmt::Formatter<fmt::NullSink, wchar_t> f4(L"test");
-  fmt::Formatter<fmt::NullSink, wchar_t> f4copy(f4);
-  fmt::Formatter<fmt::NullSink, wchar_t> f5(L"test", fmt::NullSink());
-}
-
-// A sink that counts the number of times the output is written to it.
-struct CountingSink {
-  int &num_writes;
-
-  explicit CountingSink(int &num_writes) : num_writes(num_writes) {}
-
-  void operator()(const Writer &) const {
-    ++num_writes;
-  }
-};
-
-TEST(FormatterTest, Sink) {
-  int num_writes = 0;
-  {
-    fmt::Formatter<CountingSink> f("test", CountingSink(num_writes));
-    EXPECT_EQ(0, num_writes);
-  }
-  EXPECT_EQ(1, num_writes);
-}
-
-TEST(FormatterTest, Move) {
-  // Test if formatting is performed once if we "move" a formatter.
-  int num_writes = 0;
-  {
-    typedef fmt::Formatter<CountingSink> TestFormatter;
-    TestFormatter *f = new TestFormatter("test", CountingSink(num_writes));
-    TestFormatter f2(*f);
-    delete f;
-    EXPECT_EQ(0, num_writes);
-  }
-  EXPECT_EQ(1, num_writes);
-}
-
-TEST(FormatterTest, OutputNotWrittenOnError) {
-  int num_writes = 0;
-  {
-    typedef fmt::Formatter<CountingSink> TestFormatter;
-    EXPECT_THROW(TestFormatter f("{0", CountingSink(num_writes)), FormatError);
-  }
-  EXPECT_EQ(0, num_writes);
-}
-
-#if FMT_USE_FILE_DESCRIPTORS
-
-using fmt::BufferedFile;
-using fmt::File;
-
-TEST(FormatterTest, FileSink) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
-  BufferedFile f = write_end.fdopen("w");
-  EXPECT_WRITE(f.get(), {
-    fmt::FileSink fs(f.get());
-    fs(Writer() << "test");
-  }, "test");
-}
-
-TEST(FormatterTest, FileSinkWriteError) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
-  BufferedFile f = read_end.fdopen("r");
-  fmt::FileSink fs(f.get());
-  std::size_t result = std::fwrite(" ", 1, 1, f.get());
-  int error_code = errno;
-  EXPECT_EQ(0u, result);
-  EXPECT_SYSTEM_ERROR(
-      fs(Writer() << "test"), error_code, "cannot write to file");
-}
-
-#else
-# pragma message "warning: some tests are disabled"
-#endif
-
-struct PrintError {
-  void operator()(const fmt::Writer &w) const {
-    std::cerr << "Error: " << w.str() << std::endl;
-  }
-};
-
-fmt::Formatter<PrintError> ReportError(const char *format) {
-  fmt::Formatter<PrintError> f(format);
-  return f;
-}
-
 TEST(FormatterTest, Examples) {
   EXPECT_EQ("First, thou shalt count to three",
       format("First, thou shalt count to {0}", "three"));
@@ -1516,9 +1422,6 @@ TEST(FormatterTest, Examples) {
       format("int: {0:d};  hex: {0:x};  oct: {0:o}", 42));
   EXPECT_EQ("int: 42;  hex: 0x2a;  oct: 052",
       format("int: {0:d};  hex: {0:#x};  oct: {0:#o}", 42));
-
-  std::string path = "somefile";
-  ReportError("File not found: {0}") << path;
 
   EXPECT_EQ("The answer is 42", format("The answer is {}", 42));
   EXPECT_THROW_MSG(
@@ -1584,7 +1487,7 @@ TEST(FormatTest, Print) {
 }
 
 TEST(FormatTest, PrintColored) {
-  EXPECT_WRITE(stdout, fmt::PrintColored(fmt::RED, "Hello, {}!\n") << "world",
+  EXPECT_WRITE(stdout, fmt::print_colored(fmt::RED, "Hello, {}!\n", "world"),
       "\x1b[31mHello, world!\n\x1b[0m");
 }
 

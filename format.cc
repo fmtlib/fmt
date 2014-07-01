@@ -1104,15 +1104,6 @@ void fmt::ReportWinError(
 }
 #endif
 
-void fmt::ANSITerminalSink::operator()(
-    const fmt::BasicWriter<char> &w) const {
-  char escape[] = "\x1b[30m";
-  escape[3] = '0' + static_cast<char>(color_);
-  std::fputs(escape, file_);
-  std::fwrite(w.data(), 1, w.size(), file_);
-  std::fputs(RESET_COLOR, file_);
-}
-
 void fmt::print(StringRef format, const ArgList &args) {
   Writer w;
   w.write(format, args);
@@ -1123,6 +1114,14 @@ void fmt::print(std::FILE *f, StringRef format, const ArgList &args) {
   Writer w;
   w.write(format, args);
   std::fwrite(w.data(), 1, w.size(), f);
+}
+
+void fmt::print_colored(Color c, StringRef format, const ArgList &args) {
+  char escape[] = "\x1b[30m";
+  escape[3] = '0' + static_cast<char>(c);
+  std::fputs(escape, stdout);
+  print(format, args);
+  std::fputs(RESET_COLOR, stdout);
 }
 
 void fmt::printf(StringRef format, const ArgList &args) {
