@@ -325,7 +325,7 @@ void fmt::internal::FormatWinErrorMessage(
       reinterpret_cast<LPWSTR>(system_message.ptr()), 0, 0)) {
     UTF16ToUTF8 utf8_message;
     if (!utf8_message.Convert(system_message.c_str())) {
-      out << message << ": " << c_str(utf8_message);
+      out << message << ": " << utf8_message;
       return;
     }
   }
@@ -755,7 +755,7 @@ void fmt::internal::PrintfParser<Char>::Format(
         ++s;
         const Arg &arg = HandleArgIndex(UINT_MAX, error);
         if (arg.type <= Arg::LAST_INTEGER_TYPE)
-          spec.precision_ = GetIntValue(arg);
+          spec.precision_ = static_cast<int>(GetIntValue(arg)); // TODO: check for overflow
         else if (!error)
           error = "precision is not integer";
       }

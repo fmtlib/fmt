@@ -1512,7 +1512,7 @@ typename fmt::BasicWriter<Char>::CharPtr
     unsigned fill_size = width - number_size;
     if (align != ALIGN_LEFT) {
       CharPtr p = GrowBuffer(fill_size);
-      std::fill(p, p + fill_size, spec.fill());
+      std::fill(p, p + fill_size, static_cast<Char>(spec.fill()));
     }
     CharPtr result = PrepareBufferForInt(num_digits, subspec, prefix, prefix_size);
     if (align == ALIGN_LEFT) {
