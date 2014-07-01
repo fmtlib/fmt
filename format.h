@@ -1499,6 +1499,7 @@ typename fmt::BasicWriter<Char>::CharPtr
     const char *prefix, unsigned prefix_size) {
   unsigned width = spec.width();
   Alignment align = spec.align();
+  Char fill = static_cast<Char>(spec.fill());
   if (spec.precision() > static_cast<int>(num_digits)) {
     // Octal prefix '0' is counted as a digit, so ignore it if precision
     // is specified.
@@ -1512,12 +1513,12 @@ typename fmt::BasicWriter<Char>::CharPtr
     unsigned fill_size = width - number_size;
     if (align != ALIGN_LEFT) {
       CharPtr p = GrowBuffer(fill_size);
-      std::fill(p, p + fill_size, static_cast<Char>(spec.fill()));
+      std::fill(p, p + fill_size, fill);
     }
     CharPtr result = PrepareBufferForInt(num_digits, subspec, prefix, prefix_size);
     if (align == ALIGN_LEFT) {
       CharPtr p = GrowBuffer(fill_size);
-      std::fill(p, p + fill_size, spec.fill());
+      std::fill(p, p + fill_size, fill);
     }
     return result;
   }
@@ -1530,7 +1531,6 @@ typename fmt::BasicWriter<Char>::CharPtr
   CharPtr p = GrowBuffer(width);
   CharPtr end = p + width;
   // TODO: error if fill is not convertible to Char
-  Char fill = static_cast<Char>(spec.fill());
   if (align == ALIGN_LEFT) {
     std::copy(prefix, prefix + prefix_size, p);
     p += size;
