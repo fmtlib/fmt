@@ -124,7 +124,7 @@ TEST(UtilTest, MakeArg) {
 # define LONG INT
 # define ULONG UINT
 # define long_value int_value
-# define ulong_value iint_value
+# define ulong_value uint_value
 #else
 # define LONG LONG_LONG
 # define ULONG ULONG_LONG
