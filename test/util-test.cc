@@ -25,6 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cfloat>
+#include <climits>
 #include <cstring>
 #include <limits>
 #include "gtest-extra.h"
@@ -68,6 +70,102 @@ TEST(UtilTest, Increment) {
   s[1] = s[2] = '9';
   Increment(s);
   EXPECT_STREQ("200", s);
+}
+
+#define EXPECT_ARG_(Char, type_code, Type, field, value) { \
+  Type expected_value = value; \
+  fmt::internal::Arg arg = \
+    fmt::internal::MakeArg<Char>(expected_value); \
+  EXPECT_EQ(fmt::internal::Arg::type_code, arg.type); \
+  EXPECT_EQ(expected_value, arg.field); \
+}
+
+#define EXPECT_ARG(type_code, Type, field, value) \
+  EXPECT_ARG_(char, type_code, Type, field, value)
+
+#define EXPECT_ARGW(type_code, Type, field, value) \
+  EXPECT_ARG_(wchar_t, type_code, Type, field, value)
+
+TEST(UtilTest, MakeArg) {
+  // Test bool.
+  EXPECT_ARG(INT, bool, int_value, true);
+
+  // Test char.
+  EXPECT_ARG(CHAR, signed char, int_value, 42);
+  EXPECT_ARG(CHAR, signed char, int_value, SCHAR_MIN);
+  EXPECT_ARG(CHAR, signed char, int_value, SCHAR_MAX);
+  EXPECT_ARG(CHAR, unsigned char, int_value, 42);
+  EXPECT_ARG(CHAR, unsigned char, int_value, UCHAR_MAX );
+  EXPECT_ARG(CHAR, char, int_value, 'a');
+  EXPECT_ARG(CHAR, char, int_value, CHAR_MIN);
+  EXPECT_ARG(CHAR, char, int_value, CHAR_MAX);
+
+  // Test wchar_t.
+  EXPECT_ARGW(CHAR, wchar_t, int_value, 42);
+  EXPECT_ARGW(CHAR, wchar_t, int_value, WCHAR_MIN);
+  EXPECT_ARGW(CHAR, wchar_t, int_value, WCHAR_MAX);
+
+  // Test short.
+  EXPECT_ARG(INT, short, int_value, 42);
+  EXPECT_ARG(INT, short, int_value, SHRT_MIN);
+  EXPECT_ARG(INT, short, int_value, SHRT_MAX);
+  EXPECT_ARG(UINT, unsigned short, uint_value, 42);
+  EXPECT_ARG(UINT, unsigned short, uint_value, USHRT_MAX);
+
+  // Test int.
+  EXPECT_ARG(INT, int, int_value, 42);
+  EXPECT_ARG(INT, int, int_value, INT_MIN);
+  EXPECT_ARG(INT, int, int_value, INT_MAX);
+  EXPECT_ARG(UINT, unsigned, uint_value, 42);
+  EXPECT_ARG(UINT, unsigned, uint_value, UINT_MAX);
+
+  // Test long.
+#if LONG_MAX == INT_MAX
+# define LONG INT
+# define ULONG UINT
+# define long_value int_value
+# define ulong_value iint_value
+#else
+# define LONG LONG_LONG
+# define ULONG ULONG_LONG
+# define long_value long_long_value
+# define ulong_value ulong_long_value
+#endif
+  EXPECT_ARG(LONG, long, long_value, 42);
+  EXPECT_ARG(LONG, long, long_value, LONG_MIN);
+  EXPECT_ARG(LONG, long, long_value, LONG_MAX);
+  EXPECT_ARG(ULONG, unsigned long, ulong_value, 42);
+  EXPECT_ARG(ULONG, unsigned long, ulong_value, ULONG_MAX);
+
+  // Test long long.
+  EXPECT_ARG(LONG_LONG, fmt::LongLong, long_long_value, 42);
+  EXPECT_ARG(LONG_LONG, fmt::LongLong, long_long_value, LLONG_MIN);
+  EXPECT_ARG(LONG_LONG, fmt::LongLong, long_long_value, LLONG_MAX);
+  EXPECT_ARG(ULONG_LONG, fmt::ULongLong, ulong_long_value, 42);
+  EXPECT_ARG(ULONG_LONG, fmt::ULongLong, ulong_long_value, ULLONG_MAX);
+
+  // Test float.
+  EXPECT_ARG(DOUBLE, float, double_value, 4.2);
+  EXPECT_ARG(DOUBLE, float, double_value, FLT_MIN);
+  EXPECT_ARG(DOUBLE, float, double_value, FLT_MAX);
+
+  // Test double.
+  EXPECT_ARG(DOUBLE, double, double_value, 4.2);
+  EXPECT_ARG(DOUBLE, double, double_value, DBL_MIN);
+  EXPECT_ARG(DOUBLE, double, double_value, DBL_MAX);
+
+  // Test long double.
+  EXPECT_ARG(LONG_DOUBLE, long double, long_double_value, 4.2);
+  EXPECT_ARG(LONG_DOUBLE, long double, long_double_value, LDBL_MIN);
+  EXPECT_ARG(LONG_DOUBLE, long double, long_double_value, LDBL_MAX);
+
+  // Test string.
+  char STR[] = "test";
+  EXPECT_ARG(STRING, char*, string.value, STR);
+  EXPECT_ARG(STRING, const char*, string.value, STR);
+  //EXPECT_ARG(STRING, volatile char*, string.value, STR);
+
+  // TODO: test pointers
 }
 
 // Tests fmt::internal::CountDigits for integer type Int.

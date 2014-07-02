@@ -351,7 +351,7 @@ class CharTraits;
 template <>
 class CharTraits<char> : public BasicCharTraits<char> {
  private:
-  // Conversion from wchar_t to char is not supported.
+  // Conversion from wchar_t to char is not allowed.
   static char ConvertChar(wchar_t);
 
  public:
@@ -596,9 +596,9 @@ struct Arg {
   union {
     int int_value;
     unsigned uint_value;
-    double double_value;
     LongLong long_long_value;
     ULongLong ulong_long_value;
+    double double_value;
     long double long_double_value;
     const void *pointer_value;
     StringValue<char> string;
@@ -623,7 +623,7 @@ class MakeArg : public Arg {
 
  public:
   MakeArg() {}
-  // TODO: unsigned char & signed char
+  MakeArg(bool value) { type = INT; int_value = value; }
   MakeArg(short value) { type = INT; int_value = value; }
   MakeArg(unsigned short value) { type = UINT; uint_value = value; }
   MakeArg(int value) { type = INT; int_value = value; }
@@ -651,6 +651,8 @@ class MakeArg : public Arg {
   MakeArg(float value) { type = DOUBLE; double_value = value; }
   MakeArg(double value) { type = DOUBLE; double_value = value; }
   MakeArg(long double value) { type = LONG_DOUBLE; long_double_value = value; }
+  MakeArg(signed char value) { type = CHAR; int_value = value; }
+  MakeArg(unsigned char value) { type = CHAR; int_value = value; }
   MakeArg(char value) { type = CHAR; int_value = value; }
   MakeArg(wchar_t value) {
     type = CHAR;
