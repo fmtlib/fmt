@@ -562,12 +562,6 @@ struct FormatErrorReporter {
   void operator()(const Char *s, fmt::StringRef message) const;
 };
 
-// Parses a nonnegative integer advancing s to the end of the parsed input.
-// This function assumes that the first character of s is a digit.
-template <typename Char>
-int ParseNonnegativeInt(
-  const Char *&s, const char *&error) FMT_NOEXCEPT(true);
-
 // Computes max(Arg, 1) at compile time. It is used to avoid errors about
 // allocating an array of 0 size.
 template <unsigned Arg>
@@ -580,9 +574,8 @@ struct NonZero<0> {
   enum { VALUE = 1 };
 };
 
-// Information about a format argument. It is a POD type to allow
-// storage in internal::Array.
-struct ArgInfo {
+// A formatting argument. It is a POD type to allow storage in internal::Array.
+struct Arg {
   enum Type {
     // Integer types should go first,
     INT, UINT, LONG_LONG, ULONG_LONG, LAST_INTEGER_TYPE = ULONG_LONG,
@@ -614,9 +607,9 @@ struct ArgInfo {
   };
 };
 
-// Makes an ArgInfo object from any type.
+// Makes an Arg object from any type.
 template <typename Char>
-class MakeArg : public internal::ArgInfo {
+class MakeArg : public Arg {
  private:
   // This method is private to disallow formatting of arbitrary pointers.
   // If you want to output a pointer cast it to const void*. Do not implement!
@@ -629,8 +622,6 @@ class MakeArg : public internal::ArgInfo {
   MakeArg(T *value);
 
  public:
-  using internal::ArgInfo::type;
-
   MakeArg() {}
   // TODO: unsigned char & signed char
   MakeArg(short value) { type = INT; int_value = value; }
@@ -718,12 +709,12 @@ class RuntimeError : public std::runtime_error {
  */
 class ArgList {
  private:
-  const internal::ArgInfo *args_;
+  const internal::Arg *args_;
   std::size_t size_;
 
  public:
   ArgList() : size_(0) {}
-  ArgList(const internal::ArgInfo *args, std::size_t size)
+  ArgList(const internal::Arg *args, std::size_t size)
   : args_(args), size_(size) {}
 
   /**
@@ -734,7 +725,7 @@ class ArgList {
   /**
     Returns the argument at specified index.
    */
-  const internal::ArgInfo &operator[](std::size_t index) const {
+  const internal::Arg &operator[](std::size_t index) const {
     return args_[index];
   }
 };
@@ -747,15 +738,13 @@ class PrintfParser {
   ArgList args_;
   int next_arg_index_;
   
-  typedef ArgInfo Arg;
-
   void ParseFlags(FormatSpec &spec, const Char *&s);
 
   // Parses argument index, flags and width and returns the parsed
   // argument index.
   unsigned ParseHeader(const Char *&s, FormatSpec &spec, const char *&error);
 
-  const ArgInfo &HandleArgIndex(unsigned arg_index, const char *&error);
+  const internal::Arg &HandleArgIndex(unsigned arg_index, const char *&error);
 
  public:
   void Format(BasicWriter<Char> &writer,
@@ -1012,7 +1001,8 @@ inline StrFormatSpec<wchar_t> pad(
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template<typename... Args> \
   void func(arg_type arg1, const Args & ... args) { \
-    const internal::ArgInfo arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
+    using fmt::internal::Arg; \
+    const Arg arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
       fmt::internal::MakeArg<Char>(args)... \
     }; \
     func(arg1, ArgList(arg_array, sizeof...(Args))); \
@@ -1022,7 +1012,8 @@ inline StrFormatSpec<wchar_t> pad(
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template<typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    const internal::ArgInfo arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
+    using fmt::internal::Arg; \
+    const Arg arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
       fmt::internal::MakeArg<Char>(args)... \
     }; \
     func(arg0, arg1, ArgList(arg_array, sizeof...(Args))); \
@@ -1036,7 +1027,7 @@ inline StrFormatSpec<wchar_t> pad(
 # define FMT_WRAP1(func, arg_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    const fmt::internal::Arg args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
     func(arg1, fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
   }
 
@@ -1051,7 +1042,7 @@ inline StrFormatSpec<wchar_t> pad(
 # define FMT_CTOR(ctor, func, arg0_type, arg1_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   ctor(arg0_type arg0, arg1_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    const fmt::internal::Arg args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
     func(arg0, arg1, fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
   }
 
@@ -1165,8 +1156,6 @@ class BasicWriter {
 
   typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
 
-  typedef internal::ArgInfo Arg;
-
 #if _SECURE_SCL
   static Char *GetBase(CharPtr p) { return p.base(); }
 #else
@@ -1228,9 +1217,9 @@ class BasicWriter {
     fmt::internal::FormatErrorReporter<Char> report_error_;
 
     // Parses argument index and returns an argument with this index.
-    const Arg &ParseArgIndex(const Char *&s);
+    const internal::Arg &ParseArgIndex(const Char *&s);
 
-    void CheckSign(const Char *&s, const Arg &arg);
+    void CheckSign(const Char *&s, const internal::Arg &arg);
 
    public:
     void Format(BasicWriter<Char> &writer,
@@ -1834,8 +1823,8 @@ inline void FormatDec(char *&buffer, T value) {
   template<typename... Args> \
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
-    enum {N = fmt::internal::NonZero<sizeof...(Args)>::VALUE}; \
-    const fmt::internal::ArgInfo array[N] = { \
+    using fmt::internal::Arg; \
+    const Arg array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
       fmt::internal::MakeArg<Char>(args)... \
     }; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
@@ -1848,7 +1837,7 @@ inline void FormatDec(char *&buffer, T value) {
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgInfo args[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
+    const fmt::internal::Arg args[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
   }

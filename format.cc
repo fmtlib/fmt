@@ -51,6 +51,7 @@
 #endif
 
 using fmt::ULongLong;
+using fmt::internal::Arg;
 
 #if _MSC_VER
 # pragma warning(push)
@@ -118,10 +119,9 @@ void ReportError(FormatFunc func,
   } catch (...) {}
 }
 
-const fmt::internal::ArgInfo DUMMY_ARG = {fmt::internal::ArgInfo::INT, 0};
+const Arg DUMMY_ARG = {Arg::INT, 0};
 
-fmt::ULongLong GetIntValue(const fmt::internal::ArgInfo &arg) {
-  typedef fmt::internal::ArgInfo Arg;
+fmt::ULongLong GetIntValue(const Arg &arg) {
   switch (arg.type) {
     case Arg::INT:
       return arg.int_value;
@@ -134,6 +134,25 @@ fmt::ULongLong GetIntValue(const fmt::internal::ArgInfo &arg) {
     default:
       return -1;
   }
+}
+
+// Parses an unsigned integer advancing s to the end of the parsed input.
+// This function assumes that the first character of s is a digit.
+template <typename Char>
+int ParseNonnegativeInt(const Char *&s, const char *&error) FMT_NOEXCEPT(true) {
+  assert('0' <= *s && *s <= '9');
+  unsigned value = 0;
+  do {
+    unsigned new_value = value * 10 + (*s++ - '0');
+    // Check if value wrapped around.
+    value = new_value >= value ? new_value : UINT_MAX;
+  } while ('0' <= *s && *s <= '9');
+  if (value > INT_MAX) {
+    if (!error)
+      error = "number is too big in format";
+    return 0;
+  }
+  return value;
 }
 }  // namespace
 
@@ -349,26 +368,6 @@ void fmt::internal::FormatErrorReporter<Char>::operator()(
   throw fmt::FormatError("unmatched '{' in format");
 }
 
-// Parses an unsigned integer advancing s to the end of the parsed input.
-// This function assumes that the first character of s is a digit.
-template <typename Char>
-int fmt::internal::ParseNonnegativeInt(
-    const Char *&s, const char *&error) FMT_NOEXCEPT(true) {
-  assert('0' <= *s && *s <= '9');
-  unsigned value = 0;
-  do {
-    unsigned new_value = value * 10 + (*s++ - '0');
-    // Check if value wrapped around.
-    value = new_value >= value ? new_value : UINT_MAX;
-  } while ('0' <= *s && *s <= '9');
-  if (value > INT_MAX) {
-    if (!error)
-      error = "number is too big in format";
-    return 0;
-  }
-  return value;
-}
-
 // Fills the padding around the content and returns the pointer to the
 // content area.
 template <typename Char>
@@ -553,7 +552,7 @@ void fmt::BasicWriter<Char>::write_str(
 }
 
 template <typename Char>
-inline const typename fmt::BasicWriter<Char>::Arg
+inline const Arg
     &fmt::BasicWriter<Char>::FormatParser::ParseArgIndex(const Char *&s) {
   unsigned arg_index = 0;
   if (*s < '0' || *s > '9') {
@@ -571,7 +570,7 @@ inline const typename fmt::BasicWriter<Char>::Arg
     }
     next_arg_index_ = -1;
     const char *error = 0;
-    arg_index = internal::ParseNonnegativeInt(s, error);
+    arg_index = ParseNonnegativeInt(s, error);
     if (error)
       report_error_(s, error); // TODO
   }
@@ -630,7 +629,7 @@ unsigned fmt::internal::PrintfParser<Char>::ParseHeader(
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
     // preceded with '0' flag(s).
-    unsigned value = internal::ParseNonnegativeInt(s, error);
+    unsigned value = ParseNonnegativeInt(s, error);
     if (*s == '$') {  // value is an argument index
       ++s;
       arg_index = value;
@@ -648,7 +647,7 @@ unsigned fmt::internal::PrintfParser<Char>::ParseHeader(
   ParseFlags(spec, s);
   // Parse width.
   if (*s >= '0' && *s <= '9') {
-    spec.width_ = internal::ParseNonnegativeInt(s, error);
+    spec.width_ = ParseNonnegativeInt(s, error);
   } else if (*s == '*') {
     ++s;
     const Arg &arg = HandleArgIndex(UINT_MAX, error);
@@ -689,8 +688,7 @@ unsigned fmt::internal::PrintfParser<Char>::ParseHeader(
 
 // TODO: move to a base class that doesn't depend on template argument
 template <typename Char>
-const fmt::internal::ArgInfo
-  &fmt::internal::PrintfParser<Char>::HandleArgIndex(
+const Arg &fmt::internal::PrintfParser<Char>::HandleArgIndex(
     unsigned arg_index, const char *&error) {
   if (arg_index != UINT_MAX) {
     if (next_arg_index_ <= 0) {
@@ -751,7 +749,7 @@ void fmt::internal::PrintfParser<Char>::Format(
     if (*s == '.') {
       ++s;
       if ('0' <= *s && *s <= '9') {
-        spec.precision_ = internal::ParseNonnegativeInt(s, error);
+        spec.precision_ = ParseNonnegativeInt(s, error);
       } else if (*s == '*') {
         ++s;
         const Arg &arg = HandleArgIndex(UINT_MAX, error);
@@ -957,7 +955,7 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
         }
         // Zero may be parsed again as a part of the width, but it is simpler
         // and more efficient than checking if the next char is a digit.
-        spec.width_ = internal::ParseNonnegativeInt(s, error);
+        spec.width_ = ParseNonnegativeInt(s, error);
         if (error)
           report_error_(s, error);
       }
@@ -967,7 +965,7 @@ void fmt::BasicWriter<Char>::FormatParser::Format(
         ++s;
         spec.precision_ = 0;
         if ('0' <= *s && *s <= '9') {
-          spec.precision_ = internal::ParseNonnegativeInt(s, error);
+          spec.precision_ = ParseNonnegativeInt(s, error);
           if (error)
             report_error_(s, error);
         } else if (*s == '{') {
