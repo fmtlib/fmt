@@ -56,11 +56,10 @@
 # define FMT_GCC_EXTENSION
 #endif
 
-#if defined(__GNUC_LIBSTD__) && defined (__GNUC_LIBSTD_MINOR__)
+#ifdef __GNUC_LIBSTD__
 # define FMT_GNUC_LIBSTD_VERSION (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
 #endif
 
-// Compatibility with compilers other than clang.
 #ifdef __has_feature
 # define FMT_HAS_FEATURE(x) __has_feature(x)
 #else
@@ -73,19 +72,13 @@
 # define FMT_HAS_BUILTIN(x) 0
 #endif
 
-#ifdef _MSC_VER
-# define FMT_MSC_VER _MSC_VER
-#else
-# define FMT_MSC_VER 0
-#endif
-
 #ifndef FMT_USE_VARIADIC_TEMPLATES
 // Variadic templates are available in GCC since version 4.4
 // (http://gcc.gnu.org/projects/cxx0x.html) and in Visual C++
 // since version 2013.
 # define FMT_USE_VARIADIC_TEMPLATES \
    (FMT_HAS_FEATURE(cxx_variadic_templates) || \
-       (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || FMT_MSC_VER >= 1800)
+       (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1800)
 #endif
 
 #ifndef FMT_USE_RVALUE_REFERENCES
@@ -96,7 +89,7 @@
 # else
 #  define FMT_USE_RVALUE_REFERENCES \
     (FMT_HAS_FEATURE(cxx_rvalue_references) || \
-        (FMT_GCC_VERSION >= 403 && __cplusplus >= 201103) || FMT_MSC_VER >= 1600)
+        (FMT_GCC_VERSION >= 403 && __cplusplus >= 201103) || _MSC_VER >= 1600)
 # endif
 #endif
 
@@ -104,7 +97,7 @@
 # include <utility>  // for std::move
 #endif
 
-// Define FMT_USE_NOEXCEPT to make format use noexcept (C++11 feature).
+// Define FMT_USE_NOEXCEPT to make C++ Format use noexcept (C++11 feature).
 #if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
   (FMT_GCC_VERSION >= 408 && __cplusplus >= 201103)
 # define FMT_NOEXCEPT(expr) noexcept(expr)
@@ -171,8 +164,8 @@ class BasicStringRef {
  public:
   /**
     Constructs a string reference object from a C string and a size.
-    If *size* is zero, which is the default, the size is computed with
-    `strlen`.
+    If *size* is zero, which is the default, the size is computed
+    automatically.
    */
   BasicStringRef(const Char *s, std::size_t size = 0) : data_(s), size_(size) {}
 
@@ -242,10 +235,10 @@ class Array {
   T *ptr_;
   T data_[SIZE];
 
-  void Grow(std::size_t size);
+  void grow(std::size_t size);
 
   // Free memory allocated by the array.
-  void Free() {
+  void free() {
     if (ptr_ != data_) delete [] ptr_;
   }
 
@@ -268,7 +261,7 @@ class Array {
 
  public:
   Array() : size_(0), capacity_(SIZE), ptr_(data_) {}
-  ~Array() { Free(); }
+  ~Array() { free(); }
 
 #if FMT_USE_RVALUE_REFERENCES
   Array(Array &&other) {
@@ -277,7 +270,7 @@ class Array {
 
   Array& operator=(Array &&other) {
     assert(this != &other);
-    Free();
+    free();
     move(other);
     return *this;
   }
@@ -292,21 +285,21 @@ class Array {
   // Resizes the array. If T is a POD type new elements are not initialized.
   void resize(std::size_t new_size) {
     if (new_size > capacity_)
-      Grow(new_size);
+      grow(new_size);
     size_ = new_size;
   }
 
   // Reserves space to store at least capacity elements.
   void reserve(std::size_t capacity) {
     if (capacity > capacity_)
-      Grow(capacity);
+      grow(capacity);
   }
 
   void clear() { size_ = 0; }
 
   void push_back(const T &value) {
     if (size_ == capacity_)
-      Grow(size_ + 1);
+      grow(size_ + 1);
     ptr_[size_++] = value;
   }
 
@@ -318,7 +311,7 @@ class Array {
 };
 
 template <typename T, std::size_t SIZE>
-void Array<T, SIZE>::Grow(std::size_t size) {
+void Array<T, SIZE>::grow(std::size_t size) {
   capacity_ = (std::max)(size, capacity_ + capacity_ / 2);
   T *p = new T[capacity_];
   std::copy(ptr_, ptr_ + size_, CheckPtr(p, capacity_));
@@ -331,7 +324,7 @@ template <typename T, std::size_t SIZE>
 void Array<T, SIZE>::append(const T *begin, const T *end) {
   std::ptrdiff_t num_elements = end - begin;
   if (size_ + num_elements > capacity_)
-    Grow(size_ + num_elements);
+    grow(size_ + num_elements);
   std::copy(begin, end, CheckPtr(ptr_, capacity_) + size_);
   size_ += num_elements;
 }
@@ -343,9 +336,6 @@ struct StringValue {
 };
 
 template <typename Char>
-class CharTraits;
-
-template <typename Char>
 class BasicCharTraits {
  public:
 #if _SECURE_SCL
@@ -354,6 +344,9 @@ class BasicCharTraits {
   typedef Char *CharPtr;
 #endif
 };
+
+template <typename Char>
+class CharTraits;
 
 template <>
 class CharTraits<char> : public BasicCharTraits<char> {
@@ -714,9 +707,9 @@ class MakeArg : public internal::ArgInfo {
   }
 };
 
-class SystemErrorBase : public std::runtime_error {
-public:
-  SystemErrorBase() : std::runtime_error("") {}
+class RuntimeError : public std::runtime_error {
+ protected:
+  RuntimeError() : std::runtime_error("") {}
 };
 }  // namespace internal
 
@@ -728,7 +721,7 @@ class ArgList {
   const internal::ArgInfo *args_;
   std::size_t size_;
 
-public:
+ public:
   ArgList() : size_(0) {}
   ArgList(const internal::ArgInfo *args, std::size_t size)
   : args_(args), size_(size) {}
@@ -1102,7 +1095,7 @@ inline StrFormatSpec<wchar_t> pad(
 An error returned by an operating system or a language runtime,
 for example a file opening error.
 */
-class SystemError : public internal::SystemErrorBase {
+class SystemError : public internal::RuntimeError {
  private:
   void init(int error_code, StringRef format_str, const ArgList &args);
 
