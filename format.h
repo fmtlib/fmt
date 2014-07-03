@@ -191,8 +191,15 @@ class BasicStringRef {
     Returns the string size.
    */
   std::size_t size() const {
-    if (size_ == 0) size_ = std::char_traits<Char>::length(data_);
+    if (size_ == 0 && data_) size_ = std::char_traits<Char>::length(data_);
     return size_;
+  }
+
+  friend bool operator==(BasicStringRef lhs, BasicStringRef rhs) {
+    return lhs.data_ == rhs.data_;
+  }
+  friend bool operator!=(BasicStringRef lhs, BasicStringRef rhs) {
+    return lhs.data_ != rhs.data_;
   }
 };
 
@@ -611,17 +618,29 @@ struct Arg {
 template <typename Char>
 class MakeArg : public Arg {
  private:
-  // This method is private to disallow formatting of arbitrary pointers.
-  // If you want to output a pointer cast it to const void*. Do not implement!
+  // The following two methods are private to disallow formatting of
+  // arbitrary pointers. If you want to output a pointer cast it to
+  // "void *" or "const void *". In particular, this forbids formatting
+  // of "[const] volatile char *" which is printed as bool by iostreams.
+  // Do not implement!
   template <typename T>
   MakeArg(const T *value);
-
-  // This method is private to disallow formatting of arbitrary pointers.
-  // If you want to output a pointer cast it to void*. Do not implement!
   template <typename T>
   MakeArg(T *value);
 
- public:
+  void SetString(StringRef str) {
+    type = STRING;
+    string.value = str.c_str();
+    string.size = str.size();
+  }
+
+  void SetString(WStringRef str) {
+    type = WSTRING;
+    wstring.value = str.c_str();
+    wstring.size = str.size();
+  }
+
+public:
   MakeArg() {}
   MakeArg(bool value) { type = INT; int_value = value; }
   MakeArg(short value) { type = INT; int_value = value; }
@@ -629,6 +648,8 @@ class MakeArg : public Arg {
   MakeArg(int value) { type = INT; int_value = value; }
   MakeArg(unsigned value) { type = UINT; uint_value = value; }
   MakeArg(long value) {
+    // To minimize the number of types we need to deal with, long is
+    // translated either to int or to long long depending on its size.
     if (sizeof(long) == sizeof(int)) {
       type = INT;
       int_value = static_cast<int>(value);
@@ -659,38 +680,18 @@ class MakeArg : public Arg {
     int_value = internal::CharTraits<Char>::ConvertChar(value);
   }
 
-  MakeArg(const char *value) {
-    type = STRING;
-    string.value = value;
-    string.size = 0;
-  }
+  MakeArg(char *value) { SetString(value); }
+  MakeArg(const char *value) { SetString(value); }
+  MakeArg(const std::string &value) { SetString(value); }
+  MakeArg(StringRef value) { SetString(value); }
 
-  MakeArg(const wchar_t *value) {
-    type = WSTRING;
-    wstring.value = value;
-    wstring.size = 0;
-  }
+  MakeArg(wchar_t *value) { SetString(value); }
+  MakeArg(const wchar_t *value) { SetString(value); }
+  MakeArg(const std::wstring &value) { SetString(value); }
+  MakeArg(WStringRef value) { SetString(value); }
 
-  MakeArg(Char *value) {
-    type = STRING;
-    string.value = value;
-    string.size = 0;
-  }
-
-  MakeArg(const void *value) { type = POINTER; pointer_value = value; }
   MakeArg(void *value) { type = POINTER; pointer_value = value; }
-
-  MakeArg(const std::basic_string<Char> &value) {
-    type = STRING;
-    string.value = value.c_str();
-    string.size = value.size();
-  }
-
-  MakeArg(BasicStringRef<Char> value) {
-    type = STRING;
-    string.value = value.c_str();
-    string.size = value.size();
-  }
+  MakeArg(const void *value) { type = POINTER; pointer_value = value; }
 
   template <typename T>
   MakeArg(const T &value) {
@@ -1205,7 +1206,7 @@ class BasicWriter {
   void write_str(
       const internal::StringValue<StringChar> &str, const FormatSpec &spec);
 
-    // This method is private to disallow writing a wide string to a
+  // This method is private to disallow writing a wide string to a
   // char stream and vice versa. If you want to print a wide string
   // as a pointer as std::ostream does, cast it to const void*.
   // Do not implement!

@@ -73,7 +73,7 @@ TEST(UtilTest, Increment) {
 }
 
 #define EXPECT_ARG_(Char, type_code, Type, field, value) { \
-  Type expected_value = value; \
+  Type expected_value = static_cast<Type>(value); \
   fmt::internal::Arg arg = \
     fmt::internal::MakeArg<Char>(expected_value); \
   EXPECT_EQ(fmt::internal::Arg::type_code, arg.type); \
@@ -91,17 +91,17 @@ TEST(UtilTest, MakeArg) {
   EXPECT_ARG(INT, bool, int_value, true);
 
   // Test char.
-  EXPECT_ARG(CHAR, signed char, int_value, 42);
+  EXPECT_ARG(CHAR, signed char, int_value, 'a');
   EXPECT_ARG(CHAR, signed char, int_value, SCHAR_MIN);
   EXPECT_ARG(CHAR, signed char, int_value, SCHAR_MAX);
-  EXPECT_ARG(CHAR, unsigned char, int_value, 42);
+  EXPECT_ARG(CHAR, unsigned char, int_value, 'a');
   EXPECT_ARG(CHAR, unsigned char, int_value, UCHAR_MAX );
   EXPECT_ARG(CHAR, char, int_value, 'a');
   EXPECT_ARG(CHAR, char, int_value, CHAR_MIN);
   EXPECT_ARG(CHAR, char, int_value, CHAR_MAX);
 
   // Test wchar_t.
-  EXPECT_ARGW(CHAR, wchar_t, int_value, 42);
+  EXPECT_ARGW(CHAR, wchar_t, int_value, L'a');
   EXPECT_ARGW(CHAR, wchar_t, int_value, WCHAR_MIN);
   EXPECT_ARGW(CHAR, wchar_t, int_value, WCHAR_MAX);
 
@@ -163,9 +163,17 @@ TEST(UtilTest, MakeArg) {
   char STR[] = "test";
   EXPECT_ARG(STRING, char*, string.value, STR);
   EXPECT_ARG(STRING, const char*, string.value, STR);
-  //EXPECT_ARG(STRING, volatile char*, string.value, STR);
+  EXPECT_ARG(STRING, std::string, string.value, STR);
+  EXPECT_ARG(STRING, fmt::StringRef, string.value, STR);
 
-  // TODO: test pointers
+  // Test wide string.
+  wchar_t WSTR[] = L"test";
+  EXPECT_ARGW(WSTRING, wchar_t*, wstring.value, WSTR);
+  EXPECT_ARGW(WSTRING, const wchar_t*, wstring.value, WSTR);
+  EXPECT_ARGW(WSTRING, std::wstring, wstring.value, WSTR);
+  EXPECT_ARGW(WSTRING, fmt::WStringRef, wstring.value, WSTR);
+
+  // TODO: test that wide string is rejected by MakeArg<char>
 }
 
 // Tests fmt::internal::CountDigits for integer type Int.

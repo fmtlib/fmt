@@ -77,10 +77,10 @@ namespace fmt {
 
 // An error code.
 class ErrorCode {
-private:
+ private:
   int value_;
 
-public:
+ public:
   explicit ErrorCode(int value = 0) FMT_NOEXCEPT(true) : value_(value) {}
 
   int get() const FMT_NOEXCEPT(true) { return value_; }
@@ -88,14 +88,14 @@ public:
 
 // A buffered file.
 class BufferedFile {
-private:
+ private:
   FILE *file_;
 
   friend class File;
 
   explicit BufferedFile(FILE *f) : file_(f) {}
 
-public:
+ public:
   // Constructs a BufferedFile object which doesn't represent any file.
   BufferedFile() FMT_NOEXCEPT(true) : file_(0) {}
 
@@ -106,7 +106,7 @@ public:
   // Emulate a move constructor and a move assignment operator if rvalue
   // references are not supported.
 
-private:
+ private:
   // A proxy object to emulate a move constructor.
   // It is private to make it impossible call operator Proxy directly.
   struct Proxy {
@@ -178,13 +178,13 @@ public:
 // than an exception. You can get standard behavior by overriding the
 // invalid parameter handler with _set_invalid_parameter_handler.
 class File {
-private:
+ private:
   int fd_;  // File descriptor.
 
   // Constructs a File object with a given descriptor.
   explicit File(int fd) : fd_(fd) {}
 
-public:
+ public:
   // Possible values for the oflag argument to the constructor.
   enum {
     RDONLY = FMT_POSIX(O_RDONLY), // Open for reading only.
@@ -202,14 +202,14 @@ public:
   // Emulate a move constructor and a move assignment operator if rvalue
   // references are not supported.
 
-private:
+ private:
   // A proxy object to emulate a move constructor.
   // It is private to make it impossible call operator Proxy directly.
   struct Proxy {
     int fd;
   };
 
-public:
+ public:
   // A "move constructor" for moving from a temporary.
   File(Proxy p) FMT_NOEXCEPT(true) : fd_(p.fd) {}
 
