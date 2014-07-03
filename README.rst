@@ -54,7 +54,8 @@ This prints ``Hello, world!`` to stdout:
 
 .. code-block:: c++
 
-    fmt::print("Hello, {}!", "world");
+    fmt::print("Hello, {}!", "world");  // uses Python-like format
+    fmt::printf("Hello, %s!", "world"); // uses printf format
 
 Arguments can be accessed by position and arguments' indices can be repeated:
 
