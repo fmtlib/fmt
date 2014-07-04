@@ -130,6 +130,9 @@ typedef BasicWriter<wchar_t> WWriter;
 
 struct FormatSpec;
 
+template <typename Char, typename T>
+void format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value);
+
 /**
   \rst
   A string reference. It can be constructed from a C string or
@@ -359,7 +362,7 @@ template <>
 class CharTraits<char> : public BasicCharTraits<char> {
  private:
   // Conversion from wchar_t to char is not allowed.
-  static char ConvertChar(wchar_t);
+  static char convert(wchar_t);
 
   // Conversion from const wchar_t * to const char * is not allowed.
   static const wchar_t *check(const wchar_t *s);
@@ -367,7 +370,7 @@ class CharTraits<char> : public BasicCharTraits<char> {
 public:
   typedef const wchar_t *UnsupportedStrType;
 
-  static char ConvertChar(char value) { return value; }
+  static char convert(char value) { return value; }
 
   static StringValue<char> convert(StringValue<wchar_t>) {
     StringValue<char> s = {"", 0};
@@ -384,8 +387,8 @@ class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
  public:
   typedef const char *UnsupportedStrType;
 
-  static wchar_t ConvertChar(char value) { return value; }
-  static wchar_t ConvertChar(wchar_t value) { return value; }
+  static wchar_t convert(char value) { return value; }
+  static wchar_t convert(wchar_t value) { return value; }
 
   static StringValue<wchar_t> convert(StringValue<wchar_t> s) { return s; }
 
@@ -502,9 +505,6 @@ void FormatDecimal(Char *buffer, UInt value, unsigned num_digits) {
   buffer[1] = DIGITS[index + 1];
   buffer[0] = DIGITS[index];
 }
-
-template <typename Char, typename T>
-void FormatCustomArg(void *writer, const void *arg, const FormatSpec &spec);
 
 #ifdef _WIN32
 // A converter from UTF-8 to UTF-16.
@@ -633,16 +633,24 @@ class MakeArg : public Arg {
   template <typename T>
   MakeArg(T *value);
 
-  void SetString(StringRef str) {
+  void set_string(StringRef str) {
     type = STRING;
     string.value = str.c_str();
     string.size = str.size();
   }
 
-  void SetString(WStringRef str) {
+  void set_string(WStringRef str) {
     type = WSTRING;
     wstring.value = CharTraits<Char>::check(str.c_str());
     wstring.size = str.size();
+  }
+
+  // Formats an argument of a custom type, such as a user-defined class.
+  template <typename T>
+  static void format_custom_arg(
+      void *writer, const void *arg, const FormatSpec &spec) {
+    format(*static_cast<BasicWriter<Char>*>(writer),
+        spec, *static_cast<const T*>(arg));
   }
 
 public:
@@ -682,18 +690,18 @@ public:
   MakeArg(char value) { type = CHAR; int_value = value; }
   MakeArg(wchar_t value) {
     type = CHAR;
-    int_value = internal::CharTraits<Char>::ConvertChar(value);
+    int_value = internal::CharTraits<Char>::convert(value);
   }
 
-  MakeArg(char *value) { SetString(value); }
-  MakeArg(const char *value) { SetString(value); }
-  MakeArg(const std::string &value) { SetString(value); }
-  MakeArg(StringRef value) { SetString(value); }
+  MakeArg(char *value) { set_string(value); }
+  MakeArg(const char *value) { set_string(value); }
+  MakeArg(const std::string &value) { set_string(value); }
+  MakeArg(StringRef value) { set_string(value); }
 
-  MakeArg(wchar_t *value) { SetString(value); }
-  MakeArg(const wchar_t *value) { SetString(value); }
-  MakeArg(const std::wstring &value) { SetString(value); }
-  MakeArg(WStringRef value) { SetString(value); }
+  MakeArg(wchar_t *value) { set_string(value); }
+  MakeArg(const wchar_t *value) { set_string(value); }
+  MakeArg(const std::wstring &value) { set_string(value); }
+  MakeArg(WStringRef value) { set_string(value); }
 
   MakeArg(void *value) { type = POINTER; pointer_value = value; }
   MakeArg(const void *value) { type = POINTER; pointer_value = value; }
@@ -702,7 +710,7 @@ public:
   MakeArg(const T &value) {
     type = CUSTOM;
     custom.value = &value;
-    custom.format = &internal::FormatCustomArg<Char, T>;
+    custom.format = &format_custom_arg<T>;
   }
 };
 
@@ -1364,7 +1372,7 @@ class BasicWriter {
   }
 
   BasicWriter &operator<<(wchar_t value) {
-    *GrowBuffer(1) = internal::CharTraits<Char>::ConvertChar(value);
+    *GrowBuffer(1) = internal::CharTraits<Char>::convert(value);
     return *this;
   }
 
@@ -1380,7 +1388,7 @@ class BasicWriter {
 
   template <typename T, typename Spec, typename FillChar>
   BasicWriter &operator<<(const IntFormatSpec<T, Spec, FillChar> &spec) {
-    internal::CharTraits<Char>::ConvertChar(FillChar());
+    internal::CharTraits<Char>::convert(FillChar());
     FormatInt(spec.value(), spec);
     return *this;
   }
@@ -1573,15 +1581,6 @@ void format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
   w.write_str(os.str(), spec);
-}
-
-namespace internal {
-// Formats an argument of a custom type, such as a user-defined class.
-template <typename Char, typename T>
-void FormatCustomArg(void *writer, const void *arg, const FormatSpec &spec) {
-  format(*static_cast<BasicWriter<Char>*>(writer),
-      spec, *static_cast<const T*>(arg));
-}
 }
 
 // Reports a system error without throwing an exception.

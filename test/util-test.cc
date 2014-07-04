@@ -56,6 +56,9 @@ std::string GetSystemErrorMessage(int error_code) {
   return buffer;
 #endif
 }
+
+struct Test {};
+std::ostream &operator<<(std::ostream &os, Test) { return os << "test"; }
 }
 
 TEST(UtilTest, Increment) {
@@ -173,7 +176,17 @@ TEST(UtilTest, MakeArg) {
   EXPECT_ARGW(WSTRING, std::wstring, wstring.value, WSTR);
   EXPECT_ARGW(WSTRING, fmt::WStringRef, wstring.value, WSTR);
 
-  // TODO: test that wide string is rejected by MakeArg<char>
+  int n = 42;
+  EXPECT_ARG(POINTER, void*, pointer_value, &n);
+  EXPECT_ARG(POINTER, const void*, pointer_value, &n);
+
+  ::Test t;
+  fmt::internal::Arg arg = fmt::internal::MakeArg<char>(t);
+  EXPECT_EQ(fmt::internal::Arg::CUSTOM, arg.type);
+  arg.custom.value = &t;
+  fmt::Writer w;
+  arg.custom.format(&w, &t, fmt::FormatSpec());
+  EXPECT_EQ("test", w.str());
 }
 
 // Tests fmt::internal::CountDigits for integer type Int.
