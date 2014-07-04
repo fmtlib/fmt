@@ -35,6 +35,7 @@ expect_compile_error("const volatile char s[] = \"test\"; (fmt::internal::MakeAr
 
 # MakeArg<char> doesn't accept wchar_t.
 expect_compile_error("fmt::internal::MakeArg<char>(L'a');")
+expect_compile_error("fmt::internal::MakeArg<char>(L\"test\");")
 
 # Writing a wide character to a character stream Writer is forbidden.
 expect_compile_error("fmt::Writer() << L'a';")
