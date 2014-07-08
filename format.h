@@ -130,13 +130,11 @@ typedef BasicWriter<wchar_t> WWriter;
 
 struct FormatSpec;
 
-namespace internal {
 template <typename Char>
-class FormatParser;
-}
+class BasicFormatter;
 
 template <typename Char, typename T>
-void format(internal::FormatParser<Char> &f, const Char *format_str, const T &value);
+void format(BasicFormatter<Char> &f, const Char *format_str, const T &value);
 
 /**
   \rst
@@ -654,7 +652,7 @@ class MakeArg : public Arg {
   template <typename T>
   static void format_custom_arg(
       void *formatter, const void *arg, const void *format_str) {
-    format(*static_cast<FormatParser<Char>*>(formatter),
+    format(*static_cast<BasicFormatter<Char>*>(formatter),
         static_cast<const Char*>(format_str), *static_cast<const T*>(arg));
   }
 
@@ -751,17 +749,15 @@ class ArgList {
   }
 };
 
-namespace internal {
-// Format string parser.
-// TODO: rename to Formatter
+// A formatter.
 template <typename Char>
-class FormatParser {
+class BasicFormatter {
 private:
   BasicWriter<Char> &writer_;
   ArgList args_;
   int next_arg_index_;
   const Char *start_;
-  fmt::internal::FormatErrorReporter<Char> report_error_;
+  internal::FormatErrorReporter<Char> report_error_;
 
   // Parses argument index and returns an argument with this index.
   const internal::Arg &ParseArgIndex(const Char *&s);
@@ -769,7 +765,7 @@ private:
   void CheckSign(const Char *&s, const internal::Arg &arg);
 
 public:
-  explicit FormatParser(BasicWriter<Char> &w) : writer_(w) {}
+  explicit BasicFormatter(BasicWriter<Char> &w) : writer_(w) {}
 
   BasicWriter<Char> &writer() { return writer_; }
 
@@ -778,6 +774,7 @@ public:
   const Char *format(const Char *format_str, const internal::Arg &arg);
 };
 
+namespace internal {
 // Printf format string parser.
 template <typename Char>
 class PrintfParser {
@@ -1256,7 +1253,7 @@ class BasicWriter {
   // Do not implement!
   void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
 
-  friend class internal::FormatParser<Char>;
+  friend class BasicFormatter<Char>;
   friend class internal::PrintfParser<Char>;
 
  public:
@@ -1337,7 +1334,7 @@ class BasicWriter {
     \endrst
    */
   void write(BasicStringRef<Char> format, const ArgList &args) {
-    internal::FormatParser<Char>(*this).Format(format, args);
+    BasicFormatter<Char>(*this).Format(format, args);
   }
   FMT_VARIADIC_VOID(write, fmt::BasicStringRef<Char>)
 
@@ -1588,8 +1585,7 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
 
 // Formats a value.
 template <typename Char, typename T>
-void format(internal::FormatParser<Char> &f,
-    const Char *format_str, const T &value) {
+void format(BasicFormatter<Char> &f, const Char *format_str, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
   f.format(format_str, internal::MakeArg<Char>(os.str()));

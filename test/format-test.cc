@@ -1318,7 +1318,7 @@ TEST(FormatterTest, FormatUsingIOStreams) {
 class Answer {};
 
 template <typename Char>
-void format(fmt::internal::FormatParser<Char> &f, const Char *, Answer) {
+void format(fmt::BasicFormatter<Char> &f, const Char *, Answer) {
   f.writer() << "42";
 }
 

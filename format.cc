@@ -559,7 +559,7 @@ void fmt::BasicWriter<Char>::write_str(
 
 template <typename Char>
 inline const Arg
-    &fmt::internal::FormatParser<Char>::ParseArgIndex(const Char *&s) {
+    &fmt::BasicFormatter<Char>::ParseArgIndex(const Char *&s) {
   unsigned arg_index = 0;
   if (*s < '0' || *s > '9') {
     if (*s != '}' && *s != ':')
@@ -586,7 +586,7 @@ inline const Arg
 }
 
 template <typename Char>
-void fmt::internal::FormatParser<Char>::CheckSign(
+void fmt::BasicFormatter<Char>::CheckSign(
     const Char *&s, const Arg &arg) {
   char sign = static_cast<char>(*s);
   if (arg.type > Arg::LAST_NUMERIC_TYPE) {
@@ -868,7 +868,7 @@ void fmt::internal::PrintfParser<Char>::Format(
 }
 
 template <typename Char>
-const Char *fmt::internal::FormatParser<Char>::format(
+const Char *fmt::BasicFormatter<Char>::format(
     const Char *format_str, const internal::Arg &arg) {
   const Char *s = format_str;
   const char *error = 0;
@@ -1073,7 +1073,7 @@ const Char *fmt::internal::FormatParser<Char>::format(
 }
 
 template <typename Char>
-void fmt::internal::FormatParser<Char>::Format(
+void fmt::BasicFormatter<Char>::Format(
     BasicStringRef<Char> format_str, const ArgList &args) {
   const Char *s = start_ = format_str.c_str();
   args_ = args;
@@ -1142,7 +1142,7 @@ template fmt::BasicWriter<char>::CharPtr
   fmt::BasicWriter<char>::FillPadding(CharPtr buffer,
     unsigned total_size, std::size_t content_size, wchar_t fill);
 
-template void fmt::internal::FormatParser<char>::Format(
+template void fmt::BasicFormatter<char>::Format(
   BasicStringRef<char> format, const ArgList &args);
 
 template void fmt::internal::PrintfParser<char>::Format(
@@ -1154,7 +1154,7 @@ template fmt::BasicWriter<wchar_t>::CharPtr
   fmt::BasicWriter<wchar_t>::FillPadding(CharPtr buffer,
     unsigned total_size, std::size_t content_size, wchar_t fill);
 
-template void fmt::internal::FormatParser<wchar_t>::Format(
+template void fmt::BasicFormatter<wchar_t>::Format(
     BasicStringRef<wchar_t> format, const ArgList &args);
 
 template void fmt::internal::PrintfParser<wchar_t>::Format(
