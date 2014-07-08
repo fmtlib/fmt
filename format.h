@@ -130,8 +130,13 @@ typedef BasicWriter<wchar_t> WWriter;
 
 struct FormatSpec;
 
+namespace internal {
+template <typename Char>
+class FormatParser;
+}
+
 template <typename Char, typename T>
-void format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value);
+void format(internal::FormatParser<Char> &f, const Char *format_str, const T &value);
 
 /**
   \rst
@@ -598,7 +603,7 @@ struct Arg {
   Type type;
 
   typedef void (*FormatFunc)(
-      void *writer, const void *arg, const FormatSpec &spec);
+      void *formatter, const void *arg, const void *format_str);
 
   struct CustomValue {
     const void *value;
@@ -648,9 +653,9 @@ class MakeArg : public Arg {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   static void format_custom_arg(
-      void *writer, const void *arg, const FormatSpec &spec) {
-    format(*static_cast<BasicWriter<Char>*>(writer),
-        spec, *static_cast<const T*>(arg));
+      void *formatter, const void *arg, const void *format_str) {
+    format(*static_cast<FormatParser<Char>*>(formatter),
+        static_cast<const Char*>(format_str), *static_cast<const T*>(arg));
   }
 
 public:
@@ -747,6 +752,32 @@ class ArgList {
 };
 
 namespace internal {
+// Format string parser.
+// TODO: rename to Formatter
+template <typename Char>
+class FormatParser {
+private:
+  BasicWriter<Char> &writer_;
+  ArgList args_;
+  int next_arg_index_;
+  const Char *start_;
+  fmt::internal::FormatErrorReporter<Char> report_error_;
+
+  // Parses argument index and returns an argument with this index.
+  const internal::Arg &ParseArgIndex(const Char *&s);
+
+  void CheckSign(const Char *&s, const internal::Arg &arg);
+
+public:
+  explicit FormatParser(BasicWriter<Char> &w) : writer_(w) {}
+
+  BasicWriter<Char> &writer() { return writer_; }
+
+  void Format(BasicStringRef<Char> format_str, const ArgList &args);
+
+  const Char *format(const Char *format_str, const internal::Arg &arg);
+};
+
 // Printf format string parser.
 template <typename Char>
 class PrintfParser {
@@ -1225,23 +1256,7 @@ class BasicWriter {
   // Do not implement!
   void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
 
-  // Format string parser.
-  class FormatParser {
-   private:
-    ArgList args_;
-    int next_arg_index_;
-    fmt::internal::FormatErrorReporter<Char> report_error_;
-
-    // Parses argument index and returns an argument with this index.
-    const internal::Arg &ParseArgIndex(const Char *&s);
-
-    void CheckSign(const Char *&s, const internal::Arg &arg);
-
-   public:
-    void Format(BasicWriter<Char> &writer,
-      BasicStringRef<Char> format, const ArgList &args);
-  };
-
+  friend class internal::FormatParser<Char>;
   friend class internal::PrintfParser<Char>;
 
  public:
@@ -1321,8 +1336,8 @@ class BasicWriter {
     See also `Format String Syntax`_.
     \endrst
    */
-  inline void write(BasicStringRef<Char> format, const ArgList &args) {
-    FormatParser().Format(*this, format, args);
+  void write(BasicStringRef<Char> format, const ArgList &args) {
+    internal::FormatParser<Char>(*this).Format(format, args);
   }
   FMT_VARIADIC_VOID(write, fmt::BasicStringRef<Char>)
 
@@ -1396,12 +1411,9 @@ class BasicWriter {
   template <typename StringChar>
   BasicWriter &operator<<(const StrFormatSpec<StringChar> &spec) {
     const StringChar *s = spec.str();
+    // TODO: error if fill is not convertible to Char
     write_str(s, std::char_traits<Char>::length(s), spec);
     return *this;
-  }
-
-  void write_str(const std::basic_string<Char> &s, const FormatSpec &spec) {
-    write_str(s.data(), s.size(), spec);
   }
 
   void clear() { buffer_.clear(); }
@@ -1469,7 +1481,6 @@ typename fmt::BasicWriter<Char>::CharPtr
   }
   CharPtr p = GrowBuffer(width);
   CharPtr end = p + width;
-  // TODO: error if fill is not convertible to Char
   if (align == ALIGN_LEFT) {
     std::copy(prefix, prefix + prefix_size, p);
     p += size;
@@ -1575,12 +1586,13 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
   }
 }
 
-// The default formatting function.
+// Formats a value.
 template <typename Char, typename T>
-void format(BasicWriter<Char> &w, const FormatSpec &spec, const T &value) {
+void format(internal::FormatParser<Char> &f,
+    const Char *format_str, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
-  w.write_str(os.str(), spec);
+  f.format(format_str, internal::MakeArg<Char>(os.str()));
 }
 
 // Reports a system error without throwing an exception.

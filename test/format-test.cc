@@ -519,7 +519,7 @@ TEST(WriterTest, pad) {
   EXPECT_EQ("     33", (Writer() << pad(33ll, 7)).str());
   EXPECT_EQ("     44", (Writer() << pad(44ull, 7)).str());
 
-  BasicWriter<char> w;
+  Writer w;
   w.clear();
   w << pad(42, 5, '0');
   EXPECT_EQ("00042", w.str());
@@ -1312,14 +1312,14 @@ TEST(FormatterTest, FormatUsingIOStreams) {
   std::string s = format("The date is {0}", Date(2012, 12, 9));
   EXPECT_EQ("The date is 2012-12-9", s);
   Date date(2012, 12, 9);
-  CheckUnknownTypes(date, "", "object");
+  CheckUnknownTypes(date, "s", "string");
 }
 
 class Answer {};
 
 template <typename Char>
-void format(BasicWriter<Char> &w, const fmt::FormatSpec &spec, Answer) {
-  w.write_str("42", spec);
+void format(fmt::internal::FormatParser<Char> &f, const Char *, Answer) {
+  f.writer() << "42";
 }
 
 TEST(FormatterTest, CustomFormat) {

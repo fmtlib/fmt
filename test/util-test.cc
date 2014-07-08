@@ -185,7 +185,8 @@ TEST(UtilTest, MakeArg) {
   EXPECT_EQ(fmt::internal::Arg::CUSTOM, arg.type);
   arg.custom.value = &t;
   fmt::Writer w;
-  arg.custom.format(&w, &t, fmt::FormatSpec());
+  fmt::internal::FormatParser<char> formatter(w);
+  arg.custom.format(&formatter, &t, "}");
   EXPECT_EQ("test", w.str());
 }
 
