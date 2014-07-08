@@ -520,6 +520,7 @@ class UTF8ToUTF16 {
   explicit UTF8ToUTF16(StringRef s);
   operator WStringRef() const { return WStringRef(&buffer_[0], size()); }
   size_t size() const { return buffer_.size() - 1; }
+  const wchar_t *c_str() const { return &buffer_[0]; }
   std::wstring str() const { return std::wstring(&buffer_[0], size()); }
 };
 
@@ -534,6 +535,7 @@ class UTF16ToUTF8 {
   explicit UTF16ToUTF8(WStringRef s);
   operator StringRef() const { return StringRef(&buffer_[0], size()); }
   size_t size() const { return buffer_.size() - 1; }
+  const char *c_str() const { return &buffer_[0]; }
   std::string str() const { return std::string(&buffer_[0], size()); }
 
   // Performs conversion returning a system error code instead of
