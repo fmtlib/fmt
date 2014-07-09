@@ -270,22 +270,21 @@ TEST(UtilTest, StrError) {
   int error_code = EDOM;
 #endif
 
-  int result = 0;
+  int result = StrError(error_code, message = buffer, BUFFER_SIZE);
+  EXPECT_EQ(0, result);
+  std::size_t message_size = std::strlen(message);
+  EXPECT_GE(BUFFER_SIZE - 1u, message_size);
+  EXPECT_EQ(GetSystemErrorMessage(error_code), message);
+
   // StrError never uses buffer on MinGW.
 #ifndef __MINGW32__
+  result = StrError(error_code, message = buffer, message_size);
+  EXPECT_EQ(ERANGE, result);
   result = StrError(error_code, message = buffer, 1);
   EXPECT_EQ(buffer, message);  // Message should point to buffer.
   EXPECT_EQ(ERANGE, result);
   EXPECT_STREQ("", message);
 #endif
-
-  result = StrError(error_code, message = buffer, BUFFER_SIZE);
-  EXPECT_EQ(0, result);
-  std::size_t message_size = std::strlen(message);
-  EXPECT_GE(BUFFER_SIZE - 1u, message_size);
-  EXPECT_EQ(GetSystemErrorMessage(error_code), message);
-  result = StrError(error_code, message = buffer, message_size);
-  EXPECT_EQ(ERANGE, result);
 }
 
 TEST(UtilTest, SystemError) {
