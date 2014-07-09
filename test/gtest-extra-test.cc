@@ -525,7 +525,7 @@ TEST(BufferedFileTest, Fileno) {
     try {
       f.fileno();
     } catch (fmt::SystemError) {
-      std::exit(0);
+      std::exit(1);
     }
   }, "");
   f = OpenBufferedFile();
