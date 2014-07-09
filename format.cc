@@ -301,12 +301,8 @@ int fmt::internal::StrError(
   if (message == buffer && strlen(buffer) == buffer_size - 1)
     result = ERANGE;
   buffer = message;
-#elif _WIN32
-# ifdef __MINGW32__
-  strerror(result);
-# else
+#elif defined(_WIN32) && !defined(__MINGW32__)
   result = strerror_s(buffer, buffer_size, error_code);
-# endif
   // If the buffer is full then the message is probably truncated.
   if (result == 0 && std::strlen(buffer) == buffer_size - 1)
     result = ERANGE;
