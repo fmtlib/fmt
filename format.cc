@@ -1,7 +1,7 @@
 /*
  Formatting library for C++
 
- Copyright (c) 2012, Victor Zverovich
+ Copyright (c) 2012 - 2014, Victor Zverovich
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -1120,6 +1120,12 @@ void fmt::print(std::FILE *f, StringRef format, const ArgList &args) {
   Writer w;
   w.write(format, args);
   std::fwrite(w.data(), 1, w.size(), f);
+}
+
+void fmt::print(std::ostream &os, StringRef format, const ArgList &args) {
+  Writer w;
+  w.write(format, args);
+  os.write(w.data(), w.size());
 }
 
 void fmt::print_colored(Color c, StringRef format, const ArgList &args) {

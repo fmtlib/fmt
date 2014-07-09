@@ -1,7 +1,7 @@
 /*
  Formatting library for C++
 
- Copyright (c) 2012, Victor Zverovich
+ Copyright (c) 2012 - 2014, Victor Zverovich
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -127,8 +127,6 @@ class BasicWriter;
 
 typedef BasicWriter<char> Writer;
 typedef BasicWriter<wchar_t> WWriter;
-
-struct FormatSpec;
 
 template <typename Char>
 class BasicFormatter;
@@ -750,6 +748,8 @@ class ArgList {
     return args_[index];
   }
 };
+
+struct FormatSpec;
 
 // A formatter.
 template <typename Char>
@@ -1691,6 +1691,17 @@ void print(StringRef format, const ArgList &args);
  */
 void print(std::FILE *f, StringRef format, const ArgList &args);
 
+/**
+  \rst
+  Prints formatted data to a stream.
+
+  **Example**::
+
+    print(cerr, "Don't {}!", "panic");
+  \endrst
+ */
+void print(std::ostream &os, StringRef format, const ArgList &args);
+
 template <typename Char>
 void printf(BasicWriter<Char> &w,
     BasicStringRef<Char> format, const ArgList &args) {
@@ -1901,6 +1912,7 @@ FMT_VARIADIC(std::string, format, StringRef)
 FMT_VARIADIC_W(std::wstring, format, WStringRef)
 FMT_VARIADIC(void, print, StringRef)
 FMT_VARIADIC(void, print, std::FILE *, StringRef)
+FMT_VARIADIC(void, print, std::ostream &, StringRef)
 FMT_VARIADIC(void, print_colored, Color, StringRef)
 FMT_VARIADIC(std::string, sprintf, StringRef)
 FMT_VARIADIC(void, printf, StringRef)

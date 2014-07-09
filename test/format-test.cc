@@ -1486,19 +1486,22 @@ TEST(FormatIntTest, FormatDec) {
   EXPECT_EQ("42", FormatDec(42ull));
 }
 
-#if FMT_USE_FILE_DESCRIPTORS
-
 TEST(FormatTest, Print) {
+#if FMT_USE_FILE_DESCRIPTORS
   EXPECT_WRITE(stdout, fmt::print("Don't {}!", "panic"), "Don't panic!");
   EXPECT_WRITE(stderr,
       fmt::print(stderr, "Don't {}!", "panic"), "Don't panic!");
+#endif
+  std::ostringstream os;
+  fmt::print(os, "Don't {}!", "panic");
+  EXPECT_EQ("Don't panic!", os.str());
 }
 
+#if FMT_USE_FILE_DESCRIPTORS
 TEST(FormatTest, PrintColored) {
   EXPECT_WRITE(stdout, fmt::print_colored(fmt::RED, "Hello, {}!\n", "world"),
       "\x1b[31mHello, world!\n\x1b[0m");
 }
-
 #endif
 
 TEST(FormatTest, Variadic) {
