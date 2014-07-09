@@ -520,7 +520,14 @@ TEST(BufferedFileTest, CloseError) {
 
 TEST(BufferedFileTest, Fileno) {
   BufferedFile f;
-  EXPECT_DEATH(f.fileno(), "");
+  // fileno on a null FILE pointer either crashes or returns an error.
+  EXPECT_DEATH({
+    try {
+      f.fileno();
+    } catch (fmt::SystemError) {
+      std::exit(0);
+    }
+  }, "");
   f = OpenBufferedFile();
   EXPECT_TRUE(f.fileno() != -1);
   File copy = File::dup(f.fileno());
