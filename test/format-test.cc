@@ -129,6 +129,8 @@ class TestString {
   }
 };
 
+extern char array_of_unknown_size[];
+
 TEST(ArrayTest, Ctor) {
   Array<char, 123> array;
   EXPECT_EQ(0u, array.size());
@@ -417,6 +419,12 @@ TEST(WriterTest, WriteWideString) {
   CHECK_WRITE_WCHAR(L"abc");
   // The following line shouldn't compile:
   //fmt::WWriter() << "abc";
+}
+
+TEST(WriterTest, WriteArrayOfUnknownSize) {
+  fmt::Writer w;
+  w.write("{}", array_of_unknown_size);
+  EXPECT_EQ(array_of_unknown_size, w.str());
 }
 
 TEST(WriterTest, bin) {
@@ -1523,3 +1531,6 @@ TEST(FormatTest, FormatMessageExample) {
   EXPECT_EQ("[42] something happened",
       FormatMessage(42, "{} happened", "something"));
 }
+
+// This should be at the end of the file to make the array size unknown above.
+char array_of_unknown_size[] = "abc";
