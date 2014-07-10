@@ -1,18 +1,17 @@
 environment:
   matrix:
-  - build: msvc
-  - build: mingw
-    generator: -GMinGW Makefiles
+  - Build: msvc
+  - Build: mingw
+    Generator: -GMinGW Makefiles
 
 configuration:
   - Debug
   - Release
 
 install:
-  - set
-  # Install MinGW.
   - ps: |
-      if ($env:build -eq "mingw") {
+      if ($env:Build -eq "mingw") {
+        # Install MinGW.
         $url  = "http://sourceforge.net/projects/mingw-w64/files/"
         $url += "Toolchains%20targetting%20Win64/Personal%20Builds/"
         $url += "mingw-builds/4.9.0/threads-win32/seh/"
@@ -24,23 +23,23 @@ install:
 
 before_build:
   - ps: |
-      if ($env:build -eq "mingw") {
+      if ($env:Build -eq "mingw") {
         # Remove path to Git bin directory from PATH because it breaks MinGW config.
         $env:PATH = $env:PATH -replace "C:\\Program Files \(x86\)\\Git\\bin",""
       }
-      cmake -DFMT_EXTRA_TESTS=ON -DCMAKE_BUILD_TYPE=$env:Configuration "$env:generator" .
+      cmake -DFMT_EXTRA_TESTS=ON -DCMAKE_BUILD_TYPE=$env:Configuration "$env:Generator" .
 
 build_script:
   - ps: |
-      if ($env:build -eq "mingw") {
-        mingw32-make -j4
+      if ($env:Build -eq "mingw") {
+        mingw32-make -j4 VERBOSE=1
       } else {
         msbuild /m:4 /p:Configuration=$env:Configuration FORMAT.sln
       }
 
 test_script:
   - ps: |
-      if ($env:build -eq "mingw") {
+      if ($env:Build -eq "mingw") {
         mingw32-make test
       } else {
         msbuild RUN_TESTS.vcxproj
