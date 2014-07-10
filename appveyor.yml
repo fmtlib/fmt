@@ -22,7 +22,11 @@ install:
   - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%;C:\mingw64\bin
 
 before_build:
-  - ps: cmake -DFMT_EXTRA_TESTS=ON "$env:generator" .
+  - ps: |
+      if ($env:build -eq "mingw") {
+        $env:PATH = $env:PATH -replace "C:\\Program Files (x86)\\Git\\bin",""
+      }
+      cmake -DFMT_EXTRA_TESTS=ON "$env:generator" .
 
 build_script:
   - ps: |
