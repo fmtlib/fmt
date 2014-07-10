@@ -19,7 +19,8 @@ install:
         Invoke-WebRequest -UserAgent wget -Uri $url -OutFile mingw.7z
         &7z x -oC:\ mingw.7z > $null
       }
-  - dir C:\wingw64\bin
+  - dir
+  - dir C:\
   - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%;C:\wingw64\bin
 
 before_build:
