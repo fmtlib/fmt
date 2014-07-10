@@ -2,22 +2,24 @@ environment:
   matrix:
   - build: msvc
   - build: mingw
+    generator: -G "MinGW Makefiles"
 
 configuration:
   - Debug
   - Release
 
 install:
-  - set build
-  - ps: >
-      Invoke-WebRequest -UserAgent wget
-      -Uri http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/4.9.0/threads-win32/seh/x86_64-4.9.0-release-win32-seh-rt_v3-rev2.7z/download
-      -OutFile mingw.7z
-  - 7z x -oC:\ mingw.7z > nul
+  # Install MinGW.
+  - set generator
+  - ps: |
+      if ($env:build -eq "mingw") {
+        Invoke-WebRequest -UserAgent wget -Uri http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/4.9.0/threads-win32/seh/x86_64-4.9.0-release-win32-seh-rt_v3-rev2.7z/download -OutFile mingw.7z
+        7z x -oC:\ mingw.7z > nul
+      }
   - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%;C:\wingw64\bin
 
 before_build:
-  - cmake -DFMT_EXTRA_TESTS=ON .
+  - cmake -DFMT_EXTRA_TESTS=ON $generator .
 
 build_script:
   - msbuild /m:4 FORMAT.sln
