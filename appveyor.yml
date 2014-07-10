@@ -2,7 +2,7 @@ environment:
   matrix:
   - build: msvc
   - build: mingw
-    generator: -G "MinGW Makefiles"
+    generator: "-G \"MinGW Makefiles\""
 
 configuration:
   - Debug
@@ -19,9 +19,7 @@ install:
         Invoke-WebRequest -UserAgent wget -Uri $url -OutFile mingw.7z
         &7z x -oC:\ mingw.7z > $null
       }
-  - dir
-  - dir C:\
-  - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%;C:\wingw64\bin
+  - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%;C:\mingw64\bin
 
 before_build:
   - ps: cmake -DFMT_EXTRA_TESTS=ON $env:generator .
