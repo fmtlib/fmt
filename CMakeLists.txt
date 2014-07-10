@@ -12,6 +12,8 @@ option(FMT_EXTRA_TESTS "Enable extra tests." OFF)
 
 project(FORMAT)
 
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
 if (HAVE_STD_CPP11_FLAG)
