@@ -2,7 +2,6 @@ environment:
   matrix:
   - Build: msvc
   - Build: mingw
-    Generator: -GMinGW Makefiles
 
 configuration:
   - Debug
@@ -23,11 +22,13 @@ install:
 
 before_build:
   - ps: |
+      echo $env:Configuration
       if ($env:Build -eq "mingw") {
         # Remove path to Git bin directory from PATH because it breaks MinGW config.
         $env:PATH = $env:PATH -replace "C:\\Program Files \(x86\)\\Git\\bin",""
+        $generator = "-GMinGW Makefiles"
       }
-      cmake -DFMT_EXTRA_TESTS=ON -DCMAKE_BUILD_TYPE=$env:Configuration "$env:Generator" .
+      cmake -DFMT_EXTRA_TESTS=ON -DCMAKE_BUILD_TYPE=$env:Configuration "$generator" .
 
 build_script:
   - ps: |
