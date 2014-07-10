@@ -2,7 +2,7 @@ environment:
   matrix:
   - build: msvc
   - build: mingw
-    generator: "-G \"MinGW Makefiles\""
+    generator: -GMinGW Makefiles
 
 configuration:
   - Debug
@@ -22,7 +22,7 @@ install:
   - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%;C:\mingw64\bin
 
 before_build:
-  - ps: cmake -DFMT_EXTRA_TESTS=ON $env:generator .
+  - ps: cmake -DFMT_EXTRA_TESTS=ON "$env:generator" .
 
 build_script:
   - ps: |
