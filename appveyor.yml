@@ -22,7 +22,6 @@ install:
 
 before_build:
   - ps: |
-      echo $env:Configuration
       if ($env:Build -eq "mingw") {
         # Remove path to Git bin directory from PATH because it breaks MinGW config.
         $env:PATH = $env:PATH -replace "C:\\Program Files \(x86\)\\Git\\bin",""
@@ -33,7 +32,7 @@ before_build:
 build_script:
   - ps: |
       if ($env:Build -eq "mingw") {
-        mingw32-make -j4 VERBOSE=1
+        mingw32-make -j4
       } else {
         msbuild /m:4 /p:Configuration=$env:Configuration FORMAT.sln
       }
