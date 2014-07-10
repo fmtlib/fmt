@@ -1,7 +1,6 @@
 environment:
   matrix:
   - build: msvc
-    generator:
   - build: mingw
     generator: -G "MinGW Makefiles"
 
@@ -11,7 +10,6 @@ configuration:
 
 install:
   # Install MinGW.
-  - set generator
   - ps: |
       if ($env:build -eq "mingw") {
         $url  = "http://sourceforge.net/projects/mingw-w64/files/"
@@ -25,7 +23,7 @@ install:
   - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%;C:\wingw64\bin
 
 before_build:
-  - cmake -DFMT_EXTRA_TESTS=ON $generator .
+  - ps: cmake -DFMT_EXTRA_TESTS=ON $env:generator .
 
 build_script:
   - ps: |
