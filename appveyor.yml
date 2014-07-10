@@ -9,6 +9,7 @@ configuration:
   - Release
 
 install:
+  - set
   # Install MinGW.
   - ps: |
       if ($env:build -eq "mingw") {
@@ -24,7 +25,7 @@ install:
 before_build:
   - ps: |
       if ($env:build -eq "mingw") {
-        $env:PATH = $env:PATH -replace "C:\\Program Files (x86)\\Git\\bin",""
+        $env:PATH = $env:PATH -replace "C:[\\/]Program Files (x86)[\\/]Git[\\/]bin",""
       }
       cmake -DFMT_EXTRA_TESTS=ON "$env:generator" .
 
