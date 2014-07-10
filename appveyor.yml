@@ -25,16 +25,17 @@ install:
 before_build:
   - ps: |
       if ($env:build -eq "mingw") {
-        $env:PATH = $env:PATH -replace "C:[\\/]Program Files (x86)[\\/]Git[\\/]bin",""
+        # Remove path to Git bin directory from PATH because it breaks MinGW config.
+        $env:PATH = $env:PATH -replace "C:\\Program Files \(x86\)\\Git\\bin",""
       }
-      cmake -DFMT_EXTRA_TESTS=ON "$env:generator" .
+      cmake -DFMT_EXTRA_TESTS=ON -DCMAKE_BUILD_TYPE=$env:Configuration "$env:generator" .
 
 build_script:
   - ps: |
       if ($env:build -eq "mingw") {
         mingw32-make -j4
       } else {
-        msbuild /m:4 FORMAT.sln
+        msbuild /m:4 /p:Configuration=$env:Configuration FORMAT.sln
       }
 
 test_script:
