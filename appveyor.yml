@@ -1,6 +1,7 @@
 environment:
   matrix:
   - build: msvc
+    generator:
   - build: mingw
     generator: -G "MinGW Makefiles"
 
@@ -22,10 +23,20 @@ before_build:
   - cmake -DFMT_EXTRA_TESTS=ON $generator .
 
 build_script:
-  - msbuild /m:4 FORMAT.sln
+  - ps: |
+      if ($env:build -eq "mingw") {
+        mingw32-make -j4
+      } else {
+        msbuild /m:4 FORMAT.sln
+      }
 
 test_script:
-  - msbuild RUN_TESTS.vcxproj
+  - ps: |
+      if ($env:build -eq "mingw") {
+        mingw32-make test
+      } else {
+        msbuild RUN_TESTS.vcxproj
+      }
 
 on_failure:
   - appveyor PushArtifact Testing/Temporary/LastTest.log
