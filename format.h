@@ -359,9 +359,6 @@ class CharTraits<char> : public BasicCharTraits<char> {
   // Conversion from wchar_t to char is not allowed.
   static char convert(wchar_t);
 
-  // Conversion from const wchar_t * to const char * is not allowed.
-  static const wchar_t *check(const wchar_t *s);
-
 public:
   typedef const wchar_t *UnsupportedStrType;
 
@@ -379,8 +376,6 @@ class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
 
   static wchar_t convert(char value) { return value; }
   static wchar_t convert(wchar_t value) { return value; }
-
-  static const wchar_t *check(const wchar_t *s) { return s; }
 
   template <typename T>
   static int FormatFloat(wchar_t *buffer, std::size_t size,
@@ -637,7 +632,8 @@ class MakeArg : public Arg {
 
   void set_string(WStringRef str) {
     type = WSTRING;
-    wstring.value = CharTraits<Char>::check(str.c_str());
+    CharTraits<Char>::convert(wchar_t());
+    wstring.value = str.c_str();
     wstring.size = str.size();
   }
 
@@ -814,6 +810,9 @@ class RuntimeError : public std::runtime_error {
  protected:
   RuntimeError() : std::runtime_error("") {}
 };
+
+template <typename Char>
+class ArgFormatter;
 }  // namespace internal
 
 /**
@@ -1348,6 +1347,7 @@ class BasicWriter {
   // Do not implement!
   void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
 
+  friend class internal::ArgFormatter<Char>;
   friend class BasicFormatter<Char>;
   friend class internal::PrintfParser<Char>;
 

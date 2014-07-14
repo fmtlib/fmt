@@ -193,6 +193,20 @@ struct WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, ULongLong> 
 
   ULongLong visit_any_uint(ULongLong value) { return value; }
 };
+
+// This function template is used to prevent compile errors when handling
+// incompatible string arguments, e.g. handling a wide string in a narrow
+// string formatter.
+template <typename Char>
+Arg::StringValue<Char> ignore_incompatible_str(Arg::StringValue<wchar_t>);
+
+template <>
+inline Arg::StringValue<char> ignore_incompatible_str(
+    Arg::StringValue<wchar_t>) { return Arg::StringValue<char>(); }
+
+template <>
+inline Arg::StringValue<wchar_t> ignore_incompatible_str(
+    Arg::StringValue<wchar_t> s) { return s; }
 }  // namespace
 
 int fmt::internal::SignBitNoInline(double value) { return SignBit(value); }
@@ -394,6 +408,80 @@ void fmt::internal::FormatWinErrorMessage(
 }
 #endif
 
+// An argument formatter.
+template <typename Char>
+class fmt::internal::ArgFormatter :
+    public fmt::internal::ArgVisitor<fmt::internal::ArgFormatter<Char>, void> {
+ private:
+  fmt::BasicWriter<Char> &writer_;
+  fmt::FormatSpec &spec_;
+  const Char *format_;
+
+ public:
+  ArgFormatter(fmt::BasicWriter<Char> &w, fmt::FormatSpec &s, const Char *fmt)
+      : writer_(w), spec_(s), format_(fmt) {}
+
+  void visit_int(int value) {
+    writer_.FormatInt(value, spec_);
+  }
+  void visit_uint(unsigned value) {
+    writer_.FormatInt(value, spec_);
+  }
+  void visit_long_long(LongLong value) {
+    writer_.FormatInt(value, spec_);
+  }
+  void visit_ulong_long(ULongLong value) {
+    writer_.FormatInt(value, spec_);
+  }
+  void visit_double(double value) {
+    writer_.FormatDouble(value, spec_);
+  }
+  void visit_long_double(long double value) {
+    writer_.FormatDouble(value, spec_);
+  }
+
+  void visit_char(int value) {
+    if (spec_.type_ && spec_.type_ != 'c')
+      fmt::internal::ReportUnknownType(spec_.type_, "char");
+    typedef typename fmt::BasicWriter<Char>::CharPtr CharPtr;
+    CharPtr out = CharPtr();
+    if (spec_.width_ > 1) {
+      Char fill = static_cast<Char>(spec_.fill());
+      out = writer_.GrowBuffer(spec_.width_);
+      if (spec_.align_ == fmt::ALIGN_RIGHT) {
+        std::fill_n(out, spec_.width_ - 1, fill);
+        out += spec_.width_ - 1;
+      } else if (spec_.align_ == fmt::ALIGN_CENTER) {
+        out = writer_.FillPadding(out, spec_.width_, 1, fill);
+      } else {
+        std::fill_n(out + 1, spec_.width_ - 1, fill);
+      }
+    } else {
+      out = writer_.GrowBuffer(1);
+    }
+    *out = static_cast<Char>(value);
+  }
+
+  void visit_string(Arg::StringValue<char> value) {
+    writer_.write_str(value, spec_);
+  }
+  void visit_wstring(Arg::StringValue<wchar_t> value) {
+    writer_.write_str(ignore_incompatible_str<Char>(value), spec_);
+  }
+
+  void visit_pointer(const void *value) {
+    if (spec_.type_ && spec_.type_ != 'p')
+      fmt::internal::ReportUnknownType(spec_.type_, "pointer");
+    spec_.flags_ = fmt::HASH_FLAG;
+    spec_.type_ = 'x';
+    writer_.FormatInt(reinterpret_cast<uintptr_t>(value), spec_);
+  }
+
+  void visit_custom(Arg::CustomValue c) {
+    c.format(this, c.value, format_);
+  }
+};
+
 template <typename Char>
 void fmt::internal::FormatErrorReporter<Char>::operator()(
         const Char *s, fmt::StringRef message) const {
@@ -570,7 +658,7 @@ void fmt::BasicWriter<Char>::FormatDouble(T value, const FormatSpec &spec) {
 template <typename Char>
 template <typename StringChar>
 void fmt::BasicWriter<Char>::write_str(
-    const internal::Arg::StringValue<StringChar> &str, const FormatSpec &spec) {
+    const Arg::StringValue<StringChar> &str, const FormatSpec &spec) {
   // Check if StringChar is convertible to Char.
   internal::CharTraits<Char>::convert(StringChar());
   if (spec.type_ && spec.type_ != 's')
@@ -847,7 +935,7 @@ void fmt::internal::PrintfParser<Char>::Format(
       writer.write_str(arg.string, spec);
       break;
     case Arg::WSTRING:
-      writer.write_str(arg.wstring, spec);
+      writer.write_str(ignore_incompatible_str<Char>(arg.wstring), spec);
       break;
     case Arg::POINTER:
       if (spec.type_ && spec.type_ != 'p')
@@ -871,7 +959,7 @@ void fmt::internal::PrintfParser<Char>::Format(
 
 template <typename Char>
 const Char *fmt::BasicFormatter<Char>::format(
-    const Char *format_str, const internal::Arg &arg) {
+    const Char *format_str, const Arg &arg) {
   const Char *s = format_str;
   const char *error = 0;
   FormatSpec spec;
@@ -1010,67 +1098,7 @@ const Char *fmt::BasicFormatter<Char>::format(
   start_ = s;
 
   // Format argument.
-  switch (arg.type) {
-    case Arg::INT:
-      writer_.FormatInt(arg.int_value, spec);
-      break;
-    case Arg::UINT:
-      writer_.FormatInt(arg.uint_value, spec);
-      break;
-    case Arg::LONG_LONG:
-      writer_.FormatInt(arg.long_long_value, spec);
-      break;
-    case Arg::ULONG_LONG:
-      writer_.FormatInt(arg.ulong_long_value, spec);
-      break;
-    case Arg::DOUBLE:
-      writer_.FormatDouble(arg.double_value, spec);
-      break;
-    case Arg::LONG_DOUBLE:
-      writer_.FormatDouble(arg.long_double_value, spec);
-      break;
-    case Arg::CHAR: {
-      if (spec.type_ && spec.type_ != 'c')
-        internal::ReportUnknownType(spec.type_, "char");
-      typedef typename BasicWriter<Char>::CharPtr CharPtr;
-      CharPtr out = CharPtr();
-      if (spec.width_ > 1) {
-        Char fill = static_cast<Char>(spec.fill());
-        out = writer_.GrowBuffer(spec.width_);
-        if (spec.align_ == ALIGN_RIGHT) {
-          std::fill_n(out, spec.width_ - 1, fill);
-          out += spec.width_ - 1;
-        } else if (spec.align_ == ALIGN_CENTER) {
-          out = writer_.FillPadding(out, spec.width_, 1, fill);
-        } else {
-          std::fill_n(out + 1, spec.width_ - 1, fill);
-        }
-      } else {
-        out = writer_.GrowBuffer(1);
-      }
-      *out = static_cast<Char>(arg.int_value);
-      break;
-    }
-    case Arg::STRING:
-      writer_.write_str(arg.string, spec);
-      break;
-    case Arg::WSTRING:
-      writer_.write_str(arg.wstring, spec);
-      break;
-    case Arg::POINTER:
-      if (spec.type_ && spec.type_ != 'p')
-        internal::ReportUnknownType(spec.type_, "pointer");
-      spec.flags_= HASH_FLAG;
-      spec.type_ = 'x';
-      writer_.FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
-      break;
-    case Arg::CUSTOM:
-      arg.custom.format(this, arg.custom.value, s - 1);
-      break;
-    default:
-      assert(false);
-      break;
-  }
+  internal::ArgFormatter<Char>(writer_, spec, s - 1).visit(arg);
   return s;
 }
 
