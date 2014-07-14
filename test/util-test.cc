@@ -111,8 +111,10 @@ TEST(UtilTest, ArgInfo) {
   CHECK_ARG_INFO(DOUBLE, double_value, 4.2);
   CHECK_ARG_INFO(LONG_DOUBLE, long_double_value, 4.2);
   CHECK_ARG_INFO(CHAR, int_value, 'x');
-  CHECK_ARG_INFO(STRING, string.value, "abc");
-  CHECK_ARG_INFO(WSTRING, wstring.value, L"abc");
+  const char STR[] = "abc";
+  CHECK_ARG_INFO(STRING, string.value, STR);
+  const wchar_t WSTR[] = L"abc";
+  CHECK_ARG_INFO(WSTRING, wstring.value, WSTR);
   int p = 0;
   CHECK_ARG_INFO(POINTER, pointer_value, &p);
   Arg arg = {Arg::CUSTOM};
@@ -132,7 +134,6 @@ TEST(UtilTest, ArgInfo) {
 
 #define EXPECT_ARGW(type_code, Type, value) \
   EXPECT_ARG_(wchar_t, type_code, Type, value)
-
 
 TEST(UtilTest, MakeArg) {
   // Test bool.
@@ -242,6 +243,7 @@ struct Result {
 
   template <typename T>
   Result(const T& value) : arg(fmt::internal::MakeArg<char>(value)) {}
+  Result(const wchar_t *s) : arg(fmt::internal::MakeArg<wchar_t>(s)) {}
 };
 
 struct TestVisitor : fmt::internal::ArgVisitor<TestVisitor, Result> {
@@ -251,13 +253,21 @@ struct TestVisitor : fmt::internal::ArgVisitor<TestVisitor, Result> {
   Result visit_ulong_long(fmt::ULongLong value) { return value; }
   Result visit_double(double value) { return value; }
   Result visit_long_double(long double value) { return value; }
+  Result visit_char(int value) { return static_cast<char>(value); }
+  Result visit_string(fmt::internal::StringValue<char> s) { return s.value; }
+  Result visit_wstring(fmt::internal::StringValue<wchar_t> s) { return s.value; }
 };
 
-#define EXPECT_RESULT(type_code, value) { \
-  Result result = TestVisitor().visit(MakeArg<char>(value)); \
+#define EXPECT_RESULT_(Char, type_code, value) { \
+  Result result = TestVisitor().visit(MakeArg<Char>(value)); \
   EXPECT_EQ(Arg::type_code, result.arg.type); \
   EXPECT_EQ(value, ArgInfo<Arg::type_code>::get(result.arg)); \
 }
+
+#define EXPECT_RESULT(type_code, value) \
+  EXPECT_RESULT_(char, type_code, value)
+#define EXPECT_RESULTW(type_code, value) \
+  EXPECT_RESULT_(wchar_t, type_code, value)
 
 TEST(UtilTest, ArgVisitor) {
   using fmt::internal::MakeArg;
@@ -266,7 +276,11 @@ TEST(UtilTest, ArgVisitor) {
   EXPECT_RESULT(LONG_LONG, 42ll);
   EXPECT_RESULT(ULONG_LONG, 42ull);
   EXPECT_RESULT(DOUBLE, 4.2);
-  // TODO
+  EXPECT_RESULT(LONG_DOUBLE, 4.2l);
+  EXPECT_RESULT(CHAR, 'x');
+  EXPECT_RESULT(STRING, "abc");
+  EXPECT_RESULTW(WSTRING, L"abc");
+  // TODO: test pointer, custom
 }
 
 // Tests fmt::internal::CountDigits for integer type Int.
