@@ -341,12 +341,6 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
 }
 
 template <typename Char>
-struct StringValue {
-  const Char *value;
-  std::size_t size;
-};
-
-template <typename Char>
 class BasicCharTraits {
  public:
 #if _SECURE_SCL
@@ -373,11 +367,6 @@ public:
 
   static char convert(char value) { return value; }
 
-  static StringValue<char> convert(StringValue<wchar_t>) {
-    StringValue<char> s = {"", 0};
-    return s;
-  }
-
   template <typename T>
   static int FormatFloat(char *buffer, std::size_t size,
       const char *format, unsigned width, int precision, T value);
@@ -390,8 +379,6 @@ class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
 
   static wchar_t convert(char value) { return value; }
   static wchar_t convert(wchar_t value) { return value; }
-
-  static StringValue<wchar_t> convert(StringValue<wchar_t> s) { return s; }
 
   static const wchar_t *check(const wchar_t *s) { return s; }
 
@@ -600,6 +587,12 @@ struct Arg {
   };
   Type type;
 
+  template <typename Char>
+  struct StringValue {
+    const Char *value;
+    std::size_t size;
+  };
+
   typedef void (*FormatFunc)(
       void *formatter, const void *arg, const void *format_str);
 
@@ -773,10 +766,10 @@ class ArgVisitor {
   Result visit_char(int) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
-  Result visit_string(StringValue<char>) {
+  Result visit_string(Arg::StringValue<char>) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
-  Result visit_wstring(StringValue<wchar_t>) {
+  Result visit_wstring(Arg::StringValue<wchar_t>) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
   Result visit_pointer(const void *) {
@@ -1347,7 +1340,7 @@ class BasicWriter {
 
   template <typename StringChar>
   void write_str(
-      const internal::StringValue<StringChar> &str, const FormatSpec &spec);
+      const internal::Arg::StringValue<StringChar> &str, const FormatSpec &spec);
 
   // This method is private to disallow writing a wide string to a
   // char stream and vice versa. If you want to print a wide string

@@ -254,10 +254,10 @@ struct TestVisitor : fmt::internal::ArgVisitor<TestVisitor, Result> {
   Result visit_double(double value) { return value; }
   Result visit_long_double(long double value) { return value; }
   Result visit_char(int value) { return static_cast<char>(value); }
-  Result visit_string(fmt::internal::StringValue<char> s) { return s.value; }
-  Result visit_wstring(fmt::internal::StringValue<wchar_t> s) { return s.value; }
+  Result visit_string(Arg::StringValue<char> s) { return s.value; }
+  Result visit_wstring(Arg::StringValue<wchar_t> s) { return s.value; }
   Result visit_pointer(const void *p) { return p; }
-  Result visit_custom(fmt::internal::Arg::CustomValue c) {
+  Result visit_custom(Arg::CustomValue c) {
     return *static_cast<const ::Test*>(c.value);
   }
 };

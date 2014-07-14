@@ -169,15 +169,19 @@ const Char *find_closing_brace(const Char *s, int num_open_braces = 1) {
   throw fmt::FormatError("unmatched '{' in format");
 }
 
-// Handles width specifier.
+// Checks if an argument is a valid printf width specifier and sets
+// left alignment if it is negative.
 struct WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, ULongLong> {
  private:
   fmt::FormatSpec &spec_;
+
  public:
   explicit WidthHandler(fmt::FormatSpec &spec) : spec_(spec) {}
+
   ULongLong visit_unhandled_arg() {
     throw fmt::FormatError("width is not integer");
   }
+
   ULongLong visit_any_int(fmt::LongLong value) {
     ULongLong width = value;
     if (value < 0) {
@@ -186,6 +190,7 @@ struct WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, ULongLong> 
     }
     return width;
   }
+
   ULongLong visit_any_uint(ULongLong value) { return value; }
 };
 }  // namespace
@@ -565,7 +570,9 @@ void fmt::BasicWriter<Char>::FormatDouble(T value, const FormatSpec &spec) {
 template <typename Char>
 template <typename StringChar>
 void fmt::BasicWriter<Char>::write_str(
-    const internal::StringValue<StringChar> &str, const FormatSpec &spec) {
+    const internal::Arg::StringValue<StringChar> &str, const FormatSpec &spec) {
+  // Check if StringChar is convertible to Char.
+  internal::CharTraits<Char>::convert(StringChar());
   if (spec.type_ && spec.type_ != 's')
     internal::ReportUnknownType(spec.type_, "string");
   const StringChar *s = str.value;
@@ -840,7 +847,7 @@ void fmt::internal::PrintfParser<Char>::Format(
       writer.write_str(arg.string, spec);
       break;
     case Arg::WSTRING:
-      writer.write_str(internal::CharTraits<Char>::convert(arg.wstring), spec);
+      writer.write_str(arg.wstring, spec);
       break;
     case Arg::POINTER:
       if (spec.type_ && spec.type_ != 'p')
@@ -1048,7 +1055,7 @@ const Char *fmt::BasicFormatter<Char>::format(
       writer_.write_str(arg.string, spec);
       break;
     case Arg::WSTRING:
-      writer_.write_str(internal::CharTraits<Char>::convert(arg.wstring), spec);
+      writer_.write_str(arg.wstring, spec);
       break;
     case Arg::POINTER:
       if (spec.type_ && spec.type_ != 'p')
