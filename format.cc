@@ -50,6 +50,7 @@
 # undef ERROR
 #endif
 
+using fmt::LongLong;
 using fmt::ULongLong;
 using fmt::internal::Arg;
 
@@ -167,6 +168,26 @@ const Char *find_closing_brace(const Char *s, int num_open_braces = 1) {
   }
   throw fmt::FormatError("unmatched '{' in format");
 }
+
+// Handles width specifier.
+struct WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, ULongLong> {
+ private:
+  fmt::FormatSpec &spec_;
+ public:
+  explicit WidthHandler(fmt::FormatSpec &spec) : spec_(spec) {}
+  ULongLong visit_unhandled_arg() {
+    throw fmt::FormatError("width is not integer");
+  }
+  ULongLong visit_any_int(fmt::LongLong value) {
+    ULongLong width = value;
+    if (value < 0) {
+      spec_.align_ = fmt::ALIGN_LEFT;
+      width = 0 - width;
+    }
+    return width;
+  }
+  ULongLong visit_any_uint(ULongLong value) { return value; }
+};
 }  // namespace
 
 int fmt::internal::SignBitNoInline(double value) { return SignBit(value); }
@@ -657,34 +678,7 @@ unsigned fmt::internal::PrintfParser<Char>::ParseHeader(
     spec.width_ = ParseNonnegativeInt(s, error);
   } else if (*s == '*') {
     ++s;
-    const Arg &arg = HandleArgIndex(UINT_MAX, error);
-    // TODO: use ArgVisitor
-    ULongLong width = 0;
-    switch (arg.type) {
-    case Arg::INT:
-      width = arg.int_value;
-      if (arg.int_value < 0) {
-        spec.align_ = ALIGN_LEFT;
-        width = 0 - width;
-      }
-      break;
-    case Arg::UINT:
-      width = arg.uint_value;
-      break;
-    case Arg::LONG_LONG:
-      width = arg.long_long_value;
-      if (arg.long_long_value < 0) {
-        spec.align_ = ALIGN_LEFT;
-        width = 0 - width;
-      }
-      break;
-    case Arg::ULONG_LONG:
-      width = arg.ulong_long_value;
-      break;
-    default:
-      if (!error)
-        error = "width is not integer";
-    }
+    ULongLong width = WidthHandler(spec).visit(HandleArgIndex(UINT_MAX, error));
     if (width <= INT_MAX)
       spec.width_ = static_cast<unsigned>(width);
     else if (!error)

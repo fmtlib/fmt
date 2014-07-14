@@ -42,6 +42,7 @@
 #undef max
 
 using fmt::StringRef;
+using fmt::internal::Arg;
 
 namespace {
 std::string GetSystemErrorMessage(int error_code) {
@@ -75,52 +76,96 @@ TEST(UtilTest, Increment) {
   EXPECT_STREQ("200", s);
 }
 
-#define EXPECT_ARG_(Char, type_code, Type, field, value) { \
-  Type expected_value = static_cast<Type>(value); \
-  fmt::internal::Arg arg = \
-    fmt::internal::MakeArg<Char>(expected_value); \
-  EXPECT_EQ(fmt::internal::Arg::type_code, arg.type); \
-  EXPECT_EQ(expected_value, arg.field); \
+template <Arg::Type>
+struct ArgInfo;
+
+#define ARG_INFO(type_code, Type, field) \
+  template <> \
+  struct ArgInfo<Arg::type_code> { \
+    static Type get(const Arg &arg) { return arg.field; } \
+  };
+
+ARG_INFO(INT, int, int_value);
+ARG_INFO(UINT, unsigned, uint_value);
+ARG_INFO(LONG_LONG, fmt::LongLong, long_long_value);
+ARG_INFO(ULONG_LONG, fmt::ULongLong, ulong_long_value);
+ARG_INFO(DOUBLE, double, double_value);
+ARG_INFO(LONG_DOUBLE, long double, long_double_value);
+ARG_INFO(CHAR, int, int_value);
+ARG_INFO(STRING, const char *, string.value);
+ARG_INFO(WSTRING, const wchar_t *, wstring.value);
+ARG_INFO(POINTER, const void *, pointer_value);
+ARG_INFO(CUSTOM, Arg::CustomValue, custom);
+
+#define CHECK_ARG_INFO(Type, field, value) { \
+  Arg arg = {Arg::Type}; \
+  arg.field = value; \
+  EXPECT_EQ(value, ArgInfo<Arg::Type>::get(arg)); \
 }
 
-#define EXPECT_ARG(type_code, Type, field, value) \
-  EXPECT_ARG_(char, type_code, Type, field, value)
+TEST(UtilTest, ArgInfo) {
+  CHECK_ARG_INFO(INT, int_value, 42);
+  CHECK_ARG_INFO(UINT, uint_value, 42);
+  CHECK_ARG_INFO(LONG_LONG, long_long_value, 42);
+  CHECK_ARG_INFO(ULONG_LONG, ulong_long_value, 42);
+  CHECK_ARG_INFO(DOUBLE, double_value, 4.2);
+  CHECK_ARG_INFO(LONG_DOUBLE, long_double_value, 4.2);
+  CHECK_ARG_INFO(CHAR, int_value, 'x');
+  CHECK_ARG_INFO(STRING, string.value, "abc");
+  CHECK_ARG_INFO(WSTRING, wstring.value, L"abc");
+  int p = 0;
+  CHECK_ARG_INFO(POINTER, pointer_value, &p);
+  Arg arg = {Arg::CUSTOM};
+  arg.custom.value = &p;
+  EXPECT_EQ(&p, ArgInfo<Arg::CUSTOM>::get(arg).value);
+}
 
-#define EXPECT_ARGW(type_code, Type, field, value) \
-  EXPECT_ARG_(wchar_t, type_code, Type, field, value)
+#define EXPECT_ARG_(Char, type_code, Type, value) { \
+  Type expected_value = static_cast<Type>(value); \
+  Arg arg = fmt::internal::MakeArg<Char>(expected_value); \
+  EXPECT_EQ(Arg::type_code, arg.type); \
+  EXPECT_EQ(expected_value, ArgInfo<Arg::type_code>::get(arg)); \
+}
+
+#define EXPECT_ARG(type_code, Type, value) \
+  EXPECT_ARG_(char, type_code, Type, value)
+
+#define EXPECT_ARGW(type_code, Type, value) \
+  EXPECT_ARG_(wchar_t, type_code, Type, value)
+
 
 TEST(UtilTest, MakeArg) {
   // Test bool.
-  EXPECT_ARG(INT, bool, int_value, true);
+  EXPECT_ARG(INT, bool, true);
 
   // Test char.
-  EXPECT_ARG(CHAR, signed char, int_value, 'a');
-  EXPECT_ARG(CHAR, signed char, int_value, SCHAR_MIN);
-  EXPECT_ARG(CHAR, signed char, int_value, SCHAR_MAX);
-  EXPECT_ARG(CHAR, unsigned char, int_value, 'a');
-  EXPECT_ARG(CHAR, unsigned char, int_value, UCHAR_MAX );
-  EXPECT_ARG(CHAR, char, int_value, 'a');
-  EXPECT_ARG(CHAR, char, int_value, CHAR_MIN);
-  EXPECT_ARG(CHAR, char, int_value, CHAR_MAX);
+  EXPECT_ARG(CHAR, signed char, 'a');
+  EXPECT_ARG(CHAR, signed char, SCHAR_MIN);
+  EXPECT_ARG(CHAR, signed char, SCHAR_MAX);
+  EXPECT_ARG(CHAR, unsigned char, 'a');
+  EXPECT_ARG(CHAR, unsigned char, UCHAR_MAX );
+  EXPECT_ARG(CHAR, char, 'a');
+  EXPECT_ARG(CHAR, char, CHAR_MIN);
+  EXPECT_ARG(CHAR, char, CHAR_MAX);
 
   // Test wchar_t.
-  EXPECT_ARGW(CHAR, wchar_t, int_value, L'a');
-  EXPECT_ARGW(CHAR, wchar_t, int_value, WCHAR_MIN);
-  EXPECT_ARGW(CHAR, wchar_t, int_value, WCHAR_MAX);
+  EXPECT_ARGW(CHAR, wchar_t, L'a');
+  EXPECT_ARGW(CHAR, wchar_t, WCHAR_MIN);
+  EXPECT_ARGW(CHAR, wchar_t, WCHAR_MAX);
 
   // Test short.
-  EXPECT_ARG(INT, short, int_value, 42);
-  EXPECT_ARG(INT, short, int_value, SHRT_MIN);
-  EXPECT_ARG(INT, short, int_value, SHRT_MAX);
-  EXPECT_ARG(UINT, unsigned short, uint_value, 42);
-  EXPECT_ARG(UINT, unsigned short, uint_value, USHRT_MAX);
+  EXPECT_ARG(INT, short, 42);
+  EXPECT_ARG(INT, short, SHRT_MIN);
+  EXPECT_ARG(INT, short, SHRT_MAX);
+  EXPECT_ARG(UINT, unsigned short, 42);
+  EXPECT_ARG(UINT, unsigned short, USHRT_MAX);
 
   // Test int.
-  EXPECT_ARG(INT, int, int_value, 42);
-  EXPECT_ARG(INT, int, int_value, INT_MIN);
-  EXPECT_ARG(INT, int, int_value, INT_MAX);
-  EXPECT_ARG(UINT, unsigned, uint_value, 42);
-  EXPECT_ARG(UINT, unsigned, uint_value, UINT_MAX);
+  EXPECT_ARG(INT, int, 42);
+  EXPECT_ARG(INT, int, INT_MIN);
+  EXPECT_ARG(INT, int, INT_MAX);
+  EXPECT_ARG(UINT, unsigned, 42);
+  EXPECT_ARG(UINT, unsigned, UINT_MAX);
 
   // Test long.
 #if LONG_MAX == INT_MAX
@@ -134,60 +179,94 @@ TEST(UtilTest, MakeArg) {
 # define long_value long_long_value
 # define ulong_value ulong_long_value
 #endif
-  EXPECT_ARG(LONG, long, long_value, 42);
-  EXPECT_ARG(LONG, long, long_value, LONG_MIN);
-  EXPECT_ARG(LONG, long, long_value, LONG_MAX);
-  EXPECT_ARG(ULONG, unsigned long, ulong_value, 42);
-  EXPECT_ARG(ULONG, unsigned long, ulong_value, ULONG_MAX);
+  EXPECT_ARG(LONG, long, 42);
+  EXPECT_ARG(LONG, long, LONG_MIN);
+  EXPECT_ARG(LONG, long, LONG_MAX);
+  EXPECT_ARG(ULONG, unsigned long, 42);
+  EXPECT_ARG(ULONG, unsigned long, ULONG_MAX);
 
   // Test long long.
-  EXPECT_ARG(LONG_LONG, fmt::LongLong, long_long_value, 42);
-  EXPECT_ARG(LONG_LONG, fmt::LongLong, long_long_value, LLONG_MIN);
-  EXPECT_ARG(LONG_LONG, fmt::LongLong, long_long_value, LLONG_MAX);
-  EXPECT_ARG(ULONG_LONG, fmt::ULongLong, ulong_long_value, 42);
-  EXPECT_ARG(ULONG_LONG, fmt::ULongLong, ulong_long_value, ULLONG_MAX);
+  EXPECT_ARG(LONG_LONG, fmt::LongLong, 42);
+  EXPECT_ARG(LONG_LONG, fmt::LongLong, LLONG_MIN);
+  EXPECT_ARG(LONG_LONG, fmt::LongLong, LLONG_MAX);
+  EXPECT_ARG(ULONG_LONG, fmt::ULongLong, 42);
+  EXPECT_ARG(ULONG_LONG, fmt::ULongLong, ULLONG_MAX);
 
   // Test float.
-  EXPECT_ARG(DOUBLE, float, double_value, 4.2);
-  EXPECT_ARG(DOUBLE, float, double_value, FLT_MIN);
-  EXPECT_ARG(DOUBLE, float, double_value, FLT_MAX);
+  EXPECT_ARG(DOUBLE, float, 4.2);
+  EXPECT_ARG(DOUBLE, float, FLT_MIN);
+  EXPECT_ARG(DOUBLE, float, FLT_MAX);
 
   // Test double.
-  EXPECT_ARG(DOUBLE, double, double_value, 4.2);
-  EXPECT_ARG(DOUBLE, double, double_value, DBL_MIN);
-  EXPECT_ARG(DOUBLE, double, double_value, DBL_MAX);
+  EXPECT_ARG(DOUBLE, double, 4.2);
+  EXPECT_ARG(DOUBLE, double, DBL_MIN);
+  EXPECT_ARG(DOUBLE, double, DBL_MAX);
 
   // Test long double.
-  EXPECT_ARG(LONG_DOUBLE, long double, long_double_value, 4.2);
-  EXPECT_ARG(LONG_DOUBLE, long double, long_double_value, LDBL_MIN);
-  EXPECT_ARG(LONG_DOUBLE, long double, long_double_value, LDBL_MAX);
+  EXPECT_ARG(LONG_DOUBLE, long double, 4.2);
+  EXPECT_ARG(LONG_DOUBLE, long double, LDBL_MIN);
+  EXPECT_ARG(LONG_DOUBLE, long double, LDBL_MAX);
 
   // Test string.
   char STR[] = "test";
-  EXPECT_ARG(STRING, char*, string.value, STR);
-  EXPECT_ARG(STRING, const char*, string.value, STR);
-  EXPECT_ARG(STRING, std::string, string.value, STR);
-  EXPECT_ARG(STRING, fmt::StringRef, string.value, STR);
+  EXPECT_ARG(STRING, char*, STR);
+  EXPECT_ARG(STRING, const char*, STR);
+  EXPECT_ARG(STRING, std::string, STR);
+  EXPECT_ARG(STRING, fmt::StringRef, STR);
 
   // Test wide string.
   wchar_t WSTR[] = L"test";
-  EXPECT_ARGW(WSTRING, wchar_t*, wstring.value, WSTR);
-  EXPECT_ARGW(WSTRING, const wchar_t*, wstring.value, WSTR);
-  EXPECT_ARGW(WSTRING, std::wstring, wstring.value, WSTR);
-  EXPECT_ARGW(WSTRING, fmt::WStringRef, wstring.value, WSTR);
+  EXPECT_ARGW(WSTRING, wchar_t*, WSTR);
+  EXPECT_ARGW(WSTRING, const wchar_t*, WSTR);
+  EXPECT_ARGW(WSTRING, std::wstring, WSTR);
+  EXPECT_ARGW(WSTRING, fmt::WStringRef, WSTR);
 
   int n = 42;
-  EXPECT_ARG(POINTER, void*, pointer_value, &n);
-  EXPECT_ARG(POINTER, const void*, pointer_value, &n);
+  EXPECT_ARG(POINTER, void*, &n);
+  EXPECT_ARG(POINTER, const void*, &n);
 
   ::Test t;
   fmt::internal::Arg arg = fmt::internal::MakeArg<char>(t);
   EXPECT_EQ(fmt::internal::Arg::CUSTOM, arg.type);
-  arg.custom.value = &t;
+  EXPECT_EQ(&t, arg.custom.value);
   fmt::Writer w;
   fmt::BasicFormatter<char> formatter(w);
   arg.custom.format(&formatter, &t, "}");
   EXPECT_EQ("test", w.str());
+}
+
+struct Result {
+  fmt::internal::Arg arg;
+
+  Result() : arg(fmt::internal::MakeArg<char>(0xdeadbeef)) {}
+
+  template <typename T>
+  Result(const T& value) : arg(fmt::internal::MakeArg<char>(value)) {}
+};
+
+struct TestVisitor : fmt::internal::ArgVisitor<TestVisitor, Result> {
+  Result visit_int(int value) { return value; }
+  Result visit_uint(unsigned value) { return value; }
+  Result visit_long_long(fmt::LongLong value) { return value; }
+  Result visit_ulong_long(fmt::ULongLong value) { return value; }
+  Result visit_double(double value) { return value; }
+  Result visit_long_double(long double value) { return value; }
+};
+
+#define EXPECT_RESULT(type_code, value) { \
+  Result result = TestVisitor().visit(MakeArg<char>(value)); \
+  EXPECT_EQ(Arg::type_code, result.arg.type); \
+  EXPECT_EQ(value, ArgInfo<Arg::type_code>::get(result.arg)); \
+}
+
+TEST(UtilTest, ArgVisitor) {
+  using fmt::internal::MakeArg;
+  EXPECT_RESULT(INT, 42);
+  EXPECT_RESULT(UINT, 42u);
+  EXPECT_RESULT(LONG_LONG, 42ll);
+  EXPECT_RESULT(ULONG_LONG, 42ull);
+  EXPECT_RESULT(DOUBLE, 4.2);
+  // TODO
 }
 
 // Tests fmt::internal::CountDigits for integer type Int.

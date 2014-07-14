@@ -717,6 +717,106 @@ public:
   }
 };
 
+#define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
+
+// An argument visitor.
+// To use ArgVisitor define a subclass that implements some or all of the
+// visit methods with the same signatures as the methods in ArgVisitor,
+// for example, visit_int(int).
+// Specify the subclass name as the Impl template parameter. Then calling
+// ArgVisitor::visit for some argument will dispatch to a visit method
+// specific to the argument type. For example, if the argument type is
+// double then visit_double(double) method of a subclass will be called.
+// If the subclass doesn't contain a method with this signature, then
+// a corresponding method of ArgVisitor will be called.
+//
+// Example:
+//  class MyArgVisitor : public ArgVisitor<MyArgVisitor, void> {
+//   public:
+//    void visit_int(int value) { print("{}", value); }
+//    void visit_double(double value) { print("{}", value ); }
+//  };
+//
+// ArgVisitor uses the curiously recurring template pattern:
+// http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
+template <typename Impl, typename Result>
+class ArgVisitor {
+ public:
+  Result visit_unhandled_arg() { return Result(); }
+
+  Result visit_int(int value) {
+    return FMT_DISPATCH(visit_any_int(value));
+  }
+  Result visit_long_long(LongLong value) {
+    return FMT_DISPATCH(visit_any_int(value));
+  }
+  Result visit_any_int(LongLong) {
+    return FMT_DISPATCH(visit_unhandled_arg());
+  }
+
+  Result visit_uint(unsigned value) {
+    return FMT_DISPATCH(visit_any_uint(value));
+  }
+  Result visit_ulong_long(ULongLong value) {
+    return FMT_DISPATCH(visit_any_uint(value));
+  }
+  Result visit_any_uint(ULongLong) {
+    return FMT_DISPATCH(visit_unhandled_arg());
+  }
+
+  Result visit_double(double) {
+    return FMT_DISPATCH(visit_unhandled_arg());
+  }
+  Result visit_long_double(long double) {
+    return FMT_DISPATCH(visit_unhandled_arg());
+  }
+  Result visit_char(int) {
+    return FMT_DISPATCH(visit_unhandled_arg());
+  }
+  Result visit_string(StringValue<char>) {
+    return FMT_DISPATCH(visit_unhandled_arg());
+  }
+  Result visit_wstring(StringValue<wchar_t>) {
+    return FMT_DISPATCH(visit_unhandled_arg());
+  }
+  Result visit_pointer(const void *) {
+    return FMT_DISPATCH(visit_unhandled_arg());
+  }
+  Result visit_custom(Arg::CustomValue) {
+    return FMT_DISPATCH(visit_unhandled_arg());
+  }
+
+  Result visit(const Arg &arg) {
+    switch (arg.type) {
+    default:
+      assert(false);
+      // Fall through.
+    case Arg::INT:
+      return FMT_DISPATCH(visit_int(arg.int_value));
+    case Arg::UINT:
+      return FMT_DISPATCH(visit_uint(arg.uint_value));
+    case Arg::LONG_LONG:
+      return FMT_DISPATCH(visit_long_long(arg.long_long_value));
+    case Arg::ULONG_LONG:
+      return FMT_DISPATCH(visit_ulong_long(arg.ulong_long_value));
+    case Arg::DOUBLE:
+      return FMT_DISPATCH(visit_double(arg.double_value));
+    case Arg::LONG_DOUBLE:
+      return FMT_DISPATCH(visit_long_double(arg.long_double_value));
+    case Arg::CHAR:
+      return FMT_DISPATCH(visit_char(arg.int_value));
+    case Arg::STRING:
+      return FMT_DISPATCH(visit_string(arg.string));
+    case Arg::WSTRING:
+      return FMT_DISPATCH(visit_wstring(arg.wstring));
+    case Arg::POINTER:
+      return FMT_DISPATCH(visit_pointer(arg.pointer_value));
+    case Arg::CUSTOM:
+      return FMT_DISPATCH(visit_custom(arg.custom));
+    }
+  }
+};
+
 class RuntimeError : public std::runtime_error {
  protected:
   RuntimeError() : std::runtime_error("") {}
