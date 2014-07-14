@@ -256,6 +256,10 @@ struct TestVisitor : fmt::internal::ArgVisitor<TestVisitor, Result> {
   Result visit_char(int value) { return static_cast<char>(value); }
   Result visit_string(fmt::internal::StringValue<char> s) { return s.value; }
   Result visit_wstring(fmt::internal::StringValue<wchar_t> s) { return s.value; }
+  Result visit_pointer(const void *p) { return p; }
+  Result visit_custom(fmt::internal::Arg::CustomValue c) {
+    return *static_cast<const ::Test*>(c.value);
+  }
 };
 
 #define EXPECT_RESULT_(Char, type_code, value) { \
@@ -278,9 +282,16 @@ TEST(UtilTest, ArgVisitor) {
   EXPECT_RESULT(DOUBLE, 4.2);
   EXPECT_RESULT(LONG_DOUBLE, 4.2l);
   EXPECT_RESULT(CHAR, 'x');
-  EXPECT_RESULT(STRING, "abc");
-  EXPECT_RESULTW(WSTRING, L"abc");
-  // TODO: test pointer, custom
+  const char STR[] = "abc";
+  EXPECT_RESULT(STRING, STR);
+  const wchar_t WSTR[] = L"abc";
+  EXPECT_RESULTW(WSTRING, WSTR);
+  const void *p = STR;
+  EXPECT_RESULT(POINTER, p);
+  ::Test t;
+  Result result = TestVisitor().visit(MakeArg<char>(t));
+  EXPECT_EQ(Arg::CUSTOM, result.arg.type);
+  EXPECT_EQ(&t, result.arg.custom.value);
 }
 
 // Tests fmt::internal::CountDigits for integer type Int.
