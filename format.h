@@ -544,12 +544,6 @@ void FormatWinErrorMessage(
     fmt::Writer &out, int error_code, fmt::StringRef message);
 #endif
 
-struct SimpleErrorReporter {
-  void operator()(const void *, fmt::StringRef message) const {
-    throw fmt::FormatError(message);
-  }
-};
-
 // Throws Exception(message) if format contains '}', otherwise throws
 // FormatError reporting unmatched '{'. The idea is that unmatched '{'
 // should override other errors.
