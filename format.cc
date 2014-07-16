@@ -171,27 +171,29 @@ const Char *find_closing_brace(const Char *s, int num_open_braces = 1) {
 
 // Checks if an argument is a valid printf width specifier and sets
 // left alignment if it is negative.
-struct WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, ULongLong> {
+struct WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
  private:
   fmt::FormatSpec &spec_;
 
  public:
   explicit WidthHandler(fmt::FormatSpec &spec) : spec_(spec) {}
 
-  ULongLong visit_unhandled_arg() {
+  unsigned visit_unhandled_arg() {
     throw fmt::FormatError("width is not integer");
   }
 
-  ULongLong visit_any_int(fmt::LongLong value) {
-    ULongLong width = value;
-    if (value < 0) {
+  template <typename T>
+  unsigned visit_any_int(T value) {
+    typedef typename fmt::internal::IntTraits<T>::MainType UnsignedType;
+    UnsignedType width = value;
+    if (fmt::internal::is_negative(value)) {
       spec_.align_ = fmt::ALIGN_LEFT;
       width = 0 - width;
     }
-    return width;
+    if (width > INT_MAX)
+      throw fmt::FormatError("number is too big in format");
+    return static_cast<unsigned>(width);
   }
-
-  ULongLong visit_any_uint(ULongLong value) { return value; }
 };
 
 // This function template is used to prevent compile errors when handling
@@ -421,24 +423,11 @@ class fmt::internal::ArgFormatter :
   ArgFormatter(fmt::BasicWriter<Char> &w, fmt::FormatSpec &s, const Char *fmt)
       : writer_(w), spec_(s), format_(fmt) {}
 
-  void visit_int(int value) {
-    writer_.FormatInt(value, spec_);
-  }
-  void visit_uint(unsigned value) {
-    writer_.FormatInt(value, spec_);
-  }
-  void visit_long_long(LongLong value) {
-    writer_.FormatInt(value, spec_);
-  }
-  void visit_ulong_long(ULongLong value) {
-    writer_.FormatInt(value, spec_);
-  }
-  void visit_double(double value) {
-    writer_.FormatDouble(value, spec_);
-  }
-  void visit_long_double(long double value) {
-    writer_.FormatDouble(value, spec_);
-  }
+  template <typename T>
+  void visit_any_int(T value) { writer_.FormatInt(value, spec_); }
+
+  template <typename T>
+  void visit_any_double(T value) { writer_.FormatDouble(value, spec_); }
 
   void visit_char(int value) {
     if (spec_.type_ && spec_.type_ != 'c')
@@ -773,11 +762,7 @@ unsigned fmt::internal::PrintfParser<Char>::ParseHeader(
     spec.width_ = ParseNonnegativeInt(s, error);
   } else if (*s == '*') {
     ++s;
-    ULongLong width = WidthHandler(spec).visit(HandleArgIndex(UINT_MAX, error));
-    if (width <= INT_MAX)
-      spec.width_ = static_cast<unsigned>(width);
-    else if (!error)
-      error = "number is too big in format";
+    spec.width_ = WidthHandler(spec).visit(HandleArgIndex(UINT_MAX, error));
   }
   return arg_index;
 }

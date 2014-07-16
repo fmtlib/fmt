@@ -393,20 +393,20 @@ struct TypeSelector<false> { typedef uint64_t Type; };
 template <bool IsSigned>
 struct SignChecker {
   template <typename T>
-  static bool IsNegative(T) { return false; }
+  static bool is_negative(T) { return false; }
 };
 
 template <>
 struct SignChecker<true> {
   template <typename T>
-  static bool IsNegative(T value) { return value < 0; }
+  static bool is_negative(T value) { return value < 0; }
 };
 
 // Returns true if value is negative, false otherwise.
 // Same as (value < 0) but doesn't produce warnings if T is an unsigned type.
 template <typename T>
-inline bool IsNegative(T value) {
-  return SignChecker<std::numeric_limits<T>::is_signed>::IsNegative(value);
+inline bool is_negative(T value) {
+  return SignChecker<std::numeric_limits<T>::is_signed>::is_negative(value);
 }
 
 int SignBitNoInline(double value);
@@ -734,31 +734,47 @@ class ArgVisitor {
   Result visit_unhandled_arg() { return Result(); }
 
   Result visit_int(int value) {
-    return FMT_DISPATCH(visit_any_int(value));
+    return FMT_DISPATCH(visit_any_signed(value));
   }
   Result visit_long_long(LongLong value) {
-    return FMT_DISPATCH(visit_any_int(value));
+    return FMT_DISPATCH(visit_any_signed(value));
   }
-  Result visit_any_int(LongLong) {
-    return FMT_DISPATCH(visit_unhandled_arg());
+
+  // Visit any signed integer.
+  template <typename T>
+  Result visit_any_signed(T value) {
+    return FMT_DISPATCH(visit_any_int(value));
   }
 
   Result visit_uint(unsigned value) {
-    return FMT_DISPATCH(visit_any_uint(value));
+    return FMT_DISPATCH(visit_any_unsigned(value));
   }
   Result visit_ulong_long(ULongLong value) {
-    return FMT_DISPATCH(visit_any_uint(value));
+    return FMT_DISPATCH(visit_any_unsigned(value));
   }
-  Result visit_any_uint(ULongLong) {
+
+  // Visit any unsigned integer.
+  template <typename T>
+  Result visit_any_unsigned(T value) {
+    return FMT_DISPATCH(visit_any_int(value));
+  }
+
+  template <typename T>
+  Result visit_any_int(T) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
 
-  Result visit_double(double) {
+  Result visit_double(double value) {
+    return FMT_DISPATCH(visit_any_double(value));
+  }
+  Result visit_long_double(long double value) {
+    return FMT_DISPATCH(visit_any_double(value));
+  }
+  template <typename T>
+  Result visit_any_double(T) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
-  Result visit_long_double(long double) {
-    return FMT_DISPATCH(visit_unhandled_arg());
-  }
+
   Result visit_char(int) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
@@ -1603,7 +1619,7 @@ void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
   typedef typename internal::IntTraits<T>::MainType UnsignedType;
   UnsignedType abs_value = value;
   char prefix[4] = "";
-  if (internal::IsNegative(value)) {
+  if (internal::is_negative(value)) {
     prefix[0] = '-';
     ++prefix_size;
     abs_value = 0 - abs_value;
@@ -1892,7 +1908,7 @@ class FormatInt {
 template <typename T>
 inline void FormatDec(char *&buffer, T value) {
   typename internal::IntTraits<T>::MainType abs_value = value;
-  if (internal::IsNegative(value)) {
+  if (internal::is_negative(value)) {
     *buffer++ = '-';
     abs_value = 0 - abs_value;
   }
