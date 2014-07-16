@@ -707,7 +707,7 @@ void fmt::BasicFormatter<Char>::CheckSign(
 }
 
 template <typename Char>
-void fmt::internal::PrintfParser<Char>::ParseFlags(
+void fmt::internal::PrintfFormatter<Char>::ParseFlags(
     FormatSpec &spec, const Char *&s) {
   for (;;) {
     switch (*s++) {
@@ -734,7 +734,7 @@ void fmt::internal::PrintfParser<Char>::ParseFlags(
 }
 
 template <typename Char>
-unsigned fmt::internal::PrintfParser<Char>::ParseHeader(
+unsigned fmt::internal::PrintfFormatter<Char>::ParseHeader(
   const Char *&s, FormatSpec &spec, const char *&error) {
   unsigned arg_index = UINT_MAX;
   Char c = *s;
@@ -769,7 +769,7 @@ unsigned fmt::internal::PrintfParser<Char>::ParseHeader(
 
 // TODO: move to a base class that doesn't depend on template argument
 template <typename Char>
-const Arg &fmt::internal::PrintfParser<Char>::HandleArgIndex(
+const Arg &fmt::internal::PrintfFormatter<Char>::HandleArgIndex(
     unsigned arg_index, const char *&error) {
   if (arg_index != UINT_MAX) {
     if (next_arg_index_ <= 0) {
@@ -791,7 +791,7 @@ const Arg &fmt::internal::PrintfParser<Char>::HandleArgIndex(
 }
 
 template <typename Char>
-void fmt::internal::PrintfParser<Char>::Format(
+void fmt::internal::PrintfFormatter<Char>::Format(
     BasicWriter<Char> &writer, BasicStringRef<Char> format,
     const ArgList &args) {
   const Char *start = format.c_str();
@@ -1166,7 +1166,7 @@ template fmt::BasicWriter<char>::CharPtr
 template void fmt::BasicFormatter<char>::Format(
   BasicStringRef<char> format, const ArgList &args);
 
-template void fmt::internal::PrintfParser<char>::Format(
+template void fmt::internal::PrintfFormatter<char>::Format(
   BasicWriter<char> &writer, BasicStringRef<char> format, const ArgList &args);
 
 // Explicit instantiations for wchar_t.
@@ -1178,7 +1178,7 @@ template fmt::BasicWriter<wchar_t>::CharPtr
 template void fmt::BasicFormatter<wchar_t>::Format(
     BasicStringRef<wchar_t> format, const ArgList &args);
 
-template void fmt::internal::PrintfParser<wchar_t>::Format(
+template void fmt::internal::PrintfFormatter<wchar_t>::Format(
     BasicWriter<wchar_t> &writer, BasicStringRef<wchar_t> format,
     const ArgList &args);
 

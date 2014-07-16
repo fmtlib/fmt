@@ -871,9 +871,9 @@ public:
 };
 
 namespace internal {
-// Printf format string parser.
+// A printf formatter.
 template <typename Char>
-class PrintfParser {
+class PrintfFormatter {
  private:
   ArgList args_;
   int next_arg_index_;
@@ -1351,7 +1351,7 @@ class BasicWriter {
 
   friend class internal::ArgFormatter<Char>;
   friend class BasicFormatter<Char>;
-  friend class internal::PrintfParser<Char>;
+  friend class internal::PrintfFormatter<Char>;
 
  public:
   /**
@@ -1800,7 +1800,7 @@ void print(std::ostream &os, StringRef format, const ArgList &args);
 template <typename Char>
 void printf(BasicWriter<Char> &w,
     BasicStringRef<Char> format, const ArgList &args) {
-  internal::PrintfParser<Char>().Format(w, format, args);
+  internal::PrintfFormatter<Char>().Format(w, format, args);
 }
 
 inline std::string sprintf(StringRef format, const ArgList &args) {
