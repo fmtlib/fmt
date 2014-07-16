@@ -681,10 +681,9 @@ inline const Arg
         "cannot switch from automatic to manual argument indexing");
   }
   next_arg_index_ = -1;
-  const char *error = 0;
-  arg_index = ParseNonnegativeInt(s, error);
-  if (error)
-    report_error_(s, error); // TODO
+  arg_index = ParseNonnegativeInt(s, error_);
+  if (error_)
+    report_error_(s, error_); // TODO: don't use report_error_
   if (arg_index >= args_.size())
     report_error_(s, "argument index is out of range in format");
   return args_[arg_index];
@@ -719,25 +718,21 @@ const Arg &fmt::internal::FormatterBase::next_arg() {
   return DUMMY_ARG;
 }
 
-const Arg &fmt::internal::FormatterBase::HandleArgIndex(
-    unsigned arg_index, const char *&error) {
+const Arg &fmt::internal::FormatterBase::handle_arg_index(unsigned arg_index) {
   if (arg_index != UINT_MAX) {
     if (next_arg_index_ <= 0) {
       next_arg_index_ = -1;
       --arg_index;
-    } else if (!error) {
-      error = "cannot switch from automatic to manual argument indexing";
+    } else if (!error_) {
+      error_ = "cannot switch from automatic to manual argument indexing";
     }
-  } else if (next_arg_index_ >= 0) {
-    arg_index = next_arg_index_++;
-  } else if (!error) {
-    error = "cannot switch from manual to automatic argument indexing";
+    if (arg_index < args_.size())
+      return args_[arg_index];
+    if (!error_)
+      error_ = "argument index is out of range in format";
+    return DUMMY_ARG;
   }
-  if (arg_index < args_.size())
-    return args_[arg_index];
-  if (!error)
-    error = "argument index is out of range in format";
-  return DUMMY_ARG;
+  return next_arg();
 }
 
 template <typename Char>
@@ -769,13 +764,13 @@ void fmt::internal::PrintfFormatter<Char>::ParseFlags(
 
 template <typename Char>
 unsigned fmt::internal::PrintfFormatter<Char>::ParseHeader(
-  const Char *&s, FormatSpec &spec, const char *&error) {
+  const Char *&s, FormatSpec &spec) {
   unsigned arg_index = UINT_MAX;
   Char c = *s;
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
     // preceded with '0' flag(s).
-    unsigned value = ParseNonnegativeInt(s, error);
+    unsigned value = ParseNonnegativeInt(s, error_);
     if (*s == '$') {  // value is an argument index
       ++s;
       arg_index = value;
@@ -793,10 +788,10 @@ unsigned fmt::internal::PrintfFormatter<Char>::ParseHeader(
   ParseFlags(spec, s);
   // Parse width.
   if (*s >= '0' && *s <= '9') {
-    spec.width_ = ParseNonnegativeInt(s, error);
+    spec.width_ = ParseNonnegativeInt(s, error_);
   } else if (*s == '*') {
     ++s;
-    spec.width_ = WidthHandler(spec).visit(HandleArgIndex(UINT_MAX, error));
+    spec.width_ = WidthHandler(spec).visit(handle_arg_index(UINT_MAX));
   }
   return arg_index;
 }
@@ -826,33 +821,32 @@ void fmt::internal::PrintfFormatter<Char>::Format(
     // completely parsed. This is done to avoid potentially confusing
     // error messages for incomplete format strings. For example, in
     //   sprintf("%2$", 42);
-    // the format specification is incomplete. In naive approach we
+    // the format specification is incomplete. In a naive approach we
     // would parse 2 as an argument index and report an error that the
     // index is out of range which would be rather confusing if the
     // use meant "%2d$" rather than "%2$d". If we delay an error, the
     // user will get an error that the format string is invalid which
     // is OK for both cases.
-    const char *error = 0;
 
     // Parse argument index, flags and width.
-    unsigned arg_index = ParseHeader(s, spec, error);
+    unsigned arg_index = ParseHeader(s, spec);
 
     // Parse precision.
     if (*s == '.') {
       ++s;
       if ('0' <= *s && *s <= '9') {
-        spec.precision_ = ParseNonnegativeInt(s, error);
+        spec.precision_ = ParseNonnegativeInt(s, error_);
       } else if (*s == '*') {
         ++s;
-        const Arg &arg = HandleArgIndex(UINT_MAX, error);
+        const Arg &arg = handle_arg_index(UINT_MAX);
         if (arg.type <= Arg::LAST_INTEGER_TYPE)
           spec.precision_ = static_cast<int>(GetIntValue(arg)); // TODO: check for overflow
-        else if (!error)
-          error = "precision is not integer";
+        else if (!error_)
+          error_ = "precision is not integer";
       }
     }
 
-    const Arg &arg = HandleArgIndex(arg_index, error);
+    const Arg &arg = handle_arg_index(arg_index);
     if (spec.hash_flag() && GetIntValue(arg) == 0)
       spec.flags_ &= ~HASH_FLAG;
     if (spec.fill_ == '0') {
@@ -879,8 +873,8 @@ void fmt::internal::PrintfFormatter<Char>::Format(
     // Parse type.
     if (!*s)
       throw FormatError("invalid format string");
-    if (error)
-      throw FormatError(error);
+    if (error_)
+      throw FormatError(error_);
     spec.type_ = static_cast<char>(*s++);
 
     start = s;

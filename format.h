@@ -851,7 +851,7 @@ protected:
 
   const Arg &next_arg();
 
-  const Arg &HandleArgIndex(unsigned arg_index, const char *&error);
+  const Arg &handle_arg_index(unsigned arg_index);
 
   // TODO
 };
@@ -864,7 +864,7 @@ class PrintfFormatter : private FormatterBase {
 
   // Parses argument index, flags and width and returns the parsed
   // argument index.
-  unsigned ParseHeader(const Char *&s, FormatSpec &spec, const char *&error);
+  unsigned ParseHeader(const Char *&s, FormatSpec &spec);
 
  public:
   void Format(BasicWriter<Char> &writer,
