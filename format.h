@@ -734,31 +734,17 @@ class ArgVisitor {
   Result visit_unhandled_arg() { return Result(); }
 
   Result visit_int(int value) {
-    return FMT_DISPATCH(visit_any_signed(value));
+    return FMT_DISPATCH(visit_any_int(value));
   }
   Result visit_long_long(LongLong value) {
-    return FMT_DISPATCH(visit_any_signed(value));
-  }
-
-  // Visit any signed integer.
-  template <typename T>
-  Result visit_any_signed(T value) {
     return FMT_DISPATCH(visit_any_int(value));
   }
-
   Result visit_uint(unsigned value) {
-    return FMT_DISPATCH(visit_any_unsigned(value));
+    return FMT_DISPATCH(visit_any_int(value));
   }
   Result visit_ulong_long(ULongLong value) {
-    return FMT_DISPATCH(visit_any_unsigned(value));
-  }
-
-  // Visit any unsigned integer.
-  template <typename T>
-  Result visit_any_unsigned(T value) {
     return FMT_DISPATCH(visit_any_int(value));
   }
-
   template <typename T>
   Result visit_any_int(T) {
     return FMT_DISPATCH(visit_unhandled_arg());

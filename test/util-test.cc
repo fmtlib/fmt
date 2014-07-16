@@ -43,6 +43,7 @@
 
 using fmt::StringRef;
 using fmt::internal::Arg;
+using fmt::internal::MakeArg;
 
 namespace {
 std::string GetSystemErrorMessage(int error_code) {
@@ -59,7 +60,10 @@ std::string GetSystemErrorMessage(int error_code) {
 }
 
 struct Test {};
-std::ostream &operator<<(std::ostream &os, Test) { return os << "test"; }
+template <typename Char>
+std::basic_ostream<Char> &operator<<(std::basic_ostream<Char> &os, Test) {
+  return os << "test";
+}
 }
 
 TEST(UtilTest, Increment) {
@@ -103,7 +107,7 @@ ARG_INFO(CUSTOM, Arg::CustomValue, custom);
   EXPECT_EQ(value, ArgInfo<Arg::Type>::get(arg)); \
 }
 
-TEST(UtilTest, ArgInfo) {
+TEST(ArgTest, ArgInfo) {
   CHECK_ARG_INFO(INT, int_value, 42);
   CHECK_ARG_INFO(UINT, uint_value, 42);
   CHECK_ARG_INFO(LONG_LONG, long_long_value, 42);
@@ -124,7 +128,7 @@ TEST(UtilTest, ArgInfo) {
 
 #define EXPECT_ARG_(Char, type_code, Type, value) { \
   Type expected_value = static_cast<Type>(value); \
-  Arg arg = fmt::internal::MakeArg<Char>(expected_value); \
+  Arg arg = MakeArg<Char>(expected_value); \
   EXPECT_EQ(Arg::type_code, arg.type); \
   EXPECT_EQ(expected_value, ArgInfo<Arg::type_code>::get(arg)); \
 }
@@ -135,7 +139,7 @@ TEST(UtilTest, ArgInfo) {
 #define EXPECT_ARGW(type_code, Type, value) \
   EXPECT_ARG_(wchar_t, type_code, Type, value)
 
-TEST(UtilTest, MakeArg) {
+TEST(ArgTest, MakeArg) {
   // Test bool.
   EXPECT_ARG(INT, bool, true);
 
@@ -227,7 +231,7 @@ TEST(UtilTest, MakeArg) {
   EXPECT_ARG(POINTER, const void*, &n);
 
   ::Test t;
-  fmt::internal::Arg arg = fmt::internal::MakeArg<char>(t);
+  fmt::internal::Arg arg = MakeArg<char>(t);
   EXPECT_EQ(fmt::internal::Arg::CUSTOM, arg.type);
   EXPECT_EQ(&t, arg.custom.value);
   fmt::Writer w;
@@ -239,11 +243,11 @@ TEST(UtilTest, MakeArg) {
 struct Result {
   fmt::internal::Arg arg;
 
-  Result() : arg(fmt::internal::MakeArg<char>(0xdeadbeef)) {}
+  Result() : arg(MakeArg<char>(0xdeadbeef)) {}
 
   template <typename T>
-  Result(const T& value) : arg(fmt::internal::MakeArg<char>(value)) {}
-  Result(const wchar_t *s) : arg(fmt::internal::MakeArg<wchar_t>(s)) {}
+  Result(const T& value) : arg(MakeArg<char>(value)) {}
+  Result(const wchar_t *s) : arg(MakeArg<wchar_t>(s)) {}
 };
 
 struct TestVisitor : fmt::internal::ArgVisitor<TestVisitor, Result> {
@@ -273,8 +277,7 @@ struct TestVisitor : fmt::internal::ArgVisitor<TestVisitor, Result> {
 #define EXPECT_RESULTW(type_code, value) \
   EXPECT_RESULT_(wchar_t, type_code, value)
 
-TEST(UtilTest, ArgVisitor) {
-  using fmt::internal::MakeArg;
+TEST(ArgVisitorTest, VisitAll) {
   EXPECT_RESULT(INT, 42);
   EXPECT_RESULT(UINT, 42u);
   EXPECT_RESULT(LONG_LONG, 42ll);
@@ -292,6 +295,60 @@ TEST(UtilTest, ArgVisitor) {
   Result result = TestVisitor().visit(MakeArg<char>(t));
   EXPECT_EQ(Arg::CUSTOM, result.arg.type);
   EXPECT_EQ(&t, result.arg.custom.value);
+}
+
+struct TestAnyVisitor : fmt::internal::ArgVisitor<TestAnyVisitor, Result> {
+  template <typename T>
+  Result visit_any_int(T value) { return value; }
+
+  template <typename T>
+  Result visit_any_double(T value) { return value; }
+};
+
+#undef EXPECT_RESULT
+#define EXPECT_RESULT(type_code, value) { \
+  Result result = TestAnyVisitor().visit(MakeArg<char>(value)); \
+  EXPECT_EQ(Arg::type_code, result.arg.type); \
+  EXPECT_EQ(value, ArgInfo<Arg::type_code>::get(result.arg)); \
+}
+
+TEST(ArgVisitorTest, VisitAny) {
+  EXPECT_RESULT(INT, 42);
+  EXPECT_RESULT(UINT, 42u);
+  EXPECT_RESULT(LONG_LONG, 42ll);
+  EXPECT_RESULT(ULONG_LONG, 42ull);
+  EXPECT_RESULT(DOUBLE, 4.2);
+  EXPECT_RESULT(LONG_DOUBLE, 4.2l);
+}
+
+struct TestUnhandledVisitor :
+    fmt::internal::ArgVisitor<TestUnhandledVisitor, const char *> {
+  const char *visit_unhandled_arg() { return "test"; }
+};
+
+#define EXPECT_UNHANDLED(value) \
+  EXPECT_STREQ("test", TestUnhandledVisitor().visit(MakeArg<wchar_t>(value)));
+
+TEST(ArgVisitorTest, VisitUnhandledArg) {
+  EXPECT_UNHANDLED(42);
+  EXPECT_UNHANDLED(42u);
+  EXPECT_UNHANDLED(42ll);
+  EXPECT_UNHANDLED(42ull);
+  EXPECT_UNHANDLED(4.2);
+  EXPECT_UNHANDLED(4.2l);
+  EXPECT_UNHANDLED('x');
+  const char STR[] = "abc";
+  EXPECT_UNHANDLED(STR);
+  const wchar_t WSTR[] = L"abc";
+  EXPECT_UNHANDLED(WSTR);
+  const void *p = STR;
+  EXPECT_UNHANDLED(p);
+  EXPECT_UNHANDLED(::Test());
+}
+
+TEST(ArgVisitorTest, VisitInvalidArg) {
+  Arg arg = {static_cast<Arg::Type>(Arg::CUSTOM + 1)};
+  EXPECT_DEBUG_DEATH(TestVisitor().visit(arg), "Assertion");
 }
 
 // Tests fmt::internal::CountDigits for integer type Int.
