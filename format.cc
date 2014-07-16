@@ -415,13 +415,14 @@ template <typename Char>
 class fmt::internal::ArgFormatter :
     public fmt::internal::ArgVisitor<fmt::internal::ArgFormatter<Char>, void> {
  private:
+  fmt::BasicFormatter<Char> &formatter_;
   fmt::BasicWriter<Char> &writer_;
   fmt::FormatSpec &spec_;
   const Char *format_;
 
  public:
-  ArgFormatter(fmt::BasicWriter<Char> &w, fmt::FormatSpec &s, const Char *fmt)
-      : writer_(w), spec_(s), format_(fmt) {}
+  ArgFormatter(fmt::BasicFormatter<Char> &f, fmt::FormatSpec &s, const Char *fmt)
+  : formatter_(f), writer_(f.writer()), spec_(s), format_(fmt) {}
 
   template <typename T>
   void visit_any_int(T value) { writer_.FormatInt(value, spec_); }
@@ -467,7 +468,7 @@ class fmt::internal::ArgFormatter :
   }
 
   void visit_custom(Arg::CustomValue c) {
-    c.format(this, c.value, format_);
+    c.format(&formatter_, c.value, format_);
   }
 };
 
@@ -670,22 +671,20 @@ inline const Arg
   if (*s < '0' || *s > '9') {
     if (*s != '}' && *s != ':')
       report_error_(s, "invalid argument index in format string");
-    if (next_arg_index_ < 0) {
-      report_error_(s,
-          "cannot switch from manual to automatic argument indexing");
-    }
-    arg_index = next_arg_index_++;
-  } else {
-    if (next_arg_index_ > 0) {
-      report_error_(s,
-          "cannot switch from automatic to manual argument indexing");
-    }
-    next_arg_index_ = -1;
-    const char *error = 0;
-    arg_index = ParseNonnegativeInt(s, error);
-    if (error)
-      report_error_(s, error); // TODO
+    const Arg &arg = next_arg();
+    if (error_)
+      report_error_(s, error_);
+    return arg;
   }
+  if (next_arg_index_ > 0) {
+    report_error_(s,
+        "cannot switch from automatic to manual argument indexing");
+  }
+  next_arg_index_ = -1;
+  const char *error = 0;
+  arg_index = ParseNonnegativeInt(s, error);
+  if (error)
+    report_error_(s, error); // TODO
   if (arg_index >= args_.size())
     report_error_(s, "argument index is out of range in format");
   return args_[arg_index];
@@ -704,6 +703,41 @@ void fmt::BasicFormatter<Char>::CheckSign(
         fmt::format("format specifier '{}' requires signed argument", sign).c_str());
   }
   ++s;
+}
+
+const Arg &fmt::internal::FormatterBase::next_arg() {
+  if (next_arg_index_ < 0) {
+    if (!error_)
+      error_ = "cannot switch from manual to automatic argument indexing";
+    return DUMMY_ARG;
+  }
+  unsigned arg_index = next_arg_index_++;
+  if (arg_index < args_.size())
+    return args_[arg_index];
+  if (!error_)
+    error_ = "argument index is out of range in format";
+  return DUMMY_ARG;
+}
+
+const Arg &fmt::internal::FormatterBase::HandleArgIndex(
+    unsigned arg_index, const char *&error) {
+  if (arg_index != UINT_MAX) {
+    if (next_arg_index_ <= 0) {
+      next_arg_index_ = -1;
+      --arg_index;
+    } else if (!error) {
+      error = "cannot switch from automatic to manual argument indexing";
+    }
+  } else if (next_arg_index_ >= 0) {
+    arg_index = next_arg_index_++;
+  } else if (!error) {
+    error = "cannot switch from manual to automatic argument indexing";
+  }
+  if (arg_index < args_.size())
+    return args_[arg_index];
+  if (!error)
+    error = "argument index is out of range in format";
+  return DUMMY_ARG;
 }
 
 template <typename Char>
@@ -765,29 +799,6 @@ unsigned fmt::internal::PrintfFormatter<Char>::ParseHeader(
     spec.width_ = WidthHandler(spec).visit(HandleArgIndex(UINT_MAX, error));
   }
   return arg_index;
-}
-
-// TODO: move to a base class that doesn't depend on template argument
-template <typename Char>
-const Arg &fmt::internal::PrintfFormatter<Char>::HandleArgIndex(
-    unsigned arg_index, const char *&error) {
-  if (arg_index != UINT_MAX) {
-    if (next_arg_index_ <= 0) {
-      next_arg_index_ = -1;
-      --arg_index;
-    } else if (!error) {
-      error = "cannot switch from automatic to manual argument indexing";
-    }
-  } else if (next_arg_index_ >= 0) {
-    arg_index = next_arg_index_++;
-  } else if (!error) {
-    error = "cannot switch from manual to automatic argument indexing";
-  }
-  if (arg_index < args_.size())
-    return args_[arg_index];
-  if (!error)
-    error = "argument index is out of range in format";
-  return DUMMY_ARG;
 }
 
 template <typename Char>
@@ -1083,7 +1094,7 @@ const Char *fmt::BasicFormatter<Char>::format(
   start_ = s;
 
   // Format argument.
-  internal::ArgFormatter<Char>(writer_, spec, s - 1).visit(arg);
+  internal::ArgFormatter<Char>(*this, spec, s - 1).visit(arg);
   return s;
 }
 

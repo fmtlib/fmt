@@ -845,13 +845,44 @@ class ArgList {
 
 struct FormatSpec;
 
-// A formatter.
-template <typename Char>
-class BasicFormatter {
-private:
-  BasicWriter<Char> &writer_;
+namespace internal {
+
+class FormatterBase {
+protected:
   ArgList args_;
   int next_arg_index_;
+  const char *error_;
+
+  FormatterBase() : error_(0) {}
+
+  const Arg &next_arg();
+
+  const Arg &HandleArgIndex(unsigned arg_index, const char *&error);
+
+  // TODO
+};
+
+// A printf formatter.
+template <typename Char>
+class PrintfFormatter : private FormatterBase {
+ private:
+  void ParseFlags(FormatSpec &spec, const Char *&s);
+
+  // Parses argument index, flags and width and returns the parsed
+  // argument index.
+  unsigned ParseHeader(const Char *&s, FormatSpec &spec, const char *&error);
+
+ public:
+  void Format(BasicWriter<Char> &writer,
+    BasicStringRef<Char> format, const ArgList &args);
+};
+}  // namespace internal
+
+// A formatter.
+template <typename Char>
+class BasicFormatter : private internal::FormatterBase {
+private:
+  BasicWriter<Char> &writer_;
   const Char *start_;
   internal::FormatErrorReporter<Char> report_error_;
 
@@ -869,28 +900,6 @@ public:
 
   const Char *format(const Char *format_str, const internal::Arg &arg);
 };
-
-namespace internal {
-// A printf formatter.
-template <typename Char>
-class PrintfFormatter {
- private:
-  ArgList args_;
-  int next_arg_index_;
-  
-  void ParseFlags(FormatSpec &spec, const Char *&s);
-
-  // Parses argument index, flags and width and returns the parsed
-  // argument index.
-  unsigned ParseHeader(const Char *&s, FormatSpec &spec, const char *&error);
-
-  const internal::Arg &HandleArgIndex(unsigned arg_index, const char *&error);
-
- public:
-  void Format(BasicWriter<Char> &writer,
-    BasicStringRef<Char> format, const ArgList &args);
-};
-}  // namespace internal
 
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
