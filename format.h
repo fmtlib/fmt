@@ -569,10 +569,10 @@ struct NonZero<0> {
 struct Arg {
   enum Type {
     // Integer types should go first,
-    INT, UINT, LONG_LONG, ULONG_LONG, LAST_INTEGER_TYPE = ULONG_LONG,
+    INT, UINT, LONG_LONG, ULONG_LONG, CHAR, LAST_INTEGER_TYPE = CHAR,
     // followed by floating-point types.
     DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
-    CHAR, STRING, WSTRING, POINTER, CUSTOM
+    STRING, WSTRING, POINTER, CUSTOM
   };
   Type type;
 
@@ -900,7 +900,7 @@ enum Alignment {
 };
 
 // Flags.
-enum { SIGN_FLAG = 1, PLUS_FLAG = 2, HASH_FLAG = 4 };
+enum { SIGN_FLAG = 1, PLUS_FLAG = 2, MINUS_FLAG = 4, HASH_FLAG = 8 };
 
 // An empty format specifier.
 struct EmptySpec {};

@@ -696,7 +696,7 @@ TEST(FormatterTest, NumericAlign) {
   EXPECT_THROW_MSG(format("{0:=5", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0:=5}", 'c'),
-      FormatError, "format specifier '=' requires numeric argument");
+      FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:=5}", "abc"),
       FormatError, "format specifier '=' requires numeric argument");
   EXPECT_THROW_MSG(format("{0:=8}", reinterpret_cast<void*>(0xface)),
@@ -760,7 +760,7 @@ TEST(FormatterTest, PlusSign) {
   EXPECT_THROW_MSG(format("{0:+", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0:+}", 'c'),
-      FormatError, "format specifier '+' requires numeric argument");
+      FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:+}", "abc"),
       FormatError, "format specifier '+' requires numeric argument");
   EXPECT_THROW_MSG(format("{0:+}", reinterpret_cast<void*>(0x42)),
@@ -786,7 +786,7 @@ TEST(FormatterTest, MinusSign) {
   EXPECT_THROW_MSG(format("{0:-", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0:-}", 'c'),
-      FormatError, "format specifier '-' requires numeric argument");
+      FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:-}", "abc"),
       FormatError, "format specifier '-' requires numeric argument");
   EXPECT_THROW_MSG(format("{0:-}", reinterpret_cast<void*>(0x42)),
@@ -812,7 +812,7 @@ TEST(FormatterTest, SpaceSign) {
   EXPECT_THROW_MSG(format("{0: ", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0: }", 'c'),
-      FormatError, "format specifier ' ' requires numeric argument");
+      FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0: }", "abc"),
       FormatError, "format specifier ' ' requires numeric argument");
   EXPECT_THROW_MSG(format("{0: }", reinterpret_cast<void*>(0x42)),
@@ -859,7 +859,7 @@ TEST(FormatterTest, HashFlag) {
   EXPECT_THROW_MSG(format("{0:#", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0:#}", 'c'),
-      FormatError, "format specifier '#' requires numeric argument");
+      FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:#}", "abc"),
       FormatError, "format specifier '#' requires numeric argument");
   EXPECT_THROW_MSG(format("{0:#}", reinterpret_cast<void*>(0x42)),
@@ -881,7 +881,7 @@ TEST(FormatterTest, ZeroFlag) {
   EXPECT_THROW_MSG(format("{0:0", 'c'),
       FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0:05}", 'c'),
-      FormatError, "format specifier '0' requires numeric argument");
+      FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:05}", "abc"),
       FormatError, "format specifier '0' requires numeric argument");
   EXPECT_THROW_MSG(format("{0:05}", reinterpret_cast<void*>(0x42)),
@@ -1268,7 +1268,7 @@ TEST(FormatterTest, FormatLongDouble) {
 }
 
 TEST(FormatterTest, FormatChar) {
-  CheckUnknownTypes('a', "c", "char");
+  CheckUnknownTypes('a', "cbBdoxX", "char");
   EXPECT_EQ("a", format("{0}", 'a'));
   EXPECT_EQ("z", format("{0:c}", 'z'));
   EXPECT_EQ(L"a", format(L"{0}", 'a'));

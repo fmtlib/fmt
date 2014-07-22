@@ -431,8 +431,18 @@ class fmt::internal::ArgFormatter :
   void visit_any_double(T value) { writer_.FormatDouble(value, spec_); }
 
   void visit_char(int value) {
-    if (spec_.type_ && spec_.type_ != 'c')
-      fmt::internal::ReportUnknownType(spec_.type_, "char");
+    if (spec_.type_ && spec_.type_ != 'c') {
+      switch (spec_.type_) {
+      // TODO: don't duplicate integer format specifiers here
+      case 'd': case 'x': case 'X': case 'b': case 'B': case 'o':
+        writer_.FormatInt(value, spec_);
+        break;
+      default:
+        internal::ReportUnknownType(spec_.type_, "char");
+      }
+    }
+    if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
+      throw FormatError("invalid format specifier for char");
     typedef typename fmt::BasicWriter<Char>::CharPtr CharPtr;
     CharPtr out = CharPtr();
     if (spec_.width_ > 1) {
@@ -893,25 +903,17 @@ void fmt::internal::PrintfFormatter<Char>::Format(
     case Arg::ULONG_LONG:
       writer.FormatInt(arg.ulong_long_value, spec);
       break;
-    case Arg::DOUBLE:
-      writer.FormatDouble(arg.double_value, spec);
-      break;
-    case Arg::LONG_DOUBLE:
-      writer.FormatDouble(arg.long_double_value, spec);
-      break;
     case Arg::CHAR: {
       if (spec.type_ && spec.type_ != 'c')
-        internal::ReportUnknownType(spec.type_, "char");
+        writer.FormatInt(arg.int_value, spec);
       typedef typename BasicWriter<Char>::CharPtr CharPtr;
       CharPtr out = CharPtr();
       if (spec.width_ > 1) {
-        Char fill = static_cast<Char>(spec.fill());
+        Char fill = ' ';
         out = writer.GrowBuffer(spec.width_);
-        if (spec.align_ == ALIGN_RIGHT) {
+        if (spec.align_ != ALIGN_LEFT) {
           std::fill_n(out, spec.width_ - 1, fill);
           out += spec.width_ - 1;
-        } else if (spec.align_ == ALIGN_CENTER) {
-          out = writer.FillPadding(out, spec.width_, 1, fill);
         } else {
           std::fill_n(out + 1, spec.width_ - 1, fill);
         }
@@ -921,6 +923,12 @@ void fmt::internal::PrintfFormatter<Char>::Format(
       *out = static_cast<Char>(arg.int_value);
       break;
     }
+    case Arg::DOUBLE:
+      writer.FormatDouble(arg.double_value, spec);
+      break;
+    case Arg::LONG_DOUBLE:
+      writer.FormatDouble(arg.long_double_value, spec);
+      break;
     case Arg::STRING:
       writer.write_str(arg.string, spec);
       break;
@@ -1001,6 +1009,7 @@ const Char *fmt::BasicFormatter<Char>::format(
         break;
       case '-':
         CheckSign(s, arg);
+        spec.flags_ |= MINUS_FLAG;
         break;
       case ' ':
         CheckSign(s, arg);
