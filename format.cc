@@ -432,7 +432,7 @@ class fmt::internal::ArgFormatter :
 
   void visit_char(int value) {
     if (spec_.type_ && spec_.type_ != 'c')
-      fmt::internal::ReportUnknownType(spec_.type_, "char");
+      return visit_any_int(value);
     typedef typename fmt::BasicWriter<Char>::CharPtr CharPtr;
     CharPtr out = CharPtr();
     if (spec_.width_ > 1) {

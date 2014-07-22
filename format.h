@@ -571,8 +571,10 @@ struct Arg {
     // Integer types should go first,
     INT, UINT, LONG_LONG, ULONG_LONG, LAST_INTEGER_TYPE = ULONG_LONG,
     // followed by floating-point types.
-    DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
-    CHAR, STRING, WSTRING, POINTER, CUSTOM
+    DOUBLE, LONG_DOUBLE, 
+	// fringe number hybrid type
+	CHAR, LAST_NUMERIC_TYPE = CHAR,
+	STRING, WSTRING, POINTER, CUSTOM,
   };
   Type type;
 
