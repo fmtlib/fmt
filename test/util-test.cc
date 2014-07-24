@@ -351,16 +351,16 @@ TEST(ArgVisitorTest, VisitInvalidArg) {
   EXPECT_DEBUG_DEATH(TestVisitor().visit(arg), "Assertion");
 }
 
-// Tests fmt::internal::CountDigits for integer type Int.
+// Tests fmt::internal::count_digits for integer type Int.
 template <typename Int>
 void TestCountDigits(Int) {
   for (Int i = 0; i < 10; ++i)
-          EXPECT_EQ(1u, fmt::internal::CountDigits(i));
+    EXPECT_EQ(1u, fmt::internal::count_digits(i));
   for (Int i = 1, n = 1,
-               end = std::numeric_limits<Int>::max() / 10; n <= end; ++i) {
+      end = std::numeric_limits<Int>::max() / 10; n <= end; ++i) {
     n *= 10;
-    EXPECT_EQ(i, fmt::internal::CountDigits(n - 1));
-    EXPECT_EQ(i + 1, fmt::internal::CountDigits(n));
+    EXPECT_EQ(i, fmt::internal::count_digits(n - 1));
+    EXPECT_EQ(i + 1, fmt::internal::count_digits(n));
   }
 }
 
