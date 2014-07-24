@@ -853,6 +853,12 @@ protected:
 
   const Arg &handle_arg_index(unsigned arg_index);
 
+  template <typename Char>
+  void write(BasicWriter<Char> &w, const Char *start, const Char *end) {
+    if (start != end)
+      w << BasicStringRef<Char>(start, end - start);
+  }
+
   // TODO
 };
 
@@ -1331,11 +1337,11 @@ class BasicWriter {
 
   // Formats an integer.
   template <typename T, typename Spec>
-  void FormatInt(T value, const Spec &spec);
+  void write_int(T value, const Spec &spec);
 
   // Formats a floating-point number (double or long double).
   template <typename T>
-  void FormatDouble(T value, const FormatSpec &spec);
+  void write_double(T value, const FormatSpec &spec);
 
   // Writes a formatted string.
   template <typename StringChar>
@@ -1353,7 +1359,6 @@ class BasicWriter {
   void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
 
   friend class internal::ArgFormatter<Char>;
-  friend class BasicFormatter<Char>;
   friend class internal::PrintfFormatter<Char>;
 
  public:
@@ -1462,7 +1467,7 @@ class BasicWriter {
   }
 
   BasicWriter &operator<<(double value) {
-    FormatDouble(value, FormatSpec());
+    write_double(value, FormatSpec());
     return *this;
   }
 
@@ -1471,7 +1476,7 @@ class BasicWriter {
     (``'g'``) and writes it to the stream.
    */
   BasicWriter &operator<<(long double value) {
-    FormatDouble(value, FormatSpec());
+    write_double(value, FormatSpec());
     return *this;
   }
 
@@ -1479,29 +1484,28 @@ class BasicWriter {
     Writes a character to the stream.
    */
   BasicWriter &operator<<(char value) {
-    *GrowBuffer(1) = value;
+    buffer_.push_back(value);
     return *this;
   }
 
   BasicWriter &operator<<(wchar_t value) {
-    *GrowBuffer(1) = internal::CharTraits<Char>::convert(value);
+    buffer_.push_back(internal::CharTraits<Char>::convert(value));
     return *this;
   }
 
   /**
     Writes *value* to the stream.
    */
-  BasicWriter &operator<<(const fmt::BasicStringRef<Char> value) {
+  BasicWriter &operator<<(fmt::BasicStringRef<Char> value) {
     const Char *str = value.c_str();
-    std::size_t size = value.size();
-    std::copy(str, str + size, GrowBuffer(size));
+    buffer_.append(str, str + value.size());
     return *this;
   }
 
   template <typename T, typename Spec, typename FillChar>
   BasicWriter &operator<<(const IntFormatSpec<T, Spec, FillChar> &spec) {
     internal::CharTraits<Char>::convert(FillChar());
-    FormatInt(spec.value(), spec);
+    write_int(spec.value(), spec);
     return *this;
   }
 
@@ -1603,7 +1607,7 @@ typename fmt::BasicWriter<Char>::CharPtr
 
 template <typename Char>
 template <typename T, typename Spec>
-void BasicWriter<Char>::FormatInt(T value, const Spec &spec) {
+void BasicWriter<Char>::write_int(T value, const Spec &spec) {
   unsigned prefix_size = 0;
   typedef typename internal::IntTraits<T>::MainType UnsignedType;
   UnsignedType abs_value = value;

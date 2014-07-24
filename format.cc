@@ -425,17 +425,17 @@ class fmt::internal::ArgFormatter :
   : formatter_(f), writer_(f.writer()), spec_(s), format_(fmt) {}
 
   template <typename T>
-  void visit_any_int(T value) { writer_.FormatInt(value, spec_); }
+  void visit_any_int(T value) { writer_.write_int(value, spec_); }
 
   template <typename T>
-  void visit_any_double(T value) { writer_.FormatDouble(value, spec_); }
+  void visit_any_double(T value) { writer_.write_double(value, spec_); }
 
   void visit_char(int value) {
     if (spec_.type_ && spec_.type_ != 'c') {
       switch (spec_.type_) {
       // TODO: don't duplicate integer format specifiers here
       case 'd': case 'x': case 'X': case 'b': case 'B': case 'o':
-        writer_.FormatInt(value, spec_);
+        writer_.write_int(value, spec_);
         break;
       default:
         internal::ReportUnknownType(spec_.type_, "char");
@@ -474,7 +474,7 @@ class fmt::internal::ArgFormatter :
       fmt::internal::ReportUnknownType(spec_.type_, "pointer");
     spec_.flags_ = fmt::HASH_FLAG;
     spec_.type_ = 'x';
-    writer_.FormatInt(reinterpret_cast<uintptr_t>(value), spec_);
+    writer_.write_int(reinterpret_cast<uintptr_t>(value), spec_);
   }
 
   void visit_custom(Arg::CustomValue c) {
@@ -507,7 +507,7 @@ typename fmt::BasicWriter<Char>::CharPtr
 
 template <typename Char>
 template <typename T>
-void fmt::BasicWriter<Char>::FormatDouble(T value, const FormatSpec &spec) {
+void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   // Check type.
   char type = spec.type();
   bool upper = false;
@@ -818,11 +818,11 @@ void fmt::internal::PrintfFormatter<Char>::Format(
     Char c = *s++;
     if (c != '%') continue;
     if (*s == c) {
-      writer.buffer_.append(start, s);
+      write(writer, start, s);
       start = ++s;
       continue;
     }
-    writer.buffer_.append(start, s - 1);
+    write(writer, start, s - 1);
 
     FormatSpec spec;
     spec.align_ = ALIGN_RIGHT;
@@ -892,20 +892,20 @@ void fmt::internal::PrintfFormatter<Char>::Format(
     // Format argument.
     switch (arg.type) {
     case Arg::INT:
-      writer.FormatInt(arg.int_value, spec);
+      writer.write_int(arg.int_value, spec);
       break;
     case Arg::UINT:
-      writer.FormatInt(arg.uint_value, spec);
+      writer.write_int(arg.uint_value, spec);
       break;
     case Arg::LONG_LONG:
-      writer.FormatInt(arg.long_long_value, spec);
+      writer.write_int(arg.long_long_value, spec);
       break;
     case Arg::ULONG_LONG:
-      writer.FormatInt(arg.ulong_long_value, spec);
+      writer.write_int(arg.ulong_long_value, spec);
       break;
     case Arg::CHAR: {
       if (spec.type_ && spec.type_ != 'c')
-        writer.FormatInt(arg.int_value, spec);
+        writer.write_int(arg.int_value, spec);
       typedef typename BasicWriter<Char>::CharPtr CharPtr;
       CharPtr out = CharPtr();
       if (spec.width_ > 1) {
@@ -924,10 +924,10 @@ void fmt::internal::PrintfFormatter<Char>::Format(
       break;
     }
     case Arg::DOUBLE:
-      writer.FormatDouble(arg.double_value, spec);
+      writer.write_double(arg.double_value, spec);
       break;
     case Arg::LONG_DOUBLE:
-      writer.FormatDouble(arg.long_double_value, spec);
+      writer.write_double(arg.long_double_value, spec);
       break;
     case Arg::STRING:
       writer.write_str(arg.string, spec);
@@ -940,7 +940,7 @@ void fmt::internal::PrintfFormatter<Char>::Format(
         internal::ReportUnknownType(spec.type_, "pointer");
       spec.flags_= HASH_FLAG;
       spec.type_ = 'x';
-      writer.FormatInt(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
+      writer.write_int(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
       break;
     case Arg::CUSTOM:
       if (spec.type_)
@@ -952,7 +952,7 @@ void fmt::internal::PrintfFormatter<Char>::Format(
       break;
     }
   }
-  writer.buffer_.append(start, s);
+  write(writer, start, s);
 }
 
 template <typename Char>
@@ -1111,18 +1111,18 @@ void fmt::BasicFormatter<Char>::Format(
     Char c = *s++;
     if (c != '{' && c != '}') continue;
     if (*s == c) {
-      writer_.buffer_.append(start_, s);
+      write(writer_, start_, s);
       start_ = ++s;
       continue;
     }
     if (c == '}')
       throw FormatError("unmatched '}' in format");
     report_error_.num_open_braces = 1;
-    writer_.buffer_.append(start_, s - 1);
+    write(writer_, start_, s - 1);
     Arg arg = ParseArgIndex(s);
     s = format(s, arg);
   }
-  writer_.buffer_.append(start_, s);
+  write(writer_, start_, s);
 }
 
 void fmt::ReportSystemError(
