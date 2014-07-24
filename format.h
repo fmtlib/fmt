@@ -432,23 +432,23 @@ extern const uint64_t POWERS_OF_10_64[];
 
 #if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
 // Returns the number of decimal digits in n. Leading zeros are not counted
-// except for n == 0 in which case CountDigits returns 1.
-inline unsigned CountDigits(uint64_t n) {
+// except for n == 0 in which case count_digits returns 1.
+inline unsigned count_digits(uint64_t n) {
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
   uint64_t t = (64 - __builtin_clzll(n | 1)) * 1233 >> 12;
   return t - (n < POWERS_OF_10_64[t]) + 1;
 }
 # if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
-// Optional version of CountDigits for better performance on 32-bit platforms.
-inline unsigned CountDigits(uint32_t n) {
+// Optional version of count_digits for better performance on 32-bit platforms.
+inline unsigned count_digits(uint32_t n) {
   uint32_t t = (32 - __builtin_clz(n | 1)) * 1233 >> 12;
   return t - (n < POWERS_OF_10_32[t]) + 1;
 }
 # endif
 #else
-// Slower version of CountDigits used when __builtin_clz is not available.
-inline unsigned CountDigits(uint64_t n) {
+// Slower version of count_digits used when __builtin_clz is not available.
+inline unsigned count_digits(uint64_t n) {
   unsigned count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
@@ -1622,7 +1622,7 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
   }
   switch (spec.type()) {
   case 0: case 'd': {
-    unsigned num_digits = internal::CountDigits(abs_value);
+    unsigned num_digits = internal::count_digits(abs_value);
     CharPtr p = PrepareBufferForInt(
       num_digits, spec, prefix, prefix_size) + 1 - num_digits;
     internal::FormatDecimal(GetBase(p), abs_value, num_digits);
@@ -1915,7 +1915,7 @@ inline void FormatDec(char *&buffer, T value) {
     *buffer++ = internal::DIGITS[index + 1];
     return;
   }
-  unsigned num_digits = internal::CountDigits(abs_value);
+  unsigned num_digits = internal::count_digits(abs_value);
   internal::FormatDecimal(buffer, abs_value, num_digits);
   buffer += num_digits;
 }
