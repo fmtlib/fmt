@@ -436,7 +436,7 @@ class fmt::internal::ArgFormatter :
       // TODO: don't duplicate integer format specifiers here
       case 'd': case 'x': case 'X': case 'b': case 'B': case 'o':
         writer_.write_int(value, spec_);
-        break;
+        return;
       default:
         internal::ReportUnknownType(spec_.type_, "char");
       }
