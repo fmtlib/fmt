@@ -228,12 +228,12 @@ enum { INLINE_BUFFER_SIZE = 500 };
 #if _SECURE_SCL
 // Use checked iterator to avoid warnings on MSVC.
 template <typename T>
-inline stdext::checked_array_iterator<T*> CheckPtr(T *ptr, std::size_t size) {
+inline stdext::checked_array_iterator<T*> make_ptr(T *ptr, std::size_t size) {
   return stdext::checked_array_iterator<T*>(ptr, size);
 }
 #else
 template <typename T>
-inline T *CheckPtr(T *ptr, std::size_t) { return ptr; }
+inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
 #endif
 
 // A simple array for POD types with the first SIZE elements stored in
@@ -259,7 +259,7 @@ class Array {
     capacity_ = other.capacity_;
     if (other.ptr_ == other.data_) {
       ptr_ = data_;
-      std::copy(other.data_, other.data_ + size_, CheckPtr(data_, capacity_));
+      std::copy(other.data_, other.data_ + size_, make_ptr(data_, capacity_));
     } else {
       ptr_ = other.ptr_;
       // Set pointer to the inline array so that delete is not called
@@ -325,7 +325,7 @@ template <typename T, std::size_t SIZE>
 void Array<T, SIZE>::grow(std::size_t size) {
   capacity_ = (std::max)(size, capacity_ + capacity_ / 2);
   T *p = new T[capacity_];
-  std::copy(ptr_, ptr_ + size_, CheckPtr(p, capacity_));
+  std::copy(ptr_, ptr_ + size_, make_ptr(p, capacity_));
   if (ptr_ != data_)
     delete [] ptr_;
   ptr_ = p;
@@ -336,7 +336,7 @@ void Array<T, SIZE>::append(const T *begin, const T *end) {
   std::ptrdiff_t num_elements = end - begin;
   if (size_ + num_elements > capacity_)
     grow(size_ + num_elements);
-  std::copy(begin, end, CheckPtr(ptr_, capacity_) + size_);
+  std::copy(begin, end, make_ptr(ptr_, capacity_) + size_);
   size_ += num_elements;
 }
 
@@ -1311,7 +1311,7 @@ class BasicWriter {
   CharPtr GrowBuffer(std::size_t n) {
     std::size_t size = buffer_.size();
     buffer_.resize(size + n);
-    return internal::CheckPtr(&buffer_[size], n);
+    return internal::make_ptr(&buffer_[size], n);
   }
 
   // Prepare a buffer for integer formatting.
