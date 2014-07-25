@@ -906,7 +906,10 @@ enum Alignment {
 };
 
 // Flags.
-enum { SIGN_FLAG = 1, PLUS_FLAG = 2, MINUS_FLAG = 4, HASH_FLAG = 8 };
+enum {
+  SIGN_FLAG = 1, PLUS_FLAG = 2, MINUS_FLAG = 4, HASH_FLAG = 8,
+  CHAR_FLAG = 0x10  // Argument has char type - used in error reporting.
+};
 
 // An empty format specifier.
 struct EmptySpec {};
@@ -921,6 +924,7 @@ struct TypeSpec : EmptySpec {
   bool sign_flag() const { return false; }
   bool plus_flag() const { return false; }
   bool hash_flag() const { return false; }
+  bool char_flag() const { return false; }
 
   char type() const { return TYPE; }
   char fill() const { return ' '; }
@@ -959,6 +963,7 @@ struct AlignTypeSpec : AlignSpec {
   bool sign_flag() const { return false; }
   bool plus_flag() const { return false; }
   bool hash_flag() const { return false; }
+  bool char_flag() const { return false; }
 
   char type() const { return TYPE; }
 };
@@ -976,6 +981,7 @@ struct FormatSpec : AlignSpec {
   bool sign_flag() const { return (flags_ & SIGN_FLAG) != 0; }
   bool plus_flag() const { return (flags_ & PLUS_FLAG) != 0; }
   bool hash_flag() const { return (flags_ & HASH_FLAG) != 0; }
+  bool char_flag() const { return (flags_ & CHAR_FLAG) != 0; }
 
   int precision() const { return precision_; }
 
@@ -1682,7 +1688,8 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
     break;
   }
   default:
-    internal::ReportUnknownType(spec.type(), "integer");
+    internal::ReportUnknownType(
+      spec.type(), spec.char_flag() ? "char" : "integer");
     break;
   }
 }

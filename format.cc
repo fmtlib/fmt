@@ -432,14 +432,9 @@ class fmt::internal::ArgFormatter :
 
   void visit_char(int value) {
     if (spec_.type_ && spec_.type_ != 'c') {
-      switch (spec_.type_) {
-      // TODO: don't duplicate integer format specifiers here
-      case 'd': case 'x': case 'X': case 'b': case 'B': case 'o':
-        writer_.write_int(value, spec_);
-        return;
-      default:
-        internal::ReportUnknownType(spec_.type_, "char");
-      }
+      spec_.flags_ |= CHAR_FLAG;
+      writer_.write_int(value, spec_);
+      return;
     }
     if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
       throw FormatError("invalid format specifier for char");
