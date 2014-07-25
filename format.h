@@ -920,12 +920,7 @@ struct TypeSpec : EmptySpec {
   Alignment align() const { return ALIGN_DEFAULT; }
   unsigned width() const { return 0; }
   int precision() const { return -1; }
-
-  bool sign_flag() const { return false; }
-  bool plus_flag() const { return false; }
-  bool hash_flag() const { return false; }
-  bool char_flag() const { return false; }
-
+  bool flag(unsigned) const { return false; }
   char type() const { return TYPE; }
   char fill() const { return ' '; }
 };
@@ -960,11 +955,7 @@ template <char TYPE>
 struct AlignTypeSpec : AlignSpec {
   AlignTypeSpec(unsigned width, wchar_t fill) : AlignSpec(width, fill) {}
 
-  bool sign_flag() const { return false; }
-  bool plus_flag() const { return false; }
-  bool hash_flag() const { return false; }
-  bool char_flag() const { return false; }
-
+  bool flag(unsigned) const { return false; }
   char type() const { return TYPE; }
 };
 
@@ -978,13 +969,8 @@ struct FormatSpec : AlignSpec {
     unsigned width = 0, char type = 0, wchar_t fill = ' ')
   : AlignSpec(width, fill), flags_(0), precision_(-1), type_(type) {}
 
-  bool sign_flag() const { return (flags_ & SIGN_FLAG) != 0; }
-  bool plus_flag() const { return (flags_ & PLUS_FLAG) != 0; }
-  bool hash_flag() const { return (flags_ & HASH_FLAG) != 0; }
-  bool char_flag() const { return (flags_ & CHAR_FLAG) != 0; }
-
+  bool flag(unsigned f) const { return (flags_ & f) != 0; }
   int precision() const { return precision_; }
-
   char type() const { return type_; }
 };
 
@@ -1622,8 +1608,8 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
     prefix[0] = '-';
     ++prefix_size;
     abs_value = 0 - abs_value;
-  } else if (spec.sign_flag()) {
-    prefix[0] = spec.plus_flag() ? '+' : ' ';
+  } else if (spec.flag(SIGN_FLAG)) {
+    prefix[0] = spec.flag(PLUS_FLAG) ? '+' : ' ';
     ++prefix_size;
   }
   switch (spec.type()) {
@@ -1636,7 +1622,7 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
   }
   case 'x': case 'X': {
     UnsignedType n = abs_value;
-    if (spec.hash_flag()) {
+    if (spec.flag(HASH_FLAG)) {
       prefix[prefix_size++] = '0';
       prefix[prefix_size++] = spec.type();
     }
@@ -1656,7 +1642,7 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
   }
   case 'b': case 'B': {
     UnsignedType n = abs_value;
-    if (spec.hash_flag()) {
+    if (spec.flag(HASH_FLAG)) {
       prefix[prefix_size++] = '0';
       prefix[prefix_size++] = spec.type();
     }
@@ -1673,7 +1659,7 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
   }
   case 'o': {
     UnsignedType n = abs_value;
-    if (spec.hash_flag())
+    if (spec.flag(HASH_FLAG))
       prefix[prefix_size++] = '0';
     unsigned num_digits = 0;
     do {
@@ -1689,7 +1675,7 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
   }
   default:
     internal::ReportUnknownType(
-      spec.type(), spec.char_flag() ? "char" : "integer");
+      spec.type(), spec.flag(CHAR_FLAG) ? "char" : "integer");
     break;
   }
 }

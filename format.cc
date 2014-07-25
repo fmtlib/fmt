@@ -532,8 +532,8 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   if (SignBit(static_cast<double>(value))) {
     sign = '-';
     value = -value;
-  } else if (spec.sign_flag()) {
-    sign = spec.plus_flag() ? '+' : ' ';
+  } else if (spec.flag(SIGN_FLAG)) {
+    sign = spec.flag(PLUS_FLAG) ? '+' : ' ';
   }
 
   if (value != value) {
@@ -581,7 +581,7 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   Char *format_ptr = format;
   *format_ptr++ = '%';
   unsigned width_for_sprintf = width;
-  if (spec.hash_flag())
+  if (spec.flag(HASH_FLAG))
     *format_ptr++ = '#';
   if (spec.align() == ALIGN_CENTER) {
     width_for_sprintf = 0;
@@ -852,7 +852,7 @@ void fmt::internal::PrintfFormatter<Char>::Format(
     }
 
     const Arg &arg = handle_arg_index(arg_index);
-    if (spec.hash_flag() && GetIntValue(arg) == 0)
+    if (spec.flag(HASH_FLAG) && GetIntValue(arg) == 0)
       spec.flags_ &= ~HASH_FLAG;
     if (spec.fill_ == '0') {
       if (arg.type <= Arg::LAST_NUMERIC_TYPE)
