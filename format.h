@@ -1337,13 +1337,13 @@ class BasicWriter {
   void write_double(T value, const FormatSpec &spec);
 
   // Writes a formatted string.
-  template <typename StringChar>
+  template <typename StrChar>
   CharPtr write_str(
-      const StringChar *s, std::size_t size, const AlignSpec &spec);
+      const StrChar *s, std::size_t size, const AlignSpec &spec);
 
-  template <typename StringChar>
+  template <typename StrChar>
   void write_str(
-      const internal::Arg::StringValue<StringChar> &str, const FormatSpec &spec);
+      const internal::Arg::StringValue<StrChar> &str, const FormatSpec &spec);
 
   // This method is private to disallow writing a wide string to a
   // char stream and vice versa. If you want to print a wide string
@@ -1502,9 +1502,9 @@ class BasicWriter {
     return *this;
   }
 
-  template <typename StringChar>
-  BasicWriter &operator<<(const StrFormatSpec<StringChar> &spec) {
-    const StringChar *s = spec.str();
+  template <typename StrChar>
+  BasicWriter &operator<<(const StrFormatSpec<StrChar> &spec) {
+    const StrChar *s = spec.str();
     // TODO: error if fill is not convertible to Char
     write_str(s, std::char_traits<Char>::length(s), spec);
     return *this;
@@ -1514,9 +1514,9 @@ class BasicWriter {
 };
 
 template <typename Char>
-template <typename StringChar>
+template <typename StrChar>
 typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
-    const StringChar *s, std::size_t size, const AlignSpec &spec) {
+    const StrChar *s, std::size_t size, const AlignSpec &spec) {
   CharPtr out = CharPtr();
   if (spec.width() > size) {
     out = GrowBuffer(spec.width());
@@ -1560,7 +1560,8 @@ typename fmt::BasicWriter<Char>::CharPtr
       CharPtr p = GrowBuffer(fill_size);
       std::fill(p, p + fill_size, fill);
     }
-    CharPtr result = PrepareBufferForInt(num_digits, subspec, prefix, prefix_size);
+    CharPtr result = PrepareBufferForInt(
+        num_digits, subspec, prefix, prefix_size);
     if (align == ALIGN_LEFT) {
       CharPtr p = GrowBuffer(fill_size);
       std::fill(p, p + fill_size, fill);
@@ -1651,7 +1652,8 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
     do {
       ++num_digits;
     } while ((n >>= 1) != 0);
-    Char *p = GetBase(PrepareBufferForInt(num_digits, spec, prefix, prefix_size));
+    Char *p = GetBase(PrepareBufferForInt(
+        num_digits, spec, prefix, prefix_size));
     n = abs_value;
     do {
       *p-- = '0' + (n & 1);
@@ -1917,9 +1919,9 @@ inline void FormatDec(char *&buffer, T value) {
 
 #if FMT_GCC_VERSION
 // Use the system_header pragma to suppress warnings about variadic macros
-// because suppressing -Wvariadic-macros with the diagnostic pragma doesn't work.
-// It is used at the end because we want to suppress as little warnings as
-// possible.
+// because suppressing -Wvariadic-macros with the diagnostic pragma doesn't
+// work. It is used at the end because we want to suppress as little warnings
+// as possible.
 # pragma GCC system_header
 #endif
 

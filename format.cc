@@ -421,7 +421,8 @@ class fmt::internal::ArgFormatter :
   const Char *format_;
 
  public:
-  ArgFormatter(fmt::BasicFormatter<Char> &f, fmt::FormatSpec &s, const Char *fmt)
+  ArgFormatter(
+      fmt::BasicFormatter<Char> &f,fmt::FormatSpec &s, const Char *fmt)
   : formatter_(f), writer_(f.writer()), spec_(s), format_(fmt) {}
 
   template <typename T>
@@ -651,20 +652,20 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
 }
 
 template <typename Char>
-template <typename StringChar>
+template <typename StrChar>
 void fmt::BasicWriter<Char>::write_str(
-    const Arg::StringValue<StringChar> &str, const FormatSpec &spec) {
-  // Check if StringChar is convertible to Char.
-  internal::CharTraits<Char>::convert(StringChar());
+    const Arg::StringValue<StrChar> &str, const FormatSpec &spec) {
+  // Check if StrChar is convertible to Char.
+  internal::CharTraits<Char>::convert(StrChar());
   if (spec.type_ && spec.type_ != 's')
     internal::report_unknown_type(spec.type_, "string");
-  const StringChar *s = str.value;
+  const StrChar *s = str.value;
   std::size_t size = str.size;
   if (size == 0) {
     if (!s)
       throw FormatError("string pointer is null");
     if (*s)
-      size = std::char_traits<StringChar>::length(s);
+      size = std::char_traits<StrChar>::length(s);
   }
   write_str(s, size, spec);
 }
@@ -699,12 +700,12 @@ void fmt::BasicFormatter<Char>::CheckSign(
     const Char *&s, const Arg &arg) {
   char sign = static_cast<char>(*s);
   if (arg.type > Arg::LAST_NUMERIC_TYPE) {
-    report_error_(s,
-        fmt::format("format specifier '{}' requires numeric argument", sign).c_str());
+    report_error_(s, fmt::format(
+      "format specifier '{}' requires numeric argument", sign).c_str());
   }
   if (arg.type == Arg::UINT || arg.type == Arg::ULONG_LONG) {
-    report_error_(s,
-        fmt::format("format specifier '{}' requires signed argument", sign).c_str());
+    report_error_(s, fmt::format(
+      "format specifier '{}' requires signed argument", sign).c_str());
   }
   ++s;
 }
