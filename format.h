@@ -426,7 +426,7 @@ struct IsLongDouble { enum {VALUE = 0}; };
 template <>
 struct IsLongDouble<long double> { enum {VALUE = 1}; };
 
-void ReportUnknownType(char code, const char *type);
+void report_unknown_type(char code, const char *type);
 
 extern const uint32_t POWERS_OF_10_32[];
 extern const uint64_t POWERS_OF_10_64[];
@@ -1675,7 +1675,7 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
     break;
   }
   default:
-    internal::ReportUnknownType(
+    internal::report_unknown_type(
       spec.type(), spec.flag(CHAR_FLAG) ? "char" : "integer");
     break;
   }

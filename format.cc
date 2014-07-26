@@ -278,7 +278,7 @@ const uint64_t fmt::internal::POWERS_OF_10_64[] = {
   ULongLong(1000000000) * ULongLong(1000000000) * 10
 };
 
-void fmt::internal::ReportUnknownType(char code, const char *type) {
+void fmt::internal::report_unknown_type(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
     throw fmt::FormatError(
         fmt::format("unknown format code '{}' for {}", code, type));
@@ -466,7 +466,7 @@ class fmt::internal::ArgFormatter :
 
   void visit_pointer(const void *value) {
     if (spec_.type_ && spec_.type_ != 'p')
-      fmt::internal::ReportUnknownType(spec_.type_, "pointer");
+      fmt::internal::report_unknown_type(spec_.type_, "pointer");
     spec_.flags_ = fmt::HASH_FLAG;
     spec_.type_ = 'x';
     writer_.write_int(reinterpret_cast<uintptr_t>(value), spec_);
@@ -522,7 +522,7 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
     upper = true;
     break;
   default:
-    internal::ReportUnknownType(type, "double");
+    internal::report_unknown_type(type, "double");
     break;
   }
 
@@ -657,7 +657,7 @@ void fmt::BasicWriter<Char>::write_str(
   // Check if StringChar is convertible to Char.
   internal::CharTraits<Char>::convert(StringChar());
   if (spec.type_ && spec.type_ != 's')
-    internal::ReportUnknownType(spec.type_, "string");
+    internal::report_unknown_type(spec.type_, "string");
   const StringChar *s = str.value;
   std::size_t size = str.size;
   if (size == 0) {
@@ -932,14 +932,14 @@ void fmt::internal::PrintfFormatter<Char>::Format(
       break;
     case Arg::POINTER:
       if (spec.type_ && spec.type_ != 'p')
-        internal::ReportUnknownType(spec.type_, "pointer");
+        internal::report_unknown_type(spec.type_, "pointer");
       spec.flags_= HASH_FLAG;
       spec.type_ = 'x';
       writer.write_int(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
       break;
     case Arg::CUSTOM:
       if (spec.type_)
-        internal::ReportUnknownType(spec.type_, "object");
+        internal::report_unknown_type(spec.type_, "object");
       arg.custom.format(&writer, arg.custom.value, "s");
       break;
     default:
