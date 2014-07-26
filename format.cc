@@ -223,7 +223,7 @@ void fmt::SystemError::init(
 }
 
 template <typename T>
-int fmt::internal::CharTraits<char>::FormatFloat(
+int fmt::internal::CharTraits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, T value) {
   if (width == 0) {
@@ -237,7 +237,7 @@ int fmt::internal::CharTraits<char>::FormatFloat(
 }
 
 template <typename T>
-int fmt::internal::CharTraits<wchar_t>::FormatFloat(
+int fmt::internal::CharTraits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, T value) {
   if (width == 0) {
@@ -614,7 +614,7 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
     }
 #endif
     Char *start = &buffer_[offset];
-    int n = internal::CharTraits<Char>::FormatFloat(
+    int n = internal::CharTraits<Char>::format_float(
         start, size, format, width_for_sprintf, spec.precision(), value);
     if (n >= 0 && offset + n < buffer_.capacity()) {
       if (sign) {

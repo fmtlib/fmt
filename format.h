@@ -366,7 +366,7 @@ public:
 
   // Formats a floating-point number.
   template <typename T>
-  static int FormatFloat(char *buffer, std::size_t size,
+  static int format_float(char *buffer, std::size_t size,
       const char *format, unsigned width, int precision, T value);
 };
 
@@ -379,7 +379,7 @@ class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
   static wchar_t convert(wchar_t value) { return value; }
 
   template <typename T>
-  static int FormatFloat(wchar_t *buffer, std::size_t size,
+  static int format_float(wchar_t *buffer, std::size_t size,
       const wchar_t *format, unsigned width, int precision, T value);
 };
 
