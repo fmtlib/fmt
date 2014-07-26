@@ -364,6 +364,7 @@ public:
 
   static char convert(char value) { return value; }
 
+  // Formats a floating-point number.
   template <typename T>
   static int FormatFloat(char *buffer, std::size_t size,
       const char *format, unsigned width, int precision, T value);
