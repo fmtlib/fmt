@@ -52,6 +52,12 @@ master_doc = 'index'
 project = u'C++ Format'
 copyright = u'2012-2014, Victor Zverovich'
 
+# The version info for the project you're documenting, acts as replacement for
+# |version| and |release|, also used in various other places throughout the
+# built documents.
+#
+# The short X.Y version.
+
 # Get version from CMakeLists.txt.
 version = {}
 with open('../CMakeLists.txt') as f:
@@ -62,12 +68,6 @@ with open('../CMakeLists.txt') as f:
       version[kind] = value
 version = '{}.{}.{}'.format(version['MAJOR'], version['MINOR'], version['PATCH'])
 
-# The version info for the project you're documenting, acts as replacement for
-# |version| and |release|, also used in various other places throughout the
-# built documents.
-#
-# The short X.Y version.
-version = '@CPPFORMAT_VERSION@'
 # The full version, including alpha/beta/rc tags.
 release = version
 
