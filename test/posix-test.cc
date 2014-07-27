@@ -169,7 +169,7 @@ TEST(FileTest, CloseNoRetryInDtor) {
     delete f;
     saved_close_count = close_count;
     close_count = 0;
-  }, FormatSystemErrorMessage(EINTR, "cannot close file") + "\n");
+  }, format_system_error(EINTR, "cannot close file") + "\n");
   EXPECT_EQ(2, saved_close_count);
 }
 
@@ -299,7 +299,7 @@ TEST(BufferedFileTest, CloseNoRetryInDtor) {
     delete f;
     saved_fclose_count = fclose_count;
     fclose_count = 0;
-  }, FormatSystemErrorMessage(EINTR, "cannot close file") + "\n");
+  }, format_system_error(EINTR, "cannot close file") + "\n");
   EXPECT_EQ(2, saved_fclose_count);
 }
 

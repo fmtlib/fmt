@@ -308,8 +308,8 @@ TEST(ExpectTest, EXPECT_SYSTEM_ERROR) {
           "ThrowSystemError() throws an exception with a different message.\n"
           "Expected: {}\n"
           "  Actual: {}",
-          FormatSystemErrorMessage(EDOM, "other"),
-          FormatSystemErrorMessage(EDOM, "test")));
+          format_system_error(EDOM, "other"),
+          format_system_error(EDOM, "test")));
 }
 
 // Tests EXPECT_WRITE.
@@ -347,10 +347,10 @@ TEST(StreamingAssertionsTest, EXPECT_WRITE) {
       << "expected failure", "expected failure");
 }
 
-TEST(UtilTest, FormatSystemErrorMessage) {
+TEST(UtilTest, FormatSystemError) {
   fmt::Writer out;
-  fmt::internal::FormatSystemErrorMessage(out, EDOM, "test message");
-  EXPECT_EQ(out.str(), FormatSystemErrorMessage(EDOM, "test message"));
+  fmt::internal::format_system_error(out, EDOM, "test message");
+  EXPECT_EQ(out.str(), format_system_error(EDOM, "test message"));
 }
 
 #if FMT_USE_FILE_DESCRIPTORS
@@ -500,7 +500,7 @@ TEST(BufferedFileTest, CloseErrorInDtor) {
       // redirection.
       FMT_POSIX(close(f->fileno()));
       SUPPRESS_ASSERT(delete f);
-  }, FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
+  }, format_system_error(EBADF, "cannot close file") + "\n");
 }
 
 TEST(BufferedFileTest, Close) {
@@ -624,7 +624,7 @@ TEST(FileTest, CloseErrorInDtor) {
       // redirection.
       FMT_POSIX(close(f->descriptor()));
       SUPPRESS_ASSERT(delete f);
-  }, FormatSystemErrorMessage(EBADF, "cannot close file") + "\n");
+  }, format_system_error(EBADF, "cannot close file") + "\n");
 }
 
 TEST(FileTest, Close) {
@@ -825,7 +825,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
       // redirection.
       FMT_POSIX(close(write_fd));
       SUPPRESS_ASSERT(delete redir);
-  }, FormatSystemErrorMessage(EBADF, "cannot flush stream"));
+  }, format_system_error(EBADF, "cannot flush stream"));
   write_copy.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
 }
 

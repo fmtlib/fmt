@@ -211,13 +211,13 @@ inline Arg::StringValue<wchar_t> ignore_incompatible_str(
     Arg::StringValue<wchar_t> s) { return s; }
 }  // namespace
 
-int fmt::internal::SignBitNoInline(double value) { return SignBit(value); }
+int fmt::internal::signbit_noinline(double value) { return SignBit(value); }
 
 void fmt::SystemError::init(
     int error_code, StringRef format_str, const ArgList &args) {
   error_code_ = error_code;
   Writer w;
-  internal::FormatSystemErrorMessage(w, error_code, format(format_str, args));
+  internal::format_system_error(w, error_code, format(format_str, args));
   std::runtime_error &base = *this;
   base = std::runtime_error(w.str());
 }
@@ -326,7 +326,7 @@ void fmt::WindowsError::init(
     int error_code, StringRef format_str, const ArgList &args) {
   error_code_ = error_code;
   Writer w;
-  internal::FormatWinErrorMessage(w, error_code, format(format_str, args));
+  internal::format_windows_error(w, error_code, format(format_str, args));
   std::runtime_error &base = *this;
   base = std::runtime_error(w.str());
 }
@@ -361,7 +361,7 @@ int fmt::internal::safe_strerror(
   return result;
 }
 
-void fmt::internal::FormatSystemErrorMessage(
+void fmt::internal::format_system_error(
     fmt::Writer &out, int error_code, fmt::StringRef message) {
   Array<char, INLINE_BUFFER_SIZE> buffer;
   buffer.resize(INLINE_BUFFER_SIZE);
@@ -382,7 +382,7 @@ void fmt::internal::FormatSystemErrorMessage(
 }
 
 #ifdef _WIN32
-void fmt::internal::FormatWinErrorMessage(
+void fmt::internal::format_windows_error(
     fmt::Writer &out, int error_code, fmt::StringRef message) {
   class String {
    private:
@@ -1123,15 +1123,15 @@ void fmt::BasicFormatter<Char>::Format(
 
 void fmt::ReportSystemError(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
-  // FIXME: FormatSystemErrorMessage may throw
-  ReportError(internal::FormatSystemErrorMessage, error_code, message);
+  // FIXME: format_system_error may throw
+  ReportError(internal::format_system_error, error_code, message);
 }
 
 #ifdef _WIN32
 void fmt::ReportWinError(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
-  // FIXME: FormatWinErrorMessage may throw
-  ReportError(internal::FormatWinErrorMessage, error_code, message);
+  // FIXME: format_windows_error may throw
+  ReportError(internal::format_windows_error, error_code, message);
 }
 #endif
 

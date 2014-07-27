@@ -91,8 +91,8 @@ std::string OutputRedirect::RestoreAndRead() {
 
 #endif  // FMT_USE_FILE_DESCRIPTORS
 
-std::string FormatSystemErrorMessage(int error_code, fmt::StringRef message) {
+std::string format_system_error(int error_code, fmt::StringRef message) {
   fmt::Writer out;
-  fmt::internal::FormatSystemErrorMessage(out, error_code, message);
+  fmt::internal::format_system_error(out, error_code, message);
   return out.str();
 }

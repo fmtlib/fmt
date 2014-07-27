@@ -387,7 +387,7 @@ TEST(UtilTest, UTF8ToUTF16) {
 template <typename Converter>
 void CheckUTFConversionError(const char *message) {
   fmt::Writer out;
-  fmt::internal::FormatWinErrorMessage(out, ERROR_INVALID_PARAMETER, message);
+  fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
   fmt::SystemError error(0, "");
   try {
     Converter(0);
@@ -471,20 +471,20 @@ void CheckThrowError(int error_code, FormatErrorMessage format) {
   EXPECT_EQ(error_code, error.error_code());
 }
 
-TEST(UtilTest, FormatSystemErrorMessage) {
+TEST(UtilTest, FormatSystemError) {
   fmt::Writer message;
-  fmt::internal::FormatSystemErrorMessage(message, EDOM, "test");
+  fmt::internal::format_system_error(message, EDOM, "test");
   EXPECT_EQ(fmt::format("test: {}",
           GetSystemErrorMessage(EDOM)), message.str());
 }
 
 TEST(UtilTest, ThrowSystemError) {
-  CheckThrowError<fmt::SystemError>(EDOM, fmt::internal::FormatSystemErrorMessage);
+  CheckThrowError<fmt::SystemError>(EDOM, fmt::internal::format_system_error);
 }
 
 TEST(UtilTest, ReportSystemError) {
   fmt::Writer out;
-  fmt::internal::FormatSystemErrorMessage(out, EDOM, "test error");
+  fmt::internal::format_system_error(out, EDOM, "test error");
   out << '\n';
   EXPECT_WRITE(stderr, fmt::ReportSystemError(EDOM, "test error"), out.str());
 }
@@ -500,7 +500,7 @@ TEST(UtilTest, FormatWinErrorMessage) {
   fmt::internal::UTF16ToUTF8 utf8_message(message);
   LocalFree(message);
   fmt::Writer actual_message;
-  fmt::internal::FormatWinErrorMessage(
+  fmt::internal::format_windows_error(
       actual_message, ERROR_FILE_EXISTS, "test");
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
       actual_message.str());
@@ -508,12 +508,12 @@ TEST(UtilTest, FormatWinErrorMessage) {
 
 TEST(UtilTest, ThrowWinError) {
   CheckThrowError<fmt::WindowsError>(
-      ERROR_FILE_EXISTS, fmt::internal::FormatWinErrorMessage);
+      ERROR_FILE_EXISTS, fmt::internal::format_windows_error);
 }
 
 TEST(UtilTest, ReportWinError) {
   fmt::Writer out;
-  fmt::internal::FormatWinErrorMessage(out, ERROR_FILE_EXISTS, "test error");
+  fmt::internal::format_windows_error(out, ERROR_FILE_EXISTS, "test error");
   out << '\n';
   EXPECT_WRITE(stderr,
       fmt::ReportWinError(ERROR_FILE_EXISTS, "test error"), out.str());

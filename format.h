@@ -410,7 +410,7 @@ inline bool is_negative(T value) {
   return SignChecker<std::numeric_limits<T>::is_signed>::is_negative(value);
 }
 
-int SignBitNoInline(double value);
+int signbit_noinline(double value);
 
 template <typename T>
 struct IntTraits {
@@ -537,11 +537,11 @@ class UTF16ToUTF8 {
 int safe_strerror(int error_code,
     char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT(true);
 
-void FormatSystemErrorMessage(
+void format_system_error(
     fmt::Writer &out, int error_code, fmt::StringRef message);
 
 #ifdef _WIN32
-void FormatWinErrorMessage(
+void format_windows_error(
     fmt::Writer &out, int error_code, fmt::StringRef message);
 #endif
 
