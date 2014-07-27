@@ -25,6 +25,7 @@ before_build:
         $env:PATH = $env:PATH -replace "C:\\Program Files \(x86\)\\Git\\bin",""
         $generator = "-GMinGW Makefiles"
       }
+      echo "-DCMAKE_BUILD_TYPE=$env:Configuration"
       cmake -DFMT_EXTRA_TESTS=ON "-DCMAKE_BUILD_TYPE=$env:Configuration" "$generator" .
 
 build_script:
