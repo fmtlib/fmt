@@ -469,7 +469,7 @@ extern const char DIGITS[];
 
 // Formats a decimal unsigned integer value writing into buffer.
 template <typename UInt, typename Char>
-void FormatDecimal(Char *buffer, UInt value, unsigned num_digits) {
+void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
   --num_digits;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
@@ -1619,7 +1619,7 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
     unsigned num_digits = internal::count_digits(abs_value);
     CharPtr p = PrepareBufferForInt(
       num_digits, spec, prefix, prefix_size) + 1 - num_digits;
-    internal::FormatDecimal(GetBase(p), abs_value, num_digits);
+    internal::format_decimal(GetBase(p), abs_value, num_digits);
     break;
   }
   case 'x': case 'X': {
@@ -1826,7 +1826,7 @@ class FormatInt {
   char *str_;
 
   // Formats value in reverse and returns the number of digits.
-  char *FormatDecimal(ULongLong value) {
+  char *format_decimal(ULongLong value) {
     char *buffer_end = buffer_ + BUFFER_SIZE - 1;
     while (value >= 100) {
       // Integer division is slow so do it for a group of two digits instead
@@ -1852,7 +1852,7 @@ class FormatInt {
     bool negative = value < 0;
     if (negative)
       abs_value = 0 - value;
-    str_ = FormatDecimal(abs_value);
+    str_ = format_decimal(abs_value);
     if (negative)
       *--str_ = '-';
   }
@@ -1861,9 +1861,9 @@ class FormatInt {
   explicit FormatInt(int value) { FormatSigned(value); }
   explicit FormatInt(long value) { FormatSigned(value); }
   explicit FormatInt(LongLong value) { FormatSigned(value); }
-  explicit FormatInt(unsigned value) : str_(FormatDecimal(value)) {}
-  explicit FormatInt(unsigned long value) : str_(FormatDecimal(value)) {}
-  explicit FormatInt(ULongLong value) : str_(FormatDecimal(value)) {}
+  explicit FormatInt(unsigned value) : str_(format_decimal(value)) {}
+  explicit FormatInt(unsigned long value) : str_(format_decimal(value)) {}
+  explicit FormatInt(ULongLong value) : str_(format_decimal(value)) {}
 
   /**
     Returns the number of characters written to the output buffer.
@@ -1912,7 +1912,7 @@ inline void FormatDec(char *&buffer, T value) {
     return;
   }
   unsigned num_digits = internal::count_digits(abs_value);
-  internal::FormatDecimal(buffer, abs_value, num_digits);
+  internal::format_decimal(buffer, abs_value, num_digits);
   buffer += num_digits;
 }
 }
