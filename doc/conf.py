@@ -11,7 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import sys, os, re
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -48,6 +48,16 @@ master_doc = 'index'
 # General information about the project.
 project = u'C++ Format'
 copyright = u'2012-2014, Victor Zverovich'
+
+# Get version from CMakeLists.txt.
+version = {}
+with open('../CMakeLists.txt') as f:
+  for line in f:
+    m = re.match(r'set\(CPACK_PACKAGE_VERSION_([A-Z]+) ([0-9]+)\)', line.strip())
+    if m:
+      kind, value = m.groups()
+      version[kind] = value
+version = '{}.{}.{}'.format(version['MAJOR'], version['MINOR'], version['PATCH'])
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
