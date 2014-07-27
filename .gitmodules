@@ -3,4 +3,4 @@
 	url = git://github.com/cppformat/sphinx.git
 [submodule "breathe"]
 	path = breathe
-	url = git://github.com/michaeljones/breathe.git
+	url = git://github.com/vitaut/breathe.git
