@@ -2,8 +2,10 @@ environment:
   matrix:
   - Build: msvc
   - Build: mingw
-  - Configuration: Debug
-  - Configuration: Release
+
+configuration:
+  - Debug
+  - Release
 
 install:
   - ps: |
