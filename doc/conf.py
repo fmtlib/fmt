@@ -25,6 +25,9 @@ import sys, os, re
 
 sys.path.append("../breathe")
 
+if os.environ.get('READTHEDOCS', None) == 'True':
+  subprocess.call('doxygen')
+
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.ifconfig', 'breathe']
