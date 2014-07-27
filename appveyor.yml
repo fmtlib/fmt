@@ -2,10 +2,8 @@ environment:
   matrix:
   - Build: msvc
   - Build: mingw
-
-configuration:
-  - Debug
-  - Release
+  - Configuration: Debug
+  - Configuration: Release
 
 install:
   - ps: |
@@ -26,8 +24,6 @@ before_build:
         # Remove path to Git bin directory from PATH because it breaks MinGW config.
         $env:PATH = $env:PATH -replace "C:\\Program Files \(x86\)\\Git\\bin",""
         $generator = "-GMinGW Makefiles"
-      } else {
-        $generator = "-GVisual Studio 12 Win64"
       }
       cmake -DFMT_EXTRA_TESTS=ON "-DCMAKE_BUILD_TYPE=$env:Configuration" "$generator" .
 
