@@ -304,13 +304,13 @@ fmt::internal::UTF8ToUTF16::UTF8ToUTF16(fmt::StringRef s) {
 }
 
 fmt::internal::UTF16ToUTF8::UTF16ToUTF8(fmt::WStringRef s) {
-  if (int error_code = Convert(s)) {
+  if (int error_code = convert(s)) {
     throw WindowsError(error_code,
         "cannot convert string from UTF-16 to UTF-8");
   }
 }
 
-int fmt::internal::UTF16ToUTF8::Convert(fmt::WStringRef s) {
+int fmt::internal::UTF16ToUTF8::convert(fmt::WStringRef s) {
   int length = WideCharToMultiByte(CP_UTF8, 0, s.c_str(), -1, 0, 0, 0, 0);
   if (length == 0)
     return GetLastError();
@@ -333,7 +333,7 @@ void fmt::WindowsError::init(
 
 #endif
 
-int fmt::internal::StrError(
+int fmt::internal::safe_strerror(
     int error_code, char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT(true) {
   assert(buffer != 0 && buffer_size != 0);
   int result = 0;
@@ -368,7 +368,7 @@ void fmt::internal::FormatSystemErrorMessage(
   char *system_message = 0;
   for (;;) {
     system_message = &buffer[0];
-    int result = StrError(error_code, system_message, buffer.size());
+    int result = safe_strerror(error_code, system_message, buffer.size());
     if (result == 0)
       break;
     if (result != ERANGE) {
@@ -400,7 +400,7 @@ void fmt::internal::FormatWinErrorMessage(
       error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       reinterpret_cast<LPWSTR>(system_message.ptr()), 0, 0)) {
     UTF16ToUTF8 utf8_message;
-    if (!utf8_message.Convert(system_message.c_str())) {
+    if (!utf8_message.convert(system_message.c_str())) {
       out << message << ": " << utf8_message;
       return;
     }

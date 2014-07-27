@@ -521,7 +521,7 @@ class UTF16ToUTF8 {
 
   // Performs conversion returning a system error code instead of
   // throwing exception on error.
-  int Convert(WStringRef s);
+  int convert(WStringRef s);
 };
 #endif
 
@@ -534,7 +534,7 @@ class UTF16ToUTF8 {
 //   ERANGE - buffer is not large enough to store the error message
 //   other  - failure
 // Buffer should be at least of size 1.
-int StrError(int error_code,
+int safe_strerror(int error_code,
     char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT(true);
 
 void FormatSystemErrorMessage(
