@@ -1,11 +1,13 @@
 environment:
   matrix:
   - Build: msvc
+    Config: Debug
+  - Build: msvc
+    Config: Release
   - Build: mingw
-
-configuration:
-  - Debug
-  - Release
+    Config: Debug
+  - Build: mingw
+    Config: Release
 
 install:
   - ps: |
@@ -27,15 +29,15 @@ before_build:
         $env:PATH = $env:PATH -replace "C:\\Program Files \(x86\)\\Git\\bin",""
         $generator = "-GMinGW Makefiles"
       }
-      echo "-DCMAKE_BUILD_TYPE=$env:Configuration"
-      cmake -DFMT_EXTRA_TESTS=ON "-DCMAKE_BUILD_TYPE=$env:Configuration" "$generator" .
+      echo "-DCMAKE_BUILD_TYPE=$env:Config"
+      cmake -DFMT_EXTRA_TESTS=ON "-DCMAKE_BUILD_TYPE=$env:Config" "$generator" .
 
 build_script:
   - ps: |
       if ($env:Build -eq "mingw") {
         mingw32-make -j4
       } else {
-        msbuild /m:4 /p:Configuration=$env:Configuration FORMAT.sln
+        msbuild /m:4 /p:Config=$env:Config FORMAT.sln
       }
 
 test_script:
