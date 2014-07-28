@@ -126,22 +126,23 @@ TEST(ArgTest, ArgInfo) {
   EXPECT_EQ(&p, ArgInfo<Arg::CUSTOM>::get(arg).value);
 }
 
-#define EXPECT_ARG_(Char, type_code, Type, value) { \
-  Type expected_value = static_cast<Type>(value); \
-  Arg arg = MakeArg<Char>(expected_value); \
+#define EXPECT_ARG_(Char, type_code, MakeArgType, ExpectedType, value) { \
+  Arg arg = MakeArg<Char>(static_cast<MakeArgType>(value)); \
   EXPECT_EQ(Arg::type_code, arg.type); \
+  ExpectedType expected_value = static_cast<ExpectedType>(value); \
   EXPECT_EQ(expected_value, ArgInfo<Arg::type_code>::get(arg)); \
 }
 
 #define EXPECT_ARG(type_code, Type, value) \
-  EXPECT_ARG_(char, type_code, Type, value)
+  EXPECT_ARG_(char, type_code, Type, Type, value)
 
 #define EXPECT_ARGW(type_code, Type, value) \
-  EXPECT_ARG_(wchar_t, type_code, Type, value)
+  EXPECT_ARG_(wchar_t, type_code, Type, Type, value)
 
 TEST(ArgTest, MakeArg) {
   // Test bool.
-  EXPECT_ARG(INT, bool, true);
+  EXPECT_ARG_(char, INT, bool, int, true);
+  EXPECT_ARG_(wchar_t, INT, bool, int, true);
 
   // Test char.
   EXPECT_ARG(CHAR, signed char, 'a');
