@@ -127,7 +127,8 @@ TEST(ArgTest, ArgInfo) {
 }
 
 #define EXPECT_ARG_(Char, type_code, MakeArgType, ExpectedType, value) { \
-  Arg arg = MakeArg<Char>(static_cast<MakeArgType>(value)); \
+  MakeArgType input = static_cast<MakeArgType>(value); \
+  Arg arg = MakeArg<Char>(input); \
   EXPECT_EQ(Arg::type_code, arg.type); \
   ExpectedType expected_value = static_cast<ExpectedType>(value); \
   EXPECT_EQ(expected_value, ArgInfo<Arg::type_code>::get(arg)); \
