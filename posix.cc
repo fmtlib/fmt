@@ -67,7 +67,7 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 
 fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT(true) {
   if (file_ && FMT_SYSTEM(fclose(file_)) != 0)
-    fmt::ReportSystemError(errno, "cannot close file");
+    fmt::report_system_error(errno, "cannot close file");
 }
 
 void fmt::BufferedFile::close() {
@@ -102,7 +102,7 @@ fmt::File::~File() FMT_NOEXCEPT(true) {
   // Don't retry close in case of EINTR!
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
   if (fd_ != -1 && FMT_POSIX_CALL(close(fd_)) != 0)
-    fmt::ReportSystemError(errno, "cannot close file");
+    fmt::report_system_error(errno, "cannot close file");
 }
 
 void fmt::File::close() {

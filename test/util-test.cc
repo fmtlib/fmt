@@ -448,12 +448,6 @@ TEST(UtilTest, StrError) {
 #endif
 }
 
-TEST(UtilTest, SystemError) {
-  fmt::SystemError e(EDOM, "test");
-  EXPECT_EQ(fmt::format("test: {}", GetSystemErrorMessage(EDOM)), e.what());
-  EXPECT_EQ(EDOM, e.error_code());
-}
-
 typedef void (*FormatErrorMessage)(
         fmt::Writer &out, int error_code, StringRef message);
 
@@ -478,7 +472,10 @@ TEST(UtilTest, FormatSystemError) {
           GetSystemErrorMessage(EDOM)), message.str());
 }
 
-TEST(UtilTest, ThrowSystemError) {
+TEST(UtilTest, SystemError) {
+  fmt::SystemError e(EDOM, "test");
+  EXPECT_EQ(fmt::format("test: {}", GetSystemErrorMessage(EDOM)), e.what());
+  EXPECT_EQ(EDOM, e.error_code());
   CheckThrowError<fmt::SystemError>(EDOM, fmt::internal::format_system_error);
 }
 
@@ -486,12 +483,12 @@ TEST(UtilTest, ReportSystemError) {
   fmt::Writer out;
   fmt::internal::format_system_error(out, EDOM, "test error");
   out << '\n';
-  EXPECT_WRITE(stderr, fmt::ReportSystemError(EDOM, "test error"), out.str());
+  EXPECT_WRITE(stderr, fmt::report_system_error(EDOM, "test error"), out.str());
 }
 
 #ifdef _WIN32
 
-TEST(UtilTest, FormatWinErrorMessage) {
+TEST(UtilTest, FormatWindowsError) {
   LPWSTR message = 0;
   FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
       FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
@@ -506,17 +503,17 @@ TEST(UtilTest, FormatWinErrorMessage) {
       actual_message.str());
 }
 
-TEST(UtilTest, ThrowWinError) {
+TEST(UtilTest, WindowsError) {
   CheckThrowError<fmt::WindowsError>(
       ERROR_FILE_EXISTS, fmt::internal::format_windows_error);
 }
 
-TEST(UtilTest, ReportWinError) {
+TEST(UtilTest, ReportWindowsError) {
   fmt::Writer out;
   fmt::internal::format_windows_error(out, ERROR_FILE_EXISTS, "test error");
   out << '\n';
   EXPECT_WRITE(stderr,
-      fmt::ReportWinError(ERROR_FILE_EXISTS, "test error"), out.str());
+      fmt::report_windows_error(ERROR_FILE_EXISTS, "test error"), out.str());
 }
 
 #endif  // _WIN32

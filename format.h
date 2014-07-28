@@ -867,14 +867,14 @@ protected:
 template <typename Char>
 class PrintfFormatter : private FormatterBase {
  private:
-  void ParseFlags(FormatSpec &spec, const Char *&s);
+  void parse_flags(FormatSpec &spec, const Char *&s);
 
   // Parses argument index, flags and width and returns the parsed
   // argument index.
-  unsigned ParseHeader(const Char *&s, FormatSpec &spec);
+  unsigned parse_header(const Char *&s, FormatSpec &spec);
 
  public:
-  void Format(BasicWriter<Char> &writer,
+  void format(BasicWriter<Char> &writer,
     BasicStringRef<Char> format, const ArgList &args);
 };
 }  // namespace internal
@@ -888,16 +888,16 @@ private:
   internal::FormatErrorReporter<Char> report_error_;
 
   // Parses argument index and returns an argument with this index.
-  const internal::Arg &ParseArgIndex(const Char *&s);
+  const internal::Arg &parse_arg_index(const Char *&s);
 
-  void CheckSign(const Char *&s, const internal::Arg &arg);
+  void check_sign(const Char *&s, const internal::Arg &arg);
 
 public:
   explicit BasicFormatter(BasicWriter<Char> &w) : writer_(w) {}
 
   BasicWriter<Char> &writer() { return writer_; }
 
-  void Format(BasicStringRef<Char> format_str, const ArgList &args);
+  void format(BasicStringRef<Char> format_str, const ArgList &args);
 
   const Char *format(const Char *format_str, const internal::Arg &arg);
 };
@@ -1299,33 +1299,34 @@ class BasicWriter {
   typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
 
 #if _SECURE_SCL
-  static Char *GetBase(CharPtr p) { return p.base(); }
+  // Returns pointer value.
+  static Char *get(CharPtr p) { return p.base(); }
 #else
-  static Char *GetBase(Char *p) { return p; }
+  static Char *get(Char *p) { return p; }
 #endif
 
-  static CharPtr FillPadding(CharPtr buffer,
+  static CharPtr fill_padding(CharPtr buffer,
       unsigned total_size, std::size_t content_size, wchar_t fill);
 
   // Grows the buffer by n characters and returns a pointer to the newly
   // allocated area.
-  CharPtr GrowBuffer(std::size_t n) {
+  CharPtr grow_buffer(std::size_t n) {
     std::size_t size = buffer_.size();
     buffer_.resize(size + n);
     return internal::make_ptr(&buffer_[size], n);
   }
 
   // Prepare a buffer for integer formatting.
-  CharPtr PrepareBufferForInt(unsigned num_digits,
+  CharPtr prepare_int_buffer(unsigned num_digits,
       const EmptySpec &, const char *prefix, unsigned prefix_size) {
     unsigned size = prefix_size + num_digits;
-    CharPtr p = GrowBuffer(size);
+    CharPtr p = grow_buffer(size);
     std::copy(prefix, prefix + prefix_size, p);
     return p + size - 1;
   }
 
   template <typename Spec>
-  CharPtr PrepareBufferForInt(unsigned num_digits,
+  CharPtr prepare_int_buffer(unsigned num_digits,
     const Spec &spec, const char *prefix, unsigned prefix_size);
 
   // Formats an integer.
@@ -1432,7 +1433,7 @@ class BasicWriter {
     \endrst
    */
   void write(BasicStringRef<Char> format, const ArgList &args) {
-    BasicFormatter<Char>(*this).Format(format, args);
+    BasicFormatter<Char>(*this).format(format, args);
   }
   FMT_VARIADIC_VOID(write, fmt::BasicStringRef<Char>)
 
@@ -1519,18 +1520,18 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
     const StrChar *s, std::size_t size, const AlignSpec &spec) {
   CharPtr out = CharPtr();
   if (spec.width() > size) {
-    out = GrowBuffer(spec.width());
+    out = grow_buffer(spec.width());
     Char fill = static_cast<Char>(spec.fill());
     if (spec.align() == ALIGN_RIGHT) {
       std::fill_n(out, spec.width() - size, fill);
       out += spec.width() - size;
     } else if (spec.align() == ALIGN_CENTER) {
-      out = FillPadding(out, spec.width(), size, fill);
+      out = fill_padding(out, spec.width(), size, fill);
     } else {
       std::fill_n(out + size, spec.width() - size, fill);
     }
   } else {
-    out = GrowBuffer(size);
+    out = grow_buffer(size);
   }
   std::copy(s, s + size, out);
   return out;
@@ -1539,7 +1540,7 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
 template <typename Char>
 template <typename Spec>
 typename fmt::BasicWriter<Char>::CharPtr
-  fmt::BasicWriter<Char>::PrepareBufferForInt(
+  fmt::BasicWriter<Char>::prepare_int_buffer(
     unsigned num_digits, const Spec &spec,
     const char *prefix, unsigned prefix_size) {
   unsigned width = spec.width();
@@ -1553,35 +1554,35 @@ typename fmt::BasicWriter<Char>::CharPtr
     unsigned number_size = prefix_size + spec.precision();
     AlignSpec subspec(number_size, '0', ALIGN_NUMERIC);
     if (number_size >= width)
-      return PrepareBufferForInt(num_digits, subspec, prefix, prefix_size);
+      return prepare_int_buffer(num_digits, subspec, prefix, prefix_size);
     buffer_.reserve(width);
     unsigned fill_size = width - number_size;
     if (align != ALIGN_LEFT) {
-      CharPtr p = GrowBuffer(fill_size);
+      CharPtr p = grow_buffer(fill_size);
       std::fill(p, p + fill_size, fill);
     }
-    CharPtr result = PrepareBufferForInt(
+    CharPtr result = prepare_int_buffer(
         num_digits, subspec, prefix, prefix_size);
     if (align == ALIGN_LEFT) {
-      CharPtr p = GrowBuffer(fill_size);
+      CharPtr p = grow_buffer(fill_size);
       std::fill(p, p + fill_size, fill);
     }
     return result;
   }
   unsigned size = prefix_size + num_digits;
   if (width <= size) {
-    CharPtr p = GrowBuffer(size);
+    CharPtr p = grow_buffer(size);
     std::copy(prefix, prefix + prefix_size, p);
     return p + size - 1;
   }
-  CharPtr p = GrowBuffer(width);
+  CharPtr p = grow_buffer(width);
   CharPtr end = p + width;
   if (align == ALIGN_LEFT) {
     std::copy(prefix, prefix + prefix_size, p);
     p += size;
     std::fill(p, end, fill);
   } else if (align == ALIGN_CENTER) {
-    p = FillPadding(p, width, size, fill);
+    p = fill_padding(p, width, size, fill);
     std::copy(prefix, prefix + prefix_size, p);
     p += size;
   } else {
@@ -1617,9 +1618,9 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
   switch (spec.type()) {
   case 0: case 'd': {
     unsigned num_digits = internal::count_digits(abs_value);
-    CharPtr p = PrepareBufferForInt(
+    CharPtr p = prepare_int_buffer(
       num_digits, spec, prefix, prefix_size) + 1 - num_digits;
-    internal::format_decimal(GetBase(p), abs_value, num_digits);
+    internal::format_decimal(get(p), abs_value, num_digits);
     break;
   }
   case 'x': case 'X': {
@@ -1632,7 +1633,7 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
     do {
       ++num_digits;
     } while ((n >>= 4) != 0);
-    Char *p = GetBase(PrepareBufferForInt(
+    Char *p = get(prepare_int_buffer(
       num_digits, spec, prefix, prefix_size));
     n = abs_value;
     const char *digits = spec.type() == 'x' ?
@@ -1652,8 +1653,7 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
     do {
       ++num_digits;
     } while ((n >>= 1) != 0);
-    Char *p = GetBase(PrepareBufferForInt(
-        num_digits, spec, prefix, prefix_size));
+    Char *p = get(prepare_int_buffer(num_digits, spec, prefix, prefix_size));
     n = abs_value;
     do {
       *p-- = '0' + (n & 1);
@@ -1668,8 +1668,7 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
     do {
       ++num_digits;
     } while ((n >>= 3) != 0);
-    Char *p = GetBase(PrepareBufferForInt(
-      num_digits, spec, prefix, prefix_size));
+    Char *p = get(prepare_int_buffer(num_digits, spec, prefix, prefix_size));
     n = abs_value;
     do {
       *p-- = '0' + (n & 7);
@@ -1693,7 +1692,7 @@ void format(BasicFormatter<Char> &f, const Char *format_str, const T &value) {
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
-void ReportSystemError(int error_code, StringRef message) FMT_NOEXCEPT(true);
+void report_system_error(int error_code, StringRef message) FMT_NOEXCEPT(true);
 
 #ifdef _WIN32
 
@@ -1722,7 +1721,7 @@ class WindowsError : public SystemError {
 
 // Reports a Windows error without throwing an exception.
 // Can be used to report errors from destructors.
-void ReportWinError(int error_code, StringRef message) FMT_NOEXCEPT(true);
+void report_windows_error(int error_code, StringRef message) FMT_NOEXCEPT(true);
 
 #endif
 
@@ -1803,7 +1802,7 @@ void print(std::ostream &os, StringRef format, const ArgList &args);
 template <typename Char>
 void printf(BasicWriter<Char> &w,
     BasicStringRef<Char> format, const ArgList &args) {
-  internal::PrintfFormatter<Char>().Format(w, format, args);
+  internal::PrintfFormatter<Char>().format(w, format, args);
 }
 
 inline std::string sprintf(StringRef format, const ArgList &args) {

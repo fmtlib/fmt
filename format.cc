@@ -443,17 +443,17 @@ class fmt::internal::ArgFormatter :
     CharPtr out = CharPtr();
     if (spec_.width_ > 1) {
       Char fill = static_cast<Char>(spec_.fill());
-      out = writer_.GrowBuffer(spec_.width_);
+      out = writer_.grow_buffer(spec_.width_);
       if (spec_.align_ == fmt::ALIGN_RIGHT) {
         std::fill_n(out, spec_.width_ - 1, fill);
         out += spec_.width_ - 1;
       } else if (spec_.align_ == fmt::ALIGN_CENTER) {
-        out = writer_.FillPadding(out, spec_.width_, 1, fill);
+        out = writer_.fill_padding(out, spec_.width_, 1, fill);
       } else {
         std::fill_n(out + 1, spec_.width_ - 1, fill);
       }
     } else {
-      out = writer_.GrowBuffer(1);
+      out = writer_.grow_buffer(1);
     }
     *out = static_cast<Char>(value);
   }
@@ -489,7 +489,7 @@ void fmt::internal::FormatErrorReporter<Char>::operator()(
 // content area.
 template <typename Char>
 typename fmt::BasicWriter<Char>::CharPtr
-  fmt::BasicWriter<Char>::FillPadding(CharPtr buffer,
+  fmt::BasicWriter<Char>::fill_padding(CharPtr buffer,
     unsigned total_size, std::size_t content_size, wchar_t fill) {
   std::size_t padding = total_size - content_size;
   std::size_t left_padding = padding / 2;
@@ -631,9 +631,9 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
       if (spec.align() == ALIGN_CENTER &&
           spec.width() > static_cast<unsigned>(n)) {
         unsigned width = spec.width();
-        CharPtr p = GrowBuffer(width);
+        CharPtr p = grow_buffer(width);
         std::copy(p, p + n, p + (width - n) / 2);
-        FillPadding(p, spec.width(), n, fill);
+        fill_padding(p, spec.width(), n, fill);
         return;
       }
       if (spec.fill() != ' ' || sign) {
@@ -642,7 +642,7 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
         if (sign)
           *(start - 1) = sign;
       }
-      GrowBuffer(n);
+      grow_buffer(n);
       return;
     }
     // If n is negative we ask to increase the capacity by at least 1,
@@ -672,7 +672,7 @@ void fmt::BasicWriter<Char>::write_str(
 
 template <typename Char>
 inline const Arg
-    &fmt::BasicFormatter<Char>::ParseArgIndex(const Char *&s) {
+    &fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
   unsigned arg_index = 0;
   if (*s < '0' || *s > '9') {
     if (*s != '}' && *s != ':')
@@ -696,7 +696,7 @@ inline const Arg
 }
 
 template <typename Char>
-void fmt::BasicFormatter<Char>::CheckSign(
+void fmt::BasicFormatter<Char>::check_sign(
     const Char *&s, const Arg &arg) {
   char sign = static_cast<char>(*s);
   if (arg.type > Arg::LAST_NUMERIC_TYPE) {
@@ -742,7 +742,7 @@ const Arg &fmt::internal::FormatterBase::handle_arg_index(unsigned arg_index) {
 }
 
 template <typename Char>
-void fmt::internal::PrintfFormatter<Char>::ParseFlags(
+void fmt::internal::PrintfFormatter<Char>::parse_flags(
     FormatSpec &spec, const Char *&s) {
   for (;;) {
     switch (*s++) {
@@ -769,7 +769,7 @@ void fmt::internal::PrintfFormatter<Char>::ParseFlags(
 }
 
 template <typename Char>
-unsigned fmt::internal::PrintfFormatter<Char>::ParseHeader(
+unsigned fmt::internal::PrintfFormatter<Char>::parse_header(
   const Char *&s, FormatSpec &spec) {
   unsigned arg_index = UINT_MAX;
   Char c = *s;
@@ -791,7 +791,7 @@ unsigned fmt::internal::PrintfFormatter<Char>::ParseHeader(
       }
     }
   }
-  ParseFlags(spec, s);
+  parse_flags(spec, s);
   // Parse width.
   if (*s >= '0' && *s <= '9') {
     spec.width_ = ParseNonnegativeInt(s, error_);
@@ -803,7 +803,7 @@ unsigned fmt::internal::PrintfFormatter<Char>::ParseHeader(
 }
 
 template <typename Char>
-void fmt::internal::PrintfFormatter<Char>::Format(
+void fmt::internal::PrintfFormatter<Char>::format(
     BasicWriter<Char> &writer, BasicStringRef<Char> format,
     const ArgList &args) {
   const Char *start = format.c_str();
@@ -835,7 +835,7 @@ void fmt::internal::PrintfFormatter<Char>::Format(
     // is OK for both cases.
 
     // Parse argument index, flags and width.
-    unsigned arg_index = ParseHeader(s, spec);
+    unsigned arg_index = parse_header(s, spec);
 
     // Parse precision.
     if (*s == '.') {
@@ -906,7 +906,7 @@ void fmt::internal::PrintfFormatter<Char>::Format(
       CharPtr out = CharPtr();
       if (spec.width_ > 1) {
         Char fill = ' ';
-        out = writer.GrowBuffer(spec.width_);
+        out = writer.grow_buffer(spec.width_);
         if (spec.align_ != ALIGN_LEFT) {
           std::fill_n(out, spec.width_ - 1, fill);
           out += spec.width_ - 1;
@@ -914,7 +914,7 @@ void fmt::internal::PrintfFormatter<Char>::Format(
           std::fill_n(out + 1, spec.width_ - 1, fill);
         }
       } else {
-        out = writer.GrowBuffer(1);
+        out = writer.grow_buffer(1);
       }
       *out = static_cast<Char>(arg.int_value);
       break;
@@ -1000,15 +1000,15 @@ const Char *fmt::BasicFormatter<Char>::format(
     // Parse sign.
     switch (*s) {
       case '+':
-        CheckSign(s, arg);
+        check_sign(s, arg);
         spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
         break;
       case '-':
-        CheckSign(s, arg);
+        check_sign(s, arg);
         spec.flags_ |= MINUS_FLAG;
         break;
       case ' ':
-        CheckSign(s, arg);
+        check_sign(s, arg);
         spec.flags_ |= SIGN_FLAG;
         break;
     }
@@ -1046,7 +1046,7 @@ const Char *fmt::BasicFormatter<Char>::format(
       } else if (*s == '{') {
         ++s;
         ++report_error_.num_open_braces;
-        const Arg &precision_arg = ParseArgIndex(s);
+        const Arg &precision_arg = parse_arg_index(s);
         ULongLong value = 0;
         switch (precision_arg.type) {
           case Arg::INT:
@@ -1098,7 +1098,7 @@ const Char *fmt::BasicFormatter<Char>::format(
 }
 
 template <typename Char>
-void fmt::BasicFormatter<Char>::Format(
+void fmt::BasicFormatter<Char>::format(
     BasicStringRef<Char> format_str, const ArgList &args) {
   const Char *s = start_ = format_str.c_str();
   args_ = args;
@@ -1115,20 +1115,20 @@ void fmt::BasicFormatter<Char>::Format(
       throw FormatError("unmatched '}' in format");
     report_error_.num_open_braces = 1;
     write(writer_, start_, s - 1);
-    Arg arg = ParseArgIndex(s);
+    Arg arg = parse_arg_index(s);
     s = format(s, arg);
   }
   write(writer_, start_, s);
 }
 
-void fmt::ReportSystemError(
+void fmt::report_system_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
   // FIXME: format_system_error may throw
   ReportError(internal::format_system_error, error_code, message);
 }
 
 #ifdef _WIN32
-void fmt::ReportWinError(
+void fmt::report_windows_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
   // FIXME: format_windows_error may throw
   ReportError(internal::format_windows_error, error_code, message);
@@ -1170,25 +1170,25 @@ void fmt::printf(StringRef format, const ArgList &args) {
 // Explicit instantiations for char.
 
 template fmt::BasicWriter<char>::CharPtr
-  fmt::BasicWriter<char>::FillPadding(CharPtr buffer,
+  fmt::BasicWriter<char>::fill_padding(CharPtr buffer,
     unsigned total_size, std::size_t content_size, wchar_t fill);
 
-template void fmt::BasicFormatter<char>::Format(
+template void fmt::BasicFormatter<char>::format(
   BasicStringRef<char> format, const ArgList &args);
 
-template void fmt::internal::PrintfFormatter<char>::Format(
+template void fmt::internal::PrintfFormatter<char>::format(
   BasicWriter<char> &writer, BasicStringRef<char> format, const ArgList &args);
 
 // Explicit instantiations for wchar_t.
 
 template fmt::BasicWriter<wchar_t>::CharPtr
-  fmt::BasicWriter<wchar_t>::FillPadding(CharPtr buffer,
+  fmt::BasicWriter<wchar_t>::fill_padding(CharPtr buffer,
     unsigned total_size, std::size_t content_size, wchar_t fill);
 
-template void fmt::BasicFormatter<wchar_t>::Format(
+template void fmt::BasicFormatter<wchar_t>::format(
     BasicStringRef<wchar_t> format, const ArgList &args);
 
-template void fmt::internal::PrintfFormatter<wchar_t>::Format(
+template void fmt::internal::PrintfFormatter<wchar_t>::format(
     BasicWriter<wchar_t> &writer, BasicStringRef<wchar_t> format,
     const ArgList &args);
 
