@@ -1760,9 +1760,9 @@ inline std::string format(StringRef format_str, const ArgList &args) {
   return w.str();
 }
 
-inline std::wstring format(WStringRef format, const ArgList &args) {
+inline std::wstring format(WStringRef format_str, const ArgList &args) {
   WWriter w;
-  w.write(format, args);
+  w.write(format_str, args);
   return w.str();
 }
 
