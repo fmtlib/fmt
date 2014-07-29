@@ -63,29 +63,21 @@ namespace {
 
 #ifndef _MSC_VER
 
-inline int SignBit(double value) {
-  // When compiled in C++11 mode signbit is no longer a macro but a function
-  // defined in namespace std and the macro is undefined.
-#ifdef signbit
-  return signbit(value);
-#else
-  return std::signbit(value);
+// When compiled in C++11 mode signbit is no longer a macro but a function
+// defined in namespace std and the macro is undefined.
+#ifndef signbit
+  using std::signbit;
 #endif
-}
 
-inline int IsInf(double x) {
-#ifdef isinf
-  return isinf(x);
-#else
-  return std::isinf(x);
+#ifndef signbit
+  using std::isinf;
 #endif
-}
 
 #define FMT_SNPRINTF snprintf
 
 #else  // _MSC_VER
 
-inline int SignBit(double value) {
+inline int signbit(double value) {
   if (value < 0) return 1;
   if (value == value) return 0;
   int dec = 0, sign = 0;
@@ -94,15 +86,16 @@ inline int SignBit(double value) {
   return sign;
 }
 
-inline int IsInf(double x) { return !_finite(x); }
+inline int isinf(double x) { return !_finite(x); }
 
-inline int FMT_SNPRINTF(char *buffer, size_t size, const char *format, ...) {
+inline int safe_printf(char *buffer, size_t size, const char *format, ...) {
   va_list args;
   va_start(args, format);
   int result = vsnprintf_s(buffer, size, _TRUNCATE, format, args);
   va_end(args);
   return result;
 }
+#define FMT_SNPRINTF safe_printf
 
 #endif  // _MSC_VER
 
@@ -110,7 +103,7 @@ const char RESET_COLOR[] = "\x1b[0m";
 
 typedef void (*FormatFunc)(fmt::Writer &, int , fmt::StringRef);
 
-void ReportError(FormatFunc func,
+void report_error(FormatFunc func,
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
   try {
     fmt::Writer full_message;
@@ -122,7 +115,7 @@ void ReportError(FormatFunc func,
 
 const Arg DUMMY_ARG = {Arg::INT, 0};
 
-fmt::ULongLong GetIntValue(const Arg &arg) {
+fmt::ULongLong get_int_value(const Arg &arg) {
   switch (arg.type) {
     case Arg::INT:
       return arg.int_value;
@@ -140,7 +133,8 @@ fmt::ULongLong GetIntValue(const Arg &arg) {
 // Parses an unsigned integer advancing s to the end of the parsed input.
 // This function assumes that the first character of s is a digit.
 template <typename Char>
-int ParseNonnegativeInt(const Char *&s, const char *&error) FMT_NOEXCEPT(true) {
+int parse_nonnegative_int(
+    const Char *&s, const char *&error) FMT_NOEXCEPT(true) {
   assert('0' <= *s && *s <= '9');
   unsigned value = 0;
   do {
@@ -211,7 +205,7 @@ inline Arg::StringValue<wchar_t> ignore_incompatible_str(
     Arg::StringValue<wchar_t> s) { return s; }
 }  // namespace
 
-int fmt::internal::signbit_noinline(double value) { return SignBit(value); }
+int fmt::internal::signbit_noinline(double value) { return signbit(value); }
 
 void fmt::SystemError::init(
     int error_code, StringRef format_str, const ArgList &args) {
@@ -528,9 +522,9 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   }
 
   char sign = 0;
-  // Use SignBit instead of value < 0 because the latter is always
+  // Use signbit instead of value < 0 because the latter is always
   // false for NaN.
-  if (SignBit(static_cast<double>(value))) {
+  if (signbit(static_cast<double>(value))) {
     sign = '-';
     value = -value;
   } else if (spec.flag(SIGN_FLAG)) {
@@ -552,7 +546,7 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
     return;
   }
 
-  if (IsInf(static_cast<double>(value))) {
+  if (isinf(static_cast<double>(value))) {
     // Format infinity ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t size = 4;
@@ -687,7 +681,7 @@ inline const Arg
         "cannot switch from automatic to manual argument indexing");
   }
   next_arg_index_ = -1;
-  arg_index = ParseNonnegativeInt(s, error_);
+  arg_index = parse_nonnegative_int(s, error_);
   if (error_)
     report_error_(s, error_); // TODO: don't use report_error_
   if (arg_index >= args_.size())
@@ -776,7 +770,7 @@ unsigned fmt::internal::PrintfFormatter<Char>::parse_header(
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
     // preceded with '0' flag(s).
-    unsigned value = ParseNonnegativeInt(s, error_);
+    unsigned value = parse_nonnegative_int(s, error_);
     if (*s == '$') {  // value is an argument index
       ++s;
       arg_index = value;
@@ -794,7 +788,7 @@ unsigned fmt::internal::PrintfFormatter<Char>::parse_header(
   parse_flags(spec, s);
   // Parse width.
   if (*s >= '0' && *s <= '9') {
-    spec.width_ = ParseNonnegativeInt(s, error_);
+    spec.width_ = parse_nonnegative_int(s, error_);
   } else if (*s == '*') {
     ++s;
     spec.width_ = WidthHandler(spec).visit(handle_arg_index(UINT_MAX));
@@ -841,19 +835,19 @@ void fmt::internal::PrintfFormatter<Char>::format(
     if (*s == '.') {
       ++s;
       if ('0' <= *s && *s <= '9') {
-        spec.precision_ = ParseNonnegativeInt(s, error_);
+        spec.precision_ = parse_nonnegative_int(s, error_);
       } else if (*s == '*') {
         ++s;
         const Arg &arg = handle_arg_index(UINT_MAX);
         if (arg.type <= Arg::LAST_INTEGER_TYPE)
-          spec.precision_ = static_cast<int>(GetIntValue(arg)); // TODO: check for overflow
+          spec.precision_ = static_cast<int>(get_int_value(arg)); // TODO: check for overflow
         else if (!error_)
           error_ = "precision is not integer";
       }
     }
 
     const Arg &arg = handle_arg_index(arg_index);
-    if (spec.flag(HASH_FLAG) && GetIntValue(arg) == 0)
+    if (spec.flag(HASH_FLAG) && get_int_value(arg) == 0)
       spec.flags_ &= ~HASH_FLAG;
     if (spec.fill_ == '0') {
       if (arg.type <= Arg::LAST_NUMERIC_TYPE)
@@ -1030,7 +1024,7 @@ const Char *fmt::BasicFormatter<Char>::format(
       }
       // Zero may be parsed again as a part of the width, but it is simpler
       // and more efficient than checking if the next char is a digit.
-      spec.width_ = ParseNonnegativeInt(s, error);
+      spec.width_ = parse_nonnegative_int(s, error);
       if (error)
         report_error_(s, error);
     }
@@ -1040,7 +1034,7 @@ const Char *fmt::BasicFormatter<Char>::format(
       ++s;
       spec.precision_ = 0;
       if ('0' <= *s && *s <= '9') {
-        spec.precision_ = ParseNonnegativeInt(s, error);
+        spec.precision_ = parse_nonnegative_int(s, error);
         if (error)
           report_error_(s, error);
       } else if (*s == '{') {
@@ -1124,14 +1118,14 @@ void fmt::BasicFormatter<Char>::format(
 void fmt::report_system_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
   // FIXME: format_system_error may throw
-  ReportError(internal::format_system_error, error_code, message);
+  report_error(internal::format_system_error, error_code, message);
 }
 
 #ifdef _WIN32
 void fmt::report_windows_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
   // FIXME: format_windows_error may throw
-  ReportError(internal::format_windows_error, error_code, message);
+  report_error(internal::format_windows_error, error_code, message);
 }
 #endif
 
