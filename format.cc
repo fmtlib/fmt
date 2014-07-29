@@ -70,7 +70,7 @@ namespace {
 #endif
 
 // Portable version of isinf.
-inline int fmt_isinf(double x) {
+inline int isinfinity(double x) {
 #ifdef isinf
   return isinf(x);
 #else
@@ -91,7 +91,7 @@ inline int signbit(double value) {
   return sign;
 }
 
-inline int fmt_isinf(double x) { return !_finite(x); }
+inline int isinfinity(double x) { return !_finite(x); }
 
 inline int safe_printf(char *buffer, size_t size, const char *format, ...) {
   va_list args;
@@ -551,7 +551,7 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
     return;
   }
 
-  if (fmt_isinf(static_cast<double>(value))) {
+  if (isinfinity(static_cast<double>(value))) {
     // Format infinity ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t size = 4;
