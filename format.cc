@@ -69,7 +69,7 @@ namespace {
   using std::signbit;
 #endif
 
-#ifndef signbit
+#ifndef isinf
   using std::isinf;
 #endif
 
