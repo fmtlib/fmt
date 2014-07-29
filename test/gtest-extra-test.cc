@@ -282,7 +282,7 @@ TEST(ExpectTest, EXPECT_THROW_MSG) {
       "type std::logic_error.\n  Actual: it throws a different type.");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_THROW_MSG(do_nothing(), std::exception, "test"),
-      "Expected: DoNothing() throws an exception of type std::exception.\n"
+      "Expected: do_nothing() throws an exception of type std::exception.\n"
       "  Actual: it throws nothing.");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_THROW_MSG(throw_exception(), std::exception, "other"),
@@ -300,7 +300,7 @@ TEST(ExpectTest, EXPECT_SYSTEM_ERROR) {
       "type fmt::SystemError.\n  Actual: it throws a different type.");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(do_nothing(), EDOM, "test"),
-      "Expected: DoNothing() throws an exception of type fmt::SystemError.\n"
+      "Expected: do_nothing() throws an exception of type fmt::SystemError.\n"
       "  Actual: it throws nothing.");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, "other"),
