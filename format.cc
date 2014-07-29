@@ -63,11 +63,16 @@ namespace {
 
 #ifndef _MSC_VER
 
+// Portable version of signbit.
 // When compiled in C++11 mode signbit is no longer a macro but a function
 // defined in namespace std and the macro is undefined.
-#ifndef signbit
-  using std::signbit;
+inline int getsign(double x) {
+#ifdef signbit
+  return signbit(x);
+#else
+  return std::signbit(x);
 #endif
+}
 
 // Portable version of isinf.
 inline int isinfinity(double x) {
@@ -82,7 +87,7 @@ inline int isinfinity(double x) {
 
 #else  // _MSC_VER
 
-inline int signbit(double value) {
+inline int getsign(double value) {
   if (value < 0) return 1;
   if (value == value) return 0;
   int dec = 0, sign = 0;
@@ -210,7 +215,7 @@ inline Arg::StringValue<wchar_t> ignore_incompatible_str(
     Arg::StringValue<wchar_t> s) { return s; }
 }  // namespace
 
-int fmt::internal::signbit_noinline(double value) { return signbit(value); }
+int fmt::internal::signbit_noinline(double value) { return getsign(value); }
 
 void fmt::SystemError::init(
     int error_code, StringRef format_str, const ArgList &args) {
@@ -527,9 +532,9 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   }
 
   char sign = 0;
-  // Use signbit instead of value < 0 because the latter is always
+  // Use getsign instead of value < 0 because the latter is always
   // false for NaN.
-  if (signbit(static_cast<double>(value))) {
+  if (getsign(static_cast<double>(value))) {
     sign = '-';
     value = -value;
   } else if (spec.flag(SIGN_FLAG)) {
