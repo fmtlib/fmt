@@ -1894,7 +1894,7 @@ class FormatInt {
 // a pointer to the end of the formatted string. This function doesn't
 // write a terminating null character.
 template <typename T>
-inline void FormatDec(char *&buffer, T value) {
+inline void format_decimal(char *&buffer, T value) {
   typename internal::IntTraits<T>::MainType abs_value = value;
   if (internal::is_negative(value)) {
     *buffer++ = '-';
