@@ -46,7 +46,7 @@ using fmt::internal::Arg;
 using fmt::internal::MakeArg;
 
 namespace {
-std::string GetSystemErrorMessage(int error_code) {
+std::string get_system_error(int error_code) {
 #if defined(__MINGW32__) || !defined(_WIN32)
   return strerror(error_code);
 #else
@@ -64,19 +64,19 @@ template <typename Char>
 std::basic_ostream<Char> &operator<<(std::basic_ostream<Char> &os, Test) {
   return os << "test";
 }
-}
+}  // namespace
 
 TEST(UtilTest, Increment) {
   char s[10] = "123";
-  Increment(s);
+  increment(s);
   EXPECT_STREQ("124", s);
   s[2] = '8';
-  Increment(s);
+  increment(s);
   EXPECT_STREQ("129", s);
-  Increment(s);
+  increment(s);
   EXPECT_STREQ("130", s);
   s[1] = s[2] = '9';
-  Increment(s);
+  increment(s);
   EXPECT_STREQ("200", s);
 }
 
@@ -355,7 +355,7 @@ TEST(ArgVisitorTest, VisitInvalidArg) {
 
 // Tests fmt::internal::count_digits for integer type Int.
 template <typename Int>
-void TestCountDigits(Int) {
+void test_count_digits() {
   for (Int i = 0; i < 10; ++i)
     EXPECT_EQ(1u, fmt::internal::count_digits(i));
   for (Int i = 1, n = 1,
@@ -367,8 +367,8 @@ void TestCountDigits(Int) {
 }
 
 TEST(UtilTest, CountDigits) {
-  TestCountDigits(uint32_t());
-  TestCountDigits(uint64_t());
+  test_count_digits<uint32_t>();
+  test_count_digits<uint64_t>();
 }
 
 #ifdef _WIN32
@@ -387,7 +387,7 @@ TEST(UtilTest, UTF8ToUTF16) {
 }
 
 template <typename Converter>
-void CheckUTFConversionError(const char *message) {
+void check_utf_conversion_error(const char *message) {
   fmt::Writer out;
   fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
   fmt::SystemError error(0, "");
@@ -401,12 +401,12 @@ void CheckUTFConversionError(const char *message) {
 }
 
 TEST(UtilTest, UTF16ToUTF8Error) {
-  CheckUTFConversionError<fmt::internal::UTF16ToUTF8>(
+  check_utf_conversion_error<fmt::internal::UTF16ToUTF8>(
       "cannot convert string from UTF-16 to UTF-8");
 }
 
 TEST(UtilTest, UTF8ToUTF16Error) {
-  CheckUTFConversionError<fmt::internal::UTF8ToUTF16>(
+  check_utf_conversion_error<fmt::internal::UTF8ToUTF16>(
       "cannot convert string from UTF-8 to UTF-16");
 }
 
@@ -437,7 +437,7 @@ TEST(UtilTest, StrError) {
   EXPECT_EQ(0, result);
   std::size_t message_size = std::strlen(message);
   EXPECT_GE(BUFFER_SIZE - 1u, message_size);
-  EXPECT_EQ(GetSystemErrorMessage(error_code), message);
+  EXPECT_EQ(get_system_error(error_code), message);
 
   // safe_strerror never uses buffer on MinGW.
 #ifndef __MINGW32__
@@ -454,7 +454,7 @@ typedef void (*FormatErrorMessage)(
         fmt::Writer &out, int error_code, StringRef message);
 
 template <typename Error>
-void CheckThrowError(int error_code, FormatErrorMessage format) {
+void check_throw_error(int error_code, FormatErrorMessage format) {
   fmt::SystemError error(0, "");
   try {
     throw Error(error_code, "test {}", "error");
@@ -471,14 +471,14 @@ TEST(UtilTest, FormatSystemError) {
   fmt::Writer message;
   fmt::internal::format_system_error(message, EDOM, "test");
   EXPECT_EQ(fmt::format("test: {}",
-          GetSystemErrorMessage(EDOM)), message.str());
+          get_system_error(EDOM)), message.str());
 }
 
 TEST(UtilTest, SystemError) {
   fmt::SystemError e(EDOM, "test");
-  EXPECT_EQ(fmt::format("test: {}", GetSystemErrorMessage(EDOM)), e.what());
+  EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)), e.what());
   EXPECT_EQ(EDOM, e.error_code());
-  CheckThrowError<fmt::SystemError>(EDOM, fmt::internal::format_system_error);
+  check_throw_error<fmt::SystemError>(EDOM, fmt::internal::format_system_error);
 }
 
 TEST(UtilTest, ReportSystemError) {
@@ -506,7 +506,7 @@ TEST(UtilTest, FormatWindowsError) {
 }
 
 TEST(UtilTest, WindowsError) {
-  CheckThrowError<fmt::WindowsError>(
+  check_throw_error<fmt::WindowsError>(
       ERROR_FILE_EXISTS, fmt::internal::format_windows_error);
 }
 

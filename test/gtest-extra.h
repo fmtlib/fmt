@@ -99,8 +99,8 @@ class OutputRedirect {
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(OutputRedirect);
 
-  void Flush();
-  void Restore();
+  void flush();
+  void restore();
 
  public:
   explicit OutputRedirect(FILE *file);
@@ -108,7 +108,7 @@ class OutputRedirect {
 
   // Restores the original file, reads output from the pipe into a string
   // and returns it.
-  std::string RestoreAndRead();
+  std::string restore_and_read();
 };
 
 #define FMT_TEST_WRITE_(statement, expected_output, file, fail) \
@@ -117,7 +117,7 @@ class OutputRedirect {
     std::string gtest_expected_output = expected_output; \
     OutputRedirect gtest_redir(file); \
     GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
-    std::string gtest_output = gtest_redir.RestoreAndRead(); \
+    std::string gtest_output = gtest_redir.restore_and_read(); \
     if (gtest_output != gtest_expected_output) { \
       gtest_ar \
         << #statement " produces different output.\n" \

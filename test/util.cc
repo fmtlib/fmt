@@ -26,22 +26,9 @@
  */
 
 #include "util.h"
-#include <cstdarg>
-#include <cstdio>
 #include <cstring>
 
-#ifdef _MSC_VER
-# define vsnprintf vsprintf_s
-#endif
-
-void SPrintf(char *buffer, const char *format, ...) {
-  std::va_list args;
-  va_start(args, format);
-  vsnprintf(buffer, BUFFER_SIZE, format, args);
-  va_end(args);
-}
-
-void Increment(char *s) {
+void increment(char *s) {
   for (int i = static_cast<int>(std::strlen(s)) - 1; i >= 0; --i) {
     if (s[i] != '9') {
       ++s[i];

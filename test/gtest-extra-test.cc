@@ -47,12 +47,12 @@ class SuppressAssert {
   _invalid_parameter_handler original_handler_;
   int original_report_mode_;
 
-  static void InvalidParameterHandler(const wchar_t *,
+  static void handle_invalid_parameter(const wchar_t *,
       const wchar_t *, const wchar_t *, unsigned , uintptr_t) {}
 
  public:
   SuppressAssert()
-  : original_handler_(_set_invalid_parameter_handler(InvalidParameterHandler)),
+  : original_handler_(_set_invalid_parameter_handler(handle_invalid_parameter)),
     original_report_mode_(_CrtSetReportMode(_CRT_ASSERT, 0)) {
   }
   ~SuppressAssert() {
@@ -65,12 +65,12 @@ class SuppressAssert {
 
 // Fix "secure" warning about using fopen without defining
 // _CRT_SECURE_NO_WARNINGS.
-FILE *OpenFile(const char *filename, const char *mode) {
+FILE *safe_fopen(const char *filename, const char *mode) {
   FILE *f = 0;
   errno = fopen_s(&f, filename, mode);
   return f;
 }
-#define fopen OpenFile
+#define fopen safe_fopen
 #else
 # define SUPPRESS_ASSERT(statement) statement
 using std::fopen;
@@ -100,13 +100,13 @@ const char* SingleEvaluationTest::p_;
 int SingleEvaluationTest::a_;
 int SingleEvaluationTest::b_;
 
-void DoNothing() {}
+void do_nothing() {}
 
-void ThrowException() {
+void throw_exception() {
   throw std::runtime_error("test");
 }
 
-void ThrowSystemError() {
+void throw_system_error() {
   throw fmt::SystemError(EDOM, "test");
 }
 
@@ -114,7 +114,7 @@ void ThrowSystemError() {
 // exactly once.
 TEST_F(SingleEvaluationTest, FailedEXPECT_THROW_MSG) {
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THROW_MSG(ThrowException(), std::exception, p_++), "01234");
+      EXPECT_THROW_MSG(throw_exception(), std::exception, p_++), "01234");
   EXPECT_EQ(s_ + 1, p_);
 }
 
@@ -122,7 +122,7 @@ TEST_F(SingleEvaluationTest, FailedEXPECT_THROW_MSG) {
 // exactly once.
 TEST_F(SingleEvaluationTest, FailedEXPECT_SYSTEM_ERROR) {
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_SYSTEM_ERROR(ThrowSystemError(), EDOM, p_++), "01234");
+      EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, p_++), "01234");
   EXPECT_EQ(s_ + 1, p_);
 }
 
@@ -139,7 +139,7 @@ TEST_F(SingleEvaluationTest, ExceptionTests) {
   // successful EXPECT_THROW_MSG
   EXPECT_THROW_MSG({  // NOLINT
     a_++;
-    ThrowException();
+    throw_exception();
   }, std::exception, (b_++, "test"));
   EXPECT_EQ(1, a_);
   EXPECT_EQ(1, b_);
@@ -147,7 +147,7 @@ TEST_F(SingleEvaluationTest, ExceptionTests) {
   // failed EXPECT_THROW_MSG, throws different type
   EXPECT_NONFATAL_FAILURE(EXPECT_THROW_MSG({  // NOLINT
     a_++;
-    ThrowException();
+    throw_exception();
   }, std::logic_error, (b_++, "test")), "throws a different type");
   EXPECT_EQ(2, a_);
   EXPECT_EQ(2, b_);
@@ -155,7 +155,7 @@ TEST_F(SingleEvaluationTest, ExceptionTests) {
   // failed EXPECT_THROW_MSG, throws an exception with different message
   EXPECT_NONFATAL_FAILURE(EXPECT_THROW_MSG({  // NOLINT
     a_++;
-    ThrowException();
+    throw_exception();
   }, std::exception, (b_++, "other")),
       "throws an exception with a different message");
   EXPECT_EQ(3, a_);
@@ -172,7 +172,7 @@ TEST_F(SingleEvaluationTest, SystemErrorTests) {
   // successful EXPECT_SYSTEM_ERROR
   EXPECT_SYSTEM_ERROR({  // NOLINT
     a_++;
-    ThrowSystemError();
+    throw_system_error();
   }, EDOM, (b_++, "test"));
   EXPECT_EQ(1, a_);
   EXPECT_EQ(1, b_);
@@ -180,7 +180,7 @@ TEST_F(SingleEvaluationTest, SystemErrorTests) {
   // failed EXPECT_SYSTEM_ERROR, throws different type
   EXPECT_NONFATAL_FAILURE(EXPECT_SYSTEM_ERROR({  // NOLINT
     a_++;
-    ThrowException();
+    throw_exception();
   }, EDOM, (b_++, "test")), "throws a different type");
   EXPECT_EQ(2, a_);
   EXPECT_EQ(2, b_);
@@ -188,7 +188,7 @@ TEST_F(SingleEvaluationTest, SystemErrorTests) {
   // failed EXPECT_SYSTEM_ERROR, throws an exception with different message
   EXPECT_NONFATAL_FAILURE(EXPECT_SYSTEM_ERROR({  // NOLINT
     a_++;
-    ThrowSystemError();
+    throw_system_error();
   }, EDOM, (b_++, "other")),
       "throws an exception with a different message");
   EXPECT_EQ(3, a_);
@@ -245,22 +245,22 @@ TEST(ExpectSystemErrorTest, DoesNotGenerateUnreachableCodeWarning) {
 
 TEST(AssertionSyntaxTest, ExceptionAssertionBehavesLikeSingleStatement) {
   if (::testing::internal::AlwaysFalse())
-    EXPECT_THROW_MSG(DoNothing(), std::exception, "");
+    EXPECT_THROW_MSG(do_nothing(), std::exception, "");
 
   if (::testing::internal::AlwaysTrue())
-    EXPECT_THROW_MSG(ThrowException(), std::exception, "test");
+    EXPECT_THROW_MSG(throw_exception(), std::exception, "test");
   else
-    DoNothing();
+    do_nothing();
 }
 
 TEST(AssertionSyntaxTest, SystemErrorAssertionBehavesLikeSingleStatement) {
   if (::testing::internal::AlwaysFalse())
-    EXPECT_SYSTEM_ERROR(DoNothing(), EDOM, "");
+    EXPECT_SYSTEM_ERROR(do_nothing(), EDOM, "");
 
   if (::testing::internal::AlwaysTrue())
-    EXPECT_SYSTEM_ERROR(ThrowSystemError(), EDOM, "test");
+    EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, "test");
   else
-    DoNothing();
+    do_nothing();
 }
 
 TEST(AssertionSyntaxTest, WriteAssertionBehavesLikeSingleStatement) {
@@ -270,42 +270,42 @@ TEST(AssertionSyntaxTest, WriteAssertionBehavesLikeSingleStatement) {
   if (::testing::internal::AlwaysTrue())
     EXPECT_WRITE(stdout, std::printf("x"), "x");
   else
-    DoNothing();
+    do_nothing();
 }
 
 // Tests EXPECT_THROW_MSG.
 TEST(ExpectTest, EXPECT_THROW_MSG) {
-  EXPECT_THROW_MSG(ThrowException(), std::exception, "test");
+  EXPECT_THROW_MSG(throw_exception(), std::exception, "test");
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THROW_MSG(ThrowException(), std::logic_error, "test"),
-      "Expected: ThrowException() throws an exception of "
+      EXPECT_THROW_MSG(throw_exception(), std::logic_error, "test"),
+      "Expected: throw_exception() throws an exception of "
       "type std::logic_error.\n  Actual: it throws a different type.");
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THROW_MSG(DoNothing(), std::exception, "test"),
+      EXPECT_THROW_MSG(do_nothing(), std::exception, "test"),
       "Expected: DoNothing() throws an exception of type std::exception.\n"
       "  Actual: it throws nothing.");
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THROW_MSG(ThrowException(), std::exception, "other"),
-      "ThrowException() throws an exception with a different message.\n"
+      EXPECT_THROW_MSG(throw_exception(), std::exception, "other"),
+      "throw_exception() throws an exception with a different message.\n"
       "Expected: other\n"
       "  Actual: test");
 }
 
 // Tests EXPECT_SYSTEM_ERROR.
 TEST(ExpectTest, EXPECT_SYSTEM_ERROR) {
-  EXPECT_SYSTEM_ERROR(ThrowSystemError(), EDOM, "test");
+  EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, "test");
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_SYSTEM_ERROR(ThrowException(), EDOM, "test"),
-      "Expected: ThrowException() throws an exception of "
+      EXPECT_SYSTEM_ERROR(throw_exception(), EDOM, "test"),
+      "Expected: throw_exception() throws an exception of "
       "type fmt::SystemError.\n  Actual: it throws a different type.");
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_SYSTEM_ERROR(DoNothing(), EDOM, "test"),
+      EXPECT_SYSTEM_ERROR(do_nothing(), EDOM, "test"),
       "Expected: DoNothing() throws an exception of type fmt::SystemError.\n"
       "  Actual: it throws nothing.");
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_SYSTEM_ERROR(ThrowSystemError(), EDOM, "other"),
+      EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, "other"),
       fmt::format(
-          "ThrowSystemError() throws an exception with a different message.\n"
+          "throw_system_error() throws an exception with a different message.\n"
           "Expected: {}\n"
           "  Actual: {}",
           format_system_error(EDOM, "other"),
@@ -314,7 +314,7 @@ TEST(ExpectTest, EXPECT_SYSTEM_ERROR) {
 
 // Tests EXPECT_WRITE.
 TEST(ExpectTest, EXPECT_WRITE) {
-  EXPECT_WRITE(stdout, DoNothing(), "");
+  EXPECT_WRITE(stdout, do_nothing(), "");
   EXPECT_WRITE(stdout, std::printf("test"), "test");
   EXPECT_WRITE(stderr, std::fprintf(stderr, "test"), "test");
   EXPECT_NONFATAL_FAILURE(
@@ -324,18 +324,18 @@ TEST(ExpectTest, EXPECT_WRITE) {
 }
 
 TEST(StreamingAssertionsTest, EXPECT_THROW_MSG) {
-  EXPECT_THROW_MSG(ThrowException(), std::exception, "test")
+  EXPECT_THROW_MSG(throw_exception(), std::exception, "test")
       << "unexpected failure";
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THROW_MSG(ThrowException(), std::exception, "other")
+      EXPECT_THROW_MSG(throw_exception(), std::exception, "other")
       << "expected failure", "expected failure");
 }
 
 TEST(StreamingAssertionsTest, EXPECT_SYSTEM_ERROR) {
-  EXPECT_SYSTEM_ERROR(ThrowSystemError(), EDOM, "test")
+  EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, "test")
       << "unexpected failure";
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_SYSTEM_ERROR(ThrowSystemError(), EDOM, "other")
+      EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, "other")
       << "expected failure", "expected failure");
 }
 
@@ -360,12 +360,12 @@ using fmt::ErrorCode;
 using fmt::File;
 
 // Checks if the file is open by reading one character from it.
-bool IsOpen(int fd) {
+bool isopen(int fd) {
   char buffer;
   return FMT_POSIX(read(fd, &buffer, 1)) == 1;
 }
 
-bool IsClosed(int fd) {
+bool isclosed(int fd) {
   char buffer;
   std::streamsize result = 0;
   SUPPRESS_ASSERT(result = FMT_POSIX(read(fd, &buffer, 1)));
@@ -373,7 +373,7 @@ bool IsClosed(int fd) {
 }
 
 // Attempts to read count characters from a file.
-std::string Read(File &f, std::size_t count) {
+std::string read(File &f, std::size_t count) {
   std::string buffer(count, '\0');
   std::streamsize n = 0;
   std::size_t offset = 0;
@@ -387,7 +387,7 @@ std::string Read(File &f, std::size_t count) {
 }
 
 // Attempts to write a string to a file.
-void Write(File &f, fmt::StringRef s) {
+void write(File &f, fmt::StringRef s) {
   std::size_t num_chars_left = s.size();
   const char *ptr = s.c_str();
   do {
@@ -400,7 +400,7 @@ void Write(File &f, fmt::StringRef s) {
 }
 
 #define EXPECT_READ(file, expected_content) \
-  EXPECT_EQ(expected_content, Read(file, std::strlen(expected_content)))
+  EXPECT_EQ(expected_content, read(file, std::strlen(expected_content)))
 
 TEST(ErrorCodeTest, Ctor) {
   EXPECT_EQ(0, ErrorCode().get());
@@ -410,7 +410,7 @@ TEST(ErrorCodeTest, Ctor) {
 const char FILE_CONTENT[] = "Don't panic!";
 
 // Opens a file for reading.
-File OpenFile() {
+File open_file() {
   File read_end, write_end;
   File::pipe(read_end, write_end);
   write_end.write(FILE_CONTENT, sizeof(FILE_CONTENT) - 1);
@@ -419,7 +419,7 @@ File OpenFile() {
 }
 
 // Opens a buffered file for reading.
-BufferedFile OpenBufferedFile(FILE **fp = 0) {
+BufferedFile open_buffered_file(FILE **fp = 0) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
   write_end.write(FILE_CONTENT, sizeof(FILE_CONTENT) - 1);
@@ -436,7 +436,7 @@ TEST(BufferedFileTest, DefaultCtor) {
 }
 
 TEST(BufferedFileTest, MoveCtor) {
-  BufferedFile bf = OpenBufferedFile();
+  BufferedFile bf = open_buffered_file();
   FILE *fp = bf.get();
   EXPECT_TRUE(fp != 0);
   BufferedFile bf2(std::move(bf));
@@ -445,7 +445,7 @@ TEST(BufferedFileTest, MoveCtor) {
 }
 
 TEST(BufferedFileTest, MoveAssignment) {
-  BufferedFile bf = OpenBufferedFile();
+  BufferedFile bf = open_buffered_file();
   FILE *fp = bf.get();
   EXPECT_TRUE(fp != 0);
   BufferedFile bf2;
@@ -455,44 +455,44 @@ TEST(BufferedFileTest, MoveAssignment) {
 }
 
 TEST(BufferedFileTest, MoveAssignmentClosesFile) {
-  BufferedFile bf = OpenBufferedFile();
-  BufferedFile bf2 = OpenBufferedFile();
+  BufferedFile bf = open_buffered_file();
+  BufferedFile bf2 = open_buffered_file();
   int old_fd = bf2.fileno();
   bf2 = std::move(bf);
-  EXPECT_TRUE(IsClosed(old_fd));
+  EXPECT_TRUE(isclosed(old_fd));
 }
 
 TEST(BufferedFileTest, MoveFromTemporaryInCtor) {
   FILE *fp = 0;
-  BufferedFile f(OpenBufferedFile(&fp));
+  BufferedFile f(open_buffered_file(&fp));
   EXPECT_EQ(fp, f.get());
 }
 
 TEST(BufferedFileTest, MoveFromTemporaryInAssignment) {
   FILE *fp = 0;
   BufferedFile f;
-  f = OpenBufferedFile(&fp);
+  f = open_buffered_file(&fp);
   EXPECT_EQ(fp, f.get());
 }
 
 TEST(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
-  BufferedFile f = OpenBufferedFile();
+  BufferedFile f = open_buffered_file();
   int old_fd = f.fileno();
-  f = OpenBufferedFile();
-  EXPECT_TRUE(IsClosed(old_fd));
+  f = open_buffered_file();
+  EXPECT_TRUE(isclosed(old_fd));
 }
 
 TEST(BufferedFileTest, CloseFileInDtor) {
   int fd = 0;
   {
-    BufferedFile f = OpenBufferedFile();
+    BufferedFile f = open_buffered_file();
     fd = f.fileno();
   }
-  EXPECT_TRUE(IsClosed(fd));
+  EXPECT_TRUE(isclosed(fd));
 }
 
 TEST(BufferedFileTest, CloseErrorInDtor) {
-  BufferedFile *f = new BufferedFile(OpenBufferedFile());
+  BufferedFile *f = new BufferedFile(open_buffered_file());
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
@@ -504,15 +504,15 @@ TEST(BufferedFileTest, CloseErrorInDtor) {
 }
 
 TEST(BufferedFileTest, Close) {
-  BufferedFile f = OpenBufferedFile();
+  BufferedFile f = open_buffered_file();
   int fd = f.fileno();
   f.close();
   EXPECT_TRUE(f.get() == 0);
-  EXPECT_TRUE(IsClosed(fd));
+  EXPECT_TRUE(isclosed(fd));
 }
 
 TEST(BufferedFileTest, CloseError) {
-  BufferedFile f = OpenBufferedFile();
+  BufferedFile f = open_buffered_file();
   FMT_POSIX(close(f.fileno()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_TRUE(f.get() == 0);
@@ -528,7 +528,7 @@ TEST(BufferedFileTest, Fileno) {
       std::exit(1);
     }
   }, "");
-  f = OpenBufferedFile();
+  f = open_buffered_file();
   EXPECT_TRUE(f.fileno() != -1);
   File copy = File::dup(f.fileno());
   EXPECT_READ(copy, FILE_CONTENT);
@@ -544,7 +544,7 @@ TEST(FileTest, OpenBufferedFileInCtor) {
   std::fputs(FILE_CONTENT, fp);
   std::fclose(fp);
   File f("test-file", File::RDONLY);
-  ASSERT_TRUE(IsOpen(f.descriptor()));
+  ASSERT_TRUE(isopen(f.descriptor()));
 }
 
 TEST(FileTest, OpenBufferedFileError) {
@@ -553,7 +553,7 @@ TEST(FileTest, OpenBufferedFileError) {
 }
 
 TEST(FileTest, MoveCtor) {
-  File f = OpenFile();
+  File f = open_file();
   int fd = f.descriptor();
   EXPECT_NE(-1, fd);
   File f2(std::move(f));
@@ -562,7 +562,7 @@ TEST(FileTest, MoveCtor) {
 }
 
 TEST(FileTest, MoveAssignment) {
-  File f = OpenFile();
+  File f = open_file();
   int fd = f.descriptor();
   EXPECT_NE(-1, fd);
   File f2;
@@ -572,15 +572,15 @@ TEST(FileTest, MoveAssignment) {
 }
 
 TEST(FileTest, MoveAssignmentClosesFile) {
-  File f = OpenFile();
-  File f2 = OpenFile();
+  File f = open_file();
+  File f2 = open_file();
   int old_fd = f2.descriptor();
   f2 = std::move(f);
-  EXPECT_TRUE(IsClosed(old_fd));
+  EXPECT_TRUE(isclosed(old_fd));
 }
 
 File OpenBufferedFile(int &fd) {
-  File f = OpenFile();
+  File f = open_file();
   fd = f.descriptor();
   return std::move(f);
 }
@@ -600,23 +600,23 @@ TEST(FileTest, MoveFromTemporaryInAssignment) {
 
 TEST(FileTest, MoveFromTemporaryInAssignmentClosesFile) {
   int fd = 0xdeadbeef;
-  File f = OpenFile();
+  File f = open_file();
   int old_fd = f.descriptor();
   f = OpenBufferedFile(fd);
-  EXPECT_TRUE(IsClosed(old_fd));
+  EXPECT_TRUE(isclosed(old_fd));
 }
 
 TEST(FileTest, CloseFileInDtor) {
   int fd = 0;
   {
-    File f = OpenFile();
+    File f = open_file();
     fd = f.descriptor();
   }
-  EXPECT_TRUE(IsClosed(fd));
+  EXPECT_TRUE(isclosed(fd));
 }
 
 TEST(FileTest, CloseErrorInDtor) {
-  File *f = new File(OpenFile());
+  File *f = new File(open_file());
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
@@ -628,22 +628,22 @@ TEST(FileTest, CloseErrorInDtor) {
 }
 
 TEST(FileTest, Close) {
-  File f = OpenFile();
+  File f = open_file();
   int fd = f.descriptor();
   f.close();
   EXPECT_EQ(-1, f.descriptor());
-  EXPECT_TRUE(IsClosed(fd));
+  EXPECT_TRUE(isclosed(fd));
 }
 
 TEST(FileTest, CloseError) {
-  File f = OpenFile();
+  File f = open_file();
   FMT_POSIX(close(f.descriptor()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_EQ(-1, f.descriptor());
 }
 
 TEST(FileTest, Read) {
-  File f = OpenFile();
+  File f = open_file();
   EXPECT_READ(f, FILE_CONTENT);
 }
 
@@ -658,7 +658,7 @@ TEST(FileTest, ReadError) {
 TEST(FileTest, Write) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
-  Write(write_end, "test");
+  write(write_end, "test");
   write_end.close();
   EXPECT_READ(read_end, "test");
 }
@@ -671,10 +671,10 @@ TEST(FileTest, WriteError) {
 }
 
 TEST(FileTest, Dup) {
-  File f = OpenFile();
+  File f = open_file();
   File copy = File::dup(f.descriptor());
   EXPECT_NE(f.descriptor(), copy.descriptor());
-  EXPECT_EQ(FILE_CONTENT, Read(copy, sizeof(FILE_CONTENT) - 1));
+  EXPECT_EQ(FILE_CONTENT, read(copy, sizeof(FILE_CONTENT) - 1));
 }
 
 TEST(FileTest, DupError) {
@@ -683,22 +683,22 @@ TEST(FileTest, DupError) {
 }
 
 TEST(FileTest, Dup2) {
-  File f = OpenFile();
-  File copy = OpenFile();
+  File f = open_file();
+  File copy = open_file();
   f.dup2(copy.descriptor());
   EXPECT_NE(f.descriptor(), copy.descriptor());
   EXPECT_READ(copy, FILE_CONTENT);
 }
 
 TEST(FileTest, Dup2Error) {
-  File f = OpenFile();
+  File f = open_file();
   EXPECT_SYSTEM_ERROR_NOASSERT(f.dup2(-1), EBADF,
     fmt::format("cannot duplicate file descriptor {} to -1", f.descriptor()));
 }
 
 TEST(FileTest, Dup2NoExcept) {
-  File f = OpenFile();
-  File copy = OpenFile();
+  File f = open_file();
+  File copy = open_file();
   ErrorCode ec;
   f.dup2(copy.descriptor(), ec);
   EXPECT_EQ(0, ec.get());
@@ -707,7 +707,7 @@ TEST(FileTest, Dup2NoExcept) {
 }
 
 TEST(FileTest, Dup2NoExceptError) {
-  File f = OpenFile();
+  File f = open_file();
   ErrorCode ec;
   SUPPRESS_ASSERT(f.dup2(-1, ec));
   EXPECT_EQ(EBADF, ec.get());
@@ -718,7 +718,7 @@ TEST(FileTest, Pipe) {
   File::pipe(read_end, write_end);
   EXPECT_NE(-1, read_end.descriptor());
   EXPECT_NE(-1, write_end.descriptor());
-  Write(write_end, "test");
+  write(write_end, "test");
   EXPECT_READ(read_end, "test");
 }
 
@@ -768,7 +768,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
 }
 
 TEST(OutputRedirectTest, DupErrorInCtor) {
-  BufferedFile f = OpenBufferedFile();
+  BufferedFile f = open_buffered_file();
   int fd = f.fileno();
   File copy = File::dup(fd);
   FMT_POSIX(close(fd));
@@ -786,8 +786,8 @@ TEST(OutputRedirectTest, RestoreAndRead) {
   std::fprintf(file.get(), "[[[");
   OutputRedirect redir(file.get());
   std::fprintf(file.get(), "censored");
-  EXPECT_EQ("censored", redir.RestoreAndRead());
-  EXPECT_EQ("", redir.RestoreAndRead());
+  EXPECT_EQ("censored", redir.restore_and_read());
+  EXPECT_EQ("", redir.restore_and_read());
   std::fprintf(file.get(), "]]]");
   file = BufferedFile();
   EXPECT_READ(read_end, "[[[]]]");
@@ -804,7 +804,7 @@ TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   FMT_POSIX(close(write_fd));
-  EXPECT_SYSTEM_ERROR_NOASSERT(redir.RestoreAndRead(),
+  EXPECT_SYSTEM_ERROR_NOASSERT(redir.restore_and_read(),
       EBADF, "cannot flush stream");
   write_copy.dup2(write_fd);  // "undo" close or dtor will fail
 }

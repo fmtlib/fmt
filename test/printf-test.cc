@@ -35,18 +35,10 @@
 using fmt::format;
 using fmt::FormatError;
 
-// Returns a number UINT_MAX + 1 formatted as a string.
-std::string GetBigNumber() {
-  char format[BUFFER_SIZE];
-  SPrintf(format, "%u", UINT_MAX);
-  Increment(format + 1);
-  return format;
-}
-
 const unsigned BIG_NUM = INT_MAX + 1u;
 
 // Makes format string argument positional.
-std::string MakePositional(fmt::StringRef format) {
+std::string make_positional(fmt::StringRef format) {
   std::string s(format);
   s.replace(s.find('%'), 1, "%1$");
   return s;
@@ -54,7 +46,7 @@ std::string MakePositional(fmt::StringRef format) {
 
 #define EXPECT_PRINTF(expected_output, format, arg) \
   EXPECT_EQ(expected_output, fmt::sprintf(format, arg)); \
-  EXPECT_EQ(expected_output, fmt::sprintf(MakePositional(format), arg))
+  EXPECT_EQ(expected_output, fmt::sprintf(make_positional(format), arg))
 
 TEST(PrintfTest, NoArgs) {
   EXPECT_EQ("test", fmt::sprintf("test"));
@@ -187,17 +179,17 @@ TEST(PrintfTest, HashFlag) {
   EXPECT_PRINTF("-42.000000", "%#F", -42.0);
 
   char buffer[BUFFER_SIZE];
-  SPrintf(buffer, "%#e", -42.0);
+  safe_sprintf(buffer, "%#e", -42.0);
   EXPECT_PRINTF(buffer, "%#e", -42.0);
-  SPrintf(buffer, "%#E", -42.0);
+  safe_sprintf(buffer, "%#E", -42.0);
   EXPECT_PRINTF(buffer, "%#E", -42.0);
 
   EXPECT_PRINTF("-42.0000", "%#g", -42.0);
   EXPECT_PRINTF("-42.0000", "%#G", -42.0);
 
-  SPrintf(buffer, "%#a", 16.0);
+  safe_sprintf(buffer, "%#a", 16.0);
   EXPECT_PRINTF(buffer, "%#a", 16.0);
-  SPrintf(buffer, "%#A", 16.0);
+  safe_sprintf(buffer, "%#A", 16.0);
   EXPECT_PRINTF(buffer, "%#A", 16.0);
 
   // '#' flag is ignored for non-numeric types.
@@ -251,12 +243,12 @@ TEST(PrintfTest, IntPrecision) {
 
 TEST(PrintfTest, FloatPrecision) {
   char buffer[BUFFER_SIZE];
-  SPrintf(buffer, "%.3e", 1234.5678);
+  safe_sprintf(buffer, "%.3e", 1234.5678);
   EXPECT_PRINTF(buffer, "%.3e", 1234.5678);
   EXPECT_PRINTF("1234.568", "%.3f", 1234.5678);
-  SPrintf(buffer, "%.3g", 1234.5678);
+  safe_sprintf(buffer, "%.3g", 1234.5678);
   EXPECT_PRINTF(buffer, "%.3g", 1234.5678);
-  SPrintf(buffer, "%.3a", 1234.5678);
+  safe_sprintf(buffer, "%.3a", 1234.5678);
   EXPECT_PRINTF(buffer, "%.3a", 1234.5678);
 }
 

@@ -31,7 +31,7 @@
 
 using fmt::File;
 
-void OutputRedirect::Flush() {
+void OutputRedirect::flush() {
 #if EOF != -1
 # error "FMT_RETRY assumes return value of -1 indicating failure"
 #endif
@@ -41,17 +41,17 @@ void OutputRedirect::Flush() {
     throw fmt::SystemError(errno, "cannot flush stream");
 }
 
-void OutputRedirect::Restore() {
+void OutputRedirect::restore() {
   if (original_.descriptor() == -1)
     return;  // Already restored.
-  Flush();
+  flush();
   // Restore the original file.
   original_.dup2(FMT_POSIX(fileno(file_)));
   original_.close();
 }
 
 OutputRedirect::OutputRedirect(FILE *file) : file_(file) {
-  Flush();
+  flush();
   int fd = FMT_POSIX(fileno(file));
   // Create a File object referring to the original file.
   original_ = File::dup(fd);
@@ -64,15 +64,15 @@ OutputRedirect::OutputRedirect(FILE *file) : file_(file) {
 
 OutputRedirect::~OutputRedirect() FMT_NOEXCEPT(true) {
   try {
-    Restore();
+    restore();
   } catch (const std::exception &e) {
     std::fputs(e.what(), stderr);
   }
 }
 
-std::string OutputRedirect::RestoreAndRead() {
+std::string OutputRedirect::restore_and_read() {
   // Restore output.
-  Restore();
+  restore();
 
   // Read everything from the pipe.
   std::string content;

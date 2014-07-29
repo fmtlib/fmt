@@ -71,23 +71,23 @@ int result;
       result += args[i].int_value; \
   }
 
-MAKE_TEST(TestFunc)
+MAKE_TEST(test_func)
 
 typedef char Char;
-FMT_WRAP1(TestFunc, const char *, 1)
+FMT_WRAP1(test_func, const char *, 1)
 
 TEST(UtilTest, Wrap1) {
   result = 0;
-  TestFunc("", 42);
+  test_func("", 42);
   EXPECT_EQ(42, result);
 }
 
-MAKE_TEST(TestVariadicVoid)
-FMT_VARIADIC_VOID(TestVariadicVoid, const char *)
+MAKE_TEST(test_variadic_void)
+FMT_VARIADIC_VOID(test_variadic_void, const char *)
 
 TEST(UtilTest, VariadicVoid) {
   result = 0;
-  TestVariadicVoid("", 10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
+  test_variadic_void("", 10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
   EXPECT_EQ(550, result);
 }
 
@@ -96,18 +96,18 @@ struct S {};
 
 #define GET_TYPE(n) S<n>
 
-int TestVariadic(FMT_GEN(10, GET_TYPE), const fmt::ArgList &args) { \
+int test_variadic(FMT_GEN(10, GET_TYPE), const fmt::ArgList &args) { \
   int result = 0; \
   for (std::size_t i = 0, n = args.size(); i < n; ++i) \
     result += args[i].int_value; \
   return result;
 }
-FMT_VARIADIC(int, TestVariadic,
+FMT_VARIADIC(int, test_variadic,
     S<0>, S<1>, S<2>, S<3>, S<4>, S<5>, S<6>, S<7>, S<8>, S<9>)
 
 #define MAKE_ARG(n) S<n>()
 
 TEST(UtilTest, Variadic) {
-  EXPECT_EQ(550, TestVariadic(FMT_GEN(10, MAKE_ARG),
+  EXPECT_EQ(550, test_variadic(FMT_GEN(10, MAKE_ARG),
       10, 20, 30, 40, 50, 60, 70, 80, 90, 100));
 }

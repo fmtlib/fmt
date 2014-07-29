@@ -37,12 +37,12 @@
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 // Fix MSVC warning about "unsafe" fopen.
-FILE *FOpen(const char *filename, const char *mode) {
+FILE *safe_fopen(const char *filename, const char *mode) {
   FILE *f = 0;
   errno = fopen_s(&f, filename, mode);
   return f;
 }
-#define fopen FOpen
+#define fopen safe_fopen
 #endif
 
 #include "format.h"
@@ -70,7 +70,7 @@ namespace {
 // Checks if writing value to BasicWriter<Char> produces the same result
 // as writing it to std::basic_ostringstream<Char>.
 template <typename Char, typename T>
-static ::testing::AssertionResult CheckWrite(const T &value, const char *type) {
+::testing::AssertionResult check_write(const T &value, const char *type) {
   std::basic_ostringstream<Char> os;
   os << value;
   std::basic_string<Char> expected = os.str();
@@ -86,8 +86,8 @@ static ::testing::AssertionResult CheckWrite(const T &value, const char *type) {
 struct AnyWriteChecker {
   template <typename T>
   ::testing::AssertionResult operator()(const char *, const T &value) const {
-    ::testing::AssertionResult result = CheckWrite<char>(value, "char");
-    return result ? CheckWrite<wchar_t>(value, "wchar_t") : result;
+    ::testing::AssertionResult result = check_write<char>(value, "char");
+    return result ? check_write<wchar_t>(value, "wchar_t") : result;
   }
 };
 
@@ -95,7 +95,7 @@ template <typename Char>
 struct WriteChecker {
   template <typename T>
   ::testing::AssertionResult operator()(const char *, const T &value) const {
-    return CheckWrite<Char>(value, "char");
+    return check_write<Char>(value, "char");
   }
 };
 
@@ -107,14 +107,7 @@ struct WriteChecker {
   EXPECT_PRED_FORMAT1(WriteChecker<char>(), value)
 #define CHECK_WRITE_WCHAR(value) \
   EXPECT_PRED_FORMAT1(WriteChecker<wchar_t>(), value)
-
-std::string ReadFile(StringRef filename) {
-  std::ifstream out(filename.c_str());
-  std::stringstream content;
-  content << out.rdbuf();
-  return content.str();
-}
-}
+}  // namespace
 
 class TestString {
  private:
@@ -137,7 +130,7 @@ TEST(ArrayTest, Ctor) {
 
 #if FMT_USE_RVALUE_REFERENCES
 
-void CheckMoveArray(const char *str, Array<char, 5> &array) {
+void check_move_array(const char *str, Array<char, 5> &array) {
   Array<char, 5> array2(std::move(array));
   // Move shouldn't destroy the inline content of the first array.
   EXPECT_EQ(str, std::string(&array[0], array.size()));
@@ -149,11 +142,11 @@ TEST(ArrayTest, MoveCtor) {
   Array<char, 5> array;
   const char test[] = "test";
   array.append(test, test + 4);
-  CheckMoveArray("test", array);
+  check_move_array("test", array);
   // Adding one more character fills the inline buffer, but doesn't cause
   // dynamic allocation.
   array.push_back('a');
-  CheckMoveArray("testa", array);
+  check_move_array("testa", array);
   const char *inline_buffer_ptr = &array[0];
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
@@ -165,7 +158,7 @@ TEST(ArrayTest, MoveCtor) {
   EXPECT_GT(array2.capacity(), 5u);
 }
 
-void CheckMoveAssignArray(const char *str, Array<char, 5> &array) {
+void check_move_assign_array(const char *str, Array<char, 5> &array) {
   Array<char, 5> array2;
   array2 = std::move(array);
   // Move shouldn't destroy the inline content of the first array.
@@ -178,11 +171,11 @@ TEST(ArrayTest, MoveAssignment) {
   Array<char, 5> array;
   const char test[] = "test";
   array.append(test, test + 4);
-  CheckMoveAssignArray("test", array);
+  check_move_assign_array("test", array);
   // Adding one more character fills the inline buffer, but doesn't cause
   // dynamic allocation.
   array.push_back('a');
-  CheckMoveAssignArray("testa", array);
+  check_move_assign_array("testa", array);
   const char *inline_buffer_ptr = &array[0];
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
@@ -286,7 +279,7 @@ TEST(WriterTest, Ctor) {
 
 #if FMT_USE_RVALUE_REFERENCES
 
-void CheckMoveWriter(const std::string &str, Writer &w) {
+void check_move_writer(const std::string &str, Writer &w) {
   Writer w2(std::move(w));
   // Move shouldn't destroy the inline content of the first writer.
   EXPECT_EQ(str, w.str());
@@ -296,14 +289,14 @@ void CheckMoveWriter(const std::string &str, Writer &w) {
 TEST(WriterTest, MoveCtor) {
   Writer w;
   w << "test";
-  CheckMoveWriter("test", w);
+  check_move_writer("test", w);
   // This fills the inline buffer, but doesn't cause dynamic allocation.
   std::string s;
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
     s += '*';
   w.clear();
   w << s;
-  CheckMoveWriter(s, w);
+  check_move_writer(s, w);
   const char *inline_buffer_ptr = w.data();
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
@@ -611,15 +604,15 @@ TEST(FormatterTest, ArgErrors) {
       "argument index is out of range in format");
 
   char format_str[BUFFER_SIZE];
-  SPrintf(format_str, "{%u", INT_MAX);
+  safe_sprintf(format_str, "{%u", INT_MAX);
   EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
-  SPrintf(format_str, "{%u}", INT_MAX);
+  safe_sprintf(format_str, "{%u}", INT_MAX);
   EXPECT_THROW_MSG(format(format_str), FormatError,
       "argument index is out of range in format");
 
-  SPrintf(format_str, "{%u", INT_MAX + 1u);
+  safe_sprintf(format_str, "{%u", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
-  SPrintf(format_str, "{%u}", INT_MAX + 1u);
+  safe_sprintf(format_str, "{%u}", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str), FormatError, "number is too big in format");
 }
 
@@ -892,8 +885,8 @@ TEST(FormatterTest, ZeroFlag) {
 
 TEST(FormatterTest, Width) {
   char format_str[BUFFER_SIZE];
-  SPrintf(format_str, "{0:%u", UINT_MAX);
-  Increment(format_str + 3);
+  safe_sprintf(format_str, "{0:%u", UINT_MAX);
+  increment(format_str + 3);
   EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
@@ -901,9 +894,9 @@ TEST(FormatterTest, Width) {
   EXPECT_THROW_MSG(format(format_str, 0),
       FormatError, "number is too big in format");
 
-  SPrintf(format_str, "{0:%u", INT_MAX + 1u);
+  safe_sprintf(format_str, "{0:%u", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
-  SPrintf(format_str, "{0:%u}", INT_MAX + 1u);
+  safe_sprintf(format_str, "{0:%u}", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str, 0),
       FormatError, "number is too big in format");
   EXPECT_EQ(" -42", format("{0:4}", -42));
@@ -922,8 +915,8 @@ TEST(FormatterTest, Width) {
 
 TEST(FormatterTest, Precision) {
   char format_str[BUFFER_SIZE];
-  SPrintf(format_str, "{0:.%u", UINT_MAX);
-  Increment(format_str + 4);
+  safe_sprintf(format_str, "{0:.%u", UINT_MAX);
+  increment(format_str + 4);
   EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
@@ -931,9 +924,9 @@ TEST(FormatterTest, Precision) {
   EXPECT_THROW_MSG(format(format_str, 0),
       FormatError, "number is too big in format");
 
-  SPrintf(format_str, "{0:.%u", INT_MAX + 1u);
+  safe_sprintf(format_str, "{0:.%u", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
-  SPrintf(format_str, "{0:.%u}", INT_MAX + 1u);
+  safe_sprintf(format_str, "{0:.%u}", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str, 0),
       FormatError, "number is too big in format");
 
@@ -994,8 +987,8 @@ TEST(FormatterTest, Precision) {
 
 TEST(FormatterTest, RuntimePrecision) {
   char format_str[BUFFER_SIZE];
-  SPrintf(format_str, "{0:.{%u", UINT_MAX);
-  Increment(format_str + 4);
+  safe_sprintf(format_str, "{0:.{%u", UINT_MAX);
+  increment(format_str + 4);
   EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
@@ -1085,18 +1078,18 @@ TEST(FormatterTest, RuntimePrecision) {
 }
 
 template <typename T>
-void CheckUnknownTypes(
+void check_unknown_types(
     const T &value, const char *types, const char *type_name) {
   char format_str[BUFFER_SIZE], message[BUFFER_SIZE];
   const char *special = ".0123456789}";
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
     char c = i;
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
-    SPrintf(format_str, "{0:10%c}", c);
+    safe_sprintf(format_str, "{0:10%c}", c);
     if (std::isprint(static_cast<unsigned char>(c)))
-      SPrintf(message, "unknown format code '%c' for %s", c, type_name);
+      safe_sprintf(message, "unknown format code '%c' for %s", c, type_name);
     else
-      SPrintf(message, "unknown format code '\\x%02x' for %s", c, type_name);
+      safe_sprintf(message, "unknown format code '\\x%02x' for %s", c, type_name);
     EXPECT_THROW_MSG(format(format_str, value), FormatError, message)
       << format_str << " " << message;
   }
@@ -1116,7 +1109,7 @@ TEST(FormatterTest, FormatShort) {
 TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(format("{0:v", 42),
       FormatError, "unmatched '{' in format");
-  CheckUnknownTypes(42, "bBdoxX", "integer");
+  check_unknown_types(42, "bBdoxX", "integer");
 }
 
 TEST(FormatterTest, FormatBin) {
@@ -1140,17 +1133,17 @@ TEST(FormatterTest, FormatDec) {
   EXPECT_EQ("12345", format("{0}", 12345));
   EXPECT_EQ("67890", format("{0}", 67890));
   char buffer[BUFFER_SIZE];
-  SPrintf(buffer, "%d", INT_MIN);
+  safe_sprintf(buffer, "%d", INT_MIN);
   EXPECT_EQ(buffer, format("{0}", INT_MIN));
-  SPrintf(buffer, "%d", INT_MAX);
+  safe_sprintf(buffer, "%d", INT_MAX);
   EXPECT_EQ(buffer, format("{0}", INT_MAX));
-  SPrintf(buffer, "%u", UINT_MAX);
+  safe_sprintf(buffer, "%u", UINT_MAX);
   EXPECT_EQ(buffer, format("{0}", UINT_MAX));
-  SPrintf(buffer, "%ld", 0 - static_cast<unsigned long>(LONG_MIN));
+  safe_sprintf(buffer, "%ld", 0 - static_cast<unsigned long>(LONG_MIN));
   EXPECT_EQ(buffer, format("{0}", LONG_MIN));
-  SPrintf(buffer, "%ld", LONG_MAX);
+  safe_sprintf(buffer, "%ld", LONG_MAX);
   EXPECT_EQ(buffer, format("{0}", LONG_MAX));
-  SPrintf(buffer, "%lu", ULONG_MAX);
+  safe_sprintf(buffer, "%lu", ULONG_MAX);
   EXPECT_EQ(buffer, format("{0}", ULONG_MAX));
 }
 
@@ -1165,17 +1158,17 @@ TEST(FormatterTest, FormatHex) {
   EXPECT_EQ("90ABCDEF", format("{0:X}", 0x90ABCDEF));
 
   char buffer[BUFFER_SIZE];
-  SPrintf(buffer, "-%x", 0 - static_cast<unsigned>(INT_MIN));
+  safe_sprintf(buffer, "-%x", 0 - static_cast<unsigned>(INT_MIN));
   EXPECT_EQ(buffer, format("{0:x}", INT_MIN));
-  SPrintf(buffer, "%x", INT_MAX);
+  safe_sprintf(buffer, "%x", INT_MAX);
   EXPECT_EQ(buffer, format("{0:x}", INT_MAX));
-  SPrintf(buffer, "%x", UINT_MAX);
+  safe_sprintf(buffer, "%x", UINT_MAX);
   EXPECT_EQ(buffer, format("{0:x}", UINT_MAX));
-  SPrintf(buffer, "-%lx", 0 - static_cast<unsigned long>(LONG_MIN));
+  safe_sprintf(buffer, "-%lx", 0 - static_cast<unsigned long>(LONG_MIN));
   EXPECT_EQ(buffer, format("{0:x}", LONG_MIN));
-  SPrintf(buffer, "%lx", LONG_MAX);
+  safe_sprintf(buffer, "%lx", LONG_MAX);
   EXPECT_EQ(buffer, format("{0:x}", LONG_MAX));
-  SPrintf(buffer, "%lx", ULONG_MAX);
+  safe_sprintf(buffer, "%lx", ULONG_MAX);
   EXPECT_EQ(buffer, format("{0:x}", ULONG_MAX));
 }
 
@@ -1186,17 +1179,17 @@ TEST(FormatterTest, FormatOct) {
   EXPECT_EQ("-42", format("{0:o}", -042));
   EXPECT_EQ("12345670", format("{0:o}", 012345670));
   char buffer[BUFFER_SIZE];
-  SPrintf(buffer, "-%o", 0 - static_cast<unsigned>(INT_MIN));
+  safe_sprintf(buffer, "-%o", 0 - static_cast<unsigned>(INT_MIN));
   EXPECT_EQ(buffer, format("{0:o}", INT_MIN));
-  SPrintf(buffer, "%o", INT_MAX);
+  safe_sprintf(buffer, "%o", INT_MAX);
   EXPECT_EQ(buffer, format("{0:o}", INT_MAX));
-  SPrintf(buffer, "%o", UINT_MAX);
+  safe_sprintf(buffer, "%o", UINT_MAX);
   EXPECT_EQ(buffer, format("{0:o}", UINT_MAX));
-  SPrintf(buffer, "-%lo", 0 - static_cast<unsigned long>(LONG_MIN));
+  safe_sprintf(buffer, "-%lo", 0 - static_cast<unsigned long>(LONG_MIN));
   EXPECT_EQ(buffer, format("{0:o}", LONG_MIN));
-  SPrintf(buffer, "%lo", LONG_MAX);
+  safe_sprintf(buffer, "%lo", LONG_MAX);
   EXPECT_EQ(buffer, format("{0:o}", LONG_MAX));
-  SPrintf(buffer, "%lo", ULONG_MAX);
+  safe_sprintf(buffer, "%lo", ULONG_MAX);
   EXPECT_EQ(buffer, format("{0:o}", ULONG_MAX));
 }
 
@@ -1205,7 +1198,7 @@ TEST(FormatterTest, FormatFloat) {
 }
 
 TEST(FormatterTest, FormatDouble) {
-  CheckUnknownTypes(1.2, "eEfFgGaA", "double");
+  check_unknown_types(1.2, "eEfFgGaA", "double");
   EXPECT_EQ("0", format("{0:}", 0.0));
   EXPECT_EQ("0.000000", format("{0:f}", 0.0));
   EXPECT_EQ("392.65", format("{0:}", 392.65));
@@ -1214,14 +1207,14 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ("392.650000", format("{0:f}", 392.65));
   EXPECT_EQ("392.650000", format("{0:F}", 392.65));
   char buffer[BUFFER_SIZE];
-  SPrintf(buffer, "%e", 392.65);
+  safe_sprintf(buffer, "%e", 392.65);
   EXPECT_EQ(buffer, format("{0:e}", 392.65));
-  SPrintf(buffer, "%E", 392.65);
+  safe_sprintf(buffer, "%E", 392.65);
   EXPECT_EQ(buffer, format("{0:E}", 392.65));
   EXPECT_EQ("+0000392.6", format("{0:+010.4g}", 392.65));
-  SPrintf(buffer, "%a", -42.0);
+  safe_sprintf(buffer, "%a", -42.0);
   EXPECT_EQ(buffer, format("{:a}", -42.0));
-  SPrintf(buffer, "%A", -42.0);
+  safe_sprintf(buffer, "%A", -42.0);
   EXPECT_EQ(buffer, format("{:A}", -42.0));
 }
 
@@ -1261,15 +1254,15 @@ TEST(FormatterTest, FormatLongDouble) {
   EXPECT_EQ("392.650000", format("{0:f}", 392.65l));
   EXPECT_EQ("392.650000", format("{0:F}", 392.65l));
   char buffer[BUFFER_SIZE];
-  SPrintf(buffer, "%Le", 392.65l);
+  safe_sprintf(buffer, "%Le", 392.65l);
   EXPECT_EQ(buffer, format("{0:e}", 392.65l));
-  SPrintf(buffer, "%LE", 392.65l);
+  safe_sprintf(buffer, "%LE", 392.65l);
   EXPECT_EQ("+0000392.6", format("{0:+010.4g}", 392.65l));
 }
 
 TEST(FormatterTest, FormatChar) {
   const char types[] = "cbBdoxX";
-  CheckUnknownTypes('a', types, "char");
+  check_unknown_types('a', types, "char");
   EXPECT_EQ("a", format("{0}", 'a'));
   EXPECT_EQ("z", format("{0:c}", 'z'));
   EXPECT_EQ(L"a", format(L"{0}", 'a'));
@@ -1288,7 +1281,7 @@ TEST(FormatterTest, FormatWChar) {
 }
 
 TEST(FormatterTest, FormatCString) {
-  CheckUnknownTypes("test", "s", "string");
+  check_unknown_types("test", "s", "string");
   EXPECT_EQ("test", format("{0}", "test"));
   EXPECT_EQ("test", format("{0:s}", "test"));
   char nonconst[] = "nonconst";
@@ -1298,7 +1291,7 @@ TEST(FormatterTest, FormatCString) {
 }
 
 TEST(FormatterTest, FormatPointer) {
-  CheckUnknownTypes(reinterpret_cast<void*>(0x1234), "p", "pointer");
+  check_unknown_types(reinterpret_cast<void*>(0x1234), "p", "pointer");
   EXPECT_EQ("0x0", format("{0}", reinterpret_cast<void*>(0)));
   EXPECT_EQ("0x1234", format("{0}", reinterpret_cast<void*>(0x1234)));
   EXPECT_EQ("0x1234", format("{0:p}", reinterpret_cast<void*>(0x1234)));
@@ -1319,7 +1312,7 @@ TEST(FormatterTest, FormatUsingIOStreams) {
   std::string s = format("The date is {0}", Date(2012, 12, 9));
   EXPECT_EQ("The date is 2012-12-9", s);
   Date date(2012, 12, 9);
-  CheckUnknownTypes(date, "s", "string");
+  check_unknown_types(date, "s", "string");
 }
 
 class Answer {};
@@ -1401,7 +1394,7 @@ TEST(FormatterTest, Examples) {
   EXPECT_EQ("From 1 to 3", format("From {} to {}", 1, 3));
 
   char buffer[BUFFER_SIZE];
-  SPrintf(buffer, "%03.2f", -1.2);
+  safe_sprintf(buffer, "%03.2f", -1.2);
   EXPECT_EQ(buffer, format("{:03.2f}", -1.2));
 
   EXPECT_EQ("a, b, c", format("{0}, {1}, {2}", 'a', 'b', 'c'));
@@ -1519,7 +1512,7 @@ TEST(StrTest, Convert) {
   EXPECT_EQ("2012-12-9", s);
 }
 
-std::string FormatMessage(int id, const char *format,
+std::string format_message(int id, const char *format,
     const fmt::ArgList &args) {
   fmt::Writer w;
   w.write("[{}] ", id);
@@ -1527,9 +1520,9 @@ std::string FormatMessage(int id, const char *format,
   return w.str();
 }
 
-FMT_VARIADIC(std::string, FormatMessage, int, const char *)
+FMT_VARIADIC(std::string, format_message, int, const char *)
 
 TEST(FormatTest, FormatMessageExample) {
   EXPECT_EQ("[42] something happened",
-      FormatMessage(42, "{} happened", "something"));
+      format_message(42, "{} happened", "something"));
 }

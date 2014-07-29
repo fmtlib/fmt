@@ -25,9 +25,24 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstdarg>
+#include <cstdio>
+
 enum {BUFFER_SIZE = 256};
 
-void SPrintf(char *buffer, const char *format, ...);
+#ifdef _MSC_VER
+# define FMT_VSNPRINTF vsprintf_s
+#else
+# define FMT_VSNPRINTF vsnprintf
+#endif
+
+template <std::size_t SIZE>
+void safe_sprintf(char (&buffer)[SIZE], const char *format, ...) {
+  std::va_list args;
+  va_start(args, format);
+  FMT_VSNPRINTF(buffer, SIZE, format, args);
+  va_end(args);
+}
 
 // Increment a number in a string.
-void Increment(char *s);
+void increment(char *s);
