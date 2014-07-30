@@ -207,23 +207,34 @@ class PrecisionHandler :
   }
 };
 
+// MakeUnsigned<T>::Type gives an unsigned type corresponding to integer type T.
+template <typename T>
+struct MakeUnsigned { typedef T Type; };
+
+template <>
+struct MakeUnsigned<signed char> { typedef unsigned char Type; };
+
+template <>
+struct MakeUnsigned<short> { typedef unsigned short Type; };
+
 // Converts an integer argument to type T.
 template <typename T>
 class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
  private:
   fmt::internal::Arg &arg_;
+  char type_;
 
  public:
-  explicit ArgConverter(fmt::internal::Arg &arg) : arg_(arg) {}
+  ArgConverter(fmt::internal::Arg &arg, char type) : arg_(arg), type_(type) {}
 
   template <typename U>
   void visit_any_int(U value) {
-    if (std::numeric_limits<T>::is_signed) {
+    if (type_ == 'd' || type_ == 'i') {
       arg_.type = fmt::internal::Arg::INT;
       arg_.int_value = static_cast<T>(value);
     } else {
       arg_.type = fmt::internal::Arg::UINT;
-      arg_.uint_value = static_cast<T>(value);
+      arg_.uint_value = static_cast<typename MakeUnsigned<T>::Type>(value);
     }
   }
 };
@@ -890,16 +901,14 @@ void fmt::internal::PrintfFormatter<Char>::format(
         spec.fill_ = ' ';  // Ignore '0' flag for non-numeric types.
     }
 
-    // Parse length.
+    // Parse length and convert the argument to the required type.
     switch (*s) {
     case 'h': {
       ++s;
-      // TODO: handle 'hh'
-      char type = *s;
-      if (type == 'd' || type == 'i')
-        ArgConverter<short>(arg).visit(arg);
+      if (*s == 'h')
+        ArgConverter<signed char>(arg, *++s).visit(arg);
       else
-        ArgConverter<unsigned short>(arg).visit(arg);
+        ArgConverter<short>(arg, *s).visit(arg);
       break;
     }
     case 'l':
@@ -918,8 +927,10 @@ void fmt::internal::PrintfFormatter<Char>::format(
     if (error_)
       throw FormatError(error_);
     spec.type_ = static_cast<char>(*s++);
-    if (arg.type <= Arg::LAST_INTEGER_TYPE && spec.type_ == 'u')
-      spec.type_ = 'd';
+    if (arg.type <= Arg::LAST_INTEGER_TYPE &&
+        (spec.type_ == 'i' || spec.type_ == 'u')) {
+        spec.type_ = 'd';
+    }
 
     start = s;
 

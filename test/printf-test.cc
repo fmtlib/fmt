@@ -274,17 +274,17 @@ TEST(PrintfTest, DynamicPrecision) {
 
 #define EXPECT_STD_PRINTF(format, arg) { \
   char buffer[BUFFER_SIZE]; \
-  safe_sprintf(buffer, "%hd", arg); \
-  EXPECT_PRINTF(buffer, "%hd", arg); \
+  safe_sprintf(buffer, fmt::StringRef(format).c_str(), arg); \
+  EXPECT_PRINTF(buffer, format, arg); \
 }
 
 template <typename T>
 void TestLength(const char *length_spec) {
-  EXPECT_STD_PRINTF(format, 42);
   T min = std::numeric_limits<T>::min(), max = std::numeric_limits<T>::max();
   const char types[] = {'d', 'i', 'u', 'o', 'x', 'X'};
   for (int i = 0; i < sizeof(types); ++i) {
     std::string format = fmt::format("%{}{}", length_spec, types[i]);
+    //EXPECT_STD_PRINTF(format, 42);
     EXPECT_STD_PRINTF(format, min);
     EXPECT_STD_PRINTF(format, max);
     EXPECT_STD_PRINTF(format, fmt::LongLong(min) - 1);
@@ -300,9 +300,11 @@ void TestLength(const char *length_spec) {
   }
 }
 
-TEST(PrintfTest, ShortLength) {
+TEST(PrintfTest, Length) {
   TestLength<short>("h");
   TestLength<unsigned short>("h");
+  TestLength<signed char>("hh");
+  TestLength<unsigned char>("hh");
   // TODO: more tests
 }
 

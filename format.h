@@ -740,6 +740,9 @@ class ArgVisitor {
   Result visit_ulong_long(ULongLong value) {
     return FMT_DISPATCH(visit_any_int(value));
   }
+  Result visit_char(int value) {
+    return FMT_DISPATCH(visit_any_int(value));
+  }
   template <typename T>
   Result visit_any_int(T) {
     return FMT_DISPATCH(visit_unhandled_arg());
@@ -756,9 +759,6 @@ class ArgVisitor {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
 
-  Result visit_char(int) {
-    return FMT_DISPATCH(visit_unhandled_arg());
-  }
   Result visit_string(Arg::StringValue<char>) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
