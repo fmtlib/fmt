@@ -272,14 +272,38 @@ TEST(PrintfTest, DynamicPrecision) {
  }
 }
 
-TEST(PrintfTest, Length) {
-  EXPECT_PRINTF("42", "%hd", 42);
-  char buffer[BUFFER_SIZE];
-  safe_sprintf(buffer, "%hd", SHRT_MAX + 1);
-  EXPECT_PRINTF(buffer, "%hd", SHRT_MAX + 1);
-  safe_sprintf(buffer, "%hd", fmt::LongLong(SHRT_MAX) + 1);
-  EXPECT_PRINTF(buffer, "%hd", fmt::LongLong(SHRT_MAX) + 1);
-  // TODO
+#define EXPECT_STD_PRINTF(format, arg) { \
+  char buffer[BUFFER_SIZE]; \
+  safe_sprintf(buffer, "%hd", arg); \
+  EXPECT_PRINTF(buffer, "%hd", arg); \
+}
+
+template <typename T>
+void TestLength(const char *length_spec) {
+  EXPECT_STD_PRINTF(format, 42);
+  T min = std::numeric_limits<T>::min(), max = std::numeric_limits<T>::max();
+  const char types[] = {'d', 'i', 'u', 'o', 'x', 'X'};
+  for (int i = 0; i < sizeof(types); ++i) {
+    std::string format = fmt::format("%{}{}", length_spec, types[i]);
+    EXPECT_STD_PRINTF(format, min);
+    EXPECT_STD_PRINTF(format, max);
+    EXPECT_STD_PRINTF(format, fmt::LongLong(min) - 1);
+    EXPECT_STD_PRINTF(format, fmt::LongLong(max) + 1);
+    EXPECT_STD_PRINTF(format, std::numeric_limits<int>::min());
+    EXPECT_STD_PRINTF(format, std::numeric_limits<int>::max());
+    EXPECT_STD_PRINTF(format, std::numeric_limits<unsigned>::min());
+    EXPECT_STD_PRINTF(format, std::numeric_limits<unsigned>::max());
+    EXPECT_STD_PRINTF(format, std::numeric_limits<fmt::LongLong>::min());
+    EXPECT_STD_PRINTF(format, std::numeric_limits<fmt::LongLong>::max());
+    EXPECT_STD_PRINTF(format, std::numeric_limits<fmt::ULongLong>::min());
+    EXPECT_STD_PRINTF(format, std::numeric_limits<fmt::ULongLong>::max());
+  }
+}
+
+TEST(PrintfTest, ShortLength) {
+  TestLength<short>("h");
+  TestLength<unsigned short>("h");
+  // TODO: more tests
 }
 
 // TODO: test type specifier

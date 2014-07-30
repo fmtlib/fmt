@@ -218,7 +218,7 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
 
   template <typename U>
   void visit_any_int(U value) {
-    if (std::numeric_limits<U>::is_signed) {
+    if (std::numeric_limits<T>::is_signed) {
       arg_.type = fmt::internal::Arg::INT;
       arg_.int_value = static_cast<T>(value);
     } else {
@@ -892,10 +892,16 @@ void fmt::internal::PrintfFormatter<Char>::format(
 
     // Parse length.
     switch (*s) {
-    case 'h':
+    case 'h': {
       ++s;
-      ArgConverter<short>(arg).visit(arg);
+      // TODO: handle 'hh'
+      char type = *s;
+      if (type == 'd' || type == 'i')
+        ArgConverter<short>(arg).visit(arg);
+      else
+        ArgConverter<unsigned short>(arg).visit(arg);
       break;
+    }
     case 'l':
     case 'j':
     case 'z':
@@ -912,6 +918,8 @@ void fmt::internal::PrintfFormatter<Char>::format(
     if (error_)
       throw FormatError(error_);
     spec.type_ = static_cast<char>(*s++);
+    if (arg.type <= Arg::LAST_INTEGER_TYPE && spec.type_ == 'u')
+      spec.type_ = 'd';
 
     start = s;
 
