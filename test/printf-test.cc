@@ -273,6 +273,12 @@ TEST(PrintfTest, DynamicPrecision) {
 }
 
 TEST(PrintfTest, Length) {
+  EXPECT_PRINTF("42", "%hd", 42);
+  char buffer[BUFFER_SIZE];
+  safe_sprintf(buffer, "%hd", SHRT_MAX + 1);
+  EXPECT_PRINTF(buffer, "%hd", SHRT_MAX + 1);
+  safe_sprintf(buffer, "%hd", fmt::LongLong(SHRT_MAX) + 1);
+  EXPECT_PRINTF(buffer, "%hd", fmt::LongLong(SHRT_MAX) + 1);
   // TODO
 }
 

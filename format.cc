@@ -207,6 +207,27 @@ class PrecisionHandler :
   }
 };
 
+// Converts an integer argument to type T.
+template <typename T>
+class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
+ private:
+  fmt::internal::Arg &arg_;
+
+ public:
+  explicit ArgConverter(fmt::internal::Arg &arg) : arg_(arg) {}
+
+  template <typename U>
+  void visit_any_int(U value) {
+    if (std::numeric_limits<U>::is_signed) {
+      arg_.type = fmt::internal::Arg::INT;
+      arg_.int_value = static_cast<T>(value);
+    } else {
+      arg_.type = fmt::internal::Arg::UINT;
+      arg_.uint_value = static_cast<T>(value);
+    }
+  }
+};
+
 // This function template is used to prevent compile errors when handling
 // incompatible string arguments, e.g. handling a wide string in a narrow
 // string formatter.
@@ -859,7 +880,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
       }
     }
 
-    const Arg &arg = handle_arg_index(arg_index);
+    Arg arg = handle_arg_index(arg_index);
     if (spec.flag(HASH_FLAG) && IsZeroInt().visit(arg))
       spec.flags_ &= ~HASH_FLAG;
     if (spec.fill_ == '0') {
@@ -872,7 +893,9 @@ void fmt::internal::PrintfFormatter<Char>::format(
     // Parse length.
     switch (*s) {
     case 'h':
-      // TODO: convert to short
+      ++s;
+      ArgConverter<short>(arg).visit(arg);
+      break;
     case 'l':
     case 'j':
     case 'z':
