@@ -258,14 +258,18 @@ TEST(PrintfTest, IgnorePrecisionForNonNumericArg) {
 
 TEST(PrintfTest, DynamicPrecision) {
   EXPECT_EQ("00042", fmt::sprintf("%.*d", 5, 42));
-  // TODO
-  //EXPECT_EQ("42", fmt::sprintf("%.*d", -5, 42));
+  EXPECT_EQ("42", fmt::sprintf("%.*d", -5, 42));
   EXPECT_THROW_MSG(fmt::sprintf("%.*d", 5.0, 42), FormatError,
       "precision is not integer");
   EXPECT_THROW_MSG(fmt::sprintf("%.*d"), FormatError,
       "argument index is out of range in format");
-  //EXPECT_THROW_MSG(fmt::sprintf("%.*d", BIG_NUM, 42), FormatError,
-  //    "number is too big in format");
+  EXPECT_THROW_MSG(fmt::sprintf("%.*d", BIG_NUM, 42), FormatError,
+      "number is too big in format");
+  if (sizeof(fmt::LongLong) != sizeof(int)) {
+    fmt::LongLong prec = static_cast<fmt::LongLong>(INT_MIN) - 1;
+    EXPECT_THROW_MSG(fmt::sprintf("%.*d", prec, 42), FormatError,
+        "number is too big in format");
+ }
 }
 
 TEST(PrintfTest, Length) {

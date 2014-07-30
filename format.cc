@@ -125,20 +125,12 @@ void report_error(FormatFunc func,
 
 const Arg DUMMY_ARG = {Arg::INT, 0};
 
-fmt::ULongLong get_int_value(const Arg &arg) {
-  switch (arg.type) {
-    case Arg::INT:
-      return arg.int_value;
-    case Arg::UINT:
-      return arg.uint_value;
-    case Arg::LONG_LONG:
-      return arg.long_long_value;
-    case Arg::ULONG_LONG:
-      return arg.ulong_long_value;
-    default:
-      return -1;
-  }
-}
+// IsZeroInt::visit(arg) returns true iff arg is a zero integer.
+class IsZeroInt : public fmt::internal::ArgVisitor<IsZeroInt, bool> {
+ public:
+  template <typename T>
+  bool visit_any_int(T value) { return value == 0; }
+};
 
 // Parses an unsigned integer advancing s to the end of the parsed input.
 // This function assumes that the first character of s is a digit.
@@ -175,7 +167,7 @@ const Char *find_closing_brace(const Char *s, int num_open_braces = 1) {
 
 // Checks if an argument is a valid printf width specifier and sets
 // left alignment if it is negative.
-struct WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
+class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
  private:
   fmt::FormatSpec &spec_;
 
@@ -197,6 +189,21 @@ struct WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
     if (width > INT_MAX)
       throw fmt::FormatError("number is too big in format");
     return static_cast<unsigned>(width);
+  }
+};
+
+class PrecisionHandler :
+    public fmt::internal::ArgVisitor<PrecisionHandler, int> {
+ public:
+  unsigned visit_unhandled_arg() {
+    throw fmt::FormatError("precision is not integer");
+  }
+
+  template <typename T>
+  int visit_any_int(T value) {
+    if (value < INT_MIN || value > INT_MAX)
+      throw fmt::FormatError("number is too big in format");
+    return static_cast<int>(value);
   }
 };
 
@@ -848,16 +855,12 @@ void fmt::internal::PrintfFormatter<Char>::format(
         spec.precision_ = parse_nonnegative_int(s, error_);
       } else if (*s == '*') {
         ++s;
-        const Arg &arg = handle_arg_index(UINT_MAX);
-        if (arg.type <= Arg::LAST_INTEGER_TYPE)
-          spec.precision_ = static_cast<int>(get_int_value(arg)); // TODO: check for overflow
-        else if (!error_)
-          error_ = "precision is not integer";
+        spec.precision_ = PrecisionHandler().visit(handle_arg_index(UINT_MAX));
       }
     }
 
     const Arg &arg = handle_arg_index(arg_index);
-    if (spec.flag(HASH_FLAG) && get_int_value(arg) == 0)
+    if (spec.flag(HASH_FLAG) && IsZeroInt().visit(arg))
       spec.flags_ &= ~HASH_FLAG;
     if (spec.fill_ == '0') {
       if (arg.type <= Arg::LAST_NUMERIC_TYPE)
