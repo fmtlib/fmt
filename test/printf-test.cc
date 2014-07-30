@@ -45,7 +45,8 @@ std::string make_positional(fmt::StringRef format) {
 }
 
 #define EXPECT_PRINTF(expected_output, format, arg) \
-  EXPECT_EQ(expected_output, fmt::sprintf(format, arg)); \
+  EXPECT_EQ(expected_output, fmt::sprintf(format, arg)) \
+    << "format:" << format; \
   EXPECT_EQ(expected_output, fmt::sprintf(make_positional(format), arg))
 
 TEST(PrintfTest, NoArgs) {
