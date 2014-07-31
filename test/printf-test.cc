@@ -273,10 +273,27 @@ TEST(PrintfTest, DynamicPrecision) {
  }
 }
 
-#define EXPECT_STD_PRINTF(format, Type, arg) { \
+// Cast value to T to workaround an issue with MSVC not implementing
+// various format specifiers.
+template <typename T, typename U>
+T Cast(U value) { return value; }
+
+bool IsSupported(const std::string &format) {
+#ifdef _MSVC
+  // MSVC doesn't support hh, j, z and t format specifiers.
+  return format != "hh";
+#else
+  return true;
+#endif
+}
+
+#define EXPECT_STD_PRINTF(format, T, arg) { \
   char buffer[BUFFER_SIZE]; \
-  Type conv_arg = static_cast<Type>(arg); \
-  safe_sprintf(buffer, fmt::StringRef(format).c_str(), conv_arg); \
+  if (IsSupported(format)) \
+    safe_sprintf(buffer, fmt::StringRef(format).c_str(), arg); \
+  else \
+    safe_sprintf(buffer, fmt::StringRef(format).c_str(), \
+      Cast<typename fmt::internal::MakeUnsigned<T>::Type>(arg)); \
   EXPECT_PRINTF(buffer, format, arg); \
 }
 

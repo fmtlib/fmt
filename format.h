@@ -420,6 +420,18 @@ struct IntTraits {
     TypeSelector<std::numeric_limits<T>::digits <= 32>::Type MainType;
 };
 
+// MakeUnsigned<T>::Type gives an unsigned type corresponding to integer type T.
+template <typename T>
+struct MakeUnsigned { typedef T Type; };
+
+#define SPECIALIZE_MAKE_UNSIGNED(T) \
+  template <> \
+  struct MakeUnsigned<signed T> { typedef unsigned T Type; }
+
+SPECIALIZE_MAKE_UNSIGNED(char);
+SPECIALIZE_MAKE_UNSIGNED(short);
+SPECIALIZE_MAKE_UNSIGNED(long);
+
 template <typename T>
 struct IsLongDouble { enum {VALUE = 0}; };
 

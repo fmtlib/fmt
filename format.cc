@@ -207,16 +207,6 @@ class PrecisionHandler :
   }
 };
 
-// MakeUnsigned<T>::Type gives an unsigned type corresponding to integer type T.
-template <typename T>
-struct MakeUnsigned { typedef T Type; };
-
-template <>
-struct MakeUnsigned<signed char> { typedef unsigned char Type; };
-
-template <>
-struct MakeUnsigned<short> { typedef unsigned short Type; };
-
 // Converts an integer argument to type T.
 template <typename T>
 class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
@@ -229,12 +219,26 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
 
   template <typename U>
   void visit_any_int(U value) {
-    if (type_ == 'd' || type_ == 'i') {
-      arg_.type = fmt::internal::Arg::INT;
-      arg_.int_value = static_cast<T>(value);
+    bool is_signed = type_ == 'd' || type_ == 'i';
+    using fmt::internal::Arg;
+    if (sizeof(T) <= sizeof(int)) {
+      if (is_signed) {
+        arg_.type = Arg::INT;
+        arg_.int_value = static_cast<T>(value);
+      } else {
+        arg_.type = Arg::UINT;
+        arg_.uint_value =
+            static_cast<typename fmt::internal::MakeUnsigned<T>::Type>(value);
+      }
     } else {
-      arg_.type = fmt::internal::Arg::UINT;
-      arg_.uint_value = static_cast<typename MakeUnsigned<T>::Type>(value);
+      if (is_signed) {
+        arg_.type = Arg::LONG_LONG;
+        arg_.long_long_value = static_cast<T>(value);
+      } else {
+        arg_.type = Arg::ULONG_LONG;
+        arg_.ulong_long_value =
+            static_cast<typename fmt::internal::MakeUnsigned<T>::Type>(value);
+      }
     }
   }
 };
@@ -902,6 +906,10 @@ void fmt::internal::PrintfFormatter<Char>::format(
     }
 
     // Parse length and convert the argument to the required type.
+    // Conversion is done for compatibility with glibc's printf, MSVC's
+    // printf simply ignores width specifiers. For example:
+    //   printf("%hhd", -129);
+    // prints 127 when using glibc's printf and -129 when using MSVC's one.
     switch (*s) {
     case 'h': {
       ++s;
@@ -912,6 +920,9 @@ void fmt::internal::PrintfFormatter<Char>::format(
       break;
     }
     case 'l':
+      ++s;
+      ArgConverter<long>(arg, *s).visit(arg);
+      break;
     case 'j':
     case 'z':
     case 't':
