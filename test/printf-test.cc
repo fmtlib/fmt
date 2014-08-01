@@ -308,6 +308,8 @@ void TestLength(const char *length_spec) {
     EXPECT_STD_PRINTF(format, T, max);
     EXPECT_STD_PRINTF(format, T, fmt::LongLong(min) - 1);
     EXPECT_STD_PRINTF(format, T, fmt::LongLong(max) + 1);
+    EXPECT_STD_PRINTF(format, T, std::numeric_limits<short>::min());
+    EXPECT_STD_PRINTF(format, T, std::numeric_limits<unsigned short>::max());
     EXPECT_STD_PRINTF(format, T, std::numeric_limits<int>::min());
     EXPECT_STD_PRINTF(format, T, std::numeric_limits<int>::max());
     EXPECT_STD_PRINTF(format, T, std::numeric_limits<unsigned>::min());
@@ -320,12 +322,12 @@ void TestLength(const char *length_spec) {
 }
 
 TEST(PrintfTest, Length) {
-  TestLength<short>("h");
-  TestLength<unsigned short>("h");
   TestLength<signed char>("hh");
   TestLength<unsigned char>("hh");
-  //TestLength<long>("l");
-  //TestLength<unsigned long>("l");
+  TestLength<short>("h");
+  TestLength<unsigned short>("h");
+  TestLength<long>("l");
+  TestLength<unsigned long>("l");
   // TODO: more tests
 }
 

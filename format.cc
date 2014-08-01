@@ -233,11 +233,12 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
     } else {
       if (is_signed) {
         arg_.type = Arg::LONG_LONG;
-        arg_.long_long_value = static_cast<T>(value);
+        arg_.long_long_value =
+            static_cast<typename fmt::internal::MakeUnsigned<U>::Type>(value);
       } else {
         arg_.type = Arg::ULONG_LONG;
         arg_.ulong_long_value =
-            static_cast<typename fmt::internal::MakeUnsigned<T>::Type>(value);
+            static_cast<typename fmt::internal::MakeUnsigned<U>::Type>(value);
       }
     }
   }
@@ -906,10 +907,6 @@ void fmt::internal::PrintfFormatter<Char>::format(
     }
 
     // Parse length and convert the argument to the required type.
-    // Conversion is done for compatibility with glibc's printf, MSVC's
-    // printf simply ignores width specifiers. For example:
-    //   printf("%hhd", -129);
-    // prints 127 when using glibc's printf and -129 when using MSVC's one.
     switch (*s) {
     case 'h': {
       ++s;
