@@ -484,7 +484,7 @@ extern const char DIGITS[];
 
 // Formats a decimal unsigned integer value writing into buffer.
 template <typename UInt, typename Char>
-void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
+inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
   --num_digits;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
