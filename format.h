@@ -271,7 +271,7 @@ class Array {
   FMT_DISALLOW_COPY_AND_ASSIGN(Array);
 
  public:
-  Array() : size_(0), capacity_(SIZE), ptr_(data_) {}
+  explicit Array(std::size_t size = 0) : size_(size), capacity_(SIZE), ptr_(data_) {}
   ~Array() { free(); }
 
 #if FMT_USE_RVALUE_REFERENCES
