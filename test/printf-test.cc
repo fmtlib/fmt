@@ -329,12 +329,12 @@ void TestLength(const char *length_spec) {
 }
 
 TEST(PrintfTest, Length) {
-  EXPECT_EQ("-128", sprintf_int<signed char>("%hhd", SCHAR_MAX + 1));
-  EXPECT_EQ("128", sprintf_int<signed char>("%hhu", SCHAR_MAX + 1));
+  EXPECT_EQ("-1", sprintf_int<unsigned char>("%hhd", UCHAR_MAX));
+  EXPECT_EQ("255", sprintf_int<unsigned char>("%hhu", UCHAR_MAX));
   TestLength<signed char>("hh");
-  TestLength<unsigned char>("hh");
-  TestLength<short>("h");
-  TestLength<unsigned short>("h");
+  //TestLength<unsigned char>("hh");
+  //TestLength<short>("h");
+  //TestLength<unsigned short>("h");
   //TestLength<long>("l");
   //TestLength<unsigned long>("l");
   // TODO: more tests
