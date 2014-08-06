@@ -282,12 +282,27 @@ bool IsSupported(const std::string &format) {
 #endif
 }
 
+template <typename T>
+struct MakeSigned { typedef T Type; };
+
+#define SPECIALIZE_MAKE_SIGNED(T, S) \
+  template <> \
+  struct MakeSigned<T> { typedef S Type; }
+
+SPECIALIZE_MAKE_SIGNED(char, signed char);
+SPECIALIZE_MAKE_SIGNED(unsigned char, signed char);
+SPECIALIZE_MAKE_SIGNED(unsigned short, short);
+SPECIALIZE_MAKE_SIGNED(unsigned, int);
+SPECIALIZE_MAKE_SIGNED(unsigned long, long);
+SPECIALIZE_MAKE_SIGNED(fmt::ULongLong, fmt::LongLong);
+
 template <typename T, typename U>
 std::string sprintf_int(std::string format, U value) {
   char buffer[BUFFER_SIZE];
   char type = format[format.size() - 1];
   if (type == 'd' || type == 'i') {
-    safe_sprintf(buffer, format.c_str(), static_cast<T>(value));
+    typedef typename MakeSigned<T>::Type Signed;
+    safe_sprintf(buffer, format.c_str(), static_cast<Signed>(value));
   } else {
     typedef typename fmt::internal::MakeUnsigned<T>::Type Unsigned;
     safe_sprintf(buffer, format.c_str(), static_cast<Unsigned>(value));
