@@ -332,9 +332,9 @@ TEST(PrintfTest, Length) {
   EXPECT_EQ("-128", sprintf_int<signed char>("%hhd", SCHAR_MAX + 1));
   EXPECT_EQ("128", sprintf_int<signed char>("%hhu", SCHAR_MAX + 1));
   TestLength<signed char>("hh");
-  //TestLength<unsigned char>("hh");
-  //TestLength<short>("h");
-  //TestLength<unsigned short>("h");
+  TestLength<unsigned char>("hh");
+  TestLength<short>("h");
+  TestLength<unsigned short>("h");
   //TestLength<long>("l");
   //TestLength<unsigned long>("l");
   // TODO: more tests
