@@ -85,8 +85,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
 endif ()
 
-include_directories(gtest/include)
-add_subdirectory(gtest)
+add_library(gtest gtest/gtest-all.cc)
+find_package(Threads)
+target_link_libraries(gtest ${CMAKE_THREAD_LIBS_INIT})
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
@@ -101,9 +102,17 @@ set(TEST_MAIN_SRC
 add_library(test-main ${TEST_MAIN_SRC})
 target_link_libraries(test-main gtest format)
 
-cxx_test(gtest-extra-test test-main)
-cxx_test(format-test test-main)
-cxx_test(printf-test test-main)
+# Adds a test.
+# Usage: add_fmt_test(name libs srcs...)
+function(add_fmt_test name libs)
+  add_executable(${name} test/${name}.cc ${ARGN})
+  target_link_libraries(${name} ${libs})
+  add_test(${name} ${name})
+endfunction()
+
+add_fmt_test(gtest-extra-test test-main)
+add_fmt_test(format-test test-main)
+add_fmt_test(printf-test test-main)
 foreach (target format-test printf-test)
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(${target} PROPERTIES COMPILE_FLAGS
@@ -113,7 +122,7 @@ foreach (target format-test printf-test)
     set_target_properties(${target} PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   endif ()
 endforeach ()
-cxx_test(util-test test-main)
+add_fmt_test(util-test test-main)
 
 add_executable(macro-test test/macro-test.cc ${FMT_SOURCES} ${TEST_MAIN_SRC})
 set_target_properties(macro-test
