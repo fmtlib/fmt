@@ -424,16 +424,16 @@ struct IntTraits {
 template <typename T>
 struct MakeUnsigned { typedef T Type; };
 
-#define SPECIALIZE_MAKE_UNSIGNED(T, U) \
+#define FMT_SPECIALIZE_MAKE_UNSIGNED(T, U) \
   template <> \
   struct MakeUnsigned<T> { typedef U Type; }
 
-SPECIALIZE_MAKE_UNSIGNED(char, unsigned char);
-SPECIALIZE_MAKE_UNSIGNED(signed char, unsigned char);
-SPECIALIZE_MAKE_UNSIGNED(short, unsigned short);
-SPECIALIZE_MAKE_UNSIGNED(int, unsigned);
-SPECIALIZE_MAKE_UNSIGNED(long, unsigned long);
-SPECIALIZE_MAKE_UNSIGNED(LongLong, ULongLong);
+FMT_SPECIALIZE_MAKE_UNSIGNED(char, unsigned char);
+FMT_SPECIALIZE_MAKE_UNSIGNED(signed char, unsigned char);
+FMT_SPECIALIZE_MAKE_UNSIGNED(short, unsigned short);
+FMT_SPECIALIZE_MAKE_UNSIGNED(int, unsigned);
+FMT_SPECIALIZE_MAKE_UNSIGNED(long, unsigned long);
+FMT_SPECIALIZE_MAKE_UNSIGNED(LongLong, ULongLong);
 
 template <typename T>
 struct IsLongDouble { enum {VALUE = 0}; };
