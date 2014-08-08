@@ -212,10 +212,11 @@ template <typename T>
 class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
  private:
   fmt::internal::Arg &arg_;
-  char type_;
+  wchar_t type_;
 
  public:
-  ArgConverter(fmt::internal::Arg &arg, char type) : arg_(arg), type_(type) {}
+  ArgConverter(fmt::internal::Arg &arg, wchar_t type)
+    : arg_(arg), type_(type) {}
 
   template <typename U>
   void visit_any_int(U value) {
