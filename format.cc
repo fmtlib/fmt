@@ -908,26 +908,30 @@ void fmt::internal::PrintfFormatter<Char>::format(
     }
 
     // Parse length and convert the argument to the required type.
-    switch (*s) {
-    case 'h': {
-      ++s;
+    switch (*s++) {
+    case 'h':
       if (*s == 'h')
         ArgConverter<signed char>(arg, *++s).visit(arg);
       else
         ArgConverter<short>(arg, *s).visit(arg);
       break;
-    }
     case 'l':
-      ++s;
       ArgConverter<long>(arg, *s).visit(arg);
       break;
     case 'j':
+      ArgConverter<intmax_t>(arg, *s).visit(arg);
+      break;
     case 'z':
+      ArgConverter<size_t>(arg, *s).visit(arg);
+      break;
     case 't':
+      ArgConverter<ptrdiff_t>(arg, *s).visit(arg);
+      break;
     case 'L':
       // TODO: handle length
-      ++s;
       break;
+    default:
+      --s;
     }
 
     // Parse type.
