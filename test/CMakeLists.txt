@@ -1,46 +1,48 @@
-# Test if compile errors are produced where necessary.
+include_directories(..)
 
-cmake_minimum_required(VERSION 2.8)
+set(TEST_MAIN_SRC
+  test/test-main.cc test/gtest-extra.cc test/gtest-extra.h test/util.cc)
+add_library(test-main ${TEST_MAIN_SRC})
+target_link_libraries(test-main gtest format)
 
-include(CheckCXXSourceCompiles)
-set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/..)
+# Adds a test.
+# Usage: add_fmt_test(name libs srcs...)
+function(add_fmt_test name libs)
+  add_executable(${name} test/${name}.cc ${ARGN})
+  target_link_libraries(${name} ${libs})
+  add_test(${name} ${name})
+endfunction()
 
-function (expect_compile_error code)
-  check_cxx_source_compiles("
-  #include \"format.cc\"
-  int main() {
-    ${code}
-  }
-  " compiles)
-  set (does_compile ${compiles})
-  # Unset the CMake cache variable compiles. Otherwise the compile test will
-  # just use cached information next time it runs.
-  unset(compiles CACHE)
-  if (does_compile)
-    message(FATAL_ERROR "No compile error for: ${code}")
+add_fmt_test(gtest-extra-test test-main)
+add_fmt_test(format-test test-main)
+add_fmt_test(printf-test test-main)
+foreach (target format-test printf-test)
+  if (CMAKE_COMPILER_IS_GNUCXX)
+    set_target_properties(${target} PROPERTIES COMPILE_FLAGS
+      "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
   endif ()
-endfunction ()
+  if (CPP11_FLAG)
+    set_target_properties(${target} PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
+  endif ()
+endforeach ()
+add_fmt_test(util-test test-main)
 
-# Array is noncopyable.
-expect_compile_error("fmt::internal::Array<char, 5> a, b(a);")
-expect_compile_error("fmt::internal::Array<char, 5> a, b; b = a;")
+add_executable(macro-test test/macro-test.cc ${FMT_SOURCES} ${TEST_MAIN_SRC})
+set_target_properties(macro-test
+  PROPERTIES COMPILE_DEFINITIONS "FMT_USE_VARIADIC_TEMPLATES=0")
+target_link_libraries(macro-test gtest)
 
-# Writer is noncopyable.
-expect_compile_error("const fmt::Writer a, b(a);")
-expect_compile_error("fmt::Writer a, b; b = a;")
+if (HAVE_OPEN)
+  add_executable(posix-test test/posix-test.cc ${FMT_SOURCES} ${TEST_MAIN_SRC})
+  set_target_properties(posix-test
+    PROPERTIES COMPILE_DEFINITIONS "FMT_INCLUDE_POSIX_TEST=1")
+  target_link_libraries(posix-test gtest)
+  add_test(posix-test posix-test)
+endif ()
 
-# MakeArg doesn't accept [const] volatile char *.
-expect_compile_error("volatile char s[] = \"test\"; (fmt::internal::MakeArg<char>)(s);")
-expect_compile_error("const volatile char s[] = \"test\"; (fmt::internal::MakeArg<char>)(s);")
-
-# MakeArg<char> doesn't accept wchar_t.
-expect_compile_error("fmt::internal::MakeArg<char>(L'a');")
-expect_compile_error("fmt::internal::MakeArg<char>(L\"test\");")
-
-# Writing a wide character to a character stream Writer is forbidden.
-expect_compile_error("fmt::Writer() << L'a';")
-expect_compile_error("fmt::Writer() << fmt::pad(\"abc\", 5, L' ');")
-expect_compile_error("fmt::Writer() << fmt::pad(42, 5, L' ');")
-
-# Formatting a wide character with a narrow format string is forbidden.
-expect_compile_error("fmt::format(\"{}\", L'a';")
+add_test(compile-test ${CMAKE_CTEST_COMMAND}
+  --build-and-test
+  "${CMAKE_CURRENT_SOURCE_DIR}/test"
+  "${CMAKE_CURRENT_BINARY_DIR}/test"
+  --build-generator ${CMAKE_GENERATOR}
+  --build-makeprogram ${CMAKE_MAKE_PROGRAM})

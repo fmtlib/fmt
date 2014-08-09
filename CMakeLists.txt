@@ -70,10 +70,12 @@ if (CPP11_FLAG AND FMT_EXTRA_TESTS)
   set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   # Test compilation with default flags.
   file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)
-  add_library(testformat ${FMT_SOURCES} ${src})
+  add_library(testformat ${FMT_SOURCE_FILES} ${src})
 endif ()
 
 add_subdirectory(doc)
+
+include_directories(.)
 
 # We compile Google Test ourselves instead of using pre-compiled libraries.
 # See the Google Test FAQ "Why is it not recommended to install a
@@ -94,55 +96,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 endif ()
 
 enable_testing()
-
-include_directories(.)
-
-set(TEST_MAIN_SRC
-  test/test-main.cc test/gtest-extra.cc test/gtest-extra.h test/util.cc)
-add_library(test-main ${TEST_MAIN_SRC})
-target_link_libraries(test-main gtest format)
-
-# Adds a test.
-# Usage: add_fmt_test(name libs srcs...)
-function(add_fmt_test name libs)
-  add_executable(${name} test/${name}.cc ${ARGN})
-  target_link_libraries(${name} ${libs})
-  add_test(${name} ${name})
-endfunction()
-
-add_fmt_test(gtest-extra-test test-main)
-add_fmt_test(format-test test-main)
-add_fmt_test(printf-test test-main)
-foreach (target format-test printf-test)
-  if (CMAKE_COMPILER_IS_GNUCXX)
-    set_target_properties(${target} PROPERTIES COMPILE_FLAGS
-      "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
-  endif ()
-  if (CPP11_FLAG)
-    set_target_properties(${target} PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
-  endif ()
-endforeach ()
-add_fmt_test(util-test test-main)
-
-add_executable(macro-test test/macro-test.cc ${FMT_SOURCES} ${TEST_MAIN_SRC})
-set_target_properties(macro-test
-  PROPERTIES COMPILE_DEFINITIONS "FMT_USE_VARIADIC_TEMPLATES=0")
-target_link_libraries(macro-test gtest)
-
-if (HAVE_OPEN)
-  add_executable(posix-test test/posix-test.cc ${FMT_SOURCES} ${TEST_MAIN_SRC})
-  set_target_properties(posix-test
-    PROPERTIES COMPILE_DEFINITIONS "FMT_INCLUDE_POSIX_TEST=1")
-  target_link_libraries(posix-test gtest)
-  add_test(posix-test posix-test)
-endif ()
-
-add_test(compile-test ${CMAKE_CTEST_COMMAND}
-  --build-and-test
-  "${CMAKE_CURRENT_SOURCE_DIR}/test"
-  "${CMAKE_CURRENT_BINARY_DIR}/test"
-  --build-generator ${CMAKE_GENERATOR}
-  --build-makeprogram ${CMAKE_MAKE_PROGRAM})
+add_subdirectory(test)
 
 if (EXISTS .gitignore)
   # Get the list of ignored files from .gitignore.
