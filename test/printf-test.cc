@@ -348,8 +348,8 @@ TEST(PrintfTest, Length) {
   EXPECT_EQ("255", sprintf_int<unsigned char>("%hhu", UCHAR_MAX));
   TestLength<signed char>("hh");
   TestLength<unsigned char>("hh");
-  //TestLength<short>("h");
-  //TestLength<unsigned short>("h");
+  TestLength<short>("h");
+  TestLength<unsigned short>("h");
   //TestLength<long>("l");
   //TestLength<unsigned long>("l");
   // TODO: more tests
