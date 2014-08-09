@@ -1,14 +1,11 @@
-include_directories(..)
-
-set(TEST_MAIN_SRC
-  test/test-main.cc test/gtest-extra.cc test/gtest-extra.h test/util.cc)
+set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main ${TEST_MAIN_SRC})
 target_link_libraries(test-main gtest format)
 
 # Adds a test.
 # Usage: add_fmt_test(name libs srcs...)
 function(add_fmt_test name libs)
-  add_executable(${name} test/${name}.cc ${ARGN})
+  add_executable(${name} ${name}.cc ${ARGN})
   target_link_libraries(${name} ${libs})
   add_test(${name} ${name})
 endfunction()
@@ -27,13 +24,17 @@ foreach (target format-test printf-test)
 endforeach ()
 add_fmt_test(util-test test-main)
 
-add_executable(macro-test test/macro-test.cc ${FMT_SOURCES} ${TEST_MAIN_SRC})
+foreach (src ${FMT_SOURCES})
+  set(FMT_TEST_SOURCES ${FMT_TEST_SOURCES} ../${src})
+endforeach ()
+
+add_executable(macro-test macro-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
 set_target_properties(macro-test
   PROPERTIES COMPILE_DEFINITIONS "FMT_USE_VARIADIC_TEMPLATES=0")
 target_link_libraries(macro-test gtest)
 
 if (HAVE_OPEN)
-  add_executable(posix-test test/posix-test.cc ${FMT_SOURCES} ${TEST_MAIN_SRC})
+  add_executable(posix-test posix-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
   set_target_properties(posix-test
     PROPERTIES COMPILE_DEFINITIONS "FMT_INCLUDE_POSIX_TEST=1")
   target_link_libraries(posix-test gtest)
@@ -42,7 +43,7 @@ endif ()
 
 add_test(compile-test ${CMAKE_CTEST_COMMAND}
   --build-and-test
-  "${CMAKE_CURRENT_SOURCE_DIR}/test"
-  "${CMAKE_CURRENT_BINARY_DIR}/test"
+  "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"
+  "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
   --build-generator ${CMAKE_GENERATOR}
   --build-makeprogram ${CMAKE_MAKE_PROGRAM})
