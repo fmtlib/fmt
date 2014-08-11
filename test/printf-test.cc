@@ -273,15 +273,6 @@ TEST(PrintfTest, DynamicPrecision) {
  }
 }
 
-bool IsSupported(const std::string &format) {
-#if _MSC_VER
-  // MSVC doesn't support hh, j, z and t format specifiers.
-  return format.substr(1, 2) != "hh";
-#else
-  return true;
-#endif
-}
-
 template <typename T>
 struct MakeSigned { typedef T Type; };
 
@@ -297,66 +288,62 @@ SPECIALIZE_MAKE_SIGNED(unsigned long, long);
 SPECIALIZE_MAKE_SIGNED(fmt::ULongLong, fmt::LongLong);
 
 template <typename T, typename U>
-std::string sprintf_int(std::string format, U value) {
-  char buffer[BUFFER_SIZE];
-  char type = format[format.size() - 1];
-  if (sizeof(T) < sizeof(int)) {
-    if (type == 'd' || type == 'i') {
-      typedef typename MakeSigned<T>::Type Signed;
-      safe_sprintf(buffer, format.c_str(), static_cast<Signed>(value));
-    } else {
-      typedef typename fmt::internal::MakeUnsigned<T>::Type Unsigned;
-      safe_sprintf(buffer, format.c_str(), static_cast<Unsigned>(value));
-    }
-  } else {
-    safe_sprintf(buffer, format.c_str(), value);
-  }
-  return buffer;
-}
-
-#define EXPECT_STD_PRINTF(format, T, arg) { \
-  char buffer[BUFFER_SIZE]; \
-  if (IsSupported(format)) { \
-    safe_sprintf(buffer, fmt::StringRef(format).c_str(), arg); \
-    EXPECT_PRINTF(buffer, format, arg); \
-  } \
-  EXPECT_PRINTF(sprintf_int<T>(format, arg), format, arg); \
+void TestLength(const char *length_spec, U value) {
+  std::ostringstream os;
+  // Use LongLong instead of T, because std::ostream prints signed char as
+  // a character, not a number.
+  os << static_cast<fmt::LongLong>(
+          static_cast<typename MakeSigned<T>::Type>(value));
+  EXPECT_PRINTF(os.str(), fmt::format("%{}d", length_spec), value);
+  EXPECT_PRINTF(os.str(), fmt::format("%{}i", length_spec), value);
+  fmt::ULongLong unsigned_value =
+      static_cast<typename fmt::internal::MakeUnsigned<T>::Type>(value);
+  os.str("");
+  os << unsigned_value;
+  EXPECT_PRINTF(os.str(), fmt::format("%{}u", length_spec), value);
+  os.str("");
+  os << std::oct << unsigned_value;
+  EXPECT_PRINTF(os.str(), fmt::format("%{}o", length_spec), value);
+  os.str("");
+  os << std::hex << unsigned_value;
+  EXPECT_PRINTF(os.str(), fmt::format("%{}x", length_spec), value);
+  os.str("");
+  os << std::hex << std::uppercase << unsigned_value;
+  EXPECT_PRINTF(os.str(), fmt::format("%{}X", length_spec), value);
 }
 
 template <typename T>
 void TestLength(const char *length_spec) {
   T min = std::numeric_limits<T>::min(), max = std::numeric_limits<T>::max();
-  const char types[] = {'d', 'i', 'u', 'o', 'x', 'X'};
-  for (int i = 0; i < sizeof(types); ++i) {
-    std::string format = fmt::format("%{}{}", length_spec, types[i]);
-    EXPECT_STD_PRINTF(format, T, 42);
-    EXPECT_STD_PRINTF(format, T, min);
-    EXPECT_STD_PRINTF(format, T, max);
-    EXPECT_STD_PRINTF(format, T, fmt::LongLong(min) - 1);
-    EXPECT_STD_PRINTF(format, T, fmt::LongLong(max) + 1);
-    EXPECT_STD_PRINTF(format, T, std::numeric_limits<short>::min());
-    EXPECT_STD_PRINTF(format, T, std::numeric_limits<unsigned short>::max());
-    EXPECT_STD_PRINTF(format, T, std::numeric_limits<int>::min());
-    EXPECT_STD_PRINTF(format, T, std::numeric_limits<int>::max());
-    EXPECT_STD_PRINTF(format, T, std::numeric_limits<unsigned>::min());
-    EXPECT_STD_PRINTF(format, T, std::numeric_limits<unsigned>::max());
-    EXPECT_STD_PRINTF(format, T, std::numeric_limits<fmt::LongLong>::min());
-    EXPECT_STD_PRINTF(format, T, std::numeric_limits<fmt::LongLong>::max());
-    EXPECT_STD_PRINTF(format, T, std::numeric_limits<fmt::ULongLong>::min());
-    EXPECT_STD_PRINTF(format, T, std::numeric_limits<fmt::ULongLong>::max());
-  }
+  TestLength<T>(length_spec, 42);
+  TestLength<T>(length_spec, -42);
+  TestLength<T>(length_spec, min);
+  TestLength<T>(length_spec, max);
+  TestLength<T>(length_spec, fmt::LongLong(min) - 1);
+  TestLength<T>(length_spec, fmt::LongLong(max) + 1);
+  TestLength<T>(length_spec, std::numeric_limits<short>::min());
+  TestLength<T>(length_spec, std::numeric_limits<unsigned short>::max());
+  TestLength<T>(length_spec, std::numeric_limits<int>::min());
+  TestLength<T>(length_spec, std::numeric_limits<int>::max());
+  TestLength<T>(length_spec, std::numeric_limits<unsigned>::min());
+  TestLength<T>(length_spec, std::numeric_limits<unsigned>::max());
+  TestLength<T>(length_spec, std::numeric_limits<fmt::LongLong>::min());
+  TestLength<T>(length_spec, std::numeric_limits<fmt::LongLong>::max());
+  TestLength<T>(length_spec, std::numeric_limits<fmt::ULongLong>::min());
+  TestLength<T>(length_spec, std::numeric_limits<fmt::ULongLong>::max());
 }
 
 TEST(PrintfTest, Length) {
+  TestLength<char>("hh");
   TestLength<signed char>("hh");
   TestLength<unsigned char>("hh");
-  TestLength<short>("h");
+  /*TestLength<short>("h");
   TestLength<unsigned short>("h");
   TestLength<long>("l");
-  //TestLength<unsigned long>("l");
+  TestLength<unsigned long>("l");
   // TODO: more tests
   EXPECT_EQ("-1", sprintf_int<unsigned char>("%hhd", UCHAR_MAX));
-  EXPECT_EQ("255", sprintf_int<unsigned char>("%hhu", UCHAR_MAX));
+  EXPECT_EQ("255", sprintf_int<unsigned char>("%hhu", UCHAR_MAX));*/
 }
 
 // TODO: test type specifier
