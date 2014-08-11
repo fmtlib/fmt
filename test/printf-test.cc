@@ -300,7 +300,7 @@ template <typename T, typename U>
 std::string sprintf_int(std::string format, U value) {
   char buffer[BUFFER_SIZE];
   char type = format[format.size() - 1];
-  if (sizeof(T) < sizeof(U)) {
+  if (sizeof(T) < sizeof(int)) {
     if (type == 'd' || type == 'i') {
       typedef typename MakeSigned<T>::Type Signed;
       safe_sprintf(buffer, format.c_str(), static_cast<Signed>(value));
