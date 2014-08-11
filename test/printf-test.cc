@@ -300,12 +300,16 @@ template <typename T, typename U>
 std::string sprintf_int(std::string format, U value) {
   char buffer[BUFFER_SIZE];
   char type = format[format.size() - 1];
-  if (type == 'd' || type == 'i') {
-    typedef typename MakeSigned<T>::Type Signed;
-    safe_sprintf(buffer, format.c_str(), static_cast<Signed>(value));
+  if (sizeof(T) < sizeof(U)) {
+    if (type == 'd' || type == 'i') {
+      typedef typename MakeSigned<T>::Type Signed;
+      safe_sprintf(buffer, format.c_str(), static_cast<Signed>(value));
+    } else {
+      typedef typename fmt::internal::MakeUnsigned<T>::Type Unsigned;
+      safe_sprintf(buffer, format.c_str(), static_cast<Unsigned>(value));
+    }
   } else {
-    typedef typename fmt::internal::MakeUnsigned<T>::Type Unsigned;
-    safe_sprintf(buffer, format.c_str(), static_cast<Unsigned>(value));
+    safe_sprintf(buffer, format.c_str(), value);
   }
   return buffer;
 }
@@ -348,11 +352,11 @@ TEST(PrintfTest, Length) {
   TestLength<unsigned char>("hh");
   TestLength<short>("h");
   TestLength<unsigned short>("h");
-  EXPECT_EQ("-1", sprintf_int<unsigned char>("%hhd", UCHAR_MAX));
-  EXPECT_EQ("255", sprintf_int<unsigned char>("%hhu", UCHAR_MAX));
-  //TestLength<long>("l");
+  TestLength<long>("l");
   //TestLength<unsigned long>("l");
   // TODO: more tests
+  EXPECT_EQ("-1", sprintf_int<unsigned char>("%hhd", UCHAR_MAX));
+  EXPECT_EQ("255", sprintf_int<unsigned char>("%hhu", UCHAR_MAX));
 }
 
 // TODO: test type specifier
