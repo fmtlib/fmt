@@ -289,15 +289,29 @@ SPECIALIZE_MAKE_SIGNED(fmt::ULongLong, fmt::LongLong);
 
 template <typename T, typename U>
 void TestLength(const char *length_spec, U value) {
+  fmt::LongLong signed_value = value;
+  fmt::ULongLong unsigned_value = value;
+  // Apply integer promotion to the argument.
+  U max = std::numeric_limits<U>::max();
+  if (max <= std::numeric_limits<int>::max()) {
+    signed_value = static_cast<int>(value);
+    unsigned_value = static_cast<int>(value);
+  } else if (max <= std::numeric_limits<unsigned>::max()) {
+    signed_value = static_cast<unsigned>(value);
+    unsigned_value = static_cast<unsigned>(value);
+  }
+  using fmt::internal::MakeUnsigned;
+  if (sizeof(U) <= sizeof(int) && sizeof(int) < sizeof(T)) {
+    signed_value = unsigned_value =
+        static_cast<typename MakeUnsigned<unsigned>::Type>(value);
+  } else {
+    signed_value = static_cast<typename MakeSigned<T>::Type>(value);
+    unsigned_value = static_cast<typename MakeUnsigned<T>::Type>(value);
+  }
   std::ostringstream os;
-  // Use LongLong instead of T, because std::ostream prints signed char as
-  // a character, not a number.
-  os << static_cast<fmt::LongLong>(
-          static_cast<typename MakeSigned<T>::Type>(value));
+  os << signed_value;
   EXPECT_PRINTF(os.str(), fmt::format("%{}d", length_spec), value);
   EXPECT_PRINTF(os.str(), fmt::format("%{}i", length_spec), value);
-  fmt::ULongLong unsigned_value =
-      static_cast<typename fmt::internal::MakeUnsigned<T>::Type>(value);
   os.str("");
   os << unsigned_value;
   EXPECT_PRINTF(os.str(), fmt::format("%{}u", length_spec), value);
@@ -339,8 +353,8 @@ TEST(PrintfTest, Length) {
   TestLength<unsigned char>("hh");
   TestLength<short>("h");
   TestLength<unsigned short>("h");
-  //TestLength<long>("l");
-  //TestLength<unsigned long>("l");
+  TestLength<long>("l");
+  TestLength<unsigned long>("l");
   // TODO: more tests
   //EXPECT_EQ("-1", sprintf_int<unsigned char>("%hhd", UCHAR_MAX));
   //EXPECT_EQ("255", sprintf_int<unsigned char>("%hhu", UCHAR_MAX));
