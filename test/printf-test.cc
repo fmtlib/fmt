@@ -337,13 +337,13 @@ TEST(PrintfTest, Length) {
   TestLength<char>("hh");
   TestLength<signed char>("hh");
   TestLength<unsigned char>("hh");
-  /*TestLength<short>("h");
+  TestLength<short>("h");
   TestLength<unsigned short>("h");
-  TestLength<long>("l");
-  TestLength<unsigned long>("l");
+  //TestLength<long>("l");
+  //TestLength<unsigned long>("l");
   // TODO: more tests
-  EXPECT_EQ("-1", sprintf_int<unsigned char>("%hhd", UCHAR_MAX));
-  EXPECT_EQ("255", sprintf_int<unsigned char>("%hhu", UCHAR_MAX));*/
+  //EXPECT_EQ("-1", sprintf_int<unsigned char>("%hhd", UCHAR_MAX));
+  //EXPECT_EQ("255", sprintf_int<unsigned char>("%hhu", UCHAR_MAX));
 }
 
 // TODO: test type specifier
