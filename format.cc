@@ -916,7 +916,10 @@ void fmt::internal::PrintfFormatter<Char>::format(
         ArgConverter<short>(arg, *s).visit(arg);
       break;
     case 'l':
-      ArgConverter<long>(arg, *s).visit(arg);
+      if (*s == 'l')
+        ArgConverter<long long>(arg, *++s).visit(arg);
+      else
+        ArgConverter<long>(arg, *s).visit(arg);
       break;
     case 'j':
       ArgConverter<intmax_t>(arg, *s).visit(arg);
