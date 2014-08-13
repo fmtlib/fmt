@@ -357,6 +357,8 @@ TEST(PrintfTest, Length) {
   TestLength<unsigned short>("h");
   TestLength<long>("l");
   TestLength<unsigned long>("l");
+  TestLength<fmt::LongLong>("ll");
+  TestLength<fmt::ULongLong>("ll");
   TestLength<intmax_t>("j");
   TestLength<std::size_t>("z");
   TestLength<std::ptrdiff_t>("t");
