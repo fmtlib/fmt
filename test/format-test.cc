@@ -374,7 +374,11 @@ TEST(WriterTest, WriteLongLong) {
 TEST(WriterTest, WriteDouble) {
   CHECK_WRITE(4.2);
   CHECK_WRITE(-4.2);
+}
+
+TEST(WriterTest, WriteLongDouble) {
   CHECK_WRITE(4.2l);
+  CHECK_WRITE(std::numeric_limits<long double>::max());
 }
 
 TEST(WriterTest, WriteDoubleAtBufferBoundary) {

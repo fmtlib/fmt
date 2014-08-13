@@ -83,6 +83,14 @@ inline int isinfinity(double x) {
 #endif
 }
 
+inline int isinfinity(long double x) {
+#ifdef isinf
+  return isinf(x);
+#else
+  return std::isinf(x);
+#endif
+}
+
 #define FMT_SNPRINTF snprintf
 
 #else  // _MSC_VER
@@ -601,7 +609,7 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
     return;
   }
 
-  if (isinfinity(static_cast<double>(value))) {
+  if (isinfinity(value)) {
     // Format infinity ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t size = 4;
