@@ -917,7 +917,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
       break;
     case 'l':
       if (*s == 'l')
-        ArgConverter<long long>(arg, *++s).visit(arg);
+        ArgConverter<fmt::LongLong>(arg, *++s).visit(arg);
       else
         ArgConverter<long>(arg, *s).visit(arg);
       break;
