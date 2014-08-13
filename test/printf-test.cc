@@ -333,8 +333,10 @@ void TestLength(const char *length_spec) {
   TestLength<T>(length_spec, -42);
   TestLength<T>(length_spec, min);
   TestLength<T>(length_spec, max);
-  TestLength<T>(length_spec, fmt::LongLong(min) - 1);
-  TestLength<T>(length_spec, fmt::LongLong(max) + 1);
+  if (min > std::numeric_limits<fmt::LongLong>::min())
+    TestLength<T>(length_spec, fmt::LongLong(min) - 1);
+  if (max < std::numeric_limits<fmt::LongLong>::max())
+    TestLength<T>(length_spec, fmt::LongLong(max) + 1);
   TestLength<T>(length_spec, std::numeric_limits<short>::min());
   TestLength<T>(length_spec, std::numeric_limits<unsigned short>::max());
   TestLength<T>(length_spec, std::numeric_limits<int>::min());
@@ -355,9 +357,10 @@ TEST(PrintfTest, Length) {
   TestLength<unsigned short>("h");
   TestLength<long>("l");
   TestLength<unsigned long>("l");
-  // TODO: more tests
-  //EXPECT_EQ("-1", sprintf_int<unsigned char>("%hhd", UCHAR_MAX));
-  //EXPECT_EQ("255", sprintf_int<unsigned char>("%hhu", UCHAR_MAX));
+  TestLength<intmax_t>("j");
+  TestLength<std::size_t>("z");
+  TestLength<std::ptrdiff_t>("t");
+  // TODO: test 'L' & 'll'
 }
 
 // TODO: test type specifier
