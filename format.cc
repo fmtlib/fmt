@@ -75,21 +75,13 @@ inline int getsign(double x) {
 }
 
 // Portable version of isinf.
-inline int isinfinity(double x) {
 #ifdef isinf
-  return isinf(x);
+inline int isinfinity(double x) { return isinf(x); }
+inline int isinfinity(long double x) { return isinf(x); }
 #else
-  return std::isinf(x);
+inline int isinfinity(double x) { return std::isinf(x); }
+inline int isinfinity(long double x) { return std::isinf(x); }
 #endif
-}
-
-inline int isinfinity(long double x) {
-#ifdef isinf
-  return isinf(x);
-#else
-  return std::isinf(x);
-#endif
-}
 
 #define FMT_SNPRINTF snprintf
 
