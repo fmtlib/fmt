@@ -1536,3 +1536,12 @@ TEST(FormatTest, FormatMessageExample) {
   EXPECT_EQ("[42] something happened",
       format_message(42, "{} happened", "something"));
 }
+
+TEST(FormatTest, ArgConverter) {
+  using fmt::internal::Arg;
+  Arg arg = Arg();
+  arg.type = Arg::LONG_LONG;
+  arg.long_long_value = std::numeric_limits<fmt::LongLong>::max();
+  ArgConverter<fmt::LongLong>(arg, 'd').visit(arg);
+  EXPECT_EQ(Arg::LONG_LONG, arg.type);
+}
