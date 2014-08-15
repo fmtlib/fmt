@@ -362,7 +362,11 @@ TEST(PrintfTest, Length) {
   TestLength<intmax_t>("j");
   TestLength<std::size_t>("z");
   TestLength<std::ptrdiff_t>("t");
-  // TODO: test 'L' & 'll'
+  long double max = std::numeric_limits<long double>::max();
+  EXPECT_PRINTF(fmt::format("{}", max), "%g", max);
+  EXPECT_PRINTF(fmt::format("{}", max), "%Lg", max);
+  EXPECT_GT(sizeof(fmt::LongLong), sizeof(int));
+  // TODO: test 'L'
 }
 
 // TODO: test type specifier
