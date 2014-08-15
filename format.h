@@ -410,8 +410,6 @@ inline bool is_negative(T value) {
   return SignChecker<std::numeric_limits<T>::is_signed>::is_negative(value);
 }
 
-int signbit_noinline(double value);
-
 template <typename T>
 struct IntTraits {
   // Smallest of uint32_t and uint64_t that is large enough to represent
@@ -435,12 +433,6 @@ FMT_SPECIALIZE_MAKE_UNSIGNED(int, unsigned);
 FMT_SPECIALIZE_MAKE_UNSIGNED(long, unsigned long);
 FMT_SPECIALIZE_MAKE_UNSIGNED(LongLong, ULongLong);
 
-template <typename T>
-struct IsLongDouble { enum {VALUE = 0}; };
-
-template <>
-struct IsLongDouble<long double> { enum {VALUE = 1}; };
-
 void report_unknown_type(char code, const char *type);
 
 extern const uint32_t POWERS_OF_10_32[];
@@ -452,7 +444,7 @@ extern const uint64_t POWERS_OF_10_64[];
 inline unsigned count_digits(uint64_t n) {
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
-  uint64_t t = (64 - __builtin_clzll(n | 1)) * 1233 >> 12;
+  unsigned t = (64 - __builtin_clzll(n | 1)) * 1233 >> 12;
   return t - (n < POWERS_OF_10_64[t]) + 1;
 }
 # if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
@@ -1862,10 +1854,10 @@ class FormatInt {
   }
 
   void FormatSigned(LongLong value) {
-    ULongLong abs_value = value;
+    ULongLong abs_value = static_cast<ULongLong>(value);
     bool negative = value < 0;
     if (negative)
-      abs_value = 0 - value;
+      abs_value = 0 - abs_value;
     str_ = format_decimal(abs_value);
     if (negative)
       *--str_ = '-';

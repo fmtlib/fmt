@@ -109,6 +109,12 @@ inline int safe_printf(char *buffer, size_t size, const char *format, ...) {
 
 #endif  // _MSC_VER
 
+template <typename T>
+struct IsLongDouble { enum {VALUE = 0}; };
+
+template <>
+struct IsLongDouble<long double> { enum {VALUE = 1}; };
+
 const char RESET_COLOR[] = "\x1b[0m";
 
 typedef void (*FormatFunc)(fmt::Writer &, int , fmt::StringRef);
@@ -259,8 +265,6 @@ template <>
 inline Arg::StringValue<wchar_t> ignore_incompatible_str(
     Arg::StringValue<wchar_t> s) { return s; }
 }  // namespace
-
-int fmt::internal::signbit_noinline(double value) { return getsign(value); }
 
 void fmt::SystemError::init(
     int error_code, StringRef format_str, const ArgList &args) {
@@ -645,7 +649,7 @@ void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
     *format_ptr++ = '.';
     *format_ptr++ = '*';
   }
-  if (internal::IsLongDouble<T>::VALUE)
+  if (IsLongDouble<T>::VALUE)
     *format_ptr++ = 'L';
   *format_ptr++ = type;
   *format_ptr = '\0';

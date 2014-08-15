@@ -35,6 +35,13 @@
 #include <memory>
 #include <sstream>
 
+// Include format.cc instead of format.h to test implementation-specific stuff.
+#include "format.cc"
+#include "util.h"
+#include "gtest-extra.h"
+
+#include <stdint.h>
+
 #if defined(_WIN32) && !defined(__MINGW32__)
 // Fix MSVC warning about "unsafe" fopen.
 FILE *safe_fopen(const char *filename, const char *mode) {
@@ -44,12 +51,6 @@ FILE *safe_fopen(const char *filename, const char *mode) {
 }
 #define fopen safe_fopen
 #endif
-
-#include "format.h"
-#include "util.h"
-#include "gtest-extra.h"
-
-#include <stdint.h>
 
 #undef min
 #undef max
@@ -1230,7 +1231,7 @@ TEST(FormatterTest, FormatNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ("nan", format("{}", nan));
   EXPECT_EQ("+nan", format("{:+}", nan));
-  if (fmt::internal::signbit_noinline(-nan))
+  if (getsign(-nan))
     EXPECT_EQ("-nan", format("{}", -nan));
   else
     fmt::print("Warning: compiler doesn't handle negative NaN correctly");
