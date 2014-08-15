@@ -231,7 +231,7 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
     if (sizeof(T) <= sizeof(int)) {
       if (is_signed) {
         arg_.type = Arg::INT;
-        arg_.int_value = static_cast<T>(value);
+        arg_.int_value = static_cast<int>(static_cast<T>(value));
       } else {
         arg_.type = Arg::UINT;
         arg_.uint_value =
