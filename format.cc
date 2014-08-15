@@ -129,7 +129,7 @@ void report_error(FormatFunc func,
   } catch (...) {}
 }
 
-const Arg DUMMY_ARG = {Arg::INT, 0};
+const Arg DUMMY_ARG = {Arg::INT, {0}};
 
 // IsZeroInt::visit(arg) returns true iff arg is a zero integer.
 class IsZeroInt : public fmt::internal::ArgVisitor<IsZeroInt, bool> {
