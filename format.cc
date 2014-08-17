@@ -115,6 +115,25 @@ struct IsLongDouble { enum {VALUE = 0}; };
 template <>
 struct IsLongDouble<long double> { enum {VALUE = 1}; };
 
+// Checks if a value fits in int - used to avoid warnings about comparing
+// signed and unsigned integers.
+template <bool IsSigned>
+struct IntChecker {
+  template <typename T>
+  static bool fits_in_int(T value) {
+    unsigned max = INT_MAX;
+    return value <= max;
+  }
+};
+
+template <>
+struct IntChecker<true> {
+  template <typename T>
+  static bool fits_in_int(T value) {
+    return value >= INT_MIN && value <= INT_MAX;
+  }
+};
+
 const char RESET_COLOR[] = "\x1b[0m";
 
 typedef void (*FormatFunc)(fmt::Writer &, int , fmt::StringRef);
@@ -207,7 +226,7 @@ class PrecisionHandler :
 
   template <typename T>
   int visit_any_int(T value) {
-    if (value < INT_MIN || value > INT_MAX)
+    if (!IntChecker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
       throw fmt::FormatError("number is too big in format");
     return static_cast<int>(value);
   }
