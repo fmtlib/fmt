@@ -1,5 +1,5 @@
 environment:
-  - CTEST_OUTPUT_ON_FAILURE: 1
+  CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
   - Build: msvc
     Config: Debug
