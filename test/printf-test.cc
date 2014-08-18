@@ -368,8 +368,7 @@ TEST(PrintfTest, Length) {
   long double max = std::numeric_limits<long double>::max();
   EXPECT_PRINTF(fmt::format("{}", max), "%g", max);
   EXPECT_PRINTF(fmt::format("{}", max), "%Lg", max);
-  EXPECT_GT(sizeof(fmt::LongLong), sizeof(int));
-  // TODO: test 'L'
+  // TODO: test char, string
 }
 
 // TODO: test type specifier
