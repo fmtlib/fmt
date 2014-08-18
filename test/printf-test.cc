@@ -296,7 +296,8 @@ void TestLength(const char *length_spec, U value) {
   if (max <= std::numeric_limits<int>::max()) {
     signed_value = static_cast<int>(value);
     unsigned_value = static_cast<int>(value);
-  } else if (max <= std::numeric_limits<unsigned>::max()) {
+  } else if (static_cast<fmt::ULongLong>(max) <=
+             std::numeric_limits<unsigned>::max()) {
     signed_value = static_cast<unsigned>(value);
     unsigned_value = static_cast<unsigned>(value);
   }
@@ -333,8 +334,10 @@ void TestLength(const char *length_spec) {
   TestLength<T>(length_spec, -42);
   TestLength<T>(length_spec, min);
   TestLength<T>(length_spec, max);
-  if (min > std::numeric_limits<fmt::LongLong>::min())
+  if (min >= 0 || static_cast<fmt::LongLong>(min) >
+      std::numeric_limits<fmt::LongLong>::min()) {
     TestLength<T>(length_spec, fmt::LongLong(min) - 1);
+  }
   if (max < std::numeric_limits<fmt::LongLong>::max())
     TestLength<T>(length_spec, fmt::LongLong(max) + 1);
   TestLength<T>(length_spec, std::numeric_limits<short>::min());

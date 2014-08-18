@@ -253,8 +253,8 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
         arg_.int_value = static_cast<int>(static_cast<T>(value));
       } else {
         arg_.type = Arg::UINT;
-        arg_.uint_value =
-            static_cast<typename fmt::internal::MakeUnsigned<T>::Type>(value);
+        arg_.uint_value = static_cast<unsigned>(
+            static_cast<typename fmt::internal::MakeUnsigned<T>::Type>(value));
       }
     } else {
       if (is_signed) {
