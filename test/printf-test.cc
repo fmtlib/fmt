@@ -292,12 +292,11 @@ void TestLength(const char *length_spec, U value) {
   fmt::LongLong signed_value = value;
   fmt::ULongLong unsigned_value = value;
   // Apply integer promotion to the argument.
-  U max = std::numeric_limits<U>::max();
-  if (max <= std::numeric_limits<int>::max()) {
+  fmt::ULongLong max = std::numeric_limits<U>::max();
+  if (max <= static_cast<unsigned>(std::numeric_limits<int>::max())) {
     signed_value = static_cast<int>(value);
     unsigned_value = static_cast<int>(value);
-  } else if (static_cast<fmt::ULongLong>(max) <=
-             std::numeric_limits<unsigned>::max()) {
+  } else if (max <= std::numeric_limits<unsigned>::max()) {
     signed_value = static_cast<unsigned>(value);
     unsigned_value = static_cast<unsigned>(value);
   }
