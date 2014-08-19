@@ -270,6 +270,21 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
   }
 };
 
+// Converts an integer argument to char.
+class CharConverter : public fmt::internal::ArgVisitor<CharConverter, void> {
+ private:
+  fmt::internal::Arg &arg_;
+
+ public:
+  explicit CharConverter(fmt::internal::Arg &arg) : arg_(arg) {}
+
+  template <typename T>
+  void visit_any_int(T value) {
+    arg_.type = Arg::CHAR;
+    arg_.int_value = static_cast<char>(value);
+  }
+};
+
 // This function template is used to prevent compile errors when handling
 // incompatible string arguments, e.g. handling a wide string in a narrow
 // string formatter.
@@ -954,7 +969,8 @@ void fmt::internal::PrintfFormatter<Char>::format(
       ArgConverter<ptrdiff_t>(arg, *s).visit(arg);
       break;
     case 'L':
-      // TODO: handle length
+      // printf produces garbage when 'L' is omitted for long double, no
+      // need to do the same.
       break;
     default:
       --s;
@@ -966,9 +982,17 @@ void fmt::internal::PrintfFormatter<Char>::format(
     if (error_)
       throw FormatError(error_);
     spec.type_ = static_cast<char>(*s++);
-    if (arg.type <= Arg::LAST_INTEGER_TYPE &&
-        (spec.type_ == 'i' || spec.type_ == 'u')) {
+    if (arg.type <= Arg::LAST_INTEGER_TYPE) {
+      // Normalize type.
+      switch (spec.type_) {
+      case 'i': case 'u':
         spec.type_ = 'd';
+        break;
+      case 'c':
+        // TODO: handle wchar_t
+        CharConverter(arg).visit(arg);
+        break;
+      }
     }
 
     start = s;
