@@ -165,12 +165,13 @@ TEST(PrintfTest, SpaceFlag) {
 
 TEST(PrintfTest, HashFlag) {
   EXPECT_PRINTF("042", "%#o", 042);
-  EXPECT_PRINTF("-042", "%#o", -042);
+  EXPECT_PRINTF(fmt::format("0{:o}", static_cast<unsigned>(-042)), "%#o", -042);
   EXPECT_PRINTF("0", "%#o", 0);
 
   EXPECT_PRINTF("0x42", "%#x", 0x42);
   EXPECT_PRINTF("0X42", "%#X", 0x42);
-  EXPECT_PRINTF("-0x42", "%#x", -0x42);
+  EXPECT_PRINTF(
+        fmt::format("0x{:x}", static_cast<unsigned>(-0x42)), "%#x", -0x42);
   EXPECT_PRINTF("0", "%#x", 0);
 
   EXPECT_PRINTF("0x0042", "%#06x", 0x42);
@@ -368,6 +369,16 @@ TEST(PrintfTest, Length) {
   long double max = std::numeric_limits<long double>::max();
   EXPECT_PRINTF(fmt::format("{}", max), "%g", max);
   EXPECT_PRINTF(fmt::format("{}", max), "%Lg", max);
+}
+
+TEST(PrintfTest, Int) {
+  EXPECT_PRINTF("-42", "%d", -42);
+  EXPECT_PRINTF("-42", "%i", -42);
+  unsigned u = -42;
+  EXPECT_PRINTF(fmt::format("{}", u), "%u", -42);
+  EXPECT_PRINTF(fmt::format("{:o}", u), "%o", -42);
+  EXPECT_PRINTF(fmt::format("{:x}", u), "%x", -42);
+  EXPECT_PRINTF(fmt::format("{:X}", u), "%X", -42);
 }
 
 TEST(PrintfTest, Char) {

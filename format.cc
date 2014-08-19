@@ -974,6 +974,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
       break;
     default:
       --s;
+      ArgConverter<int>(arg, *s).visit(arg);
     }
 
     // Parse type.
