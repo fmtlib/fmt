@@ -98,14 +98,14 @@ inline int getsign(double value) {
 
 inline int isinfinity(double x) { return !_finite(x); }
 
-inline int safe_printf(char *buffer, size_t size, const char *format, ...) {
+inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
   va_list args;
   va_start(args, format);
   int result = vsnprintf_s(buffer, size, _TRUNCATE, format, args);
   va_end(args);
   return result;
 }
-#define FMT_SNPRINTF safe_printf
+#define FMT_SNPRINTF fmt_snprintf
 
 #endif  // _MSC_VER
 
@@ -360,7 +360,7 @@ const uint64_t fmt::internal::POWERS_OF_10_64[] = {
   0,
   FMT_POWERS_OF_10(1),
   FMT_POWERS_OF_10(ULongLong(1000000000)),
-  // Multiply several constants instead of using a single long long constants
+  // Multiply several constants instead of using a single long long constant
   // to avoid warnings about C++98 not supporting long long.
   ULongLong(1000000000) * ULongLong(1000000000) * 10
 };
