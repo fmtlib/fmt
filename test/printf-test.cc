@@ -381,12 +381,40 @@ TEST(PrintfTest, Int) {
   EXPECT_PRINTF(fmt::format("{:X}", u), "%X", -42);
 }
 
+TEST(PrintfTest, Float) {
+  EXPECT_PRINTF("392.650000", "%f", 392.65);
+  EXPECT_PRINTF("392.650000", "%F", 392.65);
+  double inf = std::numeric_limits<double>::infinity();
+  EXPECT_PRINTF("inf", "%f", inf);
+  EXPECT_PRINTF("INF", "%F", inf);
+  char buffer[BUFFER_SIZE];
+  safe_sprintf(buffer, "%e", 392.65);
+  EXPECT_PRINTF(buffer, "%e", 392.65);
+  safe_sprintf(buffer, "%E", 392.65);
+  EXPECT_PRINTF(buffer, "%E", 392.65);
+  EXPECT_PRINTF("392.65", "%g", 392.65);
+  EXPECT_PRINTF("392.65", "%G", 392.65);
+  EXPECT_PRINTF("inf", "%g", inf);
+  EXPECT_PRINTF("INF", "%G", inf);
+  // TODO: test %a & %A
+}
+
 TEST(PrintfTest, Char) {
   EXPECT_PRINTF("x", "%c", 'x');
   int max = std::numeric_limits<int>::max();
   EXPECT_PRINTF(fmt::format("{}", static_cast<char>(max)), "%c", max);
+  //EXPECT_PRINTF("x", "%lc", L'x');
   // TODO: test wchar_t
 }
 
-// TODO: test type specifier
-// TODO: test char, string
+TEST(PrintfTest, String) {
+  // TODO
+}
+
+TEST(PrintfTest, Pointer) {
+  // TODO
+}
+
+TEST(PrintfTest, Location) {
+  // TODO
+}
