@@ -6,8 +6,8 @@ Usage
 -----
 
 To use the C++ Format library, add ``format.h`` and ``format.cc`` from
-a `release archive <https://github.com/cppformat/cppformat/releases/latest>`__
-or the `Git repository <https://github.com/cppformat/cppformat>`__ to your project.
+a `release archive <https://github.com/cppformat/cppformat/releases/latest>`_
+or the `Git repository <https://github.com/cppformat/cppformat>`_ to your project.
 
 If you are using Visual C++ with precompiled headers, you might need to add
 the line
@@ -25,6 +25,20 @@ All functions and classes provided by the C++ Format library reside
 in namespace ``fmt`` and macros have prefix ``FMT_``. For brevity the
 namespace is usually omitted in examples.
 
+Formatting functions
+^^^^^^^^^^^^^^^^^^^^
+
+The following functions use `format string syntax`_ similar to the one
+used by Python's `str.format
+<http://docs.python.org/3/library/stdtypes.html#str.format>`_ function.
+They take *format_str* and *args* as arguments.
+
+*format_str* is a format string that contains literal text and replacement
+fields surrounded by braces ``{}``. The fields are replaced with formatted
+arguments in the resulting string.
+
+*args* is an argument list representing arbitrary arguments.
+
 .. doxygenfunction:: fmt::format(StringRef, const ArgList &)
 
 .. doxygenfunction:: fmt::print(StringRef, const ArgList &)
@@ -33,19 +47,24 @@ namespace is usually omitted in examples.
 
 .. doxygenfunction:: fmt::print(std::ostream &, StringRef, const ArgList &)
 
-.. doxygendefine:: FMT_VARIADIC
+Printf formatting functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. doxygenclass:: fmt::BasicWriter
-   :members:
+The following functions use `printf format string syntax
+<http://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html>`_ with
+a POSIX extension for positional arguments.
 
-.. doxygenclass:: fmt::ArgList
-   :members:
+.. doxygenfunction:: fmt::printf(StringRef, const ArgList &)
 
-.. doxygenclass:: fmt::BasicStringRef
-   :members:
+.. doxygenfunction:: fmt::fprintf(std::FILE *, StringRef, const ArgList &)
+
+.. doxygenfunction:: fmt::sprintf(StringRef, const ArgList &)
 
 Write API
 ---------
+
+.. doxygenclass:: fmt::BasicWriter
+   :members:
 
 .. doxygenfunction:: fmt::bin
 
@@ -58,6 +77,17 @@ Write API
 .. doxygenfunction:: fmt::pad(int, unsigned, Char)
 
 .. _formatstrings:
+
+Utilities
+---------
+
+.. doxygendefine:: FMT_VARIADIC
+
+.. doxygenclass:: fmt::ArgList
+   :members:
+
+.. doxygenclass:: fmt::BasicStringRef
+   :members:
 
 System Errors
 -------------

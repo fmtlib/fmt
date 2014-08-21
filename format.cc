@@ -1248,21 +1248,15 @@ void fmt::report_windows_error(
 }
 #endif
 
-void fmt::print(StringRef format, const ArgList &args) {
+void fmt::print(std::FILE *f, StringRef format_str, const ArgList &args) {
   Writer w;
-  w.write(format, args);
-  std::fwrite(w.data(), 1, w.size(), stdout);
-}
-
-void fmt::print(std::FILE *f, StringRef format, const ArgList &args) {
-  Writer w;
-  w.write(format, args);
+  w.write(format_str, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
 
-void fmt::print(std::ostream &os, StringRef format, const ArgList &args) {
+void fmt::print(std::ostream &os, StringRef format_str, const ArgList &args) {
   Writer w;
-  w.write(format, args);
+  w.write(format_str, args);
   os.write(w.data(), w.size());
 }
 
@@ -1274,10 +1268,10 @@ void fmt::print_colored(Color c, StringRef format, const ArgList &args) {
   std::fputs(RESET_COLOR, stdout);
 }
 
-void fmt::printf(StringRef format, const ArgList &args) {
+int fmt::fprintf(std::FILE *f, StringRef format, const ArgList &args) {
   Writer w;
   printf(w, format, args);
-  std::fwrite(w.data(), 1, w.size(), stdout);
+  return std::fwrite(w.data(), 1, w.size(), f);
 }
 
 // Explicit instantiations for char.

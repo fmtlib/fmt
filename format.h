@@ -1745,21 +1745,11 @@ void print_colored(Color c, StringRef format, const ArgList &args);
 
 /**
   \rst
-  Formats a string similarly to Python's `str.format
-  <http://docs.python.org/3/library/stdtypes.html#str.format>`__ function
-  and returns the result as a string.
-
-  *format_str* is a format string that contains literal text and replacement
-  fields surrounded by braces ``{}``. The fields are replaced with formatted
-  arguments in the resulting string.
-  
-  *args* is an argument list representing arbitrary arguments.
+  Formats arguments and returns the result as a string.
 
   **Example**::
 
     std::string message = format("The answer is {}", 42);
-
-  See also `Format String Syntax`_.
   \endrst
 */
 inline std::string format(StringRef format_str, const ArgList &args) {
@@ -1776,6 +1766,17 @@ inline std::wstring format(WStringRef format_str, const ArgList &args) {
 
 /**
   \rst
+  Prints formatted data to the file *f*.
+
+  **Example**::
+
+    print(stderr, "Don't {}!", "panic");
+  \endrst
+ */
+void print(std::FILE *f, StringRef format_str, const ArgList &args);
+
+/**
+  \rst
   Prints formatted data to ``stdout``.
 
   **Example**::
@@ -1783,29 +1784,20 @@ inline std::wstring format(WStringRef format_str, const ArgList &args) {
     print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-void print(StringRef format, const ArgList &args);
+inline void print(StringRef format_str, const ArgList &args) {
+  print(stdout, format_str, args);
+}
 
 /**
   \rst
-  Prints formatted data to a file.
-
-  **Example**::
-
-    print(stderr, "Don't {}!", "panic");
-  \endrst
- */
-void print(std::FILE *f, StringRef format, const ArgList &args);
-
-/**
-  \rst
-  Prints formatted data to a stream.
+  Prints formatted data to the stream *os*.
 
   **Example**::
 
     print(cerr, "Don't {}!", "panic");
   \endrst
  */
-void print(std::ostream &os, StringRef format, const ArgList &args);
+void print(std::ostream &os, StringRef format_str, const ArgList &args);
 
 template <typename Char>
 void printf(BasicWriter<Char> &w,
@@ -1813,13 +1805,44 @@ void printf(BasicWriter<Char> &w,
   internal::PrintfFormatter<Char>().format(w, format, args);
 }
 
+/**
+  \rst
+  Formats arguments and returns the result as a string.
+
+  **Example**::
+
+    std::string message = fmt::sprintf("The answer is %d", 42);
+  \endrst
+*/
 inline std::string sprintf(StringRef format, const ArgList &args) {
   Writer w;
   printf(w, format, args);
   return w.str();
 }
 
-void printf(StringRef format, const ArgList &args);
+/**
+  \rst
+  Prints formatted data to the file *f*.
+
+  **Example**::
+
+    fmt::fprintf(stderr, "Don't %s!", "panic");
+  \endrst
+ */
+int fprintf(std::FILE *f, StringRef format, const ArgList &args);
+
+/**
+  \rst
+  Prints formatted data to ``stdout``.
+
+  **Example**::
+
+    fmt::printf("Elapsed time: %.2f seconds", 1.23);
+  \endrst
+ */
+inline int printf(StringRef format, const ArgList &args) {
+  return fprintf(stdout, format, args);
+}
 
 /**
   Fast integer formatter.
@@ -2032,7 +2055,8 @@ FMT_VARIADIC(void, print, std::FILE *, StringRef)
 FMT_VARIADIC(void, print, std::ostream &, StringRef)
 FMT_VARIADIC(void, print_colored, Color, StringRef)
 FMT_VARIADIC(std::string, sprintf, StringRef)
-FMT_VARIADIC(void, printf, StringRef)
+FMT_VARIADIC(int, printf, StringRef)
+FMT_VARIADIC(int, fprintf, std::FILE *, StringRef)
 }
 
 // Restore warnings.
