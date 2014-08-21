@@ -384,9 +384,6 @@ TEST(PrintfTest, Int) {
 TEST(PrintfTest, Float) {
   EXPECT_PRINTF("392.650000", "%f", 392.65);
   EXPECT_PRINTF("392.650000", "%F", 392.65);
-  double inf = std::numeric_limits<double>::infinity();
-  EXPECT_PRINTF("inf", "%f", inf);
-  EXPECT_PRINTF("INF", "%F", inf);
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%e", 392.65);
   EXPECT_PRINTF(buffer, "%e", 392.65);
@@ -394,9 +391,19 @@ TEST(PrintfTest, Float) {
   EXPECT_PRINTF(buffer, "%E", 392.65);
   EXPECT_PRINTF("392.65", "%g", 392.65);
   EXPECT_PRINTF("392.65", "%G", 392.65);
-  EXPECT_PRINTF("inf", "%g", inf);
-  EXPECT_PRINTF("INF", "%G", inf);
-  // TODO: test %a & %A
+  safe_sprintf(buffer, "%a", -392.65);
+  EXPECT_EQ(buffer, format("{:a}", -392.65));
+  safe_sprintf(buffer, "%A", -392.65);
+  EXPECT_EQ(buffer, format("{:A}", -392.65));
+}
+
+TEST(PrintfTest, Inf) {
+  double inf = std::numeric_limits<double>::infinity();
+  for (const char* type = "fega"; *type; ++type) {
+    EXPECT_PRINTF("inf", fmt::format("%{}", *type), inf);
+    char upper = std::toupper(*type);
+    EXPECT_PRINTF("INF", fmt::format("%{}", upper), inf);
+  }
 }
 
 TEST(PrintfTest, Char) {
@@ -408,13 +415,16 @@ TEST(PrintfTest, Char) {
 }
 
 TEST(PrintfTest, String) {
-  // TODO
+  EXPECT_PRINTF("abc", "%s", "abc");
+  // TODO: wide string
 }
 
 TEST(PrintfTest, Pointer) {
-  // TODO
+  int n;
+  void *p = &n;
+  EXPECT_PRINTF(fmt::format("{}", p), "%p", p);
 }
 
 TEST(PrintfTest, Location) {
-  // TODO
+  // TODO: test %n
 }
