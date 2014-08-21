@@ -2004,6 +2004,18 @@ inline void format_decimal(char *&buffer, T value) {
       fmt::print(format, args);
     }
     FMT_VARIADIC(void, print_error, const char *, int, const char *)
+
+  ``FMT_VARIADIC`` is used for compatibility with legacy C++ compilers that
+  don't implement variadic templates. You don't have to use this macro if
+  you don't need legacy compiler support and can use variadic templates
+  directly::
+
+    template<typename... Args>
+    void print_error(const char *file, int line, const char *format,
+                     const Args & ... args) {
+      fmt::print("{}: {}: ", file, line);
+      fmt::print(format, args...);
+    }
   \endrst
  */
 #define FMT_VARIADIC(ReturnType, func, ...) \

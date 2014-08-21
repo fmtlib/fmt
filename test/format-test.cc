@@ -1545,3 +1545,12 @@ TEST(FormatTest, ArgConverter) {
   ArgConverter<fmt::LongLong>(arg, 'd').visit(arg);
   EXPECT_EQ(Arg::LONG_LONG, arg.type);
 }
+
+#if FMT_USE_VARIADIC_TEMPLATES
+template<typename... Args>
+void print_error(const char *file, int line, const char *format,
+                 const Args & ... args) {
+  fmt::print("{}: {}: ", file, line);
+  fmt::print(format, args...);
+}
+#endif

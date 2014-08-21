@@ -31,6 +31,8 @@ namespace is usually omitted in examples.
 
 .. doxygenfunction:: fmt::print(std::FILE *, StringRef, const ArgList &)
 
+.. doxygenfunction:: fmt::print(std::ostream &, StringRef, const ArgList &)
+
 .. doxygendefine:: FMT_VARIADIC
 
 .. doxygenclass:: fmt::BasicWriter
