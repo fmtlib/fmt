@@ -6535,6 +6535,8 @@ void InitGoogleTest(int* argc, wchar_t** argv) {
 
 # if GTEST_OS_MAC
 #  include <crt_externs.h>
+#  include <csignal>
+#  include <cstdlib>
 # endif  // GTEST_OS_MAC
 
 # include <errno.h>
@@ -7337,6 +7339,11 @@ DeathTest::TestRole NoExecDeathTest::AssumeRole() {
   GTEST_DEATH_TEST_CHECK_(child_pid != -1);
   set_child_pid(child_pid);
   if (child_pid == 0) {
+#if GTEST_OS_MAC
+    // This ensures that Crash Reporter is not invoked on death tests.
+    std::signal(SIGABRT, std::exit);
+    std::signal(SIGSEGV, std::exit);
+#endif
     GTEST_DEATH_TEST_CHECK_SYSCALL_(close(pipe_fd[0]));
     set_write_fd(pipe_fd[1]);
     // Redirects all logging to stderr in the child process to prevent

@@ -26,8 +26,6 @@
  */
 
 #include <gtest/gtest.h>
-#include <csignal>
-#include <cstdlib>
 
 #ifdef _WIN32
 # include <windows.h>
@@ -35,10 +33,7 @@
 #endif
 
 int main(int argc, char **argv) {
-#if defined(__APPLE__)
-  // This ensures that Crash Reporter is not invoked on death tests.
-  std::signal(SIGABRT, std::exit);
-#elif defined(_WIN32)
+#ifdef _WIN32
   // Don't display any error dialogs. This also suppresses message boxes
   // on assertion failures in MinGW where _set_error_mode/CrtSetReportMode
   // doesn't help.
