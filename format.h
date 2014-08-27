@@ -845,11 +845,11 @@ class FormatterBase {
 protected:
   ArgList args_;
   int next_arg_index_;
-  const char *error_;
+  const char *error_; // TODO: remove
 
   FormatterBase() : error_(0) {}
 
-  const Arg &next_arg();
+  const Arg &next_arg(const char *&error);
 
   const Arg &handle_arg_index(unsigned arg_index);
 
@@ -858,8 +858,6 @@ protected:
     if (start != end)
       w << BasicStringRef<Char>(start, end - start);
   }
-
-  // TODO
 };
 
 // A printf formatter.

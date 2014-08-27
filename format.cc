@@ -754,22 +754,21 @@ template <typename Char>
 inline const Arg
     &fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
   const Arg *arg = 0;
+  const char *error = 0;
   if (*s < '0' || *s > '9') {
-    arg = &next_arg();
+    arg = &next_arg(error);
   } else {
     if (next_arg_index_ > 0)
-      error_ = "cannot switch from automatic to manual argument indexing";
+      error = "cannot switch from automatic to manual argument indexing";
     next_arg_index_ = -1;
-    unsigned arg_index = parse_nonnegative_int(s, error_);
+    unsigned arg_index = parse_nonnegative_int(s, error);
     if (arg_index < args_.size())
       arg = &args_[arg_index];
-    else if (!error_)
-        error_ = "argument index is out of range in format";
+    else if (!error)
+        error = "argument index is out of range in format";
   }
-  if (error_) {
-    throw FormatError(
-          *s != '}' && *s != ':' ? "invalid format string" : error_);
-  }
+  if (error)
+    throw FormatError(*s != '}' && *s != ':' ? "invalid format string" : error);
   return *arg;
 }
 
@@ -788,17 +787,15 @@ void fmt::BasicFormatter<Char>::check_sign(
   ++s;
 }
 
-const Arg &fmt::internal::FormatterBase::next_arg() {
+const Arg &fmt::internal::FormatterBase::next_arg(const char *&error) {
   if (next_arg_index_ < 0) {
-    if (!error_)
-      error_ = "cannot switch from manual to automatic argument indexing";
+    error = "cannot switch from manual to automatic argument indexing";
     return DUMMY_ARG;
   }
   unsigned arg_index = next_arg_index_++;
   if (arg_index < args_.size())
     return args_[arg_index];
-  if (!error_)
-    error_ = "argument index is out of range in format";
+  error = "argument index is out of range in format";
   return DUMMY_ARG;
 }
 
@@ -816,7 +813,7 @@ const Arg &fmt::internal::FormatterBase::handle_arg_index(unsigned arg_index) {
       error_ = "argument index is out of range in format";
     return DUMMY_ARG;
   }
-  return next_arg();
+  return next_arg(error_);
 }
 
 template <typename Char>
