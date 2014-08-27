@@ -587,7 +587,7 @@ TEST(FormatterTest, Escape) {
 TEST(FormatterTest, UnmatchedBraces) {
   EXPECT_THROW_MSG(format("{"), FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("}"), FormatError, "unmatched '}' in format");
-  EXPECT_THROW_MSG(format("{0{}"), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format("{0{}"), FormatError, "invalid format string");
 }
 
 TEST(FormatterTest, NoArgs) {
@@ -607,19 +607,19 @@ TEST(FormatterTest, ArgsInDifferentPositions) {
 TEST(FormatterTest, ArgErrors) {
   EXPECT_THROW_MSG(format("{"), FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{x}"), FormatError, "invalid format string");
-  EXPECT_THROW_MSG(format("{0"), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format("{0"), FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{0}"), FormatError,
       "argument index is out of range in format");
 
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{%u", INT_MAX);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format(format_str), FormatError, "invalid format string");
   safe_sprintf(format_str, "{%u}", INT_MAX);
   EXPECT_THROW_MSG(format(format_str), FormatError,
       "argument index is out of range in format");
 
   safe_sprintf(format_str, "{%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format(format_str), FormatError, "invalid format string");
   safe_sprintf(format_str, "{%u}", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str), FormatError,
                    "number is too big in format");
@@ -896,7 +896,7 @@ TEST(FormatterTest, Width) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:%u", UINT_MAX);
   increment(format_str + 3);
-  EXPECT_THROW_MSG(format(format_str), FormatError,
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
                    "number is too big in format");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
@@ -905,7 +905,7 @@ TEST(FormatterTest, Width) {
                    "number is too big in format");
 
   safe_sprintf(format_str, "{0:%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str), FormatError,
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
                    "number is too big in format");
   safe_sprintf(format_str, "{0:%u}", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str, 0), FormatError,
@@ -928,7 +928,7 @@ TEST(FormatterTest, Precision) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:.%u", UINT_MAX);
   increment(format_str + 4);
-  EXPECT_THROW_MSG(format(format_str), FormatError,
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
                    "number is too big in format");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
@@ -937,7 +937,7 @@ TEST(FormatterTest, Precision) {
                    "number is too big in format");
 
   safe_sprintf(format_str, "{0:.%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str), FormatError,
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
                    "number is too big in format");
   safe_sprintf(format_str, "{0:.%u}", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str, 0), FormatError,
@@ -1002,7 +1002,7 @@ TEST(FormatterTest, RuntimePrecision) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:.{%u", UINT_MAX);
   increment(format_str + 5);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "invalid format string");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;

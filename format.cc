@@ -753,27 +753,24 @@ void fmt::BasicWriter<Char>::write_str(
 template <typename Char>
 inline const Arg
     &fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
-  unsigned arg_index = 0;
+  const Arg *arg = 0;
   if (*s < '0' || *s > '9') {
-    if (*s != '}' && *s != ':')
-      throw FormatError("invalid format string");
-    const Arg &arg = next_arg();
-    if (error_)
-      throw FormatError(error_);
-    return arg;
+    arg = &next_arg();
+  } else {
+    if (next_arg_index_ > 0)
+      error_ = "cannot switch from automatic to manual argument indexing";
+    next_arg_index_ = -1;
+    unsigned arg_index = parse_nonnegative_int(s, error_);
+    if (arg_index < args_.size())
+      arg = &args_[arg_index];
+    else if (!error_)
+        error_ = "argument index is out of range in format";
   }
-  if (next_arg_index_ > 0) {
+  if (error_) {
     throw FormatError(
-        "cannot switch from automatic to manual argument indexing");
+          *s != '}' && *s != ':' ? "invalid format string" : error_);
   }
-  next_arg_index_ = -1;
-  arg_index = parse_nonnegative_int(s, error_);
-  if (arg_index >= args_.size()) {
-    if (!error_)
-      error_ = "argument index is out of range in format";
-    return DUMMY_ARG;
-  }
-  return args_[arg_index];
+  return *arg;
 }
 
 template <typename Char>
@@ -1198,8 +1195,6 @@ const Char *fmt::BasicFormatter<Char>::format(
 
   if (*s++ != '}')
     throw FormatError("unmatched '{' in format");
-  if (error_)
-    throw FormatError(error_);
   start_ = s;
 
   // Format argument.
