@@ -565,13 +565,6 @@ class fmt::internal::ArgFormatter :
   }
 };
 
-template <typename Char>
-void fmt::internal::FormatErrorReporter<Char>::operator()(
-        const Char *s, fmt::StringRef message) const {
-  if (find_closing_brace(s, num_open_braces))
-    throw fmt::FormatError(message);
-}
-
 // Fills the padding around the content and returns the pointer to the
 // content area.
 template <typename Char>
@@ -763,22 +756,23 @@ inline const Arg
   unsigned arg_index = 0;
   if (*s < '0' || *s > '9') {
     if (*s != '}' && *s != ':')
-      report_error_(s, "invalid argument index in format string");
+      throw FormatError("invalid format string");
     const Arg &arg = next_arg();
     if (error_)
-      report_error_(s, error_);
+      throw FormatError(error_);
     return arg;
   }
   if (next_arg_index_ > 0) {
-    report_error_(s,
+    throw FormatError(
         "cannot switch from automatic to manual argument indexing");
   }
   next_arg_index_ = -1;
   arg_index = parse_nonnegative_int(s, error_);
-  if (error_)
-    report_error_(s, error_); // TODO: don't use report_error_
-  if (arg_index >= args_.size())
-    report_error_(s, "argument index is out of range in format");
+  if (arg_index >= args_.size()) {
+    if (!error_)
+      error_ = "argument index is out of range in format";
+    return DUMMY_ARG;
+  }
   return args_[arg_index];
 }
 
@@ -787,12 +781,12 @@ void fmt::BasicFormatter<Char>::check_sign(
     const Char *&s, const Arg &arg) {
   char sign = static_cast<char>(*s);
   if (arg.type > Arg::LAST_NUMERIC_TYPE) {
-    report_error_(s, fmt::format(
-      "format specifier '{}' requires numeric argument", sign).c_str());
+    throw FormatError(fmt::format(
+      "format specifier '{}' requires numeric argument", sign));
   }
   if (arg.type == Arg::UINT || arg.type == Arg::ULONG_LONG) {
-    report_error_(s, fmt::format(
-      "format specifier '{}' requires signed argument", sign).c_str());
+    throw FormatError(fmt::format(
+      "format specifier '{}' requires signed argument", sign));
   }
   ++s;
 }
@@ -1099,12 +1093,12 @@ const Char *fmt::BasicFormatter<Char>::format(
           if (p != s) {
             if (c == '}') break;
             if (c == '{')
-              report_error_(s, "invalid fill character '{'");
+              throw FormatError("invalid fill character '{'");
             s += 2;
             spec.fill_ = c;
           } else ++s;
           if (spec.align_ == ALIGN_NUMERIC && arg.type > Arg::LAST_NUMERIC_TYPE)
-            report_error_(s, "format specifier '=' requires numeric argument");
+            throw FormatError("format specifier '=' requires numeric argument");
           break;
         }
       } while (--p >= s);
@@ -1128,7 +1122,8 @@ const Char *fmt::BasicFormatter<Char>::format(
 
     if (*s == '#') {
       if (arg.type > Arg::LAST_NUMERIC_TYPE)
-        report_error_(s, "format specifier '#' requires numeric argument");
+        // TODO: make FormatError accept arguments
+        throw FormatError("format specifier '#' requires numeric argument");
       spec.flags_ |= HASH_FLAG;
       ++s;
     }
@@ -1137,7 +1132,7 @@ const Char *fmt::BasicFormatter<Char>::format(
     if ('0' <= *s && *s <= '9') {
       if (*s == '0') {
         if (arg.type > Arg::LAST_NUMERIC_TYPE)
-          report_error_(s, "format specifier '0' requires numeric argument");
+          throw FormatError("format specifier '0' requires numeric argument");
         spec.align_ = ALIGN_NUMERIC;
         spec.fill_ = '0';
       }
@@ -1145,7 +1140,7 @@ const Char *fmt::BasicFormatter<Char>::format(
       // and more efficient than checking if the next char is a digit.
       spec.width_ = parse_nonnegative_int(s, error);
       if (error)
-        report_error_(s, error);
+        throw FormatError(error);
     }
 
     // Parse precision.
@@ -1155,16 +1150,19 @@ const Char *fmt::BasicFormatter<Char>::format(
       if ('0' <= *s && *s <= '9') {
         spec.precision_ = parse_nonnegative_int(s, error);
         if (error)
-          report_error_(s, error);
+          throw FormatError(error);
       } else if (*s == '{') {
         ++s;
-        ++report_error_.num_open_braces;
         const Arg &precision_arg = parse_arg_index(s);
+        if (*s++ != '}')
+          throw FormatError("unmatched '{' in format");
+        if (error_)
+          throw FormatError(error_);
         ULongLong value = 0;
         switch (precision_arg.type) {
           case Arg::INT:
             if (precision_arg.int_value < 0)
-              report_error_(s, "negative precision in format");
+              throw FormatError("negative precision in format");
             value = precision_arg.int_value;
             break;
           case Arg::UINT:
@@ -1172,26 +1170,23 @@ const Char *fmt::BasicFormatter<Char>::format(
             break;
           case Arg::LONG_LONG:
             if (precision_arg.long_long_value < 0)
-              report_error_(s, "negative precision in format");
+              throw FormatError("negative precision in format");
             value = precision_arg.long_long_value;
             break;
           case Arg::ULONG_LONG:
             value = precision_arg.ulong_long_value;
             break;
           default:
-            report_error_(s, "precision is not integer");
+            throw FormatError("precision is not integer");
         }
         if (value > INT_MAX)
-          report_error_(s, "number is too big in format");
+          throw FormatError("number is too big in format");
         spec.precision_ = static_cast<int>(value);
-        if (*s++ != '}')
-          throw FormatError("unmatched '{' in format");
-        --report_error_.num_open_braces;
       } else {
-        report_error_(s, "missing precision in format");
+        throw FormatError("missing precision in format");
       }
       if (arg.type != Arg::DOUBLE && arg.type != Arg::LONG_DOUBLE) {
-        report_error_(s,
+        throw FormatError(
             "precision specifier requires floating-point argument");
       }
     }
@@ -1203,6 +1198,8 @@ const Char *fmt::BasicFormatter<Char>::format(
 
   if (*s++ != '}')
     throw FormatError("unmatched '{' in format");
+  if (error_)
+    throw FormatError(error_);
   start_ = s;
 
   // Format argument.
@@ -1226,7 +1223,6 @@ void fmt::BasicFormatter<Char>::format(
     }
     if (c == '}')
       throw FormatError("unmatched '}' in format");
-    report_error_.num_open_braces = 1;
     write(writer_, start_, s - 1);
     Arg arg = parse_arg_index(s);
     s = format(s, arg);

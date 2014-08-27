@@ -585,7 +585,7 @@ TEST(FormatterTest, Escape) {
 }
 
 TEST(FormatterTest, UnmatchedBraces) {
-  EXPECT_THROW_MSG(format("{"), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format("{"), FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("}"), FormatError, "unmatched '}' in format");
   EXPECT_THROW_MSG(format("{0{}"), FormatError, "unmatched '{' in format");
 }
@@ -605,9 +605,8 @@ TEST(FormatterTest, ArgsInDifferentPositions) {
 }
 
 TEST(FormatterTest, ArgErrors) {
-  EXPECT_THROW_MSG(format("{"), FormatError, "unmatched '{' in format");
-  EXPECT_THROW_MSG(format("{x}"), FormatError,
-      "invalid argument index in format string");
+  EXPECT_THROW_MSG(format("{"), FormatError, "invalid format string");
+  EXPECT_THROW_MSG(format("{x}"), FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{0"), FormatError, "unmatched '{' in format");
   EXPECT_THROW_MSG(format("{0}"), FormatError,
       "argument index is out of range in format");
@@ -622,7 +621,8 @@ TEST(FormatterTest, ArgErrors) {
   safe_sprintf(format_str, "{%u", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
   safe_sprintf(format_str, "{%u}", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str), FormatError,
+                   "number is too big in format");
 }
 
 TEST(FormatterTest, AutoArgIndex) {
@@ -727,7 +727,7 @@ TEST(FormatterTest, CenterAlign) {
 
 TEST(FormatterTest, Fill) {
   EXPECT_THROW_MSG(format("{0:{<5}", 'c'),
-      FormatError, "unmatched '{' in format");
+      FormatError, "invalid fill character '{'");
   EXPECT_THROW_MSG(format("{0:{<5}}", 'c'),
       FormatError, "invalid fill character '{'");
   EXPECT_EQ("**42", format("{0:*>4}", 42));
@@ -896,18 +896,20 @@ TEST(FormatterTest, Width) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:%u", UINT_MAX);
   increment(format_str + 3);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format(format_str), FormatError,
+                   "number is too big in format");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0),
-      FormatError, "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
+                   "number is too big in format");
 
   safe_sprintf(format_str, "{0:%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format(format_str), FormatError,
+                   "number is too big in format");
   safe_sprintf(format_str, "{0:%u}", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str, 0),
-      FormatError, "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
+                   "number is too big in format");
   EXPECT_EQ(" -42", format("{0:4}", -42));
   EXPECT_EQ("   42", format("{0:5}", 42u));
   EXPECT_EQ("   -42", format("{0:6}", -42l));
@@ -926,26 +928,28 @@ TEST(FormatterTest, Precision) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:.%u", UINT_MAX);
   increment(format_str + 4);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format(format_str), FormatError,
+                   "number is too big in format");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0),
-      FormatError, "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
+                   "number is too big in format");
 
   safe_sprintf(format_str, "{0:.%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format(format_str), FormatError,
+                   "number is too big in format");
   safe_sprintf(format_str, "{0:.%u}", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str, 0),
-      FormatError, "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
+                   "number is too big in format");
 
   EXPECT_THROW_MSG(format("{0:.", 0),
-      FormatError, "unmatched '{' in format");
+      FormatError, "missing precision in format");
   EXPECT_THROW_MSG(format("{0:.}", 0),
       FormatError, "missing precision in format");
-  EXPECT_THROW_MSG(format("{0:.2", 0),
-      FormatError, "unmatched '{' in format");
 
+  EXPECT_THROW_MSG(format("{0:.2", 0),
+      FormatError, "precision specifier requires floating-point argument");
   EXPECT_THROW_MSG(format("{0:.2}", 42),
       FormatError, "precision specifier requires floating-point argument");
   EXPECT_THROW_MSG(format("{0:.2f}", 42),
@@ -997,25 +1001,26 @@ TEST(FormatterTest, Precision) {
 TEST(FormatterTest, RuntimePrecision) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:.{%u", UINT_MAX);
-  increment(format_str + 4);
+  increment(format_str + 5);
   EXPECT_THROW_MSG(format(format_str), FormatError, "unmatched '{' in format");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "unmatched '{' in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
+                   "number is too big in format");
   format_str[size + 1] = '}';
   format_str[size + 2] = 0;
   EXPECT_THROW_MSG(format(format_str, 0),
       FormatError, "number is too big in format");
 
   EXPECT_THROW_MSG(format("{0:.{", 0),
-      FormatError, "unmatched '{' in format");
+      FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{0:.{}", 0),
-      FormatError, "unmatched '{' in format");
+      FormatError, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{0:.{x}}", 0),
-      FormatError, "invalid argument index in format string");
+      FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{0:.{1}", 0, 0),
-      FormatError, "unmatched '{' in format");
+      FormatError, "precision specifier requires floating-point argument");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0),
       FormatError, "argument index is out of range in format");
 

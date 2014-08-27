@@ -553,15 +553,6 @@ void format_windows_error(
     fmt::Writer &out, int error_code, fmt::StringRef message);
 #endif
 
-// Throws Exception(message) if format contains '}', otherwise throws
-// FormatError reporting unmatched '{'. The idea is that unmatched '{'
-// should override other errors.
-template <typename Char>
-struct FormatErrorReporter {
-  int num_open_braces;
-  void operator()(const Char *s, fmt::StringRef message) const;
-};
-
 // Computes max(Arg, 1) at compile time. It is used to avoid errors about
 // allocating an array of 0 size.
 template <unsigned Arg>
@@ -893,7 +884,6 @@ class BasicFormatter : private internal::FormatterBase {
 private:
   BasicWriter<Char> &writer_;
   const Char *start_;
-  internal::FormatErrorReporter<Char> report_error_;
 
   // Parses argument index and returns an argument with this index.
   const internal::Arg &parse_arg_index(const Char *&s);
