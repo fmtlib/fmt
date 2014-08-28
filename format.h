@@ -846,11 +846,11 @@ protected:
   ArgList args_;
   int next_arg_index_;
 
-  const Arg &next_arg(const char *&error);
+  // Returns the next argument.
+  const Arg *next_arg(const char *&error);
 
-  // Returns the argument with specified index or, if arg_index is equal
-  // to the maximum unsigned value, the next argument.
-  const Arg &handle_arg_index(unsigned arg_index);
+  // Returns the argument with specified index.
+  const Arg *get_arg(unsigned arg_index, const char *&error);
 
   template <typename Char>
   void write(BasicWriter<Char> &w, const Char *start, const Char *end) {
@@ -865,15 +865,13 @@ class PrintfFormatter : private FormatterBase {
  private:
   void parse_flags(FormatSpec &spec, const Char *&s);
 
+  // Returns the argument with specified index or, if arg_index is equal
+  // to the maximum unsigned value, the next argument.
+  const Arg &get_arg(const Char *s,
+      unsigned arg_index = std::numeric_limits<unsigned>::max());
+
   // Parses argument index, flags and width and returns the argument index.
   unsigned parse_header(const Char *&s, FormatSpec &spec);
-
-  const Arg &get_arg(const Char *s,
-      unsigned arg_index = std::numeric_limits<unsigned>::max()) {
-    if (!*s)
-      throw FormatError("invalid format string");
-    return handle_arg_index(arg_index);
-  }
 
  public:
   void format(BasicWriter<Char> &writer,

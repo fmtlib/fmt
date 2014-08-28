@@ -148,8 +148,6 @@ void report_error(FormatFunc func,
   } catch (...) {}
 }
 
-const Arg DUMMY_ARG = {Arg::INT, {0}};
-
 // IsZeroInt::visit(arg) returns true iff arg is a zero integer.
 class IsZeroInt : public fmt::internal::ArgVisitor<IsZeroInt, bool> {
  public:
@@ -752,20 +750,9 @@ void fmt::BasicWriter<Char>::write_str(
 
 template <typename Char>
 inline const Arg &fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
-  const Arg *arg = 0;
   const char *error = 0;
-  if (*s < '0' || *s > '9') {
-    arg = &next_arg(error);
-  } else {
-    if (next_arg_index_ > 0)
-      error = "cannot switch from automatic to manual argument indexing";
-    next_arg_index_ = -1;
-    unsigned arg_index = parse_nonnegative_int(s);
-    if (arg_index < args_.size())
-      arg = &args_[arg_index];
-    else if (!error)
-      error = "argument index is out of range in format";
-  }
+  const Arg *arg = *s < '0' || *s > '9' ?
+        next_arg(error) : get_arg(parse_nonnegative_int(s), error);
   if (error)
     throw FormatError(*s != '}' && *s != ':' ? "invalid format string" : error);
   return *arg;
@@ -786,36 +773,29 @@ void fmt::BasicFormatter<Char>::check_sign(
   ++s;
 }
 
-const Arg &fmt::internal::FormatterBase::next_arg(const char *&error) {
+const Arg *fmt::internal::FormatterBase::next_arg(const char *&error) {
   if (next_arg_index_ < 0) {
     error = "cannot switch from manual to automatic argument indexing";
-    return DUMMY_ARG;
+    return 0;
   }
   unsigned arg_index = next_arg_index_++;
   if (arg_index < args_.size())
-    return args_[arg_index];
+    return &args_[arg_index];
   error = "argument index is out of range in format";
-  return DUMMY_ARG;
+  return 0;
 }
 
-const Arg &fmt::internal::FormatterBase::handle_arg_index(unsigned arg_index) {
-  const char *error = 0;
-  const Arg *arg = 0;
-  if (arg_index == UINT_MAX) {
-    arg = &next_arg(error);
-  } else {
-    if (next_arg_index_ > 0)
-      error = "cannot switch from automatic to manual argument indexing";
-    next_arg_index_ = -1;
-    --arg_index;
-    if (arg_index < args_.size())
-      arg = &args_[arg_index];
-    else if (!error)
-      error = "argument index is out of range in format";
+const Arg *fmt::internal::FormatterBase::get_arg(
+    unsigned arg_index, const char *&error) {
+  if (next_arg_index_ > 0) {
+    error = "cannot switch from automatic to manual argument indexing";
+    return 0;
   }
-  if (error)
-    throw FormatError(error);
-  return *arg;
+  next_arg_index_ = -1;
+  if (arg_index < args_.size())
+    return &args_[arg_index];
+  error = "argument index is out of range in format";
+  return 0;
 }
 
 template <typename Char>
@@ -843,6 +823,17 @@ void fmt::internal::PrintfFormatter<Char>::parse_flags(
         return;
     }
   }
+}
+
+template <typename Char>
+const Arg &fmt::internal::PrintfFormatter<Char>::get_arg(
+    const Char *s, unsigned arg_index) {
+  const char *error = 0;
+  const Arg *arg = arg_index == UINT_MAX ?
+    next_arg(error) : FormatterBase::get_arg(arg_index - 1, error);
+  if (error)
+    throw FormatError(!*s ? "invalid format string" : error);
+  return *arg;
 }
 
 template <typename Char>
