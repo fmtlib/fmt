@@ -71,13 +71,9 @@ fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT(true) {
 }
 
 fmt::BufferedFile::BufferedFile(fmt::StringRef filename, fmt::StringRef mode) {
-  for (;;) {
-    file_ = FMT_SYSTEM(fopen(filename.c_str(), mode.c_str()));
-    if (file_)
-      return;
-    if (errno != EINTR)
-      throw SystemError(errno, "cannot open file");
-  }
+  FMT_RETRY_VAL(file_, FMT_SYSTEM(fopen(filename.c_str(), mode.c_str())), 0);
+  if (!file_)
+    throw SystemError(errno, "cannot open file");
 }
 
 void fmt::BufferedFile::close() {
