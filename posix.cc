@@ -73,7 +73,7 @@ fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT(true) {
 fmt::BufferedFile::BufferedFile(fmt::StringRef filename, fmt::StringRef mode) {
   FMT_RETRY_VAL(file_, FMT_SYSTEM(fopen(filename.c_str(), mode.c_str())), 0);
   if (!file_)
-    throw SystemError(errno, "cannot open file {}", path);
+    throw SystemError(errno, "cannot open file {}", filename);
 }
 
 void fmt::BufferedFile::close() {
