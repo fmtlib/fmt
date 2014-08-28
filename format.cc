@@ -799,20 +799,23 @@ const Arg &fmt::internal::FormatterBase::next_arg(const char *&error) {
 }
 
 const Arg &fmt::internal::FormatterBase::handle_arg_index(unsigned arg_index) {
-  if (arg_index != UINT_MAX) {
-    if (next_arg_index_ <= 0) {
-      next_arg_index_ = -1;
-      --arg_index;
-    } else if (!error_) {
-      error_ = "cannot switch from automatic to manual argument indexing";
-    }
+  const char *error = 0;
+  const Arg *arg = 0;
+  if (arg_index == UINT_MAX) {
+    arg = &next_arg(error);
+  } else {
+    if (next_arg_index_ > 0)
+      error = "cannot switch from automatic to manual argument indexing";
+    next_arg_index_ = -1;
+    --arg_index;
     if (arg_index < args_.size())
-      return args_[arg_index];
-    if (!error_)
-      error_ = "argument index is out of range in format";
-    return DUMMY_ARG;
+      arg = &args_[arg_index];
+    else if (!error)
+      error = "argument index is out of range in format";
   }
-  return next_arg(error_);
+  if (error)
+    throw FormatError(error);
+  return *arg;
 }
 
 template <typename Char>
@@ -871,7 +874,7 @@ unsigned fmt::internal::PrintfFormatter<Char>::parse_header(
     spec.width_ = parse_nonnegative_int(s);
   } else if (*s == '*') {
     ++s;
-    spec.width_ = WidthHandler(spec).visit(handle_arg_index(UINT_MAX));
+    spec.width_ = WidthHandler(spec).visit(get_arg(s));
   }
   return arg_index;
 }
@@ -897,17 +900,6 @@ void fmt::internal::PrintfFormatter<Char>::format(
     FormatSpec spec;
     spec.align_ = ALIGN_RIGHT;
 
-    // Reporting errors is delayed till the format specification is
-    // completely parsed. This is done to avoid potentially confusing
-    // error messages for incomplete format strings. For example, in
-    //   sprintf("%2$", 42);
-    // the format specification is incomplete. In a naive approach we
-    // would parse 2 as an argument index and report an error that the
-    // index is out of range which would be rather confusing if the
-    // use meant "%2d$" rather than "%2$d". If we delay an error, the
-    // user will get an error that the format string is invalid which
-    // is OK for both cases.
-
     // Parse argument index, flags and width.
     unsigned arg_index = parse_header(s, spec);
 
@@ -918,11 +910,11 @@ void fmt::internal::PrintfFormatter<Char>::format(
         spec.precision_ = parse_nonnegative_int(s);
       } else if (*s == '*') {
         ++s;
-        spec.precision_ = PrecisionHandler().visit(handle_arg_index(UINT_MAX));
+        spec.precision_ = PrecisionHandler().visit(get_arg(s));
       }
     }
 
-    Arg arg = handle_arg_index(arg_index);
+    Arg arg = get_arg(s, arg_index);
     if (spec.flag(HASH_FLAG) && IsZeroInt().visit(arg))
       spec.flags_ &= ~HASH_FLAG;
     if (spec.fill_ == '0') {
@@ -967,8 +959,6 @@ void fmt::internal::PrintfFormatter<Char>::format(
     // Parse type.
     if (!*s)
       throw FormatError("invalid format string");
-    if (error_)
-      throw FormatError(error_);
     spec.type_ = static_cast<char>(*s++);
     if (arg.type <= Arg::LAST_INTEGER_TYPE) {
       // Normalize type.
@@ -1149,8 +1139,6 @@ const Char *fmt::BasicFormatter<Char>::format(
         const Arg &precision_arg = parse_arg_index(s);
         if (*s++ != '}')
           throw FormatError("unmatched '{' in format");
-        if (error_)
-          throw FormatError(error_);
         ULongLong value = 0;
         switch (precision_arg.type) {
           case Arg::INT:
