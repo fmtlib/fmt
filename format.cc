@@ -230,7 +230,7 @@ class PrecisionHandler :
   }
 };
 
-// Converts an integer argument to type T.
+// Converts an integer argument to an integral type T for printf.
 template <typename T>
 class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
  private:
@@ -246,6 +246,7 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
     bool is_signed = type_ == 'd' || type_ == 'i';
     using fmt::internal::Arg;
     if (sizeof(T) <= sizeof(int)) {
+      // Extra casts are used to silence warnings.
       if (is_signed) {
         arg_.type = Arg::INT;
         arg_.int_value = static_cast<int>(static_cast<T>(value));
@@ -268,7 +269,7 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
   }
 };
 
-// Converts an integer argument to char.
+// Converts an integer argument to char for printf.
 class CharConverter : public fmt::internal::ArgVisitor<CharConverter, void> {
  private:
   fmt::internal::Arg &arg_;
