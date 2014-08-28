@@ -50,6 +50,7 @@ int fdopen_count;
 int read_count;
 int write_count;
 int pipe_count;
+int fopen_count;
 int fclose_count;
 int fileno_count;
 std::size_t read_nbyte;
@@ -123,6 +124,11 @@ int test::pipe(int *pfds, unsigned psize, int textmode) {
 }
 #endif
 
+FILE *test::fopen(const char *filename, const char *mode) {
+  EMULATE_EINTR(fopen, 0);
+  return ::fopen(filename, mode);
+}
+
 int test::fclose(FILE *stream) {
   EMULATE_EINTR(fclose, EOF);
   return ::fclose(stream);
@@ -148,10 +154,16 @@ int test::fileno(FILE *stream) {
 # define EXPECT_EQ_POSIX(expected, actual)
 #endif
 
+void write_file(fmt::StringRef filename, fmt::StringRef content) {
+  fmt::BufferedFile f(filename, "w");
+  fmt::print(f.get(), "{}", content);
+}
+
 TEST(FileTest, OpenRetry) {
+  write_file("test", "there must be something here");
   File *f = 0;
-  EXPECT_RETRY(f = new File("CMakeLists.txt", File::RDONLY),
-               open, "cannot open file CMakeLists.txt");
+  EXPECT_RETRY(f = new File("test", File::RDONLY),
+               open, "cannot open file test");
 #ifndef _WIN32
   char c = 0;
   f->read(&c, 1);
@@ -287,6 +299,18 @@ TEST(FileTest, FdopenNoRetry) {
   EXPECT_SYSTEM_ERROR(read_end.fdopen("r"),
       EINTR, "cannot associate stream with file descriptor");
   fdopen_count = 0;
+}
+
+TEST(BufferedFileTest, OpenRetry) {
+  write_file("test", "there must be something here");
+  BufferedFile *f = 0;
+  EXPECT_RETRY(f = new BufferedFile("test", "r"),
+               fopen, "cannot open file test");
+#ifndef _WIN32
+  char c = 0;
+  fread(&c, 1, 1, f->get());
+#endif
+  delete f;
 }
 
 TEST(BufferedFileTest, CloseNoRetryInDtor) {

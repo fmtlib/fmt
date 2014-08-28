@@ -61,6 +61,7 @@ int pipe(int fildes[2]);
 int pipe(int *pfds, unsigned psize, int textmode);
 #endif
 
+FILE *fopen(const char *filename, const char *mode);
 int fclose(FILE *stream);
 int fileno(FILE *stream);
 

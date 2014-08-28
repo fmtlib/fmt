@@ -162,6 +162,9 @@ public:
   }
 #endif
 
+  // Opens a file.
+  BufferedFile(fmt::StringRef filename, fmt::StringRef mode);
+
   // Closes the file.
   void close();
 
@@ -169,6 +172,11 @@ public:
   FILE *get() const { return file_; }
 
   int fileno() const;
+
+  void print(fmt::StringRef format_str, const ArgList &args) {
+    fmt::print(file_, format_str, args);
+  }
+  FMT_VARIADIC(void, print, fmt::StringRef)
 };
 
 // A file. Closed file is represented by a File object with descriptor -1.

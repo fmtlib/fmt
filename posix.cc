@@ -70,6 +70,16 @@ fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT(true) {
     fmt::report_system_error(errno, "cannot close file");
 }
 
+fmt::BufferedFile::BufferedFile(fmt::StringRef filename, fmt::StringRef mode) {
+  for (;;) {
+    file_ = FMT_SYSTEM(fopen(filename.c_str(), mode.c_str()));
+    if (file_)
+      return;
+    if (errno != EINTR)
+      throw SystemError(errno, "cannot open file");
+  }
+}
+
 void fmt::BufferedFile::close() {
   if (!file_)
     return;
