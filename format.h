@@ -883,7 +883,7 @@ private:
   BasicWriter<Char> &writer_;
   const Char *start_;
 
-  // Parses argument index and returns an argument with this index.
+  // Parses argument index and returns corresponding argument.
   const internal::Arg &parse_arg_index(const Char *&s);
 
   void check_sign(const Char *&s, const internal::Arg &arg);

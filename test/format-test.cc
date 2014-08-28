@@ -619,7 +619,8 @@ TEST(FormatterTest, ArgErrors) {
       "argument index is out of range in format");
 
   safe_sprintf(format_str, "{%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "invalid format string");
+  EXPECT_THROW_MSG(format(format_str), FormatError,
+                   "number is too big in format");
   safe_sprintf(format_str, "{%u}", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str), FormatError,
                    "number is too big in format");
@@ -1002,7 +1003,8 @@ TEST(FormatterTest, RuntimePrecision) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:.{%u", UINT_MAX);
   increment(format_str + 5);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "invalid format string");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
+                   "number is too big in format");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;

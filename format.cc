@@ -160,20 +160,20 @@ class IsZeroInt : public fmt::internal::ArgVisitor<IsZeroInt, bool> {
 // Parses an unsigned integer advancing s to the end of the parsed input.
 // This function assumes that the first character of s is a digit.
 template <typename Char>
-int parse_nonnegative_int(
-    const Char *&s, const char *&error) FMT_NOEXCEPT(true) {
+int parse_nonnegative_int(const Char *&s) {
   assert('0' <= *s && *s <= '9');
   unsigned value = 0;
   do {
     unsigned new_value = value * 10 + (*s++ - '0');
     // Check if value wrapped around.
-    value = new_value >= value ? new_value : UINT_MAX;
+    if (new_value < value) {
+      value = UINT_MAX;
+      break;
+    }
+    value = new_value;
   } while ('0' <= *s && *s <= '9');
-  if (value > INT_MAX) {
-    if (!error)
-      error = "number is too big in format";
-    return 0;
-  }
+  if (value > INT_MAX)
+    throw fmt::FormatError("number is too big in format");
   return value;
 }
 
@@ -751,8 +751,7 @@ void fmt::BasicWriter<Char>::write_str(
 }
 
 template <typename Char>
-inline const Arg
-    &fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
+inline const Arg &fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
   const Arg *arg = 0;
   const char *error = 0;
   if (*s < '0' || *s > '9') {
@@ -761,11 +760,11 @@ inline const Arg
     if (next_arg_index_ > 0)
       error = "cannot switch from automatic to manual argument indexing";
     next_arg_index_ = -1;
-    unsigned arg_index = parse_nonnegative_int(s, error);
+    unsigned arg_index = parse_nonnegative_int(s);
     if (arg_index < args_.size())
       arg = &args_[arg_index];
     else if (!error)
-        error = "argument index is out of range in format";
+      error = "argument index is out of range in format";
   }
   if (error)
     throw FormatError(*s != '}' && *s != ':' ? "invalid format string" : error);
@@ -851,7 +850,7 @@ unsigned fmt::internal::PrintfFormatter<Char>::parse_header(
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
     // preceded with '0' flag(s).
-    unsigned value = parse_nonnegative_int(s, error_);
+    unsigned value = parse_nonnegative_int(s);
     if (*s == '$') {  // value is an argument index
       ++s;
       arg_index = value;
@@ -869,7 +868,7 @@ unsigned fmt::internal::PrintfFormatter<Char>::parse_header(
   parse_flags(spec, s);
   // Parse width.
   if (*s >= '0' && *s <= '9') {
-    spec.width_ = parse_nonnegative_int(s, error_);
+    spec.width_ = parse_nonnegative_int(s);
   } else if (*s == '*') {
     ++s;
     spec.width_ = WidthHandler(spec).visit(handle_arg_index(UINT_MAX));
@@ -916,7 +915,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
     if (*s == '.') {
       ++s;
       if ('0' <= *s && *s <= '9') {
-        spec.precision_ = parse_nonnegative_int(s, error_);
+        spec.precision_ = parse_nonnegative_int(s);
       } else if (*s == '*') {
         ++s;
         spec.precision_ = PrecisionHandler().visit(handle_arg_index(UINT_MAX));
@@ -1132,7 +1131,7 @@ const Char *fmt::BasicFormatter<Char>::format(
       }
       // Zero may be parsed again as a part of the width, but it is simpler
       // and more efficient than checking if the next char is a digit.
-      spec.width_ = parse_nonnegative_int(s, error);
+      spec.width_ = parse_nonnegative_int(s);
       if (error)
         throw FormatError(error);
     }
@@ -1142,7 +1141,7 @@ const Char *fmt::BasicFormatter<Char>::format(
       ++s;
       spec.precision_ = 0;
       if ('0' <= *s && *s <= '9') {
-        spec.precision_ = parse_nonnegative_int(s, error);
+        spec.precision_ = parse_nonnegative_int(s);
         if (error)
           throw FormatError(error);
       } else if (*s == '{') {

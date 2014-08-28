@@ -79,7 +79,7 @@ TEST(PrintfTest, AutomaticArgIndexing) {
 
 TEST(PrintfTest, NumberIsTooBigInArgIndex) {
   EXPECT_THROW_MSG(fmt::sprintf(format("%{}$", BIG_NUM)),
-      FormatError, "invalid format string");
+      FormatError, "number is too big in format");
   EXPECT_THROW_MSG(fmt::sprintf(format("%{}$d", BIG_NUM)),
       FormatError, "number is too big in format");
 }
@@ -429,3 +429,13 @@ TEST(PrintfTest, Pointer) {
 TEST(PrintfTest, Location) {
   // TODO: test %n
 }
+
+#if FMT_USE_FILE_DESCRIPTORS
+TEST(PrintfTest, Examples) {
+  const char *weekday = "Thursday";
+  const char *month = "August";
+  int day = 21;
+  EXPECT_WRITE(stdout, fmt::printf("%1$s, %3$d %2$s", weekday, month, day),
+               "Thursday, 21 August");
+}
+#endif
