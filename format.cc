@@ -173,7 +173,7 @@ int parse_nonnegative_int(const Char *&s) {
     value = new_value;
   } while ('0' <= *s && *s <= '9');
   if (value > INT_MAX)
-    throw fmt::FormatError("number is too big in format");
+    throw fmt::FormatError("number is too big");
   return value;
 }
 
@@ -212,7 +212,7 @@ class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
       width = 0 - width;
     }
     if (width > INT_MAX)
-      throw fmt::FormatError("number is too big in format");
+      throw fmt::FormatError("number is too big");
     return static_cast<unsigned>(width);
   }
 };
@@ -227,7 +227,7 @@ class PrecisionHandler :
   template <typename T>
   int visit_any_int(T value) {
     if (!IntChecker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
-      throw fmt::FormatError("number is too big in format");
+      throw fmt::FormatError("number is too big");
     return static_cast<int>(value);
   }
 };
@@ -1173,7 +1173,7 @@ const Char *fmt::BasicFormatter<Char>::format(
             throw FormatError("precision is not integer");
         }
         if (value > INT_MAX)
-          throw FormatError("number is too big in format");
+          throw FormatError("number is too big");
         spec.precision_ = static_cast<int>(value);
       } else {
         throw FormatError("missing precision in format");

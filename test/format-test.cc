@@ -619,11 +619,9 @@ TEST(FormatterTest, ArgErrors) {
       "argument index is out of range in format");
 
   safe_sprintf(format_str, "{%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str), FormatError, "number is too big");
   safe_sprintf(format_str, "{%u}", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str), FormatError, "number is too big");
 }
 
 TEST(FormatterTest, AutoArgIndex) {
@@ -897,20 +895,16 @@ TEST(FormatterTest, Width) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:%u", UINT_MAX);
   increment(format_str + 3);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
 
   safe_sprintf(format_str, "{0:%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
   safe_sprintf(format_str, "{0:%u}", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
   EXPECT_EQ(" -42", format("{0:4}", -42));
   EXPECT_EQ("   42", format("{0:5}", 42u));
   EXPECT_EQ("   -42", format("{0:6}", -42l));
@@ -929,20 +923,16 @@ TEST(FormatterTest, Precision) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:.%u", UINT_MAX);
   increment(format_str + 4);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
 
   safe_sprintf(format_str, "{0:.%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
   safe_sprintf(format_str, "{0:.%u}", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
 
   EXPECT_THROW_MSG(format("{0:.", 0),
       FormatError, "missing precision in format");
@@ -1003,17 +993,14 @@ TEST(FormatterTest, RuntimePrecision) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:.{%u", UINT_MAX);
   increment(format_str + 5);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError,
-                   "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
   format_str[size + 1] = '}';
   format_str[size + 2] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0),
-      FormatError, "number is too big in format");
+  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
 
   EXPECT_THROW_MSG(format("{0:.{", 0),
       FormatError, "invalid format string");
@@ -1029,16 +1016,16 @@ TEST(FormatterTest, RuntimePrecision) {
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, -1),
       FormatError, "negative precision in format");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, (INT_MAX + 1u)),
-      FormatError, "number is too big in format");
+      FormatError, "number is too big");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, -1l),
       FormatError, "negative precision in format");
   if (sizeof(long) > sizeof(int)) {
     long value = INT_MAX;
     EXPECT_THROW_MSG(format("{0:.{1}}", 0, (value + 1)),
-        FormatError, "number is too big in format");
+        FormatError, "number is too big");
   }
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, (INT_MAX + 1ul)),
-      FormatError, "number is too big in format");
+      FormatError, "number is too big");
 
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, '0'),
       FormatError, "precision is not integer");
