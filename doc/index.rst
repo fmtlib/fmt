@@ -76,8 +76,6 @@ Write API
 
 .. doxygenfunction:: fmt::pad(int, unsigned, Char)
 
-.. _formatstrings:
-
 Utilities
 ---------
 
@@ -97,6 +95,8 @@ System Errors
 
 .. doxygenclass:: fmt::WindowsError
    :members:
+
+.. _formatstrings:
 
 Format String Syntax
 --------------------
