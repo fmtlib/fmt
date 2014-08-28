@@ -71,7 +71,7 @@
     result = (expression); \
   } while (result == error_result && errno == EINTR)
 #else
-# define FMT_RETRY(result, expression) result = (expression)
+# define FMT_RETRY_VAL(result, expression, error_result) result = (expression)
 #endif
 
 #define FMT_RETRY(result, expression) FMT_RETRY_VAL(result, expression, -1)
