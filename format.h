@@ -842,14 +842,24 @@ struct FormatSpec;
 namespace internal {
 
 class FormatterBase {
-protected:
+ private:
   ArgList args_;
   int next_arg_index_;
+
+  // Returns the argument with specified index.
+  const Arg *do_get_arg(unsigned arg_index, const char *&error);
+
+ protected:
+  void set_args(const ArgList &args) {
+    args_ = args;
+    next_arg_index_ = 0;
+  }
 
   // Returns the next argument.
   const Arg *next_arg(const char *&error);
 
-  // Returns the argument with specified index.
+  // Checks if manual indexing is used and returns the argument with
+  // specified index.
   const Arg *get_arg(unsigned arg_index, const char *&error);
 
   template <typename Char>

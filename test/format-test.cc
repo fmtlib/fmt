@@ -586,7 +586,7 @@ TEST(FormatterTest, Escape) {
 
 TEST(FormatterTest, UnmatchedBraces) {
   EXPECT_THROW_MSG(format("{"), FormatError, "invalid format string");
-  EXPECT_THROW_MSG(format("}"), FormatError, "unmatched '}' in format");
+  EXPECT_THROW_MSG(format("}"), FormatError, "unmatched '}' in format string");
   EXPECT_THROW_MSG(format("{0{}"), FormatError, "invalid format string");
 }
 
@@ -608,15 +608,14 @@ TEST(FormatterTest, ArgErrors) {
   EXPECT_THROW_MSG(format("{"), FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{x}"), FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{0"), FormatError, "invalid format string");
-  EXPECT_THROW_MSG(format("{0}"), FormatError,
-      "argument index is out of range in format");
+  EXPECT_THROW_MSG(format("{0}"), FormatError, "argument index out of range");
 
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{%u", INT_MAX);
   EXPECT_THROW_MSG(format(format_str), FormatError, "invalid format string");
   safe_sprintf(format_str, "{%u}", INT_MAX);
   EXPECT_THROW_MSG(format(format_str), FormatError,
-      "argument index is out of range in format");
+      "argument index out of range");
 
   safe_sprintf(format_str, "{%u", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str), FormatError, "number is too big");
@@ -635,8 +634,7 @@ TEST(FormatterTest, AutoArgIndex) {
       FormatError, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{:.{0}}", 1.2345, 2),
       FormatError, "cannot switch from automatic to manual argument indexing");
-  EXPECT_THROW_MSG(format("{}"), FormatError,
-      "argument index is out of range in format");
+  EXPECT_THROW_MSG(format("{}"), FormatError, "argument index out of range");
 }
 
 TEST(FormatterTest, EmptySpecs) {
@@ -695,7 +693,7 @@ TEST(FormatterTest, NumericAlign) {
   EXPECT_EQ("-  42", format("{0:=5}", -42.0));
   EXPECT_EQ("-  42", format("{0:=5}", -42.0l));
   EXPECT_THROW_MSG(format("{0:=5", 'c'),
-      FormatError, "unmatched '{' in format");
+      FormatError, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:=5}", 'c'),
       FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:=5}", "abc"),
@@ -759,7 +757,7 @@ TEST(FormatterTest, PlusSign) {
   EXPECT_EQ("+42", format("{0:+}", 42.0));
   EXPECT_EQ("+42", format("{0:+}", 42.0l));
   EXPECT_THROW_MSG(format("{0:+", 'c'),
-      FormatError, "unmatched '{' in format");
+      FormatError, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:+}", 'c'),
       FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:+}", "abc"),
@@ -785,7 +783,7 @@ TEST(FormatterTest, MinusSign) {
   EXPECT_EQ("42", format("{0:-}", 42.0));
   EXPECT_EQ("42", format("{0:-}", 42.0l));
   EXPECT_THROW_MSG(format("{0:-", 'c'),
-      FormatError, "unmatched '{' in format");
+      FormatError, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:-}", 'c'),
       FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:-}", "abc"),
@@ -811,7 +809,7 @@ TEST(FormatterTest, SpaceSign) {
   EXPECT_EQ(" 42", format("{0: }", 42.0));
   EXPECT_EQ(" 42", format("{0: }", 42.0l));
   EXPECT_THROW_MSG(format("{0: ", 'c'),
-      FormatError, "unmatched '{' in format");
+      FormatError, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0: }", 'c'),
       FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0: }", "abc"),
@@ -858,7 +856,7 @@ TEST(FormatterTest, HashFlag) {
   EXPECT_EQ("-42.0000", format("{0:#}", -42.0));
   EXPECT_EQ("-42.0000", format("{0:#}", -42.0l));
   EXPECT_THROW_MSG(format("{0:#", 'c'),
-      FormatError, "unmatched '{' in format");
+      FormatError, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:#}", 'c'),
       FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:#}", "abc"),
@@ -880,7 +878,7 @@ TEST(FormatterTest, ZeroFlag) {
   EXPECT_EQ("-0042", format("{0:05}", -42.0));
   EXPECT_EQ("-0042", format("{0:05}", -42.0l));
   EXPECT_THROW_MSG(format("{0:0", 'c'),
-      FormatError, "unmatched '{' in format");
+      FormatError, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:05}", 'c'),
       FormatError, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:05}", "abc"),
@@ -935,9 +933,9 @@ TEST(FormatterTest, Precision) {
   EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
 
   EXPECT_THROW_MSG(format("{0:.", 0),
-      FormatError, "missing precision in format");
+      FormatError, "missing precision specifier");
   EXPECT_THROW_MSG(format("{0:.}", 0),
-      FormatError, "missing precision in format");
+      FormatError, "missing precision specifier");
 
   EXPECT_THROW_MSG(format("{0:.2", 0),
       FormatError, "precision specifier requires floating-point argument");
@@ -1011,14 +1009,17 @@ TEST(FormatterTest, RuntimePrecision) {
   EXPECT_THROW_MSG(format("{0:.{1}", 0, 0),
       FormatError, "precision specifier requires floating-point argument");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0),
-      FormatError, "argument index is out of range in format");
+      FormatError, "argument index out of range");
+
+  EXPECT_THROW_MSG(format("{0:.{0:}}", 0),
+      FormatError, "invalid format string");
 
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, -1),
-      FormatError, "negative precision in format");
+      FormatError, "negative precision");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, (INT_MAX + 1u)),
       FormatError, "number is too big");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, -1l),
-      FormatError, "negative precision in format");
+      FormatError, "negative precision");
   if (sizeof(long) > sizeof(int)) {
     long value = INT_MAX;
     EXPECT_THROW_MSG(format("{0:.{1}}", 0, (value + 1)),
@@ -1111,7 +1112,7 @@ TEST(FormatterTest, FormatShort) {
 
 TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(format("{0:v", 42),
-      FormatError, "unmatched '{' in format");
+      FormatError, "missing '}' in format string");
   check_unknown_types(42, "bBdoxX", "integer");
 }
 

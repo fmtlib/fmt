@@ -108,11 +108,11 @@ TEST(PrintfTest, SwitchArgIndexing) {
 
 TEST(PrintfTest, InvalidArgIndex) {
   EXPECT_THROW_MSG(fmt::sprintf("%0$d", 42), FormatError,
-      "argument index is out of range in format");
+      "argument index out of range");
   EXPECT_THROW_MSG(fmt::sprintf("%2$d", 42), FormatError,
-      "argument index is out of range in format");
+      "argument index out of range");
   EXPECT_THROW_MSG(fmt::sprintf(format("%{}$d", INT_MAX), 42),
-      FormatError, "argument index is out of range in format");
+      FormatError, "argument index out of range");
 
   EXPECT_THROW_MSG(fmt::sprintf("%2$", 42),
       FormatError, "invalid format string");
@@ -218,7 +218,7 @@ TEST(PrintfTest, DynamicWidth) {
   EXPECT_THROW_MSG(fmt::sprintf("%*d", 5.0, 42), FormatError,
       "width is not integer");
   EXPECT_THROW_MSG(fmt::sprintf("%*d"), FormatError,
-      "argument index is out of range in format");
+      "argument index out of range");
   EXPECT_THROW_MSG(fmt::sprintf("%*d", BIG_NUM, 42), FormatError,
       "number is too big");
 }
@@ -265,7 +265,7 @@ TEST(PrintfTest, DynamicPrecision) {
   EXPECT_THROW_MSG(fmt::sprintf("%.*d", 5.0, 42), FormatError,
       "precision is not integer");
   EXPECT_THROW_MSG(fmt::sprintf("%.*d"), FormatError,
-      "argument index is out of range in format");
+      "argument index out of range");
   EXPECT_THROW_MSG(fmt::sprintf("%.*d", BIG_NUM, 42), FormatError,
       "number is too big");
   if (sizeof(fmt::LongLong) != sizeof(int)) {
