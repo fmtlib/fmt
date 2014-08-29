@@ -248,7 +248,7 @@ test name      run time
 ============== ========
 libc printf     1.28s
 std::ostream    2.09s
-format          1.32s
+cppformat       1.32s
 tinyformat      2.55s
 boost::format  10.42s
 ============== ========
