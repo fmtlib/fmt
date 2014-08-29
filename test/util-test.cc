@@ -238,7 +238,8 @@ TEST(ArgTest, MakeArg) {
   EXPECT_EQ(&t, arg.custom.value);
   fmt::Writer w;
   fmt::BasicFormatter<char> formatter(w);
-  arg.custom.format(&formatter, &t, "}");
+  const char *s = "}";
+  arg.custom.format(&formatter, &t, &s);
   EXPECT_EQ("test", w.str());
 }
 

@@ -176,19 +176,6 @@ int parse_nonnegative_int(const Char *&s) {
 }
 
 template <typename Char>
-const Char *find_closing_brace(const Char *s, int num_open_braces = 1) {
-  for (int n = num_open_braces; *s; ++s) {
-    if (*s == '{') {
-      ++n;
-    } else if (*s == '}') {
-      if (--n == 0)
-        return s;
-    }
-  }
-  throw fmt::FormatError("unmatched '{' in format");
-}
-
-template <typename Char>
 void check_sign(const Char *&s, const Arg &arg) {
   char sign = static_cast<char>(*s);
   if (arg.type > Arg::LAST_NUMERIC_TYPE) {
@@ -574,7 +561,7 @@ class fmt::internal::ArgFormatter :
   }
 
   void visit_custom(Arg::CustomValue c) {
-    c.format(&formatter_, c.value, format_);
+    c.format(&formatter_, c.value, &format_);
   }
 };
 
@@ -1019,11 +1006,13 @@ void fmt::internal::PrintfFormatter<Char>::format(
       spec.type_ = 'x';
       writer.write_int(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
       break;
-    case Arg::CUSTOM:
+    case Arg::CUSTOM: {
       if (spec.type_)
         internal::report_unknown_type(spec.type_, "object");
-      arg.custom.format(&writer, arg.custom.value, "s");
+      const void *s = "s";
+      arg.custom.format(&writer, arg.custom.value, &s);
       break;
+    }
     default:
       assert(false);
       break;
@@ -1034,14 +1023,14 @@ void fmt::internal::PrintfFormatter<Char>::format(
 
 template <typename Char>
 const Char *fmt::BasicFormatter<Char>::format(
-    const Char *format_str, const Arg &arg) {
+    const Char *&format_str, const Arg &arg) {
   const Char *s = format_str;
   const char *error = 0;
   FormatSpec spec;
   if (*s == ':') {
     if (arg.type == Arg::CUSTOM) {
-      arg.custom.format(this, arg.custom.value, s);
-      return find_closing_brace(s) + 1;
+      arg.custom.format(this, arg.custom.value, &s);
+      return s;
     }
     ++s;
     // Parse fill and alignment.

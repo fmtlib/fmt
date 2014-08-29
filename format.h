@@ -132,7 +132,7 @@ template <typename Char>
 class BasicFormatter;
 
 template <typename Char, typename T>
-void format(BasicFormatter<Char> &f, const Char *format_str, const T &value);
+void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value);
 
 /**
   \rst
@@ -583,7 +583,7 @@ struct Arg {
   };
 
   typedef void (*FormatFunc)(
-      void *formatter, const void *arg, const void *format_str);
+      void *formatter, const void *arg, void *format_str_ptr);
 
   struct CustomValue {
     const void *value;
@@ -634,9 +634,9 @@ class MakeArg : public Arg {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   static void format_custom_arg(
-      void *formatter, const void *arg, const void *format_str) {
+      void *formatter, const void *arg, void *format_str_ptr) {
     format(*static_cast<BasicFormatter<Char>*>(formatter),
-        static_cast<const Char*>(format_str), *static_cast<const T*>(arg));
+        *static_cast<const Char**>(format_str_ptr), *static_cast<const T*>(arg));
   }
 
 public:
@@ -896,7 +896,7 @@ public:
 
   void format(BasicStringRef<Char> format_str, const ArgList &args);
 
-  const Char *format(const Char *format_str, const internal::Arg &arg);
+  const Char *format(const Char *&format_str, const internal::Arg &arg);
 };
 
 enum Alignment {
@@ -1681,10 +1681,10 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
 
 // Formats a value.
 template <typename Char, typename T>
-void format(BasicFormatter<Char> &f, const Char *format_str, const T &value) {
+void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
-  f.format(format_str, internal::MakeArg<Char>(os.str()));
+  format_str = f.format(format_str, internal::MakeArg<Char>(os.str()));
 }
 
 // Reports a system error without throwing an exception.
