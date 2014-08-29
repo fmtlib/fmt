@@ -308,7 +308,8 @@ TEST(BufferedFileTest, OpenRetry) {
                fopen, "cannot open file test");
 #ifndef _WIN32
   char c = 0;
-  fread(&c, 1, 1, f->get());
+  if (fread(&c, 1, 1, f->get()) < 1)
+    throw fmt::SystemError(errno, "fread failed");
 #endif
   delete f;
 }
