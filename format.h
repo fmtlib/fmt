@@ -215,8 +215,8 @@ typedef BasicStringRef<wchar_t> WStringRef;
 */
 class FormatError : public std::runtime_error {
 public:
-  explicit FormatError(const std::string &message)
-  : std::runtime_error(message) {}
+  explicit FormatError(StringRef message)
+  : std::runtime_error(message.c_str()) {}
 };
 
 namespace internal {

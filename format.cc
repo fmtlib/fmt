@@ -175,13 +175,17 @@ int parse_nonnegative_int(const Char *&s) {
   return value;
 }
 
+inline void require_numeric_argument(const Arg &arg, char spec) {
+  if (arg.type > Arg::LAST_NUMERIC_TYPE) {
+    throw fmt::FormatError(
+          fmt::format("format specifier '{}' requires numeric argument", spec));
+  }
+}
+
 template <typename Char>
 void check_sign(const Char *&s, const Arg &arg) {
   char sign = static_cast<char>(*s);
-  if (arg.type > Arg::LAST_NUMERIC_TYPE) {
-    throw fmt::FormatError(fmt::format(
-      "format specifier '{}' requires numeric argument", sign));
-  }
+  require_numeric_argument(arg, sign);
   if (arg.type == Arg::UINT || arg.type == Arg::ULONG_LONG) {
     throw fmt::FormatError(fmt::format(
       "format specifier '{}' requires signed argument", sign));
@@ -1059,8 +1063,8 @@ const Char *fmt::BasicFormatter<Char>::format(
             s += 2;
             spec.fill_ = c;
           } else ++s;
-          if (spec.align_ == ALIGN_NUMERIC && arg.type > Arg::LAST_NUMERIC_TYPE)
-            throw FormatError("format specifier '=' requires numeric argument");
+          if (spec.align_ == ALIGN_NUMERIC)
+            require_numeric_argument(arg, '=');
           break;
         }
       } while (--p >= s);
@@ -1083,9 +1087,7 @@ const Char *fmt::BasicFormatter<Char>::format(
     }
 
     if (*s == '#') {
-      if (arg.type > Arg::LAST_NUMERIC_TYPE)
-        // TODO: make FormatError accept arguments
-        throw FormatError("format specifier '#' requires numeric argument");
+      require_numeric_argument(arg, '#');
       spec.flags_ |= HASH_FLAG;
       ++s;
     }
@@ -1093,8 +1095,7 @@ const Char *fmt::BasicFormatter<Char>::format(
     // Parse width and zero flag.
     if ('0' <= *s && *s <= '9') {
       if (*s == '0') {
-        if (arg.type > Arg::LAST_NUMERIC_TYPE)
-          throw FormatError("format specifier '0' requires numeric argument");
+        require_numeric_argument(arg, '0');
         spec.align_ = ALIGN_NUMERIC;
         spec.fill_ = '0';
       }
