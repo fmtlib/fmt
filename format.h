@@ -889,8 +889,6 @@ private:
   // Parses argument index and returns corresponding argument.
   const internal::Arg &parse_arg_index(const Char *&s);
 
-  void check_sign(const Char *&s, const internal::Arg &arg);
-
 public:
   explicit BasicFormatter(BasicWriter<Char> &w) : writer_(w) {}
 

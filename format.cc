@@ -188,6 +188,20 @@ const Char *find_closing_brace(const Char *s, int num_open_braces = 1) {
   throw fmt::FormatError("unmatched '{' in format");
 }
 
+template <typename Char>
+void check_sign(const Char *&s, const Arg &arg) {
+  char sign = static_cast<char>(*s);
+  if (arg.type > Arg::LAST_NUMERIC_TYPE) {
+    throw fmt::FormatError(fmt::format(
+      "format specifier '{}' requires numeric argument", sign));
+  }
+  if (arg.type == Arg::UINT || arg.type == Arg::ULONG_LONG) {
+    throw fmt::FormatError(fmt::format(
+      "format specifier '{}' requires signed argument", sign));
+  }
+  ++s;
+}
+
 // Checks if an argument is a valid printf width specifier and sets
 // left alignment if it is negative.
 class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
@@ -757,21 +771,6 @@ inline const Arg &fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
   if (error)
     throw FormatError(*s != '}' && *s != ':' ? "invalid format string" : error);
   return *arg;
-}
-
-template <typename Char>
-void fmt::BasicFormatter<Char>::check_sign(
-    const Char *&s, const Arg &arg) {
-  char sign = static_cast<char>(*s);
-  if (arg.type > Arg::LAST_NUMERIC_TYPE) {
-    throw FormatError(fmt::format(
-      "format specifier '{}' requires numeric argument", sign));
-  }
-  if (arg.type == Arg::UINT || arg.type == Arg::ULONG_LONG) {
-    throw FormatError(fmt::format(
-      "format specifier '{}' requires signed argument", sign));
-  }
-  ++s;
 }
 
 const Arg *fmt::internal::FormatterBase::next_arg(const char *&error) {
