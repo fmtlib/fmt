@@ -136,13 +136,33 @@ struct IntChecker<true> {
 
 const char RESET_COLOR[] = "\x1b[0m";
 
-typedef void (*FormatFunc)(fmt::Writer &, int , fmt::StringRef);
+typedef void (*FormatFunc)(fmt::Writer &, int, fmt::StringRef);
+
+// TODO: test
+void format_error_code(fmt::Writer &out, int error_code,
+                       fmt::StringRef message) FMT_NOEXCEPT(true) {
+  // Report error code making sure that the output fits into
+  // INLINE_BUFFER_SIZE to avoid dynamic memory allocation and potential
+  // bad_alloc.
+  out.clear();
+  static const char SEP[] = ": ";
+  static const char ERROR[] = "error ";
+  // SEP and ERROR add two terminating null characters, so subtract 1 as
+  // we need only one.
+  fmt::internal::IntTraits<int>::MainType ec_value = error_code;
+  std::size_t error_code_size =
+      sizeof(SEP) + sizeof(ERROR) + fmt::internal::count_digits(ec_value) - 1;
+  if (message.size() < fmt::internal::INLINE_BUFFER_SIZE - error_code_size)
+    out << message << SEP;
+  out << ERROR << error_code;
+  assert(out.size() <= fmt::internal::INLINE_BUFFER_SIZE);
+}
 
 void report_error(FormatFunc func,
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
   try {
     fmt::Writer full_message;
-    func(full_message, error_code, message); // TODO: make sure this doesn't throw
+    func(full_message, error_code, message);
     std::fwrite(full_message.c_str(), full_message.size(), 1, stderr);
     std::fputc('\n', stderr);
   } catch (...) {}
@@ -453,28 +473,31 @@ int fmt::internal::safe_strerror(
 }
 
 void fmt::internal::format_system_error(
-    fmt::Writer &out, int error_code, fmt::StringRef message) {
-  Array<char, INLINE_BUFFER_SIZE> buffer;
-  buffer.resize(INLINE_BUFFER_SIZE);
-  char *system_message = 0;
-  for (;;) {
-    system_message = &buffer[0];
-    int result = safe_strerror(error_code, system_message, buffer.size());
-    if (result == 0)
-      break;
-    if (result != ERANGE) {
-      // Can't get error message, report error code instead.
-      out << message << ": error code = " << error_code;
-      return;
+    fmt::Writer &out, int error_code,
+    fmt::StringRef message) FMT_NOEXCEPT(true) {
+  try {
+    Array<char, INLINE_BUFFER_SIZE> buffer;
+    buffer.resize(INLINE_BUFFER_SIZE);
+    char *system_message = 0;
+    for (;;) {
+      system_message = &buffer[0];
+      int result = safe_strerror(error_code, system_message, buffer.size());
+      if (result == 0) {
+        out << message << ": " << system_message;
+        return;
+      }
+      if (result != ERANGE)
+        break;  // Can't get error message, report error code instead.
+      buffer.resize(buffer.size() * 2);
     }
-    buffer.resize(buffer.size() * 2);
-  }
-  out << message << ": " << system_message;
+  } catch (...) {}
+  format_error_code(out, error_code, message);
 }
 
 #ifdef _WIN32
 void fmt::internal::format_windows_error(
-    fmt::Writer &out, int error_code, fmt::StringRef message) {
+    fmt::Writer &out, int error_code,
+    fmt::StringRef message) FMT_NOEXCEPT(true) {
   class String {
    private:
     LPWSTR str_;
@@ -485,19 +508,20 @@ void fmt::internal::format_windows_error(
     LPWSTR *ptr() { return &str_; }
     LPCWSTR c_str() const { return str_; }
   };
-  String system_message;
-  if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
-      error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-      reinterpret_cast<LPWSTR>(system_message.ptr()), 0, 0)) {
-    UTF16ToUTF8 utf8_message;
-    if (!utf8_message.convert(system_message.c_str())) {
-      out << message << ": " << utf8_message;
-      return;
+  try {
+    String system_message;
+    if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
+        error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        reinterpret_cast<LPWSTR>(system_message.ptr()), 0, 0)) {
+      UTF16ToUTF8 utf8_message;
+      if (utf8_message.convert(system_message.c_str()) == ERROR_SUCCESS) {
+        out << message << ": " << utf8_message;
+        return;
+      }
     }
-  }
-  // Can't get error message, report error code instead.
-  out << message << ": error code = " << error_code;
+  } catch (...) {}
+  format_error_code(out, error_code, message);
 }
 #endif
 
@@ -1190,14 +1214,12 @@ void fmt::BasicFormatter<Char>::format(
 
 void fmt::report_system_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
-  // FIXME: format_system_error may throw
   report_error(internal::format_system_error, error_code, message);
 }
 
 #ifdef _WIN32
 void fmt::report_windows_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
-  // FIXME: format_windows_error may throw
   report_error(internal::format_windows_error, error_code, message);
 }
 #endif

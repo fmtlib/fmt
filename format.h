@@ -307,7 +307,7 @@ class Array {
       grow(capacity);
   }
 
-  void clear() { size_ = 0; }
+  void clear() FMT_NOEXCEPT(true) { size_ = 0; }
 
   void push_back(const T &value) {
     if (size_ == capacity_)
@@ -528,7 +528,8 @@ class UTF16ToUTF8 {
   std::string str() const { return std::string(&buffer_[0], size()); }
 
   // Performs conversion returning a system error code instead of
-  // throwing exception on error.
+  // throwing exception on conversion error. This method may still throw
+  // in case of memory allocation error.
   int convert(WStringRef s);
 };
 #endif
@@ -545,12 +546,12 @@ class UTF16ToUTF8 {
 int safe_strerror(int error_code,
     char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT(true);
 
-void format_system_error(
-    fmt::Writer &out, int error_code, fmt::StringRef message);
+void format_system_error(fmt::Writer &out, int error_code,
+                         fmt::StringRef message) FMT_NOEXCEPT(true);
 
 #ifdef _WIN32
-void format_windows_error(
-    fmt::Writer &out, int error_code, fmt::StringRef message);
+void format_windows_error(fmt::Writer &out, int error_code,
+                          fmt::StringRef message) FMT_NOEXCEPT(true);
 #endif
 
 // Computes max(Arg, 1) at compile time. It is used to avoid errors about
@@ -1518,7 +1519,7 @@ class BasicWriter {
     return *this;
   }
 
-  void clear() { buffer_.clear(); }
+  void clear() FMT_NOEXCEPT(true) { buffer_.clear(); }
 };
 
 template <typename Char>

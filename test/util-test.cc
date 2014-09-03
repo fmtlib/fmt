@@ -471,8 +471,11 @@ void check_throw_error(int error_code, FormatErrorMessage format) {
 TEST(UtilTest, FormatSystemError) {
   fmt::Writer message;
   fmt::internal::format_system_error(message, EDOM, "test");
-  EXPECT_EQ(fmt::format("test: {}",
-          get_system_error(EDOM)), message.str());
+  EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)), message.str());
+  message.clear();
+  fmt::internal::format_system_error(
+        message, EDOM, fmt::StringRef("x", std::numeric_limits<size_t>::max()));
+  EXPECT_EQ(fmt::format("error {}", EDOM), message.str());
 }
 
 TEST(UtilTest, SystemError) {
@@ -504,6 +507,11 @@ TEST(UtilTest, FormatWindowsError) {
       actual_message, ERROR_FILE_EXISTS, "test");
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
       actual_message.str());
+  actual_message.clear();
+  fmt::internal::format_windows_error(
+        actual_message, ERROR_FILE_EXISTS,
+        fmt::StringRef("x", std::numeric_limits<size_t>::max()));
+  EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS), message.str());
 }
 
 TEST(UtilTest, WindowsError) {
