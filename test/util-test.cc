@@ -511,7 +511,7 @@ TEST(UtilTest, FormatWindowsError) {
   fmt::internal::format_windows_error(
         actual_message, ERROR_FILE_EXISTS,
         fmt::StringRef("x", std::numeric_limits<size_t>::max()));
-  EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS), message.str());
+  EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS), actual_message.str());
 }
 
 TEST(UtilTest, WindowsError) {
