@@ -29,6 +29,8 @@
 #include "format.cc"
 #include "gtest-extra.h"
 
+#undef max
+
 TEST(FormatTest, ArgConverter) {
   using fmt::internal::Arg;
   Arg arg = Arg();
