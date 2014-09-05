@@ -36,7 +36,7 @@
 #include <sstream>
 
 // Include format.cc instead of format.h to test implementation-specific stuff.
-#include "format.cc"
+#include "format.h"
 #include "util.h"
 #include "gtest-extra.h"
 
@@ -1226,10 +1226,6 @@ TEST(FormatterTest, FormatNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ("nan", format("{}", nan));
   EXPECT_EQ("+nan", format("{:+}", nan));
-  if (getsign(-nan))
-    EXPECT_EQ("-nan", format("{}", -nan));
-  else
-    fmt::print("Warning: compiler doesn't handle negative NaN correctly");
   EXPECT_EQ(" nan", format("{: }", nan));
   EXPECT_EQ("NAN", format("{:F}", nan));
   EXPECT_EQ("nan    ", format("{:<7}", nan));
@@ -1530,15 +1526,6 @@ FMT_VARIADIC(std::string, format_message, int, const char *)
 TEST(FormatTest, FormatMessageExample) {
   EXPECT_EQ("[42] something happened",
       format_message(42, "{} happened", "something"));
-}
-
-TEST(FormatTest, ArgConverter) {
-  using fmt::internal::Arg;
-  Arg arg = Arg();
-  arg.type = Arg::LONG_LONG;
-  arg.long_long_value = std::numeric_limits<fmt::LongLong>::max();
-  ArgConverter<fmt::LongLong>(arg, 'd').visit(arg);
-  EXPECT_EQ(Arg::LONG_LONG, arg.type);
 }
 
 #if FMT_USE_VARIADIC_TEMPLATES
