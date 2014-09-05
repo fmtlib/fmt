@@ -27,6 +27,7 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <string>
 
 enum {BUFFER_SIZE = 256};
 
@@ -46,3 +47,5 @@ void safe_sprintf(char (&buffer)[SIZE], const char *format, ...) {
 
 // Increment a number in a string.
 void increment(char *s);
+
+std::string get_system_error(int error_code);

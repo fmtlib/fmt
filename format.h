@@ -534,18 +534,6 @@ class UTF16ToUTF8 {
 };
 #endif
 
-// Portable thread-safe version of strerror.
-// Sets buffer to point to a string describing the error code.
-// This can be either a pointer to a string stored in buffer,
-// or a pointer to some static immutable string.
-// Returns one of the following values:
-//   0      - success
-//   ERANGE - buffer is not large enough to store the error message
-//   other  - failure
-// Buffer should be at least of size 1.
-int safe_strerror(int error_code,
-    char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT(true);
-
 void format_system_error(fmt::Writer &out, int error_code,
                          fmt::StringRef message) FMT_NOEXCEPT(true);
 

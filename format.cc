@@ -138,6 +138,43 @@ const char RESET_COLOR[] = "\x1b[0m";
 
 typedef void (*FormatFunc)(fmt::Writer &, int, fmt::StringRef);
 
+// Portable thread-safe version of strerror.
+// Sets buffer to point to a string describing the error code.
+// This can be either a pointer to a string stored in buffer,
+// or a pointer to some static immutable string.
+// Returns one of the following values:
+//   0      - success
+//   ERANGE - buffer is not large enough to store the error message
+//   other  - failure
+// Buffer should be at least of size 1.
+int safe_strerror(
+    int error_code, char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT(true) {
+  assert(buffer != 0 && buffer_size != 0);
+  int result = 0;
+#ifdef _GNU_SOURCE
+  char *message = strerror_r(error_code, buffer, buffer_size);
+  // If the buffer is full then the message is probably truncated.
+  if (message == buffer && strlen(buffer) == buffer_size - 1)
+    result = ERANGE;
+  buffer = message;
+#elif __MINGW32__
+  errno = 0;
+  (void)buffer_size;
+  buffer = strerror(error_code);
+  result = errno;
+#elif _WIN32
+  result = strerror_s(buffer, buffer_size, error_code);
+  // If the buffer is full then the message is probably truncated.
+  if (result == 0 && std::strlen(buffer) == buffer_size - 1)
+    result = ERANGE;
+#else
+  result = strerror_r(error_code, buffer, buffer_size);
+  if (result == -1)
+    result = errno;  // glibc versions before 2.13 return result in errno.
+#endif
+  return result;
+}
+
 void format_error_code(fmt::Writer &out, int error_code,
                        fmt::StringRef message) FMT_NOEXCEPT(true) {
   // Report error code making sure that the output fits into
@@ -441,34 +478,6 @@ void fmt::WindowsError::init(
 }
 
 #endif
-
-int fmt::internal::safe_strerror(
-    int error_code, char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT(true) {
-  assert(buffer != 0 && buffer_size != 0);
-  int result = 0;
-#ifdef _GNU_SOURCE
-  char *message = strerror_r(error_code, buffer, buffer_size);
-  // If the buffer is full then the message is probably truncated.
-  if (message == buffer && strlen(buffer) == buffer_size - 1)
-    result = ERANGE;
-  buffer = message;
-#elif __MINGW32__
-  errno = 0;
-  (void)buffer_size;
-  buffer = strerror(error_code);
-  result = errno;
-#elif _WIN32
-  result = strerror_s(buffer, buffer_size, error_code);
-  // If the buffer is full then the message is probably truncated.
-  if (result == 0 && std::strlen(buffer) == buffer_size - 1)
-    result = ERANGE;
-#else
-  result = strerror_r(error_code, buffer, buffer_size);
-  if (result == -1)
-    result = errno;  // glibc versions before 2.13 return result in errno.
-#endif
-  return result;
-}
 
 void fmt::internal::format_system_error(
     fmt::Writer &out, int error_code,

@@ -27,7 +27,11 @@
 
 // Include format.cc instead of format.h to test implementation-specific stuff.
 #include "format.cc"
+
+#include <cstring>
+
 #include "gtest-extra.h"
+#include "util.h"
 
 #undef max
 
@@ -46,6 +50,39 @@ TEST(FormatTest, FormatNegativeNaN) {
     EXPECT_EQ("-nan", fmt::format("{}", -nan));
   else
     fmt::print("Warning: compiler doesn't handle negative NaN correctly");
+}
+
+TEST(FormatTest, StrError) {
+  char *message = 0;
+  char buffer[BUFFER_SIZE];
+#ifndef NDEBUG
+  EXPECT_DEBUG_DEATH(safe_strerror(EDOM, message = 0, 0), "Assertion");
+  EXPECT_DEBUG_DEATH(safe_strerror(EDOM, message = buffer, 0), "Assertion");
+#endif
+  buffer[0] = 'x';
+#ifdef _GNU_SOURCE
+  // Use invalid error code to make sure that safe_strerror returns an error
+  // message in the buffer rather than a pointer to a static string.
+  int error_code = -1;
+#else
+  int error_code = EDOM;
+#endif
+
+  int result = safe_strerror(error_code, message = buffer, BUFFER_SIZE);
+  EXPECT_EQ(0, result);
+  std::size_t message_size = std::strlen(message);
+  EXPECT_GE(BUFFER_SIZE - 1u, message_size);
+  EXPECT_EQ(get_system_error(error_code), message);
+
+  // safe_strerror never uses buffer on MinGW.
+#ifndef __MINGW32__
+  result = safe_strerror(error_code, message = buffer, message_size);
+  EXPECT_EQ(ERANGE, result);
+  result = safe_strerror(error_code, message = buffer, 1);
+  EXPECT_EQ(buffer, message);  // Message should point to buffer.
+  EXPECT_EQ(ERANGE, result);
+  EXPECT_STREQ("", message);
+#endif
 }
 
 TEST(FormatTest, FormatErrorCode) {

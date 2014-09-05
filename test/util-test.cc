@@ -46,18 +46,6 @@ using fmt::internal::Arg;
 using fmt::internal::MakeArg;
 
 namespace {
-std::string get_system_error(int error_code) {
-#if defined(__MINGW32__) || !defined(_WIN32)
-  return strerror(error_code);
-#else
-  enum { BUFFER_SIZE = 200 };
-  char buffer[BUFFER_SIZE];
-  EXPECT_EQ(0, strerror_s(buffer, BUFFER_SIZE, error_code));
-  std::size_t max_len = BUFFER_SIZE - 1;
-  EXPECT_LT(std::strlen(buffer), max_len);
-  return buffer;
-#endif
-}
 
 struct Test {};
 template <typename Char>
@@ -416,40 +404,6 @@ TEST(UtilTest, UTF16ToUTF8Convert) {
   EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(0));
 }
 #endif  // _WIN32
-
-TEST(UtilTest, StrError) {
-  using fmt::internal::safe_strerror;
-  char *message = 0;
-  char buffer[BUFFER_SIZE];
-#ifndef NDEBUG
-  EXPECT_DEBUG_DEATH(safe_strerror(EDOM, message = 0, 0), "Assertion");
-  EXPECT_DEBUG_DEATH(safe_strerror(EDOM, message = buffer, 0), "Assertion");
-#endif
-  buffer[0] = 'x';
-#ifdef _GNU_SOURCE
-  // Use invalid error code to make sure that safe_strerror returns an error
-  // message in the buffer rather than a pointer to a static string.
-  int error_code = -1;
-#else
-  int error_code = EDOM;
-#endif
-
-  int result = safe_strerror(error_code, message = buffer, BUFFER_SIZE);
-  EXPECT_EQ(0, result);
-  std::size_t message_size = std::strlen(message);
-  EXPECT_GE(BUFFER_SIZE - 1u, message_size);
-  EXPECT_EQ(get_system_error(error_code), message);
-
-  // safe_strerror never uses buffer on MinGW.
-#ifndef __MINGW32__
-  result = safe_strerror(error_code, message = buffer, message_size);
-  EXPECT_EQ(ERANGE, result);
-  result = safe_strerror(error_code, message = buffer, 1);
-  EXPECT_EQ(buffer, message);  // Message should point to buffer.
-  EXPECT_EQ(ERANGE, result);
-  EXPECT_STREQ("", message);
-#endif
-}
 
 typedef void (*FormatErrorMessage)(
         fmt::Writer &out, int error_code, StringRef message);
