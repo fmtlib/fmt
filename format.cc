@@ -138,7 +138,6 @@ const char RESET_COLOR[] = "\x1b[0m";
 
 typedef void (*FormatFunc)(fmt::Writer &, int, fmt::StringRef);
 
-// TODO: test
 void format_error_code(fmt::Writer &out, int error_code,
                        fmt::StringRef message) FMT_NOEXCEPT(true) {
   // Report error code making sure that the output fits into
@@ -147,12 +146,11 @@ void format_error_code(fmt::Writer &out, int error_code,
   out.clear();
   static const char SEP[] = ": ";
   static const char ERROR[] = "error ";
-  // SEP and ERROR add two terminating null characters, so subtract 1 as
-  // we need only one.
   fmt::internal::IntTraits<int>::MainType ec_value = error_code;
+  // Subtract 2 to account for terminating null characters in SEP and ERROR.
   std::size_t error_code_size =
-      sizeof(SEP) + sizeof(ERROR) + fmt::internal::count_digits(ec_value) - 1;
-  if (message.size() < fmt::internal::INLINE_BUFFER_SIZE - error_code_size)
+      sizeof(SEP) + sizeof(ERROR) + fmt::internal::count_digits(ec_value) - 2;
+  if (message.size() <= fmt::internal::INLINE_BUFFER_SIZE - error_code_size)
     out << message << SEP;
   out << ERROR << error_code;
   assert(out.size() <= fmt::internal::INLINE_BUFFER_SIZE);
@@ -160,12 +158,12 @@ void format_error_code(fmt::Writer &out, int error_code,
 
 void report_error(FormatFunc func,
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
-  try {
-    fmt::Writer full_message;
-    func(full_message, error_code, message);
-    std::fwrite(full_message.c_str(), full_message.size(), 1, stderr);
-    std::fputc('\n', stderr);
-  } catch (...) {}
+  fmt::Writer full_message;
+  func(full_message, error_code, message);
+  // Use Writer::data instead of Writer::c_str to avoid potential memory
+  // allocation.
+  std::fwrite(full_message.data(), full_message.size(), 1, stderr);
+  std::fputc('\n', stderr);
 }
 
 // IsZeroInt::visit(arg) returns true iff arg is a zero integer.

@@ -38,10 +38,35 @@ TEST(FormatTest, ArgConverter) {
   EXPECT_EQ(Arg::LONG_LONG, arg.type);
 }
 
-TEST(FormatterTest, FormatNegativeNaN) {
+TEST(FormatTest, FormatNegativeNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
   if (getsign(-nan))
     EXPECT_EQ("-nan", fmt::format("{}", -nan));
   else
     fmt::print("Warning: compiler doesn't handle negative NaN correctly");
+}
+
+TEST(FormatTest, FormatErrorCode) {
+  std::string msg = "error 42", sep = ": ";
+  {
+    fmt::Writer w;
+    w << "garbage";
+    format_error_code(w, 42, "test");
+    EXPECT_EQ("test: " + msg, w.str());
+  }
+  {
+    fmt::Writer w;
+    std::string prefix(
+        fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size() + 1, 'x');
+    format_error_code(w, 42, prefix);
+    EXPECT_EQ(msg, w.str());
+  }
+  {
+    fmt::Writer w;
+    std::string prefix(
+        fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size(), 'x');
+    format_error_code(w, 42, prefix);
+    EXPECT_EQ(prefix + sep + msg, w.str());
+    EXPECT_EQ(fmt::internal::INLINE_BUFFER_SIZE, w.size());
+  }
 }

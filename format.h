@@ -1395,7 +1395,7 @@ class BasicWriter {
     Returns a pointer to the output buffer content. No terminating null
     character is appended.
    */
-  const Char *data() const { return &buffer_[0]; }
+  const Char *data() const FMT_NOEXCEPT(true) { return &buffer_[0]; }
 
   /**
     Returns a pointer to the output buffer content with terminating null
