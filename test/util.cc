@@ -44,9 +44,8 @@ std::string get_system_error(int error_code) {
 #else
   enum { BUFFER_SIZE = 200 };
   char buffer[BUFFER_SIZE];
-  EXPECT_EQ(0, strerror_s(buffer, BUFFER_SIZE, error_code));
-  std::size_t max_len = BUFFER_SIZE - 1;
-  EXPECT_LT(std::strlen(buffer), max_len);
+  if (strerror_s(buffer, BUFFER_SIZE, error_code))
+    throw std::exception("strerror_s failed");
   return buffer;
 #endif
 }
