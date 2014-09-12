@@ -33,6 +33,7 @@
 
 #ifdef _WIN32
 # include <io.h>
+# undef max
 #endif
 
 #include "gtest-extra.h"
@@ -97,7 +98,7 @@ errno_t test::sopen_s(
   return _sopen_s(pfh, filename, oflag, shflag, pmode);
 }
 
-static LONGLONG max_file_size() {return std::numeric_limits<LONGLONG>::max(); }
+static LONGLONG max_file_size() { return std::numeric_limits<LONGLONG>::max(); }
 
 BOOL test::GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize) {
   BOOL result = GetFileSizeEx(hFile, lpFileSize);
