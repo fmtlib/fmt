@@ -1119,15 +1119,20 @@ inline StrFormatSpec<wchar_t> pad(
 // Generates a comma-separated list with results of applying f to numbers 0..n-1.
 # define FMT_GEN(n, f) FMT_GEN##n(f)
 # define FMT_GEN1(f)  f(0)
-# define FMT_GEN2(f)  FMT_GEN1(f), f(1)
-# define FMT_GEN3(f)  FMT_GEN2(f), f(2)
-# define FMT_GEN4(f)  FMT_GEN3(f), f(3)
-# define FMT_GEN5(f)  FMT_GEN4(f), f(4)
-# define FMT_GEN6(f)  FMT_GEN5(f), f(5)
-# define FMT_GEN7(f)  FMT_GEN6(f), f(6)
-# define FMT_GEN8(f)  FMT_GEN7(f), f(7)
-# define FMT_GEN9(f)  FMT_GEN8(f), f(8)
-# define FMT_GEN10(f) FMT_GEN9(f), f(9)
+# define FMT_GEN2(f)  FMT_GEN1(f),  f(1)
+# define FMT_GEN3(f)  FMT_GEN2(f),  f(2)
+# define FMT_GEN4(f)  FMT_GEN3(f),  f(3)
+# define FMT_GEN5(f)  FMT_GEN4(f),  f(4)
+# define FMT_GEN6(f)  FMT_GEN5(f),  f(5)
+# define FMT_GEN7(f)  FMT_GEN6(f),  f(6)
+# define FMT_GEN8(f)  FMT_GEN7(f),  f(7)
+# define FMT_GEN9(f)  FMT_GEN8(f),  f(8)
+# define FMT_GEN10(f) FMT_GEN9(f),  f(9)
+# define FMT_GEN11(f) FMT_GEN10(f), f(10)
+# define FMT_GEN12(f) FMT_GEN11(f), f(11)
+# define FMT_GEN13(f) FMT_GEN12(f), f(12)
+# define FMT_GEN14(f) FMT_GEN13(f), f(13)
+# define FMT_GEN15(f) FMT_GEN14(f), f(14)
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
@@ -1999,7 +2004,12 @@ inline void format_decimal(char *&buffer, T value) {
   FMT_WRAP(Char, ReturnType, func, call, 7, __VA_ARGS__) \
   FMT_WRAP(Char, ReturnType, func, call, 8, __VA_ARGS__) \
   FMT_WRAP(Char, ReturnType, func, call, 9, __VA_ARGS__) \
-  FMT_WRAP(Char, ReturnType, func, call, 10, __VA_ARGS__)
+  FMT_WRAP(Char, ReturnType, func, call, 10, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 11, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 12, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 13, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 14, __VA_ARGS__) \
+  FMT_WRAP(Char, ReturnType, func, call, 15, __VA_ARGS__)
 #endif  // FMT_USE_VARIADIC_TEMPLATES
 
 /**
