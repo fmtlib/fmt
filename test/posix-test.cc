@@ -101,7 +101,7 @@ errno_t test::sopen_s(
 static LONGLONG max_file_size() { return std::numeric_limits<LONGLONG>::max(); }
 
 BOOL test::GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize) {
-  BOOL result = GetFileSizeEx(hFile, lpFileSize);
+  BOOL result = ::GetFileSizeEx(hFile, lpFileSize);
   if (increase_file_size)
     lpFileSize->QuadPart = max_file_size();
   return result;
