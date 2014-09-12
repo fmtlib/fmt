@@ -39,7 +39,11 @@ arguments in the resulting string.
 
 *args* is an argument list representing arbitrary arguments.
 
+.. _format:
+
 .. doxygenfunction:: fmt::format(StringRef, const ArgList &)
+
+.. _print:
 
 .. doxygenfunction:: fmt::print(StringRef, const ArgList &)
 
@@ -101,7 +105,7 @@ System Errors
 Format String Syntax
 --------------------
 
-Formatting functions such as :cpp:func:`fmt::format()` and :cpp:func:`fmt::print()`
+Formatting functions such as :ref:`fmt::format() <format>` and :ref:`fmt::print() <print>`
 use the same format string syntax described in this section.
 
 Format strings contain "replacement fields" surrounded by curly braces ``{}``.
@@ -160,9 +164,6 @@ Format Specification Mini-Language
 format string to define how individual values are presented (see
 :ref:`formatstrings`).  Each formattable type may define how the format
 specification is to be interpreted.
-
-..
-  They can also be passed directly to the :func:`format` function.
 
 Most built-in types implement the following options for format specifications,
 although some of the formatting options are only supported by the numeric types.
