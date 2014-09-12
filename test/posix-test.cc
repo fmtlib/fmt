@@ -56,8 +56,9 @@ int fclose_count;
 int fileno_count;
 std::size_t read_nbyte;
 std::size_t write_nbyte;
-bool increase_file_size;
 bool sysconf_error;
+
+enum FStatSimulation { NONE, MAX_SIZE, ERROR } fstat_sim;
 }
 
 #define EMULATE_EINTR(func, error_result) \
@@ -78,7 +79,7 @@ static off_t max_file_size() { return std::numeric_limits<off_t>::max(); }
 
 int test::fstat(int fd, struct stat *buf) {
   int result = ::fstat(fd, buf);
-  if (increase_file_size)
+  if (fstat_sim == MAX_SIZE)
     buf->st_size = max_file_size();
   return result;
 }
@@ -102,7 +103,11 @@ static LONGLONG max_file_size() { return std::numeric_limits<LONGLONG>::max(); }
 
 BOOL test::GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize) {
   BOOL result = ::GetFileSizeEx(hFile, lpFileSize);
-  if (increase_file_size)
+  if (fstat_sim == ERROR) {
+    SetLastError(ERROR_ACCESS_DENIED);
+    return FALSE;
+  }
+  if (fstat_sim == MAX_SIZE)
     lpFileSize->QuadPart = max_file_size();
   return result;
 }
@@ -250,16 +255,24 @@ TEST(FileTest, Size) {
   File f("test", File::RDONLY);
   EXPECT_EQ(content.size(), f.size());
   f.close();
+#ifdef _WIN32
+  fmt::Writer message;
+  format_windows_error(message, ERROR_ACCESS_DENIED, "cannot get file size");
+  fstat_sim = ERROR;
+  EXPECT_THROW_MSG(f.size(), fmt::WindowsError, message.str());
+  fstat_sim = NONE
+#else
   EXPECT_SYSTEM_ERROR(f.size(), EBADF, "cannot get file attributes");
+#endif
 }
 
 TEST(FileTest, MaxSize) {
   write_file("test", "");
   File f("test", File::RDONLY);
-  increase_file_size = true;
+  fstat_sim = MAX_SIZE;
   EXPECT_GE(f.size(), 0);
   EXPECT_EQ(max_file_size(), f.size());
-  increase_file_size = false;
+  fstat_sim = NONE;
 }
 
 TEST(FileTest, ReadRetry) {
