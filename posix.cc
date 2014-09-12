@@ -54,20 +54,6 @@
 
 #endif  // _WIN32
 
-#if FMT_GCC_VERSION >= 407
-# define FMT_UNUSED __attribute__((unused))
-#else
-# define FMT_UNUSED
-#endif
-
-#if FMT_USE_STATIC_ASSERT
-# define FMT_STATIC_ASSERT(cond, message) static_assert(cond, message)
-#else
-# define FMT_CONCAT_(a, b) FMT_CONCAT(a, b)
-# define FMT_STATIC_ASSERT(cond, message) \
-  typedef int FMT_CONCAT_(Assert, __LINE__)[(cond) ? 1 : -1] FMT_UNUSED
-#endif
-
 namespace {
 #ifdef _WIN32
 // Return type of read and write functions.

@@ -8,6 +8,7 @@ set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 function (expect_compile_error code)
   check_cxx_source_compiles("
   #include \"format.cc\"
+  #include \"posix.h\"
   int main() {
     ${code}
   }
@@ -44,3 +45,5 @@ expect_compile_error("fmt::Writer() << fmt::pad(42, 5, L' ');")
 
 # Formatting a wide character with a narrow format string is forbidden.
 expect_compile_error("fmt::format(\"{}\", L'a';")
+
+expect_compile_error("FMT_STATIC_ASSERT(0 > 1, \"oops\");")

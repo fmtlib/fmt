@@ -56,14 +56,6 @@ int fileno_count;
 std::size_t read_nbyte;
 std::size_t write_nbyte;
 bool increase_file_size;
-
-std::string TEST_FILE_CONTENT = "top secret, destroy before reading";
-
-void WriteTestFile() {
-  BufferedFile bf("test", "w");
-  bf.print(TEST_FILE_CONTENT);
-  bf.close();
-}
 }
 
 #define EMULATE_EINTR(func, error_result) \
@@ -183,7 +175,13 @@ int test::fileno(FILE *stream) {
 
 void write_file(fmt::StringRef filename, fmt::StringRef content) {
   fmt::BufferedFile f(filename, "w");
-  fmt::print(f.get(), "{}", content);
+  f.print("{}", content);
+}
+
+TEST(UtilTest, StaticAssert) {
+  FMT_STATIC_ASSERT(true, "success");
+  // Static assertion failure is tested in compile-test because it causes
+  // a compile-time error.
 }
 
 TEST(FileTest, OpenRetry) {
@@ -222,23 +220,22 @@ TEST(FileTest, CloseNoRetry) {
 }
 
 TEST(FileTest, Size) {
-  WriteTestFile();
+  std::string content = "top secret, destroy before reading";
+  write_file("test", content);
   File f("test", File::RDONLY);
-  EXPECT_EQ(TEST_FILE_CONTENT.size(), f.size());
+  EXPECT_EQ(content.size(), f.size());
   f.close();
   EXPECT_SYSTEM_ERROR(f.size(), EBADF, "cannot get file attributes");
 }
 
 TEST(FileTest, MaxSize) {
-  WriteTestFile();
+  write_file("test", "");
   File f("test", File::RDONLY);
   increase_file_size = true;
   EXPECT_GE(f.size(), 0);
   EXPECT_EQ(max_file_size(), f.size());
   increase_file_size = false;
 }
-
-// TODO: test FMT_STATIC_ASSERT
 
 TEST(FileTest, ReadRetry) {
   File read_end, write_end;
