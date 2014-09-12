@@ -132,7 +132,8 @@ void fmt::File::close() {
 fmt::LongLong fmt::File::size() const {
 #ifdef _WIN32
   LARGE_INTEGER size = {};
-  if (!FMT_SYSTEM(GetFileSizeEx(_get_osfhandle(fd_), &size)))
+  HANDLE handle = reinterpret_cast<HANDLE>(_get_osfhandle(fd_));
+  if (!FMT_SYSTEM(GetFileSizeEx(handle, &size)))
     throw WindowsError(GetLastError(), "cannot get file size");
   FMT_STATIC_ASSERT(sizeof(fmt::LongLong) >= sizeof(size.QuadPart),
       "return type of File::size is not large enough");
