@@ -34,6 +34,7 @@
 #ifndef _WIN32
 # include <unistd.h>
 #else
+# include <windows.h>
 # include <io.h>
 
 # define O_CREAT _O_CREAT
