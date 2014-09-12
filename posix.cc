@@ -55,12 +55,18 @@
 
 namespace {
 #ifdef _WIN32
+// Return type of read and write functions.
+typedef int RWResult;
+
 // On Windows the count argument to read and write is unsigned, so convert
 // it from size_t preventing integer overflow.
 inline unsigned convert_rwcount(std::size_t count) {
   return count <= UINT_MAX ? static_cast<unsigned>(count) : UINT_MAX;
 }
 #else
+// Return type of read and write functions.
+typedef ssize_t RWResult;
+
 inline std::size_t convert_rwcount(std::size_t count) { return count; }
 #endif
 }
@@ -122,18 +128,18 @@ void fmt::File::close() {
     throw SystemError(errno, "cannot close file");
 }
 
-std::streamsize fmt::File::read(void *buffer, std::size_t count) {
-  std::streamsize result = 0;
+std::size_t fmt::File::read(void *buffer, std::size_t count) {
+  RWResult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(read(fd_, buffer, convert_rwcount(count))));
-  if (result == -1)
+  if (result < 0)
     throw SystemError(errno, "cannot read from file");
   return result;
 }
 
-std::streamsize fmt::File::write(const void *buffer, std::size_t count) {
-  std::streamsize result = 0;
+std::size_t fmt::File::write(const void *buffer, std::size_t count) {
+  RWResult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(write(fd_, buffer, convert_rwcount(count))));
-  if (result == -1)
+  if (result < 0)
     throw SystemError(errno, "cannot write to file");
   return result;
 }
