@@ -194,6 +194,17 @@ TEST(FileTest, CloseNoRetry) {
   close_count = 0;
 }
 
+TEST(FileTest, Size) {
+  BufferedFile bf("test", "w");
+  std::string content = "top secret, destroy before reading";
+  bf.print(content);
+  bf.close();
+  File f("test", File::RDONLY);
+  EXPECT_EQ(content.size(), f.size());
+  // TODO: test if size can handle large file sizes
+  // TODO: test FMT_STATIC_ASSERT
+}
+
 TEST(FileTest, ReadRetry) {
   File read_end, write_end;
   File::pipe(read_end, write_end);

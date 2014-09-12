@@ -206,7 +206,7 @@ class File {
   File() FMT_NOEXCEPT(true) : fd_(-1) {}
 
   // Opens a file and constructs a File object representing this file.
-  File(const char *path, int oflag);
+  File(fmt::StringRef path, int oflag);
 
 #if !FMT_USE_RVALUE_REFERENCES
   // Emulate a move constructor and a move assignment operator if rvalue
@@ -276,6 +276,9 @@ class File {
 
   // Closes the file.
   void close();
+
+  // Returns the file size.
+  fmt::LongLong size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.
   std::size_t read(void *buffer, std::size_t count);

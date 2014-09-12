@@ -53,6 +53,20 @@
 
 #endif  // _WIN32
 
+#if FMT_GCC_VERSION >= 407
+# define FMT_UNUSED __attribute__((unused))
+#else
+# define FMT_UNUSED
+#endif
+
+#if FMT_USE_STATIC_ASSERT
+# define FMT_STATIC_ASSERT(cond, message) static_assert(cond, message)
+#else
+# define FMT_CONCAT_(a, b) FMT_CONCAT(a, b)
+# define FMT_STATIC_ASSERT(cond, message) \
+  typedef int FMT_CONCAT_(Assert, __LINE__)[(cond) ? 1 : -1] FMT_UNUSED
+#endif
+
 namespace {
 #ifdef _WIN32
 // Return type of read and write functions.
@@ -98,13 +112,13 @@ int fmt::BufferedFile::fileno() const {
   return fd;
 }
 
-fmt::File::File(const char *path, int oflag) {
+fmt::File::File(fmt::StringRef path, int oflag) {
   int mode = S_IRUSR | S_IWUSR;
 #ifdef _WIN32
   fd_ = -1;
-  FMT_POSIX_CALL(sopen_s(&fd_, path, oflag, _SH_DENYNO, mode));
+  FMT_POSIX_CALL(sopen_s(&fd_, path.c_str(), oflag, _SH_DENYNO, mode));
 #else
-  FMT_RETRY(fd_, FMT_POSIX_CALL(open(path, oflag, mode)));
+  FMT_RETRY(fd_, FMT_POSIX_CALL(open(path.c_str(), oflag, mode)));
 #endif
   if (fd_ == -1)
     throw SystemError(errno, "cannot open file {}", path);
@@ -126,6 +140,25 @@ void fmt::File::close() {
   fd_ = -1;
   if (result != 0)
     throw SystemError(errno, "cannot close file");
+}
+
+fmt::LongLong fmt::File::size() const {
+#ifdef _WIN32
+  LARGE_INTEGER size = {};
+  if (!GetFileSizeEx(_get_osfhandle(fd_), &size))
+    throw WindowsError(GetLastError(), "cannot get file size");
+  FMT_STATIC_ASSERT(sizeof(fmt::LongLong) >= sizeof(size.QuadPart),
+      "return type of File::size is not large enough");
+  return size.QuadPart;
+#else
+  typedef struct stat Stat;
+  Stat file_stat = Stat();
+  if (fstat(fd_, &file_stat) == -1)
+    throw SystemError(errno, "cannot get file attributes");
+  FMT_STATIC_ASSERT(sizeof(fmt::LongLong) >= sizeof(file_stat.st_size),
+      "return type of File::size is not large enough");
+  return file_stat.st_size;
+#endif
 }
 
 std::size_t fmt::File::read(void *buffer, std::size_t count) {
