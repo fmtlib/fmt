@@ -867,7 +867,7 @@ class PrintfFormatter : private FormatterBase {
   // Returns the argument with specified index or, if arg_index is equal
   // to the maximum unsigned value, the next argument.
   const Arg &get_arg(const Char *s,
-      unsigned arg_index = std::numeric_limits<unsigned>::max());
+      unsigned arg_index = (std::numeric_limits<unsigned>::max)());
 
   // Parses argument index, flags and width and returns the argument index.
   unsigned parse_header(const Char *&s, FormatSpec &spec);
