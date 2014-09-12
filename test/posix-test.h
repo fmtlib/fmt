@@ -45,6 +45,7 @@ typedef size_t size_t;
 typedef ssize_t ssize_t;
 int open(const char *path, int oflag, int mode);
 int fstat(int fd, struct stat *buf);
+long sysconf(int name);
 #else
 typedef unsigned size_t;
 typedef int ssize_t;

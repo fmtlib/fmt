@@ -320,7 +320,10 @@ class File {
   // this File object from the file.
   BufferedFile fdopen(const char *mode);
 };
-}
+
+// Returns the memory page size.
+long getpagesize();
+}  // namespace fmt
 
 #if !FMT_USE_RVALUE_REFERENCES
 namespace std {

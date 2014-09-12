@@ -56,6 +56,7 @@ int fileno_count;
 std::size_t read_nbyte;
 std::size_t write_nbyte;
 bool increase_file_size;
+bool sysconf_error;
 }
 
 #define EMULATE_EINTR(func, error_result) \
@@ -79,6 +80,15 @@ int test::fstat(int fd, struct stat *buf) {
   if (increase_file_size)
     buf->st_size = max_file_size();
   return result;
+}
+
+long test::sysconf(int name) {
+  long result = ::sysconf(name);
+  if (!sysconf_error)
+    return result;
+  // Simulate an error.
+  errno = EINVAL;
+  return -1;
 }
 #else
 errno_t test::sopen_s(
@@ -182,6 +192,20 @@ TEST(UtilTest, StaticAssert) {
   FMT_STATIC_ASSERT(true, "success");
   // Static assertion failure is tested in compile-test because it causes
   // a compile-time error.
+}
+
+TEST(UtilTest, GetPageSize) {
+#ifdef _WIN32
+  SYSTEM_INFO si = {};
+  GetSystemInfo(&si);
+  EXPECT_EQ(si.dwPageSize, fmt::getpagesize());
+#else
+  EXPECT_EQ(sysconf(_SC_PAGESIZE), fmt::getpagesize());
+  sysconf_error = true;
+  EXPECT_SYSTEM_ERROR(
+      fmt::getpagesize(), EINVAL, "cannot get memory page size");
+  sysconf_error = false;
+#endif
 }
 
 TEST(FileTest, OpenRetry) {

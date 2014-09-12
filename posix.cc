@@ -222,3 +222,16 @@ fmt::BufferedFile fmt::File::fdopen(const char *mode) {
   fd_ = -1;
   return file;
 }
+
+long fmt::getpagesize() {
+#ifdef _WIN32
+  SYSTEM_INFO si = {};
+  GetSystemInfo(&si);
+  return si.dwPageSize;
+#else
+  long size = FMT_POSIX_CALL(sysconf(_SC_PAGESIZE));
+  if (size < 0)
+    throw SystemError(errno, "cannot get memory page size");
+  return size;
+#endif
+}
