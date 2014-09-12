@@ -145,7 +145,7 @@ void fmt::File::close() {
 fmt::LongLong fmt::File::size() const {
 #ifdef _WIN32
   LARGE_INTEGER size = {};
-  if (!GetFileSizeEx(_get_osfhandle(fd_), &size))
+  if (!FMT_SYSTEM(GetFileSizeEx(_get_osfhandle(fd_), &size)))
     throw WindowsError(GetLastError(), "cannot get file size");
   FMT_STATIC_ASSERT(sizeof(fmt::LongLong) >= sizeof(size.QuadPart),
       "return type of File::size is not large enough");
@@ -153,7 +153,7 @@ fmt::LongLong fmt::File::size() const {
 #else
   typedef struct stat Stat;
   Stat file_stat = Stat();
-  if (fstat(fd_, &file_stat) == -1)
+  if (FMT_POSIX_CALL(fstat(fd_, &file_stat)) == -1)
     throw SystemError(errno, "cannot get file attributes");
   FMT_STATIC_ASSERT(sizeof(fmt::LongLong) >= sizeof(file_stat.st_size),
       "return type of File::size is not large enough");

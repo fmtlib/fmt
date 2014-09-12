@@ -31,6 +31,12 @@
 #include <errno.h>
 #include <stdio.h>
 
+#ifndef _WIN32
+struct stat;
+#else
+# include <windows.h>
+#endif
+
 namespace test {
 
 #ifndef _WIN32
@@ -38,11 +44,13 @@ namespace test {
 typedef size_t size_t;
 typedef ssize_t ssize_t;
 int open(const char *path, int oflag, int mode);
+int fstat(int fd, struct stat *buf);
 #else
 typedef unsigned size_t;
 typedef int ssize_t;
 errno_t sopen_s(
     int* pfh, const char *filename, int oflag, int shflag, int pmode);
+BOOL GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize);
 #endif
 
 int close(int fildes);

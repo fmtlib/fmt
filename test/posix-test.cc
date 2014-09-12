@@ -55,6 +55,15 @@ int fclose_count;
 int fileno_count;
 std::size_t read_nbyte;
 std::size_t write_nbyte;
+bool increase_file_size;
+
+std::string TEST_FILE_CONTENT = "top secret, destroy before reading";
+
+void WriteTestFile() {
+  BufferedFile bf("test", "w");
+  bf.print(TEST_FILE_CONTENT);
+  bf.close();
+}
 }
 
 #define EMULATE_EINTR(func, error_result) \
@@ -70,11 +79,29 @@ int test::open(const char *path, int oflag, int mode) {
   EMULATE_EINTR(open, -1);
   return ::open(path, oflag, mode);
 }
+
+static off_t max_file_size() { return std::numeric_limits<off_t>::max(); }
+
+int test::fstat(int fd, struct stat *buf) {
+  int result = ::fstat(fd, buf);
+  if (increase_file_size)
+    buf->st_size = max_file_size();
+  return result;
+}
 #else
 errno_t test::sopen_s(
     int* pfh, const char *filename, int oflag, int shflag, int pmode) {
   EMULATE_EINTR(open, EINTR);
   return _sopen_s(pfh, filename, oflag, shflag, pmode);
+}
+
+static LONGLONG max_file_size() {return std::numeric_limits<LONGLONG>::max(); }
+
+BOOL test::GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize) {
+  BOOL result = GetFileSizeEx(hFile, lpFileSize);
+  if (increase_file_size)
+    lpFileSize->QuadPart = max_file_size();
+  return result;
 }
 #endif
 
@@ -195,15 +222,23 @@ TEST(FileTest, CloseNoRetry) {
 }
 
 TEST(FileTest, Size) {
-  BufferedFile bf("test", "w");
-  std::string content = "top secret, destroy before reading";
-  bf.print(content);
-  bf.close();
+  WriteTestFile();
   File f("test", File::RDONLY);
-  EXPECT_EQ(content.size(), f.size());
-  // TODO: test if size can handle large file sizes
-  // TODO: test FMT_STATIC_ASSERT
+  EXPECT_EQ(TEST_FILE_CONTENT.size(), f.size());
+  f.close();
+  EXPECT_SYSTEM_ERROR(f.size(), EBADF, "cannot get file attributes");
 }
+
+TEST(FileTest, MaxSize) {
+  WriteTestFile();
+  File f("test", File::RDONLY);
+  increase_file_size = true;
+  EXPECT_GE(f.size(), 0);
+  EXPECT_EQ(max_file_size(), f.size());
+  increase_file_size = false;
+}
+
+// TODO: test FMT_STATIC_ASSERT
 
 TEST(FileTest, ReadRetry) {
   File read_end, write_end;
