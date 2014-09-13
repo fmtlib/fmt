@@ -34,6 +34,7 @@
 #ifdef _WIN32
 # include <io.h>
 # undef max
+# undef ERROR
 #endif
 
 #include "gtest-extra.h"
@@ -257,10 +258,11 @@ TEST(FileTest, Size) {
   f.close();
 #ifdef _WIN32
   fmt::Writer message;
-  format_windows_error(message, ERROR_ACCESS_DENIED, "cannot get file size");
+  fmt::format_windows_error(
+      message, ERROR_ACCESS_DENIED, "cannot get file size");
   fstat_sim = ERROR;
   EXPECT_THROW_MSG(f.size(), fmt::WindowsError, message.str());
-  fstat_sim = NONE
+  fstat_sim = NONE;
 #else
   EXPECT_SYSTEM_ERROR(f.size(), EBADF, "cannot get file attributes");
 #endif
