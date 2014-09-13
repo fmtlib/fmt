@@ -127,6 +127,8 @@ Projects using this library
 * `HarpyWar/pvpgn <https://github.com/HarpyWar/pvpgn>`__:
   Player vs Player Gaming Network with tweaks
 
+* `KBEngine <http://www.kbengine.org/>`_: An open-source MMOG server engine
+
 If you are aware of other projects using this library, please let me know
 by `email <mailto:victor.zverovich@gmail.com>`__ or by submitting an
 `issue <https://github.com/cppformat/cppformat/issues>`__.
