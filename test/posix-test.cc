@@ -103,11 +103,11 @@ errno_t test::sopen_s(
 static LONGLONG max_file_size() { return std::numeric_limits<LONGLONG>::max(); }
 
 BOOL test::GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize) {
-  BOOL result = ::GetFileSizeEx(hFile, lpFileSize);
   if (fstat_sim == ERROR) {
     SetLastError(ERROR_ACCESS_DENIED);
     return FALSE;
   }
+  BOOL result = ::GetFileSizeEx(hFile, lpFileSize);
   if (fstat_sim == MAX_SIZE)
     lpFileSize->QuadPart = max_file_size();
   return result;
@@ -255,7 +255,6 @@ TEST(FileTest, Size) {
   write_file("test", content);
   File f("test", File::RDONLY);
   EXPECT_EQ(content.size(), f.size());
-  f.close();
 #ifdef _WIN32
   fmt::Writer message;
   fmt::internal::format_windows_error(
@@ -264,6 +263,7 @@ TEST(FileTest, Size) {
   EXPECT_THROW_MSG(f.size(), fmt::WindowsError, message.str());
   fstat_sim = NONE;
 #else
+  f.close();
   EXPECT_SYSTEM_ERROR(f.size(), EBADF, "cannot get file attributes");
 #endif
 }
