@@ -258,7 +258,7 @@ TEST(FileTest, Size) {
   f.close();
 #ifdef _WIN32
   fmt::Writer message;
-  fmt::format_windows_error(
+  fmt::internal::format_windows_error(
       message, ERROR_ACCESS_DENIED, "cannot get file size");
   fstat_sim = ERROR;
   EXPECT_THROW_MSG(f.size(), fmt::WindowsError, message.str());
