@@ -1,6 +1,6 @@
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main ${TEST_MAIN_SRC})
-target_link_libraries(test-main gtest)
+target_link_libraries(test-main gmock)
 
 # Adds a test.
 # Usage: add_fmt_test(name [CUSTOM_LINK] srcs...)
@@ -36,13 +36,13 @@ endforeach ()
 add_executable(macro-test macro-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
 set_target_properties(macro-test
   PROPERTIES COMPILE_DEFINITIONS "FMT_USE_VARIADIC_TEMPLATES=0")
-target_link_libraries(macro-test gtest)
+target_link_libraries(macro-test gmock)
 
 if (HAVE_OPEN)
   add_executable(posix-test posix-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
   set_target_properties(posix-test
     PROPERTIES COMPILE_DEFINITIONS "FMT_INCLUDE_POSIX_TEST=1")
-  target_link_libraries(posix-test gtest)
+  target_link_libraries(posix-test gmock)
   add_test(posix-test posix-test)
 endif ()
 

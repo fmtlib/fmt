@@ -82,17 +82,14 @@ include_directories(.)
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
 
+add_library(gmock gmock/gmock-gtest-all.cc)
+target_include_directories(gmock PUBLIC gmock)
+find_package(Threads)
+target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
+
 # GTest doesn't detect <tuple> with clang.
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
-endif ()
-
-add_library(gtest gtest/gtest-all.cc)
-find_package(Threads)
-target_link_libraries(gtest ${CMAKE_THREAD_LIBS_INIT})
-
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
+  target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
 endif ()
 
 enable_testing()
