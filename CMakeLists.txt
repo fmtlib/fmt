@@ -75,7 +75,7 @@ endif ()
 
 add_subdirectory(doc)
 
-include_directories(.)
+include_directories(. gmock)
 
 # We compile Google Test ourselves instead of using pre-compiled libraries.
 # See the Google Test FAQ "Why is it not recommended to install a
@@ -83,7 +83,6 @@ include_directories(.)
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
 
 add_library(gmock gmock/gmock-gtest-all.cc)
-target_include_directories(gmock PUBLIC gmock)
 find_package(Threads)
 target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
 
