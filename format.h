@@ -238,8 +238,8 @@ inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
 
 // A simple array for POD types with the first SIZE elements stored in
 // the object itself. It supports a subset of std::vector's operations.
-template <typename T, std::size_t SIZE>
-class Array {
+template <typename T, std::size_t SIZE, typename Allocator = std::allocator<T> >
+class Array : private Allocator {
  private:
   std::size_t size_;
   std::size_t capacity_;
@@ -250,7 +250,7 @@ class Array {
 
   // Free memory allocated by the array.
   void free() {
-    if (ptr_ != data_) delete [] ptr_;
+    if (ptr_ != data_) this->deallocate(ptr_, capacity_);
   }
 
   // Move data from other to this array.
@@ -271,7 +271,8 @@ class Array {
   FMT_DISALLOW_COPY_AND_ASSIGN(Array);
 
  public:
-  explicit Array() : size_(0), capacity_(SIZE), ptr_(data_) {}
+  explicit Array(const Allocator &alloc = Allocator())
+      : Allocator(alloc), size_(0), capacity_(SIZE), ptr_(data_) {}
   ~Array() { free(); }
 
 #if FMT_USE_RVALUE_REFERENCES
@@ -292,6 +293,9 @@ class Array {
 
   // Returns the capacity of this array.
   std::size_t capacity() const { return capacity_; }
+
+  // Returns a copy of the allocator associated with this array.
+  Allocator get_allocator() const { return *this; }
 
   // Resizes the array. If T is a POD type new elements are not initialized.
   void resize(std::size_t new_size) {
@@ -321,18 +325,25 @@ class Array {
   const T &operator[](std::size_t index) const { return ptr_[index]; }
 };
 
-template <typename T, std::size_t SIZE>
-void Array<T, SIZE>::grow(std::size_t size) {
-  capacity_ = (std::max)(size, capacity_ + capacity_ / 2);
-  T *p = new T[capacity_];
-  std::copy(ptr_, ptr_ + size_, make_ptr(p, capacity_));
-  if (ptr_ != data_)
-    delete [] ptr_;
-  ptr_ = p;
+template <typename T, std::size_t SIZE, typename Allocator>
+void Array<T, SIZE, Allocator>::grow(std::size_t size) {
+  std::size_t new_capacity = (std::max)(size, capacity_ + capacity_ / 2);
+  T *new_ptr = this->allocate(new_capacity);
+  // The following code doesn't throw, so the raw pointer above doesn't leak.
+  std::copy(ptr_, ptr_ + size_, make_ptr(new_ptr, new_capacity));
+  std::size_t old_capacity = capacity_;
+  T *old_ptr = ptr_;
+  capacity_ = new_capacity;
+  ptr_ = new_ptr;
+  // deallocate may throw (at least in principle), but it doesn't matter since
+  // the array already uses the new storage and will deallocate it in case
+  // of exception.
+  if (old_ptr != data_)
+    this->deallocate(old_ptr, old_capacity);
 }
 
-template <typename T, std::size_t SIZE>
-void Array<T, SIZE>::append(const T *begin, const T *end) {
+template <typename T, std::size_t SIZE, typename Allocator>
+void Array<T, SIZE, Allocator>::append(const T *begin, const T *end) {
   std::ptrdiff_t num_elements = end - begin;
   if (size_ + num_elements > capacity_)
     grow(size_ + num_elements);

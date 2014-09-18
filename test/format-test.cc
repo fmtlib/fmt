@@ -34,13 +34,14 @@
 #include <iomanip>
 #include <memory>
 #include <sstream>
+#include <stdint.h>
+
+#include "gmock/gmock.h"
 
 // Include format.cc instead of format.h to test implementation-specific stuff.
 #include "format.h"
 #include "util.h"
 #include "gtest-extra.h"
-
-#include <stdint.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 // Fix MSVC warning about "unsafe" fopen.
@@ -65,6 +66,8 @@ using fmt::StringRef;
 using fmt::Writer;
 using fmt::WWriter;
 using fmt::pad;
+
+using testing::Return;
 
 namespace {
 
@@ -269,6 +272,97 @@ TEST(ArrayTest, AppendAllocatesEnoughStorage) {
   EXPECT_STREQ(test, &array[10]);
   EXPECT_EQ(19u, array.size());
   EXPECT_EQ(19u, array.capacity());
+}
+
+template <typename T>
+class MockAllocator {
+ public:
+  typedef T value_type;
+  MOCK_METHOD1_T(allocate, T* (std::size_t n));
+  MOCK_METHOD2_T(deallocate, void (T* p, std::size_t n));
+};
+
+template <typename Allocator>
+class AllocatorRef {
+ private:
+  Allocator *alloc_;
+
+ public:
+  typedef typename Allocator::value_type value_type;
+
+  explicit AllocatorRef(Allocator *alloc = 0) : alloc_(alloc) {}
+
+  Allocator *get() const { return alloc_; }
+
+  value_type* allocate(std::size_t n) { return alloc_->allocate(n); }
+  void deallocate(value_type* p, std::size_t n) { alloc_->deallocate(p, n); }
+};
+
+void CheckForwarding(
+    MockAllocator<int> &alloc, AllocatorRef< MockAllocator<int> > &ref) {
+  int mem;
+  // Check if value_type is properly defined.
+  AllocatorRef< MockAllocator<int> >::value_type *ptr = &mem;
+  // Check forwarding.
+  EXPECT_CALL(alloc, allocate(42)).WillOnce(Return(ptr));
+  ref.allocate(42);
+  EXPECT_CALL(alloc, deallocate(ptr, 42));
+  ref.deallocate(ptr, 42);
+}
+
+TEST(AllocatorTest, AllocatorRef) {
+  testing::StrictMock< MockAllocator<int> > alloc;
+  typedef AllocatorRef< MockAllocator<int> > TestAllocatorRef;
+  TestAllocatorRef ref(&alloc);
+  // Check if AllocatorRef forwards to the underlying allocator.
+  CheckForwarding(alloc, ref);
+  TestAllocatorRef ref2(ref);
+  CheckForwarding(alloc, ref2);
+  TestAllocatorRef ref3;
+  EXPECT_EQ(0, ref3.get());
+  ref3 = ref;
+  CheckForwarding(alloc, ref3);
+}
+
+TEST(ArrayTest, Allocator) {
+  typedef AllocatorRef< MockAllocator<char> > TestAllocator;
+  Array<char, 10, TestAllocator> array;
+  EXPECT_EQ(0, array.get_allocator().get());
+  testing::StrictMock< MockAllocator<char> > alloc;
+  char mem;
+  {
+    Array<char, 10, TestAllocator> array2((TestAllocator(&alloc)));
+    EXPECT_EQ(&alloc, array2.get_allocator().get());
+    std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
+    EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem));
+    array2.reserve(size);
+    EXPECT_CALL(alloc, deallocate(&mem, size));
+  }
+}
+
+TEST(ArrayTest, DeallocateException) {
+  typedef AllocatorRef< MockAllocator<char> > TestAllocator;
+  testing::StrictMock< MockAllocator<char> > alloc;
+  Array<char, 10, TestAllocator> array((TestAllocator(&alloc)));
+  std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
+  std::vector<char> mem(size);
+  {
+    EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem[0]));
+    array.resize(size);
+    std::fill(&array[0], &array[0] + size, 'x');
+  }
+  std::vector<char> mem2(2 * size);
+  {
+    EXPECT_CALL(alloc, allocate(2 * size)).WillOnce(Return(&mem2[0]));
+    std::exception e;
+    EXPECT_CALL(alloc, deallocate(&mem[0], size)).WillOnce(testing::Throw(e));
+    EXPECT_THROW(array.reserve(2 * size), std::exception);
+    EXPECT_EQ(&mem2[0], &array[0]);
+    // Check that the data has been copied.
+    for (std::size_t i = 0; i < size; ++i)
+      EXPECT_EQ('x', array[i]);
+  }
+  EXPECT_CALL(alloc, deallocate(&mem2[0], 2 * size));
 }
 
 TEST(WriterTest, Ctor) {
