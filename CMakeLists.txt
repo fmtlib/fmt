@@ -93,7 +93,7 @@ check_cxx_source_compiles("
   struct S { typedef typename S<Types...>::type type; };
   int main() {}" FMT_VARIADIC_TEMPLATES)
 if (NOT FMT_VARIADIC_TEMPLATES)
-  target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
+  add_definitions(-DGTEST_LANG_CXX11=0)
 endif ()
 
 # GTest doesn't detect <tuple> with clang.
