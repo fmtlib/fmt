@@ -86,6 +86,16 @@ add_library(gmock gmock/gmock-gtest-all.cc)
 find_package(Threads)
 target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
 
+# Check if variadic templates are working and not affected by GCC bug 39653:
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39653
+check_cxx_source_compiles("
+  template <class T, class ...Types>
+  struct S { typedef typename S<Types...>::type type; };
+  int main() {}" FMT_VARIADIC_TEMPLATES)
+if (NOT FMT_VARIADIC_TEMPLATES)
+  target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
+endif ()
+
 # GTest doesn't detect <tuple> with clang.
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
