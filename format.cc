@@ -1058,6 +1058,14 @@ template void fmt::BasicFormatter<char>::format(
 template void fmt::internal::PrintfFormatter<char>::format(
   BasicWriter<char> &writer, BasicStringRef<char> format, const ArgList &args);
 
+template int fmt::internal::CharTraits<char>::format_float(
+    char *buffer, std::size_t size, const char *format,
+    unsigned width, int precision, double value);
+
+template int fmt::internal::CharTraits<char>::format_float(
+    char *buffer, std::size_t size, const char *format,
+    unsigned width, int precision, long double value);
+
 // Explicit instantiations for wchar_t.
 
 template void fmt::BasicFormatter<wchar_t>::format(
@@ -1066,6 +1074,14 @@ template void fmt::BasicFormatter<wchar_t>::format(
 template void fmt::internal::PrintfFormatter<wchar_t>::format(
     BasicWriter<wchar_t> &writer, BasicStringRef<wchar_t> format,
     const ArgList &args);
+
+template int fmt::internal::CharTraits<wchar_t>::format_float(
+    wchar_t *buffer, std::size_t size, const wchar_t *format,
+    unsigned width, int precision, double value);
+
+template int fmt::internal::CharTraits<wchar_t>::format_float(
+    wchar_t *buffer, std::size_t size, const wchar_t *format,
+    unsigned width, int precision, long double value);
 
 #if _MSC_VER
 # pragma warning(pop)
