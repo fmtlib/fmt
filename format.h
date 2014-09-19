@@ -31,6 +31,7 @@
 #include <stdint.h>
 
 #include <cassert>
+#include <cmath>
 #include <cstddef>  // for std::ptrdiff_t
 #include <cstdio>
 #include <algorithm>
@@ -122,7 +123,7 @@ FMT_GCC_EXTENSION typedef unsigned long long ULongLong;
 using std::move;
 #endif
 
-template <typename Char>
+template <typename Char, typename Allocator = std::allocator<Char> >
 class BasicWriter;
 
 typedef BasicWriter<char> Writer;
@@ -253,8 +254,19 @@ class Array : private Allocator {
     if (ptr_ != data_) this->deallocate(ptr_, capacity_);
   }
 
+  FMT_DISALLOW_COPY_AND_ASSIGN(Array);
+
+ public:
+  explicit Array(const Allocator &alloc = Allocator())
+      : Allocator(alloc), size_(0), capacity_(SIZE), ptr_(data_) {}
+  ~Array() { free(); }
+
+#if FMT_USE_RVALUE_REFERENCES
+ private:
   // Move data from other to this array.
   void move(Array &other) {
+    Allocator &this_alloc = *this, &other_alloc = other;
+    this_alloc = std::move(other_alloc);
     size_ = other.size_;
     capacity_ = other.capacity_;
     if (other.ptr_ == other.data_) {
@@ -268,14 +280,7 @@ class Array : private Allocator {
     }
   }
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(Array);
-
  public:
-  explicit Array(const Allocator &alloc = Allocator())
-      : Allocator(alloc), size_(0), capacity_(SIZE), ptr_(data_) {}
-  ~Array() { free(); }
-
-#if FMT_USE_RVALUE_REFERENCES
   Array(Array &&other) {
     move(other);
   }
@@ -350,6 +355,44 @@ void Array<T, SIZE, Allocator>::append(const T *begin, const T *end) {
   std::copy(begin, end, make_ptr(ptr_, capacity_) + size_);
   size_ += num_elements;
 }
+
+#ifndef _MSC_VER
+// Portable version of signbit.
+// When compiled in C++11 mode signbit is no longer a macro but a function
+// defined in namespace std and the macro is undefined.
+inline int getsign(double x) {
+# ifdef signbit
+  return signbit(x);
+# else
+  return std::signbit(x);
+# endif
+}
+
+// Portable version of isinf.
+# ifdef isinf
+inline int isinfinity(double x) { return isinf(x); }
+inline int isinfinity(long double x) { return isinf(x); }
+# else
+inline int isinfinity(double x) { return std::isinf(x); }
+inline int isinfinity(long double x) { return std::isinf(x); }
+# endif
+#else
+inline int getsign(double value) {
+  if (value < 0) return 1;
+  if (value == value) return 0;
+  int dec = 0, sign = 0;
+  char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
+  _ecvt_s(buffer, sizeof(buffer), value, 0, &dec, &sign);
+  return sign;
+}
+inline int isinfinity(double x) { return !_finite(x); }
+#endif
+
+template <typename T>
+struct IsLongDouble { enum {VALUE = 0}; };
+
+template <>
+struct IsLongDouble<long double> { enum {VALUE = 1}; };
 
 template <typename Char>
 class BasicCharTraits {
@@ -1274,15 +1317,16 @@ class SystemError : public internal::RuntimeError {
   a character stream. The output is stored in a memory buffer that grows
   dynamically.
 
-  You can use one of the following typedefs for common character types:
+  You can use one of the following typedefs for common character types
+  and the standard allocator:
 
-  +---------+----------------------+
-  | Type    | Definition           |
-  +=========+======================+
-  | Writer  | BasicWriter<char>    |
-  +---------+----------------------+
-  | WWriter | BasicWriter<wchar_t> |
-  +---------+----------------------+
+  +---------+-----------------------------------------------+
+  | Type    | Definition                                    |
+  +=========+===============================================+
+  | Writer  | BasicWriter<char, std::allocator<char>>       |
+  +---------+-----------------------------------------------+
+  | WWriter | BasicWriter<wchar_t, std::allocator<wchar_t>> |
+  +---------+-----------------------------------------------+
 
   **Example**::
 
@@ -1301,11 +1345,12 @@ class SystemError : public internal::RuntimeError {
   accessed as a C string with ``out.c_str()``.
   \endrst
  */
-template <typename Char>
+template <typename Char, typename Allocator>
 class BasicWriter {
  private:
   // Output buffer.
-  mutable internal::Array<Char, internal::INLINE_BUFFER_SIZE> buffer_;
+  typedef internal::Array<Char, internal::INLINE_BUFFER_SIZE, Allocator> Array;
+  mutable Array buffer_;
 
   typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
 
@@ -1316,6 +1361,8 @@ class BasicWriter {
   static Char *get(Char *p) { return p; }
 #endif
 
+  // Fills the padding around the content and returns the pointer to the
+  // content area.
   static CharPtr fill_padding(CharPtr buffer,
       unsigned total_size, std::size_t content_size, wchar_t fill);
 
@@ -1370,7 +1417,7 @@ class BasicWriter {
   /**
     Constructs a ``BasicWriter`` object.
    */
-  BasicWriter() {}
+  BasicWriter(const Allocator &alloc = Allocator()) : buffer_(alloc) {}
 
 #if FMT_USE_RVALUE_REFERENCES
   /**
@@ -1446,7 +1493,7 @@ class BasicWriter {
   void write(BasicStringRef<Char> format, const ArgList &args) {
     BasicFormatter<Char>(*this).format(format, args);
   }
-  FMT_VARIADIC_VOID(write, fmt::BasicStringRef<Char>)
+  FMT_VARIADIC_VOID(write, BasicStringRef<Char>)
 
   BasicWriter &operator<<(int value) {
     return *this << IntFormatSpec<int>(value);
@@ -1525,9 +1572,10 @@ class BasicWriter {
   void clear() FMT_NOEXCEPT(true) { buffer_.clear(); }
 };
 
-template <typename Char>
+template <typename Char, typename Allocator>
 template <typename StrChar>
-typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
+typename BasicWriter<Char, Allocator>::CharPtr
+  BasicWriter<Char, Allocator>::write_str(
     const StrChar *s, std::size_t size, const AlignSpec &spec) {
   CharPtr out = CharPtr();
   if (spec.width() > size) {
@@ -1548,10 +1596,25 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
   return out;
 }
 
-template <typename Char>
+template <typename Char, typename Allocator>
+typename BasicWriter<Char, Allocator>::CharPtr
+  BasicWriter<Char, Allocator>::fill_padding(
+    CharPtr buffer, unsigned total_size,
+    std::size_t content_size, wchar_t fill) {
+  std::size_t padding = total_size - content_size;
+  std::size_t left_padding = padding / 2;
+  Char fill_char = static_cast<Char>(fill);
+  std::fill_n(buffer, left_padding, fill_char);
+  buffer += left_padding;
+  CharPtr content = buffer;
+  std::fill_n(buffer + content_size, padding - left_padding, fill_char);
+  return content;
+}
+
+template <typename Char, typename Allocator>
 template <typename Spec>
-typename fmt::BasicWriter<Char>::CharPtr
-  fmt::BasicWriter<Char>::prepare_int_buffer(
+typename BasicWriter<Char, Allocator>::CharPtr
+  BasicWriter<Char, Allocator>::prepare_int_buffer(
     unsigned num_digits, const Spec &spec,
     const char *prefix, unsigned prefix_size) {
   unsigned width = spec.width();
@@ -1611,9 +1674,9 @@ typename fmt::BasicWriter<Char>::CharPtr
   return p - 1;
 }
 
-template <typename Char>
+template <typename Char, typename Allocator>
 template <typename T, typename Spec>
-void BasicWriter<Char>::write_int(T value, const Spec &spec) {
+void BasicWriter<Char, Allocator>::write_int(T value, const Spec &spec) {
   unsigned prefix_size = 0;
   typedef typename internal::IntTraits<T>::MainType UnsignedType;
   UnsignedType abs_value = value;
@@ -1690,6 +1753,157 @@ void BasicWriter<Char>::write_int(T value, const Spec &spec) {
     internal::report_unknown_type(
       spec.type(), spec.flag(CHAR_FLAG) ? "char" : "integer");
     break;
+  }
+}
+
+template <typename Char, typename Allocator>
+template <typename T>
+void BasicWriter<Char, Allocator>::write_double(
+    T value, const FormatSpec &spec) {
+  // Check type.
+  char type = spec.type();
+  bool upper = false;
+  switch (type) {
+  case 0:
+    type = 'g';
+    break;
+  case 'e': case 'f': case 'g': case 'a':
+    break;
+  case 'F':
+#ifdef _MSC_VER
+    // MSVC's printf doesn't support 'F'.
+    type = 'f';
+#endif
+    // Fall through.
+  case 'E': case 'G': case 'A':
+    upper = true;
+    break;
+  default:
+    internal::report_unknown_type(type, "double");
+    break;
+  }
+
+  char sign = 0;
+  // Use getsign instead of value < 0 because the latter is always
+  // false for NaN.
+  if (internal::getsign(static_cast<double>(value))) {
+    sign = '-';
+    value = -value;
+  } else if (spec.flag(SIGN_FLAG)) {
+    sign = spec.flag(PLUS_FLAG) ? '+' : ' ';
+  }
+
+  if (value != value) {
+    // Format NaN ourselves because sprintf's output is not consistent
+    // across platforms.
+    std::size_t size = 4;
+    const char *nan = upper ? " NAN" : " nan";
+    if (!sign) {
+      --size;
+      ++nan;
+    }
+    CharPtr out = write_str(nan, size, spec);
+    if (sign)
+      *out = sign;
+    return;
+  }
+
+  if (internal::isinfinity(value)) {
+    // Format infinity ourselves because sprintf's output is not consistent
+    // across platforms.
+    std::size_t size = 4;
+    const char *inf = upper ? " INF" : " inf";
+    if (!sign) {
+      --size;
+      ++inf;
+    }
+    CharPtr out = write_str(inf, size, spec);
+    if (sign)
+      *out = sign;
+    return;
+  }
+
+  std::size_t offset = buffer_.size();
+  unsigned width = spec.width();
+  if (sign) {
+    buffer_.reserve(buffer_.size() + (std::max)(width, 1u));
+    if (width > 0)
+      --width;
+    ++offset;
+  }
+
+  // Build format string.
+  enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
+  Char format[MAX_FORMAT_SIZE];
+  Char *format_ptr = format;
+  *format_ptr++ = '%';
+  unsigned width_for_sprintf = width;
+  if (spec.flag(HASH_FLAG))
+    *format_ptr++ = '#';
+  if (spec.align() == ALIGN_CENTER) {
+    width_for_sprintf = 0;
+  } else {
+    if (spec.align() == ALIGN_LEFT)
+      *format_ptr++ = '-';
+    if (width != 0)
+      *format_ptr++ = '*';
+  }
+  if (spec.precision() >= 0) {
+    *format_ptr++ = '.';
+    *format_ptr++ = '*';
+  }
+  if (internal::IsLongDouble<T>::VALUE)
+    *format_ptr++ = 'L';
+  *format_ptr++ = type;
+  *format_ptr = '\0';
+
+  // Format using snprintf.
+  Char fill = static_cast<Char>(spec.fill());
+  for (;;) {
+    std::size_t size = buffer_.capacity() - offset;
+#if _MSC_VER
+    // MSVC's vsnprintf_s doesn't work with zero size, so reserve
+    // space for at least one extra character to make the size non-zero.
+    // Note that the buffer's capacity will increase by more than 1.
+    if (size == 0) {
+      buffer_.reserve(offset + 1);
+      size = buffer_.capacity() - offset;
+    }
+#endif
+    Char *start = &buffer_[offset];
+    int n = internal::CharTraits<Char>::format_float(
+        start, size, format, width_for_sprintf, spec.precision(), value);
+    if (n >= 0 && offset + n < buffer_.capacity()) {
+      if (sign) {
+        if ((spec.align() != ALIGN_RIGHT && spec.align() != ALIGN_DEFAULT) ||
+            *start != ' ') {
+          *(start - 1) = sign;
+          sign = 0;
+        } else {
+          *(start - 1) = fill;
+        }
+        ++n;
+      }
+      if (spec.align() == ALIGN_CENTER &&
+          spec.width() > static_cast<unsigned>(n)) {
+        unsigned width = spec.width();
+        CharPtr p = grow_buffer(width);
+        std::copy(p, p + n, p + (width - n) / 2);
+        fill_padding(p, spec.width(), n, fill);
+        return;
+      }
+      if (spec.fill() != ' ' || sign) {
+        while (*start == ' ')
+          *start++ = fill;
+        if (sign)
+          *(start - 1) = sign;
+      }
+      grow_buffer(n);
+      return;
+    }
+    // If n is negative we ask to increase the capacity by at least 1,
+    // but as std::vector, the buffer grows exponentially.
+    buffer_.reserve(n >= 0 ? offset + n + 1 : buffer_.capacity() + 1);
   }
 }
 

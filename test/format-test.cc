@@ -126,6 +126,82 @@ class TestString {
   }
 };
 
+template <typename T>
+class MockAllocator {
+ public:
+  typedef T value_type;
+  MOCK_METHOD1_T(allocate, T* (std::size_t n));
+  MOCK_METHOD2_T(deallocate, void (T* p, std::size_t n));
+};
+
+template <typename Allocator>
+class AllocatorRef {
+ private:
+  Allocator *alloc_;
+
+ public:
+  typedef typename Allocator::value_type value_type;
+
+  explicit AllocatorRef(Allocator *alloc = 0) : alloc_(alloc) {}
+
+  AllocatorRef(const AllocatorRef &other) : alloc_(other.alloc_) {}
+
+  AllocatorRef& operator=(const AllocatorRef &other) {
+    alloc_ = other.alloc_;
+    return *this;
+  }
+
+#if FMT_USE_RVALUE_REFERENCES
+ private:
+  void move(AllocatorRef &other) {
+    alloc_ = other.alloc_;
+    other.alloc_ = 0;
+  }
+
+ public:
+  AllocatorRef(AllocatorRef &&other) {
+    move(other);
+  }
+
+  AllocatorRef& operator=(AllocatorRef &&other) {
+    assert(this != &other);
+    move(other);
+    return *this;
+  }
+#endif
+
+  Allocator *get() const { return alloc_; }
+
+  value_type* allocate(std::size_t n) { return alloc_->allocate(n); }
+  void deallocate(value_type* p, std::size_t n) { alloc_->deallocate(p, n); }
+};
+
+void CheckForwarding(
+    MockAllocator<int> &alloc, AllocatorRef< MockAllocator<int> > &ref) {
+  int mem;
+  // Check if value_type is properly defined.
+  AllocatorRef< MockAllocator<int> >::value_type *ptr = &mem;
+  // Check forwarding.
+  EXPECT_CALL(alloc, allocate(42)).WillOnce(Return(ptr));
+  ref.allocate(42);
+  EXPECT_CALL(alloc, deallocate(ptr, 42));
+  ref.deallocate(ptr, 42);
+}
+
+TEST(AllocatorTest, AllocatorRef) {
+  testing::StrictMock< MockAllocator<int> > alloc;
+  typedef AllocatorRef< MockAllocator<int> > TestAllocatorRef;
+  TestAllocatorRef ref(&alloc);
+  // Check if AllocatorRef forwards to the underlying allocator.
+  CheckForwarding(alloc, ref);
+  TestAllocatorRef ref2(ref);
+  CheckForwarding(alloc, ref2);
+  TestAllocatorRef ref3;
+  EXPECT_EQ(0, ref3.get());
+  ref3 = ref;
+  CheckForwarding(alloc, ref3);
+}
+
 TEST(ArrayTest, Ctor) {
   Array<char, 123> array;
   EXPECT_EQ(0u, array.size());
@@ -134,16 +210,23 @@ TEST(ArrayTest, Ctor) {
 
 #if FMT_USE_RVALUE_REFERENCES
 
-void check_move_array(const char *str, Array<char, 5> &array) {
-  Array<char, 5> array2(std::move(array));
+typedef AllocatorRef< std::allocator<char> > TestAllocator;
+
+void check_move_array(const char *str, Array<char, 5, TestAllocator> &array) {
+  std::allocator<char> *alloc = array.get_allocator().get();
+  Array<char, 5, TestAllocator> array2(std::move(array));
   // Move shouldn't destroy the inline content of the first array.
   EXPECT_EQ(str, std::string(&array[0], array.size()));
   EXPECT_EQ(str, std::string(&array2[0], array2.size()));
   EXPECT_EQ(5, array2.capacity());
+  // Move should transfer allocator.
+  EXPECT_EQ(0, array.get_allocator().get());
+  EXPECT_EQ(alloc, array2.get_allocator().get());
 }
 
 TEST(ArrayTest, MoveCtor) {
-  Array<char, 5> array;
+  std::allocator<char> alloc;
+  Array<char, 5, TestAllocator> array((TestAllocator(&alloc)));
   const char test[] = "test";
   array.append(test, test + 4);
   check_move_array("test", array);
@@ -155,7 +238,7 @@ TEST(ArrayTest, MoveCtor) {
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
   array.push_back('b');
-  Array<char, 5> array2(std::move(array));
+  Array<char, 5, TestAllocator> array2(std::move(array));
   // Move should rip the guts of the first array.
   EXPECT_EQ(inline_buffer_ptr, &array[0]);
   EXPECT_EQ("testab", std::string(&array2[0], array2.size()));
@@ -274,56 +357,6 @@ TEST(ArrayTest, AppendAllocatesEnoughStorage) {
   EXPECT_EQ(19u, array.capacity());
 }
 
-template <typename T>
-class MockAllocator {
- public:
-  typedef T value_type;
-  MOCK_METHOD1_T(allocate, T* (std::size_t n));
-  MOCK_METHOD2_T(deallocate, void (T* p, std::size_t n));
-};
-
-template <typename Allocator>
-class AllocatorRef {
- private:
-  Allocator *alloc_;
-
- public:
-  typedef typename Allocator::value_type value_type;
-
-  explicit AllocatorRef(Allocator *alloc = 0) : alloc_(alloc) {}
-
-  Allocator *get() const { return alloc_; }
-
-  value_type* allocate(std::size_t n) { return alloc_->allocate(n); }
-  void deallocate(value_type* p, std::size_t n) { alloc_->deallocate(p, n); }
-};
-
-void CheckForwarding(
-    MockAllocator<int> &alloc, AllocatorRef< MockAllocator<int> > &ref) {
-  int mem;
-  // Check if value_type is properly defined.
-  AllocatorRef< MockAllocator<int> >::value_type *ptr = &mem;
-  // Check forwarding.
-  EXPECT_CALL(alloc, allocate(42)).WillOnce(Return(ptr));
-  ref.allocate(42);
-  EXPECT_CALL(alloc, deallocate(ptr, 42));
-  ref.deallocate(ptr, 42);
-}
-
-TEST(AllocatorTest, AllocatorRef) {
-  testing::StrictMock< MockAllocator<int> > alloc;
-  typedef AllocatorRef< MockAllocator<int> > TestAllocatorRef;
-  TestAllocatorRef ref(&alloc);
-  // Check if AllocatorRef forwards to the underlying allocator.
-  CheckForwarding(alloc, ref);
-  TestAllocatorRef ref2(ref);
-  CheckForwarding(alloc, ref2);
-  TestAllocatorRef ref3;
-  EXPECT_EQ(0, ref3.get());
-  ref3 = ref;
-  CheckForwarding(alloc, ref3);
-}
-
 TEST(ArrayTest, Allocator) {
   typedef AllocatorRef< MockAllocator<char> > TestAllocator;
   Array<char, 10, TestAllocator> array;
@@ -340,7 +373,7 @@ TEST(ArrayTest, Allocator) {
   }
 }
 
-TEST(ArrayTest, DeallocateException) {
+TEST(ArrayTest, ExceptionInDeallocate) {
   typedef AllocatorRef< MockAllocator<char> > TestAllocator;
   testing::StrictMock< MockAllocator<char> > alloc;
   Array<char, 10, TestAllocator> array((TestAllocator(&alloc)));
@@ -433,6 +466,17 @@ TEST(WriterTest, MoveAssignment) {
 }
 
 #endif  // FMT_USE_RVALUE_REFERENCES
+
+TEST(WriterTest, Allocator) {
+  typedef AllocatorRef< MockAllocator<char> > TestAllocator;
+  MockAllocator<char> alloc;
+  BasicWriter<char, TestAllocator> w((TestAllocator(&alloc)));
+  std::size_t size = 1.5 * fmt::internal::INLINE_BUFFER_SIZE;
+  std::vector<char> mem(size);
+  EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem[0]));
+  for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE + 1; ++i)
+    w << '*';
+}
 
 TEST(WriterTest, Data) {
   Writer w;

@@ -62,42 +62,8 @@ using fmt::internal::Arg;
 namespace {
 
 #ifndef _MSC_VER
-
-// Portable version of signbit.
-// When compiled in C++11 mode signbit is no longer a macro but a function
-// defined in namespace std and the macro is undefined.
-inline int getsign(double x) {
-#ifdef signbit
-  return signbit(x);
-#else
-  return std::signbit(x);
-#endif
-}
-
-// Portable version of isinf.
-#ifdef isinf
-inline int isinfinity(double x) { return isinf(x); }
-inline int isinfinity(long double x) { return isinf(x); }
-#else
-inline int isinfinity(double x) { return std::isinf(x); }
-inline int isinfinity(long double x) { return std::isinf(x); }
-#endif
-
-#define FMT_SNPRINTF snprintf
-
+# define FMT_SNPRINTF snprintf
 #else  // _MSC_VER
-
-inline int getsign(double value) {
-  if (value < 0) return 1;
-  if (value == value) return 0;
-  int dec = 0, sign = 0;
-  char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
-  _ecvt_s(buffer, sizeof(buffer), value, 0, &dec, &sign);
-  return sign;
-}
-
-inline int isinfinity(double x) { return !_finite(x); }
-
 inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
   va_list args;
   va_start(args, format);
@@ -105,15 +71,8 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
   va_end(args);
   return result;
 }
-#define FMT_SNPRINTF fmt_snprintf
-
+# define FMT_SNPRINTF fmt_snprintf
 #endif  // _MSC_VER
-
-template <typename T>
-struct IsLongDouble { enum {VALUE = 0}; };
-
-template <>
-struct IsLongDouble<long double> { enum {VALUE = 1}; };
 
 // Checks if a value fits in int - used to avoid warnings about comparing
 // signed and unsigned integers.
@@ -600,175 +559,9 @@ class fmt::internal::ArgFormatter :
   }
 };
 
-// Fills the padding around the content and returns the pointer to the
-// content area.
-template <typename Char>
-typename fmt::BasicWriter<Char>::CharPtr
-  fmt::BasicWriter<Char>::fill_padding(CharPtr buffer,
-    unsigned total_size, std::size_t content_size, wchar_t fill) {
-  std::size_t padding = total_size - content_size;
-  std::size_t left_padding = padding / 2;
-  Char fill_char = static_cast<Char>(fill);
-  std::fill_n(buffer, left_padding, fill_char);
-  buffer += left_padding;
-  CharPtr content = buffer;
-  std::fill_n(buffer + content_size, padding - left_padding, fill_char);
-  return content;
-}
-
-template <typename Char>
-template <typename T>
-void fmt::BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
-  // Check type.
-  char type = spec.type();
-  bool upper = false;
-  switch (type) {
-  case 0:
-    type = 'g';
-    break;
-  case 'e': case 'f': case 'g': case 'a':
-    break;
-  case 'F':
-#ifdef _MSC_VER
-    // MSVC's printf doesn't support 'F'.
-    type = 'f';
-#endif
-    // Fall through.
-  case 'E': case 'G': case 'A':
-    upper = true;
-    break;
-  default:
-    internal::report_unknown_type(type, "double");
-    break;
-  }
-
-  char sign = 0;
-  // Use getsign instead of value < 0 because the latter is always
-  // false for NaN.
-  if (getsign(static_cast<double>(value))) {
-    sign = '-';
-    value = -value;
-  } else if (spec.flag(SIGN_FLAG)) {
-    sign = spec.flag(PLUS_FLAG) ? '+' : ' ';
-  }
-
-  if (value != value) {
-    // Format NaN ourselves because sprintf's output is not consistent
-    // across platforms.
-    std::size_t size = 4;
-    const char *nan = upper ? " NAN" : " nan";
-    if (!sign) {
-      --size;
-      ++nan;
-    }
-    CharPtr out = write_str(nan, size, spec);
-    if (sign)
-      *out = sign;
-    return;
-  }
-
-  if (isinfinity(value)) {
-    // Format infinity ourselves because sprintf's output is not consistent
-    // across platforms.
-    std::size_t size = 4;
-    const char *inf = upper ? " INF" : " inf";
-    if (!sign) {
-      --size;
-      ++inf;
-    }
-    CharPtr out = write_str(inf, size, spec);
-    if (sign)
-      *out = sign;
-    return;
-  }
-
-  std::size_t offset = buffer_.size();
-  unsigned width = spec.width();
-  if (sign) {
-    buffer_.reserve(buffer_.size() + (std::max)(width, 1u));
-    if (width > 0)
-      --width;
-    ++offset;
-  }
-
-  // Build format string.
-  enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
-  Char format[MAX_FORMAT_SIZE];
-  Char *format_ptr = format;
-  *format_ptr++ = '%';
-  unsigned width_for_sprintf = width;
-  if (spec.flag(HASH_FLAG))
-    *format_ptr++ = '#';
-  if (spec.align() == ALIGN_CENTER) {
-    width_for_sprintf = 0;
-  } else {
-    if (spec.align() == ALIGN_LEFT)
-      *format_ptr++ = '-';
-    if (width != 0)
-      *format_ptr++ = '*';
-  }
-  if (spec.precision() >= 0) {
-    *format_ptr++ = '.';
-    *format_ptr++ = '*';
-  }
-  if (IsLongDouble<T>::VALUE)
-    *format_ptr++ = 'L';
-  *format_ptr++ = type;
-  *format_ptr = '\0';
-
-  // Format using snprintf.
-  Char fill = static_cast<Char>(spec.fill());
-  for (;;) {
-    std::size_t size = buffer_.capacity() - offset;
-#if _MSC_VER
-    // MSVC's vsnprintf_s doesn't work with zero size, so reserve
-    // space for at least one extra character to make the size non-zero.
-    // Note that the buffer's capacity will increase by more than 1.
-    if (size == 0) {
-      buffer_.reserve(offset + 1);
-      size = buffer_.capacity() - offset;
-    }
-#endif
-    Char *start = &buffer_[offset];
-    int n = internal::CharTraits<Char>::format_float(
-        start, size, format, width_for_sprintf, spec.precision(), value);
-    if (n >= 0 && offset + n < buffer_.capacity()) {
-      if (sign) {
-        if ((spec.align() != ALIGN_RIGHT && spec.align() != ALIGN_DEFAULT) ||
-            *start != ' ') {
-          *(start - 1) = sign;
-          sign = 0;
-        } else {
-          *(start - 1) = fill;
-        }
-        ++n;
-      }
-      if (spec.align() == ALIGN_CENTER &&
-          spec.width() > static_cast<unsigned>(n)) {
-        unsigned width = spec.width();
-        CharPtr p = grow_buffer(width);
-        std::copy(p, p + n, p + (width - n) / 2);
-        fill_padding(p, spec.width(), n, fill);
-        return;
-      }
-      if (spec.fill() != ' ' || sign) {
-        while (*start == ' ')
-          *start++ = fill;
-        if (sign)
-          *(start - 1) = sign;
-      }
-      grow_buffer(n);
-      return;
-    }
-    // If n is negative we ask to increase the capacity by at least 1,
-    // but as std::vector, the buffer grows exponentially.
-    buffer_.reserve(n >= 0 ? offset + n + 1 : buffer_.capacity() + 1);
-  }
-}
-
-template <typename Char>
+template <typename Char, typename Allocator>
 template <typename StrChar>
-void fmt::BasicWriter<Char>::write_str(
+void fmt::BasicWriter<Char, Allocator>::write_str(
     const Arg::StringValue<StrChar> &str, const FormatSpec &spec) {
   // Check if StrChar is convertible to Char.
   internal::CharTraits<Char>::convert(StrChar());
@@ -1259,10 +1052,6 @@ int fmt::fprintf(std::FILE *f, StringRef format, const ArgList &args) {
 
 // Explicit instantiations for char.
 
-template fmt::BasicWriter<char>::CharPtr
-  fmt::BasicWriter<char>::fill_padding(CharPtr buffer,
-    unsigned total_size, std::size_t content_size, wchar_t fill);
-
 template void fmt::BasicFormatter<char>::format(
   BasicStringRef<char> format, const ArgList &args);
 
@@ -1270,10 +1059,6 @@ template void fmt::internal::PrintfFormatter<char>::format(
   BasicWriter<char> &writer, BasicStringRef<char> format, const ArgList &args);
 
 // Explicit instantiations for wchar_t.
-
-template fmt::BasicWriter<wchar_t>::CharPtr
-  fmt::BasicWriter<wchar_t>::fill_padding(CharPtr buffer,
-    unsigned total_size, std::size_t content_size, wchar_t fill);
 
 template void fmt::BasicFormatter<wchar_t>::format(
     BasicStringRef<wchar_t> format, const ArgList &args);
