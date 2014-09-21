@@ -41,15 +41,15 @@ arguments in the resulting string.
 
 .. _format:
 
-.. doxygenfunction:: fmt::format(StringRef, const ArgList &)
+.. doxygenfunction:: fmt::format(StringRef, ArgList)
 
 .. _print:
 
-.. doxygenfunction:: fmt::print(StringRef, const ArgList &)
+.. doxygenfunction:: fmt::print(StringRef, ArgList)
 
-.. doxygenfunction:: fmt::print(std::FILE *, StringRef, const ArgList &)
+.. doxygenfunction:: fmt::print(std::FILE *, StringRef, ArgList)
 
-.. doxygenfunction:: fmt::print(std::ostream &, StringRef, const ArgList &)
+.. doxygenfunction:: fmt::print(std::ostream &, StringRef, ArgList)
 
 Printf formatting functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -58,11 +58,11 @@ The following functions use `printf format string syntax
 <http://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html>`_ with
 a POSIX extension for positional arguments.
 
-.. doxygenfunction:: fmt::printf(StringRef, const ArgList &)
+.. doxygenfunction:: fmt::printf(StringRef, ArgList)
 
-.. doxygenfunction:: fmt::fprintf(std::FILE *, StringRef, const ArgList &)
+.. doxygenfunction:: fmt::fprintf(std::FILE *, StringRef, ArgList)
 
-.. doxygenfunction:: fmt::sprintf(StringRef, const ArgList &)
+.. doxygenfunction:: fmt::sprintf(StringRef, ArgList)
 
 Write API
 ---------
