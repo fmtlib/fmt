@@ -319,7 +319,7 @@ inline Arg::StringValue<wchar_t> ignore_incompatible_str(
 }  // namespace
 
 void fmt::SystemError::init(
-    int error_code, StringRef format_str, const ArgList &args) {
+    int error_code, StringRef format_str, ArgList args) {
   error_code_ = error_code;
   Writer w;
   internal::format_system_error(w, error_code, format(format_str, args));
@@ -428,7 +428,7 @@ int fmt::internal::UTF16ToUTF8::convert(fmt::WStringRef s) {
 }
 
 void fmt::WindowsError::init(
-    int error_code, StringRef format_str, const ArgList &args) {
+    int error_code, StringRef format_str, ArgList args) {
   error_code_ = error_code;
   Writer w;
   internal::format_windows_error(w, error_code, format(format_str, args));
@@ -1024,19 +1024,19 @@ void fmt::report_windows_error(
 }
 #endif
 
-void fmt::print(std::FILE *f, StringRef format_str, const ArgList &args) {
+void fmt::print(std::FILE *f, StringRef format_str, ArgList args) {
   Writer w;
   w.write(format_str, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
 
-void fmt::print(std::ostream &os, StringRef format_str, const ArgList &args) {
+void fmt::print(std::ostream &os, StringRef format_str, ArgList args) {
   Writer w;
   w.write(format_str, args);
   os.write(w.data(), w.size());
 }
 
-void fmt::print_colored(Color c, StringRef format, const ArgList &args) {
+void fmt::print_colored(Color c, StringRef format, ArgList args) {
   char escape[] = "\x1b[30m";
   escape[3] = '0' + static_cast<char>(c);
   std::fputs(escape, stdout);
@@ -1044,7 +1044,7 @@ void fmt::print_colored(Color c, StringRef format, const ArgList &args) {
   std::fputs(RESET_COLOR, stdout);
 }
 
-int fmt::fprintf(std::FILE *f, StringRef format, const ArgList &args) {
+int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
   Writer w;
   printf(w, format, args);
   return std::fwrite(w.data(), 1, w.size(), f);

@@ -934,14 +934,14 @@ class PrintfFormatter : private FormatterBase {
 // A formatter.
 template <typename Char>
 class BasicFormatter : private internal::FormatterBase {
-private:
+ private:
   BasicWriter<Char> &writer_;
   const Char *start_;
 
   // Parses argument index and returns corresponding argument.
   const internal::Arg &parse_arg_index(const Char *&s);
 
-public:
+ public:
   explicit BasicFormatter(BasicWriter<Char> &w) : writer_(w) {}
 
   BasicWriter<Char> &writer() { return writer_; }
@@ -1284,7 +1284,7 @@ for example a file opening error.
 */
 class SystemError : public internal::RuntimeError {
  private:
-  void init(int error_code, StringRef format_str, const ArgList &args);
+  void init(int error_code, StringRef format_str, ArgList args);
 
  protected:
   int error_code_;
@@ -1490,7 +1490,7 @@ class BasicWriter {
     See also `Format String Syntax`_.
     \endrst
    */
-  void write(BasicStringRef<Char> format, const ArgList &args) {
+  void write(BasicStringRef<Char> format, ArgList args) {
     BasicFormatter<Char>(*this).format(format, args);
   }
   FMT_VARIADIC_VOID(write, BasicStringRef<Char>)
@@ -1926,7 +1926,7 @@ void report_system_error(int error_code, StringRef message) FMT_NOEXCEPT(true);
 */
 class WindowsError : public SystemError {
  private:
-  void init(int error_code, StringRef format_str, const ArgList &args);
+  void init(int error_code, StringRef format_str, ArgList args);
 
  public:
   /**
@@ -1958,7 +1958,7 @@ enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
   Example:
     PrintColored(fmt::RED, "Elapsed time: {0:.2f} seconds") << 1.23;
  */
-void print_colored(Color c, StringRef format, const ArgList &args);
+void print_colored(Color c, StringRef format, ArgList args);
 
 /**
   \rst
@@ -1969,13 +1969,13 @@ void print_colored(Color c, StringRef format, const ArgList &args);
     std::string message = format("The answer is {}", 42);
   \endrst
 */
-inline std::string format(StringRef format_str, const ArgList &args) {
+inline std::string format(StringRef format_str, ArgList args) {
   Writer w;
   w.write(format_str, args);
   return w.str();
 }
 
-inline std::wstring format(WStringRef format_str, const ArgList &args) {
+inline std::wstring format(WStringRef format_str, ArgList args) {
   WWriter w;
   w.write(format_str, args);
   return w.str();
@@ -1990,7 +1990,7 @@ inline std::wstring format(WStringRef format_str, const ArgList &args) {
     print(stderr, "Don't {}!", "panic");
   \endrst
  */
-void print(std::FILE *f, StringRef format_str, const ArgList &args);
+void print(std::FILE *f, StringRef format_str, ArgList args);
 
 /**
   \rst
@@ -2001,7 +2001,7 @@ void print(std::FILE *f, StringRef format_str, const ArgList &args);
     print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-inline void print(StringRef format_str, const ArgList &args) {
+inline void print(StringRef format_str, ArgList args) {
   print(stdout, format_str, args);
 }
 
@@ -2014,11 +2014,10 @@ inline void print(StringRef format_str, const ArgList &args) {
     print(cerr, "Don't {}!", "panic");
   \endrst
  */
-void print(std::ostream &os, StringRef format_str, const ArgList &args);
+void print(std::ostream &os, StringRef format_str, ArgList args);
 
 template <typename Char>
-void printf(BasicWriter<Char> &w,
-    BasicStringRef<Char> format, const ArgList &args) {
+void printf(BasicWriter<Char> &w, BasicStringRef<Char> format, ArgList args) {
   internal::PrintfFormatter<Char>().format(w, format, args);
 }
 
@@ -2031,7 +2030,7 @@ void printf(BasicWriter<Char> &w,
     std::string message = fmt::sprintf("The answer is %d", 42);
   \endrst
 */
-inline std::string sprintf(StringRef format, const ArgList &args) {
+inline std::string sprintf(StringRef format, ArgList args) {
   Writer w;
   printf(w, format, args);
   return w.str();
@@ -2046,7 +2045,7 @@ inline std::string sprintf(StringRef format, const ArgList &args) {
     fmt::fprintf(stderr, "Don't %s!", "panic");
   \endrst
  */
-int fprintf(std::FILE *f, StringRef format, const ArgList &args);
+int fprintf(std::FILE *f, StringRef format, ArgList args);
 
 /**
   \rst
@@ -2057,7 +2056,7 @@ int fprintf(std::FILE *f, StringRef format, const ArgList &args);
     fmt::printf("Elapsed time: %.2f seconds", 1.23);
   \endrst
  */
-inline int printf(StringRef format, const ArgList &args) {
+inline int printf(StringRef format, ArgList args) {
   return fprintf(stdout, format, args);
 }
 
@@ -2244,7 +2243,7 @@ inline void format_decimal(char *&buffer, T value) {
   **Example**::
 
     void print_error(const char *file, int line, const char *format,
-                     const fmt::ArgList &args) {
+                     fmt::ArgList args) {
       fmt::print("{}: {}: ", file, line);
       fmt::print(format, args);
     }
