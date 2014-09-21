@@ -101,7 +101,7 @@ which take arbitrary arguments:
 .. code-block:: c++
 
     // Prints formatted error message.
-    void report_error(const char *format, const fmt::ArgList &args) {
+    void report_error(const char *format, fmt::ArgList args) {
       fmt::print("Error: ");
       fmt::print(format, args);
     }
@@ -109,10 +109,9 @@ which take arbitrary arguments:
 
     report_error("file not found: {}", path);
 
-Note that you only need to define one function that takes ``const fmt::ArgList &``
-argument and ``FMT_VARIADIC`` automatically defines necessary wrappers that
-accept variable number of arguments. These wrappers are simple inline functions
-that are very fast and don't result in code bloat.
+Note that you only need to define one function that takes ``fmt::ArgList``
+argument. ``FMT_VARIADIC`` automatically defines necessary wrappers that
+accept variable number of arguments.
 
 Projects using this library
 ---------------------------
