@@ -468,14 +468,16 @@ TEST(WriterTest, MoveAssignment) {
 #endif  // FMT_USE_RVALUE_REFERENCES
 
 TEST(WriterTest, Allocator) {
-  typedef AllocatorRef< MockAllocator<char> > TestAllocator;
-  MockAllocator<char> alloc;
+  typedef testing::StrictMock< MockAllocator<char> > MockAllocator;
+  typedef AllocatorRef<MockAllocator> TestAllocator;
+  MockAllocator alloc;
   BasicWriter<char, TestAllocator> w((TestAllocator(&alloc)));
   std::size_t size = 1.5 * fmt::internal::INLINE_BUFFER_SIZE;
   std::vector<char> mem(size);
   EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem[0]));
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE + 1; ++i)
     w << '*';
+  EXPECT_CALL(alloc, deallocate(&mem[0], size));
 }
 
 TEST(WriterTest, Data) {
