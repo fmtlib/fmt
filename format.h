@@ -607,8 +607,9 @@ struct NonZero<0> {
   enum { VALUE = 1 };
 };
 
-// A formatting argument. It is a POD type to allow storage in internal::Array.
-struct ArgBase {
+// The value of a formatting argument. It is a POD type to allow storage in
+// internal::Array.
+struct Value {
   template <typename Char>
   struct StringValue {
     const Char *value;
@@ -637,7 +638,7 @@ struct ArgBase {
   };
 };
 
-struct Arg : public ArgBase {
+struct Arg : Value {
   enum Type {
     NONE,
     // Integer types should go first,
@@ -728,7 +729,7 @@ FMT_ARG_TYPE(void*, POINTER);
 
 // Makes an Arg object from any type.
 template <typename Char>
-class MakeArg : public ArgBase {
+class MakeArg : public Value {
  private:
   // The following two methods are private to disallow formatting of
   // arbitrary pointers. If you want to output a pointer cast it to
@@ -929,31 +930,31 @@ class ArgFormatter;
 class ArgList {
  private:
   fmt::ULongLong types_;
-  const internal::ArgBase *args_;
+  const internal::Value *values_;
 
  public:
   // Maximum number of arguments that can be passed in ArgList.
   enum { MAX_ARGS = 16 };
 
   ArgList() : types_(0) {}
-  ArgList(fmt::ULongLong types, const internal::ArgBase *args)
-  : types_(types), args_(args) {}
+  ArgList(fmt::ULongLong types, const internal::Value *values)
+  : types_(types), values_(values) {}
 
   /**
     Returns the argument at specified index.
    */
   internal::Arg operator[](unsigned index) const {
-    if (index >= MAX_ARGS)
-      return internal::Arg();
-    fmt::ULongLong shift = index * 4;
     using internal::Arg;
+    if (index >= MAX_ARGS)
+      return Arg();
+    fmt::ULongLong shift = index * 4;
     Arg::Type type =
         static_cast<Arg::Type>((types_ & (0xfull << shift)) >> shift);
     Arg arg;
     arg.type = type;
     if (type != Arg::NONE) {
-      internal::ArgBase &base = arg;
-      base = args_[index];
+      internal::Value &value = arg;
+      value = values_[index];
     }
     return arg;
   }
@@ -1302,24 +1303,22 @@ FMT_ARG_TYPE(15, 14);
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template<typename... Args> \
   void func(arg_type arg1, const Args & ... args) { \
-    const fmt::internal::ArgBase arg_array[ \
+    const fmt::internal::Value values[ \
       fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
       fmt::internal::MakeArg<Char>(args)... \
     }; \
-    func(arg1, ArgList( \
-      internal::ArgType<15, Args...>::TYPE, arg_array)); \
+    func(arg1, ArgList(internal::ArgType<15, Args...>::TYPE, values)); \
   }
 
 // Defines a variadic constructor.
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template<typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    const fmt::internal::ArgBase arg_array[ \
+    const fmt::internal::Value values[ \
         fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
       fmt::internal::MakeArg<Char>(args)... \
     }; \
-    func(arg0, arg1, ArgList( \
-      internal::ArgType<15, Args...>::TYPE, arg_array)); \
+    func(arg0, arg1, ArgList(internal::ArgType<15, Args...>::TYPE, values)); \
   }
 
 #else
@@ -1330,9 +1329,9 @@ FMT_ARG_TYPE(15, 14);
 # define FMT_WRAP1(func, arg_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgBase args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    const fmt::internal::Value vals[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
     func(arg1, fmt::ArgList( \
-      fmt::internal::ArgType<n, FMT_GEN(n, FMT_MAKE_ARG_TYPE)>::TYPE, args)); \
+      fmt::internal::ArgType<n, FMT_GEN(n, FMT_MAKE_ARG_TYPE)>::TYPE, vals)); \
   }
 
 // Emulates a variadic function returning void on a pre-C++11 compiler.
@@ -1346,9 +1345,9 @@ FMT_ARG_TYPE(15, 14);
 # define FMT_CTOR(ctor, func, arg0_type, arg1_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   ctor(arg0_type arg0, arg1_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgBase args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    const fmt::internal::Value vals[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
     func(arg0, arg1, fmt::ArgList( \
-      internal::ArgType<n, FMT_GEN(n, FMT_MAKE_ARG_TYPE)>::TYPE, args)); \
+      fmt::internal::ArgType<n, FMT_GEN(n, FMT_MAKE_ARG_TYPE)>::TYPE, vals)); \
   }
 
 // Emulates a variadic constructor on a pre-C++11 compiler.
@@ -2022,8 +2021,8 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
   internal::Arg arg;
-  internal::ArgBase &base = arg;
-  base = internal::MakeArg<Char>(os.str());
+  internal::Value &arg_value = arg;
+  arg_value = internal::MakeArg<Char>(os.str());
   arg.type = internal::Arg::STRING;
   format_str = f.format(format_str, arg);
 }
@@ -2308,12 +2307,12 @@ inline void format_decimal(char *&buffer, T value) {
   template<typename... Args> \
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
-    using fmt::internal::ArgBase; \
-    const ArgBase array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
+    using fmt::internal::Value; \
+    const Value values[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
       fmt::internal::MakeArg<Char>(args)... \
     }; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
-      fmt::internal::ArgType<15, Args...>::TYPE, array)); \
+      fmt::internal::ArgType<15, Args...>::TYPE, values)); \
   }
 #else
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
@@ -2322,9 +2321,9 @@ inline void format_decimal(char *&buffer, T value) {
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgBase args[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
+    const fmt::internal::Value vals[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
-      fmt::internal::ArgType<n, FMT_GEN(n, FMT_MAKE_ARG_TYPE)>::TYPE, args)); \
+      fmt::internal::ArgType<n, FMT_GEN(n, FMT_MAKE_ARG_TYPE)>::TYPE, vals)); \
   }
 
 # define FMT_VARIADIC_(Char, ReturnType, func, call, ...) \
