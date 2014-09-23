@@ -608,16 +608,7 @@ struct NonZero<0> {
 };
 
 // A formatting argument. It is a POD type to allow storage in internal::Array.
-struct Arg {
-  enum Type {
-    // Integer types should go first,
-    INT, UINT, LONG_LONG, ULONG_LONG, CHAR, LAST_INTEGER_TYPE = CHAR,
-    // followed by floating-point types.
-    DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
-    STRING, WSTRING, POINTER, CUSTOM
-  };
-  Type type;
-
+struct ArgBase {
   template <typename Char>
   struct StringValue {
     const Char *value;
@@ -646,9 +637,98 @@ struct Arg {
   };
 };
 
+struct Arg : public ArgBase {
+  enum Type {
+    NONE,
+    // Integer types should go first,
+    INT, UINT, LONG_LONG, ULONG_LONG, CHAR, LAST_INTEGER_TYPE = CHAR,
+    // followed by floating-point types.
+    DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
+    STRING, WSTRING, POINTER, CUSTOM
+  };
+  Type type;
+};
+
+struct None {};
+
+template <unsigned N, typename T0 = None, typename T1 = None,
+          typename T2 = None, typename T3 = None, typename T4 = None,
+          typename T5 = None, typename T6 = None, typename T7 = None,
+          typename T8 = None, typename T9 = None, typename T10 = None,
+          typename T11 = None, typename T12 = None, typename T13 = None,
+          typename T14 = None>
+struct ArgType {
+  static const fmt::ULongLong TYPE =
+      ArgType<1, T0>::TYPE | (ArgType<1, T1>::TYPE << 4) |
+      (ArgType<1, T2>::TYPE << 8) | (ArgType<1, T3>::TYPE << 12) |
+      (ArgType<1, T4>::TYPE << 16) | (ArgType<1, T5>::TYPE << 20) |
+      (ArgType<1, T6>::TYPE << 24) | (ArgType<1, T7>::TYPE << 28) |
+      (ArgType<1, T8>::TYPE << 32) | (ArgType<1, T9>::TYPE << 36) |
+      (ArgType<1, T10>::TYPE << 40) | (ArgType<1, T11>::TYPE << 44) |
+      (ArgType<1, T12>::TYPE << 48) | (ArgType<1, T13>::TYPE << 52) |
+      (ArgType<1, T14>::TYPE << 56);
+};
+
+template <typename T>
+struct ArgType<1, T> { enum { TYPE = Arg::CUSTOM }; };
+
+template <std::size_t N>
+struct ArgType<1, char[N]> { enum { TYPE = Arg::STRING }; };
+
+template <std::size_t N>
+struct ArgType<1, const char[N]> { enum { TYPE = Arg::STRING }; };
+
+template <>
+struct ArgType<1, const char*> { enum { TYPE = Arg::STRING }; };
+
+template <>
+struct ArgType<1, std::string> { enum { TYPE = Arg::STRING }; };
+
+template <>
+struct ArgType<1, fmt::StringRef> { enum { TYPE = Arg::STRING }; };
+
+template <std::size_t N>
+struct ArgType<1, wchar_t[N]> { enum { TYPE = Arg::WSTRING }; };
+
+template <std::size_t N>
+struct ArgType<1, const wchar_t[N]> { enum { TYPE = Arg::WSTRING }; };
+
+template <>
+struct ArgType<1, const wchar_t*> { enum { TYPE = Arg::WSTRING }; };
+
+template <>
+struct ArgType<1, std::wstring> { enum { TYPE = Arg::WSTRING }; };
+
+template <>
+struct ArgType<1, fmt::WStringRef> { enum { TYPE = Arg::WSTRING }; };
+
+#define FMT_ARG_TYPE(Type, CODE) \
+  template <> \
+  struct ArgType<1, Type> { static const fmt::ULongLong TYPE = Arg::CODE; }
+
+FMT_ARG_TYPE(None, NONE);
+FMT_ARG_TYPE(bool, INT);
+FMT_ARG_TYPE(signed char, INT);
+FMT_ARG_TYPE(unsigned char, UINT);
+FMT_ARG_TYPE(short, INT);
+FMT_ARG_TYPE(unsigned short, UINT);
+FMT_ARG_TYPE(int, INT);
+FMT_ARG_TYPE(unsigned, UINT);
+FMT_ARG_TYPE(long, LONG_LONG); // TODO: check sizeof long
+FMT_ARG_TYPE(unsigned long, ULONG_LONG); // TODO: check sizeof long
+FMT_ARG_TYPE(fmt::LongLong, LONG_LONG);
+FMT_ARG_TYPE(fmt::ULongLong, ULONG_LONG);
+FMT_ARG_TYPE(char, CHAR);
+FMT_ARG_TYPE(wchar_t, CHAR);
+FMT_ARG_TYPE(float, DOUBLE);
+FMT_ARG_TYPE(double, DOUBLE);
+FMT_ARG_TYPE(long double, LONG_DOUBLE);
+FMT_ARG_TYPE(void*, POINTER);
+// TODO: more types
+
 // Makes an Arg object from any type.
 template <typename Char>
-class MakeArg : public Arg {
+class MakeArg : public ArgBase {
  private:
   // The following two methods are private to disallow formatting of
   // arbitrary pointers. If you want to output a pointer cast it to
@@ -661,13 +741,11 @@ class MakeArg : public Arg {
   MakeArg(T *value);
 
   void set_string(StringRef str) {
-    type = STRING;
     string.value = str.c_str();
     string.size = str.size();
   }
 
   void set_string(WStringRef str) {
-    type = WSTRING;
     CharTraits<Char>::convert(wchar_t());
     wstring.value = str.c_str();
     wstring.size = str.size();
@@ -683,41 +761,34 @@ class MakeArg : public Arg {
 
 public:
   MakeArg() {}
-  MakeArg(bool value) { type = INT; int_value = value; }
-  MakeArg(short value) { type = INT; int_value = value; }
-  MakeArg(unsigned short value) { type = UINT; uint_value = value; }
-  MakeArg(int value) { type = INT; int_value = value; }
-  MakeArg(unsigned value) { type = UINT; uint_value = value; }
+  MakeArg(bool value) { int_value = value; }
+  MakeArg(short value) { int_value = value; }
+  MakeArg(unsigned short value) { uint_value = value; }
+  MakeArg(int value) { int_value = value; }
+  MakeArg(unsigned value) { uint_value = value; }
   MakeArg(long value) {
     // To minimize the number of types we need to deal with, long is
     // translated either to int or to long long depending on its size.
-    if (sizeof(long) == sizeof(int)) {
-      type = INT;
+    if (sizeof(long) == sizeof(int))
       int_value = static_cast<int>(value);
-    } else {
-      type = LONG_LONG;
+    else
       long_long_value = value;
-    }
   }
   MakeArg(unsigned long value) {
-    if (sizeof(unsigned long) == sizeof(unsigned)) {
-      type = UINT;
+    if (sizeof(unsigned long) == sizeof(unsigned))
       uint_value = static_cast<unsigned>(value);
-    } else {
-      type = ULONG_LONG;
+    else
       ulong_long_value = value;
-    }
   }
-  MakeArg(LongLong value) { type = LONG_LONG; long_long_value = value; }
-  MakeArg(ULongLong value) { type = ULONG_LONG; ulong_long_value = value; }
-  MakeArg(float value) { type = DOUBLE; double_value = value; }
-  MakeArg(double value) { type = DOUBLE; double_value = value; }
-  MakeArg(long double value) { type = LONG_DOUBLE; long_double_value = value; }
-  MakeArg(signed char value) { type = CHAR; int_value = value; }
-  MakeArg(unsigned char value) { type = CHAR; int_value = value; }
-  MakeArg(char value) { type = CHAR; int_value = value; }
+  MakeArg(LongLong value) { long_long_value = value; }
+  MakeArg(ULongLong value) { ulong_long_value = value; }
+  MakeArg(float value) { double_value = value; }
+  MakeArg(double value) { double_value = value; }
+  MakeArg(long double value) { long_double_value = value; }
+  MakeArg(signed char value) { int_value = value; }
+  MakeArg(unsigned char value) { int_value = value; }
+  MakeArg(char value) { int_value = value; }
   MakeArg(wchar_t value) {
-    type = CHAR;
     int_value = internal::CharTraits<Char>::convert(value);
   }
 
@@ -731,12 +802,11 @@ public:
   MakeArg(const std::wstring &value) { set_string(value); }
   MakeArg(WStringRef value) { set_string(value); }
 
-  MakeArg(void *value) { type = POINTER; pointer_value = value; }
-  MakeArg(const void *value) { type = POINTER; pointer_value = value; }
+  MakeArg(void *value) { pointer_value = value; }
+  MakeArg(const void *value) { pointer_value = value; }
 
   template <typename T>
   MakeArg(const T &value) {
-    type = CUSTOM;
     custom.value = &value;
     custom.format = &format_custom_arg<T>;
   }
@@ -858,24 +928,34 @@ class ArgFormatter;
  */
 class ArgList {
  private:
-  const internal::Arg *args_;
-  std::size_t size_;
+  fmt::ULongLong types_;
+  const internal::ArgBase *args_;
 
  public:
-  ArgList() : size_(0) {}
-  ArgList(const internal::Arg *args, std::size_t size)
-  : args_(args), size_(size) {}
+  // Maximum number of arguments that can be passed in ArgList.
+  enum { MAX_ARGS = 16 };
 
-  /**
-    Returns the list size (the number of arguments).
-   */
-  std::size_t size() const { return size_; }
+  ArgList() : types_(0) {}
+  ArgList(fmt::ULongLong types, const internal::ArgBase *args)
+  : types_(types), args_(args) {}
 
   /**
     Returns the argument at specified index.
    */
-  const internal::Arg &operator[](std::size_t index) const {
-    return args_[index];
+  internal::Arg operator[](unsigned index) const {
+    if (index >= MAX_ARGS)
+      return internal::Arg();
+    fmt::ULongLong shift = index * 4;
+    using internal::Arg;
+    Arg::Type type =
+        static_cast<Arg::Type>((types_ & (0xfull << shift)) >> shift);
+    Arg arg;
+    arg.type = type;
+    if (type != Arg::NONE) {
+      internal::ArgBase &base = arg;
+      base = args_[index];
+    }
+    return arg;
   }
 };
 
@@ -889,7 +969,7 @@ class FormatterBase {
   int next_arg_index_;
 
   // Returns the argument with specified index.
-  const Arg *do_get_arg(unsigned arg_index, const char *&error);
+  Arg do_get_arg(unsigned arg_index, const char *&error);
 
  protected:
   void set_args(const ArgList &args) {
@@ -898,11 +978,11 @@ class FormatterBase {
   }
 
   // Returns the next argument.
-  const Arg *next_arg(const char *&error);
+  Arg next_arg(const char *&error);
 
   // Checks if manual indexing is used and returns the argument with
   // specified index.
-  const Arg *get_arg(unsigned arg_index, const char *&error);
+  Arg get_arg(unsigned arg_index, const char *&error);
 
   template <typename Char>
   void write(BasicWriter<Char> &w, const Char *start, const Char *end) {
@@ -919,7 +999,7 @@ class PrintfFormatter : private FormatterBase {
 
   // Returns the argument with specified index or, if arg_index is equal
   // to the maximum unsigned value, the next argument.
-  const Arg &get_arg(const Char *s,
+  Arg get_arg(const Char *s,
       unsigned arg_index = (std::numeric_limits<unsigned>::max)());
 
   // Parses argument index, flags and width and returns the argument index.
@@ -939,7 +1019,7 @@ class BasicFormatter : private internal::FormatterBase {
   const Char *start_;
 
   // Parses argument index and returns corresponding argument.
-  const internal::Arg &parse_arg_index(const Char *&s);
+  internal::Arg parse_arg_index(const Char *&s);
 
  public:
   explicit BasicFormatter(BasicWriter<Char> &w) : writer_(w) {}
@@ -1188,31 +1268,58 @@ inline StrFormatSpec<wchar_t> pad(
 # define FMT_GEN15(f) FMT_GEN14(f), f(14)
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
+# define FMT_MAKE_ARG_TYPE(n) T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
 # define FMT_MAKE_REF_char(n) fmt::internal::MakeArg<char>(v##n)
 # define FMT_MAKE_REF_wchar_t(n) fmt::internal::MakeArg<wchar_t>(v##n)
+
+/*namespace internal {
+#undef FMT_ARG_TYPE
+#define FMT_ARG_TYPE(n, m) \
+  template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
+  struct ArgType##n { \
+    enum { TYPE = (ArgType1<T##m>::TYPE << 4 * m) | \
+                   ArgType##m<FMT_GEN(m, FMT_MAKE_ARG_TYPE)>::TYPE }; \
+  }
+FMT_ARG_TYPE(2, 1);
+FMT_ARG_TYPE(3, 2);
+FMT_ARG_TYPE(4, 3);
+FMT_ARG_TYPE(5, 4);
+FMT_ARG_TYPE(6, 5);
+FMT_ARG_TYPE(7, 6);
+FMT_ARG_TYPE(8, 7);
+FMT_ARG_TYPE(9, 8);
+FMT_ARG_TYPE(10, 9);
+FMT_ARG_TYPE(11, 10);
+FMT_ARG_TYPE(12, 11);
+FMT_ARG_TYPE(13, 12);
+FMT_ARG_TYPE(14, 13);
+FMT_ARG_TYPE(15, 14);
+}*/
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template<typename... Args> \
   void func(arg_type arg1, const Args & ... args) { \
-    using fmt::internal::Arg; \
-    const Arg arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
+    const fmt::internal::ArgBase arg_array[ \
+      fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
       fmt::internal::MakeArg<Char>(args)... \
     }; \
-    func(arg1, ArgList(arg_array, sizeof...(Args))); \
+    func(arg1, ArgList( \
+      internal::ArgType<15, Args...>::TYPE, arg_array)); \
   }
 
 // Defines a variadic constructor.
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template<typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    using fmt::internal::Arg; \
-    const Arg arg_array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
+    const fmt::internal::ArgBase arg_array[ \
+        fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
       fmt::internal::MakeArg<Char>(args)... \
     }; \
-    func(arg0, arg1, ArgList(arg_array, sizeof...(Args))); \
+    func(arg0, arg1, ArgList( \
+      internal::ArgType<15, Args...>::TYPE, arg_array)); \
   }
 
 #else
@@ -1223,8 +1330,9 @@ inline StrFormatSpec<wchar_t> pad(
 # define FMT_WRAP1(func, arg_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::Arg args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
-    func(arg1, fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+    const fmt::internal::ArgBase args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    func(arg1, fmt::ArgList( \
+      fmt::internal::ArgType<n, FMT_GEN(n, FMT_MAKE_ARG_TYPE)>::TYPE, args)); \
   }
 
 // Emulates a variadic function returning void on a pre-C++11 compiler.
@@ -1238,8 +1346,9 @@ inline StrFormatSpec<wchar_t> pad(
 # define FMT_CTOR(ctor, func, arg0_type, arg1_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   ctor(arg0_type arg0, arg1_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::Arg args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
-    func(arg0, arg1, fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+    const fmt::internal::ArgBase args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    func(arg0, arg1, fmt::ArgList( \
+      internal::ArgType<n, FMT_GEN(n, FMT_MAKE_ARG_TYPE)>::TYPE, args)); \
   }
 
 // Emulates a variadic constructor on a pre-C++11 compiler.
@@ -1912,7 +2021,11 @@ template <typename Char, typename T>
 void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
-  format_str = f.format(format_str, internal::MakeArg<Char>(os.str()));
+  internal::Arg arg;
+  internal::ArgBase &base = arg;
+  base = internal::MakeArg<Char>(os.str());
+  arg.type = internal::Arg::STRING;
+  format_str = f.format(format_str, arg);
 }
 
 // Reports a system error without throwing an exception.
@@ -2195,12 +2308,12 @@ inline void format_decimal(char *&buffer, T value) {
   template<typename... Args> \
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
-    using fmt::internal::Arg; \
-    const Arg array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
+    using fmt::internal::ArgBase; \
+    const ArgBase array[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
       fmt::internal::MakeArg<Char>(args)... \
     }; \
-    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(array, sizeof...(Args))); \
+    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
+      fmt::internal::ArgType<15, Args...>::TYPE, array)); \
   }
 #else
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
@@ -2209,9 +2322,9 @@ inline void format_decimal(char *&buffer, T value) {
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::Arg args[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
-    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(args, sizeof(args) / sizeof(*args))); \
+    const fmt::internal::ArgBase args[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
+    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
+      fmt::internal::ArgType<n, FMT_GEN(n, FMT_MAKE_ARG_TYPE)>::TYPE, args)); \
   }
 
 # define FMT_VARIADIC_(Char, ReturnType, func, call, ...) \

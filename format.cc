@@ -579,38 +579,38 @@ void fmt::BasicWriter<Char, Allocator>::write_str(
 }
 
 template <typename Char>
-inline const Arg &fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
+inline Arg fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
   const char *error = 0;
-  const Arg *arg = *s < '0' || *s > '9' ?
+  Arg arg = *s < '0' || *s > '9' ?
         next_arg(error) : get_arg(parse_nonnegative_int(s), error);
   if (error)
     throw FormatError(*s != '}' && *s != ':' ? "invalid format string" : error);
-  return *arg;
+  return arg;
 }
 
-const Arg *fmt::internal::FormatterBase::do_get_arg(
+Arg fmt::internal::FormatterBase::do_get_arg(
     unsigned arg_index, const char *&error) {
-  if (arg_index < args_.size())
-    return &args_[arg_index];
-  error = "argument index out of range";
-  return 0;
+  Arg arg = args_[arg_index];
+  if (arg.type == Arg::NONE)
+    error = "argument index out of range";
+  return arg;
 }
 
-inline const Arg *fmt::internal::FormatterBase::next_arg(const char *&error) {
+inline Arg fmt::internal::FormatterBase::next_arg(const char *&error) {
   if (next_arg_index_ >= 0)
     return do_get_arg(next_arg_index_++, error);
   error = "cannot switch from manual to automatic argument indexing";
-  return 0;
+  return Arg();
 }
 
-inline const Arg *fmt::internal::FormatterBase::get_arg(
+inline Arg fmt::internal::FormatterBase::get_arg(
     unsigned arg_index, const char *&error) {
   if (next_arg_index_ <= 0) {
     next_arg_index_ = -1;
     return do_get_arg(arg_index, error);
   }
   error = "cannot switch from automatic to manual argument indexing";
-  return 0;
+  return Arg();
 }
 
 template <typename Char>
@@ -641,14 +641,14 @@ void fmt::internal::PrintfFormatter<Char>::parse_flags(
 }
 
 template <typename Char>
-const Arg &fmt::internal::PrintfFormatter<Char>::get_arg(
+Arg fmt::internal::PrintfFormatter<Char>::get_arg(
     const Char *s, unsigned arg_index) {
   const char *error = 0;
-  const Arg *arg = arg_index == UINT_MAX ?
+  Arg arg = arg_index == UINT_MAX ?
     next_arg(error) : FormatterBase::get_arg(arg_index - 1, error);
   if (error)
     throw FormatError(!*s ? "invalid format string" : error);
-  return *arg;
+  return arg;
 }
 
 template <typename Char>

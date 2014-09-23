@@ -42,8 +42,8 @@
 #undef max
 
 using fmt::StringRef;
+using fmt::internal::ArgBase;
 using fmt::internal::Arg;
-using fmt::internal::MakeArg;
 
 namespace {
 
@@ -52,6 +52,16 @@ template <typename Char>
 std::basic_ostream<Char> &operator<<(std::basic_ostream<Char> &os, Test) {
   return os << "test";
 }
+
+template <typename Char, typename T>
+Arg make_arg(const T &value) {
+  Arg arg = Arg();
+  ArgBase &base = arg;
+  base = fmt::internal::MakeArg<Char>(value);
+  arg.type = static_cast<Arg::Type>(fmt::internal::ArgType<1, T>::TYPE);
+  return arg;
+}
+
 }  // namespace
 
 TEST(UtilTest, Increment) {
@@ -74,7 +84,7 @@ struct ArgInfo;
 #define ARG_INFO(type_code, Type, field) \
   template <> \
   struct ArgInfo<Arg::type_code> { \
-    static Type get(const Arg &arg) { return arg.field; } \
+    static Type get(const ArgBase &arg) { return arg.field; } \
   };
 
 ARG_INFO(INT, int, int_value);
@@ -90,7 +100,7 @@ ARG_INFO(POINTER, const void *, pointer_value);
 ARG_INFO(CUSTOM, Arg::CustomValue, custom);
 
 #define CHECK_ARG_INFO(Type, field, value) { \
-  Arg arg = {Arg::Type}; \
+  ArgBase arg = {}; \
   arg.field = value; \
   EXPECT_EQ(value, ArgInfo<Arg::Type>::get(arg)); \
 }
@@ -109,14 +119,14 @@ TEST(ArgTest, ArgInfo) {
   CHECK_ARG_INFO(WSTRING, wstring.value, WSTR);
   int p = 0;
   CHECK_ARG_INFO(POINTER, pointer_value, &p);
-  Arg arg = {Arg::CUSTOM};
+  ArgBase arg = {};
   arg.custom.value = &p;
   EXPECT_EQ(&p, ArgInfo<Arg::CUSTOM>::get(arg).value);
 }
 
 #define EXPECT_ARG_(Char, type_code, MakeArgType, ExpectedType, value) { \
   MakeArgType input = static_cast<MakeArgType>(value); \
-  Arg arg = MakeArg<Char>(input); \
+  Arg arg = make_arg<Char>(input); \
   EXPECT_EQ(Arg::type_code, arg.type); \
   ExpectedType expected_value = static_cast<ExpectedType>(value); \
   EXPECT_EQ(expected_value, ArgInfo<Arg::type_code>::get(arg)); \
@@ -221,7 +231,7 @@ TEST(ArgTest, MakeArg) {
   EXPECT_ARG(POINTER, const void*, &n);
 
   ::Test t;
-  fmt::internal::Arg arg = MakeArg<char>(t);
+  Arg arg = make_arg<char>(t);
   EXPECT_EQ(fmt::internal::Arg::CUSTOM, arg.type);
   EXPECT_EQ(&t, arg.custom.value);
   fmt::Writer w;
@@ -232,13 +242,13 @@ TEST(ArgTest, MakeArg) {
 }
 
 struct Result {
-  fmt::internal::Arg arg;
+  Arg arg;
 
-  Result() : arg(MakeArg<char>(0xdeadbeef)) {}
+  Result() : arg(make_arg<char>(0xdeadbeef)) {}
 
   template <typename T>
-  Result(const T& value) : arg(MakeArg<char>(value)) {}
-  Result(const wchar_t *s) : arg(MakeArg<wchar_t>(s)) {}
+  Result(const T& value) : arg(make_arg<char>(value)) {}
+  Result(const wchar_t *s) : arg(make_arg<wchar_t>(s)) {}
 };
 
 struct TestVisitor : fmt::internal::ArgVisitor<TestVisitor, Result> {
@@ -258,7 +268,8 @@ struct TestVisitor : fmt::internal::ArgVisitor<TestVisitor, Result> {
 };
 
 #define EXPECT_RESULT_(Char, type_code, value) { \
-  Result result = TestVisitor().visit(MakeArg<Char>(value)); \
+  Arg arg = make_arg<Char>(value); \
+  Result result = TestVisitor().visit(arg); \
   EXPECT_EQ(Arg::type_code, result.arg.type); \
   EXPECT_EQ(value, ArgInfo<Arg::type_code>::get(result.arg)); \
 }
@@ -283,7 +294,7 @@ TEST(ArgVisitorTest, VisitAll) {
   const void *p = STR;
   EXPECT_RESULT(POINTER, p);
   ::Test t;
-  Result result = TestVisitor().visit(MakeArg<char>(t));
+  Result result = TestVisitor().visit(make_arg<char>(t));
   EXPECT_EQ(Arg::CUSTOM, result.arg.type);
   EXPECT_EQ(&t, result.arg.custom.value);
 }
@@ -298,7 +309,7 @@ struct TestAnyVisitor : fmt::internal::ArgVisitor<TestAnyVisitor, Result> {
 
 #undef EXPECT_RESULT
 #define EXPECT_RESULT(type_code, value) { \
-  Result result = TestAnyVisitor().visit(MakeArg<char>(value)); \
+  Result result = TestAnyVisitor().visit(make_arg<char>(value)); \
   EXPECT_EQ(Arg::type_code, result.arg.type); \
   EXPECT_EQ(value, ArgInfo<Arg::type_code>::get(result.arg)); \
 }
@@ -318,7 +329,7 @@ struct TestUnhandledVisitor :
 };
 
 #define EXPECT_UNHANDLED(value) \
-  EXPECT_STREQ("test", TestUnhandledVisitor().visit(MakeArg<wchar_t>(value)));
+  EXPECT_STREQ("test", TestUnhandledVisitor().visit(make_arg<wchar_t>(value)));
 
 TEST(ArgVisitorTest, VisitUnhandledArg) {
   EXPECT_UNHANDLED(42);
@@ -338,7 +349,8 @@ TEST(ArgVisitorTest, VisitUnhandledArg) {
 }
 
 TEST(ArgVisitorTest, VisitInvalidArg) {
-  Arg arg = {static_cast<Arg::Type>(Arg::CUSTOM + 1)};
+  Arg arg = Arg();
+  arg.type = static_cast<Arg::Type>(Arg::CUSTOM + 1);
   EXPECT_DEBUG_DEATH(TestVisitor().visit(arg), "Assertion");
 }
 
