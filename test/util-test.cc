@@ -96,7 +96,7 @@ ARG_INFO(LONG_DOUBLE, long double, long_double_value);
 ARG_INFO(CHAR, int, int_value);
 ARG_INFO(STRING, const char *, string.value);
 ARG_INFO(WSTRING, const wchar_t *, wstring.value);
-ARG_INFO(POINTER, const void *, pointer_value);
+ARG_INFO(POINTER, const void *, pointer);
 ARG_INFO(CUSTOM, Arg::CustomValue, custom);
 
 #define CHECK_ARG_INFO(Type, field, value) { \
@@ -118,7 +118,7 @@ TEST(ArgTest, ArgInfo) {
   const wchar_t WSTR[] = L"abc";
   CHECK_ARG_INFO(WSTRING, wstring.value, WSTR);
   int p = 0;
-  CHECK_ARG_INFO(POINTER, pointer_value, &p);
+  CHECK_ARG_INFO(POINTER, pointer, &p);
   Value value = {};
   value.custom.value = &p;
   EXPECT_EQ(&p, ArgInfo<Arg::CUSTOM>::get(value).value);

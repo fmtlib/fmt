@@ -831,7 +831,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
         internal::report_unknown_type(spec.type_, "pointer");
       spec.flags_= HASH_FLAG;
       spec.type_ = 'x';
-      writer.write_int(reinterpret_cast<uintptr_t>(arg.pointer_value), spec);
+      writer.write_int(reinterpret_cast<uintptr_t>(arg.pointer), spec);
       break;
     case Arg::CUSTOM: {
       if (spec.type_)

@@ -631,7 +631,7 @@ struct Value {
     ULongLong ulong_long_value;
     double double_value;
     long double long_double_value;
-    const void *pointer_value;
+    const void *pointer;
     StringValue<char> string;
     StringValue<wchar_t> wstring;
     CustomValue custom;
@@ -803,8 +803,8 @@ public:
   MakeArg(const std::wstring &value) { set_string(value); }
   MakeArg(WStringRef value) { set_string(value); }
 
-  MakeArg(void *value) { pointer_value = value; }
-  MakeArg(const void *value) { pointer_value = value; }
+  MakeArg(void *value) { pointer = value; }
+  MakeArg(const void *value) { pointer = value; }
 
   template <typename T>
   MakeArg(const T &value) {
@@ -908,7 +908,7 @@ class ArgVisitor {
     case Arg::WSTRING:
       return FMT_DISPATCH(visit_wstring(arg.wstring));
     case Arg::POINTER:
-      return FMT_DISPATCH(visit_pointer(arg.pointer_value));
+      return FMT_DISPATCH(visit_pointer(arg.pointer));
     case Arg::CUSTOM:
       return FMT_DISPATCH(visit_custom(arg.custom));
     }
