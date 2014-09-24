@@ -58,7 +58,7 @@ Arg make_arg(const T &value) {
   Arg arg = Arg();
   Value &arg_value = arg;
   arg_value = fmt::internal::MakeArg<Char>(value);
-  arg.type = static_cast<Arg::Type>(fmt::internal::ArgType<1, T>::TYPE);
+  arg.type = static_cast<Arg::Type>(fmt::internal::MakeArg<Char>::type(value));
   return arg;
 }
 
