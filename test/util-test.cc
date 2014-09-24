@@ -57,8 +57,9 @@ template <typename Char, typename T>
 Arg make_arg(const T &value) {
   Arg arg = Arg();
   Value &arg_value = arg;
-  arg_value = fmt::internal::MakeArg<Char>(value);
-  arg.type = static_cast<Arg::Type>(fmt::internal::MakeArg<Char>::type(value));
+  arg_value = fmt::internal::MakeValue<Char>(value);
+  arg.type = static_cast<Arg::Type>(
+        fmt::internal::MakeValue<Char>::type(value));
   return arg;
 }
 

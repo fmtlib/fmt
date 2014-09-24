@@ -650,9 +650,9 @@ struct Arg : Value {
   Type type;
 };
 
-// Makes an Arg object from any type.
+// Makes a Value object from any type.
 template <typename Char>
-class MakeArg : public Value {
+class MakeValue : public Value {
  private:
   // The following two methods are private to disallow formatting of
   // arbitrary pointers. If you want to output a pointer cast it to
@@ -660,9 +660,9 @@ class MakeArg : public Value {
   // of "[const] volatile char *" which is printed as bool by iostreams.
   // Do not implement!
   template <typename T>
-  MakeArg(const T *value);
+  MakeValue(const T *value);
   template <typename T>
-  MakeArg(T *value);
+  MakeValue(T *value);
 
   void set_string(StringRef str) {
     string.value = str.c_str();
@@ -680,23 +680,24 @@ class MakeArg : public Value {
   static void format_custom_arg(
       void *formatter, const void *arg, void *format_str_ptr) {
     format(*static_cast<BasicFormatter<Char>*>(formatter),
-        *static_cast<const Char**>(format_str_ptr), *static_cast<const T*>(arg));
+           *static_cast<const Char**>(format_str_ptr),
+           *static_cast<const T*>(arg));
   }
 
 public:
-  MakeArg() {}
+  MakeValue() {}
 
-#define FMT_MAKE_ARG_CTOR(Type, field, TYPE) \
-  MakeArg(Type value) { field = value; } \
+#define FMT_MAKE_VALUE(Type, field, TYPE) \
+  MakeValue(Type value) { field = value; } \
   static fmt::ULongLong type(Type) { return Arg::TYPE; }
 
-  FMT_MAKE_ARG_CTOR(bool, int_value, INT)
-  FMT_MAKE_ARG_CTOR(short, int_value, INT)
-  FMT_MAKE_ARG_CTOR(unsigned short, uint_value, UINT)
-  FMT_MAKE_ARG_CTOR(int, int_value, INT)
-  FMT_MAKE_ARG_CTOR(unsigned, uint_value, UINT)
+  FMT_MAKE_VALUE(bool, int_value, INT)
+  FMT_MAKE_VALUE(short, int_value, INT)
+  FMT_MAKE_VALUE(unsigned short, uint_value, UINT)
+  FMT_MAKE_VALUE(int, int_value, INT)
+  FMT_MAKE_VALUE(unsigned, uint_value, UINT)
 
-  MakeArg(long value) {
+  MakeValue(long value) {
     // To minimize the number of types we need to deal with, long is
     // translated either to int or to long long depending on its size.
     if (sizeof(long) == sizeof(int))
@@ -708,7 +709,7 @@ public:
     return sizeof(long) == sizeof(int) ? Arg::INT : Arg::LONG_LONG;
   }
 
-  MakeArg(unsigned long value) {
+  MakeValue(unsigned long value) {
     if (sizeof(unsigned long) == sizeof(unsigned))
       uint_value = static_cast<unsigned>(value);
     else
@@ -719,39 +720,39 @@ public:
           Arg::UINT : Arg::ULONG_LONG;
   }
 
-  FMT_MAKE_ARG_CTOR(LongLong, long_long_value, LONG_LONG)
-  FMT_MAKE_ARG_CTOR(ULongLong, ulong_long_value, ULONG_LONG)
-  FMT_MAKE_ARG_CTOR(float, double_value, DOUBLE)
-  FMT_MAKE_ARG_CTOR(double, double_value, DOUBLE)
-  FMT_MAKE_ARG_CTOR(long double, long_double_value, LONG_DOUBLE)
-  FMT_MAKE_ARG_CTOR(signed char, int_value, CHAR)
-  FMT_MAKE_ARG_CTOR(unsigned char, int_value, CHAR)
-  FMT_MAKE_ARG_CTOR(char, int_value, CHAR)
+  FMT_MAKE_VALUE(LongLong, long_long_value, LONG_LONG)
+  FMT_MAKE_VALUE(ULongLong, ulong_long_value, ULONG_LONG)
+  FMT_MAKE_VALUE(float, double_value, DOUBLE)
+  FMT_MAKE_VALUE(double, double_value, DOUBLE)
+  FMT_MAKE_VALUE(long double, long_double_value, LONG_DOUBLE)
+  FMT_MAKE_VALUE(signed char, int_value, CHAR)
+  FMT_MAKE_VALUE(unsigned char, int_value, CHAR)
+  FMT_MAKE_VALUE(char, int_value, CHAR)
 
-  MakeArg(wchar_t value) {
+  MakeValue(wchar_t value) {
     int_value = internal::CharTraits<Char>::convert(value);
   }
   static fmt::ULongLong type(wchar_t) { return Arg::CHAR; }
 
-#define FMT_MAKE_ARG_CTOR_STR(Type, TYPE) \
-  MakeArg(Type value) { set_string(value); } \
+#define FMT_MAKE_STR_VALUE(Type, TYPE) \
+  MakeValue(Type value) { set_string(value); } \
   static fmt::ULongLong type(Type) { return Arg::TYPE; }
 
-  FMT_MAKE_ARG_CTOR_STR(char *, STRING)
-  FMT_MAKE_ARG_CTOR_STR(const char *, STRING)
-  FMT_MAKE_ARG_CTOR_STR(const std::string &, STRING)
-  FMT_MAKE_ARG_CTOR_STR(StringRef, STRING)
+  FMT_MAKE_STR_VALUE(char *, STRING)
+  FMT_MAKE_STR_VALUE(const char *, STRING)
+  FMT_MAKE_STR_VALUE(const std::string &, STRING)
+  FMT_MAKE_STR_VALUE(StringRef, STRING)
 
-  FMT_MAKE_ARG_CTOR_STR(wchar_t *, WSTRING)
-  FMT_MAKE_ARG_CTOR_STR(const wchar_t *, WSTRING)
-  FMT_MAKE_ARG_CTOR_STR(const std::wstring &, WSTRING)
-  FMT_MAKE_ARG_CTOR_STR(WStringRef, WSTRING)
+  FMT_MAKE_STR_VALUE(wchar_t *, WSTRING)
+  FMT_MAKE_STR_VALUE(const wchar_t *, WSTRING)
+  FMT_MAKE_STR_VALUE(const std::wstring &, WSTRING)
+  FMT_MAKE_STR_VALUE(WStringRef, WSTRING)
 
-  FMT_MAKE_ARG_CTOR(void *, pointer, POINTER)
-  FMT_MAKE_ARG_CTOR(const void *, pointer, POINTER)
+  FMT_MAKE_VALUE(void *, pointer, POINTER)
+  FMT_MAKE_VALUE(const void *, pointer, POINTER)
 
   template <typename T>
-  MakeArg(const T &value) {
+  MakeValue(const T &value) {
     custom.value = &value;
     custom.format = &format_custom_arg<T>;
   }
@@ -1226,37 +1227,37 @@ inline StrFormatSpec<wchar_t> pad(
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG_TYPE(n) T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
-# define FMT_MAKE_REF_char(n) fmt::internal::MakeArg<char>(v##n)
-# define FMT_MAKE_REF_wchar_t(n) fmt::internal::MakeArg<wchar_t>(v##n)
+# define FMT_MAKE_REF_char(n) fmt::internal::MakeValue<char>(v##n)
+# define FMT_MAKE_REF_wchar_t(n) fmt::internal::MakeValue<wchar_t>(v##n)
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template <typename... Args> \
   void func(arg_type arg1, const Args & ... args) { \
-    using fmt::internal::MakeArg; \
+    using fmt::internal::MakeValue; \
     const fmt::internal::Value values[ \
       fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
-      MakeArg<Char>(args)... \
+      MakeValue<Char>(args)... \
     }; \
-    func(arg1, ArgList(MakeArg<Char>::type(args...), values)); \
+    func(arg1, ArgList(MakeValue<Char>::type(args...), values)); \
   }
 
 // Defines a variadic constructor.
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    using fmt::internal::MakeArg; \
+    using fmt::internal::MakeValue; \
     const fmt::internal::Value values[ \
         fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
-      MakeArg<Char>(args)... \
+      MakeValue<Char>(args)... \
     }; \
-    func(arg0, arg1, ArgList(MakeArg<Char>::type(args...), values)); \
+    func(arg0, arg1, ArgList(MakeValue<Char>::type(args...), values)); \
   }
 
 #else
 
-# define FMT_MAKE_REF(n) fmt::internal::MakeArg<Char>(v##n)
+# define FMT_MAKE_REF(n) fmt::internal::MakeValue<Char>(v##n)
 # define FMT_MAKE_REF2(n) v##n
 
 // Defines a wrapper for a function taking one argument of type arg_type
@@ -1266,7 +1267,7 @@ inline StrFormatSpec<wchar_t> pad(
   inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
     const fmt::internal::Value vals[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
     func(arg1, fmt::ArgList( \
-      fmt::internal::MakeArg<Char>::type(FMT_GEN(n, FMT_MAKE_REF2)), vals)); \
+      fmt::internal::MakeValue<Char>::type(FMT_GEN(n, FMT_MAKE_REF2)), vals)); \
   }
 
 // Emulates a variadic function returning void on a pre-C++11 compiler.
@@ -1282,7 +1283,7 @@ inline StrFormatSpec<wchar_t> pad(
   ctor(arg0_type arg0, arg1_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
     const fmt::internal::Value vals[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
     func(arg0, arg1, fmt::ArgList( \
-      fmt::internal::MakeArg<Char>::type(FMT_GEN(n, FMT_MAKE_REF2)), vals)); \
+      fmt::internal::MakeValue<Char>::type(FMT_GEN(n, FMT_MAKE_REF2)), vals)); \
   }
 
 // Emulates a variadic constructor on a pre-C++11 compiler.
@@ -1957,7 +1958,7 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   os << value;
   internal::Arg arg;
   internal::Value &arg_value = arg;
-  arg_value = internal::MakeArg<Char>(os.str());
+  arg_value = internal::MakeValue<Char>(os.str());
   arg.type = internal::Arg::STRING;
   format_str = f.format(format_str, arg);
 }
@@ -2244,10 +2245,10 @@ inline void format_decimal(char *&buffer, T value) {
       const Args & ... args) { \
     using fmt::internal::Value; \
     const Value values[fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
-      fmt::internal::MakeArg<Char>(args)... \
+      fmt::internal::MakeValue<Char>(args)... \
     }; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
-      fmt::internal::MakeArg<Char>::type(args...), values)); \
+      fmt::internal::MakeValue<Char>::type(args...), values)); \
   }
 #else
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
@@ -2258,7 +2259,7 @@ inline void format_decimal(char *&buffer, T value) {
       FMT_GEN(n, FMT_MAKE_ARG)) { \
     const fmt::internal::Value vals[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
-      fmt::internal::MakeArg<Char>::type(FMT_GEN(n, FMT_MAKE_REF2)), vals)); \
+      fmt::internal::MakeValue<Char>::type(FMT_GEN(n, FMT_MAKE_REF2)), vals)); \
   }
 
 # define FMT_VARIADIC_(Char, ReturnType, func, call, ...) \
