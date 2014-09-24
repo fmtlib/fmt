@@ -509,7 +509,7 @@ inline unsigned count_digits(uint32_t n) {
 }
 # endif
 #else
-// Slower version of count_digits used when __builtin_clz is not available.
+// Fallback version of count_digits used when __builtin_clz is not available.
 inline unsigned count_digits(uint64_t n) {
   unsigned count = 1;
   for (;;) {
@@ -553,7 +553,7 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
 
 #ifdef _WIN32
 // A converter from UTF-8 to UTF-16.
-// It is only provided for Windows since other systems use UTF-8.
+// It is only provided for Windows since other systems support UTF-8 natively.
 class UTF8ToUTF16 {
  private:
   Array<wchar_t, INLINE_BUFFER_SIZE> buffer_;
@@ -567,7 +567,7 @@ class UTF8ToUTF16 {
 };
 
 // A converter from UTF-16 to UTF-8.
-// It is only provided for Windows since other systems use UTF-8.
+// It is only provided for Windows since other systems support UTF-8 natively.
 class UTF16ToUTF8 {
  private:
   Array<char, INLINE_BUFFER_SIZE> buffer_;
@@ -1204,7 +1204,8 @@ inline StrFormatSpec<wchar_t> pad(
   return StrFormatSpec<wchar_t>(str, width, fill);
 }
 
-// Generates a comma-separated list with results of applying f to numbers 0..n-1.
+// Generates a comma-separated list with results of applying f to
+// numbers 0..n-1.
 # define FMT_GEN(n, f) FMT_GEN##n(f)
 # define FMT_GEN1(f)  f(0)
 # define FMT_GEN2(f)  FMT_GEN1(f),  f(1)
@@ -1321,8 +1322,8 @@ inline StrFormatSpec<wchar_t> pad(
   FMT_FOR_EACH9(f, x0, x1, x2, x3, x4, x5, x6, x7, x8), f(x9, 9)
 
 /**
-An error returned by an operating system or a language runtime,
-for example a file opening error.
+ An error returned by an operating system or a language runtime,
+ for example a file opening error.
 */
 class SystemError : public internal::RuntimeError {
  private:
