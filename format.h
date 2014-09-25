@@ -897,13 +897,15 @@ class ArgList {
    */
   internal::Arg operator[](unsigned index) const {
     using internal::Arg;
-    if (index >= MAX_ARGS)
-      return Arg();
+    Arg arg;
+    if (index >= MAX_ARGS) {
+      arg.type = Arg::NONE;
+      return arg;
+    }
     unsigned shift = index * 4;
     uint64_t mask = 0xf;
     Arg::Type type =
         static_cast<Arg::Type>((types_ & (mask << shift)) >> shift);
-    Arg arg;
     arg.type = type;
     if (type != Arg::NONE) {
       internal::Value &value = arg;
