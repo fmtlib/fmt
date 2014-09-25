@@ -243,6 +243,11 @@ TEST(ArgTest, MakeArg) {
   EXPECT_EQ("test", w.str());
 }
 
+TEST(UtilTest, ArgList) {
+  fmt::ArgList args;
+  EXPECT_EQ(Arg::NONE, args[fmt::ArgList::MAX_ARGS].type);
+}
+
 struct Result {
   Arg arg;
 
