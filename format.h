@@ -689,7 +689,7 @@ public:
 
 #define FMT_MAKE_VALUE(Type, field, TYPE) \
   MakeValue(Type value) { field = value; } \
-  static ULongLong type(Type) { return Arg::TYPE; }
+  static uint64_t type(Type) { return Arg::TYPE; }
 
   FMT_MAKE_VALUE(bool, int_value, INT)
   FMT_MAKE_VALUE(short, int_value, INT)
@@ -705,7 +705,7 @@ public:
     else
       long_long_value = value;
   }
-  static ULongLong type(long) {
+  static uint64_t type(long) {
     return sizeof(long) == sizeof(int) ? Arg::INT : Arg::LONG_LONG;
   }
 
@@ -715,7 +715,7 @@ public:
     else
       ulong_long_value = value;
   }
-  static ULongLong type(unsigned long) {
+  static uint64_t type(unsigned long) {
     return sizeof(unsigned long) == sizeof(unsigned) ?
           Arg::UINT : Arg::ULONG_LONG;
   }
@@ -732,11 +732,11 @@ public:
   MakeValue(wchar_t value) {
     int_value = internal::CharTraits<Char>::convert(value);
   }
-  static ULongLong type(wchar_t) { return Arg::CHAR; }
+  static uint64_t type(wchar_t) { return Arg::CHAR; }
 
 #define FMT_MAKE_STR_VALUE(Type, TYPE) \
   MakeValue(Type value) { set_string(value); } \
-  static ULongLong type(Type) { return Arg::TYPE; }
+  static uint64_t type(Type) { return Arg::TYPE; }
 
   FMT_MAKE_VALUE(char *, string.value, CSTRING)
   FMT_MAKE_VALUE(const char *, string.value, CSTRING)
@@ -757,7 +757,7 @@ public:
     custom.format = &format_custom_arg<T>;
   }
   template <typename T>
-  static ULongLong type(const T &) { return Arg::CUSTOM; }
+  static uint64_t type(const T &) { return Arg::CUSTOM; }
 };
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
@@ -881,7 +881,7 @@ class ArgFormatter;
  */
 class ArgList {
  private:
-  ULongLong types_;
+  uint64_t types_;
   const internal::Value *values_;
 
  public:
@@ -899,7 +899,8 @@ class ArgList {
     using internal::Arg;
     if (index >= MAX_ARGS)
       return Arg();
-    ULongLong shift = index * 4, mask = 0xf;
+    unsigned shift = index * 4;
+    uint64_t mask = 0xf;
     Arg::Type type =
         static_cast<Arg::Type>((types_ & (mask << shift)) >> shift);
     Arg arg;
@@ -1222,20 +1223,20 @@ inline StrFormatSpec<wchar_t> pad(
 # define FMT_GEN15(f) FMT_GEN14(f), f(14)
 
 namespace internal {
-inline ULongLong make_type() { return 0; }
+inline uint64_t make_type() { return 0; }
 
 template <typename T>
-inline ULongLong make_type(const T &arg) { return MakeValue<char>::type(arg); }
+inline uint64_t make_type(const T &arg) { return MakeValue<char>::type(arg); }
 
 #if FMT_USE_VARIADIC_TEMPLATES
 template <typename Arg, typename... Args>
-inline ULongLong make_type(const Arg &first, const Args & ... tail) {
+inline uint64_t make_type(const Arg &first, const Args & ... tail) {
   return make_type(first) | (make_type(tail...) << 4);
 }
 #else
 
 struct ArgType {
-  fmt::ULongLong type;
+  uint64_t type;
 
   ArgType() : type(0) {}
 
@@ -1245,7 +1246,7 @@ struct ArgType {
 
 # define FMT_ARG_TYPE_DEFAULT(n) ArgType t##n = ArgType()
 
-inline ULongLong make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
+inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
   return t0.type | (t1.type << 4) | (t2.type << 8) | (t3.type << 12) |
       (t4.type << 16) | (t5.type << 20) | (t6.type << 24) | (t7.type << 28) |
       (t8.type << 32) | (t9.type << 36) | (t10.type << 40) | (t11.type << 44) |
