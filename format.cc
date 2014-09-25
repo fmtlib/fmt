@@ -820,6 +820,10 @@ void fmt::internal::PrintfFormatter<Char>::format(
     case Arg::LONG_DOUBLE:
       writer.write_double(arg.long_double_value, spec);
       break;
+    case Arg::CSTRING:
+      arg.string.size = 0;
+      writer.write_str(arg.string, spec);
+      break;
     case Arg::STRING:
       writer.write_str(arg.string, spec);
       break;

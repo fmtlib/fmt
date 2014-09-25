@@ -95,6 +95,7 @@ ARG_INFO(ULONG_LONG, fmt::ULongLong, ulong_long_value);
 ARG_INFO(DOUBLE, double, double_value);
 ARG_INFO(LONG_DOUBLE, long double, long_double_value);
 ARG_INFO(CHAR, int, int_value);
+ARG_INFO(CSTRING, const char *, string.value);
 ARG_INFO(STRING, const char *, string.value);
 ARG_INFO(WSTRING, const wchar_t *, wstring.value);
 ARG_INFO(POINTER, const void *, pointer);
@@ -115,7 +116,7 @@ TEST(ArgTest, ArgInfo) {
   CHECK_ARG_INFO(LONG_DOUBLE, long_double_value, 4.2);
   CHECK_ARG_INFO(CHAR, int_value, 'x');
   const char STR[] = "abc";
-  CHECK_ARG_INFO(STRING, string.value, STR);
+  CHECK_ARG_INFO(CSTRING, string.value, STR);
   const wchar_t WSTR[] = L"abc";
   CHECK_ARG_INFO(WSTRING, wstring.value, WSTR);
   int p = 0;
@@ -215,8 +216,8 @@ TEST(ArgTest, MakeArg) {
 
   // Test string.
   char STR[] = "test";
-  EXPECT_ARG(STRING, char*, STR);
-  EXPECT_ARG(STRING, const char*, STR);
+  EXPECT_ARG(CSTRING, char*, STR);
+  EXPECT_ARG(CSTRING, const char*, STR);
   EXPECT_ARG(STRING, std::string, STR);
   EXPECT_ARG(STRING, fmt::StringRef, STR);
 
@@ -289,7 +290,7 @@ TEST(ArgVisitorTest, VisitAll) {
   EXPECT_RESULT(LONG_DOUBLE, 4.2l);
   EXPECT_RESULT(CHAR, 'x');
   const char STR[] = "abc";
-  EXPECT_RESULT(STRING, STR);
+  EXPECT_RESULT(CSTRING, STR);
   const wchar_t WSTR[] = L"abc";
   EXPECT_RESULTW(WSTRING, WSTR);
   const void *p = STR;
