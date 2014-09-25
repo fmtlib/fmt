@@ -2049,9 +2049,7 @@ void print(std::FILE *f, StringRef format_str, ArgList args);
     print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-inline void print(StringRef format_str, ArgList args) {
-  print(stdout, format_str, args);
-}
+void print(StringRef format_str, ArgList args);
 
 /**
   \rst

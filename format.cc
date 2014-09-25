@@ -1030,6 +1030,10 @@ void fmt::print(std::FILE *f, StringRef format_str, ArgList args) {
   std::fwrite(w.data(), 1, w.size(), f);
 }
 
+void fmt::print(StringRef format_str, ArgList args) {
+  print(stdout, format_str, args);
+}
+
 void fmt::print(std::ostream &os, StringRef format_str, ArgList args) {
   Writer w;
   w.write(format_str, args);
