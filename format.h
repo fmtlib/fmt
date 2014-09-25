@@ -1990,7 +1990,8 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   os << value;
   internal::Arg arg;
   internal::Value &arg_value = arg;
-  arg_value = internal::MakeValue<Char>(os.str());
+  std::basic_string<Char> str = os.str();
+  arg_value = internal::MakeValue<Char>(str);
   arg.type = internal::Arg::STRING;
   format_str = f.format(format_str, arg);
 }
