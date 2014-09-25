@@ -106,6 +106,7 @@ TEST(FormatTest, FormatErrorCode) {
         fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size(), 'x');
     format_error_code(w, 42, prefix);
     EXPECT_EQ(prefix + sep + msg, w.str());
-    EXPECT_EQ(fmt::internal::INLINE_BUFFER_SIZE, w.size());
+    std::size_t size = fmt::internal::INLINE_BUFFER_SIZE;
+    EXPECT_EQ(size, w.size());
   }
 }
