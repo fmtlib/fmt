@@ -1060,6 +1060,9 @@ int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
 
 // Explicit instantiations for char.
 
+template const char *fmt::BasicFormatter<char>::format(
+    const char *&format_str, const fmt::internal::Arg &arg);
+
 template void fmt::BasicFormatter<char>::format(
   BasicStringRef<char> format, const ArgList &args);
 
@@ -1075,6 +1078,9 @@ template int fmt::internal::CharTraits<char>::format_float(
     unsigned width, int precision, long double value);
 
 // Explicit instantiations for wchar_t.
+
+template const wchar_t *fmt::BasicFormatter<wchar_t>::format(
+    const wchar_t *&format_str, const fmt::internal::Arg &arg);
 
 template void fmt::BasicFormatter<wchar_t>::format(
     BasicStringRef<wchar_t> format, const ArgList &args);
