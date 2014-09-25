@@ -1243,12 +1243,9 @@ struct ArgType {
   ArgType(const T &arg) : type(make_type(arg)) {}
 };
 
-inline ULongLong make_type(
-    ArgType t0, ArgType t1, ArgType t2 = ArgType(), ArgType t3 = ArgType(),
-    ArgType t4 = ArgType(), ArgType t5 = ArgType(), ArgType t6 = ArgType(),
-    ArgType t7 = ArgType(), ArgType t8 = ArgType(), ArgType t9 = ArgType(),
-    ArgType t10 = ArgType(), ArgType t11 = ArgType(), ArgType t12 = ArgType(),
-    ArgType t13 = ArgType(), ArgType t14 = ArgType()) {
+# define FMT_ARG_TYPE_DEFAULT(n) ArgType t##n = ArgType()
+
+inline ULongLong make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
   return t0.type | (t1.type << 4) | (t2.type << 8) | (t3.type << 12) |
       (t4.type << 16) | (t5.type << 20) | (t6.type << 24) | (t7.type << 28) |
       (t8.type << 32) | (t9.type << 36) | (t10.type << 40) | (t11.type << 44) |
