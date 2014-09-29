@@ -717,7 +717,7 @@ TEST(UtilTest, FormatWindowsError) {
       reinterpret_cast<LPWSTR>(&message), 0, 0);
   fmt::internal::UTF16ToUTF8 utf8_message(message);
   LocalFree(message);
-  fmt::Writer actual_message;
+  fmt::MemoryWriter actual_message;
   fmt::internal::format_windows_error(
       actual_message, ERROR_FILE_EXISTS, "test");
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
