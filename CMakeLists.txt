@@ -24,9 +24,6 @@ else ()
     set(CPP11_FLAG -std=c++0x)
   endif ()
 endif ()
-if (CPP11_FLAG)
-  set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
-endif ()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -62,6 +59,10 @@ endif ()
 if (HAVE_OPEN)
   add_definitions(-DFMT_USE_FILE_DESCRIPTORS=1)
   set(FMT_SOURCES ${FMT_SOURCES} posix.cc posix.h)
+endif ()
+
+if (CPP11_FLAG)
+  set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
 endif ()
 
 add_library(format ${shared} ${FMT_SOURCES})
