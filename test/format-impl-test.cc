@@ -88,20 +88,20 @@ TEST(FormatTest, StrError) {
 TEST(FormatTest, FormatErrorCode) {
   std::string msg = "error 42", sep = ": ";
   {
-    fmt::Writer w;
+    fmt::MemoryWriter w;
     w << "garbage";
     format_error_code(w, 42, "test");
     EXPECT_EQ("test: " + msg, w.str());
   }
   {
-    fmt::Writer w;
+    fmt::MemoryWriter w;
     std::string prefix(
         fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size() + 1, 'x');
     format_error_code(w, 42, prefix);
     EXPECT_EQ(msg, w.str());
   }
   {
-    fmt::Writer w;
+    fmt::MemoryWriter w;
     std::string prefix(
         fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size(), 'x');
     format_error_code(w, 42, prefix);

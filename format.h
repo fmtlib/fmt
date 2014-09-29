@@ -123,7 +123,7 @@ FMT_GCC_EXTENSION typedef unsigned long long ULongLong;
 using std::move;
 #endif
 
-template <typename Char, typename Allocator = std::allocator<Char> >
+template <typename Char>
 class BasicWriter;
 
 typedef BasicWriter<char> Writer;
@@ -222,8 +222,8 @@ public:
 
 namespace internal {
 
-// The number of characters to store in the Array object, representing the
-// output buffer, itself to avoid dynamic memory allocation.
+// The number of characters to store in the MemoryBuffer object itself
+// to avoid dynamic memory allocation.
 enum { INLINE_BUFFER_SIZE = 500 };
 
 #if _SECURE_SCL
@@ -237,72 +237,32 @@ template <typename T>
 inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
 #endif
 
-// A simple array for POD types with the first SIZE elements stored in
-// the object itself. It supports a subset of std::vector's operations.
-template <typename T, std::size_t SIZE, typename Allocator = std::allocator<T> >
-class Array : private Allocator {
+// A buffer for POD types. It supports a subset of std::vector's operations.
+template <typename T>
+class Buffer {
  private:
+  FMT_DISALLOW_COPY_AND_ASSIGN(Buffer);
+
+ protected:
+  T *ptr_;
   std::size_t size_;
   std::size_t capacity_;
-  T *ptr_;
-  T data_[SIZE];
 
-  void grow(std::size_t size);
+  Buffer(T *ptr = 0, std::size_t capacity = 0)
+    : ptr_(ptr), size_(0), capacity_(capacity) {}
 
-  // Free memory allocated by the array.
-  void free() {
-    if (ptr_ != data_) this->deallocate(ptr_, capacity_);
-  }
-
-  FMT_DISALLOW_COPY_AND_ASSIGN(Array);
+  virtual void grow(std::size_t size) = 0;
 
  public:
-  explicit Array(const Allocator &alloc = Allocator())
-      : Allocator(alloc), size_(0), capacity_(SIZE), ptr_(data_) {}
-  ~Array() { free(); }
+  virtual ~Buffer() {}
 
-#if FMT_USE_RVALUE_REFERENCES
- private:
-  // Move data from other to this array.
-  void move(Array &other) {
-    Allocator &this_alloc = *this, &other_alloc = other;
-    this_alloc = std::move(other_alloc);
-    size_ = other.size_;
-    capacity_ = other.capacity_;
-    if (other.ptr_ == other.data_) {
-      ptr_ = data_;
-      std::copy(other.data_, other.data_ + size_, make_ptr(data_, capacity_));
-    } else {
-      ptr_ = other.ptr_;
-      // Set pointer to the inline array so that delete is not called
-      // when freeing.
-      other.ptr_ = other.data_;
-    }
-  }
-
- public:
-  Array(Array &&other) {
-    move(other);
-  }
-
-  Array& operator=(Array &&other) {
-    assert(this != &other);
-    free();
-    move(other);
-    return *this;
-  }
-#endif
-
-  // Returns the size of this array.
+  // Returns the size of this buffer.
   std::size_t size() const { return size_; }
 
-  // Returns the capacity of this array.
+  // Returns the capacity of this buffer.
   std::size_t capacity() const { return capacity_; }
 
-  // Returns a copy of the allocator associated with this array.
-  Allocator get_allocator() const { return *this; }
-
-  // Resizes the array. If T is a POD type new elements are not initialized.
+  // Resizes the buffer. If T is a POD type new elements are not initialized.
   void resize(std::size_t new_size) {
     if (new_size > capacity_)
       grow(new_size);
@@ -323,37 +283,95 @@ class Array : private Allocator {
     ptr_[size_++] = value;
   }
 
-  // Appends data to the end of the array.
+  // Appends data to the end of the buffer.
   void append(const T *begin, const T *end);
 
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
 };
 
-template <typename T, std::size_t SIZE, typename Allocator>
-void Array<T, SIZE, Allocator>::grow(std::size_t size) {
-  std::size_t new_capacity = (std::max)(size, capacity_ + capacity_ / 2);
-  T *new_ptr = this->allocate(new_capacity);
-  // The following code doesn't throw, so the raw pointer above doesn't leak.
-  std::copy(ptr_, ptr_ + size_, make_ptr(new_ptr, new_capacity));
-  std::size_t old_capacity = capacity_;
-  T *old_ptr = ptr_;
-  capacity_ = new_capacity;
-  ptr_ = new_ptr;
-  // deallocate may throw (at least in principle), but it doesn't matter since
-  // the array already uses the new storage and will deallocate it in case
-  // of exception.
-  if (old_ptr != data_)
-    this->deallocate(old_ptr, old_capacity);
-}
-
-template <typename T, std::size_t SIZE, typename Allocator>
-void Array<T, SIZE, Allocator>::append(const T *begin, const T *end) {
+template <typename T>
+void Buffer<T>::append(const T *begin, const T *end) {
   std::ptrdiff_t num_elements = end - begin;
   if (size_ + num_elements > capacity_)
     grow(size_ + num_elements);
   std::copy(begin, end, make_ptr(ptr_, capacity_) + size_);
   size_ += num_elements;
+}
+
+// A memory buffer for POD types with the first SIZE elements stored in
+// the object itself.
+template <typename T, std::size_t SIZE, typename Allocator = std::allocator<T> >
+class MemoryBuffer : private Allocator, public Buffer<T> {
+ private:
+  T data_[SIZE];
+
+  void grow(std::size_t size);
+
+  // Free memory allocated by the buffer.
+  void free() {
+    if (this->ptr_ != data_) this->deallocate(this->ptr_, this->capacity_);
+  }
+
+ public:
+  explicit MemoryBuffer(const Allocator &alloc = Allocator())
+      : Allocator(alloc), Buffer<T>(data_, SIZE) {}
+  ~MemoryBuffer() { free(); }
+
+#if FMT_USE_RVALUE_REFERENCES
+ private:
+  // Move data from other to this buffer.
+  void move(MemoryBuffer &other) {
+    Allocator &this_alloc = *this, &other_alloc = other;
+    this_alloc = std::move(other_alloc);
+    this->size_ = other.size_;
+    this->capacity_ = other.capacity_;
+    if (other.ptr_ == other.data_) {
+      this->ptr_ = data_;
+      std::copy(other.data_,
+                other.data_ + this->size_, make_ptr(data_, this->capacity_));
+    } else {
+      this->ptr_ = other.ptr_;
+      // Set pointer to the inline array so that delete is not called
+      // when freeing.
+      other.ptr_ = other.data_;
+    }
+  }
+
+ public:
+  MemoryBuffer(MemoryBuffer &&other) {
+    move(other);
+  }
+
+  MemoryBuffer &operator=(MemoryBuffer &&other) {
+    assert(this != &other);
+    free();
+    move(other);
+    return *this;
+  }
+#endif
+
+  // Returns a copy of the allocator associated with this buffer.
+  Allocator get_allocator() const { return *this; }
+};
+
+template <typename T, std::size_t SIZE, typename Allocator>
+void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
+  std::size_t new_capacity =
+      (std::max)(size, this->capacity_ + this->capacity_ / 2);
+  T *new_ptr = this->allocate(new_capacity);
+  // The following code doesn't throw, so the raw pointer above doesn't leak.
+  std::copy(this->ptr_,
+            this->ptr_ + this->size_, make_ptr(new_ptr, new_capacity));
+  std::size_t old_capacity = this->capacity_;
+  T *old_ptr = this->ptr_;
+  this->capacity_ = new_capacity;
+  this->ptr_ = new_ptr;
+  // deallocate may throw (at least in principle), but it doesn't matter since
+  // the buffer already uses the new storage and will deallocate it in case
+  // of exception.
+  if (old_ptr != data_)
+    this->deallocate(old_ptr, old_capacity);
 }
 
 #ifndef _MSC_VER
@@ -437,24 +455,17 @@ class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
       const wchar_t *format, unsigned width, int precision, T value);
 };
 
-// Selects uint32_t if FitsIn32Bits is true, uint64_t otherwise.
-template <bool FitsIn32Bits>
-struct TypeSelector { typedef uint32_t Type; };
-
-template <>
-struct TypeSelector<false> { typedef uint64_t Type; };
-
 // Checks if a number is negative - used to avoid warnings.
 template <bool IsSigned>
 struct SignChecker {
   template <typename T>
-  static bool is_negative(T) { return false; }
+  static bool is_negative(T value) { return value < 0; }
 };
 
 template <>
-struct SignChecker<true> {
+struct SignChecker<false> {
   template <typename T>
-  static bool is_negative(T value) { return value < 0; }
+  static bool is_negative(T) { return false; }
 };
 
 // Returns true if value is negative, false otherwise.
@@ -463,6 +474,13 @@ template <typename T>
 inline bool is_negative(T value) {
   return SignChecker<std::numeric_limits<T>::is_signed>::is_negative(value);
 }
+
+// Selects uint32_t if FitsIn32Bits is true, uint64_t otherwise.
+template <bool FitsIn32Bits>
+struct TypeSelector { typedef uint32_t Type; };
+
+template <>
+struct TypeSelector<false> { typedef uint64_t Type; };
 
 template <typename T>
 struct IntTraits {
@@ -556,7 +574,7 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
 // It is only provided for Windows since other systems support UTF-8 natively.
 class UTF8ToUTF16 {
  private:
-  Array<wchar_t, INLINE_BUFFER_SIZE> buffer_;
+  MemoryBuffer<wchar_t, INLINE_BUFFER_SIZE> buffer_;
 
  public:
   explicit UTF8ToUTF16(StringRef s);
@@ -570,7 +588,7 @@ class UTF8ToUTF16 {
 // It is only provided for Windows since other systems support UTF-8 natively.
 class UTF16ToUTF8 {
  private:
-  Array<char, INLINE_BUFFER_SIZE> buffer_;
+  MemoryBuffer<char, INLINE_BUFFER_SIZE> buffer_;
 
  public:
   UTF16ToUTF8() {}
@@ -608,7 +626,7 @@ struct NonZero<0> {
 };
 
 // The value of a formatting argument. It is a POD type to allow storage in
-// internal::Array.
+// internal::MemoryBuffer.
 struct Value {
   template <typename Char>
   struct StringValue {
@@ -1421,12 +1439,13 @@ class SystemError : public internal::RuntimeError {
   accessed as a C string with ``out.c_str()``.
   \endrst
  */
-template <typename Char, typename Allocator>
+template <typename Char>
 class BasicWriter {
  private:
   // Output buffer.
-  typedef internal::Array<Char, internal::INLINE_BUFFER_SIZE, Allocator> Array;
-  mutable Array buffer_;
+  internal::Buffer<Char> &buffer_;
+
+  FMT_DISALLOW_COPY_AND_ASSIGN(BasicWriter);
 
   typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
 
@@ -1465,7 +1484,7 @@ class BasicWriter {
 
   // Formats an integer.
   template <typename T, typename Spec>
-  void write_int(T value, const Spec &spec);
+  void write_int(T value, Spec spec);
 
   // Formats a floating-point number (double or long double).
   template <typename T>
@@ -1493,24 +1512,7 @@ class BasicWriter {
   /**
     Constructs a ``BasicWriter`` object.
    */
-  BasicWriter(const Allocator &alloc = Allocator()) : buffer_(alloc) {}
-
-#if FMT_USE_RVALUE_REFERENCES
-  /**
-    Constructs a ``BasicWriter`` object moving the content of the other
-    object to it.
-   */
-  BasicWriter(BasicWriter &&other) : buffer_(std::move(other.buffer_)) {}
-
-  /**
-    Moves the content of the other ``BasicWriter`` object to this one.
-   */
-  BasicWriter& operator=(BasicWriter &&other) {
-    assert(this != &other);
-    buffer_ = std::move(other.buffer_);
-    return *this;
-  }
-#endif
+  explicit BasicWriter(internal::Buffer<Char> &b) : buffer_(b) {}
 
   /**
     Returns the total number of characters written.
@@ -1631,7 +1633,7 @@ class BasicWriter {
   }
 
   template <typename T, typename Spec, typename FillChar>
-  BasicWriter &operator<<(const IntFormatSpec<T, Spec, FillChar> &spec) {
+  BasicWriter &operator<<(IntFormatSpec<T, Spec, FillChar> spec) {
     internal::CharTraits<Char>::convert(FillChar());
     write_int(spec.value(), spec);
     return *this;
@@ -1648,10 +1650,10 @@ class BasicWriter {
   void clear() FMT_NOEXCEPT(true) { buffer_.clear(); }
 };
 
-template <typename Char, typename Allocator>
+template <typename Char>
 template <typename StrChar>
-typename BasicWriter<Char, Allocator>::CharPtr
-  BasicWriter<Char, Allocator>::write_str(
+typename BasicWriter<Char>::CharPtr
+  BasicWriter<Char>::write_str(
     const StrChar *s, std::size_t size, const AlignSpec &spec) {
   CharPtr out = CharPtr();
   if (spec.width() > size) {
@@ -1672,9 +1674,9 @@ typename BasicWriter<Char, Allocator>::CharPtr
   return out;
 }
 
-template <typename Char, typename Allocator>
-typename BasicWriter<Char, Allocator>::CharPtr
-  BasicWriter<Char, Allocator>::fill_padding(
+template <typename Char>
+typename BasicWriter<Char>::CharPtr
+  BasicWriter<Char>::fill_padding(
     CharPtr buffer, unsigned total_size,
     std::size_t content_size, wchar_t fill) {
   std::size_t padding = total_size - content_size;
@@ -1687,10 +1689,10 @@ typename BasicWriter<Char, Allocator>::CharPtr
   return content;
 }
 
-template <typename Char, typename Allocator>
+template <typename Char>
 template <typename Spec>
-typename BasicWriter<Char, Allocator>::CharPtr
-  BasicWriter<Char, Allocator>::prepare_int_buffer(
+typename BasicWriter<Char>::CharPtr
+  BasicWriter<Char>::prepare_int_buffer(
     unsigned num_digits, const Spec &spec,
     const char *prefix, unsigned prefix_size) {
   unsigned width = spec.width();
@@ -1750,9 +1752,9 @@ typename BasicWriter<Char, Allocator>::CharPtr
   return p - 1;
 }
 
-template <typename Char, typename Allocator>
+template <typename Char>
 template <typename T, typename Spec>
-void BasicWriter<Char, Allocator>::write_int(T value, const Spec &spec) {
+void BasicWriter<Char>::write_int(T value, Spec spec) {
   unsigned prefix_size = 0;
   typedef typename internal::IntTraits<T>::MainType UnsignedType;
   UnsignedType abs_value = value;
@@ -1832,9 +1834,9 @@ void BasicWriter<Char, Allocator>::write_int(T value, const Spec &spec) {
   }
 }
 
-template <typename Char, typename Allocator>
+template <typename Char>
 template <typename T>
-void BasicWriter<Char, Allocator>::write_double(
+void BasicWriter<Char>::write_double(
     T value, const FormatSpec &spec) {
   // Check type.
   char type = spec.type();
@@ -1983,6 +1985,37 @@ void BasicWriter<Char, Allocator>::write_double(
   }
 }
 
+template <typename Char, typename Allocator = std::allocator<Char> >
+class BasicMemoryWriter : public BasicWriter<Char> {
+ private:
+  internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE, Allocator> buffer_;
+
+ public:
+  explicit BasicMemoryWriter(const Allocator& alloc = Allocator())
+    : BasicWriter<Char>(buffer_), buffer_(alloc) {}
+
+#if FMT_USE_RVALUE_REFERENCES
+  /**
+    Constructs a ``BasicMemoryWriter`` object moving the content of the other
+    object to it.
+   */
+  BasicMemoryWriter(BasicMemoryWriter &&other)
+    : BasicWriter<Char>(buffer_), buffer_(std::move(other.buffer_)) {
+  }
+
+  /**
+    Moves the content of the other ``BasicMemoryWriter`` object to this one.
+   */
+  BasicMemoryWriter &operator=(BasicMemoryWriter &&other) {
+    buffer_ = std::move(other.buffer_);
+    return *this;
+  }
+#endif
+};
+
+typedef BasicMemoryWriter<char> MemoryWriter;
+typedef BasicMemoryWriter<wchar_t> WMemoryWriter;
+
 // Formats a value.
 template <typename Char, typename T>
 void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
@@ -2051,13 +2084,13 @@ void print_colored(Color c, StringRef format, ArgList args);
   \endrst
 */
 inline std::string format(StringRef format_str, ArgList args) {
-  Writer w;
+  MemoryWriter w;
   w.write(format_str, args);
   return w.str();
 }
 
 inline std::wstring format(WStringRef format_str, ArgList args) {
-  WWriter w;
+  WMemoryWriter w;
   w.write(format_str, args);
   return w.str();
 }
@@ -2110,7 +2143,7 @@ void printf(BasicWriter<Char> &w, BasicStringRef<Char> format, ArgList args) {
   \endrst
 */
 inline std::string sprintf(StringRef format, ArgList args) {
-  Writer w;
+  MemoryWriter w;
   printf(w, format, args);
   return w.str();
 }

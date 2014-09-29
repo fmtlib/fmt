@@ -25,8 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef FMT_GTEST_EXTRA_H
-#define FMT_GTEST_EXTRA_H
+#ifndef FMT_GTEST_EXTRA_H_
+#define FMT_GTEST_EXTRA_H_
 
 #include <string>
 #include <gtest/gtest.h>
@@ -135,4 +135,4 @@ class OutputRedirect {
 
 #endif  // FMT_USE_FILE_DESCRIPTORS
 
-#endif  // FMT_GTEST_EXTRA_H
+#endif  // FMT_GTEST_EXTRA_H_

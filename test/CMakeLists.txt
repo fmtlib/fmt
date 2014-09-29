@@ -27,11 +27,20 @@ foreach (target format-test printf-test)
     set_target_properties(${target} PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   endif ()
 endforeach ()
-add_fmt_test(util-test)
+add_fmt_test(util-test mock-allocator.h)
+if (CPP11_FLAG)
+  set_target_properties(util-test PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
+endif ()
 
 foreach (src ${FMT_SOURCES})
   set(FMT_TEST_SOURCES ${FMT_TEST_SOURCES} ../${src})
 endforeach ()
+
+include(CheckIncludeFileCXX)
+check_include_file_cxx(type_traits HAVE_TYPE_TRAITS)
+if (HAVE_TYPE_TRAITS)
+  add_definitions(-DFMT_USE_TYPE_TRAITS=1)
+endif ()
 
 add_executable(macro-test macro-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
 set_target_properties(macro-test

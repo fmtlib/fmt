@@ -92,7 +92,7 @@ std::string OutputRedirect::restore_and_read() {
 #endif  // FMT_USE_FILE_DESCRIPTORS
 
 std::string format_system_error(int error_code, fmt::StringRef message) {
-  fmt::Writer out;
+  fmt::MemoryWriter out;
   fmt::internal::format_system_error(out, error_code, message);
   return out.str();
 }

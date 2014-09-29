@@ -154,7 +154,7 @@ void format_error_code(fmt::Writer &out, int error_code,
 
 void report_error(FormatFunc func,
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
-  fmt::Writer full_message;
+  fmt::MemoryWriter full_message;
   func(full_message, error_code, message);
   // Use Writer::data instead of Writer::c_str to avoid potential memory
   // allocation.
@@ -321,7 +321,7 @@ inline Arg::StringValue<wchar_t> ignore_incompatible_str(
 void fmt::SystemError::init(
     int error_code, StringRef format_str, ArgList args) {
   error_code_ = error_code;
-  Writer w;
+  MemoryWriter w;
   internal::format_system_error(w, error_code, format(format_str, args));
   std::runtime_error &base = *this;
   base = std::runtime_error(w.str());
@@ -442,7 +442,7 @@ void fmt::internal::format_system_error(
     fmt::Writer &out, int error_code,
     fmt::StringRef message) FMT_NOEXCEPT(true) {
   try {
-    Array<char, INLINE_BUFFER_SIZE> buffer;
+    MemoryBuffer<char, INLINE_BUFFER_SIZE> buffer;
     buffer.resize(INLINE_BUFFER_SIZE);
     char *system_message = 0;
     for (;;) {
@@ -559,9 +559,9 @@ class fmt::internal::ArgFormatter :
   }
 };
 
-template <typename Char, typename Allocator>
+template <typename Char>
 template <typename StrChar>
-void fmt::BasicWriter<Char, Allocator>::write_str(
+void fmt::BasicWriter<Char>::write_str(
     const Arg::StringValue<StrChar> &str, const FormatSpec &spec) {
   // Check if StrChar is convertible to Char.
   internal::CharTraits<Char>::convert(StrChar());
@@ -1029,7 +1029,7 @@ void fmt::report_windows_error(
 #endif
 
 void fmt::print(std::FILE *f, StringRef format_str, ArgList args) {
-  Writer w;
+  MemoryWriter w;
   w.write(format_str, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
@@ -1039,7 +1039,7 @@ void fmt::print(StringRef format_str, ArgList args) {
 }
 
 void fmt::print(std::ostream &os, StringRef format_str, ArgList args) {
-  Writer w;
+  MemoryWriter w;
   w.write(format_str, args);
   os.write(w.data(), w.size());
 }
@@ -1053,7 +1053,7 @@ void fmt::print_colored(Color c, StringRef format, ArgList args) {
 }
 
 int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
-  Writer w;
+  MemoryWriter w;
   printf(w, format, args);
   return std::fwrite(w.data(), 1, w.size(), f);
 }

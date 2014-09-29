@@ -24,6 +24,9 @@ else ()
     set(CPP11_FLAG -std=c++0x)
   endif ()
 endif ()
+if (CPP11_FLAG)
+  set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
+endif ()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

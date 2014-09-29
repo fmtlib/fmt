@@ -38,9 +38,9 @@
 
 #include "gmock/gmock.h"
 
-// Include format.cc instead of format.h to test implementation-specific stuff.
 #include "format.h"
 #include "util.h"
+#include "mock-allocator.h"
 #include "gtest-extra.h"
 
 #if defined(_WIN32) && !defined(__MINGW32__)
@@ -58,16 +58,13 @@ FILE *safe_fopen(const char *filename, const char *mode) {
 
 using std::size_t;
 
-using fmt::internal::Array;
 using fmt::BasicWriter;
 using fmt::format;
 using fmt::FormatError;
 using fmt::StringRef;
-using fmt::Writer;
-using fmt::WWriter;
+using fmt::MemoryWriter;
+using fmt::WMemoryWriter;
 using fmt::pad;
-
-using testing::Return;
 
 namespace {
 
@@ -78,7 +75,8 @@ template <typename Char, typename T>
   std::basic_ostringstream<Char> os;
   os << value;
   std::basic_string<Char> expected = os.str();
-  std::basic_string<Char> actual = (BasicWriter<Char>() << value).str();
+  std::basic_string<Char> actual =
+      (fmt::BasicMemoryWriter<Char>() << value).str();
   if (expected == actual)
     return ::testing::AssertionSuccess();
   return ::testing::AssertionFailure()
@@ -126,280 +124,8 @@ class TestString {
   }
 };
 
-template <typename T>
-class MockAllocator {
- public:
-  typedef T value_type;
-  MOCK_METHOD1_T(allocate, T* (std::size_t n));
-  MOCK_METHOD2_T(deallocate, void (T* p, std::size_t n));
-};
-
-template <typename Allocator>
-class AllocatorRef {
- private:
-  Allocator *alloc_;
-
- public:
-  typedef typename Allocator::value_type value_type;
-
-  explicit AllocatorRef(Allocator *alloc = 0) : alloc_(alloc) {}
-
-  AllocatorRef(const AllocatorRef &other) : alloc_(other.alloc_) {}
-
-  AllocatorRef& operator=(const AllocatorRef &other) {
-    alloc_ = other.alloc_;
-    return *this;
-  }
-
-#if FMT_USE_RVALUE_REFERENCES
- private:
-  void move(AllocatorRef &other) {
-    alloc_ = other.alloc_;
-    other.alloc_ = 0;
-  }
-
- public:
-  AllocatorRef(AllocatorRef &&other) {
-    move(other);
-  }
-
-  AllocatorRef& operator=(AllocatorRef &&other) {
-    assert(this != &other);
-    move(other);
-    return *this;
-  }
-#endif
-
-  Allocator *get() const { return alloc_; }
-
-  value_type* allocate(std::size_t n) { return alloc_->allocate(n); }
-  void deallocate(value_type* p, std::size_t n) { alloc_->deallocate(p, n); }
-};
-
-void CheckForwarding(
-    MockAllocator<int> &alloc, AllocatorRef< MockAllocator<int> > &ref) {
-  int mem;
-  // Check if value_type is properly defined.
-  AllocatorRef< MockAllocator<int> >::value_type *ptr = &mem;
-  // Check forwarding.
-  EXPECT_CALL(alloc, allocate(42)).WillOnce(Return(ptr));
-  ref.allocate(42);
-  EXPECT_CALL(alloc, deallocate(ptr, 42));
-  ref.deallocate(ptr, 42);
-}
-
-TEST(AllocatorTest, AllocatorRef) {
-  testing::StrictMock< MockAllocator<int> > alloc;
-  typedef AllocatorRef< MockAllocator<int> > TestAllocatorRef;
-  TestAllocatorRef ref(&alloc);
-  // Check if AllocatorRef forwards to the underlying allocator.
-  CheckForwarding(alloc, ref);
-  TestAllocatorRef ref2(ref);
-  CheckForwarding(alloc, ref2);
-  TestAllocatorRef ref3;
-  EXPECT_EQ(0, ref3.get());
-  ref3 = ref;
-  CheckForwarding(alloc, ref3);
-}
-
-TEST(ArrayTest, Ctor) {
-  Array<char, 123> array;
-  EXPECT_EQ(0u, array.size());
-  EXPECT_EQ(123u, array.capacity());
-}
-
-#if FMT_USE_RVALUE_REFERENCES
-
-typedef AllocatorRef< std::allocator<char> > TestAllocator;
-
-void check_move_array(const char *str, Array<char, 5, TestAllocator> &array) {
-  std::allocator<char> *alloc = array.get_allocator().get();
-  Array<char, 5, TestAllocator> array2(std::move(array));
-  // Move shouldn't destroy the inline content of the first array.
-  EXPECT_EQ(str, std::string(&array[0], array.size()));
-  EXPECT_EQ(str, std::string(&array2[0], array2.size()));
-  EXPECT_EQ(5, array2.capacity());
-  // Move should transfer allocator.
-  EXPECT_EQ(0, array.get_allocator().get());
-  EXPECT_EQ(alloc, array2.get_allocator().get());
-}
-
-TEST(ArrayTest, MoveCtor) {
-  std::allocator<char> alloc;
-  Array<char, 5, TestAllocator> array((TestAllocator(&alloc)));
-  const char test[] = "test";
-  array.append(test, test + 4);
-  check_move_array("test", array);
-  // Adding one more character fills the inline buffer, but doesn't cause
-  // dynamic allocation.
-  array.push_back('a');
-  check_move_array("testa", array);
-  const char *inline_buffer_ptr = &array[0];
-  // Adding one more character causes the content to move from the inline to
-  // a dynamically allocated buffer.
-  array.push_back('b');
-  Array<char, 5, TestAllocator> array2(std::move(array));
-  // Move should rip the guts of the first array.
-  EXPECT_EQ(inline_buffer_ptr, &array[0]);
-  EXPECT_EQ("testab", std::string(&array2[0], array2.size()));
-  EXPECT_GT(array2.capacity(), 5u);
-}
-
-void check_move_assign_array(const char *str, Array<char, 5> &array) {
-  Array<char, 5> array2;
-  array2 = std::move(array);
-  // Move shouldn't destroy the inline content of the first array.
-  EXPECT_EQ(str, std::string(&array[0], array.size()));
-  EXPECT_EQ(str, std::string(&array2[0], array2.size()));
-  EXPECT_EQ(5, array2.capacity());
-}
-
-TEST(ArrayTest, MoveAssignment) {
-  Array<char, 5> array;
-  const char test[] = "test";
-  array.append(test, test + 4);
-  check_move_assign_array("test", array);
-  // Adding one more character fills the inline buffer, but doesn't cause
-  // dynamic allocation.
-  array.push_back('a');
-  check_move_assign_array("testa", array);
-  const char *inline_buffer_ptr = &array[0];
-  // Adding one more character causes the content to move from the inline to
-  // a dynamically allocated buffer.
-  array.push_back('b');
-  Array<char, 5> array2;
-  array2 = std::move(array);
-  // Move should rip the guts of the first array.
-  EXPECT_EQ(inline_buffer_ptr, &array[0]);
-  EXPECT_EQ("testab", std::string(&array2[0], array2.size()));
-  EXPECT_GT(array2.capacity(), 5u);
-}
-
-#endif  // FMT_USE_RVALUE_REFERENCES
-
-TEST(ArrayTest, Access) {
-  Array<char, 10> array;
-  array[0] = 11;
-  EXPECT_EQ(11, array[0]);
-  array[3] = 42;
-  EXPECT_EQ(42, *(&array[0] + 3));
-  const Array<char, 10> &carray = array;
-  EXPECT_EQ(42, carray[3]);
-}
-
-TEST(ArrayTest, Resize) {
-  Array<char, 123> array;
-  array[10] = 42;
-  EXPECT_EQ(42, array[10]);
-  array.resize(20);
-  EXPECT_EQ(20u, array.size());
-  EXPECT_EQ(123u, array.capacity());
-  EXPECT_EQ(42, array[10]);
-  array.resize(5);
-  EXPECT_EQ(5u, array.size());
-  EXPECT_EQ(123u, array.capacity());
-  EXPECT_EQ(42, array[10]);
-}
-
-TEST(ArrayTest, Grow) {
-  Array<int, 10> array;
-  array.resize(10);
-  for (int i = 0; i < 10; ++i)
-    array[i] = i * i;
-  array.resize(20);
-  EXPECT_EQ(20u, array.size());
-  EXPECT_EQ(20u, array.capacity());
-  for (int i = 0; i < 10; ++i)
-    EXPECT_EQ(i * i, array[i]);
-}
-
-TEST(ArrayTest, Clear) {
-  Array<char, 10> array;
-  array.resize(20);
-  array.clear();
-  EXPECT_EQ(0u, array.size());
-  EXPECT_EQ(20u, array.capacity());
-}
-
-TEST(ArrayTest, PushBack) {
-  Array<int, 10> array;
-  array.push_back(11);
-  EXPECT_EQ(11, array[0]);
-  EXPECT_EQ(1u, array.size());
-  array.resize(10);
-  array.push_back(22);
-  EXPECT_EQ(22, array[10]);
-  EXPECT_EQ(11u, array.size());
-  EXPECT_EQ(15u, array.capacity());
-}
-
-TEST(ArrayTest, Append) {
-  Array<char, 10> array;
-  const char *test = "test";
-  array.append(test, test + 5);
-  EXPECT_STREQ(test, &array[0]);
-  EXPECT_EQ(5u, array.size());
-  array.resize(10);
-  array.append(test, test + 2);
-  EXPECT_EQ('t', array[10]);
-  EXPECT_EQ('e', array[11]);
-  EXPECT_EQ(12u, array.size());
-  EXPECT_EQ(15u, array.capacity());
-}
-
-TEST(ArrayTest, AppendAllocatesEnoughStorage) {
-  Array<char, 10> array;
-  const char *test = "abcdefgh";
-  array.resize(10);
-  array.append(test, test + 9);
-  EXPECT_STREQ(test, &array[10]);
-  EXPECT_EQ(19u, array.size());
-  EXPECT_EQ(19u, array.capacity());
-}
-
-TEST(ArrayTest, Allocator) {
-  typedef AllocatorRef< MockAllocator<char> > TestAllocator;
-  Array<char, 10, TestAllocator> array;
-  EXPECT_EQ(0, array.get_allocator().get());
-  testing::StrictMock< MockAllocator<char> > alloc;
-  char mem;
-  {
-    Array<char, 10, TestAllocator> array2((TestAllocator(&alloc)));
-    EXPECT_EQ(&alloc, array2.get_allocator().get());
-    std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
-    EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem));
-    array2.reserve(size);
-    EXPECT_CALL(alloc, deallocate(&mem, size));
-  }
-}
-
-TEST(ArrayTest, ExceptionInDeallocate) {
-  typedef AllocatorRef< MockAllocator<char> > TestAllocator;
-  testing::StrictMock< MockAllocator<char> > alloc;
-  Array<char, 10, TestAllocator> array((TestAllocator(&alloc)));
-  std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
-  std::vector<char> mem(size);
-  {
-    EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem[0]));
-    array.resize(size);
-    std::fill(&array[0], &array[0] + size, 'x');
-  }
-  std::vector<char> mem2(2 * size);
-  {
-    EXPECT_CALL(alloc, allocate(2 * size)).WillOnce(Return(&mem2[0]));
-    std::exception e;
-    EXPECT_CALL(alloc, deallocate(&mem[0], size)).WillOnce(testing::Throw(e));
-    EXPECT_THROW(array.reserve(2 * size), std::exception);
-    EXPECT_EQ(&mem2[0], &array[0]);
-    // Check that the data has been copied.
-    for (std::size_t i = 0; i < size; ++i)
-      EXPECT_EQ('x', array[i]);
-  }
-  EXPECT_CALL(alloc, deallocate(&mem2[0], 2 * size));
-}
-
 TEST(WriterTest, Ctor) {
-  Writer w;
+  MemoryWriter w;
   EXPECT_EQ(0u, w.size());
   EXPECT_STREQ("", w.c_str());
   EXPECT_EQ("", w.str());
@@ -407,15 +133,15 @@ TEST(WriterTest, Ctor) {
 
 #if FMT_USE_RVALUE_REFERENCES
 
-void check_move_writer(const std::string &str, Writer &w) {
-  Writer w2(std::move(w));
+void check_move_writer(const std::string &str, MemoryWriter &w) {
+  MemoryWriter w2(std::move(w));
   // Move shouldn't destroy the inline content of the first writer.
   EXPECT_EQ(str, w.str());
   EXPECT_EQ(str, w2.str());
 }
 
 TEST(WriterTest, MoveCtor) {
-  Writer w;
+  MemoryWriter w;
   w << "test";
   check_move_writer("test", w);
   // This fills the inline buffer, but doesn't cause dynamic allocation.
@@ -429,14 +155,14 @@ TEST(WriterTest, MoveCtor) {
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
   w << '*';
-  Writer w2(std::move(w));
+  MemoryWriter w2(std::move(w));
   // Move should rip the guts of the first writer.
   EXPECT_EQ(inline_buffer_ptr, w.data());
   EXPECT_EQ(s + '*', w2.str());
 }
 
-void CheckMoveAssignWriter(const std::string &str, Writer &w) {
-  Writer w2;
+void CheckMoveAssignWriter(const std::string &str, MemoryWriter &w) {
+  MemoryWriter w2;
   w2 = std::move(w);
   // Move shouldn't destroy the inline content of the first writer.
   EXPECT_EQ(str, w.str());
@@ -444,7 +170,7 @@ void CheckMoveAssignWriter(const std::string &str, Writer &w) {
 }
 
 TEST(WriterTest, MoveAssignment) {
-  Writer w;
+  MemoryWriter w;
   w << "test";
   CheckMoveAssignWriter("test", w);
   // This fills the inline buffer, but doesn't cause dynamic allocation.
@@ -458,7 +184,7 @@ TEST(WriterTest, MoveAssignment) {
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
   w << '*';
-  Writer w2;
+  MemoryWriter w2;
   w2 = std::move(w);
   // Move should rip the guts of the first writer.
   EXPECT_EQ(inline_buffer_ptr, w.data());
@@ -471,17 +197,17 @@ TEST(WriterTest, Allocator) {
   typedef testing::StrictMock< MockAllocator<char> > MockAllocator;
   typedef AllocatorRef<MockAllocator> TestAllocator;
   MockAllocator alloc;
-  BasicWriter<char, TestAllocator> w((TestAllocator(&alloc)));
+  fmt::BasicMemoryWriter<char, TestAllocator> w((TestAllocator(&alloc)));
   std::size_t size = 1.5 * fmt::internal::INLINE_BUFFER_SIZE;
   std::vector<char> mem(size);
-  EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem[0]));
+  EXPECT_CALL(alloc, allocate(size)).WillOnce(testing::Return(&mem[0]));
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE + 1; ++i)
     w << '*';
   EXPECT_CALL(alloc, deallocate(&mem[0], size));
 }
 
 TEST(WriterTest, Data) {
-  Writer w;
+  MemoryWriter w;
   w << 42;
   EXPECT_EQ("42", std::string(w.data(), w.size()));
 }
@@ -527,13 +253,13 @@ TEST(WriterTest, WriteLongDouble) {
 }
 
 TEST(WriterTest, WriteDoubleAtBufferBoundary) {
-  fmt::Writer writer;
+  MemoryWriter writer;
   for (int i = 0; i < 100; ++i)
     writer << 1.23456789;
 }
 
 TEST(WriterTest, WriteDoubleWithFilledBuffer) {
-  fmt::Writer writer;
+  MemoryWriter writer;
   // Fill the buffer.
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
     writer << ' ';
@@ -552,36 +278,36 @@ TEST(WriterTest, WriteWideChar) {
 TEST(WriterTest, WriteString) {
   CHECK_WRITE_CHAR("abc");
   // The following line shouldn't compile:
-  //fmt::Writer() << L"abc";
+  //MemoryWriter() << L"abc";
 }
 
 TEST(WriterTest, WriteWideString) {
   CHECK_WRITE_WCHAR(L"abc");
   // The following line shouldn't compile:
-  //fmt::WWriter() << "abc";
+  //fmt::WMemoryWriter() << "abc";
 }
 
 TEST(WriterTest, bin) {
   using fmt::bin;
-  EXPECT_EQ("1100101011111110", (Writer() << bin(0xcafe)).str());
-  EXPECT_EQ("1011101010111110", (Writer() << bin(0xbabeu)).str());
-  EXPECT_EQ("1101111010101101", (Writer() << bin(0xdeadl)).str());
-  EXPECT_EQ("1011111011101111", (Writer() << bin(0xbeeful)).str());
+  EXPECT_EQ("1100101011111110", (MemoryWriter() << bin(0xcafe)).str());
+  EXPECT_EQ("1011101010111110", (MemoryWriter() << bin(0xbabeu)).str());
+  EXPECT_EQ("1101111010101101", (MemoryWriter() << bin(0xdeadl)).str());
+  EXPECT_EQ("1011111011101111", (MemoryWriter() << bin(0xbeeful)).str());
   EXPECT_EQ("11001010111111101011101010111110",
-            (Writer() << bin(0xcafebabell)).str());
+            (MemoryWriter() << bin(0xcafebabell)).str());
   EXPECT_EQ("11011110101011011011111011101111",
-            (Writer() << bin(0xdeadbeefull)).str());
+            (MemoryWriter() << bin(0xdeadbeefull)).str());
 }
 
 TEST(WriterTest, oct) {
   using fmt::oct;
-  EXPECT_EQ("12", (Writer() << oct(static_cast<short>(012))).str());
-  EXPECT_EQ("12", (Writer() << oct(012)).str());
-  EXPECT_EQ("34", (Writer() << oct(034u)).str());
-  EXPECT_EQ("56", (Writer() << oct(056l)).str());
-  EXPECT_EQ("70", (Writer() << oct(070ul)).str());
-  EXPECT_EQ("1234", (Writer() << oct(01234ll)).str());
-  EXPECT_EQ("5670", (Writer() << oct(05670ull)).str());
+  EXPECT_EQ("12", (MemoryWriter() << oct(static_cast<short>(012))).str());
+  EXPECT_EQ("12", (MemoryWriter() << oct(012)).str());
+  EXPECT_EQ("34", (MemoryWriter() << oct(034u)).str());
+  EXPECT_EQ("56", (MemoryWriter() << oct(056l)).str());
+  EXPECT_EQ("70", (MemoryWriter() << oct(070ul)).str());
+  EXPECT_EQ("1234", (MemoryWriter() << oct(01234ll)).str());
+  EXPECT_EQ("5670", (MemoryWriter() << oct(05670ull)).str());
 }
 
 TEST(WriterTest, hex) {
@@ -591,22 +317,22 @@ TEST(WriterTest, hex) {
   // This shouldn't compile:
   //fmt::IntFormatSpec<short, fmt::TypeSpec<'x'> > (*phex2)(short value) = hex;
 
-  EXPECT_EQ("cafe", (Writer() << hex(0xcafe)).str());
-  EXPECT_EQ("babe", (Writer() << hex(0xbabeu)).str());
-  EXPECT_EQ("dead", (Writer() << hex(0xdeadl)).str());
-  EXPECT_EQ("beef", (Writer() << hex(0xbeeful)).str());
-  EXPECT_EQ("cafebabe", (Writer() << hex(0xcafebabell)).str());
-  EXPECT_EQ("deadbeef", (Writer() << hex(0xdeadbeefull)).str());
+  EXPECT_EQ("cafe", (MemoryWriter() << hex(0xcafe)).str());
+  EXPECT_EQ("babe", (MemoryWriter() << hex(0xbabeu)).str());
+  EXPECT_EQ("dead", (MemoryWriter() << hex(0xdeadl)).str());
+  EXPECT_EQ("beef", (MemoryWriter() << hex(0xbeeful)).str());
+  EXPECT_EQ("cafebabe", (MemoryWriter() << hex(0xcafebabell)).str());
+  EXPECT_EQ("deadbeef", (MemoryWriter() << hex(0xdeadbeefull)).str());
 }
 
 TEST(WriterTest, hexu) {
   using fmt::hexu;
-  EXPECT_EQ("CAFE", (Writer() << hexu(0xcafe)).str());
-  EXPECT_EQ("BABE", (Writer() << hexu(0xbabeu)).str());
-  EXPECT_EQ("DEAD", (Writer() << hexu(0xdeadl)).str());
-  EXPECT_EQ("BEEF", (Writer() << hexu(0xbeeful)).str());
-  EXPECT_EQ("CAFEBABE", (Writer() << hexu(0xcafebabell)).str());
-  EXPECT_EQ("DEADBEEF", (Writer() << hexu(0xdeadbeefull)).str());
+  EXPECT_EQ("CAFE", (MemoryWriter() << hexu(0xcafe)).str());
+  EXPECT_EQ("BABE", (MemoryWriter() << hexu(0xbabeu)).str());
+  EXPECT_EQ("DEAD", (MemoryWriter() << hexu(0xdeadl)).str());
+  EXPECT_EQ("BEEF", (MemoryWriter() << hexu(0xbeeful)).str());
+  EXPECT_EQ("CAFEBABE", (MemoryWriter() << hexu(0xcafebabell)).str());
+  EXPECT_EQ("DEADBEEF", (MemoryWriter() << hexu(0xdeadbeefull)).str());
 }
 
 class Date {
@@ -647,21 +373,21 @@ ISO8601DateFormatter iso8601(const Date &d) { return ISO8601DateFormatter(d); }
 
 TEST(WriterTest, pad) {
   using fmt::hex;
-  EXPECT_EQ("    cafe", (Writer() << pad(hex(0xcafe), 8)).str());
-  EXPECT_EQ("    babe", (Writer() << pad(hex(0xbabeu), 8)).str());
-  EXPECT_EQ("    dead", (Writer() << pad(hex(0xdeadl), 8)).str());
-  EXPECT_EQ("    beef", (Writer() << pad(hex(0xbeeful), 8)).str());
-  EXPECT_EQ("    dead", (Writer() << pad(hex(0xdeadll), 8)).str());
-  EXPECT_EQ("    beef", (Writer() << pad(hex(0xbeefull), 8)).str());
+  EXPECT_EQ("    cafe", (MemoryWriter() << pad(hex(0xcafe), 8)).str());
+  EXPECT_EQ("    babe", (MemoryWriter() << pad(hex(0xbabeu), 8)).str());
+  EXPECT_EQ("    dead", (MemoryWriter() << pad(hex(0xdeadl), 8)).str());
+  EXPECT_EQ("    beef", (MemoryWriter() << pad(hex(0xbeeful), 8)).str());
+  EXPECT_EQ("    dead", (MemoryWriter() << pad(hex(0xdeadll), 8)).str());
+  EXPECT_EQ("    beef", (MemoryWriter() << pad(hex(0xbeefull), 8)).str());
 
-  EXPECT_EQ("     11", (Writer() << pad(11, 7)).str());
-  EXPECT_EQ("     22", (Writer() << pad(22u, 7)).str());
-  EXPECT_EQ("     33", (Writer() << pad(33l, 7)).str());
-  EXPECT_EQ("     44", (Writer() << pad(44ul, 7)).str());
-  EXPECT_EQ("     33", (Writer() << pad(33ll, 7)).str());
-  EXPECT_EQ("     44", (Writer() << pad(44ull, 7)).str());
+  EXPECT_EQ("     11", (MemoryWriter() << pad(11, 7)).str());
+  EXPECT_EQ("     22", (MemoryWriter() << pad(22u, 7)).str());
+  EXPECT_EQ("     33", (MemoryWriter() << pad(33l, 7)).str());
+  EXPECT_EQ("     44", (MemoryWriter() << pad(44ul, 7)).str());
+  EXPECT_EQ("     33", (MemoryWriter() << pad(33ll, 7)).str());
+  EXPECT_EQ("     44", (MemoryWriter() << pad(44ull, 7)).str());
 
-  Writer w;
+  MemoryWriter w;
   w.clear();
   w << pad(42, 5, '0');
   EXPECT_EQ("00042", w.str());
@@ -674,25 +400,25 @@ TEST(WriterTest, pad) {
 }
 
 TEST(WriterTest, PadString) {
-  EXPECT_EQ("test    ", (Writer() << pad("test", 8)).str());
-  EXPECT_EQ("test******", (Writer() << pad("test", 10, '*')).str());
+  EXPECT_EQ("test    ", (MemoryWriter() << pad("test", 8)).str());
+  EXPECT_EQ("test******", (MemoryWriter() << pad("test", 10, '*')).str());
 }
 
 TEST(WriterTest, PadWString) {
-  EXPECT_EQ(L"test    ", (WWriter() << pad(L"test", 8)).str());
-  EXPECT_EQ(L"test******", (WWriter() << pad(L"test", 10, '*')).str());
-  EXPECT_EQ(L"test******", (WWriter() << pad(L"test", 10, L'*')).str());
+  EXPECT_EQ(L"test    ", (WMemoryWriter() << pad(L"test", 8)).str());
+  EXPECT_EQ(L"test******", (WMemoryWriter() << pad(L"test", 10, '*')).str());
+  EXPECT_EQ(L"test******", (WMemoryWriter() << pad(L"test", 10, L'*')).str());
 }
 
 TEST(WriterTest, NoConflictWithIOManip) {
   using namespace std;
   using namespace fmt;
-  EXPECT_EQ("cafe", (Writer() << hex(0xcafe)).str());
-  EXPECT_EQ("12", (Writer() << oct(012)).str());
+  EXPECT_EQ("cafe", (MemoryWriter() << hex(0xcafe)).str());
+  EXPECT_EQ("12", (MemoryWriter() << oct(012)).str());
 }
 
 TEST(WriterTest, Format) {
-  Writer w;
+  MemoryWriter w;
   w.write("part{0}", 1);
   EXPECT_EQ(strlen("part1"), w.size());
   EXPECT_STREQ("part1", w.c_str());
@@ -706,7 +432,7 @@ TEST(WriterTest, Format) {
 }
 
 TEST(WriterTest, WWriter) {
-  EXPECT_EQ(L"cafe", (fmt::WWriter() << fmt::hex(0xcafe)).str());
+  EXPECT_EQ(L"cafe", (fmt::WMemoryWriter() << fmt::hex(0xcafe)).str());
 }
 
 TEST(FormatterTest, Escape) {
@@ -1481,7 +1207,7 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
 
 TEST(FormatterTest, FormatExamples) {
   using fmt::hex;
-  EXPECT_EQ("0000cafe", (Writer() << pad(hex(0xcafe), 8, '0')).str());
+  EXPECT_EQ("0000cafe", (MemoryWriter() << pad(hex(0xcafe), 8, '0')).str());
 
   std::string message = format("The answer is {}", 42);
   EXPECT_EQ("The answer is 42", message);
@@ -1489,13 +1215,13 @@ TEST(FormatterTest, FormatExamples) {
   EXPECT_EQ("42", format("{}", 42));
   EXPECT_EQ("42", format(std::string("{}"), 42));
 
-  Writer out;
+  MemoryWriter out;
   out << "The answer is " << 42 << "\n";
   out.write("({:+f}, {:+f})", -3.14, 3.14);
   EXPECT_EQ("The answer is 42\n(-3.140000, +3.140000)", out.str());
 
   {
-    fmt::Writer writer;
+    MemoryWriter writer;
     for (int i = 0; i < 10; i++)
       writer.write("{}", i);
     std::string s = writer.str(); // s == 0123456789
@@ -1655,7 +1381,7 @@ TEST(StrTest, Convert) {
 
 std::string format_message(int id, const char *format,
     const fmt::ArgList &args) {
-  fmt::Writer w;
+  MemoryWriter w;
   w.write("[{}] ", id);
   w.write(format, args);
   return w.str();

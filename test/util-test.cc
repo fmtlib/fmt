@@ -29,7 +29,14 @@
 #include <climits>
 #include <cstring>
 #include <limits>
+
+#if FMT_USE_TYPE_TRAITS
+# include <type_traits>
+#endif
+
+#include "gmock/gmock.h"
 #include "gtest-extra.h"
+#include "mock-allocator.h"
 #include "util.h"
 
 // Check if format.h compiles with windows.h included.
@@ -42,8 +49,11 @@
 #undef max
 
 using fmt::StringRef;
-using fmt::internal::Value;
 using fmt::internal::Arg;
+using fmt::internal::Value;
+using fmt::internal::MemoryBuffer;
+
+using testing::Return;
 
 namespace {
 
@@ -62,8 +72,240 @@ Arg make_arg(const T &value) {
         fmt::internal::MakeValue<Char>::type(value));
   return arg;
 }
-
 }  // namespace
+
+void CheckForwarding(
+    MockAllocator<int> &alloc, AllocatorRef< MockAllocator<int> > &ref) {
+  int mem;
+  // Check if value_type is properly defined.
+  AllocatorRef< MockAllocator<int> >::value_type *ptr = &mem;
+  // Check forwarding.
+  EXPECT_CALL(alloc, allocate(42)).WillOnce(Return(ptr));
+  ref.allocate(42);
+  EXPECT_CALL(alloc, deallocate(ptr, 42));
+  ref.deallocate(ptr, 42);
+}
+
+TEST(AllocatorTest, AllocatorRef) {
+  testing::StrictMock< MockAllocator<int> > alloc;
+  typedef AllocatorRef< MockAllocator<int> > TestAllocatorRef;
+  TestAllocatorRef ref(&alloc);
+  // Check if AllocatorRef forwards to the underlying allocator.
+  CheckForwarding(alloc, ref);
+  TestAllocatorRef ref2(ref);
+  CheckForwarding(alloc, ref2);
+  TestAllocatorRef ref3;
+  EXPECT_EQ(0, ref3.get());
+  ref3 = ref;
+  CheckForwarding(alloc, ref3);
+}
+
+#if FMT_USE_TYPE_TRAITS
+TEST(BufferTest, NotCopyConstructible) {
+  EXPECT_FALSE(std::is_copy_constructible<fmt::internal::Buffer<char> >::value);
+}
+
+TEST(BufferTest, NotCopyAssignable) {
+  EXPECT_FALSE(std::is_copy_assignable<fmt::internal::Buffer<char> >::value);
+}
+#endif
+
+TEST(MemoryBufferTest, Ctor) {
+  MemoryBuffer<char, 123> buffer;
+  EXPECT_EQ(0u, buffer.size());
+  EXPECT_EQ(123u, buffer.capacity());
+}
+
+#if FMT_USE_RVALUE_REFERENCES
+
+typedef AllocatorRef< std::allocator<char> > TestAllocator;
+
+void check_move_buffer(const char *str,
+                       MemoryBuffer<char, 5, TestAllocator> &buffer) {
+  std::allocator<char> *alloc = buffer.get_allocator().get();
+  MemoryBuffer<char, 5, TestAllocator> buffer2(std::move(buffer));
+  // Move shouldn't destroy the inline content of the first buffer.
+  EXPECT_EQ(str, std::string(&buffer[0], buffer.size()));
+  EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
+  EXPECT_EQ(5, buffer2.capacity());
+  // Move should transfer allocator.
+  EXPECT_EQ(0, buffer.get_allocator().get());
+  EXPECT_EQ(alloc, buffer2.get_allocator().get());
+}
+
+TEST(MemoryBufferTest, MoveCtor) {
+  std::allocator<char> alloc;
+  MemoryBuffer<char, 5, TestAllocator> buffer((TestAllocator(&alloc)));
+  const char test[] = "test";
+  buffer.append(test, test + 4);
+  check_move_buffer("test", buffer);
+  // Adding one more character fills the inline buffer, but doesn't cause
+  // dynamic allocation.
+  buffer.push_back('a');
+  check_move_buffer("testa", buffer);
+  const char *inline_buffer_ptr = &buffer[0];
+  // Adding one more character causes the content to move from the inline to
+  // a dynamically allocated buffer.
+  buffer.push_back('b');
+  MemoryBuffer<char, 5, TestAllocator> buffer2(std::move(buffer));
+  // Move should rip the guts of the first buffer.
+  EXPECT_EQ(inline_buffer_ptr, &buffer[0]);
+  EXPECT_EQ("testab", std::string(&buffer2[0], buffer2.size()));
+  EXPECT_GT(buffer2.capacity(), 5u);
+}
+
+void check_move_assign_buffer(const char *str, MemoryBuffer<char, 5> &buffer) {
+  MemoryBuffer<char, 5> buffer2;
+  buffer2 = std::move(buffer);
+  // Move shouldn't destroy the inline content of the first buffer.
+  EXPECT_EQ(str, std::string(&buffer[0], buffer.size()));
+  EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
+  EXPECT_EQ(5, buffer2.capacity());
+}
+
+TEST(MemoryBufferTest, MoveAssignment) {
+  MemoryBuffer<char, 5> buffer;
+  const char test[] = "test";
+  buffer.append(test, test + 4);
+  check_move_assign_buffer("test", buffer);
+  // Adding one more character fills the inline buffer, but doesn't cause
+  // dynamic allocation.
+  buffer.push_back('a');
+  check_move_assign_buffer("testa", buffer);
+  const char *inline_buffer_ptr = &buffer[0];
+  // Adding one more character causes the content to move from the inline to
+  // a dynamically allocated buffer.
+  buffer.push_back('b');
+  MemoryBuffer<char, 5> buffer2;
+  buffer2 = std::move(buffer);
+  // Move should rip the guts of the first buffer.
+  EXPECT_EQ(inline_buffer_ptr, &buffer[0]);
+  EXPECT_EQ("testab", std::string(&buffer2[0], buffer2.size()));
+  EXPECT_GT(buffer2.capacity(), 5u);
+}
+
+#endif  // FMT_USE_RVALUE_REFERENCES
+
+TEST(MemoryBufferTest, Access) {
+  MemoryBuffer<char, 10> buffer;
+  buffer[0] = 11;
+  EXPECT_EQ(11, buffer[0]);
+  buffer[3] = 42;
+  EXPECT_EQ(42, *(&buffer[0] + 3));
+  const MemoryBuffer<char, 10> &const_buffer = buffer;
+  EXPECT_EQ(42, const_buffer[3]);
+}
+
+TEST(MemoryBufferTest, Resize) {
+  MemoryBuffer<char, 123> buffer;
+  buffer[10] = 42;
+  EXPECT_EQ(42, buffer[10]);
+  buffer.resize(20);
+  EXPECT_EQ(20u, buffer.size());
+  EXPECT_EQ(123u, buffer.capacity());
+  EXPECT_EQ(42, buffer[10]);
+  buffer.resize(5);
+  EXPECT_EQ(5u, buffer.size());
+  EXPECT_EQ(123u, buffer.capacity());
+  EXPECT_EQ(42, buffer[10]);
+}
+
+TEST(MemoryBufferTest, Grow) {
+  MemoryBuffer<int, 10> buffer;
+  buffer.resize(10);
+  for (int i = 0; i < 10; ++i)
+    buffer[i] = i * i;
+  buffer.resize(20);
+  EXPECT_EQ(20u, buffer.size());
+  EXPECT_EQ(20u, buffer.capacity());
+  for (int i = 0; i < 10; ++i)
+    EXPECT_EQ(i * i, buffer[i]);
+}
+
+TEST(MemoryBufferTest, Clear) {
+  MemoryBuffer<char, 10> buffer;
+  buffer.resize(20);
+  buffer.clear();
+  EXPECT_EQ(0u, buffer.size());
+  EXPECT_EQ(20u, buffer.capacity());
+}
+
+TEST(MemoryBufferTest, PushBack) {
+  MemoryBuffer<int, 10> buffer;
+  buffer.push_back(11);
+  EXPECT_EQ(11, buffer[0]);
+  EXPECT_EQ(1u, buffer.size());
+  buffer.resize(10);
+  buffer.push_back(22);
+  EXPECT_EQ(22, buffer[10]);
+  EXPECT_EQ(11u, buffer.size());
+  EXPECT_EQ(15u, buffer.capacity());
+}
+
+TEST(MemoryBufferTest, Append) {
+  MemoryBuffer<char, 10> buffer;
+  const char *test = "test";
+  buffer.append(test, test + 5);
+  EXPECT_STREQ(test, &buffer[0]);
+  EXPECT_EQ(5u, buffer.size());
+  buffer.resize(10);
+  buffer.append(test, test + 2);
+  EXPECT_EQ('t', buffer[10]);
+  EXPECT_EQ('e', buffer[11]);
+  EXPECT_EQ(12u, buffer.size());
+  EXPECT_EQ(15u, buffer.capacity());
+}
+
+TEST(MemoryBufferTest, AppendAllocatesEnoughStorage) {
+  MemoryBuffer<char, 10> buffer;
+  const char *test = "abcdefgh";
+  buffer.resize(10);
+  buffer.append(test, test + 9);
+  EXPECT_STREQ(test, &buffer[10]);
+  EXPECT_EQ(19u, buffer.size());
+  EXPECT_EQ(19u, buffer.capacity());
+}
+
+TEST(MemoryBufferTest, Allocator) {
+  typedef AllocatorRef< MockAllocator<char> > TestAllocator;
+  MemoryBuffer<char, 10, TestAllocator> buffer;
+  EXPECT_EQ(0, buffer.get_allocator().get());
+  testing::StrictMock< MockAllocator<char> > alloc;
+  char mem;
+  {
+    MemoryBuffer<char, 10, TestAllocator> buffer2((TestAllocator(&alloc)));
+    EXPECT_EQ(&alloc, buffer2.get_allocator().get());
+    std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
+    EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem));
+    buffer2.reserve(size);
+    EXPECT_CALL(alloc, deallocate(&mem, size));
+  }
+}
+
+TEST(MemoryBufferTest, ExceptionInDeallocate) {
+  typedef AllocatorRef< MockAllocator<char> > TestAllocator;
+  testing::StrictMock< MockAllocator<char> > alloc;
+  MemoryBuffer<char, 10, TestAllocator> buffer((TestAllocator(&alloc)));
+  std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
+  std::vector<char> mem(size);
+  {
+    EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem[0]));
+    buffer.resize(size);
+    std::fill(&buffer[0], &buffer[0] + size, 'x');
+  }
+  std::vector<char> mem2(2 * size);
+  {
+    EXPECT_CALL(alloc, allocate(2 * size)).WillOnce(Return(&mem2[0]));
+    std::exception e;
+    EXPECT_CALL(alloc, deallocate(&mem[0], size)).WillOnce(testing::Throw(e));
+    EXPECT_THROW(buffer.reserve(2 * size), std::exception);
+    EXPECT_EQ(&mem2[0], &buffer[0]);
+    // Check that the data has been copied.
+    for (std::size_t i = 0; i < size; ++i)
+      EXPECT_EQ('x', buffer[i]);
+  }
+  EXPECT_CALL(alloc, deallocate(&mem2[0], 2 * size));
+}
 
 TEST(UtilTest, Increment) {
   char s[10] = "123";
@@ -236,7 +478,7 @@ TEST(ArgTest, MakeArg) {
   Arg arg = make_arg<char>(t);
   EXPECT_EQ(fmt::internal::Arg::CUSTOM, arg.type);
   EXPECT_EQ(&t, arg.custom.value);
-  fmt::Writer w;
+  fmt::MemoryWriter w;
   fmt::BasicFormatter<char> formatter(w);
   const char *s = "}";
   arg.custom.format(&formatter, &t, &s);
@@ -435,14 +677,14 @@ void check_throw_error(int error_code, FormatErrorMessage format) {
   } catch (const fmt::SystemError &e) {
     error = e;
   }
-  fmt::Writer message;
+  fmt::MemoryWriter message;
   format(message, error_code, "test error");
   EXPECT_EQ(message.str(), error.what());
   EXPECT_EQ(error_code, error.error_code());
 }
 
 TEST(UtilTest, FormatSystemError) {
-  fmt::Writer message;
+  fmt::MemoryWriter message;
   fmt::internal::format_system_error(message, EDOM, "test");
   EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)), message.str());
   message.clear();
@@ -459,7 +701,7 @@ TEST(UtilTest, SystemError) {
 }
 
 TEST(UtilTest, ReportSystemError) {
-  fmt::Writer out;
+  fmt::MemoryWriter out;
   fmt::internal::format_system_error(out, EDOM, "test error");
   out << '\n';
   EXPECT_WRITE(stderr, fmt::report_system_error(EDOM, "test error"), out.str());
@@ -501,3 +743,5 @@ TEST(UtilTest, ReportWindowsError) {
 }
 
 #endif  // _WIN32
+
+// TODO: test Buffer
