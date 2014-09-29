@@ -36,8 +36,9 @@ foreach (src ${FMT_SOURCES})
   set(FMT_TEST_SOURCES ${FMT_TEST_SOURCES} ../${src})
 endforeach ()
 
-include(CheckIncludeFileCXX)
-check_include_file_cxx(type_traits HAVE_TYPE_TRAITS)
+check_cxx_source_compiles("
+  #include <type_traits>
+  int main() { return std::is_copy_constructible<int>::value; }" HAVE_TYPE_TRAITS)
 if (HAVE_TYPE_TRAITS)
   add_definitions(-DFMT_USE_TYPE_TRAITS=1)
 endif ()
