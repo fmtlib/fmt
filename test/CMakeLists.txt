@@ -38,7 +38,9 @@ endforeach ()
 
 check_cxx_source_compiles("
   #include <type_traits>
-  int main() { return std::is_copy_constructible<int>::value; }" HAVE_TYPE_TRAITS)
+  class C { void operator=(const C&); };
+  int main() { static_assert(std::is_copy_assignable<C>::value, ""); }"
+  HAVE_TYPE_TRAITS)
 if (HAVE_TYPE_TRAITS)
   add_definitions(-DFMT_USE_TYPE_TRAITS=1)
 endif ()
