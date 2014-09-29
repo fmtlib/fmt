@@ -638,7 +638,7 @@ TEST(UtilTest, UTF8ToUTF16) {
 
 template <typename Converter>
 void check_utf_conversion_error(const char *message) {
-  fmt::Writer out;
+  fmt::MemoryWriter out;
   fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
   fmt::SystemError error(0, "");
   try {
@@ -735,7 +735,7 @@ TEST(UtilTest, WindowsError) {
 }
 
 TEST(UtilTest, ReportWindowsError) {
-  fmt::Writer out;
+  fmt::MemoryWriter out;
   fmt::internal::format_windows_error(out, ERROR_FILE_EXISTS, "test error");
   out << '\n';
   EXPECT_WRITE(stderr,
