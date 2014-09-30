@@ -51,9 +51,11 @@
 using fmt::StringRef;
 using fmt::internal::Arg;
 using fmt::internal::Value;
+using fmt::internal::Buffer;
 using fmt::internal::MemoryBuffer;
 
 using testing::Return;
+using testing::StrictMock;
 
 namespace {
 
@@ -87,7 +89,7 @@ void CheckForwarding(
 }
 
 TEST(AllocatorTest, AllocatorRef) {
-  testing::StrictMock< MockAllocator<int> > alloc;
+  StrictMock< MockAllocator<int> > alloc;
   typedef AllocatorRef< MockAllocator<int> > TestAllocatorRef;
   TestAllocatorRef ref(&alloc);
   // Check if AllocatorRef forwards to the underlying allocator.
@@ -102,13 +104,70 @@ TEST(AllocatorTest, AllocatorRef) {
 
 #if FMT_USE_TYPE_TRAITS
 TEST(BufferTest, NotCopyConstructible) {
-  EXPECT_FALSE(std::is_copy_constructible<fmt::internal::Buffer<char> >::value);
+  EXPECT_FALSE(std::is_copy_constructible<Buffer<char> >::value);
 }
 
 TEST(BufferTest, NotCopyAssignable) {
-  EXPECT_FALSE(std::is_copy_assignable<fmt::internal::Buffer<char> >::value);
+  EXPECT_FALSE(std::is_copy_assignable<Buffer<char> >::value);
 }
 #endif
+
+template <typename T>
+class MockBuffer : public Buffer<T> {
+ protected:
+  MOCK_METHOD1(grow, void (std::size_t size));
+
+ public:
+  MOCK_METHOD0(Die, void());
+
+  MockBuffer() {}
+  MockBuffer(T *ptr) : Buffer<T>(ptr) {}
+  MockBuffer(T *ptr, std::size_t capacity) : Buffer<T>(ptr, capacity) {}
+  ~MockBuffer() { Die(); }
+};
+
+TEST(BufferTest, Ctor) {
+  {
+    MockBuffer<int> buffer;
+    EXPECT_EQ(0, &buffer[0]);
+    EXPECT_EQ(0, buffer.size());
+    EXPECT_EQ(0, buffer.capacity());
+  }
+  {
+    int dummy;
+    MockBuffer<int> buffer(&dummy);
+    EXPECT_EQ(&dummy, &buffer[0]);
+    EXPECT_EQ(0, buffer.size());
+    EXPECT_EQ(0, buffer.capacity());
+  }
+  {
+    int dummy;
+    std::size_t capacity = std::numeric_limits<std::size_t>::max();
+    MockBuffer<int> buffer(&dummy, capacity);
+    EXPECT_EQ(&dummy, &buffer[0]);
+    EXPECT_EQ(0, buffer.size());
+    EXPECT_EQ(capacity, buffer.capacity());
+  }
+}
+
+TEST(BufferTest, VirtualDtor) {
+  typedef StrictMock< MockBuffer<int> > StictMockBuffer;
+  StictMockBuffer *mock_buffer = new StictMockBuffer();
+  EXPECT_CALL(*mock_buffer, Die());
+  Buffer<int> *buffer = mock_buffer;
+  delete buffer;
+}
+
+TEST(BufferTest, Access) {
+  char data[10];
+  MockBuffer<char> buffer(data, 10);
+  buffer[0] = 11;
+  EXPECT_EQ(11, buffer[0]);
+  buffer[3] = 42;
+  EXPECT_EQ(42, *(&buffer[0] + 3));
+  const Buffer<char> &const_buffer = buffer;
+  EXPECT_EQ(42, const_buffer[3]);
+}
 
 TEST(MemoryBufferTest, Ctor) {
   MemoryBuffer<char, 123> buffer;
@@ -186,16 +245,6 @@ TEST(MemoryBufferTest, MoveAssignment) {
 
 #endif  // FMT_USE_RVALUE_REFERENCES
 
-TEST(MemoryBufferTest, Access) {
-  MemoryBuffer<char, 10> buffer;
-  buffer[0] = 11;
-  EXPECT_EQ(11, buffer[0]);
-  buffer[3] = 42;
-  EXPECT_EQ(42, *(&buffer[0] + 3));
-  const MemoryBuffer<char, 10> &const_buffer = buffer;
-  EXPECT_EQ(42, const_buffer[3]);
-}
-
 TEST(MemoryBufferTest, Resize) {
   MemoryBuffer<char, 123> buffer;
   buffer[10] = 42;
@@ -270,7 +319,7 @@ TEST(MemoryBufferTest, Allocator) {
   typedef AllocatorRef< MockAllocator<char> > TestAllocator;
   MemoryBuffer<char, 10, TestAllocator> buffer;
   EXPECT_EQ(0, buffer.get_allocator().get());
-  testing::StrictMock< MockAllocator<char> > alloc;
+  StrictMock< MockAllocator<char> > alloc;
   char mem;
   {
     MemoryBuffer<char, 10, TestAllocator> buffer2((TestAllocator(&alloc)));
@@ -284,7 +333,7 @@ TEST(MemoryBufferTest, Allocator) {
 
 TEST(MemoryBufferTest, ExceptionInDeallocate) {
   typedef AllocatorRef< MockAllocator<char> > TestAllocator;
-  testing::StrictMock< MockAllocator<char> > alloc;
+  StrictMock< MockAllocator<char> > alloc;
   MemoryBuffer<char, 10, TestAllocator> buffer((TestAllocator(&alloc)));
   std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
   std::vector<char> mem(size);
