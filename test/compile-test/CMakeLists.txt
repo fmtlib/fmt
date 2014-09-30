@@ -22,14 +22,6 @@ function (expect_compile_error code)
   endif ()
 endfunction ()
 
-# Array is noncopyable.
-expect_compile_error("fmt::internal::Array<char, 5> a, b(a);")
-expect_compile_error("fmt::internal::Array<char, 5> a, b; b = a;")
-
-# Writer is noncopyable.
-expect_compile_error("const fmt::Writer a, b(a);")
-expect_compile_error("fmt::Writer a, b; b = a;")
-
 # MakeArg doesn't accept [const] volatile char *.
 expect_compile_error("volatile char s[] = \"test\"; (fmt::internal::MakeArg<char>)(s);")
 expect_compile_error("const volatile char s[] = \"test\"; (fmt::internal::MakeArg<char>)(s);")

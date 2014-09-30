@@ -36,6 +36,10 @@
 #include <sstream>
 #include <stdint.h>
 
+#if FMT_USE_TYPE_TRAITS
+# include <type_traits>
+#endif
+
 #include "gmock/gmock.h"
 
 #include "format.h"
@@ -123,6 +127,16 @@ class TestString {
     return os;
   }
 };
+
+#if FMT_USE_TYPE_TRAITS
+TEST(WriterTest, NotCopyConstructible) {
+  EXPECT_FALSE(std::is_copy_constructible<BasicWriter<char> >::value);
+}
+
+TEST(WriterTest, NotCopyAssignable) {
+  EXPECT_FALSE(std::is_copy_assignable<BasicWriter<char> >::value);
+}
+#endif
 
 TEST(WriterTest, Ctor) {
   MemoryWriter w;
