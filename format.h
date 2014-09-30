@@ -651,6 +651,8 @@ struct Value {
     long double long_double_value;
     const void *pointer;
     StringValue<char> string;
+    StringValue<signed char> sstring;
+    StringValue<unsigned char> ustring;
     StringValue<wchar_t> wstring;
     CustomValue custom;
   };
@@ -758,6 +760,8 @@ public:
 
   FMT_MAKE_VALUE(char *, string.value, CSTRING)
   FMT_MAKE_VALUE(const char *, string.value, CSTRING)
+  FMT_MAKE_VALUE(const signed char *, sstring.value, CSTRING)
+  FMT_MAKE_VALUE(const unsigned char *, ustring.value, CSTRING)
   FMT_MAKE_STR_VALUE(const std::string &, STRING)
   FMT_MAKE_STR_VALUE(StringRef, STRING)
 

@@ -1170,6 +1170,20 @@ TEST(FormatterTest, FormatCString) {
       FormatError, "string pointer is null");
 }
 
+TEST(FormatterTest, FormatSCharString) {
+  signed char str[] = "test";
+  EXPECT_EQ("test", format("{0:s}", str));
+  const signed char *const_str = str;
+  EXPECT_EQ("test", format("{0:s}", const_str));
+}
+
+TEST(FormatterTest, FormatUCharString) {
+  unsigned char str[] = "test";
+  EXPECT_EQ("test", format("{0:s}", str));
+  const unsigned char *const_str = str;
+  EXPECT_EQ("test", format("{0:s}", const_str));
+}
+
 TEST(FormatterTest, FormatPointer) {
   check_unknown_types(reinterpret_cast<void*>(0x1234), "p", "pointer");
   EXPECT_EQ("0x0", format("{0}", reinterpret_cast<void*>(0)));
