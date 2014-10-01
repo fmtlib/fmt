@@ -153,11 +153,12 @@ TEST(BufferTest, Ctor) {
   }
 }
 
+struct DyingBuffer : TestBuffer<int> {
+  MOCK_METHOD0(die, void());
+  ~DyingBuffer() { die(); }
+};
+
 TEST(BufferTest, VirtualDtor) {
-  struct DyingBuffer : TestBuffer<int> {
-    MOCK_METHOD0(die, void());
-    ~DyingBuffer() { die(); }
-  };
   typedef StrictMock<DyingBuffer> StictMockBuffer;
   StictMockBuffer *mock_buffer = new StictMockBuffer();
   EXPECT_CALL(*mock_buffer, die());
