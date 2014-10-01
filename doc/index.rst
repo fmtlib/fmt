@@ -105,6 +105,28 @@ System Errors
 
 .. _formatstrings:
 
+Custom allocators
+-----------------
+
+The C++ Format library supports custom dynamic memory allocators.
+A custom allocator class can be specified as a template argument to
+:cpp:class:`fmt::BasicMemoryWriter`::
+
+    typedef fmt::BasicMemoryWriter<char, CustomAllocator> CustomMemoryWriter;
+
+It is also possible to write a formatting function that uses a custom
+allocator::
+
+    typedef std::basic_string<char, std::char_traits<char>, CustomAllocator> CustomString;
+
+    CustomString format(CustomAllocator alloc, fmt::StringRef format_str,
+                        fmt::ArgList args) {
+      CustomMemoryWriter writer(alloc);
+      writer.write(format_str, args);
+      return CustomString(writer.data(), writer.size(), alloc);
+    }
+    FMT_VARIADIC(CustomString, format, CustomAllocator, fmt::StringRef)
+
 Format String Syntax
 --------------------
 
