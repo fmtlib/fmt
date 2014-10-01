@@ -306,12 +306,13 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
  private:
   T data_[SIZE];
 
-  void grow(std::size_t size);
-
   // Free memory allocated by the buffer.
   void free() {
     if (this->ptr_ != data_) this->deallocate(this->ptr_, this->capacity_);
   }
+
+ protected:
+  void grow(std::size_t size);
 
  public:
   explicit MemoryBuffer(const Allocator &alloc = Allocator())

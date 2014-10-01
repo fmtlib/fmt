@@ -33,6 +33,8 @@
 template <typename T>
 class MockAllocator {
  public:
+  MockAllocator() {}
+  MockAllocator(const MockAllocator &) {}
   typedef T value_type;
   MOCK_METHOD1_T(allocate, T* (std::size_t n));
   MOCK_METHOD2_T(deallocate, void (T* p, std::size_t n));

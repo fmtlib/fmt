@@ -103,27 +103,30 @@ TEST(AllocatorTest, AllocatorRef) {
 }
 
 #if FMT_USE_TYPE_TRAITS
-TEST(BufferTest, NotCopyConstructible) {
+TEST(BufferTest, Noncopyable) {
   EXPECT_FALSE(std::is_copy_constructible<Buffer<char> >::value);
+  EXPECT_FALSE(std::is_copy_assignable<Buffer<char> >::value);
 }
 
-TEST(BufferTest, NotCopyAssignable) {
-  EXPECT_FALSE(std::is_copy_assignable<Buffer<char> >::value);
+TEST(BufferTest, Nonmoveable) {
+  EXPECT_FALSE(std::is_move_constructible<Buffer<char> >::value);
+  EXPECT_FALSE(std::is_move_assignable<Buffer<char> >::value);
 }
 #endif
 
+// A test buffer with a dummy grow method.
 template <typename T>
-class MockBuffer : public Buffer<T> {
- protected:
-  MOCK_METHOD1(grow, void (std::size_t size));
+struct TestBuffer : Buffer<T> {
+  void grow(std::size_t size) { this->capacity_ = size; }
+};
 
- public:
-  MOCK_METHOD0(Die, void());
+template <typename T>
+struct MockBuffer : Buffer<T> {
+  MOCK_METHOD1(grow, void (std::size_t size));
 
   MockBuffer() {}
   MockBuffer(T *ptr) : Buffer<T>(ptr) {}
   MockBuffer(T *ptr, std::size_t capacity) : Buffer<T>(ptr, capacity) {}
-  ~MockBuffer() { Die(); }
 };
 
 TEST(BufferTest, Ctor) {
@@ -151,22 +154,91 @@ TEST(BufferTest, Ctor) {
 }
 
 TEST(BufferTest, VirtualDtor) {
-  typedef StrictMock< MockBuffer<int> > StictMockBuffer;
+  struct DyingBuffer : TestBuffer<int> {
+    MOCK_METHOD0(die, void());
+    ~DyingBuffer() { die(); }
+  };
+  typedef StrictMock<DyingBuffer> StictMockBuffer;
   StictMockBuffer *mock_buffer = new StictMockBuffer();
-  EXPECT_CALL(*mock_buffer, Die());
+  EXPECT_CALL(*mock_buffer, die());
   Buffer<int> *buffer = mock_buffer;
   delete buffer;
 }
 
 TEST(BufferTest, Access) {
   char data[10];
-  MockBuffer<char> buffer(data, 10);
+  MockBuffer<char> buffer(data, sizeof(data));
   buffer[0] = 11;
   EXPECT_EQ(11, buffer[0]);
   buffer[3] = 42;
   EXPECT_EQ(42, *(&buffer[0] + 3));
   const Buffer<char> &const_buffer = buffer;
   EXPECT_EQ(42, const_buffer[3]);
+}
+
+TEST(BufferTest, Resize) {
+  char data[123];
+  MockBuffer<char> buffer(data, sizeof(data));
+  buffer[10] = 42;
+  EXPECT_EQ(42, buffer[10]);
+  buffer.resize(20);
+  EXPECT_EQ(20u, buffer.size());
+  EXPECT_EQ(123u, buffer.capacity());
+  EXPECT_EQ(42, buffer[10]);
+  buffer.resize(5);
+  EXPECT_EQ(5u, buffer.size());
+  EXPECT_EQ(123u, buffer.capacity());
+  EXPECT_EQ(42, buffer[10]);
+  // Check if resize calls grow.
+  EXPECT_CALL(buffer, grow(124));
+  buffer.resize(124);
+  EXPECT_CALL(buffer, grow(200));
+  buffer.resize(200);
+}
+
+TEST(BufferTest, Clear) {
+  TestBuffer<char> buffer;
+  buffer.resize(20);
+  buffer.clear();
+  EXPECT_EQ(0u, buffer.size());
+  EXPECT_EQ(20u, buffer.capacity());
+}
+
+TEST(BufferTest, PushBack) {
+  int data[15];
+  MockBuffer<int> buffer(data, 10);
+  buffer.push_back(11);
+  EXPECT_EQ(11, buffer[0]);
+  EXPECT_EQ(1u, buffer.size());
+  buffer.resize(10);
+  EXPECT_CALL(buffer, grow(11));
+  buffer.push_back(22);
+  EXPECT_EQ(22, buffer[10]);
+  EXPECT_EQ(11u, buffer.size());
+}
+
+TEST(BufferTest, Append) {
+  char data[15];
+  MockBuffer<char> buffer(data, 10);
+  const char *test = "test";
+  buffer.append(test, test + 5);
+  EXPECT_STREQ(test, &buffer[0]);
+  EXPECT_EQ(5u, buffer.size());
+  buffer.resize(10);
+  EXPECT_CALL(buffer, grow(12));
+  buffer.append(test, test + 2);
+  EXPECT_EQ('t', buffer[10]);
+  EXPECT_EQ('e', buffer[11]);
+  EXPECT_EQ(12u, buffer.size());
+}
+
+TEST(BufferTest, AppendAllocatesEnoughStorage) {
+  char data[19];
+  MockBuffer<char> buffer(data, 10);
+  const char *test = "abcdefgh";
+  buffer.resize(10);
+  EXPECT_CALL(buffer, grow(19));
+  buffer.append(test, test + 9);
 }
 
 TEST(MemoryBufferTest, Ctor) {
@@ -245,74 +317,29 @@ TEST(MemoryBufferTest, MoveAssignment) {
 
 #endif  // FMT_USE_RVALUE_REFERENCES
 
-TEST(MemoryBufferTest, Resize) {
-  MemoryBuffer<char, 123> buffer;
-  buffer[10] = 42;
-  EXPECT_EQ(42, buffer[10]);
-  buffer.resize(20);
-  EXPECT_EQ(20u, buffer.size());
-  EXPECT_EQ(123u, buffer.capacity());
-  EXPECT_EQ(42, buffer[10]);
-  buffer.resize(5);
-  EXPECT_EQ(5u, buffer.size());
-  EXPECT_EQ(123u, buffer.capacity());
-  EXPECT_EQ(42, buffer[10]);
-}
-
 TEST(MemoryBufferTest, Grow) {
-  MemoryBuffer<int, 10> buffer;
-  buffer.resize(10);
-  for (int i = 0; i < 10; ++i)
+  typedef AllocatorRef< MockAllocator<int> > Allocator;
+  typedef MemoryBuffer<int, 10, Allocator> Base;
+  MockAllocator<int> alloc;
+  struct TestMemoryBuffer : Base {
+    TestMemoryBuffer(Allocator alloc) : Base(alloc) {}
+    void grow(std::size_t size) { Base::grow(size); }
+  } buffer((Allocator(&alloc)));
+  buffer.resize(7);
+  for (int i = 0; i < 7; ++i)
     buffer[i] = i * i;
-  buffer.resize(20);
-  EXPECT_EQ(20u, buffer.size());
+  EXPECT_EQ(10u, buffer.capacity());
+  int mem[20];
+  mem[7] = 0xdead;
+  EXPECT_CALL(alloc, allocate(20)).WillOnce(Return(mem));
+  buffer.grow(20);
   EXPECT_EQ(20u, buffer.capacity());
-  for (int i = 0; i < 10; ++i)
+  // Check if size elements have been copied
+  for (int i = 0; i < 7; ++i)
     EXPECT_EQ(i * i, buffer[i]);
-}
-
-TEST(MemoryBufferTest, Clear) {
-  MemoryBuffer<char, 10> buffer;
-  buffer.resize(20);
-  buffer.clear();
-  EXPECT_EQ(0u, buffer.size());
-  EXPECT_EQ(20u, buffer.capacity());
-}
-
-TEST(MemoryBufferTest, PushBack) {
-  MemoryBuffer<int, 10> buffer;
-  buffer.push_back(11);
-  EXPECT_EQ(11, buffer[0]);
-  EXPECT_EQ(1u, buffer.size());
-  buffer.resize(10);
-  buffer.push_back(22);
-  EXPECT_EQ(22, buffer[10]);
-  EXPECT_EQ(11u, buffer.size());
-  EXPECT_EQ(15u, buffer.capacity());
-}
-
-TEST(MemoryBufferTest, Append) {
-  MemoryBuffer<char, 10> buffer;
-  const char *test = "test";
-  buffer.append(test, test + 5);
-  EXPECT_STREQ(test, &buffer[0]);
-  EXPECT_EQ(5u, buffer.size());
-  buffer.resize(10);
-  buffer.append(test, test + 2);
-  EXPECT_EQ('t', buffer[10]);
-  EXPECT_EQ('e', buffer[11]);
-  EXPECT_EQ(12u, buffer.size());
-  EXPECT_EQ(15u, buffer.capacity());
-}
-
-TEST(MemoryBufferTest, AppendAllocatesEnoughStorage) {
-  MemoryBuffer<char, 10> buffer;
-  const char *test = "abcdefgh";
-  buffer.resize(10);
-  buffer.append(test, test + 9);
-  EXPECT_STREQ(test, &buffer[10]);
-  EXPECT_EQ(19u, buffer.size());
-  EXPECT_EQ(19u, buffer.capacity());
+  // and no more than that.
+  EXPECT_EQ(0xdead, buffer[7]);
+  EXPECT_CALL(alloc, deallocate(mem, 20));
 }
 
 TEST(MemoryBufferTest, Allocator) {
@@ -792,5 +819,3 @@ TEST(UtilTest, ReportWindowsError) {
 }
 
 #endif  // _WIN32
-
-// TODO: test Buffer
