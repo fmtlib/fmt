@@ -1139,7 +1139,7 @@ IntFormatSpec<int, TypeSpec<'X'> > hexu(int value);
 
   **Example**::
 
-    Writer out;
+    MemoryWriter out;
     out << pad(hex(0xcafe), 8, '0');
     // out.str() == "0000cafe"
 
@@ -1212,7 +1212,7 @@ FMT_DEFINE_INT_FORMATTERS(ULongLong)
 
   **Example**::
 
-    std::string s = str(Writer() << pad("abc", 8));
+    std::string s = str(MemoryWriter() << pad("abc", 8));
     // s == "abc     "
 
   \endrst
@@ -1413,35 +1413,19 @@ class SystemError : public internal::RuntimeError {
 /**
   \rst
   This template provides operations for formatting and writing data into
-  a character stream. The output is stored in a memory buffer that grows
-  dynamically.
+  a character stream. The output is stored in a buffer provided by a subclass
+  such as :cpp:class:`fmt::BasicMemoryWriter`.
 
-  You can use one of the following typedefs for common character types
-  and the standard allocator:
+  You can use one of the following typedefs for common character types:
 
-  +---------+-----------------------------------------------+
-  | Type    | Definition                                    |
-  +=========+===============================================+
-  | Writer  | BasicWriter<char, std::allocator<char>>       |
-  +---------+-----------------------------------------------+
-  | WWriter | BasicWriter<wchar_t, std::allocator<wchar_t>> |
-  +---------+-----------------------------------------------+
+  +---------+----------------------+
+  | Type    | Definition           |
+  +=========+======================+
+  | Writer  | BasicWriter<char>    |
+  +---------+----------------------+
+  | WWriter | BasicWriter<wchar_t> |
+  +---------+----------------------+
 
-  **Example**::
-
-     Writer out;
-     out << "The answer is " << 42 << "\n";
-     out.write("({:+f}, {:+f})", -3.14, 3.14);
-
-  This will write the following output to the ``out`` object:
-
-  .. code-block:: none
-
-     The answer is 42
-     (-3.140000, +3.140000)
-
-  The output can be converted to an ``std::string`` with ``out.str()`` or
-  accessed as a C string with ``out.c_str()``.
   \endrst
  */
 template <typename Char>
@@ -1513,11 +1497,17 @@ class BasicWriter {
   friend class internal::ArgFormatter<Char>;
   friend class internal::PrintfFormatter<Char>;
 
- public:
+ protected:
   /**
     Constructs a ``BasicWriter`` object.
    */
   explicit BasicWriter(internal::Buffer<Char> &b) : buffer_(b) {}
+
+ public:
+  /**
+    Destroys a ``BasicWriter`` object.
+   */
+  virtual ~BasicWriter() {}
 
   /**
     Returns the total number of characters written.
@@ -1556,7 +1546,7 @@ class BasicWriter {
 
     **Example**::
 
-       Writer out;
+       MemoryWriter out;
        out.write("Current point:\n");
        out.write("({:+f}, {:+f})", -3.14, 3.14);
 
@@ -1657,9 +1647,8 @@ class BasicWriter {
 
 template <typename Char>
 template <typename StrChar>
-typename BasicWriter<Char>::CharPtr
-  BasicWriter<Char>::write_str(
-    const StrChar *s, std::size_t size, const AlignSpec &spec) {
+typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
+      const StrChar *s, std::size_t size, const AlignSpec &spec) {
   CharPtr out = CharPtr();
   if (spec.width() > size) {
     out = grow_buffer(spec.width());
@@ -1990,6 +1979,40 @@ void BasicWriter<Char>::write_double(
   }
 }
 
+/**
+  \rst
+  This template provides operations for formatting and writing data into
+  a character stream. The output is stored in a memory buffer that grows
+  dynamically.
+
+  You can use one of the following typedefs for common character types
+  and the standard allocator:
+
+  +---------------+-----------------------------------------------+
+  | Type          | Definition                                    |
+  +===============+===============================================+
+  | MemoryWriter  | BasicWriter<char, std::allocator<char>>       |
+  +---------------+-----------------------------------------------+
+  | WMemoryWriter | BasicWriter<wchar_t, std::allocator<wchar_t>> |
+  +---------------+-----------------------------------------------+
+
+  **Example**::
+
+     MemoryWriter out;
+     out << "The answer is " << 42 << "\n";
+     out.write("({:+f}, {:+f})", -3.14, 3.14);
+
+  This will write the following output to the ``out`` object:
+
+  .. code-block:: none
+
+     The answer is 42
+     (-3.140000, +3.140000)
+
+  The output can be converted to an ``std::string`` with ``out.str()`` or
+  accessed as a C string with ``out.c_str()``.
+  \endrst
+ */
 template <typename Char, typename Allocator = std::allocator<Char> >
 class BasicMemoryWriter : public BasicWriter<Char> {
  private:

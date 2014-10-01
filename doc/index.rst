@@ -70,6 +70,9 @@ Write API
 .. doxygenclass:: fmt::BasicWriter
    :members:
 
+.. doxygenclass:: fmt::BasicMemoryWriter
+   :members:
+
 .. doxygenfunction:: fmt::bin
 
 .. doxygenfunction:: fmt::oct
