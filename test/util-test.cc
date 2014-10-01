@@ -122,7 +122,12 @@ struct TestBuffer : Buffer<T> {
 
 template <typename T>
 struct MockBuffer : Buffer<T> {
-  MOCK_METHOD1(grow, void (std::size_t size));
+  MOCK_METHOD1(do_grow, void (std::size_t size));
+
+  void grow(std::size_t size) {
+    this->capacity_ = size;
+    do_grow(size);
+  }
 
   MockBuffer() {}
   MockBuffer(T *ptr) : Buffer<T>(ptr) {}
@@ -191,9 +196,9 @@ TEST(BufferTest, Resize) {
   EXPECT_EQ(123u, buffer.capacity());
   EXPECT_EQ(42, buffer[10]);
   // Check if resize calls grow.
-  EXPECT_CALL(buffer, grow(124));
+  EXPECT_CALL(buffer, do_grow(124));
   buffer.resize(124);
-  EXPECT_CALL(buffer, grow(200));
+  EXPECT_CALL(buffer, do_grow(200));
   buffer.resize(200);
 }
 
@@ -212,7 +217,7 @@ TEST(BufferTest, PushBack) {
   EXPECT_EQ(11, buffer[0]);
   EXPECT_EQ(1u, buffer.size());
   buffer.resize(10);
-  EXPECT_CALL(buffer, grow(11));
+  EXPECT_CALL(buffer, do_grow(11));
   buffer.push_back(22);
   EXPECT_EQ(22, buffer[10]);
   EXPECT_EQ(11u, buffer.size());
@@ -226,7 +231,7 @@ TEST(BufferTest, Append) {
   EXPECT_STREQ(test, &buffer[0]);
   EXPECT_EQ(5u, buffer.size());
   buffer.resize(10);
-  EXPECT_CALL(buffer, grow(12));
+  EXPECT_CALL(buffer, do_grow(12));
   buffer.append(test, test + 2);
   EXPECT_EQ('t', buffer[10]);
   EXPECT_EQ('e', buffer[11]);
@@ -238,7 +243,7 @@ TEST(BufferTest, AppendAllocatesEnoughStorage) {
   MockBuffer<char> buffer(data, 10);
   const char *test = "abcdefgh";
   buffer.resize(10);
-  EXPECT_CALL(buffer, grow(19));
+  EXPECT_CALL(buffer, do_grow(19));
   buffer.append(test, test + 9);
 }
 
