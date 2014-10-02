@@ -68,7 +68,7 @@ C++ Format can be used as a safe portable replacement for ``itoa``:
 
 .. code-block:: c++
 
-    fmt::Writer w;
+    fmt::MemoryWriter w;
     w << 42;           // replaces itoa(42, buffer, 10)
     w << fmt::hex(42); // replaces itoa(42, buffer, 16)
     // access the string using w.str() or w.c_str()
