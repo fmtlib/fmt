@@ -377,9 +377,9 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
 
 #ifndef _MSC_VER
 // Portable version of signbit.
-// When compiled in C++11 mode signbit is no longer a macro but a function
-// defined in namespace std and the macro is undefined.
 inline int getsign(double x) {
+  // When compiled in C++11 mode signbit is no longer a macro but a function
+  // defined in namespace std and the macro is undefined.
 # ifdef signbit
   return signbit(x);
 # else
