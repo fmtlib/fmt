@@ -1,4 +1,4 @@
-PROJECT_NAME     = Format
+PROJECT_NAME     = C++ Format
 GENERATE_LATEX   = NO
 GENERATE_MAN     = NO
 GENERATE_RTF     = NO
