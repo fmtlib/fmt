@@ -58,6 +58,14 @@ if (HAVE_OPEN)
   add_test(posix-test posix-test)
 endif ()
 
+# Test that the library can be compiled with exceptions disabled.
+check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
+if (HAVE_FNO_EXCEPTIONS_FLAG)
+  add_library(noexception-test ../format.cc)
+  set_target_properties(noexception-test
+    PROPERTIES COMPILE_FLAGS -fno-exceptions)
+endif ()
+
 add_test(compile-test ${CMAKE_CTEST_COMMAND}
   --build-and-test
   "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"

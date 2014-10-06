@@ -54,9 +54,36 @@ using fmt::LongLong;
 using fmt::ULongLong;
 using fmt::internal::Arg;
 
+// Check if exceptions are disabled.
+#if __GNUC__ && !__EXCEPTIONS
+# define FMT_EXCEPTIONS 0
+#endif
+#if _MSC_VER && !_HAS_EXCEPTIONS
+# define FMT_EXCEPTIONS 0
+#endif
+#ifndef FMT_EXCEPTIONS
+# define FMT_EXCEPTIONS 1
+#endif
+
+#if FMT_EXCEPTIONS
+# define FMT_TRY try
+# define FMT_CATCH(x) catch (x)
+#else
+# define FMT_TRY if (true)
+# define FMT_CATCH(x) if (false)
+#endif
+
+#ifndef FMT_THROW
+# if FMT_EXCEPTIONS
+#  define FMT_THROW(x) throw x
+# else
+#  define FMT_THROW(x) assert(false)
+# endif
+#endif
+
 #if _MSC_VER
 # pragma warning(push)
-# pragma warning(disable: 4127) // conditional expression is constant
+# pragma warning(disable: 4127)  // conditional expression is constant
 #endif
 
 namespace {
@@ -185,14 +212,15 @@ int parse_nonnegative_int(const Char *&s) {
     value = new_value;
   } while ('0' <= *s && *s <= '9');
   if (value > INT_MAX)
-    throw fmt::FormatError("number is too big");
+    FMT_THROW(fmt::FormatError("number is too big"));
   return value;
 }
 
 inline void require_numeric_argument(const Arg &arg, char spec) {
   if (arg.type > Arg::LAST_NUMERIC_TYPE) {
-    throw fmt::FormatError(
-          fmt::format("format specifier '{}' requires numeric argument", spec));
+    std::string message =
+        fmt::format("format specifier '{}' requires numeric argument", spec);
+    FMT_THROW(fmt::FormatError(message));
   }
 }
 
@@ -201,8 +229,8 @@ void check_sign(const Char *&s, const Arg &arg) {
   char sign = static_cast<char>(*s);
   require_numeric_argument(arg, sign);
   if (arg.type == Arg::UINT || arg.type == Arg::ULONG_LONG) {
-    throw fmt::FormatError(fmt::format(
-      "format specifier '{}' requires signed argument", sign));
+    FMT_THROW(fmt::FormatError(fmt::format(
+      "format specifier '{}' requires signed argument", sign)));
   }
   ++s;
 }
@@ -217,7 +245,7 @@ class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
   explicit WidthHandler(fmt::FormatSpec &spec) : spec_(spec) {}
 
   unsigned visit_unhandled_arg() {
-    throw fmt::FormatError("width is not integer");
+    FMT_THROW(fmt::FormatError("width is not integer"));
   }
 
   template <typename T>
@@ -229,7 +257,7 @@ class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
       width = 0 - width;
     }
     if (width > INT_MAX)
-      throw fmt::FormatError("number is too big");
+      FMT_THROW(fmt::FormatError("number is too big"));
     return static_cast<unsigned>(width);
   }
 };
@@ -238,13 +266,13 @@ class PrecisionHandler :
     public fmt::internal::ArgVisitor<PrecisionHandler, int> {
  public:
   unsigned visit_unhandled_arg() {
-    throw fmt::FormatError("precision is not integer");
+    FMT_THROW(fmt::FormatError("precision is not integer"));
   }
 
   template <typename T>
   int visit_any_int(T value) {
     if (!IntChecker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
-      throw fmt::FormatError("number is too big");
+      FMT_THROW(fmt::FormatError("number is too big"));
     return static_cast<int>(value);
   }
 };
@@ -385,12 +413,12 @@ const uint64_t fmt::internal::POWERS_OF_10_64[] = {
 
 void fmt::internal::report_unknown_type(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
-    throw fmt::FormatError(
-        fmt::format("unknown format code '{}' for {}", code, type));
+    FMT_THROW(fmt::FormatError(
+        fmt::format("unknown format code '{}' for {}", code, type)));
   }
-  throw fmt::FormatError(
+  FMT_THROW(fmt::FormatError(
       fmt::format("unknown format code '\\x{:02x}' for {}",
-        static_cast<unsigned>(code), type));
+        static_cast<unsigned>(code), type)));
 }
 
 #ifdef _WIN32
@@ -400,18 +428,18 @@ fmt::internal::UTF8ToUTF16::UTF8ToUTF16(fmt::StringRef s) {
       CP_UTF8, MB_ERR_INVALID_CHARS, s.c_str(), -1, 0, 0);
   static const char ERROR[] = "cannot convert string from UTF-8 to UTF-16";
   if (length == 0)
-    throw WindowsError(GetLastError(), ERROR);
+    FMT_THROW(WindowsError(GetLastError(), ERROR));
   buffer_.resize(length);
   length = MultiByteToWideChar(
     CP_UTF8, MB_ERR_INVALID_CHARS, s.c_str(), -1, &buffer_[0], length);
   if (length == 0)
-    throw WindowsError(GetLastError(), ERROR);
+    FMT_THROW(WindowsError(GetLastError(), ERROR));
 }
 
 fmt::internal::UTF16ToUTF8::UTF16ToUTF8(fmt::WStringRef s) {
   if (int error_code = convert(s)) {
-    throw WindowsError(error_code,
-        "cannot convert string from UTF-16 to UTF-8");
+    FMT_THROW(WindowsError(error_code,
+        "cannot convert string from UTF-16 to UTF-8"));
   }
 }
 
@@ -441,7 +469,7 @@ void fmt::WindowsError::init(
 void fmt::internal::format_system_error(
     fmt::Writer &out, int error_code,
     fmt::StringRef message) FMT_NOEXCEPT(true) {
-  try {
+  FMT_TRY {
     MemoryBuffer<char, INLINE_BUFFER_SIZE> buffer;
     buffer.resize(INLINE_BUFFER_SIZE);
     char *system_message = 0;
@@ -456,7 +484,7 @@ void fmt::internal::format_system_error(
         break;  // Can't get error message, report error code instead.
       buffer.resize(buffer.size() * 2);
     }
-  } catch (...) {}
+  } FMT_CATCH(...) {}
   format_error_code(out, error_code, message);
 }
 
@@ -474,7 +502,7 @@ void fmt::internal::format_windows_error(
     LPWSTR *ptr() { return &str_; }
     LPCWSTR c_str() const { return str_; }
   };
-  try {
+  FMT_TRY {
     String system_message;
     if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
         FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
@@ -486,7 +514,7 @@ void fmt::internal::format_windows_error(
         return;
       }
     }
-  } catch (...) {}
+  } FMT_CATCH(...) {}
   format_error_code(out, error_code, message);
 }
 #endif
@@ -519,7 +547,7 @@ class fmt::internal::ArgFormatter :
       return;
     }
     if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
-      throw FormatError("invalid format specifier for char");
+      FMT_THROW(FormatError("invalid format specifier for char"));
     typedef typename fmt::BasicWriter<Char>::CharPtr CharPtr;
     CharPtr out = CharPtr();
     if (spec_.width_ > 1) {
@@ -571,7 +599,7 @@ void fmt::BasicWriter<Char>::write_str(
   std::size_t size = str.size;
   if (size == 0) {
     if (!s)
-      throw FormatError("string pointer is null");
+      FMT_THROW(FormatError("string pointer is null"));
     if (*s)
       size = std::char_traits<StrChar>::length(s);
   }
@@ -583,8 +611,10 @@ inline Arg fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
   const char *error = 0;
   Arg arg = *s < '0' || *s > '9' ?
         next_arg(error) : get_arg(parse_nonnegative_int(s), error);
-  if (error)
-    throw FormatError(*s != '}' && *s != ':' ? "invalid format string" : error);
+  if (error) {
+    FMT_THROW(FormatError(
+                *s != '}' && *s != ':' ? "invalid format string" : error));
+  }
   return arg;
 }
 
@@ -647,7 +677,7 @@ Arg fmt::internal::PrintfFormatter<Char>::get_arg(
   Arg arg = arg_index == UINT_MAX ?
     next_arg(error) : FormatterBase::get_arg(arg_index - 1, error);
   if (error)
-    throw FormatError(!*s ? "invalid format string" : error);
+    FMT_THROW(FormatError(!*s ? "invalid format string" : error));
   return arg;
 }
 
@@ -763,7 +793,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
 
     // Parse type.
     if (!*s)
-      throw FormatError("invalid format string");
+      FMT_THROW(FormatError("invalid format string"));
     spec.type_ = static_cast<char>(*s++);
     if (arg.type <= Arg::LAST_INTEGER_TYPE) {
       // Normalize type.
@@ -887,7 +917,7 @@ const Char *fmt::BasicFormatter<Char>::format(
           if (p != s) {
             if (c == '}') break;
             if (c == '{')
-              throw FormatError("invalid fill character '{'");
+              FMT_THROW(FormatError("invalid fill character '{'"));
             s += 2;
             spec.fill_ = c;
           } else ++s;
@@ -931,7 +961,7 @@ const Char *fmt::BasicFormatter<Char>::format(
       // and more efficient than checking if the next char is a digit.
       spec.width_ = parse_nonnegative_int(s);
       if (error)
-        throw FormatError(error);
+        FMT_THROW(FormatError(error));
     }
 
     // Parse precision.
@@ -941,17 +971,17 @@ const Char *fmt::BasicFormatter<Char>::format(
       if ('0' <= *s && *s <= '9') {
         spec.precision_ = parse_nonnegative_int(s);
         if (error)
-          throw FormatError(error);
+          FMT_THROW(FormatError(error));
       } else if (*s == '{') {
         ++s;
         const Arg &precision_arg = parse_arg_index(s);
         if (*s++ != '}')
-          throw FormatError("invalid format string");
+          FMT_THROW(FormatError("invalid format string"));
         ULongLong value = 0;
         switch (precision_arg.type) {
           case Arg::INT:
             if (precision_arg.int_value < 0)
-              throw FormatError("negative precision");
+              FMT_THROW(FormatError("negative precision"));
             value = precision_arg.int_value;
             break;
           case Arg::UINT:
@@ -959,24 +989,24 @@ const Char *fmt::BasicFormatter<Char>::format(
             break;
           case Arg::LONG_LONG:
             if (precision_arg.long_long_value < 0)
-              throw FormatError("negative precision");
+              FMT_THROW(FormatError("negative precision"));
             value = precision_arg.long_long_value;
             break;
           case Arg::ULONG_LONG:
             value = precision_arg.ulong_long_value;
             break;
           default:
-            throw FormatError("precision is not integer");
+            FMT_THROW(FormatError("precision is not integer"));
         }
         if (value > INT_MAX)
-          throw FormatError("number is too big");
+          FMT_THROW(FormatError("number is too big"));
         spec.precision_ = static_cast<int>(value);
       } else {
-        throw FormatError("missing precision specifier");
+        FMT_THROW(FormatError("missing precision specifier"));
       }
       if (arg.type != Arg::DOUBLE && arg.type != Arg::LONG_DOUBLE) {
-        throw FormatError(
-            "precision specifier requires floating-point argument");
+        FMT_THROW(FormatError(
+            "precision specifier requires floating-point argument"));
       }
     }
 
@@ -986,7 +1016,7 @@ const Char *fmt::BasicFormatter<Char>::format(
   }
 
   if (*s++ != '}')
-    throw FormatError("missing '}' in format string");
+    FMT_THROW(FormatError("missing '}' in format string"));
   start_ = s;
 
   // Format argument.
@@ -1008,7 +1038,7 @@ void fmt::BasicFormatter<Char>::format(
       continue;
     }
     if (c == '}')
-      throw FormatError("unmatched '}' in format string");
+      FMT_THROW(FormatError("unmatched '}' in format string"));
     write(writer_, start_, s - 1);
     Arg arg = parse_arg_index(s);
     s = format(s, arg);
