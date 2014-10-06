@@ -38,9 +38,10 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
     set(MSBUILD_SETUP "call \"${WINSDK_SETENV}\"")
   endif ()
   # Set FrameworkPathOverride to get rid of MSB3644 warnings.
+  set(netfxpath "C:\\Program Files\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v4.0")
   file(WRITE run-msbuild.bat "
     ${MSBUILD_SETUP}
-    ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"C:\\Program Files\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v4.0\" %*")
+    ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"${netfxpath}\" %*")
 endif ()
 
 option(FMT_SHARED "Build shared library instead of static one" OFF)
