@@ -202,7 +202,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'format.tex', u'format Documentation',
+  ('index', 'format.tex', u'C++ Format Documentation',
    u'Victor Zverovich', 'manual'),
 ]
 

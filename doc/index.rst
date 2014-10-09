@@ -1,9 +1,7 @@
 .. highlight:: c++
 
-.. _string-formatting-api:
-
 Usage
------
+=====
 
 To use the C++ Format library, add ``format.h`` and ``format.cc`` from
 a `release archive <https://github.com/cppformat/cppformat/releases/latest>`_
@@ -18,15 +16,17 @@ the line
 
 before other includes in ``format.cc``.
 
+.. _string-formatting-api:
+
 C++ Format Library API
-----------------------
+======================
 
 All functions and classes provided by the C++ Format library reside
 in namespace ``fmt`` and macros have prefix ``FMT_``. For brevity the
 namespace is usually omitted in examples.
 
 Formatting functions
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 The following functions use `format string syntax`_ similar to the one
 used by Python's `str.format
@@ -52,7 +52,7 @@ arguments in the resulting string.
 .. doxygenfunction:: fmt::print(std::ostream &, StringRef, ArgList)
 
 Printf formatting functions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 
 The following functions use `printf format string syntax
 <http://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html>`_ with
@@ -128,7 +128,7 @@ allocator::
     FMT_VARIADIC(CustomString, format, CustomAllocator, fmt::StringRef)
 
 Format String Syntax
---------------------
+====================
 
 Formatting functions such as :ref:`fmt::format() <format>` and :ref:`fmt::print() <print>`
 use the same format string syntax described in this section.
@@ -183,7 +183,7 @@ See the :ref:`formatexamples` section for some examples.
 .. _formatspec:
 
 Format Specification Mini-Language
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------------
 
 "Format specifications" are used within replacement fields contained within a
 format string to define how individual values are presented (see
@@ -416,7 +416,7 @@ The available presentation types for pointers are:
 .. _formatexamples:
 
 Format examples
-^^^^^^^^^^^^^^^
+---------------
 
 This section contains examples of the format syntax and comparison with
 the printf formatting.
