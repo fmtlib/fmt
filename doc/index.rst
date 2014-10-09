@@ -432,7 +432,7 @@ Accessing arguments by position::
 
    format("{0}, {1}, {2}", 'a', 'b', 'c');
    // Result: "a, b, c"
-   format("{}, {}, {}", 'a', 'b', 'c)';
+   format("{}, {}, {}", 'a', 'b', 'c');
    // Result: "a, b, c"
    format("{2}, {1}, {0}", 'a', 'b', 'c');
    // Result: "c, b, a"
