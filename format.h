@@ -1560,7 +1560,7 @@ class BasicWriter {
     The output can be accessed using :meth:`data`, :meth:`c_str` or :meth:`str`
     methods.
 
-    See also `Format String Syntax`_.
+    See also :ref:`syntax`.
     \endrst
    */
   void write(BasicStringRef<Char> format, ArgList args) {
