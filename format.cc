@@ -246,6 +246,7 @@ class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
 
   unsigned visit_unhandled_arg() {
     FMT_THROW(fmt::FormatError("width is not integer"));
+    return 0;
   }
 
   template <typename T>
