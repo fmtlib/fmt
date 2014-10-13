@@ -116,21 +116,22 @@ accept variable number of arguments.
 Projects using this library
 ---------------------------
 
-* `AMPL <https://github.com/ampl/ampl>`__:
-  Open-source AMPL solver interface, solver connections, table handlers
-  and examples
+* `AMPL/MP <https://github.com/ampl/mp>`_:
+  An open-source library for mathematical programming
 
-* `Saddy <https://code.google.com/p/saddy/>`__:
+* `Saddy <https://code.google.com/p/saddy/>`_:
   Small crossplatform 2D graphic engine
 
-* `HarpyWar/pvpgn <https://github.com/HarpyWar/pvpgn>`__:
+* `HarpyWar/pvpgn <https://github.com/HarpyWar/pvpgn>`_:
   Player vs Player Gaming Network with tweaks
 
 * `KBEngine <http://www.kbengine.org/>`_: An open-source MMOG server engine
 
+* `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
+
 If you are aware of other projects using this library, please let me know
-by `email <mailto:victor.zverovich@gmail.com>`__ or by submitting an
-`issue <https://github.com/cppformat/cppformat/issues>`__.
+by `email <mailto:victor.zverovich@gmail.com>`_ or by submitting an
+`issue <https://github.com/cppformat/cppformat/issues>`_.
 
 Motivation
 ----------
