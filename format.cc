@@ -268,6 +268,7 @@ class PrecisionHandler :
  public:
   unsigned visit_unhandled_arg() {
     FMT_THROW(fmt::FormatError("precision is not integer"));
+    return 0;
   }
 
   template <typename T>

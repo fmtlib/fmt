@@ -254,7 +254,9 @@ TEST(FileTest, Size) {
   std::string content = "top secret, destroy before reading";
   write_file("test", content);
   File f("test", File::RDONLY);
-  EXPECT_EQ(content.size(), f.size());
+  EXPECT_GE(f.size(), 0);
+  fmt::ULongLong file_size = f.size();
+  EXPECT_EQ(content.size(), file_size);
 #ifdef _WIN32
   fmt::MemoryWriter message;
   fmt::internal::format_windows_error(
