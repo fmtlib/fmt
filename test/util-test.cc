@@ -138,22 +138,22 @@ TEST(BufferTest, Ctor) {
   {
     MockBuffer<int> buffer;
     EXPECT_EQ(0, &buffer[0]);
-    EXPECT_EQ(0, buffer.size());
-    EXPECT_EQ(0, buffer.capacity());
+    EXPECT_EQ(0u, buffer.size());
+    EXPECT_EQ(0u, buffer.capacity());
   }
   {
     int dummy;
     MockBuffer<int> buffer(&dummy);
     EXPECT_EQ(&dummy, &buffer[0]);
-    EXPECT_EQ(0, buffer.size());
-    EXPECT_EQ(0, buffer.capacity());
+    EXPECT_EQ(0u, buffer.size());
+    EXPECT_EQ(0u, buffer.capacity());
   }
   {
     int dummy;
     std::size_t capacity = std::numeric_limits<std::size_t>::max();
     MockBuffer<int> buffer(&dummy, capacity);
     EXPECT_EQ(&dummy, &buffer[0]);
-    EXPECT_EQ(0, buffer.size());
+    EXPECT_EQ(0u, buffer.size());
     EXPECT_EQ(capacity, buffer.capacity());
   }
 }
@@ -433,9 +433,9 @@ ARG_INFO(CUSTOM, Arg::CustomValue, custom);
 
 TEST(ArgTest, ArgInfo) {
   CHECK_ARG_INFO(INT, int_value, 42);
-  CHECK_ARG_INFO(UINT, uint_value, 42);
+  CHECK_ARG_INFO(UINT, uint_value, 42u);
   CHECK_ARG_INFO(LONG_LONG, long_long_value, 42);
-  CHECK_ARG_INFO(ULONG_LONG, ulong_long_value, 42);
+  CHECK_ARG_INFO(ULONG_LONG, ulong_long_value, 42u);
   CHECK_ARG_INFO(DOUBLE, double_value, 4.2);
   CHECK_ARG_INFO(LONG_DOUBLE, long_double_value, 4.2);
   CHECK_ARG_INFO(CHAR, int_value, 'x');
