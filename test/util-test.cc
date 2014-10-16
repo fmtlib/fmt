@@ -264,7 +264,7 @@ void check_move_buffer(const char *str,
   // Move shouldn't destroy the inline content of the first buffer.
   EXPECT_EQ(str, std::string(&buffer[0], buffer.size()));
   EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
-  EXPECT_EQ(5, buffer2.capacity());
+  EXPECT_EQ(5u, buffer2.capacity());
   // Move should transfer allocator.
   EXPECT_EQ(0, buffer.get_allocator().get());
   EXPECT_EQ(alloc, buffer2.get_allocator().get());
@@ -297,7 +297,7 @@ void check_move_assign_buffer(const char *str, MemoryBuffer<char, 5> &buffer) {
   // Move shouldn't destroy the inline content of the first buffer.
   EXPECT_EQ(str, std::string(&buffer[0], buffer.size()));
   EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
-  EXPECT_EQ(5, buffer2.capacity());
+  EXPECT_EQ(5u, buffer2.capacity());
 }
 
 TEST(MemoryBufferTest, MoveAssignment) {
