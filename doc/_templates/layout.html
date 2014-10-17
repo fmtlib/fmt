@@ -3,6 +3,19 @@
 {# Custom CSS overrides #}
 {% set bootswatch_css_custom = ['_static/cppformat.css'] %}
 
+{%- block content %}
+{{ navBar() }}
+<div class="container">
+  <div class="row">
+    {%- block sidebar1 %}{{ bsidebar() }}{% endblock %}
+    <div class="col-md-8 col-md-offset-2">
+      {% block body %}{% endblock %}
+    </div>
+    {% block sidebar2 %} {# possible location for sidebar #} {% endblock %}
+  </div>
+</div>
+{%- endblock %}
+
 {% block footer %}
 {{ super() }}
 <!-- Google Analytics -->
