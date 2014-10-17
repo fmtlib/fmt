@@ -1,5 +1,8 @@
 {% extends "basic/layout.html" %}
 
+{# Custom CSS overrides #}
+{% set bootswatch_css_custom = ['_static/cppformat.css'] %}
+
 {% set theme_css_files = [] %}
 {% if theme_bootstrap_version == "3" %}
   {% set bootstrap_version, bootstrap_additional_css, navbar_version = "3.2.0", "theme", "" %}
