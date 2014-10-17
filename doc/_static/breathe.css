@@ -1,0 +1,13 @@
+
+/* -- breathe specific styles ----------------------------------------------- */
+
+/* So enum value descriptions are displayed inline to the item */
+.breatheenumvalues li tt + p {
+	display: inline;
+}
+
+/* So parameter descriptions are displayed inline to the item */
+.breatheparameterlist li tt + p {
+	display: inline;
+}
+

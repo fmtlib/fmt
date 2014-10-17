@@ -1,0 +1,8 @@
+.function dd, .class dd {
+  margin-left: 30px;
+}
+
+.public-func dd {
+  margin-left: 0px;
+}
+
