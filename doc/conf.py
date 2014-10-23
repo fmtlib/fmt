@@ -83,7 +83,9 @@ release = version
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+#exclude_patterns = []
+
+exclude_trees = ['sphinx-bootstrap-theme']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -127,10 +129,13 @@ html_theme_options = {
   # Location of link to source.
   # Options are "nav" (default), "footer".
   'source_link_position': "footer",
+  
+  # Render the next and previous page links in navbar. (Default: true)
+  'navbar_sidebarrel': False
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = ['.']
+html_theme_path = ['sphinx-bootstrap-theme']
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
