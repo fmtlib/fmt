@@ -172,7 +172,14 @@ class BasicStringRef {
     If *size* is zero, which is the default, the size is computed
     automatically.
    */
-  BasicStringRef(const Char *s, std::size_t size = 0) : data_(s), size_(size) {}
+  BasicStringRef(const Char* const& s, std::size_t size = 0) : data_(s), size_(size) {}
+
+  /**
+   Constructs a string reference object from a C string literal,
+   if its size is determinable at compile time.
+   */
+  template <std::size_t N>
+  BasicStringRef(const Char (&s) [N]) : data_(s), size_(N) {}
 
   /**
     Constructs a string reference from an `std::string` object.
