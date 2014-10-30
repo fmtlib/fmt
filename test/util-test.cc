@@ -724,13 +724,13 @@ TEST(UtilTest, UTF8ToUTF16) {
   EXPECT_EQ(7, u.size());
 }
 
-template <typename Converter>
+template <typename Converter, typename Char>
 void check_utf_conversion_error(const char *message) {
   fmt::MemoryWriter out;
   fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
   fmt::SystemError error(0, "");
   try {
-    Converter(0);
+    Converter(fmt::BasicStringRef<Char>(0, 0));
   } catch (const fmt::SystemError &e) {
     error = e;
   }
@@ -739,18 +739,18 @@ void check_utf_conversion_error(const char *message) {
 }
 
 TEST(UtilTest, UTF16ToUTF8Error) {
-  check_utf_conversion_error<fmt::internal::UTF16ToUTF8>(
+  check_utf_conversion_error<fmt::internal::UTF16ToUTF8, wchar_t>(
       "cannot convert string from UTF-16 to UTF-8");
 }
 
 TEST(UtilTest, UTF8ToUTF16Error) {
-  check_utf_conversion_error<fmt::internal::UTF8ToUTF16>(
+  check_utf_conversion_error<fmt::internal::UTF8ToUTF16, char>(
       "cannot convert string from UTF-8 to UTF-16");
 }
 
 TEST(UtilTest, UTF16ToUTF8Convert) {
   fmt::internal::UTF16ToUTF8 u;
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(0));
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::WStringRef(0, 0));
 }
 #endif  // _WIN32
 
