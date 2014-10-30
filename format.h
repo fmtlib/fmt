@@ -164,15 +164,20 @@ template <typename Char>
 class BasicStringRef {
  private:
   const Char *data_;
-  mutable std::size_t size_;
+  std::size_t size_;
 
  public:
   /**
     Constructs a string reference object from a C string and a size.
-    If *size* is zero, which is the default, the size is computed
-    automatically.
    */
-  BasicStringRef(const Char *s, std::size_t size = 0) : data_(s), size_(size) {}
+  BasicStringRef(const Char *s, std::size_t n) : data_(s), size_(n) {}
+
+  /**
+    Constructs a string reference object from a C string computing
+    the size with ``std::char_traits<Char>::length``.
+   */
+  BasicStringRef(const Char *s)
+    : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
   /**
     Constructs a string reference from an `std::string` object.
@@ -195,10 +200,7 @@ class BasicStringRef {
   /**
     Returns the string size.
    */
-  std::size_t size() const {
-    if (size_ == 0 && data_) size_ = std::char_traits<Char>::length(data_);
-    return size_;
-  }
+  std::size_t size() const { return size_; }
 
   friend bool operator==(BasicStringRef lhs, BasicStringRef rhs) {
     return lhs.data_ == rhs.data_;
