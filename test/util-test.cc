@@ -698,6 +698,12 @@ void test_count_digits() {
   }
 }
 
+TEST(UtilTest, StringRef) {
+  char space[PATH_MAX];
+  snprintf(space, sizeof(space), "some string");
+  EXPECT_EQ(sizeof("some string") - 1, StringRef(space).size());
+}
+
 TEST(UtilTest, CountDigits) {
   test_count_digits<uint32_t>();
   test_count_digits<uint64_t>();
