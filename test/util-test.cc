@@ -700,7 +700,7 @@ void test_count_digits() {
 
 TEST(UtilTest, StringRef) {
   char space[100];
-  snprintf(space, sizeof(space), "some string");
+  std::strcpy(space, "some string");
   EXPECT_EQ(sizeof("some string") - 1, StringRef(space).size());
 }
 
