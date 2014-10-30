@@ -699,7 +699,7 @@ void test_count_digits() {
 }
 
 TEST(UtilTest, StringRef) {
-  char space[PATH_MAX];
+  char space[100];
   snprintf(space, sizeof(space), "some string");
   EXPECT_EQ(sizeof("some string") - 1, StringRef(space).size());
 }
