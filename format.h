@@ -170,7 +170,7 @@ class BasicStringRef {
   /**
     Constructs a string reference object from a C string and a size.
    */
-  BasicStringRef(const Char *s, std::size_t n) : data_(s), size_(n) {}
+  BasicStringRef(const Char *s, std::size_t size) : data_(s), size_(size) {}
 
   /**
     Constructs a string reference object from a C string computing
