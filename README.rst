@@ -8,7 +8,7 @@ C++ Format
   :target: https://ci.appveyor.com/project/vitaut/cppformat
 
 .. image:: https://readthedocs.org/projects/cppformat/badge/?version=stable
-   :target: https://readthedocs.org/projects/cppformat/?badge=stable
+   :target: http://cppformat.readthedocs.org/en/stable/
    :alt: Documentation Status
 
 C++ Format is an open-source formatting library for C++.
