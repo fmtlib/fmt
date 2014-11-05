@@ -55,7 +55,6 @@ to be dynamically specified.
 
 See the :ref:`formatexamples` section for some examples.
 
-
 .. _formatspec:
 
 Format Specification Mini-Language
