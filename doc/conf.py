@@ -104,6 +104,8 @@ exclude_trees = ['sphinx-bootstrap-theme']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+highlight_language = 'c++'
+
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 

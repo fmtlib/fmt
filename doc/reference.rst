@@ -1,5 +1,3 @@
-.. highlight:: c++
-
 .. _string-formatting-api:
 
 *************
