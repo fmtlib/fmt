@@ -1,5 +1,3 @@
-.. highlight: c++
-
 C++ Format
 ==========
 
@@ -56,21 +54,23 @@ See the `documentation <http://cppformat.readthedocs.org/en/latest/>`_ for more 
 Examples
 --------
 
-This prints ``Hello, world!`` to stdout::
+This prints ``Hello, world!`` to stdout:
+
+.. code:: c++
 
     fmt::print("Hello, {}!", "world");  // uses Python-like format string syntax
     fmt::printf("Hello, %s!", "world"); // uses printf format string syntax
 
 Arguments can be accessed by position and arguments' indices can be repeated:
 
-.. code-block:: c++
+.. code:: c++
 
     std::string s = fmt::format("{0}{1}{0}", "abra", "cad");
     // s == "abracadabra"
 
 C++ Format can be used as a safe portable replacement for ``itoa``:
 
-.. code-block:: c++
+.. code:: c++
 
     fmt::MemoryWriter w;
     w << 42;           // replaces itoa(42, buffer, 10)
@@ -80,7 +80,7 @@ C++ Format can be used as a safe portable replacement for ``itoa``:
 An object of any user-defined type for which there is an overloaded
 :code:`std::ostream` insertion operator (``operator<<``) can be formatted:
 
-.. code-block:: c++
+.. code:: c++
 
     class Date {
       int year_, month_, day_;
@@ -102,7 +102,7 @@ macro to create your own functions similar to `format
 `print <http://cppformat.readthedocs.org/en/latest#fmt::print__StringRef.ArgListCR>`_
 which take arbitrary arguments:
 
-.. code-block:: c++
+.. code:: c++
 
     // Prints formatted error message.
     void report_error(const char *format, fmt::ArgList args) {
@@ -166,13 +166,13 @@ IOStreams
 
 The main issue with IOStreams is best illustrated with an example:
 
-.. code-block:: c++
+.. code:: c++
 
     std::cout << std::setprecision(2) << std::fixed << 1.23456 << "\n";
 
 which is a lot of typing compared to printf:
 
-.. code-block:: c++
+.. code:: c++
 
     printf("%.2f\n", 1.23456);
 
