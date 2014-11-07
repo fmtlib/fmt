@@ -1,3 +1,5 @@
+.. highlight: c++
+
 C++ Format
 ==========
 
@@ -54,9 +56,7 @@ See the `documentation <http://cppformat.readthedocs.org/en/latest/>`_ for more 
 Examples
 --------
 
-This prints ``Hello, world!`` to stdout:
-
-.. code-block:: c++
+This prints ``Hello, world!`` to stdout::
 
     fmt::print("Hello, {}!", "world");  // uses Python-like format string syntax
     fmt::printf("Hello, %s!", "world"); // uses printf format string syntax
