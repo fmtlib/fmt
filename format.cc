@@ -1087,7 +1087,8 @@ void fmt::print_colored(Color c, StringRef format, ArgList args) {
 int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
   MemoryWriter w;
   printf(w, format, args);
-  return std::fwrite(w.data(), 1, w.size(), f);
+  std::size_t size = w.size();
+  return std::fwrite(w.data(), 1, size, f) < size ? -1 : static_cast<int>(size);
 }
 
 // Explicit instantiations for char.

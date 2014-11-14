@@ -438,4 +438,11 @@ TEST(PrintfTest, Examples) {
   EXPECT_WRITE(stdout, fmt::printf("%1$s, %3$d %2$s", weekday, month, day),
                "Thursday, 21 August");
 }
+
+TEST(PrintfTest, PrintfError) {
+  fmt::File read_end, write_end;
+  fmt::File::pipe(read_end, write_end);
+  int result = fmt::fprintf(read_end.fdopen("r").get(), "test");
+  EXPECT_LT(result, 0);
+}
 #endif
