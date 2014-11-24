@@ -474,9 +474,8 @@ void fmt::internal::format_system_error(
   FMT_TRY {
     MemoryBuffer<char, INLINE_BUFFER_SIZE> buffer;
     buffer.resize(INLINE_BUFFER_SIZE);
-    char *system_message = 0;
     for (;;) {
-      system_message = &buffer[0];
+      char *system_message = &buffer[0];
       int result = safe_strerror(error_code, system_message, buffer.size());
       if (result == 0) {
         out << message << ": " << system_message;
@@ -888,7 +887,6 @@ template <typename Char>
 const Char *fmt::BasicFormatter<Char>::format(
     const Char *&format_str, const Arg &arg) {
   const Char *s = format_str;
-  const char *error = 0;
   FormatSpec spec;
   if (*s == ':') {
     if (arg.type == Arg::CUSTOM) {
@@ -962,8 +960,6 @@ const Char *fmt::BasicFormatter<Char>::format(
       // Zero may be parsed again as a part of the width, but it is simpler
       // and more efficient than checking if the next char is a digit.
       spec.width_ = parse_nonnegative_int(s);
-      if (error)
-        FMT_THROW(FormatError(error));
     }
 
     // Parse precision.
@@ -972,8 +968,6 @@ const Char *fmt::BasicFormatter<Char>::format(
       spec.precision_ = 0;
       if ('0' <= *s && *s <= '9') {
         spec.precision_ = parse_nonnegative_int(s);
-        if (error)
-          FMT_THROW(FormatError(error));
       } else if (*s == '{') {
         ++s;
         const Arg &precision_arg = parse_arg_index(s);
