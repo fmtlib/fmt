@@ -407,13 +407,16 @@ inline int getsign(double value) {
   return sign;
 }
 inline int isinfinity(double x) { return !_finite(x); }
+inline int isinfinity( long double x) { return !_finite(static_cast<double>(x)); }
 #endif
 
+/*
 template <typename T>
 struct IsLongDouble { enum {VALUE = 0}; };
 
 template <>
 struct IsLongDouble<long double> { enum {VALUE = 1}; };
+*/
 
 template <typename Char>
 class BasicCharTraits {
@@ -996,6 +999,8 @@ class PrintfFormatter : private FormatterBase {
 template <typename Char>
 class BasicFormatter : private internal::FormatterBase {
  private:
+  BasicFormatter& operator=(BasicFormatter const&); // no impl
+
   BasicWriter<Char> &writer_;
   const Char *start_;
 
@@ -1496,6 +1501,9 @@ class BasicWriter {
   // Do not implement!
   void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
 
+  template<typename T>
+  Char* append_float_length(Char* format_ptr);
+
   friend class internal::ArgFormatter<Char>;
   friend class internal::PrintfFormatter<Char>;
 
@@ -1926,8 +1934,8 @@ void BasicWriter<Char>::write_double(
     *format_ptr++ = '.';
     *format_ptr++ = '*';
   }
-  if (internal::IsLongDouble<T>::VALUE)
-    *format_ptr++ = 'L';
+
+  format_ptr = append_float_length<T>(format_ptr);
   *format_ptr++ = type;
   *format_ptr = '\0';
 
