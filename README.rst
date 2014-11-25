@@ -49,7 +49,7 @@ Features
   (-Wall -Wextra -pedantic).
 * Support for wide strings.
 
-See the `documentation <http://cppformat.readthedocs.org/en/latest/>`_ for more details.
+See the `documentation <http://cppformat.readthedocs.org/en/stable/>`_ for more details.
 
 Examples
 --------
