@@ -83,6 +83,8 @@ using fmt::internal::Arg;
 
 #ifdef FMT_HEADER_ONLY
 # define FMT_FUNC inline
+#else
+# define FMT_FUNC
 #endif
 
 #if _MSC_VER
