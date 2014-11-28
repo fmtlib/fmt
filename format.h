@@ -2427,4 +2427,8 @@ FMT_VARIADIC(int, fprintf, std::FILE *, StringRef)
 # pragma GCC diagnostic pop
 #endif
 
+#ifdef FMT_HEADER_ONLY
+# include "format.cc"
+#endif
+
 #endif  // FMT_FORMAT_H_
