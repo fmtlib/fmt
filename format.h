@@ -510,8 +510,16 @@ FMT_SPECIALIZE_MAKE_UNSIGNED(LongLong, ULongLong);
 
 void report_unknown_type(char code, const char *type);
 
-extern const uint32_t POWERS_OF_10_32[];
-extern const uint64_t POWERS_OF_10_64[];
+// Static data is placed in this class template to allow header-only
+// configuration.
+template <typename T = void>
+struct BasicData {
+  static const uint32_t POWERS_OF_10_32[];
+  static const uint64_t POWERS_OF_10_64[];
+  static const char DIGITS[];
+};
+
+typedef BasicData<> Data;
 
 #if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
 // Returns the number of decimal digits in n. Leading zeros are not counted
@@ -520,13 +528,13 @@ inline unsigned count_digits(uint64_t n) {
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
   unsigned t = (64 - __builtin_clzll(n | 1)) * 1233 >> 12;
-  return t - (n < POWERS_OF_10_64[t]) + 1;
+  return t - (n < Data::POWERS_OF_10_64[t]) + 1;
 }
 # if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline unsigned count_digits(uint32_t n) {
   uint32_t t = (32 - __builtin_clz(n | 1)) * 1233 >> 12;
-  return t - (n < POWERS_OF_10_32[t]) + 1;
+  return t - (n < Data::POWERS_OF_10_32[t]) + 1;
 }
 # endif
 #else
@@ -547,8 +555,6 @@ inline unsigned count_digits(uint64_t n) {
 }
 #endif
 
-extern const char DIGITS[];
-
 // Formats a decimal unsigned integer value writing into buffer.
 template <typename UInt, typename Char>
 inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
@@ -559,8 +565,8 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     unsigned index = (value % 100) * 2;
     value /= 100;
-    buffer[num_digits] = DIGITS[index + 1];
-    buffer[num_digits - 1] = DIGITS[index];
+    buffer[num_digits] = Data::DIGITS[index + 1];
+    buffer[num_digits - 1] = Data::DIGITS[index];
     num_digits -= 2;
   }
   if (value < 10) {
@@ -568,8 +574,8 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
     return;
   }
   unsigned index = static_cast<unsigned>(value * 2);
-  buffer[1] = DIGITS[index + 1];
-  buffer[0] = DIGITS[index];
+  buffer[1] = Data::DIGITS[index + 1];
+  buffer[0] = Data::DIGITS[index];
 }
 
 #ifdef _WIN32
@@ -2222,16 +2228,16 @@ class FormatInt {
       // "Three Optimization Tips for C++". See speed-test for a comparison.
       unsigned index = (value % 100) * 2;
       value /= 100;
-      *--buffer_end = internal::DIGITS[index + 1];
-      *--buffer_end = internal::DIGITS[index];
+      *--buffer_end = internal::Data::DIGITS[index + 1];
+      *--buffer_end = internal::Data::DIGITS[index];
     }
     if (value < 10) {
       *--buffer_end = static_cast<char>('0' + value);
       return buffer_end;
     }
     unsigned index = static_cast<unsigned>(value * 2);
-    *--buffer_end = internal::DIGITS[index + 1];
-    *--buffer_end = internal::DIGITS[index];
+    *--buffer_end = internal::Data::DIGITS[index + 1];
+    *--buffer_end = internal::Data::DIGITS[index];
     return buffer_end;
   }
 
@@ -2295,8 +2301,8 @@ inline void format_decimal(char *&buffer, T value) {
       return;
     }
     unsigned index = static_cast<unsigned>(abs_value * 2);
-    *buffer++ = internal::DIGITS[index];
-    *buffer++ = internal::DIGITS[index + 1];
+    *buffer++ = internal::Data::DIGITS[index];
+    *buffer++ = internal::Data::DIGITS[index + 1];
     return;
   }
   unsigned num_digits = internal::count_digits(abs_value);
