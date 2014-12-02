@@ -1132,24 +1132,6 @@ template int fmt::internal::CharTraits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, long double value);
 
-template <> template <> char* fmt::BasicWriter<char>::append_float_length<float>( char* format_ptr) { return format_ptr; }
-template <> template <> wchar_t* fmt::BasicWriter<wchar_t>::append_float_length<float>( wchar_t* format_ptr) { return format_ptr; }
-
-template <> template <> char* fmt::BasicWriter<char>::append_float_length<double>( char* format_ptr) { return format_ptr; }
-template <> template <> wchar_t* fmt::BasicWriter<wchar_t>::append_float_length<double>( wchar_t* format_ptr) { return format_ptr; }
-
-template <> template <> char* fmt::BasicWriter<char>::append_float_length<long double>( char* format_ptr)
-{
-    *format_ptr++ = 'L';
-    return format_ptr;
-}
-
-template <> template <> wchar_t* fmt::BasicWriter<wchar_t>::append_float_length<long double>( wchar_t* format_ptr)
-{
-    *format_ptr++ = 'L';
-    return format_ptr;
-}
-
 #if _MSC_VER
 # pragma warning(pop)
 #endif

@@ -1494,7 +1494,7 @@ class BasicWriter {
   void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
 
   template<typename T>
-  Char* append_float_length(Char* format_ptr);
+  Char* append_float_length(Char* format_ptr) { return format_ptr; }
 
   friend class internal::ArgFormatter<Char>;
   friend class internal::PrintfFormatter<Char>;
@@ -1979,6 +1979,16 @@ void BasicWriter<Char>::write_double(
     // but as std::vector, the buffer grows exponentially.
     buffer_.reserve(n >= 0 ? offset + n + 1 : buffer_.capacity() + 1);
   }
+}
+
+template <> template <> inline char* BasicWriter<char>::append_float_length<long double>( char* format_ptr) {
+    *format_ptr++ = 'L';
+    return format_ptr;
+}
+
+template <> template <> inline wchar_t* BasicWriter<wchar_t>::append_float_length<long double>( wchar_t* format_ptr) {
+    *format_ptr++ = 'L';
+    return format_ptr;
 }
 
 /**
