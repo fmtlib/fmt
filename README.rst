@@ -133,6 +133,8 @@ Projects using this library
 
 * `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
 
+* `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
+
 If you are aware of other projects using this library, please let me know
 by `email <mailto:victor.zverovich@gmail.com>`_ or by submitting an
 `issue <https://github.com/cppformat/cppformat/issues>`_.
