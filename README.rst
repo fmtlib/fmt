@@ -135,10 +135,6 @@ Projects using this library
 
 * `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
 
-..
-  C++ Format is listed in ANALYTICS CLOUD NOTICES AND LICENSE INFORMATION:
-  https://help.salesforce.com/servlet/servlet.FileDownload?file=015300000035w3yAAA
-
 * `Salesforce Analytics Cloud <http://www.salesforce.com/analytics-cloud/overview/>`_:
   Business intelligence software
 
