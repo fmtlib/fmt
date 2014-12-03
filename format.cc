@@ -84,6 +84,7 @@ using fmt::internal::Arg;
 #if _MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4127)  // conditional expression is constant
+# pragma warning(disable: 4702)  // unreachable code
 #endif
 
 namespace {
@@ -239,6 +240,8 @@ void check_sign(const Char *&s, const Arg &arg) {
 // left alignment if it is negative.
 class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
  private:
+  WidthHandler& operator=(WidthHandler const&); //no impl
+
   fmt::FormatSpec &spec_;
 
  public:
@@ -283,6 +286,8 @@ class PrecisionHandler :
 template <typename T>
 class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
  private:
+  ArgConverter& operator=(ArgConverter const&); //no impl
+
   fmt::internal::Arg &arg_;
   wchar_t type_;
 
@@ -321,6 +326,7 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
 // Converts an integer argument to char for printf.
 class CharConverter : public fmt::internal::ArgVisitor<CharConverter, void> {
  private:
+  CharConverter& operator=(CharConverter const&); // no impl
   fmt::internal::Arg &arg_;
 
  public:
@@ -525,6 +531,8 @@ template <typename Char>
 class fmt::internal::ArgFormatter :
     public fmt::internal::ArgVisitor<fmt::internal::ArgFormatter<Char>, void> {
  private:
+  ArgFormatter& operator=(ArgFormatter const&); // no impl
+
   fmt::BasicFormatter<Char> &formatter_;
   fmt::BasicWriter<Char> &writer_;
   fmt::FormatSpec &spec_;
