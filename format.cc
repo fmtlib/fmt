@@ -240,9 +240,9 @@ void check_sign(const Char *&s, const Arg &arg) {
 // left alignment if it is negative.
 class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
  private:
-  WidthHandler& operator=(WidthHandler const&); //no impl
-
   fmt::FormatSpec &spec_;
+
+  FMT_DISALLOW_COPY_AND_ASSIGN(WidthHandler);
 
  public:
   explicit WidthHandler(fmt::FormatSpec &spec) : spec_(spec) {}
@@ -286,10 +286,10 @@ class PrecisionHandler :
 template <typename T>
 class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
  private:
-  ArgConverter& operator=(ArgConverter const&); //no impl
-
   fmt::internal::Arg &arg_;
   wchar_t type_;
+
+  FMT_DISALLOW_COPY_AND_ASSIGN(ArgConverter);
 
  public:
   ArgConverter(fmt::internal::Arg &arg, wchar_t type)
@@ -326,8 +326,9 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
 // Converts an integer argument to char for printf.
 class CharConverter : public fmt::internal::ArgVisitor<CharConverter, void> {
  private:
-  CharConverter& operator=(CharConverter const&); // no impl
   fmt::internal::Arg &arg_;
+
+  FMT_DISALLOW_COPY_AND_ASSIGN(CharConverter);
 
  public:
   explicit CharConverter(fmt::internal::Arg &arg) : arg_(arg) {}
@@ -531,12 +532,12 @@ template <typename Char>
 class fmt::internal::ArgFormatter :
     public fmt::internal::ArgVisitor<fmt::internal::ArgFormatter<Char>, void> {
  private:
-  ArgFormatter& operator=(ArgFormatter const&); // no impl
-
   fmt::BasicFormatter<Char> &formatter_;
   fmt::BasicWriter<Char> &writer_;
   fmt::FormatSpec &spec_;
   const Char *format_;
+
+  FMT_DISALLOW_COPY_AND_ASSIGN(ArgFormatter);
 
  public:
   ArgFormatter(

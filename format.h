@@ -991,10 +991,10 @@ class PrintfFormatter : private FormatterBase {
 template <typename Char>
 class BasicFormatter : private internal::FormatterBase {
  private:
-  BasicFormatter& operator=(BasicFormatter const&); // no impl
-
   BasicWriter<Char> &writer_;
   const Char *start_;
+  
+  FMT_DISALLOW_COPY_AND_ASSIGN(BasicFormatter);
 
   // Parses argument index and returns corresponding argument.
   internal::Arg parse_arg_index(const Char *&s);
