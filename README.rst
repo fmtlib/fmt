@@ -138,6 +138,8 @@ Projects using this library
 * `Salesforce Analytics Cloud <http://www.salesforce.com/analytics-cloud/overview/>`_:
   Business intelligence software
 
+* `spdlog <https://github.com/gabime/spdlog>`_: Super fast C++ logging library
+
 If you are aware of other projects using this library, please let me know
 by `email <mailto:victor.zverovich@gmail.com>`_ or by submitting an
 `issue <https://github.com/cppformat/cppformat/issues>`_.
