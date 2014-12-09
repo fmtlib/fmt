@@ -81,6 +81,12 @@ using fmt::internal::Arg;
 # endif
 #endif
 
+#ifdef FMT_HEADER_ONLY
+# define FMT_FUNC inline
+#else
+# define FMT_FUNC
+#endif
+
 #if _MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4127)  // conditional expression is constant
@@ -355,7 +361,7 @@ inline Arg::StringValue<wchar_t> ignore_incompatible_str(
     Arg::StringValue<wchar_t> s) { return s; }
 }  // namespace
 
-void fmt::SystemError::init(
+FMT_FUNC void fmt::SystemError::init(
     int error_code, StringRef format_str, ArgList args) {
   error_code_ = error_code;
   MemoryWriter w;
@@ -392,7 +398,8 @@ int fmt::internal::CharTraits<wchar_t>::format_float(
       swprintf(buffer, size, format, width, precision, value);
 }
 
-const char fmt::internal::DIGITS[] =
+template <typename T>
+const char fmt::internal::BasicData<T>::DIGITS[] =
     "0001020304050607080910111213141516171819"
     "2021222324252627282930313233343536373839"
     "4041424344454647484950515253545556575859"
@@ -410,8 +417,13 @@ const char fmt::internal::DIGITS[] =
   factor * 100000000, \
   factor * 1000000000
 
-const uint32_t fmt::internal::POWERS_OF_10_32[] = {0, FMT_POWERS_OF_10(1)};
-const uint64_t fmt::internal::POWERS_OF_10_64[] = {
+template <typename T>
+const uint32_t fmt::internal::BasicData<T>::POWERS_OF_10_32[] = {
+  0, FMT_POWERS_OF_10(1)
+};
+
+template <typename T>
+const uint64_t fmt::internal::BasicData<T>::POWERS_OF_10_64[] = {
   0,
   FMT_POWERS_OF_10(1),
   FMT_POWERS_OF_10(ULongLong(1000000000)),
@@ -420,7 +432,7 @@ const uint64_t fmt::internal::POWERS_OF_10_64[] = {
   ULongLong(1000000000) * ULongLong(1000000000) * 10
 };
 
-void fmt::internal::report_unknown_type(char code, const char *type) {
+FMT_FUNC void fmt::internal::report_unknown_type(char code, const char *type) {
   if (std::isprint(static_cast<unsigned char>(code))) {
     FMT_THROW(fmt::FormatError(
         fmt::format("unknown format code '{}' for {}", code, type)));
@@ -475,7 +487,7 @@ void fmt::WindowsError::init(
 
 #endif
 
-void fmt::internal::format_system_error(
+FMT_FUNC void fmt::internal::format_system_error(
     fmt::Writer &out, int error_code,
     fmt::StringRef message) FMT_NOEXCEPT(true) {
   FMT_TRY {
@@ -628,7 +640,7 @@ inline Arg fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
   return arg;
 }
 
-Arg fmt::internal::FormatterBase::do_get_arg(
+FMT_FUNC Arg fmt::internal::FormatterBase::do_get_arg(
     unsigned arg_index, const char *&error) {
   Arg arg = args_[arg_index];
   if (arg.type == Arg::NONE)
@@ -1051,7 +1063,7 @@ void fmt::BasicFormatter<Char>::format(
   write(writer_, start_, s);
 }
 
-void fmt::report_system_error(
+FMT_FUNC void fmt::report_system_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
   report_error(internal::format_system_error, error_code, message);
 }
@@ -1063,23 +1075,23 @@ void fmt::report_windows_error(
 }
 #endif
 
-void fmt::print(std::FILE *f, StringRef format_str, ArgList args) {
+FMT_FUNC void fmt::print(std::FILE *f, StringRef format_str, ArgList args) {
   MemoryWriter w;
   w.write(format_str, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
 
-void fmt::print(StringRef format_str, ArgList args) {
+FMT_FUNC void fmt::print(StringRef format_str, ArgList args) {
   print(stdout, format_str, args);
 }
 
-void fmt::print(std::ostream &os, StringRef format_str, ArgList args) {
+FMT_FUNC void fmt::print(std::ostream &os, StringRef format_str, ArgList args) {
   MemoryWriter w;
   w.write(format_str, args);
   os.write(w.data(), w.size());
 }
 
-void fmt::print_colored(Color c, StringRef format, ArgList args) {
+FMT_FUNC void fmt::print_colored(Color c, StringRef format, ArgList args) {
   char escape[] = "\x1b[30m";
   escape[3] = '0' + static_cast<char>(c);
   std::fputs(escape, stdout);
@@ -1087,7 +1099,7 @@ void fmt::print_colored(Color c, StringRef format, ArgList args) {
   std::fputs(RESET_COLOR, stdout);
 }
 
-int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
+FMT_FUNC int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
   MemoryWriter w;
   printf(w, format, args);
   std::size_t size = w.size();
