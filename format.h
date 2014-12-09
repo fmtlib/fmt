@@ -47,11 +47,14 @@
 #ifdef __GNUC__
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 # define FMT_GCC_EXTENSION __extension__
-// Disable warning about "long long" which is sometimes reported even
-// when using __extension__.
 # if FMT_GCC_VERSION >= 406
 #  pragma GCC diagnostic push
+// Disable the warning about "long long" which is sometimes reported even
+// when using __extension__.
 #  pragma GCC diagnostic ignored "-Wlong-long"
+// Disable the warning about declaration shadowing because it affects too
+// many valid cases.
+#  pragma GCC diagnostic ignored "-Wshadow"
 # endif
 #else
 # define FMT_GCC_EXTENSION
@@ -154,7 +157,7 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value);
   different types of strings to a function, for example::
 
     template <typename... Args>
-    std::string format(StringRef format, const Args & ... args);
+    std::string format(StringRef format_str, const Args & ... args);
 
     format("{}", 42);
     format(std::string("{}"), 42);
@@ -989,7 +992,7 @@ class PrintfFormatter : private FormatterBase {
 
  public:
   void format(BasicWriter<Char> &writer,
-    BasicStringRef<Char> format, const ArgList &args);
+    BasicStringRef<Char> format_str, const ArgList &args);
 };
 }  // namespace internal
 
@@ -1388,7 +1391,7 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 */
 class SystemError : public internal::RuntimeError {
  private:
-  void init(int error_code, StringRef format_str, ArgList args);
+  void init(int err_code, StringRef format_str, ArgList args);
 
  protected:
   int error_code_;

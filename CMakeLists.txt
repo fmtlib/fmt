@@ -69,7 +69,7 @@ endif ()
 add_library(format ${shared} ${FMT_SOURCES})
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
-    "-Wall -Wextra -pedantic")
+    "-Wall -Wextra -Wshadow -pedantic")
 endif ()
 if (CPP11_FLAG AND FMT_EXTRA_TESTS)
   set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})

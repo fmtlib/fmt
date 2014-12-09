@@ -362,10 +362,10 @@ inline Arg::StringValue<wchar_t> ignore_incompatible_str(
 }  // namespace
 
 FMT_FUNC void fmt::SystemError::init(
-    int error_code, StringRef format_str, ArgList args) {
-  error_code_ = error_code;
+    int err_code, StringRef format_str, ArgList args) {
+  error_code_ = err_code;
   MemoryWriter w;
-  internal::format_system_error(w, error_code, format(format_str, args));
+  internal::format_system_error(w, err_code, format(format_str, args));
   std::runtime_error &base = *this;
   base = std::runtime_error(w.str());
 }
@@ -612,20 +612,20 @@ class fmt::internal::ArgFormatter :
 template <typename Char>
 template <typename StrChar>
 void fmt::BasicWriter<Char>::write_str(
-    const Arg::StringValue<StrChar> &str, const FormatSpec &spec) {
+    const Arg::StringValue<StrChar> &s, const FormatSpec &spec) {
   // Check if StrChar is convertible to Char.
   internal::CharTraits<Char>::convert(StrChar());
   if (spec.type_ && spec.type_ != 's')
     internal::report_unknown_type(spec.type_, "string");
-  const StrChar *s = str.value;
-  std::size_t size = str.size;
-  if (size == 0) {
-    if (!s)
+  const StrChar *str_value = s.value;
+  std::size_t str_size = s.size;
+  if (str_size == 0) {
+    if (!str_value)
       FMT_THROW(FormatError("string pointer is null"));
-    if (*s)
-      size = std::char_traits<StrChar>::length(s);
+    if (*str_value)
+      str_size = std::char_traits<StrChar>::length(str_value);
   }
-  write_str(s, size, spec);
+  write_str(str_value, str_size, spec);
 }
 
 template <typename Char>
@@ -739,9 +739,9 @@ unsigned fmt::internal::PrintfFormatter<Char>::parse_header(
 
 template <typename Char>
 void fmt::internal::PrintfFormatter<Char>::format(
-    BasicWriter<Char> &writer, BasicStringRef<Char> format,
+    BasicWriter<Char> &writer, BasicStringRef<Char> format_str,
     const ArgList &args) {
-  const Char *start = format.c_str();
+  const Char *start = format_str.c_str();
   set_args(args);
   const Char *s = start;
   while (*s) {
@@ -892,8 +892,8 @@ void fmt::internal::PrintfFormatter<Char>::format(
     case Arg::CUSTOM: {
       if (spec.type_)
         internal::report_unknown_type(spec.type_, "object");
-      const void *s = "s";
-      arg.custom.format(&writer, arg.custom.value, &s);
+      const void *str_format = "s";
+      arg.custom.format(&writer, arg.custom.value, &str_format);
       break;
     }
     default:
