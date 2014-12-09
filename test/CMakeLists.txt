@@ -58,6 +58,12 @@ if (HAVE_OPEN)
   add_test(posix-test posix-test)
 endif ()
 
+add_executable(header-only-test
+  header-only-test.cc header-only-test2.cc test-main.cc)
+set_target_properties(header-only-test
+  PROPERTIES COMPILE_DEFINITIONS "FMT_HEADER_ONLY=1")
+target_link_libraries(header-only-test gmock)
+
 # Test that the library can be compiled with exceptions disabled.
 check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
 if (HAVE_FNO_EXCEPTIONS_FLAG)
