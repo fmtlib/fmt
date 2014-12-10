@@ -1098,8 +1098,8 @@ class IntFormatSpec : public SpecT {
   T value_;
 
  public:
-  IntFormatSpec(T value, const SpecT &spec = SpecT())
-  : SpecT(spec), value_(value) {}
+  IntFormatSpec(T val, const SpecT &spec = SpecT())
+  : SpecT(spec), value_(val) {}
 
   T value() const { return value_; }
 };
@@ -1885,13 +1885,13 @@ void BasicWriter<Char>::write_double(
   if (value != value) {
     // Format NaN ourselves because sprintf's output is not consistent
     // across platforms.
-    std::size_t size = 4;
+    std::size_t nan_size = 4;
     const char *nan = upper ? " NAN" : " nan";
     if (!sign) {
-      --size;
+      --nan_size;
       ++nan;
     }
-    CharPtr out = write_str(nan, size, spec);
+    CharPtr out = write_str(nan, nan_size, spec);
     if (sign)
       *out = sign;
     return;
@@ -1900,13 +1900,13 @@ void BasicWriter<Char>::write_double(
   if (internal::isinfinity(value)) {
     // Format infinity ourselves because sprintf's output is not consistent
     // across platforms.
-    std::size_t size = 4;
+    std::size_t inf_size = 4;
     const char *inf = upper ? " INF" : " inf";
     if (!sign) {
-      --size;
+      --inf_size;
       ++inf;
     }
-    CharPtr out = write_str(inf, size, spec);
+    CharPtr out = write_str(inf, inf_size, spec);
     if (sign)
       *out = sign;
     return;
@@ -1949,19 +1949,19 @@ void BasicWriter<Char>::write_double(
   // Format using snprintf.
   Char fill = static_cast<Char>(spec.fill());
   for (;;) {
-    std::size_t size = buffer_.capacity() - offset;
+    std::size_t buffer_size = buffer_.capacity() - offset;
 #if _MSC_VER
     // MSVC's vsnprintf_s doesn't work with zero size, so reserve
     // space for at least one extra character to make the size non-zero.
     // Note that the buffer's capacity will increase by more than 1.
-    if (size == 0) {
+    if (buffer_size == 0) {
       buffer_.reserve(offset + 1);
-      size = buffer_.capacity() - offset;
+      buffer_size = buffer_.capacity() - offset;
     }
 #endif
     Char *start = &buffer_[offset];
     int n = internal::CharTraits<Char>::format_float(
-        start, size, format, width_for_sprintf, spec.precision(), value);
+        start, buffer_size, format, width_for_sprintf, spec.precision(), value);
     if (n >= 0 && offset + n < buffer_.capacity()) {
       if (sign) {
         if ((spec.align() != ALIGN_RIGHT && spec.align() != ALIGN_DEFAULT) ||
@@ -1975,7 +1975,7 @@ void BasicWriter<Char>::write_double(
       }
       if (spec.align() == ALIGN_CENTER &&
           spec.width() > static_cast<unsigned>(n)) {
-        unsigned width = spec.width();
+        width = spec.width();
         CharPtr p = grow_buffer(width);
         std::copy(p, p + n, p + (width - n) / 2);
         fill_padding(p, spec.width(), n, fill);
