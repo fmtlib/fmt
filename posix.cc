@@ -34,6 +34,7 @@
 #ifndef _WIN32
 # include <unistd.h>
 #else
+# define _CRT_SECURE_NO_WARNINGS
 # include <windows.h>
 # include <io.h>
 
