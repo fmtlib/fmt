@@ -42,12 +42,10 @@
 #include <cstdarg>
 
 #ifdef _WIN32
-# define WIN32_LEAN_AND_MEAN
 # ifdef __MINGW32__
 #  include <cstring>
 # endif
 # include <windows.h>
-# undef ERROR
 #endif
 
 using fmt::LongLong;
@@ -175,14 +173,14 @@ void format_error_code(fmt::Writer &out, int error_code,
   // bad_alloc.
   out.clear();
   static const char SEP[] = ": ";
-  static const char ERROR[] = "error ";
+  static const char ERR[] = "error ";
   fmt::internal::IntTraits<int>::MainType ec_value = error_code;
-  // Subtract 2 to account for terminating null characters in SEP and ERROR.
+  // Subtract 2 to account for terminating null characters in SEP and ERR.
   std::size_t error_code_size =
-      sizeof(SEP) + sizeof(ERROR) + fmt::internal::count_digits(ec_value) - 2;
+      sizeof(SEP) + sizeof(ERR) + fmt::internal::count_digits(ec_value) - 2;
   if (message.size() <= fmt::internal::INLINE_BUFFER_SIZE - error_code_size)
     out << message << SEP;
-  out << ERROR << error_code;
+  out << ERR << error_code;
   assert(out.size() <= fmt::internal::INLINE_BUFFER_SIZE);
 }
 
@@ -447,14 +445,14 @@ FMT_FUNC void fmt::internal::report_unknown_type(char code, const char *type) {
 FMT_FUNC fmt::internal::UTF8ToUTF16::UTF8ToUTF16(fmt::StringRef s) {
   int length = MultiByteToWideChar(
       CP_UTF8, MB_ERR_INVALID_CHARS, s.c_str(), -1, 0, 0);
-  static const char ERROR[] = "cannot convert string from UTF-8 to UTF-16";
+  static const char ERROR_MSG[] = "cannot convert string from UTF-8 to UTF-16";
   if (length == 0)
-    FMT_THROW(WindowsError(GetLastError(), ERROR));
+    FMT_THROW(WindowsError(GetLastError(), ERROR_MSG));
   buffer_.resize(length);
   length = MultiByteToWideChar(
     CP_UTF8, MB_ERR_INVALID_CHARS, s.c_str(), -1, &buffer_[0], length);
   if (length == 0)
-    FMT_THROW(WindowsError(GetLastError(), ERROR));
+    FMT_THROW(WindowsError(GetLastError(), ERROR_MSG));
 }
 
 FMT_FUNC fmt::internal::UTF16ToUTF8::UTF16ToUTF8(fmt::WStringRef s) {
