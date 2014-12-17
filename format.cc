@@ -42,8 +42,6 @@
 # include <windows.h>
 #endif
 
-using fmt::LongLong;
-using fmt::ULongLong;
 using fmt::internal::Arg;
 
 // Check if exceptions are disabled.
@@ -418,10 +416,10 @@ template <typename T>
 const uint64_t fmt::internal::BasicData<T>::POWERS_OF_10_64[] = {
   0,
   FMT_POWERS_OF_10(1),
-  FMT_POWERS_OF_10(ULongLong(1000000000)),
+  FMT_POWERS_OF_10(fmt::ULongLong(1000000000)),
   // Multiply several constants instead of using a single long long constant
   // to avoid warnings about C++98 not supporting long long.
-  ULongLong(1000000000) * ULongLong(1000000000) * 10
+  fmt::ULongLong(1000000000) * fmt::ULongLong(1000000000) * 10
 };
 
 FMT_FUNC void fmt::internal::report_unknown_type(char code, const char *type) {
