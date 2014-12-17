@@ -25,6 +25,9 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// Disable bogus MSVC warnings.
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "posix.h"
 
 #include <limits.h>
@@ -34,7 +37,6 @@
 #ifndef _WIN32
 # include <unistd.h>
 #else
-# define _CRT_SECURE_NO_WARNINGS
 # include <windows.h>
 # include <io.h>
 
