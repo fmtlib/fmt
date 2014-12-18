@@ -1,3 +1,5 @@
+.. cpp:namespace:: fmt
+
 .. _string-formatting-api:
 
 *************
@@ -24,15 +26,15 @@ arguments in the resulting string.
 
 .. _format:
 
-.. doxygenfunction:: fmt::format(StringRef, ArgList)
+.. doxygenfunction:: format(StringRef, ArgList)
 
 .. _print:
 
-.. doxygenfunction:: fmt::print(StringRef, ArgList)
+.. doxygenfunction:: print(StringRef, ArgList)
 
-.. doxygenfunction:: fmt::print(std::FILE *, StringRef, ArgList)
+.. doxygenfunction:: print(std::FILE *, StringRef, ArgList)
 
-.. doxygenfunction:: fmt::print(std::ostream &, StringRef, ArgList)
+.. doxygenfunction:: print(std::ostream &, StringRef, ArgList)
 
 Printf formatting functions
 ===========================
@@ -41,11 +43,11 @@ The following functions use `printf format string syntax
 <http://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html>`_ with
 a POSIX extension for positional arguments.
 
-.. doxygenfunction:: fmt::printf(StringRef, ArgList)
+.. doxygenfunction:: printf(StringRef, ArgList)
 
-.. doxygenfunction:: fmt::fprintf(std::FILE *, StringRef, ArgList)
+.. doxygenfunction:: fprintf(std::FILE *, StringRef, ArgList)
 
-.. doxygenfunction:: fmt::sprintf(StringRef, ArgList)
+.. doxygenfunction:: sprintf(StringRef, ArgList)
 
 Write API
 =========
@@ -56,15 +58,15 @@ Write API
 .. doxygenclass:: fmt::BasicMemoryWriter
    :members:
 
-.. doxygenfunction:: fmt::bin
+.. doxygenfunction:: bin
 
-.. doxygenfunction:: fmt::oct
+.. doxygenfunction:: oct
 
-.. doxygenfunction:: fmt::hex
+.. doxygenfunction:: hex
 
-.. doxygenfunction:: fmt::hexu
+.. doxygenfunction:: hexu
 
-.. doxygenfunction:: fmt::pad(int, unsigned, Char)
+.. doxygenfunction:: pad(int, unsigned, Char)
 
 Utilities
 =========
