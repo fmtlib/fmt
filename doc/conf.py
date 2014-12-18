@@ -106,6 +106,8 @@ pygments_style = 'sphinx'
 
 highlight_language = 'c++'
 
+primary_domain = 'cpp'
+
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 

@@ -93,7 +93,7 @@ Custom allocators
 
 The C++ Format library supports custom dynamic memory allocators.
 A custom allocator class can be specified as a template argument to
-:cpp:class:`fmt::BasicMemoryWriter`::
+:class:`fmt::BasicMemoryWriter`::
 
     typedef fmt::BasicMemoryWriter<char, CustomAllocator> CustomMemoryWriter;
 

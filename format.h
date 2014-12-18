@@ -1403,7 +1403,7 @@ class SystemError : public internal::RuntimeError {
  public:
   /**
    \rst
-   Constructs a :cpp:class:`fmt::SystemError` object with the description
+   Constructs a :class:`fmt::SystemError` object with the description
    of the form "*<message>*: *<system-message>*", where *<message>* is the
    formatted message and *<system-message>* is the system message corresponding
    to the error code.
@@ -1422,7 +1422,7 @@ class SystemError : public internal::RuntimeError {
   \rst
   This template provides operations for formatting and writing data into
   a character stream. The output is stored in a buffer provided by a subclass
-  such as :cpp:class:`fmt::BasicMemoryWriter`.
+  such as :class:`fmt::BasicMemoryWriter`.
 
   You can use one of the following typedefs for common character types:
 
@@ -2041,8 +2041,8 @@ class BasicMemoryWriter : public BasicWriter<Char> {
 
 #if FMT_USE_RVALUE_REFERENCES
   /**
-    Constructs a ``BasicMemoryWriter`` object moving the content of the other
-    object to it.
+    Constructs a :class:`fmt::BasicMemoryWriter` object moving the content
+    of the other object to it.
    */
   BasicMemoryWriter(BasicMemoryWriter &&other)
     : BasicWriter<Char>(buffer_), buffer_(std::move(other.buffer_)) {
@@ -2090,7 +2090,7 @@ class WindowsError : public SystemError {
  public:
   /**
    \rst
-   Constructs a :cpp:class:`fmt::WindowsError` object with the description
+   Constructs a :class:`fmt::WindowsError` object with the description
    of the form "*<message>*: *<system-message>*", where *<message>* is the
    formatted message and *<system-message>* is the system message corresponding
    to the error code.
