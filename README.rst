@@ -320,9 +320,10 @@ linkage options.
 Running the tests
 ~~~~~~~~~~~~~~~~~
 
-Please refer to [Building the library](
-http://cppformat.readthedocs.org/en/latest/usage.html#building-the-library)
-for the instructions on building the library and running the unit tests.
+Please refer to `Building the library`__ for the instructions on building
+the library and running the unit tests.
+
+__ http://cppformat.readthedocs.org/en/latest/usage.html#building-the-library
 
 Benchmarks reside in a separate repository,
 `format-benchmarks <https://github.com/cppformat/format-benchmark>`_,
