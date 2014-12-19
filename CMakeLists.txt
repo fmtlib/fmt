@@ -44,11 +44,6 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
     ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"${netfxpath}\" %*")
 endif ()
 
-option(FMT_SHARED "Build shared library instead of static one" OFF)
-if (FMT_SHARED)
-  set(shared SHARED)
-endif ()
-
 set(FMT_SOURCES format.cc format.h)
 
 include(CheckSymbolExists)
@@ -66,7 +61,7 @@ if (CPP11_FLAG)
   set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
 endif ()
 
-add_library(format ${shared} ${FMT_SOURCES})
+add_library(format ${FMT_SOURCES})
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -Wshadow -pedantic")
@@ -75,7 +70,7 @@ if (CPP11_FLAG AND FMT_EXTRA_TESTS)
   set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   # Test compilation with default flags.
   file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)
-  add_library(testformat ${FMT_SOURCE_FILES} ${src})
+  add_library(testformat STATIC ${FMT_SOURCE_FILES} ${src})
 endif ()
 
 add_subdirectory(doc)
@@ -87,7 +82,7 @@ include_directories(. gmock)
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
 
-add_library(gmock gmock/gmock-gtest-all.cc)
+add_library(gmock STATIC gmock/gmock-gtest-all.cc)
 find_package(Threads)
 target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
 
