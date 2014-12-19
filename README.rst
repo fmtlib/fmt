@@ -320,23 +320,9 @@ linkage options.
 Running the tests
 ~~~~~~~~~~~~~~~~~
 
-To run the unit tests first get the source code by cloning the repository::
-
-    $ git clone https://github.com/cppformat/cppformat.git
-
-or downloading a package from
-`Releases <https://github.com/cppformat/cppformat/releases>`_.
-
-Then go to the cppformat directory, generate Makefiles with
-`CMake <http://www.cmake.org/>`_ and build the project::
-
-    $ cd cppformat
-    $ cmake .
-    $ make
-
-Now you can run the unit tests::
-
-    $ make test
+Please refer to [Building the library](
+http://cppformat.readthedocs.org/en/latest/usage.html#building-the-library)
+for the instructions on building the library and running the unit tests.
 
 Benchmarks reside in a separate repository,
 `format-benchmarks <https://github.com/cppformat/format-benchmark>`_,
