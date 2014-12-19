@@ -1,5 +1,5 @@
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
-add_library(test-main ${TEST_MAIN_SRC})
+add_library(test-main STATIC ${TEST_MAIN_SRC})
 target_link_libraries(test-main gmock)
 
 # Adds a test.
@@ -67,7 +67,7 @@ target_link_libraries(header-only-test gmock)
 # Test that the library can be compiled with exceptions disabled.
 check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
 if (HAVE_FNO_EXCEPTIONS_FLAG)
-  add_library(noexception-test ../format.cc)
+  add_library(noexception-test STATIC ../format.cc)
   set_target_properties(noexception-test
     PROPERTIES COMPILE_FLAGS -fno-exceptions)
 endif ()
