@@ -320,8 +320,8 @@ linkage options.
 Running the tests
 ~~~~~~~~~~~~~~~~~
 
-Please refer to `Building the library`__ for the instructions on building
-the library and running the unit tests.
+Please refer to `Building the library`__ for the instructions on how to build
+the library and run the unit tests.
 
 __ http://cppformat.readthedocs.org/en/latest/usage.html#building-the-library
 
