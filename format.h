@@ -2070,7 +2070,7 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   internal::Value &arg_value = arg;
   std::basic_string<Char> str = os.str();
   arg_value = internal::MakeValue<Char>(str);
-  arg.type = internal::Arg::STRING;
+  arg.type = static_cast<internal::Arg::Type>(internal::MakeValue<Char>::type(str));
   format_str = f.format(format_str, arg);
 }
 
