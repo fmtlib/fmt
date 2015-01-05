@@ -364,6 +364,11 @@ class Date {
     return os;
   }
 
+  friend std::wostream &operator<<(std::wostream &os, const Date &d) {
+    os << d.year_ << L'-' << d.month_ << L'-' << d.day_;
+    return os;
+  }
+
   template <typename Char>
   friend BasicWriter<Char> &operator<<(BasicWriter<Char> &f, const Date &d) {
     return f << d.year_ << '-' << d.month_ << '-' << d.day_;
@@ -1208,6 +1213,7 @@ TEST(FormatterTest, FormatUsingIOStreams) {
   EXPECT_EQ("The date is 2012-12-9", s);
   Date date(2012, 12, 9);
   check_unknown_types(date, "s", "string");
+  EXPECT_EQ(L"The date is 2012-12-9", format(L"The date is {0}", Date(2012, 12, 9)));
 }
 
 class Answer {};
