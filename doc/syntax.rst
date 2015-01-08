@@ -157,7 +157,8 @@ displayed after the decimal point for a floating-point value formatted with
 ``'f'`` and ``'F'``, or before and after the decimal point for a floating-point
 value formatted with ``'g'`` or ``'G'``.  For non-number types the field
 indicates the maximum field size - in other words, how many characters will be
-used from the field content. The *precision* is not allowed for integer values.
+used from the field content. The *precision* is not allowed for integer values
+or pointers.
 
 Finally, the *type* determines how the data should be presented.
 

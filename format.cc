@@ -561,9 +561,13 @@ class fmt::internal::ArgFormatter :
     if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
       FMT_THROW(FormatError("invalid format specifier for char"));
     typedef typename fmt::BasicWriter<Char>::CharPtr CharPtr;
+    Char fill = static_cast<Char>(spec_.fill());
+    if (spec_.precision_ == 0) {
+      std::fill_n(writer_.grow_buffer(spec_.width_), spec_.width_, fill);
+      return;
+    }
     CharPtr out = CharPtr();
     if (spec_.width_ > 1) {
-      Char fill = static_cast<Char>(spec_.fill());
       out = writer_.grow_buffer(spec_.width_);
       if (spec_.align_ == fmt::ALIGN_RIGHT) {
         std::fill_n(out, spec_.width_ - 1, fill);
@@ -615,6 +619,8 @@ void fmt::BasicWriter<Char>::write_str(
     if (*str_value)
       str_size = std::char_traits<StrChar>::length(str_value);
   }
+  if (spec.precision_ >= 0 && spec.precision_ < str_size)
+    str_size = spec.precision_;
   write_str(str_value, str_size, spec);
 }
 
@@ -1011,9 +1017,10 @@ const Char *fmt::BasicFormatter<Char>::format(
       } else {
         FMT_THROW(FormatError("missing precision specifier"));
       }
-      if (arg.type != Arg::DOUBLE && arg.type != Arg::LONG_DOUBLE) {
+      if (arg.type < Arg::LAST_INTEGER_TYPE || arg.type == Arg::POINTER) {
         FMT_THROW(FormatError(
-            "precision specifier requires floating-point argument"));
+            fmt::format("precision not allowed in {} format specifier",
+            arg.type == Arg::POINTER ? "pointer" : "integer")));
       }
     }
 

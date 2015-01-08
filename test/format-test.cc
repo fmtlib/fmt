@@ -824,53 +824,42 @@ TEST(FormatterTest, Precision) {
       FormatError, "missing precision specifier");
 
   EXPECT_THROW_MSG(format("{0:.2", 0),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42u),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42u),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42l),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42l),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42ul),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ul),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42ll),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ll),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42ull),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ull),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345));
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345l));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in pointer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", reinterpret_cast<void*>(0xcafe)),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in pointer format specifier");
 
-  EXPECT_THROW_MSG(format("{0:.2}", 'x'),
-      FormatError, "precision specifier requires floating-point argument");
-  EXPECT_THROW_MSG(format("{0:.2f}", 'x'),
-      FormatError, "precision specifier requires floating-point argument");
-
-  EXPECT_THROW_MSG(format("{0:.2}", "str"),
-      FormatError, "precision specifier requires floating-point argument");
-  EXPECT_THROW_MSG(format("{0:.2f}", "str"),
-      FormatError, "precision specifier requires floating-point argument");
-
-  EXPECT_THROW_MSG(format("{0:.2}", TestString()),
-      FormatError, "precision specifier requires floating-point argument");
-  EXPECT_THROW_MSG(format("{0:.2f}", TestString()),
-      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_EQ("   ", format("{0:3.0}", 'x'));
+  EXPECT_EQ("st", format("{0:.2}", "str"));
+  EXPECT_EQ("te", format("{0:.2}", TestString("test")));
 }
 
 TEST(FormatterTest, RuntimePrecision) {
@@ -893,7 +882,7 @@ TEST(FormatterTest, RuntimePrecision) {
   EXPECT_THROW_MSG(format("{0:.{x}}", 0),
       FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{0:.{1}", 0, 0),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0),
       FormatError, "argument index out of range");
 
@@ -920,51 +909,40 @@ TEST(FormatterTest, RuntimePrecision) {
       FormatError, "precision is not integer");
 
   EXPECT_THROW_MSG(format("{0:.{1}}", 42, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42u, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42u, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42l, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42l, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42ul, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42ul, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42ll, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42ll, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42ull, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42ull, 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_EQ("1.2", format("{0:.{1}}", 1.2345, 2));
   EXPECT_EQ("1.2", format("{1:.{0}}", 2, 1.2345l));
 
   EXPECT_THROW_MSG(format("{0:.{1}}", reinterpret_cast<void*>(0xcafe), 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in pointer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", reinterpret_cast<void*>(0xcafe), 2),
-      FormatError, "precision specifier requires floating-point argument");
+      FormatError, "precision not allowed in pointer format specifier");
 
-  EXPECT_THROW_MSG(format("{0:.{1}}", 'x', 2),
-      FormatError, "precision specifier requires floating-point argument");
-  EXPECT_THROW_MSG(format("{0:.{1}f}", 'x', 2),
-      FormatError, "precision specifier requires floating-point argument");
-
-  EXPECT_THROW_MSG(format("{0:.{1}}", "str", 2),
-      FormatError, "precision specifier requires floating-point argument");
-  EXPECT_THROW_MSG(format("{0:.{1}f}", "str", 2),
-      FormatError, "precision specifier requires floating-point argument");
-
-  EXPECT_THROW_MSG(format("{0:.{1}}", TestString(), 2),
-      FormatError, "precision specifier requires floating-point argument");
-  EXPECT_THROW_MSG(format("{0:.{1}f}", TestString(), 2),
-      FormatError, "precision specifier requires floating-point argument");
+  EXPECT_EQ("   ", format("{0:3.{1}}", 'x', 0));
+  EXPECT_EQ("st", format("{0:.{1}}", "str", 2));
+  EXPECT_EQ("te", format("{0:.{1}}", TestString("test"), 2));
 }
 
 template <typename T>
