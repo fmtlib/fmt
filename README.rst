@@ -98,7 +98,7 @@ An object of any user-defined type for which there is an overloaded
 You can use the `FMT_VARIADIC
 <http://cppformat.readthedocs.org/en/latest/reference.html#utilities>`_
 macro to create your own functions similar to `format
-<http://cppformat.github.io/doc/latest/reference.html#format>`_ and
+<http://cppformat.readthedocs.org/en/latest/reference.html#format>`_ and
 `print <http://cppformat.readthedocs.org/en/latest/reference.html#print>`_
 which take arbitrary arguments:
 
