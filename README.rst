@@ -24,7 +24,7 @@ Features
 * Write API similar to the one used by IOStreams but much faster and more
   consistent.
 * Format API with `format string syntax
-  <http://cppformat.readthedocs.org/en/latest/#format-string-syntax>`_
+  <http://cppformat.readthedocs.org/en/latest/syntax.html>`_
   similar to the one used by `str.format
   <http://docs.python.org/2/library/stdtypes.html#str.format>`_ in Python.
 * Support for user-defined types.
@@ -96,10 +96,10 @@ An object of any user-defined type for which there is an overloaded
     // s == "The date is 2012-12-9"
 
 You can use the `FMT_VARIADIC
-<http://cppformat.readthedocs.org/en/latest/#project0format_8h_1a65215c7dfcc0e942cd0798860877e86b>`_
+<http://cppformat.readthedocs.org/en/latest/reference.html#utilities>`_
 macro to create your own functions similar to `format
-<http://cppformat.github.io/doc/latest#fmt::format__StringRef.ArgListCR>`_ and
-`print <http://cppformat.readthedocs.org/en/latest#fmt::print__StringRef.ArgListCR>`_
+<http://cppformat.github.io/doc/latest/reference.html#format>`_ and
+`print <http://cppformat.readthedocs.org/en/latest/reference.html#print>`_
 which take arbitrary arguments:
 
 .. code:: c++
