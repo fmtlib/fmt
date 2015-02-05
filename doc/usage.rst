@@ -19,7 +19,7 @@ before other includes in :file:`format.cc`.
 Building the library
 ====================
 
-An included `CMake build script`__ can be used to build the C++ Format
+The included `CMake build script`__ can be used to build the C++ Format
 library on a wide range of platforms. CMake is freely available for
 download from http://www.cmake.org/download/.
 
