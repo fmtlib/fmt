@@ -145,6 +145,8 @@ Projects using this library
 
 * `spdlog <https://github.com/gabime/spdlog>`_: Super fast C++ logging library
 
+`More... <https://github.com/search?q=cppformat&type=Code>`_
+
 If you are aware of other projects using this library, please let me know
 by `email <mailto:victor.zverovich@gmail.com>`_ or by submitting an
 `issue <https://github.com/cppformat/cppformat/issues>`_.
