@@ -1404,10 +1404,23 @@ class SystemError : public internal::RuntimeError {
   /**
    \rst
    Constructs a :class:`fmt::SystemError` object with the description
-   of the form "*<message>*: *<system-message>*", where *<message>* is the
-   formatted message and *<system-message>* is the system message corresponding
-   to the error code.
+   of the form
+
+   .. parsed-literal::
+     *<message>*: *<system-message>*
+   where *<message>* is the formatted message and *<system-message>* is
+   the system message corresponding to the error code.
    *error_code* is a system error code as given by ``errno``.
+   
+   **Example**
+
+     // This throws a SystemError with the description
+     //   cannot open file 'madeup': No such file or directory
+     // or similar (system message may vary).
+     const char *filename = "madeup";
+     std::FILE *file = std::fopen(filename, "r");
+     if (!file)
+       throw fmt::SystemError(errno, "cannot open file '{}'", filename);
    \endrst
   */
   SystemError(int error_code, StringRef message) {
@@ -2091,10 +2104,24 @@ class WindowsError : public SystemError {
   /**
    \rst
    Constructs a :class:`fmt::WindowsError` object with the description
-   of the form "*<message>*: *<system-message>*", where *<message>* is the
-   formatted message and *<system-message>* is the system message corresponding
-   to the error code.
+   of the form
+
+   .. parsed-literal::
+     *<message>*: *<system-message>*
+   where *<message>* is the formatted message and *<system-message>* is the system
+   message corresponding to the error code.
    *error_code* is a Windows error code as given by ``GetLastError``.
+   
+   **Example**::
+
+     // This throws an WindowsError with the description
+     //   cannot open file 'madeup': The system cannot find the file specified.
+     // or similar (system message may vary).
+     const char *filename = "madeup";
+     LPOFSTRUCT of = LPOFSTRUCT();
+     HFILE file = OpenFile(filename, &of, OF_READ);
+     if (file == HFILE_ERROR)
+       throw fmt::WindowsError(GetLastError(), "cannot open file '{}'", filename);
    \endrst
   */
   WindowsError(int error_code, StringRef message) {
