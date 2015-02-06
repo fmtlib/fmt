@@ -123,11 +123,10 @@ accept variable number of arguments.
 Projects using this library
 ---------------------------
 
+* `0 A.D. <http://play0ad.com/>`_: A free, open-source, cross-platform real-time strategy game
+
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   An open-source library for mathematical programming
-
-* `Saddy <https://code.google.com/p/saddy/>`_:
-  Small crossplatform 2D graphic engine
 
 * `HarpyWar/pvpgn <https://github.com/HarpyWar/pvpgn>`_:
   Player vs Player Gaming Network with tweaks
@@ -137,6 +136,9 @@ Projects using this library
 * `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
 
 * `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
+
+* `Saddy <https://code.google.com/p/saddy/>`_:
+  Small crossplatform 2D graphic engine
 
 * `Salesforce Analytics Cloud <http://www.salesforce.com/analytics-cloud/overview/>`_:
   Business intelligence software
