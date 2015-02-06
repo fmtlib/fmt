@@ -60,6 +60,16 @@
 # define FMT_GCC_EXTENSION
 #endif
 
+#define FMT_CLANGFALLTHROUGH
+
+#ifdef __clang__
+	#pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
+	#ifdef NDEBUG
+		#undef FMT_CLANGFALLTHROUGH
+		#define FMT_CLANGFALLTHROUGH [[clang::fallthrough]];
+	#endif
+#endif
+
 #ifdef __GNUC_LIBSTD__
 # define FMT_GNUC_LIBSTD_VERSION (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
 #endif
@@ -865,7 +875,8 @@ class ArgVisitor {
     default:
       assert(false);
       // Fall through.
-    case Arg::INT:
+		FMT_CLANGFALLTHROUGH
+	 case Arg::INT:
       return FMT_DISPATCH(visit_int(arg.int_value));
     case Arg::UINT:
       return FMT_DISPATCH(visit_uint(arg.uint_value));
@@ -2440,6 +2451,10 @@ FMT_VARIADIC(int, fprintf, std::FILE *, StringRef)
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406
 # pragma GCC diagnostic pop
+#endif
+
+#ifdef __clang__
+# pragma clang diagnostic pop
 #endif
 
 #ifdef FMT_HEADER_ONLY
