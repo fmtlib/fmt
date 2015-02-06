@@ -625,7 +625,8 @@ void fmt::BasicWriter<Char>::write_str(
     if (*str_value)
       str_size = std::char_traits<StrChar>::length(str_value);
   }
-  if (spec.precision_ >= 0 && spec.precision_ < str_size)
+  std::size_t precision = spec.precision_;
+  if (spec.precision_ >= 0 && precision < str_size)
     str_size = spec.precision_;
   write_str(str_value, str_size, spec);
 }
