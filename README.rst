@@ -10,6 +10,9 @@ C++ Format
 .. image:: https://readthedocs.org/projects/cppformat/badge/?version=stable
    :target: http://cppformat.readthedocs.org/en/stable/
    :alt: Documentation Status
+   
+.. image:: https://webapi.biicode.com/v1/badges/vitaut/vitaut/cppformat/master
+  :target: https://www.biicode.com/vitaut/cppformat
 
 C++ Format is an open-source formatting library for C++.
 It can be used as a safe alternative to printf or as a fast
