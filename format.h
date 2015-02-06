@@ -1412,7 +1412,7 @@ class SystemError : public internal::RuntimeError {
    the system message corresponding to the error code.
    *error_code* is a system error code as given by ``errno``.
    
-   **Example**
+   **Example**::
 
      // This throws a SystemError with the description
      //   cannot open file 'madeup': No such file or directory
@@ -2114,7 +2114,7 @@ class WindowsError : public SystemError {
    
    **Example**::
 
-     // This throws an WindowsError with the description
+     // This throws a WindowsError with the description
      //   cannot open file 'madeup': The system cannot find the file specified.
      // or similar (system message may vary).
      const char *filename = "madeup";
