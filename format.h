@@ -40,6 +40,15 @@
 #include <string>
 #include <sstream>
 
+#ifdef _WIN32
+# define WIN32_LEAN_AND_MEAN
+# ifdef __MINGW32__
+#  include <cstring>
+# endif
+# include <windows.h>
+# undef ERROR
+#endif
+
 #if _SECURE_SCL
 # include <iterator>
 #endif
@@ -2154,7 +2163,21 @@ void report_windows_error(int error_code, StringRef message) FMT_NOEXCEPT(true);
 
 #endif
 
-enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
+#ifdef _WIN32
+    enum Color : uint8_t
+    {
+        BLACK = 0,
+        RED = FOREGROUND_RED | FOREGROUND_INTENSITY,
+        GREEN = FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+        YELLOW = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY,
+        BLUE = FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+        MAGENTA = FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY,
+        CYAN = FOREGROUND_INTENSITY | FOREGROUND_GREEN | FOREGROUND_BLUE,
+        WHITE = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY
+    };
+#else
+    enum Color : uint8_t { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
+#endif
 
 /**
   Formats a string and prints it to stdout using ANSI escape sequences

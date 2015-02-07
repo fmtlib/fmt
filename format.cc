@@ -35,13 +35,6 @@
 #include <cmath>
 #include <cstdarg>
 
-#ifdef _WIN32
-# ifdef __MINGW32__
-#  include <cstring>
-# endif
-# include <windows.h>
-#endif
-
 using fmt::internal::Arg;
 
 // Check if exceptions are disabled.
@@ -119,7 +112,11 @@ struct IntChecker<true> {
   }
 };
 
-const char RESET_COLOR[] = "\x1b[0m";
+#ifdef _WIN32
+    const char RESET_COLOR = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE;
+#else
+    const char RESET_COLOR[] = "\x1b[0m";
+#endif
 
 typedef void (*FormatFunc)(fmt::Writer &, int, fmt::StringRef);
 
@@ -1098,11 +1095,19 @@ FMT_FUNC void fmt::print(std::ostream &os, StringRef format_str, ArgList args) {
 }
 
 FMT_FUNC void fmt::print_colored(Color c, StringRef format, ArgList args) {
+#ifdef _WIN32
+  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), c);
+#else
   char escape[] = "\x1b[30m";
   escape[3] = '0' + static_cast<char>(c);
   std::fputs(escape, stdout);
+#endif
   print(format, args);
+#ifdef _WIN32
+  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RESET_COLOR);
+#else
   std::fputs(RESET_COLOR, stdout);
+#endif
 }
 
 FMT_FUNC int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
