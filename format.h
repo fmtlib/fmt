@@ -80,6 +80,12 @@
 # define FMT_HAS_BUILTIN(x) 0
 #endif
 
+#ifdef __has_cpp_attribute
+# define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
+#else
+# define FMT_HAS_CPP_ATTRIBUTE(x) 0
+#endif
+
 #ifndef FMT_USE_VARIADIC_TEMPLATES
 // Variadic templates are available in GCC since version 4.4
 // (http://gcc.gnu.org/projects/cxx0x.html) and in Visual C++
@@ -111,6 +117,12 @@
 # define FMT_NOEXCEPT(expr) noexcept(expr)
 #else
 # define FMT_NOEXCEPT(expr)
+#endif
+
+#if FMT_HAS_CPP_ATTRIBUTE(clang::fallthrough)
+# define FMT_FALLTHROUGH [[clang::fallthrough]]
+#else
+# define FMT_FALLTHROUGH
 #endif
 
 // A macro to disallow the copy constructor and operator= functions
@@ -868,7 +880,7 @@ class ArgVisitor {
     switch (arg.type) {
     default:
       assert(false);
-      // Fall through.
+      FMT_FALLTHROUGH;
     case Arg::INT:
       return FMT_DISPATCH(visit_int(arg.int_value));
     case Arg::UINT:
