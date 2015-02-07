@@ -60,6 +60,10 @@
 # define FMT_GCC_EXTENSION
 #endif
 
+#ifdef __clang__
+# pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
+#endif
+
 #ifdef __GNUC_LIBSTD__
 # define FMT_GNUC_LIBSTD_VERSION (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
 #endif
@@ -2467,6 +2471,10 @@ FMT_VARIADIC(int, fprintf, std::FILE *, StringRef)
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406
 # pragma GCC diagnostic pop
+#endif
+
+#ifdef __clang__
+# pragma clang diagnostic pop
 #endif
 
 #ifdef FMT_HEADER_ONLY
