@@ -2164,7 +2164,7 @@ void report_windows_error(int error_code, StringRef message) FMT_NOEXCEPT(true);
 #endif
 
 #ifdef _WIN32
-    enum Color : uint8_t
+    enum Color
     {
         BLACK = 0,
         RED = FOREGROUND_RED | FOREGROUND_INTENSITY,
@@ -2176,7 +2176,7 @@ void report_windows_error(int error_code, StringRef message) FMT_NOEXCEPT(true);
         WHITE = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY
     };
 #else
-    enum Color : uint8_t { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
+    enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 #endif
 
 /**
