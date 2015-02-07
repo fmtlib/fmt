@@ -135,6 +135,9 @@ Projects using this library
 
 * `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
 
+* `PenUltima Online (POL) <http://www.polserver.com/>`_:
+  An MMO server, compatible with most Ultima Online clients
+
 * `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
 
 * `Saddy <https://code.google.com/p/saddy/>`_:
