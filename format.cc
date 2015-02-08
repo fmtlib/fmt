@@ -36,12 +36,10 @@
 #include <cstdarg>
 
 #ifdef _WIN32
-# define WIN32_LEAN_AND_MEAN
 # ifdef __MINGW32__
 #  include <cstring>
 # endif
 # include <windows.h>
-# undef ERROR
 #endif
 
 using fmt::internal::Arg;
