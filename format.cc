@@ -35,6 +35,15 @@
 #include <cmath>
 #include <cstdarg>
 
+#ifdef _WIN32
+# define WIN32_LEAN_AND_MEAN
+# ifdef __MINGW32__
+#  include <cstring>
+# endif
+# include <windows.h>
+# undef ERROR
+#endif
+
 using fmt::internal::Arg;
 
 // Check if exceptions are disabled.
@@ -113,9 +122,21 @@ struct IntChecker<true> {
 };
 
 #ifdef _WIN32
-    const char RESET_COLOR = FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE;
+  uint8_t win32_colors[] =
+  {
+    0,
+    FOREGROUND_RED | FOREGROUND_INTENSITY,
+    FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+    FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY,
+    FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+    FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY,
+    FOREGROUND_INTENSITY | FOREGROUND_GREEN | FOREGROUND_BLUE,
+    FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY
+  };
+  WORD RESET_COLOR = 0;
+  bool reset_color_flag = false;
 #else
-    const char RESET_COLOR[] = "\x1b[0m";
+  const char RESET_COLOR[] = "\x1b[0m";
 #endif
 
 typedef void (*FormatFunc)(fmt::Writer &, int, fmt::StringRef);
@@ -1096,7 +1117,19 @@ FMT_FUNC void fmt::print(std::ostream &os, StringRef format_str, ArgList args) {
 
 FMT_FUNC void fmt::print_colored(Color c, StringRef format, ArgList args) {
 #ifdef _WIN32
-  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), c);
+	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (handle == INVALID_HANDLE_VALUE)
+		FMT_THROW(GetLastError(), "cannot get output handle");
+	if (!reset_color_flag) {
+		CONSOLE_SCREEN_BUFFER_INFO infoCon;
+		if (!GetConsoleScreenBufferInfo(handle, &infoCon))
+			FMT_THROW(GetLastError(), "cannot get console informations");
+		RESET_COLOR = infoCon.wAttributes;
+		reset_color_flag = true;
+	}
+	WORD color = static_cast<int>(c) >= ARRAYSIZE(win32_colors) ? RESET_COLOR : win32_colors[c];
+	if (!SetConsoleTextAttribute(handle, color))
+		FMT_THROW(GetLastError(), "cannot set console color");
 #else
   char escape[] = "\x1b[30m";
   escape[3] = '0' + static_cast<char>(c);
@@ -1104,7 +1137,8 @@ FMT_FUNC void fmt::print_colored(Color c, StringRef format, ArgList args) {
 #endif
   print(format, args);
 #ifdef _WIN32
-  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), RESET_COLOR);
+  if(!SetConsoleTextAttribute(handle, RESET_COLOR))
+    FMT_THROW(GetLastError(), "cannot set console color");
 #else
   std::fputs(RESET_COLOR, stdout);
 #endif
