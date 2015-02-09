@@ -119,12 +119,6 @@
 # define FMT_NOEXCEPT(expr)
 #endif
 
-#if FMT_HAS_CPP_ATTRIBUTE(clang::fallthrough)
-# define FMT_FALLTHROUGH [[clang::fallthrough]]
-#else
-# define FMT_FALLTHROUGH
-#endif
-
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
 #define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
@@ -880,7 +874,7 @@ class ArgVisitor {
     switch (arg.type) {
     default:
       assert(false);
-      FMT_FALLTHROUGH;
+      return Result();
     case Arg::INT:
       return FMT_DISPATCH(visit_int(arg.int_value));
     case Arg::UINT:
