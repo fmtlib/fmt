@@ -40,6 +40,7 @@
 #  include <cstring>
 # endif
 # include <windows.h>
+# include <io.h>  // for _get_osfhandle
 #endif
 
 using fmt::internal::Arg;
@@ -1112,9 +1113,7 @@ FMT_FUNC void fmt::print(std::ostream &os, StringRef format_str, ArgList args) {
 
 FMT_FUNC void fmt::print_colored(Color c, StringRef format, ArgList args) {
 #ifdef _WIN32
-  HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-  if (handle == INVALID_HANDLE_VALUE)
-    FMT_THROW(WindowsError(GetLastError(), "cannot get output handle"));
+  HANDLE handle = reinterpret_cast<HANDLE>(_get_osfhandle(_fileno(stdout)));
   CONSOLE_SCREEN_BUFFER_INFO info_con;
   if (!GetConsoleScreenBufferInfo(handle, &info_con))
     FMT_THROW(WindowsError(GetLastError(), "cannot get console information"));
