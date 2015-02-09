@@ -61,7 +61,6 @@
 #endif
 
 #ifdef __clang__
-# define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 # pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
 #endif
 
@@ -118,13 +117,6 @@
 # define FMT_NOEXCEPT(expr) noexcept(expr)
 #else
 # define FMT_NOEXCEPT(expr)
-#endif
-
-#if FMT_HAS_CPP_ATTRIBUTE(clang::fallthrough) || \
-  (FMT_CLANG_VERSION >= 600 && __cplusplus >= 201103)
-# define FMT_FALLTHROUGH [[clang::fallthrough]]
-#else
-# define FMT_FALLTHROUGH
 #endif
 
 // A macro to disallow the copy constructor and operator= functions
