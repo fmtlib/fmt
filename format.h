@@ -882,7 +882,7 @@ class ArgVisitor {
     switch (arg.type) {
     default:
       assert(false);
-      FMT_FALLTHROUGH;
+      return Result();
     case Arg::INT:
       return FMT_DISPATCH(visit_int(arg.int_value));
     case Arg::UINT:
