@@ -1114,17 +1114,17 @@ FMT_FUNC void fmt::print_colored(Color c, StringRef format, ArgList args) {
 #ifdef _WIN32
   HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
   if (handle == INVALID_HANDLE_VALUE)
-    FMT_THROW(GetLastError(), "cannot get output handle");
+    FMT_THROW(WindowsError(GetLastError(), "cannot get output handle"));
   CONSOLE_SCREEN_BUFFER_INFO info_con;
   if (!GetConsoleScreenBufferInfo(handle, &info_con))
-    FMT_THROW(GetLastError(), "cannot get console information");
+    FMT_THROW(WindowsError(GetLastError(), "cannot get console information"));
   WORD reset_color = info_con.wAttributes;
   WORD color = static_cast<int>(c) >= ARRAYSIZE(WIN32_COLORS) ? reset_color : WIN32_COLORS[c];
   if (!SetConsoleTextAttribute(handle, color))
-    FMT_THROW(GetLastError(), "cannot set console color");
+    FMT_THROW(WindowsError(GetLastError(), "cannot set console color"));
   print(format, args);
   if (!SetConsoleTextAttribute(handle, reset_color))
-    FMT_THROW(GetLastError(), "cannot set console color");
+    FMT_THROW(WindowsError(GetLastError(), "cannot set console color"));
 #else
   char escape[] = "\x1b[30m";
   escape[3] = '0' + static_cast<char>(c);
