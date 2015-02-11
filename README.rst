@@ -280,7 +280,7 @@ As you can see boost::format is much slower than the alternative methods; this
 is confirmed by `other tests <http://accu.org/index.php/journals/1539>`_.
 Tinyformat is quite good coming close to IOStreams.  Unfortunately tinyformat
 cannot be faster than the IOStreams because it uses them internally.
-Performance of cppformat is close to that of printf. cppformat is `faster on integer
+Performance of cppformat is close to that of printf, being `faster than printf on integer
 formatting <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_,
 but slower on floating-point formatting which dominates this benchmark.
 
