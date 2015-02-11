@@ -2497,6 +2497,8 @@ FMT_VARIADIC(int, fprintf, std::FILE *, StringRef)
 
 #ifdef FMT_HEADER_ONLY
 # include "format.cc"
+#elif _MSC_VER
+# pragma comment(lib, "format.lib")
 #endif
 
 #endif  // FMT_FORMAT_H_
