@@ -269,18 +269,20 @@ further details see the `source
 ============== ========
 test name      run time
 ============== ========
-libc printf     1.28s
-std::ostream    2.09s
-cppformat       1.32s
-tinyformat      2.55s
-boost::format  10.42s
+libc printf     1.30s
+std::ostream    1.85s
+cppformat       1.42s
+tinyformat      2.25s
+boost::format   9.94s
 ============== ========
 
 As you can see boost::format is much slower than the alternative methods; this
 is confirmed by `other tests <http://accu.org/index.php/journals/1539>`_.
 Tinyformat is quite good coming close to IOStreams.  Unfortunately tinyformat
 cannot be faster than the IOStreams because it uses them internally.
-Performance of format is close to that of printf.
+Performance of cppformat is close to that of printf. cppformat is [faster on
+integer formatting](http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html),
+but slower on floating-point formatting which dominates this benchmark.
 
 Compile time and code bloat
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
