@@ -181,18 +181,45 @@ public:
   // Opens a file.
   BufferedFile(fmt::StringRef filename, fmt::StringRef mode);
 
+  // Gets whether a file is opened
+  bool is_open() { return file_ != 0; }
+
   // Closes the file.
   void close();
 
   // Returns the pointer to a FILE object representing this file.
   FILE *get() const { return file_; }
 
+  void flush() {
+    if (is_open()) {
+      std::fflush(file_);
+    }
+  }
+
   int fileno() const;
+
+  void write_raw(fmt::StringRef str) {
+    if (is_open()) {
+      std::fwrite(str.c_str(), str.size(), 1, file_);
+    }
+  }
+  void write_raw(char c) {
+    if (is_open()) {
+      std::fputc(c, file_);
+    }
+  }
 
   void print(fmt::StringRef format_str, const ArgList &args) {
     fmt::print(file_, format_str, args);
   }
+  void printf(fmt::StringRef format_str, const ArgList &args) {
+    fmt::fprintf(file_, format_str, args);
+  }
+  void println() {
+    write_raw('\n');
+  }
   FMT_VARIADIC(void, print, fmt::StringRef)
+  FMT_VARIADIC(void, printf, fmt::StringRef)
 };
 
 // A file. Closed file is represented by a File object with descriptor -1.
