@@ -75,6 +75,8 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 #endif
 }
 
+// Implementations of fmt::BufferedFile
+
 fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT {
   if (file_ && FMT_SYSTEM(fclose(file_)) != 0)
     fmt::report_system_error(errno, "cannot close file");
@@ -101,6 +103,18 @@ int fmt::BufferedFile::fileno() const {
     throw SystemError(errno, "cannot get file descriptor");
   return fd;
 }
+
+void fmt::BufferedFile::flush() {
+    if (!file_)
+        return;
+    // FIXME: int result = FMT_SYSTEM(fflush(file_));
+    int result = ::fflush(file_);
+    if (result != 0)
+        throw SystemError(errno, "cannot flush file");
+}
+
+
+// Implementations of fmt::File
 
 fmt::File::File(fmt::StringRef path, int oflag) {
   int mode = S_IRUSR | S_IWUSR;
@@ -225,6 +239,7 @@ fmt::BufferedFile fmt::File::fdopen(const char *mode) {
   fd_ = -1;
   return file;
 }
+
 
 long fmt::getpagesize() {
 #ifdef _WIN32

@@ -53,7 +53,7 @@
 #ifdef FMT_SYSTEM
 # define FMT_POSIX_CALL(call) FMT_SYSTEM(call)
 #else
-# define FMT_SYSTEM(call) call
+# define FMT_SYSTEM(call) ::call
 # ifdef _WIN32
 // Fix warnings about deprecated symbols.
 #  define FMT_POSIX_CALL(call) ::_##call
@@ -182,31 +182,33 @@ public:
   BufferedFile(fmt::StringRef filename, fmt::StringRef mode);
 
   // Gets whether a file is opened
-  bool is_open() { return file_ != 0; }
+  bool is_open() const FMT_NOEXCEPT { return file_ != 0; }
 
   // Closes the file.
   void close();
 
   // Returns the pointer to a FILE object representing this file.
-  FILE *get() const { return file_; }
-
-  void flush() {
-    if (is_open()) {
-      std::fflush(file_);
-    }
-  }
-
+  FILE *get() const FMT_NOEXCEPT{ return file_; }
+  
+  // Gets the file number of a file
   int fileno() const;
 
-  void write_raw(fmt::StringRef str) {
-    if (is_open()) {
-      std::fwrite(str.c_str(), str.size(), 1, file_);
-    }
+  // Flushes the buffer of a file
+  void flush(); // FIXME: Should be const?
+
+  // Writes raw string without formatting
+  std::size_t write_raw(fmt::StringRef str) {
+    // FIXME: throw exception when failing
+    if (!is_open())
+      return 0;
+    return ::fwrite(str.c_str(), str.size(), 1, file_);
   }
+  // Writes a single charactor without formatting
   void write_raw(char c) {
-    if (is_open()) {
-      std::fputc(c, file_);
-    }
+    // FIXME: throw exception when failing
+    if (!is_open())
+      return;
+    ::fputc(c, file_);
   }
 
   void print(fmt::StringRef format_str, const ArgList &args) {
