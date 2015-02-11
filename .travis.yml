@@ -21,7 +21,7 @@ script:
   - CTEST_OUTPUT_ON_FAILURE=1 make test
   - cd .. && rm -rf build/
   # Building with biicode
-  - ./biicode/support/travis-build.sh
+  - biicode/support/travis-build.sh
 
 
 after_failure:
