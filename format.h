@@ -114,16 +114,26 @@
 // Define FMT_USE_NOEXCEPT to make C++ Format use noexcept (C++11 feature).
 #if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
   (FMT_GCC_VERSION >= 408 && __cplusplus >= 201103)
-# define FMT_NOEXCEPT(expr) noexcept(expr)
+# define FMT_NOEXCEPT noexcept
+# define FMT_NOEXCEPT_EXPR(expr) noexcept(expr)
 #else
-# define FMT_NOEXCEPT(expr)
+# define FMT_NOEXCEPT throw()
+# define FMT_NOEXCEPT_EXPR(expr)
 #endif
 
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
+#if FMT_HAS_FEATURE(cxx_deleted_functions)\
+    || (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103)\
+    || (_MSC_VER >= 1800)
+#define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+  TypeName(const TypeName&) = delete; \
+  void operator=(const TypeName&) = delete
+#else
 #define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&); \
   void operator=(const TypeName&)
+#endif
 
 namespace fmt {
 
@@ -290,7 +300,7 @@ class Buffer {
       grow(capacity);
   }
 
-  void clear() FMT_NOEXCEPT(true) { size_ = 0; }
+  void clear() FMT_NOEXCEPT { size_ = 0; }
 
   void push_back(const T &value) {
     if (size_ == capacity_)
@@ -623,11 +633,11 @@ class UTF16ToUTF8 {
 #endif
 
 void format_system_error(fmt::Writer &out, int error_code,
-                         fmt::StringRef message) FMT_NOEXCEPT(true);
+                         fmt::StringRef message) FMT_NOEXCEPT;
 
 #ifdef _WIN32
 void format_windows_error(fmt::Writer &out, int error_code,
-                          fmt::StringRef message) FMT_NOEXCEPT(true);
+                          fmt::StringRef message) FMT_NOEXCEPT;
 #endif
 
 // Computes max(Arg, 1) at compile time. It is used to avoid errors about
@@ -1560,7 +1570,7 @@ class BasicWriter {
     Returns a pointer to the output buffer content. No terminating null
     character is appended.
    */
-  const Char *data() const FMT_NOEXCEPT(true) { return &buffer_[0]; }
+  const Char *data() const FMT_NOEXCEPT { return &buffer_[0]; }
 
   /**
     Returns a pointer to the output buffer content with terminating null
@@ -1684,7 +1694,7 @@ class BasicWriter {
     return *this;
   }
 
-  void clear() FMT_NOEXCEPT(true) { buffer_.clear(); }
+  void clear() FMT_NOEXCEPT { buffer_.clear(); }
 };
 
 template <typename Char>
@@ -2101,7 +2111,7 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
-void report_system_error(int error_code, StringRef message) FMT_NOEXCEPT(true);
+void report_system_error(int error_code, StringRef message) FMT_NOEXCEPT;
 
 #ifdef _WIN32
 
@@ -2144,7 +2154,7 @@ class WindowsError : public SystemError {
 
 // Reports a Windows error without throwing an exception.
 // Can be used to report errors from destructors.
-void report_windows_error(int error_code, StringRef message) FMT_NOEXCEPT(true);
+void report_windows_error(int error_code, StringRef message) FMT_NOEXCEPT;
 
 #endif
 

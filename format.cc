@@ -146,7 +146,7 @@ typedef void (*FormatFunc)(fmt::Writer &, int, fmt::StringRef);
 //   other  - failure
 // Buffer should be at least of size 1.
 int safe_strerror(
-    int error_code, char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT(true) {
+    int error_code, char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT {
   assert(buffer != 0 && buffer_size != 0);
   int result = 0;
 #if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE) || __ANDROID__
@@ -180,7 +180,7 @@ int safe_strerror(
 }
 
 void format_error_code(fmt::Writer &out, int error_code,
-                       fmt::StringRef message) FMT_NOEXCEPT(true) {
+                       fmt::StringRef message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
   // INLINE_BUFFER_SIZE to avoid dynamic memory allocation and potential
   // bad_alloc.
@@ -198,7 +198,7 @@ void format_error_code(fmt::Writer &out, int error_code,
 }
 
 void report_error(FormatFunc func,
-    int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
+    int error_code, fmt::StringRef message) FMT_NOEXCEPT {
   fmt::MemoryWriter full_message;
   func(full_message, error_code, message);
   // Use Writer::data instead of Writer::c_str to avoid potential memory
@@ -500,7 +500,7 @@ FMT_FUNC void fmt::WindowsError::init(
 
 FMT_FUNC void fmt::internal::format_system_error(
     fmt::Writer &out, int error_code,
-    fmt::StringRef message) FMT_NOEXCEPT(true) {
+    fmt::StringRef message) FMT_NOEXCEPT {
   FMT_TRY {
     MemoryBuffer<char, INLINE_BUFFER_SIZE> buffer;
     buffer.resize(INLINE_BUFFER_SIZE);
@@ -522,7 +522,7 @@ FMT_FUNC void fmt::internal::format_system_error(
 #ifdef _WIN32
 FMT_FUNC void fmt::internal::format_windows_error(
     fmt::Writer &out, int error_code,
-    fmt::StringRef message) FMT_NOEXCEPT(true) {
+    fmt::StringRef message) FMT_NOEXCEPT {
   class String {
    private:
     LPWSTR str_;
@@ -1083,13 +1083,13 @@ void fmt::BasicFormatter<Char>::format(
 }
 
 FMT_FUNC void fmt::report_system_error(
-    int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
+    int error_code, fmt::StringRef message) FMT_NOEXCEPT {
   report_error(internal::format_system_error, error_code, message);
 }
 
 #ifdef _WIN32
 FMT_FUNC void fmt::report_windows_error(
-    int error_code, fmt::StringRef message) FMT_NOEXCEPT(true) {
+    int error_code, fmt::StringRef message) FMT_NOEXCEPT {
   report_error(internal::format_windows_error, error_code, message);
 }
 #endif
