@@ -1418,6 +1418,7 @@ class SystemError : public internal::RuntimeError {
 
    .. parsed-literal::
      *<message>*: *<system-message>*
+
    where *<message>* is the formatted message and *<system-message>* is
    the system message corresponding to the error code.
    *error_code* is a system error code as given by ``errno``.
@@ -1599,7 +1600,7 @@ class BasicWriter {
        Current point:
        (-3.140000, +3.140000)
 
-    The output can be accessed using :meth:`data`, :meth:`c_str` or :meth:`str`
+    The output can be accessed using :func:`data()`, :func:`c_str` or :func:`str`
     methods.
 
     See also :ref:`syntax`.
@@ -2118,6 +2119,7 @@ class WindowsError : public SystemError {
 
    .. parsed-literal::
      *<message>*: *<system-message>*
+
    where *<message>* is the formatted message and *<system-message>* is the system
    message corresponding to the error code.
    *error_code* is a Windows error code as given by ``GetLastError``.
