@@ -1,3 +1,8 @@
+if (CMAKE_MAJOR_VERSION GREATER 2 AND CMAKE_MINOR_VERSION GREATER 0)
+  # Only interpret `if` arguments as variables or keywords when unquoted.
+  cmake_policy(SET CMP0054 NEW)
+endif ()
+
 cmake_minimum_required(VERSION 2.6)
 
 # Set the default CMAKE_BUILD_TYPE to Release.
