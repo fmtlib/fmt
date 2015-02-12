@@ -1,4 +1,4 @@
-if (CMAKE_MAJOR_VERSION GREATER 2 AND CMAKE_MINOR_VERSION GREATER 0)
+if (POLICY CMP0054)
   # Only interpret `if` arguments as variables or keywords when unquoted.
   cmake_policy(SET CMP0054 NEW)
 endif ()
