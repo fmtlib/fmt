@@ -1,49 +1,42 @@
 environment:
   CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
-  - Build: msvc
-    Config: Debug
-  - Build: msvc
-    Config: Release
-  - Build: mingw
-    Config: Debug
-  - Build: mingw
-    Config: Release
+  - BUILD: msvc
+    CONFIG: Debug
+  - BUILD: msvc
+    CONFIG: Release
+  - BUILD: mingw
+    CONFIG: Debug
+  - BUILD: mingw
+    CONFIG: Release
 
 install:
   - ps: |
-      if ($env:Build -eq "mingw") {
+      if ($env:BUILD -eq "mingw") {
         # Install MinGW.
         $url  = "http://sourceforge.net/projects/mingw-w64/files/"
-        $url += "Toolchains%20targetting%20Win64/Personal%20Builds/"
+        $url += "Toolchains%20targetting%20Win64/Personal%20BUILDs/"
         $url += "mingw-builds/4.9.0/threads-win32/seh/"
         $url += "x86_64-4.9.0-release-win32-seh-rt_v3-rev2.7z/download"
         Invoke-WebRequest -UserAgent wget -Uri $url -OutFile mingw.7z
         &7z x -oC:\ mingw.7z > $null
       }
-  - set PATH=C:\Program Files (x86)\MSBuild\12.0\bin\;%PATH%;C:\mingw64\bin
+  - set PATH=C:\Program Files (x86)\MSBUILD\12.0\bin\;%PATH%;C:\mingw64\bin
 
 before_build:
-  - ps: |
-      if ($env:Build -eq "mingw") {
-        # Remove path to Git bin directory from PATH because it breaks MinGW config.
-        $env:PATH = $env:PATH -replace "C:\\Program Files \(x86\)\\Git\\bin",""
-        $generator = "-GMinGW Makefiles"
-      }
-  - echo "-DCMAKE_BUILD_TYPE=$env:Config"
-  - cmake -DFMT_EXTRA_TESTS=ON "-DCMAKE_BUILD_TYPE=$env:Config" "$generator" .
+  - python support/build.py
 
 build_script:
   - ps: |
-      if ($env:Build -eq "mingw") {
+      if ($env:BUILD -eq "mingw") {
         mingw32-make -j4
       } else {
-        msbuild /m:4 /p:Config=$env:Config FORMAT.sln
+        msbuild /m:4 /p:Config=$env:CONFIG FORMAT.sln
       }
 
 test_script:
   - ps: |
-      if ($env:Build -eq "mingw") {
+      if ($env:BUILD -eq "mingw") {
         mingw32-make test
       } else {
         msbuild RUN_TESTS.vcxproj
