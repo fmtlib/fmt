@@ -23,6 +23,5 @@ script:
   # Building with biicode
   - biicode/support/travis-build.sh
 
-
 after_failure:
   - cat Testing/Temporary/LastTest.log
