@@ -61,6 +61,11 @@ if (CPP11_FLAG)
   set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
 endif ()
 
+if (BIICODE)
+  include(biicode/cmake/biicode.cmake)
+  return()
+endif ()
+
 add_library(format ${FMT_SOURCES})
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
