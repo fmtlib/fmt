@@ -113,7 +113,7 @@ class BufferedFile {
 
  public:
   // Constructs a BufferedFile object which doesn't represent any file.
-  BufferedFile() FMT_NOEXCEPT : file_(nullptr) {}
+  BufferedFile() FMT_NOEXCEPT : file_(0) {}
 
   // Destroys the object closing the file it represents if any.
   ~BufferedFile() FMT_NOEXCEPT;
@@ -167,13 +167,13 @@ public:
 
  public:
   BufferedFile(BufferedFile &&other) FMT_NOEXCEPT : file_(other.file_) {
-    other.file_ = nullptr;
+    other.file_ = 0;
   }
 
   BufferedFile& operator=(BufferedFile &&other) {
     close();
     file_ = other.file_;
-    other.file_ = nullptr;
+    other.file_ = 0;
     return *this;
   }
 #endif
@@ -182,7 +182,7 @@ public:
   BufferedFile(fmt::StringRef filename, fmt::StringRef mode);
 
   // Gets whether a file is opened
-  bool is_open() const FMT_NOEXCEPT { return file_ != nullptr; }
+  bool is_open() const FMT_NOEXCEPT { return file_ != 0; }
 
   // Closes the file.
   void close();

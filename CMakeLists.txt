@@ -117,14 +117,6 @@ if (NOT FMT_VARIADIC_TEMPLATES)
   add_definitions(-DGTEST_LANG_CXX11=0)
 endif ()
 
-# g++ 4.6 supports nullptr with __cplusplus==1
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=1773
-check_cxx_source_compiles("
-  int main(){int*p=nullptr;}" FMT_NULLPTR)
-if (FMT_NULLPTR)
-# add_definitions(-DFMT_USE_NULLPTR=1)
-endif ()
-
 check_cxx_source_compiles("
   struct C{
     C()=delete;

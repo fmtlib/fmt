@@ -133,15 +133,6 @@
   TypeName& operator=(const TypeName&)
 #endif
 
-#if FMT_USE_NULLPTR || FMT_HAS_FEATURE(cxx_nullptr)\
-    || (FMT_GCC_VERSION >= 406 && __cplusplus >= 201103L)\
-    || (_MSC_VER >= 1600)
-// Use nullptr
-#elif !defined(nullptr)
-// Some standard library implementations define nullptr themselves such as libc++
-# define nullptr 0
-#endif
-
 namespace fmt {
 
 // Fix the warning about long long on older versions of GCC
@@ -280,7 +271,7 @@ class Buffer {
   std::size_t size_;
   std::size_t capacity_;
 
-  Buffer(T *ptr = nullptr, std::size_t capacity = 0)
+  Buffer(T *ptr = 0, std::size_t capacity = 0)
     : ptr_(ptr), size_(0), capacity_(capacity) {}
 
   virtual void grow(std::size_t size) = 0;
