@@ -1,3 +1,10 @@
+message(STATUS "CMake version: ${CMAKE_VERSION}")
+
+if (POLICY CMP0054)
+  # Only interpret `if` arguments as variables or keywords when unquoted.
+  cmake_policy(SET CMP0054 NEW)
+endif ()
+
 cmake_minimum_required(VERSION 2.6)
 
 # Set the default CMAKE_BUILD_TYPE to Release.
@@ -102,7 +109,7 @@ if (NOT FMT_VARIADIC_TEMPLATES)
 endif ()
 
 # GTest doesn't detect <tuple> with clang.
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
 endif ()
 
