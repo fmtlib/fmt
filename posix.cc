@@ -92,7 +92,7 @@ void fmt::BufferedFile::close() {
   if (!file_)
     return;
   int result = FMT_SYSTEM(fclose(file_));
-  file_ = 0;
+  file_ = nullptr;
   if (result != 0)
     throw SystemError(errno, "cannot close file");
 }

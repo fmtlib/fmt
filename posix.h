@@ -113,7 +113,7 @@ class BufferedFile {
 
  public:
   // Constructs a BufferedFile object which doesn't represent any file.
-  BufferedFile() FMT_NOEXCEPT : file_(0) {}
+  BufferedFile() FMT_NOEXCEPT : file_(nullptr) {}
 
   // Destroys the object closing the file it represents if any.
   ~BufferedFile() FMT_NOEXCEPT;
@@ -167,13 +167,13 @@ public:
 
  public:
   BufferedFile(BufferedFile &&other) FMT_NOEXCEPT : file_(other.file_) {
-    other.file_ = 0;
+    other.file_ = nullptr;
   }
 
   BufferedFile& operator=(BufferedFile &&other) {
     close();
     file_ = other.file_;
-    other.file_ = 0;
+    other.file_ = nullptr;
     return *this;
   }
 #endif
@@ -182,13 +182,13 @@ public:
   BufferedFile(fmt::StringRef filename, fmt::StringRef mode);
 
   // Gets whether a file is opened
-  bool is_open() const FMT_NOEXCEPT { return file_ != 0; }
+  bool is_open() const FMT_NOEXCEPT { return file_ != nullptr; }
 
   // Closes the file.
   void close();
 
   // Returns the pointer to a FILE object representing this file.
-  FILE *get() const FMT_NOEXCEPT{ return file_; }
+  FILE *get() const FMT_NOEXCEPT { return file_; }
   
   // Gets the file number of a file
   int fileno() const;
@@ -198,14 +198,14 @@ public:
 
   // Writes raw string without formatting
   std::size_t write_raw(fmt::StringRef str) {
-    // FIXME: throw exception when failing
+    // TODO: throw exception when failing
     if (!is_open())
       return 0;
     return ::fwrite(str.c_str(), str.size(), 1, file_);
   }
   // Writes a single charactor without formatting
   void write_raw(char c) {
-    // FIXME: throw exception when failing
+    // TODO: throw exception when failing
     if (!is_open())
       return;
     ::fputc(c, file_);

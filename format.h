@@ -92,7 +92,7 @@
 // since version 2013.
 # define FMT_USE_VARIADIC_TEMPLATES \
    (FMT_HAS_FEATURE(cxx_variadic_templates) || \
-       (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103) || _MSC_VER >= 1800)
+       (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103L) || _MSC_VER >= 1800)
 #endif
 
 #ifndef FMT_USE_RVALUE_REFERENCES
@@ -103,7 +103,7 @@
 # else
 #  define FMT_USE_RVALUE_REFERENCES \
     (FMT_HAS_FEATURE(cxx_rvalue_references) || \
-        (FMT_GCC_VERSION >= 403 && __cplusplus >= 201103) || _MSC_VER >= 1600)
+        (FMT_GCC_VERSION >= 403 && __cplusplus >= 201103L) || _MSC_VER >= 1600)
 # endif
 #endif
 
@@ -113,7 +113,7 @@
 
 // Define FMT_USE_NOEXCEPT to make C++ Format use noexcept (C++11 feature).
 #if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
-  (FMT_GCC_VERSION >= 408 && __cplusplus >= 201103)
+  (FMT_GCC_VERSION >= 408 && __cplusplus >= 201103L)
 # define FMT_NOEXCEPT noexcept
 # define FMT_NOEXCEPT_EXPR(expr) noexcept(expr)
 #else
@@ -124,7 +124,7 @@
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
 #if FMT_HAS_FEATURE(cxx_deleted_functions)\
-    || (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103)\
+    || (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103L)\
     || (_MSC_VER >= 1800)
 #define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&) = delete; \
@@ -133,6 +133,32 @@
 #define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&); \
   void operator=(const TypeName&)
+#endif
+
+#if FMT_HAS_FEATURE(cxx_nullptr)\
+    || (FMT_GCC_VERSION >= 406 && __cplusplus >= 201103L)\
+    || (_MSC_VER >= 1600)
+// Use nullptr
+#else
+// Simulate it
+namespace std {
+class nullptr_t {
+public:
+  template<typename T>
+  operator T*() const {
+    return 0;
+  }
+  template<typename C, typename T>
+  operator T C::*() const
+  {
+    return 0;
+  }
+private:
+    void operator&() const;
+};
+}
+
+std::nullptr_t const nullptr = {};
 #endif
 
 namespace fmt {
@@ -273,7 +299,7 @@ class Buffer {
   std::size_t size_;
   std::size_t capacity_;
 
-  Buffer(T *ptr = 0, std::size_t capacity = 0)
+  Buffer(T *ptr = nullptr, std::size_t capacity = 0)
     : ptr_(ptr), size_(0), capacity_(capacity) {}
 
   virtual void grow(std::size_t size) = 0;
