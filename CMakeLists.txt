@@ -25,6 +25,12 @@ include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
 if (HAVE_STD_CPP11_FLAG)
   set(CPP11_FLAG -std=c++11)
+  # Use libc++.
+  # We may link with libc++abi as well, leave it for now
+  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(STATUS "${CMAKE_CXX_COMPILER_ID} detected! Use libc++ as its standard library.")
+    set(CPP11_FLAG "-std=c++11 -stdlib=libc++ -lc++")
+  endif ()
 else ()
   check_cxx_compiler_flag(-std=c++0x HAVE_STD_CPP0X_FLAG)
   if (HAVE_STD_CPP0X_FLAG)
@@ -74,7 +80,7 @@ if (BIICODE)
 endif ()
 
 add_library(format ${FMT_SOURCES})
-if (CMAKE_COMPILER_IS_GNUCXX)
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -Wshadow -pedantic")
   if (CPP11_FLAG)
