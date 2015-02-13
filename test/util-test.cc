@@ -699,8 +699,7 @@ void test_count_digits() {
 }
 
 TEST(UtilTest, StringRef) {
-  char space[100];
-  std::strcpy(space, "some string");
+  char space[100] = "some string";
   EXPECT_EQ(sizeof("some string") - 1, StringRef(space).size());
 }
 

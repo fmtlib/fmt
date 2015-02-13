@@ -25,6 +25,12 @@ include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
 if (HAVE_STD_CPP11_FLAG)
   set(CPP11_FLAG -std=c++11)
+  # Use libc++.
+  # We may link with libc++abi as well, leave it for now
+  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(STATUS "${CMAKE_CXX_COMPILER_ID} detected! Use libc++ as its standard library.")
+    set(CPP11_FLAG "-std=c++11 -stdlib=libc++ -lc++")
+  endif ()
 else ()
   check_cxx_compiler_flag(-std=c++0x HAVE_STD_CPP0X_FLAG)
   if (HAVE_STD_CPP0X_FLAG)
@@ -74,12 +80,15 @@ if (BIICODE)
 endif ()
 
 add_library(format ${FMT_SOURCES})
-if (CMAKE_COMPILER_IS_GNUCXX)
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -Wshadow -pedantic")
+  if (CPP11_FLAG)
+    set_target_properties(format PROPERTIES COMPILE_FLAGS
+      "-Wall -Wextra -Wshadow -pedantic ${CPP11_FLAG}")
+  endif ()
 endif ()
 if (CPP11_FLAG AND FMT_EXTRA_TESTS)
-  set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   # Test compilation with default flags.
   file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)
   add_library(testformat STATIC ${FMT_SOURCE_FILES} ${src})
@@ -106,6 +115,41 @@ check_cxx_source_compiles("
   int main() {}" FMT_VARIADIC_TEMPLATES)
 if (NOT FMT_VARIADIC_TEMPLATES)
   add_definitions(-DGTEST_LANG_CXX11=0)
+endif ()
+
+check_cxx_source_compiles("
+  struct C{
+    C()=delete;
+    C(const C&)=delete;
+    C& operator=(const C&)=delete;
+  };
+  int main(){}" FMT_DELETED_FUNCTIONS)
+if (FMT_DELETED_FUNCTIONS)
+# add_definitions(-DFMT_USE_DELETED_FUNCTIONS=1)
+endif ()
+
+check_cxx_source_compiles("
+  void f() noexcept {}
+  int main(){ f(); }" FMT_BASIC_NOEXCEPT_SUPPORT)
+if (FMT_BASIC_NOEXCEPT_SUPPORT)
+# add_definitions(-DFMT_USE_NOEXCEPT=1)
+endif ()
+
+check_cxx_source_compiles("
+  #include <utility>
+  struct MoveOnly {
+    MoveOnly() {}
+    MoveOnly(MoveOnly&&) {}
+  private:
+    MoveOnly(const MoveOnly&);
+  };
+  int main() {
+    MoveOnly a;
+    MoveOnly b(std::move(a));
+    MoveOnly c(MoveOnly());
+  }" FMT_RVALUE_REFERENCES)
+if (FMT_RVALUE_REFERENCES)
+# add_definitions(-DFMT_USE_RVALUE_REFERENCES=1)
 endif ()
 
 # GTest doesn't detect <tuple> with clang.

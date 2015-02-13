@@ -19,7 +19,7 @@ add_fmt_test(format-test)
 add_fmt_test(format-impl-test CUSTOM_LINK)
 add_fmt_test(printf-test)
 foreach (target format-test printf-test)
-  if (CMAKE_COMPILER_IS_GNUCXX)
+  if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set_target_properties(${target} PROPERTIES COMPILE_FLAGS
       "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
   endif ()
@@ -64,12 +64,14 @@ set_target_properties(header-only-test
   PROPERTIES COMPILE_DEFINITIONS "FMT_HEADER_ONLY=1")
 target_link_libraries(header-only-test gmock)
 
-# Test that the library can be compiled with exceptions disabled.
-check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
-if (HAVE_FNO_EXCEPTIONS_FLAG)
-  add_library(noexception-test STATIC ../format.cc)
-  set_target_properties(noexception-test
-    PROPERTIES COMPILE_FLAGS -fno-exceptions)
+if (NOT CMAKE_GENERATOR MATCHES "Visual Studio") 
+  # Test that the library can be compiled with exceptions disabled.
+  check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
+  if (HAVE_FNO_EXCEPTIONS_FLAG)
+    add_library(noexception-test STATIC ../format.cc)
+    set_target_properties(noexception-test
+      PROPERTIES COMPILE_FLAGS -fno-exceptions)
+  endif ()
 endif ()
 
 add_test(compile-test ${CMAKE_CTEST_COMMAND}

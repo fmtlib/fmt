@@ -73,6 +73,10 @@ int pipe(int *pfds, unsigned psize, int textmode);
 FILE *fopen(const char *filename, const char *mode);
 int fclose(FILE *stream);
 int fileno(FILE *stream);
+int fflush(FILE *stream);
+
+int fwrite(const void *str, size_t size, size_t count, FILE *stream);
+int fputc(int ch, FILE *stream);
 
 }  // namespace test
 
