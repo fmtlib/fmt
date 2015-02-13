@@ -19,7 +19,7 @@ add_fmt_test(format-test)
 add_fmt_test(format-impl-test CUSTOM_LINK)
 add_fmt_test(printf-test)
 foreach (target format-test printf-test)
-  if (CMAKE_COMPILER_IS_GNUCXX)
+  if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set_target_properties(${target} PROPERTIES COMPILE_FLAGS
       "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
   endif ()

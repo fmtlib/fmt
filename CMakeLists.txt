@@ -80,7 +80,7 @@ if (BIICODE)
 endif ()
 
 add_library(format ${FMT_SOURCES})
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -Wshadow -pedantic")
   if (CPP11_FLAG)
@@ -115,6 +115,49 @@ check_cxx_source_compiles("
   int main() {}" FMT_VARIADIC_TEMPLATES)
 if (NOT FMT_VARIADIC_TEMPLATES)
   add_definitions(-DGTEST_LANG_CXX11=0)
+endif ()
+
+# g++ 4.6 supports nullptr with __cplusplus==1
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=1773
+check_cxx_source_compiles("
+  int main(){int*p=nullptr;}" FMT_NULLPTR)
+if (FMT_NULLPTR)
+  add_definitions(-DFMT_USE_NULLPTR=1)
+endif ()
+
+check_cxx_source_compiles("
+  struct C{
+    C()=delete;
+    C(const C&)=delete;
+    C& operator=(const C&)=delete;
+  };
+  int main(){}" FMT_DELETED_FUNCTIONS)
+if (FMT_DELETED_FUNCTIONS)
+  add_definitions(-DFMT_USE_DELETED_FUNCTIONS=1)
+endif ()
+
+check_cxx_source_compiles("
+  void f() noexcept {}
+  int main(){ f(); }" FMT_BASIC_NOEXCEPT_SUPPORT)
+if (FMT_BASIC_NOEXCEPT_SUPPORT)
+  add_definitions(-DFMT_USE_NOEXCEPT=1)
+endif ()
+
+check_cxx_source_compiles("
+  #include <utility>
+  struct MoveOnly {
+    MoveOnly() {}
+    MoveOnly(MoveOnly&&) {}
+  private:
+    MoveOnly(const MoveOnly&);
+  };
+  int main() {
+    MoveOnly a;
+    MoveOnly b(std::move(a));
+    MoveOnly c(MoveOnly());
+  }" FMT_RVALUE_REFERENCES)
+if (FMT_RVALUE_REFERENCES)
+  add_definitions(-DFMT_USE_RVALUE_REFERENCES=1)
 endif ()
 
 # GTest doesn't detect <tuple> with clang.

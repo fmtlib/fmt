@@ -115,27 +115,25 @@
 #if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
   (FMT_GCC_VERSION >= 408 && __cplusplus >= 201103L)
 # define FMT_NOEXCEPT noexcept
-# define FMT_NOEXCEPT_EXPR(expr) noexcept(expr)
 #else
 # define FMT_NOEXCEPT throw()
-# define FMT_NOEXCEPT_EXPR(expr)
 #endif
 
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
-#if FMT_HAS_FEATURE(cxx_deleted_functions)\
+#if FMT_USE_DELETED_FUNCTIONS || FMT_HAS_FEATURE(cxx_deleted_functions)\
     || (FMT_GCC_VERSION >= 404 && __cplusplus >= 201103L)\
     || (_MSC_VER >= 1800)
 #define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&) = delete; \
-  void operator=(const TypeName&) = delete
+  TypeName& operator=(const TypeName&) = delete
 #else
 #define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&); \
-  void operator=(const TypeName&)
+  TypeName& operator=(const TypeName&)
 #endif
 
-#if FMT_HAS_FEATURE(cxx_nullptr)\
+#if FMT_USE_NULLPTR || FMT_HAS_FEATURE(cxx_nullptr)\
     || (FMT_GCC_VERSION >= 406 && __cplusplus >= 201103L)\
     || (_MSC_VER >= 1600)
 // Use nullptr
@@ -149,12 +147,11 @@ public:
     return 0;
   }
   template<typename C, typename T>
-  operator T C::*() const
-  {
+  operator T C::*() const {
     return 0;
   }
 private:
-    void operator&() const;
+  void operator&() const;
 };
 }
 
