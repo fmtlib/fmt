@@ -137,25 +137,9 @@
     || (FMT_GCC_VERSION >= 406 && __cplusplus >= 201103L)\
     || (_MSC_VER >= 1600)
 // Use nullptr
-#else
-// Simulate it
-namespace std {
-class nullptr_t {
-public:
-  template<typename T>
-  operator T*() const {
-    return 0;
-  }
-  template<typename C, typename T>
-  operator T C::*() const {
-    return 0;
-  }
-private:
-  void operator&() const;
-};
-}
-
-std::nullptr_t const nullptr = {};
+#elif !defined(nullptr)
+// Some standard library implementations define nullptr themselves such as libc++
+# define nullptr 0
 #endif
 
 namespace fmt {
