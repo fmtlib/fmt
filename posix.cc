@@ -105,12 +105,29 @@ int fmt::BufferedFile::fileno() const {
 }
 
 void fmt::BufferedFile::flush() {
-    if (!file_)
-        return;
-    // FIXME: int result = FMT_SYSTEM(fflush(file_));
-    int result = ::fflush(file_);
-    if (result != 0)
-        throw SystemError(errno, "cannot flush file");
+  if (!file_)
+    return;
+  int result = FMT_SYSTEM(fflush(file_));
+  if (result != 0)
+    throw SystemError(errno, "cannot flush file");
+}
+
+void fmt::BufferedFile::write_raw(fmt::StringRef str) {
+  if (!file_)
+    return;
+  std::size_t result = FMT_SYSTEM(fwrite(str.c_str(), str.size(), 1, file_));
+  if (result < str.size()) {
+    // FIXME: According to ```man fwrite```, fwrite won't set errno at all
+    throw SystemError(errno, "failed to write raw string, only {} character(s) written", result);
+  }
+}
+
+void fmt::BufferedFile::write_raw(char c) {
+  if (!file_)
+    return;
+  int result = FMT_SYSTEM(fputc(c, file_));
+  if (result == EOF)
+    throw SystemError(errno, "failed to write '{}'", result);
 }
 
 

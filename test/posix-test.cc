@@ -178,6 +178,18 @@ int test::fileno(FILE *stream) {
   return ::FMT_POSIX(fileno(stream));
 }
 
+int test::fflush(FILE *stream) {
+  return ::fflush(stream);
+}
+
+int test::fwrite(const void *str, size_t size, size_t count, FILE *stream) {
+  return ::fwrite(str, size, count, stream);
+}
+
+int test::fputc(int ch, FILE *stream) {
+  return ::fputc(ch, stream);
+}
+
 #ifndef _WIN32
 # define EXPECT_RETRY(statement, func, message) \
     func##_count = 1; \

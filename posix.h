@@ -197,19 +197,9 @@ public:
   void flush(); // FIXME: Should be const?
 
   // Writes raw string without formatting
-  std::size_t write_raw(fmt::StringRef str) {
-    // TODO: throw exception when failing
-    if (!is_open())
-      return 0;
-    return ::fwrite(str.c_str(), str.size(), 1, file_);
-  }
+  void write_raw(fmt::StringRef str);
   // Writes a single charactor without formatting
-  void write_raw(char c) {
-    // TODO: throw exception when failing
-    if (!is_open())
-      return;
-    ::fputc(c, file_);
-  }
+  void write_raw(char c);
 
   void print(fmt::StringRef format_str, const ArgList &args) {
     fmt::print(file_, format_str, args);
