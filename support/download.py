@@ -42,5 +42,5 @@ class Downloader:
       try:
         yield filename
       finally:
-        pass #os.remove(filename)
+        os.remove(filename)
     return remove(filename)
