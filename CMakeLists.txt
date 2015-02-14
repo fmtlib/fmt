@@ -108,12 +108,14 @@ if (NOT FMT_VARIADIC_TEMPLATES)
   add_definitions(-DGTEST_LANG_CXX11=0)
 endif ()
 
-check_cxx_source_compiles("
-  void f() noexcept {}
-  int main(){ f(); }" FMT_BASIC_NOEXCEPT_SUPPORT)
-if (FMT_BASIC_NOEXCEPT_SUPPORT)
-# add_definitions(-DFMT_USE_NOEXCEPT=1)
-endif ()
+# This is disabled at the moment because format is compiled without -std=c++11
+# by default.
+#check_cxx_source_compiles("
+#  void f() noexcept {}
+#  int main(){ f(); }" FMT_BASIC_NOEXCEPT_SUPPORT)
+#if (FMT_BASIC_NOEXCEPT_SUPPORT)
+#  add_definitions(-DFMT_USE_NOEXCEPT=1)
+#endif ()
 
 # GTest doesn't detect <tuple> with clang.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
