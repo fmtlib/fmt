@@ -117,6 +117,17 @@ endif ()
 #  add_definitions(-DFMT_USE_NOEXCEPT=1)
 #endif ()
 
+#check_cxx_source_compiles("
+#  struct C{
+#    C()=delete;
+#    C(const C&)=delete;
+#    C& operator=(const C&)=delete;
+#  };
+#  int main(){}" FMT_DELETED_FUNCTIONS)
+#if (FMT_DELETED_FUNCTIONS)
+#  add_definitions(-DFMT_USE_DELETED_FUNCTIONS=1)
+#endif ()
+
 # GTest doesn't detect <tuple> with clang.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
