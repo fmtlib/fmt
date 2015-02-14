@@ -104,7 +104,7 @@ class OutputRedirect {
 
  public:
   explicit OutputRedirect(FILE *file);
-  ~OutputRedirect() FMT_NOEXCEPT(true);
+  ~OutputRedirect() FMT_NOEXCEPT;
 
   // Restores the original file, reads output from the pipe into a string
   // and returns it.

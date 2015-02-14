@@ -75,7 +75,7 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 #endif
 }
 
-fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT(true) {
+fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT {
   if (file_ && FMT_SYSTEM(fclose(file_)) != 0)
     fmt::report_system_error(errno, "cannot close file");
 }
@@ -114,7 +114,7 @@ fmt::File::File(fmt::StringRef path, int oflag) {
     throw SystemError(errno, "cannot open file {}", path);
 }
 
-fmt::File::~File() FMT_NOEXCEPT(true) {
+fmt::File::~File() FMT_NOEXCEPT {
   // Don't retry close in case of EINTR!
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
   if (fd_ != -1 && FMT_POSIX_CALL(close(fd_)) != 0)
@@ -186,7 +186,7 @@ void fmt::File::dup2(int fd) {
   }
 }
 
-void fmt::File::dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT(true) {
+void fmt::File::dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT {
   int result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(dup2(fd_, fd)));
   if (result == -1)

@@ -62,7 +62,7 @@ OutputRedirect::OutputRedirect(FILE *file) : file_(file) {
   write_end.dup2(fd);
 }
 
-OutputRedirect::~OutputRedirect() FMT_NOEXCEPT(true) {
+OutputRedirect::~OutputRedirect() FMT_NOEXCEPT {
   try {
     restore();
   } catch (const std::exception &e) {
