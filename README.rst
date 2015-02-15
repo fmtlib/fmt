@@ -238,9 +238,8 @@ Tinyformat
 
 This library supports printf-like format strings and is very small and
 fast. Unfortunately it doesn't support positional arguments and wrapping
-it in C++98 is somewhat difficult.  However if you only need a type-safe
-printf replacement with support for user-defined types, I highly recommend
-this library.
+it in C++98 is somewhat difficult. Also its performance and code compactness
+are limited by IOStreams.
 
 Boost Spirit.Karma
 ~~~~~~~~~~~~~~~~~~
