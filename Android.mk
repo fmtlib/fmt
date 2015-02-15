@@ -13,4 +13,3 @@ LOCAL_CFLAGS += -std=c++11 -fexceptions
 
 include $(BUILD_STATIC_LIBRARY)
 
-$(call import-module,.)
