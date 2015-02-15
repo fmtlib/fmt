@@ -228,7 +228,7 @@ fmt::BufferedFile fmt::File::fdopen(const char *mode) {
 
 long fmt::getpagesize() {
 #ifdef _WIN32
-  SYSTEM_INFO si = {};
+  SYSTEM_INFO si;
   GetSystemInfo(&si);
   return si.dwPageSize;
 #else
