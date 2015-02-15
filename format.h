@@ -25,8 +25,6 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
