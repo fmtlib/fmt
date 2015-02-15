@@ -487,6 +487,11 @@ FMT_FUNC int fmt::internal::UTF16ToUTF8::convert(fmt::WStringRef s) {
   return 0;
 }
 
+# ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wshadow"
+# endif
+
 FMT_FUNC void fmt::WindowsError::init(
     int error_code, StringRef format_str, ArgList args) {
   error_code_ = error_code;
@@ -495,6 +500,10 @@ FMT_FUNC void fmt::WindowsError::init(
   std::runtime_error &base = *this;
   base = std::runtime_error(w.str());
 }
+
+# ifdef __GNUC__
+#  pragma GCC diagnostic pop
+# endif
 
 #endif
 
