@@ -56,6 +56,9 @@
 // many valid cases.
 #  pragma GCC diagnostic ignored "-Wshadow"
 # endif
+# if __cplusplus >= 201103L || defined __GXX_EXPERIMENTAL_CXX0X__
+#  define FMT_HAS_GXX_CXX11 1
+# endif
 #else
 # define FMT_GCC_EXTENSION
 #endif
@@ -84,12 +87,6 @@
 # define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
 #else
 # define FMT_HAS_CPP_ATTRIBUTE(x) 0
-#endif
-
-#ifdef __GNUC__
-# if __cplusplus >= 201103L || defined __GXX_EXPERIMENTAL_CXX0X__
-#   define FMT_HAS_GXX_CXX11 1
-# endif
 #endif
 
 #ifndef FMT_USE_VARIADIC_TEMPLATES
