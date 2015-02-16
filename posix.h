@@ -68,7 +68,8 @@
 # define FMT_UNUSED
 #endif
 
-#if FMT_USE_STATIC_ASSERT
+#if FMT_USE_STATIC_ASSERT || FMT_HAS_CPP_ATTRIBUTE(cxx_static_assert) || \
+  (FMT_GCC_VERSION >= 403 && FMT_HAS_GXX_CXX11) ||  _MSC_VER >= 1600 
 # define FMT_STATIC_ASSERT(cond, message) static_assert(cond, message)
 #else
 # define FMT_CONCAT_(a, b) FMT_CONCAT(a, b)
