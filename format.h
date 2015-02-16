@@ -1611,8 +1611,8 @@ class BasicWriter {
        Current point:
        (-3.140000, +3.140000)
 
-    The output can be accessed using :func:`data()`, :func:`c_str` or :func:`str`
-    methods.
+    The output can be accessed using :func:`data()`, :func:`c_str` or
+    :func:`str` methods.
 
     See also :ref:`syntax`.
     \endrst
