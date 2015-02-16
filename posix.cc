@@ -134,13 +134,13 @@ void fmt::File::close() {
 
 fmt::LongLong fmt::File::size() const {
 #ifdef _WIN32
-  LARGE_INTEGER size = {};
+  LARGE_INTEGER filesize = {};
   HANDLE handle = reinterpret_cast<HANDLE>(_get_osfhandle(fd_));
-  if (!FMT_SYSTEM(GetFileSizeEx(handle, &size)))
+  if (!FMT_SYSTEM(GetFileSizeEx(handle, &filesize)))
     throw WindowsError(GetLastError(), "cannot get file size");
-  FMT_STATIC_ASSERT(sizeof(fmt::LongLong) >= sizeof(size.QuadPart),
+  FMT_STATIC_ASSERT(sizeof(fmt::LongLong) >= sizeof(filesize.QuadPart),
       "return type of File::size is not large enough");
-  return size.QuadPart;
+  return filesize.QuadPart;
 #else
   typedef struct stat Stat;
   Stat file_stat = Stat();
@@ -228,7 +228,7 @@ fmt::BufferedFile fmt::File::fdopen(const char *mode) {
 
 long fmt::getpagesize() {
 #ifdef _WIN32
-  SYSTEM_INFO si = {};
+  SYSTEM_INFO si;
   GetSystemInfo(&si);
   return si.dwPageSize;
 #else
