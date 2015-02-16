@@ -44,9 +44,9 @@
 #ifndef FMT_POSIX
 # ifdef _WIN32
 // Fix warnings about deprecated symbols.
-#  define FMT_POSIX(call) _##call
+#  define FMT_POSIX(symbol) _##symbol
 # else
-#  define FMT_POSIX(call) ::call
+#  define FMT_POSIX(symbol) symbol
 # endif
 #endif
 
