@@ -59,7 +59,7 @@ Android NDK
 
 C++ Format provides `Android.mk file`__ that can be used to build the library
 with Android NDK. For an example of using C++ Format with Android NDK, see
-`android-ndk-example <https://github.com/cppformat/android-ndk-example>`_
+the `android-ndk-example <https://github.com/cppformat/android-ndk-example>`_
 repository.
 
 __ https://github.com/cppformat/cppformat/blob/master/Android.mk
