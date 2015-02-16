@@ -53,3 +53,13 @@ To build a `shared library`__ set the ``BUILD_SHARED_LIBS`` CMake variable to
   cmake -DBUILD_SHARED_LIBS=TRUE ...
 
 __ http://en.wikipedia.org/wiki/Library_%28computing%29#Shared_libraries
+
+Android NDK
+===========
+
+C++ Format provides `Android.mk file`__ that can be used to build the library
+with Android NDK. For an example of using C++ Format with Android NDK, see
+`android-ndk-example <https://github.com/cppformat/android-ndk-example>`_
+repository.
+
+__ https://github.com/cppformat/cppformat/blob/master/Android.mk
