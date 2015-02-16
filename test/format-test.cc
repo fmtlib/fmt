@@ -227,6 +227,12 @@ TEST(WriterTest, Data) {
   EXPECT_EQ("42", std::string(w.data(), w.size()));
 }
 
+TEST(WriterTest, WriteWithoutArgs) {
+  MemoryWriter w;
+  w.write("test");
+  EXPECT_EQ("test", std::string(w.data(), w.size()));
+}
+
 TEST(WriterTest, WriteInt) {
   CHECK_WRITE(42);
   CHECK_WRITE(-42);
