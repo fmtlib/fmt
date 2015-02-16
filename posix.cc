@@ -30,7 +30,7 @@
 
 #include "posix.h"
 
-#include <limits.h>
+#include <climits>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -96,10 +96,33 @@ void fmt::BufferedFile::close() {
 }
 
 int fmt::BufferedFile::fileno() const {
+  assert(file_ && "File has been closed");
   int fd = FMT_POSIX_CALL(fileno(file_));
   if (fd == -1)
     throw SystemError(errno, "cannot get file descriptor");
   return fd;
+}
+
+void fmt::BufferedFile::flush() const {
+  assert(file_ && "File has been closed");
+  if (FMT_SYSTEM(fflush(file_)) != 0) {
+    throw SystemError(errno, "cannot flush file");
+  }
+}
+
+void fmt::BufferedFile::write(fmt::StringRef str) {
+  assert(file_ && "File has been closed");
+  size_t result = FMT_SYSTEM(fwrite(str.c_str(), str.size(), 1, file_));
+  if (result < str.size()) {
+    // FIXME: Will fwrite set errno?
+    throw SystemError(errno, "failed to write raw string, only {} character(s) written", result);
+  }
+}
+
+void fmt::BufferedFile::write(char c) {
+  assert(file_ && "File has been closed");
+  if (FMT_SYSTEM(fputc(c, file_)) == EOF)
+    throw SystemError(errno, "failed to write '{}'", c);
 }
 
 fmt::File::File(fmt::StringRef path, int oflag) {

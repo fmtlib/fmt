@@ -33,6 +33,7 @@
 #include <stdio.h>
 
 #include <cstddef>
+#include <cassert>
 
 #include "format.h"
 
@@ -45,7 +46,7 @@
 // Fix warnings about deprecated symbols.
 #  define FMT_POSIX(call) _##call
 # else
-#  define FMT_POSIX(call) call
+#  define FMT_POSIX(call) ::call
 # endif
 #endif
 
@@ -53,7 +54,7 @@
 #ifdef FMT_SYSTEM
 # define FMT_POSIX_CALL(call) FMT_SYSTEM(call)
 #else
-# define FMT_SYSTEM(call) call
+# define FMT_SYSTEM(call) ::call
 # ifdef _WIN32
 // Fix warnings about deprecated symbols.
 #  define FMT_POSIX_CALL(call) ::_##call
@@ -188,12 +189,34 @@ public:
   // Returns the pointer to a FILE object representing this file.
   FILE *get() const FMT_NOEXCEPT { return file_; }
 
+  // Returns the system file number of this file
   int fileno() const;
 
+  // Flushes the buffer of this file
+  void flush() const;
+
+  // Writes raw string without formatting
+  void write(fmt::StringRef str);
+
+  // Writes a single charactor without formatting
+  void write(char c);
+
+  // Writes a new line
+  void writeln() {
+    write('\n');
+  }
+
   void print(fmt::StringRef format_str, const ArgList &args) {
+    assert(file_ && "File has been closed");
     fmt::print(file_, format_str, args);
   }
+  void printf(fmt::StringRef format_str, const ArgList &args) {
+    assert(file_ && "File has been closed");
+    fmt::fprintf(file_, format_str, args);
+  }
+
   FMT_VARIADIC(void, print, fmt::StringRef)
+  FMT_VARIADIC(void, printf, fmt::StringRef)
 };
 
 // A file. Closed file is represented by a File object with descriptor -1.
