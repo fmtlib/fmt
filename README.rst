@@ -265,9 +265,9 @@ equivalent is filled 2000000 times with output sent to ``/dev/null``; for
 further details see the `source
 <https://github.com/cppformat/format-benchmark/blob/master/tinyformat_test.cpp>`_.
 
-==============    ============ ===========
-Library           Method       Run Time, s
-==============    ============ ===========
+==============    ============= ===========
+Library           Method        Run Time, s
+==============    ============= ===========
 EGLIBC 2.19       printf          1.30
 std::ostream      operator<<      1.85
 C++ Format 1.0    fmt::print      1.42
