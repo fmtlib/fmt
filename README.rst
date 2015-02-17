@@ -269,7 +269,7 @@ further details see the `source
 Library           Method        Run Time, s
 ================= ============= ===========
 EGLIBC 2.19       printf          1.30
-std::ostream      operator<<      1.85
+libstdc++ 4.8.2   std::ostream    1.85
 C++ Format 1.0    fmt::print      1.42
 tinyformat 2.0.1  tfm::printf     2.25
 Boost Format 1.54 boost::format   9.94
