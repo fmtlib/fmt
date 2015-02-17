@@ -265,15 +265,15 @@ equivalent is filled 2000000 times with output sent to ``/dev/null``; for
 further details see the `source
 <https://github.com/cppformat/format-benchmark/blob/master/tinyformat_test.cpp>`_.
 
-==============    ============= ===========
+================= ============= ===========
 Library           Method        Run Time, s
-==============    ============= ===========
+================= ============= ===========
 EGLIBC 2.19       printf          1.30
 std::ostream      operator<<      1.85
 C++ Format 1.0    fmt::print      1.42
 tinyformat 2.0.1  tfm::printf     2.25
 Boost Format 1.54 boost::format   9.94
-================= ============= ==========
+================= ============= ===========
 
 As you can see boost::format is much slower than the alternative methods; this
 is confirmed by `other tests <http://accu.org/index.php/journals/1539>`_.
