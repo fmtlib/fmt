@@ -1,10 +1,5 @@
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
-if (POLICY CMP0054)
-  # Only interpret `if` arguments as variables or keywords when unquoted.
-  cmake_policy(SET CMP0054 NEW)
-endif ()
-
 cmake_minimum_required(VERSION 2.6)
 
 # Set the default CMAKE_BUILD_TYPE to Release.
