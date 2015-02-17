@@ -488,10 +488,10 @@ FMT_FUNC int fmt::internal::UTF16ToUTF8::convert(fmt::WStringRef s) {
 }
 
 FMT_FUNC void fmt::WindowsError::init(
-    int error_code, StringRef format_str, ArgList args) {
-  error_code_ = error_code;
+    int err_code, StringRef format_str, ArgList args) {
+  error_code_ = err_code;
   MemoryWriter w;
-  internal::format_windows_error(w, error_code, format(format_str, args));
+  internal::format_windows_error(w, err_code, format(format_str, args));
   std::runtime_error &base = *this;
   base = std::runtime_error(w.str());
 }
