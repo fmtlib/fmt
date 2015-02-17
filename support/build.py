@@ -11,10 +11,9 @@ build_command = ['msbuild', '/m:4', '/p:Config=' + os.environ['CONFIG'], 'FORMAT
 test_command = ['msbuild', 'RUN_TESTS.vcxproj']
 if build == 'mingw':
   # Install MinGW.
-  mingw_url = 'http://sourceforge.net/projects/mingw-w64/files/' + \
-    'Toolchains%20targetting%20Win64/Personal%20Builds/' + \
-    'mingw-builds/4.9.2/threads-win32/seh/' + \
-    'x86_64-4.9.2-release-win32-seh-rt_v3-rev1.7z/download'
+  mingw_url = 'http://downloads.sourceforge.net/project/mingw-w64/' + \
+    'Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/' + \
+    '4.9.2/threads-win32/seh/x86_64-4.9.2-release-win32-seh-rt_v3-rev1.7z'
   with Downloader().download(mingw_url) as f:
     check_call(['7z', 'x', '-oC:\\', f])
     
