@@ -51,7 +51,7 @@ Features
 * Clean warning-free codebase even on high warning levels
   (-Wall -Wextra -pedantic).
 * Support for wide strings.
-* Optional header-only configuration enabled with ``FMT_HEADER_ONLY``.
+* Optional header-only configuration enabled with the ``FMT_HEADER_ONLY`` macro.
 
 See the `documentation <http://cppformat.readthedocs.org/en/stable/>`_ for more details.
 
