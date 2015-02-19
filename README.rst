@@ -24,8 +24,8 @@ Features
 * Two APIs: faster concatenation-based write API and slower (but still
   very fast) replacement-based format API with positional arguments for
   localization.
-* Write API similar to the one used by IOStreams but much faster and more
-  consistent.
+* Write API similar to the one used by IOStreams but stateless allowing
+  faster implementation.
 * Format API with `format string syntax
   <http://cppformat.readthedocs.org/en/latest/syntax.html>`_
   similar to the one used by `str.format
@@ -51,6 +51,7 @@ Features
 * Clean warning-free codebase even on high warning levels
   (-Wall -Wextra -pedantic).
 * Support for wide strings.
+* Optional header-only configuration enabled with ``FMT_HEADER_ONLY``.
 
 See the `documentation <http://cppformat.readthedocs.org/en/stable/>`_ for more details.
 
