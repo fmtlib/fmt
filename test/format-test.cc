@@ -1377,15 +1377,8 @@ TEST(FormatTest, Print) {
 
 #if FMT_USE_FILE_DESCRIPTORS
 TEST(FormatTest, PrintColored) {
-#if _WIN32
-  //EXPECT_WRITE(stdout, fmt::print_colored(fmt::RED, "Hello, {}!\n", "world"),
-  //  "Hello, world!\n");
-  //EXPECT_WRITE(stdout, fmt::print_colored(static_cast<fmt::Color>(29673),
-  //  "Hello, {}!\n", "world"), "Hello, world!\n");
-#else
   EXPECT_WRITE(stdout, fmt::print_colored(fmt::RED, "Hello, {}!\n", "world"),
     "\x1b[31mHello, world!\n\x1b[0m");
-#endif
 }
 #endif
 

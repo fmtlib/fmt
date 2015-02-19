@@ -119,20 +119,7 @@ struct IntChecker<true> {
   }
 };
 
-#ifdef _WIN32
-const uint8_t WIN32_COLORS[] = {
-  0,
-  FOREGROUND_RED | FOREGROUND_INTENSITY,
-  FOREGROUND_GREEN | FOREGROUND_INTENSITY,
-  FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY,
-  FOREGROUND_BLUE | FOREGROUND_INTENSITY,
-  FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY,
-  FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
-  FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY
-};
-#else
 const char RESET_COLOR[] = "\x1b[0m";
-#endif
 
 typedef void (*FormatFunc)(fmt::Writer &, int, fmt::StringRef);
 
@@ -1111,27 +1098,11 @@ FMT_FUNC void fmt::print(std::ostream &os, StringRef format_str, ArgList args) {
 }
 
 FMT_FUNC void fmt::print_colored(Color c, StringRef format, ArgList args) {
-#ifdef _WIN32
-  HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-  if (handle == INVALID_HANDLE_VALUE)
-    FMT_THROW(WindowsError(GetLastError(), "cannot get output handle"));
-  CONSOLE_SCREEN_BUFFER_INFO info_con;
-  if (!GetConsoleScreenBufferInfo(handle, &info_con))
-    FMT_THROW(WindowsError(GetLastError(), "cannot get console information"));
-  WORD reset_color = info_con.wAttributes;
-  WORD color = static_cast<int>(c) >= ARRAYSIZE(WIN32_COLORS) ? reset_color : WIN32_COLORS[c];
-  if (!SetConsoleTextAttribute(handle, color))
-    FMT_THROW(WindowsError(GetLastError(), "cannot set console color"));
-  print(format, args);
-  if (!SetConsoleTextAttribute(handle, reset_color))
-    FMT_THROW(WindowsError(GetLastError(), "cannot set console color"));
-#else
   char escape[] = "\x1b[30m";
   escape[3] = '0' + static_cast<char>(c);
   std::fputs(escape, stdout);
   print(format, args);
   std::fputs(RESET_COLOR, stdout);
-#endif
 }
 
 FMT_FUNC int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
