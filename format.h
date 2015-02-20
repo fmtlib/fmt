@@ -43,12 +43,30 @@
 #if _SECURE_SCL
 # include <iterator>
 #endif
+
 #ifdef _MSC_VER
-# include <intrin.h> // _BitScanForward, _BitScanForward64
-# pragma intrinsic(_BitScanForward)
+# include <intrin.h>  // _BitScanReverse, _BitScanReverse64
+
+namespace fmt {
+namespace internal {
+# pragma intrinsic(_BitScanReverse)
 # ifdef _WIN64
-#  pragma intrinsic(_BitScanForward64)
+#  pragma intrinsic(_BitScanReverse64)
+inline uint32_t builtin_clzll(uint64_t n) {
+  unsigned long r = 0;
+  _BitScanReverse64(&r, x);
+  return 63 - r;
+}
+# define FMT_BUILTIN_CLZLL(n) fmt::internal::builtin_clzll(n)
 # endif
+inline uint32_t builtin_clz(uint32_t x) {
+  unsigned long r = 0;
+  _BitScanReverse(&r, x);
+  return 31 - r;
+}
+# define FMT_BUILTIN_CLZ(n) fmt::internal::builtin_clz(n)
+}
+}
 #endif
 
 #ifdef __GNUC__
@@ -546,44 +564,31 @@ struct BasicData {
 
 typedef BasicData<> Data;
 
-#if _MSC_VER
-# ifdef _WIN64
-# define FMT_EFFICIENT_COUNT_DIGITS
-inline unsigned count_digits(uint64_t n) {
-  uint32_t index;
-  assert(__BitScanForward64(&index, n | 1));
-  unsigned t = (64 - index) * 1233 >> 12;
-  return t - (n < Data::POWERS_OF_10_64[t]) + 1;
-}
-# endif
-inline unsigned count_digits(uint32_t n) {
-  uint32_t index;
-  assert(__BitScanForward(&index, n | 1));
-  unsigned t = (32 - index) * 1233 >> 12;
-  return t - (n < Data::POWERS_OF_10_32[t]) + 1;
-}
-#elif FMT_GCC_VERSION >= 400 || defined __clang__
-# if FMT_HAS_BUILTIN(__builtin_clzll)
-# define FMT_EFFICIENT_COUNT_DIGITS
+#if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
+# define FMT_BUILTIN_CLZ(n) __builtin_clzll(n)
+#endif
+
+#if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
+# define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
+#endif
+
+#ifdef FMT_BUILTIN_CLZLL
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
 inline unsigned count_digits(uint64_t n) {
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
-  unsigned t = (64 - __builtin_clzll(n | 1)) * 1233 >> 12;
+  unsigned t = (64 - FMT_BUILTIN_CLZLL(n | 1)) * 1233 >> 12;
   return t - (n < Data::POWERS_OF_10_64[t]) + 1;
 }
-# endif
-# if FMT_HAS_BUILTIN(__builtin_clz)
+# ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline unsigned count_digits(uint32_t n) {
-  uint32_t t = (32 - __builtin_clz(n | 1)) * 1233 >> 12;
+  uint32_t t = (32 - FMT_BUILTIN_CLZ(n | 1)) * 1233 >> 12;
   return t - (n < Data::POWERS_OF_10_32[t]) + 1;
 }
 # endif
-#endif
-
-#ifndef FMT_EFFICIENT_COUNT_DIGITS
+#else
 // Fallback version of count_digits used when __builtin_clz is not available.
 inline unsigned count_digits(uint64_t n) {
   unsigned count = 1;
