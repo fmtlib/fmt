@@ -43,6 +43,13 @@
 #if _SECURE_SCL
 # include <iterator>
 #endif
+#ifdef _MSC_VER
+# include <intrin.h> // _BitScanForward, _BitScanForward64
+# pragma intrinsic(_BitScanForward)
+# ifdef _WIN64
+#  pragma intrinsic(_BitScanForward64)
+# endif
+#endif
 
 #ifdef __GNUC__
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
@@ -539,7 +546,25 @@ struct BasicData {
 
 typedef BasicData<> Data;
 
-#if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
+#if _MSC_VER
+# ifdef _WIN64
+# define FMT_EFFICIENT_COUNT_DIGITS
+inline unsigned count_digits(uint64_t n) {
+  uint32_t index;
+  assert(__BitScanForward64(&index, n | 1));
+  unsigned t = (64 - index) * 1233 >> 12;
+  return t - (n < Data::POWERS_OF_10_64[t]) + 1;
+}
+# endif
+inline unsigned count_digits(uint32_t n) {
+  uint32_t index;
+  assert(__BitScanForward(&index, n | 1));
+  unsigned t = (32 - index) * 1233 >> 12;
+  return t - (n < Data::POWERS_OF_10_32[t]) + 1;
+}
+#elif FMT_GCC_VERSION >= 400 || defined __clang__
+# if FMT_HAS_BUILTIN(__builtin_clzll)
+# define FMT_EFFICIENT_COUNT_DIGITS
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
 inline unsigned count_digits(uint64_t n) {
@@ -548,14 +573,17 @@ inline unsigned count_digits(uint64_t n) {
   unsigned t = (64 - __builtin_clzll(n | 1)) * 1233 >> 12;
   return t - (n < Data::POWERS_OF_10_64[t]) + 1;
 }
-# if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
+# endif
+# if FMT_HAS_BUILTIN(__builtin_clz)
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline unsigned count_digits(uint32_t n) {
   uint32_t t = (32 - __builtin_clz(n | 1)) * 1233 >> 12;
   return t - (n < Data::POWERS_OF_10_32[t]) + 1;
 }
 # endif
-#else
+#endif
+
+#ifndef FMT_EFFICIENT_COUNT_DIGITS
 // Fallback version of count_digits used when __builtin_clz is not available.
 inline unsigned count_digits(uint64_t n) {
   unsigned count = 1;
