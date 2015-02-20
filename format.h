@@ -565,7 +565,7 @@ struct BasicData {
 typedef BasicData<> Data;
 
 #if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
-# define FMT_BUILTIN_CLZ(n) __builtin_clzll(n)
+# define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
 #endif
 
 #if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
