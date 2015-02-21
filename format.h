@@ -50,20 +50,20 @@
 namespace fmt {
 namespace internal {
 # pragma intrinsic(_BitScanReverse)
-inline uint32_t builtin_clz(uint32_t x) {
+inline uint32_t clz(uint32_t x) {
   unsigned long r = 0;
   _BitScanReverse(&r, x);
   return 31 - r;
 }
-# define FMT_BUILTIN_CLZ(n) fmt::internal::builtin_clz(n)
+# define FMT_BUILTIN_CLZ(n) fmt::internal::clz(n)
 # ifdef _WIN64
 #  pragma intrinsic(_BitScanReverse64)
-inline uint32_t builtin_clzll(uint64_t n) {
+inline uint32_t clzll(uint64_t n) {
   unsigned long r = 0;
   _BitScanReverse64(&r, x);
   return 63 - r;
 }
-# define FMT_BUILTIN_CLZLL(n) fmt::internal::builtin_clzll(n)
+# define FMT_BUILTIN_CLZLL(n) fmt::internal::clzll(n)
 # endif
 }
 }
