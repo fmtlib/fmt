@@ -581,13 +581,6 @@ inline unsigned count_digits(uint64_t n) {
   unsigned t = (64 - FMT_BUILTIN_CLZLL(n | 1)) * 1233 >> 12;
   return t - (n < Data::POWERS_OF_10_64[t]) + 1;
 }
-# ifdef FMT_BUILTIN_CLZ
-// Optional version of count_digits for better performance on 32-bit platforms.
-inline unsigned count_digits(uint32_t n) {
-  uint32_t t = (32 - FMT_BUILTIN_CLZ(n | 1)) * 1233 >> 12;
-  return t - (n < Data::POWERS_OF_10_32[t]) + 1;
-}
-# endif
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
 inline unsigned count_digits(uint64_t n) {
@@ -603,6 +596,14 @@ inline unsigned count_digits(uint64_t n) {
     n /= 10000u;
     count += 4;
   }
+}
+#endif
+
+#ifdef FMT_BUILTIN_CLZ
+// Optional version of count_digits for better performance on 32-bit platforms.
+inline unsigned count_digits(uint32_t n) {
+  uint32_t t = (32 - FMT_BUILTIN_CLZ(n | 1)) * 1233 >> 12;
+  return t - (n < Data::POWERS_OF_10_32[t]) + 1;
 }
 #endif
 
