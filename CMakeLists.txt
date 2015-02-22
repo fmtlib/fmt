@@ -28,7 +28,7 @@ else ()
 endif ()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+  "${CMAKE_CURRENT_SOURCE_DIR}/support/cmake")
 
 if (CMAKE_GENERATOR MATCHES "Visual Studio")
   # If Microsoft SDK is installed create script run-msbuild.bat that
