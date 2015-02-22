@@ -385,7 +385,7 @@ Documentation License
 ---------------------
 
 The `Format String Syntax
-<http://cppformat.readthedocs.org/en/latest/#format-string-syntax>`_
+<http://cppformat.readthedocs.org/en/latest/syntax.html>`_
 section in the documentation is based on the one from Python `string module
 documentation <http://docs.python.org/3/library/string.html#module-string>`_
 adapted for the current library. For this reason the documentation is
