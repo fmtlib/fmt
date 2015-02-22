@@ -10,7 +10,7 @@ class Date {
   }
 };
 
-int main(int argc, char *argv[]){
+int main() {
   std::string s = fmt::format("The date is {}", Date(2012, 12, 9));
   fmt::print("Hello, {}!", "world");  // uses Python-like format string syntax
   fmt::printf("\n%s", s); // uses printf format string syntax
