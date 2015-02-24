@@ -272,7 +272,7 @@ typedef BasicStringRef<wchar_t> WStringRef;
   A formatting error such as invalid format string.
 */
 class FormatError : public std::runtime_error {
-public:
+ public:
   explicit FormatError(StringRef message)
   : std::runtime_error(message.c_str()) {}
 };
@@ -772,7 +772,7 @@ class MakeValue : public Value {
            *static_cast<const T*>(arg));
   }
 
-public:
+ public:
   MakeValue() {}
 
 #define FMT_MAKE_VALUE(Type, field, TYPE) \
