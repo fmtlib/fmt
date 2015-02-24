@@ -160,3 +160,7 @@ if (EXISTS .gitignore)
   set(CPACK_RESOURCE_FILE_README ${FORMAT_SOURCE_DIR}/README.rst)
   include(CPack)
 endif ()
+
+# Install our targets
+install(TARGETS format DESTINATION lib)
+install(FILES format.h DESTINATION include)
