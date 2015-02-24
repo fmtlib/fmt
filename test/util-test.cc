@@ -700,10 +700,9 @@ void test_count_digits() {
 
 TEST(UtilTest, StringRef) {
   // Test that StringRef::size() returns string length, not buffer size.
-  enum {BUFFER_SIZE = 100};
-  char str[BUFFER_SIZE] = "some string";
+  char str[100] = "some string";
   EXPECT_EQ(std::strlen(str), StringRef(str).size());
-  EXPECT_LT(std::strlen(str), BUFFER_SIZE);
+  EXPECT_LT(std::strlen(str), sizeof(str));
 }
 
 TEST(UtilTest, CountDigits) {
