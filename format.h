@@ -738,18 +738,21 @@ struct Arg : Value {
   Type type;
 };
 
+template <typename T>
 struct None {};
 
+// A helper class template to enable or disable overloads taking wide strings
+// in MakeValue.
 template <typename T, typename Char>
 struct WStringHelper {
-  typedef None Supported;
+  typedef None<T> Supported;
   typedef T Unsupported;
 };
 
 template <typename T>
 struct WStringHelper<T, wchar_t> {
   typedef T Supported;
-  typedef None Unsupported;
+  typedef None<T> Unsupported;
 };
 
 // Makes a Value object from any type.
@@ -766,7 +769,13 @@ class MakeValue : public Value {
   template <typename T>
   MakeValue(T *value);
 
+  // The following methods are private to disallow formatting of wide
+  // strings into narrow strings as in fmt::format("{}", L"test").
+  // To fix this, use a wide format string: fmt::format(L"{}", L"test").
+  MakeValue(typename WStringHelper<wchar_t *, Char>::Unsupported);
   MakeValue(typename WStringHelper<const wchar_t *, Char>::Unsupported);
+  MakeValue(typename WStringHelper<const std::wstring &, Char>::Unsupported);
+  MakeValue(typename WStringHelper<WStringRef, Char>::Unsupported);
 
   void set_string(StringRef str) {
     string.value = str.c_str();
@@ -849,17 +858,16 @@ class MakeValue : public Value {
   FMT_MAKE_STR_VALUE(const std::string &, STRING)
   FMT_MAKE_STR_VALUE(StringRef, STRING)
 
-  MakeValue(wchar_t *value) { set_string(value); }
-  MakeValue(typename WStringHelper<const wchar_t *, Char>::Supported value) {
-    set_string(value);
-  }
-  MakeValue(const std::wstring &value) { set_string(value); }
-  MakeValue(WStringRef value) { set_string(value); }
+#define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
+  MakeValue(typename WStringHelper<Type, Char>::Supported value) { \
+    set_string(value); \
+  } \
+  static uint64_t type(Type) { return Arg::TYPE; }
 
-  static uint64_t type(wchar_t *) { return Arg::WSTRING; }
-  static uint64_t type(const wchar_t *) { return Arg::WSTRING; }
-  static uint64_t type(const std::wstring &) { return Arg::WSTRING; }
-  static uint64_t type(WStringRef) { return Arg::WSTRING; }
+  FMT_MAKE_WSTR_VALUE(wchar_t *, WSTRING)
+  FMT_MAKE_WSTR_VALUE(const wchar_t *, WSTRING)
+  FMT_MAKE_WSTR_VALUE(const std::wstring &, WSTRING)
+  FMT_MAKE_WSTR_VALUE(WStringRef, WSTRING)
 
   FMT_MAKE_VALUE(void *, pointer, POINTER)
   FMT_MAKE_VALUE(const void *, pointer, POINTER)
