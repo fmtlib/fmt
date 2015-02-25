@@ -787,7 +787,6 @@ class MakeValue : public Value {
   }
 
   void set_string(WStringRef str) {
-    CharTraits<Char>::convert(wchar_t());
     wstring.value = str.c_str();
     wstring.size = str.size();
   }
