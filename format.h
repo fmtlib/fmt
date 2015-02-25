@@ -738,6 +738,20 @@ struct Arg : Value {
   Type type;
 };
 
+struct None {};
+
+template <typename T, typename Char>
+struct WStringHelper {
+  typedef None Supported;
+  typedef T Unsupported;
+};
+
+template <typename T>
+struct WStringHelper<T, wchar_t> {
+  typedef T Supported;
+  typedef None Unsupported;
+};
+
 // Makes a Value object from any type.
 template <typename Char>
 class MakeValue : public Value {
@@ -751,6 +765,8 @@ class MakeValue : public Value {
   MakeValue(const T *value);
   template <typename T>
   MakeValue(T *value);
+
+  MakeValue(typename WStringHelper<const wchar_t *, Char>::Unsupported);
 
   void set_string(StringRef str) {
     string.value = str.c_str();
@@ -833,10 +849,17 @@ class MakeValue : public Value {
   FMT_MAKE_STR_VALUE(const std::string &, STRING)
   FMT_MAKE_STR_VALUE(StringRef, STRING)
 
-  FMT_MAKE_STR_VALUE(wchar_t *, WSTRING)
-  FMT_MAKE_STR_VALUE(const wchar_t *, WSTRING)
-  FMT_MAKE_STR_VALUE(const std::wstring &, WSTRING)
-  FMT_MAKE_STR_VALUE(WStringRef, WSTRING)
+  MakeValue(wchar_t *value) { set_string(value); }
+  MakeValue(typename WStringHelper<const wchar_t *, Char>::Supported value) {
+    set_string(value);
+  }
+  MakeValue(const std::wstring &value) { set_string(value); }
+  MakeValue(WStringRef value) { set_string(value); }
+
+  static uint64_t type(wchar_t *) { return Arg::WSTRING; }
+  static uint64_t type(const wchar_t *) { return Arg::WSTRING; }
+  static uint64_t type(const std::wstring &) { return Arg::WSTRING; }
+  static uint64_t type(WStringRef) { return Arg::WSTRING; }
 
   FMT_MAKE_VALUE(void *, pointer, POINTER)
   FMT_MAKE_VALUE(const void *, pointer, POINTER)
