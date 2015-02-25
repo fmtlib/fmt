@@ -252,6 +252,15 @@ on integer formatting than ``fmt::Writer`` on Karma's own benchmark,
 see `Fast integer to string conversion in C++
 <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 
+What Users Say
+--------------
+
+  Thanks for creating this library. It’s been a hole in C++ for a long time.
+  I’ve used both boost::format and loki::SPrintf, and neither felt like the
+  right answer. This does.
+
+  -- Kurt Haas
+
 Benchmarks
 ----------
 
