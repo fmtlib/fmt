@@ -56,10 +56,14 @@ inline uint32_t clz(uint32_t x) {
   return 31 - r;
 }
 # define FMT_BUILTIN_CLZ(n) fmt::internal::clz(n)
+
+# ifdef _WIN64
+# pragma intrinsic(_BitScanReverse64)
+# endif
+
 inline uint32_t clzll(uint64_t x) {
   unsigned long r = 0;
 # ifdef _WIN64
-#  pragma intrinsic(_BitScanReverse64)
   _BitScanReverse64(&r, x);
 # else
   // Scan the high 32 bits.
