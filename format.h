@@ -2148,7 +2148,8 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   internal::Value &arg_value = arg;
   std::basic_string<Char> str = os.str();
   arg_value = internal::MakeValue<Char>(str);
-  arg.type = static_cast<internal::Arg::Type>(internal::MakeValue<Char>::type(str));
+  arg.type = static_cast<internal::Arg::Type>(
+        internal::MakeValue<Char>::type(str));
   format_str = f.format(format_str, arg);
 }
 
@@ -2172,8 +2173,8 @@ class WindowsError : public SystemError {
    .. parsed-literal::
      *<message>*: *<system-message>*
 
-   where *<message>* is the formatted message and *<system-message>* is the system
-   message corresponding to the error code.
+   where *<message>* is the formatted message and *<system-message>* is the
+   system message corresponding to the error code.
    *error_code* is a Windows error code as given by ``GetLastError``.
    If *error_code* is not a valid error code such as -1, the system message
    will look like "error -1".
@@ -2186,8 +2187,10 @@ class WindowsError : public SystemError {
      const char *filename = "madeup";
      LPOFSTRUCT of = LPOFSTRUCT();
      HFILE file = OpenFile(filename, &of, OF_READ);
-     if (file == HFILE_ERROR)
-       throw fmt::WindowsError(GetLastError(), "cannot open file '{}'", filename);
+     if (file == HFILE_ERROR) {
+       throw fmt::WindowsError(GetLastError(),
+                               "cannot open file '{}'", filename);
+     }
    \endrst
   */
   WindowsError(int error_code, StringRef message) {
