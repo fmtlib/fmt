@@ -30,7 +30,7 @@ Features
   <http://cppformat.readthedocs.org/en/latest/syntax.html>`_
   similar to the one used by `str.format
   <http://docs.python.org/2/library/stdtypes.html#str.format>`_ in Python.
-* Complete and safe `printf implementation
+* Safe `printf implementation
   <http://cppformat.readthedocs.org/en/stable/reference.html#printf-formatting-functions>`_
   including the POSIX extension for positional arguments.
 * Support for user-defined types.
