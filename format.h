@@ -1610,9 +1610,9 @@ class BasicWriter {
   // and strings to a char stream. If you want to print a wide string as a
   // pointer as std::ostream does, cast it to const void*.
   // Do not implement!
+  void operator<<(typename internal::WCharHelper<wchar_t, Char>::Unsupported);
   void operator<<(
       typename internal::WCharHelper<const wchar_t *, Char>::Unsupported);
-  void operator<<(typename internal::WCharHelper<wchar_t, Char>::Unsupported);
 
   // Appends floating-point length specifier to the format string.
   // The second argument is only used for overload resolution.
