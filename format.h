@@ -489,8 +489,6 @@ class CharTraits<char> : public BasicCharTraits<char> {
   static char convert(wchar_t);
 
 public:
-  typedef const wchar_t *UnsupportedStrType;
-
   static char convert(char value) { return value; }
 
   // Formats a floating-point number.
@@ -502,8 +500,6 @@ public:
 template <>
 class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
  public:
-  typedef const char *UnsupportedStrType;
-
   static wchar_t convert(char value) { return value; }
   static wchar_t convert(wchar_t value) { return value; }
 
@@ -1614,9 +1610,9 @@ class BasicWriter {
   // and strings to a char stream. If you want to print a wide string as a
   // pointer as std::ostream does, cast it to const void*.
   // Do not implement!
-  void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
+  void operator<<(
+      typename internal::WCharHelper<const wchar_t *, Char>::Unsupported);
   void operator<<(typename internal::WCharHelper<wchar_t, Char>::Unsupported);
-
 
   // Appends floating-point length specifier to the format string.
   // The second argument is only used for overload resolution.
