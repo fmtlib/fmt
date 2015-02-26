@@ -745,16 +745,16 @@ struct Arg : Value {
 template <typename T>
 struct None {};
 
-// A helper class template to enable or disable overloads taking wide strings
-// in MakeValue.
+// A helper class template to enable or disable overloads taking wide
+// characters and strings in MakeValue.
 template <typename T, typename Char>
-struct WStringHelper {
+struct WCharHelper {
   typedef None<T> Supported;
   typedef T Unsupported;
 };
 
 template <typename T>
-struct WStringHelper<T, wchar_t> {
+struct WCharHelper<T, wchar_t> {
   typedef T Supported;
   typedef None<T> Unsupported;
 };
@@ -774,12 +774,14 @@ class MakeValue : public Value {
   MakeValue(T *value);
 
   // The following methods are private to disallow formatting of wide
-  // strings into narrow strings as in fmt::format("{}", L"test").
+  // characters and strings into narrow strings as in
+  //   fmt::format("{}", L"test");
   // To fix this, use a wide format string: fmt::format(L"{}", L"test").
-  MakeValue(typename WStringHelper<wchar_t *, Char>::Unsupported);
-  MakeValue(typename WStringHelper<const wchar_t *, Char>::Unsupported);
-  MakeValue(typename WStringHelper<const std::wstring &, Char>::Unsupported);
-  MakeValue(typename WStringHelper<WStringRef, Char>::Unsupported);
+  MakeValue(typename WCharHelper<wchar_t, Char>::Unsupported);
+  MakeValue(typename WCharHelper<wchar_t *, Char>::Unsupported);
+  MakeValue(typename WCharHelper<const wchar_t *, Char>::Unsupported);
+  MakeValue(typename WCharHelper<const std::wstring &, Char>::Unsupported);
+  MakeValue(typename WCharHelper<WStringRef, Char>::Unsupported);
 
   void set_string(StringRef str) {
     string.value = str.c_str();
@@ -845,8 +847,8 @@ class MakeValue : public Value {
   FMT_MAKE_VALUE(unsigned char, int_value, CHAR)
   FMT_MAKE_VALUE(char, int_value, CHAR)
 
-  MakeValue(wchar_t value) {
-    int_value = internal::CharTraits<Char>::convert(value);
+  MakeValue(typename WCharHelper<wchar_t, Char>::Supported value) {
+    int_value = value;
   }
   static uint64_t type(wchar_t) { return Arg::CHAR; }
 
@@ -862,7 +864,7 @@ class MakeValue : public Value {
   FMT_MAKE_STR_VALUE(StringRef, STRING)
 
 #define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
-  MakeValue(typename WStringHelper<Type, Char>::Supported value) { \
+  MakeValue(typename WCharHelper<Type, Char>::Supported value) { \
     set_string(value); \
   } \
   static uint64_t type(Type) { return Arg::TYPE; }
