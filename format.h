@@ -1610,11 +1610,13 @@ class BasicWriter {
   void write_str(
       const internal::Arg::StringValue<StrChar> &str, const FormatSpec &spec);
 
-  // This method is private to disallow writing a wide string to a
-  // char stream and vice versa. If you want to print a wide string
-  // as a pointer as std::ostream does, cast it to const void*.
+  // This following methods are private to disallow writing wide characters
+  // and strings to a char stream. If you want to print a wide string as a
+  // pointer as std::ostream does, cast it to const void*.
   // Do not implement!
   void operator<<(typename internal::CharTraits<Char>::UnsupportedStrType);
+  void operator<<(typename internal::WCharHelper<wchar_t, Char>::Unsupported);
+
 
   // Appends floating-point length specifier to the format string.
   // The second argument is only used for overload resolution.
@@ -1744,8 +1746,9 @@ class BasicWriter {
     return *this;
   }
 
-  BasicWriter &operator<<(wchar_t value) {
-    buffer_.push_back(internal::CharTraits<Char>::convert(value));
+  BasicWriter &operator<<(
+      typename internal::WCharHelper<wchar_t, Char>::Supported value) {
+    buffer_.push_back(value);
     return *this;
   }
 
