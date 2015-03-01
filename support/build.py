@@ -27,3 +27,4 @@ if build == 'mingw':
 
 check_call(cmake_command)
 check_call(build_command)
+check_call(test_command)
