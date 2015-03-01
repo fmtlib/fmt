@@ -1112,6 +1112,8 @@ FMT_FUNC int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
   return std::fwrite(w.data(), 1, size, f) < size ? -1 : static_cast<int>(size);
 }
 
+#ifndef FMT_HEADER_ONLY
+
 // Explicit instantiations for char.
 
 template const char *fmt::BasicFormatter<char>::format(
@@ -1150,6 +1152,8 @@ template int fmt::internal::CharTraits<wchar_t>::format_float(
 template int fmt::internal::CharTraits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, long double value);
+
+#endif  // FMT_HEADER_ONLY
 
 #if _MSC_VER
 # pragma warning(pop)
