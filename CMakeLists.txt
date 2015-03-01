@@ -99,7 +99,13 @@ check_cxx_source_compiles("
   template <class T, class ...Types>
   struct S { typedef typename S<Types...>::type type; };
   int main() {}" FMT_VARIADIC_TEMPLATES)
-if (NOT FMT_VARIADIC_TEMPLATES)
+
+# Check if initializer lists are supported.
+check_cxx_source_compiles("
+  #include <initilizer_list>
+  int main() {}" FMT_INITIALIZER_LIST)
+  
+if (NOT FMT_VARIADIC_TEMPLATES OR NOT FMT_INITIALIZER_LIST)
   add_definitions(-DGTEST_LANG_CXX11=0)
 endif ()
 
