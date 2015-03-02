@@ -32,9 +32,9 @@ arguments in the resulting string.
 
 .. doxygenfunction:: print(StringRef, ArgList)
 
-.. doxygenfunction:: print(std::FILE *, StringRef, ArgList)
+.. doxygenfunction:: print(std::FILE*, StringRef, ArgList)
 
-.. doxygenfunction:: print(std::ostream &, StringRef, ArgList)
+.. doxygenfunction:: print(std::ostream&, StringRef, ArgList)
 
 Printf formatting functions
 ===========================
@@ -45,7 +45,7 @@ a POSIX extension for positional arguments.
 
 .. doxygenfunction:: printf(StringRef, ArgList)
 
-.. doxygenfunction:: fprintf(std::FILE *, StringRef, ArgList)
+.. doxygenfunction:: fprintf(std::FILE*, StringRef, ArgList)
 
 .. doxygenfunction:: sprintf(StringRef, ArgList)
 
@@ -69,7 +69,7 @@ Write API
 
 .. doxygenfunction:: hexu
 
-.. doxygenfunction:: pad(int, unsigned, Char)
+.. doxygenfunction:: pad(int, unsigned int, Char)
 
 Utilities
 =========
