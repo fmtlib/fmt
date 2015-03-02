@@ -22,8 +22,9 @@ cmake --version
 bii init biicode_project
 mkdir -p ./biicode_project/blocks/vitaut/cppformat
 shopt -s extglob
-mv !(biicode_project|cmake-3.0.2-Darwin64-universal) ./biicode_project/blocks/vitaut/cppformat
+mv support/biicode/* biicode_project/blocks/vitaut/cppformat
+mv !(biicode_project|cmake-3.0.2-Darwin64-universal) biicode_project/blocks/vitaut/cppformat
 cd biicode_project
 bii cpp:build
 ls bin/*
-build/bin/vitaut_cppformat_support_biicode_sample
+build/bin/vitaut_cppformat_sample
