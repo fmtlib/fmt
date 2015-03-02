@@ -66,7 +66,7 @@ if (CPP11_FLAG)
 endif ()
 
 if (BIICODE)
-  include(biicode/cmake/biicode.cmake)
+  include(support/cmake/biicode.cmake)
   return()
 endif ()
 
