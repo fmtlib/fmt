@@ -11,7 +11,7 @@ environment:
     CONFIG: Release
 
 build_script:
-  - python support/build.py
+  - python support/appveyor-build.py
 
 on_failure:
   - appveyor PushArtifact Testing/Temporary/LastTest.log
