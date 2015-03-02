@@ -11,7 +11,7 @@ function(add_fmt_test name)
   if (NOT add_fmt_test_CUSTOM_LINK)
     target_link_libraries(${name} format)
   endif ()
-  add_test(${name} ${name})
+  add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
 add_fmt_test(gtest-extra-test)
@@ -55,7 +55,7 @@ if (HAVE_OPEN)
   set_target_properties(posix-test
     PROPERTIES COMPILE_DEFINITIONS "FMT_INCLUDE_POSIX_TEST=1")
   target_link_libraries(posix-test gmock)
-  add_test(posix-test posix-test)
+  add_test(NAME posix-test COMMAND posix-test)
 endif ()
 
 add_executable(header-only-test
