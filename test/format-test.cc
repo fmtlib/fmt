@@ -461,6 +461,42 @@ TEST(WriterTest, WWriter) {
   EXPECT_EQ(L"cafe", (fmt::WMemoryWriter() << fmt::hex(0xcafe)).str());
 }
 
+TEST(ArrayWriterTest, Ctor) {
+  char array[10] = "garbage";
+  fmt::ArrayWriter w(array, sizeof(array));
+  EXPECT_EQ(0u, w.size());
+  EXPECT_STREQ("", w.c_str());
+}
+
+TEST(ArrayWriterTest, CompileTimeSizeCtor) {
+  char array[10] = "garbage";
+  fmt::ArrayWriter w(array);
+  EXPECT_EQ(0u, w.size());
+  EXPECT_STREQ("", w.c_str());
+  w.write("{:10}", 1);
+}
+
+TEST(ArrayWriterTest, Write) {
+  char array[10];
+  fmt::ArrayWriter w(array, sizeof(array));
+  w.write("{}", 42);
+  EXPECT_EQ("42", w.str());
+}
+
+TEST(ArrayWriterTest, BufferOverflow) {
+  char array[10];
+  fmt::ArrayWriter w(array, sizeof(array));
+  w.write("{:10}", 1);
+  EXPECT_THROW_MSG(w.write("{}", 1), std::runtime_error, "buffer overflow");
+}
+
+TEST(ArrayWriterTest, WChar) {
+  wchar_t array[10];
+  fmt::WArrayWriter w(array);
+  w.write(L"{}", 42);
+  EXPECT_EQ(L"42", w.str());
+}
+
 TEST(FormatterTest, Escape) {
   EXPECT_EQ("{", format("{{"));
   EXPECT_EQ("before {", format("before {{"));

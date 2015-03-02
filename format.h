@@ -436,6 +436,19 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
     this->deallocate(old_ptr, old_capacity);
 }
 
+// A fixed-size buffer.
+template <typename Char>
+class FixedBuffer : public fmt::internal::Buffer<Char> {
+ public:
+  FixedBuffer(Char *array, std::size_t size)
+    : fmt::internal::Buffer<Char>(array, size) {}
+
+ protected:
+  void grow(std::size_t size) {
+    throw std::runtime_error("buffer overflow");
+  }
+};
+
 #ifndef _MSC_VER
 // Portable version of signbit.
 inline int getsign(double x) {
@@ -2111,20 +2124,20 @@ void BasicWriter<Char>::write_double(
 
 /**
   \rst
-  This template provides operations for formatting and writing data into
-  a character stream. The output is stored in a memory buffer that grows
+  This class template provides operations for formatting and writing data
+  into a character stream. The output is stored in a memory buffer that grows
   dynamically.
 
   You can use one of the following typedefs for common character types
   and the standard allocator:
 
-  +---------------+-----------------------------------------------+
-  | Type          | Definition                                    |
-  +===============+===============================================+
-  | MemoryWriter  | BasicWriter<char, std::allocator<char>>       |
-  +---------------+-----------------------------------------------+
-  | WMemoryWriter | BasicWriter<wchar_t, std::allocator<wchar_t>> |
-  +---------------+-----------------------------------------------+
+  +---------------+-----------------------------------------------------+
+  | Type          | Definition                                          |
+  +===============+=====================================================+
+  | MemoryWriter  | BasicMemoryWriter<char, std::allocator<char>>       |
+  +---------------+-----------------------------------------------------+
+  | WMemoryWriter | BasicMemoryWriter<wchar_t, std::allocator<wchar_t>> |
+  +---------------+-----------------------------------------------------+
 
   **Example**::
 
@@ -2173,6 +2186,55 @@ class BasicMemoryWriter : public BasicWriter<Char> {
 
 typedef BasicMemoryWriter<char> MemoryWriter;
 typedef BasicMemoryWriter<wchar_t> WMemoryWriter;
+
+/**
+  \rst
+  This class template provides operations for formatting and writing data
+  into a fixed-size array. For writing into a dynamically growing buffer
+  use :class:`fmt::BasicMemoryWriter`.
+  
+  Any write method will throw std::runtime_error if the output doesn't fit
+  into the array.
+
+  You can use one of the following typedefs for common character types:
+
+  +--------------+---------------------------+
+  | Type         | Definition                |
+  +==============+===========================+
+  | ArrayWriter  | BasicArrayWriter<char>    |
+  +--------------+---------------------------+
+  | WArrayWriter | BasicArrayWriter<wchar_t> |
+  +--------------+---------------------------+
+  \endrst
+ */
+template <typename Char>
+class BasicArrayWriter : public BasicWriter<Char> {
+ private:
+  internal::FixedBuffer<Char> buffer_;
+
+ public:
+  /**
+   \rst
+   Constructs a :class:`fmt::BasicArrayWriter` object for *array* of the
+   given size.
+   \endrst
+   */
+  BasicArrayWriter(Char *array, std::size_t size)
+    : BasicWriter<Char>(buffer_), buffer_(array, size) {}
+
+  /**
+   \rst
+   Constructs a :class:`fmt::BasicArrayWriter` object for *array* of the
+   size known at compile time.
+   \endrst
+   */
+  template <std::size_t SIZE>
+  explicit BasicArrayWriter(Char (&array)[SIZE])
+    : BasicWriter<Char>(buffer_), buffer_(array, SIZE) {}
+};
+
+typedef BasicArrayWriter<char> ArrayWriter;
+typedef BasicArrayWriter<wchar_t> WArrayWriter;
 
 // Formats a value.
 template <typename Char, typename T>
