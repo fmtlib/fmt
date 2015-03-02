@@ -26,5 +26,4 @@ mv !(biicode_project|cmake-3.0.2-Darwin64-universal) ./biicode_project/blocks/vi
 cd biicode_project
 bii cpp:build
 ls bin/*
-./bin/vitaut_cppformat_biicode_samples_basic
-
+build/bin/vitaut_cppformat_biicode_samples_basic
