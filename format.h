@@ -2165,15 +2165,19 @@ class BasicMemoryWriter : public BasicWriter<Char> {
 
 #if FMT_USE_RVALUE_REFERENCES
   /**
+    \rst
     Constructs a :class:`fmt::BasicMemoryWriter` object moving the content
     of the other object to it.
+    \endrst
    */
   BasicMemoryWriter(BasicMemoryWriter &&other)
     : BasicWriter<Char>(buffer_), buffer_(std::move(other.buffer_)) {
   }
 
   /**
+    \rst
     Moves the content of the other ``BasicMemoryWriter`` object to this one.
+    \endrst
    */
   BasicMemoryWriter &operator=(BasicMemoryWriter &&other) {
     buffer_ = std::move(other.buffer_);
@@ -2191,7 +2195,7 @@ typedef BasicMemoryWriter<wchar_t> WMemoryWriter;
   into a fixed-size array. For writing into a dynamically growing buffer
   use :class:`fmt::BasicMemoryWriter`.
   
-  Any write method will throw std::runtime_error if the output doesn't fit
+  Any write method will throw ``std::runtime_error`` if the output doesn't fit
   into the array.
 
   You can use one of the following typedefs for common character types:
