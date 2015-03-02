@@ -612,6 +612,11 @@ class fmt::internal::ArgFormatter :
 };
 
 template <typename Char>
+void fmt::internal::FixedBuffer<Char>::grow(std::size_t) {
+  FMT_THROW(std::runtime_error("buffer overflow"));
+}
+
+template <typename Char>
 template <typename StrChar>
 void fmt::BasicWriter<Char>::write_str(
     const Arg::StringValue<StrChar> &s, const FormatSpec &spec) {
@@ -1116,6 +1121,8 @@ FMT_FUNC int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
 
 // Explicit instantiations for char.
 
+template void fmt::internal::FixedBuffer<char>::grow(std::size_t);
+
 template const char *fmt::BasicFormatter<char>::format(
     const char *&format_str, const fmt::internal::Arg &arg);
 
@@ -1134,6 +1141,8 @@ template int fmt::internal::CharTraits<char>::format_float(
     unsigned width, int precision, long double value);
 
 // Explicit instantiations for wchar_t.
+
+template void fmt::internal::FixedBuffer<wchar_t>::grow(std::size_t);
 
 template const wchar_t *fmt::BasicFormatter<wchar_t>::format(
     const wchar_t *&format_str, const fmt::internal::Arg &arg);

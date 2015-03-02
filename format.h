@@ -444,9 +444,7 @@ class FixedBuffer : public fmt::internal::Buffer<Char> {
     : fmt::internal::Buffer<Char>(array, size) {}
 
  protected:
-  void grow(std::size_t size) {
-    throw std::runtime_error("buffer overflow");
-  }
+  void grow(std::size_t size);
 };
 
 #ifndef _MSC_VER
