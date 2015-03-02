@@ -26,5 +26,3 @@ mv support/biicode/* biicode_project/blocks/vitaut/cppformat
 mv !(biicode_project|cmake-3.0.2-Darwin64-universal) biicode_project/blocks/vitaut/cppformat
 cd biicode_project
 bii cpp:build
-ls bin/*
-build/bin/vitaut_cppformat_sample
