@@ -58,6 +58,9 @@ Write API
 .. doxygenclass:: fmt::BasicMemoryWriter
    :members:
 
+.. doxygenclass:: fmt::BasicArrayWriter
+   :members:
+
 .. doxygenfunction:: bin
 
 .. doxygenfunction:: oct
