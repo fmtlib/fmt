@@ -31,5 +31,5 @@ shutil.copytree('.', cppformat_dir,
 for f in glob.glob('support/biicode/*'):
   shutil.copy(f, cppformat_dir)
 print env['CMAKE_ROOT']
-check_call(['cmake', '--version', project_dir], env=env)
+check_call(['cmake', '--version'], env=env)
 #check_call(['bii', 'cpp:build'], cwd=project_dir, env=env)
