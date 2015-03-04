@@ -19,14 +19,15 @@ elif os_name == 'osx':
   with Downloader().download('http://www.biicode.com/downloads/latest/macos') as f:
     check_call(['sudo', 'installer', '-pkg', f, '-target', '/'])
 
+env = os.environ.copy()
+env['PATH'] = os.path.abspath(os.path.dirname(cmake_program)) + ':' + env['PATH']
+env['CMAKE_ROOT'] = os.path.abspath(cmake_dir)
+
 project_dir = 'biicode_project'
-check_call(['bii', 'init', project_dir])
+check_call(['bii', 'init', project_dir], env=env)
 cppformat_dir = os.path.join(project_dir, 'blocks/vitaut/cppformat')
 shutil.copytree('.', cppformat_dir,
                 ignore=shutil.ignore_patterns('biicode_project', cmake_dir))
 for f in glob.glob('support/biicode/*'):
   shutil.copy(f, cppformat_dir)
-env = os.environ.copy()
-env['PATH'] = os.path.abspath(os.path.dirname(cmake_program)) + ':' + env['PATH']
-env['CMAKE_ROOT'] = os.path.abspath(cmake_dir)
 check_call(['bii', 'cpp:build'], cwd=project_dir, env=env)
