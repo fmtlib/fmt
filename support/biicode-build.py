@@ -9,7 +9,7 @@ os_name = os.environ['TRAVIS_OS_NAME']
 if os_name == 'linux':
   # Install newer version of CMake.
   bootstrap.install_cmake(
-    'cmake-3.1.1-Linux-i386.tar.gz', check_installed=False, download_dir=None, install_dir='.')
+    'cmake-3.1.1-Linux-i386.tar.gz', check_installed=False, download_dir=None)
   with Downloader().download('http://www.biicode.com/downloads/latest/ubuntu64') as f:
     check_call(['sudo', 'dpkg', '-i', f])
 elif os_name == 'osx':
