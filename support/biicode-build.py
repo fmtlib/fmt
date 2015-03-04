@@ -27,5 +27,5 @@ shutil.copytree('.', cppformat_dir,
 for f in glob.glob('support/biicode/*'):
   shutil.copy(f, cppformat_dir)
 env = os.environ.copy()
-env['PATH'] = os.path.dirname(cmake_program) + ':' + env['PATH']
+env['PATH'] = os.path.abspath(os.path.dirname(cmake_program)) + ':' + env['PATH']
 check_call(['bii', 'cpp:build'], cwd=project_dir, env=env)
