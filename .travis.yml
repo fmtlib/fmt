@@ -5,9 +5,6 @@ os:
   - osx
 
 before_install:
-  - if [ $TRAVIS_OS_NAME == osx ]; then curl http://www.cmake.org/files/v3.0/cmake-3.0.2-Darwin64-universal.tar.gz -o cmake.tar.gz; fi
-  - if [ $TRAVIS_OS_NAME == osx ]; then tar xzf cmake.tar.gz; fi
-  - if [ $TRAVIS_OS_NAME == osx ]; then export PATH=$PATH:"cmake-3.0.2-Darwin64-universal/CMake.app/Contents/bin"; fi
   - git submodule update --init
 
 env:
