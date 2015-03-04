@@ -94,7 +94,7 @@ def install_cmake(package, **kwargs):
   if platform.system() == 'Darwin':
     dir = glob.glob(os.path.join(dir, 'CMake*.app', 'Contents'))[0]
   cmake_path = os.path.join(dir, 'bin', 'cmake')
-  if install_dir != '.' and kwargs.get('add_to_path', True):
+  if install_dir != '.':
     add_to_path(cmake_path)
   return cmake_path
 

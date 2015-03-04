@@ -11,8 +11,8 @@ cmake_program = 'cmake'
 if os_name == 'linux':
   # Install newer version of CMake.
   cmake_program = bootstrap.install_cmake(
-    'cmake-3.1.1-Linux-i386.tar.gz', check_installed=False,
-    download_dir=None, install_dir=cmake_dir, add_to_path=False)
+    'cmake-3.1.1-Linux-i386.tar.gz', check_installed=False, download_dir=None, install_dir='.')
+  cmake_dir = glob.glob('cmake*')[0]
   with Downloader().download('http://www.biicode.com/downloads/latest/ubuntu64') as f:
     check_call(['sudo', 'dpkg', '-i', f])
 elif os_name == 'osx':
