@@ -369,7 +369,7 @@ or the bloat test::
 License
 -------
 
-Copyright (c) 2012, Victor Zverovich
+Copyright (c) 2012 - 2015, Victor Zverovich
 
 All rights reserved.
 
