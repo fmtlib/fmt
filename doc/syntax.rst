@@ -60,7 +60,7 @@ Format Specification Mini-Language
 
 "Format specifications" are used within replacement fields contained within a
 format string to define how individual values are presented (see
-:ref:`formatstrings`).  Each formattable type may define how the format
+:ref:`syntax`).  Each formattable type may define how the format
 specification is to be interpreted.
 
 Most built-in types implement the following options for format specifications,
