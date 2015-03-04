@@ -20,7 +20,7 @@ script:
   - make -j4
   - CTEST_OUTPUT_ON_FAILURE=1 make test
   - cd .. && rm -rf build/
-  - sudo support/biicode-build.py
+#  - support/biicode-build.py
 
 after_failure:
   - cat Testing/Temporary/LastTest.log
