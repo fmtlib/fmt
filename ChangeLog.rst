@@ -1,3 +1,25 @@
+0.11.0 - 2014-08-21
+-------------------
+
+* Safe printf implementation with a POSIX extension for positional arguments:
+
+  .. code:: c++
+
+    fmt::printf("Elapsed time: %.2f seconds", 1.23);
+    fmt::printf("%1$s, %3$d %2$s", weekday, month, day);
+
+* Arguments of ``char`` type can now be formatted as integers
+  (https://github.com/cppformat/cppformat/issues/55):
+
+  .. code:: c++
+
+    fmt::format("0x{0:02X}", 'a');
+
+* Deprecated parts of the API removed.
+
+* The library is now built and tested on MinGW with Appveyor in addition to
+  existing test platforms Linux/GCC, OS X/Clang, Windows/MSVC.
+
 0.10.0 - 2014-07-01
 -------------------
 
@@ -118,8 +140,7 @@
   "Failed to open file '<filename>': No such file or directory" if file
   doesn't exist.
 
-* Support for `AppVeyor <https://ci.appveyor.com/project/vitaut/cppformat>`_
-  continuous integration platform.
+* Support for AppVeyor continuous integration platform.
 
 * ``Format`` now throws ``SystemError`` in case of I/O errors.
 
