@@ -9,7 +9,7 @@
     fmt::printf("%1$s, %3$d %2$s", weekday, month, day);
 
 * Arguments of ``char`` type can now be formatted as integers
-  (Issue `https://github.com/cppformat/cppformat/issues/55 #55`_):
+  (Issue `#55 <https://github.com/cppformat/cppformat/issues/55>`_):
 
   .. code:: c++
 
@@ -78,7 +78,7 @@
   Now all public functions are lowercase following the standard library
   conventions. Previously it was a combination of lowercase and
   CapitalizedWords.
-  Issue `https://github.com/cppformat/cppformat/issues/50 #50`_.
+  Issue `#50 <https://github.com/cppformat/cppformat/issues/50>`_.
 
 * Old functions are marked as deprecated and will be removed in the next
   release.
