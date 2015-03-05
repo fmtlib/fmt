@@ -1,3 +1,56 @@
+0.12.0 - 2014-10-25
+-------------------
+
+* [Breaking] Improved separation between formatting and buffer management.
+  ``Writer`` is now a base class that cannot be instantiated directly.
+  The new ``MemoryWriter`` class implements the default buffer management
+  with small allocations done on stack. So ``fmt::Writer`` should be replaced
+  with ``fmt::MemoryWriter`` in variable declarations.
+
+  Old code:
+
+  .. code:: c++
+
+    fmt::Writer w;
+
+  New code: 
+
+  .. code:: c++
+
+    fmt::MemoryWriter w;
+
+  If you pass ``fmt::Writer`` by reference, you can continue to do so:
+
+  .. code:: c++
+
+      void f(fmt::Writer &w);
+
+  This doesn't affect the formatting API.
+
+* Support for custom memory allocators
+  (`#69 <https://github.com/cppformat/cppformat/issues/69>`_)
+
+* Formatting functions now accept `signed char` and `unsigned char` strings as
+  arguments (`#73 <https://github.com/cppformat/cppformat/issues/73>`_):
+
+  .. code:: c++
+
+    auto s = format("GLSL version: {}", glGetString(GL_VERSION));
+
+* Reduced code bloat. According to the new `benchmark results
+  <https://github.com/cppformat/cppformat#compile-time-and-code-bloat>`_,
+  cppformat is close to ``printf`` and by the order of magnitude better than
+  Boost Format in terms of compiled code size.
+
+* Improved appearance of the documentation on mobile by using the `Sphinx
+  Bootstrap theme <http://ryan-roemer.github.io/sphinx-bootstrap-theme/`_:
+
+  Old
+  .. image:: https://cloud.githubusercontent.com/assets/576385/4792130/cd256436-5de3-11e4-9a62-c077d0c2b003.png
+
+  New
+  .. image:: https://cloud.githubusercontent.com/assets/576385/4792131/cd29896c-5de3-11e4-8f59-cac952942bf0.png
+
 0.11.0 - 2014-08-21
 -------------------
 
