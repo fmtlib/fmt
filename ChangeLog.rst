@@ -8,8 +8,7 @@
     fmt::printf("Elapsed time: %.2f seconds", 1.23);
     fmt::printf("%1$s, %3$d %2$s", weekday, month, day);
 
-* Arguments of ``char`` type can now be formatted as integers
-  (https://github.com/cppformat/cppformat/issues/55):
+* Arguments of ``char`` type can now be formatted as integers (#55):
 
   .. code:: c++
 
@@ -77,7 +76,7 @@
 * Improved consistency in naming functions that are a part of the public API.
   Now all public functions are lowercase following the standard library
   conventions. Previously it was a combination of lowercase and
-  CapitalizedWords. Issue https://github.com/cppformat/cppformat/issues/50.
+  CapitalizedWords. Issue #50.
 
 * Old functions are marked as deprecated and will be removed in the next
   release.
