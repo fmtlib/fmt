@@ -1,3 +1,49 @@
+1.0.0 - 2015-02-05
+------------------
+
+* Add support for a header-only configuration when ``FMT_HEADER_ONLY`` is
+  defined before including ``format.h``:
+
+  .. code:: c++
+
+    #define FMT_HEADER_ONLY
+    #include "format.h"
+
+* Compute string length in the constructor of ``BasicStringRef``
+  instead of the ``size`` method
+  (`#79 <https://github.com/cppformat/cppformat/issues/79>`_).
+  This eliminates size computation for string literals on reasonable optimizing
+  compilers.
+
+* Fix formatting of types with overloaded ``operator <<`` for ``std::wostream``
+  (`#86 <https://github.com/cppformat/cppformat/issues/86>`_):
+
+  .. code:: c++
+
+    fmt::format(L"The date is {0}", Date(2012, 12, 9));
+
+* Fix linkage of tests on Arch Linux
+  (`#89 <https://github.com/cppformat/cppformat/issues/89>`_).
+
+* Allow precision specifier for non-float arguments
+  (`#90 <https://github.com/cppformat/cppformat/issues/90>`_):
+
+  .. code:: c++
+
+    fmt::print("{:.3}\n", "Carpet"); // prints "Car"
+
+* Fix build on Android NDK
+  (`#93 <https://github.com/cppformat/cppformat/issues/93>`_)
+
+* Improvements to documentation build procedure.
+
+* Remove ``FMT_SHARED`` CMake variable in favor of standard `BUILD_SHARED_LIBS
+  <http://www.cmake.org/cmake/help/v3.0/variable/BUILD_SHARED_LIBS.html>`_.
+
+* Fix error handling in ``fmt::fprintf``.
+
+* Fix a number of warnings.
+
 0.12.0 - 2014-10-25
 -------------------
 
