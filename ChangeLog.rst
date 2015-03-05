@@ -91,9 +91,11 @@
 * Improved appearance of the documentation on mobile by using the `Sphinx
   Bootstrap theme <http://ryan-roemer.github.io/sphinx-bootstrap-theme/>`_:
 
-  .. |old| image:: https://cloud.githubusercontent.com/assets/576385/4792130/cd256436-5de3-11e4-9a62-c077d0c2b003.png
+  .. |old| image:: https://cloud.githubusercontent.com/assets/576385/4792130/
+                   cd256436-5de3-11e4-9a62-c077d0c2b003.png
 
-  .. |new| image:: https://cloud.githubusercontent.com/assets/576385/4792131/cd29896c-5de3-11e4-8f59-cac952942bf0.png
+  .. |new| image:: https://cloud.githubusercontent.com/assets/576385/4792131/
+                   cd29896c-5de3-11e4-8f59-cac952942bf0.png
   
   +-------+-------+
   |  Old  |  New  |
