@@ -42,8 +42,9 @@
   cppformat is close to ``printf`` and by the order of magnitude better than
   Boost Format in terms of compiled code size.
 
-* Improved appearance of the documentation on mobile by using the `Sphinx
-  Bootstrap theme <http://ryan-roemer.github.io/sphinx-bootstrap-theme/`_:
+* Improved appearance of the documentation on mobile by using the
+  `Sphinx Bootstrap theme
+  <http://ryan-roemer.github.io/sphinx-bootstrap-theme/`_:
 
   .. |old| image:: https://cloud.githubusercontent.com/assets/576385/4792130/cd256436-5de3-11e4-9a62-c077d0c2b003.png
 
