@@ -1,3 +1,84 @@
+0.10.0 - 2014-07-01
+-------------------
+
+**Improved API**
+
+* All formatting methods are now implemented as variadic functions instead
+  of using ``operator<<`` for feeding arbitrary arguments into a temporary
+  formatter object. This works both with C++11 where variadic templates are
+  used and with older standards where variadic functions are emulated by
+  providing lightweight wrapper functions defined with the ``FMT_VARIADIC``
+  macro. You can use this macro for defining your own portable variadic
+  functions:
+
+  .. code:: c++
+
+    void report_error(const char *format, const fmt::ArgList &args) {
+      fmt::print("Error: {}");
+      fmt::print(format, args);
+    }
+    FMT_VARIADIC(void, report_error, const char *)
+
+    report_error("file not found: {}", path);
+
+  Apart from a more natural syntax, this also improves performance as there
+  is no need to construct temporary formatter objects and control arguments'
+  lifetimes. Because the wrapper functions are very ligthweight, this doesn't
+  cause code bloat even in pre-C++11 mode.
+
+* Simplified common case of formatting an ``std::string``. Now it requires a
+  single function call:
+
+  .. code:: c++
+
+    std::string s = format("The answer is {}.", 42);
+
+  Previously it required 2 function calls:
+
+  .. code:: c++
+
+    std::string s = str(Format("The answer is {}.") << 42);
+
+  Instead of unsafe ``c_str`` function, ``fmt::Writer`` should be used directly
+  to bypass creation of ``std::string``:
+
+  .. code:: c++
+
+    fmt::Writer w;
+    w.write("The answer is {}.", 42);
+    w.c_str();  // returns a C string
+
+  This doesn't do dynamic memory allocation for small strings and is less error
+  prone as the lifetime of the string is the same as for ``std::string::c_str``
+  which is well understood (hopefully).
+
+* Improved consistency in naming functions that are a part of the public API.
+  Now all public functions are lowercase following the standard library
+  conventions. Previously it was a combination of lowercase and
+  CapitalizedWords. Issue https://github.com/cppformat/cppformat/issues/50.
+
+* Old functions are marked as deprecated and will be removed in the next
+  release.
+
+**Other Changes**
+
+* Experimental support for printf format specifications (work in progress):
+
+  .. code:: c++
+
+    fmt::printf("The answer is %d.", 42);
+    std::string s = fmt::sprintf("Look, a %s!", "string");
+
+* Support for hexadecimal floating point format specifiers ``a`` and ``A``:
+
+  .. code:: c++
+
+    print("{:a}", -42.0); // Prints -0x1.5p+5
+    print("{:A}", -42.0); // Prints -0X1.5P+5
+
+* CMake option ``FMT_SHARED`` that specifies whether to build format as a
+  shared library (off by default).
+
 0.9.0 - 2014-05-13
 ------------------
 
