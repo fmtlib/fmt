@@ -4,9 +4,18 @@
 * Added `0 A.D. <http://play0ad.com/>`_ and `PenUltima Online (POL)
   <http://www.polserver.com/>`_ to the list of notable projects using C++ Format.
 
-* C++ Format now uses MSVC intrinsics for better formatting performance.
+* C++ Format now uses MSVC intrinsics for better formatting performance
+  (`#116 <https://github.com/cppformat/cppformat/pull/116>`_,
+  `#118 <https://github.com/cppformat/cppformat/pull/118>`_ and
+  `#121 <https://github.com/cppformat/cppformat/pull/121>`).
   Previously these optimizations where only used on GCC and Clang.
-  Thanks to `@CarterLi <https://github.com/CarterLi>`_.
+  Thanks to `@CarterLi <https://github.com/CarterLi>`_ and
+  `@objectx <https://github.com/objectx>`_.
+
+* CMake install target (`#119 <https://github.com/cppformat/cppformat/pull/119>`_).
+  Thanks to `@TrentHouliston <https://github.com/TrentHouliston>`_.
+
+  You can now install C++ Format with ``make install`` command.
 
 * Improved `Biicode <http://www.biicode.com/>`_ support
   (`#98 <https://github.com/cppformat/cppformat/pull/98>`_ and
@@ -33,6 +42,9 @@
   `#111 <https://github.com/cppformat/cppformat/pull/111>`_
   `#112 <https://github.com/cppformat/cppformat/pull/112>`_).
   Thanks to `@CarterLi <https://github.com/CarterLi>`_.
+
+* Improved compile-time errors when formatting wide into narrow strings
+  (`#117 <https://github.com/cppformat/cppformat/issues/117>`_).
 
 * Fixed ``BasicWriter::write`` without formatting arguments when C++11 support
   is disabled (`#109 <https://github.com/cppformat/cppformat/issues/109>`_).
