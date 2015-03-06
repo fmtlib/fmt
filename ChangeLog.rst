@@ -7,7 +7,7 @@
 * C++ Format now uses MSVC intrinsics for better formatting performance
   (`#116 <https://github.com/cppformat/cppformat/pull/116>`_,
   `#118 <https://github.com/cppformat/cppformat/pull/118>`_ and
-  `#121 <https://github.com/cppformat/cppformat/pull/121>`).
+  `#121 <https://github.com/cppformat/cppformat/pull/121>`_).
   Previously these optimizations where only used on GCC and Clang.
   Thanks to `@CarterLi <https://github.com/CarterLi>`_ and
   `@objectx <https://github.com/objectx>`_.
