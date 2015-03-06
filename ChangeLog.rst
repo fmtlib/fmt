@@ -1,5 +1,5 @@
-1.1.0 - TBD
------------
+1.1.0 - 2015-03-06
+------------------
 
 * Added ``BasicArrayWriter``, a class template that provides operations for
   formatting and writing data into a fixed-size array
