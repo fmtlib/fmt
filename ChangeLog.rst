@@ -1,3 +1,24 @@
+1.1.0 - TBD
+-----------
+
+* Added `0 A.D. <http://play0ad.com/>`_ to the list of notable projects using
+  C++ Format.
+
+* Improved `Biicode <http://www.biicode.com/>`_ support
+  (`#98 <https://github.com/cppformat/cppformat/pull/98>`_ and
+  `#104 <https://github.com/cppformat/cppformat/pull/104>`_). Thanks to
+  `@MariadeAnton <https://github.com/MariadeAnton>`_ and
+  `@franramirez688 <https://github.com/franramirez688>`_.
+
+* Provided examples of using ``SystemError`` and ``WindowsError``
+  (`#54 <https://github.com/cppformat/cppformat/issues/54>`_).
+
+* Fixed packaging issues (`#94 <https://github.com/cppformat/cppformat/issues/94>`_).
+
+* Fixed warnings in MSVC and Xcode
+  (`#95 <https://github.com/cppformat/cppformat/issues/95>`_ and
+  `#96 <https://github.com/cppformat/cppformat/issues/96>`_).
+
 1.0.0 - 2015-02-05
 ------------------
 
