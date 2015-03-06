@@ -16,7 +16,8 @@
   <http://www.polserver.com/>`_ to the list of notable projects using C++ Format.
 
 * C++ Format now uses MSVC intrinsics for better formatting performance
-  (`#116 <https://github.com/cppformat/cppformat/pull/116>`_,
+  (`#115 <https://github.com/cppformat/cppformat/pull/115>`_
+  `#116 <https://github.com/cppformat/cppformat/pull/116>`_,
   `#118 <https://github.com/cppformat/cppformat/pull/118>`_ and
   `#121 <https://github.com/cppformat/cppformat/pull/121>`_).
   Previously these optimizations where only used on GCC and Clang.
