@@ -4,7 +4,7 @@
 * Added `0 A.D. <http://play0ad.com/>`_ and `PenUltima Online (POL)
   <http://www.polserver.com/>`_ to the list of notable projects using C++ Format.
 
-* C++ Format now uses MSVC intrinsic for better performance on Windows.
+* C++ Format now uses MSVC intrinsics for better formatting performance.
   Previously these optimizations where only used on GCC and Clang.
   Thanks to `@CarterLi <https://github.com/CarterLi>`_.
 
