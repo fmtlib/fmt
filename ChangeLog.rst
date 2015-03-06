@@ -1,8 +1,8 @@
 1.1.0 - TBD
 -----------
 
-* Added `0 A.D. <http://play0ad.com/>`_ to the list of notable projects using
-  C++ Format.
+* Added `0 A.D. <http://play0ad.com/>`_ and `PenUltima Online (POL)
+  <http://www.polserver.com/>`_ to the list of notable projects using C++ Format.
 
 * Improved `Biicode <http://www.biicode.com/>`_ support
   (`#98 <https://github.com/cppformat/cppformat/pull/98>`_ and
@@ -10,7 +10,18 @@
   `@MariadeAnton <https://github.com/MariadeAnton>`_ and
   `@franramirez688 <https://github.com/franramirez688>`_.
 
-* Provided examples of using ``SystemError`` and ``WindowsError``
+* Improved support for bulding with `Android NDK
+  <https://developer.android.com/tools/sdk/ndk/index.html>`_
+  (`# 107 <https://github.com/cppformat/cppformat/pull/107>`_).
+  Thanks to `@newnon <https://github.com/newnon>`_.
+  
+  The `android-ndk-example <https://github.com/cppformat/android-ndk-example>`_
+  repository provides and example of using C++ Format with Android NDK:
+
+  .. image:: https://raw.githubusercontent.com/cppformat/android-ndk-example/
+            master/screenshot.png
+
+* Improved documentation of ``SystemError`` and ``WindowsError``
   (`#54 <https://github.com/cppformat/cppformat/issues/54>`_).
 
 * Fixed packaging issues (`#94 <https://github.com/cppformat/cppformat/issues/94>`_).
