@@ -4,6 +4,10 @@
 * Added `0 A.D. <http://play0ad.com/>`_ and `PenUltima Online (POL)
   <http://www.polserver.com/>`_ to the list of notable projects using C++ Format.
 
+* C++ Format now uses MSVC intrinsic for better performance on Windows.
+  Previously these optimizations where only used on GCC and Clang.
+  Thanks to `@CarterLi <https://github.com/CarterLi>`_.
+
 * Improved `Biicode <http://www.biicode.com/>`_ support
   (`#98 <https://github.com/cppformat/cppformat/pull/98>`_ and
   `#104 <https://github.com/cppformat/cppformat/pull/104>`_). Thanks to
@@ -12,7 +16,7 @@
 
 * Improved support for bulding with `Android NDK
   <https://developer.android.com/tools/sdk/ndk/index.html>`_
-  (`# 107 <https://github.com/cppformat/cppformat/pull/107>`_).
+  (`#107 <https://github.com/cppformat/cppformat/pull/107>`_).
   Thanks to `@newnon <https://github.com/newnon>`_.
   
   The `android-ndk-example <https://github.com/cppformat/android-ndk-example>`_
@@ -24,11 +28,21 @@
 * Improved documentation of ``SystemError`` and ``WindowsError``
   (`#54 <https://github.com/cppformat/cppformat/issues/54>`_).
 
+* Various code improvements
+  (`#110 <https://github.com/cppformat/cppformat/pull/110>`_,
+  `#111 <https://github.com/cppformat/cppformat/pull/111>`_
+  `#112 <https://github.com/cppformat/cppformat/pull/112>`_).
+  Thanks to `@CarterLi <https://github.com/CarterLi>`_.
+
+* Fixed ``BasicWriter::write`` without formatting arguments when C++11 support
+  is disabled (`#109 <https://github.com/cppformat/cppformat/issues/109>`_).
+
 * Fixed packaging issues (`#94 <https://github.com/cppformat/cppformat/issues/94>`_).
 
-* Fixed warnings in MSVC and Xcode
-  (`#95 <https://github.com/cppformat/cppformat/issues/95>`_ and
-  `#96 <https://github.com/cppformat/cppformat/issues/96>`_).
+* Fixed warnings in GCC, MSVC and Xcode/Clang
+  (`#95 <https://github.com/cppformat/cppformat/issues/95>`_,
+  `#96 <https://github.com/cppformat/cppformat/issues/96>`_ and
+  `#114 <https://github.com/cppformat/cppformat/pull/114>`_).
 
 1.0.0 - 2015-02-05
 ------------------
