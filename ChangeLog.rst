@@ -1,6 +1,17 @@
 1.1.0 - TBD
 -----------
 
+* Added ``BasicArrayWriter``, a class template that provides operations for
+  formatting and writing data into a fixed-size array
+  (`#105 <https://github.com/cppformat/cppformat/issues/105>`_ and
+  `#122 <https://github.com/cppformat/cppformat/issues/122>`_):
+
+  .. code:: c++
+  
+    char buffer[100];
+    fmt::ArrayWriter w(buffer);
+    w.write("The answer is {}", 42);
+
 * Added `0 A.D. <http://play0ad.com/>`_ and `PenUltima Online (POL)
   <http://www.polserver.com/>`_ to the list of notable projects using C++ Format.
 
@@ -49,12 +60,18 @@
 * Fixed ``BasicWriter::write`` without formatting arguments when C++11 support
   is disabled (`#109 <https://github.com/cppformat/cppformat/issues/109>`_).
 
+* Fixed header-only build on OS X with GCC 4.9
+  (`#124 <https://github.com/cppformat/cppformat/issues/124>`_).
+
 * Fixed packaging issues (`#94 <https://github.com/cppformat/cppformat/issues/94>`_).
 
 * Fixed warnings in GCC, MSVC and Xcode/Clang
   (`#95 <https://github.com/cppformat/cppformat/issues/95>`_,
   `#96 <https://github.com/cppformat/cppformat/issues/96>`_ and
   `#114 <https://github.com/cppformat/cppformat/pull/114>`_).
+
+* Added `changelog <https://github.com/cppformat/cppformat/edit/master/ChangeLog.rst>`_
+  (`#103 <https://github.com/cppformat/cppformat/issues/103>`_).
 
 1.0.0 - 2015-02-05
 ------------------
