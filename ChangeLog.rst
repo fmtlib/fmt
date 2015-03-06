@@ -1,3 +1,79 @@
+1.1.0 - TBD
+-----------
+
+* Added ``BasicArrayWriter``, a class template that provides operations for
+  formatting and writing data into a fixed-size array
+  (`#105 <https://github.com/cppformat/cppformat/issues/105>`_ and
+  `#122 <https://github.com/cppformat/cppformat/issues/122>`_):
+
+  .. code:: c++
+  
+    char buffer[100];
+    fmt::ArrayWriter w(buffer);
+    w.write("The answer is {}", 42);
+
+* Added `0 A.D. <http://play0ad.com/>`_ and `PenUltima Online (POL)
+  <http://www.polserver.com/>`_ to the list of notable projects using C++ Format.
+
+* C++ Format now uses MSVC intrinsics for better formatting performance
+  (`#115 <https://github.com/cppformat/cppformat/pull/115>`_,
+  `#116 <https://github.com/cppformat/cppformat/pull/116>`_,
+  `#118 <https://github.com/cppformat/cppformat/pull/118>`_ and
+  `#121 <https://github.com/cppformat/cppformat/pull/121>`_).
+  Previously these optimizations where only used on GCC and Clang.
+  Thanks to `@CarterLi <https://github.com/CarterLi>`_ and
+  `@objectx <https://github.com/objectx>`_.
+
+* CMake install target (`#119 <https://github.com/cppformat/cppformat/pull/119>`_).
+  Thanks to `@TrentHouliston <https://github.com/TrentHouliston>`_.
+
+  You can now install C++ Format with ``make install`` command.
+
+* Improved `Biicode <http://www.biicode.com/>`_ support
+  (`#98 <https://github.com/cppformat/cppformat/pull/98>`_ and
+  `#104 <https://github.com/cppformat/cppformat/pull/104>`_). Thanks to
+  `@MariadeAnton <https://github.com/MariadeAnton>`_ and
+  `@franramirez688 <https://github.com/franramirez688>`_.
+
+* Improved support for bulding with `Android NDK
+  <https://developer.android.com/tools/sdk/ndk/index.html>`_
+  (`#107 <https://github.com/cppformat/cppformat/pull/107>`_).
+  Thanks to `@newnon <https://github.com/newnon>`_.
+  
+  The `android-ndk-example <https://github.com/cppformat/android-ndk-example>`_
+  repository provides and example of using C++ Format with Android NDK:
+
+  .. image:: https://raw.githubusercontent.com/cppformat/android-ndk-example/
+            master/screenshot.png
+
+* Improved documentation of ``SystemError`` and ``WindowsError``
+  (`#54 <https://github.com/cppformat/cppformat/issues/54>`_).
+
+* Various code improvements
+  (`#110 <https://github.com/cppformat/cppformat/pull/110>`_,
+  `#111 <https://github.com/cppformat/cppformat/pull/111>`_
+  `#112 <https://github.com/cppformat/cppformat/pull/112>`_).
+  Thanks to `@CarterLi <https://github.com/CarterLi>`_.
+
+* Improved compile-time errors when formatting wide into narrow strings
+  (`#117 <https://github.com/cppformat/cppformat/issues/117>`_).
+
+* Fixed ``BasicWriter::write`` without formatting arguments when C++11 support
+  is disabled (`#109 <https://github.com/cppformat/cppformat/issues/109>`_).
+
+* Fixed header-only build on OS X with GCC 4.9
+  (`#124 <https://github.com/cppformat/cppformat/issues/124>`_).
+
+* Fixed packaging issues (`#94 <https://github.com/cppformat/cppformat/issues/94>`_).
+
+* Fixed warnings in GCC, MSVC and Xcode/Clang
+  (`#95 <https://github.com/cppformat/cppformat/issues/95>`_,
+  `#96 <https://github.com/cppformat/cppformat/issues/96>`_ and
+  `#114 <https://github.com/cppformat/cppformat/pull/114>`_).
+
+* Added `changelog <https://github.com/cppformat/cppformat/edit/master/ChangeLog.rst>`_
+  (`#103 <https://github.com/cppformat/cppformat/issues/103>`_).
+
 1.0.0 - 2015-02-05
 ------------------
 
