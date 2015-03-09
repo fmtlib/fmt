@@ -1,5 +1,28 @@
 {% extends "!layout.html" %}
 
+{% block header %}
+{% if pagename == "index" %}
+  <div class="jumbotron">
+    <div class="bs-container">
+      <h1>C++ Format</h1>
+      <p class="lead">Small, safe and fast formatting library for C++</p>
+      <div class="btn-group">
+        <a class="btn btn-success"
+            href="https://github.com/cppformat/cppformat/releases/download/1.1.0/cppformat-1.1.0.zip">
+              <span class="glyphicon glyphicon-download"></span> Download
+        </a>
+        <button data-toggle="dropdown" class="btn btn-success dropdown-toggle"><span class="caret"></span></button>
+        <ul class="dropdown-menu">
+          <li><a href="https://github.com/cppformat/cppformat/releases/download/1.1.0/cppformat-1.1.0.zip">Version 1.1.0</a></li>
+          <li><a href="https://github.com/cppformat/cppformat/releases/download/1.0.0/cppformat-1.0.0.zip">Version 1.0.0</a></li>
+          <li><a href="https://github.com/cppformat/cppformat/releases/download/0.12.0/cppformat-0.12.0.zip">Version 0.12.0</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
 {% block footer %}
 {{ super() }}
 <!-- Google Analytics -->
