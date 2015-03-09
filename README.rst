@@ -288,7 +288,7 @@ tinyformat 2.0.1  tfm::printf     2.25
 Boost Format 1.54 boost::format   9.94
 ================= ============= ===========
 
-As you can see boost::format is much slower than the alternative methods; this
+As you can see ``boost::format`` is much slower than the alternative methods; this
 is confirmed by `other tests <http://accu.org/index.php/journals/1539>`_.
 Tinyformat is quite good coming close to IOStreams.  Unfortunately tinyformat
 cannot be faster than the IOStreams because it uses them internally.
