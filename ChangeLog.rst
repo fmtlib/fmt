@@ -71,7 +71,7 @@
   `#96 <https://github.com/cppformat/cppformat/issues/96>`_ and
   `#114 <https://github.com/cppformat/cppformat/pull/114>`_).
 
-* Added `changelog <https://github.com/cppformat/cppformat/edit/master/ChangeLog.rst>`_
+* Added `changelog <https://github.com/cppformat/cppformat/blob/master/ChangeLog.rst>`_
   (`#103 <https://github.com/cppformat/cppformat/issues/103>`_).
 
 1.0.0 - 2015-02-05
