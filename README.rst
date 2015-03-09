@@ -11,7 +11,7 @@ C++ Format
    :target: http://cppformat.readthedocs.org/en/stable/
    :alt: Documentation Status
    
-.. image:: https://webapi.biicode.com/v1/badges/vitaut/vitaut/cppformat/master
+.. image:: https://webapi.biicode.com/v1/badges/vitaut/vitaut/cppformat/master?dummy
   :target: https://www.biicode.com/vitaut/cppformat
 
 C++ Format is an open-source formatting library for C++.
