@@ -100,6 +100,12 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
 # define FMT_SNPRINTF fmt_snprintf
 #endif  // _MSC_VER
 
+#if defined(_WIN32) && defined(__MINGW32__) && !defined(__NO_ISOCEXT)
+# define FMT_SWPRINTF snwprintf
+#else
+# define FMT_SWPRINTF swprintf
+#endif // defined(_WIN32) && defined(__MINGW32__) && !defined(__NO_ISOCEXT)
+
 // Checks if a value fits in int - used to avoid warnings about comparing
 // signed and unsigned integers.
 template <bool IsSigned>
@@ -388,12 +394,12 @@ int fmt::internal::CharTraits<wchar_t>::format_float(
     unsigned width, int precision, T value) {
   if (width == 0) {
     return precision < 0 ?
-        swprintf(buffer, size, format, value) :
-        swprintf(buffer, size, format, precision, value);
+        FMT_SWPRINTF(buffer, size, format, value) :
+        FMT_SWPRINTF(buffer, size, format, precision, value);
   }
   return precision < 0 ?
-      swprintf(buffer, size, format, width, value) :
-      swprintf(buffer, size, format, width, precision, value);
+      FMT_SWPRINTF(buffer, size, format, width, value) :
+      FMT_SWPRINTF(buffer, size, format, width, precision, value);
 }
 
 template <typename T>
