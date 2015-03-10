@@ -766,6 +766,26 @@ struct WCharHelper<T, wchar_t> {
   typedef None<T> Unsupported;
 };
 
+template <typename T>
+class IsConvertibleToInt {
+ private:
+  typedef char yes[1];
+  typedef char no[2];
+
+  static const T &get();
+  static yes &check(int);
+  static no &check(...);
+
+ public:
+  enum { value = (sizeof(check(get())) == sizeof(yes)) };
+};
+
+template<bool B, class T = void>
+struct EnableIf {};
+
+template<class T>
+struct EnableIf<true, T> { typedef T type; };
+
 // Makes a Value object from any type.
 template <typename Char>
 class MakeValue : public Value {
@@ -885,12 +905,22 @@ class MakeValue : public Value {
   FMT_MAKE_VALUE(const void *, pointer, POINTER)
 
   template <typename T>
-  MakeValue(const T &value) {
+  MakeValue(const T &value,
+            typename EnableIf<!IsConvertibleToInt<T>::value, int>::type = 0) {
     custom.value = &value;
     custom.format = &format_custom_arg<T>;
   }
+
   template <typename T>
-  static uint64_t type(const T &) { return Arg::CUSTOM; }
+  MakeValue(const T &value,
+            typename EnableIf<IsConvertibleToInt<T>::value, int>::type = 0) {
+    int_value = value;
+  }
+
+  template <typename T>
+  static uint64_t type(const T &) {
+    return IsConvertibleToInt<T>::value ? Arg::INT : Arg::CUSTOM;
+  }
 };
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call

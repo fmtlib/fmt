@@ -430,6 +430,12 @@ TEST(PrintfTest, Location) {
   // TODO: test %n
 }
 
+enum E { A = 42 };
+
+TEST(PrintfTest, Enum) {
+  EXPECT_PRINTF("42", "%d", A);
+}
+
 #if FMT_USE_FILE_DESCRIPTORS
 TEST(PrintfTest, Examples) {
   const char *weekday = "Thursday";
