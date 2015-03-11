@@ -5,16 +5,16 @@ environment:
     CONFIG: Debug
   - BUILD: msvc
     CONFIG: Release
-  - BUILD: mingw
-    CONFIG: Debug
-  - BUILD: mingw
-    CONFIG: Release
+#  - BUILD: mingw
+#    CONFIG: Debug
+#  - BUILD: mingw
+#    CONFIG: Release
 
 build_script:
   - python support/appveyor-build.py
 
 on_failure:
-  - appveyor PushArtifact CMakeFiles/CMakeOutput.log
-  - appveyor PushArtifact CMakeFiles/CMakeError.log
+#  - appveyor PushArtifact CMakeFiles/CMakeOutput.log
+#  - appveyor PushArtifact CMakeFiles/CMakeError.log
   - appveyor PushArtifact Testing/Temporary/LastTest.log
   - appveyor AddTest test
