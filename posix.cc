@@ -55,6 +55,9 @@
 
 # ifdef __MINGW32__
 #  define _SH_DENYNO 0x40
+#  undef fileno
+# endif
+
 # endif
 
 #endif  // _WIN32
