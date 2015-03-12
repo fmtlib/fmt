@@ -97,7 +97,7 @@ void fmt::BufferedFile::close() {
     throw SystemError(errno, "cannot close file");
 }
 
-int fmt::BufferedFile::fileno() const {
+int (fmt::BufferedFile::fileno)() const {
   int fd = FMT_POSIX_CALL(fileno(file_));
   if (fd == -1)
     throw SystemError(errno, "cannot get file descriptor");

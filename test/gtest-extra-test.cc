@@ -36,6 +36,10 @@
 # include <crtdbg.h>  // for _CrtSetReportMode
 #endif  // _WIN32
 
+#ifdef __MINGW32__
+# undef fileno
+#endif
+
 namespace {
 
 #if defined(_WIN32) && !defined(__MINGW32__)
