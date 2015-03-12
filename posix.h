@@ -61,9 +61,9 @@
 # define FMT_SYSTEM(call) call
 # ifdef _WIN32
 // Fix warnings about deprecated symbols.
-#  define FMT_POSIX_CALL(call) ::_##call
+#  define FMT_POSIX_CALL(call) (::_##call)
 # else
-#  define FMT_POSIX_CALL(call) (::call)
+#  define FMT_POSIX_CALL(call) ::call
 # endif
 #endif
 

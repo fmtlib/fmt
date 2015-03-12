@@ -39,7 +39,7 @@ struct stat;
 
 namespace test {
 
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(__MINGW32__)
 // Size type for read and write.
 typedef size_t size_t;
 typedef ssize_t ssize_t;
