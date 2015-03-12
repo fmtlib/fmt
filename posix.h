@@ -28,8 +28,12 @@
 #ifndef FMT_POSIX_H_
 #define FMT_POSIX_H_
 
+#ifdef __MINGW32__
+// Workaround MinGW bug https://sourceforge.net/p/mingw/bugs/2024/.
+# undef __STRICT_ANSI__
+#endif
+
 #include <errno.h>
-#include <sys/types.h>  // required for fcntl.h on MinGW
 #include <fcntl.h>  // for O_RDONLY
 #include <stdio.h>
 

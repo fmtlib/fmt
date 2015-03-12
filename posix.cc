@@ -33,6 +33,7 @@
 #include "posix.h"
 
 #include <limits.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 
 #ifndef _WIN32
