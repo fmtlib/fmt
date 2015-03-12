@@ -29,6 +29,7 @@
 #define FMT_POSIX_H_
 
 #include <errno.h>
+#include <sys/types.h>  // required for fcntl.h on MinGW
 #include <fcntl.h>  // for O_RDONLY
 #include <stdio.h>
 
