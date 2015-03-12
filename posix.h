@@ -46,7 +46,7 @@
 #endif
 
 #ifndef FMT_POSIX
-# ifdef _WIN32
+# if defined(_WIN32) && !defined(__MINGW32__)
 // Fix warnings about deprecated symbols.
 #  define FMT_POSIX(call) _##call
 # else
