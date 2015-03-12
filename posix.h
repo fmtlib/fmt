@@ -188,7 +188,9 @@ public:
   // Returns the pointer to a FILE object representing this file.
   FILE *get() const FMT_NOEXCEPT { return file_; }
 
-  int fileno() const;
+  // We place parentheses around fileno to workaround a bug in some versions
+  // of MinGW that define fileno as a macro.
+  int (fileno)() const;
 
   void print(fmt::StringRef format_str, const ArgList &args) {
     fmt::print(file_, format_str, args);
