@@ -12,7 +12,8 @@ if build == 'mingw':
   build_command = ['mingw32-make', '-j4']
   test_command = ['mingw32-make', 'test']
   # Remove the path to Git bin directory from $PATH because it breaks MinGW config.
-  os.environ['PATH'] = os.environ['PATH'].replace(r'C:\Program Files (x86)\Git\bin', '')
+  path = os.environ['PATH'].replace(r'C:\Program Files (x86)\Git\bin', '')
+  os.environ['PATH'] = path + r';C:\MinGW\bin'
 else:
   build_command = ['msbuild', '/m:4', '/p:Config=' + config, 'FORMAT.sln']
   test_command = ['msbuild', 'RUN_TESTS.vcxproj']
