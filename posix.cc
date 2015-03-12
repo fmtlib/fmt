@@ -45,13 +45,13 @@
 # define O_CREAT _O_CREAT
 # define O_TRUNC _O_TRUNC
 
-#ifndef S_IRUSR
-# define S_IRUSR _S_IREAD
-#endif
+# ifndef S_IRUSR
+#  define S_IRUSR _S_IREAD
+# endif
 
-#ifndef S_IWUSR
-# define S_IWUSR _S_IWRITE
-#endif
+# ifndef S_IWUSR
+#  define S_IWUSR _S_IWRITE
+# endif
 
 # ifdef __MINGW32__
 #  define _SH_DENYNO 0x40
