@@ -58,8 +58,6 @@
 #  undef fileno
 # endif
 
-# endif
-
 #endif  // _WIN32
 
 namespace {
