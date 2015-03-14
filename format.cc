@@ -160,7 +160,8 @@ int safe_strerror(
 
     // Handle the result of XSI-compliant version of strerror_r.
     int handle(int result) {
-      return result != 0 ? errno : result;
+      // glibc versions before 2.13 return result in errno.
+      return result == -1 ? errno : result;
     }
 
     // Handle the result of GNU-specific version of strerror_r.
