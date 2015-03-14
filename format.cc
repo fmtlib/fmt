@@ -85,6 +85,15 @@ using fmt::internal::Arg;
 # pragma warning(disable: 4702)  // unreachable code
 #endif
 
+// Dummy implementations of strerror_r and strerror_s called if corresponding
+// system functions are not available.
+static fmt::internal::None<void> strerror_r(int, char *, ...) {
+  return fmt::internal::None<void>();
+}
+static fmt::internal::None<void> strerror_s(char *, std::size_t, ...) {
+  return fmt::internal::None<void>();
+}
+
 namespace {
 
 #ifndef _MSC_VER
@@ -141,35 +150,54 @@ typedef void (*FormatFunc)(fmt::Writer &, int, fmt::StringRef);
 int safe_strerror(
     int error_code, char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT {
   assert(buffer != 0 && buffer_size != 0);
-  int result = 0;
-#if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE) || __ANDROID__
-  // XSI-compliant version of strerror_r.
-  result = strerror_r(error_code, buffer, buffer_size);
-  if (result != 0)
-    result = errno;
-#elif _GNU_SOURCE
-  // GNU-specific version of strerror_r.
-  char *message = strerror_r(error_code, buffer, buffer_size);
-  // If the buffer is full then the message is probably truncated.
-  if (message == buffer && strlen(buffer) == buffer_size - 1)
-    result = ERANGE;
-  buffer = message;
-#elif __MINGW32__
-  errno = 0;
-  (void)buffer_size;
-  buffer = strerror(error_code);
-  result = errno;
-#elif _WIN32
-  result = strerror_s(buffer, buffer_size, error_code);
-  // If the buffer is full then the message is probably truncated.
-  if (result == 0 && std::strlen(buffer) == buffer_size - 1)
-    result = ERANGE;
-#else
-  result = strerror_r(error_code, buffer, buffer_size);
-  if (result == -1)
-    result = errno;  // glibc versions before 2.13 return result in errno.
-#endif
-  return result;
+
+  // strerror result handler.
+  class StrError {
+   private:
+    int error_code_;
+    char *&buffer_;
+    std::size_t buffer_size_;
+
+    // Handle the result of XSI-compliant version of strerror_r.
+    int handle(int result) {
+      return result != 0 ? errno : result;
+    }
+
+    // Handle the result of GNU-specific version of strerror_r.
+    int handle(char *message) {
+      // If the buffer is full then the message is probably truncated.
+      if (message == buffer_ && strlen(buffer_) == buffer_size_ - 1)
+        return ERANGE;
+      buffer_ = message;
+      return 0;
+    }
+
+    // Handle the case when strerror_r is not available.
+    int handle(fmt::internal::None<void>) {
+      return fallback(strerror_s(buffer_, buffer_size_, error_code_));
+    }
+
+    // Fallback to strerror_s when strerror_r is not available.
+    int fallback(int result) {
+      // If the buffer is full then the message is probably truncated.
+      return result == 0 && strlen(buffer_) == buffer_size_ - 1 ?
+            ERANGE : result;
+    }
+
+    // Fallback to strerror if strerror_r and strerror_s are not available.
+    int fallback(fmt::internal::None<void>) {
+      errno = 0;
+      buffer_ = strerror(error_code_);
+      return errno;
+    }
+
+   public:
+    StrError(int error_code, char *&buffer, std::size_t buffer_size)
+      : error_code_(error_code), buffer_(buffer), buffer_size_(buffer_size) {}
+
+    int run() { return handle(strerror_r(error_code_, buffer_, buffer_size_)); }
+  };
+  return StrError(error_code, buffer, buffer_size).run();
 }
 
 void format_error_code(fmt::Writer &out, int error_code,
