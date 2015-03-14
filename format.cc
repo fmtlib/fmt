@@ -66,10 +66,24 @@ using fmt::internal::Arg;
 #ifndef FMT_THROW
 # if FMT_EXCEPTIONS
 #  define FMT_THROW(x) throw x
-#  define FMT_RETURN_AFTER_THROW(x)
 # else
-#  define FMT_THROW(x) assert(false)
-#  define FMT_RETURN_AFTER_THROW(x) return x
+#  ifdef DEBUG
+#   define FMT_THROW(x) assert(false && #x)
+#  elif defined _MSC_VER
+#   define FMT_THROW(x) __assume(0)
+#  elif defined __clang__ || FMT_GCC_VERSION >= 405
+#   define FMT_THROW(x) __builtin_unreachable()
+#  else
+#   define FMT_THROW(x) std::abort()
+#  endif
+# endif
+#endif
+
+#ifndef FMT_NORETURN
+# if defined __GNUC__ || defined __clang__
+#  define FMT_NORETURN __attribute__((__noreturn__))
+# elif defined _MSC_VER
+#  define FMT_NORETURN __declspec(noreturn)
 # endif
 #endif
 
@@ -257,9 +271,9 @@ class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
  public:
   explicit WidthHandler(fmt::FormatSpec &spec) : spec_(spec) {}
 
+  FMT_NORETURN
   unsigned visit_unhandled_arg() {
     FMT_THROW(fmt::FormatError("width is not integer"));
-    FMT_RETURN_AFTER_THROW(0);
   }
 
   template <typename T>
@@ -279,9 +293,9 @@ class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
 class PrecisionHandler :
     public fmt::internal::ArgVisitor<PrecisionHandler, int> {
  public:
+  FMT_NORETURN
   unsigned visit_unhandled_arg() {
     FMT_THROW(fmt::FormatError("precision is not integer"));
-    FMT_RETURN_AFTER_THROW(0);
   }
 
   template <typename T>
