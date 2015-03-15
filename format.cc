@@ -67,7 +67,7 @@ using fmt::internal::Arg;
 # if FMT_EXCEPTIONS
 #  define FMT_THROW(x) throw x
 # else
-#  ifdef DEBUG
+#  ifndef NDEBUG
 #   define FMT_THROW(x) assert(false && #x)
 #  elif defined _MSC_VER
 #   define FMT_THROW(x) __assume(0)
@@ -84,6 +84,8 @@ using fmt::internal::Arg;
 #  define FMT_NORETURN __attribute__((__noreturn__))
 # elif defined _MSC_VER
 #  define FMT_NORETURN __declspec(noreturn)
+# else
+#  define FMT_NORETURN
 # endif
 #endif
 
