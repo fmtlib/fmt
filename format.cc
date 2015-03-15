@@ -66,10 +66,26 @@ using fmt::internal::Arg;
 #ifndef FMT_THROW
 # if FMT_EXCEPTIONS
 #  define FMT_THROW(x) throw x
-#  define FMT_RETURN_AFTER_THROW(x)
 # else
-#  define FMT_THROW(x) assert(false)
-#  define FMT_RETURN_AFTER_THROW(x) return x
+#  ifndef NDEBUG
+#   define FMT_THROW(x) assert(false && #x)
+#  elif defined _MSC_VER
+#   define FMT_THROW(x) __assume(0)
+#  elif defined __clang__ || FMT_GCC_VERSION >= 405
+#   define FMT_THROW(x) __builtin_unreachable()
+#  else
+#   define FMT_THROW(x) std::abort()
+#  endif
+# endif
+#endif
+
+#ifndef FMT_NORETURN
+# if defined __GNUC__ || defined __clang__
+#  define FMT_NORETURN __attribute__((__noreturn__))
+# elif defined _MSC_VER
+#  define FMT_NORETURN __declspec(noreturn)
+# else
+#  define FMT_NORETURN
 # endif
 #endif
 
@@ -286,9 +302,9 @@ class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
  public:
   explicit WidthHandler(fmt::FormatSpec &spec) : spec_(spec) {}
 
+  FMT_NORETURN
   unsigned visit_unhandled_arg() {
     FMT_THROW(fmt::FormatError("width is not integer"));
-    FMT_RETURN_AFTER_THROW(0);
   }
 
   template <typename T>
@@ -308,9 +324,9 @@ class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
 class PrecisionHandler :
     public fmt::internal::ArgVisitor<PrecisionHandler, int> {
  public:
+  FMT_NORETURN
   unsigned visit_unhandled_arg() {
     FMT_THROW(fmt::FormatError("precision is not integer"));
-    FMT_RETURN_AFTER_THROW(0);
   }
 
   template <typename T>
@@ -466,6 +482,7 @@ const uint64_t fmt::internal::BasicData<T>::POWERS_OF_10_64[] = {
 };
 
 FMT_FUNC void fmt::internal::report_unknown_type(char code, const char *type) {
+  (void)type;
   if (std::isprint(static_cast<unsigned char>(code))) {
     FMT_THROW(fmt::FormatError(
         fmt::format("unknown format code '{}' for {}", code, type)));
@@ -740,6 +757,7 @@ void fmt::internal::PrintfFormatter<Char>::parse_flags(
 template <typename Char>
 Arg fmt::internal::PrintfFormatter<Char>::get_arg(
     const Char *s, unsigned arg_index) {
+  (void)s;
   const char *error = 0;
   Arg arg = arg_index == UINT_MAX ?
     next_arg(error) : FormatterBase::get_arg(arg_index - 1, error);
