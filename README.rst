@@ -425,3 +425,5 @@ formatting. Thanks `Ruslan Baratov <https://github.com/ruslo>`_ for comprehensiv
 `comparison of integer formatting algorithms <https://github.com/ruslo/int-dec-format-tests>`_
 and useful comments regarding performance, `Boris Kaul <https://github.com/localvoid>`_ for
 `C++ counting digits benchmark <https://github.com/localvoid/cxx-benchmark-count-digits>`_.
+Thanks to `CarterLi <https://github.com/CarterLi>`_ for contributing various
+improvements to the code.
