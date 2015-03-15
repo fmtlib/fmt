@@ -87,10 +87,10 @@ using fmt::internal::Arg;
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
-static fmt::internal::None<void> strerror_r(int, char *, ...) {
+static inline fmt::internal::None<void> strerror_r(int, char *, ...) {
   return fmt::internal::None<void>();
 }
-static fmt::internal::None<void> strerror_s(char *, std::size_t, ...) {
+static inline fmt::internal::None<void> strerror_s(char *, std::size_t, ...) {
   return fmt::internal::None<void>();
 }
 
@@ -151,7 +151,6 @@ int safe_strerror(
     int error_code, char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT {
   assert(buffer != 0 && buffer_size != 0);
 
-  // strerror result handler.
   class StrError {
    private:
     int error_code_;
