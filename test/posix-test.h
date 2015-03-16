@@ -51,7 +51,7 @@ typedef unsigned size_t;
 typedef int ssize_t;
 errno_t sopen_s(
     int* pfh, const char *filename, int oflag, int shflag, int pmode);
-BOOL GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize);
+DWORD GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh);
 #endif
 
 int close(int fildes);

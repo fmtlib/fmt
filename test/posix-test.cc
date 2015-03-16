@@ -105,15 +105,17 @@ errno_t test::sopen_s(
 
 static LONGLONG max_file_size() { return std::numeric_limits<LONGLONG>::max(); }
 
-BOOL test::GetFileSizeEx(HANDLE hFile, PLARGE_INTEGER lpFileSize) {
+DWORD test::GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
   if (fstat_sim == ERROR) {
     SetLastError(ERROR_ACCESS_DENIED);
     return FALSE;
   }
-  BOOL result = ::GetFileSizeEx(hFile, lpFileSize);
-  if (fstat_sim == MAX_SIZE)
-    lpFileSize->QuadPart = max_file_size();
-  return result;
+  if (fstat_sim == MAX_SIZE) {
+    DWORD max = std::numeric_limits<DWORD>::max();
+    *lpFileSizeHig = max >> 1;
+    return max;
+  }
+  return ::GetFileSize(hFile, lpFileSizeHigh);
 }
 #endif
 

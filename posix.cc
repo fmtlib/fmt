@@ -140,13 +140,19 @@ void fmt::File::close() {
 
 fmt::LongLong fmt::File::size() const {
 #ifdef _WIN32
-  LARGE_INTEGER filesize = {};
+  // Use GetFileSize instead of GetFileSizeEx for the case when _WIN32_WINNT
+  // is less than 0x0500 as is the case with some default MinGW builds.
+  // Both functions support large file sizes.
+  DWORD size_upper = 0;
   HANDLE handle = reinterpret_cast<HANDLE>(_get_osfhandle(fd_));
-  if (!FMT_SYSTEM(GetFileSizeEx(handle, &filesize)))
-    throw WindowsError(GetLastError(), "cannot get file size");
-  FMT_STATIC_ASSERT(sizeof(fmt::LongLong) >= sizeof(filesize.QuadPart),
-      "return type of File::size is not large enough");
-  return filesize.QuadPart;
+  DWORD size_lower = FMT_SYSTEM(GetFileSize(handle, &size_upper));
+  if (size_lower == INVALID_FILE_SIZE) {
+    DWORD error = GetLastError();
+    if (error != NO_ERROR)
+      throw WindowsError(GetLastError(), "cannot get file size");
+  }
+  fmt::ULongLong size = size_upper;
+  return (size << sizeof(DWORD) * CHAR_BIT) | size_lower;
 #else
   typedef struct stat Stat;
   Stat file_stat = Stat();
