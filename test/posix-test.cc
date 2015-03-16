@@ -108,7 +108,7 @@ static LONGLONG max_file_size() { return std::numeric_limits<LONGLONG>::max(); }
 DWORD test::GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
   if (fstat_sim == ERROR) {
     SetLastError(ERROR_ACCESS_DENIED);
-    return FALSE;
+    return INVALID_FILE_SIZE;
   }
   if (fstat_sim == MAX_SIZE) {
     DWORD max = std::numeric_limits<DWORD>::max();
