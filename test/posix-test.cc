@@ -112,7 +112,7 @@ DWORD test::GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
   }
   if (fstat_sim == MAX_SIZE) {
     DWORD max = std::numeric_limits<DWORD>::max();
-    *lpFileSizeHig = max >> 1;
+    *lpFileSizeHigh = max >> 1;
     return max;
   }
   return ::GetFileSize(hFile, lpFileSizeHigh);
