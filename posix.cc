@@ -98,8 +98,11 @@ void fmt::BufferedFile::close() {
     throw SystemError(errno, "cannot close file");
 }
 
+// A macro used to prevent expansion of fileno on broken versions of MinGW.
+#define FMT_ARGS
+
 int fmt::BufferedFile::fileno() const {
-  int fd = FMT_POSIX_CALL(fileno(file_));
+  int fd = FMT_POSIX_CALL(fileno FMT_ARGS(file_));
   if (fd == -1)
     throw SystemError(errno, "cannot get file descriptor");
   return fd;
