@@ -75,6 +75,11 @@ if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -Wshadow -pedantic")
 endif ()
+
+# If FMT_EXTRA_TESTS is TRUE, then test compilation with both -std=c++11
+# and the default flags. Otherwise use only the default flags.
+# The library is distributed in the source form and users have full control
+# over compile options, so the options used here only matter for testing.
 if (CPP11_FLAG AND FMT_EXTRA_TESTS)
   set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   # Test compilation with default flags.
