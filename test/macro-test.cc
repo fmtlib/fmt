@@ -27,6 +27,8 @@
 
 #include <utility>
 #include <gtest/gtest.h>
+
+#define FMT_USE_VARIADIC_TEMPLATES 0
 #include "format.h"
 
 #define IDENTITY(x) x

@@ -46,8 +46,6 @@ if (HAVE_TYPE_TRAITS)
 endif ()
 
 add_executable(macro-test macro-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
-set_target_properties(macro-test
-  PROPERTIES COMPILE_DEFINITIONS "FMT_USE_VARIADIC_TEMPLATES=0")
 target_link_libraries(macro-test gmock)
 
 if (HAVE_OPEN)
