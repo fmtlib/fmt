@@ -75,8 +75,10 @@ if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -Wshadow -pedantic")
 endif ()
-if (CPP11_FLAG AND FMT_EXTRA_TESTS)
+if (CPP11_FLAG)
   set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
+endif ()
+if (FMT_EXTRA_TESTS)
   # Test compilation with default flags.
   file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)
   add_library(testformat STATIC ${FMT_SOURCE_FILES} ${src})
