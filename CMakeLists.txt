@@ -109,7 +109,7 @@ check_cxx_source_compiles("
 
 # Check if initializer lists are supported.
 check_cxx_source_compiles("
-  #include <initilizer_list>
+  #include <initializer_list>
   int main() {}" FMT_INITIALIZER_LIST)
   
 if (NOT FMT_VARIADIC_TEMPLATES OR NOT FMT_INITIALIZER_LIST)
