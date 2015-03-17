@@ -773,7 +773,7 @@ class IsConvertibleToInt {
   typedef char no[2];
 
   static const T &get();
-  static yes &check(int);
+  static yes &check(fmt::ULongLong);
   static no &check(...);
 
  public:
