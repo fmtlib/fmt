@@ -99,6 +99,9 @@ using fmt::internal::Arg;
 # pragma warning(push)
 # pragma warning(disable: 4127)  // conditional expression is constant
 # pragma warning(disable: 4702)  // unreachable code
+// Disable deprecation warning for strerror. The latter is not called but
+// MSVC fails to detect it.
+# pragma warning(disable: 4996)
 #endif
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
