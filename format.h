@@ -773,9 +773,11 @@ class IsConvertibleToInt {
   typedef char no[2];
 
   static const T &get();
-  static yes &check(fmt::ULongLong);
-  static no &check(...);
 
+  // Use ``long double`` instead of ``int`` to avoid warnings.
+  static yes &check(long double);
+  static no &check(...);
+  
  public:
   enum { value = (sizeof(check(get())) == sizeof(yes)) };
 };
