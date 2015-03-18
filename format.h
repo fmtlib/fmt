@@ -774,7 +774,6 @@ class IsConvertibleToInt {
 
   static const T &get();
 
-  static yes &check(bool);
   static yes &check(char);
   static yes &check(signed char);
   static yes &check(unsigned char);
