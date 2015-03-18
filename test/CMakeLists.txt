@@ -14,6 +14,14 @@ function(add_fmt_test name)
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
+check_cxx_source_compiles("
+  enum C : char {A};
+  int main() {}"
+  HAVE_ENUM_BASE)
+if (HAVE_ENUM_BASE)
+  add_definitions(-DFMT_USE_ENUM_BASE=1)
+endif ()
+
 add_fmt_test(gtest-extra-test)
 add_fmt_test(format-test)
 add_fmt_test(format-impl-test CUSTOM_LINK)

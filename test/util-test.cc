@@ -837,3 +837,11 @@ TEST(UtilTest, IsConvertibleToInt) {
   EXPECT_TRUE(fmt::internal::IsConvertibleToInt<char>::value);
   EXPECT_FALSE(fmt::internal::IsConvertibleToInt<const char *>::value);
 }
+
+#if FMT_USE_ENUM_BASE
+enum TestEnum : char {TestValue};
+TEST(UtilTest, IsEnumConvertibleToInt) {
+  EXPECT_TRUE(fmt::internal::IsConvertibleToInt<TestEnum>::value);
+}
+#endif
+
