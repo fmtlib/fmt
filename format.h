@@ -774,7 +774,20 @@ class IsConvertibleToInt {
 
   static const T &get();
 
-  // Use ``long double`` instead of ``int`` to avoid warnings.
+  static yes &check(bool);
+  static yes &check(char);
+  static yes &check(signed char);
+  static yes &check(unsigned char);
+  static yes &check(short);
+  static yes &check(unsigned short);
+  static yes &check(int);
+  static yes &check(unsigned int);
+  static yes &check(long);
+  static yes &check(unsigned long);
+  static yes &check(fmt::LongLong);
+  static yes &check(fmt::ULongLong);
+  static yes &check(float);
+  static yes &check(double);
   static yes &check(long double);
   static no &check(...);
   
