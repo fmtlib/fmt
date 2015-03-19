@@ -781,6 +781,18 @@ class IsConvertibleToInt {
   enum { value = (sizeof(check(get())) == sizeof(yes)) };
 };
 
+#define FMT_CONVERTIBLE_TO_INT(Type) \
+  template <> \
+  class IsConvertibleToInt<Type> { \
+   public: \
+    enum { value = 1 }; \
+  }
+
+// Silence warnings about convering float to int.
+FMT_CONVERTIBLE_TO_INT(float);
+FMT_CONVERTIBLE_TO_INT(double);
+FMT_CONVERTIBLE_TO_INT(long double);
+
 template<bool B, class T = void>
 struct EnableIf {};
 
