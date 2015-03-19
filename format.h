@@ -100,6 +100,7 @@ inline uint32_t clzll(uint64_t x) {
 #endif
 
 #ifdef __clang__
+# pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdocumentation"
 #endif
 
