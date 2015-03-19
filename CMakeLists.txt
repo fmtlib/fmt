@@ -21,7 +21,17 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
 if (HAVE_STD_CPP11_FLAG)
-  set(CPP11_FLAG -std=c++11)
+  # Check if including cmath works with -std=c++11 and -O3.
+  # It may not in MinGW due to bug http://ehc.ac/p/mingw/bugs/2250/.
+  set(CMAKE_REQUIRED_FLAGS "-std=c++11 -O3")
+  check_cxx_source_compiles("
+    #include <cmath>
+    int main() {}" FMT_CPP11_CMATH)
+  if (FMT_CPP11_CMATH)
+    set(CPP11_FLAG -std=c++11)
+  else ()
+    set(CMAKE_REQUIRED_FLAGS "")
+  endif ()
 else ()
   check_cxx_compiler_flag(-std=c++0x HAVE_STD_CPP0X_FLAG)
   if (HAVE_STD_CPP0X_FLAG)
