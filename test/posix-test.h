@@ -72,8 +72,7 @@ int pipe(int *pfds, unsigned psize, int textmode);
 
 FILE *fopen(const char *filename, const char *mode);
 int fclose(FILE *stream);
-int fileno(FILE *stream);
-
+int (fileno)(FILE *stream);
 }  // namespace test
 
 #define FMT_SYSTEM(call) test::call

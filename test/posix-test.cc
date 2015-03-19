@@ -175,7 +175,7 @@ int test::fclose(FILE *stream) {
   return ::fclose(stream);
 }
 
-int test::fileno(FILE *stream) {
+int (test::fileno)(FILE *stream) {
   EMULATE_EINTR(fileno, -1);
   return ::FMT_POSIX(fileno(stream));
 }
