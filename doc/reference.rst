@@ -83,6 +83,7 @@ Utilities
    :members:
 
 .. doxygenclass:: fmt::Buffer
+   :protected-members:
    :members:
 
 System Errors
