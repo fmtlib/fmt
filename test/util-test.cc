@@ -51,7 +51,7 @@
 using fmt::StringRef;
 using fmt::internal::Arg;
 using fmt::internal::Value;
-using fmt::internal::Buffer;
+using fmt::Buffer;
 using fmt::internal::MemoryBuffer;
 
 using testing::Return;

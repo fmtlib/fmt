@@ -283,7 +283,6 @@ class FormatError : public std::runtime_error {
 };
 
 namespace internal {
-
 // The number of characters to store in the MemoryBuffer object itself
 // to avoid dynamic memory allocation.
 enum { INLINE_BUFFER_SIZE = 500 };
@@ -298,8 +297,9 @@ inline stdext::checked_array_iterator<T*> make_ptr(T *ptr, std::size_t size) {
 template <typename T>
 inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
 #endif
+}  // namespace internal
 
-// A buffer for POD types. It supports a subset of std::vector's operations.
+/** A buffer supporting a subset of ``std::vector``'s operations. */
 template <typename T>
 class Buffer {
  private:
@@ -313,25 +313,31 @@ class Buffer {
   Buffer(T *ptr = 0, std::size_t capacity = 0)
     : ptr_(ptr), size_(0), capacity_(capacity) {}
 
+  /**
+    Increases the buffer capacity to hold at least *size* elements updating
+    ``ptr_`` and ``capacity_``.
+   */
   virtual void grow(std::size_t size) = 0;
 
  public:
   virtual ~Buffer() {}
 
-  // Returns the size of this buffer.
+  /** Returns the size of this buffer. */
   std::size_t size() const { return size_; }
 
-  // Returns the capacity of this buffer.
+  /** Returns the capacity of this buffer. */
   std::size_t capacity() const { return capacity_; }
 
-  // Resizes the buffer. If T is a POD type new elements are not initialized.
+  /**
+    Resizes the buffer. If T is a POD type new elements may not be initialized.
+   */
   void resize(std::size_t new_size) {
     if (new_size > capacity_)
       grow(new_size);
     size_ = new_size;
   }
 
-  // Reserves space to store at least capacity elements.
+  /** Reserves space to store at least *capacity* elements. */
   void reserve(std::size_t capacity) {
     if (capacity > capacity_)
       grow(capacity);
@@ -345,7 +351,7 @@ class Buffer {
     ptr_[size_++] = value;
   }
 
-  // Appends data to the end of the buffer.
+  /** Appends data to the end of the buffer. */
   void append(const T *begin, const T *end);
 
   T &operator[](std::size_t index) { return ptr_[index]; }
@@ -357,9 +363,11 @@ void Buffer<T>::append(const T *begin, const T *end) {
   std::ptrdiff_t num_elements = end - begin;
   if (size_ + num_elements > capacity_)
     grow(size_ + num_elements);
-  std::copy(begin, end, make_ptr(ptr_, capacity_) + size_);
+  std::copy(begin, end, internal::make_ptr(ptr_, capacity_) + size_);
   size_ += num_elements;
 }
+
+namespace internal {
 
 // A memory buffer for POD types with the first SIZE elements stored in
 // the object itself.
@@ -439,10 +447,9 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
 
 // A fixed-size buffer.
 template <typename Char>
-class FixedBuffer : public fmt::internal::Buffer<Char> {
+class FixedBuffer : public fmt::Buffer<Char> {
  public:
-  FixedBuffer(Char *array, std::size_t size)
-    : fmt::internal::Buffer<Char>(array, size) {}
+  FixedBuffer(Char *array, std::size_t size) : fmt::Buffer<Char>(array, size) {}
 
  protected:
   void grow(std::size_t size);
@@ -1605,7 +1612,7 @@ template <typename Char>
 class BasicWriter {
  private:
   // Output buffer.
-  internal::Buffer<Char> &buffer_;
+  Buffer<Char> &buffer_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(BasicWriter);
 
@@ -1685,7 +1692,7 @@ class BasicWriter {
   /**
     Constructs a ``BasicWriter`` object.
    */
-  explicit BasicWriter(internal::Buffer<Char> &b) : buffer_(b) {}
+  explicit BasicWriter(Buffer<Char> &b) : buffer_(b) {}
 
  public:
   /**
