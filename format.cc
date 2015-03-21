@@ -176,6 +176,9 @@ int safe_strerror(
     char *&buffer_;
     std::size_t buffer_size_;
 
+    // A noop assignment operator to avoid bogus warnings.
+    void operator=(const StrError &) {}
+
     // Handle the result of XSI-compliant version of strerror_r.
     int handle(int result) {
       // glibc versions before 2.13 return result in errno.
