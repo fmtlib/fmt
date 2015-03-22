@@ -229,14 +229,14 @@ void format_error_code(fmt::Writer &out, int error_code,
   // bad_alloc.
   out.clear();
   static const char SEP[] = ": ";
-  static const char _ERR[] = "error ";
+  static const char ERROR_STR[] = "error ";
   fmt::internal::IntTraits<int>::MainType ec_value = error_code;
-  // Subtract 2 to account for terminating null characters in SEP and _ERR.
-  std::size_t error_code_size =
-      sizeof(SEP) + sizeof(_ERR) + fmt::internal::count_digits(ec_value) - 2;
+  // Subtract 2 to account for terminating null characters in SEP and ERROR_STR.
+  std::size_t error_code_size = sizeof(SEP) + sizeof(ERROR_STR) - 2;
+  error_code_size += fmt::internal::count_digits(ec_value);
   if (message.size() <= fmt::internal::INLINE_BUFFER_SIZE - error_code_size)
     out << message << SEP;
-  out << _ERR << error_code;
+  out << ERROR_STR << error_code;
   assert(out.size() <= fmt::internal::INLINE_BUFFER_SIZE);
 }
 
