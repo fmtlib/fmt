@@ -567,20 +567,6 @@ TEST(ArgTest, MakeArg) {
   EXPECT_EQ("test", w.str());
 }
 
-TEST(UtilTest, TypeList) {
-  uint64_t types[] = {0};
-  int a;
-  char* b;
-  double c;
-  fmt::internal::make_type(types, 0, a, b, c);
-
-  fmt::internal::TypeList typeList(types, 3);
-  EXPECT_EQ(typeList[0], Arg::INT);
-  EXPECT_EQ(typeList[1], Arg::CSTRING);
-  EXPECT_EQ(typeList[2], Arg::DOUBLE);
-  EXPECT_EQ(typeList[3], Arg::NONE);
-}
-
 TEST(UtilTest, ArgList) {
   fmt::ArgList args;
   EXPECT_EQ(Arg::NONE, args[1].type);

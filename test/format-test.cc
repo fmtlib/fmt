@@ -551,6 +551,32 @@ TEST(FormatterTest, ArgErrors) {
   EXPECT_THROW_MSG(format(format_str), FormatError, "number is too big");
 }
 
+#if FMT_USE_VARIADIC_TEMPLATES
+template <int N>
+struct TestFormat {
+  template <typename... Args>
+  static std::string format(fmt::StringRef format_str, const Args & ... args) {
+    return TestFormat<N - 1>::format(format_str, N - 1, args...);
+  }
+};
+
+template <>
+struct TestFormat<0> {
+  template <typename... Args>
+  static std::string format(fmt::StringRef format_str, const Args & ... args) {
+    return fmt::format(format_str, args...);
+  }
+};
+
+TEST(FormatterTest, ManyArgs) {
+  EXPECT_EQ("19", TestFormat<20>::format("{19}"));
+  EXPECT_THROW_MSG(TestFormat<20>::format("{20}"),
+                   FormatError, "argument index out of range");
+  EXPECT_THROW_MSG(TestFormat<21>::format("{21}"),
+                   FormatError, "argument index out of range");
+}
+#endif
+
 TEST(FormatterTest, AutoArgIndex) {
   EXPECT_EQ("abc", format("{}{}{}", 'a', 'b', 'c'));
   EXPECT_THROW_MSG(format("{0}{}", 'a', 'b'),
