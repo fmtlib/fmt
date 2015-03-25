@@ -50,7 +50,6 @@
 
 using fmt::StringRef;
 using fmt::internal::Arg;
-using fmt::internal::Value;
 using fmt::Buffer;
 using fmt::internal::MemoryBuffer;
 
@@ -67,9 +66,7 @@ std::basic_ostream<Char> &operator<<(std::basic_ostream<Char> &os, Test) {
 
 template <typename Char, typename T>
 Arg make_arg(const T &value) {
-  Arg arg = Arg();
-  Value &arg_value = arg;
-  arg_value = fmt::internal::MakeValue<Char>(value);
+  Arg arg = fmt::internal::MakeValue<Char>(value);
   arg.type = static_cast<Arg::Type>(
         fmt::internal::MakeValue<Char>::type(value));
   return arg;
@@ -409,7 +406,7 @@ struct ArgInfo;
 #define ARG_INFO(type_code, Type, field) \
   template <> \
   struct ArgInfo<Arg::type_code> { \
-    static Type get(const Value &value) { return value.field; } \
+    static Type get(const Arg &arg) { return arg.field; } \
   };
 
 ARG_INFO(INT, int, int_value);
@@ -426,9 +423,9 @@ ARG_INFO(POINTER, const void *, pointer);
 ARG_INFO(CUSTOM, Arg::CustomValue, custom);
 
 #define CHECK_ARG_INFO(Type, field, value) { \
-  Value arg_value = {}; \
-  arg_value.field = value; \
-  EXPECT_EQ(value, ArgInfo<Arg::Type>::get(arg_value)); \
+  Arg arg = {}; \
+  arg.field = value; \
+  EXPECT_EQ(value, ArgInfo<Arg::Type>::get(arg)); \
 }
 
 TEST(ArgTest, ArgInfo) {
@@ -445,9 +442,9 @@ TEST(ArgTest, ArgInfo) {
   CHECK_ARG_INFO(WSTRING, wstring.value, WSTR);
   int p = 0;
   CHECK_ARG_INFO(POINTER, pointer, &p);
-  Value value = {};
-  value.custom.value = &p;
-  EXPECT_EQ(&p, ArgInfo<Arg::CUSTOM>::get(value).value);
+  Arg arg = {};
+  arg.custom.value = &p;
+  EXPECT_EQ(&p, ArgInfo<Arg::CUSTOM>::get(arg).value);
 }
 
 #define EXPECT_ARG_(Char, type_code, MakeArgType, ExpectedType, value) { \
