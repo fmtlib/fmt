@@ -704,7 +704,7 @@ void format_windows_error(fmt::Writer &out, int error_code,
 // allocating an array of 0 size.
 template <unsigned N>
 struct NonZero {
-  enum { VALUE = N > 0 ? N : 0 };
+  enum { VALUE = N > 0 ? N : 1 };
 };
 
 // A formatting argument. It is a POD type to allow storage in
