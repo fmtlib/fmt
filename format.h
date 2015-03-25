@@ -700,16 +700,11 @@ void format_windows_error(fmt::Writer &out, int error_code,
                           fmt::StringRef message) FMT_NOEXCEPT;
 #endif
 
-// Computes max(Arg, 1) at compile time. It is used to avoid errors about
+// Computes max(N, 1) at compile time. It is used to avoid errors about
 // allocating an array of 0 size.
-template <unsigned Arg>
+template <unsigned N>
 struct NonZero {
-  enum { VALUE = Arg };
-};
-
-template <>
-struct NonZero<0> {
-  enum { VALUE = 1 };
+  enum { VALUE = N > 0 ? N : 0 };
 };
 
 // A formatting argument. It is a POD type to allow storage in
