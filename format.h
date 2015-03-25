@@ -2608,6 +2608,15 @@ inline void set_types(Arg *args, const T &arg, const Args & ... tail) {
   args->type = static_cast<Arg::Type>(MakeArg<T>::type(arg));
   set_types(args + 1, tail...);
 }
+
+// Computes the argument array size by adding 1 to N, which is the number of
+// arguments, if N is zero, because array of zero size is invalid, or if N
+// is greater than ArgList::MAX_PACKED_ARGS to accommodate for an extra
+// argument that marks the end of the list.
+template <unsigned N>
+struct ArgArraySize {
+  enum { VALUE = N + (N == 0 || N > ArgList::MAX_PACKED_ARGS ? 1 : 0) };
+};
 }
 }
 
@@ -2616,7 +2625,9 @@ inline void set_types(Arg *args, const T &arg, const Args & ... tail) {
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
     using fmt::internal::Arg; \
-    Arg array[sizeof...(Args) + 1] = {fmt::internal::MakeArg<Char>(args)...}; \
+    Arg array[fmt::internal::ArgArraySize<sizeof...(Args)>::VALUE] = { \
+      fmt::internal::MakeArg<Char>(args)... \
+    }; \
     if (sizeof...(Args) > fmt::ArgList::MAX_PACKED_ARGS) { \
       set_types(array, args...); \
       array[sizeof...(Args)].type = Arg::NONE; \
