@@ -962,7 +962,12 @@ class MakeArg : public Arg {
 template <typename Impl, typename Result>
 class ArgVisitor {
  public:
-  Result visit_unhandled_arg() { return Result(); }
+  void report_unhandled_arg() {}
+
+  Result visit_unhandled_arg() {
+    FMT_DISPATCH(report_unhandled_arg());
+    return Result();
+  }
 
   Result visit_int(int value) {
     return FMT_DISPATCH(visit_any_int(value));
