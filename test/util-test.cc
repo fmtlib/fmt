@@ -66,8 +66,9 @@ std::basic_ostream<Char> &operator<<(std::basic_ostream<Char> &os, Test) {
 
 template <typename Char, typename T>
 Arg make_arg(const T &value) {
-  Arg arg = fmt::internal::MakeArg<Char>(value);
-  arg.type = static_cast<Arg::Type>(fmt::internal::MakeArg<Char>::type(value));
+  Arg arg = fmt::internal::MakeValue<Char>(value);
+  arg.type = static_cast<Arg::Type>(
+        fmt::internal::MakeValue<Char>::type(value));
   return arg;
 }
 }  // namespace

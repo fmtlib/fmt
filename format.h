@@ -754,7 +754,7 @@ template <typename T = void>
 struct None {};
 
 // A helper class template to enable or disable overloads taking wide
-// characters and strings in MakeArg.
+// characters and strings in MakeValue.
 template <typename T, typename Char>
 struct WCharHelper {
   typedef None<T> Supported;
@@ -802,7 +802,7 @@ struct EnableIf<true, T> { typedef T type; };
 
 // Makes an Arg object from any type.
 template <typename Char>
-class MakeArg : public Arg {
+class MakeValue : public Arg {
  private:
   // The following two methods are private to disallow formatting of
   // arbitrary pointers. If you want to output a pointer cast it to
@@ -810,19 +810,19 @@ class MakeArg : public Arg {
   // of "[const] volatile char *" which is printed as bool by iostreams.
   // Do not implement!
   template <typename T>
-  MakeArg(const T *value);
+  MakeValue(const T *value);
   template <typename T>
-  MakeArg(T *value);
+  MakeValue(T *value);
 
   // The following methods are private to disallow formatting of wide
   // characters and strings into narrow strings as in
   //   fmt::format("{}", L"test");
   // To fix this, use a wide format string: fmt::format(L"{}", L"test").
-  MakeArg(typename WCharHelper<wchar_t, Char>::Unsupported);
-  MakeArg(typename WCharHelper<wchar_t *, Char>::Unsupported);
-  MakeArg(typename WCharHelper<const wchar_t *, Char>::Unsupported);
-  MakeArg(typename WCharHelper<const std::wstring &, Char>::Unsupported);
-  MakeArg(typename WCharHelper<WStringRef, Char>::Unsupported);
+  MakeValue(typename WCharHelper<wchar_t, Char>::Unsupported);
+  MakeValue(typename WCharHelper<wchar_t *, Char>::Unsupported);
+  MakeValue(typename WCharHelper<const wchar_t *, Char>::Unsupported);
+  MakeValue(typename WCharHelper<const std::wstring &, Char>::Unsupported);
+  MakeValue(typename WCharHelper<WStringRef, Char>::Unsupported);
 
   void set_string(StringRef str) {
     string.value = str.c_str();
@@ -844,10 +844,10 @@ class MakeArg : public Arg {
   }
 
  public:
-  MakeArg() {}
+  MakeValue() {}
 
 #define FMT_MAKE_VALUE(Type, field, TYPE) \
-  MakeArg(Type value) { field = value; } \
+  MakeValue(Type value) { field = value; } \
   static uint64_t type(Type) { return Arg::TYPE; }
 
   FMT_MAKE_VALUE(bool, int_value, INT)
@@ -856,7 +856,7 @@ class MakeArg : public Arg {
   FMT_MAKE_VALUE(int, int_value, INT)
   FMT_MAKE_VALUE(unsigned, uint_value, UINT)
 
-  MakeArg(long value) {
+  MakeValue(long value) {
     // To minimize the number of types we need to deal with, long is
     // translated either to int or to long long depending on its size.
     if (sizeof(long) == sizeof(int))
@@ -868,7 +868,7 @@ class MakeArg : public Arg {
     return sizeof(long) == sizeof(int) ? Arg::INT : Arg::LONG_LONG;
   }
 
-  MakeArg(unsigned long value) {
+  MakeValue(unsigned long value) {
     if (sizeof(unsigned long) == sizeof(unsigned))
       uint_value = static_cast<unsigned>(value);
     else
@@ -888,13 +888,13 @@ class MakeArg : public Arg {
   FMT_MAKE_VALUE(unsigned char, int_value, CHAR)
   FMT_MAKE_VALUE(char, int_value, CHAR)
 
-  MakeArg(typename WCharHelper<wchar_t, Char>::Supported value) {
+  MakeValue(typename WCharHelper<wchar_t, Char>::Supported value) {
     int_value = value;
   }
   static uint64_t type(wchar_t) { return Arg::CHAR; }
 
 #define FMT_MAKE_STR_VALUE(Type, TYPE) \
-  MakeArg(Type value) { set_string(value); } \
+  MakeValue(Type value) { set_string(value); } \
   static uint64_t type(Type) { return Arg::TYPE; }
 
   FMT_MAKE_VALUE(char *, string.value, CSTRING)
@@ -905,7 +905,7 @@ class MakeArg : public Arg {
   FMT_MAKE_STR_VALUE(StringRef, STRING)
 
 #define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
-  MakeArg(typename WCharHelper<Type, Char>::Supported value) { \
+  MakeValue(typename WCharHelper<Type, Char>::Supported value) { \
     set_string(value); \
   } \
   static uint64_t type(Type) { return Arg::TYPE; }
@@ -919,15 +919,15 @@ class MakeArg : public Arg {
   FMT_MAKE_VALUE(const void *, pointer, POINTER)
 
   template <typename T>
-  MakeArg(const T &value,
-          typename EnableIf<!IsConvertibleToInt<T>::value, int>::type = 0) {
+  MakeValue(const T &value,
+            typename EnableIf<!IsConvertibleToInt<T>::value, int>::type = 0) {
     custom.value = &value;
     custom.format = &format_custom_arg<T>;
   }
 
   template <typename T>
-  MakeArg(const T &value,
-          typename EnableIf<IsConvertibleToInt<T>::value, int>::type = 0) {
+  MakeValue(const T &value,
+            typename EnableIf<IsConvertibleToInt<T>::value, int>::type = 0) {
     int_value = value;
   }
 
@@ -1419,7 +1419,7 @@ namespace internal {
 inline uint64_t make_type() { return 0; }
 
 template <typename T>
-inline uint64_t make_type(const T &arg) { return MakeArg<char>::type(arg); }
+inline uint64_t make_type(const T &arg) { return MakeValue<char>::type(arg); }
 
 #if FMT_USE_VARIADIC_TEMPLATES
 template <typename Arg, typename... Args>
@@ -1451,8 +1451,8 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG_TYPE(n) T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
-# define FMT_MAKE_REF_char(n) fmt::internal::MakeArg<char>(v##n)
-# define FMT_MAKE_REF_wchar_t(n) fmt::internal::MakeArg<wchar_t>(v##n)
+# define FMT_MAKE_REF_char(n) fmt::internal::MakeValue<char>(v##n)
+# define FMT_MAKE_REF_wchar_t(n) fmt::internal::MakeValue<wchar_t>(v##n)
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
@@ -1461,7 +1461,7 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
   void func(arg_type arg1, const Args & ... args) { \
     const fmt::internal::Arg array[ \
       fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
-      fmt::internal::MakeArg<Char>(args)... \
+      fmt::internal::MakeValue<Char>(args)... \
     }; \
     func(arg1, ArgList(fmt::internal::make_type(args...), array)); \
   }
@@ -1470,17 +1470,17 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    using fmt::internal::MakeArg; \
+    using fmt::internal::MakeValue; \
     const fmt::internal::Arg array[ \
         fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
-      MakeArg<Char>(args)... \
+      MakeValue<Char>(args)... \
     }; \
     func(arg0, arg1, ArgList(fmt::internal::make_type(args...), array)); \
   }
 
 #else
 
-# define FMT_MAKE_REF(n) fmt::internal::MakeArg<Char>(v##n)
+# define FMT_MAKE_REF(n) fmt::internal::MakeValue<Char>(v##n)
 # define FMT_MAKE_REF2(n) v##n
 
 // Defines a wrapper for a function taking one argument of type arg_type
@@ -2301,9 +2301,9 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   std::basic_ostringstream<Char> os;
   os << value;
   std::basic_string<Char> str = os.str();
-  internal::Arg arg = internal::MakeArg<Char>(str);
+  internal::Arg arg = internal::MakeValue<Char>(str);
   arg.type = static_cast<internal::Arg::Type>(
-        internal::MakeArg<Char>::type(str));
+        internal::MakeValue<Char>::type(str));
   format_str = f.format(format_str, arg);
 }
 
@@ -2605,7 +2605,7 @@ inline void set_types(Arg *) {}
 
 template <typename T, typename... Args>
 inline void set_types(Arg *args, const T &arg, const Args & ... tail) {
-  args->type = static_cast<Arg::Type>(MakeArg<T>::type(arg));
+  args->type = static_cast<Arg::Type>(MakeValue<T>::type(arg));
   set_types(args + 1, tail...);
 }
 
@@ -2626,7 +2626,7 @@ struct ArgArraySize {
       const Args & ... args) { \
     using fmt::internal::Arg; \
     Arg array[fmt::internal::ArgArraySize<sizeof...(Args)>::VALUE] = { \
-      fmt::internal::MakeArg<Char>(args)... \
+      fmt::internal::MakeValue<Char>(args)... \
     }; \
     if (sizeof...(Args) > fmt::ArgList::MAX_PACKED_ARGS) { \
       set_types(array, args...); \
