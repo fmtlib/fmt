@@ -2601,12 +2601,18 @@ inline void format_decimal(char *&buffer, T value) {
 
 namespace fmt {
 namespace internal {
-inline void set_types(Arg *) {}
+inline void do_set_types(Arg *) {}
 
 template <typename T, typename... Args>
-inline void set_types(Arg *args, const T &arg, const Args & ... tail) {
+inline void do_set_types(Arg *args, const T &arg, const Args & ... tail) {
   args->type = static_cast<Arg::Type>(MakeValue<T>::type(arg));
-  set_types(args + 1, tail...);
+  do_set_types(args + 1, tail...);
+}
+
+template <typename... Args>
+inline void set_types(Arg *array, const Args & ... args) {
+  do_set_types(array, args...);
+  array[sizeof...(Args)].type = Arg::NONE;
 }
 
 // Computes the argument array size by adding 1 to N, which is the number of
@@ -2628,10 +2634,8 @@ struct ArgArraySize {
     Arg array[fmt::internal::ArgArraySize<sizeof...(Args)>::VALUE] = { \
       fmt::internal::MakeValue<Char>(args)... \
     }; \
-    if (sizeof...(Args) > fmt::ArgList::MAX_PACKED_ARGS) { \
+    if (sizeof...(Args) > fmt::ArgList::MAX_PACKED_ARGS) \
       set_types(array, args...); \
-      array[sizeof...(Args)].type = Arg::NONE; \
-    } \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(fmt::internal::make_type(args...), array)); \
   }
