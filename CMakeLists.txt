@@ -83,8 +83,6 @@ add_library(format ${FMT_SOURCES})
 if (CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -Wshadow -pedantic")
-elseif (MSVC)
-  set_target_properties(format PROPERTIES COMPILE_FLAGS /W4)
 endif ()
 
 # If FMT_EXTRA_TESTS is TRUE, then test compilation with both -std=c++11

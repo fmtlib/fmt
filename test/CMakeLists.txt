@@ -24,6 +24,10 @@ endif ()
 
 add_fmt_test(gtest-extra-test)
 add_fmt_test(format-test)
+if (FMT_EXTRA_TESTS AND MSVC)
+  set_target_properties(format-test PROPERTIES COMPILE_FLAGS /W4)
+endif ()
+
 add_fmt_test(format-impl-test CUSTOM_LINK)
 add_fmt_test(printf-test)
 foreach (target format-test printf-test)
