@@ -322,7 +322,7 @@ tinyformat              64.6                  418                386
 Boost Format           222.8                  990                923
 ============ =============== ==================== ==================
 
-As you can see, C++ Format has 80% less overhead in terms of resulting
+As you can see, C++ Format has two times less overhead in terms of resulting
 code size compared to IOStreams and comes pretty close to ``printf``.
 Boost Format has by far the largest overheads.
 
