@@ -174,10 +174,10 @@ all the features I needed.
 Printf
 ~~~~~~
 
-The good thing about printf is that it is very fast and readily available
+The good thing about printf is that it is pretty fast and readily available
 being a part of the C standard library. The main drawback is that it
 doesn't support user-defined types. Printf also has safety issues although
-they are mostly solved with `_attribute__ ((format (printf, ...))
+they are mostly solved with `__attribute__ ((format (printf, ...))
 <http://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html>`_ in GCC.
 There is a POSIX extension that adds positional arguments required for
 `i18n <http://en.wikipedia.org/wiki/Internationalization_and_localization>`_
