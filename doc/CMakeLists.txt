@@ -14,3 +14,5 @@ endforeach ()
 add_custom_target(doc
   COMMAND ${doxygen}
   COMMAND ${sphinx-build} -b html . html)
+
+install(DIRECTORY html/ DESTINATION share/doc/cppformat)
