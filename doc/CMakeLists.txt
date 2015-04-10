@@ -1,18 +1,9 @@
-if (NOT EXISTS ${FORMAT_SOURCE_DIR}/breathe/breathe)
-  message(STATUS "Target 'doc' disabled (requires breathe module)")
+find_program(DOXYGEN doxygen)
+if (NOT DOXYGEN)
+  message(STATUS "Target 'doc' disabled (requires doxygen)")
   return ()
 endif ()
 
-foreach (program doxygen sphinx-build)
-  find_program(${program} ${program})
-  if (NOT ${program})
-    message(STATUS "Target 'doc' disabled (requires ${program})")
-    return ()
-  endif ()
-endforeach ()
+add_custom_target(doc COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build.py)
 
-add_custom_target(doc
-  COMMAND ${doxygen}
-  COMMAND ${sphinx-build} -b html . html)
-
-install(DIRECTORY html/ DESTINATION share/doc/cppformat)
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ DESTINATION share/doc/cppformat)

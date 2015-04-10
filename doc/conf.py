@@ -11,7 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os, re, subprocess
+import sys, os, re, sphinx_bootstrap_theme, subprocess
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -21,7 +21,7 @@ import sys, os, re, subprocess
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
+needs_sphinx = '1.2'
 
 sys.path.append("../breathe")
 
@@ -32,7 +32,6 @@ if os.environ.get('READTHEDOCS', None) == 'True':
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.ifconfig', 'breathe']
 
-breathe_projects = { "format": "doxyxml" }
 breathe_default_project = "format"
 breathe_domain_by_extension = {"h" : "cpp"}
 
@@ -137,7 +136,7 @@ html_theme_options = {
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = ['sphinx-bootstrap-theme']
+html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
