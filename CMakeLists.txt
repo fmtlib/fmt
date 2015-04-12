@@ -153,7 +153,7 @@ endif ()
 #endif ()
 
 # GTest doesn't detect <tuple> with clang.
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR MSVC)
   target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
 endif ()
 
