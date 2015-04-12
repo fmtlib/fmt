@@ -152,8 +152,12 @@ endif ()
 #  add_definitions(-DFMT_USE_STATIC_ASSERT=1)
 #endif ()
 
+check_cxx_source_compiles("
+  #include <tuple>
+  int main(){ std::tuple<int, double> t; }" FMT_TUPLE)
+
 # GTest doesn't detect <tuple> with clang.
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR MSVC)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR NOT FMT_TUPLE)
   target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
 endif ()
 
