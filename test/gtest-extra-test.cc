@@ -369,7 +369,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
 
 TEST(OutputRedirectTest, DupErrorInCtor) {
   BufferedFile f = open_buffered_file();
-  int fd = (f.fileno)();
+  int fd = (f.fileno_)();
   File copy = File::dup(fd);
   FMT_POSIX(close(fd));
   scoped_ptr<OutputRedirect> redir;

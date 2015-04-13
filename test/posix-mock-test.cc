@@ -445,7 +445,7 @@ TEST(BufferedFileTest, FilenoNoRetry) {
   File::pipe(read_end, write_end);
   BufferedFile f = read_end.fdopen("r");
   fileno_count = 1;
-  EXPECT_SYSTEM_ERROR((f.fileno)(), EINTR, "cannot get file descriptor");
+  EXPECT_SYSTEM_ERROR((f.fileno_)(), EINTR, "cannot get file descriptor");
   EXPECT_EQ(2, fileno_count);
   fileno_count = 0;
 }

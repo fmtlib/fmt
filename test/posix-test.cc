@@ -103,7 +103,7 @@ TEST(BufferedFileTest, MoveAssignment) {
 TEST(BufferedFileTest, MoveAssignmentClosesFile) {
   BufferedFile bf = open_buffered_file();
   BufferedFile bf2 = open_buffered_file();
-  int old_fd = bf2.fileno();
+  int old_fd = bf2.fileno_();
   bf2 = std::move(bf);
   EXPECT_TRUE(isclosed(old_fd));
 }
@@ -123,7 +123,7 @@ TEST(BufferedFileTest, MoveFromTemporaryInAssignment) {
 
 TEST(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
   BufferedFile f = open_buffered_file();
-  int old_fd = f.fileno();
+  int old_fd = f.fileno_();
   f = open_buffered_file();
   EXPECT_TRUE(isclosed(old_fd));
 }
@@ -132,7 +132,7 @@ TEST(BufferedFileTest, CloseFileInDtor) {
   int fd = 0;
   {
     BufferedFile f = open_buffered_file();
-    fd = f.fileno();
+    fd = f.fileno_();
   }
   EXPECT_TRUE(isclosed(fd));
 }
@@ -144,14 +144,14 @@ TEST(BufferedFileTest, CloseErrorInDtor) {
       // the system may recycle closed file descriptor when redirecting the
       // output in EXPECT_STDERR and the second close will break output
       // redirection.
-      FMT_POSIX(close(f->fileno()));
+      FMT_POSIX(close(f->fileno_()));
       SUPPRESS_ASSERT(f.reset());
   }, format_system_error(EBADF, "cannot close file") + "\n");
 }
 
 TEST(BufferedFileTest, Close) {
   BufferedFile f = open_buffered_file();
-  int fd = f.fileno();
+  int fd = f.fileno_();
   f.close();
   EXPECT_TRUE(f.get() == 0);
   EXPECT_TRUE(isclosed(fd));
@@ -159,7 +159,7 @@ TEST(BufferedFileTest, Close) {
 
 TEST(BufferedFileTest, CloseError) {
   BufferedFile f = open_buffered_file();
-  FMT_POSIX(close(f.fileno()));
+  FMT_POSIX(close(f.fileno_()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_TRUE(f.get() == 0);
 }
@@ -171,15 +171,15 @@ TEST(BufferedFileTest, Fileno) {
   // Disable Coverity because this is intentional.
   EXPECT_DEATH_IF_SUPPORTED({
     try {
-      f.fileno();
+      f.fileno_();
     } catch (fmt::SystemError) {
       std::exit(1);
     }
   }, "");
 #endif
   f = open_buffered_file();
-  EXPECT_TRUE(f.fileno() != -1);
-  File copy = File::dup(f.fileno());
+  EXPECT_TRUE(f.fileno_() != -1);
+  File copy = File::dup(f.fileno_());
   EXPECT_READ(copy, FILE_CONTENT);
 }
 

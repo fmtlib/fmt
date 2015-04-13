@@ -195,7 +195,7 @@ public:
 
   // We place parentheses around fileno to workaround a bug in some versions
   // of MinGW that define fileno as a macro.
-  int (fileno)() const;
+  int (fileno_)() const;
 
   void print(CStringRef format_str, const ArgList &args) {
     fmt::print(file_, format_str, args);

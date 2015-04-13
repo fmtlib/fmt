@@ -102,8 +102,8 @@ void fmt::BufferedFile::close() {
 // A macro used to prevent expansion of fileno on broken versions of MinGW.
 #define FMT_ARGS
 
-int fmt::BufferedFile::fileno() const {
-  int fd = FMT_POSIX_CALL(fileno FMT_ARGS(file_));
+int fmt::BufferedFile::fileno_() const {
+  int fd = FMT_SYSTEM(fileno FMT_ARGS(file_));
   if (fd == -1)
     throw SystemError(errno, "cannot get file descriptor");
   return fd;
