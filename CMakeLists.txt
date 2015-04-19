@@ -152,6 +152,11 @@ endif ()
 #  add_definitions(-DFMT_USE_STATIC_ASSERT=1)
 #endif ()
 
+# Workaround a bug in implementation of variadic templates in MSVC11.
+if (MSVC)
+  target_compile_definitions(gmock PUBLIC _VARIADIC_MAX=10)
+endif ()
+
 # GTest doesn't detect <tuple> with clang.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
