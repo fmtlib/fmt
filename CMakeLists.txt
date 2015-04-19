@@ -186,6 +186,8 @@ if (EXISTS .gitignore)
   include(CPack)
 endif ()
 
-# Install our targets
-install(TARGETS format DESTINATION lib)
+# Install targets.
+set(FMT_LIB_DIR lib CACHE STRING
+  "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
+install(TARGETS format DESTINATION ${FMT_LIB_DIR})
 install(FILES format.h DESTINATION include)
