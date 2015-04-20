@@ -842,3 +842,19 @@ TEST(UtilTest, IsEnumConvertibleToInt) {
 }
 #endif
 
+template <typename T>
+bool check_enable_if(
+    typename fmt::internal::EnableIf<sizeof(T) == sizeof(int), T>::type) {
+  return true;
+}
+
+template <typename T>
+bool check_enable_if(
+    typename fmt::internal::EnableIf<sizeof(T) != sizeof(int), T>::type) {
+  return false;
+}
+
+TEST(UtilTest, EnableIf) {
+  EXPECT_TRUE(check_enable_if<int>(42));
+  EXPECT_FALSE(check_enable_if<char>('a'));
+}
