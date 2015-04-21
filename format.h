@@ -1494,14 +1494,13 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 // Defines a variadic function returning void.
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template <typename... Args> \
-  void func(arg_type arg1, const Args & ... args) { \
+  void func(arg_type arg0, const Args & ... args) { \
     namespace internal = fmt::internal; \
     typedef typename internal::SelectValueType<sizeof...(Args)>::Type Value; \
-    const Value array[ \
-      internal::NonZero<sizeof...(Args)>::VALUE] = { \
+    const Value array[internal::NonZero<sizeof...(Args)>::VALUE] = { \
       internal::MakeValue<Char>(args)... \
     }; \
-    func(arg1, ArgList(internal::make_type(args...), array)); \
+    func(arg0, ArgList(internal::make_type(args...), array)); \
   }
 
 // Defines a variadic constructor.
