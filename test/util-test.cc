@@ -423,7 +423,7 @@ ARG_INFO(POINTER, const void *, pointer);
 ARG_INFO(CUSTOM, Arg::CustomValue, custom);
 
 #define CHECK_ARG_INFO(Type, field, value) { \
-  Arg arg = {}; \
+  Arg arg = Arg(); \
   arg.field = value; \
   EXPECT_EQ(value, ArgInfo<Arg::Type>::get(arg)); \
 }
@@ -442,7 +442,7 @@ TEST(ArgTest, ArgInfo) {
   CHECK_ARG_INFO(WSTRING, wstring.value, WSTR);
   int p = 0;
   CHECK_ARG_INFO(POINTER, pointer, &p);
-  Arg arg = {};
+  Arg arg = Arg();
   arg.custom.value = &p;
   EXPECT_EQ(&p, ArgInfo<Arg::CUSTOM>::get(arg).value);
 }
@@ -842,3 +842,30 @@ TEST(UtilTest, IsEnumConvertibleToInt) {
 }
 #endif
 
+template <typename T>
+bool check_enable_if(
+    typename fmt::internal::EnableIf<sizeof(T) == sizeof(int), T>::type *) {
+  return true;
+}
+
+template <typename T>
+bool check_enable_if(
+    typename fmt::internal::EnableIf<sizeof(T) != sizeof(int), T>::type *) {
+  return false;
+}
+
+TEST(UtilTest, EnableIf) {
+  int i = 0;
+  EXPECT_TRUE(check_enable_if<int>(&i));
+  char c = 0;
+  EXPECT_FALSE(check_enable_if<char>(&c));
+}
+
+TEST(UtilTest, Conditional) {
+  int i = 0;
+  fmt::internal::Conditional<true, int, char>::type *pi = &i;
+  (void)pi;
+  char c = 0;
+  fmt::internal::Conditional<false, int, char>::type *pc = &c;
+  (void)pc;
+}

@@ -707,9 +707,8 @@ struct NonZero {
   enum { VALUE = N > 0 ? N : 1 };
 };
 
-// A formatting argument. It is a POD type to allow storage in
-// internal::MemoryBuffer.
-struct Arg {
+// A formatting argument value.
+struct Value {
   template <typename Char>
   struct StringValue {
     const Char *value;
@@ -747,6 +746,11 @@ struct Arg {
     DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
     CSTRING, STRING, WSTRING, POINTER, CUSTOM
   };
+};
+
+// A formatting argument. It is a POD type to allow storage in
+// internal::MemoryBuffer.
+struct Arg : Value {
   Type type;
 };
 
@@ -799,6 +803,12 @@ struct EnableIf {};
 
 template<class T>
 struct EnableIf<true, T> { typedef T type; };
+
+template<bool B, class T, class F>
+struct Conditional { typedef T type; };
+
+template<class T, class F>
+struct Conditional<false, T, F> { typedef F type; };
 
 // A helper function to suppress bogus "conditional expression is constant"
 // warnings.
@@ -1068,7 +1078,15 @@ class ArgList {
   // To reduce compiled code size per formatting function call, types of first
   // MAX_PACKED_ARGS arguments are passed in the types_ field.
   uint64_t types_;
-  const internal::Arg *args_;
+  union {
+    // If the number of arguments is less than MAX_PACKED_ARGS, the argument
+    // values are stored in values_, otherwise they are stored in args_.
+    // This is done to reduce compiled code size as storing larger objects
+    // may require more code (at least on x86-64) even if the same amount of
+    // data is actually copied to stack. It saves ~10% on the bloat test.
+    const internal::Value *values_;
+    const internal::Arg *args_;
+  };
 
   internal::Arg::Type type(unsigned index) const {
     unsigned shift = index * 4;
@@ -1082,6 +1100,10 @@ class ArgList {
   enum { MAX_PACKED_ARGS = 16 };
 
   ArgList() : types_(0) {}
+
+  // TODO: MakeArgList(const Args &...)
+  ArgList(ULongLong types, const internal::Value *values)
+  : types_(types), values_(values) {}
   ArgList(ULongLong types, const internal::Arg *args)
   : types_(types), args_(args) {}
 
@@ -1089,14 +1111,18 @@ class ArgList {
   internal::Arg operator[](unsigned index) const {
     using internal::Arg;
     Arg arg;
+    bool use_values = type(MAX_PACKED_ARGS - 1) == Arg::NONE;
     if (index < MAX_PACKED_ARGS) {
       Arg::Type arg_type = type(index);
+      internal::Value &val = arg;
       if (arg_type != Arg::NONE)
-        arg = args_[index];
+        val = use_values ? values_[index] : args_[index];
       arg.type = arg_type;
       return arg;
     }
-    if (type(MAX_PACKED_ARGS - 1) == Arg::NONE) {
+    if (use_values) {
+      // The index is greater than the number of arguments that can be stored
+      // in values, so return a "none" argument.
       arg.type = Arg::NONE;
       return arg;
     }
@@ -1111,6 +1137,12 @@ class ArgList {
 struct FormatSpec;
 
 namespace internal {
+
+template <std::size_t NUM_ARGS>
+struct SelectValueType {
+  typedef typename Conditional<
+    (NUM_ARGS < ArgList::MAX_PACKED_ARGS), Value, Arg>::type Type;
+};
 
 class FormatterBase {
  private:
@@ -1463,23 +1495,25 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template <typename... Args> \
   void func(arg_type arg1, const Args & ... args) { \
-    const fmt::internal::Arg array[ \
-      fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
-      fmt::internal::MakeValue<Char>(args)... \
+    namespace internal = fmt::internal; \
+    typedef typename internal::SelectValueType<sizeof...(Args)>::Type Value; \
+    const Value array[ \
+      internal::NonZero<sizeof...(Args)>::VALUE] = { \
+      internal::MakeValue<Char>(args)... \
     }; \
-    func(arg1, ArgList(fmt::internal::make_type(args...), array)); \
+    func(arg1, ArgList(internal::make_type(args...), array)); \
   }
 
 // Defines a variadic constructor.
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    using fmt::internal::MakeValue; \
-    const fmt::internal::Arg array[ \
-        fmt::internal::NonZero<sizeof...(Args)>::VALUE] = { \
-      MakeValue<Char>(args)... \
+    namespace internal = fmt::internal; \
+    typedef typename internal::SelectValueType<sizeof...(Args)>::Type Value; \
+    const Value array[internal::NonZero<sizeof...(Args)>::VALUE] = { \
+      internal::MakeValue<Char>(args)... \
     }; \
-    func(arg0, arg1, ArgList(fmt::internal::make_type(args...), array)); \
+    func(arg0, arg1, ArgList(internal::make_type(args...), array)); \
   }
 
 #else
@@ -1492,9 +1526,9 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_WRAP1(func, arg_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::Arg args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    const fmt::internal::Value values[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
     func(arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), args)); \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), values)); \
   }
 
 // Emulates a variadic function returning void on a pre-C++11 compiler.
@@ -1509,9 +1543,9 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_CTOR(ctor, func, arg0_type, arg1_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   ctor(arg0_type arg0, arg1_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::Arg args[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    const fmt::internal::Value values[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
     func(arg0, arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), args)); \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), values)); \
   }
 
 // Emulates a variadic constructor on a pre-C++11 compiler.
@@ -2619,6 +2653,11 @@ inline void set_types(Arg *array, const Args & ... args) {
   array[sizeof...(Args)].type = Arg::NONE;
 }
 
+template <typename... Args>
+inline void set_types(Value *, const Args & ...) {
+  // Do nothing as types are passed separately from values.
+}
+
 // Computes the argument array size by adding 1 to N, which is the number of
 // arguments, if N is zero, because array of zero size is invalid, or if N
 // is greater than ArgList::MAX_PACKED_ARGS to accommodate for an extra
@@ -2634,14 +2673,15 @@ struct ArgArraySize {
   template <typename... Args> \
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
-    using fmt::internal::Arg; \
-    Arg array[fmt::internal::ArgArraySize<sizeof...(Args)>::VALUE] = { \
-      fmt::internal::MakeValue<Char>(args)... \
+    namespace internal = fmt::internal; \
+    typedef typename internal::SelectValueType<sizeof...(Args)>::Type Value; \
+    Value array[internal::ArgArraySize<sizeof...(Args)>::VALUE] = { \
+      internal::MakeValue<Char>(args)... \
     }; \
-    if (fmt::internal::check((sizeof...(Args) > fmt::ArgList::MAX_PACKED_ARGS))) \
+    if (internal::check((sizeof...(Args) > fmt::ArgList::MAX_PACKED_ARGS))) \
       set_types(array, args...); \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(fmt::internal::make_type(args...), array)); \
+      fmt::ArgList(internal::make_type(args...), array)); \
   }
 #else
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
@@ -2650,9 +2690,9 @@ struct ArgArraySize {
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::Arg args[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
+    const fmt::internal::Value values[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), args)); \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), values)); \
   }
 
 # define FMT_VARIADIC_(Char, ReturnType, func, call, ...) \
