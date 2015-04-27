@@ -142,6 +142,8 @@ Projects using this library
 * `PenUltima Online (POL) <http://www.polserver.com/>`_:
   An MMO server, compatible with most Ultima Online clients
 
+* `quasardb <https://www.quasardb.net/>`_: A distributed, high-performance, associative database
+
 * `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
 
 * `Saddy <https://code.google.com/p/saddy/>`_:
