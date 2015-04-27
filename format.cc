@@ -25,7 +25,9 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef FMT_HEADER_ONLY
 #include "format.h"
+#endif
 
 #include <string.h>
 
@@ -39,6 +41,8 @@
 # ifdef __MINGW32__
 #  include <cstring>
 # endif
+# define WIN32_LEAN_AND_MEAN
+# define NOMINMAX
 # include <windows.h>
 #endif
 
