@@ -2677,7 +2677,7 @@ struct ArgArraySize {
     Value array[internal::ArgArraySize<sizeof...(Args)>::VALUE] = { \
       internal::MakeValue<Char>(args)... \
     }; \
-    if (internal::check((sizeof...(Args) > fmt::ArgList::MAX_PACKED_ARGS))) \
+    if (internal::check(sizeof...(Args) > fmt::ArgList::MAX_PACKED_ARGS)) \
       set_types(array, args...); \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(internal::make_type(args...), array)); \
