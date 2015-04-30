@@ -39,7 +39,13 @@
 # ifdef __MINGW32__
 #  include <cstring>
 # endif
-# include <windows.h>
+# if defined(NOMINMAX) || defined(FMT_WIN_MINMAX)
+#  include <windows.h>
+# else
+#  define NOMINMAX
+#  include <windows.h>
+#  undef NOMINMAX
+# endif
 #endif
 
 using fmt::internal::Arg;
