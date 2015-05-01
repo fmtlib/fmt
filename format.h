@@ -1140,12 +1140,6 @@ struct FormatSpec;
 
 namespace internal {
 
-template <std::size_t NUM_ARGS>
-struct SelectValueType {
-  typedef typename Conditional<
-    (NUM_ARGS < ArgList::MAX_PACKED_ARGS), Value, Arg>::type Type;
-};
-
 class FormatterBase {
  private:
   ArgList args_;
@@ -1484,6 +1478,18 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
       (t12.type << 48) | (t13.type << 52) | (t14.type << 56);
 }
 #endif
+
+template <unsigned N>
+struct ArgArray {
+  // Computes the argument array size by adding 1 to N, which is the number of
+  // arguments, if N is zero, because array of zero size is invalid, or if N
+  // is greater than ArgList::MAX_PACKED_ARGS to accommodate for an extra
+  // argument that marks the end of the list.
+  enum { SIZE = N + (N == 0 || N >= ArgList::MAX_PACKED_ARGS ? 1 : 0) };
+
+  typedef typename Conditional<
+    (N < ArgList::MAX_PACKED_ARGS), Value, Arg>::type Type[SIZE];
+};
 }  // namespace internal
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
@@ -1497,24 +1503,20 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template <typename... Args> \
   void func(arg_type arg0, const Args & ... args) { \
-    namespace internal = fmt::internal; \
-    typedef typename internal::SelectValueType<sizeof...(Args)>::Type Value; \
-    const Value array[internal::NonZero<sizeof...(Args)>::VALUE] = { \
-      internal::MakeValue<Char>(args)... \
+    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array = { \
+      fmt::internal::MakeValue<Char>(args)... \
     }; \
-    func(arg0, ArgList(internal::make_type(args...), array)); \
+    func(arg0, ArgList(fmt::internal::make_type(args...), array)); \
   }
 
 // Defines a variadic constructor.
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    namespace internal = fmt::internal; \
-    typedef typename internal::SelectValueType<sizeof...(Args)>::Type Value; \
-    const Value array[internal::NonZero<sizeof...(Args)>::VALUE] = { \
-      internal::MakeValue<Char>(args)... \
+    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array = { \
+      fmt::internal::MakeValue<Char>(args)... \
     }; \
-    func(arg0, arg1, ArgList(internal::make_type(args...), array)); \
+    func(arg0, arg1, ArgList(fmt::internal::make_type(args...), array)); \
   }
 
 #else
@@ -2658,15 +2660,6 @@ template <typename... Args>
 inline void set_types(Value *, const Args & ...) {
   // Do nothing as types are passed separately from values.
 }
-
-// Computes the argument array size by adding 1 to N, which is the number of
-// arguments, if N is zero, because array of zero size is invalid, or if N
-// is greater than ArgList::MAX_PACKED_ARGS to accommodate for an extra
-// argument that marks the end of the list.
-template <unsigned N>
-struct ArgArraySize {
-  enum { VALUE = N + (N == 0 || N >= ArgList::MAX_PACKED_ARGS ? 1 : 0) };
-};
 }
 }
 
@@ -2674,15 +2667,13 @@ struct ArgArraySize {
   template <typename... Args> \
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
-    namespace internal = fmt::internal; \
-    typedef typename internal::SelectValueType<sizeof...(Args)>::Type Value; \
-    Value array[internal::ArgArraySize<sizeof...(Args)>::VALUE] = { \
-      internal::MakeValue<Char>(args)... \
+    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array = { \
+      fmt::internal::MakeValue<Char>(args)... \
     }; \
-    if (internal::check(sizeof...(Args) > fmt::ArgList::MAX_PACKED_ARGS)) \
+    if (fmt::internal::check(sizeof...(Args) > fmt::ArgList::MAX_PACKED_ARGS)) \
       set_types(array, args...); \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(internal::make_type(args...), array)); \
+      fmt::ArgList(fmt::internal::make_type(args...), array)); \
   }
 #else
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
