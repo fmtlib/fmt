@@ -2665,7 +2665,7 @@ inline void set_types(Value *, const Args & ...) {
 // argument that marks the end of the list.
 template <unsigned N>
 struct ArgArraySize {
-  enum { VALUE = N + (N == 0 || N > ArgList::MAX_PACKED_ARGS ? 1 : 0) };
+  enum { VALUE = N + (N == 0 || N >= ArgList::MAX_PACKED_ARGS ? 1 : 0) };
 };
 }
 }
