@@ -1096,7 +1096,6 @@ class ArgList {
 
   ArgList() : types_(0) {}
 
-  // TODO: MakeArgList(const Args &...)
   ArgList(ULongLong types, const internal::Value *values)
   : types_(types), values_(values) {}
   ArgList(ULongLong types, const internal::Arg *args)
