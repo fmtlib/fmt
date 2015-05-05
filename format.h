@@ -1473,7 +1473,8 @@ inline void do_set_types(Arg *args, const T &arg, const Args & ... tail) {
 
 template <typename... Args>
 inline void set_types(Arg *array, const Args & ... args) {
-  do_set_types(array, args...);
+  if (check(sizeof...(Args) > ArgList::MAX_PACKED_ARGS))
+    do_set_types(array, args...);
   array[sizeof...(Args)].type = Arg::NONE;
 }
 
@@ -1497,7 +1498,7 @@ inline void store_args(Arg *args, const T &arg, const Args & ... tail) {
 template <typename Char, typename... Args>
 ArgList make_arg_list(typename ArgArray<sizeof...(Args)>::Type array,
                       const Args & ... args) {
-  if (check(sizeof...(Args) > ArgList::MAX_PACKED_ARGS))
+  if (check(sizeof...(Args) >= ArgList::MAX_PACKED_ARGS))
     set_types(array, args...);
   store_args<Char>(array, args...);
   return ArgList(make_type(args...), array);
