@@ -1446,10 +1446,62 @@ inline uint64_t make_type() { return 0; }
 template <typename T>
 inline uint64_t make_type(const T &arg) { return MakeValue<char>::type(arg); }
 
+template <unsigned N>
+struct ArgArray {
+  // Computes the argument array size by adding 1 to N, which is the number of
+  // arguments, if N is zero, because array of zero size is invalid, or if N
+  // is greater than ArgList::MAX_PACKED_ARGS to accommodate for an extra
+  // argument that marks the end of the list.
+  enum { SIZE = N + (N == 0 || N >= ArgList::MAX_PACKED_ARGS ? 1 : 0) };
+
+  typedef typename Conditional<
+    (N < ArgList::MAX_PACKED_ARGS), Value, Arg>::type Type[SIZE];
+};
+
 #if FMT_USE_VARIADIC_TEMPLATES
 template <typename Arg, typename... Args>
 inline uint64_t make_type(const Arg &first, const Args & ... tail) {
   return make_type(first) | (make_type(tail...) << 4);
+}
+
+inline void do_set_types(Arg *) {}
+
+template <typename T, typename... Args>
+inline void do_set_types(Arg *args, const T &arg, const Args & ... tail) {
+  args->type = static_cast<Arg::Type>(MakeValue<T>::type(arg));
+  do_set_types(args + 1, tail...);
+}
+
+template <typename... Args>
+inline void set_types(Arg *array, const Args & ... args) {
+  do_set_types(array, args...);
+  array[sizeof...(Args)].type = Arg::NONE;
+}
+
+template <typename... Args>
+inline void set_types(Value *, const Args & ...) {
+  // Do nothing as types are passed separately from values.
+}
+
+template <typename Char, typename Value>
+inline void store_args(Value *values) {}
+
+template <typename Char, typename Arg, typename T, typename... Args>
+inline void store_args(Arg *args, const T &arg, const Args & ... tail) {
+  // Assign only the Value subobject of Arg and don't overwrite type (if any)
+  // that is assigned by set_types.
+  Value &value = *args;
+  value = MakeValue<Char>(arg);
+  store_args<Char>(args + 1, tail...);
+}
+
+template <typename Char, typename... Args>
+ArgList make_arg_list(typename ArgArray<sizeof...(Args)>::Type array,
+                      const Args & ... args) {
+  if (check(sizeof...(Args) > ArgList::MAX_PACKED_ARGS))
+    set_types(array, args...);
+  store_args<Char>(array, args...);
+  return ArgList(make_type(args...), array);
 }
 #else
 
@@ -1471,18 +1523,6 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
       (t12.type << 48) | (t13.type << 52) | (t14.type << 56);
 }
 #endif
-
-template <unsigned N>
-struct ArgArray {
-  // Computes the argument array size by adding 1 to N, which is the number of
-  // arguments, if N is zero, because array of zero size is invalid, or if N
-  // is greater than ArgList::MAX_PACKED_ARGS to accommodate for an extra
-  // argument that marks the end of the list.
-  enum { SIZE = N + (N == 0 || N >= ArgList::MAX_PACKED_ARGS ? 1 : 0) };
-
-  typedef typename Conditional<
-    (N < ArgList::MAX_PACKED_ARGS), Value, Arg>::type Type[SIZE];
-};
 }  // namespace internal
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
@@ -1496,20 +1536,16 @@ struct ArgArray {
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template <typename... Args> \
   void func(arg_type arg0, const Args & ... args) { \
-    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array = { \
-      fmt::internal::MakeValue<Char>(args)... \
-    }; \
-    func(arg0, ArgList(fmt::internal::make_type(args...), array)); \
+    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
+    func(arg0, fmt::internal::make_arg_list<Char>(array, args...)); \
   }
 
 // Defines a variadic constructor.
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array = { \
-      fmt::internal::MakeValue<Char>(args)... \
-    }; \
-    func(arg0, arg1, ArgList(fmt::internal::make_type(args...), array)); \
+    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
+    func(arg0, arg1, fmt::internal::make_arg_list<Char>(array, args...)); \
   }
 
 #else
@@ -1522,9 +1558,9 @@ struct ArgArray {
 # define FMT_WRAP1(func, arg_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::Value values[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    const fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
     func(arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), values)); \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
   }
 
 // Emulates a variadic function returning void on a pre-C++11 compiler.
@@ -1539,9 +1575,9 @@ struct ArgArray {
 # define FMT_CTOR(ctor, func, arg0_type, arg1_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   ctor(arg0_type arg0, arg1_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::Value values[] = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    const fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
     func(arg0, arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), values)); \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
   }
 
 // Emulates a variadic constructor on a pre-C++11 compiler.
@@ -2632,41 +2668,13 @@ inline void format_decimal(char *&buffer, T value) {
 #define FMT_GET_ARG_NAME(type, index) arg##index
 
 #if FMT_USE_VARIADIC_TEMPLATES
-
-namespace fmt {
-namespace internal {
-inline void do_set_types(Arg *) {}
-
-template <typename T, typename... Args>
-inline void do_set_types(Arg *args, const T &arg, const Args & ... tail) {
-  args->type = static_cast<Arg::Type>(MakeValue<T>::type(arg));
-  do_set_types(args + 1, tail...);
-}
-
-template <typename... Args>
-inline void set_types(Arg *array, const Args & ... args) {
-  do_set_types(array, args...);
-  array[sizeof...(Args)].type = Arg::NONE;
-}
-
-template <typename... Args>
-inline void set_types(Value *, const Args & ...) {
-  // Do nothing as types are passed separately from values.
-}
-}
-}
-
 # define FMT_VARIADIC_(Char, ReturnType, func, call, ...) \
   template <typename... Args> \
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
-    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array = { \
-      fmt::internal::MakeValue<Char>(args)... \
-    }; \
-    if (fmt::internal::check(sizeof...(Args) > fmt::ArgList::MAX_PACKED_ARGS)) \
-      set_types(array, args...); \
+    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(fmt::internal::make_type(args...), array)); \
+      fmt::internal::make_arg_list<Char>(array, args...)); \
   }
 #else
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
@@ -2675,9 +2683,9 @@ inline void set_types(Value *, const Args & ...) {
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::Value values[] = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
+    fmt::internal::ArgArray<n>::Type arr = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), values)); \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), arr)); \
   }
 
 # define FMT_VARIADIC_(Char, ReturnType, func, call, ...) \
