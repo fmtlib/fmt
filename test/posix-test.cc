@@ -73,7 +73,7 @@ enum FStatSimulation { NONE, MAX_SIZE, ERROR } fstat_sim;
     } \
   }
 
-#ifndef _WIN32
+#ifndef _MSC_VER
 int test::open(const char *path, int oflag, int mode) {
   EMULATE_EINTR(open, -1);
   return ::open(path, oflag, mode);
@@ -87,7 +87,17 @@ int test::fstat(int fd, struct stat *buf) {
     buf->st_size = max_file_size();
   return result;
 }
+#else
+errno_t test::sopen_s(
+    int* pfh, const char *filename, int oflag, int shflag, int pmode) {
+  EMULATE_EINTR(open, EINTR);
+  return _sopen_s(pfh, filename, oflag, shflag, pmode);
+}
 
+static LONGLONG max_file_size() { return std::numeric_limits<LONGLONG>::max(); }
+#endif
+
+#ifndef _WIN32
 long test::sysconf(int name) {
   long result = ::sysconf(name);
   if (!sysconf_error)
@@ -97,14 +107,6 @@ long test::sysconf(int name) {
   return -1;
 }
 #else
-errno_t test::sopen_s(
-    int* pfh, const char *filename, int oflag, int shflag, int pmode) {
-  EMULATE_EINTR(open, EINTR);
-  return _sopen_s(pfh, filename, oflag, shflag, pmode);
-}
-
-static LONGLONG max_file_size() { return std::numeric_limits<LONGLONG>::max(); }
-
 DWORD test::GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
   if (fstat_sim == ERROR) {
     SetLastError(ERROR_ACCESS_DENIED);

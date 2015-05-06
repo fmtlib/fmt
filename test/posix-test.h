@@ -31,26 +31,32 @@
 #include <errno.h>
 #include <stdio.h>
 
-#ifndef _WIN32
-struct stat;
-#else
+#ifdef _WIN32
 # include <windows.h>
+#endif
+
+#ifndef _MSC_VER
+struct stat;
 #endif
 
 namespace test {
 
-#if !defined(_WIN32) || defined(__MINGW32__)
+#ifndef _MSC_VER
 // Size type for read and write.
 typedef size_t size_t;
 typedef ssize_t ssize_t;
 int open(const char *path, int oflag, int mode);
 int fstat(int fd, struct stat *buf);
-long sysconf(int name);
 #else
 typedef unsigned size_t;
 typedef int ssize_t;
 errno_t sopen_s(
     int* pfh, const char *filename, int oflag, int shflag, int pmode);
+#endif
+
+#ifndef _WIN32
+long sysconf(int name);
+#else
 DWORD GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh);
 #endif
 
