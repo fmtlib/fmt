@@ -177,7 +177,11 @@ int test::fclose(FILE *stream) {
 
 int (test::fileno)(FILE *stream) {
   EMULATE_EINTR(fileno, -1);
+#ifdef fileno
+  return FMT_POSIX(fileno(stream));
+#else
   return ::FMT_POSIX(fileno(stream));
+#endif
 }
 
 #ifndef _WIN32
@@ -433,7 +437,7 @@ TEST(BufferedFileTest, FilenoNoRetry) {
   File::pipe(read_end, write_end);
   BufferedFile f = read_end.fdopen("r");
   fileno_count = 1;
-  EXPECT_SYSTEM_ERROR(f.fileno(), EINTR, "cannot get file descriptor");
+  EXPECT_SYSTEM_ERROR((f.fileno)(), EINTR, "cannot get file descriptor");
   EXPECT_EQ(2, fileno_count);
   fileno_count = 0;
 }
