@@ -383,8 +383,9 @@ section in the documentation is based on the one from Python `string module
 documentation <http://docs.python.org/3/library/string.html#module-string>`_
 adapted for the current library. For this reason the documentation is
 distributed under the Python Software Foundation license available in
-`doc/LICENSE.python
+`doc/python-license.txt
 <https://raw.github.com/cppformat/cppformat/master/doc/python-license.txt>`_.
+It only applies if you distribute the documentation of C++ Format.
 
 Acknowledgments
 ---------------
