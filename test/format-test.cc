@@ -72,15 +72,31 @@ using fmt::pad;
 
 namespace {
 
+// Format value using the standard library.
+template <typename Char, typename T>
+std::basic_string<Char> std_format(const T &value) {
+  std::basic_ostringstream<Char> os;
+  os << value;
+  return os.str();
+}
+
+#ifdef __MINGW32__
+// Workaround a bug in formatting long double in MinGW.
+template <typename Char>
+std::basic_string<Char> std_format(long double value) {
+  char buffer[100];
+  sprintf_s(buffer, sizeof(buffer), "%Lg", value);
+  return buffer;
+}
+#endif
+
 // Checks if writing value to BasicWriter<Char> produces the same result
 // as writing it to std::basic_ostringstream<Char>.
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T &value, const char *type) {
-  std::basic_ostringstream<Char> os;
-  os << value;
-  std::basic_string<Char> expected = os.str();
   std::basic_string<Char> actual =
       (fmt::BasicMemoryWriter<Char>() << value).str();
+  std::basic_string<Char> expected = std_format<Char>(value);
   if (expected == actual)
     return ::testing::AssertionSuccess();
   return ::testing::AssertionFailure()
