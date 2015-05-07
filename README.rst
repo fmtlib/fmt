@@ -49,7 +49,7 @@ Features
   overflow errors.
 * Ease of use: small self-contained code base, no external dependencies,
   permissive BSD `license
-  <https://raw.github.com/cppformat/cppformat/master/LICENSE.rst>`_
+  <https://github.com/cppformat/cppformat/blob/master/LICENSE.rst>`_
 * `Portability <http://cppformat.github.io#portability>`_ with consistent output
   across platforms and support for older compilers.
 * Clean warning-free codebase even on high warning levels
@@ -375,7 +375,7 @@ License
 -------
 
 C++ Format is distributed under the BSD `license
-<https://raw.github.com/cppformat/cppformat/master/LICENSE.rst>`_.
+<https://github.com/cppformat/cppformat/blob/master/LICENSE.rst>`_.
 
 The `Format String Syntax
 <http://cppformat.readthedocs.org/en/latest/syntax.html>`_
