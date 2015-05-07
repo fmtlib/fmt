@@ -74,19 +74,18 @@ namespace {
 
 // Format value using the standard library.
 template <typename Char, typename T>
-std::basic_string<Char> std_format(const T &value) {
+void std_format(const T &value, std::basic_string<Char> &result) {
   std::basic_ostringstream<Char> os;
   os << value;
-  return os.str();
+  result = os.str();
 }
 
 #ifdef __MINGW32__
 // Workaround a bug in formatting long double in MinGW.
-template <typename Char>
-std::basic_string<Char> std_format(long double value) {
+void std_format(long double value, std::string &result) {
   char buffer[100];
-  sprintf_s(buffer, sizeof(buffer), "%Lg", value);
-  return buffer;
+  snprintf(buffer, sizeof(buffer), "%Lg", value);
+  result = buffer;
 }
 #endif
 
@@ -96,7 +95,8 @@ template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T &value, const char *type) {
   std::basic_string<Char> actual =
       (fmt::BasicMemoryWriter<Char>() << value).str();
-  std::basic_string<Char> expected = std_format<Char>(value);
+  std::basic_string<Char> expected;
+  std_format<Char>(value, expected);
   if (expected == actual)
     return ::testing::AssertionSuccess();
   return ::testing::AssertionFailure()
