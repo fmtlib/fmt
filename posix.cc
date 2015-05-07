@@ -151,8 +151,8 @@ fmt::LongLong fmt::File::size() const {
     if (error != NO_ERROR)
       throw WindowsError(GetLastError(), "cannot get file size");
   }
-  fmt::ULongLong size = size_upper;
-  return (size << sizeof(DWORD) * CHAR_BIT) | size_lower;
+  fmt::ULongLong long_size = size_upper;
+  return (long_size << sizeof(DWORD) * CHAR_BIT) | size_lower;
 #else
   typedef struct stat Stat;
   Stat file_stat = Stat();
