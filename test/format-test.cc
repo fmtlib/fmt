@@ -84,7 +84,7 @@ void std_format(const T &value, std::basic_string<Char> &result) {
 // Workaround a bug in formatting long double in MinGW.
 void std_format(long double value, std::string &result) {
   char buffer[100];
-  snprintf(buffer, sizeof(buffer), "%Lg", value);
+  safe_sprintf(buffer, "%Lg", value);
   result = buffer;
 }
 #endif
@@ -96,7 +96,7 @@ template <typename Char, typename T>
   std::basic_string<Char> actual =
       (fmt::BasicMemoryWriter<Char>() << value).str();
   std::basic_string<Char> expected;
-  std_format<Char>(value, expected);
+  std_format(value, expected);
   if (expected == actual)
     return ::testing::AssertionSuccess();
   return ::testing::AssertionFailure()
