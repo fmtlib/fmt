@@ -64,3 +64,10 @@ For an example of using C++ Format with Android NDK, see the
 repository.
 
 __ https://github.com/cppformat/cppformat/blob/master/Android.mk
+
+Homebrew
+========
+
+C++ Format can be installed on OS X using `Homebrew <http://brew.sh/>`_::
+
+  brew install cppformat
