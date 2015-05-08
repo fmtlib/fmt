@@ -1484,7 +1484,7 @@ inline void set_types(Value *, const Args & ...) {
 }
 
 template <typename Char, typename Value>
-inline void store_args(Value *values) {}
+inline void store_args(Value *) {}
 
 template <typename Char, typename Arg, typename T, typename... Args>
 inline void store_args(Arg *args, const T &arg, const Args & ... tail) {
