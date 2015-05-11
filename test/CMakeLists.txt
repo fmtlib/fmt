@@ -82,9 +82,11 @@ if (HAVE_FNO_EXCEPTIONS_FLAG)
     PROPERTIES COMPILE_FLAGS -fno-exceptions)
 endif ()
 
-add_test(compile-test ${CMAKE_CTEST_COMMAND}
-  --build-and-test
-  "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"
-  "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
-  --build-generator ${CMAKE_GENERATOR}
-  --build-makeprogram ${CMAKE_MAKE_PROGRAM})
+if (FMT_EXTRA_TESTS)
+  add_test(compile-test ${CMAKE_CTEST_COMMAND}
+    --build-and-test
+    "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"
+    "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
+    --build-generator ${CMAKE_GENERATOR}
+    --build-makeprogram ${CMAKE_MAKE_PROGRAM})
+endif ()
