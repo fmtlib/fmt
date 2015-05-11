@@ -1,22 +1,22 @@
 C++ Format
 ==========
 
-.. image:: https://badges.gitter.im/Join%20Chat.svg
-   :alt: Join the chat at https://gitter.im/cppformat/cppformat
-   :target: https://gitter.im/cppformat/cppformat?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-
 .. image:: https://travis-ci.org/cppformat/cppformat.png?branch=master
-  :target: https://travis-ci.org/cppformat/cppformat
+   :target: https://travis-ci.org/cppformat/cppformat
 
 .. image:: https://ci.appveyor.com/api/projects/status/qk0bhyhqp1ekpat8
-  :target: https://ci.appveyor.com/project/vitaut/cppformat
+   :target: https://ci.appveyor.com/project/vitaut/cppformat
 
 .. image:: https://readthedocs.org/projects/cppformat/badge/?version=stable
    :target: http://cppformat.readthedocs.org/en/stable/
    :alt: Documentation Status
    
 .. image:: https://webapi.biicode.com/v1/badges/vitaut/vitaut/cppformat/master?dummy
-  :target: https://www.biicode.com/vitaut/cppformat
+   :target: https://www.biicode.com/vitaut/cppformat
+
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/cppformat/cppformat
+   :target: https://gitter.im/cppformat/cppformat?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 C++ Format is an open-source formatting library for C++.
 It can be used as a safe alternative to printf or as a fast
