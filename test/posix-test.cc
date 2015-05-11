@@ -87,7 +87,7 @@ typedef off_t FileSize;
 
 static FileSize max_file_size() { return std::numeric_limits<FileSize>::max(); }
 
-int test::fstat(int fd, struct stat *buf) {
+int (test::fstat)(int fd, struct stat *buf) {
   int result = ::fstat(fd, buf);
   if (fstat_sim == MAX_SIZE)
     buf->st_size = max_file_size();
