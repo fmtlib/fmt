@@ -79,7 +79,13 @@ int test::open(const char *path, int oflag, int mode) {
   return ::open(path, oflag, mode);
 }
 
-static off_t max_file_size() { return std::numeric_limits<off_t>::max(); }
+#ifdef _WIN32
+typedef fmt::LongLong FileSize;
+#else
+typedef off_t FileSize;
+#endif
+
+static FileSize max_file_size() { return std::numeric_limits<FileSize>::max(); }
 
 int test::fstat(int fd, struct stat *buf) {
   int result = ::fstat(fd, buf);
