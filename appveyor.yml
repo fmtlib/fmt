@@ -5,8 +5,8 @@ environment:
     CONFIG: Debug
   - BUILD: msvc
     CONFIG: Release
-  - BUILD: mingw
-    CONFIG: Debug
+#  - BUILD: mingw
+#    CONFIG: Debug
 #  - BUILD: mingw
 #    CONFIG: Release
 
