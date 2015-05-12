@@ -1,14 +1,14 @@
 environment:
   CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
-#  - BUILD: msvc
-#    CONFIG: Debug
-#  - BUILD: msvc
-#    CONFIG: Release
+  - BUILD: msvc
+    CONFIG: Debug
+  - BUILD: msvc
+    CONFIG: Release
   - BUILD: mingw
     CONFIG: Debug
-#  - BUILD: mingw
-#    CONFIG: Release
+  - BUILD: mingw
+    CONFIG: Release
 
 build_script:
   - python support/appveyor-build.py

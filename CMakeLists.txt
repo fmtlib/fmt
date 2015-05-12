@@ -31,8 +31,8 @@ if (HAVE_STD_CPP11_FLAG)
   # It may not in MinGW due to bug http://sourceforge.net/p/mingw/bugs/2024/.
   check_cxx_source_compiles("
     #include <unistd.h>
-    int main() {}" FMT_CPP11_IO_H)
-  if (FMT_CPP11_CMATH AND FMT_CPP11_IO_H)
+    int main() {}" FMT_CPP11_UNISTD_H)
+  if (FMT_CPP11_CMATH AND FMT_CPP11_UNISTD_H)
     set(CPP11_FLAG -std=c++11)
   endif ()
   set(CMAKE_REQUIRED_FLAGS )
