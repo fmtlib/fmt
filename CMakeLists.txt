@@ -110,7 +110,9 @@ include_directories(. gmock)
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
 
-add_library(gmock STATIC gmock/gmock-gtest-all.cc)
+add_library(gmock STATIC
+  gmock/gmock-gtest-all.cc gmock/gmock/gmock.h
+  gmock/gtest/gtest.h gmock/gtest/gtest-spi.h)
 find_package(Threads)
 target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
 
