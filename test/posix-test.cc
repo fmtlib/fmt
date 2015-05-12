@@ -78,32 +78,16 @@ int test::open(const char *path, int oflag, int mode) {
   EMULATE_EINTR(open, -1);
   return ::open(path, oflag, mode);
 }
-
-#ifdef _WIN32
-typedef fmt::LongLong FileSize;
-#else
-typedef off_t FileSize;
-#endif
-
-static FileSize max_file_size() { return std::numeric_limits<FileSize>::max(); }
-
-int (test::fstat)(int fd, struct stat *buf) {
-  int result = ::fstat(fd, buf);
-  if (fstat_sim == MAX_SIZE)
-    buf->st_size = max_file_size();
-  return result;
-}
 #else
 errno_t test::sopen_s(
     int* pfh, const char *filename, int oflag, int shflag, int pmode) {
   EMULATE_EINTR(open, EINTR);
   return _sopen_s(pfh, filename, oflag, shflag, pmode);
 }
-
-static LONGLONG max_file_size() { return std::numeric_limits<LONGLONG>::max(); }
 #endif
 
 #ifndef _WIN32
+
 long test::sysconf(int name) {
   long result = ::sysconf(name);
   if (!sysconf_error)
@@ -112,7 +96,20 @@ long test::sysconf(int name) {
   errno = EINVAL;
   return -1;
 }
+
+static off_t max_file_size() { return std::numeric_limits<off_t>::max(); }
+
+int test::fstat(int fd, struct stat *buf) {
+  int result = ::fstat(fd, buf);
+  if (fstat_sim == MAX_SIZE)
+    buf->st_size = max_file_size();
+  return result;
+}
+
 #else
+
+static LONGLONG max_file_size() { return std::numeric_limits<LONGLONG>::max(); }
+
 DWORD test::GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
   if (fstat_sim == ERROR) {
     SetLastError(ERROR_ACCESS_DENIED);
@@ -125,6 +122,7 @@ DWORD test::GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
   }
   return ::GetFileSize(hFile, lpFileSizeHigh);
 }
+
 #endif
 
 int test::close(int fildes) {
