@@ -994,7 +994,7 @@ TEST(FormatterTest, RuntimePrecision) {
       FormatError, "number is too big");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, -1l),
       FormatError, "negative precision");
-  if (sizeof(long) > sizeof(int)) {
+  if (fmt::internal::check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG(format("{0:.{1}}", 0, (value + 1)),
         FormatError, "number is too big");
@@ -1050,7 +1050,7 @@ void check_unknown_types(
   char format_str[BUFFER_SIZE], message[BUFFER_SIZE];
   const char *special = ".0123456789}";
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
-    char c = i;
+    char c = static_cast<char>(i);
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
     safe_sprintf(format_str, "{0:10%c}", c);
     if (std::isprint(static_cast<unsigned char>(c)))
