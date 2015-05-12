@@ -10,7 +10,7 @@ if (NOT CMAKE_BUILD_TYPE)
     "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif ()
 
-option(FMT_EXTRA_TESTS "Enable extra tests." OFF)
+option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 
 project(FORMAT)
 
@@ -90,16 +90,16 @@ if (BIICODE)
 endif ()
 
 add_library(format ${FMT_SOURCES})
-if (CMAKE_COMPILER_IS_GNUCXX)
+if (FMT_PEDANTIC AND CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(format PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -Wshadow -pedantic")
 endif ()
 
-# If FMT_EXTRA_TESTS is TRUE, then test compilation with both -std=c++11
+# If FMT_PEDANTIC is TRUE, then test compilation with both -std=c++11
 # and the default flags. Otherwise use only the default flags.
 # The library is distributed in the source form and users have full control
 # over compile options, so the options used here only matter for testing.
-if (CPP11_FLAG AND FMT_EXTRA_TESTS)
+if (CPP11_FLAG AND FMT_PEDANTIC)
   set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   # Test compilation with default flags.
   file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)

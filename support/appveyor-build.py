@@ -6,7 +6,7 @@ from subprocess import check_call
 
 build = os.environ['BUILD']
 config = os.environ['CONFIG']
-cmake_command = ['cmake', '-DFMT_EXTRA_TESTS=ON', '-DCMAKE_BUILD_TYPE=' + config]
+cmake_command = ['cmake', '-DFMT_PEDANTIC=ON', '-DCMAKE_BUILD_TYPE=' + config]
 if build == 'mingw':
   cmake_command.append('-GMinGW Makefiles')
   build_command = ['mingw32-make', '-j4']

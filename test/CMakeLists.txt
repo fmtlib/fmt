@@ -24,14 +24,14 @@ endif ()
 
 add_fmt_test(gtest-extra-test)
 add_fmt_test(format-test)
-if (FMT_EXTRA_TESTS AND MSVC)
+if (FMT_PEDANTIC AND MSVC)
   set_target_properties(format-test PROPERTIES COMPILE_FLAGS /W4)
 endif ()
 
 add_fmt_test(format-impl-test CUSTOM_LINK)
 add_fmt_test(printf-test)
 foreach (target format-test printf-test)
-  if (CMAKE_COMPILER_IS_GNUCXX)
+  if (FMT_PEDANTIC AND CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(${target} PROPERTIES COMPILE_FLAGS
       "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
   endif ()
@@ -82,7 +82,7 @@ if (HAVE_FNO_EXCEPTIONS_FLAG)
     PROPERTIES COMPILE_FLAGS -fno-exceptions)
 endif ()
 
-if (FMT_EXTRA_TESTS)
+if (FMT_PEDANTIC)
   add_test(compile-test ${CMAKE_CTEST_COMMAND}
     --build-and-test
     "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"
