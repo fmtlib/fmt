@@ -1163,6 +1163,8 @@ FMT_FUNC int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
 
 #ifndef FMT_HEADER_ONLY
 
+template class fmt::internal::BasicData<void>;
+
 // Explicit instantiations for char.
 
 template void fmt::internal::FixedBuffer<char>::grow(std::size_t);
