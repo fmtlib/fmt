@@ -391,6 +391,11 @@ distributed under the Python Software Foundation license available in
 <https://raw.github.com/cppformat/cppformat/master/doc/python-license.txt>`_.
 It only applies if you distribute the documentation of C++ Format.
 
+Links
+-----
+
+`API changes/compatibility report <http://upstream-tracker.org/versions/cppformat.html>`_
+
 Acknowledgments
 ---------------
 
