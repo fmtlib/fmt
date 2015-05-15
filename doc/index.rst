@@ -85,7 +85,7 @@ throws a ``FormatError`` exception with description
 ``"forty-two"`` is a string while the format code ``d``
 only applies to integers.
 
-Where possible, errors are catched at compile time. For example, the code
+Where possible, errors are caught at compile time. For example, the code
 
 .. code:: c++
 
