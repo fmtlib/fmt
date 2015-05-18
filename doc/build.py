@@ -53,11 +53,5 @@ def build_docs(workdir, travis):
 
 returncode = 1
 travis = 'TRAVIS' in os.environ
-workdir = tempfile.mkdtemp()
-try:
-  returncode = build_docs(workdir, travis=travis)
-finally:
-  # Don't remove workdir on Travis because the VM is discarded anyway.
-  if not travis:
-    shutil.rmtree(workdir)
+returncode = build_docs('', travis=travis)
 exit(returncode)
