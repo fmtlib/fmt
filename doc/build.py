@@ -18,7 +18,7 @@ def build_docs(workdir, travis):
   activate_this_file = os.path.join(virtualenv_dir, 'bin', 'activate_this.py')
   execfile(activate_this_file, dict(__file__=activate_this_file))
   # Install Sphinx, Breathe and the Bootstrap theme.
-  pip_install('sphinx==1.2.2')
+  pip_install('sphinx==1.3.1')
   pip_install('michaeljones/breathe', '18bd461b4e29dde0adf5df4b3da7e5473e2c2983')
   pip_install('cppformat/sphinx-bootstrap-theme', '534ba82ef51c17e0f13e8e57b9fa133fa1926c80')
   # Build docs.
