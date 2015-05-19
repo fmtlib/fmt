@@ -1,0 +1,55 @@
+@import 'bootstrap.less';
+
+@header-bg: #094d75;
+@icon-font-path: "fonts/";
+
+.navbar {
+  border-radius: 0;
+  margin-bottom: 0;
+  background-color: darken(@header-bg, 10%);
+}
+
+.navbar-content {
+  .make-md-column-offset(2);
+  .make-md-column(8);
+}
+
+.jumbotron {
+  #gradient > .vertical(@header-bg; darken(@header-bg, 2%); 50%; 50%);
+  background-size: 100% 4px;
+  background-color: @header-bg;
+  background-repeat: repeat-y;
+  color: white;
+  text-align: center;
+}
+
+div.sphinxsidebar {
+  margin-left: 0;
+}
+
+// Keep content not too wide for better readability.
+.content {
+  .make-md-column-offset(2);
+  .make-md-column(8);
+}
+
+.footer {
+  padding-top: 20px;
+  padding-bottom: 20px;
+  border-top: 1px solid @gray-lighter;
+  text-align: center;
+}
+
+// TODO: check if this is needed
+/*.github-btn {
+  border: 0;
+  overflow: hidden;
+}
+.public-func dd {
+  margin-left: 0;
+}*/
+
+// Indent descriptions of classes, defines and functions.
+.class dd, .define dd, .function dd {
+  margin-left: 30px;
+}

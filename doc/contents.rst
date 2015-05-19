@@ -1,10 +1,10 @@
-##########
-C++ Format
-##########
+########
+Contents
+########
 
 .. toctree::
    :maxdepth: 2
 
    usage
-   reference
+   api
    syntax
