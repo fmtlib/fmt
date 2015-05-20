@@ -3,12 +3,19 @@
 
 from __future__ import print_function
 import os, shutil, tempfile
-from subprocess import check_call, check_output, Popen, PIPE
+from subprocess import check_call, CalledProcessError, Popen, PIPE
 
 def pip_install(package, commit=None):
   "Install package using pip."
   if commit:
-    if check_output(['pip', 'show', package.split('/')[1]]):
+    cmd = ['pip', 'show', package.split('/')[1]]
+    p = Popen(cmd, stdout=PIPE)
+    output = p.communicate()[0]
+    if p.returncode != 0:
+      if 'No command by the name pip show' in output:
+        return # Old version of pip - ignore
+      raise CalledProcessError(p.returncode, cmd)
+    if output:
       return # Already installed
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   check_call(['pip', 'install', '-q', package])
