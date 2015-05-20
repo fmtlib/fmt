@@ -44,21 +44,21 @@ div.sphinxsidebar {
   text-align: center;
 }
 
-// TODO: check if this is needed
-/*.github-btn {
-  border: 0;
-  overflow: hidden;
-}
-.public-func dd {
-  margin-left: 0;
-}*/
-
-// Indent descriptions of classes, defines and functions.
-.class dd, .define dd, .function dd {
-  margin-left: 30px;
+// Indent descriptions of classes, functions and macros.
+.class dd, .function dd, .macro dd {
+  margin-left: 20px;
 }
 
-// Remove Bootstrap padding for code elements in API signatures.
+// Remove Bootstrap padding for Sphinx containers.
+.breathe-sectiondef.container {
+  padding: 0;
+}
+
+// Remove Bootstrap padding for Sphinx code elements in API signatures.
 .descclassname, .descname {
   padding: 0;
+}
+
+p.rubric {
+  margin-top: 10px;
 }
