@@ -32,7 +32,7 @@ arguments in the resulting string.
 
 .. doxygenfunction:: print(StringRef, ArgList)
 
-.. doxygenfunction:: print(std::FILE*, StringRef, ArgList)
+.. doxygenfunction:: print(std::FILE *, StringRef, ArgList)
 
 .. doxygenfunction:: print(std::ostream&, StringRef, ArgList)
 
@@ -69,7 +69,7 @@ Write API
 
 .. doxygenfunction:: hexu
 
-.. doxygenfunction:: pad(int, unsigned int, Char)
+.. doxygenfunction:: pad(int, unsigned, Char)
 
 Utilities
 =========
