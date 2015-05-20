@@ -13,9 +13,10 @@ def pip_install(package, commit=None):
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   check_call(['pip', 'install', '-q', package])
 
-def build_docs(workdir, travis):
+def build_docs():
   # Create virtualenv.
-  virtualenv_dir = os.path.join(workdir, 'virtualenv')
+  doc_dir = os.path.dirname(os.path.realpath(__file__))
+  virtualenv_dir = os.path.join(doc_dir, 'virtualenv')
   check_call(['virtualenv', virtualenv_dir])
   activate_this_file = os.path.join(virtualenv_dir, 'bin', 'activate_this.py')
   execfile(activate_this_file, dict(__file__=activate_this_file))
@@ -23,8 +24,8 @@ def build_docs(workdir, travis):
   pip_install('sphinx==1.3.1')
   pip_install('michaeljones/breathe', '18bd461b4e29dde0adf5df4b3da7e5473e2c2983')
   # Build docs.
-  doc_dir = os.path.dirname(os.path.realpath(__file__))
-  p = Popen(['doxygen', '-'], stdin=PIPE)
+  cmd = ['doxygen', '-']
+  p = Popen(cmd, stdin=PIPE, cwd=doc_dir)
   p.communicate(input=r'''
       PROJECT_NAME      = C++ Format
       GENERATE_LATEX    = NO
@@ -46,13 +47,12 @@ def build_docs(workdir, travis):
       EXCLUDE_SYMBOLS   = fmt::internal::* StringValue write_str
     '''.format(os.path.dirname(doc_dir)))
   if p.returncode != 0:
-    return p.returncode
-  check_call(['sphinx-build',
-              '-D', "breathe_projects.format=" + os.path.join(os.getcwd(), "doxyxml"),
-              '-b', 'html', doc_dir, 'html'])
-  return 0
+    raise CalledProcessError(p.returncode, cmd)
+  check_call(['sphinx-build', '-D', 'breathe_projects.format=doxyxml',
+              '-b', 'html', '.', 'html'], cwd=doc_dir)
+  check_call(['lessc', '--clean-css', '--include-path=bootstrap', 'cppformat.less',
+              'html/_static/cppformat.css'], cwd=doc_dir)
+  return os.path.join(doc_dir, 'html')
 
-returncode = 1
-travis = 'TRAVIS' in os.environ
-returncode = build_docs('', travis=travis)
-exit(returncode)
+if __name__ == '__main__':
+  build_docs()

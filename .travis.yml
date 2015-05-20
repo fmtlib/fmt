@@ -4,17 +4,15 @@ os:
   - linux
   - osx
 
-before_install:
-  - git submodule update --init
-
 env:
-  - BUILD_TYPE=Debug
-  - BUILD_TYPE=Release
+  - BUILD=Doc
+  - BUILD=Debug
+  - BUILD=Release
+
+matrix:
+  exclude:
+    - os: osx
+    - env: BUILD=Doc
 
 script:
-  - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DFMT_PEDANTIC=ON .
-  - make -j4
-  - CTEST_OUTPUT_ON_FAILURE=1 make test
-
-after_failure:
-  - cat Testing/Temporary/LastTest.log
+  - support/travis-build.py
