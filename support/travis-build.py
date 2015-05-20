@@ -25,11 +25,12 @@ if build == 'Doc':
   # Clone the cppformat.github.io repo.
   repo = 'cppformat.github.io'
   rmtree_if_exists(repo)
-  check_call(['git', 'clone', 'https://github.com/cppformat/{}.git'.format(repo)])
+  git_url = 'https://github.com/' if travis else 'git@github.com:'
+  check_call(['git', 'clone', git_url + 'cppformat/{}.git'.format(repo)])
   # Copy docs to the repo.
   target_dir = os.path.join(repo, 'dev')
   rmtree_if_exists(target_dir)
-  shutil.copytree(html_dir, target_dir)
+  shutil.copytree(html_dir, target_dir, ignore=shutil.ignore_patterns('.*'))
   if travis:
     check_call(['git', 'config', '--global', 'user.name', 'amplbot'])
     check_call(['git', 'config', '--global', 'user.email', 'viz@ampl.com'])
@@ -37,8 +38,10 @@ if build == 'Doc':
   check_call(['git', 'add', '--all'], cwd=repo)
   if call(['git', 'diff-index', '--quiet', 'HEAD'], cwd=repo):
     check_call(['git', 'commit', '-m', 'Update documentation'], cwd=repo)
-    cmd = 'git push https://$KEY@github.com/cppformat/cppformat.github.io.git master'
-    p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT)
+    cmd = 'git push'
+    if travis:
+      cmd += ' https://$KEY@github.com/cppformat/cppformat.github.io.git master'
+    p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT, cwd=repo)
     # Remove URL from output because it may contain a token.
     print(re.sub(r'https:.*\.git', '<url>', p.communicate()[0]))
     if p.returncode != 0:
