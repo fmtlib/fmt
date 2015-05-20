@@ -9,13 +9,13 @@ def pip_install(package, commit=None):
   "Install package using pip."
   if commit:
     cmd = ['pip', 'show', package.split('/')[1]]
-    p = Popen(cmd, stdout=PIPE)
-    output = p.communicate()[0]
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate()
     if p.returncode != 0:
-      if 'No command by the name pip show' in output:
-        return # Old version of pip - ignore
-      raise CalledProcessError(p.returncode, cmd)
-    if output:
+      # Check if pip supports the show command.
+      if 'No command by the name pip show' not in stderr:
+        raise CalledProcessError(p.returncode, cmd)
+    elif stdout:
       return # Already installed
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   check_call(['pip', 'install', '-q', package])
