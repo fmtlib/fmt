@@ -1,5 +1,3 @@
-.. cpp:namespace:: fmt
-
 .. _string-formatting-api:
 
 *************
