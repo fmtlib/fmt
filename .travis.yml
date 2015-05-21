@@ -2,12 +2,12 @@ language: cpp
 
 os:
   - linux
-  - osx
+  #- osx
 
 env:
   - BUILD=Doc
-  - BUILD=Debug
-  - BUILD=Release
+  #- BUILD=Debug
+  #- BUILD=Release
 
 matrix:
   exclude:
