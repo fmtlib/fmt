@@ -44,6 +44,8 @@
               {%endif%}
             {% endfor %}
           </ul>
+          {% if pagename != 'search' %}
+          <!-- TODO: use the same form on the Search page -->
           <form class="navbar-form navbar-right" role="search" action="{{ pathto('search') }}" method="get">
             <div class="form-group">
               <input type="text" name="q" class="form-control" placeholder="Search">
@@ -51,6 +53,7 @@
               <input type="hidden" name="area" value="default" />
             </div>
           </form>
+          {%endif%}
         </div> <!-- /.navbar-collapse -->
       </div> <!-- /.col-md-offset-2 -->
     </div> <!-- /.row -->
