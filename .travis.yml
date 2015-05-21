@@ -5,6 +5,11 @@ os:
   #- osx
 
 env:
+  global:
+    - secure: |-
+        TUZKaV/W4ldNNY5UqPqUgVGL3oMnktX2ny9c/FCa1tdFU34XBkMtDFIIQ19Qu/GGIYbG32
+        Pdf/rX5+65kmjONSusBheRlVlWfZ2/cXjGFFFSkNn2JLLyGWpEZ6fdvr9yQVD57TXsY9Zf
+        allEyZLeSLeWFPeuhEOxq4F8YhKlQxI=
   - BUILD=Doc
   #- BUILD=Debug
   #- BUILD=Release
