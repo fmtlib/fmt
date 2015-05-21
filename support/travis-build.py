@@ -17,6 +17,8 @@ if build == 'Doc':
   travis = 'TRAVIS' in os.environ
   # Install dependencies.
   if travis:
+    check_call('curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -',
+               shell=True)
     check_call("echo 'deb https://deb.nodesource.com/node_0.10 precise main' | " +
                "sudo tee /etc/apt/sources.list.d/nodesource.list", shell=True)
     check_call(['sudo', 'apt-get', 'update'])
