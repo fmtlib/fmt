@@ -17,8 +17,8 @@ if build == 'Doc':
   travis = 'TRAVIS' in os.environ
   # Install dependencies.
   if travis:
-    with open('/etc/apt/sources.list.d/nodesource.list', 'a') as f:
-      f.write('deb http://deb.nodesource.com/node_0.10 precise main\n')
+    check_call("echo 'deb https://deb.nodesource.com/node_0.10 precise main' | " +
+               "sudo tee /etc/apt/sources.list.d/nodesource.list", shell=True)
     check_call(['sudo', 'apt-get', 'update'])
     check_call(['sudo', 'apt-get', 'install', 'python-virtualenv', 'doxygen', 'nodejs'])
     check_call(['npm', 'install', '-g', 'less'])
