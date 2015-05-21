@@ -23,7 +23,7 @@ if build == 'Doc':
                'sudo tee /etc/apt/sources.list.d/nodesource.list', shell=True)
     check_call(['sudo', 'apt-get', 'update'])
     check_call(['sudo', 'apt-get', 'install', 'python-virtualenv', 'doxygen', 'nodejs'])
-    check_call(['npm', 'install', '-g', 'less'])
+    check_call(['npm', 'install', '-g', 'less', 'less-plugin-clean-css'])
   cppformat_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
   sys.path.insert(0, os.path.join(cppformat_dir, 'doc'))
   import build
