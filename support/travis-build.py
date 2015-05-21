@@ -17,8 +17,7 @@ if build == 'Doc':
   travis = 'TRAVIS' in os.environ
   # Install dependencies.
   if travis:
-    check_call(['sudo', 'apt-get', 'install', 'python-virtualenv', 'doxygen', 'node-less'])
-    os.symlink('/usr/lib/node_modules/', os.path.expanduser('~/.node_libraries'))
+    check_call(['sudo', 'apt-get', 'install', 'python-virtualenv', 'doxygen', 'lessc'])
   cppformat_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
   sys.path.insert(0, os.path.join(cppformat_dir, 'doc'))
   import build
