@@ -29,11 +29,11 @@ Features
 * Write API similar to the one used by IOStreams but stateless allowing
   faster implementation.
 * Format API with `format string syntax
-  <http://cppformat.readthedocs.org/en/latest/syntax.html>`_
+  <http://cppformat.github.io/latest/syntax.html>`_
   similar to the one used by `str.format
   <http://docs.python.org/2/library/stdtypes.html#str.format>`_ in Python.
 * Safe `printf implementation
-  <http://cppformat.readthedocs.org/en/stable/reference.html#printf-formatting-functions>`_
+  <http://cppformat.github.io/latest/reference.html#printf-formatting-functions>`_
   including the POSIX extension for positional arguments.
 * Support for user-defined types.
 * High speed: performance of the format API is close to that of
@@ -59,7 +59,7 @@ Features
 * Support for wide strings.
 * Optional header-only configuration enabled with the ``FMT_HEADER_ONLY`` macro.
 
-See the `documentation <http://cppformat.readthedocs.org/en/stable/>`_ for more details.
+See the `documentation <http://cppformat.github.io/latest/>`_ for more details.
 
 Examples
 --------
@@ -106,10 +106,10 @@ An object of any user-defined type for which there is an overloaded
     // s == "The date is 2012-12-9"
 
 You can use the `FMT_VARIADIC
-<http://cppformat.readthedocs.org/en/latest/reference.html#utilities>`_
+<http://cppformat.github.io/latest/reference.html#utilities>`_
 macro to create your own functions similar to `format
-<http://cppformat.readthedocs.org/en/latest/reference.html#format>`_ and
-`print <http://cppformat.readthedocs.org/en/latest/reference.html#print>`_
+<http://cppformat.github.io/latest/reference.html#format>`_ and
+`print <http://cppformat.github.io/latest/reference.html#print>`_
 which take arbitrary arguments:
 
 .. code:: c++
@@ -354,7 +354,7 @@ Running the tests
 Please refer to `Building the library`__ for the instructions on how to build
 the library and run the unit tests.
 
-__ http://cppformat.readthedocs.org/en/latest/usage.html#building-the-library
+__ http://cppformat.github.io/latest/usage.html#building-the-library
 
 Benchmarks reside in a separate repository,
 `format-benchmarks <https://github.com/cppformat/format-benchmark>`_,
@@ -380,7 +380,7 @@ C++ Format is distributed under the BSD `license
 <https://github.com/cppformat/cppformat/blob/master/LICENSE.rst>`_.
 
 The `Format String Syntax
-<http://cppformat.readthedocs.org/en/latest/syntax.html>`_
+<http://cppformat.github.io/latest/syntax.html>`_
 section in the documentation is based on the one from Python `string module
 documentation <http://docs.python.org/3/library/string.html#module-string>`_
 adapted for the current library. For this reason the documentation is
