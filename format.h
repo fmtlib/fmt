@@ -1816,7 +1816,9 @@ class BasicWriter {
   }
 
   /**
+    \rst
     Returns the content of the output buffer as an `std::string`.
+    \endrst
    */
   std::basic_string<Char> str() const {
     return std::basic_string<Char>(&buffer_[0], buffer_.size());
