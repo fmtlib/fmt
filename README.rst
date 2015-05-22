@@ -6,10 +6,6 @@ C++ Format
 
 .. image:: https://ci.appveyor.com/api/projects/status/qk0bhyhqp1ekpat8
    :target: https://ci.appveyor.com/project/vitaut/cppformat
-
-.. image:: https://readthedocs.org/projects/cppformat/badge/?version=stable
-   :target: http://cppformat.readthedocs.org/en/stable/
-   :alt: Documentation Status
    
 .. image:: https://webapi.biicode.com/v1/badges/vitaut/vitaut/cppformat/master?dummy
    :target: https://www.biicode.com/vitaut/cppformat
@@ -21,6 +17,8 @@ C++ Format
 C++ Format is an open-source formatting library for C++.
 It can be used as a safe alternative to printf or as a fast
 alternative to IOStreams.
+
+`Documentation <http://cppformat.github.io/latest/>`_
 
 Features
 --------
