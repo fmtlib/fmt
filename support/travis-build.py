@@ -15,7 +15,6 @@ def rmtree_if_exists(dir):
 build = os.environ['BUILD']
 if build == 'Doc':
   travis = 'TRAVIS' in os.environ
-  print("Has key {}".format('KEY' in os.environ))
   # Install dependencies.
   if travis:
     check_call('curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | ' +

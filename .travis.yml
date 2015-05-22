@@ -2,7 +2,7 @@ language: cpp
 
 os:
   - linux
-  #- osx
+  - osx
 
 env:
   global:
@@ -12,8 +12,8 @@ env:
         6pxmyzLHSn1ZR7OX5rfPvwM3tOyZ3H0=
   matrix:
     - BUILD=Doc
-    #- BUILD=Debug
-    #- BUILD=Release
+    - BUILD=Debug
+    - BUILD=Release
 
 matrix:
   exclude:
