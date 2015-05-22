@@ -233,20 +233,26 @@ class BasicStringRef {
   BasicStringRef(const Char *s, std::size_t size) : data_(s), size_(size) {}
 
   /**
+    \rst
     Constructs a string reference object from a C string computing
     the size with ``std::char_traits<Char>::length``.
+    \endrst
    */
   BasicStringRef(const Char *s)
     : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
   /**
-    Constructs a string reference from an `std::string` object.
+    \rst
+    Constructs a string reference from an ``std::string`` object.
+    \endrst
    */
   BasicStringRef(const std::basic_string<Char> &s)
   : data_(s.c_str()), size_(s.size()) {}
 
   /**
-    Converts a string reference to an `std::string` object.
+    \rst
+    Converts a string reference to an ``std::string`` object.
+    \endrst
    */
   operator std::basic_string<Char>() const {
     return std::basic_string<Char>(data_, size());
@@ -299,7 +305,11 @@ inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
 #endif
 }  // namespace internal
 
-/** A buffer supporting a subset of ``std::vector``'s operations. */
+/**
+  \rst
+  A buffer supporting a subset of ``std::vector``'s operations.
+  \endrst
+ */
 template <typename T>
 class Buffer {
  private:
@@ -314,8 +324,10 @@ class Buffer {
     : ptr_(ptr), size_(0), capacity_(capacity) {}
 
   /**
+    \rst
     Increases the buffer capacity to hold at least *size* elements updating
     ``ptr_`` and ``capacity_``.
+    \endrst
    */
   virtual void grow(std::size_t size) = 0;
 
@@ -337,7 +349,11 @@ class Buffer {
     size_ = new_size;
   }
 
-  /** Reserves space to store at least *capacity* elements. */
+  /**
+    \rst
+    Reserves space to store at least *capacity* elements.
+    \endrst
+   */
   void reserve(std::size_t capacity) {
     if (capacity > capacity_)
       grow(capacity);
@@ -1771,7 +1787,9 @@ class BasicWriter {
 
  public:
   /**
+    \rst
     Destroys a ``BasicWriter`` object.
+    \endrst
    */
   virtual ~BasicWriter() {}
 
@@ -1851,7 +1869,9 @@ class BasicWriter {
   }
 
   /**
+    \rst
     Formats *value* and writes it to the stream.
+    \endrst
    */
   BasicWriter &operator<<(ULongLong value) {
     return *this << IntFormatSpec<ULongLong>(value);
@@ -1863,8 +1883,10 @@ class BasicWriter {
   }
 
   /**
+    \rst
     Formats *value* using the general format for floating-point numbers
     (``'g'``) and writes it to the stream.
+    \endrst
    */
   BasicWriter &operator<<(long double value) {
     write_double(value, FormatSpec());
@@ -1886,7 +1908,9 @@ class BasicWriter {
   }
 
   /**
+    \rst
     Writes *value* to the stream.
+    \endrst
    */
   BasicWriter &operator<<(fmt::BasicStringRef<Char> value) {
     const Char *str = value.c_str();
@@ -2609,7 +2633,9 @@ class FormatInt {
   }
 
   /**
-    Returns the content of the output buffer as an `std::string`.
+    \rst
+    Returns the content of the output buffer as an ``std::string``.
+    \endrst
    */
   std::string str() const { return std::string(str_, size()); }
 };
