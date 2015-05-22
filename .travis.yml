@@ -7,9 +7,9 @@ os:
 env:
   global:
     - secure: |-
-        jEPN5RbGT8o+zN8ybGoTzJ1m7gjP/D8vaf5V+A2ZDMayKHXdGMmVtA5FjI9B1aSiq0P4nC
-        cbx2lUzQffJJruBqoSI7ZhWaFBNJejVFwOer3MlzxBdNOHOrJwwf1FpgypaheCHyLebQa5
-        JIGZrLK2XoLb7s00FybNCZEgEvUT7W4=
+        Gsnp9ERFnXt+diCfc7Vb72g+7HDn1MCHvw4zfUDdoBh9bxxFlLQRlzZZfwWhzni57lflrt
+        0QHXafu+oBVOJuNv6WauV3+ZyuWIQRmNGjZFNLvZsXHK/dyad2vGQBPvEkb+8l/aCyTpbr
+        6pxmyzLHSn1ZR7OX5rfPvwM3tOyZ3H0=
   matrix:
     - BUILD=Doc
     #- BUILD=Debug

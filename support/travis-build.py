@@ -49,8 +49,8 @@ if build == 'Doc':
     if travis:
       cmd += ' https://$KEY@github.com/cppformat/cppformat.github.io.git master'
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT, cwd=repo)
-    # Remove URL from output because it may contain a token.
-    print(re.sub(r'https:.*\.git', '<url>', p.communicate()[0]))
+    # Print the output without the key.
+    print(p.communicate()[0].replace(os.environ['KEY'], '$KEY'))
     if p.returncode != 0:
       raise CalledProcessError(p.returncode, cmd)
   exit(0)
