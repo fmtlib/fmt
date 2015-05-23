@@ -1163,7 +1163,7 @@ FMT_FUNC int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
 
 #ifndef FMT_HEADER_ONLY
 
-template class fmt::internal::BasicData<void>;
+template struct fmt::internal::BasicData<void>;
 
 // Explicit instantiations for char.
 
