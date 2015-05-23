@@ -24,19 +24,19 @@
     border-top-color: darken(@jumbotron-bg, 10%);
   }
 
-  .container &,
+  .tb-container &,
   .container-fluid & {
     border-radius: @border-radius-large; // Only round corners at higher resolutions if contained in a container
   }
 
-  .container {
+  .tb-container {
     max-width: 100%;
   }
 
   @media screen and (min-width: @screen-sm-min) {
     padding: (@jumbotron-padding * 1.6) 0;
 
-    .container &,
+    .tb-container &,
     .container-fluid & {
       padding-left:  (@jumbotron-padding * 2);
       padding-right: (@jumbotron-padding * 2);
