@@ -158,7 +158,7 @@ in open-source and commercial projects.
 
 .. raw:: html
 
-  <a class="btn btn-success" href="https://github.com/cppformat/cppformat">GitHub Repository</a></p>
+  <a class="btn btn-success" href="https://github.com/cppformat/cppformat">GitHub Repository</a>
 
   <div class="section footer">
     <iframe src="http://ghbtns.com/github-btn.html?user=cppformat&amp;repo=cppformat&amp;type=watch&amp;count=true"
