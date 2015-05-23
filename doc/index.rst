@@ -5,6 +5,17 @@ C++ Format (cppformat) is an open-source formatting library for C++.
 It can be used as a safe alternative to printf or as a fast
 alternative to IOStreams.
 
+.. raw:: html
+
+   <div class="panel panel-default">
+     <div class="panel-heading">What users say:</div>
+     <div class="panel-body">
+       Thanks for creating this library. It’s been a hole in C++ for a long time.
+       I’ve used both boost::format and loki::SPrintf, and neither felt like the
+       right answer. This does.
+     </div>
+   </div>
+
 .. _format-api:
 
 Format API
