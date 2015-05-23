@@ -26,7 +26,7 @@
   <div class="container">
     <div class="row">
       <div class="navbar-content">
-        <!-- Brand and toggle get grouped for better mobile display -->
+        {# Brand and toggle get grouped for better mobile display #}
         <div class="navbar-header">
           <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
             <span class="sr-only">Toggle navigation</span>
@@ -37,11 +37,11 @@
           <a class="navbar-brand" href="index.html">C++ Format</a>
         </div>
 
-        <!-- Collect the nav links, forms, and other content for toggling -->
+        {# Collect the nav links, forms, and other content for toggling #}
         <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li class="dropdown">
-              <!-- TODO: update versions automatically -->
+              {# TODO: update versions automatically #}
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
                  aria-expanded="false">dev <span class="caret"></span></a>
               <ul class="dropdown-menu" role="menu">
@@ -60,10 +60,10 @@
           {% if pagename != 'search' %}
             {{ searchform('navbar-form navbar-right', False) }}
           {%endif%}
-        </div> <!-- /.navbar-collapse -->
-      </div> <!-- /.col-md-offset-2 -->
-    </div> <!-- /.row -->
-  </div><!-- /.container -->
+        </div> {# /.navbar-collapse #}
+      </div> {# /.col-md-offset-2 #}
+    </div> {# /.row #}
+  </div> {# /.container #}
 </nav>
 {% if pagename == "index" %}
 <div class="jumbotron">
@@ -87,7 +87,7 @@
 {% endif %}
 {% endblock %}
 
-<!-- TODO: what to do with relbars (prev/next/index)? -->
+{# TODO: what to do with relbars (prev/next/index)? #}
 {% block relbar1 %}
 {% endblock %}
 {% block relbar2 %}
@@ -96,8 +96,8 @@
 {% block content %}
 <div class="container">
   <div class="row">
-    <!-- TODO: integrate sidebar -->
-    <!--div class="bs-sidebar">
+    {# TODO: integrate sidebar
+    <div class="bs-sidebar">
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
           {%- block sidebarlogo %}
@@ -112,7 +112,8 @@
           {%- endfor %}
         </div>
       </div>
-    </div-->
+    </div>
+    #}
 
     <div class="content">
       {% block body %} {% endblock %}
@@ -124,11 +125,11 @@
 {% block footer %}
 {{ super() }}
 
-<!-- Placed at the end of the document so the pages load faster. -->
+{# Placed at the end of the document so the pages load faster. #}
 <script src="_static/bootstrap.min.js"></script>
 
 <script>
-  // Google Analytics
+  {# Google Analytics #}
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
