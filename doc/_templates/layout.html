@@ -19,7 +19,7 @@
 {%- macro searchform(classes, button) %}
 <form class="{{classes}}" role="search" action="{{ pathto('search') }}" method="get">
   <div class="form-group">
-    <input type="text" name="q" class="form-control" placeholder="Search">
+    <input type="text" name="q" class="form-control" {{ 'placeholder="Search"' if not button }} >
   </div>
   <input type="hidden" name="check_keywords" value="yes" />
   <input type="hidden" name="area" value="default" />
