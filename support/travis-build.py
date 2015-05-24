@@ -2,7 +2,7 @@
 # Build the project on Travis CI.
 
 from __future__ import print_function
-import errno, os, re, shutil, sys, tempfile, urllib2
+import errno, os, re, shutil, sys, tempfile, urllib
 from subprocess import call, check_call, Popen, PIPE, STDOUT
 
 def rmtree_if_exists(dir):
@@ -25,10 +25,8 @@ if build == 'Doc':
     check_call(['sudo', 'apt-get', 'install', 'python-virtualenv', 'nodejs'])
     check_call(['npm', 'install', '-g', 'less', 'less-plugin-clean-css'])
     deb_file = 'doxygen_1.8.6-2_amd64.deb'
-    response = urllib2.urlopen('http://mirrors.kernel.org/ubuntu/pool/main/d/doxygen/' +
-                               deb_file)
-    with open(deb_file, 'wb') as f:
-      f.write(response.read())
+    urllib.urlretrieve('http://mirrors.kernel.org/ubuntu/pool/main/d/doxygen/' +
+                       deb_file, deb_file)
     check_call(['sudo', 'dpkg', '-i', deb_file])
   cppformat_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
   sys.path.insert(0, os.path.join(cppformat_dir, 'doc'))
