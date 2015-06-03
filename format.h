@@ -1305,16 +1305,19 @@ class IntFormatSpec : public SpecT {
 };
 
 // A string format specifier.
-template <typename T>
+template <typename Char>
 class StrFormatSpec : public AlignSpec {
  private:
-  const T *str_;
+  const Char *str_;
 
  public:
-  StrFormatSpec(const T *str, unsigned width, wchar_t fill)
-  : AlignSpec(width, fill), str_(str) {}
+  template <typename FillChar>
+  StrFormatSpec(const Char *str, unsigned width, FillChar fill)
+  : AlignSpec(width, fill), str_(str) {
+    internal::CharTraits<Char>::convert(FillChar());
+  }
 
-  const T *str() const { return str_; }
+  const Char *str() const { return str_; }
 };
 
 /**
@@ -1930,7 +1933,6 @@ class BasicWriter {
   template <typename StrChar>
   BasicWriter &operator<<(const StrFormatSpec<StrChar> &spec) {
     const StrChar *s = spec.str();
-    // TODO: error if fill is not convertible to Char
     write_str(s, std::char_traits<Char>::length(s), spec);
     return *this;
   }
