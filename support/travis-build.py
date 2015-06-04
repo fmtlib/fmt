@@ -32,8 +32,13 @@ if build == 'Doc':
   sys.path.insert(0, os.path.join(cppformat_dir, 'doc'))
   import build
   html_dir = build.build_docs()
-  # Clone the cppformat.github.io repo.
   repo = 'cppformat.github.io'
+  if travis and 'KEY' not in os.environ:
+    # Don't update the repo if building on Travis from an account that doesn't
+    # have push access.
+    print('Skipping update of ' + repo)
+    exit(0)
+  # Clone the cppformat.github.io repo.
   rmtree_if_exists(repo)
   git_url = 'https://github.com/' if travis else 'git@github.com:'
   check_call(['git', 'clone', git_url + 'cppformat/{}.git'.format(repo)])
