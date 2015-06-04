@@ -1025,16 +1025,46 @@ const Char *fmt::BasicFormatter<Char>::format(
       ++s;
     }
 
-    // Parse width and zero flag.
-    if ('0' <= *s && *s <= '9') {
-      if (*s == '0') {
+    // Parse zero flag.
+    if (*s == '0') {
         require_numeric_argument(arg, '0');
         spec.align_ = ALIGN_NUMERIC;
         spec.fill_ = '0';
-      }
-      // Zero may be parsed again as a part of the width, but it is simpler
-      // and more efficient than checking if the next char is a digit.
+        ++s;
+    }
+    
+    // Parse width.
+    if ('0' <= *s && *s <= '9') {
       spec.width_ = parse_nonnegative_int(s);
+    } else if (*s == '{') {
+        ++s;
+        const Arg &width_arg = parse_arg_index(s);
+        if (*s++ != '}')
+            FMT_THROW(FormatError("invalid format string"));
+        ULongLong value = 0;
+        switch (width_arg.type) {
+        case Arg::INT:
+            if (width_arg.int_value < 0)
+                FMT_THROW(FormatError("negative width"));
+            value = width_arg.int_value;
+            break;
+        case Arg::UINT:
+            value = width_arg.uint_value;
+            break;
+        case Arg::LONG_LONG:
+            if (width_arg.long_long_value < 0)
+                FMT_THROW(FormatError("negative width"));
+            value = width_arg.long_long_value;
+            break;
+        case Arg::ULONG_LONG:
+            value = width_arg.ulong_long_value;
+            break;
+        default:
+            FMT_THROW(FormatError("width is not integer"));
+        }
+        if (value > INT_MAX)
+            FMT_THROW(FormatError("number is too big"));
+        spec.width_ = static_cast<int>(value);
     }
 
     // Parse precision.
