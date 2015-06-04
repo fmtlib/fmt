@@ -2378,8 +2378,7 @@ class BasicArrayWriter : public BasicWriter<Char> {
   BasicArrayWriter(Char *array, std::size_t size)
     : BasicWriter<Char>(buffer_), buffer_(array, size) {}
 
-  // FIXME: this is temporary undocumented due to a bug in Sphinx
-  /*
+  /**
    \rst
    Constructs a :class:`fmt::BasicArrayWriter` object for *array* of the
    size known at compile time.

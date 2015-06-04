@@ -29,7 +29,7 @@ def build_docs():
   execfile(activate_this_file, dict(__file__=activate_this_file))
   # Install Sphinx and Breathe.
   pip_install('sphinx==1.3.1')
-  pip_install('michaeljones/breathe', '18bd461b4e29dde0adf5df4b3da7e5473e2c2983')
+  pip_install('michaeljones/breathe', '511b0887293e7c6b12310bb61b3659068f48f0f4')
   # Build docs.
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE, cwd=doc_dir)
