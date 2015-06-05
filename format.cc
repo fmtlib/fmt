@@ -266,9 +266,8 @@ int parse_nonnegative_int(const Char *&s) {
 }
 
 template <typename Char>
-inline bool is_name_start(Char c)
-{
-    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
+inline bool is_name_start(Char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
 }
 
 inline void require_numeric_argument(const Arg &arg, char spec) {
@@ -746,7 +745,7 @@ inline Arg fmt::internal::FormatterBase::get_arg(
   assert(map);
   const unsigned* index = map->find(arg_name);
   if (index)
-      return get_arg(*index, error);
+    return get_arg(*index, error);
   error = "argument not found";
   return Arg();
 }

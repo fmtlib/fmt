@@ -280,7 +280,7 @@ class BasicStringRef {
     return lhs.data_ != rhs.data_;
   }
   friend bool operator<(BasicStringRef lhs, BasicStringRef rhs) {
-      return std::lexicographical_compare(lhs.data_, lhs.data_ + lhs.size_, rhs.data_, rhs.data_ + rhs.size_);
+    return std::lexicographical_compare(lhs.data_, lhs.data_ + lhs.size_, rhs.data_, rhs.data_ + rhs.size_);
   }
 };
 
@@ -1563,7 +1563,7 @@ inline void add_named_arg(NameIndexPair* map, T const&, unsigned) {}
 
 template <typename NameIndexPair, typename Char, typename T>
 inline void add_named_arg(NameIndexPair*& map, const NamedArg<Char, T> &namedArg, unsigned n) {
-    *map++ = NameIndexPair(namedArg.name, n);
+  *map++ = NameIndexPair(namedArg.name, n);
 }
 
 #if FMT_USE_VARIADIC_TEMPLATES
