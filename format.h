@@ -768,12 +768,11 @@ struct Value {
 };
 
 template <typename Char, typename T>
-struct NamedArg
-{
-    BasicStringRef<Char> name;
-    T const& arg;
+struct NamedArg {
+  BasicStringRef<Char> name;
+  T const& arg;
 
-    NamedArg(BasicStringRef<Char> name, T const& arg) : name(name), arg(arg) {}
+  NamedArg(BasicStringRef<Char> name, T const& arg) : name(name), arg(arg) {}
 };
 
 // A formatting argument. It is a POD type to allow storage in
@@ -980,47 +979,13 @@ class MakeValue : public Arg {
 };
 
 template <typename T>
-inline const T &strip_name(const T &arg)
-{
-    return arg;
+inline const T &strip_name(const T &arg) {
+  return arg;
 }
 
 template <typename Char, typename T>
-inline const T &strip_name(const NamedArg<Char, T> &namedArg)
-{
-    return namedArg.arg;
-}
-
-template <typename... T>
-struct NamedArgsCounter
-{
-    static const int value = 0;
-};
-
-template <typename T, typename... U>
-struct NamedArgsCounter<T, U...> : NamedArgsCounter<U...>
-{};
-
-template <typename Char, typename T, typename... U>
-struct NamedArgsCounter<NamedArg<Char, T>, U...>
-{
-    static const int value = 1 + NamedArgsCounter<U...>::value;
-};
-
-template <int N, typename NameIndexPair>
-inline void add_named_args(NameIndexPair*) {}
-
-template <int N, typename NameIndexPair, typename T, typename... U>
-inline void add_named_args(NameIndexPair* map, T const&, U const&... rest)
-{
-    add_named_args<N + 1>(map, rest...);
-}
-
-template <int N, typename NameIndexPair, typename Char, typename T, typename... U>
-inline void add_named_args(NameIndexPair* map, const NamedArg<Char, T> &namedArg, U const&... rest)
-{
-    *map = NameIndexPair(namedArg.name, N);
-    add_named_args<N + 1>(map + 1, rest...);
+inline const T &strip_name(const NamedArg<Char, T> &namedArg) {
+  return namedArg.arg;
 }
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
@@ -1142,6 +1107,45 @@ class RuntimeError : public std::runtime_error {
 
 template <typename Char>
 class ArgFormatter;
+
+template <typename Char>
+struct BasicArgMap {
+  typedef std::pair<BasicStringRef<Char>, unsigned> value_type;
+
+  struct Compare {
+    bool operator()(const value_type &lhs, const value_type &rhs) const {
+      return lhs.first < rhs.first;
+    }
+  };
+
+  BasicArgMap() : map_(), size_() {}
+
+  BasicArgMap(value_type* map, unsigned size)
+  : map_(map), size_(size) {
+    std::sort(map, map + size, Compare());
+  }
+
+  const unsigned* find(BasicStringRef<Char> name) const {
+    value_type* first = map_;
+    value_type* last = map_ + size_;
+    while (first != last)
+    {
+      value_type* it(first + ((last - first) >> 1));
+      if (name < it->first)
+        last = it;
+      else if (it->first < name)
+        first = ++it;
+      else
+        return &it->second;
+    }
+    return 0;
+  }
+
+private:
+
+  value_type* map_;
+  unsigned size_;
+};
 }  // namespace internal
 
 /** An argument list. */
@@ -1159,6 +1163,7 @@ class ArgList {
     const internal::Value *values_;
     const internal::Arg *args_;
   };
+  const void* map_;
 
   internal::Arg::Type type(unsigned index) const {
     unsigned shift = index * 4;
@@ -1171,12 +1176,15 @@ class ArgList {
   // Maximum number of arguments with packed types.
   enum { MAX_PACKED_ARGS = 16 };
 
-  ArgList() : types_(0) {}
+  ArgList() : types_(0), map_() {}
 
-  ArgList(ULongLong types, const internal::Value *values)
-  : types_(types), values_(values) {}
-  ArgList(ULongLong types, const internal::Arg *args)
-  : types_(types), args_(args) {}
+  template <typename Char>
+  ArgList(ULongLong types, const internal::Value *values, const internal::BasicArgMap<Char>* map)
+  : types_(types), values_(values), map_(map) {}
+
+  template <typename Char>
+  ArgList(ULongLong types, const internal::Arg *args, const internal::BasicArgMap<Char>* map)
+  : types_(types), args_(args), map_(map) {}
 
   /** Returns the argument at specified index. */
   internal::Arg operator[](unsigned index) const {
@@ -1203,51 +1211,14 @@ class ArgList {
     }
     return args_[index];
   }
+
+  template <typename Char>
+  const internal::BasicArgMap<Char>* get_arg_map() const {
+    return static_cast<const internal::BasicArgMap<Char>*>(map_);
+  }
 };
 
 struct FormatSpec;
-
-template <typename Char>
-struct BasicArgMap
-{
-    typedef std::pair<BasicStringRef<Char>, int> value_type;
-
-    BasicArgMap() : map_(), size_() {}
-
-    BasicArgMap(value_type* map, int size)
-        : map_(map), size_(size)
-    {
-        std::sort(map, map + size, [](const value_type &lhs, const value_type &rhs)
-        {
-            return lhs.first < rhs.first;
-        });
-    }
-
-    const int* find(BasicStringRef<Char> name) const
-    {
-        value_type* first = map_;
-        value_type* last = map_ + size_;
-        while (first != last)
-        {
-            value_type* it(first + (last - first >> 1));
-            if (name < it->first)
-                last = it;
-            else if (it->first < name)
-                first = ++it;
-            else
-                return &it->second;
-        }
-        return nullptr;
-    }
-
-private:
-
-    value_type* map_;
-    int size_;
-};
-
-typedef BasicArgMap<char> ArgMap;
-typedef BasicArgMap<wchar_t> WArgMap;
 
 namespace internal {
 
@@ -1271,6 +1242,11 @@ class FormatterBase {
   // Checks if manual indexing is used and returns the argument with
   // specified index.
   Arg get_arg(unsigned arg_index, const char *&error);
+
+  // Checks if manual indexing is used and returns the argument with
+  // specified name.
+  template <typename Char>
+  Arg get_arg(const BasicStringRef<Char>& arg_name, const char *&error);
 
   template <typename Char>
   void write(BasicWriter<Char> &w, const Char *start, const Char *end) {
@@ -1312,16 +1288,16 @@ class BasicFormatter : private internal::FormatterBase {
   internal::Arg parse_arg_index(const Char *&s);
 
   // Parses argument name and returns corresponding argument.
-  internal::Arg parse_arg_name(const Char *&s, const BasicArgMap<Char> &map);
+  internal::Arg parse_arg_name(const Char *&s);
 
  public:
   explicit BasicFormatter(BasicWriter<Char> &w) : writer_(w) {}
 
   BasicWriter<Char> &writer() { return writer_; }
 
-  void format(BasicStringRef<Char> format_str, const ArgList &args, const BasicArgMap<Char> &map);
+  void format(BasicStringRef<Char> format_str, const ArgList &args);
 
-  const Char *format(const Char *&format_str, const internal::Arg &arg, const BasicArgMap<Char> &map);
+  const Char *format(const Char *&format_str, const internal::Arg &arg);
 };
 
 enum Alignment {
@@ -1582,6 +1558,14 @@ struct ArgArray {
     (N < ArgList::MAX_PACKED_ARGS), Value, Arg>::type Type[SIZE];
 };
 
+template <typename NameIndexPair, typename T>
+inline void add_named_arg(NameIndexPair* map, T const&, unsigned) {}
+
+template <typename NameIndexPair, typename Char, typename T>
+inline void add_named_arg(NameIndexPair*& map, const NamedArg<Char, T> &namedArg, unsigned n) {
+    *map++ = NameIndexPair(namedArg.name, n);
+}
+
 #if FMT_USE_VARIADIC_TEMPLATES
 template <typename Arg, typename... Args>
 inline uint64_t make_type(const Arg &first, const Args & ... tail) {
@@ -1622,12 +1606,36 @@ inline void store_args(Arg *args, const T &arg, const Args & ... tail) {
 
 template <typename Char, typename... Args>
 ArgList make_arg_list(typename ArgArray<sizeof...(Args)>::Type array,
+                      const BasicArgMap<Char>* map,
                       const Args & ... args) {
   if (check(sizeof...(Args) >= ArgList::MAX_PACKED_ARGS))
     set_types(array, args...);
   store_args<Char>(array, args...);
-  return ArgList(make_type(args...), array);
+  return ArgList(make_type(args...), array, map);
 }
+
+template <typename... T>
+struct NamedArgsCounter {
+  static const int value = 0;
+};
+
+template <typename T, typename... U>
+struct NamedArgsCounter<T, U...> : NamedArgsCounter<U...> {};
+
+template <typename Char, typename T, typename... U>
+struct NamedArgsCounter<NamedArg<Char, T>, U...> {
+  static const int value = 1 + NamedArgsCounter<U...>::value;
+};
+
+template <unsigned N, typename NameIndexPair>
+inline void add_named_args(NameIndexPair*) {}
+
+template <unsigned N, typename NameIndexPair, typename T, typename... U>
+inline void add_named_args(NameIndexPair* map, const T &arg, const U &... rest) {
+  add_named_arg(map, arg, N);
+  add_named_args<N + 1>(map, rest...);
+}
+
 #else
 
 struct ArgType {
@@ -1653,8 +1661,6 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG_TYPE(n) T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
-# define FMT_MAKE_REF_char(n) fmt::internal::MakeValue<char>(v##n)
-# define FMT_MAKE_REF_wchar_t(n) fmt::internal::MakeValue<wchar_t>(v##n)
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
@@ -1663,10 +1669,10 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
   void func(arg_type arg0, const Args & ... args) { \
     typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
     const int count = fmt::internal::NamedArgsCounter<Args...>::value; \
-    fmt::BasicArgMap<Char>::value_type mapArray[count + 1]; \
+    typename fmt::internal::BasicArgMap<Char>::value_type mapArray[count + 1]; \
     fmt::internal::add_named_args<0>(mapArray, args...); \
-    fmt::BasicArgMap<Char> map(mapArray, count); \
-    func(arg0, fmt::internal::make_arg_list<Char>(array, fmt::internal::strip_name(args)...), map); \
+    fmt::internal::BasicArgMap<Char> map(mapArray, count); \
+    func(arg0, fmt::internal::make_arg_list<Char>(array, &map, fmt::internal::strip_name(args)...)); \
   }
 
 // Defines a variadic constructor.
@@ -1675,25 +1681,31 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
     typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
     const int count = fmt::internal::NamedArgsCounter<Args...>::value; \
-    fmt::BasicArgMap<Char>::value_type mapArray[count + 1]; \
+    typename fmt::internal::BasicArgMap<Char>::value_type mapArray[count + 1]; \
     fmt::internal::add_named_args<0>(mapArray, args...); \
-    fmt::BasicArgMap<Char> map(mapArray, count); \
-    func(arg0, arg1, fmt::internal::make_arg_list<Char>(array, fmt::internal::strip_name(args)...), map); \
+    fmt::internal::BasicArgMap<Char> map(mapArray, count); \
+    func(arg0, arg1, fmt::internal::make_arg_list<Char>(array, &map, fmt::internal::strip_name(args)...)); \
   }
 
 #else
 
-# define FMT_MAKE_REF(n) fmt::internal::MakeValue<Char>(v##n)
-# define FMT_MAKE_REF2(n) v##n
+# define FMT_MAKE_REF(n) fmt::internal::MakeValue<Char>(fmt::internal::strip_name(v##n))
+# define FMT_MAKE_REF2(n) fmt::internal::strip_name(v##n)
+# define FMT_ADD_NAMED_ARG(n) fmt::internal::add_named_arg(mapPtr, v##n, n)
 
 // Defines a wrapper for a function taking one argument of type arg_type
 // and n additional arguments of arbitrary types.
 # define FMT_WRAP1(func, arg_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
+    typedef typename fmt::internal::BasicArgMap<Char>::value_type ArgMapValue; \
     const fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    ArgMapValue mapArray[n]; \
+    ArgMapValue* mapPtr = mapArray; \
+    FMT_GEN(n, FMT_ADD_NAMED_ARG); \
+    fmt::internal::BasicArgMap<Char> map(mapArray, unsigned(mapPtr - mapArray)); \
     func(arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array, &map)); \
   }
 
 // Emulates a variadic function returning void on a pre-C++11 compiler.
@@ -1708,9 +1720,14 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_CTOR(ctor, func, arg0_type, arg1_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   ctor(arg0_type arg0, arg1_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
+    typedef typename fmt::internal::BasicArgMap<Char>::value_type ArgMapValue; \
     const fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    ArgMapValue mapArray[n]; \
+    ArgMapValue* mapPtr = mapArray; \
+    FMT_GEN(n, FMT_ADD_NAMED_ARG); \
+    fmt::internal::BasicArgMap<Char> map(mapArray, unsigned(mapPtr - mapArray)); \
     func(arg0, arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array, &map)); \
   }
 
 // Emulates a variadic constructor on a pre-C++11 compiler.
@@ -1755,7 +1772,7 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 */
 class SystemError : public internal::RuntimeError {
  private:
-  void init(int err_code, StringRef format_str, ArgList args, const ArgMap &map);
+  void init(int err_code, StringRef format_str, ArgList args);
 
  protected:
   int error_code_;
@@ -1791,7 +1808,7 @@ class SystemError : public internal::RuntimeError {
    \endrst
   */
   SystemError(int error_code, StringRef message) {
-    init(error_code, message, ArgList(), ArgMap());
+    init(error_code, message, ArgList());
   }
   FMT_VARIADIC_CTOR(SystemError, init, int, StringRef)
 
@@ -1966,8 +1983,8 @@ class BasicWriter {
     See also :ref:`syntax`.
     \endrst
    */
-  void write(BasicStringRef<Char> format, ArgList args, const BasicArgMap<Char> &map) {
-    BasicFormatter<Char>(*this).format(format, args, map);
+  void write(BasicStringRef<Char> format, ArgList args) {
+    BasicFormatter<Char>(*this).format(format, args);
   }
   FMT_VARIADIC_VOID(write, BasicStringRef<Char>)
 
@@ -2515,7 +2532,7 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   internal::Arg arg = internal::MakeValue<Char>(str);
   arg.type = static_cast<internal::Arg::Type>(
         internal::MakeValue<Char>::type(str));
-  format_str = f.format(format_str, arg, BasicArgMap<Char>());
+  format_str = f.format(format_str, arg);
 }
 
 // Reports a system error without throwing an exception.
@@ -2527,7 +2544,7 @@ void report_system_error(int error_code, StringRef message) FMT_NOEXCEPT;
 /** A Windows error. */
 class WindowsError : public SystemError {
  private:
-  void init(int error_code, StringRef format_str, ArgList args, const ArgMap &map);
+  void init(int error_code, StringRef format_str, ArgList args);
 
  public:
   /**
@@ -2559,7 +2576,7 @@ class WindowsError : public SystemError {
    \endrst
   */
   WindowsError(int error_code, StringRef message) {
-    init(error_code, message, ArgList(), ArgMap());
+    init(error_code, message, ArgList());
   }
   FMT_VARIADIC_CTOR(WindowsError, init, int, StringRef)
 };
@@ -2578,7 +2595,7 @@ enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
   Example:
     PrintColored(fmt::RED, "Elapsed time: {0:.2f} seconds") << 1.23;
  */
-void print_colored(Color c, StringRef format, ArgList args, const ArgMap &map);
+void print_colored(Color c, StringRef format, ArgList args);
 
 /**
   \rst
@@ -2589,15 +2606,15 @@ void print_colored(Color c, StringRef format, ArgList args, const ArgMap &map);
     std::string message = format("The answer is {}", 42);
   \endrst
 */
-inline std::string format(StringRef format_str, ArgList args, const ArgMap &map) {
+inline std::string format(StringRef format_str, ArgList args) {
   MemoryWriter w;
-  w.write(format_str, args, map);
+  w.write(format_str, args);
   return w.str();
 }
 
-inline std::wstring format(WStringRef format_str, ArgList args, const WArgMap &map) {
+inline std::wstring format(WStringRef format_str, ArgList args) {
   WMemoryWriter w;
-  w.write(format_str, args, map);
+  w.write(format_str, args);
   return w.str();
 }
 
@@ -2610,7 +2627,7 @@ inline std::wstring format(WStringRef format_str, ArgList args, const WArgMap &m
     print(stderr, "Don't {}!", "panic");
   \endrst
  */
-void print(std::FILE *f, StringRef format_str, ArgList args, const ArgMap &map);
+void print(std::FILE *f, StringRef format_str, ArgList args);
 
 /**
   \rst
@@ -2621,7 +2638,7 @@ void print(std::FILE *f, StringRef format_str, ArgList args, const ArgMap &map);
     print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-void print(StringRef format_str, ArgList args, const ArgMap &map);
+void print(StringRef format_str, ArgList args);
 
 /**
   \rst
@@ -2632,10 +2649,10 @@ void print(StringRef format_str, ArgList args, const ArgMap &map);
     print(cerr, "Don't {}!", "panic");
   \endrst
  */
-void print(std::ostream &os, StringRef format_str, ArgList args, const ArgMap &map);
+void print(std::ostream &os, StringRef format_str, ArgList args);
 
 template <typename Char>
-void printf(BasicWriter<Char> &w, BasicStringRef<Char> format, ArgList args, const ArgMap &) {
+void printf(BasicWriter<Char> &w, BasicStringRef<Char> format, ArgList args) {
   internal::PrintfFormatter<Char>().format(w, format, args);
 }
 
@@ -2648,9 +2665,9 @@ void printf(BasicWriter<Char> &w, BasicStringRef<Char> format, ArgList args, con
     std::string message = fmt::sprintf("The answer is %d", 42);
   \endrst
 */
-inline std::string sprintf(StringRef format, ArgList args, const ArgMap &map) {
+inline std::string sprintf(StringRef format, ArgList args) {
   MemoryWriter w;
-  printf(w, format, args, map);
+  printf(w, format, args);
   return w.str();
 }
 
@@ -2663,7 +2680,7 @@ inline std::string sprintf(StringRef format, ArgList args, const ArgMap &map) {
     fmt::fprintf(stderr, "Don't %s!", "panic");
   \endrst
  */
-int fprintf(std::FILE *f, StringRef format, ArgList args, const ArgMap &);
+int fprintf(std::FILE *f, StringRef format, ArgList args);
 
 /**
   \rst
@@ -2674,8 +2691,8 @@ int fprintf(std::FILE *f, StringRef format, ArgList args, const ArgMap &);
     fmt::printf("Elapsed time: %.2f seconds", 1.23);
   \endrst
  */
-inline int printf(StringRef format, ArgList args, const ArgMap &map) {
-  return fprintf(stdout, format, args, map);
+inline int printf(StringRef format, ArgList args) {
+  return fprintf(stdout, format, args);
 }
 
 /**
@@ -2782,13 +2799,24 @@ inline void format_decimal(char *&buffer, T value) {
   buffer += num_digits;
 }
 
+
+/**
+  \rst
+  Returns a named argument for formatting functions.
+
+  **Example**::
+
+    print("Elapsed time: {s:.2f} seconds", arg("s", 1.23));
+
+  \endrst
+ */
 template <typename T>
-inline internal::NamedArg<char, T> arg(StringRef name, T const& arg) {
+inline internal::NamedArg<char, T> arg(StringRef name, const T &arg) {
   return internal::NamedArg<char, T>(name, arg);
 }
 
 template <typename T>
-inline internal::NamedArg<wchar_t, T> arg(WStringRef name, T const& arg) {
+inline internal::NamedArg<wchar_t, T> arg(WStringRef name, const T &arg) {
   return internal::NamedArg<wchar_t, T>(name, arg);
 }
 }
@@ -2827,22 +2855,28 @@ inline internal::NamedArg<wchar_t, T> arg(WStringRef name, T const& arg) {
       const Args & ... args) { \
     typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
     const int count = fmt::internal::NamedArgsCounter<Args...>::value; \
-    fmt::BasicArgMap<Char>::value_type mapArray[count + 1]; \
+    fmt::internal::BasicArgMap<Char>::value_type mapArray[count + 1]; \
     fmt::internal::add_named_args<0>(mapArray, args...); \
-    fmt::BasicArgMap<Char> map(mapArray, count); \
+    fmt::internal::BasicArgMap<Char> map(mapArray, count); \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::internal::make_arg_list<Char>(array, fmt::internal::strip_name(args)...), map); \
+      fmt::internal::make_arg_list<Char>(array, &map, fmt::internal::strip_name(args)...)); \
   }
 #else
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
 // and n additional arguments of arbitrary types.
-# define FMT_WRAP(Char, ReturnType, func, call, n, ...) \
+# define FMT_WRAP(Char_, ReturnType, func, call, n, ...) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       FMT_GEN(n, FMT_MAKE_ARG)) { \
-    fmt::internal::ArgArray<n>::Type arr = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
+    typedef Char_ Char; \
+    typedef fmt::internal::BasicArgMap<Char>::value_type ArgMapValue; \
+    fmt::internal::ArgArray<n>::Type arr = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    ArgMapValue mapArray[n]; \
+    ArgMapValue* mapPtr = mapArray; \
+    FMT_GEN(n, FMT_ADD_NAMED_ARG); \
+    fmt::internal::BasicArgMap<Char> map(mapArray, unsigned(mapPtr - mapArray)); \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), arr)); \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), arr, &map)); \
   }
 
 # define FMT_VARIADIC_(Char, ReturnType, func, call, ...) \
@@ -2901,6 +2935,20 @@ inline internal::NamedArg<wchar_t, T> arg(WStringRef name, T const& arg) {
 
 #define FMT_CAPTURE_ARG_(id, index) ::fmt::arg(#id, id)
 
+/**
+  \rst
+  Convenient macro to capture the arguments' names and values into several
+  `fmt::arg(name, value)`.
+
+  **Example**::
+
+    int x = 1, y = 2;
+    print("point: ({x}, {y})", FMT_CAPTURE(x, y));
+    // same as:
+    // print("point: ({x}, {y})", arg("x", x), arg("y", y));
+
+  \endrst
+ */
 #define FMT_CAPTURE(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_, __VA_ARGS__)
 
 namespace fmt {

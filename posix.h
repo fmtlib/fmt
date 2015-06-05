@@ -197,8 +197,8 @@ public:
   // of MinGW that define fileno as a macro.
   int (fileno)() const;
 
-  void print(fmt::StringRef format_str, const ArgList &args, const ArgMap &map) {
-    fmt::print(file_, format_str, args, map);
+  void print(fmt::StringRef format_str, const ArgList &args) {
+    fmt::print(file_, format_str, args);
   }
   FMT_VARIADIC(void, print, fmt::StringRef)
 };

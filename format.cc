@@ -268,7 +268,7 @@ int parse_nonnegative_int(const Char *&s) {
 template <typename Char>
 inline bool is_name_start(Char c)
 {
-    return 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || '_' == c;
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
 }
 
 inline void require_numeric_argument(const Arg &arg, char spec) {
@@ -408,10 +408,10 @@ inline Arg::StringValue<wchar_t> ignore_incompatible_str(
 }  // namespace
 
 FMT_FUNC void fmt::SystemError::init(
-    int err_code, StringRef format_str, ArgList args, const ArgMap &map) {
+    int err_code, StringRef format_str, ArgList args) {
   error_code_ = err_code;
   MemoryWriter w;
-  internal::format_system_error(w, err_code, format(format_str, args, map));
+  internal::format_system_error(w, err_code, format(format_str, args));
   std::runtime_error &base = *this;
   base = std::runtime_error(w.str());
 }
@@ -524,10 +524,10 @@ FMT_FUNC int fmt::internal::UTF16ToUTF8::convert(fmt::WStringRef s) {
 }
 
 FMT_FUNC void fmt::WindowsError::init(
-    int err_code, StringRef format_str, ArgList args, const ArgMap &map) {
+    int err_code, StringRef format_str, ArgList args) {
   error_code_ = err_code;
   MemoryWriter w;
-  internal::format_windows_error(w, err_code, format(format_str, args, map));
+  internal::format_windows_error(w, err_code, format(format_str, args));
   std::runtime_error &base = *this;
   base = std::runtime_error(w.str());
 }
@@ -700,21 +700,18 @@ inline Arg fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
 }
 
 template <typename Char>
-inline Arg fmt::BasicFormatter<Char>::parse_arg_name(const Char *&s, const fmt::BasicArgMap<Char> &map) {
-    assert(is_name_start(*s));
-    const Char *start = s;
-    Char c;
-    do {
-        c = *++s;
-    } while ('a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || '0' <= c && c <= '9');
-    const int* index = map.find(fmt::BasicStringRef<Char>(start, s - start));
-    if (!index)
-        FMT_THROW(fmt::FormatError("argument not found"));
-    const char *error = 0;
-    Arg arg = get_arg(*index, error);
-    if (error)
-        FMT_THROW(fmt::FormatError(error));
-    return arg;
+inline Arg fmt::BasicFormatter<Char>::parse_arg_name(const Char *&s) {
+  assert(is_name_start(*s));
+  const Char *start = s;
+  Char c;
+  do {
+    c = *++s;
+  } while (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9'));
+  const char *error = 0;
+  Arg arg = get_arg(fmt::BasicStringRef<Char>(start, s - start), error);
+  if (error)
+    FMT_THROW(fmt::FormatError(error));
+  return arg;
 }
 
 FMT_FUNC Arg fmt::internal::FormatterBase::do_get_arg(
@@ -739,6 +736,18 @@ inline Arg fmt::internal::FormatterBase::get_arg(
     return do_get_arg(arg_index, error);
   }
   error = "cannot switch from automatic to manual argument indexing";
+  return Arg();
+}
+
+template <typename Char>
+inline Arg fmt::internal::FormatterBase::get_arg(
+  const BasicStringRef<Char>& arg_name, const char *&error) {
+  const BasicArgMap<Char>* map = args_.get_arg_map<Char>();
+  assert(map);
+  const unsigned* index = map->find(arg_name);
+  if (index)
+      return get_arg(*index, error);
+  error = "argument not found";
   return Arg();
 }
 
@@ -984,7 +993,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
 
 template <typename Char>
 const Char *fmt::BasicFormatter<Char>::format(
-    const Char *&format_str, const Arg &arg, const BasicArgMap<Char> &map) {
+    const Char *&format_str, const Arg &arg) {
   const Char *s = format_str;
   FormatSpec spec;
   if (*s == ':') {
@@ -1062,7 +1071,7 @@ const Char *fmt::BasicFormatter<Char>::format(
       spec.width_ = parse_nonnegative_int(s);
     } else if (*s == '{') {
         ++s;
-        const Arg &width_arg = is_name_start(*s) ? parse_arg_name(s, map) : parse_arg_index(s);
+        const Arg &width_arg = is_name_start(*s) ? parse_arg_name(s) : parse_arg_index(s);
         if (*s++ != '}')
             FMT_THROW(FormatError("invalid format string"));
         ULongLong value = 0;
@@ -1099,7 +1108,7 @@ const Char *fmt::BasicFormatter<Char>::format(
         spec.precision_ = parse_nonnegative_int(s);
       } else if (*s == '{') {
         ++s;
-        const Arg &precision_arg = is_name_start(*s) ? parse_arg_name(s, map) : parse_arg_index(s);
+        const Arg &precision_arg = is_name_start(*s) ? parse_arg_name(s) : parse_arg_index(s);
         if (*s++ != '}')
           FMT_THROW(FormatError("invalid format string"));
         ULongLong value = 0;
@@ -1152,7 +1161,7 @@ const Char *fmt::BasicFormatter<Char>::format(
 
 template <typename Char>
 void fmt::BasicFormatter<Char>::format(
-    BasicStringRef<Char> format_str, const ArgList &args, const BasicArgMap<Char> &map) {
+    BasicStringRef<Char> format_str, const ArgList &args) {
   const Char *s = start_ = format_str.c_str();
   set_args(args);
   while (*s) {
@@ -1166,8 +1175,8 @@ void fmt::BasicFormatter<Char>::format(
     if (c == '}')
       FMT_THROW(FormatError("unmatched '}' in format string"));
     write(writer_, start_, s - 1);
-    Arg arg = is_name_start(*s) ? parse_arg_name(s, map) : parse_arg_index(s);
-    s = format(s, arg, map);
+    Arg arg = is_name_start(*s) ? parse_arg_name(s) : parse_arg_index(s);
+    s = format(s, arg);
   }
   write(writer_, start_, s);
 }
@@ -1184,33 +1193,33 @@ FMT_FUNC void fmt::report_windows_error(
 }
 #endif
 
-FMT_FUNC void fmt::print(std::FILE *f, StringRef format_str, ArgList args, const ArgMap &map) {
+FMT_FUNC void fmt::print(std::FILE *f, StringRef format_str, ArgList args) {
   MemoryWriter w;
-  w.write(format_str, args, map);
+  w.write(format_str, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
 
-FMT_FUNC void fmt::print(StringRef format_str, ArgList args, const ArgMap &map) {
-  print(stdout, format_str, args, map);
+FMT_FUNC void fmt::print(StringRef format_str, ArgList args) {
+  print(stdout, format_str, args);
 }
 
-FMT_FUNC void fmt::print(std::ostream &os, StringRef format_str, ArgList args, const ArgMap &map) {
+FMT_FUNC void fmt::print(std::ostream &os, StringRef format_str, ArgList args) {
   MemoryWriter w;
-  w.write(format_str, args, map);
+  w.write(format_str, args);
   os.write(w.data(), w.size());
 }
 
-FMT_FUNC void fmt::print_colored(Color c, StringRef format, ArgList args, const ArgMap &map) {
+FMT_FUNC void fmt::print_colored(Color c, StringRef format, ArgList args) {
   char escape[] = "\x1b[30m";
   escape[3] = '0' + static_cast<char>(c);
   std::fputs(escape, stdout);
-  print(format, args, map);
+  print(format, args);
   std::fputs(RESET_COLOR, stdout);
 }
 
-FMT_FUNC int fmt::fprintf(std::FILE *f, StringRef format, ArgList args, const ArgMap &map) {
+FMT_FUNC int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
   MemoryWriter w;
-  printf(w, format, args, map);
+  printf(w, format, args);
   std::size_t size = w.size();
   return std::fwrite(w.data(), 1, size, f) < size ? -1 : static_cast<int>(size);
 }
@@ -1224,10 +1233,10 @@ template struct fmt::internal::BasicData<void>;
 template void fmt::internal::FixedBuffer<char>::grow(std::size_t);
 
 template const char *fmt::BasicFormatter<char>::format(
-    const char *&format_str, const fmt::internal::Arg &arg, const BasicArgMap<char> &map);
+    const char *&format_str, const fmt::internal::Arg &arg);
 
 template void fmt::BasicFormatter<char>::format(
-  BasicStringRef<char> format, const ArgList &args, const BasicArgMap<char> &map);
+  BasicStringRef<char> format, const ArgList &args);
 
 template void fmt::internal::PrintfFormatter<char>::format(
   BasicWriter<char> &writer, BasicStringRef<char> format, const ArgList &args);
@@ -1245,10 +1254,10 @@ template int fmt::internal::CharTraits<char>::format_float(
 template void fmt::internal::FixedBuffer<wchar_t>::grow(std::size_t);
 
 template const wchar_t *fmt::BasicFormatter<wchar_t>::format(
-    const wchar_t *&format_str, const fmt::internal::Arg &arg, const BasicArgMap<wchar_t> &map);
+    const wchar_t *&format_str, const fmt::internal::Arg &arg);
 
 template void fmt::BasicFormatter<wchar_t>::format(
-    BasicStringRef<wchar_t> format, const ArgList &args, const BasicArgMap<wchar_t> &map);
+    BasicStringRef<wchar_t> format, const ArgList &args);
 
 template void fmt::internal::PrintfFormatter<wchar_t>::format(
     BasicWriter<wchar_t> &writer, BasicStringRef<wchar_t> format,

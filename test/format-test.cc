@@ -606,6 +606,7 @@ TEST(FormatterTest, ManyArgs) {
   EXPECT_THROW_MSG(TestFormat<MAX_PACKED_ARGS>::format(format_str),
                    FormatError, "argument index out of range");
 }
+#endif
 
 TEST(FormatterTest, NamedArg) {
     char a = 'A', b = 'B', c = 'C';
@@ -620,7 +621,6 @@ TEST(FormatterTest, NamedArg) {
     EXPECT_EQ(" -42", format("{0:{width}}", -42, fmt::arg("width", 4)));
     EXPECT_EQ("st", format("{0:.{precision}}", "str", fmt::arg("precision", 2)));
 }
-#endif
 
 TEST(FormatterTest, AutoArgIndex) {
   EXPECT_EQ("abc", format("{}{}{}", 'a', 'b', 'c'));
@@ -1564,10 +1564,10 @@ TEST(StrTest, Convert) {
 }
 
 std::string format_message(int id, const char *format,
-    const fmt::ArgList &args, const fmt::ArgMap &map) {
+    const fmt::ArgList &args) {
   MemoryWriter w;
   w.write("[{}] ", id);
-  w.write(format, args, map);
+  w.write(format, args);
   return w.str();
 }
 
