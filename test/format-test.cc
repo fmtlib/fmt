@@ -561,7 +561,7 @@ TEST(FormatterTest, ArgsInDifferentPositions) {
 
 TEST(FormatterTest, ArgErrors) {
   EXPECT_THROW_MSG(format("{"), FormatError, "invalid format string");
-  EXPECT_THROW_MSG(format("{x}"), FormatError, "invalid format string");
+  EXPECT_THROW_MSG(format("{?}"), FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{0"), FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{0}"), FormatError, "argument index out of range");
 
@@ -605,6 +605,20 @@ TEST(FormatterTest, ManyArgs) {
   std::string format_str = fmt::format("{{{}}}", MAX_PACKED_ARGS + 1);
   EXPECT_THROW_MSG(TestFormat<MAX_PACKED_ARGS>::format(format_str),
                    FormatError, "argument index out of range");
+}
+
+TEST(FormatterTest, NamedArg) {
+    char a = 'A', b = 'B', c = 'C';
+    EXPECT_EQ("BBAACC", format("{1}{b}{0}{a}{2}{c}", FMT_CAPTURE(a, b, c)));
+    EXPECT_EQ(" A", format("{a:>2}", FMT_CAPTURE(a)));
+    EXPECT_THROW_MSG(format("{a+}", FMT_CAPTURE(a)), FormatError, "missing '}' in format string");
+    EXPECT_THROW_MSG(format("{d}", FMT_CAPTURE(a, b, c)), FormatError, "argument not found");
+    EXPECT_THROW_MSG(format("{a}{}", FMT_CAPTURE(a)),
+        FormatError, "cannot switch from manual to automatic argument indexing");
+    EXPECT_THROW_MSG(format("{}{a}", FMT_CAPTURE(a)),
+        FormatError, "cannot switch from automatic to manual argument indexing");
+    EXPECT_EQ(" -42", format("{0:{width}}", -42, fmt::arg("width", 4)));
+    EXPECT_EQ("st", format("{0:.{precision}}", "str", fmt::arg("precision", 2)));
 }
 #endif
 
@@ -919,7 +933,7 @@ TEST(FormatterTest, RuntimeWidth) {
         FormatError, "invalid format string");
     EXPECT_THROW_MSG(format("{0:{}", 0),
         FormatError, "cannot switch from manual to automatic argument indexing");
-    EXPECT_THROW_MSG(format("{0:{x}}", 0),
+    EXPECT_THROW_MSG(format("{0:{?}}", 0),
         FormatError, "invalid format string");
     EXPECT_THROW_MSG(format("{0:{1}}", 0),
         FormatError, "argument index out of range");
@@ -1036,7 +1050,7 @@ TEST(FormatterTest, RuntimePrecision) {
       FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{0:.{}", 0),
       FormatError, "cannot switch from manual to automatic argument indexing");
-  EXPECT_THROW_MSG(format("{0:.{x}}", 0),
+  EXPECT_THROW_MSG(format("{0:.{?}}", 0),
       FormatError, "invalid format string");
   EXPECT_THROW_MSG(format("{0:.{1}", 0, 0),
       FormatError, "precision not allowed in integer format specifier");
@@ -1550,10 +1564,10 @@ TEST(StrTest, Convert) {
 }
 
 std::string format_message(int id, const char *format,
-    const fmt::ArgList &args) {
+    const fmt::ArgList &args, const fmt::ArgMap &map) {
   MemoryWriter w;
   w.write("[{}] ", id);
-  w.write(format, args);
+  w.write(format, args, map);
   return w.str();
 }
 

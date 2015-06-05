@@ -228,6 +228,11 @@ class BasicStringRef {
 
  public:
   /**
+    Constructs an empty string reference object.
+   */
+   BasicStringRef() : data_(), size_() {}
+
+  /**
     Constructs a string reference object from a C string and a size.
    */
   BasicStringRef(const Char *s, std::size_t size) : data_(s), size_(size) {}
@@ -273,6 +278,9 @@ class BasicStringRef {
   }
   friend bool operator!=(BasicStringRef lhs, BasicStringRef rhs) {
     return lhs.data_ != rhs.data_;
+  }
+  friend bool operator<(BasicStringRef lhs, BasicStringRef rhs) {
+      return std::lexicographical_compare(lhs.data_, lhs.data_ + lhs.size_, rhs.data_, rhs.data_ + rhs.size_);
   }
 };
 
@@ -759,6 +767,15 @@ struct Value {
   };
 };
 
+template <typename Char, typename T>
+struct NamedArg
+{
+    BasicStringRef<Char> name;
+    T const& arg;
+
+    NamedArg(BasicStringRef<Char> name, T const& arg) : name(name), arg(arg) {}
+};
+
 // A formatting argument. It is a POD type to allow storage in
 // internal::MemoryBuffer.
 struct Arg : Value {
@@ -962,6 +979,50 @@ class MakeValue : public Arg {
   }
 };
 
+template <typename T>
+inline const T &strip_name(const T &arg)
+{
+    return arg;
+}
+
+template <typename Char, typename T>
+inline const T &strip_name(const NamedArg<Char, T> &namedArg)
+{
+    return namedArg.arg;
+}
+
+template <typename... T>
+struct NamedArgsCounter
+{
+    static const int value = 0;
+};
+
+template <typename T, typename... U>
+struct NamedArgsCounter<T, U...> : NamedArgsCounter<U...>
+{};
+
+template <typename Char, typename T, typename... U>
+struct NamedArgsCounter<NamedArg<Char, T>, U...>
+{
+    static const int value = 1 + NamedArgsCounter<U...>::value;
+};
+
+template <int N, typename NameIndexPair>
+inline void add_named_args(NameIndexPair*) {}
+
+template <int N, typename NameIndexPair, typename T, typename... U>
+inline void add_named_args(NameIndexPair* map, T const&, U const&... rest)
+{
+    add_named_args<N + 1>(map, rest...);
+}
+
+template <int N, typename NameIndexPair, typename Char, typename T, typename... U>
+inline void add_named_args(NameIndexPair* map, const NamedArg<Char, T> &namedArg, U const&... rest)
+{
+    *map = NameIndexPair(namedArg.name, N);
+    add_named_args<N + 1>(map + 1, rest...);
+}
+
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
 
 // An argument visitor.
@@ -1146,6 +1207,48 @@ class ArgList {
 
 struct FormatSpec;
 
+template <typename Char>
+struct BasicArgMap
+{
+    typedef std::pair<BasicStringRef<Char>, int> value_type;
+
+    BasicArgMap() : map_(), size_() {}
+
+    BasicArgMap(value_type* map, int size)
+        : map_(map), size_(size)
+    {
+        std::sort(map, map + size, [](const value_type &lhs, const value_type &rhs)
+        {
+            return lhs.first < rhs.first;
+        });
+    }
+
+    const int* find(BasicStringRef<Char> name) const
+    {
+        value_type* first = map_;
+        value_type* last = map_ + size_;
+        while (first != last)
+        {
+            value_type* it(first + (last - first >> 1));
+            if (name < it->first)
+                last = it;
+            else if (it->first < name)
+                first = ++it;
+            else
+                return &it->second;
+        }
+        return nullptr;
+    }
+
+private:
+
+    value_type* map_;
+    int size_;
+};
+
+typedef BasicArgMap<char> ArgMap;
+typedef BasicArgMap<wchar_t> WArgMap;
+
 namespace internal {
 
 class FormatterBase {
@@ -1208,14 +1311,17 @@ class BasicFormatter : private internal::FormatterBase {
   // Parses argument index and returns corresponding argument.
   internal::Arg parse_arg_index(const Char *&s);
 
+  // Parses argument name and returns corresponding argument.
+  internal::Arg parse_arg_name(const Char *&s, const BasicArgMap<Char> &map);
+
  public:
   explicit BasicFormatter(BasicWriter<Char> &w) : writer_(w) {}
 
   BasicWriter<Char> &writer() { return writer_; }
 
-  void format(BasicStringRef<Char> format_str, const ArgList &args);
+  void format(BasicStringRef<Char> format_str, const ArgList &args, const BasicArgMap<Char> &map);
 
-  const Char *format(const Char *&format_str, const internal::Arg &arg);
+  const Char *format(const Char *&format_str, const internal::Arg &arg, const BasicArgMap<Char> &map);
 };
 
 enum Alignment {
@@ -1556,7 +1662,11 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
   template <typename... Args> \
   void func(arg_type arg0, const Args & ... args) { \
     typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
-    func(arg0, fmt::internal::make_arg_list<Char>(array, args...)); \
+    const int count = fmt::internal::NamedArgsCounter<Args...>::value; \
+    fmt::BasicArgMap<Char>::value_type mapArray[count + 1]; \
+    fmt::internal::add_named_args<0>(mapArray, args...); \
+    fmt::BasicArgMap<Char> map(mapArray, count); \
+    func(arg0, fmt::internal::make_arg_list<Char>(array, fmt::internal::strip_name(args)...), map); \
   }
 
 // Defines a variadic constructor.
@@ -1564,7 +1674,11 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
     typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
-    func(arg0, arg1, fmt::internal::make_arg_list<Char>(array, args...)); \
+    const int count = fmt::internal::NamedArgsCounter<Args...>::value; \
+    fmt::BasicArgMap<Char>::value_type mapArray[count + 1]; \
+    fmt::internal::add_named_args<0>(mapArray, args...); \
+    fmt::BasicArgMap<Char> map(mapArray, count); \
+    func(arg0, arg1, fmt::internal::make_arg_list<Char>(array, fmt::internal::strip_name(args)...), map); \
   }
 
 #else
@@ -1641,7 +1755,7 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 */
 class SystemError : public internal::RuntimeError {
  private:
-  void init(int err_code, StringRef format_str, ArgList args);
+  void init(int err_code, StringRef format_str, ArgList args, const ArgMap &map);
 
  protected:
   int error_code_;
@@ -1677,7 +1791,7 @@ class SystemError : public internal::RuntimeError {
    \endrst
   */
   SystemError(int error_code, StringRef message) {
-    init(error_code, message, ArgList());
+    init(error_code, message, ArgList(), ArgMap());
   }
   FMT_VARIADIC_CTOR(SystemError, init, int, StringRef)
 
@@ -1852,8 +1966,8 @@ class BasicWriter {
     See also :ref:`syntax`.
     \endrst
    */
-  void write(BasicStringRef<Char> format, ArgList args) {
-    BasicFormatter<Char>(*this).format(format, args);
+  void write(BasicStringRef<Char> format, ArgList args, const BasicArgMap<Char> &map) {
+    BasicFormatter<Char>(*this).format(format, args, map);
   }
   FMT_VARIADIC_VOID(write, BasicStringRef<Char>)
 
@@ -2401,7 +2515,7 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   internal::Arg arg = internal::MakeValue<Char>(str);
   arg.type = static_cast<internal::Arg::Type>(
         internal::MakeValue<Char>::type(str));
-  format_str = f.format(format_str, arg);
+  format_str = f.format(format_str, arg, BasicArgMap<Char>());
 }
 
 // Reports a system error without throwing an exception.
@@ -2413,7 +2527,7 @@ void report_system_error(int error_code, StringRef message) FMT_NOEXCEPT;
 /** A Windows error. */
 class WindowsError : public SystemError {
  private:
-  void init(int error_code, StringRef format_str, ArgList args);
+  void init(int error_code, StringRef format_str, ArgList args, const ArgMap &map);
 
  public:
   /**
@@ -2445,7 +2559,7 @@ class WindowsError : public SystemError {
    \endrst
   */
   WindowsError(int error_code, StringRef message) {
-    init(error_code, message, ArgList());
+    init(error_code, message, ArgList(), ArgMap());
   }
   FMT_VARIADIC_CTOR(WindowsError, init, int, StringRef)
 };
@@ -2464,7 +2578,7 @@ enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
   Example:
     PrintColored(fmt::RED, "Elapsed time: {0:.2f} seconds") << 1.23;
  */
-void print_colored(Color c, StringRef format, ArgList args);
+void print_colored(Color c, StringRef format, ArgList args, const ArgMap &map);
 
 /**
   \rst
@@ -2475,15 +2589,15 @@ void print_colored(Color c, StringRef format, ArgList args);
     std::string message = format("The answer is {}", 42);
   \endrst
 */
-inline std::string format(StringRef format_str, ArgList args) {
+inline std::string format(StringRef format_str, ArgList args, const ArgMap &map) {
   MemoryWriter w;
-  w.write(format_str, args);
+  w.write(format_str, args, map);
   return w.str();
 }
 
-inline std::wstring format(WStringRef format_str, ArgList args) {
+inline std::wstring format(WStringRef format_str, ArgList args, const WArgMap &map) {
   WMemoryWriter w;
-  w.write(format_str, args);
+  w.write(format_str, args, map);
   return w.str();
 }
 
@@ -2496,7 +2610,7 @@ inline std::wstring format(WStringRef format_str, ArgList args) {
     print(stderr, "Don't {}!", "panic");
   \endrst
  */
-void print(std::FILE *f, StringRef format_str, ArgList args);
+void print(std::FILE *f, StringRef format_str, ArgList args, const ArgMap &map);
 
 /**
   \rst
@@ -2507,7 +2621,7 @@ void print(std::FILE *f, StringRef format_str, ArgList args);
     print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-void print(StringRef format_str, ArgList args);
+void print(StringRef format_str, ArgList args, const ArgMap &map);
 
 /**
   \rst
@@ -2518,10 +2632,10 @@ void print(StringRef format_str, ArgList args);
     print(cerr, "Don't {}!", "panic");
   \endrst
  */
-void print(std::ostream &os, StringRef format_str, ArgList args);
+void print(std::ostream &os, StringRef format_str, ArgList args, const ArgMap &map);
 
 template <typename Char>
-void printf(BasicWriter<Char> &w, BasicStringRef<Char> format, ArgList args) {
+void printf(BasicWriter<Char> &w, BasicStringRef<Char> format, ArgList args, const ArgMap &) {
   internal::PrintfFormatter<Char>().format(w, format, args);
 }
 
@@ -2534,9 +2648,9 @@ void printf(BasicWriter<Char> &w, BasicStringRef<Char> format, ArgList args) {
     std::string message = fmt::sprintf("The answer is %d", 42);
   \endrst
 */
-inline std::string sprintf(StringRef format, ArgList args) {
+inline std::string sprintf(StringRef format, ArgList args, const ArgMap &map) {
   MemoryWriter w;
-  printf(w, format, args);
+  printf(w, format, args, map);
   return w.str();
 }
 
@@ -2549,7 +2663,7 @@ inline std::string sprintf(StringRef format, ArgList args) {
     fmt::fprintf(stderr, "Don't %s!", "panic");
   \endrst
  */
-int fprintf(std::FILE *f, StringRef format, ArgList args);
+int fprintf(std::FILE *f, StringRef format, ArgList args, const ArgMap &);
 
 /**
   \rst
@@ -2560,8 +2674,8 @@ int fprintf(std::FILE *f, StringRef format, ArgList args);
     fmt::printf("Elapsed time: %.2f seconds", 1.23);
   \endrst
  */
-inline int printf(StringRef format, ArgList args) {
-  return fprintf(stdout, format, args);
+inline int printf(StringRef format, ArgList args, const ArgMap &map) {
+  return fprintf(stdout, format, args, map);
 }
 
 /**
@@ -2667,6 +2781,16 @@ inline void format_decimal(char *&buffer, T value) {
   internal::format_decimal(buffer, abs_value, num_digits);
   buffer += num_digits;
 }
+
+template <typename T>
+inline internal::NamedArg<char, T> arg(StringRef name, T const& arg) {
+  return internal::NamedArg<char, T>(name, arg);
+}
+
+template <typename T>
+inline internal::NamedArg<wchar_t, T> arg(WStringRef name, T const& arg) {
+  return internal::NamedArg<wchar_t, T>(name, arg);
+}
 }
 
 #if FMT_GCC_VERSION
@@ -2702,8 +2826,12 @@ inline void format_decimal(char *&buffer, T value) {
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
     typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
+    const int count = fmt::internal::NamedArgsCounter<Args...>::value; \
+    fmt::BasicArgMap<Char>::value_type mapArray[count + 1]; \
+    fmt::internal::add_named_args<0>(mapArray, args...); \
+    fmt::BasicArgMap<Char> map(mapArray, count); \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::internal::make_arg_list<Char>(array, args...)); \
+      fmt::internal::make_arg_list<Char>(array, fmt::internal::strip_name(args)...), map); \
   }
 #else
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
@@ -2770,6 +2898,10 @@ inline void format_decimal(char *&buffer, T value) {
 
 #define FMT_VARIADIC_W(ReturnType, func, ...) \
   FMT_VARIADIC_(wchar_t, ReturnType, func, return func, __VA_ARGS__)
+
+#define FMT_CAPTURE_ARG_(id, index) ::fmt::arg(#id, id)
+
+#define FMT_CAPTURE(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_, __VA_ARGS__)
 
 namespace fmt {
 FMT_VARIADIC(std::string, format, StringRef)
