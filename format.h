@@ -773,6 +773,11 @@ struct NamedArg {
   T const& arg;
 
   NamedArg(BasicStringRef<Char> name, T const& arg) : name(name), arg(arg) {}
+
+private:
+
+  // Suppress MSVC warning : assignment operator could not be generated
+  NamedArg& operator=(const NamedArg&);
 };
 
 // A formatting argument. It is a POD type to allow storage in
@@ -1559,7 +1564,7 @@ struct ArgArray {
 };
 
 template <typename NameIndexPair, typename T>
-inline void add_named_arg(NameIndexPair* map, T const&, unsigned) {}
+inline void add_named_arg(NameIndexPair*, const T &, unsigned) {}
 
 template <typename NameIndexPair, typename Char, typename T>
 inline void add_named_arg(NameIndexPair*& map, const NamedArg<Char, T> &namedArg, unsigned n) {
