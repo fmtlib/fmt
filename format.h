@@ -2940,6 +2940,8 @@ inline internal::NamedArg<wchar_t, T> arg(WStringRef name, const T &arg) {
 
 #define FMT_CAPTURE_ARG_(id, index) ::fmt::arg(#id, id)
 
+#define FMT_CAPTURE_ARG_W_(id, index) ::fmt::arg(L#id, id)
+
 /**
   \rst
   Convenient macro to capture the arguments' names and values into several
@@ -2955,6 +2957,8 @@ inline internal::NamedArg<wchar_t, T> arg(WStringRef name, const T &arg) {
   \endrst
  */
 #define FMT_CAPTURE(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_, __VA_ARGS__)
+
+#define FMT_CAPTURE_W(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_W_, __VA_ARGS__)
 
 namespace fmt {
 FMT_VARIADIC(std::string, format, StringRef)
