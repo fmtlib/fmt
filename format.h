@@ -2940,7 +2940,7 @@ inline internal::NamedArg<wchar_t, T> arg(WStringRef name, const T &arg) {
 
 #define FMT_CAPTURE_ARG_(id, index) ::fmt::arg(#id, id)
 
-#define FMT_CAPTURE_ARG_W_(id, index) ::fmt::arg(L#id, id)
+#define FMT_CAPTURE_ARG_W_(id, index) ::fmt::arg(L###id, id)
 
 /**
   \rst
