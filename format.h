@@ -164,10 +164,12 @@ inline uint32_t clzll(uint64_t x) {
 // This should be used in the private: declarations for a class
 #if FMT_USE_DELETED_FUNCTIONS || FMT_HAS_FEATURE(cxx_deleted_functions) || \
   (FMT_GCC_VERSION >= 404 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1800
+# define FMT_DELETED_OR_UNDEFINED  = delete
 # define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
     TypeName(const TypeName&) = delete; \
     TypeName& operator=(const TypeName&) = delete
 #else
+# define FMT_DELETED_OR_UNDEFINED
 # define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
     TypeName(const TypeName&); \
     TypeName& operator=(const TypeName&)
@@ -968,11 +970,9 @@ class MakeValue : public Arg {
     return IsConvertibleToInt<T>::value ? Arg::INT : Arg::CUSTOM;
   }
 
-  template <typename Char_>
-  MakeValue(const NamedArg<Char_> &value) { pointer = &value; }
+  MakeValue(const NamedArg<Char> &value) { pointer = &value; }
 
-  template <typename Char_>
-  static uint64_t type(const NamedArg<Char_> &) { return Arg::NAMED_ARG; }
+  static uint64_t type(const NamedArg<Char> &) { return Arg::NAMED_ARG; }
 };
 
 template <typename Char>
@@ -2745,6 +2745,12 @@ template <typename T>
 inline internal::NamedArg<wchar_t> arg(WStringRef name, const T &arg) {
   return internal::NamedArg<wchar_t>(name, arg);
 }
+
+template <typename Char>
+void arg(StringRef name, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
+
+template <typename Char>
+void arg(WStringRef name, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 }
 
 #if FMT_GCC_VERSION
