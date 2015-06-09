@@ -932,6 +932,32 @@ TEST(FormatterTest, RuntimeWidth) {
   format_str[size + 2] = 0;
   EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
 
+  EXPECT_THROW_MSG(format("{0:{", 0),
+      FormatError, "invalid format string");
+  EXPECT_THROW_MSG(format("{0:{}", 0),
+      FormatError, "cannot switch from manual to automatic argument indexing");
+  EXPECT_THROW_MSG(format("{0:{?}}", 0),
+      FormatError, "invalid format string");
+  EXPECT_THROW_MSG(format("{0:{1}}", 0),
+      FormatError, "argument index out of range");
+
+  EXPECT_THROW_MSG(format("{0:{0:}}", 0),
+      FormatError, "invalid format string");
+
+  EXPECT_THROW_MSG(format("{0:{1}}", 0, -1),
+      FormatError, "negative width");
+  EXPECT_THROW_MSG(format("{0:{1}}", 0, (INT_MAX + 1u)),
+      FormatError, "number is too big");
+  EXPECT_THROW_MSG(format("{0:{1}}", 0, -1l),
+      FormatError, "negative width");
+  if (fmt::internal::check(sizeof(long) > sizeof(int))) {
+    long value = INT_MAX;
+    EXPECT_THROW_MSG(format("{0:{1}}", 0, (value + 1)),
+        FormatError, "number is too big");
+  }
+  EXPECT_THROW_MSG(format("{0:{1}}", 0, (INT_MAX + 1ul)),
+      FormatError, "number is too big");
+
   EXPECT_THROW_MSG(format("{0:{1}}", 0, '0'),
       FormatError, "width is not integer");
   EXPECT_THROW_MSG(format("{0:{1}}", 0, 0.0),
