@@ -1176,53 +1176,16 @@ struct fmt::ArgList::Map {
   typedef std::map<fmt::BasicStringRef<Char>, internal::Arg> MapType;
   typedef typename MapType::value_type Pair;
 
-  void init(const ArgList &args) {
-    if (!map_.empty())
-      return;
-    bool use_values = args.type(MAX_PACKED_ARGS - 1) == internal::Arg::NONE;
-    if (use_values) {
-      add_packed(args, args.values_);
-      return;
-    }
-    add_packed(args, args.args_);
-    const internal::NamedArg<Char>* named_arg;
-    for (unsigned i = MAX_PACKED_ARGS; ; ++i) {
-      switch (args.args_[i].type) {
-      case internal::Arg::NONE:
-        return;
-      case internal::Arg::NAMED_ARG:
-        named_arg = static_cast<const internal::NamedArg<Char>*>(args.args_[i].pointer);
-        map_.insert(Pair(named_arg->name, *named_arg));
-        break;
-      }
-    }
-  }
+  void init(const ArgList &args);
 
-  const internal::Arg* find(const fmt::BasicStringRef<Char> &name) const
-  {
-      typename MapType::const_iterator it = map_.find(name);
-      if (it != map_.end())
-          return &it->second;
-      return 0;
+  const internal::Arg* find(const fmt::BasicStringRef<Char> &name) const {
+    typename MapType::const_iterator it = map_.find(name);
+    if (it != map_.end())
+      return &it->second;
+    return 0;
   }
 
 private:
-
-  template <typename T>
-  void add_packed(const ArgList &args, const T* data) {
-    const internal::NamedArg<Char>* named_arg;
-    for (unsigned i = 0; i != MAX_PACKED_ARGS; ++i) {
-      internal::Arg::Type arg_type = args.type(i);
-      switch (arg_type) {
-      case internal::Arg::NONE:
-        return;
-      case internal::Arg::NAMED_ARG:
-        named_arg = static_cast<const internal::NamedArg<Char>*>(data[i].pointer);
-        map_.insert(Pair(named_arg->name, *named_arg));
-        break;
-      }
-    }
-  }
 
   MapType map_;
 };
