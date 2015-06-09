@@ -687,6 +687,20 @@ void fmt::BasicWriter<Char>::write_str(
 }
 
 template <typename Char>
+inline Arg fmt::BasicFormatter<Char>::get_arg(
+  const BasicStringRef<Char>& arg_name, const char *&error) {
+  if (check_no_auto_index(error)) {
+    next_arg_index_ = -1;
+    map_.init(args_);
+    const Arg* arg = map_.find(arg_name);
+    if (arg)
+      return *arg;
+    error = "argument not found";
+  }
+  return Arg();
+}
+
+template <typename Char>
 inline Arg fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
   const char *error = 0;
   Arg arg = *s < '0' || *s > '9' ?
@@ -716,8 +730,13 @@ inline Arg fmt::BasicFormatter<Char>::parse_arg_name(const Char *&s) {
 FMT_FUNC Arg fmt::internal::FormatterBase::do_get_arg(
     unsigned arg_index, const char *&error) {
   Arg arg = args_[arg_index];
-  if (arg.type == Arg::NONE)
+  switch (arg.type) {
+  case Arg::NONE:
     error = "argument index out of range";
+    break;
+  case Arg::NAMED_ARG:
+    arg = *static_cast<const internal::Arg*>(arg.pointer);
+  }
   return arg;
 }
 
@@ -728,25 +747,20 @@ inline Arg fmt::internal::FormatterBase::next_arg(const char *&error) {
   return Arg();
 }
 
+inline bool fmt::internal::FormatterBase::check_no_auto_index(const char *&error) {
+  if (next_arg_index_ > 0) {
+    error = "cannot switch from automatic to manual argument indexing";
+    return false;
+  }
+  return true;
+}
+
 inline Arg fmt::internal::FormatterBase::get_arg(
     unsigned arg_index, const char *&error) {
-  if (next_arg_index_ <= 0) {
+  if (check_no_auto_index(error)) {
     next_arg_index_ = -1;
     return do_get_arg(arg_index, error);
   }
-  error = "cannot switch from automatic to manual argument indexing";
-  return Arg();
-}
-
-template <typename Char>
-inline Arg fmt::internal::FormatterBase::get_arg(
-  const BasicStringRef<Char>& arg_name, const char *&error) {
-  const BasicArgMap<Char>* map = args_.get_arg_map<Char>();
-  assert(map);
-  const unsigned* index = map->find(arg_name);
-  if (index)
-    return get_arg(*index, error);
-  error = "argument not found";
   return Arg();
 }
 
