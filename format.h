@@ -368,14 +368,16 @@ class Buffer {
   }
 
   /** Appends data to the end of the buffer. */
-  void append(const T *begin, const T *end);
+  template <typename U>
+  void append(const U *begin, const U *end);
 
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
 };
 
 template <typename T>
-void Buffer<T>::append(const T *begin, const T *end) {
+template <typename U>
+void Buffer<T>::append(const U *begin, const U *end) {
   std::ptrdiff_t num_elements = end - begin;
   if (size_ + num_elements > capacity_)
     grow(size_ + num_elements);
@@ -1919,6 +1921,12 @@ class BasicWriter {
    */
   BasicWriter &operator<<(fmt::BasicStringRef<Char> value) {
     const Char *str = value.c_str();
+    buffer_.append(str, str + value.size());
+    return *this;
+  }
+
+  BasicWriter &operator<<(typename internal::WCharHelper<StringRef, Char>::Supported value) {
+    const char *str = value.c_str();
     buffer_.append(str, str + value.size());
     return *this;
   }
