@@ -970,9 +970,12 @@ class MakeValue : public Arg {
     return IsConvertibleToInt<T>::value ? Arg::INT : Arg::CUSTOM;
   }
 
-  MakeValue(const NamedArg<Char> &value) { pointer = &value; }
+  // Additional template param `Char_` is needed here because make_type always uses MakeValue<char>.
+  template <typename Char_>
+  MakeValue(const NamedArg<Char_> &value) { pointer = &value; }
 
-  static uint64_t type(const NamedArg<Char> &) { return Arg::NAMED_ARG; }
+  template <typename Char_>
+  static uint64_t type(const NamedArg<Char_> &) { return Arg::NAMED_ARG; }
 };
 
 template <typename Char>
