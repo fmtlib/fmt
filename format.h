@@ -972,7 +972,8 @@ class MakeValue : public Arg {
     return IsConvertibleToInt<T>::value ? Arg::INT : Arg::CUSTOM;
   }
 
-  // Additional template param `Char_` is needed here because make_type always uses MakeValue<char>.
+  // Additional template param `Char_` is needed here because make_type always
+  // uses MakeValue<char>.
   template <typename Char_>
   MakeValue(const NamedArg<Char_> &value) { pointer = &value; }
 
@@ -1110,6 +1111,9 @@ class RuntimeError : public std::runtime_error {
 
 template <typename Char>
 class ArgFormatter;
+
+template <typename Char>
+class ArgMap;
 }  // namespace internal
 
 /** An argument list. */
@@ -1135,12 +1139,12 @@ class ArgList {
           (types_ & (mask << shift)) >> shift);
   }
 
+  template <typename Char>
+  friend class internal::ArgMap;
+
  public:
   // Maximum number of arguments with packed types.
   enum { MAX_PACKED_ARGS = 16 };
-
-  template <typename Char>
-  struct Map;
 
   ArgList() : types_(0) {}
 
@@ -1176,11 +1180,19 @@ class ArgList {
   }
 };
 
+struct FormatSpec;
+
+namespace internal {
+
 template <typename Char>
-struct fmt::ArgList::Map {
+class ArgMap {
+ private:
   typedef std::map<fmt::BasicStringRef<Char>, internal::Arg> MapType;
   typedef typename MapType::value_type Pair;
 
+  MapType map_;
+
+ public:
   void init(const ArgList &args);
 
   const internal::Arg* find(const fmt::BasicStringRef<Char> &name) const {
@@ -1189,15 +1201,7 @@ struct fmt::ArgList::Map {
       return &it->second;
     return 0;
   }
-
-private:
-
-  MapType map_;
 };
-
-struct FormatSpec;
-
-namespace internal {
 
 class FormatterBase {
  protected:
@@ -1255,7 +1259,7 @@ class BasicFormatter : private internal::FormatterBase {
  private:
   BasicWriter<Char> &writer_;
   const Char *start_;
-  ArgList::Map<Char> map_;
+  internal::ArgMap<Char> map_;
   
   FMT_DISALLOW_COPY_AND_ASSIGN(BasicFormatter);
 
@@ -1263,7 +1267,8 @@ class BasicFormatter : private internal::FormatterBase {
 
   // Checks if manual indexing is used and returns the argument with
   // specified name.
-  internal::Arg get_arg(const BasicStringRef<Char>& arg_name, const char *&error);
+  internal::Arg get_arg(const BasicStringRef<Char>& arg_name,
+                        const char *&error);
 
   // Parses argument index and returns corresponding argument.
   internal::Arg parse_arg_index(const Char *&s);
