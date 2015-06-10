@@ -72,6 +72,10 @@ Write API
 Utilities
 =========
 
+.. doxygenfunction:: fmt::arg(StringRef, const T&)
+
+.. doxygendefine:: FMT_CAPTURE
+
 .. doxygendefine:: FMT_VARIADIC
 
 .. doxygenclass:: fmt::ArgList
