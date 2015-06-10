@@ -265,6 +265,11 @@ int parse_nonnegative_int(const Char *&s) {
   return value;
 }
 
+template <typename Char>
+inline bool is_name_start(Char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
+}
+
 inline void require_numeric_argument(const Arg &arg, char spec) {
   if (arg.type > Arg::LAST_NUMERIC_TYPE) {
     std::string message =
@@ -580,6 +585,49 @@ FMT_FUNC void fmt::internal::format_windows_error(
 }
 #endif
 
+template <typename Char>
+void fmt::ArgList::Map<Char>::init(const ArgList &args) {
+  if (!map_.empty())
+    return;
+  const internal::NamedArg<Char>* named_arg;
+  bool use_values = args.type(MAX_PACKED_ARGS - 1) == internal::Arg::NONE;
+  if (use_values) {
+    for (unsigned i = 0;/*nothing*/; ++i) {
+      internal::Arg::Type arg_type = args.type(i);
+      switch (arg_type) {
+      case internal::Arg::NONE:
+        return;
+      case internal::Arg::NAMED_ARG:
+        named_arg = static_cast<const internal::NamedArg<Char>*>(args.values_[i].pointer);
+        map_.insert(Pair(named_arg->name, *named_arg));
+        break;
+      default:
+        /*nothing*/;
+      }
+    }
+    return;
+  }
+  for (unsigned i = 0; i != MAX_PACKED_ARGS; ++i) {
+    internal::Arg::Type arg_type = args.type(i);
+    if (arg_type == internal::Arg::NAMED_ARG) {
+      named_arg = static_cast<const internal::NamedArg<Char>*>(args.args_[i].pointer);
+      map_.insert(Pair(named_arg->name, *named_arg));
+    }
+  }
+  for (unsigned i = MAX_PACKED_ARGS;/*nothing*/; ++i) {
+    switch (args.args_[i].type) {
+    case internal::Arg::NONE:
+      return;
+    case internal::Arg::NAMED_ARG:
+      named_arg = static_cast<const internal::NamedArg<Char>*>(args.args_[i].pointer);
+      map_.insert(Pair(named_arg->name, *named_arg));
+      break;
+    default:
+      /*nothing*/;
+    }
+  }
+}
+
 // An argument formatter.
 template <typename Char>
 class fmt::internal::ArgFormatter :
@@ -682,6 +730,20 @@ void fmt::BasicWriter<Char>::write_str(
 }
 
 template <typename Char>
+inline Arg fmt::BasicFormatter<Char>::get_arg(
+  const BasicStringRef<Char>& arg_name, const char *&error) {
+  if (check_no_auto_index(error)) {
+    next_arg_index_ = -1;
+    map_.init(args_);
+    const Arg* arg = map_.find(arg_name);
+    if (arg)
+      return *arg;
+    error = "argument not found";
+  }
+  return Arg();
+}
+
+template <typename Char>
 inline Arg fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
   const char *error = 0;
   Arg arg = *s < '0' || *s > '9' ?
@@ -693,11 +755,33 @@ inline Arg fmt::BasicFormatter<Char>::parse_arg_index(const Char *&s) {
   return arg;
 }
 
+template <typename Char>
+inline Arg fmt::BasicFormatter<Char>::parse_arg_name(const Char *&s) {
+  assert(is_name_start(*s));
+  const Char *start = s;
+  Char c;
+  do {
+    c = *++s;
+  } while (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9'));
+  const char *error = 0;
+  Arg arg = get_arg(fmt::BasicStringRef<Char>(start, s - start), error);
+  if (error)
+    FMT_THROW(fmt::FormatError(error));
+  return arg;
+}
+
 FMT_FUNC Arg fmt::internal::FormatterBase::do_get_arg(
     unsigned arg_index, const char *&error) {
   Arg arg = args_[arg_index];
-  if (arg.type == Arg::NONE)
+  switch (arg.type) {
+  case Arg::NONE:
     error = "argument index out of range";
+    break;
+  case Arg::NAMED_ARG:
+    arg = *static_cast<const internal::Arg*>(arg.pointer);
+  default:
+    /*nothing*/;
+  }
   return arg;
 }
 
@@ -708,13 +792,20 @@ inline Arg fmt::internal::FormatterBase::next_arg(const char *&error) {
   return Arg();
 }
 
+inline bool fmt::internal::FormatterBase::check_no_auto_index(const char *&error) {
+  if (next_arg_index_ > 0) {
+    error = "cannot switch from automatic to manual argument indexing";
+    return false;
+  }
+  return true;
+}
+
 inline Arg fmt::internal::FormatterBase::get_arg(
     unsigned arg_index, const char *&error) {
-  if (next_arg_index_ <= 0) {
+  if (check_no_auto_index(error)) {
     next_arg_index_ = -1;
     return do_get_arg(arg_index, error);
   }
-  error = "cannot switch from automatic to manual argument indexing";
   return Arg();
 }
 
@@ -1038,7 +1129,7 @@ const Char *fmt::BasicFormatter<Char>::format(
       spec.width_ = parse_nonnegative_int(s);
     } else if (*s == '{') {
       ++s;
-      const Arg &width_arg = parse_arg_index(s);
+      const Arg &width_arg = is_name_start(*s) ? parse_arg_name(s) : parse_arg_index(s);
       if (*s++ != '}')
         FMT_THROW(FormatError("invalid format string"));
       ULongLong value = 0;
@@ -1075,7 +1166,7 @@ const Char *fmt::BasicFormatter<Char>::format(
         spec.precision_ = parse_nonnegative_int(s);
       } else if (*s == '{') {
         ++s;
-        const Arg &precision_arg = parse_arg_index(s);
+        const Arg &precision_arg = is_name_start(*s) ? parse_arg_name(s) : parse_arg_index(s);
         if (*s++ != '}')
           FMT_THROW(FormatError("invalid format string"));
         ULongLong value = 0;
@@ -1142,7 +1233,7 @@ void fmt::BasicFormatter<Char>::format(
     if (c == '}')
       FMT_THROW(FormatError("unmatched '}' in format string"));
     write(writer_, start_, s - 1);
-    Arg arg = parse_arg_index(s);
+    Arg arg = is_name_start(*s) ? parse_arg_name(s) : parse_arg_index(s);
     s = format(s, arg);
   }
   write(writer_, start_, s);

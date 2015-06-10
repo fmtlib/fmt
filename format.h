@@ -39,6 +39,7 @@
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <map>
 
 #if _SECURE_SCL
 # include <iterator>
@@ -163,10 +164,12 @@ inline uint32_t clzll(uint64_t x) {
 // This should be used in the private: declarations for a class
 #if FMT_USE_DELETED_FUNCTIONS || FMT_HAS_FEATURE(cxx_deleted_functions) || \
   (FMT_GCC_VERSION >= 404 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1800
+# define FMT_DELETED_OR_UNDEFINED  = delete
 # define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
     TypeName(const TypeName&) = delete; \
     TypeName& operator=(const TypeName&) = delete
 #else
+# define FMT_DELETED_OR_UNDEFINED
 # define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
     TypeName(const TypeName&); \
     TypeName& operator=(const TypeName&)
@@ -273,6 +276,9 @@ class BasicStringRef {
   }
   friend bool operator!=(BasicStringRef lhs, BasicStringRef rhs) {
     return lhs.data_ != rhs.data_;
+  }
+  friend bool operator<(BasicStringRef lhs, BasicStringRef rhs) {
+    return std::lexicographical_compare(lhs.data_, lhs.data_ + lhs.size_, rhs.data_, rhs.data_ + rhs.size_);
   }
 };
 
@@ -752,7 +758,7 @@ struct Value {
   };
 
   enum Type {
-    NONE,
+    NONE, NAMED_ARG,
     // Integer types should go first,
     INT, UINT, LONG_LONG, ULONG_LONG, CHAR, LAST_INTEGER_TYPE = CHAR,
     // followed by floating-point types.
@@ -766,6 +772,9 @@ struct Value {
 struct Arg : Value {
   Type type;
 };
+
+template <typename Char>
+struct NamedArg;
 
 template <typename T = void>
 struct None {};
@@ -962,6 +971,24 @@ class MakeValue : public Arg {
   static uint64_t type(const T &) {
     return IsConvertibleToInt<T>::value ? Arg::INT : Arg::CUSTOM;
   }
+
+  // Additional template param `Char_` is needed here because make_type always uses MakeValue<char>.
+  template <typename Char_>
+  MakeValue(const NamedArg<Char_> &value) { pointer = &value; }
+
+  template <typename Char_>
+  static uint64_t type(const NamedArg<Char_> &) { return Arg::NAMED_ARG; }
+};
+
+template <typename Char>
+struct NamedArg : Arg {
+  BasicStringRef<Char> name;
+
+  template <typename T>
+  NamedArg(BasicStringRef<Char> name, const T &value)
+  : name(name), Arg(MakeValue<Char>(value)) {
+    type = static_cast<internal::Arg::Type>(MakeValue<Char>::type(value));
+  }
 };
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
@@ -1112,6 +1139,9 @@ class ArgList {
   // Maximum number of arguments with packed types.
   enum { MAX_PACKED_ARGS = 16 };
 
+  template <typename Char>
+  struct Map;
+
   ArgList() : types_(0) {}
 
   ArgList(ULongLong types, const internal::Value *values)
@@ -1146,12 +1176,31 @@ class ArgList {
   }
 };
 
+template <typename Char>
+struct fmt::ArgList::Map {
+  typedef std::map<fmt::BasicStringRef<Char>, internal::Arg> MapType;
+  typedef typename MapType::value_type Pair;
+
+  void init(const ArgList &args);
+
+  const internal::Arg* find(const fmt::BasicStringRef<Char> &name) const {
+    typename MapType::const_iterator it = map_.find(name);
+    if (it != map_.end())
+      return &it->second;
+    return 0;
+  }
+
+private:
+
+  MapType map_;
+};
+
 struct FormatSpec;
 
 namespace internal {
 
 class FormatterBase {
- private:
+ protected:
   ArgList args_;
   int next_arg_index_;
 
@@ -1170,6 +1219,8 @@ class FormatterBase {
   // Checks if manual indexing is used and returns the argument with
   // specified index.
   Arg get_arg(unsigned arg_index, const char *&error);
+
+  bool check_no_auto_index(const char *&error);
 
   template <typename Char>
   void write(BasicWriter<Char> &w, const Char *start, const Char *end) {
@@ -1204,11 +1255,21 @@ class BasicFormatter : private internal::FormatterBase {
  private:
   BasicWriter<Char> &writer_;
   const Char *start_;
+  ArgList::Map<Char> map_;
   
   FMT_DISALLOW_COPY_AND_ASSIGN(BasicFormatter);
 
+  using FormatterBase::get_arg;
+
+  // Checks if manual indexing is used and returns the argument with
+  // specified name.
+  internal::Arg get_arg(const BasicStringRef<Char>& arg_name, const char *&error);
+
   // Parses argument index and returns corresponding argument.
   internal::Arg parse_arg_index(const Char *&s);
+
+  // Parses argument name and returns corresponding argument.
+  internal::Arg parse_arg_name(const Char *&s);
 
  public:
   explicit BasicFormatter(BasicWriter<Char> &w) : writer_(w) {}
@@ -2675,6 +2736,32 @@ inline void format_decimal(char *&buffer, T value) {
   internal::format_decimal(buffer, abs_value, num_digits);
   buffer += num_digits;
 }
+
+/**
+  \rst
+  Returns a named argument for formatting functions.
+
+  **Example**::
+
+    print("Elapsed time: {s:.2f} seconds", arg("s", 1.23));
+
+  \endrst
+ */
+template <typename T>
+inline internal::NamedArg<char> arg(StringRef name, const T &arg) {
+  return internal::NamedArg<char>(name, arg);
+}
+
+template <typename T>
+inline internal::NamedArg<wchar_t> arg(WStringRef name, const T &arg) {
+  return internal::NamedArg<wchar_t>(name, arg);
+}
+
+template <typename Char>
+void arg(StringRef name, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
+
+template <typename Char>
+void arg(WStringRef name, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 }
 
 #if FMT_GCC_VERSION
@@ -2778,6 +2865,28 @@ inline void format_decimal(char *&buffer, T value) {
 
 #define FMT_VARIADIC_W(ReturnType, func, ...) \
   FMT_VARIADIC_(wchar_t, ReturnType, func, return func, __VA_ARGS__)
+
+#define FMT_CAPTURE_ARG_(id, index) ::fmt::arg(#id, id)
+
+#define FMT_CAPTURE_ARG_W_(id, index) ::fmt::arg(L###id, id)
+
+/**
+  \rst
+  Convenient macro to capture the arguments' names and values into several
+  `fmt::arg(name, value)`.
+
+  **Example**::
+
+    int x = 1, y = 2;
+    print("point: ({x}, {y})", FMT_CAPTURE(x, y));
+    // same as:
+    // print("point: ({x}, {y})", arg("x", x), arg("y", y));
+
+  \endrst
+ */
+#define FMT_CAPTURE(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_, __VA_ARGS__)
+
+#define FMT_CAPTURE_W(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_W_, __VA_ARGS__)
 
 namespace fmt {
 FMT_VARIADIC(std::string, format, StringRef)
