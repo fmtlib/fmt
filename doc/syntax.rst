@@ -15,15 +15,18 @@ literal text, it can be escaped by doubling: ``{{`` and ``}}``.
 The grammar for a replacement field is as follows:
 
 .. productionlist:: sf
-   replacement_field: "{" [`arg_field`] [":" `format_spec`] "}"
-   arg_field: `arg_index` | `arg_name`
-   arg_index: `integer`
-   arg_name: \^[a-zA-Z_][a-zA-Z0-9_]*$\
+   replacement_field: "{" [`arg_id`] [":" `format_spec`] "}"
+   arg_id: `integer` | `identifier`
+   integer: `digit`+
+   digit: "0"..."9"
+   identifier: `id_start` `id_continue`*
+   id_start: "a"..."z" | "A"..."Z" | "_"
+   id_continue: `id_start` | `digit`
 
-In less formal terms, the replacement field can start with an *arg_field*
+In less formal terms, the replacement field can start with an *arg_id*
 that specifies the argument whose value is to be formatted and inserted into
 the output instead of the replacement field.
-The *arg_field* is optionally followed by a *format_spec*, which is preceded
+The *arg_id* is optionally followed by a *format_spec*, which is preceded
 by a colon ``':'``.  These specify a non-default format for the replacement value.
 
 See also the :ref:`formatspec` section.
@@ -75,8 +78,8 @@ The general form of a *standard format specifier* is:
    fill: <a character other than '{' or '}'>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
-   width: `integer` | "{" `arg_field` "}"
-   precision: `integer` | "{" `arg_field` "}"
+   width: `integer` | "{" `arg_id` "}"
+   precision: `integer` | "{" `arg_id` "}"
    type: `int_type` | "c" | "e" | "E" | "f" | "F" | "g" | "G" | "p" | "s"
    int_type: "b" | "B" | "d" | "o" | "x" | "X"
 

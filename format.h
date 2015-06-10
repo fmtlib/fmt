@@ -2873,7 +2873,7 @@ void arg(WStringRef name, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFI
 /**
   \rst
   Convenient macro to capture the arguments' names and values into several
-  `fmt::arg(name, value)`.
+  ``fmt::arg(name, value)``.
 
   **Example**::
 
