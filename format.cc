@@ -764,7 +764,7 @@ inline Arg fmt::BasicFormatter<Char>::parse_arg_name(const Char *&s) {
   Char c;
   do {
     c = *++s;
-  } while (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9'));
+  } while (is_name_start(c) || ('0' <= c && c <= '9'));
   const char *error = 0;
   Arg arg = get_arg(fmt::BasicStringRef<Char>(start, s - start), error);
   if (error)
