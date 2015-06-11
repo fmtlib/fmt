@@ -413,9 +413,10 @@ ARG_INFO(INT, int, int_value);
 ARG_INFO(UINT, unsigned, uint_value);
 ARG_INFO(LONG_LONG, fmt::LongLong, long_long_value);
 ARG_INFO(ULONG_LONG, fmt::ULongLong, ulong_long_value);
+ARG_INFO(BOOL, int, int_value);
+ARG_INFO(CHAR, int, int_value);
 ARG_INFO(DOUBLE, double, double_value);
 ARG_INFO(LONG_DOUBLE, long double, long_double_value);
-ARG_INFO(CHAR, int, int_value);
 ARG_INFO(CSTRING, const char *, string.value);
 ARG_INFO(STRING, const char *, string.value);
 ARG_INFO(WSTRING, const wchar_t *, wstring.value);
@@ -463,8 +464,8 @@ TEST(ArgTest, ArgInfo) {
 
 TEST(ArgTest, MakeArg) {
   // Test bool.
-  EXPECT_ARG_(char, INT, bool, int, true);
-  EXPECT_ARG_(wchar_t, INT, bool, int, true);
+  EXPECT_ARG_(char, BOOL, bool, int, true);
+  EXPECT_ARG_(wchar_t, BOOL, bool, int, true);
 
   // Test char.
   EXPECT_ARG(CHAR, signed char, 'a');

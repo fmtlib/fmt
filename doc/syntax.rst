@@ -220,6 +220,9 @@ The available integer presentation types are:
 +---------+----------------------------------------------------------+
 
 Integer presentation types can also be used with character and Boolean values.
+Boolean values are formatted using textual representation, either ``true`` or
+``false``, if the presentation type is not specified.
+
 The available presentation types for floating-point values are:
 
 +---------+----------------------------------------------------------+

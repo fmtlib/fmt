@@ -1147,8 +1147,12 @@ void check_unknown_types(
   }
 }
 
-TEST(FormatterTest, FormatBool) {
-  EXPECT_EQ(L"1", format(L"{}", true));
+TEST(BoolTest, FormatBool) {
+  EXPECT_EQ("true", format("{}", true));
+  EXPECT_EQ("false", format("{}", false));
+  EXPECT_EQ("1", format("{:d}", true));
+  EXPECT_EQ("true ", format("{:5}", true));
+  EXPECT_EQ(L"true", format(L"{}", true));
 }
 
 TEST(FormatterTest, FormatShort) {

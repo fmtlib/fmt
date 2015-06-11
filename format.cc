@@ -653,6 +653,16 @@ class fmt::internal::ArgFormatter :
   template <typename T>
   void visit_any_double(T value) { writer_.write_double(value, spec_); }
 
+  void visit_bool(bool value) {
+    if (spec_.type_) {
+      writer_.write_int(value, spec_);
+      return;
+    }
+    const char *str_value = value ? "true" : "false";
+    Arg::StringValue<char> str = { str_value, strlen(str_value) };
+    writer_.write_str(str, spec_);
+  }
+
   void visit_char(int value) {
     if (spec_.type_ && spec_.type_ != 'c') {
       spec_.flags_ |= CHAR_FLAG;

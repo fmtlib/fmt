@@ -760,7 +760,7 @@ struct Value {
   enum Type {
     NONE, NAMED_ARG,
     // Integer types should go first,
-    INT, UINT, LONG_LONG, ULONG_LONG, CHAR, LAST_INTEGER_TYPE = CHAR,
+    INT, UINT, LONG_LONG, ULONG_LONG, BOOL, CHAR, LAST_INTEGER_TYPE = CHAR,
     // followed by floating-point types.
     DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
     CSTRING, STRING, WSTRING, POINTER, CUSTOM
@@ -886,7 +886,7 @@ class MakeValue : public Arg {
   MakeValue(Type value) { field = value; } \
   static uint64_t type(Type) { return Arg::TYPE; }
 
-  FMT_MAKE_VALUE(bool, int_value, INT)
+  FMT_MAKE_VALUE(bool, int_value, BOOL)
   FMT_MAKE_VALUE(short, int_value, INT)
   FMT_MAKE_VALUE(unsigned short, uint_value, UINT)
   FMT_MAKE_VALUE(int, int_value, INT)
@@ -1036,6 +1036,9 @@ class ArgVisitor {
   Result visit_ulong_long(ULongLong value) {
     return FMT_DISPATCH(visit_any_int(value));
   }
+  Result visit_bool(bool value) {
+    return FMT_DISPATCH(visit_any_int(value));
+  }
   Result visit_char(int value) {
     return FMT_DISPATCH(visit_any_int(value));
   }
@@ -1081,12 +1084,14 @@ class ArgVisitor {
       return FMT_DISPATCH(visit_long_long(arg.long_long_value));
     case Arg::ULONG_LONG:
       return FMT_DISPATCH(visit_ulong_long(arg.ulong_long_value));
+    case Arg::BOOL:
+      return FMT_DISPATCH(visit_bool(arg.int_value));
+    case Arg::CHAR:
+      return FMT_DISPATCH(visit_char(arg.int_value));
     case Arg::DOUBLE:
       return FMT_DISPATCH(visit_double(arg.double_value));
     case Arg::LONG_DOUBLE:
       return FMT_DISPATCH(visit_long_double(arg.long_double_value));
-    case Arg::CHAR:
-      return FMT_DISPATCH(visit_char(arg.int_value));
     case Arg::CSTRING: {
       Arg::StringValue<char> str = arg.string;
       str.size = 0;
