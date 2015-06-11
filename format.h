@@ -1197,14 +1197,12 @@ class ArgMap {
 
   const internal::Arg* find(const fmt::BasicStringRef<Char> &name) const {
     typename MapType::const_iterator it = map_.find(name);
-    if (it != map_.end())
-      return &it->second;
-    return 0;
+    return it != map_.end() ? &it->second : 0;
   }
 };
 
 class FormatterBase {
- protected:
+ private:
   ArgList args_;
   int next_arg_index_;
 
@@ -1212,6 +1210,8 @@ class FormatterBase {
   Arg do_get_arg(unsigned arg_index, const char *&error);
 
  protected:
+  const ArgList &args() const { return args_; }
+
   void set_args(const ArgList &args) {
     args_ = args;
     next_arg_index_ = 0;
@@ -1267,8 +1267,7 @@ class BasicFormatter : private internal::FormatterBase {
 
   // Checks if manual indexing is used and returns the argument with
   // specified name.
-  internal::Arg get_arg(const BasicStringRef<Char>& arg_name,
-                        const char *&error);
+  internal::Arg get_arg(BasicStringRef<Char> arg_name, const char *&error);
 
   // Parses argument index and returns corresponding argument.
   internal::Arg parse_arg_index(const Char *&s);
@@ -2762,11 +2761,12 @@ inline internal::NamedArg<wchar_t> arg(WStringRef name, const T &arg) {
   return internal::NamedArg<wchar_t>(name, arg);
 }
 
+// The following two functions are deleted intentionally to disable
+// nested named arguments as in ``format("{}", arg("a", arg("b", 42)))``.
 template <typename Char>
-void arg(StringRef name, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
-
+void arg(StringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 template <typename Char>
-void arg(WStringRef name, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
+void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 }
 
 #if FMT_GCC_VERSION

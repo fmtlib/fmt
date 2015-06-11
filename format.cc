@@ -590,7 +590,7 @@ void fmt::internal::ArgMap<Char>::init(const ArgList &args) {
   if (!map_.empty())
     return;
   typedef internal::NamedArg<Char> NamedArg;
-  const NamedArg* named_arg = 0;
+  const NamedArg *named_arg = 0;
   bool use_values =
       args.type(ArgList::MAX_PACKED_ARGS - 1) == internal::Arg::NONE;
   if (use_values) {
@@ -733,11 +733,10 @@ void fmt::BasicWriter<Char>::write_str(
 
 template <typename Char>
 inline Arg fmt::BasicFormatter<Char>::get_arg(
-  const BasicStringRef<Char>& arg_name, const char *&error) {
+  BasicStringRef<Char> arg_name, const char *&error) {
   if (check_no_auto_index(error)) {
-    next_arg_index_ = -1;
-    map_.init(args_);
-    const Arg* arg = map_.find(arg_name);
+    map_.init(args());
+    const Arg *arg = map_.find(arg_name);
     if (arg)
       return *arg;
     error = "argument not found";
@@ -794,21 +793,19 @@ inline Arg fmt::internal::FormatterBase::next_arg(const char *&error) {
   return Arg();
 }
 
-inline bool fmt::internal::FormatterBase::check_no_auto_index(const char *&error) {
+inline bool fmt::internal::FormatterBase::check_no_auto_index(
+    const char *&error) {
   if (next_arg_index_ > 0) {
     error = "cannot switch from automatic to manual argument indexing";
     return false;
   }
+  next_arg_index_ = -1;
   return true;
 }
 
 inline Arg fmt::internal::FormatterBase::get_arg(
     unsigned arg_index, const char *&error) {
-  if (check_no_auto_index(error)) {
-    next_arg_index_ = -1;
-    return do_get_arg(arg_index, error);
-  }
-  return Arg();
+  return check_no_auto_index(error) ? do_get_arg(arg_index, error) : Arg();
 }
 
 template <typename Char>
@@ -1131,7 +1128,8 @@ const Char *fmt::BasicFormatter<Char>::format(
       spec.width_ = parse_nonnegative_int(s);
     } else if (*s == '{') {
       ++s;
-      const Arg &width_arg = is_name_start(*s) ? parse_arg_name(s) : parse_arg_index(s);
+      Arg width_arg = is_name_start(*s) ?
+            parse_arg_name(s) : parse_arg_index(s);
       if (*s++ != '}')
         FMT_THROW(FormatError("invalid format string"));
       ULongLong value = 0;
@@ -1168,7 +1166,8 @@ const Char *fmt::BasicFormatter<Char>::format(
         spec.precision_ = parse_nonnegative_int(s);
       } else if (*s == '{') {
         ++s;
-        const Arg &precision_arg = is_name_start(*s) ? parse_arg_name(s) : parse_arg_index(s);
+        Arg precision_arg =
+            is_name_start(*s) ? parse_arg_name(s) : parse_arg_index(s);
         if (*s++ != '}')
           FMT_THROW(FormatError("invalid format string"));
         ULongLong value = 0;
