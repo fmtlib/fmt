@@ -610,13 +610,16 @@ TEST(FormatterTest, ManyArgs) {
 #endif
 
 TEST(FormatterTest, NamedArg) {
-  EXPECT_EQ("1/a/A", format("{_1}/{a_}/{A_}", fmt::arg("a_", 'a'), fmt::arg("A_", "A"), fmt::arg("_1", 1)));
+  EXPECT_EQ("1/a/A", format("{_1}/{a_}/{A_}", fmt::arg("a_", 'a'),
+                            fmt::arg("A_", "A"), fmt::arg("_1", 1)));
   char a = 'A', b = 'B', c = 'C';
   EXPECT_EQ("BB/AA/CC", format("{1}{b}/{0}{a}/{2}{c}", FMT_CAPTURE(a, b, c)));
   EXPECT_EQ(" A", format("{a:>2}", FMT_CAPTURE(a)));
-  EXPECT_THROW_MSG(format("{a+}", FMT_CAPTURE(a)), FormatError, "missing '}' in format string");
+  EXPECT_THROW_MSG(format("{a+}", FMT_CAPTURE(a)), FormatError,
+                   "missing '}' in format string");
   EXPECT_THROW_MSG(format("{a}"), FormatError, "argument not found");
-  EXPECT_THROW_MSG(format("{d}", FMT_CAPTURE(a, b, c)), FormatError, "argument not found");
+  EXPECT_THROW_MSG(format("{d}", FMT_CAPTURE(a, b, c)), FormatError,
+                   "argument not found");
   EXPECT_THROW_MSG(format("{a}{}", FMT_CAPTURE(a)),
     FormatError, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{}{a}", FMT_CAPTURE(a)),
@@ -973,7 +976,8 @@ TEST(FormatterTest, RuntimeWidth) {
   EXPECT_EQ("     42", format("{0:{1}}", 42ull, 7));
   EXPECT_EQ("   -1.23", format("{0:{1}}", -1.23, 8));
   EXPECT_EQ("    -1.23", format("{0:{1}}", -1.23l, 9));
-  EXPECT_EQ("    0xcafe", format("{0:{1}}", reinterpret_cast<void*>(0xcafe), 10));
+  EXPECT_EQ("    0xcafe",
+            format("{0:{1}}", reinterpret_cast<void*>(0xcafe), 10));
   EXPECT_EQ("x          ", format("{0:{1}}", 'x', 11));
   EXPECT_EQ("str         ", format("{0:{1}}", "str", 12));
   EXPECT_EQ("test         ", format("{0:{1}}", TestString("test"), 13));
@@ -1130,10 +1134,12 @@ void check_unknown_types(
     char c = static_cast<char>(i);
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
     safe_sprintf(format_str, "{0:10%c}", c);
-    if (std::isprint(static_cast<unsigned char>(c)))
+    if (std::isprint(static_cast<unsigned char>(c))) {
       safe_sprintf(message, "unknown format code '%c' for %s", c, type_name);
-    else
-      safe_sprintf(message, "unknown format code '\\x%02x' for %s", c, type_name);
+    } else {
+      safe_sprintf(message, "unknown format code '\\x%02x' for %s", c,
+                   type_name);
+    }
     EXPECT_THROW_MSG(format(format_str, value), FormatError, message)
       << format_str << " " << message;
   }
@@ -1367,7 +1373,8 @@ TEST(FormatterTest, FormatUsingIOStreams) {
   EXPECT_EQ("The date is 2012-12-9", s);
   Date date(2012, 12, 9);
   check_unknown_types(date, "s", "string");
-  EXPECT_EQ(L"The date is 2012-12-9", format(L"The date is {0}", Date(2012, 12, 9)));
+  EXPECT_EQ(L"The date is 2012-12-9",
+            format(L"The date is {0}", Date(2012, 12, 9)));
 }
 
 class Answer {};
@@ -1506,7 +1513,8 @@ TEST(FormatIntTest, FormatInt) {
   EXPECT_EQ("-42", fmt::FormatInt(-42ll).str());
   std::ostringstream os;
   os << std::numeric_limits<int64_t>::max();
-  EXPECT_EQ(os.str(), fmt::FormatInt(std::numeric_limits<int64_t>::max()).str());
+  EXPECT_EQ(os.str(),
+            fmt::FormatInt(std::numeric_limits<int64_t>::max()).str());
 }
 
 template <typename T>
