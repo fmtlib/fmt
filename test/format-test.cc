@@ -610,8 +610,9 @@ TEST(FormatterTest, ManyArgs) {
 #endif
 
 TEST(FormatterTest, NamedArg) {
+  EXPECT_EQ("1/a/A", format("{_1}/{a_}/{A_}", fmt::arg("a_", 'a'), fmt::arg("A_", "A"), fmt::arg("_1", 1)));
   char a = 'A', b = 'B', c = 'C';
-  EXPECT_EQ("BBAACC", format("{1}{b}{0}{a}{2}{c}", FMT_CAPTURE(a, b, c)));
+  EXPECT_EQ("BB/AA/CC", format("{1}{b}/{0}{a}/{2}{c}", FMT_CAPTURE(a, b, c)));
   EXPECT_EQ(" A", format("{a:>2}", FMT_CAPTURE(a)));
   EXPECT_THROW_MSG(format("{a+}", FMT_CAPTURE(a)), FormatError, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{a}"), FormatError, "argument not found");
