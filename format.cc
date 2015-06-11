@@ -663,10 +663,6 @@ class fmt::internal::ArgFormatter :
       FMT_THROW(FormatError("invalid format specifier for char"));
     typedef typename fmt::BasicWriter<Char>::CharPtr CharPtr;
     Char fill = static_cast<Char>(spec_.fill());
-    if (spec_.precision_ == 0) {
-      std::fill_n(writer_.grow_buffer(spec_.width_), spec_.width_, fill);
-      return;
-    }
     CharPtr out = CharPtr();
     if (spec_.width_ > 1) {
       out = writer_.grow_buffer(spec_.width_);
@@ -1197,7 +1193,7 @@ const Char *fmt::BasicFormatter<Char>::format(
       } else {
         FMT_THROW(FormatError("missing precision specifier"));
       }
-      if (arg.type < Arg::LAST_INTEGER_TYPE || arg.type == Arg::POINTER) {
+      if (arg.type <= Arg::LAST_INTEGER_TYPE || arg.type == Arg::POINTER) {
         FMT_THROW(FormatError(
             fmt::format("precision not allowed in {} format specifier",
             arg.type == Arg::POINTER ? "pointer" : "integer")));

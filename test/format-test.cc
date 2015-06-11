@@ -1029,6 +1029,8 @@ TEST(FormatterTest, Precision) {
       FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ull),
       FormatError, "precision not allowed in integer format specifier");
+  EXPECT_THROW_MSG(format("{0:3.0}", 'x'),
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345));
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345l));
 
@@ -1037,7 +1039,6 @@ TEST(FormatterTest, Precision) {
   EXPECT_THROW_MSG(format("{0:.2f}", reinterpret_cast<void*>(0xcafe)),
       FormatError, "precision not allowed in pointer format specifier");
 
-  EXPECT_EQ("   ", format("{0:3.0}", 'x'));
   EXPECT_EQ("st", format("{0:.2}", "str"));
   EXPECT_EQ("te", format("{0:.2}", TestString("test")));
 }
@@ -1112,6 +1113,8 @@ TEST(FormatterTest, RuntimePrecision) {
       FormatError, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42ull, 2),
       FormatError, "precision not allowed in integer format specifier");
+  EXPECT_THROW_MSG(format("{0:3.{1}}", 'x', 0),
+      FormatError, "precision not allowed in integer format specifier");
   EXPECT_EQ("1.2", format("{0:.{1}}", 1.2345, 2));
   EXPECT_EQ("1.2", format("{1:.{0}}", 2, 1.2345l));
 
@@ -1120,7 +1123,6 @@ TEST(FormatterTest, RuntimePrecision) {
   EXPECT_THROW_MSG(format("{0:.{1}f}", reinterpret_cast<void*>(0xcafe), 2),
       FormatError, "precision not allowed in pointer format specifier");
 
-  EXPECT_EQ("   ", format("{0:3.{1}}", 'x', 0));
   EXPECT_EQ("st", format("{0:.{1}}", "str", 2));
   EXPECT_EQ("te", format("{0:.{1}}", TestString("test"), 2));
 }
