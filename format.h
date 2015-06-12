@@ -682,7 +682,15 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
   buffer[0] = Data::DIGITS[index];
 }
 
-#ifdef _WIN32
+#ifndef _WIN32
+# define FMT_USE_WINDOWS_H 0
+#elif !defined(FMT_USE_WINDOWS_H)
+# define FMT_USE_WINDOWS_H 1
+#endif
+
+// Define FMT_USE_WINDOWS_H to 0 to disable use of windows.h.
+// All the functionality that relies on it will be disabled too.
+#if FMT_USE_WINDOWS_H
 // A converter from UTF-8 to UTF-16.
 // It is only provided for Windows since other systems support UTF-8 natively.
 class UTF8ToUTF16 {
@@ -716,15 +724,13 @@ class UTF16ToUTF8 {
   // in case of memory allocation error.
   int convert(WStringRef s);
 };
+
+void format_windows_error(fmt::Writer &out, int error_code,
+                          fmt::StringRef message) FMT_NOEXCEPT;
 #endif
 
 void format_system_error(fmt::Writer &out, int error_code,
                          fmt::StringRef message) FMT_NOEXCEPT;
-
-#ifdef _WIN32
-void format_windows_error(fmt::Writer &out, int error_code,
-                          fmt::StringRef message) FMT_NOEXCEPT;
-#endif
 
 // A formatting argument value.
 struct Value {
@@ -2486,7 +2492,7 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
 // Can be used to report errors from destructors.
 void report_system_error(int error_code, StringRef message) FMT_NOEXCEPT;
 
-#ifdef _WIN32
+#if FMT_USE_WINDOWS_H
 
 /** A Windows error. */
 class WindowsError : public SystemError {

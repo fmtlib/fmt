@@ -35,10 +35,11 @@
 #include <cmath>
 #include <cstdarg>
 
-#ifdef _WIN32
-# ifdef __MINGW32__
-#  include <cstring>
-# endif
+#if defined(_WIN32) && defined(__MINGW32__)
+# include <cstring>
+#endif
+
+#if FMT_USE_WINDOWS_H
 # if defined(NOMINMAX) || defined(FMT_WIN_MINMAX)
 #  include <windows.h>
 # else
@@ -488,7 +489,7 @@ FMT_FUNC void fmt::internal::report_unknown_type(char code, const char *type) {
         static_cast<unsigned>(code), type)));
 }
 
-#ifdef _WIN32
+#if FMT_USE_WINDOWS_H
 
 FMT_FUNC fmt::internal::UTF8ToUTF16::UTF8ToUTF16(fmt::StringRef s) {
   int length = MultiByteToWideChar(
@@ -531,30 +532,6 @@ FMT_FUNC void fmt::WindowsError::init(
   base = std::runtime_error(w.str());
 }
 
-#endif
-
-FMT_FUNC void fmt::internal::format_system_error(
-    fmt::Writer &out, int error_code,
-    fmt::StringRef message) FMT_NOEXCEPT {
-  FMT_TRY {
-    MemoryBuffer<char, INLINE_BUFFER_SIZE> buffer;
-    buffer.resize(INLINE_BUFFER_SIZE);
-    for (;;) {
-      char *system_message = &buffer[0];
-      int result = safe_strerror(error_code, system_message, buffer.size());
-      if (result == 0) {
-        out << message << ": " << system_message;
-        return;
-      }
-      if (result != ERANGE)
-        break;  // Can't get error message, report error code instead.
-      buffer.resize(buffer.size() * 2);
-    }
-  } FMT_CATCH(...) {}
-  format_error_code(out, error_code, message);
-}
-
-#ifdef _WIN32
 FMT_FUNC void fmt::internal::format_windows_error(
     fmt::Writer &out, int error_code,
     fmt::StringRef message) FMT_NOEXCEPT {
@@ -583,7 +560,29 @@ FMT_FUNC void fmt::internal::format_windows_error(
   } FMT_CATCH(...) {}
   format_error_code(out, error_code, message);
 }
-#endif
+
+#endif  // FMT_USE_WINDOWS_H
+
+FMT_FUNC void fmt::internal::format_system_error(
+    fmt::Writer &out, int error_code,
+    fmt::StringRef message) FMT_NOEXCEPT {
+  FMT_TRY {
+    MemoryBuffer<char, INLINE_BUFFER_SIZE> buffer;
+    buffer.resize(INLINE_BUFFER_SIZE);
+    for (;;) {
+      char *system_message = &buffer[0];
+      int result = safe_strerror(error_code, system_message, buffer.size());
+      if (result == 0) {
+        out << message << ": " << system_message;
+        return;
+      }
+      if (result != ERANGE)
+        break;  // Can't get error message, report error code instead.
+      buffer.resize(buffer.size() * 2);
+    }
+  } FMT_CATCH(...) {}
+  format_error_code(out, error_code, message);
+}
 
 template <typename Char>
 void fmt::internal::ArgMap<Char>::init(const ArgList &args) {
@@ -1251,7 +1250,7 @@ FMT_FUNC void fmt::report_system_error(
   report_error(internal::format_system_error, error_code, message);
 }
 
-#ifdef _WIN32
+#if FMT_USE_WINDOWS_H
 FMT_FUNC void fmt::report_windows_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT {
   report_error(internal::format_windows_error, error_code, message);

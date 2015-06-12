@@ -89,4 +89,9 @@ if (FMT_PEDANTIC)
     "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
     --build-generator ${CMAKE_GENERATOR}
     --build-makeprogram ${CMAKE_MAKE_PROGRAM})
+
+  # Test that the library compiles without windows.h.
+  add_library(no-windows-h-test ../format.cc)
+  set_target_properties(no-windows-h-test
+    PROPERTIES COMPILE_DEFINITIONS "FMT_USE_WINDOWS_H=0")
 endif ()
