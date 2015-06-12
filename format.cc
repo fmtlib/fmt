@@ -102,6 +102,7 @@ static inline fmt::internal::None<> strerror_s(char *, std::size_t, ...) {
   return fmt::internal::None<>();
 }
 
+namespace fmt {
 namespace {
 
 #ifndef _MSC_VER
@@ -406,6 +407,7 @@ template <>
 inline Arg::StringValue<wchar_t> ignore_incompatible_str(
     Arg::StringValue<wchar_t> s) { return s; }
 }  // namespace
+}  // namespace fmt
 
 FMT_FUNC void fmt::SystemError::init(
     int err_code, StringRef format_str, ArgList args) {

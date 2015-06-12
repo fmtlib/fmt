@@ -40,7 +40,7 @@ TEST(FormatTest, ArgConverter) {
   Arg arg = Arg();
   arg.type = Arg::LONG_LONG;
   arg.long_long_value = std::numeric_limits<fmt::LongLong>::max();
-  ArgConverter<fmt::LongLong>(arg, 'd').visit(arg);
+  fmt::ArgConverter<fmt::LongLong>(arg, 'd').visit(arg);
   EXPECT_EQ(Arg::LONG_LONG, arg.type);
 }
 
@@ -56,8 +56,8 @@ TEST(FormatTest, StrError) {
   char *message = 0;
   char buffer[BUFFER_SIZE];
 #ifndef NDEBUG
-  EXPECT_DEBUG_DEATH(safe_strerror(EDOM, message = 0, 0), "Assertion");
-  EXPECT_DEBUG_DEATH(safe_strerror(EDOM, message = buffer, 0), "Assertion");
+  EXPECT_DEBUG_DEATH(fmt::safe_strerror(EDOM, message = 0, 0), "Assertion");
+  EXPECT_DEBUG_DEATH(fmt::safe_strerror(EDOM, message = buffer, 0), "Assertion");
 #endif
   buffer[0] = 'x';
 #ifdef _GNU_SOURCE
@@ -68,7 +68,7 @@ TEST(FormatTest, StrError) {
   int error_code = EDOM;
 #endif
 
-  int result = safe_strerror(error_code, message = buffer, BUFFER_SIZE);
+  int result = fmt::safe_strerror(error_code, message = buffer, BUFFER_SIZE);
   EXPECT_EQ(0, result);
   std::size_t message_size = std::strlen(message);
   EXPECT_GE(BUFFER_SIZE - 1u, message_size);
@@ -76,9 +76,9 @@ TEST(FormatTest, StrError) {
 
   // safe_strerror never uses buffer on MinGW.
 #ifndef __MINGW32__
-  result = safe_strerror(error_code, message = buffer, message_size);
+  result = fmt::safe_strerror(error_code, message = buffer, message_size);
   EXPECT_EQ(ERANGE, result);
-  result = safe_strerror(error_code, message = buffer, 1);
+  result = fmt::safe_strerror(error_code, message = buffer, 1);
   EXPECT_EQ(buffer, message);  // Message should point to buffer.
   EXPECT_EQ(ERANGE, result);
   EXPECT_STREQ("", message);
@@ -90,21 +90,21 @@ TEST(FormatTest, FormatErrorCode) {
   {
     fmt::MemoryWriter w;
     w << "garbage";
-    format_error_code(w, 42, "test");
+    fmt::format_error_code(w, 42, "test");
     EXPECT_EQ("test: " + msg, w.str());
   }
   {
     fmt::MemoryWriter w;
     std::string prefix(
         fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size() + 1, 'x');
-    format_error_code(w, 42, prefix);
+    fmt::format_error_code(w, 42, prefix);
     EXPECT_EQ(msg, w.str());
   }
   {
     fmt::MemoryWriter w;
     std::string prefix(
         fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size(), 'x');
-    format_error_code(w, 42, prefix);
+    fmt::format_error_code(w, 42, prefix);
     EXPECT_EQ(prefix + sep + msg, w.str());
     std::size_t size = fmt::internal::INLINE_BUFFER_SIZE;
     EXPECT_EQ(size, w.size());
