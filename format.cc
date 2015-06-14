@@ -207,7 +207,10 @@ int safe_strerror(
     StrError(int error_code, char *&buffer, std::size_t buffer_size)
       : error_code_(error_code), buffer_(buffer), buffer_size_(buffer_size) {}
 
-    int run() { return handle(strerror_r(error_code_, buffer_, buffer_size_)); }
+    int run() {
+      strerror_r(0, 0, "");  // Suppress a warning about unused strerror_r.
+      return handle(strerror_r(error_code_, buffer_, buffer_size_));
+    }
   };
   return StrError(error_code, buffer, buffer_size).run();
 }
