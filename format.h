@@ -533,7 +533,7 @@ class CharTraits<char> : public BasicCharTraits<char> {
   // Conversion from wchar_t to char is not allowed.
   static char convert(wchar_t);
 
-public:
+ public:
   static char convert(char value) { return value; }
 
   // Formats a floating-point number.

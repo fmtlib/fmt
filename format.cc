@@ -697,8 +697,11 @@ class fmt::internal::ArgFormatter :
   void visit_string(Arg::StringValue<char> value) {
     writer_.write_str(value, spec_);
   }
-  void visit_wstring(Arg::StringValue<wchar_t> value) {
-    writer_.write_str(ignore_incompatible_str<Char>(value), spec_);
+
+  using ArgVisitor<fmt::internal::ArgFormatter<Char>, void>::visit_wstring;
+
+  void visit_wstring(Arg::StringValue<Char> value) {
+    writer_.write_str(value, spec_);
   }
 
   void visit_pointer(const void *value) {
