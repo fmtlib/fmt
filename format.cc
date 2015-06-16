@@ -395,21 +395,135 @@ class CharConverter : public fmt::internal::ArgVisitor<CharConverter, void> {
     arg_.int_value = static_cast<char>(value);
   }
 };
-
-// This function template is used to prevent compile errors when handling
-// incompatible string arguments, e.g. handling a wide string in a narrow
-// string formatter.
-template <typename Char>
-Arg::StringValue<Char> ignore_incompatible_str(Arg::StringValue<wchar_t>);
-
-template <>
-inline Arg::StringValue<char> ignore_incompatible_str(
-    Arg::StringValue<wchar_t>) { return Arg::StringValue<char>(); }
-
-template <>
-inline Arg::StringValue<wchar_t> ignore_incompatible_str(
-    Arg::StringValue<wchar_t> s) { return s; }
 }  // namespace
+
+namespace internal {
+
+template <typename Impl, typename Char>
+class BasicArgFormatter : public ArgVisitor<Impl, void> {
+ private:
+  BasicWriter<Char> &writer_;
+  FormatSpec &spec_;
+
+  FMT_DISALLOW_COPY_AND_ASSIGN(BasicArgFormatter);
+
+ protected:
+  BasicWriter<Char> &writer() { return writer_; }
+  const FormatSpec &spec() const { return spec_; }
+
+ public:
+  BasicArgFormatter(BasicWriter<Char> &w, FormatSpec &s)
+  : writer_(w), spec_(s) {}
+
+  template <typename T>
+  void visit_any_int(T value) { writer_.write_int(value, spec_); }
+
+  template <typename T>
+  void visit_any_double(T value) { writer_.write_double(value, spec_); }
+
+  void visit_bool(bool value) {
+    if (spec_.type_) {
+      writer_.write_int(value, spec_);
+      return;
+    }
+    const char *str_value = value ? "true" : "false";
+    Arg::StringValue<char> str = { str_value, strlen(str_value) };
+    writer_.write_str(str, spec_);
+  }
+
+  void visit_char(int value) {
+    if (spec_.type_ && spec_.type_ != 'c') {
+      spec_.flags_ |= CHAR_FLAG;
+      writer_.write_int(value, spec_);
+      return;
+    }
+    if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
+      FMT_THROW(FormatError("invalid format specifier for char"));
+    typedef typename BasicWriter<Char>::CharPtr CharPtr;
+    Char fill = static_cast<Char>(spec_.fill());
+    CharPtr out = CharPtr();
+    if (spec_.width_ > 1) {
+      out = writer_.grow_buffer(spec_.width_);
+      if (spec_.align_ == ALIGN_RIGHT) {
+        std::fill_n(out, spec_.width_ - 1, fill);
+        out += spec_.width_ - 1;
+      } else if (spec_.align_ == ALIGN_CENTER) {
+        out = writer_.fill_padding(out, spec_.width_, 1, fill);
+      } else {
+        std::fill_n(out + 1, spec_.width_ - 1, fill);
+      }
+    } else {
+      out = writer_.grow_buffer(1);
+    }
+    *out = static_cast<Char>(value);
+  }
+
+  void visit_string(Arg::StringValue<char> value) {
+    writer_.write_str(value, spec_);
+  }
+
+  using ArgVisitor<Impl, void>::visit_wstring;
+
+  void visit_wstring(Arg::StringValue<Char> value) {
+    writer_.write_str(value, spec_);
+  }
+
+  void visit_pointer(const void *value) {
+    if (spec_.type_ && spec_.type_ != 'p')
+      report_unknown_type(spec_.type_, "pointer");
+    spec_.flags_ = HASH_FLAG;
+    spec_.type_ = 'x';
+    writer_.write_int(reinterpret_cast<uintptr_t>(value), spec_);
+  }
+};
+
+// An argument formatter.
+template <typename Char>
+class ArgFormatter : public BasicArgFormatter<ArgFormatter<Char>, Char> {
+ private:
+  BasicFormatter<Char> &formatter_;
+  const Char *format_;
+
+ public:
+  ArgFormatter(BasicFormatter<Char> &f, FormatSpec &s, const Char *fmt)
+  : BasicArgFormatter<ArgFormatter<Char>, Char>(f.writer(), s),
+    formatter_(f), format_(fmt) {}
+
+  void visit_custom(Arg::CustomValue c) {
+    c.format(&formatter_, c.value, &format_);
+  }
+};
+
+template <typename Char>
+class PrintfArgFormatter :
+    public BasicArgFormatter<PrintfArgFormatter<Char>, Char> {
+ public:
+  PrintfArgFormatter(BasicWriter<Char> &w, FormatSpec &s)
+  : BasicArgFormatter<PrintfArgFormatter<Char>, Char>(w, s) {}
+
+  void visit_char(int value) {
+    const FormatSpec &spec = this->spec();
+    BasicWriter<Char> &writer = this->writer();
+    if (spec.type_ && spec.type_ != 'c')
+      writer.write_int(value, spec);
+    typedef typename BasicWriter<Char>::CharPtr CharPtr;
+    CharPtr out = CharPtr();
+    if (spec.width_ > 1) {
+      Char fill = ' ';
+      out = writer.grow_buffer(spec.width_);
+      if (spec.align_ != ALIGN_LEFT) {
+        std::fill_n(out, spec.width_ - 1, fill);
+        out += spec.width_ - 1;
+      } else {
+        std::fill_n(out + 1, spec.width_ - 1, fill);
+      }
+    } else {
+      out = writer.grow_buffer(1);
+    }
+    *out = static_cast<Char>(value);
+  }
+};
+}  // namespace internal
 }  // namespace fmt
 
 FMT_FUNC void fmt::SystemError::init(
@@ -633,89 +747,6 @@ void fmt::internal::ArgMap<Char>::init(const ArgList &args) {
     }
   }
 }
-
-// An argument formatter.
-template <typename Char>
-class fmt::internal::ArgFormatter :
-    public fmt::internal::ArgVisitor<fmt::internal::ArgFormatter<Char>, void> {
- private:
-  fmt::BasicFormatter<Char> &formatter_;
-  fmt::BasicWriter<Char> &writer_;
-  fmt::FormatSpec &spec_;
-  const Char *format_;
-
-  FMT_DISALLOW_COPY_AND_ASSIGN(ArgFormatter);
-
- public:
-  ArgFormatter(
-      fmt::BasicFormatter<Char> &f,fmt::FormatSpec &s, const Char *fmt)
-  : formatter_(f), writer_(f.writer()), spec_(s), format_(fmt) {}
-
-  template <typename T>
-  void visit_any_int(T value) { writer_.write_int(value, spec_); }
-
-  template <typename T>
-  void visit_any_double(T value) { writer_.write_double(value, spec_); }
-
-  void visit_bool(bool value) {
-    if (spec_.type_) {
-      writer_.write_int(value, spec_);
-      return;
-    }
-    const char *str_value = value ? "true" : "false";
-    Arg::StringValue<char> str = { str_value, strlen(str_value) };
-    writer_.write_str(str, spec_);
-  }
-
-  void visit_char(int value) {
-    if (spec_.type_ && spec_.type_ != 'c') {
-      spec_.flags_ |= CHAR_FLAG;
-      writer_.write_int(value, spec_);
-      return;
-    }
-    if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
-      FMT_THROW(FormatError("invalid format specifier for char"));
-    typedef typename fmt::BasicWriter<Char>::CharPtr CharPtr;
-    Char fill = static_cast<Char>(spec_.fill());
-    CharPtr out = CharPtr();
-    if (spec_.width_ > 1) {
-      out = writer_.grow_buffer(spec_.width_);
-      if (spec_.align_ == fmt::ALIGN_RIGHT) {
-        std::fill_n(out, spec_.width_ - 1, fill);
-        out += spec_.width_ - 1;
-      } else if (spec_.align_ == fmt::ALIGN_CENTER) {
-        out = writer_.fill_padding(out, spec_.width_, 1, fill);
-      } else {
-        std::fill_n(out + 1, spec_.width_ - 1, fill);
-      }
-    } else {
-      out = writer_.grow_buffer(1);
-    }
-    *out = static_cast<Char>(value);
-  }
-
-  void visit_string(Arg::StringValue<char> value) {
-    writer_.write_str(value, spec_);
-  }
-
-  using ArgVisitor<fmt::internal::ArgFormatter<Char>, void>::visit_wstring;
-
-  void visit_wstring(Arg::StringValue<Char> value) {
-    writer_.write_str(value, spec_);
-  }
-
-  void visit_pointer(const void *value) {
-    if (spec_.type_ && spec_.type_ != 'p')
-      fmt::internal::report_unknown_type(spec_.type_, "pointer");
-    spec_.flags_ = fmt::HASH_FLAG;
-    spec_.type_ = 'x';
-    writer_.write_int(reinterpret_cast<uintptr_t>(value), spec_);
-  }
-
-  void visit_custom(Arg::CustomValue c) {
-    c.format(&formatter_, c.value, &format_);
-  }
-};
 
 template <typename Char>
 void fmt::internal::FixedBuffer<Char>::grow(std::size_t) {
@@ -990,73 +1021,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
     start = s;
 
     // Format argument.
-    switch (arg.type) {
-    case Arg::INT:
-      writer.write_int(arg.int_value, spec);
-      break;
-    case Arg::UINT:
-      writer.write_int(arg.uint_value, spec);
-      break;
-    case Arg::LONG_LONG:
-      writer.write_int(arg.long_long_value, spec);
-      break;
-    case Arg::ULONG_LONG:
-      writer.write_int(arg.ulong_long_value, spec);
-      break;
-    case Arg::CHAR: {
-      if (spec.type_ && spec.type_ != 'c')
-        writer.write_int(arg.int_value, spec);
-      typedef typename BasicWriter<Char>::CharPtr CharPtr;
-      CharPtr out = CharPtr();
-      if (spec.width_ > 1) {
-        Char fill = ' ';
-        out = writer.grow_buffer(spec.width_);
-        if (spec.align_ != ALIGN_LEFT) {
-          std::fill_n(out, spec.width_ - 1, fill);
-          out += spec.width_ - 1;
-        } else {
-          std::fill_n(out + 1, spec.width_ - 1, fill);
-        }
-      } else {
-        out = writer.grow_buffer(1);
-      }
-      *out = static_cast<Char>(arg.int_value);
-      break;
-    }
-    case Arg::DOUBLE:
-      writer.write_double(arg.double_value, spec);
-      break;
-    case Arg::LONG_DOUBLE:
-      writer.write_double(arg.long_double_value, spec);
-      break;
-    case Arg::CSTRING:
-      arg.string.size = 0;
-      writer.write_str(arg.string, spec);
-      break;
-    case Arg::STRING:
-      writer.write_str(arg.string, spec);
-      break;
-    case Arg::WSTRING:
-      writer.write_str(ignore_incompatible_str<Char>(arg.wstring), spec);
-      break;
-    case Arg::POINTER:
-      if (spec.type_ && spec.type_ != 'p')
-        internal::report_unknown_type(spec.type_, "pointer");
-      spec.flags_= HASH_FLAG;
-      spec.type_ = 'x';
-      writer.write_int(reinterpret_cast<uintptr_t>(arg.pointer), spec);
-      break;
-    case Arg::CUSTOM: {
-      if (spec.type_)
-        internal::report_unknown_type(spec.type_, "object");
-      const void *str_format = "s";
-      arg.custom.format(&writer, arg.custom.value, &str_format);
-      break;
-    }
-    default:
-      assert(false);
-      break;
-    }
+    internal::PrintfArgFormatter<Char>(writer, spec).visit(arg);
   }
   write(writer, start, s);
 }

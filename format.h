@@ -1120,8 +1120,11 @@ class RuntimeError : public std::runtime_error {
   RuntimeError() : std::runtime_error("") {}
 };
 
+template <typename Impl, typename Char>
+class BasicArgFormatter;
+
 template <typename Char>
-class ArgFormatter;
+class PrintfArgFormatter;
 
 template <typename Char>
 class ArgMap;
@@ -1857,8 +1860,10 @@ class BasicWriter {
   template<typename T>
   void append_float_length(Char *&, T) {}
 
-  friend class internal::ArgFormatter<Char>;
-  friend class internal::PrintfFormatter<Char>;
+  template <typename Impl, typename Char_>
+  friend class internal::BasicArgFormatter;
+
+  friend class internal::PrintfArgFormatter<Char>;
 
  protected:
   /**
