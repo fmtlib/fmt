@@ -1450,7 +1450,7 @@ TEST(StringRefTest, Ctor) {
 }
 
 TEST(StringRefTest, ConvertToString) {
-  std::string s = StringRef("abc");
+  std::string s = StringRef("abc").to_string();
   EXPECT_EQ("abc", s);
 }
 

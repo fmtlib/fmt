@@ -257,7 +257,7 @@ class BasicStringRef {
     Converts a string reference to an ``std::string`` object.
     \endrst
    */
-  operator std::basic_string<Char>() const {
+  std::basic_string<Char> to_string() const {
     return std::basic_string<Char>(data_, size());
   }
 
