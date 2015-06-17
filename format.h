@@ -2007,7 +2007,8 @@ class BasicWriter {
     return *this;
   }
 
-  BasicWriter &operator<<(typename internal::WCharHelper<StringRef, Char>::Supported value) {
+  BasicWriter &operator<<(
+      typename internal::WCharHelper<StringRef, Char>::Supported value) {
     const char *str = value.c_str();
     buffer_.append(str, str + value.size());
     return *this;
