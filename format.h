@@ -522,6 +522,7 @@ class BasicCharTraits {
 #else
   typedef Char *CharPtr;
 #endif
+  static Char cast(wchar_t value) { return static_cast<Char>(value); }
 };
 
 template <typename Char>
@@ -2036,7 +2037,7 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
   CharPtr out = CharPtr();
   if (spec.width() > size) {
     out = grow_buffer(spec.width());
-    Char fill = static_cast<Char>(spec.fill());
+    Char fill = internal::CharTraits<Char>::cast(spec.fill());
     if (spec.align() == ALIGN_RIGHT) {
       std::fill_n(out, spec.width() - size, fill);
       out += spec.width() - size;
@@ -2059,7 +2060,7 @@ typename BasicWriter<Char>::CharPtr
     std::size_t content_size, wchar_t fill) {
   std::size_t padding = total_size - content_size;
   std::size_t left_padding = padding / 2;
-  Char fill_char = static_cast<Char>(fill);
+  Char fill_char = internal::CharTraits<Char>::cast(fill);
   std::fill_n(buffer, left_padding, fill_char);
   buffer += left_padding;
   CharPtr content = buffer;
@@ -2075,7 +2076,7 @@ typename BasicWriter<Char>::CharPtr
     const char *prefix, unsigned prefix_size) {
   unsigned width = spec.width();
   Alignment align = spec.align();
-  Char fill = static_cast<Char>(spec.fill());
+  Char fill = internal::CharTraits<Char>::cast(spec.fill());
   if (spec.precision() > static_cast<int>(num_digits)) {
     // Octal prefix '0' is counted as a digit, so ignore it if precision
     // is specified.
@@ -2314,7 +2315,7 @@ void BasicWriter<Char>::write_double(
   *format_ptr = '\0';
 
   // Format using snprintf.
-  Char fill = static_cast<Char>(spec.fill());
+  Char fill = internal::CharTraits<Char>::cast(spec.fill());
   for (;;) {
     std::size_t buffer_size = buffer_.capacity() - offset;
 #if _MSC_VER

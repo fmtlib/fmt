@@ -440,7 +440,7 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
     if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
       FMT_THROW(FormatError("invalid format specifier for char"));
     typedef typename BasicWriter<Char>::CharPtr CharPtr;
-    Char fill = static_cast<Char>(spec_.fill());
+    Char fill = internal::CharTraits<Char>::cast(spec_.fill());
     CharPtr out = CharPtr();
     if (spec_.width_ > 1) {
       out = writer_.grow_buffer(spec_.width_);
@@ -455,7 +455,7 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
     } else {
       out = writer_.grow_buffer(1);
     }
-    *out = static_cast<Char>(value);
+    *out = internal::CharTraits<Char>::cast(value);
   }
 
   void visit_string(Arg::StringValue<char> value) {
