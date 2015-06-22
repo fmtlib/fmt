@@ -1532,7 +1532,7 @@ std::string format_decimal(T value) {
 }
 
 TEST(FormatIntTest, FormatDec) {
-  EXPECT_EQ("-42", format_decimal(static_cast<char>(-42)));
+  EXPECT_EQ("-42", format_decimal(static_cast<signed char>(-42)));
   EXPECT_EQ("-42", format_decimal(static_cast<short>(-42)));
   std::ostringstream os;
   os << std::numeric_limits<unsigned short>::max();
