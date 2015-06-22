@@ -5,7 +5,8 @@ if (NOT DOXYGEN)
 endif ()
 
 add_custom_command(OUTPUT html/_static/cppformat.css
-  COMMAND lessc --clean-css --include-path=bootstrap cppformat.less html/_static/cppformat.css
+  COMMAND lessc --clean-css --include-path=${CMAKE_CURRENT_SOURCE_DIR}/bootstrap
+                ${CMAKE_CURRENT_SOURCE_DIR}/cppformat.less html/_static/cppformat.css
   DEPENDS cppformat.less)
 
 add_custom_target(doc COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build.py

@@ -23,7 +23,7 @@ def pip_install(package, commit=None):
 def build_docs():
   # Create virtualenv.
   doc_dir = os.path.dirname(os.path.realpath(__file__))
-  virtualenv_dir = os.path.join(doc_dir, 'virtualenv')
+  virtualenv_dir = 'virtualenv'
   check_call(['virtualenv', virtualenv_dir])
   activate_this_file = os.path.join(virtualenv_dir, 'bin', 'activate_this.py')
   execfile(activate_this_file, dict(__file__=activate_this_file))
@@ -32,7 +32,7 @@ def build_docs():
   pip_install('michaeljones/breathe', '511b0887293e7c6b12310bb61b3659068f48f0f4')
   # Build docs.
   cmd = ['doxygen', '-']
-  p = Popen(cmd, stdin=PIPE, cwd=doc_dir)
+  p = Popen(cmd, stdin=PIPE)
   p.communicate(input=r'''
       PROJECT_NAME      = C++ Format
       GENERATE_LATEX    = NO
@@ -57,10 +57,10 @@ def build_docs():
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
   check_call(['sphinx-build', '-D', 'breathe_projects.format=doxyxml',
-              '-b', 'html', '.', 'html'], cwd=doc_dir)
-  check_call(['lessc', '--clean-css', '--include-path=bootstrap', 'cppformat.less',
-              'html/_static/cppformat.css'], cwd=doc_dir)
-  return os.path.join(doc_dir, 'html')
+              '-b', 'html', doc_dir, 'html'])
+  #check_call(['lessc', '--clean-css', '--include-path=bootstrap', 'cppformat.less',
+  #            'html/_static/cppformat.css'], cwd=doc_dir)
+  return 'html'
 
 if __name__ == '__main__':
   build_docs()
