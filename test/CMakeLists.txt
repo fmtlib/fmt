@@ -22,6 +22,7 @@ if (HAVE_ENUM_BASE)
   add_definitions(-DFMT_USE_ENUM_BASE=1)
 endif ()
 
+add_fmt_test(assert-test)
 add_fmt_test(gtest-extra-test)
 add_fmt_test(format-test)
 if (FMT_PEDANTIC AND MSVC)

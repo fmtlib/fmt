@@ -175,6 +175,10 @@ inline uint32_t clzll(uint64_t x) {
     TypeName& operator=(const TypeName&)
 #endif
 
+#ifndef FMT_ASSERT
+# define FMT_ASSERT(condition, message) assert((condition) && message)
+#endif
+
 namespace fmt {
 
 // Fix the warning about long long on older versions of GCC
@@ -1081,7 +1085,7 @@ class ArgVisitor {
   Result visit(const Arg &arg) {
     switch (arg.type) {
     default:
-      assert(false);
+      FMT_ASSERT(false, "invalid argument type");
       return Result();
     case Arg::INT:
       return FMT_DISPATCH(visit_int(arg.int_value));

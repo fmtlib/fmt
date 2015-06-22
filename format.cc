@@ -158,7 +158,7 @@ typedef void (*FormatFunc)(fmt::Writer &, int, fmt::StringRef);
 // Buffer should be at least of size 1.
 int safe_strerror(
     int error_code, char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT {
-  assert(buffer != 0 && buffer_size != 0);
+  FMT_ASSERT(buffer != 0 && buffer_size != 0, "invalid buffer");
 
   class StrError {
    private:

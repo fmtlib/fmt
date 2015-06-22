@@ -25,6 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "test-assert.h"
+
 #include <cfloat>
 #include <climits>
 #include <cstring>
@@ -680,7 +682,7 @@ TEST(ArgVisitorTest, VisitUnhandledArg) {
 TEST(ArgVisitorTest, VisitInvalidArg) {
   Arg arg = Arg();
   arg.type = static_cast<Arg::Type>(Arg::CUSTOM + 1);
-  EXPECT_DEBUG_DEATH(TestVisitor().visit(arg), "Assertion");
+  EXPECT_ASSERT(TestVisitor().visit(arg), "invalid argument type");
 }
 
 // Tests fmt::internal::count_digits for integer type Int.

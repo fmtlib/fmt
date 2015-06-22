@@ -525,7 +525,7 @@ TEST(BufferedFileTest, CloseError) {
 TEST(BufferedFileTest, Fileno) {
   BufferedFile f;
   // fileno on a null FILE pointer either crashes or returns an error.
-  EXPECT_DEATH({
+  EXPECT_DEATH_IF_SUPPORTED({
     try {
       f.fileno();
     } catch (fmt::SystemError) {

@@ -25,6 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "test-assert.h"
+
 // Include format.cc instead of format.h to test implementation-specific stuff.
 #include "format.cc"
 
@@ -55,10 +57,8 @@ TEST(FormatTest, FormatNegativeNaN) {
 TEST(FormatTest, StrError) {
   char *message = 0;
   char buffer[BUFFER_SIZE];
-#ifndef NDEBUG
-  EXPECT_DEBUG_DEATH(fmt::safe_strerror(EDOM, message = 0, 0), "Assertion");
-  EXPECT_DEBUG_DEATH(fmt::safe_strerror(EDOM, message = buffer, 0), "Assertion");
-#endif
+  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = 0, 0), "invalid buffer");
+  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = buffer, 0), "invalid buffer");
   buffer[0] = 'x';
 #ifdef _GNU_SOURCE
   // Use invalid error code to make sure that safe_strerror returns an error
