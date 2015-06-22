@@ -58,8 +58,8 @@ def build_docs():
     raise CalledProcessError(p.returncode, cmd)
   check_call(['sphinx-build', '-D', 'breathe_projects.format=doxyxml',
               '-b', 'html', doc_dir, 'html'])
-  #check_call(['lessc', '--clean-css', '--include-path=bootstrap', 'cppformat.less',
-  #            'html/_static/cppformat.css'], cwd=doc_dir)
+  check_call(['lessc', '--clean-css', '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
+              os.path.join(doc_dir, 'cppformat.less'), 'html/_static/cppformat.css'])
   return 'html'
 
 if __name__ == '__main__':
