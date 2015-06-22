@@ -153,11 +153,13 @@ inline uint32_t clzll(uint64_t x) {
 #endif
 
 // Define FMT_USE_NOEXCEPT to make C++ Format use noexcept (C++11 feature).
-#if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
-  (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11)
-# define FMT_NOEXCEPT noexcept
-#else
-# define FMT_NOEXCEPT throw()
+#ifndef FMT_NOEXCEPT
+# if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
+   (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11)
+#  define FMT_NOEXCEPT noexcept
+# else
+#  define FMT_NOEXCEPT throw()
+# endif
 #endif
 
 // A macro to disallow the copy constructor and operator= functions

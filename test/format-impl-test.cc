@@ -25,6 +25,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define FMT_NOEXCEPT
 #include "test-assert.h"
 
 // Include format.cc instead of format.h to test implementation-specific stuff.

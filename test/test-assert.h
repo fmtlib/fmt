@@ -28,15 +28,20 @@
 #ifndef FMT_TEST_ASSERT_H
 #define FMT_TEST_ASSERT_H
 
-#include <string>
+#include <stdexcept>
 
-static std::string last_assert;
+class AssertionFailure : public std::logic_error {
+ public:
+  explicit AssertionFailure(const char *message) : std::logic_error(message) {}
+};
 
 #define FMT_ASSERT(condition, message) \
-  if (!(condition)) last_assert = message;
+  if (!(condition)) throw AssertionFailure(message);
+
+#include "gtest-extra.h"
 
 // Expects an assertion failure.
 #define EXPECT_ASSERT(stmt, message) \
-  { last_assert = ""; stmt; EXPECT_EQ(last_assert, message); }
+  EXPECT_THROW_MSG(stmt, AssertionFailure, message)
 
 #endif  // FMT_TEST_ASSERT_H
