@@ -1308,8 +1308,7 @@ TEST(FormatterTest, FormatLongDouble) {
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%Le", 392.65l);
   EXPECT_EQ(buffer, format("{0:e}", 392.65l));
-  safe_sprintf(buffer, "%LE", 392.65l);
-  EXPECT_EQ("+0000392.6", format("{0:+010.4g}", 392.65l));
+  EXPECT_EQ("+0000392.6", format("{0:+010.4g}", 392.64l));
 }
 
 TEST(FormatterTest, FormatChar) {
