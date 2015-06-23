@@ -207,4 +207,4 @@ endif ()
 set(FMT_LIB_DIR lib CACHE STRING
   "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
 install(TARGETS cppformat DESTINATION ${FMT_LIB_DIR})
-install(FILES format.h DESTINATION include)
+install(FILES format.h DESTINATION include/cppformat)
