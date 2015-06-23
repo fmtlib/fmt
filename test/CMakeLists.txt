@@ -1,6 +1,6 @@
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
-target_link_libraries(test-main format gmock)
+target_link_libraries(test-main cppformat gmock)
 
 # Adds a test.
 # Usage: add_fmt_test(name [CUSTOM_LINK] srcs...)
@@ -9,7 +9,7 @@ function(add_fmt_test name)
   add_executable(${name} ${name}.cc ${add_fmt_test_UNPARSED_ARGUMENTS})
   target_link_libraries(${name} test-main)
   if (NOT add_fmt_test_CUSTOM_LINK)
-    target_link_libraries(${name} format)
+    target_link_libraries(${name} cppformat)
   endif ()
   add_test(NAME ${name} COMMAND ${name})
 endfunction()

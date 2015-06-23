@@ -89,9 +89,9 @@ if (BIICODE)
   return()
 endif ()
 
-add_library(format ${FMT_SOURCES})
+add_library(cppformat ${FMT_SOURCES})
 if (FMT_PEDANTIC AND CMAKE_COMPILER_IS_GNUCXX)
-  set_target_properties(format PROPERTIES COMPILE_FLAGS
+  set_target_properties(cppformat PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -Wshadow -pedantic")
 endif ()
 
@@ -100,7 +100,7 @@ endif ()
 # The library is distributed in the source form and users have full control
 # over compile options, so the options used here only matter for testing.
 if (CPP11_FLAG AND FMT_PEDANTIC)
-  set_target_properties(format PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
+  set_target_properties(cppformat PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
   # Test compilation with default flags.
   file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)
   add_library(testformat STATIC ${FMT_SOURCE_FILES} ${src})
@@ -182,7 +182,7 @@ set(CPACK_PACKAGE_VERSION_MINOR 2)
 set(CPACK_PACKAGE_VERSION_PATCH 0)
 set(CPPFORMAT_VERSION
   ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH})
-set_target_properties(format PROPERTIES
+set_target_properties(cppformat PROPERTIES
   VERSION ${CPPFORMAT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR})
 
 if (EXISTS .gitignore)
@@ -206,5 +206,5 @@ endif ()
 # Install targets.
 set(FMT_LIB_DIR lib CACHE STRING
   "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
-install(TARGETS format DESTINATION ${FMT_LIB_DIR})
+install(TARGETS cppformat DESTINATION ${FMT_LIB_DIR})
 install(FILES format.h DESTINATION include)
