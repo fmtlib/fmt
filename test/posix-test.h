@@ -33,6 +33,8 @@
 
 #ifdef _WIN32
 # include <windows.h>
+#else
+# include <sys/types.h>  // for ssize_t
 #endif
 
 #ifndef _MSC_VER
