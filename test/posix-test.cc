@@ -31,6 +31,10 @@
 #include "posix.h"
 #include "util.h"
 
+#ifdef __MINGW32__
+# undef fileno
+#endif
+
 using fmt::BufferedFile;
 using fmt::ErrorCode;
 using fmt::File;

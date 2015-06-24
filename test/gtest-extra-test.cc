@@ -38,10 +38,6 @@
 
 #include "util.h"
 
-#ifdef __MINGW32__
-# undef fileno
-#endif
-
 namespace {
 
 #ifdef _MSC_VER
@@ -376,7 +372,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
 
 TEST(OutputRedirectTest, DupErrorInCtor) {
   BufferedFile f = open_buffered_file();
-  int fd = f.fileno();
+  int fd = (f.fileno)();
   File copy = File::dup(fd);
   FMT_POSIX(close(fd));
   OutputRedirect *redir = 0;
