@@ -29,6 +29,8 @@
 #include <cstdio>
 #include <string>
 
+#include "posix.h"
+
 enum {BUFFER_SIZE = 256};
 
 #ifdef _MSC_VER
@@ -49,3 +51,8 @@ void safe_sprintf(char (&buffer)[SIZE], const char *format, ...) {
 void increment(char *s);
 
 std::string get_system_error(int error_code);
+
+extern const char FILE_CONTENT[];
+
+// Opens a buffered file for reading.
+fmt::BufferedFile open_buffered_file(FILE **fp = 0);

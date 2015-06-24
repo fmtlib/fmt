@@ -62,9 +62,10 @@ add_executable(macro-test macro-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
 target_link_libraries(macro-test gmock)
 
 if (HAVE_OPEN)
-  add_executable(posix-test posix-mock-test.cc ../format.cc ${TEST_MAIN_SRC})
-  target_link_libraries(posix-test gmock)
-  add_test(NAME posix-test COMMAND posix-test)
+  add_executable(posix-mock-test posix-mock-test.cc ../format.cc ${TEST_MAIN_SRC})
+  target_link_libraries(posix-mock-test gmock)
+  add_test(NAME posix-mock-test COMMAND posix-mock-test)
+  add_fmt_test(posix-test)
 endif ()
 
 add_executable(header-only-test

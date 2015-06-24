@@ -42,6 +42,7 @@
 #endif
 
 #include "gtest-extra.h"
+#include "util.h"
 
 using fmt::BufferedFile;
 using fmt::ErrorCode;

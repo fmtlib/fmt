@@ -89,6 +89,19 @@ std::string OutputRedirect::restore_and_read() {
   return content;
 }
 
+std::string read(File &f, std::size_t count) {
+  std::string buffer(count, '\0');
+  std::streamsize n = 0;
+  std::size_t offset = 0;
+  do {
+    n = f.read(&buffer[offset], count - offset);
+    // We can't read more than size_t bytes since count has type size_t.
+    offset += static_cast<std::size_t>(n);
+  } while (offset < count && n != 0);
+  buffer.resize(offset);
+  return buffer;
+}
+
 #endif  // FMT_USE_FILE_DESCRIPTORS
 
 std::string format_system_error(int error_code, fmt::StringRef message) {

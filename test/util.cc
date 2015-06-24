@@ -49,3 +49,16 @@ std::string get_system_error(int error_code) {
   return buffer;
 #endif
 }
+
+const char FILE_CONTENT[] = "Don't panic!";
+
+fmt::BufferedFile open_buffered_file(FILE **fp) {
+  fmt::File read_end, write_end;
+  fmt::File::pipe(read_end, write_end);
+  write_end.write(FILE_CONTENT, sizeof(FILE_CONTENT) - 1);
+  write_end.close();
+  fmt::BufferedFile f = read_end.fdopen("r");
+  if (fp)
+    *fp = f.get();
+  return f;
+}
