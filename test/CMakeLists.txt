@@ -62,9 +62,7 @@ add_executable(macro-test macro-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
 target_link_libraries(macro-test gmock)
 
 if (HAVE_OPEN)
-  add_executable(posix-test posix-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
-  set_target_properties(posix-test
-    PROPERTIES COMPILE_DEFINITIONS "FMT_INCLUDE_POSIX_TEST=1")
+  add_executable(posix-test posix-mock-test.cc ../format.cc ${TEST_MAIN_SRC})
   target_link_libraries(posix-test gmock)
   add_test(NAME posix-test COMMAND posix-test)
 endif ()

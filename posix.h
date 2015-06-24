@@ -41,10 +41,6 @@
 
 #include "format.h"
 
-#ifdef FMT_INCLUDE_POSIX_TEST
-# include "test/posix-test.h"
-#endif
-
 #ifndef FMT_POSIX
 # if defined(_WIN32) && !defined(__MINGW32__)
 // Fix warnings about deprecated symbols.

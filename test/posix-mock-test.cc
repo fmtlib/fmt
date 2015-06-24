@@ -1,7 +1,7 @@
 /*
- Test wrappers around POSIX functions.
+ Tests of the C++ interface to POSIX functions that require mocks
 
- Copyright (c) 2012-2014, Victor Zverovich
+ Copyright (c) 2012-2015, Victor Zverovich
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,8 @@
 // Disable bogus MSVC warnings.
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "posix-test.h"
+#include "posix-mock.h"
+#include "posix.cc"
 
 #include <errno.h>
 #include <fcntl.h>
