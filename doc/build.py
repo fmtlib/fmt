@@ -29,7 +29,8 @@ def build_docs():
   execfile(activate_this_file, dict(__file__=activate_this_file))
   # Install Sphinx and Breathe.
   pip_install('sphinx==1.3.1')
-  pip_install('michaeljones/breathe', '511b0887293e7c6b12310bb61b3659068f48f0f4')
+  pip_install('michaeljones/breathe',
+              '511b0887293e7c6b12310bb61b3659068f48f0f4')
   # Build docs.
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE)
@@ -56,10 +57,13 @@ def build_docs():
     '''.format(os.path.dirname(doc_dir)))
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
-  check_call(['sphinx-build', '-D', 'breathe_projects.format=doxyxml',
+  check_call(['sphinx-build', '-D',
+              'breathe_projects.format=' + os.path.join(os.getcwd(), 'doxyxml'),
               '-b', 'html', doc_dir, 'html'])
-  check_call(['lessc', '--clean-css', '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
-              os.path.join(doc_dir, 'cppformat.less'), 'html/_static/cppformat.css'])
+  check_call(['lessc', '--clean-css',
+              '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
+              os.path.join(doc_dir, 'cppformat.less'),
+              'html/_static/cppformat.css'])
   return 'html'
 
 if __name__ == '__main__':
