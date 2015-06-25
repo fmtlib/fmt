@@ -292,11 +292,11 @@ TEST(FileTest, Read) {
 }
 
 TEST(FileTest, ReadError) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  File f("test-file", File::WRONLY);
   char buf;
-  // We intentionally read from write_end to cause error.
-  EXPECT_SYSTEM_ERROR(write_end.read(&buf, 1), EBADF, "cannot read from file");
+  // We intentionally read from a file opened in the write-only mode to
+  // cause error.
+  EXPECT_SYSTEM_ERROR(f.read(&buf, 1), EBADF, "cannot read from file");
 }
 
 TEST(FileTest, Write) {
@@ -308,10 +308,10 @@ TEST(FileTest, Write) {
 }
 
 TEST(FileTest, WriteError) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
-  // We intentionally write to read_end to cause error.
-  EXPECT_SYSTEM_ERROR(read_end.write(" ", 1), EBADF, "cannot write to file");
+  File f("test-file", File::RDONLY);
+  // We intentionally write to a file opened in the read-only mode to
+  // cause error.
+  EXPECT_SYSTEM_ERROR(f.write(" ", 1), EBADF, "cannot write to file");
 }
 
 TEST(FileTest, Dup) {
