@@ -181,7 +181,7 @@ public:
 #endif
 
   // Opens a file.
-  BufferedFile(fmt::StringRef filename, fmt::StringRef mode);
+  BufferedFile(CStringRef filename, CStringRef mode);
 
   // Closes the file.
   void close();
@@ -193,10 +193,10 @@ public:
   // of MinGW that define fileno as a macro.
   int (fileno)() const;
 
-  void print(fmt::StringRef format_str, const ArgList &args) {
+  void print(CStringRef format_str, const ArgList &args) {
     fmt::print(file_, format_str, args);
   }
-  FMT_VARIADIC(void, print, fmt::StringRef)
+  FMT_VARIADIC(void, print, CStringRef)
 };
 
 // A file. Closed file is represented by a File object with descriptor -1.
@@ -224,7 +224,7 @@ class File {
   File() FMT_NOEXCEPT : fd_(-1) {}
 
   // Opens a file and constructs a File object representing this file.
-  File(fmt::StringRef path, int oflag);
+  File(CStringRef path, int oflag);
 
 #if !FMT_USE_RVALUE_REFERENCES
   // Emulate a move constructor and a move assignment operator if rvalue
@@ -296,7 +296,7 @@ class File {
   void close();
 
   // Returns the file size.
-  fmt::LongLong size() const;
+  LongLong size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.
   std::size_t read(void *buffer, std::size_t count);

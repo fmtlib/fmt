@@ -207,7 +207,7 @@ int (test::fileno)(FILE *stream) {
 # define EXPECT_EQ_POSIX(expected, actual)
 #endif
 
-void write_file(fmt::StringRef filename, fmt::StringRef content) {
+void write_file(fmt::CStringRef filename, fmt::StringRef content) {
   fmt::BufferedFile f(filename, "w");
   f.print("{}", content);
 }

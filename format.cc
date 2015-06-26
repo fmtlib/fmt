@@ -527,7 +527,7 @@ class PrintfArgFormatter :
 }  // namespace fmt
 
 FMT_FUNC void fmt::SystemError::init(
-    int err_code, StringRef format_str, ArgList args) {
+    int err_code, CStringRef format_str, ArgList args) {
   error_code_ = err_code;
   MemoryWriter w;
   internal::format_system_error(w, err_code, format(format_str, args));
@@ -927,7 +927,7 @@ unsigned fmt::internal::PrintfFormatter<Char>::parse_header(
 
 template <typename Char>
 void fmt::internal::PrintfFormatter<Char>::format(
-    BasicWriter<Char> &writer, BasicStringRef<Char> format_str,
+    BasicWriter<Char> &writer, BasicCStringRef<Char> format_str,
     const ArgList &args) {
   const Char *start = format_str.c_str();
   set_args(args);
@@ -1198,7 +1198,7 @@ const Char *fmt::BasicFormatter<Char>::format(
 
 template <typename Char>
 void fmt::BasicFormatter<Char>::format(
-    BasicStringRef<Char> format_str, const ArgList &args) {
+    BasicCStringRef<Char> format_str, const ArgList &args) {
   const Char *s = start_ = format_str.c_str();
   set_args(args);
   while (*s) {
@@ -1230,23 +1230,23 @@ FMT_FUNC void fmt::report_windows_error(
 }
 #endif
 
-FMT_FUNC void fmt::print(std::FILE *f, StringRef format_str, ArgList args) {
+FMT_FUNC void fmt::print(std::FILE *f, CStringRef format_str, ArgList args) {
   MemoryWriter w;
   w.write(format_str, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
 
-FMT_FUNC void fmt::print(StringRef format_str, ArgList args) {
+FMT_FUNC void fmt::print(CStringRef format_str, ArgList args) {
   print(stdout, format_str, args);
 }
 
-FMT_FUNC void fmt::print(std::ostream &os, StringRef format_str, ArgList args) {
+FMT_FUNC void fmt::print(std::ostream &os, CStringRef format_str, ArgList args) {
   MemoryWriter w;
   w.write(format_str, args);
   os.write(w.data(), w.size());
 }
 
-FMT_FUNC void fmt::print_colored(Color c, StringRef format, ArgList args) {
+FMT_FUNC void fmt::print_colored(Color c, CStringRef format, ArgList args) {
   char escape[] = "\x1b[30m";
   escape[3] = '0' + static_cast<char>(c);
   std::fputs(escape, stdout);
@@ -1254,7 +1254,7 @@ FMT_FUNC void fmt::print_colored(Color c, StringRef format, ArgList args) {
   std::fputs(RESET_COLOR, stdout);
 }
 
-FMT_FUNC int fmt::fprintf(std::FILE *f, StringRef format, ArgList args) {
+FMT_FUNC int fmt::fprintf(std::FILE *f, CStringRef format, ArgList args) {
   MemoryWriter w;
   printf(w, format, args);
   std::size_t size = w.size();
@@ -1273,10 +1273,10 @@ template const char *fmt::BasicFormatter<char>::format(
     const char *&format_str, const fmt::internal::Arg &arg);
 
 template void fmt::BasicFormatter<char>::format(
-  BasicStringRef<char> format, const ArgList &args);
+  CStringRef format, const ArgList &args);
 
 template void fmt::internal::PrintfFormatter<char>::format(
-  BasicWriter<char> &writer, BasicStringRef<char> format, const ArgList &args);
+  BasicWriter<char> &writer, CStringRef format, const ArgList &args);
 
 template int fmt::internal::CharTraits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
@@ -1294,10 +1294,10 @@ template const wchar_t *fmt::BasicFormatter<wchar_t>::format(
     const wchar_t *&format_str, const fmt::internal::Arg &arg);
 
 template void fmt::BasicFormatter<wchar_t>::format(
-    BasicStringRef<wchar_t> format, const ArgList &args);
+    BasicCStringRef<wchar_t> format, const ArgList &args);
 
 template void fmt::internal::PrintfFormatter<wchar_t>::format(
-    BasicWriter<wchar_t> &writer, BasicStringRef<wchar_t> format,
+    BasicWriter<wchar_t> &writer, WCStringRef format,
     const ArgList &args);
 
 template int fmt::internal::CharTraits<wchar_t>::format_float(

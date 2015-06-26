@@ -206,8 +206,7 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value);
 
 /**
   \rst
-  A string reference. It can be constructed from a C string or
-  ``std::string``.
+  A string reference. It can be constructed from a C string or ``std::string``.
   
   You can use one of the following typedefs for common character types:
 
@@ -236,9 +235,7 @@ class BasicStringRef {
   std::size_t size_;
 
  public:
-  /**
-    Constructs a string reference object from a C string and a size.
-   */
+  /** Constructs a string reference object from a C string and a size. */
   BasicStringRef(const Char *s, std::size_t size) : data_(s), size_(size) {}
 
   /**
@@ -264,17 +261,13 @@ class BasicStringRef {
     \endrst
    */
   std::basic_string<Char> to_string() const {
-    return std::basic_string<Char>(data_, size());
+    return std::basic_string<Char>(data_, size_);
   }
 
-  /**
-    Returns the pointer to a C string.
-   */
-  const Char *c_str() const { return data_; }
+  /** Returns the pointer to a C string. */
+  const Char *data() const { return data_; }
 
-  /**
-    Returns the string size.
-   */
+  /** Returns the string size. */
   std::size_t size() const { return size_; }
 
   friend bool operator==(BasicStringRef lhs, BasicStringRef rhs) {
@@ -284,19 +277,69 @@ class BasicStringRef {
     return lhs.data_ != rhs.data_;
   }
   friend bool operator<(BasicStringRef lhs, BasicStringRef rhs) {
-    return std::lexicographical_compare(lhs.data_, lhs.data_ + lhs.size_, rhs.data_, rhs.data_ + rhs.size_);
+    return std::lexicographical_compare(
+          lhs.data_, lhs.data_ + lhs.size_, rhs.data_, rhs.data_ + rhs.size_);
   }
 };
 
 typedef BasicStringRef<char> StringRef;
 typedef BasicStringRef<wchar_t> WStringRef;
 
+
+/**
+  \rst
+  A reference to a null terminated string. It can be constructed from a C
+  string or ``std::string``.
+
+  You can use one of the following typedefs for common character types:
+
+  +-------------+--------------------------+
+  | Type        | Definition               |
+  +=============+==========================+
+  | CStringRef  | BasicCStringRef<char>    |
+  +-------------+--------------------------+
+  | WCStringRef | BasicCStringRef<wchar_t> |
+  +-------------+--------------------------+
+
+  This class is most useful as a parameter type to allow passing
+  different types of strings to a function, for example::
+
+    template <typename... Args>
+    std::string format(CStringRef format_str, const Args & ... args);
+
+    format("{}", 42);
+    format(std::string("{}"), 42);
+  \endrst
+ */
+template <typename Char>
+class BasicCStringRef {
+ private:
+  const Char *data_;
+
+ public:
+  /** Constructs a string reference object from a C string. */
+  BasicCStringRef(const Char *s) : data_(s) {}
+
+  /**
+    \rst
+    Constructs a string reference from an ``std::string`` object.
+    \endrst
+   */
+  BasicCStringRef(const std::basic_string<Char> &s) : data_(s.c_str()) {}
+
+  /** Returns the pointer to a C string. */
+  const Char *c_str() const { return data_; }
+};
+
+typedef BasicCStringRef<char> CStringRef;
+typedef BasicCStringRef<wchar_t> WCStringRef;
+
 /**
   A formatting error such as invalid format string.
 */
 class FormatError : public std::runtime_error {
  public:
-  explicit FormatError(StringRef message)
+  explicit FormatError(CStringRef message)
   : std::runtime_error(message.c_str()) {}
 };
 
@@ -874,12 +917,12 @@ class MakeValue : public Arg {
   MakeValue(typename WCharHelper<WStringRef, Char>::Unsupported);
 
   void set_string(StringRef str) {
-    string.value = str.c_str();
+    string.value = str.data();
     string.size = str.size();
   }
 
   void set_string(WStringRef str) {
-    wstring.value = str.c_str();
+    wstring.value = str.data();
     wstring.size = str.size();
   }
 
@@ -895,9 +938,12 @@ class MakeValue : public Arg {
  public:
   MakeValue() {}
 
-#define FMT_MAKE_VALUE(Type, field, TYPE) \
-  MakeValue(Type value) { field = value; } \
+#define FMT_MAKE_VALUE_(Type, field, TYPE, rhs) \
+  MakeValue(Type value) { field = rhs; } \
   static uint64_t type(Type) { return Arg::TYPE; }
+
+#define FMT_MAKE_VALUE(Type, field, TYPE) \
+  FMT_MAKE_VALUE_(Type, field, TYPE, value)
 
   FMT_MAKE_VALUE(bool, int_value, BOOL)
   FMT_MAKE_VALUE(short, int_value, INT)
@@ -952,6 +998,7 @@ class MakeValue : public Arg {
   FMT_MAKE_VALUE(const unsigned char *, ustring.value, CSTRING)
   FMT_MAKE_STR_VALUE(const std::string &, STRING)
   FMT_MAKE_STR_VALUE(StringRef, STRING)
+  FMT_MAKE_VALUE_(CStringRef, string.value, CSTRING, value.c_str())
 
 #define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
   MakeValue(typename WCharHelper<Type, Char>::Supported value) { \
@@ -1270,7 +1317,7 @@ class PrintfFormatter : private FormatterBase {
 
  public:
   void format(BasicWriter<Char> &writer,
-    BasicStringRef<Char> format_str, const ArgList &args);
+    BasicCStringRef<Char> format_str, const ArgList &args);
 };
 }  // namespace internal
 
@@ -1301,7 +1348,7 @@ class BasicFormatter : private internal::FormatterBase {
 
   BasicWriter<Char> &writer() { return writer_; }
 
-  void format(BasicStringRef<Char> format_str, const ArgList &args);
+  void format(BasicCStringRef<Char> format_str, const ArgList &args);
 
   const Char *format(const Char *&format_str, const internal::Arg &arg);
 };
@@ -1729,7 +1776,7 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 */
 class SystemError : public internal::RuntimeError {
  private:
-  void init(int err_code, StringRef format_str, ArgList args);
+  void init(int err_code, CStringRef format_str, ArgList args);
 
  protected:
   int error_code_;
@@ -1764,10 +1811,10 @@ class SystemError : public internal::RuntimeError {
        throw fmt::SystemError(errno, "cannot open file '{}'", filename);
    \endrst
   */
-  SystemError(int error_code, StringRef message) {
+  SystemError(int error_code, CStringRef message) {
     init(error_code, message, ArgList());
   }
-  FMT_VARIADIC_CTOR(SystemError, init, int, StringRef)
+  FMT_VARIADIC_CTOR(SystemError, init, int, CStringRef)
 
   int error_code() const { return error_code_; }
 };
@@ -1942,10 +1989,10 @@ class BasicWriter {
     See also :ref:`syntax`.
     \endrst
    */
-  void write(BasicStringRef<Char> format, ArgList args) {
+  void write(BasicCStringRef<Char> format, ArgList args) {
     BasicFormatter<Char>(*this).format(format, args);
   }
-  FMT_VARIADIC_VOID(write, BasicStringRef<Char>)
+  FMT_VARIADIC_VOID(write, BasicCStringRef<Char>)
 
   BasicWriter &operator<<(int value) {
     return *this << IntFormatSpec<int>(value);
@@ -2008,14 +2055,14 @@ class BasicWriter {
     \endrst
    */
   BasicWriter &operator<<(fmt::BasicStringRef<Char> value) {
-    const Char *str = value.c_str();
+    const Char *str = value.data();
     buffer_.append(str, str + value.size());
     return *this;
   }
 
   BasicWriter &operator<<(
       typename internal::WCharHelper<StringRef, Char>::Supported value) {
-    const char *str = value.c_str();
+    const char *str = value.data();
     buffer_.append(str, str + value.size());
     return *this;
   }
@@ -2561,7 +2608,7 @@ enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
   Example:
     PrintColored(fmt::RED, "Elapsed time: {0:.2f} seconds") << 1.23;
  */
-void print_colored(Color c, StringRef format, ArgList args);
+void print_colored(Color c, CStringRef format, ArgList args);
 
 /**
   \rst
@@ -2572,13 +2619,13 @@ void print_colored(Color c, StringRef format, ArgList args);
     std::string message = format("The answer is {}", 42);
   \endrst
 */
-inline std::string format(StringRef format_str, ArgList args) {
+inline std::string format(CStringRef format_str, ArgList args) {
   MemoryWriter w;
   w.write(format_str, args);
   return w.str();
 }
 
-inline std::wstring format(WStringRef format_str, ArgList args) {
+inline std::wstring format(WCStringRef format_str, ArgList args) {
   WMemoryWriter w;
   w.write(format_str, args);
   return w.str();
@@ -2593,7 +2640,7 @@ inline std::wstring format(WStringRef format_str, ArgList args) {
     print(stderr, "Don't {}!", "panic");
   \endrst
  */
-void print(std::FILE *f, StringRef format_str, ArgList args);
+void print(std::FILE *f, CStringRef format_str, ArgList args);
 
 /**
   \rst
@@ -2604,7 +2651,7 @@ void print(std::FILE *f, StringRef format_str, ArgList args);
     print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-void print(StringRef format_str, ArgList args);
+void print(CStringRef format_str, ArgList args);
 
 /**
   \rst
@@ -2615,10 +2662,10 @@ void print(StringRef format_str, ArgList args);
     print(cerr, "Don't {}!", "panic");
   \endrst
  */
-void print(std::ostream &os, StringRef format_str, ArgList args);
+void print(std::ostream &os, CStringRef format_str, ArgList args);
 
 template <typename Char>
-void printf(BasicWriter<Char> &w, BasicStringRef<Char> format, ArgList args) {
+void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
   internal::PrintfFormatter<Char>().format(w, format, args);
 }
 
@@ -2631,7 +2678,7 @@ void printf(BasicWriter<Char> &w, BasicStringRef<Char> format, ArgList args) {
     std::string message = fmt::sprintf("The answer is %d", 42);
   \endrst
 */
-inline std::string sprintf(StringRef format, ArgList args) {
+inline std::string sprintf(CStringRef format, ArgList args) {
   MemoryWriter w;
   printf(w, format, args);
   return w.str();
@@ -2646,7 +2693,7 @@ inline std::string sprintf(StringRef format, ArgList args) {
     fmt::fprintf(stderr, "Don't %s!", "panic");
   \endrst
  */
-int fprintf(std::FILE *f, StringRef format, ArgList args);
+int fprintf(std::FILE *f, CStringRef format, ArgList args);
 
 /**
   \rst
@@ -2657,7 +2704,7 @@ int fprintf(std::FILE *f, StringRef format, ArgList args);
     fmt::printf("Elapsed time: %.2f seconds", 1.23);
   \endrst
  */
-inline int printf(StringRef format, ArgList args) {
+inline int printf(CStringRef format, ArgList args) {
   return fprintf(stdout, format, args);
 }
 
@@ -2918,15 +2965,15 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 #define FMT_CAPTURE_W(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_W_, __VA_ARGS__)
 
 namespace fmt {
-FMT_VARIADIC(std::string, format, StringRef)
-FMT_VARIADIC_W(std::wstring, format, WStringRef)
-FMT_VARIADIC(void, print, StringRef)
-FMT_VARIADIC(void, print, std::FILE *, StringRef)
-FMT_VARIADIC(void, print, std::ostream &, StringRef)
-FMT_VARIADIC(void, print_colored, Color, StringRef)
-FMT_VARIADIC(std::string, sprintf, StringRef)
-FMT_VARIADIC(int, printf, StringRef)
-FMT_VARIADIC(int, fprintf, std::FILE *, StringRef)
+FMT_VARIADIC(std::string, format, CStringRef)
+FMT_VARIADIC_W(std::wstring, format, WCStringRef)
+FMT_VARIADIC(void, print, CStringRef)
+FMT_VARIADIC(void, print, std::FILE *, CStringRef)
+FMT_VARIADIC(void, print, std::ostream &, CStringRef)
+FMT_VARIADIC(void, print_colored, Color, CStringRef)
+FMT_VARIADIC(std::string, sprintf, CStringRef)
+FMT_VARIADIC(int, printf, CStringRef)
+FMT_VARIADIC(int, fprintf, std::FILE *, CStringRef)
 }
 
 // Restore warnings.

@@ -64,7 +64,7 @@ File open_file() {
 // Attempts to write a string to a file.
 void write(File &f, fmt::StringRef s) {
   std::size_t num_chars_left = s.size();
-  const char *ptr = s.c_str();
+  const char *ptr = s.data();
   do {
     std::streamsize count = f.write(ptr, num_chars_left);
     ptr += count;

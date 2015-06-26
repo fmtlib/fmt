@@ -66,6 +66,7 @@ using fmt::BasicWriter;
 using fmt::format;
 using fmt::FormatError;
 using fmt::StringRef;
+using fmt::CStringRef;
 using fmt::MemoryWriter;
 using fmt::WMemoryWriter;
 using fmt::pad;
@@ -135,6 +136,24 @@ struct WriteChecker {
 #define CHECK_WRITE_WCHAR(value) \
   EXPECT_PRED_FORMAT1(WriteChecker<wchar_t>(), value)
 }  // namespace
+
+TEST(StringRefTest, Ctor) {
+  EXPECT_STREQ("abc", StringRef("abc").data());
+  EXPECT_EQ(3u, StringRef("abc").size());
+
+  EXPECT_STREQ("defg", StringRef(std::string("defg")).data());
+  EXPECT_EQ(4u, StringRef(std::string("defg")).size());
+}
+
+TEST(StringRefTest, ConvertToString) {
+  std::string s = StringRef("abc").to_string();
+  EXPECT_EQ("abc", s);
+}
+
+TEST(CStringRefTest, Ctor) {
+  EXPECT_STREQ("abc", CStringRef("abc").c_str());
+  EXPECT_STREQ("defg", CStringRef(std::string("defg")).c_str());
+}
 
 class TestString {
  private:
@@ -583,7 +602,7 @@ TEST(FormatterTest, ArgErrors) {
 template <int N>
 struct TestFormat {
   template <typename... Args>
-  static std::string format(fmt::StringRef format_str, const Args & ... args) {
+  static std::string format(fmt::CStringRef format_str, const Args & ... args) {
     return TestFormat<N - 1>::format(format_str, N - 1, args...);
   }
 };
@@ -591,7 +610,7 @@ struct TestFormat {
 template <>
 struct TestFormat<0> {
   template <typename... Args>
-  static std::string format(fmt::StringRef format_str, const Args & ... args) {
+  static std::string format(fmt::CStringRef format_str, const Args & ... args) {
     return fmt::format(format_str, args...);
   }
 };
@@ -1372,6 +1391,10 @@ TEST(FormatterTest, FormatStringRef) {
   EXPECT_EQ("test", format("{0}", StringRef("test")));
 }
 
+TEST(FormatterTest, FormatCStringRef) {
+  EXPECT_EQ("test", format("{0}", CStringRef("test")));
+}
+
 TEST(FormatterTest, FormatUsingIOStreams) {
   EXPECT_EQ("a string", format("{0}", TestString("a string")));
   std::string s = format("The date is {0}", Date(2012, 12, 9));
@@ -1438,19 +1461,6 @@ TEST(FormatterTest, FormatExamples) {
     if (!f)
       throw fmt::SystemError(errno, "Cannot open file '{}'", filename);
   }, error_code, "Cannot open file 'nonexistent'");
-}
-
-TEST(StringRefTest, Ctor) {
-  EXPECT_STREQ("abc", StringRef("abc").c_str());
-  EXPECT_EQ(3u, StringRef("abc").size());
-
-  EXPECT_STREQ("defg", StringRef(std::string("defg")).c_str());
-  EXPECT_EQ(4u, StringRef(std::string("defg")).size());
-}
-
-TEST(StringRefTest, ConvertToString) {
-  std::string s = StringRef("abc").to_string();
-  EXPECT_EQ("abc", s);
 }
 
 TEST(FormatterTest, Examples) {
