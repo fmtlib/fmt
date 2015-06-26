@@ -24,15 +24,15 @@ arguments in the resulting string.
 
 .. _format:
 
-.. doxygenfunction:: format(StringRef, ArgList)
+.. doxygenfunction:: format(CStringRef, ArgList)
 
 .. _print:
 
-.. doxygenfunction:: print(StringRef, ArgList)
+.. doxygenfunction:: print(CStringRef, ArgList)
 
-.. doxygenfunction:: print(std::FILE *, StringRef, ArgList)
+.. doxygenfunction:: print(std::FILE *, CStringRef, ArgList)
 
-.. doxygenfunction:: print(std::ostream&, StringRef, ArgList)
+.. doxygenfunction:: print(std::ostream&, CStringRef, ArgList)
 
 Printf formatting functions
 ===========================
@@ -41,11 +41,11 @@ The following functions use `printf format string syntax
 <http://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html>`_ with
 a POSIX extension for positional arguments.
 
-.. doxygenfunction:: printf(StringRef, ArgList)
+.. doxygenfunction:: printf(CStringRef, ArgList)
 
-.. doxygenfunction:: fprintf(std::FILE*, StringRef, ArgList)
+.. doxygenfunction:: fprintf(std::FILE*, CStringRef, ArgList)
 
-.. doxygenfunction:: sprintf(StringRef, ArgList)
+.. doxygenfunction:: sprintf(CStringRef, ArgList)
 
 Write API
 =========
@@ -84,6 +84,9 @@ Utilities
 .. doxygenclass:: fmt::BasicStringRef
    :members:
 
+.. doxygenclass:: fmt::BasicCStringRef
+   :members:
+
 .. doxygenclass:: fmt::Buffer
    :protected-members:
    :members:
@@ -113,10 +116,10 @@ allocator::
 
     typedef std::basic_string<char, std::char_traits<char>, CustomAllocator> CustomString;
 
-    CustomString format(CustomAllocator alloc, fmt::StringRef format_str,
+    CustomString format(CustomAllocator alloc, fmt::CStringRef format_str,
                         fmt::ArgList args) {
       CustomMemoryWriter writer(alloc);
       writer.write(format_str, args);
       return CustomString(writer.data(), writer.size(), alloc);
     }
-    FMT_VARIADIC(CustomString, format, CustomAllocator, fmt::StringRef)
+    FMT_VARIADIC(CustomString, format, CustomAllocator, fmt::CStringRef)
