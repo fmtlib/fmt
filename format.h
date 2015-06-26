@@ -2557,7 +2557,7 @@ void report_system_error(int error_code, StringRef message) FMT_NOEXCEPT;
 /** A Windows error. */
 class WindowsError : public SystemError {
  private:
-  void init(int error_code, StringRef format_str, ArgList args);
+  void init(int error_code, CStringRef format_str, ArgList args);
 
  public:
   /**
@@ -2588,10 +2588,10 @@ class WindowsError : public SystemError {
      }
    \endrst
   */
-  WindowsError(int error_code, StringRef message) {
+  WindowsError(int error_code, CStringRef message) {
     init(error_code, message, ArgList());
   }
-  FMT_VARIADIC_CTOR(WindowsError, init, int, StringRef)
+  FMT_VARIADIC_CTOR(WindowsError, init, int, CStringRef)
 };
 
 // Reports a Windows error without throwing an exception.
