@@ -616,11 +616,12 @@ FMT_FUNC fmt::internal::UTF8ToUTF16::UTF8ToUTF16(fmt::StringRef s) {
   static const char ERROR_MSG[] = "cannot convert string from UTF-8 to UTF-16";
   if (length == 0)
     FMT_THROW(WindowsError(GetLastError(), ERROR_MSG));
-  buffer_.resize(length);
+  buffer_.resize(length + 1);
   length = MultiByteToWideChar(
     CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s.size(), &buffer_[0], length);
   if (length == 0)
     FMT_THROW(WindowsError(GetLastError(), ERROR_MSG));
+  buffer_[length] = 0;
 }
 
 FMT_FUNC fmt::internal::UTF16ToUTF8::UTF16ToUTF8(fmt::WStringRef s) {
@@ -634,11 +635,12 @@ FMT_FUNC int fmt::internal::UTF16ToUTF8::convert(fmt::WStringRef s) {
   int length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s.size(), 0, 0, 0, 0);
   if (length == 0)
     return GetLastError();
-  buffer_.resize(length);
+  buffer_.resize(length + 1);
   length = WideCharToMultiByte(
     CP_UTF8, 0, s.data(), s.size(), &buffer_[0], length, 0, 0);
   if (length == 0)
     return GetLastError();
+  buffer_[length] = 0;
   return 0;
 }
 
