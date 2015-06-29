@@ -119,7 +119,11 @@ add_library(gmock STATIC
   gmock/gmock-gtest-all.cc gmock/gmock/gmock.h
   gmock/gtest/gtest.h gmock/gtest/gtest-spi.h)
 find_package(Threads)
-target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
+if (Threads_FOUND)
+  target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
+else ()
+  target_compile_definitions(gmock PUBLIC GTEST_HAS_PTHREAD=0)
+endif ()
 
 # Check if variadic templates are working and not affected by GCC bug 39653:
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39653
