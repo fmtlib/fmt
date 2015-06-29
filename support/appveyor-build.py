@@ -14,7 +14,7 @@ if build == 'mingw':
   test_command = ['mingw32-make', 'test']
   # Remove the path to Git bin directory from $PATH because it breaks MinGW config.
   path = path.replace(r'C:\Program Files (x86)\Git\bin', '')
-  os.environ['PATH'] = path + r';C:\MinGW\bin'
+  os.environ['PATH'] = r'C:\MinGW\bin;' + path
 else:
   # Add MSBuild 14.0 to PATH as described in
   # http://help.appveyor.com/discussions/problems/2229-v140-not-found-on-vs2105rc.
