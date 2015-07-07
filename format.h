@@ -833,20 +833,20 @@ template <typename Char>
 struct NamedArg;
 
 template <typename T = void>
-struct None {};
+struct Null {};
 
 // A helper class template to enable or disable overloads taking wide
 // characters and strings in MakeValue.
 template <typename T, typename Char>
 struct WCharHelper {
-  typedef None<T> Supported;
+  typedef Null<T> Supported;
   typedef T Unsupported;
 };
 
 template <typename T>
 struct WCharHelper<T, wchar_t> {
   typedef T Supported;
-  typedef None<T> Unsupported;
+  typedef Null<T> Unsupported;
 };
 
 template <typename T>

@@ -42,6 +42,9 @@
 
 #include "gmock/gmock.h"
 
+// Test that the library compiles if None is defined to 0 as done by xlib.h.
+#define None 0
+
 #include "format.h"
 #include "util.h"
 #include "mock-allocator.h"

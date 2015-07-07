@@ -95,11 +95,11 @@ using fmt::internal::Arg;
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
-static inline fmt::internal::None<> strerror_r(int, char *, ...) {
-  return fmt::internal::None<>();
+static inline fmt::internal::Null<> strerror_r(int, char *, ...) {
+  return fmt::internal::Null<>();
 }
-static inline fmt::internal::None<> strerror_s(char *, std::size_t, ...) {
-  return fmt::internal::None<>();
+static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
+  return fmt::internal::Null<>();
 }
 
 namespace fmt {
@@ -185,7 +185,7 @@ int safe_strerror(
     }
 
     // Handle the case when strerror_r is not available.
-    int handle(fmt::internal::None<>) {
+    int handle(fmt::internal::Null<>) {
       return fallback(strerror_s(buffer_, buffer_size_, error_code_));
     }
 
@@ -197,7 +197,7 @@ int safe_strerror(
     }
 
     // Fallback to strerror if strerror_r and strerror_s are not available.
-    int fallback(fmt::internal::None<>) {
+    int fallback(fmt::internal::Null<>) {
       errno = 0;
       buffer_ = strerror(error_code_);
       return errno;
