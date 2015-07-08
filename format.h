@@ -1145,7 +1145,7 @@ class ArgVisitor {
     case Arg::ULONG_LONG:
       return FMT_DISPATCH(visit_ulong_long(arg.ulong_long_value));
     case Arg::BOOL:
-      return FMT_DISPATCH(visit_bool(arg.int_value));
+      return FMT_DISPATCH(visit_bool(arg.int_value != 0));
     case Arg::CHAR:
       return FMT_DISPATCH(visit_char(arg.int_value));
     case Arg::DOUBLE:
