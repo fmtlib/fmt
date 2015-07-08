@@ -50,7 +50,7 @@ std::string get_system_error(int error_code) {
 #endif
 }
 
-const char FILE_CONTENT[] = "Don't panic!";
+const char *FILE_CONTENT = "Don't panic!";
 
 fmt::BufferedFile open_buffered_file(FILE **fp) {
   fmt::File read_end, write_end;

@@ -52,7 +52,7 @@ void increment(char *s);
 
 std::string get_system_error(int error_code);
 
-extern const char FILE_CONTENT[];
+extern const char *FILE_CONTENT;
 
 // Opens a buffered file for reading.
 fmt::BufferedFile open_buffered_file(FILE **fp = 0);
