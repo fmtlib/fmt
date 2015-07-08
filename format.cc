@@ -133,6 +133,7 @@ struct IntChecker {
     unsigned max = INT_MAX;
     return value <= max;
   }
+  static bool fits_in_int(bool) { return true; }
 };
 
 template <>
