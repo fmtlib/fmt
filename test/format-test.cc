@@ -50,16 +50,6 @@
 #include "mock-allocator.h"
 #include "gtest-extra.h"
 
-#if defined(_WIN32) && !defined(__MINGW32__)
-// Fix MSVC warning about "unsafe" fopen.
-FILE *safe_fopen(const char *filename, const char *mode) {
-  FILE *f = 0;
-  errno = fopen_s(&f, filename, mode);
-  return f;
-}
-#define fopen safe_fopen
-#endif
-
 #undef min
 #undef max
 
@@ -1456,11 +1446,11 @@ TEST(FormatterTest, FormatExamples) {
   }
 
   const char *filename = "nonexistent";
-  FILE *ftest = fopen(filename, "r");
+  FILE *ftest = safe_fopen(filename, "r");
   int error_code = errno;
   EXPECT_TRUE(ftest == 0);
   EXPECT_SYSTEM_ERROR({
-    FILE *f = fopen(filename, "r");
+    FILE *f = safe_fopen(filename, "r");
     if (!f)
       throw fmt::SystemError(errno, "Cannot open file '{}'", filename);
   }, error_code, "Cannot open file 'nonexistent'");

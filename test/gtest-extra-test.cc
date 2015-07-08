@@ -40,19 +40,6 @@
 
 namespace {
 
-#ifdef _MSC_VER
-// Fix "secure" warning about using fopen without defining
-// _CRT_SECURE_NO_WARNINGS.
-FILE *safe_fopen(const char *filename, const char *mode) {
-  FILE *f = 0;
-  errno = fopen_s(&f, filename, mode);
-  return f;
-}
-#define fopen safe_fopen
-#else
-using std::fopen;
-#endif  // _MSC_VER
-
 // Tests that assertion macros evaluate their arguments exactly once.
 class SingleEvaluationTest : public ::testing::Test {
  protected:

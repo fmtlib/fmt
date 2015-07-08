@@ -184,7 +184,7 @@ TEST(FileTest, DefaultCtor) {
 }
 
 TEST(FileTest, OpenBufferedFileInCtor) {
-  FILE *fp = fopen("test-file", "w");
+  FILE *fp = safe_fopen("test-file", "w");
   std::fputs(FILE_CONTENT, fp);
   std::fclose(fp);
   File f("test-file", File::RDONLY);

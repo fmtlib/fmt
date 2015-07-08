@@ -56,3 +56,14 @@ extern const char *const FILE_CONTENT;
 
 // Opens a buffered file for reading.
 fmt::BufferedFile open_buffered_file(FILE **fp = 0);
+
+inline FILE *safe_fopen(const char *filename, const char *mode) {
+#if defined(_WIN32) && !defined(__MINGW32__)
+  // Fix MSVC warning about "unsafe" fopen.
+  FILE *f = 0;
+  errno = fopen_s(&f, filename, mode);
+  return f;
+#else
+  return std::fopen(filename, mode);
+#endif
+}
