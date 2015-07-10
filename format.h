@@ -857,11 +857,11 @@ class IsConvertibleToInt {
 
   static const T &get();
 
-  static yes &check(fmt::ULongLong);
-  static no &check(...);
+  static yes &convert(fmt::ULongLong);
+  static no &convert(...);
   
  public:
-  enum { value = (sizeof(check(get())) == sizeof(yes)) };
+  enum { value = (sizeof(convert(get())) == sizeof(yes)) };
 };
 
 #define FMT_CONVERTIBLE_TO_INT(Type) \
