@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # Build the documentation.
 
 from __future__ import print_function
@@ -17,7 +17,7 @@ def pip_install(package, commit=None):
       # Old versions of pip such as the one installed on Travis don't support
       # the show command - continue installation in this case.
       # Otherwise throw CalledProcessError.
-      if 'No command by the name pip show' not in stderr:
+      if p.returncode > 1 and 'No command by the name pip show' not in stderr:
         raise CalledProcessError(p.returncode, cmd)
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   check_call(['pip', 'install', '-q', package])
