@@ -11,12 +11,14 @@ def pip_install(package, commit=None):
     cmd = ['pip', 'show', package.split('/')[1]]
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate()
-    if p.returncode != 0:
-      # Check if pip supports the show command.
+    if stdout:
+      return # Already installed
+    elif p.returncode != 0:
+      # Old versions of pip such as the one installed on Travis don't support
+      # the show command - continue installation in this case.
+      # Otherwise throw CalledProcessError.
       if 'No command by the name pip show' not in stderr:
         raise CalledProcessError(p.returncode, cmd)
-    elif stdout:
-      return # Already installed
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   check_call(['pip', 'install', '-q', package])
 
