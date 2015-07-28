@@ -1192,7 +1192,6 @@ const Char *fmt::BasicFormatter<Char>::format(
 
   if (*s++ != '}')
     FMT_THROW(FormatError("missing '}' in format string"));
-  start_ = s;
 
   // Format argument.
   internal::ArgFormatter<Char>(*this, spec, s - 1).visit(arg);
@@ -1202,23 +1201,24 @@ const Char *fmt::BasicFormatter<Char>::format(
 template <typename Char>
 void fmt::BasicFormatter<Char>::format(
     BasicCStringRef<Char> format_str, const ArgList &args) {
-  const Char *s = start_ = format_str.c_str();
+  const Char *s = format_str.c_str();
+  const Char *start = s;
   set_args(args);
   while (*s) {
     Char c = *s++;
     if (c != '{' && c != '}') continue;
     if (*s == c) {
-      write(writer_, start_, s);
-      start_ = ++s;
+      write(writer_, start, s);
+      start = ++s;
       continue;
     }
     if (c == '}')
       FMT_THROW(FormatError("unmatched '}' in format string"));
-    write(writer_, start_, s - 1);
+    write(writer_, start, s - 1);
     Arg arg = is_name_start(*s) ? parse_arg_name(s) : parse_arg_index(s);
-    s = format(s, arg);
+    start = s = format(s, arg);
   }
-  write(writer_, start_, s);
+  write(writer_, start, s);
 }
 
 FMT_FUNC void fmt::report_system_error(

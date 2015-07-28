@@ -1326,7 +1326,6 @@ template <typename Char>
 class BasicFormatter : private internal::FormatterBase {
  private:
   BasicWriter<Char> &writer_;
-  const Char *start_;
   internal::ArgMap<Char> map_;
   
   FMT_DISALLOW_COPY_AND_ASSIGN(BasicFormatter);
