@@ -1280,7 +1280,7 @@ class FormatterBase {
  protected:
   const ArgList &args() const { return args_; }
 
-  void set_args(const ArgList &args) {
+  explicit FormatterBase(const ArgList &args) {
     args_ = args;
     next_arg_index_ = 0;
   }
@@ -1316,8 +1316,8 @@ class PrintfFormatter : private FormatterBase {
   unsigned parse_header(const Char *&s, FormatSpec &spec);
 
  public:
-  void format(BasicWriter<Char> &writer,
-    BasicCStringRef<Char> format_str, const ArgList &args);
+  explicit PrintfFormatter(const ArgList &args) : FormatterBase(args) {}
+  void format(BasicWriter<Char> &writer, BasicCStringRef<Char> format_str);
 };
 }  // namespace internal
 
@@ -1343,11 +1343,12 @@ class BasicFormatter : private internal::FormatterBase {
   internal::Arg parse_arg_name(const Char *&s);
 
  public:
-  explicit BasicFormatter(BasicWriter<Char> &w) : writer_(w) {}
+  BasicFormatter(const ArgList &args, BasicWriter<Char> &w)
+    : FormatterBase(args), writer_(w) {}
 
   BasicWriter<Char> &writer() { return writer_; }
 
-  void format(BasicCStringRef<Char> format_str, const ArgList &args);
+  void format(BasicCStringRef<Char> format_str);
 
   const Char *format(const Char *&format_str, const internal::Arg &arg);
 };
@@ -1989,7 +1990,7 @@ class BasicWriter {
     \endrst
    */
   void write(BasicCStringRef<Char> format, ArgList args) {
-    BasicFormatter<Char>(*this).format(format, args);
+    BasicFormatter<Char>(args, *this).format(format);
   }
   FMT_VARIADIC_VOID(write, BasicCStringRef<Char>)
 
@@ -2665,7 +2666,7 @@ void print(std::ostream &os, CStringRef format_str, ArgList args);
 
 template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
-  internal::PrintfFormatter<Char>().format(w, format, args);
+  internal::PrintfFormatter<Char>(args).format(w, format);
 }
 
 /**

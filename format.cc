@@ -930,10 +930,8 @@ unsigned fmt::internal::PrintfFormatter<Char>::parse_header(
 
 template <typename Char>
 void fmt::internal::PrintfFormatter<Char>::format(
-    BasicWriter<Char> &writer, BasicCStringRef<Char> format_str,
-    const ArgList &args) {
+    BasicWriter<Char> &writer, BasicCStringRef<Char> format_str) {
   const Char *start = format_str.c_str();
-  set_args(args);
   const Char *s = start;
   while (*s) {
     Char c = *s++;
@@ -1199,11 +1197,9 @@ const Char *fmt::BasicFormatter<Char>::format(
 }
 
 template <typename Char>
-void fmt::BasicFormatter<Char>::format(
-    BasicCStringRef<Char> format_str, const ArgList &args) {
+void fmt::BasicFormatter<Char>::format(BasicCStringRef<Char> format_str) {
   const Char *s = format_str.c_str();
   const Char *start = s;
-  set_args(args);
   while (*s) {
     Char c = *s++;
     if (c != '{' && c != '}') continue;
@@ -1275,11 +1271,10 @@ template void fmt::internal::FixedBuffer<char>::grow(std::size_t);
 template const char *fmt::BasicFormatter<char>::format(
     const char *&format_str, const fmt::internal::Arg &arg);
 
-template void fmt::BasicFormatter<char>::format(
-  CStringRef format, const ArgList &args);
+template void fmt::BasicFormatter<char>::format(CStringRef format);
 
 template void fmt::internal::PrintfFormatter<char>::format(
-  BasicWriter<char> &writer, CStringRef format, const ArgList &args);
+  BasicWriter<char> &writer, CStringRef format);
 
 template int fmt::internal::CharTraits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
@@ -1297,11 +1292,10 @@ template const wchar_t *fmt::BasicFormatter<wchar_t>::format(
     const wchar_t *&format_str, const fmt::internal::Arg &arg);
 
 template void fmt::BasicFormatter<wchar_t>::format(
-    BasicCStringRef<wchar_t> format, const ArgList &args);
+    BasicCStringRef<wchar_t> format);
 
 template void fmt::internal::PrintfFormatter<wchar_t>::format(
-    BasicWriter<wchar_t> &writer, WCStringRef format,
-    const ArgList &args);
+    BasicWriter<wchar_t> &writer, WCStringRef format);
 
 template int fmt::internal::CharTraits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,

@@ -561,7 +561,7 @@ TEST(ArgTest, MakeArg) {
   EXPECT_EQ(fmt::internal::Arg::CUSTOM, arg.type);
   EXPECT_EQ(&t, arg.custom.value);
   fmt::MemoryWriter w;
-  fmt::BasicFormatter<char> formatter(w);
+  fmt::BasicFormatter<char> formatter(fmt::ArgList(), w);
   const char *s = "}";
   arg.custom.format(&formatter, &t, &s);
   EXPECT_EQ("test", w.str());
