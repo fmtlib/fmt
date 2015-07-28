@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <climits>
+#include <memory>
 
 #ifdef _WIN32
 # include <io.h>
@@ -247,11 +248,11 @@ TEST(FileTest, OpenRetry) {
 TEST(FileTest, CloseNoRetryInDtor) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
-  File *f = new File(std::move(read_end));
+  std::auto_ptr<File> f(new File(std::move(read_end)));
   int saved_close_count = 0;
   EXPECT_WRITE(stderr, {
     close_count = 1;
-    delete f;
+    f.reset();
     saved_close_count = close_count;
     close_count = 0;
   }, format_system_error(EINTR, "cannot close file") + "\n");

@@ -26,6 +26,7 @@
  */
 
 #include <cstring>
+#include <memory>
 
 #include "gtest-extra.h"
 #include "posix.h"
@@ -136,14 +137,14 @@ TEST(BufferedFileTest, CloseFileInDtor) {
 }
 
 TEST(BufferedFileTest, CloseErrorInDtor) {
-  BufferedFile *f = new BufferedFile(open_buffered_file());
+  std::auto_ptr<BufferedFile> f(new BufferedFile(open_buffered_file()));
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
       // output in EXPECT_STDERR and the second close will break output
       // redirection.
       FMT_POSIX(close(f->fileno()));
-      SUPPRESS_ASSERT(delete f);
+      SUPPRESS_ASSERT(f.reset());
   }, format_system_error(EBADF, "cannot close file") + "\n");
 }
 
