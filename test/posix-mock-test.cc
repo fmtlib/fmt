@@ -34,7 +34,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <climits>
-#include <memory>
 
 #ifdef _WIN32
 # include <io.h>
@@ -248,7 +247,7 @@ TEST(FileTest, OpenRetry) {
 TEST(FileTest, CloseNoRetryInDtor) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
-  std::auto_ptr<File> f(new File(std::move(read_end)));
+  testing::internal::scoped_ptr<File> f(new File(std::move(read_end)));
   int saved_close_count = 0;
   EXPECT_WRITE(stderr, {
     close_count = 1;

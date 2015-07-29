@@ -26,7 +26,6 @@
  */
 
 #include <cstring>
-#include <memory>
 
 #include "gtest-extra.h"
 #include "posix.h"
@@ -137,7 +136,8 @@ TEST(BufferedFileTest, CloseFileInDtor) {
 }
 
 TEST(BufferedFileTest, CloseErrorInDtor) {
-  std::auto_ptr<BufferedFile> f(new BufferedFile(open_buffered_file()));
+  testing::internal::scoped_ptr<BufferedFile> f(
+        new BufferedFile(open_buffered_file()));
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
