@@ -18,3 +18,5 @@ addons:
     build_command_prepend: cmake .
     build_command: make -j4
     branch_pattern: coverity_scan
+
+script: true
