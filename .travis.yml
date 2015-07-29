@@ -10,12 +10,6 @@ env:
         Gsnp9ERFnXt+diCfc7Vb72g+7HDn1MCHvw4zfUDdoBh9bxxFlLQRlzZZfwWhzni57lflrt
         0QHXafu+oBVOJuNv6WauV3+ZyuWIQRmNGjZFNLvZsXHK/dyad2vGQBPvEkb+8l/aCyTpbr
         6pxmyzLHSn1ZR7OX5rfPvwM3tOyZ3H0=
-    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-    # via the "travis encrypt" command using the project repo's public key.
-    - secure: |-
-        Edkq75sWlKsPhiffnpAYxDm9E9zGg1Hf3rOwSlMZjwS5BmcjU3iteTXfS+cSUbh4YAbgc+
-        3OK+oKtCg7YV0X7AFmz/YOy0Ch8RXM4p0NxV/+OONjno77MsgFVkV41L2wilp5IXbz8nWl
-        j/HBbZMLPRqtHqEBHMUKGy4VEKq9sBg=
   matrix:
     - BUILD=Doc
     - BUILD=Debug
@@ -28,13 +22,3 @@ matrix:
 
 script:
   - support/travis-build.py
-
-addons:
-  coverity_scan:
-    project:
-      name: "cppformat/cppformat"
-      description: "Small, safe and fast formatting library for C++"
-    notification_email: victor.zverovich@gmail.com
-    build_command_prepend: cmake .
-    build_command: make -j4
-    branch_pattern: coverity_scan
