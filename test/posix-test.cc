@@ -39,6 +39,8 @@ using fmt::BufferedFile;
 using fmt::ErrorCode;
 using fmt::File;
 
+using testing::internal::scoped_ptr;
+
 // Checks if the file is open by reading one character from it.
 bool isopen(int fd) {
   char buffer;
@@ -136,8 +138,7 @@ TEST(BufferedFileTest, CloseFileInDtor) {
 }
 
 TEST(BufferedFileTest, CloseErrorInDtor) {
-  testing::internal::scoped_ptr<BufferedFile> f(
-        new BufferedFile(open_buffered_file()));
+  scoped_ptr<BufferedFile> f(new BufferedFile(open_buffered_file()));
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
@@ -261,14 +262,14 @@ TEST(FileTest, CloseFileInDtor) {
 }
 
 TEST(FileTest, CloseErrorInDtor) {
-  File *f = new File(open_file());
+  scoped_ptr<File> f(new File(open_file()));
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
       // output in EXPECT_STDERR and the second close will break output
       // redirection.
       FMT_POSIX(close(f->descriptor()));
-      SUPPRESS_ASSERT(delete f);
+      SUPPRESS_ASSERT(f.reset());
   }, format_system_error(EBADF, "cannot close file") + "\n");
 }
 
