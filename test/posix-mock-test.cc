@@ -48,6 +48,8 @@ using fmt::BufferedFile;
 using fmt::ErrorCode;
 using fmt::File;
 
+using testing::internal::scoped_ptr;
+
 namespace {
 int open_count;
 int close_count;
@@ -234,20 +236,19 @@ TEST(UtilTest, GetPageSize) {
 
 TEST(FileTest, OpenRetry) {
   write_file("test", "there must be something here");
-  File *f = 0;
-  EXPECT_RETRY(f = new File("test", File::RDONLY),
+  scoped_ptr<File> f;
+  EXPECT_RETRY(f.reset(new File("test", File::RDONLY)),
                open, "cannot open file test");
 #ifndef _WIN32
   char c = 0;
   f->read(&c, 1);
 #endif
-  delete f;
 }
 
 TEST(FileTest, CloseNoRetryInDtor) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
-  testing::internal::scoped_ptr<File> f(new File(std::move(read_end)));
+  scoped_ptr<File> f(new File(std::move(read_end)));
   int saved_close_count = 0;
   EXPECT_WRITE(stderr, {
     close_count = 1;
@@ -405,25 +406,24 @@ TEST(FileTest, FdopenNoRetry) {
 
 TEST(BufferedFileTest, OpenRetry) {
   write_file("test", "there must be something here");
-  BufferedFile *f = 0;
-  EXPECT_RETRY(f = new BufferedFile("test", "r"),
+  scoped_ptr<BufferedFile> f;
+  EXPECT_RETRY(f.reset(new BufferedFile("test", "r")),
                fopen, "cannot open file test");
 #ifndef _WIN32
   char c = 0;
   if (fread(&c, 1, 1, f->get()) < 1)
     throw fmt::SystemError(errno, "fread failed");
 #endif
-  delete f;
 }
 
 TEST(BufferedFileTest, CloseNoRetryInDtor) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
-  BufferedFile *f = new BufferedFile(read_end.fdopen("r"));
+  scoped_ptr<BufferedFile> f(new BufferedFile(read_end.fdopen("r")));
   int saved_fclose_count = 0;
   EXPECT_WRITE(stderr, {
     fclose_count = 1;
-    delete f;
+    f.reset();
     saved_fclose_count = fclose_count;
     fclose_count = 0;
   }, format_system_error(EINTR, "cannot close file") + "\n");
