@@ -38,6 +38,8 @@
 
 #include "util.h"
 
+using testing::internal::scoped_ptr;
+
 namespace {
 
 // Tests that assertion macros evaluate their arguments exactly once.
@@ -350,10 +352,10 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   FMT_POSIX(close(write_fd));
-  OutputRedirect *redir = 0;
-  EXPECT_SYSTEM_ERROR_NOASSERT(redir = new OutputRedirect(f.get()),
+  scoped_ptr<OutputRedirect> redir;
+  EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new OutputRedirect(f.get())),
       EBADF, "cannot flush stream");
-  delete redir;
+  redir.reset();
   write_copy.dup2(write_fd);  // "undo" close or dtor will fail
 }
 
@@ -362,11 +364,10 @@ TEST(OutputRedirectTest, DupErrorInCtor) {
   int fd = (f.fileno)();
   File copy = File::dup(fd);
   FMT_POSIX(close(fd));
-  OutputRedirect *redir = 0;
-  EXPECT_SYSTEM_ERROR_NOASSERT(redir = new OutputRedirect(f.get()),
+  scoped_ptr<OutputRedirect> redir;
+  EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new OutputRedirect(f.get())),
       EBADF, fmt::format("cannot duplicate file descriptor {}", fd));
   copy.dup2(fd);  // "undo" close or dtor will fail
-  delete redir;
 }
 
 TEST(OutputRedirectTest, RestoreAndRead) {
@@ -405,7 +406,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
   int write_fd = write_end.descriptor();
   File write_copy = write_end.dup(write_fd);
   BufferedFile f = write_end.fdopen("w");
-  OutputRedirect *redir = new OutputRedirect(f.get());
+  scoped_ptr<OutputRedirect> redir(new OutputRedirect(f.get()));
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   EXPECT_WRITE(stderr, {
@@ -414,7 +415,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
       // output in EXPECT_STDERR and the second close will break output
       // redirection.
       FMT_POSIX(close(write_fd));
-      SUPPRESS_ASSERT(delete redir);
+      SUPPRESS_ASSERT(redir.reset());
   }, format_system_error(EBADF, "cannot flush stream"));
   write_copy.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
 }
