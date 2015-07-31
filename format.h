@@ -1867,6 +1867,27 @@ class BasicWriter {
     return internal::make_ptr(&buffer_[size], n);
   }
 
+  // Writes an unsigned decimal integer.
+  template <typename UInt>
+  Char *write_unsigned_decimal(UInt value, unsigned prefix_size = 0) {
+    unsigned num_digits = internal::count_digits(value);
+    Char *ptr = get(grow_buffer(prefix_size + num_digits));
+    internal::format_decimal(ptr + prefix_size, value, num_digits);
+    return ptr;
+  }
+
+  // Writes a decimal integer.
+  template <typename Int>
+  void write_decimal(Int value) {
+    typename internal::IntTraits<Int>::MainType abs_value = value;
+    if (internal::is_negative(value)) {
+      abs_value = 0 - abs_value;
+      *write_unsigned_decimal(abs_value, 1) = '-';
+    } else {
+      write_unsigned_decimal(abs_value, 0);
+    }
+  }
+
   // Prepare a buffer for integer formatting.
   CharPtr prepare_int_buffer(unsigned num_digits,
       const EmptySpec &, const char *prefix, unsigned prefix_size) {
@@ -1995,19 +2016,22 @@ class BasicWriter {
   FMT_VARIADIC_VOID(write, BasicCStringRef<Char>)
 
   BasicWriter &operator<<(int value) {
-    return *this << IntFormatSpec<int>(value);
+    write_decimal(value);
+    return *this;
   }
   BasicWriter &operator<<(unsigned value) {
     return *this << IntFormatSpec<unsigned>(value);
   }
   BasicWriter &operator<<(long value) {
-    return *this << IntFormatSpec<long>(value);
+    write_decimal(value);
+    return *this;
   }
   BasicWriter &operator<<(unsigned long value) {
     return *this << IntFormatSpec<unsigned long>(value);
   }
   BasicWriter &operator<<(LongLong value) {
-    return *this << IntFormatSpec<LongLong>(value);
+    write_decimal(value);
+    return *this;
   }
 
   /**
