@@ -95,12 +95,9 @@ if (BUILD_SHARED_LIBS)
   # unused-direct-shlib-dependency /usr/lib/libformat.so.1.1.0 /lib/libm.so.6.
   target_link_libraries(cppformat -Wl,--as-needed)
 endif ()
-if (FMT_PEDANTIC AND CMAKE_COMPILER_IS_GNUCXX)
-  set_target_properties(cppformat PROPERTIES COMPILE_FLAGS
-    "-Wall -Wextra -Wshadow -pedantic")
-endif ()
-if (FMT_PEDANTIC AND (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic")
+if (FMT_PEDANTIC AND
+    (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang")))
+  set(FMT_EXTRA_COMPILE_FLAGS "-Wall -Wextra -Wshadow -pedantic")
 endif ()
 
 # If FMT_PEDANTIC is TRUE, then test compilation with both -std=c++11
@@ -108,11 +105,14 @@ endif ()
 # The library is distributed in the source form and users have full control
 # over compile options, so the options used here only matter for testing.
 if (CPP11_FLAG AND FMT_PEDANTIC)
-  set_target_properties(cppformat PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
+  set(FMT_EXTRA_COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS} ${CPP11_FLAG}")
   # Test compilation with default flags.
   file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)
   add_library(testformat STATIC ${FMT_SOURCE_FILES} ${src})
 endif ()
+
+set_target_properties(cppformat
+  PROPERTIES COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS}")
 
 add_subdirectory(doc)
 
