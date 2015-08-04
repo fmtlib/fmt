@@ -1447,12 +1447,14 @@ TEST(FormatterTest, FormatExamples) {
 
   const char *filename = "nonexistent";
   FILE *ftest = safe_fopen(filename, "r");
+  if (ftest) fclose(ftest);
   int error_code = errno;
   EXPECT_TRUE(ftest == 0);
   EXPECT_SYSTEM_ERROR({
     FILE *f = safe_fopen(filename, "r");
     if (!f)
       throw fmt::SystemError(errno, "Cannot open file '{}'", filename);
+    fclose(f);
   }, error_code, "Cannot open file 'nonexistent'");
 }
 
