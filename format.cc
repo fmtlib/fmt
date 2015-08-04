@@ -503,20 +503,20 @@ class PrintfArgFormatter :
   : BasicArgFormatter<PrintfArgFormatter<Char>, Char>(w, s) {}
 
   void visit_char(int value) {
-    const FormatSpec &spec = this->spec();
+    const FormatSpec &fmt_spec = this->spec();
     BasicWriter<Char> &writer = this->writer();
-    if (spec.type_ && spec.type_ != 'c')
-      writer.write_int(value, spec);
+    if (fmt_spec.type_ && fmt_spec.type_ != 'c')
+      writer.write_int(value, fmt_spec);
     typedef typename BasicWriter<Char>::CharPtr CharPtr;
     CharPtr out = CharPtr();
-    if (spec.width_ > 1) {
+    if (fmt_spec.width_ > 1) {
       Char fill = ' ';
-      out = writer.grow_buffer(spec.width_);
-      if (spec.align_ != ALIGN_LEFT) {
-        std::fill_n(out, spec.width_ - 1, fill);
-        out += spec.width_ - 1;
+      out = writer.grow_buffer(fmt_spec.width_);
+      if (fmt_spec.align_ != ALIGN_LEFT) {
+        std::fill_n(out, fmt_spec.width_ - 1, fill);
+        out += fmt_spec.width_ - 1;
       } else {
-        std::fill_n(out + 1, spec.width_ - 1, fill);
+        std::fill_n(out + 1, fmt_spec.width_ - 1, fill);
       }
     } else {
       out = writer.grow_buffer(1);
