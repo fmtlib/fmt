@@ -1046,8 +1046,8 @@ struct NamedArg : Arg {
   BasicStringRef<Char> name;
 
   template <typename T>
-  NamedArg(BasicStringRef<Char> name, const T &value)
-  : name(name), Arg(MakeValue<Char>(value)) {
+  NamedArg(BasicStringRef<Char> argname, const T &value)
+  : name(argname), Arg(MakeValue<Char>(value)) {
     type = static_cast<internal::Arg::Type>(MakeValue<Char>::type(value));
   }
 };
