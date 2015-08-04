@@ -205,8 +205,8 @@ int safe_strerror(
     }
 
    public:
-    StrError(int error_code, char *&buffer, std::size_t buffer_size)
-      : error_code_(error_code), buffer_(buffer), buffer_size_(buffer_size) {}
+    StrError(int err_code, char *&buf, std::size_t buf_size)
+      : error_code_(err_code), buffer_(buf), buffer_size_(buf_size) {}
 
     int run() {
       strerror_r(0, 0, "");  // Suppress a warning about unused strerror_r.

@@ -99,6 +99,9 @@ if (FMT_PEDANTIC AND CMAKE_COMPILER_IS_GNUCXX)
   set_target_properties(cppformat PROPERTIES COMPILE_FLAGS
     "-Wall -Wextra -Wshadow -pedantic")
 endif ()
+if (FMT_PEDANTIC AND (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -pedantic")
+endif ()
 
 # If FMT_PEDANTIC is TRUE, then test compilation with both -std=c++11
 # and the default flags. Otherwise use only the default flags.
