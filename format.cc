@@ -504,14 +504,14 @@ class PrintfArgFormatter :
 
   void visit_char(int value) {
     const FormatSpec &fmt_spec = this->spec();
-    BasicWriter<Char> &writer = this->writer();
+    BasicWriter<Char> &w = this->writer();
     if (fmt_spec.type_ && fmt_spec.type_ != 'c')
-      writer.write_int(value, fmt_spec);
+      w.write_int(value, fmt_spec);
     typedef typename BasicWriter<Char>::CharPtr CharPtr;
     CharPtr out = CharPtr();
     if (fmt_spec.width_ > 1) {
       Char fill = ' ';
-      out = writer.grow_buffer(fmt_spec.width_);
+      out = w.grow_buffer(fmt_spec.width_);
       if (fmt_spec.align_ != ALIGN_LEFT) {
         std::fill_n(out, fmt_spec.width_ - 1, fill);
         out += fmt_spec.width_ - 1;
@@ -519,7 +519,7 @@ class PrintfArgFormatter :
         std::fill_n(out + 1, fmt_spec.width_ - 1, fill);
       }
     } else {
-      out = writer.grow_buffer(1);
+      out = w.grow_buffer(1);
     }
     *out = static_cast<Char>(value);
   }
