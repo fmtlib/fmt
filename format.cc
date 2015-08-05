@@ -205,8 +205,8 @@ int safe_strerror(
     }
 
    public:
-    StrError(int error_code, char *&buffer, std::size_t buffer_size)
-      : error_code_(error_code), buffer_(buffer), buffer_size_(buffer_size) {}
+    StrError(int err_code, char *&buf, std::size_t buf_size)
+      : error_code_(err_code), buffer_(buf), buffer_size_(buf_size) {}
 
     int run() {
       strerror_r(0, 0, "");  // Suppress a warning about unused strerror_r.
@@ -503,23 +503,23 @@ class PrintfArgFormatter :
   : BasicArgFormatter<PrintfArgFormatter<Char>, Char>(w, s) {}
 
   void visit_char(int value) {
-    const FormatSpec &spec = this->spec();
-    BasicWriter<Char> &writer = this->writer();
-    if (spec.type_ && spec.type_ != 'c')
-      writer.write_int(value, spec);
+    const FormatSpec &fmt_spec = this->spec();
+    BasicWriter<Char> &w = this->writer();
+    if (fmt_spec.type_ && fmt_spec.type_ != 'c')
+      w.write_int(value, fmt_spec);
     typedef typename BasicWriter<Char>::CharPtr CharPtr;
     CharPtr out = CharPtr();
-    if (spec.width_ > 1) {
+    if (fmt_spec.width_ > 1) {
       Char fill = ' ';
-      out = writer.grow_buffer(spec.width_);
-      if (spec.align_ != ALIGN_LEFT) {
-        std::fill_n(out, spec.width_ - 1, fill);
-        out += spec.width_ - 1;
+      out = w.grow_buffer(fmt_spec.width_);
+      if (fmt_spec.align_ != ALIGN_LEFT) {
+        std::fill_n(out, fmt_spec.width_ - 1, fill);
+        out += fmt_spec.width_ - 1;
       } else {
-        std::fill_n(out + 1, spec.width_ - 1, fill);
+        std::fill_n(out + 1, fmt_spec.width_ - 1, fill);
       }
     } else {
-      out = writer.grow_buffer(1);
+      out = w.grow_buffer(1);
     }
     *out = static_cast<Char>(value);
   }
