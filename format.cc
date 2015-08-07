@@ -633,12 +633,15 @@ FMT_FUNC fmt::internal::UTF16ToUTF8::UTF16ToUTF8(fmt::WStringRef s) {
 }
 
 FMT_FUNC int fmt::internal::UTF16ToUTF8::convert(fmt::WStringRef s) {
-  int length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s.size(), 0, 0, 0, 0);
+  if (s.size() > INT_MAX)
+    return ERROR_INVALID_PARAMETER;
+  int s_size = static_cast<int>(s.size());
+  int length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, 0, 0, 0, 0);
   if (length == 0)
     return GetLastError();
   buffer_.resize(length + 1);
   length = WideCharToMultiByte(
-    CP_UTF8, 0, s.data(), s.size(), &buffer_[0], length, 0, 0);
+    CP_UTF8, 0, s.data(), s_size, &buffer_[0], length, 0, 0);
   if (length == 0)
     return GetLastError();
   buffer_[length] = 0;
