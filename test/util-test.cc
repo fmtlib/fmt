@@ -726,12 +726,14 @@ TEST(UtilTest, UTF8ToUTF16) {
 }
 
 template <typename Converter, typename Char>
-void check_utf_conversion_error(const char *message) {
+void check_utf_conversion_error(
+        const char *message,
+        fmt::BasicStringRef<Char> str = fmt::BasicStringRef<Char>(0, 0)) {
   fmt::MemoryWriter out;
   fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
   fmt::SystemError error(0, "");
   try {
-    Converter(fmt::BasicStringRef<Char>(0, 0));
+    (Converter)(str);
   } catch (const fmt::SystemError &e) {
     error = e;
   }
@@ -745,14 +747,17 @@ TEST(UtilTest, UTF16ToUTF8Error) {
 }
 
 TEST(UtilTest, UTF8ToUTF16Error) {
+  const char *message = "cannot convert string from UTF-8 to UTF-16";
+  check_utf_conversion_error<fmt::internal::UTF8ToUTF16, char>(message);
   check_utf_conversion_error<fmt::internal::UTF8ToUTF16, char>(
-      "cannot convert string from UTF-8 to UTF-16");
+    message, fmt::StringRef("foo", INT_MAX + 1u));
 }
 
 TEST(UtilTest, UTF16ToUTF8Convert) {
   fmt::internal::UTF16ToUTF8 u;
   EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::WStringRef(0, 0)));
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::WStringRef(L"foo", INT_MAX + 1u)));
+  EXPECT_EQ(ERROR_INVALID_PARAMETER,
+            u.convert(fmt::WStringRef(L"foo", INT_MAX + 1u)));
 }
 #endif  // _WIN32
 

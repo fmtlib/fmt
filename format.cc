@@ -612,14 +612,17 @@ FMT_FUNC void fmt::internal::report_unknown_type(char code, const char *type) {
 #if FMT_USE_WINDOWS_H
 
 FMT_FUNC fmt::internal::UTF8ToUTF16::UTF8ToUTF16(fmt::StringRef s) {
-  int length = MultiByteToWideChar(
-      CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s.size(), 0, 0);
   static const char ERROR_MSG[] = "cannot convert string from UTF-8 to UTF-16";
+  if (s.size() > INT_MAX)
+    FMT_THROW(WindowsError(ERROR_INVALID_PARAMETER, ERROR_MSG));
+  int s_size = static_cast<int>(s.size());
+  int length = MultiByteToWideChar(
+      CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size, 0, 0);
   if (length == 0)
     FMT_THROW(WindowsError(GetLastError(), ERROR_MSG));
   buffer_.resize(length + 1);
   length = MultiByteToWideChar(
-    CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s.size(), &buffer_[0], length);
+    CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size, &buffer_[0], length);
   if (length == 0)
     FMT_THROW(WindowsError(GetLastError(), ERROR_MSG));
   buffer_[length] = 0;
