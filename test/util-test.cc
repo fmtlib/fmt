@@ -752,7 +752,7 @@ TEST(UtilTest, UTF8ToUTF16Error) {
 TEST(UtilTest, UTF16ToUTF8Convert) {
   fmt::internal::UTF16ToUTF8 u;
   EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::WStringRef(0, 0)));
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::WStringRef("foo", INT_MAX + 1u)));
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::WStringRef(L"foo", INT_MAX + 1u)));
 }
 #endif  // _WIN32
 
