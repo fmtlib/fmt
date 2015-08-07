@@ -6,7 +6,7 @@ from subprocess import check_call
 
 build = os.environ['BUILD']
 config = os.environ['CONFIGURATION']
-platform = os.environ['PLATFORM']
+platform = os.environ.get('PLATFORM')
 path = os.environ['PATH']
 cmake_command = ['cmake', '-DFMT_PEDANTIC=ON', '-DCMAKE_BUILD_TYPE=' + config]
 if build == 'mingw':
