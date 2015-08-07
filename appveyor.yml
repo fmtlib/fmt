@@ -6,8 +6,9 @@ environment:
   CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
   - BUILD: msvc
+    PLATFORM: x86
   - BUILD: msvc
-  - BUILD: mingw
+    PLATFORM: x64
   - BUILD: mingw
 
 build_script:

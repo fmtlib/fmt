@@ -6,6 +6,7 @@ from subprocess import check_call
 
 build = os.environ['BUILD']
 config = os.environ['CONFIGURATION']
+platform = os.environ['PLATFORM']
 path = os.environ['PATH']
 cmake_command = ['cmake', '-DFMT_PEDANTIC=ON', '-DCMAKE_BUILD_TYPE=' + config]
 if build == 'mingw':
@@ -19,6 +20,10 @@ else:
   # Add MSBuild 14.0 to PATH as described in
   # http://help.appveyor.com/discussions/problems/2229-v140-not-found-on-vs2105rc.
   os.environ['PATH'] = r'C:\Program Files (x86)\MSBuild\14.0\Bin;' + path
+  generator = 'Visual Studio 14 2015'
+  if platform == 'x64':
+    generator += ' Win64'
+  cmake_command.append('-G' + generator)
   build_command = ['msbuild', '/m:4', '/p:Config=' + config, 'FORMAT.sln']
   test_command = ['msbuild', 'RUN_TESTS.vcxproj']
 
