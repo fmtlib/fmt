@@ -157,6 +157,8 @@ Projects using this library
 
 * `spdlog <https://github.com/gabime/spdlog>`_: Super fast C++ logging library
 
+* `Touch Surgery <https://www.touchsurgery.com/>`_: Surgery simulator
+
 * `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: Open-source MMORPG framework
 
 `More... <https://github.com/search?q=cppformat&type=Code>`_
