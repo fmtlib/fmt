@@ -11,6 +11,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
+option(FMT_INSTALL "Generate install target." ON)
 
 project(FORMAT)
 
@@ -216,7 +217,9 @@ if (EXISTS .gitignore)
 endif ()
 
 # Install targets.
-set(FMT_LIB_DIR lib CACHE STRING
-  "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
-install(TARGETS cppformat DESTINATION ${FMT_LIB_DIR})
-install(FILES format.h DESTINATION include/cppformat)
+if (FMT_INSTALL)
+	set(FMT_LIB_DIR lib CACHE STRING
+	  "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
+	install(TARGETS cppformat DESTINATION ${FMT_LIB_DIR})
+	install(FILES format.h DESTINATION include/cppformat)
+endif ()
