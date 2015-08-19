@@ -59,14 +59,6 @@ function(add_fmt_test name)
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
-check_cxx_source_compiles("
-  enum C : char {A};
-  int main() {}"
-  HAVE_ENUM_BASE)
-if (HAVE_ENUM_BASE)
-  add_definitions(-DFMT_USE_ENUM_BASE=1)
-endif ()
-
 add_fmt_test(assert-test)
 add_fmt_test(gtest-extra-test)
 add_fmt_test(format-test)
@@ -90,6 +82,15 @@ if (CPP11_FLAG)
   set_target_properties(util-test PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
 endif ()
 
+check_cxx_source_compiles("
+  enum C : char {A};
+  int main() {}"
+  HAVE_ENUM_BASE)
+if (HAVE_ENUM_BASE)
+  set_target_properties(util-test
+    PROPERTIES COMPILE_DEFINITIONS "FMT_USE_ENUM_BASE=1")
+endif ()
+
 foreach (src ${FMT_SOURCES})
   set(FMT_TEST_SOURCES ${FMT_TEST_SOURCES} ../${src})
 endforeach ()
@@ -100,7 +101,10 @@ check_cxx_source_compiles("
   int main() { static_assert(!std::is_copy_assignable<C>::value, \"\"); }"
   HAVE_TYPE_TRAITS)
 if (HAVE_TYPE_TRAITS)
-  add_definitions(-DFMT_USE_TYPE_TRAITS=1)
+  foreach (target format-test util-test)
+    set_target_properties(${target}
+      PROPERTIES COMPILE_DEFINITIONS "FMT_USE_TYPE_TRAITS=1")
+  endforeach ()
 endif ()
 
 add_executable(macro-test macro-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
@@ -125,6 +129,15 @@ if (HAVE_FNO_EXCEPTIONS_FLAG)
   add_library(noexception-test STATIC ../format.cc)
   set_target_properties(noexception-test
     PROPERTIES COMPILE_FLAGS -fno-exceptions)
+endif ()
+
+# Test compilation with default flags.
+if (FMT_TEST_DEFAULT_FLAGS)
+  file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cc *.h)
+  foreach (s ${FMT_SOURCES})
+    set(src ${src} ../${s})
+  endforeach ()
+  add_library(testformat STATIC ${src})
 endif ()
 
 if (FMT_PEDANTIC)

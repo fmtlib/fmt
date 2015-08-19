@@ -108,11 +108,7 @@ endif ()
 # over compile options, so the options used here only matter for testing.
 if (CPP11_FLAG AND FMT_PEDANTIC)
   set(FMT_EXTRA_COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS} ${CPP11_FLAG}")
-  # Test compilation with default flags.
-  if (FMT_TESTS)
-    file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)
-    add_library(testformat STATIC ${FMT_SOURCES} ${src})
-  endif ()
+  set(FMT_TEST_DEFAULT_FLAGS TRUE)
 endif ()
 
 set_target_properties(cppformat
