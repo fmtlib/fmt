@@ -30,7 +30,7 @@ check_cxx_source_compiles("
   int main() {}" FMT_INITIALIZER_LIST)
   
 if (NOT FMT_VARIADIC_TEMPLATES OR NOT FMT_INITIALIZER_LIST)
-  target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
+  add_definitions(-DGTEST_LANG_CXX11=0)
 endif ()
 
 # Workaround a bug in implementation of variadic templates in MSVC11.
