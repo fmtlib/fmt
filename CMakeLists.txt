@@ -111,7 +111,7 @@ if (CPP11_FLAG AND FMT_PEDANTIC)
   # Test compilation with default flags.
   if (FMT_TESTS)
     file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} test/*.cc test/*.h)
-    add_library(testformat STATIC ${FMT_SOURCE_FILES} ${src})
+    add_library(testformat STATIC ${FMT_SOURCES} ${src})
   endif ()
 endif ()
 
