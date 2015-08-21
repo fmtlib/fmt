@@ -14,3 +14,4 @@ CTestTestfile.cmake
 CMakeCache.txt
 CMakeFiles
 Makefile
+run-msbuild.bat
