@@ -43,7 +43,6 @@ def build_docs():
       GENERATE_RTF      = NO
       CASE_SENSE_NAMES  = NO
       INPUT             = {0}/format.h
-      EXCLUDE_SYMBOLS   = fmt::internal::*
       QUIET             = YES
       JAVADOC_AUTOBRIEF = YES
       AUTOLINK_SUPPORT  = NO
