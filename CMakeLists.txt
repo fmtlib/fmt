@@ -13,6 +13,7 @@ endif ()
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 option(FMT_INSTALL "Generate install target." ON)
 option(FMT_TESTS "Generate tests." ON)
+option(FMT_DOCS "Generate doxygen documentation." ON)
 
 project(FORMAT)
 
@@ -114,7 +115,9 @@ endif ()
 set_target_properties(cppformat
   PROPERTIES COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS}")
 
-add_subdirectory(doc)
+if (FMT_DOCS)
+  add_subdirectory(doc)
+endif ()
 
 if (FMT_TESTS)
   enable_testing()
