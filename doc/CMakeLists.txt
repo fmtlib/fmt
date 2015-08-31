@@ -6,4 +6,5 @@ endif ()
 
 add_custom_target(doc COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build.py)
 
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ DESTINATION share/doc/cppformat)
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+        DESTINATION share/doc/cppformat)
