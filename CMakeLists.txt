@@ -11,9 +11,11 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
-option(FMT_INSTALL "Generate install target." ON)
-option(FMT_TESTS "Generate tests." ON)
-option(FMT_DOCS "Generate doxygen documentation." ON)
+
+# Options that control generation of various targets.
+option(FMT_DOC "Generate the doc target." ON)
+option(FMT_INSTALL "Generate the install target." ON)
+option(FMT_TEST "Generate the test target." ON)
 
 project(FORMAT)
 
@@ -115,11 +117,11 @@ endif ()
 set_target_properties(cppformat
   PROPERTIES COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS}")
 
-if (FMT_DOCS)
+if (FMT_DOC)
   add_subdirectory(doc)
 endif ()
 
-if (FMT_TESTS)
+if (FMT_TEST)
   enable_testing()
   add_subdirectory(test)
 endif ()
