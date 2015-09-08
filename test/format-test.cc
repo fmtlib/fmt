@@ -148,19 +148,6 @@ TEST(CStringRefTest, Ctor) {
   EXPECT_STREQ("defg", CStringRef(std::string("defg")).c_str());
 }
 
-class TestString {
- private:
-  std::string value_;
-
- public:
-  explicit TestString(const char *value = "") : value_(value) {}
-
-  friend std::ostream &operator<<(std::ostream &os, const TestString &s) {
-    os << s.value_;
-    return os;
-  }
-};
-
 #if FMT_USE_TYPE_TRAITS
 TEST(WriterTest, NotCopyConstructible) {
   EXPECT_FALSE(std::is_copy_constructible<BasicWriter<char> >::value);

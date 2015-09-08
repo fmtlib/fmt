@@ -67,3 +67,16 @@ inline FILE *safe_fopen(const char *filename, const char *mode) {
   return std::fopen(filename, mode);
 #endif
 }
+
+class TestString {
+ private:
+  std::string value_;
+
+ public:
+  explicit TestString(const char *value = "") : value_(value) {}
+
+  friend std::ostream &operator<<(std::ostream &os, const TestString &s) {
+    os << s.value_;
+    return os;
+  }
+};

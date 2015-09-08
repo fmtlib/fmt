@@ -523,6 +523,12 @@ class PrintfArgFormatter :
     }
     *out = static_cast<Char>(value);
   }
+
+  void visit_custom(Arg::CustomValue c) {
+    BasicFormatter<Char> formatter(ArgList(), this->writer());
+    const char *format = "}";
+    c.format(&formatter, c.value, &format);
+  }
 };
 }  // namespace internal
 }  // namespace fmt

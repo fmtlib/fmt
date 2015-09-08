@@ -426,6 +426,10 @@ TEST(PrintfTest, Pointer) {
   EXPECT_PRINTF(fmt::format("{}", p), "%p", p);
 }
 
+TEST(PrintfTest, Custom) {
+  EXPECT_PRINTF("abc", "%s", TestString("abc"));
+}
+
 TEST(PrintfTest, Location) {
   // TODO: test %n
 }
