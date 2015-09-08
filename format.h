@@ -285,7 +285,6 @@ class BasicStringRef {
 typedef BasicStringRef<char> StringRef;
 typedef BasicStringRef<wchar_t> WStringRef;
 
-
 /**
   \rst
   A reference to a null terminated string. It can be constructed from a C
