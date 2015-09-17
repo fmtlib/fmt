@@ -149,6 +149,8 @@ Projects using this library
 
 * `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
 
+* `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: A Redis cluster proxy
+
 * `Saddy <https://code.google.com/p/saddy/>`_:
   Small crossplatform 2D graphic engine
 
