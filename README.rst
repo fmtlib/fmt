@@ -159,6 +159,8 @@ Projects using this library
 
 * `spdlog <https://github.com/gabime/spdlog>`_: Super fast C++ logging library
 
+* `Stellar <https://www.stellar.org/>`_: Financial platform
+
 * `Touch Surgery <https://www.touchsurgery.com/>`_: Surgery simulator
 
 * `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: Open-source MMORPG framework
