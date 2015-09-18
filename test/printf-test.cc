@@ -456,3 +456,7 @@ TEST(PrintfTest, PrintfError) {
   EXPECT_LT(result, 0);
 }
 #endif
+
+TEST(PrintfTest, WideString) {
+  EXPECT_EQ(L"abc", fmt::sprintf(L"%s", TestWString(L"abc")));
+}

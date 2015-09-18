@@ -2706,6 +2706,12 @@ inline std::string sprintf(CStringRef format, ArgList args) {
   return w.str();
 }
 
+inline std::wstring sprintf(WCStringRef format, ArgList args) {
+  WMemoryWriter w;
+  printf(w, format, args);
+  return w.str();
+}
+
 /**
   \rst
   Prints formatted data to the file *f*.
@@ -2994,6 +3000,7 @@ FMT_VARIADIC(void, print, std::FILE *, CStringRef)
 FMT_VARIADIC(void, print, std::ostream &, CStringRef)
 FMT_VARIADIC(void, print_colored, Color, CStringRef)
 FMT_VARIADIC(std::string, sprintf, CStringRef)
+FMT_VARIADIC_W(std::wstring, sprintf, WCStringRef)
 FMT_VARIADIC(int, printf, CStringRef)
 FMT_VARIADIC(int, fprintf, std::FILE *, CStringRef)
 }

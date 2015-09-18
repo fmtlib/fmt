@@ -68,15 +68,25 @@ inline FILE *safe_fopen(const char *filename, const char *mode) {
 #endif
 }
 
-class TestString {
+template <typename Char>
+class BasicTestString {
  private:
-  std::string value_;
+  std::basic_string<Char> value_;
+
+  static const Char EMPTY[];
 
  public:
-  explicit TestString(const char *value = "") : value_(value) {}
+  explicit BasicTestString(const Char *value = EMPTY) : value_(value) {}
 
-  friend std::ostream &operator<<(std::ostream &os, const TestString &s) {
+  friend std::basic_ostream<Char> &operator<<(
+      std::basic_ostream<Char> &os, const BasicTestString &s) {
     os << s.value_;
     return os;
   }
 };
+
+template <typename Char>
+const Char BasicTestString<Char>::EMPTY[] = {0};
+
+typedef BasicTestString<char> TestString;
+typedef BasicTestString<wchar_t> TestWString;
