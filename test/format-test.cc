@@ -1610,4 +1610,17 @@ TEST(LiteralsTest, Format) {
   EXPECT_EQ(format("{}c{}", "ab", 1), "{}c{}"_format("ab", 1));
   EXPECT_EQ(format(L"{}c{}", L"ab", 1), L"{}c{}"_format(L"ab", 1));
 }
+
+TEST(LiteralsTest, NamedArg) {
+  EXPECT_EQ(format("{first}{second}{first}{third}",
+                   fmt::arg("first", "abra"), fmt::arg("second", "cad"),
+                   fmt::arg("third", 99)),
+            format("{first}{second}{first}{third}",
+                   "first"_a="abra", "second"_a="cad", "third"_a=99));
+  EXPECT_EQ(format(L"{first}{second}{first}{third}",
+                   fmt::arg(L"first", L"abra"), fmt::arg(L"second", L"cad"),
+                   fmt::arg(L"third", 99)),
+            format(L"{first}{second}{first}{third}",
+                   L"first"_a=L"abra", L"second"_a=L"cad", L"third"_a=99));
+}
 #endif // FMT_USE_USER_DEFINED_LITERALS
