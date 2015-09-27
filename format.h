@@ -177,6 +177,16 @@ inline uint32_t clzll(uint64_t x) {
     TypeName& operator=(const TypeName&)
 #endif
 
+#ifndef FMT_USE_USER_DEFINED_LITERALS
+// All compilers which support UDLs also support variadic templates. This
+// makes the fmt::literals implementation easier. However, an explicit check
+// for variadic templates is added here just in case.
+# define FMT_USE_USER_DEFINED_LITERALS \
+   FMT_USE_VARIADIC_TEMPLATES && \
+   (FMT_HAS_FEATURE(cxx_user_literals) || \
+       (FMT_GCC_VERSION >= 407 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1900)
+#endif
+
 #ifndef FMT_ASSERT
 # define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
@@ -3004,6 +3014,34 @@ FMT_VARIADIC_W(std::wstring, sprintf, WCStringRef)
 FMT_VARIADIC(int, printf, CStringRef)
 FMT_VARIADIC(int, fprintf, std::FILE *, CStringRef)
 }
+
+#if FMT_USE_USER_DEFINED_LITERALS
+namespace fmt {
+namespace internal {
+
+template <typename Char>
+struct UdlFormat {
+  const Char *str;
+
+  template <typename... Args>
+  auto operator()(Args && ... args) const
+                  -> decltype(format(str, std::forward<Args>(args)...)) {
+    return format(str, std::forward<Args>(args)...);
+  }
+};
+
+} // namespace internal
+
+inline namespace literals {
+
+inline internal::UdlFormat<char>
+operator"" _format(const char *s, std::size_t) { return {s}; }
+inline internal::UdlFormat<wchar_t>
+operator"" _format(const wchar_t *s, std::size_t) { return {s}; }
+
+} // inline namespace literals
+} // namespace fmt
+#endif // FMT_USE_USER_DEFINED_LITERALS
 
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406

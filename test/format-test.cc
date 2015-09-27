@@ -1602,3 +1602,12 @@ TEST(FormatTest, MaxArgs) {
             fmt::format("{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}",
                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e'));
 }
+
+#if FMT_USE_USER_DEFINED_LITERALS
+using namespace fmt::literals;
+
+TEST(LiteralsTest, Format) {
+  EXPECT_EQ(format("{}c{}", "ab", 1), "{}c{}"_format("ab", 1));
+  EXPECT_EQ(format(L"{}c{}", L"ab", 1), L"{}c{}"_format(L"ab", 1));
+}
+#endif // FMT_USE_USER_DEFINED_LITERALS
