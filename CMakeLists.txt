@@ -95,7 +95,7 @@ if (BIICODE)
 endif ()
 
 add_library(cppformat ${FMT_SOURCES})
-if (BUILD_SHARED_LIBS)
+if (BUILD_SHARED_LIBS AND UNIX AND NOT APPLE)
   # Fix rpmlint warning:
   # unused-direct-shlib-dependency /usr/lib/libformat.so.1.1.0 /lib/libm.so.6.
   target_link_libraries(cppformat -Wl,--as-needed)
