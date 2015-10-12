@@ -30,7 +30,8 @@ def build_docs():
   activate_this_file = os.path.join(virtualenv_dir, 'bin', 'activate_this.py')
   execfile(activate_this_file, dict(__file__=activate_this_file))
   # Install Sphinx and Breathe.
-  pip_install('sphinx==1.3.1')
+  pip_install('sphinx-doc/sphinx',
+              '4d2c17e043d9e8197fa5cd0db34212af3bb17069')
   pip_install('michaeljones/breathe',
               '511b0887293e7c6b12310bb61b3659068f48f0f4')
   # Build docs.
@@ -53,7 +54,8 @@ def build_docs():
       ALIASES          += "endrst=\endverbatim"
       PREDEFINED        = _WIN32=1 \
                           FMT_USE_VARIADIC_TEMPLATES=1 \
-                          FMT_USE_RVALUE_REFERENCES=1
+                          FMT_USE_RVALUE_REFERENCES=1 \
+                          FMT_USE_USER_DEFINED_LITERALS=1
       EXCLUDE_SYMBOLS   = fmt::internal::* StringValue write_str
     '''.format(os.path.dirname(doc_dir)))
   if p.returncode != 0:

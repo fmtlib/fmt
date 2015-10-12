@@ -3044,11 +3044,31 @@ struct UdlArg {
 
 inline namespace literals {
 
+/**
+  \rst
+  C++11 literal equivalent of :func:`fmt::format`.
+
+  **Example**::
+  
+    using namespace fmt::literals;
+    std::string message = "The answer is {}"_format(42);
+  \endrst
+ */
 inline internal::UdlFormat<char>
 operator"" _format(const char *s, std::size_t) { return {s}; }
 inline internal::UdlFormat<wchar_t>
 operator"" _format(const wchar_t *s, std::size_t) { return {s}; }
 
+/**
+  \rst
+  C++11 literal equivalent of :func:`fmt::arg`.
+
+  **Example**::
+    
+    using namespace fmt::literals;
+    print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
+  \endrst
+ */
 inline internal::UdlArg<char>
 operator"" _a(const char *s, std::size_t) { return {s}; }
 inline internal::UdlArg<wchar_t>

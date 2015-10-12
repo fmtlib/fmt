@@ -26,6 +26,8 @@ arguments in the resulting string.
 
 .. doxygenfunction:: format(CStringRef, ArgList)
 
+.. doxygenfunction:: operator""_format(const char *, std::size_t)
+
 .. _print:
 
 .. doxygenfunction:: print(CStringRef, ArgList)
@@ -73,6 +75,8 @@ Utilities
 =========
 
 .. doxygenfunction:: fmt::arg(StringRef, const T&)
+
+.. doxygenfunction:: operator""_a(const char *, std::size_t)
 
 .. doxygendefine:: FMT_CAPTURE
 
