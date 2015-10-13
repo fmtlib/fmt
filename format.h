@@ -116,7 +116,7 @@ inline uint32_t clzll(uint64_t x) {
 # define FMT_GCC_EXTENSION
 #endif
 
-#ifdef __clang__
+#if defined(__clang__) && !defined(__INTEL_COMPILER)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdocumentation"
 #endif
@@ -3146,7 +3146,7 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 # pragma GCC diagnostic pop
 #endif
 
-#ifdef __clang__
+#if defined(__clang__) && !defined(__INTEL_COMPILER)
 # pragma clang diagnostic pop
 #endif
 
