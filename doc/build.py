@@ -5,14 +5,16 @@ from __future__ import print_function
 import os, shutil, tempfile
 from subprocess import check_call, CalledProcessError, Popen, PIPE
 
-def pip_install(package, commit=None):
+def pip_install(package, commit=None, **kwargs):
   "Install package using pip."
   if commit:
+    check_version = kwargs.get('check_version', '')
     cmd = ['pip', 'show', package.split('/')[1]]
     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate()
-    if stdout:
-      return # Already installed
+    if stdout and check_version in stdout:
+      print('{} already installed'.format(package))
+      return
     elif p.returncode != 0:
       # Old versions of pip such as the one installed on Travis don't support
       # the show command - continue installation in this case.
@@ -31,7 +33,8 @@ def build_docs():
   execfile(activate_this_file, dict(__file__=activate_this_file))
   # Install Sphinx and Breathe.
   pip_install('sphinx-doc/sphinx',
-              '4d2c17e043d9e8197fa5cd0db34212af3bb17069')
+              '4d2c17e043d9e8197fa5cd0db34212af3bb17069',
+              check_version='1.4a0.dev-20151013')
   pip_install('michaeljones/breathe',
               '511b0887293e7c6b12310bb61b3659068f48f0f4')
   # Build docs.
