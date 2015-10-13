@@ -165,7 +165,7 @@ Although the library uses C++11 features when available, it also works with olde
 compilers and standard library implementations. The only thing to keep in mind 
 for C++98 portability:
 
-* Variadic templates: minimum GCC 4.4, Clang 2.9 or VS2013. This feature allow 
+* Variadic templates: minimum GCC 4.4, Clang 2.9 or VS2013. This feature allows 
   the Format API to accept an unlimited number of arguments. With older compilers
   the maximum is 15.
 
