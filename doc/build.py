@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 import os, shutil, tempfile
-from subprocess import check_call, CalledProcessError, Popen, PIPE
+from subprocess import check_call, check_output, CalledProcessError, Popen, PIPE
 
 def pip_install(package, commit=None, **kwargs):
   "Install package using pip."
@@ -15,13 +15,14 @@ def pip_install(package, commit=None, **kwargs):
     if stdout and check_version in stdout:
       print('{} already installed'.format(package))
       return
-    elif p.returncode != 0:
+    if p.returncode != 0:
       # Old versions of pip such as the one installed on Travis don't support
       # the show command - continue installation in this case.
       # Otherwise throw CalledProcessError.
       if p.returncode > 1 and 'No command by the name pip show' not in stderr:
         raise CalledProcessError(p.returncode, cmd)
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
+  print('Installing {}'.format(package))
   check_call(['pip', 'install', '-q', package])
 
 def build_docs():
@@ -37,6 +38,7 @@ def build_docs():
               check_version='1.4a0.dev-20151013')
   pip_install('michaeljones/breathe',
               '511b0887293e7c6b12310bb61b3659068f48f0f4')
+  print(check_output(['sphinx-build', '--version']))
   # Build docs.
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE)
