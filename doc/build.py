@@ -2,28 +2,22 @@
 # Build the documentation.
 
 from __future__ import print_function
-import os, shutil, tempfile
+import os, pip, shutil, tempfile
 from subprocess import check_call, check_output, CalledProcessError, Popen, PIPE
+from distutils.version import LooseVersion
 
 def pip_install(package, commit=None, **kwargs):
   "Install package using pip."
+  if LooseVersion(pip.__version__) < LooseVersion('1.5.4'):
+    # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
+    # is broken (see #207) and it doesn't support the show command.
+    check_call(['pip', 'install', '--upgrade', 'pip'])
   if commit:
     check_version = kwargs.get('check_version', '')
-    cmd = ['pip', 'show', package.split('/')[1]]
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = p.communicate()
-    if stdout and check_version in stdout:
+    output = check_output(['pip', 'show', package.split('/')[1]])
+    if check_version in output:
       print('{} already installed'.format(package))
       return
-    if p.returncode != 0:
-      # Old versions of pip such as the one installed on Travis don't support
-      # the show command - continue installation in this case.
-      # Otherwise throw CalledProcessError.
-      if p.returncode > 1 and 'No command by the name pip show' not in stderr:
-        raise CalledProcessError(p.returncode, cmd)
-    else:
-      print('Uninstalling {}'.format(package))
-      check_call('pip', 'uninstall', '-y', package)
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   print('Installing {}'.format(package))
   check_call(['pip', 'install', '--upgrade', package])
