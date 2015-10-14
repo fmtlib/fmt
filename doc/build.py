@@ -8,16 +8,12 @@ from distutils.version import LooseVersion
 
 def pip_install(package, commit=None, **kwargs):
   "Install package using pip."
-  if LooseVersion(pip.__version__) < LooseVersion('1.5.4'):
-    # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
-    # is broken (see #207) and it doesn't support the show command.
-    check_call(['pip', 'install', '--upgrade', 'pip'])
   if commit:
     check_version = kwargs.get('check_version', '')
-    output = check_output(['pip', 'show', package.split('/')[1]])
-    if check_version in output:
-      print('{} already installed'.format(package))
-      return
+    #output = check_output(['pip', 'show', package.split('/')[1]])
+    #if check_version in output:
+    #  print('{} already installed'.format(package))
+    #  return
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   print('Installing {}'.format(package))
   check_call(['pip', 'install', '--upgrade', package])
@@ -29,6 +25,10 @@ def build_docs():
   check_call(['virtualenv', virtualenv_dir])
   activate_this_file = os.path.join(virtualenv_dir, 'bin', 'activate_this.py')
   execfile(activate_this_file, dict(__file__=activate_this_file))
+  # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
+  # is broken (see #207) and it doesn't support the show command.
+  if LooseVersion(pip.__version__) < LooseVersion('1.5.4'):
+    check_call(['pip', 'install', '--upgrade', 'pip'])
   # Install Sphinx and Breathe.
   pip_install('sphinx-doc/sphinx',
               '4d2c17e043d9e8197fa5cd0db34212af3bb17069',
@@ -39,7 +39,6 @@ def build_docs():
   print(check_output(['sphinx-build', '--version']))
   print('PATH:', os.environ['PATH'])
   print(check_output(['which', 'sphinx-build']))
-  print(check_output(['cat', '/home/travis/build/cppformat/cppformat/virtualenv/bin/sphinx-build']))
   import sphinx
   print(sphinx.__version__)
   # Build docs.
