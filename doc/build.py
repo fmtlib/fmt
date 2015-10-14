@@ -23,7 +23,7 @@ def pip_install(package, commit=None, **kwargs):
         raise CalledProcessError(p.returncode, cmd)
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   print('Installing {}'.format(package))
-  check_call(['pip', 'install', '--upgrade', '--quiet', package])
+  check_call(['pip', 'install', '--upgrade', package])
 
 def build_docs():
   # Create virtualenv.
@@ -42,6 +42,8 @@ def build_docs():
   print('PATH:', os.environ['PATH'])
   print(check_output(['which', 'sphinx-build']))
   print(check_output(['cat', '/home/travis/build/cppformat/cppformat/virtualenv/bin/sphinx-build']))
+  import sphinx
+  print(sphinx.__version__)
   # Build docs.
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE)
