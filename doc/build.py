@@ -21,6 +21,8 @@ def pip_install(package, commit=None, **kwargs):
       # Otherwise throw CalledProcessError.
       if p.returncode > 1 and 'No command by the name pip show' not in stderr:
         raise CalledProcessError(p.returncode, cmd)
+    else:
+      check_call('pip', 'uninstall', '-y', 'sphinx')
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   print('Installing {}'.format(package))
   check_call(['pip', 'install', '--upgrade', package])
