@@ -41,6 +41,7 @@ def build_docs():
   print(check_output(['sphinx-build', '--version']))
   print('PATH:', os.environ['PATH'])
   print(check_output(['which', 'sphinx-build']))
+  print(check_output(['cat', '/home/travis/build/cppformat/cppformat/virtualenv/bin/sphinx-build']))
   # Build docs.
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE)
