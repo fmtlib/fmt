@@ -22,7 +22,8 @@ def pip_install(package, commit=None, **kwargs):
       if p.returncode > 1 and 'No command by the name pip show' not in stderr:
         raise CalledProcessError(p.returncode, cmd)
     else:
-      check_call('pip', 'uninstall', '-y', 'sphinx')
+      print('Uninstalling {}'.format(package))
+      check_call('pip', 'uninstall', '-y', package)
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   print('Installing {}'.format(package))
   check_call(['pip', 'install', '--upgrade', package])
@@ -40,6 +41,7 @@ def build_docs():
               check_version='1.4a0.dev-20151013')
   pip_install('michaeljones/breathe',
               '511b0887293e7c6b12310bb61b3659068f48f0f4')
+  print(check_output(['pip', '--version']))
   print(check_output(['sphinx-build', '--version']))
   print('PATH:', os.environ['PATH'])
   print(check_output(['which', 'sphinx-build']))
