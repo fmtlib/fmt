@@ -23,7 +23,7 @@ def pip_install(package, commit=None, **kwargs):
         raise CalledProcessError(p.returncode, cmd)
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   print('Installing {}'.format(package))
-  check_call(['pip', 'install', '-q', package])
+  check_call(['pip', 'install', '--upgrade', '--quiet', package])
 
 def build_docs():
   # Create virtualenv.
