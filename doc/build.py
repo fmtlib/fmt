@@ -28,8 +28,8 @@ def build_docs():
   # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
   # is broken (see #207) and it doesn't support the show command.
   import pip
-  print('pip version: {} {}'.format(pip.__version__, LooseVersion(pip.__version__) < LooseVersion('1.5.4')))
-  if LooseVersion(pip.__version__) < LooseVersion('1.5.4'):
+  if not '__version__' in dir(pip) or \
+     LooseVersion(pip.__version__) < LooseVersion('1.5.4'):
     print("Updating pip")
     check_call(['pip', 'install', '--upgrade', 'pip==1.5.4'])
   # Install Sphinx and Breathe.
