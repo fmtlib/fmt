@@ -34,6 +34,7 @@ def build_docs():
     print("Updating pip")
     check_call(['pip', 'install', '--upgrade', 'pip'])
   # Install Sphinx and Breathe.
+  check_call(['pip', 'install', 'sphinx-rtd-theme==0.1.8'])
   pip_install('sphinx-doc/sphinx',
               '4d2c17e043d9e8197fa5cd0db34212af3bb17069',
               check_version='1.4a0.dev-20151013')
