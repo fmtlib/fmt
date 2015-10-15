@@ -2,7 +2,7 @@
 # Build the documentation.
 
 from __future__ import print_function
-import os, shutil, tempfile
+import os, pkg_resources, shutil, tempfile
 from subprocess import check_call, check_output, CalledProcessError, Popen, PIPE
 from distutils.version import LooseVersion
 
@@ -27,9 +27,9 @@ def build_docs():
   execfile(activate_this_file, dict(__file__=activate_this_file))
   # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
   # is broken (see #207) and it doesn't support the show command.
-  import pip
-  if not '__version__' in dir(pip) or \
-     LooseVersion(pip.__version__) < LooseVersion('1.5.4'):
+  pip_version = pkg_resources.get_distribution('pip').version
+  print('pip version: ' + pip_version)
+  if LooseVersion(pip_version) < LooseVersion('1.5.4'):
     print("Updating pip")
     check_call(['pip', 'install', '--upgrade', 'pip'])
   # Install Sphinx and Breathe.
@@ -39,6 +39,7 @@ def build_docs():
   pip_install('michaeljones/breathe',
               '511b0887293e7c6b12310bb61b3659068f48f0f4')
   print(check_output(['pip', '--version']))
+  print('sphinx-rtd-theme version: ' + pkg_resources.get_distribution("sphinx-rtd-theme").version)
   print(check_output(['pip', 'show', 'sphinx-rtd-theme']))
   print(check_output(['sphinx-build', '--version']))
   print('PATH:', os.environ['PATH'])
