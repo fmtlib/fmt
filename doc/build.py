@@ -41,7 +41,6 @@ def build_docs():
   pip_install('michaeljones/breathe',
               '511b0887293e7c6b12310bb61b3659068f48f0f4')
   print(check_output(['pip', '--version']))
-  print('sphinx-rtd-theme version: ' + pkg_resources.get_distribution("sphinx_rtd_theme").version)
   print(check_output(['pip', 'show', 'sphinx-rtd-theme']))
   print(check_output(['sphinx-build', '--version']))
   print('PATH:', os.environ['PATH'])
