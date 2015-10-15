@@ -2,7 +2,7 @@
 # Build the documentation.
 
 from __future__ import print_function
-import os, pip, shutil, tempfile
+import os, shutil, tempfile
 from subprocess import check_call, check_output, CalledProcessError, Popen, PIPE
 from distutils.version import LooseVersion
 
@@ -27,6 +27,7 @@ def build_docs():
   execfile(activate_this_file, dict(__file__=activate_this_file))
   # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
   # is broken (see #207) and it doesn't support the show command.
+  import pip
   print('pip version: {} {}'.format(pip.__version__, LooseVersion(pip.__version__) < LooseVersion('1.5.4')))
   if LooseVersion(pip.__version__) < LooseVersion('1.5.4'):
     print("Updating pip")
