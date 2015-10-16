@@ -35,7 +35,7 @@ def build_docs():
     check_call(['pip', 'install', '--upgrade', 'pip'])
   # Install Sphinx and Breathe.
   pip_install('cppformat/sphinx',
-              '12dde8afdb0a7bb5576e2656692c3478c69d8cc3',
+              'bb0bdaa6c99a9a9834ab689be9d859d01f876452',
               check_version='1.4a0.dev-20151013')
   pip_install('michaeljones/breathe',
               '511b0887293e7c6b12310bb61b3659068f48f0f4')
