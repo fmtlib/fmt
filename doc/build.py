@@ -27,15 +27,24 @@ def build_docs():
   execfile(activate_this_file, dict(__file__=activate_this_file))
   # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
   # is broken (see #207) and it doesn't support the show command.
-  import pkg_resources
-  pip_version = pkg_resources.get_distribution('pip').version
-  print('pip version: ' + pip_version)
+  from pkg_resources import get_distribution, DistributionNotFound
+  pip_version = get_distribution('pip').version
   if LooseVersion(pip_version) < LooseVersion('1.5.4'):
     print("Updating pip")
     check_call(['pip', 'install', '--upgrade', 'pip'])
+  # Upgrade distribute because installation of sphinx with distribute 0.6.24
+  # available on Travis is broken (see #207).
+  try:
+    distribute_version = get_distribution('distribute').version
+    print('distribute version: ' + distribute_version)
+    if LooseVersion(distribute_version) <= LooseVersion('0.6.24'):
+      print("Updating distribute")
+      check_call(['pip', 'install', '--upgrade', 'distribute'])
+  except DistributionNotFound:
+    pass
   # Install Sphinx and Breathe.
   pip_install('cppformat/sphinx',
-              'bb0bdaa6c99a9a9834ab689be9d859d01f876452',
+              '12dde8afdb0a7bb5576e2656692c3478c69d8cc3',
               check_version='1.4a0.dev-20151013')
   pip_install('michaeljones/breathe',
               '511b0887293e7c6b12310bb61b3659068f48f0f4')
