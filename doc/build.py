@@ -2,7 +2,7 @@
 # Build the documentation.
 
 from __future__ import print_function
-import os, shutil, tempfile
+import errno, os, shutil, sys, tempfile
 from subprocess import check_call, check_output, CalledProcessError, Popen, PIPE
 from distutils.version import LooseVersion
 
@@ -76,10 +76,16 @@ def build_docs():
   check_call(['sphinx-build', '-D',
               'breathe_projects.format=' + os.path.join(os.getcwd(), 'doxyxml'),
               '-b', 'html', doc_dir, 'html'])
-  check_call(['lessc', '--clean-css',
-              '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
-              os.path.join(doc_dir, 'cppformat.less'),
-              'html/_static/cppformat.css'])
+  try:
+    check_call(['lessc', '--clean-css',
+                '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
+                os.path.join(doc_dir, 'cppformat.less'),
+                'html/_static/cppformat.css'])
+  except OSError, e:
+    if e.errno != errno.ENOENT:
+      raise
+    print('lessc not found; make sure that Less (http://lesscss.org/) is installed')
+    sys.exit(1)
   return 'html'
 
 if __name__ == '__main__':
