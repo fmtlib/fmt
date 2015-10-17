@@ -60,9 +60,9 @@ Building the documentation
 To build the documentation you need the following software installed on your
 system:
 
-* [Python](https://www.python.org/) with pip and virtualenv
-* [Doxygen](http://www.stack.nl/~dimitri/doxygen/)
-* [Less](http://lesscss.org/) with less-plugin-clean-css
+* `Python <https://www.python.org/>`_ with pip and virtualenv
+* `Doxygen <http://www.stack.nl/~dimitri/doxygen/>`_
+* `Less <http://lesscss.org/>`_ with less-plugin-clean-css
 
 First generate makefiles or project files using CMake as described in
 previous section. Then compile the ``doc`` target/project, for example::
