@@ -65,11 +65,11 @@ system:
 * `Less <http://lesscss.org/>`_ with less-plugin-clean-css
 
 First generate makefiles or project files using CMake as described in
-previous section. Then compile the ``doc`` target/project, for example::
+the previous section. Then compile the ``doc`` target/project, for example::
 
   make doc
 
-This will generate HTML documenation in ``doc/html``.
+This will generate the HTML documenation in ``doc/html``.
   
 Android NDK
 ===========
