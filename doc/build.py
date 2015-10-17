@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Build the documentation.
 
 from __future__ import print_function
@@ -24,7 +24,8 @@ def build_docs():
   virtualenv_dir = 'virtualenv'
   check_call(['virtualenv', virtualenv_dir])
   activate_this_file = os.path.join(virtualenv_dir, 'bin', 'activate_this.py')
-  execfile(activate_this_file, dict(__file__=activate_this_file))
+  with open(activate_this_file) as f:
+    exec(f.read(), dict(__file__=activate_this_file))
   # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
   # is broken (see #207) and it doesn't support the show command.
   from pkg_resources import get_distribution, DistributionNotFound
@@ -70,7 +71,7 @@ def build_docs():
                           FMT_USE_RVALUE_REFERENCES=1 \
                           FMT_USE_USER_DEFINED_LITERALS=1
       EXCLUDE_SYMBOLS   = fmt::internal::* StringValue write_str
-    '''.format(os.path.dirname(doc_dir)))
+    '''.format(os.path.dirname(doc_dir)).encode('UTF-8'))
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
   check_call(['sphinx-build', '-D',
@@ -81,7 +82,7 @@ def build_docs():
                 '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
                 os.path.join(doc_dir, 'cppformat.less'),
                 'html/_static/cppformat.css'])
-  except OSError, e:
+  except OSError as e:
     if e.errno != errno.ENOENT:
       raise
     print('lessc not found; make sure that Less (http://lesscss.org/) is installed')
