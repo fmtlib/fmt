@@ -458,9 +458,9 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
  private:
   T data_[SIZE];
 
-  // Free memory allocated by the buffer.
-  void free() {
-    if (this->ptr_ != data_) this->deallocate(this->ptr_, this->capacity_);
+  // Deallocate memory allocated by the buffer.
+  void deallocate() {
+    if (this->ptr_ != data_) Allocator::deallocate(this->ptr_, this->capacity_);
   }
 
  protected:
@@ -469,7 +469,7 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
  public:
   explicit MemoryBuffer(const Allocator &alloc = Allocator())
       : Allocator(alloc), Buffer<T>(data_, SIZE) {}
-  ~MemoryBuffer() { free(); }
+  ~MemoryBuffer() { deallocate(); }
 
 #if FMT_USE_RVALUE_REFERENCES
  private:
@@ -486,7 +486,7 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
     } else {
       this->ptr_ = other.ptr_;
       // Set pointer to the inline array so that delete is not called
-      // when freeing.
+      // when deallocating.
       other.ptr_ = other.data_;
     }
   }
@@ -498,7 +498,7 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
 
   MemoryBuffer &operator=(MemoryBuffer &&other) {
     assert(this != &other);
-    free();
+    deallocate();
     move(other);
     return *this;
   }
@@ -524,7 +524,7 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
   // the buffer already uses the new storage and will deallocate it in case
   // of exception.
   if (old_ptr != data_)
-    this->deallocate(old_ptr, old_capacity);
+    Allocator::deallocate(old_ptr, old_capacity);
 }
 
 // A fixed-size buffer.
