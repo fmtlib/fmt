@@ -1252,11 +1252,13 @@ FMT_FUNC void fmt::print(CStringRef format_str, ArgList args) {
   print(stdout, format_str, args);
 }
 
+#ifndef FMT_NO_STREAM_LIBRARIES
 FMT_FUNC void fmt::print(std::ostream &os, CStringRef format_str, ArgList args) {
   MemoryWriter w;
   w.write(format_str, args);
   os.write(w.data(), w.size());
 }
+#endif
 
 FMT_FUNC void fmt::print_colored(Color c, CStringRef format, ArgList args) {
   char escape[] = "\x1b[30m";

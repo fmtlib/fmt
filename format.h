@@ -38,8 +38,11 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
-#include <sstream>
 #include <map>
+
+#ifndef FMT_NO_STREAM_LIBRARIES
+# include <sstream>
+#endif
 
 #if _SECURE_SCL
 # include <iterator>
@@ -2685,6 +2688,8 @@ void print(std::FILE *f, CStringRef format_str, ArgList args);
  */
 void print(CStringRef format_str, ArgList args);
 
+
+#ifndef FMT_NO_STREAM_LIBRARIES
 /**
   \rst
   Prints formatted data to the stream *os*.
@@ -2695,6 +2700,7 @@ void print(CStringRef format_str, ArgList args);
   \endrst
  */
 void print(std::ostream &os, CStringRef format_str, ArgList args);
+#endif
 
 template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
@@ -3007,7 +3013,11 @@ FMT_VARIADIC(std::string, format, CStringRef)
 FMT_VARIADIC_W(std::wstring, format, WCStringRef)
 FMT_VARIADIC(void, print, CStringRef)
 FMT_VARIADIC(void, print, std::FILE *, CStringRef)
+
+#ifndef FMT_NO_STREAM_LIBRARIES
 FMT_VARIADIC(void, print, std::ostream &, CStringRef)
+#endif
+
 FMT_VARIADIC(void, print_colored, Color, CStringRef)
 FMT_VARIADIC(std::string, sprintf, CStringRef)
 FMT_VARIADIC_W(std::wstring, sprintf, WCStringRef)
