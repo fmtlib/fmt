@@ -13,11 +13,6 @@ html {
   background-color: darken(@header-bg, 10%);
 }
 
-.navbar-content {
-  .make-md-column-offset(2);
-  .make-md-column(8);
-}
-
 .jumbotron {
   #gradient > .vertical(@header-bg; darken(@header-bg, 2%); 50%; 50%);
   background-size: 100% 4px;
@@ -32,9 +27,11 @@ div.sphinxsidebar {
 }
 
 // Keep content not too wide for better readability.
-.content {
-  .make-md-column-offset(2);
-  .make-md-column(8);
+.navbar-content, .content {
+  .make-md-column-offset(1);
+  .make-md-column(10);
+  .make-lg-column-offset(2);
+  .make-lg-column(8);
 }
 
 .footer {
