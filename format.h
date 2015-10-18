@@ -40,7 +40,11 @@
 #include <string>
 #include <map>
 
-#ifndef FMT_NO_STREAM_LIBRARIES
+#ifndef FMT_USE_IOSTREAMS
+# define FMT_USE_IOSTREAMS 1
+#endif
+
+#if FMT_USE_IOSTREAMS
 # include <sstream>
 #endif
 
@@ -2688,20 +2692,6 @@ void print(std::FILE *f, CStringRef format_str, ArgList args);
  */
 void print(CStringRef format_str, ArgList args);
 
-
-#ifndef FMT_NO_STREAM_LIBRARIES
-/**
-  \rst
-  Prints formatted data to the stream *os*.
-
-  **Example**::
-
-    print(cerr, "Don't {}!", "panic");
-  \endrst
- */
-void print(std::ostream &os, CStringRef format_str, ArgList args);
-#endif
-
 template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
   internal::PrintfFormatter<Char>(args).format(w, format);
@@ -3014,16 +3004,26 @@ FMT_VARIADIC_W(std::wstring, format, WCStringRef)
 FMT_VARIADIC(void, print, CStringRef)
 FMT_VARIADIC(void, print, std::FILE *, CStringRef)
 
-#ifndef FMT_NO_STREAM_LIBRARIES
-FMT_VARIADIC(void, print, std::ostream &, CStringRef)
-#endif
-
 FMT_VARIADIC(void, print_colored, Color, CStringRef)
 FMT_VARIADIC(std::string, sprintf, CStringRef)
 FMT_VARIADIC_W(std::wstring, sprintf, WCStringRef)
 FMT_VARIADIC(int, printf, CStringRef)
 FMT_VARIADIC(int, fprintf, std::FILE *, CStringRef)
-}
+
+#if FMT_USE_IOSTREAMS
+/**
+  \rst
+  Prints formatted data to the stream *os*.
+
+  **Example**::
+
+    print(cerr, "Don't {}!", "panic");
+  \endrst
+ */
+void print(std::ostream &os, CStringRef format_str, ArgList args);
+FMT_VARIADIC(void, print, std::ostream &, CStringRef)
+#endif
+}  // namespace fmt
 
 #if FMT_USE_USER_DEFINED_LITERALS
 namespace fmt {

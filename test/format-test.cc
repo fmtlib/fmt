@@ -1539,7 +1539,6 @@ TEST(FormatIntTest, FormatDec) {
   EXPECT_EQ("42", format_decimal(42ull));
 }
 
-#ifndef FMT_NO_STREAM_LIBRARIES
 TEST(FormatTest, Print) {
 #if FMT_USE_FILE_DESCRIPTORS
   EXPECT_WRITE(stdout, fmt::print("Don't {}!", "panic"), "Don't panic!");
@@ -1550,7 +1549,6 @@ TEST(FormatTest, Print) {
   fmt::print(os, "Don't {}!", "panic");
   EXPECT_EQ("Don't panic!", os.str());
 }
-#endif
 
 #if FMT_USE_FILE_DESCRIPTORS
 TEST(FormatTest, PrintColored) {
