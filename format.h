@@ -927,7 +927,11 @@ struct Value {
     StringValue<wchar_t> wstring;
     CustomValue custom;
   };
+};
 
+// A formatting argument. It is a POD type to allow storage in
+// internal::MemoryBuffer.
+struct Arg {
   enum Type {
     NONE, NAMED_ARG,
     // Integer types should go first,
@@ -936,11 +940,8 @@ struct Value {
     DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
     CSTRING, STRING, WSTRING, POINTER, CUSTOM
   };
-};
 
-// A formatting argument. It is a POD type to allow storage in
-// internal::MemoryBuffer.
-struct Arg : Value {
+  Value value;
   Type type;
 };
 
@@ -1044,7 +1045,7 @@ struct Not<false> { enum { value = 1 }; };
 
 // Makes an Arg object from any type.
 template <typename Formatter>
-class MakeValue : public Arg {
+class MakeValue : public Value {
  public:
   typedef typename Formatter::Char Char;
 
@@ -1206,9 +1207,10 @@ struct NamedArg : Arg {
   typedef internal::MakeValue< BasicFormatter<Char> > MakeValue;
 
   template <typename T>
-  NamedArg(BasicStringRef<Char> argname, const T &value)
-  : Arg(MakeValue(value)), name(argname) {
-    type = static_cast<Arg::Type>(MakeValue::type(value));
+  NamedArg(BasicStringRef<Char> argname, const T &x)
+  : name(argname) {
+    value = MakeValue(x);
+    type = static_cast<Arg::Type>(MakeValue::type(x));
   }
 };
 
@@ -1281,16 +1283,16 @@ class ArgVisitor {
   Result visit_cstring(const char *) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
-  Result visit_string(Arg::StringValue<char>) {
+  Result visit_string(Value::StringValue<char>) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
-  Result visit_wstring(Arg::StringValue<wchar_t>) {
+  Result visit_wstring(Value::StringValue<wchar_t>) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
   Result visit_pointer(const void *) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
-  Result visit_custom(Arg::CustomValue) {
+  Result visit_custom(Value::CustomValue) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
 
@@ -1300,31 +1302,31 @@ class ArgVisitor {
       FMT_ASSERT(false, "invalid argument type");
       return Result();
     case Arg::INT:
-      return FMT_DISPATCH(visit_int(arg.int_value));
+      return FMT_DISPATCH(visit_int(arg.value.int_value));
     case Arg::UINT:
-      return FMT_DISPATCH(visit_uint(arg.uint_value));
+      return FMT_DISPATCH(visit_uint(arg.value.uint_value));
     case Arg::LONG_LONG:
-      return FMT_DISPATCH(visit_long_long(arg.long_long_value));
+      return FMT_DISPATCH(visit_long_long(arg.value.long_long_value));
     case Arg::ULONG_LONG:
-      return FMT_DISPATCH(visit_ulong_long(arg.ulong_long_value));
+      return FMT_DISPATCH(visit_ulong_long(arg.value.ulong_long_value));
     case Arg::BOOL:
-      return FMT_DISPATCH(visit_bool(arg.int_value != 0));
+      return FMT_DISPATCH(visit_bool(arg.value.int_value != 0));
     case Arg::CHAR:
-      return FMT_DISPATCH(visit_char(arg.int_value));
+      return FMT_DISPATCH(visit_char(arg.value.int_value));
     case Arg::DOUBLE:
-      return FMT_DISPATCH(visit_double(arg.double_value));
+      return FMT_DISPATCH(visit_double(arg.value.double_value));
     case Arg::LONG_DOUBLE:
-      return FMT_DISPATCH(visit_long_double(arg.long_double_value));
+      return FMT_DISPATCH(visit_long_double(arg.value.long_double_value));
     case Arg::CSTRING:
-      return FMT_DISPATCH(visit_cstring(arg.string.value));
+      return FMT_DISPATCH(visit_cstring(arg.value.string.value));
     case Arg::STRING:
-      return FMT_DISPATCH(visit_string(arg.string));
+      return FMT_DISPATCH(visit_string(arg.value.string));
     case Arg::WSTRING:
-      return FMT_DISPATCH(visit_wstring(arg.wstring));
+      return FMT_DISPATCH(visit_wstring(arg.value.wstring));
     case Arg::POINTER:
-      return FMT_DISPATCH(visit_pointer(arg.pointer));
+      return FMT_DISPATCH(visit_pointer(arg.value.pointer));
     case Arg::CUSTOM:
-      return FMT_DISPATCH(visit_custom(arg.custom));
+      return FMT_DISPATCH(visit_custom(arg.value.custom));
     }
   }
 };
@@ -1385,9 +1387,8 @@ class ArgList {
     bool use_values = type(MAX_PACKED_ARGS - 1) == Arg::NONE;
     if (index < MAX_PACKED_ARGS) {
       Arg::Type arg_type = type(index);
-      internal::Value &val = arg;
       if (arg_type != Arg::NONE)
-        val = use_values ? values_[index] : args_[index];
+        arg.value = use_values ? values_[index] : args_[index].value;
       arg.type = arg_type;
       return arg;
     }
@@ -1665,12 +1666,12 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
 
   void write(bool value) {
     const char *str_value = value ? "true" : "false";
-    Arg::StringValue<char> str = { str_value, std::strlen(str_value) };
+    Value::StringValue<char> str = { str_value, std::strlen(str_value) };
     writer_.write_str(str, spec_);
   }
 
   void write(const char *value) {
-    Arg::StringValue<char> str = {value, value != 0 ? std::strlen(value) : 0};
+    Value::StringValue<char> str = {value, value != 0 ? std::strlen(value) : 0};
     writer_.write_str(str, spec_);
   }
 
@@ -1726,13 +1727,13 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     write(value);
   }
 
-  void visit_string(Arg::StringValue<char> value) {
+  void visit_string(Value::StringValue<char> value) {
     writer_.write_str(value, spec_);
   }
 
   using ArgVisitor<Impl, void>::visit_wstring;
 
-  void visit_wstring(Arg::StringValue<Char> value) {
+  void visit_wstring(Value::StringValue<Char> value) {
     writer_.write_str(value, spec_);
   }
 
@@ -1756,7 +1757,7 @@ class BasicArgFormatter :
   : ArgFormatterBase<BasicArgFormatter<Char>, Char>(f.writer(), s),
     formatter_(f), format_(fmt) {}
 
-  void visit_custom(Arg::CustomValue c) {
+  void visit_custom(Value::CustomValue c) {
     c.format(&formatter_, c.value, &format_);
   }
 };
@@ -1931,12 +1932,15 @@ inline void set_types(Value *, const Args & ...) {
 template <typename Formatter, typename Value>
 inline void store_args(Value *) {}
 
-template <typename Formatter, typename Arg, typename T, typename... Args>
+template <typename Formatter, typename T, typename... Args>
 inline void store_args(Arg *args, const T &arg, const Args & ... tail) {
-  // Assign only the Value subobject of Arg and don't overwrite type (if any)
-  // that is assigned by set_types.
-  Value &value = *args;
-  value = MakeValue<Formatter>(arg);
+  args->value = MakeValue<Formatter>(arg);
+  store_args<Formatter>(args + 1, tail...);
+}
+
+template <typename Formatter, typename T, typename... Args>
+inline void store_args(Value *args, const T &arg, const Args & ... tail) {
+  *args = MakeValue<Formatter>(arg);
   store_args<Formatter>(args + 1, tail...);
 }
 
@@ -2242,7 +2246,7 @@ class BasicWriter {
   CharPtr write_str(const StrChar *s, std::size_t size, const AlignSpec &spec);
 
   template <typename StrChar>
-  void write_str(const internal::Arg::StringValue<StrChar> &str,
+  void write_str(const internal::Value::StringValue<StrChar> &str,
                  const FormatSpec &spec);
 
   // This following methods are private to disallow writing wide characters
@@ -2461,7 +2465,7 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
 template <typename Char>
 template <typename StrChar>
 void BasicWriter<Char>::write_str(
-    const internal::Arg::StringValue<StrChar> &s, const FormatSpec &spec) {
+    const internal::Value::StringValue<StrChar> &s, const FormatSpec &spec) {
   // Check if StrChar is convertible to Char.
   internal::CharTraits<Char>::convert(StrChar());
   if (spec.type_ && spec.type_ != 's')
@@ -2921,7 +2925,8 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
 
   BasicStringRef<Char> str(&buffer[0], format_buf.size());
   typedef internal::MakeValue< BasicFormatter<Char> > MakeValue;
-  internal::Arg arg = MakeValue(str);
+  internal::Arg arg;
+  arg.value = MakeValue(str);
   arg.type = static_cast<internal::Arg::Type>(MakeValue::type(str));
   format_str = f.format(format_str, arg);
 }
@@ -3462,7 +3467,7 @@ const Char *BasicFormatter<Char>::format(
   FormatSpec spec;
   if (*s == ':') {
     if (arg.type == Arg::CUSTOM) {
-      arg.custom.format(this, arg.custom.value, &s);
+      arg.value.custom.format(this, arg.value.custom.value, &s);
       return s;
     }
     ++s;
@@ -3542,20 +3547,20 @@ const Char *BasicFormatter<Char>::format(
       ULongLong value = 0;
       switch (width_arg.type) {
       case Arg::INT:
-        if (width_arg.int_value < 0)
+        if (width_arg.value.int_value < 0)
           FMT_THROW(FormatError("negative width"));
-        value = width_arg.int_value;
+        value = width_arg.value.int_value;
         break;
       case Arg::UINT:
-        value = width_arg.uint_value;
+        value = width_arg.value.uint_value;
         break;
       case Arg::LONG_LONG:
-        if (width_arg.long_long_value < 0)
+        if (width_arg.value.long_long_value < 0)
           FMT_THROW(FormatError("negative width"));
-        value = width_arg.long_long_value;
+        value = width_arg.value.long_long_value;
         break;
       case Arg::ULONG_LONG:
-        value = width_arg.ulong_long_value;
+        value = width_arg.value.ulong_long_value;
         break;
       default:
         FMT_THROW(FormatError("width is not integer"));
@@ -3580,20 +3585,20 @@ const Char *BasicFormatter<Char>::format(
         ULongLong value = 0;
         switch (precision_arg.type) {
           case Arg::INT:
-            if (precision_arg.int_value < 0)
+            if (precision_arg.value.int_value < 0)
               FMT_THROW(FormatError("negative precision"));
-            value = precision_arg.int_value;
+            value = precision_arg.value.int_value;
             break;
           case Arg::UINT:
-            value = precision_arg.uint_value;
+            value = precision_arg.value.uint_value;
             break;
           case Arg::LONG_LONG:
-            if (precision_arg.long_long_value < 0)
+            if (precision_arg.value.long_long_value < 0)
               FMT_THROW(FormatError("negative precision"));
-            value = precision_arg.long_long_value;
+            value = precision_arg.value.long_long_value;
             break;
           case Arg::ULONG_LONG:
-            value = precision_arg.ulong_long_value;
+            value = precision_arg.value.ulong_long_value;
             break;
           default:
             FMT_THROW(FormatError("precision is not integer"));

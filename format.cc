@@ -304,20 +304,20 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
       // Extra casts are used to silence warnings.
       if (is_signed) {
         arg_.type = Arg::INT;
-        arg_.int_value = static_cast<int>(static_cast<T>(value));
+        arg_.value.int_value = static_cast<int>(static_cast<T>(value));
       } else {
         arg_.type = Arg::UINT;
-        arg_.uint_value = static_cast<unsigned>(
+        arg_.value.uint_value = static_cast<unsigned>(
             static_cast<typename fmt::internal::MakeUnsigned<T>::Type>(value));
       }
     } else {
       if (is_signed) {
         arg_.type = Arg::LONG_LONG;
-        arg_.long_long_value =
+        arg_.value.long_long_value =
             static_cast<typename fmt::internal::MakeUnsigned<U>::Type>(value);
       } else {
         arg_.type = Arg::ULONG_LONG;
-        arg_.ulong_long_value =
+        arg_.value.ulong_long_value =
             static_cast<typename fmt::internal::MakeUnsigned<U>::Type>(value);
       }
     }
@@ -337,7 +337,7 @@ class CharConverter : public fmt::internal::ArgVisitor<CharConverter, void> {
   template <typename T>
   void visit_any_int(T value) {
     arg_.type = Arg::CHAR;
-    arg_.int_value = static_cast<char>(value);
+    arg_.value.int_value = static_cast<char>(value);
   }
 };
 }  // namespace
@@ -405,7 +405,7 @@ class PrintfArgFormatter :
     write_null_pointer();
   }
 
-  void visit_custom(Arg::CustomValue c) {
+  void visit_custom(Value::CustomValue c) {
     BasicFormatter<Char> formatter(ArgList(), this->writer());
     const Char format_str[] = {'}', 0};
     const Char *format = format_str;
@@ -627,7 +627,7 @@ void fmt::internal::ArgMap<Char>::init(const ArgList &args) {
   for (unsigned i = 0; i != ArgList::MAX_PACKED_ARGS; ++i) {
     internal::Arg::Type arg_type = args.type(i);
     if (arg_type == internal::Arg::NAMED_ARG) {
-      named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
+      named_arg = static_cast<const NamedArg*>(args.args_[i].value.pointer);
       map_.insert(Pair(named_arg->name, *named_arg));
     }
   }
@@ -636,7 +636,7 @@ void fmt::internal::ArgMap<Char>::init(const ArgList &args) {
     case internal::Arg::NONE:
       return;
     case internal::Arg::NAMED_ARG:
-      named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
+      named_arg = static_cast<const NamedArg*>(args.args_[i].value.pointer);
       map_.insert(Pair(named_arg->name, *named_arg));
       break;
     default:
@@ -658,7 +658,7 @@ FMT_FUNC Arg fmt::internal::FormatterBase::do_get_arg(
     error = "argument index out of range";
     break;
   case Arg::NAMED_ARG:
-    arg = *static_cast<const internal::Arg*>(arg.pointer);
+    arg = *static_cast<const internal::Arg*>(arg.value.pointer);
   default:
     /*nothing*/;
   }

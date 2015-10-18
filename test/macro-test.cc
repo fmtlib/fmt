@@ -70,7 +70,7 @@ int result;
   void func(const char *format, const fmt::ArgList &args) { \
     result = 0; \
     for (unsigned i = 0; args[i].type; ++i) \
-      result += args[i].int_value; \
+      result += args[i].value.int_value; \
   }
 
 MAKE_TEST(test_func)
@@ -101,7 +101,7 @@ struct S {};
 int test_variadic(FMT_GEN(10, GET_TYPE), const fmt::ArgList &args) { \
   int result = 0; \
   for (unsigned i = 0; args[i].type; ++i) \
-    result += args[i].int_value; \
+    result += args[i].value.int_value; \
   return result;
 }
 FMT_VARIADIC(int, test_variadic,

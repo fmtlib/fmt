@@ -53,6 +53,7 @@
 
 using fmt::StringRef;
 using fmt::internal::Arg;
+using fmt::internal::Value;
 using fmt::Buffer;
 using fmt::internal::MemoryBuffer;
 
@@ -70,7 +71,8 @@ std::basic_ostream<Char> &operator<<(std::basic_ostream<Char> &os, Test) {
 template <typename Char, typename T>
 Arg make_arg(const T &value) {
   typedef fmt::internal::MakeValue< fmt::BasicFormatter<Char> > MakeValue;
-  Arg arg = MakeValue(value);
+  Arg arg;
+  arg.value = MakeValue(value);
   arg.type = static_cast<Arg::Type>(MakeValue::type(value));
   return arg;
 }
@@ -409,7 +411,7 @@ struct ArgInfo;
 #define ARG_INFO(type_code, Type, field) \
   template <> \
   struct ArgInfo<Arg::type_code> { \
-    static Type get(const Arg &arg) { return arg.field; } \
+    static Type get(const Arg &arg) { return arg.value.field; } \
   };
 
 ARG_INFO(INT, int, int_value);
@@ -424,12 +426,12 @@ ARG_INFO(CSTRING, const char *, string.value);
 ARG_INFO(STRING, const char *, string.value);
 ARG_INFO(WSTRING, const wchar_t *, wstring.value);
 ARG_INFO(POINTER, const void *, pointer);
-ARG_INFO(CUSTOM, Arg::CustomValue, custom);
+ARG_INFO(CUSTOM, Value::CustomValue, custom);
 
-#define CHECK_ARG_INFO(Type, field, value) { \
+#define CHECK_ARG_INFO(Type, field, x) { \
   Arg arg = Arg(); \
-  arg.field = value; \
-  EXPECT_EQ(value, ArgInfo<Arg::Type>::get(arg)); \
+  arg.value.field = x; \
+  EXPECT_EQ(x, ArgInfo<Arg::Type>::get(arg)); \
 }
 
 TEST(ArgTest, ArgInfo) {
@@ -447,7 +449,7 @@ TEST(ArgTest, ArgInfo) {
   int p = 0;
   CHECK_ARG_INFO(POINTER, pointer, &p);
   Arg arg = Arg();
-  arg.custom.value = &p;
+  arg.value.custom.value = &p;
   EXPECT_EQ(&p, ArgInfo<Arg::CUSTOM>::get(arg).value);
 }
 
@@ -562,11 +564,11 @@ TEST(ArgTest, MakeArg) {
   ::Test t;
   Arg arg = make_arg<char>(t);
   EXPECT_EQ(fmt::internal::Arg::CUSTOM, arg.type);
-  EXPECT_EQ(&t, arg.custom.value);
+  EXPECT_EQ(&t, arg.value.custom.value);
   fmt::MemoryWriter w;
   fmt::BasicFormatter<char> formatter(fmt::ArgList(), w);
   const char *s = "}";
-  arg.custom.format(&formatter, &t, &s);
+  arg.value.custom.format(&formatter, &t, &s);
   EXPECT_EQ("test", w.str());
 }
 
@@ -585,10 +587,11 @@ void format(CustomFormatter &, const char *&s, const Test &) {
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
-  Arg arg = fmt::internal::MakeValue<CustomFormatter>(t);
+  Arg arg;
+  arg.value = fmt::internal::MakeValue<CustomFormatter>(t);
   CustomFormatter formatter;
   const char *s = "";
-  arg.custom.format(&formatter, &t, &s);
+  arg.value.custom.format(&formatter, &t, &s);
   EXPECT_STREQ("custom_format", s);
 }
 
@@ -611,10 +614,10 @@ struct TestVisitor : fmt::internal::ArgVisitor<TestVisitor, Result> {
   Result visit_long_double(long double value) { return value; }
   Result visit_char(int value) { return static_cast<char>(value); }
   Result visit_cstring(const char *s) { return s; }
-  Result visit_string(Arg::StringValue<char> s) { return s.value; }
-  Result visit_wstring(Arg::StringValue<wchar_t> s) { return s.value; }
+  Result visit_string(Value::StringValue<char> s) { return s.value; }
+  Result visit_wstring(Value::StringValue<wchar_t> s) { return s.value; }
   Result visit_pointer(const void *p) { return p; }
-  Result visit_custom(Arg::CustomValue c) {
+  Result visit_custom(Value::CustomValue c) {
     return *static_cast<const ::Test*>(c.value);
   }
 };
@@ -648,7 +651,7 @@ TEST(ArgVisitorTest, VisitAll) {
   ::Test t;
   Result result = TestVisitor().visit(make_arg<char>(t));
   EXPECT_EQ(Arg::CUSTOM, result.arg.type);
-  EXPECT_EQ(&t, result.arg.custom.value);
+  EXPECT_EQ(&t, result.arg.value.custom.value);
 }
 
 struct TestAnyVisitor : fmt::internal::ArgVisitor<TestAnyVisitor, Result> {
