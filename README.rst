@@ -149,6 +149,8 @@ Projects using this library
 
 * `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
 
+* `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: A Redis cluster proxy
+
 * `Saddy <https://code.google.com/p/saddy/>`_:
   Small crossplatform 2D graphic engine
 
@@ -156,6 +158,10 @@ Projects using this library
   Business intelligence software
 
 * `spdlog <https://github.com/gabime/spdlog>`_: Super fast C++ logging library
+
+* `Stellar <https://www.stellar.org/>`_: Financial platform
+
+* `Touch Surgery <https://www.touchsurgery.com/>`_: Surgery simulator
 
 * `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: Open-source MMORPG framework
 

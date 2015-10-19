@@ -100,7 +100,7 @@ struct S {};
 
 int test_variadic(FMT_GEN(10, GET_TYPE), const fmt::ArgList &args) { \
   int result = 0; \
-  for (std::size_t i = 0; args[i].type; ++i) \
+  for (unsigned i = 0; args[i].type; ++i) \
     result += args[i].int_value; \
   return result;
 }

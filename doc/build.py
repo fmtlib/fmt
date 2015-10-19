@@ -1,26 +1,22 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Build the documentation.
 
 from __future__ import print_function
-import os, shutil, tempfile
-from subprocess import check_call, CalledProcessError, Popen, PIPE
+import errno, os, shutil, sys, tempfile
+from subprocess import check_call, check_output, CalledProcessError, Popen, PIPE
+from distutils.version import LooseVersion
 
-def pip_install(package, commit=None):
+def pip_install(package, commit=None, **kwargs):
   "Install package using pip."
   if commit:
-    cmd = ['pip', 'show', package.split('/')[1]]
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = p.communicate()
-    if stdout:
-      return # Already installed
-    elif p.returncode != 0:
-      # Old versions of pip such as the one installed on Travis don't support
-      # the show command - continue installation in this case.
-      # Otherwise throw CalledProcessError.
-      if p.returncode > 1 and 'No command by the name pip show' not in stderr:
-        raise CalledProcessError(p.returncode, cmd)
+    check_version = kwargs.get('check_version', '')
+    #output = check_output(['pip', 'show', package.split('/')[1]])
+    #if check_version in output:
+    #  print('{} already installed'.format(package))
+    #  return
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
-  check_call(['pip', 'install', '-q', package])
+  print('Installing {}'.format(package))
+  check_call(['pip', 'install', '--upgrade', package])
 
 def build_docs():
   # Create virtualenv.
@@ -28,9 +24,28 @@ def build_docs():
   virtualenv_dir = 'virtualenv'
   check_call(['virtualenv', virtualenv_dir])
   activate_this_file = os.path.join(virtualenv_dir, 'bin', 'activate_this.py')
-  execfile(activate_this_file, dict(__file__=activate_this_file))
+  with open(activate_this_file) as f:
+    exec(f.read(), dict(__file__=activate_this_file))
+  # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
+  # is broken (see #207) and it doesn't support the show command.
+  from pkg_resources import get_distribution, DistributionNotFound
+  pip_version = get_distribution('pip').version
+  if LooseVersion(pip_version) < LooseVersion('1.5.4'):
+    print("Updating pip")
+    check_call(['pip', 'install', '--upgrade', 'pip'])
+  # Upgrade distribute because installation of sphinx with distribute 0.6.24
+  # available on Travis is broken (see #207).
+  try:
+    distribute_version = get_distribution('distribute').version
+    if LooseVersion(distribute_version) <= LooseVersion('0.6.24'):
+      print("Updating distribute")
+      check_call(['pip', 'install', '--upgrade', 'distribute'])
+  except DistributionNotFound:
+    pass
   # Install Sphinx and Breathe.
-  pip_install('sphinx==1.3.1')
+  pip_install('cppformat/sphinx',
+              '12dde8afdb0a7bb5576e2656692c3478c69d8cc3',
+              check_version='1.4a0.dev-20151013')
   pip_install('michaeljones/breathe',
               '511b0887293e7c6b12310bb61b3659068f48f0f4')
   # Build docs.
@@ -43,7 +58,6 @@ def build_docs():
       GENERATE_RTF      = NO
       CASE_SENSE_NAMES  = NO
       INPUT             = {0}/format.h
-      EXCLUDE_SYMBOLS   = fmt::internal::*
       QUIET             = YES
       JAVADOC_AUTOBRIEF = YES
       AUTOLINK_SUPPORT  = NO
@@ -54,18 +68,25 @@ def build_docs():
       ALIASES          += "endrst=\endverbatim"
       PREDEFINED        = _WIN32=1 \
                           FMT_USE_VARIADIC_TEMPLATES=1 \
-                          FMT_USE_RVALUE_REFERENCES=1
+                          FMT_USE_RVALUE_REFERENCES=1 \
+                          FMT_USE_USER_DEFINED_LITERALS=1
       EXCLUDE_SYMBOLS   = fmt::internal::* StringValue write_str
-    '''.format(os.path.dirname(doc_dir)))
+    '''.format(os.path.dirname(doc_dir)).encode('UTF-8'))
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
   check_call(['sphinx-build', '-D',
               'breathe_projects.format=' + os.path.join(os.getcwd(), 'doxyxml'),
               '-b', 'html', doc_dir, 'html'])
-  check_call(['lessc', '--clean-css',
-              '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
-              os.path.join(doc_dir, 'cppformat.less'),
-              'html/_static/cppformat.css'])
+  try:
+    check_call(['lessc', '--clean-css',
+                '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
+                os.path.join(doc_dir, 'cppformat.less'),
+                'html/_static/cppformat.css'])
+  except OSError as e:
+    if e.errno != errno.ENOENT:
+      raise
+    print('lessc not found; make sure that Less (http://lesscss.org/) is installed')
+    sys.exit(1)
   return 'html'
 
 if __name__ == '__main__':

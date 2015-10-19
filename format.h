@@ -38,8 +38,15 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
-#include <sstream>
 #include <map>
+
+#ifndef FMT_USE_IOSTREAMS
+# define FMT_USE_IOSTREAMS 1
+#endif
+
+#if FMT_USE_IOSTREAMS
+# include <sstream>
+#endif
 
 #if _SECURE_SCL
 # include <iterator>
@@ -177,6 +184,16 @@ inline uint32_t clzll(uint64_t x) {
     TypeName& operator=(const TypeName&)
 #endif
 
+#ifndef FMT_USE_USER_DEFINED_LITERALS
+// All compilers which support UDLs also support variadic templates. This
+// makes the fmt::literals implementation easier. However, an explicit check
+// for variadic templates is added here just in case.
+# define FMT_USE_USER_DEFINED_LITERALS \
+   FMT_USE_VARIADIC_TEMPLATES && \
+   (FMT_HAS_FEATURE(cxx_user_literals) || \
+       (FMT_GCC_VERSION >= 407 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1900)
+#endif
+
 #ifndef FMT_ASSERT
 # define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
@@ -284,7 +301,6 @@ class BasicStringRef {
 
 typedef BasicStringRef<char> StringRef;
 typedef BasicStringRef<wchar_t> WStringRef;
-
 
 /**
   \rst
@@ -449,9 +465,9 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
  private:
   T data_[SIZE];
 
-  // Free memory allocated by the buffer.
-  void free() {
-    if (this->ptr_ != data_) this->deallocate(this->ptr_, this->capacity_);
+  // Deallocate memory allocated by the buffer.
+  void deallocate() {
+    if (this->ptr_ != data_) Allocator::deallocate(this->ptr_, this->capacity_);
   }
 
  protected:
@@ -460,7 +476,7 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
  public:
   explicit MemoryBuffer(const Allocator &alloc = Allocator())
       : Allocator(alloc), Buffer<T>(data_, SIZE) {}
-  ~MemoryBuffer() { free(); }
+  ~MemoryBuffer() { deallocate(); }
 
 #if FMT_USE_RVALUE_REFERENCES
  private:
@@ -477,7 +493,7 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
     } else {
       this->ptr_ = other.ptr_;
       // Set pointer to the inline array so that delete is not called
-      // when freeing.
+      // when deallocating.
       other.ptr_ = other.data_;
     }
   }
@@ -489,7 +505,7 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
 
   MemoryBuffer &operator=(MemoryBuffer &&other) {
     assert(this != &other);
-    free();
+    deallocate();
     move(other);
     return *this;
   }
@@ -515,7 +531,7 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
   // the buffer already uses the new storage and will deallocate it in case
   // of exception.
   if (old_ptr != data_)
-    this->deallocate(old_ptr, old_capacity);
+    Allocator::deallocate(old_ptr, old_capacity);
 }
 
 // A fixed-size buffer.
@@ -712,24 +728,23 @@ inline unsigned count_digits(uint32_t n) {
 // Formats a decimal unsigned integer value writing into buffer.
 template <typename UInt, typename Char>
 inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
-  --num_digits;
+  buffer += num_digits;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     unsigned index = (value % 100) * 2;
     value /= 100;
-    buffer[num_digits] = Data::DIGITS[index + 1];
-    buffer[num_digits - 1] = Data::DIGITS[index];
-    num_digits -= 2;
+    *--buffer = Data::DIGITS[index + 1];
+    *--buffer = Data::DIGITS[index];
   }
   if (value < 10) {
-    *buffer = static_cast<char>('0' + value);
+    *--buffer = static_cast<char>('0' + value);
     return;
   }
   unsigned index = static_cast<unsigned>(value * 2);
-  buffer[1] = Data::DIGITS[index + 1];
-  buffer[0] = Data::DIGITS[index];
+  *--buffer = Data::DIGITS[index + 1];
+  *--buffer = Data::DIGITS[index];
 }
 
 #ifndef _WIN32
@@ -1047,7 +1062,7 @@ struct NamedArg : Arg {
 
   template <typename T>
   NamedArg(BasicStringRef<Char> argname, const T &value)
-  : name(argname), Arg(MakeValue<Char>(value)) {
+  : Arg(MakeValue<Char>(value)), name(argname) {
     type = static_cast<internal::Arg::Type>(MakeValue<Char>::type(value));
   }
 };
@@ -2677,17 +2692,6 @@ void print(std::FILE *f, CStringRef format_str, ArgList args);
  */
 void print(CStringRef format_str, ArgList args);
 
-/**
-  \rst
-  Prints formatted data to the stream *os*.
-
-  **Example**::
-
-    print(cerr, "Don't {}!", "panic");
-  \endrst
- */
-void print(std::ostream &os, CStringRef format_str, ArgList args);
-
 template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
   internal::PrintfFormatter<Char>(args).format(w, format);
@@ -2704,6 +2708,12 @@ void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
 */
 inline std::string sprintf(CStringRef format, ArgList args) {
   MemoryWriter w;
+  printf(w, format, args);
+  return w.str();
+}
+
+inline std::wstring sprintf(WCStringRef format, ArgList args) {
+  WMemoryWriter w;
   printf(w, format, args);
   return w.str();
 }
@@ -2993,12 +3003,90 @@ FMT_VARIADIC(std::string, format, CStringRef)
 FMT_VARIADIC_W(std::wstring, format, WCStringRef)
 FMT_VARIADIC(void, print, CStringRef)
 FMT_VARIADIC(void, print, std::FILE *, CStringRef)
-FMT_VARIADIC(void, print, std::ostream &, CStringRef)
+
 FMT_VARIADIC(void, print_colored, Color, CStringRef)
 FMT_VARIADIC(std::string, sprintf, CStringRef)
+FMT_VARIADIC_W(std::wstring, sprintf, WCStringRef)
 FMT_VARIADIC(int, printf, CStringRef)
 FMT_VARIADIC(int, fprintf, std::FILE *, CStringRef)
-}
+
+#if FMT_USE_IOSTREAMS
+/**
+  \rst
+  Prints formatted data to the stream *os*.
+
+  **Example**::
+
+    print(cerr, "Don't {}!", "panic");
+  \endrst
+ */
+void print(std::ostream &os, CStringRef format_str, ArgList args);
+FMT_VARIADIC(void, print, std::ostream &, CStringRef)
+#endif
+}  // namespace fmt
+
+#if FMT_USE_USER_DEFINED_LITERALS
+namespace fmt {
+namespace internal {
+
+template <typename Char>
+struct UdlFormat {
+  const Char *str;
+
+  template <typename... Args>
+  auto operator()(Args && ... args) const
+                  -> decltype(format(str, std::forward<Args>(args)...)) {
+    return format(str, std::forward<Args>(args)...);
+  }
+};
+
+template <typename Char>
+struct UdlArg {
+  const Char *str;
+
+  template <typename T>
+  NamedArg<Char> operator=(T &&value) const {
+    return {str, std::forward<T>(value)};
+  }
+};
+
+} // namespace internal
+
+inline namespace literals {
+
+/**
+  \rst
+  C++11 literal equivalent of :func:`fmt::format`.
+
+  **Example**::
+  
+    using namespace fmt::literals;
+    std::string message = "The answer is {}"_format(42);
+  \endrst
+ */
+inline internal::UdlFormat<char>
+operator"" _format(const char *s, std::size_t) { return {s}; }
+inline internal::UdlFormat<wchar_t>
+operator"" _format(const wchar_t *s, std::size_t) { return {s}; }
+
+/**
+  \rst
+  C++11 literal equivalent of :func:`fmt::arg`.
+
+  **Example**::
+    
+    using namespace fmt::literals;
+    print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
+  \endrst
+ */
+inline internal::UdlArg<char>
+operator"" _a(const char *s, std::size_t) { return {s}; }
+inline internal::UdlArg<wchar_t>
+operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
+
+} // inline namespace literals
+} // namespace fmt
+#endif // FMT_USE_USER_DEFINED_LITERALS
 
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406

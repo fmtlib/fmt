@@ -148,19 +148,6 @@ TEST(CStringRefTest, Ctor) {
   EXPECT_STREQ("defg", CStringRef(std::string("defg")).c_str());
 }
 
-class TestString {
- private:
-  std::string value_;
-
- public:
-  explicit TestString(const char *value = "") : value_(value) {}
-
-  friend std::ostream &operator<<(std::ostream &os, const TestString &s) {
-    os << s.value_;
-    return os;
-  }
-};
-
 #if FMT_USE_TYPE_TRAITS
 TEST(WriterTest, NotCopyConstructible) {
   EXPECT_FALSE(std::is_copy_constructible<BasicWriter<char> >::value);
@@ -1615,3 +1602,33 @@ TEST(FormatTest, MaxArgs) {
             fmt::format("{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}",
                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e'));
 }
+
+#if FMT_USE_USER_DEFINED_LITERALS
+// Passing user-defined literals directly to EXPECT_EQ causes problems
+// with macro argument stringification (#) on some versions of GCC.
+// Workaround: Assing the UDL result to a variable before the macro.
+
+using namespace fmt::literals;
+
+TEST(LiteralsTest, Format) {
+  auto udl_format = "{}c{}"_format("ab", 1);
+  EXPECT_EQ(format("{}c{}", "ab", 1), udl_format);
+  auto udl_format_w = L"{}c{}"_format(L"ab", 1);
+  EXPECT_EQ(format(L"{}c{}", L"ab", 1), udl_format_w);
+}
+
+TEST(LiteralsTest, NamedArg) {
+  auto udl_a = format("{first}{second}{first}{third}",
+                      "first"_a="abra", "second"_a="cad", "third"_a=99);
+  EXPECT_EQ(format("{first}{second}{first}{third}",
+                   fmt::arg("first", "abra"), fmt::arg("second", "cad"),
+                   fmt::arg("third", 99)),
+            udl_a);
+  auto udl_a_w = format(L"{first}{second}{first}{third}",
+                        L"first"_a=L"abra", L"second"_a=L"cad", L"third"_a=99);
+  EXPECT_EQ(format(L"{first}{second}{first}{third}",
+                   fmt::arg(L"first", L"abra"), fmt::arg(L"second", L"cad"),
+                   fmt::arg(L"third", 99)),
+            udl_a_w);
+}
+#endif // FMT_USE_USER_DEFINED_LITERALS

@@ -65,6 +65,34 @@ The Format API also supports positional arguments useful for localization:
 
   fmt::print("I'd rather be {1} than {0}.", "right", "happy");
 
+Named arguments can be created with ``fmt::arg``. This makes it easier to track 
+what goes where when multiple values are being inserted:
+
+.. code:: c++
+
+  fmt::print("Hello, {name}! The answer is {number}. Goodbye, {name}.",
+             fmt::arg("name", "World"), fmt::arg("number", 42));
+
+If your compiler supports C++11 user-defined literals, the suffix ``_a`` offers 
+an alternative, slightly terser syntax for named arguments:
+
+.. code:: c++
+
+  fmt::print("Hello, {name}! The answer is {number}. Goodbye, {name}.",
+             "name"_a="World", "number"_a=42);
+
+The ``_format`` suffix may be used to format string literals similar to Python:
+
+.. code:: c++
+
+  std::string message = "{0}{1}{0}"_format("abra", "cad"); 
+
+Other than the placement of the format string on the left of the operator, 
+``_format`` is functionally identical to ``fmt::format``. In order to use the 
+literal operators, they must be made visible with the directive 
+``using namespace fmt::literals;``. Note that this brings in only ``_a`` and 
+``_format`` but nothing else from the ``fmt`` namespace.
+
 .. _write-api:
   
 Write API
@@ -128,13 +156,22 @@ compilers where it has been tested and known to work:
 
 * Mac OS X with GCC 4.2.1 and Clang 4.2, 5.1.0
 
-* 64-bit Windows with Visual C++ 2010 and
-  `2013 <https://ci.appveyor.com/project/vitaut/cppformat>`_
+* 64-bit Windows with Visual C++ 2010, 2013 and
+  `2015 <https://ci.appveyor.com/project/vitaut/cppformat>`_
 
 * 32-bit Windows with Visual C++ 2010
 
 Although the library uses C++11 features when available, it also works with older
-compilers and standard library implementations.
+compilers and standard library implementations. The only thing to keep in mind 
+for C++98 portability:
+
+* Variadic templates: minimum GCC 4.4, Clang 2.9 or VS2013. This feature allows 
+  the Format API to accept an unlimited number of arguments. With older compilers
+  the maximum is 15.
+
+* User-defined literals: minimum GCC 4.7, Clang 3.1 or VS2015. The suffixes 
+  ``_format`` and ``_a`` are functionally equivalent to the functions 
+  ``fmt::format`` and ``fmt::arg``.
 
 The output of all formatting functions is consistent across platforms. In particular,
 formatting a floating-point infinity always gives ``inf`` while the output

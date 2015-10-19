@@ -1,3 +1,48 @@
+set(FMT_GMOCK_DIR ../gmock)
+
+include_directories(.. ${FMT_GMOCK_DIR})
+
+# We compile Google Test ourselves instead of using pre-compiled libraries.
+# See the Google Test FAQ "Why is it not recommended to install a
+# pre-compiled copy of Google Test (for example, into /usr/local)?"
+# at http://code.google.com/p/googletest/wiki/FAQ for more details.
+
+add_library(gmock STATIC
+  ${FMT_GMOCK_DIR}/gmock-gtest-all.cc ${FMT_GMOCK_DIR}/gmock/gmock.h
+  ${FMT_GMOCK_DIR}/gtest/gtest.h ${FMT_GMOCK_DIR}/gtest/gtest-spi.h)
+find_package(Threads)
+if (Threads_FOUND)
+  target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
+else ()
+  target_compile_definitions(gmock PUBLIC GTEST_HAS_PTHREAD=0)
+endif ()
+
+# Check if variadic templates are working and not affected by GCC bug 39653:
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39653
+check_cxx_source_compiles("
+  template <class T, class ...Types>
+  struct S { typedef typename S<Types...>::type type; };
+  int main() {}" FMT_VARIADIC_TEMPLATES)
+
+# Check if initializer lists are supported.
+check_cxx_source_compiles("
+  #include <initializer_list>
+  int main() {}" FMT_INITIALIZER_LIST)
+  
+if (NOT FMT_VARIADIC_TEMPLATES OR NOT FMT_INITIALIZER_LIST)
+  add_definitions(-DGTEST_LANG_CXX11=0)
+endif ()
+
+# Workaround a bug in implementation of variadic templates in MSVC11.
+if (MSVC)
+  target_compile_definitions(gmock PUBLIC _VARIADIC_MAX=10)
+endif ()
+
+# GTest doesn't detect <tuple> with clang.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
+endif ()
+
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
 target_link_libraries(test-main cppformat gmock)
@@ -13,14 +58,6 @@ function(add_fmt_test name)
   endif ()
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
-
-check_cxx_source_compiles("
-  enum C : char {A};
-  int main() {}"
-  HAVE_ENUM_BASE)
-if (HAVE_ENUM_BASE)
-  add_definitions(-DFMT_USE_ENUM_BASE=1)
-endif ()
 
 add_fmt_test(assert-test)
 add_fmt_test(gtest-extra-test)
@@ -45,6 +82,15 @@ if (CPP11_FLAG)
   set_target_properties(util-test PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
 endif ()
 
+check_cxx_source_compiles("
+  enum C : char {A};
+  int main() {}"
+  HAVE_ENUM_BASE)
+if (HAVE_ENUM_BASE)
+  set_target_properties(util-test
+    PROPERTIES COMPILE_DEFINITIONS "FMT_USE_ENUM_BASE=1")
+endif ()
+
 foreach (src ${FMT_SOURCES})
   set(FMT_TEST_SOURCES ${FMT_TEST_SOURCES} ../${src})
 endforeach ()
@@ -55,7 +101,10 @@ check_cxx_source_compiles("
   int main() { static_assert(!std::is_copy_assignable<C>::value, \"\"); }"
   HAVE_TYPE_TRAITS)
 if (HAVE_TYPE_TRAITS)
-  add_definitions(-DFMT_USE_TYPE_TRAITS=1)
+  foreach (target format-test util-test)
+    set_target_properties(${target}
+      PROPERTIES COMPILE_DEFINITIONS "FMT_USE_TYPE_TRAITS=1")
+  endforeach ()
 endif ()
 
 add_executable(macro-test macro-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
@@ -80,6 +129,15 @@ if (HAVE_FNO_EXCEPTIONS_FLAG)
   add_library(noexception-test STATIC ../format.cc)
   set_target_properties(noexception-test
     PROPERTIES COMPILE_FLAGS -fno-exceptions)
+endif ()
+
+# Test compilation with default flags.
+if (FMT_TEST_DEFAULT_FLAGS)
+  file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cc *.h)
+  foreach (s ${FMT_SOURCES})
+    set(src ${src} ../${s})
+  endforeach ()
+  add_library(testformat STATIC ${src})
 endif ()
 
 if (FMT_PEDANTIC)

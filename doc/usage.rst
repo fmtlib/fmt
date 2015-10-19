@@ -54,6 +54,23 @@ To build a `shared library`__ set the ``BUILD_SHARED_LIBS`` CMake variable to
 
 __ http://en.wikipedia.org/wiki/Library_%28computing%29#Shared_libraries
 
+Building the documentation
+==========================
+
+To build the documentation you need the following software installed on your
+system:
+
+* `Python <https://www.python.org/>`_ with pip and virtualenv
+* `Doxygen <http://www.stack.nl/~dimitri/doxygen/>`_
+* `Less <http://lesscss.org/>`_ with less-plugin-clean-css
+
+First generate makefiles or project files using CMake as described in
+the previous section. Then compile the ``doc`` target/project, for example::
+
+  make doc
+
+This will generate the HTML documenation in ``doc/html``.
+  
 Android NDK
 ===========
 
