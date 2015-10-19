@@ -17,6 +17,6 @@ addons:
     notification_email: victor.zverovich@gmail.com
     build_command_prepend: cmake .
     build_command: make -j4
-    branch_pattern: coverity_scan
+    branch_pattern: coverity
 
 script: true
