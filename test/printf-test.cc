@@ -295,7 +295,8 @@ void TestLength(const char *length_spec, U value) {
   fmt::ULongLong unsigned_value = value;
   // Apply integer promotion to the argument.
   fmt::ULongLong max = std::numeric_limits<U>::max();
-  if (max <= static_cast<unsigned>(std::numeric_limits<int>::max())) {
+  using fmt::internal::check;
+  if (check(max <= static_cast<unsigned>(std::numeric_limits<int>::max()))) {
     signed_value = static_cast<int>(value);
     unsigned_value = static_cast<int>(value);
   } else if (max <= std::numeric_limits<unsigned>::max()) {
