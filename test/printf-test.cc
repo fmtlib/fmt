@@ -299,7 +299,7 @@ void TestLength(const char *length_spec, U value) {
   if (check(max <= static_cast<unsigned>(std::numeric_limits<int>::max()))) {
     signed_value = static_cast<int>(value);
     unsigned_value = static_cast<int>(value);
-  } else if (max <= std::numeric_limits<unsigned>::max()) {
+  } else if (check(max <= std::numeric_limits<unsigned>::max())) {
     signed_value = static_cast<unsigned>(value);
     unsigned_value = static_cast<unsigned>(value);
   }
