@@ -782,7 +782,7 @@ void fmt::BasicWriter<Char>::write_str(
   if (str_size == 0) {
     if (!str_value)
       FMT_THROW(FormatError("string pointer is null"));
-    if (*str_value)
+    else if (*str_value)
       str_size = std::char_traits<StrChar>::length(str_value);
   }
   std::size_t precision = spec.precision_;
