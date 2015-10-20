@@ -168,6 +168,7 @@ TEST(BufferedFileTest, Fileno) {
   BufferedFile f;
 #ifndef __COVERITY__
   // fileno on a null FILE pointer either crashes or returns an error.
+  // Disable Coverity because this is intentional.
   EXPECT_DEATH_IF_SUPPORTED({
     try {
       f.fileno();
@@ -326,7 +327,8 @@ TEST(FileTest, Dup) {
 }
 
 TEST(FileTest, DupError) {
-  EXPECT_SYSTEM_ERROR_NOASSERT(File::dup(-1),
+  volatile int value = -1;
+  EXPECT_SYSTEM_ERROR_NOASSERT(File::dup(value),
       EBADF, "cannot duplicate file descriptor -1");
 }
 
