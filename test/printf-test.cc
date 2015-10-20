@@ -336,12 +336,13 @@ void TestLength(const char *length_spec) {
   TestLength<T>(length_spec, -42);
   TestLength<T>(length_spec, min);
   TestLength<T>(length_spec, max);
-  if (min >= 0 || static_cast<fmt::LongLong>(min) >
-      std::numeric_limits<fmt::LongLong>::min()) {
+  using fmt::internal::check;
+  if (check(min >= 0 || static_cast<fmt::LongLong>(min) >
+      std::numeric_limits<fmt::LongLong>::min())) {
     TestLength<T>(length_spec, fmt::LongLong(min) - 1);
   }
   fmt::ULongLong long_long_max = std::numeric_limits<fmt::LongLong>::max();
-  if (max < 0 || static_cast<fmt::ULongLong>(max) < long_long_max)
+  if (check(max < 0 || static_cast<fmt::ULongLong>(max) < long_long_max))
     TestLength<T>(length_spec, fmt::LongLong(max) + 1);
   TestLength<T>(length_spec, std::numeric_limits<short>::min());
   TestLength<T>(length_spec, std::numeric_limits<unsigned short>::max());
