@@ -5,23 +5,26 @@
 
 from __future__ import print_function
 import shutil, tempfile
-from subprocess import check_call
+from subprocess import check_output, STDOUT
 
 class Git:
   def __init__(self, dir):
     self.dir = dir
 
   def __call__(self, *args):
-    check_call(['git'] + list(args), cwd=self.dir)
+    output = check_output(['git'] + list(args), cwd=self.dir, stderr=STDOUT)
+    print(output)
+    return output
 
 dir = tempfile.mkdtemp()
 try:
   git = Git(dir)
   git('clone', '-b', 'coverity', 'git@github.com:cppformat/cppformat.git', dir)
-  git('merge', '-X', 'theirs', '--no-commit', 'origin/master')
-  git('reset', 'HEAD', '.travis.yml')
-  git('checkout', '--', '.travis.yml')
-  git('commit', '-m', 'Update coverity branch')
+  output = git('merge', '-X', 'theirs', '--no-commit', 'origin/master')
+  if 'Fast-forward' not in output:
+    git('reset', 'HEAD', '.travis.yml')
+    git('checkout', '--', '.travis.yml')
+    git('commit', '-m', 'Update coverity branch')
   git('push')
 finally:
   shutil.rmtree(dir)
