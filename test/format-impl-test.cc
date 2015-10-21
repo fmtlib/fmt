@@ -61,10 +61,10 @@ TEST(FormatTest, StrError) {
   EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = 0, 0), "invalid buffer");
   EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = buffer, 0), "invalid buffer");
   buffer[0] = 'x';
-#ifdef _GNU_SOURCE
+#if defined(_GNU_SOURCE) && !defined(__COVERITY__)
   // Use invalid error code to make sure that safe_strerror returns an error
   // message in the buffer rather than a pointer to a static string.
-  volatile int error_code = -1;
+  int error_code = -1;
 #else
   int error_code = EDOM;
 #endif

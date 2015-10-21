@@ -326,11 +326,13 @@ TEST(FileTest, Dup) {
   EXPECT_EQ(FILE_CONTENT, read(copy, std::strlen(FILE_CONTENT)));
 }
 
+#ifndef __COVERITY__
 TEST(FileTest, DupError) {
-  volatile int value = -1;
+  int value = -1;
   EXPECT_SYSTEM_ERROR_NOASSERT(File::dup(value),
       EBADF, "cannot duplicate file descriptor -1");
 }
+#endif
 
 TEST(FileTest, Dup2) {
   File f = open_file();
