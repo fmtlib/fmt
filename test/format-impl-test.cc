@@ -64,7 +64,7 @@ TEST(FormatTest, StrError) {
 #ifdef _GNU_SOURCE
   // Use invalid error code to make sure that safe_strerror returns an error
   // message in the buffer rather than a pointer to a static string.
-  int error_code = -1;
+  volatile int error_code = -1;
 #else
   int error_code = EDOM;
 #endif
