@@ -46,8 +46,8 @@ def build_docs():
   pip_install('cppformat/sphinx',
               '12dde8afdb0a7bb5576e2656692c3478c69d8cc3',
               check_version='1.4a0.dev-20151013')
-  pip_install('cppformat/breathe',
-              'da8bc0b3d4f6897d89061a934c323c247ef9e9b0')
+  pip_install('michaeljones/breathe',
+              '1c9d7f80378a92cffa755084823a78bb38ee4acc')
   # Build docs.
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE)
