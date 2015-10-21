@@ -40,6 +40,9 @@
 
 using testing::internal::scoped_ptr;
 
+// Marks the argument as sanitized (defined in Coverity model file).
+const std::string &sanitize(const std::string &) {}
+
 namespace {
 
 // Tests that assertion macros evaluate their arguments exactly once.
@@ -377,7 +380,7 @@ TEST(OutputRedirectTest, RestoreAndRead) {
   std::fprintf(file.get(), "[[[");
   OutputRedirect redir(file.get());
   std::fprintf(file.get(), "censored");
-  EXPECT_EQ("censored", redir.restore_and_read());
+  EXPECT_EQ("censored", sanitize(redir.restore_and_read()));
   EXPECT_EQ("", redir.restore_and_read());
   std::fprintf(file.get(), "]]]");
   file = BufferedFile();
