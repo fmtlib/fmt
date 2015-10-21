@@ -41,7 +41,7 @@
 using testing::internal::scoped_ptr;
 
 // Marks the argument as sanitized (defined in Coverity model file).
-const std::string &sanitize(const std::string &) {}
+const std::string &sanitize(const std::string &s) { return s; }
 
 namespace {
 
