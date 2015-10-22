@@ -140,8 +140,9 @@ template <>
 struct IntChecker<true> {
   template <typename T>
   static bool fits_in_int(T value) {
-    return internal::check(value >= INT_MIN) && value <= INT_MAX;
+    return value >= INT_MIN && value <= INT_MAX;
   }
+  static bool fits_in_int(int value) { return true; }
 };
 
 const char RESET_COLOR[] = "\x1b[0m";
