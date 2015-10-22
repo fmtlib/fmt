@@ -705,6 +705,33 @@ TEST(UtilTest, StringRef) {
   EXPECT_LT(std::strlen(str), sizeof(str));
 }
 
+// Check StringRef's comparison operator.
+template <template <typename> class Op>
+void CheckOp() {
+  const char *inputs[] = {"foo", "fop", "fo"};
+  std::size_t num_inputs = sizeof(inputs) / sizeof(*inputs);
+  for (std::size_t i = 0; i < num_inputs; ++i) {
+    for (std::size_t j = 0; j < num_inputs; ++j) {
+      StringRef lhs(inputs[i]), rhs(inputs[j]);
+      EXPECT_EQ(Op<int>()(lhs.compare(rhs), 0), Op<StringRef>()(lhs, rhs));
+    }
+  }
+}
+
+TEST(UtilTest, StringRefCompare) {
+  EXPECT_EQ(0, StringRef("foo").compare(StringRef("foo")));
+  EXPECT_EQ(1, StringRef("fop").compare(StringRef("foo")));
+  EXPECT_EQ(-1, StringRef("foo").compare(StringRef("fop")));
+  EXPECT_EQ(1, StringRef("foo").compare(StringRef("fo")));
+  EXPECT_EQ(-1, StringRef("fo").compare(StringRef("foo")));
+  CheckOp<std::equal_to>();
+  CheckOp<std::not_equal_to>();
+  CheckOp<std::less>();
+  CheckOp<std::less_equal>();
+  CheckOp<std::greater>();
+  CheckOp<std::greater_equal>();
+}
+
 TEST(UtilTest, CountDigits) {
   test_count_digits<uint32_t>();
   test_count_digits<uint64_t>();

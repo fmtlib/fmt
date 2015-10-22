@@ -287,15 +287,30 @@ class BasicStringRef {
   /** Returns the string size. */
   std::size_t size() const { return size_; }
 
+  // Lexicographically compare this string reference to other.
+  int compare(BasicStringRef other) const {
+    std::size_t size = std::min(size_, other.size_);
+    int result = std::char_traits<Char>::compare(data_, other.data_, size);
+    return result != 0 ? result : size_ - other.size_;
+  }
+
   friend bool operator==(BasicStringRef lhs, BasicStringRef rhs) {
-    return lhs.data_ == rhs.data_;
+    return lhs.compare(rhs) == 0;
   }
   friend bool operator!=(BasicStringRef lhs, BasicStringRef rhs) {
-    return lhs.data_ != rhs.data_;
+    return lhs.compare(rhs) != 0;
   }
   friend bool operator<(BasicStringRef lhs, BasicStringRef rhs) {
-    return std::lexicographical_compare(
-          lhs.data_, lhs.data_ + lhs.size_, rhs.data_, rhs.data_ + rhs.size_);
+    return lhs.compare(rhs) < 0;
+  }
+  friend bool operator<=(BasicStringRef lhs, BasicStringRef rhs) {
+    return lhs.compare(rhs) <= 0;
+  }
+  friend bool operator>(BasicStringRef lhs, BasicStringRef rhs) {
+    return lhs.compare(rhs) > 0;
+  }
+  friend bool operator>=(BasicStringRef lhs, BasicStringRef rhs) {
+    return lhs.compare(rhs) >= 0;
   }
 };
 
