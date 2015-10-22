@@ -30,6 +30,7 @@
 #include <cfloat>
 #include <climits>
 #include <cstring>
+#include <functional>
 #include <limits>
 
 #if FMT_USE_TYPE_TRAITS
