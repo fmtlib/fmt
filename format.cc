@@ -449,6 +449,7 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
         std::fill_n(out, spec_.width_ - 1, fill);
         out += spec_.width_ - 1;
       } else if (spec_.align_ == ALIGN_CENTER) {
+        // coverity[suspicious_sizeof]
         out = writer_.fill_padding(out, spec_.width_, 1, fill);
       } else {
         std::fill_n(out + 1, spec_.width_ - 1, fill);
