@@ -1,6 +1,13 @@
 2.0.0 - TBD
 -----------
 
+* [Breaking] Made ``BasicStringRef`` comparison operators compare string
+  content, not pointers
+  (`#183 <https://github.com/cppformat/cppformat/issues/183>`_).
+
+* Made pthreads dependency introduced by Google Test optional.
+  (`#185 <https://github.com/cppformat/cppformat/issues/185>`_).
+
 * Further improved performance of ``fmt::Writer`` on integer formatting
   and fixed a minor regression. Now it is ~7% faster than ``karma::generate``
   on Karma's benchmark
@@ -10,7 +17,7 @@
   (`#187 <https://github.com/cppformat/cppformat/issues/187>`_,
   `#192 <https://github.com/cppformat/cppformat/issues/192>`_).
 
-* Implemented a workaround for a bug in MSVC2010
+* Implemented a workaround for a name lookup bug in MSVC2010
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
 * Fixed warnings in Clang and MSVC2013
@@ -20,9 +27,9 @@
   Thanks to `@rpopescu <https://github.com/rpopescu>`_ and
   `@gabime <https://github.com/gabime>`_.
 
-* Implemented formatting of objects of user-defined types that provide an
-  overloaded ``std::ostream`` insertion operator (``operator<<``) with
-  ``fmt::(s)printf``
+* [Breaking] Implemented formatting of objects of user-defined types that
+  provide an overloaded ``std::ostream`` insertion operator (``operator<<``)
+  with ``fmt::(s)printf``
   (`#201 <https://github.com/cppformat/cppformat/issues/201>`_):
 
   .. code:: c++
