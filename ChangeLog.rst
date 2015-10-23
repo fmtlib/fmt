@@ -5,7 +5,7 @@
   content, not pointers
   (`#183 <https://github.com/cppformat/cppformat/issues/183>`_).
 
-* Made pthreads dependency introduced by Google Test optional.
+* Made pthreads dependency introduced by Google Test optional
   (`#185 <https://github.com/cppformat/cppformat/issues/185>`_).
 
 * Further improved performance of ``fmt::Writer`` on integer formatting
@@ -25,7 +25,7 @@
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
   `#194 <https://github.com/cppformat/cppformat/issues/194>`_).
   Thanks to `@rpopescu <https://github.com/rpopescu>`_ and
-  `@gabime <https://github.com/gabime>`_.
+  `@gabime (Gabi Melman) <https://github.com/gabime>`_.
 
 * [Breaking] Implemented formatting of objects of user-defined types that
   provide an overloaded ``std::ostream`` insertion operator (``operator<<``)
@@ -37,9 +37,12 @@
     fmt::printf("The date is %s", Date(2012, 12, 9));
 
 * Fixed portability issues in tests causing failures on ARM, ppc64, ppc64le
-  and s390x (`#202 <https://github.com/cppformat/cppformat/issues/202>`_,
+  and s390x (
+  `#179 <https://github.com/cppformat/cppformat/issues/179>`_,
+  `#180 <https://github.com/cppformat/cppformat/issues/180>`_,
+  `#202 <https://github.com/cppformat/cppformat/issues/202>`_,
   `Red Hat Bugzilla Bug 1260297 <https://bugzilla.redhat.com/show_bug.cgi?id=1260297>`_).
-  Thanks to Dave Johansen.
+  Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_ and Dave Johansen.
 
 * Added an option to disable use of IOStreams when ``FMT_USE_IOSTREAMS``
   is set to 0 before including ``format.h``
@@ -51,7 +54,7 @@
   <http://cppformat.github.io/dev/usage.html#building-the-documentation>`_
   section to the documentation.
 
-* Made documentation building script compatible with Python 3
+* Made documentation build script compatible with Python 3
   (`#209 <https://github.com/cppformat/cppformat/issues/209>`_).
 
 * Fixed documentation layout issues on medium screen sizes
