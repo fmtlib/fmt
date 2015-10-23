@@ -1,12 +1,22 @@
 2.0.0 - TBD
 -----------
 
+* Fixed portability issues in tests causing failures on ARM, ppc64, ppc64le
+  and s390x (`#205 <https://github.com/cppformat/cppformat/issues/205>`_).
+  Thanks to Dave Johansen.
+
+* Added an option to disable use of IOStreams when ``FMT_USE_IOSTREAMS``
+  is set to 0 before including ``format.h``
+  (`#205 <https://github.com/cppformat/cppformat/issues/205>`_,
+  `#208 <https://github.com/cppformat/cppformat/pull/208>`_).
+  Thanks to `@JodiTheTigger <https://github.com/JodiTheTigger>`_.
+
 * Added `Building the documentation
   <http://cppformat.github.io/dev/usage.html#building-the-documentation>`_
   section to the documentation.
 
 * Made documentation building script compatible with Python 3
-  (`#210 <https://github.com/cppformat/cppformat/issues/209>`_).
+  (`#209 <https://github.com/cppformat/cppformat/issues/209>`_).
 
 * Fixed documentation layout issues on medium screen sizes
   (`#210 <https://github.com/cppformat/cppformat/issues/210>`_).
