@@ -1,6 +1,11 @@
 2.0.0 - TBD
 -----------
 
+* Further improved performance of ``fmt::Writer`` on integer formatting
+  and fixed a minor regression. Now it is ~7% faster than ``karma::generate``
+  on Karma's benchmark
+  (`#186 <https://github.com/cppformat/cppformat/issues/186>`_).
+
 * Fixed most warnings reported by Coverity Scan
   (`#187 <https://github.com/cppformat/cppformat/issues/187>`_,
   `#192 <https://github.com/cppformat/cppformat/issues/192>`_).
