@@ -1,3 +1,20 @@
+2.0.0 - TBD
+-----------
+
+* Added `Building the documentation
+  <http://cppformat.github.io/dev/usage.html#building-the-documentation>`_
+  section to the documentation.
+
+* Made documentation building script compatible with Python 3
+  (`#210 <https://github.com/cppformat/cppformat/issues/209>`_).
+
+* Fixed documentation layout issues on medium screen sizes
+  (`#210 <https://github.com/cppformat/cppformat/issues/210>`_).
+
+* Fixed a name conflict with macro ``free`` defined in
+  ``crtdbg.h`` when ``_CRTDBG_MAP_ALLOC`` is set
+  (`#211 <https://github.com/cppformat/cppformat/issues/211>`_).
+
 1.1.0 - 2015-03-06
 ------------------
 
