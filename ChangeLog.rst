@@ -1,6 +1,13 @@
 2.0.0 - TBD
 -----------
 
+* Fixed warnings in MSVC2013 and Clang
+  (`#190 <https://github.com/cppformat/cppformat/issues/190>`_,
+  `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
+  `#194 <https://github.com/cppformat/cppformat/issues/194>`_).
+  Thanks to `@rpopescu <https://github.com/rpopescu>`_ and
+  `@gabime <https://github.com/gabime>`_.
+
 * Implemented formatting of objects of user-defined types that provide an
   overloaded ``std::ostream`` insertion operator (``operator<<``) with
   ``fmt::(s)printf``
