@@ -1,6 +1,10 @@
 2.0.0 - TBD
 -----------
 
+* Fixed most warnings reported by Coverity Scan
+  (`#187 <https://github.com/cppformat/cppformat/issues/187>`_,
+  `#192 <https://github.com/cppformat/cppformat/issues/192>`_).
+
 * Implemented a workaround for a bug in MSVC2010
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
