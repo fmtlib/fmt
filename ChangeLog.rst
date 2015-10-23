@@ -1,8 +1,18 @@
 2.0.0 - TBD
 -----------
 
+* Implemented formatting of objects of user-defined types that provide an
+  overloaded ``std::ostream`` insertion operator (``operator<<``) with
+  ``fmt::(s)printf``
+  (`#201 <https://github.com/cppformat/cppformat/issues/201>`_):
+
+  .. code:: c++
+
+    fmt::printf("The date is %s", Date(2012, 12, 9));
+
 * Fixed portability issues in tests causing failures on ARM, ppc64, ppc64le
-  and s390x (`#205 <https://github.com/cppformat/cppformat/issues/205>`_).
+  and s390x (`#202 <https://github.com/cppformat/cppformat/issues/202>`_,
+  `1260297 <https://bugzilla.redhat.com/show_bug.cgi?id=1260297>`_).
   Thanks to Dave Johansen.
 
 * Added an option to disable use of IOStreams when ``FMT_USE_IOSTREAMS``
