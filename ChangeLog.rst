@@ -1,7 +1,10 @@
 2.0.0 - TBD
 -----------
 
-* Fixed warnings in MSVC2013 and Clang
+* Implemented a workaround for a bug in MSVC2010
+  (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
+
+* Fixed warnings in Clang and MSVC2013
   (`#190 <https://github.com/cppformat/cppformat/issues/190>`_,
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
   `#194 <https://github.com/cppformat/cppformat/issues/194>`_).
