@@ -12,7 +12,7 @@
 
 * Fixed portability issues in tests causing failures on ARM, ppc64, ppc64le
   and s390x (`#202 <https://github.com/cppformat/cppformat/issues/202>`_,
-  `1260297 <https://bugzilla.redhat.com/show_bug.cgi?id=1260297>`_).
+  `Red Hat Bugzilla Bug 1260297 <https://bugzilla.redhat.com/show_bug.cgi?id=1260297>`_).
   Thanks to Dave Johansen.
 
 * Added an option to disable use of IOStreams when ``FMT_USE_IOSTREAMS``
