@@ -1200,6 +1200,16 @@ class MakeValue : public Value {
   static uint64_t type(const NamedArg<Char_> &) { return Arg::NAMED_ARG; }
 };
 
+template <typename Formatter>
+class MakeArg : public Arg {
+public:
+  template <typename T>
+  MakeArg(const T &x) {
+    value = MakeValue<Formatter>(x);
+    type = static_cast<Arg::Type>(MakeValue<Formatter>::type(x));
+  }
+};
+
 template <typename Char>
 struct NamedArg : Arg {
   BasicStringRef<Char> name;
@@ -1908,35 +1918,19 @@ inline uint64_t make_type(const Arg &first, const Args & ... tail) {
   return make_type(first) | (make_type(tail...) << 4);
 }
 
-inline void do_set_types(Arg *) {}
-
-template <typename T, typename... Args>
-inline void do_set_types(Arg *args, const T &arg, const Args & ... tail) {
-  args->type = static_cast<Arg::Type>(
-        MakeValue< BasicFormatter<char> >::type(arg));
-  do_set_types(args + 1, tail...);
+template <typename Formatter>
+inline void store_args(Arg *args) {
+  *args = Arg{0, Arg::NONE};
 }
-
-template <typename... Args>
-inline void set_types(Arg *array, const Args & ... args) {
-  if (check(sizeof...(Args) > ArgList::MAX_PACKED_ARGS))
-    do_set_types(array, args...);
-  array[sizeof...(Args)].type = Arg::NONE;
-}
-
-template <typename... Args>
-inline void set_types(Value *, const Args & ...) {
-  // Do nothing as types are passed separately from values.
-}
-
-template <typename Formatter, typename Value>
-inline void store_args(Value *) {}
 
 template <typename Formatter, typename T, typename... Args>
 inline void store_args(Arg *args, const T &arg, const Args & ... tail) {
-  args->value = MakeValue<Formatter>(arg);
+  *args = MakeArg<Formatter>(arg);
   store_args<Formatter>(args + 1, tail...);
 }
+
+template <typename Formatter>
+inline void store_args(Value *) {}
 
 template <typename Formatter, typename T, typename... Args>
 inline void store_args(Value *args, const T &arg, const Args & ... tail) {
@@ -1947,8 +1941,6 @@ inline void store_args(Value *args, const T &arg, const Args & ... tail) {
 template <typename Formatter, typename... Args>
 ArgList make_arg_list(typename ArgArray<sizeof...(Args)>::Type array,
                       const Args & ... args) {
-  if (check(sizeof...(Args) >= ArgList::MAX_PACKED_ARGS))
-    set_types(array, args...);
   store_args<Formatter>(array, args...);
   return ArgList(make_type(args...), array);
 }
