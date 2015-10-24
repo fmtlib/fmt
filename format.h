@@ -1211,17 +1211,27 @@ class MakeValue : public Arg {
   static uint64_t type(const NamedArg<Char_> &) { return Arg::NAMED_ARG; }
 };
 
+template <typename Formatter>
+class MakeArg : public Arg {
+public:
+  MakeArg() {
+    type = Arg::NONE;
+  }
+  
+  template <typename T>
+  MakeArg(const T &value)
+  : Arg(MakeValue<Formatter>(value)) {
+    type = static_cast<Arg::Type>(MakeValue<Formatter>::type(value));
+  }
+};
+
 template <typename Char>
 struct NamedArg : Arg {
   BasicStringRef<Char> name;
 
-  typedef internal::MakeValue< BasicFormatter<Char> > MakeValue;
-
   template <typename T>
   NamedArg(BasicStringRef<Char> argname, const T &value)
-  : Arg(MakeValue(value)), name(argname) {
-    type = static_cast<Arg::Type>(MakeValue::type(value));
-  }
+  : Arg(MakeArg< BasicFormatter<Char> >(value)), name(argname) {}
 };
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
@@ -1931,44 +1941,29 @@ inline uint64_t make_type(const Arg &first, const Args & ... tail) {
   return make_type(first) | (make_type(tail...) << 4);
 }
 
-inline void do_set_types(Arg *) {}
-
-template <typename T, typename... Args>
-inline void do_set_types(Arg *args, const T &arg, const Args & ... tail) {
-  args->type = static_cast<Arg::Type>(
-        MakeValue< BasicFormatter<char> >::type(arg));
-  do_set_types(args + 1, tail...);
+template <typename Formatter>
+inline void store_args(Arg *args) {
+  *args = MakeArg<Formatter>();
 }
 
-template <typename... Args>
-inline void set_types(Arg *array, const Args & ... args) {
-  if (check(sizeof...(Args) > ArgList::MAX_PACKED_ARGS))
-    do_set_types(array, args...);
-  array[sizeof...(Args)].type = Arg::NONE;
+template <typename Formatter, typename T, typename... Args>
+inline void store_args(Arg *args, const T &arg, const Args & ... tail) {
+  *args = MakeArg<Formatter>(arg);
+  store_args<Formatter>(args + 1, tail...);
 }
 
-template <typename... Args>
-inline void set_types(Value *, const Args & ...) {
-  // Do nothing as types are passed separately from values.
-}
-
-template <typename Formatter, typename Value>
+template <typename Formatter>
 inline void store_args(Value *) {}
 
-template <typename Formatter, typename Arg, typename T, typename... Args>
-inline void store_args(Arg *args, const T &arg, const Args & ... tail) {
-  // Assign only the Value subobject of Arg and don't overwrite type (if any)
-  // that is assigned by set_types.
-  Value &value = *args;
-  value = MakeValue<Formatter>(arg);
+template <typename Formatter, typename T, typename... Args>
+inline void store_args(Value *args, const T &arg, const Args & ... tail) {
+  *args = MakeValue<Formatter>(arg);
   store_args<Formatter>(args + 1, tail...);
 }
 
 template <typename Formatter, typename... Args>
 ArgList make_arg_list(typename ArgArray<sizeof...(Args)>::Type array,
                       const Args & ... args) {
-  if (check(sizeof...(Args) >= ArgList::MAX_PACKED_ARGS))
-    set_types(array, args...);
   store_args<Formatter>(array, args...);
   return ArgList(make_type(args...), array);
 }
@@ -2944,10 +2939,8 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   output << value;
 
   BasicStringRef<Char> str(&buffer[0], format_buf.size());
-  typedef internal::MakeValue< BasicFormatter<Char> > MakeValue;
-  internal::Arg arg = MakeValue(str);
-  arg.type = static_cast<internal::Arg::Type>(MakeValue::type(str));
-  format_str = f.format(format_str, arg);
+  typedef internal::MakeArg< BasicFormatter<Char> > MakeArg;
+  format_str = f.format(format_str, MakeArg(str));
 }
 
 // Reports a system error without throwing an exception.
