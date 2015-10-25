@@ -979,9 +979,7 @@ class MakeValue : public Arg {
 
   FMT_MAKE_VALUE(bool, int_value, BOOL)
   FMT_MAKE_VALUE(short, int_value, INT)
-#if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
   FMT_MAKE_VALUE(unsigned short, uint_value, UINT)
-#endif
   FMT_MAKE_VALUE(int, int_value, INT)
   FMT_MAKE_VALUE(unsigned, uint_value, UINT)
 
@@ -1017,10 +1015,12 @@ class MakeValue : public Arg {
   FMT_MAKE_VALUE(unsigned char, int_value, CHAR)
   FMT_MAKE_VALUE(char, int_value, CHAR)
 
+#if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
   MakeValue(typename WCharHelper<wchar_t, Char>::Supported value) {
     int_value = value;
   }
   static uint64_t type(wchar_t) { return Arg::CHAR; }
+#endif
 
 #define FMT_MAKE_STR_VALUE(Type, TYPE) \
   MakeValue(Type value) { set_string(value); } \
