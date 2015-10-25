@@ -1203,6 +1203,10 @@ class MakeValue : public Value {
 template <typename Formatter>
 class MakeArg : public Arg {
 public:
+  MakeArg() {
+    type = Arg::NONE;
+  }
+  
   template <typename T>
   MakeArg(const T &x) {
     value = MakeValue<Formatter>(x);
@@ -1900,6 +1904,22 @@ inline uint64_t make_type(const T &arg) {
   return MakeValue< BasicFormatter<char> >::type(arg);
 }
 
+#if FMT_USE_VARIADIC_TEMPLATES
+
+template <typename Formatter, unsigned N>
+using ArgArray = typename Conditional<
+  N < ArgList::MAX_PACKED_ARGS,
+  MakeValue<Formatter>[(N > 0) ? N : 1],
+  MakeArg<Formatter>[N + 1]
+>::type;
+
+template <typename Arg, typename... Args>
+inline uint64_t make_type(const Arg &first, const Args & ... tail) {
+  return make_type(first) | (make_type(tail...) << 4);
+}
+
+#else // FMT_USE_VARIADIC_TEMPLATES
+
 template <unsigned N>
 struct ArgArray {
   // Computes the argument array size by adding 1 to N, which is the number of
@@ -1911,40 +1931,6 @@ struct ArgArray {
   typedef typename Conditional<
     (N < ArgList::MAX_PACKED_ARGS), Value, Arg>::type Type[SIZE];
 };
-
-#if FMT_USE_VARIADIC_TEMPLATES
-template <typename Arg, typename... Args>
-inline uint64_t make_type(const Arg &first, const Args & ... tail) {
-  return make_type(first) | (make_type(tail...) << 4);
-}
-
-template <typename Formatter>
-inline void store_args(Arg *args) {
-  *args = Arg{0, Arg::NONE};
-}
-
-template <typename Formatter, typename T, typename... Args>
-inline void store_args(Arg *args, const T &arg, const Args & ... tail) {
-  *args = MakeArg<Formatter>(arg);
-  store_args<Formatter>(args + 1, tail...);
-}
-
-template <typename Formatter>
-inline void store_args(Value *) {}
-
-template <typename Formatter, typename T, typename... Args>
-inline void store_args(Value *args, const T &arg, const Args & ... tail) {
-  *args = MakeValue<Formatter>(arg);
-  store_args<Formatter>(args + 1, tail...);
-}
-
-template <typename Formatter, typename... Args>
-ArgList make_arg_list(typename ArgArray<sizeof...(Args)>::Type array,
-                      const Args & ... args) {
-  store_args<Formatter>(array, args...);
-  return ArgList(make_type(args...), array);
-}
-#else
 
 struct ArgType {
   uint64_t type;
@@ -2011,18 +1997,16 @@ class FormatBuf : public std::basic_streambuf<Char> {
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template <typename... Args> \
   void func(arg_type arg0, const Args & ... args) { \
-    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
-    func(arg0, fmt::internal::make_arg_list< \
-      fmt::BasicFormatter<Char> >(array, args...)); \
+    fmt::internal::ArgArray<fmt::BasicFormatter<Char>, sizeof...(Args)> array{args...}; \
+    func(arg0, fmt::ArgList(fmt::internal::make_type(args...), array)); \
   }
 
 // Defines a variadic constructor.
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
-    func(arg0, arg1, fmt::internal::make_arg_list< \
-      fmt::BasicFormatter<Char> >(array, args...)); \
+    fmt::internal::ArgArray<fmt::BasicFormatter<Char>, sizeof...(Args)> array{args...}; \
+    func(arg0, arg1, fmt::ArgList(fmt::internal::make_type(args...), array)); \
   }
 
 #else
@@ -3242,10 +3226,9 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
   template <typename... Args> \
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
-    typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
+    fmt::internal::ArgArray<fmt::BasicFormatter<Char>, sizeof...(Args)> array{args...}; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::internal::make_arg_list< \
-        fmt::BasicFormatter<Char> >(array, args...)); \
+      fmt::ArgList(fmt::internal::make_type(args...), array)); \
   }
 #else
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
