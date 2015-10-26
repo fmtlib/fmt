@@ -162,7 +162,8 @@ inline uint32_t clzll(uint64_t x) {
 // Define FMT_USE_NOEXCEPT to make C++ Format use noexcept (C++11 feature).
 #ifndef FMT_NOEXCEPT
 # if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
-   (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11)
+   (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
+   _MSC_VER >= 1900
 #  define FMT_NOEXCEPT noexcept
 # else
 #  define FMT_NOEXCEPT throw()
