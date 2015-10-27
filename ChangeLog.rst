@@ -1,6 +1,16 @@
 2.0.0 - TBD
 -----------
 
+* Placed the anonymous namespace within ``fmt`` namespace for the header-only
+  configuration
+  (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
+  Thanks to `@alfps (Alf P. Steinbach) <https://github.com/alfps>`_.
+
+* Added an option to disable use of ``windows.h`` when ``FMT_USE_WINDOWS_H``
+  is defined as 0 before including ``format.h``
+  (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
+  Thanks to `@alfps (Alf P. Steinbach) <https://github.com/alfps>`_.
+
 * Fixed out-of-tree documentation build
   (`#177 <https://github.com/cppformat/cppformat/issues/177>`_).
   Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
