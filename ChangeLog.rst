@@ -1,6 +1,16 @@
 2.0.0 - TBD
 -----------
 
+* [Breaking] The library name has been changed from ``format`` to ``cppformat``
+  for consistency with project name and to avoid potential conflicts
+  (`#178 <https://github.com/cppformat/cppformat/issues/178>`_).
+  Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
+
+* [Breaking] Headers are now installed in
+  ``${CMAKE_INSTALL_PREFIX}/include/cppformat``
+  (`#178 <https://github.com/cppformat/cppformat/issues/178>`_).
+  Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
+
 * [Breaking] ``BasicStringRef`` comparison operators now compare string
   content, not pointers
   (`#183 <https://github.com/cppformat/cppformat/issues/183>`_).
@@ -67,7 +77,7 @@
   (`#214 <https://github.com/cppformat/cppformat/pull/214>`_).
   Thanks to `@slavanap (Vyacheslav Napadovsky) <https://github.com/slavanap>`_.
 
-* ``noexcept`` is now used when compiling with MSVC2015.
+* ``noexcept`` is now used when compiling with MSVC2015
   (`#215 <https://github.com/cppformat/cppformat/pull/215>`_).
   Thanks to `@dmkrepo (Dmitriy) <https://github.com/dmkrepo>`_.
 
