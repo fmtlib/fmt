@@ -67,6 +67,10 @@
   (`#214 <https://github.com/cppformat/cppformat/pull/214>`_).
   Thanks to `@slavanap (Vyacheslav Napadovsky) <https://github.com/slavanap>`_.
 
+* ``noexcept`` is now used when compiling with MSVC2015.
+  (`#215 <https://github.com/cppformat/cppformat/pull/215>`_).
+  Thanks to `@dmkrepo (Dmitriy) <https://github.com/dmkrepo>`_.
+
 1.1.0 - 2015-03-06
 ------------------
 
