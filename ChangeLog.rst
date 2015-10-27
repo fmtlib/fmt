@@ -35,11 +35,13 @@
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
 * Fixed warnings in Clang and MSVC2013
-  (`#190 <https://github.com/cppformat/cppformat/issues/190>`_,
+  (`#175 <https://github.com/cppformat/cppformat/issues/175>`_,
+  `#190 <https://github.com/cppformat/cppformat/issues/190>`_,
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
   `#194 <https://github.com/cppformat/cppformat/issues/194>`_).
-  Thanks to `@rpopescu <https://github.com/rpopescu>`_ and
-  `@gabime (Gabi Melman) <https://github.com/gabime>`_.
+  Thanks to `@rpopescu <https://github.com/rpopescu>`_,
+  `@gabime (Gabi Melman) <https://github.com/gabime>`_ and
+  `@cubicool (Jeremy Moles) <https://github.com/cubicool>`_.
 
 * [Breaking] ``fmt::(s)printf`` now supports formatting of objects of user-defined types
   that provide an overloaded ``std::ostream`` insertion operator (``operator<<``)
