@@ -1,8 +1,12 @@
 2.0.0 - TBD
 -----------
 
-* [Breaking] The library name has been changed from ``format`` to ``cppformat``
-  for consistency with project name and to avoid potential conflicts
+* Fixed out-of-tree documentation build
+  (`#177 <https://github.com/cppformat/cppformat/issues/177>`_).
+  Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
+
+* [Breaking] Changed the library name from ``format`` to ``cppformat``
+  for consistency with the project name and to avoid potential conflicts
   (`#178 <https://github.com/cppformat/cppformat/issues/178>`_).
   Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
 
