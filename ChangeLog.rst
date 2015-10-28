@@ -83,12 +83,14 @@
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
 * Fixed warnings in Clang and MSVC2013
-  (`#163 <https://github.com/cppformat/cppformat/issues/163>`_
+  (#158 `<https://github.com/cppformat/cppformat/issues/158>`_,
+  `#163 <https://github.com/cppformat/cppformat/issues/163>`_
   `#175 <https://github.com/cppformat/cppformat/issues/175>`_,
   `#190 <https://github.com/cppformat/cppformat/issues/190>`_,
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
   `#194 <https://github.com/cppformat/cppformat/issues/194>`_).
-  Thanks to `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_,
+  Thanks to `@fmatthew5876 (Matthew Fioravante) <https://github.com/fmatthew5876>`_,
+  `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_,
   `@rpopescu <https://github.com/rpopescu>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_ and
   `@cubicool (Jeremy Moles) <https://github.com/cubicool>`_.
