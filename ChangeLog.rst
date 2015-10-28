@@ -14,6 +14,10 @@
 
     fmt::print("{:d}", true); // prints "1"
 
+* Documentation fixes
+  (`#162 <https://github.com/cppformat/cppformat/issues/162>`_ and
+  `#165 <https://github.com/cppformat/cppformat/issues/165>`_).
+
 * Improved support for custom character types
   (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
   Thanks to `@alfps (Alf P. Steinbach) <https://github.com/alfps>`_.
@@ -62,11 +66,13 @@
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
 * Fixed warnings in Clang and MSVC2013
-  (`#175 <https://github.com/cppformat/cppformat/issues/175>`_,
+  (`#163 <https://github.com/cppformat/cppformat/issues/163>`_
+  `#175 <https://github.com/cppformat/cppformat/issues/175>`_,
   `#190 <https://github.com/cppformat/cppformat/issues/190>`_,
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
   `#194 <https://github.com/cppformat/cppformat/issues/194>`_).
-  Thanks to `@rpopescu <https://github.com/rpopescu>`_,
+  Thanks to `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_
+  `@rpopescu <https://github.com/rpopescu>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_ and
   `@cubicool (Jeremy Moles) <https://github.com/cubicool>`_.
 
