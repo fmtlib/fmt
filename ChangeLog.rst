@@ -1,14 +1,23 @@
 2.0.0 - TBD
 -----------
 
-* Packages for `Debian <https://www.debian.org/>`_ GNU/Linux and derived distributions
-  such as Ubuntu:
+* C++ Format is now available in `Debian <https://www.debian.org/>`_ GNU/Linux
+  (`stretch <https://packages.debian.org/source/stretch/cppformat>`_,
+  `sid <https://packages.debian.org/source/sid/cppformat>`_) and 
+  derived distributions such as
+  `Ubuntu <https://launchpad.net/ubuntu/+source/cppformat>`_ 15.10 and later
+  (`#155 <https://github.com/cppformat/cppformat/issues/155>`_)::
 
-  - Debian `stretch <https://packages.debian.org/source/stretch/cppformat>`_
-  - Debian `sid <https://packages.debian.org/source/sid/cppformat>`_
-  - `Ubuntu <https://launchpad.net/ubuntu/+source/cppformat>`_
-  
+    $ sudo apt-get install libcppformat1-dev
+
   Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
+
+* C++ Format can now be installed via `Homebrew <http://brew.sh/>`_ on OS X
+  (`#157 <https://github.com/cppformat/cppformat/issues/157>`_)::
+
+    $ brew install cppformat
+
+  Thanks to `@ortho <https://github.com/ortho>`_, Anatoliy Bulukin.
 
 * [Breaking] Changed default ``bool`` format to textual, "true" or "false"
   (`#170 <https://github.com/cppformat/cppformat/issues/170>`_):
