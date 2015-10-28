@@ -42,6 +42,7 @@ using testing::internal::scoped_ptr;
 
 namespace {
 
+// This is used to suppress coverity warnings about untrusted values.
 std::string sanitize(const std::string &s) {
   std::string result;
   for (std::string::const_iterator i = s.begin(), end = s.end(); i != end; ++i)
@@ -385,7 +386,7 @@ TEST(OutputRedirectTest, RestoreAndRead) {
   OutputRedirect redir(file.get());
   std::fprintf(file.get(), "censored");
   EXPECT_EQ("censored", sanitize(redir.restore_and_read()));
-  EXPECT_EQ("", redir.restore_and_read());
+  EXPECT_EQ("", sanitize(redir.restore_and_read()));
   std::fprintf(file.get(), "]]]");
   file = BufferedFile();
   EXPECT_READ(read_end, "[[[]]]");

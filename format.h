@@ -921,7 +921,8 @@ struct Conditional<false, T, F> { typedef F type; };
 
 // A helper function to suppress bogus "conditional expression is constant"
 // warnings.
-inline bool check(bool value) { return value; }
+template <typename T>
+inline T check(T value) { return value; }
 
 // Makes an Arg object from any type.
 template <typename Char>
