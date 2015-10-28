@@ -23,9 +23,10 @@
 
     fmt::print("{:d}", true); // prints "1"
 
-* Documentation fixes
-  (`#162 <https://github.com/cppformat/cppformat/issues/162>`_ and
-  `#165 <https://github.com/cppformat/cppformat/issues/165>`_).
+* Fixed documentation issues
+  (`#162 <https://github.com/cppformat/cppformat/issues/162>`_,
+  `#165 <https://github.com/cppformat/cppformat/issues/165>`_,
+  `#210 <https://github.com/cppformat/cppformat/issues/210>`_).
 
 * Improved support for custom character types
   (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
@@ -55,9 +56,15 @@
   (`#178 <https://github.com/cppformat/cppformat/issues/178>`_).
   Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
 
-* [Breaking] ``StringRef``/``BasicStringRef`` comparison operators now compare string
-  content, not pointers
-  (`#183 <https://github.com/cppformat/cppformat/issues/183>`_).
+* [Breaking] Improved compatibility between ``BasicStringRef`` and
+  `std::experimental::basic_string_view
+  <http://en.cppreference.com/w/cpp/experimental/basic_string_view>`_
+  (`#159 <https://github.com/cppformat/cppformat/issues/159>`_,
+  `#183 <https://github.com/cppformat/cppformat/issues/183>`_):
+
+  - Comparison operators now compare string content, not pointers
+  - `BasicStringRef::c_str` replaced by `BasicStringRef::data`
+  - `BasicStringRef` is no longer assumed to be null-terminated
 
 * Dependency on pthreads introduced by Google Test is now optional
   (`#185 <https://github.com/cppformat/cppformat/issues/185>`_).
@@ -113,9 +120,6 @@
 
 * Documentation build script is now compatible with Python 3
   (`#209 <https://github.com/cppformat/cppformat/issues/209>`_).
-
-* Fixed documentation layout issues on medium screen sizes
-  (`#210 <https://github.com/cppformat/cppformat/issues/210>`_).
 
 * Fixed a name conflict with macro ``free`` defined in
   ``crtdbg.h`` when ``_CRTDBG_MAP_ALLOC`` is set
