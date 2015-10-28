@@ -1,6 +1,24 @@
 2.0.0 - TBD
 -----------
 
+* C++ Format is now available in `Debian <https://www.debian.org/>`_ GNU/Linux
+  (`stretch <https://packages.debian.org/source/stretch/cppformat>`_,
+  `sid <https://packages.debian.org/source/sid/cppformat>`_) and 
+  derived distributions such as
+  `Ubuntu <https://launchpad.net/ubuntu/+source/cppformat>`_ 15.10 and later
+  (`#155 <https://github.com/cppformat/cppformat/issues/155>`_)::
+
+    $ sudo apt-get install libcppformat1-dev
+
+  Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
+
+* C++ Format can now be installed via `Homebrew <http://brew.sh/>`_ on OS X
+  (`#157 <https://github.com/cppformat/cppformat/issues/157>`_)::
+
+    $ brew install cppformat
+
+  Thanks to `@ortho <https://github.com/ortho>`_, Anatoliy Bulukin.
+
 * [Breaking] Changed default ``bool`` format to textual, "true" or "false"
   (`#170 <https://github.com/cppformat/cppformat/issues/170>`_):
 
@@ -14,9 +32,10 @@
 
     fmt::print("{:d}", true); // prints "1"
 
-* Documentation fixes
-  (`#162 <https://github.com/cppformat/cppformat/issues/162>`_ and
-  `#165 <https://github.com/cppformat/cppformat/issues/165>`_).
+* Fixed documentation issues
+  (`#162 <https://github.com/cppformat/cppformat/issues/162>`_,
+  `#165 <https://github.com/cppformat/cppformat/issues/165>`_,
+  `#210 <https://github.com/cppformat/cppformat/issues/210>`_).
 
 * Improved support for custom character types
   (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
@@ -46,9 +65,16 @@
   (`#178 <https://github.com/cppformat/cppformat/issues/178>`_).
   Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
 
-* [Breaking] ``BasicStringRef`` comparison operators now compare string
-  content, not pointers
-  (`#183 <https://github.com/cppformat/cppformat/issues/183>`_).
+* [Breaking] Improved compatibility between ``BasicStringRef`` and
+  `std::experimental::basic_string_view
+  <http://en.cppreference.com/w/cpp/experimental/basic_string_view>`_
+  (`#100 <https://github.com/cppformat/cppformat/issues/100>`_,
+  `#159 <https://github.com/cppformat/cppformat/issues/159>`_,
+  `#183 <https://github.com/cppformat/cppformat/issues/183>`_):
+
+  - Comparison operators now compare string content, not pointers
+  - ``BasicStringRef::c_str`` replaced by ``BasicStringRef::data``
+  - ``BasicStringRef`` is no longer assumed to be null-terminated
 
 * Dependency on pthreads introduced by Google Test is now optional
   (`#185 <https://github.com/cppformat/cppformat/issues/185>`_).
@@ -58,7 +84,7 @@
   on Karma's benchmark
   (`#186 <https://github.com/cppformat/cppformat/issues/186>`_).
 
-* Fixed most warnings reported by Coverity Scan
+* Fixed warnings reported by Coverity Scan
   (`#187 <https://github.com/cppformat/cppformat/issues/187>`_,
   `#192 <https://github.com/cppformat/cppformat/issues/192>`_).
 
@@ -66,12 +92,14 @@
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
 * Fixed warnings in Clang and MSVC2013
-  (`#163 <https://github.com/cppformat/cppformat/issues/163>`_
+  (`#158 <https://github.com/cppformat/cppformat/issues/158>`_,
+  `#163 <https://github.com/cppformat/cppformat/issues/163>`_
   `#175 <https://github.com/cppformat/cppformat/issues/175>`_,
   `#190 <https://github.com/cppformat/cppformat/issues/190>`_,
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
   `#194 <https://github.com/cppformat/cppformat/issues/194>`_).
-  Thanks to `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_,
+  Thanks to `@fmatthew5876 (Matthew Fioravante) <https://github.com/fmatthew5876>`_,
+  `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_,
   `@rpopescu <https://github.com/rpopescu>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_ and
   `@cubicool (Jeremy Moles) <https://github.com/cubicool>`_.
@@ -104,9 +132,6 @@
 
 * Documentation build script is now compatible with Python 3
   (`#209 <https://github.com/cppformat/cppformat/issues/209>`_).
-
-* Fixed documentation layout issues on medium screen sizes
-  (`#210 <https://github.com/cppformat/cppformat/issues/210>`_).
 
 * Fixed a name conflict with macro ``free`` defined in
   ``crtdbg.h`` when ``_CRTDBG_MAP_ALLOC`` is set
