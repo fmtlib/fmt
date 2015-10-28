@@ -1,6 +1,15 @@
 2.0.0 - TBD
 -----------
 
+* Packages for `Debian <https://www.debian.org/>`_ GNU/Linux and derived distributions
+  such as Ubuntu:
+
+  - Debian `stretch <https://packages.debian.org/source/stretch/cppformat>`_
+  - Debian `sid <https://packages.debian.org/source/sid/cppformat>`_
+  - `Ubuntu <https://launchpad.net/ubuntu/+source/cppformat>`_
+  
+  Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
+
 * [Breaking] Changed default ``bool`` format to textual, "true" or "false"
   (`#170 <https://github.com/cppformat/cppformat/issues/170>`_):
 
