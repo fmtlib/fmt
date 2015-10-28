@@ -7,9 +7,6 @@ C++ Format
 .. image:: https://ci.appveyor.com/api/projects/status/qk0bhyhqp1ekpat8
    :target: https://ci.appveyor.com/project/vitaut/cppformat
    
-.. image:: https://webapi.biicode.com/v1/badges/vitaut/vitaut/cppformat/master?dummy
-   :target: https://www.biicode.com/vitaut/cppformat
-
 .. image:: https://badges.gitter.im/Join%20Chat.svg
    :alt: Join the chat at https://gitter.im/cppformat/cppformat
    :target: https://gitter.im/cppformat/cppformat?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
