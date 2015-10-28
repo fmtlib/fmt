@@ -1,6 +1,22 @@
 2.0.0 - TBD
 -----------
 
+* [Breaking] Changed default ``bool`` format to textual, "true" or "false":
+
+  .. code:: c++
+  
+    fmt::print("{}", true); // prints "true"
+
+  To print ``bool`` as a number use numeric format specifier such as ``d``:
+
+  .. code:: c++
+
+    fmt::print("{:d}", true); // prints "1"
+
+* Improved support for custom character types
+  (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
+  Thanks to `@alfps (Alf P. Steinbach) <https://github.com/alfps>`_.
+
 * Placed the anonymous namespace within ``fmt`` namespace for the header-only
   configuration
   (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
