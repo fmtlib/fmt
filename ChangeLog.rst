@@ -1,7 +1,8 @@
 2.0.0 - TBD
 -----------
 
-* [Breaking] Changed default ``bool`` format to textual, "true" or "false":
+* [Breaking] Changed default ``bool`` format to textual, "true" or "false"
+  (`#170 <https://github.com/cppformat/cppformat/issues/170>`_):
 
   .. code:: c++
   
