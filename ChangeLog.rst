@@ -59,7 +59,8 @@
 * [Breaking] Improved compatibility between ``BasicStringRef`` and
   `std::experimental::basic_string_view
   <http://en.cppreference.com/w/cpp/experimental/basic_string_view>`_
-  (`#159 <https://github.com/cppformat/cppformat/issues/159>`_,
+  (`#100 <https://github.com/cppformat/cppformat/issues/100>`_,
+  `#159 <https://github.com/cppformat/cppformat/issues/159>`_,
   `#183 <https://github.com/cppformat/cppformat/issues/183>`_):
 
   - Comparison operators now compare string content, not pointers
