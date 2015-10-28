@@ -46,7 +46,7 @@
   (`#178 <https://github.com/cppformat/cppformat/issues/178>`_).
   Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
 
-* [Breaking] ``BasicStringRef`` comparison operators now compare string
+* [Breaking] ``StringRef``/``BasicStringRef`` comparison operators now compare string
   content, not pointers
   (`#183 <https://github.com/cppformat/cppformat/issues/183>`_).
 
@@ -58,7 +58,7 @@
   on Karma's benchmark
   (`#186 <https://github.com/cppformat/cppformat/issues/186>`_).
 
-* Fixed most warnings reported by Coverity Scan
+* Fixed warnings reported by Coverity Scan
   (`#187 <https://github.com/cppformat/cppformat/issues/187>`_,
   `#192 <https://github.com/cppformat/cppformat/issues/192>`_).
 
