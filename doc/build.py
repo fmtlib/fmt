@@ -23,7 +23,10 @@ def build_docs():
   doc_dir = os.path.dirname(os.path.realpath(__file__))
   virtualenv_dir = 'virtualenv'
   check_call(['virtualenv', virtualenv_dir])
-  activate_this_file = os.path.join(virtualenv_dir, 'bin', 'activate_this.py')
+  import sysconfig
+  scripts_dir = os.path.basename(sysconfig.get_path('scripts'))
+  activate_this_file = os.path.join(virtualenv_dir, scripts_dir,
+                                    'activate_this.py')
   with open(activate_this_file) as f:
     exec(f.read(), dict(__file__=activate_this_file))
   # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
