@@ -71,7 +71,7 @@
   `#190 <https://github.com/cppformat/cppformat/issues/190>`_,
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
   `#194 <https://github.com/cppformat/cppformat/issues/194>`_).
-  Thanks to `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_
+  Thanks to `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_,
   `@rpopescu <https://github.com/rpopescu>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_ and
   `@cubicool (Jeremy Moles) <https://github.com/cubicool>`_.
