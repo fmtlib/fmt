@@ -83,7 +83,7 @@
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
 * Fixed warnings in Clang and MSVC2013
-  (#158 `<https://github.com/cppformat/cppformat/issues/158>`_,
+  (`#158 <https://github.com/cppformat/cppformat/issues/158>`_,
   `#163 <https://github.com/cppformat/cppformat/issues/163>`_
   `#175 <https://github.com/cppformat/cppformat/issues/175>`_,
   `#190 <https://github.com/cppformat/cppformat/issues/190>`_,
