@@ -444,16 +444,16 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
     typedef typename BasicWriter<Char>::CharPtr CharPtr;
     Char fill = internal::CharTraits<Char>::cast(spec_.fill());
     CharPtr out = CharPtr();
-    if (spec_.width_ > 1) {
+    enum { CHAR_WIDTH = 1 };
+    if (spec_.width_ > CHAR_WIDTH) {
       out = writer_.grow_buffer(spec_.width_);
       if (spec_.align_ == ALIGN_RIGHT) {
-        std::fill_n(out, spec_.width_ - 1, fill);
-        out += spec_.width_ - 1;
+        std::fill_n(out, spec_.width_ - CHAR_WIDTH, fill);
+        out += spec_.width_ - CHAR_WIDTH;
       } else if (spec_.align_ == ALIGN_CENTER) {
-        // coverity[suspicious_sizeof]
-        out = writer_.fill_padding(out, spec_.width_, 1, fill);
+        out = writer_.fill_padding(out, spec_.width_, CHAR_WIDTH, fill);
       } else {
-        std::fill_n(out + 1, spec_.width_ - 1, fill);
+        std::fill_n(out + CHAR_WIDTH, spec_.width_ - CHAR_WIDTH, fill);
       }
     } else {
       out = writer_.grow_buffer(1);
