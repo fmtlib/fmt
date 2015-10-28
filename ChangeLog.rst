@@ -63,8 +63,8 @@
   `#183 <https://github.com/cppformat/cppformat/issues/183>`_):
 
   - Comparison operators now compare string content, not pointers
-  - `BasicStringRef::c_str` replaced by `BasicStringRef::data`
-  - `BasicStringRef` is no longer assumed to be null-terminated
+  - ``BasicStringRef::c_str`` replaced by ``BasicStringRef::data``
+  - ``BasicStringRef`` is no longer assumed to be null-terminated
 
 * Dependency on pthreads introduced by Google Test is now optional
   (`#185 <https://github.com/cppformat/cppformat/issues/185>`_).
