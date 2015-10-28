@@ -142,7 +142,7 @@ struct IntChecker<true> {
   static bool fits_in_int(T value) {
     return value >= INT_MIN && value <= INT_MAX;
   }
-  static bool fits_in_int(int value) { return true; }
+  static bool fits_in_int(int) { return true; }
 };
 
 const char RESET_COLOR[] = "\x1b[0m";
