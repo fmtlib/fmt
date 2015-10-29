@@ -1,6 +1,9 @@
 2.0.0 - TBD
 -----------
 
+* Fixed a compile error on MSVC with disabled exceptions
+  (`#144 <https://github.com/cppformat/cppformat/issues/144>`_).
+
 * Added a workaround for broken implementation of variadic templates in MSVC2012
   (`#148 <https://github.com/cppformat/cppformat/issues/148>`_).
 
@@ -101,7 +104,9 @@
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
 * Fixed multiple warnings
-  (`#146 <https://github.com/cppformat/cppformat/issues/146>`_,
+  (`#142 <https://github.com/cppformat/cppformat/issues/142>`_,
+  `#145 <https://github.com/cppformat/cppformat/issues/145>`_,
+  `#146 <https://github.com/cppformat/cppformat/issues/146>`_,
   `#158 <https://github.com/cppformat/cppformat/issues/158>`_,
   `#163 <https://github.com/cppformat/cppformat/issues/163>`_
   `#175 <https://github.com/cppformat/cppformat/issues/175>`_,
@@ -148,7 +153,7 @@
   ``crtdbg.h`` when ``_CRTDBG_MAP_ALLOC`` is set
   (`#211 <https://github.com/cppformat/cppformat/issues/211>`_).
 
-* Fixed an overload conflict in MSVC when ``/Zc:wchar_t-`` option is specified
+* Fixed an overload conflict on MSVC when ``/Zc:wchar_t-`` option is specified
   (`#214 <https://github.com/cppformat/cppformat/pull/214>`_).
   Thanks to `@slavanap (Vyacheslav Napadovsky) <https://github.com/slavanap>`_.
 
