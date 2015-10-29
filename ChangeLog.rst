@@ -1,6 +1,11 @@
 2.0.0 - TBD
 -----------
 
+* Migrated from ReadTheDocs to GitHub Pages for better responsiveness
+  and reliability
+  (`#128 <https://github.com/cppformat/cppformat/issues/128>`_).
+  New documentation address is http://cppformat.github.io/.
+
 * Fixed formatting of enums with numeric format specifiers in ``fmt::(s)printf`` 
   (`#131 <https://github.com/cppformat/cppformat/issues/131>`_,
   `#139 <https://github.com/cppformat/cppformat/issues/139>`_):
@@ -13,7 +18,9 @@
   Thanks to `@Naios <https://github.com/Naios>`_.
 
 * Improved compatibility with old versions of MinGW
-  (`#132 <https://github.com/cppformat/cppformat/issues/132>`_).
+  (`#129 <https://github.com/cppformat/cppformat/issues/129>`_,
+  `#132 <https://github.com/cppformat/cppformat/issues/132>`_).
+  Thanks to `@cstamford (Christopher Stamford) <https://github.com/cstamford>`_.
 
 * The ``Buffer`` template is now part of the public API and can be used
   to implement custom memory buffers
