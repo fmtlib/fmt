@@ -6,7 +6,8 @@
   (`#128 <https://github.com/cppformat/cppformat/issues/128>`_).
   New documentation address is http://cppformat.github.io/.
 
-* Fixed formatting of enums with numeric format specifiers in ``fmt::(s)printf`` 
+* [Breaking] Fixed formatting of enums with numeric format specifiers in
+  ``fmt::(s)printf`` 
   (`#131 <https://github.com/cppformat/cppformat/issues/131>`_,
   `#139 <https://github.com/cppformat/cppformat/issues/139>`_):
 
@@ -22,7 +23,7 @@
   `#132 <https://github.com/cppformat/cppformat/issues/132>`_).
   Thanks to `@cstamford (Christopher Stamford) <https://github.com/cstamford>`_.
 
-* The ``Buffer`` template is now part of the public API and can be used
+* [Breaking] The ``Buffer`` template is now part of the public API and can be used
   to implement custom memory buffers
   (`#140 <https://github.com/cppformat/cppformat/issues/140>`_).
   Thanks to `@polyvertex (Jean-Charles Lefebvre) <https://github.com/polyvertex>`_.
