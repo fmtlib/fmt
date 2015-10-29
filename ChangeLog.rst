@@ -1,6 +1,12 @@
 2.0.0 - TBD
 -----------
 
+* [Breaking] ``windows.h`` is now included with ``NOMINMAX`` unless
+  ``FMT_WIN_MINMAX`` is defined. This is done to prevent breaking code using
+  ``std::min`` and ``std::max`` and only affects the header-only configuration
+  (`#152 <https://github.com/cppformat/cppformat/issues/152>`_).
+  Thanks to `@DevO2012 <https://github.com/DevO2012>`_.
+
 * C++ Format is now available in `Debian <https://www.debian.org/>`_ GNU/Linux
   (`stretch <https://packages.debian.org/source/stretch/cppformat>`_,
   `sid <https://packages.debian.org/source/sid/cppformat>`_) and 
