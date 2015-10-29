@@ -1,6 +1,17 @@
 2.0.0 - TBD
 -----------
 
+* Fixed formatting of enums with numeric format specifiers in ``fmt::(s)printf`` 
+  (`#131 <https://github.com/cppformat/cppformat/issues/131>`_,
+  `#139 <https://github.com/cppformat/cppformat/issues/139>`_)::
+
+  .. code:: c++
+
+    enum { ANSWER = 42 };
+    fmt::printf("%d", ANSWER);
+
+  Thanks to `@Naios <https://github.com/Naios>`_.
+
 * Improved compatibility with old versions of MinGW
   (`#132 <https://github.com/cppformat/cppformat/issues/132>`_).
 
