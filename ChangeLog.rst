@@ -1,6 +1,9 @@
 2.0.0 - TBD
 -----------
 
+* Improved compatibility with old versions of MinGW
+  (`#132 <https://github.com/cppformat/cppformat/issues/132>`_).
+
 * The ``Buffer`` template is now part of the public API and can be used
   to implement custom memory buffers
   (`#140 <https://github.com/cppformat/cppformat/issues/140>`_).
