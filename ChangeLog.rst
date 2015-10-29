@@ -1,6 +1,11 @@
 2.0.0 - TBD
 -----------
 
+* The ``Buffer`` template is now part of the public API and can be used
+  to implement custom memory buffers
+  (`#140 <https://github.com/cppformat/cppformat/issues/140>`_).
+  Thanks to `@polyvertex (Jean-Charles Lefebvre) <https://github.com/polyvertex>`_.
+
 * Fixed a compile error on MSVC with disabled exceptions
   (`#144 <https://github.com/cppformat/cppformat/issues/144>`_).
 
@@ -104,7 +109,8 @@
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
 * Fixed multiple warnings
-  (`#142 <https://github.com/cppformat/cppformat/issues/142>`_,
+  (`#135 <https://github.com/cppformat/cppformat/issues/135>`_,
+  `#142 <https://github.com/cppformat/cppformat/issues/142>`_,
   `#145 <https://github.com/cppformat/cppformat/issues/145>`_,
   `#146 <https://github.com/cppformat/cppformat/issues/146>`_,
   `#158 <https://github.com/cppformat/cppformat/issues/158>`_,
