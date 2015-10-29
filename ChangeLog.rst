@@ -70,8 +70,11 @@
 
     fmt::print("{:d}", true); // prints "1"
 
-* Fixed documentation issues
-  (`#162 <https://github.com/cppformat/cppformat/issues/162>`_,
+* Documentation fixes and improvements
+  (`#36 <https://github.com/cppformat/cppformat/issues/36>`_,
+  `#75 <https://github.com/cppformat/cppformat/issues/75>`_,
+  `#125 <https://github.com/cppformat/cppformat/issues/125>`_,
+  `#162 <https://github.com/cppformat/cppformat/issues/162>`_,
   `#165 <https://github.com/cppformat/cppformat/issues/165>`_,
   `#210 <https://github.com/cppformat/cppformat/issues/210>`_).
 
