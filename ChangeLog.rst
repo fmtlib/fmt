@@ -166,6 +166,18 @@
   `Red Hat Bugzilla Bug 1260297 <https://bugzilla.redhat.com/show_bug.cgi?id=1260297>`_).
   Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_ and Dave Johansen.
 
+* [Experimental] User-defined literals for format and named arguments
+  (`#204 <https://github.com/cppformat/cppformat/pull/204>`_,
+  `#206 <https://github.com/cppformat/cppformat/pull/206>`_,
+  `#207 <https://github.com/cppformat/cppformat/pull/207>`_):
+
+  .. code:: c++
+
+    using namespace fmt::literals;
+    fmt::print("The answer is {answer}.", "answer"_a=42);
+
+  Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_.
+
 * Added an option to disable use of IOStreams when ``FMT_USE_IOSTREAMS``
   is defined as 0 before including ``format.h``
   (`#205 <https://github.com/cppformat/cppformat/issues/205>`_,
@@ -182,6 +194,10 @@
 * Fixed a name conflict with macro ``free`` defined in
   ``crtdbg.h`` when ``_CRTDBG_MAP_ALLOC`` is set
   (`#211 <https://github.com/cppformat/cppformat/issues/211>`_).
+
+* Fixed shared library build on OS X
+  (`#212 <https://github.com/cppformat/cppformat/pull/212>`_).
+  Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_.
 
 * Fixed an overload conflict on MSVC when ``/Zc:wchar_t-`` option is specified
   (`#214 <https://github.com/cppformat/cppformat/pull/214>`_).
