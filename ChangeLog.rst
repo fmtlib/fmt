@@ -3,7 +3,7 @@
 
 * Fixed formatting of enums with numeric format specifiers in ``fmt::(s)printf`` 
   (`#131 <https://github.com/cppformat/cppformat/issues/131>`_,
-  `#139 <https://github.com/cppformat/cppformat/issues/139>`_)::
+  `#139 <https://github.com/cppformat/cppformat/issues/139>`_):
 
   .. code:: c++
 
