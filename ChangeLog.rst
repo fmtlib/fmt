@@ -37,7 +37,9 @@
 * [Breaking] ``windows.h`` is now included with ``NOMINMAX`` unless
   ``FMT_WIN_MINMAX`` is defined. This is done to prevent breaking code using
   ``std::min`` and ``std::max`` and only affects the header-only configuration
-  (`#152 <https://github.com/cppformat/cppformat/issues/152>`_).
+  (`#152 <https://github.com/cppformat/cppformat/issues/152>`_,
+  `#153 <https://github.com/cppformat/cppformat/pull/153>`_,
+  `#154 <https://github.com/cppformat/cppformat/pull/154>`_).
   Thanks to `@DevO2012 <https://github.com/DevO2012>`_.
 
 * C++ Format is now available in `Debian <https://www.debian.org/>`_ GNU/Linux
@@ -75,9 +77,13 @@
   (`#36 <https://github.com/cppformat/cppformat/issues/36>`_,
   `#75 <https://github.com/cppformat/cppformat/issues/75>`_,
   `#125 <https://github.com/cppformat/cppformat/issues/125>`_,
+  `#160 <https://github.com/cppformat/cppformat/pull/160>`_,
+  `#161 <https://github.com/cppformat/cppformat/pull/161>`_,
   `#162 <https://github.com/cppformat/cppformat/issues/162>`_,
   `#165 <https://github.com/cppformat/cppformat/issues/165>`_,
   `#210 <https://github.com/cppformat/cppformat/issues/210>`_).
+  Thanks to `@syohex (Syohei YOSHIDA) <https://github.com/syohex>`_ and
+  bug reporters.
 
 * Improved support for custom character types
   (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
@@ -92,6 +98,15 @@
   is defined as 0 before including ``format.h``
   (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
   Thanks to `@alfps (Alf P. Steinbach) <https://github.com/alfps>`_.
+
+* Runtime width specification
+  (`#168 <https://github.com/cppformat/cppformat/pull/168>`_):
+
+  .. code:: c++
+
+    fmt::format("{0:{1}}", 42, 5); // gives "   42"
+
+  Thanks to `@jamboree <https://github.com/jamboree>`_.
 
 * [Breaking] Named arguments
   (`#169 <https://github.com/cppformat/cppformat/pull/169>`_,
