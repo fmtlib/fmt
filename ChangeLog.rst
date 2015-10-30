@@ -143,18 +143,21 @@
   `#175 <https://github.com/cppformat/cppformat/issues/175>`_,
   `#190 <https://github.com/cppformat/cppformat/issues/190>`_,
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
-  `#194 <https://github.com/cppformat/cppformat/issues/194>`_).
+  `#194 <https://github.com/cppformat/cppformat/issues/194>`_,
+  `#196 <https://github.com/cppformat/cppformat/pull/196>`_).
   Thanks to `@Naios <https://github.com/Naios>`_,
   `@fmatthew5876 (Matthew Fioravante) <https://github.com/fmatthew5876>`_,
   `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_,
   `@rpopescu <https://github.com/rpopescu>`_,
-  `@gabime (Gabi Melman) <https://github.com/gabime>`_ and
-  `@cubicool (Jeremy Moles) <https://github.com/cubicool>`_.
+  `@gabime (Gabi Melman) <https://github.com/gabime>`_,
+  `@cubicool (Jeremy Moles) <https://github.com/cubicool>`_ and
+  `@jkflying (Julian Kent) <https://github.com/jkflying>`_.
 
-* New CMake options ``FMT_INSTALL`` and ``FMT_TEST`` to control generation
-  of ``install`` and ``test`` targets respectively, on by default
+* New CMake options ``FMT_DOC``, ``FMT_INSTALL`` and ``FMT_TEST`` to control
+  generation of ``doc``, ``install`` and ``test`` targets respectively, on by default
   (`#197 <https://github.com/cppformat/cppformat/issues/197>`_,
-  `#198 <https://github.com/cppformat/cppformat/issues/198>`_).
+  `#198 <https://github.com/cppformat/cppformat/issues/198>`_,
+  `#200 <https://github.com/cppformat/cppformat/issues/200>`_).
   Thanks to `@maddinat0r (Alex Martin) <https://github.com/maddinat0r>`_.
 
 * [Breaking] ``fmt::(s)printf`` now supports formatting of objects of user-defined types
