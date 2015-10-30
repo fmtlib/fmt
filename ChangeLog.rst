@@ -6,6 +6,10 @@
   (`#128 <https://github.com/cppformat/cppformat/issues/128>`_).
   New documentation address is http://cppformat.github.io/.
 
+* Fixed ``initializer_list`` detection
+  (`#136 <https://github.com/cppformat/cppformat/issues/136>`_).
+  Thanks to `@Gachapen (Magnus Bjerke Vik) <https://github.com/Gachapen>`_.
+
 * [Breaking] Fixed formatting of enums with numeric format specifiers in
   ``fmt::(s)printf`` 
   (`#131 <https://github.com/cppformat/cppformat/issues/131>`_,
@@ -20,6 +24,7 @@
 
 * Improved compatibility with old versions of MinGW
   (`#129 <https://github.com/cppformat/cppformat/issues/129>`_,
+  `#130 <https://github.com/cppformat/cppformat/pull/130>`_,
   `#132 <https://github.com/cppformat/cppformat/issues/132>`_).
   Thanks to `@cstamford (Christopher Stamford) <https://github.com/cstamford>`_.
 
