@@ -93,6 +93,17 @@
   (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
   Thanks to `@alfps (Alf P. Steinbach) <https://github.com/alfps>`_.
 
+* [Breaking] Named arguments
+  (`#169 <https://github.com/cppformat/cppformat/pull/169>`_,
+  `#173 <https://github.com/cppformat/cppformat/pull/173>`_,
+  `#174 <https://github.com/cppformat/cppformat/pull/174>`_):
+
+  .. code:: c++
+
+    fmt::print("The answer is {answer}.", fmt::arg("answer", 42));
+
+  Thanks to `@jamboree <https://github.com/jamboree>`_.
+
 * Fixed out-of-tree documentation build
   (`#177 <https://github.com/cppformat/cppformat/issues/177>`_).
   Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
@@ -133,7 +144,7 @@
 * Implemented a workaround for a name lookup bug in MSVC2010
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
-* Fixed multiple warnings
+* Fixed compiler warnings
   (`#135 <https://github.com/cppformat/cppformat/issues/135>`_,
   `#142 <https://github.com/cppformat/cppformat/issues/142>`_,
   `#145 <https://github.com/cppformat/cppformat/issues/145>`_,
@@ -198,8 +209,11 @@
   <http://cppformat.github.io/dev/usage.html#building-the-documentation>`_
   section to the documentation.
 
-* Documentation build script is now compatible with Python 3
-  (`#209 <https://github.com/cppformat/cppformat/issues/209>`_).
+* Documentation build script is now compatible with Python 3 and newer pip versions.
+  (`#189 <https://github.com/cppformat/cppformat/pull/189>`_,
+  `#209 <https://github.com/cppformat/cppformat/issues/209>`_).
+  Thanks to `@JodiTheTigger <https://github.com/JodiTheTigger>`_ and
+  `@xentec <https://github.com/xentec>`_.
 
 * Fixed a name conflict with macro ``free`` defined in
   ``crtdbg.h`` when ``_CRTDBG_MAP_ALLOC`` is set
