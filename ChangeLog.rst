@@ -1,6 +1,62 @@
 2.0.0 - TBD
 -----------
 
+* Migrated from ReadTheDocs to GitHub Pages for better responsiveness
+  and reliability
+  (`#128 <https://github.com/cppformat/cppformat/issues/128>`_).
+  New documentation address is http://cppformat.github.io/.
+
+* Fixed ``initializer_list`` detection
+  (`#136 <https://github.com/cppformat/cppformat/issues/136>`_).
+  Thanks to `@Gachapen (Magnus Bjerke Vik) <https://github.com/Gachapen>`_.
+
+* [Breaking] Fixed formatting of enums with numeric format specifiers in
+  ``fmt::(s)printf`` 
+  (`#131 <https://github.com/cppformat/cppformat/issues/131>`_,
+  `#139 <https://github.com/cppformat/cppformat/issues/139>`_):
+
+  .. code:: c++
+
+    enum { ANSWER = 42 };
+    fmt::printf("%d", ANSWER);
+
+  Thanks to `@Naios <https://github.com/Naios>`_.
+
+* Improved compatibility with old versions of MinGW
+  (`#129 <https://github.com/cppformat/cppformat/issues/129>`_,
+  `#130 <https://github.com/cppformat/cppformat/pull/130>`_,
+  `#132 <https://github.com/cppformat/cppformat/issues/132>`_).
+  Thanks to `@cstamford (Christopher Stamford) <https://github.com/cstamford>`_.
+
+* [Breaking] The ``Buffer`` template is now part of the public API and can be used
+  to implement custom memory buffers
+  (`#140 <https://github.com/cppformat/cppformat/issues/140>`_).
+  Thanks to `@polyvertex (Jean-Charles Lefebvre) <https://github.com/polyvertex>`_.
+
+* [Breaking] Formatting of more than 16 arguments is now supported when using
+  variadic templates
+  (`#141 <https://github.com/cppformat/cppformat/issues/141>`_).
+  Thanks to `@Shauren <https://github.com/Shauren>`_.
+
+* [Breaking] Reduced `compiled code size
+  <https://github.com/cppformat/cppformat#compile-time-and-code-bloat>`_
+  (`#143 <https://github.com/cppformat/cppformat/issues/143>`_,
+  `#149 <https://github.com/cppformat/cppformat/pull/149>`_).
+
+* Fixed a compile error on MSVC with disabled exceptions
+  (`#144 <https://github.com/cppformat/cppformat/issues/144>`_).
+
+* Added a workaround for broken implementation of variadic templates in MSVC2012
+  (`#148 <https://github.com/cppformat/cppformat/issues/148>`_).
+
+* [Breaking] ``windows.h`` is now included with ``NOMINMAX`` unless
+  ``FMT_WIN_MINMAX`` is defined. This is done to prevent breaking code using
+  ``std::min`` and ``std::max`` and only affects the header-only configuration
+  (`#152 <https://github.com/cppformat/cppformat/issues/152>`_,
+  `#153 <https://github.com/cppformat/cppformat/pull/153>`_,
+  `#154 <https://github.com/cppformat/cppformat/pull/154>`_).
+  Thanks to `@DevO2012 <https://github.com/DevO2012>`_.
+
 * C++ Format is now available in `Debian <https://www.debian.org/>`_ GNU/Linux
   (`stretch <https://packages.debian.org/source/stretch/cppformat>`_,
   `sid <https://packages.debian.org/source/sid/cppformat>`_) and 
@@ -32,10 +88,17 @@
 
     fmt::print("{:d}", true); // prints "1"
 
-* Fixed documentation issues
-  (`#162 <https://github.com/cppformat/cppformat/issues/162>`_,
+* Documentation fixes and improvements
+  (`#36 <https://github.com/cppformat/cppformat/issues/36>`_,
+  `#75 <https://github.com/cppformat/cppformat/issues/75>`_,
+  `#125 <https://github.com/cppformat/cppformat/issues/125>`_,
+  `#160 <https://github.com/cppformat/cppformat/pull/160>`_,
+  `#161 <https://github.com/cppformat/cppformat/pull/161>`_,
+  `#162 <https://github.com/cppformat/cppformat/issues/162>`_,
   `#165 <https://github.com/cppformat/cppformat/issues/165>`_,
   `#210 <https://github.com/cppformat/cppformat/issues/210>`_).
+  Thanks to `@syohex (Syohei YOSHIDA) <https://github.com/syohex>`_ and
+  bug reporters.
 
 * Improved support for custom character types
   (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
@@ -50,6 +113,26 @@
   is defined as 0 before including ``format.h``
   (`#171 <https://github.com/cppformat/cppformat/issues/171>`_).
   Thanks to `@alfps (Alf P. Steinbach) <https://github.com/alfps>`_.
+
+* Runtime width specification
+  (`#168 <https://github.com/cppformat/cppformat/pull/168>`_):
+
+  .. code:: c++
+
+    fmt::format("{0:{1}}", 42, 5); // gives "   42"
+
+  Thanks to `@jamboree <https://github.com/jamboree>`_.
+
+* [Breaking] Named arguments
+  (`#169 <https://github.com/cppformat/cppformat/pull/169>`_,
+  `#173 <https://github.com/cppformat/cppformat/pull/173>`_,
+  `#174 <https://github.com/cppformat/cppformat/pull/174>`_):
+
+  .. code:: c++
+
+    fmt::print("The answer is {answer}.", fmt::arg("answer", 42));
+
+  Thanks to `@jamboree <https://github.com/jamboree>`_.
 
 * Fixed out-of-tree documentation build
   (`#177 <https://github.com/cppformat/cppformat/issues/177>`_).
@@ -91,18 +174,32 @@
 * Implemented a workaround for a name lookup bug in MSVC2010
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
-* Fixed warnings in Clang and MSVC2013
-  (`#158 <https://github.com/cppformat/cppformat/issues/158>`_,
+* Fixed compiler warnings
+  (`#135 <https://github.com/cppformat/cppformat/issues/135>`_,
+  `#142 <https://github.com/cppformat/cppformat/issues/142>`_,
+  `#145 <https://github.com/cppformat/cppformat/issues/145>`_,
+  `#146 <https://github.com/cppformat/cppformat/issues/146>`_,
+  `#158 <https://github.com/cppformat/cppformat/issues/158>`_,
   `#163 <https://github.com/cppformat/cppformat/issues/163>`_
   `#175 <https://github.com/cppformat/cppformat/issues/175>`_,
   `#190 <https://github.com/cppformat/cppformat/issues/190>`_,
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
-  `#194 <https://github.com/cppformat/cppformat/issues/194>`_).
-  Thanks to `@fmatthew5876 (Matthew Fioravante) <https://github.com/fmatthew5876>`_,
+  `#194 <https://github.com/cppformat/cppformat/issues/194>`_,
+  `#196 <https://github.com/cppformat/cppformat/pull/196>`_).
+  Thanks to `@Naios <https://github.com/Naios>`_,
+  `@fmatthew5876 (Matthew Fioravante) <https://github.com/fmatthew5876>`_,
   `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_,
   `@rpopescu <https://github.com/rpopescu>`_,
-  `@gabime (Gabi Melman) <https://github.com/gabime>`_ and
-  `@cubicool (Jeremy Moles) <https://github.com/cubicool>`_.
+  `@gabime (Gabi Melman) <https://github.com/gabime>`_,
+  `@cubicool (Jeremy Moles) <https://github.com/cubicool>`_ and
+  `@jkflying (Julian Kent) <https://github.com/jkflying>`_.
+
+* New CMake options ``FMT_DOC``, ``FMT_INSTALL`` and ``FMT_TEST`` to control
+  generation of ``doc``, ``install`` and ``test`` targets respectively, on by default
+  (`#197 <https://github.com/cppformat/cppformat/issues/197>`_,
+  `#198 <https://github.com/cppformat/cppformat/issues/198>`_,
+  `#200 <https://github.com/cppformat/cppformat/issues/200>`_).
+  Thanks to `@maddinat0r (Alex Martin) <https://github.com/maddinat0r>`_.
 
 * [Breaking] ``fmt::(s)printf`` now supports formatting of objects of user-defined types
   that provide an overloaded ``std::ostream`` insertion operator (``operator<<``)
@@ -112,13 +209,27 @@
 
     fmt::printf("The date is %s", Date(2012, 12, 9));
 
-* Fixed portability issues in tests causing failures on ARM, ppc64, ppc64le
-  and s390x (
+* Fixed portability issues (mostly causing test failures) on ARM, ppc64, ppc64le,
+  s390x and SunOS 5.11 i386 (
+  `#138 <https://github.com/cppformat/cppformat/issues/138>`_,
   `#179 <https://github.com/cppformat/cppformat/issues/179>`_,
   `#180 <https://github.com/cppformat/cppformat/issues/180>`_,
   `#202 <https://github.com/cppformat/cppformat/issues/202>`_,
   `Red Hat Bugzilla Bug 1260297 <https://bugzilla.redhat.com/show_bug.cgi?id=1260297>`_).
-  Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_ and Dave Johansen.
+  Thanks to `@Naios <https://github.com/Naios>`_,
+  `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_ and Dave Johansen.
+
+* [Experimental] User-defined literals for format and named arguments
+  (`#204 <https://github.com/cppformat/cppformat/pull/204>`_,
+  `#206 <https://github.com/cppformat/cppformat/pull/206>`_,
+  `#207 <https://github.com/cppformat/cppformat/pull/207>`_):
+
+  .. code:: c++
+
+    using namespace fmt::literals;
+    fmt::print("The answer is {answer}.", "answer"_a=42);
+
+  Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_.
 
 * Added an option to disable use of IOStreams when ``FMT_USE_IOSTREAMS``
   is defined as 0 before including ``format.h``
@@ -130,14 +241,21 @@
   <http://cppformat.github.io/dev/usage.html#building-the-documentation>`_
   section to the documentation.
 
-* Documentation build script is now compatible with Python 3
-  (`#209 <https://github.com/cppformat/cppformat/issues/209>`_).
+* Documentation build script is now compatible with Python 3 and newer pip versions.
+  (`#189 <https://github.com/cppformat/cppformat/pull/189>`_,
+  `#209 <https://github.com/cppformat/cppformat/issues/209>`_).
+  Thanks to `@JodiTheTigger <https://github.com/JodiTheTigger>`_ and
+  `@xentec <https://github.com/xentec>`_.
 
 * Fixed a name conflict with macro ``free`` defined in
   ``crtdbg.h`` when ``_CRTDBG_MAP_ALLOC`` is set
   (`#211 <https://github.com/cppformat/cppformat/issues/211>`_).
 
-* Fixed an overload conflict in MSVC when ``/Zc:wchar_t-`` option is specified
+* Fixed shared library build on OS X
+  (`#212 <https://github.com/cppformat/cppformat/pull/212>`_).
+  Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_.
+
+* Fixed an overload conflict on MSVC when ``/Zc:wchar_t-`` option is specified
   (`#214 <https://github.com/cppformat/cppformat/pull/214>`_).
   Thanks to `@slavanap (Vyacheslav Napadovsky) <https://github.com/slavanap>`_.
 
