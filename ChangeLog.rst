@@ -185,7 +185,8 @@
   `#190 <https://github.com/cppformat/cppformat/issues/190>`_,
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
   `#194 <https://github.com/cppformat/cppformat/issues/194>`_,
-  `#196 <https://github.com/cppformat/cppformat/pull/196>`_).
+  `#196 <https://github.com/cppformat/cppformat/pull/196>`_,
+  `#216 <https://github.com/cppformat/cppformat/issues/216>`_).
   Thanks to `@Naios <https://github.com/Naios>`_,
   `@fmatthew5876 (Matthew Fioravante) <https://github.com/fmatthew5876>`_,
   `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_,
