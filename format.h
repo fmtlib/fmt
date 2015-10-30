@@ -292,7 +292,9 @@ class BasicStringRef {
   int compare(BasicStringRef other) const {
     std::size_t size = std::min(size_, other.size_);
     int result = std::char_traits<Char>::compare(data_, other.data_, size);
-    return result != 0 ? result : size_ - other.size_;
+    if (result == 0)
+      result = size_ == other.size_ ? 0 : (size_ < other.size_ ? -1 : 1);
+    return result;
   }
 
   friend bool operator==(BasicStringRef lhs, BasicStringRef rhs) {

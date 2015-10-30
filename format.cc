@@ -444,7 +444,7 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
     typedef typename BasicWriter<Char>::CharPtr CharPtr;
     Char fill = internal::CharTraits<Char>::cast(spec_.fill());
     CharPtr out = CharPtr();
-    const int CHAR_WIDTH = 1;
+    const unsigned CHAR_WIDTH = 1;
     if (spec_.width_ > CHAR_WIDTH) {
       out = writer_.grow_buffer(spec_.width_);
       if (spec_.align_ == ALIGN_RIGHT) {
