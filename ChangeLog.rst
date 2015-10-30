@@ -28,6 +28,16 @@
   (`#140 <https://github.com/cppformat/cppformat/issues/140>`_).
   Thanks to `@polyvertex (Jean-Charles Lefebvre) <https://github.com/polyvertex>`_.
 
+* [Breaking] Formatting of more than 16 arguments is now supported when using
+  variadic templates
+  (`#141 <https://github.com/cppformat/cppformat/issues/141>`_).
+  Thanks to `@Shauren <https://github.com/Shauren>`_.
+
+* [Breaking] Reduced `compiled code size
+  <https://github.com/cppformat/cppformat#compile-time-and-code-bloat>`_
+  (`#143 <https://github.com/cppformat/cppformat/issues/143>`_,
+  `#149 <https://github.com/cppformat/cppformat/pull/149>`_).
+
 * Fixed a compile error on MSVC with disabled exceptions
   (`#144 <https://github.com/cppformat/cppformat/issues/144>`_).
 
@@ -194,13 +204,15 @@
 
     fmt::printf("The date is %s", Date(2012, 12, 9));
 
-* Fixed portability issues in tests causing failures on ARM, ppc64, ppc64le
-  and s390x (
+* Fixed portability issues (mostly causing test failures) on ARM, ppc64, ppc64le,
+  s390x and SunOS 5.11 i386 (
+  `#138 <https://github.com/cppformat/cppformat/issues/138>`_,
   `#179 <https://github.com/cppformat/cppformat/issues/179>`_,
   `#180 <https://github.com/cppformat/cppformat/issues/180>`_,
   `#202 <https://github.com/cppformat/cppformat/issues/202>`_,
   `Red Hat Bugzilla Bug 1260297 <https://bugzilla.redhat.com/show_bug.cgi?id=1260297>`_).
-  Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_ and Dave Johansen.
+  Thanks to `@Naios <https://github.com/Naios>`_,
+  `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_ and Dave Johansen.
 
 * [Experimental] User-defined literals for format and named arguments
   (`#204 <https://github.com/cppformat/cppformat/pull/204>`_,
