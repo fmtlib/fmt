@@ -151,6 +151,12 @@
   `@gabime (Gabi Melman) <https://github.com/gabime>`_ and
   `@cubicool (Jeremy Moles) <https://github.com/cubicool>`_.
 
+* New CMake options ``FMT_INSTALL`` and ``FMT_TEST`` to control generation
+  of ``install`` and ``test`` targets respectively, on by default
+  (`#197 <https://github.com/cppformat/cppformat/issues/197>`_,
+  `#198 <https://github.com/cppformat/cppformat/issues/198>`_).
+  Thanks to `@maddinat0r (Alex Martin) <https://github.com/maddinat0r>`_.
+
 * [Breaking] ``fmt::(s)printf`` now supports formatting of objects of user-defined types
   that provide an overloaded ``std::ostream`` insertion operator (``operator<<``)
   (`#201 <https://github.com/cppformat/cppformat/issues/201>`_):
