@@ -48,6 +48,10 @@
 # include <sstream>
 #endif
 
+#ifndef _SECURE_SCL
+# define _SECURE_SCL 0
+#endif
+
 #if _SECURE_SCL
 # include <iterator>
 #endif
@@ -160,6 +164,10 @@ inline uint32_t clzll(uint64_t x) {
 #endif
 
 // Define FMT_USE_NOEXCEPT to make C++ Format use noexcept (C++11 feature).
+#ifndef FMT_USE_NOEXCEPT
+# define FMT_USE_NOEXCEPT 0
+#endif
+
 #ifndef FMT_NOEXCEPT
 # if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
@@ -172,6 +180,10 @@ inline uint32_t clzll(uint64_t x) {
 
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
+#ifndef FMT_USE_DELETED_FUNCTIONS
+# define FMT_USE_DELETED_FUNCTIONS 0
+#endif
+
 #if FMT_USE_DELETED_FUNCTIONS || FMT_HAS_FEATURE(cxx_deleted_functions) || \
   (FMT_GCC_VERSION >= 404 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1800
 # define FMT_DELETED_OR_UNDEFINED  = delete
@@ -2434,7 +2446,7 @@ void BasicWriter<Char>::write_double(
   Char fill = internal::CharTraits<Char>::cast(spec.fill());
   for (;;) {
     std::size_t buffer_size = buffer_.capacity() - offset;
-#if _MSC_VER
+#ifdef _MSC_VER
     // MSVC's vsnprintf_s doesn't work with zero size, so reserve
     // space for at least one extra character to make the size non-zero.
     // Note that the buffer's capacity will increase by more than 1.
