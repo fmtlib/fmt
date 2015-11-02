@@ -55,7 +55,7 @@ using fmt::internal::Arg;
 #if __GNUC__ && !__EXCEPTIONS
 # define FMT_EXCEPTIONS 0
 #endif
-#if _MSC_VER && !_HAS_EXCEPTIONS
+#if defined(_MSC_VER) && !_HAS_EXCEPTIONS
 # define FMT_EXCEPTIONS 0
 #endif
 #ifndef FMT_EXCEPTIONS
@@ -84,7 +84,7 @@ using fmt::internal::Arg;
 # define FMT_FUNC
 #endif
 
-#if _MSC_VER
+#ifdef _MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4127)  // conditional expression is constant
 # pragma warning(disable: 4702)  // unreachable code
@@ -1325,6 +1325,6 @@ template int fmt::internal::CharTraits<wchar_t>::format_float(
 
 #endif  // FMT_HEADER_ONLY
 
-#if _MSC_VER
+#ifdef _MSC_VER
 # pragma warning(pop)
 #endif
