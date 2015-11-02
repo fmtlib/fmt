@@ -911,7 +911,7 @@ struct WCharHelper<T, wchar_t> {
 
 template <typename T>
 class IsConvertibleToInt {
- private:
+ protected:
   typedef char yes[1];
   typedef char no[2];
 
