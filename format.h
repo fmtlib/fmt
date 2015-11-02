@@ -48,11 +48,13 @@
 # include <sstream>
 #endif
 
-#ifndef _SECURE_SCL
-# define _SECURE_SCL 0
+#ifdef _SECURE_SCL
+# define FMT_SECURE_SCL _SECURE_SCL
+#else
+# define FMT_SECURE_SCL 0
 #endif
 
-#if _SECURE_SCL
+#if FMT_SECURE_SCL
 # include <iterator>
 #endif
 
@@ -394,7 +396,7 @@ namespace internal {
 // to avoid dynamic memory allocation.
 enum { INLINE_BUFFER_SIZE = 500 };
 
-#if _SECURE_SCL
+#if FMT_SECURE_SCL
 // Use checked iterator to avoid warnings on MSVC.
 template <typename T>
 inline stdext::checked_array_iterator<T*> make_ptr(T *ptr, std::size_t size) {
@@ -625,7 +627,7 @@ inline int isnotanumber(long double x) {
 template <typename Char>
 class BasicCharTraits {
  public:
-#if _SECURE_SCL
+#if FMT_SECURE_SCL
   typedef stdext::checked_array_iterator<Char*> CharPtr;
 #else
   typedef Char *CharPtr;
@@ -1910,7 +1912,7 @@ class BasicWriter {
 
   typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
 
-#if _SECURE_SCL
+#if FMT_SECURE_SCL
   // Returns pointer value.
   static Char *get(CharPtr p) { return p.base(); }
 #else
