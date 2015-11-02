@@ -778,7 +778,7 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
     // Integer division is slow so do it for a group of two digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
-    unsigned index = (value % 100) * 2;
+    unsigned index = static_cast<unsigned>((value % 100) * 2);
     value /= 100;
     *--buffer = Data::DIGITS[index + 1];
     *--buffer = Data::DIGITS[index];
@@ -2330,7 +2330,7 @@ void BasicWriter<Char>::write_int(T value, Spec spec) {
     Char *p = get(prepare_int_buffer(num_digits, spec, prefix, prefix_size));
     n = abs_value;
     do {
-      *p-- = '0' + (n & 1);
+      *p-- = static_cast<Char>('0' + (n & 1));
     } while ((n >>= 1) != 0);
     break;
   }
@@ -2345,7 +2345,7 @@ void BasicWriter<Char>::write_int(T value, Spec spec) {
     Char *p = get(prepare_int_buffer(num_digits, spec, prefix, prefix_size));
     n = abs_value;
     do {
-      *p-- = '0' + (n & 7);
+      *p-- = static_cast<Char>('0' + (n & 7));
     } while ((n >>= 3) != 0);
     break;
   }
@@ -2810,7 +2810,7 @@ class FormatInt {
       // Integer division is slow so do it for a group of two digits instead
       // of for every digit. The idea comes from the talk by Alexandrescu
       // "Three Optimization Tips for C++". See speed-test for a comparison.
-      unsigned index = (value % 100) * 2;
+      unsigned index = static_cast<unsigned>((value % 100) * 2);
       value /= 100;
       *--buffer_end = internal::Data::DIGITS[index + 1];
       *--buffer_end = internal::Data::DIGITS[index];

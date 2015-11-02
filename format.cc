@@ -1265,7 +1265,7 @@ FMT_FUNC void fmt::print(std::ostream &os, CStringRef format_str, ArgList args) 
 
 FMT_FUNC void fmt::print_colored(Color c, CStringRef format, ArgList args) {
   char escape[] = "\x1b[30m";
-  escape[3] = '0' + static_cast<char>(c);
+  escape[3] = static_cast<char>('0' + c);
   std::fputs(escape, stdout);
   print(format, args);
   std::fputs(RESET_COLOR, stdout);
