@@ -594,6 +594,15 @@ inline int isinfinity(long double x) { return isinf(x); }
 inline int isinfinity(double x) { return std::isinf(x); }
 inline int isinfinity(long double x) { return std::isinf(x); }
 # endif
+
+// Portable version of isnan.
+# ifdef isnan
+inline int isnotanumber(double x) { return isnan(x); }
+inline int isnotanumber(long double x) { return isnan(x); }
+# else
+inline int isnotanumber(double x) { return std::isnan(x); }
+inline int isnotanumber(long double x) { return std::isnan(x); }
+# endif
 #else
 inline int getsign(double value) {
   if (value < 0) return 1;
@@ -606,6 +615,10 @@ inline int getsign(double value) {
 inline int isinfinity(double x) { return !_finite(x); }
 inline int isinfinity(long double x) {
   return !_finite(static_cast<double>(x));
+}
+inline int isnotanumber(double x) { return _isnan(x); }
+inline int isnotanumber(long double x) {
+    return _isnan(static_cast<double>(x));
 }
 #endif
 
@@ -2378,7 +2391,7 @@ void BasicWriter<Char>::write_double(
     sign = spec.flag(PLUS_FLAG) ? '+' : ' ';
   }
 
-  if (value != value) {
+  if (internal::isnotanumber(value)) {
     // Format NaN ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t nan_size = 4;
