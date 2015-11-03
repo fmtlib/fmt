@@ -52,7 +52,7 @@
 using fmt::internal::Arg;
 
 // Check if exceptions are disabled.
-#if __GNUC__ && !__EXCEPTIONS
+#if defined(__GNUC__) && !defined(__EXCEPTIONS)
 # define FMT_EXCEPTIONS 0
 #endif
 #if defined(_MSC_VER) && !_HAS_EXCEPTIONS
