@@ -105,6 +105,9 @@ inline uint32_t clzll(uint64_t x) {
 // Disable the warning about declaration shadowing because it affects too
 // many valid cases.
 #  pragma GCC diagnostic ignored "-Wshadow"
+// Disable the warning about implicit conversions that may change the sign of
+// an integer; silencing it otherwise would require many explicit casts.
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
 # endif
 # if __cplusplus >= 201103L || defined __GXX_EXPERIMENTAL_CXX0X__
 #  define FMT_HAS_GXX_CXX11 1
