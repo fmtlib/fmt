@@ -10,6 +10,10 @@ environment:
     PLATFORM: x64
   - BUILD: mingw
 
+before_build:
+  # Workaround for CMake not wanting sh.exe on PATH for MinGW.
+  - set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
+
 build_script:
   - python support/appveyor-build.py
 
