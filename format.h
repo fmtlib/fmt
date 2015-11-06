@@ -1045,8 +1045,8 @@ class MakeValue : public Arg {
   FMT_MAKE_VALUE(float, double_value, DOUBLE)
   FMT_MAKE_VALUE(double, double_value, DOUBLE)
   FMT_MAKE_VALUE(long double, long_double_value, LONG_DOUBLE)
-  FMT_MAKE_VALUE(signed char, int_value, CHAR)
-  FMT_MAKE_VALUE(unsigned char, int_value, CHAR)
+  FMT_MAKE_VALUE(signed char, int_value, INT)
+  FMT_MAKE_VALUE(unsigned char, int_value, UINT)
   FMT_MAKE_VALUE(char, int_value, CHAR)
 
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)

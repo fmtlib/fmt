@@ -471,11 +471,6 @@ TEST(ArgTest, MakeArg) {
   EXPECT_ARG_(wchar_t, BOOL, bool, int, true);
 
   // Test char.
-  EXPECT_ARG(CHAR, signed char, 'a');
-  EXPECT_ARG(CHAR, signed char, SCHAR_MIN);
-  EXPECT_ARG(CHAR, signed char, SCHAR_MAX);
-  EXPECT_ARG(CHAR, unsigned char, 'a');
-  EXPECT_ARG(CHAR, unsigned char, UCHAR_MAX );
   EXPECT_ARG(CHAR, char, 'a');
   EXPECT_ARG(CHAR, char, CHAR_MIN);
   EXPECT_ARG(CHAR, char, CHAR_MAX);
@@ -484,6 +479,13 @@ TEST(ArgTest, MakeArg) {
   EXPECT_ARGW(CHAR, wchar_t, L'a');
   EXPECT_ARGW(CHAR, wchar_t, WCHAR_MIN);
   EXPECT_ARGW(CHAR, wchar_t, WCHAR_MAX);
+
+  // Test signed/unsigned char.
+  EXPECT_ARG(INT, signed char, 42);
+  EXPECT_ARG(INT, signed char, SCHAR_MIN);
+  EXPECT_ARG(INT, signed char, SCHAR_MAX);
+  EXPECT_ARG(UINT, unsigned char, 42);
+  EXPECT_ARG(UINT, unsigned char, UCHAR_MAX );
 
   // Test short.
   EXPECT_ARG(INT, short, 42);
