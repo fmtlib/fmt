@@ -114,6 +114,20 @@ TEST(BufferTest, Nonmoveable) {
   EXPECT_FALSE(std::is_move_constructible<Buffer<char> >::value);
   EXPECT_FALSE(std::is_move_assignable<Buffer<char> >::value);
 }
+
+TEST(ArgArrayTest, ValueTraits) {
+  typedef fmt::internal::MakeValue< fmt::BasicFormatter<char> > MakeValue;
+  EXPECT_TRUE(std::is_pod<Value>::value);
+  EXPECT_TRUE(std::is_standard_layout<MakeValue>::value);
+  EXPECT_EQ(sizeof(Value[2]), sizeof(MakeValue[2]));
+}
+
+TEST(ArgArrayTest, ArgTraits) {
+  typedef fmt::internal::MakeArg< fmt::BasicFormatter<char> > MakeArg;
+  EXPECT_TRUE(std::is_pod<Arg>::value);
+  EXPECT_TRUE(std::is_standard_layout<MakeArg>::value);
+  EXPECT_EQ(sizeof(Arg[2]), sizeof(MakeArg[2]));
+}
 #endif
 
 // A test buffer with a dummy grow method.
