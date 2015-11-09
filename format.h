@@ -1186,6 +1186,9 @@ class ArgVisitor {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
 
+  Result visit_cstring(const char *) {
+    return FMT_DISPATCH(visit_unhandled_arg());
+  }
   Result visit_string(Arg::StringValue<char>) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
@@ -1220,11 +1223,8 @@ class ArgVisitor {
       return FMT_DISPATCH(visit_double(arg.double_value));
     case Arg::LONG_DOUBLE:
       return FMT_DISPATCH(visit_long_double(arg.long_double_value));
-    case Arg::CSTRING: {
-      Arg::StringValue<char> str = arg.string;
-      str.size = 0;
-      return FMT_DISPATCH(visit_string(str));
-    }
+    case Arg::CSTRING:
+      return FMT_DISPATCH(visit_cstring(arg.string.value));
     case Arg::STRING:
       return FMT_DISPATCH(visit_string(arg.string));
     case Arg::WSTRING:

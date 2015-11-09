@@ -1336,7 +1336,7 @@ TEST(FormatterTest, FormatWChar) {
 }
 
 TEST(FormatterTest, FormatCString) {
-  check_unknown_types("test", "s", "string");
+  check_unknown_types("test", "sp", "string");
   EXPECT_EQ("test", format("{0}", "test"));
   EXPECT_EQ("test", format("{0:s}", "test"));
   char nonconst[] = "nonconst";

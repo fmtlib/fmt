@@ -425,6 +425,8 @@ TEST(PrintfTest, Pointer) {
   int n;
   void *p = &n;
   EXPECT_PRINTF(fmt::format("{}", p), "%p", p);
+  const char *s = "test";
+  EXPECT_PRINTF(fmt::format("{:p}", s), "%p", s);
 }
 
 TEST(PrintfTest, Custom) {

@@ -409,6 +409,12 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
 
   FMT_DISALLOW_COPY_AND_ASSIGN(BasicArgFormatter);
 
+  void write_pointer(const void *p) {
+    spec_.flags_ = HASH_FLAG;
+    spec_.type_ = 'x';
+    writer_.write_int(reinterpret_cast<uintptr_t>(p), spec_);
+  }
+
  protected:
   BasicWriter<Char> &writer() { return writer_; }
   const FormatSpec &spec() const { return spec_; }
@@ -462,6 +468,15 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
     *out = internal::CharTraits<Char>::cast(value);
   }
 
+  void visit_cstring(const char *value) {
+    if (spec_.type_ == 'p') {
+      write_pointer(value);
+      return;
+    }
+    Arg::StringValue<char> str = {value, 0};
+    writer_.write_str(str, spec_);
+  }
+
   void visit_string(Arg::StringValue<char> value) {
     writer_.write_str(value, spec_);
   }
@@ -475,9 +490,7 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
   void visit_pointer(const void *value) {
     if (spec_.type_ && spec_.type_ != 'p')
       report_unknown_type(spec_.type_, "pointer");
-    spec_.flags_ = HASH_FLAG;
-    spec_.type_ = 'x';
-    writer_.write_int(reinterpret_cast<uintptr_t>(value), spec_);
+    write_pointer(value);
   }
 };
 
