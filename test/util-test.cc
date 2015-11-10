@@ -724,8 +724,8 @@ void CheckOp() {
 
 TEST(UtilTest, StringRefCompare) {
   EXPECT_EQ(0, StringRef("foo").compare(StringRef("foo")));
-  EXPECT_EQ(1, StringRef("fop").compare(StringRef("foo")));
-  EXPECT_EQ(-1, StringRef("foo").compare(StringRef("fop")));
+  EXPECT_GT(StringRef("fop").compare(StringRef("foo")), 0);
+  EXPECT_LT(StringRef("foo").compare(StringRef("fop")), 0);
   EXPECT_EQ(1, StringRef("foo").compare(StringRef("fo")));
   EXPECT_EQ(-1, StringRef("fo").compare(StringRef("foo")));
   CheckOp<std::equal_to>();
