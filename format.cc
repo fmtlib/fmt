@@ -540,6 +540,20 @@ class PrintfArgFormatter :
     *out = static_cast<Char>(value);
   }
 
+  void visit_cstring(const char *value) {
+    if (value)
+      BasicArgFormatter<PrintfArgFormatter<Char>, Char>::visit_cstring(value);
+    else
+      this->writer() << "(null)";
+  }
+
+  void visit_pointer(const void *value) {
+    if (value)
+      BasicArgFormatter<PrintfArgFormatter<Char>, Char>::visit_pointer(value);
+    else
+      this->writer() << "(nil)";
+  }
+
   void visit_custom(Arg::CustomValue c) {
     BasicFormatter<Char> formatter(ArgList(), this->writer());
     const Char format_str[] = {'}', 0};
