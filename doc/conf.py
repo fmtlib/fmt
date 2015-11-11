@@ -56,14 +56,11 @@ copyright = u'2012-2014, Victor Zverovich'
 # The short X.Y version.
 
 # Get version from CMakeLists.txt.
-version = {}
 with open('../CMakeLists.txt') as f:
   for line in f:
-    m = re.match(r'set\(CPACK_PACKAGE_VERSION_([A-Z]+) ([0-9]+)\)', line.strip())
+    m = re.match(r'set\(CPPFORMAT_VERSION (.+)\)', line.strip())
     if m:
-      kind, value = m.groups()
-      version[kind] = value
-version = '{}.{}.{}'.format(version['MAJOR'], version['MINOR'], version['PATCH'])
+      version = m.group(1)
 
 # The full version, including alpha/beta/rc tags.
 release = version
