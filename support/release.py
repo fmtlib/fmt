@@ -2,8 +2,9 @@
 # Release script
 
 from __future__ import print_function
+import datetime, fileinput, re, sys
 from docutils import nodes, writers, core
-import re
+from subprocess import check_call
 
 class MDWriter(writers.Writer):
     """GitHub-flavored markdown writer"""
@@ -14,7 +15,7 @@ class MDWriter(writers.Writer):
     def translate(self):
         translator = Translator(self.document)
         self.document.walkabout(translator)
-        self.output = translator.output
+        self.output = (translator.output, translator.version)
 
 
 def is_github_ref(node):
@@ -45,6 +46,7 @@ class Translator(nodes.NodeVisitor):
         raise nodes.StopTraversal
 
     def visit_title(self, node):
+        self.version = re.match(r'(\d+\.\d+\.\d+).*', node.children[0]).group(1)
         raise nodes.SkipChildren
 
     def depart_title(self, node):
@@ -116,4 +118,40 @@ class Translator(nodes.NodeVisitor):
         pass
 
 
-core.publish_file(source_path='../ChangeLog.rst', writer=MDWriter())
+class Runner:
+    def __init__(self):
+        self.cwd = '.'
+
+    def __call__(self, *args, **kwargs):
+        check_call(args, cwd=self.cwd, **kwargs)
+
+run = Runner()
+run('git', 'clone', 'git@github.com:cppformat/cppformat.git')
+
+changelog = 'ChangeLog.rst'
+changelog_path = 'cppformat/' + changelog
+changes, version = core.publish_file(source_path=changelog_path, writer=MDWriter())
+for line in fileinput.input('cppformat/CMakeLists.txt', inplace=True):
+    prefix = 'set(CPPFORMAT_VERSION '
+    if line.startswith(prefix):
+        line = prefix + version + ')\n'
+    sys.stdout.write(line)
+
+title_len = 0
+for line in fileinput.input(changelog_path, inplace=True):
+    if line.startswith(version + ' - TBD'):
+        line = version + ' - ' + datetime.date.today().isoformat()
+        title_len = len(line)
+        line += '\n'
+    elif title_len:
+        line = '-' * title_len + '\n'
+        title_len = 0
+    sys.stdout.write(line)
+
+run.cwd = 'cppformat'
+run('git', 'add', changelog, 'CMakeLists.txt')
+run('git', 'commit', '-m', 'Update version')
+run('cmake', '.')
+run('make', 'doc', 'package_source')
+
+# TODO: create a release on GitHub
