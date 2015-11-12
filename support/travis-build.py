@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 import errno, os, re, shutil, sys, tempfile, urllib
-from subprocess import call, check_call, Popen, PIPE, STDOUT
+from subprocess import call, check_call, check_output, Popen, PIPE, STDOUT
 
 def rmtree_if_exists(dir):
   try:
@@ -17,6 +17,8 @@ if build == 'Doc':
   travis = 'TRAVIS' in os.environ
   # Install dependencies.
   if travis:
+    if check_output('git rev-parse --abbrev-ref HEAD', shell=True).strip() != 'master':
+      exit(0) # Ignore non-master branches
     check_call('curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | ' +
                'sudo apt-key add -', shell=True)
     check_call('echo "deb https://deb.nodesource.com/node_0.10 precise main" | ' +
