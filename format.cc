@@ -514,6 +514,11 @@ class ArgFormatter : public BasicArgFormatter<ArgFormatter<Char>, Char> {
 template <typename Char>
 class PrintfArgFormatter :
     public BasicArgFormatter<PrintfArgFormatter<Char>, Char> {
+
+  void write_null_pointer() {
+    this->writer() << "(nil)";
+  }
+
  public:
   PrintfArgFormatter(BasicWriter<Char> &w, FormatSpec &s)
   : BasicArgFormatter<PrintfArgFormatter<Char>, Char>(w, s) {}
@@ -543,6 +548,8 @@ class PrintfArgFormatter :
   void visit_cstring(const char *value) {
     if (value)
       BasicArgFormatter<PrintfArgFormatter<Char>, Char>::visit_cstring(value);
+    else if (this->spec().type_ == 'p')
+      write_null_pointer();
     else
       this->writer() << "(null)";
   }
@@ -551,7 +558,7 @@ class PrintfArgFormatter :
     if (value)
       BasicArgFormatter<PrintfArgFormatter<Char>, Char>::visit_pointer(value);
     else
-      this->writer() << "(nil)";
+      write_null_pointer();
   }
 
   void visit_custom(Arg::CustomValue c) {

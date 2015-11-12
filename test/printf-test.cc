@@ -431,6 +431,8 @@ TEST(PrintfTest, Pointer) {
   EXPECT_PRINTF("(nil)", "%p", p);
   const char *s = "test";
   EXPECT_PRINTF(fmt::format("{:p}", s), "%p", s);
+  const char *null_str = 0;
+  EXPECT_PRINTF("(nil)", "%p", null_str);
 }
 
 TEST(PrintfTest, Custom) {
