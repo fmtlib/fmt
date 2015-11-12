@@ -2,7 +2,7 @@
 # Release script
 
 from __future__ import print_function
-import datetime, fileinput, re, sys
+import datetime, fileinput, json, os, re, requests, shutil, sys, tempfile
 from docutils import nodes, writers, core
 from subprocess import check_call
 
@@ -125,33 +125,51 @@ class Runner:
     def __call__(self, *args, **kwargs):
         check_call(args, cwd=self.cwd, **kwargs)
 
-run = Runner()
-run('git', 'clone', 'git@github.com:cppformat/cppformat.git')
+workdir = tempfile.mkdtemp()
+try:
+    run = Runner()
+    run('git', 'clone', 'git@github.com:cppformat/cppformat.git', workdir)
 
-changelog = 'ChangeLog.rst'
-changelog_path = 'cppformat/' + changelog
-changes, version = core.publish_file(source_path=changelog_path, writer=MDWriter())
-for line in fileinput.input('cppformat/CMakeLists.txt', inplace=True):
-    prefix = 'set(CPPFORMAT_VERSION '
-    if line.startswith(prefix):
-        line = prefix + version + ')\n'
-    sys.stdout.write(line)
+    # Convert changelog from RST to GitHub-flavored Markdown and get the version.
+    changelog = 'ChangeLog.rst'
+    changelog_path = os.path.join(workdir, changelog)
+    changes, version = core.publish_file(source_path=changelog_path, writer=MDWriter())
+    cmakelists = 'CMakeLists.txt'
+    for line in fileinput.input(os.path.join(workdir, cmakelists), inplace=True):
+        prefix = 'set(CPPFORMAT_VERSION '
+        if line.startswith(prefix):
+            line = prefix + version + ')\n'
+        sys.stdout.write(line)
 
-title_len = 0
-for line in fileinput.input(changelog_path, inplace=True):
-    if line.startswith(version + ' - TBD'):
-        line = version + ' - ' + datetime.date.today().isoformat()
-        title_len = len(line)
-        line += '\n'
-    elif title_len:
-        line = '-' * title_len + '\n'
-        title_len = 0
-    sys.stdout.write(line)
+    # Update the version in the changelog.
+    title_len = 0
+    for line in fileinput.input(changelog_path, inplace=True):
+        if line.startswith(version + ' - TBD'):
+            line = version + ' - ' + datetime.date.today().isoformat()
+            title_len = len(line)
+            line += '\n'
+        elif title_len:
+            line = '-' * title_len + '\n'
+            title_len = 0
+        sys.stdout.write(line)
+    run.cwd = workdir
+    run('git', 'checkout', '-b', 'release')
+    run('git', 'add', changelog, cmakelists)
+    run('git', 'commit', '-m', 'Update version')
 
-run.cwd = 'cppformat'
-run('git', 'add', changelog, 'CMakeLists.txt')
-run('git', 'commit', '-m', 'Update version')
-run('cmake', '.')
-run('make', 'doc', 'package_source')
+    # Build the docs and package.
+    run('cmake', '.')
+    run('make', 'doc', 'package_source')
 
-# TODO: create a release on GitHub
+    # Create a release on GitHub.
+    run('git', 'push', 'origin', 'release')
+    r = requests.post('https://api.github.com/repos/cppformat/cppformat/releases',
+                      params={'access_token': os.getenv('CPPFORMAT_TOKEN')},
+                      data=json.dumps({'tag_name': version, 'target_commitish': 'release',
+                                      'body': changes, 'draft': True}))
+    if r.status_code != 201:
+        raise Exception('Failed to create a release ' + str(r))
+
+    # TODO: update website
+finally:
+    shutil.rmtree(workdir)
