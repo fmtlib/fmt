@@ -32,7 +32,6 @@
 
 #include <cassert>
 #include <cmath>
-#include <cstddef>  // for std::ptrdiff_t
 #include <cstdio>
 #include <algorithm>
 #include <limits>
@@ -484,11 +483,12 @@ class Buffer {
 template <typename T>
 template <typename U>
 void Buffer<T>::append(const U *begin, const U *end) {
-  std::ptrdiff_t num_elements = end - begin;
-  if (size_ + num_elements > capacity_)
-    grow(size_ + num_elements);
+  assert(begin <= end);
+  std::size_t new_size = size_ + (end - begin);
+  if (new_size > capacity_)
+    grow(new_size);
   std::copy(begin, end, internal::make_ptr(ptr_, capacity_) + size_);
-  size_ += num_elements;
+  size_ = new_size;
 }
 
 namespace internal {

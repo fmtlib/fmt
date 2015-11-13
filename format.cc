@@ -34,6 +34,7 @@
 #include <climits>
 #include <cmath>
 #include <cstdarg>
+#include <cstddef>  // for std::ptrdiff_t
 
 #if defined(_WIN32) && defined(__MINGW32__)
 # include <cstring>
@@ -1040,10 +1041,10 @@ void fmt::internal::PrintfFormatter<Char>::format(
       ArgConverter<intmax_t>(arg, *s).visit(arg);
       break;
     case 'z':
-      ArgConverter<size_t>(arg, *s).visit(arg);
+      ArgConverter<std::size_t>(arg, *s).visit(arg);
       break;
     case 't':
-      ArgConverter<ptrdiff_t>(arg, *s).visit(arg);
+      ArgConverter<std::ptrdiff_t>(arg, *s).visit(arg);
       break;
     case 'L':
       // printf produces garbage when 'L' is omitted for long double, no
