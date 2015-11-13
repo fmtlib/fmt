@@ -373,6 +373,11 @@ TEST(PrintfTest, Length) {
   EXPECT_PRINTF(fmt::format("{}", max), "%Lg", max);
 }
 
+TEST(PrintfTest, Bool) {
+  EXPECT_PRINTF("1", "%d", true);
+  EXPECT_PRINTF("true", "%s", true);
+}
+
 TEST(PrintfTest, Int) {
   EXPECT_PRINTF("-42", "%d", -42);
   EXPECT_PRINTF("-42", "%i", -42);

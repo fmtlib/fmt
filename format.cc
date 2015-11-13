@@ -354,6 +354,11 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
   ArgConverter(fmt::internal::Arg &arg, wchar_t type)
     : arg_(arg), type_(type) {}
 
+  void visit_bool(bool value) {
+    if (type_ != 's')
+      visit_any_int(value);
+  }
+
   template <typename U>
   void visit_any_int(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
@@ -418,7 +423,13 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
 
  protected:
   BasicWriter<Char> &writer() { return writer_; }
-  const FormatSpec &spec() const { return spec_; }
+  FormatSpec &spec() { return spec_; }
+  
+  void write_bool(bool value) {
+    const char *str_value = value ? "true" : "false";
+    Arg::StringValue<char> str = { str_value, strlen(str_value) };
+    writer_.write_str(str, spec_);
+  }
 
  public:
   BasicArgFormatter(BasicWriter<Char> &w, FormatSpec &s)
@@ -431,13 +442,9 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
   void visit_any_double(T value) { writer_.write_double(value, spec_); }
 
   void visit_bool(bool value) {
-    if (spec_.type_) {
-      writer_.write_int(value, spec_);
-      return;
-    }
-    const char *str_value = value ? "true" : "false";
-    Arg::StringValue<char> str = { str_value, strlen(str_value) };
-    writer_.write_str(str, spec_);
+    if (spec_.type_)
+      return visit_any_int(value);
+    write_bool(value);
   }
 
   void visit_char(int value) {
@@ -470,10 +477,8 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
   }
 
   void visit_cstring(const char *value) {
-    if (spec_.type_ == 'p') {
-      write_pointer(value);
-      return;
-    }
+    if (spec_.type_ == 'p')
+      return write_pointer(value);
     Arg::StringValue<char> str = {value, 0};
     writer_.write_str(str, spec_);
   }
@@ -523,6 +528,14 @@ class PrintfArgFormatter :
  public:
   PrintfArgFormatter(BasicWriter<Char> &w, FormatSpec &s)
   : BasicArgFormatter<PrintfArgFormatter<Char>, Char>(w, s) {}
+
+  void visit_bool(bool value) {
+    FormatSpec &fmt_spec = this->spec();
+    if (fmt_spec.type_ != 's')
+      return this->visit_any_int(value);
+    fmt_spec.type_ = 0;
+    this->write_bool(value);
+  }
 
   void visit_char(int value) {
     const FormatSpec &fmt_spec = this->spec();
