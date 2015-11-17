@@ -614,7 +614,10 @@ inline int getsign(double x) {
         int dec;
         explicit Ecvt(double val) : value(val), sign(0), dec(0) {}
         void handle(int) {}
-        void handle(Null<>) { ecvt(value, 0, &dec, &sign); }
+        void handle(fmt::internal::Null<>) { // Fully qualify to make bcc happy.
+          using namespace std;
+          ecvt(value, 0, &dec, &sign);
+        }
       } e(value);
       char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
       using namespace fmt_system;
