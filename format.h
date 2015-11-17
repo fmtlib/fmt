@@ -216,6 +216,22 @@ inline uint32_t clzll(uint64_t x) {
 #endif
 
 namespace fmt {
+namespace internal {
+template <typename T = void>
+struct Null {};
+}
+}
+
+// Dummy implementations of signbit and _ecvt_s called if corresponding system
+// functions are not available. These methods are in the namespace fmt_system
+// rather than fmt::internal to make sure they don't hide the potential
+// overloads in the std namespace.
+namespace fmt_system {
+inline fmt::internal::Null<> signbit(...) { return fmt::internal::Null<>(); }
+inline fmt::internal::Null<> _ecvt_s(...) { return fmt::internal::Null<>(); }
+}
+
+namespace fmt {
 
 // Fix the warning about long long on older versions of GCC
 // that don't support the diagnostic pragma.
@@ -579,42 +595,38 @@ class FixedBuffer : public fmt::Buffer<Char> {
   void grow(std::size_t size);
 };
 
-template <typename T = void>
-struct Null {};
-
-// Dummy implementations of signbit and _ecvt_s called if corresponding system
-// functions are not available.
-inline Null<> signbit(...) { return Null<>(); }
-inline Null<> _ecvt_s(...) { return Null<>(); }
-
 // Portable version of signbit.
 inline int getsign(double x) {
-  class SignBit {
-   private:
-    double value_;
+  struct SignBit {
+    double value;
+
+    explicit SignBit(double val) : value(val) {}
 
     int handle(int result) { return result; }
 
-    int handle(fmt::internal::Null<>) {
-      if (value_ < 0) return 1;
-      if (value_ == value_) return 0;
-      int dec = 0, sign = 0;
+    int handle(Null<>) {
+      if (value < 0) return 1;
+      if (value == value) return 0;
+
+      struct Ecvt {
+        double value;
+        int sign;
+        int dec;
+        explicit Ecvt(double val) : value(val), sign(0), dec(0) {}
+        void handle(int) {}
+        void handle(Null<>) { ecvt(value, 0, &dec, &sign); }
+      } e(value);
       char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
-      _ecvt_s(buffer, sizeof(buffer), value_, 0, &dec, &sign);
-      return sign;
-    }
-
-   public:
-    SignBit(double value) : value_(value) {}
-
-    int call() {
-      // When compiled in C++11 mode signbit is no longer a macro but a
-      // function defined in namespace std and the macro is undefined.
-      using namespace std;
-      return handle(signbit(value_));
+      using namespace fmt_system;
+      e.handle(_ecvt_s(buffer, sizeof(buffer), value, 0, &e.dec, &e.sign));
+      return e.sign;
     }
   };
-  return SignBit(x).call();
+  // When compiled in C++11 mode signbit is no longer a macro but a
+  // function defined in namespace std and the macro is undefined.
+  using namespace std;
+  using namespace fmt_system;
+  return SignBit(x).handle(signbit(x));
 }
 
 #ifndef _MSC_VER
