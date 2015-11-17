@@ -38,6 +38,7 @@
 #include <stdexcept>
 #include <string>
 #include <map>
+#include <ostream>
 
 #ifndef FMT_USE_IOSTREAMS
 # define FMT_USE_IOSTREAMS 1
@@ -478,6 +479,11 @@ class Buffer {
 
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
+
+
+  template<class Elem, class Traits = std::char_traits<Elem> >
+  friend class basic_formatbuf;
+
 };
 
 template <typename T>
@@ -2028,6 +2034,11 @@ class BasicWriter {
   std::size_t size() const { return buffer_.size(); }
 
   /**
+    Returns underlying buffer.
+   */
+  Buffer<Char>& buffer() const { return buffer_; }
+
+  /**
     Returns a pointer to the output buffer content. No terminating null
     character is appended.
    */
@@ -2628,16 +2639,39 @@ class BasicArrayWriter : public BasicWriter<Char> {
 typedef BasicArrayWriter<char> ArrayWriter;
 typedef BasicArrayWriter<wchar_t> WArrayWriter;
 
+template<class Elem, class Traits = std::char_traits<Elem> >
+class basic_formatbuf : public std::basic_streambuf<Elem, Traits> {
+
+  typedef typename std::basic_streambuf<Elem, Traits>::int_type int_type;
+
+  Buffer<Elem>& buffer_;
+
+public:
+    basic_formatbuf(BasicFormatter<Elem> &formatter) : buffer_(formatter.writer().buffer()) {
+      setp(buffer_.ptr_, buffer_.ptr_ + buffer_.size_, buffer_.ptr_ + buffer_.capacity_);
+  }
+
+  virtual int_type overflow(int_type _Meta = Traits::eof()) {
+    buffer_.grow(buffer_.capacity_ * 2);
+    setp(buffer_.ptr_, buffer_.ptr_ + buffer_.size_, buffer_.ptr_ + buffer_.capacity_);
+
+    return traits_type::to_int_type(*pptr());
+  }
+
+  int_type flush() {
+    buffer_.size_ = pptr() - pbase();
+    return traits_type::to_int_type(*pptr());
+  }
+};
+
 // Formats a value.
 template <typename Char, typename T>
-void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
-  std::basic_ostringstream<Char> os;
-  os << value;
-  std::basic_string<Char> str = os.str();
-  internal::Arg arg = internal::MakeValue<Char>(str);
-  arg.type = static_cast<internal::Arg::Type>(
-        internal::MakeValue<Char>::type(str));
-  format_str = f.format(format_str, arg);
+void format(BasicFormatter<Char> &formatter, const Char *&format_str, const T &value) {
+
+  basic_formatbuf<Char> format_buf(formatter);
+  std::basic_ostream<Char> output(&format_buf);
+  output << value;
+  format_buf.flush();
 }
 
 // Reports a system error without throwing an exception.
