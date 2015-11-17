@@ -579,18 +579,45 @@ class FixedBuffer : public fmt::Buffer<Char> {
   void grow(std::size_t size);
 };
 
-#ifndef _MSC_VER
+template <typename T = void>
+struct Null {};
+
+// Dummy implementations of signbit and _ecvt_s called if corresponding system
+// functions are not available.
+inline Null<> signbit(...) { return Null<>(); }
+inline Null<> _ecvt_s(...) { return Null<>(); }
+
 // Portable version of signbit.
 inline int getsign(double x) {
-  // When compiled in C++11 mode signbit is no longer a macro but a function
-  // defined in namespace std and the macro is undefined.
-# ifdef signbit
-  return signbit(x);
-# else
-  return std::signbit(x);
-# endif
+  class SignBit {
+   private:
+    double value_;
+
+    int handle(int result) { return result; }
+
+    int handle(fmt::internal::Null<>) {
+      if (value_ < 0) return 1;
+      if (value_ == value_) return 0;
+      int dec = 0, sign = 0;
+      char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
+      _ecvt_s(buffer, sizeof(buffer), value_, 0, &dec, &sign);
+      return sign;
+    }
+
+   public:
+    SignBit(double value) : value_(value) {}
+
+    int call() {
+      // When compiled in C++11 mode signbit is no longer a macro but a
+      // function defined in namespace std and the macro is undefined.
+      using namespace std;
+      return handle(signbit(value_));
+    }
+  };
+  return SignBit(x).call();
 }
 
+#ifndef _MSC_VER
 // Portable version of isinf.
 # ifdef isinf
 inline int isinfinity(double x) { return isinf(x); }
@@ -609,14 +636,6 @@ inline int isnotanumber(double x) { return std::isnan(x); }
 inline int isnotanumber(long double x) { return std::isnan(x); }
 # endif
 #else
-inline int getsign(double value) {
-  if (value < 0) return 1;
-  if (value == value) return 0;
-  int dec = 0, sign = 0;
-  char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
-  _ecvt_s(buffer, sizeof(buffer), value, 0, &dec, &sign);
-  return sign;
-}
 inline int isinfinity(double x) { return !_finite(x); }
 inline int isinfinity(long double x) {
   return !_finite(static_cast<double>(x));
@@ -894,9 +913,6 @@ struct Arg : Value {
 
 template <typename Char>
 struct NamedArg;
-
-template <typename T = void>
-struct Null {};
 
 // A helper class template to enable or disable overloads taking wide
 // characters and strings in MakeValue.
