@@ -612,7 +612,7 @@ inline int getsign(double x) {
   return sign;
 }
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__BORLANDC__)
 // Portable version of isinf.
 # ifdef isinf
 inline int isinfinity(double x) { return isinf(x); }
