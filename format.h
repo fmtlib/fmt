@@ -215,20 +215,17 @@ inline uint32_t clzll(uint64_t x) {
 # define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
 
-namespace fmt {
-namespace internal {
-template <typename T = void>
-struct Null {};
-}
-}
-
 // Dummy implementations of signbit and _ecvt_s called if corresponding system
-// functions are not available. These methods are in the namespace fmt_system
+// functions are not available. These functions are in the namespace fmt_system
 // rather than fmt::internal to make sure they don't hide the potential
 // overloads in the std namespace.
 namespace fmt_system {
-inline fmt::internal::Null<> signbit(...) { return fmt::internal::Null<>(); }
-inline fmt::internal::Null<> _ecvt_s(...) { return fmt::internal::Null<>(); }
+struct DummyInt {
+  int data[2];
+  operator int() const { return 0; }
+};
+inline DummyInt signbit(...) { return DummyInt(); }
+inline DummyInt _ecvt_s(...) { return DummyInt(); }
 }
 
 namespace fmt {
@@ -597,39 +594,22 @@ class FixedBuffer : public fmt::Buffer<Char> {
 
 // Portable version of signbit.
 inline int getsign(double x) {
-  struct SignBit {
-    double value;
-
-    explicit SignBit(double val) : value(val) {}
-
-    int handle(int result) { return result; }
-
-    int handle(Null<>) {
-      if (value < 0) return 1;
-      if (value == value) return 0;
-
-      struct Ecvt {
-        double value;
-        int sign;
-        int dec;
-        explicit Ecvt(double val) : value(val), sign(0), dec(0) {}
-        void handle(int) {}
-        void handle(fmt::internal::Null<>) { // Fully qualify to make bcc happy.
-          using namespace std;
-          ecvt(value, 0, &dec, &sign);
-        }
-      } e(value);
-      char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
-      using namespace fmt_system;
-      e.handle(_ecvt_s(buffer, sizeof(buffer), value, 0, &e.dec, &e.sign));
-      return e.sign;
-    }
-  };
   // When compiled in C++11 mode signbit is no longer a macro but a
   // function defined in namespace std and the macro is undefined.
   using namespace std;
   using namespace fmt_system;
-  return SignBit(x).handle(signbit(x));
+  if (sizeof(signbit(x)) == sizeof(int))
+    return signbit(x);
+  if (x < 0) return 1;
+  if (x == x) return 0;
+  int dec = 0, sign = 0;
+  if (sizeof(_ecvt_s(0, 0, x, 0, 0, 0)) == sizeof(int)) {
+    char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
+    _ecvt_s(buffer, sizeof(buffer), x, 0, &dec, &sign);
+    return sign;
+  }
+  ecvt(x, 0, &dec, &sign);
+  return sign;
 }
 
 #ifndef _MSC_VER
@@ -928,6 +908,9 @@ struct Arg : Value {
 
 template <typename Char>
 struct NamedArg;
+
+template <typename T = void>
+struct Null {};
 
 // A helper class template to enable or disable overloads taking wide
 // characters and strings in MakeValue.
