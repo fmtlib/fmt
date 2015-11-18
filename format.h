@@ -1412,7 +1412,7 @@ class BasicFormatter : private internal::FormatterBase {
   
   FMT_DISALLOW_COPY_AND_ASSIGN(BasicFormatter);
 
-  using FormatterBase::get_arg;
+  using internal::FormatterBase::get_arg;
 
   // Checks if manual indexing is used and returns the argument with
   // specified name.

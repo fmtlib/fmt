@@ -744,7 +744,7 @@ FMT_FUNC void fmt::internal::format_windows_error(
       }
     }
   } FMT_CATCH(...) {}
-  format_error_code(out, error_code, message);
+  fmt::format_error_code(out, error_code, message);  // 'fmt::' is for bcc32.
 }
 
 #endif  // FMT_USE_WINDOWS_H
@@ -767,7 +767,7 @@ FMT_FUNC void fmt::internal::format_system_error(
       buffer.resize(buffer.size() * 2);
     }
   } FMT_CATCH(...) {}
-  format_error_code(out, error_code, message);
+  fmt::format_error_code(out, error_code, message);  // 'fmt::' is for bcc32.
 }
 
 template <typename Char>
