@@ -2638,6 +2638,7 @@ template<class Elem, class Traits = std::char_traits<Elem> >
 class basic_formatbuf : public std::basic_streambuf<Elem, Traits> {
 
   typedef typename std::basic_streambuf<Elem, Traits>::int_type int_type;
+  typedef typename std::basic_streambuf<Elem, Traits>::traits_type traits_type;
 
   Buffer<Elem>& buffer_;
 
@@ -2648,7 +2649,7 @@ public:
       setp(start, start + buffer_.size(), start + buffer_.capacity());
     }
 
-  virtual int_type overflow(int_type _Meta = Traits::eof()) {
+  virtual int_type overflow(int_type) {
     buffer_.reserve(buffer_.capacity() * 2);
     Elem* start = &buffer_[0];
     setp(start, start + buffer_.size(), start + buffer_.capacity());
@@ -2657,7 +2658,7 @@ public:
   }
 
   size_t size() {
-    return pptr() - pbase();
+    return this->pptr() - this->pbase();
   }
 };
 
