@@ -479,11 +479,6 @@ class Buffer {
 
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
-
-
-  template<class Elem, class Traits = std::char_traits<Elem> >
-  friend class basic_formatbuf;
-
 };
 
 template <typename T>
@@ -2647,31 +2642,39 @@ class basic_formatbuf : public std::basic_streambuf<Elem, Traits> {
   Buffer<Elem>& buffer_;
 
 public:
-    basic_formatbuf(BasicFormatter<Elem> &formatter) : buffer_(formatter.writer().buffer()) {
-      setp(buffer_.ptr_, buffer_.ptr_ + buffer_.size_, buffer_.ptr_ + buffer_.capacity_);
-  }
+    basic_formatbuf(Buffer<Elem>& buffer) : buffer_(buffer) {
+
+      Elem* start = &buffer_[0];
+      setp(start, start + buffer_.size(), start + buffer_.capacity());
+    }
 
   virtual int_type overflow(int_type _Meta = Traits::eof()) {
-    buffer_.grow(buffer_.capacity_ * 2);
-    setp(buffer_.ptr_, buffer_.ptr_ + buffer_.size_, buffer_.ptr_ + buffer_.capacity_);
+    buffer_.reserve(buffer_.capacity() * 2);
+    Elem* start = &buffer_[0];
+    setp(start, start + buffer_.size(), start + buffer_.capacity());
 
     return traits_type::to_int_type(*pptr());
   }
 
-  int_type flush() {
-    buffer_.size_ = pptr() - pbase();
-    return traits_type::to_int_type(*pptr());
+  size_t size() {
+    return pptr() - pbase();
   }
 };
 
 // Formats a value.
 template <typename Char, typename T>
-void format(BasicFormatter<Char> &formatter, const Char *&format_str, const T &value) {
+void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
+  internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
 
-  basic_formatbuf<Char> format_buf(formatter);
+  basic_formatbuf<Char> format_buf(buffer);
   std::basic_ostream<Char> output(&format_buf);
   output << value;
-  format_buf.flush();
+
+  BasicStringRef<Char> str(format_buf.size() > 0 ? &buffer[0] : 0, format_buf.size());
+  internal::Arg arg = internal::MakeValue<Char>(str);
+  arg.type = static_cast<internal::Arg::Type>(
+        internal::MakeValue<Char>::type(str));
+  format_str = f.format(format_str, arg);
 }
 
 // Reports a system error without throwing an exception.
