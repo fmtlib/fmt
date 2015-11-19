@@ -2712,7 +2712,7 @@ enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
   Formats a string and prints it to stdout using ANSI escape sequences
   to specify color (experimental).
   Example:
-    PrintColored(fmt::RED, "Elapsed time: {0:.2f} seconds") << 1.23;
+    print_colored(fmt::RED, "Elapsed time: {0:.2f} seconds", 1.23);
  */
 void print_colored(Color c, CStringRef format, ArgList args);
 
