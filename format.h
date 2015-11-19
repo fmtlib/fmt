@@ -2640,25 +2640,37 @@ class basic_formatbuf : public std::basic_streambuf<Elem, Traits> {
   typedef typename std::basic_streambuf<Elem, Traits>::int_type int_type;
   typedef typename std::basic_streambuf<Elem, Traits>::traits_type traits_type;
 
+  using std::basic_streambuf<Elem, Traits>::setp;
+  using	std::basic_streambuf<Elem, Traits>::pptr;
+  using	std::basic_streambuf<Elem, Traits>::pbase;
+
   Buffer<Elem>& buffer_;
+  Elem* start_;
 
 public:
-    basic_formatbuf(Buffer<Elem>& buffer) : buffer_(buffer) {
+    basic_formatbuf(Buffer<Elem>& buffer) : buffer_(buffer), start_(&buffer[0]) {
 
-      Elem* start = &buffer_[0];
-      setp(start, start + buffer_.size(), start + buffer_.capacity());
+      setp(start_, start_ + buffer_.capacity());
     }
 
-  virtual int_type overflow(int_type) {
-    buffer_.reserve(buffer_.capacity() * 2);
-    Elem* start = &buffer_[0];
-    setp(start, start + buffer_.size(), start + buffer_.capacity());
+  virtual int_type overflow(int_type _Meta = traits_type::eof()) {
 
-    return traits_type::to_int_type(*pptr());
+    if (!traits_type::eq_int_type(_Meta, traits_type::eof())) {
+
+      size_t size = pptr() - start_;
+      buffer_.resize(size);
+      buffer_.reserve(size * 2);
+
+      start_ = &buffer_[0];
+      start_[size] = traits_type::to_char_type(_Meta);
+      setp(start_+ size + 1, start_ + size * 2);
+    }
+
+    return _Meta;
   }
 
   size_t size() {
-    return this->pptr() - this->pbase();
+    return pptr() - start_;
   }
 };
 
