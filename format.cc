@@ -1285,13 +1285,15 @@ void fmt::BasicFormatter<Char>::format(BasicCStringRef<Char> format_str) {
 
 FMT_FUNC void fmt::report_system_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT {
-  report_error(internal::format_system_error, error_code, message);
+  // 'fmt::' is for bcc32.
+  fmt::report_error(internal::format_system_error, error_code, message);
 }
 
 #if FMT_USE_WINDOWS_H
 FMT_FUNC void fmt::report_windows_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT {
-  report_error(internal::format_windows_error, error_code, message);
+  // 'fmt::' is for bcc32.
+  fmt::report_error(internal::format_windows_error, error_code, message);
 }
 #endif
 

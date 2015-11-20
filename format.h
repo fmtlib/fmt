@@ -927,19 +927,20 @@ struct WCharHelper<T, wchar_t> {
   typedef Null<T> Unsupported;
 };
 
+typedef char Yes[1];
+typedef char No[2];
+
+// These are non-members to workaround an overload resolution bug in bcc32.
+Yes &convert(fmt::ULongLong);
+No &convert(...);
+
 template <typename T>
 class IsConvertibleToInt {
  protected:
-  typedef char yes[1];
-  typedef char no[2];
-
   static const T &get();
 
-  static yes &convert(fmt::ULongLong);
-  static no &convert(...);
-  
  public:
-  enum { value = (sizeof(convert(get())) == sizeof(yes)) };
+  enum { value = (sizeof(convert(get())) == sizeof(Yes)) };
 };
 
 #define FMT_CONVERTIBLE_TO_INT(Type) \
@@ -1099,7 +1100,7 @@ class MakeValue : public Arg {
 
   template <typename T>
   MakeValue(const T &value,
-            typename EnableIf<!IsConvertibleToInt<T>::value, int>::type = 0) {
+      typename EnableIf<IsConvertibleToInt<T>::value == 0, int>::type = 0) {
     custom.value = &value;
     custom.format = &format_custom_arg<T>;
   }
@@ -1765,8 +1766,8 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG_TYPE(n) T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
-# define FMT_MAKE_REF_char(n) fmt::internal::MakeValue<char>(v##n)
-# define FMT_MAKE_REF_wchar_t(n) fmt::internal::MakeValue<wchar_t>(v##n)
+# define FMT_ASSIGN_char(n) arr[n] = fmt::internal::MakeValue<char>(v##n)
+# define FMT_ASSIGN_wchar_t(n) arr[n] = fmt::internal::MakeValue<wchar_t>(v##n)
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
@@ -2985,7 +2986,8 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       FMT_GEN(n, FMT_MAKE_ARG)) { \
-    fmt::internal::ArgArray<n>::Type arr = {FMT_GEN(n, FMT_MAKE_REF_##Char)}; \
+    fmt::internal::ArgArray<n>::Type arr; \
+    FMT_GEN(n, FMT_ASSIGN_##Char); \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
       fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), arr)); \
   }
