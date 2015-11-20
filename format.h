@@ -967,7 +967,7 @@ struct Conditional { typedef T type; };
 template<class T, class F>
 struct Conditional<false, T, F> { typedef F type; };
 
-// For bcc32 which doesn't understand ! in template argumetns.
+// For bcc32 which doesn't understand ! in template arguments.
 template<bool>
 struct Not { enum { value = 0 }; };
 
