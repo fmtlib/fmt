@@ -608,7 +608,8 @@ inline int getsign(double x) {
     _ecvt_s(buffer, sizeof(buffer), x, 0, &dec, &sign);
     return sign;
   }
-  ecvt(x, 0, &dec, &sign);
+  char *result = ecvt(x, 0, &dec, &sign);
+  (void)result;  // Suppress warning about unused return value of ecvt.
   return sign;
 }
 
