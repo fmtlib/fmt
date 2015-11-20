@@ -967,6 +967,13 @@ struct Conditional { typedef T type; };
 template<class T, class F>
 struct Conditional<false, T, F> { typedef F type; };
 
+// For bcc32 which doesn't understand ! in template argumetns.
+template<bool>
+struct Not { enum { value = 0 }; };
+
+template<>
+struct Not<false> { enum { value = 1 }; };
+
 // A helper function to suppress bogus "conditional expression is constant"
 // warnings.
 template <typename T>
@@ -1100,7 +1107,8 @@ class MakeValue : public Arg {
 
   template <typename T>
   MakeValue(const T &value,
-      typename EnableIf<IsConvertibleToInt<T>::value == 0, int>::type = 0) {
+            typename EnableIf<Not<
+               IsConvertibleToInt<T>::value>::value, int>::type = 0) {
     custom.value = &value;
     custom.format = &format_custom_arg<T>;
   }
@@ -1428,7 +1436,7 @@ class BasicFormatter : private internal::FormatterBase {
 
  public:
   BasicFormatter(const ArgList &args, BasicWriter<Char> &w)
-    : FormatterBase(args), writer_(w) {}
+    : internal::FormatterBase(args), writer_(w) {}
 
   BasicWriter<Char> &writer() { return writer_; }
 
