@@ -227,6 +227,7 @@ typedef std::numeric_limits<fmt::internal::DummyInt> FPUtil;
 // if the latter are not available.
 inline DummyInt signbit(...) { return DummyInt(); }
 inline DummyInt _ecvt_s(...) { return DummyInt(); }
+inline DummyInt _ecvt(...) { return DummyInt(); }
 inline DummyInt isinf(...) { return DummyInt(); }
 inline DummyInt _finite(...) { return DummyInt(); }
 inline DummyInt isnan(...) { return DummyInt(); }
@@ -274,11 +275,10 @@ class numeric_limits<fmt::internal::DummyInt> :
     if (sizeof(_ecvt_s(0, 0, x, 0, 0, 0)) == sizeof(int)) {
       char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
       _ecvt_s(buffer, sizeof(buffer), x, 0, &dec, &sign);
-      return sign;
+      return sign != 0;
     }
-    char *result = ecvt(x, 0, &dec, &sign);
-    (void)result;  // Suppress a warning about unused return value of ecvt.
-    return sign;
+    _ecvt(x, 0, &dec, &sign);
+    return sign != 0;
   }
 };
 }  // namespace std
