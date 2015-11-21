@@ -215,18 +215,73 @@ inline uint32_t clzll(uint64_t x) {
 # define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
 
-// Dummy implementations of signbit and _ecvt_s called if corresponding system
-// functions are not available. These functions are in the namespace fmt_system
-// rather than fmt::internal to make sure they don't hide the potential
-// overloads in the std namespace.
-namespace fmt_system {
+namespace fmt {
+namespace internal {
 struct DummyInt {
   int data[2];
   operator int() const { return 0; }
 };
+typedef std::numeric_limits<fmt::internal::DummyInt> FPUtil;
+
+// Dummy implementations of system functions such as signbit and ecvt called
+// if the latter are not available.
 inline DummyInt signbit(...) { return DummyInt(); }
 inline DummyInt _ecvt_s(...) { return DummyInt(); }
+inline DummyInt isinf(...) { return DummyInt(); }
+inline DummyInt _finite(...) { return DummyInt(); }
+inline DummyInt isnan(...) { return DummyInt(); }
+inline DummyInt _isnan(...) { return DummyInt(); }
 }
+}  // namespace fmt
+
+namespace std {
+// Standard permits specialization of std::numeric_limits. This specialization
+// is used to resolve ambiguity between isinf and std::isinf in glibc:
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48891
+// and the same for isnan and signbit.
+template <>
+class numeric_limits<fmt::internal::DummyInt> :
+    public std::numeric_limits<int> {
+ public:
+  // Portable version of isinf.
+  template <typename T>
+  static bool isinfinity(T x) {
+    using namespace fmt::internal;
+    // The resolution "priority" is:
+    // isinf macro > std::isinf > ::isinf > fmt::internal::isinf
+    if (sizeof(isinf(x)) == sizeof(bool) || sizeof(isinf(x)) == sizeof(int))
+      return isinf(x);
+    return !_finite(x);
+  }
+
+  // Portable version of isnan.
+  template <typename T>
+  static bool isnotanumber(T x) {
+    using namespace fmt::internal;
+    if (sizeof(isnan(x)) == sizeof(bool) || sizeof(isnan(x)) == sizeof(int))
+      return isnan(x);
+    return _isnan(x);
+  }
+
+  // Portable version of signbit.
+  static bool isnegative(double x) {
+    using namespace fmt::internal;
+    if (sizeof(signbit(x)) == sizeof(int))
+      return signbit(x);
+    if (x < 0) return true;
+    if (!isnotanumber(x)) return false;
+    int dec = 0, sign = 0;
+    if (sizeof(_ecvt_s(0, 0, x, 0, 0, 0)) == sizeof(int)) {
+      char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
+      _ecvt_s(buffer, sizeof(buffer), x, 0, &dec, &sign);
+      return sign;
+    }
+    char *result = ecvt(x, 0, &dec, &sign);
+    (void)result;  // Suppress a warning about unused return value of ecvt.
+    return sign;
+  }
+};
+}  // namespace std
 
 namespace fmt {
 
@@ -591,56 +646,6 @@ class FixedBuffer : public fmt::Buffer<Char> {
  protected:
   void grow(std::size_t size);
 };
-
-// Portable version of signbit.
-inline int getsign(double x) {
-  // When compiled in C++11 mode signbit is no longer a macro but a
-  // function defined in namespace std and the macro is undefined.
-  using namespace std;
-  using namespace fmt_system;
-  if (sizeof(signbit(x)) == sizeof(int))
-    return signbit(x);
-  if (x < 0) return 1;
-  if (x == x) return 0;
-  int dec = 0, sign = 0;
-  if (sizeof(_ecvt_s(0, 0, x, 0, 0, 0)) == sizeof(int)) {
-    char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
-    _ecvt_s(buffer, sizeof(buffer), x, 0, &dec, &sign);
-    return sign;
-  }
-  char *result = ecvt(x, 0, &dec, &sign);
-  (void)result;  // Suppress warning about unused return value of ecvt.
-  return sign;
-}
-
-#if !defined(_MSC_VER) && !defined(__BORLANDC__)
-// Portable version of isinf.
-# ifdef isinf
-inline int isinfinity(double x) { return isinf(x); }
-inline int isinfinity(long double x) { return isinf(x); }
-# else
-inline int isinfinity(double x) { return std::isinf(x); }
-inline int isinfinity(long double x) { return std::isinf(x); }
-# endif
-
-// Portable version of isnan.
-# ifdef isnan
-inline int isnotanumber(double x) { return isnan(x); }
-inline int isnotanumber(long double x) { return isnan(x); }
-# else
-inline int isnotanumber(double x) { return std::isnan(x); }
-inline int isnotanumber(long double x) { return std::isnan(x); }
-# endif
-#else
-inline int isinfinity(double x) { return !_finite(x); }
-inline int isinfinity(long double x) {
-  return !_finite(static_cast<double>(x));
-}
-inline int isnotanumber(double x) { return _isnan(x); }
-inline int isnotanumber(long double x) {
-    return _isnan(static_cast<double>(x));
-}
-#endif
 
 template <typename Char>
 class BasicCharTraits {
@@ -2411,16 +2416,16 @@ void BasicWriter<Char>::write_double(
   }
 
   char sign = 0;
-  // Use getsign instead of value < 0 because the latter is always
+  // Use isnegative instead of value < 0 because the latter is always
   // false for NaN.
-  if (internal::getsign(static_cast<double>(value))) {
+  if (internal::FPUtil::isnegative(static_cast<double>(value))) {
     sign = '-';
     value = -value;
   } else if (spec.flag(SIGN_FLAG)) {
     sign = spec.flag(PLUS_FLAG) ? '+' : ' ';
   }
 
-  if (internal::isnotanumber(value)) {
+  if (internal::FPUtil::isnotanumber(value)) {
     // Format NaN ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t nan_size = 4;
@@ -2435,7 +2440,7 @@ void BasicWriter<Char>::write_double(
     return;
   }
 
-  if (internal::isinfinity(value)) {
+  if (internal::FPUtil::isinfinity(value)) {
     // Format infinity ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t inf_size = 4;
