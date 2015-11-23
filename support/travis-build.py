@@ -17,7 +17,9 @@ if build == 'Doc':
   travis = 'TRAVIS' in os.environ
   # Install dependencies.
   if travis:
-    if check_output('git rev-parse --abbrev-ref HEAD', shell=True).strip() != 'master':
+    branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).strip()
+    if branch != 'master':
+      print('Branch: ' + branch)
       exit(0) # Ignore non-master branches
     check_call('curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | ' +
                'sudo apt-key add -', shell=True)
