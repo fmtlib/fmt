@@ -18,7 +18,7 @@ def pip_install(package, commit=None, **kwargs):
   print('Installing {}'.format(package))
   check_call(['pip', 'install', '--upgrade', package])
 
-def build_docs():
+def build_docs(version='dev'):
   # Create virtualenv.
   doc_dir = os.path.dirname(os.path.realpath(__file__))
   virtualenv_dir = 'virtualenv'
@@ -77,8 +77,9 @@ def build_docs():
     '''.format(os.path.dirname(doc_dir)).encode('UTF-8'))
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
-  check_call(['sphinx-build', '-D',
-              'breathe_projects.format=' + os.path.join(os.getcwd(), 'doxyxml'),
+  check_call(['sphinx-build',
+              '-Dbreathe_projects.format=' + os.path.join(os.getcwd(), 'doxyxml'),
+              '-Dversion=' + version, '-Drelease=' + version, '-Aversion=' + version,
               '-b', 'html', doc_dir, 'html'])
   try:
     check_call(['lessc', '--clean-css',
@@ -93,4 +94,4 @@ def build_docs():
   return 'html'
 
 if __name__ == '__main__':
-  build_docs()
+  build_docs(sys.argv[1])

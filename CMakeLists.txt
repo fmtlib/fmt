@@ -117,6 +117,14 @@ endif ()
 set_target_properties(cppformat
   PROPERTIES COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS}")
 
+set(CPPFORMAT_VERSION 1.2.0)
+if (NOT CPPFORMAT_VERSION MATCHES "^([0-9]+).([0-9]+).([0-9]+)$")
+  message(FATAL_ERROR "Invalid version format ${CPPFORMAT_VERSION}.")
+endif ()
+set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_MATCH_2})
+set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_MATCH_3})
+
 if (FMT_DOC)
   add_subdirectory(doc)
 endif ()
@@ -125,14 +133,6 @@ if (FMT_TEST)
   enable_testing()
   add_subdirectory(test)
 endif ()
-
-set(CPPFORMAT_VERSION 1.2.0)
-if (NOT CPPFORMAT_VERSION MATCHES "^([0-9]+).([0-9]+).([0-9]+)$")
-  message(FATAL_ERROR "Invalid version format ${CPPFORMAT_VERSION}.")
-endif ()
-set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_MATCH_1})
-set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_MATCH_2})
-set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_MATCH_3})
 
 set_target_properties(cppformat PROPERTIES
   VERSION ${CPPFORMAT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR})
