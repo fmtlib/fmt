@@ -17,7 +17,7 @@ if build == 'Doc':
   travis = 'TRAVIS' in os.environ
   # Install dependencies.
   if travis:
-    branch = check_output('git rev-parse --abbrev-ref HEAD', shell=True).strip()
+    branch = os.environ['TRAVIS_BRANCH']
     if branch != 'master':
       print('Branch: ' + branch)
       exit(0) # Ignore non-master branches
