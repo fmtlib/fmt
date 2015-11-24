@@ -937,28 +937,59 @@ typedef char No[2];
 
 // These are non-members to workaround an overload resolution bug in bcc32.
 Yes &convert(fmt::ULongLong);
+Yes &convert(std::ostream &);
 No &convert(...);
 
 template <typename T>
-class IsConvertibleToInt {
- protected:
-  static const T &get();
+T &get();
 
- public:
-  enum { value = (sizeof(convert(get())) == sizeof(Yes)) };
+struct DummyStream : std::ostream {
+  // Hide all operator<< overloads from std::ostream.
+  void operator<<(Null<>);
 };
 
-#define FMT_CONVERTIBLE_TO_INT(Type) \
+No &operator<<(std::ostream &, int);
+
+template<typename T, bool ENABLE_CONVERSION>
+struct ConvertToIntImpl {
+  enum { value = false };
+};
+
+template<typename T>
+struct ConvertToIntImpl<T, true> {
+  // Convert to int only if T doesn't have an overloaded operator<<.
+  enum {
+    value = sizeof(convert(get<DummyStream>() << get<T>())) == sizeof(No)
+  };
+};
+
+template<typename T, bool ENABLE_CONVERSION>
+struct ConvertToIntImpl2 {
+  enum { value = false };
+};
+
+template<typename T>
+struct ConvertToIntImpl2<T, true> {
+  enum {
+    // Don't convert numeric types.
+    value = ConvertToIntImpl<T, !std::numeric_limits<T>::is_specialized>::value
+  };
+};
+
+template<typename T>
+struct ConvertToInt {
+  enum { enable_conversion = sizeof(convert(get<T>())) == sizeof(Yes) };
+  enum { value = ConvertToIntImpl2<T, enable_conversion>::value };
+};
+
+#define FMT_DISABLE_CONVERSION_TO_INT(Type) \
   template <> \
-  class IsConvertibleToInt<Type> { \
-   public: \
-    enum { value = 1 }; \
-  }
+  struct ConvertToInt<Type> {  enum { value = 0 }; }
 
 // Silence warnings about convering float to int.
-FMT_CONVERTIBLE_TO_INT(float);
-FMT_CONVERTIBLE_TO_INT(double);
-FMT_CONVERTIBLE_TO_INT(long double);
+FMT_DISABLE_CONVERSION_TO_INT(float);
+FMT_DISABLE_CONVERSION_TO_INT(double);
+FMT_DISABLE_CONVERSION_TO_INT(long double);
 
 template<bool B, class T = void>
 struct EnableIf {};
@@ -1113,20 +1144,20 @@ class MakeValue : public Arg {
   template <typename T>
   MakeValue(const T &value,
             typename EnableIf<Not<
-               IsConvertibleToInt<T>::value>::value, int>::type = 0) {
+              ConvertToInt<T>::value>::value, int>::type = 0) {
     custom.value = &value;
     custom.format = &format_custom_arg<T>;
   }
 
   template <typename T>
   MakeValue(const T &value,
-            typename EnableIf<IsConvertibleToInt<T>::value, int>::type = 0) {
+            typename EnableIf<ConvertToInt<T>::value, int>::type = 0) {
     int_value = value;
   }
 
   template <typename T>
   static uint64_t type(const T &) {
-    return IsConvertibleToInt<T>::value ? Arg::INT : Arg::CUSTOM;
+    return ConvertToInt<T>::value ? Arg::INT : Arg::CUSTOM;
   }
 
   // Additional template param `Char_` is needed here because make_type always

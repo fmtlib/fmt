@@ -870,15 +870,21 @@ TEST(UtilTest, ReportWindowsError) {
 
 #endif  // _WIN32
 
-TEST(UtilTest, IsConvertibleToInt) {
-  EXPECT_TRUE(fmt::internal::IsConvertibleToInt<char>::value);
-  EXPECT_FALSE(fmt::internal::IsConvertibleToInt<const char *>::value);
+enum TestEnum2 {};
+enum TestEnum3 {};
+std::ostream &operator<<(std::ostream &, TestEnum3);
+
+TEST(UtilTest, ConvertToInt) {
+  EXPECT_TRUE(fmt::internal::ConvertToInt<char>::enable_conversion);
+  EXPECT_FALSE(fmt::internal::ConvertToInt<const char *>::enable_conversion);
+  EXPECT_TRUE(fmt::internal::ConvertToInt<TestEnum2>::value);
+  EXPECT_FALSE(fmt::internal::ConvertToInt<TestEnum3>::value);
 }
 
 #if FMT_USE_ENUM_BASE
 enum TestEnum : char {TestValue};
 TEST(UtilTest, IsEnumConvertibleToInt) {
-  EXPECT_TRUE(fmt::internal::IsConvertibleToInt<TestEnum>::value);
+  EXPECT_TRUE(fmt::internal::ConvertToInt<TestEnum>::enable_conversion);
 }
 #endif
 

@@ -1637,3 +1637,15 @@ TEST(LiteralsTest, NamedArg) {
             udl_a_w);
 }
 #endif // FMT_USE_USER_DEFINED_LITERALS
+
+enum TestEnum {};
+std::ostream &operator<<(std::ostream &os, TestEnum) {
+  return os << "TestEnum";
+}
+
+enum TestEnum2 { A };
+
+TEST(FormatTest, Enum) {
+  EXPECT_EQ("TestEnum", fmt::format("{}", TestEnum()));
+  EXPECT_EQ("0", fmt::format("{}", A));
+}
