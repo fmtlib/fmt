@@ -207,7 +207,7 @@ inline uint32_t clzll(uint64_t x) {
 // makes the fmt::literals implementation easier. However, an explicit check
 // for variadic templates is added here just in case.
 # define FMT_USE_USER_DEFINED_LITERALS \
-   FMT_USE_VARIADIC_TEMPLATES && \
+   FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES && \
    (FMT_HAS_FEATURE(cxx_user_literals) || \
        (FMT_GCC_VERSION >= 407 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1900)
 #endif
