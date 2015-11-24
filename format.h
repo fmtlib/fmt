@@ -2029,11 +2029,6 @@ class BasicWriter {
   std::size_t size() const { return buffer_.size(); }
 
   /**
-    Returns underlying buffer.
-   */
-  Buffer<Char>& buffer() const { return buffer_; }
-
-  /**
     Returns a pointer to the output buffer content. No terminating null
     character is appended.
    */
