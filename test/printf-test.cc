@@ -425,6 +425,7 @@ TEST(PrintfTest, String) {
   EXPECT_PRINTF("abc", "%s", "abc");
   const char *null_str = 0;
   EXPECT_PRINTF("(null)", "%s", null_str);
+  EXPECT_PRINTF("    (null)", "%10s", null_str);
   // TODO: wide string
 }
 
@@ -434,6 +435,7 @@ TEST(PrintfTest, Pointer) {
   EXPECT_PRINTF(fmt::format("{}", p), "%p", p);
   p = 0;
   EXPECT_PRINTF("(nil)", "%p", p);
+  EXPECT_PRINTF("     (nil)", "%10p", p);
   const char *s = "test";
   EXPECT_PRINTF(fmt::format("{:p}", s), "%p", s);
   const char *null_str = 0;
