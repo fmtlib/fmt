@@ -38,6 +38,7 @@
 #include <stdexcept>
 #include <string>
 #include <map>
+#include <ostream>
 
 #ifndef FMT_USE_IOSTREAMS
 # define FMT_USE_IOSTREAMS 1
@@ -2028,6 +2029,11 @@ class BasicWriter {
   std::size_t size() const { return buffer_.size(); }
 
   /**
+    Returns underlying buffer.
+   */
+  Buffer<Char>& buffer() const { return buffer_; }
+
+  /**
     Returns a pointer to the output buffer content. No terminating null
     character is appended.
    */
@@ -2628,12 +2634,56 @@ class BasicArrayWriter : public BasicWriter<Char> {
 typedef BasicArrayWriter<char> ArrayWriter;
 typedef BasicArrayWriter<wchar_t> WArrayWriter;
 
+template<class Elem, class Traits = std::char_traits<Elem> >
+class basic_formatbuf : public std::basic_streambuf<Elem, Traits> {
+
+  typedef typename std::basic_streambuf<Elem, Traits>::int_type int_type;
+  typedef typename std::basic_streambuf<Elem, Traits>::traits_type traits_type;
+
+  using std::basic_streambuf<Elem, Traits>::setp;
+  using	std::basic_streambuf<Elem, Traits>::pptr;
+  using	std::basic_streambuf<Elem, Traits>::pbase;
+
+  Buffer<Elem>& buffer_;
+  Elem* start_;
+
+public:
+    basic_formatbuf(Buffer<Elem>& buffer) : buffer_(buffer), start_(&buffer[0]) {
+
+      setp(start_, start_ + buffer_.capacity());
+    }
+
+  virtual int_type overflow(int_type _Meta = traits_type::eof()) {
+
+    if (!traits_type::eq_int_type(_Meta, traits_type::eof())) {
+
+      size_t size = pptr() - start_;
+      buffer_.resize(size);
+      buffer_.reserve(size * 2);
+
+      start_ = &buffer_[0];
+      start_[size] = traits_type::to_char_type(_Meta);
+      setp(start_+ size + 1, start_ + size * 2);
+    }
+
+    return _Meta;
+  }
+
+  size_t size() {
+    return pptr() - start_;
+  }
+};
+
 // Formats a value.
 template <typename Char, typename T>
 void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
-  std::basic_ostringstream<Char> os;
-  os << value;
-  std::basic_string<Char> str = os.str();
+  internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
+
+  basic_formatbuf<Char> format_buf(buffer);
+  std::basic_ostream<Char> output(&format_buf);
+  output << value;
+
+  BasicStringRef<Char> str(format_buf.size() > 0 ? &buffer[0] : 0, format_buf.size());
   internal::Arg arg = internal::MakeValue<Char>(str);
   arg.type = static_cast<internal::Arg::Type>(
         internal::MakeValue<Char>::type(str));
