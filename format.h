@@ -232,6 +232,11 @@ inline DummyInt isinf(...) { return DummyInt(); }
 inline DummyInt _finite(...) { return DummyInt(); }
 inline DummyInt isnan(...) { return DummyInt(); }
 inline DummyInt _isnan(...) { return DummyInt(); }
+
+// A helper function to suppress bogus "conditional expression is constant"
+// warnings.
+template <typename T>
+inline T check(T value) { return value; }
 }
 }  // namespace fmt
 
@@ -250,24 +255,28 @@ class numeric_limits<fmt::internal::DummyInt> :
     using namespace fmt::internal;
     // The resolution "priority" is:
     // isinf macro > std::isinf > ::isinf > fmt::internal::isinf
-    if (sizeof(isinf(x)) == sizeof(bool) || sizeof(isinf(x)) == sizeof(int))
+    if (check(sizeof(isinf(x)) == sizeof(bool) ||
+              sizeof(isinf(x)) == sizeof(int))) {
       return isinf(x);
-    return !_finite(x);
+    }
+    return !_finite(static_cast<double>(x));
   }
 
   // Portable version of isnan.
   template <typename T>
   static bool isnotanumber(T x) {
     using namespace fmt::internal;
-    if (sizeof(isnan(x)) == sizeof(bool) || sizeof(isnan(x)) == sizeof(int))
+    if (check(sizeof(isnan(x)) == sizeof(bool) ||
+              sizeof(isnan(x)) == sizeof(int))) {
       return isnan(x);
-    return _isnan(x) != 0;
+    }
+    return _isnan(static_cast<double>(x)) != 0;
   }
 
   // Portable version of signbit.
   static bool isnegative(double x) {
     using namespace fmt::internal;
-    if (sizeof(signbit(x)) == sizeof(int))
+    if (check(sizeof(signbit(x)) == sizeof(int)))
       return signbit(x);
     if (x < 0) return true;
     if (!isnotanumber(x)) return false;
@@ -1005,11 +1014,6 @@ struct Not { enum { value = 0 }; };
 
 template<>
 struct Not<false> { enum { value = 1 }; };
-
-// A helper function to suppress bogus "conditional expression is constant"
-// warnings.
-template <typename T>
-inline T check(T value) { return value; }
 
 // Makes an Arg object from any type.
 template <typename Char>
