@@ -1832,7 +1832,7 @@ class FormatBuf : public std::basic_streambuf<Char> {
     return ch;
   }
 
-  size_t size() {
+  size_t size() const {
     return this->pptr() - start_;
   }
 };
