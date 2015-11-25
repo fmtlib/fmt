@@ -1649,3 +1649,12 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("TestEnum", fmt::format("{}", TestEnum()));
   EXPECT_EQ("0", fmt::format("{}", A));
 }
+
+struct EmptyTest {};
+std::ostream &operator<<(std::ostream &os, EmptyTest) {
+  return os << "";
+}
+
+TEST(FormatTest, EmptyCustomOutput) {
+  EXPECT_EQ("", fmt::format("{}", EmptyTest()));
+}

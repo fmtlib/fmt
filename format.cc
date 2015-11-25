@@ -432,7 +432,7 @@ class BasicArgFormatter : public ArgVisitor<Impl, void> {
   }
 
   void write(const char *value) {
-    Arg::StringValue<char> str = {value, 0};
+    Arg::StringValue<char> str = {value, value != 0 ? strlen(value) : 0};
     writer_.write_str(str, spec_);
   }
 
@@ -842,8 +842,6 @@ void fmt::BasicWriter<Char>::write_str(
       FMT_THROW(FormatError("string pointer is null"));
       return;
     }
-    if (*str_value)
-      str_size = std::char_traits<StrChar>::length(str_value);
   }
   std::size_t precision = spec.precision_;
   if (spec.precision_ >= 0 && precision < str_size)
