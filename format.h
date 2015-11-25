@@ -38,14 +38,13 @@
 #include <stdexcept>
 #include <string>
 #include <map>
-#include <ostream>
 
 #ifndef FMT_USE_IOSTREAMS
 # define FMT_USE_IOSTREAMS 1
 #endif
 
 #if FMT_USE_IOSTREAMS
-# include <sstream>
+# include <ostream>
 #endif
 
 #ifdef _SECURE_SCL
@@ -1805,6 +1804,38 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
       (t12.type << 48) | (t13.type << 52) | (t14.type << 56);
 }
 #endif
+
+template <class Char>
+class FormatBuf : public std::basic_streambuf<Char> {
+ private:
+  typedef typename std::basic_streambuf<Char>::int_type int_type;
+  typedef typename std::basic_streambuf<Char>::traits_type traits_type;
+
+  Buffer<Char> &buffer_;
+  Char *start_;
+
+ public:
+  FormatBuf(Buffer<Char> &buffer) : buffer_(buffer), start_(&buffer[0]) {
+    this->setp(start_, start_ + buffer_.capacity());
+  }
+
+  int_type overflow(int_type ch = traits_type::eof()) {
+    if (!traits_type::eq_int_type(ch, traits_type::eof())) {
+      size_t size = this->pptr() - start_;
+      buffer_.resize(size);
+      buffer_.reserve(size * 2);
+
+      start_ = &buffer_[0];
+      start_[size] = traits_type::to_char_type(ch);
+      this->setp(start_+ size + 1, start_ + size * 2);
+    }
+    return ch;
+  }
+
+  size_t size() {
+    return this->pptr() - start_;
+  }
+};
 }  // namespace internal
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
@@ -2688,56 +2719,16 @@ class BasicArrayWriter : public BasicWriter<Char> {
 typedef BasicArrayWriter<char> ArrayWriter;
 typedef BasicArrayWriter<wchar_t> WArrayWriter;
 
-template<class Elem, class Traits = std::char_traits<Elem> >
-class basic_formatbuf : public std::basic_streambuf<Elem, Traits> {
-
-  typedef typename std::basic_streambuf<Elem, Traits>::int_type int_type;
-  typedef typename std::basic_streambuf<Elem, Traits>::traits_type traits_type;
-
-  using std::basic_streambuf<Elem, Traits>::setp;
-  using	std::basic_streambuf<Elem, Traits>::pptr;
-  using	std::basic_streambuf<Elem, Traits>::pbase;
-
-  Buffer<Elem>& buffer_;
-  Elem* start_;
-
-public:
-    basic_formatbuf(Buffer<Elem>& buffer) : buffer_(buffer), start_(&buffer[0]) {
-
-      setp(start_, start_ + buffer_.capacity());
-    }
-
-  virtual int_type overflow(int_type _Meta = traits_type::eof()) {
-
-    if (!traits_type::eq_int_type(_Meta, traits_type::eof())) {
-
-      size_t size = pptr() - start_;
-      buffer_.resize(size);
-      buffer_.reserve(size * 2);
-
-      start_ = &buffer_[0];
-      start_[size] = traits_type::to_char_type(_Meta);
-      setp(start_+ size + 1, start_ + size * 2);
-    }
-
-    return _Meta;
-  }
-
-  size_t size() {
-    return pptr() - start_;
-  }
-};
-
 // Formats a value.
 template <typename Char, typename T>
 void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
 
-  basic_formatbuf<Char> format_buf(buffer);
+  internal::FormatBuf<Char> format_buf(buffer);
   std::basic_ostream<Char> output(&format_buf);
   output << value;
 
-  BasicStringRef<Char> str(format_buf.size() > 0 ? &buffer[0] : 0, format_buf.size());
+  BasicStringRef<Char> str(&buffer[0], format_buf.size());
   internal::Arg arg = internal::MakeValue<Char>(str);
   arg.type = static_cast<internal::Arg::Type>(
         internal::MakeValue<Char>::type(str));
