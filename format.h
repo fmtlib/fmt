@@ -261,7 +261,7 @@ class numeric_limits<fmt::internal::DummyInt> :
     using namespace fmt::internal;
     if (sizeof(isnan(x)) == sizeof(bool) || sizeof(isnan(x)) == sizeof(int))
       return isnan(x);
-    return _isnan(x);
+    return _isnan(x) != 0;
   }
 
   // Portable version of signbit.
