@@ -68,7 +68,7 @@ General
 
   Thanks to `@LarsGullik <https://github.com/LarsGullik>`_.
 
-* [Breaking] ``signed`` and ``unsigned char`` are now formatted as integers by default
+* [Breaking] ``signed char`` and ``unsigned char`` are now formatted as integers by default
   (`#217 <https://github.com/cppformat/cppformat/pull/217>`_).
 
 * [Breaking] Pointers to C strings can now be formatted with the ``p`` specifier
@@ -108,6 +108,9 @@ General
   - Comparison operators now compare string content, not pointers
   - ``BasicStringRef::c_str`` replaced by ``BasicStringRef::data``
   - ``BasicStringRef`` is no longer assumed to be null-terminated
+
+  References to null-terminated strings are now represented by a new class,
+  ``BasicCStringRef``.
 
 * Dependency on pthreads introduced by Google Test is now optional
   (`#185 <https://github.com/cppformat/cppformat/issues/185>`_).
@@ -204,6 +207,7 @@ Documentation
   and reliability
   (`#128 <https://github.com/cppformat/cppformat/issues/128>`_).
   New documentation address is http://cppformat.github.io/.
+
 
 * Added `Building the documentation
   <http://cppformat.github.io/dev/usage.html#building-the-documentation>`_
