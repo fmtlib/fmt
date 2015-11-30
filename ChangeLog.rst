@@ -193,6 +193,9 @@ Distribution
 
   Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
 
+* `Packages for Fedora and RHEL <https://admin.fedoraproject.org/pkgdb/package/cppformat/>`_
+  are now available. Thanks to Dave Johansen.
+  
 * C++ Format can now be installed via `Homebrew <http://brew.sh/>`_ on OS X
   (`#157 <https://github.com/cppformat/cppformat/issues/157>`_)::
 
