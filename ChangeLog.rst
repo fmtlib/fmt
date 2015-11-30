@@ -175,7 +175,10 @@
   (`#188 <https://github.com/cppformat/cppformat/issues/188>`_).
 
 * Fixed compiler warnings
-  (`#135 <https://github.com/cppformat/cppformat/issues/135>`_,
+  (`#95 <https://github.com/cppformat/cppformat/issues/95>`_,
+  `#96 <https://github.com/cppformat/cppformat/issues/96>`_,
+  `#114 <https://github.com/cppformat/cppformat/pull/114>`_,
+  `#135 <https://github.com/cppformat/cppformat/issues/135>`_,
   `#142 <https://github.com/cppformat/cppformat/issues/142>`_,
   `#145 <https://github.com/cppformat/cppformat/issues/145>`_,
   `#146 <https://github.com/cppformat/cppformat/issues/146>`_,
@@ -186,8 +189,13 @@
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
   `#194 <https://github.com/cppformat/cppformat/issues/194>`_,
   `#196 <https://github.com/cppformat/cppformat/pull/196>`_,
-  `#216 <https://github.com/cppformat/cppformat/issues/216>`_).
-  Thanks to `@Naios <https://github.com/Naios>`_,
+  `#216 <https://github.com/cppformat/cppformat/issues/216>`_,
+  `#233 <https://github.com/cppformat/cppformat/issues/233>`_,
+  `#234 <https://github.com/cppformat/cppformat/issues/234>`_).
+  Thanks to `@seanmiddleditch (Sean Middleditch) <https://github.com/seanmiddleditch>`_,
+  `@dixlorenz (Dix Lorenz) <https://github.com/dixlorenz>`_,
+  `@CarterLi (李通洲) <https://github.com/CarterLi>`,
+  `@Naios <https://github.com/Naios>`_,
   `@fmatthew5876 (Matthew Fioravante) <https://github.com/fmatthew5876>`_,
   `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_,
   `@rpopescu <https://github.com/rpopescu>`_,
@@ -216,6 +224,7 @@
   `#179 <https://github.com/cppformat/cppformat/issues/179>`_,
   `#180 <https://github.com/cppformat/cppformat/issues/180>`_,
   `#202 <https://github.com/cppformat/cppformat/issues/202>`_,
+  `#225 <https://github.com/cppformat/cppformat/issues/225>`_,
   `Red Hat Bugzilla Bug 1260297 <https://bugzilla.redhat.com/show_bug.cgi?id=1260297>`_).
   Thanks to `@Naios <https://github.com/Naios>`_,
   `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_ and Dave Johansen.
@@ -263,6 +272,39 @@
 * ``noexcept`` is now used when compiling with MSVC2015
   (`#215 <https://github.com/cppformat/cppformat/pull/215>`_).
   Thanks to `@dmkrepo (Dmitriy) <https://github.com/dmkrepo>`_.
+
+* [Breaking] ``signed`` and ``unsigned char`` are now formatted as integers by default
+  (`#217 <https://github.com/cppformat/cppformat/pull/217>`_).
+
+* Pointers to C strings can now be formatted with the ``p`` specifier
+  (`#223 <https://github.com/cppformat/cppformat/pull/223>`_):
+
+  .. code:: c++
+
+    fmt::print("{:p}", "test"); // prints pointer value
+
+  Thanks to `@LarsGullik <https://github.com/LarsGullik>`_.
+
+* ``fmt::printf`` and ``fmt::sprintf`` now support formatting of ``bool`` with the
+  ``%s`` specifier giving textual output, ``true`` or ``false``
+  (`#223 <https://github.com/cppformat/cppformat/pull/223>`_):
+
+  .. code:: c++
+
+    fmt::printf("%s", true); // prints "true"
+
+  Thanks to `@LarsGullik <https://github.com/LarsGullik>`_.
+
+* [Breaking] ``fmt::printf`` and ``fmt::sprintf`` now print null pointers as ``(nil)``
+  and null strings as ``(null)`` for consistency with glibc
+  (`#226 <https://github.com/cppformat/cppformat/pull/226>`_).
+  Thanks to `@LarsGullik <https://github.com/LarsGullik>`_.
+
+* Improved compatibility with bcc32
+  (`#227 <https://github.com/cppformat/cppformat/pull/227>`_).
+
+* Enums are now formatted with an overloaded ``std::ostream`` insertion operator
+  (``operator<<``) if available.
 
 1.1.0 - 2015-03-06
 ------------------
@@ -331,11 +373,6 @@
   (`#124 <https://github.com/cppformat/cppformat/issues/124>`_).
 
 * Fixed packaging issues (`#94 <https://github.com/cppformat/cppformat/issues/94>`_).
-
-* Fixed warnings in GCC, MSVC and Xcode/Clang
-  (`#95 <https://github.com/cppformat/cppformat/issues/95>`_,
-  `#96 <https://github.com/cppformat/cppformat/issues/96>`_ and
-  `#114 <https://github.com/cppformat/cppformat/pull/114>`_).
 
 * Added `changelog <https://github.com/cppformat/cppformat/blob/master/ChangeLog.rst>`_
   (`#103 <https://github.com/cppformat/cppformat/issues/103>`_).
