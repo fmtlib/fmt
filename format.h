@@ -28,7 +28,13 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
+#if defined _MSC_VER && _MSC_VER <= 1500
+typedef unsigned int       uint32_t;
+typedef unsigned long long uint64_t;
+typedef long long          intmax_t;
+#else
 #include <stdint.h>
+#endif
 
 #include <cassert>
 #include <cmath>
