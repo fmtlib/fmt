@@ -290,7 +290,7 @@ Fixes
   `#145 <https://github.com/cppformat/cppformat/issues/145>`_,
   `#146 <https://github.com/cppformat/cppformat/issues/146>`_,
   `#158 <https://github.com/cppformat/cppformat/issues/158>`_,
-  `#163 <https://github.com/cppformat/cppformat/issues/163>`_
+  `#163 <https://github.com/cppformat/cppformat/issues/163>`_,
   `#175 <https://github.com/cppformat/cppformat/issues/175>`_,
   `#190 <https://github.com/cppformat/cppformat/issues/190>`_,
   `#191 <https://github.com/cppformat/cppformat/pull/191>`_,
@@ -301,10 +301,11 @@ Fixes
   `#220 <https://github.com/cppformat/cppformat/pull/220>`_,
   `#229 <https://github.com/cppformat/cppformat/pull/229>`_,
   `#233 <https://github.com/cppformat/cppformat/issues/233>`_,
-  `#234 <https://github.com/cppformat/cppformat/issues/234>`_).
+  `#234 <https://github.com/cppformat/cppformat/issues/234>`_,
+  `#236 <https://github.com/cppformat/cppformat/pull/236>`_).
   Thanks to `@seanmiddleditch (Sean Middleditch) <https://github.com/seanmiddleditch>`_,
   `@dixlorenz (Dix Lorenz) <https://github.com/dixlorenz>`_,
-  `@CarterLi (李通洲) <https://github.com/CarterLi>`,
+  `@CarterLi (李通洲) <https://github.com/CarterLi>`_,
   `@Naios <https://github.com/Naios>`_,
   `@fmatthew5876 (Matthew Fioravante) <https://github.com/fmatthew5876>`_,
   `@LevskiWeng (Levski Weng) <https://github.com/LevskiWeng>`_,
@@ -312,8 +313,9 @@ Fixes
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
   `@cubicool (Jeremy Moles) <https://github.com/cubicool>`_,
   `@jkflying (Julian Kent) <https://github.com/jkflying>`_,
-  `@LogicalKnight (Sean L) <https://github.com/LogicalKnight>`_ and
-  `@inguin (Ingo van Lil) <https://github.com/inguin>`_
+  `@LogicalKnight (Sean L) <https://github.com/LogicalKnight>`_,
+  `@inguin (Ingo van Lil) <https://github.com/inguin>`_ and
+  `@Jopie64 (Johan) <https://github.com/Jopie64>`_.
 
 * Fixed portability issues (mostly causing test failures) on ARM, ppc64, ppc64le,
   s390x and SunOS 5.11 i386 (
@@ -338,8 +340,12 @@ Fixes
   (`#214 <https://github.com/cppformat/cppformat/pull/214>`_).
   Thanks to `@slavanap (Vyacheslav Napadovsky) <https://github.com/slavanap>`_.
 
+* Improved compatibility with MSVC 2008
+  (`#236 <https://github.com/cppformat/cppformat/pull/236>`_).
+  Thanks to `@Jopie64 (Johan) <https://github.com/Jopie64>`_.
+
 * Improved compatibility with bcc32
-  (`#227 <https://github.com/cppformat/cppformat/pull/227>`_).
+  (`#227 <https://github.com/cppformat/cppformat/issues/227>`_).
 
 * Fixed ``static_assert`` detection on Clang
   (`#228 <https://github.com/cppformat/cppformat/pull/228>`_).
