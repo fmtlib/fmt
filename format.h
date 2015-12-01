@@ -28,7 +28,13 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
+#if defined _MSC_VER && _MSC_VER <= 1500
+typedef unsigned int       uint32_t;
+typedef unsigned long long uint64_t;
+typedef long long          intmax_t;
+#else
 #include <stdint.h>
+#endif
 
 #include <cassert>
 #include <cmath>
@@ -256,7 +262,7 @@ class numeric_limits<fmt::internal::DummyInt> :
     // isinf macro > std::isinf > ::isinf > fmt::internal::isinf
     if (check(sizeof(isinf(x)) == sizeof(bool) ||
               sizeof(isinf(x)) == sizeof(int))) {
-      return isinf(x);
+      return !!isinf(x);
     }
     return !_finite(static_cast<double>(x));
   }
@@ -267,7 +273,7 @@ class numeric_limits<fmt::internal::DummyInt> :
     using namespace fmt::internal;
     if (check(sizeof(isnan(x)) == sizeof(bool) ||
               sizeof(isnan(x)) == sizeof(int))) {
-      return isnan(x);
+      return !!isnan(x);
     }
     return _isnan(static_cast<double>(x)) != 0;
   }
@@ -276,7 +282,7 @@ class numeric_limits<fmt::internal::DummyInt> :
   static bool isnegative(double x) {
     using namespace fmt::internal;
     if (check(sizeof(signbit(x)) == sizeof(int)))
-      return signbit(x);
+      return !!signbit(x);
     if (x < 0) return true;
     if (!isnotanumber(x)) return false;
     int dec = 0, sign = 0;
@@ -313,7 +319,7 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value);
 /**
   \rst
   A string reference. It can be constructed from a C string or ``std::string``.
-  
+
   You can use one of the following typedefs for common character types:
 
   +------------+-------------------------+
@@ -1454,7 +1460,7 @@ class BasicFormatter : private internal::FormatterBase {
  private:
   BasicWriter<Char> &writer_;
   internal::ArgMap<Char> map_;
-  
+
   FMT_DISALLOW_COPY_AND_ASSIGN(BasicFormatter);
 
   using internal::FormatterBase::get_arg;
@@ -1958,7 +1964,7 @@ class SystemError : public internal::RuntimeError {
    *error_code* is a system error code as given by ``errno``.
    If *error_code* is not a valid error code such as -1, the system message
    may look like "Unknown error -1" and is platform-dependent.
-   
+
    **Example**::
 
      // This throws a SystemError with the description
@@ -2147,7 +2153,7 @@ class BasicWriter {
   /**
     \rst
     Writes formatted data.
-    
+
     *args* is an argument list representing arbitrary arguments.
 
     **Example**::
@@ -2675,7 +2681,7 @@ typedef BasicMemoryWriter<wchar_t> WMemoryWriter;
   This class template provides operations for formatting and writing data
   into a fixed-size array. For writing into a dynamically growing buffer
   use :class:`fmt::BasicMemoryWriter`.
-  
+
   Any write method will throw ``std::runtime_error`` if the output doesn't fit
   into the array.
 
@@ -3208,7 +3214,7 @@ inline namespace literals {
   C++11 literal equivalent of :func:`fmt::format`.
 
   **Example**::
-  
+
     using namespace fmt::literals;
     std::string message = "The answer is {}"_format(42);
   \endrst
@@ -3223,7 +3229,7 @@ operator"" _format(const wchar_t *s, std::size_t) { return {s}; }
   C++11 literal equivalent of :func:`fmt::arg`.
 
   **Example**::
-    
+
     using namespace fmt::literals;
     print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
   \endrst
