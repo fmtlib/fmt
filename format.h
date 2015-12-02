@@ -1021,8 +1021,11 @@ template<>
 struct Not<false> { enum { value = 1 }; };
 
 // Makes an Arg object from any type.
-template <typename Char>
+template <typename Formatter>
 class MakeValue : public Arg {
+ public:
+  typedef typename Formatter::Char Char;
+
  private:
   // The following two methods are private to disallow formatting of
   // arbitrary pointers. If you want to output a pointer cast it to
@@ -1060,7 +1063,7 @@ class MakeValue : public Arg {
   template <typename T>
   static void format_custom_arg(
       void *formatter, const void *arg, void *format_str_ptr) {
-    format(*static_cast<BasicFormatter<Char>*>(formatter),
+    format(*static_cast<Formatter*>(formatter),
            *static_cast<const Char**>(format_str_ptr),
            *static_cast<const T*>(arg));
   }
@@ -1166,7 +1169,7 @@ class MakeValue : public Arg {
   }
 
   // Additional template param `Char_` is needed here because make_type always
-  // uses MakeValue<char>.
+  // uses char.
   template <typename Char_>
   MakeValue(const NamedArg<Char_> &value) { pointer = &value; }
 
@@ -1178,10 +1181,12 @@ template <typename Char>
 struct NamedArg : Arg {
   BasicStringRef<Char> name;
 
+  typedef internal::MakeValue< BasicFormatter<Char> > MakeValue;
+
   template <typename T>
   NamedArg(BasicStringRef<Char> argname, const T &value)
-  : Arg(MakeValue<Char>(value)), name(argname) {
-    type = static_cast<internal::Arg::Type>(MakeValue<Char>::type(value));
+  : Arg(MakeValue(value)), name(argname) {
+    type = static_cast<Arg::Type>(MakeValue::type(value));
   }
 };
 
@@ -1455,8 +1460,11 @@ class PrintfFormatter : private FormatterBase {
 }  // namespace internal
 
 // A formatter.
-template <typename Char>
+template <typename CharType>
 class BasicFormatter : private internal::FormatterBase {
+ public:
+  typedef CharType Char;
+
  private:
   BasicWriter<Char> &writer_;
   internal::ArgMap<Char> map_;
@@ -1730,7 +1738,9 @@ namespace internal {
 inline uint64_t make_type() { return 0; }
 
 template <typename T>
-inline uint64_t make_type(const T &arg) { return MakeValue<char>::type(arg); }
+inline uint64_t make_type(const T &arg) {
+  return MakeValue< BasicFormatter<char> >::type(arg);
+}
 
 template <unsigned N>
 struct ArgArray {
@@ -1754,7 +1764,8 @@ inline void do_set_types(Arg *) {}
 
 template <typename T, typename... Args>
 inline void do_set_types(Arg *args, const T &arg, const Args & ... tail) {
-  args->type = static_cast<Arg::Type>(MakeValue<T>::type(arg));
+  args->type = static_cast<Arg::Type>(
+        MakeValue< BasicFormatter<char> >::type(arg));
   do_set_types(args + 1, tail...);
 }
 
@@ -1770,24 +1781,24 @@ inline void set_types(Value *, const Args & ...) {
   // Do nothing as types are passed separately from values.
 }
 
-template <typename Char, typename Value>
+template <typename Formatter, typename Value>
 inline void store_args(Value *) {}
 
-template <typename Char, typename Arg, typename T, typename... Args>
+template <typename Formatter, typename Arg, typename T, typename... Args>
 inline void store_args(Arg *args, const T &arg, const Args & ... tail) {
   // Assign only the Value subobject of Arg and don't overwrite type (if any)
   // that is assigned by set_types.
   Value &value = *args;
-  value = MakeValue<Char>(arg);
-  store_args<Char>(args + 1, tail...);
+  value = MakeValue<Formatter>(arg);
+  store_args<Formatter>(args + 1, tail...);
 }
 
-template <typename Char, typename... Args>
+template <typename Formatter, typename... Args>
 ArgList make_arg_list(typename ArgArray<sizeof...(Args)>::Type array,
                       const Args & ... args) {
   if (check(sizeof...(Args) >= ArgList::MAX_PACKED_ARGS))
     set_types(array, args...);
-  store_args<Char>(array, args...);
+  store_args<Formatter>(array, args...);
   return ArgList(make_type(args...), array);
 }
 #else
@@ -1847,8 +1858,10 @@ class FormatBuf : public std::basic_streambuf<Char> {
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG_TYPE(n) T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
-# define FMT_ASSIGN_char(n) arr[n] = fmt::internal::MakeValue<char>(v##n)
-# define FMT_ASSIGN_wchar_t(n) arr[n] = fmt::internal::MakeValue<wchar_t>(v##n)
+# define FMT_ASSIGN_char(n) \
+  arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<char> >(v##n)
+# define FMT_ASSIGN_wchar_t(n) \
+  arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<wchar_t> >(v##n)
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
@@ -1856,7 +1869,8 @@ class FormatBuf : public std::basic_streambuf<Char> {
   template <typename... Args> \
   void func(arg_type arg0, const Args & ... args) { \
     typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
-    func(arg0, fmt::internal::make_arg_list<Char>(array, args...)); \
+    func(arg0, fmt::internal::make_arg_list< \
+      fmt::BasicFormatter<Char> >(array, args...)); \
   }
 
 // Defines a variadic constructor.
@@ -1864,12 +1878,14 @@ class FormatBuf : public std::basic_streambuf<Char> {
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
     typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
-    func(arg0, arg1, fmt::internal::make_arg_list<Char>(array, args...)); \
+    func(arg0, arg1, fmt::internal::make_arg_list< \
+      fmt::BasicFormatter<Char> >(array, args...)); \
   }
 
 #else
 
-# define FMT_MAKE_REF(n) fmt::internal::MakeValue<Char>(v##n)
+# define FMT_MAKE_REF(n) \
+  fmt::internal::MakeValue< fmt::BasicFormatter<Char> >(v##n)
 # define FMT_MAKE_REF2(n) v##n
 
 // Defines a wrapper for a function taking one argument of type arg_type
@@ -2735,9 +2751,9 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   output << value;
 
   BasicStringRef<Char> str(&buffer[0], format_buf.size());
-  internal::Arg arg = internal::MakeValue<Char>(str);
-  arg.type = static_cast<internal::Arg::Type>(
-        internal::MakeValue<Char>::type(str));
+  typedef internal::MakeValue< BasicFormatter<Char> > MakeValue;
+  internal::Arg arg = MakeValue(str);
+  arg.type = static_cast<internal::Arg::Type>(MakeValue::type(str));
   format_str = f.format(format_str, arg);
 }
 
@@ -3062,7 +3078,8 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
       const Args & ... args) { \
     typename fmt::internal::ArgArray<sizeof...(Args)>::Type array; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::internal::make_arg_list<Char>(array, args...)); \
+      fmt::internal::make_arg_list< \
+        fmt::BasicFormatter<Char> >(array, args...)); \
   }
 #else
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
