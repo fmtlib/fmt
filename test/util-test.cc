@@ -69,9 +69,9 @@ std::basic_ostream<Char> &operator<<(std::basic_ostream<Char> &os, Test) {
 
 template <typename Char, typename T>
 Arg make_arg(const T &value) {
-  Arg arg = fmt::internal::MakeValue<Char>(value);
-  arg.type = static_cast<Arg::Type>(
-        fmt::internal::MakeValue<Char>::type(value));
+  typedef fmt::internal::MakeValue< fmt::BasicFormatter<Char> > MakeValue;
+  Arg arg = MakeValue(value);
+  arg.type = static_cast<Arg::Type>(MakeValue::type(value));
   return arg;
 }
 }  // namespace
@@ -573,6 +573,23 @@ TEST(ArgTest, MakeArg) {
 TEST(UtilTest, ArgList) {
   fmt::ArgList args;
   EXPECT_EQ(Arg::NONE, args[1].type);
+}
+
+struct CustomFormatter {
+  typedef char Char;
+};
+
+void format(CustomFormatter &, const char *&s, const Test &) {
+  s = "custom_format";
+}
+
+TEST(UtilTest, MakeValueWithCustomFormatter) {
+  ::Test t;
+  Arg arg = fmt::internal::MakeValue<CustomFormatter>(t);
+  CustomFormatter formatter;
+  const char *s = "";
+  arg.custom.format(&formatter, &t, &s);
+  EXPECT_STREQ("custom_format", s);
 }
 
 struct Result {
