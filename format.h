@@ -685,7 +685,7 @@ class BasicCharTraits {
 #else
   typedef Char *CharPtr;
 #endif
-  static Char cast(wchar_t value) { return static_cast<Char>(value); }
+  static Char cast(int value) { return static_cast<Char>(value); }
 };
 
 template <typename Char>
@@ -1623,7 +1623,6 @@ inline StrFormatSpec<wchar_t> pad(
     const wchar_t *str, unsigned width, char fill = ' ') {
   return StrFormatSpec<wchar_t>(str, width, fill);
 }
-
 
 namespace internal {
 
