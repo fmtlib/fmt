@@ -40,8 +40,8 @@ typedef long long          intmax_t;
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <algorithm>
 #include <limits>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <map>
@@ -404,7 +404,7 @@ class BasicStringRef {
 
   // Lexicographically compare this string reference to other.
   int compare(BasicStringRef other) const {
-    std::size_t size = (std::min)(size_, other.size_);
+    std::size_t size = size_ < other.size_ ? size_ : other.size_;
     int result = std::char_traits<Char>::compare(data_, other.data_, size);
     if (result == 0)
       result = size_ == other.size_ ? 0 : (size_ < other.size_ ? -1 : 1);
@@ -585,7 +585,8 @@ void Buffer<T>::append(const U *begin, const U *end) {
   std::size_t new_size = size_ + (end - begin);
   if (new_size > capacity_)
     grow(new_size);
-  std::copy(begin, end, internal::make_ptr(ptr_, capacity_) + size_);
+  std::uninitialized_copy(begin, end,
+                          internal::make_ptr(ptr_, capacity_) + size_);
   size_ = new_size;
 }
 
@@ -621,8 +622,8 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
     this->capacity_ = other.capacity_;
     if (other.ptr_ == other.data_) {
       this->ptr_ = data_;
-      std::copy(other.data_,
-                other.data_ + this->size_, make_ptr(data_, this->capacity_));
+      std::uninitialized_copy(other.data_, other.data_ + this->size_,
+                              make_ptr(data_, this->capacity_));
     } else {
       this->ptr_ = other.ptr_;
       // Set pointer to the inline array so that delete is not called
@@ -650,12 +651,13 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
 
 template <typename T, std::size_t SIZE, typename Allocator>
 void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
-  std::size_t new_capacity =
-      (std::max)(size, this->capacity_ + this->capacity_ / 2);
+  std::size_t new_capacity = this->capacity_ + this->capacity_ / 2;
+  if (size > new_capacity)
+      new_capacity = size;
   T *new_ptr = this->allocate(new_capacity);
   // The following code doesn't throw, so the raw pointer above doesn't leak.
-  std::copy(this->ptr_,
-            this->ptr_ + this->size_, make_ptr(new_ptr, new_capacity));
+  std::uninitialized_copy(this->ptr_, this->ptr_ + this->size_,
+                          make_ptr(new_ptr, new_capacity));
   std::size_t old_capacity = this->capacity_;
   T *old_ptr = this->ptr_;
   this->capacity_ = new_capacity;
@@ -1703,13 +1705,14 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     if (spec_.width_ > CHAR_WIDTH) {
       out = writer_.grow_buffer(spec_.width_);
       if (spec_.align_ == ALIGN_RIGHT) {
-        std::fill_n(out, spec_.width_ - CHAR_WIDTH, fill);
+        std::uninitialized_fill_n(out, spec_.width_ - CHAR_WIDTH, fill);
         out += spec_.width_ - CHAR_WIDTH;
       } else if (spec_.align_ == ALIGN_CENTER) {
         out = writer_.fill_padding(out, spec_.width_,
                                    internal::check(CHAR_WIDTH), fill);
       } else {
-        std::fill_n(out + CHAR_WIDTH, spec_.width_ - CHAR_WIDTH, fill);
+        std::uninitialized_fill_n(out + CHAR_WIDTH,
+                                  spec_.width_ - CHAR_WIDTH, fill);
       }
     } else {
       out = writer_.grow_buffer(CHAR_WIDTH);
@@ -2218,7 +2221,7 @@ class BasicWriter {
       const EmptySpec &, const char *prefix, unsigned prefix_size) {
     unsigned size = prefix_size + num_digits;
     CharPtr p = grow_buffer(size);
-    std::copy(prefix, prefix + prefix_size, p);
+    std::uninitialized_copy(prefix, prefix + prefix_size, p);
     return p + size - 1;
   }
 
@@ -2441,17 +2444,17 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
     out = grow_buffer(spec.width());
     Char fill = internal::CharTraits<Char>::cast(spec.fill());
     if (spec.align() == ALIGN_RIGHT) {
-      std::fill_n(out, spec.width() - size, fill);
+      std::uninitialized_fill_n(out, spec.width() - size, fill);
       out += spec.width() - size;
     } else if (spec.align() == ALIGN_CENTER) {
       out = fill_padding(out, spec.width(), size, fill);
     } else {
-      std::fill_n(out + size, spec.width() - size, fill);
+      std::uninitialized_fill_n(out + size, spec.width() - size, fill);
     }
   } else {
     out = grow_buffer(size);
   }
-  std::copy(s, s + size, out);
+  std::uninitialized_copy(s, s + size, out);
   return out;
 }
 
@@ -2485,10 +2488,11 @@ typename BasicWriter<Char>::CharPtr
   std::size_t padding = total_size - content_size;
   std::size_t left_padding = padding / 2;
   Char fill_char = internal::CharTraits<Char>::cast(fill);
-  std::fill_n(buffer, left_padding, fill_char);
+  std::uninitialized_fill_n(buffer, left_padding, fill_char);
   buffer += left_padding;
   CharPtr content = buffer;
-  std::fill_n(buffer + content_size, padding - left_padding, fill_char);
+  std::uninitialized_fill_n(buffer + content_size,
+                            padding - left_padding, fill_char);
   return content;
 }
 
@@ -2514,42 +2518,42 @@ typename BasicWriter<Char>::CharPtr
     unsigned fill_size = width - number_size;
     if (align != ALIGN_LEFT) {
       CharPtr p = grow_buffer(fill_size);
-      std::fill(p, p + fill_size, fill);
+      std::uninitialized_fill(p, p + fill_size, fill);
     }
     CharPtr result = prepare_int_buffer(
         num_digits, subspec, prefix, prefix_size);
     if (align == ALIGN_LEFT) {
       CharPtr p = grow_buffer(fill_size);
-      std::fill(p, p + fill_size, fill);
+      std::uninitialized_fill(p, p + fill_size, fill);
     }
     return result;
   }
   unsigned size = prefix_size + num_digits;
   if (width <= size) {
     CharPtr p = grow_buffer(size);
-    std::copy(prefix, prefix + prefix_size, p);
+    std::uninitialized_copy(prefix, prefix + prefix_size, p);
     return p + size - 1;
   }
   CharPtr p = grow_buffer(width);
   CharPtr end = p + width;
   if (align == ALIGN_LEFT) {
-    std::copy(prefix, prefix + prefix_size, p);
+    std::uninitialized_copy(prefix, prefix + prefix_size, p);
     p += size;
-    std::fill(p, end, fill);
+    std::uninitialized_fill(p, end, fill);
   } else if (align == ALIGN_CENTER) {
     p = fill_padding(p, width, size, fill);
-    std::copy(prefix, prefix + prefix_size, p);
+    std::uninitialized_copy(prefix, prefix + prefix_size, p);
     p += size;
   } else {
     if (align == ALIGN_NUMERIC) {
       if (prefix_size != 0) {
-        p = std::copy(prefix, prefix + prefix_size, p);
+        p = std::uninitialized_copy(prefix, prefix + prefix_size, p);
         size -= prefix_size;
       }
     } else {
-      std::copy(prefix, prefix + prefix_size, end - size);
+      std::uninitialized_copy(prefix, prefix + prefix_size, end - size);
     }
-    std::fill(p, end - size, fill);
+    std::uninitialized_fill(p, end - size, fill);
     p = end;
   }
   return p - 1;
@@ -2707,7 +2711,7 @@ void BasicWriter<Char>::write_double(
   std::size_t offset = buffer_.size();
   unsigned width = spec.width();
   if (sign) {
-    buffer_.reserve(buffer_.size() + (std::max)(width, 1u));
+    buffer_.reserve(buffer_.size() + (width > 1u ? width : 1u));
     if (width > 0)
       --width;
     ++offset;
@@ -2769,7 +2773,7 @@ void BasicWriter<Char>::write_double(
           spec.width() > static_cast<unsigned>(n)) {
         width = spec.width();
         CharPtr p = grow_buffer(width);
-        std::copy(p, p + n, p + (width - n) / 2);
+        std::uninitialized_copy(p, p + n, p + (width - n) / 2);
         fill_padding(p, spec.width(), n, fill);
         return;
       }

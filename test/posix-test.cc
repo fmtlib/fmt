@@ -25,6 +25,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstdlib>  // std::exit
 #include <cstring>
 
 #include "gtest-extra.h"
