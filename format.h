@@ -282,7 +282,7 @@ class numeric_limits<fmt::internal::DummyInt> :
     // isinf macro > std::isinf > ::isinf > fmt::internal::isinf
     if (check(sizeof(isinf(x)) == sizeof(bool) ||
               sizeof(isinf(x)) == sizeof(int))) {
-      return !!isinf(x);
+      return isinf(x) != 0;
     }
     return !_finite(static_cast<double>(x));
   }
@@ -293,7 +293,7 @@ class numeric_limits<fmt::internal::DummyInt> :
     using namespace fmt::internal;
     if (check(sizeof(isnan(x)) == sizeof(bool) ||
               sizeof(isnan(x)) == sizeof(int))) {
-      return !!isnan(x);
+      return isnan(x) != 0;
     }
     return _isnan(static_cast<double>(x)) != 0;
   }
@@ -302,7 +302,7 @@ class numeric_limits<fmt::internal::DummyInt> :
   static bool isnegative(double x) {
     using namespace fmt::internal;
     if (check(sizeof(signbit(x)) == sizeof(int)))
-      return !!signbit(x);
+      return signbit(x) != 0;
     if (x < 0) return true;
     if (!isnotanumber(x)) return false;
     int dec = 0, sign = 0;
