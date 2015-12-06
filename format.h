@@ -2773,7 +2773,7 @@ void BasicWriter<Char>::write_double(
           spec.width() > static_cast<unsigned>(n)) {
         width = spec.width();
         CharPtr p = grow_buffer(width);
-        std::memmove(p + (width - n) / 2, p, n * sizeof(Char));
+        std::memmove(get(p) + (width - n) / 2, get(p), n * sizeof(Char));
         fill_padding(p, spec.width(), n, fill);
         return;
       }
