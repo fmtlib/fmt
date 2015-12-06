@@ -1218,14 +1218,9 @@ template <typename Char>
 struct NamedArg : Arg {
   BasicStringRef<Char> name;
 
-  typedef internal::MakeValue< BasicFormatter<Char> > MakeValue;
-
   template <typename T>
   NamedArg(BasicStringRef<Char> argname, const T &x)
-  : name(argname) {
-    value = MakeValue(x);
-    type = static_cast<Arg::Type>(MakeValue::type(x));
-  }
+  : Arg(internal::MakeArg< BasicFormatter<Char> >(x)), name(argname) {}
 };
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
@@ -2900,11 +2895,8 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
   output << value;
 
   BasicStringRef<Char> str(&buffer[0], format_buf.size());
-  typedef internal::MakeValue< BasicFormatter<Char> > MakeValue;
-  internal::Arg arg;
-  arg.value = MakeValue(str);
-  arg.type = static_cast<internal::Arg::Type>(MakeValue::type(str));
-  format_str = f.format(format_str, arg);
+  typedef internal::MakeArg< BasicFormatter<Char> > MakeArg;
+  format_str = f.format(format_str, MakeArg(str));
 }
 
 // Reports a system error without throwing an exception.
