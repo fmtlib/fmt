@@ -1902,11 +1902,13 @@ inline uint64_t make_type(const T &arg) {
 #if FMT_USE_VARIADIC_TEMPLATES
 
 template <typename Formatter, unsigned N>
-using ArgArray = typename Conditional<
-  N < ArgList::MAX_PACKED_ARGS,
-  MakeValue<Formatter>[(N > 0) ? N : 1],
-  MakeArg<Formatter>[N + 1]
->::type;
+struct ArgArray {
+  typedef typename Conditional<
+    N < ArgList::MAX_PACKED_ARGS,
+    MakeValue<Formatter>[(N > 0) ? N : 1],
+    MakeArg<Formatter>[N + 1]
+  >::type Type;
+};
 
 template <typename Arg, typename... Args>
 inline uint64_t make_type(const Arg &first, const Args & ... tail) {
@@ -1992,7 +1994,8 @@ class FormatBuf : public std::basic_streambuf<Char> {
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template <typename... Args> \
   void func(arg_type arg0, const Args & ... args) { \
-    fmt::internal::ArgArray<fmt::BasicFormatter<Char>, sizeof...(Args)> array{args...}; \
+    typename fmt::internal::ArgArray< \
+      fmt::BasicFormatter<Char>, sizeof...(Args)>::Type array{args...}; \
     func(arg0, fmt::ArgList(fmt::internal::make_type(args...), array)); \
   }
 
@@ -2000,7 +2003,8 @@ class FormatBuf : public std::basic_streambuf<Char> {
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    fmt::internal::ArgArray<fmt::BasicFormatter<Char>, sizeof...(Args)> array{args...}; \
+    typename fmt::internal::ArgArray< \
+      fmt::BasicFormatter<Char>, sizeof...(Args)>::Type array{args...}; \
     func(arg0, arg1, fmt::ArgList(fmt::internal::make_type(args...), array)); \
   }
 
@@ -3218,7 +3222,8 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
   template <typename... Args> \
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
-    fmt::internal::ArgArray<fmt::BasicFormatter<Char>, sizeof...(Args)> array{args...}; \
+    typename fmt::internal::ArgArray< \
+      fmt::BasicFormatter<Char>, sizeof...(Args)>::Type array{args...}; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
       fmt::ArgList(fmt::internal::make_type(args...), array)); \
   }
