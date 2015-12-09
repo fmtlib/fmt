@@ -2,6 +2,10 @@ set(FMT_GMOCK_DIR ../gmock)
 
 include_directories(.. ${FMT_GMOCK_DIR})
 
+if (BUILD_SHARED_LIBS)
+  set(FMT_IMPORT "-DFMT_SHARED")
+endif ()
+
 # We compile Google Test ourselves instead of using pre-compiled libraries.
 # See the Google Test FAQ "Why is it not recommended to install a
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
@@ -45,6 +49,7 @@ endif ()
 
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
+set_target_properties(test-main PROPERTIES COMPILE_FLAGS "${FMT_IMPORT}")
 target_link_libraries(test-main cppformat gmock)
 
 # Adds a test.
@@ -54,6 +59,7 @@ function(add_fmt_test name)
   add_executable(${name} ${name}.cc ${add_fmt_test_UNPARSED_ARGUMENTS})
   target_link_libraries(${name} test-main)
   if (NOT add_fmt_test_CUSTOM_LINK)
+    set_target_properties(${name} PROPERTIES COMPILE_FLAGS "${FMT_IMPORT}")
     target_link_libraries(${name} cppformat)
   endif ()
   add_test(NAME ${name} COMMAND ${name})
