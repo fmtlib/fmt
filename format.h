@@ -976,6 +976,7 @@ template <typename T>
 T &get();
 
 struct DummyStream : std::ostream {
+  DummyStream();  // Suppress a bogus warning in MSVC.
   // Hide all operator<< overloads from std::ostream.
   void operator<<(Null<>);
 };
