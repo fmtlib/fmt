@@ -64,15 +64,14 @@ typedef long long          intmax_t;
 # include <iterator>
 #endif
 
-#if !defined(FMT_HEADER_ONLY) && (defined(_WIN32) || defined(__WIN32__) || defined(WIN32))
+#if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
 # ifdef FMT_EXPORT
 #  define FMT_API __declspec(dllexport)
 # elif defined(FMT_SHARED)
 #  define FMT_API __declspec(dllimport)
-# else
-#  define FMT_API
 # endif
-#else
+#endif
+#ifndef FMT_API
 # define FMT_API
 #endif
 
@@ -903,11 +902,11 @@ class UTF16ToUTF8 {
 };
 
 FMT_API void format_windows_error(fmt::Writer &out, int error_code,
-                                   fmt::StringRef message) FMT_NOEXCEPT;
+                                  fmt::StringRef message) FMT_NOEXCEPT;
 #endif
 
 FMT_API void format_system_error(fmt::Writer &out, int error_code,
-                                  fmt::StringRef message) FMT_NOEXCEPT;
+                                 fmt::StringRef message) FMT_NOEXCEPT;
 
 // A formatting argument value.
 struct Value {
@@ -1836,7 +1835,8 @@ class PrintfFormatter : private FormatterBase {
 
  public:
   explicit PrintfFormatter(const ArgList &args) : FormatterBase(args) {}
-  FMT_API void format(BasicWriter<Char> &writer, BasicCStringRef<Char> format_str);
+  FMT_API void format(BasicWriter<Char> &writer,
+                      BasicCStringRef<Char> format_str);
 };
 }  // namespace internal
 
@@ -2941,7 +2941,8 @@ void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
-FMT_API void report_system_error(int error_code, StringRef message) FMT_NOEXCEPT;
+FMT_API void report_system_error(int error_code,
+                                 StringRef message) FMT_NOEXCEPT;
 
 #if FMT_USE_WINDOWS_H
 
@@ -2987,7 +2988,8 @@ class WindowsError : public SystemError {
 
 // Reports a Windows error without throwing an exception.
 // Can be used to report errors from destructors.
-FMT_API void report_windows_error(int error_code, StringRef message) FMT_NOEXCEPT;
+FMT_API void report_windows_error(int error_code,
+                                  StringRef message) FMT_NOEXCEPT;
 
 #endif
 
