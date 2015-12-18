@@ -72,7 +72,8 @@ def build_docs(version='dev'):
       PREDEFINED        = _WIN32=1 \
                           FMT_USE_VARIADIC_TEMPLATES=1 \
                           FMT_USE_RVALUE_REFERENCES=1 \
-                          FMT_USE_USER_DEFINED_LITERALS=1
+                          FMT_USE_USER_DEFINED_LITERALS=1 \
+                          FMT_API=
       EXCLUDE_SYMBOLS   = fmt::internal::* StringValue write_str
     '''.format(os.path.dirname(doc_dir)).encode('UTF-8'))
   if p.returncode != 0:
