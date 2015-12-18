@@ -1840,10 +1840,11 @@ class PrintfFormatter : private FormatterBase {
 };
 }  // namespace internal
 
-// A formatter.
+/** This template formats data and writes the output to a writer. */
 template <typename CharType>
 class BasicFormatter : private internal::FormatterBase {
  public:
+  /** The character type for the output. */
   typedef CharType Char;
 
  private:
@@ -1865,13 +1866,23 @@ class BasicFormatter : private internal::FormatterBase {
   internal::Arg parse_arg_name(const Char *&s);
 
  public:
+  /**
+   * \rst
+   * Constructs a ``BasicFormatter`` object. References to the arguments and
+   * the writer are stored in the formatter object so make sure they have
+   * appropriate lifetimes.
+   * \endrst
+   */
   BasicFormatter(const ArgList &args, BasicWriter<Char> &w)
     : internal::FormatterBase(args), writer_(w) {}
 
+  /** Returns a reference to the writer associated with this formatter. */
   BasicWriter<Char> &writer() { return writer_; }
 
+  /** Formats stored arguments and writes the output to the writer. */
   void format(BasicCStringRef<Char> format_str);
 
+  // Formats a single argument and advances format_str, a format string pointer.
   const Char *format(const Char *&format_str, const internal::Arg &arg);
 };
 
@@ -3468,7 +3479,6 @@ inline internal::Arg BasicFormatter<Char>::parse_arg_name(const Char *&s) {
   return arg;
 }
 
-// Should be after FormatSpec
 template <typename Char>
 const Char *BasicFormatter<Char>::format(
     const Char *&format_str, const internal::Arg &arg) {
