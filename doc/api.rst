@@ -8,8 +8,8 @@ All functions and classes provided by the C++ Format library reside
 in namespace ``fmt`` and macros have prefix ``FMT_``. For brevity the
 namespace is usually omitted in examples.
 
-Formatting functions
-====================
+Format API
+==========
 
 The following functions use :ref:`format string syntax <syntax>` similar
 to the one used by Python's `str.format
@@ -36,8 +36,10 @@ arguments in the resulting string.
 
 .. doxygenfunction:: print(std::ostream&, CStringRef, ArgList)
 
+.. doxygenclass:: fmt::BasicFormatter
+
 Printf formatting functions
-===========================
+---------------------------
 
 The following functions use `printf format string syntax
 <http://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html>`_ with
