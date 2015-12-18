@@ -37,6 +37,7 @@ arguments in the resulting string.
 .. doxygenfunction:: print(std::ostream&, CStringRef, ArgList)
 
 .. doxygenclass:: fmt::BasicFormatter
+   :members:
 
 Printf formatting functions
 ---------------------------
