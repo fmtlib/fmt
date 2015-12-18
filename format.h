@@ -28,14 +28,6 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
-#if defined _MSC_VER && _MSC_VER <= 1500
-typedef unsigned int       uint32_t;
-typedef unsigned long long uint64_t;
-typedef long long          intmax_t;
-#else
-#include <stdint.h>
-#endif
-
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -62,6 +54,14 @@ typedef long long          intmax_t;
 
 #if FMT_SECURE_SCL
 # include <iterator>
+#endif
+
+#if defined(_MSC_VER) && _MSC_VER <= 1500
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int64 uint64_t;
+typedef __int64          intmax_t;
+#else
+#include <stdint.h>
 #endif
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
