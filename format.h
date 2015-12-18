@@ -1867,11 +1867,11 @@ class BasicFormatter : private internal::FormatterBase {
 
  public:
   /**
-   * \rst
-   * Constructs a ``BasicFormatter`` object. References to the arguments and
-   * the writer are stored in the formatter object so make sure they have
-   * appropriate lifetimes.
-   * \endrst
+   \rst
+   Constructs a ``BasicFormatter`` object. References to the arguments and
+   the writer are stored in the formatter object so make sure they have
+   appropriate lifetimes.
+   \endrst
    */
   BasicFormatter(const ArgList &args, BasicWriter<Char> &w)
     : internal::FormatterBase(args), writer_(w) {}
