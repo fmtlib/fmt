@@ -3366,6 +3366,18 @@ FMT_VARIADIC(int, fprintf, std::FILE *, CStringRef)
  */
 FMT_API void print(std::ostream &os, CStringRef format_str, ArgList args);
 FMT_VARIADIC(void, print, std::ostream &, CStringRef)
+
+/**
+  \rst
+  Prints formatted data to the stream *os*.
+
+  **Example**::
+
+    fprintf(cerr, "Don't %s!", "panic");
+  \endrst
+ */
+FMT_API int fprintf(std::ostream &os, CStringRef format_str, ArgList args);
+FMT_VARIADIC(int, fprintf, std::ostream &, CStringRef)
 #endif
 
 namespace internal {
