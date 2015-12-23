@@ -476,3 +476,10 @@ TEST(PrintfTest, PrintfError) {
 TEST(PrintfTest, WideString) {
   EXPECT_EQ(L"abc", fmt::sprintf(L"%s", TestWString(L"abc")));
 }
+
+TEST(PrintfTest, Iostream) {
+  std::ostringstream os;
+  int ret = fmt::fprintf(os, "Don't %s!", "panic");
+  EXPECT_EQ("Don't panic!", os.str());
+  EXPECT_EQ(12, ret);
+}

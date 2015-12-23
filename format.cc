@@ -882,6 +882,13 @@ FMT_FUNC int fmt::fprintf(std::FILE *f, CStringRef format, ArgList args) {
   return std::fwrite(w.data(), 1, size, f) < size ? -1 : static_cast<int>(size);
 }
 
+FMT_FUNC int fmt::fprintf(std::ostream &os, CStringRef format, ArgList args) {
+  MemoryWriter w;
+  printf(w, format, args);
+  os.write(w.data(), w.size());
+  return static_cast<int>(w.size());
+}
+
 #ifndef FMT_HEADER_ONLY
 
 template struct fmt::internal::BasicData<void>;
