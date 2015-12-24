@@ -48,7 +48,9 @@ a POSIX extension for positional arguments.
 
 .. doxygenfunction:: printf(CStringRef, ArgList)
 
-.. doxygenfunction:: fprintf(std::FILE*, CStringRef, ArgList)
+.. doxygenfunction:: fprintf(std::FILE *, CStringRef, ArgList)
+
+.. doxygenfunction:: fprintf(std::ostream&, CStringRef, ArgList)
 
 .. doxygenfunction:: sprintf(CStringRef, ArgList)
 
