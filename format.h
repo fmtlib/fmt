@@ -75,7 +75,7 @@ typedef __int64          intmax_t;
 # define FMT_API
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
 # include <intrin.h>  // _BitScanReverse, _BitScanReverse64
 
 namespace fmt {
