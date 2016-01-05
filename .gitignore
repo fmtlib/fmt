@@ -3,8 +3,10 @@ bin/
 /doc/doxyxml
 /doc/html
 /doc/virtualenv
+/doc/sphinx-bootstrap-theme
 /Testing
 /install_manifest.txt
+/breathe
 *~
 *.a
 *.so*
