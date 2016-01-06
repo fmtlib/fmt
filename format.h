@@ -75,7 +75,7 @@ typedef __int64          intmax_t;
 # define FMT_API
 #endif
 
-#if defined(_MSC_VER) && !defined(__clang__)
+#if defined(_MSC_VER)
 # include <intrin.h>  // _BitScanReverse, _BitScanReverse64
 
 namespace fmt {
@@ -84,9 +84,14 @@ namespace internal {
 inline uint32_t clz(uint32_t x) {
   unsigned long r = 0;
   _BitScanReverse(&r, x);
+
+  assert(x != 0);
+  // Static analysis complains about using uninitialized data
+  // "r", but the only way that can happen is if "x" is 0, 
+  // which the callers guarantee to not happen.
+#pragma warning(suppress: 6102)
   return 31 - r;
 }
-# define FMT_BUILTIN_CLZ(n) fmt::internal::clz(n)
 
 # ifdef _WIN64
 #  pragma intrinsic(_BitScanReverse64)
@@ -104,9 +109,14 @@ inline uint32_t clzll(uint64_t x) {
   // Scan the low 32 bits.
   _BitScanReverse(&r, static_cast<uint32_t>(x));
 # endif
+
+  assert(x != 0);
+  // Static analysis complains about using uninitialized data
+  // "r", but the only way that can happen is if "x" is 0, 
+  // which the callers guarantee to not happen.
+#pragma warning(suppress: 6102)
   return 63 - r;
 }
-# define FMT_BUILTIN_CLZLL(n) fmt::internal::clzll(n)
 }
 }
 #endif
@@ -800,6 +810,23 @@ typedef BasicData<> Data;
 #if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
 # define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
+
+#if defined(_MSC_VER)
+
+// Some compilers masquerade as both MSVC and GCC-likes or 
+// otherwise support __builtin_clz and __builtin_clzll, so
+// only define FMT_BUILTIN_CLZ using the MSVC intrinsics
+// if the clz and clzll builtins are not available.
+#if !defined(FMT_BUILTIN_CLZ)
+# define FMT_BUILTIN_CLZ(n) fmt::internal::clz(n)
+#endif
+
+#if !defined(FMT_BUILTIN_CLZLL)
+# define FMT_BUILTIN_CLZLL(n) fmt::internal::clzll(n)
+#endif
+
+#endif
+
 
 #ifdef FMT_BUILTIN_CLZLL
 // Returns the number of decimal digits in n. Leading zeros are not counted
