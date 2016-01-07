@@ -225,17 +225,16 @@ typedef __int64          intmax_t;
 # define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
 
-#if defined(_MSC_VER)
-# include <intrin.h>  // _BitScanReverse, _BitScanReverse64
-
-namespace fmt {
-namespace internal {
 // Some compilers masquerade as both MSVC and GCC-likes or 
 // otherwise support __builtin_clz and __builtin_clzll, so
 // only define FMT_BUILTIN_CLZ using the MSVC intrinsics
 // if the clz and clzll builtins are not available.
-# if !defined(FMT_BUILTIN_CLZ)
-#  pragma intrinsic(_BitScanReverse)
+#if defined(_MSC_VER) && !defined(FMT_BUILTIN_CLZLL)
+# include <intrin.h>  // _BitScanReverse, _BitScanReverse64
+
+namespace fmt {
+namespace internal {
+# pragma intrinsic(_BitScanReverse)
 inline uint32_t clz(uint32_t x) {
   unsigned long r = 0;
   _BitScanReverse(&r, x);
@@ -244,40 +243,36 @@ inline uint32_t clz(uint32_t x) {
   // Static analysis complains about using uninitialized data
   // "r", but the only way that can happen is if "x" is 0, 
   // which the callers guarantee to not happen.
-#  pragma warning(suppress: 6102)
+# pragma warning(suppress: 6102)
   return 31 - r;
 }
-#  define FMT_BUILTIN_CLZ(n) fmt::internal::clz(n)
-# endif
+# define FMT_BUILTIN_CLZ(n) fmt::internal::clz(n)
 
-# if !defined(FMT_BUILTIN_CLZLL)
-#  pragma intrinsic(_BitScanReverse)
-#  ifdef _WIN64
-#   pragma intrinsic(_BitScanReverse64)
-#  endif
+# ifdef _WIN64
+#  pragma intrinsic(_BitScanReverse64)
+# endif
 
 inline uint32_t clzll(uint64_t x) {
   unsigned long r = 0;
-#  ifdef _WIN64
+# ifdef _WIN64
   _BitScanReverse64(&r, x);
-#  else
+# else
   // Scan the high 32 bits.
   if (_BitScanReverse(&r, static_cast<uint32_t>(x >> 32)))
     return 63 - (r + 32);
 
   // Scan the low 32 bits.
   _BitScanReverse(&r, static_cast<uint32_t>(x));
-#  endif
+# endif
 
   assert(x != 0);
   // Static analysis complains about using uninitialized data
   // "r", but the only way that can happen is if "x" is 0, 
   // which the callers guarantee to not happen.
-#  pragma warning(suppress: 6102)
+# pragma warning(suppress: 6102)
   return 63 - r;
 }
-#  define FMT_BUILTIN_CLZLL(n) fmt::internal::clzll(n)
-# endif
+# define FMT_BUILTIN_CLZLL(n) fmt::internal::clzll(n)
 }
 }
 #endif
