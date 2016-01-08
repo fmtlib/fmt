@@ -75,52 +75,6 @@ typedef __int64          intmax_t;
 # define FMT_API
 #endif
 
-#if defined(_MSC_VER)
-# include <intrin.h>  // _BitScanReverse, _BitScanReverse64
-
-namespace fmt {
-namespace internal {
-# pragma intrinsic(_BitScanReverse)
-inline uint32_t clz(uint32_t x) {
-  unsigned long r = 0;
-  _BitScanReverse(&r, x);
-
-  assert(x != 0);
-  // Static analysis complains about using uninitialized data
-  // "r", but the only way that can happen is if "x" is 0, 
-  // which the callers guarantee to not happen.
-#pragma warning(suppress: 6102)
-  return 31 - r;
-}
-
-# ifdef _WIN64
-#  pragma intrinsic(_BitScanReverse64)
-# endif
-
-inline uint32_t clzll(uint64_t x) {
-  unsigned long r = 0;
-# ifdef _WIN64
-  _BitScanReverse64(&r, x);
-# else
-  // Scan the high 32 bits.
-  if (_BitScanReverse(&r, static_cast<uint32_t>(x >> 32)))
-    return 63 - (r + 32);
-
-  // Scan the low 32 bits.
-  _BitScanReverse(&r, static_cast<uint32_t>(x));
-# endif
-
-  assert(x != 0);
-  // Static analysis complains about using uninitialized data
-  // "r", but the only way that can happen is if "x" is 0, 
-  // which the callers guarantee to not happen.
-#pragma warning(suppress: 6102)
-  return 63 - r;
-}
-}
-}
-#endif
-
 #ifdef __GNUC__
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 # define FMT_GCC_EXTENSION __extension__
@@ -260,6 +214,67 @@ inline uint32_t clzll(uint64_t x) {
 
 #ifndef FMT_ASSERT
 # define FMT_ASSERT(condition, message) assert((condition) && message)
+#endif
+
+
+#if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
+# define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
+#endif
+
+#if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
+# define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
+#endif
+
+// Some compilers masquerade as both MSVC and GCC-likes or 
+// otherwise support __builtin_clz and __builtin_clzll, so
+// only define FMT_BUILTIN_CLZ using the MSVC intrinsics
+// if the clz and clzll builtins are not available.
+#if defined(_MSC_VER) && !defined(FMT_BUILTIN_CLZLL)
+# include <intrin.h>  // _BitScanReverse, _BitScanReverse64
+
+namespace fmt {
+namespace internal {
+# pragma intrinsic(_BitScanReverse)
+inline uint32_t clz(uint32_t x) {
+  unsigned long r = 0;
+  _BitScanReverse(&r, x);
+
+  assert(x != 0);
+  // Static analysis complains about using uninitialized data
+  // "r", but the only way that can happen is if "x" is 0, 
+  // which the callers guarantee to not happen.
+# pragma warning(suppress: 6102)
+  return 31 - r;
+}
+# define FMT_BUILTIN_CLZ(n) fmt::internal::clz(n)
+
+# ifdef _WIN64
+#  pragma intrinsic(_BitScanReverse64)
+# endif
+
+inline uint32_t clzll(uint64_t x) {
+  unsigned long r = 0;
+# ifdef _WIN64
+  _BitScanReverse64(&r, x);
+# else
+  // Scan the high 32 bits.
+  if (_BitScanReverse(&r, static_cast<uint32_t>(x >> 32)))
+    return 63 - (r + 32);
+
+  // Scan the low 32 bits.
+  _BitScanReverse(&r, static_cast<uint32_t>(x));
+# endif
+
+  assert(x != 0);
+  // Static analysis complains about using uninitialized data
+  // "r", but the only way that can happen is if "x" is 0, 
+  // which the callers guarantee to not happen.
+# pragma warning(suppress: 6102)
+  return 63 - r;
+}
+# define FMT_BUILTIN_CLZLL(n) fmt::internal::clzll(n)
+}
+}
 #endif
 
 namespace fmt {
@@ -802,30 +817,6 @@ struct FMT_API BasicData {
 };
 
 typedef BasicData<> Data;
-
-#if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
-# define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
-#endif
-
-#if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
-# define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
-#endif
-
-#if defined(_MSC_VER)
-
-// Some compilers masquerade as both MSVC and GCC-likes or 
-// otherwise support __builtin_clz and __builtin_clzll, so
-// only define FMT_BUILTIN_CLZ using the MSVC intrinsics
-// if the clz and clzll builtins are not available.
-#if !defined(FMT_BUILTIN_CLZ)
-# define FMT_BUILTIN_CLZ(n) fmt::internal::clz(n)
-#endif
-
-#if !defined(FMT_BUILTIN_CLZLL)
-# define FMT_BUILTIN_CLZLL(n) fmt::internal::clzll(n)
-#endif
-
-#endif
 
 
 #ifdef FMT_BUILTIN_CLZLL
