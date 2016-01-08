@@ -30,7 +30,7 @@ Features
   similar to the one used by `str.format
   <https://docs.python.org/2/library/stdtypes.html#str.format>`_ in Python.
 * Safe `printf implementation
-  <http://cppformat.github.io/latest/reference.html#printf-formatting-functions>`_
+  <http://cppformat.github.io/latest/api.html#printf-formatting-functions>`_
   including the POSIX extension for positional arguments.
 * Support for user-defined types.
 * High speed: performance of the format API is close to that of
@@ -103,10 +103,10 @@ An object of any user-defined type for which there is an overloaded
     // s == "The date is 2012-12-9"
 
 You can use the `FMT_VARIADIC
-<http://cppformat.github.io/latest/reference.html#utilities>`_
+<http://cppformat.github.io/latest/api.html#utilities>`_
 macro to create your own functions similar to `format
-<http://cppformat.github.io/latest/reference.html#format>`_ and
-`print <http://cppformat.github.io/latest/reference.html#print>`_
+<http://cppformat.github.io/latest/api.html#format>`_ and
+`print <http://cppformat.github.io/latest/api.html#print>`_
 which take arbitrary arguments:
 
 .. code:: c++
