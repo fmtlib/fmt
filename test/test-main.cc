@@ -1,5 +1,5 @@
 /*
- Tests of additional gtest macros.
+ Test main function.
 
  Copyright (c) 2012-2014, Victor Zverovich
  All rights reserved.
