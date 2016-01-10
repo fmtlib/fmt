@@ -36,7 +36,8 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <map>
+#include <vector>
+#include <utility>
 
 #ifndef FMT_USE_IOSTREAMS
 # define FMT_USE_IOSTREAMS 1
@@ -1671,7 +1672,7 @@ namespace internal {
 template <typename Char>
 class ArgMap {
  private:
-  typedef std::map<fmt::BasicStringRef<Char>, internal::Arg> MapType;
+  typedef std::vector<std::pair<fmt::BasicStringRef<Char>, internal::Arg> > MapType;
   typedef typename MapType::value_type Pair;
 
   MapType map_;
@@ -1680,7 +1681,12 @@ class ArgMap {
   FMT_API void init(const ArgList &args);
 
   const internal::Arg* find(const fmt::BasicStringRef<Char> &name) const {
-    typename MapType::const_iterator it = map_.find(name);
+    typename MapType::const_iterator it = map_.begin();
+    // the list is unsorted, so just return the first matching name.
+    for (; it != map_.end(); ++it) {
+      if (it->first == name)
+        break;
+    }
     return it != map_.end() ? &it->second : 0;
   }
 };

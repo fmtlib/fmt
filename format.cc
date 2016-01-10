@@ -616,7 +616,7 @@ void fmt::internal::ArgMap<Char>::init(const ArgList &args) {
         return;
       case internal::Arg::NAMED_ARG:
         named_arg = static_cast<const NamedArg*>(args.values_[i].pointer);
-        map_.insert(Pair(named_arg->name, *named_arg));
+        map_.push_back(Pair(named_arg->name, *named_arg));
         break;
       default:
         /*nothing*/;
@@ -628,7 +628,7 @@ void fmt::internal::ArgMap<Char>::init(const ArgList &args) {
     internal::Arg::Type arg_type = args.type(i);
     if (arg_type == internal::Arg::NAMED_ARG) {
       named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
-      map_.insert(Pair(named_arg->name, *named_arg));
+      map_.push_back(Pair(named_arg->name, *named_arg));
     }
   }
   for (unsigned i = ArgList::MAX_PACKED_ARGS;/*nothing*/; ++i) {
@@ -637,7 +637,7 @@ void fmt::internal::ArgMap<Char>::init(const ArgList &args) {
       return;
     case internal::Arg::NAMED_ARG:
       named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
-      map_.insert(Pair(named_arg->name, *named_arg));
+      map_.push_back(Pair(named_arg->name, *named_arg));
       break;
     default:
       /*nothing*/;
