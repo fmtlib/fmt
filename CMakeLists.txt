@@ -1,6 +1,6 @@
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.12)
 
 # Set the default CMAKE_BUILD_TYPE to Release.
 # This should be done before the project command since the latter can set
@@ -163,8 +163,45 @@ endif ()
 
 # Install targets.
 if (FMT_INSTALL)
-  set(FMT_LIB_DIR lib CACHE STRING
+  include(CMakePackageConfigHelpers)
+  set(config_install_dir "lib/cmake/cppformat")
+  set(version_config "${CMAKE_CURRENT_BINARY_DIR}/cppformatConfigVersion.cmake")
+  set(project_config "${CMAKE_CURRENT_BINARY_DIR}/cppformatConfig.cmake")
+  set(targets_export_name "cppformatTargets")
+
+  set(FMT_LIB_DIR "lib" CACHE STRING
     "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
-  install(TARGETS cppformat DESTINATION ${FMT_LIB_DIR})
-  install(FILES format.h DESTINATION include/cppformat)
+
+  # copy the header into the build directory to mimic the installed tree
+  configure_file("format.h" "cppformat/format.h" COPYONLY)
+  # add the include directories for both build and install tree
+  target_include_directories(
+    cppformat PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+
+  # generate the version, config and target files into the build directory
+  write_basic_package_version_file(
+    "${version_config}"
+    VERSION ${CPPFORMAT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+  )
+  configure_package_config_file(
+    "support/cmake/cppformatConfig.cmake.in"
+    "${project_config}"
+    INSTALL_DESTINATION "${config_install_dir}"
+  )
+  export(TARGETS cppformat FILE "${targets_export_name}.cmake")
+
+  # install version, config and target files
+  install(
+      FILES "${project_config}" "${version_config}"
+      DESTINATION "${config_install_dir}"
+  )
+  install(EXPORT "${targets_export_name}" DESTINATION "${config_install_dir}")
+
+  # install the library and the include file
+  install(TARGETS cppformat EXPORT "${targets_export_name}" DESTINATION "${FMT_LIB_DIR}")
+  install(FILES format.h DESTINATION "include/cppformat")
 endif ()
