@@ -142,7 +142,7 @@ endif ()
 set_target_properties(cppformat PROPERTIES
   VERSION ${CPPFORMAT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR})
 
-if (EXISTS .gitignore)
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.gitignore")
   # Get the list of ignored files from .gitignore.
   file (STRINGS ".gitignore" lines)
   LIST(REMOVE_ITEM lines /doc/html)
@@ -156,7 +156,7 @@ if (EXISTS .gitignore)
 
   set(CPACK_SOURCE_GENERATOR ZIP)
   set(CPACK_SOURCE_IGNORE_FILES ${ignored_files})
-  set(CPACK_SOURCE_PACKAGE_FILE_NAME cppformat-${CPPFORMAT_VERSION})
+  set(CPACK_PACKAGE_NAME "cppformat")
   set(CPACK_RESOURCE_FILE_README ${FORMAT_SOURCE_DIR}/README.rst)
   include(CPack)
 endif ()
