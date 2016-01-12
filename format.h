@@ -1681,13 +1681,13 @@ class ArgMap {
   FMT_API void init(const ArgList &args);
 
   const internal::Arg* find(const fmt::BasicStringRef<Char> &name) const {
-    typename MapType::const_iterator it = map_.begin();
-    // the list is unsorted, so just return the first matching name.
-    for (; it != map_.end(); ++it) {
+    // The list is unsorted, so just return the first matching name.
+    for (typename MapType::const_iterator it = map_.begin(), end = map_.end();
+         it != end; ++it) {
       if (it->first == name)
-        break;
+        return &it->second;
     }
-    return it != map_.end() ? &it->second : 0;
+    return 0;
   }
 };
 
