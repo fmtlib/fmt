@@ -20,5 +20,13 @@ matrix:
     - os: osx
       env: BUILD=Doc
 
+addons:
+  apt:
+    sources:
+    - kubuntu-backports                   # cmake 2.8.12
+#    - george-edison55-precise-backports   # cmake 3.2.3
+    packages:
+    - cmake
+
 script:
   - support/travis-build.py

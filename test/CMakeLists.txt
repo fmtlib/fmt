@@ -10,12 +10,6 @@ function (target_link_cppformat target)
   endif ()
 endfunction ()
 
-function (fmt_target_include_directories)
-  if (CMAKE_MAJOR_VERSION VERSION_GREATER 2.8.10)
-    target_include_directories(${ARGN})
-  endif ()
-endfunction ()
-
 # We compile Google Test ourselves instead of using pre-compiled libraries.
 # See the Google Test FAQ "Why is it not recommended to install a
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
@@ -24,7 +18,7 @@ endfunction ()
 add_library(gmock STATIC
   ${FMT_GMOCK_DIR}/gmock-gtest-all.cc ${FMT_GMOCK_DIR}/gmock/gmock.h
   ${FMT_GMOCK_DIR}/gtest/gtest.h ${FMT_GMOCK_DIR}/gtest/gtest-spi.h)
-fmt_target_include_directories(gmock INTERFACE ${FMT_GMOCK_DIR})
+target_include_directories(gmock INTERFACE ${FMT_GMOCK_DIR})
 find_package(Threads)
 if (Threads_FOUND)
   target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
@@ -43,7 +37,7 @@ check_cxx_source_compiles("
 check_cxx_source_compiles("
   #include <initializer_list>
   int main() {}" FMT_INITIALIZER_LIST)
-  
+
 if (NOT FMT_VARIADIC_TEMPLATES OR NOT FMT_INITIALIZER_LIST)
   add_definitions(-DGTEST_LANG_CXX11=0)
 endif ()
