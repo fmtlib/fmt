@@ -9,8 +9,8 @@ bin/
 *.a
 *.so*
 *.zip
+/*.cmake
 cmake_install.cmake
-CPack*Config.cmake
 CTestTestfile.cmake
 CMakeCache.txt
 CMakeFiles
