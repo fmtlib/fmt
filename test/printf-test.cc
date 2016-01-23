@@ -289,6 +289,7 @@ SPECIALIZE_MAKE_SIGNED(unsigned, int);
 SPECIALIZE_MAKE_SIGNED(unsigned long, long);
 SPECIALIZE_MAKE_SIGNED(fmt::ULongLong, fmt::LongLong);
 
+// Test length format specifier ``length_spec``.
 template <typename T, typename U>
 void TestLength(const char *length_spec, U value) {
   fmt::LongLong signed_value = value;
@@ -386,6 +387,13 @@ TEST(PrintfTest, Int) {
   EXPECT_PRINTF(fmt::format("{:o}", u), "%o", -42);
   EXPECT_PRINTF(fmt::format("{:x}", u), "%x", -42);
   EXPECT_PRINTF(fmt::format("{:X}", u), "%X", -42);
+}
+
+TEST(PrintfTest, LongLong) {
+  // fmt::printf allows passing long long arguments to %d without length
+  // specifiers.
+  fmt::LongLong max = std::numeric_limits<fmt::LongLong>::max();
+  EXPECT_PRINTF(fmt::format("{}", max), "%d", max);
 }
 
 TEST(PrintfTest, Float) {

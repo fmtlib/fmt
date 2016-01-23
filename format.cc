@@ -278,8 +278,21 @@ class PrecisionHandler :
   }
 };
 
-// Converts an integer argument to an integral type T for printf.
+template <typename T, typename U>
+struct is_same {
+  enum { value = 0 };
+};
+
 template <typename T>
+struct is_same<T, T> {
+  enum { value = 1 };
+};
+
+// An argument visitor that converts an integer argument to T for printf,
+// if T is an integral type. If T is not integral, the argument is converted
+// to corresponding signed or unsigned type depending on the type specifier:
+// 'd' and 'i' - signed, other - unsigned)
+template <typename T = void>
 class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
  private:
   fmt::internal::Arg &arg_;
@@ -300,15 +313,17 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
   void visit_any_int(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
     using fmt::internal::Arg;
-    if (sizeof(T) <= sizeof(int)) {
+    typedef typename fmt::internal::Conditional<
+        is_same<T, void>::value, U, T>::type TargetType;
+    if (sizeof(TargetType) <= sizeof(int)) {
       // Extra casts are used to silence warnings.
       if (is_signed) {
         arg_.type = Arg::INT;
-        arg_.int_value = static_cast<int>(static_cast<T>(value));
+        arg_.int_value = static_cast<int>(static_cast<TargetType>(value));
       } else {
         arg_.type = Arg::UINT;
-        arg_.uint_value = static_cast<unsigned>(
-            static_cast<typename fmt::internal::MakeUnsigned<T>::Type>(value));
+        typedef typename fmt::internal::MakeUnsigned<TargetType>::Type Unsigned;
+        arg_.uint_value = static_cast<unsigned>(static_cast<Unsigned>(value));
       }
     } else {
       if (is_signed) {
@@ -809,7 +824,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
       break;
     default:
       --s;
-      ArgConverter<int>(arg, *s).visit(arg);
+      ArgConverter<void>(arg, *s).visit(arg);
     }
 
     // Parse type.
