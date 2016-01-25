@@ -289,8 +289,8 @@ struct is_same<T, T> {
 };
 
 // An argument visitor that converts an integer argument to T for printf,
-// if T is an integral type. If T is not integral, the argument is converted
-// to corresponding signed or unsigned type depending on the type specifier:
+// if T is an integral type. If T is void, the argument is converted to
+// corresponding signed or unsigned type depending on the type specifier:
 // 'd' and 'i' - signed, other - unsigned)
 template <typename T = void>
 class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
