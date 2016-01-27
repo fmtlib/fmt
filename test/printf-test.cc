@@ -306,8 +306,8 @@ void TestLength(const char *length_spec, U value) {
   }
   using fmt::internal::MakeUnsigned;
   if (sizeof(U) <= sizeof(int) && sizeof(int) < sizeof(T)) {
-    signed_value = unsigned_value =
-        static_cast<typename MakeUnsigned<unsigned>::Type>(value);
+    signed_value = value;
+    unsigned_value = static_cast<typename MakeUnsigned<unsigned>::Type>(value);
   } else {
     signed_value = static_cast<typename MakeSigned<T>::Type>(value);
     unsigned_value = static_cast<typename MakeUnsigned<T>::Type>(value);
