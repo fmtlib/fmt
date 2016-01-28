@@ -72,7 +72,7 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
     ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"${netfxpath}\" %*")
 endif ()
 
-set(FMT_SOURCES format.cc format.h)
+set(FMT_SOURCES cppformat/format.cc cppformat/format.h)
 
 include(CheckSymbolExists)
 if (WIN32)
@@ -82,7 +82,7 @@ else ()
 endif ()
 if (HAVE_OPEN)
   add_definitions(-DFMT_USE_FILE_DESCRIPTORS=1)
-  set(FMT_SOURCES ${FMT_SOURCES} posix.cc posix.h)
+  set(FMT_SOURCES ${FMT_SOURCES} cppformat/posix.cc cppformat/posix.h)
 endif ()
 
 if (CPP11_FLAG)
@@ -199,5 +199,5 @@ if (FMT_INSTALL)
 
   # Install the library and the include file.
   install(TARGETS cppformat EXPORT ${targets_export_name} DESTINATION ${FMT_LIB_DIR})
-  install(FILES format.h DESTINATION include/cppformat)
+  install(FILES cppformat/format.h DESTINATION include/cppformat)
 endif ()

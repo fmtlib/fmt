@@ -120,7 +120,7 @@ add_executable(macro-test macro-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
 target_link_libraries(macro-test gmock)
 
 if (HAVE_OPEN)
-  add_executable(posix-mock-test posix-mock-test.cc ../format.cc ${TEST_MAIN_SRC})
+  add_executable(posix-mock-test posix-mock-test.cc ../cppformat/format.cc ${TEST_MAIN_SRC})
   target_link_libraries(posix-mock-test gmock)
   add_test(NAME posix-mock-test COMMAND posix-mock-test)
   add_fmt_test(posix-test)
@@ -135,7 +135,7 @@ target_link_libraries(header-only-test gmock)
 # Test that the library can be compiled with exceptions disabled.
 check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
 if (HAVE_FNO_EXCEPTIONS_FLAG)
-  add_library(noexception-test STATIC ../format.cc)
+  add_library(noexception-test STATIC ../cppformat/format.cc)
   set_target_properties(noexception-test
     PROPERTIES COMPILE_FLAGS -fno-exceptions)
 endif ()
@@ -158,7 +158,7 @@ if (FMT_PEDANTIC)
     --build-makeprogram ${CMAKE_MAKE_PROGRAM})
 
   # Test that the library compiles without windows.h.
-  add_library(no-windows-h-test ../format.cc)
+  add_library(no-windows-h-test ../cppformat/format.cc)
   set_target_properties(no-windows-h-test
     PROPERTIES COMPILE_DEFINITIONS "FMT_USE_WINDOWS_H=0")
 endif ()
