@@ -28,18 +28,8 @@ endif ()
 
 # Check if variadic templates are working and not affected by GCC bug 39653:
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39653
-check_cxx_source_compiles("
-  template <class T, class ...Types>
-  struct S { typedef typename S<Types...>::type type; };
-  int main() {}" FMT_VARIADIC_TEMPLATES)
-
-# Check if initializer lists are supported.
-check_cxx_source_compiles("
-  #include <initializer_list>
-  int main() {}" FMT_INITIALIZER_LIST)
-
-if (NOT FMT_VARIADIC_TEMPLATES OR NOT FMT_INITIALIZER_LIST)
-  add_definitions(-DGTEST_LANG_CXX11=0)
+if (NOT SUPPORTS_VARIADIC_TEMPLATES OR NOT SUPPORTS_INITIALIZER_LIST)
+  target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
 endif ()
 
 # Workaround a bug in implementation of variadic templates in MSVC11.
@@ -91,11 +81,7 @@ if (CPP11_FLAG)
   set_target_properties(util-test PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
 endif ()
 
-check_cxx_source_compiles("
-  enum C : char {A};
-  int main() {}"
-  HAVE_ENUM_BASE)
-if (HAVE_ENUM_BASE)
+if (SUPPORTS_ENUM_BASE)
   set_target_properties(util-test
     PROPERTIES COMPILE_DEFINITIONS "FMT_USE_ENUM_BASE=1")
 endif ()
@@ -104,12 +90,7 @@ foreach (src ${FMT_SOURCES})
   set(FMT_TEST_SOURCES ${FMT_TEST_SOURCES} ../${src})
 endforeach ()
 
-check_cxx_source_compiles("
-  #include <type_traits>
-  class C { void operator=(const C&); };
-  int main() { static_assert(!std::is_copy_assignable<C>::value, \"\"); }"
-  HAVE_TYPE_TRAITS)
-if (HAVE_TYPE_TRAITS)
+if (SUPPORTS_TYPE_TRAITS)
   foreach (target format-test util-test)
     set_target_properties(${target}
       PROPERTIES COMPILE_DEFINITIONS "FMT_USE_TYPE_TRAITS=1")
