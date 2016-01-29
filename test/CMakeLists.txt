@@ -102,6 +102,8 @@ target_link_libraries(macro-test gmock)
 
 if (HAVE_OPEN)
   add_executable(posix-mock-test posix-mock-test.cc ../cppformat/format.cc ${TEST_MAIN_SRC})
+  target_include_directories(posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR})
+  target_compile_definitions(posix-mock-test PRIVATE FMT_USE_FILE_DESCRIPTORS=1)
   target_link_libraries(posix-mock-test gmock)
   add_test(NAME posix-mock-test COMMAND posix-mock-test)
   add_fmt_test(posix-test)
@@ -109,9 +111,13 @@ endif ()
 
 add_executable(header-only-test
   header-only-test.cc header-only-test2.cc test-main.cc)
-set_target_properties(header-only-test
-  PROPERTIES COMPILE_DEFINITIONS "FMT_HEADER_ONLY=1")
 target_link_libraries(header-only-test gmock)
+if (TARGET cppformat-header-only)
+  target_link_libraries(header-only-test cppformat-header-only)
+else ()
+  target_include_directories(header-only-test PRIVATE ${PROJECT_SOURCE_DIR})
+  target_compile_definitions(header-only-test PRIVATE FMT_HEADER_ONLY=1)
+endif ()
 
 # Test that the library can be compiled with exceptions disabled.
 check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
@@ -119,15 +125,6 @@ if (HAVE_FNO_EXCEPTIONS_FLAG)
   add_library(noexception-test STATIC ../cppformat/format.cc)
   set_target_properties(noexception-test
     PROPERTIES COMPILE_FLAGS -fno-exceptions)
-endif ()
-
-# Test compilation with default flags.
-if (FMT_TEST_DEFAULT_FLAGS)
-  file(GLOB src RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cc *.h)
-  foreach (s ${FMT_SOURCES})
-    set(src ${src} ../${s})
-  endforeach ()
-  add_library(testformat STATIC ${src})
 endif ()
 
 if (FMT_PEDANTIC)

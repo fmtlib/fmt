@@ -19,15 +19,29 @@ option(FMT_TEST "Generate the test target." ON)
 
 project(FORMAT)
 
+# starting with cmake 3.0 VERSION is part of the project command
+set(CPPFORMAT_VERSION 2.1.0)
+if (NOT CPPFORMAT_VERSION MATCHES "^([0-9]+).([0-9]+).([0-9]+)$")
+  message(FATAL_ERROR "Invalid version format ${CPPFORMAT_VERSION}.")
+endif ()
+set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_MATCH_2})
+set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_MATCH_3})
+
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/support/cmake")
 
 include(testCxx11)
+
+if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wshadow -pedantic)
+elseif (MSVC)
+  set(PEDANTIC_COMPILE_FLAGS /W4)
+endif ()
 
 if (CMAKE_GENERATOR MATCHES "Visual Studio")
   # If Microsoft SDK is installed create script run-msbuild.bat that
@@ -45,21 +59,11 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
     ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"${netfxpath}\" %*")
 endif ()
 
-set(FMT_SOURCES cppformat/format.cc cppformat/format.h)
-
 include(CheckSymbolExists)
 if (WIN32)
   check_symbol_exists(open io.h HAVE_OPEN)
 else ()
   check_symbol_exists(open fcntl.h HAVE_OPEN)
-endif ()
-if (HAVE_OPEN)
-  add_definitions(-DFMT_USE_FILE_DESCRIPTORS=1)
-  set(FMT_SOURCES ${FMT_SOURCES} cppformat/posix.cc cppformat/posix.h)
-endif ()
-
-if (CPP11_FLAG)
-  set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
 endif ()
 
 if (BIICODE)
@@ -67,41 +71,50 @@ if (BIICODE)
   return()
 endif ()
 
+#------------------------------------------------------------------------------
+# define the cppformat library, its includes and the needed defines
+set(FMT_SOURCES cppformat/format.cc cppformat/format.h)
+if (HAVE_OPEN)
+  set(FMT_SOURCES ${FMT_SOURCES} cppformat/posix.cc cppformat/posix.h)
+endif ()
+
 add_library(cppformat ${FMT_SOURCES})
+
+target_compile_options(cppformat PUBLIC ${CPP11_FLAG}) # starting with cmake 3.1 the CXX_STANDARD property can be used
+if (FMT_PEDANTIC)
+  target_compile_options(cppformat PRIVATE ${PEDANTIC_COMPILE_FLAGS})
+endif ()
+
+target_compile_definitions(cppformat INTERFACE
+  FMT_USE_FILE_DESCRIPTORS=$<BOOL:${HAVE_OPEN}>)
+
+target_include_directories(cppformat INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:include>)
+
+set_target_properties(cppformat PROPERTIES
+  VERSION ${CPPFORMAT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR})
+
 if (BUILD_SHARED_LIBS)
   if (UNIX AND NOT APPLE)
     # Fix rpmlint warning:
     # unused-direct-shlib-dependency /usr/lib/libformat.so.1.1.0 /lib/libm.so.6.
     target_link_libraries(cppformat -Wl,--as-needed)
   endif ()
-  set(FMT_EXTRA_COMPILE_FLAGS -DFMT_EXPORT)
+  target_compile_definitions(cppformat PRIVATE FMT_EXPORT INTERFACE FMT_SHARED)
 endif ()
 
-if (FMT_PEDANTIC AND
-    (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang")))
-  set(FMT_EXTRA_COMPILE_FLAGS
-      "${FMT_EXTRA_COMPILE_FLAGS} -Wall -Wextra -Wshadow -pedantic")
-endif ()
+#------------------------------------------------------------------------------
+# additionally define a header only library when cmake is new enough
+if (CMAKE_VERSION VERSION_GREATER 3.1.0 OR CMAKE_VERSION VERSION_EQUAL 3.1.0)
+  add_library(cppformat-header-only INTERFACE)
 
-# If FMT_PEDANTIC is TRUE, then test compilation with both -std=c++11
-# and the default flags. Otherwise use only the default flags.
-# The library is distributed in the source form and users have full control
-# over compile options, so the options used here only matter for testing.
-if (CPP11_FLAG AND FMT_PEDANTIC)
-  set(FMT_EXTRA_COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS} ${CPP11_FLAG}")
-  set(FMT_TEST_DEFAULT_FLAGS TRUE)
-endif ()
+  target_compile_definitions(cppformat-header-only INTERFACE FMT_HEADER_ONLY=1)
 
-set_target_properties(cppformat
-  PROPERTIES COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS}")
-
-set(CPPFORMAT_VERSION 2.1.0)
-if (NOT CPPFORMAT_VERSION MATCHES "^([0-9]+).([0-9]+).([0-9]+)$")
-  message(FATAL_ERROR "Invalid version format ${CPPFORMAT_VERSION}.")
+  target_include_directories(cppformat-header-only INTERFACE
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>)
 endif ()
-set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_MATCH_1})
-set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_MATCH_2})
-set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_MATCH_3})
 
 if (FMT_DOC)
   add_subdirectory(doc)
@@ -112,10 +125,9 @@ if (FMT_TEST)
   add_subdirectory(test)
 endif ()
 
-set_target_properties(cppformat PROPERTIES
-  VERSION ${CPPFORMAT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR})
 
-set(gitignore ${CMAKE_CURRENT_SOURCE_DIR}/.gitignore)
+
+set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)
 if (EXISTS ${gitignore})
   # Get the list of ignored files from .gitignore.
   file (STRINGS ${gitignore} lines)
@@ -132,7 +144,7 @@ if (EXISTS ${gitignore})
   set(CPACK_SOURCE_IGNORE_FILES ${ignored_files})
   set(CPACK_SOURCE_PACKAGE_FILE_NAME cppformat-${CPPFORMAT_VERSION})
   set(CPACK_PACKAGE_NAME cppformat)
-  set(CPACK_RESOURCE_FILE_README ${FORMAT_SOURCE_DIR}/README.rst)
+  set(CPACK_RESOURCE_FILE_README ${PROJECT_SOURCE_DIR}/README.rst)
   include(CPack)
 endif ()
 
@@ -147,12 +159,6 @@ if (FMT_INSTALL)
   set(FMT_LIB_DIR lib CACHE STRING
     "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
 
-  # Add the include directories for both build and install tree.
-  target_include_directories(
-    cppformat PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include>)
-
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
     ${version_config}
@@ -162,7 +168,11 @@ if (FMT_INSTALL)
     support/cmake/cppformat-config.cmake.in
     ${project_config}
     INSTALL_DESTINATION ${config_install_dir})
-  export(TARGETS cppformat FILE ${targets_export_name}.cmake)
+  set(CPPFORMAT_LIBRARY_TARGETS cppformat)
+  if (TARGET cppformat-header-only)
+    set(CPPFORMAT_LIBRARY_TARGETS ${CPPFORMAT_LIBRARY_TARGETS} cppformat-header-only)
+  endif ()
+  export(TARGETS ${CPPFORMAT_LIBRARY_TARGETS} FILE ${targets_export_name}.cmake)
 
   # Install version, config and target files.
   install(
