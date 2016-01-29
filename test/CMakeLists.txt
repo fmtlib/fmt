@@ -1,24 +1,17 @@
-set(FMT_GMOCK_DIR ../gmock)
-
-include_directories(.. ${FMT_GMOCK_DIR})
-
-# Links target with cppformat and any libraries passed as extra arguments.
-function (target_link_cppformat target)
-  target_link_libraries(${target} cppformat ${ARGN})
-  if (BUILD_SHARED_LIBS)
-    set_target_properties(${target} PROPERTIES COMPILE_FLAGS -DFMT_SHARED)
-  endif ()
-endfunction ()
+#------------------------------------------------------------------------------
+# Build the google test library
 
 # We compile Google Test ourselves instead of using pre-compiled libraries.
 # See the Google Test FAQ "Why is it not recommended to install a
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
-
+set(FMT_GMOCK_DIR ../gmock)
 add_library(gmock STATIC
   ${FMT_GMOCK_DIR}/gmock-gtest-all.cc ${FMT_GMOCK_DIR}/gmock/gmock.h
   ${FMT_GMOCK_DIR}/gtest/gtest.h ${FMT_GMOCK_DIR}/gtest/gtest-spi.h)
-target_include_directories(gmock INTERFACE ${FMT_GMOCK_DIR})
+target_include_directories(gmock PUBLIC ${FMT_GMOCK_DIR})
+target_compile_options(gmock PUBLIC ${CPP11_FLAG})
+
 find_package(Threads)
 if (Threads_FOUND)
   target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
@@ -42,18 +35,31 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
 endif ()
 
+#------------------------------------------------------------------------------
+# Build the actual library tests
+
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
-add_library(test-main STATIC ${TEST_MAIN_SRC})
-target_link_cppformat(test-main gmock)
+
+# relax pedantic flags for the tests
+if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros)
+endif ()
 
 # Adds a test.
 # Usage: add_fmt_test(name [CUSTOM_LINK] srcs...)
 function(add_fmt_test name)
   cmake_parse_arguments(add_fmt_test CUSTOM_LINK "" "" ${ARGN})
-  add_executable(${name} ${name}.cc ${add_fmt_test_UNPARSED_ARGUMENTS})
-  target_link_libraries(${name} test-main)
+  add_executable(${name} ${name}.cc ${TEST_MAIN_SRC} ${add_fmt_test_UNPARSED_ARGUMENTS})
+  target_link_libraries(${name} gmock)
   if (NOT add_fmt_test_CUSTOM_LINK)
-    target_link_cppformat(${name})
+    target_link_libraries(${name} cppformat)
+  endif ()
+  # define if certain c++ features can be used
+  target_compile_definitions(${name} PRIVATE
+    FMT_USE_TYPE_TRAITS=$<BOOL:${SUPPORTS_TYPE_TRAITS}>
+    FMT_USE_ENUM_BASE=$<BOOL:${SUPPORTS_ENUM_BASE}>)
+  if (FMT_PEDANTIC)
+    target_compile_options(${name} PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
@@ -61,44 +67,12 @@ endfunction()
 add_fmt_test(assert-test)
 add_fmt_test(gtest-extra-test)
 add_fmt_test(format-test)
-if (FMT_PEDANTIC AND MSVC)
-  set_target_properties(format-test PROPERTIES COMPILE_FLAGS /W4)
-endif ()
-
-add_fmt_test(format-impl-test CUSTOM_LINK)
+add_fmt_test(format-impl-test)
 add_fmt_test(printf-test)
-foreach (target format-test printf-test)
-  if (FMT_PEDANTIC AND CMAKE_COMPILER_IS_GNUCXX)
-    set_target_properties(${target} PROPERTIES COMPILE_FLAGS
-      "-Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros")
-  endif ()
-  if (CPP11_FLAG)
-    set_target_properties(${target} PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
-  endif ()
-endforeach ()
 add_fmt_test(util-test mock-allocator.h)
-if (CPP11_FLAG)
-  set_target_properties(util-test PROPERTIES COMPILE_FLAGS ${CPP11_FLAG})
-endif ()
 
-if (SUPPORTS_ENUM_BASE)
-  set_target_properties(util-test
-    PROPERTIES COMPILE_DEFINITIONS "FMT_USE_ENUM_BASE=1")
-endif ()
-
-foreach (src ${FMT_SOURCES})
-  set(FMT_TEST_SOURCES ${FMT_TEST_SOURCES} ../${src})
-endforeach ()
-
-if (SUPPORTS_TYPE_TRAITS)
-  foreach (target format-test util-test)
-    set_target_properties(${target}
-      PROPERTIES COMPILE_DEFINITIONS "FMT_USE_TYPE_TRAITS=1")
-  endforeach ()
-endif ()
-
-add_executable(macro-test macro-test.cc ${FMT_TEST_SOURCES} ${TEST_MAIN_SRC})
-target_link_libraries(macro-test gmock)
+add_executable(macro-test macro-test.cc ${TEST_MAIN_SRC})
+target_link_libraries(macro-test gmock cppformat)
 
 if (HAVE_OPEN)
   add_executable(posix-mock-test posix-mock-test.cc ../cppformat/format.cc ${TEST_MAIN_SRC})
@@ -122,21 +96,19 @@ endif ()
 # Test that the library can be compiled with exceptions disabled.
 check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
 if (HAVE_FNO_EXCEPTIONS_FLAG)
-  add_library(noexception-test STATIC ../cppformat/format.cc)
-  set_target_properties(noexception-test
-    PROPERTIES COMPILE_FLAGS -fno-exceptions)
+  add_library(noexception-test ../cppformat/format.cc)
+  target_compile_options(noexception-test PRIVATE -fno-exceptions)
 endif ()
 
-if (FMT_PEDANTIC)
-  add_test(compile-test ${CMAKE_CTEST_COMMAND}
-    --build-and-test
-    "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"
-    "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
-    --build-generator ${CMAKE_GENERATOR}
-    --build-makeprogram ${CMAKE_MAKE_PROGRAM})
-
-  # Test that the library compiles without windows.h.
+# Test that the library compiles without windows.h.
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
   add_library(no-windows-h-test ../cppformat/format.cc)
-  set_target_properties(no-windows-h-test
-    PROPERTIES COMPILE_DEFINITIONS "FMT_USE_WINDOWS_H=0")
+  target_compile_definitions(no-windows-h-test PRIVATE FMT_USE_WINDOWS_H=0)
 endif ()
+
+add_test(compile-test ${CMAKE_CTEST_COMMAND}
+  --build-and-test
+  "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"
+  "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
+  --build-generator ${CMAKE_GENERATOR}
+  --build-makeprogram ${CMAKE_MAKE_PROGRAM})
