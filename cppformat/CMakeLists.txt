@@ -51,6 +51,11 @@ if (FMT_INSTALL)
   set(project_config ${PROJECT_BINARY_DIR}/cppformat-config.cmake)
   set(targets_export_name cppformat-targets)
 
+  set (INSTALL_TARGETS cppformat)
+  if (TARGET cppformat-header-only)
+    set(INSTALL_TARGETS ${INSTALL_TARGETS} cppformat-header-only)
+  endif ()
+
   set(FMT_LIB_DIR lib CACHE STRING
     "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
 
@@ -63,12 +68,7 @@ if (FMT_INSTALL)
     ${PROJECT_SOURCE_DIR}/support/cmake/cppformat-config.cmake.in
     ${project_config}
     INSTALL_DESTINATION ${config_install_dir})
-
-  if (TARGET cppformat-header-only)
-    export(TARGETS cppformat cppformat-header-only FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
-  else ()
-    export(TARGETS cppformat FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
-  endif ()
+  export(TARGETS ${INSTALL_TARGETS} FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
   # Install version, config and target files.
   install(
@@ -77,6 +77,6 @@ if (FMT_INSTALL)
   install(EXPORT ${targets_export_name} DESTINATION ${config_install_dir})
 
   # Install the library and the include file.
-  install(TARGETS cppformat EXPORT ${targets_export_name} DESTINATION ${FMT_LIB_DIR})
+  install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name} DESTINATION ${FMT_LIB_DIR})
   install(FILES format.h DESTINATION include/cppformat)
 endif ()
