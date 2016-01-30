@@ -112,3 +112,12 @@ add_test(compile-test ${CMAKE_CTEST_COMMAND}
   "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
   --build-generator ${CMAKE_GENERATOR}
   --build-makeprogram ${CMAKE_MAKE_PROGRAM})
+
+# test if the targets are findable from the build directory
+add_test(find-package-test ${CMAKE_CTEST_COMMAND}
+  --build-and-test
+  "${CMAKE_CURRENT_SOURCE_DIR}/find-package-test"
+  "${CMAKE_CURRENT_BINARY_DIR}/find-package-test"
+  --build-generator ${CMAKE_GENERATOR}
+  --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+  --build-options "-Dcppformat_DIR=${PROJECT_BINARY_DIR}")
