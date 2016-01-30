@@ -45,7 +45,7 @@
 // Test that the library compiles if None is defined to 0 as done by xlib.h.
 #define None 0
 
-#include "format.h"
+#include <cppformat/format.h>
 #include "util.h"
 #include "mock-allocator.h"
 #include "gtest-extra.h"
