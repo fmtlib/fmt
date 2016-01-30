@@ -34,8 +34,10 @@
 #endif
 
 #include <errno.h>
-#include <fcntl.h>  // for O_RDONLY
+#include <fcntl.h>   // for O_RDONLY
+#include <locale.h>  // for locale_t
 #include <stdio.h>
+#include <stdlib.h>  // for strtod_l
 
 #include <cstddef>
 
@@ -331,6 +333,54 @@ class File {
 
 // Returns the memory page size.
 long getpagesize();
+
+#if defined(LC_NUMERIC_MASK) || defined(_MSC_VER)
+
+// A "C" numeric locale.
+class Locale {
+ private:
+# ifdef _MSC_VER
+  typedef _locale_t locale_t;
+
+  enum { LC_NUMERIC_MASK = LC_NUMERIC };
+
+  static locale_t newlocale(int category_mask, const char *locale, locale_t) {
+    return _create_locale(category_mask, locale);
+  }
+
+  static void freelocale(locale_t locale) {
+    _free_locale(locale);
+  }
+
+  static double strtod_l(const char *nptr, char **endptr, _locale_t locale) {
+    return _strtod_l(nptr, endptr, locale);
+  }
+# endif
+
+  locale_t locale_;
+
+  FMT_DISALLOW_COPY_AND_ASSIGN(Locale);
+
+ public:
+  Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", NULL)) {
+    if (!locale_)
+      throw fmt::SystemError(errno, "cannot create locale");
+  }
+  ~Locale() { freelocale(locale_); }
+
+  locale_t get() const { return locale_; }
+
+  // Converts string to floating-point number and advances str past the end
+  // of the parsed input.
+  double strtod(const char *&str) const {
+    char *end = 0;
+    double result = strtod_l(str, &end, locale_);
+    str = end;
+    return result;
+  }
+};
+
+#endif  // LC_NUMERIC
 }  // namespace fmt
 
 #if !FMT_USE_RVALUE_REFERENCES

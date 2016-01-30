@@ -387,3 +387,12 @@ TEST(FileTest, FdopenError) {
   EXPECT_SYSTEM_ERROR_NOASSERT(
       f.fdopen("r"), EBADF, "cannot associate stream with file descriptor");
 }
+
+#ifdef LC_NUMERIC_MASK
+TEST(LocaleTest, Strtod) {
+  fmt::Locale locale;
+  const char *start = "4.2", *ptr = start;
+  EXPECT_EQ(4.2, locale.strtod(ptr));
+  EXPECT_EQ(start + 3, ptr);
+}
+#endif
