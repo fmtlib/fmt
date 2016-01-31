@@ -328,8 +328,10 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
     } else {
       if (is_signed) {
         arg_.type = Arg::LONG_LONG;
-        arg_.long_long_value =
-            static_cast<typename fmt::internal::MakeUnsigned<U>::Type>(value);
+        // glibc's printf doesn't sign extend arguments of smaller types:
+        //   std::printf("%lld", -42);  // prints "4294967254"
+        // but we don't have to do the same because it's a UB.
+        arg_.long_long_value = value;
       } else {
         arg_.type = Arg::ULONG_LONG;
         arg_.ulong_long_value =

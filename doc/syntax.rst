@@ -262,6 +262,8 @@ The available presentation types for floating-point values are:
 | none    | The same as ``'g'``.                                     |
 +---------+----------------------------------------------------------+
 
+Floating-point formatting is locale-dependent.
+
 .. ifconfig:: False
 
    +---------+----------------------------------------------------------+
