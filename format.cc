@@ -477,6 +477,9 @@ const char fmt::internal::BasicData<T>::DIGITS[] =
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
 
+template <typename T>
+const uint16_t *fmt::internal::BasicData<T>::U16_DIGITS = (const uint16_t*)DIGITS;
+
 #define FMT_POWERS_OF_10(factor) \
   factor * 10, \
   factor * 100, \

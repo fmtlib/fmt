@@ -815,6 +815,7 @@ struct FMT_API BasicData {
   static const uint32_t POWERS_OF_10_32[];
   static const uint64_t POWERS_OF_10_64[];
   static const char DIGITS[];
+  static const uint16_t* U16_DIGITS;
 };
 
 typedef BasicData<> Data;
@@ -3114,30 +3115,28 @@ class FormatInt {
  private:
   // Buffer should be large enough to hold all digits (digits10 + 1),
   // a sign and a null character.
-  enum {BUFFER_SIZE = std::numeric_limits<ULongLong>::digits10 + 3};
+  enum {BUFFER_SIZE = std::numeric_limits<ULongLong>::digits10 + 4};
   mutable char buffer_[BUFFER_SIZE];
   char *str_;
 
   // Formats value in reverse and returns the number of digits.
   char *format_decimal(ULongLong value) {
-    char *buffer_end = buffer_ + BUFFER_SIZE - 1;
+    uint16_t* buffer_end = (uint16_t*)(buffer_ + BUFFER_SIZE - 1);
     while (value >= 100) {
       // Integer division is slow so do it for a group of two digits instead
       // of for every digit. The idea comes from the talk by Alexandrescu
       // "Three Optimization Tips for C++". See speed-test for a comparison.
-      unsigned index = static_cast<unsigned>((value % 100) * 2);
+      unsigned index = value%100;
       value /= 100;
-      *--buffer_end = internal::Data::DIGITS[index + 1];
-      *--buffer_end = internal::Data::DIGITS[index];
+      *--buffer_end = internal::Data::U16_DIGITS[index];
     }
-    if (value < 10) {
-      *--buffer_end = static_cast<char>('0' + value);
-      return buffer_end;
+
+    *--buffer_end = internal::Data::U16_DIGITS[value];
+    if ( value < 10 ) {
+      return ((char*)buffer_end)+1;
+    } else {
+      return ((char*)buffer_end);
     }
-    unsigned index = static_cast<unsigned>(value * 2);
-    *--buffer_end = internal::Data::DIGITS[index + 1];
-    *--buffer_end = internal::Data::DIGITS[index];
-    return buffer_end;
   }
 
   void FormatSigned(LongLong value) {
