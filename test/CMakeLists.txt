@@ -120,4 +120,5 @@ add_test(find-package-test ${CMAKE_CTEST_COMMAND}
   "${CMAKE_CURRENT_BINARY_DIR}/find-package-test"
   --build-generator ${CMAKE_GENERATOR}
   --build-makeprogram ${CMAKE_MAKE_PROGRAM}
-  --build-options "-Dcppformat_DIR=${PROJECT_BINARY_DIR}")
+  --build-options "-Dcppformat_DIR=${PROJECT_BINARY_DIR}"
+                  "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
