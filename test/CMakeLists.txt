@@ -115,6 +115,7 @@ add_test(compile-test ${CMAKE_CTEST_COMMAND}
 
 # test if the targets are findable from the build directory
 add_test(find-package-test ${CMAKE_CTEST_COMMAND}
+  -C ${CMAKE_BUILD_TYPE}
   --build-and-test
   "${CMAKE_CURRENT_SOURCE_DIR}/find-package-test"
   "${CMAKE_CURRENT_BINARY_DIR}/find-package-test"
