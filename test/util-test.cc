@@ -47,7 +47,7 @@
 # include <windows.h>
 #endif
 
-#include <cppformat/format.h>
+#include "cppformat/format.h"
 
 #undef max
 

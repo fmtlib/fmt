@@ -29,7 +29,7 @@
 #include <cstdio>
 #include <string>
 
-#include <cppformat/posix.h>
+#include "cppformat/posix.h"
 
 enum {BUFFER_SIZE = 256};
 
