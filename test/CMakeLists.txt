@@ -19,8 +19,6 @@ else ()
   target_compile_definitions(gmock PUBLIC GTEST_HAS_PTHREAD=0)
 endif ()
 
-# Check if variadic templates are working and not affected by GCC bug 39653:
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39653
 if (NOT SUPPORTS_VARIADIC_TEMPLATES OR NOT SUPPORTS_INITIALIZER_LIST)
   target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
 endif ()
