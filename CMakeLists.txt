@@ -39,8 +39,6 @@ include(testCxx11)
 
 if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
   set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wshadow -pedantic)
-elseif (MSVC)
-  set(PEDANTIC_COMPILE_FLAGS /W4)
 endif ()
 
 if (CMAKE_GENERATOR MATCHES "Visual Studio")

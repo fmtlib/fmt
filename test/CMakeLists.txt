@@ -39,6 +39,7 @@ endif ()
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 
 # relax pedantic flags for the tests
+# TODO: fix warnings in tests to make this redundant. (e.g. -Wshadow,...)
 if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
   set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros)
 endif ()
@@ -68,6 +69,13 @@ add_fmt_test(format-test)
 add_fmt_test(format-impl-test)
 add_fmt_test(printf-test)
 add_fmt_test(util-test mock-allocator.h)
+
+# Enable stricter options for one test to make sure that the header is free of
+# warnings.
+# TODO: make all tests warning free and add this flag to PEDANTIC_COMPILE_FLAGS
+if (FMT_PEDANTIC AND MSVC)
+  target_compile_options(format-test PRIVATE /W4)
+endif ()
 
 add_executable(macro-test macro-test.cc ${TEST_MAIN_SRC})
 target_link_libraries(macro-test gmock cppformat)
