@@ -510,9 +510,9 @@ LocaleType newlocale(int category_mask, const char *locale, LocaleType base) {
 }
 
 #ifdef __APPLE__
-# define FreeLocaleResult int
+typedef int FreeLocaleResult;
 #else
-# define FreeLocaleResult void
+typedef void FreeLocaleResult;
 #endif
 
 FreeLocaleResult freelocale(LocaleType locale) {
