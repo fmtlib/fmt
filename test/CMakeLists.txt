@@ -116,38 +116,38 @@ if (FMT_PEDANTIC)
   if (HAVE_STD_CPP98_FLAG)
     target_compile_options(testformat PRIVATE -std=c++98)
   endif ()
+
+  # Test that the library compiles without windows.h.
+  if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    add_library(no-windows-h-test ../cppformat/format.cc)
+    target_compile_definitions(no-windows-h-test PRIVATE FMT_USE_WINDOWS_H=0)
+  endif ()
+
+  add_test(compile-test ${CMAKE_CTEST_COMMAND}
+    --build-and-test
+    "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"
+    "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
+    --build-generator ${CMAKE_GENERATOR}
+    --build-makeprogram ${CMAKE_MAKE_PROGRAM})
+
+  # test if the targets are findable from the build directory
+  add_test(find-package-test ${CMAKE_CTEST_COMMAND}
+    -C ${CMAKE_BUILD_TYPE}
+    --build-and-test
+    "${CMAKE_CURRENT_SOURCE_DIR}/find-package-test"
+    "${CMAKE_CURRENT_BINARY_DIR}/find-package-test"
+    --build-generator ${CMAKE_GENERATOR}
+    --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+    --build-options "-Dcppformat_DIR=${PROJECT_BINARY_DIR}"
+                    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+
+  # test if the targets are findable when add_subdirectory is used
+  add_test(add_subdirectory-test ${CMAKE_CTEST_COMMAND}
+    -C ${CMAKE_BUILD_TYPE}
+    --build-and-test
+    "${CMAKE_CURRENT_SOURCE_DIR}/add_subdirectory-test"
+    "${CMAKE_CURRENT_BINARY_DIR}/add_subdirectory-test"
+    --build-generator ${CMAKE_GENERATOR}
+    --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+    --build-options "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()
-
-# Test that the library compiles without windows.h.
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  add_library(no-windows-h-test ../cppformat/format.cc)
-  target_compile_definitions(no-windows-h-test PRIVATE FMT_USE_WINDOWS_H=0)
-endif ()
-
-add_test(compile-test ${CMAKE_CTEST_COMMAND}
-  --build-and-test
-  "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"
-  "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
-  --build-generator ${CMAKE_GENERATOR}
-  --build-makeprogram ${CMAKE_MAKE_PROGRAM})
-
-# test if the targets are findable from the build directory
-add_test(find-package-test ${CMAKE_CTEST_COMMAND}
-  -C ${CMAKE_BUILD_TYPE}
-  --build-and-test
-  "${CMAKE_CURRENT_SOURCE_DIR}/find-package-test"
-  "${CMAKE_CURRENT_BINARY_DIR}/find-package-test"
-  --build-generator ${CMAKE_GENERATOR}
-  --build-makeprogram ${CMAKE_MAKE_PROGRAM}
-  --build-options "-Dcppformat_DIR=${PROJECT_BINARY_DIR}"
-                  "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
-
-# test if the targets are findable when add_subdirectory is used
-add_test(add_subdirectory-test ${CMAKE_CTEST_COMMAND}
-  -C ${CMAKE_BUILD_TYPE}
-  --build-and-test
-  "${CMAKE_CURRENT_SOURCE_DIR}/add_subdirectory-test"
-  "${CMAKE_CURRENT_BINARY_DIR}/add_subdirectory-test"
-  --build-generator ${CMAKE_GENERATOR}
-  --build-makeprogram ${CMAKE_MAKE_PROGRAM}
-  --build-options "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
