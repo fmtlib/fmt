@@ -107,6 +107,20 @@ if (HAVE_FNO_EXCEPTIONS_FLAG)
   target_compile_options(noexception-test PRIVATE -fno-exceptions)
 endif ()
 
+if (FMT_PEDANTIC)
+  # syntax test which checks if the library builds in c++98 mode
+  file(GLOB test_src *.cc *.h)
+  file(GLOB lib_src ../cppformat/*.cc ../cppformat/*.h)
+  add_library(testformat STATIC ${test_src} ${lib_src})
+  target_include_directories(testformat PRIVATE .. ../gmock)
+  target_compile_definitions(testformat PRIVATE
+    FMT_USE_FILE_DESCRIPTORS=$<BOOL:${HAVE_OPEN}>)
+  check_cxx_compiler_flag(-std=c++98 HAVE_STD_CPP98_FLAG)
+  if (HAVE_STD_CPP98_FLAG)
+    target_compile_options(testformat PRIVATE -std=c++98)
+  endif ()
+endif ()
+
 # Test that the library compiles without windows.h.
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
   add_library(no-windows-h-test ../cppformat/format.cc)
