@@ -2,6 +2,13 @@ message(STATUS "CMake version: ${CMAKE_VERSION}")
 
 cmake_minimum_required(VERSION 2.8.12)
 
+# determine if cppformat is built as sub project (using add_subdirectory)
+# or if it is the master project
+set(MASTER_PROJECT OFF)
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  set(MASTER_PROJECT ON)
+endif ()
+
 # Set the default CMAKE_BUILD_TYPE to Release.
 # This should be done before the project command since the latter can set
 # CMAKE_BUILD_TYPE itself (it does so for nmake).
@@ -13,9 +20,9 @@ endif ()
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 
 # Options that control generation of various targets.
-option(FMT_DOC "Generate the doc target." ON)
-option(FMT_INSTALL "Generate the install target." ON)
-option(FMT_TEST "Generate the test target." ON)
+option(FMT_DOC "Generate the doc target." ${MASTER_PROJECT})
+option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
+option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
 
 project(FORMAT)
 
@@ -41,7 +48,7 @@ if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
   set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wshadow -pedantic)
 endif ()
 
-if (CMAKE_GENERATOR MATCHES "Visual Studio")
+if (MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
   # If Microsoft SDK is installed create script run-msbuild.bat that
   # calls SetEnv.cmd to to set up build environment and runs msbuild.
   # It is useful when building Visual Studio projects with the SDK
@@ -81,7 +88,7 @@ if (FMT_TEST)
 endif ()
 
 set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)
-if (EXISTS ${gitignore})
+if (MASTER_PROJECT AND EXISTS ${gitignore})
   # Get the list of ignored files from .gitignore.
   file (STRINGS ${gitignore} lines)
   LIST(REMOVE_ITEM lines /doc/html)

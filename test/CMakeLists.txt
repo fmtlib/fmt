@@ -144,3 +144,13 @@ add_test(find-package-test ${CMAKE_CTEST_COMMAND}
   --build-makeprogram ${CMAKE_MAKE_PROGRAM}
   --build-options "-Dcppformat_DIR=${PROJECT_BINARY_DIR}"
                   "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+
+# test if the targets are findable when add_subdirectory is used
+add_test(add_subdirectory-test ${CMAKE_CTEST_COMMAND}
+  -C ${CMAKE_BUILD_TYPE}
+  --build-and-test
+  "${CMAKE_CURRENT_SOURCE_DIR}/add_subdirectory-test"
+  "${CMAKE_CURRENT_BINARY_DIR}/add_subdirectory-test"
+  --build-generator ${CMAKE_GENERATOR}
+  --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+  --build-options "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
