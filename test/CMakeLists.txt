@@ -56,7 +56,8 @@ function(add_fmt_test name)
   # define if certain c++ features can be used
   target_compile_definitions(${name} PRIVATE
     FMT_USE_TYPE_TRAITS=$<BOOL:${SUPPORTS_TYPE_TRAITS}>
-    FMT_USE_ENUM_BASE=$<BOOL:${SUPPORTS_ENUM_BASE}>)
+    FMT_USE_ENUM_BASE=$<BOOL:${SUPPORTS_ENUM_BASE}>
+    FMT_USE_FILE_DESCRIPTORS=$<BOOL:${HAVE_OPEN}>)
   if (FMT_PEDANTIC)
     target_compile_options(${name} PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()

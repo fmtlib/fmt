@@ -12,9 +12,6 @@ if (FMT_PEDANTIC)
   target_compile_options(cppformat PRIVATE ${PEDANTIC_COMPILE_FLAGS})
 endif ()
 
-target_compile_definitions(cppformat INTERFACE
-  FMT_USE_FILE_DESCRIPTORS=$<BOOL:${HAVE_OPEN}>)
-
 target_include_directories(cppformat INTERFACE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include>)
