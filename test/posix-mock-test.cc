@@ -41,6 +41,7 @@
 # undef ERROR
 #endif
 
+#include "gmock/gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
 
@@ -49,6 +50,9 @@ using fmt::ErrorCode;
 using fmt::File;
 
 using testing::internal::scoped_ptr;
+using testing::_;
+using testing::StrEq;
+using testing::Return;
 
 namespace {
 int open_count;
@@ -449,3 +453,108 @@ TEST(BufferedFileTest, FilenoNoRetry) {
   EXPECT_EQ(2, fileno_count);
   fileno_count = 0;
 }
+
+template <typename Mock>
+struct ScopedMock : testing::StrictMock<Mock> {
+ private:
+  Mock *&global_mock_;
+
+ public:
+  explicit ScopedMock(Mock *&global_mock) : global_mock_(global_mock) {
+    global_mock = this;
+  }
+  ~ScopedMock() { global_mock_ = 0; }
+};
+
+struct TestMock {};
+
+TEST(ScopedMock, Scope) {
+  TestMock *global_mock = 0;
+  {
+    ScopedMock<TestMock> mock(global_mock);
+    EXPECT_EQ(&mock, global_mock);
+    TestMock &copy = mock;
+  }
+  EXPECT_EQ(0, global_mock);
+}
+
+#ifdef FMT_LOCALE
+
+typedef fmt::Locale::Type LocaleType;
+
+struct LocaleMock {
+  MOCK_METHOD3(newlocale, LocaleType (int category_mask, const char *locale,
+                                      LocaleType base));
+  MOCK_METHOD1(freelocale, void (LocaleType locale));
+
+  MOCK_METHOD3(strtod_l, double (const char *nptr, char **endptr,
+                                 LocaleType locale));
+} *locale_mock;
+
+#ifdef _MSC_VER
+_locale_t _create_locale(int category, const char *locale) {
+  return locale_mock->newlocale(category, locale, 0);
+}
+
+void _free_locale(_locale_t locale) {
+  locale_mock->freelocale(locale);
+}
+
+double _strtod_l(const char *nptr, char **endptr, _locale_t locale) {
+  return locale_mock->strtod_l(nptr, endptr, locale);
+}
+#endif
+
+LocaleType newlocale(int category_mask, const char *locale, LocaleType base) {
+  return locale_mock->newlocale(category_mask, locale, base);
+}
+
+#ifdef __APPLE__
+# define FreeLocaleResult int
+#else
+# define FreeLocaleResult void
+#endif
+
+FreeLocaleResult freelocale(LocaleType locale) {
+  locale_mock->freelocale(locale);
+}
+
+double strtod_l(const char *nptr, char **endptr, LocaleType locale) {
+  return locale_mock->strtod_l(nptr, endptr, locale);
+}
+
+TEST(LocaleTest, LocaleMock) {
+  ScopedMock<LocaleMock> mock(locale_mock);
+  LocaleType locale = reinterpret_cast<LocaleType>(11);
+  EXPECT_CALL(mock, newlocale(222, StrEq("foo"), locale));
+  newlocale(222, "foo", locale);
+}
+
+TEST(LocaleTest, Locale) {
+#ifndef LC_NUMERIC_MASK
+  enum { LC_NUMERIC_MASK = LC_NUMERIC };
+#endif
+  ScopedMock<LocaleMock> mock(locale_mock);
+  LocaleType impl = reinterpret_cast<LocaleType>(42);
+  EXPECT_CALL(mock, newlocale(LC_NUMERIC_MASK, StrEq("C"), 0))
+      .WillOnce(Return(impl));
+  EXPECT_CALL(mock, freelocale(impl));
+  fmt::Locale locale;
+  EXPECT_EQ(impl, locale.get());
+}
+
+TEST(LocaleTest, Strtod) {
+  ScopedMock<LocaleMock> mock(locale_mock);
+  EXPECT_CALL(mock, newlocale(_, _, _))
+      .WillOnce(Return(reinterpret_cast<LocaleType>(42)));
+  EXPECT_CALL(mock, freelocale(_));
+  fmt::Locale locale;
+  const char *str = "4.2";
+  char end = 'x';
+  EXPECT_CALL(mock, strtod_l(str, _, locale.get()))
+      .WillOnce(testing::DoAll(testing::SetArgPointee<1>(&end), Return(777)));
+  EXPECT_EQ(777, locale.strtod(str));
+  EXPECT_EQ(&end, str);
+}
+
+#endif  // FMT_LOCALE
