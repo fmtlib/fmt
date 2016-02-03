@@ -29,7 +29,7 @@
 #include <gtest/gtest.h>
 
 #define FMT_USE_VARIADIC_TEMPLATES 0
-#include "format.h"
+#include "cppformat/format.h"
 
 #define IDENTITY(x) x
 
@@ -67,7 +67,7 @@ TEST(UtilTest, NArg) {
 int result;
 
 #define MAKE_TEST(func) \
-  void func(const char *format, const fmt::ArgList &args) { \
+  void func(const char *, const fmt::ArgList &args) { \
     result = 0; \
     for (unsigned i = 0; args[i].type; ++i) \
       result += args[i].int_value; \

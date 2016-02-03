@@ -29,7 +29,7 @@
 #include <cstring>
 
 #include "gtest-extra.h"
-#include "posix.h"
+#include "cppformat/posix.h"
 #include "util.h"
 
 #ifdef fileno

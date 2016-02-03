@@ -2,6 +2,13 @@ message(STATUS "CMake version: ${CMAKE_VERSION}")
 
 cmake_minimum_required(VERSION 2.8.12)
 
+# determine if cppformat is built as sub project (using add_subdirectory)
+# or if it is the master project
+set(MASTER_PROJECT OFF)
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  set(MASTER_PROJECT ON)
+endif ()
+
 # Set the default CMAKE_BUILD_TYPE to Release.
 # This should be done before the project command since the latter can set
 # CMAKE_BUILD_TYPE itself (it does so for nmake).
@@ -13,50 +20,35 @@ endif ()
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 
 # Options that control generation of various targets.
-option(FMT_DOC "Generate the doc target." ON)
-option(FMT_INSTALL "Generate the install target." ON)
-option(FMT_TEST "Generate the test target." ON)
+option(FMT_DOC "Generate the doc target." ${MASTER_PROJECT})
+option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
+option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
 
 project(FORMAT)
+
+# starting with cmake 3.0 VERSION is part of the project command
+set(CPPFORMAT_VERSION 2.1.0)
+if (NOT CPPFORMAT_VERSION MATCHES "^([0-9]+).([0-9]+).([0-9]+)$")
+  message(FATAL_ERROR "Invalid version format ${CPPFORMAT_VERSION}.")
+endif ()
+set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_MATCH_2})
+set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_MATCH_3})
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
-if (HAVE_STD_CPP11_FLAG)
-  # Check if including cmath works with -std=c++11 and -O3.
-  # It may not in MinGW due to bug http://ehc.ac/p/mingw/bugs/2250/.
-  set(CMAKE_REQUIRED_FLAGS "-std=c++11 -O3")
-  check_cxx_source_compiles("
-    #include <cmath>
-    int main() {}" FMT_CPP11_CMATH)
-  # Check if including <unistd.h> works with -std=c++11.
-  # It may not in MinGW due to bug http://sourceforge.net/p/mingw/bugs/2024/.
-  check_cxx_source_compiles("
-    #include <unistd.h>
-    int main() {}" FMT_CPP11_UNISTD_H)
-  if (FMT_CPP11_CMATH AND FMT_CPP11_UNISTD_H)
-    set(CPP11_FLAG -std=c++11)
-  else ()
-    check_cxx_compiler_flag(-std=gnu++11 HAVE_STD_GNUPP11_FLAG)
-    if (HAVE_STD_CPP11_FLAG)
-      set(CPP11_FLAG -std=gnu++11)
-    endif ()
-  endif ()
-  set(CMAKE_REQUIRED_FLAGS )
-else ()
-  check_cxx_compiler_flag(-std=c++0x HAVE_STD_CPP0X_FLAG)
-  if (HAVE_STD_CPP0X_FLAG)
-    set(CPP11_FLAG -std=c++0x)
-  endif ()
-endif ()
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/support/cmake")
 
-if (CMAKE_GENERATOR MATCHES "Visual Studio")
+include(testCxx11)
+
+if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wshadow -pedantic)
+endif ()
+
+if (MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
   # If Microsoft SDK is installed create script run-msbuild.bat that
   # calls SetEnv.cmd to to set up build environment and runs msbuild.
   # It is useful when building Visual Studio projects with the SDK
@@ -72,21 +64,11 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
     ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"${netfxpath}\" %*")
 endif ()
 
-set(FMT_SOURCES format.cc format.h)
-
 include(CheckSymbolExists)
 if (WIN32)
   check_symbol_exists(open io.h HAVE_OPEN)
 else ()
   check_symbol_exists(open fcntl.h HAVE_OPEN)
-endif ()
-if (HAVE_OPEN)
-  add_definitions(-DFMT_USE_FILE_DESCRIPTORS=1)
-  set(FMT_SOURCES ${FMT_SOURCES} posix.cc posix.h)
-endif ()
-
-if (CPP11_FLAG)
-  set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
 endif ()
 
 if (BIICODE)
@@ -94,41 +76,7 @@ if (BIICODE)
   return()
 endif ()
 
-add_library(cppformat ${FMT_SOURCES})
-if (BUILD_SHARED_LIBS)
-  if (UNIX AND NOT APPLE)
-    # Fix rpmlint warning:
-    # unused-direct-shlib-dependency /usr/lib/libformat.so.1.1.0 /lib/libm.so.6.
-    target_link_libraries(cppformat -Wl,--as-needed)
-  endif ()
-  set(FMT_EXTRA_COMPILE_FLAGS -DFMT_EXPORT)
-endif ()
-
-if (FMT_PEDANTIC AND
-    (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang")))
-  set(FMT_EXTRA_COMPILE_FLAGS
-      "${FMT_EXTRA_COMPILE_FLAGS} -Wall -Wextra -Wshadow -pedantic")
-endif ()
-
-# If FMT_PEDANTIC is TRUE, then test compilation with both -std=c++11
-# and the default flags. Otherwise use only the default flags.
-# The library is distributed in the source form and users have full control
-# over compile options, so the options used here only matter for testing.
-if (CPP11_FLAG AND FMT_PEDANTIC)
-  set(FMT_EXTRA_COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS} ${CPP11_FLAG}")
-  set(FMT_TEST_DEFAULT_FLAGS TRUE)
-endif ()
-
-set_target_properties(cppformat
-  PROPERTIES COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS}")
-
-set(CPPFORMAT_VERSION 2.1.0)
-if (NOT CPPFORMAT_VERSION MATCHES "^([0-9]+).([0-9]+).([0-9]+)$")
-  message(FATAL_ERROR "Invalid version format ${CPPFORMAT_VERSION}.")
-endif ()
-set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_MATCH_1})
-set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_MATCH_2})
-set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_MATCH_3})
+add_subdirectory(cppformat)
 
 if (FMT_DOC)
   add_subdirectory(doc)
@@ -139,11 +87,8 @@ if (FMT_TEST)
   add_subdirectory(test)
 endif ()
 
-set_target_properties(cppformat PROPERTIES
-  VERSION ${CPPFORMAT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR})
-
-set(gitignore ${CMAKE_CURRENT_SOURCE_DIR}/.gitignore)
-if (EXISTS ${gitignore})
+set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)
+if (MASTER_PROJECT AND EXISTS ${gitignore})
   # Get the list of ignored files from .gitignore.
   file (STRINGS ${gitignore} lines)
   LIST(REMOVE_ITEM lines /doc/html)
@@ -159,45 +104,6 @@ if (EXISTS ${gitignore})
   set(CPACK_SOURCE_IGNORE_FILES ${ignored_files})
   set(CPACK_SOURCE_PACKAGE_FILE_NAME cppformat-${CPPFORMAT_VERSION})
   set(CPACK_PACKAGE_NAME cppformat)
-  set(CPACK_RESOURCE_FILE_README ${FORMAT_SOURCE_DIR}/README.rst)
+  set(CPACK_RESOURCE_FILE_README ${PROJECT_SOURCE_DIR}/README.rst)
   include(CPack)
-endif ()
-
-# Install targets.
-if (FMT_INSTALL)
-  include(CMakePackageConfigHelpers)
-  set(config_install_dir lib/cmake/cppformat)
-  set(version_config ${CMAKE_CURRENT_BINARY_DIR}/cppformat-config-version.cmake)
-  set(project_config ${CMAKE_CURRENT_BINARY_DIR}/cppformat-config.cmake)
-  set(targets_export_name cppformat-targets)
-
-  set(FMT_LIB_DIR lib CACHE STRING
-    "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
-
-  # Add the include directories for both build and install tree.
-  target_include_directories(
-    cppformat PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include>)
-
-  # Generate the version, config and target files into the build directory.
-  write_basic_package_version_file(
-    ${version_config}
-    VERSION ${CPPFORMAT_VERSION}
-    COMPATIBILITY AnyNewerVersion)
-  configure_package_config_file(
-    support/cmake/cppformat-config.cmake.in
-    ${project_config}
-    INSTALL_DESTINATION ${config_install_dir})
-  export(TARGETS cppformat FILE ${targets_export_name}.cmake)
-
-  # Install version, config and target files.
-  install(
-    FILES ${project_config} ${version_config}
-    DESTINATION ${config_install_dir})
-  install(EXPORT ${targets_export_name} DESTINATION ${config_install_dir})
-
-  # Install the library and the include file.
-  install(TARGETS cppformat EXPORT ${targets_export_name} DESTINATION ${FMT_LIB_DIR})
-  install(FILES format.h DESTINATION include/cppformat)
 endif ()

@@ -31,14 +31,14 @@
 #include <string>
 #include <gtest/gtest.h>
 
-#include "format.h"
+#include "cppformat/format.h"
 
 #ifndef FMT_USE_FILE_DESCRIPTORS
 # define FMT_USE_FILE_DESCRIPTORS 0
 #endif
 
 #if FMT_USE_FILE_DESCRIPTORS
-# include "posix.h"
+# include "cppformat/posix.h"
 #endif
 
 #define FMT_TEST_THROW_(statement, expected_exception, expected_message, fail) \

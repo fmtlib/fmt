@@ -29,7 +29,7 @@
 #include <climits>
 #include <cstring>
 
-#include "format.h"
+#include "cppformat/format.h"
 #include "gtest-extra.h"
 #include "util.h"
 

@@ -47,7 +47,7 @@
 # include <windows.h>
 #endif
 
-#include "format.h"
+#include "cppformat/format.h"
 
 #undef max
 
@@ -410,7 +410,7 @@ struct ArgInfo;
   template <> \
   struct ArgInfo<Arg::type_code> { \
     static Type get(const Arg &arg) { return arg.field; } \
-  };
+  }
 
 ARG_INFO(INT, int, int_value);
 ARG_INFO(UINT, unsigned, uint_value);
