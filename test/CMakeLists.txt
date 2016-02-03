@@ -37,6 +37,10 @@ endif ()
 # Build the actual library tests
 
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
+add_library(test-main STATIC ${TEST_MAIN_SRC})
+target_compile_definitions(test-main PUBLIC
+  FMT_USE_FILE_DESCRIPTORS=$<BOOL:${HAVE_OPEN}>)
+target_link_libraries(test-main gmock cppformat)
 
 # relax pedantic flags for the tests
 # TODO: fix warnings in tests to make this redundant. (e.g. -Wshadow,...)
@@ -45,19 +49,14 @@ if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
 endif ()
 
 # Adds a test.
-# Usage: add_fmt_test(name [CUSTOM_LINK] srcs...)
+# Usage: add_fmt_test(name srcs...)
 function(add_fmt_test name)
-  cmake_parse_arguments(add_fmt_test CUSTOM_LINK "" "" ${ARGN})
-  add_executable(${name} ${name}.cc ${TEST_MAIN_SRC} ${add_fmt_test_UNPARSED_ARGUMENTS})
-  target_link_libraries(${name} gmock)
-  if (NOT add_fmt_test_CUSTOM_LINK)
-    target_link_libraries(${name} cppformat)
-  endif ()
+  add_executable(${name} ${name}.cc ${ARGN})
+  target_link_libraries(${name} test-main)
   # define if certain c++ features can be used
   target_compile_definitions(${name} PRIVATE
     FMT_USE_TYPE_TRAITS=$<BOOL:${SUPPORTS_TYPE_TRAITS}>
-    FMT_USE_ENUM_BASE=$<BOOL:${SUPPORTS_ENUM_BASE}>
-    FMT_USE_FILE_DESCRIPTORS=$<BOOL:${HAVE_OPEN}>)
+    FMT_USE_ENUM_BASE=$<BOOL:${SUPPORTS_ENUM_BASE}>)
   if (FMT_PEDANTIC)
     target_compile_options(${name} PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
@@ -70,6 +69,7 @@ add_fmt_test(format-test)
 add_fmt_test(format-impl-test)
 add_fmt_test(printf-test)
 add_fmt_test(util-test mock-allocator.h)
+add_fmt_test(macro-test)
 
 # Enable stricter options for one test to make sure that the header is free of
 # warnings.
@@ -77,9 +77,6 @@ add_fmt_test(util-test mock-allocator.h)
 if (FMT_PEDANTIC AND MSVC)
   target_compile_options(format-test PRIVATE /W4)
 endif ()
-
-add_executable(macro-test macro-test.cc ${TEST_MAIN_SRC})
-target_link_libraries(macro-test gmock cppformat)
 
 if (HAVE_OPEN)
   add_executable(posix-mock-test posix-mock-test.cc ../cppformat/format.cc ${TEST_MAIN_SRC})
