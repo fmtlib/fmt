@@ -335,7 +335,10 @@ class File {
 long getpagesize();
 
 #if defined(LC_NUMERIC_MASK) || defined(_MSC_VER)
+# define FMT_LOCALE
+#endif
 
+#ifdef FMT_LOCALE
 // A "C" numeric locale.
 class Locale {
  private:
@@ -362,13 +365,15 @@ class Locale {
   FMT_DISALLOW_COPY_AND_ASSIGN(Locale);
 
  public:
+  typedef locale_t Type;
+
   Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", NULL)) {
     if (!locale_)
       throw fmt::SystemError(errno, "cannot create locale");
   }
   ~Locale() { freelocale(locale_); }
 
-  locale_t get() const { return locale_; }
+  Type get() const { return locale_; }
 
   // Converts string to floating-point number and advances str past the end
   // of the parsed input.
@@ -379,8 +384,7 @@ class Locale {
     return result;
   }
 };
-
-#endif  // LC_NUMERIC
+#endif  // FMT_LOCALE
 }  // namespace fmt
 
 #if !FMT_USE_RVALUE_REFERENCES
