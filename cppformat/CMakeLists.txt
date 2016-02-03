@@ -1,11 +1,13 @@
 #------------------------------------------------------------------------------
 # define the cppformat library, its includes and the needed defines
-set(FMT_SOURCES format.cc format.h)
+set(FMT_HEADERS format.h)
+set(FMT_SOURCES format.cc)
 if (HAVE_OPEN)
-  set(FMT_SOURCES ${FMT_SOURCES} posix.cc posix.h)
+  set(FMT_HEADERS ${FMT_HEADERS} posix.h)
+  set(FMT_SOURCES ${FMT_SOURCES} posix.cc)
 endif ()
 
-add_library(cppformat ${FMT_SOURCES})
+add_library(cppformat ${FMT_SOURCES} ${FMT_HEADERS})
 
 target_compile_options(cppformat PUBLIC ${CPP11_FLAG}) # starting with cmake 3.1 the CXX_STANDARD property can be used
 if (FMT_PEDANTIC)
@@ -75,5 +77,5 @@ if (FMT_INSTALL)
 
   # Install the library and the include file.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name} DESTINATION ${FMT_LIB_DIR})
-  install(FILES format.h DESTINATION include/cppformat)
+  install(FILES ${FMT_HEADERS} DESTINATION include/cppformat)
 endif ()
