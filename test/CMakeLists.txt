@@ -43,7 +43,11 @@ target_compile_definitions(test-main PUBLIC
 target_link_libraries(test-main gmock cppformat)
 
 # Workaround GTest bug https://github.com/google/googletest/issues/705.
-target_compile_options(test-main PUBLIC -fno-delete-null-pointer-checks)
+check_cxx_compiler_flag(
+  -fno-delete-null-pointer-checks HAVE_FNO_DELETE_NULL_POINTER_CHECKS)
+if (HAVE_FNO_DELETE_NULL_POINTER_CHECKS)
+  target_compile_options(test-main PUBLIC -fno-delete-null-pointer-checks)
+endif ()
 
 # relax pedantic flags for the tests
 # TODO: fix warnings in tests to make this redundant. (e.g. -Wshadow,...)
