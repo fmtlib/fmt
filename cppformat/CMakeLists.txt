@@ -1,7 +1,6 @@
 #------------------------------------------------------------------------------
 # define the cppformat library, its includes and the needed defines
-set(FMT_HEADERS format.h)
-set(FMT_SOURCES format.cc)
+set(FMT_HEADERS format.h format.cc)
 if (HAVE_OPEN)
   set(FMT_HEADERS ${FMT_HEADERS} posix.h)
   set(FMT_SOURCES ${FMT_SOURCES} posix.cc)
