@@ -29,8 +29,10 @@ else ()
   endif ()
 endif ()
 
+if (FMT_USE_CPP11)
+  set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
+endif ()
 
-set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
 # Check if variadic templates are working and not affected by GCC bug 39653:
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39653
 check_cxx_source_compiles("

@@ -8,7 +8,9 @@ endif ()
 
 add_library(cppformat ${FMT_SOURCES} ${FMT_HEADERS})
 
-target_compile_options(cppformat PUBLIC ${CPP11_FLAG}) # starting with cmake 3.1 the CXX_STANDARD property can be used
+if (FMT_USE_CPP11)
+  target_compile_options(cppformat PUBLIC ${CPP11_FLAG}) # starting with cmake 3.1 the CXX_STANDARD property can be used
+endif ()
 if (FMT_PEDANTIC)
   target_compile_options(cppformat PRIVATE ${PEDANTIC_COMPILE_FLAGS})
 endif ()
