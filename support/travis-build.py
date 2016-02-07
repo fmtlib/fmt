@@ -85,29 +85,23 @@ buildDir_test = os.path.join(srcDir,"_build_test")
 # configure library
 makedirs_if_not_exist(buildDir)
 os.chdir(buildDir)
-if cppStandard == '98':
-  check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
-                       '-DCMAKE_BUILD_TYPE=' + build,
-                       '-DCMAKE_CXX_FLAGS=-std=c++98',
-                       '-DFMT_USE_CPP11=OFF',
-                       '-DFMT_DOC=OFF',
-                       '-DFMT_PEDANTIC=ON',
-                       srcDir])
-if cppStandard == '03':
-  check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
-                       '-DCMAKE_BUILD_TYPE=' + build,
-                       '-DCMAKE_CXX_FLAGS=-std=c++03',
-                       '-DFMT_USE_CPP11=OFF',
-                       '-DFMT_DOC=OFF',
-                       '-DFMT_PEDANTIC=ON',
-                       srcDir])
-else:
+if cppStandard == '0x':
   # default configuration
   check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
                        '-DCMAKE_BUILD_TYPE=' + build,
                        '-DFMT_DOC=OFF',
                        '-DFMT_PEDANTIC=ON',
                        srcDir])
+else:
+  check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
+                       '-DCMAKE_BUILD_TYPE=' + build,
+                       '-DCMAKE_CXX_FLAGS=-std=c++' + cppStandard,
+                       '-DFMT_USE_CPP11=OFF',
+                       '-DFMT_DOC=OFF',
+                       '-DFMT_PEDANTIC=ON',
+                       srcDir])
+else:
+
 
 # build library
 check_call(['make', '-j4'])
