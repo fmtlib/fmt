@@ -13,9 +13,9 @@ env:
         6pxmyzLHSn1ZR7OX5rfPvwM3tOyZ3H0=
   matrix:
     - BUILD=Doc
-    - BUILD=Debug STANDARD=98
     - BUILD=Debug STANDARD=11
     - BUILD=Release STANDARD=98
+    - BUILD=Release STANDARD=03
     - BUILD=Release STANDARD=11
 
 matrix:

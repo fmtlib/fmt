@@ -93,6 +93,14 @@ if cppStandard == '98':
                        '-DFMT_DOC=OFF',
                        '-DFMT_PEDANTIC=ON',
                        srcDir])
+if cppStandard == '03':
+  check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
+                       '-DCMAKE_BUILD_TYPE=' + build,
+                       '-DCMAKE_CXX_FLAGS=-std=c++03',
+                       '-DFMT_USE_CPP11=OFF',
+                       '-DFMT_DOC=OFF',
+                       '-DFMT_PEDANTIC=ON',
+                       srcDir])
 else:
   # default configuration
   check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
@@ -118,13 +126,8 @@ check_call(['make', 'install'])
 # test installation
 makedirs_if_not_exist(buildDir_test)
 os.chdir(buildDir_test)
-if cppStandard == '98':
-  check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
-                       '-DCMAKE_BUILD_TYPE=' + build,
-                       '-DCMAKE_CXX_FLAGS=-std=c++98',
-                       srcDir_test])
-else:
-  check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
-                       '-DCMAKE_BUILD_TYPE=' + build,
-                       srcDir_test])
+check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
+                      '-DCMAKE_BUILD_TYPE=' + build,
+                      '-DCMAKE_CXX_FLAGS=-std=c++' + cppStandard,
+                      srcDir_test])
 check_call(['make', '-j4'])
