@@ -100,8 +100,6 @@ else:
                        '-DFMT_DOC=OFF',
                        '-DFMT_PEDANTIC=ON',
                        srcDir])
-else:
-
 
 # build library
 check_call(['make', '-j4'])
