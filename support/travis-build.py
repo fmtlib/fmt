@@ -12,6 +12,13 @@ def rmtree_if_exists(dir):
     if e.errno == errno.ENOENT:
       pass
 
+def makedirs_if_not_exist(dir):
+  try:
+    os.makedirs(dir)
+  except OSError as e:
+    if e.errno != errno.EEXIST:
+      raise
+
 build = os.environ['BUILD']
 if build == 'Doc':
   travis = 'TRAVIS' in os.environ
@@ -67,11 +74,52 @@ if build == 'Doc':
       raise CalledProcessError(p.returncode, cmd)
   exit(0)
 
-check_call(['git', 'submodule', 'update', '--init'])
-check_call(['cmake', '-DCMAKE_BUILD_TYPE=' + build, '-DFMT_PEDANTIC=ON', '.'])
+cppStandard = os.environ['STANDARD']
+srcDir = os.getcwd()
+srcDir_test = os.path.join(srcDir,"test","find-package-test")
+
+installDir    = os.path.join(srcDir,"_install")
+buildDir      = os.path.join(srcDir,"_build")
+buildDir_test = os.path.join(srcDir,"_build_test")
+
+# configure library
+makedirs_if_not_exist(buildDir)
+os.chdir(buildDir)
+if cppStandard == '0x':
+  # default configuration
+  check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
+                       '-DCMAKE_BUILD_TYPE=' + build,
+                       '-DFMT_DOC=OFF',
+                       '-DFMT_PEDANTIC=ON',
+                       srcDir])
+else:
+  check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
+                       '-DCMAKE_BUILD_TYPE=' + build,
+                       '-DCMAKE_CXX_FLAGS=-std=c++' + cppStandard,
+                       '-DFMT_USE_CPP11=OFF',
+                       '-DFMT_DOC=OFF',
+                       '-DFMT_PEDANTIC=ON',
+                       srcDir])
+
+# build library
 check_call(['make', '-j4'])
+
+# test library
 env = os.environ.copy()
 env['CTEST_OUTPUT_ON_FAILURE'] = '1'
 if call(['make', 'test'], env=env):
   with open('Testing/Temporary/LastTest.log', 'r') as f:
     print(f.read())
+  sys.exit(-1)
+
+# install library
+check_call(['make', 'install'])
+
+# test installation
+makedirs_if_not_exist(buildDir_test)
+os.chdir(buildDir_test)
+check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
+                      '-DCMAKE_BUILD_TYPE=' + build,
+                      '-DCMAKE_CXX_FLAGS=-std=c++' + cppStandard,
+                      srcDir_test])
+check_call(['make', '-j4'])
