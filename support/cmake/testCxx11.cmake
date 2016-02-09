@@ -1,37 +1,37 @@
 include(CheckCXXCompilerFlag)
 
-check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
-if (HAVE_STD_CPP11_FLAG)
-  # Check if including cmath works with -std=c++11 and -O3.
-  # It may not in MinGW due to bug http://ehc.ac/p/mingw/bugs/2250/.
-  set(CMAKE_REQUIRED_FLAGS "-std=c++11 -O3")
-  check_cxx_source_compiles("
-    #include <cmath>
-    int main() {}" FMT_CPP11_CMATH)
-  # Check if including <unistd.h> works with -std=c++11.
-  # It may not in MinGW due to bug http://sourceforge.net/p/mingw/bugs/2024/.
-  check_cxx_source_compiles("
-    #include <unistd.h>
-    int main() {}" FMT_CPP11_UNISTD_H)
-  if (FMT_CPP11_CMATH AND FMT_CPP11_UNISTD_H)
-    set(CPP11_FLAG -std=c++11)
-  else ()
-    check_cxx_compiler_flag(-std=gnu++11 HAVE_STD_GNUPP11_FLAG)
-    if (HAVE_STD_CPP11_FLAG)
-      set(CPP11_FLAG -std=gnu++11)
+if (FMT_USE_CPP11)
+  check_cxx_compiler_flag(-std=c++11 HAVE_STD_CPP11_FLAG)
+  if (HAVE_STD_CPP11_FLAG)
+    # Check if including cmath works with -std=c++11 and -O3.
+    # It may not in MinGW due to bug http://ehc.ac/p/mingw/bugs/2250/.
+    set(CMAKE_REQUIRED_FLAGS "-std=c++11 -O3")
+    check_cxx_source_compiles("
+      #include <cmath>
+      int main() {}" FMT_CPP11_CMATH)
+    # Check if including <unistd.h> works with -std=c++11.
+    # It may not in MinGW due to bug http://sourceforge.net/p/mingw/bugs/2024/.
+    check_cxx_source_compiles("
+      #include <unistd.h>
+      int main() {}" FMT_CPP11_UNISTD_H)
+    if (FMT_CPP11_CMATH AND FMT_CPP11_UNISTD_H)
+      set(CPP11_FLAG -std=c++11)
+    else ()
+      check_cxx_compiler_flag(-std=gnu++11 HAVE_STD_GNUPP11_FLAG)
+      if (HAVE_STD_CPP11_FLAG)
+        set(CPP11_FLAG -std=gnu++11)
+      endif ()
     endif ()
-  endif ()
-  set(CMAKE_REQUIRED_FLAGS )
-else ()
-  check_cxx_compiler_flag(-std=c++0x HAVE_STD_CPP0X_FLAG)
-  if (HAVE_STD_CPP0X_FLAG)
-    set(CPP11_FLAG -std=c++0x)
+    set(CMAKE_REQUIRED_FLAGS )
+  else ()
+    check_cxx_compiler_flag(-std=c++0x HAVE_STD_CPP0X_FLAG)
+    if (HAVE_STD_CPP0X_FLAG)
+      set(CPP11_FLAG -std=c++0x)
+    endif ()
   endif ()
 endif ()
 
-if (FMT_USE_CPP11)
-  set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
-endif ()
+set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
 
 # Check if variadic templates are working and not affected by GCC bug 39653:
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39653

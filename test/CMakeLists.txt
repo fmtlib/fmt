@@ -10,9 +10,7 @@ add_library(gmock STATIC
   ${FMT_GMOCK_DIR}/gmock-gtest-all.cc ${FMT_GMOCK_DIR}/gmock/gmock.h
   ${FMT_GMOCK_DIR}/gtest/gtest.h ${FMT_GMOCK_DIR}/gtest/gtest-spi.h)
 target_include_directories(gmock PUBLIC ${FMT_GMOCK_DIR})
-if (FMT_USE_CPP11)
-  target_compile_options(gmock PUBLIC ${CPP11_FLAG})
-endif ()
+target_compile_options(gmock PUBLIC ${CPP11_FLAG})
 
 find_package(Threads)
 if (Threads_FOUND)

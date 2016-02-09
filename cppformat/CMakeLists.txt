@@ -1,5 +1,5 @@
-#------------------------------------------------------------------------------
-# define the cppformat library, its includes and the needed defines
+# Define the cppformat library, its includes and the needed defines.
+# format.cc is added to FMT_HEADERS for the header-only configuration.
 set(FMT_HEADERS format.h format.cc)
 if (HAVE_OPEN)
   set(FMT_HEADERS ${FMT_HEADERS} posix.h)
@@ -8,9 +8,8 @@ endif ()
 
 add_library(cppformat ${FMT_SOURCES} ${FMT_HEADERS})
 
-if (FMT_USE_CPP11)
-  target_compile_options(cppformat PUBLIC ${CPP11_FLAG}) # starting with cmake 3.1 the CXX_STANDARD property can be used
-endif ()
+# Starting with cmake 3.1 the CXX_STANDARD property can be used instead.
+target_compile_options(cppformat PUBLIC ${CPP11_FLAG})
 if (FMT_PEDANTIC)
   target_compile_options(cppformat PRIVATE ${PEDANTIC_COMPILE_FLAGS})
 endif ()

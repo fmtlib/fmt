@@ -19,6 +19,8 @@ def makedirs_if_not_exist(dir):
     if e.errno != errno.EEXIST:
       raise
 
+cppformat_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
 build = os.environ['BUILD']
 if build == 'Doc':
   travis = 'TRAVIS' in os.environ
@@ -39,7 +41,6 @@ if build == 'Doc':
     urllib.urlretrieve('http://mirrors.kernel.org/ubuntu/pool/main/d/doxygen/' +
                        deb_file, deb_file)
     check_call(['sudo', 'dpkg', '-i', deb_file])
-  cppformat_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
   sys.path.insert(0, os.path.join(cppformat_dir, 'doc'))
   import build
   html_dir = build.build_docs()
@@ -74,52 +75,39 @@ if build == 'Doc':
       raise CalledProcessError(p.returncode, cmd)
   exit(0)
 
-cppStandard = os.environ['STANDARD']
-srcDir = os.getcwd()
-srcDir_test = os.path.join(srcDir,"test","find-package-test")
+standard = os.environ['STANDARD']
+install_dir    = os.path.join(cppformat_dir, "_install")
+build_dir      = os.path.join(cppformat_dir, "_build")
+test_build_dir = os.path.join(cppformat_dir, "_build_test")
 
-installDir    = os.path.join(srcDir,"_install")
-buildDir      = os.path.join(srcDir,"_build")
-buildDir_test = os.path.join(srcDir,"_build_test")
+# Configure library.
+makedirs_if_not_exist(build_dir)
+common_cmake_flags = [
+  '-DCMAKE_INSTALL_PREFIX=' + install_dir, '-DCMAKE_BUILD_TYPE=' + build
+]
+extra_cmake_flags = []
+if standard != '0x':
+  extra_cmake_flags = ['-DCMAKE_CXX_FLAGS=-std=c++' + standard, '-DFMT_USE_CPP11=OFF']
+check_call(['cmake', '-DFMT_DOC=OFF', '-DFMT_PEDANTIC=ON', cppformat_dir] +
+           common_cmake_flags + extra_cmake_flags, cwd=build_dir)
 
-# configure library
-makedirs_if_not_exist(buildDir)
-os.chdir(buildDir)
-if cppStandard == '0x':
-  # default configuration
-  check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
-                       '-DCMAKE_BUILD_TYPE=' + build,
-                       '-DFMT_DOC=OFF',
-                       '-DFMT_PEDANTIC=ON',
-                       srcDir])
-else:
-  check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
-                       '-DCMAKE_BUILD_TYPE=' + build,
-                       '-DCMAKE_CXX_FLAGS=-std=c++' + cppStandard,
-                       '-DFMT_USE_CPP11=OFF',
-                       '-DFMT_DOC=OFF',
-                       '-DFMT_PEDANTIC=ON',
-                       srcDir])
+# Build library.
+check_call(['make', '-j4'], cwd=build_dir)
 
-# build library
-check_call(['make', '-j4'])
-
-# test library
+# Test library.
 env = os.environ.copy()
 env['CTEST_OUTPUT_ON_FAILURE'] = '1'
-if call(['make', 'test'], env=env):
+if call(['make', 'test'], env=env, cwd=build_dir):
   with open('Testing/Temporary/LastTest.log', 'r') as f:
     print(f.read())
   sys.exit(-1)
 
-# install library
-check_call(['make', 'install'])
+# Install library.
+check_call(['make', 'install'], cwd=build_dir)
 
-# test installation
-makedirs_if_not_exist(buildDir_test)
-os.chdir(buildDir_test)
-check_call(['cmake', '-DCMAKE_INSTALL_PREFIX='+installDir,
-                      '-DCMAKE_BUILD_TYPE=' + build,
-                      '-DCMAKE_CXX_FLAGS=-std=c++' + cppStandard,
-                      srcDir_test])
-check_call(['make', '-j4'])
+# Test installation.
+makedirs_if_not_exist(test_build_dir)
+check_call(['cmake', '-DCMAKE_CXX_FLAGS=-std=c++' + standard,
+                     os.path.join(cppformat_dir, "test", "find-package-test")] +
+           common_cmake_flags, cwd=test_build_dir)
+check_call(['make', '-j4'], cwd=test_build_dir)
