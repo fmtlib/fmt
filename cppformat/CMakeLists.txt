@@ -75,7 +75,7 @@ if (FMT_INSTALL)
     DESTINATION ${config_install_dir})
   install(EXPORT ${targets_export_name} DESTINATION ${config_install_dir})
 
-  # Install the library and the include file.
+  # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name} DESTINATION ${FMT_LIB_DIR})
   install(FILES ${FMT_HEADERS} DESTINATION include/cppformat)
 endif ()
