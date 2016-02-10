@@ -5,12 +5,10 @@
 # See the Google Test FAQ "Why is it not recommended to install a
 # pre-compiled copy of Google Test (for example, into /usr/local)?"
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
-set(FMT_GMOCK_DIR ../gmock)
 add_library(gmock STATIC
-  ${FMT_GMOCK_DIR}/gmock-gtest-all.cc ${FMT_GMOCK_DIR}/gmock/gmock.h
-  ${FMT_GMOCK_DIR}/gtest/gtest.h ${FMT_GMOCK_DIR}/gtest/gtest-spi.h)
-target_include_directories(gmock PUBLIC ${FMT_GMOCK_DIR})
+  gmock-gtest-all.cc gmock/gmock.h gtest/gtest.h gtest/gtest-spi.h)
 target_compile_options(gmock PUBLIC ${CPP11_FLAG})
+target_include_directories(gmock PUBLIC .)
 
 find_package(Threads)
 if (Threads_FOUND)
