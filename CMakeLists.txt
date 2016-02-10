@@ -72,11 +72,6 @@ else ()
   check_symbol_exists(open fcntl.h HAVE_OPEN)
 endif ()
 
-if (BIICODE)
-  include(support/cmake/biicode.cmake)
-  return()
-endif ()
-
 add_subdirectory(cppformat)
 
 if (FMT_DOC)
