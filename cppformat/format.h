@@ -433,7 +433,7 @@ class BasicStringRef {
     return std::basic_string<Char>(data_, size_);
   }
 
-  /** Returns the pointer to a C string. */
+  /** Returns a pointer to the string data. */
   const Char *data() const { return data_; }
 
   /** Returns the string size. */
