@@ -513,6 +513,7 @@ typedef void FreeLocaleResult;
 
 FreeLocaleResult freelocale(LocaleType locale) {
   LocaleMock::instance->freelocale(locale);
+  return FreeLocaleResult();
 }
 
 double strtod_l(const char *nptr, char **endptr, LocaleType locale) {
