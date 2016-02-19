@@ -41,6 +41,10 @@
 
 #include <cstddef>
 
+#ifdef __APPLE__
+# include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
+#endif
+
 #include "format.h"
 
 #ifndef FMT_POSIX
