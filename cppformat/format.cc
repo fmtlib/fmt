@@ -676,6 +676,7 @@ FMT_FUNC Arg fmt::internal::FormatterBase::do_get_arg(
     break;
   case Arg::NAMED_ARG:
     arg = *static_cast<const internal::Arg*>(arg.pointer);
+    break;
   default:
     /*nothing*/;
   }
