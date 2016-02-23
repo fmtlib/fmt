@@ -1955,7 +1955,13 @@ struct ArgArray<N, true/*IsPacked*/> {
   typedef Value Type[N > 0 ? N : 1];
   
   template <typename Formatter, typename T>
-  static Value make(const T &value) { return MakeValue<Formatter>(value); }
+  static Value make(const T &value) {
+    Value result = MakeValue<Formatter>(value);
+    // Workaround a bug in Apple LLVM version 4.2 (clang-425.0.28) of clang:
+    // https://github.com/cppformat/cppformat/issues/276
+    (void)result.custom.format;
+    return result;
+  }
 };
 
 template <unsigned N>
