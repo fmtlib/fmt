@@ -529,6 +529,29 @@ class FormatError : public std::runtime_error {
 };
 
 namespace internal {
+
+// MakeUnsigned<T>::Type gives an unsigned type corresponding to integer type T.
+template <typename T>
+struct MakeUnsigned { typedef T Type; };
+
+#define FMT_SPECIALIZE_MAKE_UNSIGNED(T, U) \
+  template <> \
+  struct MakeUnsigned<T> { typedef U Type; }
+
+FMT_SPECIALIZE_MAKE_UNSIGNED(char, unsigned char);
+FMT_SPECIALIZE_MAKE_UNSIGNED(signed char, unsigned char);
+FMT_SPECIALIZE_MAKE_UNSIGNED(short, unsigned short);
+FMT_SPECIALIZE_MAKE_UNSIGNED(int, unsigned);
+FMT_SPECIALIZE_MAKE_UNSIGNED(long, unsigned long);
+FMT_SPECIALIZE_MAKE_UNSIGNED(LongLong, ULongLong);
+
+// Casts nonnegative integer to unsigned.
+template <typename Int>
+inline typename MakeUnsigned<Int>::Type to_unsigned(Int value) {
+  FMT_ASSERT(value >= 0, "negative value");
+  return static_cast<typename MakeUnsigned<Int>::Type>(value);
+}
+
 // The number of characters to store in the MemoryBuffer object itself
 // to avoid dynamic memory allocation.
 enum { INLINE_BUFFER_SIZE = 500 };
@@ -618,8 +641,7 @@ class Buffer {
 template <typename T>
 template <typename U>
 void Buffer<T>::append(const U *begin, const U *end) {
-  assert(begin <= end);
-  std::size_t new_size = size_ + (end - begin);
+  std::size_t new_size = size_ + internal::to_unsigned(end - begin);
   if (new_size > capacity_)
     grow(new_size);
   std::uninitialized_copy(begin, end,
@@ -791,21 +813,6 @@ struct IntTraits {
     TypeSelector<std::numeric_limits<T>::digits <= 32>::Type MainType;
 };
 
-// MakeUnsigned<T>::Type gives an unsigned type corresponding to integer type T.
-template <typename T>
-struct MakeUnsigned { typedef T Type; };
-
-#define FMT_SPECIALIZE_MAKE_UNSIGNED(T, U) \
-  template <> \
-  struct MakeUnsigned<T> { typedef U Type; }
-
-FMT_SPECIALIZE_MAKE_UNSIGNED(char, unsigned char);
-FMT_SPECIALIZE_MAKE_UNSIGNED(signed char, unsigned char);
-FMT_SPECIALIZE_MAKE_UNSIGNED(short, unsigned short);
-FMT_SPECIALIZE_MAKE_UNSIGNED(int, unsigned);
-FMT_SPECIALIZE_MAKE_UNSIGNED(long, unsigned long);
-FMT_SPECIALIZE_MAKE_UNSIGNED(LongLong, ULongLong);
-
 FMT_API void report_unknown_type(char code, const char *type);
 
 // Static data is placed in this class template to allow header-only
@@ -819,15 +826,14 @@ struct FMT_API BasicData {
 
 typedef BasicData<> Data;
 
-
 #ifdef FMT_BUILTIN_CLZLL
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
 inline unsigned count_digits(uint64_t n) {
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
-  unsigned t = (64 - FMT_BUILTIN_CLZLL(n | 1)) * 1233 >> 12;
-  return t - (n < Data::POWERS_OF_10_64[t]) + 1;
+  int t = (64 - FMT_BUILTIN_CLZLL(n | 1)) * 1233 >> 12;
+  return to_unsigned(t) - (n < Data::POWERS_OF_10_64[t]) + 1;
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
@@ -850,8 +856,8 @@ inline unsigned count_digits(uint64_t n) {
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline unsigned count_digits(uint32_t n) {
-  uint32_t t = (32 - FMT_BUILTIN_CLZ(n | 1)) * 1233 >> 12;
-  return t - (n < Data::POWERS_OF_10_32[t]) + 1;
+  int t = (32 - FMT_BUILTIN_CLZ(n | 1)) * 1233 >> 12;
+  return to_unsigned(t) - (n < Data::POWERS_OF_10_32[t]) + 1;
 }
 #endif
 
@@ -1826,7 +1832,7 @@ class FormatterBase {
   // Returns the next argument.
   Arg next_arg(const char *&error) {
     if (next_arg_index_ >= 0)
-      return do_get_arg(next_arg_index_++, error);
+      return do_get_arg(static_cast<unsigned>(next_arg_index_++), error);
     error = "cannot switch from manual to automatic argument indexing";
     return Arg();
   }
@@ -1849,7 +1855,7 @@ class FormatterBase {
   template <typename Char>
   void write(BasicWriter<Char> &w, const Char *start, const Char *end) {
     if (start != end)
-      w << BasicStringRef<Char>(start, end - start);
+      w << BasicStringRef<Char>(start, internal::to_unsigned(end - start));
   }
 };
 
@@ -2506,9 +2512,9 @@ void BasicWriter<Char>::write_str(
       return;
     }
   }
-  std::size_t precision = spec.precision_;
+  std::size_t precision = static_cast<std::size_t>(spec.precision_);
   if (spec.precision_ >= 0 && precision < str_size)
-    str_size = spec.precision_;
+    str_size = precision;
   write_str(str_value, str_size, spec);
 }
 
@@ -2596,7 +2602,7 @@ template <typename T, typename Spec>
 void BasicWriter<Char>::write_int(T value, Spec spec) {
   unsigned prefix_size = 0;
   typedef typename internal::IntTraits<T>::MainType UnsignedType;
-  UnsignedType abs_value = value;
+  UnsignedType abs_value = static_cast<UnsignedType>(value);
   char prefix[4] = "";
   if (internal::is_negative(value)) {
     prefix[0] = '-';
@@ -2675,8 +2681,7 @@ void BasicWriter<Char>::write_int(T value, Spec spec) {
 
 template <typename Char>
 template <typename T>
-void BasicWriter<Char>::write_double(
-    T value, const FormatSpec &spec) {
+void BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   // Check type.
   char type = spec.type();
   bool upper = false;
@@ -2776,6 +2781,8 @@ void BasicWriter<Char>::write_double(
 
   // Format using snprintf.
   Char fill = internal::CharTraits<Char>::cast(spec.fill());
+  unsigned n = 0;
+  Char *start = 0;
   for (;;) {
     std::size_t buffer_size = buffer_.capacity() - offset;
 #ifdef _MSC_VER
@@ -2787,41 +2794,44 @@ void BasicWriter<Char>::write_double(
       buffer_size = buffer_.capacity() - offset;
     }
 #endif
-    Char *start = &buffer_[offset];
-    int n = internal::CharTraits<Char>::format_float(
+    start = &buffer_[offset];
+    int result = internal::CharTraits<Char>::format_float(
         start, buffer_size, format, width_for_sprintf, spec.precision(), value);
-    if (n >= 0 && offset + n < buffer_.capacity()) {
-      if (sign) {
-        if ((spec.align() != ALIGN_RIGHT && spec.align() != ALIGN_DEFAULT) ||
-            *start != ' ') {
-          *(start - 1) = sign;
-          sign = 0;
-        } else {
-          *(start - 1) = fill;
-        }
-        ++n;
-      }
-      if (spec.align() == ALIGN_CENTER &&
-          spec.width() > static_cast<unsigned>(n)) {
-        width = spec.width();
-        CharPtr p = grow_buffer(width);
-        std::memmove(get(p) + (width - n) / 2, get(p), n * sizeof(Char));
-        fill_padding(p, spec.width(), n, fill);
-        return;
-      }
-      if (spec.fill() != ' ' || sign) {
-        while (*start == ' ')
-          *start++ = fill;
-        if (sign)
-          *(start - 1) = sign;
-      }
-      grow_buffer(n);
-      return;
+    if (result >= 0) {
+      n = internal::to_unsigned(result);
+      if (offset + n < buffer_.capacity())
+        break;  // The buffer is large enough - continue with formatting.
+      buffer_.reserve(offset + n + 1);
+    } else {
+      // If result is negative we ask to increase the capacity by at least 1,
+      // but as std::vector, the buffer grows exponentially.
+      buffer_.reserve(buffer_.capacity() + 1);
     }
-    // If n is negative we ask to increase the capacity by at least 1,
-    // but as std::vector, the buffer grows exponentially.
-    buffer_.reserve(n >= 0 ? offset + n + 1 : buffer_.capacity() + 1);
   }
+  if (sign) {
+    if ((spec.align() != ALIGN_RIGHT && spec.align() != ALIGN_DEFAULT) ||
+        *start != ' ') {
+      *(start - 1) = sign;
+      sign = 0;
+    } else {
+      *(start - 1) = fill;
+    }
+    ++n;
+  }
+  if (spec.align() == ALIGN_CENTER && spec.width() > n) {
+    width = spec.width();
+    CharPtr p = grow_buffer(width);
+    std::memmove(get(p) + (width - n) / 2, get(p), n * sizeof(Char));
+    fill_padding(p, spec.width(), n, fill);
+    return;
+  }
+  if (spec.fill() != ' ' || sign) {
+    while (*start == ' ')
+      *start++ = fill;
+    if (sign)
+      *(start - 1) = sign;
+  }
+  grow_buffer(n);
 }
 
 /**
@@ -3164,10 +3174,10 @@ class FormatInt {
   explicit FormatInt(unsigned long value) : str_(format_decimal(value)) {}
   explicit FormatInt(ULongLong value) : str_(format_decimal(value)) {}
 
-  /**
-    Returns the number of characters written to the output buffer.
-   */
-  std::size_t size() const { return buffer_ - str_ + BUFFER_SIZE - 1; }
+  /** Returns the number of characters written to the output buffer. */
+  std::size_t size() const {
+    return internal::to_unsigned(buffer_ - str_ + BUFFER_SIZE - 1);
+  }
 
   /**
     Returns a pointer to the output buffer content. No terminating null
@@ -3197,7 +3207,8 @@ class FormatInt {
 // write a terminating null character.
 template <typename T>
 inline void format_decimal(char *&buffer, T value) {
-  typename internal::IntTraits<T>::MainType abs_value = value;
+  typedef typename internal::IntTraits<T>::MainType MainType;
+  MainType abs_value = static_cast<MainType>(value);
   if (internal::is_negative(value)) {
     *buffer++ = '-';
     abs_value = 0 - abs_value;
