@@ -332,8 +332,9 @@ TEST(MemoryBufferTest, Grow) {
     void grow(std::size_t size) { Base::grow(size); }
   } buffer((Allocator(&alloc)));
   buffer.resize(7);
+  using fmt::internal::to_unsigned;
   for (int i = 0; i < 7; ++i)
-    buffer[i] = i * i;
+    buffer[to_unsigned(i)] = i * i;
   EXPECT_EQ(10u, buffer.capacity());
   int mem[20];
   mem[7] = 0xdead;
@@ -342,7 +343,7 @@ TEST(MemoryBufferTest, Grow) {
   EXPECT_EQ(20u, buffer.capacity());
   // Check if size elements have been copied
   for (int i = 0; i < 7; ++i)
-    EXPECT_EQ(i * i, buffer[i]);
+    EXPECT_EQ(i * i, buffer[to_unsigned(i)]);
   // and no more than that.
   EXPECT_EQ(0xdead, buffer[7]);
   EXPECT_CALL(alloc, deallocate(mem, 20));

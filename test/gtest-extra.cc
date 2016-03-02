@@ -80,10 +80,10 @@ std::string OutputRedirect::restore_and_read() {
     return content;  // Already read.
   enum { BUFFER_SIZE = 4096 };
   char buffer[BUFFER_SIZE];
-  std::streamsize count = 0;
+  std::size_t count = 0;
   do {
     count = read_end_.read(buffer, BUFFER_SIZE);
-    content.append(buffer, static_cast<std::size_t>(count));
+    content.append(buffer, count);
   } while (count != 0);
   read_end_.close();
   return content;
@@ -91,8 +91,7 @@ std::string OutputRedirect::restore_and_read() {
 
 std::string read(File &f, std::size_t count) {
   std::string buffer(count, '\0');
-  std::streamsize n = 0;
-  std::size_t offset = 0;
+  std::size_t n = 0, offset = 0;
   do {
     n = f.read(&buffer[offset], count - offset);
     // We can't read more than size_t bytes since count has type size_t.

@@ -69,7 +69,7 @@ void write(File &f, fmt::StringRef s) {
   std::size_t num_chars_left = s.size();
   const char *ptr = s.data();
   do {
-    std::streamsize count = f.write(ptr, num_chars_left);
+    std::size_t count = f.write(ptr, num_chars_left);
     ptr += count;
     // We can't write more than size_t bytes since num_chars_left
     // has type size_t.
@@ -236,20 +236,20 @@ File OpenBufferedFile(int &fd) {
 }
 
 TEST(FileTest, MoveFromTemporaryInCtor) {
-  int fd = 0xdeadbeef;
+  int fd = 0xdead;
   File f(OpenBufferedFile(fd));
   EXPECT_EQ(fd, f.descriptor());
 }
 
 TEST(FileTest, MoveFromTemporaryInAssignment) {
-  int fd = 0xdeadbeef;
+  int fd = 0xdead;
   File f;
   f = OpenBufferedFile(fd);
   EXPECT_EQ(fd, f.descriptor());
 }
 
 TEST(FileTest, MoveFromTemporaryInAssignmentClosesFile) {
-  int fd = 0xdeadbeef;
+  int fd = 0xdead;
   File f = open_file();
   int old_fd = f.descriptor();
   f = OpenBufferedFile(fd);

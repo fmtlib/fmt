@@ -173,7 +173,7 @@ std::size_t fmt::File::read(void *buffer, std::size_t count) {
   FMT_RETRY(result, FMT_POSIX_CALL(read(fd_, buffer, convert_rwcount(count))));
   if (result < 0)
     throw SystemError(errno, "cannot read from file");
-  return result;
+  return internal::to_unsigned(result);
 }
 
 std::size_t fmt::File::write(const void *buffer, std::size_t count) {
@@ -181,7 +181,7 @@ std::size_t fmt::File::write(const void *buffer, std::size_t count) {
   FMT_RETRY(result, FMT_POSIX_CALL(write(fd_, buffer, convert_rwcount(count))));
   if (result < 0)
     throw SystemError(errno, "cannot write to file");
-  return result;
+  return internal::to_unsigned(result);
 }
 
 fmt::File fmt::File::dup(int fd) {

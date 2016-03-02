@@ -2021,7 +2021,7 @@ class FormatBuf : public std::basic_streambuf<Char> {
 
   int_type overflow(int_type ch = traits_type::eof()) {
     if (!traits_type::eq_int_type(ch, traits_type::eof())) {
-      size_t size = this->pptr() - start_;
+      size_t size = this->size();
       buffer_.resize(size);
       buffer_.reserve(size * 2);
 
@@ -2033,7 +2033,7 @@ class FormatBuf : public std::basic_streambuf<Char> {
   }
 
   size_t size() const {
-    return this->pptr() - start_;
+    return to_unsigned(this->pptr() - start_);
   }
 };
 }  // namespace internal

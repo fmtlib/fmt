@@ -277,8 +277,7 @@ TEST(FileTest, Size) {
   write_file("test", content);
   File f("test", File::RDONLY);
   EXPECT_GE(f.size(), 0);
-  fmt::ULongLong file_size = f.size();
-  EXPECT_EQ(content.size(), file_size);
+  EXPECT_EQ(content.size(), static_cast<fmt::ULongLong>(f.size()));
 #ifdef _WIN32
   fmt::MemoryWriter message;
   fmt::internal::format_windows_error(
@@ -308,7 +307,7 @@ TEST(FileTest, ReadRetry) {
   write_end.write("test", SIZE);
   write_end.close();
   char buffer[SIZE];
-  std::streamsize count = 0;
+  std::size_t count = 0;
   EXPECT_RETRY(count = read_end.read(buffer, SIZE),
       read, "cannot read from file");
   EXPECT_EQ_POSIX(static_cast<std::streamsize>(SIZE), count);
@@ -318,7 +317,7 @@ TEST(FileTest, WriteRetry) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
   enum { SIZE = 4 };
-  std::streamsize count = 0;
+  std::size_t count = 0;
   EXPECT_RETRY(count = write_end.write("test", SIZE),
       write, "cannot write to file");
   write_end.close();

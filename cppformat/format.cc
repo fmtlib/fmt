@@ -362,6 +362,21 @@ class CharConverter : public fmt::internal::ArgVisitor<CharConverter, void> {
     arg_.int_value = static_cast<char>(value);
   }
 };
+
+// Write the content of w to os.
+void write(std::ostream &os, fmt::MemoryWriter &w) {
+  const char *data = w.data();
+  std::size_t size = w.size();
+  typedef internal::MakeUnsigned<std::streamsize>::Type UnsignedStreamSize;
+  UnsignedStreamSize max_size =
+      internal::to_unsigned((std::numeric_limits<std::streamsize>::max)());
+  do {
+    UnsignedStreamSize n = size <= max_size ? size : max_size;
+    os.write(data, static_cast<std::streamsize>(n));
+    data += n;
+    size -= n;
+  } while (size != 0);
+}
 }  // namespace
 
 namespace internal {
@@ -884,10 +899,11 @@ FMT_FUNC void fmt::print(CStringRef format_str, ArgList args) {
   print(stdout, format_str, args);
 }
 
-FMT_FUNC void fmt::print(std::ostream &os, CStringRef format_str, ArgList args) {
+FMT_FUNC void fmt::print(std::ostream &os, CStringRef format_str,
+                         ArgList args) {
   MemoryWriter w;
   w.write(format_str, args);
-  os.write(w.data(), w.size());
+  write(os, w);
 }
 
 FMT_FUNC void fmt::print_colored(Color c, CStringRef format, ArgList args) {
@@ -908,7 +924,7 @@ FMT_FUNC int fmt::fprintf(std::FILE *f, CStringRef format, ArgList args) {
 FMT_FUNC int fmt::fprintf(std::ostream &os, CStringRef format, ArgList args) {
   MemoryWriter w;
   printf(w, format, args);
-  os.write(w.data(), w.size());
+  write(os, w);
   return static_cast<int>(w.size());
 }
 

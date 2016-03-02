@@ -305,7 +305,8 @@ class File {
   // Closes the file.
   void close();
 
-  // Returns the file size.
+  // Returns the file size. The size has signed type for consistency with
+  // stat::st_size.
   LongLong size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.

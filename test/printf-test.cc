@@ -292,21 +292,21 @@ SPECIALIZE_MAKE_SIGNED(fmt::ULongLong, fmt::LongLong);
 // Test length format specifier ``length_spec``.
 template <typename T, typename U>
 void TestLength(const char *length_spec, U value) {
-  fmt::LongLong signed_value = value;
-  fmt::ULongLong unsigned_value = value;
+  fmt::LongLong signed_value = 0;
+  fmt::ULongLong unsigned_value = 0;
   // Apply integer promotion to the argument.
   fmt::ULongLong max = std::numeric_limits<U>::max();
   using fmt::internal::check;
   if (check(max <= static_cast<unsigned>(std::numeric_limits<int>::max()))) {
     signed_value = static_cast<int>(value);
-    unsigned_value = static_cast<int>(value);
+    unsigned_value = static_cast<unsigned>(value);
   } else if (check(max <= std::numeric_limits<unsigned>::max())) {
     signed_value = static_cast<unsigned>(value);
     unsigned_value = static_cast<unsigned>(value);
   }
   using fmt::internal::MakeUnsigned;
   if (sizeof(U) <= sizeof(int) && sizeof(int) < sizeof(T)) {
-    signed_value = value;
+    signed_value = static_cast<fmt::LongLong>(value);
     unsigned_value = static_cast<typename MakeUnsigned<unsigned>::Type>(value);
   } else {
     signed_value = static_cast<typename MakeSigned<T>::Type>(value);
@@ -382,7 +382,7 @@ TEST(PrintfTest, Bool) {
 TEST(PrintfTest, Int) {
   EXPECT_PRINTF("-42", "%d", -42);
   EXPECT_PRINTF("-42", "%i", -42);
-  unsigned u = -42;
+  unsigned u = -42u;
   EXPECT_PRINTF(fmt::format("{}", u), "%u", -42);
   EXPECT_PRINTF(fmt::format("{:o}", u), "%o", -42);
   EXPECT_PRINTF(fmt::format("{:x}", u), "%x", -42);
