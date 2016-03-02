@@ -207,10 +207,15 @@ void format_error_code(fmt::Writer &out, int error_code,
   out.clear();
   static const char SEP[] = ": ";
   static const char ERROR_STR[] = "error ";
-  fmt::internal::IntTraits<int>::MainType ec_value = error_code;
   // Subtract 2 to account for terminating null characters in SEP and ERROR_STR.
   std::size_t error_code_size = sizeof(SEP) + sizeof(ERROR_STR) - 2;
-  error_code_size += fmt::internal::count_digits(ec_value);
+  typedef fmt::internal::IntTraits<int>::MainType MainType;
+  MainType abs_value = static_cast<MainType>(error_code);
+  if (internal::is_negative(error_code)) {
+    abs_value = 0 - abs_value;
+    ++error_code_size;
+  }
+  error_code_size += fmt::internal::count_digits(abs_value);
   if (message.size() <= fmt::internal::INLINE_BUFFER_SIZE - error_code_size)
     out << message << SEP;
   out << ERROR_STR << error_code;
