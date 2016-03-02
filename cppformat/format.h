@@ -1832,7 +1832,7 @@ class FormatterBase {
   // Returns the next argument.
   Arg next_arg(const char *&error) {
     if (next_arg_index_ >= 0)
-      return do_get_arg(static_cast<unsigned>(next_arg_index_++), error);
+      return do_get_arg(internal::to_unsigned(next_arg_index_++), error);
     error = "cannot switch from manual to automatic argument indexing";
     return Arg();
   }
@@ -2245,7 +2245,8 @@ class BasicWriter {
   // Writes a decimal integer.
   template <typename Int>
   void write_decimal(Int value) {
-    typename internal::IntTraits<Int>::MainType abs_value = value;
+    typedef typename internal::IntTraits<Int>::MainType MainType;
+    MainType abs_value = static_cast<MainType>(value);
     if (internal::is_negative(value)) {
       abs_value = 0 - abs_value;
       *write_unsigned_decimal(abs_value, 1) = '-';
@@ -2548,7 +2549,8 @@ typename BasicWriter<Char>::CharPtr
     // is specified.
     if (prefix_size > 0 && prefix[prefix_size - 1] == '0')
       --prefix_size;
-    unsigned number_size = prefix_size + spec.precision();
+    unsigned number_size =
+        prefix_size + internal::to_unsigned(spec.precision());
     AlignSpec subspec(number_size, '0', ALIGN_NUMERIC);
     if (number_size >= width)
       return prepare_int_buffer(num_digits, subspec, prefix, prefix_size);
@@ -3430,7 +3432,7 @@ inline bool is_name_start(Char c) {
 // Parses an unsigned integer advancing s to the end of the parsed input.
 // This function assumes that the first character of s is a digit.
 template <typename Char>
-int parse_nonnegative_int(const Char *&s) {
+unsigned parse_nonnegative_int(const Char *&s) {
   assert('0' <= *s && *s <= '9');
   unsigned value = 0;
   do {

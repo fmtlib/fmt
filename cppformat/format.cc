@@ -257,7 +257,7 @@ class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
   template <typename T>
   unsigned visit_any_int(T value) {
     typedef typename fmt::internal::IntTraits<T>::MainType UnsignedType;
-    UnsignedType width = value;
+    UnsignedType width = static_cast<UnsignedType>(value);
     if (fmt::internal::is_negative(value)) {
       spec_.align_ = fmt::ALIGN_LEFT;
       width = 0 - width;
@@ -336,7 +336,7 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
         // glibc's printf doesn't sign extend arguments of smaller types:
         //   std::printf("%lld", -42);  // prints "4294967254"
         // but we don't have to do the same because it's a UB.
-        arg_.long_long_value = value;
+        arg_.long_long_value = static_cast<fmt::LongLong>(value);
       } else {
         arg_.type = Arg::ULONG_LONG;
         arg_.ulong_long_value =
@@ -786,7 +786,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
     if (*s == '.') {
       ++s;
       if ('0' <= *s && *s <= '9') {
-        spec.precision_ = parse_nonnegative_int(s);
+        spec.precision_ = static_cast<int>(parse_nonnegative_int(s));
       } else if (*s == '*') {
         ++s;
         spec.precision_ = PrecisionHandler().visit(get_arg(s));
@@ -795,7 +795,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
 
     Arg arg = get_arg(s, arg_index);
     if (spec.flag(HASH_FLAG) && IsZeroInt().visit(arg))
-      spec.flags_ &= ~HASH_FLAG;
+      spec.flags_ &= ~to_unsigned<int>(HASH_FLAG);
     if (spec.fill_ == '0') {
       if (arg.type <= Arg::LAST_NUMERIC_TYPE)
         spec.align_ = ALIGN_NUMERIC;
