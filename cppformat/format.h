@@ -150,21 +150,6 @@ typedef __int64          intmax_t;
 # include <utility>  // for std::move
 #endif
 
-// Define FMT_USE_NOEXCEPT to make C++ Format use noexcept (C++11 feature).
-#ifndef FMT_USE_NOEXCEPT
-# define FMT_USE_NOEXCEPT 0
-#endif
-
-#ifndef FMT_NOEXCEPT
-# if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
-   (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
-   _MSC_VER >= 1900
-#  define FMT_NOEXCEPT noexcept
-# else
-#  define FMT_NOEXCEPT throw()
-# endif
-#endif
-
 // Check if exceptions are disabled.
 #if defined(__GNUC__) && !defined(__EXCEPTIONS)
 # define FMT_EXCEPTIONS 0
@@ -181,6 +166,25 @@ typedef __int64          intmax_t;
 #  define FMT_THROW(x) throw x
 # else
 #  define FMT_THROW(x) assert(false)
+# endif
+#endif
+
+// Define FMT_USE_NOEXCEPT to make C++ Format use noexcept (C++11 feature).
+#ifndef FMT_USE_NOEXCEPT
+# define FMT_USE_NOEXCEPT 0
+#endif
+
+#ifndef FMT_NOEXCEPT
+# if FMT_EXCEPTIONS
+#  if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
+    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
+    _MSC_VER >= 1900
+#   define FMT_NOEXCEPT noexcept
+#  else
+#   define FMT_NOEXCEPT throw()
+#  endif
+# else
+#  define FMT_NOEXCEPT
 # endif
 #endif
 
