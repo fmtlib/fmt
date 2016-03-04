@@ -364,7 +364,7 @@ class CharConverter : public fmt::internal::ArgVisitor<CharConverter, void> {
 };
 
 // Write the content of w to os.
-void write(std::ostream &os, fmt::MemoryWriter &w) {
+void write(std::ostream &os, fmt::Writer &w) {
   const char *data = w.data();
   typedef internal::MakeUnsigned<std::streamsize>::Type UnsignedStreamSize;
   UnsignedStreamSize size = w.size();

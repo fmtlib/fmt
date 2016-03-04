@@ -31,11 +31,14 @@
 // Include format.cc instead of format.h to test implementation-specific stuff.
 #include "cppformat/format.cc"
 
+#include <algorithm>
 #include <cstring>
 
+#include "gmock/gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
 
+#undef min
 #undef max
 
 TEST(FormatTest, ArgConverter) {
@@ -118,4 +121,56 @@ TEST(FormatTest, FormatErrorCode) {
     fmt::format_error_code(w, codes[i], prefix);
     EXPECT_EQ(msg, w.str());
   }
+}
+
+TEST(FormatTest, WriteToOStream) {
+  std::ostringstream os;
+  fmt::MemoryWriter w;
+  w << "foo";
+  fmt::write(os, w);
+  EXPECT_EQ("foo", os.str());
+}
+
+TEST(FormatTest, WriteToOStreamMaxSize) {
+  std::size_t max_size = std::numeric_limits<std::size_t>::max();
+  std::streamsize max_streamsize = std::numeric_limits<std::streamsize>::max();
+  if (max_size <= fmt::internal::to_unsigned(max_streamsize))
+    return;
+
+  class TestWriter : public fmt::BasicWriter<char> {
+   private:
+    struct TestBuffer : fmt::Buffer<char> {
+      explicit TestBuffer(std::size_t size) { size_ = size; }
+      void grow(std::size_t) {}
+    } buffer_;
+   public:
+    explicit TestWriter(std::size_t size)
+      : fmt::BasicWriter<char>(buffer_), buffer_(size) {}
+  } w(max_size);
+
+  struct MockStreamBuf : std::streambuf {
+    MOCK_METHOD2(xsputn, std::streamsize (const void *s, std::streamsize n));
+    std::streamsize xsputn(const char *s, std::streamsize n) {
+      const void *v = s;
+      return xsputn(v, n);
+    }
+  } buffer;
+
+  struct TestOStream : std::ostream {
+    explicit TestOStream(MockStreamBuf &buffer) : std::ostream(&buffer) {}
+  } os(buffer);
+
+  testing::InSequence sequence;
+  const char *data = 0;
+  std::size_t size = max_size;
+  do {
+    typedef fmt::internal::MakeUnsigned<std::streamsize>::Type UStreamSize;
+    UStreamSize n = std::min<UStreamSize>(
+          size, fmt::internal::to_unsigned(max_streamsize));
+    EXPECT_CALL(buffer, xsputn(data, static_cast<std::streamsize>(n)))
+        .WillOnce(testing::Return(max_streamsize));
+    data += n;
+    size -= n;
+  } while (size != 0);
+  fmt::write(os, w);
 }
