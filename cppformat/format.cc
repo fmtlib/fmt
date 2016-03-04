@@ -366,8 +366,8 @@ class CharConverter : public fmt::internal::ArgVisitor<CharConverter, void> {
 // Write the content of w to os.
 void write(std::ostream &os, fmt::MemoryWriter &w) {
   const char *data = w.data();
-  std::size_t size = w.size();
   typedef internal::MakeUnsigned<std::streamsize>::Type UnsignedStreamSize;
+  UnsignedStreamSize size = w.size();
   UnsignedStreamSize max_size =
       internal::to_unsigned((std::numeric_limits<std::streamsize>::max)());
   do {
