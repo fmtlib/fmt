@@ -873,6 +873,27 @@ TEST(UtilTest, FormatWindowsError) {
   EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS), actual_message.str());
 }
 
+TEST(UtilTest, FormatLongWindowsError) {
+  LPWSTR message = 0;
+  // this error code is not available on all Windows platforms and
+  // Windows SDKs, so do not fail the test if the error string cannot
+  // be retrieved.
+  const int provisioning_not_allowed = 0x80284013L /*TBS_E_PROVISIONING_NOT_ALLOWED*/;
+  if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
+      provisioning_not_allowed, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      reinterpret_cast<LPWSTR>(&message), 0, 0) == 0) {
+    return;
+  }
+  fmt::internal::UTF16ToUTF8 utf8_message(message);
+  LocalFree(message);
+  fmt::MemoryWriter actual_message;
+  fmt::internal::format_windows_error(
+      actual_message, provisioning_not_allowed, "test");
+  EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
+      actual_message.str());
+}
+
 TEST(UtilTest, WindowsError) {
   check_throw_error<fmt::WindowsError>(
       ERROR_FILE_EXISTS, fmt::internal::format_windows_error);
