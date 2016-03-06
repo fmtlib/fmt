@@ -588,27 +588,25 @@ FMT_FUNC void fmt::WindowsError::init(
 FMT_FUNC void fmt::internal::format_windows_error(
     fmt::Writer &out, int error_code,
     fmt::StringRef message) FMT_NOEXCEPT {
-  class String {
-   private:
-    LPWSTR str_;
-
-   public:
-    String() : str_() {}
-    ~String() { LocalFree(str_); }
-    LPWSTR *ptr() { return &str_; }
-    LPCWSTR c_str() const { return str_; }
-  };
   FMT_TRY {
-    String system_message;
-    if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
-        error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        reinterpret_cast<LPWSTR>(system_message.ptr()), 0, 0)) {
-      UTF16ToUTF8 utf8_message;
-      if (utf8_message.convert(system_message.c_str()) == ERROR_SUCCESS) {
-        out << message << ": " << utf8_message;
-        return;
+    MemoryBuffer<wchar_t, INLINE_BUFFER_SIZE> buffer;
+    buffer.resize(INLINE_BUFFER_SIZE);
+    for (;;) {
+      wchar_t *system_message = &buffer[0];
+      int result = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                  0, error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                  system_message, static_cast<uint32_t>(buffer.size()), 0);
+      if (result != 0) {
+        UTF16ToUTF8 utf8_message;
+        if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
+          out << message << ": " << utf8_message;
+          return;
+        }
+        break;
       }
+      if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+        break;  // Can't get error message, report error code instead.
+      buffer.resize(buffer.size() * 2);
     }
   } FMT_CATCH(...) {}
   fmt::format_error_code(out, error_code, message);  // 'fmt::' is for bcc32.
