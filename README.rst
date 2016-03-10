@@ -137,7 +137,7 @@ Projects using this library
 
 * `KBEngine <http://kbengine.org/>`_: An open-source MMOG server engine
 
-* `Keypirinha <http://keypirinha.com/>: A semantic launcher for Windows
+* `Keypirinha <http://keypirinha.com/>`_: A semantic launcher for Windows
 
 * `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
 
