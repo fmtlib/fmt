@@ -1,6 +1,6 @@
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.12)
 
 # Set the default CMAKE_BUILD_TYPE to Release.
 # This should be done before the project command since the latter can set
@@ -95,14 +95,19 @@ if (BIICODE)
 endif ()
 
 add_library(cppformat ${FMT_SOURCES})
-if (BUILD_SHARED_LIBS AND UNIX AND NOT APPLE)
-  # Fix rpmlint warning:
-  # unused-direct-shlib-dependency /usr/lib/libformat.so.1.1.0 /lib/libm.so.6.
-  target_link_libraries(cppformat -Wl,--as-needed)
+if (BUILD_SHARED_LIBS)
+  if (UNIX AND NOT APPLE)
+    # Fix rpmlint warning:
+    # unused-direct-shlib-dependency /usr/lib/libformat.so.1.1.0 /lib/libm.so.6.
+    target_link_libraries(cppformat -Wl,--as-needed)
+  endif ()
+  set(FMT_EXTRA_COMPILE_FLAGS -DFMT_EXPORT)
 endif ()
+
 if (FMT_PEDANTIC AND
     (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang")))
-  set(FMT_EXTRA_COMPILE_FLAGS "-Wall -Wextra -Wshadow -pedantic")
+  set(FMT_EXTRA_COMPILE_FLAGS
+      "${FMT_EXTRA_COMPILE_FLAGS} -Wall -Wextra -Wshadow -pedantic")
 endif ()
 
 # If FMT_PEDANTIC is TRUE, then test compilation with both -std=c++11
@@ -117,7 +122,7 @@ endif ()
 set_target_properties(cppformat
   PROPERTIES COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS}")
 
-set(CPPFORMAT_VERSION 2.0.0)
+set(CPPFORMAT_VERSION 2.1.0)
 if (NOT CPPFORMAT_VERSION MATCHES "^([0-9]+).([0-9]+).([0-9]+)$")
   message(FATAL_ERROR "Invalid version format ${CPPFORMAT_VERSION}.")
 endif ()
@@ -137,9 +142,10 @@ endif ()
 set_target_properties(cppformat PROPERTIES
   VERSION ${CPPFORMAT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR})
 
-if (EXISTS .gitignore)
+set(gitignore ${CMAKE_CURRENT_SOURCE_DIR}/.gitignore)
+if (EXISTS ${gitignore})
   # Get the list of ignored files from .gitignore.
-  file (STRINGS ".gitignore" lines)
+  file (STRINGS ${gitignore} lines)
   LIST(REMOVE_ITEM lines /doc/html)
   foreach (line ${lines})
     string(REPLACE "." "[.]" line "${line}")
@@ -152,14 +158,46 @@ if (EXISTS .gitignore)
   set(CPACK_SOURCE_GENERATOR ZIP)
   set(CPACK_SOURCE_IGNORE_FILES ${ignored_files})
   set(CPACK_SOURCE_PACKAGE_FILE_NAME cppformat-${CPPFORMAT_VERSION})
+  set(CPACK_PACKAGE_NAME cppformat)
   set(CPACK_RESOURCE_FILE_README ${FORMAT_SOURCE_DIR}/README.rst)
   include(CPack)
 endif ()
 
 # Install targets.
 if (FMT_INSTALL)
+  include(CMakePackageConfigHelpers)
+  set(config_install_dir lib/cmake/cppformat)
+  set(version_config ${CMAKE_CURRENT_BINARY_DIR}/cppformat-config-version.cmake)
+  set(project_config ${CMAKE_CURRENT_BINARY_DIR}/cppformat-config.cmake)
+  set(targets_export_name cppformat-targets)
+
   set(FMT_LIB_DIR lib CACHE STRING
     "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
-  install(TARGETS cppformat DESTINATION ${FMT_LIB_DIR})
+
+  # Add the include directories for both build and install tree.
+  target_include_directories(
+    cppformat PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>)
+
+  # Generate the version, config and target files into the build directory.
+  write_basic_package_version_file(
+    ${version_config}
+    VERSION ${CPPFORMAT_VERSION}
+    COMPATIBILITY AnyNewerVersion)
+  configure_package_config_file(
+    support/cmake/cppformat-config.cmake.in
+    ${project_config}
+    INSTALL_DESTINATION ${config_install_dir})
+  export(TARGETS cppformat FILE ${targets_export_name}.cmake)
+
+  # Install version, config and target files.
+  install(
+    FILES ${project_config} ${version_config}
+    DESTINATION ${config_install_dir})
+  install(EXPORT ${targets_export_name} DESTINATION ${config_install_dir})
+
+  # Install the library and the include file.
+  install(TARGETS cppformat EXPORT ${targets_export_name} DESTINATION ${FMT_LIB_DIR})
   install(FILES format.h DESTINATION include/cppformat)
 endif ()
