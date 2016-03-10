@@ -137,6 +137,8 @@ Projects using this library
 
 * `KBEngine <http://kbengine.org/>`_: An open-source MMOG server engine
 
+* `Keypirinha <http://keypirinha.com/>: A semantic launcher for Windows
+
 * `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
 
 * `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to generate randomized datasets
