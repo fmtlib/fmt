@@ -122,7 +122,7 @@ endif ()
 set_target_properties(cppformat
   PROPERTIES COMPILE_FLAGS "${FMT_EXTRA_COMPILE_FLAGS}")
 
-set(CPPFORMAT_VERSION 2.1.0)
+set(CPPFORMAT_VERSION 2.0.1)
 if (NOT CPPFORMAT_VERSION MATCHES "^([0-9]+).([0-9]+).([0-9]+)$")
   message(FATAL_ERROR "Invalid version format ${CPPFORMAT_VERSION}.")
 endif ()
