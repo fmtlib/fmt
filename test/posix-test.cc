@@ -31,7 +31,7 @@
 #include "posix.h"
 #include "util.h"
 
-#ifdef __MINGW32__
+#ifdef fileno
 # undef fileno
 #endif
 
