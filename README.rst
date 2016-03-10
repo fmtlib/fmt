@@ -28,9 +28,9 @@ Features
 * Format API with `format string syntax
   <http://cppformat.github.io/latest/syntax.html>`_
   similar to the one used by `str.format
-  <http://docs.python.org/2/library/stdtypes.html#str.format>`_ in Python.
+  <https://docs.python.org/2/library/stdtypes.html#str.format>`_ in Python.
 * Safe `printf implementation
-  <http://cppformat.github.io/latest/reference.html#printf-formatting-functions>`_
+  <http://cppformat.github.io/latest/api.html#printf-formatting-functions>`_
   including the POSIX extension for positional arguments.
 * Support for user-defined types.
 * High speed: performance of the format API is close to that of
@@ -103,10 +103,10 @@ An object of any user-defined type for which there is an overloaded
     // s == "The date is 2012-12-9"
 
 You can use the `FMT_VARIADIC
-<http://cppformat.github.io/latest/reference.html#utilities>`_
+<http://cppformat.github.io/latest/api.html#utilities>`_
 macro to create your own functions similar to `format
-<http://cppformat.github.io/latest/reference.html#format>`_ and
-`print <http://cppformat.github.io/latest/reference.html#print>`_
+<http://cppformat.github.io/latest/api.html#format>`_ and
+`print <http://cppformat.github.io/latest/api.html#print>`_
 which take arbitrary arguments:
 
 .. code:: c++
@@ -132,10 +132,10 @@ Projects using this library
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   An open-source library for mathematical programming
 
-* `HarpyWar/pvpgn <https://github.com/HarpyWar/pvpgn>`_:
+* `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
 
-* `KBEngine <http://www.kbengine.org/>`_: An open-source MMOG server engine
+* `KBEngine <http://kbengine.org/>`_: An open-source MMOG server engine
 
 * `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
 
@@ -148,7 +148,7 @@ Projects using this library
 
 * `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: A Redis cluster proxy
 
-* `Saddy <https://code.google.com/p/saddy/>`_:
+* `Saddy <https://github.com/mamontov-cpp/saddy-graphics-engine-2d>`_:
   Small crossplatform 2D graphic engine
 
 * `Salesforce Analytics Cloud <http://www.salesforce.com/analytics-cloud/overview/>`_:
@@ -188,7 +188,7 @@ doesn't support user-defined types. Printf also has safety issues although
 they are mostly solved with `__attribute__ ((format (printf, ...))
 <http://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html>`_ in GCC.
 There is a POSIX extension that adds positional arguments required for
-`i18n <http://en.wikipedia.org/wiki/Internationalization_and_localization>`_
+`i18n <https://en.wikipedia.org/wiki/Internationalization_and_localization>`_
 to printf but it is not a part of C99 and may not be available on some
 platforms.
 
@@ -376,7 +376,7 @@ C++ Format is distributed under the BSD `license
 The `Format String Syntax
 <http://cppformat.github.io/latest/syntax.html>`_
 section in the documentation is based on the one from Python `string module
-documentation <http://docs.python.org/3/library/string.html#module-string>`_
+documentation <https://docs.python.org/3/library/string.html#module-string>`_
 adapted for the current library. For this reason the documentation is
 distributed under the Python Software Foundation license available in
 `doc/python-license.txt
