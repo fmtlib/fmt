@@ -1,5 +1,5 @@
-2.0.1 - TBD
------------
+2.0.1 - 2016-03-13
+------------------
 
 * Improved CMake find and package support
   (`#264 <https://github.com/cppformat/cppformat/issues/264>`_).
