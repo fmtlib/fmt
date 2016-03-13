@@ -1,8 +1,13 @@
 #!/usr/bin/env python
-# Release script
+
+"""Create a release.
+
+Usage:
+  release.py [<branch>]
+"""
 
 from __future__ import print_function
-import datetime, fileinput, json, os, re, requests, shutil, sys, tempfile
+import datetime, docopt, fileinput, json, os, re, requests, shutil, sys, tempfile
 from docutils import nodes, writers, core
 from subprocess import check_call
 
@@ -126,58 +131,61 @@ class Runner:
         kwargs['cwd'] = kwargs.get('cwd', self.cwd)
         check_call(args, **kwargs)
 
-workdir = tempfile.mkdtemp()
-try:
-    run = Runner()
-    cppformat_dir = os.path.join(workdir, 'cppformat')
-    run('git', 'clone', 'git@github.com:cppformat/cppformat.git', cppformat_dir)
+if __name__ == '__main__':
+    args = docopt.docopt(__doc__)
+    workdir = tempfile.mkdtemp()
+    try:
+        run = Runner()
+        cppformat_dir = os.path.join(workdir, 'cppformat')
+        branch = args.get('<branch>', 'master')
+        run('git', 'clone', '-b', branch, 'git@github.com:cppformat/cppformat.git', cppformat_dir)
 
-    # Convert changelog from RST to GitHub-flavored Markdown and get the version.
-    changelog = 'ChangeLog.rst'
-    changelog_path = os.path.join(cppformat_dir, changelog)
-    changes, version = core.publish_file(source_path=changelog_path, writer=MDWriter())
-    cmakelists = 'CMakeLists.txt'
-    for line in fileinput.input(os.path.join(cppformat_dir, cmakelists), inplace=True):
-        prefix = 'set(CPPFORMAT_VERSION '
-        if line.startswith(prefix):
-            line = prefix + version + ')\n'
-        sys.stdout.write(line)
+        # Convert changelog from RST to GitHub-flavored Markdown and get the version.
+        changelog = 'ChangeLog.rst'
+        changelog_path = os.path.join(cppformat_dir, changelog)
+        changes, version = core.publish_file(source_path=changelog_path, writer=MDWriter())
+        cmakelists = 'CMakeLists.txt'
+        for line in fileinput.input(os.path.join(cppformat_dir, cmakelists), inplace=True):
+            prefix = 'set(CPPFORMAT_VERSION '
+            if line.startswith(prefix):
+                line = prefix + version + ')\n'
+            sys.stdout.write(line)
 
-    # Update the version in the changelog.
-    title_len = 0
-    for line in fileinput.input(changelog_path, inplace=True):
-        if line.startswith(version + ' - TBD'):
-            line = version + ' - ' + datetime.date.today().isoformat()
-            title_len = len(line)
-            line += '\n'
-        elif title_len:
-            line = '-' * title_len + '\n'
-            title_len = 0
-        sys.stdout.write(line)
-    run.cwd = cppformat_dir
-    run('git', 'checkout', '-b', 'release')
-    run('git', 'add', changelog, cmakelists)
-    run('git', 'commit', '-m', 'Update version')
+        # Update the version in the changelog.
+        title_len = 0
+        for line in fileinput.input(changelog_path, inplace=True):
+            if line.decode('utf-8').startswith(version + ' - TBD'):
+                line = version + ' - ' + datetime.date.today().isoformat()
+                title_len = len(line)
+                line += '\n'
+            elif title_len:
+                line = '-' * title_len + '\n'
+                title_len = 0
+            sys.stdout.write(line)
+        run.cwd = cppformat_dir
+        run('git', 'checkout', '-b', 'release')
+        run('git', 'add', changelog, cmakelists)
+        run('git', 'commit', '-m', 'Update version')
 
-    # Build the docs and package.
-    run('cmake', '.')
-    run('make', 'doc', 'package_source')
-    site_dir = os.path.join(workdir, 'cppformat.github.io')
-    run('git', 'clone', 'git@github.com:cppformat/cppformat.github.io.git', site_dir)
-    doc_dir = os.path.join(site_dir, version)
-    shutil.copytree(os.path.join(cppformat_dir, 'doc', 'html'), doc_dir,
-                    ignore=shutil.ignore_patterns('.doctrees', '.buildinfo'))
-    run.cwd = site_dir
-    run('git', 'add', doc_dir)
-    run('git', 'commit', '-m', 'Update docs')
+        # Build the docs and package.
+        run('cmake', '.')
+        run('make', 'doc', 'package_source')
+        site_dir = os.path.join(workdir, 'cppformat.github.io')
+        run('git', 'clone', 'git@github.com:cppformat/cppformat.github.io.git', site_dir)
+        doc_dir = os.path.join(site_dir, version)
+        shutil.copytree(os.path.join(cppformat_dir, 'doc', 'html'), doc_dir,
+                        ignore=shutil.ignore_patterns('.doctrees', '.buildinfo'))
+        run.cwd = site_dir
+        run('git', 'add', doc_dir)
+        run('git', 'commit', '-m', 'Update docs')
 
-    # Create a release on GitHub.
-    run('git', 'push', 'origin', 'release', cwd=cppformat_dir)
-    r = requests.post('https://api.github.com/repos/cppformat/cppformat/releases',
-                      params={'access_token': os.getenv('CPPFORMAT_TOKEN')},
-                      data=json.dumps({'tag_name1': version, 'target_commitish': 'release',
-                                      'body': changes, 'draft': True}))
-    if r.status_code != 201:
-        raise Exception('Failed to create a release ' + str(r))
-finally:
-    shutil.rmtree(workdir)
+        # Create a release on GitHub.
+        run('git', 'push', 'origin', 'release', cwd=cppformat_dir)
+        r = requests.post('https://api.github.com/repos/cppformat/cppformat/releases',
+                          params={'access_token': os.getenv('CPPFORMAT_TOKEN')},
+                          data=json.dumps({'tag_name': version, 'target_commitish': 'release',
+                                          'body': changes, 'draft': True}))
+        if r.status_code != 201:
+            raise Exception('Failed to create a release ' + str(r))
+    finally:
+        shutil.rmtree(workdir)
