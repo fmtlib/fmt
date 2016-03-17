@@ -36,6 +36,10 @@
 #ifndef GMOCK_INCLUDE_GMOCK_GMOCK_H_
 #define GMOCK_INCLUDE_GMOCK_GMOCK_H_
 
+#ifdef __clang__
+# pragma clang diagnostic ignored "-Wc99-extensions"
+#endif
+
 // This file implements the following syntax:
 //
 //   ON_CALL(mock_object.Method(...))

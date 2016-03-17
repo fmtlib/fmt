@@ -5,22 +5,40 @@ cmake_minimum_required(VERSION 2.8)
 include(CheckCXXSourceCompiles)
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 
-function (expect_compile_error code)
-  check_cxx_source_compiles("
-  #include \"format.cc\"
-  #include \"posix.h\"
+function (generate_source result fragment)
+  set(${result} "
+  #define FMT_HEADER_ONLY 1
+  #include \"cppformat/format.h\"
   int main() {
-    ${code}
+    ${fragment}
   }
-  " compiles)
-  set (does_compile ${compiles})
+  " PARENT_SCOPE)
+endfunction ()
+
+function (expect_compile code)
+  generate_source(source "${code}")
+  check_cxx_source_compiles("${source}" compiles)
+  if (NOT compiles)
+    message(FATAL_ERROR "Compile error for: ${code}")
+  endif ()
   # Unset the CMake cache variable compiles. Otherwise the compile test will
   # just use cached information next time it runs.
   unset(compiles CACHE)
-  if (does_compile)
+endfunction ()
+
+function (expect_compile_error code)
+  generate_source(source "${code}")
+  check_cxx_source_compiles("${source}" compiles)
+  if (compiles)
     message(FATAL_ERROR "No compile error for: ${code}")
   endif ()
+  # Unset the CMake cache variable compiles. Otherwise the compile test will
+  # just use cached information next time it runs.
+  unset(compiles CACHE)
 endfunction ()
+
+# check if the source file skeleton compiles
+expect_compile("")
 
 # MakeArg doesn't accept [const] volatile char *.
 expect_compile_error("volatile char s[] = \"test\"; (fmt::internal::MakeArg<char>)(s);")
