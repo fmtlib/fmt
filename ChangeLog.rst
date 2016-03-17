@@ -1,3 +1,18 @@
+2.0.1 - 2016-03-13
+------------------
+
+* Improved CMake find and package support
+  (`#264 <https://github.com/cppformat/cppformat/issues/264>`_).
+  Thanks to `@niosHD <https://github.com/niosHD>`_.
+
+* Fix compile error with Android NDK and mingw32
+  (`#241 <https://github.com/cppformat/cppformat/issues/241>`_).
+  Thanks to `@Gachapen (Magnus Bjerke Vik) <https://github.com/Gachapen>`_.
+
+* Documentation fixes
+  (`#248 <https://github.com/cppformat/cppformat/issues/248>`_,
+  `#260 <https://github.com/cppformat/cppformat/issues/260>`_).
+
 2.0.0 - 2015-12-01
 ------------------
 
