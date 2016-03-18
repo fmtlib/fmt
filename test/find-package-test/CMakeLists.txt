@@ -4,10 +4,10 @@ project(cppformat-test)
 
 find_package(cppformat REQUIRED)
 
-add_executable(library-test "main.cpp")
+add_executable(library-test "main.cc")
 target_link_libraries(library-test cppformat)
 
 if (TARGET cppformat-header-only)
-  add_executable(header-only-test "main.cpp")
+  add_executable(header-only-test "main.cc")
   target_link_libraries(header-only-test cppformat-header-only)
 endif ()
