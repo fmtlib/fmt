@@ -47,10 +47,10 @@ if (HAVE_FNO_DELETE_NULL_POINTER_CHECKS)
   target_compile_options(test-main PUBLIC -fno-delete-null-pointer-checks)
 endif ()
 
-# relax pedantic flags for the tests
-# TODO: fix warnings in tests to make this redundant. (e.g. -Wshadow,...)
+# Use less strict pedantic flags for the tests because GMock doesn't compile
+# cleanly with -pedantic and -std=c++98.
 if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wno-long-long -Wno-variadic-macros)
+  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wno-long-long -Wno-variadic-macros)
 endif ()
 
 # Adds a test.
@@ -78,7 +78,6 @@ add_fmt_test(macro-test)
 
 # Enable stricter options for one test to make sure that the header is free of
 # warnings.
-# TODO: make all tests warning free and add this flag to PEDANTIC_COMPILE_FLAGS
 if (FMT_PEDANTIC AND MSVC)
   target_compile_options(format-test PRIVATE /W4)
 endif ()
