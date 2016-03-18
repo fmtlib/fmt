@@ -1,3 +1,9 @@
+# C++11 feature support detection
+
+if (NOT FMT_USE_CPP11)
+  return()
+endif ()
+
 include(CheckCXXCompilerFlag)
 
 if (FMT_USE_CPP11)
