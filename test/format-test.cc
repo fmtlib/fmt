@@ -1659,35 +1659,27 @@ TEST(FormatTest, EmptyCustomOutput) {
   EXPECT_EQ("", fmt::format("{}", EmptyTest()));
 }
 
-class CustomArgFormatter :
-    public fmt::internal::ArgFormatterBase<CustomArgFormatter, char>  {
+class MockArgFormatter :
+    public fmt::internal::ArgFormatterBase<MockArgFormatter, char>  {
  public:
-  typedef fmt::internal::ArgFormatterBase<CustomArgFormatter, char> Base;
+  typedef fmt::internal::ArgFormatterBase<MockArgFormatter, char> Base;
 
-  CustomArgFormatter(fmt::BasicFormatter<char, CustomArgFormatter> &f,
-                     fmt::FormatSpec &s, const char *)
-    : fmt::internal::ArgFormatterBase<CustomArgFormatter, char>(f.writer(), s) {
+  MockArgFormatter(fmt::BasicFormatter<char, MockArgFormatter> &f,
+                   fmt::FormatSpec &s, const char *)
+    : fmt::internal::ArgFormatterBase<MockArgFormatter, char>(f.writer(), s) {
+    EXPECT_CALL(*this, visit_int(42));
   }
 
-  void visit_int(int value) {
-    fmt::FormatSpec &spec = this->spec();
-    if (spec.type() == 'x')
-      visit_uint(value); // convert to unsigned and format
-    else
-      Base::visit_int(value);
-  }
+  MOCK_METHOD1(visit_int, void (int value));
 };
 
-std::string custom_format(const char *format_str, fmt::ArgList args) {
+void custom_format(const char *format_str, fmt::ArgList args) {
   fmt::MemoryWriter writer;
-  fmt::BasicFormatter<char, CustomArgFormatter> formatter(args, writer);
+  fmt::BasicFormatter<char, MockArgFormatter> formatter(args, writer);
   formatter.format(format_str);
-  return writer.str();
 }
-FMT_VARIADIC(std::string, custom_format, const char *)
+FMT_VARIADIC(void, custom_format, const char *)
 
 TEST(FormatTest, CustomArgFormatter) {
-  int x = -0xbeef;
-  EXPECT_EQ(fmt::format("{:x}", static_cast<unsigned>(x)),
-            custom_format("{:x}", x));
+  custom_format("{}", 42);
 }
