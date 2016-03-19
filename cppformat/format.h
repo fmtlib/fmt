@@ -371,7 +371,13 @@ class BasicWriter;
 typedef BasicWriter<char> Writer;
 typedef BasicWriter<wchar_t> WWriter;
 
+namespace internal {
 template <typename Char>
+class BasicArgFormatter;
+}
+
+template <typename CharType,
+          typename ArgFormatter = internal::BasicArgFormatter<CharType> >
 class BasicFormatter;
 
 template <typename Char, typename T>
@@ -1885,7 +1891,7 @@ class PrintfFormatter : private FormatterBase {
 }  // namespace internal
 
 /** This template formats data and writes the output to a writer. */
-template <typename CharType>
+template <typename CharType, typename ArgFormatter>
 class BasicFormatter : private internal::FormatterBase {
  public:
   /** The character type for the output. */
@@ -3475,9 +3481,9 @@ void check_sign(const Char *&s, const Arg &arg) {
 }
 }  // namespace internal
 
-template <typename Char>
-inline internal::Arg BasicFormatter<Char>::get_arg(
-  BasicStringRef<Char> arg_name, const char *&error) {
+template <typename Char, typename AF>
+inline internal::Arg BasicFormatter<Char, AF>::get_arg(
+    BasicStringRef<Char> arg_name, const char *&error) {
   if (check_no_auto_index(error)) {
     map_.init(args());
     const internal::Arg *arg = map_.find(arg_name);
@@ -3488,8 +3494,8 @@ inline internal::Arg BasicFormatter<Char>::get_arg(
   return internal::Arg();
 }
 
-template <typename Char>
-inline internal::Arg BasicFormatter<Char>::parse_arg_index(const Char *&s) {
+template <typename Char, typename AF>
+inline internal::Arg BasicFormatter<Char, AF>::parse_arg_index(const Char *&s) {
   const char *error = 0;
   internal::Arg arg = *s < '0' || *s > '9' ?
         next_arg(error) : get_arg(internal::parse_nonnegative_int(s), error);
@@ -3500,8 +3506,8 @@ inline internal::Arg BasicFormatter<Char>::parse_arg_index(const Char *&s) {
   return arg;
 }
 
-template <typename Char>
-inline internal::Arg BasicFormatter<Char>::parse_arg_name(const Char *&s) {
+template <typename Char, typename AF>
+inline internal::Arg BasicFormatter<Char, AF>::parse_arg_name(const Char *&s) {
   assert(internal::is_name_start(*s));
   const Char *start = s;
   Char c;
@@ -3515,8 +3521,8 @@ inline internal::Arg BasicFormatter<Char>::parse_arg_name(const Char *&s) {
   return arg;
 }
 
-template <typename Char>
-const Char *BasicFormatter<Char>::format(
+template <typename Char, typename ArgFormatter>
+const Char *BasicFormatter<Char, ArgFormatter>::format(
     const Char *&format_str, const internal::Arg &arg) {
   using internal::Arg;
   const Char *s = format_str;
@@ -3681,12 +3687,12 @@ const Char *BasicFormatter<Char>::format(
     FMT_THROW(FormatError("missing '}' in format string"));
 
   // Format argument.
-  internal::BasicArgFormatter<Char>(*this, spec, s - 1).visit(arg);
+  ArgFormatter(*this, spec, s - 1).visit(arg);
   return s;
 }
 
-template <typename Char>
-void BasicFormatter<Char>::format(BasicCStringRef<Char> format_str) {
+template <typename Char, typename AF>
+void BasicFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
   const Char *s = format_str.c_str();
   const Char *start = s;
   while (*s) {

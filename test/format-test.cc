@@ -1658,3 +1658,36 @@ std::ostream &operator<<(std::ostream &os, EmptyTest) {
 TEST(FormatTest, EmptyCustomOutput) {
   EXPECT_EQ("", fmt::format("{}", EmptyTest()));
 }
+
+class CustomArgFormatter :
+    public fmt::internal::ArgFormatterBase<CustomArgFormatter, char>  {
+ public:
+  typedef fmt::internal::ArgFormatterBase<CustomArgFormatter, char> Base;
+
+  CustomArgFormatter(fmt::BasicFormatter<char, CustomArgFormatter> &f,
+                     fmt::FormatSpec &s, const char *)
+    : fmt::internal::ArgFormatterBase<CustomArgFormatter, char>(f.writer(), s) {
+  }
+
+  void visit_int(int value) {
+    fmt::FormatSpec &spec = this->spec();
+    if (spec.type() == 'x')
+      visit_uint(value); // convert to unsigned and format
+    else
+      Base::visit_int(value);
+  }
+};
+
+std::string custom_format(const char *format_str, fmt::ArgList args) {
+  fmt::MemoryWriter writer;
+  fmt::BasicFormatter<char, CustomArgFormatter> formatter(args, writer);
+  formatter.format(format_str);
+  return writer.str();
+}
+FMT_VARIADIC(std::string, custom_format, const char *)
+
+TEST(FormatTest, CustomArgFormatter) {
+  int x = -0xbeef;
+  EXPECT_EQ(fmt::format("{:x}", static_cast<unsigned>(x)),
+            custom_format("{:x}", x));
+}
