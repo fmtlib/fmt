@@ -46,7 +46,7 @@ namespace {
 std::string sanitize(const std::string &s) {
   std::string result;
   for (std::string::const_iterator i = s.begin(), end = s.end(); i != end; ++i)
-    result.push_back(*i & static_cast<char>(0xff));
+    result.push_back(static_cast<char>(*i & 0xff));
   return result;
 }
 
