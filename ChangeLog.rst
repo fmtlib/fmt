@@ -1,5 +1,5 @@
-2.1.0 - TBD
------------
+2.1.0 - 2016-03-21
+------------------
 
 * Project layout and build system improvements
   (`#267 <https://github.com/cppformat/cppformat/pull/267>`_):
