@@ -1,3 +1,25 @@
+2.1.0 - TBD
+-----------
+
+* Project layout and build system improvements
+  (`#267 <https://github.com/cppformat/cppformat/pull/267>`_):
+
+  * The code have been moved to the ``cppformat`` directory.
+    Including ``format.h`` from the top-level directory is deprecated
+    but works via a proxy header which will be removed in the next
+    major version.
+
+  * C++ Format CMake targets now have proper interface definitions.
+
+  * Installed version of the library now supports the header-only
+    configuration.
+
+  * Targets ``doc``, ``install``, and ``test`` are now disabled if C++ Format
+    is included as a CMake subproject. They can be enabled by setting
+    ``FMT_DOC``, ``FMT_INSTALL``, and ``FMT_TEST`` in the parent project.
+
+  Thanks to `@niosHD <https://github.com/niosHD>`_.
+
 2.0.1 - 2016-03-13
 ------------------
 
