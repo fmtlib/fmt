@@ -45,7 +45,8 @@ endif ()
 # Install targets.
 if (FMT_INSTALL)
   include(CMakePackageConfigHelpers)
-  set(config_install_dir lib/cmake/cppformat)
+  set(FMT_CMAKE_DIR lib/cmake/cppformat CACHE STRING
+    "Installation directory for cmake files, relative to ${CMAKE_INSTALL_PREFIX}.")
   set(version_config ${PROJECT_BINARY_DIR}/cppformat-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/cppformat-config.cmake)
   set(targets_export_name cppformat-targets)
@@ -66,14 +67,14 @@ if (FMT_INSTALL)
   configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/support/cmake/cppformat-config.cmake.in
     ${project_config}
-    INSTALL_DESTINATION ${config_install_dir})
+    INSTALL_DESTINATION ${FMT_CMAKE_DIR})
   export(TARGETS ${INSTALL_TARGETS} FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
   # Install version, config and target files.
   install(
     FILES ${project_config} ${version_config}
-    DESTINATION ${config_install_dir})
-  install(EXPORT ${targets_export_name} DESTINATION ${config_install_dir})
+    DESTINATION ${FMT_CMAKE_DIR})
+  install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR})
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name} DESTINATION ${FMT_LIB_DIR})
