@@ -93,7 +93,7 @@ if (MASTER_PROJECT AND EXISTS ${gitignore})
     string(REPLACE "*" ".*" line "${line}")
     set(ignored_files ${ignored_files} "${line}$" "${line}/")
   endforeach ()
-  set(ignored_files ${ignored_files}
+  set(ignored_files ${ignored_files} ${PROJECT_BINARY_DIR}
     /.git /breathe /format-benchmark sphinx/ .buildinfo .doctrees)
 
   set(CPACK_SOURCE_GENERATOR ZIP)
