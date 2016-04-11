@@ -1,5 +1,5 @@
-2.1.1 - TBD
------------
+2.1.1 - 2016-04-11
+------------------
 
 * The install location for generated CMake files is now configurable via
   the ``FMT_CMAKE_DIR`` CMake variable
