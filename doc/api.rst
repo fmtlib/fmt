@@ -66,13 +66,13 @@ Write API
 .. doxygenclass:: fmt::BasicArrayWriter
    :members:
 
-.. doxygenfunction:: bin
+.. doxygenfunction:: bin(int)
 
-.. doxygenfunction:: oct
+.. doxygenfunction:: oct(int)
 
-.. doxygenfunction:: hex
+.. doxygenfunction:: hex(int)
 
-.. doxygenfunction:: hexu
+.. doxygenfunction:: hexu(int)
 
 .. doxygenfunction:: pad(int, unsigned, Char)
 
