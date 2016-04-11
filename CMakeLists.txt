@@ -28,7 +28,7 @@ option(FMT_USE_CPP11 "Enable the addition of C++11 compiler flags." ON)
 project(FORMAT)
 
 # starting with cmake 3.0 VERSION is part of the project command
-set(CPPFORMAT_VERSION 2.1.0)
+set(CPPFORMAT_VERSION 2.1.1)
 if (NOT CPPFORMAT_VERSION MATCHES "^([0-9]+).([0-9]+).([0-9]+)$")
   message(FATAL_ERROR "Invalid version format ${CPPFORMAT_VERSION}.")
 endif ()

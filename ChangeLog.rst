@@ -1,3 +1,13 @@
+2.1.1 - TBD
+-----------
+
+* The install location for generated CMake files is now configurable via
+  the ``FMT_CMAKE_DIR`` CMake variable
+  (`#299 <https://github.com/cppformat/cppformat/pull/299>`_).
+  Thanks to `@niosHD <https://github.com/niosHD>`_.
+
+* Documentation fixes (`#252 <https://github.com/cppformat/cppformat/issues/252>`_).
+
 2.1.0 - 2016-03-21
 ------------------
 
