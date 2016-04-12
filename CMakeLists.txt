@@ -2,8 +2,8 @@ message(STATUS "CMake version: ${CMAKE_VERSION}")
 
 cmake_minimum_required(VERSION 2.8.12)
 
-# determine if cppformat is built as sub project (using add_subdirectory)
-# or if it is the master project
+# Determine if cppformat is built as a subproject (using add_subdirectory)
+# or if it is the master project.
 set(MASTER_PROJECT OFF)
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(MASTER_PROJECT ON)
@@ -27,8 +27,8 @@ option(FMT_USE_CPP11 "Enable the addition of C++11 compiler flags." ON)
 
 project(FORMAT)
 
-# starting with cmake 3.0 VERSION is part of the project command
-set(CPPFORMAT_VERSION 2.1.1)
+# Starting with cmake 3.0 VERSION is part of the project command.
+set(CPPFORMAT_VERSION 2.1.2)
 if (NOT CPPFORMAT_VERSION MATCHES "^([0-9]+).([0-9]+).([0-9]+)$")
   message(FATAL_ERROR "Invalid version format ${CPPFORMAT_VERSION}.")
 endif ()
