@@ -8,6 +8,7 @@
 add_library(gmock STATIC
   gmock-gtest-all.cc gmock/gmock.h gtest/gtest.h gtest/gtest-spi.h)
 target_compile_options(gmock PUBLIC ${CPP11_FLAG})
+target_compile_definitions(gmock PUBLIC GTEST_HAS_STD_WSTRING=1)
 target_include_directories(gmock PUBLIC .)
 
 find_package(Threads)
