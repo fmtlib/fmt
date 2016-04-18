@@ -216,6 +216,10 @@ The available integer presentation types are:
 |         | ``'#'`` option with this type adds the prefix ``"0X"``   |
 |         | to the output value.                                     |
 +---------+----------------------------------------------------------+
+| ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
+|         | the current locale setting to insert the appropriate     |
+|         | number separator characters.                             |
++---------+----------------------------------------------------------+
 | none    | The same as ``'d'``.                                     |
 +---------+----------------------------------------------------------+
 
