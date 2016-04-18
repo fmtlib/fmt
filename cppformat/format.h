@@ -29,6 +29,7 @@
 #define FMT_FORMAT_H_
 
 #include <cassert>
+#include <clocale>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -871,9 +872,38 @@ inline unsigned count_digits(uint32_t n) {
 }
 #endif
 
+// A functor that doesn't add a thousands separator.
+struct NoThousandsSep {
+  template <typename Char>
+  void operator()(Char *) {}
+};
+
+// A functor that adds a thousands separator.
+class ThousandsSep {
+ private:
+  fmt::StringRef sep_;
+
+  // Index of a decimal digit with the least significant digit having index 0.
+  unsigned digit_index_;
+
+ public:
+  explicit ThousandsSep(fmt::StringRef sep) : sep_(sep), digit_index_(0) {}
+
+  template <typename Char>
+  void operator()(Char *&buffer) {
+    if (++digit_index_ % 3 != 0)
+      return;
+    buffer -= sep_.size();
+    std::uninitialized_copy(sep_.data(), sep_.data() + sep_.size(), buffer);
+  }
+};
+
 // Formats a decimal unsigned integer value writing into buffer.
-template <typename UInt, typename Char>
-inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
+// thousands_sep is a functor that is called after writing each char to
+// add a thousands separator if necessary.
+template <typename UInt, typename Char, typename ThousandsSep>
+inline void format_decimal(Char *buffer, UInt value, unsigned num_digits,
+                           ThousandsSep thousands_sep) {
   buffer += num_digits;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
@@ -882,7 +912,9 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
     unsigned index = static_cast<unsigned>((value % 100) * 2);
     value /= 100;
     *--buffer = Data::DIGITS[index + 1];
+    thousands_sep(buffer);
     *--buffer = Data::DIGITS[index];
+    thousands_sep(buffer);
   }
   if (value < 10) {
     *--buffer = static_cast<char>('0' + value);
@@ -891,6 +923,11 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
   unsigned index = static_cast<unsigned>(value * 2);
   *--buffer = Data::DIGITS[index + 1];
   *--buffer = Data::DIGITS[index];
+}
+
+template <typename UInt, typename Char>
+inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
+  return format_decimal(buffer, value, num_digits, NoThousandsSep());
 }
 
 #ifndef _WIN32
@@ -2627,9 +2664,8 @@ void BasicWriter<Char>::write_int(T value, Spec spec) {
   switch (spec.type()) {
   case 0: case 'd': {
     unsigned num_digits = internal::count_digits(abs_value);
-    CharPtr p = prepare_int_buffer(
-      num_digits, spec, prefix, prefix_size) + 1 - num_digits;
-    internal::format_decimal(get(p), abs_value, num_digits);
+    CharPtr p = prepare_int_buffer(num_digits, spec, prefix, prefix_size) + 1;
+    internal::format_decimal(get(p), abs_value, 0);
     break;
   }
   case 'x': case 'X': {
@@ -2682,6 +2718,14 @@ void BasicWriter<Char>::write_int(T value, Spec spec) {
     do {
       *p-- = static_cast<Char>('0' + (n & 7));
     } while ((n >>= 3) != 0);
+    break;
+  }
+  case 'n': {
+    unsigned num_digits = internal::count_digits(abs_value);
+    fmt::StringRef sep = std::localeconv()->thousands_sep;
+    std::size_t size = num_digits + sep.size() * (num_digits - 1) / 3;
+    CharPtr p = prepare_int_buffer(size, spec, prefix, prefix_size) + 1;
+    internal::format_decimal(get(p), abs_value, 0, internal::ThousandsSep(sep));
     break;
   }
   default:

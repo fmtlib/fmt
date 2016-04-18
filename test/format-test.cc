@@ -28,6 +28,7 @@
 #include <cctype>
 #include <cfloat>
 #include <climits>
+#include <clocale>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -1164,7 +1165,7 @@ TEST(FormatterTest, FormatShort) {
 TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(format("{0:v", 42),
       FormatError, "missing '}' in format string");
-  check_unknown_types(42, "bBdoxX", "integer");
+  check_unknown_types(42, "bBdoxXn", "integer");
 }
 
 TEST(FormatterTest, FormatBin) {
@@ -1248,6 +1249,16 @@ TEST(FormatterTest, FormatOct) {
   EXPECT_EQ(buffer, format("{0:o}", ULONG_MAX));
 }
 
+TEST(FormatterTest, FormatIntLocale) {
+#ifndef _WIN32
+  const char *locale = "en_US.utf-8";
+#else
+  const char *locale = "English_United States";
+#endif
+  std::setlocale(LC_ALL, locale);
+  EXPECT_EQ("1,234,567", format("{:n}", 1234567));
+}
+
 TEST(FormatterTest, FormatFloat) {
   EXPECT_EQ("392.500000", format("{0:f}", 392.5f));
 }
@@ -1311,7 +1322,7 @@ TEST(FormatterTest, FormatLongDouble) {
 }
 
 TEST(FormatterTest, FormatChar) {
-  const char types[] = "cbBdoxX";
+  const char types[] = "cbBdoxXn";
   check_unknown_types('a', types, "char");
   EXPECT_EQ("a", format("{0}", 'a'));
   EXPECT_EQ("z", format("{0:c}", 'z'));
