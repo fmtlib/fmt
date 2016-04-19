@@ -372,17 +372,15 @@ class BasicWriter;
 typedef BasicWriter<char> Writer;
 typedef BasicWriter<wchar_t> WWriter;
 
-namespace internal {
 template <typename Char>
-class BasicArgFormatter;
-}
+class ArgFormatter;
 
 template <typename CharType,
-          typename ArgFormatter = internal::BasicArgFormatter<CharType> >
+          typename ArgFormatter = fmt::ArgFormatter<CharType> >
 class BasicFormatter;
 
-template <typename Char, typename T>
-void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value);
+template <typename Char, typename ArgFormatter, typename T>
+void format(BasicFormatter<Char, ArgFormatter> &f, const Char *&format_str, const T &value);
 
 /**
   \rst
@@ -1842,24 +1840,6 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
   }
 };
 
-// An argument formatter.
-template <typename Char>
-class BasicArgFormatter :
-    public ArgFormatterBase<BasicArgFormatter<Char>, Char> {
- private:
-  BasicFormatter<Char> &formatter_;
-  const Char *format_;
-
- public:
-  BasicArgFormatter(BasicFormatter<Char> &f, FormatSpec &s, const Char *fmt)
-  : ArgFormatterBase<BasicArgFormatter<Char>, Char>(f.writer(), s),
-    formatter_(f), format_(fmt) {}
-
-  void visit_custom(Arg::CustomValue c) {
-    c.format(&formatter_, c.value, &format_);
-  }
-};
-
 class FormatterBase {
  private:
   ArgList args_;
@@ -1926,6 +1906,32 @@ class PrintfFormatter : private FormatterBase {
                       BasicCStringRef<Char> format_str);
 };
 }  // namespace internal
+
+// An argument formatter.
+template <typename Impl, typename Char>
+class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
+ private:
+  BasicFormatter<Char, Impl> &formatter_;
+  const Char *format_;
+
+ public:
+  BasicArgFormatter(BasicFormatter<Char, Impl> &f,
+                    FormatSpec &s, const Char *fmt)
+  : internal::ArgFormatterBase<Impl, Char>(f.writer(), s),
+    formatter_(f), format_(fmt) {}
+
+  void visit_custom(internal::Arg::CustomValue c) {
+    c.format(&formatter_, c.value, &format_);
+  }
+};
+
+// The default argument formatter.
+template <typename Char>
+class ArgFormatter : public BasicArgFormatter<ArgFormatter<Char>, Char> {
+ public:
+  ArgFormatter(BasicFormatter<Char> &f, FormatSpec &s, const Char *fmt)
+  : BasicArgFormatter<ArgFormatter<Char>, Char>(f, s, fmt) {}
+};
 
 /** This template formats data and writes the output to a writer. */
 template <typename CharType, typename ArgFormatter>
@@ -3009,8 +3015,9 @@ typedef BasicArrayWriter<char> ArrayWriter;
 typedef BasicArrayWriter<wchar_t> WArrayWriter;
 
 // Formats a value.
-template <typename Char, typename T>
-void format(BasicFormatter<Char> &f, const Char *&format_str, const T &value) {
+template <typename Char, typename ArgFormatter, typename T>
+void format(BasicFormatter<Char, ArgFormatter> &f,
+            const Char *&format_str, const T &value) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
 
   internal::FormatBuf<Char> format_buf(buffer);

@@ -1671,7 +1671,7 @@ TEST(FormatTest, EmptyCustomOutput) {
 }
 
 class MockArgFormatter :
-    public fmt::internal::ArgFormatterBase<MockArgFormatter, char>  {
+    public fmt::internal::ArgFormatterBase<MockArgFormatter, char> {
  public:
   typedef fmt::internal::ArgFormatterBase<MockArgFormatter, char> Base;
 
@@ -1693,4 +1693,20 @@ FMT_VARIADIC(void, custom_format, const char *)
 
 TEST(FormatTest, CustomArgFormatter) {
   custom_format("{}", 42);
+}
+
+struct TestArgFormatter : fmt::BasicArgFormatter<TestArgFormatter, char> {
+  TestArgFormatter(fmt::BasicFormatter<char, TestArgFormatter> &f,
+                   fmt::FormatSpec &s, const char *fmt)
+    : fmt::BasicArgFormatter<TestArgFormatter, char>(f, s, fmt) {}
+};
+
+TEST(ArgFormatterTest, CustomArg) {
+  fmt::MemoryWriter writer;
+  typedef fmt::BasicFormatter<char, TestArgFormatter> Formatter;
+  Formatter formatter(fmt::ArgList(), writer);
+  fmt::FormatSpec spec;
+  TestArgFormatter af(formatter, spec, "}");
+  af.visit(fmt::internal::MakeArg<Formatter>(TestEnum()));
+  EXPECT_EQ("TestEnum", writer.str());
 }
