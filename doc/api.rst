@@ -42,6 +42,9 @@ arguments in the resulting string.
 Argument formatters
 -------------------
 
+.. doxygenclass:: fmt::ArgVisitor
+   :members:
+
 .. doxygenclass:: fmt::BasicArgFormatter
    :members:
 

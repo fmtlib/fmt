@@ -1305,30 +1305,114 @@ struct NamedArg : Arg {
   : Arg(MakeArg< BasicFormatter<Char> >(value)), name(argname) {}
 };
 
+class RuntimeError : public std::runtime_error {
+ protected:
+  RuntimeError() : std::runtime_error("") {}
+};
+
+template <typename Char>
+class PrintfArgFormatter;
+
+template <typename Char>
+class ArgMap;
+}  // namespace internal
+
+/** An argument list. */
+class ArgList {
+ private:
+  // To reduce compiled code size per formatting function call, types of first
+  // MAX_PACKED_ARGS arguments are passed in the types_ field.
+  uint64_t types_;
+  union {
+    // If the number of arguments is less than MAX_PACKED_ARGS, the argument
+    // values are stored in values_, otherwise they are stored in args_.
+    // This is done to reduce compiled code size as storing larger objects
+    // may require more code (at least on x86-64) even if the same amount of
+    // data is actually copied to stack. It saves ~10% on the bloat test.
+    const internal::Value *values_;
+    const internal::Arg *args_;
+  };
+
+  internal::Arg::Type type(unsigned index) const {
+    unsigned shift = index * 4;
+    uint64_t mask = 0xf;
+    return static_cast<internal::Arg::Type>(
+          (types_ & (mask << shift)) >> shift);
+  }
+
+  template <typename Char>
+  friend class internal::ArgMap;
+
+ public:
+  // Maximum number of arguments with packed types.
+  enum { MAX_PACKED_ARGS = 16 };
+
+  ArgList() : types_(0) {}
+
+  ArgList(ULongLong types, const internal::Value *values)
+  : types_(types), values_(values) {}
+  ArgList(ULongLong types, const internal::Arg *args)
+  : types_(types), args_(args) {}
+
+  /** Returns the argument at specified index. */
+  internal::Arg operator[](unsigned index) const {
+    using internal::Arg;
+    Arg arg;
+    bool use_values = type(MAX_PACKED_ARGS - 1) == Arg::NONE;
+    if (index < MAX_PACKED_ARGS) {
+      Arg::Type arg_type = type(index);
+      internal::Value &val = arg;
+      if (arg_type != Arg::NONE)
+        val = use_values ? values_[index] : args_[index];
+      arg.type = arg_type;
+      return arg;
+    }
+    if (use_values) {
+      // The index is greater than the number of arguments that can be stored
+      // in values, so return a "none" argument.
+      arg.type = Arg::NONE;
+      return arg;
+    }
+    for (unsigned i = MAX_PACKED_ARGS; i <= index; ++i) {
+      if (args_[i].type == Arg::NONE)
+        return args_[i];
+    }
+    return args_[index];
+  }
+};
+
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
 
-// An argument visitor.
-// To use ArgVisitor define a subclass that implements some or all of the
-// visit methods with the same signatures as the methods in ArgVisitor,
-// for example, visit_int(int).
-// Pass the subclass as the Impl template parameter. Then calling
-// ArgVisitor::visit for some argument will dispatch to a visit method
-// specific to the argument type. For example, if the argument type is
-// double then visit_double(double) method of a subclass will be called.
-// If the subclass doesn't contain a method with this signature, then
-// a corresponding method of ArgVisitor will be called.
-//
-// Example:
-//  class MyArgVisitor : public ArgVisitor<MyArgVisitor, void> {
-//   public:
-//    void visit_int(int value) { print("{}", value); }
-//    void visit_double(double value) { print("{}", value ); }
-//  };
-//
-// ArgVisitor uses the curiously recurring template pattern:
-// http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
+/**
+  \rst
+  An argument visitor.
+  To use `~fmt::ArgVisitor` define a subclass that implements some or all of the
+  visit methods with the same signatures as the methods in `~fmt::ArgVisitor`,
+  for example, `visit_int(int)`.
+  Pass the subclass as the *Impl* template parameter. Then calling
+  `~fmt::ArgVisitor::visit` for some argument will dispatch to a visit method
+  specific to the argument type. For example, if the argument type is
+  ``double`` then `visit_double(double)` method of a subclass will be called.
+  If the subclass doesn't contain a method with this signature, then
+  a corresponding method of `~fmt::ArgVisitor` will be called.
+
+  **Example**::
+
+    class MyArgVisitor : public fmt::ArgVisitor<MyArgVisitor, void> {
+     public:
+      void visit_int(int value) { fmt::print("{}", value); }
+      void visit_double(double value) { fmt::print("{}", value ); }
+    };
+
+  `~fmt::ArgVisitor` uses the `curiously recurring template pattern
+  <http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`_.
+  \endrst
+ */
 template <typename Impl, typename Result>
 class ArgVisitor {
+ private:
+  typedef internal::Arg Arg;
+
  public:
   void report_unhandled_arg() {}
 
@@ -1419,82 +1503,6 @@ class ArgVisitor {
     case Arg::CUSTOM:
       return FMT_DISPATCH(visit_custom(arg.custom));
     }
-  }
-};
-
-class RuntimeError : public std::runtime_error {
- protected:
-  RuntimeError() : std::runtime_error("") {}
-};
-
-template <typename Char>
-class PrintfArgFormatter;
-
-template <typename Char>
-class ArgMap;
-}  // namespace internal
-
-/** An argument list. */
-class ArgList {
- private:
-  // To reduce compiled code size per formatting function call, types of first
-  // MAX_PACKED_ARGS arguments are passed in the types_ field.
-  uint64_t types_;
-  union {
-    // If the number of arguments is less than MAX_PACKED_ARGS, the argument
-    // values are stored in values_, otherwise they are stored in args_.
-    // This is done to reduce compiled code size as storing larger objects
-    // may require more code (at least on x86-64) even if the same amount of
-    // data is actually copied to stack. It saves ~10% on the bloat test.
-    const internal::Value *values_;
-    const internal::Arg *args_;
-  };
-
-  internal::Arg::Type type(unsigned index) const {
-    unsigned shift = index * 4;
-    uint64_t mask = 0xf;
-    return static_cast<internal::Arg::Type>(
-          (types_ & (mask << shift)) >> shift);
-  }
-
-  template <typename Char>
-  friend class internal::ArgMap;
-
- public:
-  // Maximum number of arguments with packed types.
-  enum { MAX_PACKED_ARGS = 16 };
-
-  ArgList() : types_(0) {}
-
-  ArgList(ULongLong types, const internal::Value *values)
-  : types_(types), values_(values) {}
-  ArgList(ULongLong types, const internal::Arg *args)
-  : types_(types), args_(args) {}
-
-  /** Returns the argument at specified index. */
-  internal::Arg operator[](unsigned index) const {
-    using internal::Arg;
-    Arg arg;
-    bool use_values = type(MAX_PACKED_ARGS - 1) == Arg::NONE;
-    if (index < MAX_PACKED_ARGS) {
-      Arg::Type arg_type = type(index);
-      internal::Value &val = arg;
-      if (arg_type != Arg::NONE)
-        val = use_values ? values_[index] : args_[index];
-      arg.type = arg_type;
-      return arg;
-    }
-    if (use_values) {
-      // The index is greater than the number of arguments that can be stored
-      // in values, so return a "none" argument.
-      arg.type = Arg::NONE;
-      return arg;
-    }
-    for (unsigned i = MAX_PACKED_ARGS; i <= index; ++i) {
-      if (args_[i].type == Arg::NONE)
-        return args_[i];
-    }
-    return args_[index];
   }
 };
 
@@ -1911,9 +1919,9 @@ class PrintfFormatter : private FormatterBase {
 /**
   \rst
   An argument formatter.
-  To use `~fmt::BasicArgFormatter` define a subclass that implements some or all
-  of the visit methods with the same signatures as the methods in `ArgVisitor`,
-  for example, `visit_int(int)`.
+  To use `~fmt::BasicArgFormatter` define a subclass that implements some or
+  all of the visit methods with the same signatures as the methods in
+  `~fmt::ArgVisitor`, for example, `visit_int(int)`.
   Pass the subclass as the *Impl* template parameter. When a formatting
   function processes an argument, it will dispatch to a visit method
   specific to the argument type. For example, if the argument type is

@@ -129,7 +129,7 @@ struct IntChecker<true> {
 
 const char RESET_COLOR[] = "\x1b[0m";
 
-typedef void (*FormatFunc)(fmt::Writer &, int, fmt::StringRef);
+typedef void (*FormatFunc)(Writer &, int, StringRef);
 
 // Portable thread-safe version of strerror.
 // Sets buffer to point to a string describing the error code.
@@ -169,7 +169,7 @@ int safe_strerror(
     }
 
     // Handle the case when strerror_r is not available.
-    int handle(fmt::internal::Null<>) {
+    int handle(internal::Null<>) {
       return fallback(strerror_s(buffer_, buffer_size_, error_code_));
     }
 
@@ -181,7 +181,7 @@ int safe_strerror(
     }
 
     // Fallback to strerror if strerror_r and strerror_s are not available.
-    int fallback(fmt::internal::Null<>) {
+    int fallback(internal::Null<>) {
       errno = 0;
       buffer_ = strerror(error_code_);
       return errno;
@@ -199,8 +199,8 @@ int safe_strerror(
   return StrError(error_code, buffer, buffer_size).run();
 }
 
-void format_error_code(fmt::Writer &out, int error_code,
-                       fmt::StringRef message) FMT_NOEXCEPT {
+void format_error_code(Writer &out, int error_code,
+                       StringRef message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
   // INLINE_BUFFER_SIZE to avoid dynamic memory allocation and potential
   // bad_alloc.
@@ -209,22 +209,22 @@ void format_error_code(fmt::Writer &out, int error_code,
   static const char ERROR_STR[] = "error ";
   // Subtract 2 to account for terminating null characters in SEP and ERROR_STR.
   std::size_t error_code_size = sizeof(SEP) + sizeof(ERROR_STR) - 2;
-  typedef fmt::internal::IntTraits<int>::MainType MainType;
+  typedef internal::IntTraits<int>::MainType MainType;
   MainType abs_value = static_cast<MainType>(error_code);
   if (internal::is_negative(error_code)) {
     abs_value = 0 - abs_value;
     ++error_code_size;
   }
-  error_code_size += fmt::internal::count_digits(abs_value);
-  if (message.size() <= fmt::internal::INLINE_BUFFER_SIZE - error_code_size)
+  error_code_size += internal::count_digits(abs_value);
+  if (message.size() <= internal::INLINE_BUFFER_SIZE - error_code_size)
     out << message << SEP;
   out << ERROR_STR << error_code;
-  assert(out.size() <= fmt::internal::INLINE_BUFFER_SIZE);
+  assert(out.size() <= internal::INLINE_BUFFER_SIZE);
 }
 
-void report_error(FormatFunc func,
-    int error_code, fmt::StringRef message) FMT_NOEXCEPT {
-  fmt::MemoryWriter full_message;
+void report_error(FormatFunc func, int error_code,
+                  StringRef message) FMT_NOEXCEPT {
+  MemoryWriter full_message;
   func(full_message, error_code, message);
   // Use Writer::data instead of Writer::c_str to avoid potential memory
   // allocation.
@@ -233,7 +233,7 @@ void report_error(FormatFunc func,
 }
 
 // IsZeroInt::visit(arg) returns true iff arg is a zero integer.
-class IsZeroInt : public fmt::internal::ArgVisitor<IsZeroInt, bool> {
+class IsZeroInt : public ArgVisitor<IsZeroInt, bool> {
  public:
   template <typename T>
   bool visit_any_int(T value) { return value == 0; }
@@ -241,44 +241,43 @@ class IsZeroInt : public fmt::internal::ArgVisitor<IsZeroInt, bool> {
 
 // Checks if an argument is a valid printf width specifier and sets
 // left alignment if it is negative.
-class WidthHandler : public fmt::internal::ArgVisitor<WidthHandler, unsigned> {
+class WidthHandler : public ArgVisitor<WidthHandler, unsigned> {
  private:
-  fmt::FormatSpec &spec_;
+  FormatSpec &spec_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(WidthHandler);
 
  public:
-  explicit WidthHandler(fmt::FormatSpec &spec) : spec_(spec) {}
+  explicit WidthHandler(FormatSpec &spec) : spec_(spec) {}
 
   void report_unhandled_arg() {
-    FMT_THROW(fmt::FormatError("width is not integer"));
+    FMT_THROW(FormatError("width is not integer"));
   }
 
   template <typename T>
   unsigned visit_any_int(T value) {
-    typedef typename fmt::internal::IntTraits<T>::MainType UnsignedType;
+    typedef typename internal::IntTraits<T>::MainType UnsignedType;
     UnsignedType width = static_cast<UnsignedType>(value);
-    if (fmt::internal::is_negative(value)) {
-      spec_.align_ = fmt::ALIGN_LEFT;
+    if (internal::is_negative(value)) {
+      spec_.align_ = ALIGN_LEFT;
       width = 0 - width;
     }
     if (width > INT_MAX)
-      FMT_THROW(fmt::FormatError("number is too big"));
+      FMT_THROW(FormatError("number is too big"));
     return static_cast<unsigned>(width);
   }
 };
 
-class PrecisionHandler :
-    public fmt::internal::ArgVisitor<PrecisionHandler, int> {
+class PrecisionHandler : public ArgVisitor<PrecisionHandler, int> {
  public:
   void report_unhandled_arg() {
-    FMT_THROW(fmt::FormatError("precision is not integer"));
+    FMT_THROW(FormatError("precision is not integer"));
   }
 
   template <typename T>
   int visit_any_int(T value) {
     if (!IntChecker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
-      FMT_THROW(fmt::FormatError("number is too big"));
+      FMT_THROW(FormatError("number is too big"));
     return static_cast<int>(value);
   }
 };
@@ -298,15 +297,15 @@ struct is_same<T, T> {
 // corresponding signed or unsigned type depending on the type specifier:
 // 'd' and 'i' - signed, other - unsigned)
 template <typename T = void>
-class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
+class ArgConverter : public ArgVisitor<ArgConverter<T>, void> {
  private:
-  fmt::internal::Arg &arg_;
+  internal::Arg &arg_;
   wchar_t type_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(ArgConverter);
 
  public:
-  ArgConverter(fmt::internal::Arg &arg, wchar_t type)
+  ArgConverter(internal::Arg &arg, wchar_t type)
     : arg_(arg), type_(type) {}
 
   void visit_bool(bool value) {
@@ -317,8 +316,8 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
   template <typename U>
   void visit_any_int(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
-    using fmt::internal::Arg;
-    typedef typename fmt::internal::Conditional<
+    using internal::Arg;
+    typedef typename internal::Conditional<
         is_same<T, void>::value, U, T>::type TargetType;
     if (sizeof(TargetType) <= sizeof(int)) {
       // Extra casts are used to silence warnings.
@@ -327,7 +326,7 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
         arg_.int_value = static_cast<int>(static_cast<TargetType>(value));
       } else {
         arg_.type = Arg::UINT;
-        typedef typename fmt::internal::MakeUnsigned<TargetType>::Type Unsigned;
+        typedef typename internal::MakeUnsigned<TargetType>::Type Unsigned;
         arg_.uint_value = static_cast<unsigned>(static_cast<Unsigned>(value));
       }
     } else {
@@ -336,35 +335,35 @@ class ArgConverter : public fmt::internal::ArgVisitor<ArgConverter<T>, void> {
         // glibc's printf doesn't sign extend arguments of smaller types:
         //   std::printf("%lld", -42);  // prints "4294967254"
         // but we don't have to do the same because it's a UB.
-        arg_.long_long_value = static_cast<fmt::LongLong>(value);
+        arg_.long_long_value = static_cast<LongLong>(value);
       } else {
         arg_.type = Arg::ULONG_LONG;
         arg_.ulong_long_value =
-            static_cast<typename fmt::internal::MakeUnsigned<U>::Type>(value);
+            static_cast<typename internal::MakeUnsigned<U>::Type>(value);
       }
     }
   }
 };
 
 // Converts an integer argument to char for printf.
-class CharConverter : public fmt::internal::ArgVisitor<CharConverter, void> {
+class CharConverter : public ArgVisitor<CharConverter, void> {
  private:
-  fmt::internal::Arg &arg_;
+  internal::Arg &arg_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(CharConverter);
 
  public:
-  explicit CharConverter(fmt::internal::Arg &arg) : arg_(arg) {}
+  explicit CharConverter(internal::Arg &arg) : arg_(arg) {}
 
   template <typename T>
   void visit_any_int(T value) {
-    arg_.type = Arg::CHAR;
+    arg_.type = internal::Arg::CHAR;
     arg_.int_value = static_cast<char>(value);
   }
 };
 
 // Write the content of w to os.
-void write(std::ostream &os, fmt::Writer &w) {
+void write(std::ostream &os, Writer &w) {
   const char *data = w.data();
   typedef internal::MakeUnsigned<std::streamsize>::Type UnsignedStreamSize;
   UnsignedStreamSize size = w.size();
