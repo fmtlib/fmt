@@ -109,7 +109,7 @@ Utilities
    :protected-members:
    :members:
 
-System Errors
+System errors
 =============
 
 .. doxygenclass:: fmt::SystemError
