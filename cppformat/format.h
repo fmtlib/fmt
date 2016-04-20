@@ -1964,7 +1964,14 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
   const Char *format_;
 
  public:
-  /** Constructs an argument formatter object. */
+  /**
+    \rst
+    Constructs an argument formatter object.
+    *f* is a reference to the main formatter object, *s* contains format
+    specifier information for standard argument types, and *fmt* points to
+    the part of the format string being parsed for custom argument types.
+    \endrst
+   */
   BasicArgFormatter(BasicFormatter<Char, Impl> &f,
                     FormatSpec &s, const Char *fmt)
   : internal::ArgFormatterBase<Impl, Char>(f.writer(), s),
