@@ -39,6 +39,15 @@ arguments in the resulting string.
 .. doxygenclass:: fmt::BasicFormatter
    :members:
 
+Argument formatters
+-------------------
+
+.. doxygenclass:: fmt::BasicArgFormatter
+   :members:
+
+.. doxygenclass:: fmt::ArgFormatter
+   :members:
+
 Printf formatting functions
 ---------------------------
 

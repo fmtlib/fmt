@@ -76,7 +76,7 @@ copyright = u'2012-2015, Victor Zverovich'
 exclude_patterns = ['virtualenv']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
-#default_role = None
+default_role = 'cpp:any'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 #add_function_parentheses = True
