@@ -1420,56 +1420,88 @@ class ArgVisitor {
     return Result();
   }
 
+  /** Visits an ``int`` argument. **/
   Result visit_int(int value) {
     return FMT_DISPATCH(visit_any_int(value));
   }
+
+  /** Visits a ``long long`` argument. **/
   Result visit_long_long(LongLong value) {
     return FMT_DISPATCH(visit_any_int(value));
   }
+
+  /** Visits an ``unsigned`` argument. **/
   Result visit_uint(unsigned value) {
     return FMT_DISPATCH(visit_any_int(value));
   }
+
+  /** Visits an ``unsigned long long`` argument. **/
   Result visit_ulong_long(ULongLong value) {
     return FMT_DISPATCH(visit_any_int(value));
   }
+
+  /** Visits a ``bool`` argument. **/
   Result visit_bool(bool value) {
     return FMT_DISPATCH(visit_any_int(value));
   }
+
+  /** Visits a ``char`` or ``wchar_t`` argument. **/
   Result visit_char(int value) {
     return FMT_DISPATCH(visit_any_int(value));
   }
+
+  /** Visits an argument of any integer type. **/
   template <typename T>
   Result visit_any_int(T) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
 
+  /** Visits a ``double`` argument. **/
   Result visit_double(double value) {
     return FMT_DISPATCH(visit_any_double(value));
   }
+
+  /** Visits a ``long double`` argument. **/
   Result visit_long_double(long double value) {
     return FMT_DISPATCH(visit_any_double(value));
   }
+
+  /** Visits a ``double`` or ``long double`` argument. **/
   template <typename T>
   Result visit_any_double(T) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
 
+  /** Visits a null-terminated C string (``const char *``) argument. **/
   Result visit_cstring(const char *) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
+
+  /** Visits a string argument. **/
   Result visit_string(Arg::StringValue<char>) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
+
+  /** Visits a wide string argument. **/
   Result visit_wstring(Arg::StringValue<wchar_t>) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
+
+  /** Visits a pointer argument. **/
   Result visit_pointer(const void *) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
+
+  /** Visits an argument of a custom (user-defined) type. **/
   Result visit_custom(Arg::CustomValue) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
 
+  /**
+    Visits an argument dispatching to the appropriate visit method based on
+    the argument type. For example, if the argument type is ``double`` then
+    `visit_double(double)` method of the ``Impl`` class will be called.
+   */
   Result visit(const Arg &arg) {
     switch (arg.type) {
     default:
