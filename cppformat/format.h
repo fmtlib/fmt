@@ -1390,13 +1390,13 @@ class ArgList {
 
   To use `~fmt::ArgVisitor` define a subclass that implements some or all of the
   visit methods with the same signatures as the methods in `~fmt::ArgVisitor`,
-  for example, `visit_int(int)`.
+  for example, `~fmt::ArgVisitor::visit_int()`.
   Pass the subclass as the *Impl* template parameter. Then calling
   `~fmt::ArgVisitor::visit` for some argument will dispatch to a visit method
   specific to the argument type. For example, if the argument type is
-  ``double`` then `visit_double(double)` method of a subclass will be called.
-  If the subclass doesn't contain a method with this signature, then
-  a corresponding method of `~fmt::ArgVisitor` will be called.
+  ``double`` then the `~fmt::ArgVisitor::visit_double()` method of a subclass
+  will be called. If the subclass doesn't contain a method with this signature,
+  then a corresponding method of `~fmt::ArgVisitor` will be called.
 
   **Example**::
 
@@ -1450,7 +1450,7 @@ class ArgVisitor {
     return FMT_DISPATCH(visit_any_int(value));
   }
 
-  /** Visits an argument of any integer type. **/
+  /** Visits an argument of any integral type. **/
   template <typename T>
   Result visit_any_int(T) {
     return FMT_DISPATCH(visit_unhandled_arg());
@@ -1498,9 +1498,12 @@ class ArgVisitor {
   }
 
   /**
+    \rst
     Visits an argument dispatching to the appropriate visit method based on
     the argument type. For example, if the argument type is ``double`` then
-    `visit_double(double)` method of the ``Impl`` class will be called.
+    the `~fmt::ArgVisitor::visit_double()` method of the *Impl* class will be
+    called.
+    \endrst
    */
   Result visit(const Arg &arg) {
     switch (arg.type) {
@@ -1763,7 +1766,8 @@ namespace internal {
 template <typename Char>
 class ArgMap {
  private:
-  typedef std::vector<std::pair<fmt::BasicStringRef<Char>, internal::Arg> > MapType;
+  typedef std::vector<
+    std::pair<fmt::BasicStringRef<Char>, internal::Arg> > MapType;
   typedef typename MapType::value_type Pair;
 
   MapType map_;
@@ -1954,14 +1958,14 @@ class PrintfFormatter : private FormatterBase {
 
   To use `~fmt::BasicArgFormatter` define a subclass that implements some or
   all of the visit methods with the same signatures as the methods in
-  `~fmt::ArgVisitor`, for example, `visit_int(int)`.
+  `~fmt::ArgVisitor`, for example, `~fmt::ArgVisitor::visit_int()`.
   Pass the subclass as the *Impl* template parameter. When a formatting
   function processes an argument, it will dispatch to a visit method
   specific to the argument type. For example, if the argument type is
-  ``double`` then `visit_double(double)` method of a subclass will be called.
-  If the subclass doesn't contain a method with this signature, then
-  a corresponding method of `~fmt::BasicArgFormatter` or its superclass will be
-  called.
+  ``double`` then the `~fmt::ArgVisitor::visit_double()` method of a subclass
+  will be called. If the subclass doesn't contain a method with this signature,
+  then a corresponding method of `~fmt::BasicArgFormatter` or its superclass
+  will be called.
 
   **Example**::
 
