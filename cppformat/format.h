@@ -1385,7 +1385,9 @@ class ArgList {
 
 /**
   \rst
-  An argument visitor.
+  An argument visitor based on the `curiously recurring template pattern
+  <http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`_.
+
   To use `~fmt::ArgVisitor` define a subclass that implements some or all of the
   visit methods with the same signatures as the methods in `~fmt::ArgVisitor`,
   for example, `visit_int(int)`.
@@ -1403,9 +1405,6 @@ class ArgList {
       void visit_int(int value) { fmt::print("{}", value); }
       void visit_double(double value) { fmt::print("{}", value ); }
     };
-
-  `~fmt::ArgVisitor` uses the `curiously recurring template pattern
-  <http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`_.
   \endrst
  */
 template <typename Impl, typename Result>
@@ -1918,7 +1917,9 @@ class PrintfFormatter : private FormatterBase {
 
 /**
   \rst
-  An argument formatter.
+  An argument formatter based on the `curiously recurring template pattern
+  <http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`_.
+
   To use `~fmt::BasicArgFormatter` define a subclass that implements some or
   all of the visit methods with the same signatures as the methods in
   `~fmt::ArgVisitor`, for example, `visit_int(int)`.
@@ -1942,8 +1943,7 @@ class PrintfFormatter : private FormatterBase {
         : fmt::BasicArgFormatter<CustomArgFormatter, char>(f, s, fmt) {}
 
       void visit_int(int value) {
-        fmt::FormatSpec &spec = this->spec();
-        if (spec.type() == 'x')
+        if (spec().type() == 'x')
           visit_uint(value); // convert to unsigned and format
         else
           fmt::BasicArgFormatter<CustomArgFormatter, char>::visit_int(value);
@@ -1952,7 +1952,7 @@ class PrintfFormatter : private FormatterBase {
 
     std::string custom_format(const char *format_str, fmt::ArgList args) {
       fmt::MemoryWriter writer;
-      // Pass custom argument formatter to BasicFormatter.
+      // Pass custom argument formatter as a template arg to BasicFormatter.
       fmt::BasicFormatter<char, CustomArgFormatter> formatter(args, writer);
       formatter.format(format_str);
       return writer.str();
@@ -1960,9 +1960,6 @@ class PrintfFormatter : private FormatterBase {
     FMT_VARIADIC(std::string, custom_format, const char *)
 
     std::string s = custom_format("{:x}", -42); // s == "ffffffd6"
-
-  `~fmt::BasicArgFormatter` uses the `curiously recurring template pattern
-  <http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`_.
   \endrst
  */
 template <typename Impl, typename Char>
@@ -1975,15 +1972,15 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
   /**
     \rst
     Constructs an argument formatter object.
-    *f* is a reference to the main formatter object, *s* contains format
-    specifier information for standard argument types, and *fmt* points to
-    the part of the format string being parsed for custom argument types.
+    *formatter* is a reference to the main formatter object, *spec* contains
+    format specifier information for standard argument types, and *fmt* points
+    to the part of the format string being parsed for custom argument types.
     \endrst
    */
-  BasicArgFormatter(BasicFormatter<Char, Impl> &f,
-                    FormatSpec &s, const Char *fmt)
-  : internal::ArgFormatterBase<Impl, Char>(f.writer(), s),
-    formatter_(f), format_(fmt) {}
+  BasicArgFormatter(BasicFormatter<Char, Impl> &formatter,
+                    FormatSpec &spec, const Char *fmt)
+  : internal::ArgFormatterBase<Impl, Char>(formatter.writer(), spec),
+    formatter_(formatter), format_(fmt) {}
 
   /** Formats argument of a custom (user-defined) type. */
   void visit_custom(internal::Arg::CustomValue c) {
@@ -1996,8 +1993,9 @@ template <typename Char>
 class ArgFormatter : public BasicArgFormatter<ArgFormatter<Char>, Char> {
  public:
   /** Constructs an argument formatter object. */
-  ArgFormatter(BasicFormatter<Char> &f, FormatSpec &s, const Char *fmt)
-  : BasicArgFormatter<ArgFormatter<Char>, Char>(f, s, fmt) {}
+  ArgFormatter(BasicFormatter<Char> &formatter,
+               FormatSpec &spec, const Char *fmt)
+  : BasicArgFormatter<ArgFormatter<Char>, Char>(formatter, spec, fmt) {}
 };
 
 /** This template formats data and writes the output to a writer. */
