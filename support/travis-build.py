@@ -19,7 +19,7 @@ def makedirs_if_not_exist(dir):
     if e.errno != errno.EEXIST:
       raise
 
-cppformat_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+fmt_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 build = os.environ['BUILD']
 if build == 'Doc':
@@ -41,7 +41,7 @@ if build == 'Doc':
     urllib.urlretrieve('http://mirrors.kernel.org/ubuntu/pool/main/d/doxygen/' +
                        deb_file, deb_file)
     check_call(['sudo', 'dpkg', '-i', deb_file])
-  sys.path.insert(0, os.path.join(cppformat_dir, 'doc'))
+  sys.path.insert(0, os.path.join(fmt_dir, 'doc'))
   import build
   html_dir = build.build_docs()
   repo = 'cppformat.github.io'
@@ -76,9 +76,9 @@ if build == 'Doc':
   exit(0)
 
 standard = os.environ['STANDARD']
-install_dir    = os.path.join(cppformat_dir, "_install")
-build_dir      = os.path.join(cppformat_dir, "_build")
-test_build_dir = os.path.join(cppformat_dir, "_build_test")
+install_dir    = os.path.join(fmt_dir, "_install")
+build_dir      = os.path.join(fmt_dir, "_build")
+test_build_dir = os.path.join(fmt_dir, "_build_test")
 
 # Configure library.
 makedirs_if_not_exist(build_dir)
@@ -88,7 +88,7 @@ common_cmake_flags = [
 extra_cmake_flags = []
 if standard != '0x':
   extra_cmake_flags = ['-DCMAKE_CXX_FLAGS=-std=c++' + standard, '-DFMT_USE_CPP11=OFF']
-check_call(['cmake', '-DFMT_DOC=OFF', '-DFMT_PEDANTIC=ON', cppformat_dir] +
+check_call(['cmake', '-DFMT_DOC=OFF', '-DFMT_PEDANTIC=ON', fmt_dir] +
            common_cmake_flags + extra_cmake_flags, cwd=build_dir)
 
 # Build library.
@@ -108,6 +108,6 @@ check_call(['make', 'install'], cwd=build_dir)
 # Test installation.
 makedirs_if_not_exist(test_build_dir)
 check_call(['cmake', '-DCMAKE_CXX_FLAGS=-std=c++' + standard,
-                     os.path.join(cppformat_dir, "test", "find-package-test")] +
+                     os.path.join(fmt_dir, "test", "find-package-test")] +
            common_cmake_flags, cwd=test_build_dir)
 check_call(['make', '-j4'], cwd=test_build_dir)

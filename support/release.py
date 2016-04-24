@@ -136,16 +136,16 @@ if __name__ == '__main__':
     workdir = tempfile.mkdtemp()
     try:
         run = Runner()
-        cppformat_dir = os.path.join(workdir, 'cppformat')
+        fmt_dir = os.path.join(workdir, 'fmt')
         branch = args.get('<branch>', 'master')
-        run('git', 'clone', '-b', branch, 'git@github.com:cppformat/cppformat.git', cppformat_dir)
+        run('git', 'clone', '-b', branch, 'git@github.com:cppformat/cppformat.git', fmt_dir)
 
         # Convert changelog from RST to GitHub-flavored Markdown and get the version.
         changelog = 'ChangeLog.rst'
-        changelog_path = os.path.join(cppformat_dir, changelog)
+        changelog_path = os.path.join(fmt_dir, changelog)
         changes, version = core.publish_file(source_path=changelog_path, writer=MDWriter())
         cmakelists = 'CMakeLists.txt'
-        for line in fileinput.input(os.path.join(cppformat_dir, cmakelists), inplace=True):
+        for line in fileinput.input(os.path.join(fmt_dir, cmakelists), inplace=True):
             prefix = 'set(FMT_VERSION '
             if line.startswith(prefix):
                 line = prefix + version + ')\n'
@@ -162,7 +162,7 @@ if __name__ == '__main__':
                 line = '-' * title_len + '\n'
                 title_len = 0
             sys.stdout.write(line)
-        run.cwd = cppformat_dir
+        run.cwd = fmt_dir
         run('git', 'checkout', '-b', 'release')
         run('git', 'add', changelog, cmakelists)
         run('git', 'commit', '-m', 'Update version')
@@ -173,14 +173,14 @@ if __name__ == '__main__':
         site_dir = os.path.join(workdir, 'cppformat.github.io')
         run('git', 'clone', 'git@github.com:cppformat/cppformat.github.io.git', site_dir)
         doc_dir = os.path.join(site_dir, version)
-        shutil.copytree(os.path.join(cppformat_dir, 'doc', 'html'), doc_dir,
+        shutil.copytree(os.path.join(fmt_dir, 'doc', 'html'), doc_dir,
                         ignore=shutil.ignore_patterns('.doctrees', '.buildinfo'))
         run.cwd = site_dir
         run('git', 'add', doc_dir)
         run('git', 'commit', '-m', 'Update docs')
 
         # Create a release on GitHub.
-        run('git', 'push', 'origin', 'release', cwd=cppformat_dir)
+        run('git', 'push', 'origin', 'release', cwd=fmt_dir)
         r = requests.post('https://api.github.com/repos/cppformat/cppformat/releases',
                           params={'access_token': os.getenv('CPPFORMAT_TOKEN')},
                           data=json.dumps({'tag_name': version, 'target_commitish': 'release',

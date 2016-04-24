@@ -76,7 +76,7 @@ def build_docs(version='dev'):
                           FMT_USE_USER_DEFINED_LITERALS=1 \
                           FMT_API=
       EXCLUDE_SYMBOLS   = fmt::internal::* StringValue write_str
-    '''.format(os.path.join(os.path.dirname(doc_dir), 'cppformat')).encode('UTF-8'))
+    '''.format(os.path.join(os.path.dirname(doc_dir), 'fmt')).encode('UTF-8'))
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
   check_call(['sphinx-build',
@@ -86,8 +86,8 @@ def build_docs(version='dev'):
   try:
     check_call(['lessc', '--clean-css',
                 '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
-                os.path.join(doc_dir, 'cppformat.less'),
-                'html/_static/cppformat.css'])
+                os.path.join(doc_dir, 'fmt.less'),
+                'html/_static/fmt.css'])
   except OSError as e:
     if e.errno != errno.ENOENT:
       raise
