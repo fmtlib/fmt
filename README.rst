@@ -1,5 +1,5 @@
-C++ Format
-==========
+{fmt}
+=====
 
 .. image:: https://travis-ci.org/cppformat/cppformat.png?branch=master
    :target: https://travis-ci.org/cppformat/cppformat
@@ -11,7 +11,7 @@ C++ Format
    :alt: Join the chat at https://gitter.im/cppformat/cppformat
    :target: https://gitter.im/cppformat/cppformat?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
-C++ Format is an open-source formatting library for C++.
+**fmt** is an open-source formatting library for C++.
 It can be used as a safe alternative to printf or as a fast
 alternative to IOStreams.
 
@@ -297,7 +297,7 @@ As you can see ``boost::format`` is much slower than the alternative methods; th
 is confirmed by `other tests <http://accu.org/index.php/journals/1539>`_.
 Tinyformat is quite good coming close to IOStreams.  Unfortunately tinyformat
 cannot be faster than the IOStreams because it uses them internally.
-Performance of cppformat is close to that of printf, being `faster than printf on integer
+Performance of **fmt** is close to that of printf, being `faster than printf on integer
 formatting <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_,
 but slower on floating-point formatting which dominates this benchmark.
 
