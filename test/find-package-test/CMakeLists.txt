@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 2.8.12)
 
-project(cppformat-test)
+project(fmt-test)
 
-find_package(cppformat REQUIRED)
+find_package(FMT REQUIRED)
 
-add_executable(library-test "main.cc")
-target_link_libraries(library-test cppformat)
+add_executable(library-test main.cc)
+target_link_libraries(library-test fmt)
 
-if (TARGET cppformat-header-only)
-  add_executable(header-only-test "main.cc")
-  target_link_libraries(header-only-test cppformat-header-only)
+if (TARGET fmt-header-only)
+  add_executable(header-only-test main.cc)
+  target_link_libraries(header-only-test fmt-header-only)
 endif ()

@@ -39,7 +39,7 @@ set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
 target_compile_definitions(test-main PUBLIC
   FMT_USE_FILE_DESCRIPTORS=$<BOOL:${HAVE_OPEN}>)
-target_link_libraries(test-main gmock cppformat)
+target_link_libraries(test-main gmock fmt)
 
 include(CheckCXXCompilerFlag)
 
@@ -97,8 +97,8 @@ endif ()
 add_executable(header-only-test
   header-only-test.cc header-only-test2.cc test-main.cc)
 target_link_libraries(header-only-test gmock)
-if (TARGET cppformat-header-only)
-  target_link_libraries(header-only-test cppformat-header-only)
+if (TARGET fmt-header-only)
+  target_link_libraries(header-only-test fmt-header-only)
 else ()
   target_include_directories(header-only-test PRIVATE ${PROJECT_SOURCE_DIR})
   target_compile_definitions(header-only-test PRIVATE FMT_HEADER_ONLY=1)
@@ -133,7 +133,7 @@ if (FMT_PEDANTIC)
     "${CMAKE_CURRENT_BINARY_DIR}/find-package-test"
     --build-generator ${CMAKE_GENERATOR}
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
-    --build-options "-Dcppformat_DIR=${PROJECT_BINARY_DIR}"
+    --build-options "-DFMT_DIR=${PROJECT_BINARY_DIR}"
                     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
   # test if the targets are findable when add_subdirectory is used
