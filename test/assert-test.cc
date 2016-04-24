@@ -25,7 +25,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "cppformat/format.h"
+#include "fmt/format.h"
 #include "gtest/gtest.h"
 
 #if GTEST_HAS_DEATH_TEST

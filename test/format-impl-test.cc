@@ -29,7 +29,7 @@
 #include "test-assert.h"
 
 // Include format.cc instead of format.h to test implementation-specific stuff.
-#include "cppformat/format.cc"
+#include "fmt/format.cc"
 
 #include <algorithm>
 #include <cstring>

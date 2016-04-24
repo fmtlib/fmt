@@ -29,7 +29,7 @@
 #include <gtest/gtest.h>
 
 #define FMT_USE_VARIADIC_TEMPLATES 0
-#include "cppformat/format.h"
+#include "fmt/format.h"
 
 #define IDENTITY(x) x
 

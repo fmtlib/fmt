@@ -29,7 +29,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "posix-mock.h"
-#include "cppformat/posix.cc"
+#include "fmt/posix.cc"
 
 #include <errno.h>
 #include <fcntl.h>

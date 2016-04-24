@@ -8,7 +8,7 @@ set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 function (generate_source result fragment)
   set(${result} "
   #define FMT_HEADER_ONLY 1
-  #include \"cppformat/format.h\"
+  #include \"fmt/format.h\"
   int main() {
     ${fragment}
   }

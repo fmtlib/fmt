@@ -28,8 +28,8 @@
 #include <cstdlib>  // std::exit
 #include <cstring>
 
+#include "fmt/posix.h"
 #include "gtest-extra.h"
-#include "cppformat/posix.h"
 #include "util.h"
 
 #ifdef fileno

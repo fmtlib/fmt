@@ -86,7 +86,7 @@ if (FMT_PEDANTIC AND MSVC)
 endif ()
 
 if (HAVE_OPEN)
-  add_executable(posix-mock-test posix-mock-test.cc ../cppformat/format.cc ${TEST_MAIN_SRC})
+  add_executable(posix-mock-test posix-mock-test.cc ../fmt/format.cc ${TEST_MAIN_SRC})
   target_include_directories(posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR})
   target_compile_definitions(posix-mock-test PRIVATE FMT_USE_FILE_DESCRIPTORS=1)
   target_link_libraries(posix-mock-test gmock)
@@ -107,14 +107,14 @@ endif ()
 # Test that the library can be compiled with exceptions disabled.
 check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
 if (HAVE_FNO_EXCEPTIONS_FLAG)
-  add_library(noexception-test ../cppformat/format.cc)
+  add_library(noexception-test ../fmt/format.cc)
   target_compile_options(noexception-test PRIVATE -fno-exceptions)
 endif ()
 
 if (FMT_PEDANTIC)
   # Test that the library compiles without windows.h.
   if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    add_library(no-windows-h-test ../cppformat/format.cc)
+    add_library(no-windows-h-test ../fmt/format.cc)
     target_compile_definitions(no-windows-h-test PRIVATE FMT_USE_WINDOWS_H=0)
   endif ()
 

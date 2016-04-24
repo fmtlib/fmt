@@ -72,7 +72,7 @@ else ()
   check_symbol_exists(open fcntl.h HAVE_OPEN)
 endif ()
 
-add_subdirectory(cppformat)
+add_subdirectory(fmt)
 
 if (FMT_DOC)
   add_subdirectory(doc)
