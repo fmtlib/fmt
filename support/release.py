@@ -146,7 +146,7 @@ if __name__ == '__main__':
         changes, version = core.publish_file(source_path=changelog_path, writer=MDWriter())
         cmakelists = 'CMakeLists.txt'
         for line in fileinput.input(os.path.join(cppformat_dir, cmakelists), inplace=True):
-            prefix = 'set(CPPFORMAT_VERSION '
+            prefix = 'set(FMT_VERSION '
             if line.startswith(prefix):
                 line = prefix + version + ')\n'
             sys.stdout.write(line)

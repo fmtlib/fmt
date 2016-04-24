@@ -19,7 +19,7 @@ target_include_directories(cppformat INTERFACE
   $<INSTALL_INTERFACE:include>)
 
 set_target_properties(cppformat PROPERTIES
-  VERSION ${CPPFORMAT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR})
+  VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR})
 
 if (BUILD_SHARED_LIBS)
   if (UNIX AND NOT APPLE)
@@ -62,7 +62,7 @@ if (FMT_INSTALL)
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
     ${version_config}
-    VERSION ${CPPFORMAT_VERSION}
+    VERSION ${FMT_VERSION}
     COMPATIBILITY AnyNewerVersion)
   configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/support/cmake/cppformat-config.cmake.in
