@@ -84,7 +84,7 @@ if (FMT_INSTALL)
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name} DESTINATION ${FMT_LIB_DIR})
-  install(FILES ${FMT_HEADERS} DESTINATION include/cppformat)
+  install(FILES ${FMT_HEADERS} DESTINATION include/fmt)
   if (FMT_CPPFORMAT)
     install(TARGETS cppformat DESTINATION ${FMT_LIB_DIR})
   endif ()
