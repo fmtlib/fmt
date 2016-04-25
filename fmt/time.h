@@ -42,14 +42,21 @@ void format(BasicFormatter<char, ArgFormatter> &f,
     ++end;
   if (*end != '}')
     FMT_THROW(FormatError("missing '}' in format string"));
-  Buffer<char> &buffer = f.writer().buffer();
-  std::size_t start = buffer.size();
   internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> format;
   format.append(format_str, end + 1);
   format[format.size() - 1] = '\0';
-  std::size_t size = std::strftime(&buffer[start], buffer.capacity() - start,
-                                   &format[0], &tm);
-  buffer.resize(start + size);
+  Buffer<char> &buffer = f.writer().buffer();
+  std::size_t start = buffer.size();
+  for (;;) {
+    std::size_t size = buffer.capacity() - start;
+    std::size_t count = std::strftime(&buffer[start], size, &format[0], &tm);
+    if (count != 0) {
+      buffer.resize(start + count);
+      break;
+    }
+    enum {MIN_GROWTH = 10};
+    buffer.reserve(buffer.capacity() + size > MIN_GROWTH ? size : MIN_GROWTH);
+  }
   format_str = end + 1;
 }
 }
