@@ -2626,6 +2626,8 @@ class BasicWriter {
   }
 
   void clear() FMT_NOEXCEPT { buffer_.clear(); }
+
+  Buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
 };
 
 template <typename Char>

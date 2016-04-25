@@ -47,6 +47,8 @@
 #define None 0
 
 #include "fmt/format.h"
+#include "fmt/time.h"
+
 #include "util.h"
 #include "mock-allocator.h"
 #include "gtest-extra.h"
@@ -1576,6 +1578,15 @@ TEST(FormatTest, PrintColored) {
 TEST(FormatTest, Variadic) {
   EXPECT_EQ("abc1", format("{}c{}", "ab", 1));
   EXPECT_EQ(L"abc1", format(L"{}c{}", L"ab", 1));
+}
+
+TEST(FormatTest, Time) {
+  std::tm tm = std::tm();
+  tm.tm_year = 116;
+  tm.tm_mon  = 3;
+  tm.tm_mday = 25;
+  EXPECT_EQ("The date is 2016-04-25.",
+            fmt::format("The date is {:%Y-%m-%d}.", tm));
 }
 
 template <typename T>
