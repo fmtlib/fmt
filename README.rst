@@ -75,7 +75,7 @@ Arguments can be accessed by position and arguments' indices can be repeated:
     std::string s = fmt::format("{0}{1}{0}", "abra", "cad");
     // s == "abracadabra"
 
-C++ Format can be used as a safe portable replacement for ``itoa``:
+fmt can be used as a safe portable replacement for ``itoa``:
 
 .. code:: c++
 
@@ -288,7 +288,7 @@ Library           Method        Run Time, s
 ================= ============= ===========
 EGLIBC 2.19       printf          1.30
 libstdc++ 4.8.2   std::ostream    1.85
-C++ Format 1.0    fmt::print      1.42
+fmt 1.0           fmt::print      1.42
 tinyformat 2.0.1  tfm::printf     2.25
 Boost Format 1.54 boost::format   9.94
 ================= ============= ===========
@@ -297,7 +297,7 @@ As you can see ``boost::format`` is much slower than the alternative methods; th
 is confirmed by `other tests <http://accu.org/index.php/journals/1539>`_.
 Tinyformat is quite good coming close to IOStreams.  Unfortunately tinyformat
 cannot be faster than the IOStreams because it uses them internally.
-Performance of **fmt** is close to that of printf, being `faster than printf on integer
+Performance of fmt is close to that of printf, being `faster than printf on integer
 formatting <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_,
 but slower on floating-point formatting which dominates this benchmark.
 
@@ -320,12 +320,12 @@ Method       Compile Time, s Executable size, KiB Stripped size, KiB
 ============ =============== ==================== ==================
 printf                   2.6                   41                 30
 IOStreams               19.4                   92                 70
-C++ Format              46.8                   46                 34
+fmt                     46.8                   46                 34
 tinyformat              64.6                  418                386
 Boost Format           222.8                  990                923
 ============ =============== ==================== ==================
 
-As you can see, C++ Format has two times less overhead in terms of resulting
+As you can see, fmt has two times less overhead in terms of resulting
 code size compared to IOStreams and comes pretty close to ``printf``.
 Boost Format has by far the largest overheads.
 
@@ -336,12 +336,12 @@ Method       Compile Time, s Executable size, KiB Stripped size, KiB
 ============ =============== ==================== ==================
 printf                   2.1                   41                 30
 IOStreams               19.7                   86                 62
-C++ Format              47.9                  108                 86
+fmt                     47.9                  108                 86
 tinyformat              27.7                  234                190
 Boost Format           122.6                  884                763
 ============ =============== ==================== ==================
 
-``libc``, ``libstdc++`` and ``libformat`` are all linked as shared
+``libc``, ``libstdc++`` and ``libfmt`` are all linked as shared
 libraries to compare formatting function overhead only. Boost Format
 and tinyformat are header-only libraries so they don't provide any
 linkage options.
@@ -374,7 +374,7 @@ or the bloat test::
 License
 -------
 
-C++ Format is distributed under the BSD `license
+fmt is distributed under the BSD `license
 <https://github.com/cppformat/cppformat/blob/master/LICENSE.rst>`_.
 
 The `Format String Syntax
@@ -385,7 +385,7 @@ adapted for the current library. For this reason the documentation is
 distributed under the Python Software Foundation license available in
 `doc/python-license.txt
 <https://raw.github.com/cppformat/cppformat/master/doc/python-license.txt>`_.
-It only applies if you distribute the documentation of C++ Format.
+It only applies if you distribute the documentation of fmt.
 
 Acknowledgments
 ---------------
