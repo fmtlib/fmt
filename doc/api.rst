@@ -4,7 +4,7 @@
 API Reference
 *************
 
-All functions and classes provided by the C++ Format library reside
+All functions and classes provided by the fmt library reside
 in namespace ``fmt`` and macros have prefix ``FMT_``. For brevity the
 namespace is usually omitted in examples.
 
@@ -126,7 +126,7 @@ System errors
 Custom allocators
 =================
 
-The C++ Format library supports custom dynamic memory allocators.
+The fmt library supports custom dynamic memory allocators.
 A custom allocator class can be specified as a template argument to
 :class:`fmt::BasicMemoryWriter`::
 

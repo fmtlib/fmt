@@ -1,9 +1,9 @@
 Overview
 ========
 
-C++ Format (cppformat) is an open-source formatting library for C++.
+**fmt** (previously cppformat) is an open-source formatting library.
 It can be used as a safe alternative to printf or as a fast
-alternative to IOStreams.
+alternative to C++ IOStreams.
 
 .. raw:: html
 
@@ -146,7 +146,7 @@ is represented by ``L'\x42e'`` if we use Unicode) which is rarely what is needed
 Portability
 -----------
 
-C++ Format is highly portable. Here is an incomplete list of operating systems and
+The library is highly portable. Here is an incomplete list of operating systems and
 compilers where it has been tested and known to work:
 
 * 64-bit (amd64) GNU/Linux with GCC 4.4.3, `4.6.3 <https://travis-ci.org/cppformat/cppformat>`_,
@@ -188,16 +188,16 @@ always prints ``inf``.
 Ease of Use
 -----------
 
-C++ Format has small self-contained code base consisting of a single header file
+fmt has a small self-contained code base consisting of a single header file
 and a single source file and no external dependencies. A permissive BSD `license
-<https://github.com/cppformat/cppformat#license>`_ allows using the library both
+<https://github.com/fmtlib/fmt#license>`_ allows using the library both
 in open-source and commercial projects.
 
 .. raw:: html
 
-  <a class="btn btn-success" href="https://github.com/cppformat/cppformat">GitHub Repository</a>
+  <a class="btn btn-success" href="https://github.com/fmtlib/fmt">GitHub Repository</a>
 
   <div class="section footer">
-    <iframe src="http://ghbtns.com/github-btn.html?user=cppformat&amp;repo=cppformat&amp;type=watch&amp;count=true"
+    <iframe src="http://ghbtns.com/github-btn.html?user=fmtlib&amp;repo=fmt&amp;type=watch&amp;count=true"
             class="github-btn" width="100" height="20"></iframe>
   </div>
