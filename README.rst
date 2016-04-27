@@ -42,13 +42,13 @@ Features
   header file and a single source file) and compiled code.
   See `Compile time and code bloat`_.
 * Reliability: the library has an extensive set of `unit tests
-  <https://github.com/cppformat/cppformat/tree/master/test>`_.
+  <https://github.com/fmtlib/fmt/tree/master/test>`_.
 * Safety: the library is fully type safe, errors in format strings are
   reported using exceptions, automatic memory management prevents buffer
   overflow errors.
 * Ease of use: small self-contained code base, no external dependencies,
   permissive BSD `license
-  <https://github.com/cppformat/cppformat/blob/master/LICENSE.rst>`_
+  <https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_
 * `Portability <http://cppformat.github.io#portability>`_ with consistent output
   across platforms and support for older compilers.
 * Clean warning-free codebase even on high warning levels
@@ -170,7 +170,7 @@ Projects using this library
 
 If you are aware of other projects using this library, please let me know
 by `email <mailto:victor.zverovich@gmail.com>`_ or by submitting an
-`issue <https://github.com/cppformat/cppformat/issues>`_.
+`issue <https://github.com/fmtlib/fmt/issues>`_.
 
 Motivation
 ----------
@@ -375,7 +375,7 @@ License
 -------
 
 fmt is distributed under the BSD `license
-<https://github.com/cppformat/cppformat/blob/master/LICENSE.rst>`_.
+<https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_.
 
 The `Format String Syntax
 <http://cppformat.github.io/latest/syntax.html>`_
