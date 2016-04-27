@@ -1,8 +1,8 @@
 {fmt}
 =====
 
-.. image:: https://travis-ci.org/cppformat/cppformat.png?branch=master
-   :target: https://travis-ci.org/cppformat/cppformat
+.. image:: https://travis-ci.org/fmtlib/fmt.png?branch=master
+   :target: https://travis-ci.org/fmtlib/fmt
 
 .. image:: https://ci.appveyor.com/api/projects/status/qk0bhyhqp1ekpat8
    :target: https://ci.appveyor.com/project/vitaut/cppformat
