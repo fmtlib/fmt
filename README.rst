@@ -4,8 +4,8 @@
 .. image:: https://travis-ci.org/fmtlib/fmt.png?branch=master
    :target: https://travis-ci.org/fmtlib/fmt
 
-.. image:: https://ci.appveyor.com/api/projects/status/qk0bhyhqp1ekpat8
-   :target: https://ci.appveyor.com/project/vitaut/cppformat
+.. image:: https://ci.appveyor.com/api/projects/status/ehjkiefde6gucy1v
+   :target: https://ci.appveyor.com/project/vitaut/fmt
    
 .. image:: https://badges.gitter.im/Join%20Chat.svg
    :alt: Join the chat at https://gitter.im/cppformat/cppformat
