@@ -8,8 +8,8 @@
    :target: https://ci.appveyor.com/project/vitaut/fmt
    
 .. image:: https://badges.gitter.im/Join%20Chat.svg
-   :alt: Join the chat at https://gitter.im/cppformat/cppformat
-   :target: https://gitter.im/cppformat/cppformat?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+   :alt: Join the chat at https://gitter.im/fmtlib/fmt
+   :target: https://gitter.im/fmtlib/fmt
 
 **fmt** is an open-source formatting library for C++.
 It can be used as a safe alternative to printf or as a fast
