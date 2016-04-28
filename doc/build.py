@@ -46,7 +46,7 @@ def build_docs(version='dev'):
   except DistributionNotFound:
     pass
   # Install Sphinx and Breathe.
-  pip_install('cppformat/sphinx',
+  pip_install('fmtlib/sphinx',
               '12dde8afdb0a7bb5576e2656692c3478c69d8cc3',
               check_version='1.4a0.dev-20151013')
   pip_install('michaeljones/breathe',
@@ -55,7 +55,7 @@ def build_docs(version='dev'):
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE)
   p.communicate(input=r'''
-      PROJECT_NAME      = C++ Format
+      PROJECT_NAME      = fmt
       GENERATE_LATEX    = NO
       GENERATE_MAN      = NO
       GENERATE_RTF      = NO

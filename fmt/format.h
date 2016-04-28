@@ -170,7 +170,7 @@ typedef __int64          intmax_t;
 # endif
 #endif
 
-// Define FMT_USE_NOEXCEPT to make C++ Format use noexcept (C++11 feature).
+// Define FMT_USE_NOEXCEPT to make fmt use noexcept (C++11 feature).
 #ifndef FMT_USE_NOEXCEPT
 # define FMT_USE_NOEXCEPT 0
 #endif
