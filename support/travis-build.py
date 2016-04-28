@@ -44,16 +44,16 @@ if build == 'Doc':
   sys.path.insert(0, os.path.join(fmt_dir, 'doc'))
   import build
   html_dir = build.build_docs()
-  repo = 'cppformat.github.io'
+  repo = 'fmtlib.github.io'
   if travis and 'KEY' not in os.environ:
     # Don't update the repo if building on Travis from an account that doesn't
     # have push access.
     print('Skipping update of ' + repo)
     exit(0)
-  # Clone the cppformat.github.io repo.
+  # Clone the fmtlib.github.io repo.
   rmtree_if_exists(repo)
   git_url = 'https://github.com/' if travis else 'git@github.com:'
-  check_call(['git', 'clone', git_url + 'cppformat/{}.git'.format(repo)])
+  check_call(['git', 'clone', git_url + 'fmtlib/{}.git'.format(repo)])
   # Copy docs to the repo.
   target_dir = os.path.join(repo, 'dev')
   rmtree_if_exists(target_dir)
@@ -67,7 +67,7 @@ if build == 'Doc':
     check_call(['git', 'commit', '-m', 'Update documentation'], cwd=repo)
     cmd = 'git push'
     if travis:
-      cmd += ' https://$KEY@github.com/cppformat/cppformat.github.io.git master'
+      cmd += ' https://$KEY@github.com/fmtlib/fmtlib.github.io.git master'
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT, cwd=repo)
     # Print the output without the key.
     print(p.communicate()[0].replace(os.environ['KEY'], '$KEY'))
