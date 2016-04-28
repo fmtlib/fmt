@@ -15,7 +15,7 @@
 It can be used as a safe alternative to printf or as a fast
 alternative to IOStreams.
 
-`Documentation <http://cppformat.github.io/latest/>`_
+`Documentation <http://fmtlib.net/latest/>`_
 
 Features
 --------
@@ -26,11 +26,11 @@ Features
 * Write API similar to the one used by IOStreams but stateless allowing
   faster implementation.
 * Format API with `format string syntax
-  <http://cppformat.github.io/latest/syntax.html>`_
+  <http://fmtlib.net/latest/syntax.html>`_
   similar to the one used by `str.format
   <https://docs.python.org/2/library/stdtypes.html#str.format>`_ in Python.
 * Safe `printf implementation
-  <http://cppformat.github.io/latest/api.html#printf-formatting-functions>`_
+  <http://fmtlib.net/latest/api.html#printf-formatting-functions>`_
   including the POSIX extension for positional arguments.
 * Support for user-defined types.
 * High speed: performance of the format API is close to that of
@@ -49,14 +49,14 @@ Features
 * Ease of use: small self-contained code base, no external dependencies,
   permissive BSD `license
   <https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_
-* `Portability <http://cppformat.github.io#portability>`_ with consistent output
+* `Portability <http://fmtlib.net/latest/index.html#portability>`_ with consistent output
   across platforms and support for older compilers.
 * Clean warning-free codebase even on high warning levels
   (-Wall -Wextra -pedantic).
 * Support for wide strings.
 * Optional header-only configuration enabled with the ``FMT_HEADER_ONLY`` macro.
 
-See the `documentation <http://cppformat.github.io/latest/>`_ for more details.
+See the `documentation <http://fmtlib.net/latest/>`_ for more details.
 
 Examples
 --------
@@ -103,10 +103,10 @@ An object of any user-defined type for which there is an overloaded
     // s == "The date is 2012-12-9"
 
 You can use the `FMT_VARIADIC
-<http://cppformat.github.io/latest/api.html#utilities>`_
+<http://fmtlib.net/latest/api.html#utilities>`_
 macro to create your own functions similar to `format
-<http://cppformat.github.io/latest/api.html#format>`_ and
-`print <http://cppformat.github.io/latest/api.html#print>`_
+<http://fmtlib.net/latest/api.html#format>`_ and
+`print <http://fmtlib.net/latest/api.html#print>`_
 which take arbitrary arguments:
 
 .. code:: c++
@@ -352,7 +352,7 @@ Running the tests
 Please refer to `Building the library`__ for the instructions on how to build
 the library and run the unit tests.
 
-__ http://cppformat.github.io/latest/usage.html#building-the-library
+__ http://fmtlib.net/latest/usage.html#building-the-library
 
 Benchmarks reside in a separate repository,
 `format-benchmarks <https://github.com/fmtlib/format-benchmark>`_,
@@ -378,7 +378,7 @@ fmt is distributed under the BSD `license
 <https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_.
 
 The `Format String Syntax
-<http://cppformat.github.io/latest/syntax.html>`_
+<http://fmtlib.net/latest/syntax.html>`_
 section in the documentation is based on the one from Python `string module
 documentation <https://docs.python.org/3/library/string.html#module-string>`_
 adapted for the current library. For this reason the documentation is
