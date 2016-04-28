@@ -1,7 +1,7 @@
 Overview
 ========
 
-**fmt** (previously cppformat) is an open-source formatting library.
+**fmt** (formerly cppformat) is an open-source formatting library.
 It can be used as a safe alternative to printf or as a fast
 alternative to C++ IOStreams.
 
@@ -149,7 +149,7 @@ Portability
 The library is highly portable. Here is an incomplete list of operating systems and
 compilers where it has been tested and known to work:
 
-* 64-bit (amd64) GNU/Linux with GCC 4.4.3, `4.6.3 <https://travis-ci.org/cppformat/cppformat>`_,
+* 64-bit (amd64) GNU/Linux with GCC 4.4.3, `4.6.3 <https://travis-ci.org/fmtlib/fmt>`_,
   4.7.2, 4.8.1 and Intel C++ Compiler (ICC) 14.0.2
 
 * 32-bit (i386) GNU/Linux with GCC 4.4.3, 4.6.3
@@ -157,7 +157,7 @@ compilers where it has been tested and known to work:
 * Mac OS X with GCC 4.2.1 and Clang 4.2, 5.1.0
 
 * 64-bit Windows with Visual C++ 2010, 2013 and
-  `2015 <https://ci.appveyor.com/project/vitaut/cppformat>`_
+  `2015 <https://ci.appveyor.com/project/vitaut/fmt>`_
 
 * 32-bit Windows with Visual C++ 2010
 

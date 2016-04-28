@@ -2118,7 +2118,7 @@ struct ArgArray<N, true/*IsPacked*/> {
   static Value make(const T &value) {
     Value result = MakeValue<Formatter>(value);
     // Workaround a bug in Apple LLVM version 4.2 (clang-425.0.28) of clang:
-    // https://github.com/cppformat/cppformat/issues/276
+    // https://github.com/fmtlib/fmt/issues/276
     (void)result.custom.format;
     return result;
   }

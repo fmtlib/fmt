@@ -19,7 +19,7 @@ class Git:
 dir = tempfile.mkdtemp()
 try:
   git = Git(dir)
-  git('clone', '-b', 'coverity', 'git@github.com:cppformat/cppformat.git', dir)
+  git('clone', '-b', 'coverity', 'git@github.com:fmtlib/fmt.git', dir)
   output = git('merge', '-X', 'theirs', '--no-commit', 'origin/master')
   if 'Fast-forward' not in output:
     git('reset', 'HEAD', '.travis.yml')
