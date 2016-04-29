@@ -42,7 +42,7 @@ arguments in the resulting string.
 Date and time formatting
 ------------------------
 
-The library supports [strftime](http://en.cppreference.com/w/cpp/chrono/c/strftime)-like
+The library supports `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_-like
 date and time formatting::
 
   #include "fmt/time.h"
@@ -52,7 +52,7 @@ date and time formatting::
   fmt::print("The date is {:%Y-%m-%d}.", *std::localtime(&t));
 
 The format string syntax is described in the documentation of
-[strftime](http://en.cppreference.com/w/cpp/chrono/c/strftime).
+`strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_.
 
 Argument formatters
 -------------------
