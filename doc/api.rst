@@ -39,8 +39,54 @@ arguments in the resulting string.
 .. doxygenclass:: fmt::BasicFormatter
    :members:
 
+Date and time formatting
+------------------------
+
+The library supports [strftime](http://en.cppreference.com/w/cpp/chrono/c/strftime)-like
+date and time formatting::
+
+  #include "fmt/time.h"
+
+  std::time_t t = std::time(nullptr);
+  // Prints "The date is 2016-04-29." (with the current date)
+  fmt::print("The date is {:%Y-%m-%d}.", *std::localtime(&t));
+
+The format string syntax is described in the documentation of
+[strftime](http://en.cppreference.com/w/cpp/chrono/c/strftime).
+
 Argument formatters
 -------------------
+
+It is possible to change the way arguments are formatted by providing a
+custom argument formatter class::
+
+  // A custom argument formatter that formats negative integers as unsigned
+  // with the ``x`` format specifier.
+  class CustomArgFormatter :
+    public fmt::BasicArgFormatter<CustomArgFormatter, char>  {
+    public:
+    CustomArgFormatter(fmt::BasicFormatter<char, CustomArgFormatter> &f,
+                       fmt::FormatSpec &s, const char *fmt)
+      : fmt::BasicArgFormatter<CustomArgFormatter, char>(f, s, fmt) {}
+
+    void visit_int(int value) {
+      if (spec().type() == 'x')
+        visit_uint(value); // convert to unsigned and format
+      else
+        fmt::BasicArgFormatter<CustomArgFormatter, char>::visit_int(value);
+    }
+  };
+
+  std::string custom_format(const char *format_str, fmt::ArgList args) {
+    fmt::MemoryWriter writer;
+    // Pass custom argument formatter as a template arg to BasicFormatter.
+    fmt::BasicFormatter<char, CustomArgFormatter> formatter(args, writer);
+    formatter.format(format_str);
+    return writer.str();
+  }
+  FMT_VARIADIC(std::string, custom_format, const char *)
+
+  std::string s = custom_format("{:x}", -42); // s == "ffffffd6"
 
 .. doxygenclass:: fmt::ArgVisitor
    :members:

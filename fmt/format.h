@@ -1966,36 +1966,6 @@ class PrintfFormatter : private FormatterBase {
   will be called. If the subclass doesn't contain a method with this signature,
   then a corresponding method of `~fmt::BasicArgFormatter` or its superclass
   will be called.
-
-  **Example**::
-
-    // A custom argument formatter that formats negative integers as unsigned
-    // with the ``x`` format specifier.
-    class CustomArgFormatter :
-      public fmt::BasicArgFormatter<CustomArgFormatter, char>  {
-     public:
-      CustomArgFormatter(fmt::BasicFormatter<char, CustomArgFormatter> &f,
-                         fmt::FormatSpec &s, const char *fmt)
-        : fmt::BasicArgFormatter<CustomArgFormatter, char>(f, s, fmt) {}
-
-      void visit_int(int value) {
-        if (spec().type() == 'x')
-          visit_uint(value); // convert to unsigned and format
-        else
-          fmt::BasicArgFormatter<CustomArgFormatter, char>::visit_int(value);
-      }
-    };
-
-    std::string custom_format(const char *format_str, fmt::ArgList args) {
-      fmt::MemoryWriter writer;
-      // Pass custom argument formatter as a template arg to BasicFormatter.
-      fmt::BasicFormatter<char, CustomArgFormatter> formatter(args, writer);
-      formatter.format(format_str);
-      return writer.str();
-    }
-    FMT_VARIADIC(std::string, custom_format, const char *)
-
-    std::string s = custom_format("{:x}", -42); // s == "ffffffd6"
   \endrst
  */
 template <typename Impl, typename Char>
