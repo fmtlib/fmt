@@ -435,7 +435,7 @@ Fixes
   `@MariadeAnton <https://github.com/MariadeAnton>`_ and
   `@franramirez688 <https://github.com/franramirez688>`_.
 
-* Improved support for bulding with `Android NDK
+* Improved support for building with `Android NDK
   <https://developer.android.com/tools/sdk/ndk/index.html>`_
   (`#107 <https://github.com/fmtlib/fmt/pull/107>`_).
   Thanks to `@newnon <https://github.com/newnon>`_.
@@ -621,7 +621,7 @@ Fixes
 
   Apart from a more natural syntax, this also improves performance as there
   is no need to construct temporary formatter objects and control arguments'
-  lifetimes. Because the wrapper functions are very ligthweight, this doesn't
+  lifetimes. Because the wrapper functions are very lightweight, this doesn't
   cause code bloat even in pre-C++11 mode.
 
 * Simplified common case of formatting an ``std::string``. Now it requires a

@@ -69,7 +69,7 @@ the previous section. Then compile the ``doc`` target/project, for example::
 
   make doc
 
-This will generate the HTML documenation in ``doc/html``.
+This will generate the HTML documentation in ``doc/html``.
   
 Android NDK
 ===========
