@@ -51,7 +51,7 @@ endif ()
 
 if (MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
   # If Microsoft SDK is installed create script run-msbuild.bat that
-  # calls SetEnv.cmd to to set up build environment and runs msbuild.
+  # calls SetEnv.cmd to set up build environment and runs msbuild.
   # It is useful when building Visual Studio projects with the SDK
   # toolchain rather than Visual Studio.
   include(FindSetEnv)

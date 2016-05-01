@@ -145,7 +145,7 @@ public:
   // A "move constructor" for moving from a temporary.
   BufferedFile(Proxy p) FMT_NOEXCEPT : file_(p.file) {}
 
-  // A "move constructor" for for moving from an lvalue.
+  // A "move constructor" for moving from an lvalue.
   BufferedFile(BufferedFile &f) FMT_NOEXCEPT : file_(f.file_) {
     f.file_ = 0;
   }
@@ -251,7 +251,7 @@ class File {
   // A "move constructor" for moving from a temporary.
   File(Proxy p) FMT_NOEXCEPT : fd_(p.fd) {}
 
-  // A "move constructor" for for moving from an lvalue.
+  // A "move constructor" for moving from an lvalue.
   File(File &other) FMT_NOEXCEPT : fd_(other.fd_) {
     other.fd_ = -1;
   }
