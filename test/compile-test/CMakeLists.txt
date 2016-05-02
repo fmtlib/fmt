@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 
 include(CheckCXXSourceCompiles)
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/../..)
+set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
 
 function (generate_source result fragment)
   set(${result} "
@@ -57,3 +58,14 @@ expect_compile_error("fmt::MemoryWriter() << fmt::pad(42, 5, L' ');")
 expect_compile_error("fmt::format(\"{}\", L'a';")
 
 expect_compile_error("FMT_STATIC_ASSERT(0 > 1, \"oops\");")
+
+# Make sure that compiler features detected in the header
+# match the features detected in CMake.
+if (SUPPORTS_USER_DEFINED_LITERALS)
+  set(supports_udl 1)
+else ()
+  set(supports_udl 0)
+endif ()
+expect_compile("#if FMT_USE_USER_DEFINED_LITERALS != ${supports_udl}
+                # error
+                #endif")

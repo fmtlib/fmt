@@ -123,7 +123,11 @@ if (FMT_PEDANTIC)
     "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"
     "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
     --build-generator ${CMAKE_GENERATOR}
-    --build-makeprogram ${CMAKE_MAKE_PROGRAM})
+    --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+    --build-options 
+    "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+    "-DCPP11_FLAG=${CPP11_FLAG}"
+    "-DSUPPORTS_USER_DEFINED_LITERALS=${SUPPORTS_USER_DEFINED_LITERALS}")
 
   # test if the targets are findable from the build directory
   add_test(find-package-test ${CMAKE_CTEST_COMMAND}

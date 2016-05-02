@@ -99,6 +99,12 @@ typedef __int64          intmax_t;
 # define FMT_GCC_EXTENSION
 #endif
 
+#if defined(__INTEL_COMPILER)
+# define FMT_ICC_VERSION __INTEL_COMPILER
+#elif defined(__ICL)
+# define FMT_ICC_VERSION __ICL
+#endif
+
 #if defined(__clang__) && !defined(__INTEL_COMPILER)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdocumentation"
@@ -212,10 +218,12 @@ typedef __int64          intmax_t;
 // All compilers which support UDLs also support variadic templates. This
 // makes the fmt::literals implementation easier. However, an explicit check
 // for variadic templates is added here just in case.
+// For Intel's compiler both it and the system gcc/msc must support UDLs.
 # define FMT_USE_USER_DEFINED_LITERALS \
    FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES && \
    (FMT_HAS_FEATURE(cxx_user_literals) || \
-       (FMT_GCC_VERSION >= 407 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1900)
+       (FMT_GCC_VERSION >= 407 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1900) && \
+   (!defined(FMT_ICC_VERSION) || FMT_ICC_VERSION >= 1500)
 #endif
 
 #ifndef FMT_ASSERT
