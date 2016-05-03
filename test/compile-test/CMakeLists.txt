@@ -20,22 +20,28 @@ function (expect_compile code)
   generate_source(source "${code}")
   check_cxx_source_compiles("${source}" compiles)
   if (NOT compiles)
-    message(FATAL_ERROR "Compile error for: ${code}")
+    set(error_msg "Compile error for: ${code}")
   endif ()
   # Unset the CMake cache variable compiles. Otherwise the compile test will
   # just use cached information next time it runs.
   unset(compiles CACHE)
+  if (error_msg)
+    message(FATAL_ERROR ${error_msg})
+  endif ()
 endfunction ()
 
 function (expect_compile_error code)
   generate_source(source "${code}")
   check_cxx_source_compiles("${source}" compiles)
   if (compiles)
-    message(FATAL_ERROR "No compile error for: ${code}")
+    set(error_msg "No compile error for: ${code}")
   endif ()
   # Unset the CMake cache variable compiles. Otherwise the compile test will
   # just use cached information next time it runs.
   unset(compiles CACHE)
+  if (error_msg)
+    message(FATAL_ERROR ${error_msg})
+  endif ()
 endfunction ()
 
 # check if the source file skeleton compiles
