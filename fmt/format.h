@@ -105,7 +105,7 @@ typedef __int64          intmax_t;
 # define FMT_ICC_VERSION __ICL
 #endif
 
-#if defined(__clang__) && !defined(__INTEL_COMPILER)
+#if defined(__clang__) && !defined(FMT_ICC_VERSION)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdocumentation"
 #endif
@@ -3915,7 +3915,7 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 # pragma GCC diagnostic pop
 #endif
 
-#if defined(__clang__) && !defined(__INTEL_COMPILER)
+#if defined(__clang__) && !defined(FMT_ICC_VERSION)
 # pragma clang diagnostic pop
 #endif
 
