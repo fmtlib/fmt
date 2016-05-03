@@ -9,7 +9,7 @@ set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
 function (generate_source result fragment)
   set(${result} "
   #define FMT_HEADER_ONLY 1
-  #include \"fmt/format.h\"
+  #include \"fmt/posix.h\"
   int main() {
     ${fragment}
   }
@@ -63,6 +63,7 @@ expect_compile_error("fmt::MemoryWriter() << fmt::pad(42, 5, L' ');")
 # Formatting a wide character with a narrow format string is forbidden.
 expect_compile_error("fmt::format(\"{}\", L'a';")
 
+expect_compile("FMT_STATIC_ASSERT(true, \"this should never happen\");")
 expect_compile_error("FMT_STATIC_ASSERT(0 > 1, \"oops\");")
 
 # Make sure that compiler features detected in the header
