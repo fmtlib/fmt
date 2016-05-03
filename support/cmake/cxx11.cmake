@@ -63,4 +63,11 @@ check_cxx_source_compiles("
   class C { void operator=(const C&); };
   int main() { static_assert(!std::is_copy_assignable<C>::value, \"\"); }"
   SUPPORTS_TYPE_TRAITS)
+
+# Check if user-defined literals are available
+check_cxx_source_compiles("
+  void operator\"\" _udl(long double);
+  int main() {}"
+  SUPPORTS_USER_DEFINED_LITERALS)
+
 set(CMAKE_REQUIRED_FLAGS )
