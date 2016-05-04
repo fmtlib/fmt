@@ -9,7 +9,7 @@ set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
 function (generate_source result fragment)
   set(${result} "
   #define FMT_HEADER_ONLY 1
-  #include \"fmt/format.h\"
+  #include \"fmt/posix.h\"
   int main() {
     ${fragment}
   }
@@ -20,22 +20,28 @@ function (expect_compile code)
   generate_source(source "${code}")
   check_cxx_source_compiles("${source}" compiles)
   if (NOT compiles)
-    message(FATAL_ERROR "Compile error for: ${code}")
+    set(error_msg "Compile error for: ${code}")
   endif ()
   # Unset the CMake cache variable compiles. Otherwise the compile test will
   # just use cached information next time it runs.
   unset(compiles CACHE)
+  if (error_msg)
+    message(FATAL_ERROR ${error_msg})
+  endif ()
 endfunction ()
 
 function (expect_compile_error code)
   generate_source(source "${code}")
   check_cxx_source_compiles("${source}" compiles)
   if (compiles)
-    message(FATAL_ERROR "No compile error for: ${code}")
+    set(error_msg "No compile error for: ${code}")
   endif ()
   # Unset the CMake cache variable compiles. Otherwise the compile test will
   # just use cached information next time it runs.
   unset(compiles CACHE)
+  if (error_msg)
+    message(FATAL_ERROR ${error_msg})
+  endif ()
 endfunction ()
 
 # check if the source file skeleton compiles
@@ -57,6 +63,7 @@ expect_compile_error("fmt::MemoryWriter() << fmt::pad(42, 5, L' ');")
 # Formatting a wide character with a narrow format string is forbidden.
 expect_compile_error("fmt::format(\"{}\", L'a';")
 
+expect_compile("FMT_STATIC_ASSERT(true, \"this should never happen\");")
 expect_compile_error("FMT_STATIC_ASSERT(0 > 1, \"oops\");")
 
 # Make sure that compiler features detected in the header

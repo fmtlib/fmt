@@ -137,8 +137,10 @@ if (FMT_PEDANTIC)
     "${CMAKE_CURRENT_BINARY_DIR}/find-package-test"
     --build-generator ${CMAKE_GENERATOR}
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
-    --build-options "-DFMT_DIR=${PROJECT_BINARY_DIR}"
-                    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+    --build-options
+    "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+    "-DFMT_DIR=${PROJECT_BINARY_DIR}"
+    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
   # test if the targets are findable when add_subdirectory is used
   add_test(add-subdirectory-test ${CMAKE_CTEST_COMMAND}
@@ -148,5 +150,7 @@ if (FMT_PEDANTIC)
     "${CMAKE_CURRENT_BINARY_DIR}/add-subdirectory-test"
     --build-generator ${CMAKE_GENERATOR}
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
-    --build-options "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+    --build-options
+    "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()
