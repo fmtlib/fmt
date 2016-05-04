@@ -1,4 +1,4 @@
-Copyright (c) 2012 - 2015, Victor Zverovich
+Copyright (c) 2012 - 2016, Victor Zverovich
 
 All rights reserved.
 
