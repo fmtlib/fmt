@@ -1,3 +1,52 @@
+3.0.0 - TBD
+
+* The project has been renamed from C++ Format (cppformat) to fmt for
+  consistency with the used namespace and macro prefix
+  (`#307 <https://github.com/fmtlib/fmt/issues/307>`_).
+  Library headers are now located in the ``fmt`` directory:
+
+  .. code:: c++
+
+    #include "fmt/format.h"
+
+  Including the headers from the ``cppformat`` directory is deprecated
+  but works via a proxy header which will be removed in the next major version.
+
+* Fixed detection of user-defined literal support on Intel C++ compiler
+  (`#311 <https://github.com/fmtlib/fmt/issues/311>`_,
+  `#312 <https://github.com/fmtlib/fmt/pull/312>`_).
+  Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_ and
+  `@speth (Ray Speth) <https://github.com/speth>`_.
+
+* Compile test fixes (`#313 <https://github.com/fmtlib/fmt/pull/313>`_).
+  Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_.
+
+* Documentation fixes (`#309 <https://github.com/fmtlib/fmt/pull/309>`_).
+  Thanks to `@jwilk (Jakub Wilk) <https://github.com/jwilk>`_.
+
+* Fixed compiler warnings (`#259 <https://github.com/fmtlib/fmt/pull/259>`_,
+  `#277 <https://github.com/fmtlib/fmt/pull/277>`_,
+  `#286 <https://github.com/fmtlib/fmt/pull/286>`_).
+  Thanks to `@mwinterb <https://github.com/mwinterb>`_,
+  `@pweiskircher (Patrik Weiskircher) <https://github.com/pweiskircher>`_,
+  `@Naios <https://github.com/Naios>`_.
+
+* Improved compatibility with Windows Store apps
+  (`#280 <https://github.com/fmtlib/fmt/issues/280>`_,
+  `#285 <https://github.com/fmtlib/fmt/pull/285>`_)
+  Thanks to `@mwinterb <https://github.com/mwinterb>`_.
+
+* Added tests of compatibility with older C++ standards
+  (`#273 <https://github.com/fmtlib/fmt/pull/273>`_).
+  Thanks to `@niosHD <https://github.com/niosHD>`_.
+
+* Fixed Android build (`#271 <https://github.com/fmtlib/fmt/pull/271>`_).
+  Thanks to `@newnon <https://github.com/newnon>`_.
+
+* Changed ``ArgMap`` to be backed by a vector instead of a map.
+  (`#262 <https://github.com/fmtlib/fmt/pull/262>`_).
+  Thanks to `@mwinterb <https://github.com/mwinterb>`_.
+
 2.1.1 - 2016-04-11
 ------------------
 
