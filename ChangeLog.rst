@@ -1,4 +1,5 @@
 3.0.0 - TBD
+-----------
 
 * The project has been renamed from C++ Format (cppformat) to fmt for
   consistency with the used namespace and macro prefix
@@ -9,7 +10,7 @@
 
     #include "fmt/format.h"
 
-  Including the headers from the ``cppformat`` directory is deprecated
+  Including ``format.h`` from the ``cppformat`` directory is deprecated
   but works via a proxy header which will be removed in the next major version.
 
 * Fixed detection of user-defined literal support on Intel C++ compiler
@@ -18,13 +19,23 @@
   Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_ and
   `@speth (Ray Speth) <https://github.com/speth>`_.
 
+* Reduced compile time of variadic functions
+  (`#243 <https://github.com/fmtlib/fmt/pull/243>`_,
+  `#249 <https://github.com/fmtlib/fmt/pull/249>`_).
+  Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_.
+
 * Compile test fixes (`#313 <https://github.com/fmtlib/fmt/pull/313>`_).
   Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_.
 
-* Documentation fixes (`#309 <https://github.com/fmtlib/fmt/pull/309>`_).
-  Thanks to `@jwilk (Jakub Wilk) <https://github.com/jwilk>`_.
+* Documentation fixes (`239 <https://github.com/fmtlib/fmt/pull/239>`_,
+  `258 <https://github.com/fmtlib/fmt/pull/258>`_,
+  `#309 <https://github.com/fmtlib/fmt/pull/309>`_).
+  Thanks to `@ReadmeCritic <https://github.com/ReadmeCritic>`_
+  `@Gachapen (Magnus Bjerke Vik) <https://github.com/Gachapen>`_ and
+  `@jwilk (Jakub Wilk) <https://github.com/jwilk>`_.
 
-* Fixed compiler warnings (`#259 <https://github.com/fmtlib/fmt/pull/259>`_,
+* Fixed compiler warnings (`#256 <https://github.com/fmtlib/fmt/pull/256>`_,
+  `#259 <https://github.com/fmtlib/fmt/pull/259>`_,
   `#277 <https://github.com/fmtlib/fmt/pull/277>`_,
   `#286 <https://github.com/fmtlib/fmt/pull/286>`_).
   Thanks to `@mwinterb <https://github.com/mwinterb>`_,
@@ -46,6 +57,14 @@
 * Changed ``ArgMap`` to be backed by a vector instead of a map.
   (`#262 <https://github.com/fmtlib/fmt/pull/262>`_).
   Thanks to `@mwinterb <https://github.com/mwinterb>`_.
+
+* Added ``fprintf`` overload that writes to a ``std::ostream``
+  (`#251 <https://github.com/fmtlib/fmt/pull/251>`_).
+  Thanks to `nickhutchinson (Nicholas Hutchinson) <https://github.com/nickhutchinson>`_.
+
+* Export symbols when building a Windows DLL
+  (`#245 <https://github.com/fmtlib/fmt/pull/245>`_).
+  Thanks to `macdems (Maciek Dems) <https://github.com/macdems>`_.
 
 2.1.1 - 2016-04-11
 ------------------
