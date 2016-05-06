@@ -62,9 +62,10 @@ using testing::StrictMock;
 namespace {
 
 struct Test {};
+
 template <typename Char>
-std::basic_ostream<Char> &operator<<(std::basic_ostream<Char> &os, Test) {
-  return os << "test";
+void format(fmt::BasicFormatter<Char> &f, const Char *, Test) {
+  f.writer() << "test";
 }
 
 template <typename Char, typename T>
@@ -914,14 +915,11 @@ TEST(UtilTest, ReportWindowsError) {
 #endif  // _WIN32
 
 enum TestEnum2 {};
-enum TestEnum3 {};
-std::ostream &operator<<(std::ostream &, TestEnum3);
 
 TEST(UtilTest, ConvertToInt) {
   EXPECT_TRUE(fmt::internal::ConvertToInt<char>::enable_conversion);
   EXPECT_FALSE(fmt::internal::ConvertToInt<const char *>::enable_conversion);
   EXPECT_TRUE(fmt::internal::ConvertToInt<TestEnum2>::value);
-  EXPECT_FALSE(fmt::internal::ConvertToInt<TestEnum3>::value);
 }
 
 #if FMT_USE_ENUM_BASE

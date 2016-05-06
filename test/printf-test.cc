@@ -447,10 +447,6 @@ TEST(PrintfTest, Pointer) {
   EXPECT_PRINTF("(nil)", "%p", null_str);
 }
 
-TEST(PrintfTest, Custom) {
-  EXPECT_PRINTF("abc", "%s", TestString("abc"));
-}
-
 TEST(PrintfTest, Location) {
   // TODO: test %n
 }
@@ -479,12 +475,5 @@ TEST(PrintfTest, PrintfError) {
 #endif
 
 TEST(PrintfTest, WideString) {
-  EXPECT_EQ(L"abc", fmt::sprintf(L"%s", TestWString(L"abc")));
-}
-
-TEST(PrintfTest, Iostream) {
-  std::ostringstream os;
-  int ret = fmt::fprintf(os, "Don't %s!", "panic");
-  EXPECT_EQ("Don't panic!", os.str());
-  EXPECT_EQ(12, ret);
+  EXPECT_EQ(L"abc", fmt::sprintf(L"%s", L"abc"));
 }

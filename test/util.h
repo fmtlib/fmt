@@ -78,11 +78,7 @@ class BasicTestString {
  public:
   explicit BasicTestString(const Char *value = EMPTY) : value_(value) {}
 
-  friend std::basic_ostream<Char> &operator<<(
-      std::basic_ostream<Char> &os, const BasicTestString &s) {
-    os << s.value_;
-    return os;
-  }
+  const std::basic_string<Char> &value() const { return value_; }
 };
 
 template <typename Char>
@@ -90,3 +86,13 @@ const Char BasicTestString<Char>::EMPTY[] = {0};
 
 typedef BasicTestString<char> TestString;
 typedef BasicTestString<wchar_t> TestWString;
+
+class Date {
+  int year_, month_, day_;
+ public:
+  Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
+
+  int year() const { return year_; }
+  int month() const { return month_; }
+  int day() const { return day_; }
+};

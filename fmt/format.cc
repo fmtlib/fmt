@@ -60,12 +60,6 @@ using fmt::internal::Arg;
 # define FMT_CATCH(x) if (false)
 #endif
 
-#ifdef FMT_HEADER_ONLY
-# define FMT_FUNC inline
-#else
-# define FMT_FUNC
-#endif
-
 #ifdef _MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4127)  // conditional expression is constant
@@ -361,21 +355,6 @@ class CharConverter : public ArgVisitor<CharConverter, void> {
     arg_.int_value = static_cast<char>(value);
   }
 };
-
-// Write the content of w to os.
-void write(std::ostream &os, Writer &w) {
-  const char *data = w.data();
-  typedef internal::MakeUnsigned<std::streamsize>::Type UnsignedStreamSize;
-  UnsignedStreamSize size = w.size();
-  UnsignedStreamSize max_size =
-      internal::to_unsigned((std::numeric_limits<std::streamsize>::max)());
-  do {
-    UnsignedStreamSize n = size <= max_size ? size : max_size;
-    os.write(data, static_cast<std::streamsize>(n));
-    data += n;
-    size -= n;
-  } while (size != 0);
-}
 }  // namespace
 
 namespace internal {
@@ -896,13 +875,6 @@ FMT_FUNC void fmt::print(CStringRef format_str, ArgList args) {
   print(stdout, format_str, args);
 }
 
-FMT_FUNC void fmt::print(std::ostream &os, CStringRef format_str,
-                         ArgList args) {
-  MemoryWriter w;
-  w.write(format_str, args);
-  write(os, w);
-}
-
 FMT_FUNC void fmt::print_colored(Color c, CStringRef format, ArgList args) {
   char escape[] = "\x1b[30m";
   escape[3] = static_cast<char>('0' + c);
@@ -916,13 +888,6 @@ FMT_FUNC int fmt::fprintf(std::FILE *f, CStringRef format, ArgList args) {
   printf(w, format, args);
   std::size_t size = w.size();
   return std::fwrite(w.data(), 1, size, f) < size ? -1 : static_cast<int>(size);
-}
-
-FMT_FUNC int fmt::fprintf(std::ostream &os, CStringRef format, ArgList args) {
-  MemoryWriter w;
-  printf(w, format, args);
-  write(os, w);
-  return static_cast<int>(w.size());
 }
 
 #ifndef FMT_HEADER_ONLY

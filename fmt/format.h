@@ -40,14 +40,6 @@
 #include <vector>
 #include <utility>
 
-#ifndef FMT_USE_IOSTREAMS
-# define FMT_USE_IOSTREAMS 1
-#endif
-
-#if FMT_USE_IOSTREAMS
-# include <ostream>
-#endif
-
 #ifdef _SECURE_SCL
 # define FMT_SECURE_SCL _SECURE_SCL
 #else
@@ -386,10 +378,6 @@ class ArgFormatter;
 template <typename CharType,
           typename ArgFormatter = fmt::ArgFormatter<CharType> >
 class BasicFormatter;
-
-template <typename Char, typename ArgFormatter, typename T>
-void format(BasicFormatter<Char, ArgFormatter> &f,
-            const Char *&format_str, const T &value);
 
 /**
   \rst
@@ -1057,33 +1045,16 @@ struct WCharHelper<T, wchar_t> {
 typedef char Yes[1];
 typedef char No[2];
 
-// These are non-members to workaround an overload resolution bug in bcc32.
-Yes &convert(fmt::ULongLong);
-Yes &convert(std::ostream &);
-No &convert(...);
-
 template <typename T>
 T &get();
 
-struct DummyStream : std::ostream {
-  DummyStream();  // Suppress a bogus warning in MSVC.
-  // Hide all operator<< overloads from std::ostream.
-  void operator<<(Null<>);
-};
-
-No &operator<<(std::ostream &, int);
+// These are non-members to workaround an overload resolution bug in bcc32.
+Yes &convert(fmt::ULongLong);
+No &convert(...);
 
 template<typename T, bool ENABLE_CONVERSION>
 struct ConvertToIntImpl {
-  enum { value = false };
-};
-
-template<typename T>
-struct ConvertToIntImpl<T, true> {
-  // Convert to int only if T doesn't have an overloaded operator<<.
-  enum {
-    value = sizeof(convert(get<DummyStream>() << get<T>())) == sizeof(No)
-  };
+  enum { value = ENABLE_CONVERSION };
 };
 
 template<typename T, bool ENABLE_CONVERSION>
@@ -2140,38 +2111,6 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
       (t12.type << 48) | (t13.type << 52) | (t14.type << 56);
 }
 #endif
-
-template <class Char>
-class FormatBuf : public std::basic_streambuf<Char> {
- private:
-  typedef typename std::basic_streambuf<Char>::int_type int_type;
-  typedef typename std::basic_streambuf<Char>::traits_type traits_type;
-
-  Buffer<Char> &buffer_;
-  Char *start_;
-
- public:
-  FormatBuf(Buffer<Char> &buffer) : buffer_(buffer), start_(&buffer[0]) {
-    this->setp(start_, start_ + buffer_.capacity());
-  }
-
-  int_type overflow(int_type ch = traits_type::eof()) {
-    if (!traits_type::eq_int_type(ch, traits_type::eof())) {
-      size_t size = this->size();
-      buffer_.resize(size);
-      buffer_.reserve(size * 2);
-
-      start_ = &buffer_[0];
-      start_[size] = traits_type::to_char_type(ch);
-      this->setp(start_+ size + 1, start_ + size * 2);
-    }
-    return ch;
-  }
-
-  size_t size() const {
-    return to_unsigned(this->pptr() - start_);
-  }
-};
 }  // namespace internal
 
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
@@ -3100,21 +3039,6 @@ class BasicArrayWriter : public BasicWriter<Char> {
 typedef BasicArrayWriter<char> ArrayWriter;
 typedef BasicArrayWriter<wchar_t> WArrayWriter;
 
-// Formats a value.
-template <typename Char, typename ArgFormatter, typename T>
-void format(BasicFormatter<Char, ArgFormatter> &f,
-            const Char *&format_str, const T &value) {
-  internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
-
-  internal::FormatBuf<Char> format_buf(buffer);
-  std::basic_ostream<Char> output(&format_buf);
-  output << value;
-
-  BasicStringRef<Char> str(&buffer[0], format_buf.size());
-  typedef internal::MakeArg< BasicFormatter<Char> > MakeArg;
-  format_str = f.format(format_str, MakeArg(str));
-}
-
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
 FMT_API void report_system_error(int error_code,
@@ -3544,32 +3468,6 @@ FMT_VARIADIC_W(std::wstring, sprintf, WCStringRef)
 FMT_VARIADIC(int, printf, CStringRef)
 FMT_VARIADIC(int, fprintf, std::FILE *, CStringRef)
 
-#if FMT_USE_IOSTREAMS
-/**
-  \rst
-  Prints formatted data to the stream *os*.
-
-  **Example**::
-
-    print(cerr, "Don't {}!", "panic");
-  \endrst
- */
-FMT_API void print(std::ostream &os, CStringRef format_str, ArgList args);
-FMT_VARIADIC(void, print, std::ostream &, CStringRef)
-
-/**
-  \rst
-  Prints formatted data to the stream *os*.
-
-  **Example**::
-
-    fprintf(cerr, "Don't %s!", "panic");
-  \endrst
- */
-FMT_API int fprintf(std::ostream &os, CStringRef format_str, ArgList args);
-FMT_VARIADIC(int, fprintf, std::ostream &, CStringRef)
-#endif
-
 namespace internal {
 template <typename Char>
 inline bool is_name_start(Char c) {
@@ -3924,7 +3822,10 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 #endif
 
 #ifdef FMT_HEADER_ONLY
+# define FMT_FUNC inline
 # include "format.cc"
+#else
+# define FMT_FUNC
 #endif
 
 #endif  // FMT_FORMAT_H_
