@@ -1,5 +1,5 @@
-3.0.0 - TBD
------------
+3.0.0 - 2016-05-07
+------------------
 
 * The project has been renamed from C++ Format (cppformat) to fmt for
   consistency with the used namespace and macro prefix
