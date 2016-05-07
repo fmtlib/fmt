@@ -68,7 +68,7 @@
 
   Note that it would be an undefined behavior in ``std::printf``.
 
-* Length modifiers such as `ll` are now optional in printf formatting
+* Length modifiers such as ``ll`` are now optional in printf formatting
   functions and the correct type is determined automatically
   (`#255 <https://github.com/fmtlib/fmt/issues/255>`_):
 

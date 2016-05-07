@@ -137,7 +137,9 @@ if __name__ == '__main__':
     try:
         run = Runner()
         fmt_dir = os.path.join(workdir, 'fmt')
-        branch = args.get('<branch>', 'master')
+        branch = args.get('<branch>')
+        if branch is None:
+	  branch = 'master'
         run('git', 'clone', '-b', branch, 'git@github.com:fmtlib/fmt.git', fmt_dir)
 
         # Convert changelog from RST to GitHub-flavored Markdown and get the version.
