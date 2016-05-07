@@ -13,6 +13,52 @@
   Including ``format.h`` from the ``cppformat`` directory is deprecated
   but works via a proxy header which will be removed in the next major version.
 
+* Added support for `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_-like
+  `date and time formatting <http://fmtlib.net/dev/api.html#date-and-time-formatting>`_
+  (`#283 <https://github.com/fmtlib/fmt/issues/283>`_):
+
+  .. code:: c++
+
+    #include "fmt/time.h"
+
+    std::time_t t = std::time(nullptr);
+    // Prints "The date is 2016-04-29." (with the current date)
+    fmt::print("The date is {:%Y-%m-%d}.", *std::localtime(&t));
+
+* Added support for `custom argument formatters
+  <http://cppformat.github.io/dev/api.html#argument-formatters>`_
+  (`#235 <https://github.com/fmtlib/fmt/issues/235>`_).
+
+* Added support for locale-specific integer formatting with the ``n`` specifier
+  (`#305 <https://github.com/fmtlib/fmt/issues/305>`_):
+
+  .. code:: c++
+
+    std::setlocale(LC_ALL, "en_US.utf8");
+    fmt::print("cppformat: {:n}\n", 1234567); // prints 1,234,567
+
+* Sign is now preserved when formatting an integer with an incorrect ``printf``
+  format specifier (`#265 <https://github.com/fmtlib/fmt/issues/265>`_):
+
+  .. code:: c++
+
+    fmt::printf("%lld", -42); // prints -42
+
+  Note that it would be an undefined behavior in ``std::printf``.
+
+* Length modifiers such as `ll` are now optional in printf formatting
+  functions and the correct type is determined automatically
+  (`#255 <https://github.com/fmtlib/fmt/issues/255>`_):
+
+  .. code:: c++
+
+    fmt::printf("%d", std::numeric_limits<long long>::max());
+
+  Note that it would be an undefined behavior in ``std::printf``.
+
+* Added initial support for custom formatters
+  (`#231 <https://github.com/fmtlib/fmt/issues/231>`_).
+
 * Fixed detection of user-defined literal support on Intel C++ compiler
   (`#311 <https://github.com/fmtlib/fmt/issues/311>`_,
   `#312 <https://github.com/fmtlib/fmt/pull/312>`_).
@@ -27,17 +73,28 @@
 * Compile test fixes (`#313 <https://github.com/fmtlib/fmt/pull/313>`_).
   Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_.
 
-* Documentation fixes (`239 <https://github.com/fmtlib/fmt/pull/239>`_,
-  `258 <https://github.com/fmtlib/fmt/pull/258>`_,
+* Documentation fixes (`#239 <https://github.com/fmtlib/fmt/pull/239>`_,
+  `#248 <https://github.com/fmtlib/fmt/issues/248>`_,
+  `#252 <https://github.com/fmtlib/fmt/issues/252>`_,
+  `#258 <https://github.com/fmtlib/fmt/pull/258>`_,
+  `#260 <https://github.com/fmtlib/fmt/issues/260>`_,
+  `#301 <https://github.com/fmtlib/fmt/issues/301>`_,
   `#309 <https://github.com/fmtlib/fmt/pull/309>`_).
   Thanks to `@ReadmeCritic <https://github.com/ReadmeCritic>`_
   `@Gachapen (Magnus Bjerke Vik) <https://github.com/Gachapen>`_ and
   `@jwilk (Jakub Wilk) <https://github.com/jwilk>`_.
 
-* Fixed compiler warnings (`#256 <https://github.com/fmtlib/fmt/pull/256>`_,
+* Fixed compiler and sanitizer warnings (
+  `#244 <https://github.com/fmtlib/fmt/issues/244>`_,
+  `#256 <https://github.com/fmtlib/fmt/pull/256>`_,
   `#259 <https://github.com/fmtlib/fmt/pull/259>`_,
+  `#263 <https://github.com/fmtlib/fmt/issues/263>`_,
+  `#274 <https://github.com/fmtlib/fmt/issues/274>`_,
   `#277 <https://github.com/fmtlib/fmt/pull/277>`_,
-  `#286 <https://github.com/fmtlib/fmt/pull/286>`_).
+  `#286 <https://github.com/fmtlib/fmt/pull/286>`_,
+  `#291 <https://github.com/fmtlib/fmt/issues/291>`_,
+  `#296 <https://github.com/fmtlib/fmt/issues/296>`_,
+  `#308 <https://github.com/fmtlib/fmt/issues/308>`_)
   Thanks to `@mwinterb <https://github.com/mwinterb>`_,
   `@pweiskircher (Patrik Weiskircher) <https://github.com/pweiskircher>`_,
   `@Naios <https://github.com/Naios>`_.
@@ -55,7 +112,8 @@
   Thanks to `@newnon <https://github.com/newnon>`_.
 
 * Changed ``ArgMap`` to be backed by a vector instead of a map.
-  (`#262 <https://github.com/fmtlib/fmt/pull/262>`_).
+  (`#261 <https://github.com/fmtlib/fmt/issues/261>`_,
+  `#262 <https://github.com/fmtlib/fmt/pull/262>`_).
   Thanks to `@mwinterb <https://github.com/mwinterb>`_.
 
 * Added ``fprintf`` overload that writes to a ``std::ostream``
@@ -65,6 +123,16 @@
 * Export symbols when building a Windows DLL
   (`#245 <https://github.com/fmtlib/fmt/pull/245>`_).
   Thanks to `macdems (Maciek Dems) <https://github.com/macdems>`_.
+
+* Fixed compilation on Cygwin (`#304 <https://github.com/fmtlib/fmt/issues/304>`_).
+
+* Implemented a workaround for a bug in Apple LLVM version 4.2 of clang
+  (`#276 <https://github.com/fmtlib/fmt/issues/276>`_).
+
+* Implemented a workaround for Google Test bug
+  `#705 <https://github.com/google/googletest/issues/705>`_ on gcc 6
+  (`#268 <https://github.com/fmtlib/fmt/issues/268>`_).
+  Thanks to `octoploid <https://github.com/octoploid>`_.
 
 2.1.1 - 2016-04-11
 ------------------
@@ -417,7 +485,9 @@ Fixes
   `#229 <https://github.com/fmtlib/fmt/pull/229>`_,
   `#233 <https://github.com/fmtlib/fmt/issues/233>`_,
   `#234 <https://github.com/fmtlib/fmt/issues/234>`_,
-  `#236 <https://github.com/fmtlib/fmt/pull/236>`_).
+  `#236 <https://github.com/fmtlib/fmt/pull/236>`_,
+  `#281 <https://github.com/fmtlib/fmt/issues/281>`_,
+  `#289 <https://github.com/fmtlib/fmt/issues/289>`_).
   Thanks to `@seanmiddleditch (Sean Middleditch) <https://github.com/seanmiddleditch>`_,
   `@dixlorenz (Dix Lorenz) <https://github.com/dixlorenz>`_,
   `@CarterLi (李通洲) <https://github.com/CarterLi>`_,
