@@ -54,7 +54,7 @@ void format(BasicFormatter<char, ArgFormatter> &f,
       buffer.resize(start + count);
       break;
     }
-    enum {MIN_GROWTH = 10};
+    const std::size_t MIN_GROWTH = 10;
     buffer.reserve(buffer.capacity() + size > MIN_GROWTH ? size : MIN_GROWTH);
   }
   format_str = end + 1;

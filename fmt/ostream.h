@@ -51,13 +51,13 @@ class FormatBuf : public std::basic_streambuf<Char> {
 
   int_type overflow(int_type ch = traits_type::eof()) {
     if (!traits_type::eq_int_type(ch, traits_type::eof())) {
-      size_t size = this->size();
-      buffer_.resize(size);
-      buffer_.reserve(size * 2);
+      size_t buf_size = size();
+      buffer_.resize(buf_size);
+      buffer_.reserve(buf_size * 2);
 
       start_ = &buffer_[0];
-      start_[size] = traits_type::to_char_type(ch);
-      this->setp(start_+ size + 1, start_ + size * 2);
+      start_[buf_size] = traits_type::to_char_type(ch);
+      this->setp(start_+ buf_size + 1, start_ + buf_size * 2);
     }
     return ch;
   }
