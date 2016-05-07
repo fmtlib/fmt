@@ -16,7 +16,7 @@
   The documentation is now available at http://fmtlib.net.
 
 * Added support for `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_-like
-  `date and time formatting <http://fmtlib.net/dev/api.html#date-and-time-formatting>`_
+  `date and time formatting <http://fmtlib.net/3.0.0/api.html#date-and-time-formatting>`_
   (`#283 <https://github.com/fmtlib/fmt/issues/283>`_):
 
   .. code:: c++
@@ -48,7 +48,7 @@
     // s == "The date is 2012-12-9"
 
 * Added support for `custom argument formatters
-  <http://fmtlib.net/dev/api.html#argument-formatters>`_
+  <http://fmtlib.net/3.0.0/api.html#argument-formatters>`_
   (`#235 <https://github.com/fmtlib/fmt/issues/235>`_).
 
 * Added support for locale-specific integer formatting with the ``n`` specifier
@@ -428,7 +428,7 @@ Documentation
 
 
 * Added `Building the documentation
-  <http://fmtlib.net/dev/usage.html#building-the-documentation>`_
+  <http://fmtlib.net/2.0.0/usage.html#building-the-documentation>`_
   section to the documentation.
 
 * Documentation build script is now compatible with Python 3 and newer pip versions.
