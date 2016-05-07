@@ -25,6 +25,26 @@
     // Prints "The date is 2016-04-29." (with the current date)
     fmt::print("The date is {:%Y-%m-%d}.", *std::localtime(&t));
 
+* ``std::ostream`` support including formatting of user-defined types that provide
+  overloaded ``operator<<`` has been moved to ``fmt/ostream.h``:
+
+  .. code:: c++
+
+    #include "fmt/ostream.h"
+
+    class Date {
+      int year_, month_, day_;
+    public:
+      Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
+
+      friend std::ostream &operator<<(std::ostream &os, const Date &d) {
+        return os << d.year_ << '-' << d.month_ << '-' << d.day_;
+      }
+    };
+
+    std::string s = fmt::format("The date is {}", Date(2012, 12, 9));
+    // s == "The date is 2012-12-9"
+
 * Added support for `custom argument formatters
   <http://fmtlib.net/dev/api.html#argument-formatters>`_
   (`#235 <https://github.com/fmtlib/fmt/issues/235>`_).
