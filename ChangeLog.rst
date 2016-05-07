@@ -12,6 +12,8 @@
 
   Including ``format.h`` from the ``cppformat`` directory is deprecated
   but works via a proxy header which will be removed in the next major version.
+  
+  The documentation is now available at http://fmtlib.net.
 
 * Added support for `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_-like
   `date and time formatting <http://fmtlib.net/dev/api.html#date-and-time-formatting>`_
@@ -161,6 +163,8 @@
   `#705 <https://github.com/google/googletest/issues/705>`_ on gcc 6
   (`#268 <https://github.com/fmtlib/fmt/issues/268>`_).
   Thanks to `octoploid <https://github.com/octoploid>`_.
+
+* Removed Biicode support because the latter has been discontinued.
 
 2.1.1 - 2016-04-11
 ------------------
