@@ -26,7 +26,7 @@
     fmt::print("The date is {:%Y-%m-%d}.", *std::localtime(&t));
 
 * Added support for `custom argument formatters
-  <http://cppformat.github.io/dev/api.html#argument-formatters>`_
+  <http://fmtlib.net/dev/api.html#argument-formatters>`_
   (`#235 <https://github.com/fmtlib/fmt/issues/235>`_).
 
 * Added support for locale-specific integer formatting with the ``n`` specifier
