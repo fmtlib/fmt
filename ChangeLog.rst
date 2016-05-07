@@ -65,9 +65,17 @@
   Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_ and
   `@speth (Ray Speth) <https://github.com/speth>`_.
 
-* Reduced compile time of variadic functions
+* Reduced compile time
   (`#243 <https://github.com/fmtlib/fmt/pull/243>`_,
-  `#249 <https://github.com/fmtlib/fmt/pull/249>`_).
+  `#249 <https://github.com/fmtlib/fmt/pull/249>`_,
+  `#317 <https://github.com/fmtlib/fmt/issues/317>`_):
+
+  .. image:: https://cloud.githubusercontent.com/assets/4831417/11614060/
+             b9e826d2-9c36-11e5-8666-d4131bf503ef.png
+
+  .. image:: https://cloud.githubusercontent.com/assets/4831417/11614080/
+             6ac903cc-9c37-11e5-8165-26df6efae364.png
+
   Thanks to `@dean0x7d (Dean Moldovan) <https://github.com/dean0x7d>`_.
 
 * Compile test fixes (`#313 <https://github.com/fmtlib/fmt/pull/313>`_).
