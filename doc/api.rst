@@ -34,8 +34,6 @@ arguments in the resulting string.
 
 .. doxygenfunction:: print(std::FILE *, CStringRef, ArgList)
 
-.. doxygenfunction:: print(std::ostream&, CStringRef, ArgList)
-
 .. doxygenclass:: fmt::BasicFormatter
    :members:
 
@@ -53,6 +51,31 @@ date and time formatting::
 
 The format string syntax is described in the documentation of
 `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_.
+
+``std::ostream`` support
+------------------------
+
+The header ``fmt/ostream.h`` provides ``std::ostream`` support including
+formatting of user-defined types that have overloaded ``operator<<``::
+
+  #include "fmt/ostream.h"
+
+  class Date {
+    int year_, month_, day_;
+  public:
+    Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
+
+    friend std::ostream &operator<<(std::ostream &os, const Date &d) {
+      return os << d.year_ << '-' << d.month_ << '-' << d.day_;
+    }
+  };
+
+  std::string s = fmt::format("The date is {}", Date(2012, 12, 9));
+  // s == "The date is 2012-12-9"
+
+.. doxygenfunction:: print(std::ostream&, CStringRef, ArgList)
+
+.. doxygenfunction:: fprintf(std::ostream&, CStringRef, ArgList)
 
 Argument formatters
 -------------------
@@ -107,8 +130,6 @@ a POSIX extension for positional arguments.
 .. doxygenfunction:: printf(CStringRef, ArgList)
 
 .. doxygenfunction:: fprintf(std::FILE *, CStringRef, ArgList)
-
-.. doxygenfunction:: fprintf(std::ostream&, CStringRef, ArgList)
 
 .. doxygenfunction:: sprintf(CStringRef, ArgList)
 
