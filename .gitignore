@@ -2,7 +2,7 @@ bin/
 /_CPack_Packages
 /doc/doxyxml
 /doc/html
-/doc/virtualenv
+virtualenv
 /Testing
 /install_manifest.txt
 *~
