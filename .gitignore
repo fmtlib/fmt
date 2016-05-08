@@ -9,8 +9,9 @@ virtualenv
 *.a
 *.so*
 *.zip
-/*.cmake
 cmake_install.cmake
+CPack*.cmake
+fmt-*.cmake
 CTestTestfile.cmake
 CMakeCache.txt
 CMakeFiles
