@@ -98,6 +98,7 @@ typedef __int64          intmax_t;
 #endif
 
 #if defined(__clang__) && !defined(FMT_ICC_VERSION)
+# define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdocumentation"
 #endif
@@ -829,6 +830,14 @@ struct FMT_API BasicData {
   static const uint64_t POWERS_OF_10_64[];
   static const char DIGITS[];
 };
+
+#ifndef FMT_USE_EXTERN_TEMPLATES
+# define FMT_USE_EXTERN_TEMPLATES (FMT_CLANG_VERSION >= 209)
+#endif
+
+#if FMT_USE_EXTERN_TEMPLATES
+extern template struct BasicData<void>;
+#endif
 
 typedef BasicData<> Data;
 
