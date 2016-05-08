@@ -18,9 +18,8 @@ def pip_install(package, commit=None, **kwargs):
   print('Installing {}'.format(package))
   check_call(['pip', 'install', '--upgrade', package])
 
-def build_docs(version='dev'):
+def create_build_env():
   # Create virtualenv.
-  doc_dir = os.path.dirname(os.path.realpath(__file__))
   virtualenv_dir = 'virtualenv'
   check_call(['virtualenv', virtualenv_dir])
   import sysconfig
@@ -51,6 +50,8 @@ def build_docs(version='dev'):
               check_version='1.4a0.dev-20151013')
   pip_install('michaeljones/breathe',
               '1c9d7f80378a92cffa755084823a78bb38ee4acc')
+
+def build_docs(version='dev', doc_dir=os.path.dirname(os.path.realpath(__file__))):
   # Build docs.
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE)
@@ -96,4 +97,5 @@ def build_docs(version='dev'):
   return 'html'
 
 if __name__ == '__main__':
+  create_build_env()
   build_docs(sys.argv[1])

@@ -43,6 +43,7 @@ if build == 'Doc':
     check_call(['sudo', 'dpkg', '-i', deb_file])
   sys.path.insert(0, os.path.join(fmt_dir, 'doc'))
   import build
+  build.create_build_env()
   html_dir = build.build_docs()
   repo = 'fmtlib.github.io'
   if travis and 'KEY' not in os.environ:
