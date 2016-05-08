@@ -114,8 +114,8 @@
   `@Gachapen (Magnus Bjerke Vik) <https://github.com/Gachapen>`_ and
   `@jwilk (Jakub Wilk) <https://github.com/jwilk>`_.
 
-* Fixed compiler and sanitizer warnings (
-  `#244 <https://github.com/fmtlib/fmt/issues/244>`_,
+* Fixed compiler and sanitizer warnings
+  (`#244 <https://github.com/fmtlib/fmt/issues/244>`_,
   `#256 <https://github.com/fmtlib/fmt/pull/256>`_,
   `#259 <https://github.com/fmtlib/fmt/pull/259>`_,
   `#263 <https://github.com/fmtlib/fmt/issues/263>`_,
