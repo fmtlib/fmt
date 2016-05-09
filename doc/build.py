@@ -51,7 +51,9 @@ def create_build_env():
   pip_install('michaeljones/breathe',
               '1c9d7f80378a92cffa755084823a78bb38ee4acc')
 
-def build_docs(version='dev', doc_dir=os.path.dirname(os.path.realpath(__file__))):
+def build_docs(version='dev', **kwargs):
+  doc_dir = kwargs.get('doc_dir', os.path.dirname(os.path.realpath(__file__)))
+  include_dir = kwargs.get('include_dir', os.path.join(os.path.dirname(doc_dir), 'fmt'))
   # Build docs.
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE)
@@ -77,7 +79,7 @@ def build_docs(version='dev', doc_dir=os.path.dirname(os.path.realpath(__file__)
                           FMT_USE_USER_DEFINED_LITERALS=1 \
                           FMT_API=
       EXCLUDE_SYMBOLS   = fmt::internal::* StringValue write_str
-    '''.format(os.path.join(os.path.dirname(doc_dir), 'fmt')).encode('UTF-8'))
+    '''.format(include_dir).encode('UTF-8'))
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
   check_call(['sphinx-build',
