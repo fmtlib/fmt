@@ -50,7 +50,13 @@
 # include <iterator>
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER <= 1500
+#ifdef _MSC_VER
+# define FMT_MSC_VER _MSC_VER
+#else
+# define FMT_MSC_VER 0
+#endif
+
+#if FMT_MSC_VER && FMT_MSC_VER <= 1500
 typedef unsigned __int32 uint32_t;
 typedef unsigned __int64 uint64_t;
 typedef __int64          intmax_t;
@@ -98,7 +104,6 @@ typedef __int64          intmax_t;
 #endif
 
 #if defined(__clang__) && !defined(FMT_ICC_VERSION)
-# define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdocumentation"
 #endif
@@ -131,7 +136,7 @@ typedef __int64          intmax_t;
 // since version 2013.
 # define FMT_USE_VARIADIC_TEMPLATES \
    (FMT_HAS_FEATURE(cxx_variadic_templates) || \
-       (FMT_GCC_VERSION >= 404 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1800)
+       (FMT_GCC_VERSION >= 404 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1800)
 #endif
 
 #ifndef FMT_USE_RVALUE_REFERENCES
@@ -142,7 +147,7 @@ typedef __int64          intmax_t;
 # else
 #  define FMT_USE_RVALUE_REFERENCES \
     (FMT_HAS_FEATURE(cxx_rvalue_references) || \
-        (FMT_GCC_VERSION >= 403 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1600)
+        (FMT_GCC_VERSION >= 403 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1600)
 # endif
 #endif
 
@@ -154,7 +159,7 @@ typedef __int64          intmax_t;
 #if defined(__GNUC__) && !defined(__EXCEPTIONS)
 # define FMT_EXCEPTIONS 0
 #endif
-#if defined(_MSC_VER) && !_HAS_EXCEPTIONS
+#if FMT_MSC_VER && !_HAS_EXCEPTIONS
 # define FMT_EXCEPTIONS 0
 #endif
 #ifndef FMT_EXCEPTIONS
@@ -178,7 +183,7 @@ typedef __int64          intmax_t;
 # if FMT_EXCEPTIONS
 #  if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
     (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
-    _MSC_VER >= 1900
+    FMT_MSC_VER >= 1900
 #   define FMT_NOEXCEPT noexcept
 #  else
 #   define FMT_NOEXCEPT throw()
@@ -195,7 +200,7 @@ typedef __int64          intmax_t;
 #endif
 
 #if FMT_USE_DELETED_FUNCTIONS || FMT_HAS_FEATURE(cxx_deleted_functions) || \
-  (FMT_GCC_VERSION >= 404 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1800
+  (FMT_GCC_VERSION >= 404 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1800
 # define FMT_DELETED_OR_UNDEFINED  = delete
 # define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
     TypeName(const TypeName&) = delete; \
@@ -215,7 +220,7 @@ typedef __int64          intmax_t;
 # define FMT_USE_USER_DEFINED_LITERALS \
    FMT_USE_VARIADIC_TEMPLATES && FMT_USE_RVALUE_REFERENCES && \
    (FMT_HAS_FEATURE(cxx_user_literals) || \
-       (FMT_GCC_VERSION >= 407 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1900) && \
+     (FMT_GCC_VERSION >= 407 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900) && \
    (!defined(FMT_ICC_VERSION) || FMT_ICC_VERSION >= 1500)
 #endif
 
@@ -236,7 +241,7 @@ typedef __int64          intmax_t;
 // otherwise support __builtin_clz and __builtin_clzll, so
 // only define FMT_BUILTIN_CLZ using the MSVC intrinsics
 // if the clz and clzll builtins are not available.
-#if defined(_MSC_VER) && !defined(FMT_BUILTIN_CLZLL)
+#if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL)
 # include <intrin.h>  // _BitScanReverse, _BitScanReverse64
 
 namespace fmt {
@@ -832,7 +837,9 @@ struct FMT_API BasicData {
 };
 
 #ifndef FMT_USE_EXTERN_TEMPLATES
-# define FMT_USE_EXTERN_TEMPLATES (FMT_CLANG_VERSION >= 209)
+// Clang doesn't have a feature check for extern templates so we check
+// for variadic templates which were introduced in the same version.
+# define FMT_USE_EXTERN_TEMPLATES (__clang__ && FMT_USE_VARIADIC_TEMPLATES)
 #endif
 
 #if FMT_USE_EXTERN_TEMPLATES
@@ -1135,7 +1142,7 @@ class MakeValue : public Arg {
   // characters and strings into narrow strings as in
   //   fmt::format("{}", L"test");
   // To fix this, use a wide format string: fmt::format(L"{}", L"test").
-#if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
+#if !FMT_MSC_VER || defined(_NATIVE_WCHAR_T_DEFINED)
   MakeValue(typename WCharHelper<wchar_t, Char>::Unsupported);
 #endif
   MakeValue(typename WCharHelper<wchar_t *, Char>::Unsupported);
@@ -2789,7 +2796,7 @@ void BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   case 'e': case 'f': case 'g': case 'a':
     break;
   case 'F':
-#ifdef _MSC_VER
+#if FMT_MSC_VER
     // MSVC's printf doesn't support 'F'.
     type = 'f';
 #endif
@@ -2882,7 +2889,7 @@ void BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   Char *start = 0;
   for (;;) {
     std::size_t buffer_size = buffer_.capacity() - offset;
-#ifdef _MSC_VER
+#if FMT_MSC_VER
     // MSVC's vsnprintf_s doesn't work with zero size, so reserve
     // space for at least one extra character to make the size non-zero.
     // Note that the buffer's capacity will increase by more than 1.
