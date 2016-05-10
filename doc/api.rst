@@ -145,7 +145,7 @@ The write API provides classes for writing formatted data into character
 streams. It is usually faster than the `format API`_ but, as IOStreams,
 may result in larger compiled code size. The main writer class is
 `~fmt::BasicMemoryWriter` which stores its output in a memory buffer and provides
-direct access to it. It is possible to write create custom writers that
+direct access to it. It is possible to create custom writers that
 store output elsewhere by subclassing `~fmt::BasicWriter`.
 
 .. doxygenclass:: fmt::BasicWriter
