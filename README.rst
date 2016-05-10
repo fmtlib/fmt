@@ -20,9 +20,11 @@ alternative to IOStreams.
 Features
 --------
 
-* Two APIs: faster concatenation-based write API and slower (but still
-  very fast) replacement-based format API with positional arguments for
-  localization.
+* Two APIs: faster concatenation-based `write API
+  <http://fmtlib.net/latest/api.html#write-api>`_ and slower,
+  but still very fast, replacement-based `format API
+  <http://fmtlib.net/latest/api.html#format-api>`_ with positional arguments
+  for localization.
 * Write API similar to the one used by IOStreams but stateless allowing
   faster implementation.
 * Format API with `format string syntax
@@ -35,7 +37,7 @@ Features
 * Support for user-defined types.
 * High speed: performance of the format API is close to that of
   glibc's `printf <http://en.cppreference.com/w/cpp/io/c/fprintf>`_
-  and better than performance of IOStreams. See `Speed tests`_ and
+  and better than the performance of IOStreams. See `Speed tests`_ and
   `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 * Small code size both in terms of source code (format consists of a single

@@ -22,6 +22,11 @@ arguments in the resulting string.
 
 *args* is an argument list representing arbitrary arguments.
 
+The `performance of the format API
+<https://github.com/fmtlib/fmt/blob/master/README.rst#speed-tests>`_ is close
+to that of glibc's ``printf`` and better than the performance of IOStreams.
+For even better speed use the `write API`_.
+
 .. _format:
 
 .. doxygenfunction:: format(CStringRef, ArgList)
@@ -135,6 +140,13 @@ a POSIX extension for positional arguments.
 
 Write API
 =========
+
+The write API provides classes for writing formatted data into character
+streams. It is usually faster than the `format API`_ but, as IOStreams,
+may result in larger compiled code size. The main writer class is
+`~fmt::BasicMemoryWriter` which stores its output in a memory buffer and provides
+direct access to it. It is possible to write create custom writers that
+store output elsewhere by subclassing `~fmt::BasicWriter`.
 
 .. doxygenclass:: fmt::BasicWriter
    :members:
