@@ -834,10 +834,10 @@ void check_throw_error(int error_code, FormatErrorMessage format) {
 
 TEST(UtilTest, FormatSystemError) {
   fmt::MemoryWriter message;
-  fmt::internal::format_system_error(message, EDOM, "test");
+  fmt::format_system_error(message, EDOM, "test");
   EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)), message.str());
   message.clear();
-  fmt::internal::format_system_error(
+  fmt::format_system_error(
         message, EDOM, fmt::StringRef(0, std::numeric_limits<size_t>::max()));
   EXPECT_EQ(fmt::format("error {}", EDOM), message.str());
 }
@@ -846,12 +846,12 @@ TEST(UtilTest, SystemError) {
   fmt::SystemError e(EDOM, "test");
   EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)), e.what());
   EXPECT_EQ(EDOM, e.error_code());
-  check_throw_error<fmt::SystemError>(EDOM, fmt::internal::format_system_error);
+  check_throw_error<fmt::SystemError>(EDOM, fmt::format_system_error);
 }
 
 TEST(UtilTest, ReportSystemError) {
   fmt::MemoryWriter out;
-  fmt::internal::format_system_error(out, EDOM, "test error");
+  fmt::format_system_error(out, EDOM, "test error");
   out << '\n';
   EXPECT_WRITE(stderr, fmt::report_system_error(EDOM, "test error"), out.str());
 }

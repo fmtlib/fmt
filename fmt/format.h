@@ -989,9 +989,6 @@ FMT_API void format_windows_error(fmt::Writer &out, int error_code,
                                   fmt::StringRef message) FMT_NOEXCEPT;
 #endif
 
-FMT_API void format_system_error(fmt::Writer &out, int error_code,
-                                 fmt::StringRef message) FMT_NOEXCEPT;
-
 // A formatting argument value.
 struct Value {
   template <typename Char>
@@ -2246,17 +2243,10 @@ class SystemError : public internal::RuntimeError {
  public:
   /**
    \rst
-   Constructs a :class:`fmt::SystemError` object with the description
-   of the form
-
-   .. parsed-literal::
-     *<message>*: *<system-message>*
-
-   where *<message>* is the formatted message and *<system-message>* is
-   the system message corresponding to the error code.
-   *error_code* is a system error code as given by ``errno``.
-   If *error_code* is not a valid error code such as -1, the system message
-   may look like "Unknown error -1" and is platform-dependent.
+   Constructs a :class:`fmt::SystemError` object with a description
+   formatted with `fmt::format_system_error`. *message* and additional
+   arguments passed into the constructor are formatted similarly to
+   `fmt::format`.
 
    **Example**::
 
@@ -2276,6 +2266,25 @@ class SystemError : public internal::RuntimeError {
 
   int error_code() const { return error_code_; }
 };
+
+/**
+  \rst
+  Formats an error returned by an operating system or a language runtime,
+  for example a file opening error, and writes it to *out* in the following
+  form:
+   
+  .. parsed-literal::
+     *<message>*: *<system-message>*
+
+  where *<message>* is the passed message and *<system-message>* is
+  the system message corresponding to the error code.
+  *error_code* is a system error code as given by ``errno``.
+  If *error_code* is not a valid error code such as -1, the system message
+  may look like "Unknown error -1" and is platform-dependent.
+  \endrst
+ */
+FMT_API void format_system_error(fmt::Writer &out, int error_code,
+                                 fmt::StringRef message) FMT_NOEXCEPT;
 
 /**
   \rst

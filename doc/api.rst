@@ -197,6 +197,8 @@ System errors
 .. doxygenclass:: fmt::SystemError
    :members:
 
+.. doxygenfunction:: fmt::format_system_error
+
 .. doxygenclass:: fmt::WindowsError
    :members:
 

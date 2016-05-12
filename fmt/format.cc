@@ -359,6 +359,13 @@ class CharConverter : public ArgVisitor<CharConverter, void> {
 
 namespace internal {
 
+// This method is used to preserve binary compatibility with fmt 3.0.
+// It can be removed in 4.0.
+FMT_FUNC void format_system_error(
+  Writer &out, int error_code, StringRef message) FMT_NOEXCEPT {
+  fmt::format_system_error(out, error_code, message);
+}
+
 template <typename Char>
 class PrintfArgFormatter :
     public ArgFormatterBase<PrintfArgFormatter<Char>, Char> {
@@ -434,7 +441,7 @@ FMT_FUNC void fmt::SystemError::init(
     int err_code, CStringRef format_str, ArgList args) {
   error_code_ = err_code;
   MemoryWriter w;
-  internal::format_system_error(w, err_code, format(format_str, args));
+  format_system_error(w, err_code, format(format_str, args));
   std::runtime_error &base = *this;
   base = std::runtime_error(w.str());
 }
@@ -592,12 +599,12 @@ FMT_FUNC void fmt::internal::format_windows_error(
 
 #endif  // FMT_USE_WINDOWS_H
 
-FMT_FUNC void fmt::internal::format_system_error(
+FMT_FUNC void fmt::format_system_error(
     fmt::Writer &out, int error_code,
     fmt::StringRef message) FMT_NOEXCEPT {
   FMT_TRY {
-    MemoryBuffer<char, INLINE_BUFFER_SIZE> buffer;
-    buffer.resize(INLINE_BUFFER_SIZE);
+    internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> buffer;
+    buffer.resize(internal::INLINE_BUFFER_SIZE);
     for (;;) {
       char *system_message = &buffer[0];
       int result = safe_strerror(error_code, system_message, buffer.size());
@@ -854,7 +861,7 @@ void fmt::internal::PrintfFormatter<Char>::format(
 FMT_FUNC void fmt::report_system_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT {
   // 'fmt::' is for bcc32.
-  fmt::report_error(internal::format_system_error, error_code, message);
+  fmt::report_error(format_system_error, error_code, message);
 }
 
 #if FMT_USE_WINDOWS_H

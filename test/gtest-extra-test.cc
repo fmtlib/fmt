@@ -320,7 +320,7 @@ TEST(StreamingAssertionsTest, EXPECT_WRITE) {
 
 TEST(UtilTest, FormatSystemError) {
   fmt::MemoryWriter out;
-  fmt::internal::format_system_error(out, EDOM, "test message");
+  fmt::format_system_error(out, EDOM, "test message");
   EXPECT_EQ(out.str(), format_system_error(EDOM, "test message"));
 }
 
