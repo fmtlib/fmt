@@ -10090,8 +10090,9 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
   // threads concurrently.
   Result InvokeWith(const ArgumentTuple& args)
         GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
-    return static_cast<const ResultHolder*>(
-        this->UntypedInvokeWith(&args))->GetValueAndDelete();
+    const ResultHolder *rh = static_cast<const ResultHolder*>(
+                this->UntypedInvokeWith(&args));
+    return rh ? rh->GetValueAndDelete() : Result();
   }
 
   // Adds and returns a default action spec for this mock function.
