@@ -453,12 +453,6 @@ TEST(BufferedFileTest, FilenoNoRetry) {
   fileno_count = 0;
 }
 
-template <typename Mock>
-struct ScopedMock : testing::StrictMock<Mock> {
-  ScopedMock() { Mock::instance = this; }
-  ~ScopedMock() { Mock::instance = 0; }
-};
-
 struct TestMock {
   static TestMock *instance;
 } *TestMock::instance;

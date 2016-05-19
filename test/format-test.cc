@@ -43,6 +43,22 @@
 // Test that the library compiles if None is defined to 0 as done by xlib.h.
 #define None 0
 
+struct LocaleMock {
+  static LocaleMock *instance;
+
+  MOCK_METHOD0(localeconv, lconv *());
+} *LocaleMock::instance;
+
+namespace fmt {
+namespace std {
+using namespace ::std;
+lconv *localeconv() {
+  return LocaleMock::instance ?
+        LocaleMock::instance->localeconv() : ::std::localeconv();
+}
+}
+}
+
 #include "fmt/format.h"
 #include "fmt/time.h"
 
@@ -1209,13 +1225,12 @@ TEST(FormatterTest, FormatOct) {
 }
 
 TEST(FormatterTest, FormatIntLocale) {
-#ifndef _WIN32
-  const char *locale = "en_US.utf-8";
-#else
-  const char *locale = "English_United States";
-#endif
-  if (std::setlocale(LC_ALL, locale))
-    EXPECT_EQ("1,234,567", format("{:n}", 1234567));
+  ScopedMock<LocaleMock> mock;
+  lconv lc = {};
+  char sep[] = "--";
+  lc.thousands_sep = sep;
+  EXPECT_CALL(mock, localeconv()).WillOnce(testing::Return(&lc));
+  EXPECT_EQ("1--234--567", format("{:n}", 1234567));
 }
 
 TEST(FormatterTest, FormatFloat) {
