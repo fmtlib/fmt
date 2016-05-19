@@ -77,6 +77,7 @@ add_fmt_test(format-test)
 add_fmt_test(format-impl-test)
 add_fmt_test(ostream-test)
 add_fmt_test(printf-test)
+add_fmt_test(string-test)
 add_fmt_test(util-test mock-allocator.h)
 add_fmt_test(macro-test)
 
@@ -87,7 +88,8 @@ if (FMT_PEDANTIC AND MSVC)
 endif ()
 
 if (HAVE_OPEN)
-  add_executable(posix-mock-test posix-mock-test.cc ../fmt/format.cc ${TEST_MAIN_SRC})
+  add_executable(posix-mock-test
+    posix-mock-test.cc ../fmt/format.cc ${TEST_MAIN_SRC})
   target_include_directories(posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR})
   target_compile_definitions(posix-mock-test PRIVATE FMT_USE_FILE_DESCRIPTORS=1)
   target_link_libraries(posix-mock-test gmock)

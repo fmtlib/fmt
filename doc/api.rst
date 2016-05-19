@@ -181,6 +181,8 @@ Utilities
 .. doxygenclass:: fmt::ArgList
    :members:
 
+.. doxygenfunction:: fmt::to_string(const T&)
+
 .. doxygenclass:: fmt::BasicStringRef
    :members:
 
