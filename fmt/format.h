@@ -911,10 +911,10 @@ class ThousandsSep {
 };
 
 // Returns the thousands separator for the current locale.
-// On android the lconv structure is stubbed using an empty structure
-// The test is for the size only, not for the presense of 
+// On android the lconv structure is stubbed using an empty structure.
+// The test is for the size only, not for the presense of
 // thousands_sep in std::lconv, because if one would add thousands_sep
-// at some point, the size of structure would be at least sizeof(char*)
+// at some point, the size of structure would be at least sizeof(char*).
 template<typename Lconv, bool=(sizeof(Lconv) >= sizeof(char*))>
 struct Locale {
   static fmt::StringRef thousands_sep() { return ""; }
@@ -922,7 +922,9 @@ struct Locale {
 
 template<typename Lconv>
 struct Locale<Lconv, true> {
-  static fmt::StringRef thousands_sep() { return static_cast<Lconv*>(std::localeconv())->thousands_sep; }
+  static fmt::StringRef thousands_sep() {
+    return static_cast<Lconv*>(std::localeconv())->thousands_sep;
+  }
 };
 
 // Formats a decimal unsigned integer value writing into buffer.
@@ -2793,8 +2795,7 @@ void BasicWriter<Char>::write_int(T value, Spec spec) {
   }
   case 'n': {
     unsigned num_digits = internal::count_digits(abs_value);
-    fmt::StringRef sep =
-        internal::Locale<lconv>::thousands_sep();
+    fmt::StringRef sep = internal::Locale<lconv>::thousands_sep();
     unsigned size = static_cast<unsigned>(
           num_digits + sep.size() * (num_digits - 1) / 3);
     CharPtr p = prepare_int_buffer(size, spec, prefix, prefix_size) + 1;
