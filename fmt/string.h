@@ -20,6 +20,8 @@ namespace fmt {
 
   **Example**::
 
+    #include "fmt/string.h"
+
     std::string answer = fmt::to_string(42);
   \endrst
  */
