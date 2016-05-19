@@ -1214,8 +1214,8 @@ TEST(FormatterTest, FormatIntLocale) {
 #else
   const char *locale = "English_United States";
 #endif
-  std::setlocale(LC_ALL, locale);
-  EXPECT_EQ("1,234,567", format("{:n}", 1234567));
+  if (std::setlocale(LC_ALL, locale))
+    EXPECT_EQ("1,234,567", format("{:n}", 1234567));
 }
 
 TEST(FormatterTest, FormatFloat) {
