@@ -29,7 +29,7 @@
 #define FMT_GTEST_EXTRA_H_
 
 #include <string>
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "fmt/format.h"
 
@@ -171,5 +171,11 @@ std::string read(fmt::File &f, std::size_t count);
   EXPECT_EQ(expected_content, read(file, std::strlen(expected_content)))
 
 #endif  // FMT_USE_FILE_DESCRIPTORS
+
+template <typename Mock>
+struct ScopedMock : testing::StrictMock<Mock> {
+  ScopedMock() { Mock::instance = this; }
+  ~ScopedMock() { Mock::instance = 0; }
+};
 
 #endif  // FMT_GTEST_EXTRA_H_
