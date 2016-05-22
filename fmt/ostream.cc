@@ -25,7 +25,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ostream.h"
+#include "fmt/ostream.h"
 
 namespace fmt {
 
