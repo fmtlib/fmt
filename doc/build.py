@@ -46,8 +46,8 @@ def build_docs(version='dev'):
   except DistributionNotFound:
     pass
   # Install Sphinx and Breathe.
-  pip_install('fmtlib/sphinx',
-              '12dde8afdb0a7bb5576e2656692c3478c69d8cc3',
+  pip_install('sphinx-doc/sphinx',
+              '12b83372ac9316e8cbe86e7fed889296a4cc29ee',
               check_version='1.4a0.dev-20151013')
   pip_install('michaeljones/breathe',
               '1c9d7f80378a92cffa755084823a78bb38ee4acc')
