@@ -7,4 +7,5 @@ endif ()
 add_custom_target(doc
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build.py ${FMT_VERSION})
 
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ DESTINATION share/doc/fmt)
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/
+        DESTINATION share/doc/fmt OPTIONAL)
