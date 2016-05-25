@@ -16,7 +16,7 @@ def pip_install(package, commit=None, **kwargs):
     #  return
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   print('Installing {}'.format(package))
-  check_call(['pip', 'install', '--upgrade', package])
+  check_call(['pip', 'install', package])
 
 def build_docs(version='dev'):
   # Create virtualenv.
@@ -48,7 +48,7 @@ def build_docs(version='dev'):
   # Install Sphinx and Breathe.
   pip_install('sphinx-doc/sphinx',
               '12b83372ac9316e8cbe86e7fed889296a4cc29ee',
-              check_version='1.4a0.dev-20151013')
+              check_version='1.4.1.dev20160525')
   pip_install('michaeljones/breathe',
               '1c9d7f80378a92cffa755084823a78bb38ee4acc')
   # Build docs.
