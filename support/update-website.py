@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, shutil, sys, tempfile
+import os, re, shutil, sys, tempfile
 from subprocess import check_call
 
 class Git:
@@ -28,7 +28,7 @@ try:
   doc_repo = Git('fmtlib.github.io')
   doc_repo.clone('git@github.com:fmtlib/fmtlib.github.io')
 
-  versions = ['1.0.0']
+  versions = ['1.1.0', '2.0.0']
   for version in versions:
     fmt_repo.checkout(version)
     target_doc_dir = os.path.join(fmt_repo.dir, 'doc')
@@ -36,9 +36,10 @@ try:
     for entry in os.listdir(target_doc_dir):
       path = os.path.join(target_doc_dir, entry)
       if os.path.isdir(path):
-	shutil.rmtree(path)
+        shutil.rmtree(path)
     # Copy the new theme.
-    for entry in ['_static', '_templates', 'basic-bootstrap', 'bootstrap', 'conf.py', 'fmt.less']:
+    for entry in ['_static', '_templates', 'basic-bootstrap', 'bootstrap',
+                  'conf.py', 'fmt.less']:
       src = os.path.join(fmt_dir, 'doc', entry)
       dst = os.path.join(target_doc_dir, entry)
       copy = shutil.copytree if os.path.isdir(src) else shutil.copyfile
@@ -47,6 +48,15 @@ try:
     contents = os.path.join(target_doc_dir, 'contents.rst')
     if not os.path.exists(contents):
       os.rename(os.path.join(target_doc_dir, 'index.rst'), contents)
+    # Fix issues in reference.rst.
+    reference = os.path.join(target_doc_dir, 'reference.rst')
+    if os.path.exists(reference):
+      with open(reference) as f:
+        data = f.read()
+      data = data.replace('std::ostream &', 'std::ostream&')
+      data = re.sub('doxygenfunction.. (bin|oct|hexu|hex)', r'doxygenfunction:: \1(int)', data)
+      with open(reference, 'w') as f:
+        f.write(data)
     # Build the docs.
     build.build_docs(version, doc_dir=target_doc_dir, include_dir=fmt_repo.dir)
     # Create symlinks for older versions.
@@ -56,7 +66,6 @@ try:
     version_doc_dir = os.path.join(doc_repo.dir, version)
     shutil.rmtree(version_doc_dir)
     shutil.copytree('html', version_doc_dir, symlinks=True)
-    # TODO: fix links
     # TODO: remove doc repo
 except:
   shutil.rmtree(fmt_repo.dir)
