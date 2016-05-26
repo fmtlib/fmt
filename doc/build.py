@@ -13,13 +13,12 @@ def pip_install(package, commit=None, **kwargs):
   print('Installing {}'.format(package))
   check_call(['pip', 'install', package])
 
-def create_build_env():
+def create_build_env(dirname='virtualenv'):
   # Create virtualenv.
-  virtualenv_dir = 'virtualenv'
-  check_call(['virtualenv', virtualenv_dir])
+  check_call(['virtualenv', dirname])
   import sysconfig
   scripts_dir = os.path.basename(sysconfig.get_path('scripts'))
-  activate_this_file = os.path.join(virtualenv_dir, scripts_dir,
+  activate_this_file = os.path.join(dirname, scripts_dir,
                                     'activate_this.py')
   with open(activate_this_file) as f:
     exec(f.read(), dict(__file__=activate_this_file))
@@ -48,7 +47,8 @@ def create_build_env():
 
 def build_docs(version='dev', **kwargs):
   doc_dir = kwargs.get('doc_dir', os.path.dirname(os.path.realpath(__file__)))
-  include_dir = kwargs.get('include_dir', os.path.join(os.path.dirname(doc_dir), 'fmt'))
+  include_dir = kwargs.get('include_dir',
+                           os.path.join(os.path.dirname(doc_dir), 'fmt'))
   # Build docs.
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE)
@@ -77,10 +77,11 @@ def build_docs(version='dev', **kwargs):
     '''.format(include_dir).encode('UTF-8'))
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
+  doxyxml_dir = os.path.join(os.getcwd(), 'doxyxml')
   check_call(['sphinx-build',
-              '-Dbreathe_projects.format=' + os.path.join(os.getcwd(), 'doxyxml'),
-              '-Dversion=' + version, '-Drelease=' + version, '-Aversion=' + version,
-              '-b', 'html', doc_dir, 'html'])
+              '-Dbreathe_projects.format=' + doxyxml_dir,
+              '-Dversion=' + version, '-Drelease=' + version,
+              '-Aversion=' + version, '-b', 'html', doc_dir, 'html'])
   try:
     check_call(['lessc', #'--clean-css',
                 '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
@@ -89,7 +90,8 @@ def build_docs(version='dev', **kwargs):
   except OSError as e:
     if e.errno != errno.ENOENT:
       raise
-    print('lessc not found; make sure that Less (http://lesscss.org/) is installed')
+    print('lessc not found; make sure that Less (http://lesscss.org/) ' +
+          'is installed')
     sys.exit(1)
   return 'html'
 
