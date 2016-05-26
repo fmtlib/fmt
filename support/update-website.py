@@ -16,20 +16,29 @@ class Git:
   def checkout(self, *args):
     return self.call('checkout', args, cwd=self.dir)
 
+  def clean(self, *args):
+    return self.call('clean', args, cwd=self.dir)
+
+  def reset(self, *args):
+    return self.call('reset', args, cwd=self.dir)
+
 # Create build environment.
 fmt_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(fmt_dir, 'doc'))
-import build
-build.create_build_env()
 
-fmt_repo = Git(tempfile.mkdtemp('fmt'))
+workdir = tempfile.mkdtemp('fmt')
 try:
+  import build
+  build.create_build_env(os.path.join(workdir, 'virtualenv'))
+
+  fmt_repo = Git(os.path.join(workdir, 'fmt'))
   fmt_repo.clone('git@github.com:fmtlib/fmt')
   doc_repo = Git('fmtlib.github.io')
   doc_repo.clone('git@github.com:fmtlib/fmtlib.github.io')
 
-  versions = ['1.1.0', '2.0.0']
-  for version in versions:
+  for version in ['1.0.0']:#, '1.1.0', '2.0.0', '3.0.0']:
+    fmt_repo.clean('-f', '-d')
+    fmt_repo.reset('--hard')
     fmt_repo.checkout(version)
     target_doc_dir = os.path.join(fmt_repo.dir, 'doc')
     # Remove the old theme.
@@ -54,7 +63,8 @@ try:
       with open(reference) as f:
         data = f.read()
       data = data.replace('std::ostream &', 'std::ostream&')
-      data = re.sub('doxygenfunction.. (bin|oct|hexu|hex)', r'doxygenfunction:: \1(int)', data)
+      data = re.sub('doxygenfunction.. (bin|oct|hexu|hex)',
+                    r'doxygenfunction:: \1(int)', data)
       with open(reference, 'w') as f:
         f.write(data)
     # Build the docs.
@@ -65,7 +75,9 @@ try:
     # Copy docs to the website.
     version_doc_dir = os.path.join(doc_repo.dir, version)
     shutil.rmtree(version_doc_dir)
-    shutil.copytree('html', version_doc_dir, symlinks=True)
+    shutil.move('html', version_doc_dir)
+    # TODO: generate 'html' in temp dir
+    # TODO: update links in navbar
     # TODO: remove doc repo
 except:
-  shutil.rmtree(fmt_repo.dir)
+  shutil.rmtree(workdir)
