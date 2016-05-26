@@ -26,12 +26,15 @@ class Git:
 fmt_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(fmt_dir, 'doc'))
 
-workdir = tempfile.mkdtemp('fmt')
+work_dir = tempfile.mkdtemp('fmt')
 try:
   import build
-  build.create_build_env(os.path.join(workdir, 'virtualenv'))
+  # The virtualenv is stored in ~/.cache/fmt/virtualenv and reused to speed
+  # up builds.
+  build.create_build_env(os.path.join(
+    os.path.expanduser('~'), '.cache', 'fmt', 'virtualenv'))
 
-  fmt_repo = Git(os.path.join(workdir, 'fmt'))
+  fmt_repo = Git(os.path.join(work_dir, 'fmt'))
   fmt_repo.clone('git@github.com:fmtlib/fmt')
   doc_repo = Git('fmtlib.github.io')
   doc_repo.clone('git@github.com:fmtlib/fmtlib.github.io')
@@ -68,7 +71,8 @@ try:
       with open(reference, 'w') as f:
         f.write(data)
     # Build the docs.
-    build.build_docs(version, doc_dir=target_doc_dir, include_dir=fmt_repo.dir)
+    build.build_docs(version, doc_dir=target_doc_dir, include_dir=fmt_repo.dir,
+                     work_dir=work_dir)
     # Create symlinks for older versions.
     for link, target in {'index': 'contents', 'api': 'reference'}.items():
       os.symlink(target + '.html', os.path.join('html', link) + '.html')
@@ -76,8 +80,7 @@ try:
     version_doc_dir = os.path.join(doc_repo.dir, version)
     shutil.rmtree(version_doc_dir)
     shutil.move('html', version_doc_dir)
-    # TODO: generate 'html' in temp dir
     # TODO: update links in navbar
     # TODO: remove doc repo
 except:
-  shutil.rmtree(workdir)
+  shutil.rmtree(work_dir)

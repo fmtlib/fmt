@@ -15,11 +15,11 @@ def pip_install(package, commit=None, **kwargs):
 
 def create_build_env(dirname='virtualenv'):
   # Create virtualenv.
-  check_call(['virtualenv', dirname])
+  if not os.path.exists(dirname):
+    check_call(['virtualenv', dirname])
   import sysconfig
   scripts_dir = os.path.basename(sysconfig.get_path('scripts'))
-  activate_this_file = os.path.join(dirname, scripts_dir,
-                                    'activate_this.py')
+  activate_this_file = os.path.join(dirname, scripts_dir, 'activate_this.py')
   with open(activate_this_file) as f:
     exec(f.read(), dict(__file__=activate_this_file))
   # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
@@ -39,8 +39,7 @@ def create_build_env(dirname='virtualenv'):
   except DistributionNotFound:
     pass
   # Install Sphinx and Breathe.
-  pip_install('sphinx-doc/sphinx',
-              '12b83372ac9316e8cbe86e7fed889296a4cc29ee',
+  pip_install('sphinx-doc/sphinx', '12b83372ac9316e8cbe86e7fed889296a4cc29ee',
               check_version='1.4.1.dev20160525')
   pip_install('michaeljones/breathe',
               '6b1c5bb7a1866f15fc328b8716258354b10c1daa')
