@@ -47,11 +47,13 @@ def create_build_env(dirname='virtualenv'):
 
 def build_docs(version='dev', **kwargs):
   doc_dir = kwargs.get('doc_dir', os.path.dirname(os.path.realpath(__file__)))
+  work_dir = kwargs.get('work_dir', '.')
   include_dir = kwargs.get('include_dir',
                            os.path.join(os.path.dirname(doc_dir), 'fmt'))
   # Build docs.
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE)
+  doxyxml_dir = os.path.join(work_dir, 'doxyxml')
   p.communicate(input=r'''
       PROJECT_NAME      = fmt
       GENERATE_LATEX    = NO
@@ -64,7 +66,7 @@ def build_docs(version='dev', **kwargs):
       AUTOLINK_SUPPORT  = NO
       GENERATE_HTML     = NO
       GENERATE_XML      = YES
-      XML_OUTPUT        = doxyxml
+      XML_OUTPUT        = {1}
       ALIASES           = "rst=\verbatim embed:rst"
       ALIASES          += "endrst=\endverbatim"
       MACRO_EXPANSION   = YES
@@ -74,26 +76,26 @@ def build_docs(version='dev', **kwargs):
                           FMT_USE_USER_DEFINED_LITERALS=1 \
                           FMT_API=
       EXCLUDE_SYMBOLS   = fmt::internal::* StringValue write_str
-    '''.format(include_dir).encode('UTF-8'))
+    '''.format(include_dir, doxyxml_dir).encode('UTF-8'))
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
-  doxyxml_dir = os.path.join(os.getcwd(), 'doxyxml')
+  html_dir = os.path.join(work_dir, 'html')
   check_call(['sphinx-build',
               '-Dbreathe_projects.format=' + doxyxml_dir,
               '-Dversion=' + version, '-Drelease=' + version,
-              '-Aversion=' + version, '-b', 'html', doc_dir, 'html'])
+              '-Aversion=' + version, '-b', 'html', doc_dir, html_dir])
   try:
     check_call(['lessc', #'--clean-css',
                 '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
                 os.path.join(doc_dir, 'fmt.less'),
-                'html/_static/fmt.css'])
+                os.path.join(html_dir, '_static', 'fmt.css')])
   except OSError as e:
     if e.errno != errno.ENOENT:
       raise
     print('lessc not found; make sure that Less (http://lesscss.org/) ' +
           'is installed')
     sys.exit(1)
-  return 'html'
+  return html_dir
 
 if __name__ == '__main__':
   create_build_env()
