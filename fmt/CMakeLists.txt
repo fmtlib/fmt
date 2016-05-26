@@ -74,7 +74,8 @@ if (FMT_INSTALL)
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
     ${project_config}
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
-  export(TARGETS ${INSTALL_TARGETS} FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
+  export(TARGETS ${INSTALL_TARGETS}
+         FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
   # Install version, config and target files.
   install(
@@ -83,7 +84,8 @@ if (FMT_INSTALL)
   install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR})
 
   # Install the library and headers.
-  install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name} DESTINATION ${FMT_LIB_DIR})
+  install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
+          DESTINATION ${FMT_LIB_DIR})
   install(FILES ${FMT_HEADERS} DESTINATION include/fmt)
   if (FMT_CPPFORMAT)
     install(TARGETS cppformat DESTINATION ${FMT_LIB_DIR})
