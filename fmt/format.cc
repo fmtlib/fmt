@@ -686,8 +686,8 @@ FMT_FUNC Arg fmt::internal::FormatterBase::do_get_arg(
   return arg;
 }
 
-template <typename Char>
-void fmt::internal::PrintfFormatter<Char>::parse_flags(
+template <typename Char, typename PAF>
+void fmt::internal::PrintfFormatter<Char, PAF>::parse_flags(
     FormatSpec &spec, const Char *&s) {
   for (;;) {
     switch (*s++) {
@@ -713,8 +713,8 @@ void fmt::internal::PrintfFormatter<Char>::parse_flags(
   }
 }
 
-template <typename Char>
-Arg fmt::internal::PrintfFormatter<Char>::get_arg(
+template <typename Char, typename PAF>
+Arg fmt::internal::PrintfFormatter<Char, PAF>::get_arg(
     const Char *s, unsigned arg_index) {
   (void)s;
   const char *error = 0;
@@ -725,8 +725,8 @@ Arg fmt::internal::PrintfFormatter<Char>::get_arg(
   return arg;
 }
 
-template <typename Char>
-unsigned fmt::internal::PrintfFormatter<Char>::parse_header(
+template <typename Char, typename PAF>
+unsigned fmt::internal::PrintfFormatter<Char, PAF>::parse_header(
   const Char *&s, FormatSpec &spec) {
   unsigned arg_index = UINT_MAX;
   Char c = *s;
@@ -759,8 +759,8 @@ unsigned fmt::internal::PrintfFormatter<Char>::parse_header(
   return arg_index;
 }
 
-template <typename Char>
-void fmt::internal::PrintfFormatter<Char>::format(
+template <typename Char, typename PAF >
+  void fmt::internal::PrintfFormatter<Char,PAF>::format(
     BasicWriter<Char> &writer, BasicCStringRef<Char> format_str) {
   const Char *start = format_str.c_str();
   const Char *s = start;
@@ -853,10 +853,11 @@ void fmt::internal::PrintfFormatter<Char>::format(
     start = s;
 
     // Format argument.
-    internal::PrintfArgFormatter<Char>(writer, spec).visit(arg);
+    PAF(writer, spec).visit(arg);
   }
   write(writer, start, s);
 }
+
 
 FMT_FUNC void fmt::report_system_error(
     int error_code, fmt::StringRef message) FMT_NOEXCEPT {
