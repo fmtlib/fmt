@@ -10,11 +10,14 @@ def pip_install(package, commit=None, **kwargs):
   "Install package using pip."
   min_version = kwargs.get('min_version')
   if min_version:
-    from pkg_resources import get_distribution
-    installed_version = get_distribution(os.path.basename(package)).version
-    if LooseVersion(installed_version) >= min_version:
-      print('{} {} already installed'.format(package, min_version))
-      return
+    from pkg_resources import get_distribution, DistributionNotFound
+    try:
+      installed_version = get_distribution(os.path.basename(package)).version
+      if LooseVersion(installed_version) >= min_version:
+        print('{} {} already installed'.format(package, min_version))
+        return
+    except DistributionNotFound:
+      pass
   if commit:
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   print('Installing {}'.format(package))
