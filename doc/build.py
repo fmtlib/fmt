@@ -8,6 +8,13 @@ from distutils.version import LooseVersion
 
 def pip_install(package, commit=None, **kwargs):
   "Install package using pip."
+  min_version = kwargs.get('min_version')
+  if min_version:
+    from pkg_resources import get_distribution
+    installed_version = get_distribution(os.path.basename(package)).version
+    if LooseVersion(installed_version) >= min_version:
+      print('{} {} already installed'.format(package, min_version))
+      return
   if commit:
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
   print('Installing {}'.format(package))
@@ -22,9 +29,11 @@ def create_build_env(dirname='virtualenv'):
   activate_this_file = os.path.join(dirname, scripts_dir, 'activate_this.py')
   with open(activate_this_file) as f:
     exec(f.read(), dict(__file__=activate_this_file))
+  # Import get_distribution after activating virtualenv to get info about
+  # the correct packages.
+  from pkg_resources import get_distribution, DistributionNotFound
   # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
   # is broken (see #207) and it doesn't support the show command.
-  from pkg_resources import get_distribution, DistributionNotFound
   pip_version = get_distribution('pip').version
   if LooseVersion(pip_version) < LooseVersion('1.5.4'):
     print("Updating pip")
@@ -40,7 +49,7 @@ def create_build_env(dirname='virtualenv'):
     pass
   # Install Sphinx and Breathe.
   pip_install('sphinx-doc/sphinx', '12b83372ac9316e8cbe86e7fed889296a4cc29ee',
-              check_version='1.4.1.dev20160525')
+              min_version='1.4.1.dev20160531')
   pip_install('michaeljones/breathe',
               '6b1c5bb7a1866f15fc328b8716258354b10c1daa')
 
