@@ -1319,8 +1319,6 @@ class RuntimeError : public std::runtime_error {
   RuntimeError() : std::runtime_error("") {}
 };
 
-template <typename Char>
-class PrintfArgFormatter;
 
 template <typename Char>
 class ArgMap;
@@ -1939,15 +1937,19 @@ class FormatterBase {
   }
 };
 
+template <typename Char> class PrintfArgFormatter;
+
+}  // namespace internal
+
 // A printf formatter.
  template <typename Char, typename PAF = fmt::internal::PrintfArgFormatter<Char> >
-class PrintfFormatter : private FormatterBase {
+ class PrintfFormatter : private internal::FormatterBase {
  private:
   void parse_flags(FormatSpec &spec, const Char *&s);
 
   // Returns the argument with specified index or, if arg_index is equal
   // to the maximum unsigned value, the next argument.
-  Arg get_arg(const Char *s,
+	 internal::Arg get_arg(const Char *s,
       unsigned arg_index = (std::numeric_limits<unsigned>::max)());
 
   // Parses argument index, flags and width and returns the argument index.
@@ -1958,7 +1960,6 @@ class PrintfFormatter : private FormatterBase {
   FMT_API void format(BasicWriter<Char> &writer,
                       BasicCStringRef<Char> format_str);
 };
-}  // namespace internal
 
 /**
   \rst
@@ -3190,7 +3191,7 @@ FMT_API void print(CStringRef format_str, ArgList args);
 
  template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
-   internal::PrintfFormatter<Char>(args).format(w, format);
+   PrintfFormatter<Char>(args).format(w, format);
 }
 
 /**
