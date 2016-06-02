@@ -501,7 +501,7 @@ template void fmt::internal::FixedBuffer<char>::grow(std::size_t);
 
 template void fmt::internal::ArgMap<char>::init(const fmt::ArgList &args);
 
-template void fmt::PrintfFormatter<char>::format(
+template void fmt::internal::PrintfFormatter<char>::format(
   BasicWriter<char> &writer, CStringRef format);
 
 template int fmt::internal::CharTraits<char>::format_float(
@@ -518,7 +518,7 @@ template void fmt::internal::FixedBuffer<wchar_t>::grow(std::size_t);
 
 template void fmt::internal::ArgMap<wchar_t>::init(const fmt::ArgList &args);
 
-template void fmt::PrintfFormatter<wchar_t>::format(
+template void fmt::internal::PrintfFormatter<wchar_t>::format(
     BasicWriter<wchar_t> &writer, WCStringRef format);
 
 template int fmt::internal::CharTraits<wchar_t>::format_float(

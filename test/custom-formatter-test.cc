@@ -46,7 +46,7 @@ FMT_VARIADIC(std::string, custom_format, const char *)
 
 std::string printfer(const char* fstr, fmt::ArgList args){
   fmt::MemoryWriter writer;
-  fmt::PrintfFormatter<char, CustomPAF> pfer(args);
+  fmt::internal::PrintfFormatter<char, CustomPAF> pfer(args);
   pfer.format(writer,fstr);
   return writer.str();
 }

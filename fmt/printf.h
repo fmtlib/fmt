@@ -252,11 +252,8 @@ class PrintfArgFormatter :
   }
 };
 
-
-}// namespace internal
-
-template <typename Char, typename PAF>
-void fmt::PrintfFormatter<Char, PAF>::parse_flags(
+ template <typename Char, typename PAF>
+void fmt::internal::PrintfFormatter<Char, PAF>::parse_flags(
     FormatSpec &spec, const Char *&s) {
   for (;;) {
     switch (*s++) {
@@ -283,11 +280,11 @@ void fmt::PrintfFormatter<Char, PAF>::parse_flags(
 }
 
 template <typename Char, typename PAF>
-internal::Arg fmt::PrintfFormatter<Char, PAF>::get_arg(
+Arg fmt::internal::PrintfFormatter<Char, PAF>::get_arg(
     const Char *s, unsigned arg_index) {
   (void)s;
   const char *error = 0;
-  internal::Arg arg = arg_index == UINT_MAX ?
+  Arg arg = arg_index == UINT_MAX ?
     next_arg(error) : FormatterBase::get_arg(arg_index - 1, error);
   if (error)
     FMT_THROW(FormatError(!*s ? "invalid format string" : error));
@@ -295,14 +292,14 @@ internal::Arg fmt::PrintfFormatter<Char, PAF>::get_arg(
 }
 
 template <typename Char, typename PAF>
-unsigned fmt::PrintfFormatter<Char, PAF>::parse_header(
+unsigned fmt::internal::PrintfFormatter<Char, PAF>::parse_header(
   const Char *&s, FormatSpec &spec) {
   unsigned arg_index = UINT_MAX;
   Char c = *s;
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
     // preceded with '0' flag(s).
-	  unsigned value = internal::parse_nonnegative_int(s);
+    unsigned value = parse_nonnegative_int(s);
     if (*s == '$') {  // value is an argument index
       ++s;
       arg_index = value;
@@ -320,16 +317,16 @@ unsigned fmt::PrintfFormatter<Char, PAF>::parse_header(
   parse_flags(spec, s);
   // Parse width.
   if (*s >= '0' && *s <= '9') {
-	  spec.width_ = internal::parse_nonnegative_int(s);
+    spec.width_ = parse_nonnegative_int(s);
   } else if (*s == '*') {
     ++s;
-    spec.width_ = internal::WidthHandler(spec).visit(get_arg(s));
+    spec.width_ = WidthHandler(spec).visit(get_arg(s));
   }
   return arg_index;
 }
 
 template <typename Char, typename PAF >
-  void fmt::PrintfFormatter<Char,PAF>::format(
+  void fmt::internal::PrintfFormatter<Char,PAF>::format(
     BasicWriter<Char> &writer, BasicCStringRef<Char> format_str) {
   const Char *start = format_str.c_str();
   const Char *s = start;
@@ -353,18 +350,18 @@ template <typename Char, typename PAF >
     if (*s == '.') {
       ++s;
       if ('0' <= *s && *s <= '9') {
-		  spec.precision_ = static_cast<int>(internal::parse_nonnegative_int(s));
+        spec.precision_ = static_cast<int>(parse_nonnegative_int(s));
       } else if (*s == '*') {
         ++s;
-        spec.precision_ = internal::PrecisionHandler().visit(get_arg(s));
+        spec.precision_ = PrecisionHandler().visit(get_arg(s));
       }
     }
 
-	internal::Arg arg = get_arg(s, arg_index);
-    if (spec.flag(HASH_FLAG) && internal::IsZeroInt().visit(arg))
-		spec.flags_ &= ~internal::to_unsigned<int>(HASH_FLAG);
+    Arg arg = get_arg(s, arg_index);
+    if (spec.flag(HASH_FLAG) && IsZeroInt().visit(arg))
+      spec.flags_ &= ~to_unsigned<int>(HASH_FLAG);
     if (spec.fill_ == '0') {
-		if (arg.type <= internal::Arg::LAST_NUMERIC_TYPE)
+      if (arg.type <= Arg::LAST_NUMERIC_TYPE)
         spec.align_ = ALIGN_NUMERIC;
       else
         spec.fill_ = ' ';  // Ignore '0' flag for non-numeric types.
@@ -406,7 +403,7 @@ template <typename Char, typename PAF >
     if (!*s)
       FMT_THROW(FormatError("invalid format string"));
     spec.type_ = static_cast<char>(*s++);
-    if (arg.type <= internal::Arg::LAST_INTEGER_TYPE) {
+    if (arg.type <= Arg::LAST_INTEGER_TYPE) {
       // Normalize type.
       switch (spec.type_) {
       case 'i': case 'u':
@@ -426,6 +423,8 @@ template <typename Char, typename PAF >
   }
   write(writer, start, s);
 }
+
+}// namespace internal
 
 } // namespace fmt
 
