@@ -34,15 +34,15 @@ fmt_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(fmt_dir, 'doc'))
 import build
 
-work_dir = 'build'
+build_dir = 'build'
 
 # Virtualenv and repos are cached to speed up builds.
-build.create_build_env(os.path.join(work_dir, 'virtualenv'))
+build.create_build_env(os.path.join(build_dir, 'virtualenv'))
 
-fmt_repo = Git(os.path.join(work_dir, 'fmt'))
+fmt_repo = Git(os.path.join(build_dir, 'fmt'))
 fmt_repo.update('git@github.com:fmtlib/fmt')
 
-doc_repo = Git(os.path.join(work_dir, 'fmtlib.github.io'))
+doc_repo = Git(os.path.join(build_dir, 'fmtlib.github.io'))
 doc_repo.update('git@github.com:fmtlib/fmtlib.github.io')
 
 for version in ['1.0.0']:#, '1.1.0', '2.0.0', '3.0.0']:
@@ -57,7 +57,7 @@ for version in ['1.0.0']:#, '1.1.0', '2.0.0', '3.0.0']:
       shutil.rmtree(path)
   # Copy the new theme.
   for entry in ['_static', '_templates', 'basic-bootstrap', 'bootstrap',
-		'conf.py', 'fmt.less']:
+                'conf.py', 'fmt.less']:
     src = os.path.join(fmt_dir, 'doc', entry)
     dst = os.path.join(target_doc_dir, entry)
     copy = shutil.copytree if os.path.isdir(src) else shutil.copyfile
@@ -74,12 +74,12 @@ for version in ['1.0.0']:#, '1.1.0', '2.0.0', '3.0.0']:
       data = f.read()
     data = data.replace('std::ostream &', 'std::ostream&')
     data = re.sub(r'doxygenfunction.. (bin|oct|hexu|hex)',
-		  r'doxygenfunction:: \1(int)', data)
+                  r'doxygenfunction:: \1(int)', data)
     with open(reference, 'w') as f:
       f.write(data)
   # Build the docs.
   html_dir = build.build_docs(version, doc_dir=target_doc_dir,
-			      include_dir=fmt_repo.dir, work_dir=work_dir)
+                              include_dir=fmt_repo.dir, work_dir=build_dir)
   # Create symlinks for older versions.
   for link, target in {'index': 'contents', 'api': 'reference'}.items():
     os.symlink(target + '.html', os.path.join(html_dir, link) + '.html')

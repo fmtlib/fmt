@@ -94,7 +94,7 @@ def build_docs(version='dev', **kwargs):
   html_dir = os.path.join(work_dir, 'html')
   versions = [v for v in ['3.0.0', '2.0.0', '1.1.0'] if v != version]
   check_call(['sphinx-build',
-              '-Dbreathe_projects.format=' + doxyxml_dir,
+              '-Dbreathe_projects.format=' + os.path.abspath(doxyxml_dir),
               '-Dversion=' + version, '-Drelease=' + version,
               '-Aversion=' + version, '-Aversions=' + ','.join(versions),
               '-b', 'html', doc_dir, html_dir])

@@ -186,7 +186,7 @@ if __name__ == '__main__':
         r = requests.post('https://api.github.com/repos/fmtlib/fmt/releases',
                           params={'access_token': os.getenv('FMT_TOKEN')},
                           data=json.dumps({'tag_name': version, 'target_commitish': 'release',
-					   'body': changes, 'draft': True}))
+                                           'body': changes, 'draft': True}))
         if r.status_code != 201:
             raise Exception('Failed to create a release ' + str(r))
     finally:
