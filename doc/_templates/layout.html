@@ -8,8 +8,9 @@
 {# Google Analytics #}
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();
+    a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;
+    a.src=g;m.parentNode.insertBefore(a,m)
   })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
   ga('create', 'UA-20116650-4', 'fmtlib.net');
   ga('send', 'pageview');
@@ -17,9 +18,11 @@
 {% endblock %}
 
 {%- macro searchform(classes, button) %}
-<form class="{{classes}}" role="search" action="{{ pathto('search') }}" method="get">
+<form class="{{classes}}" role="search" action="{{ pathto('search') }}"
+      method="get">
   <div class="form-group">
-    <input type="text" name="q" class="form-control" {{ 'placeholder="Search"' if not button }} >
+    <input type="text" name="q" class="form-control"
+           {{ 'placeholder="Search"' if not button }} >
   </div>
   <input type="hidden" name="check_keywords" value="yes" />
   <input type="hidden" name="area" value="default" />
@@ -36,7 +39,8 @@
       <div class="navbar-content">
         {# Brand and toggle get grouped for better mobile display #}
         <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+          <button type="button" class="navbar-toggle collapsed"
+                  data-toggle="collapse" data-target=".navbar-collapse">
             <span class="sr-only">Toggle navigation</span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
@@ -49,18 +53,19 @@
         <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li class="dropdown">
-              {# TODO: update versions automatically #}
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
-                 aria-expanded="false">{{ version }} <span class="caret"></span></a>
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                 role="button" aria-expanded="false">{{ version }}
+                <span class="caret"></span></a>
               <ul class="dropdown-menu" role="menu">
-                <li><a href="http://fmtlib.net/2.0.0/">2.0.0</a></li>
-                <li><a href="http://fmtlib.net/1.1.0/">1.1.0</a></li>
-                <li><a href="http://fmtlib.net/1.0.0/">1.0.0</a></li>
+                {% for v in versions.split(',') %}
+                <li><a href="http://fmtlib.net/{{v}}">{{v}}</a></li>
+                {% endfor %}
               </ul>
             </li>
             {% for name in ['Contents', 'Usage', 'API', 'Syntax'] %}
               {% if pagename == name.lower() %}
-              <li class="active"><a href="{{name.lower()}}.html">{{name}} <span class="sr-only">(current)</span></a></li>
+              <li class="active"><a href="{{name.lower()}}.html">{{name}}
+                <span class="sr-only">(current)</span></a></li>
               {%else%}
               <li><a href="{{name.lower()}}.html">{{name}}</a></li>
               {%endif%}
@@ -81,10 +86,11 @@
     <p class="lead">Small, safe and fast formatting library</p>
     <div class="btn-group" role="group">
       <a class="btn btn-success"
-          href="https://github.com/fmtlib/fmt/releases/download/2.0.0/cppformat-2.0.0.zip">
-            <span class="glyphicon glyphicon-download"></span> Download
+         href="https://github.com/fmtlib/fmt/releases/download/2.0.0/cppformat-2.0.0.zip">
+           <span class="glyphicon glyphicon-download"></span> Download
       </a>
       <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+      {# TODO: update downloads automatically #}
       <ul class="dropdown-menu">
         <li><a href="https://github.com/fmtlib/fmt/releases/download/2.0.0/cppformat-2.0.0.zip">Version 2.0.0</a></li>
         <li><a href="https://github.com/fmtlib/fmt/releases/download/1.1.0/cppformat-1.1.0.zip">Version 1.1.0</a></li>
@@ -112,7 +118,8 @@
           {%- block sidebarlogo %}
           {%- if logo %}
             <p class="logo"><a href="{{ pathto(master_doc) }}">
-              <img class="logo" src="{{ pathto('_static/' + logo, 1) }}" alt="Logo"/>
+              <img class="logo" src="{{ pathto('_static/' + logo, 1) }}"
+                   alt="Logo"/>
             </a></p>
           {%- endif %}
           {%- endblock %}

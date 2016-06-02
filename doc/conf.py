@@ -228,8 +228,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'format', u'format Documentation',
-     [u'Victor Zverovich'], 1)
+    ('index', 'fmt', u'fmt documentation', [u'Victor Zverovich'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -242,8 +241,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'format', u'format Documentation',
-   u'Victor Zverovich', 'format', 'One line description of project.',
+  ('index', 'fmt', u'fmt documentation',
+   u'Victor Zverovich', 'fmt', 'One line description of project.',
    'Miscellaneous'),
 ]
 
