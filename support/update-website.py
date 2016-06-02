@@ -45,7 +45,7 @@ fmt_repo.update('git@github.com:fmtlib/fmt')
 doc_repo = Git(os.path.join(build_dir, 'fmtlib.github.io'))
 doc_repo.update('git@github.com:fmtlib/fmtlib.github.io')
 
-for version in ['1.0.0']:#, '1.1.0', '2.0.0', '3.0.0']:
+for version in ['1.0.0', '1.1.0', '2.0.0', '3.0.0']:
   fmt_repo.clean('-f', '-d')
   fmt_repo.reset('--hard')
   fmt_repo.checkout(version)
@@ -78,11 +78,18 @@ for version in ['1.0.0']:#, '1.1.0', '2.0.0', '3.0.0']:
     with open(reference, 'w') as f:
       f.write(data)
   # Build the docs.
-  html_dir = build.build_docs(version, doc_dir=target_doc_dir,
-                              include_dir=fmt_repo.dir, work_dir=build_dir)
+  html_dir = os.path.join(build_dir, 'html')
+  if os.path.exists(html_dir):
+    shutil.rmtree(html_dir)
+  build.build_docs(version, doc_dir=target_doc_dir,
+                   include_dir=fmt_repo.dir, work_dir=build_dir)
   # Create symlinks for older versions.
   for link, target in {'index': 'contents', 'api': 'reference'}.items():
-    os.symlink(target + '.html', os.path.join(html_dir, link) + '.html')
+    link = os.path.join(html_dir, link) + '.html'
+    target += '.html'
+    if os.path.exists(os.path.join(html_dir, target)) and \
+       not os.path.exists(link):
+      os.symlink(target, link)
   # Copy docs to the website.
   version_doc_dir = os.path.join(doc_repo.dir, version)
   shutil.rmtree(version_doc_dir)
