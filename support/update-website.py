@@ -90,6 +90,7 @@ for version in ['1.0.0', '1.1.0', '2.0.0', '3.0.0']:
     include_dir = os.path.join(include_dir, 'fmt')
   build.build_docs(version, doc_dir=target_doc_dir,
                    include_dir=include_dir, work_dir=build_dir)
+  shutil.rmtree(os.path.join(html_dir, '.doctrees'))
   # Create symlinks for older versions.
   for link, target in {'index': 'contents', 'api': 'reference'}.items():
     link = os.path.join(html_dir, link) + '.html'
