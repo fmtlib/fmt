@@ -20,7 +20,7 @@ def pip_install(package, commit=None, **kwargs):
       pass
   if commit:
     package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
-  print('Installing {}'.format(package))
+  print('Installing {0}'.format(package))
   check_call(['pip', 'install', package])
 
 def create_build_env(dirname='virtualenv'):

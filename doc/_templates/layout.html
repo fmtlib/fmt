@@ -80,21 +80,24 @@
   </div> {# /.tb-container #}
 </nav>
 {% if pagename == "index" %}
+{% set download_url = 'https://github.com/fmtlib/fmt/releases/download' %}
 <div class="jumbotron">
   <div class="tb-container">
     <h1>{fmt}</h1>
     <p class="lead">Small, safe and fast formatting library</p>
     <div class="btn-group" role="group">
       <a class="btn btn-success"
-         href="https://github.com/fmtlib/fmt/releases/download/2.0.0/cppformat-2.0.0.zip">
+         href="{{download_url}}/{{version}}/fmt-{{version}}.zip">
            <span class="glyphicon glyphicon-download"></span> Download
       </a>
-      <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
-      {# TODO: update downloads automatically #}
+      <button type="button" class="btn btn-success dropdown-toggle"
+        data-toggle="dropdown"><span class="caret"></span></button>
       <ul class="dropdown-menu">
-        <li><a href="https://github.com/fmtlib/fmt/releases/download/2.0.0/cppformat-2.0.0.zip">Version 2.0.0</a></li>
-        <li><a href="https://github.com/fmtlib/fmt/releases/download/1.1.0/cppformat-1.1.0.zip">Version 1.1.0</a></li>
-        <li><a href="https://github.com/fmtlib/fmt/releases/download/1.0.0/cppformat-1.0.0.zip">Version 1.0.0</a></li>
+      {% for v in versions.split(',') %}
+      {% set name = 'fmt' if v.split('.')[0]|int >= 3 else 'cppformat' %}
+        <li><a href="{{download_url}}/{{v}}/{{name}}-{{v}}.zip">Version {{v}}
+          </a></li>
+      {% endfor %}
       </ul>
     </div>
   </div>
@@ -111,7 +114,7 @@
 {% block content %}
 <div class="tb-container">
   <div class="row">
-    {# TODO: integrate sidebar
+    {# Sidebar is currently disabled.
     <div class="bs-sidebar">
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">

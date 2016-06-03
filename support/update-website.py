@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os, re, shutil, sys
+from distutils.version import LooseVersion
 from subprocess import check_call
 
 class Git:
@@ -62,27 +63,33 @@ for version in ['1.0.0', '1.1.0', '2.0.0', '3.0.0']:
     dst = os.path.join(target_doc_dir, entry)
     copy = shutil.copytree if os.path.isdir(src) else shutil.copyfile
     copy(src, dst)
-  # TODO: update links in navbar
   # Rename index to contents.
   contents = os.path.join(target_doc_dir, 'contents.rst')
   if not os.path.exists(contents):
     os.rename(os.path.join(target_doc_dir, 'index.rst'), contents)
-  # Fix issues in reference.rst.
-  reference = os.path.join(target_doc_dir, 'reference.rst')
-  if os.path.exists(reference):
+  # Fix issues in reference.rst/api.rst.
+  for filename in ['reference.rst', 'api.rst']:
+    reference = os.path.join(target_doc_dir, filename)
+    if not os.path.exists(reference):
+      continue
     with open(reference) as f:
       data = f.read()
     data = data.replace('std::ostream &', 'std::ostream&')
-    data = re.sub(r'doxygenfunction.. (bin|oct|hexu|hex)',
+    data = re.sub(re.compile('doxygenfunction.. (bin|oct|hexu|hex)$', re.MULTILINE),
                   r'doxygenfunction:: \1(int)', data)
+    data = data.replace('std::FILE*', 'std::FILE *')
+    data = data.replace('unsigned int', 'unsigned')
     with open(reference, 'w') as f:
       f.write(data)
   # Build the docs.
   html_dir = os.path.join(build_dir, 'html')
   if os.path.exists(html_dir):
     shutil.rmtree(html_dir)
+  include_dir = fmt_repo.dir
+  if LooseVersion(version) >= LooseVersion('3.0.0'):
+    include_dir = os.path.join(include_dir, 'fmt')
   build.build_docs(version, doc_dir=target_doc_dir,
-                   include_dir=fmt_repo.dir, work_dir=build_dir)
+                   include_dir=include_dir, work_dir=build_dir)
   # Create symlinks for older versions.
   for link, target in {'index': 'contents', 'api': 'reference'}.items():
     link = os.path.join(html_dir, link) + '.html'
