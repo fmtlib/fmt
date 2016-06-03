@@ -86,8 +86,9 @@
     <h1>{fmt}</h1>
     <p class="lead">Small, safe and fast formatting library</p>
     <div class="btn-group" role="group">
+      {% set name = 'fmt' if version.split('.')[0]|int >= 3 else 'cppformat' %}
       <a class="btn btn-success"
-         href="{{download_url}}/{{version}}/fmt-{{version}}.zip">
+         href="{{download_url}}/{{version}}/{{name}}-{{version}}.zip">
            <span class="glyphicon glyphicon-download"></span> Download
       </a>
       <button type="button" class="btn btn-success dropdown-toggle"
