@@ -92,7 +92,7 @@ def build_docs(version='dev', **kwargs):
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
   html_dir = os.path.join(work_dir, 'html')
-  versions = [v for v in ['3.0.0', '2.0.0', '1.1.0'] if v != version]
+  versions = ['3.0.0', '2.0.0', '1.1.0']
   check_call(['sphinx-build',
               '-Dbreathe_projects.format=' + os.path.abspath(doxyxml_dir),
               '-Dversion=' + version, '-Drelease=' + version,
