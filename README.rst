@@ -40,7 +40,7 @@ Features
   and better than the performance of IOStreams. See `Speed tests`_ and
   `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
-* Small code size both in terms of source code (format consists of a single
+* Small code size both in terms of source code (the core library consists of a single
   header file and a single source file) and compiled code.
   See `Compile time and code bloat`_.
 * Reliability: the library has an extensive set of `unit tests
