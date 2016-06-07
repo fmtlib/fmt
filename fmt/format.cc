@@ -99,31 +99,6 @@ const char fmt::internal::BasicData<T>::DIGITS[] =
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
 
-#define FMT_POWERS_OF_10(factor) \
-  factor * 10, \
-  factor * 100, \
-  factor * 1000, \
-  factor * 10000, \
-  factor * 100000, \
-  factor * 1000000, \
-  factor * 10000000, \
-  factor * 100000000, \
-  factor * 1000000000
-
-template <typename T>
-const uint32_t fmt::internal::BasicData<T>::POWERS_OF_10_32[] = {
-  0, FMT_POWERS_OF_10(1)
-};
-
-template <typename T>
-const uint64_t fmt::internal::BasicData<T>::POWERS_OF_10_64[] = {
-  0,
-  FMT_POWERS_OF_10(1),
-  FMT_POWERS_OF_10(fmt::ULongLong(1000000000)),
-  // Multiply several constants instead of using a single long long constant
-  // to avoid warnings about C++98 not supporting long long.
-  fmt::ULongLong(1000000000) * fmt::ULongLong(1000000000) * 10
-};
 
 FMT_FUNC void fmt::internal::report_unknown_type(char code, const char *type) {
   (void)type;
