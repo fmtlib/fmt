@@ -26,6 +26,7 @@
  */
 
 #include "fmt/ostream.h"
+#include "fmt/printf.h"
 
 namespace fmt {
 

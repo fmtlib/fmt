@@ -80,6 +80,7 @@ add_fmt_test(printf-test)
 add_fmt_test(string-test)
 add_fmt_test(util-test mock-allocator.h)
 add_fmt_test(macro-test)
+add_fmt_test(custom-formatter-test)
 
 # Enable stricter options for one test to make sure that the header is free of
 # warnings.

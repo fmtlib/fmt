@@ -1318,8 +1318,8 @@ class RuntimeError : public std::runtime_error {
   RuntimeError() : std::runtime_error("") {}
 };
 
-template <typename Char>
-class PrintfArgFormatter;
+template <typename Impl, typename Char>
+class BasicPrintfArgFormatter;
 
 template <typename Char>
 class ArgMap;
@@ -1937,26 +1937,6 @@ class FormatterBase {
       w << BasicStringRef<Char>(start, internal::to_unsigned(end - start));
   }
 };
-
-// A printf formatter.
-template <typename Char>
-class PrintfFormatter : private FormatterBase {
- private:
-  void parse_flags(FormatSpec &spec, const Char *&s);
-
-  // Returns the argument with specified index or, if arg_index is equal
-  // to the maximum unsigned value, the next argument.
-  Arg get_arg(const Char *s,
-      unsigned arg_index = (std::numeric_limits<unsigned>::max)());
-
-  // Parses argument index, flags and width and returns the argument index.
-  unsigned parse_header(const Char *&s, FormatSpec &spec);
-
- public:
-  explicit PrintfFormatter(const ArgList &args) : FormatterBase(args) {}
-  FMT_API void format(BasicWriter<Char> &writer,
-                      BasicCStringRef<Char> format_str);
-};
 }  // namespace internal
 
 /**
@@ -2420,7 +2400,8 @@ class BasicWriter {
   template <typename Impl, typename Char_>
   friend class internal::ArgFormatterBase;
 
-  friend class internal::PrintfArgFormatter<Char>;
+  template <typename Impl, typename Char_>
+  friend class internal::BasicPrintfArgFormatter;
 
  protected:
   /**
@@ -3187,56 +3168,6 @@ FMT_API void print(std::FILE *f, CStringRef format_str, ArgList args);
  */
 FMT_API void print(CStringRef format_str, ArgList args);
 
-template <typename Char>
-void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
-  internal::PrintfFormatter<Char>(args).format(w, format);
-}
-
-/**
-  \rst
-  Formats arguments and returns the result as a string.
-
-  **Example**::
-
-    std::string message = fmt::sprintf("The answer is %d", 42);
-  \endrst
-*/
-inline std::string sprintf(CStringRef format, ArgList args) {
-  MemoryWriter w;
-  printf(w, format, args);
-  return w.str();
-}
-
-inline std::wstring sprintf(WCStringRef format, ArgList args) {
-  WMemoryWriter w;
-  printf(w, format, args);
-  return w.str();
-}
-
-/**
-  \rst
-  Prints formatted data to the file *f*.
-
-  **Example**::
-
-    fmt::fprintf(stderr, "Don't %s!", "panic");
-  \endrst
- */
-FMT_API int fprintf(std::FILE *f, CStringRef format, ArgList args);
-
-/**
-  \rst
-  Prints formatted data to ``stdout``.
-
-  **Example**::
-
-    fmt::printf("Elapsed time: %.2f seconds", 1.23);
-  \endrst
- */
-inline int printf(CStringRef format, ArgList args) {
-  return fprintf(stdout, format, args);
-}
-
 /**
   Fast integer formatter.
  */
@@ -3502,12 +3433,7 @@ FMT_VARIADIC(std::string, format, CStringRef)
 FMT_VARIADIC_W(std::wstring, format, WCStringRef)
 FMT_VARIADIC(void, print, CStringRef)
 FMT_VARIADIC(void, print, std::FILE *, CStringRef)
-
 FMT_VARIADIC(void, print_colored, Color, CStringRef)
-FMT_VARIADIC(std::string, sprintf, CStringRef)
-FMT_VARIADIC_W(std::wstring, sprintf, WCStringRef)
-FMT_VARIADIC(int, printf, CStringRef)
-FMT_VARIADIC(int, fprintf, std::FILE *, CStringRef)
 
 namespace internal {
 template <typename Char>
