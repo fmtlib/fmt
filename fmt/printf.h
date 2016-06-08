@@ -33,6 +33,7 @@
 #include <climits>
 #include <cerrno>
 
+#include <cstdarg>//< Only for windows?
 
 
 #if defined(_WIN32) && defined(__MINGW32__)
