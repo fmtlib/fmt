@@ -81,11 +81,11 @@ static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
 namespace fmt {
 namespace internal {
 
-template <typename Char> class DefaultPrintfArgFormatter;
+// template <typename Char> class DefaultPrintfArgFormatter;
 
-template <typename CharT,
-          typename PFAF = fmt::internal::DefaultPrintfArgFormatter<CharT> >
-class PrintfFormatter;
+// template <typename CharT,
+// 		  typename PFAF = fmt::internal::DefaultPrintfArgFormatter<CharT> >
+// class PrintfFormatter;
 
 template <typename Impl, typename CharT>
 class PrintfArgFormatter : public internal::ArgFormatterBase<Impl, CharT> {
@@ -165,8 +165,9 @@ public:
     : PrintfArgFormatter<DefaultPrintfArgFormatter<CharT>, CharT>(w, spec) {}
 };
 
- template <typename Char, typename PrintfArgFormatterT>
-   class PrintfFormatter : private FormatterBase {
+ template <typename Char,
+		   typename PrintfArgFormatterT = fmt::internal::DefaultPrintfArgFormatter<Char> >
+ class PrintfFormatter : private FormatterBase {
  private:
   void parse_flags(FormatSpec &spec, const Char *&s);
 
