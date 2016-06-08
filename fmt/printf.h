@@ -83,8 +83,8 @@ namespace internal {
 
 template <typename Char> class DefaultPrintfArgFormatter;
 
-template <typename CharType,
-          typename PFAF = fmt::internal::DefaultPrintfArgFormatter<CharType> >
+template <typename CharT,
+          typename PFAF = fmt::internal::DefaultPrintfArgFormatter<CharT> >
 class PrintfFormatter;
 
 template <typename Impl, typename CharT>
