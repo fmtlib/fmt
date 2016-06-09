@@ -29,9 +29,6 @@
 #include "fmt/printf.h"
 #include "gtest-extra.h"
 
-#include <iostream>
-
-
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
 class CustomArgFormatter :
@@ -81,15 +78,6 @@ std::string printfer(const char* fstr, fmt::ArgList args){
    return writer.str();
 }
 FMT_VARIADIC(std::string, printfer, const char*);
-
-
-
-// Makes format string argument positional.
-std::string make_positional(fmt::StringRef format) {
-  std::string s(format.to_string());
-  s.replace(s.find('%'), 1, "%1$");
-  return s;
-}
 
 
 TEST(custom, foo){

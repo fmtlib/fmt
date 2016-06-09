@@ -33,7 +33,7 @@
 #include <climits>
 #include <cerrno>
 
-#include <cstdarg>//< Only for windows?
+#include <cstdarg>
 
 
 #if defined(_WIN32) && defined(__MINGW32__)
@@ -80,12 +80,6 @@ static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
 
 namespace fmt {
 namespace internal {
-
-// template <typename Char> class DefaultPrintfArgFormatter;
-
-// template <typename CharT,
-// 		  typename PFAF = fmt::internal::DefaultPrintfArgFormatter<CharT> >
-// class PrintfFormatter;
 
 template <typename Impl, typename CharT>
 class PrintfArgFormatter : public internal::ArgFormatterBase<Impl, CharT> {

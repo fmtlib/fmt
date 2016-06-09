@@ -1987,7 +1987,7 @@ class FormatterBase {
  */
 template <typename Impl, typename Char>
 class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
-private:
+ private:
   BasicFormatter<Char, Impl> &formatter_;
   const Char *format_;
 

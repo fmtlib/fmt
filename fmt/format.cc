@@ -26,7 +26,7 @@
  */
 
 #include "fmt/format.h"
-#include "printf.h"
+#include "fmt/printf.h"
 
 #include <string.h>
 
@@ -38,8 +38,6 @@
 
 
 namespace fmt {
-
-
 namespace internal {
 
 // This method is used to preserve binary compatibility with fmt 3.0.
@@ -313,10 +311,6 @@ FMT_FUNC void fmt::print_colored(Color c, CStringRef format, ArgList args) {
 }
 
 
-
-
-
-
 #ifndef FMT_HEADER_ONLY
 
 template struct fmt::internal::BasicData<void>;
@@ -326,7 +320,6 @@ template struct fmt::internal::BasicData<void>;
 template void fmt::internal::FixedBuffer<char>::grow(std::size_t);
 
 template void fmt::internal::ArgMap<char>::init(const fmt::ArgList &args);
-
 
 template int fmt::internal::CharTraits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
@@ -341,7 +334,6 @@ template int fmt::internal::CharTraits<char>::format_float(
 template void fmt::internal::FixedBuffer<wchar_t>::grow(std::size_t);
 
 template void fmt::internal::ArgMap<wchar_t>::init(const fmt::ArgList &args);
-
 
 template int fmt::internal::CharTraits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
