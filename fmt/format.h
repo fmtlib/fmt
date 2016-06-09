@@ -237,7 +237,7 @@ typedef __int64          intmax_t;
 # define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
 
-// Some compilers masquerade as both MSVC and GCC-likes or 
+// Some compilers masquerade as both MSVC and GCC-likes or
 // otherwise support __builtin_clz and __builtin_clzll, so
 // only define FMT_BUILTIN_CLZ using the MSVC intrinsics
 // if the clz and clzll builtins are not available.
@@ -253,7 +253,7 @@ inline uint32_t clz(uint32_t x) {
 
   assert(x != 0);
   // Static analysis complains about using uninitialized data
-  // "r", but the only way that can happen is if "x" is 0, 
+  // "r", but the only way that can happen is if "x" is 0,
   // which the callers guarantee to not happen.
 # pragma warning(suppress: 6102)
   return 31 - r;
@@ -279,7 +279,7 @@ inline uint32_t clzll(uint64_t x) {
 
   assert(x != 0);
   // Static analysis complains about using uninitialized data
-  // "r", but the only way that can happen is if "x" is 0, 
+  // "r", but the only way that can happen is if "x" is 0,
   // which the callers guarantee to not happen.
 # pragma warning(suppress: 6102)
   return 63 - r;
@@ -836,15 +836,45 @@ struct FMT_API BasicData {
   static const char DIGITS[];
 };
 
-#ifndef FMT_USE_EXTERN_TEMPLATES
-// Clang doesn't have a feature check for extern templates so we check
-// for variadic templates which were introduced in the same version.
-# define FMT_USE_EXTERN_TEMPLATES (__clang__ && FMT_USE_VARIADIC_TEMPLATES)
-#endif
+#define FMT_POWERS_OF_10(factor) \
+  factor * 10, \
+  factor * 100, \
+  factor * 1000, \
+  factor * 10000, \
+  factor * 100000, \
+  factor * 1000000, \
+  factor * 10000000, \
+  factor * 100000000, \
+  factor * 1000000000
 
-#if FMT_USE_EXTERN_TEMPLATES
-extern template struct BasicData<void>;
-#endif
+template <typename T>
+const uint32_t BasicData<T>::POWERS_OF_10_32[] = {
+  0, FMT_POWERS_OF_10(1)
+};
+
+template <typename T>
+const uint64_t fmt::internal::BasicData<T>::POWERS_OF_10_64[] = {
+  0,
+  FMT_POWERS_OF_10(1),
+  FMT_POWERS_OF_10(fmt::ULongLong(1000000000)),
+  // Multiply several constants instead of using a single long long constant
+  // to avoid warnings about C++98 not supporting long long.
+  fmt::ULongLong(1000000000) * fmt::ULongLong(1000000000) * 10
+};
+
+
+
+/// After the changes for 335, cland reported unedefined references to
+/// BasicData<void>, so I put their definitions in the header.
+// #ifndef FMT_USE_EXTERN_TEMPLATES
+// // Clang doesn't have a feature check for extern templates so we check
+// // for variadic templates which were introduced in the same version.
+// # define FMT_USE_EXTERN_TEMPLATES (__clang__ && FMT_USE_VARIADIC_TEMPLATES)
+// #endif
+
+// #if FMT_USE_EXTERN_TEMPLATES
+// extern template struct BasicData<void>;
+// #endif
 
 typedef BasicData<> Data;
 
@@ -1296,7 +1326,7 @@ public:
   MakeArg() {
     type = Arg::NONE;
   }
-  
+
   template <typename T>
   MakeArg(const T &value)
   : Arg(MakeValue<Formatter>(value)) {
@@ -1318,8 +1348,6 @@ class RuntimeError : public std::runtime_error {
   RuntimeError() : std::runtime_error("") {}
 };
 
-template <typename Char>
-class PrintfArgFormatter;
 
 template <typename Char>
 class ArgMap;
@@ -1938,25 +1966,6 @@ class FormatterBase {
   }
 };
 
-// A printf formatter.
-template <typename Char>
-class PrintfFormatter : private FormatterBase {
- private:
-  void parse_flags(FormatSpec &spec, const Char *&s);
-
-  // Returns the argument with specified index or, if arg_index is equal
-  // to the maximum unsigned value, the next argument.
-  Arg get_arg(const Char *s,
-      unsigned arg_index = (std::numeric_limits<unsigned>::max)());
-
-  // Parses argument index, flags and width and returns the argument index.
-  unsigned parse_header(const Char *&s, FormatSpec &spec);
-
- public:
-  explicit PrintfFormatter(const ArgList &args) : FormatterBase(args) {}
-  FMT_API void format(BasicWriter<Char> &writer,
-                      BasicCStringRef<Char> format_str);
-};
 }  // namespace internal
 
 /**
@@ -1982,7 +1991,7 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
   BasicFormatter<Char, Impl> &formatter_;
   const Char *format_;
 
- public:
+public:
   /**
     \rst
     Constructs an argument formatter object.
@@ -1991,10 +2000,10 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
     to the part of the format string being parsed for custom argument types.
     \endrst
    */
-  BasicArgFormatter(BasicFormatter<Char, Impl> &formatter,
-                    FormatSpec &spec, const Char *fmt)
-  : internal::ArgFormatterBase<Impl, Char>(formatter.writer(), spec),
-    formatter_(formatter), format_(fmt) {}
+  BasicArgFormatter(BasicFormatter<Char, Impl> &formatter, FormatSpec &spec,
+                    const Char *fmt)
+      : internal::ArgFormatterBase<Impl, Char>(formatter.writer(), spec),
+        formatter_(formatter), format_(fmt) {}
 
   /** Formats argument of a custom (user-defined) type. */
   void visit_custom(internal::Arg::CustomValue c) {
@@ -2091,7 +2100,7 @@ struct ArgArray;
 template <unsigned N>
 struct ArgArray<N, true/*IsPacked*/> {
   typedef Value Type[N > 0 ? N : 1];
-  
+
   template <typename Formatter, typename T>
   static Value make(const T &value) {
 #ifdef __clang__
@@ -2287,7 +2296,7 @@ class SystemError : public internal::RuntimeError {
   Formats an error returned by an operating system or a language runtime,
   for example a file opening error, and writes it to *out* in the following
   form:
-   
+
   .. parsed-literal::
      *<message>*: *<system-message>*
 
@@ -2300,6 +2309,11 @@ class SystemError : public internal::RuntimeError {
  */
 FMT_API void format_system_error(fmt::Writer &out, int error_code,
                                  fmt::StringRef message) FMT_NOEXCEPT;
+
+
+namespace internal{
+template <typename Impl, typename Char> class PrintfArgFormatter;
+}
 
 /**
   \rst
@@ -2405,8 +2419,7 @@ class BasicWriter {
   // pointer as std::ostream does, cast it to const void*.
   // Do not implement!
   void operator<<(typename internal::WCharHelper<wchar_t, Char>::Unsupported);
-  void operator<<(
-      typename internal::WCharHelper<const wchar_t *, Char>::Unsupported);
+  void operator<<(typename internal::WCharHelper<const wchar_t *, Char>::Unsupported);
 
   // Appends floating-point length specifier to the format string.
   // The second argument is only used for overload resolution.
@@ -2420,7 +2433,8 @@ class BasicWriter {
   template <typename Impl, typename Char_>
   friend class internal::ArgFormatterBase;
 
-  friend class internal::PrintfArgFormatter<Char>;
+  template <typename Impl, typename Char_>
+  friend class internal::PrintfArgFormatter;
 
  protected:
   /**
@@ -3187,55 +3201,7 @@ FMT_API void print(std::FILE *f, CStringRef format_str, ArgList args);
  */
 FMT_API void print(CStringRef format_str, ArgList args);
 
-template <typename Char>
-void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
-  internal::PrintfFormatter<Char>(args).format(w, format);
-}
 
-/**
-  \rst
-  Formats arguments and returns the result as a string.
-
-  **Example**::
-
-    std::string message = fmt::sprintf("The answer is %d", 42);
-  \endrst
-*/
-inline std::string sprintf(CStringRef format, ArgList args) {
-  MemoryWriter w;
-  printf(w, format, args);
-  return w.str();
-}
-
-inline std::wstring sprintf(WCStringRef format, ArgList args) {
-  WMemoryWriter w;
-  printf(w, format, args);
-  return w.str();
-}
-
-/**
-  \rst
-  Prints formatted data to the file *f*.
-
-  **Example**::
-
-    fmt::fprintf(stderr, "Don't %s!", "panic");
-  \endrst
- */
-FMT_API int fprintf(std::FILE *f, CStringRef format, ArgList args);
-
-/**
-  \rst
-  Prints formatted data to ``stdout``.
-
-  **Example**::
-
-    fmt::printf("Elapsed time: %.2f seconds", 1.23);
-  \endrst
- */
-inline int printf(CStringRef format, ArgList args) {
-  return fprintf(stdout, format, args);
-}
 
 /**
   Fast integer formatter.
@@ -3504,10 +3470,7 @@ FMT_VARIADIC(void, print, CStringRef)
 FMT_VARIADIC(void, print, std::FILE *, CStringRef)
 
 FMT_VARIADIC(void, print_colored, Color, CStringRef)
-FMT_VARIADIC(std::string, sprintf, CStringRef)
-FMT_VARIADIC_W(std::wstring, sprintf, WCStringRef)
-FMT_VARIADIC(int, printf, CStringRef)
-FMT_VARIADIC(int, fprintf, std::FILE *, CStringRef)
+
 
 namespace internal {
 template <typename Char>
@@ -3597,8 +3560,8 @@ inline internal::Arg BasicFormatter<Char, AF>::parse_arg_name(const Char *&s) {
   return arg;
 }
 
-template <typename Char, typename ArgFormatter>
-const Char *BasicFormatter<Char, ArgFormatter>::format(
+template <typename Char, typename ArgFormatter_Type>
+const Char *BasicFormatter<Char, ArgFormatter_Type>::format(
     const Char *&format_str, const internal::Arg &arg) {
   using internal::Arg;
   const Char *s = format_str;
@@ -3763,7 +3726,7 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
     FMT_THROW(FormatError("missing '}' in format string"));
 
   // Format argument.
-  ArgFormatter(*this, spec, s - 1).visit(arg);
+  ArgFormatter_Type(*this, spec, s - 1).visit(arg);
   return s;
 }
 

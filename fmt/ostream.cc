@@ -26,7 +26,7 @@
  */
 
 #include "fmt/ostream.h"
-
+#include "fmt/printf.h"
 namespace fmt {
 
 namespace {
@@ -54,7 +54,7 @@ FMT_FUNC void print(std::ostream &os, CStringRef format_str, ArgList args) {
 
 FMT_FUNC int fprintf(std::ostream &os, CStringRef format, ArgList args) {
   MemoryWriter w;
-  printf(w, format, args);
+  fmt::printf(w, format, args);
   write(os, w);
   return static_cast<int>(w.size());
 }

@@ -29,6 +29,7 @@
 #include <climits>
 #include <cstring>
 
+#include "fmt/printf.h"
 #include "fmt/format.h"
 #include "gtest-extra.h"
 #include "util.h"
