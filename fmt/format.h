@@ -105,7 +105,7 @@ typedef __int64          intmax_t;
 
 #if defined(__clang__) && !defined(FMT_ICC_VERSION)
 # pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wdocumentation"
+# pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
 #endif
 
 #ifdef __GNUC_LIBSTD__
