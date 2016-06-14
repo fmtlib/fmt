@@ -228,7 +228,6 @@ typedef __int64          intmax_t;
 # define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
 
-
 #if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
 # define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
 #endif
@@ -531,13 +530,12 @@ class BasicCStringRef {
 typedef BasicCStringRef<char> CStringRef;
 typedef BasicCStringRef<wchar_t> WCStringRef;
 
-/**
-  A formatting error such as invalid format string.
-*/
+/** A formatting error such as invalid format string. */
 class FormatError : public std::runtime_error {
  public:
   explicit FormatError(CStringRef message)
   : std::runtime_error(message.c_str()) {}
+  ~FormatError() throw();
 };
 
 namespace internal {
@@ -1319,6 +1317,7 @@ struct NamedArg : Arg {
 class RuntimeError : public std::runtime_error {
  protected:
   RuntimeError() : std::runtime_error("") {}
+  ~RuntimeError() throw();
 };
 
 template <typename Char>
@@ -2288,6 +2287,8 @@ class SystemError : public internal::RuntimeError {
     init(error_code, message, ArgList());
   }
   FMT_VARIADIC_CTOR(SystemError, init, int, CStringRef)
+
+  ~SystemError() throw();
 
   int error_code() const { return error_code_; }
 };
