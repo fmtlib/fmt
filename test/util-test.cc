@@ -708,7 +708,7 @@ TEST(ArgVisitorTest, VisitUnhandledArg) {
 
 TEST(ArgVisitorTest, VisitInvalidArg) {
   Arg arg = Arg();
-  arg.type = static_cast<Arg::Type>(Arg::CUSTOM + 1);
+  arg.type = static_cast<Arg::Type>(Arg::NONE);
   EXPECT_ASSERT(TestVisitor().visit(arg), "invalid argument type");
 }
 
