@@ -232,7 +232,7 @@ TEST(FileTest, MoveAssignmentClosesFile) {
 File OpenBufferedFile(int &fd) {
   File f = open_file();
   fd = f.descriptor();
-  return std::move(f);
+  return f;
 }
 
 TEST(FileTest, MoveFromTemporaryInCtor) {
