@@ -1514,7 +1514,8 @@ class ArgVisitor {
    */
   Result visit(const Arg &arg) {
     switch (arg.type) {
-    default:
+    case Arg::NONE:
+    case Arg::NAMED_ARG:
       FMT_ASSERT(false, "invalid argument type");
       return Result();
     case Arg::INT:
