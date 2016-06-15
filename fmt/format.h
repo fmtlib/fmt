@@ -1521,7 +1521,7 @@ class ArgVisitor {
     case Arg::NONE:
     case Arg::NAMED_ARG:
       FMT_ASSERT(false, "invalid argument type");
-      return Result();
+      break;
     case Arg::INT:
       return FMT_DISPATCH(visit_int(arg.int_value));
     case Arg::UINT:
@@ -1549,6 +1549,7 @@ class ArgVisitor {
     case Arg::CUSTOM:
       return FMT_DISPATCH(visit_custom(arg.custom));
     }
+    return Result();
   }
 };
 
