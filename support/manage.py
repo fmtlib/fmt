@@ -10,6 +10,7 @@ Usage:
 from __future__ import print_function
 import datetime, docopt, fileinput, json, os
 import re, requests, shutil, sys, tempfile
+from contextlib import contextmanager
 from distutils.version import LooseVersion
 from subprocess import check_call
 
@@ -70,6 +71,22 @@ def create_build_env():
     return env
 
 
+@contextmanager
+def rewrite(filename):
+    class Buffer:
+        pass
+    buffer = Buffer()
+    if not os.path.exists(filename):
+        buffer.data = ''
+        yield buffer
+        return
+    with open(filename) as f:
+        buffer.data = f.read()
+    yield buffer
+    with open(filename, 'w') as f:
+        f.write(buffer.data)
+
+
 fmt_repo_url = 'git@github.com:fmtlib/fmt'
 
 
@@ -102,18 +119,17 @@ def update_site(env):
             os.rename(os.path.join(target_doc_dir, 'index.rst'), contents)
         # Fix issues in reference.rst/api.rst.
         for filename in ['reference.rst', 'api.rst']:
-            reference = os.path.join(target_doc_dir, filename)
-            if not os.path.exists(reference):
-                continue
-            with open(reference) as f:
-                data = f.read()
-            data = data.replace('std::ostream &', 'std::ostream&')
             pattern = re.compile('doxygenfunction.. (bin|oct|hexu|hex)$', re.M)
-            data = re.sub(pattern, r'doxygenfunction:: \1(int)', data)
-            data = data.replace('std::FILE*', 'std::FILE *')
-            data = data.replace('unsigned int', 'unsigned')
-            with open(reference, 'w') as f:
-                f.write(data)
+            with rewrite(os.path.join(target_doc_dir, filename)) as b:
+                b.data = b.data.replace('std::ostream &', 'std::ostream&')
+                b.data = re.sub(pattern, r'doxygenfunction:: \1(int)', b.data)
+                b.data = b.data.replace('std::FILE*', 'std::FILE *')
+                b.data = b.data.replace('unsigned int', 'unsigned')
+        # Fix a broken link in index.rst.
+        index = os.path.join(target_doc_dir, 'index.rst')
+        with rewrite(index) as b:
+            b.data = b.data.replace('doc/latest/index.html#format-string-syntax',
+                                   'syntax.html')
         # Build the docs.
         html_dir = os.path.join(env.build_dir, 'html')
         if os.path.exists(html_dir):
