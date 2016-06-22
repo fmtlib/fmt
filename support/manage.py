@@ -128,8 +128,8 @@ def update_site(env):
         # Fix a broken link in index.rst.
         index = os.path.join(target_doc_dir, 'index.rst')
         with rewrite(index) as b:
-            b.data = b.data.replace('doc/latest/index.html#format-string-syntax',
-                                   'syntax.html')
+            b.data = b.data.replace(
+                'doc/latest/index.html#format-string-syntax', 'syntax.html')
         # Build the docs.
         html_dir = os.path.join(env.build_dir, 'html')
         if os.path.exists(html_dir):
