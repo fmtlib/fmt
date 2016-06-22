@@ -22,8 +22,8 @@ class Git:
     def call(self, method, args, **kwargs):
         return check_call(['git', method] + list(args), **kwargs)
 
-    def clone(self, *args):
-        return self.call('clone', list(args) + [self.dir])
+    def add(self, *args):
+        return self.call('add', args, cwd=self.dir)
 
     def checkout(self, *args):
         return self.call('checkout', args, cwd=self.dir)
@@ -31,11 +31,20 @@ class Git:
     def clean(self, *args):
         return self.call('clean', args, cwd=self.dir)
 
-    def reset(self, *args):
-        return self.call('reset', args, cwd=self.dir)
+    def clone(self, *args):
+        return self.call('clone', list(args) + [self.dir])
+
+    def commit(self, *args):
+        return self.call('commit', args, cwd=self.dir)
 
     def pull(self, *args):
         return self.call('pull', args, cwd=self.dir)
+
+    def push(self, *args):
+        return self.call('push', args, cwd=self.dir)
+
+    def reset(self, *args):
+        return self.call('reset', args, cwd=self.dir)
 
     def update(self, *args):
         clone = not os.path.exists(self.dir)
@@ -51,8 +60,8 @@ def clean_checkout(repo, branch):
 
 
 class Runner:
-    def __init__(self):
-        self.cwd = '.'
+    def __init__(self, cwd):
+        self.cwd = cwd
 
     def __call__(self, *args, **kwargs):
         kwargs['cwd'] = kwargs.get('cwd', self.cwd)
@@ -162,21 +171,22 @@ def update_site(env):
 
 def release(args):
     env = create_build_env()
+    fmt_repo = env.fmt_repo
 
     branch = args.get('<branch>')
     if branch is None:
         branch = 'master'
-    if not env.fmt_repo.update('-b', branch, fmt_repo_url):
-        clean_checkout(env.fmt_repo, branch)
+    if not fmt_repo.update('-b', branch, fmt_repo_url):
+        clean_checkout(fmt_repo, branch)
 
     # Convert changelog from RST to GitHub-flavored Markdown and get the
     # version.
     changelog = 'ChangeLog.rst'
-    changelog_path = os.path.join(env.fmt_repo.dir, changelog)
+    changelog_path = os.path.join(fmt_repo.dir, changelog)
     import rst2md
     changes, version = rst2md.convert(changelog_path)
     cmakelists = 'CMakeLists.txt'
-    for line in fileinput.input(os.path.join(env.fmt_repo.dir, cmakelists),
+    for line in fileinput.input(os.path.join(fmt_repo.dir, cmakelists),
                                 inplace=True):
         prefix = 'set(FMT_VERSION '
         if line.startswith(prefix):
@@ -194,20 +204,20 @@ def release(args):
             line = '-' * title_len + '\n'
             title_len = 0
         sys.stdout.write(line)
-    run = Runner()
-    run.cwd = env.fmt_repo.dir
-    run('git', 'checkout', '-B', 'release')
-    run('git', 'add', changelog, cmakelists)
-    run('git', 'commit', '-m', 'Update version')
+    # TODO: add new version to manage.py
+    fmt_repo.checkout('-B', 'release')
+    fmt_repo.add(changelog, cmakelists)
+    fmt_repo.commit('-m', 'Update version')
 
     # Build the docs and package.
+    run = Runner(fmt_repo.dir)
     run('cmake', '.')
     run('make', 'doc', 'package_source')
 
     update_site(env)
 
     # Create a release on GitHub.
-    run('git', 'push', 'origin', 'release', cwd=env.fmt_repo.dir)
+    fmt_repo.push('origin', 'release')
     r = requests.post('https://api.github.com/repos/fmtlib/fmt/releases',
                       params={'access_token': os.getenv('FMT_TOKEN')},
                       data=json.dumps({'tag_name': version,
