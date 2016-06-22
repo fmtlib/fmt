@@ -38,8 +38,16 @@ class Git:
         return self.call('pull', args, cwd=self.dir)
 
     def update(self, *args):
-        if not os.path.exists(self.dir):
+        clone = not os.path.exists(self.dir)
+        if clone:
             self.clone(*args)
+        return clone
+
+
+def clean_checkout(repo, branch):
+    repo.clean('-f', '-d')
+    repo.reset('--hard')
+    repo.checkout(branch)
 
 
 class Runner:
@@ -97,9 +105,7 @@ def update_site(env):
     doc_repo.update('git@github.com:fmtlib/fmtlib.github.io')
 
     for version in ['1.0.0', '1.1.0', '2.0.0', '3.0.0']:
-        env.fmt_repo.clean('-f', '-d')
-        env.fmt_repo.reset('--hard')
-        env.fmt_repo.checkout(version)
+        clean_checkout(env.fmt_repo, version)
         target_doc_dir = os.path.join(env.fmt_repo.dir, 'doc')
         # Remove the old theme.
         for entry in os.listdir(target_doc_dir):
@@ -160,7 +166,8 @@ def release(args):
     branch = args.get('<branch>')
     if branch is None:
         branch = 'master'
-    env.fmt_repo.update('-b', branch, fmt_repo_url)
+    if not env.fmt_repo.update('-b', branch, fmt_repo_url):
+        clean_checkout(env.fmt_repo, branch)
 
     # Convert changelog from RST to GitHub-flavored Markdown and get the
     # version.
@@ -189,7 +196,7 @@ def release(args):
         sys.stdout.write(line)
     run = Runner()
     run.cwd = env.fmt_repo.dir
-    run('git', 'checkout', '-b', 'release')
+    run('git', 'checkout', '-B', 'release')
     run('git', 'add', changelog, cmakelists)
     run('git', 'commit', '-m', 'Update version')
 
