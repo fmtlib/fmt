@@ -103,6 +103,12 @@ class Translator(nodes.NodeVisitor):
     def depart_inline(self, node):
         pass
 
+    def visit_image(self, node):
+        self.write('![](' + node['uri'] + ')')
+
+    def depart_image(self, node):
+        pass
+
 
 class MDWriter(writers.Writer):
     """GitHub-flavored markdown writer"""
