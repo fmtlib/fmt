@@ -841,7 +841,7 @@ struct FMT_API BasicData {
 # define FMT_USE_EXTERN_TEMPLATES (__clang__ && FMT_USE_VARIADIC_TEMPLATES)
 #endif
 
-#if FMT_USE_EXTERN_TEMPLATES
+#if FMT_USE_EXTERN_TEMPLATES && !defined(FMT_HEADER_ONLY)
 extern template struct BasicData<void>;
 #endif
 
