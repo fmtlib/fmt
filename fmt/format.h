@@ -933,6 +933,7 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits,
   }
   unsigned index = static_cast<unsigned>(value * 2);
   *--buffer = Data::DIGITS[index + 1];
+  thousands_sep(buffer);
   *--buffer = Data::DIGITS[index];
 }
 
@@ -2780,7 +2781,7 @@ void BasicWriter<Char>::write_int(T value, Spec spec) {
     unsigned num_digits = internal::count_digits(abs_value);
     fmt::StringRef sep = internal::thousands_sep(std::localeconv());
     unsigned size = static_cast<unsigned>(
-          num_digits + sep.size() * (num_digits - 1) / 3);
+          num_digits + sep.size() * ((num_digits - 1) / 3));
     CharPtr p = prepare_int_buffer(size, spec, prefix, prefix_size) + 1;
     internal::format_decimal(get(p), abs_value, 0, internal::ThousandsSep(sep));
     break;
