@@ -933,7 +933,7 @@ TEST(FormatterTest, RuntimeWidth) {
       FormatError, "number is too big");
   EXPECT_THROW_MSG(format("{0:{1}}", 0, -1l),
       FormatError, "negative width");
-  if (fmt::internal::check(sizeof(long) > sizeof(int))) {
+  if (fmt::internal::const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG(format("{0:{1}}", 0, (value + 1)),
         FormatError, "number is too big");
@@ -1052,7 +1052,7 @@ TEST(FormatterTest, RuntimePrecision) {
       FormatError, "number is too big");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, -1l),
       FormatError, "negative precision");
-  if (fmt::internal::check(sizeof(long) > sizeof(int))) {
+  if (fmt::internal::const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG(format("{0:.{1}}", 0, (value + 1)),
         FormatError, "number is too big");

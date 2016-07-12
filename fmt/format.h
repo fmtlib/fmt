@@ -309,7 +309,7 @@ inline DummyInt _isnan(...) { return DummyInt(); }
 // A helper function to suppress bogus "conditional expression is constant"
 // warnings.
 template <typename T>
-inline T check(T value) { return value; }
+inline T const_check(T value) { return value; }
 }
 }  // namespace fmt
 
@@ -328,8 +328,8 @@ class numeric_limits<fmt::internal::DummyInt> :
     using namespace fmt::internal;
     // The resolution "priority" is:
     // isinf macro > std::isinf > ::isinf > fmt::internal::isinf
-    if (check(sizeof(isinf(x)) == sizeof(bool) ||
-              sizeof(isinf(x)) == sizeof(int))) {
+    if (const_check(sizeof(isinf(x)) == sizeof(bool) ||
+                    sizeof(isinf(x)) == sizeof(int))) {
       return isinf(x) != 0;
     }
     return !_finite(static_cast<double>(x));
@@ -339,8 +339,8 @@ class numeric_limits<fmt::internal::DummyInt> :
   template <typename T>
   static bool isnotanumber(T x) {
     using namespace fmt::internal;
-    if (check(sizeof(isnan(x)) == sizeof(bool) ||
-              sizeof(isnan(x)) == sizeof(int))) {
+    if (const_check(sizeof(isnan(x)) == sizeof(bool) ||
+                    sizeof(isnan(x)) == sizeof(int))) {
       return isnan(x) != 0;
     }
     return _isnan(static_cast<double>(x)) != 0;
@@ -349,7 +349,7 @@ class numeric_limits<fmt::internal::DummyInt> :
   // Portable version of signbit.
   static bool isnegative(double x) {
     using namespace fmt::internal;
-    if (check(sizeof(signbit(x)) == sizeof(int)))
+    if (const_check(sizeof(signbit(x)) == sizeof(int)))
       return signbit(x) != 0;
     if (x < 0) return true;
     if (!isnotanumber(x)) return false;
@@ -1203,7 +1203,7 @@ class MakeValue : public Arg {
   MakeValue(long value) {
     // To minimize the number of types we need to deal with, long is
     // translated either to int or to long long depending on its size.
-    if (check(sizeof(long) == sizeof(int)))
+    if (const_check(sizeof(long) == sizeof(int)))
       int_value = static_cast<int>(value);
     else
       long_long_value = value;
@@ -1213,7 +1213,7 @@ class MakeValue : public Arg {
   }
 
   MakeValue(unsigned long value) {
-    if (check(sizeof(unsigned long) == sizeof(unsigned)))
+    if (const_check(sizeof(unsigned long) == sizeof(unsigned)))
       uint_value = static_cast<unsigned>(value);
     else
       ulong_long_value = value;
@@ -1864,7 +1864,7 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
         out += spec_.width_ - CHAR_WIDTH;
       } else if (spec_.align_ == ALIGN_CENTER) {
         out = writer_.fill_padding(out, spec_.width_,
-                                   internal::check(CHAR_WIDTH), fill);
+                                   internal::const_check(CHAR_WIDTH), fill);
       } else {
         std::uninitialized_fill_n(out + CHAR_WIDTH,
                                   spec_.width_ - CHAR_WIDTH, fill);
