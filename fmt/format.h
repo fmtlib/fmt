@@ -662,8 +662,8 @@ void Buffer<T>::append(const U *begin, const U *end) {
 
 namespace internal {
 
-// A memory buffer for trivially copyable/constructible types with the first SIZE
-// elements stored in the object itself.
+// A memory buffer for trivially copyable/constructible types with the first
+// SIZE elements stored in the object itself.
 template <typename T, std::size_t SIZE, typename Allocator = std::allocator<T> >
 class MemoryBuffer : private Allocator, public Buffer<T> {
  private:
