@@ -157,6 +157,9 @@ store output elsewhere by subclassing `~fmt::BasicWriter`.
 .. doxygenclass:: fmt::BasicArrayWriter
    :members:
 
+.. doxygenclass:: fmt::BasicStringWriter
+   :members:
+
 .. doxygenfunction:: bin(int)
 
 .. doxygenfunction:: oct(int)
