@@ -23,7 +23,7 @@
 
 #include <cstddef>
 
-#ifdef __APPLE__
+#if defined __APPLE__ || defined(__FreeBSD__)
 # include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
 #endif
 
