@@ -20,3 +20,7 @@ build_script:
 on_failure:
   - appveyor PushArtifact Testing/Temporary/LastTest.log
   - appveyor AddTest test
+
+# Uncomment this to debug AppVeyor failures.
+#on_finish:
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
