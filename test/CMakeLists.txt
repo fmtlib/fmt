@@ -56,11 +56,19 @@ if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
   set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wno-long-long -Wno-variadic-macros)
 endif ()
 
+function(add_fmt_executable name)
+  add_executable(${name} ${ARGN})
+  if (MINGW)
+    target_link_libraries(${name} -static-libgcc -static-libstdc++)
+  endif ()
+endfunction()
+
 # Adds a test.
 # Usage: add_fmt_test(name srcs...)
 function(add_fmt_test name)
-  add_executable(${name} ${name}.cc ${ARGN})
+  add_fmt_executable(${name} ${name}.cc ${ARGN})
   target_link_libraries(${name} test-main)
+
   # define if certain c++ features can be used
   target_compile_definitions(${name} PRIVATE
     FMT_USE_TYPE_TRAITS=$<BOOL:${SUPPORTS_TYPE_TRAITS}>
@@ -89,7 +97,7 @@ if (FMT_PEDANTIC AND MSVC)
 endif ()
 
 if (HAVE_OPEN)
-  add_executable(posix-mock-test
+  add_fmt_executable(posix-mock-test
     posix-mock-test.cc ../fmt/format.cc ${TEST_MAIN_SRC})
   target_include_directories(posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR})
   target_compile_definitions(posix-mock-test PRIVATE FMT_USE_FILE_DESCRIPTORS=1)
@@ -98,7 +106,7 @@ if (HAVE_OPEN)
   add_fmt_test(posix-test)
 endif ()
 
-add_executable(header-only-test
+add_fmt_executable(header-only-test
   header-only-test.cc header-only-test2.cc test-main.cc)
 target_link_libraries(header-only-test gmock)
 if (TARGET fmt-header-only)
