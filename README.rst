@@ -91,6 +91,8 @@ An object of any user-defined type for which there is an overloaded
 
 .. code:: c++
 
+    #include "fmt/ostream.h"
+
     class Date {
       int year_, month_, day_;
      public:
