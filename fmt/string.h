@@ -20,7 +20,7 @@ namespace internal {
 template <typename Char>
 class StringBuffer : public Buffer<Char> {
  private:
-  std::string data_;
+  std::basic_string<Char> data_;
 
  protected:
   virtual void grow(std::size_t size) {
@@ -31,7 +31,7 @@ class StringBuffer : public Buffer<Char> {
 
  public:
   // Moves the data to ``str`` clearing the buffer.
-  void move_to(std::string &str) {
+  void move_to(std::basic_string<Char> &str) {
     data_.resize(this->size_);
     str.swap(data_);
     this->capacity_ = this->size_ = 0;
@@ -82,14 +82,14 @@ class BasicStringWriter : public BasicWriter<Char> {
     Constructs a :class:`fmt::BasicStringWriter` object.
     \endrst
    */
-  BasicStringWriter() : Writer(buffer_) {}
+  BasicStringWriter() : BasicWriter<Char>(buffer_) {}
 
   /**
     \rst
     Moves the buffer content to *str* clearing the buffer.
     \endrst
    */
-  void move_to(std::string &str) {
+  void move_to(std::basic_string<Char> &str) {
     buffer_.move_to(str);
   }
 };

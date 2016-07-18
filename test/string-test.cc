@@ -67,6 +67,14 @@ TEST(StringWriterTest, MoveTo) {
   EXPECT_EQ(0, out.size());
 }
 
+TEST(StringWriterTest, WString) {
+  fmt::WStringWriter out;
+  out << "The answer is " << 42 << "\n";
+  std::wstring s;
+  out.move_to(s);
+  EXPECT_EQ(L"The answer is 42\n", s);
+}
+
 TEST(StringTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
 }
