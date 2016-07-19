@@ -87,4 +87,4 @@ Homebrew
 
 fmt can be installed on OS X using `Homebrew <http://brew.sh/>`_::
 
-  brew install cppformat
+  brew install fmt
