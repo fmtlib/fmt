@@ -279,6 +279,7 @@ class PrintfFormatter : private internal::FormatterBase {
   explicit PrintfFormatter(const ArgList &args, BasicWriter<Char> &w)
     : FormatterBase(args), writer_(w) {}
 
+  /** Formats stored arguments and writes the output to the writer. */
   FMT_API void format(BasicCStringRef<Char> format_str);
 };
 
