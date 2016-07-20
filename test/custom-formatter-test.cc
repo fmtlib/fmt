@@ -53,7 +53,7 @@ FMT_VARIADIC(std::string, custom_format, const char *)
 
 std::string custom_sprintf(const char* fstr, fmt::ArgList args){
   fmt::MemoryWriter writer;
-  fmt::internal::PrintfFormatter< char, CustomPAF > pfer( args);
+  fmt::PrintfFormatter<char, CustomPAF> pfer( args);
   pfer.format(writer, fstr);
   return writer.str();
 }

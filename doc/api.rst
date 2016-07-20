@@ -125,18 +125,24 @@ custom argument formatter class::
 .. doxygenclass:: fmt::ArgFormatter
    :members:
 
-Printf formatting functions
----------------------------
+Printf formatting
+-----------------
 
+The header ``fmt/printf.h`` provides ``printf``-like formatting functionality.
 The following functions use `printf format string syntax
 <http://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html>`_ with
-a POSIX extension for positional arguments.
+the POSIX extension for positional arguments. Unlike their standard
+counterparts, the ``fmt`` functions are type-safe and throw an exception if an
+argument type doesn't match its format specification.
 
 .. doxygenfunction:: printf(CStringRef, ArgList)
 
 .. doxygenfunction:: fprintf(std::FILE *, CStringRef, ArgList)
 
 .. doxygenfunction:: sprintf(CStringRef, ArgList)
+
+.. doxygenclass:: fmt::PrintfFormatter
+   :members:
 
 Write API
 =========

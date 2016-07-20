@@ -248,23 +248,34 @@ class PrintfArgFormatter
   PrintfArgFormatter(BasicWriter<Char> &w, FormatSpec &s)
   : BasicPrintfArgFormatter<PrintfArgFormatter<Char>, Char>(w, s) {}
 };
+}  // namespace internal
 
-// A printf formatter.
-template <typename Char, typename ArgFormatter = PrintfArgFormatter<Char> >
-class PrintfFormatter : private FormatterBase {
+/** This template formats data and writes the output to a writer. */
+template <typename Char,
+          typename ArgFormatter = internal::PrintfArgFormatter<Char> >
+class PrintfFormatter : private internal::FormatterBase {
  private:
   void parse_flags(FormatSpec &spec, const Char *&s);
 
   // Returns the argument with specified index or, if arg_index is equal
   // to the maximum unsigned value, the next argument.
-  Arg get_arg(const Char *s,
+  internal::Arg get_arg(
+      const Char *s,
       unsigned arg_index = (std::numeric_limits<unsigned>::max)());
 
   // Parses argument index, flags and width and returns the argument index.
   unsigned parse_header(const Char *&s, FormatSpec &spec);
 
  public:
+  /**
+   \rst
+   Constructs a ``PrintfFormatter`` object. References to the arguments
+   are stored in the formatter object so make sure they have appropriate
+   lifetimes.
+   \endrst
+   */
   explicit PrintfFormatter(const ArgList &args) : FormatterBase(args) {}
+
   FMT_API void format(BasicWriter<Char> &writer,
                       BasicCStringRef<Char> format_str);
 };
@@ -296,10 +307,11 @@ void PrintfFormatter<Char, AF>::parse_flags(FormatSpec &spec, const Char *&s) {
 }
 
 template <typename Char, typename AF>
-Arg PrintfFormatter<Char, AF>::get_arg(const Char *s, unsigned arg_index) {
+internal::Arg PrintfFormatter<Char, AF>::get_arg(const Char *s,
+                                                 unsigned arg_index) {
   (void)s;
   const char *error = 0;
-  Arg arg = arg_index == std::numeric_limits<unsigned>::max() ?
+  internal::Arg arg = arg_index == std::numeric_limits<unsigned>::max() ?
     next_arg(error) : FormatterBase::get_arg(arg_index - 1, error);
   if (error)
     FMT_THROW(FormatError(!*s ? "invalid format string" : error));
@@ -314,7 +326,7 @@ unsigned PrintfFormatter<Char, AF>::parse_header(
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
     // preceded with '0' flag(s).
-    unsigned value = parse_nonnegative_int(s);
+    unsigned value = internal::parse_nonnegative_int(s);
     if (*s == '$') {  // value is an argument index
       ++s;
       arg_index = value;
@@ -332,10 +344,10 @@ unsigned PrintfFormatter<Char, AF>::parse_header(
   parse_flags(spec, s);
   // Parse width.
   if (*s >= '0' && *s <= '9') {
-    spec.width_ = parse_nonnegative_int(s);
+    spec.width_ = internal::parse_nonnegative_int(s);
   } else if (*s == '*') {
     ++s;
-    spec.width_ = WidthHandler(spec).visit(get_arg(s));
+    spec.width_ = internal::WidthHandler(spec).visit(get_arg(s));
   }
   return arg_index;
 }
@@ -365,16 +377,17 @@ void PrintfFormatter<Char, AF>::format(
     if (*s == '.') {
       ++s;
       if ('0' <= *s && *s <= '9') {
-        spec.precision_ = static_cast<int>(parse_nonnegative_int(s));
+        spec.precision_ = static_cast<int>(internal::parse_nonnegative_int(s));
       } else if (*s == '*') {
         ++s;
-        spec.precision_ = PrecisionHandler().visit(get_arg(s));
+        spec.precision_ = internal::PrecisionHandler().visit(get_arg(s));
       }
     }
 
+    using internal::Arg;
     Arg arg = get_arg(s, arg_index);
-    if (spec.flag(HASH_FLAG) && IsZeroInt().visit(arg))
-      spec.flags_ &= ~to_unsigned<int>(HASH_FLAG);
+    if (spec.flag(HASH_FLAG) && internal::IsZeroInt().visit(arg))
+      spec.flags_ &= ~internal::to_unsigned<int>(HASH_FLAG);
     if (spec.fill_ == '0') {
       if (arg.type <= Arg::LAST_NUMERIC_TYPE)
         spec.align_ = ALIGN_NUMERIC;
@@ -383,6 +396,7 @@ void PrintfFormatter<Char, AF>::format(
     }
 
     // Parse length and convert the argument to the required type.
+    using internal::ArgConverter;
     switch (*s++) {
     case 'h':
       if (*s == 'h')
@@ -426,7 +440,7 @@ void PrintfFormatter<Char, AF>::format(
         break;
       case 'c':
         // TODO: handle wchar_t
-        CharConverter(arg).visit(arg);
+        internal::CharConverter(arg).visit(arg);
         break;
       }
     }
@@ -438,11 +452,10 @@ void PrintfFormatter<Char, AF>::format(
   }
   write(writer, start, s);
 }
-}  // namespace internal
 
 template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
-  internal::PrintfFormatter<Char>(args).format(w, format);
+  PrintfFormatter<Char>(args).format(w, format);
 }
 
 /**
