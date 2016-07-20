@@ -45,8 +45,9 @@ For even better speed use the `write API`_.
 Date and time formatting
 ------------------------
 
-The library supports `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_-like
-date and time formatting::
+The library supports `strftime
+<http://en.cppreference.com/w/cpp/chrono/c/strftime>`_-like date and time
+formatting::
 
   #include "fmt/time.h"
 
@@ -68,7 +69,7 @@ formatting of user-defined types that have overloaded ``operator<<``::
   class Date {
     int year_, month_, day_;
   public:
-    Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
+    Date(int year, int month, int day): year_(year), month_(month), day_(day) {}
 
     friend std::ostream &operator<<(std::ostream &os, const Date &d) {
       return os << d.year_ << '-' << d.month_ << '-' << d.day_;
@@ -150,8 +151,8 @@ Write API
 The write API provides classes for writing formatted data into character
 streams. It is usually faster than the `format API`_ but, as IOStreams,
 may result in larger compiled code size. The main writer class is
-`~fmt::BasicMemoryWriter` which stores its output in a memory buffer and provides
-direct access to it. It is possible to create custom writers that
+`~fmt::BasicMemoryWriter` which stores its output in a memory buffer and
+provides direct access to it. It is possible to create custom writers that
 store output elsewhere by subclassing `~fmt::BasicWriter`.
 
 .. doxygenclass:: fmt::BasicWriter
@@ -227,7 +228,8 @@ A custom allocator class can be specified as a template argument to
 It is also possible to write a formatting function that uses a custom
 allocator::
 
-    typedef std::basic_string<char, std::char_traits<char>, CustomAllocator> CustomString;
+    typedef std::basic_string<char, std::char_traits<char>, CustomAllocator>
+            CustomString;
 
     CustomString format(CustomAllocator alloc, fmt::CStringRef format_str,
                         fmt::ArgList args) {
