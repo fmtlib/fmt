@@ -255,6 +255,8 @@ template <typename Char,
           typename ArgFormatter = internal::PrintfArgFormatter<Char> >
 class PrintfFormatter : private internal::FormatterBase {
  private:
+  BasicWriter<Char> &writer_;
+
   void parse_flags(FormatSpec &spec, const Char *&s);
 
   // Returns the argument with specified index or, if arg_index is equal
@@ -269,15 +271,15 @@ class PrintfFormatter : private internal::FormatterBase {
  public:
   /**
    \rst
-   Constructs a ``PrintfFormatter`` object. References to the arguments
-   are stored in the formatter object so make sure they have appropriate
-   lifetimes.
+   Constructs a ``PrintfFormatter`` object. References to the arguments and
+   the writer are stored in the formatter object so make sure they have
+   appropriate lifetimes.
    \endrst
    */
-  explicit PrintfFormatter(const ArgList &args) : FormatterBase(args) {}
+  explicit PrintfFormatter(const ArgList &args, BasicWriter<Char> &w)
+    : FormatterBase(args), writer_(w) {}
 
-  FMT_API void format(BasicWriter<Char> &writer,
-                      BasicCStringRef<Char> format_str);
+  FMT_API void format(BasicCStringRef<Char> format_str);
 };
 
 template <typename Char, typename AF>
@@ -353,19 +355,18 @@ unsigned PrintfFormatter<Char, AF>::parse_header(
 }
 
 template <typename Char, typename AF>
-void PrintfFormatter<Char, AF>::format(
-    BasicWriter<Char> &writer, BasicCStringRef<Char> format_str) {
+void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
   const Char *start = format_str.c_str();
   const Char *s = start;
   while (*s) {
     Char c = *s++;
     if (c != '%') continue;
     if (*s == c) {
-      write(writer, start, s);
+      write(writer_, start, s);
       start = ++s;
       continue;
     }
-    write(writer, start, s - 1);
+    write(writer_, start, s - 1);
 
     FormatSpec spec;
     spec.align_ = ALIGN_RIGHT;
@@ -448,14 +449,14 @@ void PrintfFormatter<Char, AF>::format(
     start = s;
 
     // Format argument.
-    AF(writer, spec).visit(arg);
+    AF(writer_, spec).visit(arg);
   }
-  write(writer, start, s);
+  write(writer_, start, s);
 }
 
 template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
-  PrintfFormatter<Char>(args).format(w, format);
+  PrintfFormatter<Char>(args, w).format(format);
 }
 
 /**

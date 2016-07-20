@@ -51,10 +51,10 @@ std::string custom_format(const char *format_str, fmt::ArgList args) {
 }
 FMT_VARIADIC(std::string, custom_format, const char *)
 
-std::string custom_sprintf(const char* fstr, fmt::ArgList args){
+std::string custom_sprintf(const char* format_str, fmt::ArgList args){
   fmt::MemoryWriter writer;
-  fmt::PrintfFormatter<char, CustomPAF> pfer( args);
-  pfer.format(writer, fstr);
+  fmt::PrintfFormatter<char, CustomPAF> formatter(args, writer);
+  formatter.format(format_str);
   return writer.str();
 }
 FMT_VARIADIC(std::string, custom_sprintf, const char*);
