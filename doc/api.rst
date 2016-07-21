@@ -145,6 +145,12 @@ argument type doesn't match its format specification.
 .. doxygenclass:: fmt::PrintfFormatter
    :members:
 
+.. doxygenclass:: fmt::BasicPrintfArgFormatter
+   :members:
+
+.. doxygenclass:: fmt::PrintfArgFormatter
+   :members:
+
 Write API
 =========
 

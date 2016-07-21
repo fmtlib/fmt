@@ -381,6 +381,9 @@ typedef BasicWriter<wchar_t> WWriter;
 template <typename Char>
 class ArgFormatter;
 
+template <typename Impl, typename Char>
+class BasicPrintfArgFormatter;
+
 template <typename CharType,
           typename ArgFormatter = fmt::ArgFormatter<CharType> >
 class BasicFormatter;
@@ -1319,9 +1322,6 @@ class RuntimeError : public std::runtime_error {
   ~RuntimeError() throw();
 };
 
-template <typename Impl, typename Char>
-class BasicPrintfArgFormatter;
-
 template <typename Char>
 class ArgMap;
 }  // namespace internal
@@ -1979,7 +1979,7 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
   : internal::ArgFormatterBase<Impl, Char>(formatter.writer(), spec),
     formatter_(formatter), format_(fmt) {}
 
-  /** Formats argument of a custom (user-defined) type. */
+  /** Formats an argument of a custom (user-defined) type. */
   void visit_custom(internal::Arg::CustomValue c) {
     c.format(&formatter_, c.value, &format_);
   }
@@ -2406,7 +2406,7 @@ class BasicWriter {
   friend class internal::ArgFormatterBase;
 
   template <typename Impl, typename Char_>
-  friend class internal::BasicPrintfArgFormatter;
+  friend class BasicPrintfArgFormatter;
 
  protected:
   /**

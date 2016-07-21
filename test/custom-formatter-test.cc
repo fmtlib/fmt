@@ -10,7 +10,7 @@
 #include "fmt/printf.h"
 #include "gtest-extra.h"
 
-using fmt::internal::BasicPrintfArgFormatter;
+using fmt::BasicPrintfArgFormatter;
 
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
@@ -30,15 +30,18 @@ class CustomArgFormatter
 
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
-class CustomPAF : public BasicPrintfArgFormatter<CustomPAF, char> {
+class CustomPrintfArgFormatter :
+    public BasicPrintfArgFormatter<CustomPrintfArgFormatter, char> {
  public:
-  CustomPAF(fmt::BasicWriter<char> &writer, fmt::FormatSpec &spec)
-  : BasicPrintfArgFormatter<CustomPAF, char>(writer, spec) {}
+  typedef BasicPrintfArgFormatter<CustomPrintfArgFormatter, char> Base;
+
+  CustomPrintfArgFormatter(fmt::BasicWriter<char> &w, fmt::FormatSpec &spec)
+  : Base(w, spec) {}
 
   void visit_double(double value) {
     if (round(value * pow(10, spec().precision())) == 0)
       value = 0;
-    BasicPrintfArgFormatter<CustomPAF, char>::visit_double(value);
+    Base::visit_double(value);
   }
 };
 
@@ -53,7 +56,7 @@ FMT_VARIADIC(std::string, custom_format, const char *)
 
 std::string custom_sprintf(const char* format_str, fmt::ArgList args){
   fmt::MemoryWriter writer;
-  fmt::PrintfFormatter<char, CustomPAF> formatter(args, writer);
+  fmt::PrintfFormatter<char, CustomPrintfArgFormatter> formatter(args, writer);
   formatter.format(format_str);
   return writer.str();
 }
