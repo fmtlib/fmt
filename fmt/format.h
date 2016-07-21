@@ -1558,7 +1558,8 @@ enum Alignment {
 // Flags.
 enum {
   SIGN_FLAG = 1, PLUS_FLAG = 2, MINUS_FLAG = 4, HASH_FLAG = 8,
-  CHAR_FLAG = 0x10  // Argument has char type - used in error reporting.
+  GROUP_THOUSANDS_FLAG = 0x10,
+  CHAR_FLAG = 0x20  // Argument has char type - used in error reporting.
 };
 
 // An empty format specifier.
@@ -2717,7 +2718,11 @@ void BasicWriter<Char>::write_int(T value, Spec spec) {
     prefix[0] = spec.flag(PLUS_FLAG) ? '+' : ' ';
     ++prefix_size;
   }
-  switch (spec.type()) {
+  char type = spec.type();
+  if (spec.flag(GROUP_THOUSANDS_FLAG)) {
+    type = 'n';
+  }
+  switch (type) {
   case 0: case 'd': {
     unsigned num_digits = internal::count_digits(abs_value);
     CharPtr p = prepare_int_buffer(num_digits, spec, prefix, prefix_size) + 1;
@@ -2799,7 +2804,7 @@ void BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   char type = spec.type();
   bool upper = false;
   switch (type) {
-  case 0:
+  case 0: case 'n':
     type = 'g';
     break;
   case 'e': case 'f': case 'g': case 'a':
@@ -2868,13 +2873,15 @@ void BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   }
 
   // Build format string.
-  enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
+  enum { MAX_FORMAT_SIZE = 11}; // longest format: %#'-*.*Lg
   Char format[MAX_FORMAT_SIZE];
   Char *format_ptr = format;
   *format_ptr++ = '%';
   unsigned width_for_sprintf = width;
   if (spec.flag(HASH_FLAG))
     *format_ptr++ = '#';
+  if (spec.flag(GROUP_THOUSANDS_FLAG) || spec.type() == 'n')
+    *format_ptr++ = '\'';
   if (spec.align() == ALIGN_CENTER) {
     width_for_sprintf = 0;
   } else {
@@ -3638,6 +3645,11 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
       spec.width_ = static_cast<int>(value);
     }
 
+    if (*s == ',') {
+      spec.flags_ |= GROUP_THOUSANDS_FLAG;
+      ++s;
+    }
+
     // Parse precision.
     if (*s == '.') {
       ++s;
@@ -3687,6 +3699,17 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
     // Parse type.
     if (*s != '}' && *s)
       spec.type_ = static_cast<char>(*s++);
+
+    if (spec.flag(GROUP_THOUSANDS_FLAG)) {
+      switch (spec.type()) {
+      case 0: case 'd': case 'f': case 'F': case 'g': case 'G':
+        break;
+      default:
+        FMT_THROW(FormatError(
+            fmt::format("format specifier ',' not allowed for type '{}'",
+            spec.type())));
+      }
+    }
   }
 
   if (*s++ != '}')

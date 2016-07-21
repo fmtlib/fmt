@@ -74,14 +74,14 @@ although some of the formatting options are only supported by the numeric types.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: sf
-   format_spec: [[`fill`]`align`][`sign`]["#"]["0"][`width`]["." `precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`]["#"]["0"][`width`][","]["." `precision`][`type`]
    fill: <a character other than '{' or '}'>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
    width: `integer` | "{" `arg_id` "}"
    precision: `integer` | "{" `arg_id` "}"
    type: `int_type` | "c" | "e" | "E" | "f" | "F" | "g" | "G" | "p" | "s"
-   int_type: "b" | "B" | "d" | "o" | "x" | "X"
+   int_type: "b" | "B" | "d" | "n" | "o" | "x" | "X"
 
 The *fill* character can be any character other than '{' or '}'.  The presence
 of a fill character is signaled by the character following it, which must be
@@ -144,11 +144,12 @@ decimal-point character appears in the result of these conversions
 only if a digit follows it. In addition, for ``'g'`` and ``'G'``
 conversions, trailing zeros are not removed from the result.
 
-.. ifconfig:: False
-
-   The ``','`` option signals the use of a comma for a thousands separator.
-   For a locale aware separator, use the ``'n'`` integer presentation type
-   instead.
+The ``","`` option signals the use of a locale-aware thousands
+separator. In many locales, this may not be an actual `,` character.
+This option is supported for types ``'d'``, ``'f'``, ``'g'``, ``'F'``,
+``'G'``, and none. Type ``'n'`` always implies the use of a local-aware
+thousands separator; it is an error to explicitly specify both ``","``
+and ``'n'``.
 
 *width* is a decimal integer defining the minimum field width.  If not
 specified, then the field width will be determined by the content.
@@ -262,6 +263,10 @@ The available presentation types for floating-point values are:
 | ``'G'`` | General format. Same as ``'g'`` except switches to       |
 |         | ``'E'`` if the number gets too large. The                |
 |         | representations of infinity and NaN are uppercased, too. |
++---------+----------------------------------------------------------+
+| ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
+|         | the current locale setting to insert the appropriate     |
+|         | number separator characters.                             |
 +---------+----------------------------------------------------------+
 | none    | The same as ``'g'``.                                     |
 +---------+----------------------------------------------------------+
