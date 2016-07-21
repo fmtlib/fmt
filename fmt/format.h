@@ -237,7 +237,7 @@ typedef __int64          intmax_t;
 # define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
 
-// Some compilers masquerade as both MSVC and GCC-likes or 
+// Some compilers masquerade as both MSVC and GCC-likes or
 // otherwise support __builtin_clz and __builtin_clzll, so
 // only define FMT_BUILTIN_CLZ using the MSVC intrinsics
 // if the clz and clzll builtins are not available.
@@ -253,7 +253,7 @@ inline uint32_t clz(uint32_t x) {
 
   assert(x != 0);
   // Static analysis complains about using uninitialized data
-  // "r", but the only way that can happen is if "x" is 0, 
+  // "r", but the only way that can happen is if "x" is 0,
   // which the callers guarantee to not happen.
 # pragma warning(suppress: 6102)
   return 31 - r;
@@ -279,7 +279,7 @@ inline uint32_t clzll(uint64_t x) {
 
   assert(x != 0);
   // Static analysis complains about using uninitialized data
-  // "r", but the only way that can happen is if "x" is 0, 
+  // "r", but the only way that can happen is if "x" is 0,
   // which the callers guarantee to not happen.
 # pragma warning(suppress: 6102)
   return 63 - r;
@@ -1296,7 +1296,7 @@ public:
   MakeArg() {
     type = Arg::NONE;
   }
-  
+
   template <typename T>
   MakeArg(const T &value)
   : Arg(MakeValue<Formatter>(value)) {
@@ -2074,7 +2074,7 @@ struct ArgArray;
 template <unsigned N>
 struct ArgArray<N, true/*IsPacked*/> {
   typedef Value Type[N > 0 ? N : 1];
-  
+
   template <typename Formatter, typename T>
   static Value make(const T &value) {
 #ifdef __clang__
@@ -2272,7 +2272,7 @@ class SystemError : public internal::RuntimeError {
   Formats an error returned by an operating system or a language runtime,
   for example a file opening error, and writes it to *out* in the following
   form:
-   
+
   .. parsed-literal::
      *<message>*: *<system-message>*
 
@@ -2614,7 +2614,6 @@ void BasicWriter<Char>::write_str(
   if (str_size == 0) {
     if (!str_value) {
       FMT_THROW(FormatError("string pointer is null"));
-      return;
     }
   }
   std::size_t precision = static_cast<std::size_t>(spec.precision_);
