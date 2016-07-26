@@ -960,6 +960,21 @@ TEST(FormatterTest, RuntimeWidth) {
   EXPECT_EQ("str         ", format("{0:{1}}", "str", 12));
 }
 
+TEST(FormatterTest, GroupThousandsFlag) {
+  EXPECT_THROW_MSG(format("{0:,x", 42),
+      FormatError, "format specifier ',' not allowed for type 'x'");
+  EXPECT_THROW_MSG(format("{0:,b", 42),
+      FormatError, "format specifier ',' not allowed for type 'b'");
+  EXPECT_THROW_MSG(format("{0:,o", 42),
+      FormatError, "format specifier ',' not allowed for type 'o'");
+  EXPECT_THROW_MSG(format("{0:,n", 42),
+      FormatError, "format specifier ',' not allowed for type 'n'");
+  EXPECT_THROW_MSG(format("{0:,n", 42.3),
+      FormatError, "format specifier ',' not allowed for type 'n'");
+  EXPECT_THROW_MSG(format("{0:,e", 42.3),
+      FormatError, "format specifier ',' not allowed for type 'e'");
+}
+
 TEST(FormatterTest, Precision) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:.%u", UINT_MAX);
@@ -1106,7 +1121,7 @@ template <typename T>
 void check_unknown_types(
     const T &value, const char *types, const char *type_name) {
   char format_str[BUFFER_SIZE], message[BUFFER_SIZE];
-  const char *special = ".0123456789}";
+  const char *special = ",.0123456789}";
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
     char c = static_cast<char>(i);
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
@@ -1229,10 +1244,13 @@ TEST(FormatterTest, FormatIntLocale) {
   lconv lc = {};
   char sep[] = "--";
   lc.thousands_sep = sep;
-  EXPECT_CALL(mock, localeconv()).Times(3).WillRepeatedly(testing::Return(&lc));
+  EXPECT_CALL(mock, localeconv()).Times(6).WillRepeatedly(testing::Return(&lc));
   EXPECT_EQ("123", format("{:n}", 123));
   EXPECT_EQ("1--234", format("{:n}", 1234));
   EXPECT_EQ("1--234--567", format("{:n}", 1234567));
+  EXPECT_EQ("123", format("{:,d}", 123));
+  EXPECT_EQ("1--234", format("{:,d}", 1234));
+  EXPECT_EQ("1--234--567", format("{:,d}", 1234567));
 }
 
 TEST(FormatterTest, FormatFloat) {
@@ -1240,7 +1258,7 @@ TEST(FormatterTest, FormatFloat) {
 }
 
 TEST(FormatterTest, FormatDouble) {
-  check_unknown_types(1.2, "eEfFgGaA", "double");
+  check_unknown_types(1.2, "eEfFgGaAn", "double");
   EXPECT_EQ("0", format("{0:}", 0.0));
   EXPECT_EQ("0.000000", format("{0:f}", 0.0));
   EXPECT_EQ("392.65", format("{0:}", 392.65));
@@ -1258,6 +1276,26 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ(buffer, format("{:a}", -42.0));
   safe_sprintf(buffer, "%A", -42.0);
   EXPECT_EQ(buffer, format("{:A}", -42.0));
+}
+
+TEST(FormatterTest, FormatDoubleLocale) {
+  // Grouping floating-point numbers uses snprintf internally. glibc's
+  // implementation of snprintf determines the current locale's
+  // thousands separator without calling localeconv, so we can't simply
+  // mock localeconv as in FormatIntLocale--we have to set an actual
+  // locale with a non-empty thousands separator using setlocale.
+  char* oldlocale = std::setlocale(LC_ALL, "");
+  char* sep = localeconv()->thousands_sep;
+  // Ensure this locale has a non-empty thousands separator.
+  EXPECT_GE(strlen(sep), 1);
+  char buffer[100];
+  safe_sprintf(buffer, "3%s141%s592.653589", sep, sep);
+  EXPECT_EQ(buffer, format("{:,f}", 3141592.653589));
+  safe_sprintf(buffer, "3%s141.65", sep);
+  EXPECT_EQ(buffer, format("{:n}", 3141.653589));
+  EXPECT_EQ(buffer, format("{:,g}", 3141.653589));
+  EXPECT_EQ(buffer, format("{:,}", 3141.653589));
+  std::setlocale(LC_ALL, oldlocale);
 }
 
 TEST(FormatterTest, FormatNaN) {
