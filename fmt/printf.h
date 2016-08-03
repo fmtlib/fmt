@@ -13,7 +13,7 @@
 #include <algorithm>  // std::fill_n
 #include <limits>     // std::numeric_limits
 
-#include "fmt/format.h"
+#include "fmt/ostream.h"
 
 namespace fmt {
 namespace internal {
@@ -536,6 +536,23 @@ inline int printf(CStringRef format, ArgList args) {
   return fprintf(stdout, format, args);
 }
 FMT_VARIADIC(int, printf, CStringRef)
+
+/**
+  \rst
+  Prints formatted data to the stream *os*.
+
+  **Example**::
+
+    fprintf(cerr, "Don't %s!", "panic");
+  \endrst
+ */
+inline int fprintf(std::ostream &os, CStringRef format_str, ArgList args) {
+  MemoryWriter w;
+  printf(w, format_str, args);
+  internal::write(os, w);
+  return static_cast<int>(w.size());
+}
+FMT_VARIADIC(int, fprintf, std::ostream &, CStringRef)
 }  // namespace fmt
 
 #endif  // FMT_PRINTF_H_

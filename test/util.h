@@ -87,6 +87,13 @@ const Char BasicTestString<Char>::EMPTY[] = {0};
 typedef BasicTestString<char> TestString;
 typedef BasicTestString<wchar_t> TestWString;
 
+template <typename Char>
+std::basic_ostream<Char> &operator<<(
+    std::basic_ostream<Char> &os, const BasicTestString<Char> &s) {
+  os << s.value();
+  return os;
+}
+
 class Date {
   int year_, month_, day_;
  public:

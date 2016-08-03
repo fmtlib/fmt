@@ -81,8 +81,6 @@ formatting of user-defined types that have overloaded ``operator<<``::
 
 .. doxygenfunction:: print(std::ostream&, CStringRef, ArgList)
 
-.. doxygenfunction:: fprintf(std::ostream&, CStringRef, ArgList)
-
 Argument formatters
 -------------------
 
@@ -139,6 +137,8 @@ argument type doesn't match its format specification.
 .. doxygenfunction:: printf(CStringRef, ArgList)
 
 .. doxygenfunction:: fprintf(std::FILE *, CStringRef, ArgList)
+
+.. doxygenfunction:: fprintf(std::ostream&, CStringRef, ArgList)
 
 .. doxygenfunction:: sprintf(CStringRef, ArgList)
 

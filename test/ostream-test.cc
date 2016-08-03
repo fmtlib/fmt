@@ -25,7 +25,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "fmt/ostream.cc"
+#include "fmt/ostream.h"
 
 #include <sstream>
 #include "gmock/gmock.h"
@@ -34,13 +34,6 @@
 
 using fmt::format;
 using fmt::FormatError;
-
-template <typename Char>
-std::basic_ostream<Char> &operator<<(
-    std::basic_ostream<Char> &os, const BasicTestString<Char> &s) {
-  os << s.value();
-  return os;
-}
 
 std::ostream &operator<<(std::ostream &os, const Date &d) {
   os << d.year() << '-' << d.month() << '-' << d.day();
@@ -128,22 +121,11 @@ TEST(OStreamTest, Print) {
   EXPECT_EQ("Don't panic!", os.str());
 }
 
-TEST(OStreamTest, PrintfCustom) {
-  EXPECT_EQ("abc", fmt::sprintf("%s", TestString("abc")));
-}
-
-TEST(OStreamTest, FPrintf) {
-  std::ostringstream os;
-  int ret = fmt::fprintf(os, "Don't %s!", "panic");
-  EXPECT_EQ("Don't panic!", os.str());
-  EXPECT_EQ(12, ret);
-}
-
 TEST(OStreamTest, WriteToOStream) {
   std::ostringstream os;
   fmt::MemoryWriter w;
   w << "foo";
-  fmt::write(os, w);
+  fmt::internal::write(os, w);
   EXPECT_EQ("foo", os.str());
 }
 
@@ -188,5 +170,5 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
     data += n;
     size -= static_cast<std::size_t>(n);
   } while (size != 0);
-  fmt::write(os, w);
+  fmt::internal::write(os, w);
 }
