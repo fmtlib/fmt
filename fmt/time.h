@@ -37,7 +37,7 @@ void format(BasicFormatter<char, ArgFormatter> &f,
       break;
     }
     const std::size_t MIN_GROWTH = 10;
-    buffer.reserve(buffer.capacity() + size > MIN_GROWTH ? size : MIN_GROWTH);
+    buffer.reserve(buffer.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
   }
   format_str = end + 1;
 }
