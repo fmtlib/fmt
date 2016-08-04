@@ -85,8 +85,10 @@ add_fmt_test(format-test)
 add_fmt_test(format-impl-test)
 add_fmt_test(ostream-test)
 add_fmt_test(printf-test)
+add_fmt_test(time-test)
 add_fmt_test(util-test mock-allocator.h)
 add_fmt_test(macro-test)
+
 
 # Enable stricter options for one test to make sure that the header is free of
 # warnings.
