@@ -37,6 +37,11 @@ if (FMT_USE_CPP11)
   endif ()
 endif ()
 
+if (CMAKE_CXX_STANDARD)
+  # Don't use -std compiler flag if CMAKE_CXX_STANDARD is specified.
+  set(CPP11_FLAG )
+endif ()
+
 set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
 
 # Check if variadic templates are working and not affected by GCC bug 39653:
