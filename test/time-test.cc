@@ -27,3 +27,7 @@ TEST(TimeTest, GrowBuffer) {
   std::time_t t = std::time(0);
   fmt::format(s, *std::localtime(&t));
 }
+
+TEST(TimeTest, EmptyResult) {
+  EXPECT_EQ("", fmt::format("{}", std::tm()));
+}

@@ -36,6 +36,13 @@ void format(BasicFormatter<char, ArgFormatter> &f,
       buffer.resize(start + count);
       break;
     }
+    if (size >= format.size() * 256) {
+      // If the buffer is 256 times larger than the format string, assume
+      // that `strftime` gives an empty result. There doesn't seem to be a
+      // better way to distinguish the two cases:
+      // https://github.com/fmtlib/fmt/issues/367
+      break;
+    }
     const std::size_t MIN_GROWTH = 10;
     buffer.reserve(buffer.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
   }
