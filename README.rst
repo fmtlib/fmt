@@ -136,6 +136,8 @@ Projects using this library
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   An open-source library for mathematical programming
 
+* `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater vehicle
+
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
 
@@ -161,6 +163,12 @@ Projects using this library
 
 * `Salesforce Analytics Cloud <http://www.salesforce.com/analytics-cloud/overview/>`_:
   Business intelligence software
+
+* `Scylla <http://www.scylladb.com/>`_: A Cassandra-compatible NoSQL data store that can handle
+  1 million transactions per second on a single server
+
+* `Seastar <http://www.seastar-project.org/>`_: An advanced, open-source C++ framework for
+  high-performance server applications on modern hardware
 
 * `spdlog <https://github.com/gabime/spdlog>`_: Super fast C++ logging library
 
