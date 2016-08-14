@@ -15,8 +15,8 @@
 
 namespace fmt {
 template <typename ArgFormatter>
-void format(BasicFormatter<char, ArgFormatter> &f,
-            const char *&format_str, const std::tm &tm) {
+void format_arg(BasicFormatter<char, ArgFormatter> &f,
+                const char *&format_str, const std::tm &tm) {
   if (*format_str == ':')
     ++format_str;
   const char *end = format_str;

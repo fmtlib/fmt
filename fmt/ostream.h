@@ -73,8 +73,8 @@ void write(std::ostream &os, Writer &w);
 
 // Formats a value.
 template <typename Char, typename ArgFormatter, typename T>
-void format(BasicFormatter<Char, ArgFormatter> &f,
-            const Char *&format_str, const T &value) {
+void format_arg(BasicFormatter<Char, ArgFormatter> &f,
+                const Char *&format_str, const T &value) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
 
   internal::FormatBuf<Char> format_buf(buffer);
