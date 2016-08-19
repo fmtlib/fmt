@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=US-ASCII">
+<title>Text Formatting</title>
+</head>
+<body>
+<h1>Text Formatting</h1>
+
+<p>
+2016-08-19
+</p>
+
+<address>
+Victor Zverovich, victor.zverovich@gmail.com
+</address>
+
+<p>
+<a href="#Introduction">Introduction</a><br>
+<a href="#Design">Design</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Syntax">Format String Syntax</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Syntax">Locale Support</a><br>
+<a href="#Wording">Wording</a><br>
+<a href="#References">References</a><br>
+</p>
+
+<h2><a name="Introduction">Introduction</a></h2>
+
+<p>
+This paper proposes a new text formatting functionality that can be used as a
+safe and extensible alternative to the <code>printf</code> family of functions.
+It is intended to complement the existing C++ I/O streams library and reuse
+some of its infrastructure such as overloaded insertion operators for
+user-defined types.
+</p>
+
+<p>
+Example:
+
+<pre>
+<code>std::string message = std::format("The answer is {}.", 42)</code>
+</pre>
+
+<h2><a name="Design">Design</a></h2>
+
+<h3><a name="Syntax">Format String Syntax</a></h3>
+
+<p>
+Variations of the printf format string syntax are arguably the most popular
+among the programming languages and C++ itself inherits <code>printf</code>
+from C <a href="#1">[1]</a>. The advantage of the printf syntax is that many
+programmers are familiar with it. However, in its current form it has a number
+of issues:
+</p>
+
+<ul>
+<li>Many format specifiers like <code>hh</code>, <code>h</code>, <code>l</code>,
+    <code>j</code>, etc. are used only to convey type information.
+    They are redundant in type-safe formatting and would unnecessarily
+    complicate specification and parsing.</li>
+<li>There is no standard way to extend the syntax for user-defined types.</li>
+<li>There are subtle differences between different implementations. For example,
+    POSIX positional arguments <a href="#2">[2]</a> are not supported on
+    MSVC.</li>
+<li>Using <code>'%'</code> in a custom format specifier, e.g. for
+    <code>put_time</code>-like time formatting, poses difficulties.</li>
+</ul>
+
+<p>
+Although it is possible to address these issues, this will break compatibility
+and can potentially be more confusing to users than introducing a different
+syntax.
+</p>
+
+</p>
+Therefore we propose a new syntax based on the ones used in Python
+<a href="#3">[3]</a>, the .NET family of languages <a href="#4">[4]</a>,
+and Rust <a href="#5">[5]</a>. This syntax uses <code>'{'</code> and
+<code>'}'</code> as replacement field delimiters instead of <code>'%'</code>
+and it is described in details in TODO:link. Here are some of the advantages:
+</p>
+
+<ul>
+<li>Consistent and easy to parse mini-language focused on formatting rather
+    than conveying type information</li>
+<li>Extensibility and support for custom format strings for user-defined
+    types</li>
+<li>Positional arguments</li>
+<li>Support for both locale-specific and locale-independent formatting (see
+    <a href="#Locale">Locale Support</a>)</li>
+<li>Minor formatting improvements such as center alignment and binary format
+</ul>
+
+<p>
+The syntax is expressive enough to enable translation, possibly automated,
+of most printf format strings. TODO: table of correspondence between
+printf and the new syntax
+</p>
+
+<h3><a name="Locale">Locale Support</a></h3>
+
+<p>TODO</p>
+
+<h2><a name="Wording">Wording</a></h2>
+
+<p>TODO</p>
+
+<h2><a name="References">References</a></h2>
+
+<h2><a name="Implementation">Implementation</a></h2>
+
+<p>
+The ideas proposed in this paper have been implemented in the open-source fmt
+library. TODO: link
+</p>
+
+<p>
+<a name="1">[1]</a>
+<cite>The <code>fprintf</code> function. ISO/IEC 9899:2011. 7.21.6.1.</cite><br/>
+<a name="2">[2]</a>
+<cite><a href="http://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html">
+fprintf, printf, snprintf, sprintf - print formatted output</a>. The Open
+Group Base Specifications Issue 6 IEEE Std 1003.1, 2004 Edition.</cite><br/>
+<a name="3">[3]</a>
+<cite><a href="https://docs.python.org/3/library/string.html#format-string-syntax">
+6.1.3. Format String Syntax</a>. Python 3.5.2 documentation.</cite><br/>
+<a name="4">[4]</a>
+<cite><a href="https://msdn.microsoft.com/en-us/library/system.string.format(v=vs.110).aspx">
+String.Format Method</a>. .NET Framework Class Library.</cite><br/>
+<a name="5">[5]</a>
+<cite><a href="https://doc.rust-lang.org/std/fmt/">
+Module <code>std::fmt</code></a>. The Rust Standard Library.</cite><br/>
+</p>
+
+</body>
