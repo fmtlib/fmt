@@ -4,6 +4,48 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=US-ASCII">
 <title>Text Formatting</title>
+
+<style type="text/css">
+
+body { color: #000000; background-color: #FFFFFF; }
+del { text-decoration: line-through; color: #8B0040; }
+ins { text-decoration: underline; color: #005100; }
+
+p.example { margin-left: 2em; }
+pre.example { margin-left: 2em; }
+div.example { margin-left: 2em; }
+
+code.extract { background-color: #F5F6A2; }
+pre.extract { margin-left: 2em; background-color: #F5F6A2;
+  border: 1px solid #E1E28E; }
+
+p.function { }
+.attribute { margin-left: 2em; }
+.attribute dt { float: left; font-style: italic;
+  padding-right: 1ex; }
+.attribute dd { margin-left: 0em; }
+
+blockquote.std { color: #000000; background-color: #F1F1F1;
+  border: 1px solid #D1D1D1;
+  padding-left: 0.5em; padding-right: 0.5em; }
+blockquote.stddel { text-decoration: line-through;
+  color: #000000; background-color: #FFEBFF;
+  border: 1px solid #ECD7EC;
+  padding-left: 0.5empadding-right: 0.5em; ; }
+
+blockquote.stdins { text-decoration: underline;
+  color: #000000; background-color: #C8FFC8;
+  border: 1px solid #B3EBB3; padding: 0.5em; }
+
+table { border: 1px solid black; border-spacing: 0px;
+  margin-left: auto; margin-right: auto; }
+th { text-align: left; vertical-align: top;
+  padding-left: 0.8em; border: none; }
+td { text-align: left; vertical-align: top;
+  padding-left: 0.8em; border: none; }
+
+</style>
+
 </head>
 <body>
 <h1>Text Formatting</h1>
@@ -20,7 +62,8 @@ Victor Zverovich, victor.zverovich@gmail.com
 <a href="#Introduction">Introduction</a><br>
 <a href="#Design">Design</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Syntax">Format String Syntax</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Syntax">Locale Support</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Extensibility">Extensibility</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Locale">Locale Support</a><br>
 <a href="#Wording">Wording</a><br>
 <a href="#References">References</a><br>
 </p>
@@ -38,8 +81,8 @@ user-defined types.
 <p>
 Example:
 
-<pre>
-<code>std::string message = std::format("The answer is {}.", 42)</code>
+<pre class="example">
+<code>std::string message = std::format("The answer is {}.", 42);</code>
 </pre>
 
 <h2><a name="Design">Design</a></h2>
@@ -62,7 +105,7 @@ of issues:
 <li>There is no standard way to extend the syntax for user-defined types.</li>
 <li>There are subtle differences between different implementations. For example,
     POSIX positional arguments <a href="#2">[2]</a> are not supported on
-    MSVC.</li>
+    some systems <a href="#6">[6]</a>.</li>
 <li>Using <code>'%'</code> in a custom format specifier, e.g. for
     <code>put_time</code>-like time formatting, poses difficulties.</li>
 </ul>
@@ -94,9 +137,87 @@ and it is described in details in TODO:link. Here are some of the advantages:
 
 <p>
 The syntax is expressive enough to enable translation, possibly automated,
-of most printf format strings. TODO: table of correspondence between
-printf and the new syntax
+of most printf format strings. The correspondence between <code>printf</code>
+and the new syntax is given in the following table.
 </p>
+
+<table>
+<thead>
+<tr><th>printf</th><th>new</th><th>comment</th></tr>
+</thead>
+<tbody>
+<tr><td>-</td><td>&lt;</td><td>left alignment</td></tr>
+<tr><td>+</td><td>+</td><td></td></tr>
+<tr><td><em>space</em></td><td><em>space</em></td><td></td></tr>
+<tr><td>hh</td><td>unused</td><td></td></tr>
+<tr><td>h</td><td>unused</td><td></td></tr>
+<tr><td>l</td><td>unused</td><td></td></tr>
+<tr><td>ll</td><td>unused</td><td></td></tr>
+<tr><td>j</td><td>unused</td><td></td></tr>
+<tr><td>z</td><td>unused</td><td></td></tr>
+<tr><td>t</td><td>unused</td><td></td></tr>
+<tr><td>L</td><td>unused</td><td></td></tr>
+<tr><td>c</td><td>c (optional)</td><td></td></tr>
+<tr><td>s</td><td>s (optional)</td><td></td></tr>
+<tr><td>d</td><td>d (optional)</td><td></td></tr>
+<tr><td>i</td><td>d (optional)</td><td></td></tr>
+<tr><td>o</td><td>o</td><td></td></tr>
+<tr><td>x</td><td>x</td><td></td></tr>
+<tr><td>X</td><td>X</td><td></td></tr>
+<tr><td>u</td><td>d (optional)</td><td></td></tr>
+<tr><td>f</td><td>f</td><td></td></tr>
+<tr><td>F</td><td>F</td><td></td></tr>
+<tr><td>e</td><td>e</td><td></td></tr>
+<tr><td>E</td><td>E</td><td></td></tr>
+<tr><td>a</td><td>a</td><td></td></tr>
+<tr><td>A</td><td>A</td><td></td></tr>
+<tr><td>g</td><td>g (optional)</td><td></td></tr>
+<tr><td>G</td><td>G</td><td></td></tr>
+<tr><td>n</td><td>unused</td><td></td></tr>
+<tr><td>p</td><td>p (optional)</td><td></td></tr>
+</tbody>
+</table>
+
+<p>
+Width and precision are represented similarly in <code>printf</code> and the
+proposed syntax with the only difference that runtime value is specified by
+<code>*</code> in the former and <code>{}</code> in the latter, possibly with
+the index of the argument inside the braces.
+</p>
+
+<p>
+As can be seen from the table above, most of the specifiers remain the same
+which simplifies migration from <code>printf</code>. Notable difference is in
+the alignment specification. The proposed syntax allows left, center, and right
+alignment represented by <code>'&lt;'</code>, <code>'^'</code>, and
+<code>'&gt;'</code> respectively which is more expressive than the corresponding
+<code>printf</code> syntax.
+</p>
+
+<h3><a name="Extensibility">Extensibility</a></h3>
+
+<p>
+Both format string syntax and API are designed with extensibility in mind.
+The mini-language can be extended for user-defined types and users can provide
+functions that do parsing and formatting for such types.
+</p>
+
+<p>The general syntax of a replacement field in a format string is
+
+<dl>
+<dt><em>replacement-field</em>:</dt>
+<dd>
+<code>{</code> <em>integer<sub>opt</sub></em> <code>}</code><br/>
+<code>{</code> <em>integer<sub>opt</sub></em>
+  <code>:</code> <em>format-spec</em> <code>}</code>
+</dd>
+</dl>
+
+<p>
+where <em>format-spec</em> is predefined for built-in types, but can be
+customized for user-defined types. For example, time formatting
+
+TODO: elaborate</p>
 
 <h3><a name="Locale">Locale Support</a></h3>
 
@@ -106,14 +227,14 @@ printf and the new syntax
 
 <p>TODO</p>
 
-<h2><a name="References">References</a></h2>
-
 <h2><a name="Implementation">Implementation</a></h2>
 
 <p>
 The ideas proposed in this paper have been implemented in the open-source fmt
 library. TODO: link
 </p>
+
+<h2><a name="References">References</a></h2>
 
 <p>
 <a name="1">[1]</a>
@@ -131,6 +252,10 @@ String.Format Method</a>. .NET Framework Class Library.</cite><br/>
 <a name="5">[5]</a>
 <cite><a href="https://doc.rust-lang.org/std/fmt/">
 Module <code>std::fmt</code></a>. The Rust Standard Library.</cite><br/>
+<a name="6">[6]</a>
+<cite><a href="https://msdn.microsoft.com/en-us/library/56e442dc(v=vs.120).aspx">
+Format Specification Syntax: printf and wprintf Functions</a>. C++ Language and
+Standard Libraries.</cite><br/>
 </p>
 
 </body>
