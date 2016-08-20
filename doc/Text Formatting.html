@@ -64,6 +64,7 @@ Victor Zverovich, victor.zverovich@gmail.com
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Syntax">Format String Syntax</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Extensibility">Extensibility</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Locale">Locale Support</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#PosArguments">Positional Arguments</a><br>
 <a href="#Wording">Wording</a><br>
 <a href="#References">References</a><br>
 </p>
@@ -119,7 +120,7 @@ syntax.
 </p>
 Therefore we propose a new syntax based on the ones used in Python
 <a href="#3">[3]</a>, the .NET family of languages <a href="#4">[4]</a>,
-and Rust <a href="#5">[5]</a>. This syntax uses <code>'{'</code> and
+and Rust <a href="#5">[5]</a>. This syntax employs <code>'{'</code> and
 <code>'}'</code> as replacement field delimiters instead of <code>'%'</code>
 and it is described in details in TODO:link. Here are some of the advantages:
 </p>
@@ -149,6 +150,8 @@ and the new syntax is given in the following table.
 <tr><td>-</td><td>&lt;</td><td>left alignment</td></tr>
 <tr><td>+</td><td>+</td><td></td></tr>
 <tr><td><em>space</em></td><td><em>space</em></td><td></td></tr>
+<tr><td>#</td><td>#</td><td></td></tr>
+<tr><td>0</td><td>0</td><td></td></tr>
 <tr><td>hh</td><td>unused</td><td></td></tr>
 <tr><td>h</td><td>unused</td><td></td></tr>
 <tr><td>l</td><td>unused</td><td></td></tr>
@@ -191,13 +194,28 @@ which simplifies migration from <code>printf</code>. Notable difference is in
 the alignment specification. The proposed syntax allows left, center, and right
 alignment represented by <code>'&lt;'</code>, <code>'^'</code>, and
 <code>'&gt;'</code> respectively which is more expressive than the corresponding
-<code>printf</code> syntax.
+<code>printf</code> syntax. The latter only supports left and right (the default)
+alignment.
+</p>
+
+<p>
+The following example uses center alignment and <code>'*'</code> as a fill
+character:
+</p>
+
+<pre class="example">
+<code>std::format("{:*^30}", "centered");</code>
+</pre>
+
+<p>
+resulting in <code>"***********centered***********"</code>.
+The same formatting cannot be easily achieved with <code>printf</code>.
 </p>
 
 <h3><a name="Extensibility">Extensibility</a></h3>
 
 <p>
-Both format string syntax and API are designed with extensibility in mind.
+Both the format string syntax and the API are designed with extensibility in mind.
 The mini-language can be extended for user-defined types and users can provide
 functions that do parsing and formatting for such types.
 </p>
@@ -215,11 +233,22 @@ functions that do parsing and formatting for such types.
 
 <p>
 where <em>format-spec</em> is predefined for built-in types, but can be
-customized for user-defined types. For example, time formatting
+customized for user-defined types. For example, the syntax can be extended
+for <code>put_time</code>-like date and time formatting:
+</p>
 
-TODO: elaborate</p>
+<pre class="example">
+<code>std::time_t t = std::time(nullptr);
+std::string date = std::format("The date is {0:%Y-%m-%d}.", *std::localtime(&t));</code>
+</pre>
+
+<p>TODO: API</p>
 
 <h3><a name="Locale">Locale Support</a></h3>
+
+<p>TODO</p>
+
+<h3><a name="PosArguments">Positional Arguments</a></h3>
 
 <p>TODO</p>
 
