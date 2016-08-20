@@ -63,6 +63,7 @@ Victor Zverovich, victor.zverovich@gmail.com
 <a href="#Design">Design</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Syntax">Format String Syntax</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Extensibility">Extensibility</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Safety">Safety</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Locale">Locale Support</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#PosArguments">Positional Arguments</a><br>
 <a href="#Wording">Wording</a><br>
@@ -190,12 +191,12 @@ the index of the argument inside the braces.
 
 <p>
 As can be seen from the table above, most of the specifiers remain the same
-which simplifies migration from <code>printf</code>. Notable difference is in
-the alignment specification. The proposed syntax allows left, center, and right
-alignment represented by <code>'&lt;'</code>, <code>'^'</code>, and
-<code>'&gt;'</code> respectively which is more expressive than the corresponding
-<code>printf</code> syntax. The latter only supports left and right (the default)
-alignment.
+which simplifies migration from <code>printf</code>. Notable difference is
+in the alignment specification. The proposed syntax allows left, center,
+and right alignment represented by <code>'&lt;'</code>, <code>'^'</code>,
+and <code>'&gt;'</code> respectively which is more expressive than the
+corresponding <code>printf</code> syntax. The latter only supports left and
+right (the default) alignment.
 </p>
 
 <p>
@@ -215,9 +216,9 @@ The same formatting cannot be easily achieved with <code>printf</code>.
 <h3><a name="Extensibility">Extensibility</a></h3>
 
 <p>
-Both the format string syntax and the API are designed with extensibility in mind.
-The mini-language can be extended for user-defined types and users can provide
-functions that do parsing and formatting for such types.
+Both the format string syntax and the API are designed with extensibility in
+mind. The mini-language can be extended for user-defined types and users can
+provide functions that do parsing and formatting for such types.
 </p>
 
 <p>The general syntax of a replacement field in a format string is
@@ -234,7 +235,7 @@ functions that do parsing and formatting for such types.
 <p>
 where <em>format-spec</em> is predefined for built-in types, but can be
 customized for user-defined types. For example, the syntax can be extended
-for <code>put_time</code>-like date and time formatting:
+for <code>put_time</code>-like date and time formatting
 </p>
 
 <pre class="example">
@@ -242,13 +243,48 @@ for <code>put_time</code>-like date and time formatting:
 std::string date = std::format("The date is {0:%Y-%m-%d}.", *std::localtime(&t));</code>
 </pre>
 
-<p>TODO: API</p>
+<p>by providing an overload of <code>std::format_arg</code> for
+<code>std::tm</code>:</p>
+
+TODO: example
+
+<h3><a name="Safety">Safety</a></h3>
+
+Formatting functions rely on variadic templates instead of the mechanism
+provided by <code>&lt;cstdarg&gt;</code>. The type information is captured
+automatically and passed to formatters guaranteeing type safety and making
+many of the <code>printf</code> specifiers redundant (see <a href="#Syntax">
+Format String Syntax</a>). Buffer management is also automatic to prevent
+buffer overflow errors common to <code>printf</code>.
 
 <h3><a name="Locale">Locale Support</a></h3>
 
-<p>TODO</p>
+<p>
+As pointed out in
+<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0067r1.html">
+P0067R1: Elementary string conversions</a> there is a number of use
+cases that do not require internationalization support, but do require high
+throughput when produced by a server. These include various text-based
+interchange formats such as JSON or XML. The need for locale-independent
+functions for conversions between integers and strings and between
+floating-point numbers and strings has also been highlighted in
+<a href="http://open-std.org/JTC1/SC22/WG21/docs/papers/2015/n4412.html">
+N4412: Shortcomings of iostreams</a>. Therefore a user should be able to
+easily control whether to use locales or not during formatting.
+</p>
+
+<p>
+We follow Python's approach <a href="#3">[3]</a> and designate a separate format
+specifier <code>'n'</code> for locale-aware numeric formatting. It applies to
+all integral and floating-point types. All other specifiers produce output
+unaffected by locale settings.
+</p>
 
 <h3><a name="PosArguments">Positional Arguments</a></h3>
+
+<p>TODO</p>
+
+<h3><a name="Locale">Performance</a></h3>
 
 <p>TODO</p>
 
@@ -260,7 +296,7 @@ std::string date = std::format("The date is {0:%Y-%m-%d}.", *std::localtime(&t))
 
 <p>
 The ideas proposed in this paper have been implemented in the open-source fmt
-library. TODO: link
+library. TODO: link and mention other implementations (Boost Format, FastFormat)
 </p>
 
 <h2><a name="References">References</a></h2>
