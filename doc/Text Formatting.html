@@ -66,7 +66,8 @@ Victor Zverovich, victor.zverovich@gmail.com
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Safety">Safety</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Locale">Locale Support</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#PosArguments">Positional Arguments</a><br>
-<a href="#Wording">Wording</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="Footprint">Binary Footprint</a><br>
+<a href="#Wording">Proposed Wording</a><br>
 <a href="#References">References</a><br>
 </p>
 
@@ -134,7 +135,8 @@ and it is described in details in TODO:link. Here are some of the advantages:
 <li>Positional arguments</li>
 <li>Support for both locale-specific and locale-independent formatting (see
     <a href="#Locale">Locale Support</a>)</li>
-<li>Minor formatting improvements such as center alignment and binary format
+<li>Formatting improvements such as better alignment control, fill character,
+    and binary format
 </ul>
 
 <p>
@@ -145,40 +147,40 @@ and the new syntax is given in the following table.
 
 <table>
 <thead>
-<tr><th>printf</th><th>new</th><th>comment</th></tr>
+<tr><th>printf</th><th>new</th></tr>
 </thead>
 <tbody>
-<tr><td>-</td><td>&lt;</td><td>left alignment</td></tr>
-<tr><td>+</td><td>+</td><td></td></tr>
-<tr><td><em>space</em></td><td><em>space</em></td><td></td></tr>
-<tr><td>#</td><td>#</td><td></td></tr>
-<tr><td>0</td><td>0</td><td></td></tr>
-<tr><td>hh</td><td>unused</td><td></td></tr>
-<tr><td>h</td><td>unused</td><td></td></tr>
-<tr><td>l</td><td>unused</td><td></td></tr>
-<tr><td>ll</td><td>unused</td><td></td></tr>
-<tr><td>j</td><td>unused</td><td></td></tr>
-<tr><td>z</td><td>unused</td><td></td></tr>
-<tr><td>t</td><td>unused</td><td></td></tr>
-<tr><td>L</td><td>unused</td><td></td></tr>
-<tr><td>c</td><td>c (optional)</td><td></td></tr>
-<tr><td>s</td><td>s (optional)</td><td></td></tr>
-<tr><td>d</td><td>d (optional)</td><td></td></tr>
-<tr><td>i</td><td>d (optional)</td><td></td></tr>
-<tr><td>o</td><td>o</td><td></td></tr>
-<tr><td>x</td><td>x</td><td></td></tr>
-<tr><td>X</td><td>X</td><td></td></tr>
-<tr><td>u</td><td>d (optional)</td><td></td></tr>
-<tr><td>f</td><td>f</td><td></td></tr>
-<tr><td>F</td><td>F</td><td></td></tr>
-<tr><td>e</td><td>e</td><td></td></tr>
-<tr><td>E</td><td>E</td><td></td></tr>
-<tr><td>a</td><td>a</td><td></td></tr>
-<tr><td>A</td><td>A</td><td></td></tr>
-<tr><td>g</td><td>g (optional)</td><td></td></tr>
-<tr><td>G</td><td>G</td><td></td></tr>
-<tr><td>n</td><td>unused</td><td></td></tr>
-<tr><td>p</td><td>p (optional)</td><td></td></tr>
+<tr><td>-</td><td>&lt;</td></tr>
+<tr><td>+</td><td>+</td></tr>
+<tr><td><em>space</em></td><td><em>space</em></td></tr>
+<tr><td>#</td><td>#</td></tr>
+<tr><td>0</td><td>0</td></tr>
+<tr><td>hh</td><td>unused</td></tr>
+<tr><td>h</td><td>unused</td></tr>
+<tr><td>l</td><td>unused</td></tr>
+<tr><td>ll</td><td>unused</td></tr>
+<tr><td>j</td><td>unused</td></tr>
+<tr><td>z</td><td>unused</td></tr>
+<tr><td>t</td><td>unused</td></tr>
+<tr><td>L</td><td>unused</td></tr>
+<tr><td>c</td><td>c (optional)</td></tr>
+<tr><td>s</td><td>s (optional)</td></tr>
+<tr><td>d</td><td>d (optional)</td></tr>
+<tr><td>i</td><td>d (optional)</td></tr>
+<tr><td>o</td><td>o</td></tr>
+<tr><td>x</td><td>x</td></tr>
+<tr><td>X</td><td>X</td></tr>
+<tr><td>u</td><td>d (optional)</td></tr>
+<tr><td>f</td><td>f</td></tr>
+<tr><td>F</td><td>F</td></tr>
+<tr><td>e</td><td>e</td></tr>
+<tr><td>E</td><td>E</td></tr>
+<tr><td>a</td><td>a</td></tr>
+<tr><td>A</td><td>A</td></tr>
+<tr><td>g</td><td>g (optional)</td></tr>
+<tr><td>G</td><td>G</td></tr>
+<tr><td>n</td><td>unused</td></tr>
+<tr><td>p</td><td>p (optional)</td></tr>
 </tbody>
 </table>
 
@@ -223,17 +225,12 @@ provide functions that do parsing and formatting for such types.
 
 <p>The general syntax of a replacement field in a format string is
 
-<dl>
-<dt><em>replacement-field</em>:</dt>
-<dd>
-<code>{</code> <em>integer<sub>opt</sub></em> <code>}</code><br/>
-<code>{</code> <em>integer<sub>opt</sub></em>
-  <code>:</code> <em>format-spec</em> <code>}</code>
-</dd>
-</dl>
+<pre>
+<code>replacement-field ::=  '{' [arg-id] [':' format-spec] '}'</code>
+</pre>
 
 <p>
-where <em>format-spec</em> is predefined for built-in types, but can be
+where <code>format-spec</code> is predefined for built-in types, but can be
 customized for user-defined types. For example, the syntax can be extended
 for <code>put_time</code>-like date and time formatting
 </p>
@@ -277,20 +274,104 @@ easily control whether to use locales or not during formatting.
 We follow Python's approach <a href="#3">[3]</a> and designate a separate format
 specifier <code>'n'</code> for locale-aware numeric formatting. It applies to
 all integral and floating-point types. All other specifiers produce output
-unaffected by locale settings.
+unaffected by locale settings. This can also have positive peformance effect
+because locale-independent formatting can be implemented more efficiently.
 </p>
 
 <h3><a name="PosArguments">Positional Arguments</a></h3>
 
-<p>TODO</p>
+<p>
+An important feature for localization is the ability to rearrange formatting
+arguments because the word order may vary in different languages
+<a href="#3">[3]</a>. For example:
+</p>
+
+<pre class="example">
+<code>printf("String `%s' has %d characters\n", string, length(string)))</code>
+</pre>
+
+<p>A possible German translation of the format string might be:</p>
+
+<pre class="example">
+<code>"%2$d Zeichen lang ist die Zeichenkette `%1$s'\n"</code>
+</pre>
+
+<p>
+using POSIX positional arguments <a href="#2">[2]</a>. Unfortunately these
+positional specifiers are not portable <a href="#6">[6]</a>. The C++ I/O
+streams don't support positional arguments by design because formatting
+arguments are interleaved with the portions of the literal string:
+</p>
+
+<pre class="example">
+<code>std::cout << "String `" << string << "' has " << length(string) << " characters\n"</code>
+</pre>
+
+<p>
+The current proposal allows both positional and automatically numbered
+arguments, for example:
+</p>
+
+<pre class="example">
+<code>std::format("String `{}' has {} characters\n", string, length(string)))</code>
+</pre>
+
+<p>with the German translation of the format string:</p>
+
+<pre class="example">
+<code>"{1} Zeichen lang ist die Zeichenkette `{0}'\n"</code>
+</pre>
 
 <h3><a name="Locale">Performance</a></h3>
 
 <p>TODO</p>
 
-<h2><a name="Wording">Wording</a></h2>
+<h3><a name="Footprint">Binary Footprint</a></h3>
 
 <p>TODO</p>
+
+<h2><a name="Wording">Proposed Wording</a></h2>
+
+<p>
+The header <code>&lt;format&gt;</code> defines the function templates
+<code>format</code> that format arguments and return the results as strings.
+TODO: rephrase and mention format_args
+</p>
+
+<h3>Header <code>&lt;format&gt;</code> synopsis</h3>
+
+<pre>
+<code>namespace std {
+  class format_args;
+
+  template &lt;class Char&gt;
+  basic_string&lt;Char&gt; format(const Char *fmt, format_args args);
+
+  template &lt;class Char, class ...Args&gt;
+  basic_string&lt;Char&gt; format(const Char *fmt, const Args&amp;... args);
+}</code>
+</pre>
+
+<h3>Format string syntax</h3>
+
+<pre>
+<code>replacement-field ::=  '{' [arg-id] [':' format-spec] '}'
+arg-id            ::=  integer
+integer           ::=  digit+
+digit             ::=  '0'...'9'
+</pre>
+
+<!-- The notation is the same as in n4296 22.4.3.1. -->
+<pre>
+<code>format-spec ::=  [[fill] align] [sign] ['#'] ['0'] [width] ['.' precision] [type]
+fill        ::=  &lt;a character other than '{' or '}'&gt;
+align       ::=  '<' | '>' | '=' | '^'
+sign        ::=  '+' | '-' | ' '
+width       ::=  integer | '{' arg-id '}'
+precision   ::=  integer | '{' arg-id '}'
+type        ::=  int-type | 'a' | 'A' | 'c' | 'e' | 'E' | 'f' | 'F' | 'g' | 'G' | 'p' | 's'
+int-type    ::=  'b' | 'B' | 'd' | 'o' | 'x' | 'X'</code>
+</pre>
 
 <h2><a name="Implementation">Implementation</a></h2>
 
@@ -321,6 +402,9 @@ Module <code>std::fmt</code></a>. The Rust Standard Library.</cite><br/>
 <cite><a href="https://msdn.microsoft.com/en-us/library/56e442dc(v=vs.120).aspx">
 Format Specification Syntax: printf and wprintf Functions</a>. C++ Language and
 Standard Libraries.</cite><br/>
+<a name="7">[7]</a>
+<cite><a href="ftp://ftp.gnu.org/old-gnu/Manuals/gawk-3.1.0/html_chapter/gawk_11.html">
+10.4.2 Rearranging printf Arguments</a>. The GNU Awk User's Guide.</cite><br/>
 </p>
 
 </body>
