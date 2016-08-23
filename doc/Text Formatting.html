@@ -66,6 +66,7 @@ Victor Zverovich, victor.zverovich@gmail.com
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Safety">Safety</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#Locale">Locale Support</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#PosArguments">Positional Arguments</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="Performance">Performance</a><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="Footprint">Binary Footprint</a><br>
 <a href="#Wording">Proposed Wording</a><br>
 <a href="#References">References</a><br>
@@ -124,7 +125,8 @@ Therefore we propose a new syntax based on the ones used in Python
 <a href="#3">[3]</a>, the .NET family of languages <a href="#4">[4]</a>,
 and Rust <a href="#5">[5]</a>. This syntax employs <code>'{'</code> and
 <code>'}'</code> as replacement field delimiters instead of <code>'%'</code>
-and it is described in details in TODO:link. Here are some of the advantages:
+and it is described in details in the <a href="#SyntaxRef">syntax reference</a>.
+Here are some of the advantages:
 </p>
 
 <ul>
@@ -287,7 +289,7 @@ arguments because the word order may vary in different languages
 </p>
 
 <pre class="example">
-<code>printf("String `%s' has %d characters\n", string, length(string)))</code>
+<code>printf("String `%s' has %d characters\n", string, length(string)));</code>
 </pre>
 
 <p>A possible German translation of the format string might be:</p>
@@ -299,12 +301,12 @@ arguments because the word order may vary in different languages
 <p>
 using POSIX positional arguments <a href="#2">[2]</a>. Unfortunately these
 positional specifiers are not portable <a href="#6">[6]</a>. The C++ I/O
-streams don't support positional arguments by design because formatting
-arguments are interleaved with the portions of the literal string:
+streams don't support such rearranging of arguments by design because they
+are interleaved with the portions of the literal string:
 </p>
 
 <pre class="example">
-<code>std::cout << "String `" << string << "' has " << length(string) << " characters\n"</code>
+<code>std::cout << "String `" << string << "' has " << length(string) << " characters\n";</code>
 </pre>
 
 <p>
@@ -313,7 +315,7 @@ arguments, for example:
 </p>
 
 <pre class="example">
-<code>std::format("String `{}' has {} characters\n", string, length(string)))</code>
+<code>std::format("String `{}' has {} characters\n", string, length(string)));</code>
 </pre>
 
 <p>with the German translation of the format string:</p>
@@ -342,23 +344,33 @@ TODO: rephrase and mention format_args
 
 <pre>
 <code>namespace std {
+  class format_error;
+
   class format_args;
 
   template &lt;class Char&gt;
-  basic_string&lt;Char&gt; format(const Char *fmt, format_args args);
+  basic_string&lt;Char&gt; format(const Char* fmt, format_args args);
 
   template &lt;class Char, class ...Args&gt;
-  basic_string&lt;Char&gt; format(const Char *fmt, const Args&amp;... args);
+  basic_string&lt;Char&gt; format(const Char* fmt, const Args&amp;... args);
 }</code>
 </pre>
 
-<h3>Format string syntax</h3>
+<h3><a name="SyntaxRef">Format string syntax</a></h3>
+
+<p>
+Format strings contain <em>replacement fields</em> surrounded by curly braces
+<code>{}</code>. Anything that is not contained in braces is considered literal
+text, which is copied unchanged to the output. A brace character can be
+included in the literal text by doubling: <code>{{</code> and <code>}}</code>.
+The syntax for replacement fields is as follows:
+</p>
 
 <pre>
 <code>replacement-field ::=  '{' [arg-id] [':' format-spec] '}'
 arg-id            ::=  integer
 integer           ::=  digit+
-digit             ::=  '0'...'9'
+digit             ::=  '0'...'9'</code>
 </pre>
 
 <!-- The notation is the same as in n4296 22.4.3.1. -->
@@ -372,6 +384,61 @@ precision   ::=  integer | '{' arg-id '}'
 type        ::=  int-type | 'a' | 'A' | 'c' | 'e' | 'E' | 'f' | 'F' | 'g' | 'G' | 'p' | 's'
 int-type    ::=  'b' | 'B' | 'd' | 'o' | 'x' | 'X'</code>
 </pre>
+
+<h3>Class <code>format_error</code></h3>
+
+<pre>
+<code>class format_error : public std::runtime_error {
+public:
+  explicit format_error(const string& what_arg);
+  explicit format_error(const char* what_arg);
+};</code>
+</pre>
+
+<p>
+The class <code>format_error</code> defines the type of objects thrown as
+exceptions to report errors from the formatting library.
+</p>
+
+<dl>
+<dt><code>format_error(const string& what_arg);</code></dt>
+<dd>
+<p><i>Effects</i>: Constructs an object of class <code>format_error</code>.</p>
+<p><i>Postcondition</i>: <code>strcmp(what(), what_arg.c_str()) == 0</code>.</p>
+</dd>
+
+<dt><code>format_error(const char* what_arg);</code></dt>
+<dd>
+<p><i>Effects</i>: Constructs an object of class <code>format_error</code>.</p>
+<p><i>Postcondition</i>: <code>strcmp(what(), what_arg) == 0</code>.</p>
+</dd>
+
+<h3>Function template <code>format</code></h3>
+
+<dl>
+<dt>
+<pre>
+<code>template &lt;class Char&gt;
+  basic_string&lt;Char&gt; format(const Char* fmt, format_args args);
+
+template &lt;class Char, class ...Args&gt;
+  basic_string&lt;Char&gt; format(const Char* fmt, const Args&amp;... args);</code>
+</pre>
+</dt>
+<dd>
+
+<p><i>Requires</i>: <code>fmt</code> shall not be a null pointer.</p>
+<p>
+<i>Effects</i>: Each function returns a <code>basic_string</code> object
+constructed from the format string argument <code>fmt</code> with each
+replacement field substituted with the character representation of the
+argument it refers to, formatted according to the specification given in the
+field.
+</p>
+<p><i>Returns</i>: The formatted string.</p>
+<p><i>Throws</i>: <code>format_error</code> if <code>fmt</code> is not a valid
+format string.</p>
+</dd>
 
 <h2><a name="Implementation">Implementation</a></h2>
 
