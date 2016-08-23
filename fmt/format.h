@@ -1277,7 +1277,9 @@ class MakeValue : public Arg {
 
   FMT_MAKE_VALUE(char *, string.value, CSTRING)
   FMT_MAKE_VALUE(const char *, string.value, CSTRING)
+  FMT_MAKE_VALUE(signed char *, sstring.value, CSTRING)
   FMT_MAKE_VALUE(const signed char *, sstring.value, CSTRING)
+  FMT_MAKE_VALUE(unsigned char *, ustring.value, CSTRING)
   FMT_MAKE_VALUE(const unsigned char *, ustring.value, CSTRING)
   FMT_MAKE_STR_VALUE(const std::string &, STRING)
   FMT_MAKE_STR_VALUE(StringRef, STRING)
