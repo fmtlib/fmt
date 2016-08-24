@@ -46,6 +46,65 @@ td { text-align: left; vertical-align: top;
 
 </style>
 
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"
+        type="text/javascript"> </script>
+
+<script type="text/javascript">$(function() {
+    var next_id = 0
+    function find_id(node) {
+        // Look down the first children of 'node' until we find one
+        // with an id. If we don't find one, give 'node' an id and
+        // return that.
+        var cur = node[0];
+        while (cur) {
+            if (cur.id) return curid;
+            if (cur.tagName == 'A' && cur.name)
+                return cur.name;
+            cur = cur.firstChild;
+        };
+        // No id.
+        node.attr('id', 'gensection-' + next_id++);
+        return node.attr('id');
+    };
+
+    // Put a table of contents in the #toc nav.
+
+    // This is a list of <ol> elements, where toc[N] is the list for
+    // the current sequence of <h(N+2)> tags. When a header of an
+    // existing level is encountered, all higher levels are popped,
+    // and an <li> is appended to the level
+    var toc = [$("<ol/>")];
+    $(':header').not('h1').each(function() {
+        var header = $(this);
+        // For each <hN> tag, add a link to the toc at the appropriate
+        // level.  When toc is one element too short, start a new list
+        var levels = {H2: 0, H3: 1, H4: 2, H5: 3, H6: 4};
+        var level = levels[this.tagName];
+        if (typeof level == 'undefined') {
+            throw 'Unexpected tag: ' + this.tagName;
+        }
+        // Truncate to the new level.
+        toc.splice(level + 1, toc.length);
+        if (toc.length < level) {
+            // Omit TOC entries for skipped header levels.
+            return;
+        }
+        if (toc.length == level) {
+            // Add a <ol> to the previous level's last <li> and push
+            // it into the array.
+            var ol = $('<ol/>')
+            toc[toc.length - 1].children().last().append(ol);
+            toc.push(ol);
+        }
+        var header_text = header.text();
+        toc[toc.length - 1].append(
+            $('<li/>').append($('<a href="#' + find_id(header) + '"/>')
+                              .text(header_text)));
+    });
+    $('#toc').append(toc[0]);
+})
+</script>
+
 </head>
 <body>
 <h1>Text Formatting</h1>
@@ -58,19 +117,7 @@ td { text-align: left; vertical-align: top;
 Victor Zverovich, victor.zverovich@gmail.com
 </address>
 
-<p>
-<a href="#Introduction">Introduction</a><br>
-<a href="#Design">Design</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Syntax">Format String Syntax</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Extensibility">Extensibility</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Safety">Safety</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#Locale">Locale Support</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#PosArguments">Positional Arguments</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="Performance">Performance</a><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="Footprint">Binary Footprint</a><br>
-<a href="#Wording">Proposed Wording</a><br>
-<a href="#References">References</a><br>
-</p>
+<div id="toc"></div>
 
 <h2><a name="Introduction">Introduction</a></h2>
 
@@ -334,12 +381,6 @@ arguments, for example:
 
 <h2><a name="Wording">Proposed Wording</a></h2>
 
-<p>
-The header <code>&lt;format&gt;</code> defines the function templates
-<code>format</code> that format arguments and return the results as strings.
-TODO: rephrase and mention format_args
-</p>
-
 <h3>Header <code>&lt;format&gt;</code> synopsis</h3>
 
 <pre>
@@ -363,9 +404,13 @@ Format strings contain <em>replacement fields</em> surrounded by curly braces
 <code>{}</code>. Anything that is not contained in braces is considered literal
 text, which is copied unchanged to the output. A brace character can be
 included in the literal text by doubling: <code>{{</code> and <code>}}</code>.
-The syntax for replacement fields is as follows:
 </p>
 
+<p>
+The grammar for a replacement field is as follows:
+</p>
+
+<!-- The notation is the same as in n4296 22.4.3.1. -->
 <pre>
 <code>replacement-field ::=  '{' [arg-id] [':' format-spec] '}'
 arg-id            ::=  integer
@@ -373,7 +418,75 @@ integer           ::=  digit+
 digit             ::=  '0'...'9'</code>
 </pre>
 
-<!-- The notation is the same as in n4296 22.4.3.1. -->
+<p>
+In less formal terms, the replacement field can start with an
+<code>arg-id</code> that specifies the argument whose value is to be formatted
+and inserted into the output instead of the replacement field. The
+<code>arg-id</code> is optionally followed by a <code>format-spec</code>,
+which is preceded by a colon <code>':'</code>. These specify a non-default
+format for the replacement value.
+</p>
+
+<p>
+See also the <a href="FormatSpec">Format specification mini-language</a>
+section.
+</p>
+
+<p>
+If the numerical <code>arg-id</code>s in a format string are 0, 1, 2, ... in
+sequence, they can all be omitted (not just some) and the numbers 0, 1, 2, ...
+will be automatically inserted in that order.
+</p>
+
+<p>
+Some simple format string examples:
+</p>
+
+<pre>
+<code>"First, thou shalt count to {0}" // References the first argument
+"Bring me a {}"                  // Implicitly references the first argument
+"From {} to {}"                  // Same as "From {0} to {1}"</code>
+</pre>
+
+<p>
+The <code>format-spec</code> field contains a specification of how the value
+should be presented, including such details as field width, alignment, padding,
+decimal precision and so on. Each value type can define its own <em>formatting
+mini-language</em> or interpretation of the <code>format-spec</code>.
+</p>
+
+<p>
+Most built-in types support a common formatting mini-language, which is
+described in the next section.
+</p>
+
+<p>
+A <code>format-spec</code> field can also include nested replacement fields
+within it. These nested replacement fields can contain only an argument index;
+format specifications are not allowed. Formatting is performed as if the
+replacement fields within the <code>format-spec</code> are substituted before
+the format-spec string is interpreted. This allows the formatting of a value
+to be dynamically specified.
+</p>
+
+<h4><a name="FormatSpec">Format specification mini-language</a></h4>
+
+<p>
+<em>Format specifications</em> are used within replacement fields contained
+within a format string to define how individual values are presented (see
+<a href="SyntaxRef">Format string syntax</a>). Each formattable type may define
+how the format specification is to be interpreted.
+</p>
+
+<p>
+Most built-in types implement the following options for format specifications,
+although some of the formatting options are only supported by the numeric types.
+</p>
+
+<p>
+The general form of a <em>standard format specifier</em> is:
+</p>
+
 <pre>
 <code>format-spec ::=  [[fill] align] [sign] ['#'] ['0'] [width] ['.' precision] [type]
 fill        ::=  &lt;a character other than '{' or '}'&gt;
@@ -384,6 +497,8 @@ precision   ::=  integer | '{' arg-id '}'
 type        ::=  int-type | 'a' | 'A' | 'c' | 'e' | 'E' | 'f' | 'F' | 'g' | 'G' | 'p' | 's'
 int-type    ::=  'b' | 'B' | 'd' | 'o' | 'x' | 'X'</code>
 </pre>
+
+TODO
 
 <h3>Class <code>format_error</code></h3>
 
@@ -412,6 +527,10 @@ exceptions to report errors from the formatting library.
 <p><i>Effects</i>: Constructs an object of class <code>format_error</code>.</p>
 <p><i>Postcondition</i>: <code>strcmp(what(), what_arg) == 0</code>.</p>
 </dd>
+
+<h3>Class <code>format_args</code></h3>
+
+<p>TODO</p>
 
 <h3>Function template <code>format</code></h3>
 
