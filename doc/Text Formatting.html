@@ -167,7 +167,7 @@ and can potentially be more confusing to users than introducing a different
 syntax.
 </p>
 
-</p>
+<p>
 Therefore we propose a new syntax based on the ones used in Python
 <a href="#3">[3]</a>, the .NET family of languages <a href="#4">[4]</a>,
 and Rust <a href="#5">[5]</a>. This syntax employs <code>'{'</code> and
@@ -286,22 +286,24 @@ for <code>put_time</code>-like date and time formatting
 
 <pre class="example">
 <code>std::time_t t = std::time(nullptr);
-std::string date = std::format("The date is {0:%Y-%m-%d}.", *std::localtime(&t));</code>
+std::string date = std::format("The date is {0:%Y-%m-%d}.", *std::localtime(&amp;t));</code>
 </pre>
 
 <p>by providing an overload of <code>std::format_arg</code> for
 <code>std::tm</code>:</p>
 
-TODO: example
+<p>TODO: example</p>
 
 <h3><a name="Safety">Safety</a></h3>
 
+<p>
 Formatting functions rely on variadic templates instead of the mechanism
 provided by <code>&lt;cstdarg&gt;</code>. The type information is captured
 automatically and passed to formatters guaranteeing type safety and making
 many of the <code>printf</code> specifiers redundant (see <a href="#Syntax">
 Format String Syntax</a>). Buffer management is also automatic to prevent
 buffer overflow errors common to <code>printf</code>.
+</p>
 
 <h3><a name="Locale">Locale Support</a></h3>
 
@@ -498,7 +500,48 @@ type        ::=  int-type | 'a' | 'A' | 'c' | 'e' | 'E' | 'f' | 'F' | 'g' | 'G' 
 int-type    ::=  'b' | 'B' | 'd' | 'o' | 'x' | 'X'</code>
 </pre>
 
-TODO
+<p>
+The <code>fill</code> character can be any character other than <code>'{'</code>
+or <code>'}'</code>. The presence of a fill character is signaled by the
+character following it, which must be one of the alignment options. If the
+second character of <code>format-spec</code> is not a valid alignment option,
+then it is assumed that both the fill character and the alignment option are
+absent.
+
+<p>
+The meaning of the various alignment options is as follows:
+</p>
+
+<table>
+<thead>
+<tr><th>Option</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>'&lt;'</td>
+<td>Forces the field to be left-aligned within the available space (this is
+    the default for most objects).</td>
+</tr>
+<tr>
+<td>'&gt;'</td>
+<td>Forces the field to be right-aligned within the available space (this is
+    the default for numbers).</td>
+</tr>
+<tr>
+<td>'='</td>
+<td>Forces the padding to be placed after the sign (if any) but before the
+    digits. This is used for printing fields in the form
+    <code>+000000120</code>. This alignment option is only valid for numeric
+    types.</td>
+</tr>
+<tr>
+<td>'^'</td>
+<td>Forces the field to be centered within the available space.</td>
+</tr>
+</tbody>
+</table>
+
+<p>TODO</p>
 
 <h3>Class <code>format_error</code></h3>
 
@@ -521,12 +564,12 @@ exceptions to report errors from the formatting library.
 <p><i>Effects</i>: Constructs an object of class <code>format_error</code>.</p>
 <p><i>Postcondition</i>: <code>strcmp(what(), what_arg.c_str()) == 0</code>.</p>
 </dd>
-
 <dt><code>format_error(const char* what_arg);</code></dt>
 <dd>
 <p><i>Effects</i>: Constructs an object of class <code>format_error</code>.</p>
 <p><i>Postcondition</i>: <code>strcmp(what(), what_arg) == 0</code>.</p>
 </dd>
+</dl>
 
 <h3>Class <code>format_args</code></h3>
 
@@ -536,13 +579,11 @@ exceptions to report errors from the formatting library.
 
 <dl>
 <dt>
-<pre>
-<code>template &lt;class Char&gt;
-  basic_string&lt;Char&gt; format(const Char* fmt, format_args args);
-
-template &lt;class Char, class ...Args&gt;
-  basic_string&lt;Char&gt; format(const Char* fmt, const Args&amp;... args);</code>
-</pre>
+<code>template &lt;class Char&gt;<br>
+&nbsp;&nbsp;basic_string&lt;Char&gt; format(const Char* fmt, format_args args);<br>
+<br>
+template &lt;class Char, class ...Args&gt;<br>
+&nbsp;&nbsp;basic_string&lt;Char&gt; format(const Char* fmt, const Args&amp;... args);</code>
 </dt>
 <dd>
 
@@ -558,6 +599,7 @@ field.
 <p><i>Throws</i>: <code>format_error</code> if <code>fmt</code> is not a valid
 format string.</p>
 </dd>
+</dl>
 
 <h2><a name="Implementation">Implementation</a></h2>
 
@@ -570,27 +612,27 @@ library. TODO: link and mention other implementations (Boost Format, FastFormat)
 
 <p>
 <a name="1">[1]</a>
-<cite>The <code>fprintf</code> function. ISO/IEC 9899:2011. 7.21.6.1.</cite><br/>
+<cite>The <code>fprintf</code> function. ISO/IEC 9899:2011. 7.21.6.1.</cite><br>
 <a name="2">[2]</a>
 <cite><a href="http://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html">
 fprintf, printf, snprintf, sprintf - print formatted output</a>. The Open
-Group Base Specifications Issue 6 IEEE Std 1003.1, 2004 Edition.</cite><br/>
+Group Base Specifications Issue 6 IEEE Std 1003.1, 2004 Edition.</cite><br>
 <a name="3">[3]</a>
 <cite><a href="https://docs.python.org/3/library/string.html#format-string-syntax">
-6.1.3. Format String Syntax</a>. Python 3.5.2 documentation.</cite><br/>
+6.1.3. Format String Syntax</a>. Python 3.5.2 documentation.</cite><br>
 <a name="4">[4]</a>
 <cite><a href="https://msdn.microsoft.com/en-us/library/system.string.format(v=vs.110).aspx">
-String.Format Method</a>. .NET Framework Class Library.</cite><br/>
+String.Format Method</a>. .NET Framework Class Library.</cite><br>
 <a name="5">[5]</a>
 <cite><a href="https://doc.rust-lang.org/std/fmt/">
-Module <code>std::fmt</code></a>. The Rust Standard Library.</cite><br/>
+Module <code>std::fmt</code></a>. The Rust Standard Library.</cite><br>
 <a name="6">[6]</a>
 <cite><a href="https://msdn.microsoft.com/en-us/library/56e442dc(v=vs.120).aspx">
 Format Specification Syntax: printf and wprintf Functions</a>. C++ Language and
-Standard Libraries.</cite><br/>
+Standard Libraries.</cite><br>
 <a name="7">[7]</a>
 <cite><a href="ftp://ftp.gnu.org/old-gnu/Manuals/gawk-3.1.0/html_chapter/gawk_11.html">
-10.4.2 Rearranging printf Arguments</a>. The GNU Awk User's Guide.</cite><br/>
+10.4.2 Rearranging printf Arguments</a>. The GNU Awk User's Guide.</cite><br>
 </p>
 
 </body>
