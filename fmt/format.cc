@@ -82,7 +82,7 @@ static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
 namespace fmt {
 
 FMT_FUNC internal::RuntimeError::~RuntimeError() throw() {}
-FMT_FUNC FormatError::~FormatError() throw() {}
+FMT_FUNC format_error::~format_error() throw() {}
 FMT_FUNC SystemError::~SystemError() throw() {}
 
 namespace {
@@ -296,10 +296,10 @@ const uint64_t internal::BasicData<T>::POWERS_OF_10_64[] = {
 FMT_FUNC void internal::report_unknown_type(char code, const char *type) {
   (void)type;
   if (std::isprint(static_cast<unsigned char>(code))) {
-    FMT_THROW(FormatError(
+    FMT_THROW(format_error(
         format("unknown format code '{}' for {}", code, type)));
   }
-  FMT_THROW(FormatError(
+  FMT_THROW(format_error(
       format("unknown format code '\\x{:02x}' for {}",
         static_cast<unsigned>(code), type)));
 }

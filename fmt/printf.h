@@ -43,13 +43,13 @@ struct IntChecker<true> {
 class PrecisionHandler : public ArgVisitor<PrecisionHandler, int> {
  public:
   void report_unhandled_arg() {
-    FMT_THROW(FormatError("precision is not integer"));
+    FMT_THROW(format_error("precision is not integer"));
   }
 
   template <typename T>
   int visit_any_int(T value) {
     if (!IntChecker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
-      FMT_THROW(FormatError("number is too big"));
+      FMT_THROW(format_error("number is too big"));
     return static_cast<int>(value);
   }
 };
@@ -153,7 +153,7 @@ class WidthHandler : public ArgVisitor<WidthHandler, unsigned> {
   explicit WidthHandler(FormatSpec &spec) : spec_(spec) {}
 
   void report_unhandled_arg() {
-    FMT_THROW(FormatError("width is not integer"));
+    FMT_THROW(format_error("width is not integer"));
   }
 
   template <typename T>
@@ -166,7 +166,7 @@ class WidthHandler : public ArgVisitor<WidthHandler, unsigned> {
     }
     unsigned int_max = std::numeric_limits<int>::max();
     if (width > int_max)
-      FMT_THROW(FormatError("number is too big"));
+      FMT_THROW(format_error("number is too big"));
     return static_cast<unsigned>(width);
   }
 };
@@ -345,7 +345,7 @@ internal::Arg PrintfFormatter<Char, AF>::get_arg(const Char *s,
   internal::Arg arg = arg_index == std::numeric_limits<unsigned>::max() ?
     next_arg(error) : FormatterBase::get_arg(arg_index - 1, error);
   if (error)
-    FMT_THROW(FormatError(!*s ? "invalid format string" : error));
+    FMT_THROW(format_error(!*s ? "invalid format string" : error));
   return arg;
 }
 
@@ -460,7 +460,7 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
 
     // Parse type.
     if (!*s)
-      FMT_THROW(FormatError("invalid format string"));
+      FMT_THROW(format_error("invalid format string"));
     spec.type_ = static_cast<char>(*s++);
     if (arg.type <= Arg::LAST_INTEGER_TYPE) {
       // Normalize type.

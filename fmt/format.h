@@ -535,11 +535,11 @@ typedef BasicCStringRef<char> CStringRef;
 typedef BasicCStringRef<wchar_t> WCStringRef;
 
 /** A formatting error such as invalid format string. */
-class FormatError : public std::runtime_error {
+class format_error : public std::runtime_error {
  public:
-  explicit FormatError(CStringRef message)
+  explicit format_error(CStringRef message)
   : std::runtime_error(message.c_str()) {}
-  ~FormatError() throw();
+  ~format_error() throw();
 };
 
 namespace internal {
@@ -1883,7 +1883,7 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
       return;
     }
     if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
-      FMT_THROW(FormatError("invalid format specifier for char"));
+      FMT_THROW(format_error("invalid format specifier for char"));
     typedef typename BasicWriter<Char>::CharPtr CharPtr;
     Char fill = internal::CharTraits<Char>::cast(spec_.fill());
     CharPtr out = CharPtr();
@@ -2647,7 +2647,7 @@ void BasicWriter<Char>::write_str(
   std::size_t str_size = s.size;
   if (str_size == 0) {
     if (!str_value) {
-      FMT_THROW(FormatError("string pointer is null"));
+      FMT_THROW(format_error("string pointer is null"));
     }
   }
   std::size_t precision = static_cast<std::size_t>(spec.precision_);
@@ -3496,7 +3496,7 @@ unsigned parse_nonnegative_int(const Char *&s) {
   // Convert to unsigned to prevent a warning.
   unsigned max_int = (std::numeric_limits<int>::max)();
   if (value > max_int)
-    FMT_THROW(FormatError("number is too big"));
+    FMT_THROW(format_error("number is too big"));
   return value;
 }
 
@@ -3504,7 +3504,7 @@ inline void require_numeric_argument(const Arg &arg, char spec) {
   if (arg.type > Arg::LAST_NUMERIC_TYPE) {
     std::string message =
         fmt::format("format specifier '{}' requires numeric argument", spec);
-    FMT_THROW(fmt::FormatError(message));
+    FMT_THROW(fmt::format_error(message));
   }
 }
 
@@ -3513,7 +3513,7 @@ void check_sign(const Char *&s, const Arg &arg) {
   char sign = static_cast<char>(*s);
   require_numeric_argument(arg, sign);
   if (arg.type == Arg::UINT || arg.type == Arg::ULONG_LONG) {
-    FMT_THROW(FormatError(fmt::format(
+    FMT_THROW(format_error(fmt::format(
       "format specifier '{}' requires signed argument", sign)));
   }
   ++s;
@@ -3539,7 +3539,7 @@ inline internal::Arg BasicFormatter<Char, AF>::parse_arg_index(const Char *&s) {
   internal::Arg arg = *s < '0' || *s > '9' ?
         next_arg(error) : get_arg(internal::parse_nonnegative_int(s), error);
   if (error) {
-    FMT_THROW(FormatError(
+    FMT_THROW(format_error(
                 *s != '}' && *s != ':' ? "invalid format string" : error));
   }
   return arg;
@@ -3556,7 +3556,7 @@ inline internal::Arg BasicFormatter<Char, AF>::parse_arg_name(const Char *&s) {
   const char *error = 0;
   internal::Arg arg = get_arg(BasicStringRef<Char>(start, s - start), error);
   if (error)
-    FMT_THROW(FormatError(error));
+    FMT_THROW(format_error(error));
   return arg;
 }
 
@@ -3595,7 +3595,7 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
           if (p != s) {
             if (c == '}') break;
             if (c == '{')
-              FMT_THROW(FormatError("invalid fill character '{'"));
+              FMT_THROW(format_error("invalid fill character '{'"));
             s += 2;
             spec.fill_ = c;
           } else ++s;
@@ -3644,12 +3644,12 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
       Arg width_arg = internal::is_name_start(*s) ?
             parse_arg_name(s) : parse_arg_index(s);
       if (*s++ != '}')
-        FMT_THROW(FormatError("invalid format string"));
+        FMT_THROW(format_error("invalid format string"));
       ULongLong value = 0;
       switch (width_arg.type) {
       case Arg::INT:
         if (width_arg.int_value < 0)
-          FMT_THROW(FormatError("negative width"));
+          FMT_THROW(format_error("negative width"));
         value = width_arg.int_value;
         break;
       case Arg::UINT:
@@ -3657,17 +3657,17 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
         break;
       case Arg::LONG_LONG:
         if (width_arg.long_long_value < 0)
-          FMT_THROW(FormatError("negative width"));
+          FMT_THROW(format_error("negative width"));
         value = width_arg.long_long_value;
         break;
       case Arg::ULONG_LONG:
         value = width_arg.ulong_long_value;
         break;
       default:
-        FMT_THROW(FormatError("width is not integer"));
+        FMT_THROW(format_error("width is not integer"));
       }
       if (value > (std::numeric_limits<int>::max)())
-        FMT_THROW(FormatError("number is too big"));
+        FMT_THROW(format_error("number is too big"));
       spec.width_ = static_cast<int>(value);
     }
 
@@ -3682,12 +3682,12 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
         Arg precision_arg = internal::is_name_start(*s) ?
               parse_arg_name(s) : parse_arg_index(s);
         if (*s++ != '}')
-          FMT_THROW(FormatError("invalid format string"));
+          FMT_THROW(format_error("invalid format string"));
         ULongLong value = 0;
         switch (precision_arg.type) {
           case Arg::INT:
             if (precision_arg.int_value < 0)
-              FMT_THROW(FormatError("negative precision"));
+              FMT_THROW(format_error("negative precision"));
             value = precision_arg.int_value;
             break;
           case Arg::UINT:
@@ -3695,23 +3695,23 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
             break;
           case Arg::LONG_LONG:
             if (precision_arg.long_long_value < 0)
-              FMT_THROW(FormatError("negative precision"));
+              FMT_THROW(format_error("negative precision"));
             value = precision_arg.long_long_value;
             break;
           case Arg::ULONG_LONG:
             value = precision_arg.ulong_long_value;
             break;
           default:
-            FMT_THROW(FormatError("precision is not integer"));
+            FMT_THROW(format_error("precision is not integer"));
         }
         if (value > (std::numeric_limits<int>::max)())
-          FMT_THROW(FormatError("number is too big"));
+          FMT_THROW(format_error("number is too big"));
         spec.precision_ = static_cast<int>(value);
       } else {
-        FMT_THROW(FormatError("missing precision specifier"));
+        FMT_THROW(format_error("missing precision specifier"));
       }
       if (arg.type <= Arg::LAST_INTEGER_TYPE || arg.type == Arg::POINTER) {
-        FMT_THROW(FormatError(
+        FMT_THROW(format_error(
             fmt::format("precision not allowed in {} format specifier",
             arg.type == Arg::POINTER ? "pointer" : "integer")));
       }
@@ -3723,7 +3723,7 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
   }
 
   if (*s++ != '}')
-    FMT_THROW(FormatError("missing '}' in format string"));
+    FMT_THROW(format_error("missing '}' in format string"));
 
   // Format argument.
   ArgFormatter(*this, spec, s - 1).visit(arg);
@@ -3743,7 +3743,7 @@ void BasicFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
       continue;
     }
     if (c == '}')
-      FMT_THROW(FormatError("unmatched '}' in format string"));
+      FMT_THROW(format_error("unmatched '}' in format string"));
     write(writer_, start, s - 1);
     internal::Arg arg = internal::is_name_start(*s) ?
           parse_arg_name(s) : parse_arg_index(s);

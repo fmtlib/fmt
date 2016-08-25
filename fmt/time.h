@@ -23,7 +23,7 @@ void format_arg(BasicFormatter<char, ArgFormatter> &f,
   while (*end && *end != '}')
     ++end;
   if (*end != '}')
-    FMT_THROW(FormatError("missing '}' in format string"));
+    FMT_THROW(format_error("missing '}' in format string"));
   internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> format;
   format.append(format_str, end + 1);
   format[format.size() - 1] = '\0';

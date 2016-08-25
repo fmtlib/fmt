@@ -72,7 +72,7 @@ using std::size_t;
 
 using fmt::BasicWriter;
 using fmt::format;
-using fmt::FormatError;
+using fmt::format_error;
 using fmt::StringRef;
 using fmt::CStringRef;
 using fmt::MemoryWriter;
@@ -535,9 +535,9 @@ TEST(FormatterTest, Escape) {
 }
 
 TEST(FormatterTest, UnmatchedBraces) {
-  EXPECT_THROW_MSG(format("{"), FormatError, "invalid format string");
-  EXPECT_THROW_MSG(format("}"), FormatError, "unmatched '}' in format string");
-  EXPECT_THROW_MSG(format("{0{}"), FormatError, "invalid format string");
+  EXPECT_THROW_MSG(format("{"), format_error, "invalid format string");
+  EXPECT_THROW_MSG(format("}"), format_error, "unmatched '}' in format string");
+  EXPECT_THROW_MSG(format("{0{}"), format_error, "invalid format string");
 }
 
 TEST(FormatterTest, NoArgs) {
@@ -555,22 +555,22 @@ TEST(FormatterTest, ArgsInDifferentPositions) {
 }
 
 TEST(FormatterTest, ArgErrors) {
-  EXPECT_THROW_MSG(format("{"), FormatError, "invalid format string");
-  EXPECT_THROW_MSG(format("{?}"), FormatError, "invalid format string");
-  EXPECT_THROW_MSG(format("{0"), FormatError, "invalid format string");
-  EXPECT_THROW_MSG(format("{0}"), FormatError, "argument index out of range");
+  EXPECT_THROW_MSG(format("{"), format_error, "invalid format string");
+  EXPECT_THROW_MSG(format("{?}"), format_error, "invalid format string");
+  EXPECT_THROW_MSG(format("{0"), format_error, "invalid format string");
+  EXPECT_THROW_MSG(format("{0}"), format_error, "argument index out of range");
 
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{%u", INT_MAX);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "invalid format string");
+  EXPECT_THROW_MSG(format(format_str), format_error, "invalid format string");
   safe_sprintf(format_str, "{%u}", INT_MAX);
-  EXPECT_THROW_MSG(format(format_str), FormatError,
+  EXPECT_THROW_MSG(format(format_str), format_error,
       "argument index out of range");
 
   safe_sprintf(format_str, "{%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str), format_error, "number is too big");
   safe_sprintf(format_str, "{%u}", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str), format_error, "number is too big");
 }
 
 #if FMT_USE_VARIADIC_TEMPLATES
@@ -593,13 +593,13 @@ struct TestFormat<0> {
 TEST(FormatterTest, ManyArgs) {
   EXPECT_EQ("19", TestFormat<20>::format("{19}"));
   EXPECT_THROW_MSG(TestFormat<20>::format("{20}"),
-                   FormatError, "argument index out of range");
+                   format_error, "argument index out of range");
   EXPECT_THROW_MSG(TestFormat<21>::format("{21}"),
-                   FormatError, "argument index out of range");
+                   format_error, "argument index out of range");
   enum { MAX_PACKED_ARGS = fmt::ArgList::MAX_PACKED_ARGS };
   std::string format_str = fmt::format("{{{}}}", MAX_PACKED_ARGS + 1);
   EXPECT_THROW_MSG(TestFormat<MAX_PACKED_ARGS>::format(format_str),
-                   FormatError, "argument index out of range");
+                   format_error, "argument index out of range");
 }
 #endif
 
@@ -609,15 +609,15 @@ TEST(FormatterTest, NamedArg) {
   char a = 'A', b = 'B', c = 'C';
   EXPECT_EQ("BB/AA/CC", format("{1}{b}/{0}{a}/{2}{c}", FMT_CAPTURE(a, b, c)));
   EXPECT_EQ(" A", format("{a:>2}", FMT_CAPTURE(a)));
-  EXPECT_THROW_MSG(format("{a+}", FMT_CAPTURE(a)), FormatError,
+  EXPECT_THROW_MSG(format("{a+}", FMT_CAPTURE(a)), format_error,
                    "missing '}' in format string");
-  EXPECT_THROW_MSG(format("{a}"), FormatError, "argument not found");
-  EXPECT_THROW_MSG(format("{d}", FMT_CAPTURE(a, b, c)), FormatError,
+  EXPECT_THROW_MSG(format("{a}"), format_error, "argument not found");
+  EXPECT_THROW_MSG(format("{d}", FMT_CAPTURE(a, b, c)), format_error,
                    "argument not found");
   EXPECT_THROW_MSG(format("{a}{}", FMT_CAPTURE(a)),
-    FormatError, "cannot switch from manual to automatic argument indexing");
+    format_error, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{}{a}", FMT_CAPTURE(a)),
-    FormatError, "cannot switch from automatic to manual argument indexing");
+    format_error, "cannot switch from automatic to manual argument indexing");
   EXPECT_EQ(" -42", format("{0:{width}}", -42, fmt::arg("width", 4)));
   EXPECT_EQ("st", format("{0:.{precision}}", "str", fmt::arg("precision", 2)));
   int n = 100;
@@ -627,15 +627,15 @@ TEST(FormatterTest, NamedArg) {
 TEST(FormatterTest, AutoArgIndex) {
   EXPECT_EQ("abc", format("{}{}{}", 'a', 'b', 'c'));
   EXPECT_THROW_MSG(format("{0}{}", 'a', 'b'),
-      FormatError, "cannot switch from manual to automatic argument indexing");
+      format_error, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{}{0}", 'a', 'b'),
-      FormatError, "cannot switch from automatic to manual argument indexing");
+      format_error, "cannot switch from automatic to manual argument indexing");
   EXPECT_EQ("1.2", format("{:.{}}", 1.2345, 2));
   EXPECT_THROW_MSG(format("{0}:.{}", 1.2345, 2),
-      FormatError, "cannot switch from manual to automatic argument indexing");
+      format_error, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{:.{0}}", 1.2345, 2),
-      FormatError, "cannot switch from automatic to manual argument indexing");
-  EXPECT_THROW_MSG(format("{}"), FormatError, "argument index out of range");
+      format_error, "cannot switch from automatic to manual argument indexing");
+  EXPECT_THROW_MSG(format("{}"), format_error, "argument index out of range");
 }
 
 TEST(FormatterTest, EmptySpecs) {
@@ -692,13 +692,13 @@ TEST(FormatterTest, NumericAlign) {
   EXPECT_EQ("-  42", format("{0:=5}", -42.0));
   EXPECT_EQ("-  42", format("{0:=5}", -42.0l));
   EXPECT_THROW_MSG(format("{0:=5", 'c'),
-      FormatError, "missing '}' in format string");
+      format_error, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:=5}", 'c'),
-      FormatError, "invalid format specifier for char");
+      format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:=5}", "abc"),
-      FormatError, "format specifier '=' requires numeric argument");
+      format_error, "format specifier '=' requires numeric argument");
   EXPECT_THROW_MSG(format("{0:=8}", reinterpret_cast<void*>(0xface)),
-      FormatError, "format specifier '=' requires numeric argument");
+      format_error, "format specifier '=' requires numeric argument");
 }
 
 TEST(FormatterTest, CenterAlign) {
@@ -720,9 +720,9 @@ TEST(FormatterTest, CenterAlign) {
 
 TEST(FormatterTest, Fill) {
   EXPECT_THROW_MSG(format("{0:{<5}", 'c'),
-      FormatError, "invalid fill character '{'");
+      format_error, "invalid fill character '{'");
   EXPECT_THROW_MSG(format("{0:{<5}}", 'c'),
-      FormatError, "invalid fill character '{'");
+      format_error, "invalid fill character '{'");
   EXPECT_EQ("**42", format("{0:*>4}", 42));
   EXPECT_EQ("**-42", format("{0:*>5}", -42));
   EXPECT_EQ("***42", format("{0:*>5}", 42u));
@@ -742,23 +742,23 @@ TEST(FormatterTest, PlusSign) {
   EXPECT_EQ("-42", format("{0:+}", -42));
   EXPECT_EQ("+42", format("{0:+}", 42));
   EXPECT_THROW_MSG(format("{0:+}", 42u),
-      FormatError, "format specifier '+' requires signed argument");
+      format_error, "format specifier '+' requires signed argument");
   EXPECT_EQ("+42", format("{0:+}", 42l));
   EXPECT_THROW_MSG(format("{0:+}", 42ul),
-      FormatError, "format specifier '+' requires signed argument");
+      format_error, "format specifier '+' requires signed argument");
   EXPECT_EQ("+42", format("{0:+}", 42ll));
   EXPECT_THROW_MSG(format("{0:+}", 42ull),
-      FormatError, "format specifier '+' requires signed argument");
+      format_error, "format specifier '+' requires signed argument");
   EXPECT_EQ("+42", format("{0:+}", 42.0));
   EXPECT_EQ("+42", format("{0:+}", 42.0l));
   EXPECT_THROW_MSG(format("{0:+", 'c'),
-      FormatError, "missing '}' in format string");
+      format_error, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:+}", 'c'),
-      FormatError, "invalid format specifier for char");
+      format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:+}", "abc"),
-      FormatError, "format specifier '+' requires numeric argument");
+      format_error, "format specifier '+' requires numeric argument");
   EXPECT_THROW_MSG(format("{0:+}", reinterpret_cast<void*>(0x42)),
-      FormatError, "format specifier '+' requires numeric argument");
+      format_error, "format specifier '+' requires numeric argument");
 }
 
 TEST(FormatterTest, MinusSign) {
@@ -766,23 +766,23 @@ TEST(FormatterTest, MinusSign) {
   EXPECT_EQ("-42", format("{0:-}", -42));
   EXPECT_EQ("42", format("{0:-}", 42));
   EXPECT_THROW_MSG(format("{0:-}", 42u),
-      FormatError, "format specifier '-' requires signed argument");
+      format_error, "format specifier '-' requires signed argument");
   EXPECT_EQ("42", format("{0:-}", 42l));
   EXPECT_THROW_MSG(format("{0:-}", 42ul),
-      FormatError, "format specifier '-' requires signed argument");
+      format_error, "format specifier '-' requires signed argument");
   EXPECT_EQ("42", format("{0:-}", 42ll));
   EXPECT_THROW_MSG(format("{0:-}", 42ull),
-      FormatError, "format specifier '-' requires signed argument");
+      format_error, "format specifier '-' requires signed argument");
   EXPECT_EQ("42", format("{0:-}", 42.0));
   EXPECT_EQ("42", format("{0:-}", 42.0l));
   EXPECT_THROW_MSG(format("{0:-", 'c'),
-      FormatError, "missing '}' in format string");
+      format_error, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:-}", 'c'),
-      FormatError, "invalid format specifier for char");
+      format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:-}", "abc"),
-      FormatError, "format specifier '-' requires numeric argument");
+      format_error, "format specifier '-' requires numeric argument");
   EXPECT_THROW_MSG(format("{0:-}", reinterpret_cast<void*>(0x42)),
-      FormatError, "format specifier '-' requires numeric argument");
+      format_error, "format specifier '-' requires numeric argument");
 }
 
 TEST(FormatterTest, SpaceSign) {
@@ -790,23 +790,23 @@ TEST(FormatterTest, SpaceSign) {
   EXPECT_EQ("-42", format("{0: }", -42));
   EXPECT_EQ(" 42", format("{0: }", 42));
   EXPECT_THROW_MSG(format("{0: }", 42u),
-      FormatError, "format specifier ' ' requires signed argument");
+      format_error, "format specifier ' ' requires signed argument");
   EXPECT_EQ(" 42", format("{0: }", 42l));
   EXPECT_THROW_MSG(format("{0: }", 42ul),
-      FormatError, "format specifier ' ' requires signed argument");
+      format_error, "format specifier ' ' requires signed argument");
   EXPECT_EQ(" 42", format("{0: }", 42ll));
   EXPECT_THROW_MSG(format("{0: }", 42ull),
-      FormatError, "format specifier ' ' requires signed argument");
+      format_error, "format specifier ' ' requires signed argument");
   EXPECT_EQ(" 42", format("{0: }", 42.0));
   EXPECT_EQ(" 42", format("{0: }", 42.0l));
   EXPECT_THROW_MSG(format("{0: ", 'c'),
-      FormatError, "missing '}' in format string");
+      format_error, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0: }", 'c'),
-      FormatError, "invalid format specifier for char");
+      format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0: }", "abc"),
-      FormatError, "format specifier ' ' requires numeric argument");
+      format_error, "format specifier ' ' requires numeric argument");
   EXPECT_THROW_MSG(format("{0: }", reinterpret_cast<void*>(0x42)),
-      FormatError, "format specifier ' ' requires numeric argument");
+      format_error, "format specifier ' ' requires numeric argument");
 }
 
 TEST(FormatterTest, HashFlag) {
@@ -845,13 +845,13 @@ TEST(FormatterTest, HashFlag) {
   EXPECT_EQ("-42.0000", format("{0:#}", -42.0));
   EXPECT_EQ("-42.0000", format("{0:#}", -42.0l));
   EXPECT_THROW_MSG(format("{0:#", 'c'),
-      FormatError, "missing '}' in format string");
+      format_error, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:#}", 'c'),
-      FormatError, "invalid format specifier for char");
+      format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:#}", "abc"),
-      FormatError, "format specifier '#' requires numeric argument");
+      format_error, "format specifier '#' requires numeric argument");
   EXPECT_THROW_MSG(format("{0:#}", reinterpret_cast<void*>(0x42)),
-      FormatError, "format specifier '#' requires numeric argument");
+      format_error, "format specifier '#' requires numeric argument");
 }
 
 TEST(FormatterTest, ZeroFlag) {
@@ -865,29 +865,29 @@ TEST(FormatterTest, ZeroFlag) {
   EXPECT_EQ("-0042", format("{0:05}", -42.0));
   EXPECT_EQ("-0042", format("{0:05}", -42.0l));
   EXPECT_THROW_MSG(format("{0:0", 'c'),
-      FormatError, "missing '}' in format string");
+      format_error, "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:05}", 'c'),
-      FormatError, "invalid format specifier for char");
+      format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:05}", "abc"),
-      FormatError, "format specifier '0' requires numeric argument");
+      format_error, "format specifier '0' requires numeric argument");
   EXPECT_THROW_MSG(format("{0:05}", reinterpret_cast<void*>(0x42)),
-      FormatError, "format specifier '0' requires numeric argument");
+      format_error, "format specifier '0' requires numeric argument");
 }
 
 TEST(FormatterTest, Width) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:%u", UINT_MAX);
   increment(format_str + 3);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
 
   safe_sprintf(format_str, "{0:%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
   safe_sprintf(format_str, "{0:%u}", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
   EXPECT_EQ(" -42", format("{0:4}", -42));
   EXPECT_EQ("   42", format("{0:5}", 42u));
   EXPECT_EQ("   -42", format("{0:6}", -42l));
@@ -905,45 +905,45 @@ TEST(FormatterTest, RuntimeWidth) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:{%u", UINT_MAX);
   increment(format_str + 4);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
   format_str[size + 1] = '}';
   format_str[size + 2] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
 
   EXPECT_THROW_MSG(format("{0:{", 0),
-      FormatError, "invalid format string");
+      format_error, "invalid format string");
   EXPECT_THROW_MSG(format("{0:{}", 0),
-      FormatError, "cannot switch from manual to automatic argument indexing");
+      format_error, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{0:{?}}", 0),
-      FormatError, "invalid format string");
+      format_error, "invalid format string");
   EXPECT_THROW_MSG(format("{0:{1}}", 0),
-      FormatError, "argument index out of range");
+      format_error, "argument index out of range");
 
   EXPECT_THROW_MSG(format("{0:{0:}}", 0),
-      FormatError, "invalid format string");
+      format_error, "invalid format string");
 
   EXPECT_THROW_MSG(format("{0:{1}}", 0, -1),
-      FormatError, "negative width");
+      format_error, "negative width");
   EXPECT_THROW_MSG(format("{0:{1}}", 0, (INT_MAX + 1u)),
-      FormatError, "number is too big");
+      format_error, "number is too big");
   EXPECT_THROW_MSG(format("{0:{1}}", 0, -1l),
-      FormatError, "negative width");
+      format_error, "negative width");
   if (fmt::internal::const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG(format("{0:{1}}", 0, (value + 1)),
-        FormatError, "number is too big");
+        format_error, "number is too big");
   }
   EXPECT_THROW_MSG(format("{0:{1}}", 0, (INT_MAX + 1ul)),
-      FormatError, "number is too big");
+      format_error, "number is too big");
 
   EXPECT_THROW_MSG(format("{0:{1}}", 0, '0'),
-      FormatError, "width is not integer");
+      format_error, "width is not integer");
   EXPECT_THROW_MSG(format("{0:{1}}", 0, 0.0),
-      FormatError, "width is not integer");
+      format_error, "width is not integer");
 
   EXPECT_EQ(" -42", format("{0:{1}}", -42, 4));
   EXPECT_EQ("   42", format("{0:{1}}", 42u, 5));
@@ -963,57 +963,57 @@ TEST(FormatterTest, Precision) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:.%u", UINT_MAX);
   increment(format_str + 4);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
 
   safe_sprintf(format_str, "{0:.%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
   safe_sprintf(format_str, "{0:.%u}", INT_MAX + 1u);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
 
   EXPECT_THROW_MSG(format("{0:.", 0),
-      FormatError, "missing precision specifier");
+      format_error, "missing precision specifier");
   EXPECT_THROW_MSG(format("{0:.}", 0),
-      FormatError, "missing precision specifier");
+      format_error, "missing precision specifier");
 
   EXPECT_THROW_MSG(format("{0:.2", 0),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42u),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42u),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42l),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42l),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42ul),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ul),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42ll),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ll),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2}", 42ull),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ull),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:3.0}", 'x'),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345));
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345l));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
-      FormatError, "precision not allowed in pointer format specifier");
+      format_error, "precision not allowed in pointer format specifier");
   EXPECT_THROW_MSG(format("{0:.2f}", reinterpret_cast<void*>(0xcafe)),
-      FormatError, "precision not allowed in pointer format specifier");
+      format_error, "precision not allowed in pointer format specifier");
 
   EXPECT_EQ("st", format("{0:.2}", "str"));
 }
@@ -1022,81 +1022,81 @@ TEST(FormatterTest, RuntimePrecision) {
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{0:.{%u", UINT_MAX);
   increment(format_str + 5);
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
   std::size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
   format_str[size + 1] = '}';
   format_str[size + 2] = 0;
-  EXPECT_THROW_MSG(format(format_str, 0), FormatError, "number is too big");
+  EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
 
   EXPECT_THROW_MSG(format("{0:.{", 0),
-      FormatError, "invalid format string");
+      format_error, "invalid format string");
   EXPECT_THROW_MSG(format("{0:.{}", 0),
-      FormatError, "cannot switch from manual to automatic argument indexing");
+      format_error, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{0:.{?}}", 0),
-      FormatError, "invalid format string");
+      format_error, "invalid format string");
   EXPECT_THROW_MSG(format("{0:.{1}", 0, 0),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0),
-      FormatError, "argument index out of range");
+      format_error, "argument index out of range");
 
   EXPECT_THROW_MSG(format("{0:.{0:}}", 0),
-      FormatError, "invalid format string");
+      format_error, "invalid format string");
 
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, -1),
-      FormatError, "negative precision");
+      format_error, "negative precision");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, (INT_MAX + 1u)),
-      FormatError, "number is too big");
+      format_error, "number is too big");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, -1l),
-      FormatError, "negative precision");
+      format_error, "negative precision");
   if (fmt::internal::const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG(format("{0:.{1}}", 0, (value + 1)),
-        FormatError, "number is too big");
+        format_error, "number is too big");
   }
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, (INT_MAX + 1ul)),
-      FormatError, "number is too big");
+      format_error, "number is too big");
 
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, '0'),
-      FormatError, "precision is not integer");
+      format_error, "precision is not integer");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, 0.0),
-      FormatError, "precision is not integer");
+      format_error, "precision is not integer");
 
   EXPECT_THROW_MSG(format("{0:.{1}}", 42, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42u, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42u, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42l, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42l, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42ul, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42ul, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42ll, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42ll, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42ull, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42ull, 2),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_THROW_MSG(format("{0:3.{1}}", 'x', 0),
-      FormatError, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed in integer format specifier");
   EXPECT_EQ("1.2", format("{0:.{1}}", 1.2345, 2));
   EXPECT_EQ("1.2", format("{1:.{0}}", 2, 1.2345l));
 
   EXPECT_THROW_MSG(format("{0:.{1}}", reinterpret_cast<void*>(0xcafe), 2),
-      FormatError, "precision not allowed in pointer format specifier");
+      format_error, "precision not allowed in pointer format specifier");
   EXPECT_THROW_MSG(format("{0:.{1}f}", reinterpret_cast<void*>(0xcafe), 2),
-      FormatError, "precision not allowed in pointer format specifier");
+      format_error, "precision not allowed in pointer format specifier");
 
   EXPECT_EQ("st", format("{0:.{1}}", "str", 2));
 }
@@ -1116,7 +1116,7 @@ void check_unknown_types(
       safe_sprintf(message, "unknown format code '\\x%02x' for %s", c,
                    type_name);
     }
-    EXPECT_THROW_MSG(format(format_str, value), FormatError, message)
+    EXPECT_THROW_MSG(format(format_str, value), format_error, message)
       << format_str << " " << message;
   }
 }
@@ -1138,7 +1138,7 @@ TEST(FormatterTest, FormatShort) {
 
 TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(format("{0:v", 42),
-      FormatError, "missing '}' in format string");
+      format_error, "missing '}' in format string");
   check_unknown_types(42, "bBdoxXn", "integer");
 }
 
@@ -1328,7 +1328,7 @@ TEST(FormatterTest, FormatCString) {
   char nonconst[] = "nonconst";
   EXPECT_EQ("nonconst", format("{0}", nonconst));
   EXPECT_THROW_MSG(format("{0}", reinterpret_cast<const char*>(0)),
-      FormatError, "string pointer is null");
+      format_error, "string pointer is null");
 }
 
 TEST(FormatterTest, FormatSCharString) {
@@ -1374,7 +1374,7 @@ void format_arg(fmt::BasicFormatter<char> &f, const char *, const Date &d) {
 
 TEST(FormatterTest, FormatCustom) {
   Date date(2012, 12, 9);
-  EXPECT_THROW_MSG(fmt::format("{:s}", date), FormatError,
+  EXPECT_THROW_MSG(fmt::format("{:s}", date), format_error,
                    "unmatched '}' in format string");
 }
 
@@ -1477,7 +1477,7 @@ TEST(FormatterTest, Examples) {
 
   EXPECT_EQ("The answer is 42", format("The answer is {}", 42));
   EXPECT_THROW_MSG(
-    format("The answer is {:d}", "forty-two"), FormatError,
+    format("The answer is {:d}", "forty-two"), format_error,
     "unknown format code 'd' for string");
 
   EXPECT_EQ(L"Cyrillic letter \x42e",
