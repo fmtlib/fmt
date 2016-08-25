@@ -516,24 +516,24 @@ The meaning of the various alignment options is as follows:
 </thead>
 <tbody>
 <tr>
-<td>'&lt;'</td>
+<td><code>'&lt;'</code></td>
 <td>Forces the field to be left-aligned within the available space (this is
     the default for most objects).</td>
 </tr>
 <tr>
-<td>'&gt;'</td>
+<td><code>'&gt;'</code></td>
 <td>Forces the field to be right-aligned within the available space (this is
     the default for numbers).</td>
 </tr>
 <tr>
-<td>'='</td>
+<td><code>'='</code></td>
 <td>Forces the padding to be placed after the sign (if any) but before the
     digits. This is used for printing fields in the form
     <code>+000000120</code>. This alignment option is only valid for numeric
     types.</td>
 </tr>
 <tr>
-<td>'^'</td>
+<td><code>'^'</code></td>
 <td>Forces the field to be centered within the available space.</td>
 </tr>
 </tbody>
@@ -556,12 +556,12 @@ the following:
 </thead>
 <tbody>
 <tr>
-<td>'+'</td>
+<td><code>'+'</code></td>
 <td>Indicates that a sign should be used for both positive as well as negative
     numbers.</td>
 </tr>
 <tr>
-<td>'-'</td>
+<td><code>'-'</code></td>
 <td>Indicates that a sign should be used only for negative numbers (this is
     the default behavior).</td>
 </tr>
@@ -573,7 +573,223 @@ the following:
 </tbody>
 </table>
 
-<p>TODO</p>
+<p>
+The <code>'#'</code> option causes the <em>alternate form</em to be used for
+the conversion. The alternate form is defined differently for different types.
+This option is only valid for integer and floating-point types. For integers,
+when binary, octal, or hexadecimal output is used, this option adds the prefix
+respective <code>"0b"</code> (<code>"0B"</code>), <code>"0"</code>, or
+<code>"0x"</code> (<code>"0X"</code>) to the output value. Whether the prefix
+is lower-case or upper-case is determined by the case of the type specifier,
+for example, the prefix <code>"0x"</code> is used for the type <code>'x'</code>
+and <code>"0X"</code> is used for <code>'X'</code>. For floating-point numbers
+the alternate form causes the result of the conversion to always contain a
+decimal-point character, even if no digits follow it. Normally, a decimal-point
+character appears in the result of these conversions only if a digit follows it.
+In addition, for <code>'g'</code> and <code>'G'</code> conversions, trailing
+zeros are not removed from the result.
+</p>
+
+<p>
+<code>width</code> is a decimal integer defining the minimum field width. If
+not specified, then the field width will be determined by the content.
+</p>
+
+<p>
+Preceding the <code>width</code> field by a zero (<code>'0'</code>) character
+enables sign-aware zero-padding for numeric types. This is equivalent to a
+<code>fill</code> character of <code>'0'</code> with an <code>alignment</code>
+type of <code>'='</code>.
+</p>
+
+<p>
+The <code>precision</code> is a decimal number indicating how many digits should
+be displayed after the decimal point for a floating-point value formatted with
+<code>'f'</code> and <code>'F'</code>, or before and after the decimal point
+for a floating-point value formatted with <code>'g'</code> or <code>'G'</code>.
+For non-number types the field indicates the maximum field size - in other
+words, how many characters will be used from the field content. The
+<code>precision</code> is not allowed for integer, character, Boolean, and
+pointer values.
+</p>
+
+<p>
+Finally, the <code>type</code> determines how the data should be presented.
+</p>
+
+<p>The available string presentation types are:</p>
+
+<table>
+<thead>
+<tr><th>Type</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'s'</code></td>
+<td>String format. This is the default type for strings and may be omitted.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>The same as <code>'s'</code>.</td>
+</tr>
+</tbody>
+</table>
+
+<p>The available character presentation types are:</p>
+
+<table>
+<thead>
+<tr><th>Type</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'c'</code></td>
+<td>Character format. This is the default type for characters and may be
+    omitted.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>The same as <code>'c'</code>.</td>
+</tr>
+</tbody>
+</table>
+
+<p>The available integer presentation types are:</p>
+
+<table>
+<thead>
+<tr><th>Type</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'b'</code></td>
+<td>Binary format. Outputs the number in base 2. Using the <code>'#'</code>
+    option with this type adds the prefix <code>"0b"</code> to the output
+    value.</td>
+</tr>
+<tr>
+<td><code>'B'</code></td>
+<td>Binary format. Outputs the number in base 2. Using the <code>'#'</code>
+    option with this type adds the prefix <code>"0B"</code> to the output
+    value.</td>
+</tr>
+<tr>
+<td><code>'d'</code></td>
+<td>Decimal integer. Outputs the number in base 10.</td>
+</tr>
+<tr>
+<td><code>'o'</code></td>
+<td>Octal format. Outputs the number in base 8.</td>
+</tr>
+<tr>
+<td><code>'x'</code></td>
+<td>Hex format. Outputs the number in base 16, using lower-case letters for the
+    digits above 9. Using the <code>'#'</code> option with this type adds the
+    prefix <code>"0x"</code> to the output value.</td>
+</tr>
+<tr>
+<td><code>'X'</code></td>
+<td>Hex format. Outputs the number in base 16, using upper-case letters for the
+    digits above 9. Using the <code>'#'</code> option with this type adds the
+    prefix <code>"0X"</code> to the output value.</td>
+</tr>
+<tr>
+<td><code>'n'</code></td>
+<td>Number. This is the same as <code>'d'</code>, except that it uses the
+    current locale setting to insert the appropriate number separator
+    characters.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>The same as <code>'d'</code>.</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Integer presentation types can also be used with character and Boolean values.
+Boolean values are formatted using textual representation, either true or false,
+if the presentation type is not specified.
+</p>
+
+<p>The available presentation types for floating-point values are:</p>
+
+<table>
+<thead>
+<tr><th>Type</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'a'</code></td>
+<td>Hexadecimal floating point format. Prints the number in base 16 with prefix
+    <code>"0x"</code> and lower-case letters for digits above 9. Uses
+    <code>'p'</code> to indicate the exponent.</td>
+</tr>
+<tr>
+<td><code>'A'</code></td>
+<td>Same as <code>'a'</code> except it uses upper-case letters for the prefix,
+    digits above 9 and to indicate the exponent.</td>
+</tr>
+<tr>
+<td><code>'e'</code></td>
+<td>Exponent notation. Prints the number in scientific notation using the
+    letter <code>'e'</code> to indicate the exponent.</td>
+</tr>
+<tr>
+<td><code>'E'</code></td>
+<td>Exponent notation. Same as <code>'e'</code> except it uses an upper-case
+    <code>'E'</code> as the separator character.</td>
+</tr>
+<tr>
+<td><code>'f'</code></td>
+<td>Fixed point. Displays the number as a fixed-point number.</td>
+</tr>
+<tr>
+<td><code>'F'</code></td>
+<td>Fixed point. Same as <code>'f'</code>, but converts <code>nan</code> to
+    <code>NAN</code> and <code>inf</code> to <code>INF</code>.</td>
+</tr>
+<tr>
+<td><code>'g'</code></td>
+<td>General format. For a given precision <code>p >= 1</code>, this rounds the
+    number to <code>p</code> significant digits and then formats the result in
+    either fixed-point format or in scientific notation, depending on its
+    magnitude.
+
+    A precision of <code>0</code> is treated as equivalent to a precision of
+    <code>1</code>.</td>
+</tr>
+<tr>
+<td><code>'n'</code></td>
+<td>Number. This is the same as <code>'g'</code>, except that it uses the
+    current locale setting to insert the appropriate number separator
+    characters.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>The same as <code>'g'</code>.</td>
+</tr>
+</tbody>
+</table>
+
+<p>The available presentation types for pointers are:</p>
+
+<table>
+<thead>
+<tr><th>Type</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'p'</code></td>
+<td>Pointer format. This is the default type for pointers and may be
+    omitted.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>The same as <code>'p'</code>.</td>
+</tr>
+</tbody>
+</table>
 
 <h3>Class <code>format_error</code></h3>
 
