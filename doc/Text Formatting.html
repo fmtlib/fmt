@@ -464,11 +464,9 @@ described in the next section.
 
 <p>
 A <code>format-spec</code> field can also include nested replacement fields
-within it. These nested replacement fields can contain only an argument index;
-format specifications are not allowed. Formatting is performed as if the
-replacement fields within the <code>format-spec</code> are substituted before
-the format-spec string is interpreted. This allows the formatting of a value
-to be dynamically specified.
+in certain position within it. These nested replacement fields can contain only
+an argument index; format specifications are not allowed. This allows the
+formatting of a value to be dynamically specified.
 </p>
 
 <h4><a name="FormatSpec">Format specification mini-language</a></h4>
@@ -537,6 +535,40 @@ The meaning of the various alignment options is as follows:
 <tr>
 <td>'^'</td>
 <td>Forces the field to be centered within the available space.</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Note that unless a minimum field width is defined, the field width will always
+be the same size as the data to fill it, so that the alignment option has no
+meaning in this case.
+</p>
+
+<p>
+The <code>sign</code> option is only valid for number types, and can be one of
+the following:
+</p>
+
+<table>
+<thead>
+<tr><th>Option</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>'+'</td>
+<td>Indicates that a sign should be used for both positive as well as negative
+    numbers.</td>
+</tr>
+<tr>
+<td>'-'</td>
+<td>Indicates that a sign should be used only for negative numbers (this is
+    the default behavior).</td>
+</tr>
+<tr>
+<td>space</td>
+<td>Indicates that a leading space should be used on positive numbers, and a
+    minus sign on negative numbers.</td>
 </tr>
 </tbody>
 </table>
