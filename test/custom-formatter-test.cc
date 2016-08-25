@@ -45,7 +45,7 @@ class CustomPrintfArgFormatter :
   }
 };
 
-std::string custom_format(const char *format_str, fmt::ArgList args) {
+std::string custom_format(const char *format_str, fmt::format_args args) {
   fmt::MemoryWriter writer;
   // Pass custom argument formatter as a template arg to BasicFormatter.
   fmt::BasicFormatter<char, CustomArgFormatter> formatter(args, writer);
@@ -54,7 +54,7 @@ std::string custom_format(const char *format_str, fmt::ArgList args) {
 }
 FMT_VARIADIC(std::string, custom_format, const char *)
 
-std::string custom_sprintf(const char* format_str, fmt::ArgList args){
+std::string custom_sprintf(const char* format_str, fmt::format_args args){
   fmt::MemoryWriter writer;
   fmt::PrintfFormatter<char, CustomPrintfArgFormatter> formatter(args, writer);
   formatter.format(format_str);

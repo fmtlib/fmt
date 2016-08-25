@@ -1351,8 +1351,8 @@ template <typename Char>
 class ArgMap;
 }  // namespace internal
 
-/** An argument list. */
-class ArgList {
+/** Formatting arguments. */
+class format_args {
  private:
   // To reduce compiled code size per formatting function call, types of first
   // MAX_PACKED_ARGS arguments are passed in the types_ field.
@@ -1381,11 +1381,11 @@ class ArgList {
   // Maximum number of arguments with packed types.
   enum { MAX_PACKED_ARGS = 16 };
 
-  ArgList() : types_(0) {}
+  format_args() : types_(0) {}
 
-  ArgList(ULongLong types, const internal::Value *values)
+  format_args(ULongLong types, const internal::Value *values)
   : types_(types), values_(values) {}
-  ArgList(ULongLong types, const internal::Arg *args)
+  format_args(ULongLong types, const internal::Arg *args)
   : types_(types), args_(args) {}
 
   /** Returns the argument at specified index. */
@@ -1809,7 +1809,7 @@ class ArgMap {
   MapType map_;
 
  public:
-  FMT_API void init(const ArgList &args);
+  FMT_API void init(const format_args &args);
 
   const internal::Arg* find(const fmt::BasicStringRef<Char> &name) const {
     // The list is unsorted, so just return the first matching name.
@@ -1922,16 +1922,16 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
 
 class FormatterBase {
  private:
-  ArgList args_;
+  format_args args_;
   int next_arg_index_;
 
   // Returns the argument with specified index.
   FMT_API Arg do_get_arg(unsigned arg_index, const char *&error);
 
  protected:
-  const ArgList &args() const { return args_; }
+  const format_args &args() const { return args_; }
 
-  explicit FormatterBase(const ArgList &args) {
+  explicit FormatterBase(const format_args &args) {
     args_ = args;
     next_arg_index_ = 0;
   }
@@ -2053,7 +2053,7 @@ class BasicFormatter : private internal::FormatterBase {
    appropriate lifetimes.
    \endrst
    */
-  BasicFormatter(const ArgList &args, BasicWriter<Char> &w)
+  BasicFormatter(const format_args &args, BasicWriter<Char> &w)
     : internal::FormatterBase(args), writer_(w) {}
 
   /** Returns a reference to the writer associated with this formatter. */
@@ -2093,7 +2093,7 @@ inline uint64_t make_type(const T &arg) {
   return MakeValue< BasicFormatter<char> >::type(arg);
 }
 
-template <unsigned N, bool/*IsPacked*/= (N < ArgList::MAX_PACKED_ARGS)>
+template <unsigned N, bool/*IsPacked*/= (N < format_args::MAX_PACKED_ARGS)>
 struct ArgArray;
 
 template <unsigned N>
@@ -2143,7 +2143,7 @@ inline uint64_t make_type(const Arg &first, const Args & ... tail) {
     typedef fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
     typename ArgArray::Type array{ \
       ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
-    func(arg0, fmt::ArgList(fmt::internal::make_type(args...), array)); \
+    func(arg0, fmt::format_args(fmt::internal::make_type(args...), array)); \
   }
 
 // Defines a variadic constructor.
@@ -2153,7 +2153,7 @@ inline uint64_t make_type(const Arg &first, const Args & ... tail) {
     typedef fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
     typename ArgArray::Type array{ \
       ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
-    func(arg0, arg1, fmt::ArgList(fmt::internal::make_type(args...), array)); \
+    func(arg0, arg1, fmt::format_args(fmt::internal::make_type(args...), array)); \
   }
 
 // Generates a comma-separated list with results of applying f to pairs
@@ -2184,7 +2184,7 @@ inline uint64_t make_type(const Arg &first, const Args & ... tail) {
 */
 class SystemError : public internal::RuntimeError {
  private:
-  void init(int err_code, CStringRef format_str, ArgList args);
+  void init(int err_code, CStringRef format_str, format_args args);
 
  protected:
   int error_code_;
@@ -2213,7 +2213,7 @@ class SystemError : public internal::RuntimeError {
    \endrst
   */
   SystemError(int error_code, CStringRef message) {
-    init(error_code, message, ArgList());
+    init(error_code, message, format_args());
   }
   FMT_VARIADIC_CTOR(SystemError, init, int, CStringRef)
 
@@ -2433,7 +2433,7 @@ class BasicWriter {
     See also :ref:`syntax`.
     \endrst
    */
-  void write(BasicCStringRef<Char> format, ArgList args) {
+  void write(BasicCStringRef<Char> format, format_args args) {
     BasicFormatter<Char>(args, *this).format(format);
   }
   FMT_VARIADIC_VOID(write, BasicCStringRef<Char>)
@@ -3030,7 +3030,7 @@ FMT_API void report_system_error(int error_code,
 /** A Windows error. */
 class WindowsError : public SystemError {
  private:
-  FMT_API void init(int error_code, CStringRef format_str, ArgList args);
+  FMT_API void init(int error_code, CStringRef format_str, format_args args);
 
  public:
   /**
@@ -3062,7 +3062,7 @@ class WindowsError : public SystemError {
    \endrst
   */
   WindowsError(int error_code, CStringRef message) {
-    init(error_code, message, ArgList());
+    init(error_code, message, format_args());
   }
   FMT_VARIADIC_CTOR(WindowsError, init, int, CStringRef)
 };
@@ -3082,7 +3082,7 @@ enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
   Example:
     print_colored(fmt::RED, "Elapsed time: {0:.2f} seconds", 1.23);
  */
-FMT_API void print_colored(Color c, CStringRef format, ArgList args);
+FMT_API void print_colored(Color c, CStringRef format, format_args args);
 
 /**
   \rst
@@ -3093,13 +3093,13 @@ FMT_API void print_colored(Color c, CStringRef format, ArgList args);
     std::string message = format("The answer is {}", 42);
   \endrst
 */
-inline std::string format(CStringRef format_str, ArgList args) {
+inline std::string format(CStringRef format_str, format_args args) {
   MemoryWriter w;
   w.write(format_str, args);
   return w.str();
 }
 
-inline std::wstring format(WCStringRef format_str, ArgList args) {
+inline std::wstring format(WCStringRef format_str, format_args args) {
   WMemoryWriter w;
   w.write(format_str, args);
   return w.str();
@@ -3114,7 +3114,7 @@ inline std::wstring format(WCStringRef format_str, ArgList args) {
     print(stderr, "Don't {}!", "panic");
   \endrst
  */
-FMT_API void print(std::FILE *f, CStringRef format_str, ArgList args);
+FMT_API void print(std::FILE *f, CStringRef format_str, format_args args);
 
 /**
   \rst
@@ -3125,7 +3125,7 @@ FMT_API void print(std::FILE *f, CStringRef format_str, ArgList args);
     print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-FMT_API void print(CStringRef format_str, ArgList args);
+FMT_API void print(CStringRef format_str, format_args args);
 
 /**
   Fast integer formatter.
@@ -3294,7 +3294,7 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
     typename ArgArray::Type array{ \
       ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(fmt::internal::make_type(args...), array)); \
+      fmt::format_args(fmt::internal::make_type(args...), array)); \
   }
 
 /**
@@ -3305,7 +3305,7 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
   **Example**::
 
     void print_error(const char *file, int line, const char *format,
-                     fmt::ArgList args) {
+                     fmt::format_args args) {
       fmt::print("{}: {}: ", file, line);
       fmt::print(format, args);
     }

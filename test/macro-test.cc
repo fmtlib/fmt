@@ -67,7 +67,7 @@ TEST(UtilTest, NArg) {
 int result;
 
 #define MAKE_TEST(func) \
-  void func(const char *, const fmt::ArgList &args) { \
+  void func(const char *, const fmt::format_args &args) { \
     result = 0; \
     for (unsigned i = 0; args[i].type; ++i) \
       result += args[i].int_value; \
@@ -91,7 +91,7 @@ struct S {};
 
 #define GET_TYPE(n) S<n>
 
-int test_variadic(FMT_GEN(10, GET_TYPE), const fmt::ArgList &args) { \
+int test_variadic(FMT_GEN(10, GET_TYPE), const fmt::format_args &args) { \
   int result = 0; \
   for (unsigned i = 0; args[i].type; ++i) \
     result += args[i].int_value; \

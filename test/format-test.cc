@@ -1564,7 +1564,7 @@ TEST(StrTest, Convert) {
 }
 
 std::string format_message(int id, const char *format,
-    const fmt::ArgList &args) {
+    const fmt::format_args &args) {
   MemoryWriter w;
   w.write("[{}] ", id);
   w.write(format, args);
@@ -1643,7 +1643,7 @@ class MockArgFormatter :
   MOCK_METHOD1(visit_int, void (int value));
 };
 
-void custom_format(const char *format_str, fmt::ArgList args) {
+void custom_format(const char *format_str, fmt::format_args args) {
   fmt::MemoryWriter writer;
   fmt::BasicFormatter<char, MockArgFormatter> formatter(args, writer);
   formatter.format(format_str);

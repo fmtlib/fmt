@@ -95,7 +95,7 @@ void format_arg(BasicFormatter<Char, ArgFormatter> &f,
     print(cerr, "Don't {}!", "panic");
   \endrst
  */
-FMT_API void print(std::ostream &os, CStringRef format_str, ArgList args);
+FMT_API void print(std::ostream &os, CStringRef format_str, format_args args);
 FMT_VARIADIC(void, print, std::ostream &, CStringRef)
 }  // namespace fmt
 

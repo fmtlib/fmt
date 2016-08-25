@@ -223,7 +223,7 @@ FMT_FUNC void format_system_error(
 }  // namespace internal
 
 FMT_FUNC void SystemError::init(
-    int err_code, CStringRef format_str, ArgList args) {
+    int err_code, CStringRef format_str, format_args args) {
   error_code_ = err_code;
   MemoryWriter w;
   format_system_error(w, err_code, format(format_str, args));
@@ -347,7 +347,7 @@ FMT_FUNC int internal::UTF16ToUTF8::convert(WStringRef s) {
 }
 
 FMT_FUNC void WindowsError::init(
-    int err_code, CStringRef format_str, ArgList args) {
+    int err_code, CStringRef format_str, format_args args) {
   error_code_ = err_code;
   MemoryWriter w;
   internal::format_windows_error(w, err_code, format(format_str, args));
@@ -404,13 +404,13 @@ FMT_FUNC void format_system_error(
 }
 
 template <typename Char>
-void internal::ArgMap<Char>::init(const ArgList &args) {
+void internal::ArgMap<Char>::init(const format_args &args) {
   if (!map_.empty())
     return;
   typedef internal::NamedArg<Char> NamedArg;
   const NamedArg *named_arg = 0;
   bool use_values =
-      args.type(ArgList::MAX_PACKED_ARGS - 1) == internal::Arg::NONE;
+      args.type(format_args::MAX_PACKED_ARGS - 1) == internal::Arg::NONE;
   if (use_values) {
     for (unsigned i = 0;/*nothing*/; ++i) {
       internal::Arg::Type arg_type = args.type(i);
@@ -427,14 +427,14 @@ void internal::ArgMap<Char>::init(const ArgList &args) {
     }
     return;
   }
-  for (unsigned i = 0; i != ArgList::MAX_PACKED_ARGS; ++i) {
+  for (unsigned i = 0; i != format_args::MAX_PACKED_ARGS; ++i) {
     internal::Arg::Type arg_type = args.type(i);
     if (arg_type == internal::Arg::NAMED_ARG) {
       named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
       map_.push_back(Pair(named_arg->name, *named_arg));
     }
   }
-  for (unsigned i = ArgList::MAX_PACKED_ARGS;/*nothing*/; ++i) {
+  for (unsigned i = format_args::MAX_PACKED_ARGS;/*nothing*/; ++i) {
     switch (args.args_[i].type) {
     case internal::Arg::NONE:
       return;
@@ -483,17 +483,17 @@ FMT_FUNC void report_windows_error(
 }
 #endif
 
-FMT_FUNC void print(std::FILE *f, CStringRef format_str, ArgList args) {
+FMT_FUNC void print(std::FILE *f, CStringRef format_str, format_args args) {
   MemoryWriter w;
   w.write(format_str, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
 
-FMT_FUNC void print(CStringRef format_str, ArgList args) {
+FMT_FUNC void print(CStringRef format_str, format_args args) {
   print(stdout, format_str, args);
 }
 
-FMT_FUNC void print_colored(Color c, CStringRef format, ArgList args) {
+FMT_FUNC void print_colored(Color c, CStringRef format, format_args args) {
   char escape[] = "\x1b[30m";
   escape[3] = static_cast<char>('0' + c);
   std::fputs(escape, stdout);
@@ -502,9 +502,9 @@ FMT_FUNC void print_colored(Color c, CStringRef format, ArgList args) {
 }
 
 template <typename Char>
-void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args);
+void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, format_args args);
 
-FMT_FUNC int fprintf(std::FILE *f, CStringRef format, ArgList args) {
+FMT_FUNC int fprintf(std::FILE *f, CStringRef format, format_args args) {
   MemoryWriter w;
   printf(w, format, args);
   std::size_t size = w.size();
@@ -519,7 +519,7 @@ template struct internal::BasicData<void>;
 
 template void internal::FixedBuffer<char>::grow(std::size_t);
 
-template void internal::ArgMap<char>::init(const ArgList &args);
+template void internal::ArgMap<char>::init(const format_args &args);
 
 template void PrintfFormatter<char>::format(CStringRef format);
 
@@ -535,7 +535,7 @@ template int internal::CharTraits<char>::format_float(
 
 template void internal::FixedBuffer<wchar_t>::grow(std::size_t);
 
-template void internal::ArgMap<wchar_t>::init(const ArgList &args);
+template void internal::ArgMap<wchar_t>::init(const format_args &args);
 
 template void PrintfFormatter<wchar_t>::format(WCStringRef format);
 
