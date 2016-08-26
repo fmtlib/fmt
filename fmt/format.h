@@ -28,6 +28,7 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
+#include <array>
 #include <cassert>
 #include <clocale>
 #include <cmath>
