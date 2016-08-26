@@ -37,6 +37,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 #include <utility>
 
@@ -2093,34 +2094,33 @@ inline uint64_t make_type(const T &arg) {
   return MakeValue< BasicFormatter<char> >::type(arg);
 }
 
-template <unsigned N, bool/*IsPacked*/= (N < format_args::MAX_PACKED_ARGS)>
-struct ArgArray;
+template <typename ...Args>
+class format_arg_store {
+ private:
+  static const size_t NUM_ARGS = sizeof...(Args);
+  static const bool PACKED = NUM_ARGS <= format_args::MAX_PACKED_ARGS;
 
-template <unsigned N>
-struct ArgArray<N, true/*IsPacked*/> {
-  typedef Value Type[N > 0 ? N : 1];
+  typedef typename std::conditional<PACKED, Value, Arg>::type value_type;
 
-  template <typename Formatter, typename T>
-  static Value make(const T &value) {
-#ifdef __clang__
-    Value result = MakeValue<Formatter>(value);
-    // Workaround a bug in Apple LLVM version 4.2 (clang-425.0.28) of clang:
-    // https://github.com/fmtlib/fmt/issues/276
-    (void)result.custom.format;
-    return result;
-#else
-    return MakeValue<Formatter>(value);
-#endif
-  }
+  // If the arguments are not packed we add one more element to mark the end.
+  std::array<value_type, NUM_ARGS + (PACKED ? 0 : 1)> data_;
+
+  template <typename Formatter, typename ...A>
+  friend format_arg_store<A...> make_format_args(const A & ... args);
+
+ public:
+  template <typename Formatter>
+  format_arg_store(const Args &... args, Formatter *)
+    : data_{MakeValue<Formatter>(args)...} {}
+
+  const value_type *data() const { return data_.data(); }
 };
 
-template <unsigned N>
-struct ArgArray<N, false/*IsPacked*/> {
-  typedef Arg Type[N + 1]; // +1 for the list end Arg::NONE
-
-  template <typename Formatter, typename T>
-  static Arg make(const T &value) { return MakeArg<Formatter>(value); }
-};
+template <typename Formatter, typename ...Args>
+inline format_arg_store<Args...> make_format_args(const Args & ... args) {
+  Formatter *f = nullptr;
+  return format_arg_store<Args...>(args..., f);
+}
 
 template <typename Arg, typename... Args>
 inline uint64_t make_type(const Arg &first, const Args & ... tail) {
@@ -2140,20 +2140,16 @@ inline uint64_t make_type(const Arg &first, const Args & ... tail) {
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template <typename... Args> \
   void func(arg_type arg0, const Args & ... args) { \
-    typedef fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
-    typename ArgArray::Type array{ \
-      ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
-    func(arg0, fmt::format_args(fmt::internal::make_type(args...), array)); \
+    auto store = fmt::internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
+    func(arg0, fmt::format_args(fmt::internal::make_type(args...), store.data())); \
   }
 
 // Defines a variadic constructor.
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    typedef fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
-    typename ArgArray::Type array{ \
-      ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
-    func(arg0, arg1, fmt::format_args(fmt::internal::make_type(args...), array)); \
+    auto store = internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
+    func(arg0, arg1, fmt::format_args(fmt::internal::make_type(args...), store.data())); \
   }
 
 // Generates a comma-separated list with results of applying f to pairs
@@ -3290,11 +3286,9 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
   template <typename... Args> \
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
-    typedef fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
-    typename ArgArray::Type array{ \
-      ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
+    auto store = fmt::internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::format_args(fmt::internal::make_type(args...), array)); \
+      fmt::format_args(fmt::internal::make_type(args...), store.data())); \
   }
 
 /**
