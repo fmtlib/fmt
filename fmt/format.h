@@ -1394,6 +1394,47 @@ class RuntimeError : public std::runtime_error {
 
 template <typename Char>
 class ArgMap;
+
+template <typename Arg, typename... Args>
+constexpr uint64_t make_type() {
+  return type<Arg>() | (make_type<Args...>() << 4);
+}
+
+template <>
+constexpr uint64_t make_type<void>() { return 0; }
+
+// Maximum number of arguments with packed types.
+enum { MAX_PACKED_ARGS = 16 };
+
+template <typename ...Args>
+class format_arg_store {
+ private:
+  static const size_t NUM_ARGS = sizeof...(Args);
+  static const bool PACKED = NUM_ARGS <= MAX_PACKED_ARGS;
+
+  typedef typename std::conditional<PACKED, Value, Arg>::type value_type;
+
+  // If the arguments are not packed, add one more element to mark the end.
+  std::array<value_type, NUM_ARGS + (PACKED ? 0 : 1)> data_;
+
+  template <typename Formatter, typename ...A>
+  friend format_arg_store<A...> make_format_args(const A & ... args);
+
+ public:
+  static const uint64_t TYPES = make_type<Args..., void>();
+
+  template <typename Formatter>
+  format_arg_store(const Args &... args, Formatter *)
+    : data_{{MakeValue<Formatter>(args)...}} {}
+
+  const value_type *data() const { return data_.data(); }
+};
+
+template <typename Formatter, typename ...Args>
+inline format_arg_store<Args...> make_format_args(const Args & ... args) {
+  Formatter *f = nullptr;
+  return format_arg_store<Args...>(args..., f);
+}
 }  // namespace internal
 
 /** Formatting arguments. */
@@ -1422,23 +1463,24 @@ class format_args {
   template <typename Char>
   friend class internal::ArgMap;
 
- public:
-  // Maximum number of arguments with packed types.
-  enum { MAX_PACKED_ARGS = 16 };
+  void set_data(const internal::Value *values) { values_ = values; }
+  void set_data(const internal::Arg *args) { args_ = args; }
 
+ public:
   format_args() : types_(0) {}
 
-  format_args(ULongLong types, const internal::Value *values)
-  : types_(types), values_(values) {}
-  format_args(ULongLong types, const internal::Arg *args)
-  : types_(types), args_(args) {}
+  template <typename... Args>
+  format_args(const internal::format_arg_store<Args...> &store)
+  : types_(store.TYPES) {
+    set_data(store.data());
+  }
 
   /** Returns the argument at specified index. */
   internal::Arg operator[](unsigned index) const {
     using internal::Arg;
     Arg arg;
-    bool use_values = type(MAX_PACKED_ARGS - 1) == Arg::NONE;
-    if (index < MAX_PACKED_ARGS) {
+    bool use_values = type(internal::MAX_PACKED_ARGS - 1) == Arg::NONE;
+    if (index < internal::MAX_PACKED_ARGS) {
       Arg::Type arg_type = type(index);
       internal::Value &val = arg;
       if (arg_type != Arg::NONE)
@@ -1452,7 +1494,7 @@ class format_args {
       arg.type = Arg::NONE;
       return arg;
     }
-    for (unsigned i = MAX_PACKED_ARGS; i <= index; ++i) {
+    for (unsigned i = internal::MAX_PACKED_ARGS; i <= index; ++i) {
       if (args_[i].type == Arg::NONE)
         return args_[i];
     }
@@ -2130,47 +2172,6 @@ class BasicFormatter : private internal::FormatterBase {
 # define FMT_GEN14(f) FMT_GEN13(f), f(13)
 # define FMT_GEN15(f) FMT_GEN14(f), f(14)
 
-namespace internal {
-
-template <typename Arg, typename... Args>
-constexpr uint64_t make_type() {
-  return type<Arg>() | (make_type<Args...>() << 4);
-}
-
-template <>
-constexpr uint64_t make_type<void>() { return 0; }
-
-template <typename ...Args>
-class format_arg_store {
- private:
-  static const size_t NUM_ARGS = sizeof...(Args);
-  static const bool PACKED = NUM_ARGS <= format_args::MAX_PACKED_ARGS;
-
-  typedef typename std::conditional<PACKED, Value, Arg>::type value_type;
-
-  // If the arguments are not packed, add one more element to mark the end.
-  std::array<value_type, NUM_ARGS + (PACKED ? 0 : 1)> data_;
-
-  template <typename Formatter, typename ...A>
-  friend format_arg_store<A...> make_format_args(const A & ... args);
-
- public:
-  static const uint64_t TYPES = make_type<Args..., void>();
-
-  template <typename Formatter>
-  format_arg_store(const Args &... args, Formatter *)
-    : data_{{MakeValue<Formatter>(args)...}} {}
-
-  const value_type *data() const { return data_.data(); }
-};
-
-template <typename Formatter, typename ...Args>
-inline format_arg_store<Args...> make_format_args(const Args & ... args) {
-  Formatter *f = nullptr;
-  return format_arg_store<Args...>(args..., f);
-}
-}  // namespace internal
-
 # define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
 # define FMT_MAKE_ARG_TYPE(n) T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
@@ -2184,7 +2185,7 @@ inline format_arg_store<Args...> make_format_args(const Args & ... args) {
   template <typename... Args> \
   void func(arg_type arg0, const Args & ... args) { \
     auto store = fmt::internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
-    func(arg0, fmt::format_args(store.TYPES, store.data())); \
+    func(arg0, fmt::format_args(store)); \
   }
 
 // Defines a variadic constructor.
@@ -2192,7 +2193,7 @@ inline format_arg_store<Args...> make_format_args(const Args & ... args) {
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
     auto store = internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
-    func(arg0, arg1, fmt::format_args(store.TYPES, store.data())); \
+    func(arg0, arg1, fmt::format_args(store)); \
   }
 
 // Generates a comma-separated list with results of applying f to pairs
@@ -3141,7 +3142,7 @@ inline std::string vformat(CStringRef format_str, format_args args) {
 template <typename... Args>
 inline std::string format(CStringRef format_str, const Args & ... args) {
   auto vargs = internal::make_format_args<BasicFormatter<char>>(args...);
-  vformat(format_str, format_args(vargs.TYPES, vargs.data()));
+  return vformat(format_str, vargs);
 }
 
 inline std::wstring format(WCStringRef format_str, format_args args) {
@@ -3336,8 +3337,7 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
   ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       const Args & ... args) { \
     auto store = fmt::internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
-    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::format_args(store.TYPES, store.data())); \
+    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::format_args(store)); \
   }
 
 /**

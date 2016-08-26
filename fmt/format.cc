@@ -410,7 +410,7 @@ void internal::ArgMap<Char>::init(const format_args &args) {
   typedef internal::NamedArg<Char> NamedArg;
   const NamedArg *named_arg = 0;
   bool use_values =
-      args.type(format_args::MAX_PACKED_ARGS - 1) == internal::Arg::NONE;
+      args.type(MAX_PACKED_ARGS - 1) == internal::Arg::NONE;
   if (use_values) {
     for (unsigned i = 0;/*nothing*/; ++i) {
       internal::Arg::Type arg_type = args.type(i);
@@ -427,14 +427,14 @@ void internal::ArgMap<Char>::init(const format_args &args) {
     }
     return;
   }
-  for (unsigned i = 0; i != format_args::MAX_PACKED_ARGS; ++i) {
+  for (unsigned i = 0; i != MAX_PACKED_ARGS; ++i) {
     internal::Arg::Type arg_type = args.type(i);
     if (arg_type == internal::Arg::NAMED_ARG) {
       named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
       map_.push_back(Pair(named_arg->name, *named_arg));
     }
   }
-  for (unsigned i = format_args::MAX_PACKED_ARGS;/*nothing*/; ++i) {
+  for (unsigned i = MAX_PACKED_ARGS;/*nothing*/; ++i) {
     switch (args.args_[i].type) {
     case internal::Arg::NONE:
       return;
