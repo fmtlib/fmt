@@ -226,7 +226,7 @@ FMT_FUNC void SystemError::init(
     int err_code, CStringRef format_str, format_args args) {
   error_code_ = err_code;
   MemoryWriter w;
-  format_system_error(w, err_code, format(format_str, args));
+  format_system_error(w, err_code, vformat(format_str, args));
   std::runtime_error &base = *this;
   base = std::runtime_error(w.str());
 }

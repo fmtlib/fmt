@@ -3122,6 +3122,12 @@ enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
  */
 FMT_API void print_colored(Color c, CStringRef format, format_args args);
 
+inline std::string vformat(CStringRef format_str, format_args args) {
+  MemoryWriter w;
+  w.write(format_str, args);
+  return w.str();
+}
+
 /**
   \rst
   Formats arguments and returns the result as a string.
@@ -3131,10 +3137,10 @@ FMT_API void print_colored(Color c, CStringRef format, format_args args);
     std::string message = format("The answer is {}", 42);
   \endrst
 */
-inline std::string format(CStringRef format_str, format_args args) {
-  MemoryWriter w;
-  w.write(format_str, args);
-  return w.str();
+template <typename... Args>
+inline std::string format(CStringRef format_str, const Args & ... args) {
+  auto vargs = internal::make_format_args<BasicFormatter<char>>(args...);
+  vformat(format_str, format_args(vargs.TYPES, vargs.data()));
 }
 
 inline std::wstring format(WCStringRef format_str, format_args args) {
@@ -3389,7 +3395,6 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 #define FMT_CAPTURE_W(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_W_, __VA_ARGS__)
 
 namespace fmt {
-FMT_VARIADIC(std::string, format, CStringRef)
 FMT_VARIADIC_W(std::wstring, format, WCStringRef)
 FMT_VARIADIC(void, print, CStringRef)
 FMT_VARIADIC(void, print, std::FILE *, CStringRef)
