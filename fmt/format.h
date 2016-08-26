@@ -2159,7 +2159,7 @@ class format_arg_store {
 
   template <typename Formatter>
   format_arg_store(const Args &... args, Formatter *)
-    : data_{MakeValue<Formatter>(args)...} {}
+    : data_{{MakeValue<Formatter>(args)...}} {}
 
   const value_type *data() const { return data_.data(); }
 };
