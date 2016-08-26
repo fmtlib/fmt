@@ -1212,8 +1212,7 @@ class MakeValue : public Arg {
   MakeValue() {}
 
 #define FMT_MAKE_VALUE_(Type, field, TYPE, rhs) \
-  MakeValue(Type value) { field = rhs; } \
-  static uint64_t type(Type) { return Arg::TYPE; }
+  MakeValue(Type value) { field = rhs; }
 
 #define FMT_MAKE_VALUE(Type, field, TYPE) \
   FMT_MAKE_VALUE_(Type, field, TYPE, value)
@@ -1232,19 +1231,12 @@ class MakeValue : public Arg {
     else
       long_long_value = value;
   }
-  static uint64_t type(long) {
-    return sizeof(long) == sizeof(int) ? Arg::INT : Arg::LONG_LONG;
-  }
 
   MakeValue(unsigned long value) {
     if (const_check(sizeof(unsigned long) == sizeof(unsigned)))
       uint_value = static_cast<unsigned>(value);
     else
       ulong_long_value = value;
-  }
-  static uint64_t type(unsigned long) {
-    return sizeof(unsigned long) == sizeof(unsigned) ?
-          Arg::UINT : Arg::ULONG_LONG;
   }
 
   FMT_MAKE_VALUE(LongLong, long_long_value, LONG_LONG)
@@ -1260,12 +1252,10 @@ class MakeValue : public Arg {
   MakeValue(typename WCharHelper<wchar_t, Char>::Supported value) {
     int_value = value;
   }
-  static uint64_t type(wchar_t) { return Arg::CHAR; }
 #endif
 
 #define FMT_MAKE_STR_VALUE(Type, TYPE) \
-  MakeValue(Type value) { set_string(value); } \
-  static uint64_t type(Type) { return Arg::TYPE; }
+  MakeValue(Type value) { set_string(value); }
 
   FMT_MAKE_VALUE(char *, string.value, CSTRING)
   FMT_MAKE_VALUE(const char *, string.value, CSTRING)
@@ -1280,8 +1270,7 @@ class MakeValue : public Arg {
 #define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
   MakeValue(typename WCharHelper<Type, Char>::Supported value) { \
     set_string(value); \
-  } \
-  static uint64_t type(Type) { return Arg::TYPE; }
+  }
 
   FMT_MAKE_WSTR_VALUE(wchar_t *, WSTRING)
   FMT_MAKE_WSTR_VALUE(const wchar_t *, WSTRING)
@@ -1305,19 +1294,73 @@ class MakeValue : public Arg {
     int_value = value;
   }
 
-  template <typename T>
-  static uint64_t type(const T &) {
-    return ConvertToInt<T>::value ? Arg::INT : Arg::CUSTOM;
-  }
-
   // Additional template param `Char_` is needed here because make_type always
   // uses char.
   template <typename Char_>
   MakeValue(const NamedArg<Char_> &value) { pointer = &value; }
-
-  template <typename Char_>
-  static uint64_t type(const NamedArg<Char_> &) { return Arg::NAMED_ARG; }
 };
+
+template <typename T>
+struct IsNamedArg : std::false_type {};
+
+template <typename Char>
+struct IsNamedArg< NamedArg<Char> > : std::true_type {};
+
+typedef Value::Type Type;
+
+template <typename T>
+constexpr Type gettype() {
+  return IsNamedArg<T>::value ?
+        Arg::NAMED_ARG : (ConvertToInt<T>::value ? Arg::INT : Arg::CUSTOM);
+}
+
+template <> constexpr Type gettype<bool>() { return Arg::BOOL; }
+template <> constexpr Type gettype<short>() { return Arg::INT; }
+template <> constexpr Type gettype<unsigned short>() { return Arg::UINT; }
+template <> constexpr Type gettype<int>() { return Arg::INT; }
+template <> constexpr Type gettype<unsigned>() { return Arg::UINT; }
+template <> constexpr Type gettype<long>() {
+  return sizeof(long) == sizeof(int) ? Arg::INT : Arg::LONG_LONG;
+}
+template <> constexpr Type gettype<unsigned long>() {
+  return sizeof(unsigned long) == sizeof(unsigned) ?
+        Arg::UINT : Arg::ULONG_LONG;
+}
+template <> constexpr Type gettype<LongLong>() { return Arg::LONG_LONG; }
+template <> constexpr Type gettype<ULongLong>() { return Arg::ULONG_LONG; }
+template <> constexpr Type gettype<float>() { return Arg::DOUBLE; }
+template <> constexpr Type gettype<double>() { return Arg::DOUBLE; }
+template <> constexpr Type gettype<long double>() { return Arg::LONG_DOUBLE; }
+template <> constexpr Type gettype<signed char>() { return Arg::INT; }
+template <> constexpr Type gettype<unsigned char>() { return Arg::UINT; }
+template <> constexpr Type gettype<char>() { return Arg::CHAR; }
+
+#if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
+template <> constexpr Type gettype<wchar_t>() { return Arg::CHAR; }
+#endif
+
+template <> constexpr Type gettype<char *>() { return Arg::CSTRING; }
+template <> constexpr Type gettype<const char *>() { return Arg::CSTRING; }
+template <> constexpr Type gettype<signed char *>() { return Arg::CSTRING; }
+template <> constexpr Type gettype<const signed char *>() {
+  return Arg::CSTRING;
+}
+template <> constexpr Type gettype<unsigned char *>() { return Arg::CSTRING; }
+template <> constexpr Type gettype<const unsigned char *>() {
+  return Arg::CSTRING;
+}
+template <> constexpr Type gettype<std::string>() { return Arg::STRING; }
+template <> constexpr Type gettype<StringRef>() { return Arg::STRING; }
+template <> constexpr Type gettype<CStringRef>() { return Arg::CSTRING; }
+template <> constexpr Type gettype<wchar_t *>() { return Arg::WSTRING; }
+template <> constexpr Type gettype<const wchar_t *>() { return Arg::WSTRING; }
+template <> constexpr Type gettype<std::wstring>() { return Arg::WSTRING; }
+template <> constexpr Type gettype<WStringRef>() { return Arg::WSTRING; }
+template <> constexpr Type gettype<void *>() { return Arg::POINTER; }
+template <> constexpr Type gettype<const void *>() { return Arg::POINTER; }
+
+template <typename T>
+constexpr Type type() { return gettype<typename std::decay<T>::type>(); }
 
 template <typename Formatter>
 class MakeArg : public Arg {
@@ -1329,7 +1372,7 @@ public:
   template <typename T>
   MakeArg(const T &value)
   : Arg(MakeValue<Formatter>(value)) {
-    type = static_cast<Arg::Type>(MakeValue<Formatter>::type(value));
+    type = internal::type<T>();
   }
 };
 
@@ -2087,12 +2130,14 @@ class BasicFormatter : private internal::FormatterBase {
 # define FMT_GEN15(f) FMT_GEN14(f), f(14)
 
 namespace internal {
-inline uint64_t make_type() { return 0; }
 
-template <typename T>
-inline uint64_t make_type(const T &arg) {
-  return MakeValue< BasicFormatter<char> >::type(arg);
+template <typename Arg, typename... Args>
+constexpr uint64_t make_type() {
+  return type<Arg>() | (make_type<Args...>() << 4);
 }
+
+template <>
+constexpr uint64_t make_type<void>() { return 0; }
 
 template <typename ...Args>
 class format_arg_store {
@@ -2102,13 +2147,15 @@ class format_arg_store {
 
   typedef typename std::conditional<PACKED, Value, Arg>::type value_type;
 
-  // If the arguments are not packed we add one more element to mark the end.
+  // If the arguments are not packed, add one more element to mark the end.
   std::array<value_type, NUM_ARGS + (PACKED ? 0 : 1)> data_;
 
   template <typename Formatter, typename ...A>
   friend format_arg_store<A...> make_format_args(const A & ... args);
 
  public:
+  static const uint64_t TYPES = make_type<Args..., void>();
+
   template <typename Formatter>
   format_arg_store(const Args &... args, Formatter *)
     : data_{MakeValue<Formatter>(args)...} {}
@@ -2120,11 +2167,6 @@ template <typename Formatter, typename ...Args>
 inline format_arg_store<Args...> make_format_args(const Args & ... args) {
   Formatter *f = nullptr;
   return format_arg_store<Args...>(args..., f);
-}
-
-template <typename Arg, typename... Args>
-inline uint64_t make_type(const Arg &first, const Args & ... tail) {
-  return make_type(first) | (make_type(tail...) << 4);
 }
 }  // namespace internal
 
@@ -2141,7 +2183,7 @@ inline uint64_t make_type(const Arg &first, const Args & ... tail) {
   template <typename... Args> \
   void func(arg_type arg0, const Args & ... args) { \
     auto store = fmt::internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
-    func(arg0, fmt::format_args(fmt::internal::make_type(args...), store.data())); \
+    func(arg0, fmt::format_args(store.TYPES, store.data())); \
   }
 
 // Defines a variadic constructor.
@@ -2149,7 +2191,7 @@ inline uint64_t make_type(const Arg &first, const Args & ... tail) {
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
     auto store = internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
-    func(arg0, arg1, fmt::format_args(fmt::internal::make_type(args...), store.data())); \
+    func(arg0, arg1, fmt::format_args(store.TYPES, store.data())); \
   }
 
 // Generates a comma-separated list with results of applying f to pairs
@@ -3288,7 +3330,7 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
       const Args & ... args) { \
     auto store = fmt::internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::format_args(fmt::internal::make_type(args...), store.data())); \
+      fmt::format_args(store.TYPES, store.data())); \
   }
 
 /**

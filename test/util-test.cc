@@ -72,7 +72,7 @@ template <typename Char, typename T>
 Arg make_arg(const T &value) {
   typedef fmt::internal::MakeValue< fmt::BasicFormatter<Char> > MakeValue;
   Arg arg = MakeValue(value);
-  arg.type = static_cast<Arg::Type>(MakeValue::type(value));
+  arg.type = fmt::internal::type<T>();
   return arg;
 }
 }  // namespace
