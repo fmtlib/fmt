@@ -74,14 +74,3 @@ int result;
   }
 
 MAKE_TEST(test_func)
-
-typedef char Char;
-
-MAKE_TEST(test_variadic_void)
-FMT_VARIADIC_VOID(test_variadic_void, const char *)
-
-TEST(UtilTest, VariadicVoid) {
-  result = 0;
-  test_variadic_void("", 10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
-  EXPECT_EQ(550, result);
-}

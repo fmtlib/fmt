@@ -485,7 +485,7 @@ FMT_FUNC void report_windows_error(
 
 FMT_FUNC void vprint(std::FILE *f, CStringRef format_str, format_args args) {
   MemoryWriter w;
-  w.write(format_str, args);
+  w.vwrite(format_str, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
 

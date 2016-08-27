@@ -2181,14 +2181,6 @@ class BasicFormatter : private internal::FormatterBase {
 # define FMT_ASSIGN_wchar_t(n) \
   arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<wchar_t> >(v##n)
 
-// Defines a variadic function returning void.
-# define FMT_VARIADIC_VOID(func, arg_type) \
-  template <typename... Args> \
-  void func(arg_type arg0, const Args & ... args) { \
-    auto store = fmt::make_format_args< fmt::BasicFormatter<Char> >(args...); \
-    func(arg0, fmt::format_args(store)); \
-  }
-
 // Defines a variadic constructor.
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template <typename... Args> \
@@ -2449,6 +2441,10 @@ class BasicWriter {
     return std::basic_string<Char>(&buffer_[0], buffer_.size());
   }
 
+  void vwrite(BasicCStringRef<Char> format, format_args args) {
+    BasicFormatter<Char>(args, *this).format(format);
+  }
+
   /**
     \rst
     Writes formatted data.
@@ -2474,10 +2470,10 @@ class BasicWriter {
     See also :ref:`syntax`.
     \endrst
    */
-  void write(BasicCStringRef<Char> format, format_args args) {
-    BasicFormatter<Char>(args, *this).format(format);
+  template <typename... Args>
+  void write(BasicCStringRef<Char> format, const Args & ... args) {
+    vwrite(format, make_format_args<fmt::BasicFormatter<Char>>(args...));
   }
-  FMT_VARIADIC_VOID(write, BasicCStringRef<Char>)
 
   BasicWriter &operator<<(int value) {
     write_decimal(value);
@@ -3134,7 +3130,7 @@ inline void print_colored(Color c, CStringRef format_str,
 
 inline std::string vformat(CStringRef format_str, format_args args) {
   MemoryWriter w;
-  w.write(format_str, args);
+  w.vwrite(format_str, args);
   return w.str();
 }
 
@@ -3154,7 +3150,7 @@ inline std::string format(CStringRef format_str, const Args & ... args) {
 
 inline std::wstring vformat(WCStringRef format_str, format_args args) {
   WMemoryWriter w;
-  w.write(format_str, args);
+  w.vwrite(format_str, args);
   return w.str();
 }
 

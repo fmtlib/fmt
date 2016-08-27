@@ -1566,7 +1566,7 @@ TEST(StrTest, Convert) {
 std::string vformat_message(int id, const char *format, fmt::format_args args) {
   MemoryWriter w;
   w.write("[{}] ", id);
-  w.write(format, args);
+  w.vwrite(format, args);
   return w.str();
 }
 

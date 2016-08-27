@@ -30,7 +30,7 @@ FMT_FUNC void write(std::ostream &os, Writer &w) {
 FMT_FUNC void vprint(std::ostream &os, CStringRef format_str,
                      format_args args) {
   MemoryWriter w;
-  w.write(format_str, args);
+  w.vwrite(format_str, args);
   internal::write(os, w);
 }
 }  // namespace fmt
