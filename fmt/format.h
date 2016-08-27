@@ -2169,55 +2169,6 @@ class BasicFormatter : private internal::FormatterBase {
   const Char *format(const Char *&format_str, const internal::Arg &arg);
 };
 
-// Generates a comma-separated list with results of applying f to
-// numbers 0..n-1.
-# define FMT_GEN(n, f) FMT_GEN##n(f)
-# define FMT_GEN1(f)  f(0)
-# define FMT_GEN2(f)  FMT_GEN1(f),  f(1)
-# define FMT_GEN3(f)  FMT_GEN2(f),  f(2)
-# define FMT_GEN4(f)  FMT_GEN3(f),  f(3)
-# define FMT_GEN5(f)  FMT_GEN4(f),  f(4)
-# define FMT_GEN6(f)  FMT_GEN5(f),  f(5)
-# define FMT_GEN7(f)  FMT_GEN6(f),  f(6)
-# define FMT_GEN8(f)  FMT_GEN7(f),  f(7)
-# define FMT_GEN9(f)  FMT_GEN8(f),  f(8)
-# define FMT_GEN10(f) FMT_GEN9(f),  f(9)
-# define FMT_GEN11(f) FMT_GEN10(f), f(10)
-# define FMT_GEN12(f) FMT_GEN11(f), f(11)
-# define FMT_GEN13(f) FMT_GEN12(f), f(12)
-# define FMT_GEN14(f) FMT_GEN13(f), f(13)
-# define FMT_GEN15(f) FMT_GEN14(f), f(14)
-
-# define FMT_MAKE_TEMPLATE_ARG(n) typename T##n
-# define FMT_MAKE_ARG_TYPE(n) T##n
-# define FMT_MAKE_ARG(n) const T##n &v##n
-# define FMT_ASSIGN_char(n) \
-  arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<char> >(v##n)
-# define FMT_ASSIGN_wchar_t(n) \
-  arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<wchar_t> >(v##n)
-
-// Generates a comma-separated list with results of applying f to pairs
-// (argument, index).
-#define FMT_FOR_EACH1(f, x0) f(x0, 0)
-#define FMT_FOR_EACH2(f, x0, x1) \
-  FMT_FOR_EACH1(f, x0), f(x1, 1)
-#define FMT_FOR_EACH3(f, x0, x1, x2) \
-  FMT_FOR_EACH2(f, x0 ,x1), f(x2, 2)
-#define FMT_FOR_EACH4(f, x0, x1, x2, x3) \
-  FMT_FOR_EACH3(f, x0, x1, x2), f(x3, 3)
-#define FMT_FOR_EACH5(f, x0, x1, x2, x3, x4) \
-  FMT_FOR_EACH4(f, x0, x1, x2, x3), f(x4, 4)
-#define FMT_FOR_EACH6(f, x0, x1, x2, x3, x4, x5) \
-  FMT_FOR_EACH5(f, x0, x1, x2, x3, x4), f(x5, 5)
-#define FMT_FOR_EACH7(f, x0, x1, x2, x3, x4, x5, x6) \
-  FMT_FOR_EACH6(f, x0, x1, x2, x3, x4, x5), f(x6, 6)
-#define FMT_FOR_EACH8(f, x0, x1, x2, x3, x4, x5, x6, x7) \
-  FMT_FOR_EACH7(f, x0, x1, x2, x3, x4, x5, x6), f(x7, 7)
-#define FMT_FOR_EACH9(f, x0, x1, x2, x3, x4, x5, x6, x7, x8) \
-  FMT_FOR_EACH8(f, x0, x1, x2, x3, x4, x5, x6, x7), f(x8, 8)
-#define FMT_FOR_EACH10(f, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) \
-  FMT_FOR_EACH9(f, x0, x1, x2, x3, x4, x5, x6, x7, x8), f(x9, 9)
-
 /**
  An error returned by an operating system or a language runtime,
  for example a file opening error.
@@ -3337,54 +3288,6 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 // as possible.
 # pragma GCC system_header
 #endif
-
-// This is used to work around VC++ bugs in handling variadic macros.
-#define FMT_EXPAND(args) args
-
-// Returns the number of arguments.
-// Based on https://groups.google.com/forum/#!topic/comp.std.c/d-6Mj5Lko_s.
-#define FMT_NARG(...) FMT_NARG_(__VA_ARGS__, FMT_RSEQ_N())
-#define FMT_NARG_(...) FMT_EXPAND(FMT_ARG_N(__VA_ARGS__))
-#define FMT_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
-#define FMT_RSEQ_N() 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
-
-#define FMT_FOR_EACH_(N, f, ...) \
-  FMT_EXPAND(FMT_CONCAT(FMT_FOR_EACH, N)(f, __VA_ARGS__))
-#define FMT_FOR_EACH(f, ...) \
-  FMT_EXPAND(FMT_FOR_EACH_(FMT_NARG(__VA_ARGS__), f, __VA_ARGS__))
-
-#define FMT_ADD_ARG_NAME(type, index) type arg##index
-#define FMT_GET_ARG_NAME(type, index) arg##index
-
-#define FMT_VARIADIC_(Char, ReturnType, func, call, ...) \
-  template <typename... Args> \
-  ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
-      const Args & ... args) { \
-    auto store = fmt::internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
-    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::format_args(store)); \
-  }
-
-#define FMT_CAPTURE_ARG_(id, index) ::fmt::arg(#id, id)
-
-#define FMT_CAPTURE_ARG_W_(id, index) ::fmt::arg(L###id, id)
-
-/**
-  \rst
-  Convenient macro to capture the arguments' names and values into several
-  ``fmt::arg(name, value)``.
-
-  **Example**::
-
-    int x = 1, y = 2;
-    print("point: ({x}, {y})", FMT_CAPTURE(x, y));
-    // same as:
-    // print("point: ({x}, {y})", arg("x", x), arg("y", y));
-
-  \endrst
- */
-#define FMT_CAPTURE(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_, __VA_ARGS__)
-
-#define FMT_CAPTURE_W(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_W_, __VA_ARGS__)
 
 namespace fmt {
 namespace internal {
