@@ -2181,14 +2181,6 @@ class BasicFormatter : private internal::FormatterBase {
 # define FMT_ASSIGN_wchar_t(n) \
   arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<wchar_t> >(v##n)
 
-// Defines a variadic constructor.
-# define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
-  template <typename... Args> \
-  ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    auto store = fmt::make_format_args< fmt::BasicFormatter<Char> >(args...); \
-    func(arg0, arg1, fmt::format_args(store)); \
-  }
-
 // Generates a comma-separated list with results of applying f to pairs
 // (argument, index).
 #define FMT_FOR_EACH1(f, x0) f(x0, 0)
@@ -2222,8 +2214,6 @@ class SystemError : public internal::RuntimeError {
  protected:
   int error_code_;
 
-  typedef char Char;  // For FMT_VARIADIC_CTOR.
-
   SystemError() {}
 
  public:
@@ -2245,10 +2235,10 @@ class SystemError : public internal::RuntimeError {
        throw fmt::SystemError(errno, "cannot open file '{}'", filename);
    \endrst
   */
-  SystemError(int error_code, CStringRef message) {
-    init(error_code, message, format_args());
+  template <typename... Args>
+  SystemError(int error_code, CStringRef message, const Args & ... args) {
+    init(error_code, message, make_format_args<BasicFormatter<char>>(args...));
   }
-  FMT_VARIADIC_CTOR(SystemError, init, int, CStringRef)
 
   ~SystemError() throw();
 
@@ -3098,10 +3088,10 @@ class WindowsError : public SystemError {
      }
    \endrst
   */
-  WindowsError(int error_code, CStringRef message) {
-    init(error_code, message, format_args());
+  template <typename... Args>
+  WindowsError(int error_code, CStringRef message, const Args & ... args) {
+    init(error_code, message, make_format_args<BasicFormatter<char>>(args...));
   }
-  FMT_VARIADIC_CTOR(WindowsError, init, int, CStringRef)
 };
 
 // Reports a Windows error without throwing an exception.
