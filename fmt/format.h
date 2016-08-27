@@ -1161,146 +1161,6 @@ void format_arg(Formatter &, const Char *, const T &) {
                     "an overload of format_arg.");
 }
 
-// Makes an Arg object from any type.
-template <typename Formatter>
-class MakeValue : public Arg {
- public:
-  typedef typename Formatter::Char Char;
-
- private:
-  // The following two methods are private to disallow formatting of
-  // arbitrary pointers. If you want to output a pointer cast it to
-  // "void *" or "const void *". In particular, this forbids formatting
-  // of "[const] volatile char *" which is printed as bool by iostreams.
-  // Do not implement!
-  template <typename T>
-  MakeValue(const T *value);
-  template <typename T>
-  MakeValue(T *value);
-
-  // The following methods are private to disallow formatting of wide
-  // characters and strings into narrow strings as in
-  //   fmt::format("{}", L"test");
-  // To fix this, use a wide format string: fmt::format(L"{}", L"test").
-#if !FMT_MSC_VER || defined(_NATIVE_WCHAR_T_DEFINED)
-  MakeValue(typename WCharHelper<wchar_t, Char>::Unsupported);
-#endif
-  MakeValue(typename WCharHelper<wchar_t *, Char>::Unsupported);
-  MakeValue(typename WCharHelper<const wchar_t *, Char>::Unsupported);
-  MakeValue(typename WCharHelper<const std::wstring &, Char>::Unsupported);
-  MakeValue(typename WCharHelper<WStringRef, Char>::Unsupported);
-
-  void set_string(StringRef str) {
-    string.value = str.data();
-    string.size = str.size();
-  }
-
-  void set_string(WStringRef str) {
-    wstring.value = str.data();
-    wstring.size = str.size();
-  }
-
-  // Formats an argument of a custom type, such as a user-defined class.
-  template <typename T>
-  static void format_custom_arg(
-      void *formatter, const void *arg, void *format_str_ptr) {
-    format_arg(*static_cast<Formatter*>(formatter),
-               *static_cast<const Char**>(format_str_ptr),
-               *static_cast<const T*>(arg));
-  }
-
- public:
-  MakeValue() {}
-
-#define FMT_MAKE_VALUE_(Type, field, TYPE, rhs) \
-  MakeValue(Type value) { field = rhs; }
-
-#define FMT_MAKE_VALUE(Type, field, TYPE) \
-  FMT_MAKE_VALUE_(Type, field, TYPE, value)
-
-  FMT_MAKE_VALUE(bool, int_value, BOOL)
-  FMT_MAKE_VALUE(short, int_value, INT)
-  FMT_MAKE_VALUE(unsigned short, uint_value, UINT)
-  FMT_MAKE_VALUE(int, int_value, INT)
-  FMT_MAKE_VALUE(unsigned, uint_value, UINT)
-
-  MakeValue(long value) {
-    // To minimize the number of types we need to deal with, long is
-    // translated either to int or to long long depending on its size.
-    if (const_check(sizeof(long) == sizeof(int)))
-      int_value = static_cast<int>(value);
-    else
-      long_long_value = value;
-  }
-
-  MakeValue(unsigned long value) {
-    if (const_check(sizeof(unsigned long) == sizeof(unsigned)))
-      uint_value = static_cast<unsigned>(value);
-    else
-      ulong_long_value = value;
-  }
-
-  FMT_MAKE_VALUE(LongLong, long_long_value, LONG_LONG)
-  FMT_MAKE_VALUE(ULongLong, ulong_long_value, ULONG_LONG)
-  FMT_MAKE_VALUE(float, double_value, DOUBLE)
-  FMT_MAKE_VALUE(double, double_value, DOUBLE)
-  FMT_MAKE_VALUE(long double, long_double_value, LONG_DOUBLE)
-  FMT_MAKE_VALUE(signed char, int_value, INT)
-  FMT_MAKE_VALUE(unsigned char, uint_value, UINT)
-  FMT_MAKE_VALUE(char, int_value, CHAR)
-
-#if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
-  MakeValue(typename WCharHelper<wchar_t, Char>::Supported value) {
-    int_value = value;
-  }
-#endif
-
-#define FMT_MAKE_STR_VALUE(Type, TYPE) \
-  MakeValue(Type value) { set_string(value); }
-
-  FMT_MAKE_VALUE(char *, string.value, CSTRING)
-  FMT_MAKE_VALUE(const char *, string.value, CSTRING)
-  FMT_MAKE_VALUE(signed char *, sstring.value, CSTRING)
-  FMT_MAKE_VALUE(const signed char *, sstring.value, CSTRING)
-  FMT_MAKE_VALUE(unsigned char *, ustring.value, CSTRING)
-  FMT_MAKE_VALUE(const unsigned char *, ustring.value, CSTRING)
-  FMT_MAKE_STR_VALUE(const std::string &, STRING)
-  FMT_MAKE_STR_VALUE(StringRef, STRING)
-  FMT_MAKE_VALUE_(CStringRef, string.value, CSTRING, value.c_str())
-
-#define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
-  MakeValue(typename WCharHelper<Type, Char>::Supported value) { \
-    set_string(value); \
-  }
-
-  FMT_MAKE_WSTR_VALUE(wchar_t *, WSTRING)
-  FMT_MAKE_WSTR_VALUE(const wchar_t *, WSTRING)
-  FMT_MAKE_WSTR_VALUE(const std::wstring &, WSTRING)
-  FMT_MAKE_WSTR_VALUE(WStringRef, WSTRING)
-
-  FMT_MAKE_VALUE(void *, pointer, POINTER)
-  FMT_MAKE_VALUE(const void *, pointer, POINTER)
-
-  template <typename T>
-  MakeValue(const T &value,
-            typename EnableIf<Not<
-              ConvertToInt<T>::value>::value, int>::type = 0) {
-    custom.value = &value;
-    custom.format = &format_custom_arg<T>;
-  }
-
-  template <typename T>
-  MakeValue(const T &value,
-            typename EnableIf<ConvertToInt<T>::value, int>::type = 0) {
-    int_value = value;
-  }
-
-  // Additional template param `Char_` is needed here because make_type always
-  // uses char.
-  template <typename Char_>
-  MakeValue(const NamedArg<Char_> &value) { pointer = &value; }
-};
-
 template <typename T>
 struct IsNamedArg : std::false_type {};
 
@@ -1362,6 +1222,161 @@ template <> constexpr Type gettype<const void *>() { return Arg::POINTER; }
 
 template <typename T>
 constexpr Type type() { return gettype<typename std::decay<T>::type>(); }
+
+// Makes an Arg object from any type.
+template <typename Formatter>
+class MakeValue : public Arg {
+ public:
+  typedef typename Formatter::Char Char;
+
+ private:
+  // The following two methods are private to disallow formatting of
+  // arbitrary pointers. If you want to output a pointer cast it to
+  // "void *" or "const void *". In particular, this forbids formatting
+  // of "[const] volatile char *" which is printed as bool by iostreams.
+  // Do not implement!
+  template <typename T>
+  MakeValue(const T *value);
+  template <typename T>
+  MakeValue(T *value);
+
+  // The following methods are private to disallow formatting of wide
+  // characters and strings into narrow strings as in
+  //   fmt::format("{}", L"test");
+  // To fix this, use a wide format string: fmt::format(L"{}", L"test").
+#if !FMT_MSC_VER || defined(_NATIVE_WCHAR_T_DEFINED)
+  MakeValue(typename WCharHelper<wchar_t, Char>::Unsupported);
+#endif
+  MakeValue(typename WCharHelper<wchar_t *, Char>::Unsupported);
+  MakeValue(typename WCharHelper<const wchar_t *, Char>::Unsupported);
+  MakeValue(typename WCharHelper<const std::wstring &, Char>::Unsupported);
+  MakeValue(typename WCharHelper<WStringRef, Char>::Unsupported);
+
+  void set_string(StringRef str) {
+    string.value = str.data();
+    string.size = str.size();
+  }
+
+  void set_string(WStringRef str) {
+    wstring.value = str.data();
+    wstring.size = str.size();
+  }
+
+  // Formats an argument of a custom type, such as a user-defined class.
+  template <typename T>
+  static void format_custom_arg(
+      void *formatter, const void *arg, void *format_str_ptr) {
+    format_arg(*static_cast<Formatter*>(formatter),
+               *static_cast<const Char**>(format_str_ptr),
+               *static_cast<const T*>(arg));
+  }
+
+ public:
+  MakeValue() {}
+
+#define FMT_MAKE_VALUE_(Type, field, TYPE, rhs) \
+  MakeValue(Type value) { \
+    static_assert(internal::type<Type>() == TYPE, "invalid type"); \
+    field = rhs; \
+  }
+
+#define FMT_MAKE_VALUE(Type, field, TYPE) \
+  FMT_MAKE_VALUE_(Type, field, TYPE, value)
+
+  FMT_MAKE_VALUE(bool, int_value, BOOL)
+  FMT_MAKE_VALUE(short, int_value, INT)
+  FMT_MAKE_VALUE(unsigned short, uint_value, UINT)
+  FMT_MAKE_VALUE(int, int_value, INT)
+  FMT_MAKE_VALUE(unsigned, uint_value, UINT)
+
+  MakeValue(long value) {
+    // To minimize the number of types we need to deal with, long is
+    // translated either to int or to long long depending on its size.
+    if (const_check(sizeof(long) == sizeof(int)))
+      int_value = static_cast<int>(value);
+    else
+      long_long_value = value;
+  }
+
+  MakeValue(unsigned long value) {
+    if (const_check(sizeof(unsigned long) == sizeof(unsigned)))
+      uint_value = static_cast<unsigned>(value);
+    else
+      ulong_long_value = value;
+  }
+
+  FMT_MAKE_VALUE(LongLong, long_long_value, LONG_LONG)
+  FMT_MAKE_VALUE(ULongLong, ulong_long_value, ULONG_LONG)
+  FMT_MAKE_VALUE(float, double_value, DOUBLE)
+  FMT_MAKE_VALUE(double, double_value, DOUBLE)
+  FMT_MAKE_VALUE(long double, long_double_value, LONG_DOUBLE)
+  FMT_MAKE_VALUE(signed char, int_value, INT)
+  FMT_MAKE_VALUE(unsigned char, uint_value, UINT)
+  FMT_MAKE_VALUE(char, int_value, CHAR)
+
+#if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
+  typedef typename WCharHelper<wchar_t, Char>::Supported WChar;
+  MakeValue(WChar value) {
+    static_assert(internal::type<WChar>() == CHAR, "invalid type");
+    int_value = value;
+  }
+#endif
+
+#define FMT_MAKE_STR_VALUE(Type, TYPE) \
+  MakeValue(Type value) { \
+    static_assert(internal::type<Type>() == TYPE, "invalid type"); \
+    set_string(value); \
+  }
+
+  FMT_MAKE_VALUE(char *, string.value, CSTRING)
+  FMT_MAKE_VALUE(const char *, string.value, CSTRING)
+  FMT_MAKE_VALUE(signed char *, sstring.value, CSTRING)
+  FMT_MAKE_VALUE(const signed char *, sstring.value, CSTRING)
+  FMT_MAKE_VALUE(unsigned char *, ustring.value, CSTRING)
+  FMT_MAKE_VALUE(const unsigned char *, ustring.value, CSTRING)
+  FMT_MAKE_STR_VALUE(const std::string &, STRING)
+  FMT_MAKE_STR_VALUE(StringRef, STRING)
+  FMT_MAKE_VALUE_(CStringRef, string.value, CSTRING, value.c_str())
+
+#define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
+  MakeValue(typename WCharHelper<Type, Char>::Supported value) { \
+  static_assert(internal::type<Type>() == TYPE, "invalid type"); \
+    set_string(value); \
+  }
+
+  FMT_MAKE_WSTR_VALUE(wchar_t *, WSTRING)
+  FMT_MAKE_WSTR_VALUE(const wchar_t *, WSTRING)
+  FMT_MAKE_WSTR_VALUE(const std::wstring &, WSTRING)
+  FMT_MAKE_WSTR_VALUE(WStringRef, WSTRING)
+
+  FMT_MAKE_VALUE(void *, pointer, POINTER)
+  FMT_MAKE_VALUE(const void *, pointer, POINTER)
+
+  template <typename T>
+  MakeValue(const T &value,
+            typename EnableIf<Not<
+              ConvertToInt<T>::value>::value, int>::type = 0) {
+    static_assert(internal::type<T>() == CUSTOM, "invalid type");
+    custom.value = &value;
+    custom.format = &format_custom_arg<T>;
+  }
+
+  template <typename T>
+  MakeValue(const T &value,
+            typename EnableIf<ConvertToInt<T>::value, int>::type = 0) {
+    static_assert(internal::type<T>() == INT, "invalid type");
+    int_value = value;
+  }
+
+  // Additional template param `Char_` is needed here because make_type always
+  // uses char.
+  template <typename Char_>
+  MakeValue(const NamedArg<Char_> &value) {
+    static_assert(internal::type<const NamedArg<Char_> &>() == NAMED_ARG,
+                  "invalid type");
+    pointer = &value;
+  }
+};
 
 template <typename Formatter>
 class MakeArg : public Arg {
