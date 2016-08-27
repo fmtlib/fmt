@@ -1405,14 +1405,16 @@ constexpr uint64_t make_type<void>() { return 0; }
 
 // Maximum number of arguments with packed types.
 enum { MAX_PACKED_ARGS = 16 };
+}  // namespace internal
 
 template <typename ...Args>
 class format_arg_store {
  private:
   static const size_t NUM_ARGS = sizeof...(Args);
-  static const bool PACKED = NUM_ARGS <= MAX_PACKED_ARGS;
+  static const bool PACKED = NUM_ARGS <= internal::MAX_PACKED_ARGS;
 
-  typedef typename std::conditional<PACKED, Value, Arg>::type value_type;
+  typedef typename std::conditional<
+    PACKED, internal::Value, internal::Arg>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
   std::array<value_type, NUM_ARGS + (PACKED ? 0 : 1)> data_;
@@ -1421,11 +1423,11 @@ class format_arg_store {
   friend format_arg_store<A...> make_format_args(const A & ... args);
 
  public:
-  static const uint64_t TYPES = make_type<Args..., void>();
+  static const uint64_t TYPES = internal::make_type<Args..., void>();
 
   template <typename Formatter>
   format_arg_store(const Args &... args, Formatter *)
-    : data_{{MakeValue<Formatter>(args)...}} {}
+    : data_{{internal::MakeValue<Formatter>(args)...}} {}
 
   const value_type *data() const { return data_.data(); }
 };
@@ -1435,7 +1437,6 @@ inline format_arg_store<Args...> make_format_args(const Args & ... args) {
   Formatter *f = nullptr;
   return format_arg_store<Args...>(args..., f);
 }
-}  // namespace internal
 
 /** Formatting arguments. */
 class format_args {
@@ -1470,7 +1471,7 @@ class format_args {
   format_args() : types_(0) {}
 
   template <typename... Args>
-  format_args(const internal::format_arg_store<Args...> &store)
+  format_args(const format_arg_store<Args...> &store)
   : types_(store.TYPES) {
     set_data(store.data());
   }
@@ -2184,7 +2185,7 @@ class BasicFormatter : private internal::FormatterBase {
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template <typename... Args> \
   void func(arg_type arg0, const Args & ... args) { \
-    auto store = fmt::internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
+    auto store = fmt::make_format_args< fmt::BasicFormatter<Char> >(args...); \
     func(arg0, fmt::format_args(store)); \
   }
 
@@ -2192,7 +2193,7 @@ class BasicFormatter : private internal::FormatterBase {
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    auto store = internal::make_format_args< fmt::BasicFormatter<Char> >(args...); \
+    auto store = fmt::make_format_args< fmt::BasicFormatter<Char> >(args...); \
     func(arg0, arg1, fmt::format_args(store)); \
   }
 
@@ -3128,7 +3129,7 @@ template <typename... Args>
 inline void print_colored(Color c, CStringRef format_str,
                           const Args & ... args) {
   vprint_colored(c, format_str,
-                 internal::make_format_args<BasicFormatter<char>>(args...));
+                 make_format_args<BasicFormatter<char>>(args...));
 }
 
 inline std::string vformat(CStringRef format_str, format_args args) {
@@ -3148,8 +3149,7 @@ inline std::string vformat(CStringRef format_str, format_args args) {
 */
 template <typename... Args>
 inline std::string format(CStringRef format_str, const Args & ... args) {
-  auto vargs = internal::make_format_args<BasicFormatter<char>>(args...);
-  return vformat(format_str, vargs);
+  return vformat(format_str, make_format_args<BasicFormatter<char>>(args...));
 }
 
 inline std::wstring vformat(WCStringRef format_str, format_args args) {
@@ -3160,7 +3160,7 @@ inline std::wstring vformat(WCStringRef format_str, format_args args) {
 
 template <typename... Args>
 inline std::wstring format(WCStringRef format_str, const Args & ... args) {
-  auto vargs = internal::make_format_args<BasicFormatter<wchar_t>>(args...);
+  auto vargs = make_format_args<BasicFormatter<wchar_t>>(args...);
   return vformat(format_str, vargs);
 }
 
@@ -3177,8 +3177,7 @@ FMT_API void vprint(std::FILE *f, CStringRef format_str, format_args args);
  */
 template <typename... Args>
 inline void print(std::FILE *f, CStringRef format_str, const Args & ... args) {
-  vprint(f, format_str,
-         internal::make_format_args<BasicFormatter<char>>(args...));
+  vprint(f, format_str, make_format_args<BasicFormatter<char>>(args...));
 }
 
 FMT_API void vprint(CStringRef format_str, format_args args);
@@ -3194,7 +3193,7 @@ FMT_API void vprint(CStringRef format_str, format_args args);
  */
 template <typename... Args>
 inline void print(CStringRef format_str, const Args & ... args) {
-  vprint(format_str, internal::make_format_args<BasicFormatter<char>>(args...));
+  vprint(format_str, make_format_args<BasicFormatter<char>>(args...));
 }
 
 /**

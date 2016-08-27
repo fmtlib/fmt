@@ -172,8 +172,7 @@ public:
 
   template <typename... Args>
   inline void print(CStringRef format_str, const Args & ... args) {
-    vprint(format_str,
-           internal::make_format_args<BasicFormatter<char>>(args...));
+    vprint(format_str, make_format_args<BasicFormatter<char>>(args...));
   }
 };
 

@@ -100,8 +100,7 @@ FMT_API void vprint(std::ostream &os, CStringRef format_str, format_args args);
 template <typename... Args>
 inline void print(std::ostream &os, CStringRef format_str,
                   const Args & ... args) {
-  vprint(os, format_str,
-         internal::make_format_args<BasicFormatter<char>>(args...));
+  vprint(os, format_str, make_format_args<BasicFormatter<char>>(args...));
 }
 }  // namespace fmt
 

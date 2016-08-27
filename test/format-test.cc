@@ -1572,7 +1572,7 @@ std::string vformat_message(int id, const char *format, fmt::format_args args) {
 
 template <typename... Args>
 std::string format_message(int id, const char *format, const Args & ... args) {
-  auto va = fmt::internal::make_format_args<fmt::BasicFormatter<char>>(args...);
+  auto va = fmt::make_format_args<fmt::BasicFormatter<char>>(args...);
   return vformat_message(id, format, va);
 }
 
@@ -1654,7 +1654,7 @@ void vcustom_format(const char *format_str, fmt::format_args args) {
 
 template <typename... Args>
 void custom_format(const char *format_str, const Args & ... args) {
-  auto va = fmt::internal::make_format_args<fmt::BasicFormatter<char>>(args...);
+  auto va = fmt::make_format_args<fmt::BasicFormatter<char>>(args...);
   return vcustom_format(format_str, va);
 }
 

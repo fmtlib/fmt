@@ -45,7 +45,7 @@ class CustomPrintfArgFormatter :
   }
 };
 
-std::string vcustom_format(const char *format_str, fmt::format_args args) {
+std::string custom_vformat(const char *format_str, fmt::format_args args) {
   fmt::MemoryWriter writer;
   // Pass custom argument formatter as a template arg to BasicFormatter.
   fmt::BasicFormatter<char, CustomArgFormatter> formatter(args, writer);
@@ -55,11 +55,11 @@ std::string vcustom_format(const char *format_str, fmt::format_args args) {
 
 template <typename... Args>
 std::string custom_format(const char *format_str, const Args & ... args) {
-  auto va = fmt::internal::make_format_args<fmt::BasicFormatter<char>>(args...);
-  return vcustom_format(format_str, va);
+  auto va = fmt::make_format_args<fmt::BasicFormatter<char>>(args...);
+  return custom_vformat(format_str, va);
 }
 
-std::string vcustom_sprintf(const char* format_str, fmt::format_args args) {
+std::string custom_vsprintf(const char* format_str, fmt::format_args args) {
   fmt::MemoryWriter writer;
   fmt::PrintfFormatter<char, CustomPrintfArgFormatter> formatter(args, writer);
   formatter.format(format_str);
@@ -68,8 +68,8 @@ std::string vcustom_sprintf(const char* format_str, fmt::format_args args) {
 
 template <typename... Args>
 std::string custom_sprintf(const char *format_str, const Args & ... args) {
-  auto va = fmt::internal::make_format_args<fmt::BasicFormatter<char>>(args...);
-  return vcustom_sprintf(format_str, va);
+  auto va = fmt::make_format_args<fmt::BasicFormatter<char>>(args...);
+  return custom_vsprintf(format_str, va);
 }
 
 TEST(CustomFormatterTest, Format) {

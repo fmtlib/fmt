@@ -506,8 +506,7 @@ inline std::string vsprintf(CStringRef format, format_args args) {
 */
 template <typename... Args>
 inline std::string sprintf(CStringRef format_str, const Args & ... args) {
-  auto vargs = internal::make_format_args<BasicFormatter<char>>(args...);
-  return vsprintf(format_str, vargs);
+  return vsprintf(format_str, make_format_args<BasicFormatter<char>>(args...));
 }
 
 inline std::wstring vsprintf(WCStringRef format, format_args args) {
@@ -518,7 +517,7 @@ inline std::wstring vsprintf(WCStringRef format, format_args args) {
 
 template <typename... Args>
 inline std::wstring sprintf(WCStringRef format_str, const Args & ... args) {
-  auto vargs = internal::make_format_args<BasicFormatter<wchar_t>>(args...);
+  auto vargs = make_format_args<BasicFormatter<wchar_t>>(args...);
   return vsprintf(format_str, vargs);
 }
 
@@ -535,7 +534,7 @@ FMT_API int vfprintf(std::FILE *f, CStringRef format, format_args args);
  */
 template <typename... Args>
 inline int fprintf(std::FILE *f, CStringRef format_str, const Args & ... args) {
-  auto vargs = internal::make_format_args<BasicFormatter<char>>(args...);
+  auto vargs = make_format_args<BasicFormatter<char>>(args...);
   return vfprintf(f, format_str, vargs);
 }
 
@@ -554,8 +553,7 @@ inline int vprintf(CStringRef format, format_args args) {
  */
 template <typename... Args>
 inline int printf(CStringRef format_str, const Args & ... args) {
-  auto vargs = internal::make_format_args<BasicFormatter<char>>(args...);
-  return vprintf(format_str, vargs);
+  return vprintf(format_str, make_format_args<BasicFormatter<char>>(args...));
 }
 
 inline int vfprintf(std::ostream &os, CStringRef format_str, format_args args) {
@@ -577,7 +575,7 @@ inline int vfprintf(std::ostream &os, CStringRef format_str, format_args args) {
 template <typename... Args>
 inline int fprintf(std::ostream &os, CStringRef format_str,
                    const Args & ... args) {
-  auto vargs = internal::make_format_args<BasicFormatter<char>>(args...);
+  auto vargs = make_format_args<BasicFormatter<char>>(args...);
   return vfprintf(os, format_str, vargs);
 }
 }  // namespace fmt
