@@ -166,10 +166,15 @@ public:
   // of MinGW that define fileno as a macro.
   int (fileno)() const;
 
-  void print(CStringRef format_str, const format_args &args) {
-    fmt::print(file_, format_str, args);
+  void vprint(CStringRef format_str, const format_args &args) {
+    fmt::vprint(file_, format_str, args);
   }
-  FMT_VARIADIC(void, print, CStringRef)
+
+  template <typename... Args>
+  inline void print(CStringRef format_str, const Args & ... args) {
+    vprint(format_str,
+           internal::make_format_args<BasicFormatter<char>>(args...));
+  }
 };
 
 // A file. Closed file is represented by a File object with descriptor -1.

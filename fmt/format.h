@@ -3116,13 +3116,20 @@ FMT_API void report_windows_error(int error_code,
 
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
+FMT_API void vprint_colored(Color c, CStringRef format, format_args args);
+
 /**
   Formats a string and prints it to stdout using ANSI escape sequences
   to specify color (experimental).
   Example:
     print_colored(fmt::RED, "Elapsed time: {0:.2f} seconds", 1.23);
  */
-FMT_API void print_colored(Color c, CStringRef format, format_args args);
+template <typename... Args>
+inline void print_colored(Color c, CStringRef format_str,
+                          const Args & ... args) {
+  vprint_colored(c, format_str,
+                 internal::make_format_args<BasicFormatter<char>>(args...));
+}
 
 inline std::string vformat(CStringRef format_str, format_args args) {
   MemoryWriter w;
@@ -3145,11 +3152,19 @@ inline std::string format(CStringRef format_str, const Args & ... args) {
   return vformat(format_str, vargs);
 }
 
-inline std::wstring format(WCStringRef format_str, format_args args) {
+inline std::wstring vformat(WCStringRef format_str, format_args args) {
   WMemoryWriter w;
   w.write(format_str, args);
   return w.str();
 }
+
+template <typename... Args>
+inline std::wstring format(WCStringRef format_str, const Args & ... args) {
+  auto vargs = internal::make_format_args<BasicFormatter<wchar_t>>(args...);
+  return vformat(format_str, vargs);
+}
+
+FMT_API void vprint(std::FILE *f, CStringRef format_str, format_args args);
 
 /**
   \rst
@@ -3160,7 +3175,13 @@ inline std::wstring format(WCStringRef format_str, format_args args) {
     print(stderr, "Don't {}!", "panic");
   \endrst
  */
-FMT_API void print(std::FILE *f, CStringRef format_str, format_args args);
+template <typename... Args>
+inline void print(std::FILE *f, CStringRef format_str, const Args & ... args) {
+  vprint(f, format_str,
+         internal::make_format_args<BasicFormatter<char>>(args...));
+}
+
+FMT_API void vprint(CStringRef format_str, format_args args);
 
 /**
   \rst
@@ -3171,7 +3192,10 @@ FMT_API void print(std::FILE *f, CStringRef format_str, format_args args);
     print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-FMT_API void print(CStringRef format_str, format_args args);
+template <typename... Args>
+inline void print(CStringRef format_str, const Args & ... args) {
+  vprint(format_str, internal::make_format_args<BasicFormatter<char>>(args...));
+}
 
 /**
   Fast integer formatter.
@@ -3340,39 +3364,6 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::format_args(store)); \
   }
 
-/**
-  \rst
-  Defines a variadic function with the specified return type, function name
-  and argument types passed as variable arguments to this macro.
-
-  **Example**::
-
-    void print_error(const char *file, int line, const char *format,
-                     fmt::format_args args) {
-      fmt::print("{}: {}: ", file, line);
-      fmt::print(format, args);
-    }
-    FMT_VARIADIC(void, print_error, const char *, int, const char *)
-
-  ``FMT_VARIADIC`` is used for compatibility with legacy C++ compilers that
-  don't implement variadic templates. You don't have to use this macro if
-  you don't need legacy compiler support and can use variadic templates
-  directly::
-
-    template <typename... Args>
-    void print_error(const char *file, int line, const char *format,
-                     const Args & ... args) {
-      fmt::print("{}: {}: ", file, line);
-      fmt::print(format, args...);
-    }
-  \endrst
- */
-#define FMT_VARIADIC(ReturnType, func, ...) \
-  FMT_VARIADIC_(char, ReturnType, func, return func, __VA_ARGS__)
-
-#define FMT_VARIADIC_W(ReturnType, func, ...) \
-  FMT_VARIADIC_(wchar_t, ReturnType, func, return func, __VA_ARGS__)
-
 #define FMT_CAPTURE_ARG_(id, index) ::fmt::arg(#id, id)
 
 #define FMT_CAPTURE_ARG_W_(id, index) ::fmt::arg(L###id, id)
@@ -3396,11 +3387,6 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 #define FMT_CAPTURE_W(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_W_, __VA_ARGS__)
 
 namespace fmt {
-FMT_VARIADIC_W(std::wstring, format, WCStringRef)
-FMT_VARIADIC(void, print, CStringRef)
-FMT_VARIADIC(void, print, std::FILE *, CStringRef)
-FMT_VARIADIC(void, print_colored, Color, CStringRef)
-
 namespace internal {
 template <typename Char>
 inline bool is_name_start(Char c) {

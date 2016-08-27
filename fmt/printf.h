@@ -484,8 +484,15 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
 }
 
 template <typename Char>
-void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, format_args args) {
+void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format,
+            format_args args) {
   PrintfFormatter<Char>(args, w).format(format);
+}
+
+inline std::string vsprintf(CStringRef format, format_args args) {
+  MemoryWriter w;
+  printf(w, format, args);
+  return w.str();
 }
 
 /**
@@ -497,19 +504,25 @@ void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, format_args args
     std::string message = fmt::sprintf("The answer is %d", 42);
   \endrst
 */
-inline std::string sprintf(CStringRef format, format_args args) {
-  MemoryWriter w;
-  printf(w, format, args);
-  return w.str();
+template <typename... Args>
+inline std::string sprintf(CStringRef format_str, const Args & ... args) {
+  auto vargs = internal::make_format_args<BasicFormatter<char>>(args...);
+  return vsprintf(format_str, vargs);
 }
-FMT_VARIADIC(std::string, sprintf, CStringRef)
 
-inline std::wstring sprintf(WCStringRef format, format_args args) {
+inline std::wstring vsprintf(WCStringRef format, format_args args) {
   WMemoryWriter w;
   printf(w, format, args);
   return w.str();
 }
-FMT_VARIADIC_W(std::wstring, sprintf, WCStringRef)
+
+template <typename... Args>
+inline std::wstring sprintf(WCStringRef format_str, const Args & ... args) {
+  auto vargs = internal::make_format_args<BasicFormatter<wchar_t>>(args...);
+  return vsprintf(format_str, vargs);
+}
+
+FMT_API int vfprintf(std::FILE *f, CStringRef format, format_args args);
 
 /**
   \rst
@@ -520,8 +533,15 @@ FMT_VARIADIC_W(std::wstring, sprintf, WCStringRef)
     fmt::fprintf(stderr, "Don't %s!", "panic");
   \endrst
  */
-FMT_API int fprintf(std::FILE *f, CStringRef format, format_args args);
-FMT_VARIADIC(int, fprintf, std::FILE *, CStringRef)
+template <typename... Args>
+inline int fprintf(std::FILE *f, CStringRef format_str, const Args & ... args) {
+  auto vargs = internal::make_format_args<BasicFormatter<char>>(args...);
+  return vfprintf(f, format_str, vargs);
+}
+
+inline int vprintf(CStringRef format, format_args args) {
+  return vfprintf(stdout, format, args);
+}
 
 /**
   \rst
@@ -532,10 +552,18 @@ FMT_VARIADIC(int, fprintf, std::FILE *, CStringRef)
     fmt::printf("Elapsed time: %.2f seconds", 1.23);
   \endrst
  */
-inline int printf(CStringRef format, format_args args) {
-  return fprintf(stdout, format, args);
+template <typename... Args>
+inline int printf(CStringRef format_str, const Args & ... args) {
+  auto vargs = internal::make_format_args<BasicFormatter<char>>(args...);
+  return vprintf(format_str, vargs);
 }
-FMT_VARIADIC(int, printf, CStringRef)
+
+inline int vfprintf(std::ostream &os, CStringRef format_str, format_args args) {
+  MemoryWriter w;
+  printf(w, format_str, args);
+  internal::write(os, w);
+  return static_cast<int>(w.size());
+}
 
 /**
   \rst
@@ -546,13 +574,12 @@ FMT_VARIADIC(int, printf, CStringRef)
     fprintf(cerr, "Don't %s!", "panic");
   \endrst
  */
-inline int fprintf(std::ostream &os, CStringRef format_str, format_args args) {
-  MemoryWriter w;
-  printf(w, format_str, args);
-  internal::write(os, w);
-  return static_cast<int>(w.size());
+template <typename... Args>
+inline int fprintf(std::ostream &os, CStringRef format_str,
+                   const Args & ... args) {
+  auto vargs = internal::make_format_args<BasicFormatter<char>>(args...);
+  return vfprintf(os, format_str, vargs);
 }
-FMT_VARIADIC(int, fprintf, std::ostream &, CStringRef)
 }  // namespace fmt
 
 #endif  // FMT_PRINTF_H_

@@ -85,24 +85,3 @@ TEST(UtilTest, VariadicVoid) {
   test_variadic_void("", 10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
   EXPECT_EQ(550, result);
 }
-
-template <int>
-struct S {};
-
-#define GET_TYPE(n) S<n>
-
-int test_variadic(FMT_GEN(10, GET_TYPE), const fmt::format_args &args) { \
-  int result = 0; \
-  for (unsigned i = 0; args[i].type; ++i) \
-    result += args[i].int_value; \
-  return result;
-}
-FMT_VARIADIC(int, test_variadic,
-    S<0>, S<1>, S<2>, S<3>, S<4>, S<5>, S<6>, S<7>, S<8>, S<9>)
-
-#define MAKE_ARG(n) S<n>()
-
-TEST(UtilTest, Variadic) {
-  EXPECT_EQ(550, test_variadic(FMT_GEN(10, MAKE_ARG),
-      10, 20, 30, 40, 50, 60, 70, 80, 90, 100));
-}

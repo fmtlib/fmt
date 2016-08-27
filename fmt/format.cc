@@ -483,28 +483,29 @@ FMT_FUNC void report_windows_error(
 }
 #endif
 
-FMT_FUNC void print(std::FILE *f, CStringRef format_str, format_args args) {
+FMT_FUNC void vprint(std::FILE *f, CStringRef format_str, format_args args) {
   MemoryWriter w;
   w.write(format_str, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
 
-FMT_FUNC void print(CStringRef format_str, format_args args) {
-  print(stdout, format_str, args);
+FMT_FUNC void vprint(CStringRef format_str, format_args args) {
+  vprint(stdout, format_str, args);
 }
 
-FMT_FUNC void print_colored(Color c, CStringRef format, format_args args) {
+FMT_FUNC void vprint_colored(Color c, CStringRef format, format_args args) {
   char escape[] = "\x1b[30m";
   escape[3] = static_cast<char>('0' + c);
   std::fputs(escape, stdout);
-  print(format, args);
+  vprint(format, args);
   std::fputs(RESET_COLOR, stdout);
 }
 
 template <typename Char>
-void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, format_args args);
+void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format,
+            format_args args);
 
-FMT_FUNC int fprintf(std::FILE *f, CStringRef format, format_args args) {
+FMT_FUNC int vfprintf(std::FILE *f, CStringRef format, format_args args) {
   MemoryWriter w;
   printf(w, format, args);
   std::size_t size = w.size();

@@ -1563,15 +1563,18 @@ TEST(StrTest, Convert) {
   EXPECT_EQ("2012-12-9", s);
 }
 
-std::string format_message(int id, const char *format,
-    const fmt::format_args &args) {
+std::string vformat_message(int id, const char *format, fmt::format_args args) {
   MemoryWriter w;
   w.write("[{}] ", id);
   w.write(format, args);
   return w.str();
 }
 
-FMT_VARIADIC(std::string, format_message, int, const char *)
+template <typename... Args>
+std::string format_message(int id, const char *format, const Args & ... args) {
+  auto va = fmt::internal::make_format_args<fmt::BasicFormatter<char>>(args...);
+  return vformat_message(id, format, va);
+}
 
 TEST(FormatTest, FormatMessageExample) {
   EXPECT_EQ("[42] something happened",
@@ -1643,12 +1646,17 @@ class MockArgFormatter :
   MOCK_METHOD1(visit_int, void (int value));
 };
 
-void custom_format(const char *format_str, fmt::format_args args) {
+void vcustom_format(const char *format_str, fmt::format_args args) {
   fmt::MemoryWriter writer;
   fmt::BasicFormatter<char, MockArgFormatter> formatter(args, writer);
   formatter.format(format_str);
 }
-FMT_VARIADIC(void, custom_format, const char *)
+
+template <typename... Args>
+void custom_format(const char *format_str, const Args & ... args) {
+  auto va = fmt::internal::make_format_args<fmt::BasicFormatter<char>>(args...);
+  return vcustom_format(format_str, va);
+}
 
 TEST(FormatTest, CustomArgFormatter) {
   custom_format("{}", 42);

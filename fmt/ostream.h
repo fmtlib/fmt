@@ -86,6 +86,8 @@ void format_arg(BasicFormatter<Char, ArgFormatter> &f,
   format_str = f.format(format_str, MakeArg(str));
 }
 
+FMT_API void vprint(std::ostream &os, CStringRef format_str, format_args args);
+
 /**
   \rst
   Prints formatted data to the stream *os*.
@@ -95,8 +97,12 @@ void format_arg(BasicFormatter<Char, ArgFormatter> &f,
     print(cerr, "Don't {}!", "panic");
   \endrst
  */
-FMT_API void print(std::ostream &os, CStringRef format_str, format_args args);
-FMT_VARIADIC(void, print, std::ostream &, CStringRef)
+template <typename... Args>
+inline void print(std::ostream &os, CStringRef format_str,
+                  const Args & ... args) {
+  vprint(os, format_str,
+         internal::make_format_args<BasicFormatter<char>>(args...));
+}
 }  // namespace fmt
 
 #ifdef FMT_HEADER_ONLY
