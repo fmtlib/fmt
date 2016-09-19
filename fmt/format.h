@@ -1441,7 +1441,7 @@ private:
   template <typename Char>
   static std::size_t calculate_extra_size(const internal::Arg& arg);
   template <typename Char>
-  static void serialize_extra_data(uint8_t*& data_buffer, const internal::Arg& arg);
+  static void serialize_extra_data(uint8_t*& data_buffer, internal::Arg::Type type, const internal::Value& arg);
   template <typename Char>
   static void deserialize_extra_data(uint8_t*& data_buffer, internal::Arg::Type type, internal::Value& arg);
 };
@@ -1471,11 +1471,11 @@ inline std::size_t ArgList::calculate_extra_size(const internal::Arg& arg)
 }
 
 template <typename Char>
-inline void ArgList::serialize_extra_data(uint8_t*& data_buffer, const internal::Arg& arg)
+inline void ArgList::serialize_extra_data(uint8_t*& data_buffer, internal::Arg::Type type, const internal::Value& value)
 {
   // Serialize extra data
-  if (arg.type == internal::Arg::NAMED_ARG) {
-    const fmt::internal::NamedArg<Char>* named = static_cast<const fmt::internal::NamedArg<Char>*>(arg.pointer);
+  if (type == internal::Arg::NAMED_ARG) {
+    const fmt::internal::NamedArg<Char>* named = static_cast<const fmt::internal::NamedArg<Char>*>(value.pointer);
     std::memcpy(data_buffer, named, sizeof(fmt::internal::NamedArg<Char>));
     data_buffer += sizeof(fmt::internal::NamedArg<Char>);
     std::size_t size = named->name.size() * sizeof(Char);
@@ -1483,42 +1483,42 @@ inline void ArgList::serialize_extra_data(uint8_t*& data_buffer, const internal:
     data_buffer += sizeof(std::size_t);
     std::memcpy(data_buffer, named->name.data(), size);
     data_buffer += size;
-    serialize_extra_data<Char>(data_buffer, *named);
+    serialize_extra_data<Char>(data_buffer, named->type, *named);
   }
-  else if (arg.type == internal::Arg::CSTRING) {
-    std::size_t size = (std::strlen(arg.string.value) + 1) * sizeof(char);
+  else if (type == internal::Arg::CSTRING) {
+    std::size_t size = (std::strlen(value.string.value) + 1) * sizeof(char);
     std::memcpy(data_buffer, &size, sizeof(std::size_t));
     data_buffer += sizeof(std::size_t);
-    std::memcpy(data_buffer, arg.string.value, size);
+    std::memcpy(data_buffer, value.string.value, size);
     data_buffer += size;
   }
-  else if (arg.type == internal::Arg::STRING) {
-    std::size_t size = arg.string.size * sizeof(char);
+  else if (type == internal::Arg::STRING) {
+    std::size_t size = value.string.size * sizeof(char);
     std::memcpy(data_buffer, &size, sizeof(std::size_t));
     data_buffer += sizeof(std::size_t);
-    std::memcpy(data_buffer, arg.string.value, size);
+    std::memcpy(data_buffer, value.string.value, size);
     data_buffer += size;
   }
-  else if (arg.type == internal::Arg::WSTRING) {
-    std::size_t size = arg.wstring.size * sizeof(wchar_t);
+  else if (type == internal::Arg::WSTRING) {
+    std::size_t size = value.wstring.size * sizeof(wchar_t);
     std::memcpy(data_buffer, &size, sizeof(std::size_t));
     data_buffer += sizeof(std::size_t);
-    std::memcpy(data_buffer, arg.wstring.value, size);
+    std::memcpy(data_buffer, value.wstring.value, size);
     data_buffer += size;
   }
-  else if (arg.type == internal::Arg::CUSTOM) {
-    std::memcpy(data_buffer, arg.custom.value, arg.custom.size);
-    data_buffer += arg.custom.size;
+  else if (type == internal::Arg::CUSTOM) {
+    std::memcpy(data_buffer, value.custom.value, value.custom.size);
+    data_buffer += value.custom.size;
   }
 }
 
 template <typename Char>
-inline void ArgList::deserialize_extra_data(uint8_t*& data_buffer, internal::Arg::Type type, internal::Value& arg)
+inline void ArgList::deserialize_extra_data(uint8_t*& data_buffer, internal::Arg::Type type, internal::Value& value)
 {
   // Deserialize extra data
   if (type == internal::Arg::NAMED_ARG) {
     fmt::internal::NamedArg<Char>* named = reinterpret_cast<fmt::internal::NamedArg<Char>*>(data_buffer);
-    arg.pointer = named;
+    value.pointer = named;
     data_buffer += sizeof(fmt::internal::NamedArg<Char>);
     std::size_t size;
     std::memcpy(&size, data_buffer, sizeof(std::size_t));
@@ -1531,28 +1531,28 @@ inline void ArgList::deserialize_extra_data(uint8_t*& data_buffer, internal::Arg
     std::size_t size;
     std::memcpy(&size, data_buffer, sizeof(std::size_t));
     data_buffer += sizeof(std::size_t);
-    arg.string.value = reinterpret_cast<const char*>(data_buffer);
+    value.string.value = reinterpret_cast<const char*>(data_buffer);
     data_buffer += size;
   }
   else if (type == internal::Arg::STRING) {
     std::size_t size;
     std::memcpy(&size, data_buffer, sizeof(std::size_t));
     data_buffer += sizeof(std::size_t);
-    arg.string.value = reinterpret_cast<const char*>(data_buffer);
-    arg.string.size = size / sizeof(char);
+    value.string.value = reinterpret_cast<const char*>(data_buffer);
+    value.string.size = size / sizeof(char);
     data_buffer += size;
   }
   else if (type == internal::Arg::WSTRING) {
     std::size_t size;
     std::memcpy(&size, data_buffer, sizeof(std::size_t));
     data_buffer += sizeof(std::size_t);
-    arg.wstring.value = reinterpret_cast<const wchar_t*>(data_buffer);
-    arg.wstring.size = size / sizeof(wchar_t);
+    value.wstring.value = reinterpret_cast<const wchar_t*>(data_buffer);
+    value.wstring.size = size / sizeof(wchar_t);
     data_buffer += size;
   }
   else if (type == internal::Arg::CUSTOM) {
-    arg.custom.value = data_buffer;
-    data_buffer += arg.custom.size;
+    value.custom.value = data_buffer;
+    data_buffer += value.custom.size;
   }
 }
 
@@ -1600,10 +1600,11 @@ inline void ArgList::serialize(std::vector<uint8_t>& buffer) const
   for (unsigned i = 0; i < count; ++i) {
     // Serialize argument
     internal::Arg arg = args[i];
-    std::memcpy(base_buffer, &arg, item_size);
+	internal::Value& value = arg;
+    std::memcpy(base_buffer, (count > MAX_PACKED_ARGS) ? &arg : &value, item_size);
     base_buffer += item_size;
     // Serialize extra data
-    serialize_extra_data<Char>(data_buffer, arg);
+    serialize_extra_data<Char>(data_buffer, arg.type, value);
   }
 }
 
@@ -1622,9 +1623,6 @@ inline ArgList ArgList::deserialize(std::vector<uint8_t>& buffer)
   std::memcpy(&count, base_buffer, sizeof(unsigned));
   base_buffer += sizeof(unsigned);
 
-  // Calculate the item size
-  std::size_t item_size = (count > MAX_PACKED_ARGS) ? sizeof(internal::Arg) : sizeof(internal::Value);
-
   // Deserialize the base buffer size
   std::size_t base_size;
   std::memcpy(&base_size, base_buffer, sizeof(std::size_t));
@@ -1638,14 +1636,27 @@ inline ArgList ArgList::deserialize(std::vector<uint8_t>& buffer)
   std::memcpy(&types, base_buffer, sizeof(ULongLong));
   base_buffer += sizeof(ULongLong);
 
+  // Calculate the item size
+  std::size_t item_size = (count > MAX_PACKED_ARGS) ? sizeof(internal::Arg) : sizeof(internal::Value);
+
   // Deserialize values of format arguments
   uint8_t* local_buffer = base_buffer;
   for (unsigned i = 0; i < count; ++i) {
-    // Deserialize argument
-    internal::Value* arg = reinterpret_cast<internal::Value*>(local_buffer);
-	local_buffer += item_size;
-    // Deserialize extra data
-    deserialize_extra_data<Char>(data_buffer, type(types, i), *arg);
+    if (count > MAX_PACKED_ARGS)
+    {
+      // Deserialize argument
+      internal::Arg* arg = reinterpret_cast<internal::Arg*>(local_buffer);
+      // Deserialize extra data
+      deserialize_extra_data<Char>(data_buffer, arg->type, *arg);
+    }
+    else
+    {
+      // Deserialize argument
+      internal::Value* value = reinterpret_cast<internal::Value*>(local_buffer);
+      // Deserialize extra data
+      deserialize_extra_data<Char>(data_buffer, type(types, i), *value);
+    }
+    local_buffer += item_size;
   }
 
   // Prepare and return arguments list stored in the provided buffer
