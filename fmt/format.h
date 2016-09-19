@@ -156,6 +156,15 @@ typedef __int64          intmax_t;
 # include <utility>  // for std::move
 #endif
 
+#ifndef FMT_HAS_THREAD_LOCAL
+// Thread local storage are available in GCC since version 4.8
+// (https://gcc.gnu.org/projects/cxx-status.html) and in Visual C++
+// since version 2015.
+# define FMT_HAS_THREAD_LOCAL \
+   (FMT_HAS_FEATURE(cxx_thread_local) || \
+       (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900)
+#endif
+
 // Check if exceptions are disabled.
 #if defined(__GNUC__) && !defined(__EXCEPTIONS)
 # define FMT_EXCEPTIONS 0
@@ -1427,7 +1436,10 @@ class ArgList {
     return args_[index];
   }
 
+#if FMT_HAS_THREAD_LOCAL
+
   // Cross-thread serialization facility
+
   template <typename Char>
   void serialize(std::vector<uint8_t>& buffer) const;
   template <typename Char>
@@ -1440,7 +1452,10 @@ private:
   static void serialize_extra_data(uint8_t*& data_buffer, const internal::Arg& arg);
   template <typename Char>
   static void deserialize_extra_data(uint8_t*& data_buffer, internal::Arg& arg);
+#endif
 };
+
+#if FMT_HAS_THREAD_LOCAL
 
 // Cross-thread serialization facility
 
@@ -1657,6 +1672,8 @@ inline ArgList ArgList::deserialize(std::vector<uint8_t>& buffer)
 
   return args_list;
 }
+
+#endif
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
 

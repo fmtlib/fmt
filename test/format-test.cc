@@ -1654,6 +1654,8 @@ TEST(FormatTest, CustomArgFormatter) {
   custom_format("{}", 42);
 }
 
+#if FMT_HAS_THREAD_LOCAL
+
 std::string serialize_deserialize(const char *format_str, fmt::ArgList args) {
   std::vector<uint8_t> buffer;
   args.serialize<char>(buffer);
@@ -1681,3 +1683,5 @@ TEST(FormatTest, Serialization) {
   EXPECT_EQ(serialize_deserialize("Elapsed time: {s:.2f} seconds", "s"_a = 1.23), "Elapsed time: 1.23 seconds");
   EXPECT_EQ(serialize_deserialize("The answer is {}"_format(42).c_str()), "The answer is 42");
 }
+
+#endif
