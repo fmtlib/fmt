@@ -1004,6 +1004,7 @@ struct Value {
       void *formatter, const void *arg, void *format_str_ptr);
 
   struct CustomValue {
+    std::size_t size;
     const void *value;
     FormatFunc format;
   };
@@ -1303,6 +1304,7 @@ class MakeValue : public Arg {
   MakeValue(const T &value,
             typename EnableIf<Not<
               ConvertToInt<T>::value>::value, int>::type = 0) {
+    custom.size = sizeof(T);
     custom.value = &value;
     custom.format = &format_custom_arg<T>;
   }
@@ -1397,6 +1399,8 @@ class ArgList {
   ArgList(ULongLong types, const internal::Arg *args)
   : types_(types), args_(args) {}
 
+  uint64_t types() const { return types_; }
+
   /** Returns the argument at specified index. */
   internal::Arg operator[](unsigned index) const {
     using internal::Arg;
@@ -1422,6 +1426,10 @@ class ArgList {
     }
     return args_[index];
   }
+
+  // Cross-thread serialization facility
+  void serialize(std::vector<uint8_t>& buffer) const;
+  static ArgList deserialize(const std::vector<uint8_t>& buffer);
 };
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call

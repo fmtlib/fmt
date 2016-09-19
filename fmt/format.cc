@@ -549,6 +549,174 @@ template int internal::CharTraits<wchar_t>::format_float(
 
 #endif  // FMT_HEADER_ONLY
 
+// Cross-thread serialization facility
+
+void ArgList::serialize(std::vector<uint8_t>& buffer) const
+{
+  const ArgList& args = *this;
+
+  // Calculate the count of format arguments
+  unsigned count = 1;
+  while (args[count - 1].type != internal::Arg::NONE)
+    ++count;
+
+  // Special check for none format arguments
+  if (count == 1)
+    return;
+
+  // Caclulate base & full buffer sizes
+  std::size_t base_size = sizeof(count) + sizeof(std::size_t) + sizeof(ULongLong) + count * sizeof(internal::Arg);
+  std::size_t full_size = base_size;
+  for (unsigned i = 0; i < count; ++i) {
+    internal::Arg arg = args[i];
+    if (arg.type == internal::Arg::CSTRING)
+      full_size += sizeof(std::size_t) + (std::strlen(arg.string.value) + 1) * sizeof(char);
+    else if (arg.type == internal::Arg::STRING)
+      full_size += sizeof(std::size_t) + arg.string.size * sizeof(char);
+    else if (arg.type == internal::Arg::WSTRING)
+      full_size += sizeof(std::size_t) + arg.wstring.size * sizeof(wchar_t);
+    else if (arg.type == internal::Arg::CUSTOM)
+      full_size += arg.custom.size;
+  }
+
+  // Resize buffer to fit all format arguments
+  buffer.resize(full_size);
+
+  uint8_t* base_buffer = buffer.data();
+  uint8_t* data_buffer = base_buffer + base_size;
+
+  // Serialize the count of format arguments
+  std::memcpy(base_buffer, &count, sizeof(unsigned));
+  base_buffer += sizeof(unsigned);
+
+  // Serialize the base buffer size
+  std::memcpy(base_buffer, &base_size, sizeof(std::size_t));
+  base_buffer += sizeof(std::size_t);
+
+  // Serialize types of format arguments
+  ULongLong types = args.types();
+  std::memcpy(base_buffer, &types, sizeof(ULongLong));
+  base_buffer += sizeof(ULongLong);
+
+  // Serialize values of format arguments
+  for (unsigned i = 0; i < count; ++i) {
+    internal::Arg arg = args[i];
+
+    // Serialize argument
+    std::memcpy(base_buffer, &arg, sizeof(internal::Arg));
+    base_buffer += sizeof(internal::Arg);
+
+    // Serialize extra data
+    if (arg.type == internal::Arg::CSTRING) {
+      std::size_t size = (std::strlen(arg.string.value) + 1) * sizeof(char);
+      std::memcpy(data_buffer, &size, sizeof(std::size_t));
+      data_buffer += sizeof(std::size_t);
+      std::memcpy(data_buffer, arg.string.value, size);
+      data_buffer += size;
+    }
+    else if (arg.type == internal::Arg::STRING) {
+      std::size_t size = arg.string.size * sizeof(char);
+      std::memcpy(data_buffer, &size, sizeof(std::size_t));
+      data_buffer += sizeof(std::size_t);
+      std::memcpy(data_buffer, arg.string.value, size);
+      data_buffer += size;
+    }
+    else if (arg.type == internal::Arg::WSTRING) {
+      std::size_t size = arg.wstring.size * sizeof(wchar_t);
+      std::memcpy(data_buffer, &size, sizeof(std::size_t));
+      data_buffer += sizeof(std::size_t);
+      std::memcpy(data_buffer, arg.wstring.value, size);
+      data_buffer += size;
+    }
+    else if (arg.type == internal::Arg::CUSTOM) {
+      std::memcpy(data_buffer, arg.custom.value, arg.custom.size);
+      data_buffer += arg.custom.size;
+    }
+  }
+}
+
+ArgList ArgList::deserialize(const std::vector<uint8_t>& buffer)
+{
+  // Special check for empty format arguments list
+  if (buffer.empty())
+    return ArgList();
+
+  const uint8_t* base_buffer = buffer.data();
+  const uint8_t* data_buffer = base_buffer;
+
+  // Deserialize the count of format arguments
+  unsigned count;
+  std::memcpy(&count, base_buffer, sizeof(unsigned));
+  base_buffer += sizeof(unsigned);
+
+  // Deserialize the base buffer size
+  std::size_t base_size;
+  std::memcpy(&base_size, base_buffer, sizeof(std::size_t));
+  base_buffer += sizeof(std::size_t);
+
+  // Update the data buffer offset
+  data_buffer += base_size;
+
+  // Deserialize types of format arguments
+  ULongLong types;
+  std::memcpy(&types, base_buffer, sizeof(ULongLong));
+  base_buffer += sizeof(ULongLong);
+
+  // Reserve space for format arguments values
+  thread_local std::vector<internal::Arg> args;
+  args.resize(count);
+
+  // Deserialize values of format arguments
+  for (unsigned i = 0; i < count; ++i) {
+    // Deserialize argument
+    std::memcpy(&args[i], base_buffer, sizeof(internal::Arg));
+    base_buffer += sizeof(internal::Arg);
+
+    // Deserialize extra data
+    if (args[i].type == internal::Arg::CSTRING) {
+      std::size_t size;
+      std::memcpy(&size, data_buffer, sizeof(std::size_t));
+      data_buffer += sizeof(std::size_t);
+      args[i].string.value = (const char*)data_buffer;
+      data_buffer += size;
+    }
+    else if (args[i].type == internal::Arg::STRING) {
+      std::size_t size;
+      std::memcpy(&size, data_buffer, sizeof(std::size_t));
+      data_buffer += sizeof(std::size_t);
+      args[i].string.value = (const char*)data_buffer;
+      args[i].string.size = size / sizeof(char);
+      data_buffer += size;
+    }
+    else if (args[i].type == internal::Arg::WSTRING) {
+      std::size_t size;
+      std::memcpy(&size, data_buffer, sizeof(std::size_t));
+      data_buffer += sizeof(std::size_t);
+      args[i].wstring.value = (const wchar_t*)data_buffer;
+      args[i].wstring.size = size / sizeof(wchar_t);
+      data_buffer += size;
+    }
+    else if (args[i].type == internal::Arg::CUSTOM) {
+      args[i].custom.value = data_buffer;
+      data_buffer += args[i].custom.size;
+    }
+  }
+
+  // Prepare arguments list
+  ArgList args_list(types, args.data());
+
+  // Special check for arguments list optimization
+  if (count <= MAX_PACKED_ARGS)
+  {
+    thread_local std::vector<internal::Value> values(MAX_PACKED_ARGS);
+    for (std::size_t i = 0; i < args.size(); ++i)
+      values[i] = static_cast<internal::Value>(args[i]);
+    args_list = ArgList(types, values.data());
+  }
+
+  return args_list;
+}
+
 }  // namespace fmt
 
 #ifdef _MSC_VER
