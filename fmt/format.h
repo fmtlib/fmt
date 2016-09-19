@@ -1600,11 +1600,10 @@ inline void ArgList::serialize(std::vector<uint8_t>& buffer) const
   for (unsigned i = 0; i < count; ++i) {
     // Serialize argument
     internal::Arg arg = args[i];
-	internal::Value& value = arg;
-    std::memcpy(base_buffer, (count > MAX_PACKED_ARGS) ? &arg : &value, item_size);
+    std::memcpy(base_buffer, &arg, item_size);
     base_buffer += item_size;
     // Serialize extra data
-    serialize_extra_data<Char>(data_buffer, arg.type, value);
+    serialize_extra_data<Char>(data_buffer, arg.type, arg);
   }
 }
 
@@ -1642,21 +1641,11 @@ inline ArgList ArgList::deserialize(std::vector<uint8_t>& buffer)
   // Deserialize values of format arguments
   uint8_t* local_buffer = base_buffer;
   for (unsigned i = 0; i < count; ++i) {
-    if (count > MAX_PACKED_ARGS)
-    {
-      // Deserialize argument
-      internal::Arg* arg = reinterpret_cast<internal::Arg*>(local_buffer);
-      // Deserialize extra data
-      deserialize_extra_data<Char>(data_buffer, arg->type, *arg);
-    }
-    else
-    {
-      // Deserialize argument
-      internal::Value* value = reinterpret_cast<internal::Value*>(local_buffer);
-      // Deserialize extra data
-      deserialize_extra_data<Char>(data_buffer, type(types, i), *value);
-    }
+    // Deserialize argument
+    internal::Value* value = reinterpret_cast<internal::Value*>(local_buffer);
     local_buffer += item_size;
+    // Deserialize extra data
+    deserialize_extra_data<Char>(data_buffer, type(types, i), *value);
   }
 
   // Prepare and return arguments list stored in the provided buffer
