@@ -1655,10 +1655,12 @@ TEST(FormatTest, CustomArgFormatter) {
 }
 
 std::string serialize_deserialize(const char *format_str, fmt::ArgList args) {
-  static std::vector<uint8_t> buffer;
+  std::vector<uint8_t> buffer;
   args.serialize<char>(buffer);
   args = args.deserialize<char>(buffer);
-  return fmt::format(format_str, args);
+  std::string result = fmt::format(format_str, args);
+  buffer.clear();
+  return result;
 }
 FMT_VARIADIC(std::string, serialize_deserialize, const char *)
 
