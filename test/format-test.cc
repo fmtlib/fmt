@@ -1655,7 +1655,7 @@ TEST(FormatTest, CustomArgFormatter) {
 }
 
 std::string serialize_deserialize(const char *format_str, fmt::ArgList args) {
-  std::vector<uint8_t> buffer;
+  static std::vector<uint8_t> buffer;
   args.serialize<char>(buffer);
   args = args.deserialize<char>(buffer);
   return fmt::format(format_str, args);
@@ -1664,19 +1664,19 @@ FMT_VARIADIC(std::string, serialize_deserialize, const char *)
 
 TEST(FormatTest, Serialization) {
   EXPECT_EQ(serialize_deserialize("{0}, {1}, {2}", -1, 0, 1), "-1, 0, 1");
-  //EXPECT_EQ(serialize_deserialize("{0}, {1}, {2}", 'a', 'b', 'c'), "a, b, c");
-  //EXPECT_EQ(serialize_deserialize("{}, {}, {}", 'a', 'b', 'c'), "a, b, c");
-  //EXPECT_EQ(serialize_deserialize("{2}, {1}, {0}", 'a', 'b', 'c'), "c, b, a");
-  //EXPECT_EQ(serialize_deserialize("{0}{1}{0}", "abra", "cad"), "abracadabra");
-  //EXPECT_EQ(serialize_deserialize("{:<30}", "left aligned"), "left aligned                  ");
-  //EXPECT_EQ(serialize_deserialize("{:>30}", "right aligned"), "                 right aligned");
-  //EXPECT_EQ(serialize_deserialize("{:^30}", "centered"), "           centered           ");
-  //EXPECT_EQ(serialize_deserialize("{:*^30}", "centered"), "***********centered***********");
-  //EXPECT_EQ(serialize_deserialize("{:+f}; {:+f}", 3.14, -3.14), "+3.140000; -3.140000");
-  //EXPECT_EQ(serialize_deserialize("{: f}; {: f}", 3.14, -3.14), " 3.140000; -3.140000");
-  //EXPECT_EQ(serialize_deserialize("{:-f}; {:-f}", 3.14, -3.14), "3.140000; -3.140000");
-  //EXPECT_EQ(serialize_deserialize("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42), "int: 42;  hex: 2a;  oct: 52; bin: 101010");
-  //EXPECT_EQ(serialize_deserialize("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}", 42), "int: 42;  hex: 0x2a;  oct: 052;  bin: 0b101010");
-  //EXPECT_EQ(serialize_deserialize("The date is {}", Date(2012, 12, 9)), "The date is 2012-12-9");
-  //EXPECT_EQ(serialize_deserialize("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23)), "Elapsed time: 1.23 seconds");
+  EXPECT_EQ(serialize_deserialize("{0}, {1}, {2}", 'a', 'b', 'c'), "a, b, c");
+  EXPECT_EQ(serialize_deserialize("{}, {}, {}", 'a', 'b', 'c'), "a, b, c");
+  EXPECT_EQ(serialize_deserialize("{2}, {1}, {0}", 'a', 'b', 'c'), "c, b, a");
+  EXPECT_EQ(serialize_deserialize("{0}{1}{0}", "abra", "cad"), "abracadabra");
+  EXPECT_EQ(serialize_deserialize("{:<30}", "left aligned"), "left aligned                  ");
+  EXPECT_EQ(serialize_deserialize("{:>30}", "right aligned"), "                 right aligned");
+  EXPECT_EQ(serialize_deserialize("{:^30}", "centered"), "           centered           ");
+  EXPECT_EQ(serialize_deserialize("{:*^30}", "centered"), "***********centered***********");
+  EXPECT_EQ(serialize_deserialize("{:+f}; {:+f}", 3.14, -3.14), "+3.140000; -3.140000");
+  EXPECT_EQ(serialize_deserialize("{: f}; {: f}", 3.14, -3.14), " 3.140000; -3.140000");
+  EXPECT_EQ(serialize_deserialize("{:-f}; {:-f}", 3.14, -3.14), "3.140000; -3.140000");
+  EXPECT_EQ(serialize_deserialize("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42), "int: 42;  hex: 2a;  oct: 52; bin: 101010");
+  EXPECT_EQ(serialize_deserialize("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}", 42), "int: 42;  hex: 0x2a;  oct: 052;  bin: 0b101010");
+  EXPECT_EQ(serialize_deserialize("The date is {}", Date(2012, 12, 9)), "The date is 2012-12-9");
+  EXPECT_EQ(serialize_deserialize("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23)), "Elapsed time: 1.23 seconds");
 }
