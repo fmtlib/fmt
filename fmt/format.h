@@ -194,6 +194,17 @@ typedef __int64          intmax_t;
 # endif
 #endif
 
+#ifndef FMT_OVERRIDE
+# if FMT_USE_OVERRIDE || FMT_HAS_FEATURE(cxx_override) || \
+   (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
+   FMT_MSC_VER >= 1900
+#  define FMT_OVERRIDE override
+# else
+#  define FMT_OVERRIDE
+# endif
+#endif
+
+
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
 #ifndef FMT_USE_DELETED_FUNCTIONS
@@ -675,7 +686,7 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
   }
 
  protected:
-  void grow(std::size_t size);
+  void grow(std::size_t size) FMT_OVERRIDE;
 
  public:
   explicit MemoryBuffer(const Allocator &alloc = Allocator())
