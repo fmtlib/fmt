@@ -1004,6 +1004,7 @@ struct Value {
       void *formatter, const void *arg, void *format_str_ptr);
 
   struct CustomValue {
+    std::size_t size;
     const void *value;
     FormatFunc format;
   };
@@ -1303,6 +1304,7 @@ class MakeValue : public Arg {
   MakeValue(const T &value,
             typename EnableIf<Not<
               ConvertToInt<T>::value>::value, int>::type = 0) {
+    custom.size = sizeof(T);
     custom.value = &value;
     custom.format = &format_custom_arg<T>;
   }
@@ -1377,10 +1379,13 @@ class ArgList {
   };
 
   internal::Arg::Type type(unsigned index) const {
+    return type(types_, index);
+  }
+  static internal::Arg::Type type(uint64_t types, unsigned index) {
     unsigned shift = index * 4;
     uint64_t mask = 0xf;
     return static_cast<internal::Arg::Type>(
-          (types_ & (mask << shift)) >> shift);
+          (types & (mask << shift)) >> shift);
   }
 
   template <typename Char>
@@ -1396,6 +1401,8 @@ class ArgList {
   : types_(types), values_(values) {}
   ArgList(ULongLong types, const internal::Arg *args)
   : types_(types), args_(args) {}
+
+  uint64_t types() const { return types_; }
 
   /** Returns the argument at specified index. */
   internal::Arg operator[](unsigned index) const {
