@@ -1041,6 +1041,8 @@ struct Arg : Value {
 
 template <typename Char>
 struct NamedArg;
+template <typename Char, typename T>
+struct NamedArgWithType;
 
 template <typename T = void>
 struct Null {};
@@ -1322,9 +1324,13 @@ class MakeValue : public Arg {
   // uses char.
   template <typename Char_>
   MakeValue(const NamedArg<Char_> &value) { pointer = &value; }
+  template <typename Char_, typename T>
+  MakeValue(const NamedArgWithType<Char_, T> &value) { pointer = &value; }
 
   template <typename Char_>
   static uint64_t type(const NamedArg<Char_> &) { return Arg::NAMED_ARG; }
+  template <typename Char_, typename T>
+  static uint64_t type(const NamedArgWithType<Char_, T> &) { return Arg::NAMED_ARG; }
 };
 
 template <typename Formatter>
@@ -1348,6 +1354,12 @@ struct NamedArg : Arg {
   template <typename T>
   NamedArg(BasicStringRef<Char> argname, const T &value)
   : Arg(MakeArg< BasicFormatter<Char> >(value)), name(argname) {}
+};
+
+template <typename Char, typename T>
+struct NamedArgWithType : NamedArg<Char> {
+  NamedArgWithType(BasicStringRef<Char> argname, const T &value)
+  : NamedArg<Char>(argname, value) {}
 };
 
 class RuntimeError : public std::runtime_error {
@@ -3331,13 +3343,13 @@ inline void format_decimal(char *&buffer, T value) {
   \endrst
  */
 template <typename T>
-inline internal::NamedArg<char> arg(StringRef name, const T &arg) {
-  return internal::NamedArg<char>(name, arg);
+inline internal::NamedArgWithType<char, T> arg(StringRef name, const T &arg) {
+  return internal::NamedArgWithType<char, T>(name, arg);
 }
 
 template <typename T>
-inline internal::NamedArg<wchar_t> arg(WStringRef name, const T &arg) {
-  return internal::NamedArg<wchar_t>(name, arg);
+inline internal::NamedArgWithType<wchar_t, T> arg(WStringRef name, const T &arg) {
+  return internal::NamedArgWithType<wchar_t, T>(name, arg);
 }
 
 // The following two functions are deleted intentionally to disable
@@ -3782,7 +3794,7 @@ struct UdlArg {
   const Char *str;
 
   template <typename T>
-  NamedArg<Char> operator=(T &&value) const {
+  NamedArgWithType<Char, T> operator=(T &&value) const {
     return {str, std::forward<T>(value)};
   }
 };
