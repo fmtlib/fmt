@@ -129,6 +129,7 @@ if (FMT_PEDANTIC)
   # Test that the library compiles without windows.h.
   if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(no-windows-h-test ../fmt/format.cc)
+    target_compile_options(no-windows-h-test PUBLIC ${CPP11_FLAG})
     target_include_directories(no-windows-h-test PRIVATE ${PROJECT_SOURCE_DIR})
     target_compile_definitions(no-windows-h-test PRIVATE FMT_USE_WINDOWS_H=0)
   endif ()
