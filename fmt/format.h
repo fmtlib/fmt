@@ -1426,13 +1426,13 @@ template <typename ...Args>
 class format_arg_store {
  private:
   static const size_t NUM_ARGS = sizeof...(Args);
-  static const bool PACKED = NUM_ARGS <= internal::MAX_PACKED_ARGS;
+  static const bool IS_PACKED = NUM_ARGS <= internal::MAX_PACKED_ARGS;
 
   typedef typename std::conditional<
-    PACKED, internal::Value, internal::Arg>::type value_type;
+    IS_PACKED, internal::Value, internal::Arg>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
-  std::array<value_type, NUM_ARGS + (PACKED ? 0 : 1)> data_;
+  std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)> data_;
 
   template <typename Formatter, typename ...A>
   friend format_arg_store<A...> make_format_args(const A & ... args);
