@@ -169,5 +169,6 @@ if (FMT_PEDANTIC)
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+    "-DCPP11_FLAG=${CPP11_FLAG}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()
