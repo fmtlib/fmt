@@ -1025,12 +1025,17 @@ struct Value {
     CSTRING, STRING, WSTRING, POINTER, CUSTOM
   };
 };
+}  // namespace internal
 
 // A formatting argument. It is a trivially copyable/constructible type to
 // allow storage in internal::MemoryBuffer.
-struct Arg : Value {
+struct format_arg : internal::Value {
   Type type;
 };
+
+namespace internal {
+
+typedef format_arg Arg;
 
 template <typename Char>
 struct NamedArg;
@@ -1466,21 +1471,20 @@ class format_args {
     // may require more code (at least on x86-64) even if the same amount of
     // data is actually copied to stack. It saves ~10% on the bloat test.
     const internal::Value *values_;
-    const internal::Arg *args_;
+    const format_arg *args_;
   };
 
-  internal::Arg::Type type(unsigned index) const {
+  format_arg::Type type(unsigned index) const {
     unsigned shift = index * 4;
     uint64_t mask = 0xf;
-    return static_cast<internal::Arg::Type>(
-          (types_ & (mask << shift)) >> shift);
+    return static_cast<format_arg::Type>((types_ & (mask << shift)) >> shift);
   }
 
   template <typename Char>
   friend class internal::ArgMap;
 
   void set_data(const internal::Value *values) { values_ = values; }
-  void set_data(const internal::Arg *args) { args_ = args; }
+  void set_data(const format_arg *args) { args_ = args; }
 
  public:
   typedef unsigned size_type;
@@ -1494,14 +1498,13 @@ class format_args {
   }
 
   /** Returns the argument at specified index. */
-  internal::Arg operator[](size_type index) const {
-    using internal::Arg;
-    Arg arg;
-    bool use_values = type(internal::MAX_PACKED_ARGS - 1) == Arg::NONE;
+  format_arg operator[](size_type index) const {
+    format_arg arg;
+    bool use_values = type(internal::MAX_PACKED_ARGS - 1) == format_arg::NONE;
     if (index < internal::MAX_PACKED_ARGS) {
-      Arg::Type arg_type = type(index);
+      format_arg::Type arg_type = type(index);
       internal::Value &val = arg;
-      if (arg_type != Arg::NONE)
+      if (arg_type != format_arg::NONE)
         val = use_values ? values_[index] : args_[index];
       arg.type = arg_type;
       return arg;
@@ -1509,11 +1512,11 @@ class format_args {
     if (use_values) {
       // The index is greater than the number of arguments that can be stored
       // in values, so return a "none" argument.
-      arg.type = Arg::NONE;
+      arg.type = format_arg::NONE;
       return arg;
     }
     for (unsigned i = internal::MAX_PACKED_ARGS; i <= index; ++i) {
-      if (args_[i].type == Arg::NONE)
+      if (args_[i].type == format_arg::NONE)
         return args_[i];
     }
     return args_[index];
