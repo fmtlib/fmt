@@ -1483,6 +1483,8 @@ class format_args {
   void set_data(const internal::Arg *args) { args_ = args; }
 
  public:
+  typedef unsigned size_type;
+
   format_args() : types_(0) {}
 
   template <typename... Args>
@@ -1492,7 +1494,7 @@ class format_args {
   }
 
   /** Returns the argument at specified index. */
-  internal::Arg operator[](unsigned index) const {
+  internal::Arg operator[](size_type index) const {
     using internal::Arg;
     Arg arg;
     bool use_values = type(internal::MAX_PACKED_ARGS - 1) == Arg::NONE;
