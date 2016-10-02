@@ -1154,7 +1154,7 @@ inline fmt::StringRef thousands_sep(...) { return ""; }
 #endif
 
 template <typename Formatter, typename Char, typename T>
-void format_arg(Formatter &, const Char *, const T &) {
+void format_value(Formatter &, const Char *, const T &) {
   FMT_STATIC_ASSERT(False<T>::value,
                     "Cannot format argument. To enable the use of ostream "
                     "operator<< include fmt/ostream.h. Otherwise provide "
@@ -1266,9 +1266,9 @@ class MakeValue : public Arg {
   template <typename T>
   static void format_custom_arg(
       void *formatter, const void *arg, void *format_str_ptr) {
-    format_arg(*static_cast<Formatter*>(formatter),
-               *static_cast<const Char**>(format_str_ptr),
-               *static_cast<const T*>(arg));
+    format_value(*static_cast<Formatter*>(formatter),
+                 *static_cast<const Char**>(format_str_ptr),
+                 *static_cast<const T*>(arg));
   }
 
  public:
