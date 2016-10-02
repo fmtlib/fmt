@@ -1031,6 +1031,8 @@ struct Value {
 // allow storage in internal::MemoryBuffer.
 struct format_arg : internal::Value {
   Type type;
+
+  explicit operator bool() const noexcept { return type != NONE; }
 };
 
 namespace internal {
