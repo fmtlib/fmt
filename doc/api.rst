@@ -58,6 +58,39 @@ formatting::
 The format string syntax is described in the documentation of
 `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_.
 
+Formatting User-Defined types
+-----------------------------
+
+A custom ``format_arg`` function may be implemented and used to format any user-
+defined type. That is how date and time formatting described in the previous
+section is implemented in :file:`fmt/time.h`. The following example shows how to implement custom formatting for a user-defined structure. 
+
+::
+
+  struct MyStruct { double a, b, c, d; };
+
+  void format_arg(fmt::BasicFormatter<char> &f,
+      const char *&format_str, const MyStruct &s) {
+      f.writer().write("[MyStruct: a={:.1f}, b={:.2f}, c={:.3f}, d={:.4f}]",
+          s.a, s.b, s.c, s.d);
+  }
+
+  void f()
+  {
+      MyStruct m = { 1, 2, 3, 4 };
+      std::string s = fmt::format("m={}", n);
+      // s == "m=[MyStruct: a=1.0, b=2.00, c=3.000, d=4.0000]"
+  }
+
+Note in the example above the ``format_arg`` function ignores the contents of
+``format_str`` so the type will always be formatted as specified. See
+``format_arg`` in :file:`fmt/time.h` for an advanced example of how to use
+the ``format_str`` argument to customize the formatted output.
+
+This section shows how to define a custom format function for a user-defined
+type. The next section describes how to get ``fmt`` to use a conventional stream
+output ``operator<<`` when one is defined for a user-defined type.
+
 ``std::ostream`` support
 ------------------------
 
