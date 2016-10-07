@@ -90,8 +90,8 @@ custom argument formatter class::
   // A custom argument formatter that formats negative integers as unsigned
   // with the ``x`` format specifier.
   class CustomArgFormatter :
-    public fmt::BasicArgFormatter<CustomArgFormatter, char>  {
-    public:
+    public fmt::BasicArgFormatter<CustomArgFormatter, char> {
+   public:
     CustomArgFormatter(fmt::BasicFormatter<char, CustomArgFormatter> &f,
                        fmt::FormatSpec &s, const char *fmt)
       : fmt::BasicArgFormatter<CustomArgFormatter, char>(f, s, fmt) {}
