@@ -67,7 +67,7 @@ struct TestArgFormatter : fmt::BasicArgFormatter<TestArgFormatter, char> {
 TEST(OStreamTest, CustomArg) {
   fmt::MemoryWriter writer;
   typedef fmt::BasicFormatter<char, TestArgFormatter> Formatter;
-  Formatter formatter(fmt::format_args(), writer);
+  Formatter formatter(fmt::basic_format_args<Formatter>(), writer);
   fmt::FormatSpec spec;
   TestArgFormatter af(formatter, spec, "}");
   af.visit(fmt::internal::MakeArg<Formatter>(TestEnum()));

@@ -1633,16 +1633,19 @@ class MockArgFormatter :
   MOCK_METHOD1(visit_int, void (int value));
 };
 
-void vcustom_format(const char *format_str, fmt::format_args args) {
+typedef fmt::BasicFormatter<char, MockArgFormatter> CustomFormatter;
+
+void custom_vformat(const char *format_str,
+                    fmt::basic_format_args<CustomFormatter> args) {
   fmt::MemoryWriter writer;
-  fmt::BasicFormatter<char, MockArgFormatter> formatter(args, writer);
+  CustomFormatter formatter(args, writer);
   formatter.format(format_str);
 }
 
 template <typename... Args>
 void custom_format(const char *format_str, const Args & ... args) {
   auto va = fmt::make_format_args<fmt::BasicFormatter<char>>(args...);
-  return vcustom_format(format_str, va);
+  return custom_vformat(format_str, va);
 }
 
 TEST(FormatTest, CustomArgFormatter) {

@@ -404,69 +404,8 @@ FMT_FUNC void format_system_error(
 }
 
 template <typename Char>
-void internal::ArgMap<Char>::init(const format_args &args) {
-  if (!map_.empty())
-    return;
-  typedef internal::NamedArg<Char> NamedArg;
-  const NamedArg *named_arg = 0;
-  bool use_values =
-      args.type(MAX_PACKED_ARGS - 1) == internal::Arg::NONE;
-  if (use_values) {
-    for (unsigned i = 0;/*nothing*/; ++i) {
-      internal::Arg::Type arg_type = args.type(i);
-      switch (arg_type) {
-      case internal::Arg::NONE:
-        return;
-      case internal::Arg::NAMED_ARG:
-        named_arg = static_cast<const NamedArg*>(args.values_[i].pointer);
-        map_.push_back(Pair(named_arg->name, *named_arg));
-        break;
-      default:
-        /*nothing*/;
-      }
-    }
-    return;
-  }
-  for (unsigned i = 0; i != MAX_PACKED_ARGS; ++i) {
-    internal::Arg::Type arg_type = args.type(i);
-    if (arg_type == internal::Arg::NAMED_ARG) {
-      named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
-      map_.push_back(Pair(named_arg->name, *named_arg));
-    }
-  }
-  for (unsigned i = MAX_PACKED_ARGS;/*nothing*/; ++i) {
-    switch (args.args_[i].type) {
-    case internal::Arg::NONE:
-      return;
-    case internal::Arg::NAMED_ARG:
-      named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
-      map_.push_back(Pair(named_arg->name, *named_arg));
-      break;
-    default:
-      /*nothing*/;
-    }
-  }
-}
-
-template <typename Char>
 void internal::FixedBuffer<Char>::grow(std::size_t) {
   FMT_THROW(std::runtime_error("buffer overflow"));
-}
-
-FMT_FUNC Arg internal::FormatterBase::do_get_arg(
-    unsigned arg_index, const char *&error) {
-  Arg arg = args_[arg_index];
-  switch (arg.type) {
-  case Arg::NONE:
-    error = "argument index out of range";
-    break;
-  case Arg::NAMED_ARG:
-    arg = *static_cast<const internal::Arg*>(arg.pointer);
-    break;
-  default:
-    /*nothing*/;
-  }
-  return arg;
 }
 
 FMT_FUNC void report_system_error(
@@ -505,7 +444,8 @@ template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format,
             format_args args);
 
-FMT_FUNC int vfprintf(std::FILE *f, CStringRef format, format_args args) {
+FMT_FUNC int vfprintf(std::FILE *f, CStringRef format,
+                      basic_format_args<PrintfFormatter<char>> args) {
   MemoryWriter w;
   printf(w, format, args);
   std::size_t size = w.size();

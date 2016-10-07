@@ -45,10 +45,13 @@ class CustomPrintfArgFormatter :
   }
 };
 
-std::string custom_vformat(const char *format_str, fmt::format_args args) {
+typedef fmt::BasicFormatter<char, CustomArgFormatter> CustomFormatter;
+
+std::string custom_vformat(const char *format_str,
+                           fmt::basic_format_args<CustomFormatter> args) {
   fmt::MemoryWriter writer;
   // Pass custom argument formatter as a template arg to BasicFormatter.
-  fmt::BasicFormatter<char, CustomArgFormatter> formatter(args, writer);
+  CustomFormatter formatter(args, writer);
   formatter.format(format_str);
   return writer.str();
 }
@@ -59,9 +62,14 @@ std::string custom_format(const char *format_str, const Args & ... args) {
   return custom_vformat(format_str, va);
 }
 
-std::string custom_vsprintf(const char* format_str, fmt::format_args args) {
+typedef fmt::PrintfFormatter<char, CustomPrintfArgFormatter>
+  CustomPrintfFormatter;
+
+std::string custom_vsprintf(
+    const char* format_str,
+    fmt::basic_format_args<CustomPrintfFormatter> args) {
   fmt::MemoryWriter writer;
-  fmt::PrintfFormatter<char, CustomPrintfArgFormatter> formatter(args, writer);
+  CustomPrintfFormatter formatter(args, writer);
   formatter.format(format_str);
   return writer.str();
 }

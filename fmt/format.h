@@ -1429,7 +1429,7 @@ constexpr uint64_t make_type<void>() { return 0; }
 enum { MAX_PACKED_ARGS = 16 };
 }  // namespace internal
 
-template <typename ...Args>
+template <typename Formatter, typename ...Args>
 class format_arg_store {
  private:
   static const size_t NUM_ARGS = sizeof...(Args);
@@ -1441,13 +1441,12 @@ class format_arg_store {
   // If the arguments are not packed, add one more element to mark the end.
   std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)> data_;
 
-  template <typename Formatter, typename ...A>
-  friend format_arg_store<A...> make_format_args(const A & ... args);
+  template <typename ...A>
+  friend format_arg_store<Formatter, A...> make_format_args(const A & ... args);
 
  public:
   static const uint64_t TYPES = internal::make_type<Args..., void>();
 
-  template <typename Formatter>
   format_arg_store(const Args &... args, Formatter *)
     : data_{{internal::MakeValue<Formatter>(args)...}} {}
 
@@ -1455,13 +1454,15 @@ class format_arg_store {
 };
 
 template <typename Formatter, typename ...Args>
-inline format_arg_store<Args...> make_format_args(const Args & ... args) {
+inline format_arg_store<Formatter, Args...>
+    make_format_args(const Args & ... args) {
   Formatter *f = nullptr;
-  return format_arg_store<Args...>(args..., f);
+  return format_arg_store<Formatter, Args...>(args..., f);
 }
 
 /** Formatting arguments. */
-class format_args {
+template <typename Formatter>
+class basic_format_args {
  private:
   // To reduce compiled code size per formatting function call, types of first
   // MAX_PACKED_ARGS arguments are passed in the types_ field.
@@ -1491,10 +1492,10 @@ class format_args {
  public:
   typedef unsigned size_type;
 
-  format_args() : types_(0) {}
+  basic_format_args() : types_(0) {}
 
-  template <typename... Args>
-  format_args(const format_arg_store<Args...> &store)
+  template <typename F, typename... Args>
+  basic_format_args(const format_arg_store<F, Args...> &store)
   : types_(store.TYPES) {
     set_data(store.data());
   }
@@ -1524,6 +1525,9 @@ class format_args {
     return args_[index];
   }
 };
+
+typedef basic_format_args<BasicFormatter<char>> format_args;
+typedef basic_format_args<BasicFormatter<wchar_t>> wformat_args;
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
 
@@ -1919,7 +1923,8 @@ class ArgMap {
   MapType map_;
 
  public:
-  FMT_API void init(const format_args &args);
+  template <typename Formatter>
+  void init(const basic_format_args<Formatter> &args);
 
   const internal::Arg* find(const fmt::BasicStringRef<Char> &name) const {
     // The list is unsorted, so just return the first matching name.
@@ -1931,6 +1936,52 @@ class ArgMap {
     return 0;
   }
 };
+
+template <typename Char>
+template <typename Formatter>
+void ArgMap<Char>::init(const basic_format_args<Formatter> &args) {
+  if (!map_.empty())
+    return;
+  typedef internal::NamedArg<Char> NamedArg;
+  const NamedArg *named_arg = 0;
+  bool use_values =
+  args.type(MAX_PACKED_ARGS - 1) == internal::Arg::NONE;
+  if (use_values) {
+    for (unsigned i = 0;/*nothing*/; ++i) {
+      internal::Arg::Type arg_type = args.type(i);
+      switch (arg_type) {
+        case internal::Arg::NONE:
+          return;
+        case internal::Arg::NAMED_ARG:
+          named_arg = static_cast<const NamedArg*>(args.values_[i].pointer);
+          map_.push_back(Pair(named_arg->name, *named_arg));
+          break;
+        default:
+          /*nothing*/;
+      }
+    }
+    return;
+  }
+  for (unsigned i = 0; i != MAX_PACKED_ARGS; ++i) {
+    internal::Arg::Type arg_type = args.type(i);
+    if (arg_type == internal::Arg::NAMED_ARG) {
+      named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
+      map_.push_back(Pair(named_arg->name, *named_arg));
+    }
+  }
+  for (unsigned i = MAX_PACKED_ARGS;/*nothing*/; ++i) {
+    switch (args.args_[i].type) {
+      case internal::Arg::NONE:
+        return;
+      case internal::Arg::NAMED_ARG:
+        named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
+        map_.push_back(Pair(named_arg->name, *named_arg));
+        break;
+      default:
+        /*nothing*/;
+    }
+  }
+}
 
 template <typename Impl, typename Char>
 class ArgFormatterBase : public ArgVisitor<Impl, void> {
@@ -2030,21 +2081,33 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
   }
 };
 
+template <typename Formatter>
 class FormatterBase {
- private:
-  format_args args_;
+private:
+  basic_format_args<Formatter> args_;
   int next_arg_index_;
 
   // Returns the argument with specified index.
-  FMT_API Arg do_get_arg(unsigned arg_index, const char *&error);
+  Arg do_get_arg(unsigned arg_index, const char *&error) {
+    Arg arg = args_[arg_index];
+    switch (arg.type) {
+      case Arg::NONE:
+        error = "argument index out of range";
+        break;
+      case Arg::NAMED_ARG:
+        arg = *static_cast<const internal::Arg*>(arg.pointer);
+        break;
+      default:
+        /*nothing*/;
+    }
+    return arg;
+  }
 
  protected:
-  const format_args &args() const { return args_; }
+  FormatterBase(basic_format_args<Formatter> args)
+  : args_(args), next_arg_index_(0) {}
 
-  explicit FormatterBase(const format_args &args) {
-    args_ = args;
-    next_arg_index_ = 0;
-  }
+  const basic_format_args<Formatter> &args() const { return args_; }
 
   // Returns the next argument.
   Arg next_arg(const char *&error) {
@@ -2132,7 +2195,8 @@ class ArgFormatter : public BasicArgFormatter<ArgFormatter<Char>, Char> {
 
 /** This template formats data and writes the output to a writer. */
 template <typename CharType, typename ArgFormatter>
-class BasicFormatter : private internal::FormatterBase {
+class BasicFormatter :
+  private internal::FormatterBase<BasicFormatter<CharType, ArgFormatter>> {
  public:
   /** The character type for the output. */
   typedef CharType Char;
@@ -2143,7 +2207,8 @@ class BasicFormatter : private internal::FormatterBase {
 
   FMT_DISALLOW_COPY_AND_ASSIGN(BasicFormatter);
 
-  using internal::FormatterBase::get_arg;
+  typedef internal::FormatterBase<BasicFormatter> Base;
+  using Base::get_arg;
 
   // Checks if manual indexing is used and returns the argument with
   // specified name.
@@ -2163,8 +2228,8 @@ class BasicFormatter : private internal::FormatterBase {
    appropriate lifetimes.
    \endrst
    */
-  BasicFormatter(const format_args &args, BasicWriter<Char> &w)
-    : internal::FormatterBase(args), writer_(w) {}
+  BasicFormatter(basic_format_args<BasicFormatter> args, BasicWriter<Char> &w)
+    : Base(args), writer_(w) {}
 
   /** Returns a reference to the writer associated with this formatter. */
   BasicWriter<Char> &writer() { return writer_; }
@@ -2404,7 +2469,8 @@ class BasicWriter {
     return std::basic_string<Char>(&buffer_[0], buffer_.size());
   }
 
-  void vwrite(BasicCStringRef<Char> format, format_args args) {
+  void vwrite(BasicCStringRef<Char> format,
+              basic_format_args<BasicFormatter<Char>> args) {
     BasicFormatter<Char>(args, *this).format(format);
   }
 
@@ -3111,7 +3177,7 @@ inline std::string format(CStringRef format_str, const Args & ... args) {
   return vformat(format_str, make_format_args<BasicFormatter<char>>(args...));
 }
 
-inline std::wstring vformat(WCStringRef format_str, format_args args) {
+inline std::wstring vformat(WCStringRef format_str, wformat_args args) {
   WMemoryWriter w;
   w.vwrite(format_str, args);
   return w.str();
@@ -3348,8 +3414,8 @@ void check_sign(const Char *&s, const Arg &arg) {
 template <typename Char, typename AF>
 inline internal::Arg BasicFormatter<Char, AF>::get_arg(
     BasicStringRef<Char> arg_name, const char *&error) {
-  if (check_no_auto_index(error)) {
-    map_.init(args());
+  if (this->check_no_auto_index(error)) {
+    map_.init(this->args());
     const internal::Arg *arg = map_.find(arg_name);
     if (arg)
       return *arg;
@@ -3362,7 +3428,7 @@ template <typename Char, typename AF>
 inline internal::Arg BasicFormatter<Char, AF>::parse_arg_index(const Char *&s) {
   const char *error = 0;
   internal::Arg arg = *s < '0' || *s > '9' ?
-        next_arg(error) : get_arg(internal::parse_nonnegative_int(s), error);
+        this->next_arg(error) : get_arg(internal::parse_nonnegative_int(s), error);
   if (error) {
     FMT_THROW(format_error(
                 *s != '}' && *s != ':' ? "invalid format string" : error));
@@ -3563,18 +3629,18 @@ void BasicFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
     Char c = *s++;
     if (c != '{' && c != '}') continue;
     if (*s == c) {
-      write(writer_, start, s);
+      this->write(writer_, start, s);
       start = ++s;
       continue;
     }
     if (c == '}')
       FMT_THROW(format_error("unmatched '}' in format string"));
-    write(writer_, start, s - 1);
+    this->write(writer_, start, s - 1);
     internal::Arg arg = internal::is_name_start(*s) ?
           parse_arg_name(s) : parse_arg_index(s);
     start = s = format(s, arg);
   }
-  write(writer_, start, s);
+  this->write(writer_, start, s);
 }
 }  // namespace fmt
 
