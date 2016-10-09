@@ -13,6 +13,86 @@
 
 namespace fmt {
 
+namespace internal{
+inline null<> localtime_r(...) { return null<>(); }
+inline null<> localtime_s(...) { return null<>(); }
+inline null<> gmtime_r(...) { return null<>(); }
+inline null<> gmtime_s(...) { return null<>(); }
+}
+
+// Thread-safe replacement for std::localtime
+inline std::tm localtime(std::time_t time) {
+  struct LocalTime {
+    std::time_t time_;
+    std::tm tm_;
+
+    LocalTime(std::time_t t): time_(t) {}
+
+    bool run() {
+      using namespace fmt::internal;
+      return handle(localtime_r(&time_, &tm_));
+    }
+
+    bool handle(std::tm* tm) { return tm != 0; }
+
+    bool handle(internal::null<>) {
+      using namespace fmt::internal;
+      return fallback(localtime_s(&tm_, &time_));
+    }
+
+    bool fallback(int res) { return res == 0; }
+
+    bool fallback(internal::null<>) {
+      using namespace fmt::internal;
+      std::tm* tm = std::localtime(&time_);
+      if (tm != 0) tm_ = *tm;
+      return tm != 0;
+    }
+  };
+  LocalTime lt(time);
+  if (lt.run())
+    return lt.tm_;
+  // Too big time values may be unsupported.
+  FMT_THROW(format_error("time_t value out of range"));
+  return std::tm();
+}
+
+// Thread-safe replacement for std::gmtime
+inline std::tm gmtime(std::time_t time) {
+  struct GMTime {
+    std::time_t time_;
+    std::tm tm_;
+
+    GMTime(std::time_t t): time_(t) {}
+
+    bool run() {
+      using namespace fmt::internal;
+      return handle(gmtime_r(&time_, &tm_));
+    }
+
+    bool handle(std::tm* tm) { return tm != 0; }
+
+    bool handle(internal::null<>) {
+      using namespace fmt::internal;
+      return fallback(gmtime_s(&tm_, &time_));
+    }
+
+    bool fallback(int res) { return res == 0; }
+
+    bool fallback(internal::null<>) {
+      std::tm* tm = std::gmtime(&time_);
+      if (tm != 0) tm_ = *tm;
+      return tm != 0;
+    }
+  };
+  GMTime gt(time);
+  if (gt.run())
+    return gt.tm_;
+  // Too big time values may be unsupported.
+  FMT_THROW(format_error("time_t value out of range"));
+  return std::tm();
+}
+
 template <>
 struct formatter<std::tm> {
   template <typename ParseContext>

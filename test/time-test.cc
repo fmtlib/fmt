@@ -31,3 +31,27 @@ TEST(TimeTest, GrowBuffer) {
 TEST(TimeTest, EmptyResult) {
   EXPECT_EQ("", fmt::format("{}", std::tm()));
 }
+
+bool EqualTime(const std::tm &lhs, const std::tm &rhs) {
+  return lhs.tm_sec == rhs.tm_sec &&
+         lhs.tm_min == rhs.tm_min &&
+         lhs.tm_hour == rhs.tm_hour &&
+         lhs.tm_mday == rhs.tm_mday &&
+         lhs.tm_mon == rhs.tm_mon &&
+         lhs.tm_year == rhs.tm_year &&
+         lhs.tm_wday == rhs.tm_wday &&
+         lhs.tm_yday == rhs.tm_yday &&
+         lhs.tm_isdst == rhs.tm_isdst;
+}
+
+TEST(TimeTest, LocalTime) {
+  std::time_t t = std::time(0);
+  std::tm tm = *std::localtime(&t);
+  EXPECT_TRUE(EqualTime(tm, fmt::localtime(t)));
+}
+
+TEST(TimeTest, GMTime) {
+  std::time_t t = std::time(0);
+  std::tm tm = *std::gmtime(&t);
+  EXPECT_TRUE(EqualTime(tm, fmt::gmtime(t)));
+}
