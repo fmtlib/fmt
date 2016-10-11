@@ -25,8 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "fmt/format.h"
-#include "fmt/printf.h"
+#include "format.h"
+#include "printf.h"
 
 #include <string.h>
 
