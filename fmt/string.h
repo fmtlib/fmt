@@ -10,7 +10,7 @@
 #ifndef FMT_STRING_H_
 #define FMT_STRING_H_
 
-#include "fmt/format.h"
+#include "format.h"
 
 namespace fmt {
 
