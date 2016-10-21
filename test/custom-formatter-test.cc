@@ -58,7 +58,7 @@ std::string custom_vformat(const char *format_str,
 
 template <typename... Args>
 std::string custom_format(const char *format_str, const Args & ... args) {
-  auto va = fmt::make_format_args<fmt::BasicFormatter<char>>(args...);
+  auto va = fmt::make_format_args<CustomFormatter>(args...);
   return custom_vformat(format_str, va);
 }
 
@@ -76,7 +76,7 @@ std::string custom_vsprintf(
 
 template <typename... Args>
 std::string custom_sprintf(const char *format_str, const Args & ... args) {
-  auto va = fmt::make_format_args<fmt::BasicFormatter<char>>(args...);
+  auto va = fmt::make_format_args<CustomPrintfFormatter>(args...);
   return custom_vsprintf(format_str, va);
 }
 

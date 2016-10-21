@@ -1494,8 +1494,8 @@ class basic_format_args {
 
   basic_format_args() : types_(0) {}
 
-  template <typename F, typename... Args>
-  basic_format_args(const format_arg_store<F, Args...> &store)
+  template <typename... Args>
+  basic_format_args(const format_arg_store<Formatter, Args...> &store)
   : types_(store.TYPES) {
     set_data(store.data());
   }

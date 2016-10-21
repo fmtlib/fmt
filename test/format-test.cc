@@ -1644,7 +1644,7 @@ void custom_vformat(const char *format_str,
 
 template <typename... Args>
 void custom_format(const char *format_str, const Args & ... args) {
-  auto va = fmt::make_format_args<fmt::BasicFormatter<char>>(args...);
+  auto va = fmt::make_format_args<CustomFormatter>(args...);
   return custom_vformat(format_str, va);
 }
 

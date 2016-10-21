@@ -69,19 +69,24 @@ struct ConvertToIntImpl<T, true> {
 
 // Write the content of w to os.
 void write(std::ostream &os, Writer &w);
+
+template <typename Char, typename T>
+BasicStringRef<Char> format_value(
+    internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> &buffer,
+    const T &value) {
+  internal::FormatBuf<Char> format_buf(buffer);
+  std::basic_ostream<Char> output(&format_buf);
+  output << value;
+  return BasicStringRef<Char>(&buffer[0], format_buf.size());
+}
 }  // namespace internal
 
 // Formats a value.
 template <typename Char, typename ArgFormatter, typename T>
 void format_value(BasicFormatter<Char, ArgFormatter> &f,
-                const Char *&format_str, const T &value) {
+                  const Char *&format_str, const T &value) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
-
-  internal::FormatBuf<Char> format_buf(buffer);
-  std::basic_ostream<Char> output(&format_buf);
-  output << value;
-
-  BasicStringRef<Char> str(&buffer[0], format_buf.size());
+  auto str = internal::format_value(buffer, value);
   typedef internal::MakeArg< BasicFormatter<Char> > MakeArg;
   format_str = f.format(format_str, MakeArg(str));
 }
