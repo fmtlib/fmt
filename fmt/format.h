@@ -377,8 +377,7 @@ class ArgFormatter;
 template <typename Impl, typename Char>
 class BasicPrintfArgFormatter;
 
-template <typename CharType,
-          typename ArgFormatter = fmt::ArgFormatter<CharType> >
+template <typename Char, typename ArgFormatter = fmt::ArgFormatter<Char> >
 class basic_formatter;
 
 /**
