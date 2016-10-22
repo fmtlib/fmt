@@ -578,7 +578,7 @@ TEST(UtilTest, FormatArgs) {
 }
 
 struct CustomFormatter {
-  typedef char Char;
+  typedef char char_type;
 };
 
 void format_value(CustomFormatter &, const char *&s, const Test &) {

@@ -281,13 +281,13 @@ class PrintfArgFormatter
 };
 
 /** This template formats data and writes the output to a writer. */
-template <typename CharType,
-          typename ArgFormatter = PrintfArgFormatter<CharType> >
+template <typename Char,
+          typename ArgFormatter = PrintfArgFormatter<Char> >
 class PrintfFormatter :
-  private internal::FormatterBase<PrintfFormatter<CharType, ArgFormatter>> {
+  private internal::FormatterBase<PrintfFormatter<Char, ArgFormatter>> {
  public:
   /** The character type for the output. */
-  typedef CharType Char;
+  typedef Char char_type;
 
  private:
   BasicWriter<Char> &writer_;

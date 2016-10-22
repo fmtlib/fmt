@@ -1234,7 +1234,7 @@ constexpr Type type() { return gettype<typename std::decay<T>::type>(); }
 template <typename Formatter>
 class MakeValue : public Arg {
  public:
-  typedef typename Formatter::Char Char;
+  typedef typename Formatter::char_type Char;
 
  private:
   // The following two methods are private to disallow formatting of
@@ -2194,12 +2194,12 @@ class ArgFormatter : public BasicArgFormatter<ArgFormatter<Char>, Char> {
 };
 
 /** This template formats data and writes the output to a writer. */
-template <typename CharType, typename ArgFormatter>
+template <typename Char, typename ArgFormatter>
 class basic_formatter :
-  private internal::FormatterBase<basic_formatter<CharType, ArgFormatter>> {
+  private internal::FormatterBase<basic_formatter<Char, ArgFormatter>> {
  public:
   /** The character type for the output. */
-  typedef CharType Char;
+  typedef Char char_type;
 
  private:
   BasicWriter<Char> &writer_;
