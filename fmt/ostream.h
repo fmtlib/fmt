@@ -83,11 +83,11 @@ BasicStringRef<Char> format_value(
 
 // Formats a value.
 template <typename Char, typename ArgFormatter, typename T>
-void format_value(BasicFormatter<Char, ArgFormatter> &f,
+void format_value(basic_formatter<Char, ArgFormatter> &f,
                   const Char *&format_str, const T &value) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
   auto str = internal::format_value(buffer, value);
-  typedef internal::MakeArg< BasicFormatter<Char> > MakeArg;
+  typedef internal::MakeArg< basic_formatter<Char> > MakeArg;
   format_str = f.format(format_str, MakeArg(str));
 }
 
@@ -105,7 +105,7 @@ FMT_API void vprint(std::ostream &os, CStringRef format_str, format_args args);
 template <typename... Args>
 inline void print(std::ostream &os, CStringRef format_str,
                   const Args & ... args) {
-  vprint(os, format_str, make_format_args<BasicFormatter<char>>(args...));
+  vprint(os, format_str, make_format_args<basic_formatter<char>>(args...));
 }
 }  // namespace fmt
 

@@ -64,13 +64,13 @@ namespace {
 struct Test {};
 
 template <typename Char>
-void format_value(fmt::BasicFormatter<Char> &f, const Char *, Test) {
+void format_value(fmt::basic_formatter<Char> &f, const Char *, Test) {
   f.writer() << "test";
 }
 
 template <typename Char, typename T>
 Arg make_arg(const T &value) {
-  typedef fmt::internal::MakeValue< fmt::BasicFormatter<Char> > MakeValue;
+  typedef fmt::internal::MakeValue< fmt::basic_formatter<Char> > MakeValue;
   Arg arg = MakeValue(value);
   arg.type = fmt::internal::type<T>();
   return arg;
@@ -566,7 +566,7 @@ TEST(ArgTest, MakeArg) {
   EXPECT_EQ(fmt::internal::Arg::CUSTOM, arg.type);
   EXPECT_EQ(&t, arg.custom.value);
   fmt::MemoryWriter w;
-  fmt::BasicFormatter<char> formatter(fmt::format_args(), w);
+  fmt::basic_formatter<char> formatter(fmt::format_args(), w);
   const char *s = "}";
   arg.custom.format(&formatter, &t, &s);
   EXPECT_EQ("test", w.str());

@@ -1355,7 +1355,7 @@ TEST(FormatterTest, FormatCStringRef) {
   EXPECT_EQ("test", format("{0}", CStringRef("test")));
 }
 
-void format_value(fmt::BasicFormatter<char> &f, const char *, const Date &d) {
+void format_value(fmt::basic_formatter<char> &f, const char *, const Date &d) {
   f.writer() << d.year() << '-' << d.month() << '-' << d.day();
 }
 
@@ -1368,7 +1368,7 @@ TEST(FormatterTest, FormatCustom) {
 class Answer {};
 
 template <typename Char>
-void format_value(fmt::BasicFormatter<Char> &f, const Char *, Answer) {
+void format_value(fmt::basic_formatter<Char> &f, const Char *, Answer) {
   f.writer() << "42";
 }
 
@@ -1559,7 +1559,7 @@ std::string vformat_message(int id, const char *format, fmt::format_args args) {
 
 template <typename... Args>
 std::string format_message(int id, const char *format, const Args & ... args) {
-  auto va = fmt::make_format_args<fmt::BasicFormatter<char>>(args...);
+  auto va = fmt::make_format_args<fmt::basic_formatter<char>>(args...);
   return vformat_message(id, format, va);
 }
 
@@ -1624,7 +1624,7 @@ class MockArgFormatter :
  public:
   typedef fmt::internal::ArgFormatterBase<MockArgFormatter, char> Base;
 
-  MockArgFormatter(fmt::BasicFormatter<char, MockArgFormatter> &f,
+  MockArgFormatter(fmt::basic_formatter<char, MockArgFormatter> &f,
                    fmt::FormatSpec &s, const char *)
     : fmt::internal::ArgFormatterBase<MockArgFormatter, char>(f.writer(), s) {
     EXPECT_CALL(*this, visit_int(42));
@@ -1633,7 +1633,7 @@ class MockArgFormatter :
   MOCK_METHOD1(visit_int, void (int value));
 };
 
-typedef fmt::BasicFormatter<char, MockArgFormatter> CustomFormatter;
+typedef fmt::basic_formatter<char, MockArgFormatter> CustomFormatter;
 
 void custom_vformat(const char *format_str,
                     fmt::basic_format_args<CustomFormatter> args) {

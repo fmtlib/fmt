@@ -379,7 +379,7 @@ class BasicPrintfArgFormatter;
 
 template <typename CharType,
           typename ArgFormatter = fmt::ArgFormatter<CharType> >
-class BasicFormatter;
+class basic_formatter;
 
 /**
   \rst
@@ -1405,7 +1405,7 @@ struct NamedArg : Arg {
 
   template <typename T>
   NamedArg(BasicStringRef<Char> argname, const T &value)
-  : Arg(MakeArg< BasicFormatter<Char> >(value)), name(argname) {}
+  : Arg(MakeArg< basic_formatter<Char> >(value)), name(argname) {}
 };
 
 class RuntimeError : public std::runtime_error {
@@ -1526,8 +1526,8 @@ class basic_format_args {
   }
 };
 
-typedef basic_format_args<BasicFormatter<char>> format_args;
-typedef basic_format_args<BasicFormatter<wchar_t>> wformat_args;
+typedef basic_format_args<basic_formatter<char>> format_args;
+typedef basic_format_args<basic_formatter<wchar_t>> wformat_args;
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
 
@@ -2160,7 +2160,7 @@ private:
 template <typename Impl, typename Char>
 class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
  private:
-  BasicFormatter<Char, Impl> &formatter_;
+  basic_formatter<Char, Impl> &formatter_;
   const Char *format_;
 
  public:
@@ -2172,7 +2172,7 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
     to the part of the format string being parsed for custom argument types.
     \endrst
    */
-  BasicArgFormatter(BasicFormatter<Char, Impl> &formatter,
+  BasicArgFormatter(basic_formatter<Char, Impl> &formatter,
                     FormatSpec &spec, const Char *fmt)
   : internal::ArgFormatterBase<Impl, Char>(formatter.writer(), spec),
     formatter_(formatter), format_(fmt) {}
@@ -2188,15 +2188,15 @@ template <typename Char>
 class ArgFormatter : public BasicArgFormatter<ArgFormatter<Char>, Char> {
  public:
   /** Constructs an argument formatter object. */
-  ArgFormatter(BasicFormatter<Char> &formatter,
+  ArgFormatter(basic_formatter<Char> &formatter,
                FormatSpec &spec, const Char *fmt)
   : BasicArgFormatter<ArgFormatter<Char>, Char>(formatter, spec, fmt) {}
 };
 
 /** This template formats data and writes the output to a writer. */
 template <typename CharType, typename ArgFormatter>
-class BasicFormatter :
-  private internal::FormatterBase<BasicFormatter<CharType, ArgFormatter>> {
+class basic_formatter :
+  private internal::FormatterBase<basic_formatter<CharType, ArgFormatter>> {
  public:
   /** The character type for the output. */
   typedef CharType Char;
@@ -2205,9 +2205,9 @@ class BasicFormatter :
   BasicWriter<Char> &writer_;
   internal::ArgMap<Char> map_;
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(BasicFormatter);
+  FMT_DISALLOW_COPY_AND_ASSIGN(basic_formatter);
 
-  typedef internal::FormatterBase<BasicFormatter> Base;
+  typedef internal::FormatterBase<basic_formatter> Base;
   using Base::get_arg;
 
   // Checks if manual indexing is used and returns the argument with
@@ -2223,12 +2223,12 @@ class BasicFormatter :
  public:
   /**
    \rst
-   Constructs a ``BasicFormatter`` object. References to the arguments and
+   Constructs a ``basic_formatter`` object. References to the arguments and
    the writer are stored in the formatter object so make sure they have
    appropriate lifetimes.
    \endrst
    */
-  BasicFormatter(basic_format_args<BasicFormatter> args, BasicWriter<Char> &w)
+  basic_formatter(basic_format_args<basic_formatter> args, BasicWriter<Char> &w)
     : Base(args), writer_(w) {}
 
   /** Returns a reference to the writer associated with this formatter. */
@@ -2275,7 +2275,7 @@ class SystemError : public internal::RuntimeError {
   */
   template <typename... Args>
   SystemError(int error_code, CStringRef message, const Args & ... args) {
-    init(error_code, message, make_format_args<BasicFormatter<char>>(args...));
+    init(error_code, message, make_format_args<basic_formatter<char>>(args...));
   }
 
   ~SystemError() throw();
@@ -2470,8 +2470,8 @@ class BasicWriter {
   }
 
   void vwrite(BasicCStringRef<Char> format,
-              basic_format_args<BasicFormatter<Char>> args) {
-    BasicFormatter<Char>(args, *this).format(format);
+              basic_format_args<basic_formatter<Char>> args) {
+    basic_formatter<Char>(args, *this).format(format);
   }
 
   /**
@@ -2501,7 +2501,7 @@ class BasicWriter {
    */
   template <typename... Args>
   void write(BasicCStringRef<Char> format, const Args & ... args) {
-    vwrite(format, make_format_args<fmt::BasicFormatter<Char>>(args...));
+    vwrite(format, make_format_args<fmt::basic_formatter<Char>>(args...));
   }
 
   BasicWriter &operator<<(int value) {
@@ -3129,7 +3129,7 @@ class WindowsError : public SystemError {
   */
   template <typename... Args>
   WindowsError(int error_code, CStringRef message, const Args & ... args) {
-    init(error_code, message, make_format_args<BasicFormatter<char>>(args...));
+    init(error_code, message, make_format_args<basic_formatter<char>>(args...));
   }
 };
 
@@ -3154,7 +3154,7 @@ template <typename... Args>
 inline void print_colored(Color c, CStringRef format_str,
                           const Args & ... args) {
   vprint_colored(c, format_str,
-                 make_format_args<BasicFormatter<char>>(args...));
+                 make_format_args<basic_formatter<char>>(args...));
 }
 
 inline std::string vformat(CStringRef format_str, format_args args) {
@@ -3174,7 +3174,7 @@ inline std::string vformat(CStringRef format_str, format_args args) {
 */
 template <typename... Args>
 inline std::string format(CStringRef format_str, const Args & ... args) {
-  return vformat(format_str, make_format_args<BasicFormatter<char>>(args...));
+  return vformat(format_str, make_format_args<basic_formatter<char>>(args...));
 }
 
 inline std::wstring vformat(WCStringRef format_str, wformat_args args) {
@@ -3185,7 +3185,7 @@ inline std::wstring vformat(WCStringRef format_str, wformat_args args) {
 
 template <typename... Args>
 inline std::wstring format(WCStringRef format_str, const Args & ... args) {
-  auto vargs = make_format_args<BasicFormatter<wchar_t>>(args...);
+  auto vargs = make_format_args<basic_formatter<wchar_t>>(args...);
   return vformat(format_str, vargs);
 }
 
@@ -3202,7 +3202,7 @@ FMT_API void vprint(std::FILE *f, CStringRef format_str, format_args args);
  */
 template <typename... Args>
 inline void print(std::FILE *f, CStringRef format_str, const Args & ... args) {
-  vprint(f, format_str, make_format_args<BasicFormatter<char>>(args...));
+  vprint(f, format_str, make_format_args<basic_formatter<char>>(args...));
 }
 
 FMT_API void vprint(CStringRef format_str, format_args args);
@@ -3218,7 +3218,7 @@ FMT_API void vprint(CStringRef format_str, format_args args);
  */
 template <typename... Args>
 inline void print(CStringRef format_str, const Args & ... args) {
-  vprint(format_str, make_format_args<BasicFormatter<char>>(args...));
+  vprint(format_str, make_format_args<basic_formatter<char>>(args...));
 }
 
 /**
@@ -3412,7 +3412,7 @@ void check_sign(const Char *&s, const Arg &arg) {
 }  // namespace internal
 
 template <typename Char, typename AF>
-inline internal::Arg BasicFormatter<Char, AF>::get_arg(
+inline internal::Arg basic_formatter<Char, AF>::get_arg(
     BasicStringRef<Char> arg_name, const char *&error) {
   if (this->check_no_auto_index(error)) {
     map_.init(this->args());
@@ -3425,10 +3425,11 @@ inline internal::Arg BasicFormatter<Char, AF>::get_arg(
 }
 
 template <typename Char, typename AF>
-inline internal::Arg BasicFormatter<Char, AF>::parse_arg_index(const Char *&s) {
+inline internal::Arg basic_formatter<Char, AF>::parse_arg_index(
+    const Char *&s) {
   const char *error = 0;
   internal::Arg arg = *s < '0' || *s > '9' ?
-        this->next_arg(error) : get_arg(internal::parse_nonnegative_int(s), error);
+    this->next_arg(error) : get_arg(internal::parse_nonnegative_int(s), error);
   if (error) {
     FMT_THROW(format_error(
                 *s != '}' && *s != ':' ? "invalid format string" : error));
@@ -3437,7 +3438,7 @@ inline internal::Arg BasicFormatter<Char, AF>::parse_arg_index(const Char *&s) {
 }
 
 template <typename Char, typename AF>
-inline internal::Arg BasicFormatter<Char, AF>::parse_arg_name(const Char *&s) {
+inline internal::Arg basic_formatter<Char, AF>::parse_arg_name(const Char *&s) {
   assert(internal::is_name_start(*s));
   const Char *start = s;
   Char c;
@@ -3452,7 +3453,7 @@ inline internal::Arg BasicFormatter<Char, AF>::parse_arg_name(const Char *&s) {
 }
 
 template <typename Char, typename ArgFormatter>
-const Char *BasicFormatter<Char, ArgFormatter>::format(
+const Char *basic_formatter<Char, ArgFormatter>::format(
     const Char *&format_str, const internal::Arg &arg) {
   using internal::Arg;
   const Char *s = format_str;
@@ -3622,7 +3623,7 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
 }
 
 template <typename Char, typename AF>
-void BasicFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
+void basic_formatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
   const Char *s = format_str.c_str();
   const Char *start = s;
   while (*s) {

@@ -362,9 +362,10 @@ FMT_FUNC void internal::format_windows_error(
     buffer.resize(INLINE_BUFFER_SIZE);
     for (;;) {
       wchar_t *system_message = &buffer[0];
-      int result = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                                  0, error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                                  system_message, static_cast<uint32_t>(buffer.size()), 0);
+      int result = FormatMessageW(
+          FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+          0, error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+          system_message, static_cast<uint32_t>(buffer.size()), 0);
       if (result != 0) {
         UTF16ToUTF8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {

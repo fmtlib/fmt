@@ -59,14 +59,14 @@ TEST(OStreamTest, Enum) {
 }
 
 struct TestArgFormatter : fmt::BasicArgFormatter<TestArgFormatter, char> {
-  TestArgFormatter(fmt::BasicFormatter<char, TestArgFormatter> &f,
+  TestArgFormatter(fmt::basic_formatter<char, TestArgFormatter> &f,
                    fmt::FormatSpec &s, const char *fmt)
     : fmt::BasicArgFormatter<TestArgFormatter, char>(f, s, fmt) {}
 };
 
 TEST(OStreamTest, CustomArg) {
   fmt::MemoryWriter writer;
-  typedef fmt::BasicFormatter<char, TestArgFormatter> Formatter;
+  typedef fmt::basic_formatter<char, TestArgFormatter> Formatter;
   Formatter formatter(fmt::basic_format_args<Formatter>(), writer);
   fmt::FormatSpec spec;
   TestArgFormatter af(formatter, spec, "}");

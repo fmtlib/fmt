@@ -262,7 +262,7 @@ class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
 
   /** Formats an argument of a custom (user-defined) type. */
   void visit_custom(internal::Arg::CustomValue c) {
-    BasicFormatter<Char> formatter(basic_format_args<BasicFormatter<Char>>(),
+    basic_formatter<Char> formatter(basic_format_args<basic_formatter<Char>>(),
                                    this->writer());
     const Char format_str[] = {'}', 0};
     const Char *format = format_str;
