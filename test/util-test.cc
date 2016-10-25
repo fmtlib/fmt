@@ -64,8 +64,9 @@ namespace {
 struct Test {};
 
 template <typename Char>
-void format_value(fmt::basic_formatter<Char> &f, const Char *, Test) {
-  f.writer() << "test";
+void format_value(fmt::BasicWriter<Char> &w, fmt::basic_formatter<Char> &f,
+                  const Char *, Test) {
+  w << "test";
 }
 
 template <typename Char, typename T>
@@ -568,7 +569,7 @@ TEST(ArgTest, MakeArg) {
   fmt::MemoryWriter w;
   fmt::basic_formatter<char> formatter(fmt::format_args(), w);
   const char *s = "}";
-  arg.custom.format(&formatter, &t, &s);
+  arg.custom.format(&formatter.writer(), &formatter, &t, &s);
   EXPECT_EQ("test", w.str());
 }
 
@@ -581,7 +582,8 @@ struct CustomFormatter {
   typedef char char_type;
 };
 
-void format_value(CustomFormatter &, const char *&s, const Test &) {
+void format_value(fmt::Writer &, CustomFormatter &, const char *&s,
+                  const Test &) {
   s = "custom_format";
 }
 
@@ -590,7 +592,8 @@ TEST(UtilTest, MakeValueWithCustomFormatter) {
   Arg arg = fmt::internal::MakeValue<CustomFormatter>(t);
   CustomFormatter formatter;
   const char *s = "";
-  arg.custom.format(&formatter, &t, &s);
+  fmt::MemoryWriter w;
+  arg.custom.format(&w, &formatter, &t, &s);
   EXPECT_STREQ("custom_format", s);
 }
 

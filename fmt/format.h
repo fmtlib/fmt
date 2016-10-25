@@ -993,7 +993,7 @@ struct Value {
   };
 
   typedef void (*FormatFunc)(
-      void *formatter, const void *arg, void *format_str_ptr);
+      void *writer, void *formatter, const void *arg, void *format_str_ptr);
 
   struct CustomValue {
     const void *value;
@@ -1160,7 +1160,7 @@ inline fmt::StringRef thousands_sep(...) { return ""; }
 #endif
 
 template <typename Formatter, typename Char, typename T>
-void format_value(Formatter &, const Char *, const T &) {
+void format_value(BasicWriter<Char> &, Formatter &, const Char *, const T &) {
   FMT_STATIC_ASSERT(False<T>::value,
                     "Cannot format argument. To enable the use of ostream "
                     "operator<< include fmt/ostream.h. Otherwise provide "
@@ -1271,8 +1271,10 @@ class MakeValue : public Arg {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   static void format_custom_arg(
-      void *formatter, const void *arg, void *format_str_ptr) {
-    format_value(*static_cast<Formatter*>(formatter),
+      void *writer, void *formatter, const void *arg, void *format_str_ptr) {
+    typedef BasicWriter<typename Formatter::char_type> Writer;
+    format_value(*static_cast<Writer*>(writer),
+                 *static_cast<Formatter*>(formatter),
                  *static_cast<const Char**>(format_str_ptr),
                  *static_cast<const T*>(arg));
   }
@@ -2178,7 +2180,7 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
 
   /** Formats an argument of a custom (user-defined) type. */
   void visit_custom(internal::Arg::CustomValue c) {
-    c.format(&formatter_, c.value, &format_);
+    c.format(&formatter_.writer(), &formatter_, c.value, &format_);
   }
 };
 
@@ -2239,6 +2241,14 @@ class basic_formatter :
   // Formats a single argument and advances format_str, a format string pointer.
   const Char *format(const Char *&format_str, const internal::Arg &arg);
 };
+
+template <typename ArgFormatter, typename Char = typename ArgFormatter::Char>
+void vformat(BasicWriter<Char> &writer,
+             BasicCStringRef<Char> format_str,
+             basic_format_args<basic_formatter<Char, ArgFormatter>> args) {
+  basic_formatter<Char, ArgFormatter> formatter(args, writer);
+  formatter.format(format_str);
+}
 
 /**
  An error returned by an operating system or a language runtime,
@@ -2470,7 +2480,7 @@ class BasicWriter {
 
   void vwrite(BasicCStringRef<Char> format,
               basic_format_args<basic_formatter<Char>> args) {
-    basic_formatter<Char>(args, *this).format(format);
+    vformat(*this, format, args);
   }
 
   /**
@@ -3459,7 +3469,7 @@ const Char *basic_formatter<Char, ArgFormatter>::format(
   FormatSpec spec;
   if (*s == ':') {
     if (arg.type == Arg::CUSTOM) {
-      arg.custom.format(this, arg.custom.value, &s);
+      arg.custom.format(&writer(), this, arg.custom.value, &s);
       return s;
     }
     ++s;

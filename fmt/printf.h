@@ -266,7 +266,7 @@ class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
                                    this->writer());
     const Char format_str[] = {'}', 0};
     const Char *format = format_str;
-    c.format(&formatter, c.value, &format);
+    c.format(&formatter.writer(), &formatter, c.value, &format);
   }
 };
 
@@ -497,7 +497,8 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
 
 // Formats a value.
 template <typename Char, typename T>
-void format_value(PrintfFormatter<Char> &f, const Char *&, const T &value) {
+void format_value(BasicWriter<Char> &w, PrintfFormatter<Char> &f,
+                  const Char *&, const T &value) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
   f.writer() << internal::format_value(buffer, value);
 }

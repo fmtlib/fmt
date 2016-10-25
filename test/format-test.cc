@@ -1355,7 +1355,8 @@ TEST(FormatterTest, FormatCStringRef) {
   EXPECT_EQ("test", format("{0}", CStringRef("test")));
 }
 
-void format_value(fmt::basic_formatter<char> &f, const char *, const Date &d) {
+void format_value(fmt::Writer &w, fmt::basic_formatter<char> &f,
+                  const char *, const Date &d) {
   f.writer() << d.year() << '-' << d.month() << '-' << d.day();
 }
 
@@ -1368,7 +1369,8 @@ TEST(FormatterTest, FormatCustom) {
 class Answer {};
 
 template <typename Char>
-void format_value(fmt::basic_formatter<Char> &f, const Char *, Answer) {
+void format_value(BasicWriter<Char> &w, fmt::basic_formatter<Char> &f,
+                  const Char *, Answer) {
   f.writer() << "42";
 }
 

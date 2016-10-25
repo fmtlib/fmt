@@ -14,8 +14,9 @@
 #include <ctime>
 
 namespace fmt {
+
 template <typename ArgFormatter>
-void format_value(basic_formatter<char, ArgFormatter> &f,
+void format_value(Writer &w, basic_formatter<char, ArgFormatter> &f,
                   const char *&format_str, const std::tm &tm) {
   if (*format_str == ':')
     ++format_str;
@@ -27,7 +28,7 @@ void format_value(basic_formatter<char, ArgFormatter> &f,
   internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> format;
   format.append(format_str, end + 1);
   format[format.size() - 1] = '\0';
-  Buffer<char> &buffer = f.writer().buffer();
+  Buffer<char> &buffer = w.buffer();
   std::size_t start = buffer.size();
   for (;;) {
     std::size_t size = buffer.capacity() - start;
