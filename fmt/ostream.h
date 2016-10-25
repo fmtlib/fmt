@@ -83,8 +83,9 @@ BasicStringRef<Char> format_value(
 
 // Formats a value.
 template <typename Char, typename ArgFormatter, typename T>
-void format_value(BasicWriter<Char> &w, basic_formatter<Char, ArgFormatter> &f,
-                  const Char *&format_str, const T &value) {
+void format_value(BasicWriter<Char> &w, const T &value,
+                  basic_formatter<Char, ArgFormatter> &f,
+                  const Char *&format_str) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
   auto str = internal::format_value(buffer, value);
   typedef internal::MakeArg< basic_formatter<Char> > MakeArg;

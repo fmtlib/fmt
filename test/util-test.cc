@@ -64,8 +64,8 @@ namespace {
 struct Test {};
 
 template <typename Char>
-void format_value(fmt::BasicWriter<Char> &w, fmt::basic_formatter<Char> &f,
-                  const Char *, Test) {
+void format_value(fmt::BasicWriter<Char> &w, Test,
+                  fmt::basic_formatter<Char> &f, const Char *) {
   w << "test";
 }
 
@@ -582,8 +582,8 @@ struct CustomFormatter {
   typedef char char_type;
 };
 
-void format_value(fmt::Writer &, CustomFormatter &, const char *&s,
-                  const Test &) {
+void format_value(fmt::Writer &, const Test &, CustomFormatter &,
+                  const char *&s) {
   s = "custom_format";
 }
 

@@ -993,7 +993,7 @@ struct Value {
   };
 
   typedef void (*FormatFunc)(
-      void *writer, void *formatter, const void *arg, void *format_str_ptr);
+      void *writer, const void *arg, void *formatter, void *format_str_ptr);
 
   struct CustomValue {
     const void *value;
@@ -1159,8 +1159,8 @@ inline fmt::StringRef thousands_sep(...) { return ""; }
   typedef int FMT_CONCAT_(Assert, __LINE__)[(cond) ? 1 : -1] FMT_UNUSED
 #endif
 
-template <typename Formatter, typename Char, typename T>
-void format_value(BasicWriter<Char> &, Formatter &, const Char *, const T &) {
+template <typename Formatter, typename T, typename Char>
+void format_value(BasicWriter<Char> &, const T &, Formatter &, const Char *) {
   FMT_STATIC_ASSERT(False<T>::value,
                     "Cannot format argument. To enable the use of ostream "
                     "operator<< include fmt/ostream.h. Otherwise provide "
@@ -1271,12 +1271,12 @@ class MakeValue : public Arg {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   static void format_custom_arg(
-      void *writer, void *formatter, const void *arg, void *format_str_ptr) {
+      void *writer, const void *arg, void *formatter, void *format_str_ptr) {
     typedef BasicWriter<typename Formatter::char_type> Writer;
     format_value(*static_cast<Writer*>(writer),
+                 *static_cast<const T*>(arg),
                  *static_cast<Formatter*>(formatter),
-                 *static_cast<const Char**>(format_str_ptr),
-                 *static_cast<const T*>(arg));
+                 *static_cast<const Char**>(format_str_ptr));
   }
 
  public:
@@ -2180,7 +2180,7 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
 
   /** Formats an argument of a custom (user-defined) type. */
   void visit_custom(internal::Arg::CustomValue c) {
-    c.format(&formatter_.writer(), &formatter_, c.value, &format_);
+    c.format(&formatter_.writer(), c.value, &formatter_, &format_);
   }
 };
 
@@ -3469,7 +3469,7 @@ const Char *basic_formatter<Char, ArgFormatter>::format(
   FormatSpec spec;
   if (*s == ':') {
     if (arg.type == Arg::CUSTOM) {
-      arg.custom.format(&writer(), this, arg.custom.value, &s);
+      arg.custom.format(&writer(), arg.custom.value, this, &s);
       return s;
     }
     ++s;
