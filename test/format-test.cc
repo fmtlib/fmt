@@ -1357,7 +1357,7 @@ TEST(FormatterTest, FormatCStringRef) {
 
 void format_value(fmt::Writer &w, const Date &d, fmt::basic_formatter<char> &f,
                   const char *) {
-  f.writer() << d.year() << '-' << d.month() << '-' << d.day();
+  w << d.year() << '-' << d.month() << '-' << d.day();
 }
 
 TEST(FormatterTest, FormatCustom) {
@@ -1371,7 +1371,7 @@ class Answer {};
 template <typename Char>
 void format_value(BasicWriter<Char> &w, Answer, fmt::basic_formatter<Char> &f,
                   const Char *) {
-  f.writer() << "42";
+  w << "42";
 }
 
 TEST(FormatterTest, CustomFormat) {
@@ -1626,9 +1626,10 @@ class MockArgFormatter :
  public:
   typedef fmt::internal::ArgFormatterBase<MockArgFormatter, char> Base;
 
-  MockArgFormatter(fmt::basic_formatter<char, MockArgFormatter> &f,
+  MockArgFormatter(fmt::Writer &w,
+                   fmt::basic_formatter<char, MockArgFormatter> &f,
                    fmt::FormatSpec &s, const char *)
-    : fmt::internal::ArgFormatterBase<MockArgFormatter, char>(f.writer(), s) {
+    : fmt::internal::ArgFormatterBase<MockArgFormatter, char>(w, s) {
     EXPECT_CALL(*this, visit_int(42));
   }
 
@@ -1637,11 +1638,10 @@ class MockArgFormatter :
 
 typedef fmt::basic_formatter<char, MockArgFormatter> CustomFormatter;
 
-void custom_vformat(const char *format_str,
+void custom_vformat(fmt::CStringRef format_str,
                     fmt::basic_format_args<CustomFormatter> args) {
   fmt::MemoryWriter writer;
-  CustomFormatter formatter(args, writer);
-  formatter.format(format_str);
+  vformat(writer, format_str, args);
 }
 
 template <typename... Args>

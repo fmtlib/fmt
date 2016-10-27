@@ -262,11 +262,11 @@ class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
 
   /** Formats an argument of a custom (user-defined) type. */
   void visit_custom(internal::Arg::CustomValue c) {
-    basic_formatter<Char> formatter(basic_format_args<basic_formatter<Char>>(),
-                                   this->writer());
+    typedef basic_formatter<Char> Formatter;
+    Formatter formatter((basic_format_args<Formatter>()));
     const Char format_str[] = {'}', 0};
     const Char *format = format_str;
-    c.format(&formatter.writer(), c.value, &formatter, &format);
+    c.format(&this->writer(), c.value, &formatter, &format);
   }
 };
 
@@ -290,8 +290,6 @@ class PrintfFormatter :
   typedef Char char_type;
 
  private:
-  BasicWriter<Char> &writer_;
-
   typedef internal::FormatterBase<PrintfFormatter> Base;
 
   void parse_flags(FormatSpec &spec, const Char *&s);
@@ -313,14 +311,12 @@ class PrintfFormatter :
    appropriate lifetimes.
    \endrst
    */
-  explicit PrintfFormatter(basic_format_args<PrintfFormatter> args,
-                           BasicWriter<Char> &w)
-    : Base(args), writer_(w) {}
-
-  BasicWriter<Char> &writer() { return writer_; }
+  explicit PrintfFormatter(basic_format_args<PrintfFormatter> args)
+    : Base(args) {}
   
   /** Formats stored arguments and writes the output to the writer. */
-  FMT_API void format(BasicCStringRef<Char> format_str);
+  FMT_API void format(BasicWriter<Char> &writer,
+                      BasicCStringRef<Char> format_str);
 };
 
 template <typename Char, typename AF>
@@ -396,18 +392,19 @@ unsigned PrintfFormatter<Char, AF>::parse_header(
 }
 
 template <typename Char, typename AF>
-void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
+void PrintfFormatter<Char, AF>::format(BasicWriter<Char> &writer,
+                                       BasicCStringRef<Char> format_str) {
   const Char *start = format_str.c_str();
   const Char *s = start;
   while (*s) {
     Char c = *s++;
     if (c != '%') continue;
     if (*s == c) {
-      this->write(writer_, start, s);
+      internal::write(writer, start, s);
       start = ++s;
       continue;
     }
-    this->write(writer_, start, s - 1);
+    internal::write(writer, start, s - 1);
 
     FormatSpec spec;
     spec.align_ = ALIGN_RIGHT;
@@ -490,9 +487,9 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
     start = s;
 
     // Format argument.
-    AF(writer_, spec).visit(arg);
+    AF(writer, spec).visit(arg);
   }
-  this->write(writer_, start, s);
+  internal::write(writer, start, s);
 }
 
 // Formats a value.
@@ -500,13 +497,13 @@ template <typename Char, typename T>
 void format_value(BasicWriter<Char> &w, const T &value,
                   PrintfFormatter<Char> &f, const Char *&) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
-  f.writer() << internal::format_value(buffer, value);
+  w << internal::format_value(buffer, value);
 }
 
 template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format,
             basic_format_args<PrintfFormatter<Char>> args) {
-  PrintfFormatter<Char>(args, w).format(format);
+  PrintfFormatter<Char>(args).format(w, format);
 }
 
 inline std::string vsprintf(CStringRef format,

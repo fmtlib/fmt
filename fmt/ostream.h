@@ -89,7 +89,7 @@ void format_value(BasicWriter<Char> &w, const T &value,
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
   auto str = internal::format_value(buffer, value);
   typedef internal::MakeArg< basic_formatter<Char> > MakeArg;
-  format_str = f.format(format_str, MakeArg(str));
+  format_str = f.format(w, format_str, MakeArg(str));
 }
 
 FMT_API void vprint(std::ostream &os, CStringRef format_str, format_args args);

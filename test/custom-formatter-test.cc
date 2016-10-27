@@ -17,9 +17,10 @@ using fmt::BasicPrintfArgFormatter;
 class CustomArgFormatter
   : public fmt::BasicArgFormatter<CustomArgFormatter, char> {
  public:
-  CustomArgFormatter(fmt::basic_formatter<char, CustomArgFormatter> &f,
+  CustomArgFormatter(fmt::Writer &w,
+                     fmt::basic_formatter<char, CustomArgFormatter> &f,
                      fmt::FormatSpec &s, const char *fmt)
-  : fmt::BasicArgFormatter<CustomArgFormatter, char>(f, s, fmt) {}
+  : fmt::BasicArgFormatter<CustomArgFormatter, char>(w, f, s, fmt) {}
 
   void visit_double(double value) {
     if (round(value * pow(10, spec().precision())) == 0)
@@ -47,12 +48,11 @@ class CustomPrintfArgFormatter :
 
 typedef fmt::basic_formatter<char, CustomArgFormatter> CustomFormatter;
 
-std::string custom_vformat(const char *format_str,
+std::string custom_vformat(fmt::CStringRef format_str,
                            fmt::basic_format_args<CustomFormatter> args) {
   fmt::MemoryWriter writer;
-  // Pass custom argument formatter as a template arg to basic_formatter.
-  CustomFormatter formatter(args, writer);
-  formatter.format(format_str);
+  // Pass custom argument formatter as a template arg to vformat.
+  fmt::vformat<CustomArgFormatter>(writer, format_str, args);
   return writer.str();
 }
 
@@ -69,8 +69,8 @@ std::string custom_vsprintf(
     const char* format_str,
     fmt::basic_format_args<CustomPrintfFormatter> args) {
   fmt::MemoryWriter writer;
-  CustomPrintfFormatter formatter(args, writer);
-  formatter.format(format_str);
+  CustomPrintfFormatter formatter(args);
+  formatter.format(writer, format_str);
   return writer.str();
 }
 

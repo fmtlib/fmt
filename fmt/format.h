@@ -2132,13 +2132,13 @@ private:
     next_arg_index_ = -1;
     return true;
   }
-
-  template <typename Char>
-  void write(BasicWriter<Char> &w, const Char *start, const Char *end) {
-    if (start != end)
-      w << BasicStringRef<Char>(start, internal::to_unsigned(end - start));
-  }
 };
+
+template <typename Char>
+inline void write(BasicWriter<Char> &w, const Char *start, const Char *end) {
+  if (start != end)
+    w << BasicStringRef<Char>(start, internal::to_unsigned(end - start));
+}
 }  // namespace internal
 
 /**
@@ -2173,14 +2173,15 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
     to the part of the format string being parsed for custom argument types.
     \endrst
    */
-  BasicArgFormatter(basic_formatter<Char, Impl> &formatter,
+  BasicArgFormatter(BasicWriter<Char> &writer,
+                    basic_formatter<Char, Impl> &formatter,
                     FormatSpec &spec, const Char *fmt)
-  : internal::ArgFormatterBase<Impl, Char>(formatter.writer(), spec),
+  : internal::ArgFormatterBase<Impl, Char>(writer, spec),
     formatter_(formatter), format_(fmt) {}
 
   /** Formats an argument of a custom (user-defined) type. */
   void visit_custom(internal::Arg::CustomValue c) {
-    c.format(&formatter_.writer(), c.value, &formatter_, &format_);
+    c.format(&this->writer(), c.value, &formatter_, &format_);
   }
 };
 
@@ -2189,9 +2190,9 @@ template <typename Char>
 class ArgFormatter : public BasicArgFormatter<ArgFormatter<Char>, Char> {
  public:
   /** Constructs an argument formatter object. */
-  ArgFormatter(basic_formatter<Char> &formatter,
+  ArgFormatter(BasicWriter<Char> &writer, basic_formatter<Char> &formatter,
                FormatSpec &spec, const Char *fmt)
-  : BasicArgFormatter<ArgFormatter<Char>, Char>(formatter, spec, fmt) {}
+  : BasicArgFormatter<ArgFormatter<Char>, Char>(writer, formatter, spec, fmt) {}
 };
 
 /** This template formats data and writes the output to a writer. */
@@ -2203,7 +2204,6 @@ class basic_formatter :
   typedef Char char_type;
 
  private:
-  BasicWriter<Char> &writer_;
   internal::ArgMap<Char> map_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_formatter);
@@ -2215,40 +2215,25 @@ class basic_formatter :
   // specified name.
   internal::Arg get_arg(BasicStringRef<Char> arg_name, const char *&error);
 
-  // Parses argument index and returns corresponding argument.
-  internal::Arg parse_arg_index(const Char *&s);
-
-  // Parses argument name and returns corresponding argument.
-  internal::Arg parse_arg_name(const Char *&s);
-
  public:
   /**
    \rst
-   Constructs a ``basic_formatter`` object. References to the arguments and
-   the writer are stored in the formatter object so make sure they have
-   appropriate lifetimes.
+   Constructs a ``basic_formatter`` object. References to the arguments are
+   stored in the formatter object so make sure they have appropriate lifetimes.
    \endrst
    */
-  basic_formatter(basic_format_args<basic_formatter> args, BasicWriter<Char> &w)
-    : Base(args), writer_(w) {}
+  basic_formatter(basic_format_args<basic_formatter> args) : Base(args) {}
 
-  /** Returns a reference to the writer associated with this formatter. */
-  BasicWriter<Char> &writer() { return writer_; }
-
-  /** Formats stored arguments and writes the output to the writer. */
-  void format(BasicCStringRef<Char> format_str);
+  // Parses argument index and returns corresponding argument.
+  internal::Arg parse_arg_index(const Char *&s);
+  
+  // Parses argument name and returns corresponding argument.
+  internal::Arg parse_arg_name(const Char *&s);
 
   // Formats a single argument and advances format_str, a format string pointer.
-  const Char *format(const Char *&format_str, const internal::Arg &arg);
+  const Char *format(BasicWriter<Char> &writer, const Char *&format_str,
+                     const internal::Arg &arg);
 };
-
-template <typename ArgFormatter, typename Char = typename ArgFormatter::Char>
-void vformat(BasicWriter<Char> &writer,
-             BasicCStringRef<Char> format_str,
-             basic_format_args<basic_formatter<Char, ArgFormatter>> args) {
-  basic_formatter<Char, ArgFormatter> formatter(args, writer);
-  formatter.format(format_str);
-}
 
 /**
  An error returned by an operating system or a language runtime,
@@ -3463,13 +3448,13 @@ inline internal::Arg basic_formatter<Char, AF>::parse_arg_name(const Char *&s) {
 
 template <typename Char, typename ArgFormatter>
 const Char *basic_formatter<Char, ArgFormatter>::format(
-    const Char *&format_str, const internal::Arg &arg) {
+    BasicWriter<Char> &writer, const Char *&format_str, const internal::Arg &arg) {
   using internal::Arg;
   const Char *s = format_str;
   FormatSpec spec;
   if (*s == ':') {
     if (arg.type == Arg::CUSTOM) {
-      arg.custom.format(&writer(), arg.custom.value, this, &s);
+      arg.custom.format(&writer, arg.custom.value, this, &s);
       return s;
     }
     ++s;
@@ -3627,30 +3612,33 @@ const Char *basic_formatter<Char, ArgFormatter>::format(
     FMT_THROW(format_error("missing '}' in format string"));
 
   // Format argument.
-  ArgFormatter(*this, spec, s - 1).visit(arg);
+  ArgFormatter(writer, *this, spec, s - 1).visit(arg);
   return s;
 }
 
-template <typename Char, typename AF>
-void basic_formatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
+/** Formats arguments and writes the output to the writer. */
+template <typename ArgFormatter, typename Char = typename ArgFormatter::Char>
+void vformat(BasicWriter<Char> &writer, BasicCStringRef<Char> format_str,
+             basic_format_args<basic_formatter<Char, ArgFormatter>> args) {
+  basic_formatter<Char, ArgFormatter> formatter(args);
   const Char *s = format_str.c_str();
   const Char *start = s;
   while (*s) {
     Char c = *s++;
     if (c != '{' && c != '}') continue;
     if (*s == c) {
-      this->write(writer_, start, s);
+      internal::write(writer, start, s);
       start = ++s;
       continue;
     }
     if (c == '}')
       FMT_THROW(format_error("unmatched '}' in format string"));
-    this->write(writer_, start, s - 1);
+    internal::write(writer, start, s - 1);
     internal::Arg arg = internal::is_name_start(*s) ?
-          parse_arg_name(s) : parse_arg_index(s);
-    start = s = format(s, arg);
+    formatter.parse_arg_name(s) : formatter.parse_arg_index(s);
+    start = s = formatter.format(writer, s, arg);
   }
-  this->write(writer_, start, s);
+  internal::write(writer, start, s);
 }
 }  // namespace fmt
 
