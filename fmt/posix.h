@@ -338,7 +338,7 @@ class Locale {
 
   Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", NULL)) {
     if (!locale_)
-      throw fmt::SystemError(errno, "cannot create locale");
+      FMT_THROW(fmt::SystemError(errno, "cannot create locale"));
   }
   ~Locale() { freelocale(locale_); }
 
