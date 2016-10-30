@@ -180,22 +180,32 @@ typedef __int64          intmax_t;
 # define FMT_USE_NOEXCEPT 0
 #endif
 
-#ifndef FMT_NOEXCEPT
-# if FMT_EXCEPTIONS
-#  if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
+#if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
     (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
     FMT_MSC_VER >= 1900
-#   define FMT_NOEXCEPT noexcept
-#  else
-#   define FMT_NOEXCEPT throw()
-#  endif
+# define FMT_DETECTED_NOEXCEPT noexcept
+#else
+# define FMT_DETECTED_NOEXCEPT throw()
+#endif
+
+#ifndef FMT_NOEXCEPT
+# if FMT_EXCEPTIONS
+#  define FMT_NOEXCEPT FMT_DETECTED_NOEXCEPT
 # else
 #  define FMT_NOEXCEPT
 # endif
 #endif
 
+// This is needed because GCC still uses throw() in its headers when exceptions
+// are disabled.
+#if FMT_GCC_VERSION
+# define FMT_DTOR_NOEXCEPT FMT_DETECTED_NOEXCEPT
+#else
+# define FMT_DTOR_NOEXCEPT FMT_NOEXCEPT
+#endif
+
 #ifndef FMT_OVERRIDE
-# if FMT_USE_OVERRIDE || FMT_HAS_FEATURE(cxx_override) || \
+# if (defined(FMT_USE_OVERRIDE) && FMT_USE_OVERRIDE) || FMT_HAS_FEATURE(cxx_override) || \
    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
    FMT_MSC_VER >= 1900
 #  define FMT_OVERRIDE override
@@ -203,7 +213,6 @@ typedef __int64          intmax_t;
 #  define FMT_OVERRIDE
 # endif
 #endif
-
 
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
@@ -550,7 +559,8 @@ class FormatError : public std::runtime_error {
  public:
   explicit FormatError(CStringRef message)
   : std::runtime_error(message.c_str()) {}
-  ~FormatError() throw();
+  FormatError(const FormatError &ferr) : std::runtime_error(ferr) {}
+  ~FormatError() FMT_DTOR_NOEXCEPT;
 };
 
 namespace internal {
@@ -1376,7 +1386,8 @@ struct NamedArgWithType : NamedArg<Char> {
 class RuntimeError : public std::runtime_error {
  protected:
   RuntimeError() : std::runtime_error("") {}
-  ~RuntimeError() throw();
+  RuntimeError(const RuntimeError &rerr) : std::runtime_error(rerr) {}
+  ~RuntimeError() FMT_DTOR_NOEXCEPT;
 };
 
 template <typename Char>
@@ -2325,7 +2336,7 @@ class SystemError : public internal::RuntimeError {
   }
   FMT_VARIADIC_CTOR(SystemError, init, int, CStringRef)
 
-  ~SystemError() throw();
+  ~SystemError() FMT_DTOR_NOEXCEPT;
 
   int error_code() const { return error_code_; }
 };
