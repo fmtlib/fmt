@@ -194,8 +194,23 @@ typedef __int64          intmax_t;
 # endif
 #endif
 
+// This is needed because GCC still uses throw() in its headers when exceptions are disabled
+#ifndef FMT_DESTRUCTOR_NOEXCEPT
+# if FMT_EXCEPTIONS || FMT_GCC_VERSION
+#  if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
+    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
+    FMT_MSC_VER >= 1900
+#   define FMT_DESTRUCTOR_NOEXCEPT noexcept
+#  else
+#   define FMT_DESTRUCTOR_NOEXCEPT throw()
+#  endif
+# else
+#  define FMT_DESTRUCTOR_NOEXCEPT
+# endif
+#endif
+
 #ifndef FMT_OVERRIDE
-# if FMT_USE_OVERRIDE || FMT_HAS_FEATURE(cxx_override) || \
+# if (defined(FMT_USE_OVERRIDE) && FMT_USE_OVERRIDE) || FMT_HAS_FEATURE(cxx_override) || \
    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
    FMT_MSC_VER >= 1900
 #  define FMT_OVERRIDE override
@@ -550,7 +565,8 @@ class FormatError : public std::runtime_error {
  public:
   explicit FormatError(CStringRef message)
   : std::runtime_error(message.c_str()) {}
-  ~FormatError() throw();
+  FormatError(const FormatError& ferr) : std::runtime_error(ferr) {}
+  ~FormatError() FMT_DESTRUCTOR_NOEXCEPT;
 };
 
 namespace internal {
@@ -1376,7 +1392,8 @@ struct NamedArgWithType : NamedArg<Char> {
 class RuntimeError : public std::runtime_error {
  protected:
   RuntimeError() : std::runtime_error("") {}
-  ~RuntimeError() throw();
+  RuntimeError(const RuntimeError& rerr) : std::runtime_error(rerr) {}
+  ~RuntimeError() FMT_DESTRUCTOR_NOEXCEPT;
 };
 
 template <typename Char>
@@ -2325,7 +2342,7 @@ class SystemError : public internal::RuntimeError {
   }
   FMT_VARIADIC_CTOR(SystemError, init, int, CStringRef)
 
-  ~SystemError() throw();
+  ~SystemError() FMT_DESTRUCTOR_NOEXCEPT;
 
   int error_code() const { return error_code_; }
 };
