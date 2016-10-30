@@ -80,9 +80,9 @@ static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
 
 namespace fmt {
 
-FMT_FUNC internal::RuntimeError::~RuntimeError() throw() {}
-FMT_FUNC FormatError::~FormatError() throw() {}
-FMT_FUNC SystemError::~SystemError() throw() {}
+FMT_FUNC internal::RuntimeError::~RuntimeError() FMT_DTOR_NOEXCEPT {}
+FMT_FUNC FormatError::~FormatError() FMT_DTOR_NOEXCEPT {}
+FMT_FUNC SystemError::~SystemError() FMT_DTOR_NOEXCEPT {}
 
 namespace {
 
