@@ -135,7 +135,7 @@ fmt::LongLong fmt::File::size() const {
   if (size_lower == INVALID_FILE_SIZE) {
     DWORD error = GetLastError();
     if (error != NO_ERROR)
-      throw WindowsError(GetLastError(), "cannot get file size");
+      FMT_THROW(WindowsError(GetLastError(), "cannot get file size"));
   }
   fmt::ULongLong long_size = size_upper;
   return (long_size << sizeof(DWORD) * CHAR_BIT) | size_lower;
