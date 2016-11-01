@@ -1,3 +1,17 @@
+3.0.1 - 2016-11-01
+------------------
+* Fixed handling of thousands seperator (`#353 <https://github.com/fmtlib/fmt/issues/353>`_)
+
+* Fixed handling of ``unsigned char`` strings (`#373 <https://github.com/fmtlib/fmt/issues/373>`_)
+
+* Corrected buffer growth when formatting time (`#367 <https://github.com/fmtlib/fmt/issues/367>`_)
+
+* Removed warnings under MSVC and clang (`#318 <https://github.com/fmtlib/fmt/issues/318>`_, `#250 <https://github.com/fmtlib/fmt/issues/250>`_, also merged `#385 <https://github.com/fmtlib/fmt/pull/385>`_ and `#361 <https://github.com/fmtlib/fmt/pull/361>`_). Thanks `@jcelerier (Jean-Michaël Celerier) <https://github.com/jcelerier>`_ and `@nmoehrle (Nils Moehrle) <https://github.com/nmoehrle>`_.
+
+* Fixed compilation issues under Android (`#327 <https://github.com/fmtlib/fmt/pull/327>`_, `#345 <https://github.com/fmtlib/fmt/issues/345>`_ and `#381 <https://github.com/fmtlib/fmt/pull/381>`_), FreeBSD (`#358 <https://github.com/fmtlib/fmt/pull/358>`_), Cygwin (`#388 <https://github.com/fmtlib/fmt/issues/388>`_), MinGW (`#355 <https://github.com/fmtlib/fmt/issues/355>`_) as well as other issues (`#350 <https://github.com/fmtlib/fmt/issues/350>`_, `#366 <https://github.com/fmtlib/fmt/issues/355>`_, `#348 <https://github.com/fmtlib/fmt/pull/348>`_, `#402 <https://github.com/fmtlib/fmt/pull/402>`_, `#405 <https://github.com/fmtlib/fmt/pull/405>`_). Thanks to `@dpantele (Dmitry) <https://github.com/dpantele>`_, `@hghwng (Hugh Wang) <https://github.com/hghwng>`_, `@arvedarved (Tilman Keskinöz) <https://github.com/arvedarved>`_, `@LogicalKnight (Sean) <https://github.com/LogicalKnight>`_ and `@JanHellwig (Jan Hellwig) <https://github.com/janhellwig>`_.
+ 
+* Fixed some documentation issues and extended specification (`#320 <https://github.com/fmtlib/fmt/issues/320>`_, `#333 <https://github.com/fmtlib/fmt/pull/333>`_, `#347 <https://github.com/fmtlib/fmt/issues/347>`_, `#362 <https://github.com/fmtlib/fmt/pull/362>`_). Thanks to `@smellman (Taro Matsuzawa aka. btm) <https://github.com/smellman>`_.
+
 3.0.0 - 2016-05-07
 ------------------
 
@@ -114,8 +128,8 @@
   `@Gachapen (Magnus Bjerke Vik) <https://github.com/Gachapen>`_ and
   `@jwilk (Jakub Wilk) <https://github.com/jwilk>`_.
 
-* Fixed compiler and sanitizer warnings
-  (`#244 <https://github.com/fmtlib/fmt/issues/244>`_,
+* Fixed compiler and sanitizer warnings (
+  `#244 <https://github.com/fmtlib/fmt/issues/244>`_,
   `#256 <https://github.com/fmtlib/fmt/pull/256>`_,
   `#259 <https://github.com/fmtlib/fmt/pull/259>`_,
   `#263 <https://github.com/fmtlib/fmt/issues/263>`_,
