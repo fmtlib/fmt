@@ -1,5 +1,5 @@
-3.0.1 - TBD
------------------- 
+3.0.1 - 2016-11-01
+------------------
 * Fixed handling of thousands seperator (`#353 <https://github.com/fmtlib/fmt/issues/353>`_)
 
 * Fixed handling of ``unsigned char`` strings (`#373 <https://github.com/fmtlib/fmt/issues/373>`_)
