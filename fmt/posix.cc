@@ -61,6 +61,39 @@ typedef ssize_t RWResult;
 
 inline std::size_t convert_rwcount(std::size_t count) { return count; }
 #endif
+
+std::FILE* u8fopen(fmt::CStringRef filename, fmt::CStringRef mode) {
+#ifdef _WIN32
+  wchar_t namebuff[FILENAME_MAX];
+  wchar_t modebuff[100]; // VC++ provides numerous extension modes...
+  int r1 = FMT_SYSTEM(MultiByteToWideChar(CP_UTF8,
+    MB_ERR_INVALID_CHARS, filename.c_str(), -1, namebuff, FILENAME_MAX));
+  int r2 = FMT_SYSTEM(MultiByteToWideChar(CP_UTF8,
+    MB_ERR_INVALID_CHARS, mode.c_str(), -1, modebuff, 100));
+  if (r1 == 0 || r2 == 0)
+    FMT_THROW(fmt::WindowsError(::GetLastError(), 
+	  "couldn't convert filename or mode to native encoding"));
+  return FMT_SYSTEM(_wfopen(namebuff, modebuff));
+#else
+  return FMT_SYSTEM(fopen(filename.c_str(), mode.c_str()));
+#endif
+}
+
+int u8open(fmt::CStringRef filename, int flags, int mode) {
+#ifdef _WIN32
+  wchar_t namebuff[FILENAME_MAX];
+  int r = FMT_SYSTEM(MultiByteToWideChar(CP_UTF8,
+    MB_ERR_INVALID_CHARS, filename.c_str(), -1, namebuff, FILENAME_MAX));
+  if (r == 0)
+    FMT_THROW(fmt::WindowsError(::GetLastError(), 
+      "couldn't convert filename to native encoding"));
+  int fd = -1;
+  FMT_POSIX_CALL(wsopen_s(&fd, namebuff, flags, _SH_DENYNO, mode));
+  return fd;
+#else
+  return FMT_POSIX_CALL(open(filename, flags, mode));
+#endif
+}
 }
 
 fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT {
@@ -70,7 +103,7 @@ fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT {
 
 fmt::BufferedFile::BufferedFile(
     fmt::CStringRef filename, fmt::CStringRef mode) {
-  FMT_RETRY_VAL(file_, FMT_SYSTEM(fopen(filename.c_str(), mode.c_str())), 0);
+  FMT_RETRY_VAL(file_, u8fopen(filename, mode), 0);
   if (!file_)
     FMT_THROW(SystemError(errno, "cannot open file {}", filename));
 }
@@ -96,12 +129,7 @@ int fmt::BufferedFile::fileno() const {
 
 fmt::File::File(fmt::CStringRef path, int oflag) {
   int mode = S_IRUSR | S_IWUSR;
-#if defined(_WIN32) && !defined(__MINGW32__)
-  fd_ = -1;
-  FMT_POSIX_CALL(sopen_s(&fd_, path.c_str(), oflag, _SH_DENYNO, mode));
-#else
-  FMT_RETRY(fd_, FMT_POSIX_CALL(open(path.c_str(), oflag, mode)));
-#endif
+  FMT_RETRY(fd_, u8open(path, oflag, mode));
   if (fd_ == -1)
     FMT_THROW(SystemError(errno, "cannot open file {}", path));
 }
