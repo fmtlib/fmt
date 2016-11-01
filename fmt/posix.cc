@@ -88,7 +88,7 @@ int u8open(fmt::CStringRef filename, int flags, int mode) {
     FMT_THROW(fmt::WindowsError(::GetLastError(), 
       "couldn't convert filename to native encoding"));
   int fd = -1;
-  FMT_POSIX_CALL(wsopen_s(&fd, namebuff, flags, _SH_DENYNO, mode));
+  FMT_SYSTEM(_wsopen_s(&fd, namebuff, flags, _SH_DENYNO, mode));
   return fd;
 #else
   return FMT_POSIX_CALL(open(filename, flags, mode));
