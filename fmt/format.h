@@ -214,6 +214,16 @@ typedef __int64          intmax_t;
 # endif
 #endif
 
+#ifndef FMT_NULLPTR
+# if FMT_HAS_FEATURE(cxx_nullptr) || \
+   (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
+   FMT_MSC_VER >= 1600
+#  define FMT_NULLPTR nullptr
+# else
+#  define FMT_NULLPTR NULL
+# endif
+#endif
+
 // A macro to disallow the copy constructor and operator= functions
 // This should be used in the private: declarations for a class
 #ifndef FMT_USE_DELETED_FUNCTIONS
@@ -615,7 +625,7 @@ class Buffer {
   std::size_t size_;
   std::size_t capacity_;
 
-  Buffer(T *ptr = 0, std::size_t capacity = 0)
+  Buffer(T *ptr = FMT_NULLPTR, std::size_t capacity = 0)
     : ptr_(ptr), size_(0), capacity_(capacity) {}
 
   /**
@@ -745,7 +755,7 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
   std::size_t new_capacity = this->capacity_ + this->capacity_ / 2;
   if (size > new_capacity)
       new_capacity = size;
-  T *new_ptr = this->allocate(new_capacity);
+  T *new_ptr = this->allocate(new_capacity, FMT_NULLPTR);
   // The following code doesn't throw, so the raw pointer above doesn't leak.
   std::uninitialized_copy(this->ptr_, this->ptr_ + this->size_,
                           make_ptr(new_ptr, new_capacity));
@@ -767,7 +777,7 @@ class FixedBuffer : public fmt::Buffer<Char> {
   FixedBuffer(Char *array, std::size_t size) : fmt::Buffer<Char>(array, size) {}
 
  protected:
-  FMT_API void grow(std::size_t size);
+  FMT_API void grow(std::size_t size) FMT_OVERRIDE;
 };
 
 template <typename Char>
@@ -1820,7 +1830,7 @@ class ArgMap {
       if (it->first == name)
         return &it->second;
     }
-    return 0;
+    return FMT_NULLPTR;
   }
 };
 
@@ -1849,7 +1859,7 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
   }
 
   void write(const char *value) {
-    Arg::StringValue<char> str = {value, value != 0 ? std::strlen(value) : 0};
+    Arg::StringValue<char> str = {value, value != FMT_NULLPTR ? std::strlen(value) : 0};
     writer_.write_str(str, spec_);
   }
 
@@ -2932,7 +2942,7 @@ void BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   // Format using snprintf.
   Char fill = internal::CharTraits<Char>::cast(spec.fill());
   unsigned n = 0;
-  Char *start = 0;
+  Char *start = FMT_NULLPTR;
   for (;;) {
     std::size_t buffer_size = buffer_.capacity() - offset;
 #if FMT_MSC_VER
@@ -3594,7 +3604,7 @@ inline internal::Arg BasicFormatter<Char, AF>::get_arg(
 
 template <typename Char, typename AF>
 inline internal::Arg BasicFormatter<Char, AF>::parse_arg_index(const Char *&s) {
-  const char *error = 0;
+  const char *error = FMT_NULLPTR;
   internal::Arg arg = *s < '0' || *s > '9' ?
         next_arg(error) : get_arg(internal::parse_nonnegative_int(s), error);
   if (error) {
@@ -3612,7 +3622,7 @@ inline internal::Arg BasicFormatter<Char, AF>::parse_arg_name(const Char *&s) {
   do {
     c = *++s;
   } while (internal::is_name_start(c) || ('0' <= c && c <= '9'));
-  const char *error = 0;
+  const char *error = FMT_NULLPTR;
   internal::Arg arg = get_arg(BasicStringRef<Char>(start, s - start), error);
   if (error)
     FMT_THROW(FormatError(error));
