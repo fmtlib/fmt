@@ -83,8 +83,8 @@ void CheckForwarding(
   // Check if value_type is properly defined.
   AllocatorRef< MockAllocator<int> >::value_type *ptr = &mem;
   // Check forwarding.
-  EXPECT_CALL(alloc, allocate(42)).WillOnce(Return(ptr));
-  ref.allocate(42);
+  EXPECT_CALL(alloc, allocate(42, 0)).WillOnce(Return(ptr));
+  ref.allocate(42, 0);
   EXPECT_CALL(alloc, deallocate(ptr, 42));
   ref.deallocate(ptr, 42);
 }
@@ -339,7 +339,7 @@ TEST(MemoryBufferTest, Grow) {
   EXPECT_EQ(10u, buffer.capacity());
   int mem[20];
   mem[7] = 0xdead;
-  EXPECT_CALL(alloc, allocate(20)).WillOnce(Return(mem));
+  EXPECT_CALL(alloc, allocate(20, 0)).WillOnce(Return(mem));
   buffer.grow(20);
   EXPECT_EQ(20u, buffer.capacity());
   // Check if size elements have been copied
@@ -360,7 +360,7 @@ TEST(MemoryBufferTest, Allocator) {
     MemoryBuffer<char, 10, TestAllocator> buffer2((TestAllocator(&alloc)));
     EXPECT_EQ(&alloc, buffer2.get_allocator().get());
     std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
-    EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem));
+    EXPECT_CALL(alloc, allocate(size, 0)).WillOnce(Return(&mem));
     buffer2.reserve(size);
     EXPECT_CALL(alloc, deallocate(&mem, size));
   }
@@ -373,13 +373,13 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
   std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
   std::vector<char> mem(size);
   {
-    EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem[0]));
+    EXPECT_CALL(alloc, allocate(size, 0)).WillOnce(Return(&mem[0]));
     buffer.resize(size);
     std::fill(&buffer[0], &buffer[0] + size, 'x');
   }
   std::vector<char> mem2(2 * size);
   {
-    EXPECT_CALL(alloc, allocate(2 * size)).WillOnce(Return(&mem2[0]));
+    EXPECT_CALL(alloc, allocate(2 * size, 0)).WillOnce(Return(&mem2[0]));
     std::exception e;
     EXPECT_CALL(alloc, deallocate(&mem[0], size)).WillOnce(testing::Throw(e));
     EXPECT_THROW(buffer.reserve(2 * size), std::exception);

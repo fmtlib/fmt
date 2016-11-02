@@ -341,7 +341,7 @@ template <typename Char, typename AF>
 internal::Arg PrintfFormatter<Char, AF>::get_arg(const Char *s,
                                                  unsigned arg_index) {
   (void)s;
-  const char *error = 0;
+  const char *error = FMT_NULLPTR;
   internal::Arg arg = arg_index == std::numeric_limits<unsigned>::max() ?
     next_arg(error) : FormatterBase::get_arg(arg_index - 1, error);
   if (error)
