@@ -23,7 +23,7 @@ class StringBuffer : public Buffer<Char> {
   std::basic_string<Char> data_;
 
  protected:
-  virtual void grow(std::size_t size) {
+  virtual void grow(std::size_t size) FMT_OVERRIDE {
     data_.resize(size);
     this->ptr_ = &data_[0];
     this->capacity_ = size;
@@ -35,7 +35,7 @@ class StringBuffer : public Buffer<Char> {
     data_.resize(this->size_);
     str.swap(data_);
     this->capacity_ = this->size_ = 0;
-    this->ptr_ = 0;
+    this->ptr_ = FMT_NULLPTR;
   }
 };
 }  // namespace internal
