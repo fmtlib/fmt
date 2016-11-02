@@ -51,7 +51,7 @@ described in the next section.
 
 A *format_spec* field can also include nested replacement fields in certain
 positions within it. These nested replacement fields can contain only an
-argument index; format specifications are not allowed. This allows the
+argument id; format specifications are not allowed. This allows the
 formatting of a value to be dynamically specified.
 
 See the :ref:`formatexamples` section for some examples.
