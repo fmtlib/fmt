@@ -64,16 +64,8 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 
 std::FILE* u8fopen(fmt::CStringRef filename, fmt::CStringRef mode) {
 #ifdef _WIN32
-  wchar_t namebuff[FILENAME_MAX];
-  wchar_t modebuff[100]; // VC++ provides numerous extension modes...
-  int r1 = FMT_SYSTEM(MultiByteToWideChar(CP_UTF8,
-    MB_ERR_INVALID_CHARS, filename.c_str(), -1, namebuff, FILENAME_MAX));
-  int r2 = FMT_SYSTEM(MultiByteToWideChar(CP_UTF8,
-    MB_ERR_INVALID_CHARS, mode.c_str(), -1, modebuff, 100));
-  if (r1 == 0 || r2 == 0)
-    FMT_THROW(fmt::WindowsError(::GetLastError(), 
-	  "couldn't convert filename or mode to native encoding"));
-  return FMT_SYSTEM(_wfopen(namebuff, modebuff));
+  fmt::UTF8ToUTF16 conv(filename.c_str());
+  return FMT_SYSTEM(_wfopen(conv.c_str(), modebuff));
 #else
   return FMT_SYSTEM(fopen(filename.c_str(), mode.c_str()));
 #endif
@@ -81,14 +73,9 @@ std::FILE* u8fopen(fmt::CStringRef filename, fmt::CStringRef mode) {
 
 int u8open(fmt::CStringRef filename, int flags, int mode) {
 #ifdef _WIN32
-  wchar_t namebuff[FILENAME_MAX];
-  int r = FMT_SYSTEM(MultiByteToWideChar(CP_UTF8,
-    MB_ERR_INVALID_CHARS, filename.c_str(), -1, namebuff, FILENAME_MAX));
-  if (r == 0)
-    FMT_THROW(fmt::WindowsError(::GetLastError(), 
-      "couldn't convert filename to native encoding"));
+  fmt::UTF8ToUTF16 conv(filename.c_str());
   int fd = -1;
-  FMT_SYSTEM(_wsopen_s(&fd, namebuff, flags, _SH_DENYNO, mode));
+  FMT_POSIX(wsopen_s(&fd, conv.c_str(), flags, _SH_DENYNO, mode));
   return fd;
 #else
   return FMT_POSIX_CALL(open(filename, flags, mode));
