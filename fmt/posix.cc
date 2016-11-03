@@ -64,8 +64,9 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 
 std::FILE* u8fopen(fmt::CStringRef filename, fmt::CStringRef mode) {
 #ifdef _WIN32
-  fmt::UTF8ToUTF16 conv(filename.c_str());
-  return FMT_SYSTEM(_wfopen(conv.c_str(), modebuff));
+  fmt::UTF8ToUTF16 nconv(filename.c_str());
+  fmt::UTF8ToUTF16 mconv(filename.c_str());
+  return FMT_SYSTEM(_wfopen(nconv.c_str(), mconv.c_str()));
 #else
   return FMT_SYSTEM(fopen(filename.c_str(), mode.c_str()));
 #endif
