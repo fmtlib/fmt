@@ -831,7 +831,7 @@ class CharTraits<char> : public BasicCharTraits<char> {
 extern template int CharTraits<char>::format_float<double>
         (char *buffer, std::size_t size,
          const char* format, unsigned width, int precision, double value);
-extern template int CharTraits<char>::format_float<long double
+extern template int CharTraits<char>::format_float<long double>
         (char *buffer, std::size_t size,
          const char* format, unsigned width, int precision, long double value);
 #endif
