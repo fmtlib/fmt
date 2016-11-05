@@ -255,6 +255,21 @@ typedef __int64          intmax_t;
    (!defined(FMT_ICC_VERSION) || FMT_ICC_VERSION >= 1500)
 #endif
 
+#ifndef FMT_USE_EXTERN_TEMPLATES
+// Clang doesn't have a feature check for extern templates so we check
+// for variadic templates which were introduced in the same version.
+// For GCC according to cppreference.com they were introduced in 3.3.
+# define FMT_USE_EXTERN_TEMPLATES \
+    ((__clang__ && FMT_USE_VARIADIC_TEMPLATES) || \
+     FMT_GCC_VERSION >= 303)
+#endif
+
+#ifdef FMT_HEADER_ONLY
+// If header only do not use extern templates.
+# undef FMT_USE_EXTERN_TEMPLATES
+# define FMT_USE_EXTERN_TEMPLATES 0
+#endif
+
 #ifndef FMT_ASSERT
 # define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
@@ -809,6 +824,15 @@ class CharTraits<char> : public BasicCharTraits<char> {
       const char *format, unsigned width, int precision, T value);
 };
 
+#if FMT_USE_EXTERN_TEMPLATES
+extern template int CharTraits<char>::format_float<double>
+        (char *buffer, std::size_t size,
+         const char* format, unsigned width, int precision, double value);
+extern template int CharTraits<char>::format_float<long double
+        (char *buffer, std::size_t size,
+         const char* format, unsigned width, int precision, long double value);
+#endif
+
 template <>
 class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
  public:
@@ -819,6 +843,15 @@ class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
   FMT_API static int format_float(wchar_t *buffer, std::size_t size,
       const wchar_t *format, unsigned width, int precision, T value);
 };
+
+#if FMT_USE_EXTERN_TEMPLATES
+extern template int CharTraits<wchar_t>::format_float<double>
+        (wchar_t *buffer, std::size_t size,
+         const wchar_t* format, unsigned width, int precision, double value);
+extern template int CharTraits<wchar_t>::format_float<long double>
+        (wchar_t *buffer, std::size_t size,
+         const wchar_t* format, unsigned width, int precision, long double value);
+#endif
 
 // Checks if a number is negative - used to avoid warnings.
 template <bool IsSigned>
@@ -866,13 +899,7 @@ struct FMT_API BasicData {
   static const char DIGITS[];
 };
 
-#ifndef FMT_USE_EXTERN_TEMPLATES
-// Clang doesn't have a feature check for extern templates so we check
-// for variadic templates which were introduced in the same version.
-# define FMT_USE_EXTERN_TEMPLATES (__clang__ && FMT_USE_VARIADIC_TEMPLATES)
-#endif
-
-#if FMT_USE_EXTERN_TEMPLATES && !defined(FMT_HEADER_ONLY)
+#if FMT_USE_EXTERN_TEMPLATES
 extern template struct BasicData<void>;
 #endif
 
