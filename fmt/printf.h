@@ -207,8 +207,8 @@ class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
     specifier information for standard argument types.
     \endrst
    */
-  BasicPrintfArgFormatter(BasicWriter<Char> &writer, FormatSpec &spec)
-  : internal::ArgFormatterBase<Impl, Char>(writer, spec) {}
+  BasicPrintfArgFormatter(BasicWriter<Char> &w, FormatSpec &s)
+  : internal::ArgFormatterBase<Impl, Char>(w, s) {}
 
   /** Formats an argument of type ``bool``. */
   void visit_bool(bool value) {
@@ -304,8 +304,8 @@ class PrintfFormatter : private internal::FormatterBase {
    appropriate lifetimes.
    \endrst
    */
-  explicit PrintfFormatter(const ArgList &args, BasicWriter<Char> &w)
-    : FormatterBase(args), writer_(w) {}
+  explicit PrintfFormatter(const ArgList &al, BasicWriter<Char> &w)
+    : FormatterBase(al), writer_(w) {}
 
   /** Formats stored arguments and writes the output to the writer. */
   FMT_API void format(BasicCStringRef<Char> format_str);
