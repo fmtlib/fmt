@@ -1225,7 +1225,7 @@ TEST(FormatterTest, FormatOct) {
 
 TEST(FormatterTest, FormatIntLocale) {
   ScopedMock<LocaleMock> mock;
-  lconv lc = {};
+  lconv lc = lconv();
   char sep[] = "--";
   lc.thousands_sep = sep;
   EXPECT_CALL(mock, localeconv()).Times(3).WillRepeatedly(testing::Return(&lc));
