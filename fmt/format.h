@@ -214,13 +214,13 @@ typedef __int64          intmax_t;
 # endif
 #endif
 
-#ifndef FMT_NULLPTR
+#ifndef FMT_NULL
 # if FMT_HAS_FEATURE(cxx_nullptr) || \
    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
    FMT_MSC_VER >= 1600
-#  define FMT_NULLPTR nullptr
+#  define FMT_NULL nullptr
 # else
-#  define FMT_NULLPTR NULL
+#  define FMT_NULL NULL
 # endif
 #endif
 
@@ -643,7 +643,7 @@ class Buffer {
   std::size_t size_;
   std::size_t capacity_;
 
-  Buffer(T *ptr = FMT_NULLPTR, std::size_t capacity = 0)
+  Buffer(T *ptr = FMT_NULL, std::size_t capacity = 0)
     : ptr_(ptr), size_(0), capacity_(capacity) {}
 
   /**
@@ -773,7 +773,7 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
   std::size_t new_capacity = this->capacity_ + this->capacity_ / 2;
   if (size > new_capacity)
       new_capacity = size;
-  T *new_ptr = this->allocate(new_capacity, FMT_NULLPTR);
+  T *new_ptr = this->allocate(new_capacity, FMT_NULL);
   // The following code doesn't throw, so the raw pointer above doesn't leak.
   std::uninitialized_copy(this->ptr_, this->ptr_ + this->size_,
                           make_ptr(new_ptr, new_capacity));
@@ -1897,14 +1897,14 @@ class ArgMap {
  public:
   FMT_API void init(const ArgList &args);
 
-  const internal::Arg* find(const fmt::BasicStringRef<Char> &name) const {
+  const internal::Arg *find(const fmt::BasicStringRef<Char> &name) const {
     // The list is unsorted, so just return the first matching name.
     for (typename MapType::const_iterator it = map_.begin(), end = map_.end();
          it != end; ++it) {
       if (it->first == name)
         return &it->second;
     }
-    return FMT_NULLPTR;
+    return FMT_NULL;
   }
 };
 
@@ -1933,7 +1933,7 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
   }
 
   void write(const char *value) {
-    Arg::StringValue<char> str = {value, value != FMT_NULLPTR ? std::strlen(value) : 0};
+    Arg::StringValue<char> str = {value, value ? std::strlen(value) : 0};
     writer_.write_str(str, spec_);
   }
 
@@ -3009,7 +3009,7 @@ void BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   // Format using snprintf.
   Char fill = internal::CharTraits<Char>::cast(spec.fill());
   unsigned n = 0;
-  Char *start = FMT_NULLPTR;
+  Char *start = FMT_NULL;
   for (;;) {
     std::size_t buffer_size = buffer_.capacity() - offset;
 #if FMT_MSC_VER
@@ -3615,7 +3615,7 @@ inline internal::Arg BasicFormatter<Char, AF>::get_arg(
 
 template <typename Char, typename AF>
 inline internal::Arg BasicFormatter<Char, AF>::parse_arg_index(const Char *&s) {
-  const char *error = FMT_NULLPTR;
+  const char *error = FMT_NULL;
   internal::Arg arg = *s < '0' || *s > '9' ?
         next_arg(error) : get_arg(internal::parse_nonnegative_int(s), error);
   if (error) {
@@ -3633,7 +3633,7 @@ inline internal::Arg BasicFormatter<Char, AF>::parse_arg_name(const Char *&s) {
   do {
     c = *++s;
   } while (internal::is_name_start(c) || ('0' <= c && c <= '9'));
-  const char *error = FMT_NULLPTR;
+  const char *error = FMT_NULL;
   internal::Arg arg = get_arg(BasicStringRef<Char>(start, s - start), error);
   if (error)
     FMT_THROW(FormatError(error));

@@ -88,7 +88,7 @@ class BufferedFile {
 
  public:
   // Constructs a BufferedFile object which doesn't represent any file.
-  BufferedFile() FMT_NOEXCEPT : file_(FMT_NULLPTR) {}
+  BufferedFile() FMT_NOEXCEPT : file_(FMT_NULL) {}
 
   // Destroys the object closing the file it represents if any.
   ~BufferedFile() FMT_NOEXCEPT;
@@ -110,7 +110,7 @@ public:
 
   // A "move constructor" for moving from an lvalue.
   BufferedFile(BufferedFile &f) FMT_NOEXCEPT : file_(f.file_) {
-    f.file_ = FMT_NULLPTR;
+    f.file_ = FMT_NULL;
   }
 
   // A "move assignment operator" for moving from a temporary.
@@ -124,7 +124,7 @@ public:
   BufferedFile &operator=(BufferedFile &other) {
     close();
     file_ = other.file_;
-    other.file_ = FMT_NULLPTR;
+    other.file_ = FMT_NULL;
     return *this;
   }
 
@@ -132,7 +132,7 @@ public:
   //   BufferedFile file = BufferedFile(...);
   operator Proxy() FMT_NOEXCEPT {
     Proxy p = {file_};
-    file_ = FMT_NULLPTR;
+    file_ = FMT_NULL;
     return p;
   }
 
@@ -142,13 +142,13 @@ public:
 
  public:
   BufferedFile(BufferedFile &&other) FMT_NOEXCEPT : file_(other.file_) {
-    other.file_ = FMT_NULLPTR;
+    other.file_ = FMT_NULL;
   }
 
   BufferedFile& operator=(BufferedFile &&other) {
     close();
     file_ = other.file_;
-    other.file_ = FMT_NULLPTR;
+    other.file_ = FMT_NULL;
     return *this;
   }
 #endif
@@ -336,7 +336,7 @@ class Locale {
  public:
   typedef locale_t Type;
 
-  Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", FMT_NULLPTR)) {
+  Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", FMT_NULL)) {
     if (!locale_)
       FMT_THROW(fmt::SystemError(errno, "cannot create locale"));
   }
@@ -347,7 +347,7 @@ class Locale {
   // Converts string to floating-point number and advances str past the end
   // of the parsed input.
   double strtod(const char *&str) const {
-    char *end = FMT_NULLPTR;
+    char *end = FMT_NULL;
     double result = strtod_l(str, &end, locale_);
     str = end;
     return result;

@@ -35,7 +35,7 @@ class StringBuffer : public Buffer<Char> {
     data_.resize(this->size_);
     str.swap(data_);
     this->capacity_ = this->size_ = 0;
-    this->ptr_ = FMT_NULLPTR;
+    this->ptr_ = FMT_NULL;
   }
 };
 }  // namespace internal

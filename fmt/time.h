@@ -54,7 +54,7 @@ void format_arg(BasicFormatter<char, ArgFormatter> &f,
   }
   format_str = end + 1;
 }
- 
+
 namespace internal{
 inline Null<> localtime_r(...) { return Null<>(); }
 inline Null<> localtime_s(...) { return Null<>(); }
@@ -75,7 +75,7 @@ inline std::tm localtime(std::time_t time) {
       return handle(localtime_r(&time_, &tm_));
     }
 
-    bool handle(std::tm* tm) { return tm != FMT_NULLPTR; }
+    bool handle(std::tm *tm) { return tm != FMT_NULL; }
 
     bool handle(internal::Null<>) {
       using namespace fmt::internal;
@@ -86,9 +86,9 @@ inline std::tm localtime(std::time_t time) {
 
     bool fallback(internal::Null<>) {
       using namespace fmt::internal;
-      std::tm* tm = std::localtime(&time_);
-      if (tm != FMT_NULLPTR) tm_ = *tm;
-      return tm != FMT_NULLPTR;
+      std::tm *tm = std::localtime(&time_);
+      if (tm) tm_ = *tm;
+      return tm != FMT_NULL;
     }
   };
   LocalTime lt(time);
@@ -112,7 +112,7 @@ inline std::tm gmtime(std::time_t time) {
       return handle(gmtime_r(&time_, &tm_));
     }
 
-    bool handle(std::tm* tm) { return tm != FMT_NULLPTR; }
+    bool handle(std::tm *tm) { return tm != FMT_NULL; }
 
     bool handle(internal::Null<>) {
       using namespace fmt::internal;
@@ -122,9 +122,9 @@ inline std::tm gmtime(std::time_t time) {
     bool fallback(int res) { return res == 0; }
 
     bool fallback(internal::Null<>) {
-      std::tm* tm = std::gmtime(&time_);
-      if (tm != FMT_NULLPTR) tm_ = *tm;
-      return tm != FMT_NULLPTR;
+      std::tm *tm = std::gmtime(&time_);
+      if (tm != FMT_NULL) tm_ = *tm;
+      return tm != FMT_NULL;
     }
   };
   GMTime gt(time);
