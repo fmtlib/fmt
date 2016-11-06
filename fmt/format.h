@@ -1202,7 +1202,7 @@ inline fmt::StringRef thousands_sep(...) { return ""; }
 
 #define FMT_CONCAT(a, b) a##b
 
-#if FMT_GCC_VERSION >= 407
+#if FMT_GCC_VERSION >= 303
 # define FMT_UNUSED __attribute__((unused))
 #else
 # define FMT_UNUSED
