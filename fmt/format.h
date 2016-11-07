@@ -3631,7 +3631,8 @@ void vformat(BasicWriter<Char> &writer, BasicCStringRef<Char> format_str,
       FMT_THROW(format_error("unmatched '}' in format string"));
     internal::write(writer, start, s - 1);
     format_arg<ArgFormatter>(writer, ctx.parse_arg_id(), ctx);
-    assert(*s == '}');
+    if (*s != '}')
+      FMT_THROW(format_error(fmt::format("unknown format specifier")));
     start = ++s;
   }
   internal::write(writer, start, s);

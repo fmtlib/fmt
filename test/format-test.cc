@@ -1362,7 +1362,7 @@ void format_value(fmt::Writer &w, const Date &d, fmt::format_context &) {
 TEST(FormatterTest, FormatCustom) {
   Date date(2012, 12, 9);
   EXPECT_THROW_MSG(fmt::format("{:s}", date), format_error,
-                   "unmatched '}' in format string");
+                   "unknown format specifier");
 }
 
 class Answer {};
