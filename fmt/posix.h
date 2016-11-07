@@ -172,7 +172,7 @@ public:
 
   template <typename... Args>
   inline void print(CStringRef format_str, const Args & ... args) {
-    vprint(format_str, make_format_args<format_context>(args...));
+    vprint(format_str, make_format_args(args...));
   }
 };
 

@@ -1443,9 +1443,6 @@ class format_arg_store {
   // If the arguments are not packed, add one more element to mark the end.
   std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)> data_;
 
-  template <typename ...A>
-  friend format_arg_store<Context, A...> make_format_args(const A & ... args);
-
  public:
   static const uint64_t TYPES = internal::make_type<Args..., void>();
 
@@ -1457,8 +1454,14 @@ class format_arg_store {
 
 template <typename Context, typename ...Args>
 inline format_arg_store<Context, Args...>
-    make_format_args(const Args & ... args) {
+    make_xformat_args(const Args & ... args) {
   return format_arg_store<Context, Args...>(args...);
+}
+
+template <typename ...Args>
+inline format_arg_store<format_context, Args...>
+    make_format_args(const Args & ... args) {
+  return format_arg_store<format_context, Args...>(args...);
 }
 
 /** Formatting arguments. */
@@ -2271,7 +2274,7 @@ class SystemError : public internal::RuntimeError {
   */
   template <typename... Args>
   SystemError(int error_code, CStringRef message, const Args & ... args) {
-    init(error_code, message, make_format_args<format_context>(args...));
+    init(error_code, message, make_format_args(args...));
   }
 
   ~SystemError() throw();
@@ -2494,7 +2497,7 @@ class BasicWriter {
    */
   template <typename... Args>
   void write(BasicCStringRef<Char> format, const Args & ... args) {
-    vwrite(format, make_format_args<basic_format_context<Char>>(args...));
+    vwrite(format, make_xformat_args<basic_format_context<Char>>(args...));
   }
 
   BasicWriter &operator<<(int value) {
@@ -3122,7 +3125,7 @@ class WindowsError : public SystemError {
   */
   template <typename... Args>
   WindowsError(int error_code, CStringRef message, const Args & ... args) {
-    init(error_code, message, make_format_args<format_context>(args...));
+    init(error_code, message, make_format_args(args...));
   }
 };
 
@@ -3146,7 +3149,7 @@ FMT_API void vprint_colored(Color c, CStringRef format, format_args args);
 template <typename... Args>
 inline void print_colored(Color c, CStringRef format_str,
                           const Args & ... args) {
-  vprint_colored(c, format_str, make_format_args<format_context>(args...));
+  vprint_colored(c, format_str, make_format_args(args...));
 }
 
 inline std::string vformat(CStringRef format_str, format_args args) {
@@ -3166,7 +3169,7 @@ inline std::string vformat(CStringRef format_str, format_args args) {
 */
 template <typename... Args>
 inline std::string format(CStringRef format_str, const Args & ... args) {
-  return vformat(format_str, make_format_args<format_context>(args...));
+  return vformat(format_str, make_format_args(args...));
 }
 
 inline std::wstring vformat(WCStringRef format_str, wformat_args args) {
@@ -3177,7 +3180,7 @@ inline std::wstring vformat(WCStringRef format_str, wformat_args args) {
 
 template <typename... Args>
 inline std::wstring format(WCStringRef format_str, const Args & ... args) {
-  auto vargs = make_format_args<wformat_context>(args...);
+  auto vargs = make_xformat_args<wformat_context>(args...);
   return vformat(format_str, vargs);
 }
 
@@ -3194,7 +3197,7 @@ FMT_API void vprint(std::FILE *f, CStringRef format_str, format_args args);
  */
 template <typename... Args>
 inline void print(std::FILE *f, CStringRef format_str, const Args & ... args) {
-  vprint(f, format_str, make_format_args<format_context>(args...));
+  vprint(f, format_str, make_format_args(args...));
 }
 
 FMT_API void vprint(CStringRef format_str, format_args args);
@@ -3210,7 +3213,7 @@ FMT_API void vprint(CStringRef format_str, format_args args);
  */
 template <typename... Args>
 inline void print(CStringRef format_str, const Args & ... args) {
-  vprint(format_str, make_format_args<format_context>(args...));
+  vprint(format_str, make_format_args(args...));
 }
 
 /**

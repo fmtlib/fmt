@@ -523,7 +523,7 @@ inline std::string vsprintf(CStringRef format,
 */
 template <typename... Args>
 inline std::string sprintf(CStringRef format_str, const Args & ... args) {
-  return vsprintf(format_str, make_format_args<printf_context<char>>(args...));
+  return vsprintf(format_str, make_xformat_args<printf_context<char>>(args...));
 }
 
 inline std::wstring vsprintf(WCStringRef format,
@@ -535,7 +535,7 @@ inline std::wstring vsprintf(WCStringRef format,
 
 template <typename... Args>
 inline std::wstring sprintf(WCStringRef format_str, const Args & ... args) {
-  auto vargs = make_format_args<printf_context<wchar_t>>(args...);
+  auto vargs = make_xformat_args<printf_context<wchar_t>>(args...);
   return vsprintf(format_str, vargs);
 }
 
@@ -553,7 +553,7 @@ FMT_API int vfprintf(std::FILE *f, CStringRef format,
  */
 template <typename... Args>
 inline int fprintf(std::FILE *f, CStringRef format_str, const Args & ... args) {
-  auto vargs = make_format_args<printf_context<char>>(args...);
+  auto vargs = make_xformat_args<printf_context<char>>(args...);
   return vfprintf(f, format_str, vargs);
 }
 
@@ -573,7 +573,7 @@ inline int vprintf(CStringRef format,
  */
 template <typename... Args>
 inline int printf(CStringRef format_str, const Args & ... args) {
-  return vprintf(format_str, make_format_args<printf_context<char>>(args...));
+  return vprintf(format_str, make_xformat_args<printf_context<char>>(args...));
 }
 
 inline int vfprintf(std::ostream &os, CStringRef format_str,
@@ -596,7 +596,7 @@ inline int vfprintf(std::ostream &os, CStringRef format_str,
 template <typename... Args>
 inline int fprintf(std::ostream &os, CStringRef format_str,
                    const Args & ... args) {
-  auto vargs = make_format_args<printf_context<char>>(args...);
+  auto vargs = make_xformat_args<printf_context<char>>(args...);
   return vfprintf(os, format_str, vargs);
 }
 }  // namespace fmt
