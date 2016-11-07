@@ -17,10 +17,9 @@ using fmt::BasicPrintfArgFormatter;
 class CustomArgFormatter
   : public fmt::BasicArgFormatter<CustomArgFormatter, char> {
  public:
-  CustomArgFormatter(fmt::Writer &w,
-                     fmt::basic_formatter<char, CustomArgFormatter> &f,
-                     fmt::FormatSpec &s, const char *fmt)
-  : fmt::BasicArgFormatter<CustomArgFormatter, char>(w, f, s, fmt) {}
+  CustomArgFormatter(fmt::Writer &w, fmt::basic_format_context<char> &ctx,
+                     fmt::FormatSpec &s)
+  : fmt::BasicArgFormatter<CustomArgFormatter, char>(w, ctx, s) {}
 
   void visit_double(double value) {
     if (round(value * pow(10, spec().precision())) == 0)
@@ -46,10 +45,7 @@ class CustomPrintfArgFormatter :
   }
 };
 
-typedef fmt::basic_formatter<char, CustomArgFormatter> CustomFormatter;
-
-std::string custom_vformat(fmt::CStringRef format_str,
-                           fmt::basic_format_args<CustomFormatter> args) {
+std::string custom_vformat(fmt::CStringRef format_str, fmt::format_args args) {
   fmt::MemoryWriter writer;
   // Pass custom argument formatter as a template arg to vformat.
   fmt::vformat<CustomArgFormatter>(writer, format_str, args);
@@ -58,19 +54,19 @@ std::string custom_vformat(fmt::CStringRef format_str,
 
 template <typename... Args>
 std::string custom_format(const char *format_str, const Args & ... args) {
-  auto va = fmt::make_format_args<CustomFormatter>(args...);
+  auto va = fmt::make_format_args<fmt::format_context>(args...);
   return custom_vformat(format_str, va);
 }
 
-typedef fmt::PrintfFormatter<char, CustomPrintfArgFormatter>
+typedef fmt::printf_context<char, CustomPrintfArgFormatter>
   CustomPrintfFormatter;
 
 std::string custom_vsprintf(
     const char* format_str,
     fmt::basic_format_args<CustomPrintfFormatter> args) {
   fmt::MemoryWriter writer;
-  CustomPrintfFormatter formatter(args);
-  formatter.format(writer, format_str);
+  CustomPrintfFormatter formatter(format_str, args);
+  formatter.format(writer);
   return writer.str();
 }
 

@@ -65,13 +65,13 @@ struct Test {};
 
 template <typename Char>
 void format_value(fmt::BasicWriter<Char> &w, Test,
-                  fmt::basic_formatter<Char> &f, const Char *) {
+                  fmt::basic_format_context<Char> &) {
   w << "test";
 }
 
 template <typename Char, typename T>
 Arg make_arg(const T &value) {
-  typedef fmt::internal::MakeValue< fmt::basic_formatter<Char> > MakeValue;
+  typedef fmt::internal::MakeValue< fmt::basic_format_context<Char> > MakeValue;
   Arg arg = MakeValue(value);
   arg.type = fmt::internal::type<T>();
   return arg;
@@ -567,9 +567,8 @@ TEST(ArgTest, MakeArg) {
   EXPECT_EQ(fmt::internal::Arg::CUSTOM, arg.type);
   EXPECT_EQ(&t, arg.custom.value);
   fmt::MemoryWriter w;
-  fmt::basic_formatter<char> formatter((fmt::format_args()));
-  const char *s = "}";
-  arg.custom.format(&w, &formatter, &t, &s);
+  fmt::format_context ctx("}", fmt::format_args());
+  arg.custom.format(&w, &t, &ctx);
   EXPECT_EQ("test", w.str());
 }
 
@@ -580,21 +579,20 @@ TEST(UtilTest, FormatArgs) {
 
 struct CustomFormatter {
   typedef char char_type;
+  bool called;
 };
 
-void format_value(fmt::Writer &, const Test &, CustomFormatter &,
-                  const char *&s) {
-  s = "custom_format";
+void format_value(fmt::Writer &, const Test &, CustomFormatter &ctx) {
+  ctx.called = true;
 }
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
   Arg arg = fmt::internal::MakeValue<CustomFormatter>(t);
-  CustomFormatter formatter;
-  const char *s = "";
+  CustomFormatter ctx = {false};
   fmt::MemoryWriter w;
-  arg.custom.format(&w, &formatter, &t, &s);
-  EXPECT_STREQ("custom_format", s);
+  arg.custom.format(&w, &t, &ctx);
+  EXPECT_TRUE(ctx.called);
 }
 
 struct Result {

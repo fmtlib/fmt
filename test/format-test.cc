@@ -1355,8 +1355,7 @@ TEST(FormatterTest, FormatCStringRef) {
   EXPECT_EQ("test", format("{0}", CStringRef("test")));
 }
 
-void format_value(fmt::Writer &w, const Date &d, fmt::basic_formatter<char> &f,
-                  const char *) {
+void format_value(fmt::Writer &w, const Date &d, fmt::format_context &) {
   w << d.year() << '-' << d.month() << '-' << d.day();
 }
 
@@ -1369,8 +1368,7 @@ TEST(FormatterTest, FormatCustom) {
 class Answer {};
 
 template <typename Char>
-void format_value(BasicWriter<Char> &w, Answer, fmt::basic_formatter<Char> &f,
-                  const Char *) {
+void format_value(BasicWriter<Char> &w, Answer, fmt::format_context &) {
   w << "42";
 }
 
@@ -1561,7 +1559,7 @@ std::string vformat_message(int id, const char *format, fmt::format_args args) {
 
 template <typename... Args>
 std::string format_message(int id, const char *format, const Args & ... args) {
-  auto va = fmt::make_format_args<fmt::basic_formatter<char>>(args...);
+  auto va = fmt::make_format_args<fmt::format_context>(args...);
   return vformat_message(id, format, va);
 }
 
@@ -1626,9 +1624,8 @@ class MockArgFormatter :
  public:
   typedef fmt::internal::ArgFormatterBase<MockArgFormatter, char> Base;
 
-  MockArgFormatter(fmt::Writer &w,
-                   fmt::basic_formatter<char, MockArgFormatter> &f,
-                   fmt::FormatSpec &s, const char *)
+  MockArgFormatter(fmt::Writer &w, fmt::format_context &ctx,
+                   fmt::FormatSpec &s)
     : fmt::internal::ArgFormatterBase<MockArgFormatter, char>(w, s) {
     EXPECT_CALL(*this, visit_int(42));
   }
@@ -1636,17 +1633,14 @@ class MockArgFormatter :
   MOCK_METHOD1(visit_int, void (int value));
 };
 
-typedef fmt::basic_formatter<char, MockArgFormatter> CustomFormatter;
-
-void custom_vformat(fmt::CStringRef format_str,
-                    fmt::basic_format_args<CustomFormatter> args) {
+void custom_vformat(fmt::CStringRef format_str, fmt::format_args args) {
   fmt::MemoryWriter writer;
-  vformat(writer, format_str, args);
+  fmt::vformat<MockArgFormatter>(writer, format_str, args);
 }
 
 template <typename... Args>
 void custom_format(const char *format_str, const Args & ... args) {
-  auto va = fmt::make_format_args<CustomFormatter>(args...);
+  auto va = fmt::make_format_args<fmt::format_context>(args...);
   return custom_vformat(format_str, va);
 }
 

@@ -82,14 +82,13 @@ BasicStringRef<Char> format_value(
 }  // namespace internal
 
 // Formats a value.
-template <typename Char, typename ArgFormatter, typename T>
+template <typename Char, typename T>
 void format_value(BasicWriter<Char> &w, const T &value,
-                  basic_formatter<Char, ArgFormatter> &f,
-                  const Char *&format_str) {
+                  basic_format_context<Char> &ctx) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
   auto str = internal::format_value(buffer, value);
-  typedef internal::MakeArg< basic_formatter<Char> > MakeArg;
-  format_str = f.format(w, format_str, MakeArg(str));
+  typedef internal::MakeArg< basic_format_context<Char> > MakeArg;
+  format_arg< ArgFormatter<Char> >(w, MakeArg(str), ctx);
 }
 
 FMT_API void vprint(std::ostream &os, CStringRef format_str, format_args args);
@@ -106,7 +105,7 @@ FMT_API void vprint(std::ostream &os, CStringRef format_str, format_args args);
 template <typename... Args>
 inline void print(std::ostream &os, CStringRef format_str,
                   const Args & ... args) {
-  vprint(os, format_str, make_format_args<basic_formatter<char>>(args...));
+  vprint(os, format_str, make_format_args<format_context>(args...));
 }
 }  // namespace fmt
 

@@ -15,19 +15,17 @@
 
 namespace fmt {
 
-template <typename ArgFormatter>
-void format_value(Writer &w, const std::tm &tm,
-                  basic_formatter<char, ArgFormatter> &f,
-                  const char *&format_str) {
-  if (*format_str == ':')
-    ++format_str;
-  const char *end = format_str;
+void format_value(Writer &w, const std::tm &tm, format_context &ctx) {
+  const char *&s = ctx.ptr();
+  if (*s == ':')
+    ++s;
+  const char *end = s;
   while (*end && *end != '}')
     ++end;
   if (*end != '}')
     FMT_THROW(format_error("missing '}' in format string"));
   internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> format;
-  format.append(format_str, end + 1);
+  format.append(s, end + 1);
   format[format.size() - 1] = '\0';
   Buffer<char> &buffer = w.buffer();
   std::size_t start = buffer.size();
@@ -48,7 +46,7 @@ void format_value(Writer &w, const std::tm &tm,
     const std::size_t MIN_GROWTH = 10;
     buffer.reserve(buffer.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
   }
-  format_str = end + 1;
+  s = end;
 }
 }
 
