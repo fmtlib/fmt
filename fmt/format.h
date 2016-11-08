@@ -40,6 +40,9 @@
 #include <vector>
 #include <utility>
 
+// The fmt library version in the form major * 10000 + minor * 100 + patch.
+#define FMT_VERSION 30002
+
 #ifdef _SECURE_SCL
 # define FMT_SECURE_SCL _SECURE_SCL
 #else
