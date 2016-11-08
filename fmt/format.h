@@ -3446,8 +3446,8 @@ inline format_arg basic_format_context<Char>::parse_arg_id() {
 
 // Formats a single argument.
 template <typename ArgFormatter, typename Char, typename Context>
-void format_arg(BasicWriter<Char> &writer, const internal::Arg &arg,
-                Context &ctx) {
+void do_format_arg(BasicWriter<Char> &writer, const internal::Arg &arg,
+                   Context &ctx) {
   using internal::Arg;
   const Char *&s = ctx.ptr();
   FormatSpec spec;
@@ -3630,7 +3630,7 @@ void vformat(BasicWriter<Char> &writer, BasicCStringRef<Char> format_str,
     if (c == '}')
       FMT_THROW(format_error("unmatched '}' in format string"));
     internal::write(writer, start, s - 1);
-    format_arg<ArgFormatter>(writer, ctx.parse_arg_id(), ctx);
+    do_format_arg<ArgFormatter>(writer, ctx.parse_arg_id(), ctx);
     if (*s != '}')
       FMT_THROW(format_error(fmt::format("unknown format specifier")));
     start = ++s;
