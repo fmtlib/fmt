@@ -26,7 +26,6 @@
  */
 
 #include "format.h"
-#include "printf.h"
 
 #include <string.h>
 
@@ -105,8 +104,6 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
 #else
 # define FMT_SWPRINTF swprintf
 #endif // defined(_WIN32) && defined(__MINGW32__) && !defined(__NO_ISOCEXT)
-
-const char RESET_COLOR[] = "\x1b[0m";
 
 typedef void (*FormatFunc)(Writer &, int, StringRef);
 
@@ -486,34 +483,6 @@ FMT_FUNC void report_windows_error(
 }
 #endif
 
-FMT_FUNC void print(std::FILE *f, CStringRef format_str, ArgList args) {
-  MemoryWriter w;
-  w.write(format_str, args);
-  std::fwrite(w.data(), 1, w.size(), f);
-}
-
-FMT_FUNC void print(CStringRef format_str, ArgList args) {
-  print(stdout, format_str, args);
-}
-
-FMT_FUNC void print_colored(Color c, CStringRef format, ArgList args) {
-  char escape[] = "\x1b[30m";
-  escape[3] = static_cast<char>('0' + c);
-  std::fputs(escape, stdout);
-  print(format, args);
-  std::fputs(RESET_COLOR, stdout);
-}
-
-template <typename Char>
-void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args);
-
-FMT_FUNC int fprintf(std::FILE *f, CStringRef format, ArgList args) {
-  MemoryWriter w;
-  printf(w, format, args);
-  std::size_t size = w.size();
-  return std::fwrite(w.data(), 1, size, f) < size ? -1 : static_cast<int>(size);
-}
-
 #ifndef FMT_HEADER_ONLY
 
 template struct internal::BasicData<void>;
@@ -523,8 +492,6 @@ template struct internal::BasicData<void>;
 template void internal::FixedBuffer<char>::grow(std::size_t);
 
 template void internal::ArgMap<char>::init(const ArgList &args);
-
-template void PrintfFormatter<char>::format(CStringRef format);
 
 template int internal::CharTraits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
@@ -539,8 +506,6 @@ template int internal::CharTraits<char>::format_float(
 template void internal::FixedBuffer<wchar_t>::grow(std::size_t);
 
 template void internal::ArgMap<wchar_t>::init(const ArgList &args);
-
-template void PrintfFormatter<wchar_t>::format(WCStringRef format);
 
 template int internal::CharTraits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,

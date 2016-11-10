@@ -555,4 +555,8 @@ inline int fprintf(std::ostream &os, CStringRef format_str, ArgList args) {
 FMT_VARIADIC(int, fprintf, std::ostream &, CStringRef)
 }  // namespace fmt
 
+#ifdef FMT_HEADER_ONLY
+# include "printf.cc"
+#endif
+
 #endif  // FMT_PRINTF_H_

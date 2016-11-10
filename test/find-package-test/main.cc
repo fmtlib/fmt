@@ -1,4 +1,4 @@
-#include "fmt/format.h"
+#include "fmt/printf.h"
 
 int main(int argc, char** argv) {
   for(int i = 0; i < argc; ++i)

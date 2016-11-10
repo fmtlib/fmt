@@ -28,8 +28,9 @@
 #define FMT_NOEXCEPT
 #include "test-assert.h"
 
-// Include format.cc instead of format.h to test implementation-specific stuff.
+// Include *.cc instead of *.h to test implementation-specific stuff.
 #include "fmt/format.cc"
+#include "fmt/printf.cc"
 
 #include <algorithm>
 #include <cstring>
