@@ -99,7 +99,7 @@ endif ()
 
 if (HAVE_OPEN)
   add_fmt_executable(posix-mock-test
-    posix-mock-test.cc ../fmt/format.cc ${TEST_MAIN_SRC})
+    posix-mock-test.cc ../fmt/format.cc ../fmt/printf.cc ${TEST_MAIN_SRC})
   target_include_directories(posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR})
   target_compile_definitions(posix-mock-test PRIVATE FMT_USE_FILE_DESCRIPTORS=1)
   target_link_libraries(posix-mock-test gmock)
