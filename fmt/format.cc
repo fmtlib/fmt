@@ -105,6 +105,8 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
 # define FMT_SWPRINTF swprintf
 #endif // defined(_WIN32) && defined(__MINGW32__) && !defined(__NO_ISOCEXT)
 
+const char RESET_COLOR[] = "\x1b[0m";
+
 typedef void (*FormatFunc)(Writer &, int, StringRef);
 
 // Portable thread-safe version of strerror.
@@ -482,6 +484,24 @@ FMT_FUNC void report_windows_error(
   report_error(internal::format_windows_error, error_code, message);
 }
 #endif
+
+FMT_FUNC void print(std::FILE *f, CStringRef format_str, ArgList args) {
+  MemoryWriter w;
+  w.write(format_str, args);
+  std::fwrite(w.data(), 1, w.size(), f);
+}
+
+FMT_FUNC void print(CStringRef format_str, ArgList args) {
+  print(stdout, format_str, args);
+}
+
+FMT_FUNC void print_colored(Color c, CStringRef format, ArgList args) {
+  char escape[] = "\x1b[30m";
+  escape[3] = static_cast<char>('0' + c);
+  std::fputs(escape, stdout);
+  print(format, args);
+  std::fputs(RESET_COLOR, stdout);
+}
 
 #ifndef FMT_HEADER_ONLY
 
