@@ -1535,6 +1535,43 @@ typedef basic_format_args<basic_format_context<wchar_t>> wformat_args;
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
 
+template <typename Visitor>
+typename std::result_of<Visitor(int)>::type visit(Visitor &&vis, format_arg arg) {
+  switch (arg.type) {
+  case format_arg::NONE:
+  case format_arg::NAMED_ARG:
+    FMT_ASSERT(false, "invalid argument type");
+    break;
+  case format_arg::INT:
+    return vis(arg.int_value);
+  case format_arg::UINT:
+    return vis(arg.uint_value);
+  case format_arg::LONG_LONG:
+    return vis(arg.long_long_value);
+  case format_arg::ULONG_LONG:
+    return vis(arg.ulong_long_value);
+  case format_arg::BOOL:
+    return vis(arg.int_value != 0);
+  case format_arg::CHAR:
+    return vis(static_cast<wchar_t>(arg.int_value));
+  case format_arg::DOUBLE:
+    return vis(arg.double_value);
+  case format_arg::LONG_DOUBLE:
+    return vis(arg.long_double_value);
+  case format_arg::CSTRING:
+    return vis(arg.string.value);
+  case format_arg::STRING:
+    return vis(arg.string);
+  case format_arg::WSTRING:
+    return vis(arg.wstring);
+  case format_arg::POINTER:
+    return vis(arg.pointer);
+  case format_arg::CUSTOM:
+    return vis(arg.custom);
+  }
+  return typename std::result_of<Visitor(int)>::type();
+}
+
 /**
   \rst
   An argument visitor based on the `curiously recurring template pattern
@@ -1649,6 +1686,58 @@ class ArgVisitor {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
 
+  Result operator()(int value) {
+    return FMT_DISPATCH(visit_int(value));
+  }
+
+  Result operator()(unsigned value) {
+    return FMT_DISPATCH(visit_uint(value));
+  }
+
+  Result operator()(fmt::LongLong value) {
+    return FMT_DISPATCH(visit_long_long(value));
+  }
+
+  Result operator()(fmt::ULongLong value) {
+    return FMT_DISPATCH(visit_ulong_long(value));
+  }
+
+  Result operator()(bool value) {
+    return FMT_DISPATCH(visit_bool(value));
+  }
+
+  Result operator()(wchar_t value) {
+    return FMT_DISPATCH(visit_char(value));
+  }
+
+  Result operator()(double value) {
+    return FMT_DISPATCH(visit_double(value));
+  }
+
+  Result operator()(long double value) {
+    return FMT_DISPATCH(visit_long_double(value));
+  }
+
+  Result operator()(const char *value) {
+    return FMT_DISPATCH(visit_cstring(value));
+  }
+
+  Result operator()(format_arg::StringValue<char> value) {
+    return FMT_DISPATCH(visit_string(value));
+  }
+
+  Result operator()(format_arg::StringValue<wchar_t> value) {
+    return FMT_DISPATCH(visit_wstring(value));
+  }
+
+  Result operator()(const void *value) {
+    return FMT_DISPATCH(visit_pointer(value));
+  }
+
+  Result operator()(format_arg::CustomValue value) {
+    return FMT_DISPATCH(visit_custom(value));
+  }
+
   /**
     \rst
     Visits an argument dispatching to the appropriate visit method based on
@@ -1657,41 +1746,7 @@ class ArgVisitor {
     called.
     \endrst
    */
-  Result visit(const Arg &arg) {
-    switch (arg.type) {
-    case Arg::NONE:
-    case Arg::NAMED_ARG:
-      FMT_ASSERT(false, "invalid argument type");
-      break;
-    case Arg::INT:
-      return FMT_DISPATCH(visit_int(arg.int_value));
-    case Arg::UINT:
-      return FMT_DISPATCH(visit_uint(arg.uint_value));
-    case Arg::LONG_LONG:
-      return FMT_DISPATCH(visit_long_long(arg.long_long_value));
-    case Arg::ULONG_LONG:
-      return FMT_DISPATCH(visit_ulong_long(arg.ulong_long_value));
-    case Arg::BOOL:
-      return FMT_DISPATCH(visit_bool(arg.int_value != 0));
-    case Arg::CHAR:
-      return FMT_DISPATCH(visit_char(arg.int_value));
-    case Arg::DOUBLE:
-      return FMT_DISPATCH(visit_double(arg.double_value));
-    case Arg::LONG_DOUBLE:
-      return FMT_DISPATCH(visit_long_double(arg.long_double_value));
-    case Arg::CSTRING:
-      return FMT_DISPATCH(visit_cstring(arg.string.value));
-    case Arg::STRING:
-      return FMT_DISPATCH(visit_string(arg.string));
-    case Arg::WSTRING:
-      return FMT_DISPATCH(visit_wstring(arg.wstring));
-    case Arg::POINTER:
-      return FMT_DISPATCH(visit_pointer(arg.pointer));
-    case Arg::CUSTOM:
-      return FMT_DISPATCH(visit_custom(arg.custom));
-    }
-    return Result();
-  }
+  Result visit(const format_arg &arg) { return fmt::visit(*this, arg); }
 };
 
 enum Alignment {
