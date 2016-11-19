@@ -71,29 +71,24 @@ struct is_same<T, T> {
   enum { value = 1 };
 };
 
-// An argument visitor that converts an integer argument to T for printf,
-// if T is an integral type. If T is void, the argument is converted to
-// corresponding signed or unsigned type depending on the type specifier:
-// 'd' and 'i' - signed, other - unsigned)
-template <typename T = void>
-class ArgConverter : public ArgVisitor<ArgConverter<T>, void> {
+template <typename T>
+class ArgConverter {
  private:
   internal::Arg &arg_;
   wchar_t type_;
-
-  FMT_DISALLOW_COPY_AND_ASSIGN(ArgConverter);
 
  public:
   ArgConverter(internal::Arg &arg, wchar_t type)
     : arg_(arg), type_(type) {}
 
-  void visit_bool(bool value) {
+  void operator()(bool value) {
     if (type_ != 's')
-      visit_any_int(value);
+      operator()<bool>(value);
   }
 
   template <typename U>
-  void visit_any_int(U value) {
+  typename std::enable_if<std::is_integral<U>::value>::type
+      operator()(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
     using internal::Arg;
     typedef typename internal::Conditional<
@@ -122,7 +117,22 @@ class ArgConverter : public ArgVisitor<ArgConverter<T>, void> {
       }
     }
   }
+
+  template <typename U>
+  typename std::enable_if<!std::is_integral<U>::value>::type
+    operator()(U value) {
+    // No coversion needed for non-integral types.
+  }
 };
+
+// Converts an integer argument to T for printf, if T is an integral type.
+// If T is void, the argument is converted to corresponding signed or unsigned
+// type depending on the type specifier: 'd' and 'i' - signed, other -
+// unsigned).
+template <typename T>
+void convert_arg(format_arg &arg, wchar_t type) {
+  visit(ArgConverter<T>(arg, type), arg);
+}
 
 // Converts an integer argument to char for printf.
 class CharConverter : public ArgVisitor<CharConverter, void> {
@@ -436,28 +446,28 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
     }
 
     // Parse length and convert the argument to the required type.
-    using internal::ArgConverter;
+    using internal::convert_arg;
     switch (*s++) {
     case 'h':
       if (*s == 'h')
-        visit(ArgConverter<signed char>(arg, *++s), arg);
+        convert_arg<signed char>(arg, *++s);
       else
-        visit(ArgConverter<short>(arg, *s), arg);
+        convert_arg<short>(arg, *s);
       break;
     case 'l':
       if (*s == 'l')
-        visit(ArgConverter<fmt::LongLong>(arg, *++s), arg);
+        convert_arg<fmt::LongLong>(arg, *++s);
       else
-        visit(ArgConverter<long>(arg, *s), arg);
+        convert_arg<long>(arg, *s);
       break;
     case 'j':
-      visit(ArgConverter<intmax_t>(arg, *s), arg);
+      convert_arg<intmax_t>(arg, *s);
       break;
     case 'z':
-      visit(ArgConverter<std::size_t>(arg, *s), arg);
+      convert_arg<std::size_t>(arg, *s);
       break;
     case 't':
-      visit(ArgConverter<std::ptrdiff_t>(arg, *s), arg);
+      convert_arg<std::ptrdiff_t>(arg, *s);
       break;
     case 'L':
       // printf produces garbage when 'L' is omitted for long double, no
@@ -465,7 +475,7 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
       break;
     default:
       --s;
-      visit(ArgConverter<void>(arg, *s), arg);
+      convert_arg<void>(arg, *s);
     }
 
     // Parse type.
