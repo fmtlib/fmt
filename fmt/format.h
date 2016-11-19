@@ -1535,6 +1535,13 @@ typedef basic_format_args<basic_format_context<wchar_t>> wformat_args;
 
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
 
+/**
+  \rst
+  Visits an argument dispatching to the appropriate visit method based on
+  the argument type. For example, if the argument type is ``double`` then
+  ``vis(value)`` will be called with the value of type ``double``.
+  \endrst
+ */
 template <typename Visitor>
 typename std::result_of<Visitor(int)>::type visit(Visitor &&vis,
                                                   format_arg arg) {
@@ -1737,18 +1744,6 @@ class ArgVisitor {
 
   Result operator()(format_arg::CustomValue value) {
     return FMT_DISPATCH(visit_custom(value));
-  }
-
-  /**
-    \rst
-    Visits an argument dispatching to the appropriate visit method based on
-    the argument type. For example, if the argument type is ``double`` then
-    the `~fmt::ArgVisitor::operator()(double)` method of the *Impl* class will
-    be called.
-    \endrst
-   */
-  Result visit(const format_arg &arg) {
-    return fmt::visit(*static_cast<Impl*>(this), arg);
   }
 };
 
@@ -3683,7 +3678,7 @@ void do_format_arg(BasicWriter<Char> &writer, const internal::Arg &arg,
     FMT_THROW(format_error("missing '}' in format string"));
 
   // Format argument.
-  ArgFormatter(writer, ctx, spec).visit(arg);
+  visit(ArgFormatter(writer, ctx, spec), arg);
 }
 
 /** Formats arguments and writes the output to the writer. */

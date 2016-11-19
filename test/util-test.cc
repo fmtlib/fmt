@@ -628,7 +628,7 @@ struct TestVisitor : fmt::ArgVisitor<TestVisitor, Result> {
 
 #define EXPECT_RESULT_(Char, type_code, value) { \
   Arg arg = make_arg<Char>(value); \
-  Result result = TestVisitor().visit(arg); \
+  Result result = fmt::visit(TestVisitor(), arg); \
   EXPECT_EQ(Arg::type_code, result.arg.type); \
   EXPECT_EQ(value, ArgInfo<Arg::type_code>::get(result.arg)); \
 }
@@ -653,7 +653,7 @@ TEST(ArgVisitorTest, VisitAll) {
   const void *p = STR;
   EXPECT_RESULT(POINTER, p);
   ::Test t;
-  Result result = TestVisitor().visit(make_arg<char>(t));
+  Result result = visit(TestVisitor(), make_arg<char>(t));
   EXPECT_EQ(Arg::CUSTOM, result.arg.type);
   EXPECT_EQ(&t, result.arg.custom.value);
 }
@@ -668,7 +668,7 @@ struct TestAnyVisitor : fmt::ArgVisitor<TestAnyVisitor, Result> {
 
 #undef EXPECT_RESULT
 #define EXPECT_RESULT(type_code, value) { \
-  Result result = TestAnyVisitor().visit(make_arg<char>(value)); \
+  Result result = visit(TestAnyVisitor(), make_arg<char>(value)); \
   EXPECT_EQ(Arg::type_code, result.arg.type); \
   EXPECT_EQ(value, ArgInfo<Arg::type_code>::get(result.arg)); \
 }
@@ -688,7 +688,7 @@ struct TestUnhandledVisitor :
 };
 
 #define EXPECT_UNHANDLED(value) \
-  EXPECT_STREQ("test", TestUnhandledVisitor().visit(make_arg<wchar_t>(value)));
+  EXPECT_STREQ("test", visit(TestUnhandledVisitor(), make_arg<wchar_t>(value)));
 
 TEST(ArgVisitorTest, VisitUnhandledArg) {
   EXPECT_UNHANDLED(42);
@@ -710,7 +710,7 @@ TEST(ArgVisitorTest, VisitUnhandledArg) {
 TEST(ArgVisitorTest, VisitInvalidArg) {
   Arg arg = Arg();
   arg.type = static_cast<Arg::Type>(Arg::NONE);
-  EXPECT_ASSERT(TestVisitor().visit(arg), "invalid argument type");
+  EXPECT_ASSERT(visit(TestVisitor(), arg), "invalid argument type");
 }
 
 // Tests fmt::internal::count_digits for integer type Int.

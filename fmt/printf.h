@@ -388,7 +388,7 @@ unsigned printf_context<Char, AF>::parse_header(
     spec.width_ = internal::parse_nonnegative_int(s);
   } else if (*s == '*') {
     ++s;
-    spec.width_ = internal::WidthHandler(spec).visit(get_arg(s));
+    spec.width_ = visit(internal::WidthHandler(spec), get_arg(s));
   }
   return arg_index;
 }
@@ -420,13 +420,13 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
         spec.precision_ = static_cast<int>(internal::parse_nonnegative_int(s));
       } else if (*s == '*') {
         ++s;
-        spec.precision_ = internal::PrecisionHandler().visit(get_arg(s));
+        spec.precision_ = visit(internal::PrecisionHandler(), get_arg(s));
       }
     }
 
     using internal::Arg;
     Arg arg = get_arg(s, arg_index);
-    if (spec.flag(HASH_FLAG) && internal::IsZeroInt().visit(arg))
+    if (spec.flag(HASH_FLAG) && visit(internal::IsZeroInt(), arg))
       spec.flags_ &= ~internal::to_unsigned<int>(HASH_FLAG);
     if (spec.fill_ == '0') {
       if (arg.type <= Arg::LAST_NUMERIC_TYPE)
@@ -440,24 +440,24 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
     switch (*s++) {
     case 'h':
       if (*s == 'h')
-        ArgConverter<signed char>(arg, *++s).visit(arg);
+        visit(ArgConverter<signed char>(arg, *++s), arg);
       else
-        ArgConverter<short>(arg, *s).visit(arg);
+        visit(ArgConverter<short>(arg, *s), arg);
       break;
     case 'l':
       if (*s == 'l')
-        ArgConverter<fmt::LongLong>(arg, *++s).visit(arg);
+        visit(ArgConverter<fmt::LongLong>(arg, *++s), arg);
       else
-        ArgConverter<long>(arg, *s).visit(arg);
+        visit(ArgConverter<long>(arg, *s), arg);
       break;
     case 'j':
-      ArgConverter<intmax_t>(arg, *s).visit(arg);
+      visit(ArgConverter<intmax_t>(arg, *s), arg);
       break;
     case 'z':
-      ArgConverter<std::size_t>(arg, *s).visit(arg);
+      visit(ArgConverter<std::size_t>(arg, *s), arg);
       break;
     case 't':
-      ArgConverter<std::ptrdiff_t>(arg, *s).visit(arg);
+      visit(ArgConverter<std::ptrdiff_t>(arg, *s), arg);
       break;
     case 'L':
       // printf produces garbage when 'L' is omitted for long double, no
@@ -465,7 +465,7 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
       break;
     default:
       --s;
-      ArgConverter<void>(arg, *s).visit(arg);
+      visit(ArgConverter<void>(arg, *s), arg);
     }
 
     // Parse type.
@@ -480,7 +480,7 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
         break;
       case 'c':
         // TODO: handle wchar_t
-        internal::CharConverter(arg).visit(arg);
+        visit(internal::CharConverter(arg), arg);
         break;
       }
     }
@@ -488,7 +488,7 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
     start = s;
 
     // Format argument.
-    AF(writer, spec).visit(arg);
+    visit(AF(writer, spec), arg);
   }
   internal::write(writer, start, s);
 }

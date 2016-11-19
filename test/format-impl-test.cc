@@ -46,7 +46,7 @@ TEST(FormatTest, ArgConverter) {
   Arg arg = Arg();
   arg.type = Arg::LONG_LONG;
   arg.long_long_value = std::numeric_limits<fmt::LongLong>::max();
-  fmt::internal::ArgConverter<fmt::LongLong>(arg, 'd').visit(arg);
+  visit(fmt::internal::ArgConverter<fmt::LongLong>(arg, 'd'), arg);
   EXPECT_EQ(Arg::LONG_LONG, arg.type);
 }
 
