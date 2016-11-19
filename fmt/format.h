@@ -1153,7 +1153,9 @@ struct ConvertToIntImpl2<T, true> {
 
 template<typename T>
 struct ConvertToInt {
-  enum { enable_conversion = sizeof(convert(get<T>())) == sizeof(Yes) };
+  enum {
+    enable_conversion = sizeof(fmt::internal::convert(get<T>())) == sizeof(Yes)
+  };
   enum { value = ConvertToIntImpl2<T, enable_conversion>::value };
 };
 
