@@ -1743,8 +1743,8 @@ class ArgVisitor {
     \rst
     Visits an argument dispatching to the appropriate visit method based on
     the argument type. For example, if the argument type is ``double`` then
-    the `~fmt::ArgVisitor::visit_double()` method of the *Impl* class will be
-    called.
+    the `~fmt::ArgVisitor::operator()(double)` method of the *Impl* class will
+    be called.
     \endrst
    */
   Result visit(const format_arg &arg) {
