@@ -1536,7 +1536,8 @@ typedef basic_format_args<basic_format_context<wchar_t>> wformat_args;
 #define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
 
 template <typename Visitor>
-typename std::result_of<Visitor(int)>::type visit(Visitor &&vis, format_arg arg) {
+typename std::result_of<Visitor(int)>::type visit(Visitor &&vis,
+                                                  format_arg arg) {
   switch (arg.type) {
   case format_arg::NONE:
   case format_arg::NAMED_ARG:
@@ -1746,7 +1747,9 @@ class ArgVisitor {
     called.
     \endrst
    */
-  Result visit(const format_arg &arg) { return fmt::visit(*this, arg); }
+  Result visit(const format_arg &arg) {
+    return fmt::visit(*static_cast<Impl*>(this), arg);
+  }
 };
 
 enum Alignment {
@@ -2056,6 +2059,22 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     writer_.write_int(reinterpret_cast<uintptr_t>(p), spec_);
   }
 
+  template <typename StrChar>
+  void write_str(Arg::StringValue<StrChar> value,
+                  typename EnableIf<
+                    std::is_same<Char, wchar_t>::value &&
+                    std::is_same<StrChar, wchar_t>::value, int>::type = 0) {
+    writer_.write_str(value, spec_);
+  }
+
+  template <typename StrChar>
+  void write_str(Arg::StringValue<StrChar> value,
+                  typename EnableIf<
+                    !std::is_same<Char, wchar_t>::value ||
+                    !std::is_same<StrChar, wchar_t>::value, int>::type = 0) {
+    // Do nothing.
+  }
+
  protected:
   BasicWriter<Char> &writer() { return writer_; }
   FormatSpec &spec() { return spec_; }
@@ -2083,13 +2102,15 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
   template <typename T>
   void visit_any_double(T value) { writer_.write_double(value, spec_); }
 
-  void visit_bool(bool value) {
+  using ArgVisitor<Impl, void>::operator();
+
+  void operator()(bool value) {
     if (spec_.type_)
       return visit_any_int(value);
     write(value);
   }
 
-  void visit_char(int value) {
+  void operator()(wchar_t value) {
     if (spec_.type_ && spec_.type_ != 'c') {
       spec_.flags_ |= CHAR_FLAG;
       writer_.write_int(value, spec_);
@@ -2119,23 +2140,21 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     *out = internal::CharTraits<Char>::cast(value);
   }
 
-  void visit_cstring(const char *value) {
+  void operator()(const char *value) {
     if (spec_.type_ == 'p')
       return write_pointer(value);
     write(value);
   }
 
-  void visit_string(Arg::StringValue<char> value) {
+  void operator()(Arg::StringValue<char> value) {
     writer_.write_str(value, spec_);
   }
 
-  using ArgVisitor<Impl, void>::visit_wstring;
-
-  void visit_wstring(Arg::StringValue<Char> value) {
-    writer_.write_str(value, spec_);
+  void operator()(Arg::StringValue<wchar_t> value) {
+    write_str(value);
   }
 
-  void visit_pointer(const void *value) {
+  void operator()(const void *value) {
     if (spec_.type_ && spec_.type_ != 'p')
       report_unknown_type(spec_.type_, "pointer");
     write_pointer(value);

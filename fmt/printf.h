@@ -210,8 +210,10 @@ class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
   BasicPrintfArgFormatter(BasicWriter<Char> &writer, FormatSpec &spec)
   : internal::ArgFormatterBase<Impl, Char>(writer, spec) {}
 
+  using Base::operator();
+
   /** Formats an argument of type ``bool``. */
-  void visit_bool(bool value) {
+  void operator()(bool value) {
     FormatSpec &fmt_spec = this->spec();
     if (fmt_spec.type_ != 's')
       return this->visit_any_int(value);
@@ -220,7 +222,7 @@ class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
   }
 
   /** Formats a character. */
-  void visit_char(int value) {
+  void operator()(wchar_t value) {
     const FormatSpec &fmt_spec = this->spec();
     BasicWriter<Char> &w = this->writer();
     if (fmt_spec.type_ && fmt_spec.type_ != 'c')
@@ -243,9 +245,9 @@ class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
   }
 
   /** Formats a null-terminated C string. */
-  void visit_cstring(const char *value) {
+  void operator()(const char *value) {
     if (value)
-      Base::visit_cstring(value);
+      Base::operator()(value);
     else if (this->spec().type_ == 'p')
       write_null_pointer();
     else
@@ -253,15 +255,15 @@ class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
   }
 
   /** Formats a pointer. */
-  void visit_pointer(const void *value) {
+  void operator()(const void *value) {
     if (value)
-      return Base::visit_pointer(value);
+      return Base::operator()(value);
     this->spec().type_ = 0;
     write_null_pointer();
   }
 
   /** Formats an argument of a custom (user-defined) type. */
-  void visit_custom(internal::Arg::CustomValue c) {
+  void operator()(internal::Arg::CustomValue c) {
     const Char format_str[] = {'}', '\0'};
     auto args = basic_format_args<basic_format_context<Char>>();
     basic_format_context<Char> ctx(format_str, args);
