@@ -1653,3 +1653,11 @@ FMT_VARIADIC(void, custom_format, const char *)
 TEST(FormatTest, CustomArgFormatter) {
   custom_format("{}", 42);
 }
+
+void convert(int);
+
+// Check if there is no collision with convert function in the global namespace.
+TEST(FormatTest, ConvertCollision) {
+  fmt::format("{}", 42);
+}
+
