@@ -40,25 +40,34 @@ struct IntChecker<true> {
   static bool fits_in_int(int) { return true; }
 };
 
-class PrecisionHandler : public ArgVisitor<PrecisionHandler, int> {
+class PrecisionHandler {
  public:
-  void report_unhandled_arg() {
-    FMT_THROW(format_error("precision is not integer"));
-  }
-
   template <typename T>
-  int visit_any_int(T value) {
+  typename std::enable_if<std::is_integral<T>::value, int>::type
+      operator()(T value) {
     if (!IntChecker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
       FMT_THROW(format_error("number is too big"));
     return static_cast<int>(value);
   }
+
+  template <typename T>
+  typename std::enable_if<!std::is_integral<T>::value, int>::type
+      operator()(T) {
+    FMT_THROW(format_error("precision is not integer"));
+    return 0;
+  }
 };
 
-// IsZeroInt::visit(arg) returns true iff arg is a zero integer.
-class IsZeroInt : public ArgVisitor<IsZeroInt, bool> {
+// An argument visitor that returns true iff arg is a zero integer.
+class IsZeroInt {
  public:
   template <typename T>
-  bool visit_any_int(T value) { return value == 0; }
+  typename std::enable_if<std::is_integral<T>::value, bool>::type
+      operator()(T value) { return value == 0; }
+
+  template <typename T>
+  typename std::enable_if<!std::is_integral<T>::value, bool>::type
+      operator()(T value) { return false; }
 };
 
 template <typename T, typename U>
@@ -120,7 +129,7 @@ class ArgConverter {
 
   template <typename U>
   typename std::enable_if<!std::is_integral<U>::value>::type
-    operator()(U value) {
+      operator()(U value) {
     // No coversion needed for non-integral types.
   }
 };
@@ -135,7 +144,7 @@ void convert_arg(format_arg &arg, wchar_t type) {
 }
 
 // Converts an integer argument to char for printf.
-class CharConverter : public ArgVisitor<CharConverter, void> {
+class CharConverter {
  private:
   internal::Arg &arg_;
 
@@ -145,15 +154,22 @@ class CharConverter : public ArgVisitor<CharConverter, void> {
   explicit CharConverter(internal::Arg &arg) : arg_(arg) {}
 
   template <typename T>
-  void visit_any_int(T value) {
+  typename std::enable_if<std::is_integral<T>::value>::type
+      operator()(T value) {
     arg_.type = internal::Arg::CHAR;
     arg_.int_value = static_cast<char>(value);
+  }
+
+  template <typename T>
+  typename std::enable_if<!std::is_integral<T>::value>::type
+      operator()(T value) {
+    // No coversion needed for non-integral types.
   }
 };
 
 // Checks if an argument is a valid printf width specifier and sets
 // left alignment if it is negative.
-class WidthHandler : public ArgVisitor<WidthHandler, unsigned> {
+class WidthHandler {
  private:
   FormatSpec &spec_;
 
@@ -162,12 +178,9 @@ class WidthHandler : public ArgVisitor<WidthHandler, unsigned> {
  public:
   explicit WidthHandler(FormatSpec &spec) : spec_(spec) {}
 
-  void report_unhandled_arg() {
-    FMT_THROW(format_error("width is not integer"));
-  }
-
   template <typename T>
-  unsigned visit_any_int(T value) {
+  typename std::enable_if<std::is_integral<T>::value, unsigned>::type
+      operator()(T value) {
     typedef typename internal::IntTraits<T>::MainType UnsignedType;
     UnsignedType width = static_cast<UnsignedType>(value);
     if (internal::is_negative(value)) {
@@ -178,6 +191,13 @@ class WidthHandler : public ArgVisitor<WidthHandler, unsigned> {
     if (width > int_max)
       FMT_THROW(format_error("number is too big"));
     return static_cast<unsigned>(width);
+  }
+
+  template <typename T>
+  typename std::enable_if<!std::is_integral<T>::value, unsigned>::type
+      operator()(T value) {
+    FMT_THROW(format_error("width is not integer"));
+    return 0;
   }
 };
 }  // namespace internal
