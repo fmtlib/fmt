@@ -605,23 +605,23 @@ struct Result {
   Result(const wchar_t *s) : arg(make_arg<wchar_t>(s)) {}
 };
 
-struct TestVisitor : fmt::ArgVisitor<TestVisitor, Result> {
-  Result visit_int(int value) { return value; }
-  Result visit_uint(unsigned value) { return value; }
-  Result visit_long_long(fmt::LongLong value) { return value; }
-  Result visit_ulong_long(fmt::ULongLong value) { return value; }
-  Result visit_double(double value) { return value; }
-  Result visit_long_double(long double value) { return value; }
-  Result visit_char(int value) { return static_cast<char>(value); }
-  Result visit_cstring(const char *s) { return s; }
-  Result visit_string(fmt::internal::Arg::StringValue<char> s) {
+struct TestVisitor {
+  Result operator()(int value) { return value; }
+  Result operator()(unsigned value) { return value; }
+  Result operator()(fmt::LongLong value) { return value; }
+  Result operator()(fmt::ULongLong value) { return value; }
+  Result operator()(double value) { return value; }
+  Result operator()(long double value) { return value; }
+  Result operator()(wchar_t value) { return static_cast<char>(value); }
+  Result operator()(const char *s) { return s; }
+  Result operator()(fmt::format_arg::StringValue<char> s) {
     return s.value;
   }
-  Result visit_wstring(fmt::internal::Arg::StringValue<wchar_t> s) {
+  Result operator()(fmt::format_arg::StringValue<wchar_t> s) {
     return s.value;
   }
-  Result visit_pointer(const void *p) { return p; }
-  Result visit_custom(fmt::internal::Arg::CustomValue c) {
+  Result operator()(const void *p) { return p; }
+  Result operator()(fmt::format_arg::CustomValue c) {
     return *static_cast<const ::Test*>(c.value);
   }
 };
@@ -656,55 +656,6 @@ TEST(ArgVisitorTest, VisitAll) {
   Result result = visit(TestVisitor(), make_arg<char>(t));
   EXPECT_EQ(Arg::CUSTOM, result.arg.type);
   EXPECT_EQ(&t, result.arg.custom.value);
-}
-
-struct TestAnyVisitor : fmt::ArgVisitor<TestAnyVisitor, Result> {
-  template <typename T>
-  Result visit_any_int(T value) { return value; }
-
-  template <typename T>
-  Result visit_any_double(T value) { return value; }
-};
-
-#undef EXPECT_RESULT
-#define EXPECT_RESULT(type_code, value) { \
-  Result result = visit(TestAnyVisitor(), make_arg<char>(value)); \
-  EXPECT_EQ(Arg::type_code, result.arg.type); \
-  EXPECT_EQ(value, ArgInfo<Arg::type_code>::get(result.arg)); \
-}
-
-TEST(ArgVisitorTest, VisitAny) {
-  EXPECT_RESULT(INT, 42);
-  EXPECT_RESULT(UINT, 42u);
-  EXPECT_RESULT(LONG_LONG, 42ll);
-  EXPECT_RESULT(ULONG_LONG, 42ull);
-  EXPECT_RESULT(DOUBLE, 4.2);
-  EXPECT_RESULT(LONG_DOUBLE, 4.2l);
-}
-
-struct TestUnhandledVisitor :
-    fmt::ArgVisitor<TestUnhandledVisitor, const char *> {
-  const char *visit_unhandled_arg() { return "test"; }
-};
-
-#define EXPECT_UNHANDLED(value) \
-  EXPECT_STREQ("test", visit(TestUnhandledVisitor(), make_arg<wchar_t>(value)));
-
-TEST(ArgVisitorTest, VisitUnhandledArg) {
-  EXPECT_UNHANDLED(42);
-  EXPECT_UNHANDLED(42u);
-  EXPECT_UNHANDLED(42ll);
-  EXPECT_UNHANDLED(42ull);
-  EXPECT_UNHANDLED(4.2);
-  EXPECT_UNHANDLED(4.2l);
-  EXPECT_UNHANDLED('x');
-  const char STR[] = "abc";
-  EXPECT_UNHANDLED(STR);
-  const wchar_t WSTR[] = L"abc";
-  EXPECT_UNHANDLED(WSTR);
-  const void *p = STR;
-  EXPECT_UNHANDLED(p);
-  EXPECT_UNHANDLED(::Test());
 }
 
 TEST(ArgVisitorTest, VisitInvalidArg) {

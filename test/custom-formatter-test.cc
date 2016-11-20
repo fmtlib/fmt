@@ -21,10 +21,12 @@ class CustomArgFormatter
                      fmt::FormatSpec &s)
   : fmt::BasicArgFormatter<CustomArgFormatter, char>(w, ctx, s) {}
 
-  void visit_double(double value) {
+  using fmt::BasicArgFormatter<CustomArgFormatter, char>::operator();
+
+  void operator()(double value) {
     if (round(value * pow(10, spec().precision())) == 0)
       value = 0;
-    fmt::BasicArgFormatter<CustomArgFormatter, char>::visit_double(value);
+    fmt::BasicArgFormatter<CustomArgFormatter, char>::operator()(value);
   }
 };
 

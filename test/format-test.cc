@@ -1621,16 +1621,23 @@ TEST(FormatTest, Enum) {
 
 class MockArgFormatter :
     public fmt::internal::ArgFormatterBase<MockArgFormatter, char> {
+ private:
+  MOCK_METHOD1(call, void (int value));
+
  public:
   typedef fmt::internal::ArgFormatterBase<MockArgFormatter, char> Base;
 
   MockArgFormatter(fmt::Writer &w, fmt::format_context &ctx,
                    fmt::FormatSpec &s)
     : fmt::internal::ArgFormatterBase<MockArgFormatter, char>(w, s) {
-    EXPECT_CALL(*this, visit_int(42));
+    EXPECT_CALL(*this, call(42));
   }
 
-  MOCK_METHOD1(visit_int, void (int value));
+  using Base::operator();
+
+  void operator()(int value) { call(value); }
+
+  void operator()(fmt::internal::Arg::CustomValue) {}
 };
 
 void custom_vformat(fmt::CStringRef format_str, fmt::format_args args) {

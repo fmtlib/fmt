@@ -1580,173 +1580,6 @@ typename std::result_of<Visitor(int)>::type visit(Visitor &&vis,
   return typename std::result_of<Visitor(int)>::type();
 }
 
-/**
-  \rst
-  An argument visitor based on the `curiously recurring template pattern
-  <http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`_.
-
-  To use `~fmt::ArgVisitor` define a subclass that implements some or all of the
-  visit methods with the same signatures as the methods in `~fmt::ArgVisitor`,
-  for example, `~fmt::ArgVisitor::visit_int()`.
-  Pass the subclass as the *Impl* template parameter. Then calling
-  `~fmt::ArgVisitor::visit` for some argument will dispatch to a visit method
-  specific to the argument type. For example, if the argument type is
-  ``double`` then the `~fmt::ArgVisitor::visit_double()` method of a subclass
-  will be called. If the subclass doesn't contain a method with this signature,
-  then a corresponding method of `~fmt::ArgVisitor` will be called.
-
-  **Example**::
-
-    class MyArgVisitor : public fmt::ArgVisitor<MyArgVisitor, void> {
-     public:
-      void visit_int(int value) { fmt::print("{}", value); }
-      void visit_double(double value) { fmt::print("{}", value ); }
-    };
-  \endrst
- */
-template <typename Impl, typename Result>
-class ArgVisitor {
- private:
-  typedef internal::Arg Arg;
-
- public:
-  void report_unhandled_arg() {}
-
-  Result visit_unhandled_arg() {
-    FMT_DISPATCH(report_unhandled_arg());
-    return Result();
-  }
-
-  /** Visits an ``int`` argument. **/
-  Result visit_int(int value) {
-    return FMT_DISPATCH(visit_any_int(value));
-  }
-
-  /** Visits a ``long long`` argument. **/
-  Result visit_long_long(LongLong value) {
-    return FMT_DISPATCH(visit_any_int(value));
-  }
-
-  /** Visits an ``unsigned`` argument. **/
-  Result visit_uint(unsigned value) {
-    return FMT_DISPATCH(visit_any_int(value));
-  }
-
-  /** Visits an ``unsigned long long`` argument. **/
-  Result visit_ulong_long(ULongLong value) {
-    return FMT_DISPATCH(visit_any_int(value));
-  }
-
-  /** Visits a ``bool`` argument. **/
-  Result visit_bool(bool value) {
-    return FMT_DISPATCH(visit_any_int(value));
-  }
-
-  /** Visits a ``char`` or ``wchar_t`` argument. **/
-  Result visit_char(int value) {
-    return FMT_DISPATCH(visit_any_int(value));
-  }
-
-  /** Visits an argument of any integral type. **/
-  template <typename T>
-  Result visit_any_int(T) {
-    return FMT_DISPATCH(visit_unhandled_arg());
-  }
-
-  /** Visits a ``double`` argument. **/
-  Result visit_double(double value) {
-    return FMT_DISPATCH(visit_any_double(value));
-  }
-
-  /** Visits a ``long double`` argument. **/
-  Result visit_long_double(long double value) {
-    return FMT_DISPATCH(visit_any_double(value));
-  }
-
-  /** Visits a ``double`` or ``long double`` argument. **/
-  template <typename T>
-  Result visit_any_double(T) {
-    return FMT_DISPATCH(visit_unhandled_arg());
-  }
-
-  /** Visits a null-terminated C string (``const char *``) argument. **/
-  Result visit_cstring(const char *) {
-    return FMT_DISPATCH(visit_unhandled_arg());
-  }
-
-  /** Visits a string argument. **/
-  Result visit_string(Arg::StringValue<char>) {
-    return FMT_DISPATCH(visit_unhandled_arg());
-  }
-
-  /** Visits a wide string argument. **/
-  Result visit_wstring(Arg::StringValue<wchar_t>) {
-    return FMT_DISPATCH(visit_unhandled_arg());
-  }
-
-  /** Visits a pointer argument. **/
-  Result visit_pointer(const void *) {
-    return FMT_DISPATCH(visit_unhandled_arg());
-  }
-
-  /** Visits an argument of a custom (user-defined) type. **/
-  Result visit_custom(Arg::CustomValue) {
-    return FMT_DISPATCH(visit_unhandled_arg());
-  }
-
-  Result operator()(int value) {
-    return FMT_DISPATCH(visit_int(value));
-  }
-
-  Result operator()(unsigned value) {
-    return FMT_DISPATCH(visit_uint(value));
-  }
-
-  Result operator()(fmt::LongLong value) {
-    return FMT_DISPATCH(visit_long_long(value));
-  }
-
-  Result operator()(fmt::ULongLong value) {
-    return FMT_DISPATCH(visit_ulong_long(value));
-  }
-
-  Result operator()(bool value) {
-    return FMT_DISPATCH(visit_bool(value));
-  }
-
-  Result operator()(wchar_t value) {
-    return FMT_DISPATCH(visit_char(value));
-  }
-
-  Result operator()(double value) {
-    return FMT_DISPATCH(visit_double(value));
-  }
-
-  Result operator()(long double value) {
-    return FMT_DISPATCH(visit_long_double(value));
-  }
-
-  Result operator()(const char *value) {
-    return FMT_DISPATCH(visit_cstring(value));
-  }
-
-  Result operator()(format_arg::StringValue<char> value) {
-    return FMT_DISPATCH(visit_string(value));
-  }
-
-  Result operator()(format_arg::StringValue<wchar_t> value) {
-    return FMT_DISPATCH(visit_wstring(value));
-  }
-
-  Result operator()(const void *value) {
-    return FMT_DISPATCH(visit_pointer(value));
-  }
-
-  Result operator()(format_arg::CustomValue value) {
-    return FMT_DISPATCH(visit_custom(value));
-  }
-};
-
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
 };
@@ -2041,7 +1874,7 @@ void ArgMap<Char>::init(const basic_format_args<Formatter> &args) {
 }
 
 template <typename Impl, typename Char>
-class ArgFormatterBase : public ArgVisitor<Impl, void> {
+class ArgFormatterBase {
  private:
   BasicWriter<Char> &writer_;
   FormatSpec &spec_;
@@ -2092,16 +1925,16 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
   : writer_(w), spec_(s) {}
 
   template <typename T>
-  void visit_any_int(T value) { writer_.write_int(value, spec_); }
+  typename std::enable_if<std::is_integral<T>::value>::type
+      operator()(T value) { writer_.write_int(value, spec_); }
 
   template <typename T>
-  void visit_any_double(T value) { writer_.write_double(value, spec_); }
-
-  using ArgVisitor<Impl, void>::operator();
+  typename std::enable_if<std::is_floating_point<T>::value>::type
+      operator()(T value) { writer_.write_double(value, spec_); }
 
   void operator()(bool value) {
     if (spec_.type_)
-      return visit_any_int(value);
+      return (*this)(value ? 1 : 0);
     write(value);
   }
 
@@ -2222,23 +2055,7 @@ class format_context_base {
 };
 }  // namespace internal
 
-/**
-  \rst
-  An argument formatter based on the `curiously recurring template pattern
-  <http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`_.
-
-  To use `~fmt::BasicArgFormatter` define a subclass that implements some or
-  all of the visit methods with the same signatures as the methods in
-  `~fmt::ArgVisitor`, for example, `~fmt::ArgVisitor::visit_int()`.
-  Pass the subclass as the *Impl* template parameter. When a formatting
-  function processes an argument, it will dispatch to a visit method
-  specific to the argument type. For example, if the argument type is
-  ``double`` then the `~fmt::ArgVisitor::visit_double()` method of a subclass
-  will be called. If the subclass doesn't contain a method with this signature,
-  then a corresponding method of `~fmt::BasicArgFormatter` or its superclass
-  will be called.
-  \endrst
- */
+/** An argument formatter. */
 template <typename Impl, typename Char>
 class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
  private:
@@ -2257,8 +2074,10 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
                     FormatSpec &spec)
   : internal::ArgFormatterBase<Impl, Char>(writer, spec), ctx_(ctx) {}
 
+  using internal::ArgFormatterBase<Impl, Char>::operator();
+
   /** Formats an argument of a custom (user-defined) type. */
-  void visit_custom(internal::Arg::CustomValue c) {
+  void operator()(internal::Arg::CustomValue c) {
     c.format(&this->writer(), c.value, &ctx_);
   }
 };
