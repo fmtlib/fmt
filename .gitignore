@@ -1,5 +1,6 @@
 bin/
 /_CPack_Packages
+/CMakeScripts
 /doc/doxyxml
 /doc/html
 virtualenv
@@ -8,6 +9,7 @@ virtualenv
 *~
 *.a
 *.so*
+*.xcodeproj
 *.zip
 cmake_install.cmake
 CPack*.cmake
@@ -15,5 +17,6 @@ fmt-*.cmake
 CTestTestfile.cmake
 CMakeCache.txt
 CMakeFiles
+FMT.build
 Makefile
 run-msbuild.bat
