@@ -1533,8 +1533,6 @@ class basic_format_args {
 typedef basic_format_args<basic_format_context<char>> format_args;
 typedef basic_format_args<basic_format_context<wchar_t>> wformat_args;
 
-#define FMT_DISPATCH(call) static_cast<Impl*>(this)->call
-
 /**
   \rst
   Visits an argument dispatching to the appropriate visit method based on
