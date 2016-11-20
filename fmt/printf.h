@@ -208,15 +208,14 @@ class WidthHandler {
   \endrst
  */
 template <typename Char>
-class PrintfArgFormatter :
-    public internal::ArgFormatterBase<PrintfArgFormatter<Char>, Char> {
+class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
  private:
   void write_null_pointer() {
     this->spec().type_ = 0;
     this->write("(nil)");
   }
 
-  typedef internal::ArgFormatterBase<PrintfArgFormatter<Char>, Char> Base;
+  typedef internal::ArgFormatterBase<Char> Base;
 
  public:
   /**
@@ -227,7 +226,7 @@ class PrintfArgFormatter :
     \endrst
    */
   PrintfArgFormatter(BasicWriter<Char> &writer, FormatSpec &spec)
-  : internal::ArgFormatterBase<PrintfArgFormatter<Char>, Char>(writer, spec) {}
+  : internal::ArgFormatterBase<Char>(writer, spec) {}
 
   using Base::operator();
 

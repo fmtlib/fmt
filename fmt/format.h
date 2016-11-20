@@ -1873,7 +1873,7 @@ void ArgMap<Char>::init(const basic_format_args<Formatter> &args) {
   }
 }
 
-template <typename Impl, typename Char>
+template <typename Char>
 class ArgFormatterBase {
  private:
   BasicWriter<Char> &writer_;
@@ -2055,9 +2055,9 @@ class format_context_base {
 };
 }  // namespace internal
 
-/** An argument formatter. */
-template <typename Impl, typename Char>
-class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
+/** The default argument formatter. */
+template <typename Char>
+class ArgFormatter : public internal::ArgFormatterBase<Char> {
  private:
   basic_format_context<Char> &ctx_;
 
@@ -2065,31 +2065,21 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
   /**
     \rst
     Constructs an argument formatter object.
-    *formatter* is a reference to the main formatter object, *spec* contains
-    format specifier information for standard argument types, and *fmt* points
-    to the part of the format string being parsed for custom argument types.
+    *writer* is a reference to the writer to be used for output,
+    *ctx* is a reference to the formatting context, *spec* contains
+    format specifier information for standard argument types.
     \endrst
    */
-  BasicArgFormatter(BasicWriter<Char> &writer, basic_format_context<Char> &ctx,
-                    FormatSpec &spec)
-  : internal::ArgFormatterBase<Impl, Char>(writer, spec), ctx_(ctx) {}
-
-  using internal::ArgFormatterBase<Impl, Char>::operator();
-
-  /** Formats an argument of a custom (user-defined) type. */
-  void operator()(internal::Arg::CustomValue c) {
-    c.format(&this->writer(), c.value, &ctx_);
-  }
-};
-
-/** The default argument formatter. */
-template <typename Char>
-class ArgFormatter : public BasicArgFormatter<ArgFormatter<Char>, Char> {
- public:
-  /** Constructs an argument formatter object. */
   ArgFormatter(BasicWriter<Char> &writer, basic_format_context<Char> &ctx,
                FormatSpec &spec)
-  : BasicArgFormatter<ArgFormatter<Char>, Char>(writer, ctx, spec) {}
+  : internal::ArgFormatterBase<Char>(writer, spec), ctx_(ctx) {}
+
+  using internal::ArgFormatterBase<Char>::operator();
+
+  /** Formats an argument of a custom (user-defined) type. */
+  void operator()(format_arg::CustomValue c) {
+    c.format(&this->writer(), c.value, &ctx_);
+  }
 };
 
 template <typename Char>
@@ -2305,7 +2295,7 @@ class BasicWriter {
   template<typename T>
   void append_float_length(Char *&, T) {}
 
-  template <typename Impl, typename Char_>
+  template <typename Char_>
   friend class internal::ArgFormatterBase;
 
   template <typename Char_>

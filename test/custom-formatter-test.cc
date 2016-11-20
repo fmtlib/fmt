@@ -14,19 +14,18 @@ using fmt::PrintfArgFormatter;
 
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
-class CustomArgFormatter
-  : public fmt::BasicArgFormatter<CustomArgFormatter, char> {
+class CustomArgFormatter : public fmt::ArgFormatter<char> {
  public:
   CustomArgFormatter(fmt::Writer &w, fmt::basic_format_context<char> &ctx,
                      fmt::FormatSpec &s)
-  : fmt::BasicArgFormatter<CustomArgFormatter, char>(w, ctx, s) {}
+  : fmt::ArgFormatter<char>(w, ctx, s) {}
 
-  using fmt::BasicArgFormatter<CustomArgFormatter, char>::operator();
+  using fmt::ArgFormatter<char>::operator();
 
   void operator()(double value) {
     if (round(value * pow(10, spec().precision())) == 0)
       value = 0;
-    fmt::BasicArgFormatter<CustomArgFormatter, char>::operator()(value);
+    fmt::ArgFormatter<char>::operator()(value);
   }
 };
 
