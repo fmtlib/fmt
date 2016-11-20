@@ -204,30 +204,19 @@ class WidthHandler {
 
 /**
   \rst
-  A ``printf`` argument formatter based on the `curiously recurring template
-  pattern <http://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`_.
-
-  To use `~fmt::BasicPrintfArgFormatter` define a subclass that implements some
-  or all of the visit methods with the same signatures as the methods in
-  `~fmt::ArgVisitor`, for example, `~fmt::ArgVisitor::visit_int()`.
-  Pass the subclass as the *Impl* template parameter. When a formatting
-  function processes an argument, it will dispatch to a visit method
-  specific to the argument type. For example, if the argument type is
-  ``double`` then the `~fmt::ArgVisitor::visit_double()` method of a subclass
-  will be called. If the subclass doesn't contain a method with this signature,
-  then a corresponding method of `~fmt::BasicPrintfArgFormatter` or its
-  superclass will be called.
+  The ``printf`` argument formatter.
   \endrst
  */
-template <typename Impl, typename Char>
-class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
+template <typename Char>
+class PrintfArgFormatter :
+    public internal::ArgFormatterBase<PrintfArgFormatter<Char>, Char> {
  private:
   void write_null_pointer() {
     this->spec().type_ = 0;
     this->write("(nil)");
   }
 
-  typedef internal::ArgFormatterBase<Impl, Char> Base;
+  typedef internal::ArgFormatterBase<PrintfArgFormatter<Char>, Char> Base;
 
  public:
   /**
@@ -237,8 +226,8 @@ class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
     specifier information for standard argument types.
     \endrst
    */
-  BasicPrintfArgFormatter(BasicWriter<Char> &writer, FormatSpec &spec)
-  : internal::ArgFormatterBase<Impl, Char>(writer, spec) {}
+  PrintfArgFormatter(BasicWriter<Char> &writer, FormatSpec &spec)
+  : internal::ArgFormatterBase<PrintfArgFormatter<Char>, Char>(writer, spec) {}
 
   using Base::operator();
 
@@ -246,7 +235,7 @@ class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
   void operator()(bool value) {
     FormatSpec &fmt_spec = this->spec();
     if (fmt_spec.type_ != 's')
-      return this->visit_any_int(value);
+      return (*this)(value ? 1 : 0);
     fmt_spec.type_ = 0;
     this->write(value);
   }
@@ -299,16 +288,6 @@ class BasicPrintfArgFormatter : public internal::ArgFormatterBase<Impl, Char> {
     basic_format_context<Char> ctx(format_str, args);
     c.format(&this->writer(), c.value, &ctx);
   }
-};
-
-/** The default printf argument formatter. */
-template <typename Char>
-class PrintfArgFormatter
-    : public BasicPrintfArgFormatter<PrintfArgFormatter<Char>, Char> {
- public:
-  /** Constructs an argument formatter object. */
-  PrintfArgFormatter(BasicWriter<Char> &w, FormatSpec &s)
-  : BasicPrintfArgFormatter<PrintfArgFormatter<Char>, Char>(w, s) {}
 };
 
 /** This template formats data and writes the output to a writer. */

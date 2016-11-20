@@ -10,7 +10,7 @@
 #include "fmt/printf.h"
 #include "gtest-extra.h"
 
-using fmt::BasicPrintfArgFormatter;
+using fmt::PrintfArgFormatter;
 
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
@@ -30,18 +30,17 @@ class CustomArgFormatter
 
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
-class CustomPrintfArgFormatter :
-    public BasicPrintfArgFormatter<CustomPrintfArgFormatter, char> {
+class CustomPrintfArgFormatter : public PrintfArgFormatter<char> {
  public:
-  typedef BasicPrintfArgFormatter<CustomPrintfArgFormatter, char> Base;
-
   CustomPrintfArgFormatter(fmt::BasicWriter<char> &w, fmt::FormatSpec &spec)
-  : Base(w, spec) {}
+  : PrintfArgFormatter<char>(w, spec) {}
 
-  void visit_double(double value) {
+  using PrintfArgFormatter<char>::operator();
+
+  void operator()(double value) {
     if (round(value * pow(10, spec().precision())) == 0)
       value = 0;
-    Base::visit_double(value);
+    PrintfArgFormatter<char>::operator()(value);
   }
 };
 

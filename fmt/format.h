@@ -374,8 +374,8 @@ typedef BasicWriter<wchar_t> WWriter;
 template <typename Char>
 class ArgFormatter;
 
-template <typename Impl, typename Char>
-class BasicPrintfArgFormatter;
+template <typename Char>
+class PrintfArgFormatter;
 
 template <typename Char>
 class basic_format_context;
@@ -2489,8 +2489,8 @@ class BasicWriter {
   template <typename Impl, typename Char_>
   friend class internal::ArgFormatterBase;
 
-  template <typename Impl, typename Char_>
-  friend class BasicPrintfArgFormatter;
+  template <typename Char_>
+  friend class PrintfArgFormatter;
 
  protected:
   /**
