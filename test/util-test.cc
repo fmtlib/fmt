@@ -51,9 +51,9 @@
 
 #undef max
 
-using fmt::StringRef;
-using fmt::internal::Arg;
+using fmt::format_arg;
 using fmt::Buffer;
+using fmt::StringRef;
 using fmt::internal::MemoryBuffer;
 
 using testing::Return;
@@ -70,9 +70,9 @@ void format_value(fmt::BasicWriter<Char> &w, Test,
 }
 
 template <typename Char, typename T>
-Arg make_arg(const T &value) {
+format_arg make_arg(const T &value) {
   typedef fmt::internal::MakeValue< fmt::basic_format_context<Char> > MakeValue;
-  Arg arg = MakeValue(value);
+  format_arg arg = MakeValue(value);
   arg.type = fmt::internal::type<T>();
   return arg;
 }
@@ -406,13 +406,13 @@ TEST(UtilTest, Increment) {
   EXPECT_STREQ("200", s);
 }
 
-template <Arg::Type>
+template <format_arg::Type>
 struct ArgInfo;
 
 #define ARG_INFO(type_code, Type, field) \
   template <> \
-  struct ArgInfo<Arg::type_code> { \
-    static Type get(const Arg &arg) { return arg.field; } \
+  struct ArgInfo<format_arg::type_code> { \
+    static Type get(const format_arg &arg) { return arg.field; } \
   }
 
 ARG_INFO(INT, int, int_value);
@@ -427,12 +427,12 @@ ARG_INFO(CSTRING, const char *, string.value);
 ARG_INFO(STRING, const char *, string.value);
 ARG_INFO(WSTRING, const wchar_t *, wstring.value);
 ARG_INFO(POINTER, const void *, pointer);
-ARG_INFO(CUSTOM, Arg::CustomValue, custom);
+ARG_INFO(CUSTOM, format_arg::CustomValue, custom);
 
 #define CHECK_ARG_INFO(Type, field, value) { \
-  Arg arg = Arg(); \
+  format_arg arg = format_arg(); \
   arg.field = value; \
-  EXPECT_EQ(value, ArgInfo<Arg::Type>::get(arg)); \
+  EXPECT_EQ(value, ArgInfo<format_arg::Type>::get(arg)); \
 }
 
 TEST(ArgTest, ArgInfo) {
@@ -449,17 +449,17 @@ TEST(ArgTest, ArgInfo) {
   CHECK_ARG_INFO(WSTRING, wstring.value, WSTR);
   int p = 0;
   CHECK_ARG_INFO(POINTER, pointer, &p);
-  Arg arg = Arg();
+  format_arg arg = format_arg();
   arg.custom.value = &p;
-  EXPECT_EQ(&p, ArgInfo<Arg::CUSTOM>::get(arg).value);
+  EXPECT_EQ(&p, ArgInfo<format_arg::CUSTOM>::get(arg).value);
 }
 
 #define EXPECT_ARG_(Char, type_code, MakeArgType, ExpectedType, value) { \
   MakeArgType input = static_cast<MakeArgType>(value); \
-  Arg arg = make_arg<Char>(input); \
-  EXPECT_EQ(Arg::type_code, arg.type); \
+  format_arg arg = make_arg<Char>(input); \
+  EXPECT_EQ(format_arg::type_code, arg.type); \
   ExpectedType expected_value = static_cast<ExpectedType>(value); \
-  EXPECT_EQ(expected_value, ArgInfo<Arg::type_code>::get(arg)); \
+  EXPECT_EQ(expected_value, ArgInfo<format_arg::type_code>::get(arg)); \
 }
 
 #define EXPECT_ARG(type_code, Type, value) \
@@ -563,8 +563,8 @@ TEST(ArgTest, MakeArg) {
   EXPECT_ARG(POINTER, const void*, &n);
 
   ::Test t;
-  Arg arg = make_arg<char>(t);
-  EXPECT_EQ(fmt::internal::Arg::CUSTOM, arg.type);
+  format_arg arg = make_arg<char>(t);
+  EXPECT_EQ(format_arg::CUSTOM, arg.type);
   EXPECT_EQ(&t, arg.custom.value);
   fmt::MemoryWriter w;
   fmt::format_context ctx("}", fmt::format_args());
@@ -574,7 +574,7 @@ TEST(ArgTest, MakeArg) {
 
 TEST(UtilTest, FormatArgs) {
   fmt::format_args args;
-  EXPECT_EQ(Arg::NONE, args[1].type);
+  EXPECT_EQ(format_arg::NONE, args[1].type);
 }
 
 struct CustomFormatter {
@@ -588,7 +588,7 @@ void format_value(fmt::Writer &, const Test &, CustomFormatter &ctx) {
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
-  Arg arg = fmt::internal::MakeValue<CustomFormatter>(t);
+  format_arg arg = fmt::internal::MakeValue<CustomFormatter>(t);
   CustomFormatter ctx = {false};
   fmt::MemoryWriter w;
   arg.custom.format(&w, &t, &ctx);
@@ -596,7 +596,7 @@ TEST(UtilTest, MakeValueWithCustomFormatter) {
 }
 
 struct Result {
-  Arg arg;
+  format_arg arg;
 
   Result() : arg(make_arg<char>(0xdeadbeef)) {}
 
@@ -627,10 +627,10 @@ struct TestVisitor {
 };
 
 #define EXPECT_RESULT_(Char, type_code, value) { \
-  Arg arg = make_arg<Char>(value); \
+  format_arg arg = make_arg<Char>(value); \
   Result result = fmt::visit(TestVisitor(), arg); \
-  EXPECT_EQ(Arg::type_code, result.arg.type); \
-  EXPECT_EQ(value, ArgInfo<Arg::type_code>::get(result.arg)); \
+  EXPECT_EQ(format_arg::type_code, result.arg.type); \
+  EXPECT_EQ(value, ArgInfo<format_arg::type_code>::get(result.arg)); \
 }
 
 #define EXPECT_RESULT(type_code, value) \
@@ -654,13 +654,13 @@ TEST(ArgVisitorTest, VisitAll) {
   EXPECT_RESULT(POINTER, p);
   ::Test t;
   Result result = visit(TestVisitor(), make_arg<char>(t));
-  EXPECT_EQ(Arg::CUSTOM, result.arg.type);
+  EXPECT_EQ(format_arg::CUSTOM, result.arg.type);
   EXPECT_EQ(&t, result.arg.custom.value);
 }
 
 TEST(ArgVisitorTest, VisitInvalidArg) {
-  Arg arg = Arg();
-  arg.type = static_cast<Arg::Type>(Arg::NONE);
+  format_arg arg = format_arg();
+  arg.type = static_cast<format_arg::Type>(format_arg::NONE);
   EXPECT_ASSERT(visit(TestVisitor(), arg), "invalid argument type");
 }
 

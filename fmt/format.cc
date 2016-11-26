@@ -51,8 +51,6 @@
 # endif
 #endif
 
-using fmt::internal::Arg;
-
 #if FMT_EXCEPTIONS
 # define FMT_TRY try
 # define FMT_CATCH(x) catch (x)
