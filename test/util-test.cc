@@ -49,13 +49,17 @@
 
 #include "fmt/format.h"
 
+#undef min
 #undef max
 
+using fmt::basic_format_arg;
 using fmt::format_arg;
 using fmt::Buffer;
 using fmt::StringRef;
 using fmt::internal::MemoryBuffer;
+using fmt::internal::Value;
 
+using testing::_;
 using testing::Return;
 using testing::StrictMock;
 
@@ -70,11 +74,9 @@ void format_value(fmt::BasicWriter<Char> &w, Test,
 }
 
 template <typename Char, typename T>
-format_arg make_arg(const T &value) {
-  typedef fmt::internal::MakeValue< fmt::basic_format_context<Char> > MakeValue;
-  format_arg arg = MakeValue(value);
-  arg.type = fmt::internal::type<T>();
-  return arg;
+basic_format_arg<Char> make_arg(const T &value) {
+  typedef fmt::internal::MakeArg< fmt::basic_format_context<Char> > MakeArg;
+  return MakeArg(value);
 }
 }  // namespace
 
@@ -406,175 +408,9 @@ TEST(UtilTest, Increment) {
   EXPECT_STREQ("200", s);
 }
 
-template <format_arg::Type>
-struct ArgInfo;
-
-#define ARG_INFO(type_code, Type, field) \
-  template <> \
-  struct ArgInfo<format_arg::type_code> { \
-    static Type get(const format_arg &arg) { return arg.field; } \
-  }
-
-ARG_INFO(INT, int, int_value);
-ARG_INFO(UINT, unsigned, uint_value);
-ARG_INFO(LONG_LONG, fmt::LongLong, long_long_value);
-ARG_INFO(ULONG_LONG, fmt::ULongLong, ulong_long_value);
-ARG_INFO(BOOL, int, int_value);
-ARG_INFO(CHAR, int, int_value);
-ARG_INFO(DOUBLE, double, double_value);
-ARG_INFO(LONG_DOUBLE, long double, long_double_value);
-ARG_INFO(CSTRING, const char *, string.value);
-ARG_INFO(STRING, const char *, string.value);
-ARG_INFO(WSTRING, const wchar_t *, wstring.value);
-ARG_INFO(POINTER, const void *, pointer);
-ARG_INFO(CUSTOM, format_arg::CustomValue, custom);
-
-#define CHECK_ARG_INFO(Type, field, value) { \
-  format_arg arg = format_arg(); \
-  arg.field = value; \
-  EXPECT_EQ(value, ArgInfo<format_arg::Type>::get(arg)); \
-}
-
-TEST(ArgTest, ArgInfo) {
-  CHECK_ARG_INFO(INT, int_value, 42);
-  CHECK_ARG_INFO(UINT, uint_value, 42u);
-  CHECK_ARG_INFO(LONG_LONG, long_long_value, 42);
-  CHECK_ARG_INFO(ULONG_LONG, ulong_long_value, 42u);
-  CHECK_ARG_INFO(DOUBLE, double_value, 4.2);
-  CHECK_ARG_INFO(LONG_DOUBLE, long_double_value, 4.2);
-  CHECK_ARG_INFO(CHAR, int_value, 'x');
-  const char STR[] = "abc";
-  CHECK_ARG_INFO(CSTRING, string.value, STR);
-  const wchar_t WSTR[] = L"abc";
-  CHECK_ARG_INFO(WSTRING, wstring.value, WSTR);
-  int p = 0;
-  CHECK_ARG_INFO(POINTER, pointer, &p);
-  format_arg arg = format_arg();
-  arg.custom.value = &p;
-  EXPECT_EQ(&p, ArgInfo<format_arg::CUSTOM>::get(arg).value);
-}
-
-#define EXPECT_ARG_(Char, type_code, MakeArgType, ExpectedType, value) { \
-  MakeArgType input = static_cast<MakeArgType>(value); \
-  format_arg arg = make_arg<Char>(input); \
-  EXPECT_EQ(format_arg::type_code, arg.type); \
-  ExpectedType expected_value = static_cast<ExpectedType>(value); \
-  EXPECT_EQ(expected_value, ArgInfo<format_arg::type_code>::get(arg)); \
-}
-
-#define EXPECT_ARG(type_code, Type, value) \
-  EXPECT_ARG_(char, type_code, Type, Type, value)
-
-#define EXPECT_ARGW(type_code, Type, value) \
-  EXPECT_ARG_(wchar_t, type_code, Type, Type, value)
-
-TEST(ArgTest, MakeArg) {
-  // Test bool.
-  EXPECT_ARG_(char, BOOL, bool, int, true);
-  EXPECT_ARG_(wchar_t, BOOL, bool, int, true);
-
-  // Test char.
-  EXPECT_ARG(CHAR, char, 'a');
-  EXPECT_ARG(CHAR, char, CHAR_MIN);
-  EXPECT_ARG(CHAR, char, CHAR_MAX);
-
-  // Test wchar_t.
-  EXPECT_ARGW(CHAR, wchar_t, L'a');
-  EXPECT_ARGW(CHAR, wchar_t, WCHAR_MIN);
-  EXPECT_ARGW(CHAR, wchar_t, WCHAR_MAX);
-
-  // Test signed/unsigned char.
-  EXPECT_ARG(INT, signed char, 42);
-  EXPECT_ARG(INT, signed char, SCHAR_MIN);
-  EXPECT_ARG(INT, signed char, SCHAR_MAX);
-  EXPECT_ARG(UINT, unsigned char, 42);
-  EXPECT_ARG(UINT, unsigned char, UCHAR_MAX );
-
-  // Test short.
-  EXPECT_ARG(INT, short, 42);
-  EXPECT_ARG(INT, short, SHRT_MIN);
-  EXPECT_ARG(INT, short, SHRT_MAX);
-  EXPECT_ARG(UINT, unsigned short, 42);
-  EXPECT_ARG(UINT, unsigned short, USHRT_MAX);
-
-  // Test int.
-  EXPECT_ARG(INT, int, 42);
-  EXPECT_ARG(INT, int, INT_MIN);
-  EXPECT_ARG(INT, int, INT_MAX);
-  EXPECT_ARG(UINT, unsigned, 42);
-  EXPECT_ARG(UINT, unsigned, UINT_MAX);
-
-  // Test long.
-#if LONG_MAX == INT_MAX
-# define LONG INT
-# define ULONG UINT
-# define long_value int_value
-# define ulong_value uint_value
-#else
-# define LONG LONG_LONG
-# define ULONG ULONG_LONG
-# define long_value long_long_value
-# define ulong_value ulong_long_value
-#endif
-  EXPECT_ARG(LONG, long, 42);
-  EXPECT_ARG(LONG, long, LONG_MIN);
-  EXPECT_ARG(LONG, long, LONG_MAX);
-  EXPECT_ARG(ULONG, unsigned long, 42);
-  EXPECT_ARG(ULONG, unsigned long, ULONG_MAX);
-
-  // Test long long.
-  EXPECT_ARG(LONG_LONG, fmt::LongLong, 42);
-  EXPECT_ARG(LONG_LONG, fmt::LongLong, LLONG_MIN);
-  EXPECT_ARG(LONG_LONG, fmt::LongLong, LLONG_MAX);
-  EXPECT_ARG(ULONG_LONG, fmt::ULongLong, 42);
-  EXPECT_ARG(ULONG_LONG, fmt::ULongLong, ULLONG_MAX);
-
-  // Test float.
-  EXPECT_ARG(DOUBLE, float, 4.2);
-  EXPECT_ARG(DOUBLE, float, FLT_MIN);
-  EXPECT_ARG(DOUBLE, float, FLT_MAX);
-
-  // Test double.
-  EXPECT_ARG(DOUBLE, double, 4.2);
-  EXPECT_ARG(DOUBLE, double, DBL_MIN);
-  EXPECT_ARG(DOUBLE, double, DBL_MAX);
-
-  // Test long double.
-  EXPECT_ARG(LONG_DOUBLE, long double, 4.2);
-  EXPECT_ARG(LONG_DOUBLE, long double, LDBL_MIN);
-  EXPECT_ARG(LONG_DOUBLE, long double, LDBL_MAX);
-
-  // Test string.
-  char STR[] = "test";
-  EXPECT_ARG(CSTRING, char*, STR);
-  EXPECT_ARG(CSTRING, const char*, STR);
-  EXPECT_ARG(STRING, std::string, STR);
-  EXPECT_ARG(STRING, fmt::StringRef, STR);
-
-  // Test wide string.
-  wchar_t WSTR[] = L"test";
-  EXPECT_ARGW(WSTRING, wchar_t*, WSTR);
-  EXPECT_ARGW(WSTRING, const wchar_t*, WSTR);
-  EXPECT_ARGW(WSTRING, std::wstring, WSTR);
-  EXPECT_ARGW(WSTRING, fmt::WStringRef, WSTR);
-
-  int n = 42;
-  EXPECT_ARG(POINTER, void*, &n);
-  EXPECT_ARG(POINTER, const void*, &n);
-
-  ::Test t;
-  format_arg arg = make_arg<char>(t);
-  EXPECT_EQ(format_arg::CUSTOM, arg.type);
-  EXPECT_EQ(&t, arg.custom.value);
-  fmt::MemoryWriter w;
-  fmt::format_context ctx("}", fmt::format_args());
-  arg.custom.format(&w, &t, &ctx);
-  EXPECT_EQ("test", w.str());
-}
-
 TEST(UtilTest, FormatArgs) {
   fmt::format_args args;
-  EXPECT_EQ(format_arg::NONE, args[1].type);
+  EXPECT_FALSE(args[1]);
 }
 
 struct CustomFormatter {
@@ -595,73 +431,163 @@ TEST(UtilTest, MakeValueWithCustomFormatter) {
   EXPECT_TRUE(ctx.called);
 }
 
-struct Result {
-  format_arg arg;
+namespace fmt {
+namespace internal {
 
-  Result() : arg(make_arg<char>(0xdeadbeef)) {}
-
-  template <typename T>
-  Result(const T& value) : arg(make_arg<char>(value)) {}
-  Result(const wchar_t *s) : arg(make_arg<wchar_t>(s)) {}
-};
-
-struct TestVisitor {
-  Result operator()(int value) { return value; }
-  Result operator()(unsigned value) { return value; }
-  Result operator()(fmt::LongLong value) { return value; }
-  Result operator()(fmt::ULongLong value) { return value; }
-  Result operator()(double value) { return value; }
-  Result operator()(long double value) { return value; }
-  Result operator()(wchar_t value) { return static_cast<char>(value); }
-  Result operator()(const char *s) { return s; }
-  Result operator()(fmt::format_arg::StringValue<char> s) {
-    return s.value;
-  }
-  Result operator()(fmt::format_arg::StringValue<wchar_t> s) {
-    return s.value;
-  }
-  Result operator()(const void *p) { return p; }
-  Result operator()(fmt::format_arg::CustomValue c) {
-    return *static_cast<const ::Test*>(c.value);
-  }
-};
-
-#define EXPECT_RESULT_(Char, type_code, value) { \
-  format_arg arg = make_arg<Char>(value); \
-  Result result = fmt::visit(TestVisitor(), arg); \
-  EXPECT_EQ(format_arg::type_code, result.arg.type); \
-  EXPECT_EQ(value, ArgInfo<format_arg::type_code>::get(result.arg)); \
+bool operator==(Value::CustomValue lhs, Value::CustomValue rhs) {
+  return lhs.value == rhs.value;
 }
 
-#define EXPECT_RESULT(type_code, value) \
-  EXPECT_RESULT_(char, type_code, value)
-#define EXPECT_RESULTW(type_code, value) \
-  EXPECT_RESULT_(wchar_t, type_code, value)
+template <typename T>
+bool operator==(Value::StringValue<T> lhs, Value::StringValue<T> rhs) {
+  return std::basic_string<T>(lhs.value, lhs.size) ==
+         std::basic_string<T>(rhs.value, rhs.size);
+}
+}
+}
 
-TEST(ArgVisitorTest, VisitAll) {
-  EXPECT_RESULT(INT, 42);
-  EXPECT_RESULT(UINT, 42u);
-  EXPECT_RESULT(LONG_LONG, 42ll);
-  EXPECT_RESULT(ULONG_LONG, 42ull);
-  EXPECT_RESULT(DOUBLE, 4.2);
-  EXPECT_RESULT(LONG_DOUBLE, 4.2l);
-  EXPECT_RESULT(CHAR, 'x');
-  const char STR[] = "abc";
-  EXPECT_RESULT(CSTRING, STR);
-  const wchar_t WSTR[] = L"abc";
-  EXPECT_RESULTW(WSTRING, WSTR);
-  const void *p = STR;
-  EXPECT_RESULT(POINTER, p);
-  ::Test t;
-  Result result = visit(TestVisitor(), make_arg<char>(t));
-  EXPECT_EQ(format_arg::CUSTOM, result.arg.type);
-  EXPECT_EQ(&t, result.arg.custom.value);
+template <typename T>
+struct MockVisitor {
+  // Use a unique result type to make sure that there are no undesirable
+  // conversions.
+  struct Result {};
+
+  MockVisitor() {
+    ON_CALL(*this, visit(_)).WillByDefault(Return(Result()));
+  }
+
+  MOCK_METHOD1_T(visit, Result (T value));
+  MOCK_METHOD0_T(unexpected, void ());
+
+  Result operator()(T value) { return visit(value); }
+
+  template <typename U>
+  Result operator()(U value) {
+    unexpected();
+    return Result();
+  }
+};
+
+template <typename T>
+struct VisitType { typedef T Type; };
+
+#define VISIT_TYPE(Type_, VisitType_) \
+  template <> \
+  struct VisitType<Type_> { typedef VisitType_ Type; }
+
+VISIT_TYPE(signed char, int);
+VISIT_TYPE(unsigned char, unsigned);
+VISIT_TYPE(short, int);
+VISIT_TYPE(unsigned short, unsigned);
+
+#if LONG_MAX == INT_MAX
+VISIT_TYPE(long, int);
+VISIT_TYPE(unsigned long, unsigned);
+#else
+VISIT_TYPE(long, fmt::LongLong);
+VISIT_TYPE(unsigned long, fmt::ULongLong);
+#endif
+
+VISIT_TYPE(float, double);
+
+#define CHECK_ARG_(Char, expected, value) { \
+  testing::StrictMock<MockVisitor<decltype(expected)>> visitor; \
+  EXPECT_CALL(visitor, visit(expected)); \
+  fmt::visit(visitor, make_arg<Char>(value)); \
+}
+
+#define CHECK_ARG(value) { \
+  typename VisitType<decltype(value)>::Type expected = value; \
+  CHECK_ARG_(char, expected, value) \
+  CHECK_ARG_(wchar_t, expected, value) \
+}
+
+template <typename T>
+class NumericArgTest : public testing::Test {};
+
+typedef ::testing::Types<
+  bool, signed char, unsigned char, signed, unsigned short,
+  int, unsigned, long, unsigned long, fmt::LongLong, fmt::ULongLong,
+  float, double, long double> Types;
+TYPED_TEST_CASE(NumericArgTest, Types);
+
+template <typename T>
+typename std::enable_if<std::is_integral<T>::value, T>::type test_value() {
+  return static_cast<T>(42);
+}
+
+template <typename T>
+typename std::enable_if<std::is_floating_point<T>::value, T>::type
+    test_value() {
+  return static_cast<T>(4.2);
+}
+
+TYPED_TEST(NumericArgTest, MakeAndVisit) {
+  CHECK_ARG(test_value<TypeParam>());
+  CHECK_ARG(std::numeric_limits<TypeParam>::min());
+  CHECK_ARG(std::numeric_limits<TypeParam>::max());
+}
+
+TEST(UtilTest, CharArg) {
+  CHECK_ARG_(char, 'a', 'a');
+  CHECK_ARG_(wchar_t, L'a', 'a');
+  CHECK_ARG_(wchar_t, L'a', L'a');
+}
+
+TEST(UtilTest, StringArg) {
+  char str_data[] = "test";
+  char *str = str_data;
+  const char *cstr = str;
+  CHECK_ARG_(char, cstr, str);
+  CHECK_ARG_(wchar_t, cstr, str);
+  CHECK_ARG(cstr);
+
+  Value::StringValue<char> strval = {str, 4};
+  CHECK_ARG_(char, strval, std::string(str));
+  CHECK_ARG_(wchar_t, strval, std::string(str));
+  CHECK_ARG_(char, strval, fmt::StringRef(str));
+  CHECK_ARG_(wchar_t, strval, fmt::StringRef(str));
+}
+
+TEST(UtilTest, WStringArg) {
+  wchar_t str_data[] = L"test";
+  wchar_t *str = str_data;
+  const wchar_t *cstr = str;
+
+  Value::StringValue<wchar_t> strval = {str, 4};
+  CHECK_ARG_(wchar_t, strval, str);
+  CHECK_ARG_(wchar_t, strval, cstr);
+  CHECK_ARG_(wchar_t, strval, std::wstring(str));
+  CHECK_ARG_(wchar_t, strval, fmt::WStringRef(str));
+}
+
+TEST(UtilTest, PointerArg) {
+  void *p = 0;
+  const void *cp = 0;
+  CHECK_ARG_(char, cp, p);
+  CHECK_ARG_(wchar_t, cp, p);
+  CHECK_ARG(cp);
+}
+
+TEST(UtilTest, CustomArg) {
+  ::Test test;
+  typedef MockVisitor<Value::CustomValue> Visitor;
+  testing::StrictMock<Visitor> visitor;
+  EXPECT_CALL(visitor, visit(_)).WillOnce(
+        testing::Invoke([&](Value::CustomValue custom) {
+    EXPECT_EQ(&test, custom.value);
+    fmt::MemoryWriter w;
+    fmt::format_context ctx("}", fmt::format_args());
+    custom.format(&w, &test, &ctx);
+    EXPECT_EQ("test", w.str());
+    return Visitor::Result();
+  }));
+  fmt::visit(visitor, make_arg<char>(test));
 }
 
 TEST(ArgVisitorTest, VisitInvalidArg) {
   format_arg arg = format_arg();
-  arg.type = static_cast<format_arg::Type>(format_arg::NONE);
-  EXPECT_ASSERT(visit(TestVisitor(), arg), "invalid argument type");
+  EXPECT_ASSERT(visit(MockVisitor<int>(), arg), "invalid argument type");
 }
 
 // Tests fmt::internal::count_digits for integer type Int.

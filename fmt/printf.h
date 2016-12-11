@@ -40,7 +40,7 @@ struct IntChecker<true> {
   static bool fits_in_int(int) { return true; }
 };
 
-class PrecisionHandler {
+class PrintfPrecisionHandler {
  public:
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, int>::type
@@ -80,14 +80,14 @@ struct is_same<T, T> {
   enum { value = 1 };
 };
 
-template <typename T>
+template <typename T, typename Char>
 class ArgConverter {
  private:
-  format_arg &arg_;
-  wchar_t type_;
+  basic_format_arg<Char> &arg_;
+  Char type_;
 
  public:
-  ArgConverter(format_arg &arg, wchar_t type)
+  ArgConverter(basic_format_arg<Char> &arg, Char type)
     : arg_(arg), type_(type) {}
 
   void operator()(bool value) {
@@ -101,27 +101,27 @@ class ArgConverter {
     bool is_signed = type_ == 'd' || type_ == 'i';
     typedef typename internal::Conditional<
         is_same<T, void>::value, U, T>::type TargetType;
+    typedef basic_format_context<Char> format_context;
     if (sizeof(TargetType) <= sizeof(int)) {
       // Extra casts are used to silence warnings.
       if (is_signed) {
-        arg_.type = format_arg::INT;
-        arg_.int_value = static_cast<int>(static_cast<TargetType>(value));
+        arg_ = internal::MakeArg<format_context>(
+          static_cast<int>(static_cast<TargetType>(value)));
       } else {
-        arg_.type = format_arg::UINT;
         typedef typename internal::MakeUnsigned<TargetType>::Type Unsigned;
-        arg_.uint_value = static_cast<unsigned>(static_cast<Unsigned>(value));
+        arg_ = internal::MakeArg<format_context>(
+          static_cast<unsigned>(static_cast<Unsigned>(value)));
       }
     } else {
       if (is_signed) {
-        arg_.type = format_arg::LONG_LONG;
         // glibc's printf doesn't sign extend arguments of smaller types:
         //   std::printf("%lld", -42);  // prints "4294967254"
         // but we don't have to do the same because it's a UB.
-        arg_.long_long_value = static_cast<LongLong>(value);
+        arg_ = internal::MakeArg<format_context>(
+          static_cast<LongLong>(value));
       } else {
-        arg_.type = format_arg::ULONG_LONG;
-        arg_.ulong_long_value =
-            static_cast<typename internal::MakeUnsigned<U>::Type>(value);
+        arg_ = internal::MakeArg<format_context>(
+          static_cast<typename internal::MakeUnsigned<U>::Type>(value));
       }
     }
   }
@@ -137,26 +137,27 @@ class ArgConverter {
 // If T is void, the argument is converted to corresponding signed or unsigned
 // type depending on the type specifier: 'd' and 'i' - signed, other -
 // unsigned).
-template <typename T>
-void convert_arg(format_arg &arg, wchar_t type) {
-  visit(ArgConverter<T>(arg, type), arg);
+template <typename T, typename Char>
+void convert_arg(basic_format_arg<Char> &arg, Char type) {
+  visit(ArgConverter<T, Char>(arg, type), arg);
 }
 
 // Converts an integer argument to char for printf.
+template <typename Char>
 class CharConverter {
  private:
-  format_arg &arg_;
+  basic_format_arg<Char> &arg_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(CharConverter);
 
  public:
-  explicit CharConverter(format_arg &arg) : arg_(arg) {}
+  explicit CharConverter(basic_format_arg<Char> &arg) : arg_(arg) {}
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value>::type
       operator()(T value) {
-    arg_.type = format_arg::CHAR;
-    arg_.int_value = static_cast<char>(value);
+    arg_ =
+      internal::MakeArg<basic_format_context<Char>>(static_cast<char>(value));
   }
 
   template <typename T>
@@ -168,14 +169,14 @@ class CharConverter {
 
 // Checks if an argument is a valid printf width specifier and sets
 // left alignment if it is negative.
-class WidthHandler {
+class PrintfWidthHandler {
  private:
   FormatSpec &spec_;
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(WidthHandler);
+  FMT_DISALLOW_COPY_AND_ASSIGN(PrintfWidthHandler);
 
  public:
-  explicit WidthHandler(FormatSpec &spec) : spec_(spec) {}
+  explicit PrintfWidthHandler(FormatSpec &spec) : spec_(spec) {}
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, unsigned>::type
@@ -239,7 +240,7 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
   }
 
   /** Formats a character. */
-  void operator()(wchar_t value) {
+  void operator()(Char value) {
     const FormatSpec &fmt_spec = this->spec();
     BasicWriter<Char> &w = this->writer();
     if (fmt_spec.type_ && fmt_spec.type_ != 'c')
@@ -282,7 +283,7 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
   /** Formats an argument of a custom (user-defined) type. */
   void operator()(format_arg::CustomValue c) {
     const Char format_str[] = {'}', '\0'};
-    auto args = basic_format_args<basic_format_context<Char>>();
+    auto args = basic_format_args<basic_format_context<Char>, Char>();
     basic_format_context<Char> ctx(format_str, args);
     c.format(&this->writer(), c.value, &ctx);
   }
@@ -305,7 +306,7 @@ class printf_context :
 
   // Returns the argument with specified index or, if arg_index is equal
   // to the maximum unsigned value, the next argument.
-  format_arg get_arg(
+  basic_format_arg<Char> get_arg(
       const Char *s,
       unsigned arg_index = (std::numeric_limits<unsigned>::max)());
 
@@ -321,7 +322,7 @@ class printf_context :
    \endrst
    */
   explicit printf_context(BasicCStringRef<Char> format_str,
-                          basic_format_args<printf_context> args)
+                          basic_format_args<printf_context, Char> args)
     : Base(format_str.c_str(), args) {}
 
   /** Formats stored arguments and writes the output to the writer. */
@@ -355,11 +356,12 @@ void printf_context<Char, AF>::parse_flags(FormatSpec &spec, const Char *&s) {
 }
 
 template <typename Char, typename AF>
-format_arg printf_context<Char, AF>::get_arg(const Char *s,
-                                             unsigned arg_index) {
+basic_format_arg<Char> printf_context<Char, AF>::get_arg(
+    const Char *s, unsigned arg_index) {
   (void)s;
   const char *error = 0;
-  format_arg arg = arg_index == std::numeric_limits<unsigned>::max() ?
+  basic_format_arg<Char> arg =
+    arg_index == std::numeric_limits<unsigned>::max() ?
     this->next_arg(error) : Base::get_arg(arg_index - 1, error);
   if (error)
     FMT_THROW(format_error(!*s ? "invalid format string" : error));
@@ -395,7 +397,7 @@ unsigned printf_context<Char, AF>::parse_header(
     spec.width_ = internal::parse_nonnegative_int(s);
   } else if (*s == '*') {
     ++s;
-    spec.width_ = visit(internal::WidthHandler(spec), get_arg(s));
+    spec.width_ = visit(internal::PrintfWidthHandler(spec), get_arg(s));
   }
   return arg_index;
 }
@@ -427,15 +429,15 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
         spec.precision_ = static_cast<int>(internal::parse_nonnegative_int(s));
       } else if (*s == '*') {
         ++s;
-        spec.precision_ = visit(internal::PrecisionHandler(), get_arg(s));
+        spec.precision_ = visit(internal::PrintfPrecisionHandler(), get_arg(s));
       }
     }
 
-    format_arg arg = get_arg(s, arg_index);
+    basic_format_arg<Char> arg = get_arg(s, arg_index);
     if (spec.flag(HASH_FLAG) && visit(internal::IsZeroInt(), arg))
       spec.flags_ &= ~internal::to_unsigned<int>(HASH_FLAG);
     if (spec.fill_ == '0') {
-      if (arg.type <= format_arg::LAST_NUMERIC_TYPE)
+      if (arg.is_numeric())
         spec.align_ = ALIGN_NUMERIC;
       else
         spec.fill_ = ' ';  // Ignore '0' flag for non-numeric types.
@@ -478,7 +480,7 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
     if (!*s)
       FMT_THROW(format_error("invalid format string"));
     spec.type_ = static_cast<char>(*s++);
-    if (arg.type <= format_arg::LAST_INTEGER_TYPE) {
+    if (arg.is_integral()) {
       // Normalize type.
       switch (spec.type_) {
       case 'i': case 'u':
@@ -486,7 +488,7 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
         break;
       case 'c':
         // TODO: handle wchar_t
-        visit(internal::CharConverter(arg), arg);
+        visit(internal::CharConverter<Char>(arg), arg);
         break;
       }
     }
@@ -509,12 +511,13 @@ void format_value(BasicWriter<Char> &w, const T &value,
 
 template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format,
-            basic_format_args<printf_context<Char>> args) {
+            basic_format_args<printf_context<Char>, Char> args) {
   printf_context<Char>(format, args).format(w);
 }
 
-inline std::string vsprintf(CStringRef format,
-                            basic_format_args<printf_context<char>> args) {
+typedef basic_format_args<printf_context<char>, char> printf_args;
+
+inline std::string vsprintf(CStringRef format, printf_args args) {
   MemoryWriter w;
   printf(w, format, args);
   return w.str();
@@ -534,8 +537,9 @@ inline std::string sprintf(CStringRef format_str, const Args & ... args) {
   return vsprintf(format_str, make_xformat_args<printf_context<char>>(args...));
 }
 
-inline std::wstring vsprintf(WCStringRef format,
-                             basic_format_args<printf_context<wchar_t>> args) {
+inline std::wstring vsprintf(
+    WCStringRef format,
+    basic_format_args<printf_context<wchar_t>, wchar_t> args) {
   WMemoryWriter w;
   printf(w, format, args);
   return w.str();
@@ -547,8 +551,7 @@ inline std::wstring sprintf(WCStringRef format_str, const Args & ... args) {
   return vsprintf(format_str, vargs);
 }
 
-FMT_API int vfprintf(std::FILE *f, CStringRef format,
-                     basic_format_args<printf_context<char>> args);
+FMT_API int vfprintf(std::FILE *f, CStringRef format, printf_args args);
 
 /**
   \rst
@@ -565,8 +568,7 @@ inline int fprintf(std::FILE *f, CStringRef format_str, const Args & ... args) {
   return vfprintf(f, format_str, vargs);
 }
 
-inline int vprintf(CStringRef format,
-                   basic_format_args<printf_context<char>> args) {
+inline int vprintf(CStringRef format, printf_args args) {
   return vfprintf(stdout, format, args);
 }
 
@@ -584,8 +586,7 @@ inline int printf(CStringRef format_str, const Args & ... args) {
   return vprintf(format_str, make_xformat_args<printf_context<char>>(args...));
 }
 
-inline int vfprintf(std::ostream &os, CStringRef format_str,
-                    basic_format_args<printf_context<char>> args) {
+inline int vfprintf(std::ostream &os, CStringRef format_str, printf_args args) {
   MemoryWriter w;
   printf(w, format_str, args);
   internal::write(os, w);

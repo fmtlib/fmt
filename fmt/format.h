@@ -414,6 +414,8 @@ class BasicStringRef {
   std::size_t size_;
 
  public:
+  BasicStringRef() : data_(0), size_(0) {}
+
   /** Constructs a string reference object from a C string and a size. */
   BasicStringRef(const Char *s, std::size_t size) : data_(s), size_(size) {}
 
@@ -1027,15 +1029,101 @@ struct Value {
     CSTRING, STRING, WSTRING, POINTER, CUSTOM
   };
 };
+
+template <typename Char>
+class ArgMap;
 }  // namespace internal
+
+template <typename Context, typename Char>
+class basic_format_args;
 
 // A formatting argument. It is a trivially copyable/constructible type to
 // allow storage in internal::MemoryBuffer.
-struct format_arg : internal::Value {
-  Type type;
+template <typename Char>
+class basic_format_arg : public internal::Value {
+ protected:
+  Type type_;
 
-  explicit operator bool() const noexcept { return type != NONE; }
+  template <typename Visitor, typename CharType>
+  friend typename std::result_of<Visitor(int)>::type
+    visit(Visitor &&vis, basic_format_arg<CharType> arg);
+
+  template <typename Context, typename CharType>
+  friend class basic_format_args;
+
+  template <typename CharType>
+  friend class internal::ArgMap;
+
+  void check_type() const {
+    FMT_ASSERT(type_ > NAMED_ARG, "invalid argument type");
+  }
+
+ public:
+  explicit operator bool() const noexcept { return type_ != NONE; }
+
+  bool is_integral() const {
+    check_type();
+    return type_ <= LAST_INTEGER_TYPE;
+  }
+
+  bool is_numeric() const {
+    check_type();
+    return type_ <= LAST_NUMERIC_TYPE;
+  }
+
+  bool is_pointer() const {
+    check_type();
+    return type_ == POINTER;
+  }
 };
+
+typedef basic_format_arg<char> format_arg;
+typedef basic_format_arg<wchar_t> wformat_arg;
+
+/**
+  \rst
+  Visits an argument dispatching to the appropriate visit method based on
+  the argument type. For example, if the argument type is ``double`` then
+  ``vis(value)`` will be called with the value of type ``double``.
+  \endrst
+ */
+template <typename Visitor, typename Char>
+typename std::result_of<Visitor(int)>::type
+    visit(Visitor &&vis, basic_format_arg<Char> arg) {
+  switch (arg.type_) {
+  case format_arg::NONE:
+  case format_arg::NAMED_ARG:
+    FMT_ASSERT(false, "invalid argument type");
+    break;
+  case format_arg::INT:
+    return vis(arg.int_value);
+  case format_arg::UINT:
+    return vis(arg.uint_value);
+  case format_arg::LONG_LONG:
+    return vis(arg.long_long_value);
+  case format_arg::ULONG_LONG:
+    return vis(arg.ulong_long_value);
+  case format_arg::BOOL:
+    return vis(arg.int_value != 0);
+  case format_arg::CHAR:
+    return vis(static_cast<Char>(arg.int_value));
+  case format_arg::DOUBLE:
+    return vis(arg.double_value);
+  case format_arg::LONG_DOUBLE:
+    return vis(arg.long_double_value);
+  case format_arg::CSTRING:
+    return vis(arg.string.value);
+  case format_arg::STRING:
+    return vis(arg.string);
+  case format_arg::WSTRING:
+    return vis(arg.wstring);
+  case format_arg::POINTER:
+    return vis(arg.pointer);
+  case format_arg::CUSTOM:
+    return vis(arg.custom);
+  }
+  return typename std::result_of<Visitor(int)>::type();
+}
 
 namespace internal {
 
@@ -1251,7 +1339,7 @@ constexpr Type type() { return gettype<typename std::decay<T>::type>(); }
 
 // Makes a format_arg object from any type.
 template <typename Context>
-class MakeValue : public format_arg {
+class MakeValue : public basic_format_arg<typename Context::char_type> {
  public:
   typedef typename Context::char_type Char;
 
@@ -1279,13 +1367,13 @@ class MakeValue : public format_arg {
   MakeValue(typename WCharHelper<WStringRef, Char>::Unsupported);
 
   void set_string(StringRef str) {
-    string.value = str.data();
-    string.size = str.size();
+    this->string.value = str.data();
+    this->string.size = str.size();
   }
 
   void set_string(WStringRef str) {
-    wstring.value = str.data();
-    wstring.size = str.size();
+    this->wstring.value = str.data();
+    this->wstring.size = str.size();
   }
 
   // Formats an argument of a custom type, such as a user-defined class.
@@ -1302,8 +1390,8 @@ class MakeValue : public format_arg {
 
 #define FMT_MAKE_VALUE_(Type, field, TYPE, rhs) \
   MakeValue(Type value) { \
-    static_assert(internal::type<Type>() == TYPE, "invalid type"); \
-    field = rhs; \
+    static_assert(internal::type<Type>() == MakeValue::TYPE, "invalid type"); \
+    this->field = rhs; \
   }
 
 #define FMT_MAKE_VALUE(Type, field, TYPE) \
@@ -1319,16 +1407,16 @@ class MakeValue : public format_arg {
     // To minimize the number of types we need to deal with, long is
     // translated either to int or to long long depending on its size.
     if (const_check(sizeof(long) == sizeof(int)))
-      int_value = static_cast<int>(value);
+      this->int_value = static_cast<int>(value);
     else
-      long_long_value = value;
+      this->long_long_value = value;
   }
 
   MakeValue(unsigned long value) {
     if (const_check(sizeof(unsigned long) == sizeof(unsigned)))
-      uint_value = static_cast<unsigned>(value);
+      this->uint_value = static_cast<unsigned>(value);
     else
-      ulong_long_value = value;
+      this->ulong_long_value = value;
   }
 
   FMT_MAKE_VALUE(LongLong, long_long_value, LONG_LONG)
@@ -1343,14 +1431,14 @@ class MakeValue : public format_arg {
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
   typedef typename WCharHelper<wchar_t, Char>::Supported WChar;
   MakeValue(WChar value) {
-    static_assert(internal::type<WChar>() == CHAR, "invalid type");
-    int_value = value;
+    static_assert(internal::type<WChar>() == MakeValue::CHAR, "invalid type");
+    this->int_value = value;
   }
 #endif
 
 #define FMT_MAKE_STR_VALUE(Type, TYPE) \
   MakeValue(Type value) { \
-    static_assert(internal::type<Type>() == TYPE, "invalid type"); \
+    static_assert(internal::type<Type>() == MakeValue::TYPE, "invalid type"); \
     set_string(value); \
   }
 
@@ -1366,7 +1454,7 @@ class MakeValue : public format_arg {
 
 #define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
   MakeValue(typename WCharHelper<Type, Char>::Supported value) { \
-  static_assert(internal::type<Type>() == TYPE, "invalid type"); \
+  static_assert(internal::type<Type>() == MakeValue::TYPE, "invalid type"); \
     set_string(value); \
   }
 
@@ -1382,49 +1470,51 @@ class MakeValue : public format_arg {
   MakeValue(const T &value,
             typename EnableIf<Not<
               ConvertToInt<T>::value>::value, int>::type = 0) {
-    static_assert(internal::type<T>() == CUSTOM, "invalid type");
-    custom.value = &value;
-    custom.format = &format_custom_arg<T>;
+    static_assert(internal::type<T>() == MakeValue::CUSTOM, "invalid type");
+    this->custom.value = &value;
+    this->custom.format = &format_custom_arg<T>;
   }
 
   template <typename T>
   MakeValue(const T &value,
             typename EnableIf<ConvertToInt<T>::value, int>::type = 0) {
-    static_assert(internal::type<T>() == INT, "invalid type");
-    int_value = value;
+    static_assert(internal::type<T>() == MakeValue::INT, "invalid type");
+    this->int_value = value;
   }
 
   // Additional template param `Char_` is needed here because make_type always
   // uses char.
   template <typename Char_>
   MakeValue(const NamedArg<Char_> &value) {
-    static_assert(internal::type<const NamedArg<Char_> &>() == NAMED_ARG,
-                  "invalid type");
-    pointer = &value;
+    static_assert(
+      internal::type<const NamedArg<Char_> &>() == MakeValue::NAMED_ARG,
+      "invalid type");
+    this->pointer = &value;
   }
 };
 
 template <typename Context>
-class MakeArg : public format_arg {
+  class MakeArg : public basic_format_arg<typename Context::char_type> {
 public:
   MakeArg() {
-    type = format_arg::NONE;
+    this->type_ = format_arg::NONE;
   }
 
   template <typename T>
   MakeArg(const T &value)
-  : format_arg(MakeValue<Context>(value)) {
-    type = internal::type<T>();
+  : basic_format_arg<typename Context::char_type>(MakeValue<Context>(value)) {
+    this->type_ = internal::type<T>();
   }
 };
 
 template <typename Char>
-struct NamedArg : format_arg {
+struct NamedArg : basic_format_arg<Char> {
   BasicStringRef<Char> name;
 
   template <typename T>
   NamedArg(BasicStringRef<Char> argname, const T &value)
-  : format_arg(MakeArg< basic_format_context<Char> >(value)), name(argname) {}
+  : basic_format_arg<Char>(MakeArg< basic_format_context<Char> >(value)),
+    name(argname) {}
 };
 
 class RuntimeError : public std::runtime_error {
@@ -1432,9 +1522,6 @@ class RuntimeError : public std::runtime_error {
   RuntimeError() : std::runtime_error("") {}
   ~RuntimeError() throw();
 };
-
-template <typename Char>
-class ArgMap;
 
 template <typename Arg, typename... Args>
 constexpr uint64_t make_type() {
@@ -1482,8 +1569,12 @@ inline format_arg_store<format_context, Args...>
 }
 
 /** Formatting arguments. */
-template <typename Context>
+template <typename Context, typename Char>
 class basic_format_args {
+ public:
+  typedef unsigned size_type;
+  typedef basic_format_arg<Char> format_arg;
+
  private:
   // To reduce compiled code size per formatting function call, types of first
   // MAX_PACKED_ARGS arguments are passed in the types_ field.
@@ -1498,21 +1589,43 @@ class basic_format_args {
     const format_arg *args_;
   };
 
-  format_arg::Type type(unsigned index) const {
+  typename format_arg::Type type(unsigned index) const {
     unsigned shift = index * 4;
     uint64_t mask = 0xf;
-    return static_cast<format_arg::Type>((types_ & (mask << shift)) >> shift);
+    return static_cast<typename format_arg::Type>(
+      (types_ & (mask << shift)) >> shift);
   }
 
-  template <typename Char>
-  friend class internal::ArgMap;
+  friend class internal::ArgMap<Char>;
 
   void set_data(const internal::Value *values) { values_ = values; }
   void set_data(const format_arg *args) { args_ = args; }
 
- public:
-  typedef unsigned size_type;
+  format_arg get(size_type index) const {
+    format_arg arg;
+    bool use_values = type(internal::MAX_PACKED_ARGS - 1) == format_arg::NONE;
+    if (index < internal::MAX_PACKED_ARGS) {
+      typename format_arg::Type arg_type = type(index);
+      internal::Value &val = arg;
+      if (arg_type != format_arg::NONE)
+        val = use_values ? values_[index] : args_[index];
+      arg.type_ = arg_type;
+      return arg;
+    }
+    if (use_values) {
+      // The index is greater than the number of arguments that can be stored
+      // in values, so return a "none" argument.
+      arg.type_ = format_arg::NONE;
+      return arg;
+    }
+    for (unsigned i = internal::MAX_PACKED_ARGS; i <= index; ++i) {
+      if (args_[i].type_ == format_arg::NONE)
+        return args_[i];
+    }
+    return args_[index];
+  }
 
+ public:
   basic_format_args() : types_(0) {}
 
   template <typename... Args>
@@ -1523,77 +1636,14 @@ class basic_format_args {
 
   /** Returns the argument at specified index. */
   format_arg operator[](size_type index) const {
-    format_arg arg;
-    bool use_values = type(internal::MAX_PACKED_ARGS - 1) == format_arg::NONE;
-    if (index < internal::MAX_PACKED_ARGS) {
-      format_arg::Type arg_type = type(index);
-      internal::Value &val = arg;
-      if (arg_type != format_arg::NONE)
-        val = use_values ? values_[index] : args_[index];
-      arg.type = arg_type;
-      return arg;
-    }
-    if (use_values) {
-      // The index is greater than the number of arguments that can be stored
-      // in values, so return a "none" argument.
-      arg.type = format_arg::NONE;
-      return arg;
-    }
-    for (unsigned i = internal::MAX_PACKED_ARGS; i <= index; ++i) {
-      if (args_[i].type == format_arg::NONE)
-        return args_[i];
-    }
-    return args_[index];
+    format_arg arg = get(index);
+    return arg.type_ == format_arg::NAMED_ARG ?
+      *static_cast<const format_arg*>(arg.pointer) : arg;
   }
 };
 
-typedef basic_format_args<basic_format_context<char>> format_args;
-typedef basic_format_args<basic_format_context<wchar_t>> wformat_args;
-
-/**
-  \rst
-  Visits an argument dispatching to the appropriate visit method based on
-  the argument type. For example, if the argument type is ``double`` then
-  ``vis(value)`` will be called with the value of type ``double``.
-  \endrst
- */
-template <typename Visitor>
-typename std::result_of<Visitor(int)>::type visit(Visitor &&vis,
-                                                  format_arg arg) {
-  switch (arg.type) {
-  case format_arg::NONE:
-  case format_arg::NAMED_ARG:
-    FMT_ASSERT(false, "invalid argument type");
-    break;
-  case format_arg::INT:
-    return vis(arg.int_value);
-  case format_arg::UINT:
-    return vis(arg.uint_value);
-  case format_arg::LONG_LONG:
-    return vis(arg.long_long_value);
-  case format_arg::ULONG_LONG:
-    return vis(arg.ulong_long_value);
-  case format_arg::BOOL:
-    return vis(arg.int_value != 0);
-  case format_arg::CHAR:
-    return vis(static_cast<wchar_t>(arg.int_value));
-  case format_arg::DOUBLE:
-    return vis(arg.double_value);
-  case format_arg::LONG_DOUBLE:
-    return vis(arg.long_double_value);
-  case format_arg::CSTRING:
-    return vis(arg.string.value);
-  case format_arg::STRING:
-    return vis(arg.string);
-  case format_arg::WSTRING:
-    return vis(arg.wstring);
-  case format_arg::POINTER:
-    return vis(arg.pointer);
-  case format_arg::CUSTOM:
-    return vis(arg.custom);
-  }
-  return typename std::result_of<Visitor(int)>::type();
-}
+typedef basic_format_args<basic_format_context<char>, char> format_args;
+typedef basic_format_args<basic_format_context<wchar_t>, wchar_t> wformat_args;
 
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
@@ -1822,16 +1872,17 @@ template <typename Char>
 class ArgMap {
  private:
   typedef std::vector<
-    std::pair<fmt::BasicStringRef<Char>, format_arg> > MapType;
+    std::pair<fmt::BasicStringRef<Char>, basic_format_arg<Char> > > MapType;
   typedef typename MapType::value_type Pair;
 
   MapType map_;
 
  public:
-  template <typename Formatter>
-  void init(const basic_format_args<Formatter> &args);
+  template <typename Context>
+  void init(const basic_format_args<Context, Char> &args);
 
-  const format_arg *find(const fmt::BasicStringRef<Char> &name) const {
+  const basic_format_arg<Char>
+      *find(const fmt::BasicStringRef<Char> &name) const {
     // The list is unsorted, so just return the first matching name.
     for (typename MapType::const_iterator it = map_.begin(), end = map_.end();
          it != end; ++it) {
@@ -1843,8 +1894,8 @@ class ArgMap {
 };
 
 template <typename Char>
-template <typename Formatter>
-void ArgMap<Char>::init(const basic_format_args<Formatter> &args) {
+template <typename Context>
+void ArgMap<Char>::init(const basic_format_args<Context, Char> &args) {
   if (!map_.empty())
     return;
   typedef internal::NamedArg<Char> NamedArg;
@@ -1874,8 +1925,8 @@ void ArgMap<Char>::init(const basic_format_args<Formatter> &args) {
       map_.push_back(Pair(named_arg->name, *named_arg));
     }
   }
-  for (unsigned i = MAX_PACKED_ARGS;/*nothing*/; ++i) {
-    switch (args.args_[i].type) {
+  for (unsigned i = MAX_PACKED_ARGS; ; ++i) {
+    switch (args.args_[i].type_) {
       case format_arg::NONE:
         return;
       case format_arg::NAMED_ARG:
@@ -1955,7 +2006,7 @@ class ArgFormatterBase {
     write(value);
   }
 
-  void operator()(wchar_t value) {
+  void operator()(Char value) {
     if (spec_.type_ && spec_.type_ != 'c') {
       spec_.flags_ |= CHAR_FLAG;
       writer_.write_int(value, spec_);
@@ -2016,29 +2067,24 @@ template <typename Char, typename Context>
 class format_context_base {
  private:
   const Char *ptr_;
-  basic_format_args<Context> args_;
+  basic_format_args<Context, Char> args_;
   int next_arg_index_;
 
  protected:
-  format_context_base(const Char *format_str, basic_format_args<Context> args)
+  typedef basic_format_arg<Char> format_arg;
+
+  format_context_base(const Char *format_str,
+                      basic_format_args<Context, Char> args)
   : ptr_(format_str), args_(args), next_arg_index_(0) {}
   ~format_context_base() {}
 
-  basic_format_args<Context> args() const { return args_; }
+  basic_format_args<Context, Char> args() const { return args_; }
 
   // Returns the argument with specified index.
   format_arg do_get_arg(unsigned arg_index, const char *&error) {
     format_arg arg = args_[arg_index];
-    switch (arg.type) {
-      case format_arg::NONE:
-        error = "argument index out of range";
-        break;
-      case format_arg::NAMED_ARG:
-        arg = *static_cast<const format_arg*>(arg.pointer);
-        break;
-      default:
-        /*nothing*/;
-    }
+    if (!arg)
+      error = "argument index out of range";
     return arg;
   }
 
@@ -2107,13 +2153,14 @@ class basic_format_context :
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_format_context);
 
-  typedef internal::format_context_base<Char, basic_format_context> Base;
+  typedef internal::format_context_base<Char, basic_format_context<Char>> Base;
 
+  using typename Base::format_arg;
   using Base::get_arg;
 
   // Checks if manual indexing is used and returns the argument with
   // specified name.
-  format_arg get_arg(BasicStringRef<Char> name, const char *&error);
+  basic_format_arg<Char> get_arg(BasicStringRef<Char> name, const char *&error);
 
  public:
   /** The character type for the output. */
@@ -2126,11 +2173,11 @@ class basic_format_context :
    \endrst
    */
   basic_format_context(const Char *format_str,
-                       basic_format_args<basic_format_context> args)
+                       basic_format_args<basic_format_context, Char> args)
   : Base(format_str, args) {}
 
   // Parses argument id and returns corresponding argument.
-  format_arg parse_arg_id();
+  basic_format_arg<Char> parse_arg_id();
 
   using Base::ptr;
 };
@@ -2364,7 +2411,7 @@ class BasicWriter {
   }
 
   void vwrite(BasicCStringRef<Char> format,
-              basic_format_args<basic_format_context<Char>> args);
+              basic_format_args<basic_format_context<Char>, Char> args);
   /**
     \rst
     Writes formatted data.
@@ -3281,45 +3328,121 @@ unsigned parse_nonnegative_int(const Char *&s) {
   return value;
 }
 
-inline void require_numeric_argument(const format_arg &arg, char spec) {
-  if (arg.type > format_arg::LAST_NUMERIC_TYPE) {
-    std::string message =
-        fmt::format("format specifier '{}' requires numeric argument", spec);
-    FMT_THROW(fmt::format_error(message));
+template <typename Char>
+inline void require_numeric_argument(
+    const basic_format_arg<Char> &arg, char spec) {
+  if (!arg.is_numeric()) {
+    FMT_THROW(fmt::format_error(
+        fmt::format("format specifier '{}' requires numeric argument", spec)));
   }
 }
 
+struct IsUnsigned {
+  template <typename T>
+  typename std::enable_if<std::is_unsigned<T>::value, bool>::type
+      operator()(T value) {
+    return true;
+  }
+
+  template <typename T>
+  typename std::enable_if<!std::is_unsigned<T>::value, bool>::type
+      operator()(T value) {
+    return false;
+  }
+};
+
 template <typename Char>
-void check_sign(const Char *&s, const format_arg &arg) {
+void check_sign(const Char *&s, const basic_format_arg<Char> &arg) {
   char sign = static_cast<char>(*s);
   require_numeric_argument(arg, sign);
-  if (arg.type == format_arg::UINT || arg.type == format_arg::ULONG_LONG) {
+  if (visit(IsUnsigned(), arg)) {
     FMT_THROW(format_error(fmt::format(
       "format specifier '{}' requires signed argument", sign)));
   }
   ++s;
 }
+
+template <typename Char, typename Context>
+class CustomFormatter {
+ private:
+  BasicWriter<Char> &writer_;
+  Context &ctx_;
+
+ public:
+  CustomFormatter(BasicWriter<Char> &writer, Context &ctx)
+  : writer_(writer), ctx_(ctx) {}
+
+  bool operator()(format_arg::CustomValue custom) {
+    custom.format(&writer_, custom.value, &ctx_);
+    return true;
+  }
+
+  template <typename T>
+  bool operator()(T) { return false; }
+};
+
+template <typename T>
+struct IsInteger {
+  enum {
+    value = std::is_integral<T>::value && !std::is_same<T, bool>::value &&
+            !std::is_same<T, char>::value && !std::is_same<T, wchar_t>::value
+  };
+};
+
+struct WidthHandler {
+  template <typename T>
+  typename std::enable_if<IsInteger<T>::value, ULongLong>::type
+      operator()(T value) {
+    if (is_negative(value))
+      FMT_THROW(format_error("negative width"));
+    return value;
+  }
+
+  template <typename T>
+  typename std::enable_if<!IsInteger<T>::value, ULongLong>::type
+      operator()(T value) {
+    FMT_THROW(format_error("width is not integer"));
+    return 0;
+  }
+};
+
+struct PrecisionHandler {
+  template <typename T>
+  typename std::enable_if<IsInteger<T>::value, ULongLong>::type
+      operator()(T value) {
+    if (is_negative(value))
+      FMT_THROW(format_error("negative precision"));
+    return value;
+  }
+
+  template <typename T>
+  typename std::enable_if<!IsInteger<T>::value, ULongLong>::type
+      operator()(T value) {
+    FMT_THROW(format_error("precision is not integer"));
+    return 0;
+  }
+};
 }  // namespace internal
 
 template <typename Char>
-inline format_arg basic_format_context<Char>::get_arg(
+inline basic_format_arg<Char> basic_format_context<Char>::get_arg(
     BasicStringRef<Char> name, const char *&error) {
   if (this->check_no_auto_index(error)) {
     map_.init(this->args());
-    const format_arg *arg = map_.find(name);
+    const basic_format_arg<Char> *arg = map_.find(name);
     if (arg)
       return *arg;
     error = "argument not found";
   }
-  return format_arg();
+  return basic_format_arg<Char>();
 }
 
 template <typename Char>
-inline format_arg basic_format_context<Char>::parse_arg_id() {
+inline basic_format_arg<Char> basic_format_context<Char>::parse_arg_id() {
   const Char *&s = this->ptr();
   if (!internal::is_name_start(*s)) {
     const char *error = 0;
-    format_arg arg = *s < '0' || *s > '9' ?
+    basic_format_arg<Char> arg = *s < '0' || *s > '9' ?
       this->next_arg(error) : get_arg(internal::parse_nonnegative_int(s), error);
     if (error) {
       FMT_THROW(format_error(
@@ -3333,7 +3456,8 @@ inline format_arg basic_format_context<Char>::parse_arg_id() {
     c = *++s;
   } while (internal::is_name_start(c) || ('0' <= c && c <= '9'));
   const char *error = 0;
-  format_arg arg = get_arg(BasicStringRef<Char>(start, s - start), error);
+  basic_format_arg<Char> arg =
+    get_arg(BasicStringRef<Char>(start, s - start), error);
   if (error)
     FMT_THROW(format_error(error));
   return arg;
@@ -3341,15 +3465,13 @@ inline format_arg basic_format_context<Char>::parse_arg_id() {
 
 // Formats a single argument.
 template <typename ArgFormatter, typename Char, typename Context>
-void do_format_arg(BasicWriter<Char> &writer, const format_arg &arg,
+void do_format_arg(BasicWriter<Char> &writer, const basic_format_arg<Char> &arg,
                    Context &ctx) {
   const Char *&s = ctx.ptr();
   FormatSpec spec;
   if (*s == ':') {
-    if (arg.type == format_arg::CUSTOM) {
-      arg.custom.format(&writer, arg.custom.value, &ctx);
+    if (visit(internal::CustomFormatter<Char, Context>(writer, ctx), arg))
       return;
-    }
     ++s;
     // Parse fill and alignment.
     if (Char c = *s) {
@@ -3420,33 +3542,13 @@ void do_format_arg(BasicWriter<Char> &writer, const format_arg &arg,
       spec.width_ = internal::parse_nonnegative_int(s);
     } else if (*s == '{') {
       ++s;
-      format_arg width_arg = ctx.parse_arg_id();
+      auto width_arg = ctx.parse_arg_id();
       if (*s++ != '}')
         FMT_THROW(format_error("invalid format string"));
-      ULongLong value = 0;
-      switch (width_arg.type) {
-      case format_arg::INT:
-        if (width_arg.int_value < 0)
-          FMT_THROW(format_error("negative width"));
-        value = width_arg.int_value;
-        break;
-      case format_arg::UINT:
-        value = width_arg.uint_value;
-        break;
-      case format_arg::LONG_LONG:
-        if (width_arg.long_long_value < 0)
-          FMT_THROW(format_error("negative width"));
-        value = width_arg.long_long_value;
-        break;
-      case format_arg::ULONG_LONG:
-        value = width_arg.ulong_long_value;
-        break;
-      default:
-        FMT_THROW(format_error("width is not integer"));
-      }
-      if (value > (std::numeric_limits<int>::max)())
+      ULongLong width = visit(internal::WidthHandler(), width_arg);
+      if (width > (std::numeric_limits<int>::max)())
         FMT_THROW(format_error("number is too big"));
-      spec.width_ = static_cast<int>(value);
+      spec.width_ = static_cast<int>(width);
     }
 
     // Parse precision.
@@ -3457,41 +3559,21 @@ void do_format_arg(BasicWriter<Char> &writer, const format_arg &arg,
         spec.precision_ = internal::parse_nonnegative_int(s);
       } else if (*s == '{') {
         ++s;
-        format_arg precision_arg = ctx.parse_arg_id();
+        auto precision_arg = ctx.parse_arg_id();
         if (*s++ != '}')
           FMT_THROW(format_error("invalid format string"));
-        ULongLong value = 0;
-        switch (precision_arg.type) {
-          case format_arg::INT:
-            if (precision_arg.int_value < 0)
-              FMT_THROW(format_error("negative precision"));
-            value = precision_arg.int_value;
-            break;
-          case format_arg::UINT:
-            value = precision_arg.uint_value;
-            break;
-          case format_arg::LONG_LONG:
-            if (precision_arg.long_long_value < 0)
-              FMT_THROW(format_error("negative precision"));
-            value = precision_arg.long_long_value;
-            break;
-          case format_arg::ULONG_LONG:
-            value = precision_arg.ulong_long_value;
-            break;
-          default:
-            FMT_THROW(format_error("precision is not integer"));
-        }
-        if (value > (std::numeric_limits<int>::max)())
+        ULongLong precision =
+          visit(internal::PrecisionHandler(), precision_arg);
+        if (precision > (std::numeric_limits<int>::max)())
           FMT_THROW(format_error("number is too big"));
-        spec.precision_ = static_cast<int>(value);
+        spec.precision_ = static_cast<int>(precision);
       } else {
         FMT_THROW(format_error("missing precision specifier"));
       }
-      if (arg.type <= format_arg::LAST_INTEGER_TYPE ||
-          arg.type == format_arg::POINTER) {
+      if (arg.is_integral() || arg.is_pointer()) {
         FMT_THROW(format_error(
             fmt::format("precision not allowed in {} format specifier",
-            arg.type == format_arg::POINTER ? "pointer" : "integer")));
+            arg.is_pointer() ? "pointer" : "integer")));
       }
     }
 
@@ -3510,7 +3592,7 @@ void do_format_arg(BasicWriter<Char> &writer, const format_arg &arg,
 /** Formats arguments and writes the output to the writer. */
 template <typename ArgFormatter, typename Char, typename Context>
 void vformat(BasicWriter<Char> &writer, BasicCStringRef<Char> format_str,
-             basic_format_args<Context> args) {
+             basic_format_args<Context, Char> args) {
   basic_format_context<Char> ctx(format_str.c_str(), args);
   const Char *&s = ctx.ptr();
   const Char *start = s;
@@ -3536,7 +3618,7 @@ void vformat(BasicWriter<Char> &writer, BasicCStringRef<Char> format_str,
 template <typename Char>
 inline void BasicWriter<Char>::vwrite(
     BasicCStringRef<Char> format,
-    basic_format_args<basic_format_context<Char>> args) {
+    basic_format_args<basic_format_context<Char>, Char> args) {
   vformat<ArgFormatter<Char>>(*this, format, args);
 }
 }  // namespace fmt

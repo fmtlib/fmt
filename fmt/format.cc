@@ -443,8 +443,7 @@ template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format,
             format_args args);
 
-FMT_FUNC int vfprintf(std::FILE *f, CStringRef format,
-                      basic_format_args<printf_context<char>> args) {
+FMT_FUNC int vfprintf(std::FILE *f, CStringRef format, printf_args args) {
   MemoryWriter w;
   printf(w, format, args);
   std::size_t size = w.size();
@@ -475,7 +474,7 @@ template int internal::CharTraits<char>::format_float(
 
 template void internal::FixedBuffer<wchar_t>::grow(std::size_t);
 
-template void internal::ArgMap<wchar_t>::init(const format_args &args);
+template void internal::ArgMap<wchar_t>::init(const wformat_args &args);
 
 template void printf_context<wchar_t>::format(WWriter &writer);
 

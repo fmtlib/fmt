@@ -41,13 +41,25 @@
 #undef min
 #undef max
 
+template <typename T>
+struct ValueExtractor {
+  T operator()(T value) {
+    return value;
+  }
+
+  template <typename U>
+  T operator()(U) {
+    throw std::runtime_error(fmt::format("invalid type {}", typeid(U).name()));
+    return T();
+  }
+};
+
 TEST(FormatTest, ArgConverter) {
   using fmt::format_arg;
-  format_arg arg = format_arg();
-  arg.type = format_arg::LONG_LONG;
-  arg.long_long_value = std::numeric_limits<fmt::LongLong>::max();
-  visit(fmt::internal::ArgConverter<fmt::LongLong>(arg, 'd'), arg);
-  EXPECT_EQ(format_arg::LONG_LONG, arg.type);
+  fmt::LongLong value = std::numeric_limits<fmt::LongLong>::max();
+  format_arg arg = fmt::internal::MakeArg<fmt::format_context>(value);
+  visit(fmt::internal::ArgConverter<fmt::LongLong, char>(arg, 'd'), arg);
+  EXPECT_EQ(value, visit(ValueExtractor<fmt::LongLong>(), arg));
 }
 
 TEST(FormatTest, FormatNegativeNaN) {
