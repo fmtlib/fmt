@@ -437,12 +437,6 @@ namespace internal {
 bool operator==(Value::CustomValue lhs, Value::CustomValue rhs) {
   return lhs.value == rhs.value;
 }
-
-template <typename T>
-bool operator==(Value::StringValue<T> lhs, Value::StringValue<T> rhs) {
-  return std::basic_string<T>(lhs.value, lhs.size) ==
-         std::basic_string<T>(rhs.value, rhs.size);
-}
 }
 }
 
@@ -542,11 +536,10 @@ TEST(UtilTest, StringArg) {
   CHECK_ARG_(wchar_t, cstr, str);
   CHECK_ARG(cstr);
 
-  Value::StringValue<char> strval = {str, 4};
-  CHECK_ARG_(char, strval, std::string(str));
-  CHECK_ARG_(wchar_t, strval, std::string(str));
-  CHECK_ARG_(char, strval, fmt::StringRef(str));
-  CHECK_ARG_(wchar_t, strval, fmt::StringRef(str));
+  StringRef sref(str);
+  CHECK_ARG_(char, sref, std::string(str));
+  CHECK_ARG_(wchar_t, sref, std::string(str));
+  CHECK_ARG(sref);
 }
 
 TEST(UtilTest, WStringArg) {
@@ -554,11 +547,11 @@ TEST(UtilTest, WStringArg) {
   wchar_t *str = str_data;
   const wchar_t *cstr = str;
 
-  Value::StringValue<wchar_t> strval = {str, 4};
-  CHECK_ARG_(wchar_t, strval, str);
-  CHECK_ARG_(wchar_t, strval, cstr);
-  CHECK_ARG_(wchar_t, strval, std::wstring(str));
-  CHECK_ARG_(wchar_t, strval, fmt::WStringRef(str));
+  fmt::WStringRef sref(str);
+  CHECK_ARG_(wchar_t, sref, str);
+  CHECK_ARG_(wchar_t, sref, cstr);
+  CHECK_ARG_(wchar_t, sref, std::wstring(str));
+  CHECK_ARG_(wchar_t, sref, fmt::WStringRef(str));
 }
 
 TEST(UtilTest, PointerArg) {

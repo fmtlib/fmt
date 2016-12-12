@@ -1016,7 +1016,7 @@ struct Value {
     StringValue<char> string;
     StringValue<signed char> sstring;
     StringValue<unsigned char> ustring;
-    StringValue<wchar_t> wstring;
+    StringValue<wchar_t> wstring; // TODO: Char
     CustomValue custom;
   };
 
@@ -1114,9 +1114,9 @@ typename std::result_of<Visitor(int)>::type
   case format_arg::CSTRING:
     return vis(arg.string.value);
   case format_arg::STRING:
-    return vis(arg.string);
+    return vis(StringRef(arg.string.value, arg.string.size));
   case format_arg::WSTRING:
-    return vis(arg.wstring);
+    return vis(WStringRef(arg.wstring.value, arg.wstring.size));
   case format_arg::POINTER:
     return vis(arg.pointer);
   case format_arg::CUSTOM:
@@ -1954,7 +1954,7 @@ class ArgFormatterBase {
   }
 
   template <typename StrChar>
-  void write_str(format_arg::StringValue<StrChar> value,
+  void write_str(BasicStringRef<StrChar> value,
                  typename EnableIf<
                    std::is_same<Char, wchar_t>::value &&
                    std::is_same<StrChar, wchar_t>::value, int>::type = 0) {
@@ -1962,7 +1962,7 @@ class ArgFormatterBase {
   }
 
   template <typename StrChar>
-  void write_str(format_arg::StringValue<StrChar> value,
+  void write_str(BasicStringRef<StrChar> value,
                  typename EnableIf<
                    !std::is_same<Char, wchar_t>::value ||
                    !std::is_same<StrChar, wchar_t>::value, int>::type = 0) {
@@ -1974,16 +1974,12 @@ class ArgFormatterBase {
   FormatSpec &spec() { return spec_; }
 
   void write(bool value) {
-    const char *str_value = value ? "true" : "false";
-    format_arg::StringValue<char> str = { str_value, std::strlen(str_value) };
-    writer_.write_str(str, spec_);
+    writer_.write_str(StringRef(value ? "true" : "false"), spec_);
   }
 
   void write(const char *value) {
-    format_arg::StringValue<char> str = {
-      value, value != 0 ? std::strlen(value) : 0
-    };
-    writer_.write_str(str, spec_);
+    writer_.write_str(
+          StringRef(value, value != 0 ? std::strlen(value) : 0), spec_);
   }
 
  public:
@@ -2042,11 +2038,11 @@ class ArgFormatterBase {
     write(value);
   }
 
-  void operator()(format_arg::StringValue<char> value) {
+  void operator()(StringRef value) {
     writer_.write_str(value, spec_);
   }
 
-  void operator()(format_arg::StringValue<wchar_t> value) {
+  void operator()(BasicStringRef<wchar_t> value) {
     write_str(value);
   }
 
@@ -2339,8 +2335,7 @@ class BasicWriter {
   CharPtr write_str(const StrChar *s, std::size_t size, const AlignSpec &spec);
 
   template <typename StrChar>
-  void write_str(const format_arg::StringValue<StrChar> &str,
-                 const FormatSpec &spec);
+  void write_str(BasicStringRef<StrChar> str, const FormatSpec &spec);
 
   // This following methods are private to disallow writing wide characters
   // and strings to a char stream. If you want to print a wide string as a
@@ -2563,13 +2558,13 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
 template <typename Char>
 template <typename StrChar>
 void BasicWriter<Char>::write_str(
-    const format_arg::StringValue<StrChar> &s, const FormatSpec &spec) {
+    BasicStringRef<StrChar> s, const FormatSpec &spec) {
   // Check if StrChar is convertible to Char.
   internal::CharTraits<Char>::convert(StrChar());
   if (spec.type_ && spec.type_ != 's')
     internal::report_unknown_type(spec.type_, "string");
-  const StrChar *str_value = s.value;
-  std::size_t str_size = s.size;
+  const StrChar *str_value = s.data();
+  std::size_t str_size = s.size();
   if (str_size == 0) {
     if (!str_value) {
       FMT_THROW(format_error("string pointer is null"));
