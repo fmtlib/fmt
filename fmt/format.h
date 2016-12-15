@@ -1012,6 +1012,7 @@ struct CustomValue {
 };
 
 // A formatting argument value.
+template <typename Char>
 struct Value {
   union {
     int int_value;
@@ -1039,7 +1040,7 @@ class basic_format_args;
 // A formatting argument. It is a trivially copyable/constructible type to
 // allow storage in internal::MemoryBuffer.
 template <typename Char>
-class basic_format_arg : public internal::Value {
+class basic_format_arg : public internal::Value<Char> {
  protected:
   internal::Type type_;
 
@@ -1539,8 +1540,10 @@ class format_arg_store {
   static const size_t NUM_ARGS = sizeof...(Args);
   static const bool IS_PACKED = NUM_ARGS <= internal::MAX_PACKED_ARGS;
 
-  typedef typename std::conditional<
-    IS_PACKED, internal::Value, format_arg>::type value_type;
+  typedef typename Context::char_type char_type;
+
+  typedef typename std::conditional<IS_PACKED,
+    internal::Value<char_type>, basic_format_arg<char_type>>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
   std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)> data_;
@@ -1583,7 +1586,7 @@ class basic_format_args {
     // This is done to reduce compiled code size as storing larger objects
     // may require more code (at least on x86-64) even if the same amount of
     // data is actually copied to stack. It saves ~10% on the bloat test.
-    const internal::Value *values_;
+    const internal::Value<Char> *values_;
     const format_arg *args_;
   };
 
@@ -1596,7 +1599,7 @@ class basic_format_args {
 
   friend class internal::ArgMap<Char>;
 
-  void set_data(const internal::Value *values) { values_ = values; }
+  void set_data(const internal::Value<Char> *values) { values_ = values; }
   void set_data(const format_arg *args) { args_ = args; }
 
   format_arg get(size_type index) const {
@@ -1604,7 +1607,7 @@ class basic_format_args {
     bool use_values = type(internal::MAX_PACKED_ARGS - 1) == internal::NONE;
     if (index < internal::MAX_PACKED_ARGS) {
       typename internal::Type arg_type = type(index);
-      internal::Value &val = arg;
+      internal::Value<Char> &val = arg;
       if (arg_type != internal::NONE)
         val = use_values ? values_[index] : args_[index];
       arg.type_ = arg_type;
