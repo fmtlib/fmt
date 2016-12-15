@@ -995,7 +995,7 @@ enum Type {
   INT, UINT, LONG_LONG, ULONG_LONG, BOOL, CHAR, LAST_INTEGER_TYPE = CHAR,
   // followed by floating-point types.
   DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
-  CSTRING, STRING, WSTRING, POINTER, CUSTOM
+  CSTRING, STRING, TSTRING, POINTER, CUSTOM
 };
 
 template <typename Char>
@@ -1025,7 +1025,7 @@ struct Value {
     StringValue<char> string;
     StringValue<signed char> sstring;
     StringValue<unsigned char> ustring;
-    StringValue<wchar_t> wstring; // TODO: Char
+    StringValue<Char> tstring;
     CustomValue custom;
   };
 };
@@ -1115,8 +1115,8 @@ typename std::result_of<Visitor(int)>::type
     return vis(arg.string.value);
   case internal::STRING:
     return vis(StringRef(arg.string.value, arg.string.size));
-  case internal::WSTRING:
-    return vis(WStringRef(arg.wstring.value, arg.wstring.size));
+  case internal::TSTRING:
+    return vis(BasicStringRef<Char>(arg.tstring.value, arg.tstring.size));
   case internal::POINTER:
     return vis(arg.pointer);
   case internal::CUSTOM:
@@ -1320,14 +1320,14 @@ template <> constexpr Type gettype<const unsigned char *>() {
 template <> constexpr Type gettype<std::string>() { return internal::STRING; }
 template <> constexpr Type gettype<StringRef>() { return internal::STRING; }
 template <> constexpr Type gettype<CStringRef>() { return internal::CSTRING; }
-template <> constexpr Type gettype<wchar_t *>() { return internal::WSTRING; }
+template <> constexpr Type gettype<wchar_t *>() { return internal::TSTRING; }
 template <> constexpr Type gettype<const wchar_t *>() {
-  return internal::WSTRING;
+  return internal::TSTRING;
 }
 template <> constexpr Type gettype<std::wstring>() {
-  return internal::WSTRING;
+  return internal::TSTRING;
 }
-template <> constexpr Type gettype<WStringRef>() { return internal::WSTRING; }
+template <> constexpr Type gettype<WStringRef>() { return internal::TSTRING; }
 template <> constexpr Type gettype<void *>() { return internal::POINTER; }
 template <> constexpr Type gettype<const void *>() {
   return internal::POINTER;
@@ -1371,8 +1371,8 @@ class MakeValue : public basic_format_arg<typename Context::char_type> {
   }
 
   void set_string(WStringRef str) {
-    this->wstring.value = str.data();
-    this->wstring.size = str.size();
+    this->tstring.value = str.data();
+    this->tstring.size = str.size();
   }
 
   // Formats an argument of a custom type, such as a user-defined class.
@@ -1457,10 +1457,10 @@ class MakeValue : public basic_format_arg<typename Context::char_type> {
     set_string(value); \
   }
 
-  FMT_MAKE_WSTR_VALUE(wchar_t *, WSTRING)
-  FMT_MAKE_WSTR_VALUE(const wchar_t *, WSTRING)
-  FMT_MAKE_WSTR_VALUE(const std::wstring &, WSTRING)
-  FMT_MAKE_WSTR_VALUE(WStringRef, WSTRING)
+  FMT_MAKE_WSTR_VALUE(wchar_t *, TSTRING)
+  FMT_MAKE_WSTR_VALUE(const wchar_t *, TSTRING)
+  FMT_MAKE_WSTR_VALUE(const std::wstring &, TSTRING)
+  FMT_MAKE_WSTR_VALUE(WStringRef, TSTRING)
 
   FMT_MAKE_VALUE(void *, pointer, POINTER)
   FMT_MAKE_VALUE(const void *, pointer, POINTER)
