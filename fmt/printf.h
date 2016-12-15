@@ -281,7 +281,7 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
   }
 
   /** Formats an argument of a custom (user-defined) type. */
-  void operator()(format_arg::CustomValue c) {
+  void operator()(internal::CustomValue c) {
     const Char format_str[] = {'}', '\0'};
     auto args = basic_format_args<basic_format_context<Char>, Char>();
     basic_format_context<Char> ctx(format_str, args);

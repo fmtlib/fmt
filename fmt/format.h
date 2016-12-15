@@ -989,22 +989,30 @@ FMT_API void format_windows_error(fmt::Writer &out, int error_code,
                                   fmt::StringRef message) FMT_NOEXCEPT;
 #endif
 
+enum Type {
+  NONE, NAMED_ARG,
+  // Integer types should go first,
+  INT, UINT, LONG_LONG, ULONG_LONG, BOOL, CHAR, LAST_INTEGER_TYPE = CHAR,
+  // followed by floating-point types.
+  DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
+  CSTRING, STRING, WSTRING, POINTER, CUSTOM
+};
+
+template <typename Char>
+struct StringValue {
+  const Char *value;
+  std::size_t size;
+};
+
+typedef void (*FormatFunc)(void *writer, const void *arg, void *ctx);
+
+struct CustomValue {
+  const void *value;
+  FormatFunc format;
+};
+
 // A formatting argument value.
 struct Value {
-  template <typename Char>
-  struct StringValue {
-    const Char *value;
-    std::size_t size;
-  };
-
-  typedef void (*FormatFunc)(
-      void *writer, const void *arg, void *ctx);
-
-  struct CustomValue {
-    const void *value;
-    FormatFunc format;
-  };
-
   union {
     int int_value;
     unsigned uint_value;
@@ -1018,15 +1026,6 @@ struct Value {
     StringValue<unsigned char> ustring;
     StringValue<wchar_t> wstring; // TODO: Char
     CustomValue custom;
-  };
-
-  enum Type {
-    NONE, NAMED_ARG,
-    // Integer types should go first,
-    INT, UINT, LONG_LONG, ULONG_LONG, BOOL, CHAR, LAST_INTEGER_TYPE = CHAR,
-    // followed by floating-point types.
-    DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
-    CSTRING, STRING, WSTRING, POINTER, CUSTOM
   };
 };
 
@@ -1042,7 +1041,7 @@ class basic_format_args;
 template <typename Char>
 class basic_format_arg : public internal::Value {
  protected:
-  Type type_;
+  internal::Type type_;
 
   template <typename Visitor, typename CharType>
   friend typename std::result_of<Visitor(int)>::type
@@ -1055,25 +1054,25 @@ class basic_format_arg : public internal::Value {
   friend class internal::ArgMap;
 
   void check_type() const {
-    FMT_ASSERT(type_ > NAMED_ARG, "invalid argument type");
+    FMT_ASSERT(type_ > internal::NAMED_ARG, "invalid argument type");
   }
 
  public:
-  explicit operator bool() const noexcept { return type_ != NONE; }
+  explicit operator bool() const noexcept { return type_ != internal::NONE; }
 
   bool is_integral() const {
     check_type();
-    return type_ <= LAST_INTEGER_TYPE;
+    return type_ <= internal::LAST_INTEGER_TYPE;
   }
 
   bool is_numeric() const {
     check_type();
-    return type_ <= LAST_NUMERIC_TYPE;
+    return type_ <= internal::LAST_NUMERIC_TYPE;
   }
 
   bool is_pointer() const {
     check_type();
-    return type_ == POINTER;
+    return type_ == internal::POINTER;
   }
 };
 
@@ -1091,35 +1090,35 @@ template <typename Visitor, typename Char>
 typename std::result_of<Visitor(int)>::type
     visit(Visitor &&vis, basic_format_arg<Char> arg) {
   switch (arg.type_) {
-  case format_arg::NONE:
-  case format_arg::NAMED_ARG:
+  case internal::NONE:
+  case internal::NAMED_ARG:
     FMT_ASSERT(false, "invalid argument type");
     break;
-  case format_arg::INT:
+  case internal::INT:
     return vis(arg.int_value);
-  case format_arg::UINT:
+  case internal::UINT:
     return vis(arg.uint_value);
-  case format_arg::LONG_LONG:
+  case internal::LONG_LONG:
     return vis(arg.long_long_value);
-  case format_arg::ULONG_LONG:
+  case internal::ULONG_LONG:
     return vis(arg.ulong_long_value);
-  case format_arg::BOOL:
+  case internal::BOOL:
     return vis(arg.int_value != 0);
-  case format_arg::CHAR:
+  case internal::CHAR:
     return vis(static_cast<Char>(arg.int_value));
-  case format_arg::DOUBLE:
+  case internal::DOUBLE:
     return vis(arg.double_value);
-  case format_arg::LONG_DOUBLE:
+  case internal::LONG_DOUBLE:
     return vis(arg.long_double_value);
-  case format_arg::CSTRING:
+  case internal::CSTRING:
     return vis(arg.string.value);
-  case format_arg::STRING:
+  case internal::STRING:
     return vis(StringRef(arg.string.value, arg.string.size));
-  case format_arg::WSTRING:
+  case internal::WSTRING:
     return vis(WStringRef(arg.wstring.value, arg.wstring.size));
-  case format_arg::POINTER:
+  case internal::POINTER:
     return vis(arg.pointer);
-  case format_arg::CUSTOM:
+  case internal::CUSTOM:
     return vis(arg.custom);
   }
   return typename std::result_of<Visitor(int)>::type();
@@ -1262,76 +1261,75 @@ struct IsNamedArg : std::false_type {};
 template <typename Char>
 struct IsNamedArg< NamedArg<Char> > : std::true_type {};
 
-typedef Value::Type Type;
-
 template <typename T>
 constexpr Type gettype() {
   typedef format_arg Arg;
   return IsNamedArg<T>::value ?
-        Arg::NAMED_ARG : (ConvertToInt<T>::value ? Arg::INT : Arg::CUSTOM);
+        internal::NAMED_ARG :
+        (ConvertToInt<T>::value ? internal::INT : internal::CUSTOM);
 }
 
-template <> constexpr Type gettype<bool>() { return format_arg::BOOL; }
-template <> constexpr Type gettype<short>() { return format_arg::INT; }
+template <> constexpr Type gettype<bool>() { return internal::BOOL; }
+template <> constexpr Type gettype<short>() { return internal::INT; }
 template <> constexpr Type gettype<unsigned short>() {
-  return format_arg::UINT;
+  return internal::UINT;
 }
-template <> constexpr Type gettype<int>() { return format_arg::INT; }
-template <> constexpr Type gettype<unsigned>() { return format_arg::UINT; }
+template <> constexpr Type gettype<int>() { return internal::INT; }
+template <> constexpr Type gettype<unsigned>() { return internal::UINT; }
 template <> constexpr Type gettype<long>() {
-  return sizeof(long) == sizeof(int) ? format_arg::INT : format_arg::LONG_LONG;
+  return sizeof(long) == sizeof(int) ? internal::INT : internal::LONG_LONG;
 }
 template <> constexpr Type gettype<unsigned long>() {
   return sizeof(unsigned long) == sizeof(unsigned) ?
-        format_arg::UINT : format_arg::ULONG_LONG;
+        internal::UINT : internal::ULONG_LONG;
 }
-template <> constexpr Type gettype<LongLong>() { return format_arg::LONG_LONG; }
+template <> constexpr Type gettype<LongLong>() { return internal::LONG_LONG; }
 template <> constexpr Type gettype<ULongLong>() {
-  return format_arg::ULONG_LONG;
+  return internal::ULONG_LONG;
 }
-template <> constexpr Type gettype<float>() { return format_arg::DOUBLE; }
-template <> constexpr Type gettype<double>() { return format_arg::DOUBLE; }
+template <> constexpr Type gettype<float>() { return internal::DOUBLE; }
+template <> constexpr Type gettype<double>() { return internal::DOUBLE; }
 template <> constexpr Type gettype<long double>() {
-  return format_arg::LONG_DOUBLE;
+  return internal::LONG_DOUBLE;
 }
-template <> constexpr Type gettype<signed char>() { return format_arg::INT; }
-template <> constexpr Type gettype<unsigned char>() { return format_arg::UINT; }
-template <> constexpr Type gettype<char>() { return format_arg::CHAR; }
+template <> constexpr Type gettype<signed char>() { return internal::INT; }
+template <> constexpr Type gettype<unsigned char>() { return internal::UINT; }
+template <> constexpr Type gettype<char>() { return internal::CHAR; }
 
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
-template <> constexpr Type gettype<wchar_t>() { return format_arg::CHAR; }
+template <> constexpr Type gettype<wchar_t>() { return internal::CHAR; }
 #endif
 
-template <> constexpr Type gettype<char *>() { return format_arg::CSTRING; }
+template <> constexpr Type gettype<char *>() { return internal::CSTRING; }
 template <> constexpr Type gettype<const char *>() {
-  return format_arg::CSTRING;
+  return internal::CSTRING;
 }
 template <> constexpr Type gettype<signed char *>() {
-  return format_arg::CSTRING;
+  return internal::CSTRING;
 }
 template <> constexpr Type gettype<const signed char *>() {
-  return format_arg::CSTRING;
+  return internal::CSTRING;
 }
 template <> constexpr Type gettype<unsigned char *>() {
-  return format_arg::CSTRING;
+  return internal::CSTRING;
 }
 template <> constexpr Type gettype<const unsigned char *>() {
-  return format_arg::CSTRING;
+  return internal::CSTRING;
 }
-template <> constexpr Type gettype<std::string>() { return format_arg::STRING; }
-template <> constexpr Type gettype<StringRef>() { return format_arg::STRING; }
-template <> constexpr Type gettype<CStringRef>() { return format_arg::CSTRING; }
-template <> constexpr Type gettype<wchar_t *>() { return format_arg::WSTRING; }
+template <> constexpr Type gettype<std::string>() { return internal::STRING; }
+template <> constexpr Type gettype<StringRef>() { return internal::STRING; }
+template <> constexpr Type gettype<CStringRef>() { return internal::CSTRING; }
+template <> constexpr Type gettype<wchar_t *>() { return internal::WSTRING; }
 template <> constexpr Type gettype<const wchar_t *>() {
-  return format_arg::WSTRING;
+  return internal::WSTRING;
 }
 template <> constexpr Type gettype<std::wstring>() {
-  return format_arg::WSTRING;
+  return internal::WSTRING;
 }
-template <> constexpr Type gettype<WStringRef>() { return format_arg::WSTRING; }
-template <> constexpr Type gettype<void *>() { return format_arg::POINTER; }
+template <> constexpr Type gettype<WStringRef>() { return internal::WSTRING; }
+template <> constexpr Type gettype<void *>() { return internal::POINTER; }
 template <> constexpr Type gettype<const void *>() {
-  return format_arg::POINTER;
+  return internal::POINTER;
 }
 
 template <typename T>
@@ -1390,7 +1388,7 @@ class MakeValue : public basic_format_arg<typename Context::char_type> {
 
 #define FMT_MAKE_VALUE_(Type, field, TYPE, rhs) \
   MakeValue(Type value) { \
-    static_assert(internal::type<Type>() == MakeValue::TYPE, "invalid type"); \
+    static_assert(internal::type<Type>() == internal::TYPE, "invalid type"); \
     this->field = rhs; \
   }
 
@@ -1431,14 +1429,14 @@ class MakeValue : public basic_format_arg<typename Context::char_type> {
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
   typedef typename WCharHelper<wchar_t, Char>::Supported WChar;
   MakeValue(WChar value) {
-    static_assert(internal::type<WChar>() == MakeValue::CHAR, "invalid type");
+    static_assert(internal::type<WChar>() == internal::CHAR, "invalid type");
     this->int_value = value;
   }
 #endif
 
 #define FMT_MAKE_STR_VALUE(Type, TYPE) \
   MakeValue(Type value) { \
-    static_assert(internal::type<Type>() == MakeValue::TYPE, "invalid type"); \
+    static_assert(internal::type<Type>() == internal::TYPE, "invalid type"); \
     set_string(value); \
   }
 
@@ -1454,7 +1452,7 @@ class MakeValue : public basic_format_arg<typename Context::char_type> {
 
 #define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
   MakeValue(typename WCharHelper<Type, Char>::Supported value) { \
-  static_assert(internal::type<Type>() == MakeValue::TYPE, "invalid type"); \
+  static_assert(internal::type<Type>() == internal::TYPE, "invalid type"); \
     set_string(value); \
   }
 
@@ -1470,7 +1468,7 @@ class MakeValue : public basic_format_arg<typename Context::char_type> {
   MakeValue(const T &value,
             typename EnableIf<Not<
               ConvertToInt<T>::value>::value, int>::type = 0) {
-    static_assert(internal::type<T>() == MakeValue::CUSTOM, "invalid type");
+    static_assert(internal::type<T>() == internal::CUSTOM, "invalid type");
     this->custom.value = &value;
     this->custom.format = &format_custom_arg<T>;
   }
@@ -1478,7 +1476,7 @@ class MakeValue : public basic_format_arg<typename Context::char_type> {
   template <typename T>
   MakeValue(const T &value,
             typename EnableIf<ConvertToInt<T>::value, int>::type = 0) {
-    static_assert(internal::type<T>() == MakeValue::INT, "invalid type");
+    static_assert(internal::type<T>() == internal::INT, "invalid type");
     this->int_value = value;
   }
 
@@ -1487,7 +1485,7 @@ class MakeValue : public basic_format_arg<typename Context::char_type> {
   template <typename Char_>
   MakeValue(const NamedArg<Char_> &value) {
     static_assert(
-      internal::type<const NamedArg<Char_> &>() == MakeValue::NAMED_ARG,
+      internal::type<const NamedArg<Char_> &>() == internal::NAMED_ARG,
       "invalid type");
     this->pointer = &value;
   }
@@ -1497,7 +1495,7 @@ template <typename Context>
   class MakeArg : public basic_format_arg<typename Context::char_type> {
 public:
   MakeArg() {
-    this->type_ = format_arg::NONE;
+    this->type_ = internal::NONE;
   }
 
   template <typename T>
@@ -1589,10 +1587,10 @@ class basic_format_args {
     const format_arg *args_;
   };
 
-  typename format_arg::Type type(unsigned index) const {
+  typename internal::Type type(unsigned index) const {
     unsigned shift = index * 4;
     uint64_t mask = 0xf;
-    return static_cast<typename format_arg::Type>(
+    return static_cast<typename internal::Type>(
       (types_ & (mask << shift)) >> shift);
   }
 
@@ -1603,11 +1601,11 @@ class basic_format_args {
 
   format_arg get(size_type index) const {
     format_arg arg;
-    bool use_values = type(internal::MAX_PACKED_ARGS - 1) == format_arg::NONE;
+    bool use_values = type(internal::MAX_PACKED_ARGS - 1) == internal::NONE;
     if (index < internal::MAX_PACKED_ARGS) {
-      typename format_arg::Type arg_type = type(index);
+      typename internal::Type arg_type = type(index);
       internal::Value &val = arg;
-      if (arg_type != format_arg::NONE)
+      if (arg_type != internal::NONE)
         val = use_values ? values_[index] : args_[index];
       arg.type_ = arg_type;
       return arg;
@@ -1615,11 +1613,11 @@ class basic_format_args {
     if (use_values) {
       // The index is greater than the number of arguments that can be stored
       // in values, so return a "none" argument.
-      arg.type_ = format_arg::NONE;
+      arg.type_ = internal::NONE;
       return arg;
     }
     for (unsigned i = internal::MAX_PACKED_ARGS; i <= index; ++i) {
-      if (args_[i].type_ == format_arg::NONE)
+      if (args_[i].type_ == internal::NONE)
         return args_[i];
     }
     return args_[index];
@@ -1637,7 +1635,7 @@ class basic_format_args {
   /** Returns the argument at specified index. */
   format_arg operator[](size_type index) const {
     format_arg arg = get(index);
-    return arg.type_ == format_arg::NAMED_ARG ?
+    return arg.type_ == internal::NAMED_ARG ?
       *static_cast<const format_arg*>(arg.pointer) : arg;
   }
 };
@@ -1901,14 +1899,14 @@ void ArgMap<Char>::init(const basic_format_args<Context, Char> &args) {
   typedef internal::NamedArg<Char> NamedArg;
   const NamedArg *named_arg = 0;
   bool use_values =
-  args.type(MAX_PACKED_ARGS - 1) == format_arg::NONE;
+  args.type(MAX_PACKED_ARGS - 1) == internal::NONE;
   if (use_values) {
     for (unsigned i = 0;/*nothing*/; ++i) {
-      format_arg::Type arg_type = args.type(i);
+      internal::Type arg_type = args.type(i);
       switch (arg_type) {
-        case format_arg::NONE:
+        case internal::NONE:
           return;
-        case format_arg::NAMED_ARG:
+        case internal::NAMED_ARG:
           named_arg = static_cast<const NamedArg*>(args.values_[i].pointer);
           map_.push_back(Pair(named_arg->name, *named_arg));
           break;
@@ -1919,17 +1917,17 @@ void ArgMap<Char>::init(const basic_format_args<Context, Char> &args) {
     return;
   }
   for (unsigned i = 0; i != MAX_PACKED_ARGS; ++i) {
-    format_arg::Type arg_type = args.type(i);
-    if (arg_type == format_arg::NAMED_ARG) {
+    internal::Type arg_type = args.type(i);
+    if (arg_type == internal::NAMED_ARG) {
       named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
       map_.push_back(Pair(named_arg->name, *named_arg));
     }
   }
   for (unsigned i = MAX_PACKED_ARGS; ; ++i) {
     switch (args.args_[i].type_) {
-      case format_arg::NONE:
+      case internal::NONE:
         return;
-      case format_arg::NAMED_ARG:
+      case internal::NAMED_ARG:
         named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
         map_.push_back(Pair(named_arg->name, *named_arg));
         break;
@@ -2136,7 +2134,7 @@ class ArgFormatter : public internal::ArgFormatterBase<Char> {
   using internal::ArgFormatterBase<Char>::operator();
 
   /** Formats an argument of a custom (user-defined) type. */
-  void operator()(format_arg::CustomValue c) {
+  void operator()(internal::CustomValue c) {
     c.format(&this->writer(), c.value, &ctx_);
   }
 };
@@ -3367,7 +3365,7 @@ class CustomFormatter {
   CustomFormatter(BasicWriter<Char> &writer, Context &ctx)
   : writer_(writer), ctx_(ctx) {}
 
-  bool operator()(format_arg::CustomValue custom) {
+  bool operator()(internal::CustomValue custom) {
     custom.format(&writer_, custom.value, &ctx_);
     return true;
   }

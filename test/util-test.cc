@@ -434,7 +434,7 @@ TEST(UtilTest, MakeValueWithCustomFormatter) {
 namespace fmt {
 namespace internal {
 
-bool operator==(Value::CustomValue lhs, Value::CustomValue rhs) {
+bool operator==(CustomValue lhs, CustomValue rhs) {
   return lhs.value == rhs.value;
 }
 }
@@ -564,10 +564,10 @@ TEST(UtilTest, PointerArg) {
 
 TEST(UtilTest, CustomArg) {
   ::Test test;
-  typedef MockVisitor<Value::CustomValue> Visitor;
+  typedef MockVisitor<fmt::internal::CustomValue> Visitor;
   testing::StrictMock<Visitor> visitor;
   EXPECT_CALL(visitor, visit(_)).WillOnce(
-        testing::Invoke([&](Value::CustomValue custom) {
+        testing::Invoke([&](fmt::internal::CustomValue custom) {
     EXPECT_EQ(&test, custom.value);
     fmt::MemoryWriter w;
     fmt::format_context ctx("}", fmt::format_args());
