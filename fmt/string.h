@@ -16,11 +16,14 @@ namespace fmt {
 
 namespace internal {
 
-// A buffer that stores data in ``std::string``.
-template <typename Char>
+// A buffer that stores data in ``std::basic_string``.
+template <typename Char, typename Allocator = std::allocator<Char> >
 class StringBuffer : public Buffer<Char> {
+ public:
+  typedef std::basic_string<Char, std::char_traits<Char>, Allocator> string_type;
+
  private:
-  std::basic_string<Char> data_;
+  string_type data_;
 
  protected:
   virtual void grow(std::size_t size) FMT_OVERRIDE {
@@ -30,8 +33,11 @@ class StringBuffer : public Buffer<Char> {
   }
 
  public:
+  explicit StringBuffer(const Allocator &allocator = Allocator())
+  : data_(allocator) {}
+
   // Moves the data to ``str`` clearing the buffer.
-  void move_to(std::basic_string<Char> &str) {
+  void move_to(string_type &str) {
     data_.resize(this->size_);
     str.swap(data_);
     this->capacity_ = this->size_ = 0;
@@ -43,8 +49,8 @@ class StringBuffer : public Buffer<Char> {
 /**
   \rst
   This class template provides operations for formatting and writing data
-  into a character stream. The output is stored in ``std::string`` that grows
-  dynamically.
+  into a character stream. The output is stored in ``std::basic_string``
+  that grows dynamically.
 
   You can use one of the following typedefs for common character types
   and the standard allocator:
@@ -68,13 +74,13 @@ class StringBuffer : public Buffer<Char> {
 
      The answer is 42
 
-  The output can be moved to an ``std::string`` with ``out.move_to()``.
+  The output can be moved to a ``std::basic_string`` with ``out.move_to()``.
   \endrst
  */
-template <typename Char>
+template <typename Char, typename Allocator = std::allocator<Char> >
 class BasicStringWriter : public BasicWriter<Char> {
  private:
-  internal::StringBuffer<Char> buffer_;
+  internal::StringBuffer<Char, Allocator> buffer_;
 
  public:
   /**
@@ -82,14 +88,15 @@ class BasicStringWriter : public BasicWriter<Char> {
     Constructs a :class:`fmt::BasicStringWriter` object.
     \endrst
    */
-  BasicStringWriter() : BasicWriter<Char>(buffer_) {}
+  explicit BasicStringWriter(const Allocator &allocator = Allocator())
+  : BasicWriter<Char>(buffer_), buffer_(allocator) {}
 
   /**
     \rst
     Moves the buffer content to *str* clearing the buffer.
     \endrst
    */
-  void move_to(std::basic_string<Char> &str) {
+  void move_to(std::basic_string<Char, std::char_traits<Char>, Allocator> &str) {
     buffer_.move_to(str);
   }
 };

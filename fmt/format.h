@@ -440,7 +440,8 @@ class BasicFormatter;
 
 /**
   \rst
-  A string reference. It can be constructed from a C string or ``std::string``.
+  A string reference. It can be constructed from a C string or
+  ``std::basic_string``.
 
   You can use one of the following typedefs for common character types:
 
@@ -483,19 +484,24 @@ class BasicStringRef {
 
   /**
     \rst
-    Constructs a string reference from an ``std::string`` object.
+    Constructs a string reference from a ``std::basic_string`` object.
     \endrst
    */
-  BasicStringRef(const std::basic_string<Char> &s)
+  template <typename Allocator>
+  BasicStringRef(
+      const std::basic_string<Char, std::char_traits<Char>, Allocator> &s)
   : data_(s.c_str()), size_(s.size()) {}
 
   /**
     \rst
-    Converts a string reference to an ``std::string`` object.
+    Converts a string reference to a ``std::basic_string`` object.
     \endrst
    */
-  std::basic_string<Char> to_string() const {
-    return std::basic_string<Char>(data_, size_);
+  template <typename Allocator = std::allocator<Char> >
+  std::basic_string<Char, std::char_traits<Char>, Allocator>
+  to_string(const Allocator &allocator = Allocator()) const {
+    return std::basic_string<Char, std::char_traits<Char>, Allocator>(
+               data_, size_, allocator);
   }
 
   /** Returns a pointer to the string data. */
@@ -539,7 +545,7 @@ typedef BasicStringRef<wchar_t> WStringRef;
 /**
   \rst
   A reference to a null terminated string. It can be constructed from a C
-  string or ``std::string``.
+  string or ``std::basic_string``.
 
   You can use one of the following typedefs for common character types:
 
@@ -572,10 +578,13 @@ class BasicCStringRef {
 
   /**
     \rst
-    Constructs a string reference from an ``std::string`` object.
+    Constructs a string reference from a ``std::basic_string`` object.
     \endrst
    */
-  BasicCStringRef(const std::basic_string<Char> &s) : data_(s.c_str()) {}
+  template <typename Allocator>
+  BasicCStringRef(
+      const std::basic_string<Char, std::char_traits<Char>, Allocator> &s)
+  : data_(s.c_str()) {}
 
   /** Returns the pointer to a C string. */
   const Char *c_str() const { return data_; }
@@ -2567,11 +2576,14 @@ class BasicWriter {
 
   /**
     \rst
-    Returns the content of the output buffer as an `std::string`.
+    Returns the content of the output buffer as a `std::basic_string`.
     \endrst
    */
-  std::basic_string<Char> str() const {
-    return std::basic_string<Char>(&buffer_[0], buffer_.size());
+  template <typename Allocator = std::allocator<Char> >
+  std::basic_string<Char, std::char_traits<Char>, Allocator> str(
+      const Allocator &allocator = Allocator()) const {
+    return std::basic_string<Char, std::char_traits<Char>, Allocator>(
+               &buffer_[0], buffer_.size(), allocator);
   }
 
   /**
