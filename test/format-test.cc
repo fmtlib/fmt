@@ -1577,10 +1577,11 @@ void print_error(const char *file, int line, const char *format,
 }
 #endif
 
-TEST(FormatTest, MaxArgs) {
-  EXPECT_EQ("0123456789abcde",
-            fmt::format("{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}",
-                        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e'));
+TEST(FormatTest, UnpackedArgs) {
+  EXPECT_EQ("0123456789abcdefg",
+            fmt::format("{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}",
+                        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e',
+                        'f', 'g'));
 }
 
 #if FMT_USE_USER_DEFINED_LITERALS

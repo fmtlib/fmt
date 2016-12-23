@@ -1538,7 +1538,7 @@ template <typename Context, typename ...Args>
 class format_arg_store {
  private:
   static const size_t NUM_ARGS = sizeof...(Args);
-  static const bool IS_PACKED = NUM_ARGS <= internal::MAX_PACKED_ARGS;
+  static const bool IS_PACKED = NUM_ARGS < internal::MAX_PACKED_ARGS;
 
   typedef typename Context::char_type char_type;
 
@@ -1552,7 +1552,7 @@ class format_arg_store {
   static const uint64_t TYPES = internal::make_type<Args..., void>();
 
   format_arg_store(const Args &... args)
-    : data_{{internal::MakeValue<Context>(args)...}} {}
+    : data_{{internal::MakeArg<Context>(args)...}} {}
 
   const value_type *data() const { return data_.data(); }
 };
