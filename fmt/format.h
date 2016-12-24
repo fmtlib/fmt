@@ -989,146 +989,27 @@ FMT_API void format_windows_error(fmt::Writer &out, int error_code,
                                   fmt::StringRef message) FMT_NOEXCEPT;
 #endif
 
-enum Type {
-  NONE, NAMED_ARG,
-  // Integer types should go first,
-  INT, UINT, LONG_LONG, ULONG_LONG, BOOL, CHAR, LAST_INTEGER_TYPE = CHAR,
-  // followed by floating-point types.
-  DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
-  CSTRING, STRING, TSTRING, POINTER, CUSTOM
-};
+template<bool B, class T = void>
+struct EnableIf {};
 
-template <typename Char>
-struct StringValue {
-  const Char *value;
-  std::size_t size;
-};
+template<class T>
+struct EnableIf<true, T> { typedef T type; };
 
-typedef void (*FormatFunc)(void *writer, const void *arg, void *ctx);
+template<bool B, class T, class F>
+struct Conditional { typedef T type; };
 
-struct CustomValue {
-  const void *value;
-  FormatFunc format;
-};
+template<class T, class F>
+struct Conditional<false, T, F> { typedef F type; };
 
-// A formatting argument value.
-template <typename Char>
-struct Value {
-  union {
-    int int_value;
-    unsigned uint_value;
-    LongLong long_long_value;
-    ULongLong ulong_long_value;
-    double double_value;
-    long double long_double_value;
-    const void *pointer;
-    StringValue<char> string;
-    StringValue<signed char> sstring;
-    StringValue<unsigned char> ustring;
-    StringValue<Char> tstring;
-    CustomValue custom;
-  };
-};
+// For bcc32 which doesn't understand ! in template arguments.
+template <bool>
+struct Not { enum { value = 0 }; };
 
-template <typename Char>
-class ArgMap;
-}  // namespace internal
+template <>
+struct Not<false> { enum { value = 1 }; };
 
-template <typename Context, typename Char>
-class basic_format_args;
-
-// A formatting argument. It is a trivially copyable/constructible type to
-// allow storage in internal::MemoryBuffer.
-template <typename Char>
-class basic_format_arg : public internal::Value<Char> {
- protected:
-  internal::Type type_;
-
-  template <typename Visitor, typename CharType>
-  friend typename std::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, basic_format_arg<CharType> arg);
-
-  template <typename Context, typename CharType>
-  friend class basic_format_args;
-
-  template <typename CharType>
-  friend class internal::ArgMap;
-
-  void check_type() const {
-    FMT_ASSERT(type_ > internal::NAMED_ARG, "invalid argument type");
-  }
-
- public:
-  explicit operator bool() const noexcept { return type_ != internal::NONE; }
-
-  bool is_integral() const {
-    check_type();
-    return type_ <= internal::LAST_INTEGER_TYPE;
-  }
-
-  bool is_numeric() const {
-    check_type();
-    return type_ <= internal::LAST_NUMERIC_TYPE;
-  }
-
-  bool is_pointer() const {
-    check_type();
-    return type_ == internal::POINTER;
-  }
-};
-
-typedef basic_format_arg<char> format_arg;
-typedef basic_format_arg<wchar_t> wformat_arg;
-
-/**
-  \rst
-  Visits an argument dispatching to the appropriate visit method based on
-  the argument type. For example, if the argument type is ``double`` then
-  ``vis(value)`` will be called with the value of type ``double``.
-  \endrst
- */
-template <typename Visitor, typename Char>
-typename std::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, basic_format_arg<Char> arg) {
-  switch (arg.type_) {
-  case internal::NONE:
-  case internal::NAMED_ARG:
-    FMT_ASSERT(false, "invalid argument type");
-    break;
-  case internal::INT:
-    return vis(arg.int_value);
-  case internal::UINT:
-    return vis(arg.uint_value);
-  case internal::LONG_LONG:
-    return vis(arg.long_long_value);
-  case internal::ULONG_LONG:
-    return vis(arg.ulong_long_value);
-  case internal::BOOL:
-    return vis(arg.int_value != 0);
-  case internal::CHAR:
-    return vis(static_cast<Char>(arg.int_value));
-  case internal::DOUBLE:
-    return vis(arg.double_value);
-  case internal::LONG_DOUBLE:
-    return vis(arg.long_double_value);
-  case internal::CSTRING:
-    return vis(arg.string.value);
-  case internal::STRING:
-    return vis(StringRef(arg.string.value, arg.string.size));
-  case internal::TSTRING:
-    return vis(BasicStringRef<Char>(arg.tstring.value, arg.tstring.size));
-  case internal::POINTER:
-    return vis(arg.pointer);
-  case internal::CUSTOM:
-    return vis(arg.custom);
-  }
-  return typename std::result_of<Visitor(int)>::type();
-}
-
-namespace internal {
-
-template <typename Char>
-struct NamedArg;
+template <typename T>
+struct False { enum { value = 0 }; };
 
 template <typename T = void>
 struct Null {};
@@ -1190,71 +1071,49 @@ FMT_DISABLE_CONVERSION_TO_INT(float);
 FMT_DISABLE_CONVERSION_TO_INT(double);
 FMT_DISABLE_CONVERSION_TO_INT(long double);
 
-template<bool B, class T = void>
-struct EnableIf {};
-
-template<class T>
-struct EnableIf<true, T> { typedef T type; };
-
-template<bool B, class T, class F>
-struct Conditional { typedef T type; };
-
-template<class T, class F>
-struct Conditional<false, T, F> { typedef F type; };
-
-// For bcc32 which doesn't understand ! in template arguments.
-template <bool>
-struct Not { enum { value = 0 }; };
-
-template <>
-struct Not<false> { enum { value = 1 }; };
-
-template <typename T>
-struct False { enum { value = 0 }; };
-
-template <typename T, T> struct LConvCheck {
-  LConvCheck(int) {}
+enum Type {
+  NONE, NAMED_ARG,
+  // Integer types should go first,
+  INT, UINT, LONG_LONG, ULONG_LONG, BOOL, CHAR, LAST_INTEGER_TYPE = CHAR,
+  // followed by floating-point types.
+  DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
+  CSTRING, STRING, TSTRING, POINTER, CUSTOM
 };
 
-// Returns the thousands separator for the current locale.
-// We check if ``lconv`` contains ``thousands_sep`` because on Android
-// ``lconv`` is stubbed as an empty struct.
-template <typename LConv>
-inline StringRef thousands_sep(
-    LConv *lc, LConvCheck<char *LConv::*, &LConv::thousands_sep> = 0) {
-  return lc->thousands_sep;
-}
+template <typename Char>
+struct StringValue {
+  const Char *value;
+  std::size_t size;
+};
 
-inline fmt::StringRef thousands_sep(...) { return ""; }
+typedef void (*FormatFunc)(void *writer, const void *arg, void *ctx);
 
-#define FMT_CONCAT(a, b) a##b
+struct CustomValue {
+  const void *value;
+  FormatFunc format;
+};
 
-#if FMT_GCC_VERSION >= 407
-# define FMT_UNUSED __attribute__((unused))
-#else
-# define FMT_UNUSED
-#endif
+// A formatting argument value.
+template <typename Char>
+struct Value {
+  union {
+    int int_value;
+    unsigned uint_value;
+    LongLong long_long_value;
+    ULongLong ulong_long_value;
+    double double_value;
+    long double long_double_value;
+    const void *pointer;
+    StringValue<char> string;
+    StringValue<signed char> sstring;
+    StringValue<unsigned char> ustring;
+    StringValue<Char> tstring;
+    CustomValue custom;
+  };
+};
 
-#ifndef FMT_USE_STATIC_ASSERT
-# define FMT_USE_STATIC_ASSERT 0
-#endif
-
-#if FMT_USE_STATIC_ASSERT || FMT_HAS_FEATURE(cxx_static_assert) || \
-  (FMT_GCC_VERSION >= 403 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1600
-# define FMT_STATIC_ASSERT(cond, message) static_assert(cond, message)
-#else
-# define FMT_CONCAT_(a, b) FMT_CONCAT(a, b)
-# define FMT_STATIC_ASSERT(cond, message) \
-  typedef int FMT_CONCAT_(Assert, __LINE__)[(cond) ? 1 : -1] FMT_UNUSED
-#endif
-
-template <typename Formatter, typename T, typename Char>
-void format_value(BasicWriter<Char> &, const T &, Formatter &, const Char *) {
-  FMT_STATIC_ASSERT(False<T>::value,
-                    "Cannot format argument. To enable the use of ostream "
-                    "operator<< include fmt/ostream.h. Otherwise provide "
-                    "an overload of format_arg.");
-}
+template <typename Char>
+struct NamedArg;
 
 template <typename T>
 struct IsNamedArg : std::false_type {};
@@ -1264,81 +1123,57 @@ struct IsNamedArg< NamedArg<Char> > : std::true_type {};
 
 template <typename T>
 constexpr Type gettype() {
-  typedef format_arg Arg;
   return IsNamedArg<T>::value ?
-        internal::NAMED_ARG :
-        (ConvertToInt<T>::value ? internal::INT : internal::CUSTOM);
+        NAMED_ARG : (ConvertToInt<T>::value ? INT : CUSTOM);
 }
 
-template <> constexpr Type gettype<bool>() { return internal::BOOL; }
-template <> constexpr Type gettype<short>() { return internal::INT; }
-template <> constexpr Type gettype<unsigned short>() {
-  return internal::UINT;
-}
-template <> constexpr Type gettype<int>() { return internal::INT; }
-template <> constexpr Type gettype<unsigned>() { return internal::UINT; }
+template <> constexpr Type gettype<bool>() { return BOOL; }
+template <> constexpr Type gettype<short>() { return INT; }
+template <> constexpr Type gettype<unsigned short>() { return UINT; }
+template <> constexpr Type gettype<int>() { return INT; }
+template <> constexpr Type gettype<unsigned>() { return UINT; }
 template <> constexpr Type gettype<long>() {
-  return sizeof(long) == sizeof(int) ? internal::INT : internal::LONG_LONG;
+  return sizeof(long) == sizeof(int) ? INT : LONG_LONG;
 }
 template <> constexpr Type gettype<unsigned long>() {
   return sizeof(unsigned long) == sizeof(unsigned) ?
-        internal::UINT : internal::ULONG_LONG;
+        UINT : ULONG_LONG;
 }
-template <> constexpr Type gettype<LongLong>() { return internal::LONG_LONG; }
-template <> constexpr Type gettype<ULongLong>() {
-  return internal::ULONG_LONG;
-}
-template <> constexpr Type gettype<float>() { return internal::DOUBLE; }
-template <> constexpr Type gettype<double>() { return internal::DOUBLE; }
-template <> constexpr Type gettype<long double>() {
-  return internal::LONG_DOUBLE;
-}
-template <> constexpr Type gettype<signed char>() { return internal::INT; }
-template <> constexpr Type gettype<unsigned char>() { return internal::UINT; }
-template <> constexpr Type gettype<char>() { return internal::CHAR; }
+template <> constexpr Type gettype<LongLong>() { return LONG_LONG; }
+template <> constexpr Type gettype<ULongLong>() { return ULONG_LONG; }
+template <> constexpr Type gettype<float>() { return DOUBLE; }
+template <> constexpr Type gettype<double>() { return DOUBLE; }
+template <> constexpr Type gettype<long double>() { return LONG_DOUBLE; }
+template <> constexpr Type gettype<signed char>() { return INT; }
+template <> constexpr Type gettype<unsigned char>() { return UINT; }
+template <> constexpr Type gettype<char>() { return CHAR; }
 
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
-template <> constexpr Type gettype<wchar_t>() { return internal::CHAR; }
+template <> constexpr Type gettype<wchar_t>() { return CHAR; }
 #endif
 
-template <> constexpr Type gettype<char *>() { return internal::CSTRING; }
-template <> constexpr Type gettype<const char *>() {
-  return internal::CSTRING;
-}
-template <> constexpr Type gettype<signed char *>() {
-  return internal::CSTRING;
-}
-template <> constexpr Type gettype<const signed char *>() {
-  return internal::CSTRING;
-}
-template <> constexpr Type gettype<unsigned char *>() {
-  return internal::CSTRING;
-}
-template <> constexpr Type gettype<const unsigned char *>() {
-  return internal::CSTRING;
-}
-template <> constexpr Type gettype<std::string>() { return internal::STRING; }
-template <> constexpr Type gettype<StringRef>() { return internal::STRING; }
-template <> constexpr Type gettype<CStringRef>() { return internal::CSTRING; }
-template <> constexpr Type gettype<wchar_t *>() { return internal::TSTRING; }
-template <> constexpr Type gettype<const wchar_t *>() {
-  return internal::TSTRING;
-}
-template <> constexpr Type gettype<std::wstring>() {
-  return internal::TSTRING;
-}
-template <> constexpr Type gettype<WStringRef>() { return internal::TSTRING; }
-template <> constexpr Type gettype<void *>() { return internal::POINTER; }
-template <> constexpr Type gettype<const void *>() {
-  return internal::POINTER;
-}
+template <> constexpr Type gettype<char *>() { return CSTRING; }
+template <> constexpr Type gettype<const char *>() { return CSTRING; }
+template <> constexpr Type gettype<signed char *>() { return CSTRING; }
+template <> constexpr Type gettype<const signed char *>() { return CSTRING; }
+template <> constexpr Type gettype<unsigned char *>() { return CSTRING; }
+template <> constexpr Type gettype<const unsigned char *>() { return CSTRING; }
+template <> constexpr Type gettype<std::string>() { return STRING; }
+template <> constexpr Type gettype<StringRef>() { return STRING; }
+template <> constexpr Type gettype<CStringRef>() { return CSTRING; }
+template <> constexpr Type gettype<wchar_t *>() { return TSTRING; }
+template <> constexpr Type gettype<const wchar_t *>() { return TSTRING; }
+template <> constexpr Type gettype<std::wstring>() { return TSTRING; }
+template <> constexpr Type gettype<WStringRef>() { return TSTRING; }
+template <> constexpr Type gettype<void *>() { return POINTER; }
+template <> constexpr Type gettype<const void *>() { return POINTER; }
 
 template <typename T>
 constexpr Type type() { return gettype<typename std::decay<T>::type>(); }
 
 // Makes a format_arg object from any type.
 template <typename Context>
-class MakeValue : public basic_format_arg<typename Context::char_type> {
+class MakeValue : public Value<typename Context::char_type> {
  public:
   typedef typename Context::char_type Char;
 
@@ -1492,19 +1327,164 @@ class MakeValue : public basic_format_arg<typename Context::char_type> {
   }
 };
 
+template <typename Char>
+class ArgMap;
+}  // namespace internal
+
+template <typename Context, typename Char>
+class basic_format_args;
+
+// A formatting argument. It is a trivially copyable/constructible type to
+// allow storage in internal::MemoryBuffer.
+template <typename Char>
+class basic_format_arg {
+ protected:
+  internal::Value<Char> value_;
+  internal::Type type_;
+
+  template <typename Visitor, typename CharType>
+  friend typename std::result_of<Visitor(int)>::type
+    visit(Visitor &&vis, basic_format_arg<CharType> arg);
+
+  template <typename Context, typename CharType>
+  friend class basic_format_args;
+
+  template <typename CharType>
+  friend class internal::ArgMap;
+
+  void check_type() const {
+    FMT_ASSERT(type_ > internal::NAMED_ARG, "invalid argument type");
+  }
+
+ public:
+  basic_format_arg() : type_(internal::NONE) {}
+
+  explicit operator bool() const noexcept { return type_ != internal::NONE; }
+
+  bool is_integral() const {
+    check_type();
+    return type_ <= internal::LAST_INTEGER_TYPE;
+  }
+
+  bool is_numeric() const {
+    check_type();
+    return type_ <= internal::LAST_NUMERIC_TYPE;
+  }
+
+  bool is_pointer() const {
+    check_type();
+    return type_ == internal::POINTER;
+  }
+};
+
+typedef basic_format_arg<char> format_arg;
+typedef basic_format_arg<wchar_t> wformat_arg;
+
+/**
+  \rst
+  Visits an argument dispatching to the appropriate visit method based on
+  the argument type. For example, if the argument type is ``double`` then
+  ``vis(value)`` will be called with the value of type ``double``.
+  \endrst
+ */
+template <typename Visitor, typename Char>
+typename std::result_of<Visitor(int)>::type
+    visit(Visitor &&vis, basic_format_arg<Char> arg) {
+  switch (arg.type_) {
+  case internal::NONE:
+  case internal::NAMED_ARG:
+    FMT_ASSERT(false, "invalid argument type");
+    break;
+  case internal::INT:
+    return vis(arg.value_.int_value);
+  case internal::UINT:
+    return vis(arg.value_.uint_value);
+  case internal::LONG_LONG:
+    return vis(arg.value_.long_long_value);
+  case internal::ULONG_LONG:
+    return vis(arg.value_.ulong_long_value);
+  case internal::BOOL:
+    return vis(arg.value_.int_value != 0);
+  case internal::CHAR:
+    return vis(static_cast<Char>(arg.value_.int_value));
+  case internal::DOUBLE:
+    return vis(arg.value_.double_value);
+  case internal::LONG_DOUBLE:
+    return vis(arg.value_.long_double_value);
+  case internal::CSTRING:
+    return vis(arg.value_.string.value);
+  case internal::STRING:
+    return vis(StringRef(arg.value_.string.value, arg.value_.string.size));
+  case internal::TSTRING:
+    return vis(BasicStringRef<Char>(
+                 arg.value_.tstring.value, arg.value_.tstring.size));
+  case internal::POINTER:
+    return vis(arg.value_.pointer);
+  case internal::CUSTOM:
+    return vis(arg.value_.custom);
+  }
+  return typename std::result_of<Visitor(int)>::type();
+}
+
+namespace internal {
+
 template <typename Context>
   class MakeArg : public basic_format_arg<typename Context::char_type> {
-public:
+ public:
   MakeArg() {
     this->type_ = internal::NONE;
   }
 
   template <typename T>
-  MakeArg(const T &value)
-  : basic_format_arg<typename Context::char_type>(MakeValue<Context>(value)) {
+  MakeArg(const T &value) {
+    this->value_ = internal::MakeValue<Context>(value);
     this->type_ = internal::type<T>();
   }
 };
+
+template <typename T, T> struct LConvCheck {
+  LConvCheck(int) {}
+};
+
+// Returns the thousands separator for the current locale.
+// We check if ``lconv`` contains ``thousands_sep`` because on Android
+// ``lconv`` is stubbed as an empty struct.
+template <typename LConv>
+inline StringRef thousands_sep(
+    LConv *lc, LConvCheck<char *LConv::*, &LConv::thousands_sep> = 0) {
+  return lc->thousands_sep;
+}
+
+inline fmt::StringRef thousands_sep(...) { return ""; }
+
+#define FMT_CONCAT(a, b) a##b
+
+#if FMT_GCC_VERSION >= 407
+# define FMT_UNUSED __attribute__((unused))
+#else
+# define FMT_UNUSED
+#endif
+
+#ifndef FMT_USE_STATIC_ASSERT
+# define FMT_USE_STATIC_ASSERT 0
+#endif
+
+#if FMT_USE_STATIC_ASSERT || FMT_HAS_FEATURE(cxx_static_assert) || \
+  (FMT_GCC_VERSION >= 403 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1600
+# define FMT_STATIC_ASSERT(cond, message) static_assert(cond, message)
+#else
+# define FMT_CONCAT_(a, b) FMT_CONCAT(a, b)
+# define FMT_STATIC_ASSERT(cond, message) \
+  typedef int FMT_CONCAT_(Assert, __LINE__)[(cond) ? 1 : -1] FMT_UNUSED
+#endif
+
+template <typename Formatter, typename T, typename Char>
+void format_value(BasicWriter<Char> &, const T &, Formatter &, const Char *) {
+  FMT_STATIC_ASSERT(False<T>::value,
+                    "Cannot format argument. To enable the use of ostream "
+                    "operator<< include fmt/ostream.h. Otherwise provide "
+                    "an overload of format_arg.");
+}
 
 template <typename Char>
 struct NamedArg : basic_format_arg<Char> {
@@ -1532,27 +1512,39 @@ constexpr uint64_t make_type<void>() { return 0; }
 
 // Maximum number of arguments with packed types.
 enum { MAX_PACKED_ARGS = 16 };
+
+template <bool PACKED, typename Context, typename T>
+inline typename std::enable_if<PACKED, Value<typename Context::char_type>>::type
+    make_arg(const T& value) {
+  return MakeValue<Context>(value);
+}
+
+template <bool PACKED, typename Context, typename T>
+inline typename std::enable_if<!PACKED, format_arg>::type
+    make_arg(const T& value) {
+  return MakeArg<Context>(value);
+}
 }  // namespace internal
 
 template <typename Context, typename ...Args>
 class format_arg_store {
  private:
   static const size_t NUM_ARGS = sizeof...(Args);
-  static const bool IS_PACKED = NUM_ARGS < internal::MAX_PACKED_ARGS;
+  static const bool PACKED = NUM_ARGS < internal::MAX_PACKED_ARGS;
 
   typedef typename Context::char_type char_type;
 
-  typedef typename std::conditional<IS_PACKED,
+  typedef typename std::conditional<PACKED,
     internal::Value<char_type>, basic_format_arg<char_type>>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
-  std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)> data_;
+  std::array<value_type, NUM_ARGS + (PACKED ? 0 : 1)> data_;
 
  public:
   static const uint64_t TYPES = internal::make_type<Args..., void>();
 
   format_arg_store(const Args &... args)
-    : data_{{internal::MakeArg<Context>(args)...}} {}
+    : data_{{internal::make_arg<PACKED, Context>(args)...}} {}
 
   const value_type *data() const { return data_.data(); }
 };
@@ -1607,9 +1599,9 @@ class basic_format_args {
     bool use_values = type(internal::MAX_PACKED_ARGS - 1) == internal::NONE;
     if (index < internal::MAX_PACKED_ARGS) {
       typename internal::Type arg_type = type(index);
-      internal::Value<Char> &val = arg;
+      internal::Value<Char> &val = arg.value_;
       if (arg_type != internal::NONE)
-        val = use_values ? values_[index] : args_[index];
+        val = use_values ? values_[index] : args_[index].value_;
       arg.type_ = arg_type;
       return arg;
     }
@@ -1639,7 +1631,7 @@ class basic_format_args {
   format_arg operator[](size_type index) const {
     format_arg arg = get(index);
     return arg.type_ == internal::NAMED_ARG ?
-      *static_cast<const format_arg*>(arg.pointer) : arg;
+      *static_cast<const format_arg*>(arg.value_.pointer) : arg;
   }
 };
 
@@ -1922,7 +1914,7 @@ void ArgMap<Char>::init(const basic_format_args<Context, Char> &args) {
   for (unsigned i = 0; i != MAX_PACKED_ARGS; ++i) {
     internal::Type arg_type = args.type(i);
     if (arg_type == internal::NAMED_ARG) {
-      named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
+      named_arg = static_cast<const NamedArg*>(args.args_[i].value_.pointer);
       map_.push_back(Pair(named_arg->name, *named_arg));
     }
   }
@@ -1931,7 +1923,7 @@ void ArgMap<Char>::init(const basic_format_args<Context, Char> &args) {
       case internal::NONE:
         return;
       case internal::NAMED_ARG:
-        named_arg = static_cast<const NamedArg*>(args.args_[i].pointer);
+        named_arg = static_cast<const NamedArg*>(args.args_[i].value_.pointer);
         map_.push_back(Pair(named_arg->name, *named_arg));
         break;
       default:
@@ -3497,7 +3489,7 @@ void do_format_arg(BasicWriter<Char> &writer, const basic_format_arg<Char> &arg,
             spec.fill_ = c;
           } else ++s;
           if (spec.align_ == ALIGN_NUMERIC)
-            require_numeric_argument(arg, '=');
+            internal::require_numeric_argument(arg, '=');
           break;
         }
       } while (--p >= s);
@@ -3506,28 +3498,28 @@ void do_format_arg(BasicWriter<Char> &writer, const basic_format_arg<Char> &arg,
     // Parse sign.
     switch (*s) {
       case '+':
-        check_sign(s, arg);
+        internal::check_sign(s, arg);
         spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
         break;
       case '-':
-        check_sign(s, arg);
+        internal::check_sign(s, arg);
         spec.flags_ |= MINUS_FLAG;
         break;
       case ' ':
-        check_sign(s, arg);
+        internal::check_sign(s, arg);
         spec.flags_ |= SIGN_FLAG;
         break;
     }
 
     if (*s == '#') {
-      require_numeric_argument(arg, '#');
+      internal::require_numeric_argument(arg, '#');
       spec.flags_ |= HASH_FLAG;
       ++s;
     }
 
     // Parse zero flag.
     if (*s == '0') {
-      require_numeric_argument(arg, '0');
+      internal::require_numeric_argument(arg, '0');
       spec.align_ = ALIGN_NUMERIC;
       spec.fill_ = '0';
       ++s;

@@ -424,7 +424,7 @@ void format_value(fmt::Writer &, const Test &, CustomFormatter &ctx) {
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
-  format_arg arg = fmt::internal::MakeValue<CustomFormatter>(t);
+  fmt::internal::Value<char> arg = fmt::internal::MakeValue<CustomFormatter>(t);
   CustomFormatter ctx = {false};
   fmt::MemoryWriter w;
   arg.custom.format(&w, &t, &ctx);
