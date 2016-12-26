@@ -1513,15 +1513,16 @@ constexpr uint64_t make_type<void>() { return 0; }
 // Maximum number of arguments with packed types.
 enum { MAX_PACKED_ARGS = 16 };
 
-template <bool PACKED, typename Context, typename T>
-inline typename std::enable_if<PACKED, Value<typename Context::char_type>>::type
+template <bool IS_PACKED, typename Context, typename T>
+inline typename std::enable_if<
+  IS_PACKED, Value<typename Context::char_type>>::type
     make_arg(const T& value) {
   return MakeValue<Context>(value);
 }
 
-template <bool PACKED, typename Context, typename T>
+template <bool IS_PACKED, typename Context, typename T>
 inline typename std::enable_if<
-  !PACKED, basic_format_arg<typename Context::char_type>>::type
+  !IS_PACKED, basic_format_arg<typename Context::char_type>>::type
     make_arg(const T& value) {
   return MakeArg<Context>(value);
 }
@@ -1531,22 +1532,24 @@ template <typename Context, typename ...Args>
 class format_arg_store {
  private:
   static const size_t NUM_ARGS = sizeof...(Args);
-  static const bool PACKED = NUM_ARGS < internal::MAX_PACKED_ARGS;
+
+  // Packed is a macro on MinGW so use IS_PACKED instead.
+  static const bool IS_PACKED = NUM_ARGS < internal::MAX_PACKED_ARGS;
 
   typedef typename Context::char_type char_type;
 
-  typedef typename std::conditional<PACKED,
+  typedef typename std::conditional<IS_PACKED,
     internal::Value<char_type>, basic_format_arg<char_type>>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
-  typedef std::array<value_type, NUM_ARGS + (PACKED ? 0 : 1)> Array;
+  typedef std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)> Array;
   Array data_;
 
  public:
   static const uint64_t TYPES = internal::make_type<Args..., void>();
 
   format_arg_store(const Args &... args)
-    : data_(Array{internal::make_arg<PACKED, Context>(args)...}) {}
+    : data_(Array{internal::make_arg<IS_PACKED, Context>(args)...}) {}
 
   const value_type *data() const { return data_.data(); }
 };
