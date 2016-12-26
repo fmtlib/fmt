@@ -440,7 +440,8 @@ class BasicFormatter;
 
 /**
   \rst
-  A string reference. It can be constructed from a C string or ``std::string``.
+  A string reference. It can be constructed from a C string or
+  ``std::basic_string``.
 
   You can use one of the following typedefs for common character types:
 
@@ -483,10 +484,12 @@ class BasicStringRef {
 
   /**
     \rst
-    Constructs a string reference from an ``std::string`` object.
+    Constructs a string reference from a ``std::basic_string`` object.
     \endrst
    */
-  BasicStringRef(const std::basic_string<Char> &s)
+  template <typename Allocator>
+  BasicStringRef(
+      const std::basic_string<Char, std::char_traits<Char>, Allocator> &s)
   : data_(s.c_str()), size_(s.size()) {}
 
   /**
@@ -539,7 +542,7 @@ typedef BasicStringRef<wchar_t> WStringRef;
 /**
   \rst
   A reference to a null terminated string. It can be constructed from a C
-  string or ``std::string``.
+  string or ``std::basic_string``.
 
   You can use one of the following typedefs for common character types:
 
@@ -572,10 +575,13 @@ class BasicCStringRef {
 
   /**
     \rst
-    Constructs a string reference from an ``std::string`` object.
+    Constructs a string reference from a ``std::basic_string`` object.
     \endrst
    */
-  BasicCStringRef(const std::basic_string<Char> &s) : data_(s.c_str()) {}
+  template <typename Allocator>
+  BasicCStringRef(
+      const std::basic_string<Char, std::char_traits<Char>, Allocator> &s)
+  : data_(s.c_str()) {}
 
   /** Returns the pointer to a C string. */
   const Char *c_str() const { return data_; }
