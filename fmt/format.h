@@ -494,14 +494,11 @@ class BasicStringRef {
 
   /**
     \rst
-    Converts a string reference to a ``std::basic_string`` object.
+    Converts a string reference to an ``std::string`` object.
     \endrst
    */
-  template <typename Allocator = std::allocator<Char> >
-  std::basic_string<Char, std::char_traits<Char>, Allocator>
-  to_string(const Allocator &allocator = Allocator()) const {
-    return std::basic_string<Char, std::char_traits<Char>, Allocator>(
-               data_, size_, allocator);
+  std::basic_string<Char> to_string() const {
+    return std::basic_string<Char>(data_, size_);
   }
 
   /** Returns a pointer to the string data. */
@@ -2576,14 +2573,11 @@ class BasicWriter {
 
   /**
     \rst
-    Returns the content of the output buffer as a `std::basic_string`.
+    Returns the content of the output buffer as an `std::string`.
     \endrst
    */
-  template <typename Allocator = std::allocator<Char> >
-  std::basic_string<Char, std::char_traits<Char>, Allocator> str(
-      const Allocator &allocator = Allocator()) const {
-    return std::basic_string<Char, std::char_traits<Char>, Allocator>(
-               &buffer_[0], buffer_.size(), allocator);
+  std::basic_string<Char> str() const {
+    return std::basic_string<Char>(&buffer_[0], buffer_.size());
   }
 
   /**

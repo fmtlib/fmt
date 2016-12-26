@@ -20,10 +20,10 @@ namespace internal {
 template <typename Char, typename Allocator = std::allocator<Char> >
 class StringBuffer : public Buffer<Char> {
  public:
-  typedef std::basic_string<Char, std::char_traits<Char>, Allocator> string_type;
+  typedef std::basic_string<Char, std::char_traits<Char>, Allocator> StringType;
 
  private:
-  string_type data_;
+  StringType data_;
 
  protected:
   virtual void grow(std::size_t size) FMT_OVERRIDE {
@@ -37,7 +37,7 @@ class StringBuffer : public Buffer<Char> {
   : data_(allocator) {}
 
   // Moves the data to ``str`` clearing the buffer.
-  void move_to(string_type &str) {
+  void move_to(StringType &str) {
     data_.resize(this->size_);
     str.swap(data_);
     this->capacity_ = this->size_ = 0;
@@ -49,7 +49,7 @@ class StringBuffer : public Buffer<Char> {
 /**
   \rst
   This class template provides operations for formatting and writing data
-  into a character stream. The output is stored in ``std::basic_string``
+  into a character stream. The output is stored in a ``std::basic_string``
   that grows dynamically.
 
   You can use one of the following typedefs for common character types
