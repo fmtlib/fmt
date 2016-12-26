@@ -1520,7 +1520,8 @@ inline typename std::enable_if<PACKED, Value<typename Context::char_type>>::type
 }
 
 template <bool PACKED, typename Context, typename T>
-inline typename std::enable_if<!PACKED, format_arg>::type
+inline typename std::enable_if<
+  !PACKED, basic_format_arg<typename Context::char_type>>::type
     make_arg(const T& value) {
   return MakeArg<Context>(value);
 }
@@ -1538,13 +1539,14 @@ class format_arg_store {
     internal::Value<char_type>, basic_format_arg<char_type>>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
-  std::array<value_type, NUM_ARGS + (PACKED ? 0 : 1)> data_;
+  typedef std::array<value_type, NUM_ARGS + (PACKED ? 0 : 1)> Array;
+  Array data_;
 
  public:
   static const uint64_t TYPES = internal::make_type<Args..., void>();
 
   format_arg_store(const Args &... args)
-    : data_{{internal::make_arg<PACKED, Context>(args)...}} {}
+    : data_(Array{internal::make_arg<PACKED, Context>(args)...}) {}
 
   const value_type *data() const { return data_.data(); }
 };
