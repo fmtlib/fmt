@@ -579,8 +579,11 @@ TEST(UtilTest, CustomArg) {
 }
 
 TEST(ArgVisitorTest, VisitInvalidArg) {
-  format_arg arg = format_arg();
-  EXPECT_ASSERT(visit(MockVisitor<int>(), arg), "invalid argument type");
+  typedef MockVisitor<fmt::monostate> Visitor;
+  testing::StrictMock<Visitor> visitor;
+  EXPECT_CALL(visitor, visit(_));
+  format_arg arg;
+  visit(visitor, arg);
 }
 
 // Tests fmt::internal::count_digits for integer type Int.

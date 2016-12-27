@@ -1331,6 +1331,8 @@ template <typename Char>
 class ArgMap;
 }  // namespace internal
 
+struct monostate {};
+
 template <typename Context, typename Char>
 class basic_format_args;
 
@@ -1352,27 +1354,22 @@ class basic_format_arg {
   template <typename CharType>
   friend class internal::ArgMap;
 
-  void check_type() const {
-    FMT_ASSERT(type_ > internal::NAMED_ARG, "invalid argument type");
-  }
-
  public:
   basic_format_arg() : type_(internal::NONE) {}
 
   explicit operator bool() const noexcept { return type_ != internal::NONE; }
 
   bool is_integral() const {
-    check_type();
-    return type_ <= internal::LAST_INTEGER_TYPE;
+    FMT_ASSERT(type_ != internal::NAMED_ARG, "invalid argument type");
+    return type_ > internal::NONE && type_ <= internal::LAST_INTEGER_TYPE;
   }
 
   bool is_numeric() const {
-    check_type();
-    return type_ <= internal::LAST_NUMERIC_TYPE;
+    FMT_ASSERT(type_ != internal::NAMED_ARG, "invalid argument type");
+    return type_ > internal::NONE && type_ <= internal::LAST_NUMERIC_TYPE;
   }
 
   bool is_pointer() const {
-    check_type();
     return type_ == internal::POINTER;
   }
 };
@@ -1392,6 +1389,7 @@ typename std::result_of<Visitor(int)>::type
     visit(Visitor &&vis, basic_format_arg<Char> arg) {
   switch (arg.type_) {
   case internal::NONE:
+    return vis(monostate());
   case internal::NAMED_ARG:
     FMT_ASSERT(false, "invalid argument type");
     break;
@@ -1985,6 +1983,10 @@ class ArgFormatterBase {
 
   ArgFormatterBase(BasicWriter<Char> &w, FormatSpec &s)
   : writer_(w), spec_(s) {}
+
+  void operator()(monostate) {
+    FMT_ASSERT(false, "invalid argument type");
+  }
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value>::type
