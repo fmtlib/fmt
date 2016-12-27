@@ -105,11 +105,11 @@ class ArgConverter {
     if (sizeof(TargetType) <= sizeof(int)) {
       // Extra casts are used to silence warnings.
       if (is_signed) {
-        arg_ = internal::MakeArg<format_context>(
+        arg_ = internal::make_arg<format_context>(
           static_cast<int>(static_cast<TargetType>(value)));
       } else {
         typedef typename internal::MakeUnsigned<TargetType>::Type Unsigned;
-        arg_ = internal::MakeArg<format_context>(
+        arg_ = internal::make_arg<format_context>(
           static_cast<unsigned>(static_cast<Unsigned>(value)));
       }
     } else {
@@ -117,10 +117,10 @@ class ArgConverter {
         // glibc's printf doesn't sign extend arguments of smaller types:
         //   std::printf("%lld", -42);  // prints "4294967254"
         // but we don't have to do the same because it's a UB.
-        arg_ = internal::MakeArg<format_context>(
+        arg_ = internal::make_arg<format_context>(
           static_cast<LongLong>(value));
       } else {
-        arg_ = internal::MakeArg<format_context>(
+        arg_ = internal::make_arg<format_context>(
           static_cast<typename internal::MakeUnsigned<U>::Type>(value));
       }
     }
@@ -157,7 +157,7 @@ class CharConverter {
   typename std::enable_if<std::is_integral<T>::value>::type
       operator()(T value) {
     arg_ =
-      internal::MakeArg<basic_format_context<Char>>(static_cast<char>(value));
+      internal::make_arg<basic_format_context<Char>>(static_cast<char>(value));
   }
 
   template <typename T>

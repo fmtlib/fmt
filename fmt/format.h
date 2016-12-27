@@ -372,6 +372,9 @@ typedef BasicWriter<char> Writer;
 typedef BasicWriter<wchar_t> WWriter;
 
 template <typename Char>
+class basic_format_arg;
+
+template <typename Char>
 class ArgFormatter;
 
 template <typename Char>
@@ -1329,6 +1332,9 @@ class MakeValue : public Value<typename Context::char_type> {
 
 template <typename Char>
 class ArgMap;
+
+template <typename Context, typename T>
+basic_format_arg<typename Context::char_type> make_arg(const T &value);
 }  // namespace internal
 
 struct monostate {};
@@ -1340,9 +1346,13 @@ class basic_format_args;
 // allow storage in internal::MemoryBuffer.
 template <typename Char>
 class basic_format_arg {
- protected:
+ private:
   internal::Value<Char> value_;
   internal::Type type_;
+
+  template <typename Context, typename T>
+  friend basic_format_arg<typename Context::char_type>
+    internal::make_arg(const T &value);
 
   template <typename Visitor, typename CharType>
   friend typename std::result_of<Visitor(int)>::type
@@ -1426,19 +1436,13 @@ typename std::result_of<Visitor(int)>::type
 
 namespace internal {
 
-template <typename Context>
-  class MakeArg : public basic_format_arg<typename Context::char_type> {
- public:
-  MakeArg() {
-    this->type_ = internal::NONE;
-  }
-
-  template <typename T>
-  MakeArg(const T &value) {
-    this->value_ = internal::MakeValue<Context>(value);
-    this->type_ = internal::type<T>();
-  }
-};
+template <typename Context, typename T>
+basic_format_arg<typename Context::char_type> make_arg(const T &value) {
+  basic_format_arg<typename Context::char_type> arg;
+  arg.type_ = internal::type<T>();
+  arg.value_ = internal::MakeValue<Context>(value);
+  return arg;
+}
 
 template <typename T, T> struct LConvCheck {
   LConvCheck(int) {}
@@ -1490,7 +1494,7 @@ struct NamedArg : basic_format_arg<Char> {
 
   template <typename T>
   NamedArg(BasicStringRef<Char> argname, const T &value)
-  : basic_format_arg<Char>(MakeArg< basic_format_context<Char> >(value)),
+  : basic_format_arg<Char>(make_arg< basic_format_context<Char> >(value)),
     name(argname) {}
 };
 
@@ -1522,7 +1526,7 @@ template <bool IS_PACKED, typename Context, typename T>
 inline typename std::enable_if<
   !IS_PACKED, basic_format_arg<typename Context::char_type>>::type
     make_arg(const T& value) {
-  return MakeArg<Context>(value);
+  return make_arg<Context>(value);
 }
 }  // namespace internal
 

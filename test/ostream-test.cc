@@ -69,7 +69,7 @@ TEST(OStreamTest, CustomArg) {
   fmt::format_context ctx("}", fmt::format_args());
   fmt::FormatSpec spec;
   TestArgFormatter af(writer, ctx, spec);
-  visit(af, fmt::internal::MakeArg<fmt::format_context>(TestEnum()));
+  visit(af, fmt::internal::make_arg<fmt::format_context>(TestEnum()));
   EXPECT_EQ("TestEnum", writer.str());
 }
 

@@ -75,8 +75,7 @@ void format_value(fmt::BasicWriter<Char> &w, Test,
 
 template <typename Char, typename T>
 basic_format_arg<Char> make_arg(const T &value) {
-  typedef fmt::internal::MakeArg< fmt::basic_format_context<Char> > MakeArg;
-  return MakeArg(value);
+  return fmt::internal::make_arg< fmt::basic_format_context<Char> >(value);
 }
 }  // namespace
 

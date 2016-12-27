@@ -57,7 +57,7 @@ struct ValueExtractor {
 TEST(FormatTest, ArgConverter) {
   using fmt::format_arg;
   fmt::LongLong value = std::numeric_limits<fmt::LongLong>::max();
-  format_arg arg = fmt::internal::MakeArg<fmt::format_context>(value);
+  format_arg arg = fmt::internal::make_arg<fmt::format_context>(value);
   visit(fmt::internal::ArgConverter<fmt::LongLong, char>(arg, 'd'), arg);
   EXPECT_EQ(value, visit(ValueExtractor<fmt::LongLong>(), arg));
 }
