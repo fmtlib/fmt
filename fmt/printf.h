@@ -281,11 +281,11 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
   }
 
   /** Formats an argument of a custom (user-defined) type. */
-  void operator()(internal::CustomValue c) {
+  void operator()(internal::CustomValue<Char> c) {
     const Char format_str[] = {'}', '\0'};
     auto args = basic_format_args<basic_format_context<Char>, Char>();
     basic_format_context<Char> ctx(format_str, args);
-    c.format(&this->writer(), c.value, &ctx);
+    c.format(this->writer(), c.value, &ctx);
   }
 };
 

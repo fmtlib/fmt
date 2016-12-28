@@ -1089,9 +1089,11 @@ struct StringValue {
   std::size_t size;
 };
 
-typedef void (*FormatFunc)(void *writer, const void *arg, void *ctx);
-
+template <typename Char>
 struct CustomValue {
+  typedef void (*FormatFunc)(
+      BasicWriter<Char> &writer, const void *arg, void *ctx);
+
   const void *value;
   FormatFunc format;
 };
@@ -1111,7 +1113,7 @@ struct Value {
     StringValue<signed char> sstring;
     StringValue<unsigned char> ustring;
     StringValue<Char> tstring;
-    CustomValue custom;
+    CustomValue<Char> custom;
   };
 };
 
@@ -1216,9 +1218,8 @@ class MakeValue : public Value<typename Context::char_type> {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   static void format_custom_arg(
-      void *writer, const void *arg, void *context) {
-    format_value(*static_cast<BasicWriter<Char>*>(writer),
-                 *static_cast<const T*>(arg),
+      BasicWriter<Char> &writer, const void *arg, void *context) {
+    format_value(writer, *static_cast<const T*>(arg),
                  *static_cast<Context*>(context));
   }
 
@@ -2140,8 +2141,8 @@ class ArgFormatter : public internal::ArgFormatterBase<Char> {
   using internal::ArgFormatterBase<Char>::operator();
 
   /** Formats an argument of a custom (user-defined) type. */
-  void operator()(internal::CustomValue c) {
-    c.format(&this->writer(), c.value, &ctx_);
+  void operator()(internal::CustomValue<Char> c) {
+    c.format(this->writer(), c.value, &ctx_);
   }
 };
 
@@ -3371,8 +3372,8 @@ class CustomFormatter {
   CustomFormatter(BasicWriter<Char> &writer, Context &ctx)
   : writer_(writer), ctx_(ctx) {}
 
-  bool operator()(internal::CustomValue custom) {
-    custom.format(&writer_, custom.value, &ctx_);
+  bool operator()(internal::CustomValue<Char> custom) {
+    custom.format(writer_, custom.value, &ctx_);
     return true;
   }
 

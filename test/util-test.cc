@@ -426,14 +426,15 @@ TEST(UtilTest, MakeValueWithCustomFormatter) {
   fmt::internal::Value<char> arg = fmt::internal::MakeValue<CustomFormatter>(t);
   CustomFormatter ctx = {false};
   fmt::MemoryWriter w;
-  arg.custom.format(&w, &t, &ctx);
+  arg.custom.format(w, &t, &ctx);
   EXPECT_TRUE(ctx.called);
 }
 
 namespace fmt {
 namespace internal {
 
-bool operator==(CustomValue lhs, CustomValue rhs) {
+template <typename Char>
+bool operator==(CustomValue<Char> lhs, CustomValue<Char> rhs) {
   return lhs.value == rhs.value;
 }
 }
@@ -563,14 +564,14 @@ TEST(UtilTest, PointerArg) {
 
 TEST(UtilTest, CustomArg) {
   ::Test test;
-  typedef MockVisitor<fmt::internal::CustomValue> Visitor;
+  typedef MockVisitor<fmt::internal::CustomValue<char>> Visitor;
   testing::StrictMock<Visitor> visitor;
   EXPECT_CALL(visitor, visit(_)).WillOnce(
-        testing::Invoke([&](fmt::internal::CustomValue custom) {
+        testing::Invoke([&](fmt::internal::CustomValue<char> custom) {
     EXPECT_EQ(&test, custom.value);
     fmt::MemoryWriter w;
     fmt::format_context ctx("}", fmt::format_args());
-    custom.format(&w, &test, &ctx);
+    custom.format(w, &test, &ctx);
     EXPECT_EQ("test", w.str());
     return Visitor::Result();
   }));
