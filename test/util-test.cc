@@ -73,9 +73,9 @@ void format_value(fmt::BasicWriter<Char> &w, Test,
   w << "test";
 }
 
-template <typename Char, typename T>
-basic_format_arg<Char> make_arg(const T &value) {
-  return fmt::internal::make_arg< fmt::basic_format_context<Char> >(value);
+template <typename Context, typename T>
+basic_format_arg<Context> make_arg(const T &value) {
+  return fmt::internal::make_arg<Context>(value);
 }
 }  // namespace
 
@@ -487,7 +487,7 @@ VISIT_TYPE(float, double);
 #define CHECK_ARG_(Char, expected, value) { \
   testing::StrictMock<MockVisitor<decltype(expected)>> visitor; \
   EXPECT_CALL(visitor, visit(expected)); \
-  fmt::visit(visitor, make_arg<Char>(value)); \
+  fmt::visit(visitor, make_arg<fmt::basic_format_context<Char>>(value)); \
 }
 
 #define CHECK_ARG(value) { \
@@ -575,7 +575,7 @@ TEST(UtilTest, CustomArg) {
     EXPECT_EQ("test", w.str());
     return Visitor::Result();
   }));
-  fmt::visit(visitor, make_arg<char>(test));
+  fmt::visit(visitor, make_arg<fmt::format_context>(test));
 }
 
 TEST(ArgVisitorTest, VisitInvalidArg) {

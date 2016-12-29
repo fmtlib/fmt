@@ -80,14 +80,16 @@ struct is_same<T, T> {
   enum { value = 1 };
 };
 
-template <typename T, typename Char>
+template <typename T, typename Context>
 class ArgConverter {
  private:
-  basic_format_arg<Char> &arg_;
-  Char type_;
+  typedef typename Context::char_type Char;
+
+  basic_format_arg<Context> &arg_;
+  typename Context::char_type type_;
 
  public:
-  ArgConverter(basic_format_arg<Char> &arg, Char type)
+  ArgConverter(basic_format_arg<Context> &arg, Char type)
     : arg_(arg), type_(type) {}
 
   void operator()(bool value) {
@@ -105,11 +107,11 @@ class ArgConverter {
     if (sizeof(TargetType) <= sizeof(int)) {
       // Extra casts are used to silence warnings.
       if (is_signed) {
-        arg_ = internal::make_arg<format_context>(
+        arg_ = internal::make_arg<Context>(
           static_cast<int>(static_cast<TargetType>(value)));
       } else {
         typedef typename internal::MakeUnsigned<TargetType>::Type Unsigned;
-        arg_ = internal::make_arg<format_context>(
+        arg_ = internal::make_arg<Context>(
           static_cast<unsigned>(static_cast<Unsigned>(value)));
       }
     } else {
@@ -117,10 +119,9 @@ class ArgConverter {
         // glibc's printf doesn't sign extend arguments of smaller types:
         //   std::printf("%lld", -42);  // prints "4294967254"
         // but we don't have to do the same because it's a UB.
-        arg_ = internal::make_arg<format_context>(
-          static_cast<LongLong>(value));
+        arg_ = internal::make_arg<Context>(static_cast<LongLong>(value));
       } else {
-        arg_ = internal::make_arg<format_context>(
+        arg_ = internal::make_arg<Context>(
           static_cast<typename internal::MakeUnsigned<U>::Type>(value));
       }
     }
@@ -137,32 +138,30 @@ class ArgConverter {
 // If T is void, the argument is converted to corresponding signed or unsigned
 // type depending on the type specifier: 'd' and 'i' - signed, other -
 // unsigned).
-template <typename T, typename Char>
-void convert_arg(basic_format_arg<Char> &arg, Char type) {
-  visit(ArgConverter<T, Char>(arg, type), arg);
+template <typename T, typename Context, typename Char>
+void convert_arg(basic_format_arg<Context> &arg, Char type) {
+  visit(ArgConverter<T, Context>(arg, type), arg);
 }
 
 // Converts an integer argument to char for printf.
-template <typename Char>
+template <typename Context>
 class CharConverter {
  private:
-  basic_format_arg<Char> &arg_;
+  basic_format_arg<Context> &arg_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(CharConverter);
 
  public:
-  explicit CharConverter(basic_format_arg<Char> &arg) : arg_(arg) {}
+  explicit CharConverter(basic_format_arg<Context> &arg) : arg_(arg) {}
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value>::type
       operator()(T value) {
-    arg_ =
-      internal::make_arg<basic_format_context<Char>>(static_cast<char>(value));
+    arg_ = internal::make_arg<Context>(static_cast<char>(value));
   }
 
   template <typename T>
-  typename std::enable_if<!std::is_integral<T>::value>::type
-      operator()(T value) {
+  typename std::enable_if<!std::is_integral<T>::value>::type operator()(T) {
     // No coversion needed for non-integral types.
   }
 };
@@ -301,12 +300,13 @@ class printf_context :
 
  private:
   typedef internal::format_context_base<Char, printf_context> Base;
+  typedef typename Base::format_arg format_arg;
 
   void parse_flags(FormatSpec &spec, const Char *&s);
 
   // Returns the argument with specified index or, if arg_index is equal
   // to the maximum unsigned value, the next argument.
-  basic_format_arg<Char> get_arg(
+  format_arg get_arg(
       const Char *s,
       unsigned arg_index = (std::numeric_limits<unsigned>::max)());
 
@@ -356,12 +356,11 @@ void printf_context<Char, AF>::parse_flags(FormatSpec &spec, const Char *&s) {
 }
 
 template <typename Char, typename AF>
-basic_format_arg<Char> printf_context<Char, AF>::get_arg(
+typename printf_context<Char, AF>::format_arg printf_context<Char, AF>::get_arg(
     const Char *s, unsigned arg_index) {
   (void)s;
   const char *error = 0;
-  basic_format_arg<Char> arg =
-    arg_index == std::numeric_limits<unsigned>::max() ?
+  format_arg arg = arg_index == std::numeric_limits<unsigned>::max() ?
     this->next_arg(error) : Base::get_arg(arg_index - 1, error);
   if (error)
     FMT_THROW(format_error(!*s ? "invalid format string" : error));
@@ -433,7 +432,7 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
       }
     }
 
-    basic_format_arg<Char> arg = get_arg(s, arg_index);
+    format_arg arg = get_arg(s, arg_index);
     if (spec.flag(HASH_FLAG) && visit(internal::IsZeroInt(), arg))
       spec.flags_ &= ~internal::to_unsigned<int>(HASH_FLAG);
     if (spec.fill_ == '0') {
@@ -488,7 +487,7 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
         break;
       case 'c':
         // TODO: handle wchar_t
-        visit(internal::CharConverter<Char>(arg), arg);
+        visit(internal::CharConverter<printf_context<Char, AF>>(arg), arg);
         break;
       }
     }

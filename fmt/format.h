@@ -230,10 +230,9 @@ typedef __int64          intmax_t;
 # define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
 
-// Some compilers masquerade as both MSVC and GCC-likes or
-// otherwise support __builtin_clz and __builtin_clzll, so
-// only define FMT_BUILTIN_CLZ using the MSVC intrinsics
-// if the clz and clzll builtins are not available.
+// Some compilers masquerade as both MSVC and GCC-likes or otherwise support
+// __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
+// MSVC intrinsics if the clz and clzll builtins are not available.
 #if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL)
 # include <intrin.h>  // _BitScanReverse, _BitScanReverse64
 
@@ -371,7 +370,7 @@ class BasicWriter;
 typedef BasicWriter<char> Writer;
 typedef BasicWriter<wchar_t> WWriter;
 
-template <typename Char>
+template <typename Context>
 class basic_format_arg;
 
 template <typename Char>
@@ -1331,11 +1330,11 @@ class MakeValue : public Value<typename Context::char_type> {
   }
 };
 
-template <typename Char>
+template <typename Context>
 class ArgMap;
 
 template <typename Context, typename T>
-basic_format_arg<typename Context::char_type> make_arg(const T &value);
+basic_format_arg<Context> make_arg(const T &value);
 }  // namespace internal
 
 struct monostate {};
@@ -1345,25 +1344,25 @@ class basic_format_args;
 
 // A formatting argument. It is a trivially copyable/constructible type to
 // allow storage in internal::MemoryBuffer.
-template <typename Char>
+template <typename Context>
 class basic_format_arg {
  private:
+  typedef typename Context::char_type Char;
+
   internal::Value<Char> value_;
   internal::Type type_;
 
-  template <typename Context, typename T>
-  friend basic_format_arg<typename Context::char_type>
-    internal::make_arg(const T &value);
+  template <typename ContextType, typename T>
+  friend basic_format_arg<ContextType> internal::make_arg(const T &value);
 
-  template <typename Visitor, typename CharType>
+  template <typename Visitor, typename ContextType>
   friend typename std::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, basic_format_arg<CharType> arg);
+    visit(Visitor &&vis, basic_format_arg<ContextType> arg);
 
-  template <typename Context, typename CharType>
+  template <typename ContextType, typename CharType>
   friend class basic_format_args;
 
-  template <typename CharType>
-  friend class internal::ArgMap;
+  friend class internal::ArgMap<Context>;
 
  public:
   basic_format_arg() : type_(internal::NONE) {}
@@ -1385,8 +1384,8 @@ class basic_format_arg {
   }
 };
 
-typedef basic_format_arg<char> format_arg;
-typedef basic_format_arg<wchar_t> wformat_arg;
+typedef basic_format_arg<format_context> format_arg;
+typedef basic_format_arg<wformat_context> wformat_arg;
 
 /**
   \rst
@@ -1395,9 +1394,10 @@ typedef basic_format_arg<wchar_t> wformat_arg;
   ``vis(value)`` will be called with the value of type ``double``.
   \endrst
  */
-template <typename Visitor, typename Char>
+template <typename Visitor, typename Context>
 typename std::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, basic_format_arg<Char> arg) {
+    visit(Visitor &&vis, basic_format_arg<Context> arg) {
+  typedef typename Context::char_type Char;
   switch (arg.type_) {
   case internal::NONE:
     return vis(monostate());
@@ -1438,8 +1438,8 @@ typename std::result_of<Visitor(int)>::type
 namespace internal {
 
 template <typename Context, typename T>
-basic_format_arg<typename Context::char_type> make_arg(const T &value) {
-  basic_format_arg<typename Context::char_type> arg;
+basic_format_arg<Context> make_arg(const T &value) {
+  basic_format_arg<Context> arg;
   arg.type_ = internal::type<T>();
   arg.value_ = internal::MakeValue<Context>(value);
   return arg;
@@ -1489,14 +1489,15 @@ void format_value(BasicWriter<Char> &, const T &, Formatter &, const Char *) {
                     "an overload of format_arg.");
 }
 
-template <typename Char>
-struct NamedArg : basic_format_arg<Char> {
+template <typename Context>
+struct NamedArg : basic_format_arg<Context> {
+  typedef typename Context::char_type Char;
+
   BasicStringRef<Char> name;
 
   template <typename T>
   NamedArg(BasicStringRef<Char> argname, const T &value)
-  : basic_format_arg<Char>(make_arg< basic_format_context<Char> >(value)),
-    name(argname) {}
+  : basic_format_arg<Context>(make_arg<Context>(value)), name(argname) {}
 };
 
 class RuntimeError : public std::runtime_error {
@@ -1524,8 +1525,7 @@ inline typename std::enable_if<
 }
 
 template <bool IS_PACKED, typename Context, typename T>
-inline typename std::enable_if<
-  !IS_PACKED, basic_format_arg<typename Context::char_type>>::type
+inline typename std::enable_if<!IS_PACKED, basic_format_arg<Context>>::type
     make_arg(const T& value) {
   return make_arg<Context>(value);
 }
@@ -1542,7 +1542,7 @@ class format_arg_store {
   typedef typename Context::char_type char_type;
 
   typedef typename std::conditional<IS_PACKED,
-    internal::Value<char_type>, basic_format_arg<char_type>>::type value_type;
+    internal::Value<char_type>, basic_format_arg<Context>>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
   typedef std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)> Array;
@@ -1574,7 +1574,7 @@ template <typename Context, typename Char>
 class basic_format_args {
  public:
   typedef unsigned size_type;
-  typedef basic_format_arg<Char> format_arg;
+  typedef basic_format_arg<Context> format_arg;
 
  private:
   // To reduce compiled code size per formatting function call, types of first
@@ -1597,7 +1597,7 @@ class basic_format_args {
       (types_ & (mask << shift)) >> shift);
   }
 
-  friend class internal::ArgMap<Char>;
+  friend class internal::ArgMap<Context>;
 
   void set_data(const internal::Value<Char> *values) { values_ = values; }
   void set_data(const format_arg *args) { args_ = args; }
@@ -1869,20 +1869,20 @@ inline StrFormatSpec<wchar_t> pad(
 
 namespace internal {
 
-template <typename Char>
+template <typename Context>
 class ArgMap {
  private:
+  typedef typename Context::char_type Char;
   typedef std::vector<
-    std::pair<fmt::BasicStringRef<Char>, basic_format_arg<Char> > > MapType;
+    std::pair<fmt::BasicStringRef<Char>, basic_format_arg<Context> > > MapType;
   typedef typename MapType::value_type Pair;
 
   MapType map_;
 
  public:
-  template <typename Context>
   void init(const basic_format_args<Context, Char> &args);
 
-  const basic_format_arg<Char>
+  const basic_format_arg<Context>
       *find(const fmt::BasicStringRef<Char> &name) const {
     // The list is unsorted, so just return the first matching name.
     for (typename MapType::const_iterator it = map_.begin(), end = map_.end();
@@ -1894,12 +1894,11 @@ class ArgMap {
   }
 };
 
-template <typename Char>
 template <typename Context>
-void ArgMap<Char>::init(const basic_format_args<Context, Char> &args) {
+void ArgMap<Context>::init(const basic_format_args<Context, Char> &args) {
   if (!map_.empty())
     return;
-  typedef internal::NamedArg<Char> NamedArg;
+  typedef internal::NamedArg<Context> NamedArg;
   const NamedArg *named_arg = 0;
   bool use_values =
   args.type(MAX_PACKED_ARGS - 1) == internal::NONE;
@@ -2072,7 +2071,7 @@ class format_context_base {
   int next_arg_index_;
 
  protected:
-  typedef basic_format_arg<Char> format_arg;
+  typedef basic_format_arg<Context> format_arg;
 
   format_context_base(const Char *format_str,
                       basic_format_args<Context, Char> args)
@@ -2149,24 +2148,25 @@ class ArgFormatter : public internal::ArgFormatterBase<Char> {
 template <typename Char>
 class basic_format_context :
   public internal::format_context_base<Char, basic_format_context<Char>> {
+ public:
+  /** The character type for the output. */
+  typedef Char char_type;
+
  private:
-  internal::ArgMap<Char> map_;
+  internal::ArgMap<basic_format_context<Char>> map_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_format_context);
 
   typedef internal::format_context_base<Char, basic_format_context<Char>> Base;
 
-  using typename Base::format_arg;
+  typedef typename Base::format_arg format_arg;
   using Base::get_arg;
 
   // Checks if manual indexing is used and returns the argument with
   // specified name.
-  basic_format_arg<Char> get_arg(BasicStringRef<Char> name, const char *&error);
+  format_arg get_arg(BasicStringRef<Char> name, const char *&error);
 
  public:
-  /** The character type for the output. */
-  typedef Char char_type;
-
   /**
    \rst
    Constructs a ``basic_format_context`` object. References to the arguments are
@@ -2178,7 +2178,7 @@ class basic_format_context :
   : Base(format_str, args) {}
 
   // Parses argument id and returns corresponding argument.
-  basic_format_arg<Char> parse_arg_id();
+  format_arg parse_arg_id();
 
   using Base::ptr;
 };
@@ -3274,21 +3274,23 @@ inline void format_decimal(char *&buffer, T value) {
   \endrst
  */
 template <typename T>
-inline internal::NamedArg<char> arg(StringRef name, const T &arg) {
-  return internal::NamedArg<char>(name, arg);
+inline internal::NamedArg<format_context> arg(StringRef name, const T &arg) {
+  return internal::NamedArg<format_context>(name, arg);
 }
 
 template <typename T>
-inline internal::NamedArg<wchar_t> arg(WStringRef name, const T &arg) {
-  return internal::NamedArg<wchar_t>(name, arg);
+inline internal::NamedArg<wformat_context> arg(WStringRef name, const T &arg) {
+  return internal::NamedArg<wformat_context>(name, arg);
 }
 
 // The following two functions are deleted intentionally to disable
 // nested named arguments as in ``format("{}", arg("a", arg("b", 42)))``.
-template <typename Char>
-void arg(StringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
-template <typename Char>
-void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
+template <typename Context>
+void arg(StringRef, const internal::NamedArg<Context>&)
+  FMT_DELETED_OR_UNDEFINED;
+template <typename Context>
+void arg(WStringRef, const internal::NamedArg<Context>&)
+  FMT_DELETED_OR_UNDEFINED;
 }
 
 #if FMT_GCC_VERSION
@@ -3351,8 +3353,8 @@ struct IsUnsigned {
   }
 };
 
-template <typename Char>
-void check_sign(const Char *&s, const basic_format_arg<Char> &arg) {
+template <typename Char, typename Context>
+void check_sign(const Char *&s, const basic_format_arg<Context> &arg) {
   char sign = static_cast<char>(*s);
   require_numeric_argument(arg, sign);
   if (visit(IsUnsigned(), arg)) {
@@ -3425,25 +3427,27 @@ struct PrecisionHandler {
 }  // namespace internal
 
 template <typename Char>
-inline basic_format_arg<Char> basic_format_context<Char>::get_arg(
+inline typename basic_format_context<Char>::format_arg
+  basic_format_context<Char>::get_arg(
     BasicStringRef<Char> name, const char *&error) {
   if (this->check_no_auto_index(error)) {
     map_.init(this->args());
-    const basic_format_arg<Char> *arg = map_.find(name);
-    if (arg)
+    if (const format_arg *arg = map_.find(name))
       return *arg;
     error = "argument not found";
   }
-  return basic_format_arg<Char>();
+  return format_arg();
 }
 
 template <typename Char>
-inline basic_format_arg<Char> basic_format_context<Char>::parse_arg_id() {
+inline typename basic_format_context<Char>::format_arg
+    basic_format_context<Char>::parse_arg_id() {
   const Char *&s = this->ptr();
   if (!internal::is_name_start(*s)) {
     const char *error = 0;
-    basic_format_arg<Char> arg = *s < '0' || *s > '9' ?
-      this->next_arg(error) : get_arg(internal::parse_nonnegative_int(s), error);
+    format_arg arg = *s < '0' || *s > '9' ?
+      this->next_arg(error) :
+      get_arg(internal::parse_nonnegative_int(s), error);
     if (error) {
       FMT_THROW(format_error(
                   *s != '}' && *s != ':' ? "invalid format string" : error));
@@ -3456,8 +3460,7 @@ inline basic_format_arg<Char> basic_format_context<Char>::parse_arg_id() {
     c = *++s;
   } while (internal::is_name_start(c) || ('0' <= c && c <= '9'));
   const char *error = 0;
-  basic_format_arg<Char> arg =
-    get_arg(BasicStringRef<Char>(start, s - start), error);
+  format_arg arg = get_arg(BasicStringRef<Char>(start, s - start), error);
   if (error)
     FMT_THROW(format_error(error));
   return arg;
@@ -3465,7 +3468,7 @@ inline basic_format_arg<Char> basic_format_context<Char>::parse_arg_id() {
 
 // Formats a single argument.
 template <typename ArgFormatter, typename Char, typename Context>
-void do_format_arg(BasicWriter<Char> &writer, const basic_format_arg<Char> &arg,
+void do_format_arg(BasicWriter<Char> &writer, basic_format_arg<Context> arg,
                    Context &ctx) {
   const Char *&s = ctx.ptr();
   FormatSpec spec;
@@ -3643,7 +3646,7 @@ struct UdlArg {
   const Char *str;
 
   template <typename T>
-  NamedArg<Char> operator=(T &&value) const {
+  NamedArg<basic_format_context<Char>> operator=(T &&value) const {
     return {str, std::forward<T>(value)};
   }
 };
