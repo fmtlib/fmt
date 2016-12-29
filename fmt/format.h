@@ -1955,7 +1955,7 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
   }
 
  public:
-  typedef typename Spec SpecType;
+  typedef Spec SpecType;
 
   ArgFormatterBase(BasicWriter<Char> &w, Spec &s)
   : writer_(w), spec_(s) {}
