@@ -1,3 +1,5 @@
+include(CheckCXXCompilerFlag)
+
 # Define the fmt library, its includes and the needed defines.
 # *.cc are added to FMT_HEADERS for the header-only configuration.
 set(FMT_HEADERS format.h format.cc ostream.h ostream.cc printf.h printf.cc
@@ -20,6 +22,11 @@ target_compile_options(fmt PUBLIC ${CPP11_FLAG})
 if (FMT_PEDANTIC)
   target_compile_options(fmt PRIVATE ${PEDANTIC_COMPILE_FLAGS})
 endif ()
+
+check_cxx_compiler_flag(-fPIC FMT_HAS_FPIC_FLAG)
+if (FMT_HAS_FPIC_FLAG)
+    target_compile_options(fmt PRIVATE -fPIC)
+endif()
 
 target_include_directories(fmt PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
