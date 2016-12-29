@@ -19,7 +19,7 @@ def pip_install(package, commit=None, **kwargs):
     except DistributionNotFound:
       pass
   if commit:
-    package = 'git+git://github.com/{0}.git@{1}'.format(package, commit)
+    package = 'git+https://github.com/{0}.git@{1}'.format(package, commit)
   print('Installing {0}'.format(package))
   check_call(['pip', 'install', package])
 
