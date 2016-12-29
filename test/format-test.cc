@@ -1630,13 +1630,16 @@ TEST(FormatTest, Enum) {
 }
 
 class MockArgFormatter :
-    public fmt::internal::ArgFormatterBase<MockArgFormatter, char> {
+    public fmt::internal::ArgFormatterBase<MockArgFormatter, char,
+                                           fmt::FormatSpec> {
  public:
-  typedef fmt::internal::ArgFormatterBase<MockArgFormatter, char> Base;
+  typedef fmt::internal::ArgFormatterBase<MockArgFormatter, char,
+                                          fmt::FormatSpec> Base;
 
   MockArgFormatter(fmt::BasicFormatter<char, MockArgFormatter> &f,
                    fmt::FormatSpec &s, const char *)
-    : fmt::internal::ArgFormatterBase<MockArgFormatter, char>(f.writer(), s) {
+    : fmt::internal::ArgFormatterBase<MockArgFormatter,
+                                      char, fmt::FormatSpec>(f.writer(), s) {
     EXPECT_CALL(*this, visit_int(42));
   }
 

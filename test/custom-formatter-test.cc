@@ -14,26 +14,30 @@ using fmt::BasicPrintfArgFormatter;
 
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
-class CustomArgFormatter
-  : public fmt::BasicArgFormatter<CustomArgFormatter, char> {
+class CustomArgFormatter :
+    public fmt::BasicArgFormatter<CustomArgFormatter, char, fmt::FormatSpec> {
  public:
   CustomArgFormatter(fmt::BasicFormatter<char, CustomArgFormatter> &f,
                      fmt::FormatSpec &s, const char *fmt)
-  : fmt::BasicArgFormatter<CustomArgFormatter, char>(f, s, fmt) {}
+  : fmt::BasicArgFormatter<CustomArgFormatter, char,
+                           fmt::FormatSpec>(f, s, fmt) {}
 
   void visit_double(double value) {
     if (round(value * pow(10, spec().precision())) == 0)
       value = 0;
-    fmt::BasicArgFormatter<CustomArgFormatter, char>::visit_double(value);
+    fmt::BasicArgFormatter<CustomArgFormatter, char,
+                           fmt::FormatSpec>::visit_double(value);
   }
 };
 
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
 class CustomPrintfArgFormatter :
-    public BasicPrintfArgFormatter<CustomPrintfArgFormatter, char> {
+    public BasicPrintfArgFormatter<CustomPrintfArgFormatter, char,
+                                   fmt::FormatSpec> {
  public:
-  typedef BasicPrintfArgFormatter<CustomPrintfArgFormatter, char> Base;
+  typedef BasicPrintfArgFormatter<CustomPrintfArgFormatter, char,
+                                  fmt::FormatSpec> Base;
 
   CustomPrintfArgFormatter(fmt::BasicWriter<char> &w, fmt::FormatSpec &spec)
   : Base(w, spec) {}
