@@ -195,7 +195,7 @@ typedef __int64          intmax_t;
 
 #if FMT_USE_DELETED_FUNCTIONS || FMT_HAS_FEATURE(cxx_deleted_functions) || \
   (FMT_GCC_VERSION >= 404 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1800
-# define FMT_DELETED_OR_UNDEFINED  = delete
+# define FMT_DELETED_OR_UNDEFINED = delete
 # define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
     TypeName(const TypeName&) = delete; \
     TypeName& operator=(const TypeName&) = delete
@@ -283,20 +283,20 @@ inline uint32_t clzll(uint64_t x) {
 
 namespace fmt {
 namespace internal {
-struct DummyInt {
+struct dummy_int {
   int data[2];
   operator int() const { return 0; }
 };
-typedef std::numeric_limits<fmt::internal::DummyInt> FPUtil;
+typedef std::numeric_limits<fmt::internal::dummy_int> fputil;
 
 // Dummy implementations of system functions such as signbit and ecvt called
 // if the latter are not available.
-inline DummyInt signbit(...) { return DummyInt(); }
-inline DummyInt _ecvt_s(...) { return DummyInt(); }
-inline DummyInt isinf(...) { return DummyInt(); }
-inline DummyInt _finite(...) { return DummyInt(); }
-inline DummyInt isnan(...) { return DummyInt(); }
-inline DummyInt _isnan(...) { return DummyInt(); }
+inline dummy_int signbit(...) { return dummy_int(); }
+inline dummy_int _ecvt_s(...) { return dummy_int(); }
+inline dummy_int isinf(...) { return dummy_int(); }
+inline dummy_int _finite(...) { return dummy_int(); }
+inline dummy_int isnan(...) { return dummy_int(); }
+inline dummy_int _isnan(...) { return dummy_int(); }
 
 // A helper function to suppress bogus "conditional expression is constant"
 // warnings.
@@ -311,7 +311,7 @@ namespace std {
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48891
 // and the same for isnan and signbit.
 template <>
-class numeric_limits<fmt::internal::DummyInt> :
+class numeric_limits<fmt::internal::dummy_int> :
     public std::numeric_limits<int> {
  public:
   // Portable version of isinf.
@@ -2760,14 +2760,14 @@ void basic_writer<Char>::write_double(T value, const FormatSpec &spec) {
   char sign = 0;
   // Use isnegative instead of value < 0 because the latter is always
   // false for NaN.
-  if (internal::FPUtil::isnegative(static_cast<double>(value))) {
+  if (internal::fputil::isnegative(static_cast<double>(value))) {
     sign = '-';
     value = -value;
   } else if (spec.flag(SIGN_FLAG)) {
     sign = spec.flag(PLUS_FLAG) ? '+' : ' ';
   }
 
-  if (internal::FPUtil::isnotanumber(value)) {
+  if (internal::fputil::isnotanumber(value)) {
     // Format NaN ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t nan_size = 4;
@@ -2782,7 +2782,7 @@ void basic_writer<Char>::write_double(T value, const FormatSpec &spec) {
     return;
   }
 
-  if (internal::FPUtil::isinfinity(value)) {
+  if (internal::fputil::isinfinity(value)) {
     // Format infinity ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t inf_size = 4;
