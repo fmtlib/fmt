@@ -423,8 +423,7 @@ void format_value(fmt::Writer &, const Test &, CustomContext &ctx) {
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
-  fmt::internal::value<CustomContext> arg =
-      fmt::internal::MakeValue<CustomContext>(t);
+  fmt::internal::value<CustomContext> arg(t);
   CustomContext ctx = {false};
   fmt::MemoryWriter w;
   arg.custom.format(w, &t, &ctx);
