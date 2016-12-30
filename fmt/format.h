@@ -1099,7 +1099,7 @@ struct CustomValue {
 
 // A formatting argument value.
 template <typename Context>
-struct Value {
+struct value {
   union {
     int int_value;
     unsigned uint_value;
@@ -1177,7 +1177,7 @@ constexpr Type type() { return gettype<typename std::decay<T>::type>(); }
 
 // Makes a format_arg object from any type.
 template <typename Context>
-class MakeValue : public Value<Context> {
+class MakeValue : public value<Context> {
  public:
   typedef typename Context::char_type Char;
 
@@ -1347,7 +1347,7 @@ class basic_format_args;
 template <typename Context>
 class basic_format_arg {
  private:
-  internal::Value<Context> value_;
+  internal::value<Context> value_;
   internal::Type type_;
 
   template <typename ContextType, typename T>
@@ -1514,7 +1514,7 @@ constexpr uint64_t make_type<void>() { return 0; }
 enum { MAX_PACKED_ARGS = 16 };
 
 template <bool IS_PACKED, typename Context, typename T>
-inline typename std::enable_if<IS_PACKED, Value<Context>>::type
+inline typename std::enable_if<IS_PACKED, value<Context>>::type
     make_arg(const T& value) {
   return MakeValue<Context>(value);
 }
@@ -1537,7 +1537,7 @@ class format_arg_store {
   typedef typename Context::char_type char_type;
 
   typedef typename std::conditional<IS_PACKED,
-    internal::Value<Context>, basic_format_arg<Context>>::type value_type;
+    internal::value<Context>, basic_format_arg<Context>>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
   typedef std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)> Array;
@@ -1581,7 +1581,7 @@ class basic_format_args {
     // This is done to reduce compiled code size as storing larger objects
     // may require more code (at least on x86-64) even if the same amount of
     // data is actually copied to stack. It saves ~10% on the bloat test.
-    const internal::Value<Context> *values_;
+    const internal::value<Context> *values_;
     const format_arg *args_;
   };
 
@@ -1594,7 +1594,7 @@ class basic_format_args {
 
   friend class internal::ArgMap<Context>;
 
-  void set_data(const internal::Value<Context> *values) { values_ = values; }
+  void set_data(const internal::value<Context> *values) { values_ = values; }
   void set_data(const format_arg *args) { args_ = args; }
 
   format_arg get(size_type index) const {
@@ -1602,7 +1602,7 @@ class basic_format_args {
     bool use_values = type(internal::MAX_PACKED_ARGS - 1) == internal::NONE;
     if (index < internal::MAX_PACKED_ARGS) {
       typename internal::Type arg_type = type(index);
-      internal::Value<Context> &val = arg.value_;
+      internal::value<Context> &val = arg.value_;
       if (arg_type != internal::NONE)
         val = use_values ? values_[index] : args_[index].value_;
       arg.type_ = arg_type;

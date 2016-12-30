@@ -57,7 +57,7 @@ using fmt::format_arg;
 using fmt::Buffer;
 using fmt::StringRef;
 using fmt::internal::MemoryBuffer;
-using fmt::internal::Value;
+using fmt::internal::value;
 
 using testing::_;
 using testing::Return;
@@ -423,7 +423,7 @@ void format_value(fmt::Writer &, const Test &, CustomContext &ctx) {
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
-  fmt::internal::Value<CustomContext> arg =
+  fmt::internal::value<CustomContext> arg =
       fmt::internal::MakeValue<CustomContext>(t);
   CustomContext ctx = {false};
   fmt::MemoryWriter w;
