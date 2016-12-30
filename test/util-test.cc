@@ -412,19 +412,20 @@ TEST(UtilTest, FormatArgs) {
   EXPECT_FALSE(args[1]);
 }
 
-struct CustomFormatter {
+struct CustomContext {
   typedef char char_type;
   bool called;
 };
 
-void format_value(fmt::Writer &, const Test &, CustomFormatter &ctx) {
+void format_value(fmt::Writer &, const Test &, CustomContext &ctx) {
   ctx.called = true;
 }
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
-  fmt::internal::Value<char> arg = fmt::internal::MakeValue<CustomFormatter>(t);
-  CustomFormatter ctx = {false};
+  fmt::internal::Value<CustomContext> arg =
+      fmt::internal::MakeValue<CustomContext>(t);
+  CustomContext ctx = {false};
   fmt::MemoryWriter w;
   arg.custom.format(w, &t, &ctx);
   EXPECT_TRUE(ctx.called);
