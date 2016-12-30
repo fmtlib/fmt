@@ -14,8 +14,8 @@ using fmt::BasicPrintfArgFormatter;
 
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
-class CustomArgFormatter :
-    public fmt::BasicArgFormatter<CustomArgFormatter, char> {
+class CustomArgFormatter
+  : public fmt::BasicArgFormatter<CustomArgFormatter, char> {
  public:
   CustomArgFormatter(fmt::BasicFormatter<char, CustomArgFormatter> &f,
                      fmt::FormatSpec &s, const char *fmt)
