@@ -30,8 +30,8 @@ class CustomArgFormatter
 
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
-class CustomPrintfArgFormatter :
-    public BasicPrintfArgFormatter<CustomPrintfArgFormatter, char> {
+class CustomPrintfArgFormatter
+  : public BasicPrintfArgFormatter<CustomPrintfArgFormatter, char> {
  public:
   typedef BasicPrintfArgFormatter<CustomPrintfArgFormatter, char> Base;
 
