@@ -431,6 +431,8 @@ typedef BasicWriter<wchar_t> WWriter;
 template <typename Char>
 class ArgFormatter;
 
+struct FormatSpec;
+
 template <typename Impl, typename Char, typename Spec = fmt::FormatSpec>
 class BasicPrintfArgFormatter;
 
