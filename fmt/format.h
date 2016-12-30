@@ -431,7 +431,7 @@ typedef BasicWriter<wchar_t> WWriter;
 template <typename Char>
 class ArgFormatter;
 
-template <typename Impl, typename Char, typename Spec>
+template <typename Impl, typename Char, typename Spec = fmt::FormatSpec>
 class BasicPrintfArgFormatter;
 
 template <typename CharType,
@@ -1925,7 +1925,7 @@ class ArgMap {
   }
 };
 
-template <typename Impl, typename Char, typename Spec>
+template <typename Impl, typename Char, typename Spec = fmt::FormatSpec>
 class ArgFormatterBase : public ArgVisitor<Impl, void> {
  private:
   BasicWriter<Char> &writer_;
@@ -2091,7 +2091,7 @@ class FormatterBase {
   will be called.
   \endrst
  */
-template <typename Impl, typename Char, typename Spec>
+template <typename Impl, typename Char, typename Spec = fmt::FormatSpec>
 class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char, Spec> {
  private:
   BasicFormatter<Char, Impl> &formatter_;

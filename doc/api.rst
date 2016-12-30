@@ -120,19 +120,17 @@ custom argument formatter class::
   // A custom argument formatter that formats negative integers as unsigned
   // with the ``x`` format specifier.
   class CustomArgFormatter :
-    public fmt::BasicArgFormatter<CustomArgFormatter, char, fmt::FormatSpec> {
+    public fmt::BasicArgFormatter<CustomArgFormatter, char> {
     public:
     CustomArgFormatter(fmt::BasicFormatter<char, CustomArgFormatter> &f,
                        fmt::FormatSpec &s, const char *fmt)
-      : fmt::BasicArgFormatter<CustomArgFormatter, char,
-                               fmt::FormatSpec>(f, s, fmt) {}
+      : fmt::BasicArgFormatter<CustomArgFormatter, char>(f, s, fmt) {}
 
     void visit_int(int value) {
       if (spec().type() == 'x')
         visit_uint(value); // convert to unsigned and format
       else
-        fmt::BasicArgFormatter<CustomArgFormatter, char,
-                               fmt::FormatSpec>::visit_int(value);
+        fmt::BasicArgFormatter<CustomArgFormatter, char>::visit_int(value);
     }
   };
 

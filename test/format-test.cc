@@ -1630,16 +1630,13 @@ TEST(FormatTest, Enum) {
 }
 
 class MockArgFormatter :
-    public fmt::internal::ArgFormatterBase<MockArgFormatter, char,
-                                           fmt::FormatSpec> {
+    public fmt::internal::ArgFormatterBase<MockArgFormatter, char> {
  public:
-  typedef fmt::internal::ArgFormatterBase<MockArgFormatter, char,
-                                          fmt::FormatSpec> Base;
+  typedef fmt::internal::ArgFormatterBase<MockArgFormatter, char> Base;
 
   MockArgFormatter(fmt::BasicFormatter<char, MockArgFormatter> &f,
                    fmt::FormatSpec &s, const char *)
-    : fmt::internal::ArgFormatterBase<MockArgFormatter,
-                                      char, fmt::FormatSpec>(f.writer(), s) {
+    : fmt::internal::ArgFormatterBase<MockArgFormatter, char>(f.writer(), s) {
     EXPECT_CALL(*this, visit_int(42));
   }
 
@@ -1663,4 +1660,3 @@ void convert(int);
 TEST(FormatTest, ConvertCollision) {
   fmt::format("{}", 42);
 }
-

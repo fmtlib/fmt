@@ -58,12 +58,10 @@ TEST(OStreamTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-struct TestArgFormatter :
-    fmt::BasicArgFormatter<TestArgFormatter, char, fmt::FormatSpec> {
+struct TestArgFormatter : fmt::BasicArgFormatter<TestArgFormatter, char> {
   TestArgFormatter(fmt::BasicFormatter<char, TestArgFormatter> &f,
                    fmt::FormatSpec &s, const char *fmt)
-    : fmt::BasicArgFormatter<TestArgFormatter, char,
-                             fmt::FormatSpec>(f, s, fmt) {}
+    : fmt::BasicArgFormatter<TestArgFormatter, char>(f, s, fmt) {}
 };
 
 TEST(OStreamTest, CustomArg) {
