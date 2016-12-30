@@ -1003,13 +1003,6 @@ struct Conditional { typedef T type; };
 template<class T, class F>
 struct Conditional<false, T, F> { typedef F type; };
 
-// For bcc32 which doesn't understand ! in template arguments.
-template <bool>
-struct Not { enum { value = 0 }; };
-
-template <>
-struct Not<false> { enum { value = 1 }; };
-
 template <typename T>
 struct False { enum { value = 0 }; };
 
@@ -1301,7 +1294,7 @@ class value {
 
   template <typename T>
   value(const T &value,
-        typename EnableIf<Not<ConvertToInt<T>::value>::value, int>::type = 0) {
+        typename EnableIf<!ConvertToInt<T>::value, int>::type = 0) {
     static_assert(internal::type<T>() == internal::CUSTOM, "invalid type");
     this->custom.value = &value;
     this->custom.format = &format_custom_arg<T>;
