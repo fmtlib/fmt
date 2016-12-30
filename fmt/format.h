@@ -1327,7 +1327,7 @@ basic_format_arg<Context> make_arg(const T &value);
 
 struct monostate {};
 
-template <typename Context, typename Char>
+template <typename Context>
 class basic_format_args;
 
 // A formatting argument. It is a trivially copyable/constructible type to
@@ -1345,7 +1345,7 @@ class basic_format_arg {
   friend typename std::result_of<Visitor(int)>::type
     visit(Visitor &&vis, basic_format_arg<Ctx> arg);
 
-  friend class basic_format_args<Context, typename Context::char_type>;
+  friend class basic_format_args<Context>;
   friend class internal::ArgMap<Context>;
 
  public:
@@ -1553,7 +1553,7 @@ inline format_arg_store<format_context, Args...>
 }
 
 /** Formatting arguments. */
-template <typename Context, typename Char>
+template <typename Context>
 class basic_format_args {
  public:
   typedef unsigned size_type;
@@ -1626,8 +1626,8 @@ class basic_format_args {
   }
 };
 
-typedef basic_format_args<basic_format_context<char>, char> format_args;
-typedef basic_format_args<basic_format_context<wchar_t>, wchar_t> wformat_args;
+typedef basic_format_args<format_context> format_args;
+typedef basic_format_args<wformat_context> wformat_args;
 
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
@@ -1863,7 +1863,7 @@ class ArgMap {
   MapType map_;
 
  public:
-  void init(const basic_format_args<Context, Char> &args);
+  void init(const basic_format_args<Context> &args);
 
   const basic_format_arg<Context>
       *find(const fmt::BasicStringRef<Char> &name) const {
@@ -1878,7 +1878,7 @@ class ArgMap {
 };
 
 template <typename Context>
-void ArgMap<Context>::init(const basic_format_args<Context, Char> &args) {
+void ArgMap<Context>::init(const basic_format_args<Context> &args) {
   if (!map_.empty())
     return;
   typedef internal::NamedArg<Context> NamedArg;
@@ -2050,18 +2050,17 @@ template <typename Char, typename Context>
 class format_context_base {
  private:
   const Char *ptr_;
-  basic_format_args<Context, Char> args_;
+  basic_format_args<Context> args_;
   int next_arg_index_;
 
  protected:
   typedef basic_format_arg<Context> format_arg;
 
-  format_context_base(const Char *format_str,
-                      basic_format_args<Context, Char> args)
+  format_context_base(const Char *format_str, basic_format_args<Context> args)
   : ptr_(format_str), args_(args), next_arg_index_(0) {}
   ~format_context_base() {}
 
-  basic_format_args<Context, Char> args() const { return args_; }
+  basic_format_args<Context> args() const { return args_; }
 
   // Returns the argument with specified index.
   format_arg do_get_arg(unsigned arg_index, const char *&error) {
@@ -2157,7 +2156,7 @@ class basic_format_context :
    \endrst
    */
   basic_format_context(const Char *format_str,
-                       basic_format_args<basic_format_context, Char> args)
+                       basic_format_args<basic_format_context> args)
   : Base(format_str, args) {}
 
   // Parses argument id and returns corresponding argument.
@@ -2394,7 +2393,7 @@ class BasicWriter {
   }
 
   void vwrite(BasicCStringRef<Char> format,
-              basic_format_args<basic_format_context<Char>, Char> args);
+              basic_format_args<basic_format_context<Char>> args);
   /**
     \rst
     Writes formatted data.
@@ -3578,7 +3577,7 @@ void do_format_arg(BasicWriter<Char> &writer, basic_format_arg<Context> arg,
 /** Formats arguments and writes the output to the writer. */
 template <typename ArgFormatter, typename Char, typename Context>
 void vformat(BasicWriter<Char> &writer, BasicCStringRef<Char> format_str,
-             basic_format_args<Context, Char> args) {
+             basic_format_args<Context> args) {
   basic_format_context<Char> ctx(format_str.c_str(), args);
   const Char *&s = ctx.ptr();
   const Char *start = s;
@@ -3604,7 +3603,7 @@ void vformat(BasicWriter<Char> &writer, BasicCStringRef<Char> format_str,
 template <typename Char>
 inline void BasicWriter<Char>::vwrite(
     BasicCStringRef<Char> format,
-    basic_format_args<basic_format_context<Char>, Char> args) {
+    basic_format_args<basic_format_context<Char>> args) {
   vformat<ArgFormatter<Char>>(*this, format, args);
 }
 }  // namespace fmt

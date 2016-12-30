@@ -282,7 +282,7 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
   /** Formats an argument of a custom (user-defined) type. */
   void operator()(internal::CustomValue<Char> c) {
     const Char format_str[] = {'}', '\0'};
-    auto args = basic_format_args<basic_format_context<Char>, Char>();
+    auto args = basic_format_args<basic_format_context<Char>>();
     basic_format_context<Char> ctx(format_str, args);
     c.format(this->writer(), c.value, &ctx);
   }
@@ -322,7 +322,7 @@ class printf_context :
    \endrst
    */
   explicit printf_context(BasicCStringRef<Char> format_str,
-                          basic_format_args<printf_context, Char> args)
+                          basic_format_args<printf_context> args)
     : Base(format_str.c_str(), args) {}
 
   /** Formats stored arguments and writes the output to the writer. */
@@ -510,11 +510,11 @@ void format_value(BasicWriter<Char> &w, const T &value,
 
 template <typename Char>
 void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format,
-            basic_format_args<printf_context<Char>, Char> args) {
+            basic_format_args<printf_context<Char>> args) {
   printf_context<Char>(format, args).format(w);
 }
 
-typedef basic_format_args<printf_context<char>, char> printf_args;
+typedef basic_format_args<printf_context<char>> printf_args;
 
 inline std::string vsprintf(CStringRef format, printf_args args) {
   MemoryWriter w;
@@ -537,8 +537,7 @@ inline std::string sprintf(CStringRef format_str, const Args & ... args) {
 }
 
 inline std::wstring vsprintf(
-    WCStringRef format,
-    basic_format_args<printf_context<wchar_t>, wchar_t> args) {
+    WCStringRef format, basic_format_args<printf_context<wchar_t>> args) {
   WMemoryWriter w;
   printf(w, format, args);
   return w.str();
