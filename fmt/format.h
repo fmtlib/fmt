@@ -1347,21 +1347,17 @@ class basic_format_args;
 template <typename Context>
 class basic_format_arg {
  private:
-  typedef typename Context::char_type Char;
-
-  internal::Value<Char> value_;
+  internal::Value<typename Context::char_type> value_;
   internal::Type type_;
 
   template <typename ContextType, typename T>
   friend basic_format_arg<ContextType> internal::make_arg(const T &value);
 
-  template <typename Visitor, typename ContextType>
+  template <typename Visitor, typename Ctx>
   friend typename std::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, basic_format_arg<ContextType> arg);
+    visit(Visitor &&vis, basic_format_arg<Ctx> arg);
 
-  template <typename ContextType, typename CharType>
-  friend class basic_format_args;
-
+  friend class basic_format_args<Context, typename Context::char_type>;
   friend class internal::ArgMap<Context>;
 
  public:
