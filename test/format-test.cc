@@ -1660,4 +1660,3 @@ void convert(int);
 TEST(FormatTest, ConvertCollision) {
   fmt::format("{}", 42);
 }
-
