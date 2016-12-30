@@ -70,7 +70,7 @@ lconv *localeconv() {
 
 using std::size_t;
 
-using fmt::BasicWriter;
+using fmt::basic_writer;
 using fmt::format;
 using fmt::format_error;
 using fmt::StringRef;
@@ -165,11 +165,11 @@ TEST(CStringRefTest, Ctor) {
 
 #if FMT_USE_TYPE_TRAITS
 TEST(WriterTest, NotCopyConstructible) {
-  EXPECT_FALSE(std::is_copy_constructible<BasicWriter<char> >::value);
+  EXPECT_FALSE(std::is_copy_constructible<basic_writer<char> >::value);
 }
 
 TEST(WriterTest, NotCopyAssignable) {
-  EXPECT_FALSE(std::is_copy_assignable<BasicWriter<char> >::value);
+  EXPECT_FALSE(std::is_copy_assignable<basic_writer<char> >::value);
 }
 #endif
 
@@ -399,7 +399,7 @@ TEST(WriterTest, hexu) {
 }
 
 template <typename Char>
-BasicWriter<Char> &operator<<(BasicWriter<Char> &f, const Date &d) {
+basic_writer<Char> &operator<<(basic_writer<Char> &f, const Date &d) {
   return f << d.year() << '-' << d.month() << '-' << d.day();
 }
 
@@ -410,8 +410,8 @@ public:
   ISO8601DateFormatter(const Date &d) : date_(&d) {}
 
   template <typename Char>
-  friend BasicWriter<Char> &operator<<(
-      BasicWriter<Char> &w, const ISO8601DateFormatter &d) {
+  friend basic_writer<Char> &operator<<(
+      basic_writer<Char> &w, const ISO8601DateFormatter &d) {
     return w << pad(d.date_->year(), 4, '0') << '-'
         << pad(d.date_->month(), 2, '0') << '-' << pad(d.date_->day(), 2, '0');
   }
@@ -1355,7 +1355,7 @@ TEST(FormatterTest, FormatCStringRef) {
   EXPECT_EQ("test", format("{0}", CStringRef("test")));
 }
 
-void format_value(fmt::Writer &w, const Date &d, fmt::format_context &) {
+void format_value(fmt::writer &w, const Date &d, fmt::format_context &) {
   w << d.year() << '-' << d.month() << '-' << d.day();
 }
 
@@ -1368,7 +1368,7 @@ TEST(FormatterTest, FormatCustom) {
 class Answer {};
 
 template <typename Char>
-void format_value(BasicWriter<Char> &w, Answer, fmt::format_context &) {
+void format_value(basic_writer<Char> &w, Answer, fmt::format_context &) {
   w << "42";
 }
 
@@ -1627,7 +1627,7 @@ class MockArgFormatter : public fmt::internal::ArgFormatterBase<char> {
  public:
   typedef fmt::internal::ArgFormatterBase<char> Base;
 
-  MockArgFormatter(fmt::Writer &w, fmt::format_context &ctx,
+  MockArgFormatter(fmt::writer &w, fmt::format_context &ctx,
                    fmt::FormatSpec &s)
     : fmt::internal::ArgFormatterBase<char>(w, s) {
     EXPECT_CALL(*this, call(42));

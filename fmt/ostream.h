@@ -68,7 +68,7 @@ struct ConvertToIntImpl<T, true> {
 };
 
 // Write the content of w to os.
-void write(std::ostream &os, Writer &w);
+void write(std::ostream &os, writer &w);
 
 template <typename Char, typename T>
 BasicStringRef<Char> format_value(
@@ -83,7 +83,7 @@ BasicStringRef<Char> format_value(
 
 // Formats a value.
 template <typename Char, typename T>
-void format_value(BasicWriter<Char> &w, const T &value,
+void format_value(basic_writer<Char> &w, const T &value,
                   basic_format_context<Char> &ctx) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
   auto str = internal::format_value(buffer, value);

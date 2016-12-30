@@ -224,7 +224,7 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
     specifier information for standard argument types.
     \endrst
    */
-  PrintfArgFormatter(BasicWriter<Char> &writer, FormatSpec &spec)
+  PrintfArgFormatter(basic_writer<Char> &writer, FormatSpec &spec)
   : internal::ArgFormatterBase<Char>(writer, spec) {}
 
   using Base::operator();
@@ -241,10 +241,10 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
   /** Formats a character. */
   void operator()(Char value) {
     const FormatSpec &fmt_spec = this->spec();
-    BasicWriter<Char> &w = this->writer();
+    basic_writer<Char> &w = this->writer();
     if (fmt_spec.type_ && fmt_spec.type_ != 'c')
       w.write_int(value, fmt_spec);
-    typedef typename BasicWriter<Char>::CharPtr CharPtr;
+    typedef typename basic_writer<Char>::CharPtr CharPtr;
     CharPtr out = CharPtr();
     if (fmt_spec.width_ > 1) {
       Char fill = ' ';
@@ -326,7 +326,7 @@ class printf_context :
     : Base(format_str.c_str(), args) {}
 
   /** Formats stored arguments and writes the output to the writer. */
-  FMT_API void format(BasicWriter<Char> &writer);
+  FMT_API void format(basic_writer<Char> &writer);
 };
 
 template <typename Char, typename AF>
@@ -402,7 +402,7 @@ unsigned printf_context<Char, AF>::parse_header(
 }
 
 template <typename Char, typename AF>
-void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
+void printf_context<Char, AF>::format(basic_writer<Char> &writer) {
   const Char *start = this->ptr();
   const Char *s = start;
   while (*s) {
@@ -502,14 +502,14 @@ void printf_context<Char, AF>::format(BasicWriter<Char> &writer) {
 
 // Formats a value.
 template <typename Char, typename T>
-void format_value(BasicWriter<Char> &w, const T &value,
+void format_value(basic_writer<Char> &w, const T &value,
                   printf_context<Char>& ctx) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
   w << internal::format_value(buffer, value);
 }
 
 template <typename Char>
-void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format,
+void printf(basic_writer<Char> &w, BasicCStringRef<Char> format,
             basic_format_args<printf_context<Char>> args) {
   printf_context<Char>(format, args).format(w);
 }

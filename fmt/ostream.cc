@@ -12,7 +12,7 @@
 namespace fmt {
 
 namespace internal {
-FMT_FUNC void write(std::ostream &os, Writer &w) {
+FMT_FUNC void write(std::ostream &os, writer &w) {
   const char *data = w.data();
   typedef internal::MakeUnsigned<std::streamsize>::Type UnsignedStreamSize;
   UnsignedStreamSize size = w.size();

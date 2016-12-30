@@ -59,7 +59,7 @@ TEST(OStreamTest, Enum) {
 }
 
 struct TestArgFormatter : fmt::ArgFormatter<char> {
-  TestArgFormatter(fmt::Writer &w, fmt::format_context &ctx,
+  TestArgFormatter(fmt::writer &w, fmt::format_context &ctx,
                    fmt::FormatSpec &s)
     : fmt::ArgFormatter<char>(w, ctx, s) {}
 };
@@ -134,7 +134,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   if (max_size <= fmt::internal::to_unsigned(max_streamsize))
     return;
 
-  class TestWriter : public fmt::BasicWriter<char> {
+  class TestWriter : public fmt::basic_writer<char> {
    private:
     struct TestBuffer : fmt::Buffer<char> {
       explicit TestBuffer(std::size_t size) { size_ = size; }
@@ -142,7 +142,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
     } buffer_;
    public:
     explicit TestWriter(std::size_t size)
-      : fmt::BasicWriter<char>(buffer_), buffer_(size) {}
+      : fmt::basic_writer<char>(buffer_), buffer_(size) {}
   } w(max_size);
 
   struct MockStreamBuf : std::streambuf {

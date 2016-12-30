@@ -365,10 +365,10 @@ using std::move;
 #endif
 
 template <typename Char>
-class BasicWriter;
+class basic_writer;
 
-typedef BasicWriter<char> Writer;
-typedef BasicWriter<wchar_t> WWriter;
+typedef basic_writer<char> writer;
+typedef basic_writer<wchar_t> wwriter;
 
 template <typename Context>
 class basic_format_arg;
@@ -987,7 +987,7 @@ class UTF16ToUTF8 {
   FMT_API int convert(WStringRef s);
 };
 
-FMT_API void format_windows_error(fmt::Writer &out, int error_code,
+FMT_API void format_windows_error(fmt::writer &out, int error_code,
                                   fmt::StringRef message) FMT_NOEXCEPT;
 #endif
 
@@ -1076,7 +1076,7 @@ enum Type {
 };
 
 template <typename Char>
-struct StringValue {
+struct string_value {
   const Char *value;
   std::size_t size;
 };
@@ -1084,7 +1084,7 @@ struct StringValue {
 template <typename Char>
 struct CustomValue {
   typedef void (*FormatFunc)(
-      BasicWriter<Char> &writer, const void *arg, void *ctx);
+      basic_writer<Char> &writer, const void *arg, void *ctx);
 
   const void *value;
   FormatFunc format;
@@ -1161,10 +1161,10 @@ class value {
     double double_value;
     long double long_double_value;
     const void *pointer;
-    StringValue<char> string;
-    StringValue<signed char> sstring;
-    StringValue<unsigned char> ustring;
-    StringValue<typename Context::char_type> tstring;
+    string_value<char> string;
+    string_value<signed char> sstring;
+    string_value<unsigned char> ustring;
+    string_value<typename Context::char_type> tstring;
     CustomValue<typename Context::char_type> custom;
   };
 
@@ -1206,7 +1206,7 @@ class value {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   static void format_custom_arg(
-      BasicWriter<Char> &writer, const void *arg, void *context) {
+      basic_writer<Char> &writer, const void *arg, void *context) {
     format_value(writer, *static_cast<const T*>(arg),
                  *static_cast<Context*>(context));
   }
@@ -1466,7 +1466,7 @@ inline fmt::StringRef thousands_sep(...) { return ""; }
 #endif
 
 template <typename Formatter, typename T, typename Char>
-void format_value(BasicWriter<Char> &, const T &, Formatter &, const Char *) {
+void format_value(basic_writer<Char> &, const T &, Formatter &, const Char *) {
   FMT_STATIC_ASSERT(False<T>::value,
                     "Cannot format argument. To enable the use of ostream "
                     "operator<< include fmt/ostream.h. Otherwise provide "
@@ -1925,7 +1925,7 @@ void ArgMap<Context>::init(const basic_format_args<Context> &args) {
 template <typename Char>
 class ArgFormatterBase {
  private:
-  BasicWriter<Char> &writer_;
+  basic_writer<Char> &writer_;
   FormatSpec &spec_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(ArgFormatterBase);
@@ -1953,7 +1953,7 @@ class ArgFormatterBase {
   }
 
  protected:
-  BasicWriter<Char> &writer() { return writer_; }
+  basic_writer<Char> &writer() { return writer_; }
   FormatSpec &spec() { return spec_; }
 
   void write(bool value) {
@@ -1968,7 +1968,7 @@ class ArgFormatterBase {
  public:
   typedef Char char_type;
 
-  ArgFormatterBase(BasicWriter<Char> &w, FormatSpec &s)
+  ArgFormatterBase(basic_writer<Char> &w, FormatSpec &s)
   : writer_(w), spec_(s) {}
 
   void operator()(monostate) {
@@ -1997,7 +1997,7 @@ class ArgFormatterBase {
     }
     if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
       FMT_THROW(format_error("invalid format specifier for char"));
-    typedef typename BasicWriter<Char>::CharPtr CharPtr;
+    typedef typename basic_writer<Char>::CharPtr CharPtr;
     Char fill = internal::CharTraits<Char>::cast(spec_.fill());
     CharPtr out = CharPtr();
     const unsigned CHAR_WIDTH = 1;
@@ -2041,7 +2041,7 @@ class ArgFormatterBase {
 };
 
 template <typename Char>
-inline void write(BasicWriter<Char> &w, const Char *start, const Char *end) {
+inline void write(basic_writer<Char> &w, const Char *start, const Char *end) {
   if (start != end)
     w << BasicStringRef<Char>(start, internal::to_unsigned(end - start));
 }
@@ -2115,7 +2115,7 @@ class ArgFormatter : public internal::ArgFormatterBase<Char> {
     format specifier information for standard argument types.
     \endrst
    */
-  ArgFormatter(BasicWriter<Char> &writer, basic_format_context<Char> &ctx,
+  ArgFormatter(basic_writer<Char> &writer, basic_format_context<Char> &ctx,
                FormatSpec &spec)
   : internal::ArgFormatterBase<Char>(writer, spec), ctx_(ctx) {}
 
@@ -2223,7 +2223,7 @@ class SystemError : public internal::RuntimeError {
   may look like "Unknown error -1" and is platform-dependent.
   \endrst
  */
-FMT_API void format_system_error(fmt::Writer &out, int error_code,
+FMT_API void format_system_error(fmt::writer &out, int error_code,
                                  fmt::StringRef message) FMT_NOEXCEPT;
 
 /**
@@ -2234,23 +2234,23 @@ FMT_API void format_system_error(fmt::Writer &out, int error_code,
 
   You can use one of the following typedefs for common character types:
 
-  +---------+----------------------+
-  | Type    | Definition           |
-  +=========+======================+
-  | Writer  | BasicWriter<char>    |
-  +---------+----------------------+
-  | WWriter | BasicWriter<wchar_t> |
-  +---------+----------------------+
+  +---------+-----------------------+
+  | Type    | Definition            |
+  +=========+=======================+
+  | writer  | basic_writer<char>    |
+  +---------+-----------------------+
+  | wwriter | basic_writer<wchar_t> |
+  +---------+-----------------------+
 
   \endrst
  */
 template <typename Char>
-class BasicWriter {
+class basic_writer {
  private:
   // Output buffer.
   Buffer<Char> &buffer_;
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(BasicWriter);
+  FMT_DISALLOW_COPY_AND_ASSIGN(basic_writer);
 
   typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
 
@@ -2349,17 +2349,17 @@ class BasicWriter {
 
  protected:
   /**
-    Constructs a ``BasicWriter`` object.
+    Constructs a ``basic_writer`` object.
    */
-  explicit BasicWriter(Buffer<Char> &b) : buffer_(b) {}
+  explicit basic_writer(Buffer<Char> &b) : buffer_(b) {}
 
  public:
   /**
     \rst
-    Destroys a ``BasicWriter`` object.
+    Destroys a ``basic_writer`` object.
     \endrst
    */
-  virtual ~BasicWriter() {}
+  virtual ~basic_writer() {}
 
   /**
     Returns the total number of characters written.
@@ -2424,21 +2424,21 @@ class BasicWriter {
     vwrite(format, make_xformat_args<basic_format_context<Char>>(args...));
   }
 
-  BasicWriter &operator<<(int value) {
+  basic_writer &operator<<(int value) {
     write_decimal(value);
     return *this;
   }
-  BasicWriter &operator<<(unsigned value) {
+  basic_writer &operator<<(unsigned value) {
     return *this << IntFormatSpec<unsigned>(value);
   }
-  BasicWriter &operator<<(long value) {
+  basic_writer &operator<<(long value) {
     write_decimal(value);
     return *this;
   }
-  BasicWriter &operator<<(unsigned long value) {
+  basic_writer &operator<<(unsigned long value) {
     return *this << IntFormatSpec<unsigned long>(value);
   }
-  BasicWriter &operator<<(LongLong value) {
+  basic_writer &operator<<(LongLong value) {
     write_decimal(value);
     return *this;
   }
@@ -2448,11 +2448,11 @@ class BasicWriter {
     Formats *value* and writes it to the stream.
     \endrst
    */
-  BasicWriter &operator<<(ULongLong value) {
+  basic_writer &operator<<(ULongLong value) {
     return *this << IntFormatSpec<ULongLong>(value);
   }
 
-  BasicWriter &operator<<(double value) {
+  basic_writer &operator<<(double value) {
     write_double(value, FormatSpec());
     return *this;
   }
@@ -2463,7 +2463,7 @@ class BasicWriter {
     (``'g'``) and writes it to the stream.
     \endrst
    */
-  BasicWriter &operator<<(long double value) {
+  basic_writer &operator<<(long double value) {
     write_double(value, FormatSpec());
     return *this;
   }
@@ -2471,12 +2471,12 @@ class BasicWriter {
   /**
     Writes a character to the stream.
    */
-  BasicWriter &operator<<(char value) {
+  basic_writer &operator<<(char value) {
     buffer_.push_back(value);
     return *this;
   }
 
-  BasicWriter &operator<<(
+  basic_writer &operator<<(
       typename internal::WCharHelper<wchar_t, Char>::Supported value) {
     buffer_.push_back(value);
     return *this;
@@ -2487,13 +2487,13 @@ class BasicWriter {
     Writes *value* to the stream.
     \endrst
    */
-  BasicWriter &operator<<(fmt::BasicStringRef<Char> value) {
+  basic_writer &operator<<(fmt::BasicStringRef<Char> value) {
     const Char *str = value.data();
     buffer_.append(str, str + value.size());
     return *this;
   }
 
-  BasicWriter &operator<<(
+  basic_writer &operator<<(
       typename internal::WCharHelper<StringRef, Char>::Supported value) {
     const char *str = value.data();
     buffer_.append(str, str + value.size());
@@ -2501,14 +2501,14 @@ class BasicWriter {
   }
 
   template <typename T, typename Spec, typename FillChar>
-  BasicWriter &operator<<(IntFormatSpec<T, Spec, FillChar> spec) {
+  basic_writer &operator<<(IntFormatSpec<T, Spec, FillChar> spec) {
     internal::CharTraits<Char>::convert(FillChar());
     write_int(spec.value(), spec);
     return *this;
   }
 
   template <typename StrChar>
-  BasicWriter &operator<<(const StrFormatSpec<StrChar> &spec) {
+  basic_writer &operator<<(const StrFormatSpec<StrChar> &spec) {
     const StrChar *s = spec.str();
     write_str(s, std::char_traits<Char>::length(s), spec);
     return *this;
@@ -2521,7 +2521,7 @@ class BasicWriter {
 
 template <typename Char>
 template <typename StrChar>
-typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
+typename basic_writer<Char>::CharPtr basic_writer<Char>::write_str(
       const StrChar *s, std::size_t size, const AlignSpec &spec) {
   CharPtr out = CharPtr();
   if (spec.width() > size) {
@@ -2544,7 +2544,7 @@ typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
 
 template <typename Char>
 template <typename StrChar>
-void BasicWriter<Char>::write_str(
+void basic_writer<Char>::write_str(
     BasicStringRef<StrChar> s, const FormatSpec &spec) {
   // Check if StrChar is convertible to Char.
   internal::CharTraits<Char>::convert(StrChar());
@@ -2564,8 +2564,7 @@ void BasicWriter<Char>::write_str(
 }
 
 template <typename Char>
-typename BasicWriter<Char>::CharPtr
-  BasicWriter<Char>::fill_padding(
+typename basic_writer<Char>::CharPtr basic_writer<Char>::fill_padding(
     CharPtr buffer, unsigned total_size,
     std::size_t content_size, wchar_t fill) {
   std::size_t padding = total_size - content_size;
@@ -2581,8 +2580,7 @@ typename BasicWriter<Char>::CharPtr
 
 template <typename Char>
 template <typename Spec>
-typename BasicWriter<Char>::CharPtr
-  BasicWriter<Char>::prepare_int_buffer(
+typename basic_writer<Char>::CharPtr basic_writer<Char>::prepare_int_buffer(
     unsigned num_digits, const Spec &spec,
     const char *prefix, unsigned prefix_size) {
   unsigned width = spec.width();
@@ -2645,7 +2643,7 @@ typename BasicWriter<Char>::CharPtr
 
 template <typename Char>
 template <typename T, typename Spec>
-void BasicWriter<Char>::write_int(T value, Spec spec) {
+void basic_writer<Char>::write_int(T value, Spec spec) {
   unsigned prefix_size = 0;
   typedef typename internal::IntTraits<T>::MainType UnsignedType;
   UnsignedType abs_value = static_cast<UnsignedType>(value);
@@ -2735,7 +2733,7 @@ void BasicWriter<Char>::write_int(T value, Spec spec) {
 
 template <typename Char>
 template <typename T>
-void BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
+void basic_writer<Char>::write_double(T value, const FormatSpec &spec) {
   // Check type.
   char type = spec.type();
   bool upper = false;
@@ -2923,13 +2921,13 @@ void BasicWriter<Char>::write_double(T value, const FormatSpec &spec) {
   \endrst
  */
 template <typename Char, typename Allocator = std::allocator<Char> >
-class BasicMemoryWriter : public BasicWriter<Char> {
+class BasicMemoryWriter : public basic_writer<Char> {
  private:
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE, Allocator> buffer_;
 
  public:
   explicit BasicMemoryWriter(const Allocator& alloc = Allocator())
-    : BasicWriter<Char>(buffer_), buffer_(alloc) {}
+    : basic_writer<Char>(buffer_), buffer_(alloc) {}
 
 #if FMT_USE_RVALUE_REFERENCES
   /**
@@ -2939,7 +2937,7 @@ class BasicMemoryWriter : public BasicWriter<Char> {
     \endrst
    */
   BasicMemoryWriter(BasicMemoryWriter &&other)
-    : BasicWriter<Char>(buffer_), buffer_(std::move(other.buffer_)) {
+    : basic_writer<Char>(buffer_), buffer_(std::move(other.buffer_)) {
   }
 
   /**
@@ -2978,7 +2976,7 @@ typedef BasicMemoryWriter<wchar_t> WMemoryWriter;
   \endrst
  */
 template <typename Char>
-class BasicArrayWriter : public BasicWriter<Char> {
+class BasicArrayWriter : public basic_writer<Char> {
  private:
   internal::FixedBuffer<Char> buffer_;
 
@@ -2990,7 +2988,7 @@ class BasicArrayWriter : public BasicWriter<Char> {
    \endrst
    */
   BasicArrayWriter(Char *array, std::size_t size)
-    : BasicWriter<Char>(buffer_), buffer_(array, size) {}
+    : basic_writer<Char>(buffer_), buffer_(array, size) {}
 
   /**
    \rst
@@ -3000,7 +2998,7 @@ class BasicArrayWriter : public BasicWriter<Char> {
    */
   template <std::size_t SIZE>
   explicit BasicArrayWriter(Char (&array)[SIZE])
-    : BasicWriter<Char>(buffer_), buffer_(array, SIZE) {}
+    : basic_writer<Char>(buffer_), buffer_(array, SIZE) {}
 };
 
 typedef BasicArrayWriter<char> ArrayWriter;
@@ -3349,11 +3347,11 @@ void check_sign(const Char *&s, const basic_format_arg<Context> &arg) {
 template <typename Char, typename Context>
 class CustomFormatter {
  private:
-  BasicWriter<Char> &writer_;
+  basic_writer<Char> &writer_;
   Context &ctx_;
 
  public:
-  CustomFormatter(BasicWriter<Char> &writer, Context &ctx)
+  CustomFormatter(basic_writer<Char> &writer, Context &ctx)
   : writer_(writer), ctx_(ctx) {}
 
   bool operator()(internal::CustomValue<Char> custom) {
@@ -3450,7 +3448,7 @@ inline typename basic_format_context<Char>::format_arg
 
 // Formats a single argument.
 template <typename ArgFormatter, typename Char, typename Context>
-void do_format_arg(BasicWriter<Char> &writer, basic_format_arg<Context> arg,
+void do_format_arg(basic_writer<Char> &writer, basic_format_arg<Context> arg,
                    Context &ctx) {
   const Char *&s = ctx.ptr();
   FormatSpec spec;
@@ -3576,7 +3574,7 @@ void do_format_arg(BasicWriter<Char> &writer, basic_format_arg<Context> arg,
 
 /** Formats arguments and writes the output to the writer. */
 template <typename ArgFormatter, typename Char, typename Context>
-void vformat(BasicWriter<Char> &writer, BasicCStringRef<Char> format_str,
+void vformat(basic_writer<Char> &writer, BasicCStringRef<Char> format_str,
              basic_format_args<Context> args) {
   basic_format_context<Char> ctx(format_str.c_str(), args);
   const Char *&s = ctx.ptr();
@@ -3601,7 +3599,7 @@ void vformat(BasicWriter<Char> &writer, BasicCStringRef<Char> format_str,
 }
 
 template <typename Char>
-inline void BasicWriter<Char>::vwrite(
+inline void basic_writer<Char>::vwrite(
     BasicCStringRef<Char> format,
     basic_format_args<basic_format_context<Char>> args) {
   vformat<ArgFormatter<Char>>(*this, format, args);

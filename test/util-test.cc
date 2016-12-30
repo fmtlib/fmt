@@ -68,7 +68,7 @@ namespace {
 struct Test {};
 
 template <typename Char>
-void format_value(fmt::BasicWriter<Char> &w, Test,
+void format_value(fmt::basic_writer<Char> &w, Test,
                   fmt::basic_format_context<Char> &) {
   w << "test";
 }
@@ -417,7 +417,7 @@ struct CustomContext {
   bool called;
 };
 
-void format_value(fmt::Writer &, const Test &, CustomContext &ctx) {
+void format_value(fmt::writer &, const Test &, CustomContext &ctx) {
   ctx.called = true;
 }
 
@@ -690,7 +690,7 @@ TEST(UtilTest, UTF16ToUTF8Convert) {
 #endif  // _WIN32
 
 typedef void (*FormatErrorMessage)(
-        fmt::Writer &out, int error_code, StringRef message);
+        fmt::writer &out, int error_code, StringRef message);
 
 template <typename Error>
 void check_throw_error(int error_code, FormatErrorMessage format) {

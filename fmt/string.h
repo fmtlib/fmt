@@ -72,7 +72,7 @@ class StringBuffer : public Buffer<Char> {
   \endrst
  */
 template <typename Char>
-class BasicStringWriter : public BasicWriter<Char> {
+class BasicStringWriter : public basic_writer<Char> {
  private:
   internal::StringBuffer<Char> buffer_;
 
@@ -82,7 +82,7 @@ class BasicStringWriter : public BasicWriter<Char> {
     Constructs a :class:`fmt::BasicStringWriter` object.
     \endrst
    */
-  BasicStringWriter() : BasicWriter<Char>(buffer_) {}
+  BasicStringWriter() : basic_writer<Char>(buffer_) {}
 
   /**
     \rst
