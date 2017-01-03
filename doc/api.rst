@@ -203,6 +203,9 @@ store output elsewhere by subclassing `~fmt::BasicWriter`.
 .. doxygenclass:: fmt::BasicStringWriter
    :members:
 
+.. doxygenclass:: fmt::BasicContainerWriter
+   :members:
+
 .. doxygenfunction:: bin(int)
 
 .. doxygenfunction:: oct(int)
