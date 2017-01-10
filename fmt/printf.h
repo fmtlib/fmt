@@ -92,9 +92,18 @@ class ArgConverter : public ArgVisitor<ArgConverter<T>, void> {
       visit_any_int(value);
   }
 
+  void visit_char(char value) {
+    if (type_ != 's' && type_ != 'S')
+      visit_any_int(value);
+  }
+
   template <typename U>
   void visit_any_int(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
+    if (type_ == 's' || type_ == 'S') {
+        is_signed = std::numeric_limits<U>::is_signed;
+    }
+
     using internal::Arg;
     typedef typename internal::Conditional<
         is_same<T, void>::value, U, T>::type TargetType;
@@ -463,6 +472,23 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
     if (!*s)
       FMT_THROW(FormatError("invalid format string"));
     spec.type_ = static_cast<char>(*s++);
+
+    if (spec.type_ == 's' || spec.type_ == 'S') {
+        if (arg.type == Arg::POINTER) {
+            spec.type_ = 'p';
+        } else if (arg.type == Arg::CHAR) {
+            spec.type_ = 'c';
+        } else if (arg.type == Arg::BOOL) {
+            // leave bool alone
+        } else if (arg.type <= Arg::LAST_INTEGER_TYPE) {
+            // all other integer types
+            spec.type_ = 'd';
+        } else if (arg.type <= Arg::LAST_NUMERIC_TYPE) {
+            // all floating point types
+            spec.type_ = 'f';
+        }
+    }
+
     if (arg.type <= Arg::LAST_INTEGER_TYPE) {
       // Normalize type.
       switch (spec.type_) {

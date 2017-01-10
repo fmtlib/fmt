@@ -202,6 +202,8 @@ TEST(PrintfTest, HashFlag) {
 
 TEST(PrintfTest, Width) {
   EXPECT_PRINTF("  abc", "%5s", "abc");
+  EXPECT_PRINTF("  -42", "%5s", "-42");
+  EXPECT_PRINTF("  0.123456", "%10s", 0.123456);
 
   // Width cannot be specified twice.
   EXPECT_THROW_MSG(fmt::sprintf("%5-5d", 42), FormatError,
@@ -381,11 +383,14 @@ TEST(PrintfTest, Bool) {
 TEST(PrintfTest, Int) {
   EXPECT_PRINTF("-42", "%d", -42);
   EXPECT_PRINTF("-42", "%i", -42);
+  EXPECT_PRINTF("-42", "%s", -42);
   unsigned u = 0 - 42u;
   EXPECT_PRINTF(fmt::format("{}", u), "%u", -42);
   EXPECT_PRINTF(fmt::format("{:o}", u), "%o", -42);
   EXPECT_PRINTF(fmt::format("{:x}", u), "%x", -42);
   EXPECT_PRINTF(fmt::format("{:X}", u), "%X", -42);
+  EXPECT_PRINTF(fmt::format("{}", u), "%s", u);
+  EXPECT_PRINTF(fmt::format("{}", u), "%S", u);
 }
 
 TEST(PrintfTest, LongLong) {
@@ -398,6 +403,8 @@ TEST(PrintfTest, LongLong) {
 TEST(PrintfTest, Float) {
   EXPECT_PRINTF("392.650000", "%f", 392.65);
   EXPECT_PRINTF("392.650000", "%F", 392.65);
+  EXPECT_PRINTF("392.650000", "%s", 392.65);
+  EXPECT_PRINTF("392.650000", "%S", 392.65);
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%e", 392.65);
   EXPECT_PRINTF(buffer, "%e", 392.65);
@@ -422,6 +429,7 @@ TEST(PrintfTest, Inf) {
 
 TEST(PrintfTest, Char) {
   EXPECT_PRINTF("x", "%c", 'x');
+  EXPECT_PRINTF("x", "%s", 'x');
   int max = std::numeric_limits<int>::max();
   EXPECT_PRINTF(fmt::format("{}", static_cast<char>(max)), "%c", max);
   //EXPECT_PRINTF("x", "%lc", L'x');
@@ -440,13 +448,17 @@ TEST(PrintfTest, Pointer) {
   int n;
   void *p = &n;
   EXPECT_PRINTF(fmt::format("{}", p), "%p", p);
+  EXPECT_PRINTF(fmt::format("{}", p), "%s", p);
   p = 0;
   EXPECT_PRINTF("(nil)", "%p", p);
   EXPECT_PRINTF("     (nil)", "%10p", p);
+  EXPECT_PRINTF("(nil)", "%s", p);
+  EXPECT_PRINTF("     (nil)", "%10s", p);
   const char *s = "test";
   EXPECT_PRINTF(fmt::format("{:p}", s), "%p", s);
   const char *null_str = 0;
   EXPECT_PRINTF("(nil)", "%p", null_str);
+  EXPECT_PRINTF("(null)", "%s", null_str);
 }
 
 TEST(PrintfTest, Location) {
