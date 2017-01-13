@@ -74,7 +74,7 @@ class DefaultType : public ArgVisitor<DefaultType, wchar_t> {
   wchar_t visit_any_int(T) { return 'd'; }
 
   template <typename T>
-  wchar_t visit_any_double(T) { return 'f'; }
+  wchar_t visit_any_double(T) { return 'g'; }
 
   wchar_t visit_unhandled_arg() { return 's'; }
 };
@@ -119,7 +119,7 @@ class ArgConverter : public ArgVisitor<ArgConverter<T>, void> {
   void visit_any_int(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
     if (type_ == 's') {
-        is_signed = std::numeric_limits<U>::is_signed;
+      is_signed = std::numeric_limits<U>::is_signed;
     }
 
     using internal::Arg;
@@ -492,8 +492,8 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
     spec.type_ = static_cast<char>(*s++);
 
     if (spec.type_ == 's') {
-        // set the format type to the default if 's' is specified
-        spec.type_ = internal::DefaultType().visit(arg);
+      // set the format type to the default if 's' is specified
+      spec.type_ = internal::DefaultType().visit(arg);
     }
 
     if (arg.type <= Arg::LAST_INTEGER_TYPE) {

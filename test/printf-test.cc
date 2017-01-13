@@ -402,7 +402,7 @@ TEST(PrintfTest, LongLong) {
 TEST(PrintfTest, Float) {
   EXPECT_PRINTF("392.650000", "%f", 392.65);
   EXPECT_PRINTF("392.650000", "%F", 392.65);
-  EXPECT_PRINTF("392.650000", "%s", 392.65);
+  EXPECT_PRINTF("392.65", "%s", 392.65);
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%e", 392.65);
   EXPECT_PRINTF(buffer, "%e", 392.65);
