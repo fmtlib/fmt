@@ -390,7 +390,6 @@ TEST(PrintfTest, Int) {
   EXPECT_PRINTF(fmt::format("{:x}", u), "%x", -42);
   EXPECT_PRINTF(fmt::format("{:X}", u), "%X", -42);
   EXPECT_PRINTF(fmt::format("{}", u), "%s", u);
-  EXPECT_PRINTF(fmt::format("{}", u), "%S", u);
 }
 
 TEST(PrintfTest, LongLong) {
@@ -404,7 +403,6 @@ TEST(PrintfTest, Float) {
   EXPECT_PRINTF("392.650000", "%f", 392.65);
   EXPECT_PRINTF("392.650000", "%F", 392.65);
   EXPECT_PRINTF("392.650000", "%s", 392.65);
-  EXPECT_PRINTF("392.650000", "%S", 392.65);
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%e", 392.65);
   EXPECT_PRINTF(buffer, "%e", 392.65);
