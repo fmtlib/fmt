@@ -61,6 +61,24 @@ class IsZeroInt : public ArgVisitor<IsZeroInt, bool> {
   bool visit_any_int(T value) { return value == 0; }
 };
 
+// returns the default type for format specific "%s"
+class DefaultType : public ArgVisitor<DefaultType, wchar_t> {
+ public:
+  wchar_t visit_char(int) { return 'c'; }
+
+  wchar_t visit_bool(bool) { return 's'; }
+
+  wchar_t visit_pointer(const void *) { return 'p'; }
+
+  template <typename T>
+  wchar_t visit_any_int(T) { return 'd'; }
+
+  template <typename T>
+  wchar_t visit_any_double(T) { return 'g'; }
+
+  wchar_t visit_unhandled_arg() { return 's'; }
+};
+
 template <typename T, typename U>
 struct is_same {
   enum { value = 0 };
@@ -92,9 +110,18 @@ class ArgConverter : public ArgVisitor<ArgConverter<T>, void> {
       visit_any_int(value);
   }
 
+  void visit_char(char value) {
+    if (type_ != 's')
+      visit_any_int(value);
+  }
+
   template <typename U>
   void visit_any_int(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
+    if (type_ == 's') {
+      is_signed = std::numeric_limits<U>::is_signed;
+    }
+
     using internal::Arg;
     typedef typename internal::Conditional<
         is_same<T, void>::value, U, T>::type TargetType;
@@ -463,6 +490,12 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
     if (!*s)
       FMT_THROW(FormatError("invalid format string"));
     spec.type_ = static_cast<char>(*s++);
+
+    if (spec.type_ == 's') {
+      // set the format type to the default if 's' is specified
+      spec.type_ = internal::DefaultType().visit(arg);
+    }
+
     if (arg.type <= Arg::LAST_INTEGER_TYPE) {
       // Normalize type.
       switch (spec.type_) {
