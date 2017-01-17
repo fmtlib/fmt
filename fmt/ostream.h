@@ -31,6 +31,10 @@ class FormatBuf : public std::basic_streambuf<Char> {
     this->setp(start_, start_ + buffer_.capacity());
   }
 
+  FormatBuf(Buffer<Char> &buffer, Char *start) : buffer_(buffer) , start_(start) {
+    this->setp(start_, start_ + buffer_.capacity());
+  }
+
   int_type overflow(int_type ch = traits_type::eof()) {
     if (!traits_type::eq_int_type(ch, traits_type::eof())) {
       size_t buf_size = size();
@@ -69,6 +73,19 @@ struct ConvertToIntImpl<T, true> {
 
 // Write the content of w to os.
 void write(std::ostream &os, Writer &w);
+
+template<typename T>
+class is_streamable
+{
+    template<typename U>
+    static auto test(int) -> decltype(std::declval<std::ostream &>() << std::declval<U>(), std::true_type());
+
+    template<typename>
+    static auto test(...) -> std::false_type;
+
+public:
+    static constexpr bool value = decltype(test<T>(0))::value;
+};
 }  // namespace internal
 
 // Formats a value.
@@ -97,6 +114,29 @@ void format_arg(BasicFormatter<Char, ArgFormatter> &f,
  */
 FMT_API void print(std::ostream &os, CStringRef format_str, ArgList args);
 FMT_VARIADIC(void, print, std::ostream &, CStringRef)
+
+template<typename T, typename Char>
+typename std::enable_if<
+ !std::is_same<
+     typename std::remove_cv<typename std::decay<T>::type>::type,
+     char *
+ >::value,
+ BasicWriter<Char>&
+>::type
+operator<<(BasicWriter<Char> &writer, const T &value)
+{
+  static_assert(internal::is_streamable<T>::value, "T must be Streamable");
+
+  auto &buffer = writer.buffer();
+  Char *start = &buffer[0] + buffer.size();
+
+  internal::FormatBuf<Char> format_buf(buffer, start);
+  std::basic_ostream<Char> output(&format_buf);
+  output << value;
+
+  buffer.resize(buffer.size() + format_buf.size());
+  return writer;
+}
 }  // namespace fmt
 
 #ifdef FMT_HEADER_ONLY
