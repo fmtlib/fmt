@@ -77,14 +77,14 @@ void write(std::ostream &os, Writer &w);
 template<typename T>
 class is_streamable
 {
-    template<typename U>
-    static auto test(int) -> decltype(std::declval<std::ostream &>() << std::declval<U>(), std::true_type());
+  template<typename U>
+  static auto test(int) -> decltype(std::declval<std::ostream &>() << std::declval<U>(), std::true_type());
 
-    template<typename>
-    static auto test(...) -> std::false_type;
+  template<typename>
+  static auto test(...) -> std::false_type;
 
 public:
-    static constexpr bool value = decltype(test<T>(0))::value;
+  static constexpr bool value = decltype(test<T>(0))::value;
 };
 }  // namespace internal
 
@@ -118,8 +118,8 @@ FMT_VARIADIC(void, print, std::ostream &, CStringRef)
 template<typename T, typename Char>
 typename std::enable_if<
  !std::is_same<
-     typename std::remove_cv<typename std::decay<T>::type>::type,
-     char *
+   typename std::remove_cv<typename std::decay<T>::type>::type,
+   char *
  >::value,
  BasicWriter<Char>&
 >::type
