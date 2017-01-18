@@ -75,8 +75,7 @@ struct ConvertToIntImpl<T, true> {
 void write(std::ostream &os, Writer &w);
 
 template<typename T>
-class is_streamable
-{
+class is_streamable {
   template<typename U>
   static auto test(int) -> decltype(std::declval<std::ostream &>() << std::declval<U>(), std::true_type());
 
@@ -123,8 +122,7 @@ typename std::enable_if<
  >::value,
  BasicWriter<Char>&
 >::type
-operator<<(BasicWriter<Char> &writer, const T &value)
-{
+operator<<(BasicWriter<Char> &writer, const T &value) {
   static_assert(internal::is_streamable<T>::value, "T must be Streamable");
 
   auto &buffer = writer.buffer();
