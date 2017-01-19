@@ -126,9 +126,7 @@ typename std::enable_if<
  BasicWriter<Char>&
 >::type
 operator<<(BasicWriter<Char> &writer, const T &value) {
-#if FMT_HAS_DECLTYPE_INCOMPLETE_RETURN_TYPES
-  static_assert(internal::is_streamable<T>::value, "T must be Streamable");
-#endif
+  FMT_STATIC_ASSERT(internal::is_streamable<T>::value, "T must be Streamable");
 
   auto &buffer = writer.buffer();
   Char *start = &buffer[0] + buffer.size();
