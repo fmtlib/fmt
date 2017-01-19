@@ -113,11 +113,11 @@ std::ostream &operator<<(std::ostream &os, EmptyTest) {
 
 #if __cplusplus >= 201103L
 struct UserDefinedTest { int i = 42; };
-#endif
 
 std::ostream &operator<<(std::ostream &os, const UserDefinedTest &u) {
   return os << u.i;
 }
+#endif
 
 TEST(OStreamTest, EmptyCustomOutput) {
   EXPECT_EQ("", fmt::format("{}", EmptyTest()));
