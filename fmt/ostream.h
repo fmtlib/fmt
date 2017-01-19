@@ -74,7 +74,7 @@ struct ConvertToIntImpl<T, true> {
 // Write the content of w to os.
 void write(std::ostream &os, Writer &w);
 
-#ifdef FMT_HAS_DECLTYPE_INCOMPLETE_RETURN_TYPES
+#if FMT_HAS_DECLTYPE_INCOMPLETE_RETURN_TYPES
 template<typename T>
 class is_streamable {
   template<typename U>
@@ -125,7 +125,7 @@ typename std::enable_if<
  BasicWriter<Char>&
 >::type
 operator<<(BasicWriter<Char> &writer, const T &value) {
-#ifdef FMT_HAS_DECLTYPE_INCOMPLETE_RETURN_TYPES
+#if FMT_HAS_DECLTYPE_INCOMPLETE_RETURN_TYPES
   static_assert(internal::is_streamable<T>::value, "T must be Streamable");
 #endif
 
