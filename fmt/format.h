@@ -2012,13 +2012,14 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     write(value);
   }
 
-  void visit_string(Arg::StringValue<char> value) {
+  // Qualification with "internal" here and below is a workaround for nvcc.
+  void visit_string(internal::Arg::StringValue<char> value) {
     writer_.write_str(value, spec_);
   }
 
   using ArgVisitor<Impl, void>::visit_wstring;
 
-  void visit_wstring(Arg::StringValue<Char> value) {
+  void visit_wstring(internal::Arg::StringValue<Char> value) {
     writer_.write_str(value, spec_);
   }
 
