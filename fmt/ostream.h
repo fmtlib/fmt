@@ -116,6 +116,7 @@ void format_arg(BasicFormatter<Char, ArgFormatter> &f,
 FMT_API void print(std::ostream &os, CStringRef format_str, ArgList args);
 FMT_VARIADIC(void, print, std::ostream &, CStringRef)
 
+#if __cplusplus >= 201103L
 template<typename T, typename Char>
 typename std::enable_if<
  !std::is_same<
@@ -139,6 +140,7 @@ operator<<(BasicWriter<Char> &writer, const T &value) {
   buffer.resize(buffer.size() + format_buf.size());
   return writer;
 }
+#endif
 }  // namespace fmt
 
 #ifdef FMT_HEADER_ONLY

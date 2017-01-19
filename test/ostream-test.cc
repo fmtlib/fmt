@@ -111,7 +111,10 @@ std::ostream &operator<<(std::ostream &os, EmptyTest) {
   return os << "";
 }
 
+#if __cplusplus >= 201103L
 struct UserDefinedTest { int i = 42; };
+#endif
+
 std::ostream &operator<<(std::ostream &os, const UserDefinedTest &u) {
   return os << u.i;
 }
@@ -134,6 +137,7 @@ TEST(OStreamTest, WriteToOStream) {
   EXPECT_EQ("foo", os.str());
 }
 
+#if __cplusplus >= 201103L
 TEST(OStreamTest, WriteUserDefinedTypeToOStream) {
   std::ostringstream os;
   fmt::MemoryWriter w;
@@ -142,6 +146,7 @@ TEST(OStreamTest, WriteUserDefinedTypeToOStream) {
   fmt::internal::write(os, w);
   EXPECT_EQ("The answer is 42", os.str());
 }
+#endif
 
 TEST(OStreamTest, WriteToOStreamMaxSize) {
   std::size_t max_size = std::numeric_limits<std::size_t>::max();
