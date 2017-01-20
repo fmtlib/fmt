@@ -2861,7 +2861,7 @@ void BasicWriter<Char>::write_int(T value, Spec spec) {
   case 'n': {
     unsigned num_digits = internal::count_digits(abs_value);
     fmt::StringRef sep = "";
-#ifndef ANDROID
+#if !(defined(ANDROID) || defined(__ANDROID__))
     sep = internal::thousands_sep(std::localeconv());
 #endif
     unsigned size = static_cast<unsigned>(
