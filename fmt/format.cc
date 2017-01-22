@@ -193,9 +193,12 @@ void format_error_code(writer &out, int error_code,
     ++error_code_size;
   }
   error_code_size += internal::count_digits(abs_value);
-  if (message.size() <= internal::INLINE_BUFFER_SIZE - error_code_size)
-    out << message << SEP;
-  out << ERROR_STR << error_code;
+  if (message.size() <= internal::INLINE_BUFFER_SIZE - error_code_size) {
+    out.write(message);
+    out.write(SEP);
+  }
+  out.write(ERROR_STR);
+  out.write(error_code);
   assert(out.size() <= internal::INLINE_BUFFER_SIZE);
 }
 
@@ -367,7 +370,9 @@ FMT_FUNC void internal::format_windows_error(
       if (result != 0) {
         UTF16ToUTF8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          out << message << ": " << utf8_message;
+          out.write(message);
+          out.write(": ");
+          out.write(utf8_message);
           return;
         }
         break;
@@ -391,7 +396,9 @@ FMT_FUNC void format_system_error(
       char *system_message = &buffer[0];
       int result = safe_strerror(error_code, system_message, buffer.size());
       if (result == 0) {
-        out << message << ": " << system_message;
+        out.write(message);
+        out.write(": ");
+        out.write(system_message);
         return;
       }
       if (result != ERANGE)
@@ -423,7 +430,7 @@ FMT_FUNC void report_windows_error(
 
 FMT_FUNC void vprint(std::FILE *f, CStringRef format_str, format_args args) {
   MemoryWriter w;
-  w.vwrite(format_str, args);
+  w.vformat(format_str, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
 

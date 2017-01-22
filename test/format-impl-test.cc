@@ -65,7 +65,7 @@ TEST(FormatTest, ArgConverter) {
 
 TEST(FormatTest, FormatNegativeNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
-  if (fmt::internal::FPUtil::isnegative(-nan))
+  if (fmt::internal::fputil::isnegative(-nan))
     EXPECT_EQ("-nan", fmt::format("{}", -nan));
   else
     fmt::print("Warning: compiler doesn't handle negative NaN correctly");
@@ -107,7 +107,7 @@ TEST(FormatTest, FormatErrorCode) {
   std::string msg = "error 42", sep = ": ";
   {
     fmt::MemoryWriter w;
-    w << "garbage";
+    w.write("garbage");
     fmt::format_error_code(w, 42, "test");
     EXPECT_EQ("test: " + msg, w.str());
   }

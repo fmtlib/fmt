@@ -1535,7 +1535,7 @@ class format_arg_store {
   static const uint64_t TYPES = internal::make_type<Args..., void>();
 
   format_arg_store(const Args &... args)
-    : data_(Array{internal::make_arg<IS_PACKED, Context>(args)...}) {}
+    : data_(Array{{internal::make_arg<IS_PACKED, Context>(args)...}}) {}
 
   const value_type *data() const { return data_.data(); }
 };
@@ -2043,7 +2043,7 @@ class ArgFormatterBase {
 template <typename Char>
 inline void write(basic_writer<Char> &w, const Char *start, const Char *end) {
   if (start != end)
-    w << BasicStringRef<Char>(start, internal::to_unsigned(end - start));
+    w.write(BasicStringRef<Char>(start, internal::to_unsigned(end - start)));
 }
 
 template <typename Char, typename Context>
@@ -2392,8 +2392,8 @@ class basic_writer {
     return std::basic_string<Char>(&buffer_[0], buffer_.size());
   }
 
-  void vwrite(BasicCStringRef<Char> format,
-              basic_format_args<basic_format_context<Char>> args);
+  void vformat(BasicCStringRef<Char> format,
+               basic_format_args<basic_format_context<Char>> args);
   /**
     \rst
     Writes formatted data.
@@ -2403,8 +2403,8 @@ class basic_writer {
     **Example**::
 
        MemoryWriter out;
-       out.write("Current point:\n");
-       out.write("({:+f}, {:+f})", -3.14, 3.14);
+       out.format("Current point:\n");
+       out.format("({:+f}, {:+f})", -3.14, 3.14);
 
     This will write the following output to the ``out`` object:
 
@@ -2420,27 +2420,24 @@ class basic_writer {
     \endrst
    */
   template <typename... Args>
-  void write(BasicCStringRef<Char> format, const Args & ... args) {
-    vwrite(format, make_xformat_args<basic_format_context<Char>>(args...));
+  void format(BasicCStringRef<Char> format, const Args & ... args) {
+    vformat(format, make_xformat_args<basic_format_context<Char>>(args...));
   }
 
-  basic_writer &operator<<(int value) {
+  void write(int value) {
     write_decimal(value);
-    return *this;
   }
-  basic_writer &operator<<(unsigned value) {
-    return *this << IntFormatSpec<unsigned>(value);
+  void write(unsigned value) {
+    *this << IntFormatSpec<unsigned>(value);
   }
-  basic_writer &operator<<(long value) {
+  void write(long value) {
     write_decimal(value);
-    return *this;
   }
-  basic_writer &operator<<(unsigned long value) {
-    return *this << IntFormatSpec<unsigned long>(value);
+  void write(unsigned long value) {
+    *this << IntFormatSpec<unsigned long>(value);
   }
-  basic_writer &operator<<(LongLong value) {
+  void write(LongLong value) {
     write_decimal(value);
-    return *this;
   }
 
   /**
@@ -2448,13 +2445,12 @@ class basic_writer {
     Formats *value* and writes it to the stream.
     \endrst
    */
-  basic_writer &operator<<(ULongLong value) {
-    return *this << IntFormatSpec<ULongLong>(value);
+  void write(ULongLong value) {
+    *this << IntFormatSpec<ULongLong>(value);
   }
 
-  basic_writer &operator<<(double value) {
+  void write(double value) {
     write_double(value, FormatSpec());
-    return *this;
   }
 
   /**
@@ -2463,23 +2459,19 @@ class basic_writer {
     (``'g'``) and writes it to the stream.
     \endrst
    */
-  basic_writer &operator<<(long double value) {
+  void write(long double value) {
     write_double(value, FormatSpec());
-    return *this;
   }
 
   /**
     Writes a character to the stream.
    */
-  basic_writer &operator<<(char value) {
+  void write(char value) {
     buffer_.push_back(value);
-    return *this;
   }
 
-  basic_writer &operator<<(
-      typename internal::WCharHelper<wchar_t, Char>::Supported value) {
+  void write(typename internal::WCharHelper<wchar_t, Char>::Supported value) {
     buffer_.push_back(value);
-    return *this;
   }
 
   /**
@@ -2487,17 +2479,14 @@ class basic_writer {
     Writes *value* to the stream.
     \endrst
    */
-  basic_writer &operator<<(fmt::BasicStringRef<Char> value) {
+  void write(fmt::BasicStringRef<Char> value) {
     const Char *str = value.data();
     buffer_.append(str, str + value.size());
-    return *this;
   }
 
-  basic_writer &operator<<(
-      typename internal::WCharHelper<StringRef, Char>::Supported value) {
+  void write(typename internal::WCharHelper<StringRef, Char>::Supported value) {
     const char *str = value.data();
     buffer_.append(str, str + value.size());
-    return *this;
   }
 
   template <typename T, typename Spec, typename FillChar>
@@ -3076,7 +3065,7 @@ inline void print_colored(Color c, CStringRef format_str,
 
 inline std::string vformat(CStringRef format_str, format_args args) {
   MemoryWriter w;
-  w.vwrite(format_str, args);
+  w.vformat(format_str, args);
   return w.str();
 }
 
@@ -3096,7 +3085,7 @@ inline std::string format(CStringRef format_str, const Args & ... args) {
 
 inline std::wstring vformat(WCStringRef format_str, wformat_args args) {
   WMemoryWriter w;
-  w.vwrite(format_str, args);
+  w.vformat(format_str, args);
   return w.str();
 }
 
@@ -3574,7 +3563,7 @@ void do_format_arg(basic_writer<Char> &writer, basic_format_arg<Context> arg,
 
 /** Formats arguments and writes the output to the writer. */
 template <typename ArgFormatter, typename Char, typename Context>
-void vformat(basic_writer<Char> &writer, BasicCStringRef<Char> format_str,
+void vwrite(basic_writer<Char> &writer, BasicCStringRef<Char> format_str,
              basic_format_args<Context> args) {
   basic_format_context<Char> ctx(format_str.c_str(), args);
   const Char *&s = ctx.ptr();
@@ -3599,10 +3588,10 @@ void vformat(basic_writer<Char> &writer, BasicCStringRef<Char> format_str,
 }
 
 template <typename Char>
-inline void basic_writer<Char>::vwrite(
+inline void basic_writer<Char>::vformat(
     BasicCStringRef<Char> format,
     basic_format_args<basic_format_context<Char>> args) {
-  vformat<ArgFormatter<Char>>(*this, format, args);
+  vwrite<ArgFormatter<Char>>(*this, format, args);
 }
 }  // namespace fmt
 

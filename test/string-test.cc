@@ -60,7 +60,9 @@ TEST(StringBufferTest, MoveTo) {
 
 TEST(StringWriterTest, MoveTo) {
   fmt::StringWriter out;
-  out << "The answer is " << 42 << "\n";
+  out.write("The answer is ");
+  out.write(42);
+  out.write("\n");
   std::string s;
   out.move_to(s);
   EXPECT_EQ("The answer is 42\n", s);
@@ -69,7 +71,9 @@ TEST(StringWriterTest, MoveTo) {
 
 TEST(StringWriterTest, WString) {
   fmt::WStringWriter out;
-  out << "The answer is " << 42 << "\n";
+  out.write("The answer is ");
+  out.write(42);
+  out.write("\n");
   std::wstring s;
   out.move_to(s);
   EXPECT_EQ(L"The answer is 42\n", s);

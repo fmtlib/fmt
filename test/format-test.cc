@@ -107,8 +107,9 @@ void std_format(long double value, std::wstring &result) {
 // as writing it to std::basic_ostringstream<Char>.
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T &value, const char *type) {
-  std::basic_string<Char> actual =
-      (fmt::BasicMemoryWriter<Char>() << value).str();
+  fmt::BasicMemoryWriter<Char> writer;
+  writer.write(value);
+  std::basic_string<Char> actual = writer.str();
   std::basic_string<Char> expected;
   std_format(value, expected);
   if (expected == actual)
@@ -191,19 +192,19 @@ void check_move_writer(const std::string &str, MemoryWriter &w) {
 
 TEST(WriterTest, MoveCtor) {
   MemoryWriter w;
-  w << "test";
+  w.write("test");
   check_move_writer("test", w);
   // This fills the inline buffer, but doesn't cause dynamic allocation.
   std::string s;
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
     s += '*';
   w.clear();
-  w << s;
+  w.write(s);
   check_move_writer(s, w);
   const char *inline_buffer_ptr = w.data();
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
-  w << '*';
+  w.write('*');
   MemoryWriter w2(std::move(w));
   // Move should rip the guts of the first writer.
   EXPECT_EQ(inline_buffer_ptr, w.data());
@@ -220,19 +221,19 @@ void CheckMoveAssignWriter(const std::string &str, MemoryWriter &w) {
 
 TEST(WriterTest, MoveAssignment) {
   MemoryWriter w;
-  w << "test";
+  w.write("test");
   CheckMoveAssignWriter("test", w);
   // This fills the inline buffer, but doesn't cause dynamic allocation.
   std::string s;
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
     s += '*';
   w.clear();
-  w << s;
+  w.write(s);
   CheckMoveAssignWriter(s, w);
   const char *inline_buffer_ptr = w.data();
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
-  w << '*';
+  w.write('*');
   MemoryWriter w2;
   w2 = std::move(w);
   // Move should rip the guts of the first writer.
@@ -252,19 +253,19 @@ TEST(WriterTest, Allocator) {
   std::vector<char> mem(size);
   EXPECT_CALL(alloc, allocate(size)).WillOnce(testing::Return(&mem[0]));
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE + 1; ++i)
-    w << '*';
+    w.write('*');
   EXPECT_CALL(alloc, deallocate(&mem[0], size));
 }
 
 TEST(WriterTest, Data) {
   MemoryWriter w;
-  w << 42;
+  w.write(42);
   EXPECT_EQ("42", std::string(w.data(), w.size()));
 }
 
 TEST(WriterTest, WriteWithoutArgs) {
   MemoryWriter w;
-  w.write("test");
+  w.format("test");
   EXPECT_EQ("test", std::string(w.data(), w.size()));
 }
 
@@ -317,15 +318,15 @@ TEST(WriterTest, WriteLongDouble) {
 TEST(WriterTest, WriteDoubleAtBufferBoundary) {
   MemoryWriter writer;
   for (int i = 0; i < 100; ++i)
-    writer << 1.23456789;
+    writer.write(1.23456789);
 }
 
 TEST(WriterTest, WriteDoubleWithFilledBuffer) {
   MemoryWriter writer;
   // Fill the buffer.
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
-    writer << ' ';
-  writer << 1.2;
+    writer.write(' ');
+  writer.write(1.2);
   EXPECT_STREQ("1.2", writer.c_str() + fmt::internal::INLINE_BUFFER_SIZE);
 }
 
@@ -399,8 +400,13 @@ TEST(WriterTest, hexu) {
 }
 
 template <typename Char>
-basic_writer<Char> &operator<<(basic_writer<Char> &f, const Date &d) {
-  return f << d.year() << '-' << d.month() << '-' << d.day();
+basic_writer<Char> &operator<<(basic_writer<Char> &w, const Date &d) {
+  w.write(d.year());
+  w.write('-');
+  w.write(d.month());
+  w.write('-');
+  w.write(d.day());
+  return w;
 }
 
 class ISO8601DateFormatter {
@@ -412,8 +418,12 @@ public:
   template <typename Char>
   friend basic_writer<Char> &operator<<(
       basic_writer<Char> &w, const ISO8601DateFormatter &d) {
-    return w << pad(d.date_->year(), 4, '0') << '-'
-        << pad(d.date_->month(), 2, '0') << '-' << pad(d.date_->day(), 2, '0');
+    w << pad(d.date_->year(), 4, '0');
+    w.write('-');
+    w << pad(d.date_->month(), 2, '0');
+    w.write('-');
+    w << pad(d.date_->day(), 2, '0');
+    return w;
   }
 };
 
@@ -467,12 +477,12 @@ TEST(WriterTest, NoConflictWithIOManip) {
 
 TEST(WriterTest, Format) {
   MemoryWriter w;
-  w.write("part{0}", 1);
+  w.format("part{0}", 1);
   EXPECT_EQ(strlen("part1"), w.size());
   EXPECT_STREQ("part1", w.c_str());
   EXPECT_STREQ("part1", w.data());
   EXPECT_EQ("part1", w.str());
-  w.write("part{0}", 2);
+  w.format("part{0}", 2);
   EXPECT_EQ(strlen("part1part2"), w.size());
   EXPECT_STREQ("part1part2", w.c_str());
   EXPECT_STREQ("part1part2", w.data());
@@ -495,27 +505,27 @@ TEST(ArrayWriterTest, CompileTimeSizeCtor) {
   fmt::ArrayWriter w(array);
   EXPECT_EQ(0u, w.size());
   EXPECT_STREQ("", w.c_str());
-  w.write("{:10}", 1);
+  w.format("{:10}", 1);
 }
 
 TEST(ArrayWriterTest, Write) {
   char array[10];
   fmt::ArrayWriter w(array, sizeof(array));
-  w.write("{}", 42);
+  w.format("{}", 42);
   EXPECT_EQ("42", w.str());
 }
 
 TEST(ArrayWriterTest, BufferOverflow) {
   char array[10];
   fmt::ArrayWriter w(array, sizeof(array));
-  w.write("{:10}", 1);
-  EXPECT_THROW_MSG(w.write("{}", 1), std::runtime_error, "buffer overflow");
+  w.format("{:10}", 1);
+  EXPECT_THROW_MSG(w.format("{}", 1), std::runtime_error, "buffer overflow");
 }
 
 TEST(ArrayWriterTest, WChar) {
   wchar_t array[10];
   fmt::WArrayWriter w(array);
-  w.write(L"{}", 42);
+  w.format(L"{}", 42);
   EXPECT_EQ(L"42", w.str());
 }
 
@@ -1356,7 +1366,11 @@ TEST(FormatterTest, FormatCStringRef) {
 }
 
 void format_value(fmt::writer &w, const Date &d, fmt::format_context &) {
-  w << d.year() << '-' << d.month() << '-' << d.day();
+  w.write(d.year());
+  w.write('-');
+  w.write(d.month());
+  w.write('-');
+  w.write(d.day());
 }
 
 TEST(FormatterTest, FormatCustom) {
@@ -1369,7 +1383,7 @@ class Answer {};
 
 template <typename Char>
 void format_value(basic_writer<Char> &w, Answer, fmt::format_context &) {
-  w << "42";
+  w.write("42");
 }
 
 TEST(FormatterTest, CustomFormat) {
@@ -1400,14 +1414,16 @@ TEST(FormatterTest, FormatExamples) {
   EXPECT_EQ("42", format(std::string("{}"), 42));
 
   MemoryWriter out;
-  out << "The answer is " << 42 << "\n";
-  out.write("({:+f}, {:+f})", -3.14, 3.14);
+  out.write("The answer is ");
+  out.write(42);
+  out.write("\n");
+  out.format("({:+f}, {:+f})", -3.14, 3.14);
   EXPECT_EQ("The answer is 42\n(-3.140000, +3.140000)", out.str());
 
   {
     MemoryWriter writer;
     for (int i = 0; i < 10; i++)
-      writer.write("{}", i);
+      writer.format("{}", i);
     std::string s = writer.str(); // s == 0123456789
     EXPECT_EQ("0123456789", s);
   }
@@ -1552,8 +1568,8 @@ TEST(StrTest, Convert) {
 
 std::string vformat_message(int id, const char *format, fmt::format_args args) {
   MemoryWriter w;
-  w.write("[{}] ", id);
-  w.vwrite(format, args);
+  w.format("[{}] ", id);
+  w.vformat(format, args);
   return w.str();
 }
 
@@ -1642,7 +1658,7 @@ class MockArgFormatter : public fmt::internal::ArgFormatterBase<char> {
 
 void custom_vformat(fmt::CStringRef format_str, fmt::format_args args) {
   fmt::MemoryWriter writer;
-  fmt::vformat<MockArgFormatter>(writer, format_str, args);
+  fmt::vwrite<MockArgFormatter>(writer, format_str, args);
 }
 
 template <typename... Args>

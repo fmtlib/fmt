@@ -111,7 +111,7 @@ typedef BasicStringWriter<wchar_t> WStringWriter;
 template <typename T>
 std::string to_string(const T &value) {
   fmt::MemoryWriter w;
-  w << value;
+  w.write(value);
   return w.str();
 }
 }

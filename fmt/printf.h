@@ -505,7 +505,7 @@ template <typename Char, typename T>
 void format_value(basic_writer<Char> &w, const T &value,
                   printf_context<Char>& ctx) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
-  w << internal::format_value(buffer, value);
+  w.write(internal::format_value(buffer, value));
 }
 
 template <typename Char>

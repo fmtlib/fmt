@@ -123,7 +123,7 @@ TEST(OStreamTest, Print) {
 TEST(OStreamTest, WriteToOStream) {
   std::ostringstream os;
   fmt::MemoryWriter w;
-  w << "foo";
+  w.write("foo");
   fmt::internal::write(os, w);
   EXPECT_EQ("foo", os.str());
 }

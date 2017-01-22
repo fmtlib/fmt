@@ -70,7 +70,7 @@ struct Test {};
 template <typename Char>
 void format_value(fmt::basic_writer<Char> &w, Test,
                   fmt::basic_format_context<Char> &) {
-  w << "test";
+  w.write("test");
 }
 
 template <typename Context, typename T>
@@ -726,7 +726,7 @@ TEST(UtilTest, SystemError) {
 TEST(UtilTest, ReportSystemError) {
   fmt::MemoryWriter out;
   fmt::format_system_error(out, EDOM, "test error");
-  out << '\n';
+  out.write('\n');
   EXPECT_WRITE(stderr, fmt::report_system_error(EDOM, "test error"), out.str());
 }
 
