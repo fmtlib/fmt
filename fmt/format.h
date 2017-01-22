@@ -1639,6 +1639,52 @@ enum {
   CHAR_FLAG = 0x10  // Argument has char type - used in error reporting.
 };
 
+enum format_spec_tag {fill_tag, align_tag, width_tag, type_tag};
+
+// Format specifier.
+template <typename T, format_spec_tag>
+class format_spec {
+ private:
+  T value_;
+
+ public:
+  typedef T value_type;
+
+  explicit format_spec(T value) : value_(value) {}
+
+  T value() const { return value_; }
+};
+
+template <typename Char>
+using fill_spec = format_spec<Char, fill_tag>;
+
+using width_spec = format_spec<unsigned, width_tag>;
+using type_spec = format_spec<char, type_tag>;
+
+class fill_spec_factory {
+ public:
+  constexpr fill_spec_factory() {}
+
+  template <typename Char>
+  fill_spec<Char> operator=(Char value) const {
+    return fill_spec<Char>(value);
+  }
+};
+
+template <typename FormatSpec>
+class format_spec_factory {
+ public:
+  constexpr format_spec_factory() {}
+
+  FormatSpec operator=(typename FormatSpec::value_type value) const {
+    return FormatSpec(value);
+  }
+};
+
+constexpr fill_spec_factory fill;
+constexpr format_spec_factory<width_spec> width;
+constexpr format_spec_factory<type_spec> type;
+
 // An empty format specifier.
 struct EmptySpec {};
 
@@ -1688,14 +1734,39 @@ struct AlignTypeSpec : AlignSpec {
 };
 
 // A full format specifier.
-struct FormatSpec : AlignSpec {
+class FormatSpec : public AlignSpec {
+ private:
+  void set(fill_spec<char> fill) {
+    fill_ = fill.value();
+  }
+
+  void set(width_spec width) {
+    width_ = width.value();
+  }
+
+  void set(type_spec type) {
+    type_ = type.value();
+  }
+
+  template <typename Spec, typename... Specs>
+  void set(Spec spec, Specs... tail) {
+    set(spec);
+    set(tail...);
+  }
+
+ public:
   unsigned flags_;
   int precision_;
   char type_;
 
-  FormatSpec(
-    unsigned width = 0, char type = 0, wchar_t fill = ' ')
+  FormatSpec(unsigned width = 0, char type = 0, wchar_t fill = ' ')
   : AlignSpec(width, fill), flags_(0), precision_(-1), type_(type) {}
+
+  template <typename... FormatSpecs>
+  explicit FormatSpec(FormatSpecs... specs)
+    : AlignSpec(0, ' '), flags_(0), precision_(-1), type_(0){
+    set(specs...);
+  }
 
   bool flag(unsigned f) const { return (flags_ & f) != 0; }
   int precision() const { return precision_; }
@@ -1811,13 +1882,6 @@ inline IntFormatSpec<TYPE, AlignTypeSpec<0> > pad( \
     TYPE value, unsigned width) { \
   return IntFormatSpec<TYPE, AlignTypeSpec<0> >( \
       value, AlignTypeSpec<0>(width, ' ')); \
-} \
- \
-template <typename Char> \
-inline IntFormatSpec<TYPE, AlignTypeSpec<0>, Char> pad( \
-   TYPE value, unsigned width, Char fill) { \
- return IntFormatSpec<TYPE, AlignTypeSpec<0>, Char>( \
-     value, AlignTypeSpec<0>(width, fill)); \
 }
 
 FMT_DEFINE_INT_FORMATTERS(int)
@@ -2226,6 +2290,17 @@ class SystemError : public internal::RuntimeError {
 FMT_API void format_system_error(fmt::writer &out, int error_code,
                                  fmt::StringRef message) FMT_NOEXCEPT;
 
+namespace internal {
+// Named format specifier.
+template <typename T>
+class named_format_spec {
+ public:
+  constexpr named_format_spec() {}
+};
+
+constexpr named_format_spec<unsigned> width;
+}
+
 /**
   \rst
   This template provides operations for formatting and writing data into
@@ -2309,7 +2384,7 @@ class basic_writer {
   CharPtr prepare_int_buffer(unsigned num_digits,
     const Spec &spec, const char *prefix, unsigned prefix_size);
 
-  // Formats an integer.
+  // Writes a formatted integer.
   template <typename T, typename Spec>
   void write_int(T value, Spec spec);
 
@@ -2447,6 +2522,12 @@ class basic_writer {
    */
   void write(ULongLong value) {
     *this << IntFormatSpec<ULongLong>(value);
+  }
+
+  template <typename T, typename... FormatSpecs>
+  typename std::enable_if<std::is_integral<T>::value, void>::type
+      write(T value, FormatSpecs... specs) {
+    write_int(value, FormatSpec(specs...));
   }
 
   void write(double value) {
