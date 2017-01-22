@@ -781,7 +781,7 @@ TEST(UtilTest, WindowsError) {
 TEST(UtilTest, ReportWindowsError) {
   fmt::MemoryWriter out;
   fmt::internal::format_windows_error(out, ERROR_FILE_EXISTS, "test error");
-  out << '\n';
+  out.write('\n');
   EXPECT_WRITE(stderr,
       fmt::report_windows_error(ERROR_FILE_EXISTS, "test error"), out.str());
 }

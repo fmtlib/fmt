@@ -1655,14 +1655,16 @@ class format_spec {
   T value() const { return value_; }
 };
 
+// template <typename Char>
+// using fill_spec = format_spec<Char, fill_tag>;
 template <typename Char>
 class fill_spec : public format_spec<Char, fill_tag> {
  public:
   explicit fill_spec(Char value) : format_spec<Char, fill_tag>(value) {}
 };
 
-using width_spec = format_spec<unsigned, width_tag>;
-using type_spec = format_spec<char, type_tag>;
+typedef format_spec<unsigned, width_tag> width_spec;
+typedef format_spec<char, type_tag> type_spec;
 
 class fill_spec_factory {
  public:
