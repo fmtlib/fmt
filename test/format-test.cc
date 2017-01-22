@@ -418,25 +418,34 @@ public:
   template <typename Char>
   friend basic_writer<Char> &operator<<(
       basic_writer<Char> &w, const ISO8601DateFormatter &d) {
-    w << pad(d.date_->year(), 4, '0');
+    using namespace fmt;
+    w.write(d.date_->year(), width=4, fill='0');
     w.write('-');
-    w << pad(d.date_->month(), 2, '0');
+    w.write(d.date_->month(), width=2, fill='0');
     w.write('-');
-    w << pad(d.date_->day(), 2, '0');
+    w.write(d.date_->day(), width=2, fill='0');
     return w;
   }
 };
 
 ISO8601DateFormatter iso8601(const Date &d) { return ISO8601DateFormatter(d); }
 
+template <typename... T>
+std::string write_str(T... args) {
+  MemoryWriter writer;
+  using namespace fmt;
+  writer.write(args...);
+  return writer.str();
+}
+
 TEST(WriterTest, pad) {
-  using fmt::hex;
-  EXPECT_EQ("    cafe", (MemoryWriter() << pad(hex(0xcafe), 8)).str());
-  EXPECT_EQ("    babe", (MemoryWriter() << pad(hex(0xbabeu), 8)).str());
-  EXPECT_EQ("    dead", (MemoryWriter() << pad(hex(0xdeadl), 8)).str());
-  EXPECT_EQ("    beef", (MemoryWriter() << pad(hex(0xbeeful), 8)).str());
-  EXPECT_EQ("    dead", (MemoryWriter() << pad(hex(0xdeadll), 8)).str());
-  EXPECT_EQ("    beef", (MemoryWriter() << pad(hex(0xbeefull), 8)).str());
+  using namespace fmt;
+  EXPECT_EQ("    cafe", write_str(0xcafe, width=8, type='x'));
+  EXPECT_EQ("    babe", write_str(0xbabeu, width=8, type='x'));
+  EXPECT_EQ("    dead", write_str(0xdeadl, width=8, type='x'));
+  EXPECT_EQ("    beef", write_str(0xbeeful, width=8, type='x'));
+  EXPECT_EQ("    dead", write_str(0xdeadll, width=8, type='x'));
+  EXPECT_EQ("    beef", write_str(0xbeefull, width=8, type='x'));
 
   EXPECT_EQ("     11", (MemoryWriter() << pad(11, 7)).str());
   EXPECT_EQ("     22", (MemoryWriter() << pad(22u, 7)).str());
@@ -447,7 +456,8 @@ TEST(WriterTest, pad) {
 
   MemoryWriter w;
   w.clear();
-  w << pad(42, 5, '0');
+  using namespace fmt;
+  w.write(42, width=5, fill='0');
   EXPECT_EQ("00042", w.str());
   w.clear();
   w << Date(2012, 12, 9);

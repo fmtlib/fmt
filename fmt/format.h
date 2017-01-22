@@ -1656,7 +1656,10 @@ class format_spec {
 };
 
 template <typename Char>
-using fill_spec = format_spec<Char, fill_tag>;
+class fill_spec : public format_spec<Char, fill_tag> {
+ public:
+  explicit fill_spec(Char value) : format_spec<Char, fill_tag>(value) {}
+};
 
 using width_spec = format_spec<unsigned, width_tag>;
 using type_spec = format_spec<char, type_tag>;
