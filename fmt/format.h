@@ -1741,7 +1741,8 @@ struct AlignTypeSpec : AlignSpec {
 // A full format specifier.
 class FormatSpec : public AlignSpec {
  private:
-  void set(fill_spec<char> fill) {
+  template <typename Char>
+  void set(fill_spec<Char> fill) {
     fill_ = fill.value();
   }
 
@@ -1829,24 +1830,6 @@ IntFormatSpec<int, TypeSpec<'x'> > hex(int value);
  */
 IntFormatSpec<int, TypeSpec<'X'> > hexu(int value);
 
-/**
-  \rst
-  Returns an integer format specifier to pad the formatted argument with the
-  fill character to the specified width using the default (right) numeric
-  alignment.
-
-  **Example**::
-
-    MemoryWriter out;
-    out << pad(hex(0xcafe), 8, '0');
-    // out.str() == "0000cafe"
-
-  \endrst
- */
-template <char TYPE_CODE, typename Char>
-IntFormatSpec<int, AlignTypeSpec<TYPE_CODE>, Char> pad(
-    int value, unsigned width, Char fill = ' ');
-
 #define FMT_DEFINE_INT_FORMATTERS(TYPE) \
 inline IntFormatSpec<TYPE, TypeSpec<'b'> > bin(TYPE value) { \
   return IntFormatSpec<TYPE, TypeSpec<'b'> >(value, TypeSpec<'b'>()); \
@@ -1862,31 +1845,6 @@ inline IntFormatSpec<TYPE, TypeSpec<'x'> > hex(TYPE value) { \
  \
 inline IntFormatSpec<TYPE, TypeSpec<'X'> > hexu(TYPE value) { \
   return IntFormatSpec<TYPE, TypeSpec<'X'> >(value, TypeSpec<'X'>()); \
-} \
- \
-template <char TYPE_CODE> \
-inline IntFormatSpec<TYPE, AlignTypeSpec<TYPE_CODE> > pad( \
-    IntFormatSpec<TYPE, TypeSpec<TYPE_CODE> > f, unsigned width) { \
-  return IntFormatSpec<TYPE, AlignTypeSpec<TYPE_CODE> >( \
-      f.value(), AlignTypeSpec<TYPE_CODE>(width, ' ')); \
-} \
- \
-/* For compatibility with older compilers we provide two overloads for pad, */ \
-/* one that takes a fill character and one that doesn't. In the future this */ \
-/* can be replaced with one overload making the template argument Char      */ \
-/* default to char (C++11). */ \
-template <char TYPE_CODE, typename Char> \
-inline IntFormatSpec<TYPE, AlignTypeSpec<TYPE_CODE>, Char> pad( \
-    IntFormatSpec<TYPE, TypeSpec<TYPE_CODE>, Char> f, \
-    unsigned width, Char fill) { \
-  return IntFormatSpec<TYPE, AlignTypeSpec<TYPE_CODE>, Char>( \
-      f.value(), AlignTypeSpec<TYPE_CODE>(width, fill)); \
-} \
- \
-inline IntFormatSpec<TYPE, AlignTypeSpec<0> > pad( \
-    TYPE value, unsigned width) { \
-  return IntFormatSpec<TYPE, AlignTypeSpec<0> >( \
-      value, AlignTypeSpec<0>(width, ' ')); \
 }
 
 FMT_DEFINE_INT_FORMATTERS(int)
@@ -1895,29 +1853,6 @@ FMT_DEFINE_INT_FORMATTERS(unsigned)
 FMT_DEFINE_INT_FORMATTERS(unsigned long)
 FMT_DEFINE_INT_FORMATTERS(LongLong)
 FMT_DEFINE_INT_FORMATTERS(ULongLong)
-
-/**
-  \rst
-  Returns a string formatter that pads the formatted argument with the fill
-  character to the specified width using the default (left) string alignment.
-
-  **Example**::
-
-    std::string s = str(MemoryWriter() << pad("abc", 8));
-    // s == "abc     "
-
-  \endrst
- */
-template <typename Char>
-inline StrFormatSpec<Char> pad(
-    const Char *str, unsigned width, Char fill = ' ') {
-  return StrFormatSpec<Char>(str, width, fill);
-}
-
-inline StrFormatSpec<wchar_t> pad(
-    const wchar_t *str, unsigned width, char fill = ' ') {
-  return StrFormatSpec<wchar_t>(str, width, fill);
-}
 
 namespace internal {
 
@@ -2573,6 +2508,11 @@ class basic_writer {
   void write(typename internal::WCharHelper<StringRef, Char>::Supported value) {
     const char *str = value.data();
     buffer_.append(str, str + value.size());
+  }
+
+  template <typename... FormatSpecs>
+  void write(BasicStringRef<Char> str, FormatSpecs... specs) {
+    write_str(str, FormatSpec(specs...));
   }
 
   template <typename T, typename Spec, typename FillChar>

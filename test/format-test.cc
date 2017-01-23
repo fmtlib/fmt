@@ -77,7 +77,9 @@ using fmt::StringRef;
 using fmt::CStringRef;
 using fmt::MemoryWriter;
 using fmt::WMemoryWriter;
-using fmt::pad;
+using fmt::fill;
+using fmt::type;
+using fmt::width;
 
 namespace {
 
@@ -418,7 +420,6 @@ public:
   template <typename Char>
   friend basic_writer<Char> &operator<<(
       basic_writer<Char> &w, const ISO8601DateFormatter &d) {
-    using namespace fmt;
     w.write(d.date_->year(), width=4, fill='0');
     w.write('-');
     w.write(d.date_->month(), width=2, fill='0');
@@ -438,8 +439,15 @@ std::string write_str(T... args) {
   return writer.str();
 }
 
-TEST(WriterTest, pad) {
+template <typename... T>
+std::wstring write_wstr(T... args) {
+  WMemoryWriter writer;
   using namespace fmt;
+  writer.write(args...);
+  return writer.str();
+}
+
+TEST(WriterTest, pad) {
   EXPECT_EQ("    cafe", write_str(0xcafe, width=8, type='x'));
   EXPECT_EQ("    babe", write_str(0xbabeu, width=8, type='x'));
   EXPECT_EQ("    dead", write_str(0xdeadl, width=8, type='x'));
@@ -447,17 +455,16 @@ TEST(WriterTest, pad) {
   EXPECT_EQ("    dead", write_str(0xdeadll, width=8, type='x'));
   EXPECT_EQ("    beef", write_str(0xbeefull, width=8, type='x'));
 
-  EXPECT_EQ("     11", (MemoryWriter() << pad(11, 7)).str());
-  EXPECT_EQ("     22", (MemoryWriter() << pad(22u, 7)).str());
-  EXPECT_EQ("     33", (MemoryWriter() << pad(33l, 7)).str());
-  EXPECT_EQ("     44", (MemoryWriter() << pad(44ul, 7)).str());
-  EXPECT_EQ("     33", (MemoryWriter() << pad(33ll, 7)).str());
-  EXPECT_EQ("     44", (MemoryWriter() << pad(44ull, 7)).str());
+  EXPECT_EQ("     11", write_str(11, width=7));
+  EXPECT_EQ("     22", write_str(22u, width=7));
+  EXPECT_EQ("     33", write_str(33l, width=7));
+  EXPECT_EQ("     44", write_str(44ul, width=7));
+  EXPECT_EQ("     33", write_str(33ll, width=7));
+  EXPECT_EQ("     44", write_str(44ull, width=7));
 
   MemoryWriter w;
   w.clear();
-  using namespace fmt;
-  w.write(42, width=5, fill='0');
+  w.write(42, fmt::width=5, fmt::fill='0');
   EXPECT_EQ("00042", w.str());
   w.clear();
   w << Date(2012, 12, 9);
@@ -468,14 +475,14 @@ TEST(WriterTest, pad) {
 }
 
 TEST(WriterTest, PadString) {
-  EXPECT_EQ("test    ", (MemoryWriter() << pad("test", 8)).str());
-  EXPECT_EQ("test******", (MemoryWriter() << pad("test", 10, '*')).str());
+  EXPECT_EQ("test    ", write_str("test", width=8));
+  EXPECT_EQ("test******", write_str("test", width=10, fill='*'));
 }
 
 TEST(WriterTest, PadWString) {
-  EXPECT_EQ(L"test    ", (WMemoryWriter() << pad(L"test", 8)).str());
-  EXPECT_EQ(L"test******", (WMemoryWriter() << pad(L"test", 10, '*')).str());
-  EXPECT_EQ(L"test******", (WMemoryWriter() << pad(L"test", 10, L'*')).str());
+  EXPECT_EQ(L"test    ", write_wstr(L"test", width=8));
+  EXPECT_EQ(L"test******", write_wstr(L"test", width=10, fill='*'));
+  EXPECT_EQ(L"test******", write_wstr(L"test", width=10, fill=L'*'));
 }
 
 TEST(WriterTest, NoConflictWithIOManip) {
@@ -1414,8 +1421,7 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
 }
 
 TEST(FormatterTest, FormatExamples) {
-  using fmt::hex;
-  EXPECT_EQ("0000cafe", (MemoryWriter() << pad(hex(0xcafe), 8, '0')).str());
+  EXPECT_EQ("0000cafe", write_str(0xcafe, width=8, fill='0', type='x'));
 
   std::string message = format("The answer is {}", 42);
   EXPECT_EQ("The answer is 42", message);
