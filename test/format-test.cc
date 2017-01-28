@@ -353,52 +353,59 @@ TEST(WriterTest, WriteWideString) {
   //fmt::WMemoryWriter() << "abc";
 }
 
+template <typename... T>
+std::string write_str(T... args) {
+  MemoryWriter writer;
+  using namespace fmt;
+  writer.write(args...);
+  return writer.str();
+}
+
+template <typename... T>
+std::wstring write_wstr(T... args) {
+  WMemoryWriter writer;
+  using namespace fmt;
+  writer.write(args...);
+  return writer.str();
+}
+
 TEST(WriterTest, bin) {
-  using fmt::bin;
-  EXPECT_EQ("1100101011111110", (MemoryWriter() << bin(0xcafe)).str());
-  EXPECT_EQ("1011101010111110", (MemoryWriter() << bin(0xbabeu)).str());
-  EXPECT_EQ("1101111010101101", (MemoryWriter() << bin(0xdeadl)).str());
-  EXPECT_EQ("1011111011101111", (MemoryWriter() << bin(0xbeeful)).str());
+  EXPECT_EQ("1100101011111110", write_str(0xcafe, type='b'));
+  EXPECT_EQ("1011101010111110", write_str(0xbabeu, type='b'));
+  EXPECT_EQ("1101111010101101", write_str(0xdeadl, type='b'));
+  EXPECT_EQ("1011111011101111", write_str(0xbeeful, type='b'));
   EXPECT_EQ("11001010111111101011101010111110",
-            (MemoryWriter() << bin(0xcafebabell)).str());
+            write_str(0xcafebabell, type='b'));
   EXPECT_EQ("11011110101011011011111011101111",
-            (MemoryWriter() << bin(0xdeadbeefull)).str());
+            write_str(0xdeadbeefull, type='b'));
 }
 
 TEST(WriterTest, oct) {
-  using fmt::oct;
-  EXPECT_EQ("12", (MemoryWriter() << oct(static_cast<short>(012))).str());
-  EXPECT_EQ("12", (MemoryWriter() << oct(012)).str());
-  EXPECT_EQ("34", (MemoryWriter() << oct(034u)).str());
-  EXPECT_EQ("56", (MemoryWriter() << oct(056l)).str());
-  EXPECT_EQ("70", (MemoryWriter() << oct(070ul)).str());
-  EXPECT_EQ("1234", (MemoryWriter() << oct(01234ll)).str());
-  EXPECT_EQ("5670", (MemoryWriter() << oct(05670ull)).str());
+  EXPECT_EQ("12", write_str(static_cast<short>(012), type='o'));
+  EXPECT_EQ("12", write_str(012, type='o'));
+  EXPECT_EQ("34", write_str(034u, type='o'));
+  EXPECT_EQ("56", write_str(056l, type='o'));
+  EXPECT_EQ("70", write_str(070ul, type='o'));
+  EXPECT_EQ("1234", write_str(01234ll, type='o'));
+  EXPECT_EQ("5670", write_str(05670ull, type='o'));
 }
 
 TEST(WriterTest, hex) {
-  using fmt::hex;
-  fmt::IntFormatSpec<int, fmt::TypeSpec<'x'> > (*phex)(int value) = hex;
-  phex(42);
-  // This shouldn't compile:
-  //fmt::IntFormatSpec<short, fmt::TypeSpec<'x'> > (*phex2)(short value) = hex;
-
-  EXPECT_EQ("cafe", (MemoryWriter() << hex(0xcafe)).str());
-  EXPECT_EQ("babe", (MemoryWriter() << hex(0xbabeu)).str());
-  EXPECT_EQ("dead", (MemoryWriter() << hex(0xdeadl)).str());
-  EXPECT_EQ("beef", (MemoryWriter() << hex(0xbeeful)).str());
-  EXPECT_EQ("cafebabe", (MemoryWriter() << hex(0xcafebabell)).str());
-  EXPECT_EQ("deadbeef", (MemoryWriter() << hex(0xdeadbeefull)).str());
+  EXPECT_EQ("cafe", write_str(0xcafe, type='x'));
+  EXPECT_EQ("babe", write_str(0xbabeu, type='x'));
+  EXPECT_EQ("dead", write_str(0xdeadl, type='x'));
+  EXPECT_EQ("beef", write_str(0xbeeful, type='x'));
+  EXPECT_EQ("cafebabe", write_str(0xcafebabell, type='x'));
+  EXPECT_EQ("deadbeef", write_str(0xdeadbeefull, type='x'));
 }
 
 TEST(WriterTest, hexu) {
-  using fmt::hexu;
-  EXPECT_EQ("CAFE", (MemoryWriter() << hexu(0xcafe)).str());
-  EXPECT_EQ("BABE", (MemoryWriter() << hexu(0xbabeu)).str());
-  EXPECT_EQ("DEAD", (MemoryWriter() << hexu(0xdeadl)).str());
-  EXPECT_EQ("BEEF", (MemoryWriter() << hexu(0xbeeful)).str());
-  EXPECT_EQ("CAFEBABE", (MemoryWriter() << hexu(0xcafebabell)).str());
-  EXPECT_EQ("DEADBEEF", (MemoryWriter() << hexu(0xdeadbeefull)).str());
+  EXPECT_EQ("CAFE", write_str(0xcafe, type='X'));
+  EXPECT_EQ("BABE", write_str(0xbabeu, type='X'));
+  EXPECT_EQ("DEAD", write_str(0xdeadl, type='X'));
+  EXPECT_EQ("BEEF", write_str(0xbeeful, type='X'));
+  EXPECT_EQ("CAFEBABE", write_str(0xcafebabell, type='X'));
+  EXPECT_EQ("DEADBEEF", write_str(0xdeadbeefull, type='X'));
 }
 
 template <typename Char>
@@ -430,22 +437,6 @@ public:
 };
 
 ISO8601DateFormatter iso8601(const Date &d) { return ISO8601DateFormatter(d); }
-
-template <typename... T>
-std::string write_str(T... args) {
-  MemoryWriter writer;
-  using namespace fmt;
-  writer.write(args...);
-  return writer.str();
-}
-
-template <typename... T>
-std::wstring write_wstr(T... args) {
-  WMemoryWriter writer;
-  using namespace fmt;
-  writer.write(args...);
-  return writer.str();
-}
 
 TEST(WriterTest, pad) {
   EXPECT_EQ("    cafe", write_str(0xcafe, width=8, type='x'));
@@ -485,13 +476,6 @@ TEST(WriterTest, PadWString) {
   EXPECT_EQ(L"test******", write_wstr(L"test", width=10, fill=L'*'));
 }
 
-TEST(WriterTest, NoConflictWithIOManip) {
-  using namespace std;
-  using namespace fmt;
-  EXPECT_EQ("cafe", (MemoryWriter() << hex(0xcafe)).str());
-  EXPECT_EQ("12", (MemoryWriter() << oct(012)).str());
-}
-
 TEST(WriterTest, Format) {
   MemoryWriter w;
   w.format("part{0}", 1);
@@ -507,7 +491,7 @@ TEST(WriterTest, Format) {
 }
 
 TEST(WriterTest, WWriter) {
-  EXPECT_EQ(L"cafe", (fmt::WMemoryWriter() << fmt::hex(0xcafe)).str());
+  EXPECT_EQ(L"cafe", write_wstr(0xcafe, type='x'));
 }
 
 TEST(ArrayWriterTest, Ctor) {

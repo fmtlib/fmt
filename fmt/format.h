@@ -1779,81 +1779,6 @@ class FormatSpec : public AlignSpec {
   char type() const { return type_; }
 };
 
-// An integer format specifier.
-template <typename T, typename SpecT = TypeSpec<0>, typename Char = char>
-class IntFormatSpec : public SpecT {
- private:
-  T value_;
-
- public:
-  IntFormatSpec(T val, const SpecT &spec = SpecT())
-  : SpecT(spec), value_(val) {}
-
-  T value() const { return value_; }
-};
-
-// A string format specifier.
-template <typename Char>
-class StrFormatSpec : public AlignSpec {
- private:
-  const Char *str_;
-
- public:
-  template <typename FillChar>
-  StrFormatSpec(const Char *str, unsigned width, FillChar fill)
-  : AlignSpec(width, fill), str_(str) {
-    internal::CharTraits<Char>::convert(FillChar());
-  }
-
-  const Char *str() const { return str_; }
-};
-
-/**
-  Returns an integer format specifier to format the value in base 2.
- */
-IntFormatSpec<int, TypeSpec<'b'> > bin(int value);
-
-/**
-  Returns an integer format specifier to format the value in base 8.
- */
-IntFormatSpec<int, TypeSpec<'o'> > oct(int value);
-
-/**
-  Returns an integer format specifier to format the value in base 16 using
-  lower-case letters for the digits above 9.
- */
-IntFormatSpec<int, TypeSpec<'x'> > hex(int value);
-
-/**
-  Returns an integer formatter format specifier to format in base 16 using
-  upper-case letters for the digits above 9.
- */
-IntFormatSpec<int, TypeSpec<'X'> > hexu(int value);
-
-#define FMT_DEFINE_INT_FORMATTERS(TYPE) \
-inline IntFormatSpec<TYPE, TypeSpec<'b'> > bin(TYPE value) { \
-  return IntFormatSpec<TYPE, TypeSpec<'b'> >(value, TypeSpec<'b'>()); \
-} \
- \
-inline IntFormatSpec<TYPE, TypeSpec<'o'> > oct(TYPE value) { \
-  return IntFormatSpec<TYPE, TypeSpec<'o'> >(value, TypeSpec<'o'>()); \
-} \
- \
-inline IntFormatSpec<TYPE, TypeSpec<'x'> > hex(TYPE value) { \
-  return IntFormatSpec<TYPE, TypeSpec<'x'> >(value, TypeSpec<'x'>()); \
-} \
- \
-inline IntFormatSpec<TYPE, TypeSpec<'X'> > hexu(TYPE value) { \
-  return IntFormatSpec<TYPE, TypeSpec<'X'> >(value, TypeSpec<'X'>()); \
-}
-
-FMT_DEFINE_INT_FORMATTERS(int)
-FMT_DEFINE_INT_FORMATTERS(long)
-FMT_DEFINE_INT_FORMATTERS(unsigned)
-FMT_DEFINE_INT_FORMATTERS(unsigned long)
-FMT_DEFINE_INT_FORMATTERS(LongLong)
-FMT_DEFINE_INT_FORMATTERS(ULongLong)
-
 namespace internal {
 
 template <typename Context>
@@ -2442,14 +2367,8 @@ class basic_writer {
   void write(int value) {
     write_decimal(value);
   }
-  void write(unsigned value) {
-    *this << IntFormatSpec<unsigned>(value);
-  }
   void write(long value) {
     write_decimal(value);
-  }
-  void write(unsigned long value) {
-    *this << IntFormatSpec<unsigned long>(value);
   }
   void write(LongLong value) {
     write_decimal(value);
@@ -2457,13 +2376,9 @@ class basic_writer {
 
   /**
     \rst
-    Formats *value* and writes it to the stream.
+    Formats *value* and writes it to the buffer.
     \endrst
    */
-  void write(ULongLong value) {
-    *this << IntFormatSpec<ULongLong>(value);
-  }
-
   template <typename T, typename... FormatSpecs>
   typename std::enable_if<std::is_integral<T>::value, void>::type
       write(T value, FormatSpecs... specs) {
@@ -2513,20 +2428,6 @@ class basic_writer {
   template <typename... FormatSpecs>
   void write(BasicStringRef<Char> str, FormatSpecs... specs) {
     write_str(str, FormatSpec(specs...));
-  }
-
-  template <typename T, typename Spec, typename FillChar>
-  basic_writer &operator<<(IntFormatSpec<T, Spec, FillChar> spec) {
-    internal::CharTraits<Char>::convert(FillChar());
-    write_int(spec.value(), spec);
-    return *this;
-  }
-
-  template <typename StrChar>
-  basic_writer &operator<<(const StrFormatSpec<StrChar> &spec) {
-    const StrChar *s = spec.str();
-    write_str(s, std::char_traits<Char>::length(s), spec);
-    return *this;
   }
 
   void clear() FMT_NOEXCEPT { buffer_.clear(); }
