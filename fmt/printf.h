@@ -168,8 +168,11 @@ class CharConverter {
 
 // Checks if an argument is a valid printf width specifier and sets
 // left alignment if it is negative.
+template <typename Char>
 class PrintfWidthHandler {
  private:
+  typedef basic_format_specs<Char> format_specs;
+
   format_specs &spec_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(PrintfWidthHandler);
@@ -217,6 +220,8 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
   typedef internal::ArgFormatterBase<Char> Base;
 
  public:
+  typedef typename Base::format_specs format_specs;
+
   /**
     \rst
     Constructs an argument formatter object.
@@ -301,6 +306,7 @@ class printf_context :
  private:
   typedef internal::format_context_base<Char, printf_context> Base;
   typedef typename Base::format_arg format_arg;
+  typedef basic_format_specs<Char> format_specs;
 
   void parse_flags(format_specs &spec, const Char *&s);
 
@@ -396,7 +402,7 @@ unsigned printf_context<Char, AF>::parse_header(
     spec.width_ = internal::parse_nonnegative_int(s);
   } else if (*s == '*') {
     ++s;
-    spec.width_ = visit(internal::PrintfWidthHandler(spec), get_arg(s));
+    spec.width_ = visit(internal::PrintfWidthHandler<Char>(spec), get_arg(s));
   }
   return arg_index;
 }

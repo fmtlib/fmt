@@ -1739,10 +1739,13 @@ struct AlignTypeSpec : AlignSpec {
 };
 
 // Format specifiers.
-class format_specs : public AlignSpec {
+template <typename Char>
+class basic_format_specs : public AlignSpec {
  private:
-  template <typename Char>
-  void set(fill_spec<Char> fill) {
+  template <typename FillChar>
+  typename std::enable_if<std::is_same<FillChar, Char>::value ||
+                          std::is_same<FillChar, char>::value, void>::type
+      set(fill_spec<FillChar> fill) {
     fill_ = fill.value();
   }
 
@@ -1765,11 +1768,11 @@ class format_specs : public AlignSpec {
   int precision_;
   char type_;
 
-  format_specs(unsigned width = 0, char type = 0, wchar_t fill = ' ')
+  basic_format_specs(unsigned width = 0, char type = 0, wchar_t fill = ' ')
   : AlignSpec(width, fill), flags_(0), precision_(-1), type_(type) {}
 
   template <typename... FormatSpecs>
-  explicit format_specs(FormatSpecs... specs)
+  explicit basic_format_specs(FormatSpecs... specs)
     : AlignSpec(0, ' '), flags_(0), precision_(-1), type_(0){
     set(specs...);
   }
@@ -1778,6 +1781,8 @@ class format_specs : public AlignSpec {
   int precision() const { return precision_; }
   char type() const { return type_; }
 };
+
+typedef basic_format_specs<char> format_specs;
 
 namespace internal {
 
@@ -1853,6 +1858,9 @@ void ArgMap<Context>::init(const basic_format_args<Context> &args) {
 
 template <typename Char>
 class ArgFormatterBase {
+ public:
+  typedef basic_format_specs<Char> format_specs;
+
  private:
   basic_writer<Char> &writer_;
   format_specs &spec_;
@@ -2035,7 +2043,11 @@ class ArgFormatter : public internal::ArgFormatterBase<Char> {
  private:
   basic_format_context<Char> &ctx_;
 
+  typedef internal::ArgFormatterBase<Char> Base;
+
  public:
+  typedef typename Base::format_specs format_specs;
+
   /**
     \rst
     Constructs an argument formatter object.
@@ -2186,6 +2198,9 @@ constexpr named_format_spec<unsigned> width;
  */
 template <typename Char>
 class basic_writer {
+ public:
+  typedef basic_format_specs<Char> format_specs;
+
  private:
   // Output buffer.
   Buffer<Char> &buffer_;
@@ -2461,7 +2476,7 @@ typename basic_writer<Char>::CharPtr basic_writer<Char>::write_str(
 template <typename Char>
 template <typename StrChar>
 void basic_writer<Char>::write_str(
-    BasicStringRef<StrChar> s, const format_specs &spec) {
+    BasicStringRef<StrChar> s, const basic_writer<Char>::format_specs &spec) {
   // Check if StrChar is convertible to Char.
   internal::CharTraits<Char>::convert(StrChar());
   if (spec.type_ && spec.type_ != 's')
@@ -3366,7 +3381,7 @@ template <typename ArgFormatter, typename Char, typename Context>
 void do_format_arg(basic_writer<Char> &writer, basic_format_arg<Context> arg,
                    Context &ctx) {
   const Char *&s = ctx.ptr();
-  format_specs spec;
+  basic_format_specs<Char> spec;
   if (*s == ':') {
     if (visit(internal::CustomFormatter<Char, Context>(writer, ctx), arg))
       return;
