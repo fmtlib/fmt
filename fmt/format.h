@@ -1738,8 +1738,8 @@ struct AlignTypeSpec : AlignSpec {
   char type() const { return TYPE; }
 };
 
-// A full format specifier.
-class FormatSpec : public AlignSpec {
+// Format specifiers.
+class format_specs : public AlignSpec {
  private:
   template <typename Char>
   void set(fill_spec<Char> fill) {
@@ -1765,11 +1765,11 @@ class FormatSpec : public AlignSpec {
   int precision_;
   char type_;
 
-  FormatSpec(unsigned width = 0, char type = 0, wchar_t fill = ' ')
+  format_specs(unsigned width = 0, char type = 0, wchar_t fill = ' ')
   : AlignSpec(width, fill), flags_(0), precision_(-1), type_(type) {}
 
   template <typename... FormatSpecs>
-  explicit FormatSpec(FormatSpecs... specs)
+  explicit format_specs(FormatSpecs... specs)
     : AlignSpec(0, ' '), flags_(0), precision_(-1), type_(0){
     set(specs...);
   }
@@ -1855,7 +1855,7 @@ template <typename Char>
 class ArgFormatterBase {
  private:
   basic_writer<Char> &writer_;
-  FormatSpec &spec_;
+  format_specs &spec_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(ArgFormatterBase);
 
@@ -1883,7 +1883,7 @@ class ArgFormatterBase {
 
  protected:
   basic_writer<Char> &writer() { return writer_; }
-  FormatSpec &spec() { return spec_; }
+  format_specs &spec() { return spec_; }
 
   void write(bool value) {
     writer_.write_str(StringRef(value ? "true" : "false"), spec_);
@@ -1897,7 +1897,7 @@ class ArgFormatterBase {
  public:
   typedef Char char_type;
 
-  ArgFormatterBase(basic_writer<Char> &w, FormatSpec &s)
+  ArgFormatterBase(basic_writer<Char> &w, format_specs &s)
   : writer_(w), spec_(s) {}
 
   void operator()(monostate) {
@@ -2045,7 +2045,7 @@ class ArgFormatter : public internal::ArgFormatterBase<Char> {
     \endrst
    */
   ArgFormatter(basic_writer<Char> &writer, basic_format_context<Char> &ctx,
-               FormatSpec &spec)
+               format_specs &spec)
   : internal::ArgFormatterBase<Char>(writer, spec), ctx_(ctx) {}
 
   using internal::ArgFormatterBase<Char>::operator();
@@ -2255,14 +2255,14 @@ class basic_writer {
 
   // Formats a floating-point number (double or long double).
   template <typename T>
-  void write_double(T value, const FormatSpec &spec);
+  void write_double(T value, const format_specs &spec);
 
   // Writes a formatted string.
   template <typename StrChar>
   CharPtr write_str(const StrChar *s, std::size_t size, const AlignSpec &spec);
 
   template <typename StrChar>
-  void write_str(BasicStringRef<StrChar> str, const FormatSpec &spec);
+  void write_str(BasicStringRef<StrChar> str, const format_specs &spec);
 
   // This following methods are private to disallow writing wide characters
   // and strings to a char buffer. If you want to print a wide string as a
@@ -2382,11 +2382,11 @@ class basic_writer {
   template <typename T, typename... FormatSpecs>
   typename std::enable_if<std::is_integral<T>::value, void>::type
       write(T value, FormatSpecs... specs) {
-    write_int(value, FormatSpec(specs...));
+    write_int(value, format_specs(specs...));
   }
 
   void write(double value) {
-    write_double(value, FormatSpec());
+    write_double(value, format_specs());
   }
 
   /**
@@ -2396,7 +2396,7 @@ class basic_writer {
     \endrst
    */
   void write(long double value) {
-    write_double(value, FormatSpec());
+    write_double(value, format_specs());
   }
 
   /**
@@ -2427,7 +2427,7 @@ class basic_writer {
 
   template <typename... FormatSpecs>
   void write(BasicStringRef<Char> str, FormatSpecs... specs) {
-    write_str(str, FormatSpec(specs...));
+    write_str(str, format_specs(specs...));
   }
 
   void clear() FMT_NOEXCEPT { buffer_.clear(); }
@@ -2461,7 +2461,7 @@ typename basic_writer<Char>::CharPtr basic_writer<Char>::write_str(
 template <typename Char>
 template <typename StrChar>
 void basic_writer<Char>::write_str(
-    BasicStringRef<StrChar> s, const FormatSpec &spec) {
+    BasicStringRef<StrChar> s, const format_specs &spec) {
   // Check if StrChar is convertible to Char.
   internal::CharTraits<Char>::convert(StrChar());
   if (spec.type_ && spec.type_ != 's')
@@ -2649,7 +2649,7 @@ void basic_writer<Char>::write_int(T value, Spec spec) {
 
 template <typename Char>
 template <typename T>
-void basic_writer<Char>::write_double(T value, const FormatSpec &spec) {
+void basic_writer<Char>::write_double(T value, const format_specs &spec) {
   // Check type.
   char type = spec.type();
   bool upper = false;
@@ -3366,7 +3366,7 @@ template <typename ArgFormatter, typename Char, typename Context>
 void do_format_arg(basic_writer<Char> &writer, basic_format_arg<Context> arg,
                    Context &ctx) {
   const Char *&s = ctx.ptr();
-  FormatSpec spec;
+  format_specs spec;
   if (*s == ':') {
     if (visit(internal::CustomFormatter<Char, Context>(writer, ctx), arg))
       return;

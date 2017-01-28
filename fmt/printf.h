@@ -170,12 +170,12 @@ class CharConverter {
 // left alignment if it is negative.
 class PrintfWidthHandler {
  private:
-  FormatSpec &spec_;
+  format_specs &spec_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(PrintfWidthHandler);
 
  public:
-  explicit PrintfWidthHandler(FormatSpec &spec) : spec_(spec) {}
+  explicit PrintfWidthHandler(format_specs &spec) : spec_(spec) {}
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, unsigned>::type
@@ -224,14 +224,14 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
     specifier information for standard argument types.
     \endrst
    */
-  PrintfArgFormatter(basic_writer<Char> &writer, FormatSpec &spec)
+  PrintfArgFormatter(basic_writer<Char> &writer, format_specs &spec)
   : internal::ArgFormatterBase<Char>(writer, spec) {}
 
   using Base::operator();
 
   /** Formats an argument of type ``bool``. */
   void operator()(bool value) {
-    FormatSpec &fmt_spec = this->spec();
+    format_specs &fmt_spec = this->spec();
     if (fmt_spec.type_ != 's')
       return (*this)(value ? 1 : 0);
     fmt_spec.type_ = 0;
@@ -240,7 +240,7 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
 
   /** Formats a character. */
   void operator()(Char value) {
-    const FormatSpec &fmt_spec = this->spec();
+    const format_specs &fmt_spec = this->spec();
     basic_writer<Char> &w = this->writer();
     if (fmt_spec.type_ && fmt_spec.type_ != 'c')
       w.write_int(value, fmt_spec);
@@ -302,7 +302,7 @@ class printf_context :
   typedef internal::format_context_base<Char, printf_context> Base;
   typedef typename Base::format_arg format_arg;
 
-  void parse_flags(FormatSpec &spec, const Char *&s);
+  void parse_flags(format_specs &spec, const Char *&s);
 
   // Returns the argument with specified index or, if arg_index is equal
   // to the maximum unsigned value, the next argument.
@@ -311,7 +311,7 @@ class printf_context :
       unsigned arg_index = (std::numeric_limits<unsigned>::max)());
 
   // Parses argument index, flags and width and returns the argument index.
-  unsigned parse_header(const Char *&s, FormatSpec &spec);
+  unsigned parse_header(const Char *&s, format_specs &spec);
 
  public:
   /**
@@ -330,7 +330,7 @@ class printf_context :
 };
 
 template <typename Char, typename AF>
-void printf_context<Char, AF>::parse_flags(FormatSpec &spec, const Char *&s) {
+void printf_context<Char, AF>::parse_flags(format_specs &spec, const Char *&s) {
   for (;;) {
     switch (*s++) {
       case '-':
@@ -369,7 +369,7 @@ typename printf_context<Char, AF>::format_arg printf_context<Char, AF>::get_arg(
 
 template <typename Char, typename AF>
 unsigned printf_context<Char, AF>::parse_header(
-  const Char *&s, FormatSpec &spec) {
+  const Char *&s, format_specs &spec) {
   unsigned arg_index = std::numeric_limits<unsigned>::max();
   Char c = *s;
   if (c >= '0' && c <= '9') {
@@ -415,7 +415,7 @@ void printf_context<Char, AF>::format(basic_writer<Char> &writer) {
     }
     internal::write(writer, start, s - 1);
 
-    FormatSpec spec;
+    format_specs spec;
     spec.align_ = ALIGN_RIGHT;
 
     // Parse argument index, flags and width.

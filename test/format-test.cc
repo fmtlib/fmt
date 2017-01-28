@@ -1644,7 +1644,7 @@ class MockArgFormatter : public fmt::internal::ArgFormatterBase<char> {
   typedef fmt::internal::ArgFormatterBase<char> Base;
 
   MockArgFormatter(fmt::writer &w, fmt::format_context &ctx,
-                   fmt::FormatSpec &s)
+                   fmt::format_specs &s)
     : fmt::internal::ArgFormatterBase<char>(w, s) {
     EXPECT_CALL(*this, call(42));
   }

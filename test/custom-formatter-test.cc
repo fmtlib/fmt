@@ -17,7 +17,7 @@ using fmt::PrintfArgFormatter;
 class CustomArgFormatter : public fmt::ArgFormatter<char> {
  public:
   CustomArgFormatter(fmt::writer &w, fmt::basic_format_context<char> &ctx,
-                     fmt::FormatSpec &s)
+                     fmt::format_specs &s)
   : fmt::ArgFormatter<char>(w, ctx, s) {}
 
   using fmt::ArgFormatter<char>::operator();
@@ -33,7 +33,7 @@ class CustomArgFormatter : public fmt::ArgFormatter<char> {
 // rounded to 0.
 class CustomPrintfArgFormatter : public PrintfArgFormatter<char> {
  public:
-  CustomPrintfArgFormatter(fmt::basic_writer<char> &w, fmt::FormatSpec &spec)
+  CustomPrintfArgFormatter(fmt::basic_writer<char> &w, fmt::format_specs &spec)
   : PrintfArgFormatter<char>(w, spec) {}
 
   using PrintfArgFormatter<char>::operator();
