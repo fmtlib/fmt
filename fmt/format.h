@@ -2168,9 +2168,9 @@ constexpr named_format_spec<unsigned> width;
 
 /**
   \rst
-  This template provides operations for formatting and writing data into
-  a character stream. The output is stored in a buffer provided by a subclass
-  such as :class:`fmt::BasicMemoryWriter`.
+  This template provides operations for formatting and writing data into a
+  character buffer. The output buffer is specified by a subclass such as
+  :class:`fmt::BasicMemoryWriter`.
 
   You can use one of the following typedefs for common character types:
 
@@ -2265,7 +2265,7 @@ class basic_writer {
   void write_str(BasicStringRef<StrChar> str, const FormatSpec &spec);
 
   // This following methods are private to disallow writing wide characters
-  // and strings to a char stream. If you want to print a wide string as a
+  // and strings to a char buffer. If you want to print a wide string as a
   // pointer as std::ostream does, cast it to const void*.
   // Do not implement!
   void operator<<(typename internal::WCharHelper<wchar_t, Char>::Unsupported);
@@ -2392,7 +2392,7 @@ class basic_writer {
   /**
     \rst
     Formats *value* using the general format for floating-point numbers
-    (``'g'``) and writes it to the stream.
+    (``'g'``) and writes it to the buffer.
     \endrst
    */
   void write(long double value) {
@@ -2400,7 +2400,7 @@ class basic_writer {
   }
 
   /**
-    Writes a character to the stream.
+    Writes a character to the buffer.
    */
   void write(char value) {
     buffer_.push_back(value);
@@ -2412,7 +2412,7 @@ class basic_writer {
 
   /**
     \rst
-    Writes *value* to the stream.
+    Writes *value* to the buffer.
     \endrst
    */
   void write(fmt::BasicStringRef<Char> value) {
@@ -2805,8 +2805,7 @@ void basic_writer<Char>::write_double(T value, const FormatSpec &spec) {
 /**
   \rst
   This class template provides operations for formatting and writing data
-  into a character stream. The output is stored in a memory buffer that grows
-  dynamically.
+  into a memory buffer that grows dynamically.
 
   You can use one of the following typedefs for common character types
   and the standard allocator:
