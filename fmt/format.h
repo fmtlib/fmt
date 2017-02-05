@@ -3924,12 +3924,12 @@ void format_arg(fmt::BasicFormatter<Char, ArgFormatter> &f,
    if (it != e.last)
    {
       const Char* save = format_str;
-      f.format(format_str, internal::MakeArg<fmt::BasicFormatter<Char, ArgFormatter>>(*it++));
+      f.format(format_str, internal::MakeArg<fmt::BasicFormatter<Char, ArgFormatter> >(*it++));
       while (it != e.last)
       {
          f.writer().write(e.sep);
          format_str = save;
-         f.format(format_str, internal::MakeArg<fmt::BasicFormatter<Char, ArgFormatter>>(*it++));
+         f.format(format_str, internal::MakeArg<fmt::BasicFormatter<Char, ArgFormatter> >(*it++));
       }
    }
    format_str = end + 1;
