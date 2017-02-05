@@ -2199,7 +2199,7 @@ class basic_writer {
 
  private:
   // Output buffer.
-  buffer<Char> &buffer_;
+  fmt::buffer<Char> &buffer_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_writer);
 
@@ -2302,7 +2302,7 @@ class basic_writer {
   /**
     Constructs a ``basic_writer`` object.
    */
-  explicit basic_writer(buffer<Char> &b) : buffer_(b) {}
+  explicit basic_writer(fmt::buffer<Char> &b) : buffer_(b) {}
 
  public:
   /**
@@ -2443,7 +2443,7 @@ class basic_writer {
 
   void clear() FMT_NOEXCEPT { buffer_.clear(); }
 
-  buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
+  fmt::buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
 };
 
 template <typename Char>
@@ -2472,7 +2472,7 @@ typename basic_writer<Char>::CharPtr basic_writer<Char>::write_str(
 template <typename Char>
 template <typename StrChar>
 void basic_writer<Char>::write_str(
-    BasicStringRef<StrChar> s, const basic_writer<Char>::format_specs &spec) {
+    BasicStringRef<StrChar> s, const format_specs &spec) {
   // Check if StrChar is convertible to Char.
   internal::CharTraits<Char>::convert(StrChar());
   if (spec.type_ && spec.type_ != 's')
