@@ -16,7 +16,7 @@ using fmt::PrintfArgFormatter;
 // rounded to 0.
 class CustomArgFormatter : public fmt::ArgFormatter<char> {
  public:
-  CustomArgFormatter(fmt::writer &w, fmt::basic_format_context<char> &ctx,
+  CustomArgFormatter(fmt::writer &w, fmt::basic_context<char> &ctx,
                      fmt::format_specs &s)
   : fmt::ArgFormatter<char>(w, ctx, s) {}
 
@@ -54,7 +54,7 @@ std::string custom_vformat(fmt::CStringRef format_str, fmt::format_args args) {
 
 template <typename... Args>
 std::string custom_format(const char *format_str, const Args & ... args) {
-  auto va = fmt::make_format_args(args...);
+  auto va = fmt::make_args(args...);
   return custom_vformat(format_str, va);
 }
 
@@ -72,7 +72,7 @@ std::string custom_vsprintf(
 
 template <typename... Args>
 std::string custom_sprintf(const char *format_str, const Args & ... args) {
-  auto va = fmt::make_xformat_args<CustomPrintfFormatter>(args...);
+  auto va = fmt::make_args<CustomPrintfFormatter>(args...);
   return custom_vsprintf(format_str, va);
 }
 

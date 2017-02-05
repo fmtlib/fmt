@@ -380,10 +380,10 @@ template <typename Char>
 class PrintfArgFormatter;
 
 template <typename Char>
-class basic_format_context;
+class basic_context;
 
-typedef basic_format_context<char> format_context;
-typedef basic_format_context<wchar_t> wformat_context;
+typedef basic_context<char> context;
+typedef basic_context<wchar_t> wcontext;
 
 /**
   \rst
@@ -1369,8 +1369,8 @@ class basic_arg {
   }
 };
 
-typedef basic_arg<format_context> format_arg;
-typedef basic_arg<wformat_context> wformat_arg;
+typedef basic_arg<context> format_arg;
+typedef basic_arg<wcontext> wformat_arg;
 
 /**
   \rst
@@ -1516,7 +1516,7 @@ inline typename std::enable_if<!IS_PACKED, basic_arg<Context>>::type
 }  // namespace internal
 
 template <typename Context, typename ...Args>
-class format_arg_store {
+class arg_store {
  private:
   static const size_t NUM_ARGS = sizeof...(Args);
 
@@ -1535,22 +1535,20 @@ class format_arg_store {
  public:
   static const uint64_t TYPES = internal::make_type<Args..., void>();
 
-  format_arg_store(const Args &... args)
+  arg_store(const Args &... args)
     : data_(Array{{internal::make_arg<IS_PACKED, Context>(args)...}}) {}
 
   const value_type *data() const { return data_.data(); }
 };
 
 template <typename Context, typename ...Args>
-inline format_arg_store<Context, Args...>
-    make_xformat_args(const Args & ... args) {
-  return format_arg_store<Context, Args...>(args...);
+inline arg_store<Context, Args...> make_args(const Args & ... args) {
+  return arg_store<Context, Args...>(args...);
 }
 
 template <typename ...Args>
-inline format_arg_store<format_context, Args...>
-    make_format_args(const Args & ... args) {
-  return format_arg_store<format_context, Args...>(args...);
+inline arg_store<context, Args...> make_args(const Args & ... args) {
+  return arg_store<context, Args...>(args...);
 }
 
 /** Formatting arguments. */
@@ -1614,7 +1612,7 @@ class basic_args {
   basic_args() : types_(0) {}
 
   template <typename... Args>
-  basic_args(const format_arg_store<Context, Args...> &store)
+  basic_args(const arg_store<Context, Args...> &store)
   : types_(store.TYPES) {
     set_data(store.data());
   }
@@ -1627,8 +1625,8 @@ class basic_args {
   }
 };
 
-typedef basic_args<format_context> format_args;
-typedef basic_args<wformat_context> wformat_args;
+typedef basic_args<context> format_args;
+typedef basic_args<wcontext> wformat_args;
 
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
@@ -1985,7 +1983,7 @@ inline void write(basic_writer<Char> &w, const Char *start, const Char *end) {
 }
 
 template <typename Char, typename Context>
-class format_context_base {
+class context_base {
  private:
   const Char *ptr_;
   basic_args<Context> args_;
@@ -1994,9 +1992,9 @@ class format_context_base {
  protected:
   typedef basic_arg<Context> format_arg;
 
-  format_context_base(const Char *format_str, basic_args<Context> args)
+  context_base(const Char *format_str, basic_args<Context> args)
   : ptr_(format_str), args_(args), next_arg_index_(0) {}
-  ~format_context_base() {}
+  ~context_base() {}
 
   basic_args<Context> args() const { return args_; }
 
@@ -2042,7 +2040,7 @@ class format_context_base {
 template <typename Char>
 class ArgFormatter : public internal::ArgFormatterBase<Char> {
  private:
-  basic_format_context<Char> &ctx_;
+  basic_context<Char> &ctx_;
 
   typedef internal::ArgFormatterBase<Char> Base;
 
@@ -2057,7 +2055,7 @@ class ArgFormatter : public internal::ArgFormatterBase<Char> {
     format specifier information for standard argument types.
     \endrst
    */
-  ArgFormatter(basic_writer<Char> &writer, basic_format_context<Char> &ctx,
+  ArgFormatter(basic_writer<Char> &writer, basic_context<Char> &ctx,
                format_specs &spec)
   : internal::ArgFormatterBase<Char>(writer, spec), ctx_(ctx) {}
 
@@ -2070,18 +2068,18 @@ class ArgFormatter : public internal::ArgFormatterBase<Char> {
 };
 
 template <typename Char>
-class basic_format_context :
-  public internal::format_context_base<Char, basic_format_context<Char>> {
+class basic_context :
+  public internal::context_base<Char, basic_context<Char>> {
  public:
   /** The character type for the output. */
   typedef Char char_type;
 
  private:
-  internal::ArgMap<basic_format_context<Char>> map_;
+  internal::ArgMap<basic_context<Char>> map_;
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(basic_format_context);
+  FMT_DISALLOW_COPY_AND_ASSIGN(basic_context);
 
-  typedef internal::format_context_base<Char, basic_format_context<Char>> Base;
+  typedef internal::context_base<Char, basic_context<Char>> Base;
 
   typedef typename Base::format_arg format_arg;
   using Base::get_arg;
@@ -2093,12 +2091,12 @@ class basic_format_context :
  public:
   /**
    \rst
-   Constructs a ``basic_format_context`` object. References to the arguments are
+   Constructs a ``basic_context`` object. References to the arguments are
    stored in the object so make sure they have appropriate lifetimes.
    \endrst
    */
-  basic_format_context(const Char *format_str,
-                       basic_args<basic_format_context> args)
+  basic_context(const Char *format_str,
+                       basic_args<basic_context> args)
   : Base(format_str, args) {}
 
   // Parses argument id and returns corresponding argument.
@@ -2141,7 +2139,7 @@ class SystemError : public internal::RuntimeError {
   */
   template <typename... Args>
   SystemError(int error_code, CStringRef message, const Args & ... args) {
-    init(error_code, message, make_format_args(args...));
+    init(error_code, message, make_args(args...));
   }
 
   ~SystemError() throw();
@@ -2349,7 +2347,7 @@ class basic_writer {
   }
 
   void vformat(BasicCStringRef<Char> format,
-               basic_args<basic_format_context<Char>> args);
+               basic_args<basic_context<Char>> args);
   /**
     \rst
     Writes formatted data.
@@ -2377,7 +2375,7 @@ class basic_writer {
    */
   template <typename... Args>
   void format(BasicCStringRef<Char> format, const Args & ... args) {
-    vformat(format, make_xformat_args<basic_format_context<Char>>(args...));
+    vformat(format, make_args<basic_context<Char>>(args...));
   }
 
   void write(int value) {
@@ -2978,7 +2976,7 @@ class WindowsError : public SystemError {
   */
   template <typename... Args>
   WindowsError(int error_code, CStringRef message, const Args & ... args) {
-    init(error_code, message, make_format_args(args...));
+    init(error_code, message, make_args(args...));
   }
 };
 
@@ -3002,7 +3000,7 @@ FMT_API void vprint_colored(Color c, CStringRef format, format_args args);
 template <typename... Args>
 inline void print_colored(Color c, CStringRef format_str,
                           const Args & ... args) {
-  vprint_colored(c, format_str, make_format_args(args...));
+  vprint_colored(c, format_str, make_args(args...));
 }
 
 inline std::string vformat(CStringRef format_str, format_args args) {
@@ -3022,7 +3020,7 @@ inline std::string vformat(CStringRef format_str, format_args args) {
 */
 template <typename... Args>
 inline std::string format(CStringRef format_str, const Args & ... args) {
-  return vformat(format_str, make_format_args(args...));
+  return vformat(format_str, make_args(args...));
 }
 
 inline std::wstring vformat(WCStringRef format_str, wformat_args args) {
@@ -3033,7 +3031,7 @@ inline std::wstring vformat(WCStringRef format_str, wformat_args args) {
 
 template <typename... Args>
 inline std::wstring format(WCStringRef format_str, const Args & ... args) {
-  auto vargs = make_xformat_args<wformat_context>(args...);
+  auto vargs = make_args<wcontext>(args...);
   return vformat(format_str, vargs);
 }
 
@@ -3050,7 +3048,7 @@ FMT_API void vprint(std::FILE *f, CStringRef format_str, format_args args);
  */
 template <typename... Args>
 inline void print(std::FILE *f, CStringRef format_str, const Args & ... args) {
-  vprint(f, format_str, make_format_args(args...));
+  vprint(f, format_str, make_args(args...));
 }
 
 FMT_API void vprint(CStringRef format_str, format_args args);
@@ -3066,7 +3064,7 @@ FMT_API void vprint(CStringRef format_str, format_args args);
  */
 template <typename... Args>
 inline void print(CStringRef format_str, const Args & ... args) {
-  vprint(format_str, make_format_args(args...));
+  vprint(format_str, make_args(args...));
 }
 
 /**
@@ -3185,13 +3183,13 @@ inline void format_decimal(char *&buffer, T value) {
   \endrst
  */
 template <typename T>
-inline internal::NamedArg<format_context> arg(StringRef name, const T &arg) {
-  return internal::NamedArg<format_context>(name, arg);
+inline internal::NamedArg<context> arg(StringRef name, const T &arg) {
+  return internal::NamedArg<context>(name, arg);
 }
 
 template <typename T>
-inline internal::NamedArg<wformat_context> arg(WStringRef name, const T &arg) {
-  return internal::NamedArg<wformat_context>(name, arg);
+inline internal::NamedArg<wcontext> arg(WStringRef name, const T &arg) {
+  return internal::NamedArg<wcontext>(name, arg);
 }
 
 // The following two functions are deleted intentionally to disable
@@ -3338,8 +3336,8 @@ struct PrecisionHandler {
 }  // namespace internal
 
 template <typename Char>
-inline typename basic_format_context<Char>::format_arg
-  basic_format_context<Char>::get_arg(
+inline typename basic_context<Char>::format_arg
+  basic_context<Char>::get_arg(
     BasicStringRef<Char> name, const char *&error) {
   if (this->check_no_auto_index(error)) {
     map_.init(this->args());
@@ -3351,8 +3349,8 @@ inline typename basic_format_context<Char>::format_arg
 }
 
 template <typename Char>
-inline typename basic_format_context<Char>::format_arg
-    basic_format_context<Char>::parse_arg_id() {
+inline typename basic_context<Char>::format_arg
+    basic_context<Char>::parse_arg_id() {
   const Char *&s = this->ptr();
   if (!internal::is_name_start(*s)) {
     const char *error = 0;
@@ -3507,7 +3505,7 @@ void do_format_arg(basic_writer<Char> &writer, basic_arg<Context> arg,
 template <typename ArgFormatter, typename Char, typename Context>
 void vwrite(basic_writer<Char> &writer, BasicCStringRef<Char> format_str,
              basic_args<Context> args) {
-  basic_format_context<Char> ctx(format_str.c_str(), args);
+  basic_context<Char> ctx(format_str.c_str(), args);
   const Char *&s = ctx.ptr();
   const Char *start = s;
   while (*s) {
@@ -3532,7 +3530,7 @@ void vwrite(basic_writer<Char> &writer, BasicCStringRef<Char> format_str,
 template <typename Char>
 inline void basic_writer<Char>::vformat(
     BasicCStringRef<Char> format,
-    basic_args<basic_format_context<Char>> args) {
+    basic_args<basic_context<Char>> args) {
   vwrite<ArgFormatter<Char>>(*this, format, args);
 }
 }  // namespace fmt
@@ -3557,7 +3555,7 @@ struct UdlArg {
   const Char *str;
 
   template <typename T>
-  NamedArg<basic_format_context<Char>> operator=(T &&value) const {
+  NamedArg<basic_context<Char>> operator=(T &&value) const {
     return {str, std::forward<T>(value)};
   }
 };

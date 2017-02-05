@@ -103,7 +103,7 @@ class ArgConverter {
     bool is_signed = type_ == 'd' || type_ == 'i';
     typedef typename internal::Conditional<
         is_same<T, void>::value, U, T>::type TargetType;
-    typedef basic_format_context<Char> format_context;
+    typedef basic_context<Char> context;
     if (sizeof(TargetType) <= sizeof(int)) {
       // Extra casts are used to silence warnings.
       if (is_signed) {
@@ -287,8 +287,8 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
   /** Formats an argument of a custom (user-defined) type. */
   void operator()(internal::CustomValue<Char> c) {
     const Char format_str[] = {'}', '\0'};
-    auto args = basic_args<basic_format_context<Char>>();
-    basic_format_context<Char> ctx(format_str, args);
+    auto args = basic_args<basic_context<Char>>();
+    basic_context<Char> ctx(format_str, args);
     c.format(this->writer(), c.value, &ctx);
   }
 };
@@ -297,14 +297,14 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
 template <typename Char,
           typename ArgFormatter = PrintfArgFormatter<Char> >
 class printf_context :
-  private internal::format_context_base<
+  private internal::context_base<
     Char, printf_context<Char, ArgFormatter>> {
  public:
   /** The character type for the output. */
   typedef Char char_type;
 
  private:
-  typedef internal::format_context_base<Char, printf_context> Base;
+  typedef internal::context_base<Char, printf_context> Base;
   typedef typename Base::format_arg format_arg;
   typedef basic_format_specs<Char> format_specs;
 
@@ -539,7 +539,7 @@ inline std::string vsprintf(CStringRef format, printf_args args) {
 */
 template <typename... Args>
 inline std::string sprintf(CStringRef format_str, const Args & ... args) {
-  return vsprintf(format_str, make_xformat_args<printf_context<char>>(args...));
+  return vsprintf(format_str, make_args<printf_context<char>>(args...));
 }
 
 inline std::wstring vsprintf(
@@ -551,7 +551,7 @@ inline std::wstring vsprintf(
 
 template <typename... Args>
 inline std::wstring sprintf(WCStringRef format_str, const Args & ... args) {
-  auto vargs = make_xformat_args<printf_context<wchar_t>>(args...);
+  auto vargs = make_args<printf_context<wchar_t>>(args...);
   return vsprintf(format_str, vargs);
 }
 
@@ -568,7 +568,7 @@ FMT_API int vfprintf(std::FILE *f, CStringRef format, printf_args args);
  */
 template <typename... Args>
 inline int fprintf(std::FILE *f, CStringRef format_str, const Args & ... args) {
-  auto vargs = make_xformat_args<printf_context<char>>(args...);
+  auto vargs = make_args<printf_context<char>>(args...);
   return vfprintf(f, format_str, vargs);
 }
 
@@ -587,7 +587,7 @@ inline int vprintf(CStringRef format, printf_args args) {
  */
 template <typename... Args>
 inline int printf(CStringRef format_str, const Args & ... args) {
-  return vprintf(format_str, make_xformat_args<printf_context<char>>(args...));
+  return vprintf(format_str, make_args<printf_context<char>>(args...));
 }
 
 inline int vfprintf(std::ostream &os, CStringRef format_str, printf_args args) {
@@ -609,7 +609,7 @@ inline int vfprintf(std::ostream &os, CStringRef format_str, printf_args args) {
 template <typename... Args>
 inline int fprintf(std::ostream &os, CStringRef format_str,
                    const Args & ... args) {
-  auto vargs = make_xformat_args<printf_context<char>>(args...);
+  auto vargs = make_args<printf_context<char>>(args...);
   return vfprintf(os, format_str, vargs);
 }
 }  // namespace fmt

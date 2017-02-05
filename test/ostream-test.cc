@@ -59,17 +59,16 @@ TEST(OStreamTest, Enum) {
 }
 
 struct TestArgFormatter : fmt::ArgFormatter<char> {
-  TestArgFormatter(fmt::writer &w, fmt::format_context &ctx,
-                   fmt::format_specs &s)
+  TestArgFormatter(fmt::writer &w, fmt::context &ctx, fmt::format_specs &s)
     : fmt::ArgFormatter<char>(w, ctx, s) {}
 };
 
 TEST(OStreamTest, CustomArg) {
   fmt::MemoryWriter writer;
-  fmt::format_context ctx("}", fmt::format_args());
+  fmt::context ctx("}", fmt::format_args());
   fmt::format_specs spec;
   TestArgFormatter af(writer, ctx, spec);
-  visit(af, fmt::internal::make_arg<fmt::format_context>(TestEnum()));
+  visit(af, fmt::internal::make_arg<fmt::context>(TestEnum()));
   EXPECT_EQ("TestEnum", writer.str());
 }
 

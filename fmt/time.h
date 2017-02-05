@@ -15,7 +15,7 @@
 
 namespace fmt {
 
-void format_value(writer &w, const std::tm &tm, format_context &ctx) {
+void format_value(writer &w, const std::tm &tm, context &ctx) {
   const char *&s = ctx.ptr();
   if (*s == ':')
     ++s;

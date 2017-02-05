@@ -69,7 +69,7 @@ struct Test {};
 
 template <typename Char>
 void format_value(fmt::basic_writer<Char> &w, Test,
-                  fmt::basic_format_context<Char> &) {
+                  fmt::basic_context<Char> &) {
   w.write("test");
 }
 
@@ -487,7 +487,7 @@ VISIT_TYPE(float, double);
 #define CHECK_ARG_(Char, expected, value) { \
   testing::StrictMock<MockVisitor<decltype(expected)>> visitor; \
   EXPECT_CALL(visitor, visit(expected)); \
-  fmt::visit(visitor, make_arg<fmt::basic_format_context<Char>>(value)); \
+  fmt::visit(visitor, make_arg<fmt::basic_context<Char>>(value)); \
 }
 
 #define CHECK_ARG(value) { \
@@ -570,12 +570,12 @@ TEST(UtilTest, CustomArg) {
         testing::Invoke([&](fmt::internal::CustomValue<char> custom) {
     EXPECT_EQ(&test, custom.value);
     fmt::MemoryWriter w;
-    fmt::format_context ctx("}", fmt::format_args());
+    fmt::context ctx("}", fmt::format_args());
     custom.format(w, &test, &ctx);
     EXPECT_EQ("test", w.str());
     return Visitor::Result();
   }));
-  fmt::visit(visitor, make_arg<fmt::format_context>(test));
+  fmt::visit(visitor, make_arg<fmt::context>(test));
 }
 
 TEST(ArgVisitorTest, VisitInvalidArg) {

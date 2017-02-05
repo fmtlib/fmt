@@ -465,7 +465,7 @@ template struct internal::BasicData<void>;
 
 template void internal::FixedBuffer<char>::grow(std::size_t);
 
-template void internal::ArgMap<format_context>::init(const format_args &args);
+template void internal::ArgMap<context>::init(const format_args &args);
 
 template void printf_context<char>::format(writer &writer);
 
@@ -479,11 +479,11 @@ template int internal::CharTraits<char>::format_float(
 
 // Explicit instantiations for wchar_t.
 
-template class basic_format_context<wchar_t>;
+template class basic_context<wchar_t>;
 
 template void internal::FixedBuffer<wchar_t>::grow(std::size_t);
 
-template void internal::ArgMap<wformat_context>::init(const wformat_args &args);
+template void internal::ArgMap<wcontext>::init(const wformat_args &args);
 
 template void printf_context<wchar_t>::format(wwriter &writer);
 
