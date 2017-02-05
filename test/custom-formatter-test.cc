@@ -63,7 +63,7 @@ typedef fmt::printf_context<char, CustomPrintfArgFormatter>
 
 std::string custom_vsprintf(
     const char* format_str,
-    fmt::basic_format_args<CustomPrintfFormatter> args) {
+    fmt::basic_args<CustomPrintfFormatter> args) {
   fmt::MemoryWriter writer;
   CustomPrintfFormatter formatter(format_str, args);
   formatter.format(writer);

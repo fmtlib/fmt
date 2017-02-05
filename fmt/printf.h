@@ -85,11 +85,11 @@ class ArgConverter {
  private:
   typedef typename Context::char_type Char;
 
-  basic_format_arg<Context> &arg_;
+  basic_arg<Context> &arg_;
   typename Context::char_type type_;
 
  public:
-  ArgConverter(basic_format_arg<Context> &arg, Char type)
+  ArgConverter(basic_arg<Context> &arg, Char type)
     : arg_(arg), type_(type) {}
 
   void operator()(bool value) {
@@ -139,7 +139,7 @@ class ArgConverter {
 // type depending on the type specifier: 'd' and 'i' - signed, other -
 // unsigned).
 template <typename T, typename Context, typename Char>
-void convert_arg(basic_format_arg<Context> &arg, Char type) {
+void convert_arg(basic_arg<Context> &arg, Char type) {
   visit(ArgConverter<T, Context>(arg, type), arg);
 }
 
@@ -147,12 +147,12 @@ void convert_arg(basic_format_arg<Context> &arg, Char type) {
 template <typename Context>
 class CharConverter {
  private:
-  basic_format_arg<Context> &arg_;
+  basic_arg<Context> &arg_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(CharConverter);
 
  public:
-  explicit CharConverter(basic_format_arg<Context> &arg) : arg_(arg) {}
+  explicit CharConverter(basic_arg<Context> &arg) : arg_(arg) {}
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value>::type
@@ -287,7 +287,7 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
   /** Formats an argument of a custom (user-defined) type. */
   void operator()(internal::CustomValue<Char> c) {
     const Char format_str[] = {'}', '\0'};
-    auto args = basic_format_args<basic_format_context<Char>>();
+    auto args = basic_args<basic_format_context<Char>>();
     basic_format_context<Char> ctx(format_str, args);
     c.format(this->writer(), c.value, &ctx);
   }
@@ -328,7 +328,7 @@ class printf_context :
    \endrst
    */
   explicit printf_context(BasicCStringRef<Char> format_str,
-                          basic_format_args<printf_context> args)
+                          basic_args<printf_context> args)
     : Base(format_str.c_str(), args) {}
 
   /** Formats stored arguments and writes the output to the writer. */
@@ -516,11 +516,11 @@ void format_value(basic_writer<Char> &w, const T &value,
 
 template <typename Char>
 void printf(basic_writer<Char> &w, BasicCStringRef<Char> format,
-            basic_format_args<printf_context<Char>> args) {
+            basic_args<printf_context<Char>> args) {
   printf_context<Char>(format, args).format(w);
 }
 
-typedef basic_format_args<printf_context<char>> printf_args;
+typedef basic_args<printf_context<char>> printf_args;
 
 inline std::string vsprintf(CStringRef format, printf_args args) {
   MemoryWriter w;
@@ -543,7 +543,7 @@ inline std::string sprintf(CStringRef format_str, const Args & ... args) {
 }
 
 inline std::wstring vsprintf(
-    WCStringRef format, basic_format_args<printf_context<wchar_t>> args) {
+    WCStringRef format, basic_args<printf_context<wchar_t>> args) {
   WMemoryWriter w;
   printf(w, format, args);
   return w.str();

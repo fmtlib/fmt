@@ -52,9 +52,9 @@
 #undef min
 #undef max
 
-using fmt::basic_format_arg;
+using fmt::basic_arg;
 using fmt::format_arg;
-using fmt::Buffer;
+using fmt::buffer;
 using fmt::StringRef;
 using fmt::internal::MemoryBuffer;
 using fmt::internal::value;
@@ -74,7 +74,7 @@ void format_value(fmt::basic_writer<Char> &w, Test,
 }
 
 template <typename Context, typename T>
-basic_format_arg<Context> make_arg(const T &value) {
+basic_arg<Context> make_arg(const T &value) {
   return fmt::internal::make_arg<Context>(value);
 }
 }  // namespace
@@ -107,24 +107,24 @@ TEST(AllocatorTest, AllocatorRef) {
 
 #if FMT_USE_TYPE_TRAITS
 TEST(BufferTest, Noncopyable) {
-  EXPECT_FALSE(std::is_copy_constructible<Buffer<char> >::value);
-  EXPECT_FALSE(std::is_copy_assignable<Buffer<char> >::value);
+  EXPECT_FALSE(std::is_copy_constructible<buffer<char> >::value);
+  EXPECT_FALSE(std::is_copy_assignable<buffer<char> >::value);
 }
 
 TEST(BufferTest, Nonmoveable) {
-  EXPECT_FALSE(std::is_move_constructible<Buffer<char> >::value);
-  EXPECT_FALSE(std::is_move_assignable<Buffer<char> >::value);
+  EXPECT_FALSE(std::is_move_constructible<buffer<char> >::value);
+  EXPECT_FALSE(std::is_move_assignable<buffer<char> >::value);
 }
 #endif
 
 // A test buffer with a dummy grow method.
 template <typename T>
-struct TestBuffer : Buffer<T> {
+struct TestBuffer : buffer<T> {
   void grow(std::size_t size) { this->capacity_ = size; }
 };
 
 template <typename T>
-struct MockBuffer : Buffer<T> {
+struct MockBuffer : buffer<T> {
   MOCK_METHOD1(do_grow, void (std::size_t size));
 
   void grow(std::size_t size) {
@@ -133,8 +133,8 @@ struct MockBuffer : Buffer<T> {
   }
 
   MockBuffer() {}
-  MockBuffer(T *ptr) : Buffer<T>(ptr) {}
-  MockBuffer(T *ptr, std::size_t capacity) : Buffer<T>(ptr, capacity) {}
+  MockBuffer(T *ptr) : buffer<T>(ptr) {}
+  MockBuffer(T *ptr, std::size_t capacity) : buffer<T>(ptr, capacity) {}
 };
 
 TEST(BufferTest, Ctor) {
@@ -170,7 +170,7 @@ TEST(BufferTest, VirtualDtor) {
   typedef StrictMock<DyingBuffer> StictMockBuffer;
   StictMockBuffer *mock_buffer = new StictMockBuffer();
   EXPECT_CALL(*mock_buffer, die());
-  Buffer<int> *buffer = mock_buffer;
+  buffer<int> *buffer = mock_buffer;
   delete buffer;
 }
 
@@ -181,7 +181,7 @@ TEST(BufferTest, Access) {
   EXPECT_EQ(11, buffer[0]);
   buffer[3] = 42;
   EXPECT_EQ(42, *(&buffer[0] + 3));
-  const Buffer<char> &const_buffer = buffer;
+  const fmt::buffer<char> &const_buffer = buffer;
   EXPECT_EQ(42, const_buffer[3]);
 }
 

@@ -23,11 +23,11 @@ class FormatBuf : public std::basic_streambuf<Char> {
   typedef typename std::basic_streambuf<Char>::int_type int_type;
   typedef typename std::basic_streambuf<Char>::traits_type traits_type;
 
-  Buffer<Char> &buffer_;
+  buffer<Char> &buffer_;
   Char *start_;
 
  public:
-  FormatBuf(Buffer<Char> &buffer) : buffer_(buffer), start_(&buffer[0]) {
+  FormatBuf(buffer<Char> &buffer) : buffer_(buffer), start_(&buffer[0]) {
     this->setp(start_, start_ + buffer_.capacity());
   }
 

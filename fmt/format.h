@@ -371,7 +371,7 @@ typedef basic_writer<char> writer;
 typedef basic_writer<wchar_t> wwriter;
 
 template <typename Context>
-class basic_format_arg;
+class basic_arg;
 
 template <typename Char>
 class ArgFormatter;
@@ -587,16 +587,16 @@ inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
   \endrst
  */
 template <typename T>
-class Buffer {
+class buffer {
  private:
-  FMT_DISALLOW_COPY_AND_ASSIGN(Buffer);
+  FMT_DISALLOW_COPY_AND_ASSIGN(buffer);
 
  protected:
   T *ptr_;
   std::size_t size_;
   std::size_t capacity_;
 
-  Buffer(T *ptr = 0, std::size_t capacity = 0)
+  buffer(T *ptr = 0, std::size_t capacity = 0)
     : ptr_(ptr), size_(0), capacity_(capacity) {}
 
   /**
@@ -608,7 +608,7 @@ class Buffer {
   virtual void grow(std::size_t size) = 0;
 
  public:
-  virtual ~Buffer() {}
+  virtual ~buffer() {}
 
   /** Returns the size of this buffer. */
   std::size_t size() const { return size_; }
@@ -653,7 +653,7 @@ class Buffer {
 
 template <typename T>
 template <typename U>
-void Buffer<T>::append(const U *begin, const U *end) {
+void buffer<T>::append(const U *begin, const U *end) {
   std::size_t new_size = size_ + internal::to_unsigned(end - begin);
   if (new_size > capacity_)
     grow(new_size);
@@ -667,7 +667,7 @@ namespace internal {
 // A memory buffer for trivially copyable/constructible types with the first
 // SIZE elements stored in the object itself.
 template <typename T, std::size_t SIZE, typename Allocator = std::allocator<T> >
-class MemoryBuffer : private Allocator, public Buffer<T> {
+class MemoryBuffer : private Allocator, public buffer<T> {
  private:
   T data_[SIZE];
 
@@ -681,7 +681,7 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
 
  public:
   explicit MemoryBuffer(const Allocator &alloc = Allocator())
-      : Allocator(alloc), Buffer<T>(data_, SIZE) {}
+      : Allocator(alloc), buffer<T>(data_, SIZE) {}
   ~MemoryBuffer() { deallocate(); }
 
 #if FMT_USE_RVALUE_REFERENCES
@@ -743,9 +743,10 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
 
 // A fixed-size buffer.
 template <typename Char>
-class FixedBuffer : public fmt::Buffer<Char> {
+class FixedBuffer : public fmt::buffer<Char> {
  public:
-  FixedBuffer(Char *array, std::size_t size) : fmt::Buffer<Char>(array, size) {}
+  FixedBuffer(Char *array, std::size_t size)
+    : fmt::buffer<Char>(array, size) {}
 
  protected:
   FMT_API void grow(std::size_t size);
@@ -1322,34 +1323,34 @@ template <typename Context>
 class ArgMap;
 
 template <typename Context, typename T>
-basic_format_arg<Context> make_arg(const T &value);
+basic_arg<Context> make_arg(const T &value);
 }  // namespace internal
 
 struct monostate {};
 
 template <typename Context>
-class basic_format_args;
+class basic_args;
 
 // A formatting argument. It is a trivially copyable/constructible type to
 // allow storage in internal::MemoryBuffer.
 template <typename Context>
-class basic_format_arg {
+class basic_arg {
  private:
   internal::value<Context> value_;
   internal::Type type_;
 
   template <typename ContextType, typename T>
-  friend basic_format_arg<ContextType> internal::make_arg(const T &value);
+  friend basic_arg<ContextType> internal::make_arg(const T &value);
 
   template <typename Visitor, typename Ctx>
   friend typename std::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, basic_format_arg<Ctx> arg);
+    visit(Visitor &&vis, basic_arg<Ctx> arg);
 
-  friend class basic_format_args<Context>;
+  friend class basic_args<Context>;
   friend class internal::ArgMap<Context>;
 
  public:
-  basic_format_arg() : type_(internal::NONE) {}
+  basic_arg() : type_(internal::NONE) {}
 
   explicit operator bool() const noexcept { return type_ != internal::NONE; }
 
@@ -1368,8 +1369,8 @@ class basic_format_arg {
   }
 };
 
-typedef basic_format_arg<format_context> format_arg;
-typedef basic_format_arg<wformat_context> wformat_arg;
+typedef basic_arg<format_context> format_arg;
+typedef basic_arg<wformat_context> wformat_arg;
 
 /**
   \rst
@@ -1380,7 +1381,7 @@ typedef basic_format_arg<wformat_context> wformat_arg;
  */
 template <typename Visitor, typename Context>
 typename std::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, basic_format_arg<Context> arg) {
+    visit(Visitor &&vis, basic_arg<Context> arg) {
   typedef typename Context::char_type Char;
   switch (arg.type_) {
   case internal::NONE:
@@ -1422,8 +1423,8 @@ typename std::result_of<Visitor(int)>::type
 namespace internal {
 
 template <typename Context, typename T>
-basic_format_arg<Context> make_arg(const T &value) {
-  basic_format_arg<Context> arg;
+basic_arg<Context> make_arg(const T &value) {
+  basic_arg<Context> arg;
   arg.type_ = internal::type<T>();
   arg.value_ = value;
   return arg;
@@ -1474,14 +1475,14 @@ void format_value(basic_writer<Char> &, const T &, Formatter &, const Char *) {
 }
 
 template <typename Context>
-struct NamedArg : basic_format_arg<Context> {
+struct NamedArg : basic_arg<Context> {
   typedef typename Context::char_type Char;
 
   BasicStringRef<Char> name;
 
   template <typename T>
   NamedArg(BasicStringRef<Char> argname, const T &value)
-  : basic_format_arg<Context>(make_arg<Context>(value)), name(argname) {}
+  : basic_arg<Context>(make_arg<Context>(value)), name(argname) {}
 };
 
 class RuntimeError : public std::runtime_error {
@@ -1508,7 +1509,7 @@ inline typename std::enable_if<IS_PACKED, value<Context>>::type
 }
 
 template <bool IS_PACKED, typename Context, typename T>
-inline typename std::enable_if<!IS_PACKED, basic_format_arg<Context>>::type
+inline typename std::enable_if<!IS_PACKED, basic_arg<Context>>::type
     make_arg(const T& value) {
   return make_arg<Context>(value);
 }
@@ -1525,7 +1526,7 @@ class format_arg_store {
   typedef typename Context::char_type char_type;
 
   typedef typename std::conditional<IS_PACKED,
-    internal::value<Context>, basic_format_arg<Context>>::type value_type;
+    internal::value<Context>, basic_arg<Context>>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
   typedef std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)> Array;
@@ -1554,10 +1555,10 @@ inline format_arg_store<format_context, Args...>
 
 /** Formatting arguments. */
 template <typename Context>
-class basic_format_args {
+class basic_args {
  public:
   typedef unsigned size_type;
-  typedef basic_format_arg<Context> format_arg;
+  typedef basic_arg<Context> format_arg;
 
  private:
   // To reduce compiled code size per formatting function call, types of first
@@ -1610,10 +1611,10 @@ class basic_format_args {
   }
 
  public:
-  basic_format_args() : types_(0) {}
+  basic_args() : types_(0) {}
 
   template <typename... Args>
-  basic_format_args(const format_arg_store<Context, Args...> &store)
+  basic_args(const format_arg_store<Context, Args...> &store)
   : types_(store.TYPES) {
     set_data(store.data());
   }
@@ -1626,8 +1627,8 @@ class basic_format_args {
   }
 };
 
-typedef basic_format_args<format_context> format_args;
-typedef basic_format_args<wformat_context> wformat_args;
+typedef basic_args<format_context> format_args;
+typedef basic_args<wformat_context> wformat_args;
 
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
@@ -1791,15 +1792,15 @@ class ArgMap {
  private:
   typedef typename Context::char_type Char;
   typedef std::vector<
-    std::pair<fmt::BasicStringRef<Char>, basic_format_arg<Context> > > MapType;
+    std::pair<fmt::BasicStringRef<Char>, basic_arg<Context> > > MapType;
   typedef typename MapType::value_type Pair;
 
   MapType map_;
 
  public:
-  void init(const basic_format_args<Context> &args);
+  void init(const basic_args<Context> &args);
 
-  const basic_format_arg<Context>
+  const basic_arg<Context>
       *find(const fmt::BasicStringRef<Char> &name) const {
     // The list is unsorted, so just return the first matching name.
     for (typename MapType::const_iterator it = map_.begin(), end = map_.end();
@@ -1812,7 +1813,7 @@ class ArgMap {
 };
 
 template <typename Context>
-void ArgMap<Context>::init(const basic_format_args<Context> &args) {
+void ArgMap<Context>::init(const basic_args<Context> &args) {
   if (!map_.empty())
     return;
   typedef internal::NamedArg<Context> NamedArg;
@@ -1987,17 +1988,17 @@ template <typename Char, typename Context>
 class format_context_base {
  private:
   const Char *ptr_;
-  basic_format_args<Context> args_;
+  basic_args<Context> args_;
   int next_arg_index_;
 
  protected:
-  typedef basic_format_arg<Context> format_arg;
+  typedef basic_arg<Context> format_arg;
 
-  format_context_base(const Char *format_str, basic_format_args<Context> args)
+  format_context_base(const Char *format_str, basic_args<Context> args)
   : ptr_(format_str), args_(args), next_arg_index_(0) {}
   ~format_context_base() {}
 
-  basic_format_args<Context> args() const { return args_; }
+  basic_args<Context> args() const { return args_; }
 
   // Returns the argument with specified index.
   format_arg do_get_arg(unsigned arg_index, const char *&error) {
@@ -2097,7 +2098,7 @@ class basic_format_context :
    \endrst
    */
   basic_format_context(const Char *format_str,
-                       basic_format_args<basic_format_context> args)
+                       basic_args<basic_format_context> args)
   : Base(format_str, args) {}
 
   // Parses argument id and returns corresponding argument.
@@ -2203,7 +2204,7 @@ class basic_writer {
 
  private:
   // Output buffer.
-  Buffer<Char> &buffer_;
+  buffer<Char> &buffer_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_writer);
 
@@ -2306,7 +2307,7 @@ class basic_writer {
   /**
     Constructs a ``basic_writer`` object.
    */
-  explicit basic_writer(Buffer<Char> &b) : buffer_(b) {}
+  explicit basic_writer(buffer<Char> &b) : buffer_(b) {}
 
  public:
   /**
@@ -2348,7 +2349,7 @@ class basic_writer {
   }
 
   void vformat(BasicCStringRef<Char> format,
-               basic_format_args<basic_format_context<Char>> args);
+               basic_args<basic_format_context<Char>> args);
   /**
     \rst
     Writes formatted data.
@@ -2447,7 +2448,7 @@ class basic_writer {
 
   void clear() FMT_NOEXCEPT { buffer_.clear(); }
 
-  Buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
+  buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
 };
 
 template <typename Char>
@@ -3242,7 +3243,7 @@ unsigned parse_nonnegative_int(const Char *&s) {
 
 template <typename Char>
 inline void require_numeric_argument(
-    const basic_format_arg<Char> &arg, char spec) {
+    const basic_arg<Char> &arg, char spec) {
   if (!arg.is_numeric()) {
     FMT_THROW(fmt::format_error(
         fmt::format("format specifier '{}' requires numeric argument", spec)));
@@ -3264,7 +3265,7 @@ struct IsUnsigned {
 };
 
 template <typename Char, typename Context>
-void check_sign(const Char *&s, const basic_format_arg<Context> &arg) {
+void check_sign(const Char *&s, const basic_arg<Context> &arg) {
   char sign = static_cast<char>(*s);
   require_numeric_argument(arg, sign);
   if (visit(IsUnsigned(), arg)) {
@@ -3378,7 +3379,7 @@ inline typename basic_format_context<Char>::format_arg
 
 // Formats a single argument.
 template <typename ArgFormatter, typename Char, typename Context>
-void do_format_arg(basic_writer<Char> &writer, basic_format_arg<Context> arg,
+void do_format_arg(basic_writer<Char> &writer, basic_arg<Context> arg,
                    Context &ctx) {
   const Char *&s = ctx.ptr();
   basic_format_specs<Char> spec;
@@ -3505,7 +3506,7 @@ void do_format_arg(basic_writer<Char> &writer, basic_format_arg<Context> arg,
 /** Formats arguments and writes the output to the writer. */
 template <typename ArgFormatter, typename Char, typename Context>
 void vwrite(basic_writer<Char> &writer, BasicCStringRef<Char> format_str,
-             basic_format_args<Context> args) {
+             basic_args<Context> args) {
   basic_format_context<Char> ctx(format_str.c_str(), args);
   const Char *&s = ctx.ptr();
   const Char *start = s;
@@ -3531,7 +3532,7 @@ void vwrite(basic_writer<Char> &writer, BasicCStringRef<Char> format_str,
 template <typename Char>
 inline void basic_writer<Char>::vformat(
     BasicCStringRef<Char> format,
-    basic_format_args<basic_format_context<Char>> args) {
+    basic_args<basic_format_context<Char>> args) {
   vwrite<ArgFormatter<Char>>(*this, format, args);
 }
 }  // namespace fmt
