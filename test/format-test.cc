@@ -1554,7 +1554,7 @@ TEST(FormatTest, Variadic) {
 
 TEST(FormatTest, JoinArg) {
   using fmt::join;
-  int v1[] { 1, 2, 3 };
+  int v1[3] = { 1, 2, 3 };
   std::vector<float> v2;
   v2.push_back(1.2);
   v2.push_back(3.4);
