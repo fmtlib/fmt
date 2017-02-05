@@ -3870,69 +3870,63 @@ void BasicFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
 template <typename Char, typename It>
 struct ArgJoin
 {
-   It first;
-   It last;
-   BasicCStringRef<Char> sep;
+  It first;
+  It last;
+  BasicCStringRef<Char> sep;
 
-   ArgJoin(It first, It last, const BasicCStringRef<Char>& sep) :
-      first(first),
-      last(last),
-      sep(sep)
-   {
-   }
+  ArgJoin(It first, It last, const BasicCStringRef<Char>& sep) :
+    first(first),
+    last(last),
+    sep(sep) {}
 };
 
 template <typename It>
-ArgJoin<char, It> join(It first, It last, const BasicCStringRef<char>& sep)
-{
-   return ArgJoin<char, It>(first, last, sep);
+ArgJoin<char, It> join(It first, It last, const BasicCStringRef<char>& sep) {
+  return ArgJoin<char, It>(first, last, sep);
 }
 
 template <typename It>
-ArgJoin<wchar_t, It> join(It first, It last, const BasicCStringRef<wchar_t>& sep)
-{
-   return ArgJoin<wchar_t, It>(first, last, sep);
+ArgJoin<wchar_t, It> join(It first, It last, const BasicCStringRef<wchar_t>& sep) {
+  return ArgJoin<wchar_t, It>(first, last, sep);
 }
 
 #if FMT_HAS_GXX_CXX11
 template <typename Range>
-auto join(const Range& range, const BasicCStringRef<char>& sep) -> ArgJoin<char, decltype(std::begin(range))>
-{
-   return join(std::begin(range), std::end(range), sep);
+auto join(const Range& range, const BasicCStringRef<char>& sep)
+    -> ArgJoin<char, decltype(std::begin(range))> {
+  return join(std::begin(range), std::end(range), sep);
 }
 
 template <typename Range>
-auto join(const Range& range, const BasicCStringRef<wchar_t>& sep) -> ArgJoin<wchar_t, decltype(std::begin(range))>
-{
-   return join(std::begin(range), std::end(range), sep);
+auto join(const Range& range, const BasicCStringRef<wchar_t>& sep)
+    -> ArgJoin<wchar_t, decltype(std::begin(range))> {
+  return join(std::begin(range), std::end(range), sep);
 }
 #endif
 
 
 template <typename ArgFormatter, typename Char, typename It>
 void format_arg(fmt::BasicFormatter<Char, ArgFormatter> &f,
-                const Char *&format_str, const ArgJoin<Char, It>& e) {
-   const Char* end = format_str;
-   if (*end == ':')
-      ++end;
-   while (*end && *end != '}')
-      ++end;
-   if (*end != '}')
-      FMT_THROW(FormatError("missing '}' in format string"));
+    const Char *&format_str, const ArgJoin<Char, It>& e) {
+  const Char* end = format_str;
+  if (*end == ':')
+    ++end;
+  while (*end && *end != '}')
+    ++end;
+  if (*end != '}')
+    FMT_THROW(FormatError("missing '}' in format string"));
 
-   It it = e.first;
-   if (it != e.last)
-   {
-      const Char* save = format_str;
+  It it = e.first;
+  if (it != e.last) {
+    const Char* save = format_str;
+    f.format(format_str, internal::MakeArg<fmt::BasicFormatter<Char, ArgFormatter> >(*it++));
+    while (it != e.last) {
+      f.writer().write(e.sep);
+      format_str = save;
       f.format(format_str, internal::MakeArg<fmt::BasicFormatter<Char, ArgFormatter> >(*it++));
-      while (it != e.last)
-      {
-         f.writer().write(e.sep);
-         format_str = save;
-         f.format(format_str, internal::MakeArg<fmt::BasicFormatter<Char, ArgFormatter> >(*it++));
-      }
-   }
-   format_str = end + 1;
+    }
+  }
+  format_str = end + 1;
 }
 
 
