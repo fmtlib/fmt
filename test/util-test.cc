@@ -53,7 +53,6 @@
 #undef max
 
 using fmt::basic_arg;
-using fmt::format_arg;
 using fmt::buffer;
 using fmt::StringRef;
 using fmt::internal::MemoryBuffer;
@@ -408,7 +407,7 @@ TEST(UtilTest, Increment) {
 }
 
 TEST(UtilTest, FormatArgs) {
-  fmt::format_args args;
+  fmt::args args;
   EXPECT_FALSE(args[1]);
 }
 
@@ -570,7 +569,7 @@ TEST(UtilTest, CustomArg) {
         testing::Invoke([&](fmt::internal::CustomValue<char> custom) {
     EXPECT_EQ(&test, custom.value);
     fmt::MemoryWriter w;
-    fmt::context ctx("}", fmt::format_args());
+    fmt::context ctx("}", fmt::args());
     custom.format(w, &test, &ctx);
     EXPECT_EQ("test", w.str());
     return Visitor::Result();
@@ -582,7 +581,7 @@ TEST(ArgVisitorTest, VisitInvalidArg) {
   typedef MockVisitor<fmt::monostate> Visitor;
   testing::StrictMock<Visitor> visitor;
   EXPECT_CALL(visitor, visit(_));
-  format_arg arg;
+  fmt::basic_arg<fmt::context> arg;
   visit(visitor, arg);
 }
 

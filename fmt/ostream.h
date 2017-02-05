@@ -91,7 +91,7 @@ void format_value(basic_writer<Char> &w, const T &value,
         w, internal::make_arg< basic_context<Char> >(str), ctx);
 }
 
-FMT_API void vprint(std::ostream &os, CStringRef format_str, format_args args);
+FMT_API void vprint(std::ostream &os, CStringRef format_str, args args);
 
 /**
   \rst

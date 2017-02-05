@@ -1369,9 +1369,6 @@ class basic_arg {
   }
 };
 
-typedef basic_arg<context> format_arg;
-typedef basic_arg<wcontext> wformat_arg;
-
 /**
   \rst
   Visits an argument dispatching to the appropriate visit method based on
@@ -1625,8 +1622,8 @@ class basic_args {
   }
 };
 
-typedef basic_args<context> format_args;
-typedef basic_args<wcontext> wformat_args;
+typedef basic_args<context> args;
+typedef basic_args<wcontext> wargs;
 
 enum Alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
@@ -2111,7 +2108,7 @@ class basic_context :
 */
 class SystemError : public internal::RuntimeError {
  private:
-  void init(int err_code, CStringRef format_str, format_args args);
+  void init(int err_code, CStringRef format_str, args args);
 
  protected:
   int error_code_;
@@ -2943,7 +2940,7 @@ FMT_API void report_system_error(int error_code,
 /** A Windows error. */
 class WindowsError : public SystemError {
  private:
-  FMT_API void init(int error_code, CStringRef format_str, format_args args);
+  FMT_API void init(int error_code, CStringRef format_str, args args);
 
  public:
   /**
@@ -2989,7 +2986,7 @@ FMT_API void report_windows_error(int error_code,
 
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
-FMT_API void vprint_colored(Color c, CStringRef format, format_args args);
+FMT_API void vprint_colored(Color c, CStringRef format, args args);
 
 /**
   Formats a string and prints it to stdout using ANSI escape sequences
@@ -3003,7 +3000,7 @@ inline void print_colored(Color c, CStringRef format_str,
   vprint_colored(c, format_str, make_args(args...));
 }
 
-inline std::string vformat(CStringRef format_str, format_args args) {
+inline std::string vformat(CStringRef format_str, args args) {
   MemoryWriter w;
   w.vformat(format_str, args);
   return w.str();
@@ -3023,7 +3020,7 @@ inline std::string format(CStringRef format_str, const Args & ... args) {
   return vformat(format_str, make_args(args...));
 }
 
-inline std::wstring vformat(WCStringRef format_str, wformat_args args) {
+inline std::wstring vformat(WCStringRef format_str, wargs args) {
   WMemoryWriter w;
   w.vformat(format_str, args);
   return w.str();
@@ -3035,7 +3032,7 @@ inline std::wstring format(WCStringRef format_str, const Args & ... args) {
   return vformat(format_str, vargs);
 }
 
-FMT_API void vprint(std::FILE *f, CStringRef format_str, format_args args);
+FMT_API void vprint(std::FILE *f, CStringRef format_str, args args);
 
 /**
   \rst
@@ -3051,7 +3048,7 @@ inline void print(std::FILE *f, CStringRef format_str, const Args & ... args) {
   vprint(f, format_str, make_args(args...));
 }
 
-FMT_API void vprint(CStringRef format_str, format_args args);
+FMT_API void vprint(CStringRef format_str, args args);
 
 /**
   \rst

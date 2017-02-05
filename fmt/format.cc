@@ -224,7 +224,7 @@ FMT_FUNC void format_system_error(
 }  // namespace internal
 
 FMT_FUNC void SystemError::init(
-    int err_code, CStringRef format_str, format_args args) {
+    int err_code, CStringRef format_str, args args) {
   error_code_ = err_code;
   MemoryWriter w;
   format_system_error(w, err_code, vformat(format_str, args));
@@ -348,7 +348,7 @@ FMT_FUNC int internal::UTF16ToUTF8::convert(WStringRef s) {
 }
 
 FMT_FUNC void WindowsError::init(
-    int err_code, CStringRef format_str, format_args args) {
+    int err_code, CStringRef format_str, args args) {
   error_code_ = err_code;
   MemoryWriter w;
   internal::format_windows_error(w, err_code, vformat(format_str, args));
@@ -428,17 +428,17 @@ FMT_FUNC void report_windows_error(
 }
 #endif
 
-FMT_FUNC void vprint(std::FILE *f, CStringRef format_str, format_args args) {
+FMT_FUNC void vprint(std::FILE *f, CStringRef format_str, args args) {
   MemoryWriter w;
   w.vformat(format_str, args);
   std::fwrite(w.data(), 1, w.size(), f);
 }
 
-FMT_FUNC void vprint(CStringRef format_str, format_args args) {
+FMT_FUNC void vprint(CStringRef format_str, args args) {
   vprint(stdout, format_str, args);
 }
 
-FMT_FUNC void vprint_colored(Color c, CStringRef format, format_args args) {
+FMT_FUNC void vprint_colored(Color c, CStringRef format, args args) {
   char escape[] = "\x1b[30m";
   escape[3] = static_cast<char>('0' + c);
   std::fputs(escape, stdout);
@@ -448,7 +448,7 @@ FMT_FUNC void vprint_colored(Color c, CStringRef format, format_args args) {
 
 template <typename Char>
 void printf(basic_writer<Char> &w, BasicCStringRef<Char> format,
-            format_args args);
+            args args);
 
 FMT_FUNC int vfprintf(std::FILE *f, CStringRef format, printf_args args) {
   MemoryWriter w;
@@ -465,7 +465,7 @@ template struct internal::BasicData<void>;
 
 template void internal::FixedBuffer<char>::grow(std::size_t);
 
-template void internal::ArgMap<context>::init(const format_args &args);
+template void internal::ArgMap<context>::init(const args &args);
 
 template void printf_context<char>::format(writer &writer);
 
@@ -483,7 +483,7 @@ template class basic_context<wchar_t>;
 
 template void internal::FixedBuffer<wchar_t>::grow(std::size_t);
 
-template void internal::ArgMap<wcontext>::init(const wformat_args &args);
+template void internal::ArgMap<wcontext>::init(const wargs &args);
 
 template void printf_context<wchar_t>::format(wwriter &writer);
 

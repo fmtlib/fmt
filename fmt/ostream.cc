@@ -28,7 +28,7 @@ FMT_FUNC void write(std::ostream &os, writer &w) {
 }
 
 FMT_FUNC void vprint(std::ostream &os, CStringRef format_str,
-                     format_args args) {
+                     args args) {
   MemoryWriter w;
   w.vformat(format_str, args);
   internal::write(os, w);

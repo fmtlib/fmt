@@ -1566,7 +1566,7 @@ TEST(StrTest, Convert) {
   EXPECT_EQ("2012-12-9", s);
 }
 
-std::string vformat_message(int id, const char *format, fmt::format_args args) {
+std::string vformat_message(int id, const char *format, fmt::args args) {
   MemoryWriter w;
   w.format("[{}] ", id);
   w.vformat(format, args);
@@ -1656,7 +1656,7 @@ class MockArgFormatter : public fmt::internal::ArgFormatterBase<char> {
   void operator()(fmt::internal::CustomValue<char>) {}
 };
 
-void custom_vformat(fmt::CStringRef format_str, fmt::format_args args) {
+void custom_vformat(fmt::CStringRef format_str, fmt::args args) {
   fmt::MemoryWriter writer;
   fmt::vwrite<MockArgFormatter>(writer, format_str, args);
 }

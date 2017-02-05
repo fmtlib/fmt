@@ -45,7 +45,7 @@ class CustomPrintfArgFormatter : public PrintfArgFormatter<char> {
   }
 };
 
-std::string custom_vformat(fmt::CStringRef format_str, fmt::format_args args) {
+std::string custom_vformat(fmt::CStringRef format_str, fmt::args args) {
   fmt::MemoryWriter writer;
   // Pass custom argument formatter as a template arg to vformat.
   fmt::vwrite<CustomArgFormatter>(writer, format_str, args);
