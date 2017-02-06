@@ -3868,8 +3868,7 @@ void BasicFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
 
 
 template <typename Char, typename It>
-struct ArgJoin
-{
+struct ArgJoin {
   It first;
   It last;
   BasicCStringRef<Char> sep;
