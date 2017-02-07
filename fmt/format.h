@@ -3866,7 +3866,6 @@ void BasicFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
   write(writer_, start, s);
 }
 
-
 template <typename Char, typename It>
 struct ArgJoin {
   It first;
@@ -3903,7 +3902,6 @@ auto join(const Range& range, const BasicCStringRef<wchar_t>& sep)
 }
 #endif
 
-
 template <typename ArgFormatter, typename Char, typename It>
 void format_arg(fmt::BasicFormatter<Char, ArgFormatter> &f,
     const Char *&format_str, const ArgJoin<Char, It>& e) {
@@ -3927,10 +3925,6 @@ void format_arg(fmt::BasicFormatter<Char, ArgFormatter> &f,
   }
   format_str = end + 1;
 }
-
-
-
-
 }  // namespace fmt
 
 #if FMT_USE_USER_DEFINED_LITERALS
