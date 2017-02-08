@@ -1552,6 +1552,27 @@ TEST(FormatTest, Variadic) {
   EXPECT_EQ(L"abc1", format(L"{}c{}", L"ab", 1));
 }
 
+TEST(FormatTest, JoinArg) {
+  using fmt::join;
+  int v1[3] = { 1, 2, 3 };
+  std::vector<float> v2;
+  v2.push_back(1.2);
+  v2.push_back(3.4);
+
+  EXPECT_EQ("(1, 2, 3)", format("({})", join(v1 + 0, v1 + 3, ", ")));
+  EXPECT_EQ("(1)", format("({})", join(v1 + 0, v1 + 1, ", ")));
+  EXPECT_EQ("()", format("({})", join(v1 + 0, v1 + 0, ", ")));
+  EXPECT_EQ("(001, 002, 003)", format("({:03})", join(v1 + 0, v1 + 3, ", ")));
+  EXPECT_EQ("(+01.20, +03.40)", format("({:+06.2f})", join(v2.begin(), v2.end(), ", ")));
+
+  EXPECT_EQ(L"(1, 2, 3)", format(L"({})", join(v1 + 0, v1 + 3, L", ")));
+
+#if FMT_HAS_GXX_CXX11
+  EXPECT_EQ("(1, 2, 3)", format("({})", join(v1, ", ")));
+  EXPECT_EQ("(+01.20, +03.40)", format("({:+06.2f})", join(v2, ", ")));
+#endif
+}
+
 template <typename T>
 std::string str(const T &value) {
   return fmt::format("{}", value);
