@@ -12,10 +12,10 @@
 namespace fmt {
 
 namespace internal {
-FMT_FUNC void write(std::ostream &os, writer &w) {
-  const char *data = w.data();
+FMT_FUNC void write(std::ostream &os, buffer &buf) {
+  const char *data = buf.data();
   typedef internal::MakeUnsigned<std::streamsize>::Type UnsignedStreamSize;
-  UnsignedStreamSize size = w.size();
+  UnsignedStreamSize size = buf.size();
   UnsignedStreamSize max_size =
       internal::to_unsigned((std::numeric_limits<std::streamsize>::max)());
   do {
@@ -27,10 +27,9 @@ FMT_FUNC void write(std::ostream &os, writer &w) {
 }
 }
 
-FMT_FUNC void vprint(std::ostream &os, CStringRef format_str,
-                     args args) {
-  MemoryWriter w;
-  w.vformat(format_str, args);
-  internal::write(os, w);
+FMT_FUNC void vprint(std::ostream &os, CStringRef format_str, args args) {
+  internal::MemoryBuffer<char> buffer;
+  vformat_to(buffer, format_str, args);
+  internal::write(os, buffer);
 }
 }  // namespace fmt

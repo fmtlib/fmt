@@ -67,9 +67,10 @@ namespace {
 struct Test {};
 
 template <typename Char>
-void format_value(fmt::basic_writer<Char> &w, Test,
+void format_value(fmt::basic_buffer<Char> &b, Test,
                   fmt::basic_context<Char> &) {
-  w.write("test");
+  const Char *test = "test";
+  b.append(test, test + std::strlen(test));
 }
 
 template <typename Context, typename T>
@@ -416,7 +417,7 @@ struct CustomContext {
   bool called;
 };
 
-void format_value(fmt::writer &, const Test &, CustomContext &ctx) {
+void format_value(fmt::buffer &, const Test &, CustomContext &ctx) {
   ctx.called = true;
 }
 
@@ -424,8 +425,8 @@ TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
   fmt::internal::value<CustomContext> arg(t);
   CustomContext ctx = {false};
-  fmt::MemoryWriter w;
-  arg.custom.format(w, &t, &ctx);
+  fmt::internal::MemoryBuffer<char> buffer;
+  arg.custom.format(buffer, &t, &ctx);
   EXPECT_TRUE(ctx.called);
 }
 
@@ -568,10 +569,10 @@ TEST(UtilTest, CustomArg) {
   EXPECT_CALL(visitor, visit(_)).WillOnce(
         testing::Invoke([&](fmt::internal::CustomValue<char> custom) {
     EXPECT_EQ(&test, custom.value);
-    fmt::MemoryWriter w;
+    fmt::internal::MemoryBuffer<char> buffer;
     fmt::context ctx("}", fmt::args());
-    custom.format(w, &test, &ctx);
-    EXPECT_EQ("test", w.str());
+    custom.format(buffer, &test, &ctx);
+    EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
     return Visitor::Result();
   }));
   fmt::visit(visitor, make_arg<fmt::context>(test));
@@ -689,7 +690,7 @@ TEST(UtilTest, UTF16ToUTF8Convert) {
 #endif  // _WIN32
 
 typedef void (*FormatErrorMessage)(
-        fmt::writer &out, int error_code, StringRef message);
+        fmt::buffer &out, int error_code, StringRef message);
 
 template <typename Error>
 void check_throw_error(int error_code, FormatErrorMessage format) {
@@ -699,20 +700,21 @@ void check_throw_error(int error_code, FormatErrorMessage format) {
   } catch (const fmt::SystemError &e) {
     error = e;
   }
-  fmt::MemoryWriter message;
+  fmt::internal::MemoryBuffer<char> message;
   format(message, error_code, "test error");
-  EXPECT_EQ(message.str(), error.what());
+  EXPECT_EQ(to_string(message), error.what());
   EXPECT_EQ(error_code, error.error_code());
 }
 
 TEST(UtilTest, FormatSystemError) {
-  fmt::MemoryWriter message;
+  fmt::internal::MemoryBuffer<char> message;
   fmt::format_system_error(message, EDOM, "test");
-  EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)), message.str());
+  EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)),
+            to_string(message));
   message.clear();
   fmt::format_system_error(
         message, EDOM, fmt::StringRef(0, std::numeric_limits<size_t>::max()));
-  EXPECT_EQ(fmt::format("error {}", EDOM), message.str());
+  EXPECT_EQ(fmt::format("error {}", EDOM), to_string(message));
 }
 
 TEST(UtilTest, SystemError) {
@@ -723,10 +725,11 @@ TEST(UtilTest, SystemError) {
 }
 
 TEST(UtilTest, ReportSystemError) {
-  fmt::MemoryWriter out;
+  fmt::internal::MemoryBuffer<char> out;
   fmt::format_system_error(out, EDOM, "test error");
-  out.write('\n');
-  EXPECT_WRITE(stderr, fmt::report_system_error(EDOM, "test error"), out.str());
+  out.push_back('\n');
+  EXPECT_WRITE(stderr, fmt::report_system_error(EDOM, "test error"),
+               to_string(out));
 }
 
 #ifdef _WIN32

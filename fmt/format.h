@@ -365,10 +365,13 @@ using std::move;
 #endif
 
 template <typename Char>
-class basic_writer;
+class basic_buffer;
 
-typedef basic_writer<char> writer;
-typedef basic_writer<wchar_t> wwriter;
+typedef basic_buffer<char> buffer;
+typedef basic_buffer<wchar_t> wbuffer;
+
+template <typename Char>
+class basic_writer;
 
 template <typename Context>
 class basic_arg;
@@ -616,6 +619,9 @@ class basic_buffer {
   /** Returns the capacity of this buffer. */
   std::size_t capacity() const { return capacity_; }
 
+  /** Returns a pointer to the buffer data. */
+  const T *data() const { return ptr_; }
+
   /**
     Resizes the buffer. If T is a POD type new elements may not be initialized.
    */
@@ -662,11 +668,17 @@ void basic_buffer<T>::append(const U *begin, const U *end) {
   size_ = new_size;
 }
 
+template <typename Char>
+inline std::basic_string<Char> to_string(const basic_buffer<Char>& buffer) {
+  return std::basic_string<Char>(buffer.data(), buffer.size());
+}
+
 namespace internal {
 
 // A memory buffer for trivially copyable/constructible types with the first
 // SIZE elements stored in the object itself.
-template <typename T, std::size_t SIZE, typename Allocator = std::allocator<T> >
+template <typename T, std::size_t SIZE = INLINE_BUFFER_SIZE,
+          typename Allocator = std::allocator<T> >
 class MemoryBuffer : private Allocator, public basic_buffer<T> {
  private:
   T data_[SIZE];
@@ -740,17 +752,6 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
   if (old_ptr != data_)
     Allocator::deallocate(old_ptr, old_capacity);
 }
-
-// A fixed-size buffer.
-template <typename Char>
-class FixedBuffer : public fmt::basic_buffer<Char> {
- public:
-  FixedBuffer(Char *array, std::size_t size)
-    : fmt::basic_buffer<Char>(array, size) {}
-
- protected:
-  FMT_API void grow(std::size_t size);
-};
 
 template <typename Char>
 class BasicCharTraits {
@@ -988,7 +989,7 @@ class UTF16ToUTF8 {
   FMT_API int convert(WStringRef s);
 };
 
-FMT_API void format_windows_error(fmt::writer &out, int error_code,
+FMT_API void format_windows_error(fmt::buffer &out, int error_code,
                                   fmt::StringRef message) FMT_NOEXCEPT;
 #endif
 
@@ -1085,7 +1086,7 @@ struct string_value {
 template <typename Char>
 struct CustomValue {
   typedef void (*FormatFunc)(
-      basic_writer<Char> &writer, const void *arg, void *ctx);
+      basic_buffer<Char> &buffer, const void *arg, void *ctx);
 
   const void *value;
   FormatFunc format;
@@ -1207,8 +1208,8 @@ class value {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   static void format_custom_arg(
-      basic_writer<Char> &writer, const void *arg, void *context) {
-    format_value(writer, *static_cast<const T*>(arg),
+      basic_buffer<Char> &buffer, const void *arg, void *context) {
+    format_value(buffer, *static_cast<const T*>(arg),
                  *static_cast<Context*>(context));
   }
 
@@ -1464,7 +1465,7 @@ inline fmt::StringRef thousands_sep(...) { return ""; }
 #endif
 
 template <typename Formatter, typename T, typename Char>
-void format_value(basic_writer<Char> &, const T &, Formatter &, const Char *) {
+void format_value(basic_buffer<Char> &, const T &, Formatter &, const Char *) {
   FMT_STATIC_ASSERT(False<T>::value,
                     "Cannot format argument. To enable the use of ostream "
                     "operator<< include fmt/ostream.h. Otherwise provide "
@@ -1858,7 +1859,7 @@ class ArgFormatterBase {
   typedef basic_format_specs<Char> format_specs;
 
  private:
-  basic_writer<Char> &writer_;
+  basic_writer<Char> writer_;
   format_specs &spec_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(ArgFormatterBase);
@@ -1901,8 +1902,8 @@ class ArgFormatterBase {
  public:
   typedef Char char_type;
 
-  ArgFormatterBase(basic_writer<Char> &w, format_specs &s)
-  : writer_(w), spec_(s) {}
+  ArgFormatterBase(basic_buffer<Char> &b, format_specs &s)
+  : writer_(b), spec_(s) {}
 
   void operator()(monostate) {
     FMT_ASSERT(false, "invalid argument type");
@@ -1973,12 +1974,6 @@ class ArgFormatterBase {
   }
 };
 
-template <typename Char>
-inline void write(basic_writer<Char> &w, const Char *start, const Char *end) {
-  if (start != end)
-    w.write(BasicStringRef<Char>(start, internal::to_unsigned(end - start)));
-}
-
 template <typename Char, typename Context>
 class context_base {
  private:
@@ -2047,20 +2042,20 @@ class ArgFormatter : public internal::ArgFormatterBase<Char> {
   /**
     \rst
     Constructs an argument formatter object.
-    *writer* is a reference to the writer to be used for output,
+    *buffer* is a reference to the buffer to be used for output,
     *ctx* is a reference to the formatting context, *spec* contains
     format specifier information for standard argument types.
     \endrst
    */
-  ArgFormatter(basic_writer<Char> &writer, basic_context<Char> &ctx,
+  ArgFormatter(basic_buffer<Char> &buffer, basic_context<Char> &ctx,
                format_specs &spec)
-  : internal::ArgFormatterBase<Char>(writer, spec), ctx_(ctx) {}
+  : internal::ArgFormatterBase<Char>(buffer, spec), ctx_(ctx) {}
 
   using internal::ArgFormatterBase<Char>::operator();
 
   /** Formats an argument of a custom (user-defined) type. */
   void operator()(internal::CustomValue<Char> c) {
-    c.format(this->writer(), c.value, &ctx_);
+    c.format(this->writer().buffer(), c.value, &ctx_);
   }
 };
 
@@ -2160,7 +2155,7 @@ class SystemError : public internal::RuntimeError {
   may look like "Unknown error -1" and is platform-dependent.
   \endrst
  */
-FMT_API void format_system_error(fmt::writer &out, int error_code,
+FMT_API void format_system_error(fmt::buffer &out, int error_code,
                                  fmt::StringRef message) FMT_NOEXCEPT;
 
 namespace internal {
@@ -2298,13 +2293,12 @@ class basic_writer {
   template <typename Char_>
   friend class PrintfArgFormatter;
 
- protected:
+ public:
   /**
     Constructs a ``basic_writer`` object.
    */
   explicit basic_writer(basic_buffer<Char> &b) : buffer_(b) {}
 
- public:
   /**
     \rst
     Destroys a ``basic_writer`` object.
@@ -2341,38 +2335,6 @@ class basic_writer {
    */
   std::basic_string<Char> str() const {
     return std::basic_string<Char>(&buffer_[0], buffer_.size());
-  }
-
-  void vformat(BasicCStringRef<Char> format,
-               basic_args<basic_context<Char>> args);
-  /**
-    \rst
-    Writes formatted data.
-
-    *args* is an argument list representing arbitrary arguments.
-
-    **Example**::
-
-       MemoryWriter out;
-       out.format("Current point:\n");
-       out.format("({:+f}, {:+f})", -3.14, 3.14);
-
-    This will write the following output to the ``out`` object:
-
-    .. code-block:: none
-
-       Current point:
-       (-3.140000, +3.140000)
-
-    The output can be accessed using :func:`data()`, :func:`c_str` or
-    :func:`str` methods.
-
-    See also :ref:`syntax`.
-    \endrst
-   */
-  template <typename... Args>
-  void format(BasicCStringRef<Char> format, const Args & ... args) {
-    vformat(format, make_args<basic_context<Char>>(args...));
   }
 
   void write(int value) {
@@ -2881,6 +2843,23 @@ class BasicMemoryWriter : public basic_writer<Char> {
 typedef BasicMemoryWriter<char> MemoryWriter;
 typedef BasicMemoryWriter<wchar_t> WMemoryWriter;
 
+// A fixed-size buffer.
+template <typename Char>
+class FixedBuffer : public fmt::basic_buffer<Char> {
+ public:
+  /**
+   \rst
+   Constructs a :class:`fmt::FixedBuffer` object for *array* of the
+   given size.
+   \endrst
+   */
+  FixedBuffer(Char *array, std::size_t size)
+    : fmt::basic_buffer<Char>(array, size) {}
+
+ protected:
+  FMT_API void grow(std::size_t size);
+};
+
 /**
   \rst
   This class template provides operations for formatting and writing data
@@ -2904,15 +2883,9 @@ typedef BasicMemoryWriter<wchar_t> WMemoryWriter;
 template <typename Char>
 class BasicArrayWriter : public basic_writer<Char> {
  private:
-  internal::FixedBuffer<Char> buffer_;
+  FixedBuffer<Char> buffer_;
 
  public:
-  /**
-   \rst
-   Constructs a :class:`fmt::BasicArrayWriter` object for *array* of the
-   given size.
-   \endrst
-   */
   BasicArrayWriter(Char *array, std::size_t size)
     : basic_writer<Char>(buffer_), buffer_(array, size) {}
 
@@ -3000,10 +2973,34 @@ inline void print_colored(Color c, CStringRef format_str,
   vprint_colored(c, format_str, make_args(args...));
 }
 
+template <typename ArgFormatter, typename Char, typename Context>
+void vformat_to(basic_buffer<Char> &buffer, BasicCStringRef<Char> format_str,
+                basic_args<Context> args);
+
+inline void vformat_to(buffer &buf, CStringRef format_str, args args) {
+  vformat_to<ArgFormatter<char>>(buf, format_str, args);
+}
+
+inline void vformat_to(wbuffer &buf, WCStringRef format_str, wargs args) {
+  vformat_to<ArgFormatter<wchar_t>>(buf, format_str, args);
+}
+
+template <typename... Args>
+inline void format_to(buffer &buf, CStringRef format_str,
+                      const Args & ... args) {
+  vformat_to(buf, format_str, make_args(args...));
+}
+
+template <typename... Args>
+inline void format_to(wbuffer &buf, WCStringRef format_str,
+                      const Args & ... args) {
+  vformat_to(buf, format_str, make_args<wcontext>(args...));
+}
+
 inline std::string vformat(CStringRef format_str, args args) {
-  MemoryWriter w;
-  w.vformat(format_str, args);
-  return w.str();
+  internal::MemoryBuffer<char> buffer;
+  vformat_to(buffer, format_str, args);
+  return to_string(buffer);
 }
 
 /**
@@ -3021,15 +3018,14 @@ inline std::string format(CStringRef format_str, const Args & ... args) {
 }
 
 inline std::wstring vformat(WCStringRef format_str, wargs args) {
-  WMemoryWriter w;
-  w.vformat(format_str, args);
-  return w.str();
+  internal::MemoryBuffer<wchar_t> buffer;
+  vformat_to(buffer, format_str, args);
+  return to_string(buffer);
 }
 
 template <typename... Args>
 inline std::wstring format(WCStringRef format_str, const Args & ... args) {
-  auto vargs = make_args<wcontext>(args...);
-  return vformat(format_str, vargs);
+  return vformat(format_str, make_args<wcontext>(args...));
 }
 
 FMT_API void vprint(std::FILE *f, CStringRef format_str, args args);
@@ -3273,15 +3269,15 @@ void check_sign(const Char *&s, const basic_arg<Context> &arg) {
 template <typename Char, typename Context>
 class CustomFormatter {
  private:
-  basic_writer<Char> &writer_;
+  basic_buffer<Char> &buffer_;
   Context &ctx_;
 
  public:
-  CustomFormatter(basic_writer<Char> &writer, Context &ctx)
-  : writer_(writer), ctx_(ctx) {}
+  CustomFormatter(basic_buffer<Char> &buffer, Context &ctx)
+  : buffer_(buffer), ctx_(ctx) {}
 
   bool operator()(internal::CustomValue<Char> custom) {
-    custom.format(writer_, custom.value, &ctx_);
+    custom.format(buffer_, custom.value, &ctx_);
     return true;
   }
 
@@ -3374,12 +3370,12 @@ inline typename basic_context<Char>::format_arg
 
 // Formats a single argument.
 template <typename ArgFormatter, typename Char, typename Context>
-void do_format_arg(basic_writer<Char> &writer, basic_arg<Context> arg,
+void do_format_arg(basic_buffer<Char> &buffer, basic_arg<Context> arg,
                    Context &ctx) {
   const Char *&s = ctx.ptr();
   basic_format_specs<Char> spec;
   if (*s == ':') {
-    if (visit(internal::CustomFormatter<Char, Context>(writer, ctx), arg))
+    if (visit(internal::CustomFormatter<Char, Context>(buffer, ctx), arg))
       return;
     ++s;
     // Parse fill and alignment.
@@ -3495,13 +3491,13 @@ void do_format_arg(basic_writer<Char> &writer, basic_arg<Context> arg,
     FMT_THROW(format_error("missing '}' in format string"));
 
   // Format argument.
-  visit(ArgFormatter(writer, ctx, spec), arg);
+  visit(ArgFormatter(buffer, ctx, spec), arg);
 }
 
-/** Formats arguments and writes the output to the writer. */
+/** Formats arguments and writes the output to the buffer. */
 template <typename ArgFormatter, typename Char, typename Context>
-void vwrite(basic_writer<Char> &writer, BasicCStringRef<Char> format_str,
-             basic_args<Context> args) {
+void vformat_to(basic_buffer<Char> &buffer, BasicCStringRef<Char> format_str,
+                basic_args<Context> args) {
   basic_context<Char> ctx(format_str.c_str(), args);
   const Char *&s = ctx.ptr();
   const Char *start = s;
@@ -3509,26 +3505,19 @@ void vwrite(basic_writer<Char> &writer, BasicCStringRef<Char> format_str,
     Char c = *s++;
     if (c != '{' && c != '}') continue;
     if (*s == c) {
-      internal::write(writer, start, s);
+      buffer.append(start, s);
       start = ++s;
       continue;
     }
     if (c == '}')
       FMT_THROW(format_error("unmatched '}' in format string"));
-    internal::write(writer, start, s - 1);
-    do_format_arg<ArgFormatter>(writer, ctx.parse_arg_id(), ctx);
+    buffer.append(start, s - 1);
+    do_format_arg<ArgFormatter>(buffer, ctx.parse_arg_id(), ctx);
     if (*s != '}')
       FMT_THROW(format_error(fmt::format("unknown format specifier")));
     start = ++s;
   }
-  internal::write(writer, start, s);
-}
-
-template <typename Char>
-inline void basic_writer<Char>::vformat(
-    BasicCStringRef<Char> format,
-    basic_args<basic_context<Char>> args) {
-  vwrite<ArgFormatter<Char>>(*this, format, args);
+  buffer.append(start, s);
 }
 }  // namespace fmt
 

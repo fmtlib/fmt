@@ -265,12 +265,6 @@ TEST(WriterTest, Data) {
   EXPECT_EQ("42", std::string(w.data(), w.size()));
 }
 
-TEST(WriterTest, WriteWithoutArgs) {
-  MemoryWriter w;
-  w.format("test");
-  EXPECT_EQ("test", std::string(w.data(), w.size()));
-}
-
 TEST(WriterTest, WriteInt) {
   CHECK_WRITE(42);
   CHECK_WRITE(-42);
@@ -476,20 +470,6 @@ TEST(WriterTest, PadWString) {
   EXPECT_EQ(L"test******", write_wstr(L"test", width=10, fill=L'*'));
 }
 
-TEST(WriterTest, Format) {
-  MemoryWriter w;
-  w.format("part{0}", 1);
-  EXPECT_EQ(strlen("part1"), w.size());
-  EXPECT_STREQ("part1", w.c_str());
-  EXPECT_STREQ("part1", w.data());
-  EXPECT_EQ("part1", w.str());
-  w.format("part{0}", 2);
-  EXPECT_EQ(strlen("part1part2"), w.size());
-  EXPECT_STREQ("part1part2", w.c_str());
-  EXPECT_STREQ("part1part2", w.data());
-  EXPECT_EQ("part1part2", w.str());
-}
-
 TEST(WriterTest, WWriter) {
   EXPECT_EQ(L"cafe", write_wstr(0xcafe, type='x'));
 }
@@ -501,32 +481,43 @@ TEST(ArrayWriterTest, Ctor) {
   EXPECT_STREQ("", w.c_str());
 }
 
+TEST(FormatToTest, FormatWithoutArgs) {
+  fmt::internal::MemoryBuffer<char> buffer;
+  format_to(buffer, "test");
+  EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
+}
+
+TEST(FormatToTest, Format) {
+  fmt::internal::MemoryBuffer<char> buffer;
+  format_to(buffer, "part{0}", 1);
+  EXPECT_EQ(strlen("part1"), buffer.size());
+  EXPECT_EQ("part1", std::string(buffer.data(), buffer.size()));
+  format_to(buffer, "part{0}", 2);
+  EXPECT_EQ(strlen("part1part2"), buffer.size());
+  EXPECT_EQ("part1part2", std::string(buffer.data(), buffer.size()));
+  EXPECT_EQ("part1part2", to_string(buffer));
+}
+
 TEST(ArrayWriterTest, CompileTimeSizeCtor) {
   char array[10] = "garbage";
   fmt::ArrayWriter w(array);
   EXPECT_EQ(0u, w.size());
   EXPECT_STREQ("", w.c_str());
-  w.format("{:10}", 1);
-}
-
-TEST(ArrayWriterTest, Write) {
-  char array[10];
-  fmt::ArrayWriter w(array, sizeof(array));
-  w.format("{}", 42);
-  EXPECT_EQ("42", w.str());
+  format_to(w.buffer(), "{:10}", 1);
 }
 
 TEST(ArrayWriterTest, BufferOverflow) {
   char array[10];
   fmt::ArrayWriter w(array, sizeof(array));
-  w.format("{:10}", 1);
-  EXPECT_THROW_MSG(w.format("{}", 1), std::runtime_error, "buffer overflow");
+  format_to(w.buffer(), "{:10}", 1);
+  EXPECT_THROW_MSG(format_to(w.buffer(), "{}", 1), std::runtime_error,
+                   "buffer overflow");
 }
 
 TEST(ArrayWriterTest, WChar) {
   wchar_t array[10];
   fmt::WArrayWriter w(array);
-  w.format(L"{}", 42);
+  format_to(w.buffer(), L"{}", 42);
   EXPECT_EQ(L"42", w.str());
 }
 
@@ -1366,12 +1357,8 @@ TEST(FormatterTest, FormatCStringRef) {
   EXPECT_EQ("test", format("{0}", CStringRef("test")));
 }
 
-void format_value(fmt::writer &w, const Date &d, fmt::context &) {
-  w.write(d.year());
-  w.write('-');
-  w.write(d.month());
-  w.write('-');
-  w.write(d.day());
+void format_value(fmt::buffer &buf, const Date &d, fmt::context &) {
+  fmt::format_to(buf, "{}-{}-{}", d.year(), d.month(), d.day());
 }
 
 TEST(FormatterTest, FormatCustom) {
@@ -1383,8 +1370,8 @@ TEST(FormatterTest, FormatCustom) {
 class Answer {};
 
 template <typename Char>
-void format_value(basic_writer<Char> &w, Answer, fmt::context &) {
-  w.write("42");
+void format_value(fmt::basic_buffer<Char> &buf, Answer, fmt::context &) {
+  fmt::format_to(buf, "{}", 42);
 }
 
 TEST(FormatterTest, CustomFormat) {
@@ -1417,13 +1404,11 @@ TEST(FormatterTest, FormatExamples) {
   out.write("The answer is ");
   out.write(42);
   out.write("\n");
-  out.format("({:+f}, {:+f})", -3.14, 3.14);
-  EXPECT_EQ("The answer is 42\n(-3.140000, +3.140000)", out.str());
 
   {
     MemoryWriter writer;
     for (int i = 0; i < 10; i++)
-      writer.format("{}", i);
+      format_to(writer.buffer(), "{}", i);
     std::string s = writer.str(); // s == 0123456789
     EXPECT_EQ("0123456789", s);
   }
@@ -1567,10 +1552,10 @@ TEST(StrTest, Convert) {
 }
 
 std::string vformat_message(int id, const char *format, fmt::args args) {
-  MemoryWriter w;
-  w.format("[{}] ", id);
-  w.vformat(format, args);
-  return w.str();
+  fmt::internal::MemoryBuffer<char> buffer;
+  format_to(buffer, "[{}] ", id);
+  vformat_to(buffer, format, args);
+  return to_string(buffer);
 }
 
 template <typename... Args>
@@ -1643,9 +1628,9 @@ class MockArgFormatter : public fmt::internal::ArgFormatterBase<char> {
  public:
   typedef fmt::internal::ArgFormatterBase<char> Base;
 
-  MockArgFormatter(fmt::writer &w, fmt::context &ctx,
+  MockArgFormatter(fmt::buffer &b, fmt::context &ctx,
                    fmt::format_specs &s)
-    : fmt::internal::ArgFormatterBase<char>(w, s) {
+    : fmt::internal::ArgFormatterBase<char>(b, s) {
     EXPECT_CALL(*this, call(42));
   }
 
@@ -1657,8 +1642,8 @@ class MockArgFormatter : public fmt::internal::ArgFormatterBase<char> {
 };
 
 void custom_vformat(fmt::CStringRef format_str, fmt::args args) {
-  fmt::MemoryWriter writer;
-  fmt::vwrite<MockArgFormatter>(writer, format_str, args);
+  fmt::internal::MemoryBuffer<char> buffer;
+  fmt::vformat_to<MockArgFormatter>(buffer, format_str, args);
 }
 
 template <typename... Args>

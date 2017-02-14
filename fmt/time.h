@@ -15,7 +15,7 @@
 
 namespace fmt {
 
-void format_value(writer &w, const std::tm &tm, context &ctx) {
+void format_value(buffer &buf, const std::tm &tm, context &ctx) {
   const char *&s = ctx.ptr();
   if (*s == ':')
     ++s;
@@ -27,13 +27,12 @@ void format_value(writer &w, const std::tm &tm, context &ctx) {
   internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> format;
   format.append(s, end + 1);
   format[format.size() - 1] = '\0';
-  basic_buffer<char> &buffer = w.buffer();
-  std::size_t start = buffer.size();
+  std::size_t start = buf.size();
   for (;;) {
-    std::size_t size = buffer.capacity() - start;
-    std::size_t count = std::strftime(&buffer[start], size, &format[0], &tm);
+    std::size_t size = buf.capacity() - start;
+    std::size_t count = std::strftime(&buf[start], size, &format[0], &tm);
     if (count != 0) {
-      buffer.resize(start + count);
+      buf.resize(start + count);
       break;
     }
     if (size >= format.size() * 256) {
@@ -44,7 +43,7 @@ void format_value(writer &w, const std::tm &tm, context &ctx) {
       break;
     }
     const std::size_t MIN_GROWTH = 10;
-    buffer.reserve(buffer.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
+    buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
   }
   s = end;
 }

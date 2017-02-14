@@ -104,7 +104,7 @@ std::string read(File &f, std::size_t count) {
 #endif  // FMT_USE_FILE_DESCRIPTORS
 
 std::string format_system_error(int error_code, fmt::StringRef message) {
-  fmt::MemoryWriter out;
+  fmt::internal::MemoryBuffer<char> out;
   fmt::format_system_error(out, error_code, message);
-  return out.str();
+  return to_string(out);
 }

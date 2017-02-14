@@ -106,7 +106,7 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
 
 const char RESET_COLOR[] = "\x1b[0m";
 
-typedef void (*FormatFunc)(writer &, int, StringRef);
+typedef void (*FormatFunc)(buffer &, int, StringRef);
 
 // Portable thread-safe version of strerror.
 // Sets buffer to point to a string describing the error code.
@@ -176,7 +176,7 @@ int safe_strerror(
   return StrError(error_code, buffer, buffer_size).run();
 }
 
-void format_error_code(writer &out, int error_code,
+void format_error_code(buffer &out, int error_code,
                        StringRef message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
   // INLINE_BUFFER_SIZE to avoid dynamic memory allocation and potential
@@ -193,18 +193,19 @@ void format_error_code(writer &out, int error_code,
     ++error_code_size;
   }
   error_code_size += internal::count_digits(abs_value);
+  basic_writer<char> w(out);
   if (message.size() <= internal::INLINE_BUFFER_SIZE - error_code_size) {
-    out.write(message);
-    out.write(SEP);
+    w.write(message);
+    w.write(SEP);
   }
-  out.write(ERROR_STR);
-  out.write(error_code);
+  w.write(ERROR_STR);
+  w.write(error_code);
   assert(out.size() <= internal::INLINE_BUFFER_SIZE);
 }
 
 void report_error(FormatFunc func, int error_code,
                   StringRef message) FMT_NOEXCEPT {
-  MemoryWriter full_message;
+  internal::MemoryBuffer<char> full_message;
   func(full_message, error_code, message);
   // Use Writer::data instead of Writer::c_str to avoid potential memory
   // allocation.
@@ -213,23 +214,13 @@ void report_error(FormatFunc func, int error_code,
 }
 }  // namespace
 
-namespace internal {
-
-// This method is used to preserve binary compatibility with fmt 3.0.
-// It can be removed in 4.0.
-FMT_FUNC void format_system_error(
-  writer &out, int error_code, StringRef message) FMT_NOEXCEPT {
-  fmt::format_system_error(out, error_code, message);
-}
-}  // namespace internal
-
 FMT_FUNC void SystemError::init(
     int err_code, CStringRef format_str, args args) {
   error_code_ = err_code;
-  MemoryWriter w;
-  format_system_error(w, err_code, vformat(format_str, args));
+  internal::MemoryBuffer<char> buf;
+  format_system_error(buf, err_code, vformat(format_str, args));
   std::runtime_error &base = *this;
-  base = std::runtime_error(w.str());
+  base = std::runtime_error(to_string(buf));
 }
 
 template <typename T>
@@ -388,7 +379,7 @@ FMT_FUNC void internal::format_windows_error(
 #endif  // FMT_USE_WINDOWS_H
 
 FMT_FUNC void format_system_error(
-    writer &out, int error_code, StringRef message) FMT_NOEXCEPT {
+    buffer &out, int error_code, StringRef message) FMT_NOEXCEPT {
   FMT_TRY {
     internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> buffer;
     buffer.resize(internal::INLINE_BUFFER_SIZE);
@@ -396,9 +387,10 @@ FMT_FUNC void format_system_error(
       char *system_message = &buffer[0];
       int result = safe_strerror(error_code, system_message, buffer.size());
       if (result == 0) {
-        out.write(message);
-        out.write(": ");
-        out.write(system_message);
+        basic_writer<char> w(out);
+        w.write(message);
+        w.write(": ");
+        w.write(system_message);
         return;
       }
       if (result != ERANGE)
@@ -410,7 +402,7 @@ FMT_FUNC void format_system_error(
 }
 
 template <typename Char>
-void internal::FixedBuffer<Char>::grow(std::size_t) {
+void FixedBuffer<Char>::grow(std::size_t) {
   FMT_THROW(std::runtime_error("buffer overflow"));
 }
 
@@ -429,9 +421,9 @@ FMT_FUNC void report_windows_error(
 #endif
 
 FMT_FUNC void vprint(std::FILE *f, CStringRef format_str, args args) {
-  MemoryWriter w;
-  w.vformat(format_str, args);
-  std::fwrite(w.data(), 1, w.size(), f);
+  internal::MemoryBuffer<char> buffer;
+  vformat_to(buffer, format_str, args);
+  std::fwrite(buffer.data(), 1, buffer.size(), f);
 }
 
 FMT_FUNC void vprint(CStringRef format_str, args args) {
@@ -451,10 +443,11 @@ void printf(basic_writer<Char> &w, BasicCStringRef<Char> format,
             args args);
 
 FMT_FUNC int vfprintf(std::FILE *f, CStringRef format, printf_args args) {
-  MemoryWriter w;
-  printf(w, format, args);
-  std::size_t size = w.size();
-  return std::fwrite(w.data(), 1, size, f) < size ? -1 : static_cast<int>(size);
+  internal::MemoryBuffer<char> buffer;
+  printf(buffer, format, args);
+  std::size_t size = buffer.size();
+  return std::fwrite(
+        buffer.data(), 1, size, f) < size ? -1 : static_cast<int>(size);
 }
 
 #ifndef FMT_HEADER_ONLY
@@ -463,11 +456,11 @@ template struct internal::BasicData<void>;
 
 // Explicit instantiations for char.
 
-template void internal::FixedBuffer<char>::grow(std::size_t);
+template void FixedBuffer<char>::grow(std::size_t);
 
 template void internal::ArgMap<context>::init(const args &args);
 
-template void printf_context<char>::format(writer &writer);
+template void printf_context<char>::format(buffer &);
 
 template int internal::CharTraits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
@@ -481,11 +474,11 @@ template int internal::CharTraits<char>::format_float(
 
 template class basic_context<wchar_t>;
 
-template void internal::FixedBuffer<wchar_t>::grow(std::size_t);
+template void FixedBuffer<wchar_t>::grow(std::size_t);
 
 template void internal::ArgMap<wcontext>::init(const wargs &args);
 
-template void printf_context<wchar_t>::format(wwriter &writer);
+template void printf_context<wchar_t>::format(wbuffer &);
 
 template int internal::CharTraits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,

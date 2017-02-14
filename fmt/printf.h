@@ -225,12 +225,12 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
   /**
     \rst
     Constructs an argument formatter object.
-    *writer* is a reference to the output writer and *spec* contains format
+    *buffer* is a reference to the output buffer and *spec* contains format
     specifier information for standard argument types.
     \endrst
    */
-  PrintfArgFormatter(basic_writer<Char> &writer, format_specs &spec)
-  : internal::ArgFormatterBase<Char>(writer, spec) {}
+  PrintfArgFormatter(basic_buffer<Char> &buffer, format_specs &spec)
+  : internal::ArgFormatterBase<Char>(buffer, spec) {}
 
   using Base::operator();
 
@@ -289,7 +289,7 @@ class PrintfArgFormatter : public internal::ArgFormatterBase<Char> {
     const Char format_str[] = {'}', '\0'};
     auto args = basic_args<basic_context<Char>>();
     basic_context<Char> ctx(format_str, args);
-    c.format(this->writer(), c.value, &ctx);
+    c.format(this->writer().buffer(), c.value, &ctx);
   }
 };
 
@@ -331,8 +331,8 @@ class printf_context :
                           basic_args<printf_context> args)
     : Base(format_str.c_str(), args) {}
 
-  /** Formats stored arguments and writes the output to the writer. */
-  FMT_API void format(basic_writer<Char> &writer);
+  /** Formats stored arguments and writes the output to the buffer. */
+  FMT_API void format(basic_buffer<Char> &buffer);
 };
 
 template <typename Char, typename AF>
@@ -408,18 +408,18 @@ unsigned printf_context<Char, AF>::parse_header(
 }
 
 template <typename Char, typename AF>
-void printf_context<Char, AF>::format(basic_writer<Char> &writer) {
+void printf_context<Char, AF>::format(basic_buffer<Char> &buffer) {
   const Char *start = this->ptr();
   const Char *s = start;
   while (*s) {
     Char c = *s++;
     if (c != '%') continue;
     if (*s == c) {
-      internal::write(writer, start, s);
+      buffer.append(start, s);
       start = ++s;
       continue;
     }
-    internal::write(writer, start, s - 1);
+    buffer.append(start, s - 1);
 
     format_specs spec;
     spec.align_ = ALIGN_RIGHT;
@@ -501,31 +501,30 @@ void printf_context<Char, AF>::format(basic_writer<Char> &writer) {
     start = s;
 
     // Format argument.
-    visit(AF(writer, spec), arg);
+    visit(AF(buffer, spec), arg);
   }
-  internal::write(writer, start, s);
+  buffer.append(start, s);
 }
 
 // Formats a value.
 template <typename Char, typename T>
-void format_value(basic_writer<Char> &w, const T &value,
+void format_value(basic_buffer<Char> &buf, const T &value,
                   printf_context<Char>& ctx) {
-  internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
-  w.write(internal::format_value(buffer, value));
+  internal::format_value(buf, value);
 }
 
 template <typename Char>
-void printf(basic_writer<Char> &w, BasicCStringRef<Char> format,
+void printf(basic_buffer<Char> &buf, BasicCStringRef<Char> format,
             basic_args<printf_context<Char>> args) {
-  printf_context<Char>(format, args).format(w);
+  printf_context<Char>(format, args).format(buf);
 }
 
 typedef basic_args<printf_context<char>> printf_args;
 
 inline std::string vsprintf(CStringRef format, printf_args args) {
-  MemoryWriter w;
-  printf(w, format, args);
-  return w.str();
+  internal::MemoryBuffer<char> buffer;
+  printf(buffer, format, args);
+  return to_string(buffer);
 }
 
 /**
@@ -544,9 +543,9 @@ inline std::string sprintf(CStringRef format_str, const Args & ... args) {
 
 inline std::wstring vsprintf(
     WCStringRef format, basic_args<printf_context<wchar_t>> args) {
-  WMemoryWriter w;
-  printf(w, format, args);
-  return w.str();
+  internal::MemoryBuffer<wchar_t> buffer;
+  printf(buffer, format, args);
+  return to_string(buffer);
 }
 
 template <typename... Args>
@@ -591,10 +590,10 @@ inline int printf(CStringRef format_str, const Args & ... args) {
 }
 
 inline int vfprintf(std::ostream &os, CStringRef format_str, printf_args args) {
-  MemoryWriter w;
-  printf(w, format_str, args);
-  internal::write(os, w);
-  return static_cast<int>(w.size());
+  internal::MemoryBuffer<char> buffer;
+  printf(buffer, format_str, args);
+  internal::write(os, buffer);
+  return static_cast<int>(buffer.size());
 }
 
 /**

@@ -67,28 +67,27 @@ struct ConvertToIntImpl<T, true> {
   };
 };
 
-// Write the content of w to os.
-void write(std::ostream &os, writer &w);
+// Write the content of buf to os.
+void write(std::ostream &os, buffer &buf);
 
 template <typename Char, typename T>
-BasicStringRef<Char> format_value(
-    internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> &buffer,
-    const T &value) {
+void format_value(basic_buffer<Char> &buffer, const T &value) {
   internal::FormatBuf<Char> format_buf(buffer);
   std::basic_ostream<Char> output(&format_buf);
   output << value;
-  return BasicStringRef<Char>(&buffer[0], format_buf.size());
+  buffer.resize(format_buf.size());
 }
 }  // namespace internal
 
 // Formats a value.
 template <typename Char, typename T>
-void format_value(basic_writer<Char> &w, const T &value,
+void format_value(basic_buffer<Char> &buf, const T &value,
                   basic_context<Char> &ctx) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
-  auto str = internal::format_value(buffer, value);
+  internal::format_value(buffer, value);
+  BasicStringRef<Char> str(buffer.data(), buffer.size());
   do_format_arg< ArgFormatter<Char> >(
-        w, internal::make_arg< basic_context<Char> >(str), ctx);
+        buf, internal::make_arg< basic_context<Char> >(str), ctx);
 }
 
 FMT_API void vprint(std::ostream &os, CStringRef format_str, args args);

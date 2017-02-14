@@ -16,9 +16,9 @@ using fmt::PrintfArgFormatter;
 // rounded to 0.
 class CustomArgFormatter : public fmt::ArgFormatter<char> {
  public:
-  CustomArgFormatter(fmt::writer &w, fmt::basic_context<char> &ctx,
+  CustomArgFormatter(fmt::buffer &buf, fmt::basic_context<char> &ctx,
                      fmt::format_specs &s)
-  : fmt::ArgFormatter<char>(w, ctx, s) {}
+  : fmt::ArgFormatter<char>(buf, ctx, s) {}
 
   using fmt::ArgFormatter<char>::operator();
 
@@ -33,8 +33,8 @@ class CustomArgFormatter : public fmt::ArgFormatter<char> {
 // rounded to 0.
 class CustomPrintfArgFormatter : public PrintfArgFormatter<char> {
  public:
-  CustomPrintfArgFormatter(fmt::basic_writer<char> &w, fmt::format_specs &spec)
-  : PrintfArgFormatter<char>(w, spec) {}
+  CustomPrintfArgFormatter(fmt::buffer &buf, fmt::format_specs &spec)
+  : PrintfArgFormatter<char>(buf, spec) {}
 
   using PrintfArgFormatter<char>::operator();
 
@@ -46,10 +46,10 @@ class CustomPrintfArgFormatter : public PrintfArgFormatter<char> {
 };
 
 std::string custom_vformat(fmt::CStringRef format_str, fmt::args args) {
-  fmt::MemoryWriter writer;
-  // Pass custom argument formatter as a template arg to vformat.
-  fmt::vwrite<CustomArgFormatter>(writer, format_str, args);
-  return writer.str();
+  fmt::internal::MemoryBuffer<char> buffer;
+  // Pass custom argument formatter as a template arg to vwrite.
+  fmt::vformat_to<CustomArgFormatter>(buffer, format_str, args);
+  return std::string(buffer.data(), buffer.size());
 }
 
 template <typename... Args>
@@ -64,10 +64,10 @@ typedef fmt::printf_context<char, CustomPrintfArgFormatter>
 std::string custom_vsprintf(
     const char* format_str,
     fmt::basic_args<CustomPrintfFormatter> args) {
-  fmt::MemoryWriter writer;
+  fmt::internal::MemoryBuffer<char> buffer;
   CustomPrintfFormatter formatter(format_str, args);
-  formatter.format(writer);
-  return writer.str();
+  formatter.format(buffer);
+  return std::string(buffer.data(), buffer.size());
 }
 
 template <typename... Args>

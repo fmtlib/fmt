@@ -59,17 +59,17 @@ TEST(OStreamTest, Enum) {
 }
 
 struct TestArgFormatter : fmt::ArgFormatter<char> {
-  TestArgFormatter(fmt::writer &w, fmt::context &ctx, fmt::format_specs &s)
-    : fmt::ArgFormatter<char>(w, ctx, s) {}
+  TestArgFormatter(fmt::buffer &buf, fmt::context &ctx, fmt::format_specs &s)
+    : fmt::ArgFormatter<char>(buf, ctx, s) {}
 };
 
 TEST(OStreamTest, CustomArg) {
-  fmt::MemoryWriter writer;
+  fmt::internal::MemoryBuffer<char> buffer;
   fmt::context ctx("}", fmt::args());
   fmt::format_specs spec;
-  TestArgFormatter af(writer, ctx, spec);
+  TestArgFormatter af(buffer, ctx, spec);
   visit(af, fmt::internal::make_arg<fmt::context>(TestEnum()));
-  EXPECT_EQ("TestEnum", writer.str());
+  EXPECT_EQ("TestEnum", std::string(buffer.data(), buffer.size()));
 }
 
 TEST(OStreamTest, Format) {
@@ -121,9 +121,10 @@ TEST(OStreamTest, Print) {
 
 TEST(OStreamTest, WriteToOStream) {
   std::ostringstream os;
-  fmt::MemoryWriter w;
-  w.write("foo");
-  fmt::internal::write(os, w);
+  fmt::internal::MemoryBuffer<char> buffer;
+  const char *foo = "foo";
+  buffer.append(foo, foo + std::strlen(foo));
+  fmt::internal::write(os, buffer);
   EXPECT_EQ("foo", os.str());
 }
 
@@ -133,16 +134,10 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   if (max_size <= fmt::internal::to_unsigned(max_streamsize))
     return;
 
-  class TestWriter : public fmt::basic_writer<char> {
-   private:
-    struct TestBuffer : fmt::basic_buffer<char> {
-      explicit TestBuffer(std::size_t size) { size_ = size; }
-      void grow(std::size_t) {}
-    } buffer_;
-   public:
-    explicit TestWriter(std::size_t size)
-      : fmt::basic_writer<char>(buffer_), buffer_(size) {}
-  } w(max_size);
+  struct TestBuffer : fmt::basic_buffer<char> {
+    explicit TestBuffer(std::size_t size) { size_ = size; }
+    void grow(std::size_t) {}
+  } buffer(max_size);
 
   struct MockStreamBuf : std::streambuf {
     MOCK_METHOD2(xsputn, std::streamsize (const void *s, std::streamsize n));
@@ -150,11 +145,11 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
       const void *v = s;
       return xsputn(v, n);
     }
-  } buffer;
+  } streambuf;
 
   struct TestOStream : std::ostream {
     explicit TestOStream(MockStreamBuf &buffer) : std::ostream(&buffer) {}
-  } os(buffer);
+  } os(streambuf);
 
   testing::InSequence sequence;
   const char *data = 0;
@@ -163,10 +158,10 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
     typedef fmt::internal::MakeUnsigned<std::streamsize>::Type UStreamSize;
     UStreamSize n = std::min<UStreamSize>(
           size, fmt::internal::to_unsigned(max_streamsize));
-    EXPECT_CALL(buffer, xsputn(data, static_cast<std::streamsize>(n)))
+    EXPECT_CALL(streambuf, xsputn(data, static_cast<std::streamsize>(n)))
         .WillOnce(testing::Return(max_streamsize));
     data += n;
     size -= static_cast<std::size_t>(n);
   } while (size != 0);
-  fmt::internal::write(os, w);
+  fmt::internal::write(os, buffer);
 }

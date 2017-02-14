@@ -107,14 +107,14 @@ TEST(FormatTest, FormatErrorCode) {
   {
     fmt::MemoryWriter w;
     w.write("garbage");
-    fmt::format_error_code(w, 42, "test");
+    fmt::format_error_code(w.buffer(), 42, "test");
     EXPECT_EQ("test: " + msg, w.str());
   }
   {
     fmt::MemoryWriter w;
     std::string prefix(
         fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size() + 1, 'x');
-    fmt::format_error_code(w, 42, prefix);
+    fmt::format_error_code(w.buffer(), 42, prefix);
     EXPECT_EQ(msg, w.str());
   }
   int codes[] = {42, -1};
@@ -124,14 +124,14 @@ TEST(FormatTest, FormatErrorCode) {
     fmt::MemoryWriter w;
     std::string prefix(
         fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size(), 'x');
-    fmt::format_error_code(w, codes[i], prefix);
+    fmt::format_error_code(w.buffer(), codes[i], prefix);
     EXPECT_EQ(prefix + sep + msg, w.str());
     std::size_t size = fmt::internal::INLINE_BUFFER_SIZE;
     EXPECT_EQ(size, w.size());
     w.clear();
     // Test with a message that doesn't fit into the buffer.
     prefix += 'x';
-    fmt::format_error_code(w, codes[i], prefix);
+    fmt::format_error_code(w.buffer(), codes[i], prefix);
     EXPECT_EQ(msg, w.str());
   }
 }
