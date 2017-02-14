@@ -27,7 +27,7 @@ void format_value(writer &w, const std::tm &tm, context &ctx) {
   internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> format;
   format.append(s, end + 1);
   format[format.size() - 1] = '\0';
-  buffer<char> &buffer = w.buffer();
+  basic_buffer<char> &buffer = w.buffer();
   std::size_t start = buffer.size();
   for (;;) {
     std::size_t size = buffer.capacity() - start;

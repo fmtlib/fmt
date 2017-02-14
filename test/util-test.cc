@@ -53,7 +53,7 @@
 #undef max
 
 using fmt::basic_arg;
-using fmt::buffer;
+using fmt::basic_buffer;
 using fmt::StringRef;
 using fmt::internal::MemoryBuffer;
 using fmt::internal::value;
@@ -106,24 +106,24 @@ TEST(AllocatorTest, AllocatorRef) {
 
 #if FMT_USE_TYPE_TRAITS
 TEST(BufferTest, Noncopyable) {
-  EXPECT_FALSE(std::is_copy_constructible<buffer<char> >::value);
-  EXPECT_FALSE(std::is_copy_assignable<buffer<char> >::value);
+  EXPECT_FALSE(std::is_copy_constructible<basic_buffer<char> >::value);
+  EXPECT_FALSE(std::is_copy_assignable<basic_buffer<char> >::value);
 }
 
 TEST(BufferTest, Nonmoveable) {
-  EXPECT_FALSE(std::is_move_constructible<buffer<char> >::value);
-  EXPECT_FALSE(std::is_move_assignable<buffer<char> >::value);
+  EXPECT_FALSE(std::is_move_constructible<basic_buffer<char> >::value);
+  EXPECT_FALSE(std::is_move_assignable<basic_buffer<char> >::value);
 }
 #endif
 
 // A test buffer with a dummy grow method.
 template <typename T>
-struct TestBuffer : buffer<T> {
+struct TestBuffer : basic_buffer<T> {
   void grow(std::size_t size) { this->capacity_ = size; }
 };
 
 template <typename T>
-struct MockBuffer : buffer<T> {
+struct MockBuffer : basic_buffer<T> {
   MOCK_METHOD1(do_grow, void (std::size_t size));
 
   void grow(std::size_t size) {
@@ -132,8 +132,8 @@ struct MockBuffer : buffer<T> {
   }
 
   MockBuffer() {}
-  MockBuffer(T *ptr) : buffer<T>(ptr) {}
-  MockBuffer(T *ptr, std::size_t capacity) : buffer<T>(ptr, capacity) {}
+  MockBuffer(T *ptr) : basic_buffer<T>(ptr) {}
+  MockBuffer(T *ptr, std::size_t capacity) : basic_buffer<T>(ptr, capacity) {}
 };
 
 TEST(BufferTest, Ctor) {
@@ -169,7 +169,7 @@ TEST(BufferTest, VirtualDtor) {
   typedef StrictMock<DyingBuffer> StictMockBuffer;
   StictMockBuffer *mock_buffer = new StictMockBuffer();
   EXPECT_CALL(*mock_buffer, die());
-  buffer<int> *buffer = mock_buffer;
+  basic_buffer<int> *buffer = mock_buffer;
   delete buffer;
 }
 
@@ -180,7 +180,7 @@ TEST(BufferTest, Access) {
   EXPECT_EQ(11, buffer[0]);
   buffer[3] = 42;
   EXPECT_EQ(42, *(&buffer[0] + 3));
-  const fmt::buffer<char> &const_buffer = buffer;
+  const fmt::basic_buffer<char> &const_buffer = buffer;
   EXPECT_EQ(42, const_buffer[3]);
 }
 

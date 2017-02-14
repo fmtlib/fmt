@@ -18,7 +18,7 @@ namespace internal {
 
 // A buffer that stores data in ``std::string``.
 template <typename Char>
-class StringBuffer : public buffer<Char> {
+class StringBuffer : public basic_buffer<Char> {
  private:
   std::basic_string<Char> data_;
 

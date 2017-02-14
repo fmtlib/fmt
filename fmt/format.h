@@ -587,16 +587,16 @@ inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
   \endrst
  */
 template <typename T>
-class buffer {
+class basic_buffer {
  private:
-  FMT_DISALLOW_COPY_AND_ASSIGN(buffer);
+  FMT_DISALLOW_COPY_AND_ASSIGN(basic_buffer);
 
  protected:
   T *ptr_;
   std::size_t size_;
   std::size_t capacity_;
 
-  buffer(T *ptr = 0, std::size_t capacity = 0)
+  basic_buffer(T *ptr = 0, std::size_t capacity = 0)
     : ptr_(ptr), size_(0), capacity_(capacity) {}
 
   /**
@@ -608,7 +608,7 @@ class buffer {
   virtual void grow(std::size_t size) = 0;
 
  public:
-  virtual ~buffer() {}
+  virtual ~basic_buffer() {}
 
   /** Returns the size of this buffer. */
   std::size_t size() const { return size_; }
@@ -653,7 +653,7 @@ class buffer {
 
 template <typename T>
 template <typename U>
-void buffer<T>::append(const U *begin, const U *end) {
+void basic_buffer<T>::append(const U *begin, const U *end) {
   std::size_t new_size = size_ + internal::to_unsigned(end - begin);
   if (new_size > capacity_)
     grow(new_size);
@@ -667,7 +667,7 @@ namespace internal {
 // A memory buffer for trivially copyable/constructible types with the first
 // SIZE elements stored in the object itself.
 template <typename T, std::size_t SIZE, typename Allocator = std::allocator<T> >
-class MemoryBuffer : private Allocator, public buffer<T> {
+class MemoryBuffer : private Allocator, public basic_buffer<T> {
  private:
   T data_[SIZE];
 
@@ -681,7 +681,7 @@ class MemoryBuffer : private Allocator, public buffer<T> {
 
  public:
   explicit MemoryBuffer(const Allocator &alloc = Allocator())
-      : Allocator(alloc), buffer<T>(data_, SIZE) {}
+      : Allocator(alloc), basic_buffer<T>(data_, SIZE) {}
   ~MemoryBuffer() { deallocate(); }
 
 #if FMT_USE_RVALUE_REFERENCES
@@ -743,10 +743,10 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
 
 // A fixed-size buffer.
 template <typename Char>
-class FixedBuffer : public fmt::buffer<Char> {
+class FixedBuffer : public fmt::basic_buffer<Char> {
  public:
   FixedBuffer(Char *array, std::size_t size)
-    : fmt::buffer<Char>(array, size) {}
+    : fmt::basic_buffer<Char>(array, size) {}
 
  protected:
   FMT_API void grow(std::size_t size);
@@ -2199,7 +2199,7 @@ class basic_writer {
 
  private:
   // Output buffer.
-  fmt::buffer<Char> &buffer_;
+  basic_buffer<Char> &buffer_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_writer);
 
@@ -2302,7 +2302,7 @@ class basic_writer {
   /**
     Constructs a ``basic_writer`` object.
    */
-  explicit basic_writer(fmt::buffer<Char> &b) : buffer_(b) {}
+  explicit basic_writer(basic_buffer<Char> &b) : buffer_(b) {}
 
  public:
   /**
@@ -2443,7 +2443,7 @@ class basic_writer {
 
   void clear() FMT_NOEXCEPT { buffer_.clear(); }
 
-  fmt::buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
+  basic_buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
 };
 
 template <typename Char>
