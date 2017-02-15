@@ -474,13 +474,6 @@ TEST(WriterTest, WWriter) {
   EXPECT_EQ(L"cafe", write_wstr(0xcafe, type='x'));
 }
 
-TEST(ArrayWriterTest, Ctor) {
-  char array[10] = "garbage";
-  fmt::ArrayWriter w(array, sizeof(array));
-  EXPECT_EQ(0u, w.size());
-  EXPECT_STREQ("", w.c_str());
-}
-
 TEST(FormatToTest, FormatWithoutArgs) {
   fmt::internal::MemoryBuffer<char> buffer;
   format_to(buffer, "test");
@@ -496,29 +489,6 @@ TEST(FormatToTest, Format) {
   EXPECT_EQ(strlen("part1part2"), buffer.size());
   EXPECT_EQ("part1part2", std::string(buffer.data(), buffer.size()));
   EXPECT_EQ("part1part2", to_string(buffer));
-}
-
-TEST(ArrayWriterTest, CompileTimeSizeCtor) {
-  char array[10] = "garbage";
-  fmt::ArrayWriter w(array);
-  EXPECT_EQ(0u, w.size());
-  EXPECT_STREQ("", w.c_str());
-  format_to(w.buffer(), "{:10}", 1);
-}
-
-TEST(ArrayWriterTest, BufferOverflow) {
-  char array[10];
-  fmt::ArrayWriter w(array, sizeof(array));
-  format_to(w.buffer(), "{:10}", 1);
-  EXPECT_THROW_MSG(format_to(w.buffer(), "{}", 1), std::runtime_error,
-                   "buffer overflow");
-}
-
-TEST(ArrayWriterTest, WChar) {
-  wchar_t array[10];
-  fmt::WArrayWriter w(array);
-  format_to(w.buffer(), L"{}", 42);
-  EXPECT_EQ(L"42", w.str());
 }
 
 TEST(FormatterTest, Escape) {

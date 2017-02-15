@@ -213,19 +213,6 @@ TEST(BufferTest, Clear) {
   EXPECT_EQ(20u, buffer.capacity());
 }
 
-TEST(BufferTest, PushBack) {
-  int data[15];
-  MockBuffer<int> buffer(data, 10);
-  buffer.push_back(11);
-  EXPECT_EQ(11, buffer[0]);
-  EXPECT_EQ(1u, buffer.size());
-  buffer.resize(10);
-  EXPECT_CALL(buffer, do_grow(11));
-  buffer.push_back(22);
-  EXPECT_EQ(22, buffer[10]);
-  EXPECT_EQ(11u, buffer.size());
-}
-
 TEST(BufferTest, Append) {
   char data[15];
   MockBuffer<char> buffer(data, 10);
@@ -391,6 +378,29 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
       EXPECT_EQ('x', buffer[i]);
   }
   EXPECT_CALL(alloc, deallocate(&mem2[0], 2 * size));
+}
+
+TEST(FixedBufferTest, Ctor) {
+  char array[10] = "garbage";
+  fmt::FixedBuffer<char> buffer(array, sizeof(array));
+  EXPECT_EQ(0u, buffer.size());
+  EXPECT_EQ(10u, buffer.capacity());
+  EXPECT_EQ(array, buffer.data());
+}
+
+TEST(FixedBufferTest, CompileTimeSizeCtor) {
+  char array[10] = "garbage";
+  fmt::FixedBuffer<char> buffer(array);
+  EXPECT_EQ(0u, buffer.size());
+  EXPECT_EQ(10u, buffer.capacity());
+  EXPECT_EQ(array, buffer.data());
+}
+
+TEST(FixedBufferTest, BufferOverflow) {
+  char array[10];
+  fmt::FixedBuffer<char> buffer(array);
+  buffer.resize(10);
+  EXPECT_THROW_MSG(buffer.resize(11), std::runtime_error, "buffer overflow");
 }
 
 TEST(UtilTest, Increment) {

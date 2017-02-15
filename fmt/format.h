@@ -586,7 +586,7 @@ inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
 
 /**
   \rst
-  A buffer supporting a subset of ``std::vector``'s operations.
+  A contiguous memory buffer with an optional growing ability.
   \endrst
  */
 template <typename T>
@@ -2843,9 +2843,17 @@ class BasicMemoryWriter : public basic_writer<Char> {
 typedef BasicMemoryWriter<char> MemoryWriter;
 typedef BasicMemoryWriter<wchar_t> WMemoryWriter;
 
-// A fixed-size buffer.
+/**
+  \rst
+  A fixed-size memory buffer. For a dynamically growing buffer use
+  :class:`fmt::internal::MemoryBuffer`.
+
+  Trying to increase the buffer size past the initial capacity will throw
+  ``std::runtime_error``.
+  \endrst
+ */
 template <typename Char>
-class FixedBuffer : public fmt::basic_buffer<Char> {
+class FixedBuffer : public basic_buffer<Char> {
  public:
   /**
    \rst
@@ -2854,54 +2862,20 @@ class FixedBuffer : public fmt::basic_buffer<Char> {
    \endrst
    */
   FixedBuffer(Char *array, std::size_t size)
-    : fmt::basic_buffer<Char>(array, size) {}
-
- protected:
-  FMT_API void grow(std::size_t size);
-};
-
-/**
-  \rst
-  This class template provides operations for formatting and writing data
-  into a fixed-size array. For writing into a dynamically growing buffer
-  use :class:`fmt::BasicMemoryWriter`.
-
-  Any write method will throw ``std::runtime_error`` if the output doesn't fit
-  into the array.
-
-  You can use one of the following typedefs for common character types:
-
-  +--------------+---------------------------+
-  | Type         | Definition                |
-  +==============+===========================+
-  | ArrayWriter  | BasicArrayWriter<char>    |
-  +--------------+---------------------------+
-  | WArrayWriter | BasicArrayWriter<wchar_t> |
-  +--------------+---------------------------+
-  \endrst
- */
-template <typename Char>
-class BasicArrayWriter : public basic_writer<Char> {
- private:
-  FixedBuffer<Char> buffer_;
-
- public:
-  BasicArrayWriter(Char *array, std::size_t size)
-    : basic_writer<Char>(buffer_), buffer_(array, size) {}
+    : basic_buffer<Char>(array, size) {}
 
   /**
    \rst
-   Constructs a :class:`fmt::BasicArrayWriter` object for *array* of the
+   Constructs a :class:`fmt::FixedBuffer` object for *array* of the
    size known at compile time.
    \endrst
    */
   template <std::size_t SIZE>
-  explicit BasicArrayWriter(Char (&array)[SIZE])
-    : basic_writer<Char>(buffer_), buffer_(array, SIZE) {}
-};
+  explicit FixedBuffer(Char (&array)[SIZE]) : basic_buffer<Char>(array, SIZE) {}
 
-typedef BasicArrayWriter<char> ArrayWriter;
-typedef BasicArrayWriter<wchar_t> WArrayWriter;
+ protected:
+  FMT_API void grow(std::size_t size);
+};
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
