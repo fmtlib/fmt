@@ -667,7 +667,7 @@ template <typename Converter, typename Char>
 void check_utf_conversion_error(
         const char *message,
         fmt::BasicStringRef<Char> str = fmt::BasicStringRef<Char>(0, 0)) {
-  fmt::MemoryWriter out;
+  fmt::internal::MemoryBuffer<char> out;
   fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
   fmt::SystemError error(0, "");
   try {
@@ -676,7 +676,7 @@ void check_utf_conversion_error(
     error = e;
   }
   EXPECT_EQ(ERROR_INVALID_PARAMETER, error.error_code());
-  EXPECT_EQ(out.str(), error.what());
+  EXPECT_EQ(fmt::to_string(out), error.what());
 }
 
 TEST(UtilTest, UTF16ToUTF8Error) {
@@ -752,16 +752,17 @@ TEST(UtilTest, FormatWindowsError) {
       reinterpret_cast<LPWSTR>(&message), 0, 0);
   fmt::internal::UTF16ToUTF8 utf8_message(message);
   LocalFree(message);
-  fmt::MemoryWriter actual_message;
+  fmt::internal::MemoryBuffer<char> actual_message;
   fmt::internal::format_windows_error(
       actual_message, ERROR_FILE_EXISTS, "test");
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
-      actual_message.str());
+      fmt::to_string(actual_message));
   actual_message.clear();
   fmt::internal::format_windows_error(
         actual_message, ERROR_FILE_EXISTS,
         fmt::StringRef(0, std::numeric_limits<size_t>::max()));
-  EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS), actual_message.str());
+  EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS),
+            fmt::to_string(actual_message));
 }
 
 TEST(UtilTest, FormatLongWindowsError) {
@@ -778,11 +779,11 @@ TEST(UtilTest, FormatLongWindowsError) {
   }
   fmt::internal::UTF16ToUTF8 utf8_message(message);
   LocalFree(message);
-  fmt::MemoryWriter actual_message;
+  fmt::internal::MemoryBuffer<char> actual_message;
   fmt::internal::format_windows_error(
       actual_message, provisioning_not_allowed, "test");
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
-      actual_message.str());
+      fmt::to_string(actual_message));
 }
 
 TEST(UtilTest, WindowsError) {
@@ -791,11 +792,12 @@ TEST(UtilTest, WindowsError) {
 }
 
 TEST(UtilTest, ReportWindowsError) {
-  fmt::MemoryWriter out;
+  fmt::internal::MemoryBuffer<char> out;
   fmt::internal::format_windows_error(out, ERROR_FILE_EXISTS, "test error");
-  out.write('\n');
+  out.push_back('\n');
   EXPECT_WRITE(stderr,
-      fmt::report_windows_error(ERROR_FILE_EXISTS, "test error"), out.str());
+      fmt::report_windows_error(ERROR_FILE_EXISTS, "test error"),
+               fmt::to_string(out));
 }
 
 #endif  // _WIN32

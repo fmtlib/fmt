@@ -341,16 +341,16 @@ FMT_FUNC int internal::UTF16ToUTF8::convert(WStringRef s) {
 FMT_FUNC void WindowsError::init(
     int err_code, CStringRef format_str, args args) {
   error_code_ = err_code;
-  MemoryWriter w;
-  internal::format_windows_error(w, err_code, vformat(format_str, args));
+  internal::MemoryBuffer<char> buffer;
+  internal::format_windows_error(buffer, err_code, vformat(format_str, args));
   std::runtime_error &base = *this;
-  base = std::runtime_error(w.str());
+  base = std::runtime_error(to_string(buffer));
 }
 
 FMT_FUNC void internal::format_windows_error(
-    writer &out, int error_code, StringRef message) FMT_NOEXCEPT {
+    buffer &out, int error_code, StringRef message) FMT_NOEXCEPT {
   FMT_TRY {
-    MemoryBuffer<wchar_t, INLINE_BUFFER_SIZE> buffer;
+    MemoryBuffer<wchar_t> buffer;
     buffer.resize(INLINE_BUFFER_SIZE);
     for (;;) {
       wchar_t *system_message = &buffer[0];
@@ -361,9 +361,10 @@ FMT_FUNC void internal::format_windows_error(
       if (result != 0) {
         UTF16ToUTF8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          out.write(message);
-          out.write(": ");
-          out.write(utf8_message);
+          basic_writer<char> w(out);
+          w.write(message);
+          w.write(": ");
+          w.write(utf8_message);
           return;
         }
         break;
