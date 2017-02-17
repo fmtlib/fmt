@@ -14,11 +14,36 @@
 
 namespace fmt {
 
-namespace internal {
+/**
+  \rst
+  This class template represents a character buffer backed by std::string.
 
-// A buffer that stores data in ``std::string``.
-template <typename Char>
-class StringBuffer : public basic_buffer<Char> {
+  You can use one of the following typedefs for common character types
+  and the standard allocator:
+
+  +----------------+------------------------------+
+  | Type           | Definition                   |
+  +================+==============================+
+  | string_buffer  | basic_string_buffer<char>    |
+  +----------------+------------------------------+
+  | wstring_buffer | basic_string_buffer<wchar_t> |
+  +----------------+------------------------------+
+
+  **Example**::
+
+     string_buffer out;
+     format_to(out, "The answer is {}", 42);
+
+  This will write the following output to the ``out`` object:
+
+  .. code-block:: none
+
+     The answer is 42
+
+  The output can be moved to an ``std::string`` with ``out.move_to()``.
+  \endrst
+ */template <typename Char>
+class basic_string_buffer : public basic_buffer<Char> {
  private:
   std::basic_string<Char> data_;
 
@@ -30,7 +55,11 @@ class StringBuffer : public basic_buffer<Char> {
   }
 
  public:
-  // Moves the data to ``str`` clearing the buffer.
+  /**
+    \rst
+    Moves the buffer content to *str* clearing the buffer.
+    \endrst
+   */
   void move_to(std::basic_string<Char> &str) {
     data_.resize(this->size_);
     str.swap(data_);
@@ -38,64 +67,9 @@ class StringBuffer : public basic_buffer<Char> {
     this->ptr_ = 0;
   }
 };
-}  // namespace internal
 
-/**
-  \rst
-  This class template provides operations for formatting and writing data
-  into a character stream. The output is stored in ``std::string`` that grows
-  dynamically.
-
-  You can use one of the following typedefs for common character types
-  and the standard allocator:
-
-  +---------------+----------------------------+
-  | Type          | Definition                 |
-  +===============+============================+
-  | StringWriter  | BasicStringWriter<char>    |
-  +---------------+----------------------------+
-  | WStringWriter | BasicStringWriter<wchar_t> |
-  +---------------+----------------------------+
-
-  **Example**::
-
-     StringWriter out;
-     out << "The answer is " << 42 << "\n";
-
-  This will write the following output to the ``out`` object:
-
-  .. code-block:: none
-
-     The answer is 42
-
-  The output can be moved to an ``std::string`` with ``out.move_to()``.
-  \endrst
- */
-template <typename Char>
-class BasicStringWriter : public basic_writer<Char> {
- private:
-  internal::StringBuffer<Char> buffer_;
-
- public:
-  /**
-    \rst
-    Constructs a :class:`fmt::BasicStringWriter` object.
-    \endrst
-   */
-  BasicStringWriter() : basic_writer<Char>(buffer_) {}
-
-  /**
-    \rst
-    Moves the buffer content to *str* clearing the buffer.
-    \endrst
-   */
-  void move_to(std::basic_string<Char> &str) {
-    buffer_.move_to(str);
-  }
-};
-
-typedef BasicStringWriter<char> StringWriter;
-typedef BasicStringWriter<wchar_t> WStringWriter;
+typedef basic_string_buffer<char> string_buffer;
+typedef basic_string_buffer<wchar_t> wstring_buffer;
 
 /**
   \rst
@@ -110,9 +84,11 @@ typedef BasicStringWriter<wchar_t> WStringWriter;
  */
 template <typename T>
 std::string to_string(const T &value) {
-  fmt::MemoryWriter w;
-  w.write(value);
-  return w.str();
+  string_buffer buf;
+  basic_writer<char>(buf).write(value);
+  std::string str;
+  buf.move_to(str);
+  return str;
 }
 }
 

@@ -10,10 +10,10 @@
 #include "fmt/string.h"
 #include "gtest/gtest.h"
 
-using fmt::internal::StringBuffer;
+using fmt::string_buffer;
 
 TEST(StringBufferTest, Empty) {
-  StringBuffer<char> buffer;
+  string_buffer buffer;
   EXPECT_EQ(0, buffer.size());
   EXPECT_EQ(0, buffer.capacity());
   std::string data;
@@ -25,7 +25,7 @@ TEST(StringBufferTest, Empty) {
 }
 
 TEST(StringBufferTest, Reserve) {
-  StringBuffer<char> buffer;
+  string_buffer buffer;
   std::size_t capacity = std::string().capacity() + 10;
   buffer.reserve(capacity);
   EXPECT_EQ(0, buffer.size());
@@ -36,7 +36,7 @@ TEST(StringBufferTest, Reserve) {
 }
 
 TEST(StringBufferTest, Resize) {
-  StringBuffer<char> buffer;
+  string_buffer buffer;
   std::size_t size = std::string().capacity() + 10;
   buffer.resize(size);
   EXPECT_EQ(size, buffer.size());
@@ -47,7 +47,7 @@ TEST(StringBufferTest, Resize) {
 }
 
 TEST(StringBufferTest, MoveTo) {
-  StringBuffer<char> buffer;
+  string_buffer buffer;
   std::size_t size = std::string().capacity() + 10;
   buffer.resize(size);
   const char *p = &buffer[0];
@@ -58,25 +58,12 @@ TEST(StringBufferTest, MoveTo) {
   EXPECT_EQ(0, buffer.capacity());
 }
 
-TEST(StringWriterTest, MoveTo) {
-  fmt::StringWriter out;
-  out.write("The answer is ");
-  out.write(42);
-  out.write("\n");
-  std::string s;
-  out.move_to(s);
-  EXPECT_EQ("The answer is 42\n", s);
-  EXPECT_EQ(0, out.size());
-}
-
-TEST(StringWriterTest, WString) {
-  fmt::WStringWriter out;
-  out.write("The answer is ");
-  out.write(42);
-  out.write("\n");
+TEST(StringBufferTest, WString) {
+  fmt::wstring_buffer out;
+  out.push_back(L'x');
   std::wstring s;
   out.move_to(s);
-  EXPECT_EQ(L"The answer is 42\n", s);
+  EXPECT_EQ(L"x", s);
 }
 
 TEST(StringTest, ToString) {
