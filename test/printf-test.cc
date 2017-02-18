@@ -40,7 +40,7 @@ using fmt::format_error;
 const unsigned BIG_NUM = INT_MAX + 1u;
 
 // Makes format string argument positional.
-std::string make_positional(fmt::StringRef format) {
+std::string make_positional(fmt::string_view format) {
   std::string s(format.to_string());
   s.replace(s.find('%'), 1, "%1$");
   return s;
@@ -269,8 +269,8 @@ TEST(PrintfTest, DynamicPrecision) {
       "argument index out of range");
   EXPECT_THROW_MSG(fmt::sprintf("%.*d", BIG_NUM, 42), format_error,
       "number is too big");
-  if (sizeof(fmt::LongLong) != sizeof(int)) {
-    fmt::LongLong prec = static_cast<fmt::LongLong>(INT_MIN) - 1;
+  if (sizeof(fmt::long_long) != sizeof(int)) {
+    fmt::long_long prec = static_cast<fmt::long_long>(INT_MIN) - 1;
     EXPECT_THROW_MSG(fmt::sprintf("%.*d", prec, 42), format_error,
         "number is too big");
  }
@@ -288,16 +288,16 @@ SPECIALIZE_MAKE_SIGNED(unsigned char, signed char);
 SPECIALIZE_MAKE_SIGNED(unsigned short, short);
 SPECIALIZE_MAKE_SIGNED(unsigned, int);
 SPECIALIZE_MAKE_SIGNED(unsigned long, long);
-SPECIALIZE_MAKE_SIGNED(fmt::ULongLong, fmt::LongLong);
+SPECIALIZE_MAKE_SIGNED(fmt::ulong_long, fmt::long_long);
 
 // Test length format specifier ``length_spec``.
 template <typename T, typename U>
 void TestLength(const char *length_spec, U value) {
-  fmt::LongLong signed_value = 0;
-  fmt::ULongLong unsigned_value = 0;
+  fmt::long_long signed_value = 0;
+  fmt::ulong_long unsigned_value = 0;
   // Apply integer promotion to the argument.
   using std::numeric_limits;
-  fmt::ULongLong max = numeric_limits<U>::max();
+  fmt::ulong_long max = numeric_limits<U>::max();
   using fmt::internal::const_check;
   if (const_check(max <= static_cast<unsigned>(numeric_limits<int>::max()))) {
     signed_value = static_cast<int>(value);
@@ -308,7 +308,7 @@ void TestLength(const char *length_spec, U value) {
   }
   using fmt::internal::MakeUnsigned;
   if (sizeof(U) <= sizeof(int) && sizeof(int) < sizeof(T)) {
-    signed_value = static_cast<fmt::LongLong>(value);
+    signed_value = static_cast<fmt::long_long>(value);
     unsigned_value = static_cast<typename MakeUnsigned<unsigned>::Type>(value);
   } else {
     signed_value = static_cast<typename MakeSigned<T>::Type>(value);
@@ -339,20 +339,20 @@ void TestLength(const char *length_spec) {
   TestLength<T>(length_spec, -42);
   TestLength<T>(length_spec, min);
   TestLength<T>(length_spec, max);
-  TestLength<T>(length_spec, fmt::LongLong(min) - 1);
-  fmt::ULongLong long_long_max = std::numeric_limits<fmt::LongLong>::max();
-  if (static_cast<fmt::ULongLong>(max) < long_long_max)
-    TestLength<T>(length_spec, fmt::LongLong(max) + 1);
+  TestLength<T>(length_spec, fmt::long_long(min) - 1);
+  fmt::ulong_long long_long_max = std::numeric_limits<fmt::long_long>::max();
+  if (static_cast<fmt::ulong_long>(max) < long_long_max)
+    TestLength<T>(length_spec, fmt::long_long(max) + 1);
   TestLength<T>(length_spec, std::numeric_limits<short>::min());
   TestLength<T>(length_spec, std::numeric_limits<unsigned short>::max());
   TestLength<T>(length_spec, std::numeric_limits<int>::min());
   TestLength<T>(length_spec, std::numeric_limits<int>::max());
   TestLength<T>(length_spec, std::numeric_limits<unsigned>::min());
   TestLength<T>(length_spec, std::numeric_limits<unsigned>::max());
-  TestLength<T>(length_spec, std::numeric_limits<fmt::LongLong>::min());
-  TestLength<T>(length_spec, std::numeric_limits<fmt::LongLong>::max());
-  TestLength<T>(length_spec, std::numeric_limits<fmt::ULongLong>::min());
-  TestLength<T>(length_spec, std::numeric_limits<fmt::ULongLong>::max());
+  TestLength<T>(length_spec, std::numeric_limits<fmt::long_long>::min());
+  TestLength<T>(length_spec, std::numeric_limits<fmt::long_long>::max());
+  TestLength<T>(length_spec, std::numeric_limits<fmt::ulong_long>::min());
+  TestLength<T>(length_spec, std::numeric_limits<fmt::ulong_long>::max());
 }
 
 TEST(PrintfTest, Length) {
@@ -363,8 +363,8 @@ TEST(PrintfTest, Length) {
   TestLength<unsigned short>("h");
   TestLength<long>("l");
   TestLength<unsigned long>("l");
-  TestLength<fmt::LongLong>("ll");
-  TestLength<fmt::ULongLong>("ll");
+  TestLength<fmt::long_long>("ll");
+  TestLength<fmt::ulong_long>("ll");
   TestLength<intmax_t>("j");
   TestLength<std::size_t>("z");
   TestLength<std::ptrdiff_t>("t");
@@ -388,10 +388,10 @@ TEST(PrintfTest, Int) {
   EXPECT_PRINTF(fmt::format("{:X}", u), "%X", -42);
 }
 
-TEST(PrintfTest, LongLong) {
+TEST(PrintfTest, long_long) {
   // fmt::printf allows passing long long arguments to %d without length
   // specifiers.
-  fmt::LongLong max = std::numeric_limits<fmt::LongLong>::max();
+  fmt::long_long max = std::numeric_limits<fmt::long_long>::max();
   EXPECT_PRINTF(fmt::format("{}", max), "%d", max);
 }
 

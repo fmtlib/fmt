@@ -106,7 +106,7 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
 
 const char RESET_COLOR[] = "\x1b[0m";
 
-typedef void (*FormatFunc)(buffer &, int, StringRef);
+typedef void (*FormatFunc)(buffer &, int, string_view);
 
 // Portable thread-safe version of strerror.
 // Sets buffer to point to a string describing the error code.
@@ -177,7 +177,7 @@ int safe_strerror(
 }
 
 void format_error_code(buffer &out, int error_code,
-                       StringRef message) FMT_NOEXCEPT {
+                       string_view message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
   // INLINE_BUFFER_SIZE to avoid dynamic memory allocation and potential
   // bad_alloc.
@@ -204,7 +204,7 @@ void format_error_code(buffer &out, int error_code,
 }
 
 void report_error(FormatFunc func, int error_code,
-                  StringRef message) FMT_NOEXCEPT {
+                  string_view message) FMT_NOEXCEPT {
   internal::MemoryBuffer<char> full_message;
   func(full_message, error_code, message);
   // Use Writer::data instead of Writer::c_str to avoid potential memory
@@ -279,10 +279,10 @@ template <typename T>
 const uint64_t internal::BasicData<T>::POWERS_OF_10_64[] = {
   0,
   FMT_POWERS_OF_10(1),
-  FMT_POWERS_OF_10(ULongLong(1000000000)),
+  FMT_POWERS_OF_10(ulong_long(1000000000)),
   // Multiply several constants instead of using a single long long constant
   // to avoid warnings about C++98 not supporting long long.
-  ULongLong(1000000000) * ULongLong(1000000000) * 10
+  ulong_long(1000000000) * ulong_long(1000000000) * 10
 };
 
 FMT_FUNC void internal::report_unknown_type(char code, const char *type) {
@@ -298,7 +298,7 @@ FMT_FUNC void internal::report_unknown_type(char code, const char *type) {
 
 #if FMT_USE_WINDOWS_H
 
-FMT_FUNC internal::UTF8ToUTF16::UTF8ToUTF16(StringRef s) {
+FMT_FUNC internal::UTF8ToUTF16::UTF8ToUTF16(string_view s) {
   static const char ERROR_MSG[] = "cannot convert string from UTF-8 to UTF-16";
   if (s.size() > INT_MAX)
     FMT_THROW(WindowsError(ERROR_INVALID_PARAMETER, ERROR_MSG));
@@ -315,14 +315,14 @@ FMT_FUNC internal::UTF8ToUTF16::UTF8ToUTF16(StringRef s) {
   buffer_[length] = 0;
 }
 
-FMT_FUNC internal::UTF16ToUTF8::UTF16ToUTF8(WStringRef s) {
+FMT_FUNC internal::UTF16ToUTF8::UTF16ToUTF8(wstring_view s) {
   if (int error_code = convert(s)) {
     FMT_THROW(WindowsError(error_code,
         "cannot convert string from UTF-16 to UTF-8"));
   }
 }
 
-FMT_FUNC int internal::UTF16ToUTF8::convert(WStringRef s) {
+FMT_FUNC int internal::UTF16ToUTF8::convert(wstring_view s) {
   if (s.size() > INT_MAX)
     return ERROR_INVALID_PARAMETER;
   int s_size = static_cast<int>(s.size());
@@ -348,7 +348,7 @@ FMT_FUNC void WindowsError::init(
 }
 
 FMT_FUNC void internal::format_windows_error(
-    buffer &out, int error_code, StringRef message) FMT_NOEXCEPT {
+    buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
     MemoryBuffer<wchar_t> buffer;
     buffer.resize(INLINE_BUFFER_SIZE);
@@ -380,7 +380,7 @@ FMT_FUNC void internal::format_windows_error(
 #endif  // FMT_USE_WINDOWS_H
 
 FMT_FUNC void format_system_error(
-    buffer &out, int error_code, StringRef message) FMT_NOEXCEPT {
+    buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
     internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> buffer;
     buffer.resize(internal::INLINE_BUFFER_SIZE);
@@ -408,14 +408,14 @@ void FixedBuffer<Char>::grow(std::size_t) {
 }
 
 FMT_FUNC void report_system_error(
-    int error_code, fmt::StringRef message) FMT_NOEXCEPT {
+    int error_code, fmt::string_view message) FMT_NOEXCEPT {
   // 'fmt::' is for bcc32.
   report_error(format_system_error, error_code, message);
 }
 
 #if FMT_USE_WINDOWS_H
 FMT_FUNC void report_windows_error(
-    int error_code, fmt::StringRef message) FMT_NOEXCEPT {
+    int error_code, fmt::string_view message) FMT_NOEXCEPT {
   // 'fmt::' is for bcc32.
   report_error(internal::format_windows_error, error_code, message);
 }

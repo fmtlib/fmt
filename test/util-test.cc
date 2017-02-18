@@ -54,7 +54,7 @@
 
 using fmt::basic_arg;
 using fmt::basic_buffer;
-using fmt::StringRef;
+using fmt::string_view;
 using fmt::internal::MemoryBuffer;
 using fmt::internal::value;
 
@@ -488,8 +488,8 @@ VISIT_TYPE(unsigned short, unsigned);
 VISIT_TYPE(long, int);
 VISIT_TYPE(unsigned long, unsigned);
 #else
-VISIT_TYPE(long, fmt::LongLong);
-VISIT_TYPE(unsigned long, fmt::ULongLong);
+VISIT_TYPE(long, fmt::long_long);
+VISIT_TYPE(unsigned long, fmt::ulong_long);
 #endif
 
 VISIT_TYPE(float, double);
@@ -511,7 +511,7 @@ class NumericArgTest : public testing::Test {};
 
 typedef ::testing::Types<
   bool, signed char, unsigned char, signed, unsigned short,
-  int, unsigned, long, unsigned long, fmt::LongLong, fmt::ULongLong,
+  int, unsigned, long, unsigned long, fmt::long_long, fmt::ulong_long,
   float, double, long double> Types;
 TYPED_TEST_CASE(NumericArgTest, Types);
 
@@ -546,7 +546,7 @@ TEST(UtilTest, StringArg) {
   CHECK_ARG_(wchar_t, cstr, str);
   CHECK_ARG(cstr);
 
-  StringRef sref(str);
+  string_view sref(str);
   CHECK_ARG_(char, sref, std::string(str));
   CHECK_ARG_(wchar_t, sref, std::string(str));
   CHECK_ARG(sref);
@@ -557,11 +557,11 @@ TEST(UtilTest, WStringArg) {
   wchar_t *str = str_data;
   const wchar_t *cstr = str;
 
-  fmt::WStringRef sref(str);
+  fmt::wstring_view sref(str);
   CHECK_ARG_(wchar_t, sref, str);
   CHECK_ARG_(wchar_t, sref, cstr);
   CHECK_ARG_(wchar_t, sref, std::wstring(str));
-  CHECK_ARG_(wchar_t, sref, fmt::WStringRef(str));
+  CHECK_ARG_(wchar_t, sref, fmt::wstring_view(str));
 }
 
 TEST(UtilTest, PointerArg) {
@@ -612,7 +612,7 @@ void test_count_digits() {
 TEST(UtilTest, StringRef) {
   // Test that StringRef::size() returns string length, not buffer size.
   char str[100] = "some string";
-  EXPECT_EQ(std::strlen(str), StringRef(str).size());
+  EXPECT_EQ(std::strlen(str), string_view(str).size());
   EXPECT_LT(std::strlen(str), sizeof(str));
 }
 
@@ -623,18 +623,18 @@ void CheckOp() {
   std::size_t num_inputs = sizeof(inputs) / sizeof(*inputs);
   for (std::size_t i = 0; i < num_inputs; ++i) {
     for (std::size_t j = 0; j < num_inputs; ++j) {
-      StringRef lhs(inputs[i]), rhs(inputs[j]);
-      EXPECT_EQ(Op<int>()(lhs.compare(rhs), 0), Op<StringRef>()(lhs, rhs));
+      string_view lhs(inputs[i]), rhs(inputs[j]);
+      EXPECT_EQ(Op<int>()(lhs.compare(rhs), 0), Op<string_view>()(lhs, rhs));
     }
   }
 }
 
 TEST(UtilTest, StringRefCompare) {
-  EXPECT_EQ(0, StringRef("foo").compare(StringRef("foo")));
-  EXPECT_GT(StringRef("fop").compare(StringRef("foo")), 0);
-  EXPECT_LT(StringRef("foo").compare(StringRef("fop")), 0);
-  EXPECT_GT(StringRef("foo").compare(StringRef("fo")), 0);
-  EXPECT_LT(StringRef("fo").compare(StringRef("foo")), 0);
+  EXPECT_EQ(0, string_view("foo").compare(string_view("foo")));
+  EXPECT_GT(string_view("fop").compare(string_view("foo")), 0);
+  EXPECT_LT(string_view("foo").compare(string_view("fop")), 0);
+  EXPECT_GT(string_view("foo").compare(string_view("fo")), 0);
+  EXPECT_LT(string_view("fo").compare(string_view("foo")), 0);
   CheckOp<std::equal_to>();
   CheckOp<std::not_equal_to>();
   CheckOp<std::less>();
@@ -666,7 +666,7 @@ TEST(UtilTest, UTF8ToUTF16) {
 template <typename Converter, typename Char>
 void check_utf_conversion_error(
         const char *message,
-        fmt::BasicStringRef<Char> str = fmt::BasicStringRef<Char>(0, 0)) {
+        fmt::basic_string_view<Char> str = fmt::basic_string_view<Char>(0, 0)) {
   fmt::internal::MemoryBuffer<char> out;
   fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
   fmt::SystemError error(0, "");
@@ -688,19 +688,19 @@ TEST(UtilTest, UTF8ToUTF16Error) {
   const char *message = "cannot convert string from UTF-8 to UTF-16";
   check_utf_conversion_error<fmt::internal::UTF8ToUTF16, char>(message);
   check_utf_conversion_error<fmt::internal::UTF8ToUTF16, char>(
-    message, fmt::StringRef("foo", INT_MAX + 1u));
+    message, fmt::string_view("foo", INT_MAX + 1u));
 }
 
 TEST(UtilTest, UTF16ToUTF8Convert) {
   fmt::internal::UTF16ToUTF8 u;
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::WStringRef(0, 0)));
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::wstring_view(0, 0)));
   EXPECT_EQ(ERROR_INVALID_PARAMETER,
-            u.convert(fmt::WStringRef(L"foo", INT_MAX + 1u)));
+            u.convert(fmt::wstring_view(L"foo", INT_MAX + 1u)));
 }
 #endif  // _WIN32
 
 typedef void (*FormatErrorMessage)(
-        fmt::buffer &out, int error_code, StringRef message);
+        fmt::buffer &out, int error_code, string_view message);
 
 template <typename Error>
 void check_throw_error(int error_code, FormatErrorMessage format) {
@@ -723,7 +723,7 @@ TEST(UtilTest, FormatSystemError) {
             to_string(message));
   message.clear();
   fmt::format_system_error(
-        message, EDOM, fmt::StringRef(0, std::numeric_limits<size_t>::max()));
+        message, EDOM, fmt::string_view(0, std::numeric_limits<size_t>::max()));
   EXPECT_EQ(fmt::format("error {}", EDOM), to_string(message));
 }
 
@@ -760,7 +760,7 @@ TEST(UtilTest, FormatWindowsError) {
   actual_message.clear();
   fmt::internal::format_windows_error(
         actual_message, ERROR_FILE_EXISTS,
-        fmt::StringRef(0, std::numeric_limits<size_t>::max()));
+        fmt::string_view(0, std::numeric_limits<size_t>::max()));
   EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS),
             fmt::to_string(actual_message));
 }

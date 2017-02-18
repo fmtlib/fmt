@@ -82,15 +82,19 @@ typedef __int64          intmax_t;
 # define FMT_GCC_EXTENSION __extension__
 # if FMT_GCC_VERSION >= 406
 #  pragma GCC diagnostic push
+
 // Disable the warning about "long long" which is sometimes reported even
 // when using __extension__.
 #  pragma GCC diagnostic ignored "-Wlong-long"
+
 // Disable the warning about declaration shadowing because it affects too
 // many valid cases.
 #  pragma GCC diagnostic ignored "-Wshadow"
+
 // Disable the warning about implicit conversions that may change the sign of
 // an integer; silencing it otherwise would require many explicit casts.
 #  pragma GCC diagnostic ignored "-Wsign-conversion"
+
 # endif
 # if __cplusplus >= 201103L || defined __GXX_EXPERIMENTAL_CXX0X__
 #  define FMT_HAS_GXX_CXX11 1
@@ -357,8 +361,8 @@ namespace fmt {
 
 // Fix the warning about long long on older versions of GCC
 // that don't support the diagnostic pragma.
-FMT_GCC_EXTENSION typedef long long LongLong;
-FMT_GCC_EXTENSION typedef unsigned long long ULongLong;
+FMT_GCC_EXTENSION typedef long long long_long;
+FMT_GCC_EXTENSION typedef unsigned long long ulong_long;
 
 #if FMT_USE_RVALUE_REFERENCES
 using std::move;
@@ -390,39 +394,21 @@ typedef basic_context<wchar_t> wcontext;
 
 /**
   \rst
-  A string reference. It can be constructed from a C string or ``std::string``.
-
-  You can use one of the following typedefs for common character types:
-
-  +------------+-------------------------+
-  | Type       | Definition              |
-  +============+=========================+
-  | StringRef  | BasicStringRef<char>    |
-  +------------+-------------------------+
-  | WStringRef | BasicStringRef<wchar_t> |
-  +------------+-------------------------+
-
-  This class is most useful as a parameter type to allow passing
-  different types of strings to a function, for example::
-
-    template <typename... Args>
-    std::string format(StringRef format_str, const Args & ... args);
-
-    format("{}", 42);
-    format(std::string("{}"), 42);
+  An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
+  subset of the API.
   \endrst
  */
 template <typename Char>
-class BasicStringRef {
+class basic_string_view {
  private:
   const Char *data_;
   std::size_t size_;
 
  public:
-  BasicStringRef() : data_(0), size_(0) {}
+  basic_string_view() : data_(0), size_(0) {}
 
   /** Constructs a string reference object from a C string and a size. */
-  BasicStringRef(const Char *s, std::size_t size) : data_(s), size_(size) {}
+  basic_string_view(const Char *s, std::size_t size) : data_(s), size_(size) {}
 
   /**
     \rst
@@ -430,7 +416,7 @@ class BasicStringRef {
     the size with ``std::char_traits<Char>::length``.
     \endrst
    */
-  BasicStringRef(const Char *s)
+  basic_string_view(const Char *s)
     : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
   /**
@@ -438,7 +424,7 @@ class BasicStringRef {
     Constructs a string reference from an ``std::string`` object.
     \endrst
    */
-  BasicStringRef(const std::basic_string<Char> &s)
+  basic_string_view(const std::basic_string<Char> &s)
   : data_(s.c_str()), size_(s.size()) {}
 
   /**
@@ -457,7 +443,7 @@ class BasicStringRef {
   std::size_t size() const { return size_; }
 
   // Lexicographically compare this string reference to other.
-  int compare(BasicStringRef other) const {
+  int compare(basic_string_view other) const {
     std::size_t size = size_ < other.size_ ? size_ : other.size_;
     int result = std::char_traits<Char>::compare(data_, other.data_, size);
     if (result == 0)
@@ -465,28 +451,28 @@ class BasicStringRef {
     return result;
   }
 
-  friend bool operator==(BasicStringRef lhs, BasicStringRef rhs) {
+  friend bool operator==(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) == 0;
   }
-  friend bool operator!=(BasicStringRef lhs, BasicStringRef rhs) {
+  friend bool operator!=(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) != 0;
   }
-  friend bool operator<(BasicStringRef lhs, BasicStringRef rhs) {
+  friend bool operator<(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) < 0;
   }
-  friend bool operator<=(BasicStringRef lhs, BasicStringRef rhs) {
+  friend bool operator<=(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) <= 0;
   }
-  friend bool operator>(BasicStringRef lhs, BasicStringRef rhs) {
+  friend bool operator>(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) > 0;
   }
-  friend bool operator>=(BasicStringRef lhs, BasicStringRef rhs) {
+  friend bool operator>=(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) >= 0;
   }
 };
 
-typedef BasicStringRef<char> StringRef;
-typedef BasicStringRef<wchar_t> WStringRef;
+typedef basic_string_view<char> string_view;
+typedef basic_string_view<wchar_t> wstring_view;
 
 /**
   \rst
@@ -559,7 +545,7 @@ FMT_SPECIALIZE_MAKE_UNSIGNED(signed char, unsigned char);
 FMT_SPECIALIZE_MAKE_UNSIGNED(short, unsigned short);
 FMT_SPECIALIZE_MAKE_UNSIGNED(int, unsigned);
 FMT_SPECIALIZE_MAKE_UNSIGNED(long, unsigned long);
-FMT_SPECIALIZE_MAKE_UNSIGNED(LongLong, ULongLong);
+FMT_SPECIALIZE_MAKE_UNSIGNED(long_long, ulong_long);
 
 // Casts nonnegative integer to unsigned.
 template <typename Int>
@@ -895,13 +881,13 @@ struct NoThousandsSep {
 // A functor that adds a thousands separator.
 class ThousandsSep {
  private:
-  fmt::StringRef sep_;
+  fmt::string_view sep_;
 
   // Index of a decimal digit with the least significant digit having index 0.
   unsigned digit_index_;
 
  public:
-  explicit ThousandsSep(fmt::StringRef sep) : sep_(sep), digit_index_(0) {}
+  explicit ThousandsSep(fmt::string_view sep) : sep_(sep), digit_index_(0) {}
 
   template <typename Char>
   void operator()(Char *&buffer) {
@@ -962,8 +948,8 @@ class UTF8ToUTF16 {
   MemoryBuffer<wchar_t, INLINE_BUFFER_SIZE> buffer_;
 
  public:
-  FMT_API explicit UTF8ToUTF16(StringRef s);
-  operator WStringRef() const { return WStringRef(&buffer_[0], size()); }
+  FMT_API explicit UTF8ToUTF16(string_view s);
+  operator wstring_view() const { return wstring_view(&buffer_[0], size()); }
   size_t size() const { return buffer_.size() - 1; }
   const wchar_t *c_str() const { return &buffer_[0]; }
   std::wstring str() const { return std::wstring(&buffer_[0], size()); }
@@ -977,8 +963,8 @@ class UTF16ToUTF8 {
 
  public:
   UTF16ToUTF8() {}
-  FMT_API explicit UTF16ToUTF8(WStringRef s);
-  operator StringRef() const { return StringRef(&buffer_[0], size()); }
+  FMT_API explicit UTF16ToUTF8(wstring_view s);
+  operator string_view() const { return string_view(&buffer_[0], size()); }
   size_t size() const { return buffer_.size() - 1; }
   const char *c_str() const { return &buffer_[0]; }
   std::string str() const { return std::string(&buffer_[0], size()); }
@@ -986,11 +972,11 @@ class UTF16ToUTF8 {
   // Performs conversion returning a system error code instead of
   // throwing exception on conversion error. This method may still throw
   // in case of memory allocation error.
-  FMT_API int convert(WStringRef s);
+  FMT_API int convert(wstring_view s);
 };
 
 FMT_API void format_windows_error(fmt::buffer &out, int error_code,
-                                  fmt::StringRef message) FMT_NOEXCEPT;
+                                  fmt::string_view message) FMT_NOEXCEPT;
 #endif
 
 template<bool B, class T = void>
@@ -1032,7 +1018,7 @@ template <typename T>
 T &get();
 
 // These are non-members to workaround an overload resolution bug in bcc32.
-Yes &convert(fmt::ULongLong);
+Yes &convert(fmt::ulong_long);
 No &convert(...);
 
 template<typename T, bool ENABLE_CONVERSION>
@@ -1119,8 +1105,8 @@ template <> constexpr Type gettype<unsigned long>() {
   return sizeof(unsigned long) == sizeof(unsigned) ?
         UINT : ULONG_LONG;
 }
-template <> constexpr Type gettype<LongLong>() { return LONG_LONG; }
-template <> constexpr Type gettype<ULongLong>() { return ULONG_LONG; }
+template <> constexpr Type gettype<long_long>() { return LONG_LONG; }
+template <> constexpr Type gettype<ulong_long>() { return ULONG_LONG; }
 template <> constexpr Type gettype<float>() { return DOUBLE; }
 template <> constexpr Type gettype<double>() { return DOUBLE; }
 template <> constexpr Type gettype<long double>() { return LONG_DOUBLE; }
@@ -1139,12 +1125,12 @@ template <> constexpr Type gettype<const signed char *>() { return CSTRING; }
 template <> constexpr Type gettype<unsigned char *>() { return CSTRING; }
 template <> constexpr Type gettype<const unsigned char *>() { return CSTRING; }
 template <> constexpr Type gettype<std::string>() { return STRING; }
-template <> constexpr Type gettype<StringRef>() { return STRING; }
+template <> constexpr Type gettype<string_view>() { return STRING; }
 template <> constexpr Type gettype<CStringRef>() { return CSTRING; }
 template <> constexpr Type gettype<wchar_t *>() { return TSTRING; }
 template <> constexpr Type gettype<const wchar_t *>() { return TSTRING; }
 template <> constexpr Type gettype<std::wstring>() { return TSTRING; }
-template <> constexpr Type gettype<WStringRef>() { return TSTRING; }
+template <> constexpr Type gettype<wstring_view>() { return TSTRING; }
 template <> constexpr Type gettype<void *>() { return POINTER; }
 template <> constexpr Type gettype<const void *>() { return POINTER; }
 
@@ -1158,8 +1144,8 @@ class value {
   union {
     int int_value;
     unsigned uint_value;
-    LongLong long_long_value;
-    ULongLong ulong_long_value;
+    long_long long_long_value;
+    ulong_long ulong_long_value;
     double double_value;
     long double long_double_value;
     const void *pointer;
@@ -1193,14 +1179,14 @@ class value {
   value(typename WCharHelper<wchar_t *, Char>::Unsupported);
   value(typename WCharHelper<const wchar_t *, Char>::Unsupported);
   value(typename WCharHelper<const std::wstring &, Char>::Unsupported);
-  value(typename WCharHelper<WStringRef, Char>::Unsupported);
+  value(typename WCharHelper<wstring_view, Char>::Unsupported);
 
-  void set_string(StringRef str) {
+  void set_string(string_view str) {
     this->string.value = str.data();
     this->string.size = str.size();
   }
 
-  void set_string(WStringRef str) {
+  void set_string(wstring_view str) {
     this->tstring.value = str.data();
     this->tstring.size = str.size();
   }
@@ -1247,8 +1233,8 @@ class value {
       this->ulong_long_value = value;
   }
 
-  FMT_MAKE_VALUE(LongLong, long_long_value, LONG_LONG)
-  FMT_MAKE_VALUE(ULongLong, ulong_long_value, ULONG_LONG)
+  FMT_MAKE_VALUE(long_long, long_long_value, LONG_LONG)
+  FMT_MAKE_VALUE(ulong_long, ulong_long_value, ULONG_LONG)
   FMT_MAKE_VALUE(float, double_value, DOUBLE)
   FMT_MAKE_VALUE(double, double_value, DOUBLE)
   FMT_MAKE_VALUE(long double, long_double_value, LONG_DOUBLE)
@@ -1277,7 +1263,7 @@ class value {
   FMT_MAKE_VALUE(unsigned char *, ustring.value, CSTRING)
   FMT_MAKE_VALUE(const unsigned char *, ustring.value, CSTRING)
   FMT_MAKE_STR_VALUE(const std::string &, STRING)
-  FMT_MAKE_STR_VALUE(StringRef, STRING)
+  FMT_MAKE_STR_VALUE(string_view, STRING)
   FMT_MAKE_VALUE_(CStringRef, string.value, CSTRING, value.c_str())
 
 #define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
@@ -1289,7 +1275,7 @@ class value {
   FMT_MAKE_WSTR_VALUE(wchar_t *, TSTRING)
   FMT_MAKE_WSTR_VALUE(const wchar_t *, TSTRING)
   FMT_MAKE_WSTR_VALUE(const std::wstring &, TSTRING)
-  FMT_MAKE_WSTR_VALUE(WStringRef, TSTRING)
+  FMT_MAKE_WSTR_VALUE(wstring_view, TSTRING)
 
   FMT_MAKE_VALUE(void *, pointer, POINTER)
   FMT_MAKE_VALUE(const void *, pointer, POINTER)
@@ -1406,9 +1392,9 @@ typename std::result_of<Visitor(int)>::type
   case internal::CSTRING:
     return vis(arg.value_.string.value);
   case internal::STRING:
-    return vis(StringRef(arg.value_.string.value, arg.value_.string.size));
+    return vis(string_view(arg.value_.string.value, arg.value_.string.size));
   case internal::TSTRING:
-    return vis(BasicStringRef<Char>(
+    return vis(basic_string_view<Char>(
                  arg.value_.tstring.value, arg.value_.tstring.size));
   case internal::POINTER:
     return vis(arg.value_.pointer);
@@ -1436,12 +1422,12 @@ template <typename T, T> struct LConvCheck {
 // We check if ``lconv`` contains ``thousands_sep`` because on Android
 // ``lconv`` is stubbed as an empty struct.
 template <typename LConv>
-inline StringRef thousands_sep(
+inline string_view thousands_sep(
     LConv *lc, LConvCheck<char *LConv::*, &LConv::thousands_sep> = 0) {
   return lc->thousands_sep;
 }
 
-inline fmt::StringRef thousands_sep(...) { return ""; }
+inline fmt::string_view thousands_sep(...) { return ""; }
 
 #define FMT_CONCAT(a, b) a##b
 
@@ -1476,10 +1462,10 @@ template <typename Context>
 struct NamedArg : basic_arg<Context> {
   typedef typename Context::char_type Char;
 
-  BasicStringRef<Char> name;
+  basic_string_view<Char> name;
 
   template <typename T>
-  NamedArg(BasicStringRef<Char> argname, const T &value)
+  NamedArg(basic_string_view<Char> argname, const T &value)
   : basic_arg<Context>(make_arg<Context>(value)), name(argname) {}
 };
 
@@ -1788,7 +1774,7 @@ class ArgMap {
  private:
   typedef typename Context::char_type Char;
   typedef std::vector<
-    std::pair<fmt::BasicStringRef<Char>, basic_arg<Context> > > MapType;
+    std::pair<fmt::basic_string_view<Char>, basic_arg<Context> > > MapType;
   typedef typename MapType::value_type Pair;
 
   MapType map_;
@@ -1797,7 +1783,7 @@ class ArgMap {
   void init(const basic_args<Context> &args);
 
   const basic_arg<Context>
-      *find(const fmt::BasicStringRef<Char> &name) const {
+      *find(const fmt::basic_string_view<Char> &name) const {
     // The list is unsorted, so just return the first matching name.
     for (typename MapType::const_iterator it = map_.begin(), end = map_.end();
          it != end; ++it) {
@@ -1871,7 +1857,7 @@ class ArgFormatterBase {
   }
 
   template <typename StrChar>
-  void write_str(BasicStringRef<StrChar> value,
+  void write_str(basic_string_view<StrChar> value,
                  typename EnableIf<
                    std::is_same<Char, wchar_t>::value &&
                    std::is_same<StrChar, wchar_t>::value, int>::type = 0) {
@@ -1879,7 +1865,7 @@ class ArgFormatterBase {
   }
 
   template <typename StrChar>
-  void write_str(BasicStringRef<StrChar> value,
+  void write_str(basic_string_view<StrChar> value,
                  typename EnableIf<
                    !std::is_same<Char, wchar_t>::value ||
                    !std::is_same<StrChar, wchar_t>::value, int>::type = 0) {
@@ -1891,12 +1877,12 @@ class ArgFormatterBase {
   format_specs &spec() { return spec_; }
 
   void write(bool value) {
-    writer_.write_str(StringRef(value ? "true" : "false"), spec_);
+    writer_.write_str(string_view(value ? "true" : "false"), spec_);
   }
 
   void write(const char *value) {
     writer_.write_str(
-          StringRef(value, value != 0 ? std::strlen(value) : 0), spec_);
+          string_view(value, value != 0 ? std::strlen(value) : 0), spec_);
   }
 
  public:
@@ -1959,11 +1945,11 @@ class ArgFormatterBase {
     write(value);
   }
 
-  void operator()(StringRef value) {
+  void operator()(string_view value) {
     writer_.write_str(value, spec_);
   }
 
-  void operator()(BasicStringRef<wchar_t> value) {
+  void operator()(basic_string_view<wchar_t> value) {
     write_str(value);
   }
 
@@ -2078,7 +2064,7 @@ class basic_context :
 
   // Checks if manual indexing is used and returns the argument with
   // specified name.
-  format_arg get_arg(BasicStringRef<Char> name, const char *&error);
+  format_arg get_arg(basic_string_view<Char> name, const char *&error);
 
  public:
   /**
@@ -2156,7 +2142,7 @@ class SystemError : public internal::RuntimeError {
   \endrst
  */
 FMT_API void format_system_error(fmt::buffer &out, int error_code,
-                                 fmt::StringRef message) FMT_NOEXCEPT;
+                                 fmt::string_view message) FMT_NOEXCEPT;
 
 namespace internal {
 // Named format specifier.
@@ -2268,7 +2254,7 @@ class basic_writer {
   CharPtr write_str(const StrChar *s, std::size_t size, const AlignSpec &spec);
 
   template <typename StrChar>
-  void write_str(BasicStringRef<StrChar> str, const format_specs &spec);
+  void write_str(basic_string_view<StrChar> str, const format_specs &spec);
 
   // This following methods are private to disallow writing wide characters
   // and strings to a char buffer. If you want to print a wide string as a
@@ -2343,7 +2329,7 @@ class basic_writer {
   void write(long value) {
     write_decimal(value);
   }
-  void write(LongLong value) {
+  void write(long_long value) {
     write_decimal(value);
   }
 
@@ -2388,18 +2374,19 @@ class basic_writer {
     Writes *value* to the buffer.
     \endrst
    */
-  void write(fmt::BasicStringRef<Char> value) {
+  void write(fmt::basic_string_view<Char> value) {
     const Char *str = value.data();
     buffer_.append(str, str + value.size());
   }
 
-  void write(typename internal::WCharHelper<StringRef, Char>::Supported value) {
+  void write(
+      typename internal::WCharHelper<string_view, Char>::Supported value) {
     const char *str = value.data();
     buffer_.append(str, str + value.size());
   }
 
   template <typename... FormatSpecs>
-  void write(BasicStringRef<Char> str, FormatSpecs... specs) {
+  void write(basic_string_view<Char> str, FormatSpecs... specs) {
     write_str(str, format_specs(specs...));
   }
 
@@ -2434,7 +2421,7 @@ typename basic_writer<Char>::CharPtr basic_writer<Char>::write_str(
 template <typename Char>
 template <typename StrChar>
 void basic_writer<Char>::write_str(
-    BasicStringRef<StrChar> s, const format_specs &spec) {
+    basic_string_view<StrChar> s, const format_specs &spec) {
   // Check if StrChar is convertible to Char.
   internal::CharTraits<Char>::convert(StrChar());
   if (spec.type_ && spec.type_ != 's')
@@ -2606,7 +2593,7 @@ void basic_writer<Char>::write_int(T value, Spec spec) {
   }
   case 'n': {
     unsigned num_digits = internal::count_digits(abs_value);
-    fmt::StringRef sep = internal::thousands_sep(std::localeconv());
+    fmt::string_view sep = internal::thousands_sep(std::localeconv());
     unsigned size = static_cast<unsigned>(
           num_digits + sep.size() * ((num_digits - 1) / 3));
     CharPtr p = prepare_int_buffer(size, spec, prefix, prefix_size) + 1;
@@ -2880,7 +2867,7 @@ class FixedBuffer : public basic_buffer<Char> {
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
 FMT_API void report_system_error(int error_code,
-                                 StringRef message) FMT_NOEXCEPT;
+                                 string_view message) FMT_NOEXCEPT;
 
 #if FMT_USE_WINDOWS_H
 
@@ -2927,7 +2914,7 @@ class WindowsError : public SystemError {
 // Reports a Windows error without throwing an exception.
 // Can be used to report errors from destructors.
 FMT_API void report_windows_error(int error_code,
-                                  StringRef message) FMT_NOEXCEPT;
+                                  string_view message) FMT_NOEXCEPT;
 
 #endif
 
@@ -3041,12 +3028,12 @@ class FormatInt {
  private:
   // Buffer should be large enough to hold all digits (digits10 + 1),
   // a sign and a null character.
-  enum {BUFFER_SIZE = std::numeric_limits<ULongLong>::digits10 + 3};
+  enum {BUFFER_SIZE = std::numeric_limits<ulong_long>::digits10 + 3};
   mutable char buffer_[BUFFER_SIZE];
   char *str_;
 
   // Formats value in reverse and returns the number of digits.
-  char *format_decimal(ULongLong value) {
+  char *format_decimal(ulong_long value) {
     char *buffer_end = buffer_ + BUFFER_SIZE - 1;
     while (value >= 100) {
       // Integer division is slow so do it for a group of two digits instead
@@ -3067,8 +3054,8 @@ class FormatInt {
     return buffer_end;
   }
 
-  void FormatSigned(LongLong value) {
-    ULongLong abs_value = static_cast<ULongLong>(value);
+  void FormatSigned(long_long value) {
+    ulong_long abs_value = static_cast<ulong_long>(value);
     bool negative = value < 0;
     if (negative)
       abs_value = 0 - abs_value;
@@ -3080,10 +3067,10 @@ class FormatInt {
  public:
   explicit FormatInt(int value) { FormatSigned(value); }
   explicit FormatInt(long value) { FormatSigned(value); }
-  explicit FormatInt(LongLong value) { FormatSigned(value); }
+  explicit FormatInt(long_long value) { FormatSigned(value); }
   explicit FormatInt(unsigned value) : str_(format_decimal(value)) {}
   explicit FormatInt(unsigned long value) : str_(format_decimal(value)) {}
-  explicit FormatInt(ULongLong value) : str_(format_decimal(value)) {}
+  explicit FormatInt(ulong_long value) : str_(format_decimal(value)) {}
 
   /** Returns the number of characters written to the output buffer. */
   std::size_t size() const {
@@ -3150,22 +3137,22 @@ inline void format_decimal(char *&buffer, T value) {
   \endrst
  */
 template <typename T>
-inline internal::NamedArg<context> arg(StringRef name, const T &arg) {
+inline internal::NamedArg<context> arg(string_view name, const T &arg) {
   return internal::NamedArg<context>(name, arg);
 }
 
 template <typename T>
-inline internal::NamedArg<wcontext> arg(WStringRef name, const T &arg) {
+inline internal::NamedArg<wcontext> arg(wstring_view name, const T &arg) {
   return internal::NamedArg<wcontext>(name, arg);
 }
 
 // The following two functions are deleted intentionally to disable
 // nested named arguments as in ``format("{}", arg("a", arg("b", 42)))``.
 template <typename Context>
-void arg(StringRef, const internal::NamedArg<Context>&)
+void arg(string_view, const internal::NamedArg<Context>&)
   FMT_DELETED_OR_UNDEFINED;
 template <typename Context>
-void arg(WStringRef, const internal::NamedArg<Context>&)
+void arg(wstring_view, const internal::NamedArg<Context>&)
   FMT_DELETED_OR_UNDEFINED;
 }
 
@@ -3269,7 +3256,7 @@ struct IsInteger {
 
 struct WidthHandler {
   template <typename T>
-  typename std::enable_if<IsInteger<T>::value, ULongLong>::type
+  typename std::enable_if<IsInteger<T>::value, ulong_long>::type
       operator()(T value) {
     if (is_negative(value))
       FMT_THROW(format_error("negative width"));
@@ -3277,7 +3264,7 @@ struct WidthHandler {
   }
 
   template <typename T>
-  typename std::enable_if<!IsInteger<T>::value, ULongLong>::type
+  typename std::enable_if<!IsInteger<T>::value, ulong_long>::type
       operator()(T value) {
     FMT_THROW(format_error("width is not integer"));
     return 0;
@@ -3286,7 +3273,7 @@ struct WidthHandler {
 
 struct PrecisionHandler {
   template <typename T>
-  typename std::enable_if<IsInteger<T>::value, ULongLong>::type
+  typename std::enable_if<IsInteger<T>::value, ulong_long>::type
       operator()(T value) {
     if (is_negative(value))
       FMT_THROW(format_error("negative precision"));
@@ -3294,7 +3281,7 @@ struct PrecisionHandler {
   }
 
   template <typename T>
-  typename std::enable_if<!IsInteger<T>::value, ULongLong>::type
+  typename std::enable_if<!IsInteger<T>::value, ulong_long>::type
       operator()(T value) {
     FMT_THROW(format_error("precision is not integer"));
     return 0;
@@ -3305,7 +3292,7 @@ struct PrecisionHandler {
 template <typename Char>
 inline typename basic_context<Char>::format_arg
   basic_context<Char>::get_arg(
-    BasicStringRef<Char> name, const char *&error) {
+    basic_string_view<Char> name, const char *&error) {
   if (this->check_no_auto_index(error)) {
     map_.init(this->args());
     if (const format_arg *arg = map_.find(name))
@@ -3336,7 +3323,7 @@ inline typename basic_context<Char>::format_arg
     c = *++s;
   } while (internal::is_name_start(c) || ('0' <= c && c <= '9'));
   const char *error = 0;
-  format_arg arg = get_arg(BasicStringRef<Char>(start, s - start), error);
+  format_arg arg = get_arg(basic_string_view<Char>(start, s - start), error);
   if (error)
     FMT_THROW(format_error(error));
   return arg;
@@ -3424,7 +3411,7 @@ void do_format_arg(basic_buffer<Char> &buffer, basic_arg<Context> arg,
       auto width_arg = ctx.parse_arg_id();
       if (*s++ != '}')
         FMT_THROW(format_error("invalid format string"));
-      ULongLong width = visit(internal::WidthHandler(), width_arg);
+      ulong_long width = visit(internal::WidthHandler(), width_arg);
       if (width > (std::numeric_limits<int>::max)())
         FMT_THROW(format_error("number is too big"));
       spec.width_ = static_cast<int>(width);
@@ -3441,7 +3428,7 @@ void do_format_arg(basic_buffer<Char> &buffer, basic_arg<Context> arg,
         auto precision_arg = ctx.parse_arg_id();
         if (*s++ != '}')
           FMT_THROW(format_error("invalid format string"));
-        ULongLong precision =
+        ulong_long precision =
           visit(internal::PrecisionHandler(), precision_arg);
         if (precision > (std::numeric_limits<int>::max)())
           FMT_THROW(format_error("number is too big"));

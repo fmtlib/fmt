@@ -73,7 +73,7 @@ using std::size_t;
 using fmt::basic_writer;
 using fmt::format;
 using fmt::format_error;
-using fmt::StringRef;
+using fmt::string_view;
 using fmt::CStringRef;
 using fmt::MemoryWriter;
 using fmt::WMemoryWriter;
@@ -148,16 +148,16 @@ struct WriteChecker {
   EXPECT_PRED_FORMAT1(WriteChecker<wchar_t>(), value)
 }  // namespace
 
-TEST(StringRefTest, Ctor) {
-  EXPECT_STREQ("abc", StringRef("abc").data());
-  EXPECT_EQ(3u, StringRef("abc").size());
+TEST(StringViewTest, Ctor) {
+  EXPECT_STREQ("abc", string_view("abc").data());
+  EXPECT_EQ(3u, string_view("abc").size());
 
-  EXPECT_STREQ("defg", StringRef(std::string("defg")).data());
-  EXPECT_EQ(4u, StringRef(std::string("defg")).size());
+  EXPECT_STREQ("defg", string_view(std::string("defg")).data());
+  EXPECT_EQ(4u, string_view(std::string("defg")).size());
 }
 
-TEST(StringRefTest, ConvertToString) {
-  std::string s = StringRef("abc").to_string();
+TEST(StringViewTest, ConvertToString) {
+  std::string s = string_view("abc").to_string();
   EXPECT_EQ("abc", s);
 }
 
@@ -1320,7 +1320,7 @@ TEST(FormatterTest, FormatString) {
 }
 
 TEST(FormatterTest, FormatStringRef) {
-  EXPECT_EQ("test", format("{0}", StringRef("test")));
+  EXPECT_EQ("test", format("{0}", string_view("test")));
 }
 
 TEST(FormatterTest, FormatCStringRef) {

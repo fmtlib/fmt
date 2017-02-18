@@ -213,7 +213,7 @@ int (test::fileno)(FILE *stream) {
 # define EXPECT_EQ_POSIX(expected, actual)
 #endif
 
-void write_file(fmt::CStringRef filename, fmt::StringRef content) {
+void write_file(fmt::CStringRef filename, fmt::string_view content) {
   fmt::BufferedFile f(filename, "w");
   f.print("{}", content);
 }
@@ -277,7 +277,7 @@ TEST(FileTest, Size) {
   write_file("test", content);
   File f("test", File::RDONLY);
   EXPECT_GE(f.size(), 0);
-  EXPECT_EQ(content.size(), static_cast<fmt::ULongLong>(f.size()));
+  EXPECT_EQ(content.size(), static_cast<fmt::ulong_long>(f.size()));
 #ifdef _WIN32
   fmt::internal::MemoryBuffer<char> message;
   fmt::internal::format_windows_error(

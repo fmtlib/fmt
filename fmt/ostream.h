@@ -85,7 +85,7 @@ void format_value(basic_buffer<Char> &buf, const T &value,
                   basic_context<Char> &ctx) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
   internal::format_value(buffer, value);
-  BasicStringRef<Char> str(buffer.data(), buffer.size());
+  basic_string_view<Char> str(buffer.data(), buffer.size());
   do_format_arg< ArgFormatter<Char> >(
         buf, internal::make_arg< basic_context<Char> >(str), ctx);
 }
