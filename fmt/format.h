@@ -381,10 +381,10 @@ template <typename Context>
 class basic_arg;
 
 template <typename Char>
-class ArgFormatter;
+class arg_formatter;
 
 template <typename Char>
-class PrintfArgFormatter;
+class printf_arg_formatter;
 
 template <typename Char>
 class basic_context;
@@ -2016,7 +2016,7 @@ class context_base {
 
 /** The default argument formatter. */
 template <typename Char>
-class ArgFormatter : public internal::ArgFormatterBase<Char> {
+class arg_formatter : public internal::ArgFormatterBase<Char> {
  private:
   basic_context<Char> &ctx_;
 
@@ -2033,8 +2033,8 @@ class ArgFormatter : public internal::ArgFormatterBase<Char> {
     format specifier information for standard argument types.
     \endrst
    */
-  ArgFormatter(basic_buffer<Char> &buffer, basic_context<Char> &ctx,
-               format_specs &spec)
+  arg_formatter(basic_buffer<Char> &buffer, basic_context<Char> &ctx,
+                format_specs &spec)
   : internal::ArgFormatterBase<Char>(buffer, spec), ctx_(ctx) {}
 
   using internal::ArgFormatterBase<Char>::operator();
@@ -2277,7 +2277,7 @@ class basic_writer {
   friend class internal::ArgFormatterBase;
 
   template <typename Char_>
-  friend class PrintfArgFormatter;
+  friend class printf_arg_formatter;
 
  public:
   /**
@@ -2939,11 +2939,11 @@ void vformat_to(basic_buffer<Char> &buffer, BasicCStringRef<Char> format_str,
                 basic_args<Context> args);
 
 inline void vformat_to(buffer &buf, CStringRef format_str, args args) {
-  vformat_to<ArgFormatter<char>>(buf, format_str, args);
+  vformat_to<arg_formatter<char>>(buf, format_str, args);
 }
 
 inline void vformat_to(wbuffer &buf, WCStringRef format_str, wargs args) {
-  vformat_to<ArgFormatter<wchar_t>>(buf, format_str, args);
+  vformat_to<arg_formatter<wchar_t>>(buf, format_str, args);
 }
 
 template <typename... Args>
