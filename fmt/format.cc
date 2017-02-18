@@ -205,7 +205,7 @@ void format_error_code(buffer &out, int error_code,
 
 void report_error(FormatFunc func, int error_code,
                   string_view message) FMT_NOEXCEPT {
-  internal::MemoryBuffer<char> full_message;
+  memory_buffer full_message;
   func(full_message, error_code, message);
   // Use Writer::data instead of Writer::c_str to avoid potential memory
   // allocation.
@@ -217,10 +217,10 @@ void report_error(FormatFunc func, int error_code,
 FMT_FUNC void SystemError::init(
     int err_code, CStringRef format_str, args args) {
   error_code_ = err_code;
-  internal::MemoryBuffer<char> buf;
-  format_system_error(buf, err_code, vformat(format_str, args));
+  memory_buffer buffer;
+  format_system_error(buffer, err_code, vformat(format_str, args));
   std::runtime_error &base = *this;
-  base = std::runtime_error(to_string(buf));
+  base = std::runtime_error(to_string(buffer));
 }
 
 template <typename T>
@@ -382,7 +382,7 @@ FMT_FUNC void internal::format_windows_error(
 FMT_FUNC void format_system_error(
     buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
-    internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> buffer;
+    memory_buffer buffer;
     buffer.resize(internal::INLINE_BUFFER_SIZE);
     for (;;) {
       char *system_message = &buffer[0];
@@ -422,7 +422,7 @@ FMT_FUNC void report_windows_error(
 #endif
 
 FMT_FUNC void vprint(std::FILE *f, CStringRef format_str, args args) {
-  internal::MemoryBuffer<char> buffer;
+  memory_buffer buffer;
   vformat_to(buffer, format_str, args);
   std::fwrite(buffer.data(), 1, buffer.size(), f);
 }
@@ -444,7 +444,7 @@ void printf(basic_writer<Char> &w, BasicCStringRef<Char> format,
             args args);
 
 FMT_FUNC int vfprintf(std::FILE *f, CStringRef format, printf_args args) {
-  internal::MemoryBuffer<char> buffer;
+  memory_buffer buffer;
   printf(buffer, format, args);
   std::size_t size = buffer.size();
   return std::fwrite(

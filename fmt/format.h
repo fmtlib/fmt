@@ -659,13 +659,39 @@ inline std::basic_string<Char> to_string(const basic_buffer<Char>& buffer) {
   return std::basic_string<Char>(buffer.data(), buffer.size());
 }
 
-namespace internal {
+/**
+  \rst
+  A dynamically growing memory buffer for trivially copyable/constructible types
+  with the first SIZE elements stored in the object itself.
 
-// A memory buffer for trivially copyable/constructible types with the first
-// SIZE elements stored in the object itself.
-template <typename T, std::size_t SIZE = INLINE_BUFFER_SIZE,
+  You can use one of the following typedefs for common character types:
+
+  +----------------+------------------------------+
+  | Type           | Definition                   |
+  +================+==============================+
+  | memory_buffer  | basic_memory_buffer<char>    |
+  +----------------+------------------------------+
+  | wmemory_buffer | basic_memory_buffer<wchar_t> |
+  +----------------+------------------------------+
+
+  **Example**::
+
+     memory_buffer out;
+     format_to(out, "The answer is {}.", 42);
+
+  This will write the following output to the ``out`` object:
+
+  .. code-block:: none
+
+     The answer is 42.
+
+  The output can be converted to an ``std::string`` with ``to_string(out)``.
+  \endrst
+ */
+//
+template <typename T, std::size_t SIZE = internal::INLINE_BUFFER_SIZE,
           typename Allocator = std::allocator<T> >
-class MemoryBuffer : private Allocator, public basic_buffer<T> {
+class basic_memory_buffer : private Allocator, public basic_buffer<T> {
  private:
   T data_[SIZE];
 
@@ -678,14 +704,14 @@ class MemoryBuffer : private Allocator, public basic_buffer<T> {
   void grow(std::size_t size);
 
  public:
-  explicit MemoryBuffer(const Allocator &alloc = Allocator())
+  explicit basic_memory_buffer(const Allocator &alloc = Allocator())
       : Allocator(alloc), basic_buffer<T>(data_, SIZE) {}
-  ~MemoryBuffer() { deallocate(); }
+  ~basic_memory_buffer() { deallocate(); }
 
 #if FMT_USE_RVALUE_REFERENCES
  private:
   // Move data from other to this buffer.
-  void move(MemoryBuffer &other) {
+  void move(basic_memory_buffer &other) {
     Allocator &this_alloc = *this, &other_alloc = other;
     this_alloc = std::move(other_alloc);
     this->size_ = other.size_;
@@ -693,7 +719,7 @@ class MemoryBuffer : private Allocator, public basic_buffer<T> {
     if (other.ptr_ == other.data_) {
       this->ptr_ = data_;
       std::uninitialized_copy(other.data_, other.data_ + this->size_,
-                              make_ptr(data_, this->capacity_));
+                              internal::make_ptr(data_, this->capacity_));
     } else {
       this->ptr_ = other.ptr_;
       // Set pointer to the inline array so that delete is not called
@@ -703,11 +729,22 @@ class MemoryBuffer : private Allocator, public basic_buffer<T> {
   }
 
  public:
-  MemoryBuffer(MemoryBuffer &&other) {
+  /**
+    \rst
+    Constructs a :class:`fmt::basic_memory_buffer` object moving the content
+    of the other object to it.
+    \endrst
+   */
+  basic_memory_buffer(basic_memory_buffer &&other) {
     move(other);
   }
 
-  MemoryBuffer &operator=(MemoryBuffer &&other) {
+  /**
+    \rst
+    Moves the content of the other ``basic_memory_buffer`` object to this one.
+    \endrst
+   */
+  basic_memory_buffer &operator=(basic_memory_buffer &&other) {
     assert(this != &other);
     deallocate();
     move(other);
@@ -720,14 +757,14 @@ class MemoryBuffer : private Allocator, public basic_buffer<T> {
 };
 
 template <typename T, std::size_t SIZE, typename Allocator>
-void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
+void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
   std::size_t new_capacity = this->capacity_ + this->capacity_ / 2;
   if (size > new_capacity)
       new_capacity = size;
   T *new_ptr = this->allocate(new_capacity);
   // The following code doesn't throw, so the raw pointer above doesn't leak.
   std::uninitialized_copy(this->ptr_, this->ptr_ + this->size_,
-                          make_ptr(new_ptr, new_capacity));
+                          internal::make_ptr(new_ptr, new_capacity));
   std::size_t old_capacity = this->capacity_;
   T *old_ptr = this->ptr_;
   this->capacity_ = new_capacity;
@@ -738,6 +775,45 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
   if (old_ptr != data_)
     Allocator::deallocate(old_ptr, old_capacity);
 }
+
+typedef basic_memory_buffer<char> memory_buffer;
+typedef basic_memory_buffer<wchar_t> wmemory_buffer;
+
+/**
+  \rst
+  A fixed-size memory buffer. For a dynamically growing buffer use
+  :class:`fmt::basic_memory_buffer`.
+
+  Trying to increase the buffer size past the initial capacity will throw
+  ``std::runtime_error``.
+  \endrst
+ */
+template <typename Char>
+class FixedBuffer : public basic_buffer<Char> {
+ public:
+  /**
+   \rst
+   Constructs a :class:`fmt::FixedBuffer` object for *array* of the
+   given size.
+   \endrst
+   */
+  FixedBuffer(Char *array, std::size_t size)
+    : basic_buffer<Char>(array, size) {}
+
+  /**
+   \rst
+   Constructs a :class:`fmt::FixedBuffer` object for *array* of the
+   size known at compile time.
+   \endrst
+   */
+  template <std::size_t SIZE>
+  explicit FixedBuffer(Char (&array)[SIZE]) : basic_buffer<Char>(array, SIZE) {}
+
+ protected:
+  FMT_API void grow(std::size_t size);
+};
+
+namespace internal {
 
 template <typename Char>
 class BasicCharTraits {
@@ -1047,7 +1123,7 @@ struct ConvertToInt {
 
 #define FMT_DISABLE_CONVERSION_TO_INT(Type) \
   template <> \
-  struct ConvertToInt<Type> {  enum { value = 0 }; }
+  struct ConvertToInt<Type> { enum { value = 0 }; }
 
 // Silence warnings about convering float to int.
 FMT_DISABLE_CONVERSION_TO_INT(float);
@@ -2762,108 +2838,6 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
   grow_buffer(n);
 }
 
-/**
-  \rst
-  This class template provides operations for formatting and writing data
-  into a memory buffer that grows dynamically.
-
-  You can use one of the following typedefs for common character types
-  and the standard allocator:
-
-  +---------------+-----------------------------------------------------+
-  | Type          | Definition                                          |
-  +===============+=====================================================+
-  | MemoryWriter  | BasicMemoryWriter<char, std::allocator<char>>       |
-  +---------------+-----------------------------------------------------+
-  | WMemoryWriter | BasicMemoryWriter<wchar_t, std::allocator<wchar_t>> |
-  +---------------+-----------------------------------------------------+
-
-  **Example**::
-
-     MemoryWriter out;
-     out << "The answer is " << 42 << "\n";
-     out.write("({:+f}, {:+f})", -3.14, 3.14);
-
-  This will write the following output to the ``out`` object:
-
-  .. code-block:: none
-
-     The answer is 42
-     (-3.140000, +3.140000)
-
-  The output can be converted to an ``std::string`` with ``out.str()`` or
-  accessed as a C string with ``out.c_str()``.
-  \endrst
- */
-template <typename Char, typename Allocator = std::allocator<Char> >
-class BasicMemoryWriter : public basic_writer<Char> {
- private:
-  internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE, Allocator> buffer_;
-
- public:
-  explicit BasicMemoryWriter(const Allocator& alloc = Allocator())
-    : basic_writer<Char>(buffer_), buffer_(alloc) {}
-
-#if FMT_USE_RVALUE_REFERENCES
-  /**
-    \rst
-    Constructs a :class:`fmt::BasicMemoryWriter` object moving the content
-    of the other object to it.
-    \endrst
-   */
-  BasicMemoryWriter(BasicMemoryWriter &&other)
-    : basic_writer<Char>(buffer_), buffer_(std::move(other.buffer_)) {
-  }
-
-  /**
-    \rst
-    Moves the content of the other ``BasicMemoryWriter`` object to this one.
-    \endrst
-   */
-  BasicMemoryWriter &operator=(BasicMemoryWriter &&other) {
-    buffer_ = std::move(other.buffer_);
-    return *this;
-  }
-#endif
-};
-
-typedef BasicMemoryWriter<char> MemoryWriter;
-typedef BasicMemoryWriter<wchar_t> WMemoryWriter;
-
-/**
-  \rst
-  A fixed-size memory buffer. For a dynamically growing buffer use
-  :class:`fmt::internal::MemoryBuffer`.
-
-  Trying to increase the buffer size past the initial capacity will throw
-  ``std::runtime_error``.
-  \endrst
- */
-template <typename Char>
-class FixedBuffer : public basic_buffer<Char> {
- public:
-  /**
-   \rst
-   Constructs a :class:`fmt::FixedBuffer` object for *array* of the
-   given size.
-   \endrst
-   */
-  FixedBuffer(Char *array, std::size_t size)
-    : basic_buffer<Char>(array, size) {}
-
-  /**
-   \rst
-   Constructs a :class:`fmt::FixedBuffer` object for *array* of the
-   size known at compile time.
-   \endrst
-   */
-  template <std::size_t SIZE>
-  explicit FixedBuffer(Char (&array)[SIZE]) : basic_buffer<Char>(array, SIZE) {}
-
- protected:
-  FMT_API void grow(std::size_t size);
-};
-
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
 FMT_API void report_system_error(int error_code,
@@ -2959,7 +2933,7 @@ inline void format_to(wbuffer &buf, WCStringRef format_str,
 }
 
 inline std::string vformat(CStringRef format_str, args args) {
-  internal::MemoryBuffer<char> buffer;
+  memory_buffer buffer;
   vformat_to(buffer, format_str, args);
   return to_string(buffer);
 }
@@ -2979,7 +2953,7 @@ inline std::string format(CStringRef format_str, const Args & ... args) {
 }
 
 inline std::wstring vformat(WCStringRef format_str, wargs args) {
-  internal::MemoryBuffer<wchar_t> buffer;
+  wmemory_buffer buffer;
   vformat_to(buffer, format_str, args);
   return to_string(buffer);
 }

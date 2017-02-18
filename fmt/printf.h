@@ -522,7 +522,7 @@ void printf(basic_buffer<Char> &buf, BasicCStringRef<Char> format,
 typedef basic_args<printf_context<char>> printf_args;
 
 inline std::string vsprintf(CStringRef format, printf_args args) {
-  internal::MemoryBuffer<char> buffer;
+  memory_buffer buffer;
   printf(buffer, format, args);
   return to_string(buffer);
 }
@@ -543,7 +543,7 @@ inline std::string sprintf(CStringRef format_str, const Args & ... args) {
 
 inline std::wstring vsprintf(
     WCStringRef format, basic_args<printf_context<wchar_t>> args) {
-  internal::MemoryBuffer<wchar_t> buffer;
+  wmemory_buffer buffer;
   printf(buffer, format, args);
   return to_string(buffer);
 }
@@ -590,7 +590,7 @@ inline int printf(CStringRef format_str, const Args & ... args) {
 }
 
 inline int vfprintf(std::ostream &os, CStringRef format_str, printf_args args) {
-  internal::MemoryBuffer<char> buffer;
+  memory_buffer buffer;
   printf(buffer, format_str, args);
   internal::write(os, buffer);
   return static_cast<int>(buffer.size());

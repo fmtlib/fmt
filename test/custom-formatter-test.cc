@@ -46,7 +46,7 @@ class CustomPrintfArgFormatter : public printf_arg_formatter<char> {
 };
 
 std::string custom_vformat(fmt::CStringRef format_str, fmt::args args) {
-  fmt::internal::MemoryBuffer<char> buffer;
+  fmt::memory_buffer buffer;
   // Pass custom argument formatter as a template arg to vwrite.
   fmt::vformat_to<CustomArgFormatter>(buffer, format_str, args);
   return std::string(buffer.data(), buffer.size());
@@ -64,7 +64,7 @@ typedef fmt::printf_context<char, CustomPrintfArgFormatter>
 std::string custom_vsprintf(
     const char* format_str,
     fmt::basic_args<CustomPrintfFormatter> args) {
-  fmt::internal::MemoryBuffer<char> buffer;
+  fmt::memory_buffer buffer;
   CustomPrintfFormatter formatter(format_str, args);
   formatter.format(buffer);
   return std::string(buffer.data(), buffer.size());

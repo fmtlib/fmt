@@ -83,7 +83,7 @@ void format_value(basic_buffer<Char> &buffer, const T &value) {
 template <typename Char, typename T>
 void format_value(basic_buffer<Char> &buf, const T &value,
                   basic_context<Char> &ctx) {
-  internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
+  basic_memory_buffer<Char> buffer;
   internal::format_value(buffer, value);
   basic_string_view<Char> str(buffer.data(), buffer.size());
   do_format_arg< arg_formatter<Char> >(

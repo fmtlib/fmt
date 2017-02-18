@@ -54,8 +54,8 @@
 
 using fmt::basic_arg;
 using fmt::basic_buffer;
+using fmt::basic_memory_buffer;
 using fmt::string_view;
-using fmt::internal::MemoryBuffer;
 using fmt::internal::value;
 
 using testing::_;
@@ -238,7 +238,7 @@ TEST(BufferTest, AppendAllocatesEnoughStorage) {
 }
 
 TEST(MemoryBufferTest, Ctor) {
-  MemoryBuffer<char, 123> buffer;
+  basic_memory_buffer<char, 123> buffer;
   EXPECT_EQ(0u, buffer.size());
   EXPECT_EQ(123u, buffer.capacity());
 }
@@ -248,9 +248,9 @@ TEST(MemoryBufferTest, Ctor) {
 typedef AllocatorRef< std::allocator<char> > TestAllocator;
 
 void check_move_buffer(const char *str,
-                       MemoryBuffer<char, 5, TestAllocator> &buffer) {
+                       basic_memory_buffer<char, 5, TestAllocator> &buffer) {
   std::allocator<char> *alloc = buffer.get_allocator().get();
-  MemoryBuffer<char, 5, TestAllocator> buffer2(std::move(buffer));
+  basic_memory_buffer<char, 5, TestAllocator> buffer2(std::move(buffer));
   // Move shouldn't destroy the inline content of the first buffer.
   EXPECT_EQ(str, std::string(&buffer[0], buffer.size()));
   EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
@@ -262,7 +262,7 @@ void check_move_buffer(const char *str,
 
 TEST(MemoryBufferTest, MoveCtor) {
   std::allocator<char> alloc;
-  MemoryBuffer<char, 5, TestAllocator> buffer((TestAllocator(&alloc)));
+  basic_memory_buffer<char, 5, TestAllocator> buffer((TestAllocator(&alloc)));
   const char test[] = "test";
   buffer.append(test, test + 4);
   check_move_buffer("test", buffer);
@@ -274,15 +274,16 @@ TEST(MemoryBufferTest, MoveCtor) {
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
   buffer.push_back('b');
-  MemoryBuffer<char, 5, TestAllocator> buffer2(std::move(buffer));
+  basic_memory_buffer<char, 5, TestAllocator> buffer2(std::move(buffer));
   // Move should rip the guts of the first buffer.
   EXPECT_EQ(inline_buffer_ptr, &buffer[0]);
   EXPECT_EQ("testab", std::string(&buffer2[0], buffer2.size()));
   EXPECT_GT(buffer2.capacity(), 5u);
 }
 
-void check_move_assign_buffer(const char *str, MemoryBuffer<char, 5> &buffer) {
-  MemoryBuffer<char, 5> buffer2;
+void check_move_assign_buffer(
+    const char *str, basic_memory_buffer<char, 5> &buffer) {
+  basic_memory_buffer<char, 5> buffer2;
   buffer2 = std::move(buffer);
   // Move shouldn't destroy the inline content of the first buffer.
   EXPECT_EQ(str, std::string(&buffer[0], buffer.size()));
@@ -291,7 +292,7 @@ void check_move_assign_buffer(const char *str, MemoryBuffer<char, 5> &buffer) {
 }
 
 TEST(MemoryBufferTest, MoveAssignment) {
-  MemoryBuffer<char, 5> buffer;
+  basic_memory_buffer<char, 5> buffer;
   const char test[] = "test";
   buffer.append(test, test + 4);
   check_move_assign_buffer("test", buffer);
@@ -303,7 +304,7 @@ TEST(MemoryBufferTest, MoveAssignment) {
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
   buffer.push_back('b');
-  MemoryBuffer<char, 5> buffer2;
+  basic_memory_buffer<char, 5> buffer2;
   buffer2 = std::move(buffer);
   // Move should rip the guts of the first buffer.
   EXPECT_EQ(inline_buffer_ptr, &buffer[0]);
@@ -315,7 +316,7 @@ TEST(MemoryBufferTest, MoveAssignment) {
 
 TEST(MemoryBufferTest, Grow) {
   typedef AllocatorRef< MockAllocator<int> > Allocator;
-  typedef MemoryBuffer<int, 10, Allocator> Base;
+  typedef basic_memory_buffer<int, 10, Allocator> Base;
   MockAllocator<int> alloc;
   struct TestMemoryBuffer : Base {
     TestMemoryBuffer(Allocator alloc) : Base(alloc) {}
@@ -341,12 +342,12 @@ TEST(MemoryBufferTest, Grow) {
 
 TEST(MemoryBufferTest, Allocator) {
   typedef AllocatorRef< MockAllocator<char> > TestAllocator;
-  MemoryBuffer<char, 10, TestAllocator> buffer;
+  basic_memory_buffer<char, 10, TestAllocator> buffer;
   EXPECT_EQ(0, buffer.get_allocator().get());
   StrictMock< MockAllocator<char> > alloc;
   char mem;
   {
-    MemoryBuffer<char, 10, TestAllocator> buffer2((TestAllocator(&alloc)));
+    basic_memory_buffer<char, 10, TestAllocator> buffer2((TestAllocator(&alloc)));
     EXPECT_EQ(&alloc, buffer2.get_allocator().get());
     std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
     EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem));
@@ -358,7 +359,7 @@ TEST(MemoryBufferTest, Allocator) {
 TEST(MemoryBufferTest, ExceptionInDeallocate) {
   typedef AllocatorRef< MockAllocator<char> > TestAllocator;
   StrictMock< MockAllocator<char> > alloc;
-  MemoryBuffer<char, 10, TestAllocator> buffer((TestAllocator(&alloc)));
+  basic_memory_buffer<char, 10, TestAllocator> buffer((TestAllocator(&alloc)));
   std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
   std::vector<char> mem(size);
   {
@@ -435,7 +436,7 @@ TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
   fmt::internal::value<CustomContext> arg(t);
   CustomContext ctx = {false};
-  fmt::internal::MemoryBuffer<char> buffer;
+  fmt::memory_buffer buffer;
   arg.custom.format(buffer, &t, &ctx);
   EXPECT_TRUE(ctx.called);
 }
@@ -579,7 +580,7 @@ TEST(UtilTest, CustomArg) {
   EXPECT_CALL(visitor, visit(_)).WillOnce(
         testing::Invoke([&](fmt::internal::CustomValue<char> custom) {
     EXPECT_EQ(&test, custom.value);
-    fmt::internal::MemoryBuffer<char> buffer;
+    fmt::memory_buffer buffer;
     fmt::context ctx("}", fmt::args());
     custom.format(buffer, &test, &ctx);
     EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
@@ -710,14 +711,14 @@ void check_throw_error(int error_code, FormatErrorMessage format) {
   } catch (const fmt::SystemError &e) {
     error = e;
   }
-  fmt::internal::MemoryBuffer<char> message;
+  fmt::memory_buffer message;
   format(message, error_code, "test error");
   EXPECT_EQ(to_string(message), error.what());
   EXPECT_EQ(error_code, error.error_code());
 }
 
 TEST(UtilTest, FormatSystemError) {
-  fmt::internal::MemoryBuffer<char> message;
+  fmt::memory_buffer message;
   fmt::format_system_error(message, EDOM, "test");
   EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)),
             to_string(message));
@@ -735,7 +736,7 @@ TEST(UtilTest, SystemError) {
 }
 
 TEST(UtilTest, ReportSystemError) {
-  fmt::internal::MemoryBuffer<char> out;
+  fmt::memory_buffer out;
   fmt::format_system_error(out, EDOM, "test error");
   out.push_back('\n');
   EXPECT_WRITE(stderr, fmt::report_system_error(EDOM, "test error"),

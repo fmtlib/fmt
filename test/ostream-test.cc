@@ -64,7 +64,7 @@ struct TestArgFormatter : fmt::arg_formatter<char> {
 };
 
 TEST(OStreamTest, CustomArg) {
-  fmt::internal::MemoryBuffer<char> buffer;
+  fmt::memory_buffer buffer;
   fmt::context ctx("}", fmt::args());
   fmt::format_specs spec;
   TestArgFormatter af(buffer, ctx, spec);
@@ -121,7 +121,7 @@ TEST(OStreamTest, Print) {
 
 TEST(OStreamTest, WriteToOStream) {
   std::ostringstream os;
-  fmt::internal::MemoryBuffer<char> buffer;
+  fmt::memory_buffer buffer;
   const char *foo = "foo";
   buffer.append(foo, foo + std::strlen(foo));
   fmt::internal::write(os, buffer);

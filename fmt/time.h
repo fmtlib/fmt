@@ -24,7 +24,7 @@ void format_value(buffer &buf, const std::tm &tm, context &ctx) {
     ++end;
   if (*end != '}')
     FMT_THROW(format_error("missing '}' in format string"));
-  internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> format;
+  memory_buffer format;
   format.append(s, end + 1);
   format[format.size() - 1] = '\0';
   std::size_t start = buf.size();

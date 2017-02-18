@@ -75,8 +75,8 @@ using fmt::format;
 using fmt::format_error;
 using fmt::string_view;
 using fmt::CStringRef;
-using fmt::MemoryWriter;
-using fmt::WMemoryWriter;
+using fmt::memory_buffer;
+using fmt::wmemory_buffer;
 using fmt::fill;
 using fmt::type;
 using fmt::width;
@@ -109,7 +109,8 @@ void std_format(long double value, std::wstring &result) {
 // as writing it to std::basic_ostringstream<Char>.
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T &value, const char *type) {
-  fmt::BasicMemoryWriter<Char> writer;
+  fmt::basic_memory_buffer<Char> buffer;
+  fmt::basic_writer<Char> writer(buffer);
   writer.write(value);
   std::basic_string<Char> actual = writer.str();
   std::basic_string<Char> expected;
@@ -177,90 +178,16 @@ TEST(WriterTest, NotCopyAssignable) {
 #endif
 
 TEST(WriterTest, Ctor) {
-  MemoryWriter w;
+  memory_buffer buf;
+  fmt::basic_writer<char> w(buf);
   EXPECT_EQ(0u, w.size());
   EXPECT_STREQ("", w.c_str());
   EXPECT_EQ("", w.str());
 }
 
-#if FMT_USE_RVALUE_REFERENCES
-
-void check_move_writer(const std::string &str, MemoryWriter &w) {
-  MemoryWriter w2(std::move(w));
-  // Move shouldn't destroy the inline content of the first writer.
-  EXPECT_EQ(str, w.str());
-  EXPECT_EQ(str, w2.str());
-}
-
-TEST(WriterTest, MoveCtor) {
-  MemoryWriter w;
-  w.write("test");
-  check_move_writer("test", w);
-  // This fills the inline buffer, but doesn't cause dynamic allocation.
-  std::string s;
-  for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
-    s += '*';
-  w.clear();
-  w.write(s);
-  check_move_writer(s, w);
-  const char *inline_buffer_ptr = w.data();
-  // Adding one more character causes the content to move from the inline to
-  // a dynamically allocated buffer.
-  w.write('*');
-  MemoryWriter w2(std::move(w));
-  // Move should rip the guts of the first writer.
-  EXPECT_EQ(inline_buffer_ptr, w.data());
-  EXPECT_EQ(s + '*', w2.str());
-}
-
-void CheckMoveAssignWriter(const std::string &str, MemoryWriter &w) {
-  MemoryWriter w2;
-  w2 = std::move(w);
-  // Move shouldn't destroy the inline content of the first writer.
-  EXPECT_EQ(str, w.str());
-  EXPECT_EQ(str, w2.str());
-}
-
-TEST(WriterTest, MoveAssignment) {
-  MemoryWriter w;
-  w.write("test");
-  CheckMoveAssignWriter("test", w);
-  // This fills the inline buffer, but doesn't cause dynamic allocation.
-  std::string s;
-  for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
-    s += '*';
-  w.clear();
-  w.write(s);
-  CheckMoveAssignWriter(s, w);
-  const char *inline_buffer_ptr = w.data();
-  // Adding one more character causes the content to move from the inline to
-  // a dynamically allocated buffer.
-  w.write('*');
-  MemoryWriter w2;
-  w2 = std::move(w);
-  // Move should rip the guts of the first writer.
-  EXPECT_EQ(inline_buffer_ptr, w.data());
-  EXPECT_EQ(s + '*', w2.str());
-}
-
-#endif  // FMT_USE_RVALUE_REFERENCES
-
-TEST(WriterTest, Allocator) {
-  typedef testing::StrictMock< MockAllocator<char> > MockAllocator;
-  typedef AllocatorRef<MockAllocator> TestAllocator;
-  MockAllocator alloc;
-  fmt::BasicMemoryWriter<char, TestAllocator> w((TestAllocator(&alloc)));
-  std::size_t size =
-      static_cast<std::size_t>(1.5 * fmt::internal::INLINE_BUFFER_SIZE);
-  std::vector<char> mem(size);
-  EXPECT_CALL(alloc, allocate(size)).WillOnce(testing::Return(&mem[0]));
-  for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE + 1; ++i)
-    w.write('*');
-  EXPECT_CALL(alloc, deallocate(&mem[0], size));
-}
-
 TEST(WriterTest, Data) {
-  MemoryWriter w;
+  memory_buffer buf;
+  fmt::basic_writer<char> w(buf);
   w.write(42);
   EXPECT_EQ("42", std::string(w.data(), w.size()));
 }
@@ -312,13 +239,15 @@ TEST(WriterTest, WriteLongDouble) {
 }
 
 TEST(WriterTest, WriteDoubleAtBufferBoundary) {
-  MemoryWriter writer;
+  memory_buffer buf;
+  fmt::basic_writer<char> writer(buf);
   for (int i = 0; i < 100; ++i)
     writer.write(1.23456789);
 }
 
 TEST(WriterTest, WriteDoubleWithFilledBuffer) {
-  MemoryWriter writer;
+  memory_buffer buf;
+  fmt::basic_writer<char> writer(buf);
   // Fill the buffer.
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
     writer.write(' ');
@@ -349,7 +278,8 @@ TEST(WriterTest, WriteWideString) {
 
 template <typename... T>
 std::string write_str(T... args) {
-  MemoryWriter writer;
+  memory_buffer buf;
+  fmt::basic_writer<char> writer(buf);
   using namespace fmt;
   writer.write(args...);
   return writer.str();
@@ -357,7 +287,8 @@ std::string write_str(T... args) {
 
 template <typename... T>
 std::wstring write_wstr(T... args) {
-  WMemoryWriter writer;
+  wmemory_buffer buf;
+  fmt::basic_writer<wchar_t> writer(buf);
   using namespace fmt;
   writer.write(args...);
   return writer.str();
@@ -447,7 +378,8 @@ TEST(WriterTest, pad) {
   EXPECT_EQ("     33", write_str(33ll, width=7));
   EXPECT_EQ("     44", write_str(44ull, width=7));
 
-  MemoryWriter w;
+  memory_buffer buf;
+  fmt::basic_writer<char> w(buf);
   w.clear();
   w.write(42, fmt::width=5, fmt::fill='0');
   EXPECT_EQ("00042", w.str());
@@ -475,13 +407,13 @@ TEST(WriterTest, WWriter) {
 }
 
 TEST(FormatToTest, FormatWithoutArgs) {
-  fmt::internal::MemoryBuffer<char> buffer;
+  fmt::memory_buffer buffer;
   format_to(buffer, "test");
   EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
 }
 
 TEST(FormatToTest, Format) {
-  fmt::internal::MemoryBuffer<char> buffer;
+  fmt::memory_buffer buffer;
   format_to(buffer, "part{0}", 1);
   EXPECT_EQ(strlen("part1"), buffer.size());
   EXPECT_EQ("part1", std::string(buffer.data(), buffer.size()));
@@ -1370,18 +1302,9 @@ TEST(FormatterTest, FormatExamples) {
   EXPECT_EQ("42", format("{}", 42));
   EXPECT_EQ("42", format(std::string("{}"), 42));
 
-  MemoryWriter out;
-  out.write("The answer is ");
-  out.write(42);
-  out.write("\n");
-
-  {
-    MemoryWriter writer;
-    for (int i = 0; i < 10; i++)
-      format_to(writer.buffer(), "{}", i);
-    std::string s = writer.str(); // s == 0123456789
-    EXPECT_EQ("0123456789", s);
-  }
+  memory_buffer out;
+  format_to(out, "The answer is {}.", 42);
+  EXPECT_EQ("The answer is 42.", to_string(out));
 
   const char *filename = "nonexistent";
   FILE *ftest = safe_fopen(filename, "r");
@@ -1522,7 +1445,7 @@ TEST(StrTest, Convert) {
 }
 
 std::string vformat_message(int id, const char *format, fmt::args args) {
-  fmt::internal::MemoryBuffer<char> buffer;
+  fmt::memory_buffer buffer;
   format_to(buffer, "[{}] ", id);
   vformat_to(buffer, format, args);
   return to_string(buffer);
@@ -1612,7 +1535,7 @@ class MockArgFormatter : public fmt::internal::ArgFormatterBase<char> {
 };
 
 void custom_vformat(fmt::CStringRef format_str, fmt::args args) {
-  fmt::internal::MemoryBuffer<char> buffer;
+  fmt::memory_buffer buffer;
   fmt::vformat_to<MockArgFormatter>(buffer, format_str, args);
 }
 

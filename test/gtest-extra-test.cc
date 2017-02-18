@@ -319,9 +319,9 @@ TEST(StreamingAssertionsTest, EXPECT_WRITE) {
 }
 
 TEST(UtilTest, FormatSystemError) {
-  fmt::MemoryWriter out;
-  fmt::format_system_error(out.buffer(), EDOM, "test message");
-  EXPECT_EQ(out.str(), format_system_error(EDOM, "test message"));
+  fmt::memory_buffer out;
+  fmt::format_system_error(out, EDOM, "test message");
+  EXPECT_EQ(to_string(out), format_system_error(EDOM, "test message"));
 }
 
 #if FMT_USE_FILE_DESCRIPTORS
