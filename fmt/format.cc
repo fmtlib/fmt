@@ -186,8 +186,8 @@ void format_error_code(buffer &out, int error_code,
   static const char ERROR_STR[] = "error ";
   // Subtract 2 to account for terminating null characters in SEP and ERROR_STR.
   std::size_t error_code_size = sizeof(SEP) + sizeof(ERROR_STR) - 2;
-  typedef internal::IntTraits<int>::MainType MainType;
-  MainType abs_value = static_cast<MainType>(error_code);
+  typedef internal::int_traits<int>::main_type main_type;
+  main_type abs_value = static_cast<main_type>(error_code);
   if (internal::is_negative(error_code)) {
     abs_value = 0 - abs_value;
     ++error_code_size;
@@ -224,7 +224,7 @@ FMT_FUNC void SystemError::init(
 }
 
 template <typename T>
-int internal::CharTraits<char>::format_float(
+int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, T value) {
   if (width == 0) {
@@ -238,7 +238,7 @@ int internal::CharTraits<char>::format_float(
 }
 
 template <typename T>
-int internal::CharTraits<wchar_t>::format_float(
+int internal::char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, T value) {
   if (width == 0) {
@@ -252,7 +252,7 @@ int internal::CharTraits<wchar_t>::format_float(
 }
 
 template <typename T>
-const char internal::BasicData<T>::DIGITS[] =
+const char internal::basic_data<T>::DIGITS[] =
     "0001020304050607080910111213141516171819"
     "2021222324252627282930313233343536373839"
     "4041424344454647484950515253545556575859"
@@ -271,12 +271,12 @@ const char internal::BasicData<T>::DIGITS[] =
   factor * 1000000000
 
 template <typename T>
-const uint32_t internal::BasicData<T>::POWERS_OF_10_32[] = {
+const uint32_t internal::basic_data<T>::POWERS_OF_10_32[] = {
   0, FMT_POWERS_OF_10(1)
 };
 
 template <typename T>
-const uint64_t internal::BasicData<T>::POWERS_OF_10_64[] = {
+const uint64_t internal::basic_data<T>::POWERS_OF_10_64[] = {
   0,
   FMT_POWERS_OF_10(1),
   FMT_POWERS_OF_10(ulong_long(1000000000)),
@@ -298,7 +298,7 @@ FMT_FUNC void internal::report_unknown_type(char code, const char *type) {
 
 #if FMT_USE_WINDOWS_H
 
-FMT_FUNC internal::UTF8ToUTF16::UTF8ToUTF16(string_view s) {
+FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
   static const char ERROR_MSG[] = "cannot convert string from UTF-8 to UTF-16";
   if (s.size() > INT_MAX)
     FMT_THROW(WindowsError(ERROR_INVALID_PARAMETER, ERROR_MSG));
@@ -341,7 +341,7 @@ FMT_FUNC int internal::UTF16ToUTF8::convert(wstring_view s) {
 FMT_FUNC void WindowsError::init(
     int err_code, CStringRef format_str, args args) {
   error_code_ = err_code;
-  internal::MemoryBuffer<char> buffer;
+  memory_buffer buffer;
   internal::format_windows_error(buffer, err_code, vformat(format_str, args));
   std::runtime_error &base = *this;
   base = std::runtime_error(to_string(buffer));
@@ -350,7 +350,7 @@ FMT_FUNC void WindowsError::init(
 FMT_FUNC void internal::format_windows_error(
     buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
-    MemoryBuffer<wchar_t> buffer;
+    wmemory_buffer buffer;
     buffer.resize(INLINE_BUFFER_SIZE);
     for (;;) {
       wchar_t *system_message = &buffer[0];
@@ -403,7 +403,7 @@ FMT_FUNC void format_system_error(
 }
 
 template <typename Char>
-void FixedBuffer<Char>::grow(std::size_t) {
+void basic_fixed_buffer<Char>::grow(std::size_t) {
   FMT_THROW(std::runtime_error("buffer overflow"));
 }
 
@@ -453,21 +453,21 @@ FMT_FUNC int vfprintf(std::FILE *f, CStringRef format, printf_args args) {
 
 #ifndef FMT_HEADER_ONLY
 
-template struct internal::BasicData<void>;
+template struct internal::basic_data<void>;
 
 // Explicit instantiations for char.
 
-template void FixedBuffer<char>::grow(std::size_t);
+template void basic_fixed_buffer<char>::grow(std::size_t);
 
 template void internal::ArgMap<context>::init(const args &args);
 
 template void printf_context<char>::format(buffer &);
 
-template int internal::CharTraits<char>::format_float(
+template int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, double value);
 
-template int internal::CharTraits<char>::format_float(
+template int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, long double value);
 
@@ -475,17 +475,17 @@ template int internal::CharTraits<char>::format_float(
 
 template class basic_context<wchar_t>;
 
-template void FixedBuffer<wchar_t>::grow(std::size_t);
+template void basic_fixed_buffer<wchar_t>::grow(std::size_t);
 
 template void internal::ArgMap<wcontext>::init(const wargs &args);
 
 template void printf_context<wchar_t>::format(wbuffer &);
 
-template int internal::CharTraits<wchar_t>::format_float(
+template int internal::char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, double value);
 
-template int internal::CharTraits<wchar_t>::format_float(
+template int internal::char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, long double value);
 

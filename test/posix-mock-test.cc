@@ -279,7 +279,7 @@ TEST(FileTest, Size) {
   EXPECT_GE(f.size(), 0);
   EXPECT_EQ(content.size(), static_cast<fmt::ulong_long>(f.size()));
 #ifdef _WIN32
-  fmt::internal::MemoryBuffer<char> message;
+  fmt::memory_buffer message;
   fmt::internal::format_windows_error(
       message, ERROR_ACCESS_DENIED, "cannot get file size");
   fstat_sim = ERROR;

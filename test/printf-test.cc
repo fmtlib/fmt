@@ -277,11 +277,11 @@ TEST(PrintfTest, DynamicPrecision) {
 }
 
 template <typename T>
-struct MakeSigned { typedef T Type; };
+struct make_signed { typedef T type; };
 
 #define SPECIALIZE_MAKE_SIGNED(T, S) \
   template <> \
-  struct MakeSigned<T> { typedef S Type; }
+  struct make_signed<T> { typedef S type; }
 
 SPECIALIZE_MAKE_SIGNED(char, signed char);
 SPECIALIZE_MAKE_SIGNED(unsigned char, signed char);
@@ -306,13 +306,13 @@ void TestLength(const char *length_spec, U value) {
     signed_value = static_cast<unsigned>(value);
     unsigned_value = static_cast<unsigned>(value);
   }
-  using fmt::internal::MakeUnsigned;
+  using fmt::internal::make_unsigned;
   if (sizeof(U) <= sizeof(int) && sizeof(int) < sizeof(T)) {
     signed_value = static_cast<fmt::long_long>(value);
-    unsigned_value = static_cast<typename MakeUnsigned<unsigned>::Type>(value);
+    unsigned_value = static_cast<typename make_unsigned<unsigned>::type>(value);
   } else {
-    signed_value = static_cast<typename MakeSigned<T>::Type>(value);
-    unsigned_value = static_cast<typename MakeUnsigned<T>::Type>(value);
+    signed_value = static_cast<typename make_signed<T>::type>(value);
+    unsigned_value = static_cast<typename make_unsigned<T>::type>(value);
   }
   std::ostringstream os;
   os << signed_value;

@@ -101,7 +101,7 @@ class ArgConverter {
   typename std::enable_if<std::is_integral<U>::value>::type
       operator()(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
-    typedef typename internal::Conditional<
+    typedef typename internal::conditional<
         is_same<T, void>::value, U, T>::type TargetType;
     typedef basic_context<Char> context;
     if (sizeof(TargetType) <= sizeof(int)) {
@@ -110,7 +110,7 @@ class ArgConverter {
         arg_ = internal::make_arg<Context>(
           static_cast<int>(static_cast<TargetType>(value)));
       } else {
-        typedef typename internal::MakeUnsigned<TargetType>::Type Unsigned;
+        typedef typename internal::make_unsigned<TargetType>::type Unsigned;
         arg_ = internal::make_arg<Context>(
           static_cast<unsigned>(static_cast<Unsigned>(value)));
       }
@@ -122,7 +122,7 @@ class ArgConverter {
         arg_ = internal::make_arg<Context>(static_cast<long_long>(value));
       } else {
         arg_ = internal::make_arg<Context>(
-          static_cast<typename internal::MakeUnsigned<U>::Type>(value));
+          static_cast<typename internal::make_unsigned<U>::type>(value));
       }
     }
   }
@@ -183,7 +183,7 @@ class PrintfWidthHandler {
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, unsigned>::type
       operator()(T value) {
-    typedef typename internal::IntTraits<T>::MainType UnsignedType;
+    typedef typename internal::int_traits<T>::main_type UnsignedType;
     UnsignedType width = static_cast<UnsignedType>(value);
     if (internal::is_negative(value)) {
       spec_.align_ = ALIGN_LEFT;
@@ -285,7 +285,7 @@ class printf_arg_formatter : public internal::ArgFormatterBase<Char> {
   }
 
   /** Formats an argument of a custom (user-defined) type. */
-  void operator()(internal::CustomValue<Char> c) {
+  void operator()(internal::custom_value<Char> c) {
     const Char format_str[] = {'}', '\0'};
     auto args = basic_args<basic_context<Char>>();
     basic_context<Char> ctx(format_str, args);

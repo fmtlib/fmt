@@ -1531,7 +1531,7 @@ class MockArgFormatter : public fmt::internal::ArgFormatterBase<char> {
 
   void operator()(int value) { call(value); }
 
-  void operator()(fmt::internal::CustomValue<char>) {}
+  void operator()(fmt::internal::custom_value<char>) {}
 };
 
 void custom_vformat(fmt::CStringRef format_str, fmt::args args) {

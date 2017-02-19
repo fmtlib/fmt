@@ -532,13 +532,14 @@ class format_error : public std::runtime_error {
 
 namespace internal {
 
-// MakeUnsigned<T>::Type gives an unsigned type corresponding to integer type T.
+// make_unsigned<T>::type gives an unsigned type corresponding to integer
+// type T.
 template <typename T>
-struct MakeUnsigned { typedef T Type; };
+struct make_unsigned { typedef T type; };
 
 #define FMT_SPECIALIZE_MAKE_UNSIGNED(T, U) \
   template <> \
-  struct MakeUnsigned<T> { typedef U Type; }
+  struct make_unsigned<T> { typedef U type; }
 
 FMT_SPECIALIZE_MAKE_UNSIGNED(char, unsigned char);
 FMT_SPECIALIZE_MAKE_UNSIGNED(signed char, unsigned char);
@@ -549,9 +550,9 @@ FMT_SPECIALIZE_MAKE_UNSIGNED(long_long, ulong_long);
 
 // Casts nonnegative integer to unsigned.
 template <typename Int>
-inline typename MakeUnsigned<Int>::Type to_unsigned(Int value) {
+inline typename make_unsigned<Int>::type to_unsigned(Int value) {
   FMT_ASSERT(value >= 0, "negative value");
-  return static_cast<typename MakeUnsigned<Int>::Type>(value);
+  return static_cast<typename make_unsigned<Int>::type>(value);
 }
 
 // The number of characters to store in the MemoryBuffer object itself
@@ -789,25 +790,26 @@ typedef basic_memory_buffer<wchar_t> wmemory_buffer;
   \endrst
  */
 template <typename Char>
-class FixedBuffer : public basic_buffer<Char> {
+class basic_fixed_buffer : public basic_buffer<Char> {
  public:
   /**
    \rst
-   Constructs a :class:`fmt::FixedBuffer` object for *array* of the
+   Constructs a :class:`fmt::basic_fixed_buffer` object for *array* of the
    given size.
    \endrst
    */
-  FixedBuffer(Char *array, std::size_t size)
+  basic_fixed_buffer(Char *array, std::size_t size)
     : basic_buffer<Char>(array, size) {}
 
   /**
    \rst
-   Constructs a :class:`fmt::FixedBuffer` object for *array* of the
+   Constructs a :class:`fmt::basic_fixed_buffer` object for *array* of the
    size known at compile time.
    \endrst
    */
   template <std::size_t SIZE>
-  explicit FixedBuffer(Char (&array)[SIZE]) : basic_buffer<Char>(array, SIZE) {}
+  explicit basic_fixed_buffer(Char (&array)[SIZE])
+    : basic_buffer<Char>(array, SIZE) {}
 
  protected:
   FMT_API void grow(std::size_t size);
@@ -816,7 +818,7 @@ class FixedBuffer : public basic_buffer<Char> {
 namespace internal {
 
 template <typename Char>
-class BasicCharTraits {
+class basic_char_traits {
  public:
 #if FMT_SECURE_SCL
   typedef stdext::checked_array_iterator<Char*> CharPtr;
@@ -827,10 +829,10 @@ class BasicCharTraits {
 };
 
 template <typename Char>
-class CharTraits;
+class char_traits;
 
 template <>
-class CharTraits<char> : public BasicCharTraits<char> {
+class char_traits<char> : public basic_char_traits<char> {
  private:
   // Conversion from wchar_t to char is not allowed.
   static char convert(wchar_t);
@@ -845,7 +847,7 @@ class CharTraits<char> : public BasicCharTraits<char> {
 };
 
 template <>
-class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
+class char_traits<wchar_t> : public basic_char_traits<wchar_t> {
  public:
   static wchar_t convert(char value) { return value; }
   static wchar_t convert(wchar_t value) { return value; }
@@ -855,39 +857,37 @@ class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
       const wchar_t *format, unsigned width, int precision, T value);
 };
 
-// Checks if a number is negative - used to avoid warnings.
-template <bool IsSigned>
-struct SignChecker {
-  template <typename T>
-  static bool is_negative(T value) { return value < 0; }
-};
+template <bool B, class T = void>
+struct enable_if {};
 
-template <>
-struct SignChecker<false> {
-  template <typename T>
-  static bool is_negative(T) { return false; }
-};
+template <class T>
+struct enable_if<true, T> { typedef T type; };
+
+template <bool B, class T, class F>
+struct conditional { typedef T type; };
+
+template<class T, class F>
+struct conditional<false, T, F> { typedef F type; };
 
 // Returns true if value is negative, false otherwise.
 // Same as (value < 0) but doesn't produce warnings if T is an unsigned type.
 template <typename T>
-inline bool is_negative(T value) {
-  return SignChecker<std::numeric_limits<T>::is_signed>::is_negative(value);
+inline typename enable_if<std::numeric_limits<T>::is_signed, bool>::type
+    is_negative(T value) {
+  return value < 0;
+}
+template <typename T>
+inline typename enable_if<!std::numeric_limits<T>::is_signed, bool>::type
+    is_negative(T) {
+  return false;
 }
 
-// Selects uint32_t if FitsIn32Bits is true, uint64_t otherwise.
-template <bool FitsIn32Bits>
-struct TypeSelector { typedef uint32_t Type; };
-
-template <>
-struct TypeSelector<false> { typedef uint64_t Type; };
-
 template <typename T>
-struct IntTraits {
+struct int_traits {
   // Smallest of uint32_t and uint64_t that is large enough to represent
   // all values of T.
-  typedef typename
-    TypeSelector<std::numeric_limits<T>::digits <= 32>::Type MainType;
+  typedef typename conditional<
+    std::numeric_limits<T>::digits <= 32, uint32_t, uint64_t>::type main_type;
 };
 
 FMT_API void report_unknown_type(char code, const char *type);
@@ -895,7 +895,7 @@ FMT_API void report_unknown_type(char code, const char *type);
 // Static data is placed in this class template to allow header-only
 // configuration.
 template <typename T = void>
-struct FMT_API BasicData {
+struct FMT_API basic_data {
   static const uint32_t POWERS_OF_10_32[];
   static const uint64_t POWERS_OF_10_64[];
   static const char DIGITS[];
@@ -908,10 +908,10 @@ struct FMT_API BasicData {
 #endif
 
 #if FMT_USE_EXTERN_TEMPLATES && !defined(FMT_HEADER_ONLY)
-extern template struct BasicData<void>;
+extern template struct basic_data<void>;
 #endif
 
-typedef BasicData<> Data;
+typedef basic_data<> data;
 
 #ifdef FMT_BUILTIN_CLZLL
 // Returns the number of decimal digits in n. Leading zeros are not counted
@@ -920,7 +920,7 @@ inline unsigned count_digits(uint64_t n) {
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
   int t = (64 - FMT_BUILTIN_CLZLL(n | 1)) * 1233 >> 12;
-  return to_unsigned(t) - (n < Data::POWERS_OF_10_64[t]) + 1;
+  return to_unsigned(t) - (n < data::POWERS_OF_10_64[t]) + 1;
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
@@ -944,18 +944,18 @@ inline unsigned count_digits(uint64_t n) {
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline unsigned count_digits(uint32_t n) {
   int t = (32 - FMT_BUILTIN_CLZ(n | 1)) * 1233 >> 12;
-  return to_unsigned(t) - (n < Data::POWERS_OF_10_32[t]) + 1;
+  return to_unsigned(t) - (n < data::POWERS_OF_10_32[t]) + 1;
 }
 #endif
 
 // A functor that doesn't add a thousands separator.
-struct NoThousandsSep {
+struct no_thousands_sep {
   template <typename Char>
   void operator()(Char *) {}
 };
 
 // A functor that adds a thousands separator.
-class ThousandsSep {
+class add_thousands_sep {
  private:
   fmt::string_view sep_;
 
@@ -963,7 +963,8 @@ class ThousandsSep {
   unsigned digit_index_;
 
  public:
-  explicit ThousandsSep(fmt::string_view sep) : sep_(sep), digit_index_(0) {}
+  explicit add_thousands_sep(fmt::string_view sep)
+    : sep_(sep), digit_index_(0) {}
 
   template <typename Char>
   void operator()(Char *&buffer) {
@@ -988,9 +989,9 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits,
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     unsigned index = static_cast<unsigned>((value % 100) * 2);
     value /= 100;
-    *--buffer = Data::DIGITS[index + 1];
+    *--buffer = data::DIGITS[index + 1];
     thousands_sep(buffer);
-    *--buffer = Data::DIGITS[index];
+    *--buffer = data::DIGITS[index];
     thousands_sep(buffer);
   }
   if (value < 10) {
@@ -998,14 +999,14 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits,
     return;
   }
   unsigned index = static_cast<unsigned>(value * 2);
-  *--buffer = Data::DIGITS[index + 1];
+  *--buffer = data::DIGITS[index + 1];
   thousands_sep(buffer);
-  *--buffer = Data::DIGITS[index];
+  *--buffer = data::DIGITS[index];
 }
 
 template <typename UInt, typename Char>
 inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
-  return format_decimal(buffer, value, num_digits, NoThousandsSep());
+  return format_decimal(buffer, value, num_digits, no_thousands_sep());
 }
 
 #ifndef _WIN32
@@ -1019,12 +1020,12 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
 #if FMT_USE_WINDOWS_H
 // A converter from UTF-8 to UTF-16.
 // It is only provided for Windows since other systems support UTF-8 natively.
-class UTF8ToUTF16 {
+class utf8_to_utf16 {
  private:
-  MemoryBuffer<wchar_t, INLINE_BUFFER_SIZE> buffer_;
+  wmemory_buffer buffer_;
 
  public:
-  FMT_API explicit UTF8ToUTF16(string_view s);
+  FMT_API explicit utf8_to_utf16(string_view s);
   operator wstring_view() const { return wstring_view(&buffer_[0], size()); }
   size_t size() const { return buffer_.size() - 1; }
   const wchar_t *c_str() const { return &buffer_[0]; }
@@ -1035,7 +1036,7 @@ class UTF8ToUTF16 {
 // It is only provided for Windows since other systems support UTF-8 natively.
 class UTF16ToUTF8 {
  private:
-  MemoryBuffer<char, INLINE_BUFFER_SIZE> buffer_;
+  memory_buffer buffer_;
 
  public:
   UTF16ToUTF8() {}
@@ -1054,21 +1055,6 @@ class UTF16ToUTF8 {
 FMT_API void format_windows_error(fmt::buffer &out, int error_code,
                                   fmt::string_view message) FMT_NOEXCEPT;
 #endif
-
-template<bool B, class T = void>
-struct EnableIf {};
-
-template<class T>
-struct EnableIf<true, T> { typedef T type; };
-
-template<bool B, class T, class F>
-struct Conditional { typedef T type; };
-
-template<class T, class F>
-struct Conditional<false, T, F> { typedef F type; };
-
-template <typename T>
-struct False { enum { value = 0 }; };
 
 template <typename T = void>
 struct Null {};
@@ -1146,7 +1132,7 @@ struct string_value {
 };
 
 template <typename Char>
-struct CustomValue {
+struct custom_value {
   typedef void (*FormatFunc)(
       basic_buffer<Char> &buffer, const void *arg, void *ctx);
 
@@ -1229,7 +1215,7 @@ class value {
     string_value<signed char> sstring;
     string_value<unsigned char> ustring;
     string_value<typename Context::char_type> tstring;
-    CustomValue<typename Context::char_type> custom;
+    custom_value<typename Context::char_type> custom;
   };
 
   typedef typename Context::char_type Char;
@@ -1358,7 +1344,7 @@ class value {
 
   template <typename T>
   value(const T &value,
-        typename EnableIf<!ConvertToInt<T>::value, int>::type = 0) {
+        typename enable_if<!ConvertToInt<T>::value, int>::type = 0) {
     static_assert(internal::type<T>() == internal::CUSTOM, "invalid type");
     this->custom.value = &value;
     this->custom.format = &format_custom_arg<T>;
@@ -1366,7 +1352,7 @@ class value {
 
   template <typename T>
   value(const T &value,
-        typename EnableIf<ConvertToInt<T>::value, int>::type = 0) {
+        typename enable_if<ConvertToInt<T>::value, int>::type = 0) {
     static_assert(internal::type<T>() == internal::INT, "invalid type");
     this->int_value = value;
   }
@@ -1528,10 +1514,10 @@ inline fmt::string_view thousands_sep(...) { return ""; }
 
 template <typename Formatter, typename T, typename Char>
 void format_value(basic_buffer<Char> &, const T &, Formatter &, const Char *) {
-  FMT_STATIC_ASSERT(False<T>::value,
+  FMT_STATIC_ASSERT(sizeof(T) < 0,
                     "Cannot format argument. To enable the use of ostream "
                     "operator<< include fmt/ostream.h. Otherwise provide "
-                    "an overload of format_arg.");
+                    "an overload of format_value.");
 }
 
 template <typename Context>
@@ -1933,18 +1919,18 @@ class ArgFormatterBase {
   }
 
   template <typename StrChar>
-  void write_str(basic_string_view<StrChar> value,
-                 typename EnableIf<
-                   std::is_same<Char, wchar_t>::value &&
-                   std::is_same<StrChar, wchar_t>::value, int>::type = 0) {
+  typename enable_if<
+    std::is_same<Char, wchar_t>::value &&
+    std::is_same<StrChar, wchar_t>::value>::type
+      write_str(basic_string_view<StrChar> value) {
     writer_.write_str(value, spec_);
   }
 
   template <typename StrChar>
-  void write_str(basic_string_view<StrChar> value,
-                 typename EnableIf<
-                   !std::is_same<Char, wchar_t>::value ||
-                   !std::is_same<StrChar, wchar_t>::value, int>::type = 0) {
+  typename enable_if<
+    !std::is_same<Char, wchar_t>::value ||
+    !std::is_same<StrChar, wchar_t>::value>::type
+      write_str(basic_string_view<StrChar> value) {
     // Do nothing.
   }
 
@@ -1994,7 +1980,7 @@ class ArgFormatterBase {
     if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
       FMT_THROW(format_error("invalid format specifier for char"));
     typedef typename basic_writer<Char>::CharPtr CharPtr;
-    Char fill = internal::CharTraits<Char>::cast(spec_.fill());
+    Char fill = internal::char_traits<Char>::cast(spec_.fill());
     CharPtr out = CharPtr();
     const unsigned CHAR_WIDTH = 1;
     if (spec_.width_ > CHAR_WIDTH) {
@@ -2012,7 +1998,7 @@ class ArgFormatterBase {
     } else {
       out = writer_.grow_buffer(CHAR_WIDTH);
     }
-    *out = internal::CharTraits<Char>::cast(value);
+    *out = internal::char_traits<Char>::cast(value);
   }
 
   void operator()(const char *value) {
@@ -2116,7 +2102,7 @@ class arg_formatter : public internal::ArgFormatterBase<Char> {
   using internal::ArgFormatterBase<Char>::operator();
 
   /** Formats an argument of a custom (user-defined) type. */
-  void operator()(internal::CustomValue<Char> c) {
+  void operator()(internal::custom_value<Char> c) {
     c.format(this->writer().buffer(), c.value, &ctx_);
   }
 };
@@ -2260,7 +2246,7 @@ class basic_writer {
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_writer);
 
-  typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
+  typedef typename internal::char_traits<Char>::CharPtr CharPtr;
 
 #if FMT_SECURE_SCL
   // Returns pointer value.
@@ -2294,8 +2280,8 @@ class basic_writer {
   // Writes a decimal integer.
   template <typename Int>
   void write_decimal(Int value) {
-    typedef typename internal::IntTraits<Int>::MainType MainType;
-    MainType abs_value = static_cast<MainType>(value);
+    typedef typename internal::int_traits<Int>::main_type main_type;
+    main_type abs_value = static_cast<main_type>(value);
     if (internal::is_negative(value)) {
       abs_value = 0 - abs_value;
       *write_unsigned_decimal(abs_value, 1) = '-';
@@ -2478,7 +2464,7 @@ typename basic_writer<Char>::CharPtr basic_writer<Char>::write_str(
   CharPtr out = CharPtr();
   if (spec.width() > size) {
     out = grow_buffer(spec.width());
-    Char fill = internal::CharTraits<Char>::cast(spec.fill());
+    Char fill = internal::char_traits<Char>::cast(spec.fill());
     if (spec.align() == ALIGN_RIGHT) {
       std::uninitialized_fill_n(out, spec.width() - size, fill);
       out += spec.width() - size;
@@ -2499,7 +2485,7 @@ template <typename StrChar>
 void basic_writer<Char>::write_str(
     basic_string_view<StrChar> s, const format_specs &spec) {
   // Check if StrChar is convertible to Char.
-  internal::CharTraits<Char>::convert(StrChar());
+  internal::char_traits<Char>::convert(StrChar());
   if (spec.type_ && spec.type_ != 's')
     internal::report_unknown_type(spec.type_, "string");
   const StrChar *str_value = s.data();
@@ -2521,7 +2507,7 @@ typename basic_writer<Char>::CharPtr basic_writer<Char>::fill_padding(
     std::size_t content_size, wchar_t fill) {
   std::size_t padding = total_size - content_size;
   std::size_t left_padding = padding / 2;
-  Char fill_char = internal::CharTraits<Char>::cast(fill);
+  Char fill_char = internal::char_traits<Char>::cast(fill);
   std::uninitialized_fill_n(buffer, left_padding, fill_char);
   buffer += left_padding;
   CharPtr content = buffer;
@@ -2537,7 +2523,7 @@ typename basic_writer<Char>::CharPtr basic_writer<Char>::prepare_int_buffer(
     const char *prefix, unsigned prefix_size) {
   unsigned width = spec.width();
   Alignment align = spec.align();
-  Char fill = internal::CharTraits<Char>::cast(spec.fill());
+  Char fill = internal::char_traits<Char>::cast(spec.fill());
   if (spec.precision() > static_cast<int>(num_digits)) {
     // Octal prefix '0' is counted as a digit, so ignore it if precision
     // is specified.
@@ -2597,7 +2583,7 @@ template <typename Char>
 template <typename T, typename Spec>
 void basic_writer<Char>::write_int(T value, Spec spec) {
   unsigned prefix_size = 0;
-  typedef typename internal::IntTraits<T>::MainType UnsignedType;
+  typedef typename internal::int_traits<T>::main_type UnsignedType;
   UnsignedType abs_value = static_cast<UnsignedType>(value);
   char prefix[4] = "";
   if (internal::is_negative(value)) {
@@ -2673,7 +2659,8 @@ void basic_writer<Char>::write_int(T value, Spec spec) {
     unsigned size = static_cast<unsigned>(
           num_digits + sep.size() * ((num_digits - 1) / 3));
     CharPtr p = prepare_int_buffer(size, spec, prefix, prefix_size) + 1;
-    internal::format_decimal(get(p), abs_value, 0, internal::ThousandsSep(sep));
+    internal::format_decimal(get(p), abs_value, 0,
+                             internal::add_thousands_sep(sep));
     break;
   }
   default:
@@ -2784,7 +2771,7 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
   *format_ptr = '\0';
 
   // Format using snprintf.
-  Char fill = internal::CharTraits<Char>::cast(spec.fill());
+  Char fill = internal::char_traits<Char>::cast(spec.fill());
   unsigned n = 0;
   Char *start = 0;
   for (;;) {
@@ -2799,7 +2786,7 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
     }
 #endif
     start = &buffer_[offset];
-    int result = internal::CharTraits<Char>::format_float(
+    int result = internal::char_traits<Char>::format_float(
         start, buffer_size, format, width_for_sprintf, spec.precision(), value);
     if (result >= 0) {
       n = internal::to_unsigned(result);
@@ -3015,16 +3002,16 @@ class FormatInt {
       // "Three Optimization Tips for C++". See speed-test for a comparison.
       unsigned index = static_cast<unsigned>((value % 100) * 2);
       value /= 100;
-      *--buffer_end = internal::Data::DIGITS[index + 1];
-      *--buffer_end = internal::Data::DIGITS[index];
+      *--buffer_end = internal::data::DIGITS[index + 1];
+      *--buffer_end = internal::data::DIGITS[index];
     }
     if (value < 10) {
       *--buffer_end = static_cast<char>('0' + value);
       return buffer_end;
     }
     unsigned index = static_cast<unsigned>(value * 2);
-    *--buffer_end = internal::Data::DIGITS[index + 1];
-    *--buffer_end = internal::Data::DIGITS[index];
+    *--buffer_end = internal::data::DIGITS[index + 1];
+    *--buffer_end = internal::data::DIGITS[index];
     return buffer_end;
   }
 
@@ -3079,8 +3066,8 @@ class FormatInt {
 // write a terminating null character.
 template <typename T>
 inline void format_decimal(char *&buffer, T value) {
-  typedef typename internal::IntTraits<T>::MainType MainType;
-  MainType abs_value = static_cast<MainType>(value);
+  typedef typename internal::int_traits<T>::main_type main_type;
+  main_type abs_value = static_cast<main_type>(value);
   if (internal::is_negative(value)) {
     *buffer++ = '-';
     abs_value = 0 - abs_value;
@@ -3091,8 +3078,8 @@ inline void format_decimal(char *&buffer, T value) {
       return;
     }
     unsigned index = static_cast<unsigned>(abs_value * 2);
-    *buffer++ = internal::Data::DIGITS[index];
-    *buffer++ = internal::Data::DIGITS[index + 1];
+    *buffer++ = internal::data::DIGITS[index];
+    *buffer++ = internal::data::DIGITS[index + 1];
     return;
   }
   unsigned num_digits = internal::count_digits(abs_value);
@@ -3211,7 +3198,7 @@ class CustomFormatter {
   CustomFormatter(basic_buffer<Char> &buffer, Context &ctx)
   : buffer_(buffer), ctx_(ctx) {}
 
-  bool operator()(internal::CustomValue<Char> custom) {
+  bool operator()(internal::custom_value<Char> custom) {
     custom.format(buffer_, custom.value, &ctx_);
     return true;
   }

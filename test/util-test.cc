@@ -383,7 +383,7 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
 
 TEST(FixedBufferTest, Ctor) {
   char array[10] = "garbage";
-  fmt::FixedBuffer<char> buffer(array, sizeof(array));
+  fmt::basic_fixed_buffer<char> buffer(array, sizeof(array));
   EXPECT_EQ(0u, buffer.size());
   EXPECT_EQ(10u, buffer.capacity());
   EXPECT_EQ(array, buffer.data());
@@ -391,7 +391,7 @@ TEST(FixedBufferTest, Ctor) {
 
 TEST(FixedBufferTest, CompileTimeSizeCtor) {
   char array[10] = "garbage";
-  fmt::FixedBuffer<char> buffer(array);
+  fmt::basic_fixed_buffer<char> buffer(array);
   EXPECT_EQ(0u, buffer.size());
   EXPECT_EQ(10u, buffer.capacity());
   EXPECT_EQ(array, buffer.data());
@@ -399,7 +399,7 @@ TEST(FixedBufferTest, CompileTimeSizeCtor) {
 
 TEST(FixedBufferTest, BufferOverflow) {
   char array[10];
-  fmt::FixedBuffer<char> buffer(array);
+  fmt::basic_fixed_buffer<char> buffer(array);
   buffer.resize(10);
   EXPECT_THROW_MSG(buffer.resize(11), std::runtime_error, "buffer overflow");
 }
@@ -445,7 +445,7 @@ namespace fmt {
 namespace internal {
 
 template <typename Char>
-bool operator==(CustomValue<Char> lhs, CustomValue<Char> rhs) {
+bool operator==(custom_value<Char> lhs, custom_value<Char> rhs) {
   return lhs.value == rhs.value;
 }
 }
@@ -575,10 +575,10 @@ TEST(UtilTest, PointerArg) {
 
 TEST(UtilTest, CustomArg) {
   ::Test test;
-  typedef MockVisitor<fmt::internal::CustomValue<char>> Visitor;
+  typedef MockVisitor<fmt::internal::custom_value<char>> Visitor;
   testing::StrictMock<Visitor> visitor;
   EXPECT_CALL(visitor, visit(_)).WillOnce(
-        testing::Invoke([&](fmt::internal::CustomValue<char> custom) {
+        testing::Invoke([&](fmt::internal::custom_value<char> custom) {
     EXPECT_EQ(&test, custom.value);
     fmt::memory_buffer buffer;
     fmt::context ctx("}", fmt::args());
@@ -659,7 +659,7 @@ TEST(UtilTest, UTF16ToUTF8) {
 
 TEST(UtilTest, UTF8ToUTF16) {
   std::string s = "лошадка";
-  fmt::internal::UTF8ToUTF16 u(s.c_str());
+  fmt::internal::utf8_to_utf16 u(s.c_str());
   EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());
   EXPECT_EQ(7, u.size());
 }
@@ -668,7 +668,7 @@ template <typename Converter, typename Char>
 void check_utf_conversion_error(
         const char *message,
         fmt::basic_string_view<Char> str = fmt::basic_string_view<Char>(0, 0)) {
-  fmt::internal::MemoryBuffer<char> out;
+  fmt::memory_buffer out;
   fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
   fmt::SystemError error(0, "");
   try {
@@ -687,8 +687,8 @@ TEST(UtilTest, UTF16ToUTF8Error) {
 
 TEST(UtilTest, UTF8ToUTF16Error) {
   const char *message = "cannot convert string from UTF-8 to UTF-16";
-  check_utf_conversion_error<fmt::internal::UTF8ToUTF16, char>(message);
-  check_utf_conversion_error<fmt::internal::UTF8ToUTF16, char>(
+  check_utf_conversion_error<fmt::internal::utf8_to_utf16, char>(message);
+  check_utf_conversion_error<fmt::internal::utf8_to_utf16, char>(
     message, fmt::string_view("foo", INT_MAX + 1u));
 }
 
@@ -753,7 +753,7 @@ TEST(UtilTest, FormatWindowsError) {
       reinterpret_cast<LPWSTR>(&message), 0, 0);
   fmt::internal::UTF16ToUTF8 utf8_message(message);
   LocalFree(message);
-  fmt::internal::MemoryBuffer<char> actual_message;
+  fmt::memory_buffer actual_message;
   fmt::internal::format_windows_error(
       actual_message, ERROR_FILE_EXISTS, "test");
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
@@ -780,7 +780,7 @@ TEST(UtilTest, FormatLongWindowsError) {
   }
   fmt::internal::UTF16ToUTF8 utf8_message(message);
   LocalFree(message);
-  fmt::internal::MemoryBuffer<char> actual_message;
+  fmt::memory_buffer actual_message;
   fmt::internal::format_windows_error(
       actual_message, provisioning_not_allowed, "test");
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
@@ -793,7 +793,7 @@ TEST(UtilTest, WindowsError) {
 }
 
 TEST(UtilTest, ReportWindowsError) {
-  fmt::internal::MemoryBuffer<char> out;
+  fmt::memory_buffer out;
   fmt::internal::format_windows_error(out, ERROR_FILE_EXISTS, "test error");
   out.push_back('\n');
   EXPECT_WRITE(stderr,
@@ -820,13 +820,13 @@ TEST(UtilTest, IsEnumConvertibleToInt) {
 
 template <typename T>
 bool check_enable_if(
-    typename fmt::internal::EnableIf<sizeof(T) == sizeof(int), T>::type *) {
+    typename fmt::internal::enable_if<sizeof(T) == sizeof(int), T>::type *) {
   return true;
 }
 
 template <typename T>
 bool check_enable_if(
-    typename fmt::internal::EnableIf<sizeof(T) != sizeof(int), T>::type *) {
+    typename fmt::internal::enable_if<sizeof(T) != sizeof(int), T>::type *) {
   return false;
 }
 
@@ -839,10 +839,10 @@ TEST(UtilTest, EnableIf) {
 
 TEST(UtilTest, Conditional) {
   int i = 0;
-  fmt::internal::Conditional<true, int, char>::type *pi = &i;
+  fmt::internal::conditional<true, int, char>::type *pi = &i;
   (void)pi;
   char c = 0;
-  fmt::internal::Conditional<false, int, char>::type *pc = &c;
+  fmt::internal::conditional<false, int, char>::type *pc = &c;
   (void)pc;
 }
 

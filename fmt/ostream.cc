@@ -14,7 +14,7 @@ namespace fmt {
 namespace internal {
 FMT_FUNC void write(std::ostream &os, buffer &buf) {
   const char *data = buf.data();
-  typedef internal::MakeUnsigned<std::streamsize>::Type UnsignedStreamSize;
+  typedef internal::make_unsigned<std::streamsize>::type UnsignedStreamSize;
   UnsignedStreamSize size = buf.size();
   UnsignedStreamSize max_size =
       internal::to_unsigned((std::numeric_limits<std::streamsize>::max)());
