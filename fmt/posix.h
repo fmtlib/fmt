@@ -178,7 +178,7 @@ public:
 
 // A file. Closed file is represented by a File object with descriptor -1.
 // Methods that are not declared with FMT_NOEXCEPT may throw
-// fmt::SystemError in case of failure. Note that some errors such as
+// fmt::system_error in case of failure. Note that some errors such as
 // closing the file multiple times will cause a crash on Windows rather
 // than an exception. You can get standard behavior by overriding the
 // invalid parameter handler with _set_invalid_parameter_handler.
@@ -341,7 +341,7 @@ class Locale {
 
   Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", NULL)) {
     if (!locale_)
-      throw fmt::SystemError(errno, "cannot create locale");
+      throw fmt::system_error(errno, "cannot create locale");
   }
   ~Locale() { freelocale(locale_); }
 

@@ -415,7 +415,7 @@ TEST(BufferedFileTest, OpenRetry) {
 #ifndef _WIN32
   char c = 0;
   if (fread(&c, 1, 1, f->get()) < 1)
-    throw fmt::SystemError(errno, "fread failed");
+    throw fmt::system_error(errno, "fread failed");
 #endif
 }
 

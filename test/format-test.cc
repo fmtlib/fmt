@@ -1314,7 +1314,7 @@ TEST(FormatterTest, FormatExamples) {
   EXPECT_SYSTEM_ERROR({
     FILE *f = safe_fopen(filename, "r");
     if (!f)
-      throw fmt::SystemError(errno, "Cannot open file '{}'", filename);
+      throw fmt::system_error(errno, "Cannot open file '{}'", filename);
     fclose(f);
   }, error_code, "Cannot open file 'nonexistent'");
 }
@@ -1514,16 +1514,16 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-class MockArgFormatter : public fmt::internal::ArgFormatterBase<char> {
+class MockArgFormatter : public fmt::internal::arg_formatter_base<char> {
  private:
   MOCK_METHOD1(call, void (int value));
 
  public:
-  typedef fmt::internal::ArgFormatterBase<char> Base;
+  typedef fmt::internal::arg_formatter_base<char> Base;
 
   MockArgFormatter(fmt::buffer &b, fmt::context &ctx,
                    fmt::format_specs &s)
-    : fmt::internal::ArgFormatterBase<char>(b, s) {
+    : fmt::internal::arg_formatter_base<char>(b, s) {
     EXPECT_CALL(*this, call(42));
   }
 

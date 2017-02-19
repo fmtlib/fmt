@@ -652,7 +652,7 @@ TEST(UtilTest, CountDigits) {
 #ifdef _WIN32
 TEST(UtilTest, UTF16ToUTF8) {
   std::string s = "ёжик";
-  fmt::internal::UTF16ToUTF8 u(L"\x0451\x0436\x0438\x043A");
+  fmt::internal::utf16_to_utf8 u(L"\x0451\x0436\x0438\x043A");
   EXPECT_EQ(s, u.str());
   EXPECT_EQ(s.size(), u.size());
 }
@@ -681,7 +681,7 @@ void check_utf_conversion_error(
 }
 
 TEST(UtilTest, UTF16ToUTF8Error) {
-  check_utf_conversion_error<fmt::internal::UTF16ToUTF8, wchar_t>(
+  check_utf_conversion_error<fmt::internal::utf16_to_utf8, wchar_t>(
       "cannot convert string from UTF-16 to UTF-8");
 }
 
@@ -693,7 +693,7 @@ TEST(UtilTest, UTF8ToUTF16Error) {
 }
 
 TEST(UtilTest, UTF16ToUTF8Convert) {
-  fmt::internal::UTF16ToUTF8 u;
+  fmt::internal::utf16_to_utf8 u;
   EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::wstring_view(0, 0)));
   EXPECT_EQ(ERROR_INVALID_PARAMETER,
             u.convert(fmt::wstring_view(L"foo", INT_MAX + 1u)));
@@ -705,10 +705,10 @@ typedef void (*FormatErrorMessage)(
 
 template <typename Error>
 void check_throw_error(int error_code, FormatErrorMessage format) {
-  fmt::SystemError error(0, "");
+  fmt::system_error error(0, "");
   try {
     throw Error(error_code, "test {}", "error");
-  } catch (const fmt::SystemError &e) {
+  } catch (const fmt::system_error &e) {
     error = e;
   }
   fmt::memory_buffer message;
@@ -729,10 +729,10 @@ TEST(UtilTest, FormatSystemError) {
 }
 
 TEST(UtilTest, SystemError) {
-  fmt::SystemError e(EDOM, "test");
+  fmt::system_error e(EDOM, "test");
   EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)), e.what());
   EXPECT_EQ(EDOM, e.error_code());
-  check_throw_error<fmt::SystemError>(EDOM, fmt::format_system_error);
+  check_throw_error<fmt::system_error>(EDOM, fmt::format_system_error);
 }
 
 TEST(UtilTest, ReportSystemError) {
@@ -751,7 +751,7 @@ TEST(UtilTest, FormatWindowsError) {
       FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
       ERROR_FILE_EXISTS, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       reinterpret_cast<LPWSTR>(&message), 0, 0);
-  fmt::internal::UTF16ToUTF8 utf8_message(message);
+  fmt::internal::utf16_to_utf8 utf8_message(message);
   LocalFree(message);
   fmt::memory_buffer actual_message;
   fmt::internal::format_windows_error(
@@ -778,7 +778,7 @@ TEST(UtilTest, FormatLongWindowsError) {
       reinterpret_cast<LPWSTR>(&message), 0, 0) == 0) {
     return;
   }
-  fmt::internal::UTF16ToUTF8 utf8_message(message);
+  fmt::internal::utf16_to_utf8 utf8_message(message);
   LocalFree(message);
   fmt::memory_buffer actual_message;
   fmt::internal::format_windows_error(
@@ -806,15 +806,15 @@ TEST(UtilTest, ReportWindowsError) {
 enum TestEnum2 {};
 
 TEST(UtilTest, ConvertToInt) {
-  EXPECT_TRUE(fmt::internal::ConvertToInt<char>::enable_conversion);
-  EXPECT_FALSE(fmt::internal::ConvertToInt<const char *>::enable_conversion);
-  EXPECT_TRUE(fmt::internal::ConvertToInt<TestEnum2>::value);
+  EXPECT_TRUE(fmt::internal::convert_to_int<char>::enable_conversion);
+  EXPECT_FALSE(fmt::internal::convert_to_int<const char *>::enable_conversion);
+  EXPECT_TRUE(fmt::internal::convert_to_int<TestEnum2>::value);
 }
 
 #if FMT_USE_ENUM_BASE
 enum TestEnum : char {TestValue};
 TEST(UtilTest, IsEnumConvertibleToInt) {
-  EXPECT_TRUE(fmt::internal::ConvertToInt<TestEnum>::enable_conversion);
+  EXPECT_TRUE(fmt::internal::convert_to_int<TestEnum>::enable_conversion);
 }
 #endif
 

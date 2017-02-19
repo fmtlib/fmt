@@ -210,14 +210,14 @@ class PrintfWidthHandler {
   \endrst
  */
 template <typename Char>
-class printf_arg_formatter : public internal::ArgFormatterBase<Char> {
+class printf_arg_formatter : public internal::arg_formatter_base<Char> {
  private:
   void write_null_pointer() {
     this->spec().type_ = 0;
     this->write("(nil)");
   }
 
-  typedef internal::ArgFormatterBase<Char> Base;
+  typedef internal::arg_formatter_base<Char> Base;
 
  public:
   typedef typename Base::format_specs format_specs;
@@ -230,7 +230,7 @@ class printf_arg_formatter : public internal::ArgFormatterBase<Char> {
     \endrst
    */
   printf_arg_formatter(basic_buffer<Char> &buffer, format_specs &spec)
-  : internal::ArgFormatterBase<Char>(buffer, spec) {}
+  : internal::arg_formatter_base<Char>(buffer, spec) {}
 
   using Base::operator();
 
