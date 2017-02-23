@@ -2405,6 +2405,7 @@ class SystemError : public internal::RuntimeError {
   SystemError(int error_code, CStringRef message) {
     init(error_code, message, ArgList());
   }
+  SystemError(const SystemError&) = default;
   FMT_VARIADIC_CTOR(SystemError, init, int, CStringRef)
 
   FMT_API ~SystemError() FMT_DTOR_NOEXCEPT;
