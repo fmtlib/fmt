@@ -11,8 +11,8 @@ namespace is usually omitted in examples.
 Format API
 ==========
 
-The following functions use :ref:`format string syntax <syntax>` similar
-to the one used by Python's `str.format
+The following functions defined in ``fmt/format.h`` use :ref:`format string
+syntax <syntax>` similar to the one used by Python's `str.format
 <http://docs.python.org/3/library/stdtypes.html#str.format>`_ function.
 They take *format_str* and *args* as arguments.
 
