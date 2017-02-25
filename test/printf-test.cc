@@ -500,3 +500,9 @@ TEST(PrintfTest, OStream) {
   EXPECT_EQ("Don't panic!", os.str());
   EXPECT_EQ(12, ret);
 }
+
+TEST(PrintfTest, Writer) {
+  fmt::MemoryWriter writer;
+  printf(writer, "%d", 42);
+  EXPECT_EQ("42", writer.str());
+}
