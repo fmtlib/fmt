@@ -2823,7 +2823,11 @@ inline int IsATTY(int /* fd */) { return 0; }
 inline int IsATTY(int fd) { return _isatty(fd); }
 #  endif  // GTEST_OS_WINDOWS_MOBILE
 inline int StrCaseCmp(const char* s1, const char* s2) {
-  return _stricmp(s1, s2);
+#  if _EMULATE_GLIBC
+    return strcasecmp(s1, s2);
+#  else
+    return _stricmp(s1, s2);
+#  endif
 }
 inline char* StrDup(const char* src) { return _strdup(src); }
 # endif  // __BORLANDC__
