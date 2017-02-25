@@ -246,6 +246,20 @@ typedef __int64          intmax_t;
     TypeName& operator=(const TypeName&)
 #endif
 
+#ifndef FMT_USE_DEFAULTED_FUNCTIONS
+# define FMT_USE_DEFAULTED_FUNCTIONS 0
+#endif
+
+#ifndef FMT_DEFAULTED_COPY_CTOR
+# if FMT_USE_DEFAULTED_FUNCTIONS || FMT_HAS_FEATURE(cxx_defaulted_functions) || \
+   (FMT_GCC_VERSION >= 404 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1800
+#  define FMT_DEFAULTED_COPY_CTOR(TypeName) \
+    TypeName(const TypeName&) = default;
+# else
+#  define FMT_DEFAULTED_COPY_CTOR(TypeName)
+# endif
+#endif
+
 #ifndef FMT_USE_USER_DEFINED_LITERALS
 // All compilers which support UDLs also support variadic templates. This
 // makes the fmt::literals implementation easier. However, an explicit check
@@ -2405,6 +2419,7 @@ class SystemError : public internal::RuntimeError {
   SystemError(int error_code, CStringRef message) {
     init(error_code, message, ArgList());
   }
+  FMT_DEFAULTED_COPY_CTOR(SystemError)
   FMT_VARIADIC_CTOR(SystemError, init, int, CStringRef)
 
   FMT_API ~SystemError() FMT_DTOR_NOEXCEPT;
