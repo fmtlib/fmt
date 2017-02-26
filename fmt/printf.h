@@ -517,10 +517,15 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
   write(writer_, start, s);
 }
 
-template <typename Char>
-void printf(BasicWriter<Char> &w, BasicCStringRef<Char> format, ArgList args) {
-  PrintfFormatter<Char>(args, w).format(format);
+inline void printf(Writer &w, CStringRef format, ArgList args) {
+  PrintfFormatter<char>(args, w).format(format);
 }
+FMT_VARIADIC(void, printf, Writer &, CStringRef)
+
+inline void printf(WWriter &w, WCStringRef format, ArgList args) {
+  PrintfFormatter<wchar_t>(args, w).format(format);
+}
+FMT_VARIADIC(void, printf, WWriter &, WCStringRef)
 
 /**
   \rst
