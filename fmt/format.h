@@ -38,7 +38,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <utility>
+#include <utility>  // for std::pair
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 30002
@@ -153,10 +153,6 @@ typedef __int64          intmax_t;
     (FMT_HAS_FEATURE(cxx_rvalue_references) || \
         (FMT_GCC_VERSION >= 403 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1600)
 # endif
-#endif
-
-#if FMT_USE_RVALUE_REFERENCES
-# include <utility>  // for std::move
 #endif
 
 // Check if exceptions are disabled.
