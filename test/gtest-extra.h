@@ -84,7 +84,7 @@
 std::string format_system_error(int error_code, fmt::string_view message);
 
 #define EXPECT_SYSTEM_ERROR(statement, error_code, message) \
-  EXPECT_THROW_MSG(statement, fmt::SystemError, \
+  EXPECT_THROW_MSG(statement, fmt::system_error, \
       format_system_error(error_code, message))
 
 #if FMT_USE_FILE_DESCRIPTORS

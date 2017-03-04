@@ -283,7 +283,7 @@ TEST(FileTest, Size) {
   fmt::internal::format_windows_error(
       message, ERROR_ACCESS_DENIED, "cannot get file size");
   fstat_sim = ERROR;
-  EXPECT_THROW_MSG(f.size(), fmt::WindowsError, fmt::to_string(message));
+  EXPECT_THROW_MSG(f.size(), fmt::windows_error, fmt::to_string(message));
   fstat_sim = NONE;
 #else
   f.close();
@@ -340,7 +340,7 @@ TEST(FileTest, ConvertReadCount) {
     ++size;
   read_count = 1;
   read_nbyte = 0;
-  EXPECT_THROW(read_end.read(&c, size), fmt::SystemError);
+  EXPECT_THROW(read_end.read(&c, size), fmt::system_error);
   read_count = 0;
   EXPECT_EQ(UINT_MAX, read_nbyte);
 }
@@ -354,7 +354,7 @@ TEST(FileTest, ConvertWriteCount) {
     ++size;
   write_count = 1;
   write_nbyte = 0;
-  EXPECT_THROW(write_end.write(&c, size), fmt::SystemError);
+  EXPECT_THROW(write_end.write(&c, size), fmt::system_error);
   write_count = 0;
   EXPECT_EQ(UINT_MAX, write_nbyte);
 }
