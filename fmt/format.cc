@@ -455,9 +455,9 @@ void internal::FixedBuffer<Char>::grow(std::size_t) {
   FMT_THROW(std::runtime_error("buffer overflow"));
 }
 
-FMT_FUNC Arg internal::FormatterBase::do_get_arg(
+FMT_FUNC fmt::internal::Arg internal::FormatterBase::do_get_arg(
     unsigned arg_index, const char *&error) {
-  Arg arg = args_[arg_index];
+  fmt::internal::Arg arg = args_[arg_index];
   switch (arg.type) {
   case Arg::NONE:
     error = "argument index out of range";
