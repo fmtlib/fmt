@@ -50,8 +50,6 @@
 # endif
 #endif
 
-using fmt::internal::Arg;
-
 #if FMT_EXCEPTIONS
 # define FMT_TRY try
 # define FMT_CATCH(x) catch (x)
@@ -455,14 +453,14 @@ void internal::FixedBuffer<Char>::grow(std::size_t) {
   FMT_THROW(std::runtime_error("buffer overflow"));
 }
 
-FMT_FUNC Arg internal::FormatterBase::do_get_arg(
+FMT_FUNC internal::Arg internal::FormatterBase::do_get_arg(
     unsigned arg_index, const char *&error) {
-  Arg arg = args_[arg_index];
+  internal::Arg arg = args_[arg_index];
   switch (arg.type) {
-  case Arg::NONE:
+  case internal::Arg::NONE:
     error = "argument index out of range";
     break;
-  case Arg::NAMED_ARG:
+  case internal::Arg::NAMED_ARG:
     arg = *static_cast<const internal::Arg*>(arg.pointer);
     break;
   default:
