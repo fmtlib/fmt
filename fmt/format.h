@@ -1216,7 +1216,7 @@ template <>
 struct Not<false> { enum { value = 1 }; };
 
 template <typename T>
-struct False { enum { value = 0 }; };
+struct FalseType { enum { value = 0 }; };
 
 template <typename T, T> struct LConvCheck {
   LConvCheck(int) {}
@@ -1256,7 +1256,7 @@ inline fmt::StringRef thousands_sep(...) { return ""; }
 
 template <typename Formatter, typename Char, typename T>
 void format_arg(Formatter &, const Char *, const T &) {
-  FMT_STATIC_ASSERT(False<T>::value,
+  FMT_STATIC_ASSERT(FalseType<T>::value,
                     "Cannot format argument. To enable the use of ostream "
                     "operator<< include fmt/ostream.h. Otherwise provide "
                     "an overload of format_arg.");
