@@ -670,10 +670,10 @@ void check_utf_conversion_error(
         fmt::basic_string_view<Char> str = fmt::basic_string_view<Char>(0, 0)) {
   fmt::memory_buffer out;
   fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
-  fmt::SystemError error(0, "");
+  fmt::system_error error(0, "");
   try {
     (Converter)(str);
-  } catch (const fmt::SystemError &e) {
+  } catch (const fmt::system_error &e) {
     error = e;
   }
   EXPECT_EQ(ERROR_INVALID_PARAMETER, error.error_code());
@@ -788,7 +788,7 @@ TEST(UtilTest, FormatLongWindowsError) {
 }
 
 TEST(UtilTest, WindowsError) {
-  check_throw_error<fmt::WindowsError>(
+  check_throw_error<fmt::windows_error>(
       ERROR_FILE_EXISTS, fmt::internal::format_windows_error);
 }
 
