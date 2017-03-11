@@ -45,12 +45,12 @@ namespace fmt {
  */template <typename Char>
 class basic_string_buffer : public basic_buffer<Char> {
  private:
-  std::basic_string<Char> data_;
+  std::basic_string<Char> str_;
 
  protected:
   virtual void grow(std::size_t size) {
-    data_.resize(size);
-    this->ptr_ = &data_[0];
+    str_.resize(size);
+    this->ptr_ = &str_[0];
     this->capacity_ = size;
   }
 
@@ -61,8 +61,8 @@ class basic_string_buffer : public basic_buffer<Char> {
     \endrst
    */
   void move_to(std::basic_string<Char> &str) {
-    data_.resize(this->size_);
-    str.swap(data_);
+    str_.resize(this->size_);
+    str.swap(str_);
     this->capacity_ = this->size_ = 0;
     this->ptr_ = 0;
   }

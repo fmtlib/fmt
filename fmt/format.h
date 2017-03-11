@@ -613,8 +613,7 @@ class basic_buffer {
     Resizes the buffer. If T is a POD type new elements may not be initialized.
    */
   void resize(std::size_t new_size) {
-    if (new_size > capacity_)
-      grow(new_size);
+    reserve(new_size);
     size_ = new_size;
   }
 
@@ -628,11 +627,8 @@ class basic_buffer {
       grow(capacity);
   }
 
-  void clear() FMT_NOEXCEPT { size_ = 0; }
-
   void push_back(const T &value) {
-    if (size_ == capacity_)
-      grow(size_ + 1);
+    reserve(size_ + 1);
     ptr_[size_++] = value;
   }
 
@@ -648,8 +644,7 @@ template <typename T>
 template <typename U>
 void basic_buffer<T>::append(const U *begin, const U *end) {
   std::size_t new_size = size_ + internal::to_unsigned(end - begin);
-  if (new_size > capacity_)
-    grow(new_size);
+  reserve(new_size);
   std::uninitialized_copy(begin, end,
                           internal::make_ptr(ptr_, capacity_) + size_);
   size_ = new_size;
@@ -694,11 +689,11 @@ template <typename T, std::size_t SIZE = internal::INLINE_BUFFER_SIZE,
           typename Allocator = std::allocator<T> >
 class basic_memory_buffer : private Allocator, public basic_buffer<T> {
  private:
-  T data_[SIZE];
+  T store_[SIZE];
 
   // Deallocate memory allocated by the buffer.
   void deallocate() {
-    if (this->ptr_ != data_) Allocator::deallocate(this->ptr_, this->capacity_);
+    if (this->ptr_ != store_) Allocator::deallocate(this->ptr_, this->capacity_);
   }
 
  protected:
@@ -706,7 +701,7 @@ class basic_memory_buffer : private Allocator, public basic_buffer<T> {
 
  public:
   explicit basic_memory_buffer(const Allocator &alloc = Allocator())
-      : Allocator(alloc), basic_buffer<T>(data_, SIZE) {}
+      : Allocator(alloc), basic_buffer<T>(store_, SIZE) {}
   ~basic_memory_buffer() { deallocate(); }
 
 #if FMT_USE_RVALUE_REFERENCES
@@ -717,15 +712,15 @@ class basic_memory_buffer : private Allocator, public basic_buffer<T> {
     this_alloc = std::move(other_alloc);
     this->size_ = other.size_;
     this->capacity_ = other.capacity_;
-    if (other.ptr_ == other.data_) {
-      this->ptr_ = data_;
-      std::uninitialized_copy(other.data_, other.data_ + this->size_,
-                              internal::make_ptr(data_, this->capacity_));
+    if (other.ptr_ == other.store_) {
+      this->ptr_ = store_;
+      std::uninitialized_copy(other.store_, other.store_ + this->size_,
+                              internal::make_ptr(store_, this->capacity_));
     } else {
       this->ptr_ = other.ptr_;
       // Set pointer to the inline array so that delete is not called
       // when deallocating.
-      other.ptr_ = other.data_;
+      other.ptr_ = other.store_;
     }
   }
 
@@ -773,7 +768,7 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
   // deallocate may throw (at least in principle), but it doesn't matter since
   // the buffer already uses the new storage and will deallocate it in case
   // of exception.
-  if (old_ptr != data_)
+  if (old_ptr != store_)
     Allocator::deallocate(old_ptr, old_capacity);
 }
 
@@ -2420,7 +2415,7 @@ class basic_writer {
     write_str(str, format_specs(specs...));
   }
 
-  void clear() FMT_NOEXCEPT { buffer_.clear(); }
+  void clear() FMT_NOEXCEPT { buffer_.resize(0); }
 
   basic_buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
 };

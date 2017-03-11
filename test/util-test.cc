@@ -208,7 +208,7 @@ TEST(BufferTest, Resize) {
 TEST(BufferTest, Clear) {
   TestBuffer<char> buffer;
   buffer.resize(20);
-  buffer.clear();
+  buffer.resize(0);
   EXPECT_EQ(0u, buffer.size());
   EXPECT_EQ(20u, buffer.capacity());
 }
@@ -722,7 +722,7 @@ TEST(UtilTest, FormatSystemError) {
   fmt::format_system_error(message, EDOM, "test");
   EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)),
             to_string(message));
-  message.clear();
+  message.resize(0);
   fmt::format_system_error(
         message, EDOM, fmt::string_view(0, std::numeric_limits<size_t>::max()));
   EXPECT_EQ(fmt::format("error {}", EDOM), to_string(message));
@@ -758,7 +758,7 @@ TEST(UtilTest, FormatWindowsError) {
       actual_message, ERROR_FILE_EXISTS, "test");
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
       fmt::to_string(actual_message));
-  actual_message.clear();
+  actual_message.resize(0);
   fmt::internal::format_windows_error(
         actual_message, ERROR_FILE_EXISTS,
         fmt::string_view(0, std::numeric_limits<size_t>::max()));

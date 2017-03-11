@@ -128,7 +128,7 @@ TEST(FormatTest, FormatErrorCode) {
     EXPECT_EQ(prefix + sep + msg, to_string(buffer));
     std::size_t size = fmt::internal::INLINE_BUFFER_SIZE;
     EXPECT_EQ(size, buffer.size());
-    buffer.clear();
+    buffer.resize(0);
     // Test with a message that doesn't fit into the buffer.
     prefix += 'x';
     fmt::format_error_code(buffer, codes[i], prefix);
