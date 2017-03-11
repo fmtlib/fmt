@@ -591,23 +591,23 @@ class basic_buffer {
 
   /**
     \rst
-    Increases the buffer capacity to hold at least *size* elements updating
+    Increases the buffer capacity to hold at least *capacity* elements updating
     ``ptr_`` and ``capacity_``.
     \endrst
    */
-  virtual void grow(std::size_t size) = 0;
+  virtual void grow(std::size_t capacity) = 0;
 
  public:
   virtual ~basic_buffer() {}
 
   /** Returns the size of this buffer. */
-  std::size_t size() const { return size_; }
+  std::size_t size() const FMT_NOEXCEPT { return size_; }
 
   /** Returns the capacity of this buffer. */
-  std::size_t capacity() const { return capacity_; }
+  std::size_t capacity() const FMT_NOEXCEPT { return capacity_; }
 
   /** Returns a pointer to the buffer data. */
-  const T *data() const { return ptr_; }
+  const T *data() const FMT_NOEXCEPT { return ptr_; }
 
   /**
     Resizes the buffer. If T is a POD type new elements may not be initialized.
