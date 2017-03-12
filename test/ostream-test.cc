@@ -135,7 +135,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
     return;
 
   struct TestBuffer : fmt::basic_buffer<char> {
-    explicit TestBuffer(std::size_t size) { size_ = size; }
+    explicit TestBuffer(std::size_t size) { resize(size); }
     void grow(std::size_t) {}
   } buffer(max_size);
 

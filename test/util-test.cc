@@ -120,21 +120,21 @@ TEST(BufferTest, Nonmoveable) {
 // A test buffer with a dummy grow method.
 template <typename T>
 struct TestBuffer : basic_buffer<T> {
-  void grow(std::size_t size) { this->capacity_ = size; }
+  void grow(std::size_t capacity) { this->set(0, capacity); }
 };
 
 template <typename T>
 struct MockBuffer : basic_buffer<T> {
-  MOCK_METHOD1(do_grow, void (std::size_t size));
+  MOCK_METHOD1(do_grow, void (std::size_t capacity));
 
-  void grow(std::size_t size) {
-    this->capacity_ = size;
-    do_grow(size);
+  void grow(std::size_t capacity) {
+    this->set(this->data(), capacity);
+    do_grow(capacity);
   }
 
   MockBuffer() {}
-  MockBuffer(T *ptr) : basic_buffer<T>(ptr) {}
-  MockBuffer(T *ptr, std::size_t capacity) : basic_buffer<T>(ptr, capacity) {}
+  MockBuffer(T *data) { this->set(data, 0); }
+  MockBuffer(T *data, std::size_t capacity) { this->set(data, capacity); }
 };
 
 TEST(BufferTest, Ctor) {

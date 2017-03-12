@@ -48,10 +48,9 @@ class basic_string_buffer : public basic_buffer<Char> {
   std::basic_string<Char> str_;
 
  protected:
-  virtual void grow(std::size_t size) {
-    str_.resize(size);
-    this->ptr_ = &str_[0];
-    this->capacity_ = size;
+  virtual void grow(std::size_t capacity) {
+    str_.resize(capacity);
+    this->set(&str_[0], capacity);
   }
 
  public:
@@ -61,10 +60,10 @@ class basic_string_buffer : public basic_buffer<Char> {
     \endrst
    */
   void move_to(std::basic_string<Char> &str) {
-    str_.resize(this->size_);
+    str_.resize(this->size());
     str.swap(str_);
-    this->capacity_ = this->size_ = 0;
-    this->ptr_ = 0;
+    this->resize(0);
+    this->set(0, 0);
   }
 };
 
