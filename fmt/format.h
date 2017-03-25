@@ -646,7 +646,7 @@ class basic_buffer {
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
 
-  virtual const std::locale* locale() const { return 0; }
+  virtual std::locale locale() const { return std::locale(); }
 };
 
 template <typename T>
@@ -2616,11 +2616,9 @@ void basic_writer<Char>::write_int(T value, Spec spec) {
   }
   case 'n': {
     unsigned num_digits = internal::count_digits(abs_value);
-    const std::locale *loc = buffer_.locale();
-    if (!loc)
-      loc = &std::locale::classic();
+    std::locale loc = buffer_.locale();
     Char thousands_sep =
-        std::use_facet<std::numpunct<Char>>(*loc).thousands_sep();
+        std::use_facet<std::numpunct<Char>>(loc).thousands_sep();
     fmt::basic_string_view<Char> sep(&thousands_sep, 1);
     unsigned size = static_cast<unsigned>(
           num_digits + sep.size() * ((num_digits - 1) / 3));
