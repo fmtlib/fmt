@@ -43,22 +43,6 @@
 // Test that the library compiles if None is defined to 0 as done by xlib.h.
 #define None 0
 
-struct LocaleMock {
-  static LocaleMock *instance;
-
-  MOCK_METHOD0(localeconv, lconv *());
-} *LocaleMock::instance;
-
-namespace fmt {
-namespace std {
-using namespace ::std;
-lconv *localeconv() {
-  return LocaleMock::instance ?
-        LocaleMock::instance->localeconv() : ::std::localeconv();
-}
-}
-}
-
 #include "fmt/format.h"
 
 #include "util.h"
@@ -1115,14 +1099,9 @@ TEST(FormatterTest, FormatOct) {
 }
 
 TEST(FormatterTest, FormatIntLocale) {
-  ScopedMock<LocaleMock> mock;
-  lconv lc = {};
-  char sep[] = "--";
-  lc.thousands_sep = sep;
-  EXPECT_CALL(mock, localeconv()).Times(3).WillRepeatedly(testing::Return(&lc));
   EXPECT_EQ("123", format("{:n}", 123));
-  EXPECT_EQ("1--234", format("{:n}", 1234));
-  EXPECT_EQ("1--234--567", format("{:n}", 1234567));
+  EXPECT_EQ("1,234", format("{:n}", 1234));
+  EXPECT_EQ("1,234,567", format("{:n}", 1234567));
 }
 
 TEST(FormatterTest, FormatFloat) {

@@ -30,11 +30,11 @@
 
 #include <array>
 #include <cassert>
-#include <clocale>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <locale>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -645,6 +645,8 @@ class basic_buffer {
 
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
+
+  virtual const std::locale* locale() const { return 0; }
 };
 
 template <typename T>
@@ -962,18 +964,18 @@ struct no_thousands_sep {
 };
 
 // A functor that adds a thousands separator.
+template <typename Char>
 class add_thousands_sep {
  private:
-  fmt::string_view sep_;
+  fmt::basic_string_view<Char> sep_;
 
   // Index of a decimal digit with the least significant digit having index 0.
   unsigned digit_index_;
 
  public:
-  explicit add_thousands_sep(fmt::string_view sep)
+  explicit add_thousands_sep(fmt::basic_string_view<Char> sep)
     : sep_(sep), digit_index_(0) {}
 
-  template <typename Char>
   void operator()(Char *&buffer) {
     if (++digit_index_ % 3 != 0)
       return;
@@ -1482,21 +1484,6 @@ basic_arg<Context> make_arg(const T &value) {
   arg.value_ = value;
   return arg;
 }
-
-template <typename T, T> struct lconv_check {
-  lconv_check(int) {}
-};
-
-// Returns the thousands separator for the current locale.
-// We check if ``lconv`` contains ``thousands_sep`` because on Android
-// ``lconv`` is stubbed as an empty struct.
-template <typename LConv>
-inline string_view thousands_sep(
-    LConv *lc, lconv_check<char *LConv::*, &LConv::thousands_sep> = 0) {
-  return lc->thousands_sep;
-}
-
-inline fmt::string_view thousands_sep(...) { return ""; }
 
 #define FMT_CONCAT(a, b) a##b
 
@@ -2323,7 +2310,7 @@ class basic_writer {
 
   /**
     \rst
-    Destroys a ``basic_writer`` object.
+    Destroys the ``basic_writer`` object.
     \endrst
    */
   virtual ~basic_writer() {}
@@ -2629,12 +2616,17 @@ void basic_writer<Char>::write_int(T value, Spec spec) {
   }
   case 'n': {
     unsigned num_digits = internal::count_digits(abs_value);
-    fmt::string_view sep = internal::thousands_sep(std::localeconv());
+    const std::locale *loc = buffer_.locale();
+    if (!loc)
+      loc = &std::locale::classic();
+    Char thousands_sep =
+        std::use_facet<std::numpunct<Char>>(*loc).thousands_sep();
+    fmt::basic_string_view<Char> sep(&thousands_sep, 1);
     unsigned size = static_cast<unsigned>(
           num_digits + sep.size() * ((num_digits - 1) / 3));
     CharPtr p = prepare_int_buffer(size, spec, prefix, prefix_size) + 1;
     internal::format_decimal(get(p), abs_value, 0,
-                             internal::add_thousands_sep(sep));
+                             internal::add_thousands_sep<Char>(sep));
     break;
   }
   default:

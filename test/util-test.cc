@@ -845,17 +845,3 @@ TEST(UtilTest, Conditional) {
   fmt::internal::conditional<false, int, char>::type *pc = &c;
   (void)pc;
 }
-
-struct TestLConv {
-  char *thousands_sep;
-};
-
-struct EmptyLConv {};
-
-TEST(UtilTest, ThousandsSep) {
-  char foo[] = "foo";
-  TestLConv lc = {foo};
-  EXPECT_EQ("foo", fmt::internal::thousands_sep(&lc).to_string());
-  EmptyLConv empty_lc;
-  EXPECT_EQ("", fmt::internal::thousands_sep(&empty_lc));
-}
