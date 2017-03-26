@@ -327,7 +327,7 @@ class printf_context :
    appropriate lifetimes.
    \endrst
    */
-  explicit printf_context(BasicCStringRef<Char> format_str,
+  explicit printf_context(basic_cstring_view<Char> format_str,
                           basic_args<printf_context> args)
     : Base(format_str.c_str(), args) {}
 
@@ -514,14 +514,14 @@ void format_value(basic_buffer<Char> &buf, const T &value,
 }
 
 template <typename Char>
-void printf(basic_buffer<Char> &buf, BasicCStringRef<Char> format,
+void printf(basic_buffer<Char> &buf, basic_cstring_view<Char> format,
             basic_args<printf_context<Char>> args) {
   printf_context<Char>(format, args).format(buf);
 }
 
 typedef basic_args<printf_context<char>> printf_args;
 
-inline std::string vsprintf(CStringRef format, printf_args args) {
+inline std::string vsprintf(cstring_view format, printf_args args) {
   memory_buffer buffer;
   printf(buffer, format, args);
   return to_string(buffer);
@@ -537,24 +537,24 @@ inline std::string vsprintf(CStringRef format, printf_args args) {
   \endrst
 */
 template <typename... Args>
-inline std::string sprintf(CStringRef format_str, const Args & ... args) {
+inline std::string sprintf(cstring_view format_str, const Args & ... args) {
   return vsprintf(format_str, make_args<printf_context<char>>(args...));
 }
 
 inline std::wstring vsprintf(
-    WCStringRef format, basic_args<printf_context<wchar_t>> args) {
+    wcstring_view format, basic_args<printf_context<wchar_t>> args) {
   wmemory_buffer buffer;
   printf(buffer, format, args);
   return to_string(buffer);
 }
 
 template <typename... Args>
-inline std::wstring sprintf(WCStringRef format_str, const Args & ... args) {
+inline std::wstring sprintf(wcstring_view format_str, const Args & ... args) {
   auto vargs = make_args<printf_context<wchar_t>>(args...);
   return vsprintf(format_str, vargs);
 }
 
-FMT_API int vfprintf(std::FILE *f, CStringRef format, printf_args args);
+FMT_API int vfprintf(std::FILE *f, cstring_view format, printf_args args);
 
 /**
   \rst
@@ -566,12 +566,12 @@ FMT_API int vfprintf(std::FILE *f, CStringRef format, printf_args args);
   \endrst
  */
 template <typename... Args>
-inline int fprintf(std::FILE *f, CStringRef format_str, const Args & ... args) {
+inline int fprintf(std::FILE *f, cstring_view format_str, const Args & ... args) {
   auto vargs = make_args<printf_context<char>>(args...);
   return vfprintf(f, format_str, vargs);
 }
 
-inline int vprintf(CStringRef format, printf_args args) {
+inline int vprintf(cstring_view format, printf_args args) {
   return vfprintf(stdout, format, args);
 }
 
@@ -585,11 +585,11 @@ inline int vprintf(CStringRef format, printf_args args) {
   \endrst
  */
 template <typename... Args>
-inline int printf(CStringRef format_str, const Args & ... args) {
+inline int printf(cstring_view format_str, const Args & ... args) {
   return vprintf(format_str, make_args<printf_context<char>>(args...));
 }
 
-inline int vfprintf(std::ostream &os, CStringRef format_str, printf_args args) {
+inline int vfprintf(std::ostream &os, cstring_view format_str, printf_args args) {
   memory_buffer buffer;
   printf(buffer, format_str, args);
   internal::write(os, buffer);
@@ -606,7 +606,7 @@ inline int vfprintf(std::ostream &os, CStringRef format_str, printf_args args) {
   \endrst
  */
 template <typename... Args>
-inline int fprintf(std::ostream &os, CStringRef format_str,
+inline int fprintf(std::ostream &os, cstring_view format_str,
                    const Args & ... args) {
   auto vargs = make_args<printf_context<char>>(args...);
   return vfprintf(os, format_str, vargs);

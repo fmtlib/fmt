@@ -476,56 +476,56 @@ typedef basic_string_view<wchar_t> wstring_view;
 
 /**
   \rst
-  A reference to a null terminated string. It can be constructed from a C
+  A reference to a null-terminated string. It can be constructed from a C
   string or ``std::string``.
 
   You can use one of the following typedefs for common character types:
 
-  +-------------+--------------------------+
-  | Type        | Definition               |
-  +=============+==========================+
-  | CStringRef  | BasicCStringRef<char>    |
-  +-------------+--------------------------+
-  | WCStringRef | BasicCStringRef<wchar_t> |
-  +-------------+--------------------------+
+  +---------------+-----------------------------+
+  | Type          | Definition                  |
+  +===============+=============================+
+  | cstring_view  | basic_cstring_view<char>    |
+  +---------------+-----------------------------+
+  | wcstring_view | basic_cstring_view<wchar_t> |
+  +---------------+-----------------------------+
 
   This class is most useful as a parameter type to allow passing
   different types of strings to a function, for example::
 
     template <typename... Args>
-    std::string format(CStringRef format_str, const Args & ... args);
+    std::string format(cstring_view format_str, const Args & ... args);
 
     format("{}", 42);
     format(std::string("{}"), 42);
   \endrst
  */
 template <typename Char>
-class BasicCStringRef {
+class basic_cstring_view {
  private:
   const Char *data_;
 
  public:
   /** Constructs a string reference object from a C string. */
-  BasicCStringRef(const Char *s) : data_(s) {}
+  basic_cstring_view(const Char *s) : data_(s) {}
 
   /**
     \rst
     Constructs a string reference from an ``std::string`` object.
     \endrst
    */
-  BasicCStringRef(const std::basic_string<Char> &s) : data_(s.c_str()) {}
+  basic_cstring_view(const std::basic_string<Char> &s) : data_(s.c_str()) {}
 
   /** Returns the pointer to a C string. */
   const Char *c_str() const { return data_; }
 };
 
-typedef BasicCStringRef<char> CStringRef;
-typedef BasicCStringRef<wchar_t> WCStringRef;
+typedef basic_cstring_view<char> cstring_view;
+typedef basic_cstring_view<wchar_t> wcstring_view;
 
 /** A formatting error such as invalid format string. */
 class format_error : public std::runtime_error {
  public:
-  explicit format_error(CStringRef message)
+  explicit format_error(cstring_view message)
   : std::runtime_error(message.c_str()) {}
   ~format_error() throw();
 };
@@ -1197,7 +1197,7 @@ template <> constexpr Type gettype<unsigned char *>() { return CSTRING; }
 template <> constexpr Type gettype<const unsigned char *>() { return CSTRING; }
 template <> constexpr Type gettype<std::string>() { return STRING; }
 template <> constexpr Type gettype<string_view>() { return STRING; }
-template <> constexpr Type gettype<CStringRef>() { return CSTRING; }
+template <> constexpr Type gettype<cstring_view>() { return CSTRING; }
 template <> constexpr Type gettype<wchar_t *>() { return TSTRING; }
 template <> constexpr Type gettype<const wchar_t *>() { return TSTRING; }
 template <> constexpr Type gettype<std::wstring>() { return TSTRING; }
@@ -1335,7 +1335,7 @@ class value {
   FMT_MAKE_VALUE(const unsigned char *, ustring.value, CSTRING)
   FMT_MAKE_STR_VALUE(const std::string &, STRING)
   FMT_MAKE_STR_VALUE(string_view, STRING)
-  FMT_MAKE_VALUE_(CStringRef, string.value, CSTRING, value.c_str())
+  FMT_MAKE_VALUE_(cstring_view, string.value, CSTRING, value.c_str())
 
 #define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
   value(typename wchar_helper<Type, Char>::supported value) { \
@@ -2111,7 +2111,7 @@ class basic_context :
 */
 class system_error : public std::runtime_error {
  private:
-  void init(int err_code, CStringRef format_str, args args);
+  void init(int err_code, cstring_view format_str, args args);
 
  protected:
   int error_code_;
@@ -2138,7 +2138,7 @@ class system_error : public std::runtime_error {
    \endrst
   */
   template <typename... Args>
-  system_error(int error_code, CStringRef message, const Args & ... args)
+  system_error(int error_code, cstring_view message, const Args & ... args)
     : std::runtime_error("") {
     init(error_code, message, make_args(args...));
   }
@@ -2799,7 +2799,7 @@ FMT_API void report_system_error(int error_code,
 /** A Windows error. */
 class windows_error : public system_error {
  private:
-  FMT_API void init(int error_code, CStringRef format_str, args args);
+  FMT_API void init(int error_code, cstring_view format_str, args args);
 
  public:
   /**
@@ -2831,7 +2831,7 @@ class windows_error : public system_error {
    \endrst
   */
   template <typename... Args>
-  windows_error(int error_code, CStringRef message, const Args & ... args) {
+  windows_error(int error_code, cstring_view message, const Args & ... args) {
     init(error_code, message, make_args(args...));
   }
 };
@@ -2845,7 +2845,7 @@ FMT_API void report_windows_error(int error_code,
 
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
-FMT_API void vprint_colored(Color c, CStringRef format, args args);
+FMT_API void vprint_colored(Color c, cstring_view format, args args);
 
 /**
   Formats a string and prints it to stdout using ANSI escape sequences
@@ -2854,36 +2854,36 @@ FMT_API void vprint_colored(Color c, CStringRef format, args args);
     print_colored(fmt::RED, "Elapsed time: {0:.2f} seconds", 1.23);
  */
 template <typename... Args>
-inline void print_colored(Color c, CStringRef format_str,
+inline void print_colored(Color c, cstring_view format_str,
                           const Args & ... args) {
   vprint_colored(c, format_str, make_args(args...));
 }
 
 template <typename ArgFormatter, typename Char, typename Context>
-void vformat_to(basic_buffer<Char> &buffer, BasicCStringRef<Char> format_str,
+void vformat_to(basic_buffer<Char> &buffer, basic_cstring_view<Char> format_str,
                 basic_args<Context> args);
 
-inline void vformat_to(buffer &buf, CStringRef format_str, args args) {
+inline void vformat_to(buffer &buf, cstring_view format_str, args args) {
   vformat_to<arg_formatter<char>>(buf, format_str, args);
 }
 
-inline void vformat_to(wbuffer &buf, WCStringRef format_str, wargs args) {
+inline void vformat_to(wbuffer &buf, wcstring_view format_str, wargs args) {
   vformat_to<arg_formatter<wchar_t>>(buf, format_str, args);
 }
 
 template <typename... Args>
-inline void format_to(buffer &buf, CStringRef format_str,
+inline void format_to(buffer &buf, cstring_view format_str,
                       const Args & ... args) {
   vformat_to(buf, format_str, make_args(args...));
 }
 
 template <typename... Args>
-inline void format_to(wbuffer &buf, WCStringRef format_str,
+inline void format_to(wbuffer &buf, wcstring_view format_str,
                       const Args & ... args) {
   vformat_to(buf, format_str, make_args<wcontext>(args...));
 }
 
-inline std::string vformat(CStringRef format_str, args args) {
+inline std::string vformat(cstring_view format_str, args args) {
   memory_buffer buffer;
   vformat_to(buffer, format_str, args);
   return to_string(buffer);
@@ -2899,22 +2899,22 @@ inline std::string vformat(CStringRef format_str, args args) {
   \endrst
 */
 template <typename... Args>
-inline std::string format(CStringRef format_str, const Args & ... args) {
+inline std::string format(cstring_view format_str, const Args & ... args) {
   return vformat(format_str, make_args(args...));
 }
 
-inline std::wstring vformat(WCStringRef format_str, wargs args) {
+inline std::wstring vformat(wcstring_view format_str, wargs args) {
   wmemory_buffer buffer;
   vformat_to(buffer, format_str, args);
   return to_string(buffer);
 }
 
 template <typename... Args>
-inline std::wstring format(WCStringRef format_str, const Args & ... args) {
+inline std::wstring format(wcstring_view format_str, const Args & ... args) {
   return vformat(format_str, make_args<wcontext>(args...));
 }
 
-FMT_API void vprint(std::FILE *f, CStringRef format_str, args args);
+FMT_API void vprint(std::FILE *f, cstring_view format_str, args args);
 
 /**
   \rst
@@ -2926,11 +2926,12 @@ FMT_API void vprint(std::FILE *f, CStringRef format_str, args args);
   \endrst
  */
 template <typename... Args>
-inline void print(std::FILE *f, CStringRef format_str, const Args & ... args) {
+inline void print(std::FILE *f, cstring_view format_str,
+                  const Args & ... args) {
   vprint(f, format_str, make_args(args...));
 }
 
-FMT_API void vprint(CStringRef format_str, args args);
+FMT_API void vprint(cstring_view format_str, args args);
 
 /**
   \rst
@@ -2942,7 +2943,7 @@ FMT_API void vprint(CStringRef format_str, args args);
   \endrst
  */
 template <typename... Args>
-inline void print(CStringRef format_str, const Args & ... args) {
+inline void print(cstring_view format_str, const Args & ... args) {
   vprint(format_str, make_args(args...));
 }
 
@@ -3383,7 +3384,7 @@ void do_format_arg(basic_buffer<Char> &buffer, basic_arg<Context> arg,
 
 /** Formats arguments and writes the output to the buffer. */
 template <typename ArgFormatter, typename Char, typename Context>
-void vformat_to(basic_buffer<Char> &buffer, BasicCStringRef<Char> format_str,
+void vformat_to(basic_buffer<Char> &buffer, basic_cstring_view<Char> format_str,
                 basic_args<Context> args) {
   basic_context<Char> ctx(format_str.c_str(), args);
   const Char *&s = ctx.ptr();

@@ -27,7 +27,7 @@ FMT_FUNC void write(std::ostream &os, buffer &buf) {
 }
 }
 
-FMT_FUNC void vprint(std::ostream &os, CStringRef format_str, args args) {
+FMT_FUNC void vprint(std::ostream &os, cstring_view format_str, args args) {
   memory_buffer buffer;
   vformat_to(buffer, format_str, args);
   internal::write(os, buffer);

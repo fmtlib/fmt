@@ -90,7 +90,7 @@ void format_value(basic_buffer<Char> &buf, const T &value,
         buf, internal::make_arg< basic_context<Char> >(str), ctx);
 }
 
-FMT_API void vprint(std::ostream &os, CStringRef format_str, args args);
+FMT_API void vprint(std::ostream &os, cstring_view format_str, args args);
 
 /**
   \rst
@@ -102,7 +102,7 @@ FMT_API void vprint(std::ostream &os, CStringRef format_str, args args);
   \endrst
  */
 template <typename... Args>
-inline void print(std::ostream &os, CStringRef format_str,
+inline void print(std::ostream &os, cstring_view format_str,
                   const Args & ... args) {
   vprint(os, format_str, make_args(args...));
 }

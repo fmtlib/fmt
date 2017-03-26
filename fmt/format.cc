@@ -214,7 +214,7 @@ void report_error(FormatFunc func, int error_code,
 }  // namespace
 
 FMT_FUNC void system_error::init(
-    int err_code, CStringRef format_str, args args) {
+    int err_code, cstring_view format_str, args args) {
   error_code_ = err_code;
   memory_buffer buffer;
   format_system_error(buffer, err_code, vformat(format_str, args));
@@ -338,7 +338,7 @@ FMT_FUNC int internal::utf16_to_utf8::convert(wstring_view s) {
 }
 
 FMT_FUNC void windows_error::init(
-    int err_code, CStringRef format_str, args args) {
+    int err_code, cstring_view format_str, args args) {
   error_code_ = err_code;
   memory_buffer buffer;
   internal::format_windows_error(buffer, err_code, vformat(format_str, args));
@@ -420,17 +420,17 @@ FMT_FUNC void report_windows_error(
 }
 #endif
 
-FMT_FUNC void vprint(std::FILE *f, CStringRef format_str, args args) {
+FMT_FUNC void vprint(std::FILE *f, cstring_view format_str, args args) {
   memory_buffer buffer;
   vformat_to(buffer, format_str, args);
   std::fwrite(buffer.data(), 1, buffer.size(), f);
 }
 
-FMT_FUNC void vprint(CStringRef format_str, args args) {
+FMT_FUNC void vprint(cstring_view format_str, args args) {
   vprint(stdout, format_str, args);
 }
 
-FMT_FUNC void vprint_colored(Color c, CStringRef format, args args) {
+FMT_FUNC void vprint_colored(Color c, cstring_view format, args args) {
   char escape[] = "\x1b[30m";
   escape[3] = static_cast<char>('0' + c);
   std::fputs(escape, stdout);
@@ -439,10 +439,9 @@ FMT_FUNC void vprint_colored(Color c, CStringRef format, args args) {
 }
 
 template <typename Char>
-void printf(basic_writer<Char> &w, BasicCStringRef<Char> format,
-            args args);
+void printf(basic_writer<Char> &w, basic_cstring_view<Char> format, args args);
 
-FMT_FUNC int vfprintf(std::FILE *f, CStringRef format, printf_args args) {
+FMT_FUNC int vfprintf(std::FILE *f, cstring_view format, printf_args args) {
   memory_buffer buffer;
   printf(buffer, format, args);
   std::size_t size = buffer.size();
