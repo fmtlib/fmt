@@ -401,6 +401,9 @@ TEST(PrintfTest, LongLong) {
 
 TEST(PrintfTest, Float) {
   EXPECT_PRINTF("392.650000", "%f", 392.65);
+  EXPECT_PRINTF("392.65", "%.2f", 392.65);
+  EXPECT_PRINTF("392.6", "%.1f", 392.65);
+  EXPECT_PRINTF("393", "%.f", 392.65);
   EXPECT_PRINTF("392.650000", "%F", 392.65);
   EXPECT_PRINTF("392.65", "%s", 392.65);
   char buffer[BUFFER_SIZE];

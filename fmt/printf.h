@@ -439,6 +439,8 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
       } else if (*s == '*') {
         ++s;
         spec.precision_ = internal::PrecisionHandler().visit(get_arg(s));
+      } else {
+        spec.precision_ = 0;
       }
     }
 
