@@ -440,7 +440,7 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
         ++s;
         spec.precision_ = internal::PrecisionHandler().visit(get_arg(s));
       } else {
-          spec.precision_ = 0;
+        spec.precision_ = 0;
       }
     }
 
