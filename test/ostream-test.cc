@@ -191,3 +191,24 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   } while (size != 0);
   fmt::internal::write(os, w);
 }
+
+struct Xs {
+  const size_t size;
+  const std::string s;
+  Xs() : size(200), s(size, 'x') {}
+};
+
+inline std::ostream& operator<<(std::ostream& os, Xs const& xs) {
+  return os << xs.s;
+}
+
+TEST(OStreamTest, FormatBuf1) {
+  Xs xs;
+  fmt::MemoryWriter w;
+  int n = fmt::internal::INLINE_BUFFER_SIZE / xs.size + 1;
+  for (int i = 0; i < n; ++i)
+    w << xs;
+  EXPECT_EQ(w.size(), size_t(n * xs.size));
+  w << xs;
+  EXPECT_EQ(w.size(), size_t((n + 1) * xs.size));
+}
