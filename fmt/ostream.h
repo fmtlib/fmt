@@ -90,8 +90,8 @@ public:
 }  // namespace internal
 
 // Formats a value.
-template <typename Char, typename ArgFormatter_, typename T>
-void format_arg(BasicFormatter<Char, ArgFormatter_> &f,
+template <typename ArgFormatter_, typename T, typename Char=typename ArgFormatter_::Char>
+void format_arg(UserFormatter<ArgFormatter_> &f,
                 const Char *&format_str, const T &value) {
   internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE> buffer;
 

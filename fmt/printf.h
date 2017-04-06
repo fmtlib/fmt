@@ -290,7 +290,7 @@ class BasicPrintfArgFormatter :
 
   /** Formats an argument of a custom (user-defined) type. */
   void visit_custom(internal::Arg::CustomValue c) {
-    BasicFormatter<Char> formatter(ArgList(), this->writer());
+    UserFormatter<BasicPrintfArgFormatter> formatter(*this);
     const Char format_str[] = {'}', 0};
     const Char *format = format_str;
     c.format(&formatter, c.value, &format);
@@ -308,7 +308,7 @@ class PrintfArgFormatter :
 };
 
 /** This template formats data and writes the output to a writer. */
-template <typename Char, typename ArgFormatter = PrintfArgFormatter<Char> >
+template <typename Char, typename AF = PrintfArgFormatter<Char> >
 class PrintfFormatter : private internal::FormatterBase {
  private:
   BasicWriter<Char> &writer_;
@@ -325,6 +325,7 @@ class PrintfFormatter : private internal::FormatterBase {
   unsigned parse_header(const Char *&s, FormatSpec &spec);
 
  public:
+  typedef AF ArgFormatter;
   /**
    \rst
    Constructs a ``PrintfFormatter`` object. References to the arguments and

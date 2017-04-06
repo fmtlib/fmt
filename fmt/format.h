@@ -1179,10 +1179,31 @@ struct ConvertToIntImpl2<T, true> {
   };
 };
 
+template <typename T, bool ENABLE_CONVERSION>
+struct ConvertToIntImpl3 {
+  enum {
+    value = false
+  };
+};
+
+template <typename T>
+struct ConvertToIntImpl3<T, true> {
+  enum {
+    // This results in error C2718 in Visual Studio if T has alignment restrictions. 
+    value = sizeof(fmt::internal::convert(get<T>())) == sizeof(Yes)
+  };
+};
+
+#if FMT_MSC_VER >= 1700
+#define FMT_INT_ALIGNABLE(T) (alignof(T) <= alignof(fmt::ULongLong))
+#else
+#define FMT_INT_ALIGNABLE(T) (true)
+#endif
+
 template<typename T>
 struct ConvertToInt {
   enum {
-    enable_conversion = sizeof(fmt::internal::convert(get<T>())) == sizeof(Yes)
+    enable_conversion = ConvertToIntImpl3<T, FMT_INT_ALIGNABLE(T)>::value
   };
   enum { value = ConvertToIntImpl2<T, enable_conversion>::value };
 };
@@ -1262,6 +1283,7 @@ void format_arg(Formatter &, const Char *, const T &) {
                     "an overload of format_arg.");
 }
 
+    
 // Makes an Arg object from any type.
 template <typename Formatter>
 class MakeValue : public Arg {
@@ -1305,7 +1327,7 @@ class MakeValue : public Arg {
   template <typename T>
   static void format_custom_arg(
       void *formatter, const void *arg, void *format_str_ptr) {
-    format_arg(*static_cast<Formatter*>(formatter),
+    format_arg(*static_cast<UserFormatter<typename Formatter::ArgFormatter>*>(formatter),
                *static_cast<const Char**>(format_str_ptr),
                *static_cast<const T*>(arg));
   }
@@ -1463,6 +1485,29 @@ class RuntimeError : public std::runtime_error {
 
 template <typename Char>
 class ArgMap;
+
+    
+// first argument to format_arg for custom formatters
+template <typename AF>
+class UserFormatter {
+  AF &af_;
+public:
+  typedef AF ArgFormatter;
+  typedef typename AF::Char Char;
+  typedef MakeArg< UserFormatter > MakeArg;
+    
+  UserFormatter(AF &af) : af_(af) {}
+
+  BasicWriter<typename AF::Char> &writer() { return af_.writer(); }
+    
+  void visit(const Arg &arg) { af_.visit(arg); }
+    
+  const Char *format(const Char *&format_str, const internal::Arg &arg)
+  {
+    af_.visit(format_str, arg);
+  }
+};
+    
 }  // namespace internal
 
 /** An argument list. */
@@ -1945,10 +1990,10 @@ class ArgMap {
   }
 };
 
-template <typename Impl, typename Char, typename Spec = fmt::FormatSpec>
+template <typename Impl, typename CharType, typename Spec = fmt::FormatSpec>
 class ArgFormatterBase : public ArgVisitor<Impl, void> {
  private:
-  BasicWriter<Char> &writer_;
+  BasicWriter<CharType> &writer_;
   Spec &spec_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(ArgFormatterBase);
@@ -1960,7 +2005,7 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
   }
 
  protected:
-  BasicWriter<Char> &writer() { return writer_; }
+  BasicWriter<CharType> &writer() { return writer_; }
   Spec &spec() { return spec_; }
 
   void write(bool value) {
@@ -1976,6 +2021,10 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
 
  public:
   typedef Spec SpecType;
+  typedef CharType Char;
+
+  template <typename ArgFormatter>
+  friend class UserFormatter;
 
   ArgFormatterBase(BasicWriter<Char> &w, Spec &s)
   : writer_(w), spec_(s) {}
@@ -2134,7 +2183,8 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char, Spec> {
 
   /** Formats an argument of a custom (user-defined) type. */
   void visit_custom(internal::Arg::CustomValue c) {
-    c.format(&formatter_, c.value, &format_);
+    UserFormatter<BasicArgFormatter> uf(*this);
+    c.format(&uf, c.value, &format_);
   }
 };
 
@@ -2151,11 +2201,12 @@ class ArgFormatter :
 };
 
 /** This template formats data and writes the output to a writer. */
-template <typename CharType, typename ArgFormatter>
+template <typename CharType, typename AF>
 class BasicFormatter : private internal::FormatterBase {
  public:
   /** The character type for the output. */
   typedef CharType Char;
+  typedef AF ArgFormatter;
 
  private:
   BasicWriter<Char> &writer_;
@@ -3693,7 +3744,8 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
   typename ArgFormatter::SpecType spec;
   if (*s == ':') {
     if (arg.type == Arg::CUSTOM) {
-      arg.custom.format(this, arg.custom.value, &s);
+      UserFormatter<BasicFormatter<Char, ArgFormatter> > uf(*this);
+      arg.custom.format(&uf, arg.custom.value, &s);
       return s;
     }
     ++s;
@@ -3913,8 +3965,10 @@ auto join(const Range& range, const BasicCStringRef<wchar_t>& sep)
 }
 #endif
 
+using internal::UserFormatter;
+    
 template <typename ArgFormatter, typename Char, typename It>
-void format_arg(fmt::BasicFormatter<Char, ArgFormatter> &f,
+void format_arg(fmt::UserFormatter<ArgFormatter> &f,
     const Char *&format_str, const ArgJoin<Char, It>& e) {
   const Char* end = format_str;
   if (*end == ':')
