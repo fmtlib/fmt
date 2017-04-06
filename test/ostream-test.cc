@@ -192,6 +192,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   fmt::internal::write(os, w);
 }
 
+#if __cplusplus >= 201103L
 struct Xs {
   const size_t size;
   const std::string s;
@@ -212,3 +213,4 @@ TEST(OStreamTest, FormatBuf1) {
   w << xs;
   EXPECT_EQ(w.size(), size_t((n + 1) * xs.size));
 }
+#endif
