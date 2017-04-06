@@ -1283,6 +1283,30 @@ void format_arg(Formatter &, const Char *, const T &) {
                     "an overload of format_arg.");
 }
 
+template <typename Formatter>
+class MakeArg;
+      
+// first argument to format_arg for custom formatters
+template <typename AF>
+class UserFormatter {
+  AF &af_;
+public:
+  typedef AF ArgFormatter;
+  typedef typename AF::Char Char;
+  typedef MakeArg< UserFormatter > MakeArg;
+    
+  UserFormatter(AF &af) : af_(af) {}
+
+  BasicWriter<typename AF::Char> &writer() { return af_.writer(); }
+    
+  void visit(const Arg &arg) { af_.visit(arg); }
+    
+  const Char *format(const Char *&format_str, const internal::Arg &arg)
+  {
+    af_.visit(format_str, arg);
+  }
+};
+
     
 // Makes an Arg object from any type.
 template <typename Formatter>
@@ -1485,28 +1509,6 @@ class RuntimeError : public std::runtime_error {
 
 template <typename Char>
 class ArgMap;
-
-    
-// first argument to format_arg for custom formatters
-template <typename AF>
-class UserFormatter {
-  AF &af_;
-public:
-  typedef AF ArgFormatter;
-  typedef typename AF::Char Char;
-  typedef MakeArg< UserFormatter > MakeArg;
-    
-  UserFormatter(AF &af) : af_(af) {}
-
-  BasicWriter<typename AF::Char> &writer() { return af_.writer(); }
-    
-  void visit(const Arg &arg) { af_.visit(arg); }
-    
-  const Char *format(const Char *&format_str, const internal::Arg &arg)
-  {
-    af_.visit(format_str, arg);
-  }
-};
     
 }  // namespace internal
 
@@ -2183,7 +2185,7 @@ class BasicArgFormatter : public internal::ArgFormatterBase<Impl, Char, Spec> {
 
   /** Formats an argument of a custom (user-defined) type. */
   void visit_custom(internal::Arg::CustomValue c) {
-    UserFormatter<BasicArgFormatter> uf(*this);
+    internal::UserFormatter<BasicArgFormatter> uf(*this);
     c.format(&uf, c.value, &format_);
   }
 };
@@ -3744,7 +3746,7 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
   typename ArgFormatter::SpecType spec;
   if (*s == ':') {
     if (arg.type == Arg::CUSTOM) {
-      UserFormatter<BasicFormatter<Char, ArgFormatter> > uf(*this);
+      internal::UserFormatter<BasicFormatter<Char, ArgFormatter> > uf(*this);
       arg.custom.format(&uf, arg.custom.value, &s);
       return s;
     }
