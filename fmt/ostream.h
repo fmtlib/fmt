@@ -38,7 +38,7 @@ class FormatBuf : public std::basic_streambuf<Char> {
 
   int_type overflow(int_type ch = traits_type::eof()) FMT_OVERRIDE {
     if (!traits_type::eq_int_type(ch, traits_type::eof()))
-      buffer_.push_back(ch);
+      buffer_.push_back(static_cast<Char>(ch));
     return ch;
   }
 
