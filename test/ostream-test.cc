@@ -111,7 +111,10 @@ std::ostream &operator<<(std::ostream &os, EmptyTest) {
   return os << "";
 }
 
-struct UserDefinedTest { int i = 42; };
+struct UserDefinedTest {
+  int i;
+  UserDefinedTest() : i(42) {}
+};
 
 std::ostream &operator<<(std::ostream &os, const UserDefinedTest &u) {
   return os << u.i;
