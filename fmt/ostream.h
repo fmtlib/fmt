@@ -111,17 +111,11 @@ void format_arg(BasicFormatter<Char, ArgFormatter_> &f,
 FMT_API void print(std::ostream &os, CStringRef format_str, ArgList args);
 FMT_VARIADIC(void, print, std::ostream &, CStringRef)
 
-#if __cplusplus >= 201103L
-template<typename T, typename Char>
-typename std::enable_if<
- !std::is_same<
-   typename std::remove_cv<typename std::decay<T>::type>::type,
-   char *
- >::value,
- BasicWriter<Char>&
->::type
-operator<<(BasicWriter<Char> &writer, const T &value) {
+template <typename Char, typename T>
+BasicWriter<Char> &operator<<(BasicWriter<Char> &writer, const T &value) {
+#if FMT_HAS_DECLTYPE_INCOMPLETE_RETURN_TYPES
   FMT_STATIC_ASSERT(internal::is_streamable<T>::value, "T must be Streamable");
+#endif
 
   internal::FormatBuf<Char> format_buf(writer.buffer());
   std::basic_ostream<Char> output(&format_buf);
@@ -129,7 +123,7 @@ operator<<(BasicWriter<Char> &writer, const T &value) {
 
   return writer;
 }
-#endif
+
 }  // namespace fmt
 
 #ifdef FMT_HEADER_ONLY

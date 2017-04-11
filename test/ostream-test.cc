@@ -111,13 +111,11 @@ std::ostream &operator<<(std::ostream &os, EmptyTest) {
   return os << "";
 }
 
-#if __cplusplus >= 201103L
 struct UserDefinedTest { int i = 42; };
 
 std::ostream &operator<<(std::ostream &os, const UserDefinedTest &u) {
   return os << u.i;
 }
-#endif
 
 TEST(OStreamTest, EmptyCustomOutput) {
   EXPECT_EQ("", fmt::format("{}", EmptyTest()));
@@ -137,7 +135,6 @@ TEST(OStreamTest, WriteToOStream) {
   EXPECT_EQ("foo", os.str());
 }
 
-#if __cplusplus >= 201103L
 TEST(OStreamTest, WriteUserDefinedTypeToOStream) {
   std::ostringstream os;
   fmt::MemoryWriter w;
@@ -145,8 +142,12 @@ TEST(OStreamTest, WriteUserDefinedTypeToOStream) {
   w << "The answer is " << u;
   fmt::internal::write(os, w);
   EXPECT_EQ("The answer is 42", os.str());
-}
+
+#if FMT_USE_OSTREAM_RVALUE
+  EXPECT_EQ("The answer is 42",
+    (fmt::MemoryWriter() << "The answer is " << UserDefinedTest()).str());
 #endif
+}
 
 TEST(OStreamTest, WriteToOStreamMaxSize) {
   std::size_t max_size = std::numeric_limits<std::size_t>::max();
@@ -192,11 +193,10 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   fmt::internal::write(os, w);
 }
 
-#if __cplusplus >= 201103L
 struct Xs {
-  const size_t size;
+  const int size;
   const std::string s;
-  Xs() : size(200), s(size, 'x') {}
+  Xs() : size(200), s(static_cast<std::size_t>(size), 'x') {}
 };
 
 inline std::ostream& operator<<(std::ostream& os, Xs const& xs) {
@@ -209,8 +209,7 @@ TEST(OStreamTest, FormatBuf1) {
   int n = fmt::internal::INLINE_BUFFER_SIZE / xs.size + 1;
   for (int i = 0; i < n; ++i)
     w << xs;
-  EXPECT_EQ(w.size(), size_t(n * xs.size));
+  EXPECT_EQ(w.size(), static_cast<std::size_t>(n * xs.size));
   w << xs;
-  EXPECT_EQ(w.size(), size_t((n + 1) * xs.size));
+  EXPECT_EQ(w.size(), static_cast<std::size_t>((n + 1) * xs.size));
 }
-#endif
