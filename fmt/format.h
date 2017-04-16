@@ -281,7 +281,7 @@ typedef __int64          intmax_t;
 // http://en.cppreference.com/w/cpp/compiler_support
 #define FMT_HAS_DECLTYPE_INCOMPLETE_RETURN_TYPES \
     (FMT_HAS_FEATURE(cxx_decltype_incomplete_return_types) || \
-    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
+    (FMT_GCC_VERSION >= 407 && FMT_HAS_GXX_CXX11) || \
     FMT_MSC_VER >= 1900 || \
     FMT_ICC_VERSION >= 1200)
 
