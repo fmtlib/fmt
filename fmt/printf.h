@@ -336,7 +336,7 @@ class PrintfFormatter : private internal::FormatterBase {
     : FormatterBase(al), writer_(w) {}
 
   /** Formats stored arguments and writes the output to the writer. */
-  FMT_API void format(BasicCStringRef<Char> format_str);
+  void format(BasicCStringRef<Char> format_str);
 };
 
 template <typename Char, typename AF>
@@ -495,7 +495,9 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
 
     if (spec.type_ == 's') {
       // set the format type to the default if 's' is specified
-      spec.type_ = internal::DefaultType().visit(arg);
+
+      // Avoid warning for wchar_t
+      spec.type_ = char(internal::DefaultType().visit(arg));
     }
 
     if (arg.type <= Arg::LAST_INTEGER_TYPE) {
