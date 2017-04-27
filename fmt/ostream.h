@@ -67,7 +67,7 @@ struct ConvertToIntImpl<T, true> {
 };
 
 // Write the content of w to os.
-void write(std::ostream &os, Writer &w);
+FMT_API void write(std::ostream &os, Writer &w);
 
 #if FMT_HAS_DECLTYPE_INCOMPLETE_RETURN_TYPES
 template<typename T>

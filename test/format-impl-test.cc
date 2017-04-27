@@ -26,6 +26,7 @@
  */
 
 #define FMT_NOEXCEPT
+#undef FMT_SHARED
 #include "test-assert.h"
 
 // Include *.cc instead of *.h to test implementation-specific stuff.
