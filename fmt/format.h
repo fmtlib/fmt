@@ -1959,6 +1959,9 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     writer_.write_int(reinterpret_cast<uintptr_t>(p), spec_);
   }
 
+  // workaround MSVC two-phase lookup issue
+  typedef internal::Arg Arg;
+
  protected:
   BasicWriter<Char> &writer() { return writer_; }
   Spec &spec() { return spec_; }
