@@ -1556,8 +1556,8 @@ TEST(FormatTest, JoinArg) {
   using fmt::join;
   int v1[3] = { 1, 2, 3 };
   std::vector<float> v2;
-  v2.push_back(1.2);
-  v2.push_back(3.4);
+  v2.push_back(1.2f);
+  v2.push_back(3.4f);
 
   EXPECT_EQ("(1, 2, 3)", format("({})", join(v1 + 0, v1 + 3, ", ")));
   EXPECT_EQ("(1)", format("({})", join(v1 + 0, v1 + 1, ", ")));
