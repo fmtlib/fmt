@@ -2111,7 +2111,7 @@ class FormatterBase {
   template <typename Char>
   void write(BasicWriter<Char> &w, const Char *start, const Char *end) {
     if (start != end)
-      w << BasicStringRef<Char>(start, internal::to_unsigned(end - start));
+      w.append_str(BasicStringRef<Char>(start, internal::to_unsigned(end - start)));
   }
 };
 }  // namespace internal
@@ -2852,11 +2852,54 @@ class BasicWriter : public BasicWriterBase {
     return *this;
   }
 
+  // MSVC complains about ambiguous operator<< if these templates are defined as
+  // member functions and an operator<<(Writer&, const T&) is visible, e.g.
+  // if ostream.h is included.
+  //
+  // MSVC also has a language extension which can convert rvalues to lvalues and
+  // which allows e.g.
+  //    MemoryWriter() << bin(123);
+  // to work (calls the non-member function).
+  //
+  // If they are defined as non-member functions, GCC in C++98 mode cannot call
+  // them in cases like the one above.
+  // In C++11 mode, the overload defined below is used. This is only fast, if
+  // moving a BasicWriter is fast and this is, e.g., not the case for a
+  // MemoryWriter which uses its inline buffer. So it seems beneficial to
+  // implement operator<< as member functions.
+
+#ifndef _MSC_VER
+  template <typename Int, typename Spec, typename FillChar>
+  BasicWriter &operator<<(const IntFormatSpec<Int, Spec, FillChar> &value) {
+    append_int(value);
+    return *this;
+  }
+
+  template <typename Elem>
+  BasicWriter &operator<<(const StrFormatSpec<Elem> &value) {
+    append_str(value);
+    return *this;
+  }
+
+  template <typename Elem>
+  BasicWriter &operator<<(const fmt::BasicStringRef<Elem> &s) {
+    append_str(s);
+    return *this;
+  }
+
+  template <typename Elem, typename Traits, typename Alloc>
+  BasicWriter &operator<<(const std::basic_string<Elem, Traits, Alloc> &value) {
+    append_str(fmt::BasicStringRef<Elem>(value));
+    return *this;
+  }
+#endif
+
   void clear() FMT_NOEXCEPT { buffer_.clear(); }
 
   Buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
 };
 
+#ifdef _MSC_VER
 template <typename Char, typename Int, typename Spec, typename FillChar>
 inline BasicWriter<Char> &operator<<(
     BasicWriter<Char> &w, const IntFormatSpec<Int, Spec, FillChar> &value) {
@@ -2884,6 +2927,7 @@ inline BasicWriter<Char> &operator<<(
   w.append_str(fmt::BasicStringRef<Elem>(value));
   return w;
 }
+#endif
 
 #if FMT_USE_OSTREAM_RVALUE
 // http://cplusplus.github.io/LWG/lwg-active.html#1203
