@@ -534,10 +534,6 @@ TEST(WriterTest, Stream) {
   //w << std::wstring(wcs);
   w << fmt::StrFormatSpec<wchar_t>(wcs, 3, ' ');
 #endif
-
-#if FMT_USE_OSTREAM_RVALUE
-  EXPECT_EQ("i = 123", (MemoryWriter() << "i = " << 123).str());
-#endif
 }
 
 TEST(WWriterTest, Stream) {
@@ -576,10 +572,6 @@ TEST(WWriterTest, Stream) {
   EXPECT_EQ(L"ncs", (WMemoryWriter() << fmt::StringRef(ncs)).str());
   EXPECT_EQ(L"ncs", (WMemoryWriter() << std::string(ncs)).str());
   EXPECT_EQ(L"ncs", (WMemoryWriter() << fmt::StrFormatSpec<char>(ncs, 3, ' ')).str());
-
-#if FMT_USE_OSTREAM_RVALUE
-  EXPECT_EQ(L"i = 123", (WMemoryWriter() << L"i = " << 123).str());
-#endif
 }
 
 TEST(ArrayWriterTest, Ctor) {

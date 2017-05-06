@@ -145,11 +145,6 @@ TEST(OStreamTest, WriteUserDefinedTypeToOStream) {
   w << "The answer is " << u;
   fmt::internal::write(os, w);
   EXPECT_EQ("The answer is 42", os.str());
-
-#if FMT_USE_OSTREAM_RVALUE
-  EXPECT_EQ("The answer is 42",
-    (fmt::MemoryWriter() << "The answer is " << UserDefinedTest()).str());
-#endif
 }
 
 TEST(OStreamTest, WriteToOStreamMaxSize) {

@@ -155,24 +155,6 @@ typedef __int64          intmax_t;
 # endif
 #endif
 
-#ifndef FMT_USE_OSTREAM_RVALUE
-// If non-zero, enables operator<< for BasicWriter&&, such that things like
-//  std::string s = (MemoryWriter() << "i = " << i).str();
-// are possible.
-//
-// (See: http://cplusplus.github.io/LWG/lwg-active.html#1203)
-//
-// XXX:
-//  I don't know if FMT_USE_RVALUE_REFERENCES is the correct way to enable
-//  this... It works for g++ 6.3 and VC15, though.
-//
-# if FMT_USE_RVALUE_REFERENCES
-#  define FMT_USE_OSTREAM_RVALUE 1
-# else
-#  define FMT_USE_OSTREAM_RVALUE 0
-# endif
-#endif
-
 // Check if exceptions are disabled.
 #if defined(__GNUC__) && !defined(__EXCEPTIONS)
 # define FMT_EXCEPTIONS 0
@@ -2463,8 +2445,6 @@ class SystemError : public internal::RuntimeError {
 FMT_API void format_system_error(fmt::Writer &out, int error_code,
                                  fmt::StringRef message) FMT_NOEXCEPT;
 
-class BasicWriterBase {};
-
 /**
   \rst
   This template provides operations for formatting and writing data into
@@ -2484,7 +2464,7 @@ class BasicWriterBase {};
   \endrst
  */
 template <typename Char>
-class BasicWriter : public BasicWriterBase {
+class BasicWriter {
  private:
   // Output buffer.
   Buffer<Char> &buffer_;
@@ -2926,25 +2906,6 @@ inline BasicWriter<Char> &operator<<(
     BasicWriter<Char> &w, const std::basic_string<Elem, Traits, Alloc> &value) {
   w.append_str(fmt::BasicStringRef<Elem>(value));
   return w;
-}
-#endif
-
-#if FMT_USE_OSTREAM_RVALUE
-// http://cplusplus.github.io/LWG/lwg-active.html#1203
-//
-// For:
-// std::string s = (MemoryWriter() << "i = " << i).str();
-template <
-  typename WriterT,
-  typename T,
-  typename = typename std::enable_if<
-    !std::is_lvalue_reference<WriterT>::value
-      && std::is_base_of<BasicWriterBase, WriterT>::value
-  >::type
->
-inline WriterT &&operator<<(WriterT &&w, const T &value) {
-  w << value;
-  return std::move(w);
 }
 #endif
 
