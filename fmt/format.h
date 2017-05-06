@@ -1338,14 +1338,9 @@ class MakeValue : public Arg {
   }
 
   template <typename T>
-  MakeValue(const T &value,
-            typename EnableIf<ConvertToInt<T>::value, int>::type = 0) {
-    int_value = value;
-  }
-
-  template <typename T>
-  static uint64_t type(const T &) {
-    return ConvertToInt<T>::value ? Arg::INT : Arg::CUSTOM;
+  static typename EnableIf<Not<ConvertToInt<T>::value>::value, uint64_t>::type
+      type(const T &) {
+    return Arg::CUSTOM;
   }
 
   // Additional template param `Char_` is needed here because make_type always
