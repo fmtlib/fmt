@@ -119,13 +119,8 @@ void std_format(long double value, std::wstring &result) {
 // as writing it to std::basic_ostringstream<Char>.
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T &value, const char *type) {
-#if FMT_USE_OSTREAM_RVALUE
   std::basic_string<Char> actual =
       (fmt::BasicMemoryWriter<Char>() << value).str();
-#else
-  fmt::BasicMemoryWriter<Char> w;
-  std::basic_string<Char> actual = (w << value).str();
-#endif
   std::basic_string<Char> expected;
   std_format(value, expected);
   if (expected == actual)
@@ -369,28 +364,25 @@ TEST(WriterTest, WriteWideString) {
 
 TEST(WriterTest, bin) {
   using fmt::bin;
-  MemoryWriter w;
-  w.clear(); EXPECT_EQ("1100101011111110", (w << bin(0xcafe)).str());
-  w.clear(); EXPECT_EQ("1011101010111110", (w << bin(0xbabeu)).str());
-  w.clear(); EXPECT_EQ("1101111010101101", (w << bin(0xdeadl)).str());
-  w.clear(); EXPECT_EQ("1011111011101111", (w << bin(0xbeeful)).str());
-  w.clear();
-  EXPECT_EQ("11001010111111101011101010111110", (w << bin(0xcafebabell)).str());
-  w.clear();
+  EXPECT_EQ("1100101011111110", (MemoryWriter() << bin(0xcafe)).str());
+  EXPECT_EQ("1011101010111110", (MemoryWriter() << bin(0xbabeu)).str());
+  EXPECT_EQ("1101111010101101", (MemoryWriter() << bin(0xdeadl)).str());
+  EXPECT_EQ("1011111011101111", (MemoryWriter() << bin(0xbeeful)).str());
+  EXPECT_EQ("11001010111111101011101010111110",
+            (MemoryWriter() << bin(0xcafebabell)).str());
   EXPECT_EQ("11011110101011011011111011101111",
-    (w << bin(0xdeadbeefull)).str());
+            (MemoryWriter() << bin(0xdeadbeefull)).str());
 }
 
 TEST(WriterTest, oct) {
   using fmt::oct;
-  MemoryWriter w;
-  w.clear(); EXPECT_EQ("12", (w << oct(static_cast<short>(012))).str());
-  w.clear(); EXPECT_EQ("12", (w << oct(012)).str());
-  w.clear(); EXPECT_EQ("34", (w << oct(034u)).str());
-  w.clear(); EXPECT_EQ("56", (w << oct(056l)).str());
-  w.clear(); EXPECT_EQ("70", (w << oct(070ul)).str());
-  w.clear(); EXPECT_EQ("1234", (w << oct(01234ll)).str());
-  w.clear(); EXPECT_EQ("5670", (w << oct(05670ull)).str());
+  EXPECT_EQ("12", (MemoryWriter() << oct(static_cast<short>(012))).str());
+  EXPECT_EQ("12", (MemoryWriter() << oct(012)).str());
+  EXPECT_EQ("34", (MemoryWriter() << oct(034u)).str());
+  EXPECT_EQ("56", (MemoryWriter() << oct(056l)).str());
+  EXPECT_EQ("70", (MemoryWriter() << oct(070ul)).str());
+  EXPECT_EQ("1234", (MemoryWriter() << oct(01234ll)).str());
+  EXPECT_EQ("5670", (MemoryWriter() << oct(05670ull)).str());
 }
 
 TEST(WriterTest, hex) {
@@ -400,24 +392,22 @@ TEST(WriterTest, hex) {
   // This shouldn't compile:
   //fmt::IntFormatSpec<short, fmt::TypeSpec<'x'> > (*phex2)(short value) = hex;
 
-  MemoryWriter w;
-  w.clear(); EXPECT_EQ("cafe", (w << hex(0xcafe)).str());
-  w.clear(); EXPECT_EQ("babe", (w << hex(0xbabeu)).str());
-  w.clear(); EXPECT_EQ("dead", (w << hex(0xdeadl)).str());
-  w.clear(); EXPECT_EQ("beef", (w << hex(0xbeeful)).str());
-  w.clear(); EXPECT_EQ("cafebabe", (w << hex(0xcafebabell)).str());
-  w.clear(); EXPECT_EQ("deadbeef", (w << hex(0xdeadbeefull)).str());
+  EXPECT_EQ("cafe", (MemoryWriter() << hex(0xcafe)).str());
+  EXPECT_EQ("babe", (MemoryWriter() << hex(0xbabeu)).str());
+  EXPECT_EQ("dead", (MemoryWriter() << hex(0xdeadl)).str());
+  EXPECT_EQ("beef", (MemoryWriter() << hex(0xbeeful)).str());
+  EXPECT_EQ("cafebabe", (MemoryWriter() << hex(0xcafebabell)).str());
+  EXPECT_EQ("deadbeef", (MemoryWriter() << hex(0xdeadbeefull)).str());
 }
 
 TEST(WriterTest, hexu) {
   using fmt::hexu;
-  MemoryWriter w;
-  w.clear(); EXPECT_EQ("CAFE", (w << hexu(0xcafe)).str());
-  w.clear(); EXPECT_EQ("BABE", (w << hexu(0xbabeu)).str());
-  w.clear(); EXPECT_EQ("DEAD", (w << hexu(0xdeadl)).str());
-  w.clear(); EXPECT_EQ("BEEF", (w << hexu(0xbeeful)).str());
-  w.clear(); EXPECT_EQ("CAFEBABE", (w << hexu(0xcafebabell)).str());
-  w.clear(); EXPECT_EQ("DEADBEEF", (w << hexu(0xdeadbeefull)).str());
+  EXPECT_EQ("CAFE", (MemoryWriter() << hexu(0xcafe)).str());
+  EXPECT_EQ("BABE", (MemoryWriter() << hexu(0xbabeu)).str());
+  EXPECT_EQ("DEAD", (MemoryWriter() << hexu(0xdeadl)).str());
+  EXPECT_EQ("BEEF", (MemoryWriter() << hexu(0xbeeful)).str());
+  EXPECT_EQ("CAFEBABE", (MemoryWriter() << hexu(0xcafebabell)).str());
+  EXPECT_EQ("DEADBEEF", (MemoryWriter() << hexu(0xdeadbeefull)).str());
 }
 
 template <typename Char>
@@ -442,22 +432,22 @@ public:
 ISO8601DateFormatter iso8601(const Date &d) { return ISO8601DateFormatter(d); }
 
 TEST(WriterTest, pad) {
-  MemoryWriter w;
   using fmt::hex;
-  w.clear(); EXPECT_EQ("    cafe", (w << pad(hex(0xcafe), 8)).str());
-  w.clear(); EXPECT_EQ("    babe", (w << pad(hex(0xbabeu), 8)).str());
-  w.clear(); EXPECT_EQ("    dead", (w << pad(hex(0xdeadl), 8)).str());
-  w.clear(); EXPECT_EQ("    beef", (w << pad(hex(0xbeeful), 8)).str());
-  w.clear(); EXPECT_EQ("    dead", (w << pad(hex(0xdeadll), 8)).str());
-  w.clear(); EXPECT_EQ("    beef", (w << pad(hex(0xbeefull), 8)).str());
+  EXPECT_EQ("    cafe", (MemoryWriter() << pad(hex(0xcafe), 8)).str());
+  EXPECT_EQ("    babe", (MemoryWriter() << pad(hex(0xbabeu), 8)).str());
+  EXPECT_EQ("    dead", (MemoryWriter() << pad(hex(0xdeadl), 8)).str());
+  EXPECT_EQ("    beef", (MemoryWriter() << pad(hex(0xbeeful), 8)).str());
+  EXPECT_EQ("    dead", (MemoryWriter() << pad(hex(0xdeadll), 8)).str());
+  EXPECT_EQ("    beef", (MemoryWriter() << pad(hex(0xbeefull), 8)).str());
 
-  w.clear(); EXPECT_EQ("     11", (w << pad(11, 7)).str());
-  w.clear(); EXPECT_EQ("     22", (w << pad(22u, 7)).str());
-  w.clear(); EXPECT_EQ("     33", (w << pad(33l, 7)).str());
-  w.clear(); EXPECT_EQ("     44", (w << pad(44ul, 7)).str());
-  w.clear(); EXPECT_EQ("     33", (w << pad(33ll, 7)).str());
-  w.clear(); EXPECT_EQ("     44", (w << pad(44ull, 7)).str());
+  EXPECT_EQ("     11", (MemoryWriter() << pad(11, 7)).str());
+  EXPECT_EQ("     22", (MemoryWriter() << pad(22u, 7)).str());
+  EXPECT_EQ("     33", (MemoryWriter() << pad(33l, 7)).str());
+  EXPECT_EQ("     44", (MemoryWriter() << pad(44ul, 7)).str());
+  EXPECT_EQ("     33", (MemoryWriter() << pad(33ll, 7)).str());
+  EXPECT_EQ("     44", (MemoryWriter() << pad(44ull, 7)).str());
 
+  MemoryWriter w;
   w.clear();
   w << pad(42, 5, '0');
   EXPECT_EQ("00042", w.str());
@@ -470,24 +460,21 @@ TEST(WriterTest, pad) {
 }
 
 TEST(WriterTest, PadString) {
-  MemoryWriter w;
-  w.clear(); EXPECT_EQ("test    ", (w << pad("test", 8)).str());
-  w.clear(); EXPECT_EQ("test******", (w << pad("test", 10, '*')).str());
+  EXPECT_EQ("test    ", (MemoryWriter() << pad("test", 8)).str());
+  EXPECT_EQ("test******", (MemoryWriter() << pad("test", 10, '*')).str());
 }
 
 TEST(WriterTest, PadWString) {
-  WMemoryWriter w;
-  w.clear(); EXPECT_EQ(L"test    ", (w << pad(L"test", 8)).str());
-  w.clear(); EXPECT_EQ(L"test******", (w << pad(L"test", 10, '*')).str());
-  w.clear(); EXPECT_EQ(L"test******", (w << pad(L"test", 10, L'*')).str());
+  EXPECT_EQ(L"test    ", (WMemoryWriter() << pad(L"test", 8)).str());
+  EXPECT_EQ(L"test******", (WMemoryWriter() << pad(L"test", 10, '*')).str());
+  EXPECT_EQ(L"test******", (WMemoryWriter() << pad(L"test", 10, L'*')).str());
 }
 
 TEST(WriterTest, NoConflictWithIOManip) {
   using namespace std;
   using namespace fmt;
-  MemoryWriter w;
-  w.clear(); EXPECT_EQ("cafe", (w << hex(0xcafe)).str());
-  w.clear(); EXPECT_EQ("12", (w << oct(012)).str());
+  EXPECT_EQ("cafe", (MemoryWriter() << hex(0xcafe)).str());
+  EXPECT_EQ("12", (MemoryWriter() << oct(012)).str());
 }
 
 TEST(WriterTest, Format) {
@@ -505,85 +492,94 @@ TEST(WriterTest, Format) {
 }
 
 TEST(WriterTest, WWriter) {
-  WMemoryWriter w;
-  EXPECT_EQ(L"cafe", (w << fmt::hex(0xcafe)).str());
+  EXPECT_EQ(L"cafe", (fmt::WMemoryWriter() << fmt::hex(0xcafe)).str());
 }
 
 TEST(WriterTest, Stream) {
-  MemoryWriter w;
-
   const char *ncs = "ncs";
 
-  w.clear(); EXPECT_EQ("true", (w << true).str());
-  w.clear(); EXPECT_EQ("false", (w << false).str());
-  w.clear(); EXPECT_EQ("0", (w << (signed char)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (signed short)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (signed int)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (signed long)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (fmt::LongLong)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (unsigned char)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (unsigned short)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (unsigned int)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (unsigned long)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (fmt::ULongLong)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (float)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (double)0).str());
-  w.clear(); EXPECT_EQ("0", (w << (long double)0).str());
-  w.clear(); EXPECT_EQ("0x1234", (w << (const void *)0x1234).str());
-  w.clear(); EXPECT_EQ("0x1234", (w << (void *)0x1234).str());
-  w.clear(); EXPECT_EQ("x", (w << (char)'x').str());
-  w.clear(); EXPECT_EQ("ncs", (w << (const char *)ncs).str());
-  w.clear(); EXPECT_EQ("ncs", (w << (char *)ncs).str());
-  w.clear(); EXPECT_EQ("ncs", (w << fmt::StringRef(ncs)).str());
-  w.clear(); EXPECT_EQ("ncs", (w << std::string(ncs)).str());
+  EXPECT_EQ("true", (MemoryWriter() << true).str());
+  EXPECT_EQ("false", (MemoryWriter() << false).str());
+  EXPECT_EQ("0", (MemoryWriter() << (signed char)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (signed short)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (signed int)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (signed long)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (fmt::LongLong)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (unsigned char)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (unsigned short)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (unsigned int)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (unsigned long)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (fmt::ULongLong)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (float)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (double)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (long double)0).str());
+  EXPECT_EQ("0x1234", (MemoryWriter() << (const void *)0x1234).str());
+  EXPECT_EQ("0x1234", (MemoryWriter() << (void *)0x1234).str());
+  EXPECT_EQ("x", (MemoryWriter() << (char)'x').str());
+  EXPECT_EQ("ncs", (MemoryWriter() << (const char *)ncs).str());
+  EXPECT_EQ("ncs", (MemoryWriter() << (char *)ncs).str());
+  EXPECT_EQ("ncs", (MemoryWriter() << fmt::StringRef(ncs)).str());
+  EXPECT_EQ("ncs", (MemoryWriter() << std::string(ncs)).str());
+  EXPECT_EQ("0", (MemoryWriter() << fmt::IntFormatSpec<int>(0)).str());
+  EXPECT_EQ("ncs", (MemoryWriter() << fmt::StrFormatSpec<char>(ncs, 3, ' ')).str());
 
   // This should not compile:
 #if 0
   const wchar_t *wcs = L"wcs";
+  MemoryWriter w;
+  //w << (wchar_t)'x';
+  //w << (const wchar_t *)wcs;
+  //w << (wchar_t *)wcs;
+  //w << fmt::WStringRef(wcs);
+  //w << std::wstring(wcs);
+  w << fmt::StrFormatSpec<wchar_t>(wcs, 3, ' ');
+#endif
 
-  // w << (wchar_t)'x';
-  // w << (const wchar_t *)wcs;
-  // w << (wchar_t *)wcs;
-  // w << fmt::WStringRef(wcs);
-  // w << std::wstring(wcs);
+#if FMT_USE_OSTREAM_RVALUE
+  EXPECT_EQ("i = 123", (MemoryWriter() << "i = " << 123).str());
 #endif
 }
 
 TEST(WWriterTest, Stream) {
-  WMemoryWriter w;
-
   const wchar_t *wcs = L"wcs";
 
-  w.clear(); EXPECT_EQ(L"true", (w << true).str());
-  w.clear(); EXPECT_EQ(L"false", (w << false).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (signed char)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (signed short)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (signed int)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (signed long)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (fmt::LongLong)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (unsigned char)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (unsigned short)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (unsigned int)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (unsigned long)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (fmt::ULongLong)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (float)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (double)0).str());
-  w.clear(); EXPECT_EQ(L"0", (w << (long double)0).str());
-  w.clear(); EXPECT_EQ(L"0x1234", (w << (const void*)0x1234).str());
-  w.clear(); EXPECT_EQ(L"0x1234", (w << (void *)0x1234).str());
-  w.clear(); EXPECT_EQ(L"x", (w << (wchar_t)'x').str());
-  w.clear(); EXPECT_EQ(L"wcs", (w << (const wchar_t *)wcs).str());
-  w.clear(); EXPECT_EQ(L"wcs", (w << (wchar_t *)wcs).str());
-  w.clear(); EXPECT_EQ(L"wcs", (w << fmt::WStringRef(wcs)).str());
-  w.clear(); EXPECT_EQ(L"wcs", (w << std::wstring(wcs)).str());
+  EXPECT_EQ(L"true", (WMemoryWriter() << true).str());
+  EXPECT_EQ(L"false", (WMemoryWriter() << false).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (signed char)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (signed short)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (signed int)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (signed long)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (fmt::LongLong)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (unsigned char)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (unsigned short)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (unsigned int)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (unsigned long)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (fmt::ULongLong)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (float)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (double)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (long double)0).str());
+  EXPECT_EQ(L"0x1234", (WMemoryWriter() << (const void*)0x1234).str());
+  EXPECT_EQ(L"0x1234", (WMemoryWriter() << (void *)0x1234).str());
+  EXPECT_EQ(L"x", (WMemoryWriter() << (wchar_t)'x').str());
+  EXPECT_EQ(L"wcs", (WMemoryWriter() << (const wchar_t *)wcs).str());
+  EXPECT_EQ(L"wcs", (WMemoryWriter() << (wchar_t *)wcs).str());
+  EXPECT_EQ(L"wcs", (WMemoryWriter() << fmt::WStringRef(wcs)).str());
+  EXPECT_EQ(L"wcs", (WMemoryWriter() << std::wstring(wcs)).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << fmt::IntFormatSpec<int>(0)).str());
+  EXPECT_EQ(L"wcs", (WMemoryWriter() << fmt::StrFormatSpec<wchar_t>(wcs, 3, ' ')).str());
 
   const char *ncs = "ncs";
 
-  w.clear(); EXPECT_EQ(L"x", (w << (char)'x').str());
-  w.clear(); EXPECT_EQ(L"ncs", (w << (const char *)ncs).str());
-  w.clear(); EXPECT_EQ(L"ncs", (w << (char *)ncs).str());
-  w.clear(); EXPECT_EQ(L"ncs", (w << fmt::StringRef(ncs)).str());
-  w.clear(); EXPECT_EQ(L"ncs", (w << std::string(ncs)).str());
+  EXPECT_EQ(L"x", (WMemoryWriter() << (char)'x').str());
+  EXPECT_EQ(L"ncs", (WMemoryWriter() << (const char *)ncs).str());
+  EXPECT_EQ(L"ncs", (WMemoryWriter() << (char *)ncs).str());
+  EXPECT_EQ(L"ncs", (WMemoryWriter() << fmt::StringRef(ncs)).str());
+  EXPECT_EQ(L"ncs", (WMemoryWriter() << std::string(ncs)).str());
+  EXPECT_EQ(L"ncs", (WMemoryWriter() << fmt::StrFormatSpec<char>(ncs, 3, ' ')).str());
+
+#if FMT_USE_OSTREAM_RVALUE
+  EXPECT_EQ(L"i = 123", (WMemoryWriter() << L"i = " << 123).str());
+#endif
 }
 
 TEST(ArrayWriterTest, Ctor) {
@@ -1507,10 +1503,7 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
 
 TEST(FormatterTest, FormatExamples) {
   using fmt::hex;
-  {
-    MemoryWriter w;
-    EXPECT_EQ("0000cafe", (w << pad(hex(0xcafe), 8, '0')).str());
-  }
+  EXPECT_EQ("0000cafe", (MemoryWriter() << pad(hex(0xcafe), 8, '0')).str());
 
   std::string message = format("The answer is {}", 42);
   EXPECT_EQ("The answer is 42", message);

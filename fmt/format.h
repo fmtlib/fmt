@@ -1155,6 +1155,9 @@ struct NamedArgWithType;
 template <typename T = void>
 struct Null {};
 
+template <typename T = void>
+struct Incomplete; // never defined.
+
 // A helper class template to enable or disable overloads taking wide
 // characters and strings in MakeValue.
 template <typename T, typename Char>
@@ -2590,10 +2593,6 @@ class BasicWriter : public BasicWriterBase {
    */
   virtual ~BasicWriter() {}
 
-  void clear() FMT_NOEXCEPT { buffer_.clear(); }
-
-  Buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
-
   /**
     Returns the total number of characters written.
    */
@@ -2666,7 +2665,7 @@ class BasicWriter : public BasicWriterBase {
     write_int(spec.value(), spec);
   }
 
-  template <typename Float> // XXX: FloatFormatSpec?
+  template <typename Float>
   void append_double(Float value) {
     write_double(value, FormatSpec());
   }
@@ -2689,6 +2688,14 @@ class BasicWriter : public BasicWriterBase {
     buffer_.push_back(ch);
   }
 
+  void append_char(
+      typename internal::WCharHelper<wchar_t, Char>::Unsupported) {
+    // Use an incomplete type to generate a compiler error if this function is
+    // ever used. static_assert(false) does not work here.
+    internal::Incomplete<Char>
+      converting_wide_strings_to_narrow_strings_is_not_supported;
+  }
+
   void append_str(StringRef str) {
     buffer_.append(str.data(), str.data() + str.size());
   }
@@ -2696,6 +2703,12 @@ class BasicWriter : public BasicWriterBase {
   void append_str(
       typename internal::WCharHelper<WStringRef, Char>::Supported str) {
     buffer_.append(str.data(), str.data() + str.size());
+  }
+
+  void append_str(
+      typename internal::WCharHelper<WStringRef, Char>::Unsupported) {
+    internal::Incomplete<Char>
+      converting_wide_strings_to_narrow_strings_is_not_supported;
   }
 
   void append_str(const StrFormatSpec<char> &spec) {
@@ -2710,185 +2723,144 @@ class BasicWriter : public BasicWriterBase {
     write_str(s, std::char_traits<wchar_t>::length(s), spec);
   }
 
- private:
-  // The following methods are private to disallow writing wide characters
-  // and strings to a char stream. If you want to print a wide string as a
-  // pointer as std::ostream does, cast it to const void*.
-  // Do not implement!
-  void append_char(
-      typename internal::WCharHelper<wchar_t, Char>::Unsupported);
-  void append_str(
-      typename internal::WCharHelper<WStringRef, Char>::Unsupported);
   void append_str(
       typename internal::WCharHelper<
-        const StrFormatSpec<wchar_t> &, Char>::Unsupported);
-};
+        const StrFormatSpec<wchar_t> &, Char>::Unsupported) {
+    internal::Incomplete<Char>
+      converting_wide_strings_to_narrow_strings_is_not_supported;
+  }
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, bool value) {
-  // Note:
-  // Uses the same format as ArgFormatterBase.
-  w.append_str(value ? "true" : "false");
-  return w;
-}
+  BasicWriter &operator<<(bool value) {
+    append_str(value ? "true" : "false");
+    return *this;
+  }
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, signed char value) {
-  w.append_decimal(static_cast<int>(value));
-  return w;
-}
+  BasicWriter &operator<<(signed char value) {
+    append_decimal(static_cast<int>(value));
+    return *this;
+  }
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, short value) {
-  w.append_decimal(static_cast<int>(value));
-  return w;
-}
+  BasicWriter &operator<<(short value) {
+    append_decimal(static_cast<int>(value));
+    return *this;
+  }
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, int value) {
-  w.append_decimal(static_cast<int>(value));
-  return w;
-}
+  BasicWriter &operator<<(int value) {
+    append_decimal(static_cast<int>(value));
+    return *this;
+  }
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, long value) {
-  w.append_decimal(value);
-  return w;
-}
+  BasicWriter &operator<<(long value) {
+    append_decimal(value);
+    return *this;
+  }
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, LongLong value) {
-  w.append_decimal(value);
-  return w;
-}
+  BasicWriter &operator<<(LongLong value) {
+    append_decimal(value);
+    return *this;
+  }
 
 #if USHRT_MAX <= INT_MAX
+  BasicWriter &operator<<(unsigned char value) {
+    append_decimal(static_cast<int>(value));
+    return *this;
+  }
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(
-    BasicWriter<Char> &w, unsigned char value) {
-  w.append_decimal(static_cast<int>(value));
-  return w;
-}
+  BasicWriter &operator<<(unsigned short value) {
+    append_decimal(static_cast<int>(value));
+    return *this;
+  }
+#else
+  BasicWriter &operator<<(unsigned char value) {
+    append_decimal(static_cast<unsigned int>(value));
+    return *this;
+  }
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(
-    BasicWriter<Char> &w, unsigned short value) {
-  w.append_decimal(static_cast<int>(value));
-  return w;
-}
-
-#else // !( USHRT_MAX <= INT_MAX ) ---->
-
-template <typename Char>
-inline BasicWriter<Char> &operator<<(
-    BasicWriter<Char> &w, unsigned char value) {
-  w.append_decimal(static_cast<unsigned int>(value));
-  return w;
-}
-
-template <typename Char>
-inline BasicWriter<Char> &operator<<(
-    BasicWriter<Char> &w, unsigned short value) {
-  w.append_decimal(static_cast<unsigned int>(value));
-  return w;
-}
-
+  BasicWriter &operator<<(unsigned short value) {
+    append_decimal(static_cast<unsigned int>(value));
+    return *this;
+  }
 #endif
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, unsigned int value) {
-  w.append_decimal(value);
-  return w;
-}
+  BasicWriter &operator<<(unsigned int value) {
+    append_decimal(value);
+    return *this;
+  }
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(
-    BasicWriter<Char> &w, unsigned long value) {
-  w.append_decimal(value);
-  return w;
-}
+  BasicWriter &operator<<(unsigned long value) {
+    append_decimal(value);
+    return *this;
+  }
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, ULongLong value) {
-  w.append_decimal(value);
-  return w;
-}
+  BasicWriter &operator<<(ULongLong value) {
+    append_decimal(value);
+    return *this;
+  }
+
+  BasicWriter &operator<<(float value) {
+    append_double(static_cast<double>(value));
+    return *this;
+  }
+
+  BasicWriter &operator<<(double value) {
+    append_double(value);
+    return *this;
+  }
+
+  BasicWriter &operator<<(long double value) {
+    append_double(value);
+    return *this;
+  }
+
+  BasicWriter &operator<<(char ch) {
+    append_char(ch);
+    return *this;
+  }
+
+  BasicWriter &operator<<(wchar_t ch) {
+    append_char(ch);
+    return *this;
+  }
+
+  BasicWriter &operator<<(const char *value) {
+    append_str(fmt::StringRef(value));
+    return *this;
+  }
+
+  BasicWriter &operator<<(const wchar_t *value) {
+    append_str(fmt::WStringRef(value));
+    return *this;
+  }
+
+  BasicWriter &operator<<(char *value) {
+    append_str(fmt::StringRef(value));
+    return *this;
+  }
+
+  BasicWriter &operator<<(wchar_t *value) {
+    append_str(fmt::WStringRef(value));
+    return *this;
+  }
+
+  BasicWriter &operator<<(const void *pointer) {
+    append_pointer(pointer);
+    return *this;
+  }
+
+  BasicWriter &operator<<(void *pointer) {
+    append_pointer(pointer);
+    return *this;
+  }
+
+  void clear() FMT_NOEXCEPT { buffer_.clear(); }
+
+  Buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
+};
 
 template <typename Char, typename Int, typename Spec, typename FillChar>
 inline BasicWriter<Char> &operator<<(
     BasicWriter<Char> &w, const IntFormatSpec<Int, Spec, FillChar> &value) {
   w.append_int(value);
-  return w;
-}
-
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, float value) {
-  w.append_double(static_cast<double>(value));
-  return w;
-}
-
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, double value) {
-  w.append_double(value);
-  return w;
-}
-
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, long double value) {
-  w.append_double(value);
-  return w;
-}
-
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, char ch) {
-  w.append_char(ch);
-  return w;
-}
-
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, wchar_t ch) {
-  w.append_char(ch);
-  return w;
-}
-
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, const char *value) {
-  w.append_str(fmt::StringRef(value));
-  return w;
-}
-
-template <typename Char>
-inline BasicWriter<Char> &operator<<(
-    BasicWriter<Char> &w, const wchar_t *value) {
-  w.append_str(fmt::WStringRef(value));
-  return w;
-}
-
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, char *value) {
-  w.append_str(fmt::StringRef(value));
-  return w;
-}
-
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, wchar_t *value) {
-  w.append_str(fmt::WStringRef(value));
-  return w;
-}
-
-template <typename Char, typename Elem>
-inline BasicWriter<Char> &operator<<(
-    BasicWriter<Char> &w, fmt::BasicStringRef<Elem> s) {
-  w.append_str(s);
-  return w;
-}
-
-template <typename Char, typename Elem, typename Alloc>
-inline BasicWriter<Char> &operator<<(
-    BasicWriter<Char> &w,
-    const std::basic_string<Elem, std::char_traits<Elem>, Alloc> &value) {
-  w.append_str(fmt::BasicStringRef<Elem>(value));
   return w;
 }
 
@@ -2899,16 +2871,17 @@ inline BasicWriter<Char> &operator<<(
   return w;
 }
 
-template <typename Char>
+template <typename Char, typename Elem>
 inline BasicWriter<Char> &operator<<(
-    BasicWriter<Char> &w, const void *pointer) {
-  w.append_pointer(pointer);
+    BasicWriter<Char> &w, const fmt::BasicStringRef<Elem> &s) {
+  w.append_str(s);
   return w;
 }
 
-template <typename Char>
-inline BasicWriter<Char> &operator<<(BasicWriter<Char> &w, void *pointer) {
-  w.append_pointer(pointer);
+template <typename Char, typename Elem, typename Traits, typename Alloc>
+inline BasicWriter<Char> &operator<<(
+    BasicWriter<Char> &w, const std::basic_string<Elem, Traits, Alloc> &value) {
+  w.append_str(fmt::BasicStringRef<Elem>(value));
   return w;
 }
 
@@ -2923,8 +2896,7 @@ template <
   typename = typename std::enable_if<
     !std::is_lvalue_reference<WriterT>::value
       && std::is_base_of<BasicWriterBase, WriterT>::value
-  >::type,
-  typename = decltype(std::declval<WriterT &>() << std::declval<const T&>())
+  >::type
 >
 inline WriterT &&operator<<(WriterT &&w, const T &value) {
   w << value;
