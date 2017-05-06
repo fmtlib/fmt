@@ -371,7 +371,7 @@ FMT_FUNC void internal::format_windows_error(
       if (result != 0) {
         UTF16ToUTF8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          out << message << ": " << utf8_message;
+          out << message << ": " << StringRef(utf8_message);
           return;
         }
         break;

@@ -79,6 +79,18 @@ using fmt::MemoryWriter;
 using fmt::WMemoryWriter;
 using fmt::pad;
 
+namespace fmt {
+  // Mimic operator<< defined in ostream.h.
+  // If this gets called in any of the tests below, this is an error. All of the
+  // types used here should be handled by operator<< defined in format.h or a
+  // specific overload defined in this file.
+  template <typename Char, typename T>
+  BasicWriter<Char> &operator<<(BasicWriter<Char> &w, const T &) {
+    typename T::this_is_an_error t;
+    return w;
+  }
+}
+
 namespace {
 
 // Format value using the standard library.
@@ -481,6 +493,85 @@ TEST(WriterTest, Format) {
 
 TEST(WriterTest, WWriter) {
   EXPECT_EQ(L"cafe", (fmt::WMemoryWriter() << fmt::hex(0xcafe)).str());
+}
+
+TEST(WriterTest, Stream) {
+  const char *ncs = "ncs";
+
+  EXPECT_EQ("true", (MemoryWriter() << true).str());
+  EXPECT_EQ("false", (MemoryWriter() << false).str());
+  EXPECT_EQ("0", (MemoryWriter() << (signed char)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (signed short)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (signed int)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (signed long)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (fmt::LongLong)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (unsigned char)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (unsigned short)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (unsigned int)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (unsigned long)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (fmt::ULongLong)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (float)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (double)0).str());
+  EXPECT_EQ("0", (MemoryWriter() << (long double)0).str());
+  EXPECT_EQ("0x1234", (MemoryWriter() << (const void *)0x1234).str());
+  EXPECT_EQ("0x1234", (MemoryWriter() << (void *)0x1234).str());
+  EXPECT_EQ("x", (MemoryWriter() << (char)'x').str());
+  EXPECT_EQ("ncs", (MemoryWriter() << (const char *)ncs).str());
+  EXPECT_EQ("ncs", (MemoryWriter() << (char *)ncs).str());
+  EXPECT_EQ("ncs", (MemoryWriter() << fmt::StringRef(ncs)).str());
+  EXPECT_EQ("ncs", (MemoryWriter() << std::string(ncs)).str());
+  EXPECT_EQ("0", (MemoryWriter() << fmt::IntFormatSpec<int>(0)).str());
+  EXPECT_EQ("ncs", (MemoryWriter() << fmt::StrFormatSpec<char>(ncs, 3, ' ')).str());
+
+  // This should not compile:
+#if 0
+  const wchar_t *wcs = L"wcs";
+  MemoryWriter w;
+  //w << (wchar_t)'x';
+  //w << (const wchar_t *)wcs;
+  //w << (wchar_t *)wcs;
+  //w << fmt::WStringRef(wcs);
+  //w << std::wstring(wcs);
+  w << fmt::StrFormatSpec<wchar_t>(wcs, 3, ' ');
+#endif
+}
+
+TEST(WWriterTest, Stream) {
+  const wchar_t *wcs = L"wcs";
+
+  EXPECT_EQ(L"true", (WMemoryWriter() << true).str());
+  EXPECT_EQ(L"false", (WMemoryWriter() << false).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (signed char)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (signed short)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (signed int)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (signed long)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (fmt::LongLong)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (unsigned char)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (unsigned short)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (unsigned int)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (unsigned long)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (fmt::ULongLong)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (float)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (double)0).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << (long double)0).str());
+  EXPECT_EQ(L"0x1234", (WMemoryWriter() << (const void*)0x1234).str());
+  EXPECT_EQ(L"0x1234", (WMemoryWriter() << (void *)0x1234).str());
+  EXPECT_EQ(L"x", (WMemoryWriter() << (wchar_t)'x').str());
+  EXPECT_EQ(L"wcs", (WMemoryWriter() << (const wchar_t *)wcs).str());
+  EXPECT_EQ(L"wcs", (WMemoryWriter() << (wchar_t *)wcs).str());
+  EXPECT_EQ(L"wcs", (WMemoryWriter() << fmt::WStringRef(wcs)).str());
+  EXPECT_EQ(L"wcs", (WMemoryWriter() << std::wstring(wcs)).str());
+  EXPECT_EQ(L"0", (WMemoryWriter() << fmt::IntFormatSpec<int>(0)).str());
+  EXPECT_EQ(L"wcs", (WMemoryWriter() << fmt::StrFormatSpec<wchar_t>(wcs, 3, ' ')).str());
+
+  const char *ncs = "ncs";
+
+  EXPECT_EQ(L"x", (WMemoryWriter() << (char)'x').str());
+  EXPECT_EQ(L"ncs", (WMemoryWriter() << (const char *)ncs).str());
+  EXPECT_EQ(L"ncs", (WMemoryWriter() << (char *)ncs).str());
+  EXPECT_EQ(L"ncs", (WMemoryWriter() << fmt::StringRef(ncs)).str());
+  EXPECT_EQ(L"ncs", (WMemoryWriter() << std::string(ncs)).str());
+  EXPECT_EQ(L"ncs", (WMemoryWriter() << fmt::StrFormatSpec<char>(ncs, 3, ' ')).str());
 }
 
 TEST(ArrayWriterTest, Ctor) {
