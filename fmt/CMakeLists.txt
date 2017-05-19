@@ -77,7 +77,7 @@ if (FMT_INSTALL)
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
     ${project_config}
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
-  export(TARGETS ${INSTALL_TARGETS}
+  export(TARGETS ${INSTALL_TARGETS} NAMESPACE Fmt::
          FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
   # Install version, config and target files.
