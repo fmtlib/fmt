@@ -84,7 +84,8 @@ if (FMT_INSTALL)
   install(
     FILES ${project_config} ${version_config}
     DESTINATION ${FMT_CMAKE_DIR})
-  install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR})
+  install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR}
+    NAMESPACE Fmt::)
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
