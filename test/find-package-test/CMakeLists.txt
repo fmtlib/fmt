@@ -5,7 +5,7 @@ project(fmt-test)
 find_package(FMT REQUIRED)
 
 add_executable(library-test main.cc)
-target_link_libraries(library-test fmt)
+target_link_libraries(library-test Fmt::fmt)
 
 if (TARGET fmt-header-only)
   add_executable(header-only-test main.cc)
