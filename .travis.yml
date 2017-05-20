@@ -1,4 +1,5 @@
 language: cpp
+dist: trusty
 sudo: required # the doc target uses sudo to install dependencies
 
 os:
@@ -21,13 +22,6 @@ matrix:
   exclude:
     - os: osx
       env: BUILD=Doc
-
-addons:
-  apt:
-    sources:
-      - kubuntu-backports # cmake 2.8.12
-    packages:
-      - cmake
 
 script:
   - support/travis-build.py
