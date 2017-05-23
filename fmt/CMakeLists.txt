@@ -8,6 +8,7 @@ if (HAVE_OPEN)
 endif ()
 
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} ../README.rst ../ChangeLog.rst)
+add_library(fmt::fmt ALIAS fmt)
 
 option(FMT_CPPFORMAT "Build cppformat library for backward compatibility." OFF)
 if (FMT_CPPFORMAT)
@@ -43,6 +44,7 @@ endif ()
 # additionally define a header only library when cmake is new enough
 if (CMAKE_VERSION VERSION_GREATER 3.1.0 OR CMAKE_VERSION VERSION_EQUAL 3.1.0)
   add_library(fmt-header-only INTERFACE)
+  add_library(fmt::fmt-header-only ALIAS fmt-header-only)
 
   target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 
