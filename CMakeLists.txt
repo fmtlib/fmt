@@ -133,6 +133,7 @@ endif ()
 # Additionally define a header-only library when CMake is new enough.
 if (CMAKE_VERSION VERSION_GREATER 3.1.0 OR CMAKE_VERSION VERSION_EQUAL 3.1.0)
   add_library(fmt-header-only INTERFACE)
+  add_library(fmt::fmt-header-only ALIAS fmt-header-only)
 
   target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 
