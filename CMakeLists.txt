@@ -33,7 +33,9 @@ option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 option(FMT_DOC "Generate the doc target." ${MASTER_PROJECT})
 option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
-option(FMT_USE_CPP11 "Enable the addition of C++11 compiler flags." ON)
+if (MASTER_PROJECT)
+   option(FMT_USE_CPP11 "Enable the addition of C++11 compiler flags." ON)
+endif()
 
 project(FMT)
 
