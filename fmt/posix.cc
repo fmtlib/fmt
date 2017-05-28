@@ -64,6 +64,27 @@ typedef ssize_t RWResult;
 
 inline std::size_t convert_rwcount(std::size_t count) { return count; }
 #endif
+
+std::FILE* u8fopen(fmt::CStringRef filename, fmt::CStringRef mode) {
+#ifdef _WIN32
+  fmt::UTF8ToUTF16 nconv(filename.c_str());
+  fmt::UTF8ToUTF16 mconv(mode.c_str());
+  return FMT_SYSTEM(_wfopen(nconv.c_str(), mconv.c_str()));
+#else
+  return FMT_SYSTEM(fopen(filename.c_str(), mode.c_str()));
+#endif
+}
+
+int u8open(fmt::CStringRef filename, int flags, int mode) {
+#ifdef _WIN32
+  fmt::UTF8ToUTF16 conv(filename.c_str());
+  int fd = -1;
+  FMT_POSIX(wsopen_s(&fd, conv.c_str(), flags, _SH_DENYNO, mode));
+  return fd;
+#else
+  return FMT_POSIX_CALL(open(filename, flags, mode));
+#endif
+}
 }
 
 fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT {
@@ -73,7 +94,7 @@ fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT {
 
 fmt::BufferedFile::BufferedFile(
     fmt::CStringRef filename, fmt::CStringRef mode) {
-  FMT_RETRY_VAL(file_, FMT_SYSTEM(fopen(filename.c_str(), mode.c_str())), 0);
+  FMT_RETRY_VAL(file_, u8fopen(filename, mode), 0);
   if (!file_)
     FMT_THROW(SystemError(errno, "cannot open file {}", filename));
 }
@@ -99,12 +120,7 @@ int fmt::BufferedFile::fileno() const {
 
 fmt::File::File(fmt::CStringRef path, int oflag) {
   int mode = S_IRUSR | S_IWUSR;
-#if defined(_WIN32) && !defined(__MINGW32__)
-  fd_ = -1;
-  FMT_POSIX_CALL(sopen_s(&fd_, path.c_str(), oflag, _SH_DENYNO, mode));
-#else
-  FMT_RETRY(fd_, FMT_POSIX_CALL(open(path.c_str(), oflag, mode)));
-#endif
+  FMT_RETRY(fd_, u8open(path, oflag, mode));
   if (fd_ == -1)
     FMT_THROW(SystemError(errno, "cannot open file {}", path));
 }
