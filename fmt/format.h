@@ -2865,7 +2865,7 @@ void BasicWriter<Char>::write_int(T value, Spec spec) {
     ++prefix_size;
   }
   switch (spec.type()) {
-  case 0: case 'd': {
+  case 0: case 'd': case 'i': {
     unsigned num_digits = internal::count_digits(abs_value);
     CharPtr p = prepare_int_buffer(num_digits, spec, prefix, prefix_size) + 1;
     internal::format_decimal(get(p), abs_value, 0);
