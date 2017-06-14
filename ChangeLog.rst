@@ -1,3 +1,38 @@
+3.0.2 - 2017-06-14
+------------------
+
+* Added ``FMT_VERSION`` macro (`#411 <https://github.com/fmtlib/fmt/issues/411>`_).
+
+* Used ``FMT_NULL`` instead of literal ``0`` (`#409 <https://github.com/fmtlib/fmt/pull/409>`_). Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
+
+* Added extern templates for ``format_float`` (`#413 <https://github.com/fmtlib/fmt/issues/413>`_).
+
+* Fixed implicit conversion issue (`#507 <https://github.com/fmtlib/fmt/issues/507>`_).
+
+* Fixed signbit detection (`#423 <https://github.com/fmtlib/fmt/issues/423>`_).
+
+* Fixed naming collision (`#425 <https://github.com/fmtlib/fmt/issues/425>`_).
+
+* Fixed missing intrinsic for C++/CLI (`#457 <https://github.com/fmtlib/fmt/pull/457>`_). Thanks `@calumr (Calum Robinson) <https://github.com/calumr>`_
+
+* Fixed Android detection (`#458 <https://github.com/fmtlib/fmt/pull/458>`_). Thanks `@Gachapen (Magnus Bjerke Vik) <https://github.com/Gachapen>`_.
+
+* Use lean ``windows.h`` if not in header-only mode (`#503 <https://github.com/fmtlib/fmt/pull/503>`_). Thanks `@Quentin01 (Quentin Buathier) <https://github.com/Quentin01>`_.
+
+* Fixed issue with CMake exporting C++11 flag (`#445 <https://github.com/fmtlib/fmt/pull/455>`_). Thanks `@EricWF (Eric) <https://github.com/EricWF>`_.
+
+* Fixed issue with nvcc and MSVC compiler bug and MinGW (`#505 <https://github.com/fmtlib/fmt/issues/505>`_).
+
+* Fixed DLL issues (`#469 <https://github.com/fmtlib/fmt/pull/469>`_ and `#502 <https://github.com/fmtlib/fmt/pull/502>`_). Thanks `@richardeakin (Richard Eakin) <https://github.com/richardeakin>`_ and `@AndreasSchoenle (Andreas Schönle) <https://github.com/AndreasSchoenle>`_.
+
+* Fixed test compilation under FreeBSD (`#433 <https://github.com/fmtlib/fmt/issues/433>`_).
+
+* Fixed various warnings (`#403 <https://github.com/fmtlib/fmt/pull/403>`_, `#410 <https://github.com/fmtlib/fmt/pull/410>`_ and `#510 <https://github.com/fmtlib/fmt/pull/510>`_). Thanks `@Lecetem <https://github.com/Lectem>`_, `@chenhayat (Chen Hayat) <https://github.com/chenhayat>`_ and `@trozen <https://github.com/trozen>`_.
+
+* Removed redundant include (`#479 <https://github.com/fmtlib/fmt/issues/479>`_).
+
+* Fixed documentation issues.
+
 3.0.1 - 2016-11-01
 ------------------
 * Fixed handling of thousands seperator (`#353 <https://github.com/fmtlib/fmt/issues/353>`_)
