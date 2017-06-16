@@ -288,11 +288,11 @@ typedef __int64          intmax_t;
 #endif
 
 #if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
-# define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
+# define FMT_BUILTIN_CLZ(n) (31 - __builtin_clz(n))
 #endif
 
 #if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
-# define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
+# define FMT_BUILTIN_CLZLL(n) (63 - __builtin_clzll(n))
 #endif
 
 // Some compilers masquerade as both MSVC and GCC-likes or
