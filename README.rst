@@ -138,6 +138,10 @@ Projects using this library
 
 * `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater vehicle
 
+* `Drake <http://drake.mit.edu/>`_: A planning, control, and analysis toolbox for nonlinear dynamical systems (MIT)
+
+* `Envoy <https://lyft.github.io/envoy/>`_: C++ L7 proxy and communication bus (Lyft)
+
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
 
@@ -148,8 +152,6 @@ Projects using this library
 * `Kodi <https://kodi.tv/>`_ (formerly xbmc): Home theater software
 
 * `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
-
-* `Lyft Envoy <https://lyft.github.io/envoy/>`_: C++ L7 proxy and communication bus
 
 * `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to generate randomized datasets
 
