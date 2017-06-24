@@ -1,3 +1,64 @@
+4.0.0 - TBD
+-----------
+
+* Removed old compatibility headers ``cppformat/*.h`` and CMake options (`#527 <https://github.com/pull/527>`_). Thanks `@maddinat0r (Alex Martin) <https://github.com/maddinat0r>`_.
+
+* Added ``string.h`` containing ``fmt::to_string()`` as alternative to ``std::to_string()`` as well as other string writer functionality (`#326 <https://github.com/fmtlib/fmt/issues/326>`_ and `#441 <https://github.com/fmtlib/fmt/pull/441>`_):
+
+  .. code:: c++
+
+    #include "fmt/string.h"
+  
+    std::string answer = fmt::to_string(42);
+
+  Thanks to `@glebov-andrey (Andrey Glebov) <https://github.com/glebov-andrey>`_.
+
+* Moved ``fmt::printf()`` to new ``printf.h`` header and allowed ``%s`` as generic specifier (`#453 <https://github.com/fmtlib/fmt/pull/453>`_), made ``%.f`` more conformant to regular ``printf()`` (`#490 <https://github.com/fmtlib/fmt/pull/490>`_), added custom writer support (`#476 <https://github.com/fmtlib/fmt/issues/476>`_) and implemented missing custom argument formatting (`#339 <https://github.com/fmtlib/fmt/pull/339>`_ and `#340 <https://github.com/fmtlib/fmt/pull/340>`_):
+
+  .. code:: c++
+
+    #include "fmt/printf.h"
+ 
+    // %s format specifier can be used with any argument type.
+    fmt::printf("%s", 42);
+
+  Thanks `@mojoBrendan <https://github.com/mojoBrendan>`_, `@manylegged (Arthur Danskin) <https://github.com/manylegged>`_ and `@spacemoose (Glen Stark) <https://github.com/spacemoose>`_. See also `#360 <https://github.com/fmtlib/fmt/issues/360>`_, `#335 <https://github.com/fmtlib/fmt/issues/335>`_ and `#331 <https://github.com/fmtlib/fmt/issues/331>`_.
+
+* Added ``container.h`` containing a ``BasicContainerWriter`` to write to containers like ``std::vector`` (`#450 <https://github.com/fmtlib/fmt/pull/450>`_). Thanks `@polyvertex (Jean-Charles Lefebvre) <https://github.com/polyvertex>`_.
+
+* Added ``fmt::join()`` function that takes a range and formats its elements separated by a given string (`#466 <https://github.com/fmtlib/fmt/pull/466>`_):
+
+  .. code:: c++
+
+    #include "fmt/format.h"
+ 
+    std::vector<double> v = {1.2, 3.4, 5.6};
+    // Prints "(+01.20, +03.40, +05.60)".
+    fmt::print("({:+06.2f})", fmt::join(v.begin(), v.end(), ", "));
+
+  Thanks `@olivier80 <https://github.com/olivier80>`_.
+
+* Added support for custom formatting specifications to simplify customization of built-in formatting (`#444 <https://github.com/fmtlib/fmt/pull/444>`_). Thanks `@polyvertex (Jean-Charles Lefebvre) <https://github.com/polyvertex>`_. See also `#439 <https://github.com/fmtlib/fmt/issues/439>`_.
+
+* Added ``fmt::format_system_error()`` for error code formatting (`#323 <https://github.com/fmtlib/fmt/issues/323>`_ and `#526 <https://github.com/fmtlib/fmt/pull/526>`_). Thanks `@maddinat0r (Alex Martin) <https://github.com/maddinat0r>`_.
+
+* Added thread-safe ``fmt::localtime()`` and ``fmt::gmtime()`` as replacement for the standard version to ``time.h`` (`#396 <https://github.com/fmtlib/fmt/pull/396>`_). Thanks `@codicodi <https://github.com/codicodi>`_.
+
+* Internal improvements to ``NamedArg`` and ``ArgLists`` (`#389 <https://github.com/fmtlib/fmt/pull/389>`_ and `#390 <https://github.com/fmtlib/fmt/pull/390>`_). Thanks `@chronoxor <https://github.com/chronoxor>`_.
+
+* Fixed crash due to bug in ``FormatBuf`` (`#493 <https://github.com/fmtlib/fmt/pull/493>`_). Thanks `@effzeh <https://github.com/effzeh>`_. See also `#480 <https://github.com/fmtlib/fmt/issues/480>`_ and `#491 <https://github.com/fmtlib/fmt/issues/491>`_.
+
+* Fixed handling of wide strings in ``fmt::StringWriter``.
+
+* Improved compiler error messages (`#357 <https://github.com/fmtlib/fmt/issues/357>`_).
+
+* Fixed various warnings and issues with various compilers (`#494 <https://github.com/fmtlib/fmt/pull/494>`_, `#499 <https://github.com/fmtlib/fmt/pull/499>`_, `#483 <https://github.com/fmtlib/fmt/pull/483>`_, `#519 <https://github.com/fmtlib/fmt/pull/519>`_, `#485 <https://github.com/fmtlib/fmt/pull/485>`_, `#482 <https://github.com/fmtlib/fmt/pull/482>`_, `#475 <https://github.com/fmtlib/fmt/pull/475>`_, `#473 <https://github.com/fmtlib/fmt/pull/473>`_ and `#414 <https://github.com/fmtlib/fmt/pull/414>`_). Thanks `@chronoxor <https://github.com/chronoxor>`_, `@zhaohuaxishi <https://github.com/zhaohuaxishi>`_, `@pkestene (Pierre Kestener) <https://github.com/pkestene>`_, `@dschmidt (Dominik Schmidt) <https://github.com/dschmidt>`_ and `@0x414c (Alexey Gorishny) <https://github.com/0x414c>`_ .
+
+* Improved CMake: targets are now namespaced (`#511 <https://github.com/fmtlib/fmt/pull/511>`_ and `#513 <https://github.com/fmtlib/fmt/pull/513>`_), supported header-only ``printf.h`` (`#354 <https://github.com/fmtlib/fmt/pull/354>`_), fixed issue with minimal supported library subset (`#418 <https://github.com/fmtlib/fmt/issues/418>`_, `#419 <https://github.com/fmtlib/fmt/pull/419>`_ and `#420 <https://github.com/fmtlib/fmt/pull/420>`_). Thanks `@bjoernthiel (Bjoern Thiel) <https://github.com/bjoernthiel>`_,
+  `@niosHD (Mario Werner) <https://github.com/niosHD>`_, `@LogicalKnight (Sean LK) <https://github.com/LogicalKnight>`_ and `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
+
+* Improved documentation. Thanks to `@pwm1234 (Phil) <https://github.com/pwm1234>`_ for `#393 <https://github.com/fmtlib/fmt/pull/393>`_.
+
 3.0.2 - 2017-06-14
 ------------------
 

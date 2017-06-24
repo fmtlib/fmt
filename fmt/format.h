@@ -41,7 +41,7 @@
 #include <utility>  // for std::pair
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 30002
+#define FMT_VERSION 40000
 
 #ifdef _SECURE_SCL
 # define FMT_SECURE_SCL _SECURE_SCL
