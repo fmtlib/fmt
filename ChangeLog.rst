@@ -1,5 +1,5 @@
-4.0.0 - TBD
------------
+4.0.0 - 2017-06-27
+------------------
 
 * Removed old compatibility headers ``cppformat/*.h`` and CMake options (`#527 <https://github.com/pull/527>`_). Thanks `@maddinat0r (Alex Martin) <https://github.com/maddinat0r>`_.
 
