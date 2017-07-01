@@ -8,7 +8,7 @@ Usage:
 """
 
 from __future__ import print_function
-import datetime, docopt, fileinput, json, os
+import datetime, docopt, errno, fileinput, json, os
 import re, requests, shutil, sys, tempfile
 from contextlib import contextmanager
 from distutils.version import LooseVersion
@@ -80,6 +80,7 @@ def create_build_env():
     import build
 
     env.build_dir = 'build'
+    env.versions = build.versions
 
     # Virtualenv and repos are cached to speed up builds.
     build.create_build_env(os.path.join(env.build_dir, 'virtualenv'))
@@ -113,7 +114,7 @@ def update_site(env):
     doc_repo = Git(os.path.join(env.build_dir, 'fmtlib.github.io'))
     doc_repo.update('git@github.com:fmtlib/fmtlib.github.io')
 
-    for version in ['1.0.0', '1.1.0', '2.0.0', '3.0.2', '4.0.0']:
+    for version in env.versions:
         clean_checkout(env.fmt_repo, version)
         target_doc_dir = os.path.join(env.fmt_repo.dir, 'doc')
         # Remove the old theme.
@@ -165,7 +166,11 @@ def update_site(env):
                 os.symlink(target, link)
         # Copy docs to the website.
         version_doc_dir = os.path.join(doc_repo.dir, version)
-        shutil.rmtree(version_doc_dir)
+        try:
+            shutil.rmtree(version_doc_dir)
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
         shutil.move(html_dir, version_doc_dir)
 
 
@@ -205,13 +210,13 @@ def release(args):
             title_len = 0
         sys.stdout.write(line)
 
-    # Add the version to the script.
-    script = os.path.join('support', 'manage.py')
+    # Add the version to the build script.
+    script = os.path.join('doc', 'build.py')
     script_path = os.path.join(fmt_repo.dir, script)
     for line in fileinput.input(script_path, inplace=True):
-      m = re.match(r'( *for version in )\[(.+)\]:', line)
+      m = re.match(r'( *versions = )\[(.+)\]', line)
       if m:
-        line = '{}[{}, \'{}\']:\n'.format(m.group(1), m.group(2), version)
+        line = '{}[{}, \'{}\']\n'.format(m.group(1), m.group(2), version)
       sys.stdout.write(line)
 
     fmt_repo.checkout('-B', 'release')

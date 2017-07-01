@@ -6,6 +6,8 @@ import errno, os, shutil, sys, tempfile
 from subprocess import check_call, check_output, CalledProcessError, Popen, PIPE
 from distutils.version import LooseVersion
 
+versions = ['1.0.0', '1.1.0', '2.0.0', '3.0.2', '4.0.0']
+
 def pip_install(package, commit=None, **kwargs):
   "Install package using pip."
   min_version = kwargs.get('min_version')
@@ -93,11 +95,11 @@ def build_docs(version='dev', **kwargs):
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
   html_dir = os.path.join(work_dir, 'html')
-  versions = ['3.0.0', '2.0.0', '1.1.0']
+  main_versions = reversed(versions[-3:])
   check_call(['sphinx-build',
               '-Dbreathe_projects.format=' + os.path.abspath(doxyxml_dir),
               '-Dversion=' + version, '-Drelease=' + version,
-              '-Aversion=' + version, '-Aversions=' + ','.join(versions),
+              '-Aversion=' + version, '-Aversions=' + ','.join(main_versions),
               '-b', 'html', doc_dir, html_dir])
   try:
     check_call(['lessc', '--clean-css',
