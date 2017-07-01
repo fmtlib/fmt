@@ -43,7 +43,7 @@
 #undef FMT_INCLUDE
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 40000
+#define FMT_VERSION 40001
 
 #ifdef _SECURE_SCL
 # define FMT_SECURE_SCL _SECURE_SCL
