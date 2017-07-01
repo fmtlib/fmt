@@ -7,6 +7,10 @@
  For the license information refer to format.h.
  */
 
+#ifdef FMT_INCLUDE
+# error Add the fmt's parent directory and not fmt itself to includes.
+#endif
+
 #ifndef FMT_STRING_H_
 #define FMT_STRING_H_
 
