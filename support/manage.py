@@ -113,7 +113,7 @@ def update_site(env):
     doc_repo = Git(os.path.join(env.build_dir, 'fmtlib.github.io'))
     doc_repo.update('git@github.com:fmtlib/fmtlib.github.io')
 
-    for version in ['1.0.0', '1.1.0', '2.0.0', '3.0.0']:
+    for version in ['1.0.0', '1.1.0', '2.0.0', '3.0.2', '4.0.0']:
         clean_checkout(env.fmt_repo, version)
         target_doc_dir = os.path.join(env.fmt_repo.dir, 'doc')
         # Remove the old theme.
