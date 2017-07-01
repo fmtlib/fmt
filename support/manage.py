@@ -204,16 +204,24 @@ def release(args):
             line = '-' * title_len + '\n'
             title_len = 0
         sys.stdout.write(line)
-    # TODO: add new version to manage.py
+
+    # Add the version to the script.
+    script = os.path.join('support', 'manage.py')
+    script_path = os.path.join(fmt_repo.dir, script)
+    for line in fileinput.input(script_path, inplace=True):
+      m = re.match(r'( *for version in )\[(.+)\]:', line)
+      if m:
+        line = '{}[{}, \'{}\']:\n'.format(m.group(1), m.group(2), version)
+      sys.stdout.write(line)
+
     fmt_repo.checkout('-B', 'release')
-    fmt_repo.add(changelog, cmakelists)
+    fmt_repo.add(changelog, cmakelists, script)
     fmt_repo.commit('-m', 'Update version')
 
     # Build the docs and package.
     run = Runner(fmt_repo.dir)
     run('cmake', '.')
     run('make', 'doc', 'package_source')
-
     update_site(env)
 
     # Create a release on GitHub.
