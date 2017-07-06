@@ -119,7 +119,8 @@ typedef __int64          intmax_t;
 # define FMT_GNUC_LIBSTD_VERSION (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
 #endif
 
-#ifdef __has_feature
+// GLM defines __has_feature to '0' which causes MSVC to throw C4574 
+#if defined(__has_feature) && __has_feature 
 # define FMT_HAS_FEATURE(x) __has_feature(x)
 #else
 # define FMT_HAS_FEATURE(x) 0
