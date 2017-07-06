@@ -99,7 +99,9 @@ typedef __int64          intmax_t;
 #  define FMT_HAS_GXX_CXX11 1
 # endif
 #else
+# define FMT_GCC_VERSION 0
 # define FMT_GCC_EXTENSION
+# define FMT_HAS_GXX_CXX11 0
 #endif
 
 #if defined(__INTEL_COMPILER)
