@@ -120,7 +120,7 @@ typedef __int64          intmax_t;
 #endif
 
 // GLM defines __has_feature to '0' which causes MSVC to throw C4574 
-#if defined(__has_feature) && __has_feature 
+#if (defined(__has_feature) && (__has_feature))
 # define FMT_HAS_FEATURE(x) __has_feature(x)
 #else
 # define FMT_HAS_FEATURE(x) 0
