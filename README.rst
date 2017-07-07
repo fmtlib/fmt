@@ -155,6 +155,8 @@ Projects using this library
 
 * `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to generate randomized datasets
 
+* `OpenSpace <http://openspaceproject.com/>`_: An open-source astrovisualization framework
+
 * `PenUltima Online (POL) <http://www.polserver.com/>`_:
   An MMO server, compatible with most Ultima Online clients
 
