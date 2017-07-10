@@ -121,11 +121,26 @@ typedef __int64          intmax_t;
 # define FMT_GNUC_LIBSTD_VERSION (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
 #endif
 
+// GLM defines __has_feature to '0' which causes MSVC to throw C4574
+// An #if check against __has_feature makes Clang unhappy, so the only way
+// around this is to disable the warning for Microsoft Visual Studio
+// Even though this is all macros, this will still work since it is the
+// #ifdef __has_feature that throws the error, not the macro expansion
+#ifdef _MSC_VER
+#pragma warning (push)
+#pragma warning (disable : 4574)
+#endif // _MSC_VER
+
 #ifdef __has_feature
 # define FMT_HAS_FEATURE(x) __has_feature(x)
 #else
 # define FMT_HAS_FEATURE(x) 0
 #endif
+
+// And reenabling it afterwards
+#ifdef _MSC_VER
+#pragma warning (pop)
+#endif // _MSC_VER
 
 #ifdef __has_builtin
 # define FMT_HAS_BUILTIN(x) __has_builtin(x)
