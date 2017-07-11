@@ -8,7 +8,7 @@
  */
 
 #ifdef FMT_INCLUDE
-# error Add the fmt's parent directory and not fmt itself to includes.
+# error "Add the fmt's parent directory and not fmt itself to includes."
 #endif
 
 #ifndef FMT_STRING_H_
