@@ -1534,7 +1534,7 @@ template <>
 constexpr uint64_t make_type<void>() { return 0; }
 
 // Maximum number of arguments with packed types.
-enum { MAX_PACKED_ARGS = 16 };
+enum { MAX_PACKED_ARGS = 15 };
 
 template <bool IS_PACKED, typename Context, typename T>
 inline typename std::enable_if<IS_PACKED, value<Context>>::type
@@ -1567,7 +1567,9 @@ class arg_store {
   Array data_;
 
  public:
-  static const uint64_t TYPES = internal::make_type<Args..., void>();
+  static const uint64_t TYPES =
+      NUM_ARGS <= internal::MAX_PACKED_ARGS ?
+        internal::make_type<Args..., void>() : -NUM_ARGS;
 
   arg_store(const Args &... args)
     : data_(Array{{internal::make_arg<IS_PACKED, Context>(args)...}}) {}
@@ -1619,27 +1621,18 @@ class basic_args {
   void set_data(const format_arg *args) { args_ = args; }
 
   format_arg get(size_type index) const {
+    int64_t signed_types = static_cast<int64_t>(types_);
+    if (signed_types < 0) {
+      uint64_t num_args = -signed_types;
+      return index < num_args ? args_[index] : format_arg();
+    }
+    if (index > internal::MAX_PACKED_ARGS)
+      return format_arg();
     format_arg arg;
-    bool use_values = type(internal::MAX_PACKED_ARGS - 1) == internal::NONE;
-    if (index < internal::MAX_PACKED_ARGS) {
-      typename internal::Type arg_type = type(index);
-      internal::value<Context> &val = arg.value_;
-      if (arg_type != internal::NONE)
-        val = use_values ? values_[index] : args_[index].value_;
-      arg.type_ = arg_type;
-      return arg;
-    }
-    if (use_values) {
-      // The index is greater than the number of arguments that can be stored
-      // in values, so return a "none" argument.
-      arg.type_ = internal::NONE;
-      return arg;
-    }
-    for (unsigned i = internal::MAX_PACKED_ARGS; i <= index; ++i) {
-      if (args_[i].type_ == internal::NONE)
-        return args_[i];
-    }
-    return args_[index];
+    arg.type_ = type(index);
+    internal::value<Context> &val = arg.value_;
+    val = values_[index];
+    return arg;
   }
 
  public:
