@@ -1626,10 +1626,12 @@ class basic_args {
       uint64_t num_args = -signed_types;
       return index < num_args ? args_[index] : format_arg();
     }
-    if (index > internal::MAX_PACKED_ARGS)
-      return format_arg();
     format_arg arg;
+    if (index > internal::MAX_PACKED_ARGS)
+      return arg;
     arg.type_ = type(index);
+    if (arg.type_ == internal::NONE)
+      return arg;
     internal::value<Context> &val = arg.value_;
     val = values_[index];
     return arg;
