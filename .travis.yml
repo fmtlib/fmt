@@ -1,4 +1,5 @@
 language: cpp
+dist: trusty
 sudo: required # the doc target uses sudo to install dependencies
 
 os:
