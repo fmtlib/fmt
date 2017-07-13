@@ -1569,7 +1569,7 @@ class arg_store {
  public:
   static const uint64_t TYPES =
       NUM_ARGS <= internal::MAX_PACKED_ARGS ?
-        internal::make_type<Args..., void>() : -NUM_ARGS;
+        internal::make_type<Args..., void>() : -static_cast<int64_t>(NUM_ARGS);
 
   arg_store(const Args &... args)
     : data_(Array{{internal::make_arg<IS_PACKED, Context>(args)...}}) {}
