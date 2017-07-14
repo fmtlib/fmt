@@ -45,7 +45,7 @@
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 40001
 
-#ifdef _SECURE_SCL
+#if defined _SECURE_SCL && _SECURE_SCL
 # define FMT_SECURE_SCL _SECURE_SCL
 #else
 # define FMT_SECURE_SCL 0
