@@ -26,7 +26,6 @@
  */
 
 #include "fmt/format.h"
-#include "fmt/printf.h"
 
 #include <string.h>
 
@@ -438,17 +437,6 @@ FMT_FUNC void vprint_colored(Color c, cstring_view format, args args) {
   std::fputs(RESET_COLOR, stdout);
 }
 
-template <typename Char>
-void printf(basic_writer<Char> &w, basic_cstring_view<Char> format, args args);
-
-FMT_FUNC int vfprintf(std::FILE *f, cstring_view format, printf_args args) {
-  memory_buffer buffer;
-  printf(buffer, format, args);
-  std::size_t size = buffer.size();
-  return std::fwrite(
-        buffer.data(), 1, size, f) < size ? -1 : static_cast<int>(size);
-}
-
 #ifndef FMT_HEADER_ONLY
 
 template struct internal::basic_data<void>;
@@ -458,8 +446,6 @@ template struct internal::basic_data<void>;
 template void basic_fixed_buffer<char>::grow(std::size_t);
 
 template void internal::arg_map<context>::init(const args &args);
-
-template void printf_context<char>::format(buffer &);
 
 template int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
@@ -476,8 +462,6 @@ template class basic_context<wchar_t>;
 template void basic_fixed_buffer<wchar_t>::grow(std::size_t);
 
 template void internal::arg_map<wcontext>::init(const wargs &args);
-
-template void printf_context<wchar_t>::format(wbuffer &);
 
 template int internal::char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
