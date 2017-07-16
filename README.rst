@@ -142,6 +142,8 @@ Projects using this library
 
 * `Envoy <https://lyft.github.io/envoy/>`_: C++ L7 proxy and communication bus (Lyft)
 
+* `FiveM <https://fivem.net/>`_: a modification framework for GTA V
+
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
 
