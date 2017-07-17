@@ -84,6 +84,36 @@ Note in the example above the ``format_arg`` function ignores the contents of
 ``format_arg`` in :file:`fmt/time.h` for an advanced example of how to use
 the ``format_str`` argument to customize the formatted output.
 
+Note that this technique can be used for formatting class hierarchies too.::
+
+  namespace Local {
+    struct Parent {
+      Parent(int p_) : p(p_) {}
+      virtual void write(fmt::Writer& w) const {
+        w.write("Parent : p={}", p);
+      }
+      int p;
+    };
+
+    struct Child : Parent {
+      Child(int c_, int p_) : Parent(p_), c(c_) {}
+      virtual void write(fmt::Writer& w) const {
+        w.write("Child c={} : ", c);
+        Parent::write(w);
+      }
+      int c;
+    };
+
+    void format_arg(fmt::BasicFormatter<char> &f,
+    const char *&format_str, const Parent &p) {
+      p.write(f.writer());
+    }
+  }
+  Local::Child c(1,2);
+  Local::Parent &p = c;
+  fmt::print("via ref to base: {}\n", p);
+  fmt::print("direct to child: {}\n", c);
+
 This section shows how to define a custom format function for a user-defined
 type. The next section describes how to get ``fmt`` to use a conventional stream
 output ``operator<<`` when one is defined for a user-defined type.
