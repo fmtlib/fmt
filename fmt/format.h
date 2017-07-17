@@ -1255,9 +1255,9 @@ inline fmt::StringRef thousands_sep(...) { return ""; }
   typedef int FMT_CONCAT_(Assert, __LINE__)[(cond) ? 1 : -1] FMT_UNUSED
 #endif
 
-template <typename Formatter, typename Char, typename T>
-void format_arg(Formatter &, const Char *, const T &) {
-  FMT_STATIC_ASSERT(FalseType<T>::value,
+template <typename Formatter>
+void format_arg(Formatter&, ...) {
+  FMT_STATIC_ASSERT(FalseType<Formatter>::value,
                     "Cannot format argument. To enable the use of ostream "
                     "operator<< include fmt/ostream.h. Otherwise provide "
                     "an overload of format_arg.");
