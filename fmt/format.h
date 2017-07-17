@@ -2261,7 +2261,7 @@ class basic_writer {
 
   // Writes a formatted integer.
   template <typename T, typename Spec>
-  void write_int(T value, Spec spec);
+  void write_int(T value, const Spec& spec);
 
   // Formats a floating-point number (double or long double).
   template <typename T>
@@ -2537,7 +2537,7 @@ typename basic_writer<Char>::CharPtr basic_writer<Char>::prepare_int_buffer(
 
 template <typename Char>
 template <typename T, typename Spec>
-void basic_writer<Char>::write_int(T value, Spec spec) {
+void basic_writer<Char>::write_int(T value, const Spec& spec) {
   unsigned prefix_size = 0;
   typedef typename internal::int_traits<T>::main_type UnsignedType;
   UnsignedType abs_value = static_cast<UnsignedType>(value);
@@ -3227,10 +3227,11 @@ inline typename basic_context<Char>::format_arg
 template <typename Char>
 inline typename basic_context<Char>::format_arg
     basic_context<Char>::parse_arg_id() {
+  format_arg arg;
   const Char *&s = this->ptr();
   if (!internal::is_name_start(*s)) {
     const char *error = 0;
-    format_arg arg = *s < '0' || *s > '9' ?
+    arg = *s < '0' || *s > '9' ?
       this->next_arg(error) :
       get_arg(internal::parse_nonnegative_int(s), error);
     if (error) {
@@ -3245,7 +3246,7 @@ inline typename basic_context<Char>::format_arg
     c = *++s;
   } while (internal::is_name_start(c) || ('0' <= c && c <= '9'));
   const char *error = 0;
-  format_arg arg = get_arg(basic_string_view<Char>(start, s - start), error);
+  arg = get_arg(basic_string_view<Char>(start, s - start), error);
   if (error)
     FMT_THROW(format_error(error));
   return arg;
@@ -3253,7 +3254,7 @@ inline typename basic_context<Char>::format_arg
 
 // Formats a single argument.
 template <typename ArgFormatter, typename Char, typename Context>
-void do_format_arg(basic_buffer<Char> &buffer, basic_arg<Context> arg,
+void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context>& arg,
                    Context &ctx) {
   const Char *&s = ctx.ptr();
   basic_format_specs<Char> spec;
