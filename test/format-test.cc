@@ -1105,7 +1105,7 @@ template <typename T>
 void check_unknown_types(
     const T &value, const char *types, const char *type_name) {
   char format_str[BUFFER_SIZE], message[BUFFER_SIZE];
-  const char *special = ".0123456789}";
+  const char *special = ".0123456789}m";
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
     char c = static_cast<char>(i);
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
