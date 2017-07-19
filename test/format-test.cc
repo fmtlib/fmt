@@ -57,7 +57,6 @@ using fmt::basic_writer;
 using fmt::format;
 using fmt::format_error;
 using fmt::string_view;
-using fmt::cstring_view;
 using fmt::memory_buffer;
 using fmt::wmemory_buffer;
 using fmt::fill;
@@ -143,11 +142,6 @@ TEST(StringViewTest, Ctor) {
 TEST(StringViewTest, ConvertToString) {
   std::string s = string_view("abc").to_string();
   EXPECT_EQ("abc", s);
-}
-
-TEST(CStringViewTest, Ctor) {
-  EXPECT_STREQ("abc", cstring_view("abc").c_str());
-  EXPECT_STREQ("defg", cstring_view(std::string("defg")).c_str());
 }
 
 #if FMT_USE_TYPE_TRAITS
@@ -464,7 +458,7 @@ TEST(FormatterTest, ArgErrors) {
 template <int N>
 struct TestFormat {
   template <typename... Args>
-  static std::string format(fmt::cstring_view format_str, const Args & ... args) {
+  static std::string format(fmt::string_view format_str, const Args & ... args) {
     return TestFormat<N - 1>::format(format_str, N - 1, args...);
   }
 };
@@ -472,7 +466,7 @@ struct TestFormat {
 template <>
 struct TestFormat<0> {
   template <typename... Args>
-  static std::string format(fmt::cstring_view format_str, const Args & ... args) {
+  static std::string format(fmt::string_view format_str, const Args & ... args) {
     return fmt::format(format_str, args...);
   }
 };
@@ -1233,10 +1227,6 @@ TEST(FormatterTest, FormatStringView) {
   EXPECT_EQ("test", format("{0}", string_view("test")));
 }
 
-TEST(FormatterTest, FormatCStringView) {
-  EXPECT_EQ("test", format("{0}", cstring_view("test")));
-}
-
 void format_value(fmt::buffer &buf, const Date &d, fmt::context &) {
   fmt::format_to(buf, "{}-{}-{}", d.year(), d.month(), d.day());
 }
@@ -1512,7 +1502,7 @@ class MockArgFormatter : public fmt::internal::arg_formatter_base<char> {
   void operator()(fmt::internal::custom_value<char>) {}
 };
 
-void custom_vformat(fmt::cstring_view format_str, fmt::args args) {
+void custom_vformat(fmt::string_view format_str, fmt::args args) {
   fmt::memory_buffer buffer;
   fmt::vformat_to<MockArgFormatter>(buffer, format_str, args);
 }
@@ -1525,4 +1515,8 @@ void custom_format(const char *format_str, const Args & ... args) {
 
 TEST(FormatTest, CustomArgFormatter) {
   custom_format("{}", 42);
+}
+
+TEST(FormatTest, NonNullTerminatedFormatString) {
+  EXPECT_EQ("42", format(string_view("{}foo", 2), 42));
 }

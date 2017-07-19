@@ -66,6 +66,54 @@
 
 namespace fmt {
 
+/**
+  \rst
+  A reference to a null-terminated string. It can be constructed from a C
+  string or ``std::string``.
+
+  You can use one of the following typedefs for common character types:
+
+  +---------------+-----------------------------+
+  | Type          | Definition                  |
+  +===============+=============================+
+  | cstring_view  | basic_cstring_view<char>    |
+  +---------------+-----------------------------+
+  | wcstring_view | basic_cstring_view<wchar_t> |
+  +---------------+-----------------------------+
+
+  This class is most useful as a parameter type to allow passing
+  different types of strings to a function, for example::
+
+    template <typename... Args>
+    std::string format(cstring_view format_str, const Args & ... args);
+
+    format("{}", 42);
+    format(std::string("{}"), 42);
+  \endrst
+ */
+template <typename Char>
+class basic_cstring_view {
+ private:
+  const Char *data_;
+
+ public:
+  /** Constructs a string reference object from a C string. */
+  basic_cstring_view(const Char *s) : data_(s) {}
+
+  /**
+    \rst
+    Constructs a string reference from an ``std::string`` object.
+    \endrst
+   */
+  basic_cstring_view(const std::basic_string<Char> &s) : data_(s.c_str()) {}
+
+  /** Returns the pointer to a C string. */
+  const Char *c_str() const { return data_; }
+};
+
+typedef basic_cstring_view<char> cstring_view;
+typedef basic_cstring_view<wchar_t> wcstring_view;
+
 // An error code.
 class ErrorCode {
  private:
@@ -166,12 +214,12 @@ public:
   // of MinGW that define fileno as a macro.
   int (fileno)() const;
 
-  void vprint(cstring_view format_str, const args &args) {
+  void vprint(string_view format_str, const args &args) {
     fmt::vprint(file_, format_str, args);
   }
 
   template <typename... Args>
-  inline void print(cstring_view format_str, const Args & ... args) {
+  inline void print(string_view format_str, const Args & ... args) {
     vprint(format_str, make_args(args...));
   }
 };

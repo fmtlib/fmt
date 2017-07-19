@@ -72,7 +72,7 @@ fmt::BufferedFile::BufferedFile(
     fmt::cstring_view filename, fmt::cstring_view mode) {
   FMT_RETRY_VAL(file_, FMT_SYSTEM(fopen(filename.c_str(), mode.c_str())), 0);
   if (!file_)
-    throw system_error(errno, "cannot open file {}", filename);
+    throw system_error(errno, "cannot open file {}", filename.c_str());
 }
 
 void fmt::BufferedFile::close() {
@@ -103,7 +103,7 @@ fmt::File::File(fmt::cstring_view path, int oflag) {
   FMT_RETRY(fd_, FMT_POSIX_CALL(open(path.c_str(), oflag, mode)));
 #endif
   if (fd_ == -1)
-    throw system_error(errno, "cannot open file {}", path);
+    throw system_error(errno, "cannot open file {}", path.c_str());
 }
 
 fmt::File::~File() FMT_NOEXCEPT {

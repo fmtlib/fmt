@@ -3,9 +3,9 @@
 namespace fmt {
 
 template <typename Char>
-void printf(basic_writer<Char> &w, basic_cstring_view<Char> format, args args);
+void printf(basic_writer<Char> &w, basic_string_view<Char> format, args args);
 
-FMT_FUNC int vfprintf(std::FILE *f, cstring_view format, printf_args args) {
+FMT_FUNC int vfprintf(std::FILE *f, string_view format, printf_args args) {
   memory_buffer buffer;
   printf(buffer, format, args);
   std::size_t size = buffer.size();

@@ -16,17 +16,19 @@
 namespace fmt {
 
 void format_value(buffer &buf, const std::tm &tm, context &ctx) {
-  const char *&s = ctx.ptr();
-  if (*s == ':')
-    ++s;
-  const char *end = s;
+  auto &it = ctx.pos();
+  if (*it == ':')
+    ++it;
+  auto end = it;
   while (*end && *end != '}')
     ++end;
   if (*end != '}')
     FMT_THROW(format_error("missing '}' in format string"));
   memory_buffer format;
-  format.append(s, end + 1);
-  format[format.size() - 1] = '\0';
+  format.reserve(end - it + 1);
+  using internal::pointer_from;
+  format.append(pointer_from(it), pointer_from(end));
+  format.push_back('\0');
   std::size_t start = buf.size();
   for (;;) {
     std::size_t size = buf.capacity() - start;
@@ -45,7 +47,7 @@ void format_value(buffer &buf, const std::tm &tm, context &ctx) {
     const std::size_t MIN_GROWTH = 10;
     buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
   }
-  s = end;
+  it = end;
 }
 }
 

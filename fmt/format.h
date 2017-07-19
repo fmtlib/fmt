@@ -474,59 +474,15 @@ class basic_string_view {
 typedef basic_string_view<char> string_view;
 typedef basic_string_view<wchar_t> wstring_view;
 
-/**
-  \rst
-  A reference to a null-terminated string. It can be constructed from a C
-  string or ``std::string``.
-
-  You can use one of the following typedefs for common character types:
-
-  +---------------+-----------------------------+
-  | Type          | Definition                  |
-  +===============+=============================+
-  | cstring_view  | basic_cstring_view<char>    |
-  +---------------+-----------------------------+
-  | wcstring_view | basic_cstring_view<wchar_t> |
-  +---------------+-----------------------------+
-
-  This class is most useful as a parameter type to allow passing
-  different types of strings to a function, for example::
-
-    template <typename... Args>
-    std::string format(cstring_view format_str, const Args & ... args);
-
-    format("{}", 42);
-    format(std::string("{}"), 42);
-  \endrst
- */
-template <typename Char>
-class basic_cstring_view {
- private:
-  const Char *data_;
-
- public:
-  /** Constructs a string reference object from a C string. */
-  basic_cstring_view(const Char *s) : data_(s) {}
-
-  /**
-    \rst
-    Constructs a string reference from an ``std::string`` object.
-    \endrst
-   */
-  basic_cstring_view(const std::basic_string<Char> &s) : data_(s.c_str()) {}
-
-  /** Returns the pointer to a C string. */
-  const Char *c_str() const { return data_; }
-};
-
-typedef basic_cstring_view<char> cstring_view;
-typedef basic_cstring_view<wchar_t> wcstring_view;
-
 /** A formatting error such as invalid format string. */
 class format_error : public std::runtime_error {
  public:
-  explicit format_error(cstring_view message)
-  : std::runtime_error(message.c_str()) {}
+  explicit format_error(const char *message)
+  : std::runtime_error(message) {}
+
+  explicit format_error(const std::string &message)
+  : std::runtime_error(message) {}
+
   ~format_error() throw();
 };
 
@@ -1197,7 +1153,6 @@ template <> constexpr Type gettype<unsigned char *>() { return CSTRING; }
 template <> constexpr Type gettype<const unsigned char *>() { return CSTRING; }
 template <> constexpr Type gettype<std::string>() { return STRING; }
 template <> constexpr Type gettype<string_view>() { return STRING; }
-template <> constexpr Type gettype<cstring_view>() { return CSTRING; }
 template <> constexpr Type gettype<wchar_t *>() { return TSTRING; }
 template <> constexpr Type gettype<const wchar_t *>() { return TSTRING; }
 template <> constexpr Type gettype<std::wstring>() { return TSTRING; }
@@ -1335,7 +1290,6 @@ class value {
   FMT_MAKE_VALUE(const unsigned char *, ustring.value, CSTRING)
   FMT_MAKE_STR_VALUE(const std::string &, STRING)
   FMT_MAKE_STR_VALUE(string_view, STRING)
-  FMT_MAKE_VALUE_(cstring_view, string.value, CSTRING, value.c_str())
 
 #define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
   value(typename wchar_helper<Type, Char>::supported value) { \
@@ -1978,18 +1932,112 @@ class arg_formatter_base {
   }
 };
 
-template <typename Char, typename Context>
-class context_base {
+template <typename Char>
+class null_terminating_iterator;
+
+template <typename Char>
+const Char *pointer_from(null_terminating_iterator<Char> it);
+
+// An iterator that produces a null terminator on *end.
+template <typename Char>
+class null_terminating_iterator {
+ public:
+  typedef std::ptrdiff_t difference_type;
+
+  null_terminating_iterator() : ptr_(0), end_(0) {}
+
+  null_terminating_iterator(const Char *ptr, const Char *end)
+    : ptr_(ptr), end_(end) {}
+
+  Char operator*() const {
+    return ptr_ != end_ ? *ptr_ : 0;
+  }
+
+  null_terminating_iterator operator++() {
+    ++ptr_;
+    return *this;
+  }
+
+  null_terminating_iterator operator++(int) {
+    null_terminating_iterator result(*this);
+    ++ptr_;
+    return result;
+  }
+
+  null_terminating_iterator operator--() {
+    --ptr_;
+    return *this;
+  }
+
+  null_terminating_iterator operator+(difference_type n) {
+    return null_terminating_iterator(ptr_ + n, end_);
+  }
+
+  null_terminating_iterator operator+=(difference_type n) {
+    ptr_ += n;
+    return *this;
+  }
+
+  difference_type operator-(null_terminating_iterator other) const {
+    return ptr_ - other.ptr_;
+  }
+
+  bool operator!=(null_terminating_iterator other) const {
+    return ptr_ != other.ptr_;
+  }
+
+  bool operator>=(null_terminating_iterator other) const {
+    return ptr_ >= other.ptr_;
+  }
+
+  friend const Char *pointer_from<Char>(null_terminating_iterator it);
+
  private:
   const Char *ptr_;
+  const Char *end_;
+};
+
+template <
+  typename T,
+  typename Char,
+  typename std::enable_if<
+      std::is_same<T, null_terminating_iterator<Char>>::value, int>::type = 0>
+null_terminating_iterator<Char> to_iterator(basic_string_view<Char> v) {
+  const Char *s = v.data();
+  return null_terminating_iterator<Char>(s, s + v.size());
+}
+
+template <
+  typename T,
+  typename Char,
+  typename std::enable_if<std::is_same<T, const Char*>::value, int>::type = 0>
+const Char *to_iterator(const basic_string_view<Char> v) {
+  return v.data();
+}
+
+template <typename T>
+const T *pointer_from(const T *p) { return p; }
+
+template <typename Char>
+const Char *pointer_from(null_terminating_iterator<Char> it) {
+  return it.ptr_;
+}
+
+template <typename Char, typename Context>
+class context_base {
+ public:
+  typedef null_terminating_iterator<Char> iterator;
+
+ private:
+  iterator pos_;
   basic_args<Context> args_;
   int next_arg_index_;
 
  protected:
   typedef basic_arg<Context> format_arg;
 
-  context_base(const Char *format_str, basic_args<Context> args)
-  : ptr_(format_str), args_(args), next_arg_index_(0) {}
+  context_base(basic_string_view<Char> format_str, basic_args<Context> args)
+  : pos_(to_iterator<iterator>(format_str)), args_(args), next_arg_index_(0) {}
   ~context_base() {}
 
   basic_args<Context> args() const { return args_; }
@@ -2027,8 +2075,8 @@ class context_base {
   }
 
  public:
-  // Returns a pointer to the current position in the format string.
-  const Char *&ptr() { return ptr_; }
+  // Returns an iterator to the current position in the format string.
+  iterator &pos() { return pos_; }
 };
 }  // namespace internal
 
@@ -2091,13 +2139,14 @@ class basic_context :
    stored in the object so make sure they have appropriate lifetimes.
    \endrst
    */
-  basic_context(const Char *format_str, basic_args<basic_context> args)
+  basic_context(
+      basic_string_view<Char> format_str, basic_args<basic_context> args)
   : Base(format_str, args) {}
 
   // Parses argument id and returns corresponding argument.
   format_arg parse_arg_id();
 
-  using Base::ptr;
+  using Base::pos;
 };
 
 /**
@@ -2106,7 +2155,7 @@ class basic_context :
 */
 class system_error : public std::runtime_error {
  private:
-  void init(int err_code, cstring_view format_str, args args);
+  void init(int err_code, string_view format_str, args args);
 
  protected:
   int error_code_;
@@ -2133,7 +2182,7 @@ class system_error : public std::runtime_error {
    \endrst
   */
   template <typename... Args>
-  system_error(int error_code, cstring_view message, const Args & ... args)
+  system_error(int error_code, string_view message, const Args & ... args)
     : std::runtime_error("") {
     init(error_code, message, make_args(args...));
   }
@@ -2392,7 +2441,7 @@ class basic_writer {
     Writes *value* to the buffer.
     \endrst
    */
-  void write(fmt::basic_string_view<Char> value) {
+  void write(basic_string_view<Char> value) {
     const Char *str = value.data();
     buffer_.append(str, str + value.size());
   }
@@ -2794,7 +2843,7 @@ FMT_API void report_system_error(int error_code,
 /** A Windows error. */
 class windows_error : public system_error {
  private:
-  FMT_API void init(int error_code, cstring_view format_str, args args);
+  FMT_API void init(int error_code, string_view format_str, args args);
 
  public:
   /**
@@ -2826,7 +2875,7 @@ class windows_error : public system_error {
    \endrst
   */
   template <typename... Args>
-  windows_error(int error_code, cstring_view message, const Args & ... args) {
+  windows_error(int error_code, string_view message, const Args & ... args) {
     init(error_code, message, make_args(args...));
   }
 };
@@ -2840,7 +2889,7 @@ FMT_API void report_windows_error(int error_code,
 
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
-FMT_API void vprint_colored(Color c, cstring_view format, args args);
+FMT_API void vprint_colored(Color c, string_view format, args args);
 
 /**
   Formats a string and prints it to stdout using ANSI escape sequences
@@ -2849,36 +2898,36 @@ FMT_API void vprint_colored(Color c, cstring_view format, args args);
     print_colored(fmt::RED, "Elapsed time: {0:.2f} seconds", 1.23);
  */
 template <typename... Args>
-inline void print_colored(Color c, cstring_view format_str,
+inline void print_colored(Color c, string_view format_str,
                           const Args & ... args) {
   vprint_colored(c, format_str, make_args(args...));
 }
 
 template <typename ArgFormatter, typename Char, typename Context>
-void vformat_to(basic_buffer<Char> &buffer, basic_cstring_view<Char> format_str,
+void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
                 basic_args<Context> args);
 
-inline void vformat_to(buffer &buf, cstring_view format_str, args args) {
+inline void vformat_to(buffer &buf, string_view format_str, args args) {
   vformat_to<arg_formatter<char>>(buf, format_str, args);
 }
 
-inline void vformat_to(wbuffer &buf, wcstring_view format_str, wargs args) {
+inline void vformat_to(wbuffer &buf, wstring_view format_str, wargs args) {
   vformat_to<arg_formatter<wchar_t>>(buf, format_str, args);
 }
 
 template <typename... Args>
-inline void format_to(buffer &buf, cstring_view format_str,
+inline void format_to(buffer &buf, string_view format_str,
                       const Args & ... args) {
   vformat_to(buf, format_str, make_args(args...));
 }
 
 template <typename... Args>
-inline void format_to(wbuffer &buf, wcstring_view format_str,
+inline void format_to(wbuffer &buf, wstring_view format_str,
                       const Args & ... args) {
   vformat_to(buf, format_str, make_args<wcontext>(args...));
 }
 
-inline std::string vformat(cstring_view format_str, args args) {
+inline std::string vformat(string_view format_str, args args) {
   memory_buffer buffer;
   vformat_to(buffer, format_str, args);
   return to_string(buffer);
@@ -2894,22 +2943,22 @@ inline std::string vformat(cstring_view format_str, args args) {
   \endrst
 */
 template <typename... Args>
-inline std::string format(cstring_view format_str, const Args & ... args) {
+inline std::string format(string_view format_str, const Args & ... args) {
   return vformat(format_str, make_args(args...));
 }
 
-inline std::wstring vformat(wcstring_view format_str, wargs args) {
+inline std::wstring vformat(wstring_view format_str, wargs args) {
   wmemory_buffer buffer;
   vformat_to(buffer, format_str, args);
   return to_string(buffer);
 }
 
 template <typename... Args>
-inline std::wstring format(wcstring_view format_str, const Args & ... args) {
+inline std::wstring format(wstring_view format_str, const Args & ... args) {
   return vformat(format_str, make_args<wcontext>(args...));
 }
 
-FMT_API void vprint(std::FILE *f, cstring_view format_str, args args);
+FMT_API void vprint(std::FILE *f, string_view format_str, args args);
 
 /**
   \rst
@@ -2921,12 +2970,12 @@ FMT_API void vprint(std::FILE *f, cstring_view format_str, args args);
   \endrst
  */
 template <typename... Args>
-inline void print(std::FILE *f, cstring_view format_str,
+inline void print(std::FILE *f, string_view format_str,
                   const Args & ... args) {
   vprint(f, format_str, make_args(args...));
 }
 
-FMT_API void vprint(cstring_view format_str, args args);
+FMT_API void vprint(string_view format_str, args args);
 
 /**
   \rst
@@ -2938,7 +2987,7 @@ FMT_API void vprint(cstring_view format_str, args args);
   \endrst
  */
 template <typename... Args>
-inline void print(cstring_view format_str, const Args & ... args) {
+inline void print(string_view format_str, const Args & ... args) {
   vprint(format_str, make_args(args...));
 }
 
@@ -3092,21 +3141,22 @@ inline bool is_name_start(Char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
 }
 
-// Parses an unsigned integer advancing s to the end of the parsed input.
-// This function assumes that the first character of s is a digit.
-template <typename Char>
-unsigned parse_nonnegative_int(const Char *&s) {
-  assert('0' <= *s && *s <= '9');
+// Parses an unsigned integer advancing it to the end of the parsed input.
+// This function assumes that the first character of it is a digit and a
+// presence of a non-digit character at the end.
+template <typename Iterator>
+unsigned parse_nonnegative_int(Iterator &it) {
+  assert('0' <= *it && *it <= '9');
   unsigned value = 0;
   do {
-    unsigned new_value = value * 10 + (*s++ - '0');
+    unsigned new_value = value * 10 + (*it++ - '0');
     // Check if value wrapped around.
     if (new_value < value) {
       value = (std::numeric_limits<unsigned>::max)();
       break;
     }
     value = new_value;
-  } while ('0' <= *s && *s <= '9');
+  } while ('0' <= *it && *it <= '9');
   // Convert to unsigned to prevent a warning.
   unsigned max_int = (std::numeric_limits<int>::max)();
   if (value > max_int)
@@ -3138,15 +3188,15 @@ struct is_unsigned {
   }
 };
 
-template <typename Char, typename Context>
-void check_sign(const Char *&s, const basic_arg<Context> &arg) {
-  char sign = static_cast<char>(*s);
+template <typename Iterator, typename Context>
+void check_sign(Iterator &it, const basic_arg<Context> &arg) {
+  char sign = static_cast<char>(*it);
   require_numeric_argument(arg, sign);
   if (visit(is_unsigned(), arg)) {
     FMT_THROW(format_error(fmt::format(
       "format specifier '{}' requires signed argument", sign)));
   }
-  ++s;
+  ++it;
 }
 
 template <typename Char, typename Context>
@@ -3228,25 +3278,26 @@ template <typename Char>
 inline typename basic_context<Char>::format_arg
     basic_context<Char>::parse_arg_id() {
   format_arg arg;
-  const Char *&s = this->ptr();
-  if (!internal::is_name_start(*s)) {
+  auto &it = this->pos();
+  if (!internal::is_name_start(*it)) {
     const char *error = 0;
-    arg = *s < '0' || *s > '9' ?
+    arg = *it < '0' || *it > '9' ?
       this->next_arg(error) :
-      get_arg(internal::parse_nonnegative_int(s), error);
+      get_arg(internal::parse_nonnegative_int(it), error);
     if (error) {
       FMT_THROW(format_error(
-                  *s != '}' && *s != ':' ? "invalid format string" : error));
+                  *it != '}' && *it != ':' ? "invalid format string" : error));
     }
     return arg;
   }
-  const Char *start = s;
+  auto start = it;
   Char c;
   do {
-    c = *++s;
+    c = *++it;
   } while (internal::is_name_start(c) || ('0' <= c && c <= '9'));
   const char *error = 0;
-  arg = get_arg(basic_string_view<Char>(start, s - start), error);
+  arg = get_arg(basic_string_view<Char>(
+                  internal::pointer_from(start), it - start), error);
   if (error)
     FMT_THROW(format_error(error));
   return arg;
@@ -3256,15 +3307,15 @@ inline typename basic_context<Char>::format_arg
 template <typename ArgFormatter, typename Char, typename Context>
 void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context>& arg,
                    Context &ctx) {
-  const Char *&s = ctx.ptr();
+  auto &it = ctx.pos();
   basic_format_specs<Char> spec;
-  if (*s == ':') {
+  if (*it == ':') {
     if (visit(internal::custom_formatter<Char, Context>(buffer, ctx), arg))
       return;
-    ++s;
+    ++it;
     // Parse fill and alignment.
-    if (Char c = *s) {
-      const Char *p = s + 1;
+    if (Char c = *it) {
+      auto p = it + 1;
       spec.align_ = ALIGN_DEFAULT;
       do {
         switch (*p) {
@@ -3282,57 +3333,57 @@ void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context>& arg,
             break;
         }
         if (spec.align_ != ALIGN_DEFAULT) {
-          if (p != s) {
+          if (p != it) {
             if (c == '}') break;
             if (c == '{')
               FMT_THROW(format_error("invalid fill character '{'"));
-            s += 2;
+            it += 2;
             spec.fill_ = c;
-          } else ++s;
+          } else ++it;
           if (spec.align_ == ALIGN_NUMERIC)
             internal::require_numeric_argument(arg, '=');
           break;
         }
-      } while (--p >= s);
+      } while (--p >= it);
     }
 
     // Parse sign.
-    switch (*s) {
+    switch (*it) {
       case '+':
-        internal::check_sign(s, arg);
+        internal::check_sign(it, arg);
         spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
         break;
       case '-':
-        internal::check_sign(s, arg);
+        internal::check_sign(it, arg);
         spec.flags_ |= MINUS_FLAG;
         break;
       case ' ':
-        internal::check_sign(s, arg);
+        internal::check_sign(it, arg);
         spec.flags_ |= SIGN_FLAG;
         break;
     }
 
-    if (*s == '#') {
+    if (*it == '#') {
       internal::require_numeric_argument(arg, '#');
       spec.flags_ |= HASH_FLAG;
-      ++s;
+      ++it;
     }
 
     // Parse zero flag.
-    if (*s == '0') {
+    if (*it == '0') {
       internal::require_numeric_argument(arg, '0');
       spec.align_ = ALIGN_NUMERIC;
       spec.fill_ = '0';
-      ++s;
+      ++it;
     }
 
     // Parse width.
-    if ('0' <= *s && *s <= '9') {
-      spec.width_ = internal::parse_nonnegative_int(s);
-    } else if (*s == '{') {
-      ++s;
+    if ('0' <= *it && *it <= '9') {
+      spec.width_ = internal::parse_nonnegative_int(it);
+    } else if (*it == '{') {
+      ++it;
       auto width_arg = ctx.parse_arg_id();
-      if (*s++ != '}')
+      if (*it++ != '}')
         FMT_THROW(format_error("invalid format string"));
       ulong_long width = visit(internal::width_handler(), width_arg);
       if (width > (std::numeric_limits<int>::max)())
@@ -3341,15 +3392,15 @@ void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context>& arg,
     }
 
     // Parse precision.
-    if (*s == '.') {
-      ++s;
+    if (*it == '.') {
+      ++it;
       spec.precision_ = 0;
-      if ('0' <= *s && *s <= '9') {
-        spec.precision_ = internal::parse_nonnegative_int(s);
-      } else if (*s == '{') {
-        ++s;
+      if ('0' <= *it && *it <= '9') {
+        spec.precision_ = internal::parse_nonnegative_int(it);
+      } else if (*it == '{') {
+        ++it;
         auto precision_arg = ctx.parse_arg_id();
-        if (*s++ != '}')
+        if (*it++ != '}')
           FMT_THROW(format_error("invalid format string"));
         ulong_long precision =
           visit(internal::precision_handler(), precision_arg);
@@ -3367,11 +3418,11 @@ void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context>& arg,
     }
 
     // Parse type.
-    if (*s != '}' && *s)
-      spec.type_ = static_cast<char>(*s++);
+    if (*it != '}' && *it)
+      spec.type_ = static_cast<char>(*it++);
   }
 
-  if (*s != '}')
+  if (*it != '}')
     FMT_THROW(format_error("missing '}' in format string"));
 
   // Format argument.
@@ -3380,28 +3431,29 @@ void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context>& arg,
 
 /** Formats arguments and writes the output to the buffer. */
 template <typename ArgFormatter, typename Char, typename Context>
-void vformat_to(basic_buffer<Char> &buffer, basic_cstring_view<Char> format_str,
+void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
                 basic_args<Context> args) {
-  basic_context<Char> ctx(format_str.c_str(), args);
-  const Char *&s = ctx.ptr();
-  const Char *start = s;
-  while (*s) {
-    Char c = *s++;
+  basic_context<Char> ctx(format_str, args);
+  auto &it = ctx.pos();
+  auto start = it;
+  using internal::pointer_from;
+  while (*it) {
+    Char c = *it++;
     if (c != '{' && c != '}') continue;
-    if (*s == c) {
-      buffer.append(start, s);
-      start = ++s;
+    if (*it == c) {
+      buffer.append(pointer_from(start), pointer_from(it));
+      start = ++it;
       continue;
     }
     if (c == '}')
       FMT_THROW(format_error("unmatched '}' in format string"));
-    buffer.append(start, s - 1);
+    buffer.append(pointer_from(start), pointer_from(it) - 1);
     do_format_arg<ArgFormatter>(buffer, ctx.parse_arg_id(), ctx);
-    if (*s != '}')
+    if (*it != '}')
       FMT_THROW(format_error(fmt::format("unknown format specifier")));
-    start = ++s;
+    start = ++it;
   }
-  buffer.append(start, s);
+  buffer.append(pointer_from(start), pointer_from(it));
 }
 }  // namespace fmt
 
