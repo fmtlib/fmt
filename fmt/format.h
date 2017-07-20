@@ -923,7 +923,11 @@ struct IntTraits {
     TypeSelector<std::numeric_limits<T>::digits <= 32>::Type MainType;
 };
 
+#if FMT_HAS_GXX_CXX11
+FMT_API [[noreturn]] void report_unknown_type(char code, const char *type);
+#else
 FMT_API void report_unknown_type(char code, const char *type);
+#endif
 
 // Static data is placed in this class template to allow header-only
 // configuration.
