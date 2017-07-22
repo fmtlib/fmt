@@ -192,7 +192,9 @@ The following functions use `printf format string syntax
 <http://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html>`_ with
 the POSIX extension for positional arguments. Unlike their standard
 counterparts, the ``fmt`` functions are type-safe and throw an exception if an
-argument type doesn't match its format specification.
+argument type doesn't match its format specification. They also support the
+glibc '%m' extension to output the string corresponding to the error code
+in errno.
 
 .. doxygenfunction:: printf(CStringRef, ArgList)
 

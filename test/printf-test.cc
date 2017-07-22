@@ -51,6 +51,10 @@ std::string make_positional(fmt::StringRef format) {
     << "format: " << format; \
   EXPECT_EQ(expected_output, fmt::sprintf(make_positional(format), arg))
 
+#define EXPECT_PRINTF_NO_ARG(expected_output, format) \
+  EXPECT_EQ(expected_output, fmt::sprintf(format)) \
+    << "format: " << format;
+
 TEST(PrintfTest, NoArgs) {
   EXPECT_EQ("test", fmt::sprintf("test"));
 }
@@ -470,6 +474,33 @@ enum E { A = 42 };
 
 TEST(PrintfTest, Enum) {
   EXPECT_PRINTF("42", "%d", A);
+}
+
+TEST(PrintfTest, ErrnoPreserved) {
+  errno = ENOENT;
+  EXPECT_PRINTF_NO_ARG("testing 1 2 3", "testing 1 2 3");
+  EXPECT_EQ(errno, ENOENT);
+
+  EXPECT_PRINTF("42", "%d", 42);
+  EXPECT_EQ(errno, ENOENT);
+
+  EXPECT_PRINTF(" Hello", "%6s", "Hello");
+  EXPECT_EQ(errno, ENOENT);
+
+  EXPECT_PRINTF_NO_ARG("No such file or directory", "%m");
+  EXPECT_EQ(errno, ENOENT);
+}
+
+TEST(PrintfTest, ErrorMessage) {
+  errno = ENOENT;
+
+  EXPECT_PRINTF_NO_ARG("No such file or directory", "%m");
+  EXPECT_PRINTF_NO_ARG("No such file or directory     ", "%-30m");
+  EXPECT_PRINTF_NO_ARG("     No such file or directory", "%30m");
+
+  EXPECT_PRINTF_NO_ARG(L"No such file or directory", L"%m");
+  EXPECT_PRINTF_NO_ARG(L"No such file or directory     ", L"%-30m");
+  EXPECT_PRINTF_NO_ARG(L"     No such file or directory", L"%30m");
 }
 
 #if FMT_USE_FILE_DESCRIPTORS

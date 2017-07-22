@@ -385,7 +385,10 @@ FMT_FUNC void format_system_error(
       char *system_message = &buffer[0];
       int result = safe_strerror(error_code, system_message, buffer.size());
       if (result == 0) {
-        out << message << ": " << system_message;
+	  if (message.size())
+	    out << message << ": " << system_message;
+	  else
+	    out << system_message;
         return;
       }
       if (result != ERANGE)

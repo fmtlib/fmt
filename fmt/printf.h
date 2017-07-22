@@ -12,6 +12,7 @@
 
 #include <algorithm>  // std::fill_n
 #include <limits>     // std::numeric_limits
+#include <cerrno>     // errno
 
 #include "ostream.h"
 
@@ -195,6 +196,18 @@ class WidthHandler : public ArgVisitor<WidthHandler, unsigned> {
     if (width > int_max)
       FMT_THROW(FormatError("number is too big"));
     return static_cast<unsigned>(width);
+  }
+};
+
+class ErrnoPreserver {
+  const int saved_errno_;
+public:
+  ErrnoPreserver() : saved_errno_(errno) {}
+  ~ErrnoPreserver() {
+    errno = saved_errno_;
+  }
+  int get() const {
+    return saved_errno_;
   }
 };
 }  // namespace internal
@@ -430,6 +443,21 @@ void PrintfFormatter<Char, AF>::format(BasicCStringRef<Char> format_str) {
 
     // Parse argument index, flags and width.
     unsigned arg_index = parse_header(s, spec);
+
+    if (*s == 'm') {
+      // Something in here is changing errno in the mingw build. We
+      // ought to preserve it anyway, even if an exception is thrown.
+      internal::ErrnoPreserver errno_preserver;
+
+      // This dance is necessary because this function is templated on
+      // the character type but format_system_error is not.
+      MemoryWriter char_writer;
+      format_system_error(char_writer, errno_preserver.get(), "");
+      AF(writer_, spec).visit_cstring(char_writer.c_str());
+
+      start = ++s;
+      continue;
+    }
 
     // Parse precision.
     if (*s == '.') {
