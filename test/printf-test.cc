@@ -476,6 +476,21 @@ TEST(PrintfTest, Enum) {
   EXPECT_PRINTF("42", "%d", A);
 }
 
+TEST(PrintfTest, ErrnoPreserved) {
+  errno = ENOENT;
+  EXPECT_PRINTF_NO_ARG("testing 1 2 3", "testing 1 2 3");
+  EXPECT_EQ(errno, ENOENT);
+
+  EXPECT_PRINTF("42", "%d", 42);
+  EXPECT_EQ(errno, ENOENT);
+
+  EXPECT_PRINTF(" Hello", "%6s", "Hello");
+  EXPECT_EQ(errno, ENOENT);
+
+  EXPECT_PRINTF_NO_ARG("No such file or directory", "%m");
+  EXPECT_EQ(errno, ENOENT);
+}
+
 TEST(PrintfTest, ErrorMessage) {
   errno = ENOENT;
 
