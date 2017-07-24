@@ -137,6 +137,15 @@ typedef __int64          intmax_t;
 # define FMT_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
+// Use the compiler's attribute noreturn.
+#if defined(__MINGW32__) || defined(__MINGW64__)
+# define FMT_NORETURN __attribute__((noreturn))
+#elif FMT_HAS_CPP_ATTRIBUTE(noreturn)
+# define FMT_NORETURN [[noreturn]]
+#else
+# define FMT_NORETURN
+#endif
+
 #ifndef FMT_USE_RVALUE_REFERENCES
 // Don't use rvalue references when compiling with clang and an old libstdc++
 // as the latter doesn't provide std::move.
@@ -855,7 +864,7 @@ struct int_traits {
     std::numeric_limits<T>::digits <= 32, uint32_t, uint64_t>::type main_type;
 };
 
-FMT_API void report_unknown_type(char code, const char *type);
+FMT_API FMT_NORETURN void report_unknown_type(char code, const char *type);
 
 // Static data is placed in this class template to allow header-only
 // configuration.
