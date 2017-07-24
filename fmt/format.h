@@ -1840,7 +1840,7 @@ class arg_formatter_base {
   typename enable_if<
     !std::is_same<Char, wchar_t>::value ||
     !std::is_same<StrChar, wchar_t>::value>::type
-      write_str(basic_string_view<StrChar> value) {
+      write_str(basic_string_view<StrChar> ) {
     // Do nothing.
   }
 
