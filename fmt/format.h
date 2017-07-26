@@ -1947,7 +1947,9 @@ class null_terminating_iterator;
 template <typename Char>
 const Char *pointer_from(null_terminating_iterator<Char> it);
 
-// An iterator that produces a null terminator on *end.
+// An iterator that produces a null terminator on *end. This simplifies parsing
+// and allows comparing the performance of processing a null-terminated string
+// vs string_view.
 template <typename Char>
 class null_terminating_iterator {
  public:
