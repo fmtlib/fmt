@@ -3268,6 +3268,144 @@ struct precision_handler {
     return 0;
   }
 };
+
+
+// Parses standard format specifiers.
+template <typename Context>
+basic_format_specs<typename Context::char_type>
+    parse_format_specs(const basic_arg<Context>& arg, Context &ctx) {
+  typedef typename Context::char_type Char;
+  basic_format_specs<Char> spec;
+  // Parse fill and alignment.
+  auto &it = ctx.pos();
+  if (Char c = *it) {
+    auto p = it + 1;
+    spec.align_ = ALIGN_DEFAULT;
+    do {
+      switch (*p) {
+        case '<':
+          spec.align_ = ALIGN_LEFT;
+          break;
+        case '>':
+          spec.align_ = ALIGN_RIGHT;
+          break;
+        case '=':
+          spec.align_ = ALIGN_NUMERIC;
+          break;
+        case '^':
+          spec.align_ = ALIGN_CENTER;
+          break;
+      }
+      if (spec.align_ != ALIGN_DEFAULT) {
+        if (p != it) {
+          if (c == '}') break;
+          if (c == '{')
+            FMT_THROW(format_error("invalid fill character '{'"));
+          it += 2;
+          spec.fill_ = c;
+        } else ++it;
+        if (spec.align_ == ALIGN_NUMERIC)
+          internal::require_numeric_argument(arg, '=');
+        break;
+      }
+    } while (--p >= it);
+  }
+
+  // Parse sign.
+  switch (*it) {
+    case '+':
+      internal::check_sign(it, arg);
+      spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
+      break;
+    case '-':
+      internal::check_sign(it, arg);
+      spec.flags_ |= MINUS_FLAG;
+      break;
+    case ' ':
+      internal::check_sign(it, arg);
+      spec.flags_ |= SIGN_FLAG;
+      break;
+  }
+
+  if (*it == '#') {
+    internal::require_numeric_argument(arg, '#');
+    spec.flags_ |= HASH_FLAG;
+    ++it;
+  }
+
+  // Parse zero flag.
+  if (*it == '0') {
+    internal::require_numeric_argument(arg, '0');
+    spec.align_ = ALIGN_NUMERIC;
+    spec.fill_ = '0';
+    ++it;
+  }
+
+  // Parse width.
+  if ('0' <= *it && *it <= '9') {
+    spec.width_ = internal::parse_nonnegative_int(it);
+  } else if (*it == '{') {
+    ++it;
+    auto width_arg = ctx.parse_arg_id();
+    if (*it++ != '}')
+      FMT_THROW(format_error("invalid format string"));
+    ulong_long width = visit(internal::width_handler(), width_arg);
+    if (width > (std::numeric_limits<int>::max)())
+      FMT_THROW(format_error("number is too big"));
+    spec.width_ = static_cast<int>(width);
+  }
+
+  // Parse precision.
+  if (*it == '.') {
+    ++it;
+    spec.precision_ = 0;
+    if ('0' <= *it && *it <= '9') {
+      spec.precision_ = internal::parse_nonnegative_int(it);
+    } else if (*it == '{') {
+      ++it;
+      auto precision_arg = ctx.parse_arg_id();
+      if (*it++ != '}')
+        FMT_THROW(format_error("invalid format string"));
+      ulong_long precision =
+        visit(internal::precision_handler(), precision_arg);
+      if (precision > (std::numeric_limits<int>::max)())
+        FMT_THROW(format_error("number is too big"));
+      spec.precision_ = static_cast<int>(precision);
+    } else {
+      FMT_THROW(format_error("missing precision specifier"));
+    }
+    if (arg.is_integral() || arg.is_pointer()) {
+      FMT_THROW(format_error(
+          fmt::format("precision not allowed in {} format specifier",
+          arg.is_pointer() ? "pointer" : "integer")));
+    }
+  }
+
+  // Parse type.
+  if (*it != '}' && *it)
+    spec.type_ = static_cast<char>(*it++);
+  return spec;
+}
+
+// Formats a single argument.
+template <typename ArgFormatter, typename Char, typename Context>
+void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context>& arg,
+                   Context &ctx) {
+  auto &it = ctx.pos();
+  basic_format_specs<Char> spec;
+  if (*it == ':') {
+    if (visit(internal::custom_formatter<Char, Context>(buffer, ctx), arg))
+      return;
+    ++it;
+    spec = internal::parse_format_specs(arg, ctx);
+  }
+
+  if (*it != '}')
+    FMT_THROW(format_error("missing '}' in format string"));
+
+  // Format argument.
+  visit(ArgFormatter(buffer, ctx, spec), arg);
+}
 }  // namespace internal
 
 template <typename Char>
@@ -3312,132 +3450,6 @@ inline typename basic_context<Char>::format_arg
   return arg;
 }
 
-// Formats a single argument.
-template <typename ArgFormatter, typename Char, typename Context>
-void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context>& arg,
-                   Context &ctx) {
-  auto &it = ctx.pos();
-  basic_format_specs<Char> spec;
-  if (*it == ':') {
-    if (visit(internal::custom_formatter<Char, Context>(buffer, ctx), arg))
-      return;
-    ++it;
-    // Parse fill and alignment.
-    if (Char c = *it) {
-      auto p = it + 1;
-      spec.align_ = ALIGN_DEFAULT;
-      do {
-        switch (*p) {
-          case '<':
-            spec.align_ = ALIGN_LEFT;
-            break;
-          case '>':
-            spec.align_ = ALIGN_RIGHT;
-            break;
-          case '=':
-            spec.align_ = ALIGN_NUMERIC;
-            break;
-          case '^':
-            spec.align_ = ALIGN_CENTER;
-            break;
-        }
-        if (spec.align_ != ALIGN_DEFAULT) {
-          if (p != it) {
-            if (c == '}') break;
-            if (c == '{')
-              FMT_THROW(format_error("invalid fill character '{'"));
-            it += 2;
-            spec.fill_ = c;
-          } else ++it;
-          if (spec.align_ == ALIGN_NUMERIC)
-            internal::require_numeric_argument(arg, '=');
-          break;
-        }
-      } while (--p >= it);
-    }
-
-    // Parse sign.
-    switch (*it) {
-      case '+':
-        internal::check_sign(it, arg);
-        spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
-        break;
-      case '-':
-        internal::check_sign(it, arg);
-        spec.flags_ |= MINUS_FLAG;
-        break;
-      case ' ':
-        internal::check_sign(it, arg);
-        spec.flags_ |= SIGN_FLAG;
-        break;
-    }
-
-    if (*it == '#') {
-      internal::require_numeric_argument(arg, '#');
-      spec.flags_ |= HASH_FLAG;
-      ++it;
-    }
-
-    // Parse zero flag.
-    if (*it == '0') {
-      internal::require_numeric_argument(arg, '0');
-      spec.align_ = ALIGN_NUMERIC;
-      spec.fill_ = '0';
-      ++it;
-    }
-
-    // Parse width.
-    if ('0' <= *it && *it <= '9') {
-      spec.width_ = internal::parse_nonnegative_int(it);
-    } else if (*it == '{') {
-      ++it;
-      auto width_arg = ctx.parse_arg_id();
-      if (*it++ != '}')
-        FMT_THROW(format_error("invalid format string"));
-      ulong_long width = visit(internal::width_handler(), width_arg);
-      if (width > (std::numeric_limits<int>::max)())
-        FMT_THROW(format_error("number is too big"));
-      spec.width_ = static_cast<int>(width);
-    }
-
-    // Parse precision.
-    if (*it == '.') {
-      ++it;
-      spec.precision_ = 0;
-      if ('0' <= *it && *it <= '9') {
-        spec.precision_ = internal::parse_nonnegative_int(it);
-      } else if (*it == '{') {
-        ++it;
-        auto precision_arg = ctx.parse_arg_id();
-        if (*it++ != '}')
-          FMT_THROW(format_error("invalid format string"));
-        ulong_long precision =
-          visit(internal::precision_handler(), precision_arg);
-        if (precision > (std::numeric_limits<int>::max)())
-          FMT_THROW(format_error("number is too big"));
-        spec.precision_ = static_cast<int>(precision);
-      } else {
-        FMT_THROW(format_error("missing precision specifier"));
-      }
-      if (arg.is_integral() || arg.is_pointer()) {
-        FMT_THROW(format_error(
-            fmt::format("precision not allowed in {} format specifier",
-            arg.is_pointer() ? "pointer" : "integer")));
-      }
-    }
-
-    // Parse type.
-    if (*it != '}' && *it)
-      spec.type_ = static_cast<char>(*it++);
-  }
-
-  if (*it != '}')
-    FMT_THROW(format_error("missing '}' in format string"));
-
-  // Format argument.
-  visit(ArgFormatter(buffer, ctx, spec), arg);
-}
-
 /** Formats arguments and writes the output to the buffer. */
 template <typename ArgFormatter, typename Char, typename Context>
 void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
@@ -3457,7 +3469,7 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
     if (c == '}')
       FMT_THROW(format_error("unmatched '}' in format string"));
     buffer.append(pointer_from(start), pointer_from(it) - 1);
-    do_format_arg<ArgFormatter>(buffer, ctx.parse_arg_id(), ctx);
+    internal::do_format_arg<ArgFormatter>(buffer, ctx.parse_arg_id(), ctx);
     if (*it != '}')
       FMT_THROW(format_error(fmt::format("unknown format specifier")));
     start = ++it;
