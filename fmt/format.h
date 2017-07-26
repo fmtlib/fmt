@@ -3135,14 +3135,6 @@ void arg(wstring_view, const internal::named_arg<Context>&)
   FMT_DELETED_OR_UNDEFINED;
 }
 
-#if FMT_GCC_VERSION
-// Use the system_header pragma to suppress warnings about variadic macros
-// because suppressing -Wvariadic-macros with the diagnostic pragma doesn't
-// work. It is used at the end because we want to suppress as little warnings
-// as possible.
-# pragma GCC system_header
-#endif
-
 namespace fmt {
 namespace internal {
 template <typename Char>
