@@ -1240,12 +1240,14 @@ TEST(FormatterTest, FormatCustom) {
 class Answer {};
 
 template <typename Char>
-void format_value(fmt::basic_buffer<Char> &buf, Answer, fmt::context &) {
-  fmt::format_to(buf, "{}", 42);
+void format_value(fmt::basic_buffer<Char> &buf, Answer, fmt::context &ctx) {
+  fmt::formatter<int> f(ctx);
+  f.format(buf, 42, ctx);
 }
 
 TEST(FormatterTest, CustomFormat) {
   EXPECT_EQ("42", format("{0}", Answer()));
+  EXPECT_EQ("0042", format("{:04}", Answer()));
 }
 
 TEST(FormatterTest, WideFormatString) {

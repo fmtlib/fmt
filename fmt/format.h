@@ -495,6 +495,10 @@ class format_error : public std::runtime_error {
   ~format_error() throw();
 };
 
+// A formatter for objects of type T.
+template <typename Char, typename T>
+class formatter;
+
 namespace internal {
 
 // make_unsigned<T>::type gives an unsigned type corresponding to integer
@@ -1099,6 +1103,16 @@ enum Type {
   CSTRING, STRING, TSTRING, POINTER, CUSTOM
 };
 
+inline bool is_integral(Type type) {
+  FMT_ASSERT(type != internal::NAMED_ARG, "invalid argument type");
+  return type > internal::NONE && type <= internal::LAST_INTEGER_TYPE;
+}
+
+inline bool is_numeric(Type type) {
+  FMT_ASSERT(type != internal::NAMED_ARG, "invalid argument type");
+  return type > internal::NONE && type <= internal::LAST_NUMERIC_TYPE;
+}
+
 template <typename Char>
 struct string_value {
   const Char *value;
@@ -1375,19 +1389,11 @@ class basic_arg {
 
   explicit operator bool() const noexcept { return type_ != internal::NONE; }
 
-  bool is_integral() const {
-    FMT_ASSERT(type_ != internal::NAMED_ARG, "invalid argument type");
-    return type_ > internal::NONE && type_ <= internal::LAST_INTEGER_TYPE;
-  }
+  internal::Type type() const { return type_; }
 
-  bool is_numeric() const {
-    FMT_ASSERT(type_ != internal::NAMED_ARG, "invalid argument type");
-    return type_ > internal::NONE && type_ <= internal::LAST_NUMERIC_TYPE;
-  }
-
-  bool is_pointer() const {
-    return type_ == internal::POINTER;
-  }
+  bool is_integral() const { return internal::is_integral(type_); }
+  bool is_numeric() const { return internal::is_numeric(type_); }
+  bool is_pointer() const { return type_ == internal::POINTER; }
 };
 
 /**
@@ -3167,35 +3173,18 @@ unsigned parse_nonnegative_int(Iterator &it) {
   return value;
 }
 
-template <typename Char>
-inline void require_numeric_argument(
-    const basic_arg<Char> &arg, char spec) {
-  if (!arg.is_numeric()) {
+inline void require_numeric_argument(Type type, char spec) {
+  if (!is_numeric(type)) {
     FMT_THROW(fmt::format_error(
         fmt::format("format specifier '{}' requires numeric argument", spec)));
   }
 }
 
-// An argument visitor that checks if argument is unsigned.
-struct is_unsigned {
-  template <typename T>
-  typename std::enable_if<std::is_unsigned<T>::value, bool>::type
-      operator()(T value) {
-    return true;
-  }
-
-  template <typename T>
-  typename std::enable_if<!std::is_unsigned<T>::value, bool>::type
-      operator()(T value) {
-    return false;
-  }
-};
-
-template <typename Iterator, typename Context>
-void check_sign(Iterator &it, const basic_arg<Context> &arg) {
+template <typename Iterator>
+void check_sign(Iterator &it, Type type) {
   char sign = static_cast<char>(*it);
-  require_numeric_argument(arg, sign);
-  if (visit(is_unsigned(), arg)) {
+  require_numeric_argument(type, sign);
+  if (is_integral(type) && type != INT && type != LONG_LONG && type != CHAR) {
     FMT_THROW(format_error(fmt::format(
       "format specifier '{}' requires signed argument", sign)));
   }
@@ -3263,11 +3252,10 @@ struct precision_handler {
   }
 };
 
-
 // Parses standard format specifiers.
 template <typename Context>
 basic_format_specs<typename Context::char_type>
-    parse_format_specs(const basic_arg<Context>& arg, Context &ctx) {
+    parse_format_specs(Type arg_type, Context &ctx) {
   typedef typename Context::char_type Char;
   basic_format_specs<Char> spec;
   // Parse fill and alignment.
@@ -3299,7 +3287,7 @@ basic_format_specs<typename Context::char_type>
           spec.fill_ = c;
         } else ++it;
         if (spec.align_ == ALIGN_NUMERIC)
-          internal::require_numeric_argument(arg, '=');
+          internal::require_numeric_argument(arg_type, '=');
         break;
       }
     } while (--p >= it);
@@ -3308,28 +3296,28 @@ basic_format_specs<typename Context::char_type>
   // Parse sign.
   switch (*it) {
     case '+':
-      internal::check_sign(it, arg);
+      internal::check_sign(it, arg_type);
       spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
       break;
     case '-':
-      internal::check_sign(it, arg);
+      internal::check_sign(it, arg_type);
       spec.flags_ |= MINUS_FLAG;
       break;
     case ' ':
-      internal::check_sign(it, arg);
+      internal::check_sign(it, arg_type);
       spec.flags_ |= SIGN_FLAG;
       break;
   }
 
   if (*it == '#') {
-    internal::require_numeric_argument(arg, '#');
+    internal::require_numeric_argument(arg_type, '#');
     spec.flags_ |= HASH_FLAG;
     ++it;
   }
 
   // Parse zero flag.
   if (*it == '0') {
-    internal::require_numeric_argument(arg, '0');
+    internal::require_numeric_argument(arg_type, '0');
     spec.align_ = ALIGN_NUMERIC;
     spec.fill_ = '0';
     ++it;
@@ -3368,10 +3356,10 @@ basic_format_specs<typename Context::char_type>
     } else {
       FMT_THROW(format_error("missing precision specifier"));
     }
-    if (arg.is_integral() || arg.is_pointer()) {
+    if (is_integral(arg_type) || arg_type == POINTER) {
       FMT_THROW(format_error(
           fmt::format("precision not allowed in {} format specifier",
-          arg.is_pointer() ? "pointer" : "integer")));
+          arg_type == POINTER ? "pointer" : "integer")));
     }
   }
 
@@ -3383,7 +3371,7 @@ basic_format_specs<typename Context::char_type>
 
 // Formats a single argument.
 template <typename ArgFormatter, typename Char, typename Context>
-void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context>& arg,
+void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context> &arg,
                    Context &ctx) {
   auto &it = ctx.pos();
   basic_format_specs<Char> spec;
@@ -3391,7 +3379,7 @@ void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context>& arg,
     if (visit(internal::custom_formatter<Char, Context>(buffer, ctx), arg))
       return;
     ++it;
-    spec = internal::parse_format_specs(arg, ctx);
+    spec = internal::parse_format_specs(arg.type(), ctx);
   }
 
   if (*it != '}')
@@ -3401,6 +3389,26 @@ void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context>& arg,
   visit(ArgFormatter(buffer, ctx, spec), arg);
 }
 }  // namespace internal
+
+template <typename T, typename Char = char>
+class formatter {
+ public:
+  explicit formatter(basic_context<Char> &ctx) {
+    auto &it = ctx.pos();
+    if (*it == ':') {
+      ++it;
+      specs_ = parse_format_specs(internal::gettype<T>(), ctx);
+    }
+  }
+
+  void format(basic_buffer<Char> &buf, const T &val, basic_context<Char> &ctx) {
+    visit(arg_formatter<Char>(buf, ctx, specs_),
+          internal::make_arg<basic_context<Char>>(val));
+  }
+
+ private:
+  basic_format_specs<Char> specs_;
+};
 
 template <typename Char>
 inline typename basic_context<Char>::format_arg
