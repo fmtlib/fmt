@@ -367,8 +367,14 @@ typename printf_context<Char, AF>::format_arg printf_context<Char, AF>::get_arg(
     iterator it, unsigned arg_index) {
   (void)it;
   const char *error = 0;
-  format_arg arg = arg_index == std::numeric_limits<unsigned>::max() ?
-    this->next_arg(error) : Base::get_arg(arg_index - 1, error);
+  format_arg arg;
+  if (arg_index == std::numeric_limits<unsigned>::max()) {
+    arg_index = this->next_arg_index(error);
+    if (!error)
+      arg = this->do_get_arg(arg_index, error);
+  } else {
+    arg = Base::get_arg(arg_index - 1, error);
+  }
   if (error)
     FMT_THROW(format_error(!*it ? "invalid format string" : error));
   return arg;

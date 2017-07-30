@@ -1694,7 +1694,7 @@ struct empty_spec {};
 struct AlignSpec : empty_spec {
   unsigned width_;
   // Fill is always wchar_t and cast to char if necessary to avoid having
-  // two specialization of WidthSpec and its subclasses.
+  // two specialization of AlignSpec and its subclasses.
   wchar_t fill_;
   alignment align_;
 
@@ -1959,6 +1959,7 @@ const Char *pointer_from(null_terminating_iterator<Char> it);
 template <typename Char>
 class null_terminating_iterator {
  public:
+  typedef Char value_type;
   typedef std::ptrdiff_t difference_type;
 
   null_terminating_iterator() : ptr_(0), end_(0) {}
@@ -2062,7 +2063,7 @@ class context_base {
   // Returns the argument with specified index.
   format_arg do_get_arg(unsigned arg_index, const char *&error) {
     format_arg arg = args_[arg_index];
-    if (!arg)
+    if (!arg && !error)
       error = "argument index out of range";
     return arg;
   }
@@ -2074,12 +2075,12 @@ class context_base {
       this->do_get_arg(arg_index, error) : format_arg();
   }
 
-  // Returns the next argument.
-  format_arg next_arg(const char *&error) {
+  // Returns the next argument index.
+  unsigned next_arg_index(const char *&error) {
     if (next_arg_index_ >= 0)
-      return this->do_get_arg(internal::to_unsigned(next_arg_index_++), error);
+      return internal::to_unsigned(next_arg_index_++);
     error = "cannot switch from manual to automatic argument indexing";
-    return format_arg();
+    return 0;
   }
 
   bool check_no_auto_index(const char *&error) {
@@ -2145,10 +2146,6 @@ class basic_context :
   typedef typename Base::format_arg format_arg;
   using Base::get_arg;
 
-  // Checks if manual indexing is used and returns the argument with
-  // specified name.
-  format_arg get_arg(basic_string_view<Char> name, const char *&error);
-
  public:
   /**
    \rst
@@ -2160,8 +2157,26 @@ class basic_context :
       basic_string_view<Char> format_str, basic_args<basic_context> args)
   : Base(format_str, args) {}
 
-  // Parses argument id and returns corresponding argument.
-  format_arg parse_arg_id();
+  format_arg next_arg() {
+    const char *error = 0;
+    format_arg arg = this->do_get_arg(this->next_arg_index(error), error);
+    if (error)
+      FMT_THROW(format_error(error));
+    return arg;
+  }
+
+  format_arg get_arg(unsigned arg_index) {
+    const char *error = 0;
+    this->check_no_auto_index(error);
+    format_arg arg = this->do_get_arg(arg_index, error);
+    if (error)
+      FMT_THROW(format_error(error));
+    return arg;
+  }
+
+  // Checks if manual indexing is used and returns the argument with
+  // specified name.
+  format_arg get_arg(basic_string_view<Char> name);
 
   using Base::pos;
 };
@@ -3252,42 +3267,129 @@ struct precision_handler {
   }
 };
 
-// Parses standard format specifiers.
 template <typename Context>
-basic_format_specs<typename Context::char_type>
-    parse_format_specs(Type arg_type, Context &ctx) {
-  typedef typename Context::char_type Char;
-  basic_format_specs<Char> spec;
+class specs_handler {
+ public:
+  typedef typename Context::char_type char_type;
+
+  specs_handler(basic_format_specs<char_type> &specs, Context &ctx)
+    : specs_(specs), context_(ctx) {}
+
+  void on_align(alignment align) { specs_.align_ = align; }
+  void on_fill(char_type fill) { specs_.fill_ = fill; }
+  void on_plus() { specs_.flags_ |= SIGN_FLAG | PLUS_FLAG; }
+  void on_minus() { specs_.flags_ |= MINUS_FLAG; }
+  void on_space() { specs_.flags_ |= SIGN_FLAG; }
+  void on_hash() { specs_.flags_ |= HASH_FLAG; }
+
+  void on_zero() {
+    specs_.align_ = ALIGN_NUMERIC;
+    specs_.fill_ = '0';
+  }
+
+  void on_width(unsigned width) { specs_.width_ = width; }
+
+  template <typename Id>
+  void on_dynamic_width(Id arg_id) {
+    auto width_arg = get_arg(arg_id);
+    ulong_long width = visit(internal::width_handler(), width_arg);
+    if (width > (std::numeric_limits<int>::max)())
+      FMT_THROW(format_error("number is too big"));
+    specs_.width_ = static_cast<int>(width);
+  }
+
+  void on_precision(unsigned precision) { specs_.precision_ = precision; }
+
+  template <typename Id>
+  void on_dynamic_precision(Id arg_id) {
+    auto precision_arg = get_arg(arg_id);
+    ulong_long precision = visit(internal::precision_handler(), precision_arg);
+    if (precision > (std::numeric_limits<int>::max)())
+      FMT_THROW(format_error("number is too big"));
+    specs_.precision_ = static_cast<int>(precision);
+  }
+
+  void on_type(char type) { specs_.type_ = type; }
+
+ private:
+  basic_arg<Context> get_arg(monostate) {
+    return context_.next_arg();
+  }
+
+  basic_arg<Context> get_arg(unsigned index) {
+    return context_.get_arg(index);
+  }
+
+  basic_arg<Context> get_arg(basic_string_view<char_type> name) {
+    return context_.get_arg(name);
+  }
+
+  basic_format_specs<char_type> &specs_;
+  Context &context_;
+};
+
+template <typename Iterator, typename Handler>
+Iterator parse_arg_id(Iterator it, Handler handler) {
+  typedef typename Iterator::value_type char_type;
+  char_type c = *it;
+  if (c == '}' || c == ':') {
+    handler();
+    return it;
+  }
+  if (c >= '0' && c <= '9') {
+    unsigned index = parse_nonnegative_int(it);
+    if (*it != '}' && *it != ':') {
+      FMT_THROW(format_error("invalid format string"));
+    }
+    handler(index);
+    return it;
+  }
+  if (!is_name_start(c)) {
+    FMT_THROW(format_error("invalid format string"));
+  }
+  auto start = it;
+  do {
+    c = *++it;
+  } while (is_name_start(c) || ('0' <= c && c <= '9'));
+  handler(basic_string_view<char_type>(pointer_from(start), it - start));
+  return it;
+}
+
+// Parses standard format specifiers and sends notifications about parsed
+// components to handler.
+template <typename Iterator, typename Handler>
+Iterator parse_format_specs(Iterator it, Type arg_type, Handler &handler) {
+  typedef typename Iterator::value_type char_type;
   // Parse fill and alignment.
-  auto &it = ctx.pos();
-  if (Char c = *it) {
+  if (char_type c = *it) {
     auto p = it + 1;
-    spec.align_ = ALIGN_DEFAULT;
+    alignment align = ALIGN_DEFAULT;
     do {
       switch (*p) {
         case '<':
-          spec.align_ = ALIGN_LEFT;
+          align = ALIGN_LEFT;
           break;
         case '>':
-          spec.align_ = ALIGN_RIGHT;
+          align = ALIGN_RIGHT;
           break;
         case '=':
-          spec.align_ = ALIGN_NUMERIC;
+          align = ALIGN_NUMERIC;
           break;
         case '^':
-          spec.align_ = ALIGN_CENTER;
+          align = ALIGN_CENTER;
           break;
       }
-      if (spec.align_ != ALIGN_DEFAULT) {
+      if (align != ALIGN_DEFAULT) {
+        handler.on_align(align);
         if (p != it) {
           if (c == '}') break;
           if (c == '{')
             FMT_THROW(format_error("invalid fill character '{'"));
           it += 2;
-          spec.fill_ = c;
+          handler.on_fill(c);
         } else ++it;
-        if (spec.align_ == ALIGN_NUMERIC)
-          internal::require_numeric_argument(arg_type, '=');
+        if (align == ALIGN_NUMERIC)
+          require_numeric_argument(arg_type, '=');
         break;
       }
     } while (--p >= it);
@@ -3296,63 +3398,72 @@ basic_format_specs<typename Context::char_type>
   // Parse sign.
   switch (*it) {
     case '+':
-      internal::check_sign(it, arg_type);
-      spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
+      check_sign(it, arg_type);
+      handler.on_plus();
       break;
     case '-':
-      internal::check_sign(it, arg_type);
-      spec.flags_ |= MINUS_FLAG;
+      check_sign(it, arg_type);
+      handler.on_minus();
       break;
     case ' ':
-      internal::check_sign(it, arg_type);
-      spec.flags_ |= SIGN_FLAG;
+      check_sign(it, arg_type);
+      handler.on_space();
       break;
   }
 
   if (*it == '#') {
-    internal::require_numeric_argument(arg_type, '#');
-    spec.flags_ |= HASH_FLAG;
+    require_numeric_argument(arg_type, '#');
+    handler.on_hash();
     ++it;
   }
 
   // Parse zero flag.
   if (*it == '0') {
-    internal::require_numeric_argument(arg_type, '0');
-    spec.align_ = ALIGN_NUMERIC;
-    spec.fill_ = '0';
+    require_numeric_argument(arg_type, '0');
+    handler.on_zero();
     ++it;
   }
 
   // Parse width.
   if ('0' <= *it && *it <= '9') {
-    spec.width_ = internal::parse_nonnegative_int(it);
+    handler.on_width(parse_nonnegative_int(it));
   } else if (*it == '{') {
-    ++it;
-    auto width_arg = ctx.parse_arg_id();
+    struct width_handler {
+      explicit width_handler(Handler &h) : handler(h) {}
+
+      void operator()() { handler.on_dynamic_width(monostate()); }
+      void operator()(unsigned id) { handler.on_dynamic_width(id); }
+      void operator()(basic_string_view<char_type> id) {
+        handler.on_dynamic_width(id);
+      }
+
+      Handler &handler;
+    };
+    it = parse_arg_id(it + 1, width_handler(handler));
     if (*it++ != '}')
       FMT_THROW(format_error("invalid format string"));
-    ulong_long width = visit(internal::width_handler(), width_arg);
-    if (width > (std::numeric_limits<int>::max)())
-      FMT_THROW(format_error("number is too big"));
-    spec.width_ = static_cast<int>(width);
   }
 
   // Parse precision.
   if (*it == '.') {
     ++it;
-    spec.precision_ = 0;
     if ('0' <= *it && *it <= '9') {
-      spec.precision_ = internal::parse_nonnegative_int(it);
+      handler.on_precision(parse_nonnegative_int(it));
     } else if (*it == '{') {
-      ++it;
-      auto precision_arg = ctx.parse_arg_id();
+      struct precision_handler {
+        explicit precision_handler(Handler &h) : handler(h) {}
+
+        void operator()() { handler.on_dynamic_precision(monostate()); }
+        void operator()(unsigned id) { handler.on_dynamic_precision(id); }
+        void operator()(basic_string_view<char_type> id) {
+          handler.on_dynamic_precision(id);
+        }
+
+        Handler &handler;
+      };
+      it = parse_arg_id(it + 1, precision_handler(handler));
       if (*it++ != '}')
         FMT_THROW(format_error("invalid format string"));
-      ulong_long precision =
-        visit(internal::precision_handler(), precision_arg);
-      if (precision > (std::numeric_limits<int>::max)())
-        FMT_THROW(format_error("number is too big"));
-      spec.precision_ = static_cast<int>(precision);
     } else {
       FMT_THROW(format_error("missing precision specifier"));
     }
@@ -3365,8 +3476,8 @@ basic_format_specs<typename Context::char_type>
 
   // Parse type.
   if (*it != '}' && *it)
-    spec.type_ = static_cast<char>(*it++);
-  return spec;
+    handler.on_type(static_cast<char>(*it++));
+  return it;
 }
 
 // Formats a single argument.
@@ -3374,19 +3485,19 @@ template <typename ArgFormatter, typename Char, typename Context>
 void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context> &arg,
                    Context &ctx) {
   auto &it = ctx.pos();
-  basic_format_specs<Char> spec;
+  basic_format_specs<Char> specs;
   if (*it == ':') {
-    if (visit(internal::custom_formatter<Char, Context>(buffer, ctx), arg))
+    if (visit(custom_formatter<Char, Context>(buffer, ctx), arg))
       return;
-    ++it;
-    spec = internal::parse_format_specs(arg.type(), ctx);
+    specs_handler<Context> handler(specs, ctx);
+    it = parse_format_specs(it + 1, arg.type(), handler);
   }
 
   if (*it != '}')
     FMT_THROW(format_error("missing '}' in format string"));
 
   // Format argument.
-  visit(ArgFormatter(buffer, ctx, spec), arg);
+  visit(ArgFormatter(buffer, ctx, specs), arg);
 }
 }  // namespace internal
 
@@ -3397,7 +3508,8 @@ class formatter {
     auto &it = ctx.pos();
     if (*it == ':') {
       ++it;
-      specs_ = parse_format_specs(internal::gettype<T>(), ctx);
+      internal::specs_handler<basic_context<Char>> handler(specs_, ctx);
+      it = parse_format_specs(it, internal::gettype<T>(), handler);
     }
   }
 
@@ -3412,44 +3524,17 @@ class formatter {
 
 template <typename Char>
 inline typename basic_context<Char>::format_arg
-  basic_context<Char>::get_arg(
-    basic_string_view<Char> name, const char *&error) {
+  basic_context<Char>::get_arg(basic_string_view<Char> name) {
+  const char *error = 0;
   if (this->check_no_auto_index(error)) {
     map_.init(this->args());
     if (const format_arg *arg = map_.find(name))
       return *arg;
     error = "argument not found";
   }
-  return format_arg();
-}
-
-template <typename Char>
-inline typename basic_context<Char>::format_arg
-    basic_context<Char>::parse_arg_id() {
-  format_arg arg;
-  auto &it = this->pos();
-  if (!internal::is_name_start(*it)) {
-    const char *error = 0;
-    arg = *it < '0' || *it > '9' ?
-      this->next_arg(error) :
-      get_arg(internal::parse_nonnegative_int(it), error);
-    if (error) {
-      FMT_THROW(format_error(
-                  *it != '}' && *it != ':' ? "invalid format string" : error));
-    }
-    return arg;
-  }
-  auto start = it;
-  Char c;
-  do {
-    c = *++it;
-  } while (internal::is_name_start(c) || ('0' <= c && c <= '9'));
-  const char *error = 0;
-  arg = get_arg(basic_string_view<Char>(
-                  internal::pointer_from(start), it - start), error);
   if (error)
     FMT_THROW(format_error(error));
-  return arg;
+  return format_arg();
 }
 
 /** Formats arguments and writes the output to the buffer. */
@@ -3471,7 +3556,24 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
     if (c == '}')
       FMT_THROW(format_error("unmatched '}' in format string"));
     buffer.append(pointer_from(start), pointer_from(it) - 1);
-    internal::do_format_arg<ArgFormatter>(buffer, ctx.parse_arg_id(), ctx);
+
+    basic_arg<Context> arg;
+    struct id_handler {
+      explicit id_handler(Context &ctx, basic_arg<Context> &arg)
+        : context(ctx), arg(arg) {}
+
+      void operator()() { arg = context.next_arg(); }
+      void operator()(unsigned id) { arg = context.get_arg(id); }
+      void operator()(basic_string_view<Char> id) {
+        arg = context.get_arg(id);
+      }
+
+      Context &context;
+      basic_arg<Context> &arg;
+    } handler(ctx, arg);
+
+    it = parse_arg_id(it, handler);
+    internal::do_format_arg<ArgFormatter>(buffer, arg, ctx);
     if (*it != '}')
       FMT_THROW(format_error(fmt::format("unknown format specifier")));
     start = ++it;

@@ -1239,8 +1239,7 @@ TEST(FormatterTest, FormatCustom) {
 
 class Answer {};
 
-template <typename Char>
-void format_value(fmt::basic_buffer<Char> &buf, Answer, fmt::context &ctx) {
+void format_value(fmt::buffer &buf, Answer, fmt::context &ctx) {
   fmt::formatter<int> f(ctx);
   f.format(buf, 42, ctx);
 }
