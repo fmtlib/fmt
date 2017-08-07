@@ -838,7 +838,7 @@ TEST(UtilTest, FormatSystemError) {
   EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)), message.str());
   message.clear();
   fmt::format_system_error(
-        message, EDOM, fmt::StringRef(0, std::numeric_limits<size_t>::max()));
+        message, EDOM, fmt::StringRef(0, std::numeric_limits<ssize_t>::max()));
   EXPECT_EQ(fmt::format("error {}", EDOM), message.str());
 }
 
