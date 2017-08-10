@@ -837,8 +837,21 @@ TEST(UtilTest, FormatSystemError) {
   fmt::format_system_error(message, EDOM, "test");
   EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)), message.str());
   message.clear();
-  fmt::format_system_error(
-        message, EDOM, fmt::StringRef(0, std::numeric_limits<ssize_t>::max()));
+
+  // Check if std::allocator throws on allocating max size_t / 2 chars.
+  size_t max_size = std::numeric_limits<size_t>::max() / 2;
+  bool throws_on_alloc = false;
+  try {
+    std::allocator<char> alloc;
+    alloc.deallocate(alloc.allocate(max_size), max_size);
+  } catch (std::bad_alloc) {
+    throws_on_alloc = true;
+  }
+  if (!throws_on_alloc) {
+    fmt::print("warning: std::allocator allocates {} chars", max_size);
+    return;
+  }
+  fmt::format_system_error(message, EDOM, fmt::StringRef(0, max_size));
   EXPECT_EQ(fmt::format("error {}", EDOM), message.str());
 }
 
