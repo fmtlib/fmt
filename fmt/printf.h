@@ -110,7 +110,7 @@ class ArgConverter : public ArgVisitor<ArgConverter<T>, void> {
       visit_any_int(value);
   }
 
-  void visit_char(char value) {
+  void visit_char(int value) {
     if (type_ != 's')
       visit_any_int(value);
   }
