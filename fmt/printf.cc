@@ -14,7 +14,7 @@ FMT_FUNC int vfprintf(std::FILE *f, string_view format, printf_args args) {
 }
 
 #ifndef FMT_HEADER_ONLY
-template void printf_context<char>::format(buffer &);
-template void printf_context<wchar_t>::format(wbuffer &);
+template void printf_context<char>::format(string_view, buffer &);
+template void printf_context<wchar_t>::format(wstring_view, wbuffer &);
 #endif
 }

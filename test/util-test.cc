@@ -66,18 +66,26 @@ namespace {
 
 struct Test {};
 
-template <typename Char>
-void format_value(fmt::basic_buffer<Char> &b, Test,
-                  fmt::basic_context<Char> &) {
-  const Char *test = "test";
-  b.append(test, test + std::strlen(test));
-}
-
 template <typename Context, typename T>
 basic_arg<Context> make_arg(const T &value) {
   return fmt::internal::make_arg<Context>(value);
 }
 }  // namespace
+
+namespace fmt {
+template <typename Char>
+struct formatter<Test, Char> {
+  template <typename Range>
+  auto parse(Range format) -> decltype(begin(format)) {
+    return begin(format);
+  }
+
+  void format(basic_buffer<Char> &b, Test, basic_context<Char> &) {
+    const Char *test = "test";
+    b.append(test, test + std::strlen(test));
+  }
+};
+}
 
 void CheckForwarding(
     MockAllocator<int> &alloc, AllocatorRef< MockAllocator<int> > &ref) {
@@ -424,20 +432,33 @@ TEST(UtilTest, FormatArgs) {
 }
 
 struct CustomContext {
-  typedef char char_type;
-  bool called;
-};
+  using char_type = char;
 
-void format_value(fmt::buffer &, const Test &, CustomContext &ctx) {
-  ctx.called = true;
-}
+  template <typename T>
+  struct formatter_type {
+    template <typename Range>
+    auto parse(Range range) -> decltype(begin(range)) {
+      return begin(range);
+    }
+
+    void format(fmt::buffer &, const T &, CustomContext& ctx) {
+      ctx.called = true;
+    }
+  };
+
+  bool called;
+
+  fmt::string_view format() { return ""; }
+  void advance_to(const char *) {}
+};
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
   fmt::internal::value<CustomContext> arg(t);
   CustomContext ctx = {false};
   fmt::memory_buffer buffer;
-  arg.custom.format(buffer, &t, &ctx);
+  fmt::string_view format_str;
+  arg.custom.format(buffer, &t, format_str, &ctx);
   EXPECT_TRUE(ctx.called);
 }
 
@@ -581,8 +602,9 @@ TEST(UtilTest, CustomArg) {
         testing::Invoke([&](fmt::internal::custom_value<char> custom) {
     EXPECT_EQ(&test, custom.value);
     fmt::memory_buffer buffer;
-    fmt::context ctx("}", fmt::args());
-    custom.format(buffer, &test, &ctx);
+    fmt::context ctx((fmt::args()));
+    fmt::string_view format_str;
+    custom.format(buffer, &test, format_str, &ctx);
     EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
     return Visitor::Result();
   }));

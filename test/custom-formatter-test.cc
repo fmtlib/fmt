@@ -65,8 +65,8 @@ std::string custom_vsprintf(
     const char* format_str,
     fmt::basic_args<CustomPrintfFormatter> args) {
   fmt::memory_buffer buffer;
-  CustomPrintfFormatter formatter(format_str, args);
-  formatter.format(buffer);
+  CustomPrintfFormatter formatter(args);
+  formatter.format(format_str, buffer);
   return std::string(buffer.data(), buffer.size());
 }
 

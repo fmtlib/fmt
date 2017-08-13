@@ -286,28 +286,46 @@ class printf_arg_formatter : public internal::arg_formatter_base<Char> {
 
   /** Formats an argument of a custom (user-defined) type. */
   void operator()(internal::custom_value<Char> c) {
-    const Char format_str[] = {'}', '\0'};
+    const Char format_str_data[] = {'}', '\0'};
+    basic_string_view<Char> format_str = format_str_data;
     auto args = basic_args<basic_context<Char>>();
-    basic_context<Char> ctx(format_str, args);
-    c.format(this->writer().buffer(), c.value, &ctx);
+    basic_context<Char> ctx(args);
+    c.format(this->writer().buffer(), c.value, format_str, &ctx);
+  }
+};
+
+template <typename Char,
+          typename ArgFormatter = printf_arg_formatter<Char> >
+class printf_context;
+
+template <typename T, typename Char = char>
+struct printf_formatter {
+  const Char *parse(basic_string_view<Char> s) {
+    return s.data();
+  }
+
+  void format(basic_buffer<Char> &buf, const T &value, printf_context<Char> &) {
+    internal::format_value(buf, value);
   }
 };
 
 /** This template formats data and writes the output to a writer. */
-template <typename Char,
-          typename ArgFormatter = printf_arg_formatter<Char> >
+template <typename Char, typename ArgFormatter>
 class printf_context :
   private internal::context_base<
     Char, printf_context<Char, ArgFormatter>> {
  public:
   /** The character type for the output. */
-  typedef Char char_type;
+  using char_type = Char;
+
+  template <typename T>
+  using formatter_type = printf_formatter<T>;
 
  private:
   typedef internal::context_base<Char, printf_context> Base;
   typedef typename Base::format_arg format_arg;
   typedef basic_format_specs<Char> format_specs;
-  typedef typename Base::iterator iterator;
+  typedef internal::null_terminating_iterator<Char> iterator;
 
   void parse_flags(format_specs &spec, iterator &it);
 
@@ -328,12 +346,11 @@ class printf_context :
    appropriate lifetimes.
    \endrst
    */
-  explicit printf_context(basic_string_view<Char> format_str,
-                          basic_args<printf_context> args)
-    : Base(format_str, args) {}
+  explicit printf_context(basic_args<printf_context> args): Base(args) {}
 
   /** Formats stored arguments and writes the output to the buffer. */
-  FMT_API void format(basic_buffer<Char> &buffer);
+  FMT_API void format(
+      basic_string_view<Char> format_str, basic_buffer<Char> &buffer);
 };
 
 template <typename Char, typename AF>
@@ -415,8 +432,9 @@ unsigned printf_context<Char, AF>::parse_header(
 }
 
 template <typename Char, typename AF>
-void printf_context<Char, AF>::format(basic_buffer<Char> &buffer) {
-  auto start = this->pos();
+void printf_context<Char, AF>::format(
+    basic_string_view<Char> format_str, basic_buffer<Char> &buffer) {
+  auto start = iterator(format_str);
   auto it = start;
   using internal::pointer_from;
   while (*it) {
@@ -515,17 +533,10 @@ void printf_context<Char, AF>::format(basic_buffer<Char> &buffer) {
   buffer.append(pointer_from(start), pointer_from(it));
 }
 
-// Formats a value.
-template <typename Char, typename T>
-void format_value(basic_buffer<Char> &buf, const T &value,
-                  printf_context<Char>& ctx) {
-  internal::format_value(buf, value);
-}
-
 template <typename Char>
 void printf(basic_buffer<Char> &buf, basic_string_view<Char> format,
             basic_args<printf_context<Char>> args) {
-  printf_context<Char>(format, args).format(buf);
+  printf_context<Char>(args).format(format, buf);
 }
 
 typedef basic_args<printf_context<char>> printf_args;

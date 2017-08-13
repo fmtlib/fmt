@@ -77,18 +77,28 @@ void format_value(basic_buffer<Char> &buffer, const T &value) {
   output << value;
   buffer.resize(format_buf.size());
 }
+
+// Disable builtin formatting of enums and use operator<< instead.
+template <typename T>
+struct format_enum<T,
+    typename std::enable_if<std::is_enum<T>::value>::type> : std::false_type {};
 }  // namespace internal
 
-// Formats a value.
-template <typename Char, typename T>
-void format_value(basic_buffer<Char> &buf, const T &value,
-                  basic_context<Char> &ctx) {
-  basic_memory_buffer<Char> buffer;
-  internal::format_value(buffer, value);
-  basic_string_view<Char> str(buffer.data(), buffer.size());
-  internal::do_format_arg< arg_formatter<Char> >(
-        buf, internal::make_arg< basic_context<Char> >(str), ctx);
-}
+// Formats an object of type T that has an overloaded ostream operator<<.
+template <typename T, typename Char>
+struct formatter<T, Char,
+    typename std::enable_if<
+      internal::gettype<T>() == internal::CUSTOM>::type>
+    : formatter<basic_string_view<Char>, Char> {
+
+  void format(basic_buffer<Char> &buf, const T &value,
+              basic_context<Char> &ctx) {
+    basic_memory_buffer<Char> buffer;
+    internal::format_value(buffer, value);
+    basic_string_view<Char> str(buffer.data(), buffer.size());
+    formatter<basic_string_view<Char>, Char>::format(buf, str, ctx);
+  }
+};
 
 FMT_API void vprint(std::ostream &os, string_view format_str, args args);
 

@@ -451,6 +451,11 @@ class basic_string_view {
   /** Returns the string size. */
   std::size_t size() const { return size_; }
 
+  void remove_prefix(size_t n) {
+    data_ += n;
+    size_ -= n;
+  }
+
   // Lexicographically compare this string reference to other.
   int compare(basic_string_view other) const {
     std::size_t size = size_ < other.size_ ? size_ : other.size_;
@@ -483,6 +488,9 @@ class basic_string_view {
 typedef basic_string_view<char> string_view;
 typedef basic_string_view<wchar_t> wstring_view;
 
+template <typename Char>
+inline const Char *begin(basic_string_view<Char> s) { return s.data(); }
+
 /** A formatting error such as invalid format string. */
 class format_error : public std::runtime_error {
  public:
@@ -496,8 +504,8 @@ class format_error : public std::runtime_error {
 };
 
 // A formatter for objects of type T.
-template <typename Char, typename T>
-class formatter;
+template <typename T, typename Char = char, typename Enable = void>
+struct formatter;
 
 namespace internal {
 
@@ -847,6 +855,109 @@ struct conditional { typedef T type; };
 template<class T, class F>
 struct conditional<false, T, F> { typedef F type; };
 
+template <typename Char>
+class null_terminating_iterator;
+
+template <typename Char>
+const Char *pointer_from(null_terminating_iterator<Char> it);
+
+// An iterator that produces a null terminator on *end. This simplifies parsing
+// and allows comparing the performance of processing a null-terminated string
+// vs string_view.
+template <typename Char>
+class null_terminating_iterator {
+ public:
+  typedef Char value_type;
+  typedef std::ptrdiff_t difference_type;
+
+  null_terminating_iterator() : ptr_(0), end_(0) {}
+
+  null_terminating_iterator(const Char *ptr, const Char *end)
+    : ptr_(ptr), end_(end) {}
+
+  explicit null_terminating_iterator(basic_string_view<Char> s)
+    : ptr_(s.data()), end_(s.data() + s.size()) {}
+
+  null_terminating_iterator &operator=(const Char *ptr) {
+    assert(ptr <= end_);
+    ptr_ = ptr;
+    return *this;
+  }
+
+  Char operator*() const {
+    return ptr_ != end_ ? *ptr_ : 0;
+  }
+
+  null_terminating_iterator operator++() {
+    ++ptr_;
+    return *this;
+  }
+
+  null_terminating_iterator operator++(int) {
+    null_terminating_iterator result(*this);
+    ++ptr_;
+    return result;
+  }
+
+  null_terminating_iterator operator--() {
+    --ptr_;
+    return *this;
+  }
+
+  null_terminating_iterator operator+(difference_type n) {
+    return null_terminating_iterator(ptr_ + n, end_);
+  }
+
+  null_terminating_iterator operator+=(difference_type n) {
+    ptr_ += n;
+    return *this;
+  }
+
+  difference_type operator-(null_terminating_iterator other) const {
+    return ptr_ - other.ptr_;
+  }
+
+  bool operator!=(null_terminating_iterator other) const {
+    return ptr_ != other.ptr_;
+  }
+
+  bool operator>=(null_terminating_iterator other) const {
+    return ptr_ >= other.ptr_;
+  }
+
+  friend const Char *pointer_from<Char>(null_terminating_iterator it);
+
+ private:
+  const Char *ptr_;
+  const Char *end_;
+};
+
+template <
+  typename T,
+  typename Char,
+  typename std::enable_if<
+      std::is_same<T, null_terminating_iterator<Char>>::value, int>::type = 0>
+null_terminating_iterator<Char> to_iterator(basic_string_view<Char> v) {
+  const Char *s = v.data();
+  return null_terminating_iterator<Char>(s, s + v.size());
+}
+
+template <
+  typename T,
+  typename Char,
+  typename std::enable_if<std::is_same<T, const Char*>::value, int>::type = 0>
+const Char *to_iterator(basic_string_view<Char> v) {
+  return v.data();
+}
+
+template <typename T>
+const T *pointer_from(const T *p) { return p; }
+
+template <typename Char>
+const Char *pointer_from(null_terminating_iterator<Char> it) {
+  return it.ptr_;
+}
+
 // Returns true if value is negative, false otherwise.
 // Same as (value < 0) but doesn't produce warnings if T is an unsigned type.
 template <typename T>
@@ -1122,7 +1233,8 @@ struct string_value {
 template <typename Char>
 struct custom_value {
   typedef void (*FormatFunc)(
-      basic_buffer<Char> &buffer, const void *arg, void *ctx);
+      basic_buffer<Char> &buffer, const void *arg,
+      basic_string_view<Char>& format, void *ctx);
 
   const void *value;
   FormatFunc format;
@@ -1243,9 +1355,16 @@ class value {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   static void format_custom_arg(
-      basic_buffer<Char> &buffer, const void *arg, void *context) {
-    format_value(buffer, *static_cast<const T*>(arg),
-                 *static_cast<Context*>(context));
+      basic_buffer<Char> &buffer, const void *arg,
+      basic_string_view<Char> &format, void *context) {
+    Context &ctx = *static_cast<Context*>(context);
+    // Get the formatter type through the context to allow different contexts
+    // have different extension points, e.g. `formatter<T>` for `format` and
+    // `printf_formatter<T>` for `printf`.
+    typename Context::template formatter_type<T> f;
+    auto it = f.parse(format);
+    format.remove_prefix(it - begin(format));
+    f.format(buffer, *static_cast<const T*>(arg), ctx);
   }
 
  public:
@@ -1474,14 +1593,6 @@ basic_arg<Context> make_arg(const T &value) {
 # define FMT_STATIC_ASSERT(cond, message) \
   typedef int FMT_CONCAT_(Assert, __LINE__)[(cond) ? 1 : -1] FMT_UNUSED
 #endif
-
-template <typename Formatter, typename T, typename Char>
-void format_value(basic_buffer<Char> &, const T &, Formatter &, const Char *) {
-  FMT_STATIC_ASSERT(sizeof(T) < 0,
-                    "Cannot format argument. To enable the use of ostream "
-                    "operator<< include fmt/ostream.h. Otherwise provide "
-                    "an overload of format_value.");
-}
 
 template <typename Context>
 struct named_arg : basic_arg<Context> {
@@ -1947,115 +2058,17 @@ class arg_formatter_base {
   }
 };
 
-template <typename Char>
-class null_terminating_iterator;
-
-template <typename Char>
-const Char *pointer_from(null_terminating_iterator<Char> it);
-
-// An iterator that produces a null terminator on *end. This simplifies parsing
-// and allows comparing the performance of processing a null-terminated string
-// vs string_view.
-template <typename Char>
-class null_terminating_iterator {
- public:
-  typedef Char value_type;
-  typedef std::ptrdiff_t difference_type;
-
-  null_terminating_iterator() : ptr_(0), end_(0) {}
-
-  null_terminating_iterator(const Char *ptr, const Char *end)
-    : ptr_(ptr), end_(end) {}
-
-  Char operator*() const {
-    return ptr_ != end_ ? *ptr_ : 0;
-  }
-
-  null_terminating_iterator operator++() {
-    ++ptr_;
-    return *this;
-  }
-
-  null_terminating_iterator operator++(int) {
-    null_terminating_iterator result(*this);
-    ++ptr_;
-    return result;
-  }
-
-  null_terminating_iterator operator--() {
-    --ptr_;
-    return *this;
-  }
-
-  null_terminating_iterator operator+(difference_type n) {
-    return null_terminating_iterator(ptr_ + n, end_);
-  }
-
-  null_terminating_iterator operator+=(difference_type n) {
-    ptr_ += n;
-    return *this;
-  }
-
-  difference_type operator-(null_terminating_iterator other) const {
-    return ptr_ - other.ptr_;
-  }
-
-  bool operator!=(null_terminating_iterator other) const {
-    return ptr_ != other.ptr_;
-  }
-
-  bool operator>=(null_terminating_iterator other) const {
-    return ptr_ >= other.ptr_;
-  }
-
-  friend const Char *pointer_from<Char>(null_terminating_iterator it);
-
- private:
-  const Char *ptr_;
-  const Char *end_;
-};
-
-template <
-  typename T,
-  typename Char,
-  typename std::enable_if<
-      std::is_same<T, null_terminating_iterator<Char>>::value, int>::type = 0>
-null_terminating_iterator<Char> to_iterator(basic_string_view<Char> v) {
-  const Char *s = v.data();
-  return null_terminating_iterator<Char>(s, s + v.size());
-}
-
-template <
-  typename T,
-  typename Char,
-  typename std::enable_if<std::is_same<T, const Char*>::value, int>::type = 0>
-const Char *to_iterator(const basic_string_view<Char> v) {
-  return v.data();
-}
-
-template <typename T>
-const T *pointer_from(const T *p) { return p; }
-
-template <typename Char>
-const Char *pointer_from(null_terminating_iterator<Char> it) {
-  return it.ptr_;
-}
-
 template <typename Char, typename Context>
 class context_base {
- public:
-  typedef null_terminating_iterator<Char> iterator;
-
  private:
-  iterator pos_;
   basic_args<Context> args_;
   int next_arg_index_;
 
  protected:
   typedef basic_arg<Context> format_arg;
 
-  context_base(basic_string_view<Char> format_str, basic_args<Context> args)
-  : pos_(to_iterator<iterator>(format_str)), args_(args), next_arg_index_(0) {}
+  explicit context_base(basic_args<Context> args)
+  : args_(args), next_arg_index_(0) {}
   ~context_base() {}
 
   basic_args<Context> args() const { return args_; }
@@ -2091,10 +2104,6 @@ class context_base {
     next_arg_index_ = -1;
     return true;
   }
-
- public:
-  // Returns an iterator to the current position in the format string.
-  iterator &pos() { return pos_; }
 };
 }  // namespace internal
 
@@ -2125,7 +2134,8 @@ class arg_formatter : public internal::arg_formatter_base<Char> {
 
   /** Formats an argument of a custom (user-defined) type. */
   void operator()(internal::custom_value<Char> c) {
-    c.format(this->writer().buffer(), c.value, &ctx_);
+    basic_string_view<Char> format_str;
+    c.format(this->writer().buffer(), c.value, format_str, &ctx_);
   }
 };
 
@@ -2134,7 +2144,10 @@ class basic_context :
   public internal::context_base<Char, basic_context<Char>> {
  public:
   /** The character type for the output. */
-  typedef Char char_type;
+  using char_type = Char;
+
+  template <typename T>
+  using formatter_type = formatter<T, Char>;
 
  private:
   internal::arg_map<basic_context<Char>> map_;
@@ -2153,9 +2166,7 @@ class basic_context :
    stored in the object so make sure they have appropriate lifetimes.
    \endrst
    */
-  basic_context(
-      basic_string_view<Char> format_str, basic_args<basic_context> args)
-  : Base(format_str, args) {}
+  basic_context(basic_args<basic_context> args): Base(args) {}
 
   format_arg next_arg() {
     const char *error = 0;
@@ -2177,8 +2188,6 @@ class basic_context :
   // Checks if manual indexing is used and returns the argument with
   // specified name.
   format_arg get_arg(basic_string_view<Char> name);
-
-  using Base::pos;
 };
 
 /**
@@ -3210,14 +3219,16 @@ template <typename Char, typename Context>
 class custom_formatter {
  private:
   basic_buffer<Char> &buffer_;
+  basic_string_view<Char> &format_;
   Context &ctx_;
 
  public:
-  custom_formatter(basic_buffer<Char> &buffer, Context &ctx)
-  : buffer_(buffer), ctx_(ctx) {}
+  custom_formatter(basic_buffer<Char> &buffer, basic_string_view<Char> &format,
+                   Context &ctx)
+  : buffer_(buffer), format_(format), ctx_(ctx) {}
 
   bool operator()(internal::custom_value<Char> custom) {
-    custom.format(buffer_, custom.value, &ctx_);
+    custom.format(buffer_, custom.value, format_, &ctx_);
     return true;
   }
 
@@ -3267,16 +3278,14 @@ struct precision_handler {
   }
 };
 
-template <typename Context>
-class specs_handler {
+template <typename Char>
+class specs_handler_base {
  public:
-  typedef typename Context::char_type char_type;
-
-  specs_handler(basic_format_specs<char_type> &specs, Context &ctx)
-    : specs_(specs), context_(ctx) {}
+  explicit specs_handler_base(basic_format_specs<Char> &specs)
+    : specs_(specs) {}
 
   void on_align(alignment align) { specs_.align_ = align; }
-  void on_fill(char_type fill) { specs_.fill_ = fill; }
+  void on_fill(Char fill) { specs_.fill_ = fill; }
   void on_plus() { specs_.flags_ |= SIGN_FLAG | PLUS_FLAG; }
   void on_minus() { specs_.flags_ |= MINUS_FLAG; }
   void on_space() { specs_.flags_ |= SIGN_FLAG; }
@@ -3288,44 +3297,105 @@ class specs_handler {
   }
 
   void on_width(unsigned width) { specs_.width_ = width; }
+  void on_precision(unsigned precision) { specs_.precision_ = precision; }
+  void on_type(char type) { specs_.type_ = type; }
+
+ protected:
+  ~specs_handler_base() {}
+
+  basic_format_specs<Char> &specs_;
+};
+
+template <typename Handler, typename T, typename Context>
+inline void set_dynamic_spec(T &value, basic_arg<Context> arg) {
+  ulong_long big_value = visit(Handler(), arg);
+  if (big_value > (std::numeric_limits<int>::max)())
+    FMT_THROW(format_error("number is too big"));
+  value = static_cast<int>(big_value);
+}
+
+template <typename Context>
+class specs_handler : public specs_handler_base<typename Context::char_type> {
+ public:
+  typedef typename Context::char_type char_type;
+
+  specs_handler(basic_format_specs<char_type> &specs, Context &ctx)
+    : specs_handler_base<char_type>(specs), context_(ctx) {}
 
   template <typename Id>
   void on_dynamic_width(Id arg_id) {
-    auto width_arg = get_arg(arg_id);
-    ulong_long width = visit(internal::width_handler(), width_arg);
-    if (width > (std::numeric_limits<int>::max)())
-      FMT_THROW(format_error("number is too big"));
-    specs_.width_ = static_cast<int>(width);
+    set_dynamic_spec<internal::width_handler>(
+          this->specs_.width_, get_arg(arg_id));
   }
-
-  void on_precision(unsigned precision) { specs_.precision_ = precision; }
 
   template <typename Id>
   void on_dynamic_precision(Id arg_id) {
-    auto precision_arg = get_arg(arg_id);
-    ulong_long precision = visit(internal::precision_handler(), precision_arg);
-    if (precision > (std::numeric_limits<int>::max)())
-      FMT_THROW(format_error("number is too big"));
-    specs_.precision_ = static_cast<int>(precision);
+    set_dynamic_spec<internal::precision_handler>(
+          this->specs_.precision_, get_arg(arg_id));
   }
-
-  void on_type(char type) { specs_.type_ = type; }
 
  private:
   basic_arg<Context> get_arg(monostate) {
     return context_.next_arg();
   }
 
-  basic_arg<Context> get_arg(unsigned index) {
-    return context_.get_arg(index);
+  template <typename Id>
+  basic_arg<Context> get_arg(Id arg_id) {
+    return context_.get_arg(arg_id);
   }
 
-  basic_arg<Context> get_arg(basic_string_view<char_type> name) {
-    return context_.get_arg(name);
-  }
-
-  basic_format_specs<char_type> &specs_;
   Context &context_;
+};
+
+// An argument reference.
+template <typename Char>
+struct arg_ref {
+  enum Kind { NONE, INDEX, NAME };
+
+  arg_ref() : kind(NONE) {}
+  explicit arg_ref(unsigned index) : kind(INDEX), index(index) {}
+  explicit arg_ref(basic_string_view<Char> name) : kind(NAME), name(name) {}
+
+  Kind kind;
+  union {
+    unsigned index;
+    basic_string_view<Char> name;
+  };
+};
+
+template <typename Char>
+struct dynamic_format_specs : basic_format_specs<Char> {
+  arg_ref<Char> width_ref;
+  arg_ref<Char> precision_ref;
+};
+
+template <typename Char>
+class dynamic_specs_handler : public specs_handler_base<Char> {
+ public:
+  explicit dynamic_specs_handler(dynamic_format_specs<Char> &specs)
+    : specs_handler_base<Char>(specs), specs_(specs) {}
+
+  template <typename Id>
+  void on_dynamic_width(Id arg_id) {
+    set(specs_.width_ref, arg_id);
+  }
+
+  template <typename Id>
+  void on_dynamic_precision(Id arg_id) {
+    set(specs_.precision_ref, arg_id);
+  }
+
+ private:
+  template <typename Id>
+  void set(arg_ref<Char> &ref, Id arg_id) {
+    ref = arg_ref<Char>(arg_id);
+  }
+
+  void set(arg_ref<Char> &ref, monostate) {
+    ref.kind = arg_ref<Char>::NONE;
+  }
+
+  dynamic_format_specs<Char> &specs_;
 };
 
 template <typename Iterator, typename Handler>
@@ -3338,15 +3408,13 @@ Iterator parse_arg_id(Iterator it, Handler handler) {
   }
   if (c >= '0' && c <= '9') {
     unsigned index = parse_nonnegative_int(it);
-    if (*it != '}' && *it != ':') {
+    if (*it != '}' && *it != ':')
       FMT_THROW(format_error("invalid format string"));
-    }
     handler(index);
     return it;
   }
-  if (!is_name_start(c)) {
+  if (!is_name_start(c))
     FMT_THROW(format_error("invalid format string"));
-  }
   auto start = it;
   do {
     c = *++it;
@@ -3357,6 +3425,9 @@ Iterator parse_arg_id(Iterator it, Handler handler) {
 
 // Parses standard format specifiers and sends notifications about parsed
 // components to handler.
+// it: an iterator pointing to the beginning of a null-terminated range of
+//     characters, possibly emulated via null_terminating_iterator, representing
+//     format specifiers.
 template <typename Iterator, typename Handler>
 Iterator parse_format_specs(Iterator it, Type arg_type, Handler &handler) {
   typedef typename Iterator::value_type char_type;
@@ -3482,13 +3553,16 @@ Iterator parse_format_specs(Iterator it, Type arg_type, Handler &handler) {
 
 // Formats a single argument.
 template <typename ArgFormatter, typename Char, typename Context>
-void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context> &arg,
-                   Context &ctx) {
-  auto &it = ctx.pos();
+const Char *do_format_arg(basic_buffer<Char> &buffer,
+                          const basic_arg<Context> &arg,
+                          basic_string_view<Char> format,
+                          Context &ctx) {
+  auto it = null_terminating_iterator<Char>(format);
   basic_format_specs<Char> specs;
   if (*it == ':') {
-    if (visit(custom_formatter<Char, Context>(buffer, ctx), arg))
-      return;
+    format.remove_prefix(1);
+    if (visit(custom_formatter<Char, Context>(buffer, format, ctx), arg))
+      return begin(format);
     specs_handler<Context> handler(specs, ctx);
     it = parse_format_specs(it + 1, arg.type(), handler);
   }
@@ -3498,28 +3572,69 @@ void do_format_arg(basic_buffer<Char> &buffer, const basic_arg<Context> &arg,
 
   // Format argument.
   visit(ArgFormatter(buffer, ctx, specs), arg);
+  return pointer_from(it);
 }
+
+// Specifies whether to format enums.
+template <typename T, typename Enable = void>
+struct format_enum : std::integral_constant<bool, std::is_enum<T>::value> {};
 }  // namespace internal
 
-template <typename T, typename Char = char>
-class formatter {
- public:
-  explicit formatter(basic_context<Char> &ctx) {
-    auto &it = ctx.pos();
-    if (*it == ':') {
-      ++it;
-      internal::specs_handler<basic_context<Char>> handler(specs_, ctx);
-      it = parse_format_specs(it, internal::gettype<T>(), handler);
-    }
+// Formatter of objects of type T.
+template <typename T, typename Char>
+struct formatter<T, Char,
+    typename std::enable_if<internal::gettype<T>() != internal::CUSTOM>::type> {
+
+  // Parses format specifiers stopping either at the end of the range or at the
+  // terminating '}'.
+  template <typename Range>
+  auto parse(Range format) -> decltype(begin(format)) {
+    auto it = internal::null_terminating_iterator<Char>(format);
+    internal::dynamic_specs_handler<Char> handler(specs_);
+    it = parse_format_specs(it, internal::gettype<T>(), handler);
+    return pointer_from(it);
   }
 
   void format(basic_buffer<Char> &buf, const T &val, basic_context<Char> &ctx) {
+    handle_dynamic_spec<internal::width_handler>(
+      specs_.width_, specs_.width_ref, ctx);
+    handle_dynamic_spec<internal::precision_handler>(
+      specs_.precision_, specs_.precision_ref, ctx);
     visit(arg_formatter<Char>(buf, ctx, specs_),
           internal::make_arg<basic_context<Char>>(val));
   }
 
  private:
-  basic_format_specs<Char> specs_;
+  using arg_ref = internal::arg_ref<Char>;
+
+  template <typename Handler, typename Spec>
+  static void handle_dynamic_spec(
+      Spec &value, arg_ref ref, basic_context<Char> &ctx) {
+    switch (ref.kind) {
+    case arg_ref::NONE:
+      // Do nothing.
+      break;
+    case arg_ref::INDEX:
+      internal::set_dynamic_spec<Handler>(value, ctx.get_arg(ref.index));
+      break;
+    case arg_ref::NAME:
+      internal::set_dynamic_spec<Handler>(value, ctx.get_arg(ref.name));
+      break;
+    // TODO: handle automatic numbering
+    }
+  }
+
+  internal::dynamic_format_specs<Char> specs_;
+};
+
+template <typename T, typename Char>
+struct formatter<T, Char,
+    typename std::enable_if<internal::format_enum<T>::value>::type>
+    : public formatter<int, Char> {
+  template <typename Range>
+  auto parse(Range format) -> decltype(begin(format)) {
+    return begin(format);
+  }
 };
 
 template <typename Char>
@@ -3541,9 +3656,9 @@ inline typename basic_context<Char>::format_arg
 template <typename ArgFormatter, typename Char, typename Context>
 void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
                 basic_args<Context> args) {
-  basic_context<Char> ctx(format_str, args);
-  auto &it = ctx.pos();
-  auto start = it;
+  basic_context<Char> ctx(args);
+  auto start = internal::null_terminating_iterator<Char>(format_str);
+  auto it = start;
   using internal::pointer_from;
   while (*it) {
     Char c = *it++;
@@ -3573,7 +3688,8 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
     } handler(ctx, arg);
 
     it = parse_arg_id(it, handler);
-    internal::do_format_arg<ArgFormatter>(buffer, arg, ctx);
+    format_str.remove_prefix(pointer_from(it) - format_str.data());
+    it = internal::do_format_arg<ArgFormatter>(buffer, arg, format_str, ctx);
     if (*it != '}')
       FMT_THROW(format_error(fmt::format("unknown format specifier")));
     start = ++it;
