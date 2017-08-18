@@ -2,9 +2,13 @@ message(STATUS "CMake version: ${CMAKE_VERSION}")
 
 cmake_minimum_required(VERSION 2.8.12)
 
-if (POLICY CMP0048)
+if (POLICY CMP0048) # Version variables
   cmake_policy(SET CMP0048 OLD)
 endif ()
+
+if (POLICY CMP0063) # Visibility
+  cmake_policy(SET CMP0063 OLD)
+endif (POLICY CMP0063)
 
 # Determine if fmt is built as a subproject (using add_subdirectory)
 # or if it is the master project.
