@@ -142,7 +142,7 @@ typedef __int64          intmax_t;
 // Use the compiler's attribute noreturn
 #if defined(__MINGW32__) || defined(__MINGW64__)
 # define FMT_NORETURN __attribute__((noreturn))
-#elif FMT_HAS_CPP_ATTRIBUTE(noreturn)
+#elif FMT_HAS_CPP_ATTRIBUTE(noreturn) && __cplusplus >= 201103L
 # define FMT_NORETURN [[noreturn]]
 #else
 # define FMT_NORETURN
