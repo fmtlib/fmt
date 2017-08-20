@@ -3575,6 +3575,12 @@ const Char *do_format_arg(basic_buffer<Char> &buffer,
   return pointer_from(it);
 }
 
+// Specifies whether to format T using the standard formatter.
+// It is not possible to use gettype in formatter specialization directly
+// because of a bug in MSVC.
+template <typename T>
+struct format_type : std::integral_constant<bool, gettype<T>() != CUSTOM> {};
+
 // Specifies whether to format enums.
 template <typename T, typename Enable = void>
 struct format_enum : std::integral_constant<bool, std::is_enum<T>::value> {};
@@ -3582,8 +3588,7 @@ struct format_enum : std::integral_constant<bool, std::is_enum<T>::value> {};
 
 // Formatter of objects of type T.
 template <typename T, typename Char>
-struct formatter<T, Char,
-    typename std::enable_if<internal::gettype<T>() != internal::CUSTOM>::type> {
+struct formatter<T, Char, typename std::enable_if<internal::format_type<T>::value>::type> {
 
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.
