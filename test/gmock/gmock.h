@@ -825,8 +825,9 @@ template <typename T> struct DecayArray<T[]> {
 // crashes).
 template <typename T>
 inline T Invalid() {
+  void *p = NULL;
   return const_cast<typename remove_reference<T>::type&>(
-      *static_cast<volatile typename remove_reference<T>::type*>(NULL));
+      *static_cast<volatile typename remove_reference<T>::type*>(p));
 }
 template <>
 inline void Invalid<void>() {}
