@@ -488,7 +488,7 @@ struct MockVisitor {
   Result operator()(T value) { return visit(value); }
 
   template <typename U>
-  Result operator()(U value) {
+  Result operator()(U) {
     unexpected();
     return Result();
   }
