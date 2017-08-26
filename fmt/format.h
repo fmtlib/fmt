@@ -819,12 +819,6 @@ class char_traits<wchar_t> : public basic_char_traits<wchar_t> {
       const wchar_t *format, unsigned width, int precision, T value);
 };
 
-template <bool B, class T = void>
-struct enable_if {};
-
-template <class T>
-struct enable_if<true, T> { typedef T type; };
-
 template <bool B, class T, class F>
 struct conditional { typedef T type; };
 
@@ -937,12 +931,12 @@ const Char *pointer_from(null_terminating_iterator<Char> it) {
 // Returns true if value is negative, false otherwise.
 // Same as (value < 0) but doesn't produce warnings if T is an unsigned type.
 template <typename T>
-inline typename enable_if<std::numeric_limits<T>::is_signed, bool>::type
+inline typename std::enable_if<std::numeric_limits<T>::is_signed, bool>::type
     is_negative(T value) {
   return value < 0;
 }
 template <typename T>
-inline typename enable_if<!std::numeric_limits<T>::is_signed, bool>::type
+inline typename std::enable_if<!std::numeric_limits<T>::is_signed, bool>::type
     is_negative(T) {
   return false;
 }
@@ -1425,7 +1419,7 @@ class value {
 
   template <typename T>
   value(const T &value,
-        typename enable_if<!convert_to_int<T>::value, int>::type = 0) {
+        typename std::enable_if<!convert_to_int<T>::value, int>::type = 0) {
     static_assert(internal::type<T>() == internal::CUSTOM, "invalid type");
     this->custom.value = &value;
     this->custom.format = &format_custom_arg<T>;
@@ -1433,7 +1427,7 @@ class value {
 
   template <typename T>
   value(const T &value,
-        typename enable_if<convert_to_int<T>::value, int>::type = 0) {
+        typename std::enable_if<convert_to_int<T>::value, int>::type = 0) {
     static_assert(internal::type<T>() == internal::INT, "invalid type");
     this->int_value = value;
   }
@@ -1931,7 +1925,7 @@ class arg_formatter_base {
   }
 
   template <typename StrChar>
-  typename enable_if<
+  typename std::enable_if<
     std::is_same<Char, wchar_t>::value &&
     std::is_same<StrChar, wchar_t>::value>::type
       write_str(basic_string_view<StrChar> value) {
@@ -1939,7 +1933,7 @@ class arg_formatter_base {
   }
 
   template <typename StrChar>
-  typename enable_if<
+  typename std::enable_if<
     !std::is_same<Char, wchar_t>::value ||
     !std::is_same<StrChar, wchar_t>::value>::type
       write_str(basic_string_view<StrChar> ) {
@@ -3564,7 +3558,8 @@ struct format_enum : std::integral_constant<bool, std::is_enum<T>::value> {};
 
 // Formatter of objects of type T.
 template <typename T, typename Char>
-struct formatter<T, Char, typename std::enable_if<internal::format_type<T>::value>::type> {
+struct formatter<
+    T, Char, typename std::enable_if<internal::format_type<T>::value>::type> {
 
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.

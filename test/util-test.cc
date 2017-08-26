@@ -840,25 +840,6 @@ TEST(UtilTest, IsEnumConvertibleToInt) {
 }
 #endif
 
-template <typename T>
-bool check_enable_if(
-    typename fmt::internal::enable_if<sizeof(T) == sizeof(int), T>::type *) {
-  return true;
-}
-
-template <typename T>
-bool check_enable_if(
-    typename fmt::internal::enable_if<sizeof(T) != sizeof(int), T>::type *) {
-  return false;
-}
-
-TEST(UtilTest, EnableIf) {
-  int i = 0;
-  EXPECT_TRUE(check_enable_if<int>(&i));
-  char c = 0;
-  EXPECT_FALSE(check_enable_if<char>(&c));
-}
-
 TEST(UtilTest, Conditional) {
   int i = 0;
   fmt::internal::conditional<true, int, char>::type *pi = &i;
