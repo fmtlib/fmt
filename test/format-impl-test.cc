@@ -56,11 +56,10 @@ struct ValueExtractor {
 };
 
 TEST(FormatTest, ArgConverter) {
-  fmt::long_long value = std::numeric_limits<fmt::long_long>::max();
+  long long value = std::numeric_limits<long long>::max();
   auto arg = fmt::internal::make_arg<fmt::context>(value);
-  visit(fmt::internal::ArgConverter<
-          fmt::long_long, fmt::context>(arg, 'd'), arg);
-  EXPECT_EQ(value, visit(ValueExtractor<fmt::long_long>(), arg));
+  visit(fmt::internal::ArgConverter<long long, fmt::context>(arg, 'd'), arg);
+  EXPECT_EQ(value, visit(ValueExtractor<long long>(), arg));
 }
 
 TEST(FormatTest, FormatNegativeNaN) {

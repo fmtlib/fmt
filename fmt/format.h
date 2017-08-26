@@ -41,6 +41,7 @@
 #include <type_traits>
 #include <vector>
 #include <utility>
+#include <stdint.h>
 
 #ifdef _SECURE_SCL
 # define FMT_SECURE_SCL _SECURE_SCL
@@ -50,20 +51,6 @@
 
 #if FMT_SECURE_SCL
 # include <iterator>
-#endif
-
-#ifdef _MSC_VER
-# define FMT_MSC_VER _MSC_VER
-#else
-# define FMT_MSC_VER 0
-#endif
-
-#if FMT_MSC_VER && FMT_MSC_VER <= 1500
-typedef unsigned __int32 uint32_t;
-typedef unsigned __int64 uint64_t;
-typedef __int64          intmax_t;
-#else
-#include <stdint.h>
 #endif
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
@@ -79,13 +66,8 @@ typedef __int64          intmax_t;
 
 #ifdef __GNUC__
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
-# define FMT_GCC_EXTENSION __extension__
 # if FMT_GCC_VERSION >= 406
 #  pragma GCC diagnostic push
-
-// Disable the warning about "long long" which is sometimes reported even
-// when using __extension__.
-#  pragma GCC diagnostic ignored "-Wlong-long"
 
 // Disable the warning about declaration shadowing because it affects too
 // many valid cases.
@@ -99,8 +81,6 @@ typedef __int64          intmax_t;
 # if __cplusplus >= 201103L || defined __GXX_EXPERIMENTAL_CXX0X__
 #  define FMT_HAS_GXX_CXX11 1
 # endif
-#else
-# define FMT_GCC_EXTENSION
 #endif
 
 #if defined(__INTEL_COMPILER)
@@ -117,6 +97,12 @@ typedef __int64          intmax_t;
 
 #ifdef __GNUC_LIBSTD__
 # define FMT_GNUC_LIBSTD_VERSION (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
+#endif
+
+#ifdef _MSC_VER
+# define FMT_MSC_VER _MSC_VER
+#else
+# define FMT_MSC_VER 0
 #endif
 
 #ifdef __has_feature
@@ -368,11 +354,6 @@ class numeric_limits<fmt::internal::dummy_int> :
 
 namespace fmt {
 
-// Fix the warning about long long on older versions of GCC
-// that don't support the diagnostic pragma.
-FMT_GCC_EXTENSION typedef long long long_long;
-FMT_GCC_EXTENSION typedef unsigned long long ulong_long;
-
 #if FMT_USE_RVALUE_REFERENCES
 using std::move;
 #endif
@@ -523,7 +504,7 @@ FMT_SPECIALIZE_MAKE_UNSIGNED(signed char, unsigned char);
 FMT_SPECIALIZE_MAKE_UNSIGNED(short, unsigned short);
 FMT_SPECIALIZE_MAKE_UNSIGNED(int, unsigned);
 FMT_SPECIALIZE_MAKE_UNSIGNED(long, unsigned long);
-FMT_SPECIALIZE_MAKE_UNSIGNED(long_long, ulong_long);
+FMT_SPECIALIZE_MAKE_UNSIGNED(long long, unsigned long long);
 
 // Casts nonnegative integer to unsigned.
 template <typename Int>
@@ -1168,7 +1149,7 @@ typedef char no[2];
 template <typename T>
 T &get();
 
-yes &convert(fmt::ulong_long);
+yes &convert(unsigned long long);
 no &convert(...);
 
 template<typename T, bool ENABLE_CONVERSION>
@@ -1267,8 +1248,8 @@ template <> constexpr Type gettype<unsigned long>() {
   return sizeof(unsigned long) == sizeof(unsigned) ?
         UINT : ULONG_LONG;
 }
-template <> constexpr Type gettype<long_long>() { return LONG_LONG; }
-template <> constexpr Type gettype<ulong_long>() { return ULONG_LONG; }
+template <> constexpr Type gettype<long long>() { return LONG_LONG; }
+template <> constexpr Type gettype<unsigned long long>() { return ULONG_LONG; }
 template <> constexpr Type gettype<float>() { return DOUBLE; }
 template <> constexpr Type gettype<double>() { return DOUBLE; }
 template <> constexpr Type gettype<long double>() { return LONG_DOUBLE; }
@@ -1305,8 +1286,8 @@ class value {
   union {
     int int_value;
     unsigned uint_value;
-    long_long long_long_value;
-    ulong_long ulong_long_value;
+    long long long_long_value;
+    unsigned long long ulong_long_value;
     double double_value;
     long double long_double_value;
     const void *pointer;
@@ -1401,8 +1382,8 @@ class value {
       this->ulong_long_value = value;
   }
 
-  FMT_MAKE_VALUE(long_long, long_long_value, LONG_LONG)
-  FMT_MAKE_VALUE(ulong_long, ulong_long_value, ULONG_LONG)
+  FMT_MAKE_VALUE(long long, long_long_value, LONG_LONG)
+  FMT_MAKE_VALUE(unsigned long long, ulong_long_value, ULONG_LONG)
   FMT_MAKE_VALUE(float, double_value, DOUBLE)
   FMT_MAKE_VALUE(double, double_value, DOUBLE)
   FMT_MAKE_VALUE(long double, long_double_value, LONG_DOUBLE)
@@ -2437,7 +2418,7 @@ class basic_writer {
   void write(long value) {
     write_decimal(value);
   }
-  void write(long_long value) {
+  void write(long long value) {
     write_decimal(value);
   }
 
@@ -3039,12 +3020,12 @@ class FormatInt {
  private:
   // Buffer should be large enough to hold all digits (digits10 + 1),
   // a sign and a null character.
-  enum {BUFFER_SIZE = std::numeric_limits<ulong_long>::digits10 + 3};
+  enum {BUFFER_SIZE = std::numeric_limits<unsigned long long>::digits10 + 3};
   mutable char buffer_[BUFFER_SIZE];
   char *str_;
 
   // Formats value in reverse and returns the number of digits.
-  char *format_decimal(ulong_long value) {
+  char *format_decimal(unsigned long long value) {
     char *buffer_end = buffer_ + BUFFER_SIZE - 1;
     while (value >= 100) {
       // Integer division is slow so do it for a group of two digits instead
@@ -3065,8 +3046,8 @@ class FormatInt {
     return buffer_end;
   }
 
-  void FormatSigned(long_long value) {
-    ulong_long abs_value = static_cast<ulong_long>(value);
+  void FormatSigned(long long value) {
+    unsigned long long abs_value = static_cast<unsigned long long>(value);
     bool negative = value < 0;
     if (negative)
       abs_value = 0 - abs_value;
@@ -3078,10 +3059,10 @@ class FormatInt {
  public:
   explicit FormatInt(int value) { FormatSigned(value); }
   explicit FormatInt(long value) { FormatSigned(value); }
-  explicit FormatInt(long_long value) { FormatSigned(value); }
+  explicit FormatInt(long long value) { FormatSigned(value); }
   explicit FormatInt(unsigned value) : str_(format_decimal(value)) {}
   explicit FormatInt(unsigned long value) : str_(format_decimal(value)) {}
-  explicit FormatInt(ulong_long value) : str_(format_decimal(value)) {}
+  explicit FormatInt(unsigned long long value) : str_(format_decimal(value)) {}
 
   /** Returns the number of characters written to the output buffer. */
   std::size_t size() const {
@@ -3246,7 +3227,7 @@ struct is_integer {
 
 struct width_handler {
   template <typename T>
-  typename std::enable_if<is_integer<T>::value, ulong_long>::type
+  typename std::enable_if<is_integer<T>::value, unsigned long long>::type
       operator()(T value) {
     if (is_negative(value))
       FMT_THROW(format_error("negative width"));
@@ -3254,7 +3235,7 @@ struct width_handler {
   }
 
   template <typename T>
-  typename std::enable_if<!is_integer<T>::value, ulong_long>::type
+  typename std::enable_if<!is_integer<T>::value, unsigned long long>::type
       operator()(T value) {
     FMT_THROW(format_error("width is not integer"));
     return 0;
@@ -3263,7 +3244,7 @@ struct width_handler {
 
 struct precision_handler {
   template <typename T>
-  typename std::enable_if<is_integer<T>::value, ulong_long>::type
+  typename std::enable_if<is_integer<T>::value, unsigned long long>::type
       operator()(T value) {
     if (is_negative(value))
       FMT_THROW(format_error("negative precision"));
@@ -3271,7 +3252,7 @@ struct precision_handler {
   }
 
   template <typename T>
-  typename std::enable_if<!is_integer<T>::value, ulong_long>::type
+  typename std::enable_if<!is_integer<T>::value, unsigned long long>::type
       operator()(T value) {
     FMT_THROW(format_error("precision is not integer"));
     return 0;
@@ -3308,7 +3289,7 @@ class specs_handler_base {
 
 template <typename Handler, typename T, typename Context>
 inline void set_dynamic_spec(T &value, basic_arg<Context> arg) {
-  ulong_long big_value = visit(Handler(), arg);
+  unsigned long long big_value = visit(Handler(), arg);
   if (big_value > (std::numeric_limits<int>::max)())
     FMT_THROW(format_error("number is too big"));
   value = static_cast<int>(big_value);

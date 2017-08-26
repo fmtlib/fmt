@@ -322,7 +322,7 @@ class File {
 
   // Returns the file size. The size has signed type for consistency with
   // stat::st_size.
-  long_long size() const;
+  long long size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.
   std::size_t read(void *buffer, std::size_t count);

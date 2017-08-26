@@ -119,7 +119,7 @@ class ArgConverter {
         // glibc's printf doesn't sign extend arguments of smaller types:
         //   std::printf("%lld", -42);  // prints "4294967254"
         // but we don't have to do the same because it's a UB.
-        arg_ = internal::make_arg<Context>(static_cast<long_long>(value));
+        arg_ = internal::make_arg<Context>(static_cast<long long>(value));
       } else {
         arg_ = internal::make_arg<Context>(
           static_cast<typename internal::make_unsigned<U>::type>(value));
@@ -486,7 +486,7 @@ void printf_context<Char, AF>::format(
       break;
     case 'l':
       if (*it == 'l')
-        convert_arg<fmt::long_long>(arg, *++it);
+        convert_arg<long long>(arg, *++it);
       else
         convert_arg<long>(arg, *it);
       break;

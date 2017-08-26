@@ -510,8 +510,8 @@ VISIT_TYPE(unsigned short, unsigned);
 VISIT_TYPE(long, int);
 VISIT_TYPE(unsigned long, unsigned);
 #else
-VISIT_TYPE(long, fmt::long_long);
-VISIT_TYPE(unsigned long, fmt::ulong_long);
+VISIT_TYPE(long, long long);
+VISIT_TYPE(unsigned long, unsigned long long);
 #endif
 
 VISIT_TYPE(float, double);
@@ -533,7 +533,7 @@ class NumericArgTest : public testing::Test {};
 
 typedef ::testing::Types<
   bool, signed char, unsigned char, signed, unsigned short,
-  int, unsigned, long, unsigned long, fmt::long_long, fmt::ulong_long,
+  int, unsigned, long, unsigned long, long long, unsigned long long,
   float, double, long double> Types;
 TYPED_TEST_CASE(NumericArgTest, Types);
 

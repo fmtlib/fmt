@@ -281,10 +281,8 @@ template <typename T>
 const uint64_t internal::basic_data<T>::POWERS_OF_10_64[] = {
   0,
   FMT_POWERS_OF_10(1),
-  FMT_POWERS_OF_10(ulong_long(1000000000)),
-  // Multiply several constants instead of using a single long long constant
-  // to avoid warnings about C++98 not supporting long long.
-  ulong_long(1000000000) * ulong_long(1000000000) * 10
+  FMT_POWERS_OF_10(1000000000ull),
+  10000000000000000000ull
 };
 
 FMT_FUNC void internal::report_unknown_type(char code, const char *type) {

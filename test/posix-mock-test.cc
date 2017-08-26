@@ -277,7 +277,7 @@ TEST(FileTest, Size) {
   write_file("test", content);
   File f("test", File::RDONLY);
   EXPECT_GE(f.size(), 0);
-  EXPECT_EQ(content.size(), static_cast<fmt::ulong_long>(f.size()));
+  EXPECT_EQ(content.size(), static_cast<unsigned long long>(f.size()));
 #ifdef _WIN32
   fmt::memory_buffer message;
   fmt::internal::format_windows_error(
