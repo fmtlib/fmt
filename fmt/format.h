@@ -76,10 +76,6 @@
 // Disable the warning about implicit conversions that may change the sign of
 // an integer; silencing it otherwise would require many explicit casts.
 #  pragma GCC diagnostic ignored "-Wsign-conversion"
-
-# endif
-# if __cplusplus >= 201103L || defined __GXX_EXPERIMENTAL_CXX0X__
-#  define FMT_HAS_GXX_CXX11 1
 # endif
 #endif
 
@@ -140,7 +136,7 @@
 # else
 #  define FMT_USE_RVALUE_REFERENCES \
     (FMT_HAS_FEATURE(cxx_rvalue_references) || \
-        (FMT_GCC_VERSION >= 403 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1600)
+        FMT_GCC_VERSION >= 403 || FMT_MSC_VER >= 1600)
 # endif
 #endif
 
@@ -175,8 +171,7 @@
 #ifndef FMT_NOEXCEPT
 # if FMT_EXCEPTIONS
 #  if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
-    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
-    FMT_MSC_VER >= 1900
+    FMT_GCC_VERSION >= 408 || FMT_MSC_VER >= 1900
 #   define FMT_NOEXCEPT noexcept
 #  else
 #   define FMT_NOEXCEPT throw()
@@ -193,7 +188,7 @@
 #endif
 
 #if FMT_USE_DELETED_FUNCTIONS || FMT_HAS_FEATURE(cxx_deleted_functions) || \
-  (FMT_GCC_VERSION >= 404 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1800
+  FMT_GCC_VERSION >= 404 || FMT_MSC_VER >= 1800
 # define FMT_DELETED_OR_UNDEFINED = delete
 # define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
     TypeName(const TypeName&) = delete; \
@@ -213,7 +208,7 @@
 # define FMT_USE_USER_DEFINED_LITERALS \
    FMT_USE_RVALUE_REFERENCES && \
    (FMT_HAS_FEATURE(cxx_user_literals) || \
-     (FMT_GCC_VERSION >= 407 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900) && \
+     FMT_GCC_VERSION >= 407 || FMT_MSC_VER >= 1900) && \
    (!defined(FMT_ICC_VERSION) || FMT_ICC_VERSION >= 1500)
 #endif
 
@@ -1567,7 +1562,7 @@ basic_arg<Context> make_arg(const T &value) {
 #endif
 
 #if FMT_USE_STATIC_ASSERT || FMT_HAS_FEATURE(cxx_static_assert) || \
-  (FMT_GCC_VERSION >= 403 && FMT_HAS_GXX_CXX11) || _MSC_VER >= 1600
+  FMT_GCC_VERSION >= 403 || _MSC_VER >= 1600
 # define FMT_STATIC_ASSERT(cond, message) static_assert(cond, message)
 #else
 # define FMT_CONCAT_(a, b) FMT_CONCAT(a, b)
