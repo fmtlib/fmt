@@ -1751,14 +1751,14 @@ typedef format_spec<char, type_tag> type_spec;
 struct empty_spec {};
 
 // An alignment specifier.
-struct AlignSpec : empty_spec {
+struct align_spec : empty_spec {
   unsigned width_;
   // Fill is always wchar_t and cast to char if necessary to avoid having
   // two specialization of AlignSpec and its subclasses.
   wchar_t fill_;
   alignment align_;
 
-  AlignSpec(unsigned width, wchar_t fill, alignment align = ALIGN_DEFAULT)
+  align_spec(unsigned width, wchar_t fill, alignment align = ALIGN_DEFAULT)
   : width_(width), fill_(fill), align_(align) {}
 
   unsigned width() const { return width_; }
@@ -1770,7 +1770,7 @@ struct AlignSpec : empty_spec {
 
 // Format specifiers.
 template <typename Char>
-class basic_format_specs : public AlignSpec {
+class basic_format_specs : public align_spec {
  private:
   template <typename FillChar>
   typename std::enable_if<std::is_same<FillChar, Char>::value ||
@@ -1799,11 +1799,11 @@ class basic_format_specs : public AlignSpec {
   char type_;
 
   basic_format_specs(unsigned width = 0, char type = 0, wchar_t fill = ' ')
-  : AlignSpec(width, fill), flags_(0), precision_(-1), type_(type) {}
+  : align_spec(width, fill), flags_(0), precision_(-1), type_(type) {}
 
   template <typename... FormatSpecs>
   explicit basic_format_specs(FormatSpecs... specs)
-    : AlignSpec(0, ' '), flags_(0), precision_(-1), type_(0){
+    : align_spec(0, ' '), flags_(0), precision_(-1), type_(0){
     set(specs...);
   }
 
@@ -2297,7 +2297,7 @@ class basic_writer {
 
   // Writes a formatted string.
   template <typename StrChar>
-  CharPtr write_str(const StrChar *s, std::size_t size, const AlignSpec &spec);
+  CharPtr write_str(const StrChar *s, std::size_t size, const align_spec &spec);
 
   template <typename StrChar>
   void write_str(basic_string_view<StrChar> str, const format_specs &spec);
@@ -2444,7 +2444,7 @@ class basic_writer {
 template <typename Char>
 template <typename StrChar>
 typename basic_writer<Char>::CharPtr basic_writer<Char>::write_str(
-      const StrChar *s, std::size_t size, const AlignSpec &spec) {
+      const StrChar *s, std::size_t size, const align_spec &spec) {
   CharPtr out = CharPtr();
   if (spec.width() > size) {
     out = grow_buffer(spec.width());
@@ -2515,7 +2515,7 @@ typename basic_writer<Char>::CharPtr basic_writer<Char>::prepare_int_buffer(
       --prefix_size;
     unsigned number_size =
         prefix_size + internal::to_unsigned(spec.precision());
-    AlignSpec subspec(number_size, '0', ALIGN_NUMERIC);
+    align_spec subspec(number_size, '0', ALIGN_NUMERIC);
     if (number_size >= width)
       return prepare_int_buffer(num_digits, subspec, prefix, prefix_size);
     buffer_.reserve(width);
@@ -3605,21 +3605,20 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
   auto it = start;
   using internal::pointer_from;
   while (*it) {
-    Char c = *it++;
-    if (c != '{' && c != '}') continue;
-    if (*it == c) {
+    Char ch = *it++;
+    if (ch != '{' && ch != '}') continue;
+    if (*it == ch) {
       buffer.append(pointer_from(start), pointer_from(it));
       start = ++it;
       continue;
     }
-    if (c == '}')
+    if (ch == '}')
       FMT_THROW(format_error("unmatched '}' in format string"));
     buffer.append(pointer_from(start), pointer_from(it) - 1);
 
     basic_arg<Context> arg;
     struct id_handler {
-      explicit id_handler(Context &ctx, basic_arg<Context> &arg)
-        : context(ctx), arg(arg) {}
+      id_handler(Context &c, basic_arg<Context> &a): context(c), arg(a) {}
 
       void operator()() { arg = context.next_arg(); }
       void operator()(unsigned id) { arg = context.get_arg(id); }
