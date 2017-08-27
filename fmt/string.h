@@ -125,6 +125,24 @@ std::string to_string(const T &value) {
   w << value;
   return w.str();
 }
+
+/**
+  \rst
+  Converts *value* to ``std::wstring`` using the default format for type *T*.
+
+  **Example**::
+
+    #include "fmt/string.h"
+
+    std::wstring answer = fmt::to_wstring(42);
+  \endrst
+ */
+template <typename T>
+std::wstring to_wstring(const T &value) {
+  fmt::WMemoryWriter w;
+  w << value;
+  return w.str();
+}
 }
 
 #endif  // FMT_STRING_H_

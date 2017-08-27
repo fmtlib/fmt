@@ -78,3 +78,7 @@ TEST(StringWriterTest, WString) {
 TEST(StringTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
 }
+
+TEST(StringTest, ToWString) {
+  EXPECT_EQ(L"42", fmt::to_wstring(42));
+}

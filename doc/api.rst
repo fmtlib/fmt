@@ -262,6 +262,8 @@ Utilities
 
 .. doxygenfunction:: fmt::to_string(const T&)
 
+.. doxygenfunction:: fmt::to_wstring(const T&)
+
 .. doxygenclass:: fmt::BasicStringRef
    :members:
 
