@@ -70,16 +70,6 @@ class IsZeroInt {
       operator()(T) { return false; }
 };
 
-template <typename T, typename U>
-struct is_same {
-  enum { value = 0 };
-};
-
-template <typename T>
-struct is_same<T, T> {
-  enum { value = 1 };
-};
-
 template <typename T, typename Context>
 class ArgConverter {
  private:
@@ -102,7 +92,7 @@ class ArgConverter {
       operator()(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
     typedef typename internal::conditional<
-        is_same<T, void>::value, U, T>::type TargetType;
+        std::is_same<T, void>::value, U, T>::type TargetType;
     if (sizeof(TargetType) <= sizeof(int)) {
       // Extra casts are used to silence warnings.
       if (is_signed) {
