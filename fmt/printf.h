@@ -67,7 +67,7 @@ class IsZeroInt {
 
   template <typename T>
   typename std::enable_if<!std::is_integral<T>::value, bool>::type
-      operator()(T value) { return false; }
+      operator()(T) { return false; }
 };
 
 template <typename T, typename U>
@@ -103,7 +103,6 @@ class ArgConverter {
     bool is_signed = type_ == 'd' || type_ == 'i';
     typedef typename internal::conditional<
         is_same<T, void>::value, U, T>::type TargetType;
-    typedef basic_context<Char> context;
     if (sizeof(TargetType) <= sizeof(int)) {
       // Extra casts are used to silence warnings.
       if (is_signed) {
@@ -128,8 +127,7 @@ class ArgConverter {
   }
 
   template <typename U>
-  typename std::enable_if<!std::is_integral<U>::value>::type
-      operator()(U value) {
+  typename std::enable_if<!std::is_integral<U>::value>::type operator()(U) {
     // No coversion needed for non-integral types.
   }
 };
@@ -197,7 +195,7 @@ class PrintfWidthHandler {
 
   template <typename T>
   typename std::enable_if<!std::is_integral<T>::value, unsigned>::type
-      operator()(T value) {
+      operator()(T) {
     FMT_THROW(format_error("width is not integer"));
     return 0;
   }
