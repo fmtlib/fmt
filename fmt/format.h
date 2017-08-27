@@ -3225,7 +3225,7 @@ struct width_handler {
 
   template <typename T>
   typename std::enable_if<!is_integer<T>::value, unsigned long long>::type
-      operator()(T value) {
+      operator()(T) {
     FMT_THROW(format_error("width is not integer"));
     return 0;
   }
