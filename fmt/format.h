@@ -3675,6 +3675,12 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
   }
   buffer.append(pointer_from(start), pointer_from(it));
 }
+
+// Casts ``p`` to ``const void*`` for pointer formatting.
+// Example:
+//   auto s = format("{}", ptr(p));
+template <typename T>
+inline const void *ptr(const T *p) { return p; }
 }  // namespace fmt
 
 #if FMT_USE_USER_DEFINED_LITERALS

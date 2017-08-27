@@ -1217,6 +1217,7 @@ TEST(FormatterTest, FormatPointer) {
   EXPECT_EQ("0x1234", format("{0:p}", reinterpret_cast<void*>(0x1234)));
   EXPECT_EQ("0x" + std::string(sizeof(void*) * CHAR_BIT / 4, 'f'),
       format("{0}", reinterpret_cast<void*>(~uintptr_t())));
+  EXPECT_EQ("0x1234", format("{}", fmt::ptr(reinterpret_cast<int*>(0x1234))));
 }
 
 TEST(FormatterTest, FormatString) {
@@ -1504,8 +1505,7 @@ class MockArgFormatter : public fmt::internal::arg_formatter_base<char> {
  public:
   typedef fmt::internal::arg_formatter_base<char> Base;
 
-  MockArgFormatter(fmt::buffer &b, fmt::context &ctx,
-                   fmt::format_specs &s)
+  MockArgFormatter(fmt::buffer &b, fmt::context &, fmt::format_specs &s)
     : fmt::internal::arg_formatter_base<char>(b, s) {
     EXPECT_CALL(*this, call(42));
   }
