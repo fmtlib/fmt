@@ -43,6 +43,7 @@
 #define None 0
 
 #include "fmt/format.h"
+#include "fmt/write.h"
 
 #include "util.h"
 #include "mock-allocator.h"

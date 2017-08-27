@@ -1747,30 +1747,6 @@ class fill_spec : public format_spec<Char, fill_tag> {
 typedef format_spec<unsigned, width_tag> width_spec;
 typedef format_spec<char, type_tag> type_spec;
 
-class fill_spec_factory {
- public:
-  constexpr fill_spec_factory() {}
-
-  template <typename Char>
-  fill_spec<Char> operator=(Char value) const {
-    return fill_spec<Char>(value);
-  }
-};
-
-template <typename FormatSpec>
-class format_spec_factory {
- public:
-  constexpr format_spec_factory() {}
-
-  FormatSpec operator=(typename FormatSpec::value_type value) const {
-    return FormatSpec(value);
-  }
-};
-
-constexpr fill_spec_factory fill;
-constexpr format_spec_factory<width_spec> width;
-constexpr format_spec_factory<type_spec> type;
-
 // An empty format specifier.
 struct empty_spec {};
 
@@ -2224,17 +2200,6 @@ class system_error : public std::runtime_error {
  */
 FMT_API void format_system_error(fmt::buffer &out, int error_code,
                                  fmt::string_view message) FMT_NOEXCEPT;
-
-namespace internal {
-// Named format specifier.
-template <typename T>
-class named_format_spec {
- public:
-  constexpr named_format_spec() {}
-};
-
-constexpr named_format_spec<unsigned> width;
-}
 
 /**
   \rst
