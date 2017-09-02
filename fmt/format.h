@@ -1171,17 +1171,17 @@ T &get();
 Yes &convert(fmt::ULongLong);
 No &convert(...);
 
-template<typename T, bool ENABLE_CONVERSION>
+template <typename T, bool ENABLE_CONVERSION>
 struct ConvertToIntImpl {
   enum { value = ENABLE_CONVERSION };
 };
 
-template<typename T, bool ENABLE_CONVERSION>
+template <typename T, bool ENABLE_CONVERSION>
 struct ConvertToIntImpl2 {
   enum { value = false };
 };
 
-template<typename T>
+template <typename T>
 struct ConvertToIntImpl2<T, true> {
   enum {
     // Don't convert numeric types.
@@ -1189,7 +1189,7 @@ struct ConvertToIntImpl2<T, true> {
   };
 };
 
-template<typename T>
+template <typename T>
 struct ConvertToInt {
   enum {
     enable_conversion = sizeof(fmt::internal::convert(get<T>())) == sizeof(Yes)
@@ -1206,16 +1206,16 @@ FMT_DISABLE_CONVERSION_TO_INT(float);
 FMT_DISABLE_CONVERSION_TO_INT(double);
 FMT_DISABLE_CONVERSION_TO_INT(long double);
 
-template<bool B, class T = void>
+template <bool B, class T = void>
 struct EnableIf {};
 
-template<class T>
+template <class T>
 struct EnableIf<true, T> { typedef T type; };
 
-template<bool B, class T, class F>
+template <bool B, class T, class F>
 struct Conditional { typedef T type; };
 
-template<class T, class F>
+template <class T, class F>
 struct Conditional<false, T, F> { typedef F type; };
 
 // For bcc32 which doesn't understand ! in template arguments.

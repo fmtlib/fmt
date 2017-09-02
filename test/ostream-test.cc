@@ -172,3 +172,18 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   } while (size != 0);
   fmt::internal::write(os, w);
 }
+
+struct ConvertibleToInt {
+  template <typename ValueType>
+  operator ValueType() const {
+    return 0;
+  }
+
+  friend std::ostream &operator<<(std::ostream &o, ConvertibleToInt) {
+    return o << "foo";
+  }
+};
+
+TEST(FormatTest, FormatConvertibleToInt) {
+  EXPECT_EQ("foo", fmt::format("{}", ConvertibleToInt()));
+}
