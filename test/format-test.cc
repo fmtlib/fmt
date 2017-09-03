@@ -1536,3 +1536,42 @@ TEST(FormatTest, CustomArgFormatter) {
 TEST(FormatTest, NonNullTerminatedFormatString) {
   EXPECT_EQ("42", format(string_view("{}foo", 2), 42));
 }
+
+struct variant {
+  enum {INT, STRING} type;
+  explicit variant(int) : type(INT) {}
+  explicit variant(const char *) : type(STRING) {}
+};
+
+namespace fmt {
+template <>
+struct formatter<variant> : dynamic_formatter<> {
+  void format(buffer& buf, variant value, context& ctx) {
+    if (value.type == variant::INT)
+      dynamic_formatter::format(buf, 42, ctx);
+    else
+      dynamic_formatter::format(buf, "foo", ctx);
+  }
+};
+}
+
+TEST(FormatTest, DynamicFormatter) {
+  auto num = variant(42);
+  auto str = variant("foo");
+  EXPECT_EQ("42", format("{:d}", num));
+  EXPECT_EQ("foo", format("{:s}", str));
+  EXPECT_THROW_MSG(format("{:=}", str),
+      format_error, "format specifier '=' requires numeric argument");
+  EXPECT_THROW_MSG(format("{:+}", str),
+      format_error, "format specifier '+' requires numeric argument");
+  EXPECT_THROW_MSG(format("{:-}", str),
+      format_error, "format specifier '-' requires numeric argument");
+  EXPECT_THROW_MSG(format("{: }", str),
+      format_error, "format specifier ' ' requires numeric argument");
+  EXPECT_THROW_MSG(format("{:#}", str),
+      format_error, "format specifier '#' requires numeric argument");
+  EXPECT_THROW_MSG(format("{:0}", str),
+      format_error, "format specifier '=' requires numeric argument");
+  EXPECT_THROW_MSG(format("{:.2}", num),
+      format_error, "precision not allowed in integer format specifier");
+}
