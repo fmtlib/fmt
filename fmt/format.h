@@ -624,7 +624,6 @@ inline std::basic_string<Char> to_string(const basic_buffer<Char>& buffer) {
   The output can be converted to an ``std::string`` with ``to_string(out)``.
   \endrst
  */
-//
 template <typename T, std::size_t SIZE = internal::INLINE_BUFFER_SIZE,
           typename Allocator = std::allocator<T> >
 class basic_memory_buffer : private Allocator, public basic_buffer<T> {
@@ -990,13 +989,13 @@ struct no_thousands_sep {
 template <typename Char>
 class add_thousands_sep {
  private:
-  fmt::basic_string_view<Char> sep_;
+  basic_string_view<Char> sep_;
 
   // Index of a decimal digit with the least significant digit having index 0.
   unsigned digit_index_;
 
  public:
-  explicit add_thousands_sep(fmt::basic_string_view<Char> sep)
+  explicit add_thousands_sep(basic_string_view<Char> sep)
     : sep_(sep), digit_index_(0) {}
 
   void operator()(Char *&buffer) {
