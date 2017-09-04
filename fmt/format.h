@@ -128,22 +128,6 @@
 # define FMT_NORETURN
 #endif
 
-#ifndef FMT_USE_RVALUE_REFERENCES
-// Don't use rvalue references when compiling with clang and an old libstdc++
-// as the latter doesn't provide std::move.
-# if defined(FMT_GNUC_LIBSTD_VERSION) && FMT_GNUC_LIBSTD_VERSION <= 402
-#  define FMT_USE_RVALUE_REFERENCES 0
-# else
-#  define FMT_USE_RVALUE_REFERENCES \
-    (FMT_HAS_FEATURE(cxx_rvalue_references) || \
-        FMT_GCC_VERSION >= 403 || FMT_MSC_VER >= 1600)
-# endif
-#endif
-
-#if FMT_USE_RVALUE_REFERENCES
-# include <utility>  // for std::move
-#endif
-
 // Check if exceptions are disabled.
 #if defined(__GNUC__) && !defined(__EXCEPTIONS)
 # define FMT_EXCEPTIONS 0
@@ -205,10 +189,9 @@
 // makes the fmt::literals implementation easier. However, an explicit check
 // for variadic templates is added here just in case.
 // For Intel's compiler both it and the system gcc/msc must support UDLs.
-# if FMT_USE_RVALUE_REFERENCES && \
-   (FMT_HAS_FEATURE(cxx_user_literals) || \
-    FMT_GCC_VERSION >= 407 || FMT_MSC_VER >= 1900) && \
-   (!defined(FMT_ICC_VERSION) || FMT_ICC_VERSION >= 1500)
+# if (FMT_HAS_FEATURE(cxx_user_literals) || \
+      FMT_GCC_VERSION >= 407 || FMT_MSC_VER >= 1900) && \
+      (!defined(FMT_ICC_VERSION) || FMT_ICC_VERSION >= 1500)
 #  define FMT_USE_USER_DEFINED_LITERALS 1
 # else
 #  define FMT_USE_USER_DEFINED_LITERALS 0
@@ -351,10 +334,6 @@ class numeric_limits<fmt::internal::dummy_int> :
 }  // namespace std
 
 namespace fmt {
-
-#if FMT_USE_RVALUE_REFERENCES
-using std::move;
-#endif
 
 template <typename Char>
 class basic_writer;
@@ -646,7 +625,6 @@ class basic_memory_buffer : private Allocator, public basic_buffer<T> {
   }
   ~basic_memory_buffer() { deallocate(); }
 
-#if FMT_USE_RVALUE_REFERENCES
  private:
   // Move data from other to this buffer.
   void move(basic_memory_buffer &other) {
@@ -689,7 +667,6 @@ class basic_memory_buffer : private Allocator, public basic_buffer<T> {
     move(other);
     return *this;
   }
-#endif
 
   // Returns a copy of the allocator associated with this buffer.
   Allocator get_allocator() const { return *this; }
