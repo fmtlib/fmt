@@ -1267,6 +1267,7 @@ template <> constexpr Type gettype<std::wstring>() { return TSTRING; }
 template <> constexpr Type gettype<wstring_view>() { return TSTRING; }
 template <> constexpr Type gettype<void *>() { return POINTER; }
 template <> constexpr Type gettype<const void *>() { return POINTER; }
+template <> constexpr Type gettype<std::nullptr_t>() { return POINTER; }
 
 template <typename T>
 constexpr Type type() { return gettype<typename std::decay<T>::type>(); }
@@ -1419,6 +1420,7 @@ class value {
 
   FMT_MAKE_VALUE(void *, pointer, POINTER)
   FMT_MAKE_VALUE(const void *, pointer, POINTER)
+  value(std::nullptr_t) { pointer = nullptr; }
 
   template <typename T>
   value(const T &value,
