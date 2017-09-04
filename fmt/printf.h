@@ -241,25 +241,13 @@ class printf_arg_formatter : public internal::arg_formatter_base<Char> {
 
   /** Formats a character. */
   void operator()(Char value) {
-    const format_specs &fmt_spec = this->spec();
+    format_specs &fmt_spec = this->spec();
     basic_writer<Char> &w = this->writer();
     if (fmt_spec.type_ && fmt_spec.type_ != 'c')
-      w.write_int(value, fmt_spec);
-    typedef typename basic_writer<Char>::pointer_type pointer_type;
-    pointer_type out = pointer_type();
-    if (fmt_spec.width_ > 1) {
-      Char fill = ' ';
-      out = w.grow_buffer(fmt_spec.width_);
-      if (fmt_spec.align_ != ALIGN_LEFT) {
-        std::fill_n(out, fmt_spec.width_ - 1, fill);
-        out += fmt_spec.width_ - 1;
-      } else {
-        std::fill_n(out + 1, fmt_spec.width_ - 1, fill);
-      }
-    } else {
-      out = w.grow_buffer(1);
-    }
-    *out = static_cast<Char>(value);
+      return (*this)(static_cast<int>(value));
+    fmt_spec.flags_ = 0;
+    fmt_spec.align_ = ALIGN_RIGHT;
+    Base::operator()(value);
   }
 
   /** Formats a null-terminated C string. */

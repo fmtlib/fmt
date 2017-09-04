@@ -357,28 +357,20 @@ using std::move;
 #endif
 
 template <typename Char>
-class basic_buffer;
-
-typedef basic_buffer<char> buffer;
-typedef basic_buffer<wchar_t> wbuffer;
-
-template <typename Char>
 class basic_writer;
 
 template <typename Context>
 class basic_arg;
 
 template <typename Char>
-class arg_formatter;
-
-template <typename Char>
-class printf_arg_formatter;
-
-template <typename Char>
 class basic_context;
 
 typedef basic_context<char> context;
 typedef basic_context<wchar_t> wcontext;
+
+// A formatter for objects of type T.
+template <typename T, typename Char = char, typename Enable = void>
+struct formatter;
 
 /**
   \rst
@@ -482,10 +474,6 @@ class format_error : public std::runtime_error {
   ~format_error() throw();
 };
 
-// A formatter for objects of type T.
-template <typename T, typename Char = char, typename Enable = void>
-struct formatter;
-
 namespace internal {
 
 // Casts nonnegative integer to unsigned.
@@ -588,6 +576,9 @@ class basic_buffer {
 
   virtual std::locale locale() const { return std::locale(); }
 };
+
+typedef basic_buffer<char> buffer;
+typedef basic_buffer<wchar_t> wbuffer;
 
 template <typename T>
 template <typename U>
@@ -2303,9 +2294,6 @@ class basic_writer {
 
   template <typename Char_>
   friend class internal::arg_formatter_base;
-
-  template <typename Char_>
-  friend class printf_arg_formatter;
 
  public:
   /**
