@@ -768,12 +768,6 @@ class char_traits<wchar_t> : public basic_char_traits<wchar_t> {
       const wchar_t *format, unsigned width, int precision, T value);
 };
 
-template <bool B, class T, class F>
-struct conditional { typedef T type; };
-
-template<class T, class F>
-struct conditional<false, T, F> { typedef F type; };
-
 template <typename Char>
 class null_terminating_iterator;
 
@@ -851,24 +845,6 @@ class null_terminating_iterator {
   const Char *end_;
 };
 
-template <
-  typename T,
-  typename Char,
-  typename std::enable_if<
-      std::is_same<T, null_terminating_iterator<Char>>::value, int>::type = 0>
-null_terminating_iterator<Char> to_iterator(basic_string_view<Char> v) {
-  const Char *s = v.data();
-  return null_terminating_iterator<Char>(s, s + v.size());
-}
-
-template <
-  typename T,
-  typename Char,
-  typename std::enable_if<std::is_same<T, const Char*>::value, int>::type = 0>
-const Char *to_iterator(basic_string_view<Char> v) {
-  return v.data();
-}
-
 template <typename T>
 const T *pointer_from(const T *p) { return p; }
 
@@ -894,7 +870,7 @@ template <typename T>
 struct int_traits {
   // Smallest of uint32_t and uint64_t that is large enough to represent
   // all values of T.
-  typedef typename conditional<
+  typedef typename std::conditional<
     std::numeric_limits<T>::digits <= 32, uint32_t, uint64_t>::type main_type;
 };
 

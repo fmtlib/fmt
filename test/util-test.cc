@@ -839,12 +839,3 @@ TEST(UtilTest, IsEnumConvertibleToInt) {
   EXPECT_TRUE(fmt::internal::convert_to_int<TestEnum>::enable_conversion);
 }
 #endif
-
-TEST(UtilTest, Conditional) {
-  int i = 0;
-  fmt::internal::conditional<true, int, char>::type *pi = &i;
-  (void)pi;
-  char c = 0;
-  fmt::internal::conditional<false, int, char>::type *pc = &c;
-  (void)pc;
-}

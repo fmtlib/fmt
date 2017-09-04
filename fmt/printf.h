@@ -99,7 +99,7 @@ class ArgConverter {
   typename std::enable_if<std::is_integral<U>::value>::type
       operator()(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
-    typedef typename internal::conditional<
+    typedef typename std::conditional<
         std::is_same<T, void>::value, U, T>::type TargetType;
     if (sizeof(TargetType) <= sizeof(int)) {
       // Extra casts are used to silence warnings.
