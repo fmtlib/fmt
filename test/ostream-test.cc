@@ -155,7 +155,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   const char *data = 0;
   std::size_t size = max_size;
   do {
-    typedef fmt::internal::make_unsigned<std::streamsize>::type UStreamSize;
+    typedef std::make_unsigned<std::streamsize>::type UStreamSize;
     UStreamSize n = std::min<UStreamSize>(
           size, fmt::internal::to_unsigned(max_streamsize));
     EXPECT_CALL(streambuf, xsputn(data, static_cast<std::streamsize>(n)))

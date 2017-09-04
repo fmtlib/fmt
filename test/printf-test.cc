@@ -306,13 +306,13 @@ void TestLength(const char *length_spec, U value) {
     signed_value = static_cast<unsigned>(value);
     unsigned_value = static_cast<unsigned>(value);
   }
-  using fmt::internal::make_unsigned;
   if (sizeof(U) <= sizeof(int) && sizeof(int) < sizeof(T)) {
     signed_value = static_cast<long long>(value);
-    unsigned_value = static_cast<typename make_unsigned<unsigned>::type>(value);
+    unsigned_value =
+        static_cast<typename std::make_unsigned<unsigned>::type>(value);
   } else {
     signed_value = static_cast<typename make_signed<T>::type>(value);
-    unsigned_value = static_cast<typename make_unsigned<T>::type>(value);
+    unsigned_value = static_cast<typename std::make_unsigned<T>::type>(value);
   }
   std::ostringstream os;
   os << signed_value;

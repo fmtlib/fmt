@@ -488,27 +488,11 @@ struct formatter;
 
 namespace internal {
 
-// make_unsigned<T>::type gives an unsigned type corresponding to integer
-// type T.
-template <typename T>
-struct make_unsigned { typedef T type; };
-
-#define FMT_SPECIALIZE_MAKE_UNSIGNED(T, U) \
-  template <> \
-  struct make_unsigned<T> { typedef U type; }
-
-FMT_SPECIALIZE_MAKE_UNSIGNED(char, unsigned char);
-FMT_SPECIALIZE_MAKE_UNSIGNED(signed char, unsigned char);
-FMT_SPECIALIZE_MAKE_UNSIGNED(short, unsigned short);
-FMT_SPECIALIZE_MAKE_UNSIGNED(int, unsigned);
-FMT_SPECIALIZE_MAKE_UNSIGNED(long, unsigned long);
-FMT_SPECIALIZE_MAKE_UNSIGNED(long long, unsigned long long);
-
 // Casts nonnegative integer to unsigned.
 template <typename Int>
-inline typename make_unsigned<Int>::type to_unsigned(Int value) {
+inline typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   FMT_ASSERT(value >= 0, "negative value");
-  return static_cast<typename make_unsigned<Int>::type>(value);
+  return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 
 // The number of characters to store in the basic_memory_buffer object itself

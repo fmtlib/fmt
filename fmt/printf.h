@@ -70,6 +70,14 @@ class IsZeroInt {
       operator()(T) { return false; }
 };
 
+template <typename T>
+struct make_unsigned_or_bool : std::make_unsigned<T> {};
+
+template <>
+struct make_unsigned_or_bool<bool> {
+  using type = bool;
+};
+
 template <typename T, typename Context>
 class ArgConverter {
  private:
@@ -99,7 +107,7 @@ class ArgConverter {
         arg_ = internal::make_arg<Context>(
           static_cast<int>(static_cast<TargetType>(value)));
       } else {
-        typedef typename internal::make_unsigned<TargetType>::type Unsigned;
+        typedef typename make_unsigned_or_bool<TargetType>::type Unsigned;
         arg_ = internal::make_arg<Context>(
           static_cast<unsigned>(static_cast<Unsigned>(value)));
       }
@@ -111,7 +119,7 @@ class ArgConverter {
         arg_ = internal::make_arg<Context>(static_cast<long long>(value));
       } else {
         arg_ = internal::make_arg<Context>(
-          static_cast<typename internal::make_unsigned<U>::type>(value));
+          static_cast<typename make_unsigned_or_bool<U>::type>(value));
       }
     }
   }
