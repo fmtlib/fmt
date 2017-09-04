@@ -769,11 +769,6 @@ namespace internal {
 template <typename Char>
 class basic_char_traits {
  public:
-#if FMT_SECURE_SCL
-  typedef stdext::checked_array_iterator<Char*> CharPtr;
-#else
-  typedef Char *CharPtr;
-#endif
   static Char cast(int value) { return static_cast<Char>(value); }
 };
 
@@ -1950,9 +1945,9 @@ class arg_formatter_base {
     }
     if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
       FMT_THROW(format_error("invalid format specifier for char"));
-    typedef typename basic_writer<Char>::CharPtr CharPtr;
+    typedef typename basic_writer<Char>::pointer_type pointer_type;
     Char fill = internal::char_traits<Char>::cast(spec_.fill());
-    CharPtr out = CharPtr();
+    pointer_type out = pointer_type();
     const unsigned CHAR_WIDTH = 1;
     if (spec_.width_ > CHAR_WIDTH) {
       out = writer_.grow_buffer(spec_.width_);
@@ -2216,23 +2211,23 @@ class basic_writer {
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_writer);
 
-  typedef typename internal::char_traits<Char>::CharPtr CharPtr;
-
 #if FMT_SECURE_SCL
+  typedef stdext::checked_array_iterator<Char*> pointer_type;
   // Returns pointer value.
-  static Char *get(CharPtr p) { return p.base(); }
+  static Char *get(pointer_type p) { return p.base(); }
 #else
+  typedef Char *pointer_type;
   static Char *get(Char *p) { return p; }
 #endif
 
   // Fills the padding around the content and returns the pointer to the
   // content area.
-  static CharPtr fill_padding(CharPtr buffer,
+  static pointer_type fill_padding(pointer_type buffer,
       unsigned total_size, std::size_t content_size, wchar_t fill);
 
   // Grows the buffer by n characters and returns a pointer to the newly
   // allocated area.
-  CharPtr grow_buffer(std::size_t n) {
+  pointer_type grow_buffer(std::size_t n) {
     std::size_t size = buffer_.size();
     buffer_.resize(size + n);
     return internal::make_ptr(&buffer_[size], n);
@@ -2261,16 +2256,16 @@ class basic_writer {
   }
 
   // Prepare a buffer for integer formatting.
-  CharPtr prepare_int_buffer(unsigned num_digits,
+  pointer_type prepare_int_buffer(unsigned num_digits,
       const empty_spec &, const char *prefix, unsigned prefix_size) {
     unsigned size = prefix_size + num_digits;
-    CharPtr p = grow_buffer(size);
+    pointer_type p = grow_buffer(size);
     std::uninitialized_copy(prefix, prefix + prefix_size, p);
     return p + size - 1;
   }
 
   template <typename Spec>
-  CharPtr prepare_int_buffer(unsigned num_digits,
+  pointer_type prepare_int_buffer(unsigned num_digits,
     const Spec &spec, const char *prefix, unsigned prefix_size);
 
   // Writes a formatted integer.
@@ -2283,7 +2278,8 @@ class basic_writer {
 
   // Writes a formatted string.
   template <typename StrChar>
-  CharPtr write_str(const StrChar *s, std::size_t size, const align_spec &spec);
+  pointer_type write_str(
+      const StrChar *s, std::size_t size, const align_spec &spec);
 
   template <typename StrChar>
   void write_str(basic_string_view<StrChar> str, const format_specs &spec);
@@ -2429,9 +2425,9 @@ class basic_writer {
 
 template <typename Char>
 template <typename StrChar>
-typename basic_writer<Char>::CharPtr basic_writer<Char>::write_str(
+typename basic_writer<Char>::pointer_type basic_writer<Char>::write_str(
       const StrChar *s, std::size_t size, const align_spec &spec) {
-  CharPtr out = CharPtr();
+  pointer_type out = pointer_type();
   if (spec.width() > size) {
     out = grow_buffer(spec.width());
     Char fill = internal::char_traits<Char>::cast(spec.fill());
@@ -2472,15 +2468,15 @@ void basic_writer<Char>::write_str(
 }
 
 template <typename Char>
-typename basic_writer<Char>::CharPtr basic_writer<Char>::fill_padding(
-    CharPtr buffer, unsigned total_size,
+typename basic_writer<Char>::pointer_type basic_writer<Char>::fill_padding(
+    pointer_type buffer, unsigned total_size,
     std::size_t content_size, wchar_t fill) {
   std::size_t padding = total_size - content_size;
   std::size_t left_padding = padding / 2;
   Char fill_char = internal::char_traits<Char>::cast(fill);
   std::uninitialized_fill_n(buffer, left_padding, fill_char);
   buffer += left_padding;
-  CharPtr content = buffer;
+  pointer_type content = buffer;
   std::uninitialized_fill_n(buffer + content_size,
                             padding - left_padding, fill_char);
   return content;
@@ -2488,7 +2484,8 @@ typename basic_writer<Char>::CharPtr basic_writer<Char>::fill_padding(
 
 template <typename Char>
 template <typename Spec>
-typename basic_writer<Char>::CharPtr basic_writer<Char>::prepare_int_buffer(
+typename basic_writer<Char>::pointer_type
+  basic_writer<Char>::prepare_int_buffer(
     unsigned num_digits, const Spec &spec,
     const char *prefix, unsigned prefix_size) {
   unsigned width = spec.width();
@@ -2507,25 +2504,25 @@ typename basic_writer<Char>::CharPtr basic_writer<Char>::prepare_int_buffer(
     buffer_.reserve(width);
     unsigned fill_size = width - number_size;
     if (align != ALIGN_LEFT) {
-      CharPtr p = grow_buffer(fill_size);
+      pointer_type p = grow_buffer(fill_size);
       std::uninitialized_fill(p, p + fill_size, fill);
     }
-    CharPtr result = prepare_int_buffer(
+    pointer_type result = prepare_int_buffer(
         num_digits, subspec, prefix, prefix_size);
     if (align == ALIGN_LEFT) {
-      CharPtr p = grow_buffer(fill_size);
+      pointer_type p = grow_buffer(fill_size);
       std::uninitialized_fill(p, p + fill_size, fill);
     }
     return result;
   }
   unsigned size = prefix_size + num_digits;
   if (width <= size) {
-    CharPtr p = grow_buffer(size);
+    pointer_type p = grow_buffer(size);
     std::uninitialized_copy(prefix, prefix + prefix_size, p);
     return p + size - 1;
   }
-  CharPtr p = grow_buffer(width);
-  CharPtr end = p + width;
+  pointer_type p = grow_buffer(width);
+  pointer_type end = p + width;
   if (align == ALIGN_LEFT) {
     std::uninitialized_copy(prefix, prefix + prefix_size, p);
     p += size;
@@ -2567,7 +2564,8 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
   switch (spec.type()) {
   case 0: case 'd': {
     unsigned num_digits = internal::count_digits(abs_value);
-    CharPtr p = prepare_int_buffer(num_digits, spec, prefix, prefix_size) + 1;
+    pointer_type p =
+        prepare_int_buffer(num_digits, spec, prefix, prefix_size) + 1;
     internal::format_decimal(get(p), abs_value, 0);
     break;
   }
@@ -2631,7 +2629,7 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
     fmt::basic_string_view<Char> sep(&thousands_sep, 1);
     unsigned size = static_cast<unsigned>(
           num_digits + sep.size() * ((num_digits - 1) / 3));
-    CharPtr p = prepare_int_buffer(size, spec, prefix, prefix_size) + 1;
+    pointer_type p = prepare_int_buffer(size, spec, prefix, prefix_size) + 1;
     internal::format_decimal(get(p), abs_value, 0,
                              internal::add_thousands_sep<Char>(sep));
     break;
@@ -2688,7 +2686,7 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
       --nan_size;
       ++nan;
     }
-    CharPtr out = write_str(nan, nan_size, spec);
+    pointer_type out = write_str(nan, nan_size, spec);
     if (sign)
       *out = sign;
     return;
@@ -2703,7 +2701,7 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
       --inf_size;
       ++inf;
     }
-    CharPtr out = write_str(inf, inf_size, spec);
+    pointer_type out = write_str(inf, inf_size, spec);
     if (sign)
       *out = sign;
     return;
@@ -2784,7 +2782,7 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
   }
   if (spec.align() == ALIGN_CENTER && spec.width() > n) {
     width = spec.width();
-    CharPtr p = grow_buffer(width);
+    pointer_type p = grow_buffer(width);
     std::memmove(get(p) + (width - n) / 2, get(p), n * sizeof(Char));
     fill_padding(p, spec.width(), n, fill);
     return;

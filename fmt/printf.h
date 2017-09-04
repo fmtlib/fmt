@@ -245,8 +245,8 @@ class printf_arg_formatter : public internal::arg_formatter_base<Char> {
     basic_writer<Char> &w = this->writer();
     if (fmt_spec.type_ && fmt_spec.type_ != 'c')
       w.write_int(value, fmt_spec);
-    typedef typename basic_writer<Char>::CharPtr CharPtr;
-    CharPtr out = CharPtr();
+    typedef typename basic_writer<Char>::pointer_type pointer_type;
+    pointer_type out = pointer_type();
     if (fmt_spec.width_ > 1) {
       Char fill = ' ';
       out = w.grow_buffer(fmt_spec.width_);
