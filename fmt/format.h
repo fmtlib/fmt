@@ -1100,7 +1100,7 @@ FMT_DISABLE_CONVERSION_TO_INT(float);
 FMT_DISABLE_CONVERSION_TO_INT(double);
 FMT_DISABLE_CONVERSION_TO_INT(long double);
 
-enum Type {
+enum type {
   NONE, NAMED_ARG,
   // Integer types should go first,
   INT, UINT, LONG_LONG, ULONG_LONG, BOOL, CHAR, LAST_INTEGER_TYPE = CHAR,
@@ -1109,14 +1109,14 @@ enum Type {
   CSTRING, STRING, TSTRING, POINTER, CUSTOM
 };
 
-inline bool is_integral(Type type) {
-  FMT_ASSERT(type != internal::NAMED_ARG, "invalid argument type");
-  return type > internal::NONE && type <= internal::LAST_INTEGER_TYPE;
+inline bool is_integral(type t) {
+  FMT_ASSERT(t != internal::NAMED_ARG, "invalid argument type");
+  return t > internal::NONE && t <= internal::LAST_INTEGER_TYPE;
 }
 
-inline bool is_numeric(Type type) {
-  FMT_ASSERT(type != internal::NAMED_ARG, "invalid argument type");
-  return type > internal::NONE && type <= internal::LAST_NUMERIC_TYPE;
+inline bool is_numeric(type t) {
+  FMT_ASSERT(t != internal::NAMED_ARG, "invalid argument type");
+  return t > internal::NONE && t <= internal::LAST_NUMERIC_TYPE;
 }
 
 template <typename Char>
@@ -1145,52 +1145,52 @@ template <typename Char>
 struct is_named_arg<named_arg<Char>> : std::true_type {};
 
 template <typename T>
-constexpr Type get_type() {
+constexpr type get_type() {
   return std::is_reference<T>::value || std::is_array<T>::value ?
         get_type<typename std::decay<T>::type>() :
         (is_named_arg<T>::value ?
            NAMED_ARG : (convert_to_int<T>::value ? INT : CUSTOM));
 }
 
-template <> constexpr Type get_type<bool>() { return BOOL; }
-template <> constexpr Type get_type<short>() { return INT; }
-template <> constexpr Type get_type<unsigned short>() { return UINT; }
-template <> constexpr Type get_type<int>() { return INT; }
-template <> constexpr Type get_type<unsigned>() { return UINT; }
-template <> constexpr Type get_type<long>() {
+template <> constexpr type get_type<bool>() { return BOOL; }
+template <> constexpr type get_type<short>() { return INT; }
+template <> constexpr type get_type<unsigned short>() { return UINT; }
+template <> constexpr type get_type<int>() { return INT; }
+template <> constexpr type get_type<unsigned>() { return UINT; }
+template <> constexpr type get_type<long>() {
   return sizeof(long) == sizeof(int) ? INT : LONG_LONG;
 }
-template <> constexpr Type get_type<unsigned long>() {
+template <> constexpr type get_type<unsigned long>() {
   return sizeof(unsigned long) == sizeof(unsigned) ? UINT : ULONG_LONG;
 }
-template <> constexpr Type get_type<long long>() { return LONG_LONG; }
-template <> constexpr Type get_type<unsigned long long>() { return ULONG_LONG; }
-template <> constexpr Type get_type<float>() { return DOUBLE; }
-template <> constexpr Type get_type<double>() { return DOUBLE; }
-template <> constexpr Type get_type<long double>() { return LONG_DOUBLE; }
-template <> constexpr Type get_type<signed char>() { return INT; }
-template <> constexpr Type get_type<unsigned char>() { return UINT; }
-template <> constexpr Type get_type<char>() { return CHAR; }
+template <> constexpr type get_type<long long>() { return LONG_LONG; }
+template <> constexpr type get_type<unsigned long long>() { return ULONG_LONG; }
+template <> constexpr type get_type<float>() { return DOUBLE; }
+template <> constexpr type get_type<double>() { return DOUBLE; }
+template <> constexpr type get_type<long double>() { return LONG_DOUBLE; }
+template <> constexpr type get_type<signed char>() { return INT; }
+template <> constexpr type get_type<unsigned char>() { return UINT; }
+template <> constexpr type get_type<char>() { return CHAR; }
 
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
-template <> constexpr Type get_type<wchar_t>() { return CHAR; }
+template <> constexpr type get_type<wchar_t>() { return CHAR; }
 #endif
 
-template <> constexpr Type get_type<char *>() { return CSTRING; }
-template <> constexpr Type get_type<const char *>() { return CSTRING; }
-template <> constexpr Type get_type<signed char *>() { return CSTRING; }
-template <> constexpr Type get_type<const signed char *>() { return CSTRING; }
-template <> constexpr Type get_type<unsigned char *>() { return CSTRING; }
-template <> constexpr Type get_type<const unsigned char *>() { return CSTRING; }
-template <> constexpr Type get_type<std::string>() { return STRING; }
-template <> constexpr Type get_type<string_view>() { return STRING; }
-template <> constexpr Type get_type<wchar_t *>() { return TSTRING; }
-template <> constexpr Type get_type<const wchar_t *>() { return TSTRING; }
-template <> constexpr Type get_type<std::wstring>() { return TSTRING; }
-template <> constexpr Type get_type<wstring_view>() { return TSTRING; }
-template <> constexpr Type get_type<void *>() { return POINTER; }
-template <> constexpr Type get_type<const void *>() { return POINTER; }
-template <> constexpr Type get_type<std::nullptr_t>() { return POINTER; }
+template <> constexpr type get_type<char *>() { return CSTRING; }
+template <> constexpr type get_type<const char *>() { return CSTRING; }
+template <> constexpr type get_type<signed char *>() { return CSTRING; }
+template <> constexpr type get_type<const signed char *>() { return CSTRING; }
+template <> constexpr type get_type<unsigned char *>() { return CSTRING; }
+template <> constexpr type get_type<const unsigned char *>() { return CSTRING; }
+template <> constexpr type get_type<std::string>() { return STRING; }
+template <> constexpr type get_type<string_view>() { return STRING; }
+template <> constexpr type get_type<wchar_t *>() { return TSTRING; }
+template <> constexpr type get_type<const wchar_t *>() { return TSTRING; }
+template <> constexpr type get_type<std::wstring>() { return TSTRING; }
+template <> constexpr type get_type<wstring_view>() { return TSTRING; }
+template <> constexpr type get_type<void *>() { return POINTER; }
+template <> constexpr type get_type<const void *>() { return POINTER; }
+template <> constexpr type get_type<std::nullptr_t>() { return POINTER; }
 
 // A formatting argument value.
 template <typename Context>
@@ -1362,8 +1362,7 @@ class value {
   template <typename Char_>
   value(const named_arg<Char_> &value) {
     static_assert(
-      get_type<const named_arg<Char_> &>() == internal::NAMED_ARG,
-      "invalid type");
+      get_type<const named_arg<Char_> &>() == NAMED_ARG, "invalid type");
     this->pointer = &value;
   }
 };
@@ -1386,7 +1385,7 @@ template <typename Context>
 class basic_arg {
  private:
   internal::value<Context> value_;
-  internal::Type type_;
+  internal::type type_;
 
   template <typename ContextType, typename T>
   friend basic_arg<ContextType> internal::make_arg(const T &value);
@@ -1403,7 +1402,7 @@ class basic_arg {
 
   explicit operator bool() const noexcept { return type_ != internal::NONE; }
 
-  internal::Type type() const { return type_; }
+  internal::type type() const { return type_; }
 
   bool is_integral() const { return internal::is_integral(type_); }
   bool is_numeric() const { return internal::is_numeric(type_); }
@@ -1583,10 +1582,10 @@ class basic_args {
     const format_arg *args_;
   };
 
-  typename internal::Type type(unsigned index) const {
+  typename internal::type type(unsigned index) const {
     unsigned shift = index * 4;
     uint64_t mask = 0xf;
-    return static_cast<typename internal::Type>(
+    return static_cast<typename internal::type>(
       (types_ & (mask << shift)) >> shift);
   }
 
@@ -1773,7 +1772,7 @@ void arg_map<Context>::init(const basic_args<Context> &args) {
   args.type(MAX_PACKED_ARGS - 1) == internal::NONE;
   if (use_values) {
     for (unsigned i = 0;/*nothing*/; ++i) {
-      internal::Type arg_type = args.type(i);
+      internal::type arg_type = args.type(i);
       switch (arg_type) {
         case internal::NONE:
           return;
@@ -1788,7 +1787,7 @@ void arg_map<Context>::init(const basic_args<Context> &args) {
     return;
   }
   for (unsigned i = 0; i != MAX_PACKED_ARGS; ++i) {
-    internal::Type arg_type = args.type(i);
+    internal::type arg_type = args.type(i);
     if (arg_type == internal::NAMED_ARG) {
       named_arg = static_cast<const NamedArg*>(args.args_[i].value_.pointer);
       map_.push_back(Pair(named_arg->name, *named_arg));
@@ -3155,7 +3154,7 @@ class specs_setter {
 template <typename Handler>
 class specs_checker : public Handler {
  public:
-  explicit specs_checker(const Handler& handler, Type arg_type)
+  explicit specs_checker(const Handler& handler, type arg_type)
     : Handler(handler), arg_type_(arg_type) {}
 
   void on_align(alignment align) {
@@ -3220,7 +3219,7 @@ class specs_checker : public Handler {
     }
   }
 
-  Type arg_type_;
+  type arg_type_;
 };
 
 template <typename Handler, typename T, typename Context>
