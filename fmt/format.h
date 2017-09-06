@@ -1211,7 +1211,7 @@ class value {
     custom_value<typename Context::char_type> custom;
   };
 
-  typedef typename Context::char_type Char;
+  using char_type = typename Context::char_type;
 
  private:
   // The following two methods are private to disallow formatting of
@@ -1229,12 +1229,12 @@ class value {
   //   fmt::format("{}", L"test");
   // To fix this, use a wide format string: fmt::format(L"{}", L"test").
 #if !FMT_MSC_VER || defined(_NATIVE_WCHAR_T_DEFINED)
-  value(typename wchar_helper<wchar_t, Char>::unsupported);
+  value(typename wchar_helper<wchar_t, char_type>::unsupported);
 #endif
-  value(typename wchar_helper<wchar_t *, Char>::unsupported);
-  value(typename wchar_helper<const wchar_t *, Char>::unsupported);
-  value(typename wchar_helper<const std::wstring &, Char>::unsupported);
-  value(typename wchar_helper<wstring_view, Char>::unsupported);
+  value(typename wchar_helper<wchar_t *, char_type>::unsupported);
+  value(typename wchar_helper<const wchar_t *, char_type>::unsupported);
+  value(typename wchar_helper<const std::wstring &, char_type>::unsupported);
+  value(typename wchar_helper<wstring_view, char_type>::unsupported);
 
   void set_string(string_view str) {
     this->string.value = str.data();
@@ -1249,8 +1249,8 @@ class value {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   static void format_custom_arg(
-      basic_buffer<Char> &buffer, const void *arg,
-      basic_string_view<Char> &format, void *context) {
+      basic_buffer<char_type> &buffer, const void *arg,
+      basic_string_view<char_type> &format, void *context) {
     Context &ctx = *static_cast<Context*>(context);
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
@@ -1305,16 +1305,16 @@ class value {
   FMT_MAKE_VALUE(char, int_value, CHAR)
 
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
-  typedef typename wchar_helper<wchar_t, Char>::supported WChar;
+  typedef typename wchar_helper<wchar_t, char_type>::supported WChar;
   value(WChar value) {
-    static_assert(get_type<WChar>() == internal::CHAR, "invalid type");
+    static_assert(get_type<WChar>() == CHAR, "invalid type");
     this->int_value = value;
   }
 #endif
 
 #define FMT_MAKE_STR_VALUE(Type, TYPE) \
   value(Type value) { \
-    static_assert(get_type<Type>() == internal::TYPE, "invalid type"); \
+    static_assert(get_type<Type>() == TYPE, "invalid type"); \
     set_string(value); \
   }
 
@@ -1328,8 +1328,8 @@ class value {
   FMT_MAKE_STR_VALUE(string_view, STRING)
 
 #define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
-  value(typename wchar_helper<Type, Char>::supported value) { \
-    static_assert(get_type<Type>() == internal::TYPE, "invalid type"); \
+  value(typename wchar_helper<Type, char_type>::supported value) { \
+    static_assert(get_type<Type>() == TYPE, "invalid type"); \
     set_string(value); \
   }
 
@@ -1345,7 +1345,7 @@ class value {
   template <typename T>
   value(const T &value,
         typename std::enable_if<!convert_to_int<T>::value, int>::type = 0) {
-    static_assert(get_type<T>() == internal::CUSTOM, "invalid type");
+    static_assert(get_type<T>() == CUSTOM, "invalid type");
     this->custom.value = &value;
     this->custom.format = &format_custom_arg<T>;
   }
@@ -1353,16 +1353,16 @@ class value {
   template <typename T>
   value(const T &value,
         typename std::enable_if<convert_to_int<T>::value, int>::type = 0) {
-    static_assert(get_type<T>() == internal::INT, "invalid type");
+    static_assert(get_type<T>() == INT, "invalid type");
     this->int_value = value;
   }
 
   // Additional template param `Char_` is needed here because make_type always
   // uses char.
-  template <typename Char_>
-  value(const named_arg<Char_> &value) {
+  template <typename Char>
+  value(const named_arg<Char> &value) {
     static_assert(
-      get_type<const named_arg<Char_> &>() == NAMED_ARG, "invalid type");
+      get_type<const named_arg<Char> &>() == NAMED_ARG, "invalid type");
     this->pointer = &value;
   }
 };
