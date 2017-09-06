@@ -1142,57 +1142,55 @@ template <typename T>
 struct is_named_arg : std::false_type {};
 
 template <typename Char>
-struct is_named_arg< named_arg<Char> > : std::true_type {};
+struct is_named_arg<named_arg<Char>> : std::true_type {};
 
 template <typename T>
-constexpr Type gettype() {
-  return is_named_arg<T>::value ?
-        NAMED_ARG : (convert_to_int<T>::value ? INT : CUSTOM);
+constexpr Type get_type() {
+  return std::is_reference<T>::value || std::is_array<T>::value ?
+        get_type<typename std::decay<T>::type>() :
+        (is_named_arg<T>::value ?
+           NAMED_ARG : (convert_to_int<T>::value ? INT : CUSTOM));
 }
 
-template <> constexpr Type gettype<bool>() { return BOOL; }
-template <> constexpr Type gettype<short>() { return INT; }
-template <> constexpr Type gettype<unsigned short>() { return UINT; }
-template <> constexpr Type gettype<int>() { return INT; }
-template <> constexpr Type gettype<unsigned>() { return UINT; }
-template <> constexpr Type gettype<long>() {
+template <> constexpr Type get_type<bool>() { return BOOL; }
+template <> constexpr Type get_type<short>() { return INT; }
+template <> constexpr Type get_type<unsigned short>() { return UINT; }
+template <> constexpr Type get_type<int>() { return INT; }
+template <> constexpr Type get_type<unsigned>() { return UINT; }
+template <> constexpr Type get_type<long>() {
   return sizeof(long) == sizeof(int) ? INT : LONG_LONG;
 }
-template <> constexpr Type gettype<unsigned long>() {
-  return sizeof(unsigned long) == sizeof(unsigned) ?
-        UINT : ULONG_LONG;
+template <> constexpr Type get_type<unsigned long>() {
+  return sizeof(unsigned long) == sizeof(unsigned) ? UINT : ULONG_LONG;
 }
-template <> constexpr Type gettype<long long>() { return LONG_LONG; }
-template <> constexpr Type gettype<unsigned long long>() { return ULONG_LONG; }
-template <> constexpr Type gettype<float>() { return DOUBLE; }
-template <> constexpr Type gettype<double>() { return DOUBLE; }
-template <> constexpr Type gettype<long double>() { return LONG_DOUBLE; }
-template <> constexpr Type gettype<signed char>() { return INT; }
-template <> constexpr Type gettype<unsigned char>() { return UINT; }
-template <> constexpr Type gettype<char>() { return CHAR; }
+template <> constexpr Type get_type<long long>() { return LONG_LONG; }
+template <> constexpr Type get_type<unsigned long long>() { return ULONG_LONG; }
+template <> constexpr Type get_type<float>() { return DOUBLE; }
+template <> constexpr Type get_type<double>() { return DOUBLE; }
+template <> constexpr Type get_type<long double>() { return LONG_DOUBLE; }
+template <> constexpr Type get_type<signed char>() { return INT; }
+template <> constexpr Type get_type<unsigned char>() { return UINT; }
+template <> constexpr Type get_type<char>() { return CHAR; }
 
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
-template <> constexpr Type gettype<wchar_t>() { return CHAR; }
+template <> constexpr Type get_type<wchar_t>() { return CHAR; }
 #endif
 
-template <> constexpr Type gettype<char *>() { return CSTRING; }
-template <> constexpr Type gettype<const char *>() { return CSTRING; }
-template <> constexpr Type gettype<signed char *>() { return CSTRING; }
-template <> constexpr Type gettype<const signed char *>() { return CSTRING; }
-template <> constexpr Type gettype<unsigned char *>() { return CSTRING; }
-template <> constexpr Type gettype<const unsigned char *>() { return CSTRING; }
-template <> constexpr Type gettype<std::string>() { return STRING; }
-template <> constexpr Type gettype<string_view>() { return STRING; }
-template <> constexpr Type gettype<wchar_t *>() { return TSTRING; }
-template <> constexpr Type gettype<const wchar_t *>() { return TSTRING; }
-template <> constexpr Type gettype<std::wstring>() { return TSTRING; }
-template <> constexpr Type gettype<wstring_view>() { return TSTRING; }
-template <> constexpr Type gettype<void *>() { return POINTER; }
-template <> constexpr Type gettype<const void *>() { return POINTER; }
-template <> constexpr Type gettype<std::nullptr_t>() { return POINTER; }
-
-template <typename T>
-constexpr Type type() { return gettype<typename std::decay<T>::type>(); }
+template <> constexpr Type get_type<char *>() { return CSTRING; }
+template <> constexpr Type get_type<const char *>() { return CSTRING; }
+template <> constexpr Type get_type<signed char *>() { return CSTRING; }
+template <> constexpr Type get_type<const signed char *>() { return CSTRING; }
+template <> constexpr Type get_type<unsigned char *>() { return CSTRING; }
+template <> constexpr Type get_type<const unsigned char *>() { return CSTRING; }
+template <> constexpr Type get_type<std::string>() { return STRING; }
+template <> constexpr Type get_type<string_view>() { return STRING; }
+template <> constexpr Type get_type<wchar_t *>() { return TSTRING; }
+template <> constexpr Type get_type<const wchar_t *>() { return TSTRING; }
+template <> constexpr Type get_type<std::wstring>() { return TSTRING; }
+template <> constexpr Type get_type<wstring_view>() { return TSTRING; }
+template <> constexpr Type get_type<void *>() { return POINTER; }
+template <> constexpr Type get_type<const void *>() { return POINTER; }
+template <> constexpr Type get_type<std::nullptr_t>() { return POINTER; }
 
 // A formatting argument value.
 template <typename Context>
@@ -1268,7 +1266,7 @@ class value {
 
 #define FMT_MAKE_VALUE_(Type, field, TYPE, rhs) \
   value(Type value) { \
-    static_assert(internal::type<Type>() == internal::TYPE, "invalid type"); \
+    static_assert(get_type<Type>() == internal::TYPE, "invalid type"); \
     this->field = rhs; \
   }
 
@@ -1309,14 +1307,14 @@ class value {
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
   typedef typename wchar_helper<wchar_t, Char>::supported WChar;
   value(WChar value) {
-    static_assert(internal::type<WChar>() == internal::CHAR, "invalid type");
+    static_assert(get_type<WChar>() == internal::CHAR, "invalid type");
     this->int_value = value;
   }
 #endif
 
 #define FMT_MAKE_STR_VALUE(Type, TYPE) \
   value(Type value) { \
-    static_assert(internal::type<Type>() == internal::TYPE, "invalid type"); \
+    static_assert(get_type<Type>() == internal::TYPE, "invalid type"); \
     set_string(value); \
   }
 
@@ -1331,7 +1329,7 @@ class value {
 
 #define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
   value(typename wchar_helper<Type, Char>::supported value) { \
-    static_assert(internal::type<Type>() == internal::TYPE, "invalid type"); \
+    static_assert(get_type<Type>() == internal::TYPE, "invalid type"); \
     set_string(value); \
   }
 
@@ -1347,7 +1345,7 @@ class value {
   template <typename T>
   value(const T &value,
         typename std::enable_if<!convert_to_int<T>::value, int>::type = 0) {
-    static_assert(internal::type<T>() == internal::CUSTOM, "invalid type");
+    static_assert(get_type<T>() == internal::CUSTOM, "invalid type");
     this->custom.value = &value;
     this->custom.format = &format_custom_arg<T>;
   }
@@ -1355,7 +1353,7 @@ class value {
   template <typename T>
   value(const T &value,
         typename std::enable_if<convert_to_int<T>::value, int>::type = 0) {
-    static_assert(internal::type<T>() == internal::INT, "invalid type");
+    static_assert(get_type<T>() == internal::INT, "invalid type");
     this->int_value = value;
   }
 
@@ -1364,7 +1362,7 @@ class value {
   template <typename Char_>
   value(const named_arg<Char_> &value) {
     static_assert(
-      internal::type<const named_arg<Char_> &>() == internal::NAMED_ARG,
+      get_type<const named_arg<Char_> &>() == internal::NAMED_ARG,
       "invalid type");
     this->pointer = &value;
   }
@@ -1465,7 +1463,7 @@ namespace internal {
 template <typename Context, typename T>
 basic_arg<Context> make_arg(const T &value) {
   basic_arg<Context> arg;
-  arg.type_ = internal::type<T>();
+  arg.type_ = get_type<T>();
   arg.value_ = value;
   return arg;
 }
@@ -1503,12 +1501,12 @@ struct named_arg : basic_arg<Context> {
 };
 
 template <typename Arg, typename... Args>
-constexpr uint64_t make_type() {
-  return type<Arg>() | (make_type<Args...>() << 4);
+constexpr uint64_t get_types() {
+  return get_type<Arg>() | (get_types<Args...>() << 4);
 }
 
 template <>
-constexpr uint64_t make_type<void>() { return 0; }
+constexpr uint64_t get_types<void>() { return 0; }
 
 // Maximum number of arguments with packed types.
 enum { MAX_PACKED_ARGS = 15 };
@@ -1546,7 +1544,7 @@ class arg_store {
  public:
   static const uint64_t TYPES =
       NUM_ARGS <= internal::MAX_PACKED_ARGS ?
-        internal::make_type<Args..., void>() : -static_cast<int64_t>(NUM_ARGS);
+        internal::get_types<Args..., void>() : -static_cast<int64_t>(NUM_ARGS);
 
   arg_store(const Args &... args)
     : data_(Array{{internal::make_arg<IS_PACKED, Context>(args)...}}) {}
@@ -3494,10 +3492,10 @@ const Char *do_format_arg(basic_buffer<Char> &buffer,
 }
 
 // Specifies whether to format T using the standard formatter.
-// It is not possible to use gettype in formatter specialization directly
+// It is not possible to use get_type in formatter specialization directly
 // because of a bug in MSVC.
 template <typename T>
-struct format_type : std::integral_constant<bool, gettype<T>() != CUSTOM> {};
+struct format_type : std::integral_constant<bool, get_type<T>() != CUSTOM> {};
 
 // Specifies whether to format enums.
 template <typename T, typename Enable = void>
@@ -3533,7 +3531,7 @@ struct formatter<
     auto it = internal::null_terminating_iterator<Char>(format);
     using handler_type = internal::dynamic_specs_handler<Char>;
     internal::specs_checker<handler_type>
-        handler(handler_type(specs_), internal::gettype<T>());
+        handler(handler_type(specs_), internal::get_type<T>());
     it = parse_format_specs(it, handler);
     return pointer_from(it);
   }
@@ -3595,7 +3593,7 @@ struct dynamic_formatter {
       void on_hash() {}
     };
     internal::specs_checker<null_handler>
-        checker(null_handler(), internal::gettype<T>());
+        checker(null_handler(), internal::get_type<T>());
     checker.on_align(specs_.align());
     if (specs_.flags_ == 0) {
       // Do nothing.
