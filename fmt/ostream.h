@@ -63,7 +63,8 @@ template<typename T>
 struct convert_to_int_impl<T, true> {
   // Convert to int only if T doesn't have an overloaded operator<<.
   enum {
-    value = sizeof(convert(get<DummyStream>() << get<T>())) == sizeof(no)
+    value = sizeof(convert(std::declval<DummyStream&>() << std::declval<T>()))
+            == sizeof(no)
   };
 };
 

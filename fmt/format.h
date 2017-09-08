@@ -1046,9 +1046,6 @@ struct null {};
 typedef char yes[1];
 typedef char no[2];
 
-template <typename T>
-T &get();
-
 yes &convert(unsigned long long);
 no &convert(...);
 
@@ -1073,7 +1070,9 @@ struct convert_to_int_impl2<T, true> {
 
 template<typename T>
 struct convert_to_int {
-  enum { enable_conversion = sizeof(convert(get<T>())) == sizeof(yes) };
+  enum {
+    enable_conversion = sizeof(convert(std::declval<T>())) == sizeof(yes)
+  };
   enum { value = convert_to_int_impl2<T, enable_conversion>::value };
 };
 
