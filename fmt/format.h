@@ -1244,20 +1244,12 @@ class value {
   value(const signed char *s) { set<CSTRING>(sstring.value, s); }
   value(unsigned char *s) { set<CSTRING>(ustring.value, s); }
   value(const unsigned char *s) { set<CSTRING>(ustring.value, s); }
-  value(string_view s) { set_string<STRING>(string, s); }
-  value(const std::string &s) { set_string<STRING>(string, s); }
-
-#define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
-  value(Type value) { \
-    require_wchar<char_type>(); \
-    static_assert(get_type<Type>() == TYPE, "invalid type"); \
-    set_string(value); \
-  }
-
-  FMT_MAKE_WSTR_VALUE(wchar_t *, TSTRING)
-  FMT_MAKE_WSTR_VALUE(const wchar_t *, TSTRING)
-  FMT_MAKE_WSTR_VALUE(wstring_view, TSTRING)
-  FMT_MAKE_WSTR_VALUE(const std::wstring &, TSTRING)
+  value(string_view s) { set_string(s); }
+  value(const std::string &s) { set_string(s); }
+  value(wstring_view s) { set_wstring(s); }
+  value(const std::wstring &s) { set_wstring(s); }
+  value(wchar_t *s) { set_wstring(wstring_view(s)); }
+  value(const wchar_t *s) { set_wstring(wstring_view(s)); }
 
   // Formatting of arbitrary pointers is disallowed. If you want to output a
   // pointer cast it to "void *" or "const void *". In particular, this forbids
@@ -1306,16 +1298,19 @@ class value {
     field = value;
   }
 
-  template <type TYPE, typename T, typename U>
-  void set_string(T &field, const U &value) {
-    static_assert(get_type<U>() == TYPE, "invalid type");
-    field.value = value.data();
-    field.size = value.size();
+  template <typename T>
+  void set_string(const T &value) {
+    static_assert(get_type<T>() == STRING, "invalid type");
+    string.value = value.data();
+    string.size = value.size();
   }
 
-  void set_string(wstring_view str) {
-    this->tstring.value = str.data();
-    this->tstring.size = str.size();
+  template <typename T>
+  void set_wstring(const T &value) {
+    require_wchar<char_type>();
+    static_assert(get_type<T>() == TSTRING, "invalid type");
+    tstring.value = value.data();
+    tstring.size = value.size();
   }
 
   // Formats an argument of a custom type, such as a user-defined class.
