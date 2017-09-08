@@ -1043,20 +1043,6 @@ FMT_API void format_windows_error(fmt::buffer &out, int error_code,
 template <typename T = void>
 struct null {};
 
-// A helper class template to enable or disable overloads taking wide
-// characters and strings in value's constructor.
-template <typename T, typename Char>
-struct wchar_helper {
-  typedef null<T> supported;
-  typedef T unsupported;
-};
-
-template <typename T>
-struct wchar_helper<T, wchar_t> {
-  typedef T supported;
-  typedef null<T> unsupported;
-};
-
 typedef char yes[1];
 typedef char no[2];
 
@@ -1192,10 +1178,26 @@ template <> constexpr type get_type<void *>() { return POINTER; }
 template <> constexpr type get_type<const void *>() { return POINTER; }
 template <> constexpr type get_type<std::nullptr_t>() { return POINTER; }
 
+// Formatting of wide characters and strings into a narrow output is disallowed:
+//   fmt::format("{}", L"test"); // error
+// To fix this, use a wide format string:
+//   fmt::format(L"{}", L"test");
+template <typename Char>
+inline void require_wchar() {
+  static_assert(
+      std::is_same<wchar_t, Char>::value,
+      "formatting of wide characters into a narrow output is disallowed");
+}
+
+template <typename T>
+inline const T *as_const(T *p) { return p; }
+
 // A formatting argument value.
 template <typename Context>
 class value {
  public:
+  using char_type = typename Context::char_type;
+
   union {
     int int_value;
     unsigned uint_value;
@@ -1207,38 +1209,122 @@ class value {
     string_value<char> string;
     string_value<signed char> sstring;
     string_value<unsigned char> ustring;
-    string_value<typename Context::char_type> tstring;
-    custom_value<typename Context::char_type> custom;
+    string_value<char_type> tstring;
+    custom_value<char_type> custom;
   };
 
-  using char_type = typename Context::char_type;
+  value() {}
+  value(bool val) { set<BOOL>(int_value, val); }
+  value(short val) { set<INT>(int_value, val); }
+  value(unsigned short val) { set<UINT>(uint_value, val); }
+  value(int val) { set<INT>(int_value, val); }
+  value(unsigned val) { set<UINT>(uint_value, val); }
+
+  value(long val) {
+    // To minimize the number of types we need to deal with, long is
+    // translated either to int or to long long depending on its size.
+    if (const_check(sizeof(val) == sizeof(int)))
+      int_value = static_cast<int>(val);
+    else
+      long_long_value = val;
+  }
+
+  value(unsigned long val) {
+    if (const_check(sizeof(val) == sizeof(unsigned)))
+      uint_value = static_cast<unsigned>(val);
+    else
+      ulong_long_value = val;
+  }
+
+  value(long long val) { set<LONG_LONG>(long_long_value, val); }
+  value(unsigned long long val) { set<ULONG_LONG>(ulong_long_value, val); }
+  value(float val) { set<DOUBLE>(double_value, val); }
+  value(double val) { set<DOUBLE>(double_value, val); }
+  value(long double val) { set<LONG_DOUBLE>(long_double_value, val); }
+  value(signed char val) { set<INT>(int_value, val); }
+  value(unsigned char val) { set<UINT>(uint_value, val); }
+  value(char val) { set<CHAR>(int_value, val); }
+
+#if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
+  value(wchar_t value) {
+    require_wchar<char_type>();
+    set<CHAR>(int_value, value);
+  }
+#endif
+
+  value(char *s) { set<CSTRING>(string.value, s); }
+  value(const char *s) { set<CSTRING>(string.value, s); }
+  value(signed char *s) { set<CSTRING>(sstring.value, s); }
+  value(const signed char *s) { set<CSTRING>(sstring.value, s); }
+  value(unsigned char *s) { set<CSTRING>(ustring.value, s); }
+  value(const unsigned char *s) { set<CSTRING>(ustring.value, s); }
+  value(string_view s) { set_string<STRING>(string, s); }
+  value(const std::string &s) { set_string<STRING>(string, s); }
+
+#define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
+  value(Type value) { \
+    require_wchar<char_type>(); \
+    static_assert(get_type<Type>() == TYPE, "invalid type"); \
+    set_string(value); \
+  }
+
+  FMT_MAKE_WSTR_VALUE(wchar_t *, TSTRING)
+  FMT_MAKE_WSTR_VALUE(const wchar_t *, TSTRING)
+  FMT_MAKE_WSTR_VALUE(wstring_view, TSTRING)
+  FMT_MAKE_WSTR_VALUE(const std::wstring &, TSTRING)
+
+  // Formatting of arbitrary pointers is disallowed. If you want to output a
+  // pointer cast it to "void *" or "const void *". In particular, this forbids
+  // formatting of "[const] volatile char *" which is printed as bool by
+  // iostreams.
+  template <typename T>
+  value(const T *p) {
+    static_assert(std::is_same<T, void>::value,
+                  "formatting of non-void pointers is disallowed");
+    set<POINTER>(pointer, p);
+  }
+
+  template <typename T>
+  value(T *p) : value(as_const(p)) {}
+
+  value(std::nullptr_t) { pointer = nullptr; }
+
+  template <typename T>
+  value(const T &value,
+        typename std::enable_if<convert_to_int<T>::value, int>::type = 0) {
+    static_assert(get_type<T>() == INT, "invalid type");
+    int_value = value;
+  }
+
+  template <typename T>
+  value(const T &value,
+        typename std::enable_if<!convert_to_int<T>::value, int>::type = 0) {
+    static_assert(get_type<T>() == CUSTOM, "invalid type");
+    custom.value = &value;
+    custom.format = &format_custom_arg<T>;
+  }
+
+  // Additional template param `Char` is needed here because get_type always
+  // uses char.
+  template <typename Char>
+  value(const named_arg<Char> &value) {
+    static_assert(
+      get_type<const named_arg<Char> &>() == NAMED_ARG, "invalid type");
+    pointer = &value;
+  }
 
  private:
-  // The following two methods are private to disallow formatting of
-  // arbitrary pointers. If you want to output a pointer cast it to
-  // "void *" or "const void *". In particular, this forbids formatting
-  // of "[const] volatile char *" which is printed as bool by iostreams.
-  // Do not implement!
-  template <typename T>
-  value(const T *value);
-  template <typename T>
-  value(T *value);
+  template <type TYPE, typename T, typename U>
+  void set(T &field, const U &value) {
+    static_assert(get_type<U>() == TYPE, "invalid type");
+    field = value;
+  }
 
-  // The following methods are private to disallow formatting of wide
-  // characters and strings into narrow strings as in
-  //   fmt::format("{}", L"test");
-  // To fix this, use a wide format string: fmt::format(L"{}", L"test").
-#if !FMT_MSC_VER || defined(_NATIVE_WCHAR_T_DEFINED)
-  value(typename wchar_helper<wchar_t, char_type>::unsupported);
-#endif
-  value(typename wchar_helper<wchar_t *, char_type>::unsupported);
-  value(typename wchar_helper<const wchar_t *, char_type>::unsupported);
-  value(typename wchar_helper<const std::wstring &, char_type>::unsupported);
-  value(typename wchar_helper<wstring_view, char_type>::unsupported);
-
-  void set_string(string_view str) {
-    this->string.value = str.data();
-    this->string.size = str.size();
+  template <type TYPE, typename T, typename U>
+  void set_string(T &field, const U &value) {
+    static_assert(get_type<U>() == TYPE, "invalid type");
+    field.value = value.data();
+    field.size = value.size();
   }
 
   void set_string(wstring_view str) {
@@ -1259,111 +1345,6 @@ class value {
     auto it = f.parse(format);
     format.remove_prefix(it - begin(format));
     f.format(buffer, *static_cast<const T*>(arg), ctx);
-  }
-
- public:
-  value() {}
-
-#define FMT_MAKE_VALUE_(Type, field, TYPE, rhs) \
-  value(Type value) { \
-    static_assert(get_type<Type>() == internal::TYPE, "invalid type"); \
-    this->field = rhs; \
-  }
-
-#define FMT_MAKE_VALUE(Type, field, TYPE) \
-  FMT_MAKE_VALUE_(Type, field, TYPE, value)
-
-  FMT_MAKE_VALUE(bool, int_value, BOOL)
-  FMT_MAKE_VALUE(short, int_value, INT)
-  FMT_MAKE_VALUE(unsigned short, uint_value, UINT)
-  FMT_MAKE_VALUE(int, int_value, INT)
-  FMT_MAKE_VALUE(unsigned, uint_value, UINT)
-
-  value(long value) {
-    // To minimize the number of types we need to deal with, long is
-    // translated either to int or to long long depending on its size.
-    if (const_check(sizeof(long) == sizeof(int)))
-      this->int_value = static_cast<int>(value);
-    else
-      this->long_long_value = value;
-  }
-
-  value(unsigned long value) {
-    if (const_check(sizeof(unsigned long) == sizeof(unsigned)))
-      this->uint_value = static_cast<unsigned>(value);
-    else
-      this->ulong_long_value = value;
-  }
-
-  FMT_MAKE_VALUE(long long, long_long_value, LONG_LONG)
-  FMT_MAKE_VALUE(unsigned long long, ulong_long_value, ULONG_LONG)
-  FMT_MAKE_VALUE(float, double_value, DOUBLE)
-  FMT_MAKE_VALUE(double, double_value, DOUBLE)
-  FMT_MAKE_VALUE(long double, long_double_value, LONG_DOUBLE)
-  FMT_MAKE_VALUE(signed char, int_value, INT)
-  FMT_MAKE_VALUE(unsigned char, uint_value, UINT)
-  FMT_MAKE_VALUE(char, int_value, CHAR)
-
-#if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
-  typedef typename wchar_helper<wchar_t, char_type>::supported WChar;
-  value(WChar value) {
-    static_assert(get_type<WChar>() == CHAR, "invalid type");
-    this->int_value = value;
-  }
-#endif
-
-#define FMT_MAKE_STR_VALUE(Type, TYPE) \
-  value(Type value) { \
-    static_assert(get_type<Type>() == TYPE, "invalid type"); \
-    set_string(value); \
-  }
-
-  FMT_MAKE_VALUE(char *, string.value, CSTRING)
-  FMT_MAKE_VALUE(const char *, string.value, CSTRING)
-  FMT_MAKE_VALUE(signed char *, sstring.value, CSTRING)
-  FMT_MAKE_VALUE(const signed char *, sstring.value, CSTRING)
-  FMT_MAKE_VALUE(unsigned char *, ustring.value, CSTRING)
-  FMT_MAKE_VALUE(const unsigned char *, ustring.value, CSTRING)
-  FMT_MAKE_STR_VALUE(const std::string &, STRING)
-  FMT_MAKE_STR_VALUE(string_view, STRING)
-
-#define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
-  value(typename wchar_helper<Type, char_type>::supported value) { \
-    static_assert(get_type<Type>() == TYPE, "invalid type"); \
-    set_string(value); \
-  }
-
-  FMT_MAKE_WSTR_VALUE(wchar_t *, TSTRING)
-  FMT_MAKE_WSTR_VALUE(const wchar_t *, TSTRING)
-  FMT_MAKE_WSTR_VALUE(const std::wstring &, TSTRING)
-  FMT_MAKE_WSTR_VALUE(wstring_view, TSTRING)
-
-  FMT_MAKE_VALUE(void *, pointer, POINTER)
-  FMT_MAKE_VALUE(const void *, pointer, POINTER)
-  value(std::nullptr_t) { pointer = nullptr; }
-
-  template <typename T>
-  value(const T &value,
-        typename std::enable_if<!convert_to_int<T>::value, int>::type = 0) {
-    static_assert(get_type<T>() == CUSTOM, "invalid type");
-    this->custom.value = &value;
-    this->custom.format = &format_custom_arg<T>;
-  }
-
-  template <typename T>
-  value(const T &value,
-        typename std::enable_if<convert_to_int<T>::value, int>::type = 0) {
-    static_assert(get_type<T>() == INT, "invalid type");
-    this->int_value = value;
-  }
-
-  // Additional template param `Char_` is needed here because make_type always
-  // uses char.
-  template <typename Char>
-  value(const named_arg<Char> &value) {
-    static_assert(
-      get_type<const named_arg<Char> &>() == NAMED_ARG, "invalid type");
-    this->pointer = &value;
   }
 };
 
@@ -2224,14 +2205,6 @@ class basic_writer {
   template <typename StrChar>
   void write_str(basic_string_view<StrChar> str, const format_specs &spec);
 
-  // This following methods are private to disallow writing wide characters
-  // and strings to a char buffer. If you want to print a wide string as a
-  // pointer as std::ostream does, cast it to const void*.
-  // Do not implement!
-  void operator<<(typename internal::wchar_helper<wchar_t, Char>::unsupported);
-  void operator<<(
-      typename internal::wchar_helper<const wchar_t *, Char>::unsupported);
-
   // Appends floating-point length specifier to the format string.
   // The second argument is only used for overload resolution.
   void append_float_length(Char *&format_ptr, long double) {
@@ -2330,7 +2303,8 @@ class basic_writer {
     buffer_.push_back(value);
   }
 
-  void write(typename internal::wchar_helper<wchar_t, Char>::supported value) {
+  void write(wchar_t value) {
+    internal::require_wchar<Char>();
     buffer_.push_back(value);
   }
 
@@ -2339,14 +2313,14 @@ class basic_writer {
     Writes *value* to the buffer.
     \endrst
    */
-  void write(basic_string_view<Char> value) {
-    const Char *str = value.data();
+  void write(string_view value) {
+    const char *str = value.data();
     buffer_.append(str, str + value.size());
   }
 
-  void write(
-      typename internal::wchar_helper<string_view, Char>::supported value) {
-    const char *str = value.data();
+  void write(basic_string_view<wchar_t> value) {
+    internal::require_wchar<Char>();
+    const wchar_t *str = value.data();
     buffer_.append(str, str + value.size());
   }
 
