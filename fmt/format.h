@@ -165,24 +165,11 @@
 # endif
 #endif
 
-// A macro to disallow the copy constructor and operator= functions
-// This should be used in the private: declarations for a class
-#ifndef FMT_USE_DELETED_FUNCTIONS
-# define FMT_USE_DELETED_FUNCTIONS 0
-#endif
-
-#if FMT_USE_DELETED_FUNCTIONS || FMT_HAS_FEATURE(cxx_deleted_functions) || \
-  FMT_GCC_VERSION >= 404 || FMT_MSC_VER >= 1800
-# define FMT_DELETED_OR_UNDEFINED = delete
-# define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
+// A macro to disallow the copy construction and assignment.
+#define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
     TypeName(const TypeName&) = delete; \
     TypeName& operator=(const TypeName&) = delete
-#else
-# define FMT_DELETED_OR_UNDEFINED
-# define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
-    TypeName(const TypeName&); \
-    TypeName& operator=(const TypeName&)
-#endif
+#define FMT_DELETED_OR_UNDEFINED = delete
 
 #ifndef FMT_USE_USER_DEFINED_LITERALS
 // All compilers which support UDLs also support variadic templates. This
@@ -1447,25 +1434,10 @@ basic_arg<Context> make_arg(const T &value) {
   return arg;
 }
 
-#define FMT_CONCAT(a, b) a##b
-
 #if FMT_GCC_VERSION >= 407
 # define FMT_UNUSED __attribute__((unused))
 #else
 # define FMT_UNUSED
-#endif
-
-#ifndef FMT_USE_STATIC_ASSERT
-# define FMT_USE_STATIC_ASSERT 0
-#endif
-
-#if FMT_USE_STATIC_ASSERT || FMT_HAS_FEATURE(cxx_static_assert) || \
-  FMT_GCC_VERSION >= 403 || _MSC_VER >= 1600
-# define FMT_STATIC_ASSERT(cond, message) static_assert(cond, message)
-#else
-# define FMT_CONCAT_(a, b) FMT_CONCAT(a, b)
-# define FMT_STATIC_ASSERT(cond, message) \
-  typedef int FMT_CONCAT_(Assert, __LINE__)[(cond) ? 1 : -1] FMT_UNUSED
 #endif
 
 template <typename Context>

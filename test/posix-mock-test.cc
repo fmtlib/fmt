@@ -218,12 +218,6 @@ void write_file(fmt::cstring_view filename, fmt::string_view content) {
   f.print("{}", content);
 }
 
-TEST(UtilTest, StaticAssert) {
-  FMT_STATIC_ASSERT(true, "success");
-  // Static assertion failure is tested in compile-test because it causes
-  // a compile-time error.
-}
-
 TEST(UtilTest, GetPageSize) {
 #ifdef _WIN32
   SYSTEM_INFO si = {};

@@ -144,7 +144,7 @@ long long fmt::File::size() const {
   Stat file_stat = Stat();
   if (FMT_POSIX_CALL(fstat(fd_, &file_stat)) == -1)
     throw system_error(errno, "cannot get file attributes");
-  FMT_STATIC_ASSERT(sizeof(long long) >= sizeof(file_stat.st_size),
+  static_assert(sizeof(long long) >= sizeof(file_stat.st_size),
       "return type of File::size is not large enough");
   return file_stat.st_size;
 #endif
