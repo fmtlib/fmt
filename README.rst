@@ -298,11 +298,12 @@ further details see the `source
 ================= ============= ===========
 Library           Method        Run Time, s
 ================= ============= ===========
-EGLIBC 2.19       printf          1.30
-libstdc++ 4.8.2   std::ostream    1.85
-fmt 1.0           fmt::print      1.42
-tinyformat 2.0.1  tfm::printf     2.25
-Boost Format 1.54 boost::format   9.94
+libc              printf          1.35
+libc++            std::ostream    3.42
+fmt 534bff7       fmt::print      1.56
+tinyformat 2.0.1  tfm::printf     3.73
+Boost Format 1.54 boost::format   8.44
+Folly Format      folly::format   2.54
 ================= ============= ===========
 
 As you can see ``boost::format`` is much slower than the alternative methods; this
@@ -322,19 +323,20 @@ from `format-benchmark <https://github.com/fmtlib/format-benchmark>`_
 tests compile time and code bloat for nontrivial projects.
 It generates 100 translation units and uses ``printf()`` or its alternative
 five times in each to simulate a medium sized project.  The resulting
-executable size and compile time (g++-4.8.1, Ubuntu GNU/Linux 13.10,
-best of three) is shown in the following tables.
+executable size and compile time (Apple LLVM version 8.1.0 (clang-802.0.42),
+macOS Sierra, best of three) is shown in the following tables.
 
 **Optimized build (-O3)**
 
 ============ =============== ==================== ==================
 Method       Compile Time, s Executable size, KiB Stripped size, KiB
 ============ =============== ==================== ==================
-printf                   2.6                   41                 30
-IOStreams               19.4                   92                 70
-fmt                     46.8                   46                 34
-tinyformat              64.6                  418                386
-Boost Format           222.8                  990                923
+printf                   2.3                   29                 26
+IOStreams               26.9                   59                 55
+fmt                     38.0                   37                 34
+tinyformat              42.5                  104                 98
+Boost Format           112.2                  774                751
+Folly Format           152.3                  104                 87
 ============ =============== ==================== ==================
 
 As you can see, fmt has two times less overhead in terms of resulting
@@ -346,14 +348,15 @@ Boost Format has by far the largest overheads.
 ============ =============== ==================== ==================
 Method       Compile Time, s Executable size, KiB Stripped size, KiB
 ============ =============== ==================== ==================
-printf                   2.1                   41                 30
-IOStreams               19.7                   86                 62
-fmt                     47.9                  108                 86
-tinyformat              27.7                  234                190
-Boost Format           122.6                  884                763
+printf                   2.0                   33                 30
+IOStreams               25.4                   56                 52
+fmt                     37.0                   57                 51
+tinyformat              30.2                   88                 82
+Boost Format            54.0                  364                302
+Folly Format           107.1                  438                424
 ============ =============== ==================== ==================
 
-``libc``, ``libstdc++`` and ``libfmt`` are all linked as shared
+``libc``, ``lib(std)c++`` and ``libfmt`` are all linked as shared
 libraries to compare formatting function overhead only. Boost Format
 and tinyformat are header-only libraries so they don't provide any
 linkage options.
