@@ -242,7 +242,6 @@ class printf_arg_formatter : public internal::arg_formatter_base<Char> {
   /** Formats a character. */
   void operator()(Char value) {
     format_specs &fmt_spec = this->spec();
-    basic_writer<Char> &w = this->writer();
     if (fmt_spec.type_ && fmt_spec.type_ != 'c')
       return (*this)(static_cast<int>(value));
     fmt_spec.flags_ = 0;
