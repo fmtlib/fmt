@@ -1233,9 +1233,9 @@ TEST(FormatterTest, FormatStringView) {
 namespace fmt {
 template <>
 struct formatter<Date> {
-  template <typename Range>
-  auto parse(Range format) -> decltype(begin(format)) {
-    return begin(format);
+  template <typename ParseContext>
+  auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
   }
 
   void format(buffer &buf, const Date &d, context &) {

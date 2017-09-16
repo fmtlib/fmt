@@ -17,9 +17,9 @@ namespace fmt {
 
 template <>
 struct formatter<std::tm> {
-  template <typename Range>
-  auto parse(Range format) -> decltype(begin(format)) {
-    auto it = internal::null_terminating_iterator<char>(format);
+  template <typename ParseContext>
+  auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+    auto it = internal::null_terminating_iterator<char>(ctx);
     if (*it == ':')
       ++it;
     auto end = it;

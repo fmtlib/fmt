@@ -351,6 +351,8 @@ class basic_string_view {
   std::size_t size_;
 
  public:
+  using char_type = Char;
+
   basic_string_view() : data_(0), size_(0) {}
 
   /** Constructs a string reference object from a C string and a size. */
@@ -388,6 +390,9 @@ class basic_string_view {
   /** Returns the string size. */
   std::size_t size() const { return size_; }
 
+  const Char *begin() const { return data_; }
+  const Char *end() const { return data_ + size_; }
+
   void remove_prefix(size_t n) {
     data_ += n;
     size_ -= n;
@@ -424,9 +429,6 @@ class basic_string_view {
 
 typedef basic_string_view<char> string_view;
 typedef basic_string_view<wchar_t> wstring_view;
-
-template <typename Char>
-inline const Char *begin(basic_string_view<Char> s) { return s.data(); }
 
 /** A formatting error such as invalid format string. */
 class format_error : public std::runtime_error {
@@ -776,7 +778,7 @@ class null_terminating_iterator {
     : ptr_(ptr), end_(end) {}
 
   explicit null_terminating_iterator(basic_string_view<Char> s)
-    : ptr_(s.data()), end_(s.data() + s.size()) {}
+    : ptr_(s.begin()), end_(s.end()) {}
 
   null_terminating_iterator &operator=(const Char *ptr) {
     assert(ptr <= end_);
@@ -1324,7 +1326,7 @@ class value {
     // `printf_formatter<T>` for `printf`.
     typename Context::template formatter_type<T> f;
     auto it = f.parse(format);
-    format.remove_prefix(it - begin(format));
+    format.remove_prefix(it - format.begin());
     f.format(buffer, *static_cast<const T*>(arg), ctx);
   }
 };
@@ -3230,11 +3232,19 @@ struct dynamic_format_specs : basic_format_specs<Char> {
   arg_ref<Char> precision_ref;
 };
 
-template <typename Char>
-class dynamic_specs_handler: public specs_setter<Char> {
+// Format spec handler that saves references to arguments representing dynamic
+// width and precision to be resolved at formatting time.
+// ParseContext: parsing context representing a sequence of format string
+// characters and an argument counter for automatic indexing.
+template <typename ParseContext>
+class dynamic_specs_handler :
+    public specs_setter<typename ParseContext::char_type> {
  public:
-  dynamic_specs_handler(dynamic_format_specs<Char> &specs)
-    : specs_setter<Char>(specs), specs_(specs) {}
+  using char_type = typename ParseContext::char_type;
+
+  dynamic_specs_handler(
+      dynamic_format_specs<char_type> &specs, ParseContext &ctx)
+    : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
 
   template <typename Id>
   void on_dynamic_width(Id arg_id) {
@@ -3247,7 +3257,7 @@ class dynamic_specs_handler: public specs_setter<Char> {
   }
 
  private:
-  using arg_ref = arg_ref<Char>;
+  using arg_ref = arg_ref<char_type>;
 
   template <typename Id>
   arg_ref make_arg_ref(Id arg_id) {
@@ -3255,10 +3265,12 @@ class dynamic_specs_handler: public specs_setter<Char> {
   }
 
   arg_ref make_arg_ref(auto_id) {
+    // TODO: get next index from context
     return arg_ref(arg_ref::NONE);
   }
 
-  dynamic_format_specs<Char> &specs_;
+  dynamic_format_specs<char_type> &specs_;
+  ParseContext &context_;
 };
 
 template <typename Iterator, typename Handler>
@@ -3417,7 +3429,7 @@ const Char *do_format_arg(basic_buffer<Char> &buffer,
   if (*it == ':') {
     format.remove_prefix(1);
     if (visit(custom_formatter<Char, Context>(buffer, format, ctx), arg))
-      return begin(format);
+      return format.begin();
     specs_checker<specs_handler<Context>>
         handler(specs_handler<Context>(specs, ctx), arg.type());
     it = parse_format_specs(it + 1, handler);
@@ -3466,12 +3478,12 @@ struct formatter<
 
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.
-  template <typename Range>
-  auto parse(Range format) -> decltype(begin(format)) {
-    auto it = internal::null_terminating_iterator<Char>(format);
-    using handler_type = internal::dynamic_specs_handler<Char>;
+  template <typename ParseContext>
+  auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+    auto it = internal::null_terminating_iterator<Char>(ctx);
+    using handler_type = internal::dynamic_specs_handler<ParseContext>;
     internal::specs_checker<handler_type>
-        handler(handler_type(specs_), internal::get_type<T>());
+        handler(handler_type(specs_, ctx), internal::get_type<T>());
     it = parse_format_specs(it, handler);
     return pointer_from(it);
   }
@@ -3495,9 +3507,9 @@ template <typename T, typename Char>
 struct formatter<T, Char,
     typename std::enable_if<internal::format_enum<T>::value>::type>
     : public formatter<int, Char> {
-  template <typename Range>
-  auto parse(Range format) -> decltype(begin(format)) {
-    return begin(format);
+  template <typename ParseContext>
+  auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
   }
 };
 
@@ -3513,11 +3525,11 @@ struct formatter<T, Char,
 //   };
 template <typename Char = char>
 struct dynamic_formatter {
-  template <typename Range>
-  auto parse(Range format) -> decltype(begin(format)) {
-    auto it = internal::null_terminating_iterator<Char>(format);
+  template <typename ParseContext>
+  auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+    auto it = internal::null_terminating_iterator<Char>(ctx);
     // Checks are deferred to formatting time when the argument type is known.
-    internal::dynamic_specs_handler<Char> handler(specs_);
+    internal::dynamic_specs_handler<ParseContext> handler(specs_, ctx);
     it = parse_format_specs(it, handler);
     return pointer_from(it);
   }

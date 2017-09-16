@@ -75,9 +75,9 @@ basic_arg<Context> make_arg(const T &value) {
 namespace fmt {
 template <typename Char>
 struct formatter<Test, Char> {
-  template <typename Range>
-  auto parse(Range format) -> decltype(begin(format)) {
-    return begin(format);
+  template <typename ParseContext>
+  auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
   }
 
   void format(basic_buffer<Char> &b, Test, basic_context<Char> &) {
@@ -436,9 +436,9 @@ struct CustomContext {
 
   template <typename T>
   struct formatter_type {
-    template <typename Range>
-    auto parse(Range range) -> decltype(begin(range)) {
-      return begin(range);
+    template <typename ParseContext>
+    auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+      return ctx.begin();
     }
 
     void format(fmt::buffer &, const T &, CustomContext& ctx) {
