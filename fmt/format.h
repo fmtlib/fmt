@@ -3238,22 +3238,24 @@ class dynamic_specs_handler: public specs_setter<Char> {
 
   template <typename Id>
   void on_dynamic_width(Id arg_id) {
-    set(specs_.width_ref, arg_id);
+    specs_.width_ref = make_arg_ref(arg_id);
   }
 
   template <typename Id>
   void on_dynamic_precision(Id arg_id) {
-    set(specs_.precision_ref, arg_id);
+    specs_.precision_ref = make_arg_ref(arg_id);
   }
 
  private:
+  using arg_ref = arg_ref<Char>;
+
   template <typename Id>
-  void set(arg_ref<Char> &ref, Id arg_id) {
-    ref = arg_ref<Char>(arg_id);
+  arg_ref make_arg_ref(Id arg_id) {
+    return arg_ref(arg_id);
   }
 
-  void set(arg_ref<Char> &ref, auto_id) {
-    ref.kind = arg_ref<Char>::NONE;
+  arg_ref make_arg_ref(auto_id) {
+    return arg_ref(arg_ref::NONE);
   }
 
   dynamic_format_specs<Char> &specs_;
@@ -3291,7 +3293,7 @@ Iterator parse_arg_id(Iterator it, Handler handler) {
 //     format specifiers.
 template <typename Iterator, typename Handler>
 Iterator parse_format_specs(Iterator it, Handler &handler) {
-  typedef typename Iterator::value_type char_type;
+  using char_type = typename Iterator::value_type;
   // Parse fill and alignment.
   if (char_type c = *it) {
     auto p = it + 1;
