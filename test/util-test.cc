@@ -448,8 +448,9 @@ struct CustomContext {
 
   bool called;
 
-  fmt::string_view format() { return ""; }
-  void advance_to(const char *) {}
+  fmt::internal::parse_context<char> get_parse_context() {
+    return fmt::internal::parse_context<char>("");
+  }
 };
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {
@@ -457,8 +458,7 @@ TEST(UtilTest, MakeValueWithCustomFormatter) {
   fmt::internal::value<CustomContext> arg(t);
   CustomContext ctx = {false};
   fmt::memory_buffer buffer;
-  fmt::string_view format_str;
-  arg.custom.format(buffer, &t, format_str, &ctx);
+  arg.custom.format(buffer, &t, &ctx);
   EXPECT_TRUE(ctx.called);
 }
 
@@ -602,9 +602,8 @@ TEST(UtilTest, CustomArg) {
         testing::Invoke([&](fmt::internal::custom_value<char> custom) {
     EXPECT_EQ(&test, custom.value);
     fmt::memory_buffer buffer;
-    fmt::context ctx((fmt::args()));
-    fmt::string_view format_str;
-    custom.format(buffer, &test, format_str, &ctx);
+    fmt::context ctx("", fmt::args());
+    custom.format(buffer, &test, &ctx);
     EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
     return Visitor::Result();
   }));

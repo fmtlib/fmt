@@ -269,11 +269,10 @@ class printf_arg_formatter : public internal::arg_formatter_base<Char> {
 
   /** Formats an argument of a custom (user-defined) type. */
   void operator()(internal::custom_value<Char> c) {
-    const Char format_str_data[] = {'}', '\0'};
-    basic_string_view<Char> format_str = format_str_data;
+    const Char format_str[] = {'}', '\0'};
     auto args = basic_args<basic_context<Char>>();
-    basic_context<Char> ctx(args);
-    c.format(this->writer().buffer(), c.value, format_str, &ctx);
+    basic_context<Char> ctx(basic_string_view<Char>(format_str), args);
+    c.format(this->writer().buffer(), c.value, &ctx);
   }
 };
 
@@ -283,9 +282,8 @@ class printf_context;
 
 template <typename T, typename Char = char>
 struct printf_formatter {
-  const Char *parse(basic_string_view<Char> s) {
-    return s.data();
-  }
+  template <typename ParseContext>
+  const Char *parse(ParseContext& ctx) { return ctx.begin(); }
 
   void format(basic_buffer<Char> &buf, const T &value, printf_context<Char> &) {
     internal::format_value(buf, value);
@@ -329,11 +327,14 @@ class printf_context :
    appropriate lifetimes.
    \endrst
    */
-  explicit printf_context(basic_args<printf_context> args): Base(args) {}
+  printf_context(
+      basic_string_view<Char> format_str, basic_args<printf_context> args)
+    : Base(format_str, args) {}
+
+  using Base::get_parse_context;
 
   /** Formats stored arguments and writes the output to the buffer. */
-  FMT_API void format(
-      basic_string_view<Char> format_str, basic_buffer<Char> &buffer);
+  FMT_API void format(basic_buffer<Char> &buffer);
 };
 
 template <typename Char, typename AF>
@@ -415,9 +416,9 @@ unsigned printf_context<Char, AF>::parse_header(
 }
 
 template <typename Char, typename AF>
-void printf_context<Char, AF>::format(
-    basic_string_view<Char> format_str, basic_buffer<Char> &buffer) {
-  auto start = iterator(format_str);
+void printf_context<Char, AF>::format(basic_buffer<Char> &buffer) {
+  Base &base = *this;
+  auto start = iterator(base);
   auto it = start;
   using internal::pointer_from;
   while (*it) {
@@ -519,7 +520,7 @@ void printf_context<Char, AF>::format(
 template <typename Char>
 void printf(basic_buffer<Char> &buf, basic_string_view<Char> format,
             basic_args<printf_context<Char>> args) {
-  printf_context<Char>(args).format(format, buf);
+  printf_context<Char>(format, args).format(buf);
 }
 
 typedef basic_args<printf_context<char>> printf_args;

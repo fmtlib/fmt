@@ -777,8 +777,9 @@ class null_terminating_iterator {
   null_terminating_iterator(const Char *ptr, const Char *end)
     : ptr_(ptr), end_(end) {}
 
-  explicit null_terminating_iterator(basic_string_view<Char> s)
-    : ptr_(s.begin()), end_(s.end()) {}
+  template <typename Range>
+  explicit null_terminating_iterator(const Range &r)
+    : ptr_(r.begin()), end_(r.end()) {}
 
   null_terminating_iterator &operator=(const Char *ptr) {
     assert(ptr <= end_);
@@ -1102,8 +1103,7 @@ struct string_value {
 template <typename Char>
 struct custom_value {
   typedef void (*FormatFunc)(
-      basic_buffer<Char> &buffer, const void *arg,
-      basic_string_view<Char>& format, void *ctx);
+      basic_buffer<Char> &buffer, const void *arg, void *ctx);
 
   const void *value;
   FormatFunc format;
@@ -1318,15 +1318,14 @@ class value {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   static void format_custom_arg(
-      basic_buffer<char_type> &buffer, const void *arg,
-      basic_string_view<char_type> &format, void *context) {
+      basic_buffer<char_type> &buffer, const void *arg, void *context) {
     Context &ctx = *static_cast<Context*>(context);
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
     typename Context::template formatter_type<T> f;
-    auto it = f.parse(format);
-    format.remove_prefix(it - format.begin());
+    auto &&parse_ctx = ctx.get_parse_context();
+    parse_ctx.advance_to(f.parse(parse_ctx));
     f.format(buffer, *static_cast<const T*>(arg), ctx);
   }
 };
@@ -1876,8 +1875,27 @@ class arg_formatter_base {
   }
 };
 
+template <typename Char>
+class parse_context {
+ private:
+  basic_string_view<Char> format_str_;
+
+ public:
+  using char_type = Char;
+
+  explicit parse_context(basic_string_view<Char> format_str)
+    : format_str_(format_str) {}
+
+  const Char *begin() const { return format_str_.begin(); }
+  const Char *end() const { return format_str_.end(); }
+
+  void advance_to(const Char *p) {
+    format_str_.remove_prefix(p - begin());
+  }
+};
+
 template <typename Char, typename Context>
-class context_base {
+class context_base : public parse_context<Char>{
  private:
   basic_args<Context> args_;
   int next_arg_index_;
@@ -1885,8 +1903,8 @@ class context_base {
  protected:
   typedef basic_arg<Context> format_arg;
 
-  explicit context_base(basic_args<Context> args)
-  : args_(args), next_arg_index_(0) {}
+  context_base(basic_string_view<Char> format_str, basic_args<Context> args)
+  : parse_context<Char>(format_str), args_(args), next_arg_index_(0) {}
   ~context_base() {}
 
   basic_args<Context> args() const { return args_; }
@@ -1922,6 +1940,9 @@ class context_base {
     next_arg_index_ = -1;
     return true;
   }
+
+ public:
+  parse_context<Char> &get_parse_context() { return *this; }
 };
 }  // namespace internal
 
@@ -1952,8 +1973,7 @@ class arg_formatter : public internal::arg_formatter_base<Char> {
 
   /** Formats an argument of a custom (user-defined) type. */
   void operator()(internal::custom_value<Char> c) {
-    basic_string_view<Char> format_str;
-    c.format(this->writer().buffer(), c.value, format_str, &ctx_);
+    c.format(this->writer().buffer(), c.value, &ctx_);
   }
 };
 
@@ -1984,7 +2004,9 @@ class basic_context :
    stored in the object so make sure they have appropriate lifetimes.
    \endrst
    */
-  basic_context(basic_args<basic_context> args): Base(args) {}
+  basic_context(
+      basic_string_view<Char> format_str, basic_args<basic_context> args)
+    : Base(format_str, args) {}
 
   format_arg next_arg() {
     const char *error = 0;
@@ -3001,16 +3023,14 @@ template <typename Char, typename Context>
 class custom_formatter {
  private:
   basic_buffer<Char> &buffer_;
-  basic_string_view<Char> &format_;
   Context &ctx_;
 
  public:
-  custom_formatter(basic_buffer<Char> &buffer, basic_string_view<Char> &format,
-                   Context &ctx)
-  : buffer_(buffer), format_(format), ctx_(ctx) {}
+  custom_formatter(basic_buffer<Char> &buffer,Context &ctx)
+  : buffer_(buffer), ctx_(ctx) {}
 
   bool operator()(internal::custom_value<Char> custom) {
-    custom.format(buffer_, custom.value, format_, &ctx_);
+    custom.format(buffer_, custom.value, &ctx_);
     return true;
   }
 
@@ -3257,16 +3277,16 @@ class dynamic_specs_handler :
   }
 
  private:
-  using arg_ref = arg_ref<char_type>;
+  using arg_ref_type = arg_ref<char_type>;
 
   template <typename Id>
-  arg_ref make_arg_ref(Id arg_id) {
-    return arg_ref(arg_id);
+  arg_ref_type make_arg_ref(Id arg_id) {
+    return arg_ref_type(arg_id);
   }
 
-  arg_ref make_arg_ref(auto_id) {
+  arg_ref_type make_arg_ref(auto_id) {
     // TODO: get next index from context
-    return arg_ref(arg_ref::NONE);
+    return arg_ref_type(arg_ref_type::NONE);
   }
 
   dynamic_format_specs<char_type> &specs_;
@@ -3422,17 +3442,16 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
 template <typename ArgFormatter, typename Char, typename Context>
 const Char *do_format_arg(basic_buffer<Char> &buffer,
                           const basic_arg<Context> &arg,
-                          basic_string_view<Char> format,
                           Context &ctx) {
-  auto it = null_terminating_iterator<Char>(format);
+  auto it = null_terminating_iterator<Char>(ctx);
   basic_format_specs<Char> specs;
   if (*it == ':') {
-    format.remove_prefix(1);
-    if (visit(custom_formatter<Char, Context>(buffer, format, ctx), arg))
-      return format.begin();
+    ctx.advance_to(pointer_from(++it));
+    if (visit(custom_formatter<Char, Context>(buffer, ctx), arg))
+      return ctx.begin();
     specs_checker<specs_handler<Context>>
         handler(specs_handler<Context>(specs, ctx), arg.type());
-    it = parse_format_specs(it + 1, handler);
+    it = parse_format_specs(it, handler);
   }
 
   if (*it != '}')
@@ -3595,8 +3614,8 @@ inline typename basic_context<Char>::format_arg
 template <typename ArgFormatter, typename Char, typename Context>
 void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
                 basic_args<Context> args) {
-  basic_context<Char> ctx(args);
-  auto start = internal::null_terminating_iterator<Char>(format_str);
+  basic_context<Char> ctx(format_str, args);
+  auto start = internal::null_terminating_iterator<Char>(ctx);
   auto it = start;
   using internal::pointer_from;
   while (*it) {
@@ -3626,8 +3645,8 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
     } handler(ctx, arg);
 
     it = parse_arg_id(it, handler);
-    format_str.remove_prefix(pointer_from(it) - format_str.data());
-    it = internal::do_format_arg<ArgFormatter>(buffer, arg, format_str, ctx);
+    ctx.advance_to(pointer_from(it));
+    it = internal::do_format_arg<ArgFormatter>(buffer, arg, ctx);
     if (*it != '}')
       FMT_THROW(format_error(fmt::format("unknown format specifier")));
     start = ++it;
