@@ -151,16 +151,31 @@ TEST(StringRefTest, Ctor) {
 
   EXPECT_STREQ("defg", StringRef(std::string("defg")).data());
   EXPECT_EQ(4u, StringRef(std::string("defg")).size());
+
+#if FMT_HAS_STRING_VIEW
+  EXPECT_STREQ("hijk", StringRef(std::string_view("hijk")).data());
+  EXPECT_EQ(4u, StringRef(std::string_view("hijk")).size());
+#endif
 }
 
 TEST(StringRefTest, ConvertToString) {
   std::string s = StringRef("abc").to_string();
   EXPECT_EQ("abc", s);
+
+#if FMT_HAS_STRING_VIEW
+  StringRef str_ref("defg");
+  std::string_view sv = static_cast<std::string_view>(str_ref);
+  EXPECT_EQ("defg", sv);
+#endif
 }
 
 TEST(CStringRefTest, Ctor) {
   EXPECT_STREQ("abc", CStringRef("abc").c_str());
   EXPECT_STREQ("defg", CStringRef(std::string("defg")).c_str());
+
+#if FMT_HAS_STRING_VIEW
+  EXPECT_STREQ("hijk", CStringRef(std::string_view("hijk")).c_str());
+#endif
 }
 
 #if FMT_USE_TYPE_TRAITS
@@ -1377,6 +1392,12 @@ TEST(FormatterTest, FormatStringRef) {
 TEST(FormatterTest, FormatCStringRef) {
   EXPECT_EQ("test", format("{0}", CStringRef("test")));
 }
+
+#if FMT_HAS_STRING_VIEW
+TEST(FormatterTest, FormatStringView) {
+  EXPECT_EQ("test", format("{0}", std::string_view("test")));
+}
+#endif
 
 void format_arg(fmt::BasicFormatter<char> &f, const char *, const Date &d) {
   f.writer() << d.year() << '-' << d.month() << '-' << d.day();
