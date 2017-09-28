@@ -1561,6 +1561,7 @@ TEST(FormatTest, DynamicFormatter) {
   auto str = variant("foo");
   EXPECT_EQ("42", format("{:d}", num));
   EXPECT_EQ("foo", format("{:s}", str));
+  EXPECT_EQ(" 42 foo ", format("{:{}} {:{}}", num, 3, str, 4));
   EXPECT_THROW_MSG(format("{:=}", str),
       format_error, "format specifier '=' requires numeric argument");
   EXPECT_THROW_MSG(format("{:+}", str),

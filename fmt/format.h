@@ -1875,36 +1875,70 @@ class arg_formatter_base {
   }
 };
 
+// Parsing context representing a format string range being parsed and an
+// argument counter for automatic indexing.
 template <typename Char>
 class parse_context {
  private:
   basic_string_view<Char> format_str_;
+  int next_arg_index_;
+
+ protected:
+  bool check_no_auto_index(const char *&error) {
+    if (next_arg_index_ > 0) {
+      error = "cannot switch from automatic to manual argument indexing";
+      return false;
+    }
+    next_arg_index_ = -1;
+    return true;
+  }
 
  public:
   using char_type = Char;
+  using iterator = const Char*;
 
   explicit parse_context(basic_string_view<Char> format_str)
-    : format_str_(format_str) {}
+    : format_str_(format_str), next_arg_index_(0) {}
 
-  const Char *begin() const { return format_str_.begin(); }
-  const Char *end() const { return format_str_.end(); }
+  // Returns an iterator to the beginning of the format string range being
+  // parsed.
+  iterator begin() const { return format_str_.begin(); }
 
-  void advance_to(const Char *p) {
-    format_str_.remove_prefix(p - begin());
+  // Returns an iterator past the end of the format string range being parsed.
+  iterator end() const { return format_str_.end(); }
+
+  // Advances the begin iterator to ``it``.
+  void advance_to(iterator it) {
+    format_str_.remove_prefix(it - begin());
   }
+
+  // Returns the next argument index.
+  unsigned next_arg_index(const char *&error) {
+    if (next_arg_index_ >= 0)
+      return internal::to_unsigned(next_arg_index_++);
+    error = "cannot switch from manual to automatic argument indexing";
+    return 0;
+  }
+
+  void check_arg_id(unsigned index) {
+    const char *error = 0;
+    if (!check_no_auto_index(error))
+      FMT_THROW(format_error(error));
+  }
+
+  void check_arg_id(basic_string_view<Char>) {}
 };
 
 template <typename Char, typename Context>
 class context_base : public parse_context<Char>{
  private:
   basic_args<Context> args_;
-  int next_arg_index_;
 
  protected:
   typedef basic_arg<Context> format_arg;
 
   context_base(basic_string_view<Char> format_str, basic_args<Context> args)
-  : parse_context<Char>(format_str), args_(args), next_arg_index_(0) {}
+  : parse_context<Char>(format_str), args_(args) {}
   ~context_base() {}
 
   basic_args<Context> args() const { return args_; }
@@ -1922,23 +1956,6 @@ class context_base : public parse_context<Char>{
   format_arg get_arg(unsigned arg_index, const char *&error) {
     return this->check_no_auto_index(error) ?
       this->do_get_arg(arg_index, error) : format_arg();
-  }
-
-  // Returns the next argument index.
-  unsigned next_arg_index(const char *&error) {
-    if (next_arg_index_ >= 0)
-      return internal::to_unsigned(next_arg_index_++);
-    error = "cannot switch from manual to automatic argument indexing";
-    return 0;
-  }
-
-  bool check_no_auto_index(const char *&error) {
-    if (next_arg_index_ > 0) {
-      error = "cannot switch from automatic to manual argument indexing";
-      return false;
-    }
-    next_arg_index_ = -1;
-    return true;
   }
 
  public:
@@ -2018,7 +2035,6 @@ class basic_context :
 
   format_arg get_arg(unsigned arg_index) {
     const char *error = 0;
-    this->check_no_auto_index(error);
     format_arg arg = this->do_get_arg(arg_index, error);
     if (error)
       FMT_THROW(format_error(error));
@@ -3221,6 +3237,7 @@ class specs_handler: public specs_setter<typename Context::char_type> {
 
   template <typename Id>
   basic_arg<Context> get_arg(Id arg_id) {
+    context_.check_arg_id(arg_id);
     return context_.get_arg(arg_id);
   }
 
@@ -3254,8 +3271,6 @@ struct dynamic_format_specs : basic_format_specs<Char> {
 
 // Format spec handler that saves references to arguments representing dynamic
 // width and precision to be resolved at formatting time.
-// ParseContext: parsing context representing a sequence of format string
-// characters and an argument counter for automatic indexing.
 template <typename ParseContext>
 class dynamic_specs_handler :
     public specs_setter<typename ParseContext::char_type> {
@@ -3285,8 +3300,11 @@ class dynamic_specs_handler :
   }
 
   arg_ref_type make_arg_ref(auto_id) {
-    // TODO: get next index from context
-    return arg_ref_type(arg_ref_type::NONE);
+    const char *error = 0;
+    auto index = context_.next_arg_index(error);
+    if (error)
+      FMT_THROW(format_error(error));
+    return arg_ref_type(index);
   }
 
   dynamic_format_specs<char_type> &specs_;
@@ -3477,7 +3495,6 @@ static void handle_dynamic_spec(
     Spec &value, arg_ref<Char> ref, basic_context<Char> &ctx) {
   switch (ref.kind) {
   case arg_ref<Char>::NONE:
-    // Do nothing.
     break;
   case arg_ref<Char>::INDEX:
     internal::set_dynamic_spec<Handler>(value, ctx.get_arg(ref.index));
@@ -3485,7 +3502,6 @@ static void handle_dynamic_spec(
   case arg_ref<Char>::NAME:
     internal::set_dynamic_spec<Handler>(value, ctx.get_arg(ref.name));
     break;
-  // TODO: handle automatic numbering
   }
 }
 }  // namespace internal
@@ -3635,7 +3651,10 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
       id_handler(Context &c, basic_arg<Context> &a): context(c), arg(a) {}
 
       void operator()() { arg = context.next_arg(); }
-      void operator()(unsigned id) { arg = context.get_arg(id); }
+      void operator()(unsigned id) {
+        context.check_arg_id(id);
+        arg = context.get_arg(id);
+      }
       void operator()(basic_string_view<Char> id) {
         arg = context.get_arg(id);
       }
