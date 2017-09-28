@@ -2323,7 +2323,8 @@ struct ArgArray;
 
 template <std::size_t N>
 struct ArgArray<N, true/*IsPacked*/> {
-  typedef Value Type[N > 0 ? N : 1];
+  // '+' is used to silence GCC -Wduplicated-branches warning.
+  typedef Value Type[N > 0 ? N : +1];
 
   template <typename Formatter, typename T>
   static Value make(const T &value) {
