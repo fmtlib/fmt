@@ -3296,6 +3296,7 @@ class dynamic_specs_handler :
 
   template <typename Id>
   arg_ref_type make_arg_ref(Id arg_id) {
+    context_.check_arg_id(arg_id);
     return arg_ref_type(arg_id);
   }
 
