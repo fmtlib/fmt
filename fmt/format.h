@@ -769,8 +769,11 @@ const Char *pointer_from(null_terminating_iterator<Char> it);
 template <typename Char>
 class null_terminating_iterator {
  public:
-  typedef Char value_type;
-  typedef std::ptrdiff_t difference_type;
+  using difference_type = std::ptrdiff_t;
+  using value_type = Char;
+  using pointer = const Char*;
+  using reference = const Char&;
+  using iterator_category = std::random_access_iterator_tag;
 
   null_terminating_iterator() : ptr_(0), end_(0) {}
 
@@ -3314,7 +3317,7 @@ class dynamic_specs_handler :
 
 template <typename Iterator, typename Handler>
 Iterator parse_arg_id(Iterator it, Handler handler) {
-  typedef typename Iterator::value_type char_type;
+  using char_type = typename std::iterator_traits<Iterator>::value_type;
   char_type c = *it;
   if (c == '}' || c == ':') {
     handler();
