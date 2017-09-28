@@ -23,7 +23,7 @@ option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 option(FMT_DOC "Generate the doc target." ${MASTER_PROJECT})
 option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
-option(FMT_USE_CPP11 "Enable the addition of C++11 compiler flags." ON)
+option(FMT_USE_CPP14 "Enable the addition of C++14 compiler flags." ON)
 
 project(FMT)
 
@@ -43,7 +43,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/support/cmake")
 
-include(cxx11)
+include(cxx14)
 
 if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
   set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wshadow -pedantic)

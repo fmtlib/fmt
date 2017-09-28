@@ -7,7 +7,7 @@
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
 add_library(gmock STATIC
   gmock-gtest-all.cc gmock/gmock.h gtest/gtest.h gtest/gtest-spi.h)
-target_compile_options(gmock PUBLIC ${CPP11_FLAG})
+target_compile_options(gmock PUBLIC ${CPP14_FLAG})
 target_compile_definitions(gmock PUBLIC GTEST_HAS_STD_WSTRING=1)
 target_include_directories(gmock PUBLIC .)
 
@@ -120,7 +120,7 @@ endif ()
 check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
 if (HAVE_FNO_EXCEPTIONS_FLAG)
   add_library(noexception-test ../fmt/format.cc)
-  target_compile_options(noexception-test PUBLIC ${CPP11_FLAG})
+  target_compile_options(noexception-test PUBLIC ${CPP14_FLAG})
   target_include_directories(noexception-test PRIVATE ${PROJECT_SOURCE_DIR})
   target_compile_options(noexception-test PRIVATE -fno-exceptions)
 endif ()
@@ -129,7 +129,7 @@ if (FMT_PEDANTIC)
   # Test that the library compiles without windows.h.
   if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(no-windows-h-test ../fmt/format.cc)
-    target_compile_options(no-windows-h-test PUBLIC ${CPP11_FLAG})
+    target_compile_options(no-windows-h-test PUBLIC ${CPP14_FLAG})
     target_include_directories(no-windows-h-test PRIVATE ${PROJECT_SOURCE_DIR})
     target_compile_definitions(no-windows-h-test PRIVATE FMT_USE_WINDOWS_H=0)
   endif ()
@@ -142,7 +142,7 @@ if (FMT_PEDANTIC)
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
     --build-options 
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-    "-DCPP11_FLAG=${CPP11_FLAG}"
+    "-DCPP14_FLAG=${CPP14_FLAG}"
     "-DSUPPORTS_USER_DEFINED_LITERALS=${SUPPORTS_USER_DEFINED_LITERALS}")
 
   # test if the targets are findable from the build directory
@@ -155,7 +155,7 @@ if (FMT_PEDANTIC)
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-    "-DCPP11_FLAG=${CPP11_FLAG}"
+    "-DCPP14_FLAG=${CPP14_FLAG}"
     "-DFMT_DIR=${PROJECT_BINARY_DIR}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
@@ -169,6 +169,6 @@ if (FMT_PEDANTIC)
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-    "-DCPP11_FLAG=${CPP11_FLAG}"
+    "-DCPP14_FLAG=${CPP14_FLAG}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()
