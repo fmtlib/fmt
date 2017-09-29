@@ -353,10 +353,11 @@ class basic_string_view {
  public:
   using char_type = Char;
 
-  basic_string_view() : data_(0), size_(0) {}
+  constexpr basic_string_view() noexcept : data_(0), size_(0) {}
 
   /** Constructs a string reference object from a C string and a size. */
-  basic_string_view(const Char *s, std::size_t size) : data_(s), size_(size) {}
+  constexpr basic_string_view(const Char *s, std::size_t size) noexcept
+    : data_(s), size_(size) {}
 
   /**
     \rst
@@ -364,7 +365,7 @@ class basic_string_view {
     the size with ``std::char_traits<Char>::length``.
     \endrst
    */
-  basic_string_view(const Char *s)
+  constexpr basic_string_view(const Char *s)
     : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
   /**
@@ -372,7 +373,7 @@ class basic_string_view {
     Constructs a string reference from an ``std::string`` object.
     \endrst
    */
-  basic_string_view(const std::basic_string<Char> &s)
+  constexpr basic_string_view(const std::basic_string<Char> &s) noexcept
   : data_(s.c_str()), size_(s.size()) {}
 
   /**
