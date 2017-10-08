@@ -51,7 +51,8 @@
 # define FMT_HAS_INCLUDE(x) 0
 #endif
 
-#if FMT_HAS_INCLUDE(<string_view>) && __cplusplus > 201402L
+#if (FMT_HAS_INCLUDE(<string_view>) && __cplusplus > 201402L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 # include <string_view>
 # define FMT_HAS_STRING_VIEW 1
 #else
@@ -658,7 +659,7 @@ class FormatError : public std::runtime_error {
   explicit FormatError(CStringRef message)
   : std::runtime_error(message.c_str()) {}
   FormatError(const FormatError &ferr) : std::runtime_error(ferr) {}
-  FMT_API ~FormatError() FMT_DTOR_NOEXCEPT;
+  FMT_API ~FormatError() FMT_DTOR_NOEXCEPT FMT_OVERRIDE;
 };
 
 namespace internal {
@@ -803,7 +804,7 @@ class MemoryBuffer : private Allocator, public Buffer<T> {
  public:
   explicit MemoryBuffer(const Allocator &alloc = Allocator())
       : Allocator(alloc), Buffer<T>(data_, SIZE) {}
-  ~MemoryBuffer() { deallocate(); }
+  ~MemoryBuffer() FMT_OVERRIDE { deallocate(); }
 
 #if FMT_USE_RVALUE_REFERENCES
  private:
@@ -1505,7 +1506,7 @@ class RuntimeError : public std::runtime_error {
  protected:
   RuntimeError() : std::runtime_error("") {}
   RuntimeError(const RuntimeError &rerr) : std::runtime_error(rerr) {}
-  FMT_API ~RuntimeError() FMT_DTOR_NOEXCEPT;
+  FMT_API ~RuntimeError() FMT_DTOR_NOEXCEPT FMT_OVERRIDE;
 };
 
 template <typename Char>
@@ -2514,7 +2515,7 @@ class SystemError : public internal::RuntimeError {
   FMT_DEFAULTED_COPY_CTOR(SystemError)
   FMT_VARIADIC_CTOR(SystemError, init, int, CStringRef)
 
-  FMT_API ~SystemError() FMT_DTOR_NOEXCEPT;
+  FMT_API ~SystemError() FMT_DTOR_NOEXCEPT FMT_OVERRIDE;
 
   int error_code() const { return error_code_; }
 };
