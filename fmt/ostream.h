@@ -80,6 +80,7 @@ void format_arg(BasicFormatter<Char, ArgFormatter_> &f,
 
   internal::FormatBuf<Char> format_buf(buffer);
   std::basic_ostream<Char> output(&format_buf);
+  output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
   output << value;
 
   BasicStringRef<Char> str(&buffer[0], buffer.size());
