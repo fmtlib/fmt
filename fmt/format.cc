@@ -72,9 +72,11 @@
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
+FMT_MAYBE_UNUSED
 static inline fmt::internal::Null<> strerror_r(int, char *, ...) {
   return fmt::internal::Null<>();
 }
+FMT_MAYBE_UNUSED
 static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
   return fmt::internal::Null<>();
 }
@@ -159,6 +161,11 @@ int safe_strerror(
             ERANGE : result;
     }
 
+#ifdef __c2__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
     // Fallback to strerror if strerror_r and strerror_s are not available.
     int fallback(internal::Null<>) {
       errno = 0;
@@ -166,13 +173,15 @@ int safe_strerror(
       return errno;
     }
 
+#ifdef __c2__
+# pragma clang diagnostic pop
+#endif
+
    public:
     StrError(int err_code, char *&buf, std::size_t buf_size)
       : error_code_(err_code), buffer_(buf), buffer_size_(buf_size) {}
 
     int run() {
-      // Suppress a warning about unused strerror_r.
-      strerror_r(0, FMT_NULL, "");
       return handle(strerror_r(error_code_, buffer_, buffer_size_));
     }
   };
