@@ -70,6 +70,11 @@
 # pragma warning(disable: 4996)
 #endif
 
+#ifdef __c2__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
 static inline fmt::internal::Null<> strerror_r(int, char *, ...) {
@@ -78,6 +83,10 @@ static inline fmt::internal::Null<> strerror_r(int, char *, ...) {
 static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
   return fmt::internal::Null<>();
 }
+
+#ifdef __c2__
+# pragma clang diagnostic pop
+#endif
 
 namespace fmt {
 
@@ -159,12 +168,21 @@ int safe_strerror(
             ERANGE : result;
     }
 
+#ifdef __c2__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
     // Fallback to strerror if strerror_r and strerror_s are not available.
     int fallback(internal::Null<>) {
       errno = 0;
       buffer_ = strerror(error_code_);
       return errno;
     }
+
+#ifdef __c2__
+# pragma clang diagnostic pop
+#endif
 
    public:
     StrError(int err_code, char *&buf, std::size_t buf_size)
