@@ -1681,6 +1681,14 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
+#if __cplusplus >= 201103L
+enum TestFixedEnum : short { B };
+
+TEST(FormatTest, FixedEnum) {
+  EXPECT_EQ("0", fmt::format("{}", B));
+}
+#endif
+
 class MockArgFormatter :
     public fmt::internal::ArgFormatterBase<MockArgFormatter, char> {
  public:

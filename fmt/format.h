@@ -1405,6 +1405,20 @@ class MakeValue : public Arg {
   FMT_MAKE_VALUE(unsigned char, uint_value, UINT)
   FMT_MAKE_VALUE(char, int_value, CHAR)
 
+#if __cplusplus >= 201103L
+  template <
+    typename T,
+    typename = typename std::enable_if<
+      std::is_enum<T>::value && ConvertToInt<T>::value>::type>
+   MakeValue(T value) { int_value = value; }
+
+  template <
+    typename T,
+    typename = typename std::enable_if<
+      std::is_enum<T>::value && ConvertToInt<T>::value>::type>
+  static uint64_t type(T value) { return Arg::INT; }
+#endif
+
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
   MakeValue(typename WCharHelper<wchar_t, Char>::Supported value) {
     int_value = value;
