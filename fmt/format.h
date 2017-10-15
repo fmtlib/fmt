@@ -153,6 +153,23 @@ typedef __int64          intmax_t;
 # define FMT_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
+#if FMT_HAS_CPP_ATTRIBUTE(maybe_unused)
+# define FMT_HAS_CXX17_ATTRIBUTE_MAYBE_UNUSED
+// VC++ 1910 support /std: option and that will set _MSVC_LANG macro
+// Clang with Microsoft CodeGen doesn't define _MSVC_LANG macro
+#elif defined(_MSVC_LANG) && _MSVC_LANG > 201402
+# define FMT_HAS_CXX17_ATTRIBUTE_MAYBE_UNUSED
+#endif
+
+#ifdef FMT_HAS_CXX17_ATTRIBUTE_MAYBE_UNUSED
+# define FMT_MAYBE_UNUSED [[maybe_unused]]
+// g++/clang++ also support [[gnu::unused]]. However, we don't use it.
+#elif defined(__GNUC__)
+# define FMT_MAYBE_UNUSED __attribute__((unused))
+#else
+#define FMT_MAYBE_UNUSED
+#endif
+
 // Use the compiler's attribute noreturn
 #if defined(__MINGW32__) || defined(__MINGW64__)
 # define FMT_NORETURN __attribute__((noreturn))

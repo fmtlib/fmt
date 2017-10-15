@@ -72,10 +72,10 @@
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
-static inline fmt::internal::Null<> strerror_r(int, char *, ...) {
+FMT_MAYBE_UNUSED static inline fmt::internal::Null<> strerror_r(int, char *, ...) {
   return fmt::internal::Null<>();
 }
-static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
+FMT_MAYBE_UNUSED static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
   return fmt::internal::Null<>();
 }
 
@@ -180,9 +180,6 @@ int safe_strerror(
       : error_code_(err_code), buffer_(buf), buffer_size_(buf_size) {}
 
     int run() {
-      // Suppress a warning about unused strerror_r and strerror_s.
-      strerror_r(0, FMT_NULL, "");
-      strerror_s(FMT_NULL, 0, "");
       return handle(strerror_r(error_code_, buffer_, buffer_size_));
     }
   };
