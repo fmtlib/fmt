@@ -365,7 +365,7 @@ class basic_string_view {
     the size with ``std::char_traits<Char>::length``.
     \endrst
    */
-  constexpr basic_string_view(const Char *s)
+  basic_string_view(const Char *s)
     : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
   /**
@@ -389,7 +389,7 @@ class basic_string_view {
   const Char *data() const { return data_; }
 
   /** Returns the string size. */
-  std::size_t size() const { return size_; }
+  constexpr std::size_t size() const { return size_; }
 
   const Char *begin() const { return data_; }
   const Char *end() const { return data_ + size_; }
@@ -762,7 +762,7 @@ template <typename Char>
 class null_terminating_iterator;
 
 template <typename Char>
-const Char *pointer_from(null_terminating_iterator<Char> it);
+constexpr const Char *pointer_from(null_terminating_iterator<Char> it);
 
 // An iterator that produces a null terminator on *end. This simplifies parsing
 // and allows comparing the performance of processing a null-terminated string
@@ -840,10 +840,10 @@ class null_terminating_iterator {
 };
 
 template <typename T>
-const T *pointer_from(const T *p) { return p; }
+constexpr const T *pointer_from(const T *p) { return p; }
 
 template <typename Char>
-const Char *pointer_from(null_terminating_iterator<Char> it) {
+constexpr const Char *pointer_from(null_terminating_iterator<Char> it) {
   return it.ptr_;
 }
 
@@ -3012,7 +3012,7 @@ void arg(wstring_view, const internal::named_arg<Context>&)
 namespace fmt {
 namespace internal {
 template <typename Char>
-inline bool is_name_start(Char c) {
+constexpr bool is_name_start(Char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
 }
 
@@ -3020,7 +3020,7 @@ inline bool is_name_start(Char c) {
 // This function assumes that the first character of it is a digit and a
 // presence of a non-digit character at the end.
 template <typename Iterator>
-unsigned parse_nonnegative_int(Iterator &it) {
+constexpr unsigned parse_nonnegative_int(Iterator &it) {
   assert('0' <= *it && *it <= '9');
   unsigned value = 0;
   do {
@@ -3316,8 +3316,14 @@ class dynamic_specs_handler :
   ParseContext &context_;
 };
 
+struct error_handler {
+  void on_error(const char *message) {
+    FMT_THROW(format_error(message));
+  }
+};
+
 template <typename Iterator, typename Handler>
-Iterator parse_arg_id(Iterator it, Handler handler) {
+constexpr Iterator parse_arg_id(Iterator it, Handler& handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
   char_type c = *it;
   if (c == '}' || c == ':') {
@@ -3326,13 +3332,17 @@ Iterator parse_arg_id(Iterator it, Handler handler) {
   }
   if (c >= '0' && c <= '9') {
     unsigned index = parse_nonnegative_int(it);
-    if (*it != '}' && *it != ':')
-      FMT_THROW(format_error("invalid format string"));
+    if (*it != '}' && *it != ':') {
+      handler.on_error("invalid format string");
+      return it;
+    }
     handler(index);
     return it;
   }
-  if (!is_name_start(c))
-    FMT_THROW(format_error("invalid format string"));
+  if (!is_name_start(c)) {
+    handler.on_error("invalid format string");
+    return it;
+  }
   auto start = it;
   do {
     c = *++it;
@@ -3413,7 +3423,7 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
   if ('0' <= *it && *it <= '9') {
     handler.on_width(parse_nonnegative_int(it));
   } else if (*it == '{') {
-    struct width_handler {
+    struct width_handler : error_handler {
       explicit width_handler(Handler &h) : handler(h) {}
 
       void operator()() { handler.on_dynamic_width(auto_id()); }
@@ -3423,8 +3433,8 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
       }
 
       Handler &handler;
-    };
-    it = parse_arg_id(it + 1, width_handler(handler));
+    } wh(handler);
+    it = parse_arg_id(it + 1, wh);
     if (*it++ != '}')
       FMT_THROW(format_error("invalid format string"));
   }
@@ -3435,7 +3445,7 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
     if ('0' <= *it && *it <= '9') {
       handler.on_precision(parse_nonnegative_int(it));
     } else if (*it == '{') {
-      struct precision_handler {
+      struct precision_handler : error_handler {
         explicit precision_handler(Handler &h) : handler(h) {}
 
         void operator()() { handler.on_dynamic_precision(auto_id()); }
@@ -3445,8 +3455,8 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
         }
 
         Handler &handler;
-      };
-      it = parse_arg_id(it + 1, precision_handler(handler));
+      } ph(handler);
+      it = parse_arg_id(it + 1, ph);
       if (*it++ != '}')
         FMT_THROW(format_error("invalid format string"));
     } else {
@@ -3652,7 +3662,7 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
     buffer.append(pointer_from(start), pointer_from(it) - 1);
 
     basic_arg<Context> arg;
-    struct id_handler {
+    struct id_handler : internal::error_handler {
       id_handler(Context &c, basic_arg<Context> &a): context(c), arg(a) {}
 
       void operator()() { arg = context.next_arg(); }

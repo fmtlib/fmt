@@ -1581,3 +1581,40 @@ TEST(FormatTest, DynamicFormatter) {
   EXPECT_THROW_MSG(format("{:.2}", num),
       format_error, "precision not allowed in integer format specifier");
 }
+
+struct TestHandler {
+  enum Result { NONE, EMPTY, INDEX, NAME, ERROR };
+  Result result = NONE;
+  unsigned index = 0;
+  string_view name;
+
+  constexpr void operator()() { result = EMPTY; }
+
+  constexpr void operator()(unsigned index) {
+    result = INDEX;
+    this->index = index;
+  }
+
+  constexpr void operator()(string_view name) {
+    result = NAME;
+    this->name = name;
+  }
+
+  constexpr void on_error(const char *) { result = ERROR; }
+};
+
+constexpr TestHandler parse_arg_id(const char* id) {
+  TestHandler h;
+  fmt::internal::parse_arg_id(id, h);
+  return h;
+}
+
+TEST(FormatTest, ConstexprParseArgId) {
+  static_assert(parse_arg_id(":").result == TestHandler::EMPTY, "");
+  static_assert(parse_arg_id("}").result == TestHandler::EMPTY, "");
+  static_assert(parse_arg_id("42:").result == TestHandler::INDEX, "");
+  static_assert(parse_arg_id("42:").index == 42, "");
+  static_assert(parse_arg_id("foo:").result == TestHandler::NAME, "");
+  static_assert(parse_arg_id("foo:").name.size() == 3, "");
+  static_assert(parse_arg_id("!").result == TestHandler::ERROR, "");
+}
