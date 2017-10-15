@@ -1437,7 +1437,7 @@ class MakeValue : public Arg {
     typename T,
     typename = typename std::enable_if<
       std::is_enum<T>::value && ConvertToInt<T>::value>::type>
-  static uint64_t type(T value) { return Arg::INT; }
+  static uint64_t type(T) { return Arg::INT; }
 #endif
 
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
