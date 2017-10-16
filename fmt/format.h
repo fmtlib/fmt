@@ -200,6 +200,12 @@ typedef __int64          intmax_t;
 # endif
 #endif
 
+#if __cplusplus >= 201103L || FMT_MSC_VER >= 1700
+# define FMT_USE_ALLOCATOR_TRAITS 1
+#else
+# define FMT_USE_ALLOCATOR_TRAITS 0
+#endif
+
 // Check if exceptions are disabled.
 #if defined(__GNUC__) && !defined(__EXCEPTIONS)
 # define FMT_EXCEPTIONS 0
@@ -869,7 +875,12 @@ void MemoryBuffer<T, SIZE, Allocator>::grow(std::size_t size) {
   std::size_t new_capacity = this->capacity_ + this->capacity_ / 2;
   if (size > new_capacity)
       new_capacity = size;
+#if FMT_USE_ALLOCATOR_TRAITS
+  T *new_ptr =
+      std::allocator_traits<Allocator>::allocate(*this, new_capacity, FMT_NULL);
+#else
   T *new_ptr = this->allocate(new_capacity, FMT_NULL);
+#endif
   // The following code doesn't throw, so the raw pointer above doesn't leak.
   std::uninitialized_copy(this->ptr_, this->ptr_ + this->size_,
                           make_ptr(new_ptr, new_capacity));
