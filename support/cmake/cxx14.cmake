@@ -49,6 +49,7 @@ if (CMAKE_CXX_STANDARD)
   set(CPP14_FLAG )
 endif ()
 
+message(STATUS "CPP14_FLAG: ${CPP14_FLAG}")
 set(CMAKE_REQUIRED_FLAGS ${CPP14_FLAG})
 
 # Check if variadic templates are working and not affected by GCC bug 39653:

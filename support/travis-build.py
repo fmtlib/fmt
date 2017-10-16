@@ -89,10 +89,8 @@ common_cmake_flags = [
     '-DCMAKE_INSTALL_PREFIX=' + install_dir, '-DCMAKE_BUILD_TYPE=' + build
 ]
 extra_cmake_flags = []
-if standard != '0x':
-    extra_cmake_flags = [
-        '-DCMAKE_CXX_FLAGS=-std=c++' + standard, '-DFMT_USE_CPP11=OFF'
-    ]
+if standard != '14':
+    extra_cmake_flags = ['-DCMAKE_CXX_FLAGS=-std=c++' + standard]
 check_call(['cmake', '-DFMT_DOC=OFF', '-DFMT_PEDANTIC=ON', fmt_dir] +
            common_cmake_flags + extra_cmake_flags, cwd=build_dir)
 

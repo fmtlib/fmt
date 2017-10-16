@@ -3100,9 +3100,15 @@ struct precision_handler {
   }
 };
 
+struct error_handler {
+  void on_error(const char *message) {
+    FMT_THROW(format_error(message));
+  }
+};
+
 // A format specifier handler that sets fields in basic_format_specs.
 template <typename Char>
-class specs_setter {
+class specs_setter : public error_handler {
  public:
   explicit specs_setter(basic_format_specs<Char> &specs): specs_(specs) {}
 
@@ -3316,12 +3322,6 @@ class dynamic_specs_handler :
   ParseContext &context_;
 };
 
-struct error_handler {
-  void on_error(const char *message) {
-    FMT_THROW(format_error(message));
-  }
-};
-
 template <typename Iterator, typename Handler>
 constexpr Iterator parse_arg_id(Iterator it, Handler& handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
@@ -3358,7 +3358,7 @@ constexpr Iterator parse_arg_id(Iterator it, Handler& handler) {
 //     format specifiers.
 template <typename Iterator, typename Handler>
 Iterator parse_format_specs(Iterator it, Handler &handler) {
-  using char_type = typename Iterator::value_type;
+  using char_type = typename std::iterator_traits<Iterator>::value_type;
   // Parse fill and alignment.
   if (char_type c = *it) {
     auto p = it + 1;
@@ -3382,8 +3382,10 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
         handler.on_align(align);
         if (p != it) {
           if (c == '}') break;
-          if (c == '{')
-            FMT_THROW(format_error("invalid fill character '{'"));
+          if (c == '{') {
+            handler.on_error("invalid fill character '{'");
+            return it;
+          }
           it += 2;
           handler.on_fill(c);
         } else ++it;
@@ -3423,7 +3425,7 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
   if ('0' <= *it && *it <= '9') {
     handler.on_width(parse_nonnegative_int(it));
   } else if (*it == '{') {
-    struct width_handler : error_handler {
+    struct width_handler {
       explicit width_handler(Handler &h) : handler(h) {}
 
       void operator()() { handler.on_dynamic_width(auto_id()); }
@@ -3432,11 +3434,17 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
         handler.on_dynamic_width(id);
       }
 
+      void on_error(const char *message) {
+        handler.on_error(message);
+      }
+
       Handler &handler;
     } wh(handler);
     it = parse_arg_id(it + 1, wh);
-    if (*it++ != '}')
-      FMT_THROW(format_error("invalid format string"));
+    if (*it++ != '}') {
+      handler.on_error("invalid format string");
+      return it;
+    }
   }
 
   // Parse precision.
@@ -3445,7 +3453,7 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
     if ('0' <= *it && *it <= '9') {
       handler.on_precision(parse_nonnegative_int(it));
     } else if (*it == '{') {
-      struct precision_handler : error_handler {
+      struct precision_handler {
         explicit precision_handler(Handler &h) : handler(h) {}
 
         void operator()() { handler.on_dynamic_precision(auto_id()); }
@@ -3454,13 +3462,20 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
           handler.on_dynamic_precision(id);
         }
 
+        void on_error(const char *message) {
+          handler.on_error(message);
+        }
+
         Handler &handler;
       } ph(handler);
       it = parse_arg_id(it + 1, ph);
-      if (*it++ != '}')
-        FMT_THROW(format_error("invalid format string"));
+      if (*it++ != '}') {
+        handler.on_error("invalid format string");
+        return it;
+      }
     } else {
-      FMT_THROW(format_error("missing precision specifier"));
+      handler.on_error("missing precision specifier");
+      return it;
     }
     handler.end_precision();
   }
