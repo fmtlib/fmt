@@ -2,6 +2,8 @@ configuration:
   - Debug
   - Release
 
+image: Visual Studio 2017
+
 environment:
   CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
