@@ -832,7 +832,7 @@ class null_terminating_iterator {
     return ptr_ >= other.ptr_;
   }
 
-  friend const Char *pointer_from<Char>(null_terminating_iterator it);
+  friend constexpr const Char *pointer_from<Char>(null_terminating_iterator it);
 
  private:
   const Char *ptr_;
