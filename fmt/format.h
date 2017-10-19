@@ -3024,7 +3024,11 @@ constexpr unsigned parse_nonnegative_int(Iterator &it) {
   assert('0' <= *it && *it <= '9');
   unsigned value = 0;
   do {
-    unsigned new_value = value * 10 + (*it++ - '0');
+    unsigned new_value = value * 10 + (*it - '0');
+    // Workaround for MSVC "setup_exception stack overflow" error:
+    auto next = it;
+    ++next;
+    it = next;
     // Check if value wrapped around.
     if (new_value < value) {
       value = (std::numeric_limits<unsigned>::max)();
