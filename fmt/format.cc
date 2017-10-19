@@ -58,9 +58,11 @@
 # define FMT_CATCH(x) if (false)
 #endif
 
+#ifdef __GNUC__
 // Disable the warning about declaration shadowing because it affects too
 // many valid cases.
-#pragma GCC diagnostic ignored "-Wshadow"
+# pragma GCC diagnostic ignored "-Wshadow"
+#endif
 
 #ifdef _MSC_VER
 # pragma warning(push)

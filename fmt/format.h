@@ -3263,9 +3263,15 @@ template <typename Char>
 struct arg_ref {
   enum Kind { NONE, INDEX, NAME };
 
-  arg_ref() : kind(NONE) {}
+  constexpr arg_ref() : kind(NONE), index(0) {}
   explicit arg_ref(unsigned index) : kind(INDEX), index(index) {}
   explicit arg_ref(basic_string_view<Char> name) : kind(NAME), name(name) {}
+
+  constexpr arg_ref &operator=(unsigned index) {
+    kind = INDEX;
+    this->index = index;
+    return *this;
+  }
 
   Kind kind;
   union {
@@ -3361,13 +3367,14 @@ constexpr Iterator parse_arg_id(Iterator it, Handler& handler) {
 //     characters, possibly emulated via null_terminating_iterator, representing
 //     format specifiers.
 template <typename Iterator, typename Handler>
-Iterator parse_format_specs(Iterator it, Handler &handler) {
+constexpr Iterator parse_format_specs(Iterator it, Handler &handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
   // Parse fill and alignment.
   if (char_type c = *it) {
-    auto p = it + 1;
     alignment align = ALIGN_DEFAULT;
+    int i = 1;
     do {
+      auto p = it + i;
       switch (*p) {
         case '<':
           align = ALIGN_LEFT;
@@ -3395,7 +3402,7 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
         } else ++it;
         break;
       }
-    } while (--p >= it);
+    } while (--i >= 0);
   }
 
   // Parse sign.
@@ -3430,15 +3437,15 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
     handler.on_width(parse_nonnegative_int(it));
   } else if (*it == '{') {
     struct width_handler {
-      explicit width_handler(Handler &h) : handler(h) {}
+      explicit constexpr width_handler(Handler &h) : handler(h) {}
 
-      void operator()() { handler.on_dynamic_width(auto_id()); }
-      void operator()(unsigned id) { handler.on_dynamic_width(id); }
-      void operator()(basic_string_view<char_type> id) {
+      constexpr void operator()() { handler.on_dynamic_width(auto_id()); }
+      constexpr void operator()(unsigned id) { handler.on_dynamic_width(id); }
+      constexpr void operator()(basic_string_view<char_type> id) {
         handler.on_dynamic_width(id);
       }
 
-      void on_error(const char *message) {
+      constexpr void on_error(const char *message) {
         handler.on_error(message);
       }
 
@@ -3458,15 +3465,17 @@ Iterator parse_format_specs(Iterator it, Handler &handler) {
       handler.on_precision(parse_nonnegative_int(it));
     } else if (*it == '{') {
       struct precision_handler {
-        explicit precision_handler(Handler &h) : handler(h) {}
+        explicit constexpr precision_handler(Handler &h) : handler(h) {}
 
-        void operator()() { handler.on_dynamic_precision(auto_id()); }
-        void operator()(unsigned id) { handler.on_dynamic_precision(id); }
-        void operator()(basic_string_view<char_type> id) {
+        constexpr void operator()() { handler.on_dynamic_precision(auto_id()); }
+        constexpr void operator()(unsigned id) {
+          handler.on_dynamic_precision(id);
+        }
+        constexpr void operator()(basic_string_view<char_type> id) {
           handler.on_dynamic_precision(id);
         }
 
-        void on_error(const char *message) {
+        constexpr void on_error(const char *message) {
           handler.on_error(message);
         }
 

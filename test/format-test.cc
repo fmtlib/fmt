@@ -1582,7 +1582,7 @@ TEST(FormatTest, DynamicFormatter) {
       format_error, "precision not allowed in integer format specifier");
 }
 
-struct TestHandler {
+struct TestArgIDHandler {
   enum Result { NONE, EMPTY, INDEX, NAME, ERROR };
   Result result = NONE;
   unsigned index = 0;
@@ -1603,18 +1603,77 @@ struct TestHandler {
   constexpr void on_error(const char *) { result = ERROR; }
 };
 
-constexpr TestHandler parse_arg_id(const char* id) {
-  TestHandler h;
-  fmt::internal::parse_arg_id(id, h);
+constexpr TestArgIDHandler parse_arg_id(const char* s) {
+  TestArgIDHandler h;
+  fmt::internal::parse_arg_id(s, h);
   return h;
 }
 
-TEST(FormatTest, ConstexprParseArgId) {
-  static_assert(parse_arg_id(":").result == TestHandler::EMPTY, "");
-  static_assert(parse_arg_id("}").result == TestHandler::EMPTY, "");
-  static_assert(parse_arg_id("42:").result == TestHandler::INDEX, "");
+TEST(FormatTest, ConstexprParseArgID) {
+  static_assert(parse_arg_id(":").result == TestArgIDHandler::EMPTY, "");
+  static_assert(parse_arg_id("}").result == TestArgIDHandler::EMPTY, "");
+  static_assert(parse_arg_id("42:").result == TestArgIDHandler::INDEX, "");
   static_assert(parse_arg_id("42:").index == 42, "");
-  static_assert(parse_arg_id("foo:").result == TestHandler::NAME, "");
+  static_assert(parse_arg_id("foo:").result == TestArgIDHandler::NAME, "");
   static_assert(parse_arg_id("foo:").name.size() == 3, "");
-  static_assert(parse_arg_id("!").result == TestHandler::ERROR, "");
+  static_assert(parse_arg_id("!").result == TestArgIDHandler::ERROR, "");
+}
+
+struct TestFormatSpecsHandler {
+  enum Result { NONE, PLUS, MINUS, SPACE, HASH, ZERO, ERROR };
+  Result result = NONE;
+
+  fmt::alignment align = fmt::ALIGN_DEFAULT;
+  char fill = 0;
+  unsigned width = 0;
+  fmt::internal::arg_ref<char> width_ref;
+  unsigned precision = 0;
+  fmt::internal::arg_ref<char> precision_ref;
+  char type = 0;
+
+  constexpr void on_align(fmt::alignment align) { this->align = align; }
+  constexpr void on_fill(char fill) { this->fill = fill; }
+  constexpr void on_plus() { result = PLUS; }
+  constexpr void on_minus() { result = MINUS; }
+  constexpr void on_space() { result = SPACE; }
+  constexpr void on_hash() { result = HASH; }
+  constexpr void on_zero() { result = ZERO; }
+
+  constexpr void on_width(unsigned width) { this->width = width; }
+  constexpr void on_dynamic_width(fmt::internal::auto_id) {}
+  constexpr void on_dynamic_width(unsigned index) { width_ref = index; }
+  constexpr void on_dynamic_width(string_view) {}
+
+  constexpr void on_precision(unsigned precision) {
+    this->precision = precision;
+  }
+  constexpr void on_dynamic_precision(fmt::internal::auto_id) {}
+  constexpr void on_dynamic_precision(unsigned index) { precision_ref = index; }
+  constexpr void on_dynamic_precision(string_view) {}
+
+  constexpr void end_precision() {}
+  constexpr void on_type(char type) { this->type = type; }
+  constexpr void on_error(const char *) { result = ERROR; }
+};
+
+constexpr TestFormatSpecsHandler parse_specs(const char *s) {
+  TestFormatSpecsHandler h;
+  fmt::internal::parse_format_specs(s, h);
+  return h;
+}
+
+TEST(FormatTest, ConstexprParseFormatSpecs) {
+  static_assert(parse_specs("<").align == fmt::ALIGN_LEFT, "");
+  static_assert(parse_specs("*^").fill == '*', "");
+  static_assert(parse_specs("+").result == TestFormatSpecsHandler::PLUS, "");
+  static_assert(parse_specs("-").result == TestFormatSpecsHandler::MINUS, "");
+  static_assert(parse_specs(" ").result == TestFormatSpecsHandler::SPACE, "");
+  static_assert(parse_specs("#").result == TestFormatSpecsHandler::HASH, "");
+  static_assert(parse_specs("0").result == TestFormatSpecsHandler::ZERO, "");
+  static_assert(parse_specs("42").width == 42, "");
+  static_assert(parse_specs("{42}").width_ref.index == 42, "");
+  static_assert(parse_specs(".42").precision == 42, "");
+  static_assert(parse_specs(".{42}").precision_ref.index == 42, "");
+  static_assert(parse_specs("d").type == 'd', "");
+  static_assert(parse_specs("{<").result == TestFormatSpecsHandler::ERROR, "");
 }
