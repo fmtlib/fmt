@@ -10,7 +10,6 @@ environment:
   - BUILD: msvc
   - BUILD: msvc
     PLATFORM: x64
-  - BUILD: mingw
 
 before_build:
   # Workaround for CMake not wanting sh.exe on PATH for MinGW.
