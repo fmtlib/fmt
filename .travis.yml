@@ -31,7 +31,7 @@ addons:
     - g++-6
 
 before_install:
-  - export CXX=g++-6
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX=g++-6; fi
 
 script:
   - support/travis-build.py
