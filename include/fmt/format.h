@@ -1924,7 +1924,7 @@ class parse_context {
     return 0;
   }
 
-  void check_arg_id(unsigned index) {
+  void check_arg_id(unsigned) {
     const char *error = 0;
     if (!check_no_auto_index(error))
       FMT_THROW(format_error(error));
@@ -3016,11 +3016,11 @@ constexpr bool is_name_start(Char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
 }
 
-// Parses an unsigned integer advancing it to the end of the parsed input.
-// This function assumes that the first character of it is a digit and a
-// presence of a non-digit character at the end.
-template <typename Iterator>
-constexpr unsigned parse_nonnegative_int(Iterator &it) {
+// Parses the input as an unsigned integer. This function assumes that the
+// first character is a digit and presence of a non-digit character at the end.
+// it: an iterator pointing to the beginning of the input range.
+template <typename Iterator, typename ErrorHandler>
+constexpr unsigned parse_nonnegative_int(Iterator &it, ErrorHandler& handler) {
   assert('0' <= *it && *it <= '9');
   unsigned value = 0;
   do {
@@ -3039,7 +3039,7 @@ constexpr unsigned parse_nonnegative_int(Iterator &it) {
   // Convert to unsigned to prevent a warning.
   unsigned max_int = (std::numeric_limits<int>::max)();
   if (value > max_int)
-    FMT_THROW(format_error("number is too big"));
+    handler.on_error("number is too big");
   return value;
 }
 
@@ -3341,7 +3341,7 @@ constexpr Iterator parse_arg_id(Iterator it, Handler& handler) {
     return it;
   }
   if (c >= '0' && c <= '9') {
-    unsigned index = parse_nonnegative_int(it);
+    unsigned index = parse_nonnegative_int(it, handler);
     if (*it != '}' && *it != ':') {
       handler.on_error("invalid format string");
       return it;
@@ -3464,7 +3464,7 @@ constexpr Iterator parse_format_specs(Iterator it, Handler &handler) {
 
   // Parse width.
   if ('0' <= *it && *it <= '9') {
-    handler.on_width(parse_nonnegative_int(it));
+    handler.on_width(parse_nonnegative_int(it, handler));
   } else if (*it == '{') {
     width_handler<Handler, char_type> wh(handler);
     it = parse_arg_id(it + 1, wh);
@@ -3478,7 +3478,7 @@ constexpr Iterator parse_format_specs(Iterator it, Handler &handler) {
   if (*it == '.') {
     ++it;
     if ('0' <= *it && *it <= '9') {
-      handler.on_precision(parse_nonnegative_int(it));
+      handler.on_precision(parse_nonnegative_int(it, handler));
     } else if (*it == '{') {
       precision_handler<Handler, char_type> ph(handler);
       it = parse_arg_id(it + 1, ph);

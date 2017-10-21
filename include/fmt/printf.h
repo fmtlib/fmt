@@ -389,7 +389,8 @@ unsigned printf_context<Char, AF>::parse_header(
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
     // preceded with '0' flag(s).
-    unsigned value = internal::parse_nonnegative_int(it);
+    internal::error_handler eh;
+    unsigned value = parse_nonnegative_int(it, eh);
     if (*it == '$') {  // value is an argument index
       ++it;
       arg_index = value;
@@ -407,7 +408,8 @@ unsigned printf_context<Char, AF>::parse_header(
   parse_flags(spec, it);
   // Parse width.
   if (*it >= '0' && *it <= '9') {
-    spec.width_ = internal::parse_nonnegative_int(it);
+    internal::error_handler eh;
+    spec.width_ = parse_nonnegative_int(it, eh);
   } else if (*it == '*') {
     ++it;
     spec.width_ = visit(internal::PrintfWidthHandler<Char>(spec), get_arg(it));
@@ -441,7 +443,8 @@ void printf_context<Char, AF>::format(basic_buffer<Char> &buffer) {
     if (*it == '.') {
       ++it;
       if ('0' <= *it && *it <= '9') {
-        spec.precision_ = static_cast<int>(internal::parse_nonnegative_int(it));
+        internal::error_handler eh;
+        spec.precision_ = static_cast<int>(parse_nonnegative_int(it, eh));
       } else if (*it == '*') {
         ++it;
         spec.precision_ =
