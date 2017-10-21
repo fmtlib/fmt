@@ -7,7 +7,8 @@ if (HAVE_OPEN)
   set(FMT_SOURCES ${FMT_SOURCES} posix.cc)
 endif ()
 
-add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} ../README.rst ../ChangeLog.rst)
+add_library(fmt
+  ${FMT_SOURCES} ${FMT_HEADERS} ../../README.rst ../../ChangeLog.rst)
 
 option(FMT_CPPFORMAT "Build cppformat library for backward compatibility." OFF)
 if (FMT_CPPFORMAT)
@@ -22,7 +23,7 @@ if (FMT_PEDANTIC)
 endif ()
 
 target_include_directories(fmt PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
 set_target_properties(fmt PROPERTIES
@@ -45,7 +46,7 @@ if (CMAKE_VERSION VERSION_GREATER 3.1.0 OR CMAKE_VERSION VERSION_EQUAL 3.1.0)
   target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 
   target_include_directories(fmt-header-only INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 endif ()
 
