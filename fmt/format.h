@@ -3070,7 +3070,7 @@ struct is_integer {
   };
 };
 
-struct width_handler {
+struct width_checker {
   template <typename T>
   typename std::enable_if<is_integer<T>::value, unsigned long long>::type
       operator()(T value) {
@@ -3087,7 +3087,7 @@ struct width_handler {
   }
 };
 
-struct precision_handler {
+struct precision_checker {
   template <typename T>
   typename std::enable_if<is_integer<T>::value, unsigned long long>::type
       operator()(T value) {
@@ -3234,13 +3234,13 @@ class specs_handler: public specs_setter<typename Context::char_type> {
 
   template <typename Id>
   void on_dynamic_width(Id arg_id) {
-    set_dynamic_spec<internal::width_handler>(
+    set_dynamic_spec<internal::width_checker>(
           this->specs_.width_, get_arg(arg_id));
   }
 
   template <typename Id>
   void on_dynamic_precision(Id arg_id) {
-    set_dynamic_spec<internal::precision_handler>(
+    set_dynamic_spec<internal::precision_checker>(
           this->specs_.precision_, get_arg(arg_id));
   }
 
@@ -3361,6 +3361,36 @@ constexpr Iterator parse_arg_id(Iterator it, Handler& handler) {
   return it;
 }
 
+template <typename Handler, typename Char>
+struct width_handler {
+  explicit constexpr width_handler(Handler &h) : handler(h) {}
+
+  constexpr void operator()() { handler.on_dynamic_width(auto_id()); }
+  constexpr void operator()(unsigned id) { handler.on_dynamic_width(id); }
+  constexpr void operator()(basic_string_view<Char> id) {
+    handler.on_dynamic_width(id);
+  }
+
+  constexpr void on_error(const char *message) { handler.on_error(message); }
+
+  Handler &handler;
+};
+
+template <typename Handler, typename Char>
+struct precision_handler {
+  explicit constexpr precision_handler(Handler &h) : handler(h) {}
+
+  constexpr void operator()() { handler.on_dynamic_precision(auto_id()); }
+  constexpr void operator()(unsigned id) { handler.on_dynamic_precision(id); }
+  constexpr void operator()(basic_string_view<Char> id) {
+    handler.on_dynamic_precision(id);
+  }
+
+  constexpr void on_error(const char *message) { handler.on_error(message); }
+
+  Handler &handler;
+};
+
 // Parses standard format specifiers and sends notifications about parsed
 // components to handler.
 // it: an iterator pointing to the beginning of a null-terminated range of
@@ -3436,21 +3466,7 @@ constexpr Iterator parse_format_specs(Iterator it, Handler &handler) {
   if ('0' <= *it && *it <= '9') {
     handler.on_width(parse_nonnegative_int(it));
   } else if (*it == '{') {
-    struct width_handler {
-      explicit constexpr width_handler(Handler &h) : handler(h) {}
-
-      constexpr void operator()() { handler.on_dynamic_width(auto_id()); }
-      constexpr void operator()(unsigned id) { handler.on_dynamic_width(id); }
-      constexpr void operator()(basic_string_view<char_type> id) {
-        handler.on_dynamic_width(id);
-      }
-
-      constexpr void on_error(const char *message) {
-        handler.on_error(message);
-      }
-
-      Handler &handler;
-    } wh(handler);
+    width_handler<Handler, char_type> wh(handler);
     it = parse_arg_id(it + 1, wh);
     if (*it++ != '}') {
       handler.on_error("invalid format string");
@@ -3464,23 +3480,7 @@ constexpr Iterator parse_format_specs(Iterator it, Handler &handler) {
     if ('0' <= *it && *it <= '9') {
       handler.on_precision(parse_nonnegative_int(it));
     } else if (*it == '{') {
-      struct precision_handler {
-        explicit constexpr precision_handler(Handler &h) : handler(h) {}
-
-        constexpr void operator()() { handler.on_dynamic_precision(auto_id()); }
-        constexpr void operator()(unsigned id) {
-          handler.on_dynamic_precision(id);
-        }
-        constexpr void operator()(basic_string_view<char_type> id) {
-          handler.on_dynamic_precision(id);
-        }
-
-        constexpr void on_error(const char *message) {
-          handler.on_error(message);
-        }
-
-        Handler &handler;
-      } ph(handler);
+      precision_handler<Handler, char_type> ph(handler);
       it = parse_arg_id(it + 1, ph);
       if (*it++ != '}') {
         handler.on_error("invalid format string");
@@ -3567,9 +3567,9 @@ struct formatter<
   }
 
   void format(basic_buffer<Char> &buf, const T &val, basic_context<Char> &ctx) {
-    internal::handle_dynamic_spec<internal::width_handler>(
+    internal::handle_dynamic_spec<internal::width_checker>(
       specs_.width_, specs_.width_ref, ctx);
-    internal::handle_dynamic_spec<internal::precision_handler>(
+    internal::handle_dynamic_spec<internal::precision_checker>(
       specs_.precision_, specs_.precision_ref, ctx);
     visit(arg_formatter<Char>(buf, ctx, specs_),
           internal::make_arg<basic_context<Char>>(val));
@@ -3645,9 +3645,9 @@ struct dynamic_formatter {
 
  private:
   void handle_specs(basic_context<Char> &ctx) {
-    internal::handle_dynamic_spec<internal::width_handler>(
+    internal::handle_dynamic_spec<internal::width_checker>(
       specs_.width_, specs_.width_ref, ctx);
-    internal::handle_dynamic_spec<internal::precision_handler>(
+    internal::handle_dynamic_spec<internal::precision_checker>(
       specs_.precision_, specs_.precision_ref, ctx);
   }
 
