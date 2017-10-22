@@ -3148,7 +3148,7 @@ class specs_setter : public error_handler {
 template <typename Handler>
 class specs_checker : public Handler {
  public:
-  explicit specs_checker(const Handler& handler, type arg_type)
+  specs_checker(const Handler& handler, type arg_type)
     : Handler(handler), arg_type_(arg_type) {}
 
   void on_align(alignment align) {
@@ -3537,7 +3537,7 @@ template <typename T, typename Enable = void>
 struct format_enum : std::integral_constant<bool, std::is_enum<T>::value> {};
 
 template <typename Handler, typename Spec, typename Char>
-static void handle_dynamic_spec(
+void handle_dynamic_spec(
     Spec &value, arg_ref<Char> ref, basic_context<Char> &ctx) {
   switch (ref.kind) {
   case arg_ref<Char>::NONE:
