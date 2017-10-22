@@ -3647,7 +3647,7 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 #else
 // Defines a wrapper for a function taking __VA_ARGS__ arguments
 // and n additional arguments of arbitrary types.
-# define FMT_WRAP(Const,Char, ReturnType, func, call, n, ...) \
+# define FMT_WRAP(Const, Char, ReturnType, func, call, n, ...) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
       FMT_GEN(n, FMT_MAKE_ARG)) Const { \
@@ -3657,7 +3657,7 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
       fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), arr)); \
   }
 
-# define FMT_VARIADIC_(Const,Char, ReturnType, func, call, ...) \
+# define FMT_VARIADIC_(Const, Char, ReturnType, func, call, ...) \
   inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) Const { \
     call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList()); \
   } \
@@ -3706,13 +3706,13 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
   \endrst
  */
 #define FMT_VARIADIC(ReturnType, func, ...) \
-  FMT_VARIADIC_(,char, ReturnType, func, return func, __VA_ARGS__)
+  FMT_VARIADIC_(, char, ReturnType, func, return func, __VA_ARGS__)
 
 #define FMT_VARIADIC_CONST(ReturnType, func, ...) \
   FMT_VARIADIC_(const, char, ReturnType, func, return func, __VA_ARGS__)
 
 #define FMT_VARIADIC_W(ReturnType, func, ...) \
-  FMT_VARIADIC_(,wchar_t, ReturnType, func, return func, __VA_ARGS__)
+  FMT_VARIADIC_(, wchar_t, ReturnType, func, return func, __VA_ARGS__)
 
 #define FMT_VARIADIC_CONST_W(ReturnType, func, ...) \
   FMT_VARIADIC_(const, wchar_t, ReturnType, func, return func, __VA_ARGS__)
