@@ -106,9 +106,7 @@ An object of any user-defined type for which there is an overloaded
     std::string s = fmt::format("The date is {}", Date(2012, 12, 9));
     // s == "The date is 2012-12-9"
 
-You can use the `FMT_VARIADIC
-<http://fmtlib.net/latest/api.html#utilities>`_
-macro to create your own functions similar to `format
+You can create your own functions similar to `format
 <http://fmtlib.net/latest/api.html#format>`_ and
 `print <http://fmtlib.net/latest/api.html#print>`_
 which take arbitrary arguments:
@@ -116,17 +114,19 @@ which take arbitrary arguments:
 .. code:: c++
 
     // Prints formatted error message.
-    void report_error(const char *format, fmt::ArgList args) {
+    void vreport_error(const char *format, fmt::args args) {
       fmt::print("Error: ");
-      fmt::print(format, args);
+      fmt::vprint(format, args);
     }
-    FMT_VARIADIC(void, report_error, const char *)
+    template <typename... Args>
+    void report_error(const char *format, const Args & ... args) {
+      vreport_error(format, fmt::make_args(args));
+    }
 
     report_error("file not found: {}", path);
 
-Note that you only need to define one function that takes ``fmt::ArgList``
-argument. ``FMT_VARIADIC`` automatically defines necessary wrappers that
-accept variable number of arguments.
+Note that ``vreport_error`` is not parameterized on argument types which can
+improve compile times and reduce code size compared to fully parameterized version.
 
 Projects using this library
 ---------------------------
