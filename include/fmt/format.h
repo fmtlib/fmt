@@ -1630,12 +1630,13 @@ struct align_spec : empty_spec {
   wchar_t fill_;
   alignment align_;
 
-  align_spec(unsigned width, wchar_t fill, alignment align = ALIGN_DEFAULT)
+  constexpr align_spec(
+      unsigned width, wchar_t fill, alignment align = ALIGN_DEFAULT)
   : width_(width), fill_(fill), align_(align) {}
 
-  unsigned width() const { return width_; }
-  wchar_t fill() const { return fill_; }
-  alignment align() const { return align_; }
+  constexpr unsigned width() const { return width_; }
+  constexpr wchar_t fill() const { return fill_; }
+  constexpr alignment align() const { return align_; }
 
   int precision() const { return -1; }
 };
@@ -1670,7 +1671,8 @@ class basic_format_specs : public align_spec {
   int precision_;
   Char type_;
 
-  basic_format_specs(unsigned width = 0, char type = 0, wchar_t fill = ' ')
+  constexpr basic_format_specs(
+      unsigned width = 0, char type = 0, wchar_t fill = ' ')
   : align_spec(width, fill), flags_(0), precision_(-1), type_(type) {}
 
   template <typename... FormatSpecs>
@@ -1679,9 +1681,9 @@ class basic_format_specs : public align_spec {
     set(specs...);
   }
 
-  bool flag(unsigned f) const { return (flags_ & f) != 0; }
-  int precision() const { return precision_; }
-  Char type() const { return type_; }
+  constexpr bool flag(unsigned f) const { return (flags_ & f) != 0; }
+  constexpr int precision() const { return precision_; }
+  constexpr Char type() const { return type_; }
 };
 
 typedef basic_format_specs<char> format_specs;
@@ -3114,29 +3116,30 @@ struct error_handler {
 template <typename Char>
 class specs_setter : public error_handler {
  public:
-  explicit specs_setter(basic_format_specs<Char> &specs): specs_(specs) {}
+  explicit constexpr specs_setter(basic_format_specs<Char> &specs):
+    specs_(specs) {}
 
-  void on_align(alignment align) { specs_.align_ = align; }
-  void on_fill(Char fill) { specs_.fill_ = fill; }
-  void on_plus() { specs_.flags_ |= SIGN_FLAG | PLUS_FLAG; }
-  void on_minus() { specs_.flags_ |= MINUS_FLAG; }
-  void on_space() { specs_.flags_ |= SIGN_FLAG; }
-  void on_hash() { specs_.flags_ |= HASH_FLAG; }
+  constexpr void on_align(alignment align) { specs_.align_ = align; }
+  constexpr void on_fill(Char fill) { specs_.fill_ = fill; }
+  constexpr void on_plus() { specs_.flags_ |= SIGN_FLAG | PLUS_FLAG; }
+  constexpr void on_minus() { specs_.flags_ |= MINUS_FLAG; }
+  constexpr void on_space() { specs_.flags_ |= SIGN_FLAG; }
+  constexpr void on_hash() { specs_.flags_ |= HASH_FLAG; }
 
-  void on_zero() {
+  constexpr void on_zero() {
     specs_.align_ = ALIGN_NUMERIC;
     specs_.fill_ = '0';
   }
 
-  void on_width(unsigned width) { specs_.width_ = width; }
-  void on_precision(unsigned precision) { specs_.precision_ = precision; }
-  void end_precision() {}
+  constexpr void on_width(unsigned width) { specs_.width_ = width; }
+  constexpr void on_precision(unsigned precision) {
+    specs_.precision_ = precision;
+  }
+  constexpr void end_precision() {}
 
-  void on_type(Char type) { specs_.type_ = type; }
+  constexpr void on_type(Char type) { specs_.type_ = type; }
 
  protected:
-  ~specs_setter() {}
-
   basic_format_specs<Char> &specs_;
 };
 
@@ -3229,7 +3232,7 @@ class specs_handler: public specs_setter<typename Context::char_type> {
  public:
   typedef typename Context::char_type char_type;
 
-  specs_handler(basic_format_specs<char_type> &specs, Context &ctx)
+  constexpr specs_handler(basic_format_specs<char_type> &specs, Context &ctx)
     : specs_setter<char_type>(specs), context_(ctx) {}
 
   template <typename Id>
@@ -3508,8 +3511,11 @@ const Char *do_format_arg(basic_buffer<Char> &buffer,
   basic_format_specs<Char> specs;
   if (*it == ':') {
     ctx.advance_to(pointer_from(++it));
-    if (visit(custom_formatter<Char, Context>(buffer, ctx), arg))
+    if (visit(custom_formatter<Char, Context>(buffer, ctx), arg)) {
+      // TODO: if constexpr, then use formatter<T>::parse, else dispatch
+      //       dynamically
       return ctx.begin();
+    }
     specs_checker<specs_handler<Context>>
         handler(specs_handler<Context>(specs, ctx), arg.type());
     it = parse_format_specs(it, handler);
