@@ -1106,11 +1106,11 @@ struct string_value {
 
 template <typename Char>
 struct custom_value {
-  typedef void (*FormatFunc)(
+  typedef void (*format_func)(
       basic_buffer<Char> &buffer, const void *arg, void *ctx);
 
   const void *value;
-  FormatFunc format;
+  format_func format;
 };
 
 template <typename Char>
@@ -3050,7 +3050,7 @@ class custom_formatter {
   Context &ctx_;
 
  public:
-  custom_formatter(basic_buffer<Char> &buffer,Context &ctx)
+  custom_formatter(basic_buffer<Char> &buffer, Context &ctx)
   : buffer_(buffer), ctx_(ctx) {}
 
   bool operator()(internal::custom_value<Char> custom) {
