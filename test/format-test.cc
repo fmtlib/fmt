@@ -1630,6 +1630,24 @@ TEST(FormatTest, FormatMessageExample) {
       format_message(42, "{} happened", "something"));
 }
 
+class test_class
+{
+public:
+	std::string format_message(int id, const char *format,const fmt::ArgList &args) const {
+		MemoryWriter w;
+		w.write("[{}] ", id);
+		w.write(format, args);
+		return w.str();
+	}
+	FMT_VARIADIC_CONST(std::string, format_message, int, const char *)
+};
+
+TEST(FormatTest, ConstFormatMessage) {
+	test_class c;
+	EXPECT_EQ("[42] something happened",
+		c.format_message(42, "{} happened", "something"));
+}
+
 #if FMT_USE_VARIADIC_TEMPLATES
 template<typename... Args>
 void print_error(const char *file, int line, const char *format,
