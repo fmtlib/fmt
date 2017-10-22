@@ -850,13 +850,13 @@ constexpr const Char *pointer_from(null_terminating_iterator<Char> it) {
 // Returns true if value is negative, false otherwise.
 // Same as (value < 0) but doesn't produce warnings if T is an unsigned type.
 template <typename T>
-inline typename std::enable_if<std::numeric_limits<T>::is_signed, bool>::type
-    is_negative(T value) {
+constexpr typename std::enable_if<
+    std::numeric_limits<T>::is_signed, bool>::type is_negative(T value) {
   return value < 0;
 }
 template <typename T>
-inline typename std::enable_if<!std::numeric_limits<T>::is_signed, bool>::type
-    is_negative(T) {
+constexpr typename std::enable_if<
+    !std::numeric_limits<T>::is_signed, bool>::type is_negative(T) {
   return false;
 }
 
@@ -1205,11 +1205,11 @@ class value {
     custom_value<char_type> custom;
   };
 
-  value() {}
+  constexpr value() {}
   value(bool val) { set<BOOL>(int_value, val); }
   value(short val) { set<INT>(int_value, val); }
   value(unsigned short val) { set<UINT>(uint_value, val); }
-  value(int val) { set<INT>(int_value, val); }
+  constexpr value(int val) : int_value(val) {}
   value(unsigned val) { set<UINT>(uint_value, val); }
 
   value(long val) {
@@ -1299,7 +1299,7 @@ class value {
 
  private:
   template <type TYPE, typename T, typename U>
-  void set(T &field, const U &value) {
+  constexpr void set(T &field, const U &value) {
     static_assert(get_type<U>() == TYPE, "invalid type");
     field = value;
   }
@@ -1338,7 +1338,7 @@ template <typename Context>
 class arg_map;
 
 template <typename Context, typename T>
-basic_arg<Context> make_arg(const T &value);
+constexpr basic_arg<Context> make_arg(const T &value);
 }  // namespace internal
 
 struct monostate {};
@@ -1355,17 +1355,17 @@ class basic_arg {
   internal::type type_;
 
   template <typename ContextType, typename T>
-  friend basic_arg<ContextType> internal::make_arg(const T &value);
+  friend constexpr basic_arg<ContextType> internal::make_arg(const T &value);
 
   template <typename Visitor, typename Ctx>
-  friend typename std::result_of<Visitor(int)>::type
+  friend constexpr typename std::result_of<Visitor(int)>::type
     visit(Visitor &&vis, basic_arg<Ctx> arg);
 
   friend class basic_args<Context>;
   friend class internal::arg_map<Context>;
 
  public:
-  basic_arg() : type_(internal::NONE) {}
+  constexpr basic_arg() : type_(internal::NONE) {}
 
   explicit operator bool() const noexcept { return type_ != internal::NONE; }
 
@@ -1384,7 +1384,7 @@ class basic_arg {
   \endrst
  */
 template <typename Visitor, typename Context>
-typename std::result_of<Visitor(int)>::type
+constexpr typename std::result_of<Visitor(int)>::type
     visit(Visitor &&vis, basic_arg<Context> arg) {
   typedef typename Context::char_type Char;
   switch (arg.type_) {
@@ -1427,7 +1427,7 @@ typename std::result_of<Visitor(int)>::type
 namespace internal {
 
 template <typename Context, typename T>
-basic_arg<Context> make_arg(const T &value) {
+constexpr basic_arg<Context> make_arg(const T &value) {
   basic_arg<Context> arg;
   arg.type_ = get_type<T>();
   arg.value_ = value;
@@ -3074,16 +3074,16 @@ struct is_integer {
 
 struct width_checker {
   template <typename T>
-  typename std::enable_if<is_integer<T>::value, unsigned long long>::type
-      operator()(T value) {
+  constexpr typename std::enable_if<
+      is_integer<T>::value, unsigned long long>::type operator()(T value) {
     if (is_negative(value))
       FMT_THROW(format_error("negative width"));
     return value;
   }
 
   template <typename T>
-  typename std::enable_if<!is_integer<T>::value, unsigned long long>::type
-      operator()(T) {
+  constexpr typename std::enable_if<
+      !is_integer<T>::value, unsigned long long>::type operator()(T) {
     FMT_THROW(format_error("width is not integer"));
     return 0;
   }
@@ -3091,16 +3091,16 @@ struct width_checker {
 
 struct precision_checker {
   template <typename T>
-  typename std::enable_if<is_integer<T>::value, unsigned long long>::type
-      operator()(T value) {
+  constexpr typename std::enable_if<
+      is_integer<T>::value, unsigned long long>::type operator()(T value) {
     if (is_negative(value))
       FMT_THROW(format_error("negative precision"));
     return value;
   }
 
   template <typename T>
-  typename std::enable_if<!is_integer<T>::value, unsigned long long>::type
-      operator()(T) {
+  constexpr typename std::enable_if<
+      !is_integer<T>::value, unsigned long long>::type operator()(T) {
     FMT_THROW(format_error("precision is not integer"));
     return 0;
   }
@@ -3217,7 +3217,7 @@ class specs_checker : public Handler {
 };
 
 template <typename Handler, typename T, typename Context>
-inline void set_dynamic_spec(T &value, basic_arg<Context> arg) {
+constexpr void set_dynamic_spec(T &value, basic_arg<Context> arg) {
   unsigned long long big_value = visit(Handler(), arg);
   if (big_value > (std::numeric_limits<int>::max)())
     FMT_THROW(format_error("number is too big"));
@@ -3236,24 +3236,24 @@ class specs_handler: public specs_setter<typename Context::char_type> {
     : specs_setter<char_type>(specs), context_(ctx) {}
 
   template <typename Id>
-  void on_dynamic_width(Id arg_id) {
+  constexpr void on_dynamic_width(Id arg_id) {
     set_dynamic_spec<internal::width_checker>(
           this->specs_.width_, get_arg(arg_id));
   }
 
   template <typename Id>
-  void on_dynamic_precision(Id arg_id) {
+  constexpr void on_dynamic_precision(Id arg_id) {
     set_dynamic_spec<internal::precision_checker>(
           this->specs_.precision_, get_arg(arg_id));
   }
 
  private:
-  basic_arg<Context> get_arg(auto_id) {
+  constexpr basic_arg<Context> get_arg(auto_id) {
     return context_.next_arg();
   }
 
   template <typename Id>
-  basic_arg<Context> get_arg(Id arg_id) {
+  constexpr basic_arg<Context> get_arg(Id arg_id) {
     context_.check_arg_id(arg_id);
     return context_.get_arg(arg_id);
   }
@@ -3511,11 +3511,8 @@ const Char *do_format_arg(basic_buffer<Char> &buffer,
   basic_format_specs<Char> specs;
   if (*it == ':') {
     ctx.advance_to(pointer_from(++it));
-    if (visit(custom_formatter<Char, Context>(buffer, ctx), arg)) {
-      // TODO: if constexpr, then use formatter<T>::parse, else dispatch
-      //       dynamically
+    if (visit(custom_formatter<Char, Context>(buffer, ctx), arg))
       return ctx.begin();
-    }
     specs_checker<specs_handler<Context>>
         handler(specs_handler<Context>(specs, ctx), arg.type());
     it = parse_format_specs(it, handler);

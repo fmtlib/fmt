@@ -1682,17 +1682,17 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
 struct test_context {
   using char_type = char;
 
-  fmt::basic_arg<test_context> next_arg() {
-    return fmt::basic_arg<test_context>();
+  constexpr fmt::basic_arg<test_context> next_arg() {
+    return fmt::internal::make_arg<test_context>(11);
   }
 
   template <typename Id>
-  fmt::basic_arg<test_context> get_arg(Id) {
-    return fmt::basic_arg<test_context>();
+  constexpr fmt::basic_arg<test_context> get_arg(Id) {
+    return fmt::internal::make_arg<test_context>(22);
   }
 
   template <typename Id>
-  void check_arg_id(Id) {}
+  constexpr void check_arg_id(Id) {}
 };
 
 constexpr fmt::format_specs parse_specs(const char *s) {
@@ -1712,6 +1712,10 @@ TEST(FormatTest, ConstexprSpecsHandler) {
   static_assert(parse_specs("#").flag(fmt::HASH_FLAG), "");
   static_assert(parse_specs("0").align() == fmt::ALIGN_NUMERIC, "");
   static_assert(parse_specs("42").width() == 42, "");
+  static_assert(parse_specs("{}").width() == 11, "");
+  static_assert(parse_specs("{0}").width() == 22, "");
   static_assert(parse_specs(".42").precision() == 42, "");
+  static_assert(parse_specs(".{}").precision() == 11, "");
+  static_assert(parse_specs(".{0}").precision() == 22, "");
   static_assert(parse_specs("d").type() == 'd', "");
 }
