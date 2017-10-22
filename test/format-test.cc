@@ -1582,46 +1582,46 @@ TEST(FormatTest, DynamicFormatter) {
       format_error, "precision not allowed in integer format specifier");
 }
 
-struct TestArgIDHandler {
-  enum Result { NONE, EMPTY, INDEX, NAME, ERROR };
-  Result result = NONE;
+struct test_arg_id_handler {
+  enum result { NONE, EMPTY, INDEX, NAME, ERROR };
+  result res = NONE;
   unsigned index = 0;
   string_view name;
 
-  constexpr void operator()() { result = EMPTY; }
+  constexpr void operator()() { res = EMPTY; }
 
   constexpr void operator()(unsigned index) {
-    result = INDEX;
+    res = INDEX;
     this->index = index;
   }
 
   constexpr void operator()(string_view name) {
-    result = NAME;
+    res = NAME;
     this->name = name;
   }
 
-  constexpr void on_error(const char *) { result = ERROR; }
+  constexpr void on_error(const char *) { res = ERROR; }
 };
 
-constexpr TestArgIDHandler parse_arg_id(const char* s) {
-  TestArgIDHandler h;
+constexpr test_arg_id_handler parse_arg_id(const char* s) {
+  test_arg_id_handler h;
   fmt::internal::parse_arg_id(s, h);
   return h;
 }
 
 TEST(FormatTest, ConstexprParseArgID) {
-  static_assert(parse_arg_id(":").result == TestArgIDHandler::EMPTY, "");
-  static_assert(parse_arg_id("}").result == TestArgIDHandler::EMPTY, "");
-  static_assert(parse_arg_id("42:").result == TestArgIDHandler::INDEX, "");
+  static_assert(parse_arg_id(":").res == test_arg_id_handler::EMPTY, "");
+  static_assert(parse_arg_id("}").res == test_arg_id_handler::EMPTY, "");
+  static_assert(parse_arg_id("42:").res == test_arg_id_handler::INDEX, "");
   static_assert(parse_arg_id("42:").index == 42, "");
-  static_assert(parse_arg_id("foo:").result == TestArgIDHandler::NAME, "");
+  static_assert(parse_arg_id("foo:").res == test_arg_id_handler::NAME, "");
   static_assert(parse_arg_id("foo:").name.size() == 3, "");
-  static_assert(parse_arg_id("!").result == TestArgIDHandler::ERROR, "");
+  static_assert(parse_arg_id("!").res == test_arg_id_handler::ERROR, "");
 }
 
-struct TestFormatSpecsHandler {
+struct test_format_specs_handlers {
   enum Result { NONE, PLUS, MINUS, SPACE, HASH, ZERO, ERROR };
-  Result result = NONE;
+  Result res = NONE;
 
   fmt::alignment align = fmt::ALIGN_DEFAULT;
   char fill = 0;
@@ -1633,11 +1633,11 @@ struct TestFormatSpecsHandler {
 
   constexpr void on_align(fmt::alignment align) { this->align = align; }
   constexpr void on_fill(char fill) { this->fill = fill; }
-  constexpr void on_plus() { result = PLUS; }
-  constexpr void on_minus() { result = MINUS; }
-  constexpr void on_space() { result = SPACE; }
-  constexpr void on_hash() { result = HASH; }
-  constexpr void on_zero() { result = ZERO; }
+  constexpr void on_plus() { res = PLUS; }
+  constexpr void on_minus() { res = MINUS; }
+  constexpr void on_space() { res = SPACE; }
+  constexpr void on_hash() { res = HASH; }
+  constexpr void on_zero() { res = ZERO; }
 
   constexpr void on_width(unsigned width) { this->width = width; }
   constexpr void on_dynamic_width(fmt::internal::auto_id) {}
@@ -1653,11 +1653,11 @@ struct TestFormatSpecsHandler {
 
   constexpr void end_precision() {}
   constexpr void on_type(char type) { this->type = type; }
-  constexpr void on_error(const char *) { result = ERROR; }
+  constexpr void on_error(const char *) { res = ERROR; }
 };
 
-constexpr TestFormatSpecsHandler parse_specs(const char *s) {
-  TestFormatSpecsHandler h;
+constexpr test_format_specs_handlers parse_specs(const char *s) {
+  test_format_specs_handlers h;
   fmt::internal::parse_format_specs(s, h);
   return h;
 }
@@ -1665,15 +1665,15 @@ constexpr TestFormatSpecsHandler parse_specs(const char *s) {
 TEST(FormatTest, ConstexprParseFormatSpecs) {
   static_assert(parse_specs("<").align == fmt::ALIGN_LEFT, "");
   static_assert(parse_specs("*^").fill == '*', "");
-  static_assert(parse_specs("+").result == TestFormatSpecsHandler::PLUS, "");
-  static_assert(parse_specs("-").result == TestFormatSpecsHandler::MINUS, "");
-  static_assert(parse_specs(" ").result == TestFormatSpecsHandler::SPACE, "");
-  static_assert(parse_specs("#").result == TestFormatSpecsHandler::HASH, "");
-  static_assert(parse_specs("0").result == TestFormatSpecsHandler::ZERO, "");
+  static_assert(parse_specs("+").res == test_format_specs_handlers::PLUS, "");
+  static_assert(parse_specs("-").res == test_format_specs_handlers::MINUS, "");
+  static_assert(parse_specs(" ").res == test_format_specs_handlers::SPACE, "");
+  static_assert(parse_specs("#").res == test_format_specs_handlers::HASH, "");
+  static_assert(parse_specs("0").res == test_format_specs_handlers::ZERO, "");
   static_assert(parse_specs("42").width == 42, "");
   static_assert(parse_specs("{42}").width_ref.index == 42, "");
   static_assert(parse_specs(".42").precision == 42, "");
   static_assert(parse_specs(".{42}").precision_ref.index == 42, "");
   static_assert(parse_specs("d").type == 'd', "");
-  static_assert(parse_specs("{<").result == TestFormatSpecsHandler::ERROR, "");
+  static_assert(parse_specs("{<").res == test_format_specs_handlers::ERROR, "");
 }
