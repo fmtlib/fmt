@@ -1693,6 +1693,8 @@ struct test_context {
 
   template <typename Id>
   constexpr void check_arg_id(Id) {}
+
+  constexpr unsigned next_arg_index(const char *&) { return 33; }
 };
 
 constexpr fmt::format_specs parse_specs(const char *s) {
@@ -1718,4 +1720,30 @@ TEST(FormatTest, ConstexprSpecsHandler) {
   static_assert(parse_specs(".{}").precision() == 11, "");
   static_assert(parse_specs(".{0}").precision() == 22, "");
   static_assert(parse_specs("d").type() == 'd', "");
+}
+
+constexpr fmt::internal::dynamic_format_specs<char>
+    parse_dynamic_specs(const char *s) {
+  fmt::internal::dynamic_format_specs<char> specs;
+  test_context ctx;
+  fmt::internal::dynamic_specs_handler<test_context> h(specs, ctx);
+  parse_format_specs(s, h);
+  return specs;
+}
+
+TEST(FormatTest, ConstexprDynamicSpecsHandler) {
+  static_assert(parse_dynamic_specs("<").align() == fmt::ALIGN_LEFT, "");
+  static_assert(parse_dynamic_specs("*^").fill() == '*', "");
+  static_assert(parse_dynamic_specs("+").flag(fmt::PLUS_FLAG), "");
+  static_assert(parse_dynamic_specs("-").flag(fmt::MINUS_FLAG), "");
+  static_assert(parse_dynamic_specs(" ").flag(fmt::SIGN_FLAG), "");
+  static_assert(parse_dynamic_specs("#").flag(fmt::HASH_FLAG), "");
+  static_assert(parse_dynamic_specs("0").align() == fmt::ALIGN_NUMERIC, "");
+  static_assert(parse_dynamic_specs("42").width() == 42, "");
+  static_assert(parse_dynamic_specs("{}").width_ref.index == 33, "");
+  static_assert(parse_dynamic_specs("{42}").width_ref.index == 42, "");
+  static_assert(parse_dynamic_specs(".42").precision() == 42, "");
+  static_assert(parse_dynamic_specs(".{}").precision_ref.index == 33, "");
+  static_assert(parse_dynamic_specs(".{42}").precision_ref.index == 42, "");
+  static_assert(parse_dynamic_specs("d").type() == 'd', "");
 }

@@ -1205,7 +1205,7 @@ class value {
     custom_value<char_type> custom;
   };
 
-  constexpr value() {}
+  constexpr value() : int_value(0) {}
   value(bool val) { set<BOOL>(int_value, val); }
   value(short val) { set<INT>(int_value, val); }
   value(unsigned short val) { set<UINT>(uint_value, val); }
@@ -3267,7 +3267,7 @@ struct arg_ref {
   enum Kind { NONE, INDEX, NAME };
 
   constexpr arg_ref() : kind(NONE), index(0) {}
-  explicit arg_ref(unsigned index) : kind(INDEX), index(index) {}
+  constexpr explicit arg_ref(unsigned index) : kind(INDEX), index(index) {}
   explicit arg_ref(basic_string_view<Char> name) : kind(NAME), name(name) {}
 
   constexpr arg_ref &operator=(unsigned index) {
@@ -3300,17 +3300,17 @@ class dynamic_specs_handler :
  public:
   using char_type = typename ParseContext::char_type;
 
-  dynamic_specs_handler(
+  constexpr dynamic_specs_handler(
       dynamic_format_specs<char_type> &specs, ParseContext &ctx)
     : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
 
   template <typename Id>
-  void on_dynamic_width(Id arg_id) {
+  constexpr void on_dynamic_width(Id arg_id) {
     specs_.width_ref = make_arg_ref(arg_id);
   }
 
   template <typename Id>
-  void on_dynamic_precision(Id arg_id) {
+  constexpr void on_dynamic_precision(Id arg_id) {
     specs_.precision_ref = make_arg_ref(arg_id);
   }
 
@@ -3318,12 +3318,12 @@ class dynamic_specs_handler :
   using arg_ref_type = arg_ref<char_type>;
 
   template <typename Id>
-  arg_ref_type make_arg_ref(Id arg_id) {
+  constexpr arg_ref_type make_arg_ref(Id arg_id) {
     context_.check_arg_id(arg_id);
     return arg_ref_type(arg_id);
   }
 
-  arg_ref_type make_arg_ref(auto_id) {
+  constexpr arg_ref_type make_arg_ref(auto_id) {
     const char *error = 0;
     auto index = context_.next_arg_index(error);
     if (error)
