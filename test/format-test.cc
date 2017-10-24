@@ -1747,3 +1747,27 @@ TEST(FormatTest, ConstexprDynamicSpecsHandler) {
   static_assert(parse_dynamic_specs(".{42}").precision_ref.index == 42, "");
   static_assert(parse_dynamic_specs("d").type() == 'd', "");
 }
+
+constexpr test_format_specs_handler check_specs(const char *s) {
+  fmt::internal::specs_checker<test_format_specs_handler>
+      checker(test_format_specs_handler(), fmt::internal::DOUBLE);
+  parse_format_specs(s, checker);
+  return checker;
+}
+
+TEST(FormatTest, ConstexprSpecsChecker) {
+  using handler = test_format_specs_handler;
+  static_assert(check_specs("<").align == fmt::ALIGN_LEFT, "");
+  static_assert(check_specs("*^").fill == '*', "");
+  static_assert(check_specs("+").res == handler::PLUS, "");
+  static_assert(check_specs("-").res == handler::MINUS, "");
+  static_assert(check_specs(" ").res == handler::SPACE, "");
+  static_assert(check_specs("#").res == handler::HASH, "");
+  static_assert(check_specs("0").res == handler::ZERO, "");
+  static_assert(check_specs("42").width == 42, "");
+  static_assert(check_specs("{42}").width_ref.index == 42, "");
+  static_assert(check_specs(".42").precision == 42, "");
+  static_assert(check_specs(".{42}").precision_ref.index == 42, "");
+  static_assert(check_specs("d").type == 'd', "");
+  static_assert(check_specs("{<").res == handler::ERROR, "");
+}

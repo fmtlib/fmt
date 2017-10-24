@@ -1088,12 +1088,12 @@ enum type {
   CSTRING, STRING, TSTRING, POINTER, CUSTOM
 };
 
-inline bool is_integral(type t) {
+constexpr bool is_integral(type t) {
   FMT_ASSERT(t != internal::NAMED_ARG, "invalid argument type");
   return t > internal::NONE && t <= internal::LAST_INTEGER_TYPE;
 }
 
-inline bool is_numeric(type t) {
+constexpr bool is_numeric(type t) {
   FMT_ASSERT(t != internal::NAMED_ARG, "invalid argument type");
   return t > internal::NONE && t <= internal::LAST_NUMERIC_TYPE;
 }
@@ -2378,11 +2378,8 @@ void basic_writer<Char>::write_str(
     internal::report_unknown_type(spec.type_, "string");
   const StrChar *str_value = s.data();
   std::size_t str_size = s.size();
-  if (str_size == 0) {
-    if (!str_value) {
-      FMT_THROW(format_error("string pointer is null"));
-    }
-  }
+  if (str_size == 0 && !str_value)
+    FMT_THROW(format_error("string pointer is null"));
   std::size_t precision = static_cast<std::size_t>(spec.precision_);
   if (spec.precision_ >= 0 && precision < str_size)
     str_size = precision;
@@ -3072,38 +3069,52 @@ struct is_integer {
   };
 };
 
-struct width_checker {
+template <typename ErrorHandler>
+class width_checker {
+ public:
+  explicit constexpr width_checker(ErrorHandler &eh) : handler_(eh) {}
+
   template <typename T>
   constexpr typename std::enable_if<
       is_integer<T>::value, unsigned long long>::type operator()(T value) {
     if (is_negative(value))
-      FMT_THROW(format_error("negative width"));
+      handler_.on_error("negative width");
     return value;
   }
 
   template <typename T>
   constexpr typename std::enable_if<
       !is_integer<T>::value, unsigned long long>::type operator()(T) {
-    FMT_THROW(format_error("width is not integer"));
+    handler_.on_error("width is not integer");
     return 0;
   }
+
+ private:
+  ErrorHandler &handler_;
 };
 
-struct precision_checker {
+template <typename ErrorHandler>
+class precision_checker {
+ public:
+  explicit constexpr precision_checker(ErrorHandler &eh) : handler_(eh) {}
+
   template <typename T>
   constexpr typename std::enable_if<
       is_integer<T>::value, unsigned long long>::type operator()(T value) {
     if (is_negative(value))
-      FMT_THROW(format_error("negative precision"));
+      handler_.on_error("negative precision");
     return value;
   }
 
   template <typename T>
   constexpr typename std::enable_if<
       !is_integer<T>::value, unsigned long long>::type operator()(T) {
-    FMT_THROW(format_error("precision is not integer"));
+    handler_.on_error("precision is not integer");
     return 0;
   }
+
+ private:
+  ErrorHandler &handler_;
 };
 
 struct error_handler {
@@ -3148,41 +3159,41 @@ class specs_setter : public error_handler {
 template <typename Handler>
 class specs_checker : public Handler {
  public:
-  specs_checker(const Handler& handler, type arg_type)
+  constexpr specs_checker(const Handler& handler, internal::type arg_type)
     : Handler(handler), arg_type_(arg_type) {}
 
-  void on_align(alignment align) {
+  constexpr void on_align(alignment align) {
     if (align == ALIGN_NUMERIC)
       require_numeric_argument('=');
     Handler::on_align(align);
   }
 
-  void on_plus() {
+  constexpr void on_plus() {
     check_sign('+');
     Handler::on_plus();
   }
 
-  void on_minus() {
+  constexpr void on_minus() {
     check_sign('-');
     Handler::on_minus();
   }
 
-  void on_space() {
+  constexpr void on_space() {
     check_sign(' ');
     Handler::on_space();
   }
 
-  void on_hash() {
+  constexpr void on_hash() {
     require_numeric_argument('#');
     Handler::on_hash();
   }
 
-  void on_zero() {
+  constexpr void on_zero() {
     require_numeric_argument('0');
     Handler::on_zero();
   }
 
-  void end_precision() {
+  constexpr void end_precision() {
     if (is_integral(arg_type_) || arg_type_ == POINTER) {
       report_error("precision not allowed in {} format specifier",
                    arg_type_ == POINTER ? "pointer" : "integer");
@@ -3191,12 +3202,12 @@ class specs_checker : public Handler {
 
  private:
   template <typename... Args>
-  static void report_error(string_view format_str, const Args &... args) {
-    FMT_THROW(format_error(format(format_str, args...)));
+  void report_error(string_view format_str, const Args &... args) {
+    this->on_error(format(format_str, args...).c_str());
   }
 
   template <typename Char>
-  void require_numeric_argument(Char spec) const {
+  constexpr void require_numeric_argument(Char spec) {
     if (!is_numeric(arg_type_)) {
       report_error("format specifier '{}' requires numeric argument",
                    static_cast<char>(spec));
@@ -3204,7 +3215,7 @@ class specs_checker : public Handler {
   }
 
   template <typename Char>
-  void check_sign(Char sign) const {
+  constexpr void check_sign(Char sign) {
     require_numeric_argument(sign);
     if (is_integral(arg_type_) && arg_type_ != INT && arg_type_ != LONG_LONG &&
         arg_type_ != CHAR) {
@@ -3213,14 +3224,15 @@ class specs_checker : public Handler {
     }
   }
 
-  type arg_type_;
+  internal::type arg_type_;
 };
 
-template <typename Handler, typename T, typename Context>
+template <template <typename> class Handler, typename T, typename Context>
 constexpr void set_dynamic_spec(T &value, basic_arg<Context> arg) {
-  unsigned long long big_value = visit(Handler(), arg);
+  error_handler eh;
+  unsigned long long big_value = visit(Handler<error_handler>(eh), arg);
   if (big_value > (std::numeric_limits<int>::max)())
-    FMT_THROW(format_error("number is too big"));
+    eh.on_error("number is too big");
   value = static_cast<int>(big_value);
 }
 
@@ -3237,13 +3249,12 @@ class specs_handler: public specs_setter<typename Context::char_type> {
 
   template <typename Id>
   constexpr void on_dynamic_width(Id arg_id) {
-    set_dynamic_spec<internal::width_checker>(
-          this->specs_.width_, get_arg(arg_id));
+    set_dynamic_spec<width_checker>(this->specs_.width_, get_arg(arg_id));
   }
 
   template <typename Id>
   constexpr void on_dynamic_precision(Id arg_id) {
-    set_dynamic_spec<internal::precision_checker>(
+    set_dynamic_spec<precision_checker>(
           this->specs_.precision_, get_arg(arg_id));
   }
 
@@ -3536,7 +3547,7 @@ struct format_type : std::integral_constant<bool, get_type<T>() != CUSTOM> {};
 template <typename T, typename Enable = void>
 struct format_enum : std::integral_constant<bool, std::is_enum<T>::value> {};
 
-template <typename Handler, typename Spec, typename Char>
+template <template <typename> class Handler, typename Spec, typename Char>
 void handle_dynamic_spec(
     Spec &value, arg_ref<Char> ref, basic_context<Char> &ctx) {
   switch (ref.kind) {
@@ -3618,7 +3629,7 @@ struct dynamic_formatter {
   template <typename T>
   void format(basic_buffer<Char> &buf, const T &val, basic_context<Char> &ctx) {
     handle_specs(ctx);
-    struct null_handler {
+    struct null_handler : internal::error_handler {
       void on_align(alignment) {}
       void on_plus() {}
       void on_minus() {}
