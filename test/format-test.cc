@@ -1631,6 +1631,15 @@ struct test_format_specs_handler {
   fmt::internal::arg_ref<char> precision_ref;
   char type = 0;
 
+  // Workaround for MSVC2017 bug that results in "expression did not evaluate
+  // to a constant" with compiler-generated copy ctor.
+  constexpr test_format_specs_handler() {}
+  constexpr test_format_specs_handler(const test_format_specs_handler &other)
+  : res(other.res), align(other.align), fill(other.fill),
+    width(other.width), width_ref(other.width_ref),
+    precision(other.precision), precision_ref(other.precision_ref),
+    type(other.type) {}
+
   constexpr void on_align(fmt::alignment align) { this->align = align; }
   constexpr void on_fill(char fill) { this->fill = fill; }
   constexpr void on_plus() { res = PLUS; }
