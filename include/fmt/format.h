@@ -815,6 +815,10 @@ class null_terminating_iterator {
     return null_terminating_iterator(ptr_ + n, end_);
   }
 
+  null_terminating_iterator operator-(difference_type n) {
+    return null_terminating_iterator(ptr_ - n, end_);
+  }
+
   null_terminating_iterator operator+=(difference_type n) {
     ptr_ += n;
     return *this;
@@ -3514,28 +3518,51 @@ constexpr Iterator parse_format_specs(Iterator it, SpecHandler &handler) {
   return it;
 }
 
-// Formats a single argument.
-template <typename ArgFormatter, typename Char, typename Context>
-const Char *do_format_arg(basic_buffer<Char> &buffer,
-                          const basic_arg<Context> &arg,
-                          Context &ctx) {
-  auto it = null_terminating_iterator<Char>(ctx);
-  basic_format_specs<Char> specs;
-  if (*it == ':') {
-    ctx.advance_to(pointer_from(++it));
-    if (visit(custom_formatter<Char, Context>(buffer, ctx), arg))
-      return ctx.begin();
-    specs_checker<specs_handler<Context>>
-        handler(specs_handler<Context>(specs, ctx), arg.type());
-    it = parse_format_specs(it, handler);
+template <typename Iterator, typename Handler>
+void parse_format_string(Iterator it, Handler &handler) {
+  using char_type = typename std::iterator_traits<Iterator>::value_type;
+  auto start = it;
+  while (*it) {
+    char_type ch = *it++;
+    if (ch != '{' && ch != '}') continue;
+    if (*it == ch) {
+      handler.on_text(start, it);
+      start = ++it;
+      continue;
+    }
+    if (ch == '}')
+      handler.on_error("unmatched '}' in format string");
+    handler.on_text(start, it - 1);
+
+    struct id_adapter {
+      explicit id_adapter(Handler &h): handler(h) {}
+
+      void operator()() { handler.on_arg_id(); }
+      void operator()(unsigned id) { handler.on_arg_id(id); }
+      void operator()(basic_string_view<char_type> id) {
+        handler.on_arg_id(id);
+      }
+
+      void on_error(const char *message) { handler.on_error(message); }
+
+      Handler &handler;
+    } adapter(handler);
+
+    it = parse_arg_id(it, adapter);
+    if (*it == '}') {
+      handler.on_replacement_field(it);
+    } else if (*it == ':') {
+      ++it;
+      it = handler.on_format_specs(it);
+      if (*it != '}')
+        handler.on_error("unknown format specifier");
+    } else {
+      handler.on_error("missing '}' in format string");
+    }
+
+    start = ++it;
   }
-
-  if (*it != '}')
-    FMT_THROW(format_error("missing '}' in format string"));
-
-  // Format argument.
-  visit(ArgFormatter(buffer, ctx, specs), arg);
-  return pointer_from(it);
+  handler.on_text(start, it);
 }
 
 // Specifies whether to format T using the standard formatter.
@@ -3688,47 +3715,57 @@ inline typename basic_context<Char>::format_arg
 template <typename ArgFormatter, typename Char, typename Context>
 void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
                 basic_args<Context> args) {
-  basic_context<Char> ctx(format_str, args);
-  auto start = internal::null_terminating_iterator<Char>(ctx);
-  auto it = start;
-  using internal::pointer_from;
-  while (*it) {
-    Char ch = *it++;
-    if (ch != '{' && ch != '}') continue;
-    if (*it == ch) {
-      buffer.append(pointer_from(start), pointer_from(it));
-      start = ++it;
-      continue;
+  using iterator = internal::null_terminating_iterator<Char>;
+
+  struct handler : internal::error_handler {
+    handler(basic_buffer<Char> &b, basic_string_view<Char> format_str,
+            basic_args<Context> args)
+      : buffer(b), context(format_str, args) {}
+
+    void on_text(iterator begin, iterator end) {
+      buffer.append(pointer_from(begin), pointer_from(end));
     }
-    if (ch == '}')
-      FMT_THROW(format_error("unmatched '}' in format string"));
-    buffer.append(pointer_from(start), pointer_from(it) - 1);
 
+    void on_arg_id() { arg = context.next_arg(); }
+    void on_arg_id(unsigned id) {
+      context.check_arg_id(id);
+      arg = context.get_arg(id);
+    }
+    void on_arg_id(basic_string_view<Char> id) {
+      arg = context.get_arg(id);
+    }
+
+    void on_replacement_field(iterator it) {
+      context.advance_to(pointer_from(it));
+      using internal::custom_formatter;
+      if (visit(custom_formatter<Char, Context>(buffer, context), arg))
+        return;
+      basic_format_specs<Char> specs;
+      visit(ArgFormatter(buffer, context, specs), arg);
+    }
+
+    iterator on_format_specs(iterator it) {
+      context.advance_to(pointer_from(it));
+      using internal::custom_formatter;
+      if (visit(custom_formatter<Char, Context>(buffer, context), arg))
+        return iterator(context);
+      basic_format_specs<Char> specs;
+      using internal::specs_handler;
+      internal::specs_checker<specs_handler<Context>>
+          handler(specs_handler<Context>(specs, context), arg.type());
+      it = parse_format_specs(it, handler);
+      if (*it != '}')
+        on_error("missing '}' in format string");
+      context.advance_to(pointer_from(it));
+      visit(ArgFormatter(buffer, context, specs), arg);
+      return it;
+    }
+
+    basic_buffer<Char> &buffer;
+    basic_context<Char> context;
     basic_arg<Context> arg;
-    struct id_handler : internal::error_handler {
-      id_handler(Context &c, basic_arg<Context> &a): context(c), arg(a) {}
-
-      void operator()() { arg = context.next_arg(); }
-      void operator()(unsigned id) {
-        context.check_arg_id(id);
-        arg = context.get_arg(id);
-      }
-      void operator()(basic_string_view<Char> id) {
-        arg = context.get_arg(id);
-      }
-
-      Context &context;
-      basic_arg<Context> &arg;
-    } handler(ctx, arg);
-
-    it = parse_arg_id(it, handler);
-    ctx.advance_to(pointer_from(it));
-    it = internal::do_format_arg<ArgFormatter>(buffer, arg, ctx);
-    if (*it != '}')
-      FMT_THROW(format_error(fmt::format("unknown format specifier")));
-    start = ++it;
-  }
-  buffer.append(pointer_from(start), pointer_from(it));
+  } handler(buffer, format_str, args);
+  parse_format_string(iterator(format_str.begin(), format_str.end()), handler);
 }
 
 // Casts ``p`` to ``const void*`` for pointer formatting.
