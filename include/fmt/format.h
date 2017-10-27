@@ -3346,8 +3346,8 @@ class dynamic_specs_handler :
   ParseContext &context_;
 };
 
-template <typename Iterator, typename Handler>
-constexpr Iterator parse_arg_id(Iterator it, Handler& handler) {
+template <typename Iterator, typename IDHandler>
+constexpr Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
   char_type c = *it;
   if (c == '}' || c == ':') {
@@ -3375,9 +3375,10 @@ constexpr Iterator parse_arg_id(Iterator it, Handler& handler) {
   return it;
 }
 
-template <typename Handler, typename Char>
-struct width_handler {
-  explicit constexpr width_handler(Handler &h) : handler(h) {}
+// Adapts SpecHandler to IDHandler API for dynamic width.
+template <typename SpecHandler, typename Char>
+struct width_adapter {
+  explicit constexpr width_adapter(SpecHandler &h) : handler(h) {}
 
   constexpr void operator()() { handler.on_dynamic_width(auto_id()); }
   constexpr void operator()(unsigned id) { handler.on_dynamic_width(id); }
@@ -3387,12 +3388,13 @@ struct width_handler {
 
   constexpr void on_error(const char *message) { handler.on_error(message); }
 
-  Handler &handler;
+  SpecHandler &handler;
 };
 
-template <typename Handler, typename Char>
-struct precision_handler {
-  explicit constexpr precision_handler(Handler &h) : handler(h) {}
+// Adapts SpecHandler to IDHandler API for dynamic precision.
+template <typename SpecHandler, typename Char>
+struct precision_adapter {
+  explicit constexpr precision_adapter(SpecHandler &h) : handler(h) {}
 
   constexpr void operator()() { handler.on_dynamic_precision(auto_id()); }
   constexpr void operator()(unsigned id) { handler.on_dynamic_precision(id); }
@@ -3402,7 +3404,7 @@ struct precision_handler {
 
   constexpr void on_error(const char *message) { handler.on_error(message); }
 
-  Handler &handler;
+  SpecHandler &handler;
 };
 
 // Parses standard format specifiers and sends notifications about parsed
@@ -3410,8 +3412,8 @@ struct precision_handler {
 // it: an iterator pointing to the beginning of a null-terminated range of
 //     characters, possibly emulated via null_terminating_iterator, representing
 //     format specifiers.
-template <typename Iterator, typename Handler>
-constexpr Iterator parse_format_specs(Iterator it, Handler &handler) {
+template <typename Iterator, typename SpecHandler>
+constexpr Iterator parse_format_specs(Iterator it, SpecHandler &handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
   // Parse fill and alignment.
   if (char_type c = *it) {
@@ -3480,8 +3482,7 @@ constexpr Iterator parse_format_specs(Iterator it, Handler &handler) {
   if ('0' <= *it && *it <= '9') {
     handler.on_width(parse_nonnegative_int(it, handler));
   } else if (*it == '{') {
-    width_handler<Handler, char_type> wh(handler);
-    it = parse_arg_id(it + 1, wh);
+    it = parse_arg_id(it + 1, width_adapter<SpecHandler, char_type>(handler));
     if (*it++ != '}') {
       handler.on_error("invalid format string");
       return it;
@@ -3494,8 +3495,8 @@ constexpr Iterator parse_format_specs(Iterator it, Handler &handler) {
     if ('0' <= *it && *it <= '9') {
       handler.on_precision(parse_nonnegative_int(it, handler));
     } else if (*it == '{') {
-      precision_handler<Handler, char_type> ph(handler);
-      it = parse_arg_id(it + 1, ph);
+      it = parse_arg_id(
+            it + 1, precision_adapter<SpecHandler, char_type>(handler));
       if (*it++ != '}') {
         handler.on_error("invalid format string");
         return it;
