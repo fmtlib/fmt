@@ -3518,6 +3518,23 @@ constexpr Iterator parse_format_specs(Iterator it, SpecHandler &handler) {
   return it;
 }
 
+template <typename Handler, typename Char>
+struct id_adapter {
+  constexpr explicit id_adapter(Handler &h): handler(h) {}
+
+  constexpr void operator()() { handler.on_arg_id(); }
+  constexpr void operator()(unsigned id) { handler.on_arg_id(id); }
+  constexpr void operator()(basic_string_view<Char> id) {
+    handler.on_arg_id(id);
+  }
+
+  constexpr void on_error(const char *message) {
+    handler.on_error(message);
+  }
+
+  Handler &handler;
+};
+
 template <typename Iterator, typename Handler>
 constexpr void parse_format_string(Iterator it, Handler &handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
@@ -3536,23 +3553,7 @@ constexpr void parse_format_string(Iterator it, Handler &handler) {
     }
     handler.on_text(start, it - 1);
 
-    struct id_adapter {
-      constexpr explicit id_adapter(Handler &h): handler(h) {}
-
-      constexpr void operator()() { handler.on_arg_id(); }
-      constexpr void operator()(unsigned id) { handler.on_arg_id(id); }
-      constexpr void operator()(basic_string_view<char_type> id) {
-        handler.on_arg_id(id);
-      }
-
-      constexpr void on_error(const char *message) {
-        handler.on_error(message);
-      }
-
-      Handler &handler;
-    } adapter(handler);
-
-    it = parse_arg_id(it, adapter);
+    it = parse_arg_id(it, id_adapter<Handler, char_type>(handler));
     if (*it == '}') {
       handler.on_replacement_field(it);
     } else if (*it == ':') {
