@@ -1780,3 +1780,35 @@ TEST(FormatTest, ConstexprSpecsChecker) {
   static_assert(check_specs("d").type == 'd', "");
   static_assert(check_specs("{<").res == handler::ERROR, "");
 }
+
+struct test_format_string_handler {
+  constexpr void on_text(const char *, const char *) {}
+
+  constexpr void on_arg_id() {}
+
+  template <typename T>
+  constexpr void on_arg_id(T) {}
+
+  constexpr void on_replacement_field(const char *) {}
+
+  constexpr const char *on_format_specs(const char *s) { return s; }
+
+  constexpr void on_error(const char *) { error = true; }
+
+  bool error = false;
+};
+
+constexpr bool parse_string(const char *s) {
+  test_format_string_handler h;
+  fmt::internal::parse_format_string(s, h);
+  return !h.error;
+}
+
+TEST(FormatTest, ConstexprParseFormatString) {
+  static_assert(parse_string("foo"), "");
+  static_assert(!parse_string("}"), "");
+  static_assert(parse_string("{}"), "");
+  static_assert(parse_string("{42}"), "");
+  static_assert(parse_string("{foo}"), "");
+  static_assert(parse_string("{:}"), "");
+}

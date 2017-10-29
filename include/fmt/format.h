@@ -3519,7 +3519,7 @@ constexpr Iterator parse_format_specs(Iterator it, SpecHandler &handler) {
 }
 
 template <typename Iterator, typename Handler>
-void parse_format_string(Iterator it, Handler &handler) {
+constexpr void parse_format_string(Iterator it, Handler &handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
   auto start = it;
   while (*it) {
@@ -3530,20 +3530,24 @@ void parse_format_string(Iterator it, Handler &handler) {
       start = ++it;
       continue;
     }
-    if (ch == '}')
+    if (ch == '}') {
       handler.on_error("unmatched '}' in format string");
+      return;
+    }
     handler.on_text(start, it - 1);
 
     struct id_adapter {
-      explicit id_adapter(Handler &h): handler(h) {}
+      constexpr explicit id_adapter(Handler &h): handler(h) {}
 
-      void operator()() { handler.on_arg_id(); }
-      void operator()(unsigned id) { handler.on_arg_id(id); }
-      void operator()(basic_string_view<char_type> id) {
+      constexpr void operator()() { handler.on_arg_id(); }
+      constexpr void operator()(unsigned id) { handler.on_arg_id(id); }
+      constexpr void operator()(basic_string_view<char_type> id) {
         handler.on_arg_id(id);
       }
 
-      void on_error(const char *message) { handler.on_error(message); }
+      constexpr void on_error(const char *message) {
+        handler.on_error(message);
+      }
 
       Handler &handler;
     } adapter(handler);
