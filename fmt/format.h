@@ -4093,7 +4093,6 @@ struct ArgConcatNoSeparator
 template<typename Char>
 struct ArgConcatSeparator {
     BasicCStringRef<Char> sep;
-    //ArgConcatSeparator<Char>(const BasicCStringRef<Char> &sep): sep(sep) {}
 };
 
 template<typename Separator, typename ...Args>
