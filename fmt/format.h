@@ -4087,11 +4087,8 @@ void format_arg(fmt::BasicFormatter<Char, ArgFormatter> &f,
 }
 
 struct ArgConcatNoSeparator {
-    template<typename ArgFormatter>
-    void add_separator(fmt::BasicFormatter<char, ArgFormatter>&) const {}
-
-    template<typename ArgFormatter>
-    void add_separator(fmt::BasicFormatter<wchar_t, ArgFormatter>&) const {}
+    template<typename T>
+    void add_separator(T&) const {}
 };
 
 template<typename Char>
