@@ -1604,6 +1604,30 @@ TEST(FormatTest, JoinArg) {
 #endif
 }
 
+TEST(FormatTest, ConcatArg) {
+    using fmt::concat;
+    EXPECT_EQ("123", format("{}", concat(1,2,3)));
+    EXPECT_EQ("()", format("({})", concat()));
+    EXPECT_EQ("(001002003)", format("({:03})", concat(1,2,3)));
+    EXPECT_EQ("(1 hello world 2)", format("({})", concat(1," hello"," world ", 2)));
+    EXPECT_EQ("(1 hello world 2)", format("({}{})", concat(1," hello"," world "), 2));
+    EXPECT_EQ("(+01.20+03.40)", format("({:+06.2f})", concat(1.2f, 3.4f)));
+
+    EXPECT_EQ(L"(1, 2, 3)", format(L"({})", concat(1, L", ", 2, L", ", 3)));
+}
+
+TEST(FormatTest, ConcatSeparatedArg) {
+    using fmt::concat_separated;
+    EXPECT_EQ("(1, 2, 3)", format("({})", concat_separated(", ", 1,2,3)));
+    EXPECT_EQ("()", format("({})", concat_separated(", ")));
+    EXPECT_EQ("(001, 002, 003)", format("({:03})", concat_separated(", ", 1,2,3)));
+    EXPECT_EQ("(1 hello world 2)", format("({})", concat_separated(" ", 1,"hello","world", 2)));
+    EXPECT_EQ("(1 hello world 2)", format("({} {})", concat_separated(" ", 1,"hello","world"), 2));
+    EXPECT_EQ("(+01.20, +03.40)", format("({:+06.2f})", concat_separated(", ", 1.2f, 3.4f)));
+
+    EXPECT_EQ(L"(1, 2, 3)", format(L"({})", concat_separated(L", ", 1, 2, 3)));
+}
+
 template <typename T>
 std::string str(const T &value) {
   return fmt::format("{}", value);
