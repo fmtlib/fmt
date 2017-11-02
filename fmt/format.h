@@ -4085,6 +4085,85 @@ void format_arg(fmt::BasicFormatter<Char, ArgFormatter> &f,
   }
   format_str = end + 1;
 }
+
+struct ArgConcatNoSeparator
+{
+};
+
+template<typename Char>
+struct ArgConcatSeparator {
+    BasicCStringRef<Char> sep;
+    //ArgConcatSeparator<Char>(const BasicCStringRef<Char> &sep): sep(sep) {}
+};
+
+template<typename Separator, typename ...Args>
+struct ArgConcat: public Separator {
+    std::tuple<Args...> a;
+    ArgConcat(const Separator &sep, Args&&...args):
+        Separator(sep), a(std::forward<Args>(args)...){
+    }
+
+    template<std::size_t I, typename Char, typename ArgFormatter>
+    std::enable_if_t<I == sizeof...(Args), void>
+    format(fmt::BasicFormatter<Char, ArgFormatter> &,
+           const Char *&) const {
+    }
+
+    template<std::size_t I, typename Char, typename ArgFormatter>
+    std::enable_if_t<I < sizeof...(Args) &&
+    std::is_same<Separator, ArgConcatNoSeparator>::value, void>
+    format(fmt::BasicFormatter<Char, ArgFormatter> &f,
+           const Char *&format_str) const {
+        const Char* save = format_str;
+        f.format(format_str,
+                 internal::MakeArg<fmt::BasicFormatter<Char, ArgFormatter> >(std::get<I>(a)));
+        format<I+1>(f, save);
+    }
+
+    template<std::size_t I, typename Char, typename ArgFormatter>
+    std::enable_if_t<I < sizeof...(Args) &&
+        std::is_same<Separator,ArgConcatSeparator<Char>>::value, void>
+    format(fmt::BasicFormatter<Char, ArgFormatter> &f,
+           const Char *&format_str) const {
+        const Char* save = format_str;
+        if(I != 0) {
+            f.writer().write(Separator::sep);
+        }
+        f.format(format_str,
+                 internal::MakeArg<fmt::BasicFormatter<Char, ArgFormatter> >(std::get<I>(a)));
+        format<I+1>(f, save);
+    }
+};
+
+template<typename ...Args>
+ArgConcat<ArgConcatNoSeparator, Args...> concat(Args&&...args) {
+    return ArgConcat<ArgConcatNoSeparator, Args...>{ArgConcatNoSeparator{}, std::forward<Args>(args)...};
+}
+
+template<typename ...Args>
+ArgConcat<ArgConcatSeparator<char>, Args...> concat_separated(const BasicCStringRef<char> &sep, Args&&...args) {
+    return ArgConcat<ArgConcatSeparator<char>, Args...>{ArgConcatSeparator<char>{sep}, std::forward<Args>(args)...};
+}
+
+template<typename ...Args>
+ArgConcat<ArgConcatSeparator<wchar_t>, Args...> concat_separated(const BasicCStringRef<wchar_t> &sep, Args&&...args) {
+    return ArgConcat<ArgConcatSeparator<wchar_t>, Args...>{ArgConcatSeparator<wchar_t>{sep}, std::forward<Args>(args)...};
+}
+
+template<typename ArgFormatter, typename Char, typename Separator, typename ...Args>
+void format_arg(fmt::BasicFormatter<Char, ArgFormatter> &f,
+                const Char *&format_str, const ArgConcat<Separator, Args...> &e) {
+    const Char* end = format_str;
+    if (*end == ':')
+      ++end;
+    while (*end && *end != '}')
+      ++end;
+    if (*end != '}')
+      FMT_THROW(FormatError("missing '}' in format string"));
+
+    e.format<0>(f, format_str);
+    format_str = end + 1;
+}
 }  // namespace fmt
 
 #if FMT_USE_USER_DEFINED_LITERALS
