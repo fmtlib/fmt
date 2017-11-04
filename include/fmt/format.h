@@ -3548,7 +3548,7 @@ struct id_adapter {
 };
 
 template <typename Iterator, typename Handler>
-constexpr void parse_format_string(Iterator it, Handler &handler) {
+constexpr void parse_format_string(Iterator it, Handler &&handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
   auto start = it;
   while (*it) {
@@ -3781,8 +3781,9 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
     basic_buffer<Char> &buffer;
     basic_context<Char> context;
     basic_arg<Context> arg;
-  } handler(buffer, format_str, args);
-  parse_format_string(iterator(format_str.begin(), format_str.end()), handler);
+  };
+  parse_format_string(iterator(format_str.begin(), format_str.end()),
+                      handler(buffer, format_str, args));
 }
 
 // Casts ``p`` to ``const void*`` for pointer formatting.
@@ -3796,8 +3797,44 @@ inline const void *ptr(const T *p) { return p; }
 namespace fmt {
 namespace internal {
 
+# if FMT_UDL_TEMPLATE
 template <typename Char>
-struct udl_format {
+struct udl_format_handler {
+  bool error = false;
+
+  constexpr void on_text(const Char *, const Char *) {}
+
+  constexpr void on_arg_id() {}
+
+  template <typename T>
+  constexpr void on_arg_id(T) {}
+
+  constexpr void on_replacement_field(const Char *) {}
+
+  constexpr const Char *on_format_specs(const Char *s) { return s; }
+
+  constexpr void on_error(const char *) { error = true; }
+};
+
+template <typename Char, Char... CHARS>
+struct udl_formatter {
+  template <typename... Args>
+  static constexpr bool check_format(const Char *s) {
+    udl_format_handler<Char> handler;
+    internal::parse_format_string(s, handler);
+    return !handler.error;
+  }
+
+  template <typename... Args>
+  std::basic_string<Char> operator()(const Args &... args) const {
+    constexpr Char s[] = {CHARS..., '\0'};
+    static_assert(check_format<Args...>(s), "invalid format string");
+    return format(s, args...);
+  }
+};
+# else
+template <typename Char>
+struct udl_formatter {
   const Char *str;
 
   template <typename... Args>
@@ -3806,6 +3843,7 @@ struct udl_format {
     return format(str, std::forward<Args>(args)...);
   }
 };
+# endif // FMT_UDL_TEMPLATE
 
 template <typename Char>
 struct UdlArg {
@@ -3821,6 +3859,12 @@ struct UdlArg {
 
 inline namespace literals {
 
+# if FMT_UDL_TEMPLATE
+template <typename Char, Char... CHARS>
+constexpr internal::udl_formatter<Char, CHARS...> operator""_format() {
+  return {};
+}
+# else
 /**
   \rst
   C++11 literal equivalent of :func:`fmt::format`.
@@ -3831,10 +3875,11 @@ inline namespace literals {
     std::string message = "The answer is {}"_format(42);
   \endrst
  */
-inline internal::udl_format<char>
+inline internal::udl_formatter<char>
 operator"" _format(const char *s, std::size_t) { return {s}; }
-inline internal::udl_format<wchar_t>
+inline internal::udl_formatter<wchar_t>
 operator"" _format(const wchar_t *s, std::size_t) { return {s}; }
+# endif // FMT_UDL_TEMPLATE
 
 /**
   \rst
@@ -3850,23 +3895,6 @@ inline internal::UdlArg<char>
 operator"" _a(const char *s, std::size_t) { return {s}; }
 inline internal::UdlArg<wchar_t>
 operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
-
-# if FMT_UDL_TEMPLATE
-template <typename Char, Char... CHARS>
-struct udl_formatter {
-  template <typename... Args>
-  std::string operator()(const Args &... args) const {
-    const Char s[] = {CHARS...};
-    // TODO
-    return s;
-  }
-};
-
-template <typename Char, Char... CHARS>
-constexpr auto operator""_format() {
-  return udl_formatter<Char, CHARS...>();
-}
-# endif
 } // inline namespace literals
 } // namespace fmt
 #endif // FMT_USE_USER_DEFINED_LITERALS
