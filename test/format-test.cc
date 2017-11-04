@@ -1812,3 +1812,9 @@ TEST(FormatTest, ConstexprParseFormatString) {
   static_assert(parse_string("{foo}"), "");
   static_assert(parse_string("{:}"), "");
 }
+
+#if FMT_UDL_TEMPLATE
+TEST(FormatTest, UdlTemplate) {
+  EXPECT_EQ("foo", "foo"_format());
+}
+#endif

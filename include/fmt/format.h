@@ -79,6 +79,10 @@
 # endif
 #endif
 
+#ifdef __clang__
+# define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
+#endif
+
 #if defined(__INTEL_COMPILER)
 # define FMT_ICC_VERSION __INTEL_COMPILER
 #elif defined(__ICL)
@@ -88,6 +92,7 @@
 #if defined(__clang__) && !defined(FMT_ICC_VERSION)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
+# pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
 # pragma clang diagnostic ignored "-Wpadded"
 #endif
 
@@ -183,6 +188,13 @@
 # else
 #  define FMT_USE_USER_DEFINED_LITERALS 0
 # endif
+#endif
+
+#if FMT_USE_USER_DEFINED_LITERALS && \
+    (FMT_GCC_VERSION >= 600 || FMT_CLANG_VERSION >= 304)
+# define FMT_UDL_TEMPLATE 1
+#else
+# define FMT_UDL_TEMPLATE 0
 #endif
 
 #ifndef FMT_ASSERT
@@ -3839,9 +3851,26 @@ operator"" _a(const char *s, std::size_t) { return {s}; }
 inline internal::UdlArg<wchar_t>
 operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 
+# if FMT_UDL_TEMPLATE
+template <typename Char, Char... CHARS>
+struct udl_formatter {
+  template <typename... Args>
+  std::string operator()(const Args &... args) const {
+    const Char s[] = {CHARS...};
+    // TODO
+    return s;
+  }
+};
+
+template <typename Char, Char... CHARS>
+constexpr auto operator""_format() {
+  return udl_formatter<Char, CHARS...>();
+}
+# endif
 } // inline namespace literals
 } // namespace fmt
 #endif // FMT_USE_USER_DEFINED_LITERALS
+
 
 #ifdef FMT_HEADER_ONLY
 # define FMT_FUNC inline
