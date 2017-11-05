@@ -364,6 +364,7 @@ class basic_string_view {
 
  public:
   using char_type = Char;
+  using iterator = const Char *;
 
   constexpr basic_string_view() noexcept : data_(0), size_(0) {}
 
@@ -403,8 +404,8 @@ class basic_string_view {
   /** Returns the string size. */
   constexpr std::size_t size() const { return size_; }
 
-  const Char *begin() const { return data_; }
-  const Char *end() const { return data_ + size_; }
+  constexpr iterator begin() const { return data_; }
+  constexpr iterator end() const { return data_ + size_; }
 
   void remove_prefix(size_t n) {
     data_ += n;
@@ -790,11 +791,11 @@ class null_terminating_iterator {
 
   null_terminating_iterator() : ptr_(0), end_(0) {}
 
-  null_terminating_iterator(const Char *ptr, const Char *end)
+  constexpr null_terminating_iterator(const Char *ptr, const Char *end)
     : ptr_(ptr), end_(end) {}
 
   template <typename Range>
-  explicit null_terminating_iterator(const Range &r)
+  constexpr explicit null_terminating_iterator(const Range &r)
     : ptr_(r.begin()), end_(r.end()) {}
 
   null_terminating_iterator &operator=(const Char *ptr) {
@@ -803,16 +804,16 @@ class null_terminating_iterator {
     return *this;
   }
 
-  Char operator*() const {
+  constexpr Char operator*() const {
     return ptr_ != end_ ? *ptr_ : 0;
   }
 
-  null_terminating_iterator operator++() {
+  constexpr null_terminating_iterator operator++() {
     ++ptr_;
     return *this;
   }
 
-  null_terminating_iterator operator++(int) {
+  constexpr null_terminating_iterator operator++(int) {
     null_terminating_iterator result(*this);
     ++ptr_;
     return result;
@@ -823,7 +824,7 @@ class null_terminating_iterator {
     return *this;
   }
 
-  null_terminating_iterator operator+(difference_type n) {
+  constexpr null_terminating_iterator operator+(difference_type n) {
     return null_terminating_iterator(ptr_ + n, end_);
   }
 
@@ -1919,15 +1920,15 @@ class parse_context {
   using char_type = Char;
   using iterator = const Char*;
 
-  explicit parse_context(basic_string_view<Char> format_str)
+  explicit constexpr parse_context(basic_string_view<Char> format_str)
     : format_str_(format_str), next_arg_index_(0) {}
 
   // Returns an iterator to the beginning of the format string range being
   // parsed.
-  iterator begin() const { return format_str_.begin(); }
+  constexpr iterator begin() const { return format_str_.begin(); }
 
   // Returns an iterator past the end of the format string range being parsed.
-  iterator end() const { return format_str_.end(); }
+  constexpr iterator end() const { return format_str_.end(); }
 
   // Advances the begin iterator to ``it``.
   void advance_to(iterator it) {
@@ -3429,7 +3430,7 @@ struct precision_adapter {
 //     characters, possibly emulated via null_terminating_iterator, representing
 //     format specifiers.
 template <typename Iterator, typename SpecHandler>
-constexpr Iterator parse_format_specs(Iterator it, SpecHandler &handler) {
+constexpr Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
   // Parse fill and alignment.
   if (char_type c = *it) {
@@ -3616,7 +3617,7 @@ struct formatter<
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.
   template <typename ParseContext>
-  auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+  constexpr typename ParseContext::iterator parse(ParseContext &ctx) {
     auto it = internal::null_terminating_iterator<Char>(ctx);
     using handler_type = internal::dynamic_specs_handler<ParseContext>;
     internal::specs_checker<handler_type>
@@ -3797,39 +3798,68 @@ inline const void *ptr(const T *p) { return p; }
 namespace fmt {
 namespace internal {
 
+template <typename Char, typename T>
+constexpr const Char *parse_format_specs(parse_context<Char> &ctx) {
+  formatter<T, Char> f;
+  return f.parse(ctx);
+}
+
 # if FMT_UDL_TEMPLATE
-template <typename Char>
+template <typename Char, typename... Args>
 struct udl_format_handler {
-  bool error = false;
+ public:
+  explicit constexpr udl_format_handler(const Char *end) : end_(end) {}
 
   constexpr void on_text(const Char *, const Char *) {}
 
-  constexpr void on_arg_id() {}
+  constexpr void on_arg_id() { ++arg_index_; }
 
   template <typename T>
   constexpr void on_arg_id(T) {}
 
   constexpr void on_replacement_field(const Char *) {}
 
-  constexpr const Char *on_format_specs(const Char *s) { return s; }
+  constexpr const Char *on_format_specs(const Char *s) {
+    if (arg_index_ < 0 || arg_index_ >= sizeof...(Args)) {
+      on_error("argument index out of range");
+      return s;
+    }
+    parse_context<Char> ctx(basic_string_view<Char>(s, end_ - s));
+    return parse_funcs_[arg_index_](ctx);
+  }
 
-  constexpr void on_error(const char *) { error = true; }
+  constexpr void on_error(const char *) { error_ = true; }
+
+  constexpr bool is_valid() const { return !error_; }
+
+ private:
+  // Format specifier parsing function.
+  using parse_func = const Char *(*)(parse_context<Char> &);
+
+  const Char *end_;
+  int arg_index_ = -1;
+  bool error_ = false;
+  parse_func parse_funcs_[sizeof...(Args)] = {
+      &parse_format_specs<Char, Args>...
+  };
 };
 
 template <typename Char, Char... CHARS>
-struct udl_formatter {
-  template <typename... Args>
-  static constexpr bool check_format(const Char *s) {
-    udl_format_handler<Char> handler;
-    internal::parse_format_string(s, handler);
-    return !handler.error;
-  }
-
+class udl_formatter {
+ public:
   template <typename... Args>
   std::basic_string<Char> operator()(const Args &... args) const {
     constexpr Char s[] = {CHARS..., '\0'};
-    static_assert(check_format<Args...>(s), "invalid format string");
+    static_assert(check_format<Args...>(s), "error parsing format string");
     return format(s, args...);
+  }
+
+ private:
+  template <typename... Args>
+  static constexpr bool check_format(const Char *s) {
+    udl_format_handler<Char, Args...> handler(s + sizeof...(CHARS));
+    internal::parse_format_string(s, handler);
+    return handler.is_valid();
   }
 };
 # else
