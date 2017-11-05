@@ -1234,8 +1234,11 @@ namespace fmt {
 template <>
 struct formatter<Date> {
   template <typename ParseContext>
-  auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
+  constexpr auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+    auto it = ctx.begin();
+    if (*it == 'd')
+      ++it;
+    return it;
   }
 
   void format(buffer &buf, const Date &d, context &) {
@@ -1813,8 +1816,7 @@ TEST(FormatTest, ConstexprParseFormatString) {
   static_assert(parse_string("{:}"), "");
 }
 
-#if FMT_UDL_TEMPLATE
 TEST(FormatTest, UdlTemplate) {
   EXPECT_EQ("foo", "foo"_format());
+  EXPECT_EQ("        42", "{0:10}"_format(42));
 }
-#endif

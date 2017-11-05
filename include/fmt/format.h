@@ -3812,33 +3812,37 @@ struct udl_format_handler {
 
   constexpr void on_text(const Char *, const Char *) {}
 
-  constexpr void on_arg_id() { ++arg_index_; }
-
-  template <typename T>
-  constexpr void on_arg_id(T) {}
+  constexpr void on_arg_id() {
+    ++arg_index_;
+    check_arg_index();
+  }
+  constexpr void on_arg_id(unsigned index) {
+    arg_index_ = index;
+    check_arg_index();
+  }
+  constexpr void on_arg_id(basic_string_view<Char>) {}
 
   constexpr void on_replacement_field(const Char *) {}
 
   constexpr const Char *on_format_specs(const Char *s) {
-    if (arg_index_ < 0 || arg_index_ >= sizeof...(Args)) {
-      on_error("argument index out of range");
-      return s;
-    }
     parse_context<Char> ctx(basic_string_view<Char>(s, end_ - s));
     return parse_funcs_[arg_index_](ctx);
   }
 
-  constexpr void on_error(const char *) { error_ = true; }
-
-  constexpr bool is_valid() const { return !error_; }
+  // This function is intentionally not constexpr to give a compile-time error.
+  void on_error(const char *);
 
  private:
+  constexpr void check_arg_index() {
+    if (arg_index_ < 0 || arg_index_ >= sizeof...(Args))
+      on_error("argument index out of range");
+  }
+
   // Format specifier parsing function.
   using parse_func = const Char *(*)(parse_context<Char> &);
 
   const Char *end_;
   int arg_index_ = -1;
-  bool error_ = false;
   parse_func parse_funcs_[sizeof...(Args)] = {
       &parse_format_specs<Char, Args>...
   };
@@ -3850,7 +3854,7 @@ class udl_formatter {
   template <typename... Args>
   std::basic_string<Char> operator()(const Args &... args) const {
     constexpr Char s[] = {CHARS..., '\0'};
-    static_assert(check_format<Args...>(s), "error parsing format string");
+    constexpr bool invalid_format = check_format<Args...>(s);
     return format(s, args...);
   }
 
@@ -3859,7 +3863,7 @@ class udl_formatter {
   static constexpr bool check_format(const Char *s) {
     udl_format_handler<Char, Args...> handler(s + sizeof...(CHARS));
     internal::parse_format_string(s, handler);
-    return handler.is_valid();
+    return true;
   }
 };
 # else
