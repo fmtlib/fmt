@@ -125,7 +125,7 @@ class ArgConverter : public ArgVisitor<ArgConverter<T>, void> {
     using internal::Arg;
     typedef typename internal::Conditional<
         is_same<T, void>::value, U, T>::type TargetType;
-    if (sizeof(TargetType) <= sizeof(int)) {
+    if (const_check(sizeof(TargetType) <= sizeof(int))) {
       // Extra casts are used to silence warnings.
       if (is_signed) {
         arg_.type = Arg::INT;
