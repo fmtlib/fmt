@@ -10,6 +10,8 @@
 #include "fmt/printf.h"
 #include "gtest-extra.h"
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 using fmt::BasicPrintfArgFormatter;
 
 // A custom argument formatter that doesn't print `-` for floating-point values

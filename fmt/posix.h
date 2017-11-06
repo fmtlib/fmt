@@ -1,4 +1,4 @@
-/*
+﻿/*
  A C++ interface to POSIX functions.
 
  Copyright (c) 2012 - 2016, Victor Zverovich
@@ -63,6 +63,8 @@
 #endif
 
 #define FMT_RETRY(result, expression) FMT_RETRY_VAL(result, expression, -1)
+
+FMT_CUSTOM_NAMESPACE_BEGIN
 
 namespace fmt {
 
@@ -355,6 +357,8 @@ class Locale {
 };
 #endif  // FMT_LOCALE
 }  // namespace fmt
+
+FMT_CUSTOM_NAMESPACE_END
 
 #if !FMT_USE_RVALUE_REFERENCES
 namespace std {

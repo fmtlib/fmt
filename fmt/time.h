@@ -1,4 +1,4 @@
-/*
+﻿/*
  Formatting library for C++ - time formatting
 
  Copyright (c) 2012 - 2016, Victor Zverovich
@@ -18,6 +18,8 @@
 # pragma warning(disable: 4702)  // unreachable code
 # pragma warning(disable: 4996)  // "deprecated" functions
 #endif
+
+FMT_CUSTOM_NAMESPACE_BEGIN
 
 namespace fmt {
 template <typename ArgFormatter>
@@ -135,6 +137,8 @@ inline std::tm gmtime(std::time_t time) {
   return std::tm();
 }
 } //namespace fmt
+
+FMT_CUSTOM_NAMESPACE_END
 
 #ifdef _MSC_VER
 # pragma warning(pop)

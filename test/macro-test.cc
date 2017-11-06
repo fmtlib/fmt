@@ -31,6 +31,8 @@
 #define FMT_USE_VARIADIC_TEMPLATES 0
 #include "fmt/format.h"
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 #define IDENTITY(x) x
 
 TEST(UtilTest, Gen) {

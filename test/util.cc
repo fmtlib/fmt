@@ -28,6 +28,8 @@
 #include "util.h"
 #include <cstring>
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 void increment(char *s) {
   for (int i = static_cast<int>(std::strlen(s)) - 1; i >= 0; --i) {
     if (s[i] != '9') {

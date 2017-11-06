@@ -10,6 +10,8 @@
 #include "fmt/container.h"
 #include "gtest/gtest.h"
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 using fmt::internal::ContainerBuffer;
 
 TEST(ContainerBufferTest, Empty) {

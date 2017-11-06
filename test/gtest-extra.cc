@@ -29,6 +29,8 @@
 
 #if FMT_USE_FILE_DESCRIPTORS
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 using fmt::File;
 
 void OutputRedirect::flush() {

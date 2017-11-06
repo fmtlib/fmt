@@ -9,6 +9,8 @@
 
 #include "ostream.h"
 
+FMT_CUSTOM_NAMESPACE_BEGIN
+
 namespace fmt {
 
 namespace internal {
@@ -33,3 +35,5 @@ FMT_FUNC void print(std::ostream &os, CStringRef format_str, ArgList args) {
   internal::write(os, w);
 }
 }  // namespace fmt
+
+FMT_CUSTOM_NAMESPACE_END

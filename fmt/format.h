@@ -28,6 +28,8 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
+#include "custom_namespace.h"
+
 #define FMT_INCLUDE
 #include <cassert>
 #include <clocale>
@@ -355,6 +357,12 @@ typedef __int64          intmax_t;
 // if the clz and clzll builtins are not available.
 #if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL) && !defined(_MANAGED)
 # include <intrin.h>  // _BitScanReverse, _BitScanReverse64
+# define FMT_HAS_MSVC_INTRINSICS
+#endif
+
+FMT_CUSTOM_NAMESPACE_BEGIN
+
+#ifdef FMT_HAS_MSVC_INTRINSICS
 
 namespace fmt {
 namespace internal {
@@ -401,8 +409,8 @@ inline uint32_t clzll(uint64_t x) {
   return 63 - r;
 }
 # define FMT_BUILTIN_CLZLL(n) fmt::internal::clzll(n)
-}
-}
+} // namespace internal
+} // namespace fmt
 #endif
 
 namespace fmt {
@@ -426,8 +434,10 @@ inline DummyInt _isnan(...) { return DummyInt(); }
 // warnings.
 template <typename T>
 inline T const_check(T value) { return value; }
-}
+}  // namespace internal
 }  // namespace fmt
+
+FMT_CUSTOM_NAMESPACE_END
 
 namespace std {
 // Standard permits specialization of std::numeric_limits. This specialization
@@ -435,15 +445,15 @@ namespace std {
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48891
 // and the same for isnan and signbit.
 template <>
-class numeric_limits<fmt::internal::DummyInt> :
+class numeric_limits<FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::DummyInt> :
     public std::numeric_limits<int> {
  public:
   // Portable version of isinf.
   template <typename T>
   static bool isinfinity(T x) {
-    using namespace fmt::internal;
+    using namespace FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal;
     // The resolution "priority" is:
-    // isinf macro > std::isinf > ::isinf > fmt::internal::isinf
+    // isinf macro > std::isinf > ::isinf > FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::isinf
     if (const_check(sizeof(isinf(x)) == sizeof(bool) ||
                     sizeof(isinf(x)) == sizeof(int))) {
       return isinf(x) != 0;
@@ -454,7 +464,7 @@ class numeric_limits<fmt::internal::DummyInt> :
   // Portable version of isnan.
   template <typename T>
   static bool isnotanumber(T x) {
-    using namespace fmt::internal;
+    using namespace FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal;
     if (const_check(sizeof(isnan(x)) == sizeof(bool) ||
                     sizeof(isnan(x)) == sizeof(int))) {
       return isnan(x) != 0;
@@ -464,7 +474,7 @@ class numeric_limits<fmt::internal::DummyInt> :
 
   // Portable version of signbit.
   static bool isnegative(double x) {
-    using namespace fmt::internal;
+    using namespace FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal;
     if (const_check(sizeof(signbit(x)) == sizeof(bool) ||
                     sizeof(signbit(x)) == sizeof(int))) {
       return signbit(x) != 0;
@@ -478,6 +488,8 @@ class numeric_limits<fmt::internal::DummyInt> :
   }
 };
 }  // namespace std
+
+FMT_CUSTOM_NAMESPACE_BEGIN
 
 namespace fmt {
 
@@ -2427,35 +2439,35 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_MAKE_ARG_TYPE(n) T##n
 # define FMT_MAKE_ARG(n) const T##n &v##n
 # define FMT_ASSIGN_char(n) \
-  arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<char> >(v##n)
+  arr[n] = FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::MakeValue< fmt::BasicFormatter<char> >(v##n)
 # define FMT_ASSIGN_wchar_t(n) \
-  arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<wchar_t> >(v##n)
+  arr[n] = FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::MakeValue< fmt::BasicFormatter<wchar_t> >(v##n)
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
 # define FMT_VARIADIC_VOID(func, arg_type) \
   template <typename... Args> \
   void func(arg_type arg0, const Args & ... args) { \
-    typedef fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
+    typedef FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
     typename ArgArray::Type array{ \
-      ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
-    func(arg0, fmt::ArgList(fmt::internal::make_type(args...), array)); \
+      ArgArray::template make<FMT_CUSTOM_NAMESPACE_PREFIX::fmt::BasicFormatter<Char> >(args)...}; \
+    func(arg0, fmt::ArgList(FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::make_type(args...), array)); \
   }
 
 // Defines a variadic constructor.
 # define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
   template <typename... Args> \
   ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    typedef fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
+    typedef FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
     typename ArgArray::Type array{ \
-      ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
-    func(arg0, arg1, fmt::ArgList(fmt::internal::make_type(args...), array)); \
+      ArgArray::template make<FMT_CUSTOM_NAMESPACE_PREFIX::fmt::BasicFormatter<Char> >(args)...}; \
+    func(arg0, arg1, fmt::ArgList(FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::make_type(args...), array)); \
   }
 
 #else
 
 # define FMT_MAKE_REF(n) \
-  fmt::internal::MakeValue< fmt::BasicFormatter<Char> >(v##n)
+  FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::MakeValue< FMT_CUSTOM_NAMESPACE_PREFIX::fmt::BasicFormatter<Char> >(v##n)
 # define FMT_MAKE_REF2(n) v##n
 
 // Defines a wrapper for a function taking one argument of type arg_type
@@ -2463,14 +2475,14 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_WRAP1(func, arg_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
-    func(arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
+    const FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    func(arg1, FMT_CUSTOM_NAMESPACE_PREFIX::fmt::ArgList( \
+      FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
   }
 
 // Emulates a variadic function returning void on a pre-C++11 compiler.
 # define FMT_VARIADIC_VOID(func, arg_type) \
-  inline void func(arg_type arg) { func(arg, fmt::ArgList()); } \
+  inline void func(arg_type arg) { func(arg, FMT_CUSTOM_NAMESPACE_PREFIX::fmt::ArgList()); } \
   FMT_WRAP1(func, arg_type, 1) FMT_WRAP1(func, arg_type, 2) \
   FMT_WRAP1(func, arg_type, 3) FMT_WRAP1(func, arg_type, 4) \
   FMT_WRAP1(func, arg_type, 5) FMT_WRAP1(func, arg_type, 6) \
@@ -2480,9 +2492,9 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_CTOR(ctor, func, arg0_type, arg1_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   ctor(arg0_type arg0, arg1_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
-    func(arg0, arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
+    const FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    func(arg0, arg1, FMT_CUSTOM_NAMESPACE_PREFIX::fmt::ArgList( \
+      FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
   }
 
 // Emulates a variadic constructor on a pre-C++11 compiler.
@@ -3605,7 +3617,7 @@ template <typename Char>
 void arg(StringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 template <typename Char>
 void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
-}
+} // namespace fmt
 
 #if FMT_GCC_VERSION
 // Use the system_header pragma to suppress warnings about variadic macros
@@ -3717,9 +3729,9 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 #define FMT_VARIADIC_CONST_W(ReturnType, func, ...) \
   FMT_VARIADIC_(const, wchar_t, ReturnType, func, return func, __VA_ARGS__)
 
-#define FMT_CAPTURE_ARG_(id, index) ::fmt::arg(#id, id)
+#define FMT_CAPTURE_ARG_(id, index) FMT_CUSTOM_NAMESPACE_PREFIX::fmt::arg(#id, id)
 
-#define FMT_CAPTURE_ARG_W_(id, index) ::fmt::arg(L###id, id)
+#define FMT_CAPTURE_ARG_W_(id, index) FMT_CUSTOM_NAMESPACE_PREFIX::fmt::arg(L###id, id)
 
 /**
   \rst
@@ -4149,6 +4161,8 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 } // inline namespace literals
 } // namespace fmt
 #endif // FMT_USE_USER_DEFINED_LITERALS
+
+FMT_CUSTOM_NAMESPACE_END
 
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406

@@ -48,6 +48,8 @@
 # undef fileno
 #endif
 
+FMT_CUSTOM_NAMESPACE_BEGIN
+
 namespace {
 #ifdef _WIN32
 // Return type of read and write functions.
@@ -239,3 +241,5 @@ long fmt::getpagesize() {
   return size;
 #endif
 }
+
+FMT_CUSTOM_NAMESPACE_END
