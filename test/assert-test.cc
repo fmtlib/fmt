@@ -28,6 +28,8 @@
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 #if GTEST_HAS_DEATH_TEST
 # define EXPECT_DEBUG_DEATH_IF_SUPPORTED(statement, regex) \
     EXPECT_DEBUG_DEATH(statement, regex)

@@ -1,4 +1,4 @@
-/*
+﻿/*
  Formatting library for C++ - std::ostream support
 
  Copyright (c) 2012 - 2016, Victor Zverovich
@@ -12,6 +12,8 @@
 
 #include "format.h"
 #include <ostream>
+
+FMT_CUSTOM_NAMESPACE_BEGIN
 
 namespace fmt {
 
@@ -100,6 +102,8 @@ void format_arg(BasicFormatter<Char, ArgFormatter_> &f,
 FMT_API void print(std::ostream &os, CStringRef format_str, ArgList args);
 FMT_VARIADIC(void, print, std::ostream &, CStringRef)
 }  // namespace fmt
+
+FMT_CUSTOM_NAMESPACE_END
 
 #ifdef FMT_HEADER_ONLY
 # include "ostream.cc"

@@ -10,6 +10,8 @@
 #include "fmt/string.h"
 #include "gtest/gtest.h"
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 using fmt::internal::StringBuffer;
 
 TEST(StringBufferTest, Empty) {

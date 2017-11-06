@@ -33,6 +33,8 @@
 #include "fmt/format.cc"
 #include "fmt/printf.cc"
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 #include <algorithm>
 #include <cstring>
 

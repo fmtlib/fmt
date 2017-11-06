@@ -73,13 +73,15 @@
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
 FMT_MAYBE_UNUSED
-static inline fmt::internal::Null<> strerror_r(int, char *, ...) {
-  return fmt::internal::Null<>();
+static inline FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::Null<> strerror_r(int, char *, ...) {
+  return FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::Null<>();
 }
 FMT_MAYBE_UNUSED
-static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
-  return fmt::internal::Null<>();
+static inline FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
+  return FMT_CUSTOM_NAMESPACE_PREFIX::fmt::internal::Null<>();
 }
+
+FMT_CUSTOM_NAMESPACE_BEGIN
 
 namespace fmt {
 
@@ -489,6 +491,8 @@ template FMT_API int internal::CharTraits<wchar_t>::format_float(
 #endif  // FMT_HEADER_ONLY
 
 }  // namespace fmt
+
+FMT_CUSTOM_NAMESPACE_END
 
 #ifdef _MSC_VER
 # pragma warning(pop)

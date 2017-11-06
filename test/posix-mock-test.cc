@@ -31,6 +31,8 @@
 #include "posix-mock.h"
 #include "fmt/posix.cc"
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 #include <errno.h>
 #include <fcntl.h>
 #include <climits>

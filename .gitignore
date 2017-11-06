@@ -17,3 +17,5 @@ CMakeCache.txt
 CMakeFiles
 Makefile
 run-msbuild.bat
+.vs
+.vscode

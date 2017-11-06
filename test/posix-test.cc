@@ -32,6 +32,8 @@
 #include "gtest-extra.h"
 #include "util.h"
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 #ifdef fileno
 # undef fileno
 #endif

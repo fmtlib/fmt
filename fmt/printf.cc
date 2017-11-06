@@ -10,6 +10,8 @@
 #include "format.h"
 #include "printf.h"
 
+FMT_CUSTOM_NAMESPACE_BEGIN
+
 namespace fmt {
 
 template <typename Char>
@@ -30,3 +32,5 @@ template void PrintfFormatter<wchar_t>::format(WCStringRef format);
 #endif  // FMT_HEADER_ONLY
 
 }  // namespace fmt
+
+FMT_CUSTOM_NAMESPACE_END
