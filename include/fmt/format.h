@@ -1707,6 +1707,29 @@ typedef basic_format_specs<char> format_specs;
 
 namespace internal {
 
+template <typename Handler>
+void handle_integral_type_spec(char c, Handler &&handler) {
+  switch (c) {
+  case 0: case 'd':
+    handler.on_dec();
+    break;
+  case 'x': case 'X':
+    handler.on_hex();
+    break;
+  case 'b': case 'B':
+    handler.on_bin();
+    break;
+  case 'o':
+    handler.on_oct();
+    break;
+  case 'n':
+    handler.on_num();
+    break;
+  default:
+    handler.on_error();
+  }
+}
+
 template <typename Context>
 class arg_map {
  private:
@@ -2485,96 +2508,108 @@ typename basic_writer<Char>::pointer_type
 template <typename Char>
 template <typename T, typename Spec>
 void basic_writer<Char>::write_int(T value, const Spec& spec) {
-  unsigned prefix_size = 0;
-  typedef typename internal::int_traits<T>::main_type UnsignedType;
-  UnsignedType abs_value = static_cast<UnsignedType>(value);
-  char prefix[4] = "";
-  if (internal::is_negative(value)) {
-    prefix[0] = '-';
-    ++prefix_size;
-    abs_value = 0 - abs_value;
-  } else if (spec.flag(SIGN_FLAG)) {
-    prefix[0] = spec.flag(PLUS_FLAG) ? '+' : ' ';
-    ++prefix_size;
-  }
-  switch (spec.type()) {
-  case 0: case 'd': {
-    unsigned num_digits = internal::count_digits(abs_value);
-    pointer_type p =
-        prepare_int_buffer(num_digits, spec, prefix, prefix_size) + 1;
-    internal::format_decimal(get(p), abs_value, 0);
-    break;
-  }
-  case 'x': case 'X': {
-    UnsignedType n = abs_value;
-    if (spec.flag(HASH_FLAG)) {
-      prefix[prefix_size++] = '0';
-      prefix[prefix_size++] = spec.type();
+  struct spec_handler {
+    basic_writer<Char> &writer;
+    const Spec& spec;
+    unsigned prefix_size = 0;
+    typedef typename internal::int_traits<T>::main_type UnsignedType;
+    UnsignedType abs_value;
+    char prefix[4] = "";
+
+    spec_handler(basic_writer<Char> &w, T value, const Spec& s)
+      : writer(w), abs_value(static_cast<UnsignedType>(value)), spec(s) {
+      if (internal::is_negative(value)) {
+        prefix[0] = '-';
+        ++prefix_size;
+        abs_value = 0 - abs_value;
+      } else if (spec.flag(SIGN_FLAG)) {
+        prefix[0] = spec.flag(PLUS_FLAG) ? '+' : ' ';
+        ++prefix_size;
+      }
     }
-    unsigned num_digits = 0;
-    do {
-      ++num_digits;
-    } while ((n >>= 4) != 0);
-    Char *p = get(prepare_int_buffer(
-      num_digits, spec, prefix, prefix_size));
-    n = abs_value;
-    const char *digits = spec.type() == 'x' ?
-        "0123456789abcdef" : "0123456789ABCDEF";
-    do {
-      *p-- = digits[n & 0xf];
-    } while ((n >>= 4) != 0);
-    break;
-  }
-  case 'b': case 'B': {
-    UnsignedType n = abs_value;
-    if (spec.flag(HASH_FLAG)) {
-      prefix[prefix_size++] = '0';
-      prefix[prefix_size++] = spec.type();
+
+    void on_dec() {
+      unsigned num_digits = internal::count_digits(abs_value);
+      pointer_type p =
+          writer.prepare_int_buffer(num_digits, spec, prefix, prefix_size) + 1;
+      internal::format_decimal(get(p), abs_value, 0);
     }
-    unsigned num_digits = 0;
-    do {
-      ++num_digits;
-    } while ((n >>= 1) != 0);
-    Char *p = get(prepare_int_buffer(num_digits, spec, prefix, prefix_size));
-    n = abs_value;
-    do {
-      *p-- = static_cast<Char>('0' + (n & 1));
-    } while ((n >>= 1) != 0);
-    break;
-  }
-  case 'o': {
-    UnsignedType n = abs_value;
-    if (spec.flag(HASH_FLAG))
-      prefix[prefix_size++] = '0';
-    unsigned num_digits = 0;
-    do {
-      ++num_digits;
-    } while ((n >>= 3) != 0);
-    Char *p = get(prepare_int_buffer(num_digits, spec, prefix, prefix_size));
-    n = abs_value;
-    do {
-      *p-- = static_cast<Char>('0' + (n & 7));
-    } while ((n >>= 3) != 0);
-    break;
-  }
-  case 'n': {
-    unsigned num_digits = internal::count_digits(abs_value);
-    std::locale loc = buffer_.locale();
-    Char thousands_sep =
-        std::use_facet<std::numpunct<Char>>(loc).thousands_sep();
-    fmt::basic_string_view<Char> sep(&thousands_sep, 1);
-    unsigned size = static_cast<unsigned>(
-          num_digits + sep.size() * ((num_digits - 1) / 3));
-    pointer_type p = prepare_int_buffer(size, spec, prefix, prefix_size) + 1;
-    internal::format_decimal(get(p), abs_value, 0,
-                             internal::add_thousands_sep<Char>(sep));
-    break;
-  }
-  default:
-    internal::report_unknown_type(
-      spec.type(), spec.flag(CHAR_FLAG) ? "char" : "integer");
-    break;
-  }
+
+    void on_hex() {
+      UnsignedType n = abs_value;
+      if (spec.flag(HASH_FLAG)) {
+        prefix[prefix_size++] = '0';
+        prefix[prefix_size++] = spec.type();
+      }
+      unsigned num_digits = 0;
+      do {
+        ++num_digits;
+      } while ((n >>= 4) != 0);
+      Char *p =
+          get(writer.prepare_int_buffer(num_digits, spec, prefix, prefix_size));
+      n = abs_value;
+      const char *digits = spec.type() == 'x' ?
+          "0123456789abcdef" : "0123456789ABCDEF";
+      do {
+        *p-- = digits[n & 0xf];
+      } while ((n >>= 4) != 0);
+    }
+
+    void on_bin() {
+      UnsignedType n = abs_value;
+      if (spec.flag(HASH_FLAG)) {
+        prefix[prefix_size++] = '0';
+        prefix[prefix_size++] = spec.type();
+      }
+      unsigned num_digits = 0;
+      do {
+        ++num_digits;
+      } while ((n >>= 1) != 0);
+      Char *p =
+          get(writer.prepare_int_buffer(num_digits, spec, prefix, prefix_size));
+      n = abs_value;
+      do {
+        *p-- = static_cast<Char>('0' + (n & 1));
+      } while ((n >>= 1) != 0);
+    }
+
+    void on_oct() {
+      UnsignedType n = abs_value;
+      if (spec.flag(HASH_FLAG))
+        prefix[prefix_size++] = '0';
+      unsigned num_digits = 0;
+      do {
+        ++num_digits;
+      } while ((n >>= 3) != 0);
+      Char *p =
+          get(writer.prepare_int_buffer(num_digits, spec, prefix, prefix_size));
+      n = abs_value;
+      do {
+        *p-- = static_cast<Char>('0' + (n & 7));
+      } while ((n >>= 3) != 0);
+    }
+
+    void on_num() {
+      unsigned num_digits = internal::count_digits(abs_value);
+      std::locale loc = writer.buffer_.locale();
+      Char thousands_sep =
+          std::use_facet<std::numpunct<Char>>(loc).thousands_sep();
+      fmt::basic_string_view<Char> sep(&thousands_sep, 1);
+      unsigned size = static_cast<unsigned>(
+            num_digits + sep.size() * ((num_digits - 1) / 3));
+      pointer_type p =
+          writer.prepare_int_buffer(size, spec, prefix, prefix_size) + 1;
+      internal::format_decimal(get(p), abs_value, 0,
+                               internal::add_thousands_sep<Char>(sep));
+    }
+
+    void on_error() {
+      internal::report_unknown_type(
+        spec.type(), spec.flag(CHAR_FLAG) ? "char" : "integer");
+    }
+  };
+  internal::handle_integral_type_spec(
+        spec.type(), spec_handler(*this, value, spec));
 }
 
 template <typename Char>
