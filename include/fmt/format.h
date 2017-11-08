@@ -1707,8 +1707,14 @@ typedef basic_format_specs<char> format_specs;
 
 namespace internal {
 
+struct error_handler {
+  void on_error(const char *message) {
+    FMT_THROW(format_error(message));
+  }
+};
+
 template <typename Handler>
-void handle_integral_type_spec(char c, Handler &&handler) {
+constexpr void handle_integral_type_spec(char c, Handler &&handler) {
   switch (c) {
   case 0: case 'd':
     handler.on_dec();
@@ -1729,6 +1735,20 @@ void handle_integral_type_spec(char c, Handler &&handler) {
     handler.on_error();
   }
 }
+
+struct int_type_checker {
+  constexpr void on_dec() {}
+  constexpr void on_hex() {}
+  constexpr void on_bin() {}
+  constexpr void on_oct() {}
+  constexpr void on_num() {}
+
+  template <typename T = void>
+  constexpr void on_error() {
+    error_handler eh;
+    eh.on_error("invalid type specifier");
+  }
+};
 
 template <typename Context>
 class arg_map {
@@ -3169,12 +3189,6 @@ class precision_checker {
   ErrorHandler &handler_;
 };
 
-struct error_handler {
-  void on_error(const char *message) {
-    FMT_THROW(format_error(message));
-  }
-};
-
 // A format specifier handler that sets fields in basic_format_specs.
 template <typename Char>
 class specs_setter : public error_handler {
@@ -3658,6 +3672,8 @@ struct formatter<
     internal::specs_checker<handler_type>
         handler(handler_type(specs_, ctx), internal::get_type<T>());
     it = parse_format_specs(it, handler);
+    if (std::is_integral<T>::value)
+      handle_integral_type_spec(specs_.type(), internal::int_type_checker());
     return pointer_from(it);
   }
 
