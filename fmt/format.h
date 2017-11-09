@@ -1227,6 +1227,20 @@ struct WCharHelper<T, wchar_t> {
   typedef Null<T> Unsupported;
 };
 
+// A helper class template to enable or disable overloads taking
+// characters and strings in MakeValue.
+template <typename T, typename Char>
+struct CharHelper {
+    typedef T Supported;
+    typedef Null<T> Unsupported;
+};
+
+template <typename T>
+struct CharHelper<T, wchar_t> {
+    typedef Null<T> Supported;
+    typedef T Unsupported;
+};
+
 typedef char Yes[1];
 typedef char No[2];
 
@@ -1370,6 +1384,12 @@ class MakeValue : public Arg {
 #endif
   MakeValue(typename WCharHelper<WStringRef, Char>::Unsupported);
 
+  MakeValue(typename CharHelper<const std::string &, Char>::Unsupported);
+#if FMT_HAS_STRING_VIEW
+  MakeValue(typename CharHelper<const std::string_view &, Char>::Unsupported);
+#endif
+  MakeValue(typename CharHelper<StringRef, Char>::Unsupported);
+
   void set_string(StringRef str) {
     string.value = str.data();
     string.size = str.size();
@@ -1459,7 +1479,9 @@ class MakeValue : public Arg {
 #endif
 
 #define FMT_MAKE_STR_VALUE(Type, TYPE) \
-  MakeValue(Type value) { set_string(value); } \
+  MakeValue(typename CharHelper<Type, Char>::Supported value) { \
+    set_string(value); \
+  } \
   static uint64_t type(Type) { return Arg::TYPE; }
 
   FMT_MAKE_VALUE(char *, string.value, CSTRING)
