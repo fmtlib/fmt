@@ -157,7 +157,7 @@ typedef __int64          intmax_t;
 # define FMT_HAS_CXX17_ATTRIBUTE_MAYBE_UNUSED
 // VC++ 1910 support /std: option and that will set _MSVC_LANG macro
 // Clang with Microsoft CodeGen doesn't define _MSVC_LANG macro
-#elif defined(_MSVC_LANG) && _MSVC_LANG > 201402
+#elif defined(_MSVC_LANG) && _MSVC_LANG > 201402 && _MSC_VER >= 1910
 # define FMT_HAS_CXX17_ATTRIBUTE_MAYBE_UNUSED
 #endif
 
