@@ -1,4 +1,4 @@
-/*
+﻿/*
  Formatting library for C++ - standard container utilities
 
  Copyright (c) 2012 - 2016, Victor Zverovich
@@ -11,6 +11,8 @@
 #define FMT_CONTAINER_H_
 
 #include "format.h"
+
+FMT_CUSTOM_NAMESPACE_BEGIN
 
 namespace fmt {
 
@@ -78,5 +80,7 @@ class BasicContainerWriter
 };
 
 } // namespace fmt
+
+FMT_CUSTOM_NAMESPACE_END
 
 #endif  // FMT_CONTAINER_H_

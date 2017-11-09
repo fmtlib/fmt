@@ -49,6 +49,10 @@ struct LocaleMock {
   MOCK_METHOD0(localeconv, lconv *());
 } *LocaleMock::instance;
 
+#include "fmt/custom_namespace.h"
+
+FMT_CUSTOM_NAMESPACE_BEGIN
+
 namespace fmt {
 namespace std {
 using namespace ::std;
@@ -56,10 +60,14 @@ lconv *localeconv() {
   return LocaleMock::instance ?
         LocaleMock::instance->localeconv() : ::std::localeconv();
 }
-}
-}
+} // namespace std
+} // namespace fmt
+
+FMT_CUSTOM_NAMESPACE_END
 
 #include "fmt/format.h"
+
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
 
 #include "util.h"
 #include "mock-allocator.h"

@@ -81,10 +81,10 @@
   FMT_TEST_THROW_(statement, expected_exception, \
       expected_message, GTEST_NONFATAL_FAILURE_)
 
-std::string format_system_error(int error_code, fmt::StringRef message);
+std::string format_system_error(int error_code, FMT_CUSTOM_NAMESPACE_PREFIX::fmt::StringRef message);
 
 #define EXPECT_SYSTEM_ERROR(statement, error_code, message) \
-  EXPECT_THROW_MSG(statement, fmt::SystemError, \
+  EXPECT_THROW_MSG(statement, FMT_CUSTOM_NAMESPACE_PREFIX::fmt::SystemError, \
       format_system_error(error_code, message))
 
 #if FMT_USE_FILE_DESCRIPTORS
@@ -94,8 +94,8 @@ std::string format_system_error(int error_code, fmt::StringRef message);
 class OutputRedirect {
  private:
   FILE *file_;
-  fmt::File original_;  // Original file passed to redirector.
-  fmt::File read_end_;  // Read end of the pipe where the output is redirected.
+  FMT_CUSTOM_NAMESPACE_PREFIX::fmt::File original_;  // Original file passed to redirector.
+  FMT_CUSTOM_NAMESPACE_PREFIX::fmt::File read_end_;  // Read end of the pipe where the output is redirected.
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(OutputRedirect);
 
@@ -165,7 +165,7 @@ class SuppressAssert {
   EXPECT_SYSTEM_ERROR(SUPPRESS_ASSERT(statement), error_code, message)
 
 // Attempts to read count characters from a file.
-std::string read(fmt::File &f, std::size_t count);
+std::string read(FMT_CUSTOM_NAMESPACE_PREFIX::fmt::File &f, std::size_t count);
 
 #define EXPECT_READ(file, expected_content) \
   EXPECT_EQ(expected_content, read(file, std::strlen(expected_content)))

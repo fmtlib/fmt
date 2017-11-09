@@ -13,6 +13,8 @@
 #include "gmock/gmock.h"
 #include "fmt/time.h"
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 TEST(TimeTest, Format) {
   std::tm tm = std::tm();
   tm.tm_year = 116;

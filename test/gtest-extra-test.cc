@@ -38,6 +38,8 @@
 
 #include "util.h"
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 using testing::internal::scoped_ptr;
 
 namespace {
@@ -262,17 +264,29 @@ TEST(ExpectTest, EXPECT_THROW_MSG) {
       "  Actual: test");
 }
 
+#if (FMT_CUSTOM_NAMESPACE == 1)
+#define FMT_COMPILER_STRINGFY_(x)					#x
+#define FMT_COMPILER_STRINGFY(x)					FMT_COMPILER_STRINGFY_(x)
+#define EXPECT_CUSTOM_NAMESPACE_PREFIX				FMT_COMPILER_STRINGFY(FMT_CUSTOM_NAMESPACE_PREFIX)
+#else
+#define EXPECT_CUSTOM_NAMESPACE_PREFIX				""
+#endif
+
+#define EXPECT_SYSTEM_ERROR_THROW_EXCEPTION_MESSAGE	"Expected: throw_exception() throws an exception of " \
+													"type " EXPECT_CUSTOM_NAMESPACE_PREFIX "::fmt::SystemError.\n  Actual: it throws a different type."
+
+#define EXPECT_SYSTEM_ERROR_DO_NOTHING_MESSAGE		"Expected: do_nothing() throws an exception of type " EXPECT_CUSTOM_NAMESPACE_PREFIX "::fmt::SystemError.\n" \
+													"  Actual: it throws nothing."
+
 // Tests EXPECT_SYSTEM_ERROR.
 TEST(ExpectTest, EXPECT_SYSTEM_ERROR) {
   EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, "test");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(throw_exception(), EDOM, "test"),
-      "Expected: throw_exception() throws an exception of "
-      "type fmt::SystemError.\n  Actual: it throws a different type.");
+	  EXPECT_SYSTEM_ERROR_THROW_EXCEPTION_MESSAGE);
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(do_nothing(), EDOM, "test"),
-      "Expected: do_nothing() throws an exception of type fmt::SystemError.\n"
-      "  Actual: it throws nothing.");
+	  EXPECT_SYSTEM_ERROR_DO_NOTHING_MESSAGE);
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, "other"),
       fmt::format(

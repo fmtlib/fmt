@@ -1,4 +1,4 @@
-/*
+﻿/*
  Formatting library for C++ - string utilities
 
  Copyright (c) 2012 - 2016, Victor Zverovich
@@ -15,6 +15,8 @@
 #define FMT_STRING_H_
 
 #include "format.h"
+
+FMT_CUSTOM_NAMESPACE_BEGIN
 
 namespace fmt {
 
@@ -143,6 +145,8 @@ std::wstring to_wstring(const T &value) {
   w << value;
   return w.str();
 }
-}
+} // namespace fmt
+
+FMT_CUSTOM_NAMESPACE_END
 
 #endif  // FMT_STRING_H_

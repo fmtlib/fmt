@@ -51,6 +51,8 @@
 
 #undef max
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 using fmt::StringRef;
 using fmt::internal::Arg;
 using fmt::Buffer;

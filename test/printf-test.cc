@@ -34,6 +34,8 @@
 #include "gtest-extra.h"
 #include "util.h"
 
+FMT_CUSTOM_NAMESPACE_USING_NAMESPACE
+
 using fmt::format;
 using fmt::FormatError;
 

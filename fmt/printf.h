@@ -1,4 +1,4 @@
-/*
+﻿/*
  Formatting library for C++
 
  Copyright (c) 2012 - 2016, Victor Zverovich
@@ -14,6 +14,8 @@
 #include <limits>     // std::numeric_limits
 
 #include "ostream.h"
+
+FMT_CUSTOM_NAMESPACE_BEGIN
 
 namespace fmt {
 namespace internal {
@@ -595,6 +597,8 @@ inline int fprintf(std::ostream &os, CStringRef format_str, ArgList args) {
 }
 FMT_VARIADIC(int, fprintf, std::ostream &, CStringRef)
 }  // namespace fmt
+
+FMT_CUSTOM_NAMESPACE_END
 
 #ifdef FMT_HEADER_ONLY
 # include "printf.cc"
