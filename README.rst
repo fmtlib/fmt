@@ -76,6 +76,28 @@ Arguments can be accessed by position and arguments' indices can be repeated:
     std::string s = fmt::format("{0}{1}{0}", "abra", "cad");
     // s == "abracadabra"
 
+Format strings can be checked at compile time:
+
+.. code:: c++
+
+    // test.cc
+    using namespace fmt::literals;
+    std::string s = "{2}"_format(42);
+
+.. code::
+
+    $ g++ -Iinclude test.cc -std=c++14
+    ...
+    test.cc:5:31: note: in instantiation of function template specialization
+    'fmt::internal::udl_formatter<char, '{', '2', '}'>::operator()<int>' requested
+    here
+      std::string s = "{2}"_format(42);
+                                  ^
+    include/fmt/format.h:3838:7: note: non-constexpr function 'on_error' cannot be
+    used in a constant expression
+          on_error("argument index out of range");
+          ^
+
 fmt can be used as a safe portable replacement for ``itoa``:
 
 .. code:: c++
