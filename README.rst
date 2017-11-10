@@ -21,40 +21,39 @@ Features
 --------
 
 * Two APIs: faster concatenation-based `write API
-  <http://fmtlib.net/latest/api.html#write-api>`_ and slower,
-  but still very fast, replacement-based `format API
-  <http://fmtlib.net/latest/api.html#format-api>`_ with positional arguments
-  for localization.
-* Write API similar to the one used by IOStreams but stateless allowing
-  faster implementation.
-* Format API with `format string syntax
-  <http://fmtlib.net/latest/syntax.html>`_
+  <http://fmtlib.net/latest/api.html#write-api>`_ and slower, but still very
+  fast, replacement-based `format API
+  <http://fmtlib.net/latest/api.html#format-api>`_ with positional arguments for
+  localization.
+* Write API similar to the one used by IOStreams but stateless allowing faster
+  implementation.
+* Format API with `format string syntax <http://fmtlib.net/latest/syntax.html>`_
   similar to the one used by `str.format
   <https://docs.python.org/2/library/stdtypes.html#str.format>`_ in Python.
 * Safe `printf implementation
-  <http://fmtlib.net/latest/api.html#printf-formatting-functions>`_
-  including the POSIX extension for positional arguments.
+  <http://fmtlib.net/latest/api.html#printf-formatting-functions>`_ including
+  the POSIX extension for positional arguments.
 * Support for user-defined types.
-* High speed: performance of the format API is close to that of
-  glibc's `printf <http://en.cppreference.com/w/cpp/io/c/fprintf>`_
-  and better than the performance of IOStreams. See `Speed tests`_ and
+* High speed: performance of the format API is close to that of glibc's `printf
+  <http://en.cppreference.com/w/cpp/io/c/fprintf>`_ and better than the
+  performance of IOStreams. See `Speed tests`_ and
   `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
-* Small code size both in terms of source code (the core library consists of a single
-  header file and a single source file) and compiled code.
+* Small code size both in terms of source code (the core library consists of a
+  single header file and a single source file) and compiled code.
   See `Compile time and code bloat`_.
 * Reliability: the library has an extensive set of `unit tests
   <https://github.com/fmtlib/fmt/tree/master/test>`_.
-* Safety: the library is fully type safe, errors in format strings are
-  reported using exceptions, automatic memory management prevents buffer
-  overflow errors.
+* Safety: the library is fully type safe, errors in format strings can be
+  reported at compile time, automatic memory management prevents buffer overflow
+  errors.
 * Ease of use: small self-contained code base, no external dependencies,
   permissive BSD `license
   <https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_
-* `Portability <http://fmtlib.net/latest/index.html#portability>`_ with consistent output
-  across platforms and support for older compilers.
+* `Portability <http://fmtlib.net/latest/index.html#portability>`_ with
+  consistent output across platforms and support for older compilers.
 * Clean warning-free codebase even on high warning levels
-  (-Wall -Wextra -pedantic).
+  (``-Wall -Wextra -pedantic``).
 * Support for wide strings.
 * Optional header-only configuration enabled with the ``FMT_HEADER_ONLY`` macro.
 
