@@ -1521,7 +1521,7 @@ class MakeValue : public Arg {
 #if FMT_HAS_STRING_VIEW
   FMT_MAKE_WSTR_VALUE(const std::wstring_view &, WSTRING)
 #endif
-#if FMT_HAS_STRING_VIEW
+#if FMT_HAS_EXPERIMENTAL_STRING_VIEW
   FMT_MAKE_WSTR_VALUE(const std::experimental::wstring_view &, WSTRING)
 #endif
   FMT_MAKE_WSTR_VALUE(WStringRef, WSTRING)
