@@ -1858,4 +1858,6 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("foo", nullptr);
   EXPECT_ERROR("}", "unmatched '}' in format string");
   EXPECT_ERROR("{0:s", "unknown format specifier", Date);
+  EXPECT_ERROR("{0:=5", "unknown format specifier", char);
+  EXPECT_ERROR("{foo", "missing '}' in format string", int);
 }

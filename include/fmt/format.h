@@ -841,7 +841,7 @@ class null_terminating_iterator {
     return ptr_ - other.ptr_;
   }
 
-  bool operator!=(null_terminating_iterator other) const {
+  constexpr bool operator!=(null_terminating_iterator other) const {
     return ptr_ != other.ptr_;
   }
 
@@ -2570,10 +2570,13 @@ constexpr void parse_format_string(Iterator it, Handler &&handler) {
     } else if (*it == ':') {
       ++it;
       it = handler.on_format_specs(it);
-      if (*it != '}')
+      if (*it != '}') {
         handler.on_error("unknown format specifier");
+        return;
+      }
     } else {
       handler.on_error("missing '}' in format string");
+      return;
     }
 
     start = ++it;
@@ -2591,7 +2594,7 @@ template <typename Char, typename ErrorHandler, typename... Args>
 class format_string_checker : public ErrorHandler {
  public:
   explicit constexpr format_string_checker(ErrorHandler eh, const Char *end)
-    : ErrorHandler(std::move(eh)), end_(end) {}
+    : ErrorHandler(eh), end_(end) {}
 
   constexpr void on_text(const Char *, const Char *) {}
 
@@ -2613,8 +2616,10 @@ class format_string_checker : public ErrorHandler {
   }
 
  private:
+  constexpr static size_t NUM_ARGS = sizeof...(Args);
+
   constexpr void check_arg_index() {
-    if (arg_index_ < 0 || arg_index_ >= sizeof...(Args))
+    if (arg_index_ < 0 || arg_index_ >= NUM_ARGS)
       this->on_error("argument index out of range");
   }
 
@@ -2623,7 +2628,7 @@ class format_string_checker : public ErrorHandler {
 
   const Char *end_;
   int arg_index_ = -1;
-  parse_func parse_funcs_[sizeof...(Args)] = {
+  parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1] = {
       &parse_format_specs<Char, Args>...
   };
 };
