@@ -2027,6 +2027,639 @@ class context_base : public parse_context<Char>{
  public:
   parse_context<Char> &get_parse_context() { return *this; }
 };
+
+struct format_string {};
+
+template <typename Char>
+constexpr bool is_name_start(Char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
+}
+
+// Parses the input as an unsigned integer. This function assumes that the
+// first character is a digit and presence of a non-digit character at the end.
+// it: an iterator pointing to the beginning of the input range.
+template <typename Iterator, typename ErrorHandler>
+constexpr unsigned parse_nonnegative_int(Iterator &it, ErrorHandler& handler) {
+  assert('0' <= *it && *it <= '9');
+  unsigned value = 0;
+  do {
+    unsigned new_value = value * 10 + (*it - '0');
+    // Workaround for MSVC "setup_exception stack overflow" error:
+    auto next = it;
+    ++next;
+    it = next;
+    // Check if value wrapped around.
+    if (new_value < value) {
+      value = (std::numeric_limits<unsigned>::max)();
+      break;
+    }
+    value = new_value;
+  } while ('0' <= *it && *it <= '9');
+  // Convert to unsigned to prevent a warning.
+  unsigned max_int = (std::numeric_limits<int>::max)();
+  if (value > max_int)
+    handler.on_error("number is too big");
+  return value;
+}
+
+template <typename Char, typename Context>
+class custom_formatter {
+ private:
+  basic_buffer<Char> &buffer_;
+  Context &ctx_;
+
+ public:
+  custom_formatter(basic_buffer<Char> &buffer, Context &ctx)
+  : buffer_(buffer), ctx_(ctx) {}
+
+  bool operator()(internal::custom_value<Char> custom) {
+    custom.format(buffer_, custom.value, &ctx_);
+    return true;
+  }
+
+  template <typename T>
+  bool operator()(T) { return false; }
+};
+
+template <typename T>
+struct is_integer {
+  enum {
+    value = std::is_integral<T>::value && !std::is_same<T, bool>::value &&
+            !std::is_same<T, char>::value && !std::is_same<T, wchar_t>::value
+  };
+};
+
+template <typename ErrorHandler>
+class width_checker {
+ public:
+  explicit constexpr width_checker(ErrorHandler &eh) : handler_(eh) {}
+
+  template <typename T>
+  constexpr typename std::enable_if<
+      is_integer<T>::value, unsigned long long>::type operator()(T value) {
+    if (is_negative(value))
+      handler_.on_error("negative width");
+    return value;
+  }
+
+  template <typename T>
+  constexpr typename std::enable_if<
+      !is_integer<T>::value, unsigned long long>::type operator()(T) {
+    handler_.on_error("width is not integer");
+    return 0;
+  }
+
+ private:
+  ErrorHandler &handler_;
+};
+
+template <typename ErrorHandler>
+class precision_checker {
+ public:
+  explicit constexpr precision_checker(ErrorHandler &eh) : handler_(eh) {}
+
+  template <typename T>
+  constexpr typename std::enable_if<
+      is_integer<T>::value, unsigned long long>::type operator()(T value) {
+    if (is_negative(value))
+      handler_.on_error("negative precision");
+    return value;
+  }
+
+  template <typename T>
+  constexpr typename std::enable_if<
+      !is_integer<T>::value, unsigned long long>::type operator()(T) {
+    handler_.on_error("precision is not integer");
+    return 0;
+  }
+
+ private:
+  ErrorHandler &handler_;
+};
+
+// A format specifier handler that sets fields in basic_format_specs.
+template <typename Char>
+class specs_setter : public error_handler {
+ public:
+  explicit constexpr specs_setter(basic_format_specs<Char> &specs):
+    specs_(specs) {}
+
+  constexpr void on_align(alignment align) { specs_.align_ = align; }
+  constexpr void on_fill(Char fill) { specs_.fill_ = fill; }
+  constexpr void on_plus() { specs_.flags_ |= SIGN_FLAG | PLUS_FLAG; }
+  constexpr void on_minus() { specs_.flags_ |= MINUS_FLAG; }
+  constexpr void on_space() { specs_.flags_ |= SIGN_FLAG; }
+  constexpr void on_hash() { specs_.flags_ |= HASH_FLAG; }
+
+  constexpr void on_zero() {
+    specs_.align_ = ALIGN_NUMERIC;
+    specs_.fill_ = '0';
+  }
+
+  constexpr void on_width(unsigned width) { specs_.width_ = width; }
+  constexpr void on_precision(unsigned precision) {
+    specs_.precision_ = precision;
+  }
+  constexpr void end_precision() {}
+
+  constexpr void on_type(Char type) { specs_.type_ = type; }
+
+ protected:
+  basic_format_specs<Char> &specs_;
+};
+
+// A format specifier handler that checks if specifiers are consistent with the
+// argument type.
+template <typename Handler>
+class specs_checker : public Handler {
+ public:
+  constexpr specs_checker(const Handler& handler, internal::type arg_type)
+    : Handler(handler), arg_type_(arg_type) {}
+
+  constexpr void on_align(alignment align) {
+    if (align == ALIGN_NUMERIC)
+      require_numeric_argument('=');
+    Handler::on_align(align);
+  }
+
+  constexpr void on_plus() {
+    check_sign('+');
+    Handler::on_plus();
+  }
+
+  constexpr void on_minus() {
+    check_sign('-');
+    Handler::on_minus();
+  }
+
+  constexpr void on_space() {
+    check_sign(' ');
+    Handler::on_space();
+  }
+
+  constexpr void on_hash() {
+    require_numeric_argument('#');
+    Handler::on_hash();
+  }
+
+  constexpr void on_zero() {
+    require_numeric_argument('0');
+    Handler::on_zero();
+  }
+
+  constexpr void end_precision() {
+    if (is_integral(arg_type_) || arg_type_ == POINTER) {
+      report_error("precision not allowed in {} format specifier",
+                   arg_type_ == POINTER ? "pointer" : "integer");
+    }
+  }
+
+ private:
+  template <typename... Args>
+  void report_error(string_view format_str, const Args &... args) {
+    this->on_error(format(format_str, args...).c_str());
+  }
+
+  template <typename Char>
+  constexpr void require_numeric_argument(Char spec) {
+    if (!is_numeric(arg_type_)) {
+      report_error("format specifier '{}' requires numeric argument",
+                   static_cast<char>(spec));
+    }
+  }
+
+  template <typename Char>
+  constexpr void check_sign(Char sign) {
+    require_numeric_argument(sign);
+    if (is_integral(arg_type_) && arg_type_ != INT && arg_type_ != LONG_LONG &&
+        arg_type_ != CHAR) {
+      report_error("format specifier '{}' requires signed argument",
+                   static_cast<char>(sign));
+    }
+  }
+
+  internal::type arg_type_;
+};
+
+template <template <typename> class Handler, typename T, typename Context>
+constexpr void set_dynamic_spec(T &value, basic_arg<Context> arg) {
+  error_handler eh;
+  unsigned long long big_value = visit(Handler<error_handler>(eh), arg);
+  if (big_value > (std::numeric_limits<int>::max)())
+    eh.on_error("number is too big");
+  value = static_cast<int>(big_value);
+}
+
+struct auto_id {};
+
+// The standard format specifier handler with checking.
+template <typename Context>
+class specs_handler: public specs_setter<typename Context::char_type> {
+ public:
+  typedef typename Context::char_type char_type;
+
+  constexpr specs_handler(basic_format_specs<char_type> &specs, Context &ctx)
+    : specs_setter<char_type>(specs), context_(ctx) {}
+
+  template <typename Id>
+  constexpr void on_dynamic_width(Id arg_id) {
+    set_dynamic_spec<width_checker>(this->specs_.width_, get_arg(arg_id));
+  }
+
+  template <typename Id>
+  constexpr void on_dynamic_precision(Id arg_id) {
+    set_dynamic_spec<precision_checker>(
+          this->specs_.precision_, get_arg(arg_id));
+  }
+
+ private:
+  constexpr basic_arg<Context> get_arg(auto_id) {
+    return context_.next_arg();
+  }
+
+  template <typename Id>
+  constexpr basic_arg<Context> get_arg(Id arg_id) {
+    context_.check_arg_id(arg_id);
+    return context_.get_arg(arg_id);
+  }
+
+  Context &context_;
+};
+
+// An argument reference.
+template <typename Char>
+struct arg_ref {
+  enum Kind { NONE, INDEX, NAME };
+
+  constexpr arg_ref() : kind(NONE), index(0) {}
+  constexpr explicit arg_ref(unsigned index) : kind(INDEX), index(index) {}
+  explicit arg_ref(basic_string_view<Char> name) : kind(NAME), name(name) {}
+
+  constexpr arg_ref &operator=(unsigned index) {
+    kind = INDEX;
+    this->index = index;
+    return *this;
+  }
+
+  Kind kind;
+  union {
+    unsigned index;
+    basic_string_view<Char> name;
+  };
+};
+
+// Format specifiers with width and precision resolved at formatting rather
+// than parsing time to allow re-using the same parsed specifiers with
+// differents sets of arguments (precompilation of format strings).
+template <typename Char>
+struct dynamic_format_specs : basic_format_specs<Char> {
+  arg_ref<Char> width_ref;
+  arg_ref<Char> precision_ref;
+};
+
+// Format spec handler that saves references to arguments representing dynamic
+// width and precision to be resolved at formatting time.
+template <typename ParseContext>
+class dynamic_specs_handler :
+    public specs_setter<typename ParseContext::char_type> {
+ public:
+  using char_type = typename ParseContext::char_type;
+
+  constexpr dynamic_specs_handler(
+      dynamic_format_specs<char_type> &specs, ParseContext &ctx)
+    : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
+
+  template <typename Id>
+  constexpr void on_dynamic_width(Id arg_id) {
+    specs_.width_ref = make_arg_ref(arg_id);
+  }
+
+  template <typename Id>
+  constexpr void on_dynamic_precision(Id arg_id) {
+    specs_.precision_ref = make_arg_ref(arg_id);
+  }
+
+ private:
+  using arg_ref_type = arg_ref<char_type>;
+
+  template <typename Id>
+  constexpr arg_ref_type make_arg_ref(Id arg_id) {
+    context_.check_arg_id(arg_id);
+    return arg_ref_type(arg_id);
+  }
+
+  constexpr arg_ref_type make_arg_ref(auto_id) {
+    const char *error = 0;
+    auto index = context_.next_arg_index(error);
+    if (error)
+      FMT_THROW(format_error(error));
+    return arg_ref_type(index);
+  }
+
+  dynamic_format_specs<char_type> &specs_;
+  ParseContext &context_;
+};
+
+template <typename Iterator, typename IDHandler>
+constexpr Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
+  using char_type = typename std::iterator_traits<Iterator>::value_type;
+  char_type c = *it;
+  if (c == '}' || c == ':') {
+    handler();
+    return it;
+  }
+  if (c >= '0' && c <= '9') {
+    unsigned index = parse_nonnegative_int(it, handler);
+    if (*it != '}' && *it != ':') {
+      handler.on_error("invalid format string");
+      return it;
+    }
+    handler(index);
+    return it;
+  }
+  if (!is_name_start(c)) {
+    handler.on_error("invalid format string");
+    return it;
+  }
+  auto start = it;
+  do {
+    c = *++it;
+  } while (is_name_start(c) || ('0' <= c && c <= '9'));
+  handler(basic_string_view<char_type>(pointer_from(start), it - start));
+  return it;
+}
+
+// Adapts SpecHandler to IDHandler API for dynamic width.
+template <typename SpecHandler, typename Char>
+struct width_adapter {
+  explicit constexpr width_adapter(SpecHandler &h) : handler(h) {}
+
+  constexpr void operator()() { handler.on_dynamic_width(auto_id()); }
+  constexpr void operator()(unsigned id) { handler.on_dynamic_width(id); }
+  constexpr void operator()(basic_string_view<Char> id) {
+    handler.on_dynamic_width(id);
+  }
+
+  constexpr void on_error(const char *message) { handler.on_error(message); }
+
+  SpecHandler &handler;
+};
+
+// Adapts SpecHandler to IDHandler API for dynamic precision.
+template <typename SpecHandler, typename Char>
+struct precision_adapter {
+  explicit constexpr precision_adapter(SpecHandler &h) : handler(h) {}
+
+  constexpr void operator()() { handler.on_dynamic_precision(auto_id()); }
+  constexpr void operator()(unsigned id) { handler.on_dynamic_precision(id); }
+  constexpr void operator()(basic_string_view<Char> id) {
+    handler.on_dynamic_precision(id);
+  }
+
+  constexpr void on_error(const char *message) { handler.on_error(message); }
+
+  SpecHandler &handler;
+};
+
+// Parses standard format specifiers and sends notifications about parsed
+// components to handler.
+// it: an iterator pointing to the beginning of a null-terminated range of
+//     characters, possibly emulated via null_terminating_iterator, representing
+//     format specifiers.
+template <typename Iterator, typename SpecHandler>
+constexpr Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
+  using char_type = typename std::iterator_traits<Iterator>::value_type;
+  // Parse fill and alignment.
+  if (char_type c = *it) {
+    alignment align = ALIGN_DEFAULT;
+    int i = 1;
+    do {
+      auto p = it + i;
+      switch (*p) {
+        case '<':
+          align = ALIGN_LEFT;
+          break;
+        case '>':
+          align = ALIGN_RIGHT;
+          break;
+        case '=':
+          align = ALIGN_NUMERIC;
+          break;
+        case '^':
+          align = ALIGN_CENTER;
+          break;
+      }
+      if (align != ALIGN_DEFAULT) {
+        handler.on_align(align);
+        if (p != it) {
+          if (c == '}') break;
+          if (c == '{') {
+            handler.on_error("invalid fill character '{'");
+            return it;
+          }
+          it += 2;
+          handler.on_fill(c);
+        } else ++it;
+        break;
+      }
+    } while (--i >= 0);
+  }
+
+  // Parse sign.
+  switch (*it) {
+    case '+':
+      handler.on_plus();
+      ++it;
+      break;
+    case '-':
+      handler.on_minus();
+      ++it;
+      break;
+    case ' ':
+      handler.on_space();
+      ++it;
+      break;
+  }
+
+  if (*it == '#') {
+    handler.on_hash();
+    ++it;
+  }
+
+  // Parse zero flag.
+  if (*it == '0') {
+    handler.on_zero();
+    ++it;
+  }
+
+  // Parse width.
+  if ('0' <= *it && *it <= '9') {
+    handler.on_width(parse_nonnegative_int(it, handler));
+  } else if (*it == '{') {
+    it = parse_arg_id(it + 1, width_adapter<SpecHandler, char_type>(handler));
+    if (*it++ != '}') {
+      handler.on_error("invalid format string");
+      return it;
+    }
+  }
+
+  // Parse precision.
+  if (*it == '.') {
+    ++it;
+    if ('0' <= *it && *it <= '9') {
+      handler.on_precision(parse_nonnegative_int(it, handler));
+    } else if (*it == '{') {
+      it = parse_arg_id(
+            it + 1, precision_adapter<SpecHandler, char_type>(handler));
+      if (*it++ != '}') {
+        handler.on_error("invalid format string");
+        return it;
+      }
+    } else {
+      handler.on_error("missing precision specifier");
+      return it;
+    }
+    handler.end_precision();
+  }
+
+  // Parse type.
+  if (*it != '}' && *it)
+    handler.on_type(*it++);
+  return it;
+}
+
+template <typename Handler, typename Char>
+struct id_adapter {
+  constexpr explicit id_adapter(Handler &h): handler(h) {}
+
+  constexpr void operator()() { handler.on_arg_id(); }
+  constexpr void operator()(unsigned id) { handler.on_arg_id(id); }
+  constexpr void operator()(basic_string_view<Char> id) {
+    handler.on_arg_id(id);
+  }
+
+  constexpr void on_error(const char *message) {
+    handler.on_error(message);
+  }
+
+  Handler &handler;
+};
+
+template <typename Iterator, typename Handler>
+constexpr void parse_format_string(Iterator it, Handler &&handler) {
+  using char_type = typename std::iterator_traits<Iterator>::value_type;
+  auto start = it;
+  while (*it) {
+    char_type ch = *it++;
+    if (ch != '{' && ch != '}') continue;
+    if (*it == ch) {
+      handler.on_text(start, it);
+      start = ++it;
+      continue;
+    }
+    if (ch == '}') {
+      handler.on_error("unmatched '}' in format string");
+      return;
+    }
+    handler.on_text(start, it - 1);
+
+    it = parse_arg_id(it, id_adapter<Handler, char_type>(handler));
+    if (*it == '}') {
+      handler.on_replacement_field(it);
+    } else if (*it == ':') {
+      ++it;
+      it = handler.on_format_specs(it);
+      if (*it != '}')
+        handler.on_error("unknown format specifier");
+    } else {
+      handler.on_error("missing '}' in format string");
+    }
+
+    start = ++it;
+  }
+  handler.on_text(start, it);
+}
+
+template <typename Char, typename T>
+constexpr const Char *parse_format_specs(parse_context<Char> &ctx) {
+  formatter<T, Char> f;
+  return f.parse(ctx);
+}
+
+template <typename Char, typename... Args>
+struct format_string_checker {
+ public:
+  explicit constexpr format_string_checker(const Char *end) : end_(end) {}
+
+  constexpr void on_text(const Char *, const Char *) {}
+
+  constexpr void on_arg_id() {
+    ++arg_index_;
+    check_arg_index();
+  }
+  constexpr void on_arg_id(unsigned index) {
+    arg_index_ = index;
+    check_arg_index();
+  }
+  constexpr void on_arg_id(basic_string_view<Char>) {}
+
+  constexpr void on_replacement_field(const Char *) {}
+
+  constexpr const Char *on_format_specs(const Char *s) {
+    parse_context<Char> ctx(basic_string_view<Char>(s, end_ - s));
+    return parse_funcs_[arg_index_](ctx);
+  }
+
+  // This function is intentionally not constexpr to give a compile-time error.
+  void on_error(const char *);
+
+ private:
+  constexpr void check_arg_index() {
+    if (arg_index_ < 0 || arg_index_ >= sizeof...(Args))
+      on_error("argument index out of range");
+  }
+
+  // Format specifier parsing function.
+  using parse_func = const Char *(*)(parse_context<Char> &);
+
+  const Char *end_;
+  int arg_index_ = -1;
+  parse_func parse_funcs_[sizeof...(Args)] = {
+      &parse_format_specs<Char, Args>...
+  };
+};
+
+template <typename Char, typename... Args>
+constexpr bool check_format_string(basic_string_view<Char> s) {
+  format_string_checker<Char, Args...> checker(s.end());
+  internal::parse_format_string(s.begin(), checker);
+  return true;
+}
+
+// Specifies whether to format T using the standard formatter.
+// It is not possible to use get_type in formatter specialization directly
+// because of a bug in MSVC.
+template <typename T>
+struct format_type : std::integral_constant<bool, get_type<T>() != CUSTOM> {};
+
+// Specifies whether to format enums.
+template <typename T, typename Enable = void>
+struct format_enum : std::integral_constant<bool, std::is_enum<T>::value> {};
+
+template <template <typename> class Handler, typename Spec, typename Char>
+void handle_dynamic_spec(
+    Spec &value, arg_ref<Char> ref, basic_context<Char> &ctx) {
+  switch (ref.kind) {
+  case arg_ref<Char>::NONE:
+    break;
+  case arg_ref<Char>::INDEX:
+    internal::set_dynamic_spec<Handler>(value, ctx.get_arg(ref.index));
+    break;
+  case arg_ref<Char>::NAME:
+    internal::set_dynamic_spec<Handler>(value, ctx.get_arg(ref.name));
+    break;
+  }
+}
 }  // namespace internal
 
 /** The default argument formatter. */
@@ -2901,6 +3534,15 @@ inline std::string format(string_view format_str, const Args & ... args) {
   return vformat(format_str, make_args(args...));
 }
 
+template <typename String, typename... Args>
+inline typename std::enable_if<
+  std::is_base_of<internal::format_string, String>::value, std::string>::type
+    format(String format_str, const Args & ... args) {
+  constexpr bool invalid_format = internal::check_format_string<char, Args...>(
+        string_view(format_str.value(), format_str.size()));
+  return vformat(format_str.value(), make_args(args...));
+}
+
 inline std::wstring vformat(wstring_view format_str, wargs args) {
   wmemory_buffer buffer;
   vformat_to(buffer, format_str, args);
@@ -3078,585 +3720,6 @@ void arg(string_view, const internal::named_arg<Context>&)
 template <typename Context>
 void arg(wstring_view, const internal::named_arg<Context>&)
   FMT_DELETED_OR_UNDEFINED;
-}
-
-namespace fmt {
-namespace internal {
-template <typename Char>
-constexpr bool is_name_start(Char c) {
-  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
-}
-
-// Parses the input as an unsigned integer. This function assumes that the
-// first character is a digit and presence of a non-digit character at the end.
-// it: an iterator pointing to the beginning of the input range.
-template <typename Iterator, typename ErrorHandler>
-constexpr unsigned parse_nonnegative_int(Iterator &it, ErrorHandler& handler) {
-  assert('0' <= *it && *it <= '9');
-  unsigned value = 0;
-  do {
-    unsigned new_value = value * 10 + (*it - '0');
-    // Workaround for MSVC "setup_exception stack overflow" error:
-    auto next = it;
-    ++next;
-    it = next;
-    // Check if value wrapped around.
-    if (new_value < value) {
-      value = (std::numeric_limits<unsigned>::max)();
-      break;
-    }
-    value = new_value;
-  } while ('0' <= *it && *it <= '9');
-  // Convert to unsigned to prevent a warning.
-  unsigned max_int = (std::numeric_limits<int>::max)();
-  if (value > max_int)
-    handler.on_error("number is too big");
-  return value;
-}
-
-template <typename Char, typename Context>
-class custom_formatter {
- private:
-  basic_buffer<Char> &buffer_;
-  Context &ctx_;
-
- public:
-  custom_formatter(basic_buffer<Char> &buffer, Context &ctx)
-  : buffer_(buffer), ctx_(ctx) {}
-
-  bool operator()(internal::custom_value<Char> custom) {
-    custom.format(buffer_, custom.value, &ctx_);
-    return true;
-  }
-
-  template <typename T>
-  bool operator()(T) { return false; }
-};
-
-template <typename T>
-struct is_integer {
-  enum {
-    value = std::is_integral<T>::value && !std::is_same<T, bool>::value &&
-            !std::is_same<T, char>::value && !std::is_same<T, wchar_t>::value
-  };
-};
-
-template <typename ErrorHandler>
-class width_checker {
- public:
-  explicit constexpr width_checker(ErrorHandler &eh) : handler_(eh) {}
-
-  template <typename T>
-  constexpr typename std::enable_if<
-      is_integer<T>::value, unsigned long long>::type operator()(T value) {
-    if (is_negative(value))
-      handler_.on_error("negative width");
-    return value;
-  }
-
-  template <typename T>
-  constexpr typename std::enable_if<
-      !is_integer<T>::value, unsigned long long>::type operator()(T) {
-    handler_.on_error("width is not integer");
-    return 0;
-  }
-
- private:
-  ErrorHandler &handler_;
-};
-
-template <typename ErrorHandler>
-class precision_checker {
- public:
-  explicit constexpr precision_checker(ErrorHandler &eh) : handler_(eh) {}
-
-  template <typename T>
-  constexpr typename std::enable_if<
-      is_integer<T>::value, unsigned long long>::type operator()(T value) {
-    if (is_negative(value))
-      handler_.on_error("negative precision");
-    return value;
-  }
-
-  template <typename T>
-  constexpr typename std::enable_if<
-      !is_integer<T>::value, unsigned long long>::type operator()(T) {
-    handler_.on_error("precision is not integer");
-    return 0;
-  }
-
- private:
-  ErrorHandler &handler_;
-};
-
-// A format specifier handler that sets fields in basic_format_specs.
-template <typename Char>
-class specs_setter : public error_handler {
- public:
-  explicit constexpr specs_setter(basic_format_specs<Char> &specs):
-    specs_(specs) {}
-
-  constexpr void on_align(alignment align) { specs_.align_ = align; }
-  constexpr void on_fill(Char fill) { specs_.fill_ = fill; }
-  constexpr void on_plus() { specs_.flags_ |= SIGN_FLAG | PLUS_FLAG; }
-  constexpr void on_minus() { specs_.flags_ |= MINUS_FLAG; }
-  constexpr void on_space() { specs_.flags_ |= SIGN_FLAG; }
-  constexpr void on_hash() { specs_.flags_ |= HASH_FLAG; }
-
-  constexpr void on_zero() {
-    specs_.align_ = ALIGN_NUMERIC;
-    specs_.fill_ = '0';
-  }
-
-  constexpr void on_width(unsigned width) { specs_.width_ = width; }
-  constexpr void on_precision(unsigned precision) {
-    specs_.precision_ = precision;
-  }
-  constexpr void end_precision() {}
-
-  constexpr void on_type(Char type) { specs_.type_ = type; }
-
- protected:
-  basic_format_specs<Char> &specs_;
-};
-
-// A format specifier handler that checks if specifiers are consistent with the
-// argument type.
-template <typename Handler>
-class specs_checker : public Handler {
- public:
-  constexpr specs_checker(const Handler& handler, internal::type arg_type)
-    : Handler(handler), arg_type_(arg_type) {}
-
-  constexpr void on_align(alignment align) {
-    if (align == ALIGN_NUMERIC)
-      require_numeric_argument('=');
-    Handler::on_align(align);
-  }
-
-  constexpr void on_plus() {
-    check_sign('+');
-    Handler::on_plus();
-  }
-
-  constexpr void on_minus() {
-    check_sign('-');
-    Handler::on_minus();
-  }
-
-  constexpr void on_space() {
-    check_sign(' ');
-    Handler::on_space();
-  }
-
-  constexpr void on_hash() {
-    require_numeric_argument('#');
-    Handler::on_hash();
-  }
-
-  constexpr void on_zero() {
-    require_numeric_argument('0');
-    Handler::on_zero();
-  }
-
-  constexpr void end_precision() {
-    if (is_integral(arg_type_) || arg_type_ == POINTER) {
-      report_error("precision not allowed in {} format specifier",
-                   arg_type_ == POINTER ? "pointer" : "integer");
-    }
-  }
-
- private:
-  template <typename... Args>
-  void report_error(string_view format_str, const Args &... args) {
-    this->on_error(format(format_str, args...).c_str());
-  }
-
-  template <typename Char>
-  constexpr void require_numeric_argument(Char spec) {
-    if (!is_numeric(arg_type_)) {
-      report_error("format specifier '{}' requires numeric argument",
-                   static_cast<char>(spec));
-    }
-  }
-
-  template <typename Char>
-  constexpr void check_sign(Char sign) {
-    require_numeric_argument(sign);
-    if (is_integral(arg_type_) && arg_type_ != INT && arg_type_ != LONG_LONG &&
-        arg_type_ != CHAR) {
-      report_error("format specifier '{}' requires signed argument",
-                   static_cast<char>(sign));
-    }
-  }
-
-  internal::type arg_type_;
-};
-
-template <template <typename> class Handler, typename T, typename Context>
-constexpr void set_dynamic_spec(T &value, basic_arg<Context> arg) {
-  error_handler eh;
-  unsigned long long big_value = visit(Handler<error_handler>(eh), arg);
-  if (big_value > (std::numeric_limits<int>::max)())
-    eh.on_error("number is too big");
-  value = static_cast<int>(big_value);
-}
-
-struct auto_id {};
-
-// The standard format specifier handler with checking.
-template <typename Context>
-class specs_handler: public specs_setter<typename Context::char_type> {
- public:
-  typedef typename Context::char_type char_type;
-
-  constexpr specs_handler(basic_format_specs<char_type> &specs, Context &ctx)
-    : specs_setter<char_type>(specs), context_(ctx) {}
-
-  template <typename Id>
-  constexpr void on_dynamic_width(Id arg_id) {
-    set_dynamic_spec<width_checker>(this->specs_.width_, get_arg(arg_id));
-  }
-
-  template <typename Id>
-  constexpr void on_dynamic_precision(Id arg_id) {
-    set_dynamic_spec<precision_checker>(
-          this->specs_.precision_, get_arg(arg_id));
-  }
-
- private:
-  constexpr basic_arg<Context> get_arg(auto_id) {
-    return context_.next_arg();
-  }
-
-  template <typename Id>
-  constexpr basic_arg<Context> get_arg(Id arg_id) {
-    context_.check_arg_id(arg_id);
-    return context_.get_arg(arg_id);
-  }
-
-  Context &context_;
-};
-
-// An argument reference.
-template <typename Char>
-struct arg_ref {
-  enum Kind { NONE, INDEX, NAME };
-
-  constexpr arg_ref() : kind(NONE), index(0) {}
-  constexpr explicit arg_ref(unsigned index) : kind(INDEX), index(index) {}
-  explicit arg_ref(basic_string_view<Char> name) : kind(NAME), name(name) {}
-
-  constexpr arg_ref &operator=(unsigned index) {
-    kind = INDEX;
-    this->index = index;
-    return *this;
-  }
-
-  Kind kind;
-  union {
-    unsigned index;
-    basic_string_view<Char> name;
-  };
-};
-
-// Format specifiers with width and precision resolved at formatting rather
-// than parsing time to allow re-using the same parsed specifiers with
-// differents sets of arguments (precompilation of format strings).
-template <typename Char>
-struct dynamic_format_specs : basic_format_specs<Char> {
-  arg_ref<Char> width_ref;
-  arg_ref<Char> precision_ref;
-};
-
-// Format spec handler that saves references to arguments representing dynamic
-// width and precision to be resolved at formatting time.
-template <typename ParseContext>
-class dynamic_specs_handler :
-    public specs_setter<typename ParseContext::char_type> {
- public:
-  using char_type = typename ParseContext::char_type;
-
-  constexpr dynamic_specs_handler(
-      dynamic_format_specs<char_type> &specs, ParseContext &ctx)
-    : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
-
-  template <typename Id>
-  constexpr void on_dynamic_width(Id arg_id) {
-    specs_.width_ref = make_arg_ref(arg_id);
-  }
-
-  template <typename Id>
-  constexpr void on_dynamic_precision(Id arg_id) {
-    specs_.precision_ref = make_arg_ref(arg_id);
-  }
-
- private:
-  using arg_ref_type = arg_ref<char_type>;
-
-  template <typename Id>
-  constexpr arg_ref_type make_arg_ref(Id arg_id) {
-    context_.check_arg_id(arg_id);
-    return arg_ref_type(arg_id);
-  }
-
-  constexpr arg_ref_type make_arg_ref(auto_id) {
-    const char *error = 0;
-    auto index = context_.next_arg_index(error);
-    if (error)
-      FMT_THROW(format_error(error));
-    return arg_ref_type(index);
-  }
-
-  dynamic_format_specs<char_type> &specs_;
-  ParseContext &context_;
-};
-
-template <typename Iterator, typename IDHandler>
-constexpr Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
-  using char_type = typename std::iterator_traits<Iterator>::value_type;
-  char_type c = *it;
-  if (c == '}' || c == ':') {
-    handler();
-    return it;
-  }
-  if (c >= '0' && c <= '9') {
-    unsigned index = parse_nonnegative_int(it, handler);
-    if (*it != '}' && *it != ':') {
-      handler.on_error("invalid format string");
-      return it;
-    }
-    handler(index);
-    return it;
-  }
-  if (!is_name_start(c)) {
-    handler.on_error("invalid format string");
-    return it;
-  }
-  auto start = it;
-  do {
-    c = *++it;
-  } while (is_name_start(c) || ('0' <= c && c <= '9'));
-  handler(basic_string_view<char_type>(pointer_from(start), it - start));
-  return it;
-}
-
-// Adapts SpecHandler to IDHandler API for dynamic width.
-template <typename SpecHandler, typename Char>
-struct width_adapter {
-  explicit constexpr width_adapter(SpecHandler &h) : handler(h) {}
-
-  constexpr void operator()() { handler.on_dynamic_width(auto_id()); }
-  constexpr void operator()(unsigned id) { handler.on_dynamic_width(id); }
-  constexpr void operator()(basic_string_view<Char> id) {
-    handler.on_dynamic_width(id);
-  }
-
-  constexpr void on_error(const char *message) { handler.on_error(message); }
-
-  SpecHandler &handler;
-};
-
-// Adapts SpecHandler to IDHandler API for dynamic precision.
-template <typename SpecHandler, typename Char>
-struct precision_adapter {
-  explicit constexpr precision_adapter(SpecHandler &h) : handler(h) {}
-
-  constexpr void operator()() { handler.on_dynamic_precision(auto_id()); }
-  constexpr void operator()(unsigned id) { handler.on_dynamic_precision(id); }
-  constexpr void operator()(basic_string_view<Char> id) {
-    handler.on_dynamic_precision(id);
-  }
-
-  constexpr void on_error(const char *message) { handler.on_error(message); }
-
-  SpecHandler &handler;
-};
-
-// Parses standard format specifiers and sends notifications about parsed
-// components to handler.
-// it: an iterator pointing to the beginning of a null-terminated range of
-//     characters, possibly emulated via null_terminating_iterator, representing
-//     format specifiers.
-template <typename Iterator, typename SpecHandler>
-constexpr Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
-  using char_type = typename std::iterator_traits<Iterator>::value_type;
-  // Parse fill and alignment.
-  if (char_type c = *it) {
-    alignment align = ALIGN_DEFAULT;
-    int i = 1;
-    do {
-      auto p = it + i;
-      switch (*p) {
-        case '<':
-          align = ALIGN_LEFT;
-          break;
-        case '>':
-          align = ALIGN_RIGHT;
-          break;
-        case '=':
-          align = ALIGN_NUMERIC;
-          break;
-        case '^':
-          align = ALIGN_CENTER;
-          break;
-      }
-      if (align != ALIGN_DEFAULT) {
-        handler.on_align(align);
-        if (p != it) {
-          if (c == '}') break;
-          if (c == '{') {
-            handler.on_error("invalid fill character '{'");
-            return it;
-          }
-          it += 2;
-          handler.on_fill(c);
-        } else ++it;
-        break;
-      }
-    } while (--i >= 0);
-  }
-
-  // Parse sign.
-  switch (*it) {
-    case '+':
-      handler.on_plus();
-      ++it;
-      break;
-    case '-':
-      handler.on_minus();
-      ++it;
-      break;
-    case ' ':
-      handler.on_space();
-      ++it;
-      break;
-  }
-
-  if (*it == '#') {
-    handler.on_hash();
-    ++it;
-  }
-
-  // Parse zero flag.
-  if (*it == '0') {
-    handler.on_zero();
-    ++it;
-  }
-
-  // Parse width.
-  if ('0' <= *it && *it <= '9') {
-    handler.on_width(parse_nonnegative_int(it, handler));
-  } else if (*it == '{') {
-    it = parse_arg_id(it + 1, width_adapter<SpecHandler, char_type>(handler));
-    if (*it++ != '}') {
-      handler.on_error("invalid format string");
-      return it;
-    }
-  }
-
-  // Parse precision.
-  if (*it == '.') {
-    ++it;
-    if ('0' <= *it && *it <= '9') {
-      handler.on_precision(parse_nonnegative_int(it, handler));
-    } else if (*it == '{') {
-      it = parse_arg_id(
-            it + 1, precision_adapter<SpecHandler, char_type>(handler));
-      if (*it++ != '}') {
-        handler.on_error("invalid format string");
-        return it;
-      }
-    } else {
-      handler.on_error("missing precision specifier");
-      return it;
-    }
-    handler.end_precision();
-  }
-
-  // Parse type.
-  if (*it != '}' && *it)
-    handler.on_type(*it++);
-  return it;
-}
-
-template <typename Handler, typename Char>
-struct id_adapter {
-  constexpr explicit id_adapter(Handler &h): handler(h) {}
-
-  constexpr void operator()() { handler.on_arg_id(); }
-  constexpr void operator()(unsigned id) { handler.on_arg_id(id); }
-  constexpr void operator()(basic_string_view<Char> id) {
-    handler.on_arg_id(id);
-  }
-
-  constexpr void on_error(const char *message) {
-    handler.on_error(message);
-  }
-
-  Handler &handler;
-};
-
-template <typename Iterator, typename Handler>
-constexpr void parse_format_string(Iterator it, Handler &&handler) {
-  using char_type = typename std::iterator_traits<Iterator>::value_type;
-  auto start = it;
-  while (*it) {
-    char_type ch = *it++;
-    if (ch != '{' && ch != '}') continue;
-    if (*it == ch) {
-      handler.on_text(start, it);
-      start = ++it;
-      continue;
-    }
-    if (ch == '}') {
-      handler.on_error("unmatched '}' in format string");
-      return;
-    }
-    handler.on_text(start, it - 1);
-
-    it = parse_arg_id(it, id_adapter<Handler, char_type>(handler));
-    if (*it == '}') {
-      handler.on_replacement_field(it);
-    } else if (*it == ':') {
-      ++it;
-      it = handler.on_format_specs(it);
-      if (*it != '}')
-        handler.on_error("unknown format specifier");
-    } else {
-      handler.on_error("missing '}' in format string");
-    }
-
-    start = ++it;
-  }
-  handler.on_text(start, it);
-}
-
-// Specifies whether to format T using the standard formatter.
-// It is not possible to use get_type in formatter specialization directly
-// because of a bug in MSVC.
-template <typename T>
-struct format_type : std::integral_constant<bool, get_type<T>() != CUSTOM> {};
-
-// Specifies whether to format enums.
-template <typename T, typename Enable = void>
-struct format_enum : std::integral_constant<bool, std::is_enum<T>::value> {};
-
-template <template <typename> class Handler, typename Spec, typename Char>
-void handle_dynamic_spec(
-    Spec &value, arg_ref<Char> ref, basic_context<Char> &ctx) {
-  switch (ref.kind) {
-  case arg_ref<Char>::NONE:
-    break;
-  case arg_ref<Char>::INDEX:
-    internal::set_dynamic_spec<Handler>(value, ctx.get_arg(ref.index));
-    break;
-  case arg_ref<Char>::NAME:
-    internal::set_dynamic_spec<Handler>(value, ctx.get_arg(ref.name));
-    break;
-  }
-}
-}  // namespace internal
 
 // Formatter of objects of type T.
 template <typename T, typename Char>
@@ -3849,72 +3912,16 @@ inline const void *ptr(const T *p) { return p; }
 namespace fmt {
 namespace internal {
 
-template <typename Char, typename T>
-constexpr const Char *parse_format_specs(parse_context<Char> &ctx) {
-  formatter<T, Char> f;
-  return f.parse(ctx);
-}
-
 # if FMT_UDL_TEMPLATE
-template <typename Char, typename... Args>
-struct udl_format_handler {
- public:
-  explicit constexpr udl_format_handler(const Char *end) : end_(end) {}
-
-  constexpr void on_text(const Char *, const Char *) {}
-
-  constexpr void on_arg_id() {
-    ++arg_index_;
-    check_arg_index();
-  }
-  constexpr void on_arg_id(unsigned index) {
-    arg_index_ = index;
-    check_arg_index();
-  }
-  constexpr void on_arg_id(basic_string_view<Char>) {}
-
-  constexpr void on_replacement_field(const Char *) {}
-
-  constexpr const Char *on_format_specs(const Char *s) {
-    parse_context<Char> ctx(basic_string_view<Char>(s, end_ - s));
-    return parse_funcs_[arg_index_](ctx);
-  }
-
-  // This function is intentionally not constexpr to give a compile-time error.
-  void on_error(const char *);
-
- private:
-  constexpr void check_arg_index() {
-    if (arg_index_ < 0 || arg_index_ >= sizeof...(Args))
-      on_error("argument index out of range");
-  }
-
-  // Format specifier parsing function.
-  using parse_func = const Char *(*)(parse_context<Char> &);
-
-  const Char *end_;
-  int arg_index_ = -1;
-  parse_func parse_funcs_[sizeof...(Args)] = {
-      &parse_format_specs<Char, Args>...
-  };
-};
-
 template <typename Char, Char... CHARS>
 class udl_formatter {
  public:
   template <typename... Args>
   std::basic_string<Char> operator()(const Args &... args) const {
     constexpr Char s[] = {CHARS..., '\0'};
-    constexpr bool invalid_format = check_format<Args...>(s);
+    constexpr bool invalid_format = check_format_string<Char, Args...>(
+          basic_string_view<Char>(s, sizeof...(CHARS)));
     return format(s, args...);
-  }
-
- private:
-  template <typename... Args>
-  static constexpr bool check_format(const Char *s) {
-    udl_format_handler<Char, Args...> handler(s + sizeof...(CHARS));
-    internal::parse_format_string(s, handler);
-    return true;
   }
 };
 # else
@@ -3984,6 +3991,13 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 } // namespace fmt
 #endif // FMT_USE_USER_DEFINED_LITERALS
 
+#define FMT_STRING(s) [] { \
+    struct S : fmt::internal::format_string { \
+      static constexpr auto value() { return s; } \
+      static constexpr size_t size() { return sizeof(s); } \
+    }; \
+    return S{}; \
+  }()
 
 #ifdef FMT_HEADER_ONLY
 # define FMT_FUNC inline

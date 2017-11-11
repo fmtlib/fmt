@@ -1815,4 +1815,5 @@ TEST(FormatTest, ConstexprParseFormatString) {
 TEST(FormatTest, UdlTemplate) {
   EXPECT_EQ("foo", "foo"_format());
   EXPECT_EQ("        42", "{0:10}"_format(42));
+  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
 }
