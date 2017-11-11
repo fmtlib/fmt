@@ -455,7 +455,6 @@ TEST(FormatterTest, ArgErrors) {
   EXPECT_THROW_MSG(format(format_str), format_error, "number is too big");
 }
 
-#if FMT_USE_VARIADIC_TEMPLATES
 template <int N>
 struct TestFormat {
   template <typename... Args>
@@ -478,12 +477,11 @@ TEST(FormatterTest, ManyArgs) {
                    format_error, "argument index out of range");
   EXPECT_THROW_MSG(TestFormat<21>::format("{21}"),
                    format_error, "argument index out of range");
-  enum { MAX_PACKED_ARGS = fmt::ArgList::MAX_PACKED_ARGS };
+  enum { MAX_PACKED_ARGS = fmt::internal::MAX_PACKED_ARGS };
   std::string format_str = fmt::format("{{{}}}", MAX_PACKED_ARGS + 1);
   EXPECT_THROW_MSG(TestFormat<MAX_PACKED_ARGS>::format(format_str),
                    format_error, "argument index out of range");
 }
-#endif
 
 TEST(FormatterTest, NamedArg) {
   EXPECT_EQ("1/a/A", format("{_1}/{a_}/{A_}", fmt::arg("a_", 'a'),
@@ -1451,14 +1449,12 @@ TEST(FormatTest, FormatMessageExample) {
       format_message(42, "{} happened", "something"));
 }
 
-#if FMT_USE_VARIADIC_TEMPLATES
 template<typename... Args>
 void print_error(const char *file, int line, const char *format,
                  const Args & ... args) {
   fmt::print("{}: {}: ", file, line);
   fmt::print(format, args...);
 }
-#endif
 
 TEST(FormatTest, UnpackedArgs) {
   EXPECT_EQ("0123456789abcdefg",
