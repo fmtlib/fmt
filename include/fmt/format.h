@@ -1708,6 +1708,7 @@ typedef basic_format_specs<char> format_specs;
 namespace internal {
 
 struct error_handler {
+  // This function is intentionally not constexpr to give a compile-time error.
   void on_error(const char *message) {
     FMT_THROW(format_error(message));
   }
@@ -2586,10 +2587,11 @@ constexpr const Char *parse_format_specs(parse_context<Char> &ctx) {
   return f.parse(ctx);
 }
 
-template <typename Char, typename... Args>
-struct format_string_checker {
+template <typename Char, typename ErrorHandler, typename... Args>
+class format_string_checker : public ErrorHandler {
  public:
-  explicit constexpr format_string_checker(const Char *end) : end_(end) {}
+  explicit constexpr format_string_checker(ErrorHandler eh, const Char *end)
+    : ErrorHandler(std::move(eh)), end_(end) {}
 
   constexpr void on_text(const Char *, const Char *) {}
 
@@ -2610,13 +2612,10 @@ struct format_string_checker {
     return parse_funcs_[arg_index_](ctx);
   }
 
-  // This function is intentionally not constexpr to give a compile-time error.
-  void on_error(const char *);
-
  private:
   constexpr void check_arg_index() {
     if (arg_index_ < 0 || arg_index_ >= sizeof...(Args))
-      on_error("argument index out of range");
+      this->on_error("argument index out of range");
   }
 
   // Format specifier parsing function.
@@ -2629,10 +2628,12 @@ struct format_string_checker {
   };
 };
 
-template <typename Char, typename... Args>
-constexpr bool check_format_string(basic_string_view<Char> s) {
-  format_string_checker<Char, Args...> checker(s.end());
-  internal::parse_format_string(s.begin(), checker);
+template <typename Char, typename ErrorHandler, typename... Args>
+constexpr bool check_format_string(
+    basic_string_view<Char> s, ErrorHandler eh = ErrorHandler()) {
+  format_string_checker<Char, ErrorHandler, Args...>
+      checker(std::move(eh), s.end());
+  parse_format_string(s.begin(), checker);
   return true;
 }
 
@@ -3538,7 +3539,8 @@ template <typename String, typename... Args>
 inline typename std::enable_if<
   std::is_base_of<internal::format_string, String>::value, std::string>::type
     format(String format_str, const Args & ... args) {
-  constexpr bool invalid_format = internal::check_format_string<char, Args...>(
+  constexpr bool invalid_format =
+      internal::check_format_string<char, internal::error_handler, Args...>(
         string_view(format_str.value(), format_str.size()));
   return vformat(format_str.value(), make_args(args...));
 }
@@ -3919,7 +3921,8 @@ class udl_formatter {
   template <typename... Args>
   std::basic_string<Char> operator()(const Args &... args) const {
     constexpr Char s[] = {CHARS..., '\0'};
-    constexpr bool invalid_format = check_format_string<Char, Args...>(
+    constexpr bool invalid_format =
+        check_format_string<Char, error_handler, Args...>(
           basic_string_view<Char>(s, sizeof...(CHARS)));
     return format(s, args...);
   }

@@ -1817,3 +1817,45 @@ TEST(FormatTest, UdlTemplate) {
   EXPECT_EQ("        42", "{0:10}"_format(42));
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
 }
+
+struct test_error_handler {
+  const char *&error;
+
+  constexpr void on_error(const char *message) { error = message; }
+};
+
+constexpr size_t len(const char *s) {
+  size_t len = 0;
+  while (*s++)
+    ++len;
+  return len;
+}
+
+constexpr bool eq(const char *s1, const char *s2) {
+  if (!s1 && !s2)
+    return true;
+  while (*s1 && *s1 == *s2) {
+    ++s1;
+    ++s2;
+  }
+  return *s1 == *s2;
+}
+
+template <typename... Args>
+constexpr bool test_error(const char *fmt, const char *expected_error) {
+  const char *actual_error = nullptr;
+  test_error_handler eh{actual_error};
+  using ref = std::reference_wrapper<test_error_handler>;
+  fmt::internal::check_format_string<char, test_error_handler, Args...>(
+        string_view(fmt, len(fmt)), eh);
+  return eq(actual_error, expected_error);
+}
+
+#define EXPECT_ERROR(fmt, error, ...) \
+  static_assert(test_error<__VA_ARGS__>(fmt, error), "")
+
+TEST(FormatTest, FormatStringErrors) {
+  EXPECT_ERROR("foo", nullptr);
+  EXPECT_ERROR("}", "unmatched '}' in format string");
+  EXPECT_ERROR("{0:s", "unknown format specifier", Date);
+}
