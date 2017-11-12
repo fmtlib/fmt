@@ -1870,4 +1870,6 @@ TEST(FormatTest, FormatStringErrors) {
 #endif
   EXPECT_ERROR("{foo", "missing '}' in format string", int);
   EXPECT_ERROR("{10000000000}", "number is too big");
+  EXPECT_ERROR("{0x}", "invalid format string");
+  EXPECT_ERROR("{-}", "invalid format string");
 }
