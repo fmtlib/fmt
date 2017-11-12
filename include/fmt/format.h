@@ -2336,7 +2336,8 @@ class dynamic_specs_handler :
     : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
 
   constexpr dynamic_specs_handler(const dynamic_specs_handler &other)
-    : specs_setter(other), specs_(other.specs_), context_(other.context_) {}
+    : specs_setter<char_type>(other),
+      specs_(other.specs_), context_(other.context_) {}
 
   template <typename Id>
   constexpr void on_dynamic_width(Id arg_id) {

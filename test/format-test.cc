@@ -1852,10 +1852,8 @@ constexpr bool equal(const char *s1, const char *s2) {
 template <typename... Args>
 constexpr bool test_error(const char *fmt, const char *expected_error) {
   const char *actual_error = nullptr;
-  test_error_handler eh{actual_error};
-  using ref = std::reference_wrapper<test_error_handler>;
   fmt::internal::check_format_string<char, test_error_handler, Args...>(
-        string_view(fmt, len(fmt)), eh);
+        string_view(fmt, len(fmt)), test_error_handler(actual_error));
   return equal(actual_error, expected_error);
 }
 
@@ -1866,7 +1864,10 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("foo", nullptr);
   EXPECT_ERROR("}", "unmatched '}' in format string");
   EXPECT_ERROR("{0:s", "unknown format specifier", Date);
+#ifndef _MSC_VER
+  // This causes an internal compiler error in MSVC2017.
   EXPECT_ERROR("{0:=5", "unknown format specifier", char);
+#endif
   EXPECT_ERROR("{foo", "missing '}' in format string", int);
   EXPECT_ERROR("{10000000000}", "number is too big");
 }
