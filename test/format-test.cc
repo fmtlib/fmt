@@ -1821,7 +1821,15 @@ TEST(FormatTest, UdlTemplate) {
 struct test_error_handler {
   const char *&error;
 
-  constexpr void on_error(const char *message) { error = message; }
+  constexpr test_error_handler(const char *&err): error(err) {}
+
+  constexpr test_error_handler(const test_error_handler &other)
+    : error(other.error) {}
+
+  constexpr void on_error(const char *message) {
+    if (!error)
+      error = message;
+  }
 };
 
 constexpr size_t len(const char *s) {
@@ -1831,7 +1839,7 @@ constexpr size_t len(const char *s) {
   return len;
 }
 
-constexpr bool eq(const char *s1, const char *s2) {
+constexpr bool equal(const char *s1, const char *s2) {
   if (!s1 && !s2)
     return true;
   while (*s1 && *s1 == *s2) {
@@ -1848,7 +1856,7 @@ constexpr bool test_error(const char *fmt, const char *expected_error) {
   using ref = std::reference_wrapper<test_error_handler>;
   fmt::internal::check_format_string<char, test_error_handler, Args...>(
         string_view(fmt, len(fmt)), eh);
-  return eq(actual_error, expected_error);
+  return equal(actual_error, expected_error);
 }
 
 #define EXPECT_ERROR(fmt, error, ...) \
@@ -1860,4 +1868,5 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{0:s", "unknown format specifier", Date);
   EXPECT_ERROR("{0:=5", "unknown format specifier", char);
   EXPECT_ERROR("{foo", "missing '}' in format string", int);
+  EXPECT_ERROR("{10000000000}", "number is too big");
 }

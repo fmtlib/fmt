@@ -838,3 +838,18 @@ TEST(UtilTest, IsEnumConvertibleToInt) {
   EXPECT_TRUE(fmt::internal::convert_to_int<TestEnum>::enable_conversion);
 }
 #endif
+
+TEST(UtilTest, ParseNonnegativeInt) {
+  if (std::numeric_limits<int>::max() != (1 << 31)) {
+    fmt::print("Skipping parse_nonnegative_int test\n");
+    return;
+  }
+  const char *s = "10000000000";
+  EXPECT_THROW_MSG(
+        parse_nonnegative_int(s, fmt::internal::error_handler()),
+        fmt::format_error, "number is too big");
+  s = "2147483649";
+  EXPECT_THROW_MSG(
+        parse_nonnegative_int(s, fmt::internal::error_handler()),
+        fmt::format_error, "number is too big");
+}

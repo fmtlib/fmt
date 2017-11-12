@@ -2040,26 +2040,26 @@ constexpr bool is_name_start(Char c) {
 // first character is a digit and presence of a non-digit character at the end.
 // it: an iterator pointing to the beginning of the input range.
 template <typename Iterator, typename ErrorHandler>
-constexpr unsigned parse_nonnegative_int(Iterator &it, ErrorHandler& handler) {
+constexpr unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
   assert('0' <= *it && *it <= '9');
   unsigned value = 0;
+  // Convert to unsigned to prevent a warning.
+  unsigned max_int = (std::numeric_limits<int>::max)();
+  unsigned big = max_int / 10;
   do {
-    unsigned new_value = value * 10 + (*it - '0');
+    // Check for overflow.
+    if (value > big) {
+      value = max_int + 1;
+      break;
+    }
+    value = value * 10 + (*it - '0');
     // Workaround for MSVC "setup_exception stack overflow" error:
     auto next = it;
     ++next;
     it = next;
-    // Check if value wrapped around.
-    if (new_value < value) {
-      value = (std::numeric_limits<unsigned>::max)();
-      break;
-    }
-    value = new_value;
   } while ('0' <= *it && *it <= '9');
-  // Convert to unsigned to prevent a warning.
-  unsigned max_int = (std::numeric_limits<int>::max)();
   if (value > max_int)
-    handler.on_error("number is too big");
+    eh.on_error("number is too big");
   return value;
 }
 
@@ -2145,6 +2145,8 @@ class specs_setter : public error_handler {
   explicit constexpr specs_setter(basic_format_specs<Char> &specs):
     specs_(specs) {}
 
+  constexpr specs_setter(const specs_setter &other) : specs_(other.specs_) {}
+
   constexpr void on_align(alignment align) { specs_.align_ = align; }
   constexpr void on_fill(Char fill) { specs_.fill_ = fill; }
   constexpr void on_plus() { specs_.flags_ |= SIGN_FLAG | PLUS_FLAG; }
@@ -2176,6 +2178,9 @@ class specs_checker : public Handler {
  public:
   constexpr specs_checker(const Handler& handler, internal::type arg_type)
     : Handler(handler), arg_type_(arg_type) {}
+
+  constexpr specs_checker(const specs_checker &other)
+    : Handler(other), arg_type_(other.arg_type_) {}
 
   constexpr void on_align(alignment align) {
     if (align == ALIGN_NUMERIC)
@@ -2329,6 +2334,9 @@ class dynamic_specs_handler :
   constexpr dynamic_specs_handler(
       dynamic_format_specs<char_type> &specs, ParseContext &ctx)
     : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
+
+  constexpr dynamic_specs_handler(const dynamic_specs_handler &other)
+    : specs_setter(other), specs_(other.specs_), context_(other.context_) {}
 
   template <typename Id>
   constexpr void on_dynamic_width(Id arg_id) {
@@ -2636,8 +2644,7 @@ class format_string_checker : public ErrorHandler {
 template <typename Char, typename ErrorHandler, typename... Args>
 constexpr bool check_format_string(
     basic_string_view<Char> s, ErrorHandler eh = ErrorHandler()) {
-  format_string_checker<Char, ErrorHandler, Args...>
-      checker(std::move(eh), s.end());
+  format_string_checker<Char, ErrorHandler, Args...> checker(eh, s.end());
   parse_format_string(s.begin(), checker);
   return true;
 }
