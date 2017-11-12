@@ -3940,7 +3940,8 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
       default:
         FMT_THROW(FormatError("width is not integer"));
       }
-      if (value > (std::numeric_limits<int>::max)())
+      unsigned max_int = (std::numeric_limits<int>::max)();
+      if (value > max_int)
         FMT_THROW(FormatError("number is too big"));
       spec.width_ = static_cast<int>(value);
     }
@@ -3978,7 +3979,8 @@ const Char *BasicFormatter<Char, ArgFormatter>::format(
           default:
             FMT_THROW(FormatError("precision is not integer"));
         }
-        if (value > (std::numeric_limits<int>::max)())
+        unsigned max_int = (std::numeric_limits<int>::max)();
+        if (value > max_int)
           FMT_THROW(FormatError("number is too big"));
         spec.precision_ = static_cast<int>(value);
       } else {
