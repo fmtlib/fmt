@@ -1703,6 +1703,8 @@ struct test_context {
   constexpr void check_arg_id(Id) {}
 
   constexpr unsigned next_arg_index(const char *&) { return 33; }
+
+  void on_error(const char *) {}
 };
 
 constexpr fmt::format_specs parse_specs(const char *s) {
@@ -1867,9 +1869,11 @@ TEST(FormatTest, FormatStringErrors) {
 #ifndef _MSC_VER
   // This causes an internal compiler error in MSVC2017.
   EXPECT_ERROR("{0:=5", "unknown format specifier", char);
+  EXPECT_ERROR("{:{<}", "invalid fill character '{'", int);
 #endif
   EXPECT_ERROR("{foo", "missing '}' in format string", int);
   EXPECT_ERROR("{10000000000}", "number is too big");
   EXPECT_ERROR("{0x}", "invalid format string");
   EXPECT_ERROR("{-}", "invalid format string");
+  EXPECT_ERROR("{1}", "argument index out of range", int);
 }

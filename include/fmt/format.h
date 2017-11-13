@@ -1708,6 +1708,9 @@ typedef basic_format_specs<char> format_specs;
 namespace internal {
 
 struct error_handler {
+  constexpr error_handler() {}
+  constexpr error_handler(const error_handler &) {}
+
   // This function is intentionally not constexpr to give a compile-time error.
   void on_error(const char *message) {
     FMT_THROW(format_error(message));
@@ -1944,8 +1947,8 @@ class arg_formatter_base {
 
 // Parsing context representing a format string range being parsed and an
 // argument counter for automatic indexing.
-template <typename Char>
-class parse_context {
+template <typename Char, typename ErrorHandler = error_handler>
+class parse_context : public ErrorHandler {
  private:
   basic_string_view<Char> format_str_;
   int next_arg_index_;
@@ -1964,8 +1967,9 @@ class parse_context {
   using char_type = Char;
   using iterator = const Char*;
 
-  explicit constexpr parse_context(basic_string_view<Char> format_str)
-    : format_str_(format_str), next_arg_index_(0) {}
+  explicit constexpr parse_context(
+      basic_string_view<Char> format_str, ErrorHandler eh = ErrorHandler())
+    : ErrorHandler(eh), format_str_(format_str), next_arg_index_(0) {}
 
   // Returns an iterator to the beginning of the format string range being
   // parsed.
@@ -2140,7 +2144,7 @@ class precision_checker {
 
 // A format specifier handler that sets fields in basic_format_specs.
 template <typename Char>
-class specs_setter : public error_handler {
+class specs_setter {
  public:
   explicit constexpr specs_setter(basic_format_specs<Char> &specs):
     specs_(specs) {}
@@ -2278,6 +2282,10 @@ class specs_handler: public specs_setter<typename Context::char_type> {
           this->specs_.precision_, get_arg(arg_id));
   }
 
+  void on_error(const char *message) {
+    context_.on_error(message);
+  }
+
  private:
   constexpr basic_arg<Context> get_arg(auto_id) {
     return context_.next_arg();
@@ -2347,6 +2355,10 @@ class dynamic_specs_handler :
   template <typename Id>
   constexpr void on_dynamic_precision(Id arg_id) {
     specs_.precision_ref = make_arg_ref(arg_id);
+  }
+
+  constexpr void on_error(const char *message) {
+    context_.on_error(message);
   }
 
  private:
@@ -2593,9 +2605,10 @@ constexpr void parse_format_string(Iterator it, Handler &&handler) {
   handler.on_text(start, it);
 }
 
-template <typename Char, typename T>
-constexpr const Char *parse_format_specs(parse_context<Char> &ctx) {
-  formatter<T, Char> f;
+template <typename T, typename ParseContext>
+constexpr const typename ParseContext::char_type *
+    parse_format_specs(ParseContext &ctx) {
+  formatter<T, typename ParseContext::char_type> f;
   return f.parse(ctx);
 }
 
@@ -2620,11 +2633,12 @@ class format_string_checker : public ErrorHandler {
   constexpr void on_replacement_field(const Char *) {}
 
   constexpr const Char *on_format_specs(const Char *s) {
-    parse_context<Char> ctx(basic_string_view<Char>(s, end_ - s));
+    parse_context_type ctx(basic_string_view<Char>(s, end_ - s), *this);
     return parse_funcs_[arg_index_](ctx);
   }
 
  private:
+  using parse_context_type = parse_context<Char, ErrorHandler>;
   constexpr static size_t NUM_ARGS = sizeof...(Args);
 
   constexpr void check_arg_index() {
@@ -2633,12 +2647,12 @@ class format_string_checker : public ErrorHandler {
   }
 
   // Format specifier parsing function.
-  using parse_func = const Char *(*)(parse_context<Char> &);
+  using parse_func = const Char *(*)(parse_context_type &);
 
   const Char *end_;
   int arg_index_ = -1;
   parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1] = {
-      &parse_format_specs<Char, Args>...
+      &parse_format_specs<Args, parse_context_type>...
   };
 };
 
@@ -3184,7 +3198,7 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
     char prefix[4] = "";
 
     spec_handler(basic_writer<Char> &w, T value, const Spec& s)
-      : writer(w), abs_value(static_cast<UnsignedType>(value)), spec(s) {
+      : writer(w), spec(s), abs_value(static_cast<UnsignedType>(value)) {
       if (internal::is_negative(value)) {
         prefix[0] = '-';
         ++prefix_size;
