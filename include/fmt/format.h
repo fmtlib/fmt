@@ -1740,18 +1740,23 @@ constexpr void handle_integral_type_spec(char c, Handler &&handler) {
   }
 }
 
-struct int_type_checker {
+template <typename ErrorHandler>
+class int_type_checker {
+ public:
+  constexpr int_type_checker(ErrorHandler &eh) : eh_(eh) {}
+
   constexpr void on_dec() {}
   constexpr void on_hex() {}
   constexpr void on_bin() {}
   constexpr void on_oct() {}
   constexpr void on_num() {}
 
-  template <typename T = void>
   constexpr void on_error() {
-    error_handler eh;
-    eh.on_error("invalid type specifier");
+    eh_.on_error("invalid type specifier");
   }
+
+ private:
+  ErrorHandler &eh_;
 };
 
 template <typename Context>
@@ -2218,10 +2223,8 @@ class specs_checker : public Handler {
   }
 
   constexpr void end_precision() {
-    if (is_integral(arg_type_) || arg_type_ == POINTER) {
-      report_error("precision not allowed in {} format specifier",
-                   arg_type_ == POINTER ? "pointer" : "integer");
-    }
+    if (is_integral(arg_type_) || arg_type_ == POINTER)
+      this->on_error("precision not allowed for this argument type");
   }
 
  private:
@@ -2642,7 +2645,8 @@ class format_string_checker : public ErrorHandler {
   constexpr static size_t NUM_ARGS = sizeof...(Args);
 
   constexpr void check_arg_index() {
-    if (arg_index_ < 0 || arg_index_ >= NUM_ARGS)
+    unsigned unsigned_index = arg_index_;
+    if (arg_index_ < 0 || unsigned_index >= NUM_ARGS)
       this->on_error("argument index out of range");
   }
 
@@ -3189,16 +3193,16 @@ typename basic_writer<Char>::pointer_type
 template <typename Char>
 template <typename T, typename Spec>
 void basic_writer<Char>::write_int(T value, const Spec& spec) {
+  using unsigned_type = typename internal::int_traits<T>::main_type;
   struct spec_handler {
     basic_writer<Char> &writer;
     const Spec& spec;
     unsigned prefix_size = 0;
-    typedef typename internal::int_traits<T>::main_type UnsignedType;
-    UnsignedType abs_value;
+    unsigned_type abs_value;
     char prefix[4] = "";
 
     spec_handler(basic_writer<Char> &w, T value, const Spec& s)
-      : writer(w), spec(s), abs_value(static_cast<UnsignedType>(value)) {
+      : writer(w), spec(s), abs_value(static_cast<unsigned_type>(value)) {
       if (internal::is_negative(value)) {
         prefix[0] = '-';
         ++prefix_size;
@@ -3217,7 +3221,7 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
     }
 
     void on_hex() {
-      UnsignedType n = abs_value;
+      unsigned_type n = abs_value;
       if (spec.flag(HASH_FLAG)) {
         prefix[prefix_size++] = '0';
         prefix[prefix_size++] = spec.type();
@@ -3237,7 +3241,7 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
     }
 
     void on_bin() {
-      UnsignedType n = abs_value;
+      unsigned_type n = abs_value;
       if (spec.flag(HASH_FLAG)) {
         prefix[prefix_size++] = '0';
         prefix[prefix_size++] = spec.type();
@@ -3255,7 +3259,7 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
     }
 
     void on_oct() {
-      UnsignedType n = abs_value;
+      unsigned_type n = abs_value;
       if (spec.flag(HASH_FLAG))
         prefix[prefix_size++] = '0';
       unsigned num_digits = 0;
@@ -3764,8 +3768,10 @@ struct formatter<
     internal::specs_checker<handler_type>
         handler(handler_type(specs_, ctx), internal::get_type<T>());
     it = parse_format_specs(it, handler);
-    if (std::is_integral<T>::value)
-      handle_integral_type_spec(specs_.type(), internal::int_type_checker());
+    if (std::is_integral<T>::value) {
+      handle_integral_type_spec(
+            specs_.type(), internal::int_type_checker<ParseContext>(ctx));
+    }
     return pointer_from(it);
   }
 
@@ -3951,6 +3957,7 @@ class udl_formatter {
     constexpr bool invalid_format =
         check_format_string<Char, error_handler, Args...>(
           basic_string_view<Char>(s, sizeof...(CHARS)));
+    (void)invalid_format;
     return format(s, args...);
   }
 };

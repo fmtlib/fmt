@@ -847,40 +847,40 @@ TEST(FormatterTest, Precision) {
       format_error, "missing precision specifier");
 
   EXPECT_THROW_MSG(format("{0:.2", 0),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2}", 42),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2f}", 42),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2}", 42u),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2f}", 42u),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2}", 42l),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2f}", 42l),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2}", 42ul),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ul),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2}", 42ll),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ll),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2}", 42ull),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ull),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:3.0}", 'x'),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345));
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345l));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
-      format_error, "precision not allowed in pointer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2f}", reinterpret_cast<void*>(0xcafe)),
-      format_error, "precision not allowed in pointer format specifier");
+      format_error, "precision not allowed for this argument type");
 
   EXPECT_EQ("st", format("{0:.2}", "str"));
 }
@@ -905,7 +905,7 @@ TEST(FormatterTest, RuntimePrecision) {
   EXPECT_THROW_MSG(format("{0:.{?}}", 0),
       format_error, "invalid format string");
   EXPECT_THROW_MSG(format("{0:.{1}", 0, 0),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0),
       format_error, "argument index out of range");
 
@@ -932,38 +932,38 @@ TEST(FormatterTest, RuntimePrecision) {
       format_error, "precision is not integer");
 
   EXPECT_THROW_MSG(format("{0:.{1}}", 42, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42u, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42u, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42l, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42l, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42ul, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42ul, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42ll, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42ll, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}}", 42ull, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}f}", 42ull, 2),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:3.{1}}", 'x', 0),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_EQ("1.2", format("{0:.{1}}", 1.2345, 2));
   EXPECT_EQ("1.2", format("{1:.{0}}", 2, 1.2345l));
 
   EXPECT_THROW_MSG(format("{0:.{1}}", reinterpret_cast<void*>(0xcafe), 2),
-      format_error, "precision not allowed in pointer format specifier");
+      format_error, "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}f}", reinterpret_cast<void*>(0xcafe), 2),
-      format_error, "precision not allowed in pointer format specifier");
+      format_error, "precision not allowed for this argument type");
 
   EXPECT_EQ("st", format("{0:.{1}}", "str", 2));
 }
@@ -1578,7 +1578,7 @@ TEST(FormatTest, DynamicFormatter) {
   EXPECT_THROW_MSG(format("{:0}", str),
       format_error, "format specifier '=' requires numeric argument");
   EXPECT_THROW_MSG(format("{:.2}", num),
-      format_error, "precision not allowed in integer format specifier");
+      format_error, "precision not allowed for this argument type");
 }
 
 struct test_arg_id_handler {
@@ -1876,4 +1876,10 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{0x}", "invalid format string");
   EXPECT_ERROR("{-}", "invalid format string");
   EXPECT_ERROR("{1}", "argument index out of range", int);
+  EXPECT_ERROR("{:10000000000}", "number is too big", int);
+  EXPECT_ERROR("{:{0x}}", "invalid format string", int);
+  EXPECT_ERROR("{:{-}}", "invalid format string", int);
+  EXPECT_ERROR("{:.10000000000}", "number is too big", int);
+  EXPECT_ERROR("{:.{0x}}", "invalid format string", int);
+  EXPECT_ERROR("{:.{-}}", "invalid format string", int);
 }
