@@ -819,7 +819,7 @@ class null_terminating_iterator {
     return result;
   }
 
-  null_terminating_iterator operator--() {
+  constexpr null_terminating_iterator operator--() {
     --ptr_;
     return *this;
   }
@@ -828,16 +828,16 @@ class null_terminating_iterator {
     return null_terminating_iterator(ptr_ + n, end_);
   }
 
-  null_terminating_iterator operator-(difference_type n) {
+  constexpr null_terminating_iterator operator-(difference_type n) {
     return null_terminating_iterator(ptr_ - n, end_);
   }
 
-  null_terminating_iterator operator+=(difference_type n) {
+  constexpr null_terminating_iterator operator+=(difference_type n) {
     ptr_ += n;
     return *this;
   }
 
-  difference_type operator-(null_terminating_iterator other) const {
+  constexpr difference_type operator-(null_terminating_iterator other) const {
     return ptr_ - other.ptr_;
   }
 
@@ -3573,6 +3573,7 @@ inline typename std::enable_if<
   constexpr bool invalid_format =
       internal::check_format_string<char, internal::error_handler, Args...>(
         string_view(format_str.value(), format_str.size()));
+  (void)invalid_format;
   return vformat(format_str.value(), make_args(args...));
 }
 

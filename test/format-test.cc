@@ -1870,16 +1870,17 @@ TEST(FormatTest, FormatStringErrors) {
   // This causes an internal compiler error in MSVC2017.
   EXPECT_ERROR("{0:=5", "unknown format specifier", char);
   EXPECT_ERROR("{:{<}", "invalid fill character '{'", int);
+  EXPECT_ERROR("{:10000000000}", "number is too big", int);
+  EXPECT_ERROR("{:.10000000000}", "number is too big", int);
 #endif
   EXPECT_ERROR("{foo", "missing '}' in format string", int);
   EXPECT_ERROR("{10000000000}", "number is too big");
   EXPECT_ERROR("{0x}", "invalid format string");
   EXPECT_ERROR("{-}", "invalid format string");
   EXPECT_ERROR("{1}", "argument index out of range", int);
-  EXPECT_ERROR("{:10000000000}", "number is too big", int);
   EXPECT_ERROR("{:{0x}}", "invalid format string", int);
   EXPECT_ERROR("{:{-}}", "invalid format string", int);
-  EXPECT_ERROR("{:.10000000000}", "number is too big", int);
   EXPECT_ERROR("{:.{0x}}", "invalid format string", int);
   EXPECT_ERROR("{:.{-}}", "invalid format string", int);
+  EXPECT_ERROR("{:.x}", "missing precision specifier", int);
 }
