@@ -2243,10 +2243,11 @@ class specs_checker : public Handler {
   internal::type arg_type_;
 };
 
-template <template <typename> class Handler, typename T, typename Context>
-constexpr void set_dynamic_spec(T &value, basic_arg<Context> arg) {
-  error_handler eh;
-  unsigned long long big_value = visit(Handler<error_handler>(eh), arg);
+template <template <typename> class Handler, typename T,
+          typename Context, typename ErrorHandler>
+constexpr void set_dynamic_spec(
+    T &value, basic_arg<Context> arg, ErrorHandler eh) {
+  unsigned long long big_value = visit(Handler<ErrorHandler>(eh), arg);
   if (big_value > (std::numeric_limits<int>::max)())
     eh.on_error("number is too big");
   value = static_cast<int>(big_value);
@@ -2265,13 +2266,14 @@ class specs_handler: public specs_setter<typename Context::char_type> {
 
   template <typename Id>
   constexpr void on_dynamic_width(Id arg_id) {
-    set_dynamic_spec<width_checker>(this->specs_.width_, get_arg(arg_id));
+    set_dynamic_spec<width_checker>(
+          this->specs_.width_, get_arg(arg_id), context_.error_handler());
   }
 
   template <typename Id>
   constexpr void on_dynamic_precision(Id arg_id) {
     set_dynamic_spec<precision_checker>(
-          this->specs_.precision_, get_arg(arg_id));
+          this->specs_.precision_, get_arg(arg_id), context_.error_handler());
   }
 
   void on_error(const char *message) {
@@ -2674,10 +2676,12 @@ void handle_dynamic_spec(
   case arg_ref<Char>::NONE:
     break;
   case arg_ref<Char>::INDEX:
-    internal::set_dynamic_spec<Handler>(value, ctx.get_arg(ref.index));
+    internal::set_dynamic_spec<Handler>(
+          value, ctx.get_arg(ref.index), ctx.error_handler());
     break;
   case arg_ref<Char>::NAME:
-    internal::set_dynamic_spec<Handler>(value, ctx.get_arg(ref.name));
+    internal::set_dynamic_spec<Handler>(
+          value, ctx.get_arg(ref.name), ctx.error_handler());
     break;
   }
 }
