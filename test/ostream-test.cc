@@ -85,19 +85,19 @@ TEST(OStreamTest, FormatSpecs) {
   EXPECT_EQ("def  ", format("{0:<5}", TestString("def")));
   EXPECT_EQ("  def", format("{0:>5}", TestString("def")));
   EXPECT_THROW_MSG(format("{0:=5}", TestString("def")),
-      format_error, "format specifier '=' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_EQ(" def ", format("{0:^5}", TestString("def")));
   EXPECT_EQ("def**", format("{0:*<5}", TestString("def")));
   EXPECT_THROW_MSG(format("{0:+}", TestString()),
-      format_error, "format specifier '+' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:-}", TestString()),
-      format_error, "format specifier '-' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0: }", TestString()),
-      format_error, "format specifier ' ' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:#}", TestString()),
-      format_error, "format specifier '#' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:05}", TestString()),
-      format_error, "format specifier '0' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_EQ("test         ", format("{0:13}", TestString("test")));
   EXPECT_EQ("test         ", format("{0:{1}}", TestString("test"), 13));
   EXPECT_EQ("te", format("{0:.2}", TestString("test")));

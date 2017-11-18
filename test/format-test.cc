@@ -563,9 +563,9 @@ TEST(FormatterTest, NumericAlign) {
   EXPECT_THROW_MSG(format("{0:=5}", 'c'),
       format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:=5}", "abc"),
-      format_error, "format specifier '=' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:=8}", reinterpret_cast<void*>(0xface)),
-      format_error, "format specifier '=' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
 }
 
 TEST(FormatterTest, CenterAlign) {
@@ -609,13 +609,13 @@ TEST(FormatterTest, PlusSign) {
   EXPECT_EQ("-42", format("{0:+}", -42));
   EXPECT_EQ("+42", format("{0:+}", 42));
   EXPECT_THROW_MSG(format("{0:+}", 42u),
-      format_error, "format specifier '+' requires signed argument");
+      format_error, "format specifier requires signed argument");
   EXPECT_EQ("+42", format("{0:+}", 42l));
   EXPECT_THROW_MSG(format("{0:+}", 42ul),
-      format_error, "format specifier '+' requires signed argument");
+      format_error, "format specifier requires signed argument");
   EXPECT_EQ("+42", format("{0:+}", 42ll));
   EXPECT_THROW_MSG(format("{0:+}", 42ull),
-      format_error, "format specifier '+' requires signed argument");
+      format_error, "format specifier requires signed argument");
   EXPECT_EQ("+42", format("{0:+}", 42.0));
   EXPECT_EQ("+42", format("{0:+}", 42.0l));
   EXPECT_THROW_MSG(format("{0:+", 'c'),
@@ -623,9 +623,9 @@ TEST(FormatterTest, PlusSign) {
   EXPECT_THROW_MSG(format("{0:+}", 'c'),
       format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:+}", "abc"),
-      format_error, "format specifier '+' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:+}", reinterpret_cast<void*>(0x42)),
-      format_error, "format specifier '+' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
 }
 
 TEST(FormatterTest, MinusSign) {
@@ -633,13 +633,13 @@ TEST(FormatterTest, MinusSign) {
   EXPECT_EQ("-42", format("{0:-}", -42));
   EXPECT_EQ("42", format("{0:-}", 42));
   EXPECT_THROW_MSG(format("{0:-}", 42u),
-      format_error, "format specifier '-' requires signed argument");
+      format_error, "format specifier requires signed argument");
   EXPECT_EQ("42", format("{0:-}", 42l));
   EXPECT_THROW_MSG(format("{0:-}", 42ul),
-      format_error, "format specifier '-' requires signed argument");
+      format_error, "format specifier requires signed argument");
   EXPECT_EQ("42", format("{0:-}", 42ll));
   EXPECT_THROW_MSG(format("{0:-}", 42ull),
-      format_error, "format specifier '-' requires signed argument");
+      format_error, "format specifier requires signed argument");
   EXPECT_EQ("42", format("{0:-}", 42.0));
   EXPECT_EQ("42", format("{0:-}", 42.0l));
   EXPECT_THROW_MSG(format("{0:-", 'c'),
@@ -647,9 +647,9 @@ TEST(FormatterTest, MinusSign) {
   EXPECT_THROW_MSG(format("{0:-}", 'c'),
       format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:-}", "abc"),
-      format_error, "format specifier '-' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:-}", reinterpret_cast<void*>(0x42)),
-      format_error, "format specifier '-' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
 }
 
 TEST(FormatterTest, SpaceSign) {
@@ -657,13 +657,13 @@ TEST(FormatterTest, SpaceSign) {
   EXPECT_EQ("-42", format("{0: }", -42));
   EXPECT_EQ(" 42", format("{0: }", 42));
   EXPECT_THROW_MSG(format("{0: }", 42u),
-      format_error, "format specifier ' ' requires signed argument");
+      format_error, "format specifier requires signed argument");
   EXPECT_EQ(" 42", format("{0: }", 42l));
   EXPECT_THROW_MSG(format("{0: }", 42ul),
-      format_error, "format specifier ' ' requires signed argument");
+      format_error, "format specifier requires signed argument");
   EXPECT_EQ(" 42", format("{0: }", 42ll));
   EXPECT_THROW_MSG(format("{0: }", 42ull),
-      format_error, "format specifier ' ' requires signed argument");
+      format_error, "format specifier requires signed argument");
   EXPECT_EQ(" 42", format("{0: }", 42.0));
   EXPECT_EQ(" 42", format("{0: }", 42.0l));
   EXPECT_THROW_MSG(format("{0: ", 'c'),
@@ -671,9 +671,9 @@ TEST(FormatterTest, SpaceSign) {
   EXPECT_THROW_MSG(format("{0: }", 'c'),
       format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0: }", "abc"),
-      format_error, "format specifier ' ' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0: }", reinterpret_cast<void*>(0x42)),
-      format_error, "format specifier ' ' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
 }
 
 TEST(FormatterTest, HashFlag) {
@@ -716,9 +716,9 @@ TEST(FormatterTest, HashFlag) {
   EXPECT_THROW_MSG(format("{0:#}", 'c'),
       format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:#}", "abc"),
-      format_error, "format specifier '#' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:#}", reinterpret_cast<void*>(0x42)),
-      format_error, "format specifier '#' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
 }
 
 TEST(FormatterTest, ZeroFlag) {
@@ -736,9 +736,9 @@ TEST(FormatterTest, ZeroFlag) {
   EXPECT_THROW_MSG(format("{0:05}", 'c'),
       format_error, "invalid format specifier for char");
   EXPECT_THROW_MSG(format("{0:05}", "abc"),
-      format_error, "format specifier '0' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:05}", reinterpret_cast<void*>(0x42)),
-      format_error, "format specifier '0' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
 }
 
 TEST(FormatterTest, Width) {
@@ -1566,17 +1566,17 @@ TEST(FormatTest, DynamicFormatter) {
   EXPECT_THROW_MSG(format("{:{0}}", num),
       format_error, "cannot switch from automatic to manual argument indexing");
   EXPECT_THROW_MSG(format("{:=}", str),
-      format_error, "format specifier '=' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{:+}", str),
-      format_error, "format specifier '+' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{:-}", str),
-      format_error, "format specifier '-' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{: }", str),
-      format_error, "format specifier ' ' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{:#}", str),
-      format_error, "format specifier '#' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{:0}", str),
-      format_error, "format specifier '=' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{:.2}", num),
       format_error, "precision not allowed for this argument type");
 }
@@ -1705,6 +1705,8 @@ struct test_context {
   constexpr unsigned next_arg_index(const char *&) { return 33; }
 
   void on_error(const char *) {}
+
+  constexpr test_context error_handler() { return *this; }
 };
 
 constexpr fmt::format_specs parse_specs(const char *s) {
@@ -1872,15 +1874,33 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:{<}", "invalid fill character '{'", int);
   EXPECT_ERROR("{:10000000000}", "number is too big", int);
   EXPECT_ERROR("{:.10000000000}", "number is too big", int);
+  EXPECT_ERROR("{:x}", "argument index out of range");
+  EXPECT_ERROR("{:=}", "format specifier requires numeric argument",
+               const char *);
 #endif
   EXPECT_ERROR("{foo", "missing '}' in format string", int);
   EXPECT_ERROR("{10000000000}", "number is too big");
   EXPECT_ERROR("{0x}", "invalid format string");
   EXPECT_ERROR("{-}", "invalid format string");
-  EXPECT_ERROR("{1}", "argument index out of range", int);
   EXPECT_ERROR("{:{0x}}", "invalid format string", int);
   EXPECT_ERROR("{:{-}}", "invalid format string", int);
   EXPECT_ERROR("{:.{0x}}", "invalid format string", int);
   EXPECT_ERROR("{:.{-}}", "invalid format string", int);
   EXPECT_ERROR("{:.x}", "missing precision specifier", int);
+  EXPECT_ERROR("{}", "argument index out of range");
+  EXPECT_ERROR("{1}", "argument index out of range", int);
+  EXPECT_ERROR("{:+}", "format specifier requires numeric argument",
+               const char *);
+  EXPECT_ERROR("{:-}", "format specifier requires numeric argument",
+               const char *);
+  EXPECT_ERROR("{:#}", "format specifier requires numeric argument",
+               const char *);
+  EXPECT_ERROR("{: }", "format specifier requires numeric argument",
+               const char *);
+  EXPECT_ERROR("{:0}", "format specifier requires numeric argument",
+               const char *);
+  EXPECT_ERROR("{:+}", "format specifier requires signed argument", unsigned);
+  EXPECT_ERROR("{:-}", "format specifier requires signed argument", unsigned);
+  EXPECT_ERROR("{: }", "format specifier requires signed argument", unsigned);
+  EXPECT_ERROR("{:.2}", "precision not allowed for this argument type", int);
 }

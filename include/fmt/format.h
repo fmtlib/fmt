@@ -2192,32 +2192,32 @@ class specs_checker : public Handler {
 
   constexpr void on_align(alignment align) {
     if (align == ALIGN_NUMERIC)
-      require_numeric_argument('=');
+      require_numeric_argument();
     Handler::on_align(align);
   }
 
   constexpr void on_plus() {
-    check_sign('+');
+    check_sign();
     Handler::on_plus();
   }
 
   constexpr void on_minus() {
-    check_sign('-');
+    check_sign();
     Handler::on_minus();
   }
 
   constexpr void on_space() {
-    check_sign(' ');
+    check_sign();
     Handler::on_space();
   }
 
   constexpr void on_hash() {
-    require_numeric_argument('#');
+    require_numeric_argument();
     Handler::on_hash();
   }
 
   constexpr void on_zero() {
-    require_numeric_argument('0');
+    require_numeric_argument();
     Handler::on_zero();
   }
 
@@ -2227,26 +2227,16 @@ class specs_checker : public Handler {
   }
 
  private:
-  template <typename... Args>
-  void report_error(string_view format_str, const Args &... args) {
-    this->on_error(format(format_str, args...).c_str());
+  constexpr void require_numeric_argument() {
+    if (!is_numeric(arg_type_))
+      this->on_error("format specifier requires numeric argument");
   }
 
-  template <typename Char>
-  constexpr void require_numeric_argument(Char spec) {
-    if (!is_numeric(arg_type_)) {
-      report_error("format specifier '{}' requires numeric argument",
-                   static_cast<char>(spec));
-    }
-  }
-
-  template <typename Char>
-  constexpr void check_sign(Char sign) {
-    require_numeric_argument(sign);
+  constexpr void check_sign() {
+    require_numeric_argument();
     if (is_integral(arg_type_) && arg_type_ != INT && arg_type_ != LONG_LONG &&
         arg_type_ != CHAR) {
-      report_error("format specifier '{}' requires signed argument",
-                   static_cast<char>(sign));
+      this->on_error("format specifier requires signed argument");
     }
   }
 
@@ -2636,7 +2626,7 @@ class format_string_checker : public ErrorHandler {
 
   constexpr const Char *on_format_specs(const Char *s) {
     parse_context_type ctx(basic_string_view<Char>(s, end_ - s), *this);
-    return parse_funcs_[arg_index_](ctx);
+    return arg_index_ < NUM_ARGS ? parse_funcs_[arg_index_](ctx) : s;
   }
 
  private:
@@ -3200,9 +3190,9 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
     unsigned_type abs_value;
     char prefix[4] = "";
 
-    spec_handler(basic_writer<Char> &w, T value, const Spec& s)
-      : writer(w), spec(s), abs_value(static_cast<unsigned_type>(value)) {
-      if (internal::is_negative(value)) {
+    spec_handler(basic_writer<Char> &w, T val, const Spec& s)
+      : writer(w), spec(s), abs_value(static_cast<unsigned_type>(val)) {
+      if (internal::is_negative(val)) {
         prefix[0] = '-';
         ++prefix_size;
         abs_value = 0 - abs_value;
@@ -3769,10 +3759,9 @@ struct formatter<
         handler(handler_type(specs_, ctx), internal::get_type<T>());
     it = parse_format_specs(it, handler);
     if (std::is_integral<T>::value) {
-      using type_checker =
-        internal::int_type_checker<decltype(ctx.error_handler())>;
+      auto eh = ctx.error_handler();
       handle_integral_type_spec(
-            specs_.type(), type_checker(ctx.error_handler()));
+            specs_.type(), internal::int_type_checker<decltype(eh)>(eh));
     }
     return pointer_from(it);
   }
@@ -3887,9 +3876,9 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
   using iterator = internal::null_terminating_iterator<Char>;
 
   struct handler : internal::error_handler {
-    handler(basic_buffer<Char> &b, basic_string_view<Char> format_str,
+    handler(basic_buffer<Char> &b, basic_string_view<Char> str,
             basic_args<Context> args)
-      : buffer(b), context(format_str, args) {}
+      : buffer(b), context(str, args) {}
 
     void on_text(iterator begin, iterator end) {
       buffer.append(pointer_from(begin), pointer_from(end));
