@@ -1741,9 +1741,9 @@ constexpr void handle_integral_type_spec(char c, Handler &&handler) {
 }
 
 template <typename ErrorHandler>
-class int_type_checker {
+class int_type_checker : private ErrorHandler {
  public:
-  constexpr int_type_checker(ErrorHandler &eh) : eh_(eh) {}
+  constexpr int_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
 
   constexpr void on_dec() {}
   constexpr void on_hex() {}
@@ -1752,11 +1752,8 @@ class int_type_checker {
   constexpr void on_num() {}
 
   constexpr void on_error() {
-    eh_.on_error("invalid type specifier");
+    ErrorHandler::on_error("invalid type specifier");
   }
-
- private:
-  ErrorHandler &eh_;
 };
 
 template <typename Context>
@@ -2003,6 +2000,8 @@ class parse_context : public ErrorHandler {
   }
 
   void check_arg_id(basic_string_view<Char>) {}
+
+  constexpr ErrorHandler error_handler() const { return *this; }
 };
 
 template <typename Char, typename Context>
@@ -3770,8 +3769,10 @@ struct formatter<
         handler(handler_type(specs_, ctx), internal::get_type<T>());
     it = parse_format_specs(it, handler);
     if (std::is_integral<T>::value) {
+      using type_checker =
+        internal::int_type_checker<decltype(ctx.error_handler())>;
       handle_integral_type_spec(
-            specs_.type(), internal::int_type_checker<ParseContext>(ctx));
+            specs_.type(), type_checker(ctx.error_handler()));
     }
     return pointer_from(it);
   }
