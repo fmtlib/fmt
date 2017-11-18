@@ -1877,18 +1877,6 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:x}", "argument index out of range");
   EXPECT_ERROR("{:=}", "format specifier requires numeric argument",
                const char *);
-#endif
-  EXPECT_ERROR("{foo", "missing '}' in format string", int);
-  EXPECT_ERROR("{10000000000}", "number is too big");
-  EXPECT_ERROR("{0x}", "invalid format string");
-  EXPECT_ERROR("{-}", "invalid format string");
-  EXPECT_ERROR("{:{0x}}", "invalid format string", int);
-  EXPECT_ERROR("{:{-}}", "invalid format string", int);
-  EXPECT_ERROR("{:.{0x}}", "invalid format string", int);
-  EXPECT_ERROR("{:.{-}}", "invalid format string", int);
-  EXPECT_ERROR("{:.x}", "missing precision specifier", int);
-  EXPECT_ERROR("{}", "argument index out of range");
-  EXPECT_ERROR("{1}", "argument index out of range", int);
   EXPECT_ERROR("{:+}", "format specifier requires numeric argument",
                const char *);
   EXPECT_ERROR("{:-}", "format specifier requires numeric argument",
@@ -1903,4 +1891,16 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:-}", "format specifier requires signed argument", unsigned);
   EXPECT_ERROR("{: }", "format specifier requires signed argument", unsigned);
   EXPECT_ERROR("{:.2}", "precision not allowed for this argument type", int);
+#endif
+  EXPECT_ERROR("{foo", "missing '}' in format string", int);
+  EXPECT_ERROR("{10000000000}", "number is too big");
+  EXPECT_ERROR("{0x}", "invalid format string");
+  EXPECT_ERROR("{-}", "invalid format string");
+  EXPECT_ERROR("{:{0x}}", "invalid format string", int);
+  EXPECT_ERROR("{:{-}}", "invalid format string", int);
+  EXPECT_ERROR("{:.{0x}}", "invalid format string", int);
+  EXPECT_ERROR("{:.{-}}", "invalid format string", int);
+  EXPECT_ERROR("{:.x}", "missing precision specifier", int);
+  EXPECT_ERROR("{}", "argument index out of range");
+  EXPECT_ERROR("{1}", "argument index out of range", int);
 }
