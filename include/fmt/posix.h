@@ -214,13 +214,13 @@ public:
   // of MinGW that define fileno as a macro.
   int (fileno)() const;
 
-  void vprint(string_view format_str, const args &args) {
-    fmt::vprint(file_, format_str, args);
+  void vprint(string_view format_str, args format_args) {
+    fmt::vprint(file_, format_str, format_args);
   }
 
   template <typename... Args>
-  inline void print(string_view format_str, const Args & ... args) {
-    vprint(format_str, make_args(args...));
+  inline void print(string_view format_str, const Args & ... format_args) {
+    vprint(format_str, make_args(format_args...));
   }
 };
 
