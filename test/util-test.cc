@@ -563,13 +563,9 @@ TEST(UtilTest, StringArg) {
   char *str = str_data;
   const char *cstr = str;
   CHECK_ARG_(char, cstr, str);
-  CHECK_ARG_(wchar_t, cstr, str);
-  CHECK_ARG(cstr);
 
   string_view sref(str);
   CHECK_ARG_(char, sref, std::string(str));
-  CHECK_ARG_(wchar_t, sref, std::string(str));
-  CHECK_ARG(sref);
 }
 
 TEST(UtilTest, WStringArg) {
@@ -578,8 +574,8 @@ TEST(UtilTest, WStringArg) {
   const wchar_t *cstr = str;
 
   fmt::wstring_view sref(str);
-  CHECK_ARG_(wchar_t, sref, str);
-  CHECK_ARG_(wchar_t, sref, cstr);
+  CHECK_ARG_(wchar_t, cstr, str);
+  CHECK_ARG_(wchar_t, cstr, cstr);
   CHECK_ARG_(wchar_t, sref, std::wstring(str));
   CHECK_ARG_(wchar_t, sref, fmt::wstring_view(str));
 }

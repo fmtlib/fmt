@@ -1112,7 +1112,7 @@ enum type {
   INT, UINT, LONG_LONG, ULONG_LONG, BOOL, CHAR, LAST_INTEGER_TYPE = CHAR,
   // followed by floating-point types.
   DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
-  CSTRING, STRING, TSTRING, POINTER, CUSTOM
+  CSTRING, STRING, POINTER, CUSTOM
 };
 
 constexpr bool is_integral(type t) {
@@ -1189,10 +1189,10 @@ template <> constexpr type get_type<unsigned char *>() { return CSTRING; }
 template <> constexpr type get_type<const unsigned char *>() { return CSTRING; }
 template <> constexpr type get_type<std::string>() { return STRING; }
 template <> constexpr type get_type<string_view>() { return STRING; }
-template <> constexpr type get_type<wchar_t *>() { return TSTRING; }
-template <> constexpr type get_type<const wchar_t *>() { return TSTRING; }
-template <> constexpr type get_type<std::wstring>() { return TSTRING; }
-template <> constexpr type get_type<wstring_view>() { return TSTRING; }
+template <> constexpr type get_type<wchar_t *>() { return CSTRING; }
+template <> constexpr type get_type<const wchar_t *>() { return CSTRING; }
+template <> constexpr type get_type<std::wstring>() { return STRING; }
+template <> constexpr type get_type<wstring_view>() { return STRING; }
 template <> constexpr type get_type<void *>() { return POINTER; }
 template <> constexpr type get_type<const void *>() { return POINTER; }
 template <> constexpr type get_type<std::nullptr_t>() { return POINTER; }
@@ -1225,10 +1225,9 @@ class value {
     double double_value;
     long double long_double_value;
     const void *pointer;
-    string_value<char> string;
+    string_value<char_type> string;
     string_value<signed char> sstring;
     string_value<unsigned char> ustring;
-    string_value<char_type> tstring;
     custom_value<char_type> custom;
   };
 
@@ -1271,18 +1270,16 @@ class value {
   }
 #endif
 
-  value(char *s) { set<CSTRING>(string.value, s); }
-  value(const char *s) { set<CSTRING>(string.value, s); }
-  value(signed char *s) { set<CSTRING>(sstring.value, s); }
-  value(const signed char *s) { set<CSTRING>(sstring.value, s); }
-  value(unsigned char *s) { set<CSTRING>(ustring.value, s); }
-  value(const unsigned char *s) { set<CSTRING>(ustring.value, s); }
-  value(string_view s) { set_string(s); }
-  value(const std::string &s) { set_string(s); }
-  value(wstring_view s) { set_wstring(s); }
-  value(const std::wstring &s) { set_wstring(s); }
-  value(wchar_t *s) { set_wstring(wstring_view(s)); }
-  value(const wchar_t *s) { set_wstring(wstring_view(s)); }
+  // Formatting of wide strings into a narrow buffer and multibyte strings
+  // into a wide buffer is disallowed (https://github.com/fmtlib/fmt/pull/606).
+  value(char_type *s) { set<CSTRING>(string.value, s); }
+  value(const char_type *s) { set<CSTRING>(string.value, s); }
+  value(signed char *s) { set_cstring(sstring.value, s); }
+  value(const signed char *s) { set_cstring(sstring.value, s); }
+  value(unsigned char *s) { set_cstring(ustring.value, s); }
+  value(const unsigned char *s) { set_cstring(ustring.value, s); }
+  value(basic_string_view<char_type> s) { set_string(s); }
+  value(const std::basic_string<char_type> &s) { set_string(s); }
 
   // Formatting of arbitrary pointers is disallowed. If you want to output a
   // pointer cast it to "void *" or "const void *". In particular, this forbids
@@ -1338,12 +1335,11 @@ class value {
     string.size = value.size();
   }
 
-  template <typename T>
-  void set_wstring(const T &value) {
-    require_wchar<char_type>();
-    static_assert(get_type<T>() == TSTRING, "invalid type");
-    tstring.value = value.data();
-    tstring.size = value.size();
+  template <typename T, typename U>
+  constexpr void set_cstring(T &field, const U *str) {
+    static_assert(std::is_same<char, char_type>::value,
+                  "incompatible string types");
+    set<CSTRING>(field, str);
   }
 
   // Formats an argument of a custom type, such as a user-defined class.
@@ -1439,10 +1435,8 @@ constexpr typename std::result_of<Visitor(int)>::type
   case internal::CSTRING:
     return vis(arg.value_.string.value);
   case internal::STRING:
-    return vis(string_view(arg.value_.string.value, arg.value_.string.size));
-  case internal::TSTRING:
     return vis(basic_string_view<Char>(
-                 arg.value_.tstring.value, arg.value_.tstring.size));
+                 arg.value_.string.value, arg.value_.string.size));
   case internal::POINTER:
     return vis(arg.value_.pointer);
   case internal::CUSTOM:
@@ -1902,22 +1896,6 @@ class arg_formatter_base {
     writer_.write_int(reinterpret_cast<uintptr_t>(p), spec_);
   }
 
-  template <typename StrChar>
-  typename std::enable_if<
-    std::is_same<Char, wchar_t>::value &&
-    std::is_same<StrChar, wchar_t>::value>::type
-      write_str(basic_string_view<StrChar> value) {
-    writer_.write_str(value, spec_);
-  }
-
-  template <typename StrChar>
-  typename std::enable_if<
-    !std::is_same<Char, wchar_t>::value ||
-    !std::is_same<StrChar, wchar_t>::value>::type
-      write_str(basic_string_view<StrChar> ) {
-    // Do nothing.
-  }
-
  protected:
   basic_writer<Char> &writer() { return writer_; }
   format_specs &spec() { return spec_; }
@@ -1926,9 +1904,9 @@ class arg_formatter_base {
     writer_.write_str(string_view(value ? "true" : "false"), spec_);
   }
 
-  void write(const char *value) {
-    writer_.write_str(
-          string_view(value, value != 0 ? std::strlen(value) : 0), spec_);
+  void write(const Char *value) {
+    writer_.write_str(basic_string_view<Char>(
+        value, value != 0 ? std::char_traits<Char>::length(value) : 0), spec_);
   }
 
  public:
@@ -1985,18 +1963,14 @@ class arg_formatter_base {
     *out = internal::char_traits<Char>::cast(value);
   }
 
-  void operator()(const char *value) {
+  void operator()(const Char *value) {
     if (spec_.type_ == 'p')
       return write_pointer(value);
     write(value);
   }
 
-  void operator()(string_view value) {
+  void operator()(basic_string_view<Char> value) {
     writer_.write_str(value, spec_);
-  }
-
-  void operator()(basic_string_view<wchar_t> value) {
-    write_str(value);
   }
 
   void operator()(const void *value) {
