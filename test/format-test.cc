@@ -1891,6 +1891,7 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:-}", "format specifier requires signed argument", unsigned);
   EXPECT_ERROR("{: }", "format specifier requires signed argument", unsigned);
   EXPECT_ERROR("{:.2}", "precision not allowed for this argument type", int);
+  EXPECT_ERROR("{:s}", "invalid type specifier", int);
 #endif
   EXPECT_ERROR("{foo", "missing '}' in format string", int);
   EXPECT_ERROR("{10000000000}", "number is too big");
@@ -1909,5 +1910,4 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{}{1}",
                "cannot switch from automatic to manual argument indexing",
                int, int);
-  EXPECT_ERROR("{:s}", "invalid type specifier", int);
 }
