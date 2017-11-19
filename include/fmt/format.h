@@ -3960,7 +3960,7 @@ struct udl_formatter {
 # endif // FMT_UDL_TEMPLATE
 
 template <typename Char>
-struct UdlArg {
+struct udl_arg {
   const Char *str;
 
   template <typename T>
@@ -4005,9 +4005,9 @@ operator"" _format(const wchar_t *s, std::size_t) { return {s}; }
     print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
   \endrst
  */
-inline internal::UdlArg<char>
+inline internal::udl_arg<char>
 operator"" _a(const char *s, std::size_t) { return {s}; }
-inline internal::UdlArg<wchar_t>
+inline internal::udl_arg<wchar_t>
 operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 } // inline namespace literals
 } // namespace fmt
