@@ -1702,7 +1702,7 @@ struct test_context {
   template <typename Id>
   constexpr void check_arg_id(Id) {}
 
-  constexpr unsigned next_arg_index(const char *&) { return 33; }
+  constexpr unsigned next_arg_index() { return 33; }
 
   void on_error(const char *) {}
 
@@ -1903,4 +1903,7 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:.x}", "missing precision specifier", int);
   EXPECT_ERROR("{}", "argument index out of range");
   EXPECT_ERROR("{1}", "argument index out of range", int);
+  EXPECT_ERROR("{1}{}",
+               "cannot switch from manual to automatic argument indexing",
+               int, int);
 }

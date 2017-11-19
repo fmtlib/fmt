@@ -370,7 +370,7 @@ typename printf_context<Char, AF>::format_arg printf_context<Char, AF>::get_arg(
   const char *error = 0;
   format_arg arg;
   if (arg_index == std::numeric_limits<unsigned>::max()) {
-    arg_index = this->next_arg_index(error);
+    arg_index = this->next_arg_index();
     if (!error)
       arg = this->do_get_arg(arg_index, error);
   } else {

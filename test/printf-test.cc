@@ -87,14 +87,14 @@ TEST(PrintfTest, NumberIsTooBigInArgIndex) {
 
 TEST(PrintfTest, SwitchArgIndexing) {
   EXPECT_THROW_MSG(fmt::sprintf("%1$d%", 1, 2),
-      format_error, "invalid format string");
+      format_error, "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(fmt::sprintf(format("%1$d%{}d", BIG_NUM), 1, 2),
       format_error, "number is too big");
   EXPECT_THROW_MSG(fmt::sprintf("%1$d%d", 1, 2),
       format_error, "cannot switch from manual to automatic argument indexing");
 
   EXPECT_THROW_MSG(fmt::sprintf("%d%1$", 1, 2),
-      format_error, "invalid format string");
+      format_error, "cannot switch from automatic to manual argument indexing");
   EXPECT_THROW_MSG(fmt::sprintf(format("%d%{}$d", BIG_NUM), 1, 2),
       format_error, "number is too big");
   EXPECT_THROW_MSG(fmt::sprintf("%d%1$d", 1, 2),

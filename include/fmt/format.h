@@ -407,7 +407,7 @@ class basic_string_view {
   constexpr iterator begin() const { return data_; }
   constexpr iterator end() const { return data_ + size_; }
 
-  void remove_prefix(size_t n) {
+  constexpr void remove_prefix(size_t n) {
     data_ += n;
     size_ -= n;
   }
@@ -460,7 +460,7 @@ namespace internal {
 
 // Casts nonnegative integer to unsigned.
 template <typename Int>
-inline typename std::make_unsigned<Int>::type to_unsigned(Int value) {
+constexpr typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   FMT_ASSERT(value >= 0, "negative value");
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
@@ -1956,9 +1956,9 @@ class parse_context : public ErrorHandler {
   int next_arg_index_;
 
  protected:
-  bool check_no_auto_index(const char *&error) {
+  constexpr bool check_no_auto_index() {
     if (next_arg_index_ > 0) {
-      error = "cannot switch from automatic to manual argument indexing";
+      on_error("cannot switch from automatic to manual argument indexing");
       return false;
     }
     next_arg_index_ = -1;
@@ -1981,25 +1981,24 @@ class parse_context : public ErrorHandler {
   constexpr iterator end() const { return format_str_.end(); }
 
   // Advances the begin iterator to ``it``.
-  void advance_to(iterator it) {
+  constexpr void advance_to(iterator it) {
     format_str_.remove_prefix(it - begin());
   }
 
   // Returns the next argument index.
-  unsigned next_arg_index(const char *&error) {
+  constexpr unsigned next_arg_index() {
     if (next_arg_index_ >= 0)
       return internal::to_unsigned(next_arg_index_++);
-    error = "cannot switch from manual to automatic argument indexing";
+    on_error("cannot switch from manual to automatic argument indexing");
     return 0;
   }
 
-  void check_arg_id(unsigned) {
-    const char *error = 0;
-    if (!check_no_auto_index(error))
-      FMT_THROW(format_error(error));
-  }
-
+  constexpr void check_arg_id(unsigned) { check_no_auto_index(); }
   void check_arg_id(basic_string_view<Char>) {}
+
+  constexpr void on_error(const char *message) {
+    ErrorHandler::on_error(message);
+  }
 
   constexpr ErrorHandler error_handler() const { return *this; }
 };
@@ -2029,7 +2028,7 @@ class context_base : public parse_context<Char>{
   // Checks if manual indexing is used and returns the argument with
   // specified index.
   format_arg get_arg(unsigned arg_index, const char *&error) {
-    return this->check_no_auto_index(error) ?
+    return this->check_no_auto_index() ?
       this->do_get_arg(arg_index, error) : format_arg();
   }
 
@@ -2365,11 +2364,7 @@ class dynamic_specs_handler :
   }
 
   constexpr arg_ref_type make_arg_ref(auto_id) {
-    const char *error = 0;
-    auto index = context_.next_arg_index(error);
-    if (error)
-      FMT_THROW(format_error(error));
-    return arg_ref_type(index);
+    return arg_ref_type(context_.next_arg_index());
   }
 
   dynamic_format_specs<char_type> &specs_;
@@ -2607,19 +2602,21 @@ constexpr const typename ParseContext::char_type *
 }
 
 template <typename Char, typename ErrorHandler, typename... Args>
-class format_string_checker : public ErrorHandler {
+class format_string_checker {
  public:
-  explicit constexpr format_string_checker(ErrorHandler eh, const Char *end)
-    : ErrorHandler(eh), end_(end) {}
+  explicit constexpr format_string_checker(
+      basic_string_view<Char> format_str, ErrorHandler eh)
+    : context_(format_str, eh) {}
 
   constexpr void on_text(const Char *, const Char *) {}
 
   constexpr void on_arg_id() {
-    ++arg_index_;
+    arg_index_ = context_.next_arg_index();
     check_arg_index();
   }
   constexpr void on_arg_id(unsigned index) {
     arg_index_ = index;
+    context_.check_arg_id(index);
     check_arg_index();
   }
   constexpr void on_arg_id(basic_string_view<Char>) {}
@@ -2627,8 +2624,13 @@ class format_string_checker : public ErrorHandler {
   constexpr void on_replacement_field(const Char *) {}
 
   constexpr const Char *on_format_specs(const Char *s) {
-    parse_context_type ctx(basic_string_view<Char>(s, end_ - s), *this);
-    return arg_index_ < NUM_ARGS ? parse_funcs_[arg_index_](ctx) : s;
+    context_.advance_to(s);
+    return to_unsigned(arg_index_) < NUM_ARGS ?
+          parse_funcs_[arg_index_](context_) : s;
+  }
+
+  constexpr void on_error(const char *message) {
+    context_.on_error(message);
   }
 
  private:
@@ -2636,16 +2638,15 @@ class format_string_checker : public ErrorHandler {
   constexpr static size_t NUM_ARGS = sizeof...(Args);
 
   constexpr void check_arg_index() {
-    unsigned unsigned_index = arg_index_;
-    if (arg_index_ < 0 || unsigned_index >= NUM_ARGS)
-      this->on_error("argument index out of range");
+    if (internal::to_unsigned(arg_index_) >= NUM_ARGS)
+      context_.on_error("argument index out of range");
   }
 
   // Format specifier parsing function.
   using parse_func = const Char *(*)(parse_context_type &);
 
-  const Char *end_;
   int arg_index_ = -1;
+  parse_context_type context_;
   parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1] = {
       &parse_format_specs<Args, parse_context_type>...
   };
@@ -2654,7 +2655,7 @@ class format_string_checker : public ErrorHandler {
 template <typename Char, typename ErrorHandler, typename... Args>
 constexpr bool check_format_string(
     basic_string_view<Char> s, ErrorHandler eh = ErrorHandler()) {
-  format_string_checker<Char, ErrorHandler, Args...> checker(eh, s.end());
+  format_string_checker<Char, ErrorHandler, Args...> checker(s, eh);
   parse_format_string(s.begin(), checker);
   return true;
 }
@@ -2751,7 +2752,7 @@ class basic_context :
 
   format_arg next_arg() {
     const char *error = 0;
-    format_arg arg = this->do_get_arg(this->next_arg_index(error), error);
+    format_arg arg = this->do_get_arg(this->next_arg_index(), error);
     if (error)
       FMT_THROW(format_error(error));
     return arg;
@@ -3861,15 +3862,12 @@ struct dynamic_formatter {
 template <typename Char>
 inline typename basic_context<Char>::format_arg
   basic_context<Char>::get_arg(basic_string_view<Char> name) {
-  const char *error = 0;
-  if (this->check_no_auto_index(error)) {
+  if (this->check_no_auto_index()) {
     map_.init(this->args());
     if (const format_arg *arg = map_.find(name))
       return *arg;
-    error = "argument not found";
+    this->on_error("argument not found");
   }
-  if (error)
-    FMT_THROW(format_error(error));
   return format_arg();
 }
 
@@ -3881,8 +3879,8 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
 
   struct handler : internal::error_handler {
     handler(basic_buffer<Char> &b, basic_string_view<Char> str,
-            basic_args<Context> args)
-      : buffer(b), context(str, args) {}
+            basic_args<Context> format_args)
+      : buffer(b), context(str, format_args) {}
 
     void on_text(iterator begin, iterator end) {
       buffer.append(pointer_from(begin), pointer_from(end));

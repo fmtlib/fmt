@@ -32,7 +32,7 @@ struct formatter<std::tm> {
     return pointer_from(end);
   }
 
-  void format(buffer &buf, const std::tm &tm, context &ctx) {
+  void format(buffer &buf, const std::tm &tm, context &) {
     std::size_t start = buf.size();
     for (;;) {
       std::size_t size = buf.capacity() - start;
