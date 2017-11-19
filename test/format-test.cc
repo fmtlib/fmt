@@ -1909,4 +1909,5 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{}{1}",
                "cannot switch from automatic to manual argument indexing",
                int, int);
+  EXPECT_ERROR("{:s}", "invalid type specifier", int);
 }

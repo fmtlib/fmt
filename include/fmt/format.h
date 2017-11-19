@@ -3773,8 +3773,6 @@ struct formatter<
   }
 
  private:
-  using arg_ref = internal::arg_ref<Char>;
-
   internal::dynamic_format_specs<Char> specs_;
 };
 
