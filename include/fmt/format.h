@@ -2018,18 +2018,18 @@ class context_base : public parse_context<Char>{
   basic_args<Context> args() const { return args_; }
 
   // Returns the argument with specified index.
-  format_arg do_get_arg(unsigned arg_index, const char *&error) {
+  format_arg do_get_arg(unsigned arg_index) {
     format_arg arg = args_[arg_index];
-    if (!arg && !error)
-      error = "argument index out of range";
+    if (!arg)
+      this->on_error("argument index out of range");
     return arg;
   }
 
   // Checks if manual indexing is used and returns the argument with
   // specified index.
-  format_arg get_arg(unsigned arg_index, const char *&error) {
+  format_arg get_arg(unsigned arg_index) {
     return this->check_no_auto_index() ?
-      this->do_get_arg(arg_index, error) : format_arg();
+      this->do_get_arg(arg_index) : format_arg();
   }
 
  public:
@@ -2751,19 +2751,11 @@ class basic_context :
     : Base(format_str, args) {}
 
   format_arg next_arg() {
-    const char *error = 0;
-    format_arg arg = this->do_get_arg(this->next_arg_index(), error);
-    if (error)
-      FMT_THROW(format_error(error));
-    return arg;
+    return this->do_get_arg(this->next_arg_index());
   }
 
   format_arg get_arg(unsigned arg_index) {
-    const char *error = 0;
-    format_arg arg = this->do_get_arg(arg_index, error);
-    if (error)
-      FMT_THROW(format_error(error));
-    return arg;
+    return this->do_get_arg(arg_index);
   }
 
   // Checks if manual indexing is used and returns the argument with

@@ -116,7 +116,7 @@ TEST(PrintfTest, InvalidArgIndex) {
       format_error, "argument index out of range");
 
   EXPECT_THROW_MSG(fmt::sprintf("%2$", 42),
-      format_error, "invalid format string");
+      format_error, "argument index out of range");
   EXPECT_THROW_MSG(fmt::sprintf(format("%{}$d", BIG_NUM), 42),
       format_error, "number is too big");
 }

@@ -1906,4 +1906,7 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{1}{}",
                "cannot switch from manual to automatic argument indexing",
                int, int);
+  EXPECT_ERROR("{}{1}",
+               "cannot switch from automatic to manual argument indexing",
+               int, int);
 }
