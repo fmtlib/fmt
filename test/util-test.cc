@@ -448,9 +448,7 @@ struct CustomContext {
 
   bool called;
 
-  fmt::internal::parse_context<char> get_parse_context() {
-    return fmt::internal::parse_context<char>("");
-  }
+  fmt::parse_context parse_context() { return fmt::parse_context(""); }
 };
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {

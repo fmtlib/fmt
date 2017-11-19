@@ -331,7 +331,7 @@ class printf_context :
       basic_string_view<Char> format_str, basic_args<printf_context> args)
     : Base(format_str, args) {}
 
-  using Base::get_parse_context;
+  using Base::parse_context;
 
   /** Formats stored arguments and writes the output to the buffer. */
   FMT_API void format(basic_buffer<Char> &buffer);

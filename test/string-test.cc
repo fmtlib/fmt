@@ -14,8 +14,8 @@ using fmt::string_buffer;
 
 TEST(StringBufferTest, Empty) {
   string_buffer buffer;
-  EXPECT_EQ(0, buffer.size());
-  EXPECT_EQ(0, buffer.capacity());
+  EXPECT_EQ(0u, buffer.size());
+  EXPECT_EQ(0u, buffer.capacity());
   std::string data;
   // std::string may have initial capacity.
   std::size_t capacity = data.capacity();
@@ -28,7 +28,7 @@ TEST(StringBufferTest, Reserve) {
   string_buffer buffer;
   std::size_t capacity = std::string().capacity() + 10;
   buffer.reserve(capacity);
-  EXPECT_EQ(0, buffer.size());
+  EXPECT_EQ(0u, buffer.size());
   EXPECT_EQ(capacity, buffer.capacity());
   std::string data;
   buffer.move_to(data);
@@ -54,8 +54,8 @@ TEST(StringBufferTest, MoveTo) {
   std::string data;
   buffer.move_to(data);
   EXPECT_EQ(p, &data[0]);
-  EXPECT_EQ(0, buffer.size());
-  EXPECT_EQ(0, buffer.capacity());
+  EXPECT_EQ(0u, buffer.size());
+  EXPECT_EQ(0u, buffer.capacity());
 }
 
 TEST(StringBufferTest, WString) {

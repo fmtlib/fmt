@@ -144,14 +144,6 @@
 # define FMT_EXCEPTIONS 1
 #endif
 
-#ifndef FMT_THROW
-# if FMT_EXCEPTIONS
-#  define FMT_THROW(x) throw x
-# else
-#  define FMT_THROW(x) assert(false)
-# endif
-#endif
-
 // Define FMT_USE_NOEXCEPT to make fmt use noexcept (C++11 feature).
 #ifndef FMT_USE_NOEXCEPT
 # define FMT_USE_NOEXCEPT 0
@@ -479,6 +471,24 @@ inline stdext::checked_array_iterator<T*> make_ptr(T *ptr, std::size_t size) {
 template <typename T>
 inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
 #endif
+
+#ifndef FMT_THROW
+# if FMT_EXCEPTIONS
+#  define FMT_THROW(x) throw x
+# else
+#  define FMT_THROW(x) assert(false)
+# endif
+#endif
+
+struct error_handler {
+  constexpr error_handler() {}
+  constexpr error_handler(const error_handler &) {}
+
+  // This function is intentionally not constexpr to give a compile-time error.
+  void on_error(const char *message) {
+    FMT_THROW(format_error(message));
+  }
+};
 }  // namespace internal
 
 /**
@@ -1345,7 +1355,7 @@ class value {
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
     typename Context::template formatter_type<T> f;
-    auto &&parse_ctx = ctx.get_parse_context();
+    auto &&parse_ctx = ctx.parse_context();
     parse_ctx.advance_to(f.parse(parse_ctx));
     f.format(buffer, *static_cast<const T*>(arg), ctx);
   }
@@ -1705,17 +1715,66 @@ class basic_format_specs : public align_spec {
 
 typedef basic_format_specs<char> format_specs;
 
-namespace internal {
+// Parsing context consisting of a format string range being parsed and an
+// argument counter for automatic indexing.
+template <typename Char, typename ErrorHandler = internal::error_handler>
+class basic_parse_context : private ErrorHandler {
+ private:
+  basic_string_view<Char> format_str_;
+  int next_arg_index_;
 
-struct error_handler {
-  constexpr error_handler() {}
-  constexpr error_handler(const error_handler &) {}
-
-  // This function is intentionally not constexpr to give a compile-time error.
-  void on_error(const char *message) {
-    FMT_THROW(format_error(message));
+ protected:
+  constexpr bool check_no_auto_index() {
+    if (next_arg_index_ > 0) {
+      on_error("cannot switch from automatic to manual argument indexing");
+      return false;
+    }
+    next_arg_index_ = -1;
+    return true;
   }
+
+ public:
+  using char_type = Char;
+  using iterator = typename basic_string_view<Char>::iterator;
+
+  explicit constexpr basic_parse_context(
+      basic_string_view<Char> format_str, ErrorHandler eh = ErrorHandler())
+    : ErrorHandler(eh), format_str_(format_str), next_arg_index_(0) {}
+
+  // Returns an iterator to the beginning of the format string range being
+  // parsed.
+  constexpr iterator begin() const { return format_str_.begin(); }
+
+  // Returns an iterator past the end of the format string range being parsed.
+  constexpr iterator end() const { return format_str_.end(); }
+
+  // Advances the begin iterator to ``it``.
+  constexpr void advance_to(iterator it) {
+    format_str_.remove_prefix(it - begin());
+  }
+
+  // Returns the next argument index.
+  constexpr unsigned next_arg_index() {
+    if (next_arg_index_ >= 0)
+      return internal::to_unsigned(next_arg_index_++);
+    on_error("cannot switch from manual to automatic argument indexing");
+    return 0;
+  }
+
+  constexpr void check_arg_id(unsigned) { check_no_auto_index(); }
+  void check_arg_id(basic_string_view<Char>) {}
+
+  constexpr void on_error(const char *message) {
+    ErrorHandler::on_error(message);
+  }
+
+  constexpr ErrorHandler error_handler() const { return *this; }
 };
+
+using parse_context = basic_parse_context<char>;
+using wparse_context = basic_parse_context<wchar_t>;
+
+namespace internal {
 
 template <typename Handler>
 constexpr void handle_integral_type_spec(char c, Handler &&handler) {
@@ -1947,64 +2006,8 @@ class arg_formatter_base {
   }
 };
 
-// Parsing context representing a format string range being parsed and an
-// argument counter for automatic indexing.
-template <typename Char, typename ErrorHandler = error_handler>
-class parse_context : public ErrorHandler {
- private:
-  basic_string_view<Char> format_str_;
-  int next_arg_index_;
-
- protected:
-  constexpr bool check_no_auto_index() {
-    if (next_arg_index_ > 0) {
-      on_error("cannot switch from automatic to manual argument indexing");
-      return false;
-    }
-    next_arg_index_ = -1;
-    return true;
-  }
-
- public:
-  using char_type = Char;
-  using iterator = const Char*;
-
-  explicit constexpr parse_context(
-      basic_string_view<Char> format_str, ErrorHandler eh = ErrorHandler())
-    : ErrorHandler(eh), format_str_(format_str), next_arg_index_(0) {}
-
-  // Returns an iterator to the beginning of the format string range being
-  // parsed.
-  constexpr iterator begin() const { return format_str_.begin(); }
-
-  // Returns an iterator past the end of the format string range being parsed.
-  constexpr iterator end() const { return format_str_.end(); }
-
-  // Advances the begin iterator to ``it``.
-  constexpr void advance_to(iterator it) {
-    format_str_.remove_prefix(it - begin());
-  }
-
-  // Returns the next argument index.
-  constexpr unsigned next_arg_index() {
-    if (next_arg_index_ >= 0)
-      return internal::to_unsigned(next_arg_index_++);
-    on_error("cannot switch from manual to automatic argument indexing");
-    return 0;
-  }
-
-  constexpr void check_arg_id(unsigned) { check_no_auto_index(); }
-  void check_arg_id(basic_string_view<Char>) {}
-
-  constexpr void on_error(const char *message) {
-    ErrorHandler::on_error(message);
-  }
-
-  constexpr ErrorHandler error_handler() const { return *this; }
-};
-
 template <typename Char, typename Context>
-class context_base : public parse_context<Char>{
+class context_base : public basic_parse_context<Char>{
  private:
   basic_args<Context> args_;
 
@@ -2012,7 +2015,7 @@ class context_base : public parse_context<Char>{
   typedef basic_arg<Context> format_arg;
 
   context_base(basic_string_view<Char> format_str, basic_args<Context> args)
-  : parse_context<Char>(format_str), args_(args) {}
+  : basic_parse_context<Char>(format_str), args_(args) {}
   ~context_base() {}
 
   basic_args<Context> args() const { return args_; }
@@ -2033,7 +2036,7 @@ class context_base : public parse_context<Char>{
   }
 
  public:
-  parse_context<Char> &get_parse_context() { return *this; }
+  basic_parse_context<Char> &parse_context() { return *this; }
 };
 
 struct format_string {};
@@ -2634,7 +2637,7 @@ class format_string_checker {
   }
 
  private:
-  using parse_context_type = parse_context<Char, ErrorHandler>;
+  using parse_context_type = basic_parse_context<Char, ErrorHandler>;
   constexpr static size_t NUM_ARGS = sizeof...(Args);
 
   constexpr void check_arg_index() {
