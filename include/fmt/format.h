@@ -1771,8 +1771,8 @@ using wparse_context = basic_parse_context<wchar_t>;
 namespace internal {
 
 template <typename Handler>
-constexpr void handle_integral_type_spec(char c, Handler &&handler) {
-  switch (c) {
+constexpr void handle_int_type_spec(char spec, Handler &&handler) {
+  switch (spec) {
   case 0: case 'd':
     handler.on_dec();
     break;
@@ -1793,6 +1793,27 @@ constexpr void handle_integral_type_spec(char c, Handler &&handler) {
   }
 }
 
+template <typename Handler>
+constexpr void handle_float_type_spec(char spec, Handler &&handler) {
+  switch (spec) {
+  case 0: case 'g': case 'G':
+    handler.on_general();
+    break;
+  case 'e': case 'E':
+    handler.on_exp();
+    break;
+  case 'f': case 'F':
+    handler.on_fixed();
+    break;
+   case 'a': case 'A':
+    handler.on_hex();
+    break;
+  default:
+    handler.on_error();
+    break;
+  }
+}
+
 template <typename ErrorHandler>
 class int_type_checker : private ErrorHandler {
  public:
@@ -1803,6 +1824,21 @@ class int_type_checker : private ErrorHandler {
   constexpr void on_bin() {}
   constexpr void on_oct() {}
   constexpr void on_num() {}
+
+  constexpr void on_error() {
+    ErrorHandler::on_error("invalid type specifier");
+  }
+};
+
+template <typename ErrorHandler>
+class float_type_checker : private ErrorHandler {
+ public:
+  constexpr float_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
+
+  constexpr void on_general() {}
+  constexpr void on_exp() {}
+  constexpr void on_fixed() {}
+  constexpr void on_hex() {}
 
   constexpr void on_error() {
     ErrorHandler::on_error("invalid type specifier");
@@ -3256,35 +3292,52 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
         spec.type(), spec.flag(CHAR_FLAG) ? "char" : "integer");
     }
   };
-  internal::handle_integral_type_spec(
-        spec.type(), spec_handler(*this, value, spec));
+  internal::handle_int_type_spec(spec.type(), spec_handler(*this, value, spec));
 }
 
 template <typename Char>
 template <typename T>
 void basic_writer<Char>::write_double(T value, const format_specs &spec) {
   // Check type.
-  char type = spec.type();
-  bool upper = false;
-  switch (type) {
-  case 0:
-    type = 'g';
-    break;
-  case 'e': case 'f': case 'g': case 'a':
-    break;
-  case 'F':
+  struct spec_handler {
+    char type;
+    bool upper = false;
+
+    explicit spec_handler(char t) : type(t) {}
+
+    void on_general() {
+      if (type == 'G')
+        upper = true;
+      else
+        type = 'g';
+    }
+
+    void on_exp() {
+      if (type == 'E')
+        upper = true;
+    }
+
+    void on_fixed() {
+      if (type == 'F') {
+        upper = true;
 #if FMT_MSC_VER
-    // MSVC's printf doesn't support 'F'.
-    type = 'f';
+        // MSVC's printf doesn't support 'F'.
+        type = 'f';
 #endif
-    // Fall through.
-  case 'E': case 'G': case 'A':
-    upper = true;
-    break;
-  default:
-    internal::report_unknown_type(type, "double");
-    break;
-  }
+      }
+    }
+
+    void on_hex() {
+      if (type == 'A')
+        upper = true;
+    }
+
+    void on_error() {
+      internal::report_unknown_type(type, "double");
+    }
+  };
+  spec_handler handler(spec.type());
+  internal::handle_float_type_spec(spec.type(), handler);
 
   char sign = 0;
   // Use isnegative instead of value < 0 because the latter is always
@@ -3300,7 +3353,7 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
     // Format NaN ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t nan_size = 4;
-    const char *nan = upper ? " NAN" : " nan";
+    const char *nan = handler.upper ? " NAN" : " nan";
     if (!sign) {
       --nan_size;
       ++nan;
@@ -3315,7 +3368,7 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
     // Format infinity ourselves because sprintf's output is not consistent
     // across platforms.
     std::size_t inf_size = 4;
-    const char *inf = upper ? " INF" : " inf";
+    const char *inf = handler.upper ? " INF" : " inf";
     if (!sign) {
       --inf_size;
       ++inf;
@@ -3357,7 +3410,7 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
   }
 
   append_float_length(format_ptr, value);
-  *format_ptr++ = type;
+  *format_ptr++ = handler.type;
   *format_ptr = '\0';
 
   // Format using snprintf.
@@ -3729,13 +3782,43 @@ struct formatter<
   constexpr typename ParseContext::iterator parse(ParseContext &ctx) {
     auto it = internal::null_terminating_iterator<Char>(ctx);
     using handler_type = internal::dynamic_specs_handler<ParseContext>;
+    auto type = internal::get_type<T>();
     internal::specs_checker<handler_type>
-        handler(handler_type(specs_, ctx), internal::get_type<T>());
+        handler(handler_type(specs_, ctx), type);
     it = parse_format_specs(it, handler);
-    if (std::is_integral<T>::value) {
-      auto eh = ctx.error_handler();
-      handle_integral_type_spec(
+    auto eh = ctx.error_handler();
+    switch (type) {
+    case internal::NONE:
+    case internal::NAMED_ARG:
+      FMT_ASSERT(false, "invalid argument type");
+      break;
+    case internal::INT:
+    case internal::UINT:
+    case internal::LONG_LONG:
+    case internal::ULONG_LONG:
+    case internal::BOOL:
+      handle_int_type_spec(
             specs_.type(), internal::int_type_checker<decltype(eh)>(eh));
+      break;
+    case internal::CHAR:
+      // TODO
+      break;
+    case internal::DOUBLE:
+    case internal::LONG_DOUBLE:
+      handle_float_type_spec(
+            specs_.type(), internal::float_type_checker<decltype(eh)>(eh));
+      break;
+    case internal::CSTRING:
+    case internal::STRING:
+      // TODO
+      break;
+    case internal::POINTER:
+      // TODO
+      break;
+    case internal::CUSTOM:
+      // Custom format specifiers should be checked in parse functions of
+      // formatter specializations.
+      break;
     }
     return pointer_from(it);
   }

@@ -1844,8 +1844,8 @@ constexpr size_t len(const char *s) {
 }
 
 constexpr bool equal(const char *s1, const char *s2) {
-  if (!s1 && !s2)
-    return true;
+  if (!s1 || !s2)
+    return s1 == s2;
   while (*s1 && *s1 == *s2) {
     ++s1;
     ++s2;
@@ -1892,6 +1892,8 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{: }", "format specifier requires signed argument", unsigned);
   EXPECT_ERROR("{:.2}", "precision not allowed for this argument type", int);
   EXPECT_ERROR("{:s}", "invalid type specifier", int);
+  EXPECT_ERROR("{:s}", "invalid type specifier", bool);
+  EXPECT_ERROR("{:s}", "invalid type specifier", double);
 #endif
   EXPECT_ERROR("{foo", "missing '}' in format string", int);
   EXPECT_ERROR("{10000000000}", "number is too big");
