@@ -205,7 +205,7 @@ TEST(PrintfTest, Width) {
 
   // Width cannot be specified twice.
   EXPECT_THROW_MSG(fmt::sprintf("%5-5d", 42), format_error,
-      "unknown format code '-' for integer");
+      "invalid type specifier");
 
   EXPECT_THROW_MSG(fmt::sprintf(format("%{}d", BIG_NUM), 42),
       format_error, "number is too big");

@@ -971,18 +971,13 @@ TEST(FormatterTest, RuntimePrecision) {
 template <typename T>
 void check_unknown_types(
     const T &value, const char *types, const char *type_name) {
-  char format_str[BUFFER_SIZE], message[BUFFER_SIZE];
+  char format_str[BUFFER_SIZE];
   const char *special = ".0123456789}";
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
     char c = static_cast<char>(i);
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
     safe_sprintf(format_str, "{0:10%c}", c);
-    if (std::isprint(static_cast<unsigned char>(c))) {
-      safe_sprintf(message, "unknown format code '%c' for %s", c, type_name);
-    } else {
-      safe_sprintf(message, "unknown format code '\\x%02x' for %s", c,
-                   type_name);
-    }
+    const char *message = "invalid type specifier";
     EXPECT_THROW_MSG(format(format_str, value), format_error, message)
       << format_str << " " << message;
   }
@@ -1346,7 +1341,7 @@ TEST(FormatterTest, Examples) {
   EXPECT_EQ("The answer is 42", format("The answer is {}", 42));
   EXPECT_THROW_MSG(
     format("The answer is {:d}", "forty-two"), format_error,
-    "unknown format code 'd' for string");
+    "invalid type specifier");
 
   EXPECT_EQ(L"Cyrillic letter \x42e",
     format(L"Cyrillic letter {}", L'\x42e'));
@@ -1894,6 +1889,7 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:s}", "invalid type specifier", int);
   EXPECT_ERROR("{:s}", "invalid type specifier", bool);
   EXPECT_ERROR("{:s}", "invalid type specifier", double);
+  EXPECT_ERROR("{:s}", "invalid type specifier", void*);
 #endif
   EXPECT_ERROR("{foo", "missing '}' in format string", int);
   EXPECT_ERROR("{10000000000}", "number is too big");

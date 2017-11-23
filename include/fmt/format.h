@@ -895,8 +895,6 @@ struct int_traits {
     std::numeric_limits<T>::digits <= 32, uint32_t, uint64_t>::type main_type;
 };
 
-FMT_API FMT_NORETURN void report_unknown_type(char code, const char *type);
-
 // Static data is placed in this class template to allow header-only
 // configuration.
 template <typename T = void>
@@ -1815,6 +1813,12 @@ constexpr void handle_float_type_spec(char spec, Handler &&handler) {
 }
 
 template <typename ErrorHandler>
+constexpr void check_pointer_type_spec(char spec, ErrorHandler &&eh) {
+  if (spec != 0 && spec != 'p')
+    eh.on_error("invalid type specifier");
+}
+
+template <typename ErrorHandler>
 class int_type_checker : private ErrorHandler {
  public:
   constexpr int_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
@@ -2010,8 +2014,7 @@ class arg_formatter_base {
   }
 
   void operator()(const void *value) {
-    if (spec_.type_ && spec_.type_ != 'p')
-      report_unknown_type(spec_.type_, "pointer");
+    check_pointer_type_spec(spec_.type_, internal::error_handler());
     write_pointer(value);
   }
 };
@@ -3099,7 +3102,7 @@ void basic_writer<Char>::write_str(
   // Check if StrChar is convertible to Char.
   internal::char_traits<Char>::convert(StrChar());
   if (spec.type_ && spec.type_ != 's')
-    internal::report_unknown_type(spec.type_, "string");
+    FMT_THROW(format_error("invalid type specifier"));
   const StrChar *str_value = s.data();
   std::size_t str_size = s.size();
   if (str_size == 0 && !str_value)
@@ -3288,8 +3291,7 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
     }
 
     void on_error() {
-      internal::report_unknown_type(
-        spec.type(), spec.flag(CHAR_FLAG) ? "char" : "integer");
+      FMT_THROW(format_error("invalid type specifier"));
     }
   };
   internal::handle_int_type_spec(spec.type(), spec_handler(*this, value, spec));
@@ -3333,7 +3335,7 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
     }
 
     void on_error() {
-      internal::report_unknown_type(type, "double");
+      FMT_THROW(format_error("invalid type specifier"));
     }
   };
   spec_handler handler(spec.type());
@@ -3813,7 +3815,7 @@ struct formatter<
       // TODO
       break;
     case internal::POINTER:
-      // TODO
+      internal::check_pointer_type_spec(type, eh);
       break;
     case internal::CUSTOM:
       // Custom format specifiers should be checked in parse functions of

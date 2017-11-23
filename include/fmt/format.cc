@@ -287,17 +287,6 @@ const uint64_t internal::basic_data<T>::POWERS_OF_10_64[] = {
   10000000000000000000ull
 };
 
-FMT_FUNC void internal::report_unknown_type(char code, const char *type) {
-  (void)type;
-  if (std::isprint(static_cast<unsigned char>(code))) {
-    FMT_THROW(format_error(
-        format("unknown format code '{}' for {}", code, type)));
-  }
-  FMT_THROW(format_error(
-      format("unknown format code '\\x{:02x}' for {}",
-        static_cast<unsigned>(code), type)));
-}
-
 #if FMT_USE_WINDOWS_H
 
 FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
