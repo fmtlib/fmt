@@ -1606,10 +1606,7 @@ enum alignment {
 };
 
 // Flags.
-enum {
-  SIGN_FLAG = 1, PLUS_FLAG = 2, MINUS_FLAG = 4, HASH_FLAG = 8,
-  CHAR_FLAG = 0x10  // Argument has char type - used in error reporting.
-};
+enum {SIGN_FLAG = 1, PLUS_FLAG = 2, MINUS_FLAG = 4, HASH_FLAG = 8};
 
 enum format_spec_tag {fill_tag, align_tag, width_tag, type_tag};
 
@@ -1812,6 +1809,18 @@ constexpr void handle_float_type_spec(char spec, Handler &&handler) {
   }
 }
 
+template <typename Char, typename Handler>
+constexpr void handle_char_specs(
+    const basic_format_specs<Char> &specs, Handler &&handler) {
+  if (specs.type() && specs.type() != 'c') {
+    handler.on_int();
+    return;
+  }
+  if (specs.align() == ALIGN_NUMERIC || specs.flag(~0u) != 0)
+    handler.on_error("invalid format specifier for char");
+  handler.on_char();
+}
+
 template <typename ErrorHandler>
 constexpr void check_pointer_type_spec(char spec, ErrorHandler &&eh) {
   if (spec != 0 && spec != 'p')
@@ -1821,7 +1830,7 @@ constexpr void check_pointer_type_spec(char spec, ErrorHandler &&eh) {
 template <typename ErrorHandler>
 class int_type_checker : private ErrorHandler {
  public:
-  constexpr int_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
+  constexpr explicit int_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
 
   constexpr void on_dec() {}
   constexpr void on_hex() {}
@@ -1837,7 +1846,7 @@ class int_type_checker : private ErrorHandler {
 template <typename ErrorHandler>
 class float_type_checker : private ErrorHandler {
  public:
-  constexpr float_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
+  constexpr explicit float_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
 
   constexpr void on_general() {}
   constexpr void on_exp() {}
@@ -1847,6 +1856,21 @@ class float_type_checker : private ErrorHandler {
   constexpr void on_error() {
     ErrorHandler::on_error("invalid type specifier");
   }
+};
+
+template <typename ErrorHandler>
+class char_specs_checker : public ErrorHandler {
+ private:
+  char type_;
+
+ public:
+  constexpr char_specs_checker(char type, ErrorHandler eh)
+    : ErrorHandler(eh), type_(type) {}
+
+  constexpr void on_int() {
+    handle_int_type_spec(type_, int_type_checker<ErrorHandler>(*this));
+  }
+  constexpr void on_char() {}
 };
 
 template <typename Context>
@@ -1893,7 +1917,7 @@ void arg_map<Context>::init(const basic_args<Context> &args) {
           map_.push_back(Pair(named_arg->name, *named_arg));
           break;
         default:
-          /*nothing*/;
+          break; // Do nothing.
       }
     }
     return;
@@ -1914,7 +1938,7 @@ void arg_map<Context>::init(const basic_args<Context> &args) {
         map_.push_back(Pair(named_arg->name, *named_arg));
         break;
       default:
-        /*nothing*/;
+        break; // Do nothing.
     }
   }
 }
@@ -1926,76 +1950,26 @@ class arg_formatter_base {
 
  private:
   basic_writer<Char> writer_;
-  format_specs &spec_;
+  format_specs &specs_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(arg_formatter_base);
 
-  void write_pointer(const void *p) {
-    spec_.flags_ = HASH_FLAG;
-    spec_.type_ = 'x';
-    writer_.write_int(reinterpret_cast<uintptr_t>(p), spec_);
-  }
-
- protected:
-  basic_writer<Char> &writer() { return writer_; }
-  format_specs &spec() { return spec_; }
-
-  void write(bool value) {
-    writer_.write_str(string_view(value ? "true" : "false"), spec_);
-  }
-
-  void write(const Char *value) {
-    writer_.write_str(basic_string_view<Char>(
-        value, value != 0 ? std::char_traits<Char>::length(value) : 0), spec_);
-  }
-
- public:
-  typedef Char char_type;
-
-  arg_formatter_base(basic_buffer<Char> &b, format_specs &s)
-  : writer_(b), spec_(s) {}
-
-  void operator()(monostate) {
-    FMT_ASSERT(false, "invalid argument type");
-  }
-
-  template <typename T>
-  typename std::enable_if<std::is_integral<T>::value>::type
-      operator()(T value) { writer_.write_int(value, spec_); }
-
-  template <typename T>
-  typename std::enable_if<std::is_floating_point<T>::value>::type
-      operator()(T value) { writer_.write_double(value, spec_); }
-
-  void operator()(bool value) {
-    if (spec_.type_)
-      return (*this)(value ? 1 : 0);
-    write(value);
-  }
-
-  void operator()(Char value) {
-    if (spec_.type_ && spec_.type_ != 'c') {
-      spec_.flags_ |= CHAR_FLAG;
-      writer_.write_int(value, spec_);
-      return;
-    }
-    if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
-      FMT_THROW(format_error("invalid format specifier for char"));
-    typedef typename basic_writer<Char>::pointer_type pointer_type;
-    Char fill = internal::char_traits<Char>::cast(spec_.fill());
+  void write_char(Char value) {
+    using pointer_type = typename basic_writer<Char>::pointer_type;
+    Char fill = internal::char_traits<Char>::cast(specs_.fill());
     pointer_type out = pointer_type();
     const unsigned CHAR_WIDTH = 1;
-    if (spec_.width_ > CHAR_WIDTH) {
-      out = writer_.grow_buffer(spec_.width_);
-      if (spec_.align_ == ALIGN_RIGHT) {
-        std::uninitialized_fill_n(out, spec_.width_ - CHAR_WIDTH, fill);
-        out += spec_.width_ - CHAR_WIDTH;
-      } else if (spec_.align_ == ALIGN_CENTER) {
-        out = writer_.fill_padding(out, spec_.width_,
+    if (specs_.width_ > CHAR_WIDTH) {
+      out = writer_.grow_buffer(specs_.width_);
+      if (specs_.align_ == ALIGN_RIGHT) {
+        std::uninitialized_fill_n(out, specs_.width_ - CHAR_WIDTH, fill);
+        out += specs_.width_ - CHAR_WIDTH;
+      } else if (specs_.align_ == ALIGN_CENTER) {
+        out = writer_.fill_padding(out, specs_.width_,
                                    internal::const_check(CHAR_WIDTH), fill);
       } else {
         std::uninitialized_fill_n(out + CHAR_WIDTH,
-                                  spec_.width_ - CHAR_WIDTH, fill);
+                                  specs_.width_ - CHAR_WIDTH, fill);
       }
     } else {
       out = writer_.grow_buffer(CHAR_WIDTH);
@@ -2003,18 +1977,81 @@ class arg_formatter_base {
     *out = internal::char_traits<Char>::cast(value);
   }
 
+  void write_pointer(const void *p) {
+    specs_.flags_ = HASH_FLAG;
+    specs_.type_ = 'x';
+    writer_.write_int(reinterpret_cast<uintptr_t>(p), specs_);
+  }
+
+ protected:
+  basic_writer<Char> &writer() { return writer_; }
+  format_specs &spec() { return specs_; }
+
+  void write(bool value) {
+    writer_.write_str(string_view(value ? "true" : "false"), specs_);
+  }
+
+  void write(const Char *value) {
+    writer_.write_str(basic_string_view<Char>(
+        value, value != 0 ? std::char_traits<Char>::length(value) : 0), specs_);
+  }
+
+ public:
+  typedef Char char_type;
+
+  arg_formatter_base(basic_buffer<Char> &b, format_specs &s)
+  : writer_(b), specs_(s) {}
+
+  void operator()(monostate) {
+    FMT_ASSERT(false, "invalid argument type");
+  }
+
+  template <typename T>
+  typename std::enable_if<std::is_integral<T>::value>::type
+      operator()(T value) { writer_.write_int(value, specs_); }
+
+  template <typename T>
+  typename std::enable_if<std::is_floating_point<T>::value>::type
+      operator()(T value) { writer_.write_double(value, specs_); }
+
+  void operator()(bool value) {
+    if (specs_.type_)
+      return (*this)(value ? 1 : 0);
+    write(value);
+  }
+
+  void operator()(Char value) {
+    struct spec_handler {
+      arg_formatter_base &formatter;
+      Char value;
+
+      spec_handler(arg_formatter_base& f, Char val): formatter(f), value(val) {}
+
+      void on_int() { formatter.writer_.write_int(value, formatter.specs_); }
+
+      void on_char() {
+        formatter.write_char(value);
+      }
+
+      void on_error(const char *message) {
+        FMT_THROW(format_error(message));
+      }
+    };
+    internal::handle_char_specs(specs_, spec_handler(*this, value));
+  }
+
   void operator()(const Char *value) {
-    if (spec_.type_ == 'p')
+    if (specs_.type_ == 'p')
       return write_pointer(value);
     write(value);
   }
 
   void operator()(basic_string_view<Char> value) {
-    writer_.write_str(value, spec_);
+    writer_.write_str(value, specs_);
   }
 
   void operator()(const void *value) {
-    check_pointer_type_spec(spec_.type_, internal::error_handler());
+    check_pointer_type_spec(specs_.type_, internal::error_handler());
     write_pointer(value);
   }
 };
@@ -3803,7 +3840,8 @@ struct formatter<
             specs_.type(), internal::int_type_checker<decltype(eh)>(eh));
       break;
     case internal::CHAR:
-      // TODO
+      handle_char_specs(specs_, internal::char_specs_checker<decltype(eh)>(
+                          specs_.type(), eh));
       break;
     case internal::DOUBLE:
     case internal::LONG_DOUBLE:

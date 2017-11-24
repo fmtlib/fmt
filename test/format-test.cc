@@ -969,8 +969,7 @@ TEST(FormatterTest, RuntimePrecision) {
 }
 
 template <typename T>
-void check_unknown_types(
-    const T &value, const char *types, const char *type_name) {
+void check_unknown_types(const T &value, const char *types, const char *) {
   char format_str[BUFFER_SIZE];
   const char *special = ".0123456789}";
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
@@ -1865,7 +1864,7 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{0:s", "unknown format specifier", Date);
 #ifndef _MSC_VER
   // This causes an internal compiler error in MSVC2017.
-  EXPECT_ERROR("{0:=5", "unknown format specifier", char);
+  EXPECT_ERROR("{0:=5", "unknown format specifier", int);
   EXPECT_ERROR("{:{<}", "invalid fill character '{'", int);
   EXPECT_ERROR("{:10000000000}", "number is too big", int);
   EXPECT_ERROR("{:.10000000000}", "number is too big", int);
@@ -1888,6 +1887,8 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:.2}", "precision not allowed for this argument type", int);
   EXPECT_ERROR("{:s}", "invalid type specifier", int);
   EXPECT_ERROR("{:s}", "invalid type specifier", bool);
+  EXPECT_ERROR("{:s}", "invalid type specifier", char);
+  EXPECT_ERROR("{:+}", "invalid format specifier for char", char);
   EXPECT_ERROR("{:s}", "invalid type specifier", double);
   EXPECT_ERROR("{:s}", "invalid type specifier", void*);
 #endif
