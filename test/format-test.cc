@@ -1890,7 +1890,9 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:s}", "invalid type specifier", char);
   EXPECT_ERROR("{:+}", "invalid format specifier for char", char);
   EXPECT_ERROR("{:s}", "invalid type specifier", double);
-  EXPECT_ERROR("{:s}", "invalid type specifier", void*);
+  EXPECT_ERROR("{:d}", "invalid type specifier", const char *);
+  EXPECT_ERROR("{:d}", "invalid type specifier", std::string);
+  EXPECT_ERROR("{:s}", "invalid type specifier", void *);
 #endif
   EXPECT_ERROR("{foo", "missing '}' in format string", int);
   EXPECT_ERROR("{10000000000}", "number is too big");

@@ -1693,7 +1693,7 @@ class basic_format_specs : public align_spec {
 
   template <typename... FormatSpecs>
   explicit basic_format_specs(FormatSpecs... specs)
-    : align_spec(0, ' '), flags_(0), precision_(-1), type_(0){
+    : align_spec(0, ' '), flags_(0), precision_(-1), type_(0) {
     set(specs...);
   }
 
@@ -1821,6 +1821,22 @@ constexpr void handle_char_specs(
   handler.on_char();
 }
 
+template <typename Handler>
+constexpr void handle_cstring_type_spec(char spec, Handler &&handler) {
+  if (spec == 0 || spec == 's')
+    handler.on_string();
+  else if (spec == 'p')
+    handler.on_pointer();
+  else
+    handler.on_error("invalid type specifier");
+}
+
+template <typename ErrorHandler>
+constexpr void check_string_type_spec(char spec, ErrorHandler &&eh) {
+  if (spec != 0 && spec != 's')
+    eh.on_error("invalid type specifier");
+}
+
 template <typename ErrorHandler>
 constexpr void check_pointer_type_spec(char spec, ErrorHandler &&eh) {
   if (spec != 0 && spec != 'p')
@@ -1871,6 +1887,15 @@ class char_specs_checker : public ErrorHandler {
     handle_int_type_spec(type_, int_type_checker<ErrorHandler>(*this));
   }
   constexpr void on_char() {}
+};
+
+template <typename ErrorHandler>
+class cstring_type_checker : public ErrorHandler {
+ public:
+  constexpr explicit cstring_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
+
+  constexpr void on_string() {}
+  constexpr void on_pointer() {}
 };
 
 template <typename Context>
@@ -2021,32 +2046,35 @@ class arg_formatter_base {
   }
 
   void operator()(Char value) {
-    struct spec_handler {
+    struct spec_handler : internal::error_handler {
       arg_formatter_base &formatter;
       Char value;
 
       spec_handler(arg_formatter_base& f, Char val): formatter(f), value(val) {}
 
       void on_int() { formatter.writer_.write_int(value, formatter.specs_); }
-
-      void on_char() {
-        formatter.write_char(value);
-      }
-
-      void on_error(const char *message) {
-        FMT_THROW(format_error(message));
-      }
+      void on_char() { formatter.write_char(value); }
     };
     internal::handle_char_specs(specs_, spec_handler(*this, value));
   }
 
   void operator()(const Char *value) {
-    if (specs_.type_ == 'p')
-      return write_pointer(value);
-    write(value);
+    struct spec_handler : internal::error_handler {
+      arg_formatter_base &formatter;
+      const Char *value;
+
+      spec_handler(arg_formatter_base &f, const Char *val)
+        : formatter(f), value(val) {}
+
+      void on_string() { formatter.write(value); }
+      void on_pointer() { formatter.write_pointer(value); }
+    };
+    internal::handle_cstring_type_spec(
+          specs_.type_, spec_handler(*this, value));
   }
 
   void operator()(basic_string_view<Char> value) {
+    internal::check_string_type_spec(specs_.type_, internal::error_handler());
     writer_.write_str(value, specs_);
   }
 
@@ -3138,8 +3166,6 @@ void basic_writer<Char>::write_str(
     basic_string_view<StrChar> s, const format_specs &spec) {
   // Check if StrChar is convertible to Char.
   internal::char_traits<Char>::convert(StrChar());
-  if (spec.type_ && spec.type_ != 's')
-    FMT_THROW(format_error("invalid type specifier"));
   const StrChar *str_value = s.data();
   std::size_t str_size = s.size();
   if (str_size == 0 && !str_value)
@@ -3825,6 +3851,7 @@ struct formatter<
     internal::specs_checker<handler_type>
         handler(handler_type(specs_, ctx), type);
     it = parse_format_specs(it, handler);
+    auto type_spec = specs_.type();
     auto eh = ctx.error_handler();
     switch (type) {
     case internal::NONE:
@@ -3837,23 +3864,26 @@ struct formatter<
     case internal::ULONG_LONG:
     case internal::BOOL:
       handle_int_type_spec(
-            specs_.type(), internal::int_type_checker<decltype(eh)>(eh));
+            type_spec, internal::int_type_checker<decltype(eh)>(eh));
       break;
     case internal::CHAR:
       handle_char_specs(specs_, internal::char_specs_checker<decltype(eh)>(
-                          specs_.type(), eh));
+                          type_spec, eh));
       break;
     case internal::DOUBLE:
     case internal::LONG_DOUBLE:
       handle_float_type_spec(
-            specs_.type(), internal::float_type_checker<decltype(eh)>(eh));
+            type_spec, internal::float_type_checker<decltype(eh)>(eh));
       break;
     case internal::CSTRING:
+      internal::handle_cstring_type_spec(
+            type_spec, internal::cstring_type_checker<decltype(eh)>(eh));
+      break;
     case internal::STRING:
-      // TODO
+      internal::check_string_type_spec(type_spec, eh);
       break;
     case internal::POINTER:
-      internal::check_pointer_type_spec(type, eh);
+      internal::check_pointer_type_spec(type_spec, eh);
       break;
     case internal::CUSTOM:
       // Custom format specifiers should be checked in parse functions of
