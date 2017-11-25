@@ -1983,21 +1983,21 @@ class arg_formatter_base {
     using pointer_type = typename basic_writer<Char>::pointer_type;
     Char fill = internal::char_traits<Char>::cast(specs_.fill());
     pointer_type out = pointer_type();
-    const unsigned CHAR_WIDTH = 1;
-    if (specs_.width_ > CHAR_WIDTH) {
+    const unsigned character_width = 1;
+    if (specs_.width_ > character_width) {
       out = writer_.grow_buffer(specs_.width_);
       if (specs_.align_ == ALIGN_RIGHT) {
-        std::uninitialized_fill_n(out, specs_.width_ - CHAR_WIDTH, fill);
-        out += specs_.width_ - CHAR_WIDTH;
+        std::uninitialized_fill_n(out, specs_.width_ - character_width, fill);
+        out += specs_.width_ - character_width;
       } else if (specs_.align_ == ALIGN_CENTER) {
         out = writer_.fill_padding(out, specs_.width_,
-                                   internal::const_check(CHAR_WIDTH), fill);
+                                   internal::const_check(character_width), fill);
       } else {
-        std::uninitialized_fill_n(out + CHAR_WIDTH,
-                                  specs_.width_ - CHAR_WIDTH, fill);
+        std::uninitialized_fill_n(out + character_width,
+                                  specs_.width_ - character_width, fill);
       }
     } else {
-      out = writer_.grow_buffer(CHAR_WIDTH);
+      out = writer_.grow_buffer(character_width);
     }
     *out = internal::char_traits<Char>::cast(value);
   }
