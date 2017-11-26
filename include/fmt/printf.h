@@ -368,7 +368,7 @@ typename printf_context<Char, AF>::format_arg printf_context<Char, AF>::get_arg(
     iterator it, unsigned arg_index) {
   (void)it;
   if (arg_index == std::numeric_limits<unsigned>::max())
-    return this->do_get_arg(this->next_arg_index());
+    return this->do_get_arg(this->next_arg_id());
   return Base::get_arg(arg_index - 1);
 }
 

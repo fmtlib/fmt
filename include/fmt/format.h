@@ -1710,15 +1710,15 @@ template <typename Char, typename ErrorHandler = internal::error_handler>
 class basic_parse_context : private ErrorHandler {
  private:
   basic_string_view<Char> format_str_;
-  int next_arg_index_;
+  int next_arg_id_;
 
  protected:
   constexpr bool check_no_auto_index() {
-    if (next_arg_index_ > 0) {
+    if (next_arg_id_ > 0) {
       on_error("cannot switch from automatic to manual argument indexing");
       return false;
     }
-    next_arg_index_ = -1;
+    next_arg_id_ = -1;
     return true;
   }
 
@@ -1728,14 +1728,14 @@ class basic_parse_context : private ErrorHandler {
 
   explicit constexpr basic_parse_context(
       basic_string_view<Char> format_str, ErrorHandler eh = ErrorHandler())
-    : ErrorHandler(eh), format_str_(format_str), next_arg_index_(0) {}
+    : ErrorHandler(eh), format_str_(format_str), next_arg_id_(0) {}
 
   // Returns an iterator to the beginning of the format string range being
   // parsed.
-  constexpr iterator begin() const { return format_str_.begin(); }
+  constexpr iterator begin() const FMT_NOEXCEPT { return format_str_.begin(); }
 
   // Returns an iterator past the end of the format string range being parsed.
-  constexpr iterator end() const { return format_str_.end(); }
+  constexpr iterator end() const FMT_NOEXCEPT { return format_str_.end(); }
 
   // Advances the begin iterator to ``it``.
   constexpr void advance_to(iterator it) {
@@ -1743,9 +1743,9 @@ class basic_parse_context : private ErrorHandler {
   }
 
   // Returns the next argument index.
-  constexpr unsigned next_arg_index() {
-    if (next_arg_index_ >= 0)
-      return internal::to_unsigned(next_arg_index_++);
+  constexpr unsigned next_arg_id() {
+    if (next_arg_id_ >= 0)
+      return internal::to_unsigned(next_arg_id_++);
     on_error("cannot switch from manual to automatic argument indexing");
     return 0;
   }
@@ -2099,8 +2099,8 @@ class context_base : public basic_parse_context<Char>{
   basic_args<Context> args() const { return args_; }
 
   // Returns the argument with specified index.
-  format_arg do_get_arg(unsigned arg_index) {
-    format_arg arg = args_[arg_index];
+  format_arg do_get_arg(unsigned arg_id) {
+    format_arg arg = args_[arg_id];
     if (!arg)
       this->on_error("argument index out of range");
     return arg;
@@ -2108,9 +2108,9 @@ class context_base : public basic_parse_context<Char>{
 
   // Checks if manual indexing is used and returns the argument with
   // specified index.
-  format_arg get_arg(unsigned arg_index) {
+  format_arg get_arg(unsigned arg_id) {
     return this->check_no_auto_index() ?
-      this->do_get_arg(arg_index) : format_arg();
+      this->do_get_arg(arg_id) : format_arg();
   }
 
  public:
@@ -2445,7 +2445,7 @@ class dynamic_specs_handler :
   }
 
   constexpr arg_ref_type make_arg_ref(auto_id) {
-    return arg_ref_type(context_.next_arg_index());
+    return arg_ref_type(context_.next_arg_id());
   }
 
   dynamic_format_specs<char_type> &specs_;
@@ -2692,13 +2692,13 @@ class format_string_checker {
   constexpr void on_text(const Char *, const Char *) {}
 
   constexpr void on_arg_id() {
-    arg_index_ = context_.next_arg_index();
-    check_arg_index();
+    arg_id_ = context_.next_arg_id();
+    check_arg_id();
   }
-  constexpr void on_arg_id(unsigned index) {
-    arg_index_ = index;
-    context_.check_arg_id(index);
-    check_arg_index();
+  constexpr void on_arg_id(unsigned id) {
+    arg_id_ = id;
+    context_.check_arg_id(id);
+    check_arg_id();
   }
   constexpr void on_arg_id(basic_string_view<Char>) {}
 
@@ -2706,8 +2706,8 @@ class format_string_checker {
 
   constexpr const Char *on_format_specs(const Char *s) {
     context_.advance_to(s);
-    return to_unsigned(arg_index_) < NUM_ARGS ?
-          parse_funcs_[arg_index_](context_) : s;
+    return to_unsigned(arg_id_) < NUM_ARGS ?
+          parse_funcs_[arg_id_](context_) : s;
   }
 
   constexpr void on_error(const char *message) {
@@ -2718,15 +2718,15 @@ class format_string_checker {
   using parse_context_type = basic_parse_context<Char, ErrorHandler>;
   constexpr static size_t NUM_ARGS = sizeof...(Args);
 
-  constexpr void check_arg_index() {
-    if (internal::to_unsigned(arg_index_) >= NUM_ARGS)
+  constexpr void check_arg_id() {
+    if (internal::to_unsigned(arg_id_) >= NUM_ARGS)
       context_.on_error("argument index out of range");
   }
 
   // Format specifier parsing function.
   using parse_func = const Char *(*)(parse_context_type &);
 
-  int arg_index_ = -1;
+  int arg_id_ = -1;
   parse_context_type context_;
   parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1] = {
       &parse_format_specs<Args, parse_context_type>...
@@ -2831,13 +2831,8 @@ class basic_context :
       basic_string_view<Char> format_str, basic_args<basic_context> args)
     : Base(format_str, args) {}
 
-  format_arg next_arg() {
-    return this->do_get_arg(this->next_arg_index());
-  }
-
-  format_arg get_arg(unsigned arg_index) {
-    return this->do_get_arg(arg_index);
-  }
+  format_arg next_arg() { return this->do_get_arg(this->next_arg_id()); }
+  format_arg get_arg(unsigned arg_id) { return this->do_get_arg(arg_id); }
 
   // Checks if manual indexing is used and returns the argument with
   // specified name.

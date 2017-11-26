@@ -1696,7 +1696,7 @@ struct test_context {
   template <typename Id>
   constexpr void check_arg_id(Id) {}
 
-  constexpr unsigned next_arg_index() { return 33; }
+  constexpr unsigned next_arg_id() { return 33; }
 
   void on_error(const char *) {}
 
