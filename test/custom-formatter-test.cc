@@ -29,22 +29,6 @@ class CustomArgFormatter : public fmt::arg_formatter<char> {
   }
 };
 
-// A custom argument formatter that doesn't print `-` for floating-point values
-// rounded to 0.
-class CustomPrintfArgFormatter : public printf_arg_formatter<char> {
- public:
-  CustomPrintfArgFormatter(fmt::buffer &buf, fmt::format_specs &spec)
-  : printf_arg_formatter<char>(buf, spec) {}
-
-  using printf_arg_formatter<char>::operator();
-
-  void operator()(double value) {
-    if (round(value * pow(10, spec().precision())) == 0)
-      value = 0;
-    printf_arg_formatter<char>::operator()(value);
-  }
-};
-
 std::string custom_vformat(fmt::string_view format_str, fmt::args args) {
   fmt::memory_buffer buffer;
   // Pass custom argument formatter as a template arg to vwrite.
@@ -58,25 +42,6 @@ std::string custom_format(const char *format_str, const Args & ... args) {
   return custom_vformat(format_str, va);
 }
 
-typedef fmt::printf_context<char, CustomPrintfArgFormatter>
-  CustomPrintfFormatter;
-
-std::string custom_vsprintf(
-    const char* format_str,
-    fmt::basic_args<CustomPrintfFormatter> args) {
-  fmt::memory_buffer buffer;
-  CustomPrintfFormatter formatter(format_str, args);
-  formatter.format(buffer);
-  return std::string(buffer.data(), buffer.size());
-}
-
-template <typename... Args>
-std::string custom_sprintf(const char *format_str, const Args & ... args) {
-  auto va = fmt::make_args<CustomPrintfFormatter>(args...);
-  return custom_vsprintf(format_str, va);
-}
-
 TEST(CustomFormatterTest, Format) {
   EXPECT_EQ("0.00", custom_format("{:.2f}", -.00001));
-  EXPECT_EQ("0.00", custom_sprintf("%.2f", -.00001));
 }

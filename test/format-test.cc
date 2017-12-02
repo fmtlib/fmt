@@ -1509,7 +1509,7 @@ class MockArgFormatter : public fmt::internal::arg_formatter_base<char> {
 
   void operator()(int value) { call(value); }
 
-  void operator()(fmt::internal::custom_value<char>) {}
+  void operator()(fmt::basic_arg<fmt::context>::handle) {}
 };
 
 void custom_vformat(fmt::string_view format_str, fmt::args args) {

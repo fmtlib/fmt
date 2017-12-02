@@ -200,6 +200,13 @@ class PrintfWidthHandler {
 };
 }  // namespace internal
 
+template <typename Char>
+class printf_arg_formatter;
+
+template <typename Char,
+          typename ArgFormatter = printf_arg_formatter<Char> >
+class printf_context;
+
 /**
   \rst
   The ``printf`` argument formatter.
@@ -208,6 +215,8 @@ class PrintfWidthHandler {
 template <typename Char>
 class printf_arg_formatter : public internal::arg_formatter_base<Char> {
  private:
+  printf_context<Char>& context_;
+
   void write_null_pointer() {
     this->spec().type_ = 0;
     this->write("(nil)");
@@ -225,8 +234,9 @@ class printf_arg_formatter : public internal::arg_formatter_base<Char> {
     specifier information for standard argument types.
     \endrst
    */
-  printf_arg_formatter(basic_buffer<Char> &buffer, format_specs &spec)
-  : internal::arg_formatter_base<Char>(buffer, spec) {}
+  printf_arg_formatter(
+      basic_buffer<Char> &buffer, format_specs &spec, printf_context<Char> &ctx)
+  : internal::arg_formatter_base<Char>(buffer, spec), context_(ctx) {}
 
   using Base::operator();
 
@@ -268,17 +278,10 @@ class printf_arg_formatter : public internal::arg_formatter_base<Char> {
   }
 
   /** Formats an argument of a custom (user-defined) type. */
-  void operator()(internal::custom_value<Char> c) {
-    const Char format_str[] = {'}', '\0'};
-    auto args = basic_args<basic_context<Char>>();
-    basic_context<Char> ctx(basic_string_view<Char>(format_str), args);
-    c.format(this->writer().buffer(), c.value, &ctx);
+  void operator()(typename basic_arg<printf_context<Char>>::handle handle) {
+    handle.format(this->writer().buffer(), context_);
   }
 };
-
-template <typename Char,
-          typename ArgFormatter = printf_arg_formatter<Char> >
-class printf_context;
 
 template <typename T, typename Char = char>
 struct printf_formatter {
@@ -506,7 +509,7 @@ void printf_context<Char, AF>::format(basic_buffer<Char> &buffer) {
     start = it;
 
     // Format argument.
-    visit(AF(buffer, spec), arg);
+    visit(AF(buffer, spec, *this), arg);
   }
   buffer.append(pointer_from(start), pointer_from(it));
 }

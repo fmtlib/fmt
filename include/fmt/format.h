@@ -1385,7 +1385,22 @@ class basic_arg {
   friend class basic_args<Context>;
   friend class internal::arg_map<Context>;
 
+  using char_type = typename Context::char_type;
+
  public:
+  class handle {
+   public:
+    explicit handle(internal::custom_value<char_type> custom)
+      : custom_(custom) {}
+
+    void format(basic_buffer<char_type> &buf, Context &ctx) {
+      custom_.format(buf, custom_.value, &ctx);
+    }
+
+   private:
+    internal::custom_value<char_type> custom_;
+  };
+
   constexpr basic_arg() : type_(internal::NONE) {}
 
   explicit operator bool() const noexcept { return type_ != internal::NONE; }
@@ -1407,7 +1422,7 @@ class basic_arg {
 template <typename Visitor, typename Context>
 constexpr typename std::result_of<Visitor(int)>::type
     visit(Visitor &&vis, basic_arg<Context> arg) {
-  typedef typename Context::char_type Char;
+  using char_type = typename Context::char_type;
   switch (arg.type_) {
   case internal::NONE:
     return vis(monostate());
@@ -1425,7 +1440,7 @@ constexpr typename std::result_of<Visitor(int)>::type
   case internal::BOOL:
     return vis(arg.value_.int_value != 0);
   case internal::CHAR:
-    return vis(static_cast<Char>(arg.value_.int_value));
+    return vis(static_cast<char_type>(arg.value_.int_value));
   case internal::DOUBLE:
     return vis(arg.value_.double_value);
   case internal::LONG_DOUBLE:
@@ -1433,12 +1448,12 @@ constexpr typename std::result_of<Visitor(int)>::type
   case internal::CSTRING:
     return vis(arg.value_.string.value);
   case internal::STRING:
-    return vis(basic_string_view<Char>(
+    return vis(basic_string_view<char_type>(
                  arg.value_.string.value, arg.value_.string.size));
   case internal::POINTER:
     return vis(arg.value_.pointer);
   case internal::CUSTOM:
-    return vis(arg.value_.custom);
+    return vis(typename basic_arg<Context>::handle(arg.value_.custom));
   }
   return typename std::result_of<Visitor(int)>::type();
 }
@@ -2161,8 +2176,8 @@ class custom_formatter {
   custom_formatter(basic_buffer<Char> &buffer, Context &ctx)
   : buffer_(buffer), ctx_(ctx) {}
 
-  bool operator()(internal::custom_value<Char> custom) {
-    custom.format(buffer_, custom.value, &ctx_);
+  bool operator()(typename basic_arg<Context>::handle h) {
+    h.format(buffer_, ctx_);
     return true;
   }
 
@@ -2795,8 +2810,8 @@ class arg_formatter : public internal::arg_formatter_base<Char> {
   using internal::arg_formatter_base<Char>::operator();
 
   /** Formats an argument of a custom (user-defined) type. */
-  void operator()(internal::custom_value<Char> c) {
-    c.format(this->writer().buffer(), c.value, &ctx_);
+  void operator()(typename basic_arg<basic_context<Char>>::handle handle) {
+    handle.format(this->writer().buffer(), ctx_);
   }
 };
 

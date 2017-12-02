@@ -590,18 +590,17 @@ TEST(UtilTest, PointerArg) {
 
 TEST(UtilTest, CustomArg) {
   ::Test test;
-  typedef MockVisitor<fmt::internal::custom_value<char>> Visitor;
-  testing::StrictMock<Visitor> visitor;
-  EXPECT_CALL(visitor, visit(_)).WillOnce(
-        testing::Invoke([&](fmt::internal::custom_value<char> custom) {
-    EXPECT_EQ(&test, custom.value);
+  using handle = typename fmt::basic_arg<fmt::context>::handle;
+  using visitor = MockVisitor<handle>;
+  testing::StrictMock<visitor> v;
+  EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke([&](handle h) {
     fmt::memory_buffer buffer;
     fmt::context ctx("", fmt::args());
-    custom.format(buffer, &test, &ctx);
+    h.format(buffer, ctx);
     EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
-    return Visitor::Result();
+    return visitor::Result();
   }));
-  fmt::visit(visitor, make_arg<fmt::context>(test));
+  fmt::visit(v, make_arg<fmt::context>(test));
 }
 
 TEST(ArgVisitorTest, VisitInvalidArg) {
