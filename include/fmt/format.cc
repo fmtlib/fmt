@@ -26,6 +26,7 @@
  */
 
 #include "fmt/format.h"
+#include "fmt/locale.h"
 
 #include <string.h>
 
@@ -218,6 +219,12 @@ void report_error(FormatFunc func, int error_code,
 }
 }  // namespace
 
+template <typename Char>
+FMT_FUNC Char internal::thousands_sep(const basic_buffer<Char>& buf) {
+  return std::use_facet<std::numpunct<Char>>(buf.locale().get())
+                                            .thousands_sep();
+}
+
 FMT_FUNC void system_error::init(
     int err_code, string_view format_str, format_args args) {
   error_code_ = err_code;
@@ -330,7 +337,7 @@ FMT_FUNC int internal::utf16_to_utf8::convert(wstring_view s) {
 }
 
 FMT_FUNC void windows_error::init(
-    int err_code, string_view format_str, args args) {
+    int err_code, string_view format_str, format_args args) {
   error_code_ = err_code;
   memory_buffer buffer;
   internal::format_windows_error(buffer, err_code, vformat(format_str, args));
@@ -436,6 +443,10 @@ template struct internal::basic_data<void>;
 
 // Explicit instantiations for char.
 
+template locale basic_buffer<char>::locale() const;
+
+template char internal::thousands_sep(const basic_buffer<char>& buf);
+
 template void basic_fixed_buffer<char>::grow(std::size_t);
 
 template void internal::arg_map<context>::init(const format_args &args);
@@ -449,6 +460,10 @@ template int internal::char_traits<char>::format_float(
     unsigned width, int precision, long double value);
 
 // Explicit instantiations for wchar_t.
+
+template locale basic_buffer<wchar_t>::locale() const;
+
+template wchar_t internal::thousands_sep(const basic_buffer<wchar_t>& buf);
 
 template class basic_context<wchar_t>;
 

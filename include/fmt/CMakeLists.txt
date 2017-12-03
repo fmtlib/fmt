@@ -1,7 +1,7 @@
 # Define the fmt library, its includes and the needed defines.
 # format.cc is added to FMT_HEADERS for the header-only configuration.
-set(FMT_HEADERS format.h format.cc ostream.h ostream.cc printf.h printf.cc
-                string.h time.h write.h)
+set(FMT_HEADERS format.h format.cc locale.h ostream.h ostream.cc printf.h
+                printf.cc string.h time.h write.h)
 if (HAVE_OPEN)
   set(FMT_HEADERS ${FMT_HEADERS} posix.h)
   set(FMT_SOURCES ${FMT_SOURCES} posix.cc)

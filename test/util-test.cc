@@ -37,6 +37,7 @@
 # include <type_traits>
 #endif
 
+#include "fmt/locale.h"
 #include "gmock/gmock.h"
 #include "gtest-extra.h"
 #include "mock-allocator.h"

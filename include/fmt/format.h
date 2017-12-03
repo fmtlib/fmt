@@ -34,7 +34,6 @@
 #include <cstdio>
 #include <cstring>
 #include <limits>
-#include <locale>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -491,6 +490,10 @@ struct error_handler {
 };
 }  // namespace internal
 
+// A wrapper around std::locale used to reduce compile times since <locale>
+// is very heavy.
+class locale;
+
 /**
   \rst
   A contiguous memory buffer with an optional growing ability.
@@ -566,7 +569,7 @@ class basic_buffer {
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
 
-  virtual std::locale locale() const { return std::locale(); }
+  virtual fmt::locale locale() const;
 };
 
 typedef basic_buffer<char> buffer;
@@ -978,6 +981,9 @@ class add_thousands_sep {
                             internal::make_ptr(buffer, sep_.size()));
   }
 };
+
+template <typename Char>
+Char thousands_sep(const basic_buffer<Char>& buf);
 
 // Formats a decimal unsigned integer value writing into buffer.
 // thousands_sep is a functor that is called after writing each char to
@@ -3352,9 +3358,7 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
 
     void on_num() {
       unsigned num_digits = internal::count_digits(abs_value);
-      std::locale loc = writer.buffer_.locale();
-      Char thousands_sep =
-          std::use_facet<std::numpunct<Char>>(loc).thousands_sep();
+      Char thousands_sep = internal::thousands_sep(writer.buffer_);
       fmt::basic_string_view<Char> sep(&thousands_sep, 1);
       unsigned size = static_cast<unsigned>(
             num_digits + sep.size() * ((num_digits - 1) / 3));
