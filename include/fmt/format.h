@@ -1129,10 +1129,11 @@ struct string_value {
   std::size_t size;
 };
 
-template <typename Char>
+template <typename Context>
 struct custom_value {
   typedef void (*format_func)(
-      basic_buffer<Char> &buffer, const void *arg, void *ctx);
+      basic_buffer<typename Context::char_type> &buffer,
+      const void *arg, Context &ctx);
 
   const void *value;
   format_func format;
@@ -1226,7 +1227,7 @@ class value {
     string_value<char_type> string;
     string_value<signed char> sstring;
     string_value<unsigned char> ustring;
-    custom_value<char_type> custom;
+    custom_value<Context> custom;
   };
 
   constexpr value() : int_value(0) {}
@@ -1343,8 +1344,7 @@ class value {
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
   static void format_custom_arg(
-      basic_buffer<char_type> &buffer, const void *arg, void *context) {
-    Context &ctx = *static_cast<Context*>(context);
+      basic_buffer<char_type> &buffer, const void *arg, Context &ctx) {
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
@@ -1365,7 +1365,7 @@ constexpr basic_arg<Context> make_arg(const T &value);
 struct monostate {};
 
 template <typename Context>
-class basic_args;
+class basic_format_args;
 
 // A formatting argument. It is a trivially copyable/constructible type to
 // allow storage in basic_memory_buffer.
@@ -1382,7 +1382,7 @@ class basic_arg {
   friend constexpr typename std::result_of<Visitor(int)>::type
     visit(Visitor &&vis, basic_arg<Ctx> arg);
 
-  friend class basic_args<Context>;
+  friend class basic_format_args<Context>;
   friend class internal::arg_map<Context>;
 
   using char_type = typename Context::char_type;
@@ -1390,15 +1390,15 @@ class basic_arg {
  public:
   class handle {
    public:
-    explicit handle(internal::custom_value<char_type> custom)
+    explicit handle(internal::custom_value<Context> custom)
       : custom_(custom) {}
 
     void format(basic_buffer<char_type> &buf, Context &ctx) {
-      custom_.format(buf, custom_.value, &ctx);
+      custom_.format(buf, custom_.value, ctx);
     }
 
    private:
-    internal::custom_value<char_type> custom_;
+    internal::custom_value<Context> custom_;
   };
 
   constexpr basic_arg() : type_(internal::NONE) {}
@@ -1548,7 +1548,7 @@ inline arg_store<context, Args...> make_args(const Args & ... args) {
 
 /** Formatting arguments. */
 template <typename Context>
-class basic_args {
+class basic_format_args {
  public:
   typedef unsigned size_type;
   typedef basic_arg<Context> format_arg;
@@ -1597,10 +1597,10 @@ class basic_args {
   }
 
  public:
-  basic_args() : types_(0) {}
+  basic_format_args() : types_(0) {}
 
   template <typename... Args>
-  basic_args(const arg_store<Context, Args...> &store)
+  basic_format_args(const arg_store<Context, Args...> &store)
   : types_(store.TYPES) {
     set_data(store.data());
   }
@@ -1613,8 +1613,8 @@ class basic_args {
   }
 };
 
-typedef basic_args<context> args;
-typedef basic_args<wcontext> wargs;
+typedef basic_format_args<context> format_args;
+typedef basic_format_args<wcontext> wformat_args;
 
 enum alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
@@ -1924,7 +1924,7 @@ class arg_map {
   MapType map_;
 
  public:
-  void init(const basic_args<Context> &args);
+  void init(const basic_format_args<Context> &args);
 
   const basic_arg<Context>
       *find(const fmt::basic_string_view<Char> &name) const {
@@ -1939,7 +1939,7 @@ class arg_map {
 };
 
 template <typename Context>
-void arg_map<Context>::init(const basic_args<Context> &args) {
+void arg_map<Context>::init(const basic_format_args<Context> &args) {
   if (!map_.empty())
     return;
   typedef internal::named_arg<Context> NamedArg;
@@ -2102,16 +2102,17 @@ class arg_formatter_base {
 template <typename Char, typename Context>
 class context_base : public basic_parse_context<Char>{
  private:
-  basic_args<Context> args_;
+  basic_format_args<Context> args_;
 
  protected:
   typedef basic_arg<Context> format_arg;
 
-  context_base(basic_string_view<Char> format_str, basic_args<Context> args)
+  context_base(basic_string_view<Char> format_str,
+               basic_format_args<Context> args)
   : basic_parse_context<Char>(format_str), args_(args) {}
   ~context_base() {}
 
-  basic_args<Context> args() const { return args_; }
+  basic_format_args<Context> args() const { return args_; }
 
   // Returns the argument with specified index.
   format_arg do_get_arg(unsigned arg_id) {
@@ -2843,7 +2844,7 @@ class basic_context :
    \endrst
    */
   basic_context(
-      basic_string_view<Char> format_str, basic_args<basic_context> args)
+      basic_string_view<Char> format_str, basic_format_args<basic_context> args)
     : Base(format_str, args) {}
 
   format_arg next_arg() { return this->do_get_arg(this->next_arg_id()); }
@@ -2860,7 +2861,7 @@ class basic_context :
 */
 class system_error : public std::runtime_error {
  private:
-  void init(int err_code, string_view format_str, args args);
+  void init(int err_code, string_view format_str, format_args args);
 
  protected:
   int error_code_;
@@ -3553,7 +3554,7 @@ FMT_API void report_system_error(int error_code,
 /** A Windows error. */
 class windows_error : public system_error {
  private:
-  FMT_API void init(int error_code, string_view format_str, args args);
+  FMT_API void init(int error_code, string_view format_str, format_args args);
 
  public:
   /**
@@ -3599,7 +3600,7 @@ FMT_API void report_windows_error(int error_code,
 
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
-FMT_API void vprint_colored(Color c, string_view format, args args);
+FMT_API void vprint_colored(Color c, string_view format, format_args args);
 
 /**
   Formats a string and prints it to stdout using ANSI escape sequences
@@ -3615,13 +3616,14 @@ inline void print_colored(Color c, string_view format_str,
 
 template <typename ArgFormatter, typename Char, typename Context>
 void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
-                basic_args<Context> args);
+                basic_format_args<Context> args);
 
-inline void vformat_to(buffer &buf, string_view format_str, args args) {
+inline void vformat_to(buffer &buf, string_view format_str, format_args args) {
   vformat_to<arg_formatter<char>>(buf, format_str, args);
 }
 
-inline void vformat_to(wbuffer &buf, wstring_view format_str, wargs args) {
+inline void vformat_to(wbuffer &buf, wstring_view format_str,
+                       wformat_args args) {
   vformat_to<arg_formatter<wchar_t>>(buf, format_str, args);
 }
 
@@ -3637,7 +3639,7 @@ inline void format_to(wbuffer &buf, wstring_view format_str,
   vformat_to(buf, format_str, make_args<wcontext>(args...));
 }
 
-inline std::string vformat(string_view format_str, args args) {
+inline std::string vformat(string_view format_str, format_args args) {
   memory_buffer buffer;
   vformat_to(buffer, format_str, args);
   return to_string(buffer);
@@ -3668,7 +3670,7 @@ inline typename std::enable_if<
   return vformat(format_str.value(), make_args(args...));
 }
 
-inline std::wstring vformat(wstring_view format_str, wargs args) {
+inline std::wstring vformat(wstring_view format_str, wformat_args args) {
   wmemory_buffer buffer;
   vformat_to(buffer, format_str, args);
   return to_string(buffer);
@@ -3679,7 +3681,7 @@ inline std::wstring format(wstring_view format_str, const Args & ... args) {
   return vformat(format_str, make_args<wcontext>(args...));
 }
 
-FMT_API void vprint(std::FILE *f, string_view format_str, args args);
+FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
 
 /**
   \rst
@@ -3696,7 +3698,7 @@ inline void print(std::FILE *f, string_view format_str,
   vprint(f, format_str, make_args(args...));
 }
 
-FMT_API void vprint(string_view format_str, args args);
+FMT_API void vprint(string_view format_str, format_args args);
 
 /**
   \rst
@@ -4004,12 +4006,12 @@ inline typename basic_context<Char>::format_arg
 /** Formats arguments and writes the output to the buffer. */
 template <typename ArgFormatter, typename Char, typename Context>
 void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
-                basic_args<Context> args) {
+                basic_format_args<Context> args) {
   using iterator = internal::null_terminating_iterator<Char>;
 
   struct handler : internal::error_handler {
     handler(basic_buffer<Char> &b, basic_string_view<Char> str,
-            basic_args<Context> format_args)
+            basic_format_args<Context> format_args)
       : buffer(b), context(str, format_args) {}
 
     void on_text(iterator begin, iterator end) {

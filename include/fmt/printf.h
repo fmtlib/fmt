@@ -330,8 +330,8 @@ class printf_context :
    appropriate lifetimes.
    \endrst
    */
-  printf_context(
-      basic_string_view<Char> format_str, basic_args<printf_context> args)
+  printf_context(basic_string_view<Char> format_str,
+                 basic_format_args<printf_context> args)
     : Base(format_str, args) {}
 
   using Base::parse_context;
@@ -516,11 +516,11 @@ void printf_context<Char, AF>::format(basic_buffer<Char> &buffer) {
 
 template <typename Char>
 void printf(basic_buffer<Char> &buf, basic_string_view<Char> format,
-            basic_args<printf_context<Char>> args) {
+            basic_format_args<printf_context<Char>> args) {
   printf_context<Char>(format, args).format(buf);
 }
 
-typedef basic_args<printf_context<char>> printf_args;
+typedef basic_format_args<printf_context<char>> printf_args;
 
 inline std::string vsprintf(string_view format, printf_args args) {
   memory_buffer buffer;
@@ -543,7 +543,7 @@ inline std::string sprintf(string_view format_str, const Args & ... args) {
 }
 
 inline std::wstring vsprintf(
-    wstring_view format, basic_args<printf_context<wchar_t>> args) {
+    wstring_view format, basic_format_args<printf_context<wchar_t>> args) {
   wmemory_buffer buffer;
   printf(buffer, format, args);
   return to_string(buffer);

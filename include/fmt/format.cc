@@ -219,7 +219,7 @@ void report_error(FormatFunc func, int error_code,
 }  // namespace
 
 FMT_FUNC void system_error::init(
-    int err_code, string_view format_str, args args) {
+    int err_code, string_view format_str, format_args args) {
   error_code_ = err_code;
   memory_buffer buffer;
   format_system_error(buffer, err_code, vformat(format_str, args));
@@ -412,17 +412,17 @@ FMT_FUNC void report_windows_error(
 }
 #endif
 
-FMT_FUNC void vprint(std::FILE *f, string_view format_str, args args) {
+FMT_FUNC void vprint(std::FILE *f, string_view format_str, format_args args) {
   memory_buffer buffer;
   vformat_to(buffer, format_str, args);
   std::fwrite(buffer.data(), 1, buffer.size(), f);
 }
 
-FMT_FUNC void vprint(string_view format_str, args args) {
+FMT_FUNC void vprint(string_view format_str, format_args args) {
   vprint(stdout, format_str, args);
 }
 
-FMT_FUNC void vprint_colored(Color c, string_view format, args args) {
+FMT_FUNC void vprint_colored(Color c, string_view format, format_args args) {
   char escape[] = "\x1b[30m";
   escape[3] = static_cast<char>('0' + c);
   std::fputs(escape, stdout);
@@ -438,7 +438,7 @@ template struct internal::basic_data<void>;
 
 template void basic_fixed_buffer<char>::grow(std::size_t);
 
-template void internal::arg_map<context>::init(const args &args);
+template void internal::arg_map<context>::init(const format_args &args);
 
 template int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
@@ -454,7 +454,7 @@ template class basic_context<wchar_t>;
 
 template void basic_fixed_buffer<wchar_t>::grow(std::size_t);
 
-template void internal::arg_map<wcontext>::init(const wargs &args);
+template void internal::arg_map<wcontext>::init(const wformat_args &args);
 
 template int internal::char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,

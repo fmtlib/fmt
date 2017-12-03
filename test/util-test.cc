@@ -427,7 +427,7 @@ TEST(UtilTest, Increment) {
 }
 
 TEST(UtilTest, FormatArgs) {
-  fmt::args args;
+  fmt::format_args args;
   EXPECT_FALSE(args[1]);
 }
 
@@ -456,7 +456,7 @@ TEST(UtilTest, MakeValueWithCustomFormatter) {
   fmt::internal::value<CustomContext> arg(t);
   CustomContext ctx = {false};
   fmt::memory_buffer buffer;
-  arg.custom.format(buffer, &t, &ctx);
+  arg.custom.format(buffer, &t, ctx);
   EXPECT_TRUE(ctx.called);
 }
 
@@ -595,7 +595,7 @@ TEST(UtilTest, CustomArg) {
   testing::StrictMock<visitor> v;
   EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke([&](handle h) {
     fmt::memory_buffer buffer;
-    fmt::context ctx("", fmt::args());
+    fmt::context ctx("", fmt::format_args());
     h.format(buffer, ctx);
     EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
     return visitor::Result();

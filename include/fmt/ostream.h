@@ -100,7 +100,7 @@ struct formatter<T, Char,
   }
 };
 
-FMT_API void vprint(std::ostream &os, string_view format_str, args args);
+FMT_API void vprint(std::ostream &os, string_view format_str, format_args args);
 
 /**
   \rst
