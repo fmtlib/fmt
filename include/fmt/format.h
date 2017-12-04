@@ -4134,9 +4134,9 @@ constexpr internal::udl_formatter<Char, CHARS...> operator""_format() {
   \endrst
  */
 inline internal::udl_formatter<char>
-operator"" _format(const char *s, std::size_t n) { return {s, n}; }
+operator"" _format(const char *s, std::size_t n) { return {{s, n}}; }
 inline internal::udl_formatter<wchar_t>
-operator"" _format(const wchar_t *s, std::size_t n) { return {s, n}; }
+operator"" _format(const wchar_t *s, std::size_t n) { return {{s, n}}; }
 # endif // FMT_UDL_TEMPLATE
 
 /**
@@ -4150,9 +4150,9 @@ operator"" _format(const wchar_t *s, std::size_t n) { return {s, n}; }
   \endrst
  */
 inline internal::udl_arg<char>
-operator"" _a(const char *s, std::size_t n) { return {s, n}; }
+operator"" _a(const char *s, std::size_t n) { return {{s, n}}; }
 inline internal::udl_arg<wchar_t>
-operator"" _a(const wchar_t *s, std::size_t n) { return {s, n}; }
+operator"" _a(const wchar_t *s, std::size_t n) { return {{s, n}}; }
 } // inline namespace literals
 } // namespace fmt
 #endif // FMT_USE_USER_DEFINED_LITERALS
