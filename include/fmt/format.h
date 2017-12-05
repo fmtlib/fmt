@@ -4150,9 +4150,9 @@ operator"" _format(const wchar_t *s, std::size_t n) { return {{s, n}}; }
   \endrst
  */
 inline internal::udl_arg<char>
-operator"" _a(const char *s, std::size_t n) { return {s}; }
+operator"" _a(const char *s, std::size_t) { return {s}; }
 inline internal::udl_arg<wchar_t>
-operator"" _a(const wchar_t *s, std::size_t n) { return {s}; }
+operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 } // inline namespace literals
 } // namespace fmt
 #endif // FMT_USE_USER_DEFINED_LITERALS
