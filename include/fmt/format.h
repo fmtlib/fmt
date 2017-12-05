@@ -4105,7 +4105,7 @@ struct udl_formatter {
 
 template <typename Char>
 struct udl_arg {
-  basic_string_view<Char> str;
+  const Char *str;
 
   template <typename T>
   named_arg<basic_context<Char>> operator=(T &&value) const {
@@ -4150,9 +4150,9 @@ operator"" _format(const wchar_t *s, std::size_t n) { return {{s, n}}; }
   \endrst
  */
 inline internal::udl_arg<char>
-operator"" _a(const char *s, std::size_t n) { return {{s, n}}; }
+operator"" _a(const char *s, std::size_t n) { return {s}; }
 inline internal::udl_arg<wchar_t>
-operator"" _a(const wchar_t *s, std::size_t n) { return {{s, n}}; }
+operator"" _a(const wchar_t *s, std::size_t n) { return {s}; }
 } // inline namespace literals
 } // namespace fmt
 #endif // FMT_USE_USER_DEFINED_LITERALS
