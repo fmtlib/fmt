@@ -48,7 +48,7 @@
 # include <windows.h>
 #endif
 
-#include "fmt/format.h"
+#include "fmt/core.h"
 
 #undef min
 #undef max

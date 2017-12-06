@@ -29,8 +29,8 @@
 #include <climits>
 #include <cstring>
 
+#include "fmt/core.h"
 #include "fmt/printf.h"
-#include "fmt/format.h"
 #include "gtest-extra.h"
 #include "util.h"
 
