@@ -31,7 +31,6 @@
 #include <array>
 #include <cassert>
 #include <cstdio>
-#include <limits>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -274,9 +273,8 @@ struct convert_to_int_impl2 {
 template<typename T>
 struct convert_to_int_impl2<T, true> {
   enum {
-    // Don't convert numeric types.
-    value = convert_to_int_impl<
-      T, !std::numeric_limits<T>::is_specialized>::value
+    // Don't convert arithmetic types.
+    value = convert_to_int_impl<T, !std::is_arithmetic<T>::value>::value
   };
 };
 
