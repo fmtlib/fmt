@@ -919,20 +919,6 @@ constexpr typename std::result_of<Visitor(int)>::type
   return typename std::result_of<Visitor(int)>::type();
 }
 
-namespace internal {
-
-template <typename Context>
-struct named_arg : basic_arg<Context> {
-  typedef typename Context::char_type Char;
-
-  basic_string_view<Char> name;
-
-  template <typename T>
-  named_arg(basic_string_view<Char> argname, const T &value)
-  : basic_arg<Context>(make_arg<Context>(value)), name(argname) {}
-};
-}  // namespace internal
-
 enum alignment {
   ALIGN_DEFAULT, ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER, ALIGN_NUMERIC
 };
@@ -1195,7 +1181,7 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
           return;
         case internal::NAMED_ARG:
           named_arg = static_cast<const NamedArg*>(args.values_[i].pointer);
-          map_.push_back(Pair(named_arg->name, *named_arg));
+          map_.push_back(arg{named_arg->name, *named_arg});
           break;
         default:
           break; // Do nothing.
@@ -1207,7 +1193,7 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
     internal::type arg_type = args.type(i);
     if (arg_type == internal::NAMED_ARG) {
       named_arg = static_cast<const NamedArg*>(args.args_[i].value_.pointer);
-      map_.push_back(Pair(named_arg->name, *named_arg));
+      map_.push_back(arg{named_arg->name, *named_arg});
     }
   }
   for (unsigned i = MAX_PACKED_ARGS; ; ++i) {
@@ -1216,7 +1202,7 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
         return;
       case internal::NAMED_ARG:
         named_arg = static_cast<const NamedArg*>(args.args_[i].value_.pointer);
-        map_.push_back(Pair(named_arg->name, *named_arg));
+        map_.push_back(arg{named_arg->name, *named_arg});
         break;
       default:
         break; // Do nothing.
@@ -2868,35 +2854,6 @@ inline void format_decimal(char *&buffer, T value) {
   internal::format_decimal(buffer, abs_value, num_digits);
   buffer += num_digits;
 }
-
-/**
-  \rst
-  Returns a named argument for formatting functions.
-
-  **Example**::
-
-    print("Elapsed time: {s:.2f} seconds", arg("s", 1.23));
-
-  \endrst
- */
-template <typename T>
-inline internal::named_arg<context> arg(string_view name, const T &arg) {
-  return internal::named_arg<context>(name, arg);
-}
-
-template <typename T>
-inline internal::named_arg<wcontext> arg(wstring_view name, const T &arg) {
-  return internal::named_arg<wcontext>(name, arg);
-}
-
-// The following two functions are deleted intentionally to disable
-// nested named arguments as in ``format("{}", arg("a", arg("b", 42)))``.
-template <typename Context>
-void arg(string_view, const internal::named_arg<Context>&)
-  FMT_DELETED_OR_UNDEFINED;
-template <typename Context>
-void arg(wstring_view, const internal::named_arg<Context>&)
-  FMT_DELETED_OR_UNDEFINED;
 
 // Formatter of objects of type T.
 template <typename T, typename Char>
