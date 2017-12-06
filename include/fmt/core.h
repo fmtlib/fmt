@@ -34,7 +34,6 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <utility>
 
 #ifdef __has_feature
 # define FMT_HAS_FEATURE(x) __has_feature(x)
@@ -223,8 +222,8 @@ class basic_string_view {
   }
 };
 
-typedef basic_string_view<char> string_view;
-typedef basic_string_view<wchar_t> wstring_view;
+using string_view = basic_string_view<char>;
+using wstring_view = basic_string_view<wchar_t>;
 
 namespace internal {
 
@@ -255,8 +254,8 @@ inline void require_wchar() {
       "formatting of wide characters into a narrow output is disallowed");
 }
 
-typedef char yes[1];
-typedef char no[2];
+using yes = char[1];
+using no = char[2];
 
 yes &convert(unsigned long long);
 no &convert(...);
@@ -389,7 +388,7 @@ struct string_value {
 
 template <typename Context>
 struct custom_value {
-  typedef void (*format_func)(
+  using format_func = void (*)(
       basic_buffer<typename Context::char_type> &buffer,
       const void *arg, Context &ctx);
 
@@ -673,14 +672,27 @@ inline typename std::enable_if<!IS_PACKED, basic_arg<Context>>::type
 }
 
 template <typename Context>
+struct named_arg : basic_arg<Context> {
+  typedef typename Context::char_type Char;
+
+  basic_string_view<Char> name;
+
+  template <typename T>
+  named_arg(basic_string_view<Char> argname, const T &value)
+  : basic_arg<Context>(make_arg<Context>(value)), name(argname) {}
+};
+
+template <typename Context>
 class arg_map {
  private:
-  typedef typename Context::char_type Char;
-  typedef std::vector<
-    std::pair<fmt::basic_string_view<Char>, basic_arg<Context> > > MapType;
-  typedef typename MapType::value_type Pair;
+  using Char = typename Context::char_type;
 
-  MapType map_;
+  struct arg {
+    fmt::basic_string_view<Char> name;
+    basic_arg<Context> value;
+  };
+
+  std::vector<arg> map_;
 
  public:
   void init(const basic_format_args<Context> &args);
@@ -688,10 +700,9 @@ class arg_map {
   const basic_arg<Context>
       *find(const fmt::basic_string_view<Char> &name) const {
     // The list is unsorted, so just return the first matching name.
-    for (typename MapType::const_iterator it = map_.begin(), end = map_.end();
-         it != end; ++it) {
-      if (it->first == name)
-        return &it->second;
+    for (auto it = map_.begin(), end = map_.end(); it != end; ++it) {
+      if (it->name == name)
+        return &it->value;
     }
     return 0;
   }
@@ -703,7 +714,7 @@ class context_base : public basic_parse_context<Char>{
   basic_format_args<Context> args_;
 
  protected:
-  typedef basic_arg<Context> format_arg;
+  using format_arg = basic_arg<Context>;
 
   context_base(basic_string_view<Char> format_str,
                basic_format_args<Context> args)
@@ -747,9 +758,9 @@ class basic_context :
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_context);
 
-  typedef internal::context_base<Char, basic_context<Char>> Base;
+  using Base = internal::context_base<Char, basic_context<Char>>;
 
-  typedef typename Base::format_arg format_arg;
+  using format_arg = typename Base::format_arg;
   using Base::get_arg;
 
  public:
@@ -779,13 +790,11 @@ class arg_store {
   // Packed is a macro on MinGW so use IS_PACKED instead.
   static const bool IS_PACKED = NUM_ARGS < internal::MAX_PACKED_ARGS;
 
-  typedef typename Context::char_type char_type;
-
-  typedef typename std::conditional<IS_PACKED,
-    internal::value<Context>, basic_arg<Context>>::type value_type;
+  using value_type = typename std::conditional<IS_PACKED,
+    internal::value<Context>, basic_arg<Context>>::type;
 
   // If the arguments are not packed, add one more element to mark the end.
-  typedef std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)> Array;
+  using Array = std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)>;
   Array data_;
 
  public:
@@ -812,8 +821,8 @@ inline arg_store<context, Args...> make_args(const Args & ... args) {
 template <typename Context>
 class basic_format_args {
  public:
-  typedef unsigned size_type;
-  typedef basic_arg<Context> format_arg;
+  using size_type = unsigned;
+  using format_arg = basic_arg<Context> ;
 
  private:
   // To reduce compiled code size per formatting function call, types of first
@@ -875,8 +884,37 @@ class basic_format_args {
   }
 };
 
-typedef basic_format_args<context> format_args;
-typedef basic_format_args<wcontext> wformat_args;
+using format_args = basic_format_args<context>;
+using wformat_args = basic_format_args<wcontext>;
+
+/**
+  \rst
+  Returns a named argument for formatting functions.
+
+  **Example**::
+
+    print("Elapsed time: {s:.2f} seconds", arg("s", 1.23));
+
+  \endrst
+ */
+template <typename T>
+inline internal::named_arg<context> arg(string_view name, const T &arg) {
+  return internal::named_arg<context>(name, arg);
+}
+
+template <typename T>
+inline internal::named_arg<wcontext> arg(wstring_view name, const T &arg) {
+  return internal::named_arg<wcontext>(name, arg);
+}
+
+// The following two functions are deleted intentionally to disable
+// nested named arguments as in ``format("{}", arg("a", arg("b", 42)))``.
+template <typename Context>
+void arg(string_view, const internal::named_arg<Context>&)
+  FMT_DELETED_OR_UNDEFINED;
+template <typename Context>
+void arg(wstring_view, const internal::named_arg<Context>&)
+  FMT_DELETED_OR_UNDEFINED;
 
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
@@ -942,8 +980,7 @@ FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
   \endrst
  */
 template <typename... Args>
-inline void print(std::FILE *f, string_view format_str,
-                  const Args & ... args) {
+inline void print(std::FILE *f, string_view format_str, const Args & ... args) {
   vprint(f, format_str, make_args(args...));
 }
 
