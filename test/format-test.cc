@@ -488,6 +488,7 @@ TEST(FormatterTest, NamedArg) {
   EXPECT_THROW_MSG(format("{a}"), format_error, "argument not found");
   EXPECT_EQ(" -42", format("{0:{width}}", -42, fmt::arg("width", 4)));
   EXPECT_EQ("st", format("{0:.{precision}}", "str", fmt::arg("precision", 2)));
+  EXPECT_EQ("1 2", format("{} {two}", 1, fmt::arg("two", 2)));
 }
 
 TEST(FormatterTest, AutoArgIndex) {
