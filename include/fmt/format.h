@@ -48,6 +48,12 @@
 # include <iterator>
 #endif
 
+#ifdef __has_builtin
+# define FMT_HAS_BUILTIN(x) __has_builtin(x)
+#else
+# define FMT_HAS_BUILTIN(x) 0
+#endif
+
 #ifdef __GNUC__
 # if FMT_GCC_VERSION >= 406
 #  pragma GCC diagnostic push
