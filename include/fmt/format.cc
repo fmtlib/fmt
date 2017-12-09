@@ -405,7 +405,7 @@ void basic_fixed_buffer<Char>::grow(std::size_t) {
   FMT_THROW(std::runtime_error("buffer overflow"));
 }
 
-void internal::error_handler::on_error(const char *message) {
+FMT_FUNC void internal::error_handler::on_error(const char *message) {
   FMT_THROW(format_error(message));
 }
 
