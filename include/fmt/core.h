@@ -28,12 +28,10 @@
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
-#include <array>
 #include <cassert>
 #include <cstdio>
 #include <string>
 #include <type_traits>
-#include <vector>
 
 #ifdef __has_feature
 # define FMT_HAS_FEATURE(x) __has_feature(x)
@@ -684,6 +682,8 @@ struct named_arg : basic_arg<Context> {
 template <typename Context>
 class arg_map {
  private:
+  FMT_DISALLOW_COPY_AND_ASSIGN(arg_map);
+
   using Char = typename Context::char_type;
 
   struct arg {
@@ -691,15 +691,23 @@ class arg_map {
     basic_arg<Context> value;
   };
 
-  std::vector<arg> map_;
+  arg *map_ = nullptr;
+  unsigned size_ = 0;
+
+  void push_back(arg a) {
+    map_[size_] = a;
+    ++size_;
+  }
 
  public:
+  arg_map() {}
   void init(const basic_format_args<Context> &args);
+  ~arg_map() { delete [] map_; }
 
   const basic_arg<Context>
       *find(const fmt::basic_string_view<Char> &name) const {
     // The list is unsorted, so just return the first matching name.
-    for (auto it = map_.begin(), end = map_.end(); it != end; ++it) {
+    for (auto it = map_, end = map_ + size_; it != end; ++it) {
       if (it->name == name)
         return &it->value;
     }
@@ -789,21 +797,20 @@ class arg_store {
   // Packed is a macro on MinGW so use IS_PACKED instead.
   static const bool IS_PACKED = NUM_ARGS < internal::MAX_PACKED_ARGS;
 
-  using value_type = typename std::conditional<IS_PACKED,
-    internal::value<Context>, basic_arg<Context>>::type;
+  using value_type = typename std::conditional<
+    IS_PACKED, internal::value<Context>, basic_arg<Context>>::type;
 
   // If the arguments are not packed, add one more element to mark the end.
-  using Array = std::array<value_type, NUM_ARGS + (IS_PACKED ? 0 : 1)>;
-  Array data_;
+  value_type data_[NUM_ARGS + (IS_PACKED ? 0 : 1)];
 
  public:
   static const uint64_t TYPES = IS_PACKED ?
       internal::get_types<Args..., void>() : -static_cast<int64_t>(NUM_ARGS);
 
   arg_store(const Args &... args)
-    : data_(Array{{internal::make_arg<IS_PACKED, Context>(args)...}}) {}
+    : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
 
-  const value_type *data() const { return data_.data(); }
+  const value_type *data() const { return data_; }
 };
 
 template <typename Context, typename ...Args>
@@ -880,6 +887,11 @@ class basic_format_args {
     format_arg arg = get(index);
     return arg.type_ == internal::NAMED_ARG ?
       *static_cast<const format_arg*>(arg.value_.pointer) : arg;
+  }
+
+  unsigned max_size() const {
+    int64_t signed_types = static_cast<int64_t>(types_);
+    return signed_types < 0 ? -signed_types : internal::MAX_PACKED_ARGS;
   }
 };
 

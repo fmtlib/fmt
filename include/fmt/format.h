@@ -1167,8 +1167,9 @@ class cstring_type_checker : public ErrorHandler {
 
 template <typename Context>
 void arg_map<Context>::init(const basic_format_args<Context> &args) {
-  if (!map_.empty())
+  if (map_)
     return;
+  map_ = new arg[args.max_size()];
   typedef internal::named_arg<Context> NamedArg;
   const NamedArg *named_arg = 0;
   bool use_values =
@@ -1181,7 +1182,7 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
           return;
         case internal::NAMED_ARG:
           named_arg = static_cast<const NamedArg*>(args.values_[i].pointer);
-          map_.push_back(arg{named_arg->name, *named_arg});
+          push_back(arg{named_arg->name, *named_arg});
           break;
         default:
           break; // Do nothing.
@@ -1193,7 +1194,7 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
     internal::type arg_type = args.type(i);
     if (arg_type == internal::NAMED_ARG) {
       named_arg = static_cast<const NamedArg*>(args.args_[i].value_.pointer);
-      map_.push_back(arg{named_arg->name, *named_arg});
+      push_back(arg{named_arg->name, *named_arg});
     }
   }
   for (unsigned i = MAX_PACKED_ARGS; ; ++i) {
@@ -1202,7 +1203,7 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
         return;
       case internal::NAMED_ARG:
         named_arg = static_cast<const NamedArg*>(args.args_[i].value_.pointer);
-        map_.push_back(arg{named_arg->name, *named_arg});
+        push_back(arg{named_arg->name, *named_arg});
         break;
       default:
         break; // Do nothing.
