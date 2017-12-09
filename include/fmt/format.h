@@ -1517,7 +1517,7 @@ class specs_checker : public Handler {
 
  private:
   constexpr void require_numeric_argument() {
-    if (!is_numeric(arg_type_))
+    if (!is_arithmetic(arg_type_))
       this->on_error("format specifier requires numeric argument");
   }
 

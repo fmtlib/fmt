@@ -318,7 +318,7 @@ constexpr bool is_integral(type t) {
   return t > internal::NONE && t <= internal::LAST_INTEGER_TYPE;
 }
 
-constexpr bool is_numeric(type t) {
+constexpr bool is_arithmetic(type t) {
   FMT_ASSERT(t != internal::NAMED_ARG, "invalid argument type");
   return t > internal::NONE && t <= internal::LAST_NUMERIC_TYPE;
 }
@@ -591,7 +591,7 @@ class basic_arg {
   internal::type type() const { return type_; }
 
   bool is_integral() const { return internal::is_integral(type_); }
-  bool is_numeric() const { return internal::is_numeric(type_); }
+  bool is_arithmetic() const { return internal::is_arithmetic(type_); }
   bool is_pointer() const { return type_ == internal::POINTER; }
 };
 
@@ -909,11 +909,9 @@ inline internal::named_arg<wcontext> arg(wstring_view name, const T &arg) {
 // The following two functions are deleted intentionally to disable
 // nested named arguments as in ``format("{}", arg("a", arg("b", 42)))``.
 template <typename Context>
-void arg(string_view, const internal::named_arg<Context>&)
-  FMT_DELETED_OR_UNDEFINED;
+void arg(string_view, internal::named_arg<Context>) FMT_DELETED_OR_UNDEFINED;
 template <typename Context>
-void arg(wstring_view, const internal::named_arg<Context>&)
-  FMT_DELETED_OR_UNDEFINED;
+void arg(wstring_view, internal::named_arg<Context>) FMT_DELETED_OR_UNDEFINED;
 
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 

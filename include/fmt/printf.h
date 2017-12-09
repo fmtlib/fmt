@@ -450,7 +450,7 @@ void printf_context<Char, AF>::format(basic_buffer<Char> &buffer) {
     if (spec.flag(HASH_FLAG) && visit(internal::IsZeroInt(), arg))
       spec.flags_ &= ~internal::to_unsigned<int>(HASH_FLAG);
     if (spec.fill_ == '0') {
-      if (arg.is_numeric())
+      if (arg.is_arithmetic())
         spec.align_ = ALIGN_NUMERIC;
       else
         spec.fill_ = ' ';  // Ignore '0' flag for non-numeric types.
