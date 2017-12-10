@@ -349,33 +349,38 @@ macOS Sierra, best of three) is shown in the following tables.
 
 **Optimized build (-O3)**
 
-============ =============== ==================== ==================
-Method       Compile Time, s Executable size, KiB Stripped size, KiB
-============ =============== ==================== ==================
-printf                   2.3                   29                 26
-IOStreams               26.9                   59                 55
-fmt                     38.0                   37                 34
-tinyformat              42.5                  104                 98
-Boost Format           112.2                  774                751
-Folly Format           152.3                  104                 87
-============ =============== ==================== ==================
+============= =============== ==================== ==================
+Method        Compile Time, s Executable size, KiB Stripped size, KiB
+============= =============== ==================== ==================
+printf                    2.7                   29                 26
+printf+string            18.4                   29                 26
+IOStreams                34.6                   59                 55
+fmt                      22.0                   37                 34
+tinyformat               51.8                  103                 97
+Boost Format            120.5                  762                739
+Folly Format            158.7                  102                 87
+============= =============== ==================== ==================
 
-As you can see, fmt has two times less overhead in terms of resulting
-code size compared to IOStreams and comes pretty close to ``printf``.
-Boost Format has by far the largest overheads.
+As you can see, fmt has 60% less overhead in terms of resulting binary code
+size compared to IOStreams and comes pretty close to ``printf``. Boost Format
+has by far the largest overheads.
+
+``printf+string`` is the same as ``printf`` but with extra ``<string>``
+include to measure the overhead of the latter.
 
 **Non-optimized build**
 
-============ =============== ==================== ==================
-Method       Compile Time, s Executable size, KiB Stripped size, KiB
-============ =============== ==================== ==================
-printf                   2.0                   33                 30
-IOStreams               25.4                   56                 52
-fmt                     37.0                   57                 51
-tinyformat              30.2                   88                 82
-Boost Format            54.0                  364                302
-Folly Format           107.1                  438                424
-============ =============== ==================== ==================
+============= =============== ==================== ==================
+Method        Compile Time, s Executable size, KiB Stripped size, KiB
+============= =============== ==================== ==================
+printf                    2.4                   33                 30
+printf+string            18.5                   33                 30
+IOStreams                31.9                   56                 52
+fmt                      20.9                   56                 51
+tinyformat               38.9                   88                 82
+Boost Format             64.8                  366                304
+Folly Format            113.5                  442                428
+============= =============== ==================== ==================
 
 ``libc``, ``lib(std)c++`` and ``libfmt`` are all linked as shared
 libraries to compare formatting function overhead only. Boost Format
