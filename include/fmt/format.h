@@ -797,6 +797,8 @@ class decimal_formatter {
     } else if (N == 1) {
       write_pair(0, u);
     } else {
+      // The idea of using 4.32 fixed-point numbers is based on
+      // https://github.com/jeaiii/itoa
       unsigned n = N - 1;
       unsigned a = n / 5 * n * 53 / 16;
       uint64_t t = ((1ULL << (32 + a)) / data::POWERS_OF_10_32[n] + 1 - n / 9);
