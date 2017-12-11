@@ -754,6 +754,79 @@ inline unsigned count_digits(uint64_t n) {
 }
 #endif
 
+#if FMT_HAS_CPP_ATTRIBUTE(always_inline)
+# define FMT_ALWAYS_INLINE __attribute__((always_inline))
+#else
+# define FMT_ALWAYS_INLINE
+#endif
+
+template <typename Handler>
+inline char *lg(uint32_t n, Handler h) FMT_ALWAYS_INLINE;
+
+// Computes g = floor(log10(n)) and calls h.on<g>(n);
+template <typename Handler>
+inline char *lg(uint32_t n, Handler h) {
+  return n < 100 ? n < 10 ? h.template on<0>(n) : h.template on<1>(n)
+                 : n < 1000000
+                       ? n < 10000 ? n < 1000 ? h.template on<2>(n)
+                                              : h.template on<3>(n)
+                                   : n < 100000 ? h.template on<4>(n)
+                                                : h.template on<5>(n)
+                       : n < 100000000 ? n < 10000000 ? h.template on<6>(n)
+                                                      : h.template on<7>(n)
+                                       : n < 1000000000 ? h.template on<8>(n)
+                                                        : h.template on<9>(n);
+}
+
+// An lg handler that formats a decimal number.
+// Usage: lg(n, decimal_formatter(buffer));
+class decimal_formatter {
+ private:
+  char *buffer_;
+
+  void write_pair(unsigned N, uint32_t index) {
+    std::memcpy(buffer_ + N, data::DIGITS + index * 2, 2);
+  }
+
+ public:
+  explicit decimal_formatter(char *buf) : buffer_(buf) {}
+
+  template <unsigned N> char *on(uint32_t u) {
+    if (N == 0) {
+      *buffer_ = static_cast<char>(u) + '0';
+    } else if (N == 1) {
+      write_pair(0, u);
+    } else {
+      unsigned n = N - 1;
+      unsigned a = n / 5 * n * 53 / 16;
+      uint64_t t = ((1ULL << (32 + a)) / data::POWERS_OF_10_32[n] + 1 - n / 9);
+      t = ((t * u) >> a) + n / 5 * 4;
+      write_pair(0, t >> 32);
+      for (int i = 2; i < N; i += 2) {
+        t = 100ULL * static_cast<uint32_t>(t);
+        write_pair(i, t >> 32);
+      }
+      if (N % 2 == 0) {
+        buffer_[N] = static_cast<char>(
+          (10ULL * static_cast<uint32_t>(t)) >> 32) + '0';
+      }
+    }
+    return buffer_ += N + 1;
+  }
+};
+
+// An lg handler that formats a decimal number with a terminating null.
+class decimal_formatter_null : public decimal_formatter {
+ public:
+  explicit decimal_formatter_null(char *buf) : decimal_formatter(buf) {}
+
+  template <unsigned N> char *on(uint32_t u) {
+    char *buf = decimal_formatter::on<N>(u);
+    *buf = '\0';
+    return buf;
+  }
+};
+
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline unsigned count_digits(uint32_t n) {
@@ -2768,29 +2841,29 @@ class FormatInt {
   mutable char buffer_[BUFFER_SIZE];
   char *str_;
 
-  // Formats value in reverse and returns the number of digits.
+  // Formats value in reverse and returns a pointer to the beginning.
   char *format_decimal(unsigned long long value) {
-    char *buffer_end = buffer_ + BUFFER_SIZE - 1;
+    char *ptr = buffer_ + BUFFER_SIZE - 1;
     while (value >= 100) {
       // Integer division is slow so do it for a group of two digits instead
       // of for every digit. The idea comes from the talk by Alexandrescu
       // "Three Optimization Tips for C++". See speed-test for a comparison.
       unsigned index = static_cast<unsigned>((value % 100) * 2);
       value /= 100;
-      *--buffer_end = internal::data::DIGITS[index + 1];
-      *--buffer_end = internal::data::DIGITS[index];
+      *--ptr = internal::data::DIGITS[index + 1];
+      *--ptr = internal::data::DIGITS[index];
     }
     if (value < 10) {
-      *--buffer_end = static_cast<char>('0' + value);
-      return buffer_end;
+      *--ptr = static_cast<char>('0' + value);
+      return ptr;
     }
     unsigned index = static_cast<unsigned>(value * 2);
-    *--buffer_end = internal::data::DIGITS[index + 1];
-    *--buffer_end = internal::data::DIGITS[index];
-    return buffer_end;
+    *--ptr = internal::data::DIGITS[index + 1];
+    *--ptr = internal::data::DIGITS[index];
+    return ptr;
   }
 
-  void FormatSigned(long long value) {
+  void format_signed(long long value) {
     unsigned long long abs_value = static_cast<unsigned long long>(value);
     bool negative = value < 0;
     if (negative)
@@ -2801,9 +2874,9 @@ class FormatInt {
   }
 
  public:
-  explicit FormatInt(int value) { FormatSigned(value); }
-  explicit FormatInt(long value) { FormatSigned(value); }
-  explicit FormatInt(long long value) { FormatSigned(value); }
+  explicit FormatInt(int value) { format_signed(value); }
+  explicit FormatInt(long value) { format_signed(value); }
+  explicit FormatInt(long long value) { format_signed(value); }
   explicit FormatInt(unsigned value) : str_(format_decimal(value)) {}
   explicit FormatInt(unsigned long value) : str_(format_decimal(value)) {}
   explicit FormatInt(unsigned long long value) : str_(format_decimal(value)) {}
