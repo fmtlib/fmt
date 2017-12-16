@@ -156,6 +156,11 @@ TEST(StringRefTest, Ctor) {
   EXPECT_STREQ("hijk", StringRef(std::string_view("hijk")).data());
   EXPECT_EQ(4u, StringRef(std::string_view("hijk")).size());
 #endif
+
+#if FMT_HAS_EXPERIMENTAL_STRING_VIEW
+  EXPECT_STREQ("hijk", StringRef(std::experimental::string_view("hijk")).data());
+  EXPECT_EQ(4u, StringRef(std::experimental::string_view("hijk")).size());
+#endif
 }
 
 TEST(StringRefTest, ConvertToString) {
@@ -167,6 +172,12 @@ TEST(StringRefTest, ConvertToString) {
   std::string_view sv = static_cast<std::string_view>(str_ref);
   EXPECT_EQ("defg", sv);
 #endif
+
+#if FMT_HAS_EXPERIMENTAL_STRING_VIEW
+  StringRef str_ref("defg");
+  std::experimental::string_view sv = static_cast<std::experimental::string_view>(str_ref);
+  EXPECT_EQ("defg", sv);
+#endif
 }
 
 TEST(CStringRefTest, Ctor) {
@@ -175,6 +186,10 @@ TEST(CStringRefTest, Ctor) {
 
 #if FMT_HAS_STRING_VIEW
   EXPECT_STREQ("hijk", CStringRef(std::string_view("hijk")).c_str());
+#endif
+
+#if FMT_HAS_EXPERIMENTAL_STRING_VIEW
+  EXPECT_STREQ("hijk", CStringRef(std::experimental::string_view("hijk")).c_str());
 #endif
 }
 
@@ -1396,6 +1411,12 @@ TEST(FormatterTest, FormatCStringRef) {
 #if FMT_HAS_STRING_VIEW
 TEST(FormatterTest, FormatStringView) {
   EXPECT_EQ("test", format("{0}", std::string_view("test")));
+}
+#endif
+
+#if FMT_HAS_EXPERIMENTAL_STRING_VIEW
+TEST(FormatterTest, FormatExperimentalStringView) {
+	EXPECT_EQ("test", format("{0}", std::experimental::string_view("test")));
 }
 #endif
 

@@ -11,6 +11,12 @@ target_compile_options(gmock PUBLIC ${CPP11_FLAG})
 target_compile_definitions(gmock PUBLIC GTEST_HAS_STD_WSTRING=1)
 target_include_directories(gmock PUBLIC .)
 
+# Workaround for Cygwin to make google-tests compile and run because the macro
+# _POSIX_C_SOURCE must be defined to allow fileno(), strdup(), fdopen() calls.
+if (CYGWIN)
+  target_compile_definitions(gmock PUBLIC _POSIX_C_SOURCE=200809)
+endif ()
+
 find_package(Threads)
 if (Threads_FOUND)
   target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})

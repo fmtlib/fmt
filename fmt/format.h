@@ -55,8 +55,15 @@
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 # include <string_view>
 # define FMT_HAS_STRING_VIEW 1
+# define FMT_HAS_EXPERIMENTAL_STRING_VIEW 0
 #else
 # define FMT_HAS_STRING_VIEW 0
+# if (FMT_HAS_INCLUDE(<experimental/string_view>) && __cplusplus > 201402L)
+#  include <experimental/string_view>
+#  define FMT_HAS_EXPERIMENTAL_STRING_VIEW 1
+# else
+#  define FMT_HAS_EXPERIMENTAL_STRING_VIEW 0
+# endif
 #endif
 
 #if defined _SECURE_SCL && _SECURE_SCL
@@ -579,6 +586,26 @@ class BasicStringRef {
   */
   explicit operator std::basic_string_view<Char>() const FMT_NOEXCEPT {
     return std::basic_string_view<Char>(data_, size_);
+  }
+#endif
+
+#if FMT_HAS_EXPERIMENTAL_STRING_VIEW
+  /**
+  \rst
+  Constructs a string reference from a ``std::experimental::basic_string_view`` object.
+  \endrst
+  */
+  BasicStringRef(
+	  const std::experimental::basic_string_view<Char, std::char_traits<Char>> &s)
+	  : data_(s.data()), size_(s.size()) {}
+
+  /**
+  \rst
+  Converts a string reference to an ``std::string_view`` object.
+  \endrst
+  */
+  explicit operator std::experimental::basic_string_view<Char>() const FMT_NOEXCEPT {
+	  return std::experimental::basic_string_view<Char>(data_, size_);
   }
 #endif
 
@@ -1368,6 +1395,9 @@ class MakeValue : public Arg {
 #if FMT_HAS_STRING_VIEW
   MakeValue(typename WCharHelper<const std::wstring_view &, Char>::Unsupported);
 #endif
+#if FMT_HAS_EXPERIMENTAL_STRING_VIEW
+  MakeValue(typename WCharHelper<const std::experimental::wstring_view &, Char>::Unsupported);
+#endif
   MakeValue(typename WCharHelper<WStringRef, Char>::Unsupported);
 
   void set_string(StringRef str) {
@@ -1472,6 +1502,9 @@ class MakeValue : public Arg {
 #if FMT_HAS_STRING_VIEW
   FMT_MAKE_STR_VALUE(const std::string_view &, STRING)
 #endif
+#if FMT_HAS_EXPERIMENTAL_STRING_VIEW
+  FMT_MAKE_STR_VALUE(const std::experimental::string_view &, STRING)
+#endif
   FMT_MAKE_STR_VALUE(StringRef, STRING)
   FMT_MAKE_VALUE_(CStringRef, string.value, CSTRING, value.c_str())
 
@@ -1486,6 +1519,9 @@ class MakeValue : public Arg {
   FMT_MAKE_WSTR_VALUE(const std::wstring &, WSTRING)
 #if FMT_HAS_STRING_VIEW
   FMT_MAKE_WSTR_VALUE(const std::wstring_view &, WSTRING)
+#endif
+#if FMT_HAS_EXPERIMENTAL_STRING_VIEW
+  FMT_MAKE_WSTR_VALUE(const std::experimental::wstring_view &, WSTRING)
 #endif
   FMT_MAKE_WSTR_VALUE(WStringRef, WSTRING)
 
