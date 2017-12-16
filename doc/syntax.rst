@@ -35,6 +35,8 @@ If the numerical arg_ids in a format string are 0, 1, 2, ... in sequence,
 they can all be omitted (not just some) and the numbers 0, 1, 2, ... will be
 automatically inserted in that order.
 
+Named arguments can be referred to by their names or indices.
+
 Some simple format string examples::
 
    "First, thou shalt count to {0}" // References the first argument
