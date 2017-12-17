@@ -555,7 +555,13 @@ inline std::wstring sprintf(wstring_view format_str, const Args & ... args) {
   return vsprintf(format_str, vargs);
 }
 
-FMT_API int vfprintf(std::FILE *f, string_view format, printf_args args);
+inline int vfprintf(std::FILE *f, string_view format, printf_args args) {
+  memory_buffer buffer;
+  printf(buffer, format, args);
+  std::size_t size = buffer.size();
+  return std::fwrite(
+        buffer.data(), 1, size, f) < size ? -1 : static_cast<int>(size);
+}
 
 /**
   \rst

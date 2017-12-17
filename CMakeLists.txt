@@ -83,7 +83,7 @@ endfunction()
 # Define the fmt library, its includes and the needed defines.
 # format.cc is added to FMT_HEADERS for the header-only configuration.
 add_headers(FMT_HEADERS core.h format.h format.cc locale.h ostream.h ostream.cc
-                        printf.h printf.cc string.h time.h)
+                        printf.h string.h time.h)
 if (HAVE_OPEN)
   add_headers(FMT_HEADERS posix.h)
   add_headers(FMT_SOURCES posix.cc)
