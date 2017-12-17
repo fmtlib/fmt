@@ -69,7 +69,20 @@ struct convert_to_int_impl<T, true> {
 };
 
 // Write the content of buf to os.
-void write(std::ostream &os, buffer &buf);
+template <typename Char>
+void write(std::basic_ostream<Char> &os, basic_buffer<Char> &buf) {
+  const Char *data = buf.data();
+  typedef std::make_unsigned<std::streamsize>::type UnsignedStreamSize;
+  UnsignedStreamSize size = buf.size();
+  UnsignedStreamSize max_size =
+      internal::to_unsigned((std::numeric_limits<std::streamsize>::max)());
+  do {
+    UnsignedStreamSize n = size <= max_size ? size : max_size;
+    os.write(data, static_cast<std::streamsize>(n));
+    data += n;
+    size -= n;
+  } while (size != 0);
+}
 
 template <typename Char, typename T>
 void format_value(basic_buffer<Char> &buffer, const T &value) {
@@ -100,7 +113,11 @@ struct formatter<T, Char,
   }
 };
 
-FMT_API void vprint(std::ostream &os, string_view format_str, format_args args);
+inline void vprint(std::ostream &os, string_view format_str, format_args args) {
+  memory_buffer buffer;
+  vformat_to(buffer, format_str, args);
+  internal::write(os, buffer);
+}
 
 /**
   \rst
@@ -117,9 +134,5 @@ inline void print(std::ostream &os, string_view format_str,
   vprint(os, format_str, make_args(args...));
 }
 }  // namespace fmt
-
-#ifdef FMT_HEADER_ONLY
-# include "ostream.cc"
-#endif
 
 #endif  // FMT_OSTREAM_H_
