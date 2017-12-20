@@ -15,7 +15,7 @@
 
 * Conditionally enabled use of ``std::allocator_traits`` (`#583 <https://github.com/fmtlib/fmt/pull/583>`_). Thanks `@mwinterb <https://github.com/mwinterb>`_.
 
-* Added support for `const` variadic member function emulation with ``FMT_VARIADIC_CONST`` (`#591 <https://github.com/fmtlib/fmt/pull/591>`_). Thanks `@ludekvodicka (Ludek Vodicka) <https://github.com/ludekvodicka>`_.
+* Added support for ``const`` variadic member function emulation with ``FMT_VARIADIC_CONST`` (`#591 <https://github.com/fmtlib/fmt/pull/591>`_). Thanks `@ludekvodicka (Ludek Vodicka) <https://github.com/ludekvodicka>`_.
 
 * Various bugfixes: bad overflow check, unsupported implicit type conversion when determining formatting function, test segfaults (`#551 <https://github.com/fmtlib/fmt/issues/551>`_), ill-formed macros (`#542 <https://github.com/fmtlib/fmt/pull/542>`_) and ambiguous overloads (`#580 <https://github.com/fmtlib/fmt/issues/580>`_). Thanks `@xylosper (Byoung-young Lee) <https://github.com/xylosper>`_.
 
