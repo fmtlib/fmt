@@ -1,10 +1,32 @@
-4.0.1 - TBD
------------
+4.1.0 - 2017-12-20
+------------------
+
+* Added ``fmt::to_wstring()`` in addition to ``fmt::to_string()`` (`#559 <https://github.com/fmtlib/fmt/pull/559>`_). Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
+
+* Added support for C++17 ``std::string_view`` (`#571 <https://github.com/fmtlib/fmt/pull/571>`_ and `#578 <https://github.com/fmtlib/fmt/pull/578>`_). Thanks `@thelostt (Mário Feroldi) <https://github.com/thelostt>`_ and `@mwinterb <https://github.com/mwinterb>`_.
+
+* Enabled stream exceptions to catch errors (`#581 <https://github.com/fmtlib/fmt/issues/581>`_). Thanks `@crusader-mike <https://github.com/crusader-mike>`_.
+
+* Allowed formatting of class hierarchies with ``fmt::format_arg()`` (`#547 <https://github.com/fmtlib/fmt/pull/547>`_). Thanks `@rollbear (Björn Fahller) <https://github.com/rollbear>`_.
+
+* Removed limitations on character types
+  (`#563 <https://github.com/fmtlib/fmt/pull/563>`_).
+  Thanks `@Yelnats321 (Elnar Dakeshov) <https://github.com/Yelnats321>`_.
+
+* Conditionally enabled use of ``std::allocator_traits`` (`#583 <https://github.com/fmtlib/fmt/pull/583>`_). Thanks `@mwinterb <https://github.com/mwinterb>`_.
+
+* Added support for ``const`` variadic member function emulation with ``FMT_VARIADIC_CONST`` (`#591 <https://github.com/fmtlib/fmt/pull/591>`_). Thanks `@ludekvodicka (Ludek Vodicka) <https://github.com/ludekvodicka>`_.
+
+* Various bugfixes: bad overflow check, unsupported implicit type conversion when determining formatting function, test segfaults (`#551 <https://github.com/fmtlib/fmt/issues/551>`_), ill-formed macros (`#542 <https://github.com/fmtlib/fmt/pull/542>`_) and ambiguous overloads (`#580 <https://github.com/fmtlib/fmt/issues/580>`_). Thanks `@xylosper (Byoung-young Lee) <https://github.com/xylosper>`_.
+
+* Prevented warnings on MSVC (`#605 <https://github.com/fmtlib/fmt/pull/605>`_, `#602 <https://github.com/fmtlib/fmt/pull/602>`_, and `#545 <https://github.com/fmtlib/fmt/pull/545>`_), clang (`#582 <https://github.com/fmtlib/fmt/pull/582>`_), GCC (`#573 <https://github.com/fmtlib/fmt/issues/573>`_), various conversion warnings (`#609 <https://github.com/fmtlib/fmt/pull/609>`_, `#567 <https://github.com/fmtlib/fmt/pull/567>`_, `#553 <https://github.com/fmtlib/fmt/pull/553>`_ and `#553 <https://github.com/fmtlib/fmt/pull/553>`_), and added ``override`` and ``[[noreturn]]`` (`#549 <https://github.com/fmtlib/fmt/pull/549>`_ and `#555 <https://github.com/fmtlib/fmt/issues/555>`_). Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_, `@virgiliofornazin (Virgilio Alexandre Fornazin) <https://gihtub.com/virgiliofornazin>`_, `@alexanderbock (Alexander Bock) <https://github.com/alexanderbock>`_, `@yumetodo <https://github.com/yumetodo>`_, `@VaderY (Császár Mátyás) <https://github.com/VaderY>`_, `@jpcima (JP Cimalando) <https://github.com/jpcima>`_, `@thelostt (Mário Feroldi) <https://github.com/thelostt>`_, and `@Manu343726 (Manu Sánchez) <https://github.com/Manu343726>`_.
+
+* Improved CMake: Used GNUInstallDirs to set installation location (`#610 <https://github.com/fmtlib/fmt/pull/610>`_) and fixed warnings (`#536 <https://github.com/fmtlib/fmt/pull/536>`_ and `#556 <https://github.com/fmtlib/fmt/pull/556>`_). Thanks `@mikecrowe (Mike Crowe) <https://github.com/mikecrowe>`_, `@evgen231 <https://github.com/evgen231>`_ and `@henryiii (Henry Schreiner) <https://github.com/henryiii>`_.
 
 4.0.0 - 2017-06-27
 ------------------
 
-* Removed old compatibility headers ``cppformat/*.h`` and CMake options (`#527 <https://github.com/pull/527>`_). Thanks `@maddinat0r (Alex Martin) <https://github.com/maddinat0r>`_.
+* Removed old compatibility headers ``cppformat/*.h`` and CMake options (`#527 <https://github.com/fmtlib/fmt/pull/527>`_). Thanks `@maddinat0r (Alex Martin) <https://github.com/maddinat0r>`_.
 
 * Added ``string.h`` containing ``fmt::to_string()`` as alternative to ``std::to_string()`` as well as other string writer functionality (`#326 <https://github.com/fmtlib/fmt/issues/326>`_ and `#441 <https://github.com/fmtlib/fmt/pull/441>`_):
 
