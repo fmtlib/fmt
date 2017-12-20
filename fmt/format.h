@@ -43,7 +43,7 @@
 #undef FMT_INCLUDE
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 40001
+#define FMT_VERSION 40101
 
 #if defined(__has_include)
 # define FMT_HAS_INCLUDE(x) __has_include(x)
