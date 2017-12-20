@@ -9,7 +9,9 @@
 
 * Allowed formatting of class hierarchies with ``fmt::format_arg()`` (`#547 <https://github.com/fmtlib/fmt/pull/547>`_). Thanks `@rollbear (Björn Fahller) <https://github.com/rollbear>`_.
 
-* Removed limitations on character types (`#563 <https://github.com/fmtlib/fmt/pull/563>`). Thanks `@Yelnats321 Elnar Dakeshov (https://github.com/Yelnats321)`_.
+* Removed limitations on character types
+  (`#563 <https://github.com/fmtlib/fmt/pull/563>`_).
+  Thanks `@Yelnats321 Elnar Dakeshov (https://github.com/Yelnats321)`_.
 
 * Conditionally enabled use of ``std::allocator_traits`` (`#583 <https://github.com/fmtlib/fmt/pull/583>`_). Thanks `@mwinterb <https://github.com/mwinterb>`_.
 
