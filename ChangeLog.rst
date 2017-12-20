@@ -1,5 +1,5 @@
-4.1.0 - TBD
------------
+4.1.0 - 2017-12-20
+------------------
 
 * Added ``fmt::to_wstring()`` in addition to ``fmt::to_string()`` (`#559 <https://github.com/fmtlib/fmt/pull/559>`_). Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
 
