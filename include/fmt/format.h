@@ -3236,7 +3236,7 @@ class udl_formatter {
 # else
 template <typename Char>
 struct udl_formatter {
-  basic_string_view<Char> str;
+  const Char *str;
 
   template <typename... Args>
   auto operator()(Args && ... args) const
@@ -3277,9 +3277,9 @@ constexpr internal::udl_formatter<Char, CHARS...> operator""_format() {
   \endrst
  */
 inline internal::udl_formatter<char>
-operator"" _format(const char *s, std::size_t n) { return {{s, n}}; }
+operator"" _format(const char *s, std::size_t) { return {s}; }
 inline internal::udl_formatter<wchar_t>
-operator"" _format(const wchar_t *s, std::size_t n) { return {{s, n}}; }
+operator"" _format(const wchar_t *s, std::size_t) { return {s}; }
 # endif // FMT_UDL_TEMPLATE
 
 /**

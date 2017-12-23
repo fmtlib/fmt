@@ -1469,11 +1469,6 @@ TEST(LiteralsTest, Format) {
   EXPECT_EQ(format("{}c{}", "ab", 1), udl_format);
   auto udl_format_w = L"{}c{}"_format(L"ab", 1);
   EXPECT_EQ(format(L"{}c{}", L"ab", 1), udl_format_w);
-  
-  auto udl_format_null_char = "{}c\0d{}"_format("ab", 1);
-  EXPECT_EQ(format("{}c\0d{}", "ab", 1), udl_format_null_char);
-  auto udl_format_w_null_char = L"{}c\0d{}"_format(L"ab", 1);
-  EXPECT_EQ(format(L"{}c\0d{}", L"ab", 1), udl_format_w_null_char);
 }
 
 TEST(LiteralsTest, NamedArg) {
@@ -1534,7 +1529,6 @@ TEST(FormatTest, CustomArgFormatter) {
 
 TEST(FormatTest, NonNullTerminatedFormatString) {
   EXPECT_EQ("42", format(string_view("{}foo", 2), 42));
-  EXPECT_EQ("42f\0oo", format(string_view("{}f\0oo", 6), 42));
 }
 
 struct variant {
