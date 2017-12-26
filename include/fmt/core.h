@@ -287,14 +287,14 @@ FMT_DISABLE_CONVERSION_TO_INT(float);
 FMT_DISABLE_CONVERSION_TO_INT(double);
 FMT_DISABLE_CONVERSION_TO_INT(long double);
 
-template <typename Char>
+template <typename Context>
 struct named_arg;
 
 template <typename T>
 struct is_named_arg : std::false_type {};
 
-template <typename Char>
-struct is_named_arg<named_arg<Char>> : std::true_type {};
+template <typename Context>
+struct is_named_arg<named_arg<Context>> : std::true_type {};
 
 enum type {
   NONE, NAMED_ARG,
@@ -488,12 +488,12 @@ class value {
     custom.format = &format_custom_arg<T>;
   }
 
-  // Additional template param `Char` is needed here because get_type always
-  // uses char.
-  template <typename Char>
-  value(const named_arg<Char> &value) {
+  // Additional template param `Ctx` is needed here because get_type always
+  // uses basic_context<char>.
+  template <typename Ctx>
+  value(const named_arg<Ctx> &value) {
     static_assert(
-      get_type<const named_arg<Char> &>() == NAMED_ARG, "invalid type");
+      get_type<const named_arg<Ctx> &>() == NAMED_ARG, "invalid type");
     pointer = &value;
   }
 
@@ -664,12 +664,12 @@ inline typename std::enable_if<!IS_PACKED, basic_arg<Context>>::type
 
 template <typename Context>
 struct named_arg : basic_arg<Context> {
-  typedef typename Context::char_type Char;
+  using char_type = typename Context::char_type;
 
-  basic_string_view<Char> name;
+  basic_string_view<char_type> name;
 
   template <typename T>
-  named_arg(basic_string_view<Char> argname, const T &value)
+  named_arg(basic_string_view<char_type> argname, const T &value)
   : basic_arg<Context>(make_arg<Context>(value)), name(argname) {}
 };
 
@@ -678,10 +678,10 @@ class arg_map {
  private:
   FMT_DISALLOW_COPY_AND_ASSIGN(arg_map);
 
-  using Char = typename Context::char_type;
+  using char_type = typename Context::char_type;
 
   struct arg {
-    fmt::basic_string_view<Char> name;
+    fmt::basic_string_view<char_type> name;
     basic_arg<Context> value;
   };
 
@@ -699,7 +699,7 @@ class arg_map {
   ~arg_map() { delete [] map_; }
 
   const basic_arg<Context>
-      *find(const fmt::basic_string_view<Char> &name) const {
+      *find(const fmt::basic_string_view<char_type> &name) const {
     // The list is unsorted, so just return the first matching name.
     for (auto it = map_, end = map_ + size_; it != end; ++it) {
       if (it->name == name)

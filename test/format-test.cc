@@ -31,11 +31,8 @@
 #include <cmath>
 #include <cstring>
 #include <memory>
+#include <type_traits>
 #include <stdint.h>
-
-#if FMT_USE_TYPE_TRAITS
-# include <type_traits>
-#endif
 
 #include "gmock/gmock.h"
 
@@ -92,7 +89,7 @@ void std_format(long double value, std::wstring &result) {
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T &value, const char *type) {
   fmt::basic_memory_buffer<Char> buffer;
-  fmt::basic_writer<Char> writer(buffer);
+  fmt::basic_writer<fmt::basic_buffer<Char>> writer(buffer);
   writer.write(value);
   std::basic_string<Char> actual = writer.str();
   std::basic_string<Char> expected;
@@ -144,19 +141,17 @@ TEST(StringViewTest, ConvertToString) {
   EXPECT_EQ("abc", s);
 }
 
-#if FMT_USE_TYPE_TRAITS
 TEST(WriterTest, NotCopyConstructible) {
-  EXPECT_FALSE(std::is_copy_constructible<basic_writer<char> >::value);
+  EXPECT_FALSE(std::is_copy_constructible<basic_writer<fmt::buffer>>::value);
 }
 
 TEST(WriterTest, NotCopyAssignable) {
-  EXPECT_FALSE(std::is_copy_assignable<basic_writer<char> >::value);
+  EXPECT_FALSE(std::is_copy_assignable<basic_writer<fmt::buffer>>::value);
 }
-#endif
 
 TEST(WriterTest, Ctor) {
   memory_buffer buf;
-  fmt::basic_writer<char> w(buf);
+  fmt::basic_writer<fmt::buffer> w(buf);
   EXPECT_EQ(0u, w.size());
   EXPECT_STREQ("", w.c_str());
   EXPECT_EQ("", w.str());
@@ -164,7 +159,7 @@ TEST(WriterTest, Ctor) {
 
 TEST(WriterTest, Data) {
   memory_buffer buf;
-  fmt::basic_writer<char> w(buf);
+  fmt::basic_writer<fmt::buffer> w(buf);
   w.write(42);
   EXPECT_EQ("42", std::string(w.data(), w.size()));
 }
@@ -217,14 +212,14 @@ TEST(WriterTest, WriteLongDouble) {
 
 TEST(WriterTest, WriteDoubleAtBufferBoundary) {
   memory_buffer buf;
-  fmt::basic_writer<char> writer(buf);
+  fmt::basic_writer<fmt::buffer> writer(buf);
   for (int i = 0; i < 100; ++i)
     writer.write(1.23456789);
 }
 
 TEST(WriterTest, WriteDoubleWithFilledBuffer) {
   memory_buffer buf;
-  fmt::basic_writer<char> writer(buf);
+  fmt::basic_writer<fmt::buffer> writer(buf);
   // Fill the buffer.
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
     writer.write(' ');
@@ -256,7 +251,7 @@ TEST(WriterTest, WriteWideString) {
 template <typename... T>
 std::string write_str(T... args) {
   memory_buffer buf;
-  fmt::basic_writer<char> writer(buf);
+  fmt::basic_writer<fmt::buffer> writer(buf);
   using namespace fmt;
   writer.write(args...);
   return writer.str();
@@ -265,7 +260,7 @@ std::string write_str(T... args) {
 template <typename... T>
 std::wstring write_wstr(T... args) {
   wmemory_buffer buf;
-  fmt::basic_writer<wchar_t> writer(buf);
+  fmt::basic_writer<fmt::wbuffer> writer(buf);
   using namespace fmt;
   writer.write(args...);
   return writer.str();
@@ -356,7 +351,7 @@ TEST(WriterTest, pad) {
   EXPECT_EQ("     44", write_str(44ull, width=7));
 
   memory_buffer buf;
-  fmt::basic_writer<char> w(buf);
+  fmt::basic_writer<fmt::buffer> w(buf);
   w.clear();
   w.write(42, fmt::width=5, fmt::fill='0');
   EXPECT_EQ("00042", w.str());

@@ -84,7 +84,7 @@ typedef basic_string_buffer<wchar_t> wstring_buffer;
 template <typename T>
 std::string to_string(const T &value) {
   string_buffer buf;
-  basic_writer<char>(buf).write(value);
+  basic_writer<buffer>(buf).write(value);
   std::string str;
   buf.move_to(str);
   return str;

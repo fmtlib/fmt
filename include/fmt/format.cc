@@ -198,7 +198,7 @@ void format_error_code(buffer &out, int error_code,
     ++error_code_size;
   }
   error_code_size += internal::count_digits(abs_value);
-  basic_writer<char> w(out);
+  basic_writer<buffer> w(out);
   if (message.size() <= internal::INLINE_BUFFER_SIZE - error_code_size) {
     w.write(message);
     w.write(SEP);
@@ -380,13 +380,13 @@ FMT_FUNC void internal::format_windows_error(
 FMT_FUNC void format_system_error(
     buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
-    memory_buffer buffer;
-    buffer.resize(internal::INLINE_BUFFER_SIZE);
+    memory_buffer buf;
+    buf.resize(internal::INLINE_BUFFER_SIZE);
     for (;;) {
-      char *system_message = &buffer[0];
-      int result = safe_strerror(error_code, system_message, buffer.size());
+      char *system_message = &buf[0];
+      int result = safe_strerror(error_code, system_message, buf.size());
       if (result == 0) {
-        basic_writer<char> w(out);
+        basic_writer<buffer> w(out);
         w.write(message);
         w.write(": ");
         w.write(system_message);
@@ -394,7 +394,7 @@ FMT_FUNC void format_system_error(
       }
       if (result != ERANGE)
         break;  // Can't get error message, report error code instead.
-      buffer.resize(buffer.size() * 2);
+      buf.resize(buf.size() * 2);
     }
   } FMT_CATCH(...) {}
   fmt::format_error_code(out, error_code, message);  // 'fmt::' is for bcc32.

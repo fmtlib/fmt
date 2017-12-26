@@ -336,6 +336,8 @@ class basic_buffer {
   virtual void grow(std::size_t capacity) = 0;
 
  public:
+  using value_type = T;
+
   virtual ~basic_buffer() {}
 
   /** Returns the size of this buffer. */
@@ -1298,13 +1300,14 @@ class arg_formatter_base {
   typedef basic_format_specs<Char> format_specs;
 
  private:
-  basic_writer<Char> writer_;
+  using writer_type = basic_writer<basic_buffer<Char>>;
+  writer_type writer_;
   format_specs &specs_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(arg_formatter_base);
 
   void write_char(Char value) {
-    using pointer_type = typename basic_writer<Char>::pointer_type;
+    using pointer_type = typename writer_type::pointer_type;
     Char fill = internal::char_traits<Char>::cast(specs_.fill());
     pointer_type out = pointer_type();
     const unsigned character_width = 1;
@@ -1333,7 +1336,7 @@ class arg_formatter_base {
   }
 
  protected:
-  basic_writer<Char> &writer() { return writer_; }
+  writer_type &writer() { return writer_; }
   format_specs &spec() { return specs_; }
 
   void write(bool value) {
@@ -2156,39 +2159,39 @@ FMT_API void format_system_error(fmt::buffer &out, int error_code,
 /**
   \rst
   This template provides operations for formatting and writing data into a
-  character buffer. The output buffer is specified by a subclass such as
-  :class:`fmt::BasicMemoryWriter`.
+  character buffer.
 
   You can use one of the following typedefs for common character types:
 
   +---------+-----------------------+
   | Type    | Definition            |
   +=========+=======================+
-  | writer  | basic_writer<char>    |
+  | writer  | basic_writer<buffer>  |
   +---------+-----------------------+
-  | wwriter | basic_writer<wchar_t> |
+  | wwriter | basic_writer<wbuffer> |
   +---------+-----------------------+
 
   \endrst
  */
-template <typename Char>
+template <typename Buffer>
 class basic_writer {
  public:
-  typedef basic_format_specs<Char> format_specs;
+  using char_type = typename Buffer::value_type;
+  typedef basic_format_specs<char_type> format_specs;
 
  private:
   // Output buffer.
-  basic_buffer<Char> &buffer_;
+  Buffer &buffer_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_writer);
 
 #if FMT_SECURE_SCL
   typedef stdext::checked_array_iterator<Char*> pointer_type;
   // Returns pointer value.
-  static Char *get(pointer_type p) { return p.base(); }
+  static char_type *get(pointer_type p) { return p.base(); }
 #else
-  typedef Char *pointer_type;
-  static Char *get(Char *p) { return p; }
+  typedef char_type *pointer_type;
+  static char_type *get(char_type *p) { return p; }
 #endif
 
   // Fills the padding around the content and returns the pointer to the
@@ -2206,9 +2209,9 @@ class basic_writer {
 
   // Writes an unsigned decimal integer.
   template <typename UInt>
-  Char *write_unsigned_decimal(UInt value, unsigned prefix_size = 0) {
+  char_type *write_unsigned_decimal(UInt value, unsigned prefix_size = 0) {
     unsigned num_digits = internal::count_digits(value);
-    Char *ptr = get(grow_buffer(prefix_size + num_digits));
+    char_type *ptr = get(grow_buffer(prefix_size + num_digits));
     internal::format_decimal(ptr + prefix_size, value, num_digits);
     return ptr;
   }
@@ -2248,30 +2251,30 @@ class basic_writer {
   void write_double(T value, const format_specs &spec);
 
   // Writes a formatted string.
-  template <typename StrChar>
+  template <typename Char>
   pointer_type write_str(
-      const StrChar *s, std::size_t size, const align_spec &spec);
+      const Char *s, std::size_t size, const align_spec &spec);
 
-  template <typename StrChar>
-  void write_str(basic_string_view<StrChar> str, const format_specs &spec);
+  template <typename Char>
+  void write_str(basic_string_view<Char> str, const format_specs &spec);
 
   // Appends floating-point length specifier to the format string.
   // The second argument is only used for overload resolution.
-  void append_float_length(Char *&format_ptr, long double) {
+  void append_float_length(char_type *&format_ptr, long double) {
     *format_ptr++ = 'L';
   }
 
   template<typename T>
-  void append_float_length(Char *&, T) {}
+  void append_float_length(char_type *&, T) {}
 
-  template <typename Char_>
+  template <typename Char>
   friend class internal::arg_formatter_base;
 
  public:
   /**
     Constructs a ``basic_writer`` object.
    */
-  explicit basic_writer(basic_buffer<Char> &b) : buffer_(b) {}
+  explicit basic_writer(Buffer &b) : buffer_(b) {}
 
   /**
     \rst
@@ -2289,13 +2292,13 @@ class basic_writer {
     Returns a pointer to the output buffer content. No terminating null
     character is appended.
    */
-  const Char *data() const FMT_NOEXCEPT { return &buffer_[0]; }
+  const char_type *data() const FMT_NOEXCEPT { return &buffer_[0]; }
 
   /**
     Returns a pointer to the output buffer content with terminating null
     character appended.
    */
-  const Char *c_str() const {
+  const char_type *c_str() const {
     std::size_t size = buffer_.size();
     buffer_.reserve(size + 1);
     buffer_[size] = '\0';
@@ -2307,8 +2310,8 @@ class basic_writer {
     Returns the content of the output buffer as an `std::string`.
     \endrst
    */
-  std::basic_string<Char> str() const {
-    return std::basic_string<Char>(&buffer_[0], buffer_.size());
+  std::basic_string<char_type> str() const {
+    return std::basic_string<char_type>(&buffer_[0], buffer_.size());
   }
 
   void write(int value) {
@@ -2354,7 +2357,7 @@ class basic_writer {
   }
 
   void write(wchar_t value) {
-    internal::require_wchar<Char>();
+    internal::require_wchar<char_type>();
     buffer_.push_back(value);
   }
 
@@ -2369,29 +2372,29 @@ class basic_writer {
   }
 
   void write(basic_string_view<wchar_t> value) {
-    internal::require_wchar<Char>();
+    internal::require_wchar<char_type>();
     const wchar_t *str = value.data();
     buffer_.append(str, str + value.size());
   }
 
   template <typename... FormatSpecs>
-  void write(basic_string_view<Char> str, FormatSpecs... specs) {
+  void write(basic_string_view<char_type> str, FormatSpecs... specs) {
     write_str(str, format_specs(specs...));
   }
 
   void clear() FMT_NOEXCEPT { buffer_.resize(0); }
 
-  basic_buffer<Char> &buffer() FMT_NOEXCEPT { return buffer_; }
+  Buffer &buffer() FMT_NOEXCEPT { return buffer_; }
 };
 
+template <typename Buffer>
 template <typename Char>
-template <typename StrChar>
-typename basic_writer<Char>::pointer_type basic_writer<Char>::write_str(
-      const StrChar *s, std::size_t size, const align_spec &spec) {
+typename basic_writer<Buffer>::pointer_type basic_writer<Buffer>::write_str(
+      const Char *s, std::size_t size, const align_spec &spec) {
   pointer_type out = pointer_type();
   if (spec.width() > size) {
     out = grow_buffer(spec.width());
-    Char fill = internal::char_traits<Char>::cast(spec.fill());
+    char_type fill = internal::char_traits<char_type>::cast(spec.fill());
     if (spec.align() == ALIGN_RIGHT) {
       std::uninitialized_fill_n(out, spec.width() - size, fill);
       out += spec.width() - size;
@@ -2407,13 +2410,13 @@ typename basic_writer<Char>::pointer_type basic_writer<Char>::write_str(
   return out;
 }
 
+template <typename Buffer>
 template <typename Char>
-template <typename StrChar>
-void basic_writer<Char>::write_str(
-    basic_string_view<StrChar> s, const format_specs &spec) {
-  // Check if StrChar is convertible to Char.
-  internal::char_traits<Char>::convert(StrChar());
-  const StrChar *str_value = s.data();
+void basic_writer<Buffer>::write_str(
+    basic_string_view<Char> s, const format_specs &spec) {
+  // Check if Char is convertible to char_type.
+  internal::char_traits<char_type>::convert(Char());
+  const Char *str_value = s.data();
   std::size_t str_size = s.size();
   if (str_size == 0 && !str_value)
     FMT_THROW(format_error("string pointer is null"));
@@ -2423,13 +2426,13 @@ void basic_writer<Char>::write_str(
   write_str(str_value, str_size, spec);
 }
 
-template <typename Char>
-typename basic_writer<Char>::pointer_type basic_writer<Char>::fill_padding(
+template <typename Buffer>
+typename basic_writer<Buffer>::pointer_type basic_writer<Buffer>::fill_padding(
     pointer_type buffer, unsigned total_size,
     std::size_t content_size, wchar_t fill) {
   std::size_t padding = total_size - content_size;
   std::size_t left_padding = padding / 2;
-  Char fill_char = internal::char_traits<Char>::cast(fill);
+  char_type fill_char = internal::char_traits<char_type>::cast(fill);
   std::uninitialized_fill_n(buffer, left_padding, fill_char);
   buffer += left_padding;
   pointer_type content = buffer;
@@ -2438,15 +2441,15 @@ typename basic_writer<Char>::pointer_type basic_writer<Char>::fill_padding(
   return content;
 }
 
-template <typename Char>
+template <typename Buffer>
 template <typename Spec>
-typename basic_writer<Char>::pointer_type
-  basic_writer<Char>::prepare_int_buffer(
+typename basic_writer<Buffer>::pointer_type
+  basic_writer<Buffer>::prepare_int_buffer(
     unsigned num_digits, const Spec &spec,
     const char *prefix, unsigned prefix_size) {
   unsigned width = spec.width();
   alignment align = spec.align();
-  Char fill = internal::char_traits<Char>::cast(spec.fill());
+  char_type fill = internal::char_traits<char_type>::cast(spec.fill());
   if (spec.precision() > static_cast<int>(num_digits)) {
     // Octal prefix '0' is counted as a digit, so ignore it if precision
     // is specified.
@@ -2502,18 +2505,18 @@ typename basic_writer<Char>::pointer_type
   return p - 1;
 }
 
-template <typename Char>
+template <typename Buffer>
 template <typename T, typename Spec>
-void basic_writer<Char>::write_int(T value, const Spec& spec) {
+void basic_writer<Buffer>::write_int(T value, const Spec& spec) {
   using unsigned_type = typename internal::int_traits<T>::main_type;
   struct spec_handler {
-    basic_writer<Char> &writer;
+    basic_writer<Buffer> &writer;
     const Spec& spec;
     unsigned prefix_size = 0;
     unsigned_type abs_value;
     char prefix[4] = "";
 
-    spec_handler(basic_writer<Char> &w, T val, const Spec& s)
+    spec_handler(basic_writer<Buffer> &w, T val, const Spec& s)
       : writer(w), spec(s), abs_value(static_cast<unsigned_type>(val)) {
       if (internal::is_negative(val)) {
         prefix[0] = '-';
@@ -2542,7 +2545,7 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
       do {
         ++num_digits;
       } while ((n >>= 4) != 0);
-      Char *p =
+      char_type *p =
           get(writer.prepare_int_buffer(num_digits, spec, prefix, prefix_size));
       n = abs_value;
       const char *digits = spec.type() == 'x' ?
@@ -2562,11 +2565,11 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
       do {
         ++num_digits;
       } while ((n >>= 1) != 0);
-      Char *p =
+      char_type *p =
           get(writer.prepare_int_buffer(num_digits, spec, prefix, prefix_size));
       n = abs_value;
       do {
-        *p-- = static_cast<Char>('0' + (n & 1));
+        *p-- = static_cast<char_type>('0' + (n & 1));
       } while ((n >>= 1) != 0);
     }
 
@@ -2578,24 +2581,24 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
       do {
         ++num_digits;
       } while ((n >>= 3) != 0);
-      Char *p =
+      char_type *p =
           get(writer.prepare_int_buffer(num_digits, spec, prefix, prefix_size));
       n = abs_value;
       do {
-        *p-- = static_cast<Char>('0' + (n & 7));
+        *p-- = static_cast<char_type>('0' + (n & 7));
       } while ((n >>= 3) != 0);
     }
 
     void on_num() {
       unsigned num_digits = internal::count_digits(abs_value);
-      Char thousands_sep = internal::thousands_sep(writer.buffer_);
-      fmt::basic_string_view<Char> sep(&thousands_sep, 1);
+      char_type thousands_sep = internal::thousands_sep(writer.buffer_);
+      fmt::basic_string_view<char_type> sep(&thousands_sep, 1);
       unsigned size = static_cast<unsigned>(
             num_digits + sep.size() * ((num_digits - 1) / 3));
       pointer_type p =
           writer.prepare_int_buffer(size, spec, prefix, prefix_size) + 1;
       internal::format_decimal(get(p), abs_value, 0,
-                               internal::add_thousands_sep<Char>(sep));
+                               internal::add_thousands_sep<char_type>(sep));
     }
 
     void on_error() {
@@ -2605,9 +2608,9 @@ void basic_writer<Char>::write_int(T value, const Spec& spec) {
   internal::handle_int_type_spec(spec.type(), spec_handler(*this, value, spec));
 }
 
-template <typename Char>
+template <typename Buffer>
 template <typename T>
-void basic_writer<Char>::write_double(T value, const format_specs &spec) {
+void basic_writer<Buffer>::write_double(T value, const format_specs &spec) {
   // Check type.
   struct spec_handler {
     char type;
@@ -2700,8 +2703,8 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
 
   // Build format string.
   enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
-  Char format[MAX_FORMAT_SIZE];
-  Char *format_ptr = format;
+  char_type format[MAX_FORMAT_SIZE];
+  char_type *format_ptr = format;
   *format_ptr++ = '%';
   unsigned width_for_sprintf = width;
   if (spec.flag(HASH_FLAG))
@@ -2724,9 +2727,9 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
   *format_ptr = '\0';
 
   // Format using snprintf.
-  Char fill = internal::char_traits<Char>::cast(spec.fill());
+  char_type fill = internal::char_traits<char_type>::cast(spec.fill());
   unsigned n = 0;
-  Char *start = 0;
+  char_type *start = 0;
   for (;;) {
     std::size_t buffer_size = buffer_.capacity() - offset;
 #if FMT_MSC_VER
@@ -2739,7 +2742,7 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
     }
 #endif
     start = &buffer_[offset];
-    int result = internal::char_traits<Char>::format_float(
+    int result = internal::char_traits<char_type>::format_float(
         start, buffer_size, format, width_for_sprintf, spec.precision(), value);
     if (result >= 0) {
       n = internal::to_unsigned(result);
@@ -2765,7 +2768,7 @@ void basic_writer<Char>::write_double(T value, const format_specs &spec) {
   if (spec.align() == ALIGN_CENTER && spec.width() > n) {
     width = spec.width();
     pointer_type p = grow_buffer(width);
-    std::memmove(get(p) + (width - n) / 2, get(p), n * sizeof(Char));
+    std::memmove(get(p) + (width - n) / 2, get(p), n * sizeof(char_type));
     fill_padding(p, spec.width(), n, fill);
     return;
   }
