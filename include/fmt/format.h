@@ -305,11 +305,13 @@ inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
 // is very heavy.
 class locale;
 
-/**
-  \rst
-  A contiguous memory buffer with an optional growing ability.
-  \endrst
- */
+class locale_provider {
+ public:
+  virtual ~locale_provider() {}
+  virtual locale locale();
+};
+
+/** A contiguous memory buffer with an optional growing ability. */
 template <typename T>
 class basic_buffer {
  private:
@@ -381,8 +383,6 @@ class basic_buffer {
 
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
-
-  virtual fmt::locale locale() const;
 };
 
 template <typename T>
@@ -868,7 +868,7 @@ class add_thousands_sep {
 };
 
 template <typename Char>
-Char thousands_sep(const basic_buffer<Char>& buf);
+Char thousands_sep(locale_provider *lp);
 
 // Formats a decimal unsigned integer value writing into buffer.
 // thousands_sep is a functor that is called after writing each char to
@@ -2182,6 +2182,7 @@ class basic_writer {
  private:
   // Output buffer.
   Buffer &buffer_;
+  std::unique_ptr<locale_provider> locale_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_writer);
 
@@ -2591,7 +2592,8 @@ void basic_writer<Buffer>::write_int(T value, const Spec& spec) {
 
     void on_num() {
       unsigned num_digits = internal::count_digits(abs_value);
-      char_type thousands_sep = internal::thousands_sep(writer.buffer_);
+      char_type thousands_sep =
+          internal::thousands_sep<char_type>(writer.locale_.get());
       fmt::basic_string_view<char_type> sep(&thousands_sep, 1);
       unsigned size = static_cast<unsigned>(
             num_digits + sep.size() * ((num_digits - 1) / 3));

@@ -19,7 +19,4 @@ class locale {
   explicit locale(std::locale loc = std::locale()) : locale_(loc) {}
   std::locale get() { return locale_; }
 };
-
-template <typename T>
-locale basic_buffer<T>::locale() const { return fmt::locale(); }
 }

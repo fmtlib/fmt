@@ -220,9 +220,9 @@ void report_error(FormatFunc func, int error_code,
 }  // namespace
 
 template <typename Char>
-FMT_FUNC Char internal::thousands_sep(const basic_buffer<Char>& buf) {
-  return std::use_facet<std::numpunct<Char>>(buf.locale().get())
-                                            .thousands_sep();
+FMT_FUNC Char internal::thousands_sep(locale_provider *lp) {
+  std::locale loc = lp ? lp->locale().get() : std::locale();
+  return std::use_facet<std::numpunct<Char>>(loc).thousands_sep();
 }
 
 FMT_FUNC void system_error::init(
@@ -441,15 +441,15 @@ FMT_FUNC void vprint_colored(Color c, string_view format, format_args args) {
   std::fputs(RESET_COLOR, stdout);
 }
 
+FMT_FUNC locale locale_provider::locale() { return fmt::locale(); }
+
 #ifndef FMT_HEADER_ONLY
 
 template struct internal::basic_data<void>;
 
 // Explicit instantiations for char.
 
-template locale basic_buffer<char>::locale() const;
-
-template char internal::thousands_sep(const basic_buffer<char>& buf);
+template char internal::thousands_sep(locale_provider *lp);
 
 template void basic_fixed_buffer<char>::grow(std::size_t);
 
@@ -465,9 +465,7 @@ template int internal::char_traits<char>::format_float(
 
 // Explicit instantiations for wchar_t.
 
-template locale basic_buffer<wchar_t>::locale() const;
-
-template wchar_t internal::thousands_sep(const basic_buffer<wchar_t>& buf);
+template wchar_t internal::thousands_sep(locale_provider *lp);
 
 template class basic_context<wchar_t>;
 
