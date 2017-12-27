@@ -25,6 +25,11 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// transition helper
+#ifdef FMT_FORMAT_PROVIDE_PRINTF
+#include "printf.h"
+#endif
+
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
