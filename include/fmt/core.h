@@ -468,6 +468,18 @@ class value {
     set<POINTER>(pointer, p);
   }
 
+  // Match function pointers explicitly. If we do not then the
+  // forwarding T * constructor below will end up trying to call
+  // itself when a function pointer is passed, which leads to a
+  // confusing error message.
+  template <typename T, typename ...Args>
+  value(T (*p)(Args...)) {
+    // This static_assert must use something that is dependent on T,
+    // otherwise it will always fire, so let's use the same check as
+    // above - it will never match.
+    static_assert(std::is_same<T, void>::value, "formatting of function pointers is disallowed");
+  }
+
   template <typename T>
   value(T *p) : value(as_const(p)) {}
 
