@@ -52,8 +52,7 @@
 // Check if exceptions are disabled.
 #if defined(__GNUC__) && !defined(__EXCEPTIONS)
 # define FMT_EXCEPTIONS 0
-#endif
-#if FMT_MSC_VER && !_HAS_EXCEPTIONS
+#elif FMT_MSC_VER && !_HAS_EXCEPTIONS
 # define FMT_EXCEPTIONS 0
 #endif
 #ifndef FMT_EXCEPTIONS
@@ -68,7 +67,7 @@
 #ifndef FMT_NOEXCEPT
 # if FMT_EXCEPTIONS
 #  if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
-    FMT_GCC_VERSION >= 408 || FMT_MSC_VER >= 1900
+      FMT_GCC_VERSION >= 408 || FMT_MSC_VER >= 1900
 #   define FMT_NOEXCEPT noexcept
 #  else
 #   define FMT_NOEXCEPT throw()
@@ -565,12 +564,9 @@ class basic_arg {
  public:
   class handle {
    public:
-    explicit handle(internal::custom_value<Context> custom)
-      : custom_(custom) {}
+    explicit handle(internal::custom_value<Context> custom): custom_(custom) {}
 
-    void format(basic_buffer<char_type> &buf, Context &ctx) {
-      custom_.format(buf, custom_.value, ctx);
-    }
+    void format(Context &ctx) { custom_.format(custom_.value, ctx); }
 
    private:
     internal::custom_value<Context> custom_;
@@ -681,7 +677,7 @@ class arg_map {
   using char_type = typename Context::char_type;
 
   struct arg {
-    fmt::basic_string_view<char_type> name;
+    basic_string_view<char_type> name;
     basic_arg<Context> value;
   };
 
@@ -699,7 +695,7 @@ class arg_map {
   ~arg_map() { delete [] map_; }
 
   const basic_arg<Context>
-      *find(const fmt::basic_string_view<char_type> &name) const {
+      *find(const basic_string_view<char_type> &name) const {
     // The list is unsorted, so just return the first matching name.
     for (auto it = map_, end = map_ + size_; it != end; ++it) {
       if (it->name == name)
@@ -924,8 +920,8 @@ enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 FMT_API void vprint_colored(Color c, string_view format, format_args args);
 
 /**
-  Formats a string and prints it to stdout using ANSI escape sequences
-  to specify color (experimental).
+  Formats a string and prints it to stdout using ANSI escape sequences to
+  specify color (experimental).
   Example:
     print_colored(fmt::RED, "Elapsed time: {0:.2f} seconds", 1.23);
  */
