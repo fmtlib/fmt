@@ -1,11 +1,9 @@
-/*
- Formatting library for C++ - locale support
-
- Copyright (c) 2012 - 2016, Victor Zverovich
- All rights reserved.
-
- For the license information refer to format.h.
- */
+// Formatting library for C++ - locale support
+//
+// Copyright (c) 2012 - 2016, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 #include "fmt/format.h"
 #include <locale>

@@ -1,11 +1,9 @@
-/*
- A C++ interface to POSIX functions.
-
- Copyright (c) 2012 - 2016, Victor Zverovich
- All rights reserved.
-
- For the license information refer to format.h.
- */
+// A C++ interface to POSIX functions.
+//
+// Copyright (c) 2012 - 2016, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 #ifndef FMT_POSIX_H_
 #define FMT_POSIX_H_

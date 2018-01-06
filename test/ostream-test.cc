@@ -58,14 +58,14 @@ TEST(OStreamTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-struct TestArgFormatter : fmt::arg_formatter<char> {
+struct TestArgFormatter : fmt::arg_formatter<fmt::buffer> {
   TestArgFormatter(fmt::buffer &buf, fmt::context &ctx, fmt::format_specs &s)
-    : fmt::arg_formatter<char>(buf, ctx, s) {}
+    : fmt::arg_formatter<fmt::buffer>(buf, ctx, s) {}
 };
 
 TEST(OStreamTest, CustomArg) {
   fmt::memory_buffer buffer;
-  fmt::context ctx("", fmt::format_args());
+  fmt::context ctx(buffer, "", fmt::format_args());
   fmt::format_specs spec;
   TestArgFormatter af(buffer, ctx, spec);
   visit(af, fmt::internal::make_arg<fmt::context>(TestEnum()));

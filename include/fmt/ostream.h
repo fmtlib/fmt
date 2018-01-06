@@ -1,11 +1,9 @@
-/*
- Formatting library for C++ - std::ostream support
-
- Copyright (c) 2012 - 2016, Victor Zverovich
- All rights reserved.
-
- For the license information refer to format.h.
- */
+// Formatting library for C++ - std::ostream support
+//
+// Copyright (c) 2012 - 2016, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 #ifndef FMT_OSTREAM_H_
 #define FMT_OSTREAM_H_
@@ -104,12 +102,12 @@ struct formatter<T, Char,
     typename std::enable_if<!internal::format_type<T>::value>::type>
     : formatter<basic_string_view<Char>, Char> {
 
-  void format(basic_buffer<Char> &buf, const T &value,
-              basic_context<Char> &ctx) {
+  template <typename Context>
+  void format(const T &value, Context &ctx) {
     basic_memory_buffer<Char> buffer;
     internal::format_value(buffer, value);
     basic_string_view<Char> str(buffer.data(), buffer.size());
-    formatter<basic_string_view<Char>, Char>::format(buf, str, ctx);
+    formatter<basic_string_view<Char>, Char>::format(str, ctx);
   }
 };
 

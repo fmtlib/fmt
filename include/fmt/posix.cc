@@ -1,11 +1,9 @@
-/*
- A C++ interface to POSIX functions.
-
- Copyright (c) 2012 - 2016, Victor Zverovich
- All rights reserved.
-
- For the license information refer to format.h.
- */
+// A C++ interface to POSIX functions.
+//
+// Copyright (c) 2012 - 2016, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 // Disable bogus MSVC warnings.
 #ifndef _CRT_SECURE_NO_WARNINGS

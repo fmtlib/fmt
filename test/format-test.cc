@@ -31,7 +31,6 @@
 #include <cmath>
 #include <cstring>
 #include <memory>
-#include <type_traits>
 #include <stdint.h>
 
 #include "gmock/gmock.h"
@@ -91,7 +90,7 @@ template <typename Char, typename T>
   fmt::basic_memory_buffer<Char> buffer;
   fmt::basic_writer<fmt::basic_buffer<Char>> writer(buffer);
   writer.write(value);
-  std::basic_string<Char> actual = writer.str();
+  std::basic_string<Char> actual = to_string(buffer);
   std::basic_string<Char> expected;
   std_format(value, expected);
   if (expected == actual)
@@ -149,19 +148,11 @@ TEST(WriterTest, NotCopyAssignable) {
   EXPECT_FALSE(std::is_copy_assignable<basic_writer<fmt::buffer>>::value);
 }
 
-TEST(WriterTest, Ctor) {
-  memory_buffer buf;
-  fmt::basic_writer<fmt::buffer> w(buf);
-  EXPECT_EQ(0u, w.size());
-  EXPECT_STREQ("", w.c_str());
-  EXPECT_EQ("", w.str());
-}
-
 TEST(WriterTest, Data) {
   memory_buffer buf;
   fmt::basic_writer<fmt::buffer> w(buf);
   w.write(42);
-  EXPECT_EQ("42", std::string(w.data(), w.size()));
+  EXPECT_EQ("42", to_string(buf));
 }
 
 TEST(WriterTest, WriteInt) {
@@ -224,7 +215,9 @@ TEST(WriterTest, WriteDoubleWithFilledBuffer) {
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
     writer.write(' ');
   writer.write(1.2);
-  EXPECT_STREQ("1.2", writer.c_str() + fmt::internal::INLINE_BUFFER_SIZE);
+  fmt::string_view sv(buf.data(), buf.size());
+  sv.remove_prefix(fmt::internal::INLINE_BUFFER_SIZE);
+  EXPECT_EQ("1.2", sv);
 }
 
 TEST(WriterTest, WriteChar) {
@@ -239,31 +232,29 @@ TEST(WriterTest, WriteString) {
   CHECK_WRITE_CHAR("abc");
   CHECK_WRITE_WCHAR("abc");
   // The following line shouldn't compile:
-  //MemoryWriter() << L"abc";
+  //std::declval<fmt::basic_writer<fmt::buffer>>().write(L"abc");
 }
 
 TEST(WriterTest, WriteWideString) {
   CHECK_WRITE_WCHAR(L"abc");
   // The following line shouldn't compile:
-  //fmt::WMemoryWriter() << "abc";
+  //std::declval<fmt::basic_writer<fmt::wbuffer>>().write("abc");
 }
 
 template <typename... T>
 std::string write_str(T... args) {
   memory_buffer buf;
   fmt::basic_writer<fmt::buffer> writer(buf);
-  using namespace fmt;
   writer.write(args...);
-  return writer.str();
+  return to_string(buf);
 }
 
 template <typename... T>
 std::wstring write_wstr(T... args) {
   wmemory_buffer buf;
   fmt::basic_writer<fmt::wbuffer> writer(buf);
-  using namespace fmt;
   writer.write(args...);
-  return writer.str();
+  return to_string(buf);
 }
 
 TEST(WriterTest, bin) {
@@ -350,17 +341,20 @@ TEST(WriterTest, pad) {
   EXPECT_EQ("     33", write_str(33ll, width=7));
   EXPECT_EQ("     44", write_str(44ull, width=7));
 
-  memory_buffer buf;
-  fmt::basic_writer<fmt::buffer> w(buf);
-  w.clear();
-  w.write(42, fmt::width=5, fmt::fill='0');
-  EXPECT_EQ("00042", w.str());
-  w.clear();
-  w << Date(2012, 12, 9);
-  EXPECT_EQ("2012-12-9", w.str());
-  w.clear();
-  w << iso8601(Date(2012, 1, 9));
-  EXPECT_EQ("2012-01-09", w.str());
+  EXPECT_EQ("00042", write_str(42, fmt::width=5, fmt::fill='0'));
+
+  {
+    memory_buffer buf;
+    fmt::basic_writer<fmt::buffer> w(buf);
+    w << Date(2012, 12, 9);
+    EXPECT_EQ("2012-12-9", to_string(buf));
+  }
+  {
+    memory_buffer buf;
+    fmt::basic_writer<fmt::buffer> w(buf);
+    w << iso8601(Date(2012, 1, 9));
+    EXPECT_EQ("2012-01-09", to_string(buf));
+  }
 }
 
 TEST(WriterTest, PadString) {
@@ -1228,8 +1222,8 @@ struct formatter<Date> {
     return it;
   }
 
-  void format(buffer &buf, const Date &d, context &) {
-    format_to(buf, "{}-{}-{}", d.year(), d.month(), d.day());
+  void format(const Date &d, context &ctx) {
+    format_to(ctx.range(), "{}-{}-{}", d.year(), d.month(), d.day());
   }
 };
 }
@@ -1245,8 +1239,8 @@ class Answer {};
 namespace fmt {
 template <>
 struct formatter<Answer> : formatter<int> {
-  void format(fmt::buffer &buf, Answer, fmt::context &ctx) {
-    formatter<int>::format(buf, 42, ctx);
+  void format(Answer, fmt::context &ctx) {
+    formatter<int>::format(42, ctx);
   }
 };
 }
@@ -1535,11 +1529,11 @@ struct variant {
 namespace fmt {
 template <>
 struct formatter<variant> : dynamic_formatter<> {
-  void format(buffer& buf, variant value, context& ctx) {
+  void format(variant value, context& ctx) {
     if (value.type == variant::INT)
-      dynamic_formatter::format(buf, 42, ctx);
+      dynamic_formatter::format(ctx.range(), 42, ctx);
     else
-      dynamic_formatter::format(buf, "foo", ctx);
+      dynamic_formatter::format(ctx.range(), "foo", ctx);
   }
 };
 }

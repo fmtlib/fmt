@@ -1,29 +1,9 @@
-/*
- Formatting library for C++
-
- Copyright (c) 2012 - 2016, Victor Zverovich
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are met:
-
- 1. Redistributions of source code must retain the above copyright notice, this
-    list of conditions and the following disclaimer.
- 2. Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Formatting library for C++
+//
+// Copyright (c) 2012 - 2016, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 #include "fmt/format.h"
 #include "fmt/locale.h"
@@ -348,18 +328,18 @@ FMT_FUNC void windows_error::init(
 FMT_FUNC void internal::format_windows_error(
     buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
-    wmemory_buffer buffer;
-    buffer.resize(INLINE_BUFFER_SIZE);
+    wmemory_buffer buf;
+    buf.resize(INLINE_BUFFER_SIZE);
     for (;;) {
-      wchar_t *system_message = &buffer[0];
+      wchar_t *system_message = &buf[0];
       int result = FormatMessageW(
           FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
           0, error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-          system_message, static_cast<uint32_t>(buffer.size()), 0);
+          system_message, static_cast<uint32_t>(buf.size()), 0);
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          basic_writer<char> w(out);
+          basic_writer<buffer> w(out);
           w.write(message);
           w.write(": ");
           w.write(utf8_message);
@@ -369,10 +349,10 @@ FMT_FUNC void internal::format_windows_error(
       }
       if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
         break;  // Can't get error message, report error code instead.
-      buffer.resize(buffer.size() * 2);
+      buf.resize(buf.size() * 2);
     }
   } FMT_CATCH(...) {}
-  fmt::format_error_code(out, error_code, message);  // 'fmt::' is for bcc32.
+  format_error_code(out, error_code, message);
 }
 
 #endif  // FMT_USE_WINDOWS_H
@@ -466,8 +446,6 @@ template int internal::char_traits<char>::format_float(
 // Explicit instantiations for wchar_t.
 
 template wchar_t internal::thousands_sep(locale_provider *lp);
-
-template class basic_context<wchar_t>;
 
 template void basic_fixed_buffer<wchar_t>::grow(std::size_t);
 

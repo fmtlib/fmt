@@ -81,9 +81,9 @@ struct formatter<Test, Char> {
     return ctx.begin();
   }
 
-  void format(basic_buffer<Char> &b, Test, basic_context<Char> &) {
+  void format(Test, basic_context<basic_buffer<Char>> &ctx) {
     const Char *test = "test";
-    b.append(test, test + std::strlen(test));
+    ctx.range().append(test, test + std::strlen(test));
   }
 };
 }
@@ -442,7 +442,7 @@ struct CustomContext {
       return ctx.begin();
     }
 
-    void format(fmt::buffer &, const T &, CustomContext& ctx) {
+    void format(const T &, CustomContext& ctx) {
       ctx.called = true;
     }
   };
@@ -456,8 +456,7 @@ TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
   fmt::internal::value<CustomContext> arg(t);
   CustomContext ctx = {false};
-  fmt::memory_buffer buffer;
-  arg.custom.format(buffer, &t, ctx);
+  arg.custom.format(&t, ctx);
   EXPECT_TRUE(ctx.called);
 }
 
@@ -518,7 +517,8 @@ VISIT_TYPE(float, double);
 #define CHECK_ARG_(Char, expected, value) { \
   testing::StrictMock<MockVisitor<decltype(expected)>> visitor; \
   EXPECT_CALL(visitor, visit(expected)); \
-  fmt::visit(visitor, make_arg<fmt::basic_context<Char>>(value)); \
+  fmt::visit(visitor, \
+            make_arg<fmt::basic_context<basic_buffer<Char>>>(value)); \
 }
 
 #define CHECK_ARG(value) { \
@@ -596,8 +596,8 @@ TEST(UtilTest, CustomArg) {
   testing::StrictMock<visitor> v;
   EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke([&](handle h) {
     fmt::memory_buffer buffer;
-    fmt::context ctx("", fmt::format_args());
-    h.format(buffer, ctx);
+    fmt::context ctx(buffer, "", fmt::format_args());
+    h.format(ctx);
     EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
     return visitor::Result();
   }));

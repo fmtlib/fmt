@@ -1,11 +1,9 @@
-/*
- Formatting library for C++ - time formatting
-
- Copyright (c) 2012 - 2016, Victor Zverovich
- All rights reserved.
-
- For the license information refer to format.h.
- */
+// Formatting library for C++ - time formatting
+//
+// Copyright (c) 2012 - 2016, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 #ifndef FMT_TIME_H_
 #define FMT_TIME_H_
@@ -32,7 +30,8 @@ struct formatter<std::tm> {
     return pointer_from(end);
   }
 
-  void format(buffer &buf, const std::tm &tm, context &) {
+  void format(const std::tm &tm, context &ctx) {
+    buffer &buf = ctx.range();
     std::size_t start = buf.size();
     for (;;) {
       std::size_t size = buf.capacity() - start;

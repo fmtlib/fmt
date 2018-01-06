@@ -1,35 +1,16 @@
-/*
- Formatting library for C++
-
- Copyright (c) 2012 - 2016, Victor Zverovich
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are met:
-
- 1. Redistributions of source code must retain the above copyright notice, this
-    list of conditions and the following disclaimer.
- 2. Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Formatting library for C++ - the core API
+//
+// Copyright (c) 2012 - present, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
 #include <cassert>
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <type_traits>
 
@@ -92,35 +73,14 @@
 # define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
 
+#define FMT_DELETED = delete
+
 // A macro to disallow the copy construction and assignment.
-#define FMT_DISALLOW_COPY_AND_ASSIGN(TypeName) \
-    TypeName(const TypeName&) = delete; \
-    TypeName& operator=(const TypeName&) = delete
-#define FMT_DELETED_OR_UNDEFINED = delete
+#define FMT_DISALLOW_COPY_AND_ASSIGN(Type) \
+    Type(const Type &) FMT_DELETED; \
+    void operator=(const Type &) FMT_DELETED
 
 namespace fmt {
-
-template <typename T>
-class basic_buffer;
-
-using buffer = basic_buffer<char>;
-using wbuffer = basic_buffer<wchar_t>;
-
-template <typename Context>
-class basic_arg;
-
-template <typename Context>
-class basic_format_args;
-
-template <typename Char>
-class basic_context;
-
-using context = basic_context<char>;
-using wcontext = basic_context<wchar_t>;
-
-// A formatter for objects of type T.
-template <typename T, typename Char = char, typename Enable = void>
-struct formatter;
 
 /**
   \rst
@@ -138,10 +98,10 @@ class basic_string_view {
   using char_type = Char;
   using iterator = const Char *;
 
-  constexpr basic_string_view() noexcept : data_(0), size_(0) {}
+  constexpr basic_string_view() FMT_NOEXCEPT : data_(0), size_(0) {}
 
   /** Constructs a string reference object from a C string and a size. */
-  constexpr basic_string_view(const Char *s, size_t size) noexcept
+  constexpr basic_string_view(const Char *s, size_t size) FMT_NOEXCEPT
     : data_(s), size_(size) {}
 
   /**
@@ -158,7 +118,7 @@ class basic_string_view {
     Constructs a string reference from an ``std::string`` object.
     \endrst
    */
-  constexpr basic_string_view(const std::basic_string<Char> &s) noexcept
+  constexpr basic_string_view(const std::basic_string<Char> &s) FMT_NOEXCEPT
   : data_(s.c_str()), size_(s.size()) {}
 
   /**
@@ -215,6 +175,96 @@ class basic_string_view {
 
 using string_view = basic_string_view<char>;
 using wstring_view = basic_string_view<wchar_t>;
+
+/** A contiguous memory buffer with an optional growing ability. */
+template <typename T>
+class basic_buffer {
+ private:
+  FMT_DISALLOW_COPY_AND_ASSIGN(basic_buffer);
+
+  T *ptr_;
+  std::size_t size_;
+  std::size_t capacity_;
+
+ protected:
+  basic_buffer() FMT_NOEXCEPT : ptr_(0), size_(0), capacity_(0) {}
+
+  /** Sets the buffer data and capacity. */
+  void set(T *data, std::size_t capacity) FMT_NOEXCEPT {
+    ptr_ = data;
+    capacity_ = capacity;
+  }
+
+  /**
+    \rst
+    Increases the buffer capacity to hold at least *capacity* elements.
+    \endrst
+   */
+  virtual void grow(std::size_t capacity) = 0;
+
+ public:
+  using value_type = T;
+
+  virtual ~basic_buffer() {}
+
+  T *begin() FMT_NOEXCEPT { return ptr_; }
+  T *end() FMT_NOEXCEPT { return ptr_ + size_; }
+
+  /** Returns the size of this buffer. */
+  std::size_t size() const FMT_NOEXCEPT { return size_; }
+
+  /** Returns the capacity of this buffer. */
+  std::size_t capacity() const FMT_NOEXCEPT { return capacity_; }
+
+  /** Returns a pointer to the buffer data. */
+  T *data() FMT_NOEXCEPT { return ptr_; }
+
+  /** Returns a pointer to the buffer data. */
+  const T *data() const FMT_NOEXCEPT { return ptr_; }
+
+  /**
+    Resizes the buffer. If T is a POD type new elements may not be initialized.
+   */
+  void resize(std::size_t new_size) {
+    reserve(new_size);
+    size_ = new_size;
+  }
+
+  /**
+    \rst
+    Reserves space to store at least *capacity* elements.
+    \endrst
+   */
+  void reserve(std::size_t capacity) {
+    if (capacity > capacity_)
+      grow(capacity);
+  }
+
+  void push_back(const T &value) {
+    reserve(size_ + 1);
+    ptr_[size_++] = value;
+  }
+
+  /** Appends data to the end of the buffer. */
+  template <typename U>
+  void append(const U *begin, const U *end);
+
+  T &operator[](std::size_t index) { return ptr_[index]; }
+  const T &operator[](std::size_t index) const { return ptr_[index]; }
+};
+
+using buffer = basic_buffer<char>;
+using wbuffer = basic_buffer<wchar_t>;
+
+template <typename Context>
+class basic_arg;
+
+template <typename Context>
+class basic_format_args;
+
+// A formatter for objects of type T.
+template <typename T, typename Char = char, typename Enable = void>
+struct formatter;
 
 namespace internal {
 
@@ -286,14 +336,17 @@ FMT_DISABLE_CONVERSION_TO_INT(float);
 FMT_DISABLE_CONVERSION_TO_INT(double);
 FMT_DISABLE_CONVERSION_TO_INT(long double);
 
-template <typename Context>
+template <typename Char>
+struct named_arg_base;
+
+template <typename T, typename Char>
 struct named_arg;
 
 template <typename T>
 struct is_named_arg : std::false_type {};
 
-template <typename Context>
-struct is_named_arg<named_arg<Context>> : std::true_type {};
+template <typename T, typename Char>
+struct is_named_arg<named_arg<T, Char>> : std::true_type {};
 
 enum type {
   NONE, NAMED_ARG,
@@ -370,6 +423,9 @@ constexpr uint64_t get_types() {
 template <>
 constexpr uint64_t get_types<void>() { return 0; }
 
+template <typename Context, typename T>
+constexpr basic_arg<Context> make_arg(const T &value);
+
 template <typename Char>
 struct string_value {
   const Char *value;
@@ -378,12 +434,8 @@ struct string_value {
 
 template <typename Context>
 struct custom_value {
-  using format_func = void (*)(
-      basic_buffer<typename Context::char_type> &buffer,
-      const void *arg, Context &ctx);
-
   const void *value;
-  format_func format;
+  void (*format)(const void *arg, Context &ctx);
 };
 
 // A formatting argument value.
@@ -487,13 +539,17 @@ class value {
     custom.format = &format_custom_arg<T>;
   }
 
-  // Additional template param `Ctx` is needed here because get_type always
-  // uses basic_context<char>.
-  template <typename Ctx>
-  value(const named_arg<Ctx> &value) {
-    static_assert(
-      get_type<const named_arg<Ctx> &>() == NAMED_ARG, "invalid type");
-    pointer = &value;
+  template <typename T>
+  value(const named_arg<T, char_type> &na) {
+    static_assert(get_type<const named_arg<T, char_type> &>() == NAMED_ARG,
+                  "invalid type");
+    basic_arg<Context> arg = make_arg<Context>(na.value);
+    std::memcpy(na.data, &arg, sizeof(arg));
+    pointer = &na;
+  }
+
+  const named_arg_base<char_type> &as_named_arg() {
+    return *static_cast<const named_arg_base<char_type>*>(pointer);
   }
 
  private:
@@ -519,15 +575,14 @@ class value {
 
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
-  static void format_custom_arg(
-      basic_buffer<char_type> &buffer, const void *arg, Context &ctx) {
+  static void format_custom_arg(const void *arg, Context &ctx) {
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
     typename Context::template formatter_type<T> f;
     auto &&parse_ctx = ctx.parse_context();
     parse_ctx.advance_to(f.parse(parse_ctx));
-    f.format(buffer, *static_cast<const T*>(arg), ctx);
+    f.format(*static_cast<const T*>(arg), ctx);
   }
 };
 
@@ -536,9 +591,6 @@ enum { MAX_PACKED_ARGS = 15 };
 
 template <typename Context>
 class arg_map;
-
-template <typename Context, typename T>
-constexpr basic_arg<Context> make_arg(const T &value);
 }
 
 // A formatting argument. It is a trivially copyable/constructible type to
@@ -574,7 +626,9 @@ class basic_arg {
 
   constexpr basic_arg() : type_(internal::NONE) {}
 
-  explicit operator bool() const noexcept { return type_ != internal::NONE; }
+  explicit operator bool() const FMT_NOEXCEPT {
+    return type_ != internal::NONE;
+  }
 
   internal::type type() const { return type_; }
 
@@ -648,26 +702,15 @@ constexpr basic_arg<Context> make_arg(const T &value) {
 
 template <bool IS_PACKED, typename Context, typename T>
 inline typename std::enable_if<IS_PACKED, value<Context>>::type
-    make_arg(const T& value) {
+    make_arg(const T &value) {
   return value;
 }
 
 template <bool IS_PACKED, typename Context, typename T>
 inline typename std::enable_if<!IS_PACKED, basic_arg<Context>>::type
-    make_arg(const T& value) {
+    make_arg(const T &value) {
   return make_arg<Context>(value);
 }
-
-template <typename Context>
-struct named_arg : basic_arg<Context> {
-  using char_type = typename Context::char_type;
-
-  basic_string_view<char_type> name;
-
-  template <typename T>
-  named_arg(basic_string_view<char_type> argname, const T &value)
-  : basic_arg<Context>(make_arg<Context>(value)), name(argname) {}
-};
 
 template <typename Context>
 class arg_map {
@@ -676,16 +719,17 @@ class arg_map {
 
   using char_type = typename Context::char_type;
 
-  struct arg {
+  struct entry {
     basic_string_view<char_type> name;
-    basic_arg<Context> value;
+    basic_arg<Context> arg;
   };
 
-  arg *map_ = nullptr;
+  entry *map_ = nullptr;
   unsigned size_ = 0;
 
-  void push_back(arg a) {
-    map_[size_] = a;
+  void push_back(value<Context> val) {
+    const internal::named_arg_base<char_type> &named = val.as_named_arg();
+    map_[size_] = entry{named.name, named.template deserialize<Context>()};
     ++size_;
   }
 
@@ -694,29 +738,29 @@ class arg_map {
   void init(const basic_format_args<Context> &args);
   ~arg_map() { delete [] map_; }
 
-  const basic_arg<Context>
-      *find(const basic_string_view<char_type> &name) const {
+  basic_arg<Context> find(basic_string_view<char_type> name) const {
     // The list is unsorted, so just return the first matching name.
     for (auto it = map_, end = map_ + size_; it != end; ++it) {
       if (it->name == name)
-        return &it->value;
+        return it->arg;
     }
-    return 0;
+    return basic_arg<Context>();
   }
 };
 
-template <typename Char, typename Context>
-class context_base : public basic_parse_context<Char>{
+template <typename Range, typename Context>
+class context_base : public basic_parse_context<typename Range::value_type> {
  private:
+  Range &range_;
   basic_format_args<Context> args_;
 
  protected:
+  using char_type = typename Range::value_type;
   using format_arg = basic_arg<Context>;
 
-  context_base(basic_string_view<Char> format_str,
+  context_base(Range &range, basic_string_view<char_type> format_str,
                basic_format_args<Context> args)
-  : basic_parse_context<Char>(format_str), args_(args) {}
-  ~context_base() {}
+  : basic_parse_context<char_type>(format_str), range_(range), args_(args) {}
 
   basic_format_args<Context> args() const { return args_; }
 
@@ -736,29 +780,30 @@ class context_base : public basic_parse_context<Char>{
   }
 
  public:
-  basic_parse_context<Char> &parse_context() { return *this; }
+  basic_parse_context<char_type> &parse_context() { return *this; }
+  Range &range() { return range_; }
 };
 }  // namespace internal
 
-template <typename Char>
+template <typename Range>
 class basic_context :
-  public internal::context_base<Char, basic_context<Char>> {
+  public internal::context_base<Range, basic_context<Range>> {
  public:
   /** The character type for the output. */
-  using char_type = Char;
+  using char_type = typename Range::value_type;
 
   template <typename T>
-  using formatter_type = formatter<T, Char>;
+  using formatter_type = formatter<T, char_type>;
 
  private:
-  internal::arg_map<basic_context<Char>> map_;
+  internal::arg_map<basic_context> map_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_context);
 
-  using Base = internal::context_base<Char, basic_context<Char>>;
+  using base = internal::context_base<Range, basic_context>;
 
-  using format_arg = typename Base::format_arg;
-  using Base::get_arg;
+  using format_arg = typename base::format_arg;
+  using base::get_arg;
 
  public:
   /**
@@ -767,17 +812,20 @@ class basic_context :
    stored in the object so make sure they have appropriate lifetimes.
    \endrst
    */
-  basic_context(
-      basic_string_view<Char> format_str, basic_format_args<basic_context> args)
-    : Base(format_str, args) {}
+  basic_context(Range &range, basic_string_view<char_type> format_str,
+                basic_format_args<basic_context> args)
+    : base(range, format_str, args) {}
 
   format_arg next_arg() { return this->do_get_arg(this->next_arg_id()); }
   format_arg get_arg(unsigned arg_id) { return this->do_get_arg(arg_id); }
 
   // Checks if manual indexing is used and returns the argument with
   // specified name.
-  format_arg get_arg(basic_string_view<Char> name);
+  format_arg get_arg(basic_string_view<char_type> name);
 };
+
+using context = basic_context<buffer>;
+using wcontext = basic_context<wbuffer>;
 
 template <typename Context, typename ...Args>
 class arg_store {
@@ -876,7 +924,7 @@ class basic_format_args {
   format_arg operator[](size_type index) const {
     format_arg arg = get(index);
     return arg.type_ == internal::NAMED_ARG ?
-      *static_cast<const format_arg*>(arg.value_.pointer) : arg;
+          arg.value_.as_named_arg().template deserialize<Context>() : arg;
   }
 
   unsigned max_size() const {
@@ -888,6 +936,31 @@ class basic_format_args {
 using format_args = basic_format_args<context>;
 using wformat_args = basic_format_args<wcontext>;
 
+namespace internal {
+template <typename Char>
+struct named_arg_base {
+  basic_string_view<Char> name;
+
+  // Serialized value<context>.
+  mutable char data[sizeof(basic_arg<context>)];
+
+  template <typename Context>
+  basic_arg<Context> deserialize() const {
+    basic_arg<Context> arg;
+    std::memcpy(&arg, data, sizeof(basic_arg<Context>));
+    return arg;
+  }
+};
+
+template <typename T, typename Char>
+struct named_arg : named_arg_base<Char> {
+  const T &value;
+
+  named_arg(basic_string_view<Char> name, const T &val)
+    : named_arg_base<Char>{name}, value(val) {}
+};
+}
+
 /**
   \rst
   Returns a named argument for formatting functions.
@@ -895,25 +968,24 @@ using wformat_args = basic_format_args<wcontext>;
   **Example**::
 
     print("Elapsed time: {s:.2f} seconds", arg("s", 1.23));
-
   \endrst
  */
 template <typename T>
-inline internal::named_arg<context> arg(string_view name, const T &arg) {
-  return internal::named_arg<context>(name, arg);
+inline internal::named_arg<T, char> arg(string_view name, const T &arg) {
+  return internal::named_arg<T, char>(name, arg);
 }
 
 template <typename T>
-inline internal::named_arg<wcontext> arg(wstring_view name, const T &arg) {
-  return internal::named_arg<wcontext>(name, arg);
+inline internal::named_arg<T, wchar_t> arg(wstring_view name, const T &arg) {
+  return internal::named_arg<T, wchar_t>(name, arg);
 }
 
 // The following two functions are deleted intentionally to disable
 // nested named arguments as in ``format("{}", arg("a", arg("b", 42)))``.
-template <typename Context>
-void arg(string_view, internal::named_arg<Context>) FMT_DELETED_OR_UNDEFINED;
-template <typename Context>
-void arg(wstring_view, internal::named_arg<Context>) FMT_DELETED_OR_UNDEFINED;
+template <typename T>
+void arg(string_view, internal::named_arg<T, char>) FMT_DELETED;
+template <typename T>
+void arg(wstring_view, internal::named_arg<T, wchar_t>) FMT_DELETED;
 
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
