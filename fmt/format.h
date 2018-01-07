@@ -40,11 +40,17 @@
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <limits.h>  // for MB_LEN_MAX
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include <utility>  // for std::pair
+
+#ifdef FMT_WCONV_USE_NOWIDE
+# include <nowide/utf.hpp>
+#endif
+
 #undef FMT_INCLUDE
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
@@ -347,6 +353,12 @@ typedef __int64          intmax_t;
 
 #ifndef FMT_ASSERT
 # define FMT_ASSERT(condition, message) assert((condition) && message)
+#endif
+
+// User option: throw runtime_error if code conversion fails.
+// If false, use partially converted string.
+#ifndef FMT_THROW_WCONV_ERROR
+# define FMT_THROW_WCONV_ERROR 1
 #endif
 
 // __builtin_clz is broken in clang with Microsoft CodeGen:
@@ -960,6 +972,8 @@ class CharTraits<char> : public BasicCharTraits<char> {
  public:
   static char convert(char value) { return value; }
 
+  typedef wchar_t CharOther;
+
   // Formats a floating-point number.
   template <typename T>
   FMT_API static int format_float(char *buffer, std::size_t size,
@@ -980,6 +994,8 @@ class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
  public:
   static wchar_t convert(char value) { return value; }
   static wchar_t convert(wchar_t value) { return value; }
+
+  typedef char CharOther;
 
   template <typename T>
   FMT_API static int format_float(wchar_t *buffer, std::size_t size,
@@ -1245,20 +1261,6 @@ struct NamedArgWithType;
 template <typename T = void>
 struct Null {};
 
-// A helper class template to enable or disable overloads taking wide
-// characters and strings in MakeValue.
-template <typename T, typename Char>
-struct WCharHelper {
-  typedef Null<T> Supported;
-  typedef T Unsupported;
-};
-
-template <typename T>
-struct WCharHelper<T, wchar_t> {
-  typedef T Supported;
-  typedef Null<T> Unsupported;
-};
-
 typedef char Yes[1];
 typedef char No[2];
 
@@ -1387,24 +1389,6 @@ class MakeValue : public Arg {
   template <typename T>
   MakeValue(T *value);
 
-  // The following methods are private to disallow formatting of wide
-  // characters and strings into narrow strings as in
-  //   fmt::format("{}", L"test");
-  // To fix this, use a wide format string: fmt::format(L"{}", L"test").
-#if !FMT_MSC_VER || defined(_NATIVE_WCHAR_T_DEFINED)
-  MakeValue(typename WCharHelper<wchar_t, Char>::Unsupported);
-#endif
-  MakeValue(typename WCharHelper<wchar_t *, Char>::Unsupported);
-  MakeValue(typename WCharHelper<const wchar_t *, Char>::Unsupported);
-  MakeValue(typename WCharHelper<const std::wstring &, Char>::Unsupported);
-#if FMT_HAS_STRING_VIEW
-  MakeValue(typename WCharHelper<const std::wstring_view &, Char>::Unsupported);
-#endif
-#if FMT_HAS_EXPERIMENTAL_STRING_VIEW
-  MakeValue(typename WCharHelper<const std::experimental::wstring_view &, Char>::Unsupported);
-#endif
-  MakeValue(typename WCharHelper<WStringRef, Char>::Unsupported);
-
   void set_string(StringRef str) {
     string.value = str.data();
     string.size = str.size();
@@ -1471,6 +1455,7 @@ class MakeValue : public Arg {
   FMT_MAKE_VALUE(signed char, int_value, INT)
   FMT_MAKE_VALUE(unsigned char, uint_value, UINT)
   FMT_MAKE_VALUE(char, int_value, CHAR)
+  FMT_MAKE_VALUE(wchar_t, int_value, CHAR)
 
 #if __cplusplus >= 201103L
   template <
@@ -1484,13 +1469,6 @@ class MakeValue : public Arg {
     typename = typename std::enable_if<
       std::is_enum<T>::value && ConvertToInt<T>::value>::type>
   static uint64_t type(T) { return Arg::INT; }
-#endif
-
-#if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
-  MakeValue(typename WCharHelper<wchar_t, Char>::Supported value) {
-    int_value = value;
-  }
-  static uint64_t type(wchar_t) { return Arg::CHAR; }
 #endif
 
 #define FMT_MAKE_STR_VALUE(Type, TYPE) \
@@ -1513,22 +1491,16 @@ class MakeValue : public Arg {
   FMT_MAKE_STR_VALUE(StringRef, STRING)
   FMT_MAKE_VALUE_(CStringRef, string.value, CSTRING, value.c_str())
 
-#define FMT_MAKE_WSTR_VALUE(Type, TYPE) \
-  MakeValue(typename WCharHelper<Type, Char>::Supported value) { \
-    set_string(value); \
-  } \
-  static uint64_t type(Type) { return Arg::TYPE; }
-
-  FMT_MAKE_WSTR_VALUE(wchar_t *, WSTRING)
-  FMT_MAKE_WSTR_VALUE(const wchar_t *, WSTRING)
-  FMT_MAKE_WSTR_VALUE(const std::wstring &, WSTRING)
+  FMT_MAKE_STR_VALUE(wchar_t *, WSTRING)
+  FMT_MAKE_STR_VALUE(const wchar_t *, WSTRING)
+  FMT_MAKE_STR_VALUE(const std::wstring &, WSTRING)
 #if FMT_HAS_STRING_VIEW
-  FMT_MAKE_WSTR_VALUE(const std::wstring_view &, WSTRING)
+  FMT_MAKE_STR_VALUE(const std::wstring_view &, WSTRING)
 #endif
 #if FMT_HAS_EXPERIMENTAL_STRING_VIEW
-  FMT_MAKE_WSTR_VALUE(const std::experimental::wstring_view &, WSTRING)
+  FMT_MAKE_STR_VALUE(const std::experimental::wstring_view &, WSTRING)
 #endif
-  FMT_MAKE_WSTR_VALUE(WStringRef, WSTRING)
+  FMT_MAKE_STR_VALUE(WStringRef, WSTRING)
 
   FMT_MAKE_VALUE(void *, pointer, POINTER)
   FMT_MAKE_VALUE(const void *, pointer, POINTER)
@@ -2218,9 +2190,7 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     writer_.write_str(value, spec_);
   }
 
-  using ArgVisitor<Impl, void>::visit_wstring;
-
-  void visit_wstring(internal::Arg::StringValue<Char> value) {
+  void visit_wstring(internal::Arg::StringValue<wchar_t> value) {
     writer_.write_str(value, spec_);
   }
 
@@ -2653,6 +2623,7 @@ class BasicWriter {
   FMT_DISALLOW_COPY_AND_ASSIGN(BasicWriter);
 
   typedef typename internal::CharTraits<Char>::CharPtr CharPtr;
+  typedef typename internal::CharTraits<Char>::CharOther CharOther;
 
 #if FMT_SECURE_SCL
   // Returns pointer value.
@@ -2725,13 +2696,132 @@ class BasicWriter {
   void write_str(const internal::Arg::StringValue<StrChar> &str,
                  const Spec &spec);
 
-  // This following methods are private to disallow writing wide characters
-  // and strings to a char stream. If you want to print a wide string as a
-  // pointer as std::ostream does, cast it to const void*.
-  // Do not implement!
-  void operator<<(typename internal::WCharHelper<wchar_t, Char>::Unsupported);
-  void operator<<(
-      typename internal::WCharHelper<const wchar_t *, Char>::Unsupported);
+  // recode_str() and recode_str_len() are overloaded for Char and CharOther.
+  // The native Char version is trivial.
+
+  static std::size_t recode_str_len(
+    const Char* s,
+    std::size_t isize, bool throw_error = FMT_THROW_WCONV_ERROR)
+  {
+    return isize;
+  }
+
+  template <typename Iterator>
+  Iterator recode_str(
+    const Char *in,
+    std::size_t isize, Iterator out, bool throw_error = FMT_THROW_WCONV_ERROR)
+  {
+    return std::uninitialized_copy(in, in + isize, out);
+  }
+
+  // Find length in Char code units of CharOther string.
+  static std::size_t recode_str_len(
+    const CharOther* in,
+    std::size_t isize, bool throw_error = FMT_THROW_WCONV_ERROR)
+  {
+    return recode_internal<false>(in, isize, CharPtr(), throw_error);
+  }
+
+  // Convert CharOther string to Char string.
+  template <typename Iterator>
+  Iterator recode_str(
+    const CharOther* in,
+    std::size_t isize, Iterator out, bool throw_error = FMT_THROW_WCONV_ERROR)
+  {
+    return out + recode_internal<true>(in, isize, out, throw_error);
+  }
+
+#ifdef FMT_WCONV_USE_NOWIDE
+
+  // Ignore locale and treat all strings as as Unicode.
+  // char = UTF-8.  wchar_t = UTF-16 on Windows/MSVC, UTF-32 elsewhere.
+
+  template <bool bWrite>
+  static std::size_t recode_internal(const CharOther *in, std::size_t isize,
+    CharPtr out, bool throw_error)
+  {
+    std::size_t osize = 0;
+    const CharOther *end = in + isize;
+    while (in != end)
+    {
+      using namespace nowide::utf;
+      code_point c = utf_traits<CharOther>::decode(in, end);
+      if (c == illegal || c == incomplete) {
+        if (throw_error)
+          FMT_THROW(std::runtime_error("encoding error"));
+        else if (c == incomplete)
+          break;
+      }
+      if (bWrite)
+        out = utf_traits<Char>::encode(c, out);
+      else
+        osize += utf_traits<Char>::width(c);
+    }
+    return osize;
+  }
+
+#else // not FMT_WCONV_USE_NOWIDE
+
+  // Use locale encoding for char and wchar_t.
+  // Warning: This doesn't handle UTF-8 or UTF-16 on Windows/MSVC.
+  // Don't use wcsrtombs/mbsrtowcs because input is not null-terminated.
+
+  template <bool bWrite>
+  static std::size_t recode_internal(const wchar_t* in, std::size_t isize,
+    internal::CharTraits<char>::CharPtr out, bool throw_error)
+  {
+    std::size_t osize = 0;
+    std::mbstate_t state = {0};
+    char tmp[MB_LEN_MAX];
+    while (isize > 0)
+    {
+#if __STDC_WANT_SECURE_LIB__
+      std::size_t csize;
+      wcrtomb_s(&csize, &tmp[0], MB_LEN_MAX, *in, &state);
+#else
+      std::size_t csize = std::wcrtomb(&tmp[0], *in, &state);
+#endif
+      if (static_cast<int>(csize) < 0) {
+        if (throw_error)
+          FMT_THROW(std::runtime_error("encoding error"));
+        else
+          break;
+      }
+      ++in;
+      --isize;
+      osize += csize;
+      if (bWrite)
+        out = std::uninitialized_copy(&tmp[0], &tmp[csize], out);
+    }
+    return osize;
+  }
+
+  template <bool bWrite>
+  static std::size_t recode_internal(const char* in, std::size_t isize,
+    internal::CharTraits<wchar_t>::CharPtr out, bool throw_error)
+  {
+    std::size_t osize = 0;
+    std::mbstate_t state = {0};
+    wchar_t tmp;
+    while (isize > 0)
+    {
+      std::size_t csize = std::mbrtowc(&tmp, in, isize, &state);
+      if (static_cast<int>(csize) < 0) {
+        if (throw_error)
+          FMT_THROW(std::runtime_error("encoding error"));
+        else
+          break;
+      }
+      in += csize;
+      isize -= csize;
+      ++osize;
+      if (bWrite)
+        *out++ = tmp;
+    }
+    return osize;
+  }
+
+#endif // FMT_WCONV_USE_NOWIDE
 
   // Appends floating-point length specifier to the format string.
   // The second argument is only used for overload resolution.
@@ -2870,15 +2960,13 @@ class BasicWriter {
   /**
     Writes a character to the stream.
    */
-  BasicWriter &operator<<(char value) {
+  BasicWriter &operator<<(Char value) {
     buffer_.push_back(value);
     return *this;
   }
 
-  BasicWriter &operator<<(
-      typename internal::WCharHelper<wchar_t, Char>::Supported value) {
-    buffer_.push_back(value);
-    return *this;
+  BasicWriter &operator<<(CharOther value) {
+    return operator<<(BasicStringRef<CharOther>(&value, 1));
   }
 
   /**
@@ -2886,16 +2974,17 @@ class BasicWriter {
     Writes *value* to the stream.
     \endrst
    */
-  BasicWriter &operator<<(fmt::BasicStringRef<Char> value) {
+  BasicWriter &operator<<(BasicStringRef<Char> value) {
     const Char *str = value.data();
     buffer_.append(str, str + value.size());
     return *this;
   }
 
-  BasicWriter &operator<<(
-      typename internal::WCharHelper<StringRef, Char>::Supported value) {
-    const char *str = value.data();
-    buffer_.append(str, str + value.size());
+  BasicWriter &operator<<(BasicStringRef<CharOther> value) {
+    std::size_t convsize = recode_str_len(value.data(), value.size());
+    std::size_t oldsize = buffer_.size();
+    buffer_.resize(oldsize + convsize);
+    recode_str(value.data(), value.size(), internal::make_ptr(&buffer_[oldsize], convsize));
     return *this;
   }
 
@@ -2921,23 +3010,24 @@ class BasicWriter {
 template <typename Char>
 template <typename StrChar>
 typename BasicWriter<Char>::CharPtr BasicWriter<Char>::write_str(
-      const StrChar *s, std::size_t size, const AlignSpec &spec) {
+      const StrChar *s, std::size_t isize, const AlignSpec &spec) {
   CharPtr out = CharPtr();
-  if (spec.width() > size) {
+  std::size_t osize = recode_str_len(s, isize);
+  if (spec.width() > osize) {
     out = grow_buffer(spec.width());
     Char fill = internal::CharTraits<Char>::cast(spec.fill());
     if (spec.align() == ALIGN_RIGHT) {
-      std::uninitialized_fill_n(out, spec.width() - size, fill);
-      out += spec.width() - size;
+      std::uninitialized_fill_n(out, spec.width() - osize, fill);
+      out += spec.width() - osize;
     } else if (spec.align() == ALIGN_CENTER) {
-      out = fill_padding(out, spec.width(), size, fill);
+      out = fill_padding(out, spec.width(), osize, fill);
     } else {
-      std::uninitialized_fill_n(out + size, spec.width() - size, fill);
+      std::uninitialized_fill_n(out + osize, spec.width() - osize, fill);
     }
   } else {
-    out = grow_buffer(size);
+    out = grow_buffer(osize);
   }
-  std::uninitialized_copy(s, s + size, out);
+  recode_str(s, isize, out);
   return out;
 }
 
@@ -2945,8 +3035,6 @@ template <typename Char>
 template <typename StrChar, typename Spec>
 void BasicWriter<Char>::write_str(
     const internal::Arg::StringValue<StrChar> &s, const Spec &spec) {
-  // Check if StrChar is convertible to Char.
-  internal::CharTraits<Char>::convert(StrChar());
   if (spec.type_ && spec.type_ != 's')
     internal::report_unknown_type(spec.type_, "string");
   const StrChar *str_value = s.value;
