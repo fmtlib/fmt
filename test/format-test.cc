@@ -296,8 +296,8 @@ TEST(WriterTest, hexu) {
   EXPECT_EQ("DEADBEEF", write_str(0xdeadbeefull, type='X'));
 }
 
-template <typename Char>
-basic_writer<Char> &operator<<(basic_writer<Char> &w, const Date &d) {
+template <typename Range>
+basic_writer<Range> &operator<<(basic_writer<Range> &w, const Date &d) {
   w.write(d.year());
   w.write('-');
   w.write(d.month());
@@ -312,9 +312,9 @@ class ISO8601DateFormatter {
 public:
   ISO8601DateFormatter(const Date &d) : date_(&d) {}
 
-  template <typename Char>
-  friend basic_writer<Char> &operator<<(
-      basic_writer<Char> &w, const ISO8601DateFormatter &d) {
+  template <typename Range>
+  friend basic_writer<Range> &operator<<(
+      basic_writer<Range> &w, const ISO8601DateFormatter &d) {
     w.write(d.date_->year(), width=4, fill='0');
     w.write('-');
     w.write(d.date_->month(), width=2, fill='0');
