@@ -268,9 +268,6 @@ struct formatter;
 
 namespace internal {
 
-template <typename T>
-inline const T *as_const(T *p) { return p; }
-
 // A helper function to suppress bogus "conditional expression is constant"
 // warnings.
 template <typename T>
@@ -508,19 +505,11 @@ class value {
   value(basic_string_view<char_type> s) { set_string(s); }
   value(const std::basic_string<char_type> &s) { set_string(s); }
 
-  // Formatting of arbitrary pointers is disallowed. If you want to output a
-  // pointer cast it to "void *" or "const void *". In particular, this forbids
-  // formatting of "[const] volatile char *" which is printed as bool by
-  // iostreams.
   template <typename T>
-  value(const T *p) {
-    static_assert(std::is_same<T, void>::value,
-                  "formatting of non-void pointers is disallowed");
-    set<POINTER>(pointer, p);
-  }
+  value(T *p) { set_pointer(p); }
 
   template <typename T>
-  value(T *p) : value(as_const(p)) {}
+  value(const T *p) { set_pointer(p); }
 
   value(std::nullptr_t) { pointer = nullptr; }
 
@@ -571,6 +560,18 @@ class value {
     static_assert(std::is_same<char, char_type>::value,
                   "incompatible string types");
     set<CSTRING>(field, str);
+  }
+
+  // Formatting of arbitrary pointers is disallowed. If you want to output a
+  // pointer cast it to "void *" or "const void *". In particular, this forbids
+  // formatting of "[const] volatile char *" which is printed as bool by
+  // iostreams.
+  template <typename T>
+  void set_pointer(T *p) {
+    using type = typename std::remove_const<T>::type;
+    static_assert(std::is_same<type, void>::value,
+                  "formatting of non-void pointers is disallowed");
+    set<POINTER>(pointer, p);
   }
 
   // Formats an argument of a custom type, such as a user-defined class.
