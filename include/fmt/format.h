@@ -1236,21 +1236,22 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
   }
 }
 
-template <typename Char>
+template <typename Range>
 class arg_formatter_base {
  public:
-  typedef basic_format_specs<Char> format_specs;
+  using char_type = typename Range::value_type;
+  using format_specs = basic_format_specs<char_type>;
 
  private:
-  using writer_type = basic_writer<basic_buffer<Char>>;
+  using writer_type = basic_writer<Range>;
   writer_type writer_;
   format_specs &specs_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(arg_formatter_base);
 
-  void write_char(Char value) {
+  void write_char(char_type value) {
     writer_.write_padded(1, specs_, [value](auto &it) {
-      *it++ = internal::char_traits<Char>::cast(value);
+      *it++ = internal::char_traits<char_type>::cast(value);
     });
   }
 
@@ -1268,16 +1269,13 @@ class arg_formatter_base {
     writer_.write_str(string_view(value ? "true" : "false"), specs_);
   }
 
-  void write(const Char *value) {
-    writer_.write_str(basic_string_view<Char>(
-        value, value != 0 ? std::char_traits<Char>::length(value) : 0), specs_);
+  void write(const char_type *value) {
+    auto length = value != 0 ? std::char_traits<char_type>::length(value) : 0;
+    writer_.write_str(basic_string_view<char_type>(value, length), specs_);
   }
 
  public:
-  typedef Char char_type;
-
-  arg_formatter_base(basic_buffer<Char> &b, format_specs &s)
-  : writer_(b), specs_(s) {}
+  arg_formatter_base(Range &r, format_specs &s): writer_(r), specs_(s) {}
 
   void operator()(monostate) {
     FMT_ASSERT(false, "invalid argument type");
@@ -1297,12 +1295,13 @@ class arg_formatter_base {
     write(value);
   }
 
-  void operator()(Char value) {
+  void operator()(char_type value) {
     struct spec_handler : internal::error_handler {
       arg_formatter_base &formatter;
-      Char value;
+      char_type value;
 
-      spec_handler(arg_formatter_base& f, Char val): formatter(f), value(val) {}
+      spec_handler(arg_formatter_base& f, char_type val)
+        : formatter(f), value(val) {}
 
       void on_int() { formatter.writer_.write_int(value, formatter.specs_); }
       void on_char() { formatter.write_char(value); }
@@ -1310,12 +1309,12 @@ class arg_formatter_base {
     internal::handle_char_specs(specs_, spec_handler(*this, value));
   }
 
-  void operator()(const Char *value) {
+  void operator()(const char_type *value) {
     struct spec_handler : internal::error_handler {
       arg_formatter_base &formatter;
-      const Char *value;
+      const char_type *value;
 
-      spec_handler(arg_formatter_base &f, const Char *val)
+      spec_handler(arg_formatter_base &f, const char_type *val)
         : formatter(f), value(val) {}
 
       void on_string() { formatter.write(value); }
@@ -1325,7 +1324,7 @@ class arg_formatter_base {
           specs_.type_, spec_handler(*this, value));
   }
 
-  void operator()(basic_string_view<Char> value) {
+  void operator()(basic_string_view<char_type> value) {
     internal::check_string_type_spec(specs_.type_, internal::error_handler());
     writer_.write_str(value, specs_);
   }
@@ -1989,17 +1988,16 @@ void handle_dynamic_spec(
 
 /** The default argument formatter. */
 template <typename Range>
-class arg_formatter:
-    public internal::arg_formatter_base<typename Range::value_type> {
+class arg_formatter: public internal::arg_formatter_base<Range> {
  private:
   basic_context<Range> &ctx_;
 
   using char_type = typename Range::value_type;
-  typedef internal::arg_formatter_base<char_type> Base;
+  using base = internal::arg_formatter_base<Range>;
 
  public:
   using range = Range;
-  using format_specs = typename Base::format_specs;
+  using format_specs = typename base::format_specs;
 
   /**
     \rst
@@ -2011,9 +2009,9 @@ class arg_formatter:
    */
   arg_formatter(basic_buffer<char_type> &buffer, basic_context<Range> &ctx,
                 format_specs &spec)
-  : internal::arg_formatter_base<char_type>(buffer, spec), ctx_(ctx) {}
+  : base(buffer, spec), ctx_(ctx) {}
 
-  using internal::arg_formatter_base<char_type>::operator();
+  using base::operator();
 
   /** Formats an argument of a custom (user-defined) type. */
   void operator()(typename basic_arg<basic_context<Range>>::handle handle) {

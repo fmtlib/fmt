@@ -1482,16 +1482,17 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-class mock_arg_formatter : public fmt::internal::arg_formatter_base<char> {
+class mock_arg_formatter:
+    public fmt::internal::arg_formatter_base<fmt::buffer> {
  private:
   MOCK_METHOD1(call, void (int value));
 
  public:
-  using base = fmt::internal::arg_formatter_base<char>;
+  using base = fmt::internal::arg_formatter_base<fmt::buffer>;
   using range = fmt::buffer;
 
   mock_arg_formatter(fmt::buffer &b, fmt::context &, fmt::format_specs &s)
-    : fmt::internal::arg_formatter_base<char>(b, s) {
+    : base(b, s) {
     EXPECT_CALL(*this, call(42));
   }
 

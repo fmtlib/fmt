@@ -211,7 +211,7 @@ class printf_context;
  */
 template <typename Range>
 class printf_arg_formatter :
-    public internal::arg_formatter_base<typename Range::value_type> {
+    public internal::arg_formatter_base<Range> {
  private:
   printf_context<Range>& context_;
 
@@ -221,10 +221,10 @@ class printf_arg_formatter :
   }
 
   using char_type = typename Range::value_type;
-  using base = internal::arg_formatter_base<char_type>;
+  using base = internal::arg_formatter_base<Range>;
 
  public:
-  typedef typename base::format_specs format_specs;
+  using format_specs = typename base::format_specs;
 
   /**
     \rst
@@ -235,7 +235,7 @@ class printf_arg_formatter :
    */
   printf_arg_formatter(basic_buffer<char_type> &buffer, format_specs &spec,
                        printf_context<Range> &ctx)
-  : internal::arg_formatter_base<char_type>(buffer, spec), context_(ctx) {}
+  : base(buffer, spec), context_(ctx) {}
 
   using base::operator();
 
