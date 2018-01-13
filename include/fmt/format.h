@@ -2506,11 +2506,11 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   }
 
   auto write_inf_or_nan = [this, &spec, sign](const char *str) {
-    static constexpr std::size_t SIZE = 3;
+    enum {SIZE = 3}; // This is an enum to workaround a bug in MSVC.
     write_padded(SIZE + (sign ? 1 : 0), spec, [sign, str](auto &it) {
       if (sign)
         *it++ = sign;
-      it = std::uninitialized_copy_n(str, SIZE, it);
+      it = std::uninitialized_copy_n(str, static_cast<std::size_t>(SIZE), it);
     });
   };
 
