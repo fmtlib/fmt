@@ -1989,7 +1989,7 @@ void handle_dynamic_spec(
 
 /** The default argument formatter. */
 template <typename Range>
-class arg_formatter :
+class arg_formatter:
     public internal::arg_formatter_base<typename Range::value_type> {
  private:
   basic_context<Range> &ctx_;
@@ -1998,6 +1998,7 @@ class arg_formatter :
   typedef internal::arg_formatter_base<char_type> Base;
 
  public:
+  using range = Range;
   using format_specs = typename Base::format_specs;
 
   /**
@@ -2918,17 +2919,19 @@ typename basic_context<Range>::format_arg
 
 /** Formats arguments and writes the output to the buffer. */
 template <typename ArgFormatter, typename Char, typename Context>
-void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
+void vformat_to(typename ArgFormatter::range &out,
+                basic_string_view<Char> format_str,
                 basic_format_args<Context> args) {
   using iterator = internal::null_terminating_iterator<Char>;
+  using range = typename ArgFormatter::range;
 
   struct handler : internal::error_handler {
-    handler(basic_buffer<Char> &b, basic_string_view<Char> str,
+    handler(range &o, basic_string_view<Char> str,
             basic_format_args<Context> format_args)
-      : buffer(b), context(b, str, format_args) {}
+      : out(o), context(o, str, format_args) {}
 
     void on_text(iterator begin, iterator end) {
-      buffer.append(pointer_from(begin), pointer_from(end));
+      out.append(pointer_from(begin), pointer_from(end));
     }
 
     void on_arg_id() { arg = context.next_arg(); }
@@ -2946,7 +2949,7 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
       if (visit(custom_formatter<Char, Context>(context), arg))
         return;
       basic_format_specs<Char> specs;
-      visit(ArgFormatter(buffer, context, specs), arg);
+      visit(ArgFormatter(out, context, specs), arg);
     }
 
     iterator on_format_specs(iterator it) {
@@ -2962,16 +2965,16 @@ void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
       if (*it != '}')
         on_error("missing '}' in format string");
       context.advance_to(pointer_from(it));
-      visit(ArgFormatter(buffer, context, specs), arg);
+      visit(ArgFormatter(out, context, specs), arg);
       return it;
     }
 
-    basic_buffer<Char> &buffer;
+    range &out;
     Context context;
     basic_arg<Context> arg;
   };
   parse_format_string(iterator(format_str.begin(), format_str.end()),
-                      handler(buffer, format_str, args));
+                      handler(out, format_str, args));
 }
 
 // Casts ``p`` to ``const void*`` for pointer formatting.
@@ -3003,10 +3006,6 @@ class format_spec_factory {
 constexpr fill_spec_factory fill;
 constexpr format_spec_factory<width_spec> width;
 constexpr format_spec_factory<type_spec> type;
-
-template <typename ArgFormatter, typename Char, typename Context>
-void vformat_to(basic_buffer<Char> &buffer, basic_string_view<Char> format_str,
-                basic_format_args<Context> args);
 
 inline void vformat_to(buffer &buf, string_view format_str, format_args args) {
   vformat_to<arg_formatter<buffer>>(buf, format_str, args);

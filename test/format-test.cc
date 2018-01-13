@@ -1482,19 +1482,20 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-class MockArgFormatter : public fmt::internal::arg_formatter_base<char> {
+class mock_arg_formatter : public fmt::internal::arg_formatter_base<char> {
  private:
   MOCK_METHOD1(call, void (int value));
 
  public:
-  typedef fmt::internal::arg_formatter_base<char> Base;
+  using base = fmt::internal::arg_formatter_base<char>;
+  using range = fmt::buffer;
 
-  MockArgFormatter(fmt::buffer &b, fmt::context &, fmt::format_specs &s)
+  mock_arg_formatter(fmt::buffer &b, fmt::context &, fmt::format_specs &s)
     : fmt::internal::arg_formatter_base<char>(b, s) {
     EXPECT_CALL(*this, call(42));
   }
 
-  using Base::operator();
+  using base::operator();
 
   void operator()(int value) { call(value); }
 
@@ -1503,7 +1504,7 @@ class MockArgFormatter : public fmt::internal::arg_formatter_base<char> {
 
 void custom_vformat(fmt::string_view format_str, fmt::format_args args) {
   fmt::memory_buffer buffer;
-  fmt::vformat_to<MockArgFormatter>(buffer, format_str, args);
+  fmt::vformat_to<mock_arg_formatter>(buffer, format_str, args);
 }
 
 template <typename... Args>
