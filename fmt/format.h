@@ -63,7 +63,7 @@
 # define FMT_HAS_EXPERIMENTAL_STRING_VIEW 0
 #else
 # define FMT_HAS_STRING_VIEW 0
-# if (FMT_HAS_INCLUDE(<experimental/string_view>) && __cplusplus > 201402L)
+# if (FMT_HAS_INCLUDE(<experimental/string_view>) && __cplusplus >= 201402L)
 #  include <experimental/string_view>
 #  define FMT_HAS_EXPERIMENTAL_STRING_VIEW 1
 # else
