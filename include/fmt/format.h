@@ -31,6 +31,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -296,17 +297,6 @@ inline stdext::checked_array_iterator<T*> make_ptr(T *ptr, std::size_t size) {
 template <typename T>
 inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
 #endif
-}  // namespace internal
-
-// A wrapper around std::locale used to reduce compile times since <locale>
-// is very heavy.
-class locale;
-
-class locale_provider {
- public:
-  virtual ~locale_provider() {}
-  virtual fmt::locale locale();
-};
 
 template <typename T>
 template <typename U>
@@ -318,10 +308,32 @@ void basic_buffer<T>::append(const U *begin, const U *end) {
   size_ = new_size;
 }
 
-template <typename Char>
-inline std::basic_string<Char> to_string(const basic_buffer<Char>& buffer) {
-  return std::basic_string<Char>(buffer.data(), buffer.size());
-}
+template <typename Container>
+class container_buffer
+    : public internal::basic_buffer<typename Container::value_type> {
+ private:
+  Container &container_;
+
+ protected:
+  virtual void grow(std::size_t capacity) {
+    container_.resize(capacity);
+    this->set(&container_[0], capacity);
+  }
+
+ public:
+  explicit container_buffer(Container &c) : container_(c) {}
+};
+}  // namespace internal
+
+// A wrapper around std::locale used to reduce compile times since <locale>
+// is very heavy.
+class locale;
+
+class locale_provider {
+ public:
+  virtual ~locale_provider() {}
+  virtual fmt::locale locale();
+};
 
 /**
   \rst
@@ -354,7 +366,7 @@ inline std::basic_string<Char> to_string(const basic_buffer<Char>& buffer) {
  */
 template <typename T, std::size_t SIZE = internal::INLINE_BUFFER_SIZE,
           typename Allocator = std::allocator<T> >
-class basic_memory_buffer : private Allocator, public basic_buffer<T> {
+class basic_memory_buffer: private Allocator, public internal::basic_buffer<T> {
  private:
   T store_[SIZE];
 
@@ -453,7 +465,7 @@ typedef basic_memory_buffer<wchar_t> wmemory_buffer;
   \endrst
  */
 template <typename Char>
-class basic_fixed_buffer : public basic_buffer<Char> {
+class basic_fixed_buffer : public internal::basic_buffer<Char> {
  public:
   /**
    \rst
@@ -2790,7 +2802,7 @@ struct formatter<
   }
 
   template <typename FormatContext>
-  typename FormatContext::iterator format(const T &val, FormatContext &ctx) {
+  auto format(const T &val, FormatContext &ctx) -> decltype(ctx.begin()) {
     internal::handle_dynamic_spec<internal::width_checker>(
       specs_.width_, specs_.width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
@@ -2893,9 +2905,9 @@ typename basic_context<Range>::format_arg
 
 /** Formats arguments and writes the output to the buffer. */
 template <typename ArgFormatter, typename Char, typename Context>
-void vformat_to(typename ArgFormatter::range out,
-                basic_string_view<Char> format_str,
-                basic_format_args<Context> args) {
+void do_vformat_to(typename ArgFormatter::range out,
+                   basic_string_view<Char> format_str,
+                   basic_format_args<Context> args) {
   using iterator = internal::null_terminating_iterator<Char>;
   using range = typename ArgFormatter::range;
 
@@ -2983,32 +2995,64 @@ constexpr fill_spec_factory fill;
 constexpr format_spec_factory<width_spec> width;
 constexpr format_spec_factory<type_spec> type;
 
-template <typename Range>
-inline void vformat_range(Range out, string_view format_str, format_args args) {
-  vformat_to<arg_formatter<Range>>(out, format_str, args);
+/**
+  \rst
+  Converts *value* to ``std::string`` using the default format for type *T*.
+
+  **Example**::
+
+    #include "fmt/string.h"
+
+    std::string answer = fmt::to_string(42);
+  \endrst
+ */
+template <typename T>
+std::string to_string(const T &value) {
+  std::string str;
+  internal::container_buffer<std::string> buf(str);
+  writer(buf).write(value);
+  return str;
 }
 
-template <typename Range, typename... Args>
-inline void format_range(Range out, string_view format_str,
-                         const Args & ... args) {
-  vformat_range(out, format_str, make_args(args...));
+template <typename Char>
+std::basic_string<Char> to_string(const basic_memory_buffer<Char> &buffer) {
+  return std::basic_string<Char>(buffer.data(), buffer.size());
 }
 
 inline void vformat_to(buffer &buf, string_view format_str, format_args args) {
   using range = internal::dynamic_range<buffer>;
-  vformat_to<arg_formatter<range>>(buf, format_str, args);
+  do_vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
 inline void vformat_to(wbuffer &buf, wstring_view format_str,
                        wformat_args args) {
   using range = internal::dynamic_range<wbuffer>;
-  vformat_to<arg_formatter<range>>(buf, format_str, args);
+  do_vformat_to<arg_formatter<range>>(buf, format_str, args);
+}
+
+template <typename Container>
+void vformat_to(std::back_insert_iterator<Container> out,
+                string_view format_str, format_args args) {
+  using iterator = std::back_insert_iterator<Container>;
+  struct container_extractor : iterator {
+    container_extractor(iterator it) : iterator(it) {}
+    using iterator::container;
+  } extractor(out);
+  internal::container_buffer<Container> buf(*extractor.container);
+  vformat_to(buf, format_str, args);
+}
+
+template <typename Container, typename... Args>
+inline void format_to(std::back_insert_iterator<Container> out,
+                      string_view format_str,
+                      const Args & ... args) {
+  vformat_to(out, format_str, make_args(args...));
 }
 
 inline std::string vformat(string_view format_str, format_args args) {
   memory_buffer buffer;
   vformat_to(buffer, format_str, args);
-  return to_string(buffer);
+  return fmt::to_string(buffer);
 }
 
 inline std::wstring vformat(wstring_view format_str, wformat_args args) {

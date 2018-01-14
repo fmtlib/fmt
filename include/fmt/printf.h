@@ -232,8 +232,8 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
     specifier information for standard argument types.
     \endrst
    */
-  printf_arg_formatter(basic_buffer<char_type> &buffer, format_specs &spec,
-                       basic_printf_context<Range> &ctx)
+  printf_arg_formatter(internal::basic_buffer<char_type> &buffer,
+                       format_specs &spec, basic_printf_context<Range> &ctx)
   : base(buffer, spec), context_(ctx) {}
 
   using base::operator();
@@ -522,7 +522,7 @@ void basic_printf_context<Range, AF>::format() {
 }
 
 template <typename Char, typename Context>
-void printf(basic_buffer<Char> &buf, basic_string_view<Char> format,
+void printf(internal::basic_buffer<Char> &buf, basic_string_view<Char> format,
             basic_format_args<Context> args) {
   Context(buf, format, args).format();
 }

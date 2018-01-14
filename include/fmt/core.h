@@ -176,6 +176,18 @@ class basic_string_view {
 using string_view = basic_string_view<char>;
 using wstring_view = basic_string_view<wchar_t>;
 
+template <typename Context>
+class basic_arg;
+
+template <typename Context>
+class basic_format_args;
+
+// A formatter for objects of type T.
+template <typename T, typename Char = char, typename Enable = void>
+struct formatter;
+
+namespace internal {
+
 /** A contiguous memory buffer with an optional growing ability. */
 template <typename T>
 class basic_buffer {
@@ -252,21 +264,6 @@ class basic_buffer {
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
 };
-
-using buffer = basic_buffer<char>;
-using wbuffer = basic_buffer<wchar_t>;
-
-template <typename Context>
-class basic_arg;
-
-template <typename Context>
-class basic_format_args;
-
-// A formatter for objects of type T.
-template <typename T, typename Char = char, typename Enable = void>
-struct formatter;
-
-namespace internal {
 
 // A helper function to suppress bogus "conditional expression is constant"
 // warnings.
@@ -583,7 +580,7 @@ class value {
     typename Context::template formatter_type<T> f;
     auto &&parse_ctx = ctx.parse_context();
     parse_ctx.advance_to(f.parse(parse_ctx));
-    ctx.advance_to(f.format(*static_cast<const T*>(arg), ctx));
+    f.format(*static_cast<const T*>(arg), ctx);
   }
 };
 
@@ -797,7 +794,7 @@ class context_base {
   Range range() { return range_; }
 
   // Returns an iterator to the beginning of the output range.
-  iterator begin() { return out_; }
+  auto begin() { return std::back_inserter(range_.container()); }
 
   // Advances the begin iterator to ``it``.
   void advance_to(iterator it) { out_ = it; }
@@ -877,6 +874,9 @@ class basic_context :
   // specified name.
   format_arg get_arg(basic_string_view<char_type> name);
 };
+
+using buffer = internal::basic_buffer<char>;
+using wbuffer = internal::basic_buffer<wchar_t>;
 
 using context = basic_context<internal::dynamic_range<buffer>>;
 using wcontext = basic_context<internal::dynamic_range<wbuffer>>;

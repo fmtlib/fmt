@@ -88,7 +88,7 @@ void std_format(long double value, std::wstring &result) {
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T &value, const char *type) {
   fmt::basic_memory_buffer<Char> buffer;
-  using range = fmt::internal::dynamic_range<fmt::basic_buffer<Char>>;
+  using range = fmt::internal::dynamic_range<fmt::internal::basic_buffer<Char>>;
   fmt::basic_writer<range> writer(buffer);
   writer.write(value);
   std::basic_string<Char> actual = to_string(buffer);
@@ -1224,7 +1224,7 @@ struct formatter<Date> {
   }
 
   auto format(const Date &d, context &ctx) {
-    format_range(ctx.range(), "{}-{}-{}", d.year(), d.month(), d.day());
+    format_to(ctx.begin(), "{}-{}-{}", d.year(), d.month(), d.day());
     return ctx.begin();
   }
 };
@@ -1509,7 +1509,7 @@ class mock_arg_formatter :
 
 void custom_vformat(fmt::string_view format_str, fmt::format_args args) {
   fmt::memory_buffer buffer;
-  fmt::vformat_to<mock_arg_formatter>(buffer, format_str, args);
+  fmt::do_vformat_to<mock_arg_formatter>(buffer, format_str, args);
 }
 
 template <typename... Args>
@@ -1906,4 +1906,19 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{}{1}",
                "cannot switch from automatic to manual argument indexing",
                int, int);
+}
+
+TEST(FormatTest, OutputIterator) {
+
+  std::string s;
+  fmt::format_to(std::back_inserter(s), "{}", 42);
+  std::vector<char> v;
+  fmt::format_to(std::back_inserter(v), "{}", 42);
+
+  EXPECT_EQ("42", s);
+  EXPECT_EQ("42", std::string(v.begin(), v.end()));
+}
+
+TEST(StringTest, ToString) {
+  EXPECT_EQ("42", fmt::to_string(42));
 }

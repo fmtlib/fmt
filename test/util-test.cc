@@ -54,7 +54,7 @@
 #undef max
 
 using fmt::basic_arg;
-using fmt::basic_buffer;
+using fmt::internal::basic_buffer;
 using fmt::basic_memory_buffer;
 using fmt::string_view;
 using fmt::internal::value;
@@ -192,7 +192,7 @@ TEST(BufferTest, Access) {
   EXPECT_EQ(11, buffer[0]);
   buffer[3] = 42;
   EXPECT_EQ(42, *(&buffer[0] + 3));
-  const fmt::basic_buffer<char> &const_buffer = buffer;
+  const basic_buffer<char> &const_buffer = buffer;
   EXPECT_EQ(42, const_buffer[3]);
 }
 
