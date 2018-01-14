@@ -88,7 +88,8 @@ void std_format(long double value, std::wstring &result) {
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T &value, const char *type) {
   fmt::basic_memory_buffer<Char> buffer;
-  fmt::basic_writer<fmt::basic_buffer<Char>> writer(buffer);
+  using range = fmt::internal::dynamic_range<fmt::basic_buffer<Char>>;
+  fmt::basic_writer<range> writer(buffer);
   writer.write(value);
   std::basic_string<Char> actual = to_string(buffer);
   std::basic_string<Char> expected;
@@ -141,16 +142,16 @@ TEST(StringViewTest, ConvertToString) {
 }
 
 TEST(WriterTest, NotCopyConstructible) {
-  EXPECT_FALSE(std::is_copy_constructible<basic_writer<fmt::buffer>>::value);
+  EXPECT_FALSE(std::is_copy_constructible<fmt::writer>::value);
 }
 
 TEST(WriterTest, NotCopyAssignable) {
-  EXPECT_FALSE(std::is_copy_assignable<basic_writer<fmt::buffer>>::value);
+  EXPECT_FALSE(std::is_copy_assignable<fmt::writer>::value);
 }
 
 TEST(WriterTest, Data) {
   memory_buffer buf;
-  fmt::basic_writer<fmt::buffer> w(buf);
+  fmt::writer w(buf);
   w.write(42);
   EXPECT_EQ("42", to_string(buf));
 }
@@ -203,14 +204,14 @@ TEST(WriterTest, WriteLongDouble) {
 
 TEST(WriterTest, WriteDoubleAtBufferBoundary) {
   memory_buffer buf;
-  fmt::basic_writer<fmt::buffer> writer(buf);
+  fmt::writer writer(buf);
   for (int i = 0; i < 100; ++i)
     writer.write(1.23456789);
 }
 
 TEST(WriterTest, WriteDoubleWithFilledBuffer) {
   memory_buffer buf;
-  fmt::basic_writer<fmt::buffer> writer(buf);
+  fmt::writer writer(buf);
   // Fill the buffer.
   for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
     writer.write(' ');
@@ -244,7 +245,7 @@ TEST(WriterTest, WriteWideString) {
 template <typename... T>
 std::string write_str(T... args) {
   memory_buffer buf;
-  fmt::basic_writer<fmt::buffer> writer(buf);
+  fmt::writer writer(buf);
   writer.write(args...);
   return to_string(buf);
 }
@@ -252,7 +253,7 @@ std::string write_str(T... args) {
 template <typename... T>
 std::wstring write_wstr(T... args) {
   wmemory_buffer buf;
-  fmt::basic_writer<fmt::wbuffer> writer(buf);
+  fmt::wwriter writer(buf);
   writer.write(args...);
   return to_string(buf);
 }
@@ -345,13 +346,13 @@ TEST(WriterTest, pad) {
 
   {
     memory_buffer buf;
-    fmt::basic_writer<fmt::buffer> w(buf);
+    fmt::writer w(buf);
     w << Date(2012, 12, 9);
     EXPECT_EQ("2012-12-9", to_string(buf));
   }
   {
     memory_buffer buf;
-    fmt::basic_writer<fmt::buffer> w(buf);
+    fmt::writer w(buf);
     w << iso8601(Date(2012, 1, 9));
     EXPECT_EQ("2012-01-09", to_string(buf));
   }
@@ -1223,7 +1224,7 @@ struct formatter<Date> {
   }
 
   void format(const Date &d, context &ctx) {
-    format_to(ctx.range(), "{}-{}-{}", d.year(), d.month(), d.day());
+    format_range(ctx.range(), "{}-{}-{}", d.year(), d.month(), d.day());
   }
 };
 }
@@ -1482,17 +1483,19 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-class mock_arg_formatter:
-    public fmt::internal::arg_formatter_base<fmt::buffer> {
+using buffer_range = fmt::internal::dynamic_range<fmt::buffer>;
+
+class mock_arg_formatter :
+    public fmt::internal::arg_formatter_base<buffer_range> {
  private:
   MOCK_METHOD1(call, void (int value));
 
  public:
-  using base = fmt::internal::arg_formatter_base<fmt::buffer>;
-  using range = fmt::buffer;
+  using base = fmt::internal::arg_formatter_base<buffer_range>;
+  using range = buffer_range;
 
-  mock_arg_formatter(fmt::buffer &b, fmt::context &, fmt::format_specs &s)
-    : base(b, s) {
+  mock_arg_formatter(buffer_range r, fmt::context &, fmt::format_specs &s)
+    : base(r, s) {
     EXPECT_CALL(*this, call(42));
   }
 
@@ -1533,9 +1536,9 @@ template <>
 struct formatter<variant> : dynamic_formatter<> {
   void format(variant value, context& ctx) {
     if (value.type == variant::INT)
-      dynamic_formatter::format(ctx.range(), 42, ctx);
+      dynamic_formatter::format(42, ctx);
     else
-      dynamic_formatter::format(ctx.range(), "foo", ctx);
+      dynamic_formatter::format("foo", ctx);
   }
 };
 }

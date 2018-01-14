@@ -58,9 +58,11 @@ TEST(OStreamTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-struct TestArgFormatter : fmt::arg_formatter<fmt::buffer> {
+struct TestArgFormatter
+    : fmt::arg_formatter<fmt::internal::dynamic_range<fmt::buffer>> {
+  using base = fmt::arg_formatter<fmt::internal::dynamic_range<fmt::buffer>>;
   TestArgFormatter(fmt::buffer &buf, fmt::context &ctx, fmt::format_specs &s)
-    : fmt::arg_formatter<fmt::buffer>(buf, ctx, s) {}
+    : base(buf, ctx, s) {}
 };
 
 TEST(OStreamTest, CustomArg) {

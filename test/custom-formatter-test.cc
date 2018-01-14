@@ -14,18 +14,22 @@ using fmt::printf_arg_formatter;
 
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
-class CustomArgFormatter : public fmt::arg_formatter<fmt::buffer> {
+class CustomArgFormatter :
+    public fmt::arg_formatter<fmt::internal::dynamic_range<fmt::buffer>> {
  public:
-  CustomArgFormatter(fmt::buffer &buf, fmt::basic_context<fmt::buffer> &ctx,
-                     fmt::format_specs &s)
-  : fmt::arg_formatter<fmt::buffer>(buf, ctx, s) {}
+  using range = fmt::internal::dynamic_range<fmt::buffer>;
+  using base = fmt::arg_formatter<range>;
 
-  using fmt::arg_formatter<fmt::buffer>::operator();
+  CustomArgFormatter(range r, fmt::basic_context<range> &ctx,
+                     fmt::format_specs &s)
+  : base(r, ctx, s) {}
+
+  using base::operator();
 
   void operator()(double value) {
     if (round(value * pow(10, spec().precision())) == 0)
       value = 0;
-    fmt::arg_formatter<fmt::buffer>::operator()(value);
+    base::operator()(value);
   }
 };
 

@@ -610,33 +610,6 @@ constexpr const Char *pointer_from(null_terminating_iterator<Char> it) {
   return it.ptr_;
 }
 
-// A range that can grow dynamically.
-template <typename Container>
-class dynamic_range {
- private:
-  Container &container_;
-
- public:
-  using iterator = decltype(container_.begin());
-  using value_type = typename Container::value_type;
-
-  struct sentinel {
-    friend bool operator!=(sentinel, iterator) { return false; }
-    friend bool operator!=(iterator, sentinel) { return false; }
-  };
-
-  explicit dynamic_range(Container &c) : container_(c) {}
-
-  iterator begin() const { return container_.begin(); }
-  sentinel end() const { return sentinel(); }
-
-  friend iterator grow(dynamic_range r, size_t n) {
-    auto size = r.container_.size();
-    r.container_.resize(size + n);
-    return r.container_.begin() + size;
-  }
-};
-
 // Returns true if value is negative, false otherwise.
 // Same as (value < 0) but doesn't produce warnings if T is an unsigned type.
 template <typename T>
@@ -1131,8 +1104,8 @@ constexpr void handle_cstring_type_spec(char spec, Handler &&handler) {
     handler.on_error("invalid type specifier");
 }
 
-template <typename ErrorHandler>
-constexpr void check_string_type_spec(char spec, ErrorHandler &&eh) {
+template <typename Char, typename ErrorHandler>
+constexpr void check_string_type_spec(Char spec, ErrorHandler &&eh) {
   if (spec != 0 && spec != 's')
     eh.on_error("invalid type specifier");
 }
@@ -1275,7 +1248,7 @@ class arg_formatter_base {
   }
 
  public:
-  arg_formatter_base(Range &r, format_specs &s): writer_(r), specs_(s) {}
+  arg_formatter_base(Range r, format_specs &s): writer_(r), specs_(s) {}
 
   void operator()(monostate) {
     FMT_ASSERT(false, "invalid argument type");
@@ -2002,14 +1975,12 @@ class arg_formatter: public internal::arg_formatter_base<Range> {
   /**
     \rst
     Constructs an argument formatter object.
-    *buffer* is a reference to the buffer to be used for output,
-    *ctx* is a reference to the formatting context, *spec* contains
-    format specifier information for standard argument types.
+    *r* is an output range, *ctx* is a reference to the formatting context,
+    *spec* contains format specifier information for standard argument types.
     \endrst
    */
-  arg_formatter(basic_buffer<char_type> &buffer, basic_context<Range> &ctx,
-                format_specs &spec)
-  : base(buffer, spec), ctx_(ctx) {}
+  arg_formatter(Range r, basic_context<Range> &ctx, format_specs &spec)
+  : base(r, spec), ctx_(ctx) {}
 
   using base::operator();
 
@@ -2108,7 +2079,7 @@ class basic_writer {
   using iterator = decltype(std::declval<Range>().begin());
 
   // Output range.
-  internal::dynamic_range<Range> range_;
+  Range range_;
   iterator out_;
 
   std::unique_ptr<locale_provider> locale_;
@@ -2334,7 +2305,7 @@ class basic_writer {
 
  public:
   /** Constructs a ``basic_writer`` object. */
-  explicit basic_writer(Range &r): range_(r), out_(r.begin()) {}
+  explicit basic_writer(Range out): range_(out), out_(out.begin()) {}
 
   void write(int value) {
     write_decimal(value);
@@ -2455,10 +2426,10 @@ template <typename T>
 void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   // Check type.
   struct spec_handler {
-    char type;
+    char_type type;
     bool upper = false;
 
-    explicit spec_handler(char t) : type(t) {}
+    explicit spec_handler(char_type t) : type(t) {}
 
     void on_general() {
       if (type == 'G')
@@ -2599,6 +2570,9 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     it = std::uninitialized_copy_n(buffer.begin(), n, it);
   });
 }
+
+using writer = basic_writer<internal::dynamic_range<buffer>>;
+using wwriter = basic_writer<internal::dynamic_range<wbuffer>>;
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
@@ -2861,9 +2835,8 @@ struct dynamic_formatter {
     return pointer_from(it);
   }
 
-  template <typename T>
-  void format(basic_buffer<Char> &buf, const T &val,
-              basic_context<basic_buffer<Char>> &ctx) {
+  template <typename Range, typename T>
+  void format(const T &val, basic_context<Range> &ctx) {
     handle_specs(ctx);
     struct null_handler : internal::error_handler {
       void on_align(alignment) {}
@@ -2889,8 +2862,8 @@ struct dynamic_formatter {
     }
     if (specs_.precision_ != -1)
       checker.end_precision();
-    visit(arg_formatter<basic_buffer<Char>>(buf, ctx, specs_),
-          internal::make_arg<basic_context<basic_buffer<Char>>>(val));
+    visit(arg_formatter<Range>(ctx.range(), ctx, specs_),
+          internal::make_arg<basic_context<Range>>(val));
   }
 
  private:
@@ -2917,19 +2890,20 @@ typename basic_context<Range>::format_arg
 
 /** Formats arguments and writes the output to the buffer. */
 template <typename ArgFormatter, typename Char, typename Context>
-void vformat_to(typename ArgFormatter::range &out,
+void vformat_to(typename ArgFormatter::range out,
                 basic_string_view<Char> format_str,
                 basic_format_args<Context> args) {
   using iterator = internal::null_terminating_iterator<Char>;
   using range = typename ArgFormatter::range;
 
   struct handler : internal::error_handler {
-    handler(range &o, basic_string_view<Char> str,
+    handler(range r, basic_string_view<Char> str,
             basic_format_args<Context> format_args)
-      : out(o), context(o, str, format_args) {}
+      : out(r), context(r, str, format_args) {}
 
     void on_text(iterator begin, iterator end) {
-      out.append(pointer_from(begin), pointer_from(end));
+      size_t size = end - begin;
+      std::uninitialized_copy_n(begin, size, grow(out, size));
     }
 
     void on_arg_id() { arg = context.next_arg(); }
@@ -2967,7 +2941,7 @@ void vformat_to(typename ArgFormatter::range &out,
       return it;
     }
 
-    range &out;
+    range out;
     Context context;
     basic_arg<Context> arg;
   };
@@ -3005,13 +2979,26 @@ constexpr fill_spec_factory fill;
 constexpr format_spec_factory<width_spec> width;
 constexpr format_spec_factory<type_spec> type;
 
+template <typename Range>
+inline void vformat_range(Range out, string_view format_str, format_args args) {
+  vformat_to<arg_formatter<Range>>(out, format_str, args);
+}
+
+template <typename Range, typename... Args>
+inline void format_range(Range out, string_view format_str,
+                         const Args & ... args) {
+  vformat_range(out, format_str, make_args(args...));
+}
+
 inline void vformat_to(buffer &buf, string_view format_str, format_args args) {
-  vformat_to<arg_formatter<buffer>>(buf, format_str, args);
+  using range = internal::dynamic_range<buffer>;
+  vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
 inline void vformat_to(wbuffer &buf, wstring_view format_str,
                        wformat_args args) {
-  vformat_to<arg_formatter<wbuffer>>(buf, format_str, args);
+  using range = internal::dynamic_range<wbuffer>;
+  vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
 inline std::string vformat(string_view format_str, format_args args) {

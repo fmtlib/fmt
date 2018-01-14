@@ -178,7 +178,7 @@ void format_error_code(buffer &out, int error_code,
     ++error_code_size;
   }
   error_code_size += internal::count_digits(abs_value);
-  basic_writer<buffer> w(out);
+  writer w(out);
   if (message.size() <= internal::INLINE_BUFFER_SIZE - error_code_size) {
     w.write(message);
     w.write(SEP);
@@ -339,7 +339,7 @@ FMT_FUNC void internal::format_windows_error(
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          basic_writer<buffer> w(out);
+          writer w(out);
           w.write(message);
           w.write(": ");
           w.write(utf8_message);
@@ -366,7 +366,7 @@ FMT_FUNC void format_system_error(
       char *system_message = &buf[0];
       int result = safe_strerror(error_code, system_message, buf.size());
       if (result == 0) {
-        basic_writer<buffer> w(out);
+        writer w(out);
         w.write(message);
         w.write(": ");
         w.write(system_message);

@@ -488,9 +488,9 @@ class value {
   value(char val) { set<CHAR>(int_value, val); }
 
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
-  value(wchar_t value) {
+  value(wchar_t val) {
     require_wchar<char_type>();
-    set<CHAR>(int_value, value);
+    set<CHAR>(int_value, val);
   }
 #endif
 
@@ -514,27 +514,27 @@ class value {
   value(std::nullptr_t) { pointer = nullptr; }
 
   template <typename T>
-  value(const T &value,
+  value(const T &val,
         typename std::enable_if<convert_to_int<T>::value, int>::type = 0) {
     static_assert(get_type<T>() == INT, "invalid type");
-    int_value = value;
+    int_value = val;
   }
 
   template <typename T>
-  value(const T &value,
+  value(const T &val,
         typename std::enable_if<!convert_to_int<T>::value, int>::type = 0) {
     static_assert(get_type<T>() == CUSTOM, "invalid type");
-    custom.value = &value;
+    custom.value = &val;
     custom.format = &format_custom_arg<T>;
   }
 
   template <typename T>
-  value(const named_arg<T, char_type> &na) {
+  value(const named_arg<T, char_type> &val) {
     static_assert(get_type<const named_arg<T, char_type> &>() == NAMED_ARG,
                   "invalid type");
-    basic_arg<Context> arg = make_arg<Context>(na.value);
-    std::memcpy(na.data, &arg, sizeof(arg));
-    pointer = &na;
+    basic_arg<Context> arg = make_arg<Context>(val.value);
+    std::memcpy(val.data, &arg, sizeof(arg));
+    pointer = &val;
   }
 
   const named_arg_base<char_type> &as_named_arg() {
@@ -543,16 +543,16 @@ class value {
 
  private:
   template <type TYPE, typename T, typename U>
-  constexpr void set(T &field, const U &value) {
+  constexpr void set(T &field, const U &val) {
     static_assert(get_type<U>() == TYPE, "invalid type");
-    field = value;
+    field = val;
   }
 
   template <typename T>
-  void set_string(const T &value) {
+  void set_string(const T &val) {
     static_assert(get_type<T>() == STRING, "invalid type");
-    string.value = value.data();
-    string.size = value.size();
+    string.value = val.data();
+    string.size = val.size();
   }
 
   template <typename T, typename U>
@@ -752,14 +752,14 @@ class arg_map {
 template <typename Range, typename Context>
 class context_base : public basic_parse_context<typename Range::value_type> {
  private:
-  Range &range_;
+  Range range_;
   basic_format_args<Context> args_;
 
  protected:
   using char_type = typename Range::value_type;
   using format_arg = basic_arg<Context>;
 
-  context_base(Range &range, basic_string_view<char_type> format_str,
+  context_base(Range range, basic_string_view<char_type> format_str,
                basic_format_args<Context> args)
   : basic_parse_context<char_type>(format_str), range_(range), args_(args) {}
 
@@ -782,10 +782,40 @@ class context_base : public basic_parse_context<typename Range::value_type> {
 
  public:
   basic_parse_context<char_type> &parse_context() { return *this; }
-  Range &range() { return range_; }
+  Range range() { return range_; }
+};
+
+// A range that can grow dynamically.
+template <typename Container>
+class dynamic_range {
+ private:
+  Container &container_;
+
+ public:
+  using iterator = decltype(container_.begin());
+  using value_type = typename Container::value_type;
+
+  struct sentinel {
+    friend bool operator!=(sentinel, iterator) { return false; }
+    friend bool operator!=(iterator, sentinel) { return false; }
+  };
+
+  dynamic_range(Container &c) : container_(c) {}
+
+  iterator begin() const { return container_.begin(); }
+  sentinel end() const { return sentinel(); }
+
+  friend iterator grow(dynamic_range r, size_t n) {
+    auto size = r.container_.size();
+    r.container_.resize(size + n);
+    return r.container_.begin() + size;
+  }
+
+  Container &container() const { return container_; }
 };
 }  // namespace internal
 
+// Formatting context.
 template <typename Range>
 class basic_context :
   public internal::context_base<Range, basic_context<Range>> {
@@ -802,7 +832,6 @@ class basic_context :
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_context);
 
   using base = internal::context_base<Range, basic_context>;
-
   using format_arg = typename base::format_arg;
   using base::get_arg;
 
@@ -813,7 +842,7 @@ class basic_context :
    stored in the object so make sure they have appropriate lifetimes.
    \endrst
    */
-  basic_context(Range &range, basic_string_view<char_type> format_str,
+  basic_context(Range range, basic_string_view<char_type> format_str,
                 basic_format_args<basic_context> args)
     : base(range, format_str, args) {}
 
@@ -825,8 +854,8 @@ class basic_context :
   format_arg get_arg(basic_string_view<char_type> name);
 };
 
-using context = basic_context<buffer>;
-using wcontext = basic_context<wbuffer>;
+using context = basic_context<internal::dynamic_range<buffer>>;
+using wcontext = basic_context<internal::dynamic_range<wbuffer>>;
 
 template <typename Context, typename ...Args>
 class arg_store {

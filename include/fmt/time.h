@@ -31,7 +31,7 @@ struct formatter<std::tm> {
   }
 
   void format(const std::tm &tm, context &ctx) {
-    buffer &buf = ctx.range();
+    buffer &buf = ctx.range().container();
     std::size_t start = buf.size();
     for (;;) {
       std::size_t size = buf.capacity() - start;

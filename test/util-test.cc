@@ -81,9 +81,11 @@ struct formatter<Test, Char> {
     return ctx.begin();
   }
 
-  void format(Test, basic_context<basic_buffer<Char>> &ctx) {
+  using range = fmt::internal::dynamic_range<basic_buffer<Char>>;
+
+  void format(Test, basic_context<range> &ctx) {
     const Char *test = "test";
-    ctx.range().append(test, test + std::strlen(test));
+    ctx.range().container().append(test, test + std::strlen(test));
   }
 };
 }
@@ -517,8 +519,8 @@ VISIT_TYPE(float, double);
 #define CHECK_ARG_(Char, expected, value) { \
   testing::StrictMock<MockVisitor<decltype(expected)>> visitor; \
   EXPECT_CALL(visitor, visit(expected)); \
-  fmt::visit(visitor, \
-            make_arg<fmt::basic_context<basic_buffer<Char>>>(value)); \
+  using range = fmt::internal::dynamic_range<basic_buffer<Char>>; \
+  fmt::visit(visitor, make_arg<fmt::basic_context<range>>(value)); \
 }
 
 #define CHECK_ARG(value) { \
