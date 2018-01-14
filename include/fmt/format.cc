@@ -91,7 +91,7 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
 
 const char RESET_COLOR[] = "\x1b[0m";
 
-typedef void (*FormatFunc)(buffer &, int, string_view);
+typedef void (*FormatFunc)(internal::buffer &, int, string_view);
 
 // Portable thread-safe version of strerror.
 // Sets buffer to point to a string describing the error code.
@@ -161,7 +161,7 @@ int safe_strerror(
   return StrError(error_code, buffer, buffer_size).run();
 }
 
-void format_error_code(buffer &out, int error_code,
+void format_error_code(internal::buffer &out, int error_code,
                        string_view message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
   // INLINE_BUFFER_SIZE to avoid dynamic memory allocation and potential
@@ -358,7 +358,7 @@ FMT_FUNC void internal::format_windows_error(
 #endif  // FMT_USE_WINDOWS_H
 
 FMT_FUNC void format_system_error(
-    buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
+    internal::buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
     memory_buffer buf;
     buf.resize(internal::INLINE_BUFFER_SIZE);

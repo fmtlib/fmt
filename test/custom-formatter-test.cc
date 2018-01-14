@@ -15,9 +15,10 @@ using fmt::printf_arg_formatter;
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
 class CustomArgFormatter :
-    public fmt::arg_formatter<fmt::internal::dynamic_range<fmt::buffer>> {
+    public fmt::arg_formatter<
+      fmt::internal::dynamic_range<fmt::internal::buffer>> {
  public:
-  using range = fmt::internal::dynamic_range<fmt::buffer>;
+  using range = fmt::internal::dynamic_range<fmt::internal::buffer>;
   using base = fmt::arg_formatter<range>;
 
   CustomArgFormatter(range r, fmt::basic_context<range> &ctx,

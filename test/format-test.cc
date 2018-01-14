@@ -374,20 +374,17 @@ TEST(WriterTest, WWriter) {
 }
 
 TEST(FormatToTest, FormatWithoutArgs) {
-  fmt::memory_buffer buffer;
-  format_to(buffer, "test");
-  EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
+  std::string s;
+  fmt::format_to(std::back_inserter(s), "test");
+  EXPECT_EQ("test", s);
 }
 
 TEST(FormatToTest, Format) {
-  fmt::memory_buffer buffer;
-  format_to(buffer, "part{0}", 1);
-  EXPECT_EQ(strlen("part1"), buffer.size());
-  EXPECT_EQ("part1", std::string(buffer.data(), buffer.size()));
-  format_to(buffer, "part{0}", 2);
-  EXPECT_EQ(strlen("part1part2"), buffer.size());
-  EXPECT_EQ("part1part2", std::string(buffer.data(), buffer.size()));
-  EXPECT_EQ("part1part2", to_string(buffer));
+  std::string s;
+  fmt::format_to(std::back_inserter(s), "part{0}", 1);
+  EXPECT_EQ("part1", s);
+  fmt::format_to(std::back_inserter(s), "part{0}", 2);
+  EXPECT_EQ("part1part2", s);
 }
 
 TEST(FormatterTest, Escape) {
@@ -1484,7 +1481,7 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-using buffer_range = fmt::internal::dynamic_range<fmt::buffer>;
+using buffer_range = fmt::internal::dynamic_range<fmt::internal::buffer>;
 
 class mock_arg_formatter :
     public fmt::internal::arg_formatter_base<buffer_range> {
@@ -1906,17 +1903,6 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{}{1}",
                "cannot switch from automatic to manual argument indexing",
                int, int);
-}
-
-TEST(FormatTest, OutputIterator) {
-
-  std::string s;
-  fmt::format_to(std::back_inserter(s), "{}", 42);
-  std::vector<char> v;
-  fmt::format_to(std::back_inserter(v), "{}", 42);
-
-  EXPECT_EQ("42", s);
-  EXPECT_EQ("42", std::string(v.begin(), v.end()));
 }
 
 TEST(StringTest, ToString) {

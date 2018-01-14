@@ -530,7 +530,7 @@ void printf(internal::basic_buffer<Char> &buf, basic_string_view<Char> format,
 template <typename Buffer>
 using printf_context = basic_printf_context<internal::dynamic_range<Buffer>>;
 
-using printf_args = basic_format_args<printf_context<buffer>>;
+using printf_args = basic_format_args<printf_context<internal::buffer>>;
 
 inline std::string vsprintf(string_view format, printf_args args) {
   memory_buffer buffer;
@@ -549,11 +549,13 @@ inline std::string vsprintf(string_view format, printf_args args) {
 */
 template <typename... Args>
 inline std::string sprintf(string_view format_str, const Args & ... args) {
-  return vsprintf(format_str, make_args<printf_context<buffer>>(args...));
+  return vsprintf(format_str,
+                  make_args<printf_context<internal::buffer>>(args...));
 }
 
-inline std::wstring vsprintf(wstring_view format,
-                             basic_format_args<printf_context<wbuffer>> args) {
+inline std::wstring vsprintf(
+    wstring_view format,
+    basic_format_args<printf_context<internal::wbuffer>> args) {
   wmemory_buffer buffer;
   printf(buffer, format, args);
   return to_string(buffer);
@@ -561,7 +563,7 @@ inline std::wstring vsprintf(wstring_view format,
 
 template <typename... Args>
 inline std::wstring sprintf(wstring_view format_str, const Args & ... args) {
-  auto vargs = make_args<printf_context<wbuffer>>(args...);
+  auto vargs = make_args<printf_context<internal::wbuffer>>(args...);
   return vsprintf(format_str, vargs);
 }
 
@@ -584,7 +586,7 @@ inline int vfprintf(std::FILE *f, string_view format, printf_args args) {
  */
 template <typename... Args>
 inline int fprintf(std::FILE *f, string_view format_str, const Args & ... args) {
-  auto vargs = make_args<printf_context<buffer>>(args...);
+  auto vargs = make_args<printf_context<internal::buffer>>(args...);
   return vfprintf(f, format_str, vargs);
 }
 
@@ -603,7 +605,8 @@ inline int vprintf(string_view format, printf_args args) {
  */
 template <typename... Args>
 inline int printf(string_view format_str, const Args & ... args) {
-  return vprintf(format_str, make_args<printf_context<buffer>>(args...));
+  return vprintf(format_str,
+                 make_args<printf_context<internal::buffer>>(args...));
 }
 
 inline int vfprintf(std::ostream &os, string_view format_str,
@@ -626,7 +629,7 @@ inline int vfprintf(std::ostream &os, string_view format_str,
 template <typename... Args>
 inline int fprintf(std::ostream &os, string_view format_str,
                    const Args & ... args) {
-  auto vargs = make_args<printf_context<buffer>>(args...);
+  auto vargs = make_args<printf_context<internal::buffer>>(args...);
   return vfprintf(os, format_str, vargs);
 }
 }  // namespace fmt

@@ -58,10 +58,10 @@ TEST(OStreamTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-struct TestArgFormatter
-    : fmt::arg_formatter<fmt::internal::dynamic_range<fmt::buffer>> {
-  using base = fmt::arg_formatter<fmt::internal::dynamic_range<fmt::buffer>>;
-  TestArgFormatter(fmt::buffer &buf, fmt::context &ctx, fmt::format_specs &s)
+struct test_arg_formatter : fmt::arg_formatter<fmt::context::range_type> {
+  using base = fmt::arg_formatter<fmt::context::range_type>;
+  test_arg_formatter(fmt::internal::buffer &buf, fmt::context &ctx,
+                     fmt::format_specs &s)
     : base(buf, ctx, s) {}
 };
 
@@ -69,7 +69,7 @@ TEST(OStreamTest, CustomArg) {
   fmt::memory_buffer buffer;
   fmt::context ctx(buffer, "", fmt::format_args());
   fmt::format_specs spec;
-  TestArgFormatter af(buffer, ctx, spec);
+  test_arg_formatter af(buffer, ctx, spec);
   visit(af, fmt::internal::make_arg<fmt::context>(TestEnum()));
   EXPECT_EQ("TestEnum", std::string(buffer.data(), buffer.size()));
 }
@@ -136,7 +136,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   if (max_size <= fmt::internal::to_unsigned(max_streamsize))
     return;
 
-  struct test_buffer : fmt::buffer {
+  struct test_buffer : fmt::internal::buffer {
     explicit test_buffer(std::size_t size) { resize(size); }
     void grow(std::size_t) {}
   } buffer(max_size);

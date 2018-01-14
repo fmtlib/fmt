@@ -11,6 +11,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <iterator>
 #include <string>
 #include <type_traits>
 
@@ -263,6 +264,25 @@ class basic_buffer {
 
   T &operator[](std::size_t index) { return ptr_[index]; }
   const T &operator[](std::size_t index) const { return ptr_[index]; }
+};
+
+using buffer = internal::basic_buffer<char>;
+using wbuffer = internal::basic_buffer<wchar_t>;
+
+template <typename Container>
+class container_buffer
+    : public internal::basic_buffer<typename Container::value_type> {
+ private:
+  Container &container_;
+
+ protected:
+  virtual void grow(std::size_t capacity) {
+    container_.resize(capacity);
+    this->set(&container_[0], capacity);
+  }
+
+ public:
+  explicit container_buffer(Container &c) : container_(c) {}
 };
 
 // A helper function to suppress bogus "conditional expression is constant"
@@ -875,11 +895,8 @@ class basic_context :
   format_arg get_arg(basic_string_view<char_type> name);
 };
 
-using buffer = internal::basic_buffer<char>;
-using wbuffer = internal::basic_buffer<wchar_t>;
-
-using context = basic_context<internal::dynamic_range<buffer>>;
-using wcontext = basic_context<internal::dynamic_range<wbuffer>>;
+using context = basic_context<internal::dynamic_range<internal::buffer>>;
+using wcontext = basic_context<internal::dynamic_range<internal::wbuffer>>;
 
 template <typename Context, typename ...Args>
 class arg_store {
@@ -1060,19 +1077,24 @@ inline void print_colored(Color c, string_view format_str,
   vprint_colored(c, format_str, make_args(args...));
 }
 
-void vformat_to(buffer &buf, string_view format_str, format_args args);
-void vformat_to(wbuffer &buf, wstring_view format_str, wformat_args args);
+void vformat_to(internal::buffer &buf, string_view format_str,
+                format_args args);
+void vformat_to(internal::wbuffer &buf, wstring_view format_str,
+                wformat_args args);
 
-template <typename... Args>
-inline void format_to(buffer &buf, string_view format_str,
-                      const Args & ... args) {
-  vformat_to(buf, format_str, make_args(args...));
-}
-
-template <typename... Args>
-inline void format_to(wbuffer &buf, wstring_view format_str,
-                      const Args & ... args) {
-  vformat_to(buf, format_str, make_args<wcontext>(args...));
+/**
+ Formats a string and writes the output to out.
+ */
+template <typename Container>
+void vformat_to(std::back_insert_iterator<Container> out,
+                string_view format_str, format_args args) {
+  using iterator = std::back_insert_iterator<Container>;
+  struct container_accessor : iterator {
+    container_accessor(iterator it) : iterator(it) {}
+    using iterator::container;
+  } accessor(out);
+  internal::container_buffer<Container> buf(*accessor.container);
+  vformat_to(buf, format_str, args);
 }
 
 std::string vformat(string_view format_str, format_args args);

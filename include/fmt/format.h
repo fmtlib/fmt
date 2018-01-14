@@ -31,7 +31,6 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
-#include <iterator>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -307,22 +306,6 @@ void basic_buffer<T>::append(const U *begin, const U *end) {
                           internal::make_ptr(ptr_, capacity_) + size_);
   size_ = new_size;
 }
-
-template <typename Container>
-class container_buffer
-    : public internal::basic_buffer<typename Container::value_type> {
- private:
-  Container &container_;
-
- protected:
-  virtual void grow(std::size_t capacity) {
-    container_.resize(capacity);
-    this->set(&container_[0], capacity);
-  }
-
- public:
-  explicit container_buffer(Container &c) : container_(c) {}
-};
 }  // namespace internal
 
 // A wrapper around std::locale used to reduce compile times since <locale>
@@ -2061,7 +2044,7 @@ class system_error : public std::runtime_error {
   may look like "Unknown error -1" and is platform-dependent.
   \endrst
  */
-FMT_API void format_system_error(fmt::buffer &out, int error_code,
+FMT_API void format_system_error(fmt::internal::buffer &out, int error_code,
                                  fmt::string_view message) FMT_NOEXCEPT;
 
 /**
@@ -2582,8 +2565,8 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   });
 }
 
-using writer = basic_writer<internal::dynamic_range<buffer>>;
-using wwriter = basic_writer<internal::dynamic_range<wbuffer>>;
+using writer = basic_writer<internal::dynamic_range<internal::buffer>>;
+using wwriter = basic_writer<internal::dynamic_range<internal::wbuffer>>;
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
@@ -3019,27 +3002,28 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char> &buffer) {
   return std::basic_string<Char>(buffer.data(), buffer.size());
 }
 
-inline void vformat_to(buffer &buf, string_view format_str, format_args args) {
-  using range = internal::dynamic_range<buffer>;
+inline void vformat_to(internal::buffer &buf, string_view format_str,
+                       format_args args) {
+  using range = internal::dynamic_range<internal::buffer>;
   do_vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
-inline void vformat_to(wbuffer &buf, wstring_view format_str,
+inline void vformat_to(internal::wbuffer &buf, wstring_view format_str,
                        wformat_args args) {
-  using range = internal::dynamic_range<wbuffer>;
+  using range = internal::dynamic_range<internal::wbuffer>;
   do_vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
-template <typename Container>
-void vformat_to(std::back_insert_iterator<Container> out,
-                string_view format_str, format_args args) {
-  using iterator = std::back_insert_iterator<Container>;
-  struct container_extractor : iterator {
-    container_extractor(iterator it) : iterator(it) {}
-    using iterator::container;
-  } extractor(out);
-  internal::container_buffer<Container> buf(*extractor.container);
-  vformat_to(buf, format_str, args);
+template <typename... Args>
+inline void format_to(memory_buffer &buf, string_view format_str,
+                      const Args & ... args) {
+  vformat_to(buf, format_str, make_args(args...));
+}
+
+template <typename... Args>
+inline void format_to(wmemory_buffer &buf, wstring_view format_str,
+                      const Args & ... args) {
+  vformat_to(buf, format_str, make_args<wcontext>(args...));
 }
 
 template <typename Container, typename... Args>

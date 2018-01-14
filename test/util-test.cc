@@ -720,7 +720,7 @@ TEST(UtilTest, UTF16ToUTF8Convert) {
 #endif  // _WIN32
 
 typedef void (*FormatErrorMessage)(
-        fmt::buffer &out, int error_code, string_view message);
+        fmt::internal::buffer &out, int error_code, string_view message);
 
 template <typename Error>
 void check_throw_error(int error_code, FormatErrorMessage format) {
