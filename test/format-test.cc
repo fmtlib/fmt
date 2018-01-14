@@ -1223,8 +1223,9 @@ struct formatter<Date> {
     return it;
   }
 
-  void format(const Date &d, context &ctx) {
+  auto format(const Date &d, context &ctx) {
     format_range(ctx.range(), "{}-{}-{}", d.year(), d.month(), d.day());
+    return ctx.begin();
   }
 };
 }
@@ -1240,8 +1241,8 @@ class Answer {};
 namespace fmt {
 template <>
 struct formatter<Answer> : formatter<int> {
-  void format(Answer, fmt::context &ctx) {
-    formatter<int>::format(42, ctx);
+  auto format(Answer, fmt::context &ctx) {
+    return formatter<int>::format(42, ctx);
   }
 };
 }
@@ -1534,11 +1535,10 @@ struct variant {
 namespace fmt {
 template <>
 struct formatter<variant> : dynamic_formatter<> {
-  void format(variant value, context& ctx) {
+  auto format(variant value, context& ctx) {
     if (value.type == variant::INT)
-      dynamic_formatter::format(42, ctx);
-    else
-      dynamic_formatter::format("foo", ctx);
+      return dynamic_formatter::format(42, ctx);
+    return dynamic_formatter::format("foo", ctx);
   }
 };
 }

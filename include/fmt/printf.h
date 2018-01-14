@@ -285,11 +285,12 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
 template <typename T>
 struct printf_formatter {
   template <typename ParseContext>
-  auto parse(ParseContext& ctx) { return ctx.begin(); }
+  auto parse(ParseContext &ctx) { return ctx.begin(); }
 
-  template <typename Range>
-  void format(const T &value, basic_printf_context<Range> &ctx) {
+  template <typename FormatContext>
+  auto format(const T &value, FormatContext &ctx) -> decltype(ctx.begin()) {
     internal::format_value(ctx.range().container(), value);
+    return ctx.begin();
   }
 };
 
@@ -306,8 +307,8 @@ class basic_printf_context :
   using formatter_type = printf_formatter<T>;
 
  private:
-  typedef internal::context_base<Range, basic_printf_context> Base;
-  using format_arg = typename Base::format_arg;
+  using base = internal::context_base<Range, basic_printf_context>;
+  using format_arg = typename base::format_arg;
   using format_specs = basic_format_specs<char_type>;
   using iterator = internal::null_terminating_iterator<char_type>;
 
@@ -332,10 +333,12 @@ class basic_printf_context :
    */
   basic_printf_context(Range range, basic_string_view<char_type> format_str,
                        basic_format_args<basic_printf_context> args)
-    : Base(range, format_str, args) {}
+    : base(range, format_str, args) {}
 
-  using Base::parse_context;
-  using Base::range;
+  using base::parse_context;
+  using base::range;
+  using base::begin;
+  using base::advance_to;
 
   /** Formats stored arguments and writes the output to the range. */
   FMT_API void format();
@@ -374,7 +377,7 @@ typename basic_printf_context<Range, AF>::format_arg
   (void)it;
   if (arg_index == std::numeric_limits<unsigned>::max())
     return this->do_get_arg(this->parse_context().next_arg_id());
-  return Base::get_arg(arg_index - 1);
+  return base::get_arg(arg_index - 1);
 }
 
 template <typename Range, typename AF>

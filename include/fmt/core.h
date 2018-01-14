@@ -568,8 +568,8 @@ class value {
   // iostreams.
   template <typename T>
   void set_pointer(T *p) {
-    using type = typename std::remove_const<T>::type;
-    static_assert(std::is_same<type, void>::value,
+    using nonconst_type = typename std::remove_const<T>::type;
+    static_assert(std::is_same<nonconst_type, void>::value,
                   "formatting of non-void pointers is disallowed");
     set<POINTER>(pointer, p);
   }
@@ -583,7 +583,7 @@ class value {
     typename Context::template formatter_type<T> f;
     auto &&parse_ctx = ctx.parse_context();
     parse_ctx.advance_to(f.parse(parse_ctx));
-    f.format(*static_cast<const T*>(arg), ctx);
+    ctx.advance_to(f.format(*static_cast<const T*>(arg), ctx));
   }
 };
 
@@ -710,6 +710,7 @@ inline typename std::enable_if<!IS_PACKED, basic_arg<Context>>::type
   return make_arg<Context>(value);
 }
 
+// A map from argument names to their values for named arguments.
 template <typename Context>
 class arg_map {
  private:
@@ -748,9 +749,13 @@ class arg_map {
 
 template <typename Range, typename Context>
 class context_base {
+ public:
+  using iterator = decltype(std::declval<Range>().begin());
+
  private:
   basic_parse_context<typename Range::value_type> parse_context_;
   Range range_;
+  iterator out_;
   basic_format_args<Context> args_;
 
  protected:
@@ -790,6 +795,12 @@ class context_base {
   void on_error(const char *message) { parse_context_.on_error(message); }
 
   Range range() { return range_; }
+
+  // Returns an iterator to the beginning of the output range.
+  iterator begin() { return out_; }
+
+  // Advances the begin iterator to ``it``.
+  void advance_to(iterator it) { out_ = it; }
 };
 
 // A range that can grow dynamically.
@@ -833,6 +844,8 @@ class basic_context :
   template <typename T>
   using formatter_type = formatter<T, char_type>;
 
+  using range_type = Range;
+
  private:
   internal::arg_map<basic_context> map_;
 
@@ -843,6 +856,8 @@ class basic_context :
   using base::get_arg;
 
  public:
+  using typename base::iterator;
+
   /**
    \rst
    Constructs a ``basic_context`` object. References to the arguments are
@@ -858,7 +873,7 @@ class basic_context :
   }
   format_arg get_arg(unsigned arg_id) { return this->do_get_arg(arg_id); }
 
-  // Checks if manual indexing is used and returns the argument with
+  // Checks if manual indexing is used and returns the argument with the
   // specified name.
   format_arg get_arg(basic_string_view<char_type> name);
 };
@@ -878,7 +893,7 @@ class arg_store {
     IS_PACKED, internal::value<Context>, basic_arg<Context>>::type;
 
   // If the arguments are not packed, add one more element to mark the end.
-  value_type data_[NUM_ARGS + (IS_PACKED ? 0 : 1)];
+  value_type data_[NUM_ARGS + (IS_PACKED && NUM_ARGS != 0 ? 0 : 1)];
 
  public:
   static const uint64_t TYPES = IS_PACKED ?
@@ -984,6 +999,8 @@ struct named_arg_base {
   // Serialized value<context>.
   mutable char data[sizeof(basic_arg<context>)];
 
+  named_arg_base(basic_string_view<Char> name) : name(name) {}
+
   template <typename Context>
   basic_arg<Context> deserialize() const {
     basic_arg<Context> arg;
@@ -997,7 +1014,7 @@ struct named_arg : named_arg_base<Char> {
   const T &value;
 
   named_arg(basic_string_view<Char> name, const T &val)
-    : named_arg_base<Char>{name}, value(val) {}
+    : named_arg_base<Char>(name), value(val) {}
 };
 }
 

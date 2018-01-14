@@ -30,7 +30,7 @@ struct formatter<std::tm> {
     return pointer_from(end);
   }
 
-  void format(const std::tm &tm, context &ctx) {
+  auto format(const std::tm &tm, context &ctx) -> decltype(ctx.begin()) {
     buffer &buf = ctx.range().container();
     std::size_t start = buf.size();
     for (;;) {
@@ -50,6 +50,7 @@ struct formatter<std::tm> {
       const std::size_t MIN_GROWTH = 10;
       buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
     }
+    return ctx.begin();
   }
 
   memory_buffer tm_format;

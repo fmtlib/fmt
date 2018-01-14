@@ -83,9 +83,9 @@ struct formatter<Test, Char> {
 
   using range = fmt::internal::dynamic_range<basic_buffer<Char>>;
 
-  void format(Test, basic_context<range> &ctx) {
+  auto format(Test, basic_context<range> &ctx) -> decltype(ctx.begin()) {
     const Char *test = "test";
-    ctx.range().container().append(test, test + std::strlen(test));
+    return std::copy_n(test, std::strlen(test), ctx.begin());
   }
 };
 }
@@ -434,7 +434,7 @@ TEST(UtilTest, FormatArgs) {
   EXPECT_FALSE(args[1]);
 }
 
-struct CustomContext {
+struct custom_context {
   using char_type = char;
 
   template <typename T>
@@ -444,20 +444,22 @@ struct CustomContext {
       return ctx.begin();
     }
 
-    void format(const T &, CustomContext& ctx) {
+    const char *format(const T &, custom_context& ctx) {
       ctx.called = true;
+      return 0;
     }
   };
 
   bool called;
 
   fmt::parse_context parse_context() { return fmt::parse_context(""); }
+  void advance_to(const char *) {}
 };
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
-  fmt::internal::value<CustomContext> arg(t);
-  CustomContext ctx = {false};
+  fmt::internal::value<custom_context> arg(t);
+  custom_context ctx = {false};
   arg.custom.format(&t, ctx);
   EXPECT_TRUE(ctx.called);
 }

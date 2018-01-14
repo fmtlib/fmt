@@ -103,11 +103,12 @@ struct formatter<T, Char,
     : formatter<basic_string_view<Char>, Char> {
 
   template <typename Context>
-  void format(const T &value, Context &ctx) {
+  auto format(const T &value, Context &ctx) -> decltype(ctx.begin()) {
     basic_memory_buffer<Char> buffer;
     internal::format_value(buffer, value);
     basic_string_view<Char> str(buffer.data(), buffer.size());
     formatter<basic_string_view<Char>, Char>::format(str, ctx);
+    return ctx.begin();
   }
 };
 

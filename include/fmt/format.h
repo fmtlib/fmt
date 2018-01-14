@@ -2789,14 +2789,16 @@ struct formatter<
     return pointer_from(it);
   }
 
-  template <typename Range>
-  void format(const T &val, basic_context<Range> &ctx) {
+  template <typename FormatContext>
+  typename FormatContext::iterator format(const T &val, FormatContext &ctx) {
     internal::handle_dynamic_spec<internal::width_checker>(
       specs_.width_, specs_.width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
       specs_.precision_, specs_.precision_ref, ctx);
-    visit(arg_formatter<Range>(ctx.range(), ctx, specs_),
-          internal::make_arg<basic_context<Range>>(val));
+    using range = typename FormatContext::range_type;
+    visit(arg_formatter<range>(ctx.range(), ctx, specs_),
+          internal::make_arg<FormatContext>(val));
+    return ctx.begin();
   }
 
  private:
@@ -2834,8 +2836,8 @@ struct dynamic_formatter {
     return pointer_from(it);
   }
 
-  template <typename Range, typename T>
-  void format(const T &val, basic_context<Range> &ctx) {
+  template <typename T, typename FormatContext>
+  auto format(const T &val, FormatContext &ctx) -> decltype(ctx.begin()) {
     handle_specs(ctx);
     struct null_handler : internal::error_handler {
       void on_align(alignment) {}
@@ -2861,8 +2863,10 @@ struct dynamic_formatter {
     }
     if (specs_.precision_ != -1)
       checker.end_precision();
-    visit(arg_formatter<Range>(ctx.range(), ctx, specs_),
-          internal::make_arg<basic_context<Range>>(val));
+    using range = typename FormatContext::range_type;
+    visit(arg_formatter<range>(ctx.range(), ctx, specs_),
+          internal::make_arg<FormatContext>(val));
+    return ctx.begin();
   }
 
  private:
