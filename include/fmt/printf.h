@@ -373,7 +373,7 @@ typename basic_printf_context<Range, AF>::format_arg
     basic_printf_context<Range, AF>::get_arg(iterator it, unsigned arg_index) {
   (void)it;
   if (arg_index == std::numeric_limits<unsigned>::max())
-    return this->do_get_arg(this->next_arg_id());
+    return this->do_get_arg(this->parse_context().next_arg_id());
   return Base::get_arg(arg_index - 1);
 }
 
@@ -417,8 +417,7 @@ unsigned basic_printf_context<Range, AF>::parse_header(
 template <typename Range, typename AF>
 void basic_printf_context<Range, AF>::format() {
   auto &buffer = this->range().container();
-  Base &base = *this;
-  auto start = iterator(base);
+  auto start = iterator(this->parse_context());
   auto it = start;
   using internal::pointer_from;
   while (*it) {

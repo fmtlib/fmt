@@ -1694,6 +1694,7 @@ struct test_context {
 
   void on_error(const char *) {}
 
+  constexpr test_context &parse_context() { return *this; }
   constexpr test_context error_handler() { return *this; }
 };
 

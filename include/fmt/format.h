@@ -1556,7 +1556,7 @@ class specs_handler: public specs_setter<typename Context::char_type> {
 
   template <typename Id>
   constexpr basic_arg<Context> get_arg(Id arg_id) {
-    context_.check_arg_id(arg_id);
+    context_.parse_context().check_arg_id(arg_id);
     return context_.get_arg(arg_id);
   }
 
@@ -2519,7 +2519,6 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   *format_ptr = '\0';
 
   // Format using snprintf.
-  char_type fill = internal::char_traits<char_type>::cast(spec.fill());
   unsigned n = 0;
   char_type *start = 0;
   for (;;) {
@@ -2908,7 +2907,7 @@ void vformat_to(typename ArgFormatter::range out,
 
     void on_arg_id() { arg = context.next_arg(); }
     void on_arg_id(unsigned id) {
-      context.check_arg_id(id);
+      context.parse_context().check_arg_id(id);
       arg = context.get_arg(id);
     }
     void on_arg_id(basic_string_view<Char> id) {
@@ -2916,7 +2915,7 @@ void vformat_to(typename ArgFormatter::range out,
     }
 
     void on_replacement_field(iterator it) {
-      context.advance_to(pointer_from(it));
+      context.parse_context().advance_to(pointer_from(it));
       using internal::custom_formatter;
       if (visit(custom_formatter<Char, Context>(context), arg))
         return;
@@ -2925,10 +2924,11 @@ void vformat_to(typename ArgFormatter::range out,
     }
 
     iterator on_format_specs(iterator it) {
-      context.advance_to(pointer_from(it));
+      auto& parse_ctx = context.parse_context();
+      parse_ctx.advance_to(pointer_from(it));
       using internal::custom_formatter;
       if (visit(custom_formatter<Char, Context>(context), arg))
-        return iterator(context);
+        return iterator(parse_ctx);
       basic_format_specs<Char> specs;
       using internal::specs_handler;
       internal::specs_checker<specs_handler<Context>>
@@ -2936,7 +2936,7 @@ void vformat_to(typename ArgFormatter::range out,
       it = parse_format_specs(it, handler);
       if (*it != '}')
         on_error("missing '}' in format string");
-      context.advance_to(pointer_from(it));
+      parse_ctx.advance_to(pointer_from(it));
       visit(ArgFormatter(out, context, specs), arg);
       return it;
     }

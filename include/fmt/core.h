@@ -646,16 +646,6 @@ class basic_parse_context : private ErrorHandler {
   basic_string_view<Char> format_str_;
   int next_arg_id_;
 
- protected:
-  constexpr bool check_no_auto_index() {
-    if (next_arg_id_ > 0) {
-      on_error("cannot switch from automatic to manual argument indexing");
-      return false;
-    }
-    next_arg_id_ = -1;
-    return true;
-  }
-
  public:
   using char_type = Char;
   using iterator = typename basic_string_view<Char>::iterator;
@@ -679,7 +669,14 @@ class basic_parse_context : private ErrorHandler {
   // Returns the next argument index.
   constexpr unsigned next_arg_id();
 
-  constexpr void check_arg_id(unsigned) { check_no_auto_index(); }
+  constexpr bool check_arg_id(unsigned) {
+    if (next_arg_id_ > 0) {
+      on_error("cannot switch from automatic to manual argument indexing");
+      return false;
+    }
+    next_arg_id_ = -1;
+    return true;
+  }
   void check_arg_id(basic_string_view<Char>) {}
 
   constexpr void on_error(const char *message) {
@@ -750,8 +747,9 @@ class arg_map {
 };
 
 template <typename Range, typename Context>
-class context_base : public basic_parse_context<typename Range::value_type> {
+class context_base {
  private:
+  basic_parse_context<typename Range::value_type> parse_context_;
   Range range_;
   basic_format_args<Context> args_;
 
@@ -761,7 +759,7 @@ class context_base : public basic_parse_context<typename Range::value_type> {
 
   context_base(Range range, basic_string_view<char_type> format_str,
                basic_format_args<Context> args)
-  : basic_parse_context<char_type>(format_str), range_(range), args_(args) {}
+  : parse_context_(format_str), range_(range), args_(args) {}
 
   basic_format_args<Context> args() const { return args_; }
 
@@ -769,19 +767,28 @@ class context_base : public basic_parse_context<typename Range::value_type> {
   format_arg do_get_arg(unsigned arg_id) {
     format_arg arg = args_[arg_id];
     if (!arg)
-      this->on_error("argument index out of range");
+      parse_context_.on_error("argument index out of range");
     return arg;
   }
 
   // Checks if manual indexing is used and returns the argument with
   // specified index.
   format_arg get_arg(unsigned arg_id) {
-    return this->check_no_auto_index() ?
+    return this->parse_context().check_arg_id(arg_id) ?
       this->do_get_arg(arg_id) : format_arg();
   }
 
  public:
-  basic_parse_context<char_type> &parse_context() { return *this; }
+  constexpr basic_parse_context<char_type> &parse_context() {
+    return parse_context_;
+  }
+
+  internal::error_handler error_handler() {
+    return parse_context_.error_handler();
+  }
+
+  void on_error(const char *message) { parse_context_.on_error(message); }
+
   Range range() { return range_; }
 };
 
@@ -846,7 +853,9 @@ class basic_context :
                 basic_format_args<basic_context> args)
     : base(range, format_str, args) {}
 
-  format_arg next_arg() { return this->do_get_arg(this->next_arg_id()); }
+  format_arg next_arg() {
+    return this->do_get_arg(this->parse_context().next_arg_id());
+  }
   format_arg get_arg(unsigned arg_id) { return this->do_get_arg(arg_id); }
 
   // Checks if manual indexing is used and returns the argument with
@@ -959,7 +968,8 @@ class basic_format_args {
 
   unsigned max_size() const {
     int64_t signed_types = static_cast<int64_t>(types_);
-    return signed_types < 0 ? -signed_types : internal::MAX_PACKED_ARGS;
+    return signed_types < 0 ?
+          -signed_types : static_cast<int64_t>(internal::MAX_PACKED_ARGS);
   }
 };
 
