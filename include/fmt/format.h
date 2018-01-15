@@ -28,6 +28,7 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstring>
@@ -513,7 +514,9 @@ class char_traits<wchar_t> : public basic_char_traits<wchar_t> {
 };
 
 template <typename Container>
-inline auto reserve(std::back_insert_iterator<Container> &it, std::size_t n) {
+inline typename std::enable_if<
+  is_contiguous<Container>::value, typename Container::value_type*>::type
+    reserve(std::back_insert_iterator<Container> &it, std::size_t n) {
   Container &c = internal::get_container(it);
   std::size_t size = c.size();
   c.resize(size + n);
@@ -803,9 +806,10 @@ Char thousands_sep(locale_provider *lp);
 // thousands_sep is a functor that is called after writing each char to
 // add a thousands separator if necessary.
 template <typename UInt, typename Char, typename ThousandsSep>
-inline void format_decimal(Char *buffer, UInt value, unsigned num_digits,
-                           ThousandsSep thousands_sep) {
+inline Char *format_decimal(Char *buffer, UInt value, unsigned num_digits,
+                            ThousandsSep thousands_sep) {
   buffer += num_digits;
+  Char *end = buffer;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
@@ -819,17 +823,50 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits,
   }
   if (value < 10) {
     *--buffer = static_cast<char>('0' + value);
-    return;
+    return end;
   }
   unsigned index = static_cast<unsigned>(value * 2);
   *--buffer = data::DIGITS[index + 1];
   thousands_sep(buffer);
   *--buffer = data::DIGITS[index];
+  return end;
 }
 
-template <typename UInt, typename Char>
-inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
+template <typename UInt, typename Iterator, typename ThousandsSep>
+inline Iterator format_decimal(
+    Iterator out, UInt value, unsigned num_digits, ThousandsSep thousands_sep) {
+  // Buffer should be large enough to hold all digits (digits10 + 1) and null.
+  char buffer[std::numeric_limits<UInt>::digits10 + 2];
   format_decimal(buffer, value, num_digits, no_thousands_sep());
+  return std::copy_n(buffer, num_digits, out);
+}
+
+template <typename It, typename UInt>
+inline It format_decimal(It out, UInt value, unsigned num_digits) {
+  return format_decimal(out, value, num_digits, no_thousands_sep());
+}
+
+template <unsigned BASE_BITS, typename Char, typename UInt>
+inline Char *format_uint(Char *buffer, UInt value, unsigned num_digits,
+                         bool upper = false) {
+  buffer += num_digits;
+  Char *end = buffer;
+  do {
+    const char *digits = upper ? "0123456789ABCDEF" : "0123456789abcdef";
+    unsigned digit = (value & ((1 << BASE_BITS) - 1));
+    *--buffer = BASE_BITS < 4 ? static_cast<char>('0' + digit) : digits[digit];
+  } while ((value >>= BASE_BITS) != 0);
+  return end;
+}
+
+template <unsigned BASE_BITS, typename It, typename UInt>
+inline It format_uint(It out, UInt value, unsigned num_digits,
+                      bool upper = false) {
+  // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1)
+  // and null.
+  char buffer[std::numeric_limits<UInt>::digits / BASE_BITS + 2];
+  format_uint<BASE_BITS>(buffer, value, num_digits, upper);
+  return std::copy_n(buffer, num_digits, out);
 }
 
 #ifndef _WIN32
@@ -2122,8 +2159,8 @@ class basic_writer {
       as.align_ = ALIGN_RIGHT;
     write_padded(size, as, [prefix, fill, padding, f](auto &&it) {
       if (prefix.size() != 0)
-        it = std::uninitialized_copy_n(prefix.data(), prefix.size(), it);
-      it = std::uninitialized_fill_n(it, padding, fill);
+        it = std::copy_n(prefix.data(), prefix.size(), it);
+      it = std::fill_n(it, padding, fill);
       f(it);
     });
   }
@@ -2183,8 +2220,7 @@ class basic_writer {
       unsigned num_digits = internal::count_digits(abs_value);
       writer.write_int(num_digits, get_prefix(), spec,
                        [this, num_digits](auto &&it) {
-        internal::format_decimal(it, abs_value, num_digits);
-        it += num_digits;
+        it = internal::format_decimal(it, abs_value, num_digits);
       });
     }
 
@@ -2196,14 +2232,8 @@ class basic_writer {
       unsigned num_digits = count_digits<4>();
       writer.write_int(num_digits, get_prefix(), spec,
                        [this, num_digits](auto &&it) {
-        it += num_digits;
-        auto out = it;
-        auto n = abs_value;
-        const char *digits = spec.type() == 'x' ?
-            "0123456789abcdef" : "0123456789ABCDEF";
-        do {
-          *--out = digits[n & 0xf];
-        } while ((n >>= 4) != 0);
+        it = internal::format_uint<4>(it, abs_value, num_digits,
+                                      spec.type() != 'x');
       });
     }
 
@@ -2215,12 +2245,7 @@ class basic_writer {
       unsigned num_digits = count_digits<1>();
       writer.write_int(num_digits, get_prefix(), spec,
                        [this, num_digits](auto &&it) {
-        it += num_digits;
-        auto out = it;
-        auto n = abs_value;
-        do {
-          *--out = static_cast<char_type>('0' + (n & 1));
-        } while ((n >>= 1) != 0);
+        it = internal::format_uint<1>(it, abs_value, num_digits);
       });
     }
 
@@ -2234,12 +2259,7 @@ class basic_writer {
       }
       writer.write_int(num_digits, get_prefix(), spec,
                        [this, num_digits](auto &&it) {
-        it += num_digits;
-        auto out = it;
-        auto n = abs_value;
-        do {
-          *--out = static_cast<char_type>('0' + (n & 7));
-        } while ((n >>= 3) != 0);
+        it = internal::format_uint<3>(it, abs_value, num_digits);
       });
     }
 
@@ -2250,9 +2270,8 @@ class basic_writer {
       unsigned size = num_digits + SEP_SIZE * ((num_digits - 1) / 3);
       writer.write_int(size, get_prefix(), spec, [this, size, sep](auto &&it) {
         basic_string_view<char_type> s(&sep, SEP_SIZE);
-        internal::format_decimal(it, abs_value, size,
-                                 internal::add_thousands_sep<char_type>(s));
-        it += size;
+        it = format_decimal(it, abs_value, size,
+                            internal::add_thousands_sep<char_type>(s));
       });
     }
 
@@ -2276,7 +2295,7 @@ class basic_writer {
   template <typename Char>
   void write_str(const Char *s, std::size_t size, const align_spec &spec) {
     write_padded(size, spec, [s, size](auto &&it) {
-      it = std::uninitialized_copy_n(s, size, it);
+      it = std::copy_n(s, size, it);
     });
   }
 
@@ -2353,7 +2372,7 @@ class basic_writer {
    */
   void write(string_view value) {
     auto &&it = reserve(value.size());
-    it = std::uninitialized_copy(value.begin(), value.end(), it);
+    it = std::copy(value.begin(), value.end(), it);
   }
 
   void write(wstring_view value) {
@@ -2379,16 +2398,16 @@ void basic_writer<Range>::write_padded(
   char_type fill = internal::char_traits<char_type>::cast(spec.fill());
   std::size_t padding = width - size;
   if (spec.align() == ALIGN_RIGHT) {
-    it = std::uninitialized_fill_n(it, padding, fill);
+    it = std::fill_n(it, padding, fill);
     f(it);
   } else if (spec.align() == ALIGN_CENTER) {
     std::size_t left_padding = padding / 2;
-    it = std::uninitialized_fill_n(it, left_padding, fill);
+    it = std::fill_n(it, left_padding, fill);
     f(it);
-    it = std::uninitialized_fill_n(it, padding - left_padding, fill);
+    it = std::fill_n(it, padding - left_padding, fill);
   } else {
     f(it);
-    it = std::uninitialized_fill_n(it, padding, fill);
+    it = std::fill_n(it, padding, fill);
   }
 }
 
@@ -2468,7 +2487,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     write_padded(SIZE + (sign ? 1 : 0), spec, [sign, str](auto &&it) {
       if (sign)
         *it++ = sign;
-      it = std::uninitialized_copy_n(str, static_cast<std::size_t>(SIZE), it);
+      it = std::copy_n(str, static_cast<std::size_t>(SIZE), it);
     });
   };
 
@@ -2553,7 +2572,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
       *it++ = sign;
       --n;
     }
-    it = std::uninitialized_copy_n(buffer.begin(), n, it);
+    it = std::copy_n(buffer.begin(), n, it);
   });
 }
 
@@ -2614,9 +2633,7 @@ FMT_API void report_windows_error(int error_code,
 
 #endif
 
-/**
-  Fast integer formatter.
- */
+/** Fast integer formatter. */
 class FormatInt {
  private:
   // Buffer should be large enough to hold all digits (digits10 + 1),
@@ -2891,10 +2908,10 @@ void do_vformat_to(typename ArgFormatter::range out,
       : context(r, str, format_args) {}
 
     void on_text(iterator begin, iterator end) {
-      auto out = context.begin();
       size_t size = end - begin;
+      auto out = context.begin();
       auto &&it = internal::reserve(out, size);
-      it = std::uninitialized_copy_n(begin, size, it);
+      it = std::copy_n(begin, size, it);
       context.advance_to(out);
     }
 
@@ -3019,10 +3036,33 @@ inline void format_to(wmemory_buffer &buf, wstring_view format_str,
   vformat_to(buf, format_str, make_args<wcontext>(args...));
 }
 
+template <typename Container>
+using back_insert_context = basic_context<back_insert_range<Container>>;
+
+template <typename Container>
+typename std::enable_if<!is_contiguous<Container>::value>::type
+    vformat_to(std::back_insert_iterator<Container> out,
+               string_view format_str,
+               basic_format_args<back_insert_context<Container>> args) {
+  using range = back_insert_range<Container>;
+  do_vformat_to<arg_formatter<range>>(
+        range(internal::get_container(out)), format_str, args);
+}
+
 template <typename Container, typename... Args>
-inline void format_to(std::back_insert_iterator<Container> out,
-                      string_view format_str, const Args & ... args) {
+inline typename std::enable_if<is_contiguous<Container>::value>::type
+    format_to(std::back_insert_iterator<Container> out,
+              string_view format_str, const Args & ... args) {
   vformat_to(out, format_str, make_args(args...));
+}
+
+template <typename Container, typename... Args>
+inline typename std::enable_if<!is_contiguous<Container>::value>::type
+    format_to(std::back_insert_iterator<Container> out,
+              string_view format_str, const Args & ... args) {
+  // TODO: simplify
+  auto store = make_args<back_insert_context<Container>>(args...);
+  vformat_to(out, format_str, basic_format_args<back_insert_context<Container>>(store));
 }
 
 inline std::string vformat(string_view format_str, format_args args) {

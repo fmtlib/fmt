@@ -30,6 +30,7 @@
 #include <climits>
 #include <cmath>
 #include <cstring>
+#include <list>
 #include <memory>
 #include <stdint.h>
 
@@ -1907,4 +1908,10 @@ TEST(FormatTest, FormatStringErrors) {
 
 TEST(FormatTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
+}
+
+TEST(WriterTest, NoncontiguousIterator) {
+  std::list<char> out;
+  fmt::format_to(std::back_inserter(out), "{}", 42);
+  EXPECT_EQ("42", std::string(out.begin(), out.end()));
 }
