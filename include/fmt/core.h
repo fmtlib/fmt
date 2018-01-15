@@ -832,25 +832,32 @@ inline Container &get_container(std::back_insert_iterator<Container> it) {
 }
 }  // namespace internal
 
-// A range where begin() returns back_insert_iterator.
-template <typename Container>
-class back_insert_range {
+template <typename OutputIt, typename T = typename OutputIt::value_type>
+class output_range {
  private:
-  Container &container_;
+  OutputIt it_;
+
+  // Unused yet.
+  using sentinel = void;
+  sentinel end() const;
 
  public:
-  using iterator = std::back_insert_iterator<Container>;
+  using value_type = T;
+
+  explicit output_range(OutputIt it): it_(it) {}
+  OutputIt begin() const { return it_; }
+};
+
+// A range where begin() returns back_insert_iterator.
+template <typename Container>
+class back_insert_range:
+    public output_range<std::back_insert_iterator<Container>> {
+  using base = output_range<std::back_insert_iterator<Container>>;
+ public:
   using value_type = typename Container::value_type;
 
-  struct sentinel {
-    friend bool operator!=(sentinel, iterator) { return false; }
-    friend bool operator!=(iterator, sentinel) { return false; }
-  };
-
-  back_insert_range(Container &c) : container_(c) {}
-
-  iterator begin() const { return std::back_inserter(container_); }
-  sentinel end() const { return sentinel(); }
+  using base::base;
+  back_insert_range(Container &c): base(std::back_inserter(c)) {}
 };
 
 // Formatting context.

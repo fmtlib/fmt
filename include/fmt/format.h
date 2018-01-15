@@ -2023,7 +2023,7 @@ class arg_formatter: public internal::arg_formatter_base<Range> {
     \endrst
    */
   arg_formatter(basic_context<Range> &ctx, format_specs &spec)
-  : base(Range(internal::get_container(ctx.begin())), spec), ctx_(ctx) {}
+  : base(Range(ctx.begin()), spec), ctx_(ctx) {}
 
   using base::operator();
 
@@ -3036,6 +3036,13 @@ inline void format_to(wmemory_buffer &buf, wstring_view format_str,
   vformat_to(buf, format_str, make_args<wcontext>(args...));
 }
 
+template <typename Container, typename Context>
+typename std::enable_if<!is_contiguous<Container>::value>::type
+    vformat_to(std::back_insert_iterator<Container> out,
+               string_view format_str,
+               basic_format_args<Context> args) {
+}
+
 template <typename Container, typename... Args>
 inline typename std::enable_if<is_contiguous<Container>::value>::type
     format_to(std::back_insert_iterator<Container> out,
@@ -3043,15 +3050,13 @@ inline typename std::enable_if<is_contiguous<Container>::value>::type
   vformat_to(out, format_str, make_args(args...));
 }
 
-template <typename Container, typename... Args>
-inline typename std::enable_if<!is_contiguous<Container>::value>::type
-    format_to(std::back_insert_iterator<Container> out,
-              string_view format_str, const Args & ... args) {
-  using range = back_insert_range<Container>;
+template <typename OutputIt, typename... Args>
+inline void format_to(OutputIt out, string_view format_str,
+                      const Args & ... args) {
+  using range = output_range<OutputIt, char>;
   auto store = make_args<basic_context<range>>(args...);
   do_vformat_to<arg_formatter<range>>(
-        range(internal::get_container(out)), format_str,
-        basic_format_args<basic_context<range>>(store));
+        range(out), format_str, basic_format_args<basic_context<range>>(store));
 }
 
 inline std::string vformat(string_view format_str, format_args args) {
