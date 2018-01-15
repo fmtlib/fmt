@@ -3036,19 +3036,6 @@ inline void format_to(wmemory_buffer &buf, wstring_view format_str,
   vformat_to(buf, format_str, make_args<wcontext>(args...));
 }
 
-template <typename Container>
-using back_insert_context = basic_context<back_insert_range<Container>>;
-
-template <typename Container>
-typename std::enable_if<!is_contiguous<Container>::value>::type
-    vformat_to(std::back_insert_iterator<Container> out,
-               string_view format_str,
-               basic_format_args<back_insert_context<Container>> args) {
-  using range = back_insert_range<Container>;
-  do_vformat_to<arg_formatter<range>>(
-        range(internal::get_container(out)), format_str, args);
-}
-
 template <typename Container, typename... Args>
 inline typename std::enable_if<is_contiguous<Container>::value>::type
     format_to(std::back_insert_iterator<Container> out,
@@ -3060,9 +3047,11 @@ template <typename Container, typename... Args>
 inline typename std::enable_if<!is_contiguous<Container>::value>::type
     format_to(std::back_insert_iterator<Container> out,
               string_view format_str, const Args & ... args) {
-  // TODO: simplify
-  auto store = make_args<back_insert_context<Container>>(args...);
-  vformat_to(out, format_str, basic_format_args<back_insert_context<Container>>(store));
+  using range = back_insert_range<Container>;
+  auto store = make_args<basic_context<range>>(args...);
+  do_vformat_to<arg_formatter<range>>(
+        range(internal::get_container(out)), format_str,
+        basic_format_args<basic_context<range>>(store));
 }
 
 inline std::string vformat(string_view format_str, format_args args) {
