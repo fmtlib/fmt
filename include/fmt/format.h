@@ -512,6 +512,17 @@ class char_traits<wchar_t> : public basic_char_traits<wchar_t> {
       const wchar_t *format, unsigned width, int precision, T value);
 };
 
+template <typename Container>
+inline auto reserve(std::back_insert_iterator<Container> &it, std::size_t n) {
+  Container &c = internal::get_container(it);
+  std::size_t size = c.size();
+  c.resize(size + n);
+  return &c[size];
+}
+
+template <typename Iterator>
+inline Iterator &reserve(Iterator &it, std::size_t) { return it; }
+
 template <typename Char>
 class null_terminating_iterator;
 
@@ -818,7 +829,7 @@ inline void format_decimal(Char *buffer, UInt value, unsigned num_digits,
 
 template <typename UInt, typename Char>
 inline void format_decimal(Char *buffer, UInt value, unsigned num_digits) {
-  return format_decimal(buffer, value, num_digits, no_thousands_sep());
+  format_decimal(buffer, value, num_digits, no_thousands_sep());
 }
 
 #ifndef _WIN32
@@ -864,7 +875,7 @@ class utf16_to_utf8 {
   FMT_API int convert(wstring_view s);
 };
 
-FMT_API void format_windows_error(fmt::buffer &out, int error_code,
+FMT_API void format_windows_error(fmt::internal::buffer &out, int error_code,
                                   fmt::string_view message) FMT_NOEXCEPT;
 #endif
 
@@ -1218,7 +1229,7 @@ class arg_formatter_base {
   FMT_DISALLOW_COPY_AND_ASSIGN(arg_formatter_base);
 
   void write_char(char_type value) {
-    writer_.write_padded(1, specs_, [value](auto &it) {
+    writer_.write_padded(1, specs_, [value](auto &&it) {
       *it++ = internal::char_traits<char_type>::cast(value);
     });
   }
@@ -1970,12 +1981,12 @@ class arg_formatter: public internal::arg_formatter_base<Range> {
   /**
     \rst
     Constructs an argument formatter object.
-    *r* is an output range, *ctx* is a reference to the formatting context,
+    *ctx* is a reference to the formatting context,
     *spec* contains format specifier information for standard argument types.
     \endrst
    */
-  arg_formatter(Range r, basic_context<Range> &ctx, format_specs &spec)
-  : base(r, spec), ctx_(ctx) {}
+  arg_formatter(basic_context<Range> &ctx, format_specs &spec)
+  : base(Range(internal::get_container(ctx.begin())), spec), ctx_(ctx) {}
 
   using base::operator();
 
@@ -2048,21 +2059,8 @@ FMT_API void format_system_error(fmt::internal::buffer &out, int error_code,
                                  fmt::string_view message) FMT_NOEXCEPT;
 
 /**
-  \rst
   This template provides operations for formatting and writing data into a
   character range.
-
-  You can use one of the following typedefs for common character types:
-
-  +---------+-----------------------+
-  | Type    | Definition            |
-  +=========+=======================+
-  | writer  | basic_writer<buffer>  |
-  +---------+-----------------------+
-  | wwriter | basic_writer<wbuffer> |
-  +---------+-----------------------+
-
-  \endrst
  */
 template <typename Range>
 class basic_writer {
@@ -2071,10 +2069,8 @@ class basic_writer {
   using format_specs = basic_format_specs<char_type>;
 
  private:
+  // Output iterator.
   using iterator = decltype(std::declval<Range>().begin());
-
-  // Output range.
-  Range range_;
   iterator out_;
 
   std::unique_ptr<locale_provider> locale_;
@@ -2090,9 +2086,10 @@ class basic_writer {
   static char_type *get(char_type *p) { return p; }
 #endif
 
-  // Attempts to reserve space for n characters in the output range.
-  void reserve(std::size_t n) {
-    out_ = grow(range_, n);
+  // Attempts to reserve space for n extra characters in the output range.
+  // Returns a pointer to the reserved range or a reference to out_.
+  auto reserve(std::size_t n) -> decltype(internal::reserve(out_, n)) {
+    return internal::reserve(out_, n);
   }
 
   // Writes a value in the format
@@ -2123,7 +2120,7 @@ class basic_writer {
     align_spec as = spec;
     if (spec.align() == ALIGN_DEFAULT)
       as.align_ = ALIGN_RIGHT;
-    write_padded(size, as, [prefix, fill, padding, f](auto &it) {
+    write_padded(size, as, [prefix, fill, padding, f](auto &&it) {
       if (prefix.size() != 0)
         it = std::uninitialized_copy_n(prefix.data(), prefix.size(), it);
       it = std::uninitialized_fill_n(it, padding, fill);
@@ -2140,10 +2137,10 @@ class basic_writer {
     if (is_negative)
       abs_value = 0 - abs_value;
     unsigned num_digits = internal::count_digits(abs_value);
-    reserve((is_negative ? 1 : 0) + num_digits);
+    auto &&it = reserve((is_negative ? 1 : 0) + num_digits);
     if (is_negative)
-      *out_++ = '-';
-    internal::format_decimal(out_, abs_value, num_digits);
+      *it++ = '-';
+    internal::format_decimal(it, abs_value, num_digits);
   }
 
   // The handle_int_type_spec handler that writes an integer.
@@ -2185,7 +2182,7 @@ class basic_writer {
     void on_dec() {
       unsigned num_digits = internal::count_digits(abs_value);
       writer.write_int(num_digits, get_prefix(), spec,
-                       [this, num_digits](auto &it) {
+                       [this, num_digits](auto &&it) {
         internal::format_decimal(it, abs_value, num_digits);
         it += num_digits;
       });
@@ -2198,7 +2195,7 @@ class basic_writer {
       }
       unsigned num_digits = count_digits<4>();
       writer.write_int(num_digits, get_prefix(), spec,
-                       [this, num_digits](auto &it) {
+                       [this, num_digits](auto &&it) {
         it += num_digits;
         auto out = it;
         auto n = abs_value;
@@ -2217,7 +2214,7 @@ class basic_writer {
       }
       unsigned num_digits = count_digits<1>();
       writer.write_int(num_digits, get_prefix(), spec,
-                       [this, num_digits](auto &it) {
+                       [this, num_digits](auto &&it) {
         it += num_digits;
         auto out = it;
         auto n = abs_value;
@@ -2236,7 +2233,7 @@ class basic_writer {
         prefix[prefix_size++] = '0';
       }
       writer.write_int(num_digits, get_prefix(), spec,
-                       [this, num_digits](auto &it) {
+                       [this, num_digits](auto &&it) {
         it += num_digits;
         auto out = it;
         auto n = abs_value;
@@ -2251,7 +2248,7 @@ class basic_writer {
       char_type sep = internal::thousands_sep<char_type>(writer.locale_.get());
       static constexpr unsigned SEP_SIZE = 1;
       unsigned size = num_digits + SEP_SIZE * ((num_digits - 1) / 3);
-      writer.write_int(size, get_prefix(), spec, [this, size, sep](auto &it) {
+      writer.write_int(size, get_prefix(), spec, [this, size, sep](auto &&it) {
         basic_string_view<char_type> s(&sep, SEP_SIZE);
         internal::format_decimal(it, abs_value, size,
                                  internal::add_thousands_sep<char_type>(s));
@@ -2278,7 +2275,7 @@ class basic_writer {
   // Writes a formatted string.
   template <typename Char>
   void write_str(const Char *s, std::size_t size, const align_spec &spec) {
-    write_padded(size, spec, [s, size](iterator &it) {
+    write_padded(size, spec, [s, size](auto &&it) {
       it = std::uninitialized_copy_n(s, size, it);
     });
   }
@@ -2300,7 +2297,7 @@ class basic_writer {
 
  public:
   /** Constructs a ``basic_writer`` object. */
-  explicit basic_writer(Range out): range_(out), out_(out.begin()) {}
+  explicit basic_writer(Range out): out_(out.begin()) {}
 
   void write(int value) {
     write_decimal(value);
@@ -2341,14 +2338,12 @@ class basic_writer {
 
   /** Writes a character to the buffer. */
   void write(char value) {
-    reserve(1);
-    *out_++ = value;
+    *reserve(1) = value;
   }
 
   void write(wchar_t value) {
     internal::require_wchar<char_type>();
-    reserve(1);
-    *out_++ = value;
+    *reserve(1) = value;
   }
 
   /**
@@ -2357,14 +2352,14 @@ class basic_writer {
     \endrst
    */
   void write(string_view value) {
-    reserve(value.size());
-    out_ = std::uninitialized_copy(value.begin(), value.end(), out_);
+    auto &&it = reserve(value.size());
+    it = std::uninitialized_copy(value.begin(), value.end(), it);
   }
 
   void write(wstring_view value) {
     internal::require_wchar<char_type>();
-    reserve(value.size());
-    out_ = std::uninitialized_copy(value.begin(), value.end(), out_);
+    auto &&it = reserve(value.size());
+    it = std::uninitialized_copy(value.begin(), value.end(), it);
   }
 
   template <typename... FormatSpecs>
@@ -2378,24 +2373,22 @@ template <typename F>
 void basic_writer<Range>::write_padded(
     std::size_t size, const align_spec &spec, F f) {
   unsigned width = spec.width();
-  if (width <= size) {
-    reserve(size);
-    return f(out_);
-  }
-  reserve(width);
+  if (width <= size)
+    return f(reserve(size));
+  auto &&it = reserve(width);
   char_type fill = internal::char_traits<char_type>::cast(spec.fill());
   std::size_t padding = width - size;
   if (spec.align() == ALIGN_RIGHT) {
-    out_ = std::uninitialized_fill_n(out_, padding, fill);
-    f(out_);
+    it = std::uninitialized_fill_n(it, padding, fill);
+    f(it);
   } else if (spec.align() == ALIGN_CENTER) {
     std::size_t left_padding = padding / 2;
-    out_ = std::uninitialized_fill_n(out_, left_padding, fill);
-    f(out_);
-    out_ = std::uninitialized_fill_n(out_, padding - left_padding, fill);
+    it = std::uninitialized_fill_n(it, left_padding, fill);
+    f(it);
+    it = std::uninitialized_fill_n(it, padding - left_padding, fill);
   } else {
-    f(out_);
-    out_ = std::uninitialized_fill_n(out_, padding, fill);
+    f(it);
+    it = std::uninitialized_fill_n(it, padding, fill);
   }
 }
 
@@ -2472,7 +2465,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
 
   auto write_inf_or_nan = [this, &spec, sign](const char *str) {
     enum {SIZE = 3}; // This is an enum to workaround a bug in MSVC.
-    write_padded(SIZE + (sign ? 1 : 0), spec, [sign, str](auto &it) {
+    write_padded(SIZE + (sign ? 1 : 0), spec, [sign, str](auto &&it) {
       if (sign)
         *it++ = sign;
       it = std::uninitialized_copy_n(str, static_cast<std::size_t>(SIZE), it);
@@ -2544,8 +2537,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   align_spec as = spec;
   if (spec.align() == ALIGN_NUMERIC) {
     if (sign) {
-      reserve(1);
-      *out_++ = sign;
+      *reserve(1) = sign;
       sign = 0;
       --as.width_;
     }
@@ -2556,7 +2548,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     if (sign)
       ++n;
   }
-  write_padded(n, as, [n, sign, &buffer](auto &it) mutable {
+  write_padded(n, as, [n, sign, &buffer](auto &&it) mutable {
     if (sign) {
       *it++ = sign;
       --n;
@@ -2565,8 +2557,8 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   });
 }
 
-using writer = basic_writer<internal::dynamic_range<internal::buffer>>;
-using wwriter = basic_writer<internal::dynamic_range<internal::wbuffer>>;
+using writer = basic_writer<back_insert_range<internal::buffer>>;
+using wwriter = basic_writer<back_insert_range<internal::wbuffer>>;
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
@@ -2791,7 +2783,7 @@ struct formatter<
     internal::handle_dynamic_spec<internal::precision_checker>(
       specs_.precision_, specs_.precision_ref, ctx);
     using range = typename FormatContext::range_type;
-    visit(arg_formatter<range>(ctx.range(), ctx, specs_),
+    visit(arg_formatter<range>(ctx, specs_),
           internal::make_arg<FormatContext>(val));
     return ctx.begin();
   }
@@ -2858,8 +2850,7 @@ struct dynamic_formatter {
     }
     if (specs_.precision_ != -1)
       checker.end_precision();
-    using range = typename FormatContext::range_type;
-    visit(arg_formatter<range>(ctx.range(), ctx, specs_),
+    visit(arg_formatter<typename FormatContext::range_type>(ctx, specs_),
           internal::make_arg<FormatContext>(val));
     return ctx.begin();
   }
@@ -2897,11 +2888,14 @@ void do_vformat_to(typename ArgFormatter::range out,
   struct handler : internal::error_handler {
     handler(range r, basic_string_view<Char> str,
             basic_format_args<Context> format_args)
-      : out(r), context(r, str, format_args) {}
+      : context(r, str, format_args) {}
 
     void on_text(iterator begin, iterator end) {
+      auto out = context.begin();
       size_t size = end - begin;
-      std::uninitialized_copy_n(begin, size, grow(out, size));
+      auto &&it = internal::reserve(out, size);
+      it = std::uninitialized_copy_n(begin, size, it);
+      context.advance_to(out);
     }
 
     void on_arg_id() { arg = context.next_arg(); }
@@ -2919,7 +2913,7 @@ void do_vformat_to(typename ArgFormatter::range out,
       if (visit(custom_formatter<Char, Context>(context), arg))
         return;
       basic_format_specs<Char> specs;
-      visit(ArgFormatter(out, context, specs), arg);
+      visit(ArgFormatter(context, specs), arg);
     }
 
     iterator on_format_specs(iterator it) {
@@ -2936,11 +2930,10 @@ void do_vformat_to(typename ArgFormatter::range out,
       if (*it != '}')
         on_error("missing '}' in format string");
       parse_ctx.advance_to(pointer_from(it));
-      visit(ArgFormatter(out, context, specs), arg);
+      visit(ArgFormatter(context, specs), arg);
       return it;
     }
 
-    range out;
     Context context;
     basic_arg<Context> arg;
   };
@@ -3004,13 +2997,13 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char> &buffer) {
 
 inline void vformat_to(internal::buffer &buf, string_view format_str,
                        format_args args) {
-  using range = internal::dynamic_range<internal::buffer>;
+  using range = back_insert_range<internal::buffer>;
   do_vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
 inline void vformat_to(internal::wbuffer &buf, wstring_view format_str,
                        wformat_args args) {
-  using range = internal::dynamic_range<internal::wbuffer>;
+  using range = back_insert_range<internal::wbuffer>;
   do_vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
@@ -3028,8 +3021,7 @@ inline void format_to(wmemory_buffer &buf, wstring_view format_str,
 
 template <typename Container, typename... Args>
 inline void format_to(std::back_insert_iterator<Container> out,
-                      string_view format_str,
-                      const Args & ... args) {
+                      string_view format_str, const Args & ... args) {
   vformat_to(out, format_str, make_args(args...));
 }
 

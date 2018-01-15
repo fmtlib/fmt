@@ -88,7 +88,7 @@ void std_format(long double value, std::wstring &result) {
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T &value, const char *type) {
   fmt::basic_memory_buffer<Char> buffer;
-  using range = fmt::internal::dynamic_range<fmt::internal::basic_buffer<Char>>;
+  using range = fmt::back_insert_range<fmt::internal::basic_buffer<Char>>;
   fmt::basic_writer<range> writer(buffer);
   writer.write(value);
   std::basic_string<Char> actual = to_string(buffer);
@@ -1481,7 +1481,7 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-using buffer_range = fmt::internal::dynamic_range<fmt::internal::buffer>;
+using buffer_range = fmt::back_insert_range<fmt::internal::buffer>;
 
 class mock_arg_formatter :
     public fmt::internal::arg_formatter_base<buffer_range> {
@@ -1492,8 +1492,8 @@ class mock_arg_formatter :
   using base = fmt::internal::arg_formatter_base<buffer_range>;
   using range = buffer_range;
 
-  mock_arg_formatter(buffer_range r, fmt::context &, fmt::format_specs &s)
-    : base(r, s) {
+  mock_arg_formatter(fmt::context &ctx, fmt::format_specs &s)
+    : base(fmt::internal::get_container(ctx.begin()), s) {
     EXPECT_CALL(*this, call(42));
   }
 
@@ -1905,6 +1905,6 @@ TEST(FormatTest, FormatStringErrors) {
                int, int);
 }
 
-TEST(StringTest, ToString) {
+TEST(FormatTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
 }

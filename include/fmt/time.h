@@ -31,7 +31,7 @@ struct formatter<std::tm> {
   }
 
   auto format(const std::tm &tm, context &ctx) -> decltype(ctx.begin()) {
-    internal::buffer &buf = ctx.range().container();
+    internal::buffer &buf = internal::get_container(ctx.begin());
     std::size_t start = buf.size();
     for (;;) {
       std::size_t size = buf.capacity() - start;

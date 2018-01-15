@@ -326,7 +326,7 @@ FMT_FUNC void windows_error::init(
 }
 
 FMT_FUNC void internal::format_windows_error(
-    buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
+    internal::buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
     wmemory_buffer buf;
     buf.resize(INLINE_BUFFER_SIZE);

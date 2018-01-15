@@ -200,7 +200,8 @@ class basic_buffer {
   std::size_t capacity_;
 
  protected:
-  basic_buffer() FMT_NOEXCEPT : ptr_(0), size_(0), capacity_(0) {}
+  basic_buffer(T *p = 0, std::size_t size = 0, std::size_t capacity = 0)
+    FMT_NOEXCEPT: ptr_(p), size_(size), capacity_(capacity) {}
 
   /** Sets the buffer data and capacity. */
   void set(T *data, std::size_t capacity) FMT_NOEXCEPT {
@@ -266,12 +267,12 @@ class basic_buffer {
   const T &operator[](std::size_t index) const { return ptr_[index]; }
 };
 
-using buffer = internal::basic_buffer<char>;
-using wbuffer = internal::basic_buffer<wchar_t>;
+using buffer = basic_buffer<char>;
+using wbuffer = basic_buffer<wchar_t>;
 
+// A container-backed buffer.
 template <typename Container>
-class container_buffer
-    : public internal::basic_buffer<typename Container::value_type> {
+class container_buffer : public basic_buffer<typename Container::value_type> {
  private:
   Container &container_;
 
@@ -282,7 +283,9 @@ class container_buffer
   }
 
  public:
-  explicit container_buffer(Container &c) : container_(c) {}
+  explicit container_buffer(Container &c)
+    : basic_buffer<typename Container::value_type>(&c[0], c.size(), c.size()),
+      container_(c) {}
 };
 
 // A helper function to suppress bogus "conditional expression is constant"
@@ -771,7 +774,6 @@ class context_base {
 
  private:
   basic_parse_context<typename Range::value_type> parse_context_;
-  Range range_;
   iterator out_;
   basic_format_args<Context> args_;
 
@@ -779,9 +781,9 @@ class context_base {
   using char_type = typename Range::value_type;
   using format_arg = basic_arg<Context>;
 
-  context_base(Range range, basic_string_view<char_type> format_str,
+  context_base(Range r, basic_string_view<char_type> format_str,
                basic_format_args<Context> args)
-  : parse_context_(format_str), range_(range), args_(args) {}
+  : parse_context_(format_str), out_(r.begin()), args_(args) {}
 
   basic_format_args<Context> args() const { return args_; }
 
@@ -811,23 +813,33 @@ class context_base {
 
   void on_error(const char *message) { parse_context_.on_error(message); }
 
-  Range range() { return range_; }
-
   // Returns an iterator to the beginning of the output range.
-  auto begin() { return std::back_inserter(range_.container()); }
+  auto begin() { return out_; }
 
   // Advances the begin iterator to ``it``.
   void advance_to(iterator it) { out_ = it; }
 };
 
-// A range that can grow dynamically.
+// Extracts a reference to the container from back_insert_iterator.
 template <typename Container>
-class dynamic_range {
+inline Container &get_container(std::back_insert_iterator<Container> it) {
+  using iterator = std::back_insert_iterator<Container>;
+  struct accessor: iterator {
+    accessor(iterator it) : iterator(it) {}
+    using iterator::container;
+  };
+  return *accessor(it).container;
+}
+}  // namespace internal
+
+// A range where begin() returns back_insert_iterator.
+template <typename Container>
+class back_insert_range {
  private:
   Container &container_;
 
  public:
-  using iterator = decltype(container_.begin());
+  using iterator = std::back_insert_iterator<Container>;
   using value_type = typename Container::value_type;
 
   struct sentinel {
@@ -835,20 +847,11 @@ class dynamic_range {
     friend bool operator!=(iterator, sentinel) { return false; }
   };
 
-  dynamic_range(Container &c) : container_(c) {}
+  back_insert_range(Container &c) : container_(c) {}
 
-  iterator begin() const { return container_.begin(); }
+  iterator begin() const { return std::back_inserter(container_); }
   sentinel end() const { return sentinel(); }
-
-  friend iterator grow(dynamic_range r, size_t n) {
-    auto size = r.container_.size();
-    r.container_.resize(size + n);
-    return r.container_.begin() + size;
-  }
-
-  Container &container() const { return container_; }
 };
-}  // namespace internal
 
 // Formatting context.
 template <typename Range>
@@ -895,8 +898,8 @@ class basic_context :
   format_arg get_arg(basic_string_view<char_type> name);
 };
 
-using context = basic_context<internal::dynamic_range<internal::buffer>>;
-using wcontext = basic_context<internal::dynamic_range<internal::wbuffer>>;
+using context = basic_context<back_insert_range<internal::buffer>>;
+using wcontext = basic_context<back_insert_range<internal::wbuffer>>;
 
 template <typename Context, typename ...Args>
 class arg_store {
@@ -1016,7 +1019,7 @@ struct named_arg_base {
   // Serialized value<context>.
   mutable char data[sizeof(basic_arg<context>)];
 
-  named_arg_base(basic_string_view<Char> name) : name(name) {}
+  named_arg_base(basic_string_view<Char> nm) : name(nm) {}
 
   template <typename Context>
   basic_arg<Context> deserialize() const {
@@ -1082,18 +1085,21 @@ void vformat_to(internal::buffer &buf, string_view format_str,
 void vformat_to(internal::wbuffer &buf, wstring_view format_str,
                 wformat_args args);
 
-/**
- Formats a string and writes the output to out.
- */
 template <typename Container>
-void vformat_to(std::back_insert_iterator<Container> out,
-                string_view format_str, format_args args) {
-  using iterator = std::back_insert_iterator<Container>;
-  struct container_accessor : iterator {
-    container_accessor(iterator it) : iterator(it) {}
-    using iterator::container;
-  } accessor(out);
-  internal::container_buffer<Container> buf(*accessor.container);
+struct is_contiguous : std::false_type {};
+
+template <typename Char>
+struct is_contiguous<std::basic_string<Char>> : std::true_type {};
+
+template <typename Char>
+struct is_contiguous<fmt::internal::basic_buffer<Char>> : std::true_type {};
+
+/** Formats a string and writes the output to ``out``. */
+template <typename Container>
+typename std::enable_if<is_contiguous<Container>::value>::type
+    vformat_to(std::back_insert_iterator<Container> out,
+               string_view format_str, format_args args) {
+  internal::container_buffer<Container> buf(internal::get_container(out));
   vformat_to(buf, format_str, args);
 }
 
