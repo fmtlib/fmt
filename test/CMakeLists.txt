@@ -32,6 +32,10 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
 endif ()
 
+# Silence MSVC tr1 deprecation warning in gmock.
+target_compile_definitions(gmock
+  PUBLIC _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING=0)
+
 #------------------------------------------------------------------------------
 # Build the actual library tests
 
