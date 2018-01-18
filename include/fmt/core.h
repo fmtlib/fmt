@@ -929,6 +929,8 @@ class arg_store {
   arg_store(const Args &... args)
     : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
 
+  basic_format_args<Context> operator*() const { return *this; }
+
   const value_type *data() const { return data_; }
 };
 

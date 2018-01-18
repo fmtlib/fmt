@@ -1910,11 +1910,15 @@ TEST(FormatTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
 }
 
-TEST(WriterTest, OutputIterators) {
+TEST(FormatTest, OutputIterators) {
   std::list<char> out;
   fmt::format_to(std::back_inserter(out), "{}", 42);
   EXPECT_EQ("42", std::string(out.begin(), out.end()));
   std::stringstream s;
   fmt::format_to(std::ostream_iterator<char>(s), "{}", 42);
   EXPECT_EQ("42", s.str());
+}
+
+TEST(FormatTest, OutputSize) {
+  EXPECT_EQ(2, fmt::count("{}", 42));
 }

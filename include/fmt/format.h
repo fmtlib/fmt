@@ -619,6 +619,33 @@ constexpr const Char *pointer_from(null_terminating_iterator<Char> it) {
   return it.ptr_;
 }
 
+// An output iterator that counts the number of objects written to it and
+// discards them.
+template <typename T>
+class counting_iterator {
+ private:
+  std::size_t& count_;
+  mutable T blackhole_;
+
+ public:
+  explicit counting_iterator(std::size_t &count): count_(count) {}
+  counting_iterator(const counting_iterator &other): count_(other.count_) {}
+
+  counting_iterator& operator=(const counting_iterator &other) {
+    count_ = other.count_;
+    return *this;
+  }
+
+  counting_iterator& operator++() {
+    ++count_;
+    return *this;
+  }
+
+  counting_iterator operator++(int) { return ++*this; }
+
+  T &operator*() const { return blackhole_; }
+};
+
 // Returns true if value is negative, false otherwise.
 // Same as (value < 0) but doesn't produce warnings if T is an unsigned type.
 template <typename T>
@@ -3036,11 +3063,23 @@ inline void format_to(wmemory_buffer &buf, wstring_view format_str,
   vformat_to(buf, format_str, make_args<wcontext>(args...));
 }
 
-template <typename Container, typename Context>
-typename std::enable_if<!is_contiguous<Container>::value>::type
-    vformat_to(std::back_insert_iterator<Container> out,
-               string_view format_str,
-               basic_format_args<Context> args) {
+template <typename OutputIt, typename Char = char>
+using context_t = basic_context<output_range<OutputIt, Char>>;
+
+template <typename OutputIt>
+using format_args_t = basic_format_args<context_t<OutputIt>>;
+
+template <typename OutputIt, typename... Args>
+inline void vformat_to(OutputIt out, string_view format_str,
+                       format_args_t<OutputIt> args) {
+  using range = output_range<OutputIt, char>;
+  do_vformat_to<arg_formatter<range>>(range(out), format_str, args);
+}
+
+template <typename OutputIt, typename... Args>
+inline void format_to(OutputIt out, string_view format_str,
+                      const Args & ... args) {
+  vformat_to(out, format_str, *make_args<context_t<OutputIt>>(args...));
 }
 
 template <typename Container, typename... Args>
@@ -3048,15 +3087,6 @@ inline typename std::enable_if<is_contiguous<Container>::value>::type
     format_to(std::back_insert_iterator<Container> out,
               string_view format_str, const Args & ... args) {
   vformat_to(out, format_str, make_args(args...));
-}
-
-template <typename OutputIt, typename... Args>
-inline void format_to(OutputIt out, string_view format_str,
-                      const Args & ... args) {
-  using range = output_range<OutputIt, char>;
-  auto store = make_args<basic_context<range>>(args...);
-  do_vformat_to<arg_formatter<range>>(
-        range(out), format_str, basic_format_args<basic_context<range>>(store));
 }
 
 inline std::string vformat(string_view format_str, format_args args) {
@@ -3080,6 +3110,15 @@ inline typename std::enable_if<
         string_view(format_str.value(), format_str.size()));
   (void)invalid_format;
   return vformat(format_str.value(), make_args(args...));
+}
+
+// Counts the number of characters in the output of format(format_str, args...).
+template <typename... Args>
+inline std::size_t count(string_view format_str, const Args & ... args) {
+  std::size_t size = 0;
+  internal::counting_iterator<char> it(size);
+  format_to(it, format_str, args...);
+  return size;
 }
 }  // namespace fmt
 
