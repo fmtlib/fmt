@@ -4111,10 +4111,14 @@ template <typename ArgFormatter, typename Char, typename It>
 void format_arg(fmt::BasicFormatter<Char, ArgFormatter> &f,
     const Char *&format_str, const ArgJoin<Char, It>& e) {
   const Char* end = format_str;
-  if (*end == ':')
+  int brace_level = 1;
+  while (*end) {
+    if (*end == '}' && --brace_level == 0)
+      break;
+    if (*end == '{')
+      ++brace_level;
     ++end;
-  while (*end && *end != '}')
-    ++end;
+  }
   if (*end != '}')
     FMT_THROW(FormatError("missing '}' in format string"));
 
