@@ -24,6 +24,7 @@ target_include_directories(fmt PUBLIC
 
 set_target_properties(fmt PROPERTIES
   VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR})
+set_target_properties(fmt PROPERTIES DEBUG_POSTFIX d)
 
 if (BUILD_SHARED_LIBS)
   if (UNIX AND NOT APPLE)
