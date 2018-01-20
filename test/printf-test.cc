@@ -29,6 +29,7 @@
 #include <climits>
 #include <cstring>
 
+//#define FMT_WCONV_USE_NOWIDE
 #include "fmt/printf.h"
 #include "fmt/format.h"
 #include "gtest-extra.h"
@@ -508,4 +509,51 @@ TEST(PrintfTest, Writer) {
   fmt::MemoryWriter writer;
   printf(writer, "%d", 42);
   EXPECT_EQ("42", writer.str());
+}
+
+TEST(PrintfTest, ConvWchar) {
+#ifdef _MSC_VER
+# ifndef FMT_WCONV_USE_NOWIDE
+  // FMT_WCONV_USE_NOWIDE is required for this test on Windows.
+  // UTF-8 is not supported by MSVCRT so we have a compile-time option
+  // to bypass the CRT and force UTF-8.
+  return;
+# endif
+#else  // not MSVC
+  // Select UTF-8 code set.
+  std::string oldlocale = setlocale(LC_CTYPE, NULL);
+  std::size_t dotpos = oldlocale.find('.');
+  if (dotpos == std::string::npos)
+    dotpos = oldlocale.size();
+  std::string newlocale = oldlocale.substr(0, dotpos) + ".UTF-8";
+  EXPECT_EQ(newlocale, setlocale(LC_CTYPE, newlocale.c_str()));
+#endif
+
+  std::string s = "\xF0\x9F\x98\x81";
+#if WCHAR_MAX > 0xFFFF
+  std::wstring w = L"\U0001F601";
+#else
+  std::wstring w = L"\xD83D\xDE01";  // UTF-16
+#endif
+  // Ignore the 'l' in '%ls' and use types to do the right thing with strings.
+  EXPECT_EQ(s, fmt::sprintf( "%s" , s));
+  EXPECT_EQ(s, fmt::sprintf( "%s" , w));
+  EXPECT_EQ(s, fmt::sprintf( "%ls", w));
+  EXPECT_EQ(w, fmt::sprintf(L"%s" , w));
+  EXPECT_EQ(w, fmt::sprintf(L"%s" , s));
+  EXPECT_EQ(w, fmt::sprintf(L"%ls", s));
+
+  EXPECT_EQ(s, fmt::format("{}", w));
+  EXPECT_EQ(w, fmt::format(L"{}", s));
+
+  fmt::MemoryWriter out8;
+  out8 << w;
+  EXPECT_EQ(s, out8.c_str());
+  fmt::WMemoryWriter out16;
+  out16 << s;
+  EXPECT_EQ(w, out16.c_str());
+
+#ifndef _MSC_VER
+  setlocale(LC_ALL, oldlocale.c_str());
+#endif
 }
