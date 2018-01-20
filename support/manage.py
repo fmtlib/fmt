@@ -141,6 +141,7 @@ def update_site(env):
                 b.data = re.sub(pattern, r'doxygenfunction:: \1(int)', b.data)
                 b.data = b.data.replace('std::FILE*', 'std::FILE *')
                 b.data = b.data.replace('unsigned int', 'unsigned')
+                b.data = b.data.replace('operator""_', 'operator"" _')
         # Fix a broken link in index.rst.
         index = os.path.join(target_doc_dir, 'index.rst')
         with rewrite(index) as b:
