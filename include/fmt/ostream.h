@@ -8,7 +8,7 @@
 #ifndef FMT_OSTREAM_H_
 #define FMT_OSTREAM_H_
 
-#include "fmt/format.h"
+#include "format.h"
 #include <ostream>
 
 namespace fmt {

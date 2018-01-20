@@ -37,7 +37,7 @@
 #include <stdexcept>
 #include <stdint.h>
 
-#include "fmt/core.h"
+#include "core.h"
 
 #ifdef _SECURE_SCL
 # define FMT_SECURE_SCL _SECURE_SCL

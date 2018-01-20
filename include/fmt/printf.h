@@ -11,7 +11,7 @@
 #include <algorithm>  // std::fill_n
 #include <limits>     // std::numeric_limits
 
-#include "fmt/ostream.h"
+#include "ostream.h"
 
 namespace fmt {
 namespace internal {
