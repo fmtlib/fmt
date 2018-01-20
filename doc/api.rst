@@ -58,6 +58,43 @@ formatting::
 The format string syntax is described in the documentation of
 `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_.
 
+Formatting user-defined types
+-----------------------------
+
+To make a user-defined type formattable, specialize the ``formatter<T>`` struct
+template and implement ``parse`` and ``format`` methods::
+
+  struct MyStruct { double x, y; };
+
+  namespace fmt {
+  template <>
+  struct formatter<MyStruct> {
+    template <typename ParseContext>
+    auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+    template <typename FormatContext>
+    auto format(const MyStruct &s, FormatContext &ctx) {
+      fmt::format_to(ctx.begin(), "[MyStruct: x={:.1f}, y={:.2f}]", s.x, s.y);
+    }
+  };
+  }
+
+Then you can pass objects of type ``MyStruct`` to any formatting function::
+
+  MyStruct m = {1, 2};
+  std::string s = fmt::format("m={}", m);
+  // s == "m=[MyStruct: x=1.0, y=2.00]"
+
+In the example above the ``formatter<MyStruct>::parse`` function ignores the
+contents of the format string referred to by ``ctx.begin()`` so the object will
+always be formatted as specified. See ``formatter<tm>::parse`` in
+:file:`fmt/time.h` for an advanced example of how to parse the format string and
+customize the formatted output.
+
+This section shows how to define a custom format function for a user-defined
+type. The next section describes how to get ``fmt`` to use a conventional stream
+output ``operator<<`` when one is defined for a user-defined type.
+
 ``std::ostream`` support
 ------------------------
 
