@@ -77,7 +77,7 @@ void fmt::BufferedFile::close() {
   if (!file_)
     return;
   int result = FMT_SYSTEM(fclose(file_));
-  file_ = 0;
+  file_ = FMT_NULL;
   if (result != 0)
     FMT_THROW(system_error(errno, "cannot close file"));
 }

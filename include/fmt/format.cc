@@ -154,7 +154,8 @@ int safe_strerror(
       : error_code_(err_code), buffer_(buf), buffer_size_(buf_size) {}
 
     int run() {
-      strerror_r(0, 0, "");  // Suppress a warning about unused strerror_r.
+      // Suppress a warning about unused strerror_r.
+      strerror_r(0, FMT_NULL, "");
       return handle(strerror_r(error_code_, buffer_, buffer_size_));
     }
   };
@@ -282,7 +283,7 @@ FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
     FMT_THROW(windows_error(ERROR_INVALID_PARAMETER, ERROR_MSG));
   int s_size = static_cast<int>(s.size());
   int length = MultiByteToWideChar(
-      CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size, 0, 0);
+      CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size, FMT_NULL, 0);
   if (length == 0)
     FMT_THROW(windows_error(GetLastError(), ERROR_MSG));
   buffer_.resize(length + 1);
@@ -304,12 +305,13 @@ FMT_FUNC int internal::utf16_to_utf8::convert(wstring_view s) {
   if (s.size() > INT_MAX)
     return ERROR_INVALID_PARAMETER;
   int s_size = static_cast<int>(s.size());
-  int length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, 0, 0, 0, 0);
+  int length = WideCharToMultiByte(
+        CP_UTF8, 0, s.data(), s_size, FMT_NULL, 0, FMT_NULL, FMT_NULL);
   if (length == 0)
     return GetLastError();
   buffer_.resize(length + 1);
   length = WideCharToMultiByte(
-    CP_UTF8, 0, s.data(), s_size, &buffer_[0], length, 0, 0);
+    CP_UTF8, 0, s.data(), s_size, &buffer_[0], length, FMT_NULL, FMT_NULL);
   if (length == 0)
     return GetLastError();
   buffer_[length] = 0;
@@ -334,8 +336,8 @@ FMT_FUNC void internal::format_windows_error(
       wchar_t *system_message = &buf[0];
       int result = FormatMessageW(
           FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-          0, error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-          system_message, static_cast<uint32_t>(buf.size()), 0);
+          FMT_NULL, error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+          system_message, static_cast<uint32_t>(buf.size()), FMT_NULL);
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {

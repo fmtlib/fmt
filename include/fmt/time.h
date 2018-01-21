@@ -33,7 +33,7 @@ inline std::tm localtime(std::time_t time) {
       return handle(localtime_r(&time_, &tm_));
     }
 
-    bool handle(std::tm* tm) { return tm != 0; }
+    bool handle(std::tm *tm) { return tm != FMT_NULL; }
 
     bool handle(internal::null<>) {
       using namespace fmt::internal;
@@ -44,9 +44,9 @@ inline std::tm localtime(std::time_t time) {
 
     bool fallback(internal::null<>) {
       using namespace fmt::internal;
-      std::tm* tm = std::localtime(&time_);
-      if (tm != 0) tm_ = *tm;
-      return tm != 0;
+      std::tm *tm = std::localtime(&time_);
+      if (tm) tm_ = *tm;
+      return tm != FMT_NULL;
     }
   };
   LocalTime lt(time);
@@ -70,7 +70,7 @@ inline std::tm gmtime(std::time_t time) {
       return handle(gmtime_r(&time_, &tm_));
     }
 
-    bool handle(std::tm* tm) { return tm != 0; }
+    bool handle(std::tm *tm) { return tm != FMT_NULL; }
 
     bool handle(internal::null<>) {
       using namespace fmt::internal;
@@ -80,9 +80,9 @@ inline std::tm gmtime(std::time_t time) {
     bool fallback(int res) { return res == 0; }
 
     bool fallback(internal::null<>) {
-      std::tm* tm = std::gmtime(&time_);
-      if (tm != 0) tm_ = *tm;
-      return tm != 0;
+      std::tm *tm = std::gmtime(&time_);
+      if (tm) tm_ = *tm;
+      return tm != FMT_NULL;
     }
   };
   GMTime gt(time);

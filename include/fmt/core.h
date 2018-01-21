@@ -31,6 +31,16 @@
 # define FMT_MSC_VER 0
 #endif
 
+#ifndef FMT_NULL
+# if FMT_HAS_FEATURE(cxx_nullptr) || \
+   (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
+   FMT_MSC_VER >= 1600
+#  define FMT_NULL nullptr
+# else
+#  define FMT_NULL NULL
+# endif
+#endif
+
 // Check if exceptions are disabled.
 #if defined(__GNUC__) && !defined(__EXCEPTIONS)
 # define FMT_EXCEPTIONS 0
@@ -211,7 +221,7 @@ class basic_buffer {
   std::size_t capacity_;
 
  protected:
-  basic_buffer(T *p = 0, std::size_t size = 0, std::size_t capacity = 0)
+  basic_buffer(T *p = FMT_NULL, std::size_t size = 0, std::size_t capacity = 0)
     FMT_NOEXCEPT: ptr_(p), size_(size), capacity_(capacity) {}
 
   /** Sets the buffer data and capacity. */

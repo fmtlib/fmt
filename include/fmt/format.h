@@ -2560,7 +2560,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
 
   // Format using snprintf.
   unsigned n = 0;
-  char_type *start = 0;
+  char_type *start = FMT_NULL;
   for (;;) {
     std::size_t buffer_size = buffer.capacity();
 #if FMT_MSC_VER
