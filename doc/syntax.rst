@@ -4,8 +4,9 @@
 Format String Syntax
 ********************
 
-Formatting functions such as :ref:`fmt::format() <format>` and :ref:`fmt::print() <print>`
-use the same format string syntax described in this section.
+Formatting functions such as :ref:`fmt::format() <format>` and
+:ref:`fmt::print() <print>` use the same format string syntax described in this
+section.
 
 Format strings contain "replacement fields" surrounded by curly braces ``{}``.
 Anything that is not contained in braces is considered literal text, which is
@@ -51,8 +52,8 @@ described in the next section.
 
 A *format_spec* field can also include nested replacement fields in certain
 positions within it. These nested replacement fields can contain only an
-argument index; format specifications are not allowed. This allows the
-formatting of a value to be dynamically specified.
+argument id; format specifications are not allowed. This allows the formatting
+of a value to be dynamically specified.
 
 See the :ref:`formatexamples` section for some examples.
 
