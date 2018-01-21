@@ -131,6 +131,15 @@
 # define FMT_UDL_TEMPLATE 0
 #endif
 
+#ifndef FMT_USE_EXTERN_TEMPLATES
+# ifndef FMT_HEADER_ONLY
+#  define FMT_USE_EXTERN_TEMPLATES \
+     (FMT_CLANG_VERSION >= 209 || (FMT_GCC_VERSION >= 303 && FMT_HAS_GXX_CXX11))
+# else
+#  define FMT_USE_EXTERN_TEMPLATES 0
+# endif
+#endif
+
 #if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
 # define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
 #endif
@@ -513,6 +522,22 @@ class char_traits<wchar_t> : public basic_char_traits<wchar_t> {
       const wchar_t *format, unsigned width, int precision, T value);
 };
 
+#if FMT_USE_EXTERN_TEMPLATES
+extern template int char_traits<char>::format_float<double>(
+    char *buffer, std::size_t size, const char* format, unsigned width,
+    int precision, double value);
+extern template int char_traits<char>::format_float<long double>(
+    char *buffer, std::size_t size, const char* format, unsigned width,
+    int precision, long double value);
+
+extern template int char_traits<wchar_t>::format_float<double>(
+    wchar_t *buffer, std::size_t size, const wchar_t* format, unsigned width,
+    int precision, double value);
+extern template int char_traits<wchar_t>::format_float<long double>(
+    wchar_t *buffer, std::size_t size, const wchar_t* format, unsigned width,
+    int precision, long double value);
+#endif
+
 template <typename Container>
 inline typename std::enable_if<
   is_contiguous<Container>::value, typename Container::value_type*>::type
@@ -682,13 +707,7 @@ struct FMT_API basic_data {
   static const char DIGITS[];
 };
 
-#ifndef FMT_USE_EXTERN_TEMPLATES
-// Clang doesn't have a feature check for extern templates so we check
-// for variadic templates which were introduced in the same version.
-# define FMT_USE_EXTERN_TEMPLATES (__clang__)
-#endif
-
-#if FMT_USE_EXTERN_TEMPLATES && !defined(FMT_HEADER_ONLY)
+#if FMT_USE_EXTERN_TEMPLATES
 extern template struct basic_data<void>;
 #endif
 
