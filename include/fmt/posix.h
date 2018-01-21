@@ -137,7 +137,7 @@ class BufferedFile {
   BufferedFile() FMT_NOEXCEPT : file_(0) {}
 
   // Destroys the object closing the file it represents if any.
-  ~BufferedFile() FMT_NOEXCEPT;
+  ~BufferedFile() FMT_DTOR_NOEXCEPT;
 
 #if !FMT_USE_RVALUE_REFERENCES
   // Emulate a move constructor and a move assignment operator if rvalue
@@ -310,7 +310,7 @@ class File {
 #endif
 
   // Destroys the object closing the file it represents if any.
-  ~File() FMT_NOEXCEPT;
+  ~File() FMT_DTOR_NOEXCEPT;
 
   // Returns the file descriptor.
   int descriptor() const FMT_NOEXCEPT { return fd_; }

@@ -2104,7 +2104,7 @@ class system_error : public std::runtime_error {
     init(error_code, message, make_args(args...));
   }
 
-  ~system_error() throw();
+  ~system_error() FMT_DTOR_NOEXCEPT;
 
   int error_code() const { return error_code_; }
 };
