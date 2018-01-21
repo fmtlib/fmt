@@ -2058,10 +2058,12 @@ void handle_dynamic_spec(
 template <typename Range>
 class arg_formatter: public internal::arg_formatter_base<Range> {
  private:
-  basic_context<Range> &ctx_;
-
   using char_type = typename Range::value_type;
+  using iterator = decltype(std::declval<Range>().begin());
   using base = internal::arg_formatter_base<Range>;
+  using context_type = basic_context<iterator, char_type>;
+
+  context_type &ctx_;
 
  public:
   using range = Range;
@@ -2074,13 +2076,13 @@ class arg_formatter: public internal::arg_formatter_base<Range> {
     *spec* contains format specifier information for standard argument types.
     \endrst
    */
-  arg_formatter(basic_context<Range> &ctx, format_specs &spec)
+  arg_formatter(context_type &ctx, format_specs &spec)
   : base(Range(ctx.begin()), spec), ctx_(ctx) {}
 
   using base::operator();
 
   /** Formats an argument of a custom (user-defined) type. */
-  void operator()(typename basic_arg<basic_context<Range>>::handle handle) {
+  void operator()(typename basic_arg<context_type>::handle handle) {
     handle.format(ctx_);
   }
 };
@@ -2851,7 +2853,8 @@ struct formatter<
       specs_.width_, specs_.width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
       specs_.precision_, specs_.precision_ref, ctx);
-    using range = typename FormatContext::range_type;
+    using range = output_range<
+      typename FormatContext::iterator, typename FormatContext::char_type>;
     visit(arg_formatter<range>(ctx, specs_),
           internal::make_arg<FormatContext>(val));
     return ctx.begin();
@@ -2919,7 +2922,9 @@ struct dynamic_formatter {
     }
     if (specs_.precision_ != -1)
       checker.end_precision();
-    visit(arg_formatter<typename FormatContext::range_type>(ctx, specs_),
+    using range = output_range<
+      typename FormatContext::iterator, typename FormatContext::char_type>;
+    visit(arg_formatter<range>(ctx, specs_),
           internal::make_arg<FormatContext>(val));
     return ctx.begin();
   }
@@ -2936,9 +2941,9 @@ struct dynamic_formatter {
   internal::dynamic_format_specs<Char> specs_;
 };
 
-template <typename Range>
-typename basic_context<Range>::format_arg
-  basic_context<Range>::get_arg(basic_string_view<char_type> name) {
+template <typename Range, typename Char>
+typename basic_context<Range, Char>::format_arg
+  basic_context<Range, Char>::get_arg(basic_string_view<char_type> name) {
   map_.init(this->args());
   format_arg arg = map_.find(name);
   if (arg.type() == internal::NONE)
@@ -2957,7 +2962,7 @@ void do_vformat_to(typename ArgFormatter::range out,
   struct handler : internal::error_handler {
     handler(range r, basic_string_view<Char> str,
             basic_format_args<Context> format_args)
-      : context(r, str, format_args) {}
+      : context(r.begin(), str, format_args) {}
 
     void on_text(iterator begin, iterator end) {
       size_t size = end - begin;
@@ -3089,10 +3094,10 @@ inline void format_to(wmemory_buffer &buf, wstring_view format_str,
 }
 
 template <typename OutputIt, typename Char = char>
-using context_t = basic_context<output_range<OutputIt, Char>>;
+using context_t = basic_context<OutputIt, Char>;
 
-template <typename OutputIt>
-using format_args_t = basic_format_args<context_t<OutputIt>>;
+template <typename OutputIt, typename Char = char>
+using format_args_t = basic_format_args<context_t<OutputIt, Char>>;
 
 template <typename OutputIt, typename... Args>
 inline void vformat_to(OutputIt out, string_view format_str,

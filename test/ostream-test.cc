@@ -58,14 +58,17 @@ TEST(OStreamTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-struct test_arg_formatter : fmt::arg_formatter<fmt::context::range_type> {
+using range = fmt::back_insert_range<fmt::internal::buffer>;
+
+struct test_arg_formatter: fmt::arg_formatter<range> {
   test_arg_formatter(fmt::context &ctx, fmt::format_specs &s)
-    : fmt::arg_formatter<fmt::context::range_type>(ctx, s) {}
+    : fmt::arg_formatter<range>(ctx, s) {}
 };
 
 TEST(OStreamTest, CustomArg) {
   fmt::memory_buffer buffer;
-  fmt::context ctx(buffer, "", fmt::format_args());
+  fmt::internal::buffer &base = buffer;
+  fmt::context ctx(std::back_inserter(base), "", fmt::format_args());
   fmt::format_specs spec;
   test_arg_formatter af(ctx, spec);
   visit(af, fmt::internal::make_arg<fmt::context>(TestEnum()));

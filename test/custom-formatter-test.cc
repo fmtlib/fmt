@@ -18,9 +18,11 @@ class CustomArgFormatter :
     public fmt::arg_formatter<fmt::back_insert_range<fmt::internal::buffer>> {
  public:
   using range = fmt::back_insert_range<fmt::internal::buffer>;
+  using iterator = decltype(std::declval<range>().begin());
   using base = fmt::arg_formatter<range>;
 
-  CustomArgFormatter(fmt::basic_context<range> &ctx, fmt::format_specs &s)
+  CustomArgFormatter(fmt::basic_context<iterator, char> &ctx,
+                     fmt::format_specs &s)
   : base(ctx, s) {}
 
   using base::operator();

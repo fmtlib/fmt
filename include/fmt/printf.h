@@ -201,7 +201,10 @@ class PrintfWidthHandler {
 template <typename Range>
 class printf_arg_formatter;
 
-template <typename Range, typename ArgFormatter = printf_arg_formatter<Range>>
+template <
+    typename OutputIt, typename Char,
+    typename ArgFormatter =
+      printf_arg_formatter<back_insert_range<internal::basic_buffer<Char>>>>
 class basic_printf_context;
 
 /**
@@ -212,15 +215,17 @@ class basic_printf_context;
 template <typename Range>
 class printf_arg_formatter : public internal::arg_formatter_base<Range> {
  private:
-  basic_printf_context<Range> &context_;
+  using char_type = typename Range::value_type;
+  using iterator = decltype(std::declval<Range>().begin());
+  using base = internal::arg_formatter_base<Range>;
+  using context_type = basic_printf_context<iterator, char_type>;
+
+  context_type &context_;
 
   void write_null_pointer() {
     this->spec().type_ = 0;
     this->write("(nil)");
   }
-
-  using char_type = typename Range::value_type;
-  using base = internal::arg_formatter_base<Range>;
 
  public:
   using format_specs = typename base::format_specs;
@@ -233,8 +238,9 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
     \endrst
    */
   printf_arg_formatter(internal::basic_buffer<char_type> &buffer,
-                       format_specs &spec, basic_printf_context<Range> &ctx)
-  : base(buffer, spec), context_(ctx) {}
+                       format_specs &spec, context_type &ctx)
+    : base(back_insert_range<internal::basic_buffer<char_type>>(buffer), spec),
+      context_(ctx) {}
 
   using base::operator();
 
@@ -276,8 +282,7 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
   }
 
   /** Formats an argument of a custom (user-defined) type. */
-  void operator()(
-      typename basic_arg<basic_printf_context<Range>>::handle handle) {
+  void operator()(typename basic_arg<context_type>::handle handle) {
     handle.format(context_);
   }
 };
@@ -295,19 +300,19 @@ struct printf_formatter {
 };
 
 /** This template formats data and writes the output to a writer. */
-template <typename Range, typename ArgFormatter>
+template <typename OutputIt, typename Char, typename ArgFormatter>
 class basic_printf_context :
   private internal::context_base<
-    Range, basic_printf_context<Range, ArgFormatter>> {
+    OutputIt, basic_printf_context<OutputIt, Char, ArgFormatter>, Char> {
  public:
   /** The character type for the output. */
-  using char_type = typename Range::value_type;
+  using char_type = Char;
 
   template <typename T>
   using formatter_type = printf_formatter<T>;
 
  private:
-  using base = internal::context_base<Range, basic_printf_context>;
+  using base = internal::context_base<OutputIt, basic_printf_context, Char>;
   using format_arg = typename base::format_arg;
   using format_specs = basic_format_specs<char_type>;
   using iterator = internal::null_terminating_iterator<char_type>;
@@ -331,9 +336,9 @@ class basic_printf_context :
    appropriate lifetimes.
    \endrst
    */
-  basic_printf_context(Range range, basic_string_view<char_type> format_str,
+  basic_printf_context(OutputIt out, basic_string_view<char_type> format_str,
                        basic_format_args<basic_printf_context> args)
-    : base(range, format_str, args) {}
+    : base(out, format_str, args) {}
 
   using base::parse_context;
   using base::begin;
@@ -343,8 +348,8 @@ class basic_printf_context :
   FMT_API void format();
 };
 
-template <typename Range, typename AF>
-void basic_printf_context<Range, AF>::parse_flags(
+template <typename OutputIt, typename Char, typename AF>
+void basic_printf_context<OutputIt, Char, AF>::parse_flags(
     format_specs &spec, iterator &it) {
   for (;;) {
     switch (*it++) {
@@ -370,17 +375,18 @@ void basic_printf_context<Range, AF>::parse_flags(
   }
 }
 
-template <typename Range, typename AF>
-typename basic_printf_context<Range, AF>::format_arg
-    basic_printf_context<Range, AF>::get_arg(iterator it, unsigned arg_index) {
+template <typename OutputIt, typename Char, typename AF>
+typename basic_printf_context<OutputIt, Char, AF>::format_arg
+  basic_printf_context<OutputIt, Char, AF>::get_arg(
+    iterator it, unsigned arg_index) {
   (void)it;
   if (arg_index == std::numeric_limits<unsigned>::max())
     return this->do_get_arg(this->parse_context().next_arg_id());
   return base::get_arg(arg_index - 1);
 }
 
-template <typename Range, typename AF>
-unsigned basic_printf_context<Range, AF>::parse_header(
+template <typename OutputIt, typename Char, typename AF>
+unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
   iterator &it, format_specs &spec) {
   unsigned arg_index = std::numeric_limits<unsigned>::max();
   char_type c = *it;
@@ -416,8 +422,8 @@ unsigned basic_printf_context<Range, AF>::parse_header(
   return arg_index;
 }
 
-template <typename Range, typename AF>
-void basic_printf_context<Range, AF>::format() {
+template <typename OutputIt, typename Char, typename AF>
+void basic_printf_context<OutputIt, Char, AF>::format() {
   auto &buffer = internal::get_container(this->begin());
   auto start = iterator(this->parse_context());
   auto it = start;
@@ -506,8 +512,7 @@ void basic_printf_context<Range, AF>::format() {
         break;
       case 'c':
         // TODO: handle wchar_t
-        visit(internal::CharConverter<basic_printf_context<Range, AF>>(arg),
-              arg);
+        visit(internal::CharConverter<basic_printf_context>(arg), arg);
         break;
       }
     }
@@ -523,11 +528,12 @@ void basic_printf_context<Range, AF>::format() {
 template <typename Char, typename Context>
 void printf(internal::basic_buffer<Char> &buf, basic_string_view<Char> format,
             basic_format_args<Context> args) {
-  Context(buf, format, args).format();
+  Context(std::back_inserter(buf), format, args).format();
 }
 
 template <typename Buffer>
-using printf_context = basic_printf_context<back_insert_range<Buffer>>;
+using printf_context = basic_printf_context<
+  std::back_insert_iterator<Buffer>, typename Buffer::value_type>;
 
 using printf_args = basic_format_args<printf_context<internal::buffer>>;
 

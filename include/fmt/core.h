@@ -624,7 +624,7 @@ class value {
     typename Context::template formatter_type<T> f;
     auto &&parse_ctx = ctx.parse_context();
     parse_ctx.advance_to(f.parse(parse_ctx));
-    f.format(*static_cast<const T*>(arg), ctx);
+    ctx.advance_to(f.format(*static_cast<const T*>(arg), ctx));
   }
 };
 
@@ -788,23 +788,23 @@ class arg_map {
   }
 };
 
-template <typename Range, typename Context>
+template <typename OutputIt, typename Context, typename Char>
 class context_base {
  public:
-  using iterator = decltype(std::declval<Range>().begin());
+  using iterator = OutputIt;
 
  private:
-  basic_parse_context<typename Range::value_type> parse_context_;
+  basic_parse_context<Char> parse_context_;
   iterator out_;
   basic_format_args<Context> args_;
 
  protected:
-  using char_type = typename Range::value_type;
+  using char_type = Char;
   using format_arg = basic_arg<Context>;
 
-  context_base(Range r, basic_string_view<char_type> format_str,
+  context_base(OutputIt out, basic_string_view<char_type> format_str,
                basic_format_args<Context> args)
-  : parse_context_(format_str), out_(r.begin()), args_(args) {}
+  : parse_context_(format_str), out_(out), args_(args) {}
 
   basic_format_args<Context> args() const { return args_; }
 
@@ -824,7 +824,7 @@ class context_base {
   }
 
  public:
-  constexpr basic_parse_context<char_type> &parse_context() {
+  basic_parse_context<char_type> &parse_context() {
     return parse_context_;
   }
 
@@ -882,24 +882,22 @@ class back_insert_range:
 };
 
 // Formatting context.
-template <typename Range>
+template <typename OutputIt, typename Char>
 class basic_context :
-  public internal::context_base<Range, basic_context<Range>> {
+  public internal::context_base<OutputIt, basic_context<OutputIt, Char>, Char> {
  public:
   /** The character type for the output. */
-  using char_type = typename Range::value_type;
+  using char_type = Char;
 
   template <typename T>
   using formatter_type = formatter<T, char_type>;
-
-  using range_type = Range;
 
  private:
   internal::arg_map<basic_context> map_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_context);
 
-  using base = internal::context_base<Range, basic_context>;
+  using base = internal::context_base<OutputIt, basic_context, Char>;
   using format_arg = typename base::format_arg;
   using base::get_arg;
 
@@ -912,9 +910,9 @@ class basic_context :
    stored in the object so make sure they have appropriate lifetimes.
    \endrst
    */
-  basic_context(Range range, basic_string_view<char_type> format_str,
+  basic_context(OutputIt out, basic_string_view<char_type> format_str,
                 basic_format_args<basic_context> args)
-    : base(range, format_str, args) {}
+    : base(out, format_str, args) {}
 
   format_arg next_arg() {
     return this->do_get_arg(this->parse_context().next_arg_id());
@@ -926,8 +924,10 @@ class basic_context :
   format_arg get_arg(basic_string_view<char_type> name);
 };
 
-using context = basic_context<back_insert_range<internal::buffer>>;
-using wcontext = basic_context<back_insert_range<internal::wbuffer>>;
+using context = basic_context<
+  std::back_insert_iterator<internal::buffer>, char>;
+using wcontext = basic_context<
+  std::back_insert_iterator<internal::wbuffer>, wchar_t>;
 
 template <typename Context, typename ...Args>
 class arg_store {
@@ -1087,12 +1087,10 @@ inline internal::named_arg<T, wchar_t> arg(wstring_view name, const T &arg) {
   return internal::named_arg<T, wchar_t>(name, arg);
 }
 
-// The following two functions are deleted intentionally to disable
-// nested named arguments as in ``format("{}", arg("a", arg("b", 42)))``.
-template <typename T>
-void arg(string_view, internal::named_arg<T, char>) FMT_DELETED;
-template <typename T>
-void arg(wstring_view, internal::named_arg<T, wchar_t>) FMT_DELETED;
+// This function template is deleted intentionally to disable nested named
+// arguments as in ``format("{}", arg("a", arg("b", 42)))``.
+template <typename S, typename... T>
+void arg(S, internal::named_arg<T...>) FMT_DELETED;
 
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
