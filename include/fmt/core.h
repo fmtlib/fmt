@@ -140,10 +140,12 @@ class basic_string_view {
 
   /**
     \rst
-    Constructs a string reference from an ``std::string`` object.
+    Constructs a string reference from a ``std::basic_string`` object.
     \endrst
    */
-  constexpr basic_string_view(const std::basic_string<Char> &s) FMT_NOEXCEPT
+  template <typename Alloc>
+  constexpr basic_string_view(
+      const std::basic_string<Char, Alloc> &s) FMT_NOEXCEPT
   : data_(s.c_str()), size_(s.size()) {}
 
   /**
