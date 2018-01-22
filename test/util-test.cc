@@ -827,15 +827,15 @@ TEST(UtilTest, ReportWindowsError) {
 enum TestEnum2 {};
 
 TEST(UtilTest, ConvertToInt) {
-  EXPECT_TRUE(fmt::internal::convert_to_int<char>::enable_conversion);
-  EXPECT_FALSE(fmt::internal::convert_to_int<const char *>::enable_conversion);
+  EXPECT_FALSE(fmt::internal::convert_to_int<char>::value);
+  EXPECT_FALSE(fmt::internal::convert_to_int<const char *>::value);
   EXPECT_TRUE(fmt::internal::convert_to_int<TestEnum2>::value);
 }
 
 #if FMT_USE_ENUM_BASE
 enum TestEnum : char {TestValue};
 TEST(UtilTest, IsEnumConvertibleToInt) {
-  EXPECT_TRUE(fmt::internal::convert_to_int<TestEnum>::enable_conversion);
+  EXPECT_TRUE(fmt::internal::convert_to_int<TestEnum>::value);
 }
 #endif
 

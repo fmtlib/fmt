@@ -47,22 +47,12 @@ class FormatBuf : public std::basic_streambuf<Char> {
   }
 };
 
-yes &convert(std::ostream &);
-
-struct DummyStream : std::ostream {
-  DummyStream();  // Suppress a bogus warning in MSVC.
-  // Hide all operator<< overloads from std::ostream.
-  void operator<<(null<>);
-};
-
-no &operator<<(std::ostream &, int);
-
-template<typename T>
-struct convert_to_int_impl<T, true> {
+template <typename T>
+struct convert_to_int<T,
+    sizeof(std::declval<std::ostream>() << std::declval<T>()) != 0> {
   // Convert to int only if T doesn't have an overloaded operator<<.
   enum {
-    value = sizeof(convert(std::declval<DummyStream&>() << std::declval<T>()))
-            == sizeof(no)
+    value = false
   };
 };
 
