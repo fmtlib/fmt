@@ -496,7 +496,7 @@ LocaleType newlocale(int category_mask, const char *locale, LocaleType base) {
   return LocaleMock::instance->newlocale(category_mask, locale, base);
 }
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__FreeBSD__)
 typedef int FreeLocaleResult;
 #else
 typedef void FreeLocaleResult;
