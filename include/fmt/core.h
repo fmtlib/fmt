@@ -338,12 +338,46 @@ inline void require_wchar() {
       "formatting of wide characters into a narrow output is disallowed");
 }
 
-template <typename T, bool ENABLE = true>
-struct convert_to_int {
+using yes = char[1];
+using no = char[2];
+
+yes &convert(unsigned long long);
+no &convert(...);
+
+template<typename T, bool ENABLE_CONVERSION>
+struct convert_to_int_impl {
+  enum { value = ENABLE_CONVERSION };
+};
+
+template<typename T, bool ENABLE_CONVERSION>
+struct convert_to_int_impl2 {
+  enum { value = false };
+};
+
+template<typename T>
+struct convert_to_int_impl2<T, true> {
   enum {
-    value = !std::is_arithmetic<T>::value && std::is_convertible<T, int>::value
+    // Don't convert arithmetic types.
+    value = convert_to_int_impl<T, !std::is_arithmetic<T>::value>::value
   };
 };
+
+template<typename T>
+struct convert_to_int {
+  enum {
+    enable_conversion = sizeof(convert(std::declval<T>())) == sizeof(yes)
+  };
+  enum { value = convert_to_int_impl2<T, enable_conversion>::value };
+};
+
+#define FMT_DISABLE_CONVERSION_TO_INT(Type) \
+  template <> \
+  struct convert_to_int<Type> { enum { value = 0 }; }
+
+// Silence warnings about convering float to int.
+FMT_DISABLE_CONVERSION_TO_INT(float);
+FMT_DISABLE_CONVERSION_TO_INT(double);
+FMT_DISABLE_CONVERSION_TO_INT(long double);
 
 template <typename Char>
 struct named_arg_base;
