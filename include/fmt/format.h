@@ -2374,15 +2374,13 @@ class basic_writer {
   /** Constructs a ``basic_writer`` object. */
   explicit basic_writer(Range out): out_(out.begin()) {}
 
-  void write(int value) {
-    write_decimal(value);
-  }
-  void write(long value) {
-    write_decimal(value);
-  }
-  void write(long long value) {
-    write_decimal(value);
-  }
+  void write(int value) { write_decimal(value); }
+  void write(long value) { write_decimal(value); }
+  void write(long long value) { write_decimal(value); }
+
+  void write(unsigned value) { write_decimal(value); }
+  void write(unsigned long value) { write_decimal(value); }
+  void write(unsigned long long value) { write_decimal(value); }
 
   /**
     \rst
@@ -2955,9 +2953,9 @@ typename basic_context<Range, Char>::format_arg
 
 /** Formats arguments and writes the output to the buffer. */
 template <typename ArgFormatter, typename Char, typename Context>
-void do_vformat_to(typename ArgFormatter::range out,
-                   basic_string_view<Char> format_str,
-                   basic_format_args<Context> args) {
+typename Context::iterator do_vformat_to(typename ArgFormatter::range out,
+                                         basic_string_view<Char> format_str,
+                                         basic_format_args<Context> args) {
   using iterator = internal::null_terminating_iterator<Char>;
   using range = typename ArgFormatter::range;
 
@@ -3012,9 +3010,9 @@ void do_vformat_to(typename ArgFormatter::range out,
 
     Context context;
     basic_arg<Context> arg;
-  };
-  parse_format_string(iterator(format_str.begin(), format_str.end()),
-                      handler(out, format_str, args));
+  } h(out, format_str, args);
+  parse_format_string(iterator(format_str.begin(), format_str.end()), h);
+  return h.context.begin();
 }
 
 // Casts ``p`` to ``const void*`` for pointer formatting.
@@ -3102,16 +3100,16 @@ template <typename OutputIt, typename Char = char>
 using format_args_t = basic_format_args<context_t<OutputIt, Char>>;
 
 template <typename OutputIt, typename... Args>
-inline void vformat_to(OutputIt out, string_view format_str,
-                       format_args_t<OutputIt> args) {
+inline OutputIt vformat_to(OutputIt out, string_view format_str,
+                           format_args_t<OutputIt> args) {
   using range = output_range<OutputIt, char>;
-  do_vformat_to<arg_formatter<range>>(range(out), format_str, args);
+  return do_vformat_to<arg_formatter<range>>(range(out), format_str, args);
 }
 
 template <typename OutputIt, typename... Args>
-inline void format_to(OutputIt out, string_view format_str,
-                      const Args & ... args) {
-  vformat_to(out, format_str, *make_args<context_t<OutputIt>>(args...));
+inline OutputIt format_to(OutputIt out, string_view format_str,
+                          const Args & ... args) {
+  return vformat_to(out, format_str, *make_args<context_t<OutputIt>>(args...));
 }
 
 template <typename Container, typename... Args>
