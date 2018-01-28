@@ -29,7 +29,7 @@ class FormatBuf : public std::basic_streambuf<Char> {
     this->setp(start_, start_ + buffer_.capacity());
   }
 
-  int_type overflow(int_type ch = traits_type::eof()) {
+  int_type overflow(int_type ch = traits_type::eof()) FMT_OVERRIDE {
     if (!traits_type::eq_int_type(ch, traits_type::eof())) {
       size_t buf_size = size();
       buffer_.resize(buf_size);

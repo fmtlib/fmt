@@ -437,11 +437,11 @@ template void basic_fixed_buffer<char>::grow(std::size_t);
 
 template void internal::arg_map<context>::init(const format_args &args);
 
-template int internal::char_traits<char>::format_float(
+template FMT_API int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, double value);
 
-template int internal::char_traits<char>::format_float(
+template FMT_API int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, long double value);
 
@@ -453,11 +453,11 @@ template void basic_fixed_buffer<wchar_t>::grow(std::size_t);
 
 template void internal::arg_map<wcontext>::init(const wformat_args &args);
 
-template int internal::char_traits<wchar_t>::format_float(
+template FMT_API int internal::char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, double value);
 
-template int internal::char_traits<wchar_t>::format_float(
+template FMT_API int internal::char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, long double value);
 

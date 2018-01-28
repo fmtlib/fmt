@@ -282,7 +282,7 @@ class format_error : public std::runtime_error {
   explicit format_error(const std::string &message)
   : std::runtime_error(message) {}
 
-  ~format_error() throw();
+  FMT_API ~format_error() throw();
 };
 
 namespace internal {
@@ -2095,7 +2095,7 @@ class arg_formatter: public internal::arg_formatter_base<Range> {
 */
 class system_error : public std::runtime_error {
  private:
-  void init(int err_code, string_view format_str, format_args args);
+  FMT_API void init(int err_code, string_view format_str, format_args args);
 
  protected:
   int error_code_;
@@ -2127,7 +2127,7 @@ class system_error : public std::runtime_error {
     init(error_code, message, make_args(args...));
   }
 
-  ~system_error() FMT_DTOR_NOEXCEPT;
+  FMT_API ~system_error() FMT_DTOR_NOEXCEPT;
 
   int error_code() const { return error_code_; }
 };
