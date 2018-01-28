@@ -454,6 +454,8 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
         ++it;
         spec.precision_ =
             visit(internal::PrintfPrecisionHandler(), get_arg(it));
+      } else {
+        spec.precision_ = 0;
       }
     }
 
