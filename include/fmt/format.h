@@ -3045,6 +3045,60 @@ constexpr fill_spec_factory fill;
 constexpr format_spec_factory<width_spec> width;
 constexpr format_spec_factory<type_spec> type;
 
+template <typename It, typename Char>
+struct arg_join {
+  It begin;
+  It end;
+  basic_string_view<Char> sep;
+
+  arg_join(It begin, It end, basic_string_view<Char> sep)
+    : begin(begin), end(end), sep(sep) {}
+};
+
+template <typename It, typename Char>
+struct formatter<arg_join<It, Char>, Char>:
+    formatter<typename std::iterator_traits<It>::value_type, Char> {
+  template <typename FormatContext>
+  auto format(const arg_join<It, Char> &value, FormatContext &ctx) {
+    using base = formatter<typename std::iterator_traits<It>::value_type, Char>;
+    auto it = value.begin;
+    auto out = ctx.begin(); 
+    if (it != value.end) {
+      out = base::format(*it++, ctx);
+      while (it != value.end) {
+        out = std::copy(value.sep.begin(), value.sep.end(), out);
+        ctx.advance_to(out);
+        out = base::format(*it++, ctx);
+      }
+    }
+    return out;
+  }
+};
+
+template <typename It>
+arg_join<It, char> join(It begin, It end, string_view sep) {
+  return arg_join<It, char>(begin, end, sep);
+}
+
+template <typename It>
+arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
+  return arg_join<It, wchar_t>(begin, end, sep);
+}
+
+#if FMT_HAS_GXX_CXX11
+template <typename Range>
+auto join(const Range &range, string_view sep)
+    -> arg_join<decltype(std::begin(range)), char> {
+  return join(std::begin(range), std::end(range), sep);
+}
+
+template <typename Range>
+auto join(const Range &range, wstring_view sep)
+    -> arg_join<decltype(std::begin(range)), wchar_t> {
+  return join(std::begin(range), std::end(range), sep);
+}
+#endif
+
 /**
   \rst
   Converts *value* to ``std::string`` using the default format for type *T*.
