@@ -2630,6 +2630,18 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   });
 }
 
+// A range where begin() returns back_insert_iterator.
+template <typename Container>
+class back_insert_range:
+    public output_range<std::back_insert_iterator<Container>> {
+  using base = output_range<std::back_insert_iterator<Container>>;
+ public:
+  using value_type = typename Container::value_type;
+
+  using base::base;
+  back_insert_range(Container &c): base(std::back_inserter(c)) {}
+};
+
 using writer = basic_writer<back_insert_range<internal::buffer>>;
 using wwriter = basic_writer<back_insert_range<internal::wbuffer>>;
 

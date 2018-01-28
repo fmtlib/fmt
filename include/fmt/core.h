@@ -864,18 +864,6 @@ class output_range {
   OutputIt begin() const { return it_; }
 };
 
-// A range where begin() returns back_insert_iterator.
-template <typename Container>
-class back_insert_range:
-    public output_range<std::back_insert_iterator<Container>> {
-  using base = output_range<std::back_insert_iterator<Container>>;
- public:
-  using value_type = typename Container::value_type;
-
-  using base::base;
-  back_insert_range(Container &c): base(std::back_inserter(c)) {}
-};
-
 // Formatting context.
 template <typename OutputIt, typename Char>
 class basic_context :
