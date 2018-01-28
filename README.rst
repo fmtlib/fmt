@@ -166,6 +166,8 @@ Projects using this library
 
 * `Keypirinha <http://keypirinha.com/>`_: A semantic launcher for Windows
 
+* `Kodi <https://kodi.tv/>`_ (formerly xbmc): Home theater software
+
 * `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
 
 * `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to generate randomized datasets
