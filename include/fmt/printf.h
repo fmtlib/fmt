@@ -345,7 +345,7 @@ class basic_printf_context :
   using base::advance_to;
 
   /** Formats stored arguments and writes the output to the range. */
-  FMT_API void format();
+  void format();
 };
 
 template <typename OutputIt, typename Char, typename AF>

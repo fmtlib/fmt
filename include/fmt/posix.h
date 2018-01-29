@@ -137,7 +137,7 @@ class BufferedFile {
   BufferedFile() FMT_NOEXCEPT : file_(0) {}
 
   // Destroys the object closing the file it represents if any.
-  ~BufferedFile() FMT_DTOR_NOEXCEPT;
+  FMT_API ~BufferedFile() FMT_DTOR_NOEXCEPT;
 
 #if !FMT_USE_RVALUE_REFERENCES
   // Emulate a move constructor and a move assignment operator if rvalue
@@ -200,17 +200,17 @@ public:
 #endif
 
   // Opens a file.
-  BufferedFile(cstring_view filename, cstring_view mode);
+  FMT_API BufferedFile(cstring_view filename, cstring_view mode);
 
   // Closes the file.
-  void close();
+  FMT_API void close();
 
   // Returns the pointer to a FILE object representing this file.
   FILE *get() const FMT_NOEXCEPT { return file_; }
 
   // We place parentheses around fileno to workaround a bug in some versions
   // of MinGW that define fileno as a macro.
-  int (fileno)() const;
+  FMT_API int (fileno)() const;
 
   void vprint(string_view format_str, format_args args) {
     fmt::vprint(file_, format_str, args);
@@ -247,7 +247,7 @@ class File {
   File() FMT_NOEXCEPT : fd_(-1) {}
 
   // Opens a file and constructs a File object representing this file.
-  File(cstring_view path, int oflag);
+  FMT_API File(cstring_view path, int oflag);
 
 #if !FMT_USE_RVALUE_REFERENCES
   // Emulate a move constructor and a move assignment operator if rvalue
@@ -310,43 +310,43 @@ class File {
 #endif
 
   // Destroys the object closing the file it represents if any.
-  ~File() FMT_DTOR_NOEXCEPT;
+  FMT_API ~File() FMT_DTOR_NOEXCEPT;
 
   // Returns the file descriptor.
   int descriptor() const FMT_NOEXCEPT { return fd_; }
 
   // Closes the file.
-  void close();
+  FMT_API void close();
 
   // Returns the file size. The size has signed type for consistency with
   // stat::st_size.
-  long long size() const;
+  FMT_API long long size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.
-  std::size_t read(void *buffer, std::size_t count);
+  FMT_API std::size_t read(void *buffer, std::size_t count);
 
   // Attempts to write count bytes from the specified buffer to the file.
-  std::size_t write(const void *buffer, std::size_t count);
+  FMT_API std::size_t write(const void *buffer, std::size_t count);
 
   // Duplicates a file descriptor with the dup function and returns
   // the duplicate as a file object.
-  static File dup(int fd);
+  FMT_API static File dup(int fd);
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary.
-  void dup2(int fd);
+  FMT_API void dup2(int fd);
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary.
-  void dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT;
+  FMT_API void dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT;
 
   // Creates a pipe setting up read_end and write_end file objects for reading
   // and writing respectively.
-  static void pipe(File &read_end, File &write_end);
+  FMT_API static void pipe(File &read_end, File &write_end);
 
   // Creates a BufferedFile object associated with this file and detaches
   // this File object from the file.
-  BufferedFile fdopen(const char *mode);
+  FMT_API BufferedFile fdopen(const char *mode);
 };
 
 // Returns the memory page size.
