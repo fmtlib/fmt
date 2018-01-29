@@ -22,28 +22,27 @@ class FormatBuf : public std::basic_streambuf<Char> {
   typedef typename std::basic_streambuf<Char>::traits_type traits_type;
 
   basic_buffer<Char> &buffer_;
-  Char *start_;
 
  public:
-  FormatBuf(basic_buffer<Char> &buffer) : buffer_(buffer), start_(&buffer[0]) {
-    this->setp(start_, start_ + buffer_.capacity());
-  }
+  FormatBuf(basic_buffer<Char> &buffer) : buffer_(buffer) {}
+
+ protected:
+  // The put-area is actually always empty. This makes the implementation
+  // simpler and has the advantage that the streambuf and the buffer are always
+  // in sync and sputc never writes into uninitialized memory. The obvious
+  // disadvantage is that each call to sputc always results in a (virtual) call
+  // to overflow. There is no disadvantage here for sputn since this always
+  // results in a call to xsputn.
 
   int_type overflow(int_type ch = traits_type::eof()) FMT_OVERRIDE {
-    if (!traits_type::eq_int_type(ch, traits_type::eof())) {
-      size_t buf_size = size();
-      buffer_.resize(buf_size);
-      buffer_.reserve(buf_size * 2);
-
-      start_ = &buffer_[0];
-      start_[buf_size] = traits_type::to_char_type(ch);
-      this->setp(start_+ buf_size + 1, start_ + buf_size * 2);
-    }
+    if (!traits_type::eq_int_type(ch, traits_type::eof()))
+      buffer_.push_back(static_cast<Char>(ch));
     return ch;
   }
 
-  size_t size() const {
-    return to_unsigned(this->pptr() - start_);
+  std::streamsize xsputn(const Char *s, std::streamsize count) FMT_OVERRIDE {
+    buffer_.append(s, s + count);
+    return count;
   }
 };
 
@@ -92,7 +91,7 @@ void format_value(basic_buffer<Char> &buffer, const T &value) {
   internal::FormatBuf<Char> format_buf(buffer);
   std::basic_ostream<Char> output(&format_buf);
   output << value;
-  buffer.resize(format_buf.size());
+  buffer.resize(buffer.size());
 }
 
 // Disable builtin formatting of enums and use operator<< instead.
