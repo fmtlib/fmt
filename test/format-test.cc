@@ -1078,6 +1078,14 @@ TEST(FormatterTest, FormatIntLocale) {
   EXPECT_EQ("1,234,567", format("{:n}", 1234567));
 }
 
+struct ConvertibleToLongLong {
+  operator long long() const { return 1LL << 32; }
+};
+
+TEST(FormatterTest, FormatConvertibleToLongLong) {
+  EXPECT_EQ("100000000", format("{:x}", ConvertibleToLongLong()));
+}
+
 TEST(FormatterTest, FormatFloat) {
   EXPECT_EQ("392.500000", format("{0:f}", 392.5f));
 }

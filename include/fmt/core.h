@@ -353,22 +353,6 @@ inline void require_wchar() {
       "formatting of wide characters into a narrow output is disallowed");
 }
 
-template <typename T, bool ENABLE = true>
-struct convert_to_int {
-  enum {
-   value = !std::is_arithmetic<T>::value && std::is_convertible<T, int>::value
-  };
-};
-
-#define FMT_DISABLE_CONVERSION_TO_INT(Type) \
-  template <> \
-  struct convert_to_int<Type> { enum { value = 0 }; }
-
-// Silence warnings about convering float to int.
-FMT_DISABLE_CONVERSION_TO_INT(float);
-FMT_DISABLE_CONVERSION_TO_INT(double);
-FMT_DISABLE_CONVERSION_TO_INT(long double);
-
 template <typename Char>
 struct named_arg_base;
 
@@ -400,12 +384,46 @@ constexpr bool is_arithmetic(type t) {
   return t > internal::NONE && t <= internal::LAST_NUMERIC_TYPE;
 }
 
+template <typename T, bool ENABLE = true>
+struct convert_to_int {
+  enum {
+   value = !std::is_arithmetic<T>::value && std::is_convertible<T, int>::value
+  };
+};
+
+#define FMT_DISABLE_CONVERSION_TO_INT(Type) \
+  template <> \
+  struct convert_to_int<Type> { enum { value = 0 }; }
+
+// Silence warnings about convering float to int.
+FMT_DISABLE_CONVERSION_TO_INT(float);
+FMT_DISABLE_CONVERSION_TO_INT(double);
+FMT_DISABLE_CONVERSION_TO_INT(long double);
+
+// Disambiguates conversions to different integral types.
+struct type_selector {
+  using char2 = struct { char a[2]; };
+  static char convert(...);
+  static char convert(int);
+  static char convert(unsigned);
+  static char convert(long);
+  static char convert(unsigned long);
+  static char2 convert(long long);
+  static char2 convert(unsigned long long);
+
+  template <typename T>
+  static constexpr type select() {
+    return sizeof(convert(std::declval<T>())) == 1 ? INT : LONG_LONG;
+  }
+};
+
 template <typename T>
 constexpr type get_type() {
   return std::is_reference<T>::value || std::is_array<T>::value ?
         get_type<typename std::decay<T>::type>() :
         (is_named_arg<T>::value ?
-           NAMED_ARG : (convert_to_int<T>::value ? INT : CUSTOM));
+           NAMED_ARG : (convert_to_int<T>::value ?
+             type_selector::select<T>() : CUSTOM));
 }
 
 template <> constexpr type get_type<bool>() { return BOOL; }
@@ -548,13 +566,6 @@ class value {
   value(const T *p) { set_pointer(p); }
 
   value(std::nullptr_t) { pointer = nullptr; }
-
-  template <typename T>
-  value(const T &val,
-        typename std::enable_if<convert_to_int<T>::value, int>::type = 0) {
-    static_assert(get_type<T>() == INT, "invalid type");
-    int_value = val;
-  }
 
   template <typename T>
   value(const T &val,
@@ -737,7 +748,7 @@ constexpr basic_arg<Context> make_arg(const T &value) {
 template <bool IS_PACKED, typename Context, typename T>
 inline typename std::enable_if<IS_PACKED, value<Context>>::type
     make_arg(const T &value) {
-  return value;
+  return {value};
 }
 
 template <bool IS_PACKED, typename Context, typename T>
