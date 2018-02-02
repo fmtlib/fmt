@@ -54,6 +54,25 @@ To build a `shared library`__ set the ``BUILD_SHARED_LIBS`` CMake variable to
 
 __ http://en.wikipedia.org/wiki/Library_%28computing%29#Shared_libraries
 
+Header-only usage with CMake
+============================
+
+You can add the ``fmt`` library directory into your project and include it in
+your ``CMakeLists.txt`` file::
+
+   add_subdirectory(fmt)
+
+or
+::
+
+   add_subdirectory(fmt EXCLUDE_FROM_ALL)
+
+to exclude it from ``make``, ``make all``, or ``cmake --build .``.
+
+Settting up your target to use a header-only version of ``fmt`` is equaly easy::
+
+   target_link_libraries(<your-target> PRIVATE fmt-header-only)
+
 Building the documentation
 ==========================
 
