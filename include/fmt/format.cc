@@ -382,7 +382,7 @@ FMT_FUNC void format_system_error(
       buf.resize(buf.size() * 2);
     }
   } FMT_CATCH(...) {}
-  fmt::format_error_code(out, error_code, message);  // 'fmt::' is for bcc32.
+  format_error_code(out, error_code, message);
 }
 
 template <typename Char>
@@ -396,14 +396,12 @@ FMT_FUNC void internal::error_handler::on_error(const char *message) {
 
 FMT_FUNC void report_system_error(
     int error_code, fmt::string_view message) FMT_NOEXCEPT {
-  // 'fmt::' is for bcc32.
   report_error(format_system_error, error_code, message);
 }
 
 #if FMT_USE_WINDOWS_H
 FMT_FUNC void report_windows_error(
     int error_code, fmt::string_view message) FMT_NOEXCEPT {
-  // 'fmt::' is for bcc32.
   report_error(internal::format_windows_error, error_code, message);
 }
 #endif
