@@ -140,12 +140,16 @@
 # endif
 #endif
 
-#if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
-# define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
-#endif
+// __builtin_clz is broken in clang with Microsoft CodeGen:
+// https://github.com/fmtlib/fmt/issues/519
+#ifndef _MSC_VER
+# if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
+#  define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
+# endif
 
-#if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
-# define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
+# if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
+#  define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
+# endif
 #endif
 
 // Some compilers masquerade as both MSVC and GCC-likes or otherwise support
