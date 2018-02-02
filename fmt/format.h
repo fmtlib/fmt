@@ -3000,13 +3000,13 @@ typename BasicWriter<Char>::CharPtr
       CharPtr p = grow_buffer(fill_size);
       std::uninitialized_fill(p, p + fill_size, fill);
     }
-    CharPtr result = prepare_int_buffer(
-        num_digits, subspec, prefix, prefix_size);
+    std::ptrdiff_t offset = get(prepare_int_buffer(
+        num_digits, subspec, prefix, prefix_size)) - &buffer_[0];
     if (align == ALIGN_LEFT) {
       CharPtr p = grow_buffer(fill_size);
       std::uninitialized_fill(p, p + fill_size, fill);
     }
-    return result;
+    return internal::make_ptr(&buffer_[0], buffer_.size()) + offset;
   }
   unsigned size = prefix_size + num_digits;
   if (width <= size) {

@@ -1761,3 +1761,7 @@ void convert(int);
 TEST(FormatTest, ConvertCollision) {
   fmt::format("{}", 42);
 }
+
+TEST(FormatTest, Regression) {
+  fmt::format("...........{:<77777.7p}", "foo");
+}
