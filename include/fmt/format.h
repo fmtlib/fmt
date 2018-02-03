@@ -293,7 +293,7 @@ namespace internal {
 
 // Casts nonnegative integer to unsigned.
 template <typename Int>
-constexpr typename std::make_unsigned<Int>::type to_unsigned(Int value) {
+FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   FMT_ASSERT(value >= 0, "negative value");
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
@@ -561,7 +561,7 @@ template <typename Char>
 class null_terminating_iterator;
 
 template <typename Char>
-constexpr const Char *pointer_from(null_terminating_iterator<Char> it);
+FMT_CONSTEXPR const Char *pointer_from(null_terminating_iterator<Char> it);
 
 // An iterator that produces a null terminator on *end. This simplifies parsing
 // and allows comparing the performance of processing a null-terminated string
@@ -577,11 +577,11 @@ class null_terminating_iterator {
 
   null_terminating_iterator() : ptr_(0), end_(0) {}
 
-  constexpr null_terminating_iterator(const Char *ptr, const Char *end)
+  FMT_CONSTEXPR null_terminating_iterator(const Char *ptr, const Char *end)
     : ptr_(ptr), end_(end) {}
 
   template <typename Range>
-  constexpr explicit null_terminating_iterator(const Range &r)
+  FMT_CONSTEXPR explicit null_terminating_iterator(const Range &r)
     : ptr_(r.begin()), end_(r.end()) {}
 
   null_terminating_iterator &operator=(const Char *ptr) {
@@ -590,44 +590,45 @@ class null_terminating_iterator {
     return *this;
   }
 
-  constexpr Char operator*() const {
+  FMT_CONSTEXPR Char operator*() const {
     return ptr_ != end_ ? *ptr_ : 0;
   }
 
-  constexpr null_terminating_iterator operator++() {
+  FMT_CONSTEXPR null_terminating_iterator operator++() {
     ++ptr_;
     return *this;
   }
 
-  constexpr null_terminating_iterator operator++(int) {
+  FMT_CONSTEXPR null_terminating_iterator operator++(int) {
     null_terminating_iterator result(*this);
     ++ptr_;
     return result;
   }
 
-  constexpr null_terminating_iterator operator--() {
+  FMT_CONSTEXPR null_terminating_iterator operator--() {
     --ptr_;
     return *this;
   }
 
-  constexpr null_terminating_iterator operator+(difference_type n) {
+  FMT_CONSTEXPR null_terminating_iterator operator+(difference_type n) {
     return null_terminating_iterator(ptr_ + n, end_);
   }
 
-  constexpr null_terminating_iterator operator-(difference_type n) {
+  FMT_CONSTEXPR null_terminating_iterator operator-(difference_type n) {
     return null_terminating_iterator(ptr_ - n, end_);
   }
 
-  constexpr null_terminating_iterator operator+=(difference_type n) {
+  FMT_CONSTEXPR null_terminating_iterator operator+=(difference_type n) {
     ptr_ += n;
     return *this;
   }
 
-  constexpr difference_type operator-(null_terminating_iterator other) const {
+  FMT_CONSTEXPR difference_type operator-(
+      null_terminating_iterator other) const {
     return ptr_ - other.ptr_;
   }
 
-  constexpr bool operator!=(null_terminating_iterator other) const {
+  FMT_CONSTEXPR bool operator!=(null_terminating_iterator other) const {
     return ptr_ != other.ptr_;
   }
 
@@ -635,7 +636,8 @@ class null_terminating_iterator {
     return ptr_ >= other.ptr_;
   }
 
-  friend constexpr const Char *pointer_from<Char>(null_terminating_iterator it);
+  friend FMT_CONSTEXPR const Char *pointer_from<Char>(
+      null_terminating_iterator it);
 
  private:
   const Char *ptr_;
@@ -643,10 +645,10 @@ class null_terminating_iterator {
 };
 
 template <typename T>
-constexpr const T *pointer_from(const T *p) { return p; }
+FMT_CONSTEXPR const T *pointer_from(const T *p) { return p; }
 
 template <typename Char>
-constexpr const Char *pointer_from(null_terminating_iterator<Char> it) {
+FMT_CONSTEXPR const Char *pointer_from(null_terminating_iterator<Char> it) {
   return it.ptr_;
 }
 
@@ -686,12 +688,12 @@ class counting_iterator {
 // Returns true if value is negative, false otherwise.
 // Same as (value < 0) but doesn't produce warnings if T is an unsigned type.
 template <typename T>
-constexpr typename std::enable_if<
+FMT_CONSTEXPR typename std::enable_if<
     std::numeric_limits<T>::is_signed, bool>::type is_negative(T value) {
   return value < 0;
 }
 template <typename T>
-constexpr typename std::enable_if<
+FMT_CONSTEXPR typename std::enable_if<
     !std::numeric_limits<T>::is_signed, bool>::type is_negative(T) {
   return false;
 }
@@ -988,7 +990,7 @@ struct monostate {};
   \endrst
  */
 template <typename Visitor, typename Context>
-constexpr typename std::result_of<Visitor(int)>::type
+FMT_CONSTEXPR typename std::result_of<Visitor(int)>::type
     visit(Visitor &&vis, basic_arg<Context> arg) {
   using char_type = typename Context::char_type;
   switch (arg.type_) {
@@ -1071,13 +1073,13 @@ struct align_spec : empty_spec {
   wchar_t fill_;
   alignment align_;
 
-  constexpr align_spec(
+  FMT_CONSTEXPR align_spec(
       unsigned width, wchar_t fill, alignment align = ALIGN_DEFAULT)
   : width_(width), fill_(fill), align_(align) {}
 
-  constexpr unsigned width() const { return width_; }
-  constexpr wchar_t fill() const { return fill_; }
-  constexpr alignment align() const { return align_; }
+  FMT_CONSTEXPR unsigned width() const { return width_; }
+  FMT_CONSTEXPR wchar_t fill() const { return fill_; }
+  FMT_CONSTEXPR alignment align() const { return align_; }
 
   int precision() const { return -1; }
 };
@@ -1112,7 +1114,7 @@ class basic_format_specs : public align_spec {
   int precision_;
   Char type_;
 
-  constexpr basic_format_specs(
+  FMT_CONSTEXPR basic_format_specs(
       unsigned width = 0, char type = 0, wchar_t fill = ' ')
   : align_spec(width, fill), flags_(0), precision_(-1), type_(type) {}
 
@@ -1122,15 +1124,15 @@ class basic_format_specs : public align_spec {
     set(specs...);
   }
 
-  constexpr bool flag(unsigned f) const { return (flags_ & f) != 0; }
-  constexpr int precision() const { return precision_; }
-  constexpr Char type() const { return type_; }
+  FMT_CONSTEXPR bool flag(unsigned f) const { return (flags_ & f) != 0; }
+  FMT_CONSTEXPR int precision() const { return precision_; }
+  FMT_CONSTEXPR Char type() const { return type_; }
 };
 
 typedef basic_format_specs<char> format_specs;
 
 template <typename Char, typename ErrorHandler>
-constexpr unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
+FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
   if (next_arg_id_ >= 0)
     return internal::to_unsigned(next_arg_id_++);
   on_error("cannot switch from manual to automatic argument indexing");
@@ -1140,7 +1142,7 @@ constexpr unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
 namespace internal {
 
 template <typename Handler>
-constexpr void handle_int_type_spec(char spec, Handler &&handler) {
+FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler &&handler) {
   switch (spec) {
   case 0: case 'd':
     handler.on_dec();
@@ -1163,7 +1165,7 @@ constexpr void handle_int_type_spec(char spec, Handler &&handler) {
 }
 
 template <typename Handler>
-constexpr void handle_float_type_spec(char spec, Handler &&handler) {
+FMT_CONSTEXPR void handle_float_type_spec(char spec, Handler &&handler) {
   switch (spec) {
   case 0: case 'g': case 'G':
     handler.on_general();
@@ -1184,7 +1186,7 @@ constexpr void handle_float_type_spec(char spec, Handler &&handler) {
 }
 
 template <typename Char, typename Handler>
-constexpr void handle_char_specs(
+FMT_CONSTEXPR void handle_char_specs(
     const basic_format_specs<Char> &specs, Handler &&handler) {
   if (specs.type() && specs.type() != 'c') {
     handler.on_int();
@@ -1196,7 +1198,7 @@ constexpr void handle_char_specs(
 }
 
 template <typename Handler>
-constexpr void handle_cstring_type_spec(char spec, Handler &&handler) {
+FMT_CONSTEXPR void handle_cstring_type_spec(char spec, Handler &&handler) {
   if (spec == 0 || spec == 's')
     handler.on_string();
   else if (spec == 'p')
@@ -1206,13 +1208,13 @@ constexpr void handle_cstring_type_spec(char spec, Handler &&handler) {
 }
 
 template <typename Char, typename ErrorHandler>
-constexpr void check_string_type_spec(Char spec, ErrorHandler &&eh) {
+FMT_CONSTEXPR void check_string_type_spec(Char spec, ErrorHandler &&eh) {
   if (spec != 0 && spec != 's')
     eh.on_error("invalid type specifier");
 }
 
 template <typename ErrorHandler>
-constexpr void check_pointer_type_spec(char spec, ErrorHandler &&eh) {
+FMT_CONSTEXPR void check_pointer_type_spec(char spec, ErrorHandler &&eh) {
   if (spec != 0 && spec != 'p')
     eh.on_error("invalid type specifier");
 }
@@ -1220,15 +1222,15 @@ constexpr void check_pointer_type_spec(char spec, ErrorHandler &&eh) {
 template <typename ErrorHandler>
 class int_type_checker : private ErrorHandler {
  public:
-  constexpr explicit int_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
+  FMT_CONSTEXPR explicit int_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
 
-  constexpr void on_dec() {}
-  constexpr void on_hex() {}
-  constexpr void on_bin() {}
-  constexpr void on_oct() {}
-  constexpr void on_num() {}
+  FMT_CONSTEXPR void on_dec() {}
+  FMT_CONSTEXPR void on_hex() {}
+  FMT_CONSTEXPR void on_bin() {}
+  FMT_CONSTEXPR void on_oct() {}
+  FMT_CONSTEXPR void on_num() {}
 
-  constexpr void on_error() {
+  FMT_CONSTEXPR void on_error() {
     ErrorHandler::on_error("invalid type specifier");
   }
 };
@@ -1236,14 +1238,15 @@ class int_type_checker : private ErrorHandler {
 template <typename ErrorHandler>
 class float_type_checker : private ErrorHandler {
  public:
-  constexpr explicit float_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
+  FMT_CONSTEXPR explicit float_type_checker(ErrorHandler eh)
+    : ErrorHandler(eh) {}
 
-  constexpr void on_general() {}
-  constexpr void on_exp() {}
-  constexpr void on_fixed() {}
-  constexpr void on_hex() {}
+  FMT_CONSTEXPR void on_general() {}
+  FMT_CONSTEXPR void on_exp() {}
+  FMT_CONSTEXPR void on_fixed() {}
+  FMT_CONSTEXPR void on_hex() {}
 
-  constexpr void on_error() {
+  FMT_CONSTEXPR void on_error() {
     ErrorHandler::on_error("invalid type specifier");
   }
 };
@@ -1254,22 +1257,23 @@ class char_specs_checker : public ErrorHandler {
   char type_;
 
  public:
-  constexpr char_specs_checker(char type, ErrorHandler eh)
+  FMT_CONSTEXPR char_specs_checker(char type, ErrorHandler eh)
     : ErrorHandler(eh), type_(type) {}
 
-  constexpr void on_int() {
+  FMT_CONSTEXPR void on_int() {
     handle_int_type_spec(type_, int_type_checker<ErrorHandler>(*this));
   }
-  constexpr void on_char() {}
+  FMT_CONSTEXPR void on_char() {}
 };
 
 template <typename ErrorHandler>
 class cstring_type_checker : public ErrorHandler {
  public:
-  constexpr explicit cstring_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
+  FMT_CONSTEXPR explicit cstring_type_checker(ErrorHandler eh)
+    : ErrorHandler(eh) {}
 
-  constexpr void on_string() {}
-  constexpr void on_pointer() {}
+  FMT_CONSTEXPR void on_string() {}
+  FMT_CONSTEXPR void on_pointer() {}
 };
 
 template <typename Context>
@@ -1412,7 +1416,7 @@ class arg_formatter_base {
 struct format_string {};
 
 template <typename Char>
-constexpr bool is_name_start(Char c) {
+FMT_CONSTEXPR bool is_name_start(Char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
 }
 
@@ -1420,7 +1424,7 @@ constexpr bool is_name_start(Char c) {
 // first character is a digit and presence of a non-digit character at the end.
 // it: an iterator pointing to the beginning of the input range.
 template <typename Iterator, typename ErrorHandler>
-constexpr unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
+FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
   assert('0' <= *it && *it <= '9');
   unsigned value = 0;
   // Convert to unsigned to prevent a warning.
@@ -1471,10 +1475,10 @@ struct is_integer {
 template <typename ErrorHandler>
 class width_checker {
  public:
-  explicit constexpr width_checker(ErrorHandler &eh) : handler_(eh) {}
+  explicit FMT_CONSTEXPR width_checker(ErrorHandler &eh) : handler_(eh) {}
 
   template <typename T>
-  constexpr typename std::enable_if<
+  FMT_CONSTEXPR typename std::enable_if<
       is_integer<T>::value, unsigned long long>::type operator()(T value) {
     if (is_negative(value))
       handler_.on_error("negative width");
@@ -1482,7 +1486,7 @@ class width_checker {
   }
 
   template <typename T>
-  constexpr typename std::enable_if<
+  FMT_CONSTEXPR typename std::enable_if<
       !is_integer<T>::value, unsigned long long>::type operator()(T) {
     handler_.on_error("width is not integer");
     return 0;
@@ -1495,10 +1499,10 @@ class width_checker {
 template <typename ErrorHandler>
 class precision_checker {
  public:
-  explicit constexpr precision_checker(ErrorHandler &eh) : handler_(eh) {}
+  explicit FMT_CONSTEXPR precision_checker(ErrorHandler &eh) : handler_(eh) {}
 
   template <typename T>
-  constexpr typename std::enable_if<
+  FMT_CONSTEXPR typename std::enable_if<
       is_integer<T>::value, unsigned long long>::type operator()(T value) {
     if (is_negative(value))
       handler_.on_error("negative precision");
@@ -1506,7 +1510,7 @@ class precision_checker {
   }
 
   template <typename T>
-  constexpr typename std::enable_if<
+  FMT_CONSTEXPR typename std::enable_if<
       !is_integer<T>::value, unsigned long long>::type operator()(T) {
     handler_.on_error("precision is not integer");
     return 0;
@@ -1520,30 +1524,30 @@ class precision_checker {
 template <typename Char>
 class specs_setter {
  public:
-  explicit constexpr specs_setter(basic_format_specs<Char> &specs):
+  explicit FMT_CONSTEXPR specs_setter(basic_format_specs<Char> &specs):
     specs_(specs) {}
 
-  constexpr specs_setter(const specs_setter &other) : specs_(other.specs_) {}
+  FMT_CONSTEXPR specs_setter(const specs_setter &other) : specs_(other.specs_) {}
 
-  constexpr void on_align(alignment align) { specs_.align_ = align; }
-  constexpr void on_fill(Char fill) { specs_.fill_ = fill; }
-  constexpr void on_plus() { specs_.flags_ |= SIGN_FLAG | PLUS_FLAG; }
-  constexpr void on_minus() { specs_.flags_ |= MINUS_FLAG; }
-  constexpr void on_space() { specs_.flags_ |= SIGN_FLAG; }
-  constexpr void on_hash() { specs_.flags_ |= HASH_FLAG; }
+  FMT_CONSTEXPR void on_align(alignment align) { specs_.align_ = align; }
+  FMT_CONSTEXPR void on_fill(Char fill) { specs_.fill_ = fill; }
+  FMT_CONSTEXPR void on_plus() { specs_.flags_ |= SIGN_FLAG | PLUS_FLAG; }
+  FMT_CONSTEXPR void on_minus() { specs_.flags_ |= MINUS_FLAG; }
+  FMT_CONSTEXPR void on_space() { specs_.flags_ |= SIGN_FLAG; }
+  FMT_CONSTEXPR void on_hash() { specs_.flags_ |= HASH_FLAG; }
 
-  constexpr void on_zero() {
+  FMT_CONSTEXPR void on_zero() {
     specs_.align_ = ALIGN_NUMERIC;
     specs_.fill_ = '0';
   }
 
-  constexpr void on_width(unsigned width) { specs_.width_ = width; }
-  constexpr void on_precision(unsigned precision) {
+  FMT_CONSTEXPR void on_width(unsigned width) { specs_.width_ = width; }
+  FMT_CONSTEXPR void on_precision(unsigned precision) {
     specs_.precision_ = precision;
   }
-  constexpr void end_precision() {}
+  FMT_CONSTEXPR void end_precision() {}
 
-  constexpr void on_type(Char type) { specs_.type_ = type; }
+  FMT_CONSTEXPR void on_type(Char type) { specs_.type_ = type; }
 
  protected:
   basic_format_specs<Char> &specs_;
@@ -1554,55 +1558,55 @@ class specs_setter {
 template <typename Handler>
 class specs_checker : public Handler {
  public:
-  constexpr specs_checker(const Handler& handler, internal::type arg_type)
+  FMT_CONSTEXPR specs_checker(const Handler& handler, internal::type arg_type)
     : Handler(handler), arg_type_(arg_type) {}
 
-  constexpr specs_checker(const specs_checker &other)
+  FMT_CONSTEXPR specs_checker(const specs_checker &other)
     : Handler(other), arg_type_(other.arg_type_) {}
 
-  constexpr void on_align(alignment align) {
+  FMT_CONSTEXPR void on_align(alignment align) {
     if (align == ALIGN_NUMERIC)
       require_numeric_argument();
     Handler::on_align(align);
   }
 
-  constexpr void on_plus() {
+  FMT_CONSTEXPR void on_plus() {
     check_sign();
     Handler::on_plus();
   }
 
-  constexpr void on_minus() {
+  FMT_CONSTEXPR void on_minus() {
     check_sign();
     Handler::on_minus();
   }
 
-  constexpr void on_space() {
+  FMT_CONSTEXPR void on_space() {
     check_sign();
     Handler::on_space();
   }
 
-  constexpr void on_hash() {
+  FMT_CONSTEXPR void on_hash() {
     require_numeric_argument();
     Handler::on_hash();
   }
 
-  constexpr void on_zero() {
+  FMT_CONSTEXPR void on_zero() {
     require_numeric_argument();
     Handler::on_zero();
   }
 
-  constexpr void end_precision() {
+  FMT_CONSTEXPR void end_precision() {
     if (is_integral(arg_type_) || arg_type_ == POINTER)
       this->on_error("precision not allowed for this argument type");
   }
 
  private:
-  constexpr void require_numeric_argument() {
+  FMT_CONSTEXPR void require_numeric_argument() {
     if (!is_arithmetic(arg_type_))
       this->on_error("format specifier requires numeric argument");
   }
 
-  constexpr void check_sign() {
+  FMT_CONSTEXPR void check_sign() {
     require_numeric_argument();
     if (is_integral(arg_type_) && arg_type_ != INT && arg_type_ != LONG_LONG &&
         arg_type_ != CHAR) {
@@ -1615,7 +1619,7 @@ class specs_checker : public Handler {
 
 template <template <typename> class Handler, typename T,
           typename Context, typename ErrorHandler>
-constexpr void set_dynamic_spec(
+FMT_CONSTEXPR void set_dynamic_spec(
     T &value, basic_arg<Context> arg, ErrorHandler eh) {
   unsigned long long big_value = visit(Handler<ErrorHandler>(eh), arg);
   if (big_value > (std::numeric_limits<int>::max)())
@@ -1631,17 +1635,17 @@ class specs_handler: public specs_setter<typename Context::char_type> {
  public:
   typedef typename Context::char_type char_type;
 
-  constexpr specs_handler(basic_format_specs<char_type> &specs, Context &ctx)
+  FMT_CONSTEXPR specs_handler(basic_format_specs<char_type> &specs, Context &ctx)
     : specs_setter<char_type>(specs), context_(ctx) {}
 
   template <typename Id>
-  constexpr void on_dynamic_width(Id arg_id) {
+  FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
     set_dynamic_spec<width_checker>(
           this->specs_.width_, get_arg(arg_id), context_.error_handler());
   }
 
   template <typename Id>
-  constexpr void on_dynamic_precision(Id arg_id) {
+  FMT_CONSTEXPR void on_dynamic_precision(Id arg_id) {
     set_dynamic_spec<precision_checker>(
           this->specs_.precision_, get_arg(arg_id), context_.error_handler());
   }
@@ -1651,12 +1655,12 @@ class specs_handler: public specs_setter<typename Context::char_type> {
   }
 
  private:
-  constexpr basic_arg<Context> get_arg(auto_id) {
+  FMT_CONSTEXPR basic_arg<Context> get_arg(auto_id) {
     return context_.next_arg();
   }
 
   template <typename Id>
-  constexpr basic_arg<Context> get_arg(Id arg_id) {
+  FMT_CONSTEXPR basic_arg<Context> get_arg(Id arg_id) {
     context_.parse_context().check_arg_id(arg_id);
     return context_.get_arg(arg_id);
   }
@@ -1669,11 +1673,11 @@ template <typename Char>
 struct arg_ref {
   enum Kind { NONE, INDEX, NAME };
 
-  constexpr arg_ref() : kind(NONE), index(0) {}
-  constexpr explicit arg_ref(unsigned index) : kind(INDEX), index(index) {}
+  FMT_CONSTEXPR arg_ref() : kind(NONE), index(0) {}
+  FMT_CONSTEXPR explicit arg_ref(unsigned index) : kind(INDEX), index(index) {}
   explicit arg_ref(basic_string_view<Char> name) : kind(NAME), name(name) {}
 
-  constexpr arg_ref &operator=(unsigned index) {
+  FMT_CONSTEXPR arg_ref &operator=(unsigned index) {
     kind = INDEX;
     this->index = index;
     return *this;
@@ -1703,25 +1707,25 @@ class dynamic_specs_handler :
  public:
   using char_type = typename ParseContext::char_type;
 
-  constexpr dynamic_specs_handler(
+  FMT_CONSTEXPR dynamic_specs_handler(
       dynamic_format_specs<char_type> &specs, ParseContext &ctx)
     : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
 
-  constexpr dynamic_specs_handler(const dynamic_specs_handler &other)
+  FMT_CONSTEXPR dynamic_specs_handler(const dynamic_specs_handler &other)
     : specs_setter<char_type>(other),
       specs_(other.specs_), context_(other.context_) {}
 
   template <typename Id>
-  constexpr void on_dynamic_width(Id arg_id) {
+  FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
     specs_.width_ref = make_arg_ref(arg_id);
   }
 
   template <typename Id>
-  constexpr void on_dynamic_precision(Id arg_id) {
+  FMT_CONSTEXPR void on_dynamic_precision(Id arg_id) {
     specs_.precision_ref = make_arg_ref(arg_id);
   }
 
-  constexpr void on_error(const char *message) {
+  FMT_CONSTEXPR void on_error(const char *message) {
     context_.on_error(message);
   }
 
@@ -1729,12 +1733,12 @@ class dynamic_specs_handler :
   using arg_ref_type = arg_ref<char_type>;
 
   template <typename Id>
-  constexpr arg_ref_type make_arg_ref(Id arg_id) {
+  FMT_CONSTEXPR arg_ref_type make_arg_ref(Id arg_id) {
     context_.check_arg_id(arg_id);
     return arg_ref_type(arg_id);
   }
 
-  constexpr arg_ref_type make_arg_ref(auto_id) {
+  FMT_CONSTEXPR arg_ref_type make_arg_ref(auto_id) {
     return arg_ref_type(context_.next_arg_id());
   }
 
@@ -1743,7 +1747,7 @@ class dynamic_specs_handler :
 };
 
 template <typename Iterator, typename IDHandler>
-constexpr Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
+FMT_CONSTEXPR Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
   char_type c = *it;
   if (c == '}' || c == ':') {
@@ -1774,15 +1778,17 @@ constexpr Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
 // Adapts SpecHandler to IDHandler API for dynamic width.
 template <typename SpecHandler, typename Char>
 struct width_adapter {
-  explicit constexpr width_adapter(SpecHandler &h) : handler(h) {}
+  explicit FMT_CONSTEXPR width_adapter(SpecHandler &h) : handler(h) {}
 
-  constexpr void operator()() { handler.on_dynamic_width(auto_id()); }
-  constexpr void operator()(unsigned id) { handler.on_dynamic_width(id); }
-  constexpr void operator()(basic_string_view<Char> id) {
+  FMT_CONSTEXPR void operator()() { handler.on_dynamic_width(auto_id()); }
+  FMT_CONSTEXPR void operator()(unsigned id) { handler.on_dynamic_width(id); }
+  FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
     handler.on_dynamic_width(id);
   }
 
-  constexpr void on_error(const char *message) { handler.on_error(message); }
+  FMT_CONSTEXPR void on_error(const char *message) {
+    handler.on_error(message);
+  }
 
   SpecHandler &handler;
 };
@@ -1790,15 +1796,17 @@ struct width_adapter {
 // Adapts SpecHandler to IDHandler API for dynamic precision.
 template <typename SpecHandler, typename Char>
 struct precision_adapter {
-  explicit constexpr precision_adapter(SpecHandler &h) : handler(h) {}
+  explicit FMT_CONSTEXPR precision_adapter(SpecHandler &h) : handler(h) {}
 
-  constexpr void operator()() { handler.on_dynamic_precision(auto_id()); }
-  constexpr void operator()(unsigned id) { handler.on_dynamic_precision(id); }
-  constexpr void operator()(basic_string_view<Char> id) {
+  FMT_CONSTEXPR void operator()() { handler.on_dynamic_precision(auto_id()); }
+  FMT_CONSTEXPR void operator()(unsigned id) {
+    handler.on_dynamic_precision(id);
+  }
+  FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
     handler.on_dynamic_precision(id);
   }
 
-  constexpr void on_error(const char *message) { handler.on_error(message); }
+  FMT_CONSTEXPR void on_error(const char *message) { handler.on_error(message); }
 
   SpecHandler &handler;
 };
@@ -1809,7 +1817,7 @@ struct precision_adapter {
 //     characters, possibly emulated via null_terminating_iterator, representing
 //     format specifiers.
 template <typename Iterator, typename SpecHandler>
-constexpr Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
+FMT_CONSTEXPR Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
   // Parse fill and alignment.
   if (char_type c = *it) {
@@ -1912,15 +1920,15 @@ constexpr Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
 
 template <typename Handler, typename Char>
 struct id_adapter {
-  constexpr explicit id_adapter(Handler &h): handler(h) {}
+  FMT_CONSTEXPR explicit id_adapter(Handler &h): handler(h) {}
 
-  constexpr void operator()() { handler.on_arg_id(); }
-  constexpr void operator()(unsigned id) { handler.on_arg_id(id); }
-  constexpr void operator()(basic_string_view<Char> id) {
+  FMT_CONSTEXPR void operator()() { handler.on_arg_id(); }
+  FMT_CONSTEXPR void operator()(unsigned id) { handler.on_arg_id(id); }
+  FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
     handler.on_arg_id(id);
   }
 
-  constexpr void on_error(const char *message) {
+  FMT_CONSTEXPR void on_error(const char *message) {
     handler.on_error(message);
   }
 
@@ -1928,7 +1936,7 @@ struct id_adapter {
 };
 
 template <typename Iterator, typename Handler>
-constexpr void parse_format_string(Iterator it, Handler &&handler) {
+FMT_CONSTEXPR void parse_format_string(Iterator it, Handler &&handler) {
   using char_type = typename std::iterator_traits<Iterator>::value_type;
   auto start = it;
   while (*it) {
@@ -1966,7 +1974,7 @@ constexpr void parse_format_string(Iterator it, Handler &&handler) {
 }
 
 template <typename T, typename ParseContext>
-constexpr const typename ParseContext::char_type *
+FMT_CONSTEXPR const typename ParseContext::char_type *
     parse_format_specs(ParseContext &ctx) {
   formatter<T, typename ParseContext::char_type> f;
   return f.parse(ctx);
@@ -1975,40 +1983,40 @@ constexpr const typename ParseContext::char_type *
 template <typename Char, typename ErrorHandler, typename... Args>
 class format_string_checker {
  public:
-  explicit constexpr format_string_checker(
+  explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
     : context_(format_str, eh) {}
 
-  constexpr void on_text(const Char *, const Char *) {}
+  FMT_CONSTEXPR void on_text(const Char *, const Char *) {}
 
-  constexpr void on_arg_id() {
+  FMT_CONSTEXPR void on_arg_id() {
     arg_id_ = context_.next_arg_id();
     check_arg_id();
   }
-  constexpr void on_arg_id(unsigned id) {
+  FMT_CONSTEXPR void on_arg_id(unsigned id) {
     arg_id_ = id;
     context_.check_arg_id(id);
     check_arg_id();
   }
-  constexpr void on_arg_id(basic_string_view<Char>) {}
+  FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) {}
 
-  constexpr void on_replacement_field(const Char *) {}
+  FMT_CONSTEXPR void on_replacement_field(const Char *) {}
 
-  constexpr const Char *on_format_specs(const Char *s) {
+  FMT_CONSTEXPR const Char *on_format_specs(const Char *s) {
     context_.advance_to(s);
     return to_unsigned(arg_id_) < NUM_ARGS ?
           parse_funcs_[arg_id_](context_) : s;
   }
 
-  constexpr void on_error(const char *message) {
+  FMT_CONSTEXPR void on_error(const char *message) {
     context_.on_error(message);
   }
 
  private:
   using parse_context_type = basic_parse_context<Char, ErrorHandler>;
-  constexpr static size_t NUM_ARGS = sizeof...(Args);
+  enum { NUM_ARGS = sizeof...(Args) };
 
-  constexpr void check_arg_id() {
+  FMT_CONSTEXPR void check_arg_id() {
     if (internal::to_unsigned(arg_id_) >= NUM_ARGS)
       context_.on_error("argument index out of range");
   }
@@ -2024,7 +2032,7 @@ class format_string_checker {
 };
 
 template <typename Char, typename ErrorHandler, typename... Args>
-constexpr bool check_format_string(
+FMT_CONSTEXPR bool check_format_string(
     basic_string_view<Char> s, ErrorHandler eh = ErrorHandler()) {
   format_string_checker<Char, ErrorHandler, Args...> checker(s, eh);
   parse_format_string(s.begin(), checker);
@@ -2034,8 +2042,9 @@ constexpr bool check_format_string(
 // Specifies whether to format T using the standard formatter.
 // It is not possible to use get_type in formatter specialization directly
 // because of a bug in MSVC.
-template <typename T>
-struct format_type : std::integral_constant<bool, get_type<T>() != CUSTOM> {};
+template <typename Context, typename T>
+struct format_type :
+  std::integral_constant<bool, get_type<Context, T>() != CUSTOM> {};
 
 // Specifies whether to format enums.
 template <typename T, typename Enable = void>
@@ -2326,7 +2335,7 @@ class basic_writer {
     void on_num() {
       unsigned num_digits = internal::count_digits(abs_value);
       char_type sep = internal::thousands_sep<char_type>(writer.locale_.get());
-      static constexpr unsigned SEP_SIZE = 1;
+      static FMT_CONSTEXPR unsigned SEP_SIZE = 1;
       unsigned size = num_digits + SEP_SIZE * ((num_digits - 1) / 3);
       writer.write_int(size, get_prefix(), spec, [this, size, sep](auto &&it) {
         basic_string_view<char_type> s(&sep, SEP_SIZE);
@@ -2809,15 +2818,17 @@ inline void format_decimal(char *&buffer, T value) {
 // Formatter of objects of type T.
 template <typename T, typename Char>
 struct formatter<
-    T, Char, typename std::enable_if<internal::format_type<T>::value>::type> {
+    T, Char,
+    typename std::enable_if<
+      internal::format_type<buffer_context_t<Char>, T>::value>::type> {
 
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.
   template <typename ParseContext>
-  constexpr typename ParseContext::iterator parse(ParseContext &ctx) {
+  FMT_CONSTEXPR typename ParseContext::iterator parse(ParseContext &ctx) {
     auto it = internal::null_terminating_iterator<Char>(ctx);
     using handler_type = internal::dynamic_specs_handler<ParseContext>;
-    auto type = internal::get_type<T>();
+    auto type = internal::get_type<buffer_context_t<Char>, T>();
     internal::specs_checker<handler_type>
         handler(handler_type(specs_, ctx), type);
     it = parse_format_specs(it, handler);
@@ -2922,7 +2933,7 @@ struct dynamic_formatter {
       void on_hash() {}
     };
     internal::specs_checker<null_handler>
-        checker(null_handler(), internal::get_type<T>());
+        checker(null_handler(), internal::get_type<FormatContext, T>());
     checker.on_align(specs_.align());
     if (specs_.flags_ == 0) {
       // Do nothing.
@@ -3039,7 +3050,7 @@ inline const void *ptr(const T *p) { return p; }
 
 class fill_spec_factory {
  public:
-  constexpr fill_spec_factory() {}
+  FMT_CONSTEXPR fill_spec_factory() {}
 
   template <typename Char>
   fill_spec<Char> operator=(Char value) const {
@@ -3050,16 +3061,16 @@ class fill_spec_factory {
 template <typename FormatSpec>
 class format_spec_factory {
  public:
-  constexpr format_spec_factory() {}
+  FMT_CONSTEXPR format_spec_factory() {}
 
   FormatSpec operator=(typename FormatSpec::value_type value) const {
     return FormatSpec(value);
   }
 };
 
-constexpr fill_spec_factory fill;
-constexpr format_spec_factory<width_spec> width;
-constexpr format_spec_factory<type_spec> type;
+FMT_CONSTEXPR fill_spec_factory fill;
+FMT_CONSTEXPR format_spec_factory<width_spec> width;
+FMT_CONSTEXPR format_spec_factory<type_spec> type;
 
 template <typename It, typename Char>
 struct arg_join {
@@ -3205,7 +3216,7 @@ template <typename String, typename... Args>
 inline typename std::enable_if<
   std::is_base_of<internal::format_string, String>::value, std::string>::type
     format(String format_str, const Args & ... args) {
-  constexpr bool invalid_format =
+  FMT_CONSTEXPR bool invalid_format =
       internal::check_format_string<char, internal::error_handler, Args...>(
         string_view(format_str.value(), format_str.size()));
   (void)invalid_format;
@@ -3232,8 +3243,8 @@ class udl_formatter {
  public:
   template <typename... Args>
   std::basic_string<Char> operator()(const Args &... args) const {
-    constexpr Char s[] = {CHARS..., '\0'};
-    constexpr bool invalid_format =
+    FMT_CONSTEXPR Char s[] = {CHARS..., '\0'};
+    FMT_CONSTEXPR bool invalid_format =
         check_format_string<Char, error_handler, Args...>(
           basic_string_view<Char>(s, sizeof...(CHARS)));
     (void)invalid_format;
@@ -3269,7 +3280,7 @@ inline namespace literals {
 
 # if FMT_UDL_TEMPLATE
 template <typename Char, Char... CHARS>
-constexpr internal::udl_formatter<Char, CHARS...> operator""_format() {
+FMT_CONSTEXPR internal::udl_formatter<Char, CHARS...> operator""_format() {
   return {};
 }
 # else
@@ -3309,8 +3320,8 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 
 #define FMT_STRING(s) [] { \
     struct S : fmt::internal::format_string { \
-      static constexpr auto value() { return s; } \
-      static constexpr size_t size() { return sizeof(s); } \
+      static FMT_CONSTEXPR auto value() { return s; } \
+      static FMT_CONSTEXPR size_t size() { return sizeof(s); } \
     }; \
     return S{}; \
   }()

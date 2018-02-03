@@ -1222,7 +1222,7 @@ namespace fmt {
 template <>
 struct formatter<Date> {
   template <typename ParseContext>
-  constexpr auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
     if (*it == 'd')
       ++it;
@@ -1604,22 +1604,22 @@ struct test_arg_id_handler {
   unsigned index = 0;
   string_view name;
 
-  constexpr void operator()() { res = EMPTY; }
+  FMT_CONSTEXPR void operator()() { res = EMPTY; }
 
-  constexpr void operator()(unsigned index) {
+  FMT_CONSTEXPR void operator()(unsigned index) {
     res = INDEX;
     this->index = index;
   }
 
-  constexpr void operator()(string_view name) {
+  FMT_CONSTEXPR void operator()(string_view name) {
     res = NAME;
     this->name = name;
   }
 
-  constexpr void on_error(const char *) { res = ERROR; }
+  FMT_CONSTEXPR void on_error(const char *) { res = ERROR; }
 };
 
-constexpr test_arg_id_handler parse_arg_id(const char* s) {
+FMT_CONSTEXPR test_arg_id_handler parse_arg_id(const char* s) {
   test_arg_id_handler h;
   fmt::internal::parse_arg_id(s, h);
   return h;
@@ -1649,39 +1649,39 @@ struct test_format_specs_handler {
 
   // Workaround for MSVC2017 bug that results in "expression did not evaluate
   // to a constant" with compiler-generated copy ctor.
-  constexpr test_format_specs_handler() {}
-  constexpr test_format_specs_handler(const test_format_specs_handler &other)
+  FMT_CONSTEXPR test_format_specs_handler() {}
+  FMT_CONSTEXPR test_format_specs_handler(const test_format_specs_handler &other)
   : res(other.res), align(other.align), fill(other.fill),
     width(other.width), width_ref(other.width_ref),
     precision(other.precision), precision_ref(other.precision_ref),
     type(other.type) {}
 
-  constexpr void on_align(fmt::alignment align) { this->align = align; }
-  constexpr void on_fill(char fill) { this->fill = fill; }
-  constexpr void on_plus() { res = PLUS; }
-  constexpr void on_minus() { res = MINUS; }
-  constexpr void on_space() { res = SPACE; }
-  constexpr void on_hash() { res = HASH; }
-  constexpr void on_zero() { res = ZERO; }
+  FMT_CONSTEXPR void on_align(fmt::alignment align) { this->align = align; }
+  FMT_CONSTEXPR void on_fill(char fill) { this->fill = fill; }
+  FMT_CONSTEXPR void on_plus() { res = PLUS; }
+  FMT_CONSTEXPR void on_minus() { res = MINUS; }
+  FMT_CONSTEXPR void on_space() { res = SPACE; }
+  FMT_CONSTEXPR void on_hash() { res = HASH; }
+  FMT_CONSTEXPR void on_zero() { res = ZERO; }
 
-  constexpr void on_width(unsigned width) { this->width = width; }
-  constexpr void on_dynamic_width(fmt::internal::auto_id) {}
-  constexpr void on_dynamic_width(unsigned index) { width_ref = index; }
-  constexpr void on_dynamic_width(string_view) {}
+  FMT_CONSTEXPR void on_width(unsigned width) { this->width = width; }
+  FMT_CONSTEXPR void on_dynamic_width(fmt::internal::auto_id) {}
+  FMT_CONSTEXPR void on_dynamic_width(unsigned index) { width_ref = index; }
+  FMT_CONSTEXPR void on_dynamic_width(string_view) {}
 
-  constexpr void on_precision(unsigned precision) {
+  FMT_CONSTEXPR void on_precision(unsigned precision) {
     this->precision = precision;
   }
-  constexpr void on_dynamic_precision(fmt::internal::auto_id) {}
-  constexpr void on_dynamic_precision(unsigned index) { precision_ref = index; }
-  constexpr void on_dynamic_precision(string_view) {}
+  FMT_CONSTEXPR void on_dynamic_precision(fmt::internal::auto_id) {}
+  FMT_CONSTEXPR void on_dynamic_precision(unsigned index) { precision_ref = index; }
+  FMT_CONSTEXPR void on_dynamic_precision(string_view) {}
 
-  constexpr void end_precision() {}
-  constexpr void on_type(char type) { this->type = type; }
-  constexpr void on_error(const char *) { res = ERROR; }
+  FMT_CONSTEXPR void end_precision() {}
+  FMT_CONSTEXPR void on_type(char type) { this->type = type; }
+  FMT_CONSTEXPR void on_error(const char *) { res = ERROR; }
 };
 
-constexpr test_format_specs_handler parse_test_specs(const char *s) {
+FMT_CONSTEXPR test_format_specs_handler parse_test_specs(const char *s) {
   test_format_specs_handler h;
   fmt::internal::parse_format_specs(s, h);
   return h;
@@ -1707,27 +1707,27 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
 struct test_context {
   using char_type = char;
 
-  constexpr fmt::basic_arg<test_context> next_arg() {
+  FMT_CONSTEXPR fmt::basic_arg<test_context> next_arg() {
     return fmt::internal::make_arg<test_context>(11);
   }
 
   template <typename Id>
-  constexpr fmt::basic_arg<test_context> get_arg(Id) {
+  FMT_CONSTEXPR fmt::basic_arg<test_context> get_arg(Id) {
     return fmt::internal::make_arg<test_context>(22);
   }
 
   template <typename Id>
-  constexpr void check_arg_id(Id) {}
+  FMT_CONSTEXPR void check_arg_id(Id) {}
 
-  constexpr unsigned next_arg_id() { return 33; }
+  FMT_CONSTEXPR unsigned next_arg_id() { return 33; }
 
   void on_error(const char *) {}
 
-  constexpr test_context &parse_context() { return *this; }
-  constexpr test_context error_handler() { return *this; }
+  FMT_CONSTEXPR test_context &parse_context() { return *this; }
+  FMT_CONSTEXPR test_context error_handler() { return *this; }
 };
 
-constexpr fmt::format_specs parse_specs(const char *s) {
+FMT_CONSTEXPR fmt::format_specs parse_specs(const char *s) {
   fmt::format_specs specs;
   test_context ctx;
   fmt::internal::specs_handler<test_context> h(specs, ctx);
@@ -1752,7 +1752,7 @@ TEST(FormatTest, ConstexprSpecsHandler) {
   static_assert(parse_specs("d").type() == 'd', "");
 }
 
-constexpr fmt::internal::dynamic_format_specs<char>
+FMT_CONSTEXPR fmt::internal::dynamic_format_specs<char>
     parse_dynamic_specs(const char *s) {
   fmt::internal::dynamic_format_specs<char> specs;
   test_context ctx;
@@ -1778,7 +1778,7 @@ TEST(FormatTest, ConstexprDynamicSpecsHandler) {
   static_assert(parse_dynamic_specs("d").type() == 'd', "");
 }
 
-constexpr test_format_specs_handler check_specs(const char *s) {
+FMT_CONSTEXPR test_format_specs_handler check_specs(const char *s) {
   fmt::internal::specs_checker<test_format_specs_handler>
       checker(test_format_specs_handler(), fmt::internal::DOUBLE);
   parse_format_specs(s, checker);
@@ -1803,23 +1803,23 @@ TEST(FormatTest, ConstexprSpecsChecker) {
 }
 
 struct test_format_string_handler {
-  constexpr void on_text(const char *, const char *) {}
+  FMT_CONSTEXPR void on_text(const char *, const char *) {}
 
-  constexpr void on_arg_id() {}
+  FMT_CONSTEXPR void on_arg_id() {}
 
   template <typename T>
-  constexpr void on_arg_id(T) {}
+  FMT_CONSTEXPR void on_arg_id(T) {}
 
-  constexpr void on_replacement_field(const char *) {}
+  FMT_CONSTEXPR void on_replacement_field(const char *) {}
 
-  constexpr const char *on_format_specs(const char *s) { return s; }
+  FMT_CONSTEXPR const char *on_format_specs(const char *s) { return s; }
 
-  constexpr void on_error(const char *) { error = true; }
+  FMT_CONSTEXPR void on_error(const char *) { error = true; }
 
   bool error = false;
 };
 
-constexpr bool parse_string(const char *s) {
+FMT_CONSTEXPR bool parse_string(const char *s) {
   test_format_string_handler h;
   fmt::internal::parse_format_string(s, h);
   return !h.error;
@@ -1843,25 +1843,25 @@ TEST(FormatTest, UdlTemplate) {
 struct test_error_handler {
   const char *&error;
 
-  constexpr test_error_handler(const char *&err): error(err) {}
+  FMT_CONSTEXPR test_error_handler(const char *&err): error(err) {}
 
-  constexpr test_error_handler(const test_error_handler &other)
+  FMT_CONSTEXPR test_error_handler(const test_error_handler &other)
     : error(other.error) {}
 
-  constexpr void on_error(const char *message) {
+  FMT_CONSTEXPR void on_error(const char *message) {
     if (!error)
       error = message;
   }
 };
 
-constexpr size_t len(const char *s) {
+FMT_CONSTEXPR size_t len(const char *s) {
   size_t len = 0;
   while (*s++)
     ++len;
   return len;
 }
 
-constexpr bool equal(const char *s1, const char *s2) {
+FMT_CONSTEXPR bool equal(const char *s1, const char *s2) {
   if (!s1 || !s2)
     return s1 == s2;
   while (*s1 && *s1 == *s2) {
@@ -1872,7 +1872,7 @@ constexpr bool equal(const char *s1, const char *s2) {
 }
 
 template <typename... Args>
-constexpr bool test_error(const char *fmt, const char *expected_error) {
+FMT_CONSTEXPR bool test_error(const char *fmt, const char *expected_error) {
   const char *actual_error = nullptr;
   fmt::internal::check_format_string<char, test_error_handler, Args...>(
         string_view(fmt, len(fmt)), test_error_handler(actual_error));

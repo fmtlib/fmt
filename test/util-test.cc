@@ -459,7 +459,8 @@ struct custom_context {
 
 TEST(UtilTest, MakeValueWithCustomFormatter) {
   ::Test t;
-  fmt::internal::value<custom_context> arg(t);
+  fmt::internal::value<custom_context> arg =
+    fmt::internal::make_value<custom_context>(t);
   custom_context ctx = {false};
   arg.custom.format(&t, ctx);
   EXPECT_TRUE(ctx.called);
