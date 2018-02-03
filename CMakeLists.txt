@@ -105,12 +105,6 @@ endif ()
 
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
 
-option(FMT_CPPFORMAT "Build cppformat library for backward compatibility." OFF)
-if (FMT_CPPFORMAT)
-  message(WARNING "The cppformat library is deprecated, use fmt instead.")
-  add_library(cppformat ${FMT_SOURCES} ${FMT_HEADERS})
-endif ()
-
 # Starting with CMake 3.1 the CXX_STANDARD property can be used instead.
 # Don't export -std since it may break projects that use other standards.
 target_compile_options(fmt PRIVATE ${CPP14_FLAG})
@@ -184,9 +178,6 @@ if (FMT_INSTALL)
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
           DESTINATION ${FMT_LIB_DIR})
   install(FILES ${FMT_HEADERS} DESTINATION include/fmt)
-  if (FMT_CPPFORMAT)
-    install(TARGETS cppformat DESTINATION ${FMT_LIB_DIR})
-  endif ()
 endif ()
 
 if (FMT_DOC)
