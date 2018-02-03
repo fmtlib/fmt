@@ -402,18 +402,17 @@ FMT_DISABLE_CONVERSION_TO_INT(long double);
 
 // Disambiguates conversions to different integral types.
 struct type_selector {
-  using char2 = struct { char a[2]; };
-  static char convert(...);
-  static char convert(int);
-  static char convert(unsigned);
-  static char convert(long);
-  static char convert(unsigned long);
-  static char2 convert(long long);
-  static char2 convert(unsigned long long);
+  static int convert(...);
+  static int convert(int);
+  static unsigned convert(unsigned);
+  static long convert(long);
+  static unsigned long convert(unsigned long);
+  static long long convert(long long);
+  static unsigned long long convert(unsigned long long);
 
   template <typename T>
   static constexpr type select() {
-    return sizeof(convert(std::declval<T>())) == 1 ? INT : LONG_LONG;
+    return sizeof(convert(std::declval<T>())) == sizeof(int) ? INT : LONG_LONG;
   }
 };
 
