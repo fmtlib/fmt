@@ -176,6 +176,8 @@ Projects using this library
 * `Envoy <https://lyft.github.io/envoy/>`_: C++ L7 proxy and communication bus
   (Lyft)
 
+* `FiveM <https://fivem.net/>`_: a modification framework for GTA V
+
 * `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to
   generate randomized datasets
 
