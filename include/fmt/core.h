@@ -26,11 +26,14 @@
 
 #ifdef __GNUC__
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
-# if __cplusplus >= 201103L || defined __GXX_EXPERIMENTAL_CXX0X__
-#  define FMT_HAS_GXX_CXX11 1
-# endif
-# else
-#  define FMT_HAS_GXX_CXX11 0
+#else
+# define FMT_GCC_VERSION 0
+#endif
+
+#if __cplusplus >= 201103L || defined __GXX_EXPERIMENTAL_CXX0X__
+# define FMT_HAS_GXX_CXX11 FMT_GCC_VERSION
+#else
+# define FMT_HAS_GXX_CXX11 0
 #endif
 
 #ifdef _MSC_VER
