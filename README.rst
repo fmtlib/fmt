@@ -179,10 +179,14 @@ Projects using this library
 * `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to
   generate randomized datasets
 
+* `OpenSpace <http://openspaceproject.com/>`_: An open-source astrovisualization
+  framework
+
 * `PenUltima Online (POL) <http://www.polserver.com/>`_:
   An MMO server, compatible with most Ultima Online clients
 
-* `quasardb <https://www.quasardb.net/>`_: A distributed, high-performance, associative database
+* `quasardb <https://www.quasardb.net/>`_: A distributed, high-performance,
+  associative database
 
 * `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
 
