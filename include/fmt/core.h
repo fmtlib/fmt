@@ -42,12 +42,18 @@
 # define FMT_MSC_VER 0
 #endif
 
-#ifndef FMT_CONSTEXPR
-# if FMT_HAS_FEATURE(cxx_constexpr)
-#  define FMT_CONSTEXPR constexpr
-# else
-#  define FMT_CONSTEXPR
-# endif
+// Check if relaxed c++14 constexpr is supported.
+#ifndef FMT_USE_CONSTEXPR
+# define FMT_USE_CONSTEXPR \
+  (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_GCC_VERSION >= 500 || \
+   FMT_MSC_VER >= 1910)
+#endif
+#if FMT_USE_CONSTEXPR
+# define FMT_CONSTEXPR constexpr
+# define FMT_CONSTEXPR_VAR constexpr
+#else
+# define FMT_CONSTEXPR inline
+# define FMT_CONSTEXPR_VAR
 #endif
 
 #ifndef FMT_OVERRIDE
@@ -855,23 +861,23 @@ using wcontext = buffer_context_t<wchar_t>;
 
 namespace internal {
 template <typename Context, typename T>
-FMT_CONSTEXPR type get_type() {
+struct get_type {
   using value_type = decltype(make_value<Context>(std::declval<T>()));
-  return value_type::type_tag;
-}
+  static const type value = value_type::type_tag;
+};
 
 template <typename Context>
 FMT_CONSTEXPR uint64_t get_types() { return 0; }
 
 template <typename Context, typename Arg, typename... Args>
 FMT_CONSTEXPR uint64_t get_types() {
-  return get_type<Context, Arg>() | (get_types<Context, Args...>() << 4);
+  return get_type<Context, Arg>::value | (get_types<Context, Args...>() << 4);
 }
 
 template <typename Context, typename T>
 FMT_CONSTEXPR basic_arg<Context> make_arg(const T &value) {
   basic_arg<Context> arg;
-  arg.type_ = get_type<Context, T>();
+  arg.type_ = get_type<Context, T>::value;
   arg.value_ = make_value<Context>(value);
   return arg;
 }

@@ -2044,7 +2044,7 @@ FMT_CONSTEXPR bool check_format_string(
 // because of a bug in MSVC.
 template <typename Context, typename T>
 struct format_type :
-  std::integral_constant<bool, get_type<Context, T>() != CUSTOM> {};
+  std::integral_constant<bool, get_type<Context, T>::value != CUSTOM> {};
 
 // Specifies whether to format enums.
 template <typename T, typename Enable = void>
@@ -2335,7 +2335,7 @@ class basic_writer {
     void on_num() {
       unsigned num_digits = internal::count_digits(abs_value);
       char_type sep = internal::thousands_sep<char_type>(writer.locale_.get());
-      static FMT_CONSTEXPR unsigned SEP_SIZE = 1;
+      enum { SEP_SIZE = 1 };
       unsigned size = num_digits + SEP_SIZE * ((num_digits - 1) / 3);
       writer.write_int(size, get_prefix(), spec, [this, size, sep](auto &&it) {
         basic_string_view<char_type> s(&sep, SEP_SIZE);
@@ -2828,7 +2828,7 @@ struct formatter<
   FMT_CONSTEXPR typename ParseContext::iterator parse(ParseContext &ctx) {
     auto it = internal::null_terminating_iterator<Char>(ctx);
     using handler_type = internal::dynamic_specs_handler<ParseContext>;
-    auto type = internal::get_type<buffer_context_t<Char>, T>();
+    auto type = internal::get_type<buffer_context_t<Char>, T>::value;
     internal::specs_checker<handler_type>
         handler(handler_type(specs_, ctx), type);
     it = parse_format_specs(it, handler);
@@ -2933,7 +2933,7 @@ struct dynamic_formatter {
       void on_hash() {}
     };
     internal::specs_checker<null_handler>
-        checker(null_handler(), internal::get_type<FormatContext, T>());
+        checker(null_handler(), internal::get_type<FormatContext, T>::value);
     checker.on_align(specs_.align());
     if (specs_.flags_ == 0) {
       // Do nothing.
@@ -3068,9 +3068,9 @@ class format_spec_factory {
   }
 };
 
-FMT_CONSTEXPR fill_spec_factory fill;
-FMT_CONSTEXPR format_spec_factory<width_spec> width;
-FMT_CONSTEXPR format_spec_factory<type_spec> type;
+static const fill_spec_factory fill;
+static const format_spec_factory<width_spec> width;
+static const format_spec_factory<type_spec> type;
 
 template <typename It, typename Char>
 struct arg_join {
@@ -3216,7 +3216,7 @@ template <typename String, typename... Args>
 inline typename std::enable_if<
   std::is_base_of<internal::format_string, String>::value, std::string>::type
     format(String format_str, const Args & ... args) {
-  FMT_CONSTEXPR bool invalid_format =
+  FMT_CONSTEXPR_VAR bool invalid_format =
       internal::check_format_string<char, internal::error_handler, Args...>(
         string_view(format_str.value(), format_str.size()));
   (void)invalid_format;
@@ -3243,8 +3243,8 @@ class udl_formatter {
  public:
   template <typename... Args>
   std::basic_string<Char> operator()(const Args &... args) const {
-    FMT_CONSTEXPR Char s[] = {CHARS..., '\0'};
-    FMT_CONSTEXPR bool invalid_format =
+    FMT_CONSTEXPR_VAR Char s[] = {CHARS..., '\0'};
+    FMT_CONSTEXPR_VAR bool invalid_format =
         check_format_string<Char, error_handler, Args...>(
           basic_string_view<Char>(s, sizeof...(CHARS)));
     (void)invalid_format;

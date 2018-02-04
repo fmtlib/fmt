@@ -1598,6 +1598,30 @@ TEST(FormatTest, DynamicFormatter) {
       format_error, "precision not allowed for this argument type");
 }
 
+TEST(FormatTest, UdlTemplate) {
+  EXPECT_EQ("foo", "foo"_format());
+  EXPECT_EQ("        42", "{0:10}"_format(42));
+  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
+}
+
+TEST(FormatTest, ToString) {
+  EXPECT_EQ("42", fmt::to_string(42));
+}
+
+TEST(FormatTest, OutputIterators) {
+  std::list<char> out;
+  fmt::format_to(std::back_inserter(out), "{}", 42);
+  EXPECT_EQ("42", std::string(out.begin(), out.end()));
+  std::stringstream s;
+  fmt::format_to(std::ostream_iterator<char>(s), "{}", 42);
+  EXPECT_EQ("42", s.str());
+}
+
+TEST(FormatTest, OutputSize) {
+  EXPECT_EQ(2, fmt::count("{}", 42));
+}
+
+#if FMT_USE_CONSTEXPR
 struct test_arg_id_handler {
   enum result { NONE, EMPTY, INDEX, NAME, ERROR };
   result res = NONE;
@@ -1834,12 +1858,6 @@ TEST(FormatTest, ConstexprParseFormatString) {
   static_assert(parse_string("{:}"), "");
 }
 
-TEST(FormatTest, UdlTemplate) {
-  EXPECT_EQ("foo", "foo"_format());
-  EXPECT_EQ("        42", "{0:10}"_format(42));
-  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
-}
-
 struct test_error_handler {
   const char *&error;
 
@@ -1936,20 +1954,4 @@ TEST(FormatTest, FormatStringErrors) {
                "cannot switch from automatic to manual argument indexing",
                int, int);
 }
-
-TEST(FormatTest, ToString) {
-  EXPECT_EQ("42", fmt::to_string(42));
-}
-
-TEST(FormatTest, OutputIterators) {
-  std::list<char> out;
-  fmt::format_to(std::back_inserter(out), "{}", 42);
-  EXPECT_EQ("42", std::string(out.begin(), out.end()));
-  std::stringstream s;
-  fmt::format_to(std::ostream_iterator<char>(s), "{}", 42);
-  EXPECT_EQ("42", s.str());
-}
-
-TEST(FormatTest, OutputSize) {
-  EXPECT_EQ(2, fmt::count("{}", 42));
-}
+#endif  // FMT_USE_CONSTEXPR
