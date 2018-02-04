@@ -523,11 +523,11 @@ FMT_MAKE_VALUE(UINT, unsigned, unsigned)
 // either to int or to long long depending on its size.
 using long_type =
   std::conditional<sizeof(long) == sizeof(int), int, long long>::type;
-FMT_MAKE_VALUE(sizeof(long) == sizeof(int) ? INT : LONG_LONG, long, long_type);
+FMT_MAKE_VALUE((sizeof(long) == sizeof(int) ? INT : LONG_LONG), long, long_type)
 using ulong_type =
   std::conditional<sizeof(unsigned long) == sizeof(unsigned),
                    unsigned, unsigned long long>::type;
-FMT_MAKE_VALUE(sizeof(unsigned long) == sizeof(unsigned) ? UINT : ULONG_LONG,
+FMT_MAKE_VALUE((sizeof(unsigned long) == sizeof(unsigned) ? UINT : ULONG_LONG),
     unsigned long, ulong_type)
 
 FMT_MAKE_VALUE(LONG_LONG, long long, long long)
