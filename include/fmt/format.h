@@ -636,7 +636,7 @@ class null_terminating_iterator {
     return ptr_ >= other.ptr_;
   }
 
-  friend FMT_CONSTEXPR const Char *pointer_from<Char>(
+  friend FMT_CONSTEXPR_DECL const Char *pointer_from<Char>(
       null_terminating_iterator it);
 
  private:
@@ -3216,7 +3216,7 @@ template <typename String, typename... Args>
 inline typename std::enable_if<
   std::is_base_of<internal::format_string, String>::value, std::string>::type
     format(String format_str, const Args & ... args) {
-  FMT_CONSTEXPR_VAR bool invalid_format =
+  FMT_CONSTEXPR_DECL bool invalid_format =
       internal::check_format_string<char, internal::error_handler, Args...>(
         string_view(format_str.value(), format_str.size()));
   (void)invalid_format;
@@ -3243,8 +3243,8 @@ class udl_formatter {
  public:
   template <typename... Args>
   std::basic_string<Char> operator()(const Args &... args) const {
-    FMT_CONSTEXPR_VAR Char s[] = {CHARS..., '\0'};
-    FMT_CONSTEXPR_VAR bool invalid_format =
+    FMT_CONSTEXPR_DECL Char s[] = {CHARS..., '\0'};
+    FMT_CONSTEXPR_DECL bool invalid_format =
         check_format_string<Char, error_handler, Args...>(
           basic_string_view<Char>(s, sizeof...(CHARS)));
     (void)invalid_format;
