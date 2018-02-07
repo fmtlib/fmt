@@ -861,8 +861,12 @@ using wcontext = buffer_context_t<wchar_t>;
 
 namespace internal {
 template <typename Context, typename T>
-struct get_type {
-  using value_type = decltype(make_value<Context>(std::declval<T>()));
+class get_type {
+ private:
+  static const T& val();
+
+ public:
+  using value_type = decltype(make_value<Context>(val()));
   static const type value = value_type::type_tag;
 };
 
