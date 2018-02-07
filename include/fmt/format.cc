@@ -107,7 +107,7 @@ typedef void (*FormatFunc)(internal::buffer &, int, string_view);
 // Buffer should be at least of size 1.
 int safe_strerror(
     int error_code, char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT {
-  FMT_ASSERT(buffer != 0 && buffer_size != 0, "invalid buffer");
+  FMT_ASSERT(buffer != FMT_NULL && buffer_size != 0, "invalid buffer");
 
   class StrError {
    private:
