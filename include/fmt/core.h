@@ -24,6 +24,12 @@
 # define FMT_HAS_FEATURE(x) 0
 #endif
 
+#if defined(__has_include)
+# define FMT_HAS_INCLUDE(x) __has_include(x)
+#else
+# define FMT_HAS_INCLUDE(x) 0
+#endif
+
 #ifdef __GNUC__
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #else
@@ -137,8 +143,15 @@
     Type(const Type &) FMT_DELETED; \
     void operator=(const Type &) FMT_DELETED
 
+#if (FMT_HAS_INCLUDE(<string_view>) && __cplusplus > 201402L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
+# include <string_view>
+namespace fmt { using std::basic_string_view; }
+#elif (FMT_HAS_INCLUDE(<experimental/string_view>) && __cplusplus >= 201402L)
+# include <experimental/string_view>
+namespace fmt { using std::experimental::basic_string_view; }
+#else
 namespace fmt {
-
 /**
   \rst
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
@@ -179,15 +192,6 @@ class basic_string_view {
   FMT_CONSTEXPR basic_string_view(
       const std::basic_string<Char, Alloc> &s) FMT_NOEXCEPT
   : data_(s.c_str()), size_(s.size()) {}
-
-  /**
-    \rst
-    Converts a string reference to an ``std::string`` object.
-    \endrst
-   */
-  std::basic_string<Char> to_string() const {
-    return std::basic_string<Char>(data_, size_);
-  }
 
   /** Returns a pointer to the string data. */
   const Char *data() const { return data_; }
@@ -231,7 +235,10 @@ class basic_string_view {
     return lhs.compare(rhs) >= 0;
   }
 };
+}  // namespace fmt
+#endif
 
+namespace fmt {
 using string_view = basic_string_view<char>;
 using wstring_view = basic_string_view<wchar_t>;
 

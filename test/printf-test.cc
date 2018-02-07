@@ -41,7 +41,7 @@ const unsigned BIG_NUM = INT_MAX + 1u;
 
 // Makes format string argument positional.
 std::string make_positional(fmt::string_view format) {
-  std::string s(format.to_string());
+  std::string s(format.data(), format.size());
   s.replace(s.find('%'), 1, "%1$");
   return s;
 }

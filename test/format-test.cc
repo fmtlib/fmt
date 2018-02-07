@@ -137,11 +137,6 @@ TEST(StringViewTest, Ctor) {
   EXPECT_EQ(4u, string_view(std::string("defg")).size());
 }
 
-TEST(StringViewTest, ConvertToString) {
-  std::string s = string_view("abc").to_string();
-  EXPECT_EQ("abc", s);
-}
-
 TEST(WriterTest, NotCopyConstructible) {
   EXPECT_FALSE(std::is_copy_constructible<fmt::writer>::value);
 }
