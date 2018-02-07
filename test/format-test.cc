@@ -1608,6 +1608,10 @@ TEST(FormatTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
 }
 
+TEST(FormatTest, ToWString) {
+  EXPECT_EQ(L"42", fmt::to_wstring(42));
+}
+
 TEST(FormatTest, OutputIterators) {
   std::list<char> out;
   fmt::format_to(std::back_inserter(out), "{}", 42);

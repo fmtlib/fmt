@@ -1327,10 +1327,16 @@ class arg_formatter_base {
 
   FMT_DISALLOW_COPY_AND_ASSIGN(arg_formatter_base);
 
-  void write_char(char_type value) {
-    writer_.write_padded(1, specs_, [value](auto &&it) {
+  struct char_writer {
+    char_type value;
+    template <typename It>
+    void operator()(It &&it) const {
       *it++ = internal::char_traits<char_type>::cast(value);
-    });
+    }
+  };
+
+  void write_char(char_type value) {
+    writer_.write_padded(1, specs_, char_writer{value});
   }
 
   void write_pointer(const void *p) {
@@ -2172,11 +2178,11 @@ template <typename Range>
 class basic_writer {
  public:
   using char_type = typename Range::value_type;
+  using iterator = decltype(std::declval<Range>().begin());
   using format_specs = basic_format_specs<char_type>;
 
  private:
   // Output iterator.
-  using iterator = decltype(std::declval<Range>().begin());
   iterator out_;
 
   std::unique_ptr<locale_provider> locale_;
@@ -3142,6 +3148,14 @@ std::string to_string(const T &value) {
   std::string str;
   internal::container_buffer<std::string> buf(str);
   writer(buf).write(value);
+  return str;
+}
+
+template <typename T>
+std::wstring to_wstring(const T &value) {
+  std::wstring str;
+  internal::container_buffer<std::wstring> buf(str);
+  wwriter(buf).write(value);
   return str;
 }
 
