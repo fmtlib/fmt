@@ -90,6 +90,7 @@ template <typename Char, typename T>
 void format_value(basic_buffer<Char> &buffer, const T &value) {
   internal::FormatBuf<Char> format_buf(buffer);
   std::basic_ostream<Char> output(&format_buf);
+  output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
   output << value;
   buffer.resize(buffer.size());
 }
