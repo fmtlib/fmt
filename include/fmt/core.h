@@ -147,7 +147,9 @@
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 # include <string_view>
 namespace fmt { using std::basic_string_view; }
-#elif (FMT_HAS_INCLUDE(<experimental/string_view>) && __cplusplus >= 201402L)
+// std::experimental::basic_string_view::remove_prefix isn't constexpr in gcc 6.
+#elif (FMT_HAS_INCLUDE(<experimental/string_view>) && \
+       __cplusplus >= 201402L && FMT_GCC_VERSION >= 700)
 # include <experimental/string_view>
 namespace fmt { using std::experimental::basic_string_view; }
 #else
