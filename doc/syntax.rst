@@ -336,6 +336,16 @@ Aligning the text and specifying a width::
    format("{:*^30}", "centered");  // use '*' as a fill char
    // Result: "***********centered***********"
 
+Dynamic width::
+
+   format("{:<{}}", "left aligned", 30);
+   // Result: "left aligned                  "
+
+Dynamic precision::
+
+   format("{:.{}f}", 3.14, 1);
+   // Result: "3.1"
+
 Replacing ``%+f``, ``%-f``, and ``% f`` and specifying a sign::
 
    format("{:+f}; {:+f}", 3.14, -3.14);  // show it always
@@ -359,13 +369,6 @@ Replacing ``%x`` and ``%o`` and converting the value to different bases::
 
       format("{:,}", 1234567890);
       '1,234,567,890'
-
-   Expressing a percentage::
-
-      >>> points = 19
-      >>> total = 22
-      Format("Correct answers: {:.2%}") << points/total)
-      'Correct answers: 86.36%'
 
    Using type-specific formatting::
 
