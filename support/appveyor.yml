@@ -2,13 +2,14 @@ configuration:
   - Debug
   - Release
 
+image: Visual Studio 2017
+
 environment:
   CTEST_OUTPUT_ON_FAILURE: 1
   matrix:
   - BUILD: msvc
   - BUILD: msvc
     PLATFORM: x64
-  - BUILD: mingw
 
 before_build:
   # Workaround for CMake not wanting sh.exe on PATH for MinGW.

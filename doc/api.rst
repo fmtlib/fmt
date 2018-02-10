@@ -61,58 +61,35 @@ The format string syntax is described in the documentation of
 Formatting user-defined types
 -----------------------------
 
-A custom ``format_arg`` function may be implemented and used to format any
-user-defined type. That is how date and time formatting described in the
-previous section is implemented in :file:`fmt/time.h`. The following example
-shows how to implement custom formatting for a user-defined structure.
+To make a user-defined type formattable, specialize the ``formatter<T>`` struct
+template and implement ``parse`` and ``format`` methods::
 
-::
+  struct MyStruct { double x, y; };
 
-  struct MyStruct { double a, b; };
+  namespace fmt {
+  template <>
+  struct formatter<MyStruct> {
+    template <typename ParseContext>
+    auto parse(ParseContext &ctx) { return ctx.begin(); }
 
-  void format_arg(fmt::BasicFormatter<char> &f,
-    const char *&format_str, const MyStruct &s) {
-    f.writer().write("[MyStruct: a={:.1f}, b={:.2f}]", s.a, s.b);
-  }
-
-  MyStruct m = { 1, 2 };
-  std::string s = fmt::format("m={}", n);
-  // s == "m=[MyStruct: a=1.0, b=2.00]"
-
-Note in the example above the ``format_arg`` function ignores the contents of
-``format_str`` so the type will always be formatted as specified. See
-``format_arg`` in :file:`fmt/time.h` for an advanced example of how to use
-the ``format_str`` argument to customize the formatted output.
-
-This technique can also be used for formatting class hierarchies::
-
-  namespace local {
-  struct Parent {
-    Parent(int p) : p(p) {}
-    virtual void write(fmt::Writer &w) const {
-      w.write("Parent : p={}", p);
+    template <typename FormatContext>
+    auto format(const MyStruct &s, FormatContext &ctx) {
+      fmt::format_to(ctx.begin(), "[MyStruct: x={:.1f}, y={:.2f}]", s.x, s.y);
     }
-    int p;
   };
-
-  struct Child : Parent {
-    Child(int c, int p) : Parent(p), c(c) {}
-    virtual void write(fmt::Writer &w) const {
-      w.write("Child c={} : ", c);
-      Parent::write(w);
-    }
-    int c;
-  };
-
-  void format_arg(fmt::BasicFormatter<char> &f,
-                  const char *&format_str, const Parent &p) {
-    p.write(f.writer());
   }
-  }
-  Local::Child c(1,2);
-  Local::Parent &p = c;
-  fmt::print("via ref to base: {}\n", p);
-  fmt::print("direct to child: {}\n", c);
+
+Then you can pass objects of type ``MyStruct`` to any formatting function::
+
+  MyStruct m = {1, 2};
+  std::string s = fmt::format("m={}", m);
+  // s == "m=[MyStruct: x=1.0, y=2.00]"
+
+In the example above the ``formatter<MyStruct>::parse`` function ignores the
+contents of the format string referred to by ``ctx.begin()`` so the object will
+always be formatted as specified. See ``formatter<tm>::parse`` in
+:file:`fmt/time.h` for an advanced example of how to parse the format string and
+customize the formatted output.
 
 This section shows how to define a custom format function for a user-defined
 type. The next section describes how to get ``fmt`` to use a conventional stream
@@ -151,7 +128,7 @@ custom argument formatter class::
   // with the ``x`` format specifier.
   class CustomArgFormatter :
     public fmt::BasicArgFormatter<CustomArgFormatter, char> {
-    public:
+   public:
     CustomArgFormatter(fmt::BasicFormatter<char, CustomArgFormatter> &f,
                        fmt::FormatSpec &s, const char *fmt)
       : fmt::BasicArgFormatter<CustomArgFormatter, char>(f, s, fmt) {}
@@ -233,9 +210,6 @@ store output elsewhere by subclassing `~fmt::BasicWriter`.
 .. doxygenclass:: fmt::BasicStringWriter
    :members:
 
-.. doxygenclass:: fmt::BasicContainerWriter
-   :members:
-
 .. doxygenfunction:: bin(int)
 
 .. doxygenfunction:: oct(int)
@@ -261,8 +235,6 @@ Utilities
    :members:
 
 .. doxygenfunction:: fmt::to_string(const T&)
-
-.. doxygenfunction:: fmt::to_wstring(const T&)
 
 .. doxygenclass:: fmt::BasicStringRef
    :members:

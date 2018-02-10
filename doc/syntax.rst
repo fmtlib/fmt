@@ -4,8 +4,9 @@
 Format String Syntax
 ********************
 
-Formatting functions such as :ref:`fmt::format() <format>` and :ref:`fmt::print() <print>`
-use the same format string syntax described in this section.
+Formatting functions such as :ref:`fmt::format() <format>` and
+:ref:`fmt::print() <print>` use the same format string syntax described in this
+section.
 
 Format strings contain "replacement fields" surrounded by curly braces ``{}``.
 Anything that is not contained in braces is considered literal text, which is
@@ -53,8 +54,8 @@ described in the next section.
 
 A *format_spec* field can also include nested replacement fields in certain
 positions within it. These nested replacement fields can contain only an
-argument id; format specifications are not allowed. This allows the
-formatting of a value to be dynamically specified.
+argument id; format specifications are not allowed. This allows the formatting
+of a value to be dynamically specified.
 
 See the :ref:`formatexamples` section for some examples.
 
@@ -362,7 +363,7 @@ Replacing ``%x`` and ``%o`` and converting the value to different bases::
    // Result: "int: 42;  hex: 2a;  oct: 52; bin: 101010"
    // with 0x or 0 or 0b as prefix:
    format("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}", 42);
-   // Result: "int: 42;  hex: 0x2a;  oct: 052;  bin: 0b101010"   
+   // Result: "int: 42;  hex: 0x2a;  oct: 052;  bin: 0b101010"
 
 .. ifconfig:: False
 

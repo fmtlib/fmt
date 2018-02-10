@@ -14,14 +14,24 @@ env:
         6pxmyzLHSn1ZR7OX5rfPvwM3tOyZ3H0=
   matrix:
     - BUILD=Doc
-    - BUILD=Debug STANDARD=0x
-    - BUILD=Release STANDARD=98
-    - BUILD=Release STANDARD=0x
+    - BUILD=Debug STANDARD=14
+    - BUILD=Release STANDARD=14
 
 matrix:
   exclude:
     - os: osx
       env: BUILD=Doc
+
+# Install gcc-6 for extended constexpr support.
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - g++-6
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX=g++-6; fi
 
 script:
   - support/travis-build.py

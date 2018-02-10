@@ -33,7 +33,7 @@
 #include "util.h"
 
 using fmt::format;
-using fmt::FormatError;
+using fmt::format_error;
 
 std::ostream &operator<<(std::ostream &os, const Date &d) {
   os << d.year() << '-' << d.month() << '-' << d.day();
@@ -53,25 +53,26 @@ std::ostream &operator<<(std::ostream &os, TestEnum) {
 enum TestEnum2 {A};
 
 TEST(OStreamTest, Enum) {
-  EXPECT_FALSE(fmt::internal::ConvertToInt<TestEnum>::value);
+  EXPECT_FALSE(fmt::internal::convert_to_int<TestEnum>::value);
   EXPECT_EQ("TestEnum", fmt::format("{}", TestEnum()));
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-struct TestArgFormatter : fmt::BasicArgFormatter<TestArgFormatter, char> {
-  TestArgFormatter(fmt::BasicFormatter<char, TestArgFormatter> &f,
-                   fmt::FormatSpec &s, const char *fmt)
-    : fmt::BasicArgFormatter<TestArgFormatter, char>(f, s, fmt) {}
+using range = fmt::back_insert_range<fmt::internal::buffer>;
+
+struct test_arg_formatter: fmt::arg_formatter<range> {
+  test_arg_formatter(fmt::context &ctx, fmt::format_specs &s)
+    : fmt::arg_formatter<range>(ctx, s) {}
 };
 
 TEST(OStreamTest, CustomArg) {
-  fmt::MemoryWriter writer;
-  typedef fmt::BasicFormatter<char, TestArgFormatter> Formatter;
-  Formatter formatter(fmt::ArgList(), writer);
-  fmt::FormatSpec spec;
-  TestArgFormatter af(formatter, spec, "}");
-  af.visit(fmt::internal::MakeArg<Formatter>(TestEnum()));
-  EXPECT_EQ("TestEnum", writer.str());
+  fmt::memory_buffer buffer;
+  fmt::internal::buffer &base = buffer;
+  fmt::context ctx(std::back_inserter(base), "", fmt::format_args());
+  fmt::format_specs spec;
+  test_arg_formatter af(ctx, spec);
+  visit(af, fmt::internal::make_arg<fmt::context>(TestEnum()));
+  EXPECT_EQ("TestEnum", std::string(buffer.data(), buffer.size()));
 }
 
 TEST(OStreamTest, Format) {
@@ -87,19 +88,19 @@ TEST(OStreamTest, FormatSpecs) {
   EXPECT_EQ("def  ", format("{0:<5}", TestString("def")));
   EXPECT_EQ("  def", format("{0:>5}", TestString("def")));
   EXPECT_THROW_MSG(format("{0:=5}", TestString("def")),
-      FormatError, "format specifier '=' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_EQ(" def ", format("{0:^5}", TestString("def")));
   EXPECT_EQ("def**", format("{0:*<5}", TestString("def")));
   EXPECT_THROW_MSG(format("{0:+}", TestString()),
-      FormatError, "format specifier '+' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:-}", TestString()),
-      FormatError, "format specifier '-' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0: }", TestString()),
-      FormatError, "format specifier ' ' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:#}", TestString()),
-      FormatError, "format specifier '#' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:05}", TestString()),
-      FormatError, "format specifier '0' requires numeric argument");
+      format_error, "format specifier requires numeric argument");
   EXPECT_EQ("test         ", format("{0:13}", TestString("test")));
   EXPECT_EQ("test         ", format("{0:{1}}", TestString("test"), 13));
   EXPECT_EQ("te", format("{0:.2}", TestString("test")));
@@ -123,9 +124,10 @@ TEST(OStreamTest, Print) {
 
 TEST(OStreamTest, WriteToOStream) {
   std::ostringstream os;
-  fmt::MemoryWriter w;
-  w << "foo";
-  fmt::internal::write(os, w);
+  fmt::memory_buffer buffer;
+  const char *foo = "foo";
+  buffer.append(foo, foo + std::strlen(foo));
+  fmt::internal::write(os, buffer);
   EXPECT_EQ("foo", os.str());
 }
 
@@ -135,55 +137,34 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   if (max_size <= fmt::internal::to_unsigned(max_streamsize))
     return;
 
-  class TestWriter : public fmt::BasicWriter<char> {
-   private:
-    struct TestBuffer : fmt::Buffer<char> {
-      explicit TestBuffer(std::size_t size) { size_ = size; }
-      void grow(std::size_t) {}
-    } buffer_;
-   public:
-    explicit TestWriter(std::size_t size)
-      : fmt::BasicWriter<char>(buffer_), buffer_(size) {}
-  } w(max_size);
+  struct test_buffer : fmt::internal::buffer {
+    explicit test_buffer(std::size_t size) { resize(size); }
+    void grow(std::size_t) {}
+  } buffer(max_size);
 
-  struct MockStreamBuf : std::streambuf {
+  struct mock_streambuf : std::streambuf {
     MOCK_METHOD2(xsputn, std::streamsize (const void *s, std::streamsize n));
     std::streamsize xsputn(const char *s, std::streamsize n) {
       const void *v = s;
       return xsputn(v, n);
     }
-  } buffer;
+  } streambuf;
 
-  struct TestOStream : std::ostream {
-    explicit TestOStream(MockStreamBuf &buffer) : std::ostream(&buffer) {}
-  } os(buffer);
+  struct test_ostream : std::ostream {
+    explicit test_ostream(mock_streambuf &buffer) : std::ostream(&buffer) {}
+  } os(streambuf);
 
   testing::InSequence sequence;
   const char *data = 0;
   std::size_t size = max_size;
   do {
-    typedef fmt::internal::MakeUnsigned<std::streamsize>::Type UStreamSize;
-    UStreamSize n = std::min<UStreamSize>(
+    typedef std::make_unsigned<std::streamsize>::type ustreamsize;
+    ustreamsize n = std::min<ustreamsize>(
           size, fmt::internal::to_unsigned(max_streamsize));
-    EXPECT_CALL(buffer, xsputn(data, static_cast<std::streamsize>(n)))
+    EXPECT_CALL(streambuf, xsputn(data, static_cast<std::streamsize>(n)))
         .WillOnce(testing::Return(max_streamsize));
     data += n;
     size -= static_cast<std::size_t>(n);
   } while (size != 0);
-  fmt::internal::write(os, w);
-}
-
-struct ConvertibleToInt {
-  template <typename ValueType>
-  operator ValueType() const {
-    return 0;
-  }
-
-  friend std::ostream &operator<<(std::ostream &o, ConvertibleToInt) {
-    return o << "foo";
-  }
-};
-
-TEST(FormatTest, FormatConvertibleToInt) {
-  EXPECT_EQ("foo", fmt::format("{}", ConvertibleToInt()));
+  fmt::internal::write(os, buffer);
 }

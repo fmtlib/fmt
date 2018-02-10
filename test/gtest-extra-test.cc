@@ -78,7 +78,7 @@ void throw_exception() {
 }
 
 void throw_system_error() {
-  throw fmt::SystemError(EDOM, "test");
+  throw fmt::system_error(EDOM, "test");
 }
 
 // Tests that when EXPECT_THROW_MSG fails, it evaluates its message argument
@@ -207,11 +207,11 @@ TEST(ExpectThrowTest, DoesNotGenerateUnreachableCodeWarning) {
 // EXPECT_SYSTEM_ERROR macro.
 TEST(ExpectSystemErrorTest, DoesNotGenerateUnreachableCodeWarning) {
   int n = 0;
-  EXPECT_SYSTEM_ERROR(throw fmt::SystemError(EDOM, "test"), EDOM, "test");
+  EXPECT_SYSTEM_ERROR(throw fmt::system_error(EDOM, "test"), EDOM, "test");
   EXPECT_NONFATAL_FAILURE(EXPECT_SYSTEM_ERROR(n++, EDOM, ""), "");
   EXPECT_NONFATAL_FAILURE(EXPECT_SYSTEM_ERROR(throw 1, EDOM, ""), "");
   EXPECT_NONFATAL_FAILURE(EXPECT_SYSTEM_ERROR(
-      throw fmt::SystemError(EDOM, "aaa"), EDOM, "bbb"), "");
+      throw fmt::system_error(EDOM, "aaa"), EDOM, "bbb"), "");
 }
 
 TEST(AssertionSyntaxTest, ExceptionAssertionBehavesLikeSingleStatement) {
@@ -268,10 +268,10 @@ TEST(ExpectTest, EXPECT_SYSTEM_ERROR) {
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(throw_exception(), EDOM, "test"),
       "Expected: throw_exception() throws an exception of "
-      "type fmt::SystemError.\n  Actual: it throws a different type.");
+      "type fmt::system_error.\n  Actual: it throws a different type.");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(do_nothing(), EDOM, "test"),
-      "Expected: do_nothing() throws an exception of type fmt::SystemError.\n"
+      "Expected: do_nothing() throws an exception of type fmt::system_error.\n"
       "  Actual: it throws nothing.");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, "other"),
@@ -319,9 +319,9 @@ TEST(StreamingAssertionsTest, EXPECT_WRITE) {
 }
 
 TEST(UtilTest, FormatSystemError) {
-  fmt::MemoryWriter out;
+  fmt::memory_buffer out;
   fmt::format_system_error(out, EDOM, "test message");
-  EXPECT_EQ(out.str(), format_system_error(EDOM, "test message"));
+  EXPECT_EQ(to_string(out), format_system_error(EDOM, "test message"));
 }
 
 #if FMT_USE_FILE_DESCRIPTORS

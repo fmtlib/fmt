@@ -2,14 +2,6 @@ message(STATUS "CMake version: ${CMAKE_VERSION}")
 
 cmake_minimum_required(VERSION 2.8.12)
 
-if (POLICY CMP0048) # Version variables
-  cmake_policy(SET CMP0048 OLD)
-endif ()
-
-if (POLICY CMP0063) # Visibility
-  cmake_policy(SET CMP0063 OLD)
-endif (POLICY CMP0063)
-
 # Determine if fmt is built as a subproject (using add_subdirectory)
 # or if it is the master project.
 set(MASTER_PROJECT OFF)
@@ -41,14 +33,14 @@ option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 option(FMT_DOC "Generate the doc target." ${MASTER_PROJECT})
 option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
-option(FMT_USE_CPP11 "Enable the addition of C++11 compiler flags." ON)
+option(FMT_USE_CPP14 "Enable the addition of C++14 compiler flags." ON)
 
 project(FMT)
 
-# Starting with cmake 3.0 VERSION is part of the project command.
-file(READ fmt/format.h format_h)
-if (NOT format_h MATCHES "FMT_VERSION ([0-9]+)([0-9][0-9])([0-9][0-9])")
-  message(FATAL_ERROR "Cannot get FMT_VERSION from format.h.")
+# Get version from core.h
+file(READ include/fmt/core.h core_h)
+if (NOT core_h MATCHES "FMT_VERSION ([0-9]+)([0-9][0-9])([0-9][0-9])")
+  message(FATAL_ERROR "Cannot get FMT_VERSION from core.h.")
 endif ()
 # Use math to skip leading zeros if any.
 math(EXPR CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_MATCH_1})
@@ -65,7 +57,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/support/cmake")
 
-include(cxx11)
+include(cxx14)
 
 if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
   set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wshadow -pedantic)
@@ -94,7 +86,104 @@ else ()
   check_symbol_exists(open fcntl.h HAVE_OPEN)
 endif ()
 
-add_subdirectory(fmt)
+function(add_headers VAR)
+  set(headers ${${VAR}})
+  foreach (header ${ARGN})
+    set(headers ${headers} include/fmt/${header})
+  endforeach()
+  set(${VAR} ${headers} PARENT_SCOPE)
+endfunction()
+
+# Define the fmt library, its includes and the needed defines.
+# format.cc is added to FMT_HEADERS for the header-only configuration.
+add_headers(FMT_HEADERS core.h format.h format.cc locale.h ostream.h printf.h
+                        time.h)
+if (HAVE_OPEN)
+  add_headers(FMT_HEADERS posix.h)
+  add_headers(FMT_SOURCES posix.cc)
+endif ()
+
+add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
+
+# Starting with CMake 3.1 the CXX_STANDARD property can be used instead.
+# Don't export -std since it may break projects that use other standards.
+target_compile_options(fmt PRIVATE ${CPP14_FLAG})
+if (FMT_PEDANTIC)
+  target_compile_options(fmt PRIVATE ${PEDANTIC_COMPILE_FLAGS})
+endif ()
+
+target_include_directories(fmt PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+set_target_properties(fmt PROPERTIES
+  VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
+  DEBUG_POSTFIX d)
+
+if (BUILD_SHARED_LIBS)
+  if (UNIX AND NOT APPLE)
+    # Fix rpmlint warning:
+    # unused-direct-shlib-dependency /usr/lib/libformat.so.1.1.0 /lib/libm.so.6.
+    target_link_libraries(fmt -Wl,--as-needed)
+  endif ()
+  target_compile_definitions(fmt PRIVATE FMT_EXPORT INTERFACE FMT_SHARED)
+endif ()
+
+# Additionally define a header-only library when CMake is new enough.
+if (CMAKE_VERSION VERSION_GREATER 3.1.0 OR CMAKE_VERSION VERSION_EQUAL 3.1.0)
+  add_library(fmt-header-only INTERFACE)
+
+  target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
+
+  target_include_directories(fmt-header-only INTERFACE
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>)
+endif ()
+
+# Install targets.
+if (FMT_INSTALL)
+  include(GNUInstallDirs)
+  include(CMakePackageConfigHelpers)
+  set(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
+    "Installation directory for cmake files, relative to ${CMAKE_INSTALL_PREFIX}.")
+  set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
+  set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
+  set(targets_export_name fmt-targets)
+
+  set (INSTALL_TARGETS fmt)
+  if (TARGET fmt-header-only)
+    set(INSTALL_TARGETS ${INSTALL_TARGETS} fmt-header-only)
+  endif ()
+
+  set(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
+      "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
+
+  set(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRING
+      "Installation directory for include files, relative to ${CMAKE_INSTALL_PREFIX}.")
+
+  # Generate the version, config and target files into the build directory.
+  write_basic_package_version_file(
+    ${version_config}
+    VERSION ${FMT_VERSION}
+    COMPATIBILITY AnyNewerVersion)
+  configure_package_config_file(
+    ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
+    ${project_config}
+    INSTALL_DESTINATION ${FMT_CMAKE_DIR})
+  export(TARGETS ${INSTALL_TARGETS}
+         FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
+
+  # Install version, config and target files.
+  install(
+    FILES ${project_config} ${version_config}
+    DESTINATION ${FMT_CMAKE_DIR})
+  install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR})
+
+  # Install the library and headers.
+  install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
+          DESTINATION ${FMT_LIB_DIR})
+  install(FILES ${FMT_HEADERS} DESTINATION ${FMT_INC_DIR})
+endif ()
 
 if (FMT_DOC)
   add_subdirectory(doc)

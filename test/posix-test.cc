@@ -65,7 +65,7 @@ File open_file() {
 }
 
 // Attempts to write a string to a file.
-void write(File &f, fmt::StringRef s) {
+void write(File &f, fmt::string_view s) {
   std::size_t num_chars_left = s.size();
   const char *ptr = s.data();
   do {
@@ -173,7 +173,7 @@ TEST(BufferedFileTest, Fileno) {
   EXPECT_DEATH_IF_SUPPORTED({
     try {
       f.fileno();
-    } catch (fmt::SystemError) {
+    } catch (fmt::system_error) {
       std::exit(1);
     }
   }, "");

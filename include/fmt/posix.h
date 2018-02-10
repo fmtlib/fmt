@@ -1,11 +1,9 @@
-/*
- A C++ interface to POSIX functions.
-
- Copyright (c) 2012 - 2016, Victor Zverovich
- All rights reserved.
-
- For the license information refer to format.h.
- */
+// A C++ interface to POSIX functions.
+//
+// Copyright (c) 2012 - 2016, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 #ifndef FMT_POSIX_H_
 #define FMT_POSIX_H_
@@ -66,6 +64,54 @@
 
 namespace fmt {
 
+/**
+  \rst
+  A reference to a null-terminated string. It can be constructed from a C
+  string or ``std::string``.
+
+  You can use one of the following typedefs for common character types:
+
+  +---------------+-----------------------------+
+  | Type          | Definition                  |
+  +===============+=============================+
+  | cstring_view  | basic_cstring_view<char>    |
+  +---------------+-----------------------------+
+  | wcstring_view | basic_cstring_view<wchar_t> |
+  +---------------+-----------------------------+
+
+  This class is most useful as a parameter type to allow passing
+  different types of strings to a function, for example::
+
+    template <typename... Args>
+    std::string format(cstring_view format_str, const Args & ... args);
+
+    format("{}", 42);
+    format(std::string("{}"), 42);
+  \endrst
+ */
+template <typename Char>
+class basic_cstring_view {
+ private:
+  const Char *data_;
+
+ public:
+  /** Constructs a string reference object from a C string. */
+  basic_cstring_view(const Char *s) : data_(s) {}
+
+  /**
+    \rst
+    Constructs a string reference from an ``std::string`` object.
+    \endrst
+   */
+  basic_cstring_view(const std::basic_string<Char> &s) : data_(s.c_str()) {}
+
+  /** Returns the pointer to a C string. */
+  const Char *c_str() const { return data_; }
+};
+
+typedef basic_cstring_view<char> cstring_view;
+typedef basic_cstring_view<wchar_t> wcstring_view;
+
 // An error code.
 class ErrorCode {
  private:
@@ -88,10 +134,10 @@ class BufferedFile {
 
  public:
   // Constructs a BufferedFile object which doesn't represent any file.
-  BufferedFile() FMT_NOEXCEPT : file_(FMT_NULL) {}
+  BufferedFile() FMT_NOEXCEPT : file_(0) {}
 
   // Destroys the object closing the file it represents if any.
-  FMT_API ~BufferedFile() FMT_NOEXCEPT;
+  FMT_API ~BufferedFile() FMT_DTOR_NOEXCEPT;
 
 #if !FMT_USE_RVALUE_REFERENCES
   // Emulate a move constructor and a move assignment operator if rvalue
@@ -154,7 +200,7 @@ public:
 #endif
 
   // Opens a file.
-  FMT_API BufferedFile(CStringRef filename, CStringRef mode);
+  FMT_API BufferedFile(cstring_view filename, cstring_view mode);
 
   // Closes the file.
   FMT_API void close();
@@ -166,15 +212,19 @@ public:
   // of MinGW that define fileno as a macro.
   FMT_API int (fileno)() const;
 
-  void print(CStringRef format_str, const ArgList &args) {
-    fmt::print(file_, format_str, args);
+  void vprint(string_view format_str, format_args args) {
+    fmt::vprint(file_, format_str, args);
   }
-  FMT_VARIADIC(void, print, CStringRef)
+
+  template <typename... Args>
+  inline void print(string_view format_str, const Args & ... args) {
+    vprint(format_str, make_args(args...));
+  }
 };
 
 // A file. Closed file is represented by a File object with descriptor -1.
 // Methods that are not declared with FMT_NOEXCEPT may throw
-// fmt::SystemError in case of failure. Note that some errors such as
+// fmt::system_error in case of failure. Note that some errors such as
 // closing the file multiple times will cause a crash on Windows rather
 // than an exception. You can get standard behavior by overriding the
 // invalid parameter handler with _set_invalid_parameter_handler.
@@ -197,7 +247,7 @@ class File {
   File() FMT_NOEXCEPT : fd_(-1) {}
 
   // Opens a file and constructs a File object representing this file.
-  FMT_API File(CStringRef path, int oflag);
+  FMT_API File(cstring_view path, int oflag);
 
 #if !FMT_USE_RVALUE_REFERENCES
   // Emulate a move constructor and a move assignment operator if rvalue
@@ -260,7 +310,7 @@ class File {
 #endif
 
   // Destroys the object closing the file it represents if any.
-  FMT_API ~File() FMT_NOEXCEPT;
+  FMT_API ~File() FMT_DTOR_NOEXCEPT;
 
   // Returns the file descriptor.
   int descriptor() const FMT_NOEXCEPT { return fd_; }
@@ -270,7 +320,7 @@ class File {
 
   // Returns the file size. The size has signed type for consistency with
   // stat::st_size.
-  FMT_API LongLong size() const;
+  FMT_API long long size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.
   FMT_API std::size_t read(void *buffer, std::size_t count);
@@ -338,7 +388,7 @@ class Locale {
 
   Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", FMT_NULL)) {
     if (!locale_)
-      FMT_THROW(fmt::SystemError(errno, "cannot create locale"));
+      FMT_THROW(fmt::system_error(errno, "cannot create locale"));
   }
   ~Locale() { freelocale(locale_); }
 

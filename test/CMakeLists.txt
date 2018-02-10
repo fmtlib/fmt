@@ -7,15 +7,9 @@
 # at http://code.google.com/p/googletest/wiki/FAQ for more details.
 add_library(gmock STATIC
   gmock-gtest-all.cc gmock/gmock.h gtest/gtest.h gtest/gtest-spi.h)
-target_compile_options(gmock PUBLIC ${CPP11_FLAG})
+target_compile_options(gmock PUBLIC ${CPP14_FLAG})
 target_compile_definitions(gmock PUBLIC GTEST_HAS_STD_WSTRING=1)
 target_include_directories(gmock PUBLIC .)
-
-# Workaround for Cygwin to make google-tests compile and run because the macro
-# _POSIX_C_SOURCE must be defined to allow fileno(), strdup(), fdopen() calls.
-if (CYGWIN)
-  target_compile_definitions(gmock PUBLIC _POSIX_C_SOURCE=200809)
-endif ()
 
 find_package(Threads)
 if (Threads_FOUND)
@@ -37,6 +31,10 @@ endif ()
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
 endif ()
+
+# Silence MSVC tr1 deprecation warning in gmock.
+target_compile_definitions(gmock
+  PUBLIC _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING=0)
 
 #------------------------------------------------------------------------------
 # Build the actual library tests
@@ -86,16 +84,13 @@ function(add_fmt_test name)
 endfunction()
 
 add_fmt_test(assert-test)
-add_fmt_test(container-test)
 add_fmt_test(gtest-extra-test)
 add_fmt_test(format-test)
 add_fmt_test(format-impl-test)
 add_fmt_test(ostream-test)
 add_fmt_test(printf-test)
-add_fmt_test(string-test)
 add_fmt_test(time-test)
 add_fmt_test(util-test mock-allocator.h)
-add_fmt_test(macro-test)
 add_fmt_test(custom-formatter-test)
 
 # Enable stricter options for one test to make sure that the header is free of
@@ -106,8 +101,9 @@ endif ()
 
 if (HAVE_OPEN)
   add_fmt_executable(posix-mock-test
-    posix-mock-test.cc ../fmt/format.cc ../fmt/printf.cc ${TEST_MAIN_SRC})
-  target_include_directories(posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR})
+    posix-mock-test.cc ../include/fmt/format.cc ${TEST_MAIN_SRC})
+  target_include_directories(
+    posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
   target_compile_definitions(posix-mock-test PRIVATE FMT_USE_FILE_DESCRIPTORS=1)
   target_link_libraries(posix-mock-test gmock)
   add_test(NAME posix-mock-test COMMAND posix-mock-test)
@@ -120,23 +116,28 @@ target_link_libraries(header-only-test gmock)
 if (TARGET fmt-header-only)
   target_link_libraries(header-only-test fmt-header-only)
 else ()
-  target_include_directories(header-only-test PRIVATE ${PROJECT_SOURCE_DIR})
+  target_include_directories(
+    header-only-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
   target_compile_definitions(header-only-test PRIVATE FMT_HEADER_ONLY=1)
 endif ()
 
 # Test that the library can be compiled with exceptions disabled.
 check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
 if (HAVE_FNO_EXCEPTIONS_FLAG)
-  add_library(noexception-test ../fmt/format.cc)
-  target_include_directories(noexception-test PRIVATE ${PROJECT_SOURCE_DIR})
+  add_library(noexception-test ../include/fmt/format.cc)
+  target_compile_options(noexception-test PUBLIC ${CPP14_FLAG})
+  target_include_directories(
+    noexception-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
   target_compile_options(noexception-test PRIVATE -fno-exceptions)
 endif ()
 
 if (FMT_PEDANTIC)
   # Test that the library compiles without windows.h.
   if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    add_library(no-windows-h-test ../fmt/format.cc)
-    target_include_directories(no-windows-h-test PRIVATE ${PROJECT_SOURCE_DIR})
+    add_library(no-windows-h-test ../include/fmt/format.cc)
+    target_compile_options(no-windows-h-test PUBLIC ${CPP14_FLAG})
+    target_include_directories(
+      no-windows-h-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
     target_compile_definitions(no-windows-h-test PRIVATE FMT_USE_WINDOWS_H=0)
   endif ()
 
@@ -146,9 +147,9 @@ if (FMT_PEDANTIC)
     "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
     --build-generator ${CMAKE_GENERATOR}
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
-    --build-options
+    --build-options 
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-    "-DCPP11_FLAG=${CPP11_FLAG}"
+    "-DCPP14_FLAG=${CPP14_FLAG}"
     "-DSUPPORTS_USER_DEFINED_LITERALS=${SUPPORTS_USER_DEFINED_LITERALS}")
 
   # test if the targets are findable from the build directory
@@ -161,6 +162,7 @@ if (FMT_PEDANTIC)
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+    "-DCPP14_FLAG=${CPP14_FLAG}"
     "-DFMT_DIR=${PROJECT_BINARY_DIR}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
@@ -174,5 +176,6 @@ if (FMT_PEDANTIC)
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+    "-DCPP14_FLAG=${CPP14_FLAG}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()

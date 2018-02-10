@@ -20,8 +20,8 @@ if build == 'mingw':
 else:
     # Add MSBuild 14.0 to PATH as described in
     # http://help.appveyor.com/discussions/problems/2229-v140-not-found-on-vs2105rc.
-    os.environ['PATH'] = r'C:\Program Files (x86)\MSBuild\14.0\Bin;' + path
-    generator = 'Visual Studio 14 2015'
+    os.environ['PATH'] = r'C:\Program Files (x86)\MSBuild\15.0\Bin;' + path
+    generator = 'Visual Studio 15 2017'
     if platform == 'x64':
         generator += ' Win64'
     cmake_command.append('-G' + generator)

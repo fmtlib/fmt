@@ -38,7 +38,7 @@ void OutputRedirect::flush() {
   int result = 0;
   FMT_RETRY(result, fflush(file_));
   if (result != 0)
-    throw fmt::SystemError(errno, "cannot flush stream");
+    throw fmt::system_error(errno, "cannot flush stream");
 }
 
 void OutputRedirect::restore() {
@@ -103,8 +103,8 @@ std::string read(File &f, std::size_t count) {
 
 #endif  // FMT_USE_FILE_DESCRIPTORS
 
-std::string format_system_error(int error_code, fmt::StringRef message) {
-  fmt::MemoryWriter out;
-  fmt::format_system_error(out, error_code, message);
-  return out.str();
+std::string format_system_error(int error_code, fmt::string_view message) {
+  fmt::memory_buffer out;
+  format_system_error(out, error_code, message);
+  return to_string(out);
 }

@@ -36,8 +36,8 @@ class MockAllocator {
   MockAllocator() {}
   MockAllocator(const MockAllocator &) {}
   typedef T value_type;
-  MOCK_METHOD2_T(allocate, T *(std::size_t n, const void *h));
-  MOCK_METHOD2_T(deallocate, void (T *p, std::size_t n));
+  MOCK_METHOD1_T(allocate, T* (std::size_t n));
+  MOCK_METHOD2_T(deallocate, void (T* p, std::size_t n));
 };
 
 template <typename Allocator>
@@ -78,14 +78,10 @@ class AllocatorRef {
 
   Allocator *get() const { return alloc_; }
 
-  value_type *allocate(std::size_t n,  const void *h) {
-#if FMT_USE_ALLOCATOR_TRAITS
-    return std::allocator_traits<Allocator>::allocate(*alloc_, n, h);
-#else
-    return alloc_->allocate(n, h);
-#endif
+  value_type* allocate(std::size_t n) {
+    return fmt::internal::allocate(*alloc_, n);
   }
-  void deallocate(value_type *p, std::size_t n) { alloc_->deallocate(p, n); }
+  void deallocate(value_type* p, std::size_t n) { alloc_->deallocate(p, n); }
 };
 
 #endif  // FMT_MOCK_ALLOCATOR_H_

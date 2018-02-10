@@ -3,8 +3,8 @@
 cmake_minimum_required(VERSION 2.8)
 
 include(CheckCXXSourceCompiles)
-set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/../..)
-set(CMAKE_REQUIRED_FLAGS ${CPP11_FLAG})
+set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+set(CMAKE_REQUIRED_FLAGS ${CPP14_FLAG})
 
 function (generate_source result fragment)
   set(${result} "
@@ -62,9 +62,6 @@ expect_compile_error("fmt::MemoryWriter() << fmt::pad(42, 5, L' ');")
 
 # Formatting a wide character with a narrow format string is forbidden.
 expect_compile_error("fmt::format(\"{}\", L'a';")
-
-expect_compile("FMT_STATIC_ASSERT(true, \"this should never happen\");")
-expect_compile_error("FMT_STATIC_ASSERT(0 > 1, \"oops\");")
 
 # Make sure that compiler features detected in the header
 # match the features detected in CMake.

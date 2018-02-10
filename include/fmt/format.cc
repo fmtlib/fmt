@@ -1,31 +1,12 @@
-/*
- Formatting library for C++
-
- Copyright (c) 2012 - 2016, Victor Zverovich
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are met:
-
- 1. Redistributions of source code must retain the above copyright notice, this
-    list of conditions and the following disclaimer.
- 2. Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Formatting library for C++
+//
+// Copyright (c) 2012 - 2016, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 #include "format.h"
+#include "locale.h"
 
 #include <string.h>
 
@@ -61,6 +42,12 @@
 # define FMT_CATCH(x) if (false)
 #endif
 
+#ifdef __GNUC__
+// Disable the warning about declaration shadowing because it affects too
+// many valid cases.
+# pragma GCC diagnostic ignored "-Wshadow"
+#endif
+
 #ifdef _MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4127)  // conditional expression is constant
@@ -72,20 +59,17 @@
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
-FMT_MAYBE_UNUSED
-static inline fmt::internal::Null<> strerror_r(int, char *, ...) {
-  return fmt::internal::Null<>();
+inline fmt::internal::null<> strerror_r(int, char *, ...) {
+  return fmt::internal::null<>();
 }
-FMT_MAYBE_UNUSED
-static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
-  return fmt::internal::Null<>();
+inline fmt::internal::null<> strerror_s(char *, std::size_t, ...) {
+  return fmt::internal::null<>();
 }
 
 namespace fmt {
 
-FMT_FUNC internal::RuntimeError::~RuntimeError() FMT_DTOR_NOEXCEPT {}
-FMT_FUNC FormatError::~FormatError() FMT_DTOR_NOEXCEPT {}
-FMT_FUNC SystemError::~SystemError() FMT_DTOR_NOEXCEPT {}
+FMT_FUNC format_error::~format_error() throw() {}
+FMT_FUNC system_error::~system_error() throw() {}
 
 namespace {
 
@@ -110,7 +94,7 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
 
 const char RESET_COLOR[] = "\x1b[0m";
 
-typedef void (*FormatFunc)(Writer &, int, StringRef);
+typedef void (*FormatFunc)(internal::buffer &, int, string_view);
 
 // Portable thread-safe version of strerror.
 // Sets buffer to point to a string describing the error code.
@@ -150,7 +134,7 @@ int safe_strerror(
     }
 
     // Handle the case when strerror_r is not available.
-    int handle(internal::Null<>) {
+    int handle(internal::null<>) {
       return fallback(strerror_s(buffer_, buffer_size_, error_code_));
     }
 
@@ -161,21 +145,12 @@ int safe_strerror(
             ERANGE : result;
     }
 
-#ifdef __c2__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
     // Fallback to strerror if strerror_r and strerror_s are not available.
-    int fallback(internal::Null<>) {
+    int fallback(internal::null<>) {
       errno = 0;
       buffer_ = strerror(error_code_);
       return errno;
     }
-
-#ifdef __c2__
-# pragma clang diagnostic pop
-#endif
 
    public:
     StrError(int err_code, char *&buf, std::size_t buf_size)
@@ -188,32 +163,36 @@ int safe_strerror(
   return StrError(error_code, buffer, buffer_size).run();
 }
 
-void format_error_code(Writer &out, int error_code,
-                       StringRef message) FMT_NOEXCEPT {
+void format_error_code(internal::buffer &out, int error_code,
+                       string_view message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
   // INLINE_BUFFER_SIZE to avoid dynamic memory allocation and potential
   // bad_alloc.
-  out.clear();
+  out.resize(0);
   static const char SEP[] = ": ";
   static const char ERROR_STR[] = "error ";
   // Subtract 2 to account for terminating null characters in SEP and ERROR_STR.
   std::size_t error_code_size = sizeof(SEP) + sizeof(ERROR_STR) - 2;
-  typedef internal::IntTraits<int>::MainType MainType;
-  MainType abs_value = static_cast<MainType>(error_code);
+  typedef internal::int_traits<int>::main_type main_type;
+  main_type abs_value = static_cast<main_type>(error_code);
   if (internal::is_negative(error_code)) {
     abs_value = 0 - abs_value;
     ++error_code_size;
   }
   error_code_size += internal::count_digits(abs_value);
-  if (message.size() <= internal::INLINE_BUFFER_SIZE - error_code_size)
-    out << message << SEP;
-  out << ERROR_STR << error_code;
+  writer w(out);
+  if (message.size() <= internal::INLINE_BUFFER_SIZE - error_code_size) {
+    w.write(message);
+    w.write(SEP);
+  }
+  w.write(ERROR_STR);
+  w.write(error_code);
   assert(out.size() <= internal::INLINE_BUFFER_SIZE);
 }
 
 void report_error(FormatFunc func, int error_code,
-                  StringRef message) FMT_NOEXCEPT {
-  MemoryWriter full_message;
+                  string_view message) FMT_NOEXCEPT {
+  memory_buffer full_message;
   func(full_message, error_code, message);
   // Use Writer::data instead of Writer::c_str to avoid potential memory
   // allocation.
@@ -222,17 +201,23 @@ void report_error(FormatFunc func, int error_code,
 }
 }  // namespace
 
-FMT_FUNC void SystemError::init(
-    int err_code, CStringRef format_str, ArgList args) {
+template <typename Char>
+FMT_FUNC Char internal::thousands_sep(locale_provider *lp) {
+  std::locale loc = lp ? lp->locale().get() : std::locale();
+  return std::use_facet<std::numpunct<Char>>(loc).thousands_sep();
+}
+
+FMT_FUNC void system_error::init(
+    int err_code, string_view format_str, format_args args) {
   error_code_ = err_code;
-  MemoryWriter w;
-  format_system_error(w, err_code, format(format_str, args));
+  memory_buffer buffer;
+  format_system_error(buffer, err_code, vformat(format_str, args));
   std::runtime_error &base = *this;
-  base = std::runtime_error(w.str());
+  base = std::runtime_error(to_string(buffer));
 }
 
 template <typename T>
-int internal::CharTraits<char>::format_float(
+int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, T value) {
   if (width == 0) {
@@ -246,7 +231,7 @@ int internal::CharTraits<char>::format_float(
 }
 
 template <typename T>
-int internal::CharTraits<wchar_t>::format_float(
+int internal::char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, T value) {
   if (width == 0) {
@@ -260,7 +245,7 @@ int internal::CharTraits<wchar_t>::format_float(
 }
 
 template <typename T>
-const char internal::BasicData<T>::DIGITS[] =
+const char internal::basic_data<T>::DIGITS[] =
     "0001020304050607080910111213141516171819"
     "2021222324252627282930313233343536373839"
     "4041424344454647484950515253545556575859"
@@ -279,63 +264,50 @@ const char internal::BasicData<T>::DIGITS[] =
   factor * 1000000000
 
 template <typename T>
-const uint32_t internal::BasicData<T>::POWERS_OF_10_32[] = {
+const uint32_t internal::basic_data<T>::POWERS_OF_10_32[] = {
   0, FMT_POWERS_OF_10(1)
 };
 
 template <typename T>
-const uint64_t internal::BasicData<T>::POWERS_OF_10_64[] = {
+const uint64_t internal::basic_data<T>::POWERS_OF_10_64[] = {
   0,
   FMT_POWERS_OF_10(1),
-  FMT_POWERS_OF_10(ULongLong(1000000000)),
-  // Multiply several constants instead of using a single long long constant
-  // to avoid warnings about C++98 not supporting long long.
-  ULongLong(1000000000) * ULongLong(1000000000) * 10
+  FMT_POWERS_OF_10(1000000000ull),
+  10000000000000000000ull
 };
-
-FMT_FUNC void internal::report_unknown_type(char code, const char *type) {
-  (void)type;
-  if (std::isprint(static_cast<unsigned char>(code))) {
-    FMT_THROW(FormatError(
-        format("unknown format code '{}' for {}", code, type)));
-  }
-  FMT_THROW(FormatError(
-      format("unknown format code '\\x{:02x}' for {}",
-        static_cast<unsigned>(code), type)));
-}
 
 #if FMT_USE_WINDOWS_H
 
-FMT_FUNC internal::UTF8ToUTF16::UTF8ToUTF16(StringRef s) {
+FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
   static const char ERROR_MSG[] = "cannot convert string from UTF-8 to UTF-16";
   if (s.size() > INT_MAX)
-    FMT_THROW(WindowsError(ERROR_INVALID_PARAMETER, ERROR_MSG));
+    FMT_THROW(windows_error(ERROR_INVALID_PARAMETER, ERROR_MSG));
   int s_size = static_cast<int>(s.size());
   int length = MultiByteToWideChar(
       CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size, FMT_NULL, 0);
   if (length == 0)
-    FMT_THROW(WindowsError(GetLastError(), ERROR_MSG));
+    FMT_THROW(windows_error(GetLastError(), ERROR_MSG));
   buffer_.resize(length + 1);
   length = MultiByteToWideChar(
     CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size, &buffer_[0], length);
   if (length == 0)
-    FMT_THROW(WindowsError(GetLastError(), ERROR_MSG));
+    FMT_THROW(windows_error(GetLastError(), ERROR_MSG));
   buffer_[length] = 0;
 }
 
-FMT_FUNC internal::UTF16ToUTF8::UTF16ToUTF8(WStringRef s) {
+FMT_FUNC internal::utf16_to_utf8::utf16_to_utf8(wstring_view s) {
   if (int error_code = convert(s)) {
-    FMT_THROW(WindowsError(error_code,
+    FMT_THROW(windows_error(error_code,
         "cannot convert string from UTF-16 to UTF-8"));
   }
 }
 
-FMT_FUNC int internal::UTF16ToUTF8::convert(WStringRef s) {
+FMT_FUNC int internal::utf16_to_utf8::convert(wstring_view s) {
   if (s.size() > INT_MAX)
     return ERROR_INVALID_PARAMETER;
   int s_size = static_cast<int>(s.size());
   int length = WideCharToMultiByte(
-    CP_UTF8, 0, s.data(), s_size, FMT_NULL, 0, FMT_NULL, FMT_NULL);
+        CP_UTF8, 0, s.data(), s_size, FMT_NULL, 0, FMT_NULL, FMT_NULL);
   if (length == 0)
     return GetLastError();
   buffer_.resize(length + 1);
@@ -347,142 +319,144 @@ FMT_FUNC int internal::UTF16ToUTF8::convert(WStringRef s) {
   return 0;
 }
 
-FMT_FUNC void WindowsError::init(
-    int err_code, CStringRef format_str, ArgList args) {
+FMT_FUNC void windows_error::init(
+    int err_code, string_view format_str, format_args args) {
   error_code_ = err_code;
-  MemoryWriter w;
-  internal::format_windows_error(w, err_code, format(format_str, args));
+  memory_buffer buffer;
+  internal::format_windows_error(buffer, err_code, vformat(format_str, args));
   std::runtime_error &base = *this;
-  base = std::runtime_error(w.str());
+  base = std::runtime_error(to_string(buffer));
 }
 
 FMT_FUNC void internal::format_windows_error(
-    Writer &out, int error_code, StringRef message) FMT_NOEXCEPT {
+    internal::buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
-    MemoryBuffer<wchar_t, INLINE_BUFFER_SIZE> buffer;
-    buffer.resize(INLINE_BUFFER_SIZE);
+    wmemory_buffer buf;
+    buf.resize(INLINE_BUFFER_SIZE);
     for (;;) {
-      wchar_t *system_message = &buffer[0];
+      wchar_t *system_message = &buf[0];
       int result = FormatMessageW(
-        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        FMT_NULL, error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        system_message, static_cast<uint32_t>(buffer.size()), FMT_NULL);
+          FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+          FMT_NULL, error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+          system_message, static_cast<uint32_t>(buf.size()), FMT_NULL);
       if (result != 0) {
-        UTF16ToUTF8 utf8_message;
+        utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          out << message << ": " << utf8_message;
+          writer w(out);
+          w.write(message);
+          w.write(": ");
+          w.write(utf8_message);
           return;
         }
         break;
       }
       if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
         break;  // Can't get error message, report error code instead.
-      buffer.resize(buffer.size() * 2);
+      buf.resize(buf.size() * 2);
     }
   } FMT_CATCH(...) {}
-  fmt::format_error_code(out, error_code, message);  // 'fmt::' is for bcc32.
+  format_error_code(out, error_code, message);
 }
 
 #endif  // FMT_USE_WINDOWS_H
 
 FMT_FUNC void format_system_error(
-    Writer &out, int error_code, StringRef message) FMT_NOEXCEPT {
+    internal::buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
-    internal::MemoryBuffer<char, internal::INLINE_BUFFER_SIZE> buffer;
-    buffer.resize(internal::INLINE_BUFFER_SIZE);
+    memory_buffer buf;
+    buf.resize(internal::INLINE_BUFFER_SIZE);
     for (;;) {
-      char *system_message = &buffer[0];
-      int result = safe_strerror(error_code, system_message, buffer.size());
+      char *system_message = &buf[0];
+      int result = safe_strerror(error_code, system_message, buf.size());
       if (result == 0) {
-        out << message << ": " << system_message;
+        writer w(out);
+        w.write(message);
+        w.write(": ");
+        w.write(system_message);
         return;
       }
       if (result != ERANGE)
         break;  // Can't get error message, report error code instead.
-      buffer.resize(buffer.size() * 2);
+      buf.resize(buf.size() * 2);
     }
   } FMT_CATCH(...) {}
-  fmt::format_error_code(out, error_code, message);  // 'fmt::' is for bcc32.
+  format_error_code(out, error_code, message);
 }
 
 template <typename Char>
-void internal::FixedBuffer<Char>::grow(std::size_t) {
+void basic_fixed_buffer<Char>::grow(std::size_t) {
   FMT_THROW(std::runtime_error("buffer overflow"));
 }
 
-FMT_FUNC internal::Arg internal::FormatterBase::do_get_arg(
-    unsigned arg_index, const char *&error) {
-  internal::Arg arg = args_[arg_index];
-  switch (arg.type) {
-  case internal::Arg::NONE:
-    error = "argument index out of range";
-    break;
-  case internal::Arg::NAMED_ARG:
-    arg = *static_cast<const internal::Arg*>(arg.pointer);
-    break;
-  default:
-    /*nothing*/;
-  }
-  return arg;
+FMT_FUNC void internal::error_handler::on_error(const char *message) {
+  FMT_THROW(format_error(message));
 }
 
 FMT_FUNC void report_system_error(
-    int error_code, fmt::StringRef message) FMT_NOEXCEPT {
-  // 'fmt::' is for bcc32.
+    int error_code, fmt::string_view message) FMT_NOEXCEPT {
   report_error(format_system_error, error_code, message);
 }
 
 #if FMT_USE_WINDOWS_H
 FMT_FUNC void report_windows_error(
-    int error_code, fmt::StringRef message) FMT_NOEXCEPT {
-  // 'fmt::' is for bcc32.
+    int error_code, fmt::string_view message) FMT_NOEXCEPT {
   report_error(internal::format_windows_error, error_code, message);
 }
 #endif
 
-FMT_FUNC void print(std::FILE *f, CStringRef format_str, ArgList args) {
-  MemoryWriter w;
-  w.write(format_str, args);
-  std::fwrite(w.data(), 1, w.size(), f);
+FMT_FUNC void vprint(std::FILE *f, string_view format_str, format_args args) {
+  memory_buffer buffer;
+  vformat_to(buffer, format_str, args);
+  std::fwrite(buffer.data(), 1, buffer.size(), f);
 }
 
-FMT_FUNC void print(CStringRef format_str, ArgList args) {
-  print(stdout, format_str, args);
+FMT_FUNC void vprint(string_view format_str, format_args args) {
+  vprint(stdout, format_str, args);
 }
 
-FMT_FUNC void print_colored(Color c, CStringRef format, ArgList args) {
+FMT_FUNC void vprint_colored(Color c, string_view format, format_args args) {
   char escape[] = "\x1b[30m";
   escape[3] = static_cast<char>('0' + c);
   std::fputs(escape, stdout);
-  print(format, args);
+  vprint(format, args);
   std::fputs(RESET_COLOR, stdout);
 }
 
+FMT_FUNC locale locale_provider::locale() { return fmt::locale(); }
+
 #ifndef FMT_HEADER_ONLY
 
-template struct internal::BasicData<void>;
+template struct internal::basic_data<void>;
 
 // Explicit instantiations for char.
 
-template void internal::FixedBuffer<char>::grow(std::size_t);
+template char internal::thousands_sep(locale_provider *lp);
 
-template FMT_API int internal::CharTraits<char>::format_float(
+template void basic_fixed_buffer<char>::grow(std::size_t);
+
+template void internal::arg_map<context>::init(const format_args &args);
+
+template FMT_API int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, double value);
 
-template FMT_API int internal::CharTraits<char>::format_float(
+template FMT_API int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, long double value);
 
 // Explicit instantiations for wchar_t.
 
-template void internal::FixedBuffer<wchar_t>::grow(std::size_t);
+template wchar_t internal::thousands_sep(locale_provider *lp);
 
-template FMT_API int internal::CharTraits<wchar_t>::format_float(
+template void basic_fixed_buffer<wchar_t>::grow(std::size_t);
+
+template void internal::arg_map<wcontext>::init(const wformat_args &args);
+
+template FMT_API int internal::char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, double value);
 
-template FMT_API int internal::CharTraits<wchar_t>::format_float(
+template FMT_API int internal::char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, long double value);
 

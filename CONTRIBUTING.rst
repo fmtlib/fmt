@@ -6,6 +6,7 @@ All C++ code must adhere to `Google C++ Style Guide
 exceptions:
 
 * Exceptions are permitted
-* snake_case should be used instead of UpperCamelCase for function names
+* snake_case should be used instead of UpperCamelCase for function and type
+  names
 
 Thanks for contributing!

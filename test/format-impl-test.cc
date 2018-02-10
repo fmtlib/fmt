@@ -29,9 +29,9 @@
 #undef FMT_SHARED
 #include "test-assert.h"
 
-// Include *.cc instead of *.h to test implementation-specific stuff.
+// Include format.cc instead of format.h to test implementation-specific stuff.
 #include "fmt/format.cc"
-#include "fmt/printf.cc"
+#include "fmt/printf.h"
 
 #include <algorithm>
 #include <cstring>
@@ -43,18 +43,29 @@
 #undef min
 #undef max
 
+template <typename T>
+struct ValueExtractor {
+  T operator()(T value) {
+    return value;
+  }
+
+  template <typename U>
+  T operator()(U) {
+    throw std::runtime_error(fmt::format("invalid type {}", typeid(U).name()));
+    return T();
+  }
+};
+
 TEST(FormatTest, ArgConverter) {
-  using fmt::internal::Arg;
-  Arg arg = Arg();
-  arg.type = Arg::LONG_LONG;
-  arg.long_long_value = std::numeric_limits<fmt::LongLong>::max();
-  fmt::internal::ArgConverter<fmt::LongLong>(arg, 'd').visit(arg);
-  EXPECT_EQ(Arg::LONG_LONG, arg.type);
+  long long value = std::numeric_limits<long long>::max();
+  auto arg = fmt::internal::make_arg<fmt::context>(value);
+  visit(fmt::internal::ArgConverter<long long, fmt::context>(arg, 'd'), arg);
+  EXPECT_EQ(value, visit(ValueExtractor<long long>(), arg));
 }
 
 TEST(FormatTest, FormatNegativeNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
-  if (fmt::internal::FPUtil::isnegative(-nan))
+  if (fmt::internal::fputil::isnegative(-nan))
     EXPECT_EQ("-nan", fmt::format("{}", -nan));
   else
     fmt::print("Warning: compiler doesn't handle negative NaN correctly");
@@ -95,33 +106,33 @@ TEST(FormatTest, StrError) {
 TEST(FormatTest, FormatErrorCode) {
   std::string msg = "error 42", sep = ": ";
   {
-    fmt::MemoryWriter w;
-    w << "garbage";
-    fmt::format_error_code(w, 42, "test");
-    EXPECT_EQ("test: " + msg, w.str());
+    fmt::memory_buffer buffer;
+    format_to(buffer, "garbage");
+    fmt::format_error_code(buffer, 42, "test");
+    EXPECT_EQ("test: " + msg, to_string(buffer));
   }
   {
-    fmt::MemoryWriter w;
+    fmt::memory_buffer buffer;
     std::string prefix(
         fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size() + 1, 'x');
-    fmt::format_error_code(w, 42, prefix);
-    EXPECT_EQ(msg, w.str());
+    fmt::format_error_code(buffer, 42, prefix);
+    EXPECT_EQ(msg, to_string(buffer));
   }
   int codes[] = {42, -1};
   for (std::size_t i = 0, n = sizeof(codes) / sizeof(*codes); i < n; ++i) {
     // Test maximum buffer size.
     msg = fmt::format("error {}", codes[i]);
-    fmt::MemoryWriter w;
+    fmt::memory_buffer buffer;
     std::string prefix(
         fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size(), 'x');
-    fmt::format_error_code(w, codes[i], prefix);
-    EXPECT_EQ(prefix + sep + msg, w.str());
+    fmt::format_error_code(buffer, codes[i], prefix);
+    EXPECT_EQ(prefix + sep + msg, to_string(buffer));
     std::size_t size = fmt::internal::INLINE_BUFFER_SIZE;
-    EXPECT_EQ(size, w.size());
-    w.clear();
+    EXPECT_EQ(size, buffer.size());
+    buffer.resize(0);
     // Test with a message that doesn't fit into the buffer.
     prefix += 'x';
-    fmt::format_error_code(w, codes[i], prefix);
-    EXPECT_EQ(msg, w.str());
+    fmt::format_error_code(buffer, codes[i], prefix);
+    EXPECT_EQ(msg, to_string(buffer));
   }
 }
