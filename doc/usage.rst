@@ -41,6 +41,10 @@ current directory. Now you can build the library by running :command:`make`.
 Once the library has been built you can invoke :command:`make test` to run
 the tests.
 
+You can control generation of the make ``test`` target with the ``FMT_TEST``
+CMake option. This can be useful if you include fmt as a subdirectory in
+your project but don't want to add fmt's tests to your ``test`` target.
+
 If you use Windows and have Visual Studio installed, a :file:`FORMAT.sln`
 file and several :file:`.vcproj` files will be created. You can then build them
 using Visual Studio or msbuild.
