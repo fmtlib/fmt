@@ -222,7 +222,16 @@ inline dummy_int isinf(...) { return dummy_int(); }
 inline dummy_int _finite(...) { return dummy_int(); }
 inline dummy_int isnan(...) { return dummy_int(); }
 inline dummy_int _isnan(...) { return dummy_int(); }
+
+template <typename Allocator>
+typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {
+#if __cplusplus >= 201103L || FMT_MSC_VER >= 1700
+  return std::allocator_traits<Allocator>::allocate(alloc, n);
+#else
+  return this->allocate(n);
+#endif
 }
+}  // namespace internal
 }  // namespace fmt
 
 namespace std {
@@ -442,7 +451,7 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
   if (size > new_capacity)
       new_capacity = size;
   T *old_data = this->data();
-  T *new_data = this->allocate(new_capacity);
+  T *new_data = internal::allocate<Allocator>(*this, new_capacity);
   // The following code doesn't throw, so the raw pointer above doesn't leak.
   std::uninitialized_copy(old_data, old_data + this->size(),
                           internal::make_ptr(new_data, new_capacity));

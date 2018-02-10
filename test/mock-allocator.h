@@ -78,7 +78,9 @@ class AllocatorRef {
 
   Allocator *get() const { return alloc_; }
 
-  value_type* allocate(std::size_t n) { return alloc_->allocate(n); }
+  value_type* allocate(std::size_t n) {
+    return fmt::internal::allocate(*alloc_, n);
+  }
   void deallocate(value_type* p, std::size_t n) { alloc_->deallocate(p, n); }
 };
 
