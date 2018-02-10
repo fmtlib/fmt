@@ -143,6 +143,12 @@ its numeric value being written to the stream (i.e. 1070 instead of letter 'ю'
 which is represented by ``L'\x42e'`` if we use Unicode) which is rarely what is
 needed.
 
+Note that fmt does not use the value of the ``errno`` global to communicate
+errors to the user, but it may call system functions which set ``errno``. Since
+fmt does not attempt to preserve the value of ``errno``, users should not make
+any assumptions about it and always set it to ``0`` before making any system
+calls that convey error information via ``errno``.
+
 .. _portability:
 
 Portability
