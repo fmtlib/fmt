@@ -151,7 +151,8 @@
 namespace fmt { using std::basic_string_view; }
 // std::experimental::basic_string_view::remove_prefix isn't constexpr in gcc 6.
 #elif (FMT_HAS_INCLUDE(<experimental/string_view>) && \
-       __cplusplus >= 201402L && FMT_GCC_VERSION >= 700)
+       (FMT_GCC_VERSION == 0 || FMT_GCC_VERSION >= 700) && \
+       __cplusplus >= 201402L)
 # include <experimental/string_view>
 namespace fmt { using std::experimental::basic_string_view; }
 #else
