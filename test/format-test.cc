@@ -1508,6 +1508,14 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
+#if FMT_USE_STRONG_ENUMS
+enum TestFixedEnum : short { B };
+
+TEST(FormatTest, FixedEnum) {
+  EXPECT_EQ("0", fmt::format("{}", B));
+}
+#endif
+
 using buffer_range = fmt::back_insert_range<fmt::internal::buffer>;
 
 class mock_arg_formatter :

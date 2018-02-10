@@ -82,6 +82,8 @@
 # endif
 #endif
 
+#define FMT_USE_STRONG_ENUMS FMT_HAS_FEATURE(cxx_strong_enums)
+
 // Check if exceptions are disabled.
 #if defined(__GNUC__) && !defined(__EXCEPTIONS)
 # define FMT_EXCEPTIONS 0
@@ -582,6 +584,12 @@ template <typename T>
 void make_value(const T *p) {
   static_assert(!sizeof(T), "formatting of non-void pointers is disallowed");
 }
+
+template <typename C, typename T>
+inline typename std::enable_if<
+    convert_to_int<T>::value && std::is_enum<T>::value,
+    typed_value<C, INT>>::type
+  make_value(const T &val) { return static_cast<int>(val); }
 
 template <typename C, typename T>
 inline typename std::enable_if<
