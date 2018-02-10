@@ -141,8 +141,9 @@ endif ()
 
 # Install targets.
 if (FMT_INSTALL)
+  include(GNUInstallDirs)
   include(CMakePackageConfigHelpers)
-  set(FMT_CMAKE_DIR lib/cmake/fmt CACHE STRING
+  set(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
     "Installation directory for cmake files, relative to ${CMAKE_INSTALL_PREFIX}.")
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
@@ -153,8 +154,11 @@ if (FMT_INSTALL)
     set(INSTALL_TARGETS ${INSTALL_TARGETS} fmt-header-only)
   endif ()
 
-  set(FMT_LIB_DIR lib CACHE STRING
-    "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
+  set(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
+      "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
+
+  set(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRING
+      "Installation directory for include files, relative to ${CMAKE_INSTALL_PREFIX}.")
 
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
@@ -177,7 +181,7 @@ if (FMT_INSTALL)
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
           DESTINATION ${FMT_LIB_DIR})
-  install(FILES ${FMT_HEADERS} DESTINATION include/fmt)
+  install(FILES ${FMT_HEADERS} DESTINATION ${FMT_INC_DIR})
 endif ()
 
 if (FMT_DOC)
