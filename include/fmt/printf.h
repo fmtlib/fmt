@@ -99,7 +99,7 @@ class ArgConverter {
     bool is_signed = type_ == 'd' || type_ == 'i';
     typedef typename std::conditional<
         std::is_same<T, void>::value, U, T>::type TargetType;
-    if (sizeof(TargetType) <= sizeof(int)) {
+    if (const_check(sizeof(TargetType) <= sizeof(int))) {
       // Extra casts are used to silence warnings.
       if (is_signed) {
         arg_ = internal::make_arg<Context>(
