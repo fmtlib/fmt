@@ -160,7 +160,10 @@
 
 namespace fmt {
 namespace internal {
-# pragma intrinsic(_BitScanReverse)
+// Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
+# ifndef __clang__
+#  pragma intrinsic(_BitScanReverse)
+# endif
 inline uint32_t clz(uint32_t x) {
   unsigned long r = 0;
   _BitScanReverse(&r, x);
@@ -174,7 +177,7 @@ inline uint32_t clz(uint32_t x) {
 }
 # define FMT_BUILTIN_CLZ(n) fmt::internal::clz(n)
 
-# ifdef _WIN64
+# if defined(_WIN64) && !defined(__clang__)
 #  pragma intrinsic(_BitScanReverse64)
 # endif
 
