@@ -249,10 +249,8 @@ class numeric_limits<fmt::internal::dummy_int> :
     using namespace fmt::internal;
     // The resolution "priority" is:
     // isinf macro > std::isinf > ::isinf > fmt::internal::isinf
-    if (const_check(sizeof(isinf(x)) == sizeof(bool) ||
-                    sizeof(isinf(x)) == sizeof(int))) {
+    if (const_check(sizeof(isinf(x)) != sizeof(fmt::internal::dummy_int)))
       return isinf(x) != 0;
-    }
     return !_finite(static_cast<double>(x));
   }
 
@@ -260,20 +258,16 @@ class numeric_limits<fmt::internal::dummy_int> :
   template <typename T>
   static bool isnotanumber(T x) {
     using namespace fmt::internal;
-    if (const_check(sizeof(isnan(x)) == sizeof(bool) ||
-                    sizeof(isnan(x)) == sizeof(int))) {
+    if (const_check(sizeof(isnan(x)) != sizeof(fmt::internal::dummy_int)))
       return isnan(x) != 0;
-    }
     return _isnan(static_cast<double>(x)) != 0;
   }
 
   // Portable version of signbit.
   static bool isnegative(double x) {
     using namespace fmt::internal;
-    if (const_check(sizeof(signbit(x)) == sizeof(bool) ||
-                    sizeof(signbit(x)) == sizeof(int))) {
+    if (const_check(sizeof(signbit(x)) != sizeof(fmt::internal::dummy_int)))
       return signbit(x) != 0;
-    }
     if (x < 0) return true;
     if (!isnotanumber(x)) return false;
     int dec = 0, sign = 0;
