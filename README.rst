@@ -11,11 +11,14 @@
    :alt: Join the chat at https://gitter.im/fmtlib/fmt
    :target: https://gitter.im/fmtlib/fmt
 
-**fmt** is an open-source formatting library for C++.
+**{fmt}** is an open-source formatting library for C++.
 It can be used as a safe alternative to printf or as a fast
 alternative to IOStreams.
 
 `Documentation <http://fmtlib.net/latest/>`_
+
+This is a development branch, released versions are available from the
+`Releases page <https://github.com/fmtlib/fmt/releases>`__.
 
 Features
 --------
