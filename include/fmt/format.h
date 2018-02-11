@@ -2216,6 +2216,22 @@ class basic_writer {
   template <typename F>
   void write_padded(std::size_t size, const align_spec &spec, F f);
 
+  template <typename F>
+  struct padded_int_writer {
+    string_view prefix;
+    wchar_t fill;
+    unsigned padding;
+    F f;
+
+    template <typename It>
+    void operator()(It &&it) const {
+      if (prefix.size() != 0)
+        it = std::copy_n(prefix.data(), prefix.size(), it);
+      it = std::fill_n(it, padding, fill);
+      f(it);
+    }
+  };
+
   // Writes an integer in the format
   //   <left-padding><prefix><numeric-padding><digits><right-padding>
   // where <digits> are written by f(it).
@@ -2238,12 +2254,7 @@ class basic_writer {
     align_spec as = spec;
     if (spec.align() == ALIGN_DEFAULT)
       as.align_ = ALIGN_RIGHT;
-    write_padded(size, as, [prefix, fill, padding, f](auto &&it) {
-      if (prefix.size() != 0)
-        it = std::copy_n(prefix.data(), prefix.size(), it);
-      it = std::fill_n(it, padding, fill);
-      f(it);
-    });
+    write_padded(size, as, padded_int_writer<F>{prefix, fill, padding, f});
   }
 
   // Writes a decimal integer.
@@ -2368,16 +2379,54 @@ class basic_writer {
                                    int_writer<T, Spec>(*this, value, spec));
   }
 
+  enum {INF_SIZE = 3}; // This is an enum to workaround a bug in MSVC.
+
+  struct inf_or_nan_writer {
+    char sign;
+    const char *str;
+
+    template <typename It>
+    void operator()(It &&it) const {
+      if (sign)
+        *it++ = sign;
+      it = std::copy_n(str, static_cast<std::size_t>(INF_SIZE), it);
+    }
+  };
+
+  struct double_writer {
+    unsigned n;
+    char sign;
+    basic_memory_buffer<char_type> &buffer;
+
+    template <typename It>
+    void operator()(It &&it) {
+      if (sign) {
+        *it++ = sign;
+        --n;
+      }
+      it = std::copy_n(buffer.begin(), n, it);
+    }
+  };
+
   // Formats a floating-point number (double or long double).
   template <typename T>
   void write_double(T value, const format_specs &spec);
 
+  template <typename Char>
+  struct str_writer {
+    const Char *s;
+    std::size_t size;
+
+    template <typename It>
+    void operator()(It &&it) const {
+      it = std::copy_n(s, size, it);
+    }
+  };
+
   // Writes a formatted string.
   template <typename Char>
   void write_str(const Char *s, std::size_t size, const align_spec &spec) {
-    write_padded(size, spec, [s, size](auto &&it) {
-      it = std::copy_n(s, size, it);
-    });
+    write_padded(size, spec, str_writer<Char>{s, size});
   }
 
   template <typename Char>
@@ -2562,12 +2611,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   }
 
   auto write_inf_or_nan = [this, &spec, sign](const char *str) {
-    enum {SIZE = 3}; // This is an enum to workaround a bug in MSVC.
-    write_padded(SIZE + (sign ? 1 : 0), spec, [sign, str](auto &&it) {
-      if (sign)
-        *it++ = sign;
-      it = std::copy_n(str, static_cast<std::size_t>(SIZE), it);
-    });
+    write_padded(INF_SIZE + (sign ? 1 : 0), spec, inf_or_nan_writer{sign, str});
   };
 
   // Format NaN and ininity ourselves because sprintf's output is not consistent
@@ -2646,13 +2690,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     if (sign)
       ++n;
   }
-  write_padded(n, as, [n, sign, &buffer](auto &&it) mutable {
-    if (sign) {
-      *it++ = sign;
-      --n;
-    }
-    it = std::copy_n(buffer.begin(), n, it);
-  });
+  write_padded(n, as, double_writer{n, sign, buffer});
 }
 
 // A range where begin() returns back_insert_iterator.
