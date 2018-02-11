@@ -168,8 +168,8 @@ class basic_string_view {
   size_t size_;
 
  public:
-  using char_type = Char;
-  using iterator = const Char *;
+  typedef Char char_type;
+  typedef const Char *iterator;
 
   FMT_CONSTEXPR basic_string_view() FMT_NOEXCEPT : data_(0), size_(0) {}
 
@@ -242,8 +242,8 @@ class basic_string_view {
 #endif
 
 namespace fmt {
-using string_view = basic_string_view<char>;
-using wstring_view = basic_string_view<wchar_t>;
+typedef basic_string_view<char> string_view;
+typedef basic_string_view<wchar_t> wstring_view;
 
 template <typename Context>
 class basic_arg;
@@ -285,7 +285,7 @@ class basic_buffer {
   virtual void grow(std::size_t capacity) = 0;
 
  public:
-  using value_type = T;
+  typedef T value_type;
 
   virtual ~basic_buffer() {}
 
@@ -335,8 +335,8 @@ class basic_buffer {
   const T &operator[](std::size_t index) const { return ptr_[index]; }
 };
 
-using buffer = basic_buffer<char>;
-using wbuffer = basic_buffer<wchar_t>;
+typedef basic_buffer<char> buffer;
+typedef basic_buffer<wchar_t> wbuffer;
 
 // A container-backed buffer.
 template <typename Container>
@@ -443,7 +443,7 @@ struct custom_value {
 template <typename Context>
 class value {
  public:
-  using char_type = typename Context::char_type;
+  typedef typename Context::char_type char_type;
 
   union {
     int int_value;
@@ -499,7 +499,7 @@ class value {
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
-    typename Context::template formatter_type<T> f;
+    typename Context::template formatter_type<T>::type f;
     auto &&parse_ctx = ctx.parse_context();
     parse_ctx.advance_to(f.parse(parse_ctx));
     ctx.advance_to(f.format(*static_cast<const T*>(arg), ctx));
@@ -531,12 +531,11 @@ FMT_MAKE_VALUE(UINT, unsigned, unsigned)
 
 // To minimize the number of types we need to deal with, long is translated
 // either to int or to long long depending on its size.
-using long_type =
-  std::conditional<sizeof(long) == sizeof(int), int, long long>::type;
+typedef std::conditional<sizeof(long) == sizeof(int), int, long long>::type
+        long_type;
 FMT_MAKE_VALUE((sizeof(long) == sizeof(int) ? INT : LONG_LONG), long, long_type)
-using ulong_type =
-  std::conditional<sizeof(unsigned long) == sizeof(unsigned),
-                   unsigned, unsigned long long>::type;
+typedef std::conditional<sizeof(unsigned long) == sizeof(unsigned),
+                         unsigned, unsigned long long>::type ulong_type;
 FMT_MAKE_VALUE((sizeof(unsigned long) == sizeof(unsigned) ? UINT : ULONG_LONG),
     unsigned long, ulong_type)
 
@@ -628,7 +627,7 @@ class basic_arg {
   friend class basic_format_args<Context>;
   friend class internal::arg_map<Context>;
 
-  using char_type = typename Context::char_type;
+  typedef typename Context::char_type char_type;
 
  public:
   class handle {
@@ -663,8 +662,8 @@ class basic_parse_context : private ErrorHandler {
   int next_arg_id_;
 
  public:
-  using char_type = Char;
-  using iterator = typename basic_string_view<Char>::iterator;
+  typedef Char char_type;
+  typedef typename basic_string_view<Char>::iterator iterator;
 
   explicit FMT_CONSTEXPR basic_parse_context(
       basic_string_view<Char> format_str, ErrorHandler eh = ErrorHandler())
@@ -704,8 +703,8 @@ class basic_parse_context : private ErrorHandler {
   FMT_CONSTEXPR ErrorHandler error_handler() const { return *this; }
 };
 
-using parse_context = basic_parse_context<char>;
-using wparse_context = basic_parse_context<wchar_t>;
+typedef basic_parse_context<char> parse_context;
+typedef basic_parse_context<wchar_t> wparse_context;
 
 namespace internal {
 // A map from argument names to their values for named arguments.
@@ -714,7 +713,7 @@ class arg_map {
  private:
   FMT_DISALLOW_COPY_AND_ASSIGN(arg_map);
 
-  using char_type = typename Context::char_type;
+  typedef typename Context::char_type char_type;
 
   struct entry {
     basic_string_view<char_type> name;
@@ -748,7 +747,7 @@ class arg_map {
 template <typename OutputIt, typename Context, typename Char>
 class context_base {
  public:
-  using iterator = OutputIt;
+  typedef OutputIt iterator;
 
  private:
   basic_parse_context<Char> parse_context_;
@@ -756,8 +755,8 @@ class context_base {
   basic_format_args<Context> args_;
 
  protected:
-  using char_type = Char;
-  using format_arg = basic_arg<Context>;
+  typedef Char char_type;
+  typedef basic_arg<Context> format_arg;
 
   context_base(OutputIt out, basic_string_view<char_type> format_str,
                basic_format_args<Context> args)
@@ -801,7 +800,7 @@ class context_base {
 // Extracts a reference to the container from back_insert_iterator.
 template <typename Container>
 inline Container &get_container(std::back_insert_iterator<Container> it) {
-  using iterator = std::back_insert_iterator<Container>;
+  typedef std::back_insert_iterator<Container> iterator;
   struct accessor: iterator {
     accessor(iterator it) : iterator(it) {}
     using iterator::container;
@@ -816,11 +815,11 @@ class output_range {
   OutputIt it_;
 
   // Unused yet.
-  using sentinel = void;
+  typedef void sentinel;
   sentinel end() const;
 
  public:
-  using value_type = T;
+  typedef T value_type;
 
   explicit output_range(OutputIt it): it_(it) {}
   OutputIt begin() const { return it_; }
@@ -832,18 +831,19 @@ class basic_context :
   public internal::context_base<OutputIt, basic_context<OutputIt, Char>, Char> {
  public:
   /** The character type for the output. */
-  using char_type = Char;
+  typedef Char char_type;
 
+  // using formatter_type = formatter<T, char_type>;
   template <typename T>
-  using formatter_type = formatter<T, char_type>;
+  struct formatter_type { typedef formatter<T, char_type> type; };
 
  private:
   internal::arg_map<basic_context> map_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_context);
 
-  using base = internal::context_base<OutputIt, basic_context, Char>;
-  using format_arg = typename base::format_arg;
+  typedef internal::context_base<OutputIt, basic_context, Char> base;
+  typedef typename base::format_arg format_arg;
   using base::get_arg;
 
  public:
@@ -872,8 +872,8 @@ class basic_context :
 template <typename Char>
 using buffer_context_t = basic_context<
   std::back_insert_iterator<internal::basic_buffer<Char>>, Char>;
-using context = buffer_context_t<char>;
-using wcontext = buffer_context_t<wchar_t>;
+typedef buffer_context_t<char> context;
+typedef buffer_context_t<wchar_t> wcontext;
 
 namespace internal {
 template <typename Context, typename T>
@@ -882,7 +882,7 @@ class get_type {
   static const T& val();
 
  public:
-  using value_type = decltype(make_value<Context>(val()));
+  typedef decltype(make_value<Context>(val())) value_type;
   static const type value = value_type::type_tag;
 };
 
@@ -923,8 +923,8 @@ class arg_store {
   // Packed is a macro on MinGW so use IS_PACKED instead.
   static const bool IS_PACKED = NUM_ARGS < internal::MAX_PACKED_ARGS;
 
-  using value_type = typename std::conditional<
-    IS_PACKED, internal::value<Context>, basic_arg<Context>>::type;
+  typedef typename std::conditional<
+    IS_PACKED, internal::value<Context>, basic_arg<Context>>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
   value_type data_[NUM_ARGS + (IS_PACKED && NUM_ARGS != 0 ? 0 : 1)];
@@ -959,8 +959,8 @@ inline arg_store<context, Args...> make_args(const Args & ... args) {
 template <typename Context>
 class basic_format_args {
  public:
-  using size_type = unsigned;
-  using format_arg = basic_arg<Context> ;
+  typedef unsigned size_type;
+  typedef basic_arg<Context>  format_arg;
 
  private:
   // To reduce compiled code size per formatting function call, types of first
@@ -1028,8 +1028,8 @@ class basic_format_args {
   }
 };
 
-using format_args = basic_format_args<context>;
-using wformat_args = basic_format_args<wcontext>;
+typedef basic_format_args<context> format_args;
+typedef basic_format_args<wcontext> wformat_args;
 
 namespace internal {
 template <typename Char>

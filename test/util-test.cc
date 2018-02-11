@@ -440,15 +440,17 @@ struct custom_context {
 
   template <typename T>
   struct formatter_type {
-    template <typename ParseContext>
-    auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
-      return ctx.begin();
-    }
+    struct type {
+      template <typename ParseContext>
+      auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+      }
 
-    const char *format(const T &, custom_context& ctx) {
-      ctx.called = true;
-      return 0;
-    }
+      const char *format(const T &, custom_context& ctx) {
+        ctx.called = true;
+        return 0;
+      }
+    };
   };
 
   bool called;

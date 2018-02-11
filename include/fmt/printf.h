@@ -309,7 +309,7 @@ class basic_printf_context :
   using char_type = Char;
 
   template <typename T>
-  using formatter_type = printf_formatter<T>;
+  struct formatter_type { typedef printf_formatter<T> type; };
 
  private:
   using base = internal::context_base<OutputIt, basic_printf_context, Char>;

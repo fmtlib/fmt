@@ -575,11 +575,11 @@ FMT_CONSTEXPR const Char *pointer_from(null_terminating_iterator<Char> it);
 template <typename Char>
 class null_terminating_iterator {
  public:
-  using difference_type = std::ptrdiff_t;
-  using value_type = Char;
-  using pointer = const Char*;
-  using reference = const Char&;
-  using iterator_category = std::random_access_iterator_tag;
+  typedef std::ptrdiff_t difference_type;
+  typedef Char value_type;
+  typedef const Char* pointer;
+  typedef const Char& reference;
+  typedef std::random_access_iterator_tag iterator_category;
 
   null_terminating_iterator() : ptr_(0), end_(0) {}
 
@@ -667,11 +667,11 @@ class counting_iterator {
   mutable T blackhole_;
 
  public:
-  using iterator_category = std::output_iterator_tag;
-  using value_type = T;
-  using difference_type = std::ptrdiff_t;
-  using pointer = T*;
-  using reference = T&;
+  typedef std::output_iterator_tag iterator_category;
+  typedef T value_type;
+  typedef std::ptrdiff_t difference_type;
+  typedef T* pointer;
+  typedef T& reference;
 
   explicit counting_iterator(std::size_t &count): count_(count) {}
   counting_iterator(const counting_iterator &other): count_(other.count_) {}
@@ -998,7 +998,7 @@ struct monostate {};
 template <typename Visitor, typename Context>
 FMT_CONSTEXPR typename std::result_of<Visitor(int)>::type
     visit(Visitor &&vis, basic_arg<Context> arg) {
-  using char_type = typename Context::char_type;
+  typedef typename Context::char_type char_type;
   switch (arg.type_) {
   case internal::NONE:
     return vis(monostate());
@@ -1058,7 +1058,7 @@ class format_spec {
 };
 
 // template <typename Char>
-// using fill_spec = format_spec<Char, fill_tag>;
+// typedef format_spec<Char, fill_tag> fill_spec;
 template <typename Char>
 class fill_spec : public format_spec<Char, fill_tag> {
  public:
@@ -1323,11 +1323,11 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
 template <typename Range>
 class arg_formatter_base {
  public:
-  using char_type = typename Range::value_type;
-  using format_specs = basic_format_specs<char_type>;
+  typedef typename Range::value_type char_type;
+  typedef basic_format_specs<char_type> format_specs;
 
  private:
-  using writer_type = basic_writer<Range>;
+  typedef basic_writer<Range> writer_type;
   writer_type writer_;
   format_specs &specs_;
 
@@ -1717,7 +1717,7 @@ template <typename ParseContext>
 class dynamic_specs_handler :
     public specs_setter<typename ParseContext::char_type> {
  public:
-  using char_type = typename ParseContext::char_type;
+  typedef typename ParseContext::char_type char_type;
 
   FMT_CONSTEXPR dynamic_specs_handler(
       dynamic_format_specs<char_type> &specs, ParseContext &ctx)
@@ -1742,7 +1742,7 @@ class dynamic_specs_handler :
   }
 
  private:
-  using arg_ref_type = arg_ref<char_type>;
+  typedef arg_ref<char_type> arg_ref_type;
 
   template <typename Id>
   FMT_CONSTEXPR arg_ref_type make_arg_ref(Id arg_id) {
@@ -1760,7 +1760,7 @@ class dynamic_specs_handler :
 
 template <typename Iterator, typename IDHandler>
 FMT_CONSTEXPR Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
-  using char_type = typename std::iterator_traits<Iterator>::value_type;
+  typedef typename std::iterator_traits<Iterator>::value_type char_type;
   char_type c = *it;
   if (c == '}' || c == ':') {
     handler();
@@ -1830,7 +1830,7 @@ struct precision_adapter {
 //     format specifiers.
 template <typename Iterator, typename SpecHandler>
 FMT_CONSTEXPR Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
-  using char_type = typename std::iterator_traits<Iterator>::value_type;
+  typedef typename std::iterator_traits<Iterator>::value_type char_type;
   // Parse fill and alignment.
   if (char_type c = *it) {
     alignment align = ALIGN_DEFAULT;
@@ -1949,7 +1949,7 @@ struct id_adapter {
 
 template <typename Iterator, typename Handler>
 FMT_CONSTEXPR void parse_format_string(Iterator it, Handler &&handler) {
-  using char_type = typename std::iterator_traits<Iterator>::value_type;
+  typedef typename std::iterator_traits<Iterator>::value_type char_type;
   auto start = it;
   while (*it) {
     char_type ch = *it++;
@@ -2025,7 +2025,7 @@ class format_string_checker {
   }
 
  private:
-  using parse_context_type = basic_parse_context<Char, ErrorHandler>;
+  typedef basic_parse_context<Char, ErrorHandler> parse_context_type;
   enum { NUM_ARGS = sizeof...(Args) };
 
   FMT_CONSTEXPR void check_arg_id() {
@@ -2034,7 +2034,7 @@ class format_string_checker {
   }
 
   // Format specifier parsing function.
-  using parse_func = const Char *(*)(parse_context_type &);
+  typedef const Char *(*parse_func)(parse_context_type &);
 
   int arg_id_ = -1;
   parse_context_type context_;
@@ -2065,7 +2065,7 @@ struct format_enum : std::integral_constant<bool, std::is_enum<T>::value> {};
 template <template <typename> class Handler, typename Spec, typename Context>
 void handle_dynamic_spec(
     Spec &value, arg_ref<typename Context::char_type> ref, Context &ctx) {
-  using char_type = typename Context::char_type;
+  typedef typename Context::char_type char_type;
   switch (ref.kind) {
   case arg_ref<char_type>::NONE:
     break;
@@ -2085,16 +2085,16 @@ void handle_dynamic_spec(
 template <typename Range>
 class arg_formatter: public internal::arg_formatter_base<Range> {
  private:
-  using char_type = typename Range::value_type;
-  using iterator = decltype(std::declval<Range>().begin());
-  using base = internal::arg_formatter_base<Range>;
-  using context_type = basic_context<iterator, char_type>;
+  typedef typename Range::value_type char_type;
+  typedef decltype(std::declval<Range>().begin()) iterator;
+  typedef internal::arg_formatter_base<Range> base;
+  typedef basic_context<iterator, char_type> context_type;
 
   context_type &ctx_;
 
  public:
-  using range = Range;
-  using format_specs = typename base::format_specs;
+  typedef Range range;
+  typedef typename base::format_specs format_specs;
 
   /**
     \rst
@@ -2183,9 +2183,9 @@ FMT_API void format_system_error(fmt::internal::buffer &out, int error_code,
 template <typename Range>
 class basic_writer {
  public:
-  using char_type = typename Range::value_type;
-  using iterator = decltype(std::declval<Range>().begin());
-  using format_specs = basic_format_specs<char_type>;
+  typedef typename Range::value_type char_type;
+  typedef decltype(std::declval<Range>().begin()) iterator;
+  typedef basic_format_specs<char_type> format_specs;
 
  private:
   // Output iterator.
@@ -2196,11 +2196,11 @@ class basic_writer {
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_writer);
 
 #if FMT_SECURE_SCL
-  using pointer_type = stdext::checked_array_iterator<char_type*>;
+  typedef stdext::checked_array_iterator<char_type*> pointer_type;
   // Returns pointer value.
   static char_type *get(pointer_type p) { return p.base(); }
 #else
-  using pointer_type = char_type*;
+  typedef char_type* pointer_type;
   static char_type *get(char_type *p) { return p; }
 #endif
 
@@ -2260,7 +2260,7 @@ class basic_writer {
   // Writes a decimal integer.
   template <typename Int>
   void write_decimal(Int value) {
-    using main_type = typename internal::int_traits<Int>::main_type;
+    typedef typename internal::int_traits<Int>::main_type main_type;
     main_type abs_value = static_cast<main_type>(value);
     bool is_negative = internal::is_negative(value);
     if (is_negative)
@@ -2275,7 +2275,7 @@ class basic_writer {
   // The handle_int_type_spec handler that writes an integer.
   template <typename Int, typename Spec>
   struct int_writer {
-    using unsigned_type = typename internal::int_traits<Int>::main_type;
+    typedef typename internal::int_traits<Int>::main_type unsigned_type;
 
     basic_writer<Range> &writer;
     const Spec &spec;
@@ -2731,16 +2731,16 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
 template <typename Container>
 class back_insert_range:
     public output_range<std::back_insert_iterator<Container>> {
-  using base = output_range<std::back_insert_iterator<Container>>;
+  typedef output_range<std::back_insert_iterator<Container>> base;
  public:
-  using value_type = typename Container::value_type;
+  typedef typename Container::value_type value_type;
 
   using base::base;
   back_insert_range(Container &c): base(std::back_inserter(c)) {}
 };
 
-using writer = basic_writer<back_insert_range<internal::buffer>>;
-using wwriter = basic_writer<back_insert_range<internal::wbuffer>>;
+typedef basic_writer<back_insert_range<internal::buffer>> writer;
+typedef basic_writer<back_insert_range<internal::wbuffer>> wwriter;
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
@@ -2878,7 +2878,7 @@ class FormatInt {
 // write a terminating null character.
 template <typename T>
 inline void format_decimal(char *&buffer, T value) {
-  using main_type = typename internal::int_traits<T>::main_type;
+  typedef typename internal::int_traits<T>::main_type main_type;
   main_type abs_value = static_cast<main_type>(value);
   if (internal::is_negative(value)) {
     *buffer++ = '-';
@@ -2911,7 +2911,7 @@ struct formatter<
   template <typename ParseContext>
   FMT_CONSTEXPR typename ParseContext::iterator parse(ParseContext &ctx) {
     auto it = internal::null_terminating_iterator<Char>(ctx);
-    using handler_type = internal::dynamic_specs_handler<ParseContext>;
+    typedef internal::dynamic_specs_handler<ParseContext> handler_type;
     auto type = internal::get_type<buffer_context_t<Char>, T>::value;
     internal::specs_checker<handler_type>
         handler(handler_type(specs_, ctx), type);
@@ -2964,8 +2964,8 @@ struct formatter<
       specs_.width_, specs_.width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
       specs_.precision_, specs_.precision_ref, ctx);
-    using range = output_range<
-      typename FormatContext::iterator, typename FormatContext::char_type>;
+    typedef output_range<typename FormatContext::iterator,
+                         typename FormatContext::char_type> range;
     visit(arg_formatter<range>(ctx, specs_),
           internal::make_arg<FormatContext>(val));
     return ctx.begin();
@@ -2988,7 +2988,7 @@ struct formatter<T, Char,
 // A formatter for types known only at run time such as variant alternatives.
 //
 // Usage:
-//   using variant = std::variant<int, std::string>;
+//   typedef std::variant<int, std::string> variant;
 //   template <>
 //   struct formatter<variant>: dynamic_formatter<> {
 //     void format(buffer &buf, const variant &v, context &ctx) {
@@ -3033,8 +3033,8 @@ struct dynamic_formatter {
     }
     if (specs_.precision_ != -1)
       checker.end_precision();
-    using range = output_range<
-      typename FormatContext::iterator, typename FormatContext::char_type>;
+    typedef output_range<typename FormatContext::iterator,
+                         typename FormatContext::char_type> range;
     visit(arg_formatter<range>(ctx, specs_),
           internal::make_arg<FormatContext>(val));
     return ctx.begin();
@@ -3067,8 +3067,8 @@ template <typename ArgFormatter, typename Char, typename Context>
 typename Context::iterator do_vformat_to(typename ArgFormatter::range out,
                                          basic_string_view<Char> format_str,
                                          basic_format_args<Context> args) {
-  using iterator = internal::null_terminating_iterator<Char>;
-  using range = typename ArgFormatter::range;
+  typedef internal::null_terminating_iterator<Char> iterator;
+  typedef typename ArgFormatter::range range;
 
   struct handler : internal::error_handler {
     handler(range r, basic_string_view<Char> str,
@@ -3171,7 +3171,7 @@ struct formatter<arg_join<It, Char>, Char>:
     formatter<typename std::iterator_traits<It>::value_type, Char> {
   template <typename FormatContext>
   auto format(const arg_join<It, Char> &value, FormatContext &ctx) {
-    using base = formatter<typename std::iterator_traits<It>::value_type, Char>;
+    typedef formatter<typename std::iterator_traits<It>::value_type, Char> base;
     auto it = value.begin;
     auto out = ctx.begin(); 
     if (it != value.end) {
@@ -3244,13 +3244,13 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char> &buffer) {
 
 inline void vformat_to(internal::buffer &buf, string_view format_str,
                        format_args args) {
-  using range = back_insert_range<internal::buffer>;
+  typedef back_insert_range<internal::buffer> range;
   do_vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
 inline void vformat_to(internal::wbuffer &buf, wstring_view format_str,
                        wformat_args args) {
-  using range = back_insert_range<internal::wbuffer>;
+  typedef back_insert_range<internal::wbuffer> range;
   do_vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
@@ -3275,7 +3275,7 @@ using format_args_t = basic_format_args<context_t<OutputIt, Char>>;
 template <typename OutputIt, typename... Args>
 inline OutputIt vformat_to(OutputIt out, string_view format_str,
                            format_args_t<OutputIt> args) {
-  using range = output_range<OutputIt, char>;
+  typedef output_range<OutputIt, char> range;
   return do_vformat_to<arg_formatter<range>>(range(out), format_str, args);
 }
 
