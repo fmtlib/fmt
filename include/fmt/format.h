@@ -2308,13 +2308,32 @@ class basic_writer {
       }
     }
 
+    struct dec_writer {
+      unsigned_type abs_value;
+      unsigned num_digits;
+
+      template <typename It>
+      void operator()(It &&it) const {
+        it = internal::format_decimal(it, abs_value, num_digits);
+      }
+    };
+
     void on_dec() {
       unsigned num_digits = internal::count_digits(abs_value);
       writer.write_int(num_digits, get_prefix(), spec,
-                       [this, num_digits](auto &&it) {
-        it = internal::format_decimal(it, abs_value, num_digits);
-      });
+                       dec_writer{abs_value, num_digits});
     }
+
+    struct hex_writer {
+      int_writer &self;
+      unsigned num_digits;
+
+      template <typename It>
+      void operator()(It &&it) const {
+        it = internal::format_uint<4>(it, self.abs_value, num_digits,
+                                      self.spec.type() != 'x');
+      }
+    };
 
     void on_hex() {
       if (spec.flag(HASH_FLAG)) {
@@ -2323,11 +2342,19 @@ class basic_writer {
       }
       unsigned num_digits = count_digits<4>();
       writer.write_int(num_digits, get_prefix(), spec,
-                       [this, num_digits](auto &&it) {
-        it = internal::format_uint<4>(it, abs_value, num_digits,
-                                      spec.type() != 'x');
-      });
+                       hex_writer{*this, num_digits});
     }
+
+    template <int BITS>
+    struct bin_writer {
+      unsigned_type abs_value;
+      unsigned num_digits;
+
+      template <typename It>
+      void operator()(It &&it) const {
+        it = internal::format_uint<BITS>(it, abs_value, num_digits);
+      }
+    };
 
     void on_bin() {
       if (spec.flag(HASH_FLAG)) {
@@ -2336,9 +2363,7 @@ class basic_writer {
       }
       unsigned num_digits = count_digits<1>();
       writer.write_int(num_digits, get_prefix(), spec,
-                       [this, num_digits](auto &&it) {
-        it = internal::format_uint<1>(it, abs_value, num_digits);
-      });
+                       bin_writer<1>{abs_value, num_digits});
     }
 
     void on_oct() {
@@ -2350,21 +2375,30 @@ class basic_writer {
         prefix[prefix_size++] = '0';
       }
       writer.write_int(num_digits, get_prefix(), spec,
-                       [this, num_digits](auto &&it) {
-        it = internal::format_uint<3>(it, abs_value, num_digits);
-      });
+                       bin_writer<3>{abs_value, num_digits});
     }
+
+    enum { SEP_SIZE = 1 };
+
+    struct num_writer {
+      unsigned_type abs_value;
+      unsigned size;
+      char_type sep;
+
+      template <typename It>
+      void operator()(It &&it) const {
+        basic_string_view<char_type> s(&sep, SEP_SIZE);
+        it = format_decimal(it, abs_value, size,
+                            internal::add_thousands_sep<char_type>(s));
+      }
+    };
 
     void on_num() {
       unsigned num_digits = internal::count_digits(abs_value);
       char_type sep = internal::thousands_sep<char_type>(writer.locale_.get());
-      enum { SEP_SIZE = 1 };
       unsigned size = num_digits + SEP_SIZE * ((num_digits - 1) / 3);
-      writer.write_int(size, get_prefix(), spec, [this, size, sep](auto &&it) {
-        basic_string_view<char_type> s(&sep, SEP_SIZE);
-        it = format_decimal(it, abs_value, size,
-                            internal::add_thousands_sep<char_type>(s));
-      });
+      writer.write_int(size, get_prefix(), spec,
+                       num_writer{abs_value, size, sep});
     }
 
     void on_error() {
