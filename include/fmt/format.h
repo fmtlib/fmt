@@ -2727,6 +2727,22 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   write_padded(n, as, double_writer{n, sign, buffer});
 }
 
+template <typename OutputIt, typename T = typename OutputIt::value_type>
+class output_range {
+ private:
+  OutputIt it_;
+
+  // Unused yet.
+  typedef void sentinel;
+  sentinel end() const;
+
+ public:
+  typedef T value_type;
+
+  explicit output_range(OutputIt it): it_(it) {}
+  OutputIt begin() const { return it_; }
+};
+
 // A range where begin() returns back_insert_iterator.
 template <typename Container>
 class back_insert_range:

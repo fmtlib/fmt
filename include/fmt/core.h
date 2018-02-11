@@ -809,22 +809,6 @@ inline Container &get_container(std::back_insert_iterator<Container> it) {
 }
 }  // namespace internal
 
-template <typename OutputIt, typename T = typename OutputIt::value_type>
-class output_range {
- private:
-  OutputIt it_;
-
-  // Unused yet.
-  typedef void sentinel;
-  sentinel end() const;
-
- public:
-  typedef T value_type;
-
-  explicit output_range(OutputIt it): it_(it) {}
-  OutputIt begin() const { return it_; }
-};
-
 // Formatting context.
 template <typename OutputIt, typename Char>
 class basic_context :
