@@ -1,0 +1,111 @@
+// General gradle arguments for root project
+buildscript {    
+    repositories {
+        google()
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.0.1'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+// Output: Shared library (.so) for Android 
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 24    // Android 7.0
+
+    // External Native build
+    //  - Use existing CMakeList.txt
+    //  - Give path to CMake. This gradle file should be 
+    //    neighbor of the top level cmake
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+
+    // Target ABI
+    //  - This option controls target platform of module
+    //  - The platform might be limited by compiler's support
+    //    some can work with Clang(default), but some can work only with GCC...
+    //    if bad, both toolchains might not support it
+    splits {
+        abi {
+            // Be general, as it can...
+            enable true
+            universalApk true 
+            // We can specify platforms, like...
+            // reset()
+            // include "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
+        }
+    }
+
+    defaultConfig {
+        minSdkVersion 21    // Android 5.0+
+        targetSdkVersion 24 // Follow Compile SDK
+        versionCode 16      // Follow release count
+        versionName "4.1.0" // Follow Official version
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        // - Specify Android STL
+        // - Additional flags
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared"
+                          "-DBUILD_SHARED=true"
+                cppFlags  "-std=c++14"
+            }
+        }
+    }
+
+    sourceSets{
+        // gradle assemble
+        main.setRoot('./')
+        main {
+            manifest.srcFile 'support/AndroidManifest.xml'
+        }
+    }
+    // // Custom SourceSet for JNI adapter
+    // //  - Source path/directory for Gradle
+    // sourceSets {
+    //     // gradle assemble
+    //     main.setRoot('droid/main')
+    //     // main {
+    //     //     manifest.srcFile 'droid/main/AndroidManifest.xml'
+    //     //     java.srcDirs = ['droid/main/java']
+    //     //     jniLibs.srcDirs = ['droid/main/jniLibs']
+    //     //     res.srcDirs = ['droid/main/res']
+    //     //     assets.srcDirs = ['droid/main/assets']
+    //     // }
+    //     // gradle connectedAndroidTest
+    //     androidTest.setRoot('droid/androidTest')
+    //     // androidTest {
+    //     //     java.srcDir 'droid/androidTest/java'
+    //     // }
+    //     // If ABI includes `armeabi-v7a`, the following directory MUST exists.
+    //     // Notice that the path is relative to `build.gradle` file
+    //     //      `droid/main/jniLibs/armeabi-v7a`
+    //     //      `libs/armeabi-v7a`
+    //     // The library files in there will be installed automatically
+    //     main.jniLibs.srcDirs = ['droid/main/jniLibs', 'libs']
+    //     androidTest.jniLibs.srcDirs = ['droid/main/jniLibs', 'libs']
+    // }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'com.android.support:appcompat-v7:24.+'  // Follow target SDK
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+}
