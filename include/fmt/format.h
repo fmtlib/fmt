@@ -3233,7 +3233,7 @@ auto join(const Range &range, wstring_view sep)
 
   **Example**::
 
-    #include "fmt/string.h"
+    #include "fmt/format.h"
 
     std::string answer = fmt::to_string(42);
   \endrst

@@ -42,8 +42,8 @@ Features
   performance of IOStreams. See `Speed tests`_ and
   `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
-* Small code size both in terms of source code (the core library consists of a
-  single header file and a single source file) and compiled code.
+* Small code size both in terms of source code (the core library consists of two
+  header files and a single source file) and compiled code.
   See `Compile time and code bloat`_.
 * Reliability: the library has an extensive set of `unit tests
   <https://github.com/fmtlib/fmt/tree/master/test>`_.
@@ -101,7 +101,7 @@ Format strings can be checked at compile time:
           on_error("argument index out of range");
           ^
 
-fmt can be used as a safe portable replacement for ``itoa``:
+{fmt} can be used as a safe portable replacement for ``itoa``:
 
 .. code:: c++
 

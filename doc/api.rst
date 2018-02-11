@@ -11,7 +11,7 @@ namespace is usually omitted in examples.
 Format API
 ==========
 
-The following functions defined in ``fmt/format.h`` use :ref:`format string
+The following functions defined in ``fmt/core.h`` use :ref:`format string
 syntax <syntax>` similar to the one used by Python's `str.format
 <http://docs.python.org/3/library/stdtypes.html#str.format>`_ function.
 They take *format_str* and *args* as arguments.
@@ -71,7 +71,7 @@ template and implement ``parse`` and ``format`` methods::
 
     template <typename FormatContext>
     auto format(const MyStruct &s, FormatContext &ctx) {
-      fmt::format_to(ctx.begin(), "[MyStruct: x={:.1f}, y={:.2f}]", s.x, s.y);
+      return format_to(ctx.begin(), "[MyStruct: x={:.1f}, y={:.2f}]", s.x, s.y);
     }
   };
   }
@@ -84,7 +84,7 @@ Then you can pass objects of type ``MyStruct`` to any formatting function::
 
 In the example above the ``formatter<MyStruct>::parse`` function ignores the
 contents of the format string referred to by ``ctx.begin()`` so the object will
-always be formatted as specified. See ``formatter<tm>::parse`` in
+always be formatted in the same way. See ``formatter<tm>::parse`` in
 :file:`fmt/time.h` for an advanced example of how to parse the format string and
 customize the formatted output.
 
@@ -113,7 +113,7 @@ formatting of user-defined types that have overloaded ``operator<<``::
   std::string s = fmt::format("The date is {}", Date(2012, 12, 9));
   // s == "The date is 2012-12-9"
 
-.. doxygenfunction:: print(std::ostream&, string_view, ArgList)
+.. doxygenfunction:: print(std::ostream&, string_view, const Args&...)
 
 Argument formatters
 -------------------
@@ -168,13 +168,13 @@ the POSIX extension for positional arguments. Unlike their standard
 counterparts, the ``fmt`` functions are type-safe and throw an exception if an
 argument type doesn't match its format specification.
 
-.. doxygenfunction:: printf(string_view, ArgList)
+.. doxygenfunction:: printf(string_view, const Args&...)
 
-.. doxygenfunction:: fprintf(std::FILE *, string_view, ArgList)
+.. doxygenfunction:: fprintf(std::FILE *, string_view, const Args&...)
 
-.. doxygenfunction:: fprintf(std::ostream&, string_view, ArgList)
+.. doxygenfunction:: fprintf(std::ostream&, string_view, const Args&...)
 
-.. doxygenfunction:: sprintf(string_view, ArgList)
+.. doxygenfunction:: sprintf(string_view, const Args&...)
 
 .. doxygenclass:: fmt::PrintfFormatter
    :members:
@@ -246,12 +246,12 @@ Utilities
 System errors
 =============
 
-.. doxygenclass:: fmt::SystemError
+.. doxygenclass:: fmt::system_error
    :members:
 
 .. doxygenfunction:: fmt::format_system_error
 
-.. doxygenclass:: fmt::WindowsError
+.. doxygenclass:: fmt::windows_error
    :members:
 
 .. _formatstrings:
