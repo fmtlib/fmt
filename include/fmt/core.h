@@ -720,8 +720,8 @@ class arg_map {
     basic_arg<Context> arg;
   };
 
-  entry *map_ = nullptr;
-  unsigned size_ = 0;
+  entry *map_;
+  unsigned size_;
 
   void push_back(value<Context> val) {
     const internal::named_arg_base<char_type> &named = val.as_named_arg();
@@ -730,7 +730,7 @@ class arg_map {
   }
 
  public:
-  arg_map() {}
+  arg_map() : map_(FMT_NULL), size_(0) {}
   void init(const basic_format_args<Context> &args);
   ~arg_map() { delete [] map_; }
 
@@ -791,7 +791,7 @@ class context_base {
   void on_error(const char *message) { parse_context_.on_error(message); }
 
   // Returns an iterator to the beginning of the output range.
-  auto begin() { return out_; }
+  iterator begin() { return out_; }
 
   // Advances the begin iterator to ``it``.
   void advance_to(iterator it) { out_ = it; }

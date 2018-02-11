@@ -20,7 +20,7 @@ They take *format_str* and *args* as arguments.
 fields surrounded by braces ``{}``. The fields are replaced with formatted
 arguments in the resulting string.
 
-*args* is an argument list representing arbitrary arguments.
+*args* is an argument list representing objects to be formatted.
 
 The `performance of the format API
 <https://github.com/fmtlib/fmt/blob/master/README.rst#speed-tests>`_ is close
@@ -29,18 +29,15 @@ For even better speed use the `write API`_.
 
 .. _format:
 
-.. doxygenfunction:: format(CStringRef, ArgList)
+.. doxygenfunction:: format(string_view, const Args&...)
 
 .. doxygenfunction:: operator""_format(const char *, std::size_t)
 
 .. _print:
 
-.. doxygenfunction:: print(CStringRef, ArgList)
+.. doxygenfunction:: print(string_view, const Args&...)
 
-.. doxygenfunction:: print(std::FILE *, CStringRef, ArgList)
-
-.. doxygenclass:: fmt::BasicFormatter
-   :members:
+.. doxygenfunction:: print(std::FILE *, string_view, const Args&...)
 
 Date and time formatting
 ------------------------
@@ -116,7 +113,7 @@ formatting of user-defined types that have overloaded ``operator<<``::
   std::string s = fmt::format("The date is {}", Date(2012, 12, 9));
   // s == "The date is 2012-12-9"
 
-.. doxygenfunction:: print(std::ostream&, CStringRef, ArgList)
+.. doxygenfunction:: print(std::ostream&, string_view, ArgList)
 
 Argument formatters
 -------------------
@@ -171,13 +168,13 @@ the POSIX extension for positional arguments. Unlike their standard
 counterparts, the ``fmt`` functions are type-safe and throw an exception if an
 argument type doesn't match its format specification.
 
-.. doxygenfunction:: printf(CStringRef, ArgList)
+.. doxygenfunction:: printf(string_view, ArgList)
 
-.. doxygenfunction:: fprintf(std::FILE *, CStringRef, ArgList)
+.. doxygenfunction:: fprintf(std::FILE *, string_view, ArgList)
 
-.. doxygenfunction:: fprintf(std::ostream&, CStringRef, ArgList)
+.. doxygenfunction:: fprintf(std::ostream&, string_view, ArgList)
 
-.. doxygenfunction:: sprintf(CStringRef, ArgList)
+.. doxygenfunction:: sprintf(string_view, ArgList)
 
 .. doxygenclass:: fmt::PrintfFormatter
    :members:
