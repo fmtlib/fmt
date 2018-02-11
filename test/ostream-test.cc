@@ -58,7 +58,7 @@ TEST(OStreamTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-using range = fmt::back_insert_range<fmt::internal::buffer>;
+typedef fmt::back_insert_range<fmt::internal::buffer> range;
 
 struct test_arg_formatter: fmt::arg_formatter<range> {
   test_arg_formatter(fmt::context &ctx, fmt::format_specs &s)

@@ -89,7 +89,7 @@ void std_format(long double value, std::wstring &result) {
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T &value, const char *type) {
   fmt::basic_memory_buffer<Char> buffer;
-  using range = fmt::back_insert_range<fmt::internal::basic_buffer<Char>>;
+  typedef fmt::back_insert_range<fmt::internal::basic_buffer<Char>> range;
   fmt::basic_writer<range> writer(buffer);
   writer.write(value);
   std::basic_string<Char> actual = to_string(buffer);
@@ -1516,7 +1516,7 @@ TEST(FormatTest, FixedEnum) {
 }
 #endif
 
-using buffer_range = fmt::back_insert_range<fmt::internal::buffer>;
+typedef fmt::back_insert_range<fmt::internal::buffer> buffer_range;
 
 class mock_arg_formatter :
     public fmt::internal::arg_formatter_base<buffer_range> {
@@ -1524,8 +1524,8 @@ class mock_arg_formatter :
   MOCK_METHOD1(call, void (int value));
 
  public:
-  using base = fmt::internal::arg_formatter_base<buffer_range>;
-  using range = buffer_range;
+  typedef fmt::internal::arg_formatter_base<buffer_range> base;
+  typedef buffer_range range;
 
   mock_arg_formatter(fmt::context &ctx, fmt::format_specs &s)
     : base(fmt::internal::get_container(ctx.begin()), s) {
@@ -1719,7 +1719,7 @@ FMT_CONSTEXPR test_format_specs_handler parse_test_specs(const char *s) {
 }
 
 TEST(FormatTest, ConstexprParseFormatSpecs) {
-  using handler = test_format_specs_handler;
+  typedef test_format_specs_handler handler;
   static_assert(parse_test_specs("<").align == fmt::ALIGN_LEFT, "");
   static_assert(parse_test_specs("*^").fill == '*', "");
   static_assert(parse_test_specs("+").res == handler::PLUS, "");
@@ -1736,7 +1736,7 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
 }
 
 struct test_context {
-  using char_type = char;
+  typedef char char_type;
 
   FMT_CONSTEXPR fmt::basic_arg<test_context> next_arg() {
     return fmt::internal::make_arg<test_context>(11);
@@ -1817,7 +1817,7 @@ FMT_CONSTEXPR test_format_specs_handler check_specs(const char *s) {
 }
 
 TEST(FormatTest, ConstexprSpecsChecker) {
-  using handler = test_format_specs_handler;
+  typedef test_format_specs_handler handler;
   static_assert(check_specs("<").align == fmt::ALIGN_LEFT, "");
   static_assert(check_specs("*^").fill == '*', "");
   static_assert(check_specs("+").res == handler::PLUS, "");

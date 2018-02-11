@@ -104,8 +104,8 @@ struct format_enum<T,
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename T, typename Char>
 struct formatter<T, Char,
-    typename std::enable_if<
-      !internal::format_type<buffer_context_t<Char>, T>::value>::type>
+    typename std::enable_if<!internal::format_type<
+      typename buffer_context<Char>::type, T>::value>::type>
     : formatter<basic_string_view<Char>, Char> {
 
   template <typename Context>

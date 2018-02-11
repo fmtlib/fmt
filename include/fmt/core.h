@@ -854,10 +854,12 @@ class basic_context :
 };
 
 template <typename Char>
-using buffer_context_t = basic_context<
-  std::back_insert_iterator<internal::basic_buffer<Char>>, Char>;
-typedef buffer_context_t<char> context;
-typedef buffer_context_t<wchar_t> wcontext;
+struct buffer_context {
+  typedef basic_context<
+    std::back_insert_iterator<internal::basic_buffer<Char>>, Char> type;
+};
+typedef buffer_context<char>::type context;
+typedef buffer_context<wchar_t>::type wcontext;
 
 namespace internal {
 template <typename Context, typename T>

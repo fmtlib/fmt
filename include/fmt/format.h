@@ -2919,8 +2919,8 @@ inline void format_decimal(char *&buffer, T value) {
 template <typename T, typename Char>
 struct formatter<
     T, Char,
-    typename std::enable_if<
-      internal::format_type<buffer_context_t<Char>, T>::value>::type> {
+    typename std::enable_if<internal::format_type<
+        typename buffer_context<Char>::type, T>::value>::type> {
 
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.
@@ -2928,7 +2928,8 @@ struct formatter<
   FMT_CONSTEXPR typename ParseContext::iterator parse(ParseContext &ctx) {
     auto it = internal::null_terminating_iterator<Char>(ctx);
     typedef internal::dynamic_specs_handler<ParseContext> handler_type;
-    auto type = internal::get_type<buffer_context_t<Char>, T>::value;
+    auto type = internal::get_type<
+      typename buffer_context<Char>::type, T>::value;
     internal::specs_checker<handler_type>
         handler(handler_type(specs_, ctx), type);
     it = parse_format_specs(it, handler);
@@ -3283,14 +3284,18 @@ inline void format_to(wmemory_buffer &buf, wstring_view format_str,
 }
 
 template <typename OutputIt, typename Char = char>
-using context_t = basic_context<OutputIt, Char>;
+//using context_t = basic_context<OutputIt, Char>;
+struct context_t { typedef basic_context<OutputIt, Char> type; };
 
 template <typename OutputIt, typename Char = char>
-using format_args_t = basic_format_args<context_t<OutputIt, Char>>;
+//using format_args_t = basic_format_args<context_t<OutputIt, Char>>;
+struct format_args_t {
+  typedef basic_format_args<typename context_t<OutputIt, Char>::type> type;
+};
 
 template <typename OutputIt, typename... Args>
 inline OutputIt vformat_to(OutputIt out, string_view format_str,
-                           format_args_t<OutputIt> args) {
+                           typename format_args_t<OutputIt>::type args) {
   typedef output_range<OutputIt, char> range;
   return do_vformat_to<arg_formatter<range>>(range(out), format_str, args);
 }
@@ -3298,7 +3303,8 @@ inline OutputIt vformat_to(OutputIt out, string_view format_str,
 template <typename OutputIt, typename... Args>
 inline OutputIt format_to(OutputIt out, string_view format_str,
                           const Args & ... args) {
-  return vformat_to(out, format_str, *make_args<context_t<OutputIt>>(args...));
+  return vformat_to(out, format_str,
+      *make_args<typename context_t<OutputIt>::type>(args...));
 }
 
 template <typename Container, typename... Args>

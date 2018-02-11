@@ -81,7 +81,7 @@ struct formatter<Test, Char> {
     return ctx.begin();
   }
 
-  using iterator = std::back_insert_iterator<basic_buffer<Char>>;
+  typedef std::back_insert_iterator<basic_buffer<Char>> iterator;
 
   auto format(Test, basic_context<iterator, char> &ctx)
       -> decltype(ctx.begin()) {
@@ -436,7 +436,7 @@ TEST(UtilTest, FormatArgs) {
 }
 
 struct custom_context {
-  using char_type = char;
+  typedef char char_type;
 
   template <typename T>
   struct formatter_type {
@@ -525,7 +525,7 @@ VISIT_TYPE(float, double);
 #define CHECK_ARG_(Char, expected, value) { \
   testing::StrictMock<MockVisitor<decltype(expected)>> visitor; \
   EXPECT_CALL(visitor, visit(expected)); \
-  using iterator = std::back_insert_iterator<basic_buffer<Char>>; \
+  typedef std::back_insert_iterator<basic_buffer<Char>> iterator; \
   fmt::visit(visitor, make_arg<fmt::basic_context<iterator, Char>>(value)); \
 }
 
@@ -599,8 +599,8 @@ TEST(UtilTest, PointerArg) {
 
 TEST(UtilTest, CustomArg) {
   ::Test test;
-  using handle = typename fmt::basic_arg<fmt::context>::handle;
-  using visitor = MockVisitor<handle>;
+  typedef typename fmt::basic_arg<fmt::context>::handle handle;
+  typedef MockVisitor<handle> visitor;
   testing::StrictMock<visitor> v;
   EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke([&](handle h) {
     fmt::memory_buffer buffer;

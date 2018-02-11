@@ -73,7 +73,7 @@ struct make_unsigned_or_bool : std::make_unsigned<T> {};
 
 template <>
 struct make_unsigned_or_bool<bool> {
-  using type = bool;
+  typedef bool type;
 };
 
 template <typename T, typename Context>
@@ -215,10 +215,10 @@ class basic_printf_context;
 template <typename Range>
 class printf_arg_formatter : public internal::arg_formatter_base<Range> {
  private:
-  using char_type = typename Range::value_type;
-  using iterator = decltype(std::declval<Range>().begin());
-  using base = internal::arg_formatter_base<Range>;
-  using context_type = basic_printf_context<iterator, char_type>;
+  typedef typename Range::value_type char_type;
+  typedef decltype(std::declval<Range>().begin()) iterator;
+  typedef internal::arg_formatter_base<Range> base;
+  typedef basic_printf_context<iterator, char_type> context_type;
 
   context_type &context_;
 
@@ -228,7 +228,7 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
   }
 
  public:
-  using format_specs = typename base::format_specs;
+  typedef typename base::format_specs format_specs;
 
   /**
     \rst
@@ -306,16 +306,16 @@ class basic_printf_context :
     OutputIt, basic_printf_context<OutputIt, Char, ArgFormatter>, Char> {
  public:
   /** The character type for the output. */
-  using char_type = Char;
+  typedef Char char_type;
 
   template <typename T>
   struct formatter_type { typedef printf_formatter<T> type; };
 
  private:
-  using base = internal::context_base<OutputIt, basic_printf_context, Char>;
-  using format_arg = typename base::format_arg;
-  using format_specs = basic_format_specs<char_type>;
-  using iterator = internal::null_terminating_iterator<char_type>;
+  typedef internal::context_base<OutputIt, basic_printf_context, Char> base;
+  typedef typename base::format_arg format_arg;
+  typedef basic_format_specs<char_type> format_specs;
+  typedef internal::null_terminating_iterator<char_type> iterator;
 
   void parse_flags(format_specs &spec, iterator &it);
 
@@ -534,10 +534,13 @@ void printf(internal::basic_buffer<Char> &buf, basic_string_view<Char> format,
 }
 
 template <typename Buffer>
-using printf_context = basic_printf_context<
-  std::back_insert_iterator<Buffer>, typename Buffer::value_type>;
+struct printf_context {
+  typedef basic_printf_context<
+    std::back_insert_iterator<Buffer>, typename Buffer::value_type> type;
+};
 
-using printf_args = basic_format_args<printf_context<internal::buffer>>;
+typedef basic_format_args<
+  typename printf_context<internal::buffer>::type> printf_args;
 
 inline std::string vsprintf(string_view format, printf_args args) {
   memory_buffer buffer;
@@ -557,12 +560,12 @@ inline std::string vsprintf(string_view format, printf_args args) {
 template <typename... Args>
 inline std::string sprintf(string_view format_str, const Args & ... args) {
   return vsprintf(format_str,
-                  make_args<printf_context<internal::buffer>>(args...));
+    make_args<typename printf_context<internal::buffer>::type>(args...));
 }
 
 inline std::wstring vsprintf(
     wstring_view format,
-    basic_format_args<printf_context<internal::wbuffer>> args) {
+    basic_format_args<typename printf_context<internal::wbuffer>::type> args) {
   wmemory_buffer buffer;
   printf(buffer, format, args);
   return to_string(buffer);
@@ -570,7 +573,8 @@ inline std::wstring vsprintf(
 
 template <typename... Args>
 inline std::wstring sprintf(wstring_view format_str, const Args & ... args) {
-  auto vargs = make_args<printf_context<internal::wbuffer>>(args...);
+  auto vargs = make_args<
+    typename printf_context<internal::wbuffer>::type>(args...);
   return vsprintf(format_str, vargs);
 }
 
@@ -593,7 +597,8 @@ inline int vfprintf(std::FILE *f, string_view format, printf_args args) {
  */
 template <typename... Args>
 inline int fprintf(std::FILE *f, string_view format_str, const Args & ... args) {
-  auto vargs = make_args<printf_context<internal::buffer>>(args...);
+  auto vargs = make_args<
+    typename printf_context<internal::buffer>::type>(args...);
   return vfprintf(f, format_str, vargs);
 }
 
@@ -613,7 +618,7 @@ inline int vprintf(string_view format, printf_args args) {
 template <typename... Args>
 inline int printf(string_view format_str, const Args & ... args) {
   return vprintf(format_str,
-                 make_args<printf_context<internal::buffer>>(args...));
+    make_args<typename printf_context<internal::buffer>::type>(args...));
 }
 
 inline int vfprintf(std::ostream &os, string_view format_str,
@@ -636,7 +641,8 @@ inline int vfprintf(std::ostream &os, string_view format_str,
 template <typename... Args>
 inline int fprintf(std::ostream &os, string_view format_str,
                    const Args & ... args) {
-  auto vargs = make_args<printf_context<internal::buffer>>(args...);
+  auto vargs = make_args<
+    typename printf_context<internal::buffer>::type>(args...);
   return vfprintf(os, format_str, vargs);
 }
 }  // namespace fmt
