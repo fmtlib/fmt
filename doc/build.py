@@ -62,8 +62,8 @@ def create_build_env(dirname='virtualenv'):
 def build_docs(version='dev', **kwargs):
   doc_dir = kwargs.get('doc_dir', os.path.dirname(os.path.realpath(__file__)))
   work_dir = kwargs.get('work_dir', '.')
-  include_dir = kwargs.get('include_dir',
-                           os.path.join(os.path.dirname(doc_dir), 'fmt'))
+  include_dir = kwargs.get(
+      'include_dir', os.path.join(os.path.dirname(doc_dir), 'include', 'fmt'))
   # Build docs.
   cmd = ['doxygen', '-']
   p = Popen(cmd, stdin=PIPE)
@@ -74,8 +74,8 @@ def build_docs(version='dev', **kwargs):
       GENERATE_MAN      = NO
       GENERATE_RTF      = NO
       CASE_SENSE_NAMES  = NO
-      INPUT             = {0}/container.h {0}/format.h {0}/ostream.h \
-                          {0}/printf.h {0}/string.h
+      INPUT             = {0}/core.h {0}/format.h {0}/ostream.h \
+                          {0}/printf.h {0}/time.h
       QUIET             = YES
       JAVADOC_AUTOBRIEF = YES
       AUTOLINK_SUPPORT  = NO
