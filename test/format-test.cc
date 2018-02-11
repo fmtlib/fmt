@@ -1508,7 +1508,7 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-#if FMT_USE_STRONG_ENUMS
+#if FMT_HAS_FEATURE(cxx_strong_enums)
 enum TestFixedEnum : short { B };
 
 TEST(FormatTest, FixedEnum) {

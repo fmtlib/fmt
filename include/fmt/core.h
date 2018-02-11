@@ -24,7 +24,7 @@
 # define FMT_HAS_FEATURE(x) 0
 #endif
 
-#if defined(__has_include)
+#ifdef __has_include
 # define FMT_HAS_INCLUDE(x) __has_include(x)
 #else
 # define FMT_HAS_INCLUDE(x) 0
@@ -36,7 +36,7 @@
 # define FMT_GCC_VERSION 0
 #endif
 
-#if __cplusplus >= 201103L || defined __GXX_EXPERIMENTAL_CXX0X__
+#if __cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__)
 # define FMT_HAS_GXX_CXX11 FMT_GCC_VERSION
 #else
 # define FMT_HAS_GXX_CXX11 0
@@ -81,8 +81,6 @@
 #  define FMT_NULL NULL
 # endif
 #endif
-
-#define FMT_USE_STRONG_ENUMS FMT_HAS_FEATURE(cxx_strong_enums)
 
 // Check if exceptions are disabled.
 #if defined(__GNUC__) && !defined(__EXCEPTIONS)
