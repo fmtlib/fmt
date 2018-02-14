@@ -382,7 +382,7 @@ class basic_memory_buffer: private Allocator, public internal::basic_buffer<T> {
   }
 
  protected:
-  void grow(std::size_t size);
+  void grow(std::size_t size) FMT_OVERRIDE;
 
  public:
   explicit basic_memory_buffer(const Allocator &alloc = Allocator())
@@ -494,7 +494,7 @@ class basic_fixed_buffer : public internal::basic_buffer<Char> {
   }
 
  protected:
-  FMT_API void grow(std::size_t size);
+  FMT_API void grow(std::size_t size) FMT_OVERRIDE;
 };
 
 namespace internal {
@@ -567,7 +567,7 @@ template <typename Char>
 class null_terminating_iterator;
 
 template <typename Char>
-FMT_CONSTEXPR const Char *pointer_from(null_terminating_iterator<Char> it);
+FMT_CONSTEXPR_DECL const Char *pointer_from(null_terminating_iterator<Char> it);
 
 // An iterator that produces a null terminator on *end. This simplifies parsing
 // and allows comparing the performance of processing a null-terminated string
@@ -642,7 +642,13 @@ class null_terminating_iterator {
     return ptr_ >= other.ptr_;
   }
 
+  // 'fmt::internal::pointer_from': the inline specifier cannot be used
+  // when a friend declaration refers to a specialization of a function
+
+  // pointer_from is defined with the inline specifier, but declared without,
+  // so this looks like a bug in the compiler.
   friend FMT_CONSTEXPR_DECL const Char *pointer_from<Char>(
+# pragma warning(suppress: 4396)
       null_terminating_iterator it);
 
  private:
@@ -1360,7 +1366,7 @@ class arg_formatter_base {
   }
 
   void write(const char_type *value) {
-    auto length = value != 0 ? std::char_traits<char_type>::length(value) : 0;
+    auto length = value != FMT_NULL ? std::char_traits<char_type>::length(value) : 0;
     writer_.write_str(basic_string_view<char_type>(value, length), specs_);
   }
 
@@ -2220,7 +2226,7 @@ class basic_writer {
   struct padded_int_writer {
     string_view prefix;
     wchar_t fill;
-    unsigned padding;
+    std::size_t padding;
     F f;
 
     template <typename It>
@@ -2238,9 +2244,9 @@ class basic_writer {
   template <typename Spec, typename F>
   void write_int(unsigned num_digits, string_view prefix,
                  const Spec &spec, F f) {
-    unsigned size = prefix.size() + num_digits;
+    std::size_t size = prefix.size() + num_digits;
     auto fill = spec.fill();
-    unsigned padding = 0;
+    std::size_t padding = 0;
     if (spec.align() == ALIGN_NUMERIC) {
       if (spec.width() > size) {
         padding = spec.width() - size;
