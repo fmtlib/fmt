@@ -147,9 +147,10 @@
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 # include <string_view>
 namespace fmt { using std::basic_string_view; }
-// std::experimental::basic_string_view::remove_prefix isn't constexpr in gcc 6.
+// std::experimental::basic_string_view::remove_prefix isn't constexpr until
+// gcc 7.3.
 #elif (FMT_HAS_INCLUDE(<experimental/string_view>) && \
-       (FMT_GCC_VERSION == 0 || FMT_GCC_VERSION >= 700) && \
+       (FMT_GCC_VERSION == 0 || FMT_GCC_VERSION >= 730) && \
        __cplusplus >= 201402L)
 # include <experimental/string_view>
 namespace fmt { using std::experimental::basic_string_view; }
@@ -1065,8 +1066,8 @@ inline internal::named_arg<T, wchar_t> arg(wstring_view name, const T &arg) {
 
 // This function template is deleted intentionally to disable nested named
 // arguments as in ``format("{}", arg("a", arg("b", 42)))``.
-template <typename S, typename... T>
-void arg(S, internal::named_arg<T...>) FMT_DELETED;
+template <typename S, typename T, typename Char>
+void arg(S, internal::named_arg<T, Char>) FMT_DELETED;
 
 enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
