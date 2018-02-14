@@ -346,7 +346,7 @@ class container_buffer : public basic_buffer<typename Container::value_type> {
   Container &container_;
 
  protected:
-  virtual void grow(std::size_t capacity) {
+  void grow(std::size_t capacity) FMT_OVERRIDE {
     container_.resize(capacity);
     this->set(&container_[0], capacity);
   }
@@ -801,10 +801,10 @@ class context_base {
 // Extracts a reference to the container from back_insert_iterator.
 template <typename Container>
 inline Container &get_container(std::back_insert_iterator<Container> it) {
-  typedef std::back_insert_iterator<Container> iterator;
-  struct accessor: iterator {
-    accessor(iterator it) : iterator(it) {}
-    using iterator::container;
+  typedef std::back_insert_iterator<Container> bi_iterator;
+  struct accessor: bi_iterator {
+    accessor(bi_iterator it) : bi_iterator(it) {}
+    using bi_iterator::container;
   };
   return *accessor(it).container;
 }
@@ -865,11 +865,8 @@ typedef buffer_context<wchar_t>::type wcontext;
 namespace internal {
 template <typename Context, typename T>
 class get_type {
- private:
-  static const T& val();
-
  public:
-  typedef decltype(make_value<Context>(val())) value_type;
+  typedef decltype(make_value<Context>(std::declval<typename std::decay<T>::type&>())) value_type;
   static const type value = value_type::type_tag;
 };
 
