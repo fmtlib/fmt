@@ -3199,10 +3199,10 @@ template <typename It, typename Char>
 struct formatter<arg_join<It, Char>, Char>:
     formatter<typename std::iterator_traits<It>::value_type, Char> {
   template <typename FormatContext>
-  auto format(const arg_join<It, Char> &value, FormatContext &ctx) {
+  auto format(const arg_join<It, Char> &value, FormatContext &ctx) -> decltype(ctx.begin()) {
     typedef formatter<typename std::iterator_traits<It>::value_type, Char> base;
     auto it = value.begin;
-    auto out = ctx.begin(); 
+    auto out = ctx.begin();
     if (it != value.end) {
       out = base::format(*it++, ctx);
       while (it != value.end) {
