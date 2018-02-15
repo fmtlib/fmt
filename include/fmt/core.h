@@ -172,7 +172,7 @@ class basic_string_view {
   typedef Char char_type;
   typedef const Char *iterator;
 
-  FMT_CONSTEXPR basic_string_view() FMT_NOEXCEPT : data_(0), size_(0) {}
+  FMT_CONSTEXPR basic_string_view() FMT_NOEXCEPT : data_(FMT_NULL), size_(0) {}
 
   /** Constructs a string reference object from a C string and a size. */
   FMT_CONSTEXPR basic_string_view(const Char *s, size_t size) FMT_NOEXCEPT
