@@ -134,7 +134,7 @@ class BufferedFile {
 
  public:
   // Constructs a BufferedFile object which doesn't represent any file.
-  BufferedFile() FMT_NOEXCEPT : file_(0) {}
+  BufferedFile() FMT_NOEXCEPT : file_(FMT_NULL) {}
 
   // Destroys the object closing the file it represents if any.
   FMT_API ~BufferedFile() FMT_DTOR_NOEXCEPT;
