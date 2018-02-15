@@ -904,7 +904,7 @@ inline Char *format_decimal(Char *buffer, UInt value, unsigned num_digits,
 
 template <typename UInt, typename Iterator, typename ThousandsSep>
 inline Iterator format_decimal(
-    Iterator out, UInt value, unsigned num_digits, ThousandsSep thousands_sep) {
+    Iterator out, UInt value, unsigned num_digits, ThousandsSep) {
   // Buffer should be large enough to hold all digits (digits10 + 1) and null.
   char buffer[std::numeric_limits<UInt>::digits10 + 2];
   format_decimal(buffer, value, num_digits, no_thousands_sep());
