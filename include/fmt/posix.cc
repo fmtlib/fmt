@@ -180,8 +180,8 @@ void fmt::File::dup2(int fd) {
   int result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(dup2(fd_, fd)));
   if (result == -1) {
-    throw system_error(errno,
-      "cannot duplicate file descriptor {} to {}", fd_, fd);
+    FMT_THROW(system_error(errno,
+      "cannot duplicate file descriptor {} to {}", fd_, fd));
   }
 }
 
