@@ -1627,7 +1627,7 @@ class specs_checker : public Handler {
   FMT_CONSTEXPR void check_sign() {
     require_numeric_argument();
     if (is_integral(arg_type_) && arg_type_ != int_type &&
-        arg_type_ != long_long_type && arg_type_ != char_type) {
+        arg_type_ != long_long_type && arg_type_ != internal::char_type) {
       this->on_error("format specifier requires signed argument");
     }
   }
