@@ -1811,7 +1811,7 @@ TEST(FormatTest, ConstexprDynamicSpecsHandler) {
 
 FMT_CONSTEXPR test_format_specs_handler check_specs(const char *s) {
   fmt::internal::specs_checker<test_format_specs_handler>
-      checker(test_format_specs_handler(), fmt::internal::DOUBLE);
+      checker(test_format_specs_handler(), fmt::internal::double_type);
   parse_format_specs(s, checker);
   return checker;
 }

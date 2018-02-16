@@ -1006,35 +1006,35 @@ FMT_CONSTEXPR typename std::result_of<Visitor(int)>::type
     visit(Visitor &&vis, basic_arg<Context> arg) {
   typedef typename Context::char_type char_type;
   switch (arg.type_) {
-  case internal::NONE:
+  case internal::none_type:
     return vis(monostate());
-  case internal::NAMED_ARG:
+  case internal::name_arg_type:
     FMT_ASSERT(false, "invalid argument type");
     break;
-  case internal::INT:
+  case internal::int_type:
     return vis(arg.value_.int_value);
-  case internal::UINT:
+  case internal::uint_type:
     return vis(arg.value_.uint_value);
-  case internal::LONG_LONG:
+  case internal::long_long_type:
     return vis(arg.value_.long_long_value);
-  case internal::ULONG_LONG:
+  case internal::ulong_long_type:
     return vis(arg.value_.ulong_long_value);
-  case internal::BOOL:
+  case internal::bool_type:
     return vis(arg.value_.int_value != 0);
-  case internal::CHAR:
+  case internal::char_type:
     return vis(static_cast<char_type>(arg.value_.int_value));
-  case internal::DOUBLE:
+  case internal::double_type:
     return vis(arg.value_.double_value);
-  case internal::LONG_DOUBLE:
+  case internal::long_double_type:
     return vis(arg.value_.long_double_value);
-  case internal::CSTRING:
+  case internal::cstring_type:
     return vis(arg.value_.string.value);
-  case internal::STRING:
+  case internal::string_type:
     return vis(basic_string_view<char_type>(
                  arg.value_.string.value, arg.value_.string.size));
-  case internal::POINTER:
+  case internal::pointer_type:
     return vis(arg.value_.pointer);
-  case internal::CUSTOM:
+  case internal::custom_type:
     return vis(typename basic_arg<Context>::handle(arg.value_.custom));
   }
   return typename std::result_of<Visitor(int)>::type();
@@ -1293,14 +1293,14 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
   if (map_)
     return;
   map_ = new entry[args.max_size()];
-  bool use_values = args.type(MAX_PACKED_ARGS - 1) == internal::NONE;
+  bool use_values = args.type(MAX_PACKED_ARGS - 1) == internal::none_type;
   if (use_values) {
     for (unsigned i = 0;/*nothing*/; ++i) {
       internal::type arg_type = args.type(i);
       switch (arg_type) {
-        case internal::NONE:
+        case internal::none_type:
           return;
-        case internal::NAMED_ARG:
+        case internal::name_arg_type:
           push_back(args.values_[i]);
           break;
         default:
@@ -1310,14 +1310,14 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
     return;
   }
   for (unsigned i = 0; i != MAX_PACKED_ARGS; ++i) {
-    if (args.type(i) == internal::NAMED_ARG)
+    if (args.type(i) == internal::name_arg_type)
       push_back(args.args_[i].value_);
   }
   for (unsigned i = MAX_PACKED_ARGS; ; ++i) {
     switch (args.args_[i].type_) {
-      case internal::NONE:
+      case internal::none_type:
         return;
-      case internal::NAMED_ARG:
+      case internal::name_arg_type:
         push_back(args.args_[i].value_);
         break;
       default:
@@ -1614,7 +1614,7 @@ class specs_checker : public Handler {
   }
 
   FMT_CONSTEXPR void end_precision() {
-    if (is_integral(arg_type_) || arg_type_ == POINTER)
+    if (is_integral(arg_type_) || arg_type_ == pointer_type)
       this->on_error("precision not allowed for this argument type");
   }
 
@@ -1626,8 +1626,8 @@ class specs_checker : public Handler {
 
   FMT_CONSTEXPR void check_sign() {
     require_numeric_argument();
-    if (is_integral(arg_type_) && arg_type_ != INT && arg_type_ != LONG_LONG &&
-        arg_type_ != CHAR) {
+    if (is_integral(arg_type_) && arg_type_ != int_type &&
+        arg_type_ != long_long_type && arg_type_ != char_type) {
       this->on_error("format specifier requires signed argument");
     }
   }
@@ -2062,7 +2062,7 @@ FMT_CONSTEXPR bool check_format_string(
 // because of a bug in MSVC.
 template <typename Context, typename T>
 struct format_type :
-  std::integral_constant<bool, get_type<Context, T>::value != CUSTOM> {};
+  std::integral_constant<bool, get_type<Context, T>::value != custom_type> {};
 
 // Specifies whether to format enums.
 template <typename T, typename Enable = void>
@@ -2942,38 +2942,38 @@ struct formatter<
     auto type_spec = specs_.type();
     auto eh = ctx.error_handler();
     switch (type) {
-    case internal::NONE:
-    case internal::NAMED_ARG:
+    case internal::none_type:
+    case internal::name_arg_type:
       FMT_ASSERT(false, "invalid argument type");
       break;
-    case internal::INT:
-    case internal::UINT:
-    case internal::LONG_LONG:
-    case internal::ULONG_LONG:
-    case internal::BOOL:
+    case internal::int_type:
+    case internal::uint_type:
+    case internal::long_long_type:
+    case internal::ulong_long_type:
+    case internal::bool_type:
       handle_int_type_spec(
             type_spec, internal::int_type_checker<decltype(eh)>(eh));
       break;
-    case internal::CHAR:
+    case internal::char_type:
       handle_char_specs(specs_, internal::char_specs_checker<decltype(eh)>(
                           type_spec, eh));
       break;
-    case internal::DOUBLE:
-    case internal::LONG_DOUBLE:
+    case internal::double_type:
+    case internal::long_double_type:
       handle_float_type_spec(
             type_spec, internal::float_type_checker<decltype(eh)>(eh));
       break;
-    case internal::CSTRING:
+    case internal::cstring_type:
       internal::handle_cstring_type_spec(
             type_spec, internal::cstring_type_checker<decltype(eh)>(eh));
       break;
-    case internal::STRING:
+    case internal::string_type:
       internal::check_string_type_spec(type_spec, eh);
       break;
-    case internal::POINTER:
+    case internal::pointer_type:
       internal::check_pointer_type_spec(type_spec, eh);
       break;
-    case internal::CUSTOM:
+    case internal::custom_type:
       // Custom format specifiers should be checked in parse functions of
       // formatter specializations.
       break;
@@ -3080,7 +3080,7 @@ typename basic_context<Range, Char>::format_arg
   basic_context<Range, Char>::get_arg(basic_string_view<char_type> name) {
   map_.init(this->args());
   format_arg arg = map_.find(name);
-  if (arg.type() == internal::NONE)
+  if (arg.type() == internal::none_type)
     this->on_error("argument not found");
   return arg;
 }

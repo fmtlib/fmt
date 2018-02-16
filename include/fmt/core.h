@@ -394,22 +394,23 @@ template <typename T, typename Char>
 struct is_named_arg<named_arg<T, Char>> : std::true_type {};
 
 enum type {
-  NONE, NAMED_ARG,
+  none_type, name_arg_type,
   // Integer types should go first,
-  INT, UINT, LONG_LONG, ULONG_LONG, BOOL, CHAR, LAST_INTEGER_TYPE = CHAR,
+  int_type, uint_type, long_long_type, ulong_long_type, bool_type, char_type,
+  last_integer_type = char_type,
   // followed by floating-point types.
-  DOUBLE, LONG_DOUBLE, LAST_NUMERIC_TYPE = LONG_DOUBLE,
-  CSTRING, STRING, POINTER, CUSTOM
+  double_type, long_double_type, last_numeric_type = long_double_type,
+  cstring_type, string_type, pointer_type, custom_type
 };
 
 FMT_CONSTEXPR bool is_integral(type t) {
-  FMT_ASSERT(t != internal::NAMED_ARG, "invalid argument type");
-  return t > internal::NONE && t <= internal::LAST_INTEGER_TYPE;
+  FMT_ASSERT(t != internal::name_arg_type, "invalid argument type");
+  return t > internal::none_type && t <= internal::last_integer_type;
 }
 
 FMT_CONSTEXPR bool is_arithmetic(type t) {
-  FMT_ASSERT(t != internal::NAMED_ARG, "invalid argument type");
-  return t > internal::NONE && t <= internal::LAST_NUMERIC_TYPE;
+  FMT_ASSERT(t != internal::name_arg_type, "invalid argument type");
+  return t > internal::none_type && t <= internal::last_numeric_type;
 }
 
 template <typename T, bool ENABLE = true>
@@ -519,61 +520,63 @@ template <typename Context, typename T>
 FMT_CONSTEXPR basic_arg<Context> make_arg(const T &value);
 
 #define FMT_MAKE_VALUE(TAG, ArgType, ValueType) \
-  template <typename C, typename char_type = typename C::char_type> \
+  template <typename C, typename Char = typename C::char_type> \
   FMT_CONSTEXPR typed_value<C, TAG> make_value(ArgType val) { \
     return static_cast<ValueType>(val); \
   }
 
-FMT_MAKE_VALUE(BOOL, bool, int)
-FMT_MAKE_VALUE(INT, short, int)
-FMT_MAKE_VALUE(UINT, unsigned short, unsigned)
-FMT_MAKE_VALUE(INT, int, int)
-FMT_MAKE_VALUE(UINT, unsigned, unsigned)
+FMT_MAKE_VALUE(bool_type, bool, int)
+FMT_MAKE_VALUE(int_type, short, int)
+FMT_MAKE_VALUE(uint_type, unsigned short, unsigned)
+FMT_MAKE_VALUE(int_type, int, int)
+FMT_MAKE_VALUE(uint_type, unsigned, unsigned)
 
 // To minimize the number of types we need to deal with, long is translated
 // either to int or to long long depending on its size.
 typedef std::conditional<sizeof(long) == sizeof(int), int, long long>::type
         long_type;
-FMT_MAKE_VALUE((sizeof(long) == sizeof(int) ? INT : LONG_LONG), long, long_type)
+FMT_MAKE_VALUE(
+    (sizeof(long) == sizeof(int) ? int_type : long_long_type), long, long_type)
 typedef std::conditional<sizeof(unsigned long) == sizeof(unsigned),
                          unsigned, unsigned long long>::type ulong_type;
-FMT_MAKE_VALUE((sizeof(unsigned long) == sizeof(unsigned) ? UINT : ULONG_LONG),
+FMT_MAKE_VALUE(
+    (sizeof(unsigned long) == sizeof(unsigned) ? uint_type : ulong_long_type),
     unsigned long, ulong_type)
 
-FMT_MAKE_VALUE(LONG_LONG, long long, long long)
-FMT_MAKE_VALUE(ULONG_LONG, unsigned long long, unsigned long long)
-FMT_MAKE_VALUE(INT, signed char, int)
-FMT_MAKE_VALUE(UINT, unsigned char, unsigned)
-FMT_MAKE_VALUE(CHAR, char, int)
+FMT_MAKE_VALUE(long_long_type, long long, long long)
+FMT_MAKE_VALUE(ulong_long_type, unsigned long long, unsigned long long)
+FMT_MAKE_VALUE(int_type, signed char, int)
+FMT_MAKE_VALUE(uint_type, unsigned char, unsigned)
+FMT_MAKE_VALUE(char_type, char, int)
 
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
 template <typename C>
-inline typed_value<C, CHAR> make_value(wchar_t val) {
+inline typed_value<C, char_type> make_value(wchar_t val) {
   require_wchar<typename C::char_type>();
   return static_cast<int>(val);
 }
 #endif
 
-FMT_MAKE_VALUE(DOUBLE, float, double)
-FMT_MAKE_VALUE(DOUBLE, double, double)
-FMT_MAKE_VALUE(LONG_DOUBLE, long double, long double)
+FMT_MAKE_VALUE(double_type, float, double)
+FMT_MAKE_VALUE(double_type, double, double)
+FMT_MAKE_VALUE(long_double_type, long double, long double)
 
 // Formatting of wide strings into a narrow buffer and multibyte strings
 // into a wide buffer is disallowed (https://github.com/fmtlib/fmt/pull/606).
-FMT_MAKE_VALUE(CSTRING, char_type*, const char_type*)
-FMT_MAKE_VALUE(CSTRING, const char_type*, const char_type*)
+FMT_MAKE_VALUE(cstring_type, Char*, const Char*)
+FMT_MAKE_VALUE(cstring_type, const Char*, const Char*)
 
-FMT_MAKE_VALUE(CSTRING, signed char*, const signed char*)
-FMT_MAKE_VALUE(CSTRING, const signed char*, const signed char*)
-FMT_MAKE_VALUE(CSTRING, unsigned char*, const unsigned char*)
-FMT_MAKE_VALUE(CSTRING, const unsigned char*, const unsigned char*)
-FMT_MAKE_VALUE(STRING, basic_string_view<char_type>,
-               basic_string_view<char_type>)
-FMT_MAKE_VALUE(STRING, const std::basic_string<char_type>&,
-               basic_string_view<char_type>)
-FMT_MAKE_VALUE(POINTER, void*, const void*)
-FMT_MAKE_VALUE(POINTER, const void*, const void*)
-FMT_MAKE_VALUE(POINTER, std::nullptr_t, const void*)
+FMT_MAKE_VALUE(cstring_type, signed char*, const signed char*)
+FMT_MAKE_VALUE(cstring_type, const signed char*, const signed char*)
+FMT_MAKE_VALUE(cstring_type, unsigned char*, const unsigned char*)
+FMT_MAKE_VALUE(cstring_type, const unsigned char*, const unsigned char*)
+FMT_MAKE_VALUE(string_type, basic_string_view<Char>,
+               basic_string_view<Char>)
+FMT_MAKE_VALUE(string_type, const std::basic_string<Char>&,
+               basic_string_view<Char>)
+FMT_MAKE_VALUE(pointer_type, void*, const void*)
+FMT_MAKE_VALUE(pointer_type, const void*, const void*)
+FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
 
 // Formatting of arbitrary pointers is disallowed. If you want to output a
 // pointer cast it to "void *" or "const void *". In particular, this forbids
@@ -587,16 +590,16 @@ void make_value(const T *p) {
 template <typename C, typename T>
 inline typename std::enable_if<
     convert_to_int<T>::value && std::is_enum<T>::value,
-    typed_value<C, INT>>::type
+    typed_value<C, int_type>>::type
   make_value(const T &val) { return static_cast<int>(val); }
 
 template <typename C, typename T>
 inline typename std::enable_if<
-    !convert_to_int<T>::value, typed_value<C, CUSTOM>>::type
+    !convert_to_int<T>::value, typed_value<C, custom_type>>::type
   make_value(const T &val) { return val; }
 
 template <typename C, typename T>
-typed_value<C, NAMED_ARG>
+typed_value<C, name_arg_type>
     make_value(const named_arg<T, typename C::char_type> &val) {
   basic_arg<C> arg = make_arg<C>(val.value);
   std::memcpy(val.data, &arg, sizeof(arg));
@@ -641,17 +644,17 @@ class basic_arg {
     internal::custom_value<Context> custom_;
   };
 
-  FMT_CONSTEXPR basic_arg() : type_(internal::NONE) {}
+  FMT_CONSTEXPR basic_arg() : type_(internal::none_type) {}
 
   explicit operator bool() const FMT_NOEXCEPT {
-    return type_ != internal::NONE;
+    return type_ != internal::none_type;
   }
 
   internal::type type() const { return type_; }
 
   bool is_integral() const { return internal::is_integral(type_); }
   bool is_arithmetic() const { return internal::is_arithmetic(type_); }
-  bool is_pointer() const { return type_ == internal::POINTER; }
+  bool is_pointer() const { return type_ == internal::pointer_type; }
 };
 
 // Parsing context consisting of a format string range being parsed and an
@@ -982,7 +985,7 @@ class basic_format_args {
     if (index > internal::MAX_PACKED_ARGS)
       return arg;
     arg.type_ = type(index);
-    if (arg.type_ == internal::NONE)
+    if (arg.type_ == internal::none_type)
       return arg;
     internal::value<Context> &val = arg.value_;
     val = values_[index];
@@ -1001,7 +1004,7 @@ class basic_format_args {
   /** Returns the argument at specified index. */
   format_arg operator[](size_type index) const {
     format_arg arg = get(index);
-    return arg.type_ == internal::NAMED_ARG ?
+    return arg.type_ == internal::name_arg_type ?
           arg.value_.as_named_arg().template deserialize<Context>() : arg;
   }
 
