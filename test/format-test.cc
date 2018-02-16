@@ -1779,7 +1779,7 @@ struct test_context {
 
 FMT_CONSTEXPR fmt::format_specs parse_specs(const char *s) {
   fmt::format_specs specs;
-  test_context ctx;
+  test_context ctx{};
   fmt::internal::specs_handler<test_context> h(specs, ctx);
   parse_format_specs(s, h);
   return specs;
@@ -1805,7 +1805,7 @@ TEST(FormatTest, ConstexprSpecsHandler) {
 FMT_CONSTEXPR fmt::internal::dynamic_format_specs<char>
     parse_dynamic_specs(const char *s) {
   fmt::internal::dynamic_format_specs<char> specs;
-  test_context ctx;
+  test_context ctx{};
   fmt::internal::dynamic_specs_handler<test_context> h(specs, ctx);
   parse_format_specs(s, h);
   return specs;
