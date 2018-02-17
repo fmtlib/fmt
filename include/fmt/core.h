@@ -570,9 +570,8 @@ FMT_MAKE_VALUE(cstring_type, signed char*, const signed char*)
 FMT_MAKE_VALUE(cstring_type, const signed char*, const signed char*)
 FMT_MAKE_VALUE(cstring_type, unsigned char*, const unsigned char*)
 FMT_MAKE_VALUE(cstring_type, const unsigned char*, const unsigned char*)
-FMT_MAKE_VALUE(string_type, basic_string_view<Char>,
-               basic_string_view<Char>)
-FMT_MAKE_VALUE(string_type, const std::basic_string<Char>&,
+FMT_MAKE_VALUE(string_type, basic_string_view<Char>, basic_string_view<Char>)
+FMT_MAKE_VALUE(string_type, const std::basic_string<typename C::char_type>&,
                basic_string_view<Char>)
 FMT_MAKE_VALUE(pointer_type, void*, const void*)
 FMT_MAKE_VALUE(pointer_type, const void*, const void*)
@@ -593,9 +592,11 @@ inline typename std::enable_if<
     typed_value<C, int_type>>::type
   make_value(const T &val) { return static_cast<int>(val); }
 
-template <typename C, typename T>
-inline typename std::enable_if<!convert_to_int<
-    T, typename C::char_type>::value, typed_value<C, custom_type>>::type
+template <typename C, typename T, typename Char = typename C::char_type>
+inline typename std::enable_if<
+    !convert_to_int<T, Char>::value &&
+    !std::is_convertible<T, std::basic_string<Char>>::value,
+    typed_value<C, custom_type>>::type
   make_value(const T &val) { return val; }
 
 template <typename C, typename T>
