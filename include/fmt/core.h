@@ -413,7 +413,7 @@ FMT_CONSTEXPR bool is_arithmetic(type t) {
   return t > internal::none_type && t <= internal::last_numeric_type;
 }
 
-template <typename T, bool ENABLE = true>
+template <typename T, typename Char, bool ENABLE = true>
 struct convert_to_int {
   enum {
    value = !std::is_arithmetic<T>::value && std::is_convertible<T, int>::value
@@ -421,8 +421,8 @@ struct convert_to_int {
 };
 
 #define FMT_DISABLE_CONVERSION_TO_INT(Type) \
-  template <> \
-  struct convert_to_int<Type> { enum { value = 0 }; }
+  template <typename Char> \
+  struct convert_to_int<Type, Char> { enum { value = 0 }; }
 
 // Silence warnings about convering float to int.
 FMT_DISABLE_CONVERSION_TO_INT(float);
@@ -589,13 +589,13 @@ void make_value(const T *p) {
 
 template <typename C, typename T>
 inline typename std::enable_if<
-    convert_to_int<T>::value && std::is_enum<T>::value,
+    convert_to_int<T, typename C::char_type>::value && std::is_enum<T>::value,
     typed_value<C, int_type>>::type
   make_value(const T &val) { return static_cast<int>(val); }
 
 template <typename C, typename T>
-inline typename std::enable_if<
-    !convert_to_int<T>::value, typed_value<C, custom_type>>::type
+inline typename std::enable_if<!convert_to_int<
+    T, typename C::char_type>::value, typed_value<C, custom_type>>::type
   make_value(const T &val) { return val; }
 
 template <typename C, typename T>

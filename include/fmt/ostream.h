@@ -46,21 +46,22 @@ class FormatBuf : public std::basic_streambuf<Char> {
   }
 };
 
-struct test_stream : std::ostream {
+template <typename Char>
+struct test_stream : std::basic_ostream<Char> {
  private:
   struct null;
-  // Hide all operator<< from std::ostream.
+  // Hide all operator<< from std::basic_ostream<Char>.
   void operator<<(null);
 };
 
 // Disable conversion to int if T has an overloaded operator<< which is a free
 // function (not a member of std::ostream).
-template <typename T>
-class convert_to_int<T, true> {
+template <typename T, typename Char>
+class convert_to_int<T, Char, true> {
  private:
   template <typename U>
   static decltype(
-    std::declval<test_stream&>() << std::declval<U>(), std::true_type())
+    std::declval<test_stream<Char>&>() << std::declval<U>(), std::true_type())
       test(int);
 
   template <typename>

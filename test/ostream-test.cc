@@ -53,7 +53,7 @@ std::ostream &operator<<(std::ostream &os, TestEnum) {
 enum TestEnum2 {A};
 
 TEST(OStreamTest, Enum) {
-  EXPECT_FALSE(fmt::internal::convert_to_int<TestEnum>::value);
+  EXPECT_FALSE((fmt::internal::convert_to_int<TestEnum, char>::value));
   EXPECT_EQ("TestEnum", fmt::format("{}", TestEnum()));
   EXPECT_EQ("0", fmt::format("{}", A));
 }
