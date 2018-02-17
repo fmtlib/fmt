@@ -1609,6 +1609,7 @@ TEST(FormatTest, UdlTemplate) {
 
 TEST(FormatTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
+  EXPECT_EQ("0x1234", fmt::to_string(reinterpret_cast<void*>(0x1234)));
 }
 
 TEST(FormatTest, ToWString) {

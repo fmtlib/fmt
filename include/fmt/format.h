@@ -2553,6 +2553,14 @@ class basic_writer {
   void write(basic_string_view<char_type> str, FormatSpecs... specs) {
     write_str(str, format_specs(specs...));
   }
+
+  template <typename T>
+  typename std::enable_if<std::is_same<T, void>::value>::type write(const T* p) {
+    format_specs specs;
+    specs.flags_ = HASH_FLAG;
+    specs.type_ = 'x';
+    write_int(reinterpret_cast<uintptr_t>(p), specs);
+  }
 };
 
 template <typename Range>
