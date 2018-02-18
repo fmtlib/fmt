@@ -870,7 +870,8 @@ namespace internal {
 template <typename Context, typename T>
 class get_type {
  public:
-  typedef decltype(make_value<Context>(std::declval<typename std::decay<T>::type&>())) value_type;
+  typedef decltype(make_value<Context>(
+        std::declval<typename std::decay<T>::type&>())) value_type;
   static const type value = value_type::type_tag;
 };
 

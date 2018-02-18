@@ -642,13 +642,7 @@ class null_terminating_iterator {
     return ptr_ >= other.ptr_;
   }
 
-  // 'fmt::internal::pointer_from': the inline specifier cannot be used
-  // when a friend declaration refers to a specialization of a function
-
-  // pointer_from is defined with the inline specifier, but declared without,
-  // so this looks like a bug in the compiler.
   friend FMT_CONSTEXPR_DECL const Char *pointer_from<Char>(
-# pragma warning(suppress: 4396)
       null_terminating_iterator it);
 
  private:
