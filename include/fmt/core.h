@@ -588,7 +588,7 @@ void make_value(const T *p) {
 
 template <typename C, typename T>
 inline typename std::enable_if<
-    convert_to_int<T, typename C::char_type>::value && std::is_enum<T>::value,
+    std::is_enum<T>::value && convert_to_int<T, typename C::char_type>::value,
     typed_value<C, int_type>>::type
   make_value(const T &val) { return static_cast<int>(val); }
 
