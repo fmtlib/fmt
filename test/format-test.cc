@@ -1223,6 +1223,14 @@ TEST(FormatterTest, FormatConvertibleToString) {
   EXPECT_EQ("foo", format("{}", ConvertibleToString()));
 }
 
+struct ConvertibleToStringView {
+  operator fmt::string_view() const { return "foo"; }
+};
+
+TEST(FormatterTest, FormatConvertibleToStringView) {
+  EXPECT_EQ("foo", format("{}", ConvertibleToStringView()));
+}
+
 namespace fmt {
 template <>
 struct formatter<Date> {
