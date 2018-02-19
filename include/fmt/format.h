@@ -140,6 +140,10 @@
 # endif
 #endif
 
+#if FMT_HAS_GXX_CXX11 || FMT_MSC_VER >= 1600
+# define FMT_USE_TRAILING_RETURN 1
+#endif
+
 // __builtin_clz is broken in clang with Microsoft CodeGen:
 // https://github.com/fmtlib/fmt/issues/519
 #ifndef _MSC_VER
@@ -3221,7 +3225,7 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
   return arg_join<It, wchar_t>(begin, end, sep);
 }
 
-#if FMT_HAS_GXX_CXX11
+#if FMT_USE_TRAILING_RETURN
 template <typename Range>
 auto join(const Range &range, string_view sep)
     -> arg_join<decltype(std::begin(range)), char> {
