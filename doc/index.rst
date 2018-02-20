@@ -25,7 +25,7 @@ The replacement-based Format API provides a safe alternative to ``printf``,
 ``sprintf`` and friends with comparable or `better performance
 <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 The `format string syntax <syntax.html>`_ is similar to the one used by
-`str.format <http://docs.python.org/2/library/stdtypes.html#str.format>`_
+`str.format <http://docs.python.org/3/library/stdtypes.html#str.format>`_
 in Python:
 
 .. code:: c++
