@@ -1213,6 +1213,12 @@ TEST(FormatterTest, FormatStringView) {
   EXPECT_EQ("test", format("{0}", string_view("test")));
 }
 
+#ifdef FMT_USE_STD_STRING_VIEW
+TEST(FormatterTest, FormatStringView) {
+  EXPECT_EQ("test", format("{0}", std::string_view("test")));
+}
+#endif
+
 struct ConvertibleToString {
   std::string s;
   ConvertibleToString() : s("foo") {}

@@ -146,20 +146,23 @@
 #if (FMT_HAS_INCLUDE(<string_view>) && __cplusplus > 201402L) || \
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 # include <string_view>
-namespace fmt { using std::basic_string_view; }
+# define FMT_USE_STD_STRING_VIEW
 // std::experimental::basic_string_view::remove_prefix isn't constexpr until
 // gcc 7.3.
 #elif (FMT_HAS_INCLUDE(<experimental/string_view>) && \
        (FMT_GCC_VERSION == 0 || FMT_GCC_VERSION >= 730) && \
        __cplusplus >= 201402L)
 # include <experimental/string_view>
-namespace fmt { using std::experimental::basic_string_view; }
-#else
+# define FMT_USE_EXPERIMENTAL_STRING_VIEW
+#endif
+
 namespace fmt {
 /**
   \rst
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
-  subset of the API.
+  subset of the API. fmt::basic_string_view is used for format strings even if
+  std::string_view is available to prevent issues when a library is compiled
+  with different -std option than the client code (which is not recommended).
   \endrst
  */
 template <typename Char>
@@ -171,6 +174,18 @@ class basic_string_view {
  public:
   typedef Char char_type;
   typedef const Char *iterator;
+
+  // Standard basic_string_view type.
+#if defined(FMT_USE_STD_STRING_VIEW)
+  typedef std::basic_string_view<Char> type;
+#elif defined(FMT_USE_EXPERIMENTAL_STRING_VIEW)
+  typedef std::experimental::basic_string_view<Char> type;
+#else
+  struct type {
+    const char *data() const { return FMT_NULL; }
+    size_t size() const { return 0; };
+  };
+#endif
 
   FMT_CONSTEXPR basic_string_view() FMT_NOEXCEPT : data_(FMT_NULL), size_(0) {}
 
@@ -196,6 +211,9 @@ class basic_string_view {
   FMT_CONSTEXPR basic_string_view(
       const std::basic_string<Char, Alloc> &s) FMT_NOEXCEPT
   : data_(s.c_str()), size_(s.size()) {}
+
+  FMT_CONSTEXPR basic_string_view(type s) FMT_NOEXCEPT
+  : data_(s.data()), size_(s.size()) {}
 
   /** Returns a pointer to the string data. */
   const Char *data() const { return data_; }
@@ -239,10 +257,7 @@ class basic_string_view {
     return lhs.compare(rhs) >= 0;
   }
 };
-}  // namespace fmt
-#endif
 
-namespace fmt {
 typedef basic_string_view<char> string_view;
 typedef basic_string_view<wchar_t> wstring_view;
 
@@ -571,6 +586,9 @@ FMT_MAKE_VALUE(cstring_type, const signed char*, const signed char*)
 FMT_MAKE_VALUE(cstring_type, unsigned char*, const unsigned char*)
 FMT_MAKE_VALUE(cstring_type, const unsigned char*, const unsigned char*)
 FMT_MAKE_VALUE(string_type, basic_string_view<typename C::char_type>,
+               basic_string_view<Char>)
+FMT_MAKE_VALUE(string_type,
+               typename basic_string_view<typename C::char_type>::type,
                basic_string_view<Char>)
 FMT_MAKE_VALUE(string_type, const std::basic_string<typename C::char_type>&,
                basic_string_view<Char>)
