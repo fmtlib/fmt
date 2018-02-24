@@ -1929,7 +1929,7 @@ FMT_CONSTEXPR bool test_error(const char *fmt, const char *expected_error) {
 TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("foo", nullptr);
   EXPECT_ERROR("}", "unmatched '}' in format string");
-  //EXPECT_ERROR("{0:s", "unknown format specifier", Date);
+  EXPECT_ERROR("{0:s", "unknown format specifier", Date);
 #ifndef _MSC_VER
   // This causes an internal compiler error in MSVC2017.
   EXPECT_ERROR("{0:=5", "unknown format specifier", int);

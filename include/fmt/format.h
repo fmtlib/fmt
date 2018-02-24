@@ -1992,7 +1992,8 @@ FMT_CONSTEXPR void parse_format_string(Iterator it, Handler &&handler) {
 template <typename T, typename ParseContext>
 FMT_CONSTEXPR const typename ParseContext::char_type *
     parse_format_specs(ParseContext &ctx) {
-  formatter<T, typename ParseContext::char_type> f;
+  // GCC 7.2 requires initializer.
+  formatter<T, typename ParseContext::char_type> f{};
   return f.parse(ctx);
 }
 
