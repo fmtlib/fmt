@@ -71,7 +71,8 @@ fmt::BufferedFile::~BufferedFile() FMT_NOEXCEPT {
 
 fmt::BufferedFile::BufferedFile(
     fmt::cstring_view filename, fmt::cstring_view mode) {
-  FMT_RETRY_VAL(file_, FMT_SYSTEM(fopen(filename.c_str(), mode.c_str())), FMT_NULL);
+  FMT_RETRY_VAL(file_,
+                FMT_SYSTEM(fopen(filename.c_str(), mode.c_str())), FMT_NULL);
   if (!file_)
     FMT_THROW(system_error(errno, "cannot open file {}", filename.c_str()));
 }
