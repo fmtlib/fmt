@@ -683,7 +683,8 @@ class basic_arg {
 template <typename Char, typename ErrorHandler = internal::error_handler>
 class basic_parse_context : private ErrorHandler {
  private:
-  basic_string_view<Char> format_str_;
+  typename basic_string_view<Char>::iterator begin_;
+  typename basic_string_view<Char>::iterator end_;
   int next_arg_id_;
 
  public:
@@ -692,20 +693,21 @@ class basic_parse_context : private ErrorHandler {
 
   explicit FMT_CONSTEXPR basic_parse_context(
       basic_string_view<Char> format_str, ErrorHandler eh = ErrorHandler())
-    : ErrorHandler(eh), format_str_(format_str), next_arg_id_(0) {}
+    : ErrorHandler(eh), begin_(format_str.begin()), end_(format_str.end()),
+      next_arg_id_(0) {}
 
   // Returns an iterator to the beginning of the format string range being
   // parsed.
   FMT_CONSTEXPR iterator begin() const FMT_NOEXCEPT {
-    return format_str_.begin();
+    return begin_;
   }
 
   // Returns an iterator past the end of the format string range being parsed.
-  FMT_CONSTEXPR iterator end() const FMT_NOEXCEPT { return format_str_.end(); }
+  FMT_CONSTEXPR iterator end() const FMT_NOEXCEPT { return end_; }
 
   // Advances the begin iterator to ``it``.
   FMT_CONSTEXPR void advance_to(iterator it) {
-    format_str_.remove_prefix(it - begin());
+    begin_ = it;
   }
 
   // Returns the next argument index.

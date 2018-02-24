@@ -571,7 +571,7 @@ template <typename Char>
 class null_terminating_iterator;
 
 template <typename Char>
-FMT_CONSTEXPR_DECL const Char *pointer_from(null_terminating_iterator<Char> it);
+FMT_CONSTEXPR_DECL typename null_terminating_iterator<Char>::pointer pointer_from(null_terminating_iterator<Char> it);
 
 // An iterator that produces a null terminator on *end. This simplifies parsing
 // and allows comparing the performance of processing a null-terminated string
@@ -581,20 +581,20 @@ class null_terminating_iterator {
  public:
   typedef std::ptrdiff_t difference_type;
   typedef Char value_type;
-  typedef const Char* pointer;
+  typedef typename basic_string_view<Char>::iterator pointer;
   typedef const Char& reference;
   typedef std::random_access_iterator_tag iterator_category;
 
   null_terminating_iterator() : ptr_(0), end_(0) {}
 
-  FMT_CONSTEXPR null_terminating_iterator(const Char *ptr, const Char *end)
+  FMT_CONSTEXPR null_terminating_iterator(pointer ptr, pointer end)
     : ptr_(ptr), end_(end) {}
 
   template <typename Range>
   FMT_CONSTEXPR explicit null_terminating_iterator(const Range &r)
     : ptr_(r.begin()), end_(r.end()) {}
 
-  null_terminating_iterator &operator=(const Char *ptr) {
+  null_terminating_iterator &operator=(pointer ptr) {
     assert(ptr <= end_);
     ptr_ = ptr;
     return *this;
@@ -646,19 +646,19 @@ class null_terminating_iterator {
     return ptr_ >= other.ptr_;
   }
 
-  friend FMT_CONSTEXPR_DECL const Char *pointer_from<Char>(
+  friend FMT_CONSTEXPR_DECL typename null_terminating_iterator<Char>::pointer pointer_from<Char>(
       null_terminating_iterator it);
 
  private:
-  const Char *ptr_;
-  const Char *end_;
+  pointer ptr_;
+  pointer end_;
 };
 
 template <typename T>
 FMT_CONSTEXPR const T *pointer_from(const T *p) { return p; }
 
 template <typename Char>
-FMT_CONSTEXPR const Char *pointer_from(null_terminating_iterator<Char> it) {
+FMT_CONSTEXPR typename null_terminating_iterator<Char>::pointer pointer_from(null_terminating_iterator<Char> it) {
   return it.ptr_;
 }
 
@@ -1787,7 +1787,7 @@ FMT_CONSTEXPR Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
   do {
     c = *++it;
   } while (is_name_start(c) || ('0' <= c && c <= '9'));
-  handler(basic_string_view<char_type>(pointer_from(start), it - start));
+  handler(basic_string_view<char_type>(&*pointer_from(start), it - start));
   return it;
 }
 
