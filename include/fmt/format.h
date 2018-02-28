@@ -2002,7 +2002,8 @@ class format_string_checker {
  public:
   explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
-    : arg_id_(-1), context_(format_str, eh) {}
+    : arg_id_(-1), context_(format_str, eh),
+      parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 
   FMT_CONSTEXPR void on_text(const Char *, const Char *) {}
 
@@ -2043,9 +2044,7 @@ class format_string_checker {
 
   int arg_id_;
   parse_context_type context_;
-  parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1] = {
-      &parse_format_specs<Args, parse_context_type>...
-  };
+  parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1];
 };
 
 template <typename Char, typename ErrorHandler, typename... Args>
@@ -2286,7 +2285,7 @@ class basic_writer {
     const Spec &spec;
     unsigned_type abs_value;
     char prefix[4];
-    unsigned prefix_size = 0;
+    unsigned prefix_size;
 
     string_view get_prefix() const { return string_view(prefix, prefix_size); }
 
@@ -2302,7 +2301,8 @@ class basic_writer {
     }
 
     int_writer(basic_writer<Range> &w, Int value, const Spec &s)
-      : writer(w), spec(s), abs_value(static_cast<unsigned_type>(value)) {
+      : writer(w), spec(s), abs_value(static_cast<unsigned_type>(value)),
+        prefix_size(0) {
       if (internal::is_negative(value)) {
         prefix[0] = '-';
         ++prefix_size;
@@ -2609,9 +2609,9 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   // Check type.
   struct spec_handler {
     char_type type;
-    bool upper = false;
+    bool upper;
 
-    explicit spec_handler(char_type t) : type(t) {}
+    explicit spec_handler(char_type t) : type(t), upper(false) {}
 
     void on_general() {
       if (type == 'G')
@@ -2750,6 +2750,7 @@ class output_range {
   sentinel end() const;
 
  public:
+  typedef OutputIt iterator;
   typedef T value_type;
 
   explicit output_range(OutputIt it): it_(it) {}
@@ -2764,8 +2765,8 @@ class back_insert_range:
  public:
   typedef typename Container::value_type value_type;
 
-  using base::base;
   back_insert_range(Container &c): base(std::back_inserter(c)) {}
+  back_insert_range(typename base::iterator it): base(it) {}
 };
 
 typedef basic_writer<back_insert_range<internal::buffer>> writer;
