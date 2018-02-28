@@ -232,7 +232,7 @@ typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {
 #if __cplusplus >= 201103L || FMT_MSC_VER >= 1700
   return std::allocator_traits<Allocator>::allocate(alloc, n);
 #else
-  return this->allocate(n);
+  return alloc.allocate(n);
 #endif
 }
 }  // namespace internal
@@ -2002,7 +2002,7 @@ class format_string_checker {
  public:
   explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
-    : context_(format_str, eh) {}
+    : arg_id_(-1), context_(format_str, eh) {}
 
   FMT_CONSTEXPR void on_text(const Char *, const Char *) {}
 
@@ -2041,7 +2041,7 @@ class format_string_checker {
   // Format specifier parsing function.
   typedef const Char *(*parse_func)(parse_context_type &);
 
-  int arg_id_ = -1;
+  int arg_id_;
   parse_context_type context_;
   parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1] = {
       &parse_format_specs<Args, parse_context_type>...
