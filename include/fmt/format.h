@@ -2093,7 +2093,7 @@ template <typename Range>
 class arg_formatter: public internal::arg_formatter_base<Range> {
  private:
   typedef typename Range::value_type char_type;
-  typedef decltype(std::declval<Range>().begin()) iterator;
+  typedef decltype(declval<Range>().begin()) iterator;
   typedef internal::arg_formatter_base<Range> base;
   typedef basic_context<iterator, char_type> context_type;
 
@@ -2191,7 +2191,7 @@ template <typename Range>
 class basic_writer {
  public:
   typedef typename Range::value_type char_type;
-  typedef decltype(std::declval<Range>().begin()) iterator;
+  typedef decltype(declval<Range>().begin()) iterator;
   typedef basic_format_specs<char_type> format_specs;
 
  private:

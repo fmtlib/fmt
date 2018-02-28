@@ -72,14 +72,25 @@
 # endif
 #endif
 
+#if FMT_HAS_FEATURE(cxx_explicit_conversions)
+# define FMT_EXPLICIT explicit
+#else
+# define FMT_EXPLICIT
+#endif
+
 #ifndef FMT_NULL
 # if FMT_HAS_FEATURE(cxx_nullptr) || \
    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
    FMT_MSC_VER >= 1600
 #  define FMT_NULL nullptr
+#  define FMT_USE_NULLPTR 1
 # else
 #  define FMT_NULL NULL
 # endif
+#endif
+
+#ifndef FMT_USE_NULLPTR
+# define FMT_USE_NULLPTR 0
 #endif
 
 // Check if exceptions are disabled.
@@ -157,6 +168,11 @@
 #endif
 
 namespace fmt {
+
+// An implementation of declval for pre-C++11 compilers such as gcc 4.
+template <typename T>
+typename std::add_rvalue_reference<T>::type declval() FMT_NOEXCEPT;
+
 /**
   \rst
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
@@ -284,6 +300,8 @@ class basic_buffer {
   std::size_t capacity_;
 
  protected:
+  typedef const T &const_reference;
+
   basic_buffer(T *p = FMT_NULL, std::size_t size = 0, std::size_t capacity = 0)
     FMT_NOEXCEPT: ptr_(p), size_(size), capacity_(capacity) {}
 
@@ -594,7 +612,10 @@ FMT_MAKE_VALUE(string_type, const std::basic_string<typename C::char_type>&,
                basic_string_view<Char>)
 FMT_MAKE_VALUE(pointer_type, void*, const void*)
 FMT_MAKE_VALUE(pointer_type, const void*, const void*)
+
+#if FMT_USE_NULLPTR
 FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
+#endif
 
 // Formatting of arbitrary pointers is disallowed. If you want to output a
 // pointer cast it to "void *" or "const void *". In particular, this forbids
@@ -667,7 +688,7 @@ class basic_arg {
 
   FMT_CONSTEXPR basic_arg() : type_(internal::none_type) {}
 
-  explicit operator bool() const FMT_NOEXCEPT {
+  FMT_EXPLICIT operator bool() const FMT_NOEXCEPT {
     return type_ != internal::none_type;
   }
 
@@ -891,7 +912,7 @@ template <typename Context, typename T>
 class get_type {
  public:
   typedef decltype(make_value<Context>(
-        std::declval<typename std::decay<T>::type&>())) value_type;
+        declval<typename std::decay<T>::type&>())) value_type;
   static const type value = value_type::type_tag;
 };
 
