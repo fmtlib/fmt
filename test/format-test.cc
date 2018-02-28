@@ -1251,7 +1251,7 @@ struct formatter<Date> {
     return it;
   }
 
-  auto format(const Date &d, context &ctx) {
+  auto format(const Date &d, context &ctx) -> decltype(ctx.begin()) {
     format_to(ctx.begin(), "{}-{}-{}", d.year(), d.month(), d.day());
     return ctx.begin();
   }
@@ -1269,7 +1269,7 @@ class Answer {};
 namespace fmt {
 template <>
 struct formatter<Answer> : formatter<int> {
-  auto format(Answer, fmt::context &ctx) {
+  auto format(Answer, fmt::context &ctx) -> decltype(ctx.begin()) {
     return formatter<int>::format(42, ctx);
   }
 };
@@ -1527,6 +1527,12 @@ TEST(LiteralsTest, NamedArg) {
                    fmt::arg(L"third", 99)),
             udl_a_w);
 }
+
+TEST(FormatTest, UdlTemplate) {
+  EXPECT_EQ("foo", "foo"_format());
+  EXPECT_EQ("        42", "{0:10}"_format(42));
+  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
+}
 #endif // FMT_USE_USER_DEFINED_LITERALS
 
 enum TestEnum { A };
@@ -1594,7 +1600,7 @@ struct variant {
 namespace fmt {
 template <>
 struct formatter<variant> : dynamic_formatter<> {
-  auto format(variant value, context& ctx) {
+  auto format(variant value, context& ctx) -> decltype(ctx.begin()) {
     if (value.type == variant::INT)
       return dynamic_formatter::format(42, ctx);
     return dynamic_formatter::format("foo", ctx);
@@ -1626,12 +1632,6 @@ TEST(FormatTest, DynamicFormatter) {
       format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{:.2}", num),
       format_error, "precision not allowed for this argument type");
-}
-
-TEST(FormatTest, UdlTemplate) {
-  EXPECT_EQ("foo", "foo"_format());
-  EXPECT_EQ("        42", "{0:10}"_format(42));
-  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
 }
 
 TEST(FormatTest, ToString) {
