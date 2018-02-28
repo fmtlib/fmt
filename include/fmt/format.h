@@ -646,8 +646,11 @@ class null_terminating_iterator {
     return ptr_ >= other.ptr_;
   }
 
-  friend FMT_CONSTEXPR_DECL const Char *pointer_from<Char>(
-      null_terminating_iterator it);
+  // This should be a friend specialization pointer_from<Char> but the latter
+  // doesn't compile by gcc 5.1 due to a compiler bug.
+  template <typename CharT>
+  friend FMT_CONSTEXPR_DECL const CharT *pointer_from(
+      null_terminating_iterator<CharT> it);
 
  private:
   const Char *ptr_;
