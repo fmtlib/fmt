@@ -290,7 +290,7 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
 template <typename T>
 struct printf_formatter {
   template <typename ParseContext>
-  auto parse(ParseContext &ctx) { return ctx.begin(); }
+  auto parse(ParseContext &ctx) -> decltype(ctx.begin()) { return ctx.begin(); }
 
   template <typename FormatContext>
   auto format(const T &value, FormatContext &ctx) -> decltype(ctx.begin()) {

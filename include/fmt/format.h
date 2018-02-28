@@ -2658,7 +2658,8 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   }
 
   auto write_inf_or_nan = [this, &spec, sign](const char *str) {
-    write_padded(INF_SIZE + (sign ? 1 : 0), spec, inf_or_nan_writer{sign, str});
+    this->write_padded(INF_SIZE + (sign ? 1 : 0), spec,
+                       inf_or_nan_writer{sign, str});
   };
 
   // Format NaN and ininity ourselves because sprintf's output is not consistent

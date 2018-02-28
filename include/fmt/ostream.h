@@ -67,8 +67,10 @@ class convert_to_int<T, Char, true> {
   template <typename>
   static std::false_type test(...);
 
+  typedef decltype(test<T>(0)) result;
+
  public:
-  static const bool value = !decltype(test<T>(0))::value;
+  static const bool value = !result::value;
 };
 
 // Write the content of buf to os.

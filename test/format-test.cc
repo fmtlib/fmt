@@ -137,6 +137,8 @@ TEST(StringViewTest, Ctor) {
   EXPECT_EQ(4u, string_view(std::string("defg")).size());
 }
 
+// GCC 4.6 doesn't have std::is_copy_*.
+#if FMT_GCC_VERSION && FMT_GCC_VERSION >= 407
 TEST(WriterTest, NotCopyConstructible) {
   EXPECT_FALSE(std::is_copy_constructible<fmt::writer>::value);
 }
@@ -144,6 +146,7 @@ TEST(WriterTest, NotCopyConstructible) {
 TEST(WriterTest, NotCopyAssignable) {
   EXPECT_FALSE(std::is_copy_assignable<fmt::writer>::value);
 }
+#endif
 
 TEST(WriterTest, Data) {
   memory_buffer buf;
