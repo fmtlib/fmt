@@ -212,6 +212,19 @@ inline uint32_t clzll(uint64_t x) {
 
 namespace fmt {
 namespace internal {
+
+// An implementation of begin and end for pre-C++11 compilers such as gcc 4.
+template <typename C>
+FMT_CONSTEXPR auto begin(const C &c) -> decltype(c.begin()) {
+  return c.begin();
+}
+template <typename T, std::size_t N>
+FMT_CONSTEXPR T *begin(T (&array)[N]) FMT_NOEXCEPT { return array; }
+template <typename C>
+FMT_CONSTEXPR auto end(const C &c) -> decltype(c.end()) { return c.end(); }
+template <typename T, std::size_t N>
+FMT_CONSTEXPR T *end(T (&array)[N]) FMT_NOEXCEPT { return array + N; }
+
 struct dummy_int {
   int data[2];
   operator int() const { return 0; }
@@ -2093,7 +2106,7 @@ template <typename Range>
 class arg_formatter: public internal::arg_formatter_base<Range> {
  private:
   typedef typename Range::value_type char_type;
-  typedef decltype(declval<Range>().begin()) iterator;
+  typedef decltype(internal::declval<Range>().begin()) iterator;
   typedef internal::arg_formatter_base<Range> base;
   typedef basic_context<iterator, char_type> context_type;
 
@@ -2191,7 +2204,7 @@ template <typename Range>
 class basic_writer {
  public:
   typedef typename Range::value_type char_type;
-  typedef decltype(declval<Range>().begin()) iterator;
+  typedef decltype(internal::declval<Range>().begin()) iterator;
   typedef basic_format_specs<char_type> format_specs;
 
  private:
@@ -2660,10 +2673,15 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     sign = spec.flag(PLUS_FLAG) ? '+' : ' ';
   }
 
-  auto write_inf_or_nan = [this, &spec, sign](const char *str) {
-    this->write_padded(INF_SIZE + (sign ? 1 : 0), spec,
-                       inf_or_nan_writer{sign, str});
-  };
+  struct write_inf_or_nan_t {
+    basic_writer &writer;
+    format_specs spec;
+    char sign;
+    void operator()(const char *str) const {
+      writer.write_padded(INF_SIZE + (sign ? 1 : 0), spec,
+                          inf_or_nan_writer{sign, str});
+    }
+  } write_inf_or_nan = {*this, spec, sign};
 
   // Format NaN and ininity ourselves because sprintf's output is not consistent
   // across platforms.
@@ -3235,14 +3253,14 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
 #if FMT_USE_TRAILING_RETURN
 template <typename Range>
 auto join(const Range &range, string_view sep)
-    -> arg_join<decltype(std::begin(range)), char> {
-  return join(std::begin(range), std::end(range), sep);
+    -> arg_join<decltype(internal::begin(range)), char> {
+  return join(internal::begin(range), internal::end(range), sep);
 }
 
 template <typename Range>
 auto join(const Range &range, wstring_view sep)
-    -> arg_join<decltype(std::begin(range)), wchar_t> {
-  return join(std::begin(range), std::end(range), sep);
+    -> arg_join<decltype(internal::begin(range)), wchar_t> {
+  return join(internal::begin(range), internal::end(range), sep);
 }
 #endif
 

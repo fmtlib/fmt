@@ -170,8 +170,10 @@
 namespace fmt {
 
 // An implementation of declval for pre-C++11 compilers such as gcc 4.
+namespace internal {
 template <typename T>
 typename std::add_rvalue_reference<T>::type declval() FMT_NOEXCEPT;
+}
 
 /**
   \rst
@@ -962,8 +964,15 @@ class arg_store {
  public:
   static const uint64_t TYPES;
 
+#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 405 && !defined(__clang__)
+  // Workaround an array initialization bug in gcc 4.5 and earlier.
+  arg_store(const Args &... args) {
+    data_ = {internal::make_arg<IS_PACKED, Context>(args)...};
+  }
+#else
   arg_store(const Args &... args)
     : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
+#endif
 
   basic_format_args<Context> operator*() const { return *this; }
 
