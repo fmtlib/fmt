@@ -19,7 +19,7 @@ namespace internal {
 // Checks if a value fits in int - used to avoid warnings about comparing
 // signed and unsigned integers.
 template <bool IsSigned>
-struct IntChecker {
+struct int_checker {
   template <typename T>
   static bool fits_in_int(T value) {
     unsigned max = std::numeric_limits<int>::max();
@@ -29,7 +29,7 @@ struct IntChecker {
 };
 
 template <>
-struct IntChecker<true> {
+struct int_checker<true> {
   template <typename T>
   static bool fits_in_int(T value) {
     return value >= std::numeric_limits<int>::min() &&
@@ -38,12 +38,12 @@ struct IntChecker<true> {
   static bool fits_in_int(int) { return true; }
 };
 
-class PrintfPrecisionHandler {
+class printf_precision_handler: public function<int> {
  public:
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, int>::type
       operator()(T value) {
-    if (!IntChecker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
+    if (!int_checker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
       FMT_THROW(format_error("number is too big"));
     return static_cast<int>(value);
   }
@@ -57,7 +57,7 @@ class PrintfPrecisionHandler {
 };
 
 // An argument visitor that returns true iff arg is a zero integer.
-class IsZeroInt {
+class is_zero_int: public function<bool> {
  public:
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, bool>::type
@@ -77,7 +77,7 @@ struct make_unsigned_or_bool<bool> {
 };
 
 template <typename T, typename Context>
-class ArgConverter {
+class arg_converter: public function<void> {
  private:
   typedef typename Context::char_type Char;
 
@@ -85,7 +85,7 @@ class ArgConverter {
   typename Context::char_type type_;
 
  public:
-  ArgConverter(basic_arg<Context> &arg, Char type)
+  arg_converter(basic_arg<Context> &arg, Char type)
     : arg_(arg), type_(type) {}
 
   void operator()(bool value) {
@@ -134,19 +134,19 @@ class ArgConverter {
 // unsigned).
 template <typename T, typename Context, typename Char>
 void convert_arg(basic_arg<Context> &arg, Char type) {
-  visit(ArgConverter<T, Context>(arg, type), arg);
+  visit(arg_converter<T, Context>(arg, type), arg);
 }
 
 // Converts an integer argument to char for printf.
 template <typename Context>
-class CharConverter {
+class char_converter: public function<void> {
  private:
   basic_arg<Context> &arg_;
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(CharConverter);
+  FMT_DISALLOW_COPY_AND_ASSIGN(char_converter);
 
  public:
-  explicit CharConverter(basic_arg<Context> &arg) : arg_(arg) {}
+  explicit char_converter(basic_arg<Context> &arg) : arg_(arg) {}
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value>::type
@@ -163,16 +163,16 @@ class CharConverter {
 // Checks if an argument is a valid printf width specifier and sets
 // left alignment if it is negative.
 template <typename Char>
-class PrintfWidthHandler {
+class printf_width_handler: public function<unsigned> {
  private:
   typedef basic_format_specs<Char> format_specs;
 
   format_specs &spec_;
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(PrintfWidthHandler);
+  FMT_DISALLOW_COPY_AND_ASSIGN(printf_width_handler);
 
  public:
-  explicit PrintfWidthHandler(format_specs &spec) : spec_(spec) {}
+  explicit printf_width_handler(format_specs &spec) : spec_(spec) {}
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, unsigned>::type
@@ -213,10 +213,11 @@ class basic_printf_context;
   \endrst
  */
 template <typename Range>
-class printf_arg_formatter : public internal::arg_formatter_base<Range> {
+class printf_arg_formatter:
+  public internal::function<void>, public internal::arg_formatter_base<Range> {
  private:
   typedef typename Range::value_type char_type;
-  typedef decltype(std::declval<Range>().begin()) iterator;
+  typedef decltype(internal::declval<Range>().begin()) iterator;
   typedef internal::arg_formatter_base<Range> base;
   typedef basic_printf_context<iterator, char_type> context_type;
 
@@ -417,7 +418,7 @@ unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
   } else if (*it == '*') {
     ++it;
     spec.width_ =
-        visit(internal::PrintfWidthHandler<char_type>(spec), get_arg(it));
+        visit(internal::printf_width_handler<char_type>(spec), get_arg(it));
   }
   return arg_index;
 }
@@ -453,14 +454,14 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
       } else if (*it == '*') {
         ++it;
         spec.precision_ =
-            visit(internal::PrintfPrecisionHandler(), get_arg(it));
+            visit(internal::printf_precision_handler(), get_arg(it));
       } else {
         spec.precision_ = 0;
       }
     }
 
     format_arg arg = get_arg(it, arg_index);
-    if (spec.flag(HASH_FLAG) && visit(internal::IsZeroInt(), arg))
+    if (spec.flag(HASH_FLAG) && visit(internal::is_zero_int(), arg))
       spec.flags_ &= ~internal::to_unsigned<int>(HASH_FLAG);
     if (spec.fill_ == '0') {
       if (arg.is_arithmetic())
@@ -514,7 +515,7 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
         break;
       case 'c':
         // TODO: handle wchar_t
-        visit(internal::CharConverter<basic_printf_context>(arg), arg);
+        visit(internal::char_converter<basic_printf_context>(arg), arg);
         break;
       }
     }
@@ -539,8 +540,7 @@ struct printf_context {
     std::back_insert_iterator<Buffer>, typename Buffer::value_type> type;
 };
 
-typedef basic_format_args<
-  typename printf_context<internal::buffer>::type> printf_args;
+typedef basic_format_args<printf_context<internal::buffer>::type> printf_args;
 
 inline std::string vsprintf(string_view format, printf_args args) {
   memory_buffer buffer;
@@ -565,7 +565,7 @@ inline std::string sprintf(string_view format_str, const Args & ... args) {
 
 inline std::wstring vsprintf(
     wstring_view format,
-    basic_format_args<typename printf_context<internal::wbuffer>::type> args) {
+    basic_format_args<printf_context<internal::wbuffer>::type> args) {
   wmemory_buffer buffer;
   printf(buffer, format, args);
   return to_string(buffer);

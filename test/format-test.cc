@@ -1205,7 +1205,9 @@ TEST(FormatterTest, FormatPointer) {
   EXPECT_EQ("0x" + std::string(sizeof(void*) * CHAR_BIT / 4, 'f'),
       format("{0}", reinterpret_cast<void*>(~uintptr_t())));
   EXPECT_EQ("0x1234", format("{}", fmt::ptr(reinterpret_cast<int*>(0x1234))));
-  EXPECT_EQ("0x0", format("{}", nullptr));
+#if FMT_USE_NULLPTR
+  EXPECT_EQ("0x0", format("{}", FMT_NULL));
+#endif
 }
 
 TEST(FormatterTest, FormatString) {
@@ -1450,7 +1452,7 @@ TEST(FormatTest, JoinArg) {
   EXPECT_EQ(L"(1, 2, 3)", format(L"({})", join(v1, v1 + 3, L", ")));
   EXPECT_EQ("1, 2, 3", format("{0:{1}}", join(v1, v1 + 3, ", "), 1));
 
-#if FMT_HAS_GXX_CXX11
+#if FMT_USE_TRAILING_RETURN && (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 405)
   EXPECT_EQ("(1, 2, 3)", format("({})", join(v1, ", ")));
   EXPECT_EQ("(+01.20, +03.40)", format("({:+06.2f})", join(v2, ", ")));
 #endif
@@ -1551,7 +1553,8 @@ TEST(FormatTest, FixedEnum) {
 
 typedef fmt::back_insert_range<fmt::internal::buffer> buffer_range;
 
-class mock_arg_formatter :
+class mock_arg_formatter:
+    public fmt::internal::function<void>,
     public fmt::internal::arg_formatter_base<buffer_range> {
  private:
   MOCK_METHOD1(call, void (int value));
@@ -1602,8 +1605,8 @@ template <>
 struct formatter<variant> : dynamic_formatter<> {
   auto format(variant value, context& ctx) -> decltype(ctx.begin()) {
     if (value.type == variant::INT)
-      return dynamic_formatter::format(42, ctx);
-    return dynamic_formatter::format("foo", ctx);
+      return dynamic_formatter<>::format(42, ctx);
+    return dynamic_formatter<>::format("foo", ctx);
   }
 };
 }

@@ -18,7 +18,7 @@ class CustomArgFormatter :
     public fmt::arg_formatter<fmt::back_insert_range<fmt::internal::buffer>> {
  public:
   typedef fmt::back_insert_range<fmt::internal::buffer> range;
-  typedef decltype(std::declval<range>().begin()) iterator;
+  typedef decltype(fmt::internal::declval<range>().begin()) iterator;
   typedef fmt::arg_formatter<range> base;
 
   CustomArgFormatter(fmt::basic_context<iterator, char> &ctx,

@@ -44,7 +44,7 @@
 #undef max
 
 template <typename T>
-struct ValueExtractor {
+struct ValueExtractor: fmt::internal::function<T> {
   T operator()(T value) {
     return value;
   }
@@ -59,7 +59,7 @@ struct ValueExtractor {
 TEST(FormatTest, ArgConverter) {
   long long value = std::numeric_limits<long long>::max();
   auto arg = fmt::internal::make_arg<fmt::context>(value);
-  visit(fmt::internal::ArgConverter<long long, fmt::context>(arg, 'd'), arg);
+  visit(fmt::internal::arg_converter<long long, fmt::context>(arg, 'd'), arg);
   EXPECT_EQ(value, visit(ValueExtractor<long long>(), arg));
 }
 

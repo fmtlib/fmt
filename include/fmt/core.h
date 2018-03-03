@@ -167,6 +167,11 @@
 # define FMT_USE_EXPERIMENTAL_STRING_VIEW
 #endif
 
+// std::result_of is defined in <functional> in gcc 4.4.
+#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 404
+# include <functional>
+#endif
+
 namespace fmt {
 
 // An implementation of declval for pre-C++11 compilers such as gcc 4.
@@ -302,8 +307,6 @@ class basic_buffer {
   std::size_t capacity_;
 
  protected:
-  typedef const T &const_reference;
-
   basic_buffer(T *p = FMT_NULL, std::size_t size = 0, std::size_t capacity = 0)
     FMT_NOEXCEPT: ptr_(p), size_(size), capacity_(capacity) {}
 
@@ -322,6 +325,7 @@ class basic_buffer {
 
  public:
   typedef T value_type;
+  typedef const T &const_reference;
 
   virtual ~basic_buffer() {}
 
@@ -655,6 +659,16 @@ enum { MAX_PACKED_ARGS = 15 };
 
 template <typename Context>
 class arg_map;
+
+template <typename>
+struct result_of;
+
+template <typename F, typename... Args>
+struct result_of<F(Args...)> {
+  // A workaround for gcc 4.4 that doesn't allow F to be a reference.
+  typedef typename std::result_of<
+    typename std::remove_reference<F>::type(Args...)>::type type;
+};
 }
 
 // A formatting argument. It is a trivially copyable/constructible type to
@@ -669,7 +683,7 @@ class basic_arg {
   friend FMT_CONSTEXPR basic_arg<ContextType> internal::make_arg(const T &value);
 
   template <typename Visitor, typename Ctx>
-  friend FMT_CONSTEXPR typename std::result_of<Visitor(int)>::type
+  friend FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
     visit(Visitor &&vis, basic_arg<Ctx> arg);
 
   friend class basic_format_args<Context>;

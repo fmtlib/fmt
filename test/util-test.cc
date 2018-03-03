@@ -478,12 +478,12 @@ bool operator==(custom_value<Char> lhs, custom_value<Char> rhs) {
 }
 }
 
-template <typename T>
-struct MockVisitor {
-  // Use a unique result type to make sure that there are no undesirable
-  // conversions.
-  struct Result {};
+// Use a unique result type to make sure that there are no undesirable
+// conversions.
+struct Result {};
 
+template <typename T>
+struct MockVisitor: fmt::internal::function<Result> {
   MockVisitor() {
     ON_CALL(*this, visit(_)).WillByDefault(Return(Result()));
   }
@@ -529,8 +529,9 @@ VISIT_TYPE(float, double);
   fmt::visit(visitor, make_arg<fmt::basic_context<iterator, Char>>(value)); \
 }
 
-#define CHECK_ARG(value) { \
-  typename VisitType<decltype(value)>::Type expected = value; \
+#define CHECK_ARG(value, typename_) { \
+  typedef decltype(value) value_type; \
+  typename_ VisitType<value_type>::Type expected = value; \
   CHECK_ARG_(char, expected, value) \
   CHECK_ARG_(wchar_t, expected, value) \
 }
@@ -556,9 +557,9 @@ typename std::enable_if<std::is_floating_point<T>::value, T>::type
 }
 
 TYPED_TEST(NumericArgTest, MakeAndVisit) {
-  CHECK_ARG(test_value<TypeParam>());
-  CHECK_ARG(std::numeric_limits<TypeParam>::min());
-  CHECK_ARG(std::numeric_limits<TypeParam>::max());
+  CHECK_ARG(test_value<TypeParam>(), typename);
+  CHECK_ARG(std::numeric_limits<TypeParam>::min(), typename);
+  CHECK_ARG(std::numeric_limits<TypeParam>::max(), typename);
 }
 
 TEST(UtilTest, CharArg) {
@@ -594,22 +595,25 @@ TEST(UtilTest, PointerArg) {
   const void *cp = 0;
   CHECK_ARG_(char, cp, p);
   CHECK_ARG_(wchar_t, cp, p);
-  CHECK_ARG(cp);
+  CHECK_ARG(cp, );
 }
 
-TEST(UtilTest, CustomArg) {
-  ::Test test;
-  typedef typename fmt::basic_arg<fmt::context>::handle handle;
-  typedef MockVisitor<handle> visitor;
-  testing::StrictMock<visitor> v;
-  EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke([&](handle h) {
+struct check_custom {
+  Result operator()(fmt::basic_arg<fmt::context>::handle h) const {
     fmt::memory_buffer buffer;
     fmt::internal::basic_buffer<char> &base = buffer;
     fmt::context ctx(std::back_inserter(base), "", fmt::format_args());
     h.format(ctx);
     EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
-    return visitor::Result();
-  }));
+    return Result();
+  }
+};
+
+TEST(UtilTest, CustomArg) {
+  ::Test test;
+  typedef MockVisitor<fmt::basic_arg<fmt::context>::handle> visitor;
+  testing::StrictMock<visitor> v;
+  EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke(check_custom()));
   fmt::visit(v, make_arg<fmt::context>(test));
 }
 

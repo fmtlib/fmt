@@ -61,8 +61,8 @@ class convert_to_int<T, Char, true> {
  private:
   template <typename U>
   static decltype(
-    std::declval<test_stream<Char>&>() << std::declval<U>(), std::true_type())
-      test(int);
+    internal::declval<test_stream<Char>&>()
+      << internal::declval<U>(), std::true_type()) test(int);
 
   template <typename>
   static std::false_type test(...);
