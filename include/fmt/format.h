@@ -2146,7 +2146,7 @@ class arg_formatter:
 
   using base::operator();
 
-  /** Formats an argument of a custom (user-defined) type. */
+  /** Formats an argument of a user-defined type. */
   void operator()(typename basic_arg<context_type>::handle handle) const {
     handle.format(ctx_);
   }
@@ -3324,28 +3324,28 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char> &buffer) {
   return std::basic_string<Char>(buffer.data(), buffer.size());
 }
 
-inline void vformat_to(internal::buffer &buf, string_view format_str,
-                       format_args args) {
+inline context::iterator vformat_to(
+    internal::buffer &buf, string_view format_str, format_args args) {
   typedef back_insert_range<internal::buffer> range;
-  vformat_to<arg_formatter<range>>(buf, format_str, args);
+  return vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
-inline void vformat_to(internal::wbuffer &buf, wstring_view format_str,
-                       wformat_args args) {
+inline wcontext::iterator vformat_to(
+    internal::wbuffer &buf, wstring_view format_str, wformat_args args) {
   typedef back_insert_range<internal::wbuffer> range;
-  vformat_to<arg_formatter<range>>(buf, format_str, args);
+  return vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
 template <typename... Args>
-inline void format_to(memory_buffer &buf, string_view format_str,
-                      const Args & ... args) {
-  vformat_to(buf, format_str, make_args(args...));
+inline context::iterator format_to(
+    memory_buffer &buf, string_view format_str, const Args & ... args) {
+  return vformat_to(buf, format_str, make_args(args...));
 }
 
 template <typename... Args>
-inline void format_to(wmemory_buffer &buf, wstring_view format_str,
-                      const Args & ... args) {
-  vformat_to(buf, format_str, make_args<wcontext>(args...));
+inline wcontext::iterator format_to(
+    wmemory_buffer &buf, wstring_view format_str, const Args & ... args) {
+  return vformat_to(buf, format_str, make_args<wcontext>(args...));
 }
 
 template <typename OutputIt, typename Char = char>
@@ -3373,10 +3373,11 @@ inline OutputIt format_to(OutputIt out, string_view format_str,
 }
 
 template <typename Container, typename... Args>
-inline typename std::enable_if<is_contiguous<Container>::value>::type
+inline typename std::enable_if<
+  is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
     format_to(std::back_insert_iterator<Container> out,
               string_view format_str, const Args & ... args) {
-  vformat_to(out, format_str, make_args(args...));
+  return vformat_to(out, format_str, make_args(args...));
 }
 
 inline std::string vformat(string_view format_str, format_args args) {

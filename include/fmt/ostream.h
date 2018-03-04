@@ -133,7 +133,7 @@ inline void vprint(std::ostream &os, string_view format_str, format_args args) {
 
   **Example**::
 
-    print(cerr, "Don't {}!", "panic");
+    fmt::print(cerr, "Don't {}!", "panic");
   \endrst
  */
 template <typename... Args>

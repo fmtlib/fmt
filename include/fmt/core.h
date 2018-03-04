@@ -1118,7 +1118,7 @@ struct named_arg : named_arg_base<Char> {
 
   **Example**::
 
-    print("Elapsed time: {s:.2f} seconds", arg("s", 1.23));
+    fmt::print("Elapsed time: {s:.2f} seconds", arg("s", 1.23));
   \endrst
  */
 template <typename T>
@@ -1144,7 +1144,7 @@ FMT_API void vprint_colored(Color c, string_view format, format_args args);
   Formats a string and prints it to stdout using ANSI escape sequences to
   specify color (experimental).
   Example:
-    print_colored(fmt::RED, "Elapsed time: {0:.2f} seconds", 1.23);
+    fmt::print_colored(fmt::RED, "Elapsed time: {0:.2f} seconds", 1.23);
  */
 template <typename... Args>
 inline void print_colored(Color c, string_view format_str,
@@ -1152,10 +1152,10 @@ inline void print_colored(Color c, string_view format_str,
   vprint_colored(c, format_str, make_args(args...));
 }
 
-void vformat_to(internal::buffer &buf, string_view format_str,
-                format_args args);
-void vformat_to(internal::wbuffer &buf, wstring_view format_str,
-                wformat_args args);
+context::iterator vformat_to(internal::buffer &buf, string_view format_str,
+                             format_args args);
+wcontext::iterator vformat_to(internal::wbuffer &buf, wstring_view format_str,
+                               wformat_args args);
 
 template <typename Container>
 struct is_contiguous : std::false_type {};
@@ -1168,11 +1168,14 @@ struct is_contiguous<fmt::internal::basic_buffer<Char>> : std::true_type {};
 
 /** Formats a string and writes the output to ``out``. */
 template <typename Container>
-typename std::enable_if<is_contiguous<Container>::value>::type
+typename std::enable_if<
+  is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
     vformat_to(std::back_insert_iterator<Container> out,
                string_view format_str, format_args args) {
-  internal::container_buffer<Container> buf(internal::get_container(out));
+  auto& container = internal::get_container(out);
+  internal::container_buffer<Container> buf(container);
   vformat_to(buf, format_str, args);
+  return std::back_inserter(container);
 }
 
 std::string vformat(string_view format_str, format_args args);
@@ -1184,7 +1187,7 @@ std::wstring vformat(wstring_view format_str, wformat_args args);
 
   **Example**::
 
-    std::string message = format("The answer is {}", 42);
+    std::string message = fmt::format("The answer is {}", 42);
   \endrst
 */
 template <typename... Args>
@@ -1204,7 +1207,7 @@ FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
 
   **Example**::
 
-    print(stderr, "Don't {}!", "panic");
+    fmt::print(stderr, "Don't {}!", "panic");
   \endrst
  */
 template <typename... Args>
@@ -1220,7 +1223,7 @@ FMT_API void vprint(string_view format_str, format_args args);
 
   **Example**::
 
-    print("Elapsed time: {0:.2f} seconds", 1.23);
+    fmt::print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
 template <typename... Args>
