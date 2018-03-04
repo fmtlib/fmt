@@ -29,8 +29,6 @@ to that of glibc's ``printf`` and better than the performance of IOStreams.
 
 .. doxygenfunction:: format(string_view, const Args&...)
 
-.. doxygenfunction:: operator""_format(const char *, std::size_t)
-
 .. _print:
 
 .. doxygenfunction:: print(string_view, const Args&...)
@@ -113,8 +111,17 @@ formatting of user-defined types that have overloaded ``operator<<``::
 
 .. doxygenfunction:: print(std::ostream&, string_view, const Args&...)
 
-Argument formatters
--------------------
+Literal-based API
+-----------------
+
+The following user-defined literals are defined in ``fmt/format.h``.
+
+.. doxygenfunction:: operator""_format(const char *, std::size_t)
+
+.. doxygenfunction:: operator""_a(const char *, std::size_t)
+
+Custom formatting of built-in types
+-----------------------------------
 
 It is possible to change the way arguments are formatted by providing a
 custom argument formatter class::
@@ -217,8 +224,6 @@ Utilities
 =========
 
 .. doxygenfunction:: fmt::arg(string_view, const T&)
-
-.. doxygenfunction:: operator""_a(const char *, std::size_t)
 
 .. doxygenclass:: fmt::basic_format_args
    :members:

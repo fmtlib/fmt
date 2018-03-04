@@ -1182,6 +1182,7 @@ std::wstring vformat(wstring_view format_str, wformat_args args);
 
   **Example**::
 
+    #include "fmt/core.h"
     std::string message = fmt::format("The answer is {}", 42);
   \endrst
 */
