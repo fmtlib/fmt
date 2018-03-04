@@ -374,7 +374,7 @@ class locale_provider {
 /**
   \rst
   A dynamically growing memory buffer for trivially copyable/constructible types
-  with the first SIZE elements stored in the object itself.
+  with the first ``SIZE`` elements stored in the object itself.
 
   You can use one of the following typedefs for common character types:
 
@@ -388,7 +388,7 @@ class locale_provider {
 
   **Example**::
 
-     memory_buffer out;
+     fmt::memory_buffer out;
      format_to(out, "The answer is {}.", 42);
 
   This will write the following output to the ``out`` object:
@@ -3487,7 +3487,7 @@ operator"" _format(const wchar_t *s, std::size_t) { return {s}; }
   **Example**::
 
     using namespace fmt::literals;
-    print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
+    fmt::print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
   \endrst
  */
 inline internal::udl_arg<char>

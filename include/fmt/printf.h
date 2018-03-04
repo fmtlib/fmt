@@ -635,7 +635,7 @@ inline int vfprintf(std::ostream &os, string_view format_str,
 
   **Example**::
 
-    fprintf(cerr, "Don't %s!", "panic");
+    fmt::fprintf(cerr, "Don't %s!", "panic");
   \endrst
  */
 template <typename... Args>

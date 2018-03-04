@@ -1114,11 +1114,11 @@ struct named_arg : named_arg_base<Char> {
 
 /**
   \rst
-  Returns a named argument for formatting functions.
+  Returns a named argument to be used in a formatting function.
 
   **Example**::
 
-    fmt::print("Elapsed time: {s:.2f} seconds", arg("s", 1.23));
+    fmt::print("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23));
   \endrst
  */
 template <typename T>

@@ -187,14 +187,14 @@ Write API
 The write API provides classes for writing formatted data into character
 streams. It is usually faster than the `format API`_ but, as IOStreams,
 may result in larger compiled code size. The main writer class is
-`~fmt::BasicMemoryWriter` which stores its output in a memory buffer and
+`~fmt::basic_memory_writer` which stores its output in a memory buffer and
 provides direct access to it. It is possible to create custom writers that
 store output elsewhere by subclassing `~fmt::BasicWriter`.
 
 .. doxygenclass:: fmt::BasicWriter
    :members:
 
-.. doxygenclass:: fmt::BasicMemoryWriter
+.. doxygenclass:: fmt::basic_memory_writer
    :members:
 
 .. doxygenclass:: fmt::BasicArrayWriter
@@ -220,8 +220,6 @@ Utilities
 
 .. doxygenfunction:: operator""_a(const char *, std::size_t)
 
-.. doxygendefine:: FMT_CAPTURE
-
 .. doxygenclass:: fmt::basic_format_args
    :members:
 
@@ -230,7 +228,7 @@ Utilities
 .. doxygenclass:: fmt::basic_string_view
    :members:
 
-.. doxygenclass:: fmt::Buffer
+.. doxygenclass:: fmt::basic_memory_buffer
    :protected-members:
    :members:
 
@@ -250,22 +248,29 @@ System errors
 Custom allocators
 =================
 
-The fmt library supports custom dynamic memory allocators.
+The {fmt} library supports custom dynamic memory allocators.
 A custom allocator class can be specified as a template argument to
-:class:`fmt::BasicMemoryWriter`::
+:class:`fmt::basic_memory_buffer`::
 
-    typedef fmt::BasicMemoryWriter<char, CustomAllocator> CustomMemoryWriter;
+    using custom_memory_buffer = 
+      fmt::basic_memory_buffer<char, custom_allocator>;
 
 It is also possible to write a formatting function that uses a custom
 allocator::
 
-    typedef std::basic_string<char, std::char_traits<char>, CustomAllocator>
-            CustomString;
+    using custom_string =
+      std::basic_string<char, std::char_traits<char>, custom_allocator>;
 
-    CustomString format(CustomAllocator alloc, fmt::CStringRef format_str,
-                        fmt::ArgList args) {
-      CustomMemoryWriter writer(alloc);
-      writer.write(format_str, args);
-      return CustomString(writer.data(), writer.size(), alloc);
+    custom_string format(custom_allocator alloc, fmt::string_view format_str,
+                         fmt::format_args args) {
+      custom_memory_buffer buf(alloc);
+      fmt::vformat_to(buf, format_str, args);
+      return custom_string(buf.data(), buf.size(), alloc);
     }
-    FMT_VARIADIC(CustomString, format, CustomAllocator, fmt::CStringRef)
+
+    template <typename ...Args>
+    inline custom_string format(custom_allocator alloc,
+                                fmt::string_view format_str,
+                                const Args & ... args) {
+      return vformat(alloc, format_str, fmt::make_args(args...));
+    }
