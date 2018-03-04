@@ -397,11 +397,6 @@ class container_buffer : public basic_buffer<typename Container::value_type> {
       container_(c) {}
 };
 
-// A helper function to suppress bogus "conditional expression is constant"
-// warnings.
-template <typename T>
-inline T const_check(T value) { return value; }
-
 struct error_handler {
   FMT_CONSTEXPR error_handler() {}
   FMT_CONSTEXPR error_handler(const error_handler &) {}
@@ -1136,9 +1131,9 @@ inline internal::named_arg<T, wchar_t> arg(wstring_view name, const T &arg) {
 template <typename S, typename T, typename Char>
 void arg(S, internal::named_arg<T, Char>) FMT_DELETED;
 
-enum Color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
+enum color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
 
-FMT_API void vprint_colored(Color c, string_view format, format_args args);
+FMT_API void vprint_colored(color c, string_view format, format_args args);
 
 /**
   Formats a string and prints it to stdout using ANSI escape sequences to
@@ -1147,7 +1142,7 @@ FMT_API void vprint_colored(Color c, string_view format, format_args args);
     fmt::print_colored(fmt::RED, "Elapsed time: {0:.2f} seconds", 1.23);
  */
 template <typename... Args>
-inline void print_colored(Color c, string_view format_str,
+inline void print_colored(color c, string_view format_str,
                           const Args & ... args) {
   vprint_colored(c, format_str, make_args(args...));
 }

@@ -262,6 +262,11 @@ typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {
   return alloc.allocate(n);
 #endif
 }
+
+// A helper function to suppress bogus "conditional expression is constant"
+// warnings.
+template <typename T>
+inline T const_check(T value) { return value; }
 }  // namespace internal
 }  // namespace fmt
 

@@ -414,7 +414,7 @@ FMT_FUNC void vprint(string_view format_str, format_args args) {
   vprint(stdout, format_str, args);
 }
 
-FMT_FUNC void vprint_colored(Color c, string_view format, format_args args) {
+FMT_FUNC void vprint_colored(color c, string_view format, format_args args) {
   char escape[] = "\x1b[30m";
   escape[3] = static_cast<char>('0' + c);
   std::fputs(escape, stdout);
