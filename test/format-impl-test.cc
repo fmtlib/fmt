@@ -94,7 +94,7 @@ TEST(FormatTest, FormatErrorCode) {
   {
     fmt::memory_buffer buffer;
     std::string prefix(
-        fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size() + 1, 'x');
+        fmt::inline_buffer_size - msg.size() - sep.size() + 1, 'x');
     fmt::format_error_code(buffer, 42, prefix);
     EXPECT_EQ(msg, to_string(buffer));
   }
@@ -104,10 +104,10 @@ TEST(FormatTest, FormatErrorCode) {
     msg = fmt::format("error {}", codes[i]);
     fmt::memory_buffer buffer;
     std::string prefix(
-        fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size(), 'x');
+        fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
     fmt::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(prefix + sep + msg, to_string(buffer));
-    std::size_t size = fmt::internal::INLINE_BUFFER_SIZE;
+    std::size_t size = fmt::inline_buffer_size;
     EXPECT_EQ(size, buffer.size());
     buffer.resize(0);
     // Test with a message that doesn't fit into the buffer.

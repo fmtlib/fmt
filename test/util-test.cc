@@ -341,7 +341,7 @@ TEST(MemoryBufferTest, Allocator) {
   {
     basic_memory_buffer<char, 10, TestAllocator> buffer2((TestAllocator(&alloc)));
     EXPECT_EQ(&alloc, buffer2.get_allocator().get());
-    std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
+    std::size_t size = 2 * fmt::inline_buffer_size;
     EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem));
     buffer2.reserve(size);
     EXPECT_CALL(alloc, deallocate(&mem, size));
@@ -352,7 +352,7 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
   typedef AllocatorRef< MockAllocator<char> > TestAllocator;
   StrictMock< MockAllocator<char> > alloc;
   basic_memory_buffer<char, 10, TestAllocator> buffer((TestAllocator(&alloc)));
-  std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
+  std::size_t size = 2 * fmt::inline_buffer_size;
   std::vector<char> mem(size);
   {
     EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem[0]));

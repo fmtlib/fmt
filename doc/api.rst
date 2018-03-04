@@ -253,7 +253,7 @@ A custom allocator class can be specified as a template argument to
 :class:`fmt::basic_memory_buffer`::
 
     using custom_memory_buffer = 
-      fmt::basic_memory_buffer<char, custom_allocator>;
+      fmt::basic_memory_buffer<char, fmt::inline_buffer_size, custom_allocator>;
 
 It is also possible to write a formatting function that uses a custom
 allocator::
@@ -261,8 +261,8 @@ allocator::
     using custom_string =
       std::basic_string<char, std::char_traits<char>, custom_allocator>;
 
-    custom_string format(custom_allocator alloc, fmt::string_view format_str,
-                         fmt::format_args args) {
+    custom_string vformat(custom_allocator alloc, fmt::string_view format_str,
+                          fmt::format_args args) {
       custom_memory_buffer buf(alloc);
       fmt::vformat_to(buf, format_str, args);
       return custom_string(buf.data(), buf.size(), alloc);

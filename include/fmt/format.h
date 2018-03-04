@@ -335,10 +335,6 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 
-// The number of characters to store in the basic_memory_buffer object itself
-// to avoid dynamic memory allocation.
-enum { INLINE_BUFFER_SIZE = 500 };
-
 #if FMT_SECURE_SCL
 // Use checked iterator to avoid warnings on MSVC.
 template <typename T>
@@ -371,6 +367,10 @@ class locale_provider {
   virtual fmt::locale locale();
 };
 
+// The number of characters to store in the basic_memory_buffer object itself
+// to avoid dynamic memory allocation.
+enum { inline_buffer_size = 500 };
+
 /**
   \rst
   A dynamically growing memory buffer for trivially copyable/constructible types
@@ -400,7 +400,7 @@ class locale_provider {
   The output can be converted to an ``std::string`` with ``to_string(out)``.
   \endrst
  */
-template <typename T, std::size_t SIZE = internal::INLINE_BUFFER_SIZE,
+template <typename T, std::size_t SIZE = inline_buffer_size,
           typename Allocator = std::allocator<T> >
 class basic_memory_buffer: private Allocator, public internal::basic_buffer<T> {
  private:

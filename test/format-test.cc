@@ -192,11 +192,11 @@ TEST(WriterTest, WriteDoubleWithFilledBuffer) {
   memory_buffer buf;
   fmt::writer writer(buf);
   // Fill the buffer.
-  for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
+  for (int i = 0; i < fmt::inline_buffer_size; ++i)
     writer.write(' ');
   writer.write(1.2);
   fmt::string_view sv(buf.data(), buf.size());
-  sv.remove_prefix(fmt::internal::INLINE_BUFFER_SIZE);
+  sv.remove_prefix(fmt::inline_buffer_size);
   EXPECT_EQ("1.2", sv);
 }
 
