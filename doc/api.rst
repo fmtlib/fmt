@@ -65,7 +65,7 @@ template and implement ``parse`` and ``format`` methods::
   template <>
   struct formatter<point> {
     template <typename ParseContext>
-    auto parse(ParseContext &ctx) { return ctx.begin(); }
+    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
     auto format(const point &p, FormatContext &ctx) {
@@ -98,17 +98,17 @@ formatting of user-defined types that have overloaded ``operator<<``::
 
   #include "fmt/ostream.h"
 
-  class Date {
+  class date {
     int year_, month_, day_;
   public:
-    Date(int year, int month, int day): year_(year), month_(month), day_(day) {}
+    date(int year, int month, int day): year_(year), month_(month), day_(day) {}
 
-    friend std::ostream &operator<<(std::ostream &os, const Date &d) {
+    friend std::ostream &operator<<(std::ostream &os, const date &d) {
       return os << d.year_ << '-' << d.month_ << '-' << d.day_;
     }
   };
 
-  std::string s = fmt::format("The date is {}", Date(2012, 12, 9));
+  std::string s = fmt::format("The date is {}", date(2012, 12, 9));
   // s == "The date is 2012-12-9"
 
 .. doxygenfunction:: print(std::ostream&, string_view, const Args&...)
