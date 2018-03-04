@@ -434,7 +434,8 @@ template char internal::thousands_sep(locale_provider *lp);
 
 template void basic_fixed_buffer<char>::grow(std::size_t);
 
-template void internal::arg_map<context>::init(const format_args &args);
+template void internal::arg_map<context>::init(
+    const basic_format_args<context> &args);
 
 template FMT_API int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
