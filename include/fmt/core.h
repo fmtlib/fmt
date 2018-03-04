@@ -1187,11 +1187,16 @@ std::wstring vformat(wstring_view format_str, wformat_args args);
 */
 template <typename... Args>
 inline std::string format(string_view format_str, const Args & ... args) {
-  return vformat(format_str, make_args(args...));
+  // This should be just
+  // return vformat(format_str, make_args(args...));
+  // but gcc has trouble optimizing the latter, so break it down.
+  arg_store<context, Args...> as(args...);
+  return vformat(format_str, as);
 }
 template <typename... Args>
 inline std::wstring format(wstring_view format_str, const Args & ... args) {
-  return vformat(format_str, make_args<wcontext>(args...));
+  arg_store<wcontext, Args...> as(args...);
+  return vformat(format_str, as);
 }
 
 FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
@@ -1207,7 +1212,8 @@ FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
  */
 template <typename... Args>
 inline void print(std::FILE *f, string_view format_str, const Args & ... args) {
-  vprint(f, format_str, make_args(args...));
+  arg_store<context, Args...> as(args...);
+  vprint(f, format_str, as);
 }
 
 FMT_API void vprint(string_view format_str, format_args args);
@@ -1223,7 +1229,8 @@ FMT_API void vprint(string_view format_str, format_args args);
  */
 template <typename... Args>
 inline void print(string_view format_str, const Args & ... args) {
-  vprint(format_str, make_args(args...));
+  arg_store<context, Args...> as(args...);
+  vprint(format_str, as);
 }
 }  // namespace fmt
 
