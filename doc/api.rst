@@ -22,7 +22,7 @@ arguments in the resulting string.
 
 *args* is an argument list representing objects to be formatted.
 
-The `performance of the format API
+The `performance of the formating functions
 <https://github.com/fmtlib/fmt/blob/master/README.rst#speed-tests>`_ is close
 to that of glibc's ``printf`` and better than the performance of IOStreams.
 
@@ -127,7 +127,7 @@ custom argument formatter class::
   // with the ``x`` format specifier.
   class custom_arg_formatter : public arg_formatter {
    public:
-    custom_arg_formatter(context_type &ctx, fmt::format_specs &spec)
+    custom_arg_formatter(fmt::context &ctx, fmt::format_specs &spec)
       : arg_formatter(ctx, spec) {}
 
     using arg_formatter::operator();
@@ -142,8 +142,8 @@ custom argument formatter class::
 
   std::string custom_vformat(fmt::string_view format_str, fmt::format_args args) {
     fmt::memory_buffer buffer;
-    // Pass custom argument formatter as a template arg to do_vformat.
-    fmt::do_vformat_to<custom_arg_formatter>(buffer, format_str, args);
+    // Pass custom argument formatter as a template arg to vformat_to.
+    fmt::vformat_to<custom_arg_formatter>(buffer, format_str, args);
     return fmt::to_string(buffer);
   }
 

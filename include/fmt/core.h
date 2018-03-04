@@ -183,9 +183,10 @@ typename std::add_rvalue_reference<T>::type declval() FMT_NOEXCEPT;
 /**
   \rst
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
-  subset of the API. fmt::basic_string_view is used for format strings even if
-  std::string_view is available to prevent issues when a library is compiled
-  with different -std option than the client code (which is not recommended).
+  subset of the API. ``fmt::basic_string_view`` is used for format strings even
+  if ``std::string_view`` is available to prevent issues when a library is
+  compiled with a different ``-std`` option than the client code (which is not
+  recommended).
   \endrst
  */
 template <typename Char>

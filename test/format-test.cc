@@ -1577,7 +1577,7 @@ class mock_arg_formatter:
 
 void custom_vformat(fmt::string_view format_str, fmt::format_args args) {
   fmt::memory_buffer buffer;
-  fmt::do_vformat_to<mock_arg_formatter>(buffer, format_str, args);
+  fmt::vformat_to<mock_arg_formatter>(buffer, format_str, args);
 }
 
 template <typename... Args>

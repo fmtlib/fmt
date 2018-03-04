@@ -3197,9 +3197,9 @@ struct format_handler : internal::error_handler {
 
 /** Formats arguments and writes the output to the buffer. */
 template <typename ArgFormatter, typename Char, typename Context>
-typename Context::iterator do_vformat_to(typename ArgFormatter::range out,
-                                         basic_string_view<Char> format_str,
-                                         basic_format_args<Context> args) {
+typename Context::iterator vformat_to(typename ArgFormatter::range out,
+                                      basic_string_view<Char> format_str,
+                                      basic_format_args<Context> args) {
   typedef internal::null_terminating_iterator<Char> iterator;
   format_handler<ArgFormatter, Char, Context> h(out, format_str, args);
   parse_format_string(iterator(format_str.begin(), format_str.end()), h);
@@ -3327,13 +3327,13 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char> &buffer) {
 inline void vformat_to(internal::buffer &buf, string_view format_str,
                        format_args args) {
   typedef back_insert_range<internal::buffer> range;
-  do_vformat_to<arg_formatter<range>>(buf, format_str, args);
+  vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
 inline void vformat_to(internal::wbuffer &buf, wstring_view format_str,
                        wformat_args args) {
   typedef back_insert_range<internal::wbuffer> range;
-  do_vformat_to<arg_formatter<range>>(buf, format_str, args);
+  vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
 template <typename... Args>
@@ -3362,7 +3362,7 @@ template <typename OutputIt, typename... Args>
 inline OutputIt vformat_to(OutputIt out, string_view format_str,
                            typename format_args_t<OutputIt>::type args) {
   typedef output_range<OutputIt, char> range;
-  return do_vformat_to<arg_formatter<range>>(range(out), format_str, args);
+  return vformat_to<arg_formatter<range>>(range(out), format_str, args);
 }
 
 template <typename OutputIt, typename... Args>
@@ -3465,7 +3465,7 @@ FMT_CONSTEXPR internal::udl_formatter<Char, CHARS...> operator""_format() {
 # else
 /**
   \rst
-  C++11 literal equivalent of :func:`fmt::format`.
+  User-defined literal equivalent of :func:`fmt::format`.
 
   **Example**::
 
@@ -3481,7 +3481,7 @@ operator"" _format(const wchar_t *s, std::size_t) { return {s}; }
 
 /**
   \rst
-  C++11 literal equivalent of :func:`fmt::arg`.
+  User-defined literal equivalent of :func:`fmt::arg`.
 
   **Example**::
 
