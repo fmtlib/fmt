@@ -4,16 +4,16 @@
 API Reference
 *************
 
-All functions and classes provided by the fmt library reside
-in namespace ``fmt`` and macros have prefix ``FMT_``. For brevity the
-namespace is usually omitted in examples.
+All functions and classes provided by the fmt library reside in namespace
+``fmt`` and macros have prefix ``FMT_``. For brevity the namespace is usually
+omitted in examples.
 
 Format API
 ==========
 
 The following functions defined in ``fmt/core.h`` use :ref:`format string
-syntax <syntax>` similar to the one used by Python's `str.format
-<http://docs.python.org/3/library/stdtypes.html#str.format>`_ function.
+syntax <syntax>` similar to that of Python's `str.format
+<http://docs.python.org/3/library/stdtypes.html#str.format>`_.
 They take *format_str* and *args* as arguments.
 
 *format_str* is a format string that contains literal text and replacement
@@ -25,7 +25,6 @@ arguments in the resulting string.
 The `performance of the format API
 <https://github.com/fmtlib/fmt/blob/master/README.rst#speed-tests>`_ is close
 to that of glibc's ``printf`` and better than the performance of IOStreams.
-For even better speed use the `write API`_.
 
 .. _format:
 
@@ -121,41 +120,48 @@ Argument formatters
 It is possible to change the way arguments are formatted by providing a
 custom argument formatter class::
 
+  using arg_formatter =
+    fmt::arg_formatter<fmt::back_insert_range<fmt::internal::buffer>>;
+
   // A custom argument formatter that formats negative integers as unsigned
   // with the ``x`` format specifier.
-  class CustomArgFormatter :
-    public fmt::BasicArgFormatter<CustomArgFormatter, char> {
+  class custom_arg_formatter : public arg_formatter {
    public:
-    CustomArgFormatter(fmt::BasicFormatter<char, CustomArgFormatter> &f,
-                       fmt::FormatSpec &s, const char *fmt)
-      : fmt::BasicArgFormatter<CustomArgFormatter, char>(f, s, fmt) {}
+    custom_arg_formatter(context_type &ctx, fmt::format_specs &spec)
+      : arg_formatter(ctx, spec) {}
 
-    void visit_int(int value) {
+    using arg_formatter::operator();
+
+    void operator()(int value) {
       if (spec().type() == 'x')
-        visit_uint(value); // convert to unsigned and format
+        (*this)(static_cast<unsigned>(value)); // convert to unsigned and format
       else
-        fmt::BasicArgFormatter<CustomArgFormatter, char>::visit_int(value);
+        arg_formatter::operator()(value);
     }
   };
 
-  std::string custom_format(const char *format_str, fmt::ArgList args) {
-    fmt::MemoryWriter writer;
-    // Pass custom argument formatter as a template arg to BasicFormatter.
-    fmt::BasicFormatter<char, CustomArgFormatter> formatter(args, writer);
-    formatter.format(format_str);
-    return writer.str();
+  std::string custom_vformat(fmt::string_view format_str, fmt::format_args args) {
+    fmt::memory_buffer buffer;
+    // Pass custom argument formatter as a template arg to do_vformat.
+    fmt::do_vformat_to<custom_arg_formatter>(buffer, format_str, args);
+    return fmt::to_string(buffer);
   }
-  FMT_VARIADIC(std::string, custom_format, const char *)
+
+  template <typename ...Args>
+  inline std::string custom_format(
+      fmt::string_view format_str, const Args &... args) {
+    return custom_vformat(format_str, fmt::make_args(args...));
+  }
 
   std::string s = custom_format("{:x}", -42); // s == "ffffffd6"
 
 .. doxygenclass:: fmt::ArgVisitor
    :members:
 
-.. doxygenclass:: fmt::BasicArgFormatter
+.. doxygenclass:: fmt::arg_formatter_base
    :members:
 
-.. doxygenclass:: fmt::ArgFormatter
+.. doxygenclass:: fmt::arg_formatter
    :members:
 
 Printf formatting
@@ -211,23 +217,18 @@ store output elsewhere by subclassing `~fmt::BasicWriter`.
 Utilities
 =========
 
-.. doxygenfunction:: fmt::arg(StringRef, const T&)
+.. doxygenfunction:: fmt::arg(string_view, const T&)
 
 .. doxygenfunction:: operator""_a(const char *, std::size_t)
 
 .. doxygendefine:: FMT_CAPTURE
 
-.. doxygendefine:: FMT_VARIADIC
-
-.. doxygenclass:: fmt::ArgList
+.. doxygenclass:: fmt::basic_format_args
    :members:
 
 .. doxygenfunction:: fmt::to_string(const T&)
 
-.. doxygenclass:: fmt::BasicStringRef
-   :members:
-
-.. doxygenclass:: fmt::BasicCStringRef
+.. doxygenclass:: fmt::basic_string_view
    :members:
 
 .. doxygenclass:: fmt::Buffer
