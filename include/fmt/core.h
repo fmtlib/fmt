@@ -451,18 +451,9 @@ FMT_CONSTEXPR bool is_arithmetic(type t) {
 template <typename T, typename Char, bool ENABLE = true>
 struct convert_to_int {
   enum {
-   value = !std::is_arithmetic<T>::value && std::is_convertible<T, int>::value
+    value = !std::is_arithmetic<T>::value && std::is_convertible<T, int>::value
   };
 };
-
-#define FMT_DISABLE_CONVERSION_TO_INT(Type) \
-  template <typename Char> \
-  struct convert_to_int<Type, Char> { enum { value = 0 }; }
-
-// Silence warnings about convering float to int.
-FMT_DISABLE_CONVERSION_TO_INT(float);
-FMT_DISABLE_CONVERSION_TO_INT(double);
-FMT_DISABLE_CONVERSION_TO_INT(long double);
 
 template <typename Char>
 struct string_value {
