@@ -1468,6 +1468,10 @@ class arg_formatter_base {
 
 struct format_string {};
 
+template <typename S>
+struct is_format_string:
+  std::integral_constant<bool, std::is_base_of<format_string, S>::value> {};
+
 template <typename Char>
 FMT_CONSTEXPR bool is_name_start(Char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
@@ -2091,6 +2095,14 @@ FMT_CONSTEXPR bool check_format_string(
   format_string_checker<Char, ErrorHandler, Args...> checker(s, eh);
   parse_format_string(s.begin(), checker);
   return true;
+}
+
+template <typename... Args, typename String>
+void check_format_string(String format_str) {
+  FMT_CONSTEXPR_DECL bool invalid_format =
+      internal::check_format_string<char, internal::error_handler, Args...>(
+        string_view(format_str.data(), format_str.size()));
+  (void)invalid_format;
 }
 
 // Specifies whether to format T using the standard formatter.
@@ -3399,13 +3411,17 @@ inline std::wstring vformat(wstring_view format_str, wformat_args args) {
 
 template <typename String, typename... Args>
 inline typename std::enable_if<
-  std::is_base_of<internal::format_string, String>::value, std::string>::type
+  internal::is_format_string<String>::value, std::string>::type
     format(String format_str, const Args & ... args) {
-  FMT_CONSTEXPR_DECL bool invalid_format =
-      internal::check_format_string<char, internal::error_handler, Args...>(
-        string_view(format_str.value(), format_str.size()));
-  (void)invalid_format;
-  return vformat(format_str.value(), make_args(args...));
+  internal::check_format_string<Args...>(format_str);
+  return vformat(format_str.data(), make_args(args...));
+}
+
+template <typename String, typename... Args>
+inline typename std::enable_if<internal::is_format_string<String>::value>::type
+    print(String format_str, const Args & ... args) {
+  internal::check_format_string<Args...>(format_str);
+  return vprint(format_str.data(), make_args(args...));
 }
 
 // Counts the number of characters in the output of format(format_str, args...).
@@ -3505,7 +3521,7 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 
 #define FMT_STRING(s) [] { \
     struct S : fmt::internal::format_string { \
-      static FMT_CONSTEXPR auto value() { return s; } \
+      static FMT_CONSTEXPR auto data() { return s; } \
       static FMT_CONSTEXPR size_t size() { return sizeof(s); } \
     }; \
     return S{}; \
