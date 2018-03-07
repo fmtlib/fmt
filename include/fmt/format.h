@@ -1326,7 +1326,7 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
   if (map_)
     return;
   map_ = new entry[args.max_size()];
-  bool use_values = args.type(MAX_PACKED_ARGS - 1) == internal::none_type;
+  bool use_values = args.type(max_packed_args - 1) == internal::none_type;
   if (use_values) {
     for (unsigned i = 0;/*nothing*/; ++i) {
       internal::type arg_type = args.type(i);
@@ -1342,11 +1342,11 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
     }
     return;
   }
-  for (unsigned i = 0; i != MAX_PACKED_ARGS; ++i) {
+  for (unsigned i = 0; i != max_packed_args; ++i) {
     if (args.type(i) == internal::name_arg_type)
       push_back(args.args_[i].value_);
   }
-  for (unsigned i = MAX_PACKED_ARGS; ; ++i) {
+  for (unsigned i = max_packed_args; ; ++i) {
     switch (args.args_[i].type_) {
       case internal::none_type:
         return;

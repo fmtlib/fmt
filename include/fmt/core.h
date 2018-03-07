@@ -642,7 +642,7 @@ typed_value<C, name_arg_type>
 }
 
 // Maximum number of arguments with packed types.
-enum { MAX_PACKED_ARGS = 15 };
+enum { max_packed_args = 15 };
 
 template <typename Context>
 class arg_map;
@@ -912,8 +912,7 @@ typedef buffer_context<wchar_t>::type wcontext;
 
 namespace internal {
 template <typename Context, typename T>
-class get_type {
- public:
+struct get_type {
   typedef decltype(make_value<Context>(
         declval<typename std::decay<T>::type&>())) value_type;
   static const type value = value_type::type_tag;
@@ -954,7 +953,7 @@ class arg_store {
   static const size_t NUM_ARGS = sizeof...(Args);
 
   // Packed is a macro on MinGW so use IS_PACKED instead.
-  static const bool IS_PACKED = NUM_ARGS < internal::MAX_PACKED_ARGS;
+  static const bool IS_PACKED = NUM_ARGS < internal::max_packed_args;
 
   typedef typename std::conditional<
     IS_PACKED, internal::value<Context>, basic_arg<Context>>::type value_type;
@@ -1004,10 +1003,10 @@ class basic_format_args {
 
  private:
   // To reduce compiled code size per formatting function call, types of first
-  // MAX_PACKED_ARGS arguments are passed in the types_ field.
+  // max_packed_args arguments are passed in the types_ field.
   uint64_t types_;
   union {
-    // If the number of arguments is less than MAX_PACKED_ARGS, the argument
+    // If the number of arguments is less than max_packed_args, the argument
     // values are stored in values_, otherwise they are stored in args_.
     // This is done to reduce compiled code size as storing larger objects
     // may require more code (at least on x86-64) even if the same amount of
@@ -1035,7 +1034,7 @@ class basic_format_args {
       return index < num_args ? args_[index] : format_arg();
     }
     format_arg arg;
-    if (index > internal::MAX_PACKED_ARGS)
+    if (index > internal::max_packed_args)
       return arg;
     arg.type_ = type(index);
     if (arg.type_ == internal::none_type)
@@ -1064,7 +1063,7 @@ class basic_format_args {
   unsigned max_size() const {
     int64_t signed_types = static_cast<int64_t>(types_);
     return signed_types < 0 ?
-          -signed_types : static_cast<int64_t>(internal::MAX_PACKED_ARGS);
+          -signed_types : static_cast<int64_t>(internal::max_packed_args);
   }
 };
 
@@ -1127,7 +1126,7 @@ inline internal::named_arg<T, wchar_t> arg(wstring_view name, const T &arg) {
 template <typename S, typename T, typename Char>
 void arg(S, internal::named_arg<T, Char>) FMT_DELETED;
 
-enum color { BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE };
+enum color { black, red, green, yellow, blue, magenta, cyan, white };
 
 FMT_API void vprint_colored(color c, string_view format, format_args args);
 

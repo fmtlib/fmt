@@ -442,9 +442,9 @@ TEST(FormatterTest, ManyArgs) {
                    format_error, "argument index out of range");
   EXPECT_THROW_MSG(TestFormat<21>::format("{21}"),
                    format_error, "argument index out of range");
-  enum { MAX_PACKED_ARGS = fmt::internal::MAX_PACKED_ARGS };
-  std::string format_str = fmt::format("{{{}}}", MAX_PACKED_ARGS + 1);
-  EXPECT_THROW_MSG(TestFormat<MAX_PACKED_ARGS>::format(format_str),
+  enum { max_packed_args = fmt::internal::max_packed_args };
+  std::string format_str = fmt::format("{{{}}}", max_packed_args + 1);
+  EXPECT_THROW_MSG(TestFormat<max_packed_args>::format(format_str),
                    format_error, "argument index out of range");
 }
 
@@ -1405,7 +1405,7 @@ TEST(FormatTest, Print) {
 
 #if FMT_USE_FILE_DESCRIPTORS
 TEST(FormatTest, PrintColored) {
-  EXPECT_WRITE(stdout, fmt::print_colored(fmt::RED, "Hello, {}!\n", "world"),
+  EXPECT_WRITE(stdout, fmt::print_colored(fmt::red, "Hello, {}!\n", "world"),
     "\x1b[31mHello, world!\n\x1b[0m");
 }
 #endif
