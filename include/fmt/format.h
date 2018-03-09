@@ -3527,6 +3527,10 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
     return S{}; \
   }()
 
+#ifndef FMT_NO_FMT_STRING_ALIAS
+# define fmt(s) FMT_STRING(s)
+#endif
+
 #ifdef FMT_HEADER_ONLY
 # define FMT_FUNC inline
 # include "format.cc"
