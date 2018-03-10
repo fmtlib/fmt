@@ -1069,7 +1069,8 @@ class basic_format_args {
   }
 };
 
-// This is a separate type rather than a typedef to make symbols readable.
+/** An alias to ``basic_format_args<context>``. */
+// It is a separate type rather than a typedef to make symbols readable.
 struct format_args: basic_format_args<context> {
   template <typename ...Args>
   format_args(Args && ... arg)
@@ -1179,7 +1180,7 @@ std::wstring vformat(wstring_view format_str, wformat_args args);
 
   **Example**::
 
-    #include "fmt/core.h"
+    #include <fmt/core.h>
     std::string message = fmt::format("The answer is {}", 42);
   \endrst
 */

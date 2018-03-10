@@ -4,14 +4,29 @@
 API Reference
 *************
 
-All functions and classes provided by the {fmt} library reside in namespace
-``fmt`` and macros have prefix ``FMT_``.
+The {fmt} library API consists of the following parts:
 
-Format API
-==========
+* :ref:`fmt/core.h <core-api>`: the core API providing argument handling
+  facilities and a lightweight subset of formatting functions
+* :ref:`fmt/format.h <format-api>`: the full format API providing compile-time
+  format string checks, output iterator and user-defined type support
+* :ref:`fmt/time.h <time-api>`: date and time formatting
+* :ref:`fmt/ostream.h <ostream-api>`: ``std::ostream`` support
+* :ref:`fmt/printf.h <printf-api>`: ``printf`` formatting
 
-The following functions defined in ``fmt/core.h`` use :ref:`format string
-syntax <syntax>` similar to that of Python's `str.format
+All functions and types provided by the library reside in namespace ``fmt`` and
+macros have prefix ``FMT_`` or ``fmt``.
+
+.. _core-api:
+
+Core API
+========
+
+``fmt/core.h`` defines the core API which provides argument handling facilities
+and a lightweight subset of formatting functions.
+
+The following functions use :ref:`format string syntax <syntax>`
+imilar to that of Python's `str.format
 <http://docs.python.org/3/library/stdtypes.html#str.format>`_.
 They take *format_str* and *args* as arguments.
 
@@ -21,41 +36,60 @@ arguments in the resulting string.
 
 *args* is an argument list representing objects to be formatted.
 
-The `performance of the formating functions
-<https://github.com/fmtlib/fmt/blob/master/README.rst#speed-tests>`_ is close
-to that of glibc's ``printf`` and better than the performance of IOStreams.
-
 .. _format:
 
 .. doxygenfunction:: format(string_view, const Args&...)
+.. doxygenfunction:: vformat(string_view, format_args)
 
 .. _print:
 
 .. doxygenfunction:: print(string_view, const Args&...)
+.. doxygenfunction:: vprint(string_view, format_args)
 
 .. doxygenfunction:: print(std::FILE *, string_view, const Args&...)
+.. doxygenfunction:: vprint(std::FILE *, string_view, format_args)
 
-Date and time formatting
-------------------------
+.. _format-api:
 
-The library supports `strftime
-<http://en.cppreference.com/w/cpp/chrono/c/strftime>`_-like date and time
-formatting::
+Named arguments
+---------------
 
-  #include "fmt/time.h"
+.. doxygenfunction:: fmt::arg(string_view, const T&)
 
-  std::time_t t = std::time(nullptr);
-  // Prints "The date is 2016-04-29." (with the current date)
-  fmt::print("The date is {:%Y-%m-%d}.", *std::localtime(&t));
+Argument lists
+--------------
 
-The format string syntax is described in the documentation of
-`strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_.
+.. doxygenclass:: fmt::basic_format_args
+   :members:
+
+.. doxygenstruct:: fmt::format_args
+
+.. doxygenfunction:: fmt::make_args(const Args&...)
+
+Compatibility
+-------------
+
+.. doxygenclass:: fmt::basic_string_view
+   :members:
+
+Format API
+==========
+
+``fmt/format.h`` defines the full format API providing compile-time format
+string checks, output iterator and user-defined type support.
+
+Compile-time format string checks
+---------------------------------
+
+.. doxygendefine:: fmt
 
 Formatting user-defined types
 -----------------------------
 
 To make a user-defined type formattable, specialize the ``formatter<T>`` struct
 template and implement ``parse`` and ``format`` methods::
+
+  #include <fmt/format.h>
 
   struct point { double x, y; };
 
@@ -88,28 +122,10 @@ This section shows how to define a custom format function for a user-defined
 type. The next section describes how to get ``fmt`` to use a conventional stream
 output ``operator<<`` when one is defined for a user-defined type.
 
-``std::ostream`` support
-------------------------
+Output iterator support
+-----------------------
 
-The header ``fmt/ostream.h`` provides ``std::ostream`` support including
-formatting of user-defined types that have overloaded ``operator<<``::
-
-  #include "fmt/ostream.h"
-
-  class date {
-    int year_, month_, day_;
-  public:
-    date(int year, int month, int day): year_(year), month_(month), day_(day) {}
-
-    friend std::ostream &operator<<(std::ostream &os, const date &d) {
-      return os << d.year_ << '-' << d.month_ << '-' << d.day_;
-    }
-  };
-
-  std::string s = fmt::format("The date is {}", date(2012, 12, 9));
-  // s == "The date is 2012-12-9"
-
-.. doxygenfunction:: print(std::ostream&, string_view, const Args&...)
+.. doxygenfunction:: fmt::format_to(OutputIt, string_view, const Args&...)
 
 Literal-based API
 -----------------
@@ -120,6 +136,57 @@ The following user-defined literals are defined in ``fmt/format.h``.
 
 .. doxygenfunction:: operator""_a(const char *, std::size_t)
 
+Utilities
+---------
+
+.. doxygenfunction:: fmt::to_string(const T&)
+
+.. doxygenclass:: fmt::basic_memory_buffer
+   :protected-members:
+   :members:
+
+System errors
+-------------
+
+.. doxygenclass:: fmt::system_error
+   :members:
+
+.. doxygenfunction:: fmt::format_system_error
+
+.. doxygenclass:: fmt::windows_error
+   :members:
+
+.. _formatstrings:
+
+Custom allocators
+-----------------
+
+The {fmt} library supports custom dynamic memory allocators.
+A custom allocator class can be specified as a template argument to
+:class:`fmt::basic_memory_buffer`::
+
+    using custom_memory_buffer = 
+      fmt::basic_memory_buffer<char, fmt::inline_buffer_size, custom_allocator>;
+
+It is also possible to write a formatting function that uses a custom
+allocator::
+
+    using custom_string =
+      std::basic_string<char, std::char_traits<char>, custom_allocator>;
+
+    custom_string vformat(custom_allocator alloc, fmt::string_view format_str,
+                          fmt::format_args args) {
+      custom_memory_buffer buf(alloc);
+      fmt::vformat_to(buf, format_str, args);
+      return custom_string(buf.data(), buf.size(), alloc);
+    }
+
+    template <typename ...Args>
+    inline custom_string format(custom_allocator alloc,
+                                fmt::string_view format_str,
+                                const Args & ... args) {
+      return vformat(alloc, format_str, fmt::make_args(args...));
+    }
 Custom formatting of built-in types
 -----------------------------------
 
@@ -170,8 +237,53 @@ custom argument formatter class::
 .. doxygenclass:: fmt::arg_formatter
    :members:
 
-Printf formatting
------------------
+.. _time-api:
+
+Date and time formatting
+========================
+
+The library supports `strftime
+<http://en.cppreference.com/w/cpp/chrono/c/strftime>`_-like date and time
+formatting::
+
+  #include <fmt/time.h>
+
+  std::time_t t = std::time(nullptr);
+  // Prints "The date is 2016-04-29." (with the current date)
+  fmt::print("The date is {:%Y-%m-%d}.", *std::localtime(&t));
+
+The format string syntax is described in the documentation of
+`strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_.
+
+.. _ostream-api:
+
+``std::ostream`` support
+========================
+
+``fmt/ostream.h`` provides ``std::ostream`` support including formatting of
+user-defined types that have overloaded ``operator<<``::
+
+  #include <fmt/ostream.h>
+
+  class date {
+    int year_, month_, day_;
+  public:
+    date(int year, int month, int day): year_(year), month_(month), day_(day) {}
+
+    friend std::ostream &operator<<(std::ostream &os, const date &d) {
+      return os << d.year_ << '-' << d.month_ << '-' << d.day_;
+    }
+  };
+
+  std::string s = fmt::format("The date is {}", date(2012, 12, 9));
+  // s == "The date is 2012-12-9"
+
+.. doxygenfunction:: print(std::ostream&, string_view, const Args&...)
+
+.. _printf-api:
+
+``printf`` formatting
+=====================
 
 The header ``fmt/printf.h`` provides ``printf``-like formatting functionality.
 The following functions use `printf format string syntax
@@ -220,62 +332,3 @@ store output elsewhere by subclassing `~fmt::BasicWriter`.
 
 .. doxygenfunction:: pad(int, unsigned, Char)
 
-Utilities
-=========
-
-.. doxygenfunction:: fmt::arg(string_view, const T&)
-
-.. doxygenclass:: fmt::basic_format_args
-   :members:
-
-.. doxygenfunction:: fmt::to_string(const T&)
-
-.. doxygenclass:: fmt::basic_string_view
-   :members:
-
-.. doxygenclass:: fmt::basic_memory_buffer
-   :protected-members:
-   :members:
-
-System errors
-=============
-
-.. doxygenclass:: fmt::system_error
-   :members:
-
-.. doxygenfunction:: fmt::format_system_error
-
-.. doxygenclass:: fmt::windows_error
-   :members:
-
-.. _formatstrings:
-
-Custom allocators
-=================
-
-The {fmt} library supports custom dynamic memory allocators.
-A custom allocator class can be specified as a template argument to
-:class:`fmt::basic_memory_buffer`::
-
-    using custom_memory_buffer = 
-      fmt::basic_memory_buffer<char, fmt::inline_buffer_size, custom_allocator>;
-
-It is also possible to write a formatting function that uses a custom
-allocator::
-
-    using custom_string =
-      std::basic_string<char, std::char_traits<char>, custom_allocator>;
-
-    custom_string vformat(custom_allocator alloc, fmt::string_view format_str,
-                          fmt::format_args args) {
-      custom_memory_buffer buf(alloc);
-      fmt::vformat_to(buf, format_str, args);
-      return custom_string(buf.data(), buf.size(), alloc);
-    }
-
-    template <typename ...Args>
-    inline custom_string format(custom_allocator alloc,
-                                fmt::string_view format_str,
-                                const Args & ... args) {
-      return vformat(alloc, format_str, fmt::make_args(args...));
-    }

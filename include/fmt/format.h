@@ -3315,7 +3315,7 @@ auto join(const Range &range, wstring_view sep)
 
   **Example**::
 
-    #include "fmt/format.h"
+    #include <fmt/format.h>
 
     std::string answer = fmt::to_string(42);
   \endrst
@@ -3528,6 +3528,16 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
   }()
 
 #ifndef FMT_NO_FMT_STRING_ALIAS
+/**
+  \rst
+  Constructs a compile-time format string.
+
+  **Example**::
+
+    #include <fmt/format.h>
+    std::string s = fmt::format(fmt("{:d}"), "foo"); // fails to compile
+  \endrst
+ */
 # define fmt(s) FMT_STRING(s)
 #endif
 
