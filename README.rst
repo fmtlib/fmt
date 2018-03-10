@@ -84,22 +84,22 @@ Format strings can be checked at compile time:
 .. code:: c++
 
     // test.cc
-    using namespace fmt::literals;
-    std::string s = "{2}"_format(42);
+    #include <fmt/format.h>
+    std::string s = fmt::format(fmt("{2}"), 42);
 
 .. code::
 
     $ g++ -Iinclude test.cc -std=c++14
     ...
-    test.cc:5:31: note: in instantiation of function template specialization
-    'fmt::internal::udl_formatter<char, '{', '2', '}'>::operator()<int>' requested
-    here
-      std::string s = "{2}"_format(42);
-                                  ^
-    include/fmt/format.h:3838:7: note: non-constexpr function 'on_error' cannot be
-    used in a constant expression
-          on_error("argument index out of range");
-          ^
+    test.cc:2:22: note: in instantiation of function template specialization 'fmt::format<S, int>' requested here
+    std::string s = fmt::format(fmt("{2}"), 42);
+                         ^
+    include/fmt/core.h:749:19: note: non-constexpr function 'on_error' cannot be used in a constant expression
+        ErrorHandler::on_error(message);
+                      ^
+    include/fmt/format.h:2081:16: note: in call to '&checker.context_->on_error(&"argument index out of range"[0])'
+          context_.on_error("argument index out of range");
+                   ^
 
 {fmt} can be used as a safe portable replacement for ``itoa``:
 
