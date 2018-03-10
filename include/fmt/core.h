@@ -546,7 +546,7 @@ template <typename Context, typename T>
 FMT_CONSTEXPR basic_arg<Context> make_arg(const T &value);
 
 #define FMT_MAKE_VALUE(TAG, ArgType, ValueType) \
-  template <typename C, typename Char = typename C::char_type> \
+  template <typename C> \
   FMT_CONSTEXPR typed_value<C, TAG> make_value(ArgType val) { \
     return static_cast<ValueType>(val); \
   }
@@ -589,20 +589,22 @@ FMT_MAKE_VALUE(long_double_type, long double, long double)
 
 // Formatting of wide strings into a narrow buffer and multibyte strings
 // into a wide buffer is disallowed (https://github.com/fmtlib/fmt/pull/606).
-FMT_MAKE_VALUE(cstring_type, Char*, const Char*)
-FMT_MAKE_VALUE(cstring_type, const Char*, const Char*)
+FMT_MAKE_VALUE(cstring_type, typename C::char_type*,
+               const typename C::char_type*)
+FMT_MAKE_VALUE(cstring_type, const typename C::char_type*,
+               const typename C::char_type*)
 
 FMT_MAKE_VALUE(cstring_type, signed char*, const signed char*)
 FMT_MAKE_VALUE(cstring_type, const signed char*, const signed char*)
 FMT_MAKE_VALUE(cstring_type, unsigned char*, const unsigned char*)
 FMT_MAKE_VALUE(cstring_type, const unsigned char*, const unsigned char*)
 FMT_MAKE_VALUE(string_type, basic_string_view<typename C::char_type>,
-               basic_string_view<Char>)
+               basic_string_view<typename C::char_type>)
 FMT_MAKE_VALUE(string_type,
                typename basic_string_view<typename C::char_type>::type,
-               basic_string_view<Char>)
+               basic_string_view<typename C::char_type>)
 FMT_MAKE_VALUE(string_type, const std::basic_string<typename C::char_type>&,
-               basic_string_view<Char>)
+               basic_string_view<typename C::char_type>)
 FMT_MAKE_VALUE(pointer_type, void*, const void*)
 FMT_MAKE_VALUE(pointer_type, const void*, const void*)
 
