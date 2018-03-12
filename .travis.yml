@@ -43,7 +43,7 @@ matrix:
         - wget https://services.gradle.org/distributions/gradle-4.3.1-bin.zip
         - mkdir -p gradle
         - unzip -q -d ./gradle gradle-4.3.1-bin.zip
-        - export GRADLE=gradle/gradle-4.3.1/bin/gradle
+        - export GRADLE=${TRAVIS_BUILD_DIR}/gradle/gradle-4.3.1/bin/gradle
       before_script:
         - bash $GRADLE --version
         - cd ./support
