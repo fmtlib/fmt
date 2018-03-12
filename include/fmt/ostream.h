@@ -46,28 +46,31 @@ class FormatBuf : public std::basic_streambuf<Char> {
   }
 };
 
-struct test_stream : std::ostream {
+template <typename Char>
+struct test_stream : std::basic_ostream<Char> {
  private:
   struct null;
-  // Hide all operator<< from std::ostream.
+  // Hide all operator<< from std::basic_ostream<Char>.
   void operator<<(null);
 };
 
 // Disable conversion to int if T has an overloaded operator<< which is a free
 // function (not a member of std::ostream).
-template <typename T>
-class convert_to_int<T, true> {
+template <typename T, typename Char>
+class convert_to_int<T, Char, true> {
  private:
   template <typename U>
   static decltype(
-    std::declval<test_stream&>() << std::declval<U>(), std::true_type())
-      test(int);
+    internal::declval<test_stream<Char>&>()
+      << internal::declval<U>(), std::true_type()) test(int);
 
   template <typename>
   static std::false_type test(...);
 
+  typedef decltype(test<T>(0)) result;
+
  public:
-  static const bool value = !decltype(test<T>(0))::value;
+  static const bool value = !result::value;
 };
 
 // Write the content of buf to os.
@@ -104,8 +107,8 @@ struct format_enum<T,
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename T, typename Char>
 struct formatter<T, Char,
-    typename std::enable_if<
-      !internal::format_type<buffer_context_t<Char>, T>::value>::type>
+    typename std::enable_if<!internal::format_type<
+      typename buffer_context<Char>::type, T>::value>::type>
     : formatter<basic_string_view<Char>, Char> {
 
   template <typename Context>
@@ -130,7 +133,7 @@ inline void vprint(std::ostream &os, string_view format_str, format_args args) {
 
   **Example**::
 
-    print(cerr, "Don't {}!", "panic");
+    fmt::print(cerr, "Don't {}!", "panic");
   \endrst
  */
 template <typename... Args>

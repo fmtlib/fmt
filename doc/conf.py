@@ -47,7 +47,7 @@ source_suffix = '.rst'
 
 # General information about the project.
 project = u'fmt'
-copyright = u'2012-2015, Victor Zverovich'
+copyright = u'2012-present, Victor Zverovich'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

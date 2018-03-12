@@ -1,29 +1,9 @@
-/*
- Utility tests.
-
- Copyright (c) 2012-2014, Victor Zverovich
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are met:
-
- 1. Redistributions of source code must retain the above copyright notice, this
-    list of conditions and the following disclaimer.
- 2. Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Formatting library for C++ - utility tests
+//
+// Copyright (c) 2012 - present, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 #include "test-assert.h"
 
@@ -81,7 +61,7 @@ struct formatter<Test, Char> {
     return ctx.begin();
   }
 
-  using iterator = std::back_insert_iterator<basic_buffer<Char>>;
+  typedef std::back_insert_iterator<basic_buffer<Char>> iterator;
 
   auto format(Test, basic_context<iterator, char> &ctx)
       -> decltype(ctx.begin()) {
@@ -361,7 +341,7 @@ TEST(MemoryBufferTest, Allocator) {
   {
     basic_memory_buffer<char, 10, TestAllocator> buffer2((TestAllocator(&alloc)));
     EXPECT_EQ(&alloc, buffer2.get_allocator().get());
-    std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
+    std::size_t size = 2 * fmt::inline_buffer_size;
     EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem));
     buffer2.reserve(size);
     EXPECT_CALL(alloc, deallocate(&mem, size));
@@ -372,7 +352,7 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
   typedef AllocatorRef< MockAllocator<char> > TestAllocator;
   StrictMock< MockAllocator<char> > alloc;
   basic_memory_buffer<char, 10, TestAllocator> buffer((TestAllocator(&alloc)));
-  std::size_t size = 2 * fmt::internal::INLINE_BUFFER_SIZE;
+  std::size_t size = 2 * fmt::inline_buffer_size;
   std::vector<char> mem(size);
   {
     EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem[0]));
@@ -436,19 +416,21 @@ TEST(UtilTest, FormatArgs) {
 }
 
 struct custom_context {
-  using char_type = char;
+  typedef char char_type;
 
   template <typename T>
   struct formatter_type {
-    template <typename ParseContext>
-    auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
-      return ctx.begin();
-    }
+    struct type {
+      template <typename ParseContext>
+      auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+      }
 
-    const char *format(const T &, custom_context& ctx) {
-      ctx.called = true;
-      return 0;
-    }
+      const char *format(const T &, custom_context& ctx) {
+        ctx.called = true;
+        return 0;
+      }
+    };
   };
 
   bool called;
@@ -476,12 +458,12 @@ bool operator==(custom_value<Char> lhs, custom_value<Char> rhs) {
 }
 }
 
-template <typename T>
-struct MockVisitor {
-  // Use a unique result type to make sure that there are no undesirable
-  // conversions.
-  struct Result {};
+// Use a unique result type to make sure that there are no undesirable
+// conversions.
+struct Result {};
 
+template <typename T>
+struct MockVisitor: fmt::internal::function<Result> {
   MockVisitor() {
     ON_CALL(*this, visit(_)).WillByDefault(Return(Result()));
   }
@@ -523,12 +505,13 @@ VISIT_TYPE(float, double);
 #define CHECK_ARG_(Char, expected, value) { \
   testing::StrictMock<MockVisitor<decltype(expected)>> visitor; \
   EXPECT_CALL(visitor, visit(expected)); \
-  using iterator = std::back_insert_iterator<basic_buffer<Char>>; \
+  typedef std::back_insert_iterator<basic_buffer<Char>> iterator; \
   fmt::visit(visitor, make_arg<fmt::basic_context<iterator, Char>>(value)); \
 }
 
-#define CHECK_ARG(value) { \
-  typename VisitType<decltype(value)>::Type expected = value; \
+#define CHECK_ARG(value, typename_) { \
+  typedef decltype(value) value_type; \
+  typename_ VisitType<value_type>::Type expected = value; \
   CHECK_ARG_(char, expected, value) \
   CHECK_ARG_(wchar_t, expected, value) \
 }
@@ -554,9 +537,9 @@ typename std::enable_if<std::is_floating_point<T>::value, T>::type
 }
 
 TYPED_TEST(NumericArgTest, MakeAndVisit) {
-  CHECK_ARG(test_value<TypeParam>());
-  CHECK_ARG(std::numeric_limits<TypeParam>::min());
-  CHECK_ARG(std::numeric_limits<TypeParam>::max());
+  CHECK_ARG(test_value<TypeParam>(), typename);
+  CHECK_ARG(std::numeric_limits<TypeParam>::min(), typename);
+  CHECK_ARG(std::numeric_limits<TypeParam>::max(), typename);
 }
 
 TEST(UtilTest, CharArg) {
@@ -592,22 +575,25 @@ TEST(UtilTest, PointerArg) {
   const void *cp = 0;
   CHECK_ARG_(char, cp, p);
   CHECK_ARG_(wchar_t, cp, p);
-  CHECK_ARG(cp);
+  CHECK_ARG(cp, );
 }
 
-TEST(UtilTest, CustomArg) {
-  ::Test test;
-  using handle = typename fmt::basic_arg<fmt::context>::handle;
-  using visitor = MockVisitor<handle>;
-  testing::StrictMock<visitor> v;
-  EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke([&](handle h) {
+struct check_custom {
+  Result operator()(fmt::basic_arg<fmt::context>::handle h) const {
     fmt::memory_buffer buffer;
     fmt::internal::basic_buffer<char> &base = buffer;
     fmt::context ctx(std::back_inserter(base), "", fmt::format_args());
     h.format(ctx);
     EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
-    return visitor::Result();
-  }));
+    return Result();
+  }
+};
+
+TEST(UtilTest, CustomArg) {
+  ::Test test;
+  typedef MockVisitor<fmt::basic_arg<fmt::context>::handle> visitor;
+  testing::StrictMock<visitor> v;
+  EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke(check_custom()));
   fmt::visit(v, make_arg<fmt::context>(test));
 }
 
@@ -841,15 +827,15 @@ TEST(UtilTest, ReportWindowsError) {
 enum TestEnum2 {};
 
 TEST(UtilTest, ConvertToInt) {
-  EXPECT_FALSE(fmt::internal::convert_to_int<char>::value);
-  EXPECT_FALSE(fmt::internal::convert_to_int<const char *>::value);
-  EXPECT_TRUE(fmt::internal::convert_to_int<TestEnum2>::value);
+  EXPECT_FALSE((fmt::internal::convert_to_int<char, char>::value));
+  EXPECT_FALSE((fmt::internal::convert_to_int<const char *, char>::value));
+  EXPECT_TRUE((fmt::internal::convert_to_int<TestEnum2, char>::value));
 }
 
 #if FMT_USE_ENUM_BASE
 enum TestEnum : char {TestValue};
 TEST(UtilTest, IsEnumConvertibleToInt) {
-  EXPECT_TRUE(fmt::internal::convert_to_int<TestEnum>::value);
+  EXPECT_TRUE((fmt::internal::convert_to_int<TestEnum, char>::value));
 }
 #endif
 

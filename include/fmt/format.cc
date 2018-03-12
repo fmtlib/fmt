@@ -166,7 +166,7 @@ int safe_strerror(
 void format_error_code(internal::buffer &out, int error_code,
                        string_view message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
-  // INLINE_BUFFER_SIZE to avoid dynamic memory allocation and potential
+  // inline_buffer_size to avoid dynamic memory allocation and potential
   // bad_alloc.
   out.resize(0);
   static const char SEP[] = ": ";
@@ -181,13 +181,13 @@ void format_error_code(internal::buffer &out, int error_code,
   }
   error_code_size += internal::count_digits(abs_value);
   writer w(out);
-  if (message.size() <= internal::INLINE_BUFFER_SIZE - error_code_size) {
+  if (message.size() <= inline_buffer_size - error_code_size) {
     w.write(message);
     w.write(SEP);
   }
   w.write(ERROR_STR);
   w.write(error_code);
-  assert(out.size() <= internal::INLINE_BUFFER_SIZE);
+  assert(out.size() <= inline_buffer_size);
 }
 
 void report_error(FormatFunc func, int error_code,
@@ -332,7 +332,7 @@ FMT_FUNC void internal::format_windows_error(
     internal::buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
     wmemory_buffer buf;
-    buf.resize(INLINE_BUFFER_SIZE);
+    buf.resize(inline_buffer_size);
     for (;;) {
       wchar_t *system_message = &buf[0];
       int result = FormatMessageW(
@@ -364,7 +364,7 @@ FMT_FUNC void format_system_error(
     internal::buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
     memory_buffer buf;
-    buf.resize(internal::INLINE_BUFFER_SIZE);
+    buf.resize(inline_buffer_size);
     for (;;) {
       char *system_message = &buf[0];
       int result = safe_strerror(error_code, system_message, buf.size());
@@ -414,7 +414,7 @@ FMT_FUNC void vprint(string_view format_str, format_args args) {
   vprint(stdout, format_str, args);
 }
 
-FMT_FUNC void vprint_colored(Color c, string_view format, format_args args) {
+FMT_FUNC void vprint_colored(color c, string_view format, format_args args) {
   char escape[] = "\x1b[30m";
   escape[3] = static_cast<char>('0' + c);
   std::fputs(escape, stdout);
@@ -434,7 +434,8 @@ template char internal::thousands_sep(locale_provider *lp);
 
 template void basic_fixed_buffer<char>::grow(std::size_t);
 
-template void internal::arg_map<context>::init(const format_args &args);
+template void internal::arg_map<context>::init(
+    const basic_format_args<context> &args);
 
 template FMT_API int internal::char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,

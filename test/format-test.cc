@@ -1,29 +1,9 @@
-/*
- Formatting library tests.
-
- Copyright (c) 2012-2014, Victor Zverovich
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are met:
-
- 1. Redistributions of source code must retain the above copyright notice, this
-    list of conditions and the following disclaimer.
- 2. Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Formatting library for C++ - formatting library tests
+//
+// Copyright (c) 2012 - present, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 #include <cctype>
 #include <cfloat>
@@ -89,7 +69,7 @@ void std_format(long double value, std::wstring &result) {
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T &value, const char *type) {
   fmt::basic_memory_buffer<Char> buffer;
-  using range = fmt::back_insert_range<fmt::internal::basic_buffer<Char>>;
+  typedef fmt::back_insert_range<fmt::internal::basic_buffer<Char>> range;
   fmt::basic_writer<range> writer(buffer);
   writer.write(value);
   std::basic_string<Char> actual = to_string(buffer);
@@ -137,6 +117,8 @@ TEST(StringViewTest, Ctor) {
   EXPECT_EQ(4u, string_view(std::string("defg")).size());
 }
 
+// GCC 4.6 doesn't have std::is_copy_*.
+#if FMT_GCC_VERSION && FMT_GCC_VERSION >= 407
 TEST(WriterTest, NotCopyConstructible) {
   EXPECT_FALSE(std::is_copy_constructible<fmt::writer>::value);
 }
@@ -144,6 +126,7 @@ TEST(WriterTest, NotCopyConstructible) {
 TEST(WriterTest, NotCopyAssignable) {
   EXPECT_FALSE(std::is_copy_assignable<fmt::writer>::value);
 }
+#endif
 
 TEST(WriterTest, Data) {
   memory_buffer buf;
@@ -209,11 +192,11 @@ TEST(WriterTest, WriteDoubleWithFilledBuffer) {
   memory_buffer buf;
   fmt::writer writer(buf);
   // Fill the buffer.
-  for (int i = 0; i < fmt::internal::INLINE_BUFFER_SIZE; ++i)
+  for (int i = 0; i < fmt::inline_buffer_size; ++i)
     writer.write(' ');
   writer.write(1.2);
   fmt::string_view sv(buf.data(), buf.size());
-  sv.remove_prefix(fmt::internal::INLINE_BUFFER_SIZE);
+  sv.remove_prefix(fmt::inline_buffer_size);
   EXPECT_EQ("1.2", sv);
 }
 
@@ -459,9 +442,9 @@ TEST(FormatterTest, ManyArgs) {
                    format_error, "argument index out of range");
   EXPECT_THROW_MSG(TestFormat<21>::format("{21}"),
                    format_error, "argument index out of range");
-  enum { MAX_PACKED_ARGS = fmt::internal::MAX_PACKED_ARGS };
-  std::string format_str = fmt::format("{{{}}}", MAX_PACKED_ARGS + 1);
-  EXPECT_THROW_MSG(TestFormat<MAX_PACKED_ARGS>::format(format_str),
+  enum { max_packed_args = fmt::internal::max_packed_args };
+  std::string format_str = fmt::format("{{{}}}", max_packed_args + 1);
+  EXPECT_THROW_MSG(TestFormat<max_packed_args>::format(format_str),
                    format_error, "argument index out of range");
 }
 
@@ -549,6 +532,7 @@ TEST(FormatterTest, NumericAlign) {
       format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:=8}", reinterpret_cast<void*>(0xface)),
       format_error, "format specifier requires numeric argument");
+  EXPECT_EQ(" 1", fmt::format("{:= }", 1.0));
 }
 
 TEST(FormatterTest, CenterAlign) {
@@ -1202,7 +1186,9 @@ TEST(FormatterTest, FormatPointer) {
   EXPECT_EQ("0x" + std::string(sizeof(void*) * CHAR_BIT / 4, 'f'),
       format("{0}", reinterpret_cast<void*>(~uintptr_t())));
   EXPECT_EQ("0x1234", format("{}", fmt::ptr(reinterpret_cast<int*>(0x1234))));
-  EXPECT_EQ("0x0", format("{}", nullptr));
+#if FMT_USE_NULLPTR
+  EXPECT_EQ("0x0", format("{}", FMT_NULL));
+#endif
 }
 
 TEST(FormatterTest, FormatString) {
@@ -1211,6 +1197,30 @@ TEST(FormatterTest, FormatString) {
 
 TEST(FormatterTest, FormatStringView) {
   EXPECT_EQ("test", format("{0}", string_view("test")));
+}
+
+#ifdef FMT_USE_STD_STRING_VIEW
+TEST(FormatterTest, FormatStringView) {
+  EXPECT_EQ("test", format("{0}", std::string_view("test")));
+}
+#endif
+
+struct ConvertibleToString {
+  std::string s;
+  ConvertibleToString() : s("foo") {}
+  operator const std::string &() const { return s; }
+};
+
+TEST(FormatterTest, FormatConvertibleToString) {
+  EXPECT_EQ("foo", format("{}", ConvertibleToString()));
+}
+
+struct ConvertibleToStringView {
+  operator fmt::string_view() const { return "foo"; }
+};
+
+TEST(FormatterTest, FormatConvertibleToStringView) {
+  EXPECT_EQ("foo", format("{}", ConvertibleToStringView()));
 }
 
 namespace fmt {
@@ -1224,7 +1234,7 @@ struct formatter<Date> {
     return it;
   }
 
-  auto format(const Date &d, context &ctx) {
+  auto format(const Date &d, context &ctx) -> decltype(ctx.begin()) {
     format_to(ctx.begin(), "{}-{}-{}", d.year(), d.month(), d.day());
     return ctx.begin();
   }
@@ -1242,7 +1252,7 @@ class Answer {};
 namespace fmt {
 template <>
 struct formatter<Answer> : formatter<int> {
-  auto format(Answer, fmt::context &ctx) {
+  auto format(Answer, fmt::context &ctx) -> decltype(ctx.begin()) {
     return formatter<int>::format(42, ctx);
   }
 };
@@ -1396,7 +1406,7 @@ TEST(FormatTest, Print) {
 
 #if FMT_USE_FILE_DESCRIPTORS
 TEST(FormatTest, PrintColored) {
-  EXPECT_WRITE(stdout, fmt::print_colored(fmt::RED, "Hello, {}!\n", "world"),
+  EXPECT_WRITE(stdout, fmt::print_colored(fmt::red, "Hello, {}!\n", "world"),
     "\x1b[31mHello, world!\n\x1b[0m");
 }
 #endif
@@ -1423,7 +1433,7 @@ TEST(FormatTest, JoinArg) {
   EXPECT_EQ(L"(1, 2, 3)", format(L"({})", join(v1, v1 + 3, L", ")));
   EXPECT_EQ("1, 2, 3", format("{0:{1}}", join(v1, v1 + 3, ", "), 1));
 
-#if FMT_HAS_GXX_CXX11
+#if FMT_USE_TRAILING_RETURN && (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 405)
   EXPECT_EQ("(1, 2, 3)", format("({})", join(v1, ", ")));
   EXPECT_EQ("(+01.20, +03.40)", format("({:+06.2f})", join(v2, ", ")));
 #endif
@@ -1500,6 +1510,12 @@ TEST(LiteralsTest, NamedArg) {
                    fmt::arg(L"third", 99)),
             udl_a_w);
 }
+
+TEST(FormatTest, UdlTemplate) {
+  EXPECT_EQ("foo", "foo"_format());
+  EXPECT_EQ("        42", "{0:10}"_format(42));
+  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
+}
 #endif // FMT_USE_USER_DEFINED_LITERALS
 
 enum TestEnum { A };
@@ -1508,7 +1524,7 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
-#if FMT_USE_STRONG_ENUMS
+#if FMT_HAS_FEATURE(cxx_strong_enums)
 enum TestFixedEnum : short { B };
 
 TEST(FormatTest, FixedEnum) {
@@ -1516,16 +1532,17 @@ TEST(FormatTest, FixedEnum) {
 }
 #endif
 
-using buffer_range = fmt::back_insert_range<fmt::internal::buffer>;
+typedef fmt::back_insert_range<fmt::internal::buffer> buffer_range;
 
-class mock_arg_formatter :
+class mock_arg_formatter:
+    public fmt::internal::function<void>,
     public fmt::internal::arg_formatter_base<buffer_range> {
  private:
   MOCK_METHOD1(call, void (int value));
 
  public:
-  using base = fmt::internal::arg_formatter_base<buffer_range>;
-  using range = buffer_range;
+  typedef fmt::internal::arg_formatter_base<buffer_range> base;
+  typedef buffer_range range;
 
   mock_arg_formatter(fmt::context &ctx, fmt::format_specs &s)
     : base(fmt::internal::get_container(ctx.begin()), s) {
@@ -1541,7 +1558,7 @@ class mock_arg_formatter :
 
 void custom_vformat(fmt::string_view format_str, fmt::format_args args) {
   fmt::memory_buffer buffer;
-  fmt::do_vformat_to<mock_arg_formatter>(buffer, format_str, args);
+  fmt::vformat_to<mock_arg_formatter>(buffer, format_str, args);
 }
 
 template <typename... Args>
@@ -1567,10 +1584,10 @@ struct variant {
 namespace fmt {
 template <>
 struct formatter<variant> : dynamic_formatter<> {
-  auto format(variant value, context& ctx) {
+  auto format(variant value, context& ctx) -> decltype(ctx.begin()) {
     if (value.type == variant::INT)
-      return dynamic_formatter::format(42, ctx);
-    return dynamic_formatter::format("foo", ctx);
+      return dynamic_formatter<>::format(42, ctx);
+    return dynamic_formatter<>::format("foo", ctx);
   }
 };
 }
@@ -1601,14 +1618,9 @@ TEST(FormatTest, DynamicFormatter) {
       format_error, "precision not allowed for this argument type");
 }
 
-TEST(FormatTest, UdlTemplate) {
-  EXPECT_EQ("foo", "foo"_format());
-  EXPECT_EQ("        42", "{0:10}"_format(42));
-  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
-}
-
 TEST(FormatTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
+  EXPECT_EQ("0x1234", fmt::to_string(reinterpret_cast<void*>(0x1234)));
 }
 
 TEST(FormatTest, ToWString) {
@@ -1719,7 +1731,7 @@ FMT_CONSTEXPR test_format_specs_handler parse_test_specs(const char *s) {
 }
 
 TEST(FormatTest, ConstexprParseFormatSpecs) {
-  using handler = test_format_specs_handler;
+  typedef test_format_specs_handler handler;
   static_assert(parse_test_specs("<").align == fmt::ALIGN_LEFT, "");
   static_assert(parse_test_specs("*^").fill == '*', "");
   static_assert(parse_test_specs("+").res == handler::PLUS, "");
@@ -1736,7 +1748,7 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
 }
 
 struct test_context {
-  using char_type = char;
+  typedef char char_type;
 
   FMT_CONSTEXPR fmt::basic_arg<test_context> next_arg() {
     return fmt::internal::make_arg<test_context>(11);
@@ -1760,7 +1772,7 @@ struct test_context {
 
 FMT_CONSTEXPR fmt::format_specs parse_specs(const char *s) {
   fmt::format_specs specs;
-  test_context ctx;
+  test_context ctx{};
   fmt::internal::specs_handler<test_context> h(specs, ctx);
   parse_format_specs(s, h);
   return specs;
@@ -1786,7 +1798,7 @@ TEST(FormatTest, ConstexprSpecsHandler) {
 FMT_CONSTEXPR fmt::internal::dynamic_format_specs<char>
     parse_dynamic_specs(const char *s) {
   fmt::internal::dynamic_format_specs<char> specs;
-  test_context ctx;
+  test_context ctx{};
   fmt::internal::dynamic_specs_handler<test_context> h(specs, ctx);
   parse_format_specs(s, h);
   return specs;
@@ -1811,13 +1823,13 @@ TEST(FormatTest, ConstexprDynamicSpecsHandler) {
 
 FMT_CONSTEXPR test_format_specs_handler check_specs(const char *s) {
   fmt::internal::specs_checker<test_format_specs_handler>
-      checker(test_format_specs_handler(), fmt::internal::DOUBLE);
+      checker(test_format_specs_handler(), fmt::internal::double_type);
   parse_format_specs(s, checker);
   return checker;
 }
 
 TEST(FormatTest, ConstexprSpecsChecker) {
-  using handler = test_format_specs_handler;
+  typedef test_format_specs_handler handler;
   static_assert(check_specs("<").align == fmt::ALIGN_LEFT, "");
   static_assert(check_specs("*^").fill == '*', "");
   static_assert(check_specs("+").res == handler::PLUS, "");

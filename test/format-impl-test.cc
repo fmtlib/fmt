@@ -1,35 +1,15 @@
-/*
- Formatting library implementation tests.
-
- Copyright (c) 2012-2014, Victor Zverovich
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are met:
-
- 1. Redistributions of source code must retain the above copyright notice, this
-    list of conditions and the following disclaimer.
- 2. Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Formatting library for C++ - formatting library implementation tests
+//
+// Copyright (c) 2012 - present, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
 #define FMT_NOEXCEPT
 #undef FMT_SHARED
 #include "test-assert.h"
 
-// Include format.cc instead of format.h to test implementation-specific stuff.
+// Include format.cc instead of format.h to test implementation.
 #include "fmt/format.cc"
 #include "fmt/printf.h"
 
@@ -44,7 +24,7 @@
 #undef max
 
 template <typename T>
-struct ValueExtractor {
+struct ValueExtractor: fmt::internal::function<T> {
   T operator()(T value) {
     return value;
   }
@@ -59,7 +39,7 @@ struct ValueExtractor {
 TEST(FormatTest, ArgConverter) {
   long long value = std::numeric_limits<long long>::max();
   auto arg = fmt::internal::make_arg<fmt::context>(value);
-  visit(fmt::internal::ArgConverter<long long, fmt::context>(arg, 'd'), arg);
+  visit(fmt::internal::arg_converter<long long, fmt::context>(arg, 'd'), arg);
   EXPECT_EQ(value, visit(ValueExtractor<long long>(), arg));
 }
 
@@ -114,7 +94,7 @@ TEST(FormatTest, FormatErrorCode) {
   {
     fmt::memory_buffer buffer;
     std::string prefix(
-        fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size() + 1, 'x');
+        fmt::inline_buffer_size - msg.size() - sep.size() + 1, 'x');
     fmt::format_error_code(buffer, 42, prefix);
     EXPECT_EQ(msg, to_string(buffer));
   }
@@ -124,10 +104,10 @@ TEST(FormatTest, FormatErrorCode) {
     msg = fmt::format("error {}", codes[i]);
     fmt::memory_buffer buffer;
     std::string prefix(
-        fmt::internal::INLINE_BUFFER_SIZE - msg.size() - sep.size(), 'x');
+        fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
     fmt::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(prefix + sep + msg, to_string(buffer));
-    std::size_t size = fmt::internal::INLINE_BUFFER_SIZE;
+    std::size_t size = fmt::inline_buffer_size;
     EXPECT_EQ(size, buffer.size());
     buffer.resize(0);
     // Test with a message that doesn't fit into the buffer.

@@ -42,8 +42,8 @@ Features
   performance of IOStreams. See `Speed tests`_ and
   `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
-* Small code size both in terms of source code (the core library consists of a
-  single header file and a single source file) and compiled code.
+* Small code size both in terms of source code (the core library consists of two
+  header files and a single source file) and compiled code.
   See `Compile time and code bloat`_.
 * Reliability: the library has an extensive set of `unit tests
   <https://github.com/fmtlib/fmt/tree/master/test>`_.
@@ -84,24 +84,24 @@ Format strings can be checked at compile time:
 .. code:: c++
 
     // test.cc
-    using namespace fmt::literals;
-    std::string s = "{2}"_format(42);
+    #include <fmt/format.h>
+    std::string s = fmt::format(fmt("{2}"), 42);
 
 .. code::
 
     $ g++ -Iinclude test.cc -std=c++14
     ...
-    test.cc:5:31: note: in instantiation of function template specialization
-    'fmt::internal::udl_formatter<char, '{', '2', '}'>::operator()<int>' requested
-    here
-      std::string s = "{2}"_format(42);
-                                  ^
-    include/fmt/format.h:3838:7: note: non-constexpr function 'on_error' cannot be
-    used in a constant expression
-          on_error("argument index out of range");
-          ^
+    test.cc:2:22: note: in instantiation of function template specialization 'fmt::format<S, int>' requested here
+    std::string s = fmt::format(fmt("{2}"), 42);
+                         ^
+    include/fmt/core.h:749:19: note: non-constexpr function 'on_error' cannot be used in a constant expression
+        ErrorHandler::on_error(message);
+                      ^
+    include/fmt/format.h:2081:16: note: in call to '&checker.context_->on_error(&"argument index out of range"[0])'
+          context_.on_error("argument index out of range");
+                   ^
 
-fmt can be used as a safe portable replacement for ``itoa``:
+{fmt} can be used as a safe portable replacement for ``itoa``:
 
 .. code:: c++
 
@@ -159,6 +159,8 @@ Projects using this library
 
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   An open-source library for mathematical programming
+  
+* `AvioBook <https://www.aviobook.aero/en>`_: A comprehensive aircraft operations suite.
 
 * `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater vehicle
 
