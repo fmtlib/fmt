@@ -30,8 +30,7 @@ matrix:
         - android-21
         - sys-img-armeabi-v7a-android-21
       env:
-        - ANDROID_ARCH_NAME=arm
-        - ANDROID_ABI=armeabi-v7a
+        - ANDROID=true
       before_install:
         - git submodule update --init --recursive
         - sudo apt-get install wget unzip tree
@@ -49,6 +48,9 @@ matrix:
         - cd ./support
       script:
         - bash $GRADLE clean assemble
+      after_success:
+        - cd ${TRAVIS_BUILD_DIR}
+        - tree ./libs
 
 # Install gcc-6 for extended constexpr support.
 addons:

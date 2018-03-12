@@ -80,19 +80,19 @@ assemble.doLast
     // We are doing this since FMT is dependent to the ANDROID_STL after build
     copy {
         from 'build/intermediates/cmake'
-        into 'libs'
+        into '../libs'
     }
     // Copy debug binaries
     copy {
-        from 'libs/debug/obj'
-        into 'libs/debug'
+        from '../libs/debug/obj'
+        into '../libs/debug'
     }
     // Copy Release binaries
     copy {
-        from 'libs/release/obj'
-        into 'libs/release'
+        from '../libs/release/obj'
+        into '../libs/release'
     }
     // Remove empty directory
-    delete 'libs/debug/obj'
-    delete 'libs/release/obj'
+    delete '../libs/debug/obj'
+    delete '../libs/release/obj'
 }
