@@ -1,3 +1,14 @@
+.vscode/
+
+*.iml
+.idea/
+.externalNativeBuild/
+.gradle/
+gradle/
+gradlew*
+local.properties
+build/
+
 bin/
 /_CPack_Packages
 /CMakeScripts

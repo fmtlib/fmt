@@ -1,0 +1,98 @@
+// General gradle arguments for root project
+buildscript {    
+    repositories {
+        google()
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.0.1'
+    }
+}
+
+// Output: Shared library (.so) for Android 
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 25    // Android 7.0
+
+    // Target ABI
+    //  - This option controls target platform of module
+    //  - The platform might be limited by compiler's support
+    //    some can work with Clang(default), but some can work only with GCC...
+    //    if bad, both toolchains might not support it
+    splits {
+        abi {
+            enable true
+            // Be general, as much as possible ...
+            // universalApk true 
+
+            // Specify platforms for Application
+            reset()
+            include "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
+        }
+    }
+
+    defaultConfig {
+        minSdkVersion 21    // Android 5.0+
+        targetSdkVersion 25 // Follow Compile SDK
+        versionCode 16      // Follow release count
+        versionName "4.1.0" // Follow Official version
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=c++_shared"    // Specify Android STL
+                arguments "-DBUILD_SHARED_LIBS=true"    // Build shared object
+                arguments "-DFMT_TEST=false"            // Skip test
+                arguments "-DFMT_DOC=false"             // Skip document
+                cppFlags  "-std=c++14"
+            }
+        }
+        println("Gradle CMake Plugin: ")
+        println(externalNativeBuild.cmake.cppFlags)
+        println(externalNativeBuild.cmake.arguments)
+    }
+
+    // External Native build
+    //  - Use existing CMakeList.txt
+    //  - Give path to CMake. This gradle file should be 
+    //    neighbor of the top level cmake
+    externalNativeBuild {
+        cmake {
+            path "../CMakeLists.txt"
+            // buildStagingDirectory "./build"  // Custom path for cmake output
+        }
+        //println(cmake.path)
+    }
+    
+    sourceSets{
+        // Android Manifest for Gradle
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+        }
+    }
+}
+
+assemble.doLast
+{
+    // Instead of `ninja install`, Gradle will deploy the files.
+    // We are doing this since FMT is dependent to the ANDROID_STL after build
+    copy {
+        from 'build/intermediates/cmake'
+        into '../libs'
+    }
+    // Copy debug binaries
+    copy {
+        from '../libs/debug/obj'
+        into '../libs/debug'
+    }
+    // Copy Release binaries
+    copy {
+        from '../libs/release/obj'
+        into '../libs/release'
+    }
+    // Remove empty directory
+    delete '../libs/debug/obj'
+    delete '../libs/release/obj'
+}
