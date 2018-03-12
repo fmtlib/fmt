@@ -283,6 +283,13 @@ FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
   if (s.size() > INT_MAX)
     FMT_THROW(windows_error(ERROR_INVALID_PARAMETER, ERROR_MSG));
   int s_size = static_cast<int>(s.size());
+  if (s_size == 0) {
+    // MultiByteToWideChar does not support zero length, handle separately.
+    buffer_.resize(1);
+    buffer_[0] = 0;
+    return;
+  }
+
   int length = MultiByteToWideChar(
       CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size, FMT_NULL, 0);
   if (length == 0)
@@ -306,6 +313,13 @@ FMT_FUNC int internal::utf16_to_utf8::convert(wstring_view s) {
   if (s.size() > INT_MAX)
     return ERROR_INVALID_PARAMETER;
   int s_size = static_cast<int>(s.size());
+  if (s_size == 0) {
+    // WideCharToMultiByte does not support zero length, handle separately.
+    buffer_.resize(1);
+    buffer_[0] = 0;
+    return 0;
+  }
+
   int length = WideCharToMultiByte(
         CP_UTF8, 0, s.data(), s_size, FMT_NULL, 0, FMT_NULL, FMT_NULL);
   if (length == 0)

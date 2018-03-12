@@ -665,11 +665,25 @@ TEST(UtilTest, UTF16ToUTF8) {
   EXPECT_EQ(s.size(), u.size());
 }
 
+TEST(UtilTest, UTF16ToUTF8EmptyString) {
+  std::string s = "";
+  fmt::internal::utf16_to_utf8 u(L"");
+  EXPECT_EQ(s, u.str());
+  EXPECT_EQ(s.size(), u.size());
+}
+
 TEST(UtilTest, UTF8ToUTF16) {
   std::string s = "лошадка";
   fmt::internal::utf8_to_utf16 u(s.c_str());
   EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());
   EXPECT_EQ(7, u.size());
+}
+
+TEST(UtilTest, UTF8ToUTF16EmptyString) {
+  std::string s = "";
+  fmt::internal::utf8_to_utf16 u(s.c_str());
+  EXPECT_EQ(L"", u.str());
+  EXPECT_EQ(s.size(), u.size());
 }
 
 template <typename Converter, typename Char>
