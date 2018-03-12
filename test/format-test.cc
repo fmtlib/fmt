@@ -532,6 +532,7 @@ TEST(FormatterTest, NumericAlign) {
       format_error, "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:=8}", reinterpret_cast<void*>(0xface)),
       format_error, "format specifier requires numeric argument");
+  EXPECT_EQ(" 1", fmt::format("{:= }", 1.0));
 }
 
 TEST(FormatterTest, CenterAlign) {

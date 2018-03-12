@@ -2787,7 +2787,8 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     if (sign) {
       *reserve(1) = sign;
       sign = 0;
-      --as.width_;
+      if (as.width_)
+        --as.width_;
     }
     as.align_ = ALIGN_RIGHT;
   } else {
