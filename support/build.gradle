@@ -60,7 +60,7 @@ android {
     //    neighbor of the top level cmake
     externalNativeBuild {
         cmake {
-            path "CMakeLists.txt"
+            path "../CMakeLists.txt"
             // buildStagingDirectory "./build"  // Custom path for cmake output
         }
         //println(cmake.path)
@@ -69,7 +69,7 @@ android {
     sourceSets{
         // Android Manifest for Gradle
         main {
-            manifest.srcFile 'support/AndroidManifest.xml'
+            manifest.srcFile 'AndroidManifest.xml'
         }
     }
 }
