@@ -365,6 +365,11 @@ Replacing ``%x`` and ``%o`` and converting the value to different bases::
    format("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}", 42);
    // Result: "int: 42;  hex: 0x2a;  oct: 052;  bin: 0b101010"
 
+Padded hex byte with prefix and always prints both hex characters::
+
+   format("{:#04x}", 0);
+   // Result: "0x00"
+
 .. ifconfig:: False
 
    Using the comma as a thousands separator::
