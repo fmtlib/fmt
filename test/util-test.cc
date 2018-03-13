@@ -666,10 +666,10 @@ TEST(UtilTest, UTF16ToUTF8) {
 }
 
 TEST(UtilTest, UTF16ToUTF8EmptyString) {
-	std::string s = "";
-	fmt::internal::utf16_to_utf8 u(L"");
-	EXPECT_EQ(s, u.str());
-	EXPECT_EQ(s.size(), u.size());
+  std::string s = "";
+  fmt::internal::utf16_to_utf8 u(L"");
+  EXPECT_EQ(s, u.str());
+  EXPECT_EQ(s.size(), u.size());
 }
 
 TEST(UtilTest, UTF8ToUTF16) {
@@ -680,10 +680,10 @@ TEST(UtilTest, UTF8ToUTF16) {
 }
 
 TEST(UtilTest, UTF8ToUTF16EmptyString) {
-	std::string s = "";
-	fmt::internal::utf8_to_utf16 u(s.c_str());
-	EXPECT_EQ(L"", u.str());
-	EXPECT_EQ(s.size(), u.size());
+  std::string s = "";
+  fmt::internal::utf8_to_utf16 u(s.c_str());
+  EXPECT_EQ(L"", u.str());
+  EXPECT_EQ(s.size(), u.size());
 }
 
 template <typename Converter, typename Char>
