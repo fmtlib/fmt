@@ -104,6 +104,7 @@ if (HAVE_OPEN)
 endif ()
 
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
+add_library(fmt::fmt ALIAS fmt)
 
 # Starting with CMake 3.1 the CXX_STANDARD property can be used instead.
 # Don't export -std since it may break projects that use other standards.
@@ -170,14 +171,17 @@ if (FMT_INSTALL)
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
     ${project_config}
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
-  export(TARGETS ${INSTALL_TARGETS}
+  # Use a namespace because CMake provides better diagnostics for namespaced
+  # imported targets.
+  export(TARGETS ${INSTALL_TARGETS} NAMESPACE fmt::
          FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
   # Install version, config and target files.
   install(
     FILES ${project_config} ${version_config}
     DESTINATION ${FMT_CMAKE_DIR})
-  install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR})
+  install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR},
+          NAMESPACE fmt::)
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
