@@ -689,7 +689,7 @@ TEST(UtilTest, UTF8ToUTF16EmptyString) {
 template <typename Converter, typename Char>
 void check_utf_conversion_error(
         const char *message,
-        fmt::basic_string_view<Char> str = fmt::basic_string_view<Char>(0, 0)) {
+        fmt::basic_string_view<Char> str = fmt::basic_string_view<Char>(0, 1)) {
   fmt::memory_buffer out;
   fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
   fmt::system_error error(0, "");
@@ -716,7 +716,7 @@ TEST(UtilTest, UTF8ToUTF16Error) {
 
 TEST(UtilTest, UTF16ToUTF8Convert) {
   fmt::internal::utf16_to_utf8 u;
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::wstring_view(0, 0)));
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::wstring_view(0, 1)));
   EXPECT_EQ(ERROR_INVALID_PARAMETER,
             u.convert(fmt::wstring_view(L"foo", INT_MAX + 1u)));
 }
