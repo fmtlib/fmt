@@ -1452,7 +1452,7 @@ class arg_formatter_base {
 
   void operator()(const char_type *value) {
     internal::handle_cstring_type_spec(
-          specs_.type_, cstring_spec_handler(*this, value));
+          static_cast<char>(specs_.type_), cstring_spec_handler(*this, value));
   }
 
   void operator()(basic_string_view<char_type> value) {
@@ -1461,7 +1461,7 @@ class arg_formatter_base {
   }
 
   void operator()(const void *value) {
-    check_pointer_type_spec(specs_.type_, internal::error_handler());
+    check_pointer_type_spec(static_cast<char>(specs_.type_), internal::error_handler());
     write_pointer(value);
   }
 };
@@ -2394,7 +2394,7 @@ class basic_writer {
     void on_hex() {
       if (spec.flag(HASH_FLAG)) {
         prefix[prefix_size++] = '0';
-        prefix[prefix_size++] = spec.type();
+        prefix[prefix_size++] = static_cast<char>(spec.type());
       }
       unsigned num_digits = count_digits<4>();
       writer.write_int(num_digits, get_prefix(), spec,
@@ -2415,7 +2415,7 @@ class basic_writer {
     void on_bin() {
       if (spec.flag(HASH_FLAG)) {
         prefix[prefix_size++] = '0';
-        prefix[prefix_size++] = spec.type();
+        prefix[prefix_size++] = static_cast<char>(spec.type());
       }
       unsigned num_digits = count_digits<1>();
       writer.write_int(num_digits, get_prefix(), spec,
@@ -2465,7 +2465,7 @@ class basic_writer {
   // Writes a formatted integer.
   template <typename T, typename Spec>
   void write_int(T value, const Spec &spec) {
-    internal::handle_int_type_spec(spec.type(),
+    internal::handle_int_type_spec(static_cast<char>(spec.type()),
                                    int_writer<T, Spec>(*this, value, spec));
   }
 
@@ -2698,7 +2698,7 @@ template <typename T>
 void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   // Check type.
   float_spec_handler<char_type> handler(spec.type());
-  internal::handle_float_type_spec(spec.type(), handler);
+  internal::handle_float_type_spec(static_cast<char>(spec.type()), handler);
 
   char sign = 0;
   // Use isnegative instead of value < 0 because the latter is always

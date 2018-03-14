@@ -1064,8 +1064,9 @@ class basic_format_args {
 
   unsigned max_size() const {
     int64_t signed_types = static_cast<int64_t>(types_);
-    return signed_types < 0 ?
-          -signed_types : static_cast<int64_t>(internal::max_packed_args);
+    return static_cast<unsigned>(signed_types < 0
+                                 ? -signed_types
+                                 : static_cast<int64_t>(internal::max_packed_args));
   }
 };
 
