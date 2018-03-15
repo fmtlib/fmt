@@ -1075,7 +1075,7 @@ class basic_format_args {
 struct format_args: basic_format_args<context> {
   template <typename ...Args>
   format_args(Args && ... arg)
-  : basic_format_args<context>(std::forward<Args>(arg)...) {};
+  : basic_format_args<context>(std::forward<Args>(arg)...) {}
 };
 typedef basic_format_args<wcontext> wformat_args;
 
