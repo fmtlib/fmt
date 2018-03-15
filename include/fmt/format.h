@@ -1186,8 +1186,8 @@ FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
 
 namespace internal {
 
-template <typename Handler>
-FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler &&handler) {
+template <typename Char, typename Handler>
+FMT_CONSTEXPR void handle_int_type_spec(Char spec, Handler &&handler) {
   switch (spec) {
   case 0: case 'd':
     handler.on_dec();
@@ -1209,8 +1209,8 @@ FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler &&handler) {
   }
 }
 
-template <typename Handler>
-FMT_CONSTEXPR void handle_float_type_spec(char spec, Handler &&handler) {
+template <typename Char, typename Handler>
+FMT_CONSTEXPR void handle_float_type_spec(Char spec, Handler &&handler) {
   switch (spec) {
   case 0: case 'g': case 'G':
     handler.on_general();
@@ -1242,8 +1242,8 @@ FMT_CONSTEXPR void handle_char_specs(
   handler.on_char();
 }
 
-template <typename Handler>
-FMT_CONSTEXPR void handle_cstring_type_spec(char spec, Handler &&handler) {
+template <typename Char, typename Handler>
+FMT_CONSTEXPR void handle_cstring_type_spec(Char spec, Handler &&handler) {
   if (spec == 0 || spec == 's')
     handler.on_string();
   else if (spec == 'p')
@@ -1258,8 +1258,8 @@ FMT_CONSTEXPR void check_string_type_spec(Char spec, ErrorHandler &&eh) {
     eh.on_error("invalid type specifier");
 }
 
-template <typename ErrorHandler>
-FMT_CONSTEXPR void check_pointer_type_spec(char spec, ErrorHandler &&eh) {
+template <typename Char, typename ErrorHandler>
+FMT_CONSTEXPR void check_pointer_type_spec(Char spec, ErrorHandler &&eh) {
   if (spec != 0 && spec != 'p')
     eh.on_error("invalid type specifier");
 }
@@ -1452,7 +1452,7 @@ class arg_formatter_base {
 
   void operator()(const char_type *value) {
     internal::handle_cstring_type_spec(
-          static_cast<char>(specs_.type_), cstring_spec_handler(*this, value));
+          specs_.type_, cstring_spec_handler(*this, value));
   }
 
   void operator()(basic_string_view<char_type> value) {
@@ -1461,7 +1461,7 @@ class arg_formatter_base {
   }
 
   void operator()(const void *value) {
-    check_pointer_type_spec(static_cast<char>(specs_.type_), internal::error_handler());
+    check_pointer_type_spec(specs_.type_, internal::error_handler());
     write_pointer(value);
   }
 };
@@ -2465,7 +2465,7 @@ class basic_writer {
   // Writes a formatted integer.
   template <typename T, typename Spec>
   void write_int(T value, const Spec &spec) {
-    internal::handle_int_type_spec(static_cast<char>(spec.type()),
+    internal::handle_int_type_spec(spec.type(),
                                    int_writer<T, Spec>(*this, value, spec));
   }
 
@@ -2698,7 +2698,7 @@ template <typename T>
 void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   // Check type.
   float_spec_handler<char_type> handler(spec.type());
-  internal::handle_float_type_spec(static_cast<char>(spec.type()), handler);
+  internal::handle_float_type_spec(spec.type(), handler);
 
   char sign = 0;
   // Use isnegative instead of value < 0 because the latter is always
