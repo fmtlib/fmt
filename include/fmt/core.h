@@ -30,7 +30,7 @@
 # define FMT_HAS_INCLUDE(x) 0
 #endif
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__)
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #else
 # define FMT_GCC_VERSION 0
@@ -966,7 +966,7 @@ class arg_store {
  public:
   static const uint64_t TYPES;
 
-#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 405 && !defined(__clang__)
+#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 405
   // Workaround an array initialization bug in gcc 4.5 and earlier.
   arg_store(const Args &... args) {
     data_ = {internal::make_arg<IS_PACKED, Context>(args)...};
