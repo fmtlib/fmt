@@ -157,7 +157,7 @@
 #endif
 
 // A workaround for gcc 4.4 that doesn't support union members with ctors.
-#if (FMT_GCC_VERSION && FMT_GCC_VERSION <= 404) && !defined(__clang__)
+#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 404
 # define FMT_UNION struct
 #else
 # define FMT_UNION union
