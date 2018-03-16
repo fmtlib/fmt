@@ -59,6 +59,9 @@ Named arguments
 Argument lists
 --------------
 
+.. doxygenclass:: fmt::basic_arg
+   :members:
+
 .. doxygenclass:: fmt::basic_format_args
    :members:
 
@@ -71,6 +74,9 @@ Compatibility
 
 .. doxygenclass:: fmt::basic_string_view
    :members:
+
+.. doxygentypedef:: fmt::string_view
+.. doxygentypedef:: fmt::wstring_view
 
 Format API
 ==========
