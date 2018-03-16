@@ -3536,7 +3536,8 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
   **Example**::
 
     #include <fmt/format.h>
-    std::string s = fmt::format(fmt("{:d}"), "foo"); // fails to compile
+    // A compile-time error because 'd' is an invalid specifier for strings.
+    std::string s = fmt::format(fmt("{:d}"), "foo");
   \endrst
  */
 # define fmt(s) FMT_STRING(s)
