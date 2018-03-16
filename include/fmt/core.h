@@ -854,7 +854,7 @@ template <typename Container>
 inline Container &get_container(std::back_insert_iterator<Container> it) {
   typedef std::back_insert_iterator<Container> bi_iterator;
   struct accessor: bi_iterator {
-    accessor(bi_iterator it) : bi_iterator(it) {}
+    accessor(bi_iterator iter) : bi_iterator(iter) {}
     using bi_iterator::container;
   };
   return *accessor(it).container;
