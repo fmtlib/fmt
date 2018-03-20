@@ -59,7 +59,9 @@ Named arguments
 Argument lists
 --------------
 
-.. doxygenclass:: fmt::basic_arg
+.. doxygenfunction:: fmt::make_args(const Args&...)
+
+.. doxygenclass:: fmt::arg_store
    :members:
 
 .. doxygenclass:: fmt::basic_format_args
@@ -67,7 +69,8 @@ Argument lists
 
 .. doxygenstruct:: fmt::format_args
 
-.. doxygenfunction:: fmt::make_args(const Args&...)
+.. doxygenclass:: fmt::basic_arg
+   :members:
 
 Compatibility
 -------------
@@ -193,6 +196,7 @@ allocator::
                                 const Args & ... args) {
       return vformat(alloc, format_str, fmt::make_args(args...));
     }
+
 Custom formatting of built-in types
 -----------------------------------
 
@@ -235,9 +239,6 @@ custom argument formatter class::
   std::string s = custom_format("{:x}", -42); // s == "ffffffd6"
 
 .. doxygenclass:: fmt::ArgVisitor
-   :members:
-
-.. doxygenclass:: fmt::arg_formatter_base
    :members:
 
 .. doxygenclass:: fmt::arg_formatter
@@ -305,36 +306,3 @@ argument type doesn't match its format specification.
 .. doxygenfunction:: fprintf(std::ostream&, string_view, const Args&...)
 
 .. doxygenfunction:: sprintf(string_view, const Args&...)
-
-Write API
-=========
-
-The write API provides classes for writing formatted data into character
-streams. It is usually faster than the `format API`_ but, as IOStreams,
-may result in larger compiled code size. The main writer class is
-`~fmt::basic_memory_writer` which stores its output in a memory buffer and
-provides direct access to it. It is possible to create custom writers that
-store output elsewhere by subclassing `~fmt::BasicWriter`.
-
-.. doxygenclass:: fmt::BasicWriter
-   :members:
-
-.. doxygenclass:: fmt::basic_memory_writer
-   :members:
-
-.. doxygenclass:: fmt::BasicArrayWriter
-   :members:
-
-.. doxygenclass:: fmt::BasicStringWriter
-   :members:
-
-.. doxygenfunction:: bin(int)
-
-.. doxygenfunction:: oct(int)
-
-.. doxygenfunction:: hex(int)
-
-.. doxygenfunction:: hexu(int)
-
-.. doxygenfunction:: pad(int, unsigned, Char)
-

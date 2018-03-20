@@ -950,6 +950,13 @@ inline typename std::enable_if<!IS_PACKED, basic_arg<Context>>::type
 }
 }
 
+/**
+  \rst
+  An array of references to arguments. It can be implicitly converted into
+  `~fmt::basic_format_args` for passing into type-erased formatting functions
+  such as `~fmt::vformat`.
+  \endrst
+ */
 template <typename Context, typename ...Args>
 class arg_store {
  private:
@@ -963,6 +970,8 @@ class arg_store {
 
   // If the arguments are not packed, add one more element to mark the end.
   value_type data_[NUM_ARGS + (IS_PACKED && NUM_ARGS != 0 ? 0 : 1)];
+
+  friend class basic_format_args<Context>;
 
  public:
   static const uint64_t TYPES;
@@ -978,8 +987,6 @@ class arg_store {
 #endif
 
   basic_format_args<Context> operator*() const { return *this; }
-
-  const value_type *data() const { return data_; }
 };
 
 template <typename Context, typename ...Args>
@@ -987,6 +994,13 @@ const uint64_t arg_store<Context, Args...>::TYPES = IS_PACKED ?
     internal::get_types<Context, Args...>() :
     -static_cast<int64_t>(NUM_ARGS);
 
+/**
+  \rst
+  Constructs an `~fmt::arg_store` object that contains references to arguments
+  and can be implicitly converted to `~fmt::format_args`. `Context` can be
+  omitted in which case it defaults to `~fmt::context`.
+  \endrst
+ */
 template <typename Context, typename ...Args>
 inline arg_store<Context, Args...> make_args(const Args & ... args) {
   return arg_store<Context, Args...>(args...);
@@ -1050,10 +1064,15 @@ class basic_format_args {
  public:
   basic_format_args() : types_(0) {}
 
+  /**
+   \rst
+   Constructs a `basic_format_args` object from `~fmt::arg_store`.
+   \endrst
+   */
   template <typename... Args>
   basic_format_args(const arg_store<Context, Args...> &store)
   : types_(store.TYPES) {
-    set_data(store.data());
+    set_data(store.data_);
   }
 
   /** Returns the argument at specified index. */
@@ -1065,9 +1084,9 @@ class basic_format_args {
 
   unsigned max_size() const {
     int64_t signed_types = static_cast<int64_t>(types_);
-    return static_cast<unsigned>(signed_types < 0
-                                 ? -signed_types
-                                 : static_cast<int64_t>(internal::max_packed_args));
+    return static_cast<unsigned>(
+        signed_types < 0 ?
+        -signed_types : static_cast<int64_t>(internal::max_packed_args));
   }
 };
 

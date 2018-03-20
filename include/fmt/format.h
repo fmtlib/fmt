@@ -1399,7 +1399,8 @@ class arg_formatter_base {
   }
 
   void write(const char_type *value) {
-    auto length = value != FMT_NULL ? std::char_traits<char_type>::length(value) : 0;
+    auto length = value != FMT_NULL ?
+      std::char_traits<char_type>::length(value) : 0;
     writer_.write_str(basic_string_view<char_type>(value, length), specs_);
   }
 
