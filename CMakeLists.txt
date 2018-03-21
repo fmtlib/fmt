@@ -95,12 +95,12 @@ function(add_headers VAR)
 endfunction()
 
 # Define the fmt library, its includes and the needed defines.
-# format.cc is added to FMT_HEADERS for the header-only configuration.
-add_headers(FMT_HEADERS core.h format.h format.cc locale.h ostream.h printf.h
+add_headers(FMT_HEADERS core.h format.h format-inl.h locale.h ostream.h printf.h
                         time.h)
+set(FMT_SOURCES src/format.cc)
 if (HAVE_OPEN)
   add_headers(FMT_HEADERS posix.h)
-  add_headers(FMT_SOURCES posix.cc)
+  set(FMT_SOURCES ${FMT_SOURCES} src/posix.cc)
 endif ()
 
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)

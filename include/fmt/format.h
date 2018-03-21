@@ -3546,7 +3546,7 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 
 #ifdef FMT_HEADER_ONLY
 # define FMT_FUNC inline
-# include "format.cc"
+# include "format-inl.h"
 #else
 # define FMT_FUNC
 #endif

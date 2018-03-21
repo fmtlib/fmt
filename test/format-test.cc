@@ -1637,7 +1637,7 @@ TEST(FormatTest, OutputIterators) {
 }
 
 TEST(FormatTest, OutputSize) {
-  EXPECT_EQ(2, fmt::count("{}", 42));
+  EXPECT_EQ(2u, fmt::count("{}", 42));
 }
 
 #if FMT_USE_CONSTEXPR
@@ -1974,3 +1974,4 @@ TEST(FormatTest, FormatStringErrors) {
                int, int);
 }
 #endif  // FMT_USE_CONSTEXPR
+

@@ -5,6 +5,9 @@
 //
 // For the license information refer to format.h.
 
+#ifndef FMT_FORMAT_INL_H_
+#define FMT_FORMAT_INL_H_
+
 #include "format.h"
 #include "locale.h"
 
@@ -69,7 +72,7 @@ inline fmt::internal::null<> strerror_s(char *, std::size_t, ...) {
 namespace fmt {
 
 FMT_FUNC format_error::~format_error() throw() {}
-FMT_FUNC system_error::~system_error() throw() {}
+FMT_FUNC system_error::~system_error() FMT_DTOR_NOEXCEPT {}
 
 namespace {
 
@@ -438,47 +441,10 @@ FMT_FUNC void vprint_colored(color c, string_view format, format_args args) {
 
 FMT_FUNC locale locale_provider::locale() { return fmt::locale(); }
 
-#ifndef FMT_HEADER_ONLY
-
-template struct internal::basic_data<void>;
-
-// Explicit instantiations for char.
-
-template char internal::thousands_sep(locale_provider *lp);
-
-template void basic_fixed_buffer<char>::grow(std::size_t);
-
-template void internal::arg_map<context>::init(
-    const basic_format_args<context> &args);
-
-template FMT_API int internal::char_traits<char>::format_float(
-    char *buffer, std::size_t size, const char *format,
-    unsigned width, int precision, double value);
-
-template FMT_API int internal::char_traits<char>::format_float(
-    char *buffer, std::size_t size, const char *format,
-    unsigned width, int precision, long double value);
-
-// Explicit instantiations for wchar_t.
-
-template wchar_t internal::thousands_sep(locale_provider *lp);
-
-template void basic_fixed_buffer<wchar_t>::grow(std::size_t);
-
-template void internal::arg_map<wcontext>::init(const wformat_args &args);
-
-template FMT_API int internal::char_traits<wchar_t>::format_float(
-    wchar_t *buffer, std::size_t size, const wchar_t *format,
-    unsigned width, int precision, double value);
-
-template FMT_API int internal::char_traits<wchar_t>::format_float(
-    wchar_t *buffer, std::size_t size, const wchar_t *format,
-    unsigned width, int precision, long double value);
-
-#endif  // FMT_HEADER_ONLY
-
 }  // namespace fmt
 
 #ifdef _MSC_VER
 # pragma warning(pop)
 #endif
+
+#endif  // FMT_FORMAT_INL_H_

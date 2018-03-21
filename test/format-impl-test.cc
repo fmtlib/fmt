@@ -10,7 +10,7 @@
 #include "test-assert.h"
 
 // Include format.cc instead of format.h to test implementation.
-#include "fmt/format.cc"
+#include "../src/format.cc"
 #include "fmt/printf.h"
 
 #include <algorithm>
