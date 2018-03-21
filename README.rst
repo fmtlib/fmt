@@ -12,8 +12,7 @@
    :target: https://gitter.im/fmtlib/fmt
 
 **{fmt}** is an open-source formatting library for C++.
-It can be used as a safe alternative to printf or as a fast
-alternative to IOStreams.
+It can be used as a safe and fast alternative to (s)printf and IOStreams.
 
 `Documentation <http://fmtlib.net/latest/>`_
 
@@ -23,16 +22,11 @@ This is a development branch, released versions are available from the
 Features
 --------
 
-* Two APIs: faster concatenation-based `write API
-  <http://fmtlib.net/latest/api.html#write-api>`_ and slower, but still very
-  fast, replacement-based `format API
-  <http://fmtlib.net/latest/api.html#format-api>`_ with positional arguments for
-  localization.
-* Write API similar to the one used by IOStreams but stateless allowing faster
-  implementation.
-* Format API with `format string syntax <http://fmtlib.net/latest/syntax.html>`_
-  similar to the one used by `str.format
-  <https://docs.python.org/2/library/stdtypes.html#str.format>`_ in Python.
+* Replacement-based `format API <http://fmtlib.net/dev/api.html>`_ with
+  positional arguments for localization.
+* `Format string syntax <http://fmtlib.net/dev/syntax.html>`_ similar to the one
+  of `str.format <https://docs.python.org/2/library/stdtypes.html#str.format>`_
+  in Python.
 * Safe `printf implementation
   <http://fmtlib.net/latest/api.html#printf-formatting-functions>`_ including
   the POSIX extension for positional arguments.
