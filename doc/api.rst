@@ -238,9 +238,6 @@ custom argument formatter class::
 
   std::string s = custom_format("{:x}", -42); // s == "ffffffd6"
 
-.. doxygenclass:: fmt::ArgVisitor
-   :members:
-
 .. doxygenclass:: fmt::arg_formatter
    :members:
 
