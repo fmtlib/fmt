@@ -2295,7 +2295,7 @@ class basic_writer {
   void write_int(unsigned num_digits, string_view prefix,
                  const Spec &spec, F f) {
     std::size_t size = prefix.size() + num_digits;
-    char_type fill = spec.fill();
+    char_type fill = static_cast<char_type>(spec.fill());
     std::size_t padding = 0;
     if (spec.align() == ALIGN_NUMERIC) {
       if (spec.width() > size) {
