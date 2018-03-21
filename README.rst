@@ -38,9 +38,9 @@ Features
   performance of IOStreams. See `Speed tests`_ and
   `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
-* Small code size both in terms of source code (the core library consists of two
-  header files and a single source file) and compiled code.
-  See `Compile time and code bloat`_.
+* Small code size both in terms of source code (the minimum configuration
+  consists of just three header files, ``core.h``, ``format.h`` and
+  ``format-inl.h``) and compiled code. See `Compile time and code bloat`_.
 * Reliability: the library has an extensive set of `unit tests
   <https://github.com/fmtlib/fmt/tree/master/test>`_.
 * Safety: the library is fully type safe, errors in format strings can be
@@ -156,7 +156,7 @@ Projects using this library
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   An open-source library for mathematical programming
   
-* `AvioBook <https://www.aviobook.aero/en>`_: A comprehensive aircraft operations suite.
+* `AvioBook <https://www.aviobook.aero/en>`_: A comprehensive aircraft operations suite
 
 * `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater vehicle
 
