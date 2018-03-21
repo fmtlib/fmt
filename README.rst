@@ -14,10 +14,12 @@
 **{fmt}** is an open-source formatting library for C++.
 It can be used as a safe and fast alternative to (s)printf and IOStreams.
 
-`Documentation <http://fmtlib.net/latest/>`_
+`Documentation <http://fmtlib.net/latest/>`__
 
-This is a development branch, released versions are available from the
-`Releases page <https://github.com/fmtlib/fmt/releases>`__.
+This is a development branch that implements the C++ standards proposal `P0645
+Text Formatting <http://fmtlib.net/Text%20Formatting.html>`__.
+Released versions are available from the `Releases page
+<https://github.com/fmtlib/fmt/releases>`__.
 
 Features
 --------
