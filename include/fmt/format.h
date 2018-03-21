@@ -2275,7 +2275,7 @@ class basic_writer {
   template <typename F>
   struct padded_int_writer {
     string_view prefix;
-    wchar_t fill;
+    char_type fill;
     std::size_t padding;
     F f;
 
@@ -2295,7 +2295,7 @@ class basic_writer {
   void write_int(unsigned num_digits, string_view prefix,
                  const Spec &spec, F f) {
     std::size_t size = prefix.size() + num_digits;
-    auto fill = spec.fill();
+    char_type fill = spec.fill();
     std::size_t padding = 0;
     if (spec.align() == ALIGN_NUMERIC) {
       if (spec.width() > size) {
