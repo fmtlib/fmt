@@ -1196,7 +1196,8 @@ TEST(FormatterTest, FormatString) {
 }
 
 TEST(FormatterTest, FormatStringView) {
-  EXPECT_EQ("test", format("{0}", string_view("test")));
+  EXPECT_EQ("test", format("{}", string_view("test")));
+  EXPECT_EQ("", format("{}", string_view()));
 }
 
 #ifdef FMT_USE_STD_STRING_VIEW
