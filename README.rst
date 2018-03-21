@@ -127,18 +127,18 @@ An object of any user-defined type for which there is an overloaded
 You can create your own functions similar to `format
 <http://fmtlib.net/latest/api.html#format>`_ and
 `print <http://fmtlib.net/latest/api.html#print>`_
-which take arbitrary arguments:
+which take arbitrary arguments ([godbolt](https://godbolt.org/g/uoSRRh):
 
 .. code:: c++
 
     // Prints formatted error message.
-    void vreport_error(const char *format, fmt::args args) {
+    void vreport_error(const char *format, fmt::format_args args) {
       fmt::print("Error: ");
       fmt::vprint(format, args);
     }
     template <typename... Args>
     void report_error(const char *format, const Args & ... args) {
-      vreport_error(format, fmt::make_args(args));
+      vreport_error(format, fmt::make_args(args...));
     }
 
     report_error("file not found: {}", path);
