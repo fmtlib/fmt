@@ -4090,7 +4090,8 @@ ArgJoin<wchar_t, It> join(It first, It last, const BasicCStringRef<wchar_t>& sep
   return ArgJoin<wchar_t, It>(first, last, sep);
 }
 
-#if FMT_HAS_GXX_CXX11
+#if FMT_HAS_GXX_CXX11 && \
+    (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 405 || __clang__)
 template <typename Range>
 auto join(const Range& range, const BasicCStringRef<char>& sep)
     -> ArgJoin<char, decltype(std::begin(range))> {
