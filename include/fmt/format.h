@@ -1590,7 +1590,7 @@ class specs_setter {
   FMT_CONSTEXPR specs_setter(const specs_setter &other) : specs_(other.specs_) {}
 
   FMT_CONSTEXPR void on_align(alignment align) { specs_.align_ = align; }
-  FMT_CONSTEXPR void on_fill(Char p_fill) { specs_.fill_ = p_fill; }
+  FMT_CONSTEXPR void on_fill(Char fill_char) { specs_.fill_ = fill_char; }
   FMT_CONSTEXPR void on_plus() { specs_.flags_ |= SIGN_FLAG | PLUS_FLAG; }
   FMT_CONSTEXPR void on_minus() { specs_.flags_ |= MINUS_FLAG; }
   FMT_CONSTEXPR void on_space() { specs_.flags_ |= SIGN_FLAG; }
@@ -1601,7 +1601,7 @@ class specs_setter {
     specs_.fill_ = '0';
   }
 
-  FMT_CONSTEXPR void on_width(unsigned p_width) { specs_.width_ = p_width; }
+  FMT_CONSTEXPR void on_width(unsigned width_value) { specs_.width_ = width_value; }
   FMT_CONSTEXPR void on_precision(unsigned precision) {
     specs_.precision_ = precision;
   }
@@ -2296,7 +2296,7 @@ class basic_writer {
   void write_int(unsigned num_digits, string_view prefix,
                  const Spec &spec, F f) {
     std::size_t size = prefix.size() + num_digits;
-    char_type nFill = static_cast<char_type>(spec.fill());
+    char_type fill_char = static_cast<char_type>(spec.fill());
     std::size_t padding = 0;
     if (spec.align() == ALIGN_NUMERIC) {
       if (spec.width() > size) {
@@ -2306,12 +2306,12 @@ class basic_writer {
     } else if (spec.precision() > static_cast<int>(num_digits)) {
       size = prefix.size() + spec.precision();
       padding = spec.precision() - num_digits;
-	  nFill = '0';
+	  fill_char = '0';
     }
     align_spec as = spec;
     if (spec.align() == ALIGN_DEFAULT)
       as.align_ = ALIGN_RIGHT;
-    write_padded(size, as, padded_int_writer<F>{prefix, nFill, padding, f});
+    write_padded(size, as, padded_int_writer<F>{prefix, fill_char, padding, f});
   }
 
   // Writes a decimal integer.
@@ -2619,12 +2619,12 @@ template <typename Range>
 template <typename F>
 void basic_writer<Range>::write_padded(
     std::size_t size, const align_spec &spec, F f) {
-  unsigned nWidth = spec.width();
-  if (nWidth <= size)
+  unsigned width_value = spec.width();
+  if (width_value <= size)
     return f(reserve(size));
-  auto &&it = reserve(nWidth);
+  auto &&it = reserve(width_value);
   char_type nFill = internal::char_traits<char_type>::cast(spec.fill());
-  std::size_t padding = nWidth - size;
+  std::size_t padding = width_value - size;
   if (spec.align() == ALIGN_RIGHT) {
     it = std::fill_n(it, padding, nFill);
     f(it);
@@ -2729,11 +2729,11 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
 
   basic_memory_buffer<char_type> buffer;
 
-  unsigned nWidth = spec.width();
+  unsigned width_value = spec.width();
   if (sign) {
-    buffer.reserve(nWidth > 1u ? nWidth : 1u);
-    if (nWidth > 0)
-      --nWidth;
+    buffer.reserve(width_value > 1u ? width_value : 1u);
+    if (width_value > 0)
+      --width_value;
   }
 
   // Build format string.
@@ -2741,7 +2741,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   char_type format[MAX_FORMAT_SIZE];
   char_type *format_ptr = format;
   *format_ptr++ = '%';
-  unsigned width_for_sprintf = nWidth;
+  unsigned width_for_sprintf = width_value;
   if (spec.flag(HASH_FLAG))
     *format_ptr++ = '#';
   width_for_sprintf = 0;
