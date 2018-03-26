@@ -155,9 +155,10 @@
     Type(const Type &) FMT_DELETED; \
     void operator=(const Type &) FMT_DELETED
 
-#if (FMT_HAS_INCLUDE(<string_view>) && __cplusplus > 201402L) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910) || \
-    _LIBCPP_VERSION // libc++ supports string_view in pre-c++17
+// libc++ supports string_view in pre-c++17.
+#if (FMT_HAS_INCLUDE(<string_view>) && \
+      (__cplusplus > 201402L || _LIBCPP_VERSION)) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910) 
 # include <string_view>
 # define FMT_USE_STD_STRING_VIEW
 // std::experimental::basic_string_view::remove_prefix isn't constexpr until
