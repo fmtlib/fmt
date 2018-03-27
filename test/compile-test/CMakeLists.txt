@@ -48,10 +48,10 @@ endfunction ()
 expect_compile("")
 
 # Formatting a wide character with a narrow format string is forbidden.
-expect_compile_error("fmt::format(\"{}\", L'a';")
+expect_compile_error("fmt::format(\"{}\", L'a');")
 
 # Formatting a wide string with a narrow format string is forbidden.
-expect_compile_error("fmt::format(\"{}\", L\"foo\";")
+expect_compile_error("fmt::format(\"{}\", L\"foo\");")
 
 # Make sure that compiler features detected in the header
 # match the features detected in CMake.
