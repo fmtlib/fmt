@@ -1201,7 +1201,7 @@ TEST(FormatterTest, FormatStringView) {
 }
 
 #ifdef FMT_USE_STD_STRING_VIEW
-TEST(FormatterTest, FormatStringView) {
+TEST(FormatterTest, FormatStdStringView) {
   EXPECT_EQ("test", format("{0}", std::string_view("test")));
 }
 #endif

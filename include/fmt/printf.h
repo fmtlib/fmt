@@ -540,6 +540,10 @@ struct printf_context {
     std::back_insert_iterator<Buffer>, typename Buffer::value_type> type;
 };
 
+template <typename ...Args>
+inline arg_store<printf_context<internal::buffer>::type, Args...> make_printf_args(const Args & ... args) {
+  return arg_store<printf_context<internal::buffer>::type, Args...>(args...);
+}
 typedef basic_format_args<printf_context<internal::buffer>::type> printf_args;
 
 inline std::string vsprintf(string_view format, printf_args args) {
