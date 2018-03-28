@@ -405,7 +405,7 @@ struct error_handler {
   FMT_CONSTEXPR error_handler(const error_handler &) {}
 
   // This function is intentionally not constexpr to give a compile-time error.
-  void on_error(const char *message);
+  FMT_API void on_error(const char *message);
 };
 
 // Formatting of wide characters and strings into a narrow output is disallowed:

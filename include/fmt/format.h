@@ -905,7 +905,7 @@ class add_thousands_sep {
 };
 
 template <typename Char>
-Char thousands_sep(locale_provider *lp);
+FMT_API Char thousands_sep(locale_provider *lp);
 
 // Formats a decimal unsigned integer value writing into buffer.
 // thousands_sep is a functor that is called after writing each char to

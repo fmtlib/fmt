@@ -13,7 +13,7 @@ template struct internal::basic_data<void>;
 
 // Explicit instantiations for char.
 
-template char internal::thousands_sep(locale_provider *lp);
+template FMT_API char internal::thousands_sep(locale_provider *lp);
 
 template void basic_fixed_buffer<char>::grow(std::size_t);
 
@@ -30,7 +30,7 @@ template FMT_API int internal::char_traits<char>::format_float(
 
 // Explicit instantiations for wchar_t.
 
-template wchar_t internal::thousands_sep(locale_provider *lp);
+template FMT_API wchar_t internal::thousands_sep(locale_provider *lp);
 
 template void basic_fixed_buffer<wchar_t>::grow(std::size_t);
 
