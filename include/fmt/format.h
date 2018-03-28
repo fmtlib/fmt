@@ -2623,19 +2623,19 @@ void basic_writer<Range>::write_padded(
   if (width_value <= size)
     return f(reserve(size));
   auto &&it = reserve(width_value);
-  char_type nFill = internal::char_traits<char_type>::cast(spec.fill());
+  char_type fill_char = internal::char_traits<char_type>::cast(spec.fill());
   std::size_t padding = width_value - size;
   if (spec.align() == ALIGN_RIGHT) {
-    it = std::fill_n(it, padding, nFill);
+    it = std::fill_n(it, padding, fill_char);
     f(it);
   } else if (spec.align() == ALIGN_CENTER) {
     std::size_t left_padding = padding / 2;
-    it = std::fill_n(it, left_padding, nFill);
+    it = std::fill_n(it, left_padding, fill_char);
     f(it);
-    it = std::fill_n(it, padding - left_padding, nFill);
+    it = std::fill_n(it, padding - left_padding, fill_char);
   } else {
     f(it);
-    it = std::fill_n(it, padding, nFill);
+    it = std::fill_n(it, padding, fill_char);
   }
 }
 
