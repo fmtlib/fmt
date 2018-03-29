@@ -36,9 +36,6 @@ using fmt::format_error;
 using fmt::string_view;
 using fmt::memory_buffer;
 using fmt::wmemory_buffer;
-using fmt::fill;
-using fmt::type;
-using fmt::width;
 
 namespace {
 
@@ -219,137 +216,6 @@ TEST(WriterTest, WriteWideString) {
   CHECK_WRITE_WCHAR(L"abc");
   // The following line shouldn't compile:
   //std::declval<fmt::basic_writer<fmt::wbuffer>>().write("abc");
-}
-
-template <typename... T>
-std::string write_str(T... args) {
-  memory_buffer buf;
-  fmt::writer writer(buf);
-  writer.write(args...);
-  return to_string(buf);
-}
-
-template <typename... T>
-std::wstring write_wstr(T... args) {
-  wmemory_buffer buf;
-  fmt::wwriter writer(buf);
-  writer.write(args...);
-  return to_string(buf);
-}
-
-TEST(WriterTest, bin) {
-  EXPECT_EQ("1100101011111110", write_str(0xcafe, type='b'));
-  EXPECT_EQ("1011101010111110", write_str(0xbabeu, type='b'));
-  EXPECT_EQ("1101111010101101", write_str(0xdeadl, type='b'));
-  EXPECT_EQ("1011111011101111", write_str(0xbeeful, type='b'));
-  EXPECT_EQ("11001010111111101011101010111110",
-            write_str(0xcafebabell, type='b'));
-  EXPECT_EQ("11011110101011011011111011101111",
-            write_str(0xdeadbeefull, type='b'));
-}
-
-TEST(WriterTest, oct) {
-  EXPECT_EQ("12", write_str(static_cast<short>(012), type='o'));
-  EXPECT_EQ("12", write_str(012, type='o'));
-  EXPECT_EQ("34", write_str(034u, type='o'));
-  EXPECT_EQ("56", write_str(056l, type='o'));
-  EXPECT_EQ("70", write_str(070ul, type='o'));
-  EXPECT_EQ("1234", write_str(01234ll, type='o'));
-  EXPECT_EQ("5670", write_str(05670ull, type='o'));
-}
-
-TEST(WriterTest, hex) {
-  EXPECT_EQ("cafe", write_str(0xcafe, type='x'));
-  EXPECT_EQ("babe", write_str(0xbabeu, type='x'));
-  EXPECT_EQ("dead", write_str(0xdeadl, type='x'));
-  EXPECT_EQ("beef", write_str(0xbeeful, type='x'));
-  EXPECT_EQ("cafebabe", write_str(0xcafebabell, type='x'));
-  EXPECT_EQ("deadbeef", write_str(0xdeadbeefull, type='x'));
-}
-
-TEST(WriterTest, hexu) {
-  EXPECT_EQ("CAFE", write_str(0xcafe, type='X'));
-  EXPECT_EQ("BABE", write_str(0xbabeu, type='X'));
-  EXPECT_EQ("DEAD", write_str(0xdeadl, type='X'));
-  EXPECT_EQ("BEEF", write_str(0xbeeful, type='X'));
-  EXPECT_EQ("CAFEBABE", write_str(0xcafebabell, type='X'));
-  EXPECT_EQ("DEADBEEF", write_str(0xdeadbeefull, type='X'));
-}
-
-template <typename Range>
-basic_writer<Range> &operator<<(basic_writer<Range> &w, const Date &d) {
-  w.write(d.year());
-  w.write('-');
-  w.write(d.month());
-  w.write('-');
-  w.write(d.day());
-  return w;
-}
-
-class ISO8601DateFormatter {
- const Date *date_;
-
-public:
-  ISO8601DateFormatter(const Date &d) : date_(&d) {}
-
-  template <typename Range>
-  friend basic_writer<Range> &operator<<(
-      basic_writer<Range> &w, const ISO8601DateFormatter &d) {
-    w.write(d.date_->year(), width=4, fill='0');
-    w.write('-');
-    w.write(d.date_->month(), width=2, fill='0');
-    w.write('-');
-    w.write(d.date_->day(), width=2, fill='0');
-    return w;
-  }
-};
-
-ISO8601DateFormatter iso8601(const Date &d) { return ISO8601DateFormatter(d); }
-
-TEST(WriterTest, pad) {
-  EXPECT_EQ("    cafe", write_str(0xcafe, width=8, type='x'));
-  EXPECT_EQ("    babe", write_str(0xbabeu, width=8, type='x'));
-  EXPECT_EQ("    dead", write_str(0xdeadl, width=8, type='x'));
-  EXPECT_EQ("    beef", write_str(0xbeeful, width=8, type='x'));
-  EXPECT_EQ("    dead", write_str(0xdeadll, width=8, type='x'));
-  EXPECT_EQ("    beef", write_str(0xbeefull, width=8, type='x'));
-
-  EXPECT_EQ("     11", write_str(11, width=7));
-  EXPECT_EQ("     22", write_str(22u, width=7));
-  EXPECT_EQ("     33", write_str(33l, width=7));
-  EXPECT_EQ("     44", write_str(44ul, width=7));
-  EXPECT_EQ("     33", write_str(33ll, width=7));
-  EXPECT_EQ("     44", write_str(44ull, width=7));
-
-  EXPECT_EQ("00042", write_str(42, fmt::width=5, fmt::fill='0'));
-
-  {
-    memory_buffer buf;
-    fmt::writer w(buf);
-    w << Date(2012, 12, 9);
-    EXPECT_EQ("2012-12-9", to_string(buf));
-  }
-  {
-    memory_buffer buf;
-    fmt::writer w(buf);
-    w << iso8601(Date(2012, 1, 9));
-    EXPECT_EQ("2012-01-09", to_string(buf));
-  }
-}
-
-TEST(WriterTest, PadString) {
-  EXPECT_EQ("test    ", write_str("test", width=8));
-  EXPECT_EQ("test******", write_str("test", width=10, fill='*'));
-}
-
-TEST(WriterTest, PadWString) {
-  EXPECT_EQ(L"test    ", write_wstr(L"test", width=8));
-  EXPECT_EQ(L"test******", write_wstr(L"test", width=10, fill='*'));
-  EXPECT_EQ(L"test******", write_wstr(L"test", width=10, fill=L'*'));
-}
-
-TEST(WriterTest, WWriter) {
-  EXPECT_EQ(L"cafe", write_wstr(0xcafe, type='x'));
 }
 
 TEST(FormatToTest, FormatWithoutArgs) {
@@ -1278,8 +1144,6 @@ TEST(FormatterTest, FormatStringFromSpeedTest) {
 }
 
 TEST(FormatterTest, FormatExamples) {
-  EXPECT_EQ("0000cafe", write_str(0xcafe, width=8, fill='0', type='x'));
-
   std::string message = format("The answer is {}", 42);
   EXPECT_EQ("The answer is 42", message);
 

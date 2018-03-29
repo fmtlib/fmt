@@ -3230,30 +3230,6 @@ typename Context::iterator vformat_to(typename ArgFormatter::range out,
 template <typename T>
 inline const void *ptr(const T *p) { return p; }
 
-class fill_spec_factory {
- public:
-  FMT_CONSTEXPR fill_spec_factory() {}
-
-  template <typename Char>
-  fill_spec<Char> operator=(Char value) const {
-    return fill_spec<Char>(value);
-  }
-};
-
-template <typename FormatSpec>
-class format_spec_factory {
- public:
-  FMT_CONSTEXPR format_spec_factory() {}
-
-  FormatSpec operator=(typename FormatSpec::value_type value) const {
-    return FormatSpec(value);
-  }
-};
-
-static const fill_spec_factory fill;
-static const format_spec_factory<width_spec> width;
-static const format_spec_factory<type_spec> type;
-
 template <typename It, typename Char>
 struct arg_join {
   It begin;
