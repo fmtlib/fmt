@@ -10,6 +10,7 @@ function (generate_source result fragment)
   set(${result} "
   #define FMT_HEADER_ONLY 1
   #include \"fmt/posix.h\"
+  #include \"fmt/ostream.h\"
   int main() {
     ${fragment}
   }
@@ -52,6 +53,10 @@ expect_compile_error("fmt::format(\"{}\", L'a');")
 
 # Formatting a wide string with a narrow format string is forbidden.
 expect_compile_error("fmt::format(\"{}\", L\"foo\");")
+
+# Formatting a narrow string with a wide format string is forbidden because
+# mixing UTF-8 with UTF-16/32 can result in an invalid output.
+expect_compile_error("fmt::format(L\"{}\", \"foo\");")
 
 # Make sure that compiler features detected in the header
 # match the features detected in CMake.

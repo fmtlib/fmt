@@ -619,8 +619,8 @@ FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
 // pointer cast it to "void *" or "const void *". In particular, this forbids
 // formatting of "[const] volatile char *" which is printed as bool by
 // iostreams.
-template <typename T>
-void make_value(const T *) {
+template <typename C, typename T>
+typed_value<C, pointer_type> make_value(const T *) {
   static_assert(!sizeof(T), "formatting of non-void pointers is disallowed");
 }
 
