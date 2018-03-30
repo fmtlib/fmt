@@ -3256,7 +3256,7 @@ struct format_handler : internal::error_handler {
   basic_arg<Context> arg;
 };
 
-/** Formats arguments and writes the output to the buffer. */
+/** Formats arguments and writes the output to the range. */
 template <typename ArgFormatter, typename Char, typename Context>
 typename Context::iterator vformat_to(typename ArgFormatter::range out,
                                       basic_string_view<Char> format_str,
@@ -3419,10 +3419,19 @@ inline typename std::enable_if<
 
 template <typename OutputIt>
 struct format_to_n_result {
+  /** Iterator past the end of the output range. */
   OutputIt out;
+  /** Total (not truncated) output size. */
   std::size_t size;
 };
 
+/**
+ \rst
+ Formats arguments, writes up to ``n`` characters of the result to the output
+ iterator ``out`` and returns the total output size and the iterator past the end
+ of the output range.
+ \endrst
+ */
 template <typename OutputIt, typename... Args>
 inline format_to_n_result<OutputIt> format_to_n(
     OutputIt out, std::size_t n, string_view format_str, const Args & ... args) {
