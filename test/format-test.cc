@@ -1416,9 +1416,14 @@ class mock_arg_formatter:
 
   using base::operator();
 
-  void operator()(int value) { call(value); }
+  iterator operator()(int value) {
+    call(value);
+    return base::operator()(value);
+  }
 
-  void operator()(fmt::basic_arg<fmt::context>::handle) {}
+  iterator operator()(fmt::basic_arg<fmt::context>::handle) {
+    return base::operator()(fmt::monostate());
+  }
 };
 
 void custom_vformat(fmt::string_view format_str, fmt::format_args args) {
@@ -1510,7 +1515,12 @@ TEST(FormatTest, FormatToN) {
   buffer[3] = 'x';
   auto result = fmt::format_to_n(buffer, 3, "{}", 12345);
   EXPECT_EQ(5u, result.size);
+  EXPECT_EQ(buffer + 3, result.out);
   EXPECT_EQ("123x", fmt::string_view(buffer, 4));
+  result = fmt::format_to_n(buffer, 3, "{:s}", "foobar");
+  EXPECT_EQ(6u, result.size);
+  EXPECT_EQ(buffer + 3, result.out);
+  EXPECT_EQ("foox", fmt::string_view(buffer, 4));
 }
 
 #if FMT_USE_CONSTEXPR

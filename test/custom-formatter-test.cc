@@ -21,10 +21,10 @@ class custom_arg_formatter :
 
   using base::operator();
 
-  void operator()(double value) {
+  iterator operator()(double value) {
     if (round(value * pow(10, spec().precision())) == 0)
       value = 0;
-    base::operator()(value);
+    return base::operator()(value);
   }
 };
 

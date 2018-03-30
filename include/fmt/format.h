@@ -1069,7 +1069,7 @@ FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
   typedef typename Context::char_type char_type;
   switch (arg.type_) {
   case internal::none_type:
-    return vis(monostate());
+    break;
   case internal::name_arg_type:
     FMT_ASSERT(false, "invalid argument type");
     break;
@@ -1099,7 +1099,7 @@ FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
   case internal::custom_type:
     return vis(typename basic_arg<Context>::handle(arg.value_.custom));
   }
-  return typename internal::result_of<Visitor(int)>::type();
+  return vis(monostate());
 }
 
 enum alignment {
@@ -1392,6 +1392,7 @@ template <typename Range>
 class arg_formatter_base {
  public:
   typedef typename Range::value_type char_type;
+  typedef decltype(internal::declval<Range>().begin()) iterator;
   typedef basic_format_specs<char_type> format_specs;
 
  private:
@@ -1422,6 +1423,7 @@ class arg_formatter_base {
  protected:
   writer_type &writer() { return writer_; }
   format_specs &spec() { return specs_; }
+  iterator out() { return writer_.out(); }
 
   void write(bool value) {
     writer_.write_str(string_view(value ? "true" : "false"), specs_);
@@ -1437,22 +1439,30 @@ class arg_formatter_base {
  public:
   arg_formatter_base(Range r, format_specs &s): writer_(r), specs_(s) {}
 
-  void operator()(monostate) {
+  iterator operator()(monostate) {
     FMT_ASSERT(false, "invalid argument type");
+    return out();
   }
 
   template <typename T>
-  typename std::enable_if<std::is_integral<T>::value>::type
-      operator()(T value) { writer_.write_int(value, specs_); }
+  typename std::enable_if<std::is_integral<T>::value, iterator>::type
+      operator()(T value) {
+    writer_.write_int(value, specs_);
+    return out();
+  }
 
   template <typename T>
-  typename std::enable_if<std::is_floating_point<T>::value>::type
-      operator()(T value) { writer_.write_double(value, specs_); }
+  typename std::enable_if<std::is_floating_point<T>::value, iterator>::type
+      operator()(T value) {
+    writer_.write_double(value, specs_);
+    return out();
+  }
 
-  void operator()(bool value) {
+  iterator operator()(bool value) {
     if (specs_.type_)
       return (*this)(value ? 1 : 0);
     write(value);
+    return out();
   }
 
   struct char_spec_handler : internal::error_handler {
@@ -1466,8 +1476,9 @@ class arg_formatter_base {
     void on_char() { formatter.write_char(value); }
   };
 
-  void operator()(char_type value) {
+  iterator operator()(char_type value) {
     internal::handle_char_specs(specs_, char_spec_handler(*this, value));
+    return out();
   }
 
   struct cstring_spec_handler : internal::error_handler {
@@ -1481,19 +1492,22 @@ class arg_formatter_base {
     void on_pointer() { formatter.write_pointer(value); }
   };
 
-  void operator()(const char_type *value) {
+  iterator operator()(const char_type *value) {
     internal::handle_cstring_type_spec(
           specs_.type_, cstring_spec_handler(*this, value));
+    return out();
   }
 
-  void operator()(basic_string_view<char_type> value) {
+  iterator operator()(basic_string_view<char_type> value) {
     internal::check_string_type_spec(specs_.type_, internal::error_handler());
     writer_.write_str(value, specs_);
+    return out();
   }
 
-  void operator()(const void *value) {
+  iterator operator()(const void *value) {
     check_pointer_type_spec(specs_.type_, internal::error_handler());
     write_pointer(value);
+    return out();
   }
 };
 
@@ -2172,14 +2186,14 @@ class arg_formatter:
   public internal::function<void>, public internal::arg_formatter_base<Range> {
  private:
   typedef typename Range::value_type char_type;
-  typedef decltype(internal::declval<Range>().begin()) iterator;
   typedef internal::arg_formatter_base<Range> base;
-  typedef basic_context<iterator, char_type> context_type;
+  typedef basic_context<typename base::iterator, char_type> context_type;
 
   context_type &ctx_;
 
  public:
   typedef Range range;
+  typedef typename base::iterator iterator;
   typedef typename base::format_specs format_specs;
 
   /**
@@ -2195,8 +2209,9 @@ class arg_formatter:
   using base::operator();
 
   /** Formats an argument of a user-defined type. */
-  void operator()(typename basic_arg<context_type>::handle handle) const {
+  iterator operator()(typename basic_arg<context_type>::handle handle) {
     handle.format(ctx_);
+    return this->out();
   }
 };
 
@@ -2289,6 +2304,8 @@ class basic_writer {
   typedef char_type* pointer_type;
   static char_type *get(char_type *p) { return p; }
 #endif
+
+  iterator out() const { return out_; }
 
   // Attempts to reserve space for n extra characters in the output range.
   // Returns a pointer to the reserved range or a reference to out_.
@@ -2667,7 +2684,6 @@ void basic_writer<Range>::write_padded(
     it = std::fill_n(it, padding, fill);
   }
 }
-
 
 template <typename Range>
 template <typename Char>
@@ -3213,18 +3229,16 @@ struct format_handler : internal::error_handler {
 
   void on_replacement_field(iterator it) {
     context.parse_context().advance_to(pointer_from(it));
-    using internal::custom_formatter;
-    if (visit(custom_formatter<Char, Context>(context), arg))
+    if (visit(internal::custom_formatter<Char, Context>(context), arg))
       return;
     basic_format_specs<Char> specs;
-    visit(ArgFormatter(context, specs), arg);
+    context.advance_to(visit(ArgFormatter(context, specs), arg));
   }
 
   iterator on_format_specs(iterator it) {
     auto& parse_ctx = context.parse_context();
     parse_ctx.advance_to(pointer_from(it));
-    using internal::custom_formatter;
-    if (visit(custom_formatter<Char, Context>(context), arg))
+    if (visit(internal::custom_formatter<Char, Context>(context), arg))
       return iterator(parse_ctx);
     basic_format_specs<Char> specs;
     using internal::specs_handler;
@@ -3234,7 +3248,7 @@ struct format_handler : internal::error_handler {
     if (*it != '}')
       on_error("missing '}' in format string");
     parse_ctx.advance_to(pointer_from(it));
-    visit(ArgFormatter(context, specs), arg);
+    context.advance_to(visit(ArgFormatter(context, specs), arg));
     return it;
   }
 

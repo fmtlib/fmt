@@ -246,45 +246,49 @@ class printf_arg_formatter:
   using base::operator();
 
   /** Formats an argument of type ``bool``. */
-  void operator()(bool value) {
+  iterator operator()(bool value) {
     format_specs &fmt_spec = this->spec();
     if (fmt_spec.type_ != 's')
       return (*this)(value ? 1 : 0);
     fmt_spec.type_ = 0;
     this->write(value);
+    return this->out();
   }
 
   /** Formats a character. */
-  void operator()(char_type value) {
+  iterator operator()(char_type value) {
     format_specs &fmt_spec = this->spec();
     if (fmt_spec.type_ && fmt_spec.type_ != 'c')
       return (*this)(static_cast<int>(value));
     fmt_spec.flags_ = 0;
     fmt_spec.align_ = ALIGN_RIGHT;
-    base::operator()(value);
+    return base::operator()(value);
   }
 
   /** Formats a null-terminated C string. */
-  void operator()(const char *value) {
+  iterator operator()(const char *value) {
     if (value)
       base::operator()(value);
     else if (this->spec().type_ == 'p')
       write_null_pointer();
     else
       this->write("(null)");
+    return this->out();
   }
 
   /** Formats a pointer. */
-  void operator()(const void *value) {
+  iterator operator()(const void *value) {
     if (value)
       return base::operator()(value);
     this->spec().type_ = 0;
     write_null_pointer();
+    return this->out();
   }
 
   /** Formats an argument of a custom (user-defined) type. */
-  void operator()(typename basic_arg<context_type>::handle handle) {
+  iterator operator()(typename basic_arg<context_type>::handle handle) {
     handle.format(context_);
+    return this->out();
   }
 };
 
