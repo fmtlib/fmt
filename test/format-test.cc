@@ -1505,6 +1505,14 @@ TEST(FormatTest, OutputSize) {
   EXPECT_EQ(2u, fmt::count("{}", 42));
 }
 
+TEST(FormatTest, FormatToN) {
+  char buffer[4];
+  buffer[3] = 'x';
+  auto result = fmt::format_to_n(buffer, 3, "{}", 12345);
+  EXPECT_EQ(5u, result.size);
+  EXPECT_EQ("123x", fmt::string_view(buffer, 4));
+}
+
 #if FMT_USE_CONSTEXPR
 struct test_arg_id_handler {
   enum result { NONE, EMPTY, INDEX, NAME, ERROR };
