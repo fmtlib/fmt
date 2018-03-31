@@ -702,7 +702,7 @@ FMT_CONSTEXPR const Char *pointer_from(null_terminating_iterator<Char> it) {
 template <typename T>
 class counting_iterator {
  private:
-  std::size_t* count_;
+  std::size_t count_;
   mutable T blackhole_;
 
  public:
@@ -712,10 +712,12 @@ class counting_iterator {
   typedef T* pointer;
   typedef T& reference;
 
-  explicit counting_iterator(std::size_t &count): count_(&count) {}
+  counting_iterator(): count_(0) {}
+
+  std::size_t count() const { return count_; }
 
   counting_iterator& operator++() {
-    ++*count_;
+    ++count_;
     return *this;
   }
 
@@ -733,7 +735,7 @@ class truncating_iterator {
 
   OutputIt out_;
   std::size_t limit_;
-  std::size_t *count_;
+  std::size_t count_;
   mutable typename traits::value_type blackhole_;
 
  public:
@@ -743,20 +745,21 @@ class truncating_iterator {
   typedef typename traits::pointer pointer;
   typedef typename traits::reference reference;
 
-  truncating_iterator(OutputIt out, std::size_t limit, std::size_t &count)
-    : out_(out), limit_(limit), count_(&count) {}
+  truncating_iterator(OutputIt out, std::size_t limit)
+    : out_(out), limit_(limit), count_(0) {}
 
   OutputIt base() const { return out_; }
+  std::size_t count() const { return count_; }
 
   truncating_iterator& operator++() {
-    if ((*count_)++ < limit_)
+    if (count_++ < limit_)
       ++out_;
     return *this;
   }
 
   truncating_iterator operator++(int) { return ++*this; }
 
-  reference operator*() const { return *count_ < limit_ ? *out_ : blackhole_; }
+  reference operator*() const { return count_ < limit_ ? *out_ : blackhole_; }
 };
 
 // Returns true if value is negative, false otherwise.
@@ -3436,10 +3439,9 @@ template <typename OutputIt, typename... Args>
 inline format_to_n_result<OutputIt> format_to_n(
     OutputIt out, std::size_t n, string_view format_str, const Args & ... args) {
   typedef internal::truncating_iterator<OutputIt> It;
-  std::size_t count = 0;
-  auto it = vformat_to(It(out, n, count), format_str,
+  auto it = vformat_to(It(out, n), format_str,
       *make_args<typename context_t<It>::type>(args...));
-  return {it.base(), count};
+  return {it.base(), it.count()};
 }
 
 inline std::string vformat(string_view format_str, format_args args) {
@@ -3472,10 +3474,8 @@ inline typename std::enable_if<internal::is_format_string<String>::value>::type
 // Counts the number of characters in the output of format(format_str, args...).
 template <typename... Args>
 inline std::size_t count(string_view format_str, const Args & ... args) {
-  std::size_t size = 0;
-  internal::counting_iterator<char> it(size);
-  format_to(it, format_str, args...);
-  return size;
+  auto it = format_to(internal::counting_iterator<char>(), format_str, args...);
+  return it.count();
 }
 }  // namespace fmt
 
