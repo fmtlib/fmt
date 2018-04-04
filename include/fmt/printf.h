@@ -81,11 +81,11 @@ class arg_converter: public function<void> {
  private:
   typedef typename Context::char_type Char;
 
-  basic_arg<Context> &arg_;
+  basic_format_arg<Context> &arg_;
   typename Context::char_type type_;
 
  public:
-  arg_converter(basic_arg<Context> &arg, Char type)
+  arg_converter(basic_format_arg<Context> &arg, Char type)
     : arg_(arg), type_(type) {}
 
   void operator()(bool value) {
@@ -133,7 +133,7 @@ class arg_converter: public function<void> {
 // type depending on the type specifier: 'd' and 'i' - signed, other -
 // unsigned).
 template <typename T, typename Context, typename Char>
-void convert_arg(basic_arg<Context> &arg, Char type) {
+void convert_arg(basic_format_arg<Context> &arg, Char type) {
   visit(arg_converter<T, Context>(arg, type), arg);
 }
 
@@ -141,12 +141,12 @@ void convert_arg(basic_arg<Context> &arg, Char type) {
 template <typename Context>
 class char_converter: public function<void> {
  private:
-  basic_arg<Context> &arg_;
+  basic_format_arg<Context> &arg_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(char_converter);
 
  public:
-  explicit char_converter(basic_arg<Context> &arg) : arg_(arg) {}
+  explicit char_converter(basic_format_arg<Context> &arg) : arg_(arg) {}
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value>::type
@@ -286,7 +286,7 @@ class printf_arg_formatter:
   }
 
   /** Formats an argument of a custom (user-defined) type. */
-  iterator operator()(typename basic_arg<context_type>::handle handle) {
+  iterator operator()(typename basic_format_arg<context_type>::handle handle) {
     handle.format(context_);
     return this->out();
   }
@@ -545,8 +545,10 @@ struct printf_context {
 };
 
 template <typename ...Args>
-inline arg_store<printf_context<internal::buffer>::type, Args...> make_printf_args(const Args & ... args) {
-  return arg_store<printf_context<internal::buffer>::type, Args...>(args...);
+inline format_arg_store<printf_context<internal::buffer>::type, Args...>
+    make_printf_args(const Args & ... args) {
+  return format_arg_store<printf_context<internal::buffer>::type, Args...>(
+      args...);
 }
 typedef basic_format_args<printf_context<internal::buffer>::type> printf_args;
 

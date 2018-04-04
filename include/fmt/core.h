@@ -289,7 +289,7 @@ typedef basic_string_view<char> string_view;
 typedef basic_string_view<wchar_t> wstring_view;
 
 template <typename Context>
-class basic_arg;
+class basic_format_arg;
 
 template <typename Context>
 class basic_format_args;
@@ -546,7 +546,7 @@ struct typed_value : value<Context> {
 };
 
 template <typename Context, typename T>
-FMT_CONSTEXPR basic_arg<Context> make_arg(const T &value);
+FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T &value);
 
 #define FMT_MAKE_VALUE(TAG, ArgType, ValueType) \
   template <typename C> \
@@ -641,7 +641,7 @@ inline typename std::enable_if<
 template <typename C, typename T>
 typed_value<C, name_arg_type>
     make_value(const named_arg<T, typename C::char_type> &val) {
-  basic_arg<C> arg = make_arg<C>(val.value);
+  basic_format_arg<C> arg = make_arg<C>(val.value);
   std::memcpy(val.data, &arg, sizeof(arg));
   return static_cast<const void*>(&val);
 }
@@ -666,17 +666,18 @@ struct result_of<F(Args...)> {
 // A formatting argument. It is a trivially copyable/constructible type to
 // allow storage in basic_memory_buffer.
 template <typename Context>
-class basic_arg {
+class basic_format_arg {
  private:
   internal::value<Context> value_;
   internal::type type_;
 
   template <typename ContextType, typename T>
-  friend FMT_CONSTEXPR basic_arg<ContextType> internal::make_arg(const T &value);
+  friend FMT_CONSTEXPR basic_format_arg<ContextType>
+    internal::make_arg(const T &value);
 
   template <typename Visitor, typename Ctx>
   friend FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, basic_arg<Ctx> arg);
+    visit(Visitor &&vis, basic_format_arg<Ctx> arg);
 
   friend class basic_format_args<Context>;
   friend class internal::arg_map<Context>;
@@ -694,7 +695,7 @@ class basic_arg {
     internal::custom_value<Context> custom_;
   };
 
-  FMT_CONSTEXPR basic_arg() : type_(internal::none_type) {}
+  FMT_CONSTEXPR basic_format_arg() : type_(internal::none_type) {}
 
   FMT_EXPLICIT operator bool() const FMT_NOEXCEPT {
     return type_ != internal::none_type;
@@ -771,7 +772,7 @@ class arg_map {
 
   struct entry {
     basic_string_view<char_type> name;
-    basic_arg<Context> arg;
+    basic_format_arg<Context> arg;
   };
 
   entry *map_;
@@ -788,13 +789,13 @@ class arg_map {
   void init(const basic_format_args<Context> &args);
   ~arg_map() { delete [] map_; }
 
-  basic_arg<Context> find(basic_string_view<char_type> name) const {
+  basic_format_arg<Context> find(basic_string_view<char_type> name) const {
     // The list is unsorted, so just return the first matching name.
     for (auto it = map_, end = map_ + size_; it != end; ++it) {
       if (it->name == name)
         return it->arg;
     }
-    return basic_arg<Context>();
+    return basic_format_arg<Context>();
   }
 };
 
@@ -810,7 +811,7 @@ class context_base {
 
  protected:
   typedef Char char_type;
-  typedef basic_arg<Context> format_arg;
+  typedef basic_format_arg<Context> format_arg;
 
   context_base(OutputIt out, basic_string_view<char_type> format_str,
                basic_format_args<Context> args)
@@ -932,8 +933,8 @@ FMT_CONSTEXPR uint64_t get_types() {
 }
 
 template <typename Context, typename T>
-FMT_CONSTEXPR basic_arg<Context> make_arg(const T &value) {
-  basic_arg<Context> arg;
+FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T &value) {
+  basic_format_arg<Context> arg;
   arg.type_ = get_type<Context, T>::value;
   arg.value_ = make_value<Context>(value);
   return arg;
@@ -946,7 +947,7 @@ inline typename std::enable_if<IS_PACKED, value<Context>>::type
 }
 
 template <bool IS_PACKED, typename Context, typename T>
-inline typename std::enable_if<!IS_PACKED, basic_arg<Context>>::type
+inline typename std::enable_if<!IS_PACKED, basic_format_arg<Context>>::type
     make_arg(const T &value) {
   return make_arg<Context>(value);
 }
@@ -960,15 +961,15 @@ inline typename std::enable_if<!IS_PACKED, basic_arg<Context>>::type
   \endrst
  */
 template <typename Context, typename ...Args>
-class arg_store {
+class format_arg_store {
  private:
   static const size_t NUM_ARGS = sizeof...(Args);
 
   // Packed is a macro on MinGW so use IS_PACKED instead.
   static const bool IS_PACKED = NUM_ARGS < internal::max_packed_args;
 
-  typedef typename std::conditional<
-    IS_PACKED, internal::value<Context>, basic_arg<Context>>::type value_type;
+  typedef typename std::conditional<IS_PACKED,
+    internal::value<Context>, basic_format_arg<Context>>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
   value_type data_[NUM_ARGS + (IS_PACKED && NUM_ARGS != 0 ? 0 : 1)];
@@ -980,11 +981,11 @@ class arg_store {
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION <= 405
   // Workaround an array initialization bug in gcc 4.5 and earlier.
-  arg_store(const Args &... args) {
+  format_arg_store(const Args &... args) {
     data_ = {internal::make_arg<IS_PACKED, Context>(args)...};
   }
 #else
-  arg_store(const Args &... args)
+  format_arg_store(const Args &... args)
     : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
 #endif
 
@@ -992,25 +993,25 @@ class arg_store {
 };
 
 template <typename Context, typename ...Args>
-const uint64_t arg_store<Context, Args...>::TYPES = IS_PACKED ?
+const uint64_t format_arg_store<Context, Args...>::TYPES = IS_PACKED ?
     internal::get_types<Context, Args...>() :
     -static_cast<int64_t>(NUM_ARGS);
 
 /**
   \rst
-  Constructs an `~fmt::arg_store` object that contains references to arguments
-  and can be implicitly converted to `~fmt::format_args`. `Context` can be
-  omitted in which case it defaults to `~fmt::context`.
+  Constructs an `~fmt::format_arg_store` object that contains references to
+  arguments and can be implicitly converted to `~fmt::format_args`. `Context` can
+  be omitted in which case it defaults to `~fmt::context`.
   \endrst
  */
 template <typename Context, typename ...Args>
-inline arg_store<Context, Args...> make_args(const Args & ... args) {
-  return arg_store<Context, Args...>(args...);
+inline format_arg_store<Context, Args...> make_args(const Args & ... args) {
+  return format_arg_store<Context, Args...>(args...);
 }
 
 template <typename ...Args>
-inline arg_store<context, Args...> make_args(const Args & ... args) {
-  return arg_store<context, Args...>(args...);
+inline format_arg_store<context, Args...> make_args(const Args & ... args) {
+  return format_arg_store<context, Args...>(args...);
 }
 
 /** Formatting arguments. */
@@ -1018,7 +1019,7 @@ template <typename Context>
 class basic_format_args {
  public:
   typedef unsigned size_type;
-  typedef basic_arg<Context>  format_arg;
+  typedef basic_format_arg<Context>  format_arg;
 
  private:
   // To reduce compiled code size per formatting function call, types of first
@@ -1068,11 +1069,11 @@ class basic_format_args {
 
   /**
    \rst
-   Constructs a `basic_format_args` object from `~fmt::arg_store`.
+   Constructs a `basic_format_args` object from `~fmt::format_arg_store`.
    \endrst
    */
   template <typename... Args>
-  basic_format_args(const arg_store<Context, Args...> &store)
+  basic_format_args(const format_arg_store<Context, Args...> &store)
   : types_(store.TYPES) {
     set_data(store.data_);
   }
@@ -1107,14 +1108,14 @@ struct named_arg_base {
   basic_string_view<Char> name;
 
   // Serialized value<context>.
-  mutable char data[sizeof(basic_arg<context>)];
+  mutable char data[sizeof(basic_format_arg<context>)];
 
   named_arg_base(basic_string_view<Char> nm) : name(nm) {}
 
   template <typename Context>
-  basic_arg<Context> deserialize() const {
-    basic_arg<Context> arg;
-    std::memcpy(&arg, data, sizeof(basic_arg<Context>));
+  basic_format_arg<Context> deserialize() const {
+    basic_format_arg<Context> arg;
+    std::memcpy(&arg, data, sizeof(basic_format_arg<Context>));
     return arg;
   }
 };
@@ -1212,12 +1213,12 @@ inline std::string format(string_view format_str, const Args & ... args) {
   // This should be just
   // return vformat(format_str, make_args(args...));
   // but gcc has trouble optimizing the latter, so break it down.
-  arg_store<context, Args...> as(args...);
+  format_arg_store<context, Args...> as(args...);
   return vformat(format_str, as);
 }
 template <typename... Args>
 inline std::wstring format(wstring_view format_str, const Args & ... args) {
-  arg_store<wcontext, Args...> as(args...);
+  format_arg_store<wcontext, Args...> as(args...);
   return vformat(format_str, as);
 }
 
@@ -1234,7 +1235,7 @@ FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
  */
 template <typename... Args>
 inline void print(std::FILE *f, string_view format_str, const Args & ... args) {
-  arg_store<context, Args...> as(args...);
+  format_arg_store<context, Args...> as(args...);
   vprint(f, format_str, as);
 }
 
@@ -1251,7 +1252,7 @@ FMT_API void vprint(string_view format_str, format_args args);
  */
 template <typename... Args>
 inline void print(string_view format_str, const Args & ... args) {
-  arg_store<context, Args...> as(args...);
+  format_arg_store<context, Args...> as(args...);
   vprint(format_str, as);
 }
 }  // namespace fmt

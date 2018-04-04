@@ -33,7 +33,7 @@
 #undef min
 #undef max
 
-using fmt::basic_arg;
+using fmt::basic_format_arg;
 using fmt::internal::basic_buffer;
 using fmt::basic_memory_buffer;
 using fmt::string_view;
@@ -48,7 +48,7 @@ namespace {
 struct Test {};
 
 template <typename Context, typename T>
-basic_arg<Context> make_arg(const T &value) {
+basic_format_arg<Context> make_arg(const T &value) {
   return fmt::internal::make_arg<Context>(value);
 }
 }  // namespace
@@ -579,7 +579,7 @@ TEST(UtilTest, PointerArg) {
 }
 
 struct check_custom {
-  Result operator()(fmt::basic_arg<fmt::context>::handle h) const {
+  Result operator()(fmt::basic_format_arg<fmt::context>::handle h) const {
     fmt::memory_buffer buffer;
     fmt::internal::basic_buffer<char> &base = buffer;
     fmt::context ctx(std::back_inserter(base), "", fmt::format_args());
@@ -591,7 +591,7 @@ struct check_custom {
 
 TEST(UtilTest, CustomArg) {
   ::Test test;
-  typedef MockVisitor<fmt::basic_arg<fmt::context>::handle> visitor;
+  typedef MockVisitor<fmt::basic_format_arg<fmt::context>::handle> visitor;
   testing::StrictMock<visitor> v;
   EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke(check_custom()));
   fmt::visit(v, make_arg<fmt::context>(test));
@@ -601,7 +601,7 @@ TEST(ArgVisitorTest, VisitInvalidArg) {
   typedef MockVisitor<fmt::monostate> Visitor;
   testing::StrictMock<Visitor> visitor;
   EXPECT_CALL(visitor, visit(_));
-  fmt::basic_arg<fmt::context> arg;
+  fmt::basic_format_arg<fmt::context> arg;
   visit(visitor, arg);
 }
 

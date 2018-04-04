@@ -1068,7 +1068,7 @@ struct monostate {};
  */
 template <typename Visitor, typename Context>
 FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, basic_arg<Context> arg) {
+    visit(Visitor &&vis, basic_format_arg<Context> arg) {
   typedef typename Context::char_type char_type;
   switch (arg.type_) {
   case internal::none_type:
@@ -1100,7 +1100,7 @@ FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
   case internal::pointer_type:
     return vis(arg.value_.pointer);
   case internal::custom_type:
-    return vis(typename basic_arg<Context>::handle(arg.value_.custom));
+    return vis(typename basic_format_arg<Context>::handle(arg.value_.custom));
   }
   return vis(monostate());
 }
@@ -1560,7 +1560,7 @@ class custom_formatter: public function<bool> {
  public:
   explicit custom_formatter(Context &ctx): ctx_(ctx) {}
 
-  bool operator()(typename basic_arg<Context>::handle h) const {
+  bool operator()(typename basic_format_arg<Context>::handle h) const {
     h.format(ctx_);
     return true;
   }
@@ -1726,7 +1726,7 @@ class specs_checker : public Handler {
 template <template <typename> class Handler, typename T,
           typename Context, typename ErrorHandler>
 FMT_CONSTEXPR void set_dynamic_spec(
-    T &value, basic_arg<Context> arg, ErrorHandler eh) {
+    T &value, basic_format_arg<Context> arg, ErrorHandler eh) {
   unsigned long long big_value = visit(Handler<ErrorHandler>(eh), arg);
   if (big_value > (std::numeric_limits<int>::max)())
     eh.on_error("number is too big");
@@ -1761,12 +1761,12 @@ class specs_handler: public specs_setter<typename Context::char_type> {
   }
 
  private:
-  FMT_CONSTEXPR basic_arg<Context> get_arg(auto_id) {
+  FMT_CONSTEXPR basic_format_arg<Context> get_arg(auto_id) {
     return context_.next_arg();
   }
 
   template <typename Id>
-  FMT_CONSTEXPR basic_arg<Context> get_arg(Id arg_id) {
+  FMT_CONSTEXPR basic_format_arg<Context> get_arg(Id arg_id) {
     context_.parse_context().check_arg_id(arg_id);
     return context_.get_arg(arg_id);
   }
@@ -2212,7 +2212,7 @@ class arg_formatter:
   using base::operator();
 
   /** Formats an argument of a user-defined type. */
-  iterator operator()(typename basic_arg<context_type>::handle handle) {
+  iterator operator()(typename basic_format_arg<context_type>::handle handle) {
     handle.format(ctx_);
     return this->out();
   }
@@ -3256,7 +3256,7 @@ struct format_handler : internal::error_handler {
   }
 
   Context context;
-  basic_arg<Context> arg;
+  basic_format_arg<Context> arg;
 };
 
 /** Formats arguments and writes the output to the range. */
@@ -3473,7 +3473,8 @@ inline typename std::enable_if<internal::is_format_string<String>::value>::type
 
 // Counts the number of characters in the output of format(format_str, args...).
 template <typename... Args>
-inline std::size_t count(string_view format_str, const Args & ... args) {
+inline std::size_t formatted_size(string_view format_str,
+                                  const Args & ... args) {
   auto it = format_to(internal::counting_iterator<char>(), format_str, args...);
   return it.count();
 }

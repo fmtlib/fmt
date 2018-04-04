@@ -1421,7 +1421,7 @@ class mock_arg_formatter:
     return base::operator()(value);
   }
 
-  iterator operator()(fmt::basic_arg<fmt::context>::handle) {
+  iterator operator()(fmt::basic_format_arg<fmt::context>::handle) {
     return base::operator()(fmt::monostate());
   }
 };
@@ -1506,8 +1506,8 @@ TEST(FormatTest, OutputIterators) {
   EXPECT_EQ("42", s.str());
 }
 
-TEST(FormatTest, OutputSize) {
-  EXPECT_EQ(2u, fmt::count("{}", 42));
+TEST(FormatTest, FormattedSize) {
+  EXPECT_EQ(2u, fmt::formatted_size("{}", 42));
 }
 
 TEST(FormatTest, FormatToN) {
@@ -1633,12 +1633,12 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
 struct test_context {
   typedef char char_type;
 
-  FMT_CONSTEXPR fmt::basic_arg<test_context> next_arg() {
+  FMT_CONSTEXPR fmt::basic_format_arg<test_context> next_arg() {
     return fmt::internal::make_arg<test_context>(11);
   }
 
   template <typename Id>
-  FMT_CONSTEXPR fmt::basic_arg<test_context> get_arg(Id) {
+  FMT_CONSTEXPR fmt::basic_format_arg<test_context> get_arg(Id) {
     return fmt::internal::make_arg<test_context>(22);
   }
 
