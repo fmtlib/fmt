@@ -135,7 +135,7 @@ Output iterator support
 -----------------------
 
 .. doxygenfunction:: fmt::format_to(OutputIt, string_view, const Args&...)
-.. doxygenfunction:: fmt::format_to_n(OutputIt, size_t string_view, const Args&...)
+.. doxygenfunction:: fmt::format_to_n(OutputIt, size_t, string_view, const Args&...)
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
 
