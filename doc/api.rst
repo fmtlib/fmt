@@ -61,7 +61,7 @@ Argument lists
 
 .. doxygenfunction:: fmt::make_args(const Args&...)
 
-.. doxygenclass:: fmt::arg_store
+.. doxygenclass:: fmt::format_arg_store
    :members:
 
 .. doxygenclass:: fmt::basic_format_args
@@ -69,7 +69,7 @@ Argument lists
 
 .. doxygenstruct:: fmt::format_args
 
-.. doxygenclass:: fmt::basic_arg
+.. doxygenclass:: fmt::basic_format_arg
    :members:
 
 Compatibility
