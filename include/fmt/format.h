@@ -586,14 +586,34 @@ extern template int char_traits<wchar_t>::format_float<long double>(
     int precision, long double value);
 #endif
 
+#if FMT_SECURE_SCL
+template <typename T>
+struct pointer { typedef stdext::checked_array_iterator<T*> type; };
+// Returns pointer value.
+template <typename T>
+static T *get(typename pointer<T>::type p) { return p.base(); }
+template <typename T>
+static typename pointer<T>::type make_pointer(T* p, std::size_t n) {
+  return {p, n};
+}
+#else
+template <typename T>
+struct pointer { typedef T *type; };
+template <typename T>
+static T *get(T *p) { return p; }
+template <typename T>
+static T *make_pointer(T *p, std::size_t) { return p; }
+#endif
+
 template <typename Container>
 inline typename std::enable_if<
-  is_contiguous<Container>::value, typename Container::value_type*>::type
+  is_contiguous<Container>::value,
+  typename pointer<typename Container::value_type>::type>::type
     reserve(std::back_insert_iterator<Container> &it, std::size_t n) {
   Container &c = internal::get_container(it);
   std::size_t size = c.size();
   c.resize(size + n);
-  return &c[size];
+  return make_pointer(&c[size], n);
 }
 
 template <typename Iterator>
@@ -927,7 +947,8 @@ class add_thousands_sep {
   explicit add_thousands_sep(basic_string_view<Char> sep)
     : sep_(sep), digit_index_(0) {}
 
-  void operator()(Char *&buffer) {
+  template <typename BufChar>
+  void operator()(BufChar *&buffer) {
     if (++digit_index_ % 3 != 0)
       return;
     buffer -= sep_.size();
@@ -971,10 +992,10 @@ inline Char *format_decimal(Char *buffer, UInt value, unsigned num_digits,
 
 template <typename UInt, typename Iterator, typename ThousandsSep>
 inline Iterator format_decimal(
-    Iterator out, UInt value, unsigned num_digits, ThousandsSep) {
+    Iterator out, UInt value, unsigned num_digits, ThousandsSep sep) {
   // Buffer should be large enough to hold all digits (digits10 + 1) and null.
   char buffer[std::numeric_limits<UInt>::digits10 + 2];
-  format_decimal(buffer, value, num_digits, no_thousands_sep());
+  format_decimal(buffer, value, num_digits, sep);
   return std::copy_n(buffer, num_digits, out);
 }
 
@@ -2298,15 +2319,6 @@ class basic_writer {
   std::unique_ptr<locale_provider> locale_;
 
   FMT_DISALLOW_COPY_AND_ASSIGN(basic_writer);
-
-#if FMT_SECURE_SCL
-  typedef stdext::checked_array_iterator<char_type*> pointer_type;
-  // Returns pointer value.
-  static char_type *get(pointer_type p) { return p.base(); }
-#else
-  typedef char_type* pointer_type;
-  static char_type *get(char_type *p) { return p; }
-#endif
 
   iterator out() const { return out_; }
 
