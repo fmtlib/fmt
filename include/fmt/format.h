@@ -1804,9 +1804,9 @@ struct arg_ref {
   FMT_CONSTEXPR explicit arg_ref(unsigned index) : kind(INDEX), index(index) {}
   explicit arg_ref(basic_string_view<Char> name) : kind(NAME), name(name) {}
 
-  FMT_CONSTEXPR arg_ref &operator=(unsigned index) {
+  FMT_CONSTEXPR arg_ref &operator=(unsigned idx) {
     kind = INDEX;
-    this->index = index;
+    index = idx;
     return *this;
   }
 
