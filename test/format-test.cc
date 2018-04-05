@@ -1532,14 +1532,14 @@ struct test_arg_id_handler {
 
   FMT_CONSTEXPR void operator()() { res = EMPTY; }
 
-  FMT_CONSTEXPR void operator()(unsigned index) {
+  FMT_CONSTEXPR void operator()(unsigned i) {
     res = INDEX;
-    this->index = index;
+    index = i;
   }
 
-  FMT_CONSTEXPR void operator()(string_view name) {
+  FMT_CONSTEXPR void operator()(string_view n) {
     res = NAME;
-    this->name = name;
+    name = n;
   }
 
   FMT_CONSTEXPR void on_error(const char *) { res = ERROR; }
@@ -1582,22 +1582,20 @@ struct test_format_specs_handler {
     precision(other.precision), precision_ref(other.precision_ref),
     type(other.type) {}
 
-  FMT_CONSTEXPR void on_align(fmt::alignment align) { this->align = align; }
-  FMT_CONSTEXPR void on_fill(char fill) { this->fill = fill; }
+  FMT_CONSTEXPR void on_align(fmt::alignment a) { align = a; }
+  FMT_CONSTEXPR void on_fill(char f) { fill = f; }
   FMT_CONSTEXPR void on_plus() { res = PLUS; }
   FMT_CONSTEXPR void on_minus() { res = MINUS; }
   FMT_CONSTEXPR void on_space() { res = SPACE; }
   FMT_CONSTEXPR void on_hash() { res = HASH; }
   FMT_CONSTEXPR void on_zero() { res = ZERO; }
 
-  FMT_CONSTEXPR void on_width(unsigned width) { this->width = width; }
+  FMT_CONSTEXPR void on_width(unsigned w) { width = w; }
   FMT_CONSTEXPR void on_dynamic_width(fmt::internal::auto_id) {}
   FMT_CONSTEXPR void on_dynamic_width(unsigned index) { width_ref = index; }
   FMT_CONSTEXPR void on_dynamic_width(string_view) {}
 
-  FMT_CONSTEXPR void on_precision(unsigned precision) {
-    this->precision = precision;
-  }
+  FMT_CONSTEXPR void on_precision(unsigned p) { precision = p; }
   FMT_CONSTEXPR void on_dynamic_precision(fmt::internal::auto_id) {}
   FMT_CONSTEXPR void on_dynamic_precision(unsigned index) { precision_ref = index; }
   FMT_CONSTEXPR void on_dynamic_precision(string_view) {}
