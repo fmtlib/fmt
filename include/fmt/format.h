@@ -341,14 +341,26 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
 }
 
 #if FMT_SECURE_SCL
-// Use checked iterator to avoid warnings on MSVC.
 template <typename T>
-inline stdext::checked_array_iterator<T*> make_ptr(T *ptr, std::size_t size) {
-  return stdext::checked_array_iterator<T*>(ptr, size);
+struct checked { typedef stdext::checked_array_iterator<T*> type; };
+
+// Make a checked iterator to avoid warnings on MSVC.
+template <typename T>
+inline stdext::checked_array_iterator<T*> make_checked(T *p, std::size_t size) {
+  return {p, size};
 }
+
+// Extracts the pointer from a checked iterator.
+template <typename T>
+static T *from_checked(stdext::checked_array_iterator<T*> p) { return p.base(); }
+
 #else
 template <typename T>
-inline T *make_ptr(T *ptr, std::size_t) { return ptr; }
+struct checked { typedef T *type; };
+template <typename T>
+inline T *make_checked(T *p, std::size_t) { return p; }
+template <typename T>
+inline T *from_checked(T *p) { return p; }
 #endif
 
 template <typename T>
@@ -357,7 +369,7 @@ void basic_buffer<T>::append(const U *begin, const U *end) {
   std::size_t new_size = size_ + internal::to_unsigned(end - begin);
   reserve(new_size);
   std::uninitialized_copy(begin, end,
-                          internal::make_ptr(ptr_, capacity_) + size_);
+                          internal::make_checked(ptr_, capacity_) + size_);
   size_ = new_size;
 }
 }  // namespace internal
@@ -437,7 +449,7 @@ class basic_memory_buffer: private Allocator, public internal::basic_buffer<T> {
     if (data == other.store_) {
       this->set(store_, capacity);
       std::uninitialized_copy(other.store_, other.store_ + size,
-                              internal::make_ptr(store_, capacity));
+                              internal::make_checked(store_, capacity));
     } else {
       this->set(data, capacity);
       // Set pointer to the inline array so that delete is not called
@@ -484,7 +496,7 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
   T *new_data = internal::allocate<Allocator>(*this, new_capacity);
   // The following code doesn't throw, so the raw pointer above doesn't leak.
   std::uninitialized_copy(old_data, old_data + this->size(),
-                          internal::make_ptr(new_data, new_capacity));
+                          internal::make_checked(new_data, new_capacity));
   this->set(new_data, new_capacity);
   // deallocate must not throw according to the standard, but even if it does,
   // the buffer already uses the new storage and will deallocate it in
@@ -586,34 +598,15 @@ extern template int char_traits<wchar_t>::format_float<long double>(
     int precision, long double value);
 #endif
 
-#if FMT_SECURE_SCL
-template <typename T>
-struct pointer { typedef stdext::checked_array_iterator<T*> type; };
-// Returns pointer value.
-template <typename T>
-static T *get(typename pointer<T>::type p) { return p.base(); }
-template <typename T>
-static typename pointer<T>::type make_pointer(T* p, std::size_t n) {
-  return {p, n};
-}
-#else
-template <typename T>
-struct pointer { typedef T *type; };
-template <typename T>
-static T *get(T *p) { return p; }
-template <typename T>
-static T *make_pointer(T *p, std::size_t) { return p; }
-#endif
-
 template <typename Container>
 inline typename std::enable_if<
   is_contiguous<Container>::value,
-  typename pointer<typename Container::value_type>::type>::type
+  typename checked<typename Container::value_type>::type>::type
     reserve(std::back_insert_iterator<Container> &it, std::size_t n) {
   Container &c = internal::get_container(it);
   std::size_t size = c.size();
   c.resize(size + n);
-  return make_pointer(&c[size], n);
+  return make_checked(&c[size], n);
 }
 
 template <typename Iterator>
@@ -731,6 +724,7 @@ class counting_iterator {
   typedef std::ptrdiff_t difference_type;
   typedef T* pointer;
   typedef T& reference;
+  typedef counting_iterator _Unchecked_type;  // Mark iterator as checked.
 
   counting_iterator(): count_(0) {}
 
@@ -764,6 +758,7 @@ class truncating_iterator {
   typedef typename traits::difference_type difference_type;
   typedef typename traits::pointer pointer;
   typedef typename traits::reference reference;
+  typedef truncating_iterator _Unchecked_type;  // Mark iterator as checked.
 
   truncating_iterator(OutputIt out, std::size_t limit)
     : out_(out), limit_(limit), count_(0) {}
@@ -956,7 +951,7 @@ class add_thousands_sep {
       return;
     buffer -= sep_.size();
     std::uninitialized_copy(sep_.data(), sep_.data() + sep_.size(),
-                            internal::make_ptr(buffer, sep_.size()));
+                            internal::make_checked(buffer, sep_.size()));
   }
 };
 
