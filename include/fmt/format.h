@@ -349,18 +349,11 @@ template <typename T>
 inline stdext::checked_array_iterator<T*> make_checked(T *p, std::size_t size) {
   return {p, size};
 }
-
-// Extracts the pointer from a checked iterator.
-template <typename T>
-static T *from_checked(stdext::checked_array_iterator<T*> p) { return p.base(); }
-
 #else
 template <typename T>
 struct checked { typedef T *type; };
 template <typename T>
 inline T *make_checked(T *p, std::size_t) { return p; }
-template <typename T>
-inline T *from_checked(T *p) { return p; }
 #endif
 
 template <typename T>
