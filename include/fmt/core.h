@@ -161,10 +161,7 @@
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910) 
 # include <string_view>
 # define FMT_USE_STD_STRING_VIEW
-// std::experimental::basic_string_view::remove_prefix isn't constexpr until
-// gcc 7.3.
 #elif (FMT_HAS_INCLUDE(<experimental/string_view>) && \
-       (FMT_GCC_VERSION == 0 || FMT_GCC_VERSION >= 730) && \
        __cplusplus >= 201402L)
 # include <experimental/string_view>
 # define FMT_USE_EXPERIMENTAL_STRING_VIEW
