@@ -930,6 +930,8 @@ inline unsigned count_digits(uint32_t n) {
 
 // A functor that doesn't add a thousands separator.
 struct no_thousands_sep {
+  typedef char char_type;
+
   template <typename Char>
   void operator()(Char *) {}
 };
@@ -944,11 +946,12 @@ class add_thousands_sep {
   unsigned digit_index_;
 
  public:
+  typedef Char char_type;
+
   explicit add_thousands_sep(basic_string_view<Char> sep)
     : sep_(sep), digit_index_(0) {}
 
-  template <typename BufChar>
-  void operator()(BufChar *&buffer) {
+  void operator()(Char *&buffer) {
     if (++digit_index_ % 3 != 0)
       return;
     buffer -= sep_.size();
@@ -993,8 +996,9 @@ inline Char *format_decimal(Char *buffer, UInt value, unsigned num_digits,
 template <typename UInt, typename Iterator, typename ThousandsSep>
 inline Iterator format_decimal(
     Iterator out, UInt value, unsigned num_digits, ThousandsSep sep) {
+  typedef typename ThousandsSep::char_type char_type;
   // Buffer should be large enough to hold all digits (digits10 + 1) and null.
-  char buffer[std::numeric_limits<UInt>::digits10 + 2];
+  char_type buffer[std::numeric_limits<UInt>::digits10 + 2];
   format_decimal(buffer, value, num_digits, sep);
   return std::copy_n(buffer, num_digits, out);
 }
