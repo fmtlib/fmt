@@ -16,7 +16,7 @@ class custom_arg_formatter :
   typedef fmt::back_insert_range<fmt::internal::buffer> range;
   typedef fmt::arg_formatter<range> base;
 
-  custom_arg_formatter(fmt::context &ctx, fmt::format_specs &s)
+  custom_arg_formatter(fmt::format_context &ctx, fmt::format_specs &s)
   : base(ctx, s) {}
 
   using base::operator();

@@ -580,10 +580,10 @@ TEST(UtilTest, PointerArg) {
 }
 
 struct check_custom {
-  Result operator()(fmt::basic_format_arg<fmt::context>::handle h) const {
+  Result operator()(fmt::basic_format_arg<fmt::format_context>::handle h) const {
     fmt::memory_buffer buffer;
     fmt::internal::basic_buffer<char> &base = buffer;
-    fmt::context ctx(std::back_inserter(base), "", fmt::format_args());
+    fmt::format_context ctx(std::back_inserter(base), "", fmt::format_args());
     h.format(ctx);
     EXPECT_EQ("test", std::string(buffer.data(), buffer.size()));
     return Result();
@@ -592,17 +592,18 @@ struct check_custom {
 
 TEST(UtilTest, CustomArg) {
   ::Test test;
-  typedef MockVisitor<fmt::basic_format_arg<fmt::context>::handle> visitor;
+  typedef MockVisitor<fmt::basic_format_arg<fmt::format_context>::handle>
+    visitor;
   testing::StrictMock<visitor> v;
   EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke(check_custom()));
-  fmt::visit(v, make_arg<fmt::context>(test));
+  fmt::visit(v, make_arg<fmt::format_context>(test));
 }
 
 TEST(ArgVisitorTest, VisitInvalidArg) {
   typedef MockVisitor<fmt::monostate> Visitor;
   testing::StrictMock<Visitor> visitor;
   EXPECT_CALL(visitor, visit(_));
-  fmt::basic_format_arg<fmt::context> arg;
+  fmt::basic_format_arg<fmt::format_context> arg;
   visit(visitor, arg);
 }
 

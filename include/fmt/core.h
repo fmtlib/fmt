@@ -911,8 +911,8 @@ struct buffer_context {
   typedef basic_format_context<
     std::back_insert_iterator<internal::basic_buffer<Char>>, Char> type;
 };
-typedef buffer_context<char>::type context;
-typedef buffer_context<wchar_t>::type wcontext;
+typedef buffer_context<char>::type format_context;
+typedef buffer_context<wchar_t>::type wformat_context;
 
 namespace internal {
 template <typename Context, typename T>
@@ -1008,8 +1008,9 @@ inline format_arg_store<Context, Args...> make_args(const Args & ... args) {
 }
 
 template <typename ...Args>
-inline format_arg_store<context, Args...> make_args(const Args & ... args) {
-  return format_arg_store<context, Args...>(args...);
+inline format_arg_store<format_context, Args...>
+    make_args(const Args & ... args) {
+  return format_arg_store<format_context, Args...>(args...);
 }
 
 /** Formatting arguments. */
@@ -1093,12 +1094,12 @@ class basic_format_args {
 
 /** An alias to ``basic_format_args<context>``. */
 // It is a separate type rather than a typedef to make symbols readable.
-struct format_args: basic_format_args<context> {
+struct format_args: basic_format_args<format_context> {
   template <typename ...Args>
   format_args(Args && ... arg)
-  : basic_format_args<context>(std::forward<Args>(arg)...) {}
+  : basic_format_args<format_context>(std::forward<Args>(arg)...) {}
 };
-typedef basic_format_args<wcontext> wformat_args;
+typedef basic_format_args<wformat_context> wformat_args;
 
 namespace internal {
 template <typename Char>
@@ -1106,7 +1107,7 @@ struct named_arg_base {
   basic_string_view<Char> name;
 
   // Serialized value<context>.
-  mutable char data[sizeof(basic_format_arg<context>)];
+  mutable char data[sizeof(basic_format_arg<format_context>)];
 
   named_arg_base(basic_string_view<Char> nm) : name(nm) {}
 
@@ -1167,10 +1168,10 @@ inline void print_colored(color c, string_view format_str,
   vprint_colored(c, format_str, make_args(args...));
 }
 
-context::iterator vformat_to(internal::buffer &buf, string_view format_str,
-                             format_args args);
-wcontext::iterator vformat_to(internal::wbuffer &buf, wstring_view format_str,
-                               wformat_args args);
+format_context::iterator vformat_to(
+    internal::buffer &buf, string_view format_str, format_args args);
+wformat_context::iterator vformat_to(
+    internal::wbuffer &buf, wstring_view format_str, wformat_args args);
 
 template <typename Container>
 struct is_contiguous : std::false_type {};
@@ -1211,12 +1212,12 @@ inline std::string format(string_view format_str, const Args & ... args) {
   // This should be just
   // return vformat(format_str, make_args(args...));
   // but gcc has trouble optimizing the latter, so break it down.
-  format_arg_store<context, Args...> as(args...);
+  format_arg_store<format_context, Args...> as(args...);
   return vformat(format_str, as);
 }
 template <typename... Args>
 inline std::wstring format(wstring_view format_str, const Args & ... args) {
-  format_arg_store<wcontext, Args...> as(args...);
+  format_arg_store<wformat_context, Args...> as(args...);
   return vformat(format_str, as);
 }
 
@@ -1233,7 +1234,7 @@ FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
  */
 template <typename... Args>
 inline void print(std::FILE *f, string_view format_str, const Args & ... args) {
-  format_arg_store<context, Args...> as(args...);
+  format_arg_store<format_context, Args...> as(args...);
   vprint(f, format_str, as);
 }
 
@@ -1250,7 +1251,7 @@ FMT_API void vprint(string_view format_str, format_args args);
  */
 template <typename... Args>
 inline void print(string_view format_str, const Args & ... args) {
-  format_arg_store<context, Args...> as(args...);
+  format_arg_store<format_context, Args...> as(args...);
   vprint(format_str, as);
 }
 }  // namespace fmt

@@ -3368,28 +3368,28 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char> &buffer) {
   return std::basic_string<Char>(buffer.data(), buffer.size());
 }
 
-inline context::iterator vformat_to(
+inline format_context::iterator vformat_to(
     internal::buffer &buf, string_view format_str, format_args args) {
   typedef back_insert_range<internal::buffer> range;
   return vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
-inline wcontext::iterator vformat_to(
+inline wformat_context::iterator vformat_to(
     internal::wbuffer &buf, wstring_view format_str, wformat_args args) {
   typedef back_insert_range<internal::wbuffer> range;
   return vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
 template <typename... Args>
-inline context::iterator format_to(
+inline format_context::iterator format_to(
     memory_buffer &buf, string_view format_str, const Args & ... args) {
   return vformat_to(buf, format_str, make_args(args...));
 }
 
 template <typename... Args>
-inline wcontext::iterator format_to(
+inline wformat_context::iterator format_to(
     wmemory_buffer &buf, wstring_view format_str, const Args & ... args) {
-  return vformat_to(buf, format_str, make_args<wcontext>(args...));
+  return vformat_to(buf, format_str, make_args<wformat_context>(args...));
 }
 
 template <typename OutputIt, typename Char = char>

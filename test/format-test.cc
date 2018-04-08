@@ -1101,7 +1101,7 @@ struct formatter<Date> {
     return it;
   }
 
-  auto format(const Date &d, context &ctx) -> decltype(ctx.begin()) {
+  auto format(const Date &d, format_context &ctx) -> decltype(ctx.begin()) {
     format_to(ctx.begin(), "{}-{}-{}", d.year(), d.month(), d.day());
     return ctx.begin();
   }
@@ -1119,7 +1119,7 @@ class Answer {};
 namespace fmt {
 template <>
 struct formatter<Answer> : formatter<int> {
-  auto format(Answer, fmt::context &ctx) -> decltype(ctx.begin()) {
+  auto format(Answer, fmt::format_context &ctx) -> decltype(ctx.begin()) {
     return formatter<int>::format(42, ctx);
   }
 };
@@ -1409,7 +1409,7 @@ class mock_arg_formatter:
   typedef fmt::internal::arg_formatter_base<buffer_range> base;
   typedef buffer_range range;
 
-  mock_arg_formatter(fmt::context &ctx, fmt::format_specs &s)
+  mock_arg_formatter(fmt::format_context &ctx, fmt::format_specs &s)
     : base(fmt::internal::get_container(ctx.begin()), s) {
     EXPECT_CALL(*this, call(42));
   }
@@ -1421,7 +1421,7 @@ class mock_arg_formatter:
     return base::operator()(value);
   }
 
-  iterator operator()(fmt::basic_format_arg<fmt::context>::handle) {
+  iterator operator()(fmt::basic_format_arg<fmt::format_context>::handle) {
     return base::operator()(fmt::monostate());
   }
 };
@@ -1454,7 +1454,7 @@ struct variant {
 namespace fmt {
 template <>
 struct formatter<variant> : dynamic_formatter<> {
-  auto format(variant value, context& ctx) -> decltype(ctx.begin()) {
+  auto format(variant value, format_context& ctx) -> decltype(ctx.begin()) {
     if (value.type == variant::INT)
       return dynamic_formatter<>::format(42, ctx);
     return dynamic_formatter<>::format("foo", ctx);

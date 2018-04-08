@@ -110,7 +110,7 @@ struct formatter<std::tm> {
     return pointer_from(end);
   }
 
-  auto format(const std::tm &tm, context &ctx) -> decltype(ctx.begin()) {
+  auto format(const std::tm &tm, format_context &ctx) -> decltype(ctx.begin()) {
     internal::buffer &buf = internal::get_container(ctx.begin());
     std::size_t start = buf.size();
     for (;;) {
