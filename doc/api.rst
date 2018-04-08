@@ -59,7 +59,7 @@ Named arguments
 Argument lists
 --------------
 
-.. doxygenfunction:: fmt::make_args(const Args&...)
+.. doxygenfunction:: fmt::make_format_args(const Args&...)
 
 .. doxygenclass:: fmt::format_arg_store
    :members:
@@ -197,7 +197,7 @@ allocator::
     inline custom_string format(custom_allocator alloc,
                                 fmt::string_view format_str,
                                 const Args & ... args) {
-      return vformat(alloc, format_str, fmt::make_args(args...));
+      return vformat(alloc, format_str, fmt::make_format_args(args...));
     }
 
 Custom formatting of built-in types
@@ -213,7 +213,7 @@ custom argument formatter class::
   // with the ``x`` format specifier.
   class custom_arg_formatter : public arg_formatter {
    public:
-    custom_arg_formatter(fmt::context &ctx, fmt::format_specs &spec)
+    custom_arg_formatter(fmt::format_context &ctx, fmt::format_specs &spec)
       : arg_formatter(ctx, spec) {}
 
     using arg_formatter::operator();
@@ -236,7 +236,7 @@ custom argument formatter class::
   template <typename ...Args>
   inline std::string custom_format(
       fmt::string_view format_str, const Args &... args) {
-    return custom_vformat(format_str, fmt::make_args(args...));
+    return custom_vformat(format_str, fmt::make_format_args(args...));
   }
 
   std::string s = custom_format("{:x}", -42); // s == "ffffffd6"
