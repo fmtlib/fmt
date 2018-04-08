@@ -140,7 +140,7 @@ which take arbitrary arguments (`godbolt <https://godbolt.org/g/uoSRRh>`_):
     }
     template <typename... Args>
     void report_error(const char *format, const Args & ... args) {
-      vreport_error(format, fmt::make_args(args...));
+      vreport_error(format, fmt::make_format_args(args...));
     }
 
     report_error("file not found: {}", path);
