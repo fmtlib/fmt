@@ -139,7 +139,7 @@ inline void vprint(std::ostream &os, string_view format_str, format_args args) {
 template <typename... Args>
 inline void print(std::ostream &os, string_view format_str,
                   const Args & ... args) {
-  vprint(os, format_str, make_args(args...));
+  vprint(os, format_str, make_format_args(args...));
 }
 }  // namespace fmt
 

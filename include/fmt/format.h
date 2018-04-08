@@ -2266,7 +2266,7 @@ class system_error : public std::runtime_error {
   template <typename... Args>
   system_error(int error_code, string_view message, const Args & ... args)
     : std::runtime_error("") {
-    init(error_code, message, make_args(args...));
+    init(error_code, message, make_format_args(args...));
   }
 
   FMT_API ~system_error() FMT_DTOR_NOEXCEPT;
@@ -2927,7 +2927,7 @@ class windows_error : public system_error {
   */
   template <typename... Args>
   windows_error(int error_code, string_view message, const Args & ... args) {
-    init(error_code, message, make_args(args...));
+    init(error_code, message, make_format_args(args...));
   }
 };
 
@@ -3383,13 +3383,13 @@ inline wformat_context::iterator vformat_to(
 template <typename... Args>
 inline format_context::iterator format_to(
     memory_buffer &buf, string_view format_str, const Args & ... args) {
-  return vformat_to(buf, format_str, make_args(args...));
+  return vformat_to(buf, format_str, make_format_args(args...));
 }
 
 template <typename... Args>
 inline wformat_context::iterator format_to(
     wmemory_buffer &buf, wstring_view format_str, const Args & ... args) {
-  return vformat_to(buf, format_str, make_args<wformat_context>(args...));
+  return vformat_to(buf, format_str, make_format_args<wformat_context>(args...));
 }
 
 template <typename OutputIt, typename Char = char>
@@ -3414,7 +3414,7 @@ template <typename OutputIt, typename... Args>
 inline OutputIt format_to(OutputIt out, string_view format_str,
                           const Args & ... args) {
   return vformat_to(out, format_str,
-      *make_args<typename format_context_t<OutputIt>::type>(args...));
+      *make_format_args<typename format_context_t<OutputIt>::type>(args...));
 }
 
 template <typename Container, typename... Args>
@@ -3422,7 +3422,7 @@ inline typename std::enable_if<
   is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
     format_to(std::back_insert_iterator<Container> out,
               string_view format_str, const Args & ... args) {
-  return vformat_to(out, format_str, make_args(args...));
+  return vformat_to(out, format_str, make_format_args(args...));
 }
 
 template <typename OutputIt>
@@ -3445,7 +3445,7 @@ inline format_to_n_result<OutputIt> format_to_n(
     OutputIt out, std::size_t n, string_view format_str, const Args & ... args) {
   typedef internal::truncating_iterator<OutputIt> It;
   auto it = vformat_to(It(out, n), format_str,
-      *make_args<typename format_context_t<It>::type>(args...));
+      *make_format_args<typename format_context_t<It>::type>(args...));
   return {it.base(), it.count()};
 }
 
@@ -3466,14 +3466,14 @@ inline typename std::enable_if<
   internal::is_format_string<String>::value, std::string>::type
     format(String format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
-  return vformat(format_str.data(), make_args(args...));
+  return vformat(format_str.data(), make_format_args(args...));
 }
 
 template <typename String, typename... Args>
 inline typename std::enable_if<internal::is_format_string<String>::value>::type
     print(String format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
-  return vprint(format_str.data(), make_args(args...));
+  return vprint(format_str.data(), make_format_args(args...));
 }
 
 // Counts the number of characters in the output of format(format_str, args...).

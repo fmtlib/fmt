@@ -1003,13 +1003,14 @@ const uint64_t format_arg_store<Context, Args...>::TYPES = IS_PACKED ?
   \endrst
  */
 template <typename Context, typename ...Args>
-inline format_arg_store<Context, Args...> make_args(const Args & ... args) {
+inline format_arg_store<Context, Args...>
+    make_format_args(const Args & ... args) {
   return format_arg_store<Context, Args...>(args...);
 }
 
 template <typename ...Args>
 inline format_arg_store<format_context, Args...>
-    make_args(const Args & ... args) {
+    make_format_args(const Args & ... args) {
   return format_arg_store<format_context, Args...>(args...);
 }
 
@@ -1165,7 +1166,7 @@ FMT_API void vprint_colored(color c, string_view format, format_args args);
 template <typename... Args>
 inline void print_colored(color c, string_view format_str,
                           const Args & ... args) {
-  vprint_colored(c, format_str, make_args(args...));
+  vprint_colored(c, format_str, make_format_args(args...));
 }
 
 format_context::iterator vformat_to(
@@ -1210,7 +1211,7 @@ std::wstring vformat(wstring_view format_str, wformat_args args);
 template <typename... Args>
 inline std::string format(string_view format_str, const Args & ... args) {
   // This should be just
-  // return vformat(format_str, make_args(args...));
+  // return vformat(format_str, make_format_args(args...));
   // but gcc has trouble optimizing the latter, so break it down.
   format_arg_store<format_context, Args...> as(args...);
   return vformat(format_str, as);

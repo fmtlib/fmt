@@ -570,7 +570,7 @@ inline std::string vsprintf(string_view format, printf_args args) {
 template <typename... Args>
 inline std::string sprintf(string_view format_str, const Args & ... args) {
   return vsprintf(format_str,
-    make_args<typename printf_context<internal::buffer>::type>(args...));
+    make_format_args<typename printf_context<internal::buffer>::type>(args...));
 }
 
 inline std::wstring vsprintf(
@@ -583,7 +583,7 @@ inline std::wstring vsprintf(
 
 template <typename... Args>
 inline std::wstring sprintf(wstring_view format_str, const Args & ... args) {
-  auto vargs = make_args<
+  auto vargs = make_format_args<
     typename printf_context<internal::wbuffer>::type>(args...);
   return vsprintf(format_str, vargs);
 }
@@ -607,7 +607,7 @@ inline int vfprintf(std::FILE *f, string_view format, printf_args args) {
  */
 template <typename... Args>
 inline int fprintf(std::FILE *f, string_view format_str, const Args & ... args) {
-  auto vargs = make_args<
+  auto vargs = make_format_args<
     typename printf_context<internal::buffer>::type>(args...);
   return vfprintf(f, format_str, vargs);
 }
@@ -628,7 +628,7 @@ inline int vprintf(string_view format, printf_args args) {
 template <typename... Args>
 inline int printf(string_view format_str, const Args & ... args) {
   return vprintf(format_str,
-    make_args<typename printf_context<internal::buffer>::type>(args...));
+    make_format_args<typename printf_context<internal::buffer>::type>(args...));
 }
 
 inline int vfprintf(std::ostream &os, string_view format_str,
@@ -651,7 +651,7 @@ inline int vfprintf(std::ostream &os, string_view format_str,
 template <typename... Args>
 inline int fprintf(std::ostream &os, string_view format_str,
                    const Args & ... args) {
-  auto vargs = make_args<
+  auto vargs = make_format_args<
     typename printf_context<internal::buffer>::type>(args...);
   return vfprintf(os, format_str, vargs);
 }

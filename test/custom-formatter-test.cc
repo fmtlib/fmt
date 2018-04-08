@@ -37,7 +37,7 @@ std::string custom_vformat(fmt::string_view format_str, fmt::format_args args) {
 
 template <typename... Args>
 std::string custom_format(const char *format_str, const Args & ... args) {
-  auto va = fmt::make_args(args...);
+  auto va = fmt::make_format_args(args...);
   return custom_vformat(format_str, va);
 }
 

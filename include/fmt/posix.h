@@ -218,7 +218,7 @@ public:
 
   template <typename... Args>
   inline void print(string_view format_str, const Args & ... args) {
-    vprint(format_str, make_args(args...));
+    vprint(format_str, make_format_args(args...));
   }
 };
 
