@@ -104,15 +104,6 @@
 # endif
 #endif
 
-// Use the compiler's attribute noreturn.
-#if defined(__MINGW32__) || defined(__MINGW64__)
-# define FMT_NORETURN __attribute__((noreturn))
-#elif FMT_HAS_CPP_ATTRIBUTE(noreturn)
-# define FMT_NORETURN [[noreturn]]
-#else
-# define FMT_NORETURN
-#endif
-
 #ifndef FMT_USE_USER_DEFINED_LITERALS
 // For Intel's compiler both it and the system gcc/msc must support UDLs.
 # if (FMT_HAS_FEATURE(cxx_user_literals) || \
