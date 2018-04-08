@@ -63,7 +63,7 @@ struct formatter<Test, Char> {
 
   typedef std::back_insert_iterator<basic_buffer<Char>> iterator;
 
-  auto format(Test, basic_context<iterator, char> &ctx)
+  auto format(Test, basic_format_context<iterator, char> &ctx)
       -> decltype(ctx.begin()) {
     const Char *test = "test";
     return std::copy_n(test, std::strlen(test), ctx.begin());
@@ -506,7 +506,8 @@ VISIT_TYPE(float, double);
   testing::StrictMock<MockVisitor<decltype(expected)>> visitor; \
   EXPECT_CALL(visitor, visit(expected)); \
   typedef std::back_insert_iterator<basic_buffer<Char>> iterator; \
-  fmt::visit(visitor, make_arg<fmt::basic_context<iterator, Char>>(value)); \
+  fmt::visit(visitor, \
+      make_arg<fmt::basic_format_context<iterator, Char>>(value)); \
 }
 
 #define CHECK_ARG(value, typename_) { \

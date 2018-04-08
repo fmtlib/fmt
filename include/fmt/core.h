@@ -863,8 +863,9 @@ inline Container &get_container(std::back_insert_iterator<Container> it) {
 
 // Formatting context.
 template <typename OutputIt, typename Char>
-class basic_context :
-  public internal::context_base<OutputIt, basic_context<OutputIt, Char>, Char> {
+class basic_format_context :
+  public internal::context_base<
+    OutputIt, basic_format_context<OutputIt, Char>, Char> {
  public:
   /** The character type for the output. */
   typedef Char char_type;
@@ -874,11 +875,11 @@ class basic_context :
   struct formatter_type { typedef formatter<T, char_type> type; };
 
  private:
-  internal::arg_map<basic_context> map_;
+  internal::arg_map<basic_format_context> map_;
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(basic_context);
+  FMT_DISALLOW_COPY_AND_ASSIGN(basic_format_context);
 
-  typedef internal::context_base<OutputIt, basic_context, Char> base;
+  typedef internal::context_base<OutputIt, basic_format_context, Char> base;
   typedef typename base::format_arg format_arg;
   using base::get_arg;
 
@@ -887,12 +888,12 @@ class basic_context :
 
   /**
    \rst
-   Constructs a ``basic_context`` object. References to the arguments are
+   Constructs a ``basic_format_context`` object. References to the arguments are
    stored in the object so make sure they have appropriate lifetimes.
    \endrst
    */
-  basic_context(OutputIt out, basic_string_view<char_type> format_str,
-                basic_format_args<basic_context> args)
+  basic_format_context(OutputIt out, basic_string_view<char_type> format_str,
+                basic_format_args<basic_format_context> args)
     : base(out, format_str, args) {}
 
   format_arg next_arg() {
@@ -907,7 +908,7 @@ class basic_context :
 
 template <typename Char>
 struct buffer_context {
-  typedef basic_context<
+  typedef basic_format_context<
     std::back_insert_iterator<internal::basic_buffer<Char>>, Char> type;
 };
 typedef buffer_context<char>::type context;

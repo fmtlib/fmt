@@ -2203,7 +2203,7 @@ class arg_formatter:
  private:
   typedef typename Range::value_type char_type;
   typedef internal::arg_formatter_base<Range> base;
-  typedef basic_context<typename base::iterator, char_type> context_type;
+  typedef basic_format_context<typename base::iterator, char_type> context_type;
 
   context_type &ctx_;
 
@@ -3199,8 +3199,8 @@ class dynamic_formatter {
 };
 
 template <typename Range, typename Char>
-typename basic_context<Range, Char>::format_arg
-  basic_context<Range, Char>::get_arg(basic_string_view<char_type> name) {
+typename basic_format_context<Range, Char>::format_arg
+  basic_format_context<Range, Char>::get_arg(basic_string_view<char_type> name) {
   map_.init(this->args());
   format_arg arg = map_.find(name);
   if (arg.type() == internal::none_type)
@@ -3393,8 +3393,8 @@ inline wcontext::iterator format_to(
 }
 
 template <typename OutputIt, typename Char = char>
-//using context_t = basic_context<OutputIt, Char>;
-struct context_t { typedef basic_context<OutputIt, Char> type; };
+//using context_t = basic_format_context<OutputIt, Char>;
+struct context_t { typedef basic_format_context<OutputIt, Char> type; };
 
 template <typename OutputIt, typename Char = char>
 //using format_args_t = basic_format_args<context_t<OutputIt, Char>>;
