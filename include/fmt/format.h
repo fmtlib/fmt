@@ -532,23 +532,17 @@ class basic_fixed_buffer : public internal::basic_buffer<Char> {
 namespace internal {
 
 template <typename Char>
-class basic_char_traits {
- public:
-  static Char cast(int value) { return static_cast<Char>(value); }
+struct char_traits {
+  template <typename T>
+  static int format_float(Char *buffer, std::size_t size,
+      const Char *format, unsigned width, int precision, T value) {
+    // TODO
+    return 0;
+  }
 };
 
-template <typename Char>
-class char_traits;
-
 template <>
-class char_traits<char> : public basic_char_traits<char> {
- private:
-  // Conversion from wchar_t to char is not allowed.
-  static char convert(wchar_t);
-
- public:
-  static char convert(char value) { return value; }
-
+struct char_traits<char> {
   // Formats a floating-point number.
   template <typename T>
   FMT_API static int format_float(char *buffer, std::size_t size,
@@ -556,11 +550,7 @@ class char_traits<char> : public basic_char_traits<char> {
 };
 
 template <>
-class char_traits<wchar_t> : public basic_char_traits<wchar_t> {
- public:
-  static wchar_t convert(char value) { return value; }
-  static wchar_t convert(wchar_t value) { return value; }
-
+struct char_traits<wchar_t> {
   template <typename T>
   FMT_API static int format_float(wchar_t *buffer, std::size_t size,
       const wchar_t *format, unsigned width, int precision, T value);
@@ -1412,9 +1402,7 @@ class arg_formatter_base {
   struct char_writer {
     char_type value;
     template <typename It>
-    void operator()(It &&it) const {
-      *it++ = internal::char_traits<char_type>::cast(value);
-    }
+    void operator()(It &&it) const { *it++ = value; }
   };
 
   void write_char(char_type value) {
@@ -2667,7 +2655,7 @@ void basic_writer<Range>::write_padded(
   if (width <= size)
     return f(reserve(size));
   auto &&it = reserve(width);
-  char_type fill = internal::char_traits<char_type>::cast(spec.fill());
+  char_type fill = spec.fill();
   std::size_t padding = width - size;
   if (spec.align() == ALIGN_RIGHT) {
     it = std::fill_n(it, padding, fill);
@@ -2687,8 +2675,6 @@ template <typename Range>
 template <typename Char>
 void basic_writer<Range>::write_str(
     basic_string_view<Char> s, const format_specs &spec) {
-  // Check if Char is convertible to char_type.
-  internal::char_traits<char_type>::convert(Char());
   const Char *data = s.data();
   std::size_t size = s.size();
   std::size_t precision = static_cast<std::size_t>(spec.precision_);
