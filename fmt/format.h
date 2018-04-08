@@ -1027,7 +1027,7 @@ struct IntTraits {
     TypeSelector<std::numeric_limits<T>::digits <= 32>::Type MainType;
 };
 
-FMT_API FMT_NORETURN void report_unknown_type(char code, const char *type);
+FMT_NORETURN FMT_API void report_unknown_type(char code, const char *type);
 
 // Static data is placed in this class template to allow header-only
 // configuration.
