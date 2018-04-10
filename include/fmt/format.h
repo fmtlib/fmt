@@ -2655,7 +2655,7 @@ void basic_writer<Range>::write_padded(
   if (width <= size)
     return f(reserve(size));
   auto &&it = reserve(width);
-  char_type fill = spec.fill();
+  char_type fill = static_cast<char_type>(spec.fill());
   std::size_t padding = width - size;
   if (spec.align() == ALIGN_RIGHT) {
     it = std::fill_n(it, padding, fill);
