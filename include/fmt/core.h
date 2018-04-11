@@ -636,6 +636,12 @@ inline typename std::enable_if<
   make_value(const T &val) { return val; }
 
 template <typename C, typename T>
+inline typename std::enable_if<
+    std::is_same<decltype(sizeof(&T::toString)), size_t>::value,
+    typed_value<C, string_type>>::type
+  make_value(T& val) {return static_cast<basic_string_view<typename C::char_type>>(val.toString());}
+
+template <typename C, typename T>
 typed_value<C, name_arg_type>
     make_value(const named_arg<T, typename C::char_type> &val) {
   basic_format_arg<C> arg = make_arg<C>(val.value);
