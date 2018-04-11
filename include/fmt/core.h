@@ -629,11 +629,18 @@ inline typename std::enable_if<
 
 template <typename C, typename T, typename Char = typename C::char_type>
 inline typename std::enable_if<
+    !std::is_same<decltype(sizeof(&T::toString)), size_t>::value &&
     !convert_to_int<T, Char>::value &&
     !std::is_convertible<T, basic_string_view<Char>>::value &&
     !std::is_convertible<T, std::basic_string<Char>>::value,
     typed_value<C, custom_type>>::type
   make_value(const T &val) { return val; }
+
+template <typename C, typename T>
+inline typename std::enable_if<
+    std::is_same<decltype(sizeof(&T::toString)), size_t>::value,
+    typed_value<C, string_type>>::type
+  make_value(const T& val) {return static_cast<basic_string_view<typename C::char_type>>(val.toString());}
 
 template <typename C, typename T>
 typed_value<C, name_arg_type>
