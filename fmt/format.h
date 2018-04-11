@@ -2099,7 +2099,6 @@ void ArgMap<Char>::init(const ArgList &args) {
         /*nothing*/;
       }
     }
-    return;
   }
   for (unsigned i = 0; i != ArgList::MAX_PACKED_ARGS; ++i) {
     internal::Arg::Type arg_type = args.type(i);
