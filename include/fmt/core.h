@@ -814,8 +814,6 @@ class context_base {
                basic_format_args<Context> args)
   : parse_context_(format_str), out_(out), args_(args) {}
 
-  basic_format_args<Context> args() const { return args_; }
-
   // Returns the argument with specified index.
   format_arg do_get_arg(unsigned arg_id) {
     format_arg arg = args_[arg_id];
@@ -847,6 +845,8 @@ class context_base {
 
   // Advances the begin iterator to ``it``.
   void advance_to(iterator it) { out_ = it; }
+
+  basic_format_args<Context> args() const { return args_; }
 };
 
 // Extracts a reference to the container from back_insert_iterator.
