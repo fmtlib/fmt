@@ -532,14 +532,7 @@ class basic_fixed_buffer : public internal::basic_buffer<Char> {
 namespace internal {
 
 template <typename Char>
-struct char_traits {
-  template <typename T>
-  static int format_float(Char *buffer, std::size_t size,
-      const Char *format, unsigned width, int precision, T value) {
-    // TODO
-    return 0;
-  }
-};
+struct char_traits;
 
 template <>
 struct char_traits<char> {
