@@ -129,7 +129,7 @@ An object of any user-defined type for which there is an overloaded
 You can create your own functions similar to `format
 <http://fmtlib.net/latest/api.html#format>`_ and
 `print <http://fmtlib.net/latest/api.html#print>`_
-which take arbitrary arguments (`godbolt <https://godbolt.org/g/uoSRRh>`_):
+which take arbitrary arguments (`godbolt <https://godbolt.org/g/Rsfb1s>`_):
 
 .. code:: c++
 
