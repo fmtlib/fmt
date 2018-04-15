@@ -93,20 +93,6 @@ literal operators, they must be made visible with the directive
 ``using namespace fmt::literals;``. Note that this brings in only ``_a`` and 
 ``_format`` but nothing else from the ``fmt`` namespace.
 
-.. _write-api:
-  
-Write API
----------
-
-The concatenation-based Write API (experimental) provides a `fast
-<http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_
-stateless alternative to IOStreams:
-
-.. code:: c++
-
-  fmt::MemoryWriter out;
-  out << "The answer in hexadecimal is " << hex(42);
-
 .. _safety:
 
 Safety
