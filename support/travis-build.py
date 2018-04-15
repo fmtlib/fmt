@@ -75,7 +75,7 @@ if build == 'Doc':
         # Print the output without the key.
         print(p.communicate()[0].replace(os.environ['KEY'], '$KEY'))
         if p.returncode != 0:
-            raise CalledProcessError(p.returncode, cmd)
+            raise subprocess.CalledProcessError(p.returncode, cmd)
     exit(0)
 
 standard = os.environ['STANDARD']
