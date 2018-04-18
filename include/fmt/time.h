@@ -93,11 +93,21 @@ inline std::tm gmtime(std::time_t time) {
   return std::tm();
 }
 
-template <>
-struct formatter<std::tm> {
+namespace internal {
+inline std::size_t strftime(char *str, std::size_t count, const char *format, const std::tm *time) {
+  return std::strftime(str, count, format, time);
+}
+
+inline std::size_t strftime(wchar_t *str, std::size_t count, const wchar_t *format, const std::tm *time) {
+  return std::wcsftime(str, count, format, time);
+}
+}
+
+template <typename Char>
+struct formatter<std::tm, Char> {
   template <typename ParseContext>
   auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
-    auto it = internal::null_terminating_iterator<char>(ctx);
+    auto it = internal::null_terminating_iterator<Char>(ctx);
     if (*it == ':')
       ++it;
     auto end = it;
@@ -110,12 +120,13 @@ struct formatter<std::tm> {
     return pointer_from(end);
   }
 
-  auto format(const std::tm &tm, format_context &ctx) -> decltype(ctx.begin()) {
-    internal::buffer &buf = internal::get_container(ctx.begin());
+  template <typename FormatContext>
+  auto format(const std::tm &tm, FormatContext &ctx) -> decltype(ctx.begin()) {
+    internal::basic_buffer<Char> &buf = internal::get_container(ctx.begin());
     std::size_t start = buf.size();
     for (;;) {
       std::size_t size = buf.capacity() - start;
-      std::size_t count = std::strftime(&buf[start], size, &tm_format[0], &tm);
+      std::size_t count = internal::strftime(&buf[start], size, &tm_format[0], &tm);
       if (count != 0) {
         buf.resize(start + count);
         break;
@@ -133,7 +144,7 @@ struct formatter<std::tm> {
     return ctx.begin();
   }
 
-  memory_buffer tm_format;
+  basic_memory_buffer<Char> tm_format;
 };
 }
 
