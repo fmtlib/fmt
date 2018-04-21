@@ -686,7 +686,7 @@ class basic_format_arg {
    public:
     explicit handle(internal::custom_value<Context> custom): custom_(custom) {}
 
-    void format(Context &ctx) { custom_.format(custom_.value, ctx); }
+    void format(Context &ctx) const { custom_.format(custom_.value, ctx); }
 
    private:
     internal::custom_value<Context> custom_;
@@ -702,7 +702,6 @@ class basic_format_arg {
 
   bool is_integral() const { return internal::is_integral(type_); }
   bool is_arithmetic() const { return internal::is_arithmetic(type_); }
-  bool is_pointer() const { return type_ == internal::pointer_type; }
 };
 
 // Parsing context consisting of a format string range being parsed and an
@@ -816,7 +815,7 @@ class context_base {
 
   // Returns the argument with specified index.
   format_arg do_get_arg(unsigned arg_id) {
-    format_arg arg = args_[arg_id];
+    format_arg arg = args_.get(arg_id);
     if (!arg)
       parse_context_.on_error("argument index out of range");
     return arg;
@@ -986,8 +985,6 @@ class format_arg_store {
   format_arg_store(const Args &... args)
     : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
 #endif
-
-  basic_format_args<Context> operator*() const { return *this; }
 };
 
 template <typename Context, typename ...Args>
@@ -1047,7 +1044,7 @@ class basic_format_args {
   void set_data(const internal::value<Context> *values) { values_ = values; }
   void set_data(const format_arg *args) { args_ = args; }
 
-  format_arg get(size_type index) const {
+  format_arg do_get(size_type index) const {
     int64_t signed_types = static_cast<int64_t>(types_);
     if (signed_types < 0) {
       uint64_t num_args = -signed_types;
@@ -1079,8 +1076,8 @@ class basic_format_args {
   }
 
   /** Returns the argument at specified index. */
-  format_arg operator[](size_type index) const {
-    format_arg arg = get(index);
+  format_arg get(size_type index) const {
+    format_arg arg = do_get(index);
     return arg.type_ == internal::name_arg_type ?
           arg.value_.as_named_arg().template deserialize<Context>() : arg;
   }

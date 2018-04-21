@@ -412,7 +412,7 @@ TEST(UtilTest, Increment) {
 
 TEST(UtilTest, FormatArgs) {
   fmt::format_args args;
-  EXPECT_FALSE(args[1]);
+  EXPECT_FALSE(args.get(1));
 }
 
 struct custom_context {

@@ -3384,7 +3384,7 @@ template <typename OutputIt, typename... Args>
 inline OutputIt format_to(OutputIt out, string_view format_str,
                           const Args & ... args) {
   return vformat_to(out, format_str,
-      *make_format_args<typename format_context_t<OutputIt>::type>(args...));
+      make_format_args<typename format_context_t<OutputIt>::type>(args...));
 }
 
 template <typename Container, typename... Args>
@@ -3415,7 +3415,7 @@ inline format_to_n_result<OutputIt> format_to_n(
     OutputIt out, std::size_t n, string_view format_str, const Args & ... args) {
   typedef internal::truncating_iterator<OutputIt> It;
   auto it = vformat_to(It(out, n), format_str,
-      *make_format_args<typename format_context_t<It>::type>(args...));
+      make_format_args<typename format_context_t<It>::type>(args...));
   return {it.base(), it.count()};
 }
 
