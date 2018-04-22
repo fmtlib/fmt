@@ -3320,10 +3320,10 @@ void BasicWriter<Char>::write_double(T value, const Spec &spec) {
   accessed as a C string with ``out.c_str()``.
   \endrst
  */
-template <typename Char, typename Allocator = std::allocator<Char> >
+template <typename Char, typename Allocator = std::allocator<Char>, std::size_t INLINE_BUFFER_SIZE = internal::INLINE_BUFFER_SIZE>
 class BasicMemoryWriter : public BasicWriter<Char> {
  private:
-  internal::MemoryBuffer<Char, internal::INLINE_BUFFER_SIZE, Allocator> buffer_;
+  internal::MemoryBuffer<Char, INLINE_BUFFER_SIZE, Allocator> buffer_;
 
  public:
   explicit BasicMemoryWriter(const Allocator& alloc = Allocator())
