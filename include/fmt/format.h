@@ -131,7 +131,7 @@
 # endif
 #endif
 
-#if FMT_HAS_GXX_CXX11 || FMT_MSC_VER >= 1600
+#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_trailing_return) || FMT_MSC_VER >= 1600
 # define FMT_USE_TRAILING_RETURN 1
 #endif
 
