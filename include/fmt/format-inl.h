@@ -219,8 +219,9 @@ FMT_FUNC void system_error::init(
   base = std::runtime_error(to_string(buffer));
 }
 
+namespace internal {
 template <typename T>
-int internal::char_traits<char>::format_float(
+int char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, T value) {
   if (width == 0) {
@@ -234,7 +235,7 @@ int internal::char_traits<char>::format_float(
 }
 
 template <typename T>
-int internal::char_traits<wchar_t>::format_float(
+int char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, T value) {
   if (width == 0) {
@@ -248,7 +249,7 @@ int internal::char_traits<wchar_t>::format_float(
 }
 
 template <typename T>
-const char internal::basic_data<T>::DIGITS[] =
+const char basic_data<T>::DIGITS[] =
     "0001020304050607080910111213141516171819"
     "2021222324252627282930313233343536373839"
     "4041424344454647484950515253545556575859"
@@ -267,17 +268,29 @@ const char internal::basic_data<T>::DIGITS[] =
   factor * 1000000000
 
 template <typename T>
-const uint32_t internal::basic_data<T>::POWERS_OF_10_32[] = {
+const uint32_t basic_data<T>::POWERS_OF_10_32[] = {
   0, FMT_POWERS_OF_10(1)
 };
 
 template <typename T>
-const uint64_t internal::basic_data<T>::POWERS_OF_10_64[] = {
+const uint64_t basic_data<T>::POWERS_OF_10_64[] = {
   0,
   FMT_POWERS_OF_10(1),
   FMT_POWERS_OF_10(1000000000ull),
   10000000000000000000ull
 };
+
+FMT_FUNC fp operator*(fp x, fp y) {
+  // Multiply 32-bit parts of significands.
+  uint64_t mask = (1ULL << 32) - 1;
+  uint64_t a = x.f >> 32, b = x.f & mask;
+  uint64_t c = y.f >> 32, d = y.f & mask;
+  uint64_t ac = a * c, bc = b * c, ad = a * d, bd = b * d;
+  // Compute mid 64-bit of result and round.
+  uint64_t mid = (bd >> 32) + (ad & mask) + (bc & mask) + (1U << 31);
+  return fp(ac + (ad >> 32) + (bc >> 32) + (mid >> 32), x.e + y.e + 64); 
+}
+}  // namespace internal
 
 #if FMT_USE_WINDOWS_H
 

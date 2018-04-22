@@ -37,6 +37,7 @@ using fmt::basic_format_arg;
 using fmt::internal::basic_buffer;
 using fmt::basic_memory_buffer;
 using fmt::string_view;
+using fmt::internal::fp;
 using fmt::internal::value;
 
 using testing::_;
@@ -868,4 +869,19 @@ TEST(UtilTest, ParseNonnegativeInt) {
   EXPECT_THROW_MSG(
         parse_nonnegative_int(s, fmt::internal::error_handler()),
         fmt::format_error, "number is too big");
+}
+
+TEST(UtilTest, FPSubtract) {
+  auto r = fp(123, 1) - fp(102, 1);
+  EXPECT_EQ(r.f, 21u);
+  EXPECT_EQ(r.e, 1);
+}
+
+TEST(UtilTest, FPMultiply) {
+  auto r = fp(123ULL << 32, 4) * fp(56ULL << 32, 7);
+  EXPECT_EQ(r.f, 123u * 56u);
+  EXPECT_EQ(r.e, 4 + 7 + 64);
+  r = fp(123ULL << 32, 4) * fp(567ULL << 31, 8);
+  EXPECT_EQ(r.f, (123 * 567 + 1u) / 2);
+  EXPECT_EQ(r.e, 4 + 8 + 64);
 }

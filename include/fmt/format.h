@@ -245,6 +245,30 @@ inline dummy_int _finite(...) { return dummy_int(); }
 inline dummy_int isnan(...) { return dummy_int(); }
 inline dummy_int _isnan(...) { return dummy_int(); }
 
+// A handmade floating-point number f * pow(2, e).
+struct fp {
+  uint64_t f;
+  int e;
+  fp(uint64_t f, int e): f(f), e(e) {}
+};
+
+// Returns an fp number representing x - y. Result may not be normalized.
+inline fp operator-(fp x, fp y) {
+  FMT_ASSERT(x.f >= y.f && x.e == y.e, "invalid operands");
+  return fp(x.f - y.f, x.e); 
+}
+
+// Computes an fp number r with r.f = x.f * y.f / pow(2, 32) rounded to nearest
+// with half-up tie breaking, r.e = x.e + y.e + 32. Result may not be normalized.
+fp operator*(fp x, fp y);
+
+// Compute k such that its cached power c_k = c_k.f * pow(2, c_k.e) satisfies
+// alpha <= c_k.e + e <= alpha + 3.
+inline int compute_cached_power_index(int e, int alpha) {
+  constexpr double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
+  return std::ceil((alpha - e + 63) * one_over_log2_10);
+}
+
 template <typename Allocator>
 typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {
 #if __cplusplus >= 201103L || FMT_MSC_VER >= 1700
