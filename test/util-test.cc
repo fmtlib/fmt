@@ -65,9 +65,9 @@ struct formatter<Test, Char> {
   typedef std::back_insert_iterator<basic_buffer<Char>> iterator;
 
   auto format(Test, basic_format_context<iterator, char> &ctx)
-      -> decltype(ctx.begin()) {
+      -> decltype(ctx.out()) {
     const Char *test = "test";
-    return std::copy_n(test, std::strlen(test), ctx.begin());
+    return std::copy_n(test, std::strlen(test), ctx.out());
   }
 };
 }

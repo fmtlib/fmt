@@ -2216,7 +2216,7 @@ class arg_formatter:
     \endrst
    */
   arg_formatter(context_type &ctx, format_specs &spec)
-  : base(Range(ctx.begin()), spec), ctx_(ctx) {}
+  : base(Range(ctx.out()), spec), ctx_(ctx) {}
 
   using base::operator();
 
@@ -3096,7 +3096,7 @@ struct formatter<
   }
 
   template <typename FormatContext>
-  auto format(const T &val, FormatContext &ctx) -> decltype(ctx.begin()) {
+  auto format(const T &val, FormatContext &ctx) -> decltype(ctx.out()) {
     internal::handle_dynamic_spec<internal::width_checker>(
       specs_.width_, specs_.width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
@@ -3105,7 +3105,7 @@ struct formatter<
                          typename FormatContext::char_type> range;
     visit(arg_formatter<range>(ctx, specs_),
           internal::make_arg<FormatContext>(val));
-    return ctx.begin();
+    return ctx.out();
   }
 
  private:
@@ -3154,7 +3154,7 @@ class dynamic_formatter {
   }
 
   template <typename T, typename FormatContext>
-  auto format(const T &val, FormatContext &ctx) -> decltype(ctx.begin()) {
+  auto format(const T &val, FormatContext &ctx) -> decltype(ctx.out()) {
     handle_specs(ctx);
     internal::specs_checker<null_handler>
         checker(null_handler(), internal::get_type<FormatContext, T>::value);
@@ -3177,7 +3177,7 @@ class dynamic_formatter {
                          typename FormatContext::char_type> range;
     visit(arg_formatter<range>(ctx, specs_),
           internal::make_arg<FormatContext>(val));
-    return ctx.begin();
+    return ctx.out();
   }
 
  private:
@@ -3213,7 +3213,7 @@ struct format_handler : internal::error_handler {
 
   void on_text(iterator begin, iterator end) {
     size_t size = end - begin;
-    auto out = context.begin();
+    auto out = context.out();
     auto &&it = internal::reserve(out, size);
     it = std::copy_n(begin, size, it);
     context.advance_to(out);
@@ -3265,7 +3265,7 @@ typename Context::iterator vformat_to(typename ArgFormatter::range out,
   typedef internal::null_terminating_iterator<Char> iterator;
   format_handler<ArgFormatter, Char, Context> h(out, format_str, args);
   parse_format_string(iterator(format_str.begin(), format_str.end()), h);
-  return h.context.begin();
+  return h.context.out();
 }
 
 // Casts ``p`` to ``const void*`` for pointer formatting.
@@ -3289,10 +3289,10 @@ struct formatter<arg_join<It, Char>, Char>:
     formatter<typename std::iterator_traits<It>::value_type, Char> {
   template <typename FormatContext>
   auto format(const arg_join<It, Char> &value, FormatContext &ctx)
-      -> decltype(ctx.begin()) {
+      -> decltype(ctx.out()) {
     typedef formatter<typename std::iterator_traits<It>::value_type, Char> base;
     auto it = value.begin;
-    auto out = ctx.begin();
+    auto out = ctx.out();
     if (it != value.end) {
       out = base::format(*it++, ctx);
       while (it != value.end) {

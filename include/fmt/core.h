@@ -840,7 +840,8 @@ class context_base {
   void on_error(const char *message) { parse_context_.on_error(message); }
 
   // Returns an iterator to the beginning of the output range.
-  iterator begin() { return out_; }
+  iterator out() { return out_; }
+  iterator begin() { return out_; }  // deprecated
 
   // Advances the begin iterator to ``it``.
   void advance_to(iterator it) { out_ = it; }

@@ -121,8 +121,8 @@ struct formatter<std::tm, Char> {
   }
 
   template <typename FormatContext>
-  auto format(const std::tm &tm, FormatContext &ctx) -> decltype(ctx.begin()) {
-    internal::basic_buffer<Char> &buf = internal::get_container(ctx.begin());
+  auto format(const std::tm &tm, FormatContext &ctx) -> decltype(ctx.out()) {
+    internal::basic_buffer<Char> &buf = internal::get_container(ctx.out());
     std::size_t start = buf.size();
     for (;;) {
       std::size_t size = buf.capacity() - start;
@@ -141,7 +141,7 @@ struct formatter<std::tm, Char> {
       const std::size_t MIN_GROWTH = 10;
       buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
     }
-    return ctx.begin();
+    return ctx.out();
   }
 
   basic_memory_buffer<Char> tm_format;

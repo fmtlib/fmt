@@ -298,9 +298,9 @@ struct printf_formatter {
   auto parse(ParseContext &ctx) -> decltype(ctx.begin()) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const T &value, FormatContext &ctx) -> decltype(ctx.begin()) {
-    internal::format_value(internal::get_container(ctx.begin()), value);
-    return ctx.begin();
+  auto format(const T &value, FormatContext &ctx) -> decltype(ctx.out()) {
+    internal::format_value(internal::get_container(ctx.out()), value);
+    return ctx.out();
   }
 };
 
@@ -346,7 +346,7 @@ class basic_printf_context :
     : base(out, format_str, args) {}
 
   using base::parse_context;
-  using base::begin;
+  using base::out;
   using base::advance_to;
 
   /** Formats stored arguments and writes the output to the range. */
@@ -429,7 +429,7 @@ unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
 
 template <typename OutputIt, typename Char, typename AF>
 void basic_printf_context<OutputIt, Char, AF>::format() {
-  auto &buffer = internal::get_container(this->begin());
+  auto &buffer = internal::get_container(this->out());
   auto start = iterator(this->parse_context());
   auto it = start;
   using internal::pointer_from;
