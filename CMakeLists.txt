@@ -7,7 +7,7 @@ if (POLICY CMP0048) # Version variables
 endif ()
 
 if (POLICY CMP0063) # Visibility
-  cmake_policy(SET CMP0063 OLD)
+  cmake_policy(SET CMP0063 NEW)
 endif (POLICY CMP0063)
 
 # Determine if fmt is built as a subproject (using add_subdirectory)
