@@ -30,12 +30,19 @@ std::ostream &operator<<(std::ostream &os, TestEnum) {
   return os << "TestEnum";
 }
 
+std::wostream &operator<<(std::wostream &os, TestEnum) {
+  return os << L"TestEnum";
+}
+
 enum TestEnum2 {A};
 
 TEST(OStreamTest, Enum) {
   EXPECT_FALSE((fmt::internal::convert_to_int<TestEnum, char>::value));
   EXPECT_EQ("TestEnum", fmt::format("{}", TestEnum()));
   EXPECT_EQ("0", fmt::format("{}", A));
+  EXPECT_FALSE((fmt::internal::convert_to_int<TestEnum, wchar_t>::value));
+  EXPECT_EQ(L"TestEnum", fmt::format(L"{}", TestEnum()));
+  EXPECT_EQ(L"0", fmt::format(L"{}", A));
 }
 
 typedef fmt::back_insert_range<fmt::internal::buffer> range;
@@ -100,6 +107,9 @@ TEST(OStreamTest, Print) {
   std::ostringstream os;
   fmt::print(os, "Don't {}!", "panic");
   EXPECT_EQ("Don't panic!", os.str());
+  std::wostringstream wos;
+  fmt::print(wos, L"Don't {}!", L"panic");
+  EXPECT_EQ(L"Don't panic!", wos.str());
 }
 
 TEST(OStreamTest, WriteToOStream) {

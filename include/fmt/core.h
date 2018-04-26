@@ -1098,7 +1098,11 @@ struct format_args: basic_format_args<format_context> {
   format_args(Args && ... arg)
   : basic_format_args<format_context>(std::forward<Args>(arg)...) {}
 };
-typedef basic_format_args<wformat_context> wformat_args;
+struct wformat_args : basic_format_args<wformat_context> {
+  template <typename ...Args>
+  wformat_args(Args && ... arg)
+  : basic_format_args<wformat_context>(std::forward<Args>(arg)...) {}
+};
 
 namespace internal {
 template <typename Char>
@@ -1154,6 +1158,7 @@ void arg(S, internal::named_arg<T, Char>) FMT_DELETED;
 enum color { black, red, green, yellow, blue, magenta, cyan, white };
 
 FMT_API void vprint_colored(color c, string_view format, format_args args);
+FMT_API void vprint_colored(color c, wstring_view format, wformat_args args);
 
 /**
   Formats a string and prints it to stdout using ANSI escape sequences to
@@ -1165,6 +1170,12 @@ template <typename... Args>
 inline void print_colored(color c, string_view format_str,
                           const Args & ... args) {
   vprint_colored(c, format_str, make_format_args(args...));
+}
+
+template <typename... Args>
+inline void print_colored(color c, wstring_view format_str,
+                          const Args & ... args) {
+  vprint_colored(c, format_str, make_format_args<wformat_context>(args...));
 }
 
 format_context::iterator vformat_to(
@@ -1187,6 +1198,17 @@ typename std::enable_if<
   is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
     vformat_to(std::back_insert_iterator<Container> out,
                string_view format_str, format_args args) {
+  auto& container = internal::get_container(out);
+  internal::container_buffer<Container> buf(container);
+  vformat_to(buf, format_str, args);
+  return std::back_inserter(container);
+}
+
+template <typename Container>
+typename std::enable_if<
+  is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
+  vformat_to(std::back_insert_iterator<Container> out,
+             wstring_view format_str, wformat_args args) {
   auto& container = internal::get_container(out);
   internal::container_buffer<Container> buf(container);
   vformat_to(buf, format_str, args);
@@ -1221,6 +1243,7 @@ inline std::wstring format(wstring_view format_str, const Args & ... args) {
 }
 
 FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
+FMT_API void vprint(std::FILE *f, wstring_view format_str, wformat_args args);
 
 /**
   \rst
@@ -1236,8 +1259,14 @@ inline void print(std::FILE *f, string_view format_str, const Args & ... args) {
   format_arg_store<format_context, Args...> as(args...);
   vprint(f, format_str, as);
 }
+template <typename... Args>
+inline void print(std::FILE *f, wstring_view format_str, const Args & ... args) {
+  format_arg_store<wformat_context, Args...> as(args...);
+  vprint(f, format_str, as);
+}
 
 FMT_API void vprint(string_view format_str, format_args args);
+FMT_API void vprint(wstring_view format_str, wformat_args args);
 
 /**
   \rst
@@ -1251,6 +1280,12 @@ FMT_API void vprint(string_view format_str, format_args args);
 template <typename... Args>
 inline void print(string_view format_str, const Args & ... args) {
   format_arg_store<format_context, Args...> as(args...);
+  vprint(format_str, as);
+}
+
+template <typename... Args>
+inline void print(wstring_view format_str, const Args & ... args) {
+  format_arg_store<wformat_context, Args...> as(args...);
   vprint(format_str, as);
 }
 }  // namespace fmt
