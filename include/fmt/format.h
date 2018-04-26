@@ -266,7 +266,7 @@ fp operator*(fp x, fp y);
 // alpha <= c_k.e + e <= alpha + 3.
 inline int compute_cached_power_index(int e, int alpha) {
   constexpr double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
-  return std::ceil((alpha - e + 63) * one_over_log2_10);
+  return static_cast<int>(std::ceil((alpha - e + 63) * one_over_log2_10));
 }
 
 template <typename Allocator>
