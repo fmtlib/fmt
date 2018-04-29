@@ -1229,6 +1229,8 @@ FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
   return 0;
 }
 
+struct format_string {};
+
 namespace internal {
 
 template <typename Char, typename Handler>
@@ -1524,8 +1526,6 @@ class arg_formatter_base {
     return out();
   }
 };
-
-struct format_string {};
 
 template <typename S>
 struct is_format_string:
@@ -3567,7 +3567,7 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 #endif // FMT_USE_USER_DEFINED_LITERALS
 
 #define FMT_STRING(s) [] { \
-    struct S : fmt::internal::format_string { \
+    struct S : fmt::format_string { \
       static FMT_CONSTEXPR auto data() { return s; } \
       static FMT_CONSTEXPR size_t size() { return sizeof(s); } \
     }; \
