@@ -337,7 +337,7 @@ FMT_FUNC fp operator*(fp x, fp y) {
   uint64_t ac = a * c, bc = b * c, ad = a * d, bd = b * d;
   // Compute mid 64-bit of result and round.
   uint64_t mid = (bd >> 32) + (ad & mask) + (bc & mask) + (1U << 31);
-  return fp(ac + (ad >> 32) + (bc >> 32) + (mid >> 32), x.e + y.e + 64); 
+  return fp(ac + (ad >> 32) + (bc >> 32) + (mid >> 32), x.e + y.e + 64);
 }
 }  // namespace internal
 
