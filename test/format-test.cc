@@ -1287,6 +1287,7 @@ TEST(FormatTest, JoinArg) {
   std::vector<float> v2;
   v2.push_back(1.2f);
   v2.push_back(3.4f);
+  void *v3[2] = { &v1[0], &v1[1] };
 
   EXPECT_EQ("(1, 2, 3)", format("({})", join(v1, v1 + 3, ", ")));
   EXPECT_EQ("(1)", format("({})", join(v1, v1 + 1, ", ")));
@@ -1297,6 +1298,9 @@ TEST(FormatTest, JoinArg) {
 
   EXPECT_EQ(L"(1, 2, 3)", format(L"({})", join(v1, v1 + 3, L", ")));
   EXPECT_EQ("1, 2, 3", format("{0:{1}}", join(v1, v1 + 3, ", "), 1));
+
+  EXPECT_EQ(format("{}, {}", v3[0], v3[1]),
+            format("{}", join(v3, v3 + 2, ", ")));
 
 #if FMT_USE_TRAILING_RETURN && (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 405)
   EXPECT_EQ("(1, 2, 3)", format("({})", join(v1, ", ")));
