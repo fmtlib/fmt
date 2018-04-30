@@ -255,7 +255,7 @@ struct fp {
 // Returns an fp number representing x - y. Result may not be normalized.
 inline fp operator-(fp x, fp y) {
   FMT_ASSERT(x.f >= y.f && x.e == y.e, "invalid operands");
-  return fp(x.f - y.f, x.e); 
+  return fp(x.f - y.f, x.e);
 }
 
 // Computes an fp number r with r.f = x.f * y.f / pow(2, 32) rounded to nearest
@@ -1594,7 +1594,7 @@ class width_checker: public function<unsigned long long> {
   explicit FMT_CONSTEXPR width_checker(ErrorHandler &eh) : handler_(eh) {}
 
   template <typename T>
-  FMT_CONSTEXPR 
+  FMT_CONSTEXPR
   typename std::enable_if<
       is_integer<T>::value, unsigned long long>::type operator()(T value) {
     if (is_negative(value))
