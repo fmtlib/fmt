@@ -1431,9 +1431,10 @@ class arg_formatter_base {
   }
 
   void write_pointer(const void *p) {
-    specs_.flags_ = HASH_FLAG;
-    specs_.type_ = 'x';
-    writer_.write_int(reinterpret_cast<uintptr_t>(p), specs_);
+    format_specs specs = specs_;
+    specs.flags_ = HASH_FLAG;
+    specs.type_ = 'x';
+    writer_.write_int(reinterpret_cast<uintptr_t>(p), specs);
   }
 
  protected:
