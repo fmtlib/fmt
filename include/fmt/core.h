@@ -157,7 +157,7 @@
 
 // libc++ supports string_view in pre-c++17.
 #if (FMT_HAS_INCLUDE(<string_view>) && \
-      (__cplusplus > 201402L || _LIBCPP_VERSION)) || \
+      (__cplusplus > 201402L || defined(_LIBCPP_VERSION))) || \
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 # include <string_view>
 # define FMT_USE_STD_STRING_VIEW
