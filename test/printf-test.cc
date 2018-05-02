@@ -26,6 +26,12 @@ std::string make_positional(fmt::string_view format) {
   return s;
 }
 
+std::wstring make_positional(fmt::wstring_view format) {
+  std::wstring s(format.data(), format.size());
+  s.replace(s.find(L'%'), 1, L"%1$");
+  return s;
+}
+
 #define EXPECT_PRINTF(expected_output, format, arg) \
   EXPECT_EQ(expected_output, fmt::sprintf(format, arg)) \
     << "format: " << format; \
@@ -33,6 +39,7 @@ std::string make_positional(fmt::string_view format) {
 
 TEST(PrintfTest, NoArgs) {
   EXPECT_EQ("test", fmt::sprintf("test"));
+  EXPECT_EQ(L"test", fmt::sprintf(L"test"));
 }
 
 TEST(PrintfTest, Escape) {
@@ -41,6 +48,11 @@ TEST(PrintfTest, Escape) {
   EXPECT_EQ("% after", fmt::sprintf("%% after"));
   EXPECT_EQ("before % after", fmt::sprintf("before %% after"));
   EXPECT_EQ("%s", fmt::sprintf("%%s"));
+  EXPECT_EQ(L"%", fmt::sprintf(L"%%"));
+  EXPECT_EQ(L"before %", fmt::sprintf(L"before %%"));
+  EXPECT_EQ(L"% after", fmt::sprintf(L"%% after"));
+  EXPECT_EQ(L"before % after", fmt::sprintf(L"before %% after"));
+  EXPECT_EQ(L"%s", fmt::sprintf(L"%%s"));
 }
 
 TEST(PrintfTest, PositionalArgs) {
@@ -408,7 +420,8 @@ TEST(PrintfTest, Char) {
   int max = std::numeric_limits<int>::max();
   EXPECT_PRINTF(fmt::format("{}", static_cast<char>(max)), "%c", max);
   //EXPECT_PRINTF("x", "%lc", L'x');
-  // TODO: test wchar_t
+  EXPECT_PRINTF(L"x", L"%c", L'x');
+  EXPECT_PRINTF(fmt::format(L"{}", static_cast<wchar_t>(max)), L"%c", max);
 }
 
 TEST(PrintfTest, String) {
@@ -416,7 +429,10 @@ TEST(PrintfTest, String) {
   const char *null_str = 0;
   EXPECT_PRINTF("(null)", "%s", null_str);
   EXPECT_PRINTF("    (null)", "%10s", null_str);
-  // TODO: wide string
+  EXPECT_PRINTF(L"abc", L"%s", L"abc");
+  const wchar_t *null_wstr = 0;
+  EXPECT_PRINTF(L"(null)", L"%s", null_wstr);
+  EXPECT_PRINTF(L"    (null)", L"%10s", null_wstr);
 }
 
 TEST(PrintfTest, Pointer) {
@@ -430,6 +446,16 @@ TEST(PrintfTest, Pointer) {
   EXPECT_PRINTF(fmt::format("{:p}", s), "%p", s);
   const char *null_str = 0;
   EXPECT_PRINTF("(nil)", "%p", null_str);
+
+  p = &n;
+  EXPECT_PRINTF(fmt::format(L"{}", p), L"%p", p);
+  p = 0;
+  EXPECT_PRINTF(L"(nil)", L"%p", p);
+  EXPECT_PRINTF(L"     (nil)", L"%10p", p);
+  const wchar_t *w = L"test";
+  EXPECT_PRINTF(fmt::format(L"{:p}", w), L"%p", w);
+  const wchar_t *null_wstr = 0;
+  EXPECT_PRINTF(L"(nil)", L"%p", null_wstr);
 }
 
 TEST(PrintfTest, Location) {

@@ -121,12 +121,14 @@ struct formatter<T, Char,
   }
 };
 
-inline void vprint(std::ostream &os, string_view format_str, format_args args) {
-  memory_buffer buffer;
+template <typename Char>
+inline void vprint(std::basic_ostream<Char> &os,
+                   basic_string_view<Char> format_str,
+                   basic_format_args<typename buffer_context<Char>::type> args) {
+  basic_memory_buffer<Char> buffer;
   vformat_to(buffer, format_str, args);
   internal::write(os, buffer);
 }
-
 /**
   \rst
   Prints formatted data to the stream *os*.
@@ -139,8 +141,15 @@ inline void vprint(std::ostream &os, string_view format_str, format_args args) {
 template <typename... Args>
 inline void print(std::ostream &os, string_view format_str,
                   const Args & ... args) {
-  vprint(os, format_str, make_format_args(args...));
+  vprint(os, format_str, make_format_args<format_context>(args...));
 }
+
+template <typename... Args>
+inline void print(std::wostream &os, wstring_view format_str,
+                  const Args & ... args) {
+  vprint(os, format_str, make_format_args<wformat_context>(args...));
+}
+
 }  // namespace fmt
 
 #endif  // FMT_OSTREAM_H_

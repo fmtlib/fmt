@@ -96,6 +96,7 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
 #endif // defined(_WIN32) && defined(__MINGW32__) && !defined(__NO_ISOCEXT)
 
 const char RESET_COLOR[] = "\x1b[0m";
+const wchar_t WRESET_COLOR[] = L"\x1b[0m"; 
 
 typedef void (*FormatFunc)(internal::buffer &, int, string_view);
 
@@ -489,7 +490,17 @@ FMT_FUNC void vprint(std::FILE *f, string_view format_str, format_args args) {
   std::fwrite(buffer.data(), 1, buffer.size(), f);
 }
 
+FMT_FUNC void vprint(std::FILE *f, wstring_view format_str, wformat_args args) {
+  wmemory_buffer buffer;
+  vformat_to(buffer, format_str, args);
+  std::fwrite(buffer.data(), sizeof(wchar_t), buffer.size(), f);
+}
+
 FMT_FUNC void vprint(string_view format_str, format_args args) {
+  vprint(stdout, format_str, args);
+}
+
+FMT_FUNC void vprint(wstring_view format_str, wformat_args args) {
   vprint(stdout, format_str, args);
 }
 
@@ -499,6 +510,14 @@ FMT_FUNC void vprint_colored(color c, string_view format, format_args args) {
   std::fputs(escape, stdout);
   vprint(format, args);
   std::fputs(RESET_COLOR, stdout);
+}
+
+FMT_FUNC void vprint_colored(color c, wstring_view format, wformat_args args) {
+  wchar_t escape[] = L"\x1b[30m";
+  escape[3] = static_cast<wchar_t>('0' + c);
+  std::fputws(escape, stdout);
+  vprint(format, args);
+  std::fputws(WRESET_COLOR, stdout);
 }
 
 FMT_FUNC locale locale_provider::locale() { return fmt::locale(); }
