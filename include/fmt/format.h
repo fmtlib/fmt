@@ -260,7 +260,34 @@ inline dummy_int _isnan(...) { return dummy_int(); }
 struct fp {
   uint64_t f;
   int e;
+
   fp(uint64_t f, int e): f(f), e(e) {}
+
+  // Constructs fp from an IEEE754 double. It is a template to prevent compile
+  // errors on platforms where double is not IEEE754.
+  template <typename Double>
+  explicit fp(Double d) {
+    // Assume double is in the format [sign][exponent][significand].
+    typedef std::numeric_limits<Double> limits;
+    const int double_size =
+      sizeof(Double) * std::numeric_limits<unsigned char>::digits;
+    // Subtract 1 to account for an implicit most significant bit in the
+    // normalized form.
+    const int significand_size = limits::digits - 1;
+    const int exponent_size = double_size - significand_size - 1;  // -1 for sign
+    const uint64_t implicit_bit = 1ull << significand_size;
+    const uint64_t significand_mask = implicit_bit - 1;
+    const uint64_t exponent_mask = (~0ull >> 1) & ~significand_mask;
+    const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
+    auto u = bit_cast<uint64_t>(d);
+    auto biased_e = (u & exponent_mask) >> significand_size;
+    f = u & significand_mask;
+    if (biased_e != 0)
+      f += implicit_bit;
+    else
+      biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
+    e = biased_e - exponent_bias - significand_size;
+  }
 };
 
 // Returns an fp number representing x - y. Result may not be normalized.
