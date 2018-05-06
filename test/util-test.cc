@@ -397,6 +397,16 @@ TEST(FixedBufferTest, BufferOverflow) {
   EXPECT_THROW_MSG(buffer.resize(11), std::runtime_error, "buffer overflow");
 }
 
+TEST(UtilTest, BitCast) {
+  struct S {
+    uint32_t u[2];
+  };
+  auto s = fmt::internal::bit_cast<S>(uint64_t(42));
+  EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), 42);
+  s = fmt::internal::bit_cast<S>(uint64_t(~0ull));
+  EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), ~0ull);
+}
+
 TEST(UtilTest, Increment) {
   char s[10] = "123";
   increment(s);

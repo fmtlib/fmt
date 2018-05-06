@@ -211,6 +211,17 @@ inline uint32_t clzll(uint64_t x) {
 namespace fmt {
 namespace internal {
 
+// An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't produce
+// undefined behavior (e.g. due to type aliasing).
+// Example: uint64_t d = bit_cast<uint64_t>(2.718);
+template <typename Dest, typename Source>
+inline Dest bit_cast(const Source& source) {
+  static_assert(sizeof(Dest) == sizeof(Source), "size mismatch");
+  Dest dest;
+  std::memcpy(&dest, &source, sizeof(dest));
+  return dest;
+}
+
 // An implementation of begin and end for pre-C++11 compilers such as gcc 4.
 template <typename C>
 FMT_CONSTEXPR auto begin(const C &c) -> decltype(c.begin()) {
