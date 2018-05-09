@@ -200,6 +200,11 @@ allocator::
       return vformat(alloc, format_str, fmt::make_format_args(args...));
     }
 
+The allocator will be used for the output container only. If you are using named
+arguments, the container that stores pointers to them will be allocated using
+the default allocator. Also floating-point formatting falls back on ``sprintf``
+which may do allocations.
+
 Custom formatting of built-in types
 -----------------------------------
 
