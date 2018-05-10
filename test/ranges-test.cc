@@ -13,16 +13,14 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#define FMT_HEADER_ONLY   1
 #include "fmt/ranges.h"
 
 #include "gtest/gtest.h"
 
-
 #include <vector>
 #include <array>
 #include <map>
-#include <string_view>
+
 
 TEST(RangesTest, FormatVector) {
   std::vector<int32_t> iv{ 1,2,3,5,7,11 };
