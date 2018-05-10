@@ -52,8 +52,8 @@
 // GCC doesn't allow throw in constexpr until version 6 (bug 67371).
 #ifndef FMT_USE_CONSTEXPR
 # define FMT_USE_CONSTEXPR \
-  (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_GCC_VERSION >= 600 || \
-   FMT_MSC_VER >= 1910)
+  (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VER >= 1910 || \
+   (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L))
 #endif
 #if FMT_USE_CONSTEXPR
 # define FMT_CONSTEXPR constexpr
