@@ -80,6 +80,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
           -Wnull-dereference -Wduplicated-cond)
   endif ()
+
+  set(WERROR_FLAG -Werror)
 endif ()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -87,6 +89,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       -Wno-weak-vtables -Wno-padded -Wno-gnu-statement-expression
       -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-reserved-id-macro
       -Wno-global-constructors -Wno-disabled-macro-expansion)
+
+  set(WERROR_FLAG -Werror)
+endif ()
+
+if (MSVC)
+  set(PEDANTIC_COMPILE_FLAGS /W4)
+  set(WERROR_FLAG /WX)
 endif ()
 
 if (MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
@@ -135,6 +144,9 @@ add_library(fmt::fmt ALIAS fmt)
 # Starting with CMake 3.1 the CXX_STANDARD property can be used instead.
 # Don't export -std since it may break projects that use other standards.
 target_compile_options(fmt PRIVATE ${CPP14_FLAG})
+if (FMT_WERROR)
+  target_compile_options(fmt PRIVATE ${WERROR_FLAG})
+endif ()
 if (FMT_PEDANTIC)
   target_compile_options(fmt PRIVATE ${PEDANTIC_COMPILE_FLAGS})
 endif ()

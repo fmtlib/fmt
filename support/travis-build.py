@@ -86,12 +86,12 @@ test_build_dir = os.path.join(fmt_dir, "_build_test")
 # Configure library.
 makedirs_if_not_exist(build_dir)
 common_cmake_flags = [
-    '-DCMAKE_INSTALL_PREFIX=' + install_dir, '-DCMAKE_BUILD_TYPE=' + build
+    '-DCMAKE_INSTALL_PREFIX=' + install_dir, '-DCMAKE_BUILD_TYPE=' + build,
 ]
 extra_cmake_flags = []
 if standard != '14':
     extra_cmake_flags = ['-DCMAKE_CXX_FLAGS=-std=c++' + standard]
-check_call(['cmake', '-DFMT_DOC=OFF', '-DFMT_PEDANTIC=ON', fmt_dir] +
+check_call(['cmake', '-DFMT_DOC=OFF', '-DFMT_PEDANTIC=ON', '-DFMT_WERROR=ON', fmt_dir] +
            common_cmake_flags + extra_cmake_flags, cwd=build_dir)
 
 # Build library.
