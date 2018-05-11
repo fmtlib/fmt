@@ -49,10 +49,12 @@
 # define FMT_CLANG_VERSION 0
 #endif
 
-#if defined(__INTEL_COMPILER)
+#ifdef __INTEL_COMPILER
 # define FMT_ICC_VERSION __INTEL_COMPILER
 #elif defined(__ICL)
 # define FMT_ICC_VERSION __ICL
+#else
+# define FMT_ICC_VERSION 0
 #endif
 
 #ifdef _MSC_VER
@@ -73,7 +75,7 @@
 # pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
-#if FMT_CLANG_VERSION && !defined(FMT_ICC_VERSION)
+#if FMT_CLANG_VERSION && !FMT_ICC_VERSION
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
 # pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
@@ -114,7 +116,7 @@
 // For Intel's compiler both it and the system gcc/msc must support UDLs.
 # if (FMT_HAS_FEATURE(cxx_user_literals) || \
       FMT_GCC_VERSION >= 407 || FMT_MSC_VER >= 1900) && \
-      (!defined(FMT_ICC_VERSION) || FMT_ICC_VERSION >= 1500)
+      (!FMT_ICC_VERSION || FMT_ICC_VERSION >= 1500)
 #  define FMT_USE_USER_DEFINED_LITERALS 1
 # else
 #  define FMT_USE_USER_DEFINED_LITERALS 0
@@ -1614,6 +1616,11 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
   return value;
 }
 
+#if FMT_MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4512)
+#endif
+
 template <typename Char, typename Context>
 class custom_formatter: public function<bool> {
  private:
@@ -1630,6 +1637,10 @@ class custom_formatter: public function<bool> {
   template <typename T>
   bool operator()(T) const { return false; }
 };
+
+#if FMT_MSC_VER
+#pragma warning(pop)
+#endif
 
 template <typename T>
 struct is_integer {

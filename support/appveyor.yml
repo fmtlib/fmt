@@ -1,22 +1,49 @@
-configuration:
-  - Debug
-  - Release
+configuration: Debug
 
-image: Visual Studio 2017
+clone_depth: 1
+
+platform:
+  - Win32
+  - x64
 
 environment:
   CTEST_OUTPUT_ON_FAILURE: 1
+  MSVC_DEFAULT_OPTIONS: ON
   matrix:
-  - BUILD: msvc
-  - BUILD: msvc
-    PLATFORM: x64
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
+      CMAKE_GENERATOR: Visual Studio 12 2013
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      CMAKE_GENERATOR: Visual Studio 14 2015
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      CMAKE_GENERATOR: Visual Studio 15 2017
+
+matrix:
+  allow_failures:
+    - image: Visual Studio 2013
+
+init:
+  - ps: |
+      If ($env:Platform -Match "x64") {
+        $env:CMAKE_GENERATOR_SUFFIX=" Win64"
+      }
 
 before_build:
   # Workaround for CMake not wanting sh.exe on PATH for MinGW.
-  - set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
+  - ps: |
+      mkdir build
+      cd build
+    
+      cmake -G "$($env:CMAKE_GENERATOR)$($env:CMAKE_GENERATOR_SUFFIX)" -DFMT_WERROR=OFF -DFMT_PEDANTIC=ON -DCMAKE_BUILD_TYPE=$env:CONFIGURATION ..
 
-build_script:
-  - python support/appveyor-build.py
+build:
+  project: C:\projects\fmt\build\fmt.sln
+  parallel: true
+  verbosity: normal
+
+test_script:
+  - ps: |
+      cd build
+      ctest -C $env:CONFIGURATION
 
 on_failure:
   - appveyor PushArtifact Testing/Temporary/LastTest.log
