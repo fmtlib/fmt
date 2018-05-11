@@ -219,7 +219,7 @@ class basic_string_view {
 #else
   struct type {
     const char *data() const { return FMT_NULL; }
-    size_t size() const { return 0; };
+    size_t size() const { return 0; }
   };
 #endif
 
@@ -557,7 +557,7 @@ struct typed_value : value<Context> {
 template <typename Context, typename T>
 FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T &value);
 
-#if FMT_GCC_VERSION
+#if FMT_GCC_VERSION >= 406
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuseless-cast"
 #endif
@@ -629,7 +629,7 @@ FMT_MAKE_VALUE(pointer_type, const void*, const void*)
 FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
 #endif
 
-#if FMT_GCC_VERSION
+#if FMT_GCC_VERSION >= 406
 // -Wuseless-cast
 #pragma GCC diagnostic pop
 #endif

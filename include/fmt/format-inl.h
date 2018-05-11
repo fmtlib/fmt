@@ -45,12 +45,6 @@
 # define FMT_CATCH(x) if (false)
 #endif
 
-#ifdef __GNUC__
-// Disable the warning about declaration shadowing because it affects too
-// many valid cases.
-# pragma GCC diagnostic ignored "-Wshadow"
-#endif
-
 #ifdef _MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4127)  // conditional expression is constant
@@ -228,7 +222,7 @@ FMT_FUNC void system_error::init(
 }
 
 namespace internal {
-#ifdef __GNUC__
+#if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #endif
@@ -261,7 +255,7 @@ int char_traits<wchar_t>::format_float(
       FMT_SWPRINTF(buffer, size, format, width, precision, value);
 }
 
-#ifdef __GNUC__
+#if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
 #pragma GCC diagnostic pop
 #endif
 

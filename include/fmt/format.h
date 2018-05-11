@@ -318,7 +318,7 @@ fp operator*(fp x, fp y);
 // Compute k such that its cached power c_k = c_k.f * pow(2, c_k.e) satisfies
 // min_exponent <= c_k.e + e <= min_exponent + 3.
 inline int compute_cached_power_index(int e, int min_exponent) {
-  constexpr double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
+  FMT_CONSTEXPR_DECL double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
   return static_cast<int>(std::ceil((min_exponent - e + 63) * one_over_log2_10));
 }
 
