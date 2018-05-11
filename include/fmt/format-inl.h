@@ -115,8 +115,8 @@ int safe_strerror(
     void operator=(const StrError &) {}
 
 #if FMT_CLANG_VERSION
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-member-function"
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunused-member-function"
 #endif
 
     // Handle the result of XSI-compliant version of strerror_r.
@@ -154,7 +154,7 @@ int safe_strerror(
     }
 
 #if FMT_CLANG_VERSION
-#pragma clang diagnostic pop
+# pragma clang diagnostic pop
 #endif
 
    public:
@@ -223,8 +223,8 @@ FMT_FUNC void system_error::init(
 
 namespace internal {
 #if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #endif
 
 template <typename T>
@@ -256,7 +256,7 @@ int char_traits<wchar_t>::format_float(
 }
 
 #if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
-#pragma GCC diagnostic pop
+# pragma GCC diagnostic pop
 #endif
 
 template <typename T>
@@ -479,14 +479,14 @@ void basic_fixed_buffer<Char>::grow(std::size_t) {
 }
 
 #if FMT_CLANG_VERSION
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wmissing-noreturn"
 #endif
 FMT_FUNC void internal::error_handler::on_error(const char *message) {
   FMT_THROW(format_error(message));
 }
 #if FMT_CLANG_VERSION
-#pragma clang diagnostic pop
+# pragma clang diagnostic pop
 #endif
 
 FMT_FUNC void report_system_error(

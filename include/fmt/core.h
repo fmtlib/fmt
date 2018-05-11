@@ -558,8 +558,8 @@ template <typename Context, typename T>
 FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T &value);
 
 #if FMT_GCC_VERSION >= 406
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuseless-cast"
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wuseless-cast"
 #endif
 
 #define FMT_MAKE_VALUE(TAG, ArgType, ValueType) \
@@ -631,7 +631,7 @@ FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
 
 #if FMT_GCC_VERSION >= 406
 // -Wuseless-cast
-#pragma GCC diagnostic pop
+# pragma GCC diagnostic pop
 #endif
 
 // Formatting of arbitrary pointers is disallowed. If you want to output a

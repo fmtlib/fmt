@@ -77,9 +77,16 @@
 
 #if FMT_CLANG_VERSION && !FMT_ICC_VERSION
 # pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wswitch-enum"
+# pragma clang diagnostic ignored "-Wweak-vtables"
+# pragma clang diagnostic ignored "-Wpadded"
+# pragma clang diagnostic ignored "-Wgnu-statement-expression"
+# pragma clang diagnostic ignored "-Wc++98-compat"
+# pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+# pragma clang diagnostic ignored "-Wglobal-constructors"
+# pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
 # pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
 # pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
-# pragma clang diagnostic ignored "-Wswitch-enum"
 #endif
 
 #include "core.h"
@@ -1617,8 +1624,8 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
 }
 
 #if FMT_MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4512)
+# pragma warning(push)
+# pragma warning(disable: 4512)
 #endif
 
 template <typename Char, typename Context>
@@ -1639,7 +1646,7 @@ class custom_formatter: public function<bool> {
 };
 
 #if FMT_MSC_VER
-#pragma warning(pop)
+# pragma warning(pop)
 #endif
 
 template <typename T>
@@ -2564,8 +2571,8 @@ class basic_writer {
 
     void on_num() {
       #if FMT_CLANG_VERSION
-      #pragma clang diagnostic push
-      #pragma clang diagnostic ignored "-Wundefined-func-template"
+      # pragma clang diagnostic push
+      # pragma clang diagnostic ignored "-Wundefined-func-template"
       #endif
       unsigned num_digits = internal::count_digits(abs_value);
       char_type sep = internal::thousands_sep<char_type>(writer.locale_.get());
@@ -2573,7 +2580,7 @@ class basic_writer {
       writer.write_int(size, get_prefix(), spec,
                        num_writer{abs_value, size, sep});
       #if FMT_CLANG_VERSION
-      #pragma clang diagnostic pop
+      # pragma clang diagnostic pop
       #endif
     }
 

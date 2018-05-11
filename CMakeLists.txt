@@ -88,7 +88,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(PEDANTIC_COMPILE_FLAGS -Weverything -Wpedantic
       -Wno-weak-vtables -Wno-padded -Wno-gnu-statement-expression
       -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-reserved-id-macro
-      -Wno-global-constructors -Wno-disabled-macro-expansion)
+      -Wno-global-constructors -Wno-disabled-macro-expansion
+      -Wno-switch-enum -Wno-documentation-unknown-command
+      -Wno-gnu-string-literal-operator-template)
 
   set(WERROR_FLAG -Werror)
 endif ()

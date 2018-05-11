@@ -19,7 +19,8 @@ environment:
 
 matrix:
   allow_failures:
-    - image: Visual Studio 2013
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
+      CMAKE_GENERATOR: Visual Studio 12 2013
 
 init:
   - ps: |
@@ -28,12 +29,10 @@ init:
       }
 
 before_build:
-  # Workaround for CMake not wanting sh.exe on PATH for MinGW.
-  - ps: |
-      mkdir build
-      cd build
+ - mkdir build
+ - cd build
     
-      cmake -G "$($env:CMAKE_GENERATOR)$($env:CMAKE_GENERATOR_SUFFIX)" -DFMT_WERROR=OFF -DFMT_PEDANTIC=ON -DCMAKE_BUILD_TYPE=$env:CONFIGURATION ..
+ - ps: cmake -G "$($env:CMAKE_GENERATOR)$($env:CMAKE_GENERATOR_SUFFIX)" -DFMT_WERROR=OFF -DFMT_PEDANTIC=ON -DCMAKE_BUILD_TYPE=Debug ..
 
 build:
   project: C:\projects\fmt\build\fmt.sln
@@ -42,8 +41,14 @@ build:
 
 test_script:
   - ps: |
-      cd build
-      ctest -C $env:CONFIGURATION
+      New-Item .\DartConfiguration.tcl -ItemType file
+      ctest -C Debug -T Test
+      $XSLInputElement = New-Object System.Xml.Xsl.XslCompiledTransform
+      $XslInputElement.Load("https://raw.githubusercontent.com/rpavlik/jenkins-ctest-plugin/master/ctest-to-junit.xsl")
+      $file = $(ls Testing\*\Test.xml) | Select -first 1
+      $XSLInputElement.Transform((Resolve-Path $file), (Join-Path (Resolve-Path .) "ctest-to-junit-results.xml"))
+      $wc = New-Object 'System.Net.WebClient'
+      $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\ctest-to-junit-results.xml))
 
 on_failure:
   - appveyor PushArtifact Testing/Temporary/LastTest.log
