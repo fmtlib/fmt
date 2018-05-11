@@ -30,22 +30,16 @@
 # define FMT_HAS_INCLUDE(x) 0
 #endif
 
-#if defined(__GNUC__) && !defined(__clang__)
-# define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
+#ifdef __has_cpp_attribute
+# define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
 #else
-# define FMT_GCC_VERSION 0
+# define FMT_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
 #if __cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__)
 # define FMT_HAS_GXX_CXX11 FMT_GCC_VERSION
 #else
 # define FMT_HAS_GXX_CXX11 0
-#endif
-
-#ifdef _MSC_VER
-# define FMT_MSC_VER _MSC_VER
-#else
-# define FMT_MSC_VER 0
 #endif
 
 // Check if relaxed c++14 constexpr is supported.
@@ -92,6 +86,12 @@
 
 #ifndef FMT_USE_NULLPTR
 # define FMT_USE_NULLPTR 0
+#endif
+
+#if FMT_HAS_CPP_ATTRIBUTE(noreturn)
+# define FMT_NORETURN [[noreturn]]
+#else
+# define FMT_NORETURN /*noreturn*/
 #endif
 
 // Check if exceptions are disabled.
@@ -557,6 +557,11 @@ struct typed_value : value<Context> {
 template <typename Context, typename T>
 FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T &value);
 
+#if FMT_GCC_VERSION
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+#endif
+
 #define FMT_MAKE_VALUE(TAG, ArgType, ValueType) \
   template <typename C> \
   FMT_CONSTEXPR typed_value<C, TAG> make_value(ArgType val) { \
@@ -622,6 +627,11 @@ FMT_MAKE_VALUE(pointer_type, const void*, const void*)
 
 #if FMT_USE_NULLPTR
 FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
+#endif
+
+#if FMT_GCC_VERSION
+// -Wuseless-cast
+#pragma GCC diagnostic pop
 #endif
 
 // Formatting of arbitrary pointers is disallowed. If you want to output a

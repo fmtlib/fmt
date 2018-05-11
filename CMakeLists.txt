@@ -59,8 +59,33 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 
 include(cxx14)
 
-if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wshadow -pedantic)
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic
+      -Wold-style-cast -Wfloat-equal -Wlogical-op -Wundef
+      -Wredundant-decls -Wshadow -Wwrite-strings -Wpointer-arith
+      -Wcast-qual -Wformat=2 -Wmissing-include-dirs
+      -Wcast-align -Wnon-virtual-dtor
+      -Wctor-dtor-privacy -Wdisabled-optimization
+      -Winvalid-pch -Wmissing-declarations -Woverloaded-virtual)
+  if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept)
+  endif ()
+  if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wdouble-promotion
+          -Wtrampolines -Wzero-as-null-pointer-constant -Wuseless-cast
+          -Wvector-operation-performance -Wsized-deallocation)
+  endif ()
+  if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.0)
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
+          -Wnull-dereference -Wduplicated-cond)
+  endif ()
+endif ()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(PEDANTIC_COMPILE_FLAGS -Weverything -Wpedantic
+      -Wno-weak-vtables -Wno-padded -Wno-gnu-statement-expression
+      -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-reserved-id-macro
+      -Wno-global-constructors -Wno-disabled-macro-expansion)
 endif ()
 
 if (MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")

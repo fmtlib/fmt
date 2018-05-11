@@ -195,33 +195,39 @@ TEST(ExpectSystemErrorTest, DoesNotGenerateUnreachableCodeWarning) {
 }
 
 TEST(AssertionSyntaxTest, ExceptionAssertionBehavesLikeSingleStatement) {
-  if (::testing::internal::AlwaysFalse())
+  if (::testing::internal::AlwaysFalse()) {
     EXPECT_THROW_MSG(do_nothing(), std::exception, "");
+  }
 
-  if (::testing::internal::AlwaysTrue())
+  if (::testing::internal::AlwaysTrue()) {
     EXPECT_THROW_MSG(throw_exception(), std::exception, "test");
-  else
+  } else {
     do_nothing();
+  }
 }
 
 TEST(AssertionSyntaxTest, SystemErrorAssertionBehavesLikeSingleStatement) {
-  if (::testing::internal::AlwaysFalse())
+  if (::testing::internal::AlwaysFalse()) {
     EXPECT_SYSTEM_ERROR(do_nothing(), EDOM, "");
+  }
 
-  if (::testing::internal::AlwaysTrue())
+  if (::testing::internal::AlwaysTrue()) {
     EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, "test");
-  else
+  } else {
     do_nothing();
+  }
 }
 
 TEST(AssertionSyntaxTest, WriteAssertionBehavesLikeSingleStatement) {
-  if (::testing::internal::AlwaysFalse())
+  if (::testing::internal::AlwaysFalse()) {
     EXPECT_WRITE(stdout, std::printf("x"), "x");
+  }
 
-  if (::testing::internal::AlwaysTrue())
+  if (::testing::internal::AlwaysTrue()) {
     EXPECT_WRITE(stdout, std::printf("x"), "x");
-  else
+  } else {
     do_nothing();
+  }
 }
 
 // Tests EXPECT_THROW_MSG.

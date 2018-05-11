@@ -37,6 +37,49 @@
 #include <stdexcept>
 #include <stdint.h>
 
+#if defined(__GNUC__) && !defined(__clang__)
+# define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
+#else
+# define FMT_GCC_VERSION 0
+#endif
+
+#ifdef __clang__
+# define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
+#else
+# define FMT_CLANG_VERSION 0
+#endif
+
+#if defined(__INTEL_COMPILER)
+# define FMT_ICC_VERSION __INTEL_COMPILER
+#elif defined(__ICL)
+# define FMT_ICC_VERSION __ICL
+#endif
+
+#ifdef _MSC_VER
+# define FMT_MSC_VER _MSC_VER
+#else
+# define FMT_MSC_VER 0
+#endif
+
+#if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
+# pragma GCC diagnostic push
+
+// Disable the warning about declaration shadowing because it affects too
+// many valid cases.
+# pragma GCC diagnostic ignored "-Wshadow"
+
+// Disable the warning about implicit conversions that may change the sign of
+// an integer; silencing it otherwise would require many explicit casts.
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
+#if FMT_CLANG_VERSION && !defined(FMT_ICC_VERSION)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
+# pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
+# pragma clang diagnostic ignored "-Wswitch-enum"
+#endif
+
 #include "core.h"
 
 #ifdef _SECURE_SCL
@@ -55,45 +98,8 @@
 # define FMT_HAS_BUILTIN(x) 0
 #endif
 
-#ifdef __GNUC__
-# if FMT_GCC_VERSION >= 406
-#  pragma GCC diagnostic push
-
-// Disable the warning about declaration shadowing because it affects too
-// many valid cases.
-#  pragma GCC diagnostic ignored "-Wshadow"
-
-// Disable the warning about implicit conversions that may change the sign of
-// an integer; silencing it otherwise would require many explicit casts.
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-# endif
-#endif
-
-#ifdef __clang__
-# define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
-#endif
-
-#if defined(__INTEL_COMPILER)
-# define FMT_ICC_VERSION __INTEL_COMPILER
-#elif defined(__ICL)
-# define FMT_ICC_VERSION __ICL
-#endif
-
-#if defined(__clang__) && !defined(FMT_ICC_VERSION)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
-# pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
-# pragma clang diagnostic ignored "-Wpadded"
-#endif
-
 #ifdef __GNUC_LIBSTD__
 # define FMT_GNUC_LIBSTD_VERSION (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
-#endif
-
-#ifdef __has_cpp_attribute
-# define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
-#else
-# define FMT_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
 #ifndef FMT_THROW
@@ -115,9 +121,8 @@
 # endif
 #endif
 
-#if FMT_USE_USER_DEFINED_LITERALS && \
-    ((FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L) || \
-    (defined(FMT_CLANG_VERSION) && FMT_CLANG_VERSION >= 304))
+#if FMT_USE_USER_DEFINED_LITERALS && __cplusplus >= 201402L && \
+    (FMT_GCC_VERSION >= 600 || FMT_CLANG_VERSION >= 304)
 # define FMT_UDL_TEMPLATE 1
 #else
 # define FMT_UDL_TEMPLATE 0
@@ -126,7 +131,8 @@
 #ifndef FMT_USE_EXTERN_TEMPLATES
 # ifndef FMT_HEADER_ONLY
 #  define FMT_USE_EXTERN_TEMPLATES \
-     (FMT_CLANG_VERSION >= 209 || (FMT_GCC_VERSION >= 303 && FMT_HAS_GXX_CXX11))
+     ((FMT_CLANG_VERSION >= 209 && __cplusplus >= 201103L) || \
+      (FMT_GCC_VERSION >= 303 && FMT_HAS_GXX_CXX11))
 # else
 #  define FMT_USE_EXTERN_TEMPLATES 0
 # endif
@@ -134,6 +140,14 @@
 
 #if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_trailing_return) || FMT_MSC_VER >= 1600
 # define FMT_USE_TRAILING_RETURN 1
+#else
+# define FMT_USE_TRAILING_RETURN 0
+#endif
+
+#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_rvalue_references) || FMT_MSC_VER >= 1600
+# define FMT_USE_RVALUE_REFERENCES 1
+#else
+# define FMT_USE_RVALUE_REFERENCES 0
 #endif
 
 // __builtin_clz is broken in clang with Microsoft CodeGen:
@@ -380,8 +394,6 @@ class format_error : public std::runtime_error {
 
   explicit format_error(const std::string &message)
   : std::runtime_error(message) {}
-
-  FMT_API ~format_error() throw();
 };
 
 namespace internal {
@@ -2306,8 +2318,6 @@ class system_error : public std::runtime_error {
     init(error_code, message, make_format_args(args...));
   }
 
-  FMT_API ~system_error() FMT_DTOR_NOEXCEPT;
-
   int error_code() const { return error_code_; }
 };
 
@@ -2542,11 +2552,18 @@ class basic_writer {
     };
 
     void on_num() {
+      #if FMT_CLANG_VERSION
+      #pragma clang diagnostic push
+      #pragma clang diagnostic ignored "-Wundefined-func-template"
+      #endif
       unsigned num_digits = internal::count_digits(abs_value);
       char_type sep = internal::thousands_sep<char_type>(writer.locale_.get());
       unsigned size = num_digits + SEP_SIZE * ((num_digits - 1) / 3);
       writer.write_int(size, get_prefix(), spec,
                        num_writer{abs_value, size, sep});
+      #if FMT_CLANG_VERSION
+      #pragma clang diagnostic pop
+      #endif
     }
 
     void on_error() {
@@ -3647,11 +3664,11 @@ FMT_END_NAMESPACE
 #endif
 
 // Restore warnings.
-#if FMT_GCC_VERSION >= 406
+#if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
 # pragma GCC diagnostic pop
 #endif
 
-#if defined(__clang__) && !defined(FMT_ICC_VERSION)
+#if FMT_CLANG_VERSION && !defined(FMT_ICC_VERSION)
 # pragma clang diagnostic pop
 #endif
 

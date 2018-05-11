@@ -402,7 +402,7 @@ TEST(UtilTest, BitCast) {
     uint32_t u[2];
   };
   auto s = fmt::internal::bit_cast<S>(uint64_t(42));
-  EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), 42);
+  EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), 42ull);
   s = fmt::internal::bit_cast<S>(uint64_t(~0ull));
   EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), ~0ull);
 }
@@ -765,7 +765,7 @@ TEST(UtilTest, FormatSystemError) {
   try {
     std::allocator<char> alloc;
     alloc.deallocate(alloc.allocate(max_size), max_size);
-  } catch (std::bad_alloc) {
+  } catch (const std::bad_alloc&) {
     throws_on_alloc = true;
   }
   if (!throws_on_alloc) {

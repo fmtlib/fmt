@@ -74,8 +74,6 @@ FMT_BEGIN_NAMESPACE
 FMT_FUNC format_error::~format_error() throw() {}
 FMT_FUNC system_error::~system_error() FMT_DTOR_NOEXCEPT {}
 
-namespace {
-
 #ifndef _MSC_VER
 # define FMT_SNPRINTF snprintf
 #else  // _MSC_VER
@@ -122,6 +120,11 @@ int safe_strerror(
     // A noop assignment operator to avoid bogus warnings.
     void operator=(const StrError &) {}
 
+#if FMT_CLANG_VERSION
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-member-function"
+#endif
+
     // Handle the result of XSI-compliant version of strerror_r.
     int handle(int result) {
       // glibc versions before 2.13 return result in errno.
@@ -155,6 +158,10 @@ int safe_strerror(
       buffer_ = strerror(error_code_);
       return errno;
     }
+
+#if FMT_CLANG_VERSION
+#pragma clang diagnostic pop
+#endif
 
    public:
     StrError(int err_code, char *&buf, std::size_t buf_size)
@@ -221,6 +228,11 @@ FMT_FUNC void system_error::init(
 }
 
 namespace internal {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+
 template <typename T>
 int char_traits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
@@ -248,6 +260,10 @@ int char_traits<wchar_t>::format_float(
       FMT_SWPRINTF(buffer, size, format, width, value) :
       FMT_SWPRINTF(buffer, size, format, width, precision, value);
 }
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 template <typename T>
 const char basic_data<T>::DIGITS[] =
@@ -468,9 +484,16 @@ void basic_fixed_buffer<Char>::grow(std::size_t) {
   FMT_THROW(std::runtime_error("buffer overflow"));
 }
 
+#if FMT_CLANG_VERSION
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+#endif
 FMT_FUNC void internal::error_handler::on_error(const char *message) {
   FMT_THROW(format_error(message));
 }
+#if FMT_CLANG_VERSION
+#pragma clang diagnostic pop
+#endif
 
 FMT_FUNC void report_system_error(
     int error_code, fmt::string_view message) FMT_NOEXCEPT {

@@ -153,7 +153,7 @@ TEST(BufferedFileTest, Fileno) {
   EXPECT_DEATH_IF_SUPPORTED({
     try {
       f.fileno();
-    } catch (fmt::system_error) {
+    } catch (const fmt::system_error&) {
       std::exit(1);
     }
   }, "");
