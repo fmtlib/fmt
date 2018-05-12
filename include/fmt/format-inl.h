@@ -69,7 +69,7 @@ inline fmt::internal::null<> strerror_s(char *, std::size_t, ...) {
   return fmt::internal::null<>();
 }
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 
 FMT_FUNC format_error::~format_error() throw() {}
 FMT_FUNC system_error::~system_error() FMT_DTOR_NOEXCEPT {}
@@ -522,7 +522,7 @@ FMT_FUNC void vprint_colored(color c, wstring_view format, wformat_args args) {
 
 FMT_FUNC locale locale_provider::locale() { return fmt::locale(); }
 
-}  // namespace fmt
+FMT_END_NAMESPACE
 
 #ifdef _MSC_VER
 # pragma warning(pop)

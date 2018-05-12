@@ -1090,7 +1090,7 @@ TEST(FormatterTest, FormatConvertibleToStringView) {
   EXPECT_EQ("foo", format("{}", ConvertibleToStringView()));
 }
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 template <>
 struct formatter<Date> {
   template <typename ParseContext>
@@ -1106,7 +1106,7 @@ struct formatter<Date> {
     return ctx.out();
   }
 };
-}
+FMT_END_NAMESPACE
 
 TEST(FormatterTest, FormatCustom) {
   Date date(2012, 12, 9);
@@ -1116,14 +1116,14 @@ TEST(FormatterTest, FormatCustom) {
 
 class Answer {};
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 template <>
 struct formatter<Answer> : formatter<int> {
   auto format(Answer, fmt::format_context &ctx) -> decltype(ctx.out()) {
     return formatter<int>::format(42, ctx);
   }
 };
-}
+FMT_END_NAMESPACE
 
 TEST(FormatterTest, CustomFormat) {
   EXPECT_EQ("42", format("{0}", Answer()));
@@ -1455,7 +1455,7 @@ struct variant {
   explicit variant(const char *) : type(STRING) {}
 };
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 template <>
 struct formatter<variant> : dynamic_formatter<> {
   auto format(variant value, format_context& ctx) -> decltype(ctx.out()) {
@@ -1464,7 +1464,7 @@ struct formatter<variant> : dynamic_formatter<> {
     return dynamic_formatter<>::format("foo", ctx);
   }
 };
-}
+FMT_END_NAMESPACE
 
 TEST(FormatTest, DynamicFormatter) {
   auto num = variant(42);

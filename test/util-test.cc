@@ -54,7 +54,7 @@ basic_format_arg<Context> make_arg(const T &value) {
 }
 }  // namespace
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 template <typename Char>
 struct formatter<Test, Char> {
   template <typename ParseContext>
@@ -70,7 +70,7 @@ struct formatter<Test, Char> {
     return std::copy_n(test, std::strlen(test), ctx.out());
   }
 };
-}
+FMT_END_NAMESPACE
 
 void CheckForwarding(
     MockAllocator<int> &alloc, AllocatorRef< MockAllocator<int> > &ref) {
@@ -459,7 +459,7 @@ TEST(UtilTest, MakeValueWithCustomFormatter) {
   EXPECT_TRUE(ctx.called);
 }
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 namespace internal {
 
 template <typename Char>
@@ -467,7 +467,7 @@ bool operator==(custom_value<Char> lhs, custom_value<Char> rhs) {
   return lhs.value == rhs.value;
 }
 }
-}
+FMT_END_NAMESPACE
 
 // Use a unique result type to make sure that there are no undesirable
 // conversions.

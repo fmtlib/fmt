@@ -133,6 +133,15 @@
 # define FMT_DTOR_NOEXCEPT FMT_NOEXCEPT
 #endif
 
+#if FMT_HAS_FEATURE(cxx_inline_namespaces) || FMT_MSC_VER >= 1900
+# define FMT_INLINE_NAMESPACE inline namespace
+# define FMT_END_NAMESPACE }}
+#else
+# define FMT_INLINE_NAMESPACE namespace
+# define FMT_END_NAMESPACE } using namespace v5; }
+#endif
+#define FMT_BEGIN_NAMESPACE namespace fmt { FMT_INLINE_NAMESPACE v5 {
+
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
 # ifdef FMT_EXPORT
 #  define FMT_API __declspec(dllexport)
@@ -172,7 +181,7 @@
 # include <functional>
 #endif
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 
 // An implementation of declval for pre-C++11 compilers such as gcc 4.
 namespace internal {
@@ -1190,7 +1199,7 @@ template <typename Char>
 struct is_contiguous<std::basic_string<Char>> : std::true_type {};
 
 template <typename Char>
-struct is_contiguous<fmt::internal::basic_buffer<Char>> : std::true_type {};
+struct is_contiguous<internal::basic_buffer<Char>> : std::true_type {};
 
 /** Formats a string and writes the output to ``out``. */
 template <typename Container>
@@ -1288,6 +1297,6 @@ inline void print(wstring_view format_str, const Args & ... args) {
   format_arg_store<wformat_context, Args...> as(args...);
   vprint(format_str, as);
 }
-}  // namespace fmt
+FMT_END_NAMESPACE
 
 #endif  // FMT_CORE_H_
