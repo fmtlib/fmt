@@ -144,32 +144,33 @@ void for_each(Tuple &&tup, F &&f) {
 // =====================================================================================================================
 template <typename TupleT, typename Char>
 struct formatter<TupleT, Char, std::enable_if_t<fmt::internal::is_tuple_like_v<TupleT>>> {
-  fmt::formatting_tuple<Char> formating;
+
+  fmt::formatting_tuple<Char> formatting;
 
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
-    return formating.parse(ctx);
+    return formatting.parse(ctx);
   }
 
   template <typename FormatContext = format_context>
   auto format(const TupleT &values, FormatContext &ctx) -> decltype(ctx.out()) {
     auto out = ctx.out();
     std::size_t i = 0;
-    internal::copy(formating.prefix, out);
+    internal::copy(formatting.prefix, out);
     internal::for_each(values, [&](const auto &v) {
       if (i++ > 0) {
-        internal::copy(formating.delimiter, out);
+        internal::copy(formatting.delimiter, out);
       }
-      if (formating.add_spaces) {
+      if (formatting.add_spaces) {
         format_to(out, " {}", v);
       } else {
         format_to(out, "{}", v);
       }
     });
-    if (formating.add_spaces) {
+    if (formatting.add_spaces) {
       *out++ = ' ';
     }
-    internal::copy(formating.postfix, out);
+    internal::copy(formatting.postfix, out);
 
     return ctx.out();
   }
@@ -177,26 +178,27 @@ struct formatter<TupleT, Char, std::enable_if_t<fmt::internal::is_tuple_like_v<T
 
 template <typename RangeT, typename Char>
 struct formatter<RangeT, Char, std::enable_if_t<fmt::internal::is_range_v<RangeT>>> {
+
   static FMT_CONSTEXPR std::size_t range_length_limit =
       FMT_RANGE_OUTPUT_LENGTH_LIMIT;  // output only up to N items from the range.
 
-  fmt::formatting_range<Char> formating;
+  fmt::formatting_range<Char> formatting;
 
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
-    return formating.parse(ctx);
+    return formatting.parse(ctx);
   }
 
   template <typename FormatContext>
   auto format(const RangeT &values, FormatContext &ctx) -> decltype(ctx.out()) {
     auto out = ctx.out();
-    internal::copy(formating.prefix, out);
+    internal::copy(formatting.prefix, out);
     std::size_t i = 0;
     for (const auto &it : values) {
       if (i > 0) {
-        internal::copy(formating.delimiter, out);
+        internal::copy(formatting.delimiter, out);
       }
-      if (formating.add_spaces) {
+      if (formatting.add_spaces) {
         format_to(out, " {}", it);
       } else {
         format_to(out, "{}", it);
@@ -206,10 +208,10 @@ struct formatter<RangeT, Char, std::enable_if_t<fmt::internal::is_range_v<RangeT
         break;
       }
     }
-    if (formating.add_spaces) {
+    if (formatting.add_spaces) {
       *out++ = ' ';
     }
-    internal::copy(formating.postfix, out);
+    internal::copy(formatting.postfix, out);
     return ctx.out();
   }
 };
