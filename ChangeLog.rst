@@ -30,19 +30,35 @@
 
 * Added a section on `formatting user-defined <http://fmtlib.net/dev/api.html#formatting-user-defined-types>`_ types to the docs (`#393 <https://github.com/fmtlib/fmt/pull/393>`_). Thanks `@pwm1234 (Phil) <https://github.com/pwm1234>`_.
 
-* Fixed compilation on Android (`#381 <https://github.com/fmtlib/fmt/pull/381>`_).
-  Thanks `@hghwng (Hugh Wang) <https://github.com/hghwng>`_.
-
-* Fixed Linux compilation with ``-fno-exceptions`` (`#402 <https://github.com/fmtlib/fmt/pull/402>`_).
-  Thanks `@JanHellwig (Jan Hellwig) <https://github.com/JanHellwig>`_.
-
 * Implemented thread-safe time formatting (`#395 <https://github.com/fmtlib/fmt/issues/395>`_, `#396 <https://github.com/fmtlib/fmt/pull/396>`_).
   Thanks `@codicodi <https://github.com/codicodi>`_.
+
+* Added a version macro ``FMT_VERSION`` (`#411 <https://github.com/fmtlib/fmt/issues/411>`_)
 
 * Removed unnecessary ``fmt/`` prefix in includes (`#397 <https://github.com/fmtlib/fmt/pull/397>`_).
   Thanks `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
 
 * Renamed ``CHAR_WIDTH`` to ``CHAR_SIZE`` to avoid collision with ISO/IEC TS 18661-1:2014 macro.
+
+* Replaced literal 0 with ``nullptr`` in pointer contexts (`#409 <https://github.com/fmtlib/fmt/pull/409>`_).
+  Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
+
+* Fixed minimal supported library subset (`#418 <https://github.com/fmtlib/fmt/issues/418>`_, `#419 <https://github.com/fmtlib/fmt/pull/419>`_, `#420 <https://github.com/fmtlib/fmt/pull/420>`_).
+  Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
+
+* Fixed compilation on Android (`#381 <https://github.com/fmtlib/fmt/pull/381>`_).
+  Thanks `@hghwng (Hugh Wang) <https://github.com/hghwng>`_.
+
+* Fixed compilation with ``-fno-exceptions`` (`#402 <https://github.com/fmtlib/fmt/pull/402>`_, `#405 <https://github.com/fmtlib/fmt/pull/405>`_).
+  Thanks `@JanHellwig (Jan Hellwig) <https://github.com/JanHellwig>`_.
+
+* Fixed compilation as a shared library with Clang (`#413 <https://github.com/fmtlib/fmt/pull/413>`_). Thanks `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_.
+
+* Fixed test compilation on FreeBSD.  (`#433 <https://github.com/fmtlib/fmt/issues/433>`_). Thanks `@WscriChy  <https://github.com/WscriChy>`_.
+
+* Fixed signbit detection (`#423 <https://github.com/fmtlib/fmt/pull/423>`_).
+
+* Fixed various warnings (`#409 <https://github.com/fmtlib/fmt/issues/414>`_). Thanks `@Lectem <https://github.com/Lectem>`_, `@chenhayat (Chen Hayat) <https://github.com/chenhayat>`_.
 
 4.1.0 - 2017-12-20
 ------------------
