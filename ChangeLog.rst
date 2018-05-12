@@ -1,5 +1,32 @@
-4.1.1 - TBD
-------------
+5.0.0 - TBD
+-----------
+
+* Added a requirement for compiler support for variadic templates and dropped ``FMT_VARIADIC_*`` emulation macros. Variadic templates are available since GCC 4.4, Clang 2.9 and MSVC 18.0 (2013). For older compilers use `version 4.x <https://github.com/fmtlib/fmt/releases/tag/4.1.0>`_ which continues to be maintained.
+
+* Renamed symbols to follow standard C++ naming conventions and cleaned the argument handling API: ``ArgList`` -> ``format_args``, ``ArgArray`` -> ``format_arg_store``, etc.
+
+* Added the ``make_format_args`` function for capturing formatting arguments:
+
+  .. code:: c++
+  
+     // Prints formatted error message.
+     void vreport_error(const char *format, fmt::format_args args) {
+       fmt::print("Error: ");
+       fmt::vprint(format, args);
+     }
+     template <typename... Args>
+     void report_error(const char *format, const Args & ... args) {
+       vreport_error(format, fmt::make_format_args(args...));
+     }
+
+* Added prefix ``v`` to non-variadic functions taking ``format_args`` to distinguish them from variadic ones:
+
+  .. code:: c++
+
+     std::string vformat(string_view format_str, format_args args);
+     
+     template <typename... Args>
+     inline std::string format(string_view format_str, const Args & ... args);
 
 4.1.0 - 2017-12-20
 ------------------
