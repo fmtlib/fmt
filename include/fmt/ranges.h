@@ -35,7 +35,7 @@ struct formatting_range : formatting_base<Char> {
   Char prefix = '{';
   Char delimiter = ',';
   Char postfix = '}';
-  static FMT_CONSTEXPR bool add_spaces = false;
+  static FMT_CONSTEXPR_DECL const bool add_spaces = false;
 };
 
 template <typename Char, typename Enable = void>
@@ -43,7 +43,7 @@ struct formatting_tuple : formatting_base<Char> {
   Char prefix = '[';
   Char delimiter = ',';
   Char postfix = ']';
-  static FMT_CONSTEXPR bool add_spaces = false;
+  static FMT_CONSTEXPR_DECL const bool add_spaces = false;
 };
 
 namespace internal {
@@ -81,11 +81,9 @@ class is_like_std_string {
   static void check(...);
 
  public:
-  static FMT_CONSTEXPR bool value = !std::is_void<decltype(check<T>(nullptr))>::value;
+  static FMT_CONSTEXPR_DECL const bool value = !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
-template <typename T>
-FMT_CONSTEXPR bool is_like_std_string_v = is_like_std_string<T>::value;
 
 template <typename... Ts>
 struct conditional_helper {};
@@ -100,7 +98,10 @@ struct is_range_<T, std::conditional_t<false,
                  void>> : std::true_type {};
 
 template <typename T>
-FMT_CONSTEXPR bool is_range_v = is_range_<T>::value && !is_like_std_string<T>::value;
+struct is_range {
+  static FMT_CONSTEXPR_DECL const bool value = is_range_<T>::value && !is_like_std_string<T>::value;
+};
+
 
 /// tuple_size and tuple_element check.
 template <typename T>
@@ -113,11 +114,13 @@ class is_tuple_like_ {
   static void check(...);
 
  public:
-  static FMT_CONSTEXPR bool value = !std::is_void<decltype(check<T>(nullptr))>::value;
+  static FMT_CONSTEXPR_DECL const bool value = !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
 template <typename T>
-FMT_CONSTEXPR bool is_tuple_like_v = is_tuple_like_<T>::value && !is_range_<T>::value;
+struct is_tuple_like {
+  static FMT_CONSTEXPR_DECL const bool value = is_tuple_like_<T>::value && !is_range_<T>::value;
+};
 
 //=--------------------------------------------------------------------------------------------------------------------
 template <size_t... Is, class Tuple, class F>
@@ -143,7 +146,8 @@ void for_each(Tuple &&tup, F &&f) {
 
 // =====================================================================================================================
 template <typename TupleT, typename Char>
-struct formatter<TupleT, Char, std::enable_if_t<fmt::internal::is_tuple_like_v<TupleT>>> {
+struct formatter<TupleT, Char, 
+    typename std::enable_if<fmt::internal::is_tuple_like<TupleT>::value>::type> {
 
   fmt::formatting_tuple<Char> formatting;
 
@@ -177,10 +181,11 @@ struct formatter<TupleT, Char, std::enable_if_t<fmt::internal::is_tuple_like_v<T
 };
 
 template <typename RangeT, typename Char>
-struct formatter<RangeT, Char, std::enable_if_t<fmt::internal::is_range_v<RangeT>>> {
+struct formatter< RangeT, Char,
+    typename std::enable_if<fmt::internal::is_range<RangeT>::value>::type> {
 
-  static FMT_CONSTEXPR std::size_t range_length_limit =
-      FMT_RANGE_OUTPUT_LENGTH_LIMIT;  // output only up to N items from the range.
+  static FMT_CONSTEXPR_DECL const std::size_t range_length_limit =
+      FMT_RANGE_OUTPUT_LENGTH_LIMIT; // output only up to N items from the range.
 
   fmt::formatting_range<Char> formatting;
 
