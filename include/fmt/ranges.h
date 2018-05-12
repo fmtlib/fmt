@@ -20,7 +20,7 @@
 #define FMT_RANGE_OUTPUT_LENGTH_LIMIT 256
 #endif
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 
 template <typename Char>
 struct formatting_base {
@@ -214,6 +214,6 @@ struct formatter<RangeT, Char, std::enable_if_t<fmt::internal::is_range_v<RangeT
   }
 };
 
-}  // namespace fmt
+FMT_END_NAMESPACE
 
 #endif // FMT_RANGES_H_
