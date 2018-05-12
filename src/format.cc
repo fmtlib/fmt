@@ -7,7 +7,7 @@
 
 #include "fmt/format-inl.h"
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 
 template struct internal::basic_data<void>;
 
@@ -44,4 +44,4 @@ template FMT_API int internal::char_traits<wchar_t>::format_float(
 template FMT_API int internal::char_traits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, long double value);
-}  // namespace fmt
+FMT_END_NAMESPACE

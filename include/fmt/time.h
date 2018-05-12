@@ -11,7 +11,7 @@
 #include "format.h"
 #include <ctime>
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 
 namespace internal{
 inline null<> localtime_r(...) { return null<>(); }
@@ -146,6 +146,6 @@ struct formatter<std::tm, Char> {
 
   basic_memory_buffer<Char> tm_format;
 };
-}
+FMT_END_NAMESPACE
 
 #endif  // FMT_TIME_H_

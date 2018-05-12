@@ -11,8 +11,7 @@
 #include "format.h"
 #include <ostream>
 
-namespace fmt {
-
+FMT_BEGIN_NAMESPACE
 namespace internal {
 
 template <class Char>
@@ -149,7 +148,6 @@ inline void print(std::wostream &os, wstring_view format_str,
                   const Args & ... args) {
   vprint(os, format_str, make_format_args<wformat_context>(args...));
 }
-
-}  // namespace fmt
+FMT_END_NAMESPACE
 
 #endif  // FMT_OSTREAM_H_

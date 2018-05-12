@@ -62,7 +62,7 @@
 
 #define FMT_RETRY(result, expression) FMT_RETRY_VAL(result, expression, -1)
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 
 /**
   \rst
@@ -388,7 +388,7 @@ class Locale {
 
   Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", FMT_NULL)) {
     if (!locale_)
-      FMT_THROW(fmt::system_error(errno, "cannot create locale"));
+      FMT_THROW(system_error(errno, "cannot create locale"));
   }
   ~Locale() { freelocale(locale_); }
 
@@ -404,7 +404,7 @@ class Locale {
   }
 };
 #endif  // FMT_LOCALE
-}  // namespace fmt
+FMT_END_NAMESPACE
 
 #if !FMT_USE_RVALUE_REFERENCES
 namespace std {

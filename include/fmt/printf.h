@@ -13,7 +13,7 @@
 
 #include "ostream.h"
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 namespace internal {
 
 // Checks if a value fits in int - used to avoid warnings about comparing
@@ -706,6 +706,6 @@ inline int fprintf(std::wostream &os, wstring_view format_str,
     typename printf_context<internal::buffer>::type>(args...);
   return vfprintf(os, format_str, vargs);
 }
-}  // namespace fmt
+FMT_END_NAMESPACE
 
 #endif  // FMT_PRINTF_H_

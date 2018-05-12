@@ -161,7 +161,7 @@
 #if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL) && !defined(_MANAGED)
 # include <intrin.h>  // _BitScanReverse, _BitScanReverse64
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 namespace internal {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
 # ifndef __clang__
@@ -206,10 +206,10 @@ inline uint32_t clzll(uint64_t x) {
 }
 # define FMT_BUILTIN_CLZLL(n) fmt::internal::clzll(n)
 }
-}
+FMT_END_NAMESPACE
 #endif
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 namespace internal {
 
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't produce
@@ -246,7 +246,7 @@ struct dummy_int {
   int data[2];
   operator int() const { return 0; }
 };
-typedef std::numeric_limits<fmt::internal::dummy_int> fputil;
+typedef std::numeric_limits<internal::dummy_int> fputil;
 
 // Dummy implementations of system functions such as signbit and ecvt called
 // if the latter are not available.
@@ -322,7 +322,7 @@ typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {
 template <typename T>
 inline T const_check(T value) { return value; }
 }  // namespace internal
-}  // namespace fmt
+FMT_END_NAMESPACE
 
 namespace std {
 // Standard permits specialization of std::numeric_limits. This specialization
@@ -339,7 +339,7 @@ class numeric_limits<fmt::internal::dummy_int> :
     using namespace fmt::internal;
     // The resolution "priority" is:
     // isinf macro > std::isinf > ::isinf > fmt::internal::isinf
-    if (const_check(sizeof(isinf(x)) != sizeof(fmt::internal::dummy_int)))
+    if (const_check(sizeof(isinf(x)) != sizeof(dummy_int)))
       return isinf(x) != 0;
     return !_finite(static_cast<double>(x));
   }
@@ -368,8 +368,7 @@ class numeric_limits<fmt::internal::dummy_int> :
 };
 }  // namespace std
 
-namespace fmt {
-
+FMT_BEGIN_NAMESPACE
 template <typename Range>
 class basic_writer;
 
@@ -2328,7 +2327,7 @@ class system_error : public std::runtime_error {
   may look like "Unknown error -1" and is platform-dependent.
   \endrst
  */
-FMT_API void format_system_error(fmt::internal::buffer &out, int error_code,
+FMT_API void format_system_error(internal::buffer &out, int error_code,
                                  fmt::string_view message) FMT_NOEXCEPT;
 
 /**
@@ -3527,10 +3526,8 @@ inline std::size_t formatted_size(string_view format_str,
   auto it = format_to(internal::counting_iterator<char>(), format_str, args...);
   return it.count();
 }
-}  // namespace fmt
 
 #if FMT_USE_USER_DEFINED_LITERALS
-namespace fmt {
 namespace internal {
 
 # if FMT_UDL_TEMPLATE
@@ -3611,8 +3608,8 @@ operator"" _a(const char *s, std::size_t) { return {s}; }
 inline internal::udl_arg<wchar_t>
 operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 } // inline namespace literals
-} // namespace fmt
 #endif // FMT_USE_USER_DEFINED_LITERALS
+FMT_END_NAMESPACE
 
 #define FMT_STRING(s) [] { \
     struct S : fmt::format_string { \
