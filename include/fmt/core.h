@@ -133,14 +133,16 @@
 # define FMT_DTOR_NOEXCEPT FMT_NOEXCEPT
 #endif
 
-#if FMT_HAS_FEATURE(cxx_inline_namespaces) || FMT_MSC_VER >= 1900
-# define FMT_INLINE_NAMESPACE inline namespace
-# define FMT_END_NAMESPACE }}
-#else
-# define FMT_INLINE_NAMESPACE namespace
-# define FMT_END_NAMESPACE } using namespace v5; }
+#ifndef FMT_BEGIN_NAMESPACE
+# if FMT_HAS_FEATURE(cxx_inline_namespaces) || FMT_MSC_VER >= 1900
+#  define FMT_INLINE_NAMESPACE inline namespace
+#  define FMT_END_NAMESPACE }}
+# else
+#  define FMT_INLINE_NAMESPACE namespace
+#  define FMT_END_NAMESPACE } using namespace v5; }
+# endif
+# define FMT_BEGIN_NAMESPACE namespace fmt { FMT_INLINE_NAMESPACE v5 {
 #endif
-#define FMT_BEGIN_NAMESPACE namespace fmt { FMT_INLINE_NAMESPACE v5 {
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
 # ifdef FMT_EXPORT
