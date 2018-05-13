@@ -30,9 +30,8 @@ struct ValueExtractor: fmt::internal::function<T> {
   }
 
   template <typename U>
-  T operator()(U) {
+  FMT_NORETURN T operator()(U) {
     throw std::runtime_error(fmt::format("invalid type {}", typeid(U).name()));
-    return T();
   }
 };
 

@@ -126,8 +126,38 @@ struct is_tuple_like {
     is_tuple_like_<T>::value && !is_range_<T>::value;
 };
 
-template <size_t... Is, class Tuple, class F>
-void for_each(std::index_sequence<Is...>, Tuple &&tup, F &&f) noexcept {
+// Check for integer_sequence
+#if defined(__cpp_lib_integer_sequence) || FMT_MSC_VER >= 1910
+template <typename T, T... N>
+using integer_sequence = std::integer_sequence<T, N...>;
+template <std::size_t... N>
+using index_sequence = std::index_sequence<N...>;
+template <std::size_t N>
+using make_index_sequence = std::make_index_sequence<N>;
+#else
+template <typename T, T... N>
+struct integer_sequence {
+    typedef T value_type;
+
+    static FMT_CONSTEXPR std::size_t size() {
+        return sizeof...(N);
+    }
+};
+
+template <std::size_t... N>
+using index_sequence = integer_sequence<std::size_t, N...>;
+
+template <typename T, std::size_t N, T... Ns>
+struct make_integer_sequence : make_integer_sequence<T, N - 1, N - 1, Ns...> {};
+template <typename T, T... Ns>
+struct make_integer_sequence<T, 0, Ns...> : integer_sequence<T, Ns...> {};
+
+template <std::size_t N>
+using make_index_sequence = make_integer_sequence<std::size_t, N>;
+#endif
+
+template <class Tuple, class F, size_t... Is>
+void for_each(index_sequence<Is...>, Tuple &&tup, F &&f) noexcept {
   using std::get;
   // using free function get<I>(T) now.
   const int _[] = {0, ((void)f(get<Is>(tup)), 0)...};
@@ -135,7 +165,7 @@ void for_each(std::index_sequence<Is...>, Tuple &&tup, F &&f) noexcept {
 }
 
 template <class T>
-FMT_CONSTEXPR std::make_index_sequence<std::tuple_size<T>::value> 
+FMT_CONSTEXPR make_index_sequence<std::tuple_size<T>::value> 
 get_indexes(T const &) { return {}; }
 
 template <class Tuple, class F>

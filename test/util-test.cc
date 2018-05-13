@@ -822,7 +822,8 @@ TEST(UtilTest, FormatLongWindowsError) {
   const int provisioning_not_allowed = 0x80284013L /*TBS_E_PROVISIONING_NOT_ALLOWED*/;
   if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
       FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
-      provisioning_not_allowed, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      static_cast<DWORD>(provisioning_not_allowed),
+      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       reinterpret_cast<LPWSTR>(&message), 0, 0) == 0) {
     return;
   }

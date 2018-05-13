@@ -36,6 +36,12 @@
 # define FMT_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
+#if defined(__GNUC__) && !defined(__clang__)
+# define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
+#else
+# define FMT_GCC_VERSION 0
+#endif
+
 #if __cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__)
 # define FMT_HAS_GXX_CXX11 FMT_GCC_VERSION
 #else
@@ -557,21 +563,22 @@ struct typed_value : value<Context> {
 template <typename Context, typename T>
 FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T &value);
 
-#if FMT_GCC_VERSION >= 406
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wuseless-cast"
-#endif
-
 #define FMT_MAKE_VALUE(TAG, ArgType, ValueType) \
   template <typename C> \
   FMT_CONSTEXPR typed_value<C, TAG> make_value(ArgType val) { \
     return static_cast<ValueType>(val); \
   }
 
+#define FMT_MAKE_VALUE_SAME(TAG, Type) \
+  template <typename C> \
+  FMT_CONSTEXPR typed_value<C, TAG> make_value(Type val) { \
+    return val; \
+  }
+
 FMT_MAKE_VALUE(bool_type, bool, int)
 FMT_MAKE_VALUE(int_type, short, int)
 FMT_MAKE_VALUE(uint_type, unsigned short, unsigned)
-FMT_MAKE_VALUE(int_type, int, int)
+FMT_MAKE_VALUE_SAME(int_type, int)
 FMT_MAKE_VALUE(uint_type, unsigned, unsigned)
 
 // To minimize the number of types we need to deal with, long is translated
@@ -586,7 +593,7 @@ FMT_MAKE_VALUE(
     (sizeof(unsigned long) == sizeof(unsigned) ? uint_type : ulong_long_type),
     unsigned long, ulong_type)
 
-FMT_MAKE_VALUE(long_long_type, long long, long long)
+FMT_MAKE_VALUE_SAME(long_long_type, long long)
 FMT_MAKE_VALUE(ulong_long_type, unsigned long long, unsigned long long)
 FMT_MAKE_VALUE(int_type, signed char, int)
 FMT_MAKE_VALUE(uint_type, unsigned char, unsigned)
@@ -601,8 +608,8 @@ inline typed_value<C, char_type> make_value(wchar_t val) {
 #endif
 
 FMT_MAKE_VALUE(double_type, float, double)
-FMT_MAKE_VALUE(double_type, double, double)
-FMT_MAKE_VALUE(long_double_type, long double, long double)
+FMT_MAKE_VALUE_SAME(double_type, double)
+FMT_MAKE_VALUE_SAME(long_double_type, long double)
 
 // Formatting of wide strings into a narrow buffer and multibyte strings
 // into a wide buffer is disallowed (https://github.com/fmtlib/fmt/pull/606).
@@ -612,26 +619,20 @@ FMT_MAKE_VALUE(cstring_type, const typename C::char_type*,
                const typename C::char_type*)
 
 FMT_MAKE_VALUE(cstring_type, signed char*, const signed char*)
-FMT_MAKE_VALUE(cstring_type, const signed char*, const signed char*)
+FMT_MAKE_VALUE_SAME(cstring_type, const signed char*)
 FMT_MAKE_VALUE(cstring_type, unsigned char*, const unsigned char*)
-FMT_MAKE_VALUE(cstring_type, const unsigned char*, const unsigned char*)
-FMT_MAKE_VALUE(string_type, basic_string_view<typename C::char_type>,
-               basic_string_view<typename C::char_type>)
+FMT_MAKE_VALUE_SAME(cstring_type, const unsigned char*)
+FMT_MAKE_VALUE_SAME(string_type, basic_string_view<typename C::char_type>)
 FMT_MAKE_VALUE(string_type,
                typename basic_string_view<typename C::char_type>::type,
                basic_string_view<typename C::char_type>)
 FMT_MAKE_VALUE(string_type, const std::basic_string<typename C::char_type>&,
                basic_string_view<typename C::char_type>)
 FMT_MAKE_VALUE(pointer_type, void*, const void*)
-FMT_MAKE_VALUE(pointer_type, const void*, const void*)
+FMT_MAKE_VALUE_SAME(pointer_type, const void*)
 
 #if FMT_USE_NULLPTR
 FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
-#endif
-
-#if FMT_GCC_VERSION >= 406
-// -Wuseless-cast
-# pragma GCC diagnostic pop
 #endif
 
 // Formatting of arbitrary pointers is disallowed. If you want to output a

@@ -23,13 +23,10 @@ env:
         o1F2EwFbiso0EmtzhAPs19ujiVxkLn4=
 
 matrix:
-  exclude:
-    - env: TRAVIS_EMPTY_JOB_WORKAROUND=true
   include:
       # Documentation
-    - env: CXX_COMPILER=g++-6 BUILD=Doc
+    - env: BUILD=Doc
       sudo: required
-      compiler: gcc
       # g++ 6 on Linux with C++14
     - env: CXX_COMPILER=g++-6 BUILD=Debug STANDARD=14
       compiler: gcc
@@ -116,15 +113,9 @@ matrix:
     - env: CXX_COMPILER=g++-4.4 BUILD=Debug STANDARD=0x
       compiler: gcc
 
-install:
-    - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
-    - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
-
-    - cd ${TRAVIS_BUILD_DIR}
-
 before_script:
   - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then export CXX=${CXX_COMPILER}; fi
-  - ${CXX} --version
+  - if [[ "${BUILD}" != "Doc" ]]; then ${CXX} --version; fi
 
 script:
   - support/travis-build.py

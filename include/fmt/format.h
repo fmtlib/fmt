@@ -37,12 +37,6 @@
 #include <stdexcept>
 #include <stdint.h>
 
-#if defined(__GNUC__) && !defined(__clang__)
-# define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
-#else
-# define FMT_GCC_VERSION 0
-#endif
-
 #ifdef __clang__
 # define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 #else
@@ -63,7 +57,8 @@
 # define FMT_MSC_VER 0
 #endif
 
-#if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
+#if (defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 406) || \
+    FMT_CLANG_VERSION
 # pragma GCC diagnostic push
 
 // Disable the warning about declaration shadowing because it affects too
@@ -81,8 +76,6 @@
 # pragma clang diagnostic ignored "-Wweak-vtables"
 # pragma clang diagnostic ignored "-Wpadded"
 # pragma clang diagnostic ignored "-Wgnu-statement-expression"
-# pragma clang diagnostic ignored "-Wc++98-compat"
-# pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
 # pragma clang diagnostic ignored "-Wglobal-constructors"
 # pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
 # pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
@@ -3146,7 +3139,7 @@ struct formatter<
       break;
     case internal::char_type:
       handle_char_specs(specs_, internal::char_specs_checker<decltype(eh)>(
-                          type_spec, eh));
+                          static_cast<char>(type_spec), eh));
       break;
     case internal::double_type:
     case internal::long_double_type:
@@ -3178,8 +3171,8 @@ struct formatter<
     internal::handle_dynamic_spec<internal::precision_checker>(
       specs_.precision_, specs_.precision_ref, ctx);
     typedef output_range<typename FormatContext::iterator,
-                         typename FormatContext::char_type> range;
-    visit(arg_formatter<range>(ctx, specs_),
+                         typename FormatContext::char_type> range_type;
+    visit(arg_formatter<range_type>(ctx, specs_),
           internal::make_arg<FormatContext>(val));
     return ctx.out();
   }

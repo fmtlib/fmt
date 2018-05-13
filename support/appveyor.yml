@@ -1,4 +1,6 @@
-configuration: Debug
+configuration:
+  - Debug
+  - Release
 
 clone_depth: 1
 
@@ -32,7 +34,7 @@ before_build:
  - mkdir build
  - cd build
     
- - ps: cmake -G "$($env:CMAKE_GENERATOR)$($env:CMAKE_GENERATOR_SUFFIX)" -DFMT_WERROR=OFF -DFMT_PEDANTIC=ON -DCMAKE_BUILD_TYPE=Debug ..
+ - ps: cmake -G "$($env:CMAKE_GENERATOR)$($env:CMAKE_GENERATOR_SUFFIX)" -DFMT_WERROR=OFF -DFMT_PEDANTIC=ON -DCMAKE_BUILD_TYPE="$($env:configuration)" ..
 
 build:
   project: C:\projects\fmt\build\fmt.sln
@@ -42,7 +44,7 @@ build:
 test_script:
   - ps: |
       New-Item .\DartConfiguration.tcl -ItemType file
-      ctest -C Debug -T Test
+      ctest -C "$($env:configuration)" -T Test
       $XSLInputElement = New-Object System.Xml.Xsl.XslCompiledTransform
       $XslInputElement.Load("https://raw.githubusercontent.com/rpavlik/jenkins-ctest-plugin/master/ctest-to-junit.xsl")
       $file = $(ls Testing\*\Test.xml) | Select -first 1
