@@ -3,7 +3,7 @@
 
 * Added a requirement for compiler support for variadic templates and dropped ``FMT_VARIADIC_*`` emulation macros. Variadic templates are available since GCC 4.4, Clang 2.9 and MSVC 18.0 (2013). For older compilers use `version 4.x <https://github.com/fmtlib/fmt/releases/tag/4.1.0>`_ which continues to be maintained.
 
-* Renamed symbols to follow standard C++ naming conventions and cleaned the argument handling API: ``ArgList`` -> ``format_args``, ``ArgArray`` -> ``format_arg_store``, etc.
+* Renamed symbols to follow standard C++ naming conventions and proposed a subset of the library for standardization in `P0645R2 Text Formatting <https://wg21.link/P0645>`_.
 
 * Added the `make_format_args <http://fmtlib.net/dev/api.html#_CPPv2N3fmt16make_format_argsEDpRK4Args>`_ function for capturing formatting arguments:
 
@@ -30,10 +30,21 @@
 
 * Added a section on `formatting user-defined <http://fmtlib.net/dev/api.html#formatting-user-defined-types>`_ types to the docs (`#393 <https://github.com/fmtlib/fmt/pull/393>`_). Thanks `@pwm1234 (Phil) <https://github.com/pwm1234>`_.
 
+* Added an experimental ``join`` function that allows formating a range of values (`godbolt <https://godbolt.org/g/ivosda>`_, `#466 <https://github.com/fmtlib/fmt/pull/466>`_):
+
+  .. code:: c++
+
+     std::vector<int> v = {1, 2, 3};
+     print("{}", fmt::join(v.begin(), v.end(), ", ")); // prints "1, 2, 3"
+
+  Thanks `@olivier80 <https://github.com/olivier80>`_.
+
+* Removed the Write API in favor of the `Format API <http://fmtlib.net/dev/api.html#id2>`_ with compile-time handling of format strings.
+
 * Implemented thread-safe time formatting (`#395 <https://github.com/fmtlib/fmt/issues/395>`_, `#396 <https://github.com/fmtlib/fmt/pull/396>`_).
   Thanks `@codicodi <https://github.com/codicodi>`_.
 
-* Added a version macro ``FMT_VERSION`` (`#411 <https://github.com/fmtlib/fmt/issues/411>`_)
+* Added a version macro ``FMT_VERSION`` (`#411 <https://github.com/fmtlib/fmt/issues/411>`_).
 
 * Removed unnecessary ``fmt/`` prefix in includes (`#397 <https://github.com/fmtlib/fmt/pull/397>`_).
   Thanks `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
@@ -42,6 +53,19 @@
 
 * Replaced literal 0 with ``nullptr`` in pointer contexts (`#409 <https://github.com/fmtlib/fmt/pull/409>`_).
   Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
+  
+* Added ``std::basic_string`` allocator support to ``fmt::string_view`` (`#441 <https://github.com/fmtlib/fmt/pull/441>`_).
+  Thanks `@glebov-andrey (Andrey Glebov) <https://github.com/glebov-andrey>`_.
+  
+* Stopped exporting the ``-std=c++11`` flag from the ``fmt`` target  (`#445 <https://github.com/fmtlib/fmt/pull/445>`_).
+  Thanks `@EricWF (Eric) <https://github.com/EricWF>`_.
+  
+* Made ``%s`` a generic format specifier that works with any argument type in ``fmt::printf`` (`#453 <https://github.com/fmtlib/fmt/pull/453>`_).
+  Thanks `@mojoBrendan <https://github.com/mojoBrendan>`_:
+
+  .. code:: c++
+
+     fmt::printf("%s", 42);
 
 * Fixed minimal supported library subset (`#418 <https://github.com/fmtlib/fmt/issues/418>`_, `#419 <https://github.com/fmtlib/fmt/pull/419>`_, `#420 <https://github.com/fmtlib/fmt/pull/420>`_).
   Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
@@ -54,9 +78,19 @@
 
 * Fixed compilation as a shared library with Clang (`#413 <https://github.com/fmtlib/fmt/pull/413>`_). Thanks `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_.
 
-* Fixed test compilation on FreeBSD.  (`#433 <https://github.com/fmtlib/fmt/issues/433>`_). Thanks `@WscriChy  <https://github.com/WscriChy>`_.
+* Fixed test compilation on FreeBSD (`#433 <https://github.com/fmtlib/fmt/issues/433>`_). Thanks `@WscriChy  <https://github.com/WscriChy>`_.
+
+* Fixed a name conflict with Xlib (`#483 <https://github.com/fmtlib/fmt/issues/483>`_).
 
 * Fixed signbit detection (`#423 <https://github.com/fmtlib/fmt/pull/423>`_).
+
+* Fixed missing intrinsic when included from C++/CLI (`#457 <https://github.com/fmtlib/fmt/pull/457>`_). Thanks `@calumr (Calum Robinson) <https://github.com/calumr>`_.
+
+* Fixed Android not being detected with NDK 13b toolchain (`#458 <https://github.com/fmtlib/fmt/pull/458>`_). Thanks `@Gachapen (Magnus Bjerke Vik) <https://github.com/Gachapen>`_.
+
+* Added ``SOURCELINK_SUFFIX`` for compatibility with Sphinx 1.5 (`#497 <https://github.com/fmtlib/fmt/pull/497>`_). Thanks `@ginggs (Graham Inggs) <https://github.com/ginggs>`_.
+
+* Added ``FMT_API`` declarations where needed for building a DLL (`#469 <https://github.com/fmtlib/fmt/pull/469>`_). Thanks `@richardeakin (Richard Eakin) <https://github.com/richardeakin>`_.
 
 * Fixed various warnings (`#409 <https://github.com/fmtlib/fmt/issues/414>`_). Thanks `@Lectem <https://github.com/Lectem>`_, `@chenhayat (Chen Hayat) <https://github.com/chenhayat>`_.
 
