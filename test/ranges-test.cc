@@ -9,10 +9,6 @@
 // All Rights Reserved
 // {fmt} support for ranges, containers and types tuple interface.
 
-#ifdef WIN32
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "fmt/ranges.h"
 
 #include "gtest/gtest.h"
@@ -36,20 +32,21 @@ TEST(RangesTest, FormatVector2) {
 
 TEST(RangesTest, FormatMap) {
   std::map<std::string, int32_t> simap{{"one", 1}, {"two", 2}};
-  EXPECT_EQ("{[one,1],[two,2]}", fmt::format("{}", simap));
+  EXPECT_EQ("{(one,1),(two,2)}", fmt::format("{}", simap));
 }
 
 TEST(RangesTest, FormatPair) {
   std::pair<int64_t, float> pa1{42, 3.14159265358979f};
-  EXPECT_EQ("[42,3.14159]", fmt::format("{}", pa1));
+  EXPECT_EQ("(42,3.14159)", fmt::format("{}", pa1));
 }
 
 TEST(RangesTest, FormatTuple) {
   std::tuple<int64_t, float, std::string> tu1{42, 3.14159265358979f,
                                               "this is tuple"};
-  EXPECT_EQ("[42,3.14159,this is tuple]", fmt::format("{}", tu1));
+  EXPECT_EQ("(42,3.14159,this is tuple)", fmt::format("{}", tu1));
 }
 
+/// check if  'if constexpr' is supported.
 #if (__cplusplus > 201402L) || \
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 
@@ -84,7 +81,8 @@ struct tuple_element<N, my_struct> {
 
 TEST(RangesTest, FormatStruct) {
   my_struct mst{13, "my struct"};
-  EXPECT_EQ("[13,my struct]", fmt::format("{}", mst));
+  EXPECT_EQ("(13, my struct)", fmt::format("{}", mst));
 }
 
-#endif // (__cplusplus > 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
+#endif  // (__cplusplus > 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >
+        // 201402L && _MSC_VER >= 1910)

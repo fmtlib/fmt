@@ -32,18 +32,22 @@ struct formatting_base {
 
 template <typename Char, typename Enable = void>
 struct formatting_range : formatting_base<Char> {
+  static FMT_CONSTEXPR_DECL const std::size_t range_length_limit =
+      FMT_RANGE_OUTPUT_LENGTH_LIMIT; // output only up to N items from the range.
   Char prefix = '{';
   Char delimiter = ',';
   Char postfix = '}';
-  static FMT_CONSTEXPR_DECL const bool add_spaces = false;
+  static FMT_CONSTEXPR_DECL const bool add_delimiter_spaces = true;
+  static FMT_CONSTEXPR_DECL const bool add_prepostfix_space = false;
 };
 
 template <typename Char, typename Enable = void>
 struct formatting_tuple : formatting_base<Char> {
-  Char prefix = '[';
+  Char prefix = '(';
   Char delimiter = ',';
-  Char postfix = ']';
-  static FMT_CONSTEXPR_DECL const bool add_spaces = false;
+  Char postfix = ')';
+  static FMT_CONSTEXPR_DECL const bool add_delimiter_spaces = true;
+  static FMT_CONSTEXPR_DECL const bool add_prepostfix_space = false;
 };
 
 namespace internal {
@@ -92,10 +96,11 @@ template <typename T, typename _ = void>
 struct is_range_ : std::false_type {};
 
 template <typename T>
-struct is_range_<T, std::conditional_t<false,
-                 conditional_helper<decltype(std::declval<T>().begin()),
-                                    decltype(std::declval<T>().end())>,
-                 void>> : std::true_type {};
+struct is_range_<T,typename std::conditional<
+                   false,
+                   conditional_helper<decltype(std::declval<T>().begin()),
+                                      decltype(std::declval<T>().end())>,
+                   void>::type> : std::true_type {};
 
 template <typename T>
 struct is_range {
@@ -162,16 +167,20 @@ struct formatter<TupleT, Char,
     std::size_t i = 0;
     internal::copy(formatting.prefix, out);
     internal::for_each(values, [&](const auto &v) {
-      if (i++ > 0) {
+      if (i > 0) {
+        if (formatting.add_prepostfix_space) {
+          *out++ = ' ';
+        }
         internal::copy(formatting.delimiter, out);
       }
-      if (formatting.add_spaces) {
+      if (formatting.add_delimiter_spaces && i > 0) {
         format_to(out, " {}", v);
       } else {
         format_to(out, "{}", v);
       }
+      ++i;
     });
-    if (formatting.add_spaces) {
+    if (formatting.add_prepostfix_space) {
       *out++ = ' ';
     }
     internal::copy(formatting.postfix, out);
@@ -184,8 +193,6 @@ template <typename RangeT, typename Char>
 struct formatter< RangeT, Char,
     typename std::enable_if<fmt::internal::is_range<RangeT>::value>::type> {
 
-  static FMT_CONSTEXPR_DECL const std::size_t range_length_limit =
-      FMT_RANGE_OUTPUT_LENGTH_LIMIT; // output only up to N items from the range.
 
   fmt::formatting_range<Char> formatting;
 
@@ -201,19 +208,22 @@ struct formatter< RangeT, Char,
     std::size_t i = 0;
     for (const auto &it : values) {
       if (i > 0) {
+        if (formatting.add_prepostfix_space) {
+          *out++ = ' ';
+        }
         internal::copy(formatting.delimiter, out);
       }
-      if (formatting.add_spaces) {
+      if (formatting.add_delimiter_spaces && i > 0) {
         format_to(out, " {}", it);
       } else {
         format_to(out, "{}", it);
       }
-      if (++i > range_length_limit) {
+      if (++i > formatting.range_length_limit) {
         format_to(out, " ... <other elements>");
         break;
       }
     }
-    if (formatting.add_spaces) {
+    if (formatting.add_prepostfix_space) {
       *out++ = ' ';
     }
     internal::copy(formatting.postfix, out);
