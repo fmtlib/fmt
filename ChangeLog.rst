@@ -1,18 +1,21 @@
 5.0.0 - TBD
 -----------
 
-* Added a requirement for compiler support for variadic templates and dropped
-  ``FMT_VARIADIC_*`` emulation macros. Variadic templates are available since
-  GCC 4.4, Clang 2.9 and MSVC 18.0 (2013). For older compilers use `version 4.x
+* Added a requirement for partial C++11 support, most importantly variadic
+  templates and type traits, and dropped ``FMT_VARIADIC_*`` emulation macros.
+  Variadic templates are available since GCC 4.4, Clang 2.9 and MSVC 18.0 (2013).
+  For older compilers use {fmt} `version 4.x
   <https://github.com/fmtlib/fmt/releases/tag/4.1.0>`_ which continues to be
-  maintained.
+  maintained and works with C++98 compilers.
 
 * Renamed symbols to follow standard C++ naming conventions and proposed a subset
   of the library for standardization in `P0645R2 Text Formatting
   <https://wg21.link/P0645>`_.
 
-* Swparated format string parsing and formatting in the extension API to enable
-  compile-time format-string processing. For example
+* Implemented ``constexpr`` parsing of format strings.
+
+* Separated format string parsing and formatting in the extension API to enable
+  compile-time format string processing. For example
 
   .. code:: c++
 
@@ -26,8 +29,7 @@
          spec = *it;
          if (spec != 'd' && spec != 's')
            throw format_error("invalid specifier");
-         ++it;
-         return it;
+         return ++it;
        }
 
        template <typename FormatContext>
@@ -41,14 +43,26 @@
      };
      }
 
-     std::string s = fmt::format(fmt("{:x}"), S());
+     std::string s = format(fmt("{:x}"), S());
 
   will give a compile-time error due to invalid format specifier (`godbolt
-  <https://godbolt.org/g/9s4kNB>`_)::
+  <https://godbolt.org/g/ywhrPp>`_)::
 
      ...
      <source>:12:45: error: expression '<throw-expression>' is not a constant expression
             throw format_error("invalid specifier");
+
+* Improved compile times by reducing dependencies on standard headers and
+  providing a lightweight `core API <http://fmtlib.net/dev/api.html#core-api>`_:
+
+  .. code:: c++
+
+     #include <fmt/core.h>
+
+     fmt::print("The answer is {}.", 42);
+
+  See `Compile time and code bloat
+  <https://github.com/fmtlib/fmt#compile-time-and-code-bloat>`_.
 
 * Added the `make_format_args
   <http://fmtlib.net/dev/api.html#_CPPv2N3fmt16make_format_argsEDpRK4Args>`_
@@ -80,9 +94,18 @@
   in the format API and provided ``fmt::string_view`` which implements a subset
   of ``std::string_view`` API for pre-C++17 systems.
 
+* Allowed mixing named and automatic arguments:
+
+  .. code:: c++
+
+     fmt::format("{} {two}", 1, fmt::arg("two", 2));
+
 * Removed the write API in favor of the `format API
   <http://fmtlib.net/dev/api.html#format-api>`_ with compile-time handling of
   format strings.
+
+* Disallowed formatting of multibyte strings into a wide character target
+  (`#606 <https://github.com/fmtlib/fmt/pull/606>`_).
 
 * Added a section on `formatting user-defined types
   <http://fmtlib.net/dev/api.html#formatting-user-defined-types>`_ to the docs
@@ -93,6 +116,12 @@
   <http://fmtlib.net/dev/usage.html#header-only-usage-with-cmake>`_ to the docs
   (`#515 <https://github.com/fmtlib/fmt/pull/515>`_).
   Thanks `@ibell (Ian Bell) <https://github.com/ibell>`_.
+
+* Added a `note about errno <http://fmtlib.net/latest/index.html#safety>`_ to the
+  documentation (
+  `#614 <https://github.com/fmtlib/fmt/issues/614>`_,
+  `#617 <https://github.com/fmtlib/fmt/pull/617>`_).
+  Thanks `@mihaitodor (Mihai Todor) <https://github.com/mihaitodor>`_.
 
 * Implemented thread-safe time formatting (
   `#395 <https://github.com/fmtlib/fmt/issues/395>`_,
@@ -163,6 +192,10 @@
 * Fixed a name conflict with Xlib
   (`#483 <https://github.com/fmtlib/fmt/issues/483>`_).
 
+* Fixed a name conflict with the macro ``CHAR_WIDTH`` in glibc
+  (`#616 <https://github.com/fmtlib/fmt/pull/616>`_).
+  Thanks `@aroig (Abdó Roig-Maranges) <https://github.com/aroig>`_.
+
 * Fixed signbit detection (`#423 <https://github.com/fmtlib/fmt/pull/423>`_).
 
 * Fixed missing intrinsic when included from C++/CLI
@@ -180,6 +213,10 @@
 * Added ``FMT_API`` declarations where needed for building a DLL
   (`#469 <https://github.com/fmtlib/fmt/pull/469>`_).
   Thanks `@richardeakin (Richard Eakin) <https://github.com/richardeakin>`_.
+
+* Added a missing ``inline`` in the header-only mode
+  (`#626 <https://github.com/fmtlib/fmt/pull/626>`_).
+  Thanks `@aroig (Abdó Roig-Maranges) <https://github.com/aroig>`_.
 
 4.1.0 - 2017-12-20
 ------------------
