@@ -16,7 +16,7 @@ alternative to C++ IOStreams.
      </div>
    </div>
 
-.. _format-api:
+.. _format-api-intro:
 
 Format API
 ----------
