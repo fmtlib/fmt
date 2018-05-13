@@ -3390,6 +3390,11 @@ std::string to_string(const T &value) {
   return str;
 }
 
+/**
+  \rst
+  Converts *value* to ``std::wstring`` using the default format for type *T*.
+  \endrst
+ */
 template <typename T>
 std::wstring to_wstring(const T &value) {
   std::wstring str;

@@ -49,8 +49,6 @@ arguments in the resulting string.
 .. doxygenfunction:: print(std::FILE *, string_view, const Args&...)
 .. doxygenfunction:: vprint(std::FILE *, string_view, format_args)
 
-.. _format-api:
-
 Named arguments
 ---------------
 
@@ -80,6 +78,8 @@ Compatibility
 
 .. doxygentypedef:: fmt::string_view
 .. doxygentypedef:: fmt::wstring_view
+
+.. _format-api:
 
 Format API
 ==========
@@ -152,6 +152,8 @@ Utilities
 ---------
 
 .. doxygenfunction:: fmt::to_string(const T&)
+
+.. doxygenfunction:: fmt::to_wstring(const T&)
 
 .. doxygenclass:: fmt::basic_memory_buffer
    :protected-members:
