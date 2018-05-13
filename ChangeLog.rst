@@ -28,16 +28,9 @@
      template <typename... Args>
      std::string format(string_view format_str, const Args & ... args);
 
-* Added a section on `formatting user-defined <http://fmtlib.net/dev/api.html#formatting-user-defined-types>`_ types to the docs (`#393 <https://github.com/fmtlib/fmt/pull/393>`_). Thanks `@pwm1234 (Phil) <https://github.com/pwm1234>`_.
+* Added a section on `formatting user-defined types <http://fmtlib.net/dev/api.html#formatting-user-defined-types>`_ to the docs (`#393 <https://github.com/fmtlib/fmt/pull/393>`_). Thanks `@pwm1234 (Phil) <https://github.com/pwm1234>`_.
 
-* Added an experimental ``join`` function that allows formating a range of values (`godbolt <https://godbolt.org/g/ivosda>`_, `#466 <https://github.com/fmtlib/fmt/pull/466>`_):
-
-  .. code:: c++
-
-     std::vector<int> v = {1, 2, 3};
-     print("{}", fmt::join(v.begin(), v.end(), ", ")); // prints "1, 2, 3"
-
-  Thanks `@olivier80 <https://github.com/olivier80>`_.
+* Added a section describing `the use of header-only target with CMake <http://fmtlib.net/dev/usage.html#header-only-usage-with-cmake>`_ to the docs (`#515 <https://github.com/fmtlib/fmt/pull/515>`_). Thanks `@ibell (Ian Bell) <https://github.com/ibell>`_.
 
 * Removed the Write API in favor of the `Format API <http://fmtlib.net/dev/api.html#id2>`_ with compile-time handling of format strings.
 
@@ -66,6 +59,9 @@
   .. code:: c++
 
      fmt::printf("%s", 42);
+
+* Placed CMake imported targets in the `fmt` namespace (`#511 <https://github.com/fmtlib/fmt/pull/511>`_, `#513 <https://github.com/fmtlib/fmt/pull/513>`_).
+  Thanks `@bjoernthiel (Bjoern Thiel) <https://github.com/bjoernthiel>`_, `@niosHD (Mario Werner) <https://github.com/niosHD>`_.
 
 * Fixed minimal supported library subset (`#418 <https://github.com/fmtlib/fmt/issues/418>`_, `#419 <https://github.com/fmtlib/fmt/pull/419>`_, `#420 <https://github.com/fmtlib/fmt/pull/420>`_).
   Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
