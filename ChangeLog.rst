@@ -107,11 +107,6 @@
 * Disallowed formatting of multibyte strings into a wide character target
   (`#606 <https://github.com/fmtlib/fmt/pull/606>`_).
 
-* Added a section on `formatting user-defined types
-  <http://fmtlib.net/dev/api.html#formatting-user-defined-types>`_ to the docs
-  (`#393 <https://github.com/fmtlib/fmt/pull/393>`_).
-  Thanks `@pwm1234 (Phil) <https://github.com/pwm1234>`_.
-
 * Added a section describing `the use of header-only target with CMake
   <http://fmtlib.net/dev/usage.html#header-only-usage-with-cmake>`_ to the docs
   (`#515 <https://github.com/fmtlib/fmt/pull/515>`_).
@@ -123,15 +118,7 @@
   `#617 <https://github.com/fmtlib/fmt/pull/617>`_).
   Thanks `@mihaitodor (Mihai Todor) <https://github.com/mihaitodor>`_.
 
-* Implemented thread-safe time formatting (
-  `#395 <https://github.com/fmtlib/fmt/issues/395>`_,
-  `#396 <https://github.com/fmtlib/fmt/pull/396>`_).
-  Thanks `@codicodi <https://github.com/codicodi>`_.
-
 * Implemented more efficient handling of large number of format arguments.
-
-* Added a version macro ``FMT_VERSION``
-  (`#411 <https://github.com/fmtlib/fmt/issues/411>`_).
 
 * Removed unnecessary ``fmt/`` prefix in includes
   (`#397 <https://github.com/fmtlib/fmt/pull/397>`_).
@@ -140,79 +127,13 @@
 * Renamed ``CHAR_WIDTH`` to ``CHAR_SIZE`` to avoid collision with ISO/IEC TS
   18661-1:2014 macro.
 
-* Replaced literal 0 with ``nullptr`` in pointer contexts
-  (`#409 <https://github.com/fmtlib/fmt/pull/409>`_).
-  Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
-  
-* Added ``std::basic_string`` allocator support to ``fmt::string_view``
-  (`#441 <https://github.com/fmtlib/fmt/pull/441>`_).
-  Thanks `@glebov-andrey (Andrey Glebov) <https://github.com/glebov-andrey>`_.
-  
-* Stopped exporting the ``-std=c++11`` flag from the ``fmt`` target
-  (`#445 <https://github.com/fmtlib/fmt/pull/445>`_).
-  Thanks `@EricWF (Eric) <https://github.com/EricWF>`_.
-  
-* Made ``%s`` a generic format specifier that works with any argument type in
-  ``fmt::printf`` (`#453 <https://github.com/fmtlib/fmt/pull/453>`_).
-  Thanks `@mojoBrendan <https://github.com/mojoBrendan>`_:
-
-  .. code:: c++
-
-     fmt::printf("%s", 42);
-
-* Placed CMake imported targets in the `fmt` namespace (
-  `#511 <https://github.com/fmtlib/fmt/pull/511>`_,
-  `#513 <https://github.com/fmtlib/fmt/pull/513>`_).
-  Thanks `@bjoernthiel (Bjoern Thiel) <https://github.com/bjoernthiel>`_ and
-  `@niosHD (Mario Werner) <https://github.com/niosHD>`_.
-
-* Fixed minimal supported library subset (
-  `#418 <https://github.com/fmtlib/fmt/issues/418>`_,
-  `#419 <https://github.com/fmtlib/fmt/pull/419>`_,
-  `#420 <https://github.com/fmtlib/fmt/pull/420>`_).
-  Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
-
-* Fixed compilation on Android
-  (`#381 <https://github.com/fmtlib/fmt/pull/381>`_).
-  Thanks `@hghwng (Hugh Wang) <https://github.com/hghwng>`_.
-
-* Fixed compilation with ``-fno-exceptions`` (
-  `#402 <https://github.com/fmtlib/fmt/pull/402>`_,
-  `#405 <https://github.com/fmtlib/fmt/pull/405>`_).
-  Thanks `@JanHellwig (Jan Hellwig) <https://github.com/JanHellwig>`_.
-
-* Fixed compilation as a shared library with Clang
-  (`#413 <https://github.com/fmtlib/fmt/pull/413>`_).
-  Thanks `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_.
-
-* Fixed test compilation on FreeBSD
-  (`#433 <https://github.com/fmtlib/fmt/issues/433>`_).
-  Thanks `@WscriChy <https://github.com/WscriChy>`_.
-
-* Fixed a name conflict with Xlib
-  (`#483 <https://github.com/fmtlib/fmt/issues/483>`_).
-
 * Fixed a name conflict with the macro ``CHAR_WIDTH`` in glibc
   (`#616 <https://github.com/fmtlib/fmt/pull/616>`_).
   Thanks `@aroig (Abdó Roig-Maranges) <https://github.com/aroig>`_.
 
-* Fixed signbit detection (`#423 <https://github.com/fmtlib/fmt/pull/423>`_).
-
-* Fixed missing intrinsic when included from C++/CLI
-  (`#457 <https://github.com/fmtlib/fmt/pull/457>`_).
-  Thanks `@calumr (Calum Robinson) <https://github.com/calumr>`_.
-
-* Fixed Android not being detected with NDK 13b toolchain
-  (`#458 <https://github.com/fmtlib/fmt/pull/458>`_).
-  Thanks `@Gachapen (Magnus Bjerke Vik) <https://github.com/Gachapen>`_.
-
 * Added ``SOURCELINK_SUFFIX`` for compatibility with Sphinx 1.5
   (`#497 <https://github.com/fmtlib/fmt/pull/497>`_).
   Thanks `@ginggs (Graham Inggs) <https://github.com/ginggs>`_.
-
-* Added ``FMT_API`` declarations where needed for building a DLL
-  (`#469 <https://github.com/fmtlib/fmt/pull/469>`_).
-  Thanks `@richardeakin (Richard Eakin) <https://github.com/richardeakin>`_.
 
 * Added a missing ``inline`` in the header-only mode
   (`#626 <https://github.com/fmtlib/fmt/pull/626>`_).
