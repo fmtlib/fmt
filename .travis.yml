@@ -7,13 +7,6 @@ os: linux
 git:
   depth: 1
 
-addons:
-  apt:
-    update: true
-    sources: &apt_sources
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-6
 
 env:
   global:
@@ -30,8 +23,22 @@ matrix:
       # g++ 6 on Linux with C++14
     - env: CXX_COMPILER=g++-6 BUILD=Debug STANDARD=14
       compiler: gcc
+      addons:
+        apt:
+          update: true
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
     - env: CXX_COMPILER=g++-6 BUILD=Release STANDARD=14
       compiler: gcc
+      addons:
+        apt:
+          update: true
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
       # Apple clang on OS X with C++14
     - env: BUILD=Debug STANDARD=14
       compiler: clang
@@ -79,6 +86,9 @@ matrix:
       # Android
     - language: android
       android:
+      addons:
+        apt:
+          update: true
       components:
         - tools
         - platform-tools

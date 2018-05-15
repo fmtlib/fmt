@@ -140,13 +140,21 @@ inline void vprint(std::basic_ostream<Char> &os,
 template <typename... Args>
 inline void print(std::ostream &os, string_view format_str,
                   const Args & ... args) {
+#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 440
+  vprint<char>(os, format_str, make_format_args<format_context>(args...));
+#else
   vprint(os, format_str, make_format_args<format_context>(args...));
+#endif
 }
 
 template <typename... Args>
 inline void print(std::wostream &os, wstring_view format_str,
                   const Args & ... args) {
+#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 440
+  vprint<wchar_t>(os, format_str, make_format_args<wformat_context>(args...));
+#else
   vprint(os, format_str, make_format_args<wformat_context>(args...));
+#endif
 }
 FMT_END_NAMESPACE
 

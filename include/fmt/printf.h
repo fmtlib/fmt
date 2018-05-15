@@ -625,14 +625,23 @@ template <typename... Args>
 inline int fprintf(std::FILE *f, string_view format_str, const Args & ... args) {
   auto vargs = make_format_args<
     typename printf_context<internal::buffer>::type>(args...);
+#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 440
+  return vfprintf<char>(f, format_str, vargs);
+#else
   return vfprintf(f, format_str, vargs);
+#endif
 }
 
 template <typename... Args>
 inline int fprintf(std::FILE *f, wstring_view format_str,
                    const Args & ... args) {
+#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 440
+  return vfprintf<wchar_t>(f, format_str,
+    make_format_args<typename printf_context<internal::wbuffer>::type>(args...));
+#else
   return vfprintf(f, format_str,
     make_format_args<typename printf_context<internal::wbuffer>::type>(args...));
+#endif
 }
 
 inline int vprintf(string_view format, printf_args args) {

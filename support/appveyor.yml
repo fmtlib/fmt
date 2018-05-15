@@ -8,49 +8,26 @@ platform:
   - Win32
   - x64
 
+image:
+  - Visual Studio 2013
+  - Visual Studio 2015
+  - Visual Studio 2017
+
 environment:
   CTEST_OUTPUT_ON_FAILURE: 1
   MSVC_DEFAULT_OPTIONS: ON
-  matrix:
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
-      CMAKE_GENERATOR: Visual Studio 12 2013
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      CMAKE_GENERATOR: Visual Studio 14 2015
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      CMAKE_GENERATOR: Visual Studio 15 2017
+  BUILD: msvc
 
 matrix:
   allow_failures:
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
-      CMAKE_GENERATOR: Visual Studio 12 2013
-
-init:
-  - ps: |
-      If ($env:Platform -Match "x64") {
-        $env:CMAKE_GENERATOR_SUFFIX=" Win64"
-      }
+    - image: Visual Studio 2013
 
 before_build:
  - mkdir build
  - cd build
-    
- - ps: cmake -G "$($env:CMAKE_GENERATOR)$($env:CMAKE_GENERATOR_SUFFIX)" -DFMT_WERROR=OFF -DFMT_PEDANTIC=ON -DCMAKE_BUILD_TYPE="$($env:configuration)" ..
 
-build:
-  project: C:\projects\fmt\build\fmt.sln
-  parallel: true
-  verbosity: normal
-
-test_script:
-  - ps: |
-      New-Item .\DartConfiguration.tcl -ItemType file
-      ctest -C "$($env:configuration)" -T Test
-      $XSLInputElement = New-Object System.Xml.Xsl.XslCompiledTransform
-      $XslInputElement.Load("https://raw.githubusercontent.com/rpavlik/jenkins-ctest-plugin/master/ctest-to-junit.xsl")
-      $file = $(ls Testing\*\Test.xml) | Select -first 1
-      $XSLInputElement.Transform((Resolve-Path $file), (Join-Path (Resolve-Path .) "ctest-to-junit-results.xml"))
-      $wc = New-Object 'System.Net.WebClient'
-      $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\ctest-to-junit-results.xml))
+build_script:
+  - python ../support/appveyor-build.py
 
 on_failure:
   - appveyor PushArtifact Testing/Temporary/LastTest.log
