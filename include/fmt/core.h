@@ -193,13 +193,11 @@ typename std::add_rvalue_reference<T>::type declval() FMT_NOEXCEPT;
 }
 
 /**
-  \rst
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
   subset of the API. ``fmt::basic_string_view`` is used for format strings even
   if ``std::string_view`` is available to prevent issues when a library is
   compiled with a different ``-std`` option than the client code (which is not
   recommended).
-  \endrst
  */
 template <typename Char>
 class basic_string_view {
@@ -238,11 +236,7 @@ class basic_string_view {
   basic_string_view(const Char *s)
     : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
-  /**
-    \rst
-    Constructs a string reference from a ``std::basic_string`` object.
-    \endrst
-   */
+  /** Constructs a string reference from a ``std::basic_string`` object. */
   template <typename Alloc>
   FMT_CONSTEXPR basic_string_view(
       const std::basic_string<Char, Alloc> &s) FMT_NOEXCEPT
@@ -329,11 +323,7 @@ class basic_buffer {
     capacity_ = capacity;
   }
 
-  /**
-    \rst
-    Increases the buffer capacity to hold at least *capacity* elements.
-    \endrst
-   */
+  /** Increases the buffer capacity to hold at least *capacity* elements. */
   virtual void grow(std::size_t capacity) = 0;
 
  public:
@@ -365,11 +355,7 @@ class basic_buffer {
     size_ = new_size;
   }
 
-  /**
-    \rst
-    Reserves space to store at least *capacity* elements.
-    \endrst
-   */
+  /** Reserves space to store at least *capacity* elements. */
   void reserve(std::size_t capacity) {
     if (capacity > capacity_)
       grow(capacity);
@@ -899,10 +885,8 @@ class basic_format_context :
   using typename base::iterator;
 
   /**
-   \rst
    Constructs a ``basic_format_context`` object. References to the arguments are
    stored in the object so make sure they have appropriate lifetimes.
-   \endrst
    */
   basic_format_context(OutputIt out, basic_string_view<char_type> format_str,
                 basic_format_args<basic_format_context> args)

@@ -3391,9 +3391,7 @@ std::string to_string(const T &value) {
 }
 
 /**
-  \rst
   Converts *value* to ``std::wstring`` using the default format for type *T*.
-  \endrst
  */
 template <typename T>
 std::wstring to_wstring(const T &value) {
@@ -3455,10 +3453,10 @@ inline OutputIt vformat_to(OutputIt out, string_view format_str,
  Formats arguments, writes the result to the output iterator ``out`` and returns
  the iterator past the end of the output range.
 
-   **Example**::
+ **Example**::
 
-     std::vector<char> out;
-     fmt::format_to(std::back_inserter(out), "{}", 42);
+   std::vector<char> out;
+   fmt::format_to(std::back_inserter(out), "{}", 42);
  \endrst
  */
 template <typename OutputIt, typename... Args>
@@ -3535,7 +3533,10 @@ inline typename std::enable_if<internal::is_format_string<String>::value>::type
   return vprint(format_str.data(), make_format_args(args...));
 }
 
-// Counts the number of characters in the output of format(format_str, args...).
+/**
+ Returns the number of characters in the output of
+ ``format(format_str, args...)``.
+ */
 template <typename... Args>
 inline std::size_t formatted_size(string_view format_str,
                                   const Args & ... args) {

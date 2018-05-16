@@ -63,6 +63,16 @@
      std::vector<char> out;
      fmt::format_to(std::back_inserter(out), "{}", 42);
 
+* Added the `formatted_size
+  <http://fmtlib.net/dev/api.html#output-iterator-support>`_ function for
+  computing output size:
+
+  .. code:: c++
+
+     #include <fmt/format.h>
+
+     auto size = fmt::formatted_size("{}", 12345); // size == 5
+
 * Improved compile times by reducing dependencies on standard headers and
   providing a lightweight `core API <http://fmtlib.net/dev/api.html#core-api>`_:
 
