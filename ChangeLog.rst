@@ -52,6 +52,17 @@
      <source>:12:45: error: expression '<throw-expression>' is not a constant expression
             throw format_error("invalid specifier");
 
+* Added `iterator support
+  <http://fmtlib.net/dev/api.html#output-iterator-support>`_:
+
+  .. code:: c++
+
+     #include <vector>
+     #include <fmt/format.h>
+
+     std::vector<char> out;
+     fmt::format_to(std::back_inserter(out), "{}", 42);
+
 * Improved compile times by reducing dependencies on standard headers and
   providing a lightweight `core API <http://fmtlib.net/dev/api.html#core-api>`_:
 
@@ -93,6 +104,19 @@
 * Switched from a custom null-terminated string view class to ``string_view``
   in the format API and provided ``fmt::string_view`` which implements a subset
   of ``std::string_view`` API for pre-C++17 systems.
+
+* Added support for ``std::experimental::string_view``
+  (`#607 <https://github.com/fmtlib/fmt/pull/607>`_):
+
+  .. code:: c++
+
+     #include <fmt/core.h>
+     #include <experimental/string_view>
+
+     fmt::print("{}", std::experimental::string_view("foo"));
+
+  Thanks `@virgiliofornazin (Virgilio Alexandre Fornazin)
+  <https://github.com/virgiliofornazin>`_.
 
 * Allowed mixing named and automatic arguments:
 

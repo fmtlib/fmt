@@ -3450,6 +3450,17 @@ inline OutputIt vformat_to(OutputIt out, string_view format_str,
   return vformat_to<arg_formatter<range>>(range(out), format_str, args);
 }
 
+/**
+ \rst
+ Formats arguments, writes the result to the output iterator ``out`` and returns
+ the iterator past the end of the output range.
+
+   **Example**::
+
+     std::vector<char> out;
+     fmt::format_to(std::back_inserter(out), "{}", 42);
+ \endrst
+ */
 template <typename OutputIt, typename... Args>
 inline OutputIt format_to(OutputIt out, string_view format_str,
                           const Args & ... args) {

@@ -151,6 +151,8 @@ The following user-defined literals are defined in ``fmt/format.h``.
 Utilities
 ---------
 
+.. dosygenfunction:: fmt::formatted_size(string_view, const Args&...)
+
 .. doxygenfunction:: fmt::to_string(const T&)
 
 .. doxygenfunction:: fmt::to_wstring(const T&)
