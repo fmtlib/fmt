@@ -626,6 +626,7 @@ inline int fprintf(std::FILE *f, string_view format_str, const Args & ... args) 
   auto vargs = make_format_args<
     typename printf_context<internal::buffer>::type>(args...);
 #if FMT_GCC_VERSION && FMT_GCC_VERSION <= 440
+  // Fix gcc's bugged template deduction
   return vfprintf<char>(f, format_str, vargs);
 #else
   return vfprintf(f, format_str, vargs);

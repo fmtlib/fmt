@@ -141,6 +141,7 @@ template <typename... Args>
 inline void print(std::ostream &os, string_view format_str,
                   const Args & ... args) {
 #if FMT_GCC_VERSION && FMT_GCC_VERSION <= 440
+  // Fix gcc's bugged template deduction
   vprint<char>(os, format_str, make_format_args<format_context>(args...));
 #else
   vprint(os, format_str, make_format_args<format_context>(args...));

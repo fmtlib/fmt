@@ -92,7 +92,7 @@ add_fmt_test(printf-test)
 add_fmt_test(time-test)
 add_fmt_test(util-test mock-allocator.h)
 add_fmt_test(custom-formatter-test)
-add_fmt_test(ranges-test)
+#add_fmt_test(ranges-test)
 
 # Enable stricter options for one test to make sure that the header is free of
 # warnings.
@@ -148,7 +148,7 @@ if (FMT_PEDANTIC)
     "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
     --build-generator ${CMAKE_GENERATOR}
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
-    --build-options 
+    --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCPP14_FLAG=${CPP14_FLAG}"
     "-DSUPPORTS_USER_DEFINED_LITERALS=${SUPPORTS_USER_DEFINED_LITERALS}")
