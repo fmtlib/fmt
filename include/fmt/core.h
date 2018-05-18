@@ -73,7 +73,8 @@
 # endif
 #endif
 
-#if FMT_HAS_FEATURE(cxx_explicit_conversions)
+#if FMT_HAS_FEATURE(cxx_explicit_conversions) || \
+    FMT_MSC_VER >= 1800
 # define FMT_EXPLICIT explicit
 #else
 # define FMT_EXPLICIT
@@ -199,13 +200,11 @@ typename std::add_rvalue_reference<T>::type declval() FMT_NOEXCEPT;
 }
 
 /**
-  \rst
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
   subset of the API. ``fmt::basic_string_view`` is used for format strings even
   if ``std::string_view`` is available to prevent issues when a library is
   compiled with a different ``-std`` option than the client code (which is not
   recommended).
-  \endrst
  */
 template <typename Char>
 class basic_string_view {
@@ -244,11 +243,7 @@ class basic_string_view {
   basic_string_view(const Char *s)
     : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
-  /**
-    \rst
-    Constructs a string reference from a ``std::basic_string`` object.
-    \endrst
-   */
+  /** Constructs a string reference from a ``std::basic_string`` object. */
   template <typename Alloc>
   FMT_CONSTEXPR basic_string_view(
       const std::basic_string<Char, Alloc> &s) FMT_NOEXCEPT
@@ -335,11 +330,7 @@ class basic_buffer {
     capacity_ = capacity;
   }
 
-  /**
-    \rst
-    Increases the buffer capacity to hold at least *capacity* elements.
-    \endrst
-   */
+  /** Increases the buffer capacity to hold at least *capacity* elements. */
   virtual void grow(std::size_t capacity) = 0;
 
  public:
@@ -371,11 +362,7 @@ class basic_buffer {
     size_ = new_size;
   }
 
-  /**
-    \rst
-    Reserves space to store at least *capacity* elements.
-    \endrst
-   */
+  /** Reserves space to store at least *capacity* elements. */
   void reserve(std::size_t capacity) {
     if (capacity > capacity_)
       grow(capacity);
@@ -910,10 +897,8 @@ class basic_format_context :
   using typename base::iterator;
 
   /**
-   \rst
    Constructs a ``basic_format_context`` object. References to the arguments are
    stored in the object so make sure they have appropriate lifetimes.
-   \endrst
    */
   basic_format_context(OutputIt out, basic_string_view<char_type> format_str,
                 basic_format_args<basic_format_context> args)
@@ -997,8 +982,17 @@ class format_arg_store {
 
   friend class basic_format_args<Context>;
 
+  static FMT_CONSTEXPR uint64_t get_types() {
+    return IS_PACKED ? internal::get_types<Context, Args...>()
+                : -static_cast<int64_t>(NUM_ARGS);
+  }
+
  public:
+#if FMT_USE_CONSTEXPR
+  static constexpr uint64_t TYPES = get_types();
+#else
   static const uint64_t TYPES;
+#endif
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION <= 405
   // Workaround an array initialization bug in gcc 4.5 and earlier.
@@ -1011,10 +1005,10 @@ class format_arg_store {
 #endif
 };
 
+#if !FMT_USE_CONSTEXPR
 template <typename Context, typename ...Args>
-const uint64_t format_arg_store<Context, Args...>::TYPES = IS_PACKED ?
-    internal::get_types<Context, Args...>() :
-    -static_cast<int64_t>(NUM_ARGS);
+const uint64_t format_arg_store<Context, Args...>::TYPES = get_types();
+#endif
 
 /**
   \rst
