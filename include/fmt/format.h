@@ -1381,13 +1381,13 @@ class float_type_checker : private ErrorHandler {
   }
 };
 
-template <typename ErrorHandler>
+template <typename ErrorHandler, typename CharType>
 class char_specs_checker : public ErrorHandler {
  private:
-  char type_;
+  CharType type_;
 
  public:
-  FMT_CONSTEXPR char_specs_checker(char type, ErrorHandler eh)
+  FMT_CONSTEXPR char_specs_checker(CharType type, ErrorHandler eh)
     : ErrorHandler(eh), type_(type) {}
 
   FMT_CONSTEXPR void on_int() {
@@ -3110,8 +3110,10 @@ struct formatter<
             type_spec, internal::int_type_checker<decltype(eh)>(eh));
       break;
     case internal::char_type:
-      handle_char_specs(specs_, internal::char_specs_checker<decltype(eh)>(
-                          type_spec, eh));
+      handle_char_specs(
+          specs_,
+          internal::char_specs_checker<decltype(eh), decltype(type_spec)>(
+              type_spec, eh));
       break;
     case internal::double_type:
     case internal::long_double_type:
@@ -3391,9 +3393,7 @@ std::string to_string(const T &value) {
 }
 
 /**
-  \rst
   Converts *value* to ``std::wstring`` using the default format for type *T*.
-  \endrst
  */
 template <typename T>
 std::wstring to_wstring(const T &value) {
@@ -3450,6 +3450,17 @@ inline OutputIt vformat_to(OutputIt out, string_view format_str,
   return vformat_to<arg_formatter<range>>(range(out), format_str, args);
 }
 
+/**
+ \rst
+ Formats arguments, writes the result to the output iterator ``out`` and returns
+ the iterator past the end of the output range.
+
+ **Example**::
+
+   std::vector<char> out;
+   fmt::format_to(std::back_inserter(out), "{}", 42);
+ \endrst
+ */
 template <typename OutputIt, typename... Args>
 inline OutputIt format_to(OutputIt out, string_view format_str,
                           const Args & ... args) {
@@ -3524,7 +3535,10 @@ inline typename std::enable_if<internal::is_format_string<String>::value>::type
   return vprint(format_str.data(), make_format_args(args...));
 }
 
-// Counts the number of characters in the output of format(format_str, args...).
+/**
+ Returns the number of characters in the output of
+ ``format(format_str, args...)``.
+ */
 template <typename... Args>
 inline std::size_t formatted_size(string_view format_str,
                                   const Args & ... args) {

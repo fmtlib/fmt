@@ -17,7 +17,7 @@
 
 // output only up to N items from the range.
 #ifndef FMT_RANGE_OUTPUT_LENGTH_LIMIT
-#define FMT_RANGE_OUTPUT_LENGTH_LIMIT 256
+# define FMT_RANGE_OUTPUT_LENGTH_LIMIT 256
 #endif
 
 FMT_BEGIN_NAMESPACE
@@ -72,22 +72,19 @@ void copy(char ch, OutputIterator out) {
   *out++ = ch;
 }
 
-}  // namespace internal
-
-namespace internal {
-
 /// Return true value if T has std::string interface, like std::string_view.
 template <typename T>
 class is_like_std_string {
   template <typename U>
-  static auto check(U *p) -> decltype(p->find('a'), p->length(), p->data(), int());
+  static auto check(U *p) ->
+    decltype(p->find('a'), p->length(), p->data(), int());
   template <typename>
   static void check(...);
 
  public:
-  static FMT_CONSTEXPR_DECL const bool value = !std::is_void<decltype(check<T>(nullptr))>::value;
+  static FMT_CONSTEXPR_DECL const bool value =
+    !std::is_void<decltype(check<T>(nullptr))>::value;
 };
-
 
 template <typename... Ts>
 struct conditional_helper {};
@@ -104,30 +101,31 @@ struct is_range_<T,typename std::conditional<
 
 template <typename T>
 struct is_range {
-  static FMT_CONSTEXPR_DECL const bool value = is_range_<T>::value && !is_like_std_string<T>::value;
+  static FMT_CONSTEXPR_DECL const bool value =
+    is_range_<T>::value && !is_like_std_string<T>::value;
 };
-
 
 /// tuple_size and tuple_element check.
 template <typename T>
 class is_tuple_like_ {
   template <typename U>
-  static auto check(U *p)
-      -> decltype(std::tuple_size<U>::value,
-                  std::declval<typename std::tuple_element<0, U>::type>(), int());
+  static auto check(U *p) ->
+    decltype(std::tuple_size<U>::value,
+             std::declval<typename std::tuple_element<0, U>::type>(), int());
   template <typename>
   static void check(...);
 
  public:
-  static FMT_CONSTEXPR_DECL const bool value = !std::is_void<decltype(check<T>(nullptr))>::value;
+  static FMT_CONSTEXPR_DECL const bool value =
+    !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
 template <typename T>
 struct is_tuple_like {
-  static FMT_CONSTEXPR_DECL const bool value = is_tuple_like_<T>::value && !is_range_<T>::value;
+  static FMT_CONSTEXPR_DECL const bool value =
+    is_tuple_like_<T>::value && !is_range_<T>::value;
 };
 
-//=--------------------------------------------------------------------------------------------------------------------
 template <size_t... Is, class Tuple, class F>
 void for_each(std::index_sequence<Is...>, Tuple &&tup, F &&f) noexcept {
   using std::get;
@@ -135,21 +133,18 @@ void for_each(std::index_sequence<Is...>, Tuple &&tup, F &&f) noexcept {
   const int _[] = {0, ((void)f(get<Is>(tup)), 0)...};
   (void)_;  // blocks warnings
 }
-//=--------------------------------------------------------------------------------------------------------------------
+
 template <class T>
 FMT_CONSTEXPR std::make_index_sequence<std::tuple_size<T>::value> 
 get_indexes(T const &) { return {}; }
 
-//=--------------------------------------------------------------------------------------------------------------------
 template <class Tuple, class F>
 void for_each(Tuple &&tup, F &&f) {
   const auto indexes = get_indexes(tup);
   for_each(indexes, std::forward<Tuple>(tup), std::forward<F>(f));
 }
-
 }  // namespace internal
 
-// =====================================================================================================================
 template <typename TupleT, typename Char>
 struct formatter<TupleT, Char, 
     typename std::enable_if<fmt::internal::is_tuple_like<TupleT>::value>::type> {
@@ -193,7 +188,6 @@ template <typename RangeT, typename Char>
 struct formatter< RangeT, Char,
     typename std::enable_if<fmt::internal::is_range<RangeT>::value>::type> {
 
-
   fmt::formatting_range<Char> formatting;
 
   template <typename ParseContext>
@@ -234,3 +228,4 @@ struct formatter< RangeT, Char,
 FMT_END_NAMESPACE
 
 #endif // FMT_RANGES_H_
+

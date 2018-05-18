@@ -33,13 +33,13 @@ in Python:
   fmt::format("The answer is {}", 42);
   
 The ``fmt::format`` function returns a string "The answer is 42". You can use
-``fmt::MemoryWriter`` to avoid constructing ``std::string``:
+``fmt::memory_buffer`` to avoid constructing ``std::string``:
 
 .. code:: c++
 
-  fmt::MemoryWriter w;
-  w.write("Look, a {} string", 'C');
-  w.c_str(); // returns a C string (const char*)
+  fmt::memory_buffer out;
+  format_to(out, "For a moment, {} happened.", "nothing");
+  out.data(); // returns a pointer to the formatted data
 
 The ``fmt::print`` function performs formatting and writes the result to a file:
 
@@ -53,11 +53,6 @@ The file argument can be omitted in which case the function prints to
 .. code:: c++
 
   fmt::print("Don't {}\n", "panic");
-
-If your compiler supports C++11, then the formatting functions are implemented
-with variadic templates. Otherwise variadic functions are emulated by generating
-a set of lightweight wrappers. This ensures compatibility with older compilers
-while providing a natural API.
 
 The Format API also supports positional arguments useful for localization:
 
@@ -106,7 +101,7 @@ the code
 
   fmt::format("The answer is {:d}", "forty-two");
 
-throws a ``FormatError`` exception with description
+throws a ``format_error`` exception with description
 "unknown format code 'd' for string", because the argument
 ``"forty-two"`` is a string while the format code ``d``
 only applies to integers.
@@ -134,6 +129,38 @@ errors to the user, but it may call system functions which set ``errno``. Since
 fmt does not attempt to preserve the value of ``errno``, users should not make
 any assumptions about it and always set it to ``0`` before making any system
 calls that convey error information via ``errno``.
+
+Compact binary code
+-------------------
+
+Each call to a formatting function results in a compact binary code. For example
+(`godbolt <https://godbolt.org/g/TZU4KF>`_),
+
+.. code:: c++
+
+   #include <fmt/core.h>
+
+   int main() {
+     fmt::print("The answer is {}.", 42);
+   }
+
+compiles to just
+
+.. code:: asm
+
+   main: # @main
+     sub rsp, 24
+     mov qword ptr [rsp], 42
+     mov rcx, rsp
+     mov edi, offset .L.str
+     mov esi, 17
+     mov edx, 2
+     call fmt::v5::vprint(fmt::v5::basic_string_view<char>, fmt::v5::format_args)
+     xor eax, eax
+     add rsp, 24
+     ret
+   .L.str:
+     .asciz "The answer is {}."
 
 .. _portability:
 
