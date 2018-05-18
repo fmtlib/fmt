@@ -73,7 +73,8 @@
 # endif
 #endif
 
-#if FMT_HAS_FEATURE(cxx_explicit_conversions)
+#if FMT_HAS_FEATURE(cxx_explicit_conversions) || \
+    FMT_MSC_VER >= 1800
 # define FMT_EXPLICIT explicit
 #else
 # define FMT_EXPLICIT
@@ -970,8 +971,17 @@ class format_arg_store {
 
   friend class basic_format_args<Context>;
 
+  static FMT_CONSTEXPR uint64_t get_types() {
+    return IS_PACKED ? internal::get_types<Context, Args...>()
+                : -static_cast<int64_t>(NUM_ARGS);
+  }
+
  public:
+#if FMT_USE_CONSTEXPR
+  static constexpr uint64_t TYPES = get_types();
+#else
   static const uint64_t TYPES;
+#endif
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION <= 405
   // Workaround an array initialization bug in gcc 4.5 and earlier.
@@ -984,10 +994,10 @@ class format_arg_store {
 #endif
 };
 
+#if !FMT_USE_CONSTEXPR
 template <typename Context, typename ...Args>
-const uint64_t format_arg_store<Context, Args...>::TYPES = IS_PACKED ?
-    internal::get_types<Context, Args...>() :
-    -static_cast<int64_t>(NUM_ARGS);
+const uint64_t format_arg_store<Context, Args...>::TYPES = get_types();
+#endif
 
 /**
   \rst

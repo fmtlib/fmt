@@ -1381,13 +1381,13 @@ class float_type_checker : private ErrorHandler {
   }
 };
 
-template <typename ErrorHandler>
+template <typename ErrorHandler, typename CharType>
 class char_specs_checker : public ErrorHandler {
  private:
-  char type_;
+  CharType type_;
 
  public:
-  FMT_CONSTEXPR char_specs_checker(char type, ErrorHandler eh)
+  FMT_CONSTEXPR char_specs_checker(CharType type, ErrorHandler eh)
     : ErrorHandler(eh), type_(type) {}
 
   FMT_CONSTEXPR void on_int() {
@@ -3110,8 +3110,10 @@ struct formatter<
             type_spec, internal::int_type_checker<decltype(eh)>(eh));
       break;
     case internal::char_type:
-      handle_char_specs(specs_, internal::char_specs_checker<decltype(eh)>(
-                          type_spec, eh));
+      handle_char_specs(
+          specs_,
+          internal::char_specs_checker<decltype(eh), decltype(type_spec)>(
+              type_spec, eh));
       break;
     case internal::double_type:
     case internal::long_double_type:
