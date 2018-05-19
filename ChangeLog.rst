@@ -52,6 +52,9 @@
      <source>:12:45: error: expression '<throw-expression>' is not a constant expression
             throw format_error("invalid specifier");
 
+  Compile-time checks require relaxed ``constexpr`` (C++14 feature) support. If
+  the latter is not available, checks will be performed at runtime.
+
 * Added `iterator support
   <http://fmtlib.net/dev/api.html#output-iterator-support>`_:
 
@@ -64,8 +67,8 @@
      fmt::format_to(std::back_inserter(out), "{}", 42);
 
 * Added the `formatted_size
-  <http://fmtlib.net/dev/api.html#output-iterator-support>`_ function for
-  computing output size:
+  <http://fmtlib.net/dev/api.html#_CPPv2N3fmt14formatted_sizeE11string_viewDpRK4Args>`_
+  function for computing the output size:
 
   .. code:: c++
 
@@ -154,16 +157,25 @@
 
 * Implemented more efficient handling of large number of format arguments.
 
+* Added debug postfix ``d`` to the `fmt`` library name
+  (`#636 <https://github.com/fmtlib/fmt/issues/636>`_).
+
 * Removed unnecessary ``fmt/`` prefix in includes
   (`#397 <https://github.com/fmtlib/fmt/pull/397>`_).
   Thanks `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
 
-* Renamed ``CHAR_WIDTH`` to ``CHAR_SIZE`` to avoid collision with ISO/IEC TS
-  18661-1:2014 macro.
+* Added qmake project file ``support/fmt.pro``
+  (`#641 <https://github.com/fmtlib/fmt/pull/641>`_).
+  Thanks `@cowo78 (Giuseppe Corbelli) <https://github.com/cowo78>`_.
+
+* Removed ``FMT_CPPFORMAT`` CMake option.
 
 * Fixed a name conflict with the macro ``CHAR_WIDTH`` in glibc
   (`#616 <https://github.com/fmtlib/fmt/pull/616>`_).
   Thanks `@aroig (Abdó Roig-Maranges) <https://github.com/aroig>`_.
+
+* Fixed handling of nested braces in ``fmt::join``
+  (`#638 <https://github.com/fmtlib/fmt/issues/638>`_).
 
 * Added ``SOURCELINK_SUFFIX`` for compatibility with Sphinx 1.5
   (`#497 <https://github.com/fmtlib/fmt/pull/497>`_).
@@ -172,6 +184,18 @@
 * Added a missing ``inline`` in the header-only mode
   (`#626 <https://github.com/fmtlib/fmt/pull/626>`_).
   Thanks `@aroig (Abdó Roig-Maranges) <https://github.com/aroig>`_.
+
+* Fixed a warning about unreachable code
+  (`#640 <https://github.com/fmtlib/fmt/pull/640>`_).
+  Thanks `@peterbell10 <https://github.com/peterbell10>`_.
+
+* Worked around an MSVC bug and fixed several warnings
+  (`#653 <https://github.com/fmtlib/fmt/pull/653>`_).
+  Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
+
+* Fixed compilation with ``-fno-exceptions``
+  (`#655 <https://github.com/fmtlib/fmt/pull/655>`_).
+  Thanks `@chenxiaolong (Andrew Gunnerson) <https://github.com/chenxiaolong>`_.
 
 4.1.0 - 2017-12-20
 ------------------
@@ -234,7 +258,7 @@
   `@thelostt (Mário Feroldi) <https://github.com/thelostt>`_, and
   `@Manu343726 (Manu Sánchez) <https://github.com/Manu343726>`_.
 
-* Improved CMake: Used GNUInstallDirs to set installation location
+* Improved CMake: Used ``GNUInstallDirs`` to set installation location
   (`#610 <https://github.com/fmtlib/fmt/pull/610>`_) and fixed warnings
   (`#536 <https://github.com/fmtlib/fmt/pull/536>`_ and
   `#556 <https://github.com/fmtlib/fmt/pull/556>`_).
