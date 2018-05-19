@@ -307,17 +307,17 @@ TEST(UtilTest, FormatSystemError) {
 #if FMT_USE_FILE_DESCRIPTORS
 
 using fmt::buffered_file;
-using fmt::ErrorCode;
-using fmt::File;
+using fmt::error_code;
+using fmt::file;
 
 TEST(ErrorCodeTest, Ctor) {
-  EXPECT_EQ(0, ErrorCode().get());
-  EXPECT_EQ(42, ErrorCode(42).get());
+  EXPECT_EQ(0, error_code().get());
+  EXPECT_EQ(42, error_code(42).get());
 }
 
 TEST(OutputRedirectTest, ScopedRedirect) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   {
     buffered_file file(write_end.fdopen("w"));
     std::fprintf(file.get(), "[[[");
@@ -332,10 +332,10 @@ TEST(OutputRedirectTest, ScopedRedirect) {
 
 // Test that OutputRedirect handles errors in flush correctly.
 TEST(OutputRedirectTest, FlushErrorInCtor) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
-  File write_copy = write_end.dup(write_fd);
+  file write_copy = write_end.dup(write_fd);
   buffered_file f = write_end.fdopen("w");
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
@@ -350,7 +350,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
 TEST(OutputRedirectTest, DupErrorInCtor) {
   buffered_file f = open_buffered_file();
   int fd = (f.fileno)();
-  File copy = File::dup(fd);
+  file copy = file::dup(fd);
   FMT_POSIX(close(fd));
   scoped_ptr<OutputRedirect> redir;
   EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new OutputRedirect(f.get())),
@@ -359,8 +359,8 @@ TEST(OutputRedirectTest, DupErrorInCtor) {
 }
 
 TEST(OutputRedirectTest, RestoreAndRead) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   buffered_file file(write_end.fdopen("w"));
   std::fprintf(file.get(), "[[[");
   OutputRedirect redir(file.get());
@@ -374,10 +374,10 @@ TEST(OutputRedirectTest, RestoreAndRead) {
 
 // Test that OutputRedirect handles errors in flush correctly.
 TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
-  File write_copy = write_end.dup(write_fd);
+  file write_copy = write_end.dup(write_fd);
   buffered_file f = write_end.fdopen("w");
   OutputRedirect redir(f.get());
   // Put a character in a file buffer.
@@ -389,10 +389,10 @@ TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
 }
 
 TEST(OutputRedirectTest, ErrorInDtor) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
-  File write_copy = write_end.dup(write_fd);
+  file write_copy = write_end.dup(write_fd);
   buffered_file f = write_end.fdopen("w");
   scoped_ptr<OutputRedirect> redir(new OutputRedirect(f.get()));
   // Put a character in a file buffer.

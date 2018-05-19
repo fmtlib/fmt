@@ -26,8 +26,8 @@
 #include "util.h"
 
 using fmt::buffered_file;
-using fmt::ErrorCode;
-using fmt::File;
+using fmt::error_code;
+using fmt::file;
 
 using testing::internal::scoped_ptr;
 using testing::_;
@@ -214,8 +214,8 @@ TEST(UtilTest, GetPageSize) {
 
 TEST(FileTest, OpenRetry) {
   write_file("test", "there must be something here");
-  scoped_ptr<File> f;
-  EXPECT_RETRY(f.reset(new File("test", File::RDONLY)),
+  scoped_ptr<file> f;
+  EXPECT_RETRY(f.reset(new file("test", file::RDONLY)),
                open, "cannot open file test");
 #ifndef _WIN32
   char c = 0;
@@ -224,9 +224,9 @@ TEST(FileTest, OpenRetry) {
 }
 
 TEST(FileTest, CloseNoRetryInDtor) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
-  scoped_ptr<File> f(new File(std::move(read_end)));
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
+  scoped_ptr<file> f(new file(std::move(read_end)));
   int saved_close_count = 0;
   EXPECT_WRITE(stderr, {
     close_count = 1;
@@ -238,8 +238,8 @@ TEST(FileTest, CloseNoRetryInDtor) {
 }
 
 TEST(FileTest, CloseNoRetry) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   close_count = 1;
   EXPECT_SYSTEM_ERROR(read_end.close(), EINTR, "cannot close file");
   EXPECT_EQ(2, close_count);
@@ -249,7 +249,7 @@ TEST(FileTest, CloseNoRetry) {
 TEST(FileTest, Size) {
   std::string content = "top secret, destroy before reading";
   write_file("test", content);
-  File f("test", File::RDONLY);
+  file f("test", file::RDONLY);
   EXPECT_GE(f.size(), 0);
   EXPECT_EQ(content.size(), static_cast<unsigned long long>(f.size()));
 #ifdef _WIN32
@@ -267,7 +267,7 @@ TEST(FileTest, Size) {
 
 TEST(FileTest, MaxSize) {
   write_file("test", "");
-  File f("test", File::RDONLY);
+  file f("test", file::RDONLY);
   fstat_sim = MAX_SIZE;
   EXPECT_GE(f.size(), 0);
   EXPECT_EQ(max_file_size(), f.size());
@@ -275,8 +275,8 @@ TEST(FileTest, MaxSize) {
 }
 
 TEST(FileTest, ReadRetry) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   enum { SIZE = 4 };
   write_end.write("test", SIZE);
   write_end.close();
@@ -288,8 +288,8 @@ TEST(FileTest, ReadRetry) {
 }
 
 TEST(FileTest, WriteRetry) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   enum { SIZE = 4 };
   std::size_t count = 0;
   EXPECT_RETRY(count = write_end.write("test", SIZE),
@@ -306,8 +306,8 @@ TEST(FileTest, WriteRetry) {
 
 #ifdef _WIN32
 TEST(FileTest, ConvertReadCount) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   char c;
   std::size_t size = UINT_MAX;
   if (sizeof(unsigned) != sizeof(std::size_t))
@@ -320,8 +320,8 @@ TEST(FileTest, ConvertReadCount) {
 }
 
 TEST(FileTest, ConvertWriteCount) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   char c;
   std::size_t size = UINT_MAX;
   if (sizeof(unsigned) != sizeof(std::size_t))
@@ -337,14 +337,14 @@ TEST(FileTest, ConvertWriteCount) {
 TEST(FileTest, DupNoRetry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
   dup_count = 1;
-  EXPECT_SYSTEM_ERROR(File::dup(stdout_fd), EINTR,
+  EXPECT_SYSTEM_ERROR(file::dup(stdout_fd), EINTR,
       fmt::format("cannot duplicate file descriptor {}", stdout_fd));
   dup_count = 0;
 }
 
 TEST(FileTest, Dup2Retry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
-  File f1 = File::dup(stdout_fd), f2 = File::dup(stdout_fd);
+  file f1 = file::dup(stdout_fd), f2 = file::dup(stdout_fd);
   EXPECT_RETRY(f1.dup2(f2.descriptor()), dup2,
       fmt::format("cannot duplicate file descriptor {} to {}",
       f1.descriptor(), f2.descriptor()));
@@ -352,8 +352,8 @@ TEST(FileTest, Dup2Retry) {
 
 TEST(FileTest, Dup2NoExceptRetry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
-  File f1 = File::dup(stdout_fd), f2 = File::dup(stdout_fd);
-  ErrorCode ec;
+  file f1 = file::dup(stdout_fd), f2 = file::dup(stdout_fd);
+  error_code ec;
   dup2_count = 1;
   f1.dup2(f2.descriptor(), ec);
 #ifndef _WIN32
@@ -365,16 +365,16 @@ TEST(FileTest, Dup2NoExceptRetry) {
 }
 
 TEST(FileTest, PipeNoRetry) {
-  File read_end, write_end;
+  file read_end, write_end;
   pipe_count = 1;
   EXPECT_SYSTEM_ERROR(
-      File::pipe(read_end, write_end), EINTR, "cannot create pipe");
+      file::pipe(read_end, write_end), EINTR, "cannot create pipe");
   pipe_count = 0;
 }
 
 TEST(FileTest, FdopenNoRetry) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   fdopen_count = 1;
   EXPECT_SYSTEM_ERROR(read_end.fdopen("r"),
       EINTR, "cannot associate stream with file descriptor");
@@ -394,8 +394,8 @@ TEST(BufferedFileTest, OpenRetry) {
 }
 
 TEST(BufferedFileTest, CloseNoRetryInDtor) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   scoped_ptr<buffered_file> f(new buffered_file(read_end.fdopen("r")));
   int saved_fclose_count = 0;
   EXPECT_WRITE(stderr, {
@@ -408,8 +408,8 @@ TEST(BufferedFileTest, CloseNoRetryInDtor) {
 }
 
 TEST(BufferedFileTest, CloseNoRetry) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   buffered_file f = read_end.fdopen("r");
   fclose_count = 1;
   EXPECT_SYSTEM_ERROR(f.close(), EINTR, "cannot close file");
@@ -418,8 +418,8 @@ TEST(BufferedFileTest, CloseNoRetry) {
 }
 
 TEST(BufferedFileTest, FilenoNoRetry) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   buffered_file f = read_end.fdopen("r");
   fileno_count = 1;
   EXPECT_SYSTEM_ERROR((f.fileno)(), EINTR, "cannot get file descriptor");

@@ -478,8 +478,8 @@ TEST(PrintfTest, Examples) {
 }
 
 TEST(PrintfTest, PrintfError) {
-  fmt::File read_end, write_end;
-  fmt::File::pipe(read_end, write_end);
+  fmt::file read_end, write_end;
+  fmt::file::pipe(read_end, write_end);
   int result = fmt::fprintf(read_end.fdopen("r").get(), "test");
   EXPECT_LT(result, 0);
 }

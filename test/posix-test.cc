@@ -17,8 +17,8 @@
 #endif
 
 using fmt::buffered_file;
-using fmt::ErrorCode;
-using fmt::File;
+using fmt::error_code;
+using fmt::file;
 
 using testing::internal::scoped_ptr;
 
@@ -36,16 +36,16 @@ bool isclosed(int fd) {
 }
 
 // Opens a file for reading.
-File open_file() {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+file open_file() {
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   write_end.write(FILE_CONTENT, std::strlen(FILE_CONTENT));
   write_end.close();
   return read_end;
 }
 
 // Attempts to write a string to a file.
-void write(File &f, fmt::string_view s) {
+void write(file &f, fmt::string_view s) {
   std::size_t num_chars_left = s.size();
   const char *ptr = s.data();
   do {
@@ -160,12 +160,12 @@ TEST(BufferedFileTest, Fileno) {
 #endif
   f = open_buffered_file();
   EXPECT_TRUE(f.fileno() != -1);
-  File copy = File::dup(f.fileno());
+  file copy = file::dup(f.fileno());
   EXPECT_READ(copy, FILE_CONTENT);
 }
 
 TEST(FileTest, DefaultCtor) {
-  File f;
+  file f;
   EXPECT_EQ(-1, f.descriptor());
 }
 
@@ -173,64 +173,64 @@ TEST(FileTest, OpenBufferedFileInCtor) {
   FILE *fp = safe_fopen("test-file", "w");
   std::fputs(FILE_CONTENT, fp);
   std::fclose(fp);
-  File f("test-file", File::RDONLY);
+  file f("test-file", file::RDONLY);
   ASSERT_TRUE(isopen(f.descriptor()));
 }
 
 TEST(FileTest, OpenBufferedFileError) {
-  EXPECT_SYSTEM_ERROR(File("nonexistent", File::RDONLY),
+  EXPECT_SYSTEM_ERROR(file("nonexistent", file::RDONLY),
       ENOENT, "cannot open file nonexistent");
 }
 
 TEST(FileTest, MoveCtor) {
-  File f = open_file();
+  file f = open_file();
   int fd = f.descriptor();
   EXPECT_NE(-1, fd);
-  File f2(std::move(f));
+  file f2(std::move(f));
   EXPECT_EQ(fd, f2.descriptor());
   EXPECT_EQ(-1, f.descriptor());
 }
 
 TEST(FileTest, MoveAssignment) {
-  File f = open_file();
+  file f = open_file();
   int fd = f.descriptor();
   EXPECT_NE(-1, fd);
-  File f2;
+  file f2;
   f2 = std::move(f);
   EXPECT_EQ(fd, f2.descriptor());
   EXPECT_EQ(-1, f.descriptor());
 }
 
 TEST(FileTest, MoveAssignmentClosesFile) {
-  File f = open_file();
-  File f2 = open_file();
+  file f = open_file();
+  file f2 = open_file();
   int old_fd = f2.descriptor();
   f2 = std::move(f);
   EXPECT_TRUE(isclosed(old_fd));
 }
 
-File OpenBufferedFile(int &fd) {
-  File f = open_file();
+file OpenBufferedFile(int &fd) {
+  file f = open_file();
   fd = f.descriptor();
   return f;
 }
 
 TEST(FileTest, MoveFromTemporaryInCtor) {
   int fd = 0xdead;
-  File f(OpenBufferedFile(fd));
+  file f(OpenBufferedFile(fd));
   EXPECT_EQ(fd, f.descriptor());
 }
 
 TEST(FileTest, MoveFromTemporaryInAssignment) {
   int fd = 0xdead;
-  File f;
+  file f;
   f = OpenBufferedFile(fd);
   EXPECT_EQ(fd, f.descriptor());
 }
 
 TEST(FileTest, MoveFromTemporaryInAssignmentClosesFile) {
   int fd = 0xdead;
-  File f = open_file();
+  file f = open_file();
   int old_fd = f.descriptor();
   f = OpenBufferedFile(fd);
   EXPECT_TRUE(isclosed(old_fd));
@@ -239,14 +239,14 @@ TEST(FileTest, MoveFromTemporaryInAssignmentClosesFile) {
 TEST(FileTest, CloseFileInDtor) {
   int fd = 0;
   {
-    File f = open_file();
+    file f = open_file();
     fd = f.descriptor();
   }
   EXPECT_TRUE(isclosed(fd));
 }
 
 TEST(FileTest, CloseErrorInDtor) {
-  scoped_ptr<File> f(new File(open_file()));
+  scoped_ptr<file> f(new file(open_file()));
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
@@ -258,7 +258,7 @@ TEST(FileTest, CloseErrorInDtor) {
 }
 
 TEST(FileTest, Close) {
-  File f = open_file();
+  file f = open_file();
   int fd = f.descriptor();
   f.close();
   EXPECT_EQ(-1, f.descriptor());
@@ -266,19 +266,19 @@ TEST(FileTest, Close) {
 }
 
 TEST(FileTest, CloseError) {
-  File f = open_file();
+  file f = open_file();
   FMT_POSIX(close(f.descriptor()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_EQ(-1, f.descriptor());
 }
 
 TEST(FileTest, Read) {
-  File f = open_file();
+  file f = open_file();
   EXPECT_READ(f, FILE_CONTENT);
 }
 
 TEST(FileTest, ReadError) {
-  File f("test-file", File::WRONLY);
+  file f("test-file", file::WRONLY);
   char buf;
   // We intentionally read from a file opened in the write-only mode to
   // cause error.
@@ -286,23 +286,23 @@ TEST(FileTest, ReadError) {
 }
 
 TEST(FileTest, Write) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   write(write_end, "test");
   write_end.close();
   EXPECT_READ(read_end, "test");
 }
 
 TEST(FileTest, WriteError) {
-  File f("test-file", File::RDONLY);
+  file f("test-file", file::RDONLY);
   // We intentionally write to a file opened in the read-only mode to
   // cause error.
   EXPECT_SYSTEM_ERROR(f.write(" ", 1), EBADF, "cannot write to file");
 }
 
 TEST(FileTest, Dup) {
-  File f = open_file();
-  File copy = File::dup(f.descriptor());
+  file f = open_file();
+  file copy = file::dup(f.descriptor());
   EXPECT_NE(f.descriptor(), copy.descriptor());
   EXPECT_EQ(FILE_CONTENT, read(copy, std::strlen(FILE_CONTENT)));
 }
@@ -310,29 +310,29 @@ TEST(FileTest, Dup) {
 #ifndef __COVERITY__
 TEST(FileTest, DupError) {
   int value = -1;
-  EXPECT_SYSTEM_ERROR_NOASSERT(File::dup(value),
+  EXPECT_SYSTEM_ERROR_NOASSERT(file::dup(value),
       EBADF, "cannot duplicate file descriptor -1");
 }
 #endif
 
 TEST(FileTest, Dup2) {
-  File f = open_file();
-  File copy = open_file();
+  file f = open_file();
+  file copy = open_file();
   f.dup2(copy.descriptor());
   EXPECT_NE(f.descriptor(), copy.descriptor());
   EXPECT_READ(copy, FILE_CONTENT);
 }
 
 TEST(FileTest, Dup2Error) {
-  File f = open_file();
+  file f = open_file();
   EXPECT_SYSTEM_ERROR_NOASSERT(f.dup2(-1), EBADF,
     fmt::format("cannot duplicate file descriptor {} to -1", f.descriptor()));
 }
 
 TEST(FileTest, Dup2NoExcept) {
-  File f = open_file();
-  File copy = open_file();
-  ErrorCode ec;
+  file f = open_file();
+  file copy = open_file();
+  error_code ec;
   f.dup2(copy.descriptor(), ec);
   EXPECT_EQ(0, ec.get());
   EXPECT_NE(f.descriptor(), copy.descriptor());
@@ -340,15 +340,15 @@ TEST(FileTest, Dup2NoExcept) {
 }
 
 TEST(FileTest, Dup2NoExceptError) {
-  File f = open_file();
-  ErrorCode ec;
+  file f = open_file();
+  error_code ec;
   SUPPRESS_ASSERT(f.dup2(-1, ec));
   EXPECT_EQ(EBADF, ec.get());
 }
 
 TEST(FileTest, Pipe) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   EXPECT_NE(-1, read_end.descriptor());
   EXPECT_NE(-1, write_end.descriptor());
   write(write_end, "test");
@@ -356,14 +356,14 @@ TEST(FileTest, Pipe) {
 }
 
 TEST(FileTest, Fdopen) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   int read_fd = read_end.descriptor();
   EXPECT_EQ(read_fd, FMT_POSIX(fileno(read_end.fdopen("r").get())));
 }
 
 TEST(FileTest, FdopenError) {
-  File f;
+  file f;
   EXPECT_SYSTEM_ERROR_NOASSERT(
       f.fdopen("r"), EBADF, "cannot associate stream with file descriptor");
 }

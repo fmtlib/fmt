@@ -33,8 +33,8 @@ std::string get_system_error(int error_code) {
 const char *const FILE_CONTENT = "Don't panic!";
 
 fmt::buffered_file open_buffered_file(FILE **fp) {
-  fmt::File read_end, write_end;
-  fmt::File::pipe(read_end, write_end);
+  fmt::file read_end, write_end;
+  fmt::file::pipe(read_end, write_end);
   write_end.write(FILE_CONTENT, std::strlen(FILE_CONTENT));
   write_end.close();
   fmt::buffered_file f = read_end.fdopen("r");

@@ -113,12 +113,12 @@ typedef basic_cstring_view<char> cstring_view;
 typedef basic_cstring_view<wchar_t> wcstring_view;
 
 // An error code.
-class ErrorCode {
+class error_code {
  private:
   int value_;
 
  public:
-  explicit ErrorCode(int value = 0) FMT_NOEXCEPT : value_(value) {}
+  explicit error_code(int value = 0) FMT_NOEXCEPT : value_(value) {}
 
   int get() const FMT_NOEXCEPT { return value_; }
 };
@@ -128,7 +128,7 @@ class buffered_file {
  private:
   FILE *file_;
 
-  friend class File;
+  friend class file;
 
   explicit buffered_file(FILE *f) : file_(f) {}
 
@@ -222,18 +222,18 @@ public:
   }
 };
 
-// A file. Closed file is represented by a File object with descriptor -1.
+// A file. Closed file is represented by a file object with descriptor -1.
 // Methods that are not declared with FMT_NOEXCEPT may throw
 // fmt::system_error in case of failure. Note that some errors such as
 // closing the file multiple times will cause a crash on Windows rather
 // than an exception. You can get standard behavior by overriding the
 // invalid parameter handler with _set_invalid_parameter_handler.
-class File {
+class file {
  private:
   int fd_;  // File descriptor.
 
-  // Constructs a File object with a given descriptor.
-  explicit File(int fd) : fd_(fd) {}
+  // Constructs a file object with a given descriptor.
+  explicit file(int fd) : fd_(fd) {}
 
  public:
   // Possible values for the oflag argument to the constructor.
@@ -243,11 +243,11 @@ class File {
     RDWR   = FMT_POSIX(O_RDWR)    // Open for reading and writing.
   };
 
-  // Constructs a File object which doesn't represent any file.
-  File() FMT_NOEXCEPT : fd_(-1) {}
+  // Constructs a file object which doesn't represent any file.
+  file() FMT_NOEXCEPT : fd_(-1) {}
 
-  // Opens a file and constructs a File object representing this file.
-  FMT_API File(cstring_view path, int oflag);
+  // Opens a file and constructs a file object representing this file.
+  FMT_API file(cstring_view path, int oflag);
 
 #if !FMT_USE_RVALUE_REFERENCES
   // Emulate a move constructor and a move assignment operator if rvalue
@@ -262,22 +262,22 @@ class File {
 
  public:
   // A "move constructor" for moving from a temporary.
-  File(Proxy p) FMT_NOEXCEPT : fd_(p.fd) {}
+  file(Proxy p) FMT_NOEXCEPT : fd_(p.fd) {}
 
   // A "move constructor" for moving from an lvalue.
-  File(File &other) FMT_NOEXCEPT : fd_(other.fd_) {
+  file(file &other) FMT_NOEXCEPT : fd_(other.fd_) {
     other.fd_ = -1;
   }
 
   // A "move assignment operator" for moving from a temporary.
-  File &operator=(Proxy p) {
+  file &operator=(Proxy p) {
     close();
     fd_ = p.fd;
     return *this;
   }
 
   // A "move assignment operator" for moving from an lvalue.
-  File &operator=(File &other) {
+  file &operator=(file &other) {
     close();
     fd_ = other.fd_;
     other.fd_ = -1;
@@ -285,7 +285,7 @@ class File {
   }
 
   // Returns a proxy object for moving from a temporary:
-  //   File file = File(...);
+  //   file f = file(...);
   operator Proxy() FMT_NOEXCEPT {
     Proxy p = {fd_};
     fd_ = -1;
@@ -294,14 +294,14 @@ class File {
 
 #else
  private:
-  FMT_DISALLOW_COPY_AND_ASSIGN(File);
+  FMT_DISALLOW_COPY_AND_ASSIGN(file);
 
  public:
-  File(File &&other) FMT_NOEXCEPT : fd_(other.fd_) {
+  file(file &&other) FMT_NOEXCEPT : fd_(other.fd_) {
     other.fd_ = -1;
   }
 
-  File& operator=(File &&other) {
+  file& operator=(file &&other) {
     close();
     fd_ = other.fd_;
     other.fd_ = -1;
@@ -310,7 +310,7 @@ class File {
 #endif
 
   // Destroys the object closing the file it represents if any.
-  FMT_API ~File() FMT_DTOR_NOEXCEPT;
+  FMT_API ~file() FMT_DTOR_NOEXCEPT;
 
   // Returns the file descriptor.
   int descriptor() const FMT_NOEXCEPT { return fd_; }
@@ -330,7 +330,7 @@ class File {
 
   // Duplicates a file descriptor with the dup function and returns
   // the duplicate as a file object.
-  FMT_API static File dup(int fd);
+  FMT_API static file dup(int fd);
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary.
@@ -338,14 +338,14 @@ class File {
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary.
-  FMT_API void dup2(int fd, ErrorCode &ec) FMT_NOEXCEPT;
+  FMT_API void dup2(int fd, error_code &ec) FMT_NOEXCEPT;
 
   // Creates a pipe setting up read_end and write_end file objects for reading
   // and writing respectively.
-  FMT_API static void pipe(File &read_end, File &write_end);
+  FMT_API static void pipe(file &read_end, file &write_end);
 
   // Creates a buffered_file object associated with this file and detaches
-  // this File object from the file.
+  // this file object from the file.
   FMT_API buffered_file fdopen(const char *mode);
 };
 
@@ -410,7 +410,7 @@ FMT_END_NAMESPACE
 namespace std {
 // For compatibility with C++98.
 inline fmt::buffered_file &move(fmt::buffered_file &f) { return f; }
-inline fmt::File &move(fmt::File &f) { return f; }
+inline fmt::file &move(fmt::file &f) { return f; }
 }
 #endif
 
