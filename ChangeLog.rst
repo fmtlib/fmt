@@ -22,8 +22,8 @@
      #include <fmt/format.h>
      std::string s = format(fmt("{:d}"), "foo");
 
-gives a compile-time error because ``d`` is an invalid specifier for strings
-(`godbolt <https://godbolt.org/g/rnCy9Q>`_)::
+  gives a compile-time error because ``d`` is an invalid specifier for strings
+  (`godbolt <https://godbolt.org/g/rnCy9Q>`_)::
 
      ...
      <source>:4:19: note: in instantiation of function template specialization 'fmt::v5::format<S, char [4]>' requested here
@@ -31,6 +31,9 @@ gives a compile-time error because ``d`` is an invalid specifier for strings
                        ^
      format.h:1337:13: note: non-constexpr function 'on_error' cannot be used in a constant expression
          handler.on_error("invalid type specifier");
+
+  Compile-time checks require relaxed ``constexpr`` (C++14 feature) support. If
+  the latter is not available, checks will be performed at runtime.
 
 * Separated format string parsing and formatting in the extension API to enable
   compile-time format string processing. For example
@@ -70,9 +73,6 @@ gives a compile-time error because ``d`` is an invalid specifier for strings
      <source>:12:45: error: expression '<throw-expression>' is not a constant expression
             throw format_error("invalid specifier");
 
-  Compile-time checks require relaxed ``constexpr`` (C++14 feature) support. If
-  the latter is not available, checks will be performed at runtime.
-
 * Added `iterator support
   <http://fmtlib.net/dev/api.html#output-iterator-support>`_:
 
@@ -83,6 +83,17 @@ gives a compile-time error because ``d`` is an invalid specifier for strings
 
      std::vector<char> out;
      fmt::format_to(std::back_inserter(out), "{}", 42);
+
+* Added the `format_to_n
+  <http://fmtlib.net/dev/api.html#_CPPv2N3fmt11format_to_nE8OutputItNSt6size_tE11string_viewDpRK4Args>`_
+  function that restricts the output to the specified number of characters
+  (`#298 <https://github.com/fmtlib/fmt/issues/298>`_):
+
+  .. code:: c++
+
+     char out[4];
+     fmt::format_to_n(out, sizeof(out), "{}", 12345);
+     // out == "1234" (without terminating '\0')
 
 * Added the `formatted_size
   <http://fmtlib.net/dev/api.html#_CPPv2N3fmt14formatted_sizeE11string_viewDpRK4Args>`_
@@ -121,6 +132,9 @@ gives a compile-time error because ``d`` is an invalid specifier for strings
      void report_error(const char *format, const Args & ... args) {
        vreport_error(format, fmt::make_format_args(args...));
      }
+
+* Added the ``make_printf_args`` function for capturing ``printf`` arguments.
+  Thanks `@Kronuz (Germán Méndez Bravo) <https://github.com/Kronuz>`_.
 
 * Added prefix ``v`` to non-variadic functions taking ``format_args`` to
   distinguish them from variadic ones:
@@ -162,16 +176,15 @@ gives a compile-time error because ``d`` is an invalid specifier for strings
 * Disallowed formatting of multibyte strings into a wide character target
   (`#606 <https://github.com/fmtlib/fmt/pull/606>`_).
 
-* Added a section describing `the use of header-only target with CMake
-  <http://fmtlib.net/dev/usage.html#header-only-usage-with-cmake>`_ to the docs
-  (`#515 <https://github.com/fmtlib/fmt/pull/515>`_).
-  Thanks `@ibell (Ian Bell) <https://github.com/ibell>`_.
-
-* Added a `note about errno <http://fmtlib.net/latest/index.html#safety>`_ to the
-  documentation (
+* Improved documentation (
+  `#515 <https://github.com/fmtlib/fmt/pull/515>`_,
   `#614 <https://github.com/fmtlib/fmt/issues/614>`_,
-  `#617 <https://github.com/fmtlib/fmt/pull/617>`_).
-  Thanks `@mihaitodor (Mihai Todor) <https://github.com/mihaitodor>`_.
+  `#617 <https://github.com/fmtlib/fmt/pull/617>`_,
+  `#661 <https://github.com/fmtlib/fmt/pull/661>`_,
+  `#680 <https://github.com/fmtlib/fmt/pull/680>`_).
+  Thanks `@ibell (Ian Bell) <https://github.com/ibell>`_,
+  `@mihaitodor (Mihai Todor) <https://github.com/mihaitodor>`_, and
+  `@johnthagen <https://github.com/johnthagen>`_.
 
 * Implemented more efficient handling of large number of format arguments.
 
@@ -181,6 +194,10 @@ gives a compile-time error because ``d`` is an invalid specifier for strings
 * Removed unnecessary ``fmt/`` prefix in includes
   (`#397 <https://github.com/fmtlib/fmt/pull/397>`_).
   Thanks `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
+
+* Moved ``fmt/*.h`` to ``include/fmt/*.h`` to prevent irrelevant files and
+  directories appearing on the include search paths when fmt is used as a
+  subproject and moved source files to the ``src`` directory.
 
 * Added qmake project file ``support/fmt.pro``
   (`#641 <https://github.com/fmtlib/fmt/pull/641>`_).
@@ -209,13 +226,22 @@ gives a compile-time error because ``d`` is an invalid specifier for strings
 
 * Fixed various compiler warnings (
   `#640 <https://github.com/fmtlib/fmt/pull/640>`_,
-  `#656 <https://github.com/fmtlib/fmt/pull/656>`_).
-  Thanks `@peterbell10 <https://github.com/peterbell10>`_ and
-  `@LarsGullik <https://github.com/LarsGullik>`_.
+  `#656 <https://github.com/fmtlib/fmt/pull/656>`_,
+  `#679 <https://github.com/fmtlib/fmt/pull/679>`_,
+  `#681 <https://github.com/fmtlib/fmt/pull/681>`_,
+  `#705 <https://github.com/fmtlib/fmt/pull/705>`_).
+  Thanks `@peterbell10 <https://github.com/peterbell10>`_,
+  `@LarsGullik <https://github.com/LarsGullik>`_,
+  `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_,
+  `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_, and
+  `@christianparpart (Christian Parpart) <https://github.com/christianparpart>`_.
 
 * Worked around an MSVC bug and fixed several warnings
   (`#653 <https://github.com/fmtlib/fmt/pull/653>`_).
   Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
+
+* Worked around GCC bug 67371
+  (`#682 <https://github.com/fmtlib/fmt/issues/682>`_).
 
 * Fixed compilation with ``-fno-exceptions``
   (`#655 <https://github.com/fmtlib/fmt/pull/655>`_).
@@ -234,10 +260,6 @@ gives a compile-time error because ``d`` is an invalid specifier for strings
   (`#660 <https://github.com/fmtlib/fmt/pull/660>`_).
   Thanks `@hubslave <https://github.com/hubslave>`_.
 
-* Improved documentation 
-  (`#661 <https://github.com/fmtlib/fmt/pull/661>`_).
-  Thanks `@johnthagen <https://github.com/johnthagen>`_.
-
 * Fixed compilation when there is a mismatch between ``-std`` options between
   the library and user code
   (`#664 <https://github.com/fmtlib/fmt/issues/664>`_).
@@ -247,6 +269,22 @@ gives a compile-time error because ``d`` is an invalid specifier for strings
 
 * Fixed handling of numeric alignment with no width 
   (`#675 <https://github.com/fmtlib/fmt/issues/675>`_).
+
+* Fixed handling of empty strings in UTF8/16 converters
+  (`#676 <https://github.com/fmtlib/fmt/pull/676>`_).
+  Thanks `@vgalka-sl (Vasili Galka) <https://github.com/vgalka-sl>`_.
+
+* Fixed formatting of an empty ``string_view``
+  (`#689 <https://github.com/fmtlib/fmt/issues/689>`_).
+
+* Fixed detection of ``string_view`` on libc++ 
+  (`#686 <https://github.com/fmtlib/fmt/issues/686>`_).
+
+* Fixed DLL issues (`#696 <https://github.com/fmtlib/fmt/pull/696>`_).
+  Thanks `@sebkoenig <https://github.com/sebkoenig>`_.
+
+* Fixed compile checks for mixing narrow and wide strings
+  (`#690 <https://github.com/fmtlib/fmt/issues/690>`_).
 
 4.1.0 - 2017-12-20
 ------------------
