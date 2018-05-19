@@ -25,7 +25,7 @@
 #include "gtest-extra.h"
 #include "util.h"
 
-using fmt::BufferedFile;
+using fmt::buffered_file;
 using fmt::ErrorCode;
 using fmt::File;
 
@@ -194,7 +194,7 @@ int (test::fileno)(FILE *stream) {
 #endif
 
 void write_file(fmt::cstring_view filename, fmt::string_view content) {
-  fmt::BufferedFile f(filename, "w");
+  fmt::buffered_file f(filename, "w");
   f.print("{}", content);
 }
 
@@ -383,8 +383,8 @@ TEST(FileTest, FdopenNoRetry) {
 
 TEST(BufferedFileTest, OpenRetry) {
   write_file("test", "there must be something here");
-  scoped_ptr<BufferedFile> f;
-  EXPECT_RETRY(f.reset(new BufferedFile("test", "r")),
+  scoped_ptr<buffered_file> f;
+  EXPECT_RETRY(f.reset(new buffered_file("test", "r")),
                fopen, "cannot open file test");
 #ifndef _WIN32
   char c = 0;
@@ -396,7 +396,7 @@ TEST(BufferedFileTest, OpenRetry) {
 TEST(BufferedFileTest, CloseNoRetryInDtor) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
-  scoped_ptr<BufferedFile> f(new BufferedFile(read_end.fdopen("r")));
+  scoped_ptr<buffered_file> f(new buffered_file(read_end.fdopen("r")));
   int saved_fclose_count = 0;
   EXPECT_WRITE(stderr, {
     fclose_count = 1;
@@ -410,7 +410,7 @@ TEST(BufferedFileTest, CloseNoRetryInDtor) {
 TEST(BufferedFileTest, CloseNoRetry) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
-  BufferedFile f = read_end.fdopen("r");
+  buffered_file f = read_end.fdopen("r");
   fclose_count = 1;
   EXPECT_SYSTEM_ERROR(f.close(), EINTR, "cannot close file");
   EXPECT_EQ(2, fclose_count);
@@ -420,7 +420,7 @@ TEST(BufferedFileTest, CloseNoRetry) {
 TEST(BufferedFileTest, FilenoNoRetry) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
-  BufferedFile f = read_end.fdopen("r");
+  buffered_file f = read_end.fdopen("r");
   fileno_count = 1;
   EXPECT_SYSTEM_ERROR((f.fileno)(), EINTR, "cannot get file descriptor");
   EXPECT_EQ(2, fileno_count);

@@ -306,7 +306,7 @@ TEST(UtilTest, FormatSystemError) {
 
 #if FMT_USE_FILE_DESCRIPTORS
 
-using fmt::BufferedFile;
+using fmt::buffered_file;
 using fmt::ErrorCode;
 using fmt::File;
 
@@ -319,7 +319,7 @@ TEST(OutputRedirectTest, ScopedRedirect) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
   {
-    BufferedFile file(write_end.fdopen("w"));
+    buffered_file file(write_end.fdopen("w"));
     std::fprintf(file.get(), "[[[");
     {
       OutputRedirect redir(file.get());
@@ -336,7 +336,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
   File::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
   File write_copy = write_end.dup(write_fd);
-  BufferedFile f = write_end.fdopen("w");
+  buffered_file f = write_end.fdopen("w");
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   FMT_POSIX(close(write_fd));
@@ -348,7 +348,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
 }
 
 TEST(OutputRedirectTest, DupErrorInCtor) {
-  BufferedFile f = open_buffered_file();
+  buffered_file f = open_buffered_file();
   int fd = (f.fileno)();
   File copy = File::dup(fd);
   FMT_POSIX(close(fd));
@@ -361,14 +361,14 @@ TEST(OutputRedirectTest, DupErrorInCtor) {
 TEST(OutputRedirectTest, RestoreAndRead) {
   File read_end, write_end;
   File::pipe(read_end, write_end);
-  BufferedFile file(write_end.fdopen("w"));
+  buffered_file file(write_end.fdopen("w"));
   std::fprintf(file.get(), "[[[");
   OutputRedirect redir(file.get());
   std::fprintf(file.get(), "censored");
   EXPECT_EQ("censored", sanitize(redir.restore_and_read()));
   EXPECT_EQ("", sanitize(redir.restore_and_read()));
   std::fprintf(file.get(), "]]]");
-  file = BufferedFile();
+  file = buffered_file();
   EXPECT_READ(read_end, "[[[]]]");
 }
 
@@ -378,7 +378,7 @@ TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
   File::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
   File write_copy = write_end.dup(write_fd);
-  BufferedFile f = write_end.fdopen("w");
+  buffered_file f = write_end.fdopen("w");
   OutputRedirect redir(f.get());
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
@@ -393,7 +393,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
   File::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
   File write_copy = write_end.dup(write_fd);
-  BufferedFile f = write_end.fdopen("w");
+  buffered_file f = write_end.fdopen("w");
   scoped_ptr<OutputRedirect> redir(new OutputRedirect(f.get()));
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
@@ -405,7 +405,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
       FMT_POSIX(close(write_fd));
       SUPPRESS_ASSERT(redir.reset());
   }, format_system_error(EBADF, "cannot flush stream"));
-  write_copy.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
+  write_copy.dup2(write_fd); // "undo" close or dtor of buffered_file will fail
 }
 
 #endif  // FMT_USE_FILE_DESCRIPTORS

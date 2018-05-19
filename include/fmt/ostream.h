@@ -15,7 +15,7 @@ FMT_BEGIN_NAMESPACE
 namespace internal {
 
 template <class Char>
-class FormatBuf : public std::basic_streambuf<Char> {
+class formatbuf : public std::basic_streambuf<Char> {
  private:
   typedef typename std::basic_streambuf<Char>::int_type int_type;
   typedef typename std::basic_streambuf<Char>::traits_type traits_type;
@@ -23,7 +23,7 @@ class FormatBuf : public std::basic_streambuf<Char> {
   basic_buffer<Char> &buffer_;
 
  public:
-  FormatBuf(basic_buffer<Char> &buffer) : buffer_(buffer) {}
+  formatbuf(basic_buffer<Char> &buffer) : buffer_(buffer) {}
 
  protected:
   // The put-area is actually always empty. This makes the implementation
@@ -90,7 +90,7 @@ void write(std::basic_ostream<Char> &os, basic_buffer<Char> &buf) {
 
 template <typename Char, typename T>
 void format_value(basic_buffer<Char> &buffer, const T &value) {
-  internal::FormatBuf<Char> format_buf(buffer);
+  internal::formatbuf<Char> format_buf(buffer);
   std::basic_ostream<Char> output(&format_buf);
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
   output << value;

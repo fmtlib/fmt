@@ -124,20 +124,20 @@ class ErrorCode {
 };
 
 // A buffered file.
-class BufferedFile {
+class buffered_file {
  private:
   FILE *file_;
 
   friend class File;
 
-  explicit BufferedFile(FILE *f) : file_(f) {}
+  explicit buffered_file(FILE *f) : file_(f) {}
 
  public:
-  // Constructs a BufferedFile object which doesn't represent any file.
-  BufferedFile() FMT_NOEXCEPT : file_(FMT_NULL) {}
+  // Constructs a buffered_file object which doesn't represent any file.
+  buffered_file() FMT_NOEXCEPT : file_(FMT_NULL) {}
 
   // Destroys the object closing the file it represents if any.
-  FMT_API ~BufferedFile() FMT_DTOR_NOEXCEPT;
+  FMT_API ~buffered_file() FMT_DTOR_NOEXCEPT;
 
 #if !FMT_USE_RVALUE_REFERENCES
   // Emulate a move constructor and a move assignment operator if rvalue
@@ -152,22 +152,22 @@ class BufferedFile {
 
 public:
   // A "move constructor" for moving from a temporary.
-  BufferedFile(Proxy p) FMT_NOEXCEPT : file_(p.file) {}
+  buffered_file(Proxy p) FMT_NOEXCEPT : file_(p.file) {}
 
   // A "move constructor" for moving from an lvalue.
-  BufferedFile(BufferedFile &f) FMT_NOEXCEPT : file_(f.file_) {
+  buffered_file(buffered_file &f) FMT_NOEXCEPT : file_(f.file_) {
     f.file_ = FMT_NULL;
   }
 
   // A "move assignment operator" for moving from a temporary.
-  BufferedFile &operator=(Proxy p) {
+  buffered_file &operator=(Proxy p) {
     close();
     file_ = p.file;
     return *this;
   }
 
   // A "move assignment operator" for moving from an lvalue.
-  BufferedFile &operator=(BufferedFile &other) {
+  buffered_file &operator=(buffered_file &other) {
     close();
     file_ = other.file_;
     other.file_ = FMT_NULL;
@@ -175,7 +175,7 @@ public:
   }
 
   // Returns a proxy object for moving from a temporary:
-  //   BufferedFile file = BufferedFile(...);
+  //   buffered_file file = buffered_file(...);
   operator Proxy() FMT_NOEXCEPT {
     Proxy p = {file_};
     file_ = FMT_NULL;
@@ -184,14 +184,14 @@ public:
 
 #else
  private:
-  FMT_DISALLOW_COPY_AND_ASSIGN(BufferedFile);
+  FMT_DISALLOW_COPY_AND_ASSIGN(buffered_file);
 
  public:
-  BufferedFile(BufferedFile &&other) FMT_NOEXCEPT : file_(other.file_) {
+  buffered_file(buffered_file &&other) FMT_NOEXCEPT : file_(other.file_) {
     other.file_ = FMT_NULL;
   }
 
-  BufferedFile& operator=(BufferedFile &&other) {
+  buffered_file& operator=(buffered_file &&other) {
     close();
     file_ = other.file_;
     other.file_ = FMT_NULL;
@@ -200,7 +200,7 @@ public:
 #endif
 
   // Opens a file.
-  FMT_API BufferedFile(cstring_view filename, cstring_view mode);
+  FMT_API buffered_file(cstring_view filename, cstring_view mode);
 
   // Closes the file.
   FMT_API void close();
@@ -344,9 +344,9 @@ class File {
   // and writing respectively.
   FMT_API static void pipe(File &read_end, File &write_end);
 
-  // Creates a BufferedFile object associated with this file and detaches
+  // Creates a buffered_file object associated with this file and detaches
   // this File object from the file.
-  FMT_API BufferedFile fdopen(const char *mode);
+  FMT_API buffered_file fdopen(const char *mode);
 };
 
 // Returns the memory page size.
@@ -409,7 +409,7 @@ FMT_END_NAMESPACE
 #if !FMT_USE_RVALUE_REFERENCES
 namespace std {
 // For compatibility with C++98.
-inline fmt::BufferedFile &move(fmt::BufferedFile &f) { return f; }
+inline fmt::buffered_file &move(fmt::buffered_file &f) { return f; }
 inline fmt::File &move(fmt::File &f) { return f; }
 }
 #endif

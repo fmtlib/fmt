@@ -66,19 +66,19 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 
 FMT_BEGIN_NAMESPACE
 
-BufferedFile::~BufferedFile() FMT_NOEXCEPT {
+buffered_file::~buffered_file() FMT_NOEXCEPT {
   if (file_ && FMT_SYSTEM(fclose(file_)) != 0)
     report_system_error(errno, "cannot close file");
 }
 
-BufferedFile::BufferedFile(cstring_view filename, cstring_view mode) {
+buffered_file::buffered_file(cstring_view filename, cstring_view mode) {
   FMT_RETRY_VAL(file_,
                 FMT_SYSTEM(fopen(filename.c_str(), mode.c_str())), FMT_NULL);
   if (!file_)
     FMT_THROW(system_error(errno, "cannot open file {}", filename.c_str()));
 }
 
-void BufferedFile::close() {
+void buffered_file::close() {
   if (!file_)
     return;
   int result = FMT_SYSTEM(fclose(file_));
@@ -90,7 +90,7 @@ void BufferedFile::close() {
 // A macro used to prevent expansion of fileno on broken versions of MinGW.
 #define FMT_ARGS
 
-int BufferedFile::fileno() const {
+int buffered_file::fileno() const {
   int fd = FMT_POSIX_CALL(fileno FMT_ARGS(file_));
   if (fd == -1)
     FMT_THROW(system_error(errno, "cannot get file descriptor"));
@@ -217,13 +217,13 @@ void File::pipe(File &read_end, File &write_end) {
   write_end = File(fds[1]);
 }
 
-BufferedFile File::fdopen(const char *mode) {
+buffered_file File::fdopen(const char *mode) {
   // Don't retry as fdopen doesn't return EINTR.
   FILE *f = FMT_POSIX_CALL(fdopen(fd_, mode));
   if (!f)
     FMT_THROW(system_error(errno,
                            "cannot associate stream with file descriptor"));
-  BufferedFile file(f);
+  buffered_file file(f);
   fd_ = -1;
   return file;
 }

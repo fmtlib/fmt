@@ -16,7 +16,7 @@
 # undef fileno
 #endif
 
-using fmt::BufferedFile;
+using fmt::buffered_file;
 using fmt::ErrorCode;
 using fmt::File;
 
@@ -58,32 +58,32 @@ void write(File &f, fmt::string_view s) {
 }
 
 TEST(BufferedFileTest, DefaultCtor) {
-  BufferedFile f;
+  buffered_file f;
   EXPECT_TRUE(f.get() == 0);
 }
 
 TEST(BufferedFileTest, MoveCtor) {
-  BufferedFile bf = open_buffered_file();
+  buffered_file bf = open_buffered_file();
   FILE *fp = bf.get();
   EXPECT_TRUE(fp != 0);
-  BufferedFile bf2(std::move(bf));
+  buffered_file bf2(std::move(bf));
   EXPECT_EQ(fp, bf2.get());
   EXPECT_TRUE(bf.get() == 0);
 }
 
 TEST(BufferedFileTest, MoveAssignment) {
-  BufferedFile bf = open_buffered_file();
+  buffered_file bf = open_buffered_file();
   FILE *fp = bf.get();
   EXPECT_TRUE(fp != 0);
-  BufferedFile bf2;
+  buffered_file bf2;
   bf2 = std::move(bf);
   EXPECT_EQ(fp, bf2.get());
   EXPECT_TRUE(bf.get() == 0);
 }
 
 TEST(BufferedFileTest, MoveAssignmentClosesFile) {
-  BufferedFile bf = open_buffered_file();
-  BufferedFile bf2 = open_buffered_file();
+  buffered_file bf = open_buffered_file();
+  buffered_file bf2 = open_buffered_file();
   int old_fd = bf2.fileno();
   bf2 = std::move(bf);
   EXPECT_TRUE(isclosed(old_fd));
@@ -91,19 +91,19 @@ TEST(BufferedFileTest, MoveAssignmentClosesFile) {
 
 TEST(BufferedFileTest, MoveFromTemporaryInCtor) {
   FILE *fp = 0;
-  BufferedFile f(open_buffered_file(&fp));
+  buffered_file f(open_buffered_file(&fp));
   EXPECT_EQ(fp, f.get());
 }
 
 TEST(BufferedFileTest, MoveFromTemporaryInAssignment) {
   FILE *fp = 0;
-  BufferedFile f;
+  buffered_file f;
   f = open_buffered_file(&fp);
   EXPECT_EQ(fp, f.get());
 }
 
 TEST(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
-  BufferedFile f = open_buffered_file();
+  buffered_file f = open_buffered_file();
   int old_fd = f.fileno();
   f = open_buffered_file();
   EXPECT_TRUE(isclosed(old_fd));
@@ -112,14 +112,14 @@ TEST(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
 TEST(BufferedFileTest, CloseFileInDtor) {
   int fd = 0;
   {
-    BufferedFile f = open_buffered_file();
+    buffered_file f = open_buffered_file();
     fd = f.fileno();
   }
   EXPECT_TRUE(isclosed(fd));
 }
 
 TEST(BufferedFileTest, CloseErrorInDtor) {
-  scoped_ptr<BufferedFile> f(new BufferedFile(open_buffered_file()));
+  scoped_ptr<buffered_file> f(new buffered_file(open_buffered_file()));
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
@@ -131,7 +131,7 @@ TEST(BufferedFileTest, CloseErrorInDtor) {
 }
 
 TEST(BufferedFileTest, Close) {
-  BufferedFile f = open_buffered_file();
+  buffered_file f = open_buffered_file();
   int fd = f.fileno();
   f.close();
   EXPECT_TRUE(f.get() == 0);
@@ -139,14 +139,14 @@ TEST(BufferedFileTest, Close) {
 }
 
 TEST(BufferedFileTest, CloseError) {
-  BufferedFile f = open_buffered_file();
+  buffered_file f = open_buffered_file();
   FMT_POSIX(close(f.fileno()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_TRUE(f.get() == 0);
 }
 
 TEST(BufferedFileTest, Fileno) {
-  BufferedFile f;
+  buffered_file f;
 #ifndef __COVERITY__
   // fileno on a null FILE pointer either crashes or returns an error.
   // Disable Coverity because this is intentional.
