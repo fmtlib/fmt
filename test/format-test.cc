@@ -1072,16 +1072,6 @@ TEST(FormatterTest, FormatStdStringView) {
 }
 #endif
 
-struct ConvertibleToString {
-  std::string s;
-  ConvertibleToString() : s("foo") {}
-  operator const std::string &() const { return s; }
-};
-
-TEST(FormatterTest, FormatConvertibleToString) {
-  EXPECT_EQ("foo", format("{}", ConvertibleToString()));
-}
-
 struct ConvertibleToStringView {
   operator fmt::string_view() const { return "foo"; }
 };
