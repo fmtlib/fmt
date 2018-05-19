@@ -12,7 +12,25 @@
   of the library for standardization in `P0645R2 Text Formatting
   <https://wg21.link/P0645>`_.
 
-* Implemented ``constexpr`` parsing of format strings.
+* Implemented ``constexpr`` parsing of format strings and `compile-time format
+  string checks
+  <http://fmtlib.net/dev/api.html#compile-time-format-string-checks>`_. For
+  example
+
+  .. code:: c++
+
+     #include <fmt/format.h>
+     std::string s = format(fmt("{:d}"), "foo");
+
+gives a compile-time error because ``d`` is an invalid specifier for strings
+(`godbolt <https://godbolt.org/g/rnCy9Q>`_)::
+
+     ...
+     <source>:4:19: note: in instantiation of function template specialization 'fmt::v5::format<S, char [4]>' requested here
+       std::string s = format(fmt("{:d}"), "foo");
+                       ^
+     format.h:1337:13: note: non-constexpr function 'on_error' cannot be used in a constant expression
+         handler.on_error("invalid type specifier");
 
 * Separated format string parsing and formatting in the extension API to enable
   compile-time format string processing. For example
@@ -45,7 +63,7 @@
 
      std::string s = format(fmt("{:x}"), S());
 
-  will give a compile-time error due to invalid format specifier (`godbolt
+  gives a compile-time error due to invalid format specifier (`godbolt
   <https://godbolt.org/g/ywhrPp>`_)::
 
      ...
@@ -168,6 +186,10 @@
   (`#641 <https://github.com/fmtlib/fmt/pull/641>`_).
   Thanks `@cowo78 (Giuseppe Corbelli) <https://github.com/cowo78>`_.
 
+* Added Gradle build file ``support/build.gradle``
+  (`#649 <https://github.com/fmtlib/fmt/pull/649>`_).
+  Thanks `@luncliff (Park DongHa) <https://github.com/luncliff>`_.
+
 * Removed ``FMT_CPPFORMAT`` CMake option.
 
 * Fixed a name conflict with the macro ``CHAR_WIDTH`` in glibc
@@ -185,9 +207,11 @@
   (`#626 <https://github.com/fmtlib/fmt/pull/626>`_).
   Thanks `@aroig (Abdó Roig-Maranges) <https://github.com/aroig>`_.
 
-* Fixed a warning about unreachable code
-  (`#640 <https://github.com/fmtlib/fmt/pull/640>`_).
-  Thanks `@peterbell10 <https://github.com/peterbell10>`_.
+* Fixed various compiler warnings (
+  `#640 <https://github.com/fmtlib/fmt/pull/640>`_,
+  `#656 <https://github.com/fmtlib/fmt/pull/656>`_).
+  Thanks `@peterbell10 <https://github.com/peterbell10>`_ and
+  `@LarsGullik <https://github.com/LarsGullik>`_.
 
 * Worked around an MSVC bug and fixed several warnings
   (`#653 <https://github.com/fmtlib/fmt/pull/653>`_).
@@ -196,6 +220,33 @@
 * Fixed compilation with ``-fno-exceptions``
   (`#655 <https://github.com/fmtlib/fmt/pull/655>`_).
   Thanks `@chenxiaolong (Andrew Gunnerson) <https://github.com/chenxiaolong>`_.
+
+* Made ``constexpr remove_prefix`` gcc version check tighter
+  (`#648 <https://github.com/fmtlib/fmt/issues/648>`_).
+
+* Renamed internal type enum constants to prevent collision with poorly written
+  C libraries (`#644 <https://github.com/fmtlib/fmt/issues/644>`_).
+
+* Added detection of ``wostream operator<<``
+  (`#650 <https://github.com/fmtlib/fmt/issues/650>`_).
+
+* Fixed compilation on OpenBSD
+  (`#660 <https://github.com/fmtlib/fmt/pull/660>`_).
+  Thanks `@hubslave <https://github.com/hubslave>`_.
+
+* Improved documentation 
+  (`#661 <https://github.com/fmtlib/fmt/pull/661>`_).
+  Thanks `@johnthagen <https://github.com/johnthagen>`_.
+
+* Fixed compilation when there is a mismatch between ``-std`` options between
+  the library and user code
+  (`#664 <https://github.com/fmtlib/fmt/issues/664>`_).
+
+* Improved generated binary code on GCC 7 and older
+  (`#668 <https://github.com/fmtlib/fmt/issues/668>`_).
+
+* Fixed handling of numeric alignment with no width 
+  (`#675 <https://github.com/fmtlib/fmt/issues/675>`_).
 
 4.1.0 - 2017-12-20
 ------------------
