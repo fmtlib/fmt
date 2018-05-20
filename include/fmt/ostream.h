@@ -140,13 +140,13 @@ inline void vprint(std::basic_ostream<Char> &os,
 template <typename... Args>
 inline void print(std::ostream &os, string_view format_str,
                   const Args & ... args) {
-  vprint(os, format_str, make_format_args<format_context>(args...));
+  vprint<char>(os, format_str, make_format_args<format_context>(args...));
 }
 
 template <typename... Args>
 inline void print(std::wostream &os, wstring_view format_str,
                   const Args & ... args) {
-  vprint(os, format_str, make_format_args<wformat_context>(args...));
+  vprint<wchar_t>(os, format_str, make_format_args<wformat_context>(args...));
 }
 FMT_END_NAMESPACE
 

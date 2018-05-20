@@ -1394,7 +1394,8 @@ TEST(FormatTest, FixedEnum) {
 typedef fmt::back_insert_range<fmt::internal::buffer> buffer_range;
 
 class mock_arg_formatter:
-    public fmt::internal::function<void>,
+    public fmt::internal::function<
+      fmt::internal::arg_formatter_base<buffer_range>::iterator>,
     public fmt::internal::arg_formatter_base<buffer_range> {
  private:
   MOCK_METHOD1(call, void (int value));

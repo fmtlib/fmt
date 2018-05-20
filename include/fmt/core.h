@@ -616,7 +616,8 @@ FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
 // formatting of "[const] volatile char *" which is printed as bool by
 // iostreams.
 template <typename C, typename T>
-typed_value<C, pointer_type> make_value(const T *) {
+typename std::enable_if<!std::is_same<T, typename C::char_type>::value>::type
+    make_value(const T *) {
   static_assert(!sizeof(T), "formatting of non-void pointers is disallowed");
 }
 
@@ -1240,12 +1241,12 @@ inline std::string format(string_view format_str, const Args & ... args) {
   // This should be just
   // return vformat(format_str, make_format_args(args...));
   // but gcc has trouble optimizing the latter, so break it down.
-  format_arg_store<format_context, Args...> as(args...);
+  format_arg_store<format_context, Args...> as{args...};
   return vformat(format_str, as);
 }
 template <typename... Args>
 inline std::wstring format(wstring_view format_str, const Args & ... args) {
-  format_arg_store<wformat_context, Args...> as(args...);
+  format_arg_store<wformat_context, Args...> as{args...};
   return vformat(format_str, as);
 }
 
@@ -1286,7 +1287,7 @@ FMT_API void vprint(wstring_view format_str, wformat_args args);
  */
 template <typename... Args>
 inline void print(string_view format_str, const Args & ... args) {
-  format_arg_store<format_context, Args...> as(args...);
+  format_arg_store<format_context, Args...> as{args...};
   vprint(format_str, as);
 }
 
