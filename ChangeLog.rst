@@ -20,6 +20,7 @@
   .. code:: c++
 
      #include <fmt/format.h>
+
      std::string s = format(fmt("{:d}"), "foo");
 
   gives a compile-time error because ``d`` is an invalid specifier for strings
@@ -133,7 +134,9 @@
        vreport_error(format, fmt::make_format_args(args...));
      }
 
-* Added the ``make_printf_args`` function for capturing ``printf`` arguments.
+* Added the ``make_printf_args`` function for capturing ``printf`` arguments (
+  `#687 <https://github.com/fmtlib/fmt/issues/687>`_,
+  `#694 <https://github.com/fmtlib/fmt/pull/694>`_).
   Thanks `@Kronuz (Germán Méndez Bravo) <https://github.com/Kronuz>`_.
 
 * Added prefix ``v`` to non-variadic functions taking ``format_args`` to
@@ -145,6 +148,34 @@
      
      template <typename... Args>
      std::string format(string_view format_str, const Args & ... args);
+
+* Added experimental support for formatting ranges, containers and tuple-like
+  types in ``fmt/ranges.h`` (`#735 <https://github.com/fmtlib/fmt/pull/735>`_):
+
+  .. code:: c++
+
+     #include <fmt/ranges.h>
+
+     std::vector<int> v = {1, 2, 3};
+     fmt::print("{}", v); // prints {1, 2, 3}
+
+  Thanks `@Remotion (Remo) <https://github.com/Remotion>`_.
+
+* Implemented ``wchar_t`` date and time formatting
+  (`#712 <https://github.com/fmtlib/fmt/pull/712>`_):
+
+  .. code:: c++
+
+     #include <fmt/time.h>
+
+     std::time_t t = std::time(nullptr);
+     auto s = fmt::format(L"The date is {:%Y-%m-%d}.", *std::localtime(&t));
+
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
+
+* Provided more wide string overloads
+  (`#724 <https://github.com/fmtlib/fmt/pull/724>`_).
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
 * Switched from a custom null-terminated string view class to ``string_view``
   in the format API and provided ``fmt::string_view`` which implements a subset
@@ -188,6 +219,8 @@
 
 * Implemented more efficient handling of large number of format arguments.
 
+* Introduced an inline namespace for symbol versioning.
+
 * Added debug postfix ``d`` to the `fmt`` library name
   (`#636 <https://github.com/fmtlib/fmt/issues/636>`_).
 
@@ -229,12 +262,21 @@
   `#656 <https://github.com/fmtlib/fmt/pull/656>`_,
   `#679 <https://github.com/fmtlib/fmt/pull/679>`_,
   `#681 <https://github.com/fmtlib/fmt/pull/681>`_,
-  `#705 <https://github.com/fmtlib/fmt/pull/705>`_).
+  `#705 <https://github.com/fmtlib/fmt/pull/705>`_,
+  `#715 <https://github.com/fmtlib/fmt/issues/715>`_,
+  `#717 <https://github.com/fmtlib/fmt/pull/717>`_,
+  `#720 <https://github.com/fmtlib/fmt/pull/720>`_,
+  `#723 <https://github.com/fmtlib/fmt/pull/723>`_,
+  `#726 <https://github.com/fmtlib/fmt/pull/726>`_,
+  `#730 <https://github.com/fmtlib/fmt/pull/730>`_,
+  `#739 <https://github.com/fmtlib/fmt/pull/739>`_).
   Thanks `@peterbell10 <https://github.com/peterbell10>`_,
   `@LarsGullik <https://github.com/LarsGullik>`_,
   `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_,
-  `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_, and
-  `@christianparpart (Christian Parpart) <https://github.com/christianparpart>`_.
+  `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_,
+  `@christianparpart (Christian Parpart) <https://github.com/christianparpart>`_,
+  `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
+  and `@mwinterb <https://github.com/mwinterb>`_.
 
 * Worked around an MSVC bug and fixed several warnings
   (`#653 <https://github.com/fmtlib/fmt/pull/653>`_).
@@ -260,9 +302,16 @@
   (`#660 <https://github.com/fmtlib/fmt/pull/660>`_).
   Thanks `@hubslave <https://github.com/hubslave>`_.
 
+* Fixed compilation on FreeBSD 12
+  (`#732 <https://github.com/fmtlib/fmt/pull/732>`_).
+  Thanks `@dankm <https://github.com/dankm>`_.
+
 * Fixed compilation when there is a mismatch between ``-std`` options between
   the library and user code
   (`#664 <https://github.com/fmtlib/fmt/issues/664>`_).
+
+* Fixed compilation with GCC 7 and ``-std=c++11``
+  (`#734 <https://github.com/fmtlib/fmt/issues/734>`_).
 
 * Improved generated binary code on GCC 7 and older
   (`#668 <https://github.com/fmtlib/fmt/issues/668>`_).
@@ -285,6 +334,17 @@
 
 * Fixed compile checks for mixing narrow and wide strings
   (`#690 <https://github.com/fmtlib/fmt/issues/690>`_).
+
+* Disabled unsafe implicit conversion to ``std::string``
+  (`#729 <https://github.com/fmtlib/fmt/issues/729>`_).
+
+* Fixed handling of reused format specs (as in ``fmt::join``) for pointers
+  (`#725 <https://github.com/fmtlib/fmt/pull/725>`_).
+  Thanks `@mwinterb <https://github.com/mwinterb>`_.
+
+* Fixed installation of ``fmt/ranges.h``
+  (`#738 <https://github.com/fmtlib/fmt/pull/738>`_).
+  Thanks `@sv1990 <https://github.com/sv1990>`_.
 
 4.1.0 - 2017-12-20
 ------------------
