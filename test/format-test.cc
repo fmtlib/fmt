@@ -1072,16 +1072,6 @@ TEST(FormatterTest, FormatStdStringView) {
 }
 #endif
 
-struct ConvertibleToString {
-  std::string s;
-  ConvertibleToString() : s("foo") {}
-  operator const std::string &() const { return s; }
-};
-
-TEST(FormatterTest, FormatConvertibleToString) {
-  EXPECT_EQ("foo", format("{}", ConvertibleToString()));
-}
-
 struct ConvertibleToStringView {
   operator fmt::string_view() const { return "foo"; }
 };
@@ -1217,23 +1207,23 @@ TEST(FormatterTest, Examples) {
 }
 
 TEST(FormatIntTest, Data) {
-  fmt::FormatInt format_int(42);
+  fmt::format_int format_int(42);
   EXPECT_EQ("42", std::string(format_int.data(), format_int.size()));
 }
 
 TEST(FormatIntTest, FormatInt) {
-  EXPECT_EQ("42", fmt::FormatInt(42).str());
-  EXPECT_EQ(2u, fmt::FormatInt(42).size());
-  EXPECT_EQ("-42", fmt::FormatInt(-42).str());
-  EXPECT_EQ(3u, fmt::FormatInt(-42).size());
-  EXPECT_EQ("42", fmt::FormatInt(42ul).str());
-  EXPECT_EQ("-42", fmt::FormatInt(-42l).str());
-  EXPECT_EQ("42", fmt::FormatInt(42ull).str());
-  EXPECT_EQ("-42", fmt::FormatInt(-42ll).str());
+  EXPECT_EQ("42", fmt::format_int(42).str());
+  EXPECT_EQ(2u, fmt::format_int(42).size());
+  EXPECT_EQ("-42", fmt::format_int(-42).str());
+  EXPECT_EQ(3u, fmt::format_int(-42).size());
+  EXPECT_EQ("42", fmt::format_int(42ul).str());
+  EXPECT_EQ("-42", fmt::format_int(-42l).str());
+  EXPECT_EQ("42", fmt::format_int(42ull).str());
+  EXPECT_EQ("-42", fmt::format_int(-42ll).str());
   std::ostringstream os;
   os << std::numeric_limits<int64_t>::max();
   EXPECT_EQ(os.str(),
-            fmt::FormatInt(std::numeric_limits<int64_t>::max()).str());
+            fmt::format_int(std::numeric_limits<int64_t>::max()).str());
 }
 
 template <typename T>

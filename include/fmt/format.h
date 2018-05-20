@@ -2974,7 +2974,7 @@ FMT_API void report_windows_error(int error_code,
 #endif
 
 /** Fast integer formatter. */
-class FormatInt {
+class format_int {
  private:
   // Buffer should be large enough to hold all digits (digits10 + 1),
   // a sign and a null character.
@@ -3015,12 +3015,12 @@ class FormatInt {
   }
 
  public:
-  explicit FormatInt(int value) { format_signed(value); }
-  explicit FormatInt(long value) { format_signed(value); }
-  explicit FormatInt(long long value) { format_signed(value); }
-  explicit FormatInt(unsigned value) : str_(format_decimal(value)) {}
-  explicit FormatInt(unsigned long value) : str_(format_decimal(value)) {}
-  explicit FormatInt(unsigned long long value) : str_(format_decimal(value)) {}
+  explicit format_int(int value) { format_signed(value); }
+  explicit format_int(long value) { format_signed(value); }
+  explicit format_int(long long value) { format_signed(value); }
+  explicit format_int(unsigned value) : str_(format_decimal(value)) {}
+  explicit format_int(unsigned long value) : str_(format_decimal(value)) {}
+  explicit format_int(unsigned long long value) : str_(format_decimal(value)) {}
 
   /** Returns the number of characters written to the output buffer. */
   std::size_t size() const {
@@ -3647,7 +3647,7 @@ FMT_END_NAMESPACE
 
     #include <fmt/format.h>
     // A compile-time error because 'd' is an invalid specifier for strings.
-    std::string s = fmt::format(fmt("{:d}"), "foo");
+    std::string s = format(fmt("{:d}"), "foo");
   \endrst
  */
 # define fmt(s) FMT_STRING(s)

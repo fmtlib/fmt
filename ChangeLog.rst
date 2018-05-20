@@ -12,7 +12,28 @@
   of the library for standardization in `P0645R2 Text Formatting
   <https://wg21.link/P0645>`_.
 
-* Implemented ``constexpr`` parsing of format strings.
+* Implemented ``constexpr`` parsing of format strings and `compile-time format
+  string checks
+  <http://fmtlib.net/dev/api.html#compile-time-format-string-checks>`_. For
+  example
+
+  .. code:: c++
+
+     #include <fmt/format.h>
+     std::string s = format(fmt("{:d}"), "foo");
+
+  gives a compile-time error because ``d`` is an invalid specifier for strings
+  (`godbolt <https://godbolt.org/g/rnCy9Q>`_)::
+
+     ...
+     <source>:4:19: note: in instantiation of function template specialization 'fmt::v5::format<S, char [4]>' requested here
+       std::string s = format(fmt("{:d}"), "foo");
+                       ^
+     format.h:1337:13: note: non-constexpr function 'on_error' cannot be used in a constant expression
+         handler.on_error("invalid type specifier");
+
+  Compile-time checks require relaxed ``constexpr`` (C++14 feature) support. If
+  the latter is not available, checks will be performed at runtime.
 
 * Separated format string parsing and formatting in the extension API to enable
   compile-time format string processing. For example
@@ -45,7 +66,7 @@
 
      std::string s = format(fmt("{:x}"), S());
 
-  will give a compile-time error due to invalid format specifier (`godbolt
+  gives a compile-time error due to invalid format specifier (`godbolt
   <https://godbolt.org/g/ywhrPp>`_)::
 
      ...
@@ -63,9 +84,20 @@
      std::vector<char> out;
      fmt::format_to(std::back_inserter(out), "{}", 42);
 
+* Added the `format_to_n
+  <http://fmtlib.net/dev/api.html#_CPPv2N3fmt11format_to_nE8OutputItNSt6size_tE11string_viewDpRK4Args>`_
+  function that restricts the output to the specified number of characters
+  (`#298 <https://github.com/fmtlib/fmt/issues/298>`_):
+
+  .. code:: c++
+
+     char out[4];
+     fmt::format_to_n(out, sizeof(out), "{}", 12345);
+     // out == "1234" (without terminating '\0')
+
 * Added the `formatted_size
-  <http://fmtlib.net/dev/api.html#output-iterator-support>`_ function for
-  computing output size:
+  <http://fmtlib.net/dev/api.html#_CPPv2N3fmt14formatted_sizeE11string_viewDpRK4Args>`_
+  function for computing the output size:
 
   .. code:: c++
 
@@ -100,6 +132,9 @@
      void report_error(const char *format, const Args & ... args) {
        vreport_error(format, fmt::make_format_args(args...));
      }
+
+* Added the ``make_printf_args`` function for capturing ``printf`` arguments.
+  Thanks `@Kronuz (Germán Méndez Bravo) <https://github.com/Kronuz>`_.
 
 * Added prefix ``v`` to non-variadic functions taking ``format_args`` to
   distinguish them from variadic ones:
@@ -141,29 +176,45 @@
 * Disallowed formatting of multibyte strings into a wide character target
   (`#606 <https://github.com/fmtlib/fmt/pull/606>`_).
 
-* Added a section describing `the use of header-only target with CMake
-  <http://fmtlib.net/dev/usage.html#header-only-usage-with-cmake>`_ to the docs
-  (`#515 <https://github.com/fmtlib/fmt/pull/515>`_).
-  Thanks `@ibell (Ian Bell) <https://github.com/ibell>`_.
-
-* Added a `note about errno <http://fmtlib.net/latest/index.html#safety>`_ to the
-  documentation (
+* Improved documentation (
+  `#515 <https://github.com/fmtlib/fmt/pull/515>`_,
   `#614 <https://github.com/fmtlib/fmt/issues/614>`_,
-  `#617 <https://github.com/fmtlib/fmt/pull/617>`_).
-  Thanks `@mihaitodor (Mihai Todor) <https://github.com/mihaitodor>`_.
+  `#617 <https://github.com/fmtlib/fmt/pull/617>`_,
+  `#661 <https://github.com/fmtlib/fmt/pull/661>`_,
+  `#680 <https://github.com/fmtlib/fmt/pull/680>`_).
+  Thanks `@ibell (Ian Bell) <https://github.com/ibell>`_,
+  `@mihaitodor (Mihai Todor) <https://github.com/mihaitodor>`_, and
+  `@johnthagen <https://github.com/johnthagen>`_.
 
 * Implemented more efficient handling of large number of format arguments.
+
+* Added debug postfix ``d`` to the `fmt`` library name
+  (`#636 <https://github.com/fmtlib/fmt/issues/636>`_).
 
 * Removed unnecessary ``fmt/`` prefix in includes
   (`#397 <https://github.com/fmtlib/fmt/pull/397>`_).
   Thanks `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
 
-* Renamed ``CHAR_WIDTH`` to ``CHAR_SIZE`` to avoid collision with ISO/IEC TS
-  18661-1:2014 macro.
+* Moved ``fmt/*.h`` to ``include/fmt/*.h`` to prevent irrelevant files and
+  directories appearing on the include search paths when fmt is used as a
+  subproject and moved source files to the ``src`` directory.
+
+* Added qmake project file ``support/fmt.pro``
+  (`#641 <https://github.com/fmtlib/fmt/pull/641>`_).
+  Thanks `@cowo78 (Giuseppe Corbelli) <https://github.com/cowo78>`_.
+
+* Added Gradle build file ``support/build.gradle``
+  (`#649 <https://github.com/fmtlib/fmt/pull/649>`_).
+  Thanks `@luncliff (Park DongHa) <https://github.com/luncliff>`_.
+
+* Removed ``FMT_CPPFORMAT`` CMake option.
 
 * Fixed a name conflict with the macro ``CHAR_WIDTH`` in glibc
   (`#616 <https://github.com/fmtlib/fmt/pull/616>`_).
   Thanks `@aroig (Abdó Roig-Maranges) <https://github.com/aroig>`_.
+
+* Fixed handling of nested braces in ``fmt::join``
+  (`#638 <https://github.com/fmtlib/fmt/issues/638>`_).
 
 * Added ``SOURCELINK_SUFFIX`` for compatibility with Sphinx 1.5
   (`#497 <https://github.com/fmtlib/fmt/pull/497>`_).
@@ -172,6 +223,68 @@
 * Added a missing ``inline`` in the header-only mode
   (`#626 <https://github.com/fmtlib/fmt/pull/626>`_).
   Thanks `@aroig (Abdó Roig-Maranges) <https://github.com/aroig>`_.
+
+* Fixed various compiler warnings (
+  `#640 <https://github.com/fmtlib/fmt/pull/640>`_,
+  `#656 <https://github.com/fmtlib/fmt/pull/656>`_,
+  `#679 <https://github.com/fmtlib/fmt/pull/679>`_,
+  `#681 <https://github.com/fmtlib/fmt/pull/681>`_,
+  `#705 <https://github.com/fmtlib/fmt/pull/705>`_).
+  Thanks `@peterbell10 <https://github.com/peterbell10>`_,
+  `@LarsGullik <https://github.com/LarsGullik>`_,
+  `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_,
+  `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_, and
+  `@christianparpart (Christian Parpart) <https://github.com/christianparpart>`_.
+
+* Worked around an MSVC bug and fixed several warnings
+  (`#653 <https://github.com/fmtlib/fmt/pull/653>`_).
+  Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
+
+* Worked around GCC bug 67371
+  (`#682 <https://github.com/fmtlib/fmt/issues/682>`_).
+
+* Fixed compilation with ``-fno-exceptions``
+  (`#655 <https://github.com/fmtlib/fmt/pull/655>`_).
+  Thanks `@chenxiaolong (Andrew Gunnerson) <https://github.com/chenxiaolong>`_.
+
+* Made ``constexpr remove_prefix`` gcc version check tighter
+  (`#648 <https://github.com/fmtlib/fmt/issues/648>`_).
+
+* Renamed internal type enum constants to prevent collision with poorly written
+  C libraries (`#644 <https://github.com/fmtlib/fmt/issues/644>`_).
+
+* Added detection of ``wostream operator<<``
+  (`#650 <https://github.com/fmtlib/fmt/issues/650>`_).
+
+* Fixed compilation on OpenBSD
+  (`#660 <https://github.com/fmtlib/fmt/pull/660>`_).
+  Thanks `@hubslave <https://github.com/hubslave>`_.
+
+* Fixed compilation when there is a mismatch between ``-std`` options between
+  the library and user code
+  (`#664 <https://github.com/fmtlib/fmt/issues/664>`_).
+
+* Improved generated binary code on GCC 7 and older
+  (`#668 <https://github.com/fmtlib/fmt/issues/668>`_).
+
+* Fixed handling of numeric alignment with no width 
+  (`#675 <https://github.com/fmtlib/fmt/issues/675>`_).
+
+* Fixed handling of empty strings in UTF8/16 converters
+  (`#676 <https://github.com/fmtlib/fmt/pull/676>`_).
+  Thanks `@vgalka-sl (Vasili Galka) <https://github.com/vgalka-sl>`_.
+
+* Fixed formatting of an empty ``string_view``
+  (`#689 <https://github.com/fmtlib/fmt/issues/689>`_).
+
+* Fixed detection of ``string_view`` on libc++ 
+  (`#686 <https://github.com/fmtlib/fmt/issues/686>`_).
+
+* Fixed DLL issues (`#696 <https://github.com/fmtlib/fmt/pull/696>`_).
+  Thanks `@sebkoenig <https://github.com/sebkoenig>`_.
+
+* Fixed compile checks for mixing narrow and wide strings
+  (`#690 <https://github.com/fmtlib/fmt/issues/690>`_).
 
 4.1.0 - 2017-12-20
 ------------------
@@ -234,7 +347,7 @@
   `@thelostt (Mário Feroldi) <https://github.com/thelostt>`_, and
   `@Manu343726 (Manu Sánchez) <https://github.com/Manu343726>`_.
 
-* Improved CMake: Used GNUInstallDirs to set installation location
+* Improved CMake: Used ``GNUInstallDirs`` to set installation location
   (`#610 <https://github.com/fmtlib/fmt/pull/610>`_) and fixed warnings
   (`#536 <https://github.com/fmtlib/fmt/pull/536>`_ and
   `#556 <https://github.com/fmtlib/fmt/pull/556>`_).

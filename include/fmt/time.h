@@ -22,11 +22,11 @@ inline null<> gmtime_s(...) { return null<>(); }
 
 // Thread-safe replacement for std::localtime
 inline std::tm localtime(std::time_t time) {
-  struct LocalTime {
+  struct dispatcher {
     std::time_t time_;
     std::tm tm_;
 
-    LocalTime(std::time_t t): time_(t) {}
+    dispatcher(std::time_t t): time_(t) {}
 
     bool run() {
       using namespace fmt::internal;
@@ -49,7 +49,7 @@ inline std::tm localtime(std::time_t time) {
       return tm != FMT_NULL;
     }
   };
-  LocalTime lt(time);
+  dispatcher lt(time);
   if (lt.run())
     return lt.tm_;
   // Too big time values may be unsupported.
@@ -59,11 +59,11 @@ inline std::tm localtime(std::time_t time) {
 
 // Thread-safe replacement for std::gmtime
 inline std::tm gmtime(std::time_t time) {
-  struct GMTime {
+  struct dispatcher {
     std::time_t time_;
     std::tm tm_;
 
-    GMTime(std::time_t t): time_(t) {}
+    dispatcher(std::time_t t): time_(t) {}
 
     bool run() {
       using namespace fmt::internal;
@@ -85,7 +85,7 @@ inline std::tm gmtime(std::time_t time) {
       return tm != FMT_NULL;
     }
   };
-  GMTime gt(time);
+  dispatcher gt(time);
   if (gt.run())
     return gt.tm_;
   // Too big time values may be unsupported.
@@ -94,11 +94,13 @@ inline std::tm gmtime(std::time_t time) {
 }
 
 namespace internal {
-inline std::size_t strftime(char *str, std::size_t count, const char *format, const std::tm *time) {
+inline std::size_t strftime(char *str, std::size_t count, const char *format,
+                            const std::tm *time) {
   return std::strftime(str, count, format, time);
 }
 
-inline std::size_t strftime(wchar_t *str, std::size_t count, const wchar_t *format, const std::tm *time) {
+inline std::size_t strftime(wchar_t *str, std::size_t count,
+                            const wchar_t *format, const std::tm *time) {
   return std::wcsftime(str, count, format, time);
 }
 }
@@ -126,7 +128,8 @@ struct formatter<std::tm, Char> {
     std::size_t start = buf.size();
     for (;;) {
       std::size_t size = buf.capacity() - start;
-      std::size_t count = internal::strftime(&buf[start], size, &tm_format[0], &tm);
+      std::size_t count =
+        internal::strftime(&buf[start], size, &tm_format[0], &tm);
       if (count != 0) {
         buf.resize(start + count);
         break;
