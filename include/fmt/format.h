@@ -304,7 +304,7 @@ fp operator*(fp x, fp y);
 // Compute k such that its cached power c_k = c_k.f * pow(2, c_k.e) satisfies
 // min_exponent <= c_k.e + e <= min_exponent + 3.
 inline int compute_cached_power_index(int e, int min_exponent) {
-  constexpr double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
+  const double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
   return static_cast<int>(std::ceil((min_exponent - e + 63) * one_over_log2_10));
 }
 
@@ -2236,7 +2236,9 @@ void handle_dynamic_spec(
 /** The default argument formatter. */
 template <typename Range>
 class arg_formatter:
-  public internal::function<void>, public internal::arg_formatter_base<Range> {
+  public internal::function<
+    typename internal::arg_formatter_base<Range>::iterator>,
+  public internal::arg_formatter_base<Range> {
  private:
   typedef typename Range::value_type char_type;
   typedef internal::arg_formatter_base<Range> base;
