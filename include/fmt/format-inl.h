@@ -9,7 +9,6 @@
 #define FMT_FORMAT_INL_H_
 
 #include "format.h"
-#include "locale.h"
 
 #include <string.h>
 
@@ -19,6 +18,7 @@
 #include <cmath>
 #include <cstdarg>
 #include <cstddef>  // for std::ptrdiff_t
+#include <locale>
 
 #if defined(_WIN32) && defined(__MINGW32__)
 # include <cstring>
@@ -204,6 +204,15 @@ void report_error(FormatFunc func, int error_code,
   std::fputc('\n', stderr);
 }
 }  // namespace
+
+class locale {
+ private:
+  std::locale locale_;
+
+ public:
+  explicit locale(std::locale loc = std::locale()) : locale_(loc) {}
+  std::locale get() { return locale_; }
+};
 
 template <typename Char>
 FMT_FUNC Char internal::thousands_sep(locale_provider *lp) {
