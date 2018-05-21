@@ -223,9 +223,9 @@ buffered_file file::fdopen(const char *mode) {
   if (!f)
     FMT_THROW(system_error(errno,
                            "cannot associate stream with file descriptor"));
-  buffered_file file(f);
+  buffered_file bf(f);
   fd_ = -1;
-  return file;
+  return bf;
 }
 
 long getpagesize() {

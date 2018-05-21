@@ -34,18 +34,20 @@ template <typename Char, typename Enable = void>
 struct formatting_range : formatting_base<Char> {
   static FMT_CONSTEXPR_DECL const std::size_t range_length_limit =
       FMT_RANGE_OUTPUT_LENGTH_LIMIT; // output only up to N items from the range.
-  Char prefix = '{';
-  Char delimiter = ',';
-  Char postfix = '}';
+  Char prefix;
+  Char delimiter;
+  Char postfix;
+  formatting_range() : prefix('{'), delimiter(','), postfix('}') {}
   static FMT_CONSTEXPR_DECL const bool add_delimiter_spaces = true;
   static FMT_CONSTEXPR_DECL const bool add_prepostfix_space = false;
 };
 
 template <typename Char, typename Enable = void>
 struct formatting_tuple : formatting_base<Char> {
-  Char prefix = '(';
-  Char delimiter = ',';
-  Char postfix = ')';
+  Char prefix;
+  Char delimiter;
+  Char postfix;
+  formatting_tuple() : prefix('('), delimiter(','), postfix(')') {}
   static FMT_CONSTEXPR_DECL const bool add_delimiter_spaces = true;
   static FMT_CONSTEXPR_DECL const bool add_prepostfix_space = false;
 };
@@ -54,9 +56,8 @@ namespace internal {
 
 template <typename RangeT, typename OutputIterator>
 void copy(const RangeT &range, OutputIterator out) {
-  for (const auto &it : range) {
-    *out++ = it;
-  }
+  for (auto it = range.begin(), end = range.end(); it != end; ++it)
+    *out++ = *it;
 }
 
 template <typename OutputIterator>
@@ -83,7 +84,7 @@ class is_like_std_string {
 
  public:
   static FMT_CONSTEXPR_DECL const bool value =
-    !std::is_void<decltype(check<T>(nullptr))>::value;
+    !std::is_void<decltype(check<T>(FMT_NULL))>::value;
 };
 
 template <typename... Ts>
@@ -95,8 +96,8 @@ struct is_range_ : std::false_type {};
 template <typename T>
 struct is_range_<T,typename std::conditional<
                    false,
-                   conditional_helper<decltype(std::declval<T>().begin()),
-                                      decltype(std::declval<T>().end())>,
+                   conditional_helper<decltype(internal::declval<T>().begin()),
+                                      decltype(internal::declval<T>().end())>,
                    void>::type> : std::true_type {};
 
 template <typename T>
@@ -111,13 +112,13 @@ class is_tuple_like_ {
   template <typename U>
   static auto check(U *p) ->
     decltype(std::tuple_size<U>::value,
-             std::declval<typename std::tuple_element<0, U>::type>(), int());
+      internal::declval<typename std::tuple_element<0, U>::type>(), int());
   template <typename>
   static void check(...);
 
  public:
   static FMT_CONSTEXPR_DECL const bool value =
-    !std::is_void<decltype(check<T>(nullptr))>::value;
+    !std::is_void<decltype(check<T>(FMT_NULL))>::value;
 };
 
 template <typename T>
@@ -125,7 +126,16 @@ struct is_tuple_like {
   static FMT_CONSTEXPR_DECL const bool value =
     is_tuple_like_<T>::value && !is_range_<T>::value;
 };
+}  // namespace internal
 
+#if FMT_HAS_FEATURE(__cpp_lib_integer_sequence)
+# define FMT_USE_INTEGER_SEQUENCE 1
+#else
+# define FMT_USE_INTEGER_SEQUENCE 0
+#endif
+
+#if FMT_USE_INTEGER_SEQUENCE
+namespace internal {
 template <size_t... Is, class Tuple, class F>
 void for_each(std::index_sequence<Is...>, Tuple &&tup, F &&f) noexcept {
   using std::get;
@@ -183,6 +193,7 @@ struct formatter<TupleT, Char,
     return ctx.out();
   }
 };
+#endif  // FMT_USE_INTEGER_SEQUENCE
 
 template <typename RangeT, typename Char>
 struct formatter< RangeT, Char,
@@ -196,11 +207,12 @@ struct formatter< RangeT, Char,
   }
 
   template <typename FormatContext>
-  auto format(const RangeT &values, FormatContext &ctx) -> decltype(ctx.out()) {
+  typename FormatContext::iterator format(
+      const RangeT &values, FormatContext &ctx) {
     auto out = ctx.out();
     internal::copy(formatting.prefix, out);
     std::size_t i = 0;
-    for (const auto &it : values) {
+    for (auto it = values.begin(), end = values.end(); it != end; ++it) {
       if (i > 0) {
         if (formatting.add_prepostfix_space) {
           *out++ = ' ';
@@ -208,9 +220,9 @@ struct formatter< RangeT, Char,
         internal::copy(formatting.delimiter, out);
       }
       if (formatting.add_delimiter_spaces && i > 0) {
-        format_to(out, " {}", it);
+        format_to(out, " {}", *it);
       } else {
-        format_to(out, "{}", it);
+        format_to(out, "{}", *it);
       }
       if (++i > formatting.range_length_limit) {
         format_to(out, " ... <other elements>");

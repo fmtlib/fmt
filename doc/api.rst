@@ -164,6 +164,10 @@ Utilities
 System errors
 -------------
 
+fmt does not use ``errno`` to communicate errors to the user, but it may call
+system functions which set ``errno``. Users should not make any assumptions about
+the value of ``errno`` being preserved by library functions.
+
 .. doxygenclass:: fmt::system_error
    :members:
 

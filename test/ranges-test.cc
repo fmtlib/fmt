@@ -30,6 +30,7 @@ TEST(RangesTest, FormatVector2) {
   EXPECT_EQ("{{1, 2}, {3, 5}, {7, 11}}", ivf);
 }
 
+#if FMT_USE_INTEGER_SEQUENCE
 TEST(RangesTest, FormatMap) {
   std::map<std::string, int32_t> simap{{"one", 1}, {"two", 2}};
   EXPECT_EQ("{(one, 1), (two, 2)}", fmt::format("{}", simap));
@@ -46,7 +47,7 @@ TEST(RangesTest, FormatTuple) {
   EXPECT_EQ("(42, 3.14159, this is tuple)", fmt::format("{}", tu1));
 }
 
-/// check if  'if constexpr' is supported.
+/// Check if  'if constexpr' is supported.
 #if (__cplusplus > 201402L) || \
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 
@@ -86,3 +87,4 @@ TEST(RangesTest, FormatStruct) {
 
 #endif  // (__cplusplus > 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >
         // 201402L && _MSC_VER >= 1910)
+#endif  // FMT_USE_INTEGER_SEQUENCE

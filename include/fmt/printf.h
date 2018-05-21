@@ -215,7 +215,9 @@ class basic_printf_context;
  */
 template <typename Range>
 class printf_arg_formatter:
-  public internal::function<void>, public internal::arg_formatter_base<Range> {
+  public internal::function<
+    typename internal::arg_formatter_base<Range>::iterator>,
+  public internal::arg_formatter_base<Range> {
  private:
   typedef typename Range::value_type char_type;
   typedef decltype(internal::declval<Range>().begin()) iterator;
@@ -627,7 +629,7 @@ template <typename... Args>
 inline int fprintf(std::FILE *f, string_view format_str, const Args & ... args) {
   auto vargs = make_format_args<
     typename printf_context<internal::buffer>::type>(args...);
-  return vfprintf(f, format_str, vargs);
+  return vfprintf<char>(f, format_str, vargs);
 }
 
 template <typename... Args>
