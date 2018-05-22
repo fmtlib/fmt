@@ -1,5 +1,5 @@
-5.0.0 - TBD
------------
+5.0.0 - 2018-05-21
+------------------
 
 * Added a requirement for partial C++11 support, most importantly variadic
   templates and type traits, and dropped ``FMT_VARIADIC_*`` emulation macros.
