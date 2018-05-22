@@ -74,7 +74,7 @@ matrix:
     - env: CXX_COMPILER=g++-4.8 BUILD=Debug STANDARD=11
       compiler: gcc
       # g++ 4.4 on Linux with C++11
-    - env: CXX_COMPILER=g++-4.4 BUILD=Debug STANDARD=0x
+    - env: CXX_COMPILER=g++-4.4 BUILD=Debug STANDARD=11
       compiler: gcc
       addons:
         apt:
