@@ -221,7 +221,7 @@
 
 * Introduced an inline namespace for symbol versioning.
 
-* Added debug postfix ``d`` to the `fmt`` library name
+* Added debug postfix ``d`` to the ``fmt`` library name
   (`#636 <https://github.com/fmtlib/fmt/issues/636>`_).
 
 * Removed unnecessary ``fmt/`` prefix in includes
