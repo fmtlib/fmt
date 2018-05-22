@@ -70,18 +70,6 @@
 # pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
-#if FMT_CLANG_VERSION && !FMT_ICC_VERSION
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wswitch-enum"
-# pragma clang diagnostic ignored "-Wweak-vtables"
-# pragma clang diagnostic ignored "-Wpadded"
-# pragma clang diagnostic ignored "-Wgnu-statement-expression"
-# pragma clang diagnostic ignored "-Wglobal-constructors"
-# pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
-# pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
-# pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
-#endif
-
 #include "core.h"
 
 #ifdef _SECURE_SCL
@@ -1617,6 +1605,8 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
 }
 
 #if FMT_MSC_VER
+// Warns that the compiler cannot generate an assignment operator
+// The class has a reference member variable, so this is obviously the case
 # pragma warning(push)
 # pragma warning(disable: 4512)
 #endif
@@ -2563,18 +2553,11 @@ class basic_writer {
     };
 
     void on_num() {
-      #if FMT_CLANG_VERSION
-      # pragma clang diagnostic push
-      # pragma clang diagnostic ignored "-Wundefined-func-template"
-      #endif
       unsigned num_digits = internal::count_digits(abs_value);
       char_type sep = internal::thousands_sep<char_type>(writer.locale_.get());
       unsigned size = num_digits + SEP_SIZE * ((num_digits - 1) / 3);
       writer.write_int(size, get_prefix(), spec,
                        num_writer{abs_value, size, sep});
-      #if FMT_CLANG_VERSION
-      # pragma clang diagnostic pop
-      #endif
     }
 
     void on_error() {
@@ -3691,10 +3674,6 @@ FMT_END_NAMESPACE
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
 # pragma GCC diagnostic pop
-#endif
-
-#if FMT_CLANG_VERSION && !defined(FMT_ICC_VERSION)
-# pragma clang diagnostic pop
 #endif
 
 #endif  // FMT_FORMAT_H_

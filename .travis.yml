@@ -120,7 +120,7 @@ matrix:
       # Errors
     - env: CXX_COMPILER=g++-4.8 BUILD=Debug STANDARD=11
       compiler: gcc
-    - env: CXX_COMPILER=g++-4.4 BUILD=Debug STANDARD=0x
+    - env: CXX_COMPILER=g++-4.4 BUILD=Debug STANDARD=11
       compiler: gcc
 
 before_script:

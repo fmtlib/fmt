@@ -90,7 +90,7 @@ common_cmake_flags = [
 ]
 extra_cmake_flags = []
 if standard != '14':
-    extra_cmake_flags = ['-DCMAKE_CXX_FLAGS=-std=c++' + standard]
+    extra_cmake_flags = ['-DCMAKE_CXX_STANDARD=' + standard]
 check_call(['cmake', '-DFMT_DOC=OFF', '-DFMT_PEDANTIC=ON', '-DFMT_WERROR=ON', fmt_dir] +
            common_cmake_flags + extra_cmake_flags, cwd=build_dir)
 
@@ -110,7 +110,7 @@ check_call(['make', 'install'], cwd=build_dir)
 
 # Test installation.
 makedirs_if_not_exist(test_build_dir)
-check_call(['cmake', '-DCMAKE_CXX_FLAGS=-std=c++' + standard,
+check_call(['cmake', '-DCMAKE_CXX_STANDARD=' + standard,
                      os.path.join(fmt_dir, "test", "find-package-test")] +
            common_cmake_flags, cwd=test_build_dir)
 check_call(['make', '-j4'], cwd=test_build_dir)

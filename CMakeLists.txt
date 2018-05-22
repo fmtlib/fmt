@@ -35,6 +35,14 @@ option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
 option(FMT_USE_CPP14 "Enable the addition of C++14 compiler flags." ON)
 
+if (NOT CMAKE_CXX_STANDARD)
+  if (FMT_USE_CPP14)
+    set(CMAKE_CXX_STANDARD 14)
+  else ()
+    set(CMAKE_CXX_STANDARD 11)
+  endif()
+endif()
+
 project(FMT)
 
 # Get version from core.h
@@ -67,7 +75,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Wcast-align -Wnon-virtual-dtor
       -Wctor-dtor-privacy -Wdisabled-optimization
       -Winvalid-pch -Wmissing-declarations -Woverloaded-virtual
-      -Wno-sign-conversion -Wno-shadow)
+      -Wno-sign-conversion -Wno-shadow -Wno-format-nonliteral
+      -Wno-dangling-else)
   if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept)
   endif ()
@@ -90,7 +99,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-reserved-id-macro
       -Wno-global-constructors -Wno-disabled-macro-expansion
       -Wno-switch-enum -Wno-documentation-unknown-command
-      -Wno-gnu-string-literal-operator-template)
+      -Wno-gnu-string-literal-operator-template -Wno-unused-member-function
+      -Wno-format-nonliteral -Wno-missing-noreturn -Wno-undefined-func-template)
 
   set(WERROR_FLAG -Werror)
 endif ()

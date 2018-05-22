@@ -566,7 +566,7 @@ FMT_MAKE_VALUE(bool_type, bool, int)
 FMT_MAKE_VALUE(int_type, short, int)
 FMT_MAKE_VALUE(uint_type, unsigned short, unsigned)
 FMT_MAKE_VALUE_SAME(int_type, int)
-FMT_MAKE_VALUE(uint_type, unsigned, unsigned)
+FMT_MAKE_VALUE_SAME(uint_type, unsigned)
 
 // To minimize the number of types we need to deal with, long is translated
 // either to int or to long long depending on its size.
@@ -581,7 +581,7 @@ FMT_MAKE_VALUE(
     unsigned long, ulong_type)
 
 FMT_MAKE_VALUE_SAME(long_long_type, long long)
-FMT_MAKE_VALUE(ulong_long_type, unsigned long long, unsigned long long)
+FMT_MAKE_VALUE_SAME(ulong_long_type, unsigned long long)
 FMT_MAKE_VALUE(int_type, signed char, int)
 FMT_MAKE_VALUE(uint_type, unsigned char, unsigned)
 FMT_MAKE_VALUE(char_type, char, int)
