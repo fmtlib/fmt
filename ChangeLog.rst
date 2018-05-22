@@ -41,11 +41,11 @@
 
   .. code:: c++
 
-     struct S {};
+     struct Answer {};
 
      namespace fmt {
      template <>
-     struct formatter<S> {
+     struct formatter<Answer> {
        constexpr auto parse(parse_context& ctx) {
          auto it = ctx.begin();
          spec = *it;
@@ -55,7 +55,7 @@
        }
 
        template <typename FormatContext>
-       auto format(S, FormatContext& ctx) {
+       auto format(Answer, FormatContext& ctx) {
          return spec == 's' ?
            format_to(ctx.begin(), "{}", "fourty-two") :
            format_to(ctx.begin(), "{}", 42);
@@ -65,10 +65,10 @@
      };
      }
 
-     std::string s = format(fmt("{:x}"), S());
+     std::string s = format(fmt("{:x}"), Answer());
 
   gives a compile-time error due to invalid format specifier (`godbolt
-  <https://godbolt.org/g/ywhrPp>`_)::
+  <https://godbolt.org/g/2jQ1Dv>`_)::
 
      ...
      <source>:12:45: error: expression '<throw-expression>' is not a constant expression
