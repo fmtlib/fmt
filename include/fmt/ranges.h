@@ -128,7 +128,7 @@ struct is_tuple_like {
 };
 }  // namespace internal
 
-#if FMT_HAS_FEATURE(__cpp_lib_integer_sequence)
+#if FMT_HAS_FEATURE(__cpp_lib_integer_sequence) || FMT_MSC_VER >= 1900
 # define FMT_USE_INTEGER_SEQUENCE 1
 #else
 # define FMT_USE_INTEGER_SEQUENCE 0
