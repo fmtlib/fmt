@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 2.8)
 
 include(CheckCXXSourceCompiles)
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
-set(CMAKE_REQUIRED_FLAGS ${CPP14_FLAG})
 
 function (generate_source result fragment)
   set(${result} "

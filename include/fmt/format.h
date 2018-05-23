@@ -3645,7 +3645,7 @@ FMT_END_NAMESPACE
 
 #define FMT_STRING(s) [] { \
     struct S : fmt::format_string { \
-      static FMT_CONSTEXPR auto data() { return s; } \
+      static FMT_CONSTEXPR decltype(s) data() { return s; } \
       static FMT_CONSTEXPR size_t size() { return sizeof(s); } \
     }; \
     return S{}; \
