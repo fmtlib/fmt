@@ -15,7 +15,7 @@ FMT_BEGIN_NAMESPACE
 namespace internal {
 
 template <class Char>
-class FormatBuf : public std::basic_streambuf<Char> {
+class formatbuf : public std::basic_streambuf<Char> {
  private:
   typedef typename std::basic_streambuf<Char>::int_type int_type;
   typedef typename std::basic_streambuf<Char>::traits_type traits_type;
@@ -23,7 +23,7 @@ class FormatBuf : public std::basic_streambuf<Char> {
   basic_buffer<Char> &buffer_;
 
  public:
-  FormatBuf(basic_buffer<Char> &buffer) : buffer_(buffer) {}
+  formatbuf(basic_buffer<Char> &buffer) : buffer_(buffer) {}
 
  protected:
   // The put-area is actually always empty. This makes the implementation
@@ -53,10 +53,10 @@ struct test_stream : std::basic_ostream<Char> {
   void operator<<(null);
 };
 
-// Disable conversion to int if T has an overloaded operator<< which is a free
-// function (not a member of std::ostream).
+// Checks if T has an overloaded operator<< which is a free function (not a
+// member of std::ostream).
 template <typename T, typename Char>
-class convert_to_int<T, Char, true> {
+class is_streamable {
  private:
   template <typename U>
   static decltype(
@@ -69,7 +69,16 @@ class convert_to_int<T, Char, true> {
   typedef decltype(test<T>(0)) result;
 
  public:
-  static const bool value = !result::value;
+  static const bool value = result::value;
+};
+
+// Disable conversion to int if T has an overloaded operator<< which is a free
+// function (not a member of std::ostream).
+template <typename T, typename Char>
+class convert_to_int<T, Char, true> {
+ public:
+  static const bool value =
+    convert_to_int<T, Char, false>::value && !is_streamable<T, Char>::value;
 };
 
 // Write the content of buf to os.
@@ -90,7 +99,7 @@ void write(std::basic_ostream<Char> &os, basic_buffer<Char> &buf) {
 
 template <typename Char, typename T>
 void format_value(basic_buffer<Char> &buffer, const T &value) {
-  internal::FormatBuf<Char> format_buf(buffer);
+  internal::formatbuf<Char> format_buf(buffer);
   std::basic_ostream<Char> output(&format_buf);
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
   output << value;
@@ -106,8 +115,7 @@ struct format_enum<T,
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename T, typename Char>
 struct formatter<T, Char,
-    typename std::enable_if<!internal::format_type<
-      typename buffer_context<Char>::type, T>::value>::type>
+    typename std::enable_if<internal::is_streamable<T, Char>::value>::type>
     : formatter<basic_string_view<Char>, Char> {
 
   template <typename Context>
@@ -140,22 +148,13 @@ inline void vprint(std::basic_ostream<Char> &os,
 template <typename... Args>
 inline void print(std::ostream &os, string_view format_str,
                   const Args & ... args) {
-#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 440
-  // Fix gcc's bugged template deduction
   vprint<char>(os, format_str, make_format_args<format_context>(args...));
-#else
-  vprint(os, format_str, make_format_args<format_context>(args...));
-#endif
 }
 
 template <typename... Args>
 inline void print(std::wostream &os, wstring_view format_str,
                   const Args & ... args) {
-#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 440
   vprint<wchar_t>(os, format_str, make_format_args<wformat_context>(args...));
-#else
-  vprint(os, format_str, make_format_args<wformat_context>(args...));
-#endif
 }
 FMT_END_NAMESPACE
 

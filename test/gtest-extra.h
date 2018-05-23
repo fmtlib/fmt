@@ -74,8 +74,8 @@ std::string format_system_error(int error_code, fmt::string_view message);
 class OutputRedirect {
  private:
   FILE *file_;
-  fmt::File original_;  // Original file passed to redirector.
-  fmt::File read_end_;  // Read end of the pipe where the output is redirected.
+  fmt::file original_;  // Original file passed to redirector.
+  fmt::file read_end_;  // Read end of the pipe where the output is redirected.
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(OutputRedirect);
 
@@ -145,7 +145,7 @@ class SuppressAssert {
   EXPECT_SYSTEM_ERROR(SUPPRESS_ASSERT(statement), error_code, message)
 
 // Attempts to read count characters from a file.
-std::string read(fmt::File &f, std::size_t count);
+std::string read(fmt::file &f, std::size_t count);
 
 #define EXPECT_READ(file, expected_content) \
   EXPECT_EQ(expected_content, read(file, std::strlen(expected_content)))

@@ -9,7 +9,7 @@
 
 #if FMT_USE_FILE_DESCRIPTORS
 
-using fmt::File;
+using fmt::file;
 
 void OutputRedirect::flush() {
 #if EOF != -1
@@ -30,14 +30,14 @@ void OutputRedirect::restore() {
   original_.close();
 }
 
-OutputRedirect::OutputRedirect(FILE *file) : file_(file) {
+OutputRedirect::OutputRedirect(FILE *f) : file_(f) {
   flush();
-  int fd = FMT_POSIX(fileno(file));
-  // Create a File object referring to the original file.
-  original_ = File::dup(fd);
+  int fd = FMT_POSIX(fileno(f));
+  // Create a file object referring to the original file.
+  original_ = file::dup(fd);
   // Create a pipe.
-  File write_end;
-  File::pipe(read_end_, write_end);
+  file write_end;
+  file::pipe(read_end_, write_end);
   // Connect the passed FILE object to the write end of the pipe.
   write_end.dup2(fd);
 }
@@ -69,7 +69,7 @@ std::string OutputRedirect::restore_and_read() {
   return content;
 }
 
-std::string read(File &f, std::size_t count) {
+std::string read(file &f, std::size_t count) {
   std::string buffer(count, '\0');
   std::size_t n = 0, offset = 0;
   do {

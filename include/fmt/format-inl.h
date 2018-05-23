@@ -9,7 +9,6 @@
 #define FMT_FORMAT_INL_H_
 
 #include "format.h"
-#include "locale.h"
 
 #include <string.h>
 
@@ -19,6 +18,7 @@
 #include <cmath>
 #include <cstdarg>
 #include <cstddef>  // for std::ptrdiff_t
+#include <locale>
 
 #if defined(_WIN32) && defined(__MINGW32__)
 # include <cstring>
@@ -104,14 +104,14 @@ int safe_strerror(
     int error_code, char *&buffer, std::size_t buffer_size) FMT_NOEXCEPT {
   FMT_ASSERT(buffer != FMT_NULL && buffer_size != 0, "invalid buffer");
 
-  class StrError {
+  class dispatcher {
    private:
     int error_code_;
     char *&buffer_;
     std::size_t buffer_size_;
 
     // A noop assignment operator to avoid bogus warnings.
-    void operator=(const StrError &) {}
+    void operator=(const dispatcher &) {}
 
     // Handle the result of XSI-compliant version of strerror_r.
     int handle(int result) {
@@ -148,14 +148,14 @@ int safe_strerror(
     }
 
    public:
-    StrError(int err_code, char *&buf, std::size_t buf_size)
+    dispatcher(int err_code, char *&buf, std::size_t buf_size)
       : error_code_(err_code), buffer_(buf), buffer_size_(buf_size) {}
 
     int run() {
       return handle(strerror_r(error_code_, buffer_, buffer_size_));
     }
   };
-  return StrError(error_code, buffer, buffer_size).run();
+  return dispatcher(error_code, buffer, buffer_size).run();
 }
 
 void format_error_code(internal::buffer &out, int error_code,
@@ -195,6 +195,15 @@ void report_error(FormatFunc func, int error_code,
   std::fputc('\n', stderr);
 }
 }  // namespace
+
+class locale {
+ private:
+  std::locale locale_;
+
+ public:
+  explicit locale(std::locale loc = std::locale()) : locale_(loc) {}
+  std::locale get() { return locale_; }
+};
 
 template <typename Char>
 FMT_FUNC Char internal::thousands_sep(locale_provider *lp) {
