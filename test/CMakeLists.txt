@@ -8,7 +8,7 @@
 add_library(gmock STATIC
   gmock-gtest-all.cc gmock/gmock.h gtest/gtest.h gtest/gtest-spi.h)
 target_compile_definitions(gmock PUBLIC GTEST_HAS_STD_WSTRING=1)
-target_include_directories(gmock PUBLIC .)
+target_include_directories(gmock SYSTEM PUBLIC . gmock gtest)
 
 find_package(Threads)
 if (Threads_FOUND)
@@ -42,6 +42,7 @@ set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
 target_compile_definitions(test-main PUBLIC
   FMT_USE_FILE_DESCRIPTORS=$<BOOL:${HAVE_OPEN}>)
+target_include_directories(test-main SYSTEM PUBLIC gtest gmock)
 target_link_libraries(test-main gmock fmt)
 
 include(CheckCXXCompilerFlag)
@@ -56,7 +57,7 @@ endif ()
 # Use less strict pedantic flags for the tests because GMock doesn't compile
 # cleanly with -pedantic and -std=c++98.
 if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wno-long-long -Wno-variadic-macros)
+    #set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wno-long-long -Wno-variadic-macros)
 endif ()
 
 function(add_fmt_executable name)
@@ -79,6 +80,7 @@ function(add_fmt_test name)
   if (FMT_PEDANTIC)
     target_compile_options(${name} PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
+  target_include_directories(${name} SYSTEM PUBLIC gtest gmock)
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
@@ -100,6 +102,10 @@ if (HAVE_OPEN)
     posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
   target_compile_definitions(posix-mock-test PRIVATE FMT_USE_FILE_DESCRIPTORS=1)
   target_link_libraries(posix-mock-test gmock)
+  target_include_directories(posix-mock-test SYSTEM PUBLIC gtest gmock)
+  if (FMT_PEDANTIC)
+    target_compile_options(posix-mock-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
+  endif ()
   add_test(NAME posix-mock-test COMMAND posix-mock-test)
   add_fmt_test(posix-test)
 endif ()
@@ -107,6 +113,7 @@ endif ()
 add_fmt_executable(header-only-test
   header-only-test.cc header-only-test2.cc test-main.cc)
 target_link_libraries(header-only-test gmock)
+target_include_directories(header-only-test SYSTEM PUBLIC gtest gmock)
 if (TARGET fmt-header-only)
   target_link_libraries(header-only-test fmt-header-only)
 else ()
@@ -122,7 +129,13 @@ if (HAVE_FNO_EXCEPTIONS_FLAG)
   target_include_directories(
     noexception-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
   target_compile_options(noexception-test PRIVATE -fno-exceptions)
+  if (FMT_PEDANTIC)
+    target_compile_options(noexception-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
+  endif ()
+  target_include_directories(noexception-test SYSTEM PUBLIC gtest gmock)
 endif ()
+
+message(STATUS "FMT_PEDANTIC: ${FMT_PEDANTIC}")
 
 if (FMT_PEDANTIC)
   # Test that the library compiles without windows.h.
@@ -131,7 +144,13 @@ if (FMT_PEDANTIC)
     target_include_directories(
       no-windows-h-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
     target_compile_definitions(no-windows-h-test PRIVATE FMT_USE_WINDOWS_H=0)
+    if (FMT_PEDANTIC)
+      target_compile_options(no-windows-h-test ${PEDANTIC_COMPILE_FLAGS})
+    endif ()
+    target_include_directories(no-windows-h-test SYSTEM PUBLIC gtest gmock)
   endif ()
+
+  message(STATUS USER_DEFINED_LITERALS: ${SUPPORTS_USER_DEFINED_LITERALS})
 
   add_test(compile-test ${CMAKE_CTEST_COMMAND}
     --build-and-test
@@ -142,6 +161,8 @@ if (FMT_PEDANTIC)
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
+    "-DCXX_STANDARD_FLAG=${CXX_STANDARD_FLAG}"
+    "-DPEDANTIC_COMPILE_FLAGS=${PEDANTIC_COMPILE_FLAGS}"
     "-DSUPPORTS_USER_DEFINED_LITERALS=${SUPPORTS_USER_DEFINED_LITERALS}")
 
   # test if the targets are findable from the build directory
@@ -156,6 +177,7 @@ if (FMT_PEDANTIC)
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
     "-DFMT_DIR=${PROJECT_BINARY_DIR}"
+    "-DPEDANTIC_COMPILE_FLAGS=${PEDANTIC_COMPILE_FLAGS}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
   # test if the targets are findable when add_subdirectory is used
@@ -169,5 +191,6 @@ if (FMT_PEDANTIC)
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
+    "-DPEDANTIC_COMPILE_FLAGS=${PEDANTIC_COMPILE_FLAGS}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()

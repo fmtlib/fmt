@@ -139,11 +139,11 @@ using make_index_sequence = std::make_index_sequence<N>;
 #else
 template <typename T, T... N>
 struct integer_sequence {
-    typedef T value_type;
+  typedef T value_type;
 
-    static FMT_CONSTEXPR std::size_t size() {
-        return sizeof...(N);
-    }
+  static FMT_CONSTEXPR std::size_t size() {
+    return sizeof...(N);
+  }
 };
 
 template <std::size_t... N>

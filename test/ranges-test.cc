@@ -11,7 +11,7 @@
 
 #include "fmt/ranges.h"
 
-#include "gtest/gtest.h"
+#include "gtest.h"
 
 #include <vector>
 #include <array>

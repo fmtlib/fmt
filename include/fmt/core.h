@@ -48,6 +48,12 @@
 # define FMT_HAS_GXX_CXX11 0
 #endif
 
+#ifdef _MSC_VER
+# define FMT_MSC_VER _MSC_VER
+#else
+# define FMT_MSC_VER 0
+#endif
+
 // Check if relaxed c++14 constexpr is supported.
 // GCC doesn't allow throw in constexpr until version 6 (bug 67371).
 #ifndef FMT_USE_CONSTEXPR

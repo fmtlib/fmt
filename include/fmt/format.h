@@ -51,12 +51,6 @@
 # define FMT_ICC_VERSION 0
 #endif
 
-#ifdef _MSC_VER
-# define FMT_MSC_VER _MSC_VER
-#else
-# define FMT_MSC_VER 0
-#endif
-
 #if (defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 406) || \
     FMT_CLANG_VERSION
 # pragma GCC diagnostic push
@@ -96,7 +90,7 @@
 # if FMT_EXCEPTIONS
 #  define FMT_THROW(x) throw x
 # else
-#  define FMT_THROW(x) assert(false)
+#  define FMT_THROW(x) do { static_cast<void>(sizeof(x)); assert(false); } while(false);
 # endif
 #endif
 
