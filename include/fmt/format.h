@@ -1975,41 +1975,42 @@ struct precision_adapter {
 template <typename Iterator, typename SpecHandler>
 FMT_CONSTEXPR Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
   typedef typename std::iterator_traits<Iterator>::value_type char_type;
+  char_type c = *it;
+  if (c == '}' || !c)
+    return it;
+
   // Parse fill and alignment.
-  if (char_type c = *it) {
-    alignment align = ALIGN_DEFAULT;
-    int i = 1;
-    do {
-      auto p = it + i;
-      switch (*p) {
-        case '<':
-          align = ALIGN_LEFT;
-          break;
-        case '>':
-          align = ALIGN_RIGHT;
-          break;
-        case '=':
-          align = ALIGN_NUMERIC;
-          break;
-        case '^':
-          align = ALIGN_CENTER;
-          break;
-      }
-      if (align != ALIGN_DEFAULT) {
-        handler.on_align(align);
-        if (p != it) {
-          if (c == '}') break;
-          if (c == '{') {
-            handler.on_error("invalid fill character '{'");
-            return it;
-          }
-          it += 2;
-          handler.on_fill(c);
-        } else ++it;
+  alignment align = ALIGN_DEFAULT;
+  int i = 1;
+  do {
+    auto p = it + i;
+    switch (*p) {
+      case '<':
+        align = ALIGN_LEFT;
         break;
-      }
-    } while (--i >= 0);
-  }
+      case '>':
+        align = ALIGN_RIGHT;
+        break;
+      case '=':
+        align = ALIGN_NUMERIC;
+        break;
+      case '^':
+        align = ALIGN_CENTER;
+        break;
+    }
+    if (align != ALIGN_DEFAULT) {
+      if (p != it) {
+        if (c == '{') {
+          handler.on_error("invalid fill character '{'");
+          return it;
+        }
+        it += 2;
+        handler.on_fill(c);
+      } else ++it;
+      handler.on_align(align);
+      break;
+    }
+  } while (--i >= 0);
 
   // Parse sign.
   switch (*it) {

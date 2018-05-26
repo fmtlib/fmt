@@ -435,6 +435,7 @@ TEST(FormatterTest, Fill) {
   EXPECT_EQ("c****", format("{0:*<5}", 'c'));
   EXPECT_EQ("abc**", format("{0:*<5}", "abc"));
   EXPECT_EQ("**0xface", format("{0:*>8}", reinterpret_cast<void*>(0xface)));
+  EXPECT_EQ("foo=", format("{:}=", "foo"));
 }
 
 TEST(FormatterTest, PlusSign) {
