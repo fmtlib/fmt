@@ -927,6 +927,6 @@ TEST(FPTest, GetCachedPower) {
     EXPECT_LE(exp, fp.e);
     int dec_exp_step = 8;
     EXPECT_LE(fp.e, exp + dec_exp_step * log2(10));
-    EXPECT_EQ(pow(10, dec_exp), ldexp(fp.f, fp.e));
+    EXPECT_DOUBLE_EQ(pow(10, dec_exp), ldexp(fp.f, fp.e));
   }
 }
