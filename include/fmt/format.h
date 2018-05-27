@@ -260,6 +260,8 @@ inline dummy_int _isnan(...) { return dummy_int(); }
 // A handmade floating-point number f * pow(2, e).
 class fp {
  private:
+  typedef uint64_t significand_type;
+
   // All sizes are in bits.
   static constexpr int char_size = std::numeric_limits<unsigned char>::digits;
   // Subtract 1 to account for an implicit most significant bit in the
@@ -269,10 +271,11 @@ class fp {
   static constexpr uint64_t implicit_bit = 1ull << double_significand_size;
 
  public:
-  uint64_t f;
+  significand_type f;
   int e;
 
-  static constexpr int fp_significand_size = sizeof(f) * char_size;
+  static constexpr int fp_significand_size =
+    sizeof(significand_type) * char_size;
 
   fp(uint64_t f, int e): f(f), e(e) {}
 
