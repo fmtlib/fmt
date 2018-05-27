@@ -258,7 +258,17 @@ inline dummy_int isnan(...) { return dummy_int(); }
 inline dummy_int _isnan(...) { return dummy_int(); }
 
 // A handmade floating-point number f * pow(2, e).
-struct fp {
+class fp {
+ private:
+  // All sizes are in bits.
+  static constexpr int char_size = std::numeric_limits<unsigned char>::digits;
+  // Subtract 1 to account for an implicit most significant bit in the
+  // normalized form.
+  static constexpr int double_significand_size =
+    std::numeric_limits<double>::digits - 1;
+  static constexpr uint64_t implicit_bit = 1ull << double_significand_size;
+
+ public:
   uint64_t f;
   int e;
 
@@ -270,24 +280,36 @@ struct fp {
   explicit fp(Double d) {
     // Assume double is in the format [sign][exponent][significand].
     typedef std::numeric_limits<Double> limits;
-    const int double_size =
-      sizeof(Double) * std::numeric_limits<unsigned char>::digits;
-    // Subtract 1 to account for an implicit most significant bit in the
-    // normalized form.
-    const int significand_size = limits::digits - 1;
-    const int exponent_size = double_size - significand_size - 1;  // -1 for sign
-    const uint64_t implicit_bit = 1ull << significand_size;
+    const int double_size = sizeof(Double) * char_size;
+    const int exponent_size =
+      double_size - double_significand_size - 1;  // -1 for sign
     const uint64_t significand_mask = implicit_bit - 1;
     const uint64_t exponent_mask = (~0ull >> 1) & ~significand_mask;
     const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
     auto u = bit_cast<uint64_t>(d);
-    auto biased_e = (u & exponent_mask) >> significand_size;
+    auto biased_e = (u & exponent_mask) >> double_significand_size;
     f = u & significand_mask;
     if (biased_e != 0)
       f += implicit_bit;
     else
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    e = biased_e - exponent_bias - significand_size;
+    e = biased_e - exponent_bias - double_significand_size;
+  }
+
+  // Normalizes the value converted from double and multiplied by (1 << SHIFT).
+  template <int SHIFT = 0>
+  void normalize() {
+    // Handle subnormals.
+    auto shifted_implicit_bit = implicit_bit << SHIFT;
+    while ((f & shifted_implicit_bit) == 0) {
+      f <<= 1;
+      --e;
+    }
+    auto fp_significand_size = sizeof(f) * char_size;
+    // Subtract 1 to account for hidden bit.
+    auto offset = fp_significand_size - double_significand_size - SHIFT - 1;
+    f <<= offset;
+    e -= offset;
   }
 };
 
