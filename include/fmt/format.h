@@ -272,6 +272,8 @@ class fp {
   uint64_t f;
   int e;
 
+  static constexpr int fp_significand_size = sizeof(f) * char_size;
+
   fp(uint64_t f, int e): f(f), e(e) {}
 
   // Constructs fp from an IEEE754 double. It is a template to prevent compile
@@ -305,7 +307,6 @@ class fp {
       f <<= 1;
       --e;
     }
-    auto fp_significand_size = sizeof(f) * char_size;
     // Subtract 1 to account for hidden bit.
     auto offset = fp_significand_size - double_significand_size - SHIFT - 1;
     f <<= offset;
@@ -323,12 +324,9 @@ inline fp operator-(fp x, fp y) {
 // with half-up tie breaking, r.e = x.e + y.e + 32. Result may not be normalized.
 fp operator*(fp x, fp y);
 
-// Compute k such that its cached power c_k = c_k.f * pow(2, c_k.e) satisfies
-// min_exponent <= c_k.e + e <= min_exponent + 3.
-inline int compute_cached_power_index(int e, int min_exponent) {
-  const double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
-  return static_cast<int>(std::ceil((min_exponent - e + 63) * one_over_log2_10));
-}
+// Returns cached power (of 10) c_k = c_k.f * pow(2, c_k.e) such that its
+// (binary) exponent satisfies min_exponent <= c_k.e <= min_exponent + 3.
+fp get_cached_power(int min_exponent, int &pow10_exponent);
 
 template <typename Allocator>
 typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {

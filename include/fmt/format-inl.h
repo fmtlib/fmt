@@ -342,6 +342,19 @@ FMT_FUNC fp operator*(fp x, fp y) {
   uint64_t mid = (bd >> 32) + (ad & mask) + (bc & mask) + (1U << 31);
   return fp(ac + (ad >> 32) + (bc >> 32) + (mid >> 32), x.e + y.e + 64);
 }
+
+FMT_FUNC fp get_cached_power(int min_exponent, int &pow10_exponent) {
+  const double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
+  int index = static_cast<int>(std::ceil(
+        (min_exponent + fp::fp_significand_size - 1) * one_over_log2_10));
+  // Decimal exponent of the first (smallest) cached power of 10.
+  const int first_dec_exp = -348;
+  // Difference between two consecutive decimal exponents in cached powers of 10.
+  const int dec_exp_step = 8;
+  index = (index - first_dec_exp - 1) / dec_exp_step + 1;
+  pow10_exponent = first_dec_exp + index * dec_exp_step;
+  return fp(data::POW10_SIGNIFICANDS[index], data::POW10_EXPONENTS[index]);
+}
 }  // namespace internal
 
 #if FMT_USE_WINDOWS_H

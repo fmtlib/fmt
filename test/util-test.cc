@@ -918,3 +918,15 @@ TEST(FPTest, Multiply) {
   EXPECT_EQ(v.f, (123 * 567 + 1u) / 2);
   EXPECT_EQ(v.e, 4 + 8 + 64);
 }
+
+TEST(FPTest, GetCachedPower) {
+  typedef std::numeric_limits<double> limits;
+  for (auto exp = limits::min_exponent; exp <= limits::max_exponent; ++exp) {
+    int dec_exp = 0;
+    auto fp = fmt::internal::get_cached_power(exp, dec_exp);
+    EXPECT_LE(exp, fp.e);
+    int dec_exp_step = 8;
+    EXPECT_LE(fp.e, exp + dec_exp_step * log2(10));
+    EXPECT_EQ(pow(10, dec_exp), ldexp(fp.f, fp.e));
+  }
+}
