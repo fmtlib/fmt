@@ -132,8 +132,13 @@
 # endif
 #endif
 
-#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_trailing_return) || FMT_MSC_VER >= 1600
+#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_trailing_return) || \
+    FMT_MSC_VER >= 1600
 # define FMT_USE_TRAILING_RETURN 1
+#endif
+
+#ifndef FMT_USE_GRISU
+# define FMT_USE_GRISU 0
 #endif
 
 // __builtin_clz is broken in clang with Microsoft CodeGen:
@@ -274,8 +279,7 @@ class fp {
   significand_type f;
   int e;
 
-  static constexpr int fp_significand_size =
-    sizeof(significand_type) * char_size;
+  static constexpr int significand_size = sizeof(significand_type) * char_size;
 
   fp(uint64_t f, int e): f(f), e(e) {}
 
@@ -311,7 +315,7 @@ class fp {
       --e;
     }
     // Subtract 1 to account for hidden bit.
-    auto offset = fp_significand_size - double_significand_size - SHIFT - 1;
+    auto offset = significand_size - double_significand_size - SHIFT - 1;
     f <<= offset;
     e -= offset;
   }
@@ -394,6 +398,38 @@ class numeric_limits<fmt::internal::dummy_int> :
 FMT_BEGIN_NAMESPACE
 template <typename Range>
 class basic_writer;
+
+template <typename OutputIt, typename T = typename OutputIt::value_type>
+class output_range {
+ private:
+  OutputIt it_;
+
+  // Unused yet.
+  typedef void sentinel;
+  sentinel end() const;
+
+ public:
+  typedef OutputIt iterator;
+  typedef T value_type;
+
+  explicit output_range(OutputIt it): it_(it) {}
+  OutputIt begin() const { return it_; }
+};
+
+// A range where begin() returns back_insert_iterator.
+template <typename Container>
+class back_insert_range:
+    public output_range<std::back_insert_iterator<Container>> {
+  typedef output_range<std::back_insert_iterator<Container>> base;
+ public:
+  typedef typename Container::value_type value_type;
+
+  back_insert_range(Container &c): base(std::back_inserter(c)) {}
+  back_insert_range(typename base::iterator it): base(it) {}
+};
+
+typedef basic_writer<back_insert_range<internal::buffer>> writer;
+typedef basic_writer<back_insert_range<internal::wbuffer>> wwriter;
 
 /** A formatting error such as invalid format string. */
 class format_error : public std::runtime_error {
@@ -2619,6 +2655,10 @@ class basic_writer {
   // Formats a floating-point number (double or long double).
   template <typename T>
   void write_double(T value, const format_specs &spec);
+  template <typename T>
+  void write_double_sprintf(T value, const format_specs &spec,
+                            internal::basic_buffer<char_type>& buffer,
+                            char sign);
 
   template <typename Char>
   struct str_writer {
@@ -2841,7 +2881,60 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     return write_inf_or_nan(handler.upper ? "INF" : "inf");
 
   basic_memory_buffer<char_type> buffer;
+  if (FMT_USE_GRISU && sizeof(T) <= sizeof(double) &&
+      std::numeric_limits<double>::is_iec559) {
+    internal::fp fp_value(static_cast<double>(value));
+    fp_value.normalize();
+    // Find a cached power of 10 close to 1 / fp_value.
+    int dec_exp = 0;
+    int min_exp = -60;
+    auto dec_pow = internal::get_cached_power(
+        min_exp - (fp_value.e + internal::fp::significand_size), dec_exp);
+    internal::fp product = fp_value * dec_pow;
+    // Generate output.
+    internal::fp one(1ull << -product.e, product.e);
+    uint32_t hi = product.f >> -one.e;
+    uint64_t f = product.f & (one.f - 1);
+    typedef back_insert_range<internal::basic_buffer<char_type>> range;
+    basic_writer<range> w{range(buffer)};
+    w.write(hi);
+    w.write('.');
+    for (int i = 0; i < 18; ++i) {
+      f *= 10;
+      w.write(static_cast<char>('0' + (f >> -one.e)));
+      f &= one.f - 1;
+    }
+    w.write('e');
+    w.write(-dec_exp);
+  } else {
+    format_specs normalized_spec(spec);
+    normalized_spec.type_ = handler.type;
+    write_double_sprintf(value, normalized_spec, buffer, sign);
+  }
+  unsigned n = buffer.size();
+  align_spec as = spec;
+  if (spec.align() == ALIGN_NUMERIC) {
+    if (sign) {
+      *reserve(1) = sign;
+      sign = 0;
+      if (as.width_)
+        --as.width_;
+    }
+    as.align_ = ALIGN_RIGHT;
+  } else {
+    if (spec.align() == ALIGN_DEFAULT)
+      as.align_ = ALIGN_RIGHT;
+    if (sign)
+      ++n;
+  }
+  write_padded(n, as, double_writer{n, sign, buffer});
+}
 
+template <typename Range>
+template <typename T>
+void basic_writer<Range>::write_double_sprintf(
+    T value, const format_specs &spec,
+    internal::basic_buffer<char_type>& buffer, char sign) {
   unsigned width = spec.width();
   if (sign) {
     buffer.reserve(width > 1u ? width : 1u);
@@ -2864,11 +2957,10 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   }
 
   append_float_length(format_ptr, value);
-  *format_ptr++ = handler.type;
+  *format_ptr++ = spec.type();
   *format_ptr = '\0';
 
   // Format using snprintf.
-  unsigned n = 0;
   char_type *start = FMT_NULL;
   for (;;) {
     std::size_t buffer_size = buffer.capacity();
@@ -2885,9 +2977,11 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     int result = internal::char_traits<char_type>::format_float(
         start, buffer_size, format, width_for_sprintf, spec.precision(), value);
     if (result >= 0) {
-      n = internal::to_unsigned(result);
-      if (n < buffer.capacity())
+      unsigned n = internal::to_unsigned(result);
+      if (n < buffer.capacity()) {
+        buffer.resize(n);
         break;  // The buffer is large enough - continue with formatting.
+      }
       buffer.reserve(n + 1);
     } else {
       // If result is negative we ask to increase the capacity by at least 1,
@@ -2895,55 +2989,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
       buffer.reserve(buffer.capacity() + 1);
     }
   }
-  align_spec as = spec;
-  if (spec.align() == ALIGN_NUMERIC) {
-    if (sign) {
-      *reserve(1) = sign;
-      sign = 0;
-      if (as.width_)
-        --as.width_;
-    }
-    as.align_ = ALIGN_RIGHT;
-  } else {
-    if (spec.align() == ALIGN_DEFAULT)
-      as.align_ = ALIGN_RIGHT;
-    if (sign)
-      ++n;
-  }
-  write_padded(n, as, double_writer{n, sign, buffer});
 }
-
-template <typename OutputIt, typename T = typename OutputIt::value_type>
-class output_range {
- private:
-  OutputIt it_;
-
-  // Unused yet.
-  typedef void sentinel;
-  sentinel end() const;
-
- public:
-  typedef OutputIt iterator;
-  typedef T value_type;
-
-  explicit output_range(OutputIt it): it_(it) {}
-  OutputIt begin() const { return it_; }
-};
-
-// A range where begin() returns back_insert_iterator.
-template <typename Container>
-class back_insert_range:
-    public output_range<std::back_insert_iterator<Container>> {
-  typedef output_range<std::back_insert_iterator<Container>> base;
- public:
-  typedef typename Container::value_type value_type;
-
-  back_insert_range(Container &c): base(std::back_inserter(c)) {}
-  back_insert_range(typename base::iterator it): base(it) {}
-};
-
-typedef basic_writer<back_insert_range<internal::buffer>> writer;
-typedef basic_writer<back_insert_range<internal::wbuffer>> wwriter;
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
