@@ -660,30 +660,30 @@ struct char_traits<char> {
   // Formats a floating-point number.
   template <typename T>
   FMT_API static int format_float(char *buffer, std::size_t size,
-      const char *format, unsigned width, int precision, T value);
+      const char *format, int precision, T value);
 };
 
 template <>
 struct char_traits<wchar_t> {
   template <typename T>
   FMT_API static int format_float(wchar_t *buffer, std::size_t size,
-      const wchar_t *format, unsigned width, int precision, T value);
+      const wchar_t *format, int precision, T value);
 };
 
 #if FMT_USE_EXTERN_TEMPLATES
 extern template int char_traits<char>::format_float<double>(
-    char *buffer, std::size_t size, const char* format, unsigned width,
-    int precision, double value);
+    char *buffer, std::size_t size, const char* format, int precision,
+    double value);
 extern template int char_traits<char>::format_float<long double>(
-    char *buffer, std::size_t size, const char* format, unsigned width,
-    int precision, long double value);
+    char *buffer, std::size_t size, const char* format, int precision,
+    long double value);
 
 extern template int char_traits<wchar_t>::format_float<double>(
-    wchar_t *buffer, std::size_t size, const wchar_t* format, unsigned width,
-    int precision, double value);
+    wchar_t *buffer, std::size_t size, const wchar_t* format, int precision,
+    double value);
 extern template int char_traits<wchar_t>::format_float<long double>(
-    wchar_t *buffer, std::size_t size, const wchar_t* format, unsigned width,
-    int precision, long double value);
+    wchar_t *buffer, std::size_t size, const wchar_t* format, int precision,
+    long double value);
 #endif
 
 template <typename Container>
@@ -2657,8 +2657,7 @@ class basic_writer {
   void write_double(T value, const format_specs &spec);
   template <typename T>
   void write_double_sprintf(T value, const format_specs &spec,
-                            internal::basic_buffer<char_type>& buffer,
-                            char sign);
+                            internal::basic_buffer<char_type>& buffer);
 
   template <typename Char>
   struct str_writer {
@@ -2887,7 +2886,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     fp_value.normalize();
     // Find a cached power of 10 close to 1 / fp_value.
     int dec_exp = 0;
-    int min_exp = -60;
+    const int min_exp = -60;
     auto dec_pow = internal::get_cached_power(
         min_exp - (fp_value.e + internal::fp::significand_size), dec_exp);
     internal::fp product = fp_value * dec_pow;
@@ -2898,8 +2897,10 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     typedef back_insert_range<internal::basic_buffer<char_type>> range;
     basic_writer<range> w{range(buffer)};
     w.write(hi);
+    unsigned digits = buffer.size();
     w.write('.');
-    for (int i = 0; i < 18; ++i) {
+    const unsigned max_digits = 18;
+    while (digits++ < max_digits) {
       f *= 10;
       w.write(static_cast<char>('0' + (f >> -one.e)));
       f &= one.f - 1;
@@ -2909,7 +2910,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   } else {
     format_specs normalized_spec(spec);
     normalized_spec.type_ = handler.type;
-    write_double_sprintf(value, normalized_spec, buffer, sign);
+    write_double_sprintf(value, normalized_spec, buffer);
   }
   unsigned n = buffer.size();
   align_spec as = spec;
@@ -2934,23 +2935,17 @@ template <typename Range>
 template <typename T>
 void basic_writer<Range>::write_double_sprintf(
     T value, const format_specs &spec,
-    internal::basic_buffer<char_type>& buffer, char sign) {
-  unsigned width = spec.width();
-  if (sign) {
-    buffer.reserve(width > 1u ? width : 1u);
-    if (width > 0)
-      --width;
-  }
+    internal::basic_buffer<char_type>& buffer) {
+  // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
+  FMT_ASSERT(buffer.capacity() != 0, "empty buffer");
 
   // Build format string.
   enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
   char_type format[MAX_FORMAT_SIZE];
   char_type *format_ptr = format;
   *format_ptr++ = '%';
-  unsigned width_for_sprintf = width;
   if (spec.flag(HASH_FLAG))
     *format_ptr++ = '#';
-  width_for_sprintf = 0;
   if (spec.precision() >= 0) {
     *format_ptr++ = '.';
     *format_ptr++ = '*';
@@ -2964,18 +2959,9 @@ void basic_writer<Range>::write_double_sprintf(
   char_type *start = FMT_NULL;
   for (;;) {
     std::size_t buffer_size = buffer.capacity();
-#if FMT_MSC_VER
-    // MSVC's vsnprintf_s doesn't work with zero size, so reserve
-    // space for at least one extra character to make the size non-zero.
-    // Note that the buffer's capacity may increase by more than 1.
-    if (buffer_size == 0) {
-      buffer.reserve(1);
-      buffer_size = buffer.capacity();
-    }
-#endif
     start = &buffer[0];
     int result = internal::char_traits<char_type>::format_float(
-        start, buffer_size, format, width_for_sprintf, spec.precision(), value);
+        start, buffer_size, format, spec.precision(), value);
     if (result >= 0) {
       unsigned n = internal::to_unsigned(result);
       if (n < buffer.capacity()) {

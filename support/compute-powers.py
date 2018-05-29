@@ -48,3 +48,6 @@ for i, fp in enumerate(powers):
     if i % 11 == 0:
         print(end='\n ')
     print(' {:5}'.format(fp.e), end=',')
+
+print('\n\nMax exponent difference:',
+      max([x.e - powers[i - 1].e for i, x in enumerate(powers)][1:]))

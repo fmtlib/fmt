@@ -232,30 +232,19 @@ FMT_FUNC void system_error::init(
 namespace internal {
 template <typename T>
 int char_traits<char>::format_float(
-    char *buffer, std::size_t size, const char *format,
-    unsigned width, int precision, T value) {
-  if (width == 0) {
-    return precision < 0 ?
-        FMT_SNPRINTF(buffer, size, format, value) :
-        FMT_SNPRINTF(buffer, size, format, precision, value);
-  }
+    char *buffer, std::size_t size, const char *format, int precision, T value) {
   return precision < 0 ?
-      FMT_SNPRINTF(buffer, size, format, width, value) :
-      FMT_SNPRINTF(buffer, size, format, width, precision, value);
+      FMT_SNPRINTF(buffer, size, format, value) :
+      FMT_SNPRINTF(buffer, size, format, precision, value);
 }
 
 template <typename T>
 int char_traits<wchar_t>::format_float(
-    wchar_t *buffer, std::size_t size, const wchar_t *format,
-    unsigned width, int precision, T value) {
-  if (width == 0) {
-    return precision < 0 ?
-        FMT_SWPRINTF(buffer, size, format, value) :
-        FMT_SWPRINTF(buffer, size, format, precision, value);
-  }
+    wchar_t *buffer, std::size_t size, const wchar_t *format, int precision,
+    T value) {
   return precision < 0 ?
-      FMT_SWPRINTF(buffer, size, format, width, value) :
-      FMT_SWPRINTF(buffer, size, format, width, precision, value);
+      FMT_SWPRINTF(buffer, size, format, value) :
+      FMT_SWPRINTF(buffer, size, format, precision, value);
 }
 
 template <typename T>
