@@ -327,8 +327,8 @@ inline fp operator-(fp x, fp y) {
   return fp(x.f - y.f, x.e);
 }
 
-// Computes an fp number r with r.f = x.f * y.f / pow(2, 32) rounded to nearest
-// with half-up tie breaking, r.e = x.e + y.e + 32. Result may not be normalized.
+// Computes an fp number r with r.f = x.f * y.f / pow(2, 64) rounded to nearest
+// with half-up tie breaking, r.e = x.e + y.e + 64. Result may not be normalized.
 fp operator*(fp x, fp y);
 
 // Returns cached power (of 10) c_k = c_k.f * pow(2, c_k.e) such that its
