@@ -1322,8 +1322,7 @@ template <typename Char, typename ErrorHandler>
 FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
   if (next_arg_id_ >= 0)
     return internal::to_unsigned(next_arg_id_++);
-  on_error("cannot switch from manual to automatic argument indexing");
-  return 0;
+  return on_error("cannot switch from manual to automatic argument indexing"), 0;
 }
 
 struct format_string {};
@@ -1703,8 +1702,7 @@ class width_checker: public function<unsigned long long> {
   template <typename T>
   FMT_CONSTEXPR typename std::enable_if<
       !is_integer<T>::value, unsigned long long>::type operator()(T) {
-    handler_.on_error("width is not integer");
-    return 0;
+    return handler_.on_error("width is not integer"), 0;
   }
 
  private:
@@ -2058,10 +2056,8 @@ FMT_CONSTEXPR Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
     }
     if (align != ALIGN_DEFAULT) {
       if (p != it) {
-        if (c == '{') {
-          handler.on_error("invalid fill character '{'");
-          return it;
-        }
+        if (c == '{')
+          return handler.on_error("invalid fill character '{'"), it;
         it += 2;
         handler.on_fill(c);
       } else ++it;
