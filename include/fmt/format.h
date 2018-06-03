@@ -1727,8 +1727,7 @@ class precision_checker: public function<unsigned long long> {
   template <typename T>
   FMT_CONSTEXPR typename std::enable_if<
       !is_integer<T>::value, unsigned long long>::type operator()(T) {
-    handler_.on_error("precision is not integer");
-    return 0;
+    return handler_.on_error("precision is not integer"), 0;
   }
 
  private:
