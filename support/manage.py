@@ -152,7 +152,9 @@ def update_site(env):
         if os.path.exists(html_dir):
             shutil.rmtree(html_dir)
         include_dir = env.fmt_repo.dir
-        if LooseVersion(version) >= LooseVersion('3.0.0'):
+        if LooseVersion(version) >= LooseVersion('5.0.0'):
+            include_dir = os.path.join(include_dir, 'include', 'fmt')
+        elif LooseVersion(version) >= LooseVersion('3.0.0'):
             include_dir = os.path.join(include_dir, 'fmt')
         import build
         build.build_docs(version, doc_dir=target_doc_dir,

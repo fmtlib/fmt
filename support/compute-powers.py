@@ -39,12 +39,15 @@ for i, exp in enumerate(range(min_exponent, max_exponent + 1, step)):
 
 print('Significands:', end='')
 for i, fp in enumerate(powers):
-    if i % 3 == 0:
+    if i % 4 == 0:
         print(end='\n ')
-    print(' {:0<#16x}ull'.format(fp.f, ), end=',')
+    print(' {:0<#16x}'.format(fp.f, ), end=',')
 
 print('\n\nExponents:', end='')
 for i, fp in enumerate(powers):
     if i % 11 == 0:
         print(end='\n ')
     print(' {:5}'.format(fp.e), end=',')
+
+print('\n\nMax exponent difference:',
+      max([x.e - powers[i - 1].e for i, x in enumerate(powers)][1:]))
