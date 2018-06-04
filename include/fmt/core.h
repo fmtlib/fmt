@@ -787,9 +787,8 @@ class arg_map {
   ~arg_map() { delete [] map_; }
 
   basic_format_arg<Context> find(basic_string_view<char_type> name) const {
-    auto end = map_ + size_;  // Define end outside of loop to make nvcc happy.
     // The list is unsorted, so just return the first matching name.
-    for (auto it = map_; it != end; ++it) {
+    for (entry *it = map_, *end = map_ + size_; it != end; ++it) {
       if (it->name == name)
         return it->arg;
     }
