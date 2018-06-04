@@ -283,12 +283,12 @@ class fp {
   typedef uint64_t significand_type;
 
   // All sizes are in bits.
-  static constexpr int char_size = std::numeric_limits<unsigned char>::digits;
+  static FMT_CONSTEXPR_DECL const int char_size = std::numeric_limits<unsigned char>::digits;
   // Subtract 1 to account for an implicit most significant bit in the
   // normalized form.
-  static constexpr int double_significand_size =
+  static FMT_CONSTEXPR_DECL const int double_significand_size =
     std::numeric_limits<double>::digits - 1;
-  static constexpr uint64_t implicit_bit = 1ull << double_significand_size;
+  static FMT_CONSTEXPR_DECL const uint64_t implicit_bit = 1ull << double_significand_size;
 
  public:
   significand_type f;
@@ -317,7 +317,7 @@ class fp {
       f += implicit_bit;
     else
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    e = biased_e - exponent_bias - double_significand_size;
+    e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
   }
 
   // Normalizes the value converted from double and multiplied by (1 << SHIFT).
@@ -2660,7 +2660,7 @@ class basic_writer {
   };
 
   struct double_writer {
-    unsigned n;
+    size_t n;
     char sign;
     basic_memory_buffer<char_type> &buffer;
 
@@ -2914,7 +2914,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     internal::fp product = fp_value * dec_pow;
     // Generate output.
     internal::fp one(1ull << -product.e, product.e);
-    uint32_t hi = product.f >> -one.e;
+    uint64_t hi = product.f >> -one.e;
     uint64_t f = product.f & (one.f - 1);
     typedef back_insert_range<internal::basic_buffer<char_type>> range;
     basic_writer<range> w{range(buffer)};
@@ -2934,7 +2934,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     normalized_spec.type_ = handler.type;
     write_double_sprintf(value, normalized_spec, buffer);
   }
-  unsigned n = buffer.size();
+  size_t n = buffer.size();
   align_spec as = spec;
   if (spec.align() == ALIGN_NUMERIC) {
     if (sign) {

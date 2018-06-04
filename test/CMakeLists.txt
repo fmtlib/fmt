@@ -150,8 +150,6 @@ if (FMT_PEDANTIC)
     target_include_directories(no-windows-h-test SYSTEM PUBLIC gtest gmock)
   endif ()
 
-  message(STATUS USER_DEFINED_LITERALS: ${SUPPORTS_USER_DEFINED_LITERALS})
-
   add_test(compile-test ${CMAKE_CTEST_COMMAND}
     --build-and-test
     "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"

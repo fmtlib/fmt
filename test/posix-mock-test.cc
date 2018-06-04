@@ -475,7 +475,13 @@ double _strtod_l(const char *nptr, char **endptr, _locale_t locale) {
 # pragma warning(pop)
 #endif
 
-LocaleType newlocale(int category_mask, const char *locale, LocaleType base) {
+#if defined(__THROW) && FMT_GCC_VERSION > 0 && FMT_GCC_VERSION <= 408
+#define FMT_LOCALE_THROW __THROW
+#else
+#define FMT_LOCALE_THROW
+#endif
+
+LocaleType newlocale(int category_mask, const char *locale, LocaleType base) FMT_LOCALE_THROW {
   return LocaleMock::instance->newlocale(category_mask, locale, base);
 }
 
@@ -485,14 +491,16 @@ typedef int FreeLocaleResult;
 typedef void FreeLocaleResult;
 #endif
 
-FreeLocaleResult freelocale(LocaleType locale) {
+FreeLocaleResult freelocale(LocaleType locale) FMT_LOCALE_THROW {
   LocaleMock::instance->freelocale(locale);
   return FreeLocaleResult();
 }
 
-double strtod_l(const char *nptr, char **endptr, LocaleType locale) {
+double strtod_l(const char *nptr, char **endptr, LocaleType locale) FMT_LOCALE_THROW {
   return LocaleMock::instance->strtod_l(nptr, endptr, locale);
 }
+
+#undef FMT_LOCALE_THROW
 
 TEST(LocaleTest, LocaleMock) {
   ScopedMock<LocaleMock> mock;

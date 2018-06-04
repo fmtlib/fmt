@@ -36,7 +36,7 @@ elseif (CMAKE_CXX_STANDARD EQUAL 14)
     set(CXX_STANDARD_FLAG -std=c++1y)
   endif ()
 elseif (CMAKE_CXX_STANDARD EQUAL 11)
-  check_cxx_compiler_flag(-std=c++11 has_std_14_flag)
+  check_cxx_compiler_flag(-std=c++11 has_std_11_flag)
   check_cxx_compiler_flag(-std=c++0x has_std_0x_flag)
 
   if (has_std_11_flag)
