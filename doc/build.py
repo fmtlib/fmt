@@ -56,7 +56,7 @@ def create_build_env(dirname='virtualenv'):
   pip_install('sphinx-doc/sphinx', '12b83372ac9316e8cbe86e7fed889296a4cc29ee',
               min_version='1.4.1.dev20160531')
   pip_install('michaeljones/breathe',
-              '6b1c5bb7a1866f15fc328b8716258354b10c1daa',
+              '129222318f7c8f865d2631e7da7b033567e7f56a',
               min_version='4.2.0')
 
 def build_docs(version='dev', **kwargs):
