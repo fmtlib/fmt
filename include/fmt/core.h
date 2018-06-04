@@ -787,8 +787,9 @@ class arg_map {
   ~arg_map() { delete [] map_; }
 
   basic_format_arg<Context> find(basic_string_view<char_type> name) const {
+    auto end = map_ + size_;  // Define end outside of loop to make nvcc happy.
     // The list is unsorted, so just return the first matching name.
-    for (auto it = map_, end = map_ + size_; it != end; ++it) {
+    for (auto it = map_; it != end; ++it) {
       if (it->name == name)
         return it->arg;
     }
@@ -973,16 +974,17 @@ class format_arg_store {
 
   friend class basic_format_args<Context>;
 
-  static FMT_CONSTEXPR uint64_t get_types() {
-    return IS_PACKED ? internal::get_types<Context, Args...>()
-                : -static_cast<int64_t>(NUM_ARGS);
+  static FMT_CONSTEXPR int64_t get_types() {
+    return IS_PACKED ?
+      static_cast<int64_t>(internal::get_types<Context, Args...>()) :
+      -static_cast<int64_t>(NUM_ARGS);
   }
 
  public:
 #if FMT_USE_CONSTEXPR
-  static constexpr uint64_t TYPES = get_types();
+  static constexpr int64_t TYPES = get_types();
 #else
-  static const uint64_t TYPES;
+  static const int64_t TYPES;
 #endif
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION <= 405
@@ -998,7 +1000,7 @@ class format_arg_store {
 
 #if !FMT_USE_CONSTEXPR
 template <typename Context, typename ...Args>
-const uint64_t format_arg_store<Context, Args...>::TYPES = get_types();
+const int64_t format_arg_store<Context, Args...>::TYPES = get_types();
 #endif
 
 /**
