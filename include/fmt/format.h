@@ -98,7 +98,23 @@
 
 #ifndef FMT_THROW
 # if FMT_EXCEPTIONS
-#  define FMT_THROW(x) throw x
+#  if FMT_MSC_VER
+FMT_BEGIN_NAMESPACE
+namespace internal {
+template <typename Exception>
+inline void do_throw(const Exception &x) {
+  // Silence unreachable code warnings in MSVC because these are nearly
+  // impossible to fix in a generic code.
+  volatile bool b = true;
+  if (b)
+    throw x;
+}
+}
+FMT_END_NAMESPACE
+#   define FMT_THROW(x) fmt::internal::do_throw(x)
+#  else
+#   define FMT_THROW(x) throw x
+#  endif
 # else
 #  define FMT_THROW(x) assert(false)
 # endif
@@ -1322,7 +1338,8 @@ template <typename Char, typename ErrorHandler>
 FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
   if (next_arg_id_ >= 0)
     return internal::to_unsigned(next_arg_id_++);
-  return on_error("cannot switch from manual to automatic argument indexing"), 0;
+  on_error("cannot switch from manual to automatic argument indexing");
+  return 0;
 }
 
 struct format_string {};
@@ -1702,7 +1719,8 @@ class width_checker: public function<unsigned long long> {
   template <typename T>
   FMT_CONSTEXPR typename std::enable_if<
       !is_integer<T>::value, unsigned long long>::type operator()(T) {
-    return handler_.on_error("width is not integer"), 0;
+    handler_.on_error("width is not integer");
+    return 0;
   }
 
  private:
@@ -1725,7 +1743,8 @@ class precision_checker: public function<unsigned long long> {
   template <typename T>
   FMT_CONSTEXPR typename std::enable_if<
       !is_integer<T>::value, unsigned long long>::type operator()(T) {
-    return handler_.on_error("precision is not integer"), 0;
+    handler_.on_error("precision is not integer");
+    return 0;
   }
 
  private:
@@ -2056,8 +2075,10 @@ FMT_CONSTEXPR Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
     }
     if (align != ALIGN_DEFAULT) {
       if (p != it) {
-        if (c == '{')
-          return handler.on_error("invalid fill character '{'"), it;
+        if (c == '{') {
+          handler.on_error("invalid fill character '{'");
+          return it;
+        }
         it += 2;
         handler.on_fill(c);
       } else ++it;

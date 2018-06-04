@@ -740,8 +740,8 @@ class basic_parse_context : private ErrorHandler {
 
   FMT_CONSTEXPR bool check_arg_id(unsigned) {
     if (next_arg_id_ > 0) {
-      return on_error(
-          "cannot switch from automatic to manual argument indexing"), false;
+      on_error("cannot switch from automatic to manual argument indexing");
+      return false;
     }
     next_arg_id_ = -1;
     return true;
