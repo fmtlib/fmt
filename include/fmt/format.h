@@ -294,7 +294,7 @@ class fp {
   significand_type f;
   int e;
 
-  static constexpr int significand_size = sizeof(significand_type) * char_size;
+  static FMT_CONSTEXPR_DECL const int significand_size = sizeof(significand_type) * char_size;
 
   fp(uint64_t f, int e): f(f), e(e) {}
 

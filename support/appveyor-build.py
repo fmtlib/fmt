@@ -32,16 +32,9 @@ else:
     if platform == 'x64':
         generator += ' Win64'
     cmake_command.append('-G' + generator)
-    # build_command = ['msbuild', r'C:\projects\fmt\build\fmt.sln', '/m:4',
-    #        r'/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"']
     build_command = ['cmake', '--build', '.', '--config', config, '--', '/m:4']
-    test_command = ['ctest', '-C', config, '-T', 'Test']
-    with open('DartConfiguration.tcl', 'w+') as file:
-        pass
+    test_command = ['ctest', '-C', config]
 
 check_call(cmake_command)
 check_call(build_command)
 check_call(test_command)
-
-# Upload test results
-# check_call([r'../support/appveyor-test-upload.ps1', '-configuration', config, '-jobid', jobid])
