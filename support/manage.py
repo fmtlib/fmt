@@ -245,12 +245,11 @@ def release(args):
     id = r.json()['id']
     uploads_url = 'https://uploads.github.com/repos/fmtlib/fmt/releases'
     package = 'fmt-{}.zip'.format(version)
-    with open('build/fmt/' + package, 'rb') as f:
-        r = requests.post(
-            '{}/{}/assets?name={}'.format(uploads_url, id, package),
-            params=params, files={package: f})
-        if r.status_code != 201:
-            raise Exception('Failed to upload an asset ' + str(r))
+    r = requests.post(
+        '{}/{}/assets?name={}'.format(uploads_url, id, package),
+        params=params, files={package: open('build/fmt/' + package, 'rb')})
+    if r.status_code != 201:
+        raise Exception('Failed to upload an asset ' + str(r))
 
 
 if __name__ == '__main__':
