@@ -52,6 +52,7 @@ class printf_precision_handler: public function<int> {
   typename std::enable_if<!std::is_integral<T>::value, int>::type
       operator()(T) {
     FMT_THROW(format_error("precision is not integer"));
+    return 0; // Silence visual studio
   }
 };
 
@@ -193,6 +194,7 @@ class printf_width_handler: public function<unsigned> {
   typename std::enable_if<!std::is_integral<T>::value, unsigned>::type
       operator()(T) {
     FMT_THROW(format_error("width is not integer"));
+    return 0; // Silence Visual Studio
   }
 };
 }  // namespace internal

@@ -2919,7 +2919,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     typedef back_insert_range<internal::basic_buffer<char_type>> range;
     basic_writer<range> w{range(buffer)};
     w.write(hi);
-    unsigned digits = buffer.size();
+    size_t digits = buffer.size();
     w.write('.');
     const unsigned max_digits = 18;
     while (digits++ < max_digits) {

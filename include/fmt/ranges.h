@@ -126,10 +126,9 @@ struct is_tuple_like {
   static FMT_CONSTEXPR_DECL const bool value =
     is_tuple_like_<T>::value && !is_range_<T>::value;
 };
-}  // namespace internal
 
 // Check for integer_sequence
-#if defined(__cpp_lib_integer_sequence) || FMT_MSC_VER >= 1910
+#if defined(__cpp_lib_integer_sequence) || FMT_MSC_VER >= 1900
 template <typename T, T... N>
 using integer_sequence = std::integer_sequence<T, N...>;
 template <std::size_t... N>
@@ -179,21 +178,13 @@ void for_each(Tuple &&tup, F &&f) {
 
 template <typename TupleT, typename Char>
 struct formatter<TupleT, Char, 
-    typename std::enable_if<fmt::internal::is_tuple_like<TupleT>::value>::type> {
-
-  fmt::formatting_tuple<Char> formatting;
-
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
-    return formatting.parse(ctx);
-  }
-
-  template <typename FormatContext = format_context>
-  auto format(const TupleT &values, FormatContext &ctx) -> decltype(ctx.out()) {
-    auto out = ctx.out();
-    std::size_t i = 0;
-    internal::copy(formatting.prefix, out);
-    internal::for_each(values, [&](const auto &v) {
+    typename std::enable_if<internal::is_tuple_like<TupleT>::value>::type> {
+private:
+  // C++11 generic lambda for format()
+  template <typename FormatContext>
+  struct format_each {
+    template <typename T>
+    void operator()(const T& v) {
       if (i > 0) {
         if (formatting.add_prepostfix_space) {
           *out++ = ' ';
@@ -206,7 +197,28 @@ struct formatter<TupleT, Char,
         format_to(out, "{}", v);
       }
       ++i;
-    });
+    }
+
+    formatting_tuple<Char>& formatting;
+    std::size_t& i;
+    typename std::add_lvalue_reference<decltype(std::declval<FormatContext>().out())>::type out;
+  };
+
+public:
+  formatting_tuple<Char> formatting;
+
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
+    return formatting.parse(ctx);
+  }
+
+  template <typename FormatContext = format_context>
+  auto format(const TupleT &values, FormatContext &ctx) -> decltype(ctx.out()) {
+    auto out = ctx.out();
+    std::size_t i = 0;
+    internal::copy(formatting.prefix, out);
+
+    internal::for_each(values, format_each<FormatContext>{formatting, i, out});
     if (formatting.add_prepostfix_space) {
       *out++ = ' ';
     }
@@ -215,13 +227,12 @@ struct formatter<TupleT, Char,
     return ctx.out();
   }
 };
-#endif  // FMT_USE_INTEGER_SEQUENCE
 
 template <typename RangeT, typename Char>
-struct formatter< RangeT, Char,
-    typename std::enable_if<fmt::internal::is_range<RangeT>::value>::type> {
+struct formatter<RangeT, Char,
+    typename std::enable_if<internal::is_range<RangeT>::value>::type> {
 
-  fmt::formatting_range<Char> formatting;
+  formatting_range<Char> formatting;
 
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
