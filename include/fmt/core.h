@@ -428,7 +428,7 @@ template <typename T, typename Char>
 struct is_named_arg<named_arg<T, Char>> : std::true_type {};
 
 enum type {
-  none_type, name_arg_type,
+  none_type, named_arg_type,
   // Integer types should go first,
   int_type, uint_type, long_long_type, ulong_long_type, bool_type, char_type,
   last_integer_type = char_type,
@@ -438,12 +438,12 @@ enum type {
 };
 
 FMT_CONSTEXPR bool is_integral(type t) {
-  FMT_ASSERT(t != internal::name_arg_type, "invalid argument type");
+  FMT_ASSERT(t != internal::named_arg_type, "invalid argument type");
   return t > internal::none_type && t <= internal::last_integer_type;
 }
 
 FMT_CONSTEXPR bool is_arithmetic(type t) {
-  FMT_ASSERT(t != internal::name_arg_type, "invalid argument type");
+  FMT_ASSERT(t != internal::named_arg_type, "invalid argument type");
   return t > internal::none_type && t <= internal::last_numeric_type;
 }
 
@@ -637,7 +637,7 @@ inline typename std::enable_if<
   make_value(const T &val) { return val; }
 
 template <typename C, typename T>
-typed_value<C, name_arg_type>
+typed_value<C, named_arg_type>
     make_value(const named_arg<T, typename C::char_type> &val) {
   basic_format_arg<C> arg = make_arg<C>(val.value);
   std::memcpy(val.data, &arg, sizeof(arg));
@@ -1088,7 +1088,7 @@ class basic_format_args {
   /** Returns the argument at specified index. */
   format_arg get(size_type index) const {
     format_arg arg = do_get(index);
-    return arg.type_ == internal::name_arg_type ?
+    return arg.type_ == internal::named_arg_type ?
           arg.value_.as_named_arg().template deserialize<Context>() : arg;
   }
 

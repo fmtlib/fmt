@@ -1199,7 +1199,7 @@ FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
   switch (arg.type_) {
   case internal::none_type:
     break;
-  case internal::name_arg_type:
+  case internal::named_arg_type:
     FMT_ASSERT(false, "invalid argument type");
     break;
   case internal::int_type:
@@ -1493,7 +1493,7 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
       switch (arg_type) {
         case internal::none_type:
           return;
-        case internal::name_arg_type:
+        case internal::named_arg_type:
           push_back(args.values_[i]);
           break;
         default:
@@ -1502,15 +1502,11 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
     }
     return;
   }
-  for (unsigned i = 0; i != max_packed_args; ++i) {
-    if (args.type(i) == internal::name_arg_type)
-      push_back(args.args_[i].value_);
-  }
-  for (unsigned i = max_packed_args; ; ++i) {
+  for (unsigned i = 0; ; ++i) {
     switch (args.args_[i].type_) {
       case internal::none_type:
         return;
-      case internal::name_arg_type:
+      case internal::named_arg_type:
         push_back(args.args_[i].value_);
         break;
       default:
@@ -3172,7 +3168,7 @@ struct formatter<
     auto eh = ctx.error_handler();
     switch (type) {
     case internal::none_type:
-    case internal::name_arg_type:
+    case internal::named_arg_type:
       FMT_ASSERT(false, "invalid argument type");
       break;
     case internal::int_type:
