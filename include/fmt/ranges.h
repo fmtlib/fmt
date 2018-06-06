@@ -166,20 +166,20 @@ void for_each(Tuple &&tup, F &&f) {
 }
 
 template<typename Arg>
-const char* format_str_quoted(bool add_space, const Arg&, typename std::enable_if<!is_like_std_string<Arg>::value>::type* = 0) {
+inline const char* format_str_quoted(bool add_space, const Arg&, typename std::enable_if<!is_like_std_string<Arg>::value>::type* = nullptr) {
   return add_space ? " {}" : "{}";
 }
 
 template<typename Arg>
-const char* format_str_quoted(bool add_space, const Arg&, typename std::enable_if<is_like_std_string<Arg>::value>::type* = 0) {
+inline const char* format_str_quoted(bool add_space, const Arg&, typename std::enable_if<is_like_std_string<Arg>::value>::type* = nullptr) {
   return add_space ? " '{}'" : "'{}'";
 }
 
-const char* format_str_quoted(bool add_space, const char*) {
+inline const char* format_str_quoted(bool add_space, const char*) {
   return add_space ? " '{}'" : "'{}'";
 }
 
-const char* format_str_quoted(bool add_space, const char) {
+inline const char* format_str_quoted(bool add_space, const char) {
     return add_space ? " '{}'" : "'{}'";
 }
 
