@@ -100,11 +100,7 @@ struct is_range_<T,typename std::conditional<
                                       decltype(internal::declval<T>().end())>,
                    void>::type> : std::true_type {};
 
-template <typename T>
-struct is_range {
-  static FMT_CONSTEXPR_DECL const bool value =
-    is_range_<T>::value && !is_like_std_string<T>::value;
-};
+
 
 /// tuple_size and tuple_element check.
 template <typename T>
@@ -119,12 +115,6 @@ class is_tuple_like_ {
  public:
   static FMT_CONSTEXPR_DECL const bool value =
     !std::is_void<decltype(check<T>(FMT_NULL))>::value;
-};
-
-template <typename T>
-struct is_tuple_like {
-  static FMT_CONSTEXPR_DECL const bool value =
-    is_tuple_like_<T>::value && !is_range_<T>::value;
 };
 
 // Check for integer_sequence
@@ -174,11 +164,36 @@ void for_each(Tuple &&tup, F &&f) {
   const auto indexes = get_indexes(tup);
   for_each(indexes, std::forward<Tuple>(tup), std::forward<F>(f));
 }
+
+template<typename Arg>
+const char* format_str_quoted(bool add_space, const Arg&, typename std::enable_if<!is_like_std_string<Arg>::value>::type* = 0) {
+  return add_space ? " {}" : "{}";
+}
+
+template<typename Arg>
+const char* format_str_quoted(bool add_space, const Arg&, typename std::enable_if<is_like_std_string<Arg>::value>::type* = 0) {
+  return add_space ? " '{}'" : "'{}'";
+}
+
+const char* format_str_quoted(bool add_space, const char*) {
+  return add_space ? " '{}'" : "'{}'";
+}
+
+const char* format_str_quoted(bool add_space, const char) {
+    return add_space ? " '{}'" : "'{}'";
+}
+
 }  // namespace internal
+
+template <typename T>
+struct is_tuple_like {
+  static FMT_CONSTEXPR_DECL const bool value =
+      internal::is_tuple_like_<T>::value && !internal::is_range_<T>::value;
+};
 
 template <typename TupleT, typename Char>
 struct formatter<TupleT, Char, 
-    typename std::enable_if<internal::is_tuple_like<TupleT>::value>::type> {
+    typename std::enable_if<fmt::is_tuple_like<TupleT>::value>::type> {
 private:
   // C++11 generic lambda for format()
   template <typename FormatContext>
@@ -191,11 +206,7 @@ private:
         }
         internal::copy(formatting.delimiter, out);
       }
-      if (formatting.add_delimiter_spaces && i > 0) {
-        format_to(out, " {}", v);
-      } else {
-        format_to(out, "{}", v);
-      }
+      format_to(out, internal::format_str_quoted((formatting.add_delimiter_spaces && i > 0), v), v);
       ++i;
     }
 
@@ -228,9 +239,16 @@ public:
   }
 };
 
+
+template <typename T>
+struct is_range {
+  static FMT_CONSTEXPR_DECL const bool value =
+      internal::is_range_<T>::value && !internal::is_like_std_string<T>::value;
+};
+
 template <typename RangeT, typename Char>
 struct formatter<RangeT, Char,
-    typename std::enable_if<internal::is_range<RangeT>::value>::type> {
+    typename std::enable_if<fmt::is_range<RangeT>::value>::type> {
 
   formatting_range<Char> formatting;
 
@@ -252,11 +270,7 @@ struct formatter<RangeT, Char,
         }
         internal::copy(formatting.delimiter, out);
       }
-      if (formatting.add_delimiter_spaces && i > 0) {
-        format_to(out, " {}", *it);
-      } else {
-        format_to(out, "{}", *it);
-      }
+      format_to(out, internal::format_str_quoted((formatting.add_delimiter_spaces && i > 0), *it), *it);
       if (++i > formatting.range_length_limit) {
         format_to(out, " ... <other elements>");
         break;
