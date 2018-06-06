@@ -112,7 +112,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif ()
 
 if (MSVC)
-  set(PEDANTIC_COMPILE_FLAGS /W4)
+  set(PEDANTIC_COMPILE_FLAGS /W3)
   set(WERROR_FLAG /WX)
 endif ()
 

@@ -104,7 +104,7 @@
 #if FMT_HAS_CPP_ATTRIBUTE(noreturn)
 # define FMT_NORETURN [[noreturn]]
 #else
-# define FMT_NORETURN /*noreturn*/
+# define FMT_NORETURN
 #endif
 
 // Check if exceptions are disabled.

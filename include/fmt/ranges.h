@@ -100,8 +100,6 @@ struct is_range_<T,typename std::conditional<
                                       decltype(internal::declval<T>().end())>,
                    void>::type> : std::true_type {};
 
-
-
 /// tuple_size and tuple_element check.
 template <typename T>
 class is_tuple_like_ {
@@ -180,9 +178,15 @@ FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&,
 FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const char*) {
   return add_space ? " '{}'" : "'{}'";
 }
+FMT_CONSTEXPR const wchar_t* format_str_quoted(bool add_space, const wchar_t*) {
+    return add_space ? L" '{}'" : L"'{}'";
+}
 
 FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const char) {
     return add_space ? " '{}'" : "'{}'";
+}
+FMT_CONSTEXPR const wchar_t* format_str_quoted(bool add_space, const wchar_t) {
+    return add_space ? L" '{}'" : L"'{}'";
 }
 
 }  // namespace internal
@@ -190,7 +194,7 @@ FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const char) {
 template <typename T>
 struct is_tuple_like {
   static FMT_CONSTEXPR_DECL const bool value =
-      internal::is_tuple_like_<T>::value && !internal::is_range_<T>::value;
+    internal::is_tuple_like_<T>::value && !internal::is_range_<T>::value;
 };
 
 template <typename TupleT, typename Char>
@@ -241,11 +245,10 @@ public:
   }
 };
 
-
 template <typename T>
 struct is_range {
   static FMT_CONSTEXPR_DECL const bool value =
-      internal::is_range_<T>::value && !internal::is_like_std_string<T>::value;
+    internal::is_range_<T>::value && !internal::is_like_std_string<T>::value;
 };
 
 template <typename RangeT, typename Char>
