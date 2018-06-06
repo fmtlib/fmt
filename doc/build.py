@@ -6,7 +6,7 @@ import errno, os, shutil, sys, tempfile
 from subprocess import check_call, check_output, CalledProcessError, Popen, PIPE
 from distutils.version import LooseVersion
 
-versions = ['1.0.0', '1.1.0', '2.0.0', '3.0.2', '4.0.0', '4.1.0']
+versions = ['1.0.0', '1.1.0', '2.0.0', '3.0.2', '4.0.0', '4.1.0', '5.0.0']
 
 def pip_install(package, commit=None, **kwargs):
   "Install package using pip."
@@ -56,7 +56,7 @@ def create_build_env(dirname='virtualenv'):
   pip_install('sphinx-doc/sphinx', '12b83372ac9316e8cbe86e7fed889296a4cc29ee',
               min_version='1.4.1.dev20160531')
   pip_install('michaeljones/breathe',
-              '6b1c5bb7a1866f15fc328b8716258354b10c1daa',
+              '129222318f7c8f865d2631e7da7b033567e7f56a',
               min_version='4.2.0')
 
 def build_docs(version='dev', **kwargs):

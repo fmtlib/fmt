@@ -23,12 +23,12 @@ using fmt::file;
 using testing::internal::scoped_ptr;
 
 // Checks if the file is open by reading one character from it.
-bool isopen(int fd) {
+static bool isopen(int fd) {
   char buffer;
   return FMT_POSIX(read(fd, &buffer, 1)) == 1;
 }
 
-bool isclosed(int fd) {
+static bool isclosed(int fd) {
   char buffer;
   std::streamsize result = 0;
   SUPPRESS_ASSERT(result = FMT_POSIX(read(fd, &buffer, 1)));
@@ -36,7 +36,7 @@ bool isclosed(int fd) {
 }
 
 // Opens a file for reading.
-file open_file() {
+static file open_file() {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   write_end.write(FILE_CONTENT, std::strlen(FILE_CONTENT));
@@ -45,7 +45,7 @@ file open_file() {
 }
 
 // Attempts to write a string to a file.
-void write(file &f, fmt::string_view s) {
+static void write(file &f, fmt::string_view s) {
   std::size_t num_chars_left = s.size();
   const char *ptr = s.data();
   do {
@@ -53,32 +53,32 @@ void write(file &f, fmt::string_view s) {
     ptr += count;
     // We can't write more than size_t bytes since num_chars_left
     // has type size_t.
-    num_chars_left -= static_cast<std::size_t>(count);
+    num_chars_left -= count;
   } while (num_chars_left != 0);
 }
 
 TEST(BufferedFileTest, DefaultCtor) {
   buffered_file f;
-  EXPECT_TRUE(f.get() == 0);
+  EXPECT_TRUE(f.get() == nullptr);
 }
 
 TEST(BufferedFileTest, MoveCtor) {
   buffered_file bf = open_buffered_file();
   FILE *fp = bf.get();
-  EXPECT_TRUE(fp != 0);
+  EXPECT_TRUE(fp != nullptr);
   buffered_file bf2(std::move(bf));
   EXPECT_EQ(fp, bf2.get());
-  EXPECT_TRUE(bf.get() == 0);
+  EXPECT_TRUE(bf.get() == nullptr);
 }
 
 TEST(BufferedFileTest, MoveAssignment) {
   buffered_file bf = open_buffered_file();
   FILE *fp = bf.get();
-  EXPECT_TRUE(fp != 0);
+  EXPECT_TRUE(fp != nullptr);
   buffered_file bf2;
   bf2 = std::move(bf);
   EXPECT_EQ(fp, bf2.get());
-  EXPECT_TRUE(bf.get() == 0);
+  EXPECT_TRUE(bf.get() == nullptr);
 }
 
 TEST(BufferedFileTest, MoveAssignmentClosesFile) {
@@ -90,13 +90,13 @@ TEST(BufferedFileTest, MoveAssignmentClosesFile) {
 }
 
 TEST(BufferedFileTest, MoveFromTemporaryInCtor) {
-  FILE *fp = 0;
+  FILE *fp = nullptr;
   buffered_file f(open_buffered_file(&fp));
   EXPECT_EQ(fp, f.get());
 }
 
 TEST(BufferedFileTest, MoveFromTemporaryInAssignment) {
-  FILE *fp = 0;
+  FILE *fp = nullptr;
   buffered_file f;
   f = open_buffered_file(&fp);
   EXPECT_EQ(fp, f.get());
@@ -126,7 +126,7 @@ TEST(BufferedFileTest, CloseErrorInDtor) {
       // output in EXPECT_STDERR and the second close will break output
       // redirection.
       FMT_POSIX(close(f->fileno()));
-      SUPPRESS_ASSERT(f.reset());
+      SUPPRESS_ASSERT(f.reset(nullptr));
   }, format_system_error(EBADF, "cannot close file") + "\n");
 }
 
@@ -134,7 +134,7 @@ TEST(BufferedFileTest, Close) {
   buffered_file f = open_buffered_file();
   int fd = f.fileno();
   f.close();
-  EXPECT_TRUE(f.get() == 0);
+  EXPECT_TRUE(f.get() == nullptr);
   EXPECT_TRUE(isclosed(fd));
 }
 
@@ -142,7 +142,7 @@ TEST(BufferedFileTest, CloseError) {
   buffered_file f = open_buffered_file();
   FMT_POSIX(close(f.fileno()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
-  EXPECT_TRUE(f.get() == 0);
+  EXPECT_TRUE(f.get() == nullptr);
 }
 
 TEST(BufferedFileTest, Fileno) {
@@ -153,7 +153,7 @@ TEST(BufferedFileTest, Fileno) {
   EXPECT_DEATH_IF_SUPPORTED({
     try {
       f.fileno();
-    } catch (fmt::system_error) {
+    } catch (const fmt::system_error&) {
       std::exit(1);
     }
   }, "");
@@ -209,7 +209,7 @@ TEST(FileTest, MoveAssignmentClosesFile) {
   EXPECT_TRUE(isclosed(old_fd));
 }
 
-file OpenBufferedFile(int &fd) {
+static file OpenBufferedFile(int &fd) {
   file f = open_file();
   fd = f.descriptor();
   return f;
@@ -253,7 +253,7 @@ TEST(FileTest, CloseErrorInDtor) {
       // output in EXPECT_STDERR and the second close will break output
       // redirection.
       FMT_POSIX(close(f->descriptor()));
-      SUPPRESS_ASSERT(f.reset());
+      SUPPRESS_ASSERT(f.reset(nullptr));
   }, format_system_error(EBADF, "cannot close file") + "\n");
 }
 

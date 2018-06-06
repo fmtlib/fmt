@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <cstring>
 
-#include "gmock/gmock.h"
+#include "gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
 
@@ -30,9 +30,8 @@ struct ValueExtractor: fmt::internal::function<T> {
   }
 
   template <typename U>
-  T operator()(U) {
+  FMT_NORETURN T operator()(U) {
     throw std::runtime_error(fmt::format("invalid type {}", typeid(U).name()));
-    return T();
   }
 };
 
@@ -53,9 +52,9 @@ TEST(FormatTest, FormatNegativeNaN) {
 }
 
 TEST(FormatTest, StrError) {
-  char *message = 0;
+  char *message = nullptr;
   char buffer[BUFFER_SIZE];
-  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = 0, 0), "invalid buffer");
+  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = nullptr, 0), "invalid buffer");
   EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = buffer, 0),
                 "invalid buffer");
   buffer[0] = 'x';

@@ -1,6 +1,6 @@
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.1.0)
 
 # Determine if fmt is built as a subproject (using add_subdirectory)
 # or if it is the master project.
@@ -28,12 +28,12 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
+option(FMT_WERROR "Halt the compilation with an error on compiler warnings." OFF)
 
 # Options that control generation of various targets.
 option(FMT_DOC "Generate the doc target." ${MASTER_PROJECT})
 option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
-option(FMT_USE_CPP14 "Enable the addition of C++14 compiler flags." ON)
 
 project(FMT)
 
@@ -58,9 +58,62 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/support/cmake")
 
 include(cxx14)
+include(CheckCXXCompilerFlag)
 
-if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wshadow -pedantic)
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic
+      -Wold-style-cast -Wfloat-equal -Wlogical-op -Wundef
+      -Wredundant-decls -Wshadow -Wwrite-strings -Wpointer-arith
+      -Wcast-qual -Wformat=2 -Wmissing-include-dirs
+      -Wcast-align -Wnon-virtual-dtor
+      -Wctor-dtor-privacy -Wdisabled-optimization
+      -Winvalid-pch -Wmissing-declarations -Woverloaded-virtual
+      -Wno-sign-conversion -Wno-shadow -Wno-format-nonliteral
+      -Wno-dangling-else -Wno-ctor-dtor-privacy)
+  if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept)
+  endif ()
+  if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wdouble-promotion
+          -Wtrampolines -Wzero-as-null-pointer-constant -Wuseless-cast
+          -Wvector-operation-performance -Wsized-deallocation)
+  endif ()
+  if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.0)
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
+          -Wnull-dereference -Wduplicated-cond)
+  endif ()
+
+  set(WERROR_FLAG -Werror)
+endif ()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(PEDANTIC_COMPILE_FLAGS -Weverything -Wpedantic
+      -Wno-weak-vtables -Wno-padded -Wno-gnu-statement-expression
+      -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-reserved-id-macro
+      -Wno-global-constructors -Wno-disabled-macro-expansion
+      -Wno-switch-enum -Wno-documentation-unknown-command
+      -Wno-gnu-string-literal-operator-template -Wno-unused-member-function
+      -Wno-format-nonliteral -Wno-missing-noreturn -Wno-undefined-func-template
+      -Wno-shadow -Wno-sign-conversion -Wno-used-but-marked-unused
+      -Wno-covered-switch-default -Wno-missing-variable-declarations
+      -Wno-double-promotion)
+
+  set(WERROR_FLAG -Werror)
+
+  check_cxx_compiler_flag(-Wno-zero-as-null-pointer-constant HAS_NULLPTR_WARNING)
+  if (HAS_NULLPTR_WARNING)
+    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wno-zero-as-null-pointer-constant)
+  endif ()
+
+  check_cxx_compiler_flag(-Wno-gnu-string-literal-operator-template HAS_GNU_UDL_WARNING)
+  if (HAS_GNU_UDL_WARNING)
+    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wno-gnu-string-literal-operator-template)
+  endif ()
+endif ()
+
+if (MSVC)
+  set(PEDANTIC_COMPILE_FLAGS /W4)
+  set(WERROR_FLAG /WX)
 endif ()
 
 if (MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
@@ -106,9 +159,9 @@ endif ()
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
 add_library(fmt::fmt ALIAS fmt)
 
-# Starting with CMake 3.1 the CXX_STANDARD property can be used instead.
-# Don't export -std since it may break projects that use other standards.
-target_compile_options(fmt PRIVATE ${CPP14_FLAG})
+if (FMT_WERROR)
+  target_compile_options(fmt PRIVATE ${WERROR_FLAG})
+endif ()
 if (FMT_PEDANTIC)
   target_compile_options(fmt PRIVATE ${PEDANTIC_COMPILE_FLAGS})
 endif ()
@@ -130,17 +183,14 @@ if (BUILD_SHARED_LIBS)
   target_compile_definitions(fmt PRIVATE FMT_EXPORT INTERFACE FMT_SHARED)
 endif ()
 
-# Additionally define a header-only library when CMake is new enough.
-if (CMAKE_VERSION VERSION_GREATER 3.1.0 OR CMAKE_VERSION VERSION_EQUAL 3.1.0)
-  add_library(fmt-header-only INTERFACE)
-  add_library(fmt::fmt-header-only ALIAS fmt-header-only)
+add_library(fmt-header-only INTERFACE)
+add_library(fmt::fmt-header-only ALIAS fmt-header-only)
 
-  target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
+target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 
-  target_include_directories(fmt-header-only INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>)
-endif ()
+target_include_directories(fmt-header-only INTERFACE
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
 
 # Install targets.
 if (FMT_INSTALL)

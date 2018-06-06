@@ -235,7 +235,7 @@
 
 // Most of the types needed for porting Google Mock are also required
 // for Google Test and are defined in gtest-port.h.
-#include "gtest/gtest.h"
+#include "gtest.h"
 
 // To avoid conditional compilation everywhere, we make it
 // gmock-port.h's responsibility to #include the header implementing

@@ -6,7 +6,9 @@
 // For the license information refer to format.h.
 
 // Disable bogus MSVC warnings.
-#define _CRT_SECURE_NO_WARNINGS
+#ifdef _MSC_VER
+# define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #include "posix-mock.h"
 #include "../src/posix.cc"
@@ -21,7 +23,7 @@
 # undef ERROR
 #endif
 
-#include "gmock/gmock.h"
+#include "gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
 
@@ -131,7 +133,7 @@ int test::dup2(int fildes, int fildes2) {
 }
 
 FILE *test::fdopen(int fildes, const char *mode) {
-  EMULATE_EINTR(fdopen, 0);
+  EMULATE_EINTR(fdopen, nullptr);
   return ::FMT_POSIX(fdopen(fildes, mode));
 }
 
@@ -160,7 +162,7 @@ int test::pipe(int *pfds, unsigned psize, int textmode) {
 #endif
 
 FILE *test::fopen(const char *filename, const char *mode) {
-  EMULATE_EINTR(fopen, 0);
+  EMULATE_EINTR(fopen, nullptr);
   return ::fopen(filename, mode);
 }
 
@@ -193,7 +195,7 @@ int (test::fileno)(FILE *stream) {
 # define EXPECT_EQ_POSIX(expected, actual)
 #endif
 
-void write_file(fmt::cstring_view filename, fmt::string_view content) {
+static void write_file(fmt::cstring_view filename, fmt::string_view content) {
   fmt::buffered_file f(filename, "w");
   f.print("{}", content);
 }
@@ -214,7 +216,7 @@ TEST(UtilTest, GetPageSize) {
 
 TEST(FileTest, OpenRetry) {
   write_file("test", "there must be something here");
-  scoped_ptr<file> f;
+  scoped_ptr<file> f{nullptr};
   EXPECT_RETRY(f.reset(new file("test", file::RDONLY)),
                open, "cannot open file test");
 #ifndef _WIN32
@@ -230,7 +232,7 @@ TEST(FileTest, CloseNoRetryInDtor) {
   int saved_close_count = 0;
   EXPECT_WRITE(stderr, {
     close_count = 1;
-    f.reset();
+    f.reset(nullptr);
     saved_close_count = close_count;
     close_count = 0;
   }, format_system_error(EINTR, "cannot close file") + "\n");
@@ -383,7 +385,7 @@ TEST(FileTest, FdopenNoRetry) {
 
 TEST(BufferedFileTest, OpenRetry) {
   write_file("test", "there must be something here");
-  scoped_ptr<buffered_file> f;
+  scoped_ptr<buffered_file> f{nullptr};
   EXPECT_RETRY(f.reset(new buffered_file("test", "r")),
                fopen, "cannot open file test");
 #ifndef _WIN32
@@ -400,7 +402,7 @@ TEST(BufferedFileTest, CloseNoRetryInDtor) {
   int saved_fclose_count = 0;
   EXPECT_WRITE(stderr, {
     fclose_count = 1;
-    f.reset();
+    f.reset(nullptr);
     saved_fclose_count = fclose_count;
     fclose_count = 0;
   }, format_system_error(EINTR, "cannot close file") + "\n");
@@ -436,8 +438,9 @@ TEST(ScopedMock, Scope) {
     ScopedMock<TestMock> mock;
     EXPECT_EQ(&mock, TestMock::instance);
     TestMock &copy = mock;
+    static_cast<void>(copy);
   }
-  EXPECT_EQ(0, TestMock::instance);
+  EXPECT_EQ(nullptr, TestMock::instance);
 }
 
 #ifdef FMT_LOCALE
@@ -472,7 +475,13 @@ double _strtod_l(const char *nptr, char **endptr, _locale_t locale) {
 # pragma warning(pop)
 #endif
 
-LocaleType newlocale(int category_mask, const char *locale, LocaleType base) {
+#if defined(__THROW) && FMT_GCC_VERSION > 0 && FMT_GCC_VERSION <= 408
+#define FMT_LOCALE_THROW __THROW
+#else
+#define FMT_LOCALE_THROW
+#endif
+
+LocaleType newlocale(int category_mask, const char *locale, LocaleType base) FMT_LOCALE_THROW {
   return LocaleMock::instance->newlocale(category_mask, locale, base);
 }
 
@@ -482,14 +491,16 @@ typedef int FreeLocaleResult;
 typedef void FreeLocaleResult;
 #endif
 
-FreeLocaleResult freelocale(LocaleType locale) {
+FreeLocaleResult freelocale(LocaleType locale) FMT_LOCALE_THROW {
   LocaleMock::instance->freelocale(locale);
   return FreeLocaleResult();
 }
 
-double strtod_l(const char *nptr, char **endptr, LocaleType locale) {
+double strtod_l(const char *nptr, char **endptr, LocaleType locale) FMT_LOCALE_THROW {
   return LocaleMock::instance->strtod_l(nptr, endptr, locale);
 }
+
+#undef FMT_LOCALE_THROW
 
 TEST(LocaleTest, LocaleMock) {
   ScopedMock<LocaleMock> mock;
@@ -504,7 +515,7 @@ TEST(LocaleTest, Locale) {
 #endif
   ScopedMock<LocaleMock> mock;
   LocaleType impl = reinterpret_cast<LocaleType>(42);
-  EXPECT_CALL(mock, newlocale(LC_NUMERIC_MASK, StrEq("C"), 0))
+  EXPECT_CALL(mock, newlocale(LC_NUMERIC_MASK, StrEq("C"), nullptr))
       .WillOnce(Return(impl));
   EXPECT_CALL(mock, freelocale(impl));
   fmt::Locale locale;

@@ -8,7 +8,7 @@
 #ifndef FMT_MOCK_ALLOCATOR_H_
 #define FMT_MOCK_ALLOCATOR_H_
 
-#include "gmock/gmock.h"
+#include "gmock.h"
 
 template <typename T>
 class MockAllocator {
@@ -28,7 +28,7 @@ class AllocatorRef {
  public:
   typedef typename Allocator::value_type value_type;
 
-  explicit AllocatorRef(Allocator *alloc = 0) : alloc_(alloc) {}
+  explicit AllocatorRef(Allocator *alloc = nullptr) : alloc_(alloc) {}
 
   AllocatorRef(const AllocatorRef &other) : alloc_(other.alloc_) {}
 
@@ -41,7 +41,7 @@ class AllocatorRef {
  private:
   void move(AllocatorRef &other) {
     alloc_ = other.alloc_;
-    other.alloc_ = 0;
+    other.alloc_ = nullptr;
   }
 
  public:

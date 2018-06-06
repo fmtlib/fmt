@@ -2,21 +2,32 @@ configuration:
   - Debug
   - Release
 
-image: Visual Studio 2017
+clone_depth: 1
+
+platform:
+  - Win32
+  - x64
+
+image:
+  - Visual Studio 2013
+  - Visual Studio 2015
+  - Visual Studio 2017
 
 environment:
   CTEST_OUTPUT_ON_FAILURE: 1
-  matrix:
-  - BUILD: msvc
-  - BUILD: msvc
-    PLATFORM: x64
+  MSVC_DEFAULT_OPTIONS: ON
+  BUILD: msvc
+
+matrix:
+  allow_failures:
+    - image: Visual Studio 2013
 
 before_build:
-  # Workaround for CMake not wanting sh.exe on PATH for MinGW.
-  - set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
+ - mkdir build
+ - cd build
 
 build_script:
-  - python support/appveyor-build.py
+  - python ../support/appveyor-build.py
 
 on_failure:
   - appveyor PushArtifact Testing/Temporary/LastTest.log

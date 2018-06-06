@@ -37,6 +37,33 @@
 #include <stdexcept>
 #include <stdint.h>
 
+#ifdef __clang__
+# define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
+#else
+# define FMT_CLANG_VERSION 0
+#endif
+
+#ifdef __INTEL_COMPILER
+# define FMT_ICC_VERSION __INTEL_COMPILER
+#elif defined(__ICL)
+# define FMT_ICC_VERSION __ICL
+#else
+# define FMT_ICC_VERSION 0
+#endif
+
+#if (defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 406) || \
+    FMT_CLANG_VERSION
+# pragma GCC diagnostic push
+
+// Disable the warning about declaration shadowing because it affects too
+// many valid cases.
+# pragma GCC diagnostic ignored "-Wshadow"
+
+// Disable the warning about implicit conversions that may change the sign of
+// an integer; silencing it otherwise would require many explicit casts.
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 #include "core.h"
 
 #ifdef _SECURE_SCL
@@ -55,52 +82,31 @@
 # define FMT_HAS_BUILTIN(x) 0
 #endif
 
-#ifdef __GNUC__
-# if FMT_GCC_VERSION >= 406
-#  pragma GCC diagnostic push
-
-// Disable the warning about declaration shadowing because it affects too
-// many valid cases.
-#  pragma GCC diagnostic ignored "-Wshadow"
-
-// Disable the warning about implicit conversions that may change the sign of
-// an integer; silencing it otherwise would require many explicit casts.
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-# endif
-#endif
-
-#ifdef __clang__
-# define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
-#endif
-
-#if defined(__INTEL_COMPILER)
-# define FMT_ICC_VERSION __INTEL_COMPILER
-#elif defined(__ICL)
-# define FMT_ICC_VERSION __ICL
-#endif
-
-#if defined(__clang__) && !defined(FMT_ICC_VERSION)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
-# pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
-# pragma clang diagnostic ignored "-Wpadded"
-#endif
-
 #ifdef __GNUC_LIBSTD__
 # define FMT_GNUC_LIBSTD_VERSION (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
 #endif
 
-#ifdef __has_cpp_attribute
-# define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
-#else
-# define FMT_HAS_CPP_ATTRIBUTE(x) 0
-#endif
-
 #ifndef FMT_THROW
 # if FMT_EXCEPTIONS
-#  define FMT_THROW(x) throw x
+#  if FMT_MSC_VER
+FMT_BEGIN_NAMESPACE
+namespace internal {
+template <typename Exception>
+inline void do_throw(const Exception &x) {
+  // Silence unreachable code warnings in MSVC because these are nearly
+  // impossible to fix in a generic code.
+  volatile bool b = true;
+  if (b)
+    throw x;
+}
+}
+FMT_END_NAMESPACE
+#   define FMT_THROW(x) fmt::internal::do_throw(x)
+#  else
+#   define FMT_THROW(x) throw x
+#  endif
 # else
-#  define FMT_THROW(x) assert(false)
+#  define FMT_THROW(x) do { static_cast<void>(sizeof(x)); assert(false); } while(false);
 # endif
 #endif
 
@@ -108,14 +114,14 @@
 // For Intel's compiler both it and the system gcc/msc must support UDLs.
 # if (FMT_HAS_FEATURE(cxx_user_literals) || \
       FMT_GCC_VERSION >= 407 || FMT_MSC_VER >= 1900) && \
-      (!defined(FMT_ICC_VERSION) || FMT_ICC_VERSION >= 1500)
+      (!FMT_ICC_VERSION || FMT_ICC_VERSION >= 1500)
 #  define FMT_USE_USER_DEFINED_LITERALS 1
 # else
 #  define FMT_USE_USER_DEFINED_LITERALS 0
 # endif
 #endif
 
-#if FMT_USE_USER_DEFINED_LITERALS && \
+#if FMT_USE_USER_DEFINED_LITERALS && !defined(FMT_ICC_VERSION) && \
     ((FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L) || \
     (defined(FMT_CLANG_VERSION) && FMT_CLANG_VERSION >= 304))
 # define FMT_UDL_TEMPLATE 1
@@ -126,14 +132,28 @@
 #ifndef FMT_USE_EXTERN_TEMPLATES
 # ifndef FMT_HEADER_ONLY
 #  define FMT_USE_EXTERN_TEMPLATES \
-     (FMT_CLANG_VERSION >= 209 || (FMT_GCC_VERSION >= 303 && FMT_HAS_GXX_CXX11))
+     ((FMT_CLANG_VERSION >= 209 && __cplusplus >= 201103L) || \
+      (FMT_GCC_VERSION >= 303 && FMT_HAS_GXX_CXX11))
 # else
 #  define FMT_USE_EXTERN_TEMPLATES 0
 # endif
 #endif
 
-#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_trailing_return) || FMT_MSC_VER >= 1600
+#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_trailing_return) || \
+    FMT_MSC_VER >= 1600
 # define FMT_USE_TRAILING_RETURN 1
+#else
+# define FMT_USE_TRAILING_RETURN 0
+#endif
+
+#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_rvalue_references) || FMT_MSC_VER >= 1600
+# define FMT_USE_RVALUE_REFERENCES 1
+#else
+# define FMT_USE_RVALUE_REFERENCES 0
+#endif
+
+#ifndef FMT_USE_GRISU
+# define FMT_USE_GRISU 0
 #endif
 
 // __builtin_clz is broken in clang with Microsoft CodeGen:
@@ -258,9 +278,23 @@ inline dummy_int isnan(...) { return dummy_int(); }
 inline dummy_int _isnan(...) { return dummy_int(); }
 
 // A handmade floating-point number f * pow(2, e).
-struct fp {
-  uint64_t f;
+class fp {
+ private:
+  typedef uint64_t significand_type;
+
+  // All sizes are in bits.
+  static FMT_CONSTEXPR_DECL const int char_size = std::numeric_limits<unsigned char>::digits;
+  // Subtract 1 to account for an implicit most significant bit in the
+  // normalized form.
+  static FMT_CONSTEXPR_DECL const int double_significand_size =
+    std::numeric_limits<double>::digits - 1;
+  static FMT_CONSTEXPR_DECL const uint64_t implicit_bit = 1ull << double_significand_size;
+
+ public:
+  significand_type f;
   int e;
+
+  static FMT_CONSTEXPR_DECL const int significand_size = sizeof(significand_type) * char_size;
 
   fp(uint64_t f, int e): f(f), e(e) {}
 
@@ -270,24 +304,35 @@ struct fp {
   explicit fp(Double d) {
     // Assume double is in the format [sign][exponent][significand].
     typedef std::numeric_limits<Double> limits;
-    const int double_size =
-      sizeof(Double) * std::numeric_limits<unsigned char>::digits;
-    // Subtract 1 to account for an implicit most significant bit in the
-    // normalized form.
-    const int significand_size = limits::digits - 1;
-    const int exponent_size = double_size - significand_size - 1;  // -1 for sign
-    const uint64_t implicit_bit = 1ull << significand_size;
+    const int double_size = sizeof(Double) * char_size;
+    const int exponent_size =
+      double_size - double_significand_size - 1;  // -1 for sign
     const uint64_t significand_mask = implicit_bit - 1;
     const uint64_t exponent_mask = (~0ull >> 1) & ~significand_mask;
     const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
     auto u = bit_cast<uint64_t>(d);
-    auto biased_e = (u & exponent_mask) >> significand_size;
+    auto biased_e = (u & exponent_mask) >> double_significand_size;
     f = u & significand_mask;
     if (biased_e != 0)
       f += implicit_bit;
     else
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    e = biased_e - exponent_bias - significand_size;
+    e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
+  }
+
+  // Normalizes the value converted from double and multiplied by (1 << SHIFT).
+  template <int SHIFT = 0>
+  void normalize() {
+    // Handle subnormals.
+    auto shifted_implicit_bit = implicit_bit << SHIFT;
+    while ((f & shifted_implicit_bit) == 0) {
+      f <<= 1;
+      --e;
+    }
+    // Subtract 1 to account for hidden bit.
+    auto offset = significand_size - double_significand_size - SHIFT - 1;
+    f <<= offset;
+    e -= offset;
   }
 };
 
@@ -297,16 +342,13 @@ inline fp operator-(fp x, fp y) {
   return fp(x.f - y.f, x.e);
 }
 
-// Computes an fp number r with r.f = x.f * y.f / pow(2, 32) rounded to nearest
-// with half-up tie breaking, r.e = x.e + y.e + 32. Result may not be normalized.
+// Computes an fp number r with r.f = x.f * y.f / pow(2, 64) rounded to nearest
+// with half-up tie breaking, r.e = x.e + y.e + 64. Result may not be normalized.
 fp operator*(fp x, fp y);
 
-// Compute k such that its cached power c_k = c_k.f * pow(2, c_k.e) satisfies
-// min_exponent <= c_k.e + e <= min_exponent + 3.
-inline int compute_cached_power_index(int e, int min_exponent) {
-  const double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
-  return static_cast<int>(std::ceil((min_exponent - e + 63) * one_over_log2_10));
-}
+// Returns cached power (of 10) c_k = c_k.f * pow(2, c_k.e) such that its
+// (binary) exponent satisfies min_exponent <= c_k.e <= min_exponent + 3.
+fp get_cached_power(int min_exponent, int &pow10_exponent);
 
 template <typename Allocator>
 typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {
@@ -372,6 +414,38 @@ FMT_BEGIN_NAMESPACE
 template <typename Range>
 class basic_writer;
 
+template <typename OutputIt, typename T = typename OutputIt::value_type>
+class output_range {
+ private:
+  OutputIt it_;
+
+  // Unused yet.
+  typedef void sentinel;
+  sentinel end() const;
+
+ public:
+  typedef OutputIt iterator;
+  typedef T value_type;
+
+  explicit output_range(OutputIt it): it_(it) {}
+  OutputIt begin() const { return it_; }
+};
+
+// A range where begin() returns back_insert_iterator.
+template <typename Container>
+class back_insert_range:
+    public output_range<std::back_insert_iterator<Container>> {
+  typedef output_range<std::back_insert_iterator<Container>> base;
+ public:
+  typedef typename Container::value_type value_type;
+
+  back_insert_range(Container &c): base(std::back_inserter(c)) {}
+  back_insert_range(typename base::iterator it): base(it) {}
+};
+
+typedef basic_writer<back_insert_range<internal::buffer>> writer;
+typedef basic_writer<back_insert_range<internal::wbuffer>> wwriter;
+
 /** A formatting error such as invalid format string. */
 class format_error : public std::runtime_error {
  public:
@@ -380,8 +454,6 @@ class format_error : public std::runtime_error {
 
   explicit format_error(const std::string &message)
   : std::runtime_error(message) {}
-
-  FMT_API ~format_error() throw();
 };
 
 namespace internal {
@@ -601,30 +673,30 @@ struct char_traits<char> {
   // Formats a floating-point number.
   template <typename T>
   FMT_API static int format_float(char *buffer, std::size_t size,
-      const char *format, unsigned width, int precision, T value);
+      const char *format, int precision, T value);
 };
 
 template <>
 struct char_traits<wchar_t> {
   template <typename T>
   FMT_API static int format_float(wchar_t *buffer, std::size_t size,
-      const wchar_t *format, unsigned width, int precision, T value);
+      const wchar_t *format, int precision, T value);
 };
 
 #if FMT_USE_EXTERN_TEMPLATES
 extern template int char_traits<char>::format_float<double>(
-    char *buffer, std::size_t size, const char* format, unsigned width,
-    int precision, double value);
+    char *buffer, std::size_t size, const char* format, int precision,
+    double value);
 extern template int char_traits<char>::format_float<long double>(
-    char *buffer, std::size_t size, const char* format, unsigned width,
-    int precision, long double value);
+    char *buffer, std::size_t size, const char* format, int precision,
+    long double value);
 
 extern template int char_traits<wchar_t>::format_float<double>(
-    wchar_t *buffer, std::size_t size, const wchar_t* format, unsigned width,
-    int precision, double value);
+    wchar_t *buffer, std::size_t size, const wchar_t* format, int precision,
+    double value);
 extern template int char_traits<wchar_t>::format_float<long double>(
-    wchar_t *buffer, std::size_t size, const wchar_t* format, unsigned width,
-    int precision, long double value);
+    wchar_t *buffer, std::size_t size, const wchar_t* format, int precision,
+    long double value);
 #endif
 
 template <typename Container>
@@ -1124,7 +1196,7 @@ FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
   switch (arg.type_) {
   case internal::none_type:
     break;
-  case internal::name_arg_type:
+  case internal::named_arg_type:
     FMT_ASSERT(false, "invalid argument type");
     break;
   case internal::int_type:
@@ -1418,7 +1490,7 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
       switch (arg_type) {
         case internal::none_type:
           return;
-        case internal::name_arg_type:
+        case internal::named_arg_type:
           push_back(args.values_[i]);
           break;
         default:
@@ -1427,15 +1499,11 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
     }
     return;
   }
-  for (unsigned i = 0; i != max_packed_args; ++i) {
-    if (args.type(i) == internal::name_arg_type)
-      push_back(args.args_[i].value_);
-  }
-  for (unsigned i = max_packed_args; ; ++i) {
+  for (unsigned i = 0; ; ++i) {
     switch (args.args_[i].type_) {
       case internal::none_type:
         return;
-      case internal::name_arg_type:
+      case internal::named_arg_type:
         push_back(args.args_[i].value_);
         break;
       default:
@@ -1602,6 +1670,13 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
   return value;
 }
 
+#if FMT_MSC_VER
+// Warns that the compiler cannot generate an assignment operator
+// The class has a reference member variable, so this is obviously the case
+# pragma warning(push)
+# pragma warning(disable: 4512)
+#endif
+
 template <typename Char, typename Context>
 class custom_formatter: public function<bool> {
  private:
@@ -1618,6 +1693,10 @@ class custom_formatter: public function<bool> {
   template <typename T>
   bool operator()(T) const { return false; }
 };
+
+#if FMT_MSC_VER
+# pragma warning(pop)
+#endif
 
 template <typename T>
 struct is_integer {
@@ -1975,41 +2054,42 @@ struct precision_adapter {
 template <typename Iterator, typename SpecHandler>
 FMT_CONSTEXPR Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
   typedef typename std::iterator_traits<Iterator>::value_type char_type;
+  char_type c = *it;
+  if (c == '}' || !c)
+    return it;
+
   // Parse fill and alignment.
-  if (char_type c = *it) {
-    alignment align = ALIGN_DEFAULT;
-    int i = 1;
-    do {
-      auto p = it + i;
-      switch (*p) {
-        case '<':
-          align = ALIGN_LEFT;
-          break;
-        case '>':
-          align = ALIGN_RIGHT;
-          break;
-        case '=':
-          align = ALIGN_NUMERIC;
-          break;
-        case '^':
-          align = ALIGN_CENTER;
-          break;
-      }
-      if (align != ALIGN_DEFAULT) {
-        handler.on_align(align);
-        if (p != it) {
-          if (c == '}') break;
-          if (c == '{') {
-            handler.on_error("invalid fill character '{'");
-            return it;
-          }
-          it += 2;
-          handler.on_fill(c);
-        } else ++it;
+  alignment align = ALIGN_DEFAULT;
+  int i = 1;
+  do {
+    auto p = it + i;
+    switch (*p) {
+      case '<':
+        align = ALIGN_LEFT;
         break;
-      }
-    } while (--i >= 0);
-  }
+      case '>':
+        align = ALIGN_RIGHT;
+        break;
+      case '=':
+        align = ALIGN_NUMERIC;
+        break;
+      case '^':
+        align = ALIGN_CENTER;
+        break;
+    }
+    if (align != ALIGN_DEFAULT) {
+      if (p != it) {
+        if (c == '{') {
+          handler.on_error("invalid fill character '{'");
+          return it;
+        }
+        it += 2;
+        handler.on_fill(c);
+      } else ++it;
+      handler.on_align(align);
+      break;
+    }
+  } while (--i >= 0);
 
   // Parse sign.
   switch (*it) {
@@ -2308,8 +2388,6 @@ class system_error : public std::runtime_error {
     init(error_code, message, make_format_args(args...));
   }
 
-  FMT_API ~system_error() FMT_DTOR_NOEXCEPT;
-
   int error_code() const { return error_code_; }
 };
 
@@ -2578,7 +2656,7 @@ class basic_writer {
   };
 
   struct double_writer {
-    unsigned n;
+    size_t n;
     char sign;
     basic_memory_buffer<char_type> &buffer;
 
@@ -2595,6 +2673,9 @@ class basic_writer {
   // Formats a floating-point number (double or long double).
   template <typename T>
   void write_double(T value, const format_specs &spec);
+  template <typename T>
+  void write_double_sprintf(T value, const format_specs &spec,
+                            internal::basic_buffer<char_type>& buffer);
 
   template <typename Char>
   struct str_writer {
@@ -2817,60 +2898,39 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     return write_inf_or_nan(handler.upper ? "INF" : "inf");
 
   basic_memory_buffer<char_type> buffer;
-
-  unsigned width = spec.width();
-  if (sign) {
-    buffer.reserve(width > 1u ? width : 1u);
-    if (width > 0)
-      --width;
-  }
-
-  // Build format string.
-  enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
-  char_type format[MAX_FORMAT_SIZE];
-  char_type *format_ptr = format;
-  *format_ptr++ = '%';
-  unsigned width_for_sprintf = width;
-  if (spec.flag(HASH_FLAG))
-    *format_ptr++ = '#';
-  width_for_sprintf = 0;
-  if (spec.precision() >= 0) {
-    *format_ptr++ = '.';
-    *format_ptr++ = '*';
-  }
-
-  append_float_length(format_ptr, value);
-  *format_ptr++ = handler.type;
-  *format_ptr = '\0';
-
-  // Format using snprintf.
-  unsigned n = 0;
-  char_type *start = FMT_NULL;
-  for (;;) {
-    std::size_t buffer_size = buffer.capacity();
-#if FMT_MSC_VER
-    // MSVC's vsnprintf_s doesn't work with zero size, so reserve
-    // space for at least one extra character to make the size non-zero.
-    // Note that the buffer's capacity may increase by more than 1.
-    if (buffer_size == 0) {
-      buffer.reserve(1);
-      buffer_size = buffer.capacity();
+  if (FMT_USE_GRISU && sizeof(T) <= sizeof(double) &&
+      std::numeric_limits<double>::is_iec559) {
+    internal::fp fp_value(static_cast<double>(value));
+    fp_value.normalize();
+    // Find a cached power of 10 close to 1 / fp_value.
+    int dec_exp = 0;
+    const int min_exp = -60;
+    auto dec_pow = internal::get_cached_power(
+        min_exp - (fp_value.e + internal::fp::significand_size), dec_exp);
+    internal::fp product = fp_value * dec_pow;
+    // Generate output.
+    internal::fp one(1ull << -product.e, product.e);
+    uint64_t hi = product.f >> -one.e;
+    uint64_t f = product.f & (one.f - 1);
+    typedef back_insert_range<internal::basic_buffer<char_type>> range;
+    basic_writer<range> w{range(buffer)};
+    w.write(hi);
+    size_t digits = buffer.size();
+    w.write('.');
+    const unsigned max_digits = 18;
+    while (digits++ < max_digits) {
+      f *= 10;
+      w.write(static_cast<char>('0' + (f >> -one.e)));
+      f &= one.f - 1;
     }
-#endif
-    start = &buffer[0];
-    int result = internal::char_traits<char_type>::format_float(
-        start, buffer_size, format, width_for_sprintf, spec.precision(), value);
-    if (result >= 0) {
-      n = internal::to_unsigned(result);
-      if (n < buffer.capacity())
-        break;  // The buffer is large enough - continue with formatting.
-      buffer.reserve(n + 1);
-    } else {
-      // If result is negative we ask to increase the capacity by at least 1,
-      // but as std::vector, the buffer grows exponentially.
-      buffer.reserve(buffer.capacity() + 1);
-    }
+    w.write('e');
+    w.write(-dec_exp);
+  } else {
+    format_specs normalized_spec(spec);
+    normalized_spec.type_ = handler.type;
+    write_double_sprintf(value, normalized_spec, buffer);
   }
+  size_t n = buffer.size();
   align_spec as = spec;
   if (spec.align() == ALIGN_NUMERIC) {
     if (sign) {
@@ -2889,37 +2949,51 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   write_padded(n, as, double_writer{n, sign, buffer});
 }
 
-template <typename OutputIt, typename T = typename OutputIt::value_type>
-class output_range {
- private:
-  OutputIt it_;
+template <typename Range>
+template <typename T>
+void basic_writer<Range>::write_double_sprintf(
+    T value, const format_specs &spec,
+    internal::basic_buffer<char_type>& buffer) {
+  // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
+  FMT_ASSERT(buffer.capacity() != 0, "empty buffer");
 
-  // Unused yet.
-  typedef void sentinel;
-  sentinel end() const;
+  // Build format string.
+  enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
+  char_type format[MAX_FORMAT_SIZE];
+  char_type *format_ptr = format;
+  *format_ptr++ = '%';
+  if (spec.flag(HASH_FLAG))
+    *format_ptr++ = '#';
+  if (spec.precision() >= 0) {
+    *format_ptr++ = '.';
+    *format_ptr++ = '*';
+  }
 
- public:
-  typedef OutputIt iterator;
-  typedef T value_type;
+  append_float_length(format_ptr, value);
+  *format_ptr++ = spec.type();
+  *format_ptr = '\0';
 
-  explicit output_range(OutputIt it): it_(it) {}
-  OutputIt begin() const { return it_; }
-};
-
-// A range where begin() returns back_insert_iterator.
-template <typename Container>
-class back_insert_range:
-    public output_range<std::back_insert_iterator<Container>> {
-  typedef output_range<std::back_insert_iterator<Container>> base;
- public:
-  typedef typename Container::value_type value_type;
-
-  back_insert_range(Container &c): base(std::back_inserter(c)) {}
-  back_insert_range(typename base::iterator it): base(it) {}
-};
-
-typedef basic_writer<back_insert_range<internal::buffer>> writer;
-typedef basic_writer<back_insert_range<internal::wbuffer>> wwriter;
+  // Format using snprintf.
+  char_type *start = FMT_NULL;
+  for (;;) {
+    std::size_t buffer_size = buffer.capacity();
+    start = &buffer[0];
+    int result = internal::char_traits<char_type>::format_float(
+        start, buffer_size, format, spec.precision(), value);
+    if (result >= 0) {
+      unsigned n = internal::to_unsigned(result);
+      if (n < buffer.capacity()) {
+        buffer.resize(n);
+        break;  // The buffer is large enough - continue with formatting.
+      }
+      buffer.reserve(n + 1);
+    } else {
+      // If result is negative we ask to increase the capacity by at least 1,
+      // but as std::vector, the buffer grows exponentially.
+      buffer.reserve(buffer.capacity() + 1);
+    }
+  }
+}
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
@@ -3100,7 +3174,7 @@ struct formatter<
     auto eh = ctx.error_handler();
     switch (type) {
     case internal::none_type:
-    case internal::name_arg_type:
+    case internal::named_arg_type:
       FMT_ASSERT(false, "invalid argument type");
       break;
     case internal::int_type:
@@ -3147,8 +3221,8 @@ struct formatter<
     internal::handle_dynamic_spec<internal::precision_checker>(
       specs_.precision_, specs_.precision_ref, ctx);
     typedef output_range<typename FormatContext::iterator,
-                         typename FormatContext::char_type> range;
-    visit(arg_formatter<range>(ctx, specs_),
+                         typename FormatContext::char_type> range_type;
+    visit(arg_formatter<range_type>(ctx, specs_),
           internal::make_arg<FormatContext>(val));
     return ctx.out();
   }
@@ -3634,7 +3708,7 @@ FMT_END_NAMESPACE
 
 #define FMT_STRING(s) [] { \
     struct S : fmt::format_string { \
-      static FMT_CONSTEXPR auto data() { return s; } \
+      static FMT_CONSTEXPR decltype(s) data() { return s; } \
       static FMT_CONSTEXPR size_t size() { return sizeof(s); } \
     }; \
     return S{}; \
@@ -3663,12 +3737,8 @@ FMT_END_NAMESPACE
 #endif
 
 // Restore warnings.
-#if FMT_GCC_VERSION >= 406
+#if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
 # pragma GCC diagnostic pop
-#endif
-
-#if defined(__clang__) && !defined(FMT_ICC_VERSION)
-# pragma clang diagnostic pop
 #endif
 
 #endif  // FMT_FORMAT_H_

@@ -53,10 +53,10 @@ struct test_stream : std::basic_ostream<Char> {
   void operator<<(null);
 };
 
-// Disable conversion to int if T has an overloaded operator<< which is a free
-// function (not a member of std::ostream).
+// Checks if T has an overloaded operator<< which is a free function (not a
+// member of std::ostream).
 template <typename T, typename Char>
-class convert_to_int<T, Char, true> {
+class is_streamable {
  private:
   template <typename U>
   static decltype(
@@ -69,7 +69,16 @@ class convert_to_int<T, Char, true> {
   typedef decltype(test<T>(0)) result;
 
  public:
-  static const bool value = !result::value;
+  static const bool value = result::value;
+};
+
+// Disable conversion to int if T has an overloaded operator<< which is a free
+// function (not a member of std::ostream).
+template <typename T, typename Char>
+class convert_to_int<T, Char, true> {
+ public:
+  static const bool value =
+    convert_to_int<T, Char, false>::value && !is_streamable<T, Char>::value;
 };
 
 // Write the content of buf to os.
@@ -106,8 +115,7 @@ struct format_enum<T,
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename T, typename Char>
 struct formatter<T, Char,
-    typename std::enable_if<!internal::format_type<
-      typename buffer_context<Char>::type, T>::value>::type>
+    typename std::enable_if<internal::is_streamable<T, Char>::value>::type>
     : formatter<basic_string_view<Char>, Char> {
 
   template <typename Context>

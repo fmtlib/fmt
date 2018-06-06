@@ -152,7 +152,9 @@ def update_site(env):
         if os.path.exists(html_dir):
             shutil.rmtree(html_dir)
         include_dir = env.fmt_repo.dir
-        if LooseVersion(version) >= LooseVersion('3.0.0'):
+        if LooseVersion(version) >= LooseVersion('5.0.0'):
+            include_dir = os.path.join(include_dir, 'include', 'fmt')
+        elif LooseVersion(version) >= LooseVersion('3.0.0'):
             include_dir = os.path.join(include_dir, 'fmt')
         import build
         build.build_docs(version, doc_dir=target_doc_dir,
@@ -243,12 +245,11 @@ def release(args):
     id = r.json()['id']
     uploads_url = 'https://uploads.github.com/repos/fmtlib/fmt/releases'
     package = 'fmt-{}.zip'.format(version)
-    with open('build/fmt/' + package, 'rb') as f:
-        r = requests.post(
-            '{}/{}/assets?name={}'.format(uploads_url, id, package),
-            params=params, files={package: f})
-        if r.status_code != 201:
-            raise Exception('Failed to upload an asset ' + str(r))
+    r = requests.post(
+        '{}/{}/assets?name={}'.format(uploads_url, id, package),
+        params=params, files={package: open('build/fmt/' + package, 'rb')})
+    if r.status_code != 201:
+        raise Exception('Failed to upload an asset ' + str(r))
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
-5.0.0 - TBD
------------
+5.0.0 - 2018-05-21
+------------------
 
 * Added a requirement for partial C++11 support, most importantly variadic
   templates and type traits, and dropped ``FMT_VARIADIC_*`` emulation macros.
@@ -24,7 +24,7 @@
      std::string s = format(fmt("{:d}"), "foo");
 
   gives a compile-time error because ``d`` is an invalid specifier for strings
-  (`godbolt <https://godbolt.org/g/rnCy9Q>`_)::
+  (`godbolt <https://godbolt.org/g/rnCy9Q>`__)::
 
      ...
      <source>:4:19: note: in instantiation of function template specialization 'fmt::v5::format<S, char [4]>' requested here
@@ -41,11 +41,11 @@
 
   .. code:: c++
 
-     struct S {};
+     struct Answer {};
 
      namespace fmt {
      template <>
-     struct formatter<S> {
+     struct formatter<Answer> {
        constexpr auto parse(parse_context& ctx) {
          auto it = ctx.begin();
          spec = *it;
@@ -55,7 +55,7 @@
        }
 
        template <typename FormatContext>
-       auto format(S, FormatContext& ctx) {
+       auto format(Answer, FormatContext& ctx) {
          return spec == 's' ?
            format_to(ctx.begin(), "{}", "fourty-two") :
            format_to(ctx.begin(), "{}", 42);
@@ -65,10 +65,10 @@
      };
      }
 
-     std::string s = format(fmt("{:x}"), S());
+     std::string s = format(fmt("{:x}"), Answer());
 
   gives a compile-time error due to invalid format specifier (`godbolt
-  <https://godbolt.org/g/ywhrPp>`_)::
+  <https://godbolt.org/g/2jQ1Dv>`__)::
 
      ...
      <source>:12:45: error: expression '<throw-expression>' is not a constant expression
@@ -192,7 +192,7 @@
      fmt::print("{}", std::experimental::string_view("foo"));
 
   Thanks `@virgiliofornazin (Virgilio Alexandre Fornazin)
-  <https://github.com/virgiliofornazin>`_.
+  <https://github.com/virgiliofornazin>`__.
 
 * Allowed mixing named and automatic arguments:
 
@@ -221,7 +221,7 @@
 
 * Introduced an inline namespace for symbol versioning.
 
-* Added debug postfix ``d`` to the `fmt`` library name
+* Added debug postfix ``d`` to the ``fmt`` library name
   (`#636 <https://github.com/fmtlib/fmt/issues/636>`_).
 
 * Removed unnecessary ``fmt/`` prefix in includes
@@ -262,7 +262,7 @@
   `#656 <https://github.com/fmtlib/fmt/pull/656>`_,
   `#679 <https://github.com/fmtlib/fmt/pull/679>`_,
   `#681 <https://github.com/fmtlib/fmt/pull/681>`_,
-  `#705 <https://github.com/fmtlib/fmt/pull/705>`_,
+  `#705 <https://github.com/fmtlib/fmt/pull/705>`__,
   `#715 <https://github.com/fmtlib/fmt/issues/715>`_,
   `#717 <https://github.com/fmtlib/fmt/pull/717>`_,
   `#720 <https://github.com/fmtlib/fmt/pull/720>`_,
@@ -513,7 +513,6 @@
   (`#494 <https://github.com/fmtlib/fmt/pull/494>`_,
   `#499 <https://github.com/fmtlib/fmt/pull/499>`_,
   `#483 <https://github.com/fmtlib/fmt/pull/483>`_,
-  `#519 <https://github.com/fmtlib/fmt/pull/519>`_,
   `#485 <https://github.com/fmtlib/fmt/pull/485>`_,
   `#482 <https://github.com/fmtlib/fmt/pull/482>`_,
   `#475 <https://github.com/fmtlib/fmt/pull/475>`_,

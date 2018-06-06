@@ -52,7 +52,7 @@ class printf_precision_handler: public function<int> {
   typename std::enable_if<!std::is_integral<T>::value, int>::type
       operator()(T) {
     FMT_THROW(format_error("precision is not integer"));
-    return 0;
+    return 0; // Silence visual studio
   }
 };
 
@@ -194,7 +194,7 @@ class printf_width_handler: public function<unsigned> {
   typename std::enable_if<!std::is_integral<T>::value, unsigned>::type
       operator()(T) {
     FMT_THROW(format_error("width is not integer"));
-    return 0;
+    return 0; // Silence Visual Studio
   }
 };
 }  // namespace internal
@@ -635,8 +635,13 @@ inline int fprintf(std::FILE *f, string_view format_str, const Args & ... args) 
 template <typename... Args>
 inline int fprintf(std::FILE *f, wstring_view format_str,
                    const Args & ... args) {
+#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 440
+  return vfprintf<wchar_t>(f, format_str,
+    make_format_args<typename printf_context<internal::wbuffer>::type>(args...));
+#else
   return vfprintf(f, format_str,
     make_format_args<typename printf_context<internal::wbuffer>::type>(args...));
+#endif
 }
 
 inline int vprintf(string_view format, printf_args args) {
