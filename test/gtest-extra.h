@@ -9,7 +9,7 @@
 #define FMT_GTEST_EXTRA_H_
 
 #include <string>
-#include <gmock/gmock.h>
+#include "gmock.h"
 
 #include "fmt/core.h"
 
@@ -155,7 +155,7 @@ std::string read(fmt::file &f, std::size_t count);
 template <typename Mock>
 struct ScopedMock : testing::StrictMock<Mock> {
   ScopedMock() { Mock::instance = this; }
-  ~ScopedMock() { Mock::instance = 0; }
+  ~ScopedMock() { Mock::instance = nullptr; }
 };
 
 #endif  // FMT_GTEST_EXTRA_H_

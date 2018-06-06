@@ -37,6 +37,33 @@
 #include <stdexcept>
 #include <stdint.h>
 
+#ifdef __clang__
+# define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
+#else
+# define FMT_CLANG_VERSION 0
+#endif
+
+#ifdef __INTEL_COMPILER
+# define FMT_ICC_VERSION __INTEL_COMPILER
+#elif defined(__ICL)
+# define FMT_ICC_VERSION __ICL
+#else
+# define FMT_ICC_VERSION 0
+#endif
+
+#if (defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 406) || \
+    FMT_CLANG_VERSION
+# pragma GCC diagnostic push
+
+// Disable the warning about declaration shadowing because it affects too
+// many valid cases.
+# pragma GCC diagnostic ignored "-Wshadow"
+
+// Disable the warning about implicit conversions that may change the sign of
+// an integer; silencing it otherwise would require many explicit casts.
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+#endif
+
 #include "core.h"
 
 #ifdef _SECURE_SCL
@@ -55,45 +82,8 @@
 # define FMT_HAS_BUILTIN(x) 0
 #endif
 
-#ifdef __GNUC__
-# if FMT_GCC_VERSION >= 406
-#  pragma GCC diagnostic push
-
-// Disable the warning about declaration shadowing because it affects too
-// many valid cases.
-#  pragma GCC diagnostic ignored "-Wshadow"
-
-// Disable the warning about implicit conversions that may change the sign of
-// an integer; silencing it otherwise would require many explicit casts.
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-# endif
-#endif
-
-#ifdef __clang__
-# define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
-#endif
-
-#if defined(__INTEL_COMPILER)
-# define FMT_ICC_VERSION __INTEL_COMPILER
-#elif defined(__ICL)
-# define FMT_ICC_VERSION __ICL
-#endif
-
-#if defined(__clang__) && !defined(FMT_ICC_VERSION)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
-# pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
-# pragma clang diagnostic ignored "-Wpadded"
-#endif
-
 #ifdef __GNUC_LIBSTD__
 # define FMT_GNUC_LIBSTD_VERSION (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
-#endif
-
-#ifdef __has_cpp_attribute
-# define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
-#else
-# define FMT_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
 #ifndef FMT_THROW
@@ -116,7 +106,7 @@ FMT_END_NAMESPACE
 #   define FMT_THROW(x) throw x
 #  endif
 # else
-#  define FMT_THROW(x) assert(false)
+#  define FMT_THROW(x) do { static_cast<void>(sizeof(x)); assert(false); } while(false);
 # endif
 #endif
 
@@ -124,7 +114,7 @@ FMT_END_NAMESPACE
 // For Intel's compiler both it and the system gcc/msc must support UDLs.
 # if (FMT_HAS_FEATURE(cxx_user_literals) || \
       FMT_GCC_VERSION >= 407 || FMT_MSC_VER >= 1900) && \
-      (!defined(FMT_ICC_VERSION) || FMT_ICC_VERSION >= 1500)
+      (!FMT_ICC_VERSION || FMT_ICC_VERSION >= 1500)
 #  define FMT_USE_USER_DEFINED_LITERALS 1
 # else
 #  define FMT_USE_USER_DEFINED_LITERALS 0
@@ -142,7 +132,8 @@ FMT_END_NAMESPACE
 #ifndef FMT_USE_EXTERN_TEMPLATES
 # ifndef FMT_HEADER_ONLY
 #  define FMT_USE_EXTERN_TEMPLATES \
-     (FMT_CLANG_VERSION >= 209 || (FMT_GCC_VERSION >= 303 && FMT_HAS_GXX_CXX11))
+     ((FMT_CLANG_VERSION >= 209 && __cplusplus >= 201103L) || \
+      (FMT_GCC_VERSION >= 303 && FMT_HAS_GXX_CXX11))
 # else
 #  define FMT_USE_EXTERN_TEMPLATES 0
 # endif
@@ -151,6 +142,14 @@ FMT_END_NAMESPACE
 #if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_trailing_return) || \
     FMT_MSC_VER >= 1600
 # define FMT_USE_TRAILING_RETURN 1
+#else
+# define FMT_USE_TRAILING_RETURN 0
+#endif
+
+#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_rvalue_references) || FMT_MSC_VER >= 1600
+# define FMT_USE_RVALUE_REFERENCES 1
+#else
+# define FMT_USE_RVALUE_REFERENCES 0
 #endif
 
 #ifndef FMT_USE_GRISU
@@ -284,18 +283,18 @@ class fp {
   typedef uint64_t significand_type;
 
   // All sizes are in bits.
-  static constexpr int char_size = std::numeric_limits<unsigned char>::digits;
+  static FMT_CONSTEXPR_DECL const int char_size = std::numeric_limits<unsigned char>::digits;
   // Subtract 1 to account for an implicit most significant bit in the
   // normalized form.
-  static constexpr int double_significand_size =
+  static FMT_CONSTEXPR_DECL const int double_significand_size =
     std::numeric_limits<double>::digits - 1;
-  static constexpr uint64_t implicit_bit = 1ull << double_significand_size;
+  static FMT_CONSTEXPR_DECL const uint64_t implicit_bit = 1ull << double_significand_size;
 
  public:
   significand_type f;
   int e;
 
-  static constexpr int significand_size = sizeof(significand_type) * char_size;
+  static FMT_CONSTEXPR_DECL const int significand_size = sizeof(significand_type) * char_size;
 
   fp(uint64_t f, int e): f(f), e(e) {}
 
@@ -318,7 +317,7 @@ class fp {
       f += implicit_bit;
     else
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    e = biased_e - exponent_bias - double_significand_size;
+    e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
   }
 
   // Normalizes the value converted from double and multiplied by (1 << SHIFT).
@@ -455,8 +454,6 @@ class format_error : public std::runtime_error {
 
   explicit format_error(const std::string &message)
   : std::runtime_error(message) {}
-
-  FMT_API ~format_error() throw();
 };
 
 namespace internal {
@@ -1673,6 +1670,13 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
   return value;
 }
 
+#if FMT_MSC_VER
+// Warns that the compiler cannot generate an assignment operator
+// The class has a reference member variable, so this is obviously the case
+# pragma warning(push)
+# pragma warning(disable: 4512)
+#endif
+
 template <typename Char, typename Context>
 class custom_formatter: public function<bool> {
  private:
@@ -1689,6 +1693,10 @@ class custom_formatter: public function<bool> {
   template <typename T>
   bool operator()(T) const { return false; }
 };
+
+#if FMT_MSC_VER
+# pragma warning(pop)
+#endif
 
 template <typename T>
 struct is_integer {
@@ -2380,8 +2388,6 @@ class system_error : public std::runtime_error {
     init(error_code, message, make_format_args(args...));
   }
 
-  FMT_API ~system_error() FMT_DTOR_NOEXCEPT;
-
   int error_code() const { return error_code_; }
 };
 
@@ -2650,7 +2656,7 @@ class basic_writer {
   };
 
   struct double_writer {
-    unsigned n;
+    size_t n;
     char sign;
     basic_memory_buffer<char_type> &buffer;
 
@@ -2904,12 +2910,12 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     internal::fp product = fp_value * dec_pow;
     // Generate output.
     internal::fp one(1ull << -product.e, product.e);
-    uint32_t hi = product.f >> -one.e;
+    uint64_t hi = product.f >> -one.e;
     uint64_t f = product.f & (one.f - 1);
     typedef back_insert_range<internal::basic_buffer<char_type>> range;
     basic_writer<range> w{range(buffer)};
     w.write(hi);
-    unsigned digits = buffer.size();
+    size_t digits = buffer.size();
     w.write('.');
     const unsigned max_digits = 18;
     while (digits++ < max_digits) {
@@ -2924,7 +2930,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     normalized_spec.type_ = handler.type;
     write_double_sprintf(value, normalized_spec, buffer);
   }
-  unsigned n = buffer.size();
+  size_t n = buffer.size();
   align_spec as = spec;
   if (spec.align() == ALIGN_NUMERIC) {
     if (sign) {
@@ -3215,8 +3221,8 @@ struct formatter<
     internal::handle_dynamic_spec<internal::precision_checker>(
       specs_.precision_, specs_.precision_ref, ctx);
     typedef output_range<typename FormatContext::iterator,
-                         typename FormatContext::char_type> range;
-    visit(arg_formatter<range>(ctx, specs_),
+                         typename FormatContext::char_type> range_type;
+    visit(arg_formatter<range_type>(ctx, specs_),
           internal::make_arg<FormatContext>(val));
     return ctx.out();
   }
@@ -3702,7 +3708,7 @@ FMT_END_NAMESPACE
 
 #define FMT_STRING(s) [] { \
     struct S : fmt::format_string { \
-      static FMT_CONSTEXPR auto data() { return s; } \
+      static FMT_CONSTEXPR decltype(s) data() { return s; } \
       static FMT_CONSTEXPR size_t size() { return sizeof(s); } \
     }; \
     return S{}; \
@@ -3731,12 +3737,8 @@ FMT_END_NAMESPACE
 #endif
 
 // Restore warnings.
-#if FMT_GCC_VERSION >= 406
+#if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
 # pragma GCC diagnostic pop
-#endif
-
-#if defined(__clang__) && !defined(FMT_ICC_VERSION)
-# pragma clang diagnostic pop
 #endif
 
 #endif  // FMT_FORMAT_H_

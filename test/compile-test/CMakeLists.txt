@@ -1,10 +1,12 @@
 # Test if compile errors are produced where necessary.
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1.0)
 
 include(CheckCXXSourceCompiles)
+include(CheckCXXCompilerFlag)
+
 set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
-set(CMAKE_REQUIRED_FLAGS ${CPP14_FLAG})
+set(CMAKE_REQUIRED_FLAGS ${CXX_STANDARD_FLAG} ${PEDANTIC_COMPILE_FLAGS})
 
 function (generate_source result fragment)
   set(${result} "

@@ -45,12 +45,6 @@
 # define FMT_CATCH(x) if (false)
 #endif
 
-#ifdef __GNUC__
-// Disable the warning about declaration shadowing because it affects too
-// many valid cases.
-# pragma GCC diagnostic ignored "-Wshadow"
-#endif
-
 #ifdef _MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4127)  // conditional expression is constant
@@ -70,9 +64,6 @@ inline fmt::internal::null<> strerror_s(char *, std::size_t, ...) {
 }
 
 FMT_BEGIN_NAMESPACE
-
-FMT_FUNC format_error::~format_error() throw() {}
-FMT_FUNC system_error::~system_error() FMT_DTOR_NOEXCEPT {}
 
 namespace {
 

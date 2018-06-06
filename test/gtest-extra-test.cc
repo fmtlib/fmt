@@ -340,10 +340,10 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   FMT_POSIX(close(write_fd));
-  scoped_ptr<OutputRedirect> redir;
+  scoped_ptr<OutputRedirect> redir{nullptr};
   EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new OutputRedirect(f.get())),
       EBADF, "cannot flush stream");
-  redir.reset();
+  redir.reset(nullptr);
   write_copy.dup2(write_fd);  // "undo" close or dtor will fail
 }
 
@@ -352,7 +352,7 @@ TEST(OutputRedirectTest, DupErrorInCtor) {
   int fd = (f.fileno)();
   file copy = file::dup(fd);
   FMT_POSIX(close(fd));
-  scoped_ptr<OutputRedirect> redir;
+  scoped_ptr<OutputRedirect> redir{nullptr};
   EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new OutputRedirect(f.get())),
       EBADF, fmt::format("cannot duplicate file descriptor {}", fd));
   copy.dup2(fd);  // "undo" close or dtor will fail
@@ -403,7 +403,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
       // output in EXPECT_STDERR and the second close will break output
       // redirection.
       FMT_POSIX(close(write_fd));
-      SUPPRESS_ASSERT(redir.reset());
+      SUPPRESS_ASSERT(redir.reset(nullptr));
   }, format_system_error(EBADF, "cannot flush stream"));
   write_copy.dup2(write_fd); // "undo" close or dtor of buffered_file will fail
 }

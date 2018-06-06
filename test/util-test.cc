@@ -17,7 +17,7 @@
 # include <type_traits>
 #endif
 
-#include "gmock/gmock.h"
+#include "gmock.h"
 #include "gtest-extra.h"
 #include "mock-allocator.h"
 #include "util.h"
@@ -71,8 +71,8 @@ struct formatter<Test, Char> {
 };
 FMT_END_NAMESPACE
 
-void CheckForwarding(
-    MockAllocator<int> &alloc, AllocatorRef< MockAllocator<int> > &ref) {
+static void CheckForwarding(
+    MockAllocator<int> &alloc, AllocatorRef<MockAllocator<int>> &ref) {
   int mem;
   // Check if value_type is properly defined.
   AllocatorRef< MockAllocator<int> >::value_type *ptr = &mem;
@@ -92,7 +92,7 @@ TEST(AllocatorTest, AllocatorRef) {
   TestAllocatorRef ref2(ref);
   CheckForwarding(alloc, ref2);
   TestAllocatorRef ref3;
-  EXPECT_EQ(0, ref3.get());
+  EXPECT_EQ(nullptr, ref3.get());
   ref3 = ref;
   CheckForwarding(alloc, ref3);
 }
@@ -112,7 +112,7 @@ TEST(BufferTest, Nonmoveable) {
 // A test buffer with a dummy grow method.
 template <typename T>
 struct TestBuffer : basic_buffer<T> {
-  void grow(std::size_t capacity) { this->set(0, capacity); }
+  void grow(std::size_t capacity) { this->set(nullptr, capacity); }
 };
 
 template <typename T>
@@ -132,23 +132,23 @@ struct MockBuffer : basic_buffer<T> {
 TEST(BufferTest, Ctor) {
   {
     MockBuffer<int> buffer;
-    EXPECT_EQ(0, &buffer[0]);
-    EXPECT_EQ(0u, buffer.size());
-    EXPECT_EQ(0u, buffer.capacity());
+    EXPECT_EQ(nullptr, &buffer[0]);
+    EXPECT_EQ(static_cast<size_t>(0), buffer.size());
+    EXPECT_EQ(static_cast<size_t>(0), buffer.capacity());
   }
   {
     int dummy;
     MockBuffer<int> buffer(&dummy);
     EXPECT_EQ(&dummy, &buffer[0]);
-    EXPECT_EQ(0u, buffer.size());
-    EXPECT_EQ(0u, buffer.capacity());
+    EXPECT_EQ(static_cast<size_t>(0), buffer.size());
+    EXPECT_EQ(static_cast<size_t>(0), buffer.capacity());
   }
   {
     int dummy;
     std::size_t capacity = std::numeric_limits<std::size_t>::max();
     MockBuffer<int> buffer(&dummy, capacity);
     EXPECT_EQ(&dummy, &buffer[0]);
-    EXPECT_EQ(0u, buffer.size());
+    EXPECT_EQ(static_cast<size_t>(0), buffer.size());
     EXPECT_EQ(capacity, buffer.capacity());
   }
 }
@@ -201,7 +201,7 @@ TEST(BufferTest, Clear) {
   TestBuffer<char> buffer;
   buffer.resize(20);
   buffer.resize(0);
-  EXPECT_EQ(0u, buffer.size());
+  EXPECT_EQ(static_cast<size_t>(0), buffer.size());
   EXPECT_EQ(20u, buffer.capacity());
 }
 
@@ -231,7 +231,7 @@ TEST(BufferTest, AppendAllocatesEnoughStorage) {
 
 TEST(MemoryBufferTest, Ctor) {
   basic_memory_buffer<char, 123> buffer;
-  EXPECT_EQ(0u, buffer.size());
+  EXPECT_EQ(static_cast<size_t>(0), buffer.size());
   EXPECT_EQ(123u, buffer.capacity());
 }
 
@@ -239,7 +239,7 @@ TEST(MemoryBufferTest, Ctor) {
 
 typedef AllocatorRef< std::allocator<char> > TestAllocator;
 
-void check_move_buffer(const char *str,
+static void check_move_buffer(const char *str,
                        basic_memory_buffer<char, 5, TestAllocator> &buffer) {
   std::allocator<char> *alloc = buffer.get_allocator().get();
   basic_memory_buffer<char, 5, TestAllocator> buffer2(std::move(buffer));
@@ -248,7 +248,7 @@ void check_move_buffer(const char *str,
   EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
   EXPECT_EQ(5u, buffer2.capacity());
   // Move should transfer allocator.
-  EXPECT_EQ(0, buffer.get_allocator().get());
+  EXPECT_EQ(nullptr, buffer.get_allocator().get());
   EXPECT_EQ(alloc, buffer2.get_allocator().get());
 }
 
@@ -273,7 +273,7 @@ TEST(MemoryBufferTest, MoveCtor) {
   EXPECT_GT(buffer2.capacity(), 5u);
 }
 
-void check_move_assign_buffer(
+static void check_move_assign_buffer(
     const char *str, basic_memory_buffer<char, 5> &buffer) {
   basic_memory_buffer<char, 5> buffer2;
   buffer2 = std::move(buffer);
@@ -335,7 +335,7 @@ TEST(MemoryBufferTest, Grow) {
 TEST(MemoryBufferTest, Allocator) {
   typedef AllocatorRef< MockAllocator<char> > TestAllocator;
   basic_memory_buffer<char, 10, TestAllocator> buffer;
-  EXPECT_EQ(0, buffer.get_allocator().get());
+  EXPECT_EQ(nullptr, buffer.get_allocator().get());
   StrictMock< MockAllocator<char> > alloc;
   char mem;
   {
@@ -376,7 +376,7 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
 TEST(FixedBufferTest, Ctor) {
   char array[10] = "garbage";
   fmt::basic_fixed_buffer<char> buffer(array, sizeof(array));
-  EXPECT_EQ(0u, buffer.size());
+  EXPECT_EQ(static_cast<size_t>(0), buffer.size());
   EXPECT_EQ(10u, buffer.capacity());
   EXPECT_EQ(array, buffer.data());
 }
@@ -384,7 +384,7 @@ TEST(FixedBufferTest, Ctor) {
 TEST(FixedBufferTest, CompileTimeSizeCtor) {
   char array[10] = "garbage";
   fmt::basic_fixed_buffer<char> buffer(array);
-  EXPECT_EQ(0u, buffer.size());
+  EXPECT_EQ(static_cast<size_t>(0), buffer.size());
   EXPECT_EQ(10u, buffer.capacity());
   EXPECT_EQ(array, buffer.data());
 }
@@ -402,7 +402,7 @@ struct uint32_pair {
 
 TEST(UtilTest, BitCast) {
   auto s = fmt::internal::bit_cast<uint32_pair>(uint64_t{42});
-  EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), 42u);
+  EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), 42ull);
   s = fmt::internal::bit_cast<uint32_pair>(uint64_t(~0ull));
   EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), ~0ull);
 }
@@ -439,7 +439,7 @@ struct custom_context {
 
       const char *format(const T &, custom_context& ctx) {
         ctx.called = true;
-        return 0;
+        return nullptr;
       }
     };
   };
@@ -583,8 +583,8 @@ TEST(UtilTest, WStringArg) {
 }
 
 TEST(UtilTest, PointerArg) {
-  void *p = 0;
-  const void *cp = 0;
+  void *p = nullptr;
+  const void *cp = nullptr;
   CHECK_ARG_(char, cp, p);
   CHECK_ARG_(wchar_t, cp, p);
   CHECK_ARG(cp, );
@@ -765,14 +765,14 @@ TEST(UtilTest, FormatSystemError) {
   try {
     std::allocator<char> alloc;
     alloc.deallocate(alloc.allocate(max_size), max_size);
-  } catch (std::bad_alloc) {
+  } catch (const std::bad_alloc&) {
     throws_on_alloc = true;
   }
   if (!throws_on_alloc) {
     fmt::print("warning: std::allocator allocates {} chars", max_size);
     return;
   }
-  fmt::format_system_error(message, EDOM, fmt::string_view(0, max_size));
+  fmt::format_system_error(message, EDOM, fmt::string_view(nullptr, max_size));
   EXPECT_EQ(fmt::format("error {}", EDOM), to_string(message));
 }
 
@@ -822,7 +822,8 @@ TEST(UtilTest, FormatLongWindowsError) {
   const int provisioning_not_allowed = 0x80284013L /*TBS_E_PROVISIONING_NOT_ALLOWED*/;
   if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
       FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
-      provisioning_not_allowed, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      static_cast<DWORD>(provisioning_not_allowed),
+      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       reinterpret_cast<LPWSTR>(&message), 0, 0) == 0) {
     return;
   }
@@ -867,7 +868,7 @@ TEST(UtilTest, IsEnumConvertibleToInt) {
 #endif
 
 TEST(UtilTest, ParseNonnegativeInt) {
-  if (std::numeric_limits<int>::max() != (1 << 31)) {
+  if (std::numeric_limits<int>::max() != static_cast<int>(static_cast<unsigned>(1) << 31)) {
     fmt::print("Skipping parse_nonnegative_int test\n");
     return;
   }

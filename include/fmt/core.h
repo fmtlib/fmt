@@ -30,6 +30,12 @@
 # define FMT_HAS_INCLUDE(x) 0
 #endif
 
+#ifdef __has_cpp_attribute
+# define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
+#else
+# define FMT_HAS_CPP_ATTRIBUTE(x) 0
+#endif
+
 #if defined(__GNUC__) && !defined(__clang__)
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #else
@@ -93,6 +99,12 @@
 
 #ifndef FMT_USE_NULLPTR
 # define FMT_USE_NULLPTR 0
+#endif
+
+#if FMT_HAS_CPP_ATTRIBUTE(noreturn)
+# define FMT_NORETURN [[noreturn]]
+#else
+# define FMT_NORETURN /*noreturn*/
 #endif
 
 // Check if exceptions are disabled.
@@ -218,7 +230,7 @@ class basic_string_view {
 #else
   struct type {
     const char *data() const { return FMT_NULL; }
-    size_t size() const { return 0; };
+    size_t size() const { return 0; }
   };
 #endif
 
@@ -550,11 +562,17 @@ FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T &value);
     return static_cast<ValueType>(val); \
   }
 
+#define FMT_MAKE_VALUE_SAME(TAG, Type) \
+  template <typename C> \
+  FMT_CONSTEXPR typed_value<C, TAG> make_value(Type val) { \
+    return val; \
+  }
+
 FMT_MAKE_VALUE(bool_type, bool, int)
 FMT_MAKE_VALUE(int_type, short, int)
 FMT_MAKE_VALUE(uint_type, unsigned short, unsigned)
-FMT_MAKE_VALUE(int_type, int, int)
-FMT_MAKE_VALUE(uint_type, unsigned, unsigned)
+FMT_MAKE_VALUE_SAME(int_type, int)
+FMT_MAKE_VALUE_SAME(uint_type, unsigned)
 
 // To minimize the number of types we need to deal with, long is translated
 // either to int or to long long depending on its size.
@@ -568,8 +586,8 @@ FMT_MAKE_VALUE(
     (sizeof(unsigned long) == sizeof(unsigned) ? uint_type : ulong_long_type),
     unsigned long, ulong_type)
 
-FMT_MAKE_VALUE(long_long_type, long long, long long)
-FMT_MAKE_VALUE(ulong_long_type, unsigned long long, unsigned long long)
+FMT_MAKE_VALUE_SAME(long_long_type, long long)
+FMT_MAKE_VALUE_SAME(ulong_long_type, unsigned long long)
 FMT_MAKE_VALUE(int_type, signed char, int)
 FMT_MAKE_VALUE(uint_type, unsigned char, unsigned)
 FMT_MAKE_VALUE(char_type, char, int)
@@ -583,8 +601,8 @@ inline typed_value<C, char_type> make_value(wchar_t val) {
 #endif
 
 FMT_MAKE_VALUE(double_type, float, double)
-FMT_MAKE_VALUE(double_type, double, double)
-FMT_MAKE_VALUE(long_double_type, long double, long double)
+FMT_MAKE_VALUE_SAME(double_type, double)
+FMT_MAKE_VALUE_SAME(long_double_type, long double)
 
 // Formatting of wide strings into a narrow buffer and multibyte strings
 // into a wide buffer is disallowed (https://github.com/fmtlib/fmt/pull/606).
@@ -594,18 +612,17 @@ FMT_MAKE_VALUE(cstring_type, const typename C::char_type*,
                const typename C::char_type*)
 
 FMT_MAKE_VALUE(cstring_type, signed char*, const signed char*)
-FMT_MAKE_VALUE(cstring_type, const signed char*, const signed char*)
+FMT_MAKE_VALUE_SAME(cstring_type, const signed char*)
 FMT_MAKE_VALUE(cstring_type, unsigned char*, const unsigned char*)
-FMT_MAKE_VALUE(cstring_type, const unsigned char*, const unsigned char*)
-FMT_MAKE_VALUE(string_type, basic_string_view<typename C::char_type>,
-               basic_string_view<typename C::char_type>)
+FMT_MAKE_VALUE_SAME(cstring_type, const unsigned char*)
+FMT_MAKE_VALUE_SAME(string_type, basic_string_view<typename C::char_type>)
 FMT_MAKE_VALUE(string_type,
                typename basic_string_view<typename C::char_type>::type,
                basic_string_view<typename C::char_type>)
 FMT_MAKE_VALUE(string_type, const std::basic_string<typename C::char_type>&,
                basic_string_view<typename C::char_type>)
 FMT_MAKE_VALUE(pointer_type, void*, const void*)
-FMT_MAKE_VALUE(pointer_type, const void*, const void*)
+FMT_MAKE_VALUE_SAME(pointer_type, const void*)
 
 #if FMT_USE_NULLPTR
 FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)

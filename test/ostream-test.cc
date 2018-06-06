@@ -8,29 +8,29 @@
 #include "fmt/ostream.h"
 
 #include <sstream>
-#include "gmock/gmock.h"
+#include "gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
 
 using fmt::format;
 using fmt::format_error;
 
-std::ostream &operator<<(std::ostream &os, const Date &d) {
+static std::ostream &operator<<(std::ostream &os, const Date &d) {
   os << d.year() << '-' << d.month() << '-' << d.day();
   return os;
 }
 
-std::wostream &operator<<(std::wostream &os, const Date &d) {
+static std::wostream &operator<<(std::wostream &os, const Date &d) {
   os << d.year() << L'-' << d.month() << L'-' << d.day();
   return os;
 }
 
 enum TestEnum {};
-std::ostream &operator<<(std::ostream &os, TestEnum) {
+static std::ostream &operator<<(std::ostream &os, TestEnum) {
   return os << "TestEnum";
 }
 
-std::wostream &operator<<(std::wostream &os, TestEnum) {
+static std::wostream &operator<<(std::wostream &os, TestEnum) {
   return os << L"TestEnum";
 }
 
@@ -95,7 +95,7 @@ TEST(OStreamTest, FormatSpecs) {
 }
 
 struct EmptyTest {};
-std::ostream &operator<<(std::ostream &os, EmptyTest) {
+static std::ostream &operator<<(std::ostream &os, EmptyTest) {
   return os << "";
 }
 
@@ -145,7 +145,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   } os(streambuf);
 
   testing::InSequence sequence;
-  const char *data = 0;
+  const char *data = nullptr;
   std::size_t size = max_size;
   do {
     typedef std::make_unsigned<std::streamsize>::type ustreamsize;
@@ -154,7 +154,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
     EXPECT_CALL(streambuf, xsputn(data, static_cast<std::streamsize>(n)))
         .WillOnce(testing::Return(max_streamsize));
     data += n;
-    size -= static_cast<std::size_t>(n);
+    size -= n;
   } while (size != 0);
   fmt::internal::write(os, buffer);
 }
