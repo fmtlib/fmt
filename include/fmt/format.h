@@ -146,7 +146,8 @@ FMT_END_NAMESPACE
 # define FMT_USE_TRAILING_RETURN 0
 #endif
 
-#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_rvalue_references) || FMT_MSC_VER >= 1600
+#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_rvalue_references) || \
+    FMT_MSC_VER >= 1600
 # define FMT_USE_RVALUE_REFERENCES 1
 #else
 # define FMT_USE_RVALUE_REFERENCES 0
@@ -283,18 +284,21 @@ class fp {
   typedef uint64_t significand_type;
 
   // All sizes are in bits.
-  static FMT_CONSTEXPR_DECL const int char_size = std::numeric_limits<unsigned char>::digits;
+  static FMT_CONSTEXPR_DECL const int char_size =
+    std::numeric_limits<unsigned char>::digits;
   // Subtract 1 to account for an implicit most significant bit in the
   // normalized form.
   static FMT_CONSTEXPR_DECL const int double_significand_size =
     std::numeric_limits<double>::digits - 1;
-  static FMT_CONSTEXPR_DECL const uint64_t implicit_bit = 1ull << double_significand_size;
+  static FMT_CONSTEXPR_DECL const uint64_t implicit_bit =
+    1ull << double_significand_size;
 
  public:
   significand_type f;
   int e;
 
-  static FMT_CONSTEXPR_DECL const int significand_size = sizeof(significand_type) * char_size;
+  static FMT_CONSTEXPR_DECL const int significand_size =
+    sizeof(significand_type) * char_size;
 
   fp(uint64_t f, int e): f(f), e(e) {}
 
@@ -1670,13 +1674,6 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
   return value;
 }
 
-#if FMT_MSC_VER
-// Warns that the compiler cannot generate an assignment operator
-// The class has a reference member variable, so this is obviously the case
-# pragma warning(push)
-# pragma warning(disable: 4512)
-#endif
-
 template <typename Char, typename Context>
 class custom_formatter: public function<bool> {
  private:
@@ -1693,10 +1690,6 @@ class custom_formatter: public function<bool> {
   template <typename T>
   bool operator()(T) const { return false; }
 };
-
-#if FMT_MSC_VER
-# pragma warning(pop)
-#endif
 
 template <typename T>
 struct is_integer {
