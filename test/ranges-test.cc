@@ -32,7 +32,7 @@ TEST(RangesTest, FormatVector2) {
 
 TEST(RangesTest, FormatMap) {
   std::map<std::string, int32_t> simap{{"one", 1}, {"two", 2}};
-  EXPECT_EQ("{(one, 1), (two, 2)}", fmt::format("{}", simap));
+  EXPECT_EQ("{(\"one\", 1), (\"two\", 2)}", fmt::format("{}", simap));
 }
 
 TEST(RangesTest, FormatPair) {
@@ -41,9 +41,9 @@ TEST(RangesTest, FormatPair) {
 }
 
 TEST(RangesTest, FormatTuple) {
-  std::tuple<int64_t, float, std::string> tu1{42, 3.14159265358979f,
-                                              "this is tuple"};
-  EXPECT_EQ("(42, 3.14159, this is tuple)", fmt::format("{}", tu1));
+  std::tuple<int64_t, float, std::string, char> tu1{42, 3.14159265358979f,
+                                              "this is tuple", 'i'};
+  EXPECT_EQ("(42, 3.14159, \"this is tuple\", 'i')", fmt::format("{}", tu1));
 }
 
 /// Check if  'if constexpr' is supported.
@@ -81,7 +81,7 @@ struct tuple_element<N, my_struct> {
 
 TEST(RangesTest, FormatStruct) {
   my_struct mst{13, "my struct"};
-  EXPECT_EQ("(13, my struct)", fmt::format("{}", mst));
+  EXPECT_EQ("(13, \"my struct\")", fmt::format("{}", mst));
 }
 
 #endif  // (__cplusplus > 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >

@@ -162,6 +162,33 @@ void for_each(Tuple &&tup, F &&f) {
   const auto indexes = get_indexes(tup);
   for_each(indexes, std::forward<Tuple>(tup), std::forward<F>(f));
 }
+
+template<typename Arg>
+FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&, 
+    typename std::enable_if<!is_like_std_string<typename  std::decay<Arg>::type>::value>::type* = nullptr) {
+  return add_space ? " {}" : "{}";
+}
+
+template<typename Arg>
+FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&, 
+    typename std::enable_if<is_like_std_string<typename  std::decay<Arg>::type>::value>::type* = nullptr) {
+  return add_space ? " \"{}\"" : "\"{}\"";
+}
+
+FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const char*) {
+  return add_space ? " \"{}\"" : "\"{}\"";
+}
+FMT_CONSTEXPR const wchar_t* format_str_quoted(bool add_space, const wchar_t*) {
+    return add_space ? L" \"{}\"" : L"\"{}\"";
+}
+
+FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const char) {
+    return add_space ? " '{}'" : "'{}'";
+}
+FMT_CONSTEXPR const wchar_t* format_str_quoted(bool add_space, const wchar_t) {
+    return add_space ? L" '{}'" : L"'{}'";
+}
+
 }  // namespace internal
 
 template <typename T>
@@ -185,11 +212,7 @@ private:
         }
         internal::copy(formatting.delimiter, out);
       }
-      if (formatting.add_delimiter_spaces && i > 0) {
-        format_to(out, " {}", v);
-      } else {
-        format_to(out, "{}", v);
-      }
+      format_to(out, internal::format_str_quoted((formatting.add_delimiter_spaces && i > 0), v), v);
       ++i;
     }
 
@@ -252,11 +275,7 @@ struct formatter<RangeT, Char,
         }
         internal::copy(formatting.delimiter, out);
       }
-      if (formatting.add_delimiter_spaces && i > 0) {
-        format_to(out, " {}", *it);
-      } else {
-        format_to(out, "{}", *it);
-      }
+      format_to(out, internal::format_str_quoted((formatting.add_delimiter_spaces && i > 0), *it), *it);
       if (++i > formatting.range_length_limit) {
         format_to(out, " ... <other elements>");
         break;
