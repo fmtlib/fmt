@@ -100,12 +100,6 @@ struct is_range_<T,typename std::conditional<
                                       decltype(internal::declval<T>().end())>,
                    void>::type> : std::true_type {};
 
-template <typename T>
-struct is_range {
-  static FMT_CONSTEXPR_DECL const bool value =
-    is_range_<T>::value && !is_like_std_string<T>::value;
-};
-
 /// tuple_size and tuple_element check.
 template <typename T>
 class is_tuple_like_ {
@@ -119,12 +113,6 @@ class is_tuple_like_ {
  public:
   static FMT_CONSTEXPR_DECL const bool value =
     !std::is_void<decltype(check<T>(FMT_NULL))>::value;
-};
-
-template <typename T>
-struct is_tuple_like {
-  static FMT_CONSTEXPR_DECL const bool value =
-    is_tuple_like_<T>::value && !is_range_<T>::value;
 };
 
 // Check for integer_sequence
@@ -176,9 +164,15 @@ void for_each(Tuple &&tup, F &&f) {
 }
 }  // namespace internal
 
+template <typename T>
+struct is_tuple_like {
+  static FMT_CONSTEXPR_DECL const bool value =
+    internal::is_tuple_like_<T>::value && !internal::is_range_<T>::value;
+};
+
 template <typename TupleT, typename Char>
 struct formatter<TupleT, Char, 
-    typename std::enable_if<internal::is_tuple_like<TupleT>::value>::type> {
+    typename std::enable_if<fmt::is_tuple_like<TupleT>::value>::type> {
 private:
   // C++11 generic lambda for format()
   template <typename FormatContext>
@@ -228,9 +222,15 @@ public:
   }
 };
 
+template <typename T>
+struct is_range {
+  static FMT_CONSTEXPR_DECL const bool value =
+    internal::is_range_<T>::value && !internal::is_like_std_string<T>::value;
+};
+
 template <typename RangeT, typename Char>
 struct formatter<RangeT, Char,
-    typename std::enable_if<internal::is_range<RangeT>::value>::type> {
+    typename std::enable_if<fmt::is_range<RangeT>::value>::type> {
 
   formatting_range<Char> formatting;
 
