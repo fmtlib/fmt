@@ -232,6 +232,12 @@ TEST(FormatToTest, Format) {
   EXPECT_EQ("part1part2", s);
 }
 
+TEST(FormatToTest, FormatToNonbackInsertIteratorWithSignAndNumericAlignment) {
+  char buffer[16] = {};
+  fmt::format_to(buffer, "{: =+}", 42.0);
+  EXPECT_STREQ("+42", buffer);
+}
+
 TEST(FormatterTest, Escape) {
   EXPECT_EQ("{", format("{{"));
   EXPECT_EQ("before {", format("before {{"));
