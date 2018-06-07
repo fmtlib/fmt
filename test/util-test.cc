@@ -931,3 +931,18 @@ TEST(FPTest, GetCachedPower) {
     EXPECT_DOUBLE_EQ(pow(10, dec_exp), ldexp(fp.f, fp.e));
   }
 }
+
+TEST(IteratorTest, CountingIterator) {
+  fmt::internal::counting_iterator<char> it;
+  auto prev = it++;
+  EXPECT_EQ(prev.count(), 0);
+  EXPECT_EQ(it.count(), 1);
+}
+
+TEST(IteratorTest, TruncatingIterator) {
+  char *p = FMT_NULL;
+  fmt::internal::truncating_iterator<char*> it(p, 3);
+  auto prev = it++;
+  EXPECT_EQ(prev.base(), p);
+  EXPECT_EQ(it.base(), p + 1);
+}

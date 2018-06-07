@@ -14,16 +14,11 @@
 #include <memory>
 #include <stdint.h>
 
-#include "gmock.h"
-
-// Test that the library compiles if None is defined to 0 as done by xlib.h.
-#define None 0
-
 #include "fmt/format.h"
-
-#include "util.h"
-#include "mock-allocator.h"
+#include "gmock.h"
 #include "gtest-extra.h"
+#include "mock-allocator.h"
+#include "util.h"
 
 #undef min
 #undef max
@@ -1528,9 +1523,6 @@ TEST(FormatTest, FormatToN) {
   EXPECT_EQ(6u, result.size);
   EXPECT_EQ(buffer + 3, result.out);
   EXPECT_EQ("foox", fmt::string_view(buffer, 4));
-
-  // Workaround for potentially unused macro
-  static_cast<void>(None);
 }
 
 #if FMT_USE_CONSTEXPR

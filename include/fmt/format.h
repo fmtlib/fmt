@@ -840,7 +840,11 @@ class counting_iterator {
     return *this;
   }
 
-  counting_iterator operator++(int) { return ++*this; }
+  counting_iterator operator++(int) {
+    auto it = *this;
+    ++*this;
+    return it;
+  }
 
   T &operator*() const { return blackhole_; }
 };
@@ -877,7 +881,11 @@ class truncating_iterator {
     return *this;
   }
 
-  truncating_iterator operator++(int) { return ++*this; }
+  truncating_iterator operator++(int) {
+    auto it = *this;
+    ++*this;
+    return it;
+  }
 
   reference operator*() const { return count_ < limit_ ? *out_ : blackhole_; }
 };
