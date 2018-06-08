@@ -165,13 +165,15 @@ void for_each(Tuple &&tup, F &&f) {
 
 template<typename Arg>
 FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&, 
-    typename std::enable_if<!is_like_std_string<typename  std::decay<Arg>::type>::value>::type* = nullptr) {
+  typename std::enable_if<
+    !is_like_std_string<typename std::decay<Arg>::type>::value>::type* = nullptr) {
   return add_space ? " {}" : "{}";
 }
 
 template<typename Arg>
 FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&, 
-    typename std::enable_if<is_like_std_string<typename  std::decay<Arg>::type>::value>::type* = nullptr) {
+  typename std::enable_if<
+    is_like_std_string<typename std::decay<Arg>::type>::value>::type* = nullptr) {
   return add_space ? " \"{}\"" : "\"{}\"";
 }
 
@@ -212,7 +214,10 @@ private:
         }
         internal::copy(formatting.delimiter, out);
       }
-      format_to(out, internal::format_str_quoted((formatting.add_delimiter_spaces && i > 0), v), v);
+      format_to(out,
+                internal::format_str_quoted(
+                    (formatting.add_delimiter_spaces && i > 0), v),
+                v);
       ++i;
     }
 
@@ -275,7 +280,10 @@ struct formatter<RangeT, Char,
         }
         internal::copy(formatting.delimiter, out);
       }
-      format_to(out, internal::format_str_quoted((formatting.add_delimiter_spaces && i > 0), *it), *it);
+      format_to(out,
+                internal::format_str_quoted(
+                    (formatting.add_delimiter_spaces && i > 0), *it),
+                *it);
       if (++i > formatting.range_length_limit) {
         format_to(out, " ... <other elements>");
         break;
