@@ -16,6 +16,8 @@
 
 FMT_BEGIN_NAMESPACE
 
+enum class colors : uint32_t;
+
 // rgb is a struct for red, green and blue colors.
 // We use rgb as name because some editors will show it as color direct in the
 // editor.
@@ -25,6 +27,8 @@ struct rgb {
     : r(r_), g(g_), b(b_) {}
   FMT_CONSTEXPR_DECL rgb(uint32_t hex) 
       : r((hex >> 16) & 0xFF), g((hex >> 8) & 0xFF), b((hex) & 0xFF) {}
+  FMT_CONSTEXPR_DECL rgb(colors hex) 
+      : r((uint32_t(hex) >> 16) & 0xFF), g((uint32_t(hex) >> 8) & 0xFF), b(uint32_t(hex) & 0xFF) {}
   uint8_t r;
   uint8_t g;
   uint8_t b;
@@ -87,7 +91,7 @@ inline void print(rgb fd, rgb bg, string_view format_str, const Args & ... args)
   vprint_rgb(fd, bg, format_str, make_format_args(args...));
 }
 
-enum class color : uint32_t {
+enum class colors : uint32_t {
   alice_blue              = 0xF0F8FF, // rgb(240,248,255) 
   antique_white           = 0xFAEBD7, // rgb(250,235,215) 
   aqua                    = 0x00FFFF, // rgb(0,255,255)   
