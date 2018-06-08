@@ -16,6 +16,8 @@
 
 FMT_BEGIN_NAMESPACE
 
+enum class colors : uint32_t;
+
 // rgb is a struct for red, green and blue colors.
 // We use rgb as name because some editors will show it as color direct in the
 // editor.
@@ -25,6 +27,8 @@ struct rgb {
     : r(r_), g(g_), b(b_) {}
   FMT_CONSTEXPR_DECL rgb(uint32_t hex) 
       : r((hex >> 16) & 0xFF), g((hex >> 8) & 0xFF), b((hex) & 0xFF) {}
+  FMT_CONSTEXPR_DECL rgb(colors hex) 
+      : r((uint32_t(hex) >> 16) & 0xFF), g((uint32_t(hex) >> 8) & 0xFF), b(uint32_t(hex) & 0xFF) {}
   uint8_t r;
   uint8_t g;
   uint8_t b;
@@ -40,7 +44,7 @@ FMT_CONSTEXPR inline void to_esc(uint8_t c, char out[], int offset) {
 
 } // namespace internal
 
-FMT_FUNC void vprint_rgb(rgb fd, string_view format, format_args args) {
+inline void vprint_rgb(rgb fd, string_view format, format_args args) {
   char escape_fd[] = "\x1b[38;2;000;000;000m";
   static FMT_CONSTEXPR_DECL const char RESET_COLOR[] = "\x1b[0m";
   internal::to_esc(fd.r, escape_fd, 7);
@@ -52,7 +56,7 @@ FMT_FUNC void vprint_rgb(rgb fd, string_view format, format_args args) {
   std::fputs(RESET_COLOR, stdout);
 }
 
-FMT_FUNC void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
+inline void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
   char escape_fd[] = "\x1b[38;2;000;000;000m"; // foreground color
   char escape_bg[] = "\x1b[48;2;000;000;000m"; // background color
   static FMT_CONSTEXPR_DECL const char RESET_COLOR[] = "\x1b[0m";
@@ -87,7 +91,7 @@ inline void print(rgb fd, rgb bg, string_view format_str, const Args & ... args)
   vprint_rgb(fd, bg, format_str, make_format_args(args...));
 }
 
-enum class color : uint32_t {
+enum class colors : uint32_t {
   alice_blue              = 0xF0F8FF, // rgb(240,248,255) 
   antique_white           = 0xFAEBD7, // rgb(250,235,215) 
   aqua                    = 0x00FFFF, // rgb(0,255,255)   

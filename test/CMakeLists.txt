@@ -94,6 +94,7 @@ add_fmt_test(time-test)
 add_fmt_test(util-test mock-allocator.h)
 add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
+add_fmt_test(colors_test)
 
 if (HAVE_OPEN)
   add_fmt_executable(posix-mock-test
