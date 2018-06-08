@@ -5,6 +5,7 @@
 //
 // For the license information refer to format.h.
 
+#define FMT_EXTENDED_COLORS
 #define FMT_NOEXCEPT
 #undef FMT_SHARED
 #include "test-assert.h"
@@ -115,4 +116,11 @@ TEST(FormatTest, FormatErrorCode) {
     fmt::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(msg, to_string(buffer));
   }
+}
+
+TEST(ColorsTest, Colors) {
+  EXPECT_WRITE(stdout, fmt::print(fmt::rgb(255,20,30), "rgb(255,20,30)"),
+               "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(fmt::color::blue,"blue"),
+               "\x1b[38;2;000;000;255mblue\x1b[0m");
 }

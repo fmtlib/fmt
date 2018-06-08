@@ -499,6 +499,7 @@ FMT_FUNC void vprint(wstring_view format_str, wformat_args args) {
   vprint(stdout, format_str, args);
 }
 
+#ifndef FMT_EXTENDED_COLORS
 FMT_FUNC void vprint_colored(color c, string_view format, format_args args) {
   char escape[] = "\x1b[30m";
   escape[3] = static_cast<char>('0' + c);
@@ -514,6 +515,45 @@ FMT_FUNC void vprint_colored(color c, wstring_view format, wformat_args args) {
   vprint(format, args);
   std::fputws(WRESET_COLOR, stdout);
 }
+#else
+namespace internal {
+FMT_CONSTEXPR void to_esc(uint8_t c, char out[], int offset) {
+  out[offset + 0] = static_cast<char>('0' + c / 100);
+  out[offset + 1] = static_cast<char>('0' + c / 10 % 10);
+  out[offset + 2] = static_cast<char>('0' + c % 10);
+}
+} // namespace internal
+
+FMT_FUNC void vprint_rgb(rgb fd, string_view format, format_args args) {
+  char escape_fd[] = "\x1b[38;2;000;000;000m";
+  static FMT_CONSTEXPR_DECL const char RESET_COLOR[] = "\x1b[0m";
+  internal::to_esc(fd.r, escape_fd, 7);
+  internal::to_esc(fd.g, escape_fd, 11);
+  internal::to_esc(fd.b, escape_fd, 15);
+
+  std::fputs(escape_fd, stdout);
+  vprint(format, args);
+  std::fputs(RESET_COLOR, stdout);
+}
+
+FMT_FUNC void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
+  char escape_fd[] = "\x1b[38;2;000;000;000m"; // foreground color
+  char escape_bg[] = "\x1b[48;2;000;000;000m"; // background color
+  static FMT_CONSTEXPR_DECL const char RESET_COLOR[] = "\x1b[0m";
+  internal::to_esc(fd.r, escape_fd, 7);
+  internal::to_esc(fd.g, escape_fd, 11);
+  internal::to_esc(fd.b, escape_fd, 15);
+
+  internal::to_esc(bg.r, escape_bg, 7);
+  internal::to_esc(bg.g, escape_bg, 11);
+  internal::to_esc(bg.b, escape_bg, 15);
+
+  std::fputs(escape_fd, stdout);
+  std::fputs(escape_bg, stdout);
+  vprint(format, args);
+  std::fputs(RESET_COLOR, stdout);
+}
+#endif
 
 FMT_FUNC locale locale_provider::locale() { return fmt::locale(); }
 
