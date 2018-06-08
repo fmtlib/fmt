@@ -51,7 +51,7 @@
 # define FMT_ICC_VERSION 0
 #endif
 
-#if (defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 406) || \
+#if (defined(__GNUC__) && !defined(__clang__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 406) || \
     FMT_CLANG_VERSION
 # pragma GCC diagnostic push
 
