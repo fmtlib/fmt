@@ -51,8 +51,9 @@
 # define FMT_ICC_VERSION 0
 #endif
 
-#if (defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 406) || \
-    FMT_CLANG_VERSION
+#include "core.h"
+
+#if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
 # pragma GCC diagnostic push
 
 // Disable the warning about declaration shadowing because it affects too
@@ -63,8 +64,6 @@
 // an integer; silencing it otherwise would require many explicit casts.
 # pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
-
-#include "core.h"
 
 #ifdef _SECURE_SCL
 # define FMT_SECURE_SCL _SECURE_SCL
