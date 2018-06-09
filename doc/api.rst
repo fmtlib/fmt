@@ -49,6 +49,9 @@ arguments in the resulting string.
 .. doxygenfunction:: print(std::FILE *, string_view, const Args&...)
 .. doxygenfunction:: vprint(std::FILE *, string_view, format_args)
 
+.. doxygenfunction:: print(std::FILE *, wstring_view, const Args&...)
+.. doxygenfunction:: vprint(std::FILE *, wstring_view, wformat_args)
+
 Named arguments
 ---------------
 

@@ -1285,6 +1285,10 @@ inline void print(std::FILE *f, string_view format_str, const Args & ... args) {
   format_arg_store<format_context, Args...> as(args...);
   vprint(f, format_str, as);
 }
+/**
+  Prints formatted data to the file *f* which should be in wide-oriented mode set
+  via ``fwide(f, 1)`` or ``_setmode(_fileno(f), _O_U8TEXT)`` on Windows.
+ */
 template <typename... Args>
 inline void print(std::FILE *f, wstring_view format_str, const Args & ... args) {
   format_arg_store<wformat_context, Args...> as(args...);
