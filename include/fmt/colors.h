@@ -16,7 +16,7 @@
 
 FMT_BEGIN_NAMESPACE
 
-enum class colors : uint32_t;
+enum class color : uint32_t;
 
 // rgb is a struct for red, green and blue colors.
 // We use rgb as name because some editors will show it as color direct in the
@@ -27,7 +27,7 @@ struct rgb {
     : r(r_), g(g_), b(b_) {}
   FMT_CONSTEXPR_DECL rgb(uint32_t hex) 
       : r((hex >> 16) & 0xFF), g((hex >> 8) & 0xFF), b((hex) & 0xFF) {}
-  FMT_CONSTEXPR_DECL rgb(colors hex) 
+  FMT_CONSTEXPR_DECL rgb(color hex) 
       : r((uint32_t(hex) >> 16) & 0xFF), g((uint32_t(hex) >> 8) & 0xFF), b(uint32_t(hex) & 0xFF) {}
   uint8_t r;
   uint8_t g;
@@ -74,24 +74,40 @@ inline void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
   std::fputs(RESET_COLOR, stdout);
 }
 
+/**
+  Formats a string and prints it to stdout using ANSI escape sequences to
+  specify foreground color 'fd'.
+  Example:
+    fmt::print_rgb(fmt::color::red, "Elapsed time: {0:.2f} seconds", 1.23);
+ */
 template <typename... Args>
 inline void print_rgb(rgb fd, string_view format_str, const Args & ... args) {
   vprint_rgb(fd, format_str, make_format_args(args...));
 }
 
-// rgb foreground color
+/**
+  Formats a string and prints it to stdout using ANSI escape sequences to
+  specify foreground color 'fd'.
+  Example:
+    fmt::print(fmt::color::red, "Elapsed time: {0:.2f} seconds", 1.23);
+ */
 template <typename... Args>
 inline void print(rgb fd, string_view format_str, const Args & ... args) {
   vprint_rgb(fd, format_str, make_format_args(args...));
 }
 
-// rgb foreground color and background color
+/**
+  Formats a string and prints it to stdout using ANSI escape sequences to
+  specify foreground color 'fd' and background color 'bg'.
+  Example:
+    fmt::print(fmt::color::red, fmt::color::black, "Elapsed time: {0:.2f} seconds", 1.23);
+ */
 template <typename... Args>
 inline void print(rgb fd, rgb bg, string_view format_str, const Args & ... args) {
   vprint_rgb(fd, bg, format_str, make_format_args(args...));
 }
 
-enum class colors : uint32_t {
+enum class color : uint32_t {
   alice_blue              = 0xF0F8FF, // rgb(240,248,255) 
   antique_white           = 0xFAEBD7, // rgb(250,235,215) 
   aqua                    = 0x00FFFF, // rgb(0,255,255)   
@@ -233,7 +249,7 @@ enum class colors : uint32_t {
   white_smoke             = 0xF5F5F5, // rgb(245,245,245) 
   yellow                  = 0xFFFF00, // rgb(255,255,0)   
   yellow_green            = 0x9ACD32, // rgb(154,205,50)  
-};  // enum class colors
+};  // enum class color
 
 FMT_END_NAMESPACE
 

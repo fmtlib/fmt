@@ -30,9 +30,9 @@ TEST(ColorsTest, RgbTest) {
 }
 
 TEST(ColorsTest, Colors) {
-  fmt::print(fmt::colors::blue,"blue \n");               // \x1b[38;2;000;000;255mblue \n\x1b[0m
-  fmt::print(fmt::colors::medium_spring_green,"medium_spring_green \n"); // \x1b[38;2;000;250;154mmedium_spring_green \n\x1b[0m
-  fmt::print(fmt::colors::light_golden_rod_yellow,"light_golden_rod_yellow \n"); // \x1b[38;2;250;250;210mlight_golden_rod_yellow \n\x1b[0m
+  fmt::print(fmt::color::blue,"blue \n");               // \x1b[38;2;000;000;255mblue \n\x1b[0m
+  fmt::print(fmt::color::medium_spring_green,"medium_spring_green \n"); // \x1b[38;2;000;250;154mmedium_spring_green \n\x1b[0m
+  fmt::print(fmt::color::light_golden_rod_yellow,"light_golden_rod_yellow \n"); // \x1b[38;2;250;250;210mlight_golden_rod_yellow \n\x1b[0m
 
-  EXPECT_WRITE(stdout, fmt::print(fmt::colors::blue,"blue"), "\x1b[38;2;000;000;255mblue\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(fmt::color::blue,"blue"), "\x1b[38;2;000;000;255mblue\x1b[0m");
 }

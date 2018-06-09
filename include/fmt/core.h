@@ -1181,29 +1181,6 @@ inline internal::named_arg<T, wchar_t> arg(wstring_view name, const T &arg) {
 template <typename S, typename T, typename Char>
 void arg(S, internal::named_arg<T, Char>) FMT_DELETED;
 
-enum color { black, red, green, yellow, blue, magenta, cyan, white };
-
-FMT_API void vprint_colored(color c, string_view format, format_args args);
-FMT_API void vprint_colored(color c, wstring_view format, wformat_args args);
-
-/**
-  Formats a string and prints it to stdout using ANSI escape sequences to
-  specify color (experimental).
-  Example:
-    fmt::print_colored(fmt::RED, "Elapsed time: {0:.2f} seconds", 1.23);
- */
-template <typename... Args>
-inline void print_colored(color c, string_view format_str,
-                          const Args & ... args) {
-  vprint_colored(c, format_str, make_format_args(args...));
-}
-
-template <typename... Args>
-inline void print_colored(color c, wstring_view format_str,
-                          const Args & ... args) {
-  vprint_colored(c, format_str, make_format_args<wformat_context>(args...));
-}
-
 format_context::iterator vformat_to(
     internal::buffer &buf, string_view format_str, format_args args);
 wformat_context::iterator vformat_to(

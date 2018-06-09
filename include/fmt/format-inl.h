@@ -499,22 +499,6 @@ FMT_FUNC void vprint(wstring_view format_str, wformat_args args) {
   vprint(stdout, format_str, args);
 }
 
-FMT_FUNC void vprint_colored(color c, string_view format, format_args args) {
-  char escape[] = "\x1b[30m";
-  escape[3] = static_cast<char>('0' + c);
-  std::fputs(escape, stdout);
-  vprint(format, args);
-  std::fputs(RESET_COLOR, stdout);
-}
-
-FMT_FUNC void vprint_colored(color c, wstring_view format, wformat_args args) {
-  wchar_t escape[] = L"\x1b[30m";
-  escape[3] = static_cast<wchar_t>('0' + c);
-  std::fputws(escape, stdout);
-  vprint(format, args);
-  std::fputws(WRESET_COLOR, stdout);
-}
-
 FMT_FUNC locale locale_provider::locale() { return fmt::locale(); }
 
 FMT_END_NAMESPACE
