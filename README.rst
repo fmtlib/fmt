@@ -97,14 +97,15 @@ Format strings can be checked at compile time:
           context_.on_error("argument index out of range");
                    ^
 
-{fmt} can be used as a safe portable replacement for ``itoa``:
+{fmt} can be used as a safe portable replacement for ``itoa``
+(`godbolt <https://godbolt.org/g/NXmpU4>`_):
 
 .. code:: c++
 
-    fmt::MemoryWriter w;
-    w << 42;           // replaces itoa(42, buffer, 10)
-    w << fmt::hex(42); // replaces itoa(42, buffer, 16)
-    // access the string using w.str() or w.c_str()
+    fmt::memory_buffer buf;
+    format_to(buf, "{}", 42);    // replaces itoa(42, buffer, 10)
+    format_to(buf, "{:x}", 42);  // replaces itoa(42, buffer, 16)
+    // access the string using to_string(buf) or buf.data()
 
 An object of any user-defined type for which there is an overloaded
 :code:`std::ostream` insertion operator (``operator<<``) can be formatted:

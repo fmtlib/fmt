@@ -12,10 +12,8 @@ QMAKE_EXT_CPP = .cc
 CONFIG = staticlib warn_on c++11
 
 FMT_SOURCES = \
-    ../fmt/format.cc \
-    ../fmt/ostream.cc \
-    ../fmt/posix.cc \
-    ../fmt/printf.cc
+    ../src/format.cc \
+    ../src/posix.cc
 
 fmt.name = libfmt
 fmt.input = FMT_SOURCES

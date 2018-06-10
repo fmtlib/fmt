@@ -306,20 +306,20 @@ TEST(UtilTest, FormatSystemError) {
 
 #if FMT_USE_FILE_DESCRIPTORS
 
-using fmt::BufferedFile;
-using fmt::ErrorCode;
-using fmt::File;
+using fmt::buffered_file;
+using fmt::error_code;
+using fmt::file;
 
 TEST(ErrorCodeTest, Ctor) {
-  EXPECT_EQ(0, ErrorCode().get());
-  EXPECT_EQ(42, ErrorCode(42).get());
+  EXPECT_EQ(0, error_code().get());
+  EXPECT_EQ(42, error_code(42).get());
 }
 
 TEST(OutputRedirectTest, ScopedRedirect) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   {
-    BufferedFile file(write_end.fdopen("w"));
+    buffered_file file(write_end.fdopen("w"));
     std::fprintf(file.get(), "[[[");
     {
       OutputRedirect redir(file.get());
@@ -332,53 +332,53 @@ TEST(OutputRedirectTest, ScopedRedirect) {
 
 // Test that OutputRedirect handles errors in flush correctly.
 TEST(OutputRedirectTest, FlushErrorInCtor) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
-  File write_copy = write_end.dup(write_fd);
-  BufferedFile f = write_end.fdopen("w");
+  file write_copy = write_end.dup(write_fd);
+  buffered_file f = write_end.fdopen("w");
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   FMT_POSIX(close(write_fd));
-  scoped_ptr<OutputRedirect> redir;
+  scoped_ptr<OutputRedirect> redir{nullptr};
   EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new OutputRedirect(f.get())),
       EBADF, "cannot flush stream");
-  redir.reset();
+  redir.reset(nullptr);
   write_copy.dup2(write_fd);  // "undo" close or dtor will fail
 }
 
 TEST(OutputRedirectTest, DupErrorInCtor) {
-  BufferedFile f = open_buffered_file();
+  buffered_file f = open_buffered_file();
   int fd = (f.fileno)();
-  File copy = File::dup(fd);
+  file copy = file::dup(fd);
   FMT_POSIX(close(fd));
-  scoped_ptr<OutputRedirect> redir;
+  scoped_ptr<OutputRedirect> redir{nullptr};
   EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new OutputRedirect(f.get())),
       EBADF, fmt::format("cannot duplicate file descriptor {}", fd));
   copy.dup2(fd);  // "undo" close or dtor will fail
 }
 
 TEST(OutputRedirectTest, RestoreAndRead) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
-  BufferedFile file(write_end.fdopen("w"));
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
+  buffered_file file(write_end.fdopen("w"));
   std::fprintf(file.get(), "[[[");
   OutputRedirect redir(file.get());
   std::fprintf(file.get(), "censored");
   EXPECT_EQ("censored", sanitize(redir.restore_and_read()));
   EXPECT_EQ("", sanitize(redir.restore_and_read()));
   std::fprintf(file.get(), "]]]");
-  file = BufferedFile();
+  file = buffered_file();
   EXPECT_READ(read_end, "[[[]]]");
 }
 
 // Test that OutputRedirect handles errors in flush correctly.
 TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
-  File write_copy = write_end.dup(write_fd);
-  BufferedFile f = write_end.fdopen("w");
+  file write_copy = write_end.dup(write_fd);
+  buffered_file f = write_end.fdopen("w");
   OutputRedirect redir(f.get());
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
@@ -389,11 +389,11 @@ TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
 }
 
 TEST(OutputRedirectTest, ErrorInDtor) {
-  File read_end, write_end;
-  File::pipe(read_end, write_end);
+  file read_end, write_end;
+  file::pipe(read_end, write_end);
   int write_fd = write_end.descriptor();
-  File write_copy = write_end.dup(write_fd);
-  BufferedFile f = write_end.fdopen("w");
+  file write_copy = write_end.dup(write_fd);
+  buffered_file f = write_end.fdopen("w");
   scoped_ptr<OutputRedirect> redir(new OutputRedirect(f.get()));
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
@@ -403,9 +403,9 @@ TEST(OutputRedirectTest, ErrorInDtor) {
       // output in EXPECT_STDERR and the second close will break output
       // redirection.
       FMT_POSIX(close(write_fd));
-      SUPPRESS_ASSERT(redir.reset());
+      SUPPRESS_ASSERT(redir.reset(nullptr));
   }, format_system_error(EBADF, "cannot flush stream"));
-  write_copy.dup2(write_fd); // "undo" close or dtor of BufferedFile will fail
+  write_copy.dup2(write_fd); // "undo" close or dtor of buffered_file will fail
 }
 
 #endif  // FMT_USE_FILE_DESCRIPTORS

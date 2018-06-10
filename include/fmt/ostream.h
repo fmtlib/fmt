@@ -11,12 +11,11 @@
 #include "format.h"
 #include <ostream>
 
-namespace fmt {
-
+FMT_BEGIN_NAMESPACE
 namespace internal {
 
 template <class Char>
-class FormatBuf : public std::basic_streambuf<Char> {
+class formatbuf : public std::basic_streambuf<Char> {
  private:
   typedef typename std::basic_streambuf<Char>::int_type int_type;
   typedef typename std::basic_streambuf<Char>::traits_type traits_type;
@@ -24,7 +23,7 @@ class FormatBuf : public std::basic_streambuf<Char> {
   basic_buffer<Char> &buffer_;
 
  public:
-  FormatBuf(basic_buffer<Char> &buffer) : buffer_(buffer) {}
+  formatbuf(basic_buffer<Char> &buffer) : buffer_(buffer) {}
 
  protected:
   // The put-area is actually always empty. This makes the implementation
@@ -54,10 +53,9 @@ struct test_stream : std::basic_ostream<Char> {
   void operator<<(null);
 };
 
-// Disable conversion to int if T has an overloaded operator<< which is a free
-// function (not a member of std::ostream).
+// Checks if T has a user-defined operator<< (e.g. not a member of std::ostream).
 template <typename T, typename Char>
-class convert_to_int<T, Char, true> {
+class is_streamable {
  private:
   template <typename U>
   static decltype(
@@ -70,7 +68,18 @@ class convert_to_int<T, Char, true> {
   typedef decltype(test<T>(0)) result;
 
  public:
-  static const bool value = !result::value;
+  // std::string operator<< is not considered user-defined because we handle strings
+  // specially.
+  static const bool value = result::value && !std::is_same<T, std::string>::value;
+};
+
+// Disable conversion to int if T has an overloaded operator<< which is a free
+// function (not a member of std::ostream).
+template <typename T, typename Char>
+class convert_to_int<T, Char, true> {
+ public:
+  static const bool value =
+    convert_to_int<T, Char, false>::value && !is_streamable<T, Char>::value;
 };
 
 // Write the content of buf to os.
@@ -91,7 +100,7 @@ void write(std::basic_ostream<Char> &os, basic_buffer<Char> &buf) {
 
 template <typename Char, typename T>
 void format_value(basic_buffer<Char> &buffer, const T &value) {
-  internal::FormatBuf<Char> format_buf(buffer);
+  internal::formatbuf<Char> format_buf(buffer);
   std::basic_ostream<Char> output(&format_buf);
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
   output << value;
@@ -107,26 +116,27 @@ struct format_enum<T,
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename T, typename Char>
 struct formatter<T, Char,
-    typename std::enable_if<!internal::format_type<
-      typename buffer_context<Char>::type, T>::value>::type>
+    typename std::enable_if<internal::is_streamable<T, Char>::value>::type>
     : formatter<basic_string_view<Char>, Char> {
 
   template <typename Context>
-  auto format(const T &value, Context &ctx) -> decltype(ctx.begin()) {
+  auto format(const T &value, Context &ctx) -> decltype(ctx.out()) {
     basic_memory_buffer<Char> buffer;
     internal::format_value(buffer, value);
     basic_string_view<Char> str(buffer.data(), buffer.size());
     formatter<basic_string_view<Char>, Char>::format(str, ctx);
-    return ctx.begin();
+    return ctx.out();
   }
 };
 
-inline void vprint(std::ostream &os, string_view format_str, format_args args) {
-  memory_buffer buffer;
+template <typename Char>
+inline void vprint(std::basic_ostream<Char> &os,
+                   basic_string_view<Char> format_str,
+                   basic_format_args<typename buffer_context<Char>::type> args) {
+  basic_memory_buffer<Char> buffer;
   vformat_to(buffer, format_str, args);
   internal::write(os, buffer);
 }
-
 /**
   \rst
   Prints formatted data to the stream *os*.
@@ -139,8 +149,14 @@ inline void vprint(std::ostream &os, string_view format_str, format_args args) {
 template <typename... Args>
 inline void print(std::ostream &os, string_view format_str,
                   const Args & ... args) {
-  vprint(os, format_str, make_format_args(args...));
+  vprint<char>(os, format_str, make_format_args<format_context>(args...));
 }
-}  // namespace fmt
+
+template <typename... Args>
+inline void print(std::wostream &os, wstring_view format_str,
+                  const Args & ... args) {
+  vprint<wchar_t>(os, format_str, make_format_args<wformat_context>(args...));
+}
+FMT_END_NAMESPACE
 
 #endif  // FMT_OSTREAM_H_

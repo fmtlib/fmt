@@ -67,6 +67,7 @@ your ``CMakeLists.txt`` file::
    add_subdirectory(fmt)
 
 or
+
 ::
 
    add_subdirectory(fmt EXCLUDE_FROM_ALL)

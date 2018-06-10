@@ -13,7 +13,7 @@
 
 #include "ostream.h"
 
-namespace fmt {
+FMT_BEGIN_NAMESPACE
 namespace internal {
 
 // Checks if a value fits in int - used to avoid warnings about comparing
@@ -49,8 +49,7 @@ class printf_precision_handler: public function<int> {
   }
 
   template <typename T>
-  typename std::enable_if<!std::is_integral<T>::value, int>::type
-      operator()(T) {
+  typename std::enable_if<!std::is_integral<T>::value, int>::type operator()(T) {
     FMT_THROW(format_error("precision is not integer"));
     return 0;
   }
@@ -151,7 +150,8 @@ class char_converter: public function<void> {
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value>::type
       operator()(T value) {
-    arg_ = internal::make_arg<Context>(static_cast<char>(value));
+    typedef typename Context::char_type Char;
+    arg_ = internal::make_arg<Context>(static_cast<Char>(value));
   }
 
   template <typename T>
@@ -214,7 +214,9 @@ class basic_printf_context;
  */
 template <typename Range>
 class printf_arg_formatter:
-  public internal::function<void>, public internal::arg_formatter_base<Range> {
+  public internal::function<
+    typename internal::arg_formatter_base<Range>::iterator>,
+  public internal::arg_formatter_base<Range> {
  private:
   typedef typename Range::value_type char_type;
   typedef decltype(internal::declval<Range>().begin()) iterator;
@@ -223,9 +225,14 @@ class printf_arg_formatter:
 
   context_type &context_;
 
-  void write_null_pointer() {
+  void write_null_pointer(char) {
     this->spec().type_ = 0;
     this->write("(nil)");
+  }
+
+  void write_null_pointer(wchar_t) {
+    this->spec().type_ = 0;
+    this->write(L"(nil)");
   }
 
  public:
@@ -270,9 +277,20 @@ class printf_arg_formatter:
     if (value)
       base::operator()(value);
     else if (this->spec().type_ == 'p')
-      write_null_pointer();
+      write_null_pointer(char_type());
     else
       this->write("(null)");
+    return this->out();
+  }
+
+  /** Formats a null-terminated wide C string. */
+  iterator operator()(const wchar_t *value) {
+    if (value)
+      base::operator()(value);
+    else if (this->spec().type_ == 'p')
+      write_null_pointer(char_type());
+    else
+      this->write(L"(null)");
     return this->out();
   }
 
@@ -281,7 +299,7 @@ class printf_arg_formatter:
     if (value)
       return base::operator()(value);
     this->spec().type_ = 0;
-    write_null_pointer();
+    write_null_pointer(char_type());
     return this->out();
   }
 
@@ -298,9 +316,9 @@ struct printf_formatter {
   auto parse(ParseContext &ctx) -> decltype(ctx.begin()) { return ctx.begin(); }
 
   template <typename FormatContext>
-  auto format(const T &value, FormatContext &ctx) -> decltype(ctx.begin()) {
-    internal::format_value(internal::get_container(ctx.begin()), value);
-    return ctx.begin();
+  auto format(const T &value, FormatContext &ctx) -> decltype(ctx.out()) {
+    internal::format_value(internal::get_container(ctx.out()), value);
+    return ctx.out();
   }
 };
 
@@ -346,7 +364,7 @@ class basic_printf_context :
     : base(out, format_str, args) {}
 
   using base::parse_context;
-  using base::begin;
+  using base::out;
   using base::advance_to;
 
   /** Formats stored arguments and writes the output to the range. */
@@ -429,7 +447,7 @@ unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
 
 template <typename OutputIt, typename Char, typename AF>
 void basic_printf_context<OutputIt, Char, AF>::format() {
-  auto &buffer = internal::get_container(this->begin());
+  auto &buffer = internal::get_container(this->out());
   auto start = iterator(this->parse_context());
   auto it = start;
   using internal::pointer_from;
@@ -518,7 +536,7 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
         spec.type_ = 'd';
         break;
       case 'c':
-        // TODO: handle wchar_t
+        // TODO: handle wchar_t better?
         visit(internal::char_converter<basic_printf_context>(arg), arg);
         break;
       }
@@ -551,6 +569,7 @@ inline format_arg_store<printf_context<internal::buffer>::type, Args...>
       args...);
 }
 typedef basic_format_args<printf_context<internal::buffer>::type> printf_args;
+typedef basic_format_args<printf_context<internal::wbuffer>::type> wprintf_args;
 
 inline std::string vsprintf(string_view format, printf_args args) {
   memory_buffer buffer;
@@ -573,9 +592,7 @@ inline std::string sprintf(string_view format_str, const Args & ... args) {
     make_format_args<typename printf_context<internal::buffer>::type>(args...));
 }
 
-inline std::wstring vsprintf(
-    wstring_view format,
-    basic_format_args<printf_context<internal::wbuffer>::type> args) {
+inline std::wstring vsprintf(wstring_view format, wprintf_args args) {
   wmemory_buffer buffer;
   printf(buffer, format, args);
   return to_string(buffer);
@@ -583,17 +600,19 @@ inline std::wstring vsprintf(
 
 template <typename... Args>
 inline std::wstring sprintf(wstring_view format_str, const Args & ... args) {
-  auto vargs = make_format_args<
-    typename printf_context<internal::wbuffer>::type>(args...);
-  return vsprintf(format_str, vargs);
+  return vsprintf(format_str,
+    make_format_args<typename printf_context<internal::wbuffer>::type>(args...));
 }
 
-inline int vfprintf(std::FILE *f, string_view format, printf_args args) {
-  memory_buffer buffer;
+template <typename Char>
+inline int vfprintf(std::FILE *f, basic_string_view<Char> format,
+                    basic_format_args<typename printf_context<
+                      internal::basic_buffer<Char>>::type> args) {
+  basic_memory_buffer<Char> buffer;
   printf(buffer, format, args);
   std::size_t size = buffer.size();
   return std::fwrite(
-        buffer.data(), 1, size, f) < size ? -1 : static_cast<int>(size);
+    buffer.data(), sizeof(Char), size, f) < size ? -1 : static_cast<int>(size);
 }
 
 /**
@@ -609,10 +628,21 @@ template <typename... Args>
 inline int fprintf(std::FILE *f, string_view format_str, const Args & ... args) {
   auto vargs = make_format_args<
     typename printf_context<internal::buffer>::type>(args...);
-  return vfprintf(f, format_str, vargs);
+  return vfprintf<char>(f, format_str, vargs);
+}
+
+template <typename... Args>
+inline int fprintf(std::FILE *f, wstring_view format_str,
+                   const Args & ... args) {
+  return vfprintf(f, format_str,
+    make_format_args<typename printf_context<internal::wbuffer>::type>(args...));
 }
 
 inline int vprintf(string_view format, printf_args args) {
+  return vfprintf(stdout, format, args);
+}
+
+inline int vprintf(wstring_view format, wprintf_args args) {
   return vfprintf(stdout, format, args);
 }
 
@@ -631,9 +661,23 @@ inline int printf(string_view format_str, const Args & ... args) {
     make_format_args<typename printf_context<internal::buffer>::type>(args...));
 }
 
+template <typename... Args>
+inline int printf(wstring_view format_str, const Args & ... args) {
+  return vprintf(format_str,
+    make_format_args<typename printf_context<internal::wbuffer>::type>(args...));
+}
+
 inline int vfprintf(std::ostream &os, string_view format_str,
                     printf_args args) {
   memory_buffer buffer;
+  printf(buffer, format_str, args);
+  internal::write(os, buffer);
+  return static_cast<int>(buffer.size());
+}
+
+inline int vfprintf(std::wostream &os, wstring_view format_str,
+                    wprintf_args args) {
+  wmemory_buffer buffer;
   printf(buffer, format_str, args);
   internal::write(os, buffer);
   return static_cast<int>(buffer.size());
@@ -655,6 +699,14 @@ inline int fprintf(std::ostream &os, string_view format_str,
     typename printf_context<internal::buffer>::type>(args...);
   return vfprintf(os, format_str, vargs);
 }
-}  // namespace fmt
+
+template <typename... Args>
+inline int fprintf(std::wostream &os, wstring_view format_str,
+                   const Args & ... args) {
+  auto vargs = make_format_args<
+    typename printf_context<internal::buffer>::type>(args...);
+  return vfprintf(os, format_str, vargs);
+}
+FMT_END_NAMESPACE
 
 #endif  // FMT_PRINTF_H_

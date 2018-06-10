@@ -8,26 +8,30 @@
 #include "fmt/ostream.h"
 
 #include <sstream>
-#include "gmock/gmock.h"
+#include "gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
 
 using fmt::format;
 using fmt::format_error;
 
-std::ostream &operator<<(std::ostream &os, const Date &d) {
+static std::ostream &operator<<(std::ostream &os, const Date &d) {
   os << d.year() << '-' << d.month() << '-' << d.day();
   return os;
 }
 
-std::wostream &operator<<(std::wostream &os, const Date &d) {
+static std::wostream &operator<<(std::wostream &os, const Date &d) {
   os << d.year() << L'-' << d.month() << L'-' << d.day();
   return os;
 }
 
 enum TestEnum {};
-std::ostream &operator<<(std::ostream &os, TestEnum) {
+static std::ostream &operator<<(std::ostream &os, TestEnum) {
   return os << "TestEnum";
+}
+
+static std::wostream &operator<<(std::wostream &os, TestEnum) {
+  return os << L"TestEnum";
 }
 
 enum TestEnum2 {A};
@@ -36,6 +40,9 @@ TEST(OStreamTest, Enum) {
   EXPECT_FALSE((fmt::internal::convert_to_int<TestEnum, char>::value));
   EXPECT_EQ("TestEnum", fmt::format("{}", TestEnum()));
   EXPECT_EQ("0", fmt::format("{}", A));
+  EXPECT_FALSE((fmt::internal::convert_to_int<TestEnum, wchar_t>::value));
+  EXPECT_EQ(L"TestEnum", fmt::format(L"{}", TestEnum()));
+  EXPECT_EQ(L"0", fmt::format(L"{}", A));
 }
 
 typedef fmt::back_insert_range<fmt::internal::buffer> range;
@@ -88,7 +95,7 @@ TEST(OStreamTest, FormatSpecs) {
 }
 
 struct EmptyTest {};
-std::ostream &operator<<(std::ostream &os, EmptyTest) {
+static std::ostream &operator<<(std::ostream &os, EmptyTest) {
   return os << "";
 }
 
@@ -100,6 +107,9 @@ TEST(OStreamTest, Print) {
   std::ostringstream os;
   fmt::print(os, "Don't {}!", "panic");
   EXPECT_EQ("Don't panic!", os.str());
+  std::wostringstream wos;
+  fmt::print(wos, L"Don't {}!", L"panic");
+  EXPECT_EQ(L"Don't panic!", wos.str());
 }
 
 TEST(OStreamTest, WriteToOStream) {
@@ -135,7 +145,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   } os(streambuf);
 
   testing::InSequence sequence;
-  const char *data = 0;
+  const char *data = nullptr;
   std::size_t size = max_size;
   do {
     typedef std::make_unsigned<std::streamsize>::type ustreamsize;
@@ -144,7 +154,16 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
     EXPECT_CALL(streambuf, xsputn(data, static_cast<std::streamsize>(n)))
         .WillOnce(testing::Return(max_streamsize));
     data += n;
-    size -= static_cast<std::size_t>(n);
+    size -= n;
   } while (size != 0);
   fmt::internal::write(os, buffer);
+}
+
+TEST(OStreamTest, Join) {
+  int v[3] = {1, 2, 3};
+  EXPECT_EQ("1, 2, 3", fmt::format("{}", fmt::join(v, v + 3, ", ")));
+}
+
+TEST(OStreamTest, ConstexprString) {
+  EXPECT_EQ("42", format(fmt("{}"), std::string("42")));
 }

@@ -14,6 +14,7 @@
 #ifdef _WIN32
 # include <windows.h>
 #else
+# include <sys/param.h>  // for FreeBSD version
 # include <sys/types.h>  // for ssize_t
 #endif
 

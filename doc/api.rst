@@ -49,7 +49,8 @@ arguments in the resulting string.
 .. doxygenfunction:: print(std::FILE *, string_view, const Args&...)
 .. doxygenfunction:: vprint(std::FILE *, string_view, format_args)
 
-.. _format-api:
+.. doxygenfunction:: print(std::FILE *, wstring_view, const Args&...)
+.. doxygenfunction:: vprint(std::FILE *, wstring_view, wformat_args)
 
 Named arguments
 ---------------
@@ -80,6 +81,8 @@ Compatibility
 
 .. doxygentypedef:: fmt::string_view
 .. doxygentypedef:: fmt::wstring_view
+
+.. _format-api:
 
 Format API
 ==========
@@ -151,7 +154,11 @@ The following user-defined literals are defined in ``fmt/format.h``.
 Utilities
 ---------
 
+.. doxygenfunction:: fmt::formatted_size(string_view, const Args&...)
+
 .. doxygenfunction:: fmt::to_string(const T&)
+
+.. doxygenfunction:: fmt::to_wstring(const T&)
 
 .. doxygenclass:: fmt::basic_memory_buffer
    :protected-members:
@@ -159,6 +166,10 @@ Utilities
 
 System errors
 -------------
+
+fmt does not use ``errno`` to communicate errors to the user, but it may call
+system functions which set ``errno``. Users should not make any assumptions about
+the value of ``errno`` being preserved by library functions.
 
 .. doxygenclass:: fmt::system_error
    :members:
@@ -199,6 +210,11 @@ allocator::
                                 const Args & ... args) {
       return vformat(alloc, format_str, fmt::make_format_args(args...));
     }
+
+The allocator will be used for the output container only. If you are using named
+arguments, the container that stores pointers to them will be allocated using
+the default allocator. Also floating-point formatting falls back on ``sprintf``
+which may do allocations.
 
 Custom formatting of built-in types
 -----------------------------------

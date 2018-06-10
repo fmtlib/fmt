@@ -6,9 +6,11 @@ from subprocess import check_call
 
 build = os.environ['BUILD']
 config = os.environ['CONFIGURATION']
-platform = os.environ.get('PLATFORM')
+platform = os.environ['PLATFORM']
 path = os.environ['PATH']
-cmake_command = ['cmake', '-DFMT_PEDANTIC=ON', '-DCMAKE_BUILD_TYPE=' + config]
+image = os.environ['APPVEYOR_BUILD_WORKER_IMAGE']
+jobid = os.environ['APPVEYOR_JOB_ID']
+cmake_command = ['cmake', '-DFMT_PEDANTIC=ON', '-DCMAKE_BUILD_TYPE=' + config, '..']
 if build == 'mingw':
     cmake_command.append('-GMinGW Makefiles')
     build_command = ['mingw32-make', '-j4']
@@ -21,7 +23,12 @@ else:
     # Add MSBuild 14.0 to PATH as described in
     # http://help.appveyor.com/discussions/problems/2229-v140-not-found-on-vs2105rc.
     os.environ['PATH'] = r'C:\Program Files (x86)\MSBuild\15.0\Bin;' + path
-    generator = 'Visual Studio 15 2017'
+    if image == 'Visual Studio 2013':
+        generator = 'Visual Studio 12 2013'
+    elif image == 'Visual Studio 2015':
+        generator = 'Visual Studio 14 2015'
+    elif image == 'Visual Studio 2017':
+        generator = 'Visual Studio 15 2017'
     if platform == 'x64':
         generator += ' Win64'
     cmake_command.append('-G' + generator)

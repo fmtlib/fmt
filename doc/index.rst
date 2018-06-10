@@ -2,8 +2,7 @@ Overview
 ========
 
 **fmt** (formerly cppformat) is an open-source formatting library.
-It can be used as a safe alternative to printf or as a fast
-alternative to C++ IOStreams.
+It can be used as a fast and safe alternative to printf and IOStreams.
 
 .. raw:: html
 
@@ -16,7 +15,7 @@ alternative to C++ IOStreams.
      </div>
    </div>
 
-.. _format-api:
+.. _format-api-intro:
 
 Format API
 ----------
@@ -30,16 +29,16 @@ in Python:
 
 .. code:: c++
 
-  fmt::format("The answer is {}", 42);
+  fmt::format("The answer is {}.", 42);
   
-The ``fmt::format`` function returns a string "The answer is 42". You can use
-``fmt::MemoryWriter`` to avoid constructing ``std::string``:
+The ``fmt::format`` function returns a string "The answer is 42.". You can use
+``fmt::memory_buffer`` to avoid constructing ``std::string``:
 
 .. code:: c++
 
-  fmt::MemoryWriter w;
-  w.write("Look, a {} string", 'C');
-  w.c_str(); // returns a C string (const char*)
+  fmt::memory_buffer out;
+  format_to(out, "For a moment, {} happened.", "nothing");
+  out.data(); // returns a pointer to the formatted data
 
 The ``fmt::print`` function performs formatting and writes the result to a file:
 
@@ -53,11 +52,6 @@ The file argument can be omitted in which case the function prints to
 .. code:: c++
 
   fmt::print("Don't {}\n", "panic");
-
-If your compiler supports C++11, then the formatting functions are implemented
-with variadic templates. Otherwise variadic functions are emulated by generating
-a set of lightweight wrappers. This ensures compatibility with older compilers
-while providing a natural API.
 
 The Format API also supports positional arguments useful for localization:
 
@@ -99,19 +93,25 @@ Safety
 ------
 
 The library is fully type safe, automatic memory management prevents buffer
-overflow, errors in format strings are reported using exceptions. For example,
-the code
+overflow, errors in format strings are reported using exceptions or at compile
+tim. For example, the code
 
 .. code:: c++
 
   fmt::format("The answer is {:d}", "forty-two");
 
-throws a ``FormatError`` exception with description
-"unknown format code 'd' for string", because the argument
-``"forty-two"`` is a string while the format code ``d``
-only applies to integers.
+throws a ``format_error`` exception with description "unknown format code 'd' for
+string", because the argument ``"forty-two"`` is a string while the format code
+``d`` only applies to integers, while
 
-Where possible, errors are caught at compile time. For example, the code
+.. code:: c++
+
+  format(fmt("The answer is {:d}"), "forty-two");
+
+reports a compile-time error for the same reason on compilers that support
+relaxed ``constexpr``.
+
+The following code
 
 .. code:: c++
 
@@ -129,44 +129,56 @@ its numeric value being written to the stream (i.e. 1070 instead of letter 'ю'
 which is represented by ``L'\x42e'`` if we use Unicode) which is rarely what is
 needed.
 
-Note that fmt does not use the value of the ``errno`` global to communicate
-errors to the user, but it may call system functions which set ``errno``. Since
-fmt does not attempt to preserve the value of ``errno``, users should not make
-any assumptions about it and always set it to ``0`` before making any system
-calls that convey error information via ``errno``.
+Compact binary code
+-------------------
+
+The library is designed to produce compact per-call compiled code. For example
+(`godbolt <https://godbolt.org/g/TZU4KF>`_),
+
+.. code:: c++
+
+   #include <fmt/core.h>
+
+   int main() {
+     fmt::print("The answer is {}.", 42);
+   }
+
+compiles to just
+
+.. code:: asm
+
+   main: # @main
+     sub rsp, 24
+     mov qword ptr [rsp], 42
+     mov rcx, rsp
+     mov edi, offset .L.str
+     mov esi, 17
+     mov edx, 2
+     call fmt::v5::vprint(fmt::v5::basic_string_view<char>, fmt::v5::format_args)
+     xor eax, eax
+     add rsp, 24
+     ret
+   .L.str:
+     .asciz "The answer is {}."
 
 .. _portability:
 
 Portability
 -----------
 
-The library is highly portable. Here is an incomplete list of operating systems
-and compilers where it has been tested and known to work:
+The library is highly portable and relies only on a small set of C++11 features:
 
-* 64-bit (amd64) GNU/Linux with GCC 4.4.3,
-  `4.6.3 <https://travis-ci.org/fmtlib/fmt>`_, 4.7.2, 4.8.1, and Intel C++
-  Compiler (ICC) 14.0.2
+* variadic templates
+* type traits
+* rvalue references
+* decltype
+* trailing return types
+* deleted functions
 
-* 32-bit (i386) GNU/Linux with GCC 4.4.3, 4.6.3
-
-* Mac OS X with GCC 4.2.1 and Clang 4.2, 5.1.0
-
-* 64-bit Windows with Visual C++ 2010, 2013 and
-  `2015 <https://ci.appveyor.com/project/vitaut/fmt>`_
-
-* 32-bit Windows with Visual C++ 2010
-
-Although the library uses C++11 features when available, it also works with
-older compilers and standard library implementations. The only thing to keep in
-mind for C++98 portability:
-
-* Variadic templates: minimum GCC 4.4, Clang 2.9 or VS2013. This feature allows 
-  the Format API to accept an unlimited number of arguments. With older
-  compilers the maximum is 15.
-
-* User-defined literals: minimum GCC 4.7, Clang 3.1 or VS2015. The suffixes
-  ``_format`` and ``_a`` are functionally equivalent to the functions
-  ``fmt::format`` and ``fmt::arg``.
+These are available since GCC 4.4, Clang 2.9 and MSVC 18.0 (2013). For older
+compilers use fmt `version 4.x
+<https://github.com/fmtlib/fmt/releases/tag/4.1.0>`_ which continues to be
+maintained and only requires C++98.
 
 The output of all formatting functions is consistent across platforms. In
 particular, formatting a floating-point infinity always gives ``inf`` while the
@@ -184,7 +196,7 @@ Ease of Use
 -----------
 
 fmt has a small self-contained code base with the core library consisting of
-a single header file and a single source file and no external dependencies.
+just three header files and no external dependencies.
 A permissive BSD `license <https://github.com/fmtlib/fmt#license>`_ allows
 using the library both in open-source and commercial projects.
 
