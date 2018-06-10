@@ -163,3 +163,7 @@ TEST(OStreamTest, Join) {
   int v[3] = {1, 2, 3};
   EXPECT_EQ("1, 2, 3", fmt::format("{}", fmt::join(v, v + 3, ", ")));
 }
+
+TEST(OStreamTest, ConstexprString) {
+  EXPECT_EQ("42", format(fmt("{}"), std::string("42")));
+}

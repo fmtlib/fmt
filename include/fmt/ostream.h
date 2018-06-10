@@ -53,8 +53,7 @@ struct test_stream : std::basic_ostream<Char> {
   void operator<<(null);
 };
 
-// Checks if T has an overloaded operator<< which is a free function (not a
-// member of std::ostream).
+// Checks if T has a user-defined operator<< (e.g. not a member of std::ostream).
 template <typename T, typename Char>
 class is_streamable {
  private:
@@ -69,7 +68,9 @@ class is_streamable {
   typedef decltype(test<T>(0)) result;
 
  public:
-  static const bool value = result::value;
+  // std::string operator<< is not considered user-defined because we handle strings
+  // specially.
+  static const bool value = result::value && !std::is_same<T, std::string>::value;
 };
 
 // Disable conversion to int if T has an overloaded operator<< which is a free
