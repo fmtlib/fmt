@@ -214,8 +214,8 @@ class basic_string_view {
   FMT_CONSTEXPR basic_string_view() FMT_NOEXCEPT : data_(FMT_NULL), size_(0) {}
 
   /** Constructs a string reference object from a C string and a size. */
-  FMT_CONSTEXPR basic_string_view(const Char *s, size_t size) FMT_NOEXCEPT
-    : data_(s), size_(size) {}
+  FMT_CONSTEXPR basic_string_view(const Char *s, size_t str_size) FMT_NOEXCEPT
+    : data_(s), size_(str_size) {}
 
   /**
     \rst
@@ -255,8 +255,8 @@ class basic_string_view {
 
   // Lexicographically compare this string reference to other.
   int compare(basic_string_view other) const {
-    size_t size = size_ < other.size_ ? size_ : other.size_;
-    int result = std::char_traits<Char>::compare(data_, other.data_, size);
+    size_t str_size = size_ < other.size_ ? size_ : other.size_;
+    int result = std::char_traits<Char>::compare(data_, other.data_, str_size);
     if (result == 0)
       result = size_ == other.size_ ? 0 : (size_ < other.size_ ? -1 : 1);
     return result;
@@ -308,13 +308,13 @@ class basic_buffer {
   std::size_t capacity_;
 
  protected:
-  basic_buffer(T *p = FMT_NULL, std::size_t size = 0, std::size_t capacity = 0)
-    FMT_NOEXCEPT: ptr_(p), size_(size), capacity_(capacity) {}
+  basic_buffer(T *p = FMT_NULL, std::size_t buf_size = 0, std::size_t buf_capacity = 0)
+    FMT_NOEXCEPT: ptr_(p), size_(buf_size), capacity_(buf_capacity) {}
 
   /** Sets the buffer data and capacity. */
-  void set(T *data, std::size_t capacity) FMT_NOEXCEPT {
-    ptr_ = data;
-    capacity_ = capacity;
+  void set(T *buf_data, std::size_t buf_capacity) FMT_NOEXCEPT {
+    ptr_ = buf_data;
+    capacity_ = buf_capacity;
   }
 
   /**
@@ -358,9 +358,9 @@ class basic_buffer {
     Reserves space to store at least *capacity* elements.
     \endrst
    */
-  void reserve(std::size_t capacity) {
-    if (capacity > capacity_)
-      grow(capacity);
+  void reserve(std::size_t buf_capacity) {
+    if (buf_capacity > capacity_)
+      grow(buf_capacity);
   }
 
   void push_back(const T &value) {
@@ -811,8 +811,8 @@ class context_base {
   typedef basic_format_arg<Context> format_arg;
 
   context_base(OutputIt out, basic_string_view<char_type> format_str,
-               basic_format_args<Context> args)
-  : parse_context_(format_str), out_(out), args_(args) {}
+               basic_format_args<Context> ctx_args)
+  : parse_context_(format_str), out_(out), args_(ctx_args) {}
 
   // Returns the argument with specified index.
   format_arg do_get_arg(unsigned arg_id) {
@@ -893,8 +893,8 @@ class basic_format_context :
    \endrst
    */
   basic_format_context(OutputIt out, basic_string_view<char_type> format_str,
-                basic_format_args<basic_format_context> args)
-    : base(out, format_str, args) {}
+                basic_format_args<basic_format_context> ctx_args)
+    : base(out, format_str, ctx_args) {}
 
   format_arg next_arg() {
     return this->do_get_arg(this->parse_context().next_arg_id());
