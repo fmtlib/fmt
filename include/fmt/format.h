@@ -3526,6 +3526,13 @@ inline OutputIt vformat_to(OutputIt out, string_view format_str,
   typedef output_range<OutputIt, char> range;
   return vformat_to<arg_formatter<range>>(range(out), format_str, args);
 }
+template <typename OutputIt, typename... Args>
+inline OutputIt vformat_to(
+    OutputIt out, wstring_view format_str,
+    typename format_args_t<OutputIt, wchar_t>::type args) {
+  typedef output_range<OutputIt, wchar_t> range;
+  return vformat_to<arg_formatter<range>>(range(out), format_str, args);
+}
 
 /**
  \rst
@@ -3578,10 +3585,18 @@ struct format_to_n_result {
  */
 template <typename OutputIt, typename... Args>
 inline format_to_n_result<OutputIt> format_to_n(
-    OutputIt out, std::size_t n, string_view format_str, const Args & ... args) {
+    OutputIt out, std::size_t n, string_view format_str, const Args &... args) {
   typedef internal::truncating_iterator<OutputIt> It;
   auto it = vformat_to(It(out, n), format_str,
       make_format_args<typename format_context_t<It>::type>(args...));
+  return {it.base(), it.count()};
+}
+template <typename OutputIt, typename... Args>
+inline format_to_n_result<OutputIt> format_to_n(
+    OutputIt out, std::size_t n, wstring_view format_str, const Args &... args) {
+  typedef internal::truncating_iterator<OutputIt> It;
+  auto it = vformat_to(It(out, n), format_str,
+      make_format_args<typename format_context_t<It, wchar_t>::type>(args...));
   return {it.base(), it.count()};
 }
 

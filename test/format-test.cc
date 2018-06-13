@@ -1525,6 +1525,15 @@ TEST(FormatTest, FormatToN) {
   EXPECT_EQ("foox", fmt::string_view(buffer, 4));
 }
 
+TEST(FormatTest, WideFormatToN) {
+  wchar_t buffer[4];
+  buffer[3] = L'x';
+  auto result = fmt::format_to_n(buffer, 3, L"{}", 12345);
+  EXPECT_EQ(5u, result.size);
+  EXPECT_EQ(buffer + 3, result.out);
+  EXPECT_EQ(L"123x", fmt::wstring_view(buffer, 4));
+}
+
 #if FMT_USE_CONSTEXPR
 struct test_arg_id_handler {
   enum result { NONE, EMPTY, INDEX, NAME, ERROR };
