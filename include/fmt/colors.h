@@ -16,6 +16,8 @@
 
 FMT_BEGIN_NAMESPACE
 
+enum class color : uint32_t;
+
 // rgb is a struct for red, green and blue colors.
 // We use rgb as name because some editors will show it as color direct in the
 // editor.
@@ -25,6 +27,8 @@ struct rgb {
     : r(r_), g(g_), b(b_) {}
   FMT_CONSTEXPR_DECL rgb(uint32_t hex) 
       : r((hex >> 16) & 0xFF), g((hex >> 8) & 0xFF), b((hex) & 0xFF) {}
+  FMT_CONSTEXPR_DECL rgb(color hex) 
+      : r((uint32_t(hex) >> 16) & 0xFF), g((uint32_t(hex) >> 8) & 0xFF), b(uint32_t(hex) & 0xFF) {}
   uint8_t r;
   uint8_t g;
   uint8_t b;
@@ -32,7 +36,7 @@ struct rgb {
 
 namespace internal {
 
-FMT_CONSTEXPR inline void to_esc(uint8_t c, char out[], int offset) {
+FMT_CONSTEXPR void to_esc(uint8_t c, char out[], int offset) {
   out[offset + 0] = static_cast<char>('0' + c / 100);
   out[offset + 1] = static_cast<char>('0' + c / 10 % 10);
   out[offset + 2] = static_cast<char>('0' + c % 10);
@@ -40,7 +44,7 @@ FMT_CONSTEXPR inline void to_esc(uint8_t c, char out[], int offset) {
 
 } // namespace internal
 
-FMT_FUNC void vprint_rgb(rgb fd, string_view format, format_args args) {
+inline void vprint_rgb(rgb fd, string_view format, format_args args) {
   char escape_fd[] = "\x1b[38;2;000;000;000m";
   static FMT_CONSTEXPR_DECL const char RESET_COLOR[] = "\x1b[0m";
   internal::to_esc(fd.r, escape_fd, 7);
@@ -52,7 +56,7 @@ FMT_FUNC void vprint_rgb(rgb fd, string_view format, format_args args) {
   std::fputs(RESET_COLOR, stdout);
 }
 
-FMT_FUNC void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
+inline void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
   char escape_fd[] = "\x1b[38;2;000;000;000m"; // foreground color
   char escape_bg[] = "\x1b[48;2;000;000;000m"; // background color
   static FMT_CONSTEXPR_DECL const char RESET_COLOR[] = "\x1b[0m";
@@ -70,18 +74,23 @@ FMT_FUNC void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
   std::fputs(RESET_COLOR, stdout);
 }
 
-template <typename... Args>
-inline void print_rgb(rgb fd, string_view format_str, const Args & ... args) {
-  vprint_rgb(fd, format_str, make_format_args(args...));
-}
-
-// rgb foreground color
+/**
+  Formats a string and prints it to stdout using ANSI escape sequences to
+  specify foreground color 'fd'.
+  Example:
+    fmt::print(fmt::color::red, "Elapsed time: {0:.2f} seconds", 1.23);
+ */
 template <typename... Args>
 inline void print(rgb fd, string_view format_str, const Args & ... args) {
   vprint_rgb(fd, format_str, make_format_args(args...));
 }
 
-// rgb foreground color and background color
+/**
+  Formats a string and prints it to stdout using ANSI escape sequences to
+  specify foreground color 'fd' and background color 'bg'.
+  Example:
+    fmt::print(fmt::color::red, fmt::color::black, "Elapsed time: {0:.2f} seconds", 1.23);
+ */
 template <typename... Args>
 inline void print(rgb fd, rgb bg, string_view format_str, const Args & ... args) {
   vprint_rgb(fd, bg, format_str, make_format_args(args...));
@@ -229,7 +238,7 @@ enum class color : uint32_t {
   white_smoke             = 0xF5F5F5, // rgb(245,245,245) 
   yellow                  = 0xFFFF00, // rgb(255,255,0)   
   yellow_green            = 0x9ACD32, // rgb(154,205,50)  
-};  // enum class colors
+};  // enum class color
 
 FMT_END_NAMESPACE
 

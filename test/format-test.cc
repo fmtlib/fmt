@@ -1266,13 +1266,6 @@ TEST(FormatTest, Print) {
 #endif
 }
 
-#if FMT_USE_FILE_DESCRIPTORS
-TEST(FormatTest, PrintColored) {
-  EXPECT_WRITE(stdout, fmt::print_colored(fmt::red, "Hello, {}!\n", "world"),
-    "\x1b[31mHello, world!\n\x1b[0m");
-}
-#endif
-
 TEST(FormatTest, Variadic) {
   EXPECT_EQ("abc1", format("{}c{}", "ab", 1));
   EXPECT_EQ(L"abc1", format(L"{}c{}", L"ab", 1));
