@@ -36,7 +36,7 @@ struct rgb {
 
 namespace internal {
 
-FMT_CONSTEXPR inline void to_esc(uint8_t c, char out[], int offset) {
+FMT_CONSTEXPR void to_esc(uint8_t c, char out[], int offset) {
   out[offset + 0] = static_cast<char>('0' + c / 100);
   out[offset + 1] = static_cast<char>('0' + c / 10 % 10);
   out[offset + 2] = static_cast<char>('0' + c % 10);
@@ -72,17 +72,6 @@ inline void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
   std::fputs(escape_bg, stdout);
   vprint(format, args);
   std::fputs(RESET_COLOR, stdout);
-}
-
-/**
-  Formats a string and prints it to stdout using ANSI escape sequences to
-  specify foreground color 'fd'.
-  Example:
-    fmt::print_rgb(fmt::color::red, "Elapsed time: {0:.2f} seconds", 1.23);
- */
-template <typename... Args>
-inline void print_rgb(rgb fd, string_view format_str, const Args & ... args) {
-  vprint_rgb(fd, format_str, make_format_args(args...));
 }
 
 /**
