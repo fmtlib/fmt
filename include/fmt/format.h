@@ -461,13 +461,6 @@ class format_error : public std::runtime_error {
 
 namespace internal {
 
-// Casts nonnegative integer to unsigned.
-template <typename Int>
-FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
-  FMT_ASSERT(value >= 0, "negative value");
-  return static_cast<typename std::make_unsigned<Int>::type>(value);
-}
-
 #if FMT_SECURE_SCL
 template <typename T>
 struct checked { typedef stdext::checked_array_iterator<T*> type; };
@@ -1004,7 +997,7 @@ class decimal_formatter {
       uint64_t t = ((1ULL << (32 + a)) / data::POWERS_OF_10_32[n] + 1 - n / 9);
       t = ((t * u) >> a) + n / 5 * 4;
       write_pair(0, t >> 32);
-      for (int i = 2; i < N; i += 2) {
+      for (unsigned i = 2; i < N; i += 2) {
         t = 100ULL * static_cast<uint32_t>(t);
         write_pair(i, t >> 32);
       }
@@ -1670,7 +1663,7 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
       value = max_int + 1;
       break;
     }
-    value = value * 10 + (*it - '0');
+    value = value * 10 + unsigned(*it - '0');
     // Workaround for MSVC "setup_exception stack overflow" error:
     auto next = it;
     ++next;
@@ -1717,7 +1710,7 @@ class width_checker: public function<unsigned long long> {
       is_integer<T>::value, unsigned long long>::type operator()(T value) {
     if (is_negative(value))
       handler_.on_error("negative width");
-    return value;
+    return static_cast<unsigned long long>(value);
   }
 
   template <typename T>
@@ -1741,7 +1734,7 @@ class precision_checker: public function<unsigned long long> {
       is_integer<T>::value, unsigned long long>::type operator()(T value) {
     if (is_negative(value))
       handler_.on_error("negative precision");
-    return value;
+    return static_cast<unsigned long long>(value);
   }
 
   template <typename T>
@@ -1778,7 +1771,7 @@ class specs_setter {
 
   FMT_CONSTEXPR void on_width(unsigned width) { specs_.width_ = width; }
   FMT_CONSTEXPR void on_precision(unsigned precision) {
-    specs_.precision_ = precision;
+    specs_.precision_ = static_cast<int>(precision);
   }
   FMT_CONSTEXPR void end_precision() {}
 
@@ -1859,7 +1852,7 @@ FMT_CONSTEXPR void set_dynamic_spec(
   unsigned long long big_value = visit(Handler<ErrorHandler>(eh), arg);
   if (big_value > (std::numeric_limits<int>::max)())
     eh.on_error("number is too big");
-  value = static_cast<int>(big_value);
+  value = static_cast<T>(big_value);
 }
 
 struct auto_id {};
@@ -2006,7 +1999,7 @@ FMT_CONSTEXPR Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
   do {
     c = *++it;
   } while (is_name_start(c) || ('0' <= c && c <= '9'));
-  handler(basic_string_view<char_type>(pointer_from(start), it - start));
+  handler(basic_string_view<char_type>(pointer_from(start), to_unsigned(it - start)));
   return it;
 }
 
@@ -2474,8 +2467,8 @@ class basic_writer {
         size = spec.width();
       }
     } else if (spec.precision() > static_cast<int>(num_digits)) {
-      size = prefix.size() + spec.precision();
-      padding = spec.precision() - num_digits;
+      size = prefix.size() + static_cast<std::size_t>(spec.precision());
+      padding = static_cast<std::size_t>(spec.precision()) - num_digits;
       fill = '0';
     }
     align_spec as = spec;
@@ -3332,7 +3325,7 @@ struct format_handler : internal::error_handler {
     : context(r.begin(), str, format_args) {}
 
   void on_text(iterator begin, iterator end) {
-    size_t size = end - begin;
+    auto size = internal::to_unsigned(end - begin);
     auto out = context.out();
     auto &&it = internal::reserve(out, size);
     it = std::copy_n(begin, size, it);

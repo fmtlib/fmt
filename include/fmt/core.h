@@ -199,10 +199,19 @@
 
 FMT_BEGIN_NAMESPACE
 
-// An implementation of declval for pre-C++11 compilers such as gcc 4.
 namespace internal {
+
+// An implementation of declval for pre-C++11 compilers such as gcc 4.
 template <typename T>
 typename std::add_rvalue_reference<T>::type declval() FMT_NOEXCEPT;
+
+// Casts nonnegative integer to unsigned.
+template <typename Int>
+FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
+  FMT_ASSERT(value >= 0, "negative value");
+  return static_cast<typename std::make_unsigned<Int>::type>(value);
+}
+
 }
 
 /**
@@ -749,7 +758,7 @@ class basic_parse_context : private ErrorHandler {
 
   // Advances the begin iterator to ``it``.
   FMT_CONSTEXPR void advance_to(iterator it) {
-    format_str_.remove_prefix(it - begin());
+    format_str_.remove_prefix(internal::to_unsigned(it - begin()));
   }
 
   // Returns the next argument index.
@@ -1074,7 +1083,7 @@ class basic_format_args {
   format_arg do_get(size_type index) const {
     int64_t signed_types = static_cast<int64_t>(types_);
     if (signed_types < 0) {
-      uint64_t num_args = -signed_types;
+      uint64_t num_args = static_cast<uint64_t>(-signed_types);
       return index < num_args ? args_[index] : format_arg();
     }
     format_arg arg;
