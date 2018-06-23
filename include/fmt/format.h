@@ -3576,6 +3576,28 @@ struct format_to_n_result {
   std::size_t size;
 };
 
+template <typename OutputIt>
+using format_to_n_context = typename fmt::format_context_t<
+  fmt::internal::truncating_iterator<OutputIt>>::type;
+
+template <typename OutputIt>
+using format_to_n_args = fmt::basic_format_args<format_to_n_context<OutputIt>>;
+
+template <typename OutputIt, typename ...Args>
+inline format_arg_store<format_to_n_context<OutputIt>, Args...>
+    make_format_to_n_args(const Args & ... args) {
+  return format_arg_store<format_to_n_context<OutputIt>, Args...>(args...);
+}
+
+template <typename OutputIt, typename... Args>
+inline format_to_n_result<OutputIt> vformat_to_n(
+    OutputIt out, std::size_t n, string_view format_str,
+    format_to_n_args<OutputIt> args) {
+  typedef internal::truncating_iterator<OutputIt> It;
+  auto it = vformat_to(It(out, n), format_str, args);
+  return {it.base(), it.count()};
+}
+
 /**
  \rst
  Formats arguments, writes up to ``n`` characters of the result to the output
@@ -3586,10 +3608,8 @@ struct format_to_n_result {
 template <typename OutputIt, typename... Args>
 inline format_to_n_result<OutputIt> format_to_n(
     OutputIt out, std::size_t n, string_view format_str, const Args &... args) {
-  typedef internal::truncating_iterator<OutputIt> It;
-  auto it = vformat_to(It(out, n), format_str,
-      make_format_args<typename format_context_t<It>::type>(args...));
-  return {it.base(), it.count()};
+  return vformat_to_n(out, n, format_str,
+                      make_format_to_n_args<OutputIt>(args...));
 }
 template <typename OutputIt, typename... Args>
 inline format_to_n_result<OutputIt> format_to_n(
