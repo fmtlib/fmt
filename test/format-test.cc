@@ -233,6 +233,12 @@ TEST(FormatToTest, FormatToNonbackInsertIteratorWithSignAndNumericAlignment) {
   EXPECT_STREQ("+42", buffer);
 }
 
+TEST(FormatToTest, FormatToMemoryBuffer) {
+  fmt::basic_memory_buffer<char, 100> buffer;
+  fmt::format_to(buffer, "{}", "foo");
+  EXPECT_EQ("foo", to_string(buffer));
+}
+
 TEST(FormatterTest, Escape) {
   EXPECT_EQ("{", format("{{"));
   EXPECT_EQ("before {", format("before {{"));

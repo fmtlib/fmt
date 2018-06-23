@@ -3480,9 +3480,9 @@ std::wstring to_wstring(const T &value) {
   return str;
 }
 
-template <typename Char>
-std::basic_string<Char> to_string(const basic_memory_buffer<Char> &buffer) {
-  return std::basic_string<Char>(buffer.data(), buffer.size());
+template <typename Char, std::size_t SIZE>
+std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE> &buf) {
+  return std::basic_string<Char>(buf.data(), buf.size());
 }
 
 inline format_context::iterator vformat_to(
@@ -3497,15 +3497,17 @@ inline wformat_context::iterator vformat_to(
   return vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
-template <typename... Args>
+template <typename... Args, std::size_t SIZE = inline_buffer_size>
 inline format_context::iterator format_to(
-    memory_buffer &buf, string_view format_str, const Args & ... args) {
+    basic_memory_buffer<char, SIZE> &buf, string_view format_str,
+    const Args & ... args) {
   return vformat_to(buf, format_str, make_format_args(args...));
 }
 
-template <typename... Args>
+template <typename... Args, std::size_t SIZE = inline_buffer_size>
 inline wformat_context::iterator format_to(
-    wmemory_buffer &buf, wstring_view format_str, const Args & ... args) {
+    basic_memory_buffer<wchar_t, SIZE> &buf, wstring_view format_str,
+    const Args & ... args) {
   return vformat_to(buf, format_str, make_format_args<wformat_context>(args...));
 }
 
