@@ -3608,8 +3608,8 @@ inline format_to_n_result<OutputIt> vformat_to_n(
 template <typename OutputIt, typename... Args>
 inline format_to_n_result<OutputIt> format_to_n(
     OutputIt out, std::size_t n, string_view format_str, const Args &... args) {
-  return vformat_to_n(out, n, format_str,
-                      make_format_to_n_args<OutputIt>(args...));
+  return vformat_to_n<OutputIt>(
+    out, n, format_str, make_format_to_n_args<OutputIt>(args...));
 }
 template <typename OutputIt, typename... Args>
 inline format_to_n_result<OutputIt> format_to_n(
