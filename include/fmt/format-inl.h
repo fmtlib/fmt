@@ -86,9 +86,6 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
 # define FMT_SWPRINTF swprintf
 #endif // defined(_WIN32) && defined(__MINGW32__) && !defined(__NO_ISOCEXT)
 
-const char RESET_COLOR[] = "\x1b[0m";
-const wchar_t WRESET_COLOR[] = L"\x1b[0m"; 
-
 typedef void (*FormatFunc)(internal::buffer &, int, string_view);
 
 // Portable thread-safe version of strerror.
@@ -312,6 +309,9 @@ const int16_t basic_data<T>::POW10_EXPONENTS[] = {
     827,   853,   880,   907,   933,   960,   986,  1013,  1039,  1066
 };
 
+template <typename T> const char basic_data<T>::RESET_COLOR[] = "\x1b[0m";
+template <typename T> const wchar_t basic_data<T>::WRESET_COLOR[] = L"\x1b[0m";
+
 FMT_FUNC fp operator*(fp x, fp y) {
   // Multiply 32-bit parts of significands.
   uint64_t mask = (1ULL << 32) - 1;
@@ -505,7 +505,7 @@ FMT_FUNC void vprint_colored(color c, string_view format, format_args args) {
   escape[3] = static_cast<char>('0' + c);
   std::fputs(escape, stdout);
   vprint(format, args);
-  std::fputs(RESET_COLOR, stdout);
+  std::fputs(internal::data::RESET_COLOR, stdout);
 }
 
 FMT_FUNC void vprint_colored(color c, wstring_view format, wformat_args args) {
@@ -513,7 +513,7 @@ FMT_FUNC void vprint_colored(color c, wstring_view format, wformat_args args) {
   escape[3] = static_cast<wchar_t>('0' + c);
   std::fputws(escape, stdout);
   vprint(format, args);
-  std::fputws(WRESET_COLOR, stdout);
+  std::fputws(internal::data::WRESET_COLOR, stdout);
 }
 #else
 namespace internal {
@@ -526,20 +526,18 @@ FMT_CONSTEXPR void to_esc(uint8_t c, char out[], int offset) {
 
 FMT_FUNC void vprint_rgb(rgb fd, string_view format, format_args args) {
   char escape_fd[] = "\x1b[38;2;000;000;000m";
-  static FMT_CONSTEXPR_DECL const char RESET_COLOR[] = "\x1b[0m";
   internal::to_esc(fd.r, escape_fd, 7);
   internal::to_esc(fd.g, escape_fd, 11);
   internal::to_esc(fd.b, escape_fd, 15);
 
   std::fputs(escape_fd, stdout);
   vprint(format, args);
-  std::fputs(RESET_COLOR, stdout);
+  std::fputs(internal::data::RESET_COLOR, stdout);
 }
 
 FMT_FUNC void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
   char escape_fd[] = "\x1b[38;2;000;000;000m"; // foreground color
   char escape_bg[] = "\x1b[48;2;000;000;000m"; // background color
-  static FMT_CONSTEXPR_DECL const char RESET_COLOR[] = "\x1b[0m";
   internal::to_esc(fd.r, escape_fd, 7);
   internal::to_esc(fd.g, escape_fd, 11);
   internal::to_esc(fd.b, escape_fd, 15);
@@ -551,7 +549,7 @@ FMT_FUNC void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
   std::fputs(escape_fd, stdout);
   std::fputs(escape_bg, stdout);
   vprint(format, args);
-  std::fputs(RESET_COLOR, stdout);
+  std::fputs(internal::data::RESET_COLOR, stdout);
 }
 #endif
 
