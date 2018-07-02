@@ -32,7 +32,7 @@ Features
 * Safe `printf implementation
   <http://fmtlib.net/latest/api.html#printf-formatting-functions>`_ including
   the POSIX extension for positional arguments.
-* Support for user-defined types.
+* Support for user-defined types (using ostream.h).
 * High speed: performance of the format API is close to that of glibc's `printf
   <http://en.cppreference.com/w/cpp/io/c/fprintf>`_ and better than the
   performance of IOStreams. See `Speed tests`_ and
