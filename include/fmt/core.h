@@ -1112,7 +1112,7 @@ class basic_format_args {
    */
   template <typename... Args>
   basic_format_args(const format_arg_store<Context, Args...> &store)
-  : types_(store.TYPES) {
+  : types_(static_cast<unsigned long long>(store.TYPES)) {
     set_data(store.data_);
   }
 
