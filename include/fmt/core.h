@@ -948,10 +948,10 @@ struct get_type {
 };
 
 template <typename Context>
-FMT_CONSTEXPR uint64_t get_types() { return 0; }
+FMT_CONSTEXPR unsigned long long get_types() { return 0; }
 
 template <typename Context, typename Arg, typename... Args>
-FMT_CONSTEXPR uint64_t get_types() {
+FMT_CONSTEXPR unsigned long long get_types() {
   return get_type<Context, Arg>::value | (get_types<Context, Args...>() << 4);
 }
 
@@ -995,27 +995,32 @@ class format_arg_store {
     internal::value<Context>, basic_format_arg<Context>>::type value_type;
 
   // If the arguments are not packed, add one more element to mark the end.
-  value_type data_[NUM_ARGS + (IS_PACKED && NUM_ARGS != 0 ? 0 : 1)];
+  static const size_t DATA_SIZE =
+          NUM_ARGS + (IS_PACKED && NUM_ARGS != 0 ? 0 : 1);
+  value_type data_[DATA_SIZE];
 
   friend class basic_format_args<Context>;
 
-  static FMT_CONSTEXPR int64_t get_types() {
+  static FMT_CONSTEXPR long long get_types() {
     return IS_PACKED ?
-      static_cast<int64_t>(internal::get_types<Context, Args...>()) :
-      -static_cast<int64_t>(NUM_ARGS);
+      static_cast<long long>(internal::get_types<Context, Args...>()) :
+      -static_cast<long long>(NUM_ARGS);
   }
 
  public:
 #if FMT_USE_CONSTEXPR
-  static constexpr int64_t TYPES = get_types();
+  static constexpr long long TYPES = get_types();
 #else
-  static const int64_t TYPES;
+  static const long long TYPES;
 #endif
 
-#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 405
-  // Workaround an array initialization bug in gcc 4.5 and earlier.
+#if (FMT_GCC_VERSION && FMT_GCC_VERSION <= 405) || \
+    (FMT_MSC_VER && FMT_MSC_VER <= 1800)
+  // Workaround array initialization issues in gcc <= 4.5 and MSVC <= 2013.
   format_arg_store(const Args &... args) {
-    data_ = {internal::make_arg<IS_PACKED, Context>(args)...};
+    value_type init[DATA_SIZE] =
+      {internal::make_arg<IS_PACKED, Context>(args)...};
+    std::memcpy(data_, init, sizeof(init));
   }
 #else
   format_arg_store(const Args &... args)
@@ -1025,7 +1030,7 @@ class format_arg_store {
 
 #if !FMT_USE_CONSTEXPR
 template <typename Context, typename ...Args>
-const int64_t format_arg_store<Context, Args...>::TYPES = get_types();
+const long long format_arg_store<Context, Args...>::TYPES = get_types();
 #endif
 
 /**
@@ -1057,7 +1062,7 @@ class basic_format_args {
  private:
   // To reduce compiled code size per formatting function call, types of first
   // max_packed_args arguments are passed in the types_ field.
-  uint64_t types_;
+  unsigned long long types_;
   union {
     // If the number of arguments is less than max_packed_args, the argument
     // values are stored in values_, otherwise they are stored in args_.
@@ -1070,7 +1075,7 @@ class basic_format_args {
 
   typename internal::type type(unsigned index) const {
     unsigned shift = index * 4;
-    uint64_t mask = 0xf;
+    unsigned long long mask = 0xf;
     return static_cast<typename internal::type>(
       (types_ & (mask << shift)) >> shift);
   }
@@ -1081,9 +1086,9 @@ class basic_format_args {
   void set_data(const format_arg *args) { args_ = args; }
 
   format_arg do_get(size_type index) const {
-    int64_t signed_types = static_cast<int64_t>(types_);
+    long long signed_types = static_cast<long long>(types_);
     if (signed_types < 0) {
-      uint64_t num_args = static_cast<uint64_t>(-signed_types);
+      unsigned long long num_args = static_cast<unsigned long long>(-signed_types);
       return index < num_args ? args_[index] : format_arg();
     }
     format_arg arg;
@@ -1119,10 +1124,10 @@ class basic_format_args {
   }
 
   unsigned max_size() const {
-    int64_t signed_types = static_cast<int64_t>(types_);
+    long long signed_types = static_cast<long long>(types_);
     return static_cast<unsigned>(
         signed_types < 0 ?
-        -signed_types : static_cast<int64_t>(internal::max_packed_args));
+        -signed_types : static_cast<long long>(internal::max_packed_args));
   }
 };
 

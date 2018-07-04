@@ -1293,28 +1293,6 @@ struct align_spec : empty_spec {
 // Format specifiers.
 template <typename Char>
 class basic_format_specs : public align_spec {
- private:
-  template <typename FillChar>
-  typename std::enable_if<std::is_same<FillChar, Char>::value ||
-                          std::is_same<FillChar, char>::value, void>::type
-      set(fill_spec<FillChar> fill) {
-    fill_ = fill.value();
-  }
-
-  void set(width_spec width) {
-    width_ = width.value();
-  }
-
-  void set(type_spec type) {
-    type_ = type.value();
-  }
-
-  template <typename Spec, typename... Specs>
-  void set(Spec spec, Specs... tail) {
-    set(spec);
-    set(tail...);
-  }
-
  public:
   unsigned flags_;
   int precision_;
@@ -1323,12 +1301,6 @@ class basic_format_specs : public align_spec {
   FMT_CONSTEXPR basic_format_specs(
       unsigned width = 0, char type = 0, wchar_t fill = ' ')
   : align_spec(width, fill), flags_(0), precision_(-1), type_(type) {}
-
-  template <typename... FormatSpecs>
-  explicit basic_format_specs(FormatSpecs... specs)
-    : align_spec(0, ' '), flags_(0), precision_(-1), type_(0) {
-    set(specs...);
-  }
 
   FMT_CONSTEXPR bool flag(unsigned f) const { return (flags_ & f) != 0; }
   FMT_CONSTEXPR int precision() const { return precision_; }
@@ -1576,7 +1548,18 @@ class arg_formatter_base {
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, iterator>::type
       operator()(T value) {
-    writer_.write_int(value, specs_);
+    // MSVC2013 fails to compile separate overloads for bool and char_type so
+    // use std::is_same instead.
+    if (std::is_same<T, bool>::value) {
+      if (specs_.type_)
+        return (*this)(value ? 1 : 0);
+      write(value);
+    } else if (std::is_same<T, char_type>::value) {
+      internal::handle_char_specs(
+        specs_, char_spec_handler(*this, static_cast<char_type>(value)));
+    } else {
+      writer_.write_int(value, specs_);
+    }
     return out();
   }
 
@@ -1584,13 +1567,6 @@ class arg_formatter_base {
   typename std::enable_if<std::is_floating_point<T>::value, iterator>::type
       operator()(T value) {
     writer_.write_double(value, specs_);
-    return out();
-  }
-
-  iterator operator()(bool value) {
-    if (specs_.type_)
-      return (*this)(value ? 1 : 0);
-    write(value);
     return out();
   }
 
@@ -1604,11 +1580,6 @@ class arg_formatter_base {
     void on_int() { formatter.writer_.write_int(value, formatter.specs_); }
     void on_char() { formatter.write_char(value); }
   };
-
-  iterator operator()(char_type value) {
-    internal::handle_char_specs(specs_, char_spec_handler(*this, value));
-    return out();
-  }
 
   struct cstring_spec_handler : internal::error_handler {
     arg_formatter_base &formatter;

@@ -252,23 +252,33 @@ class printf_arg_formatter:
 
   using base::operator();
 
-  /** Formats an argument of type ``bool``. */
-  iterator operator()(bool value) {
-    format_specs &fmt_spec = this->spec();
-    if (fmt_spec.type_ != 's')
-      return (*this)(value ? 1 : 0);
-    fmt_spec.type_ = 0;
-    this->write(value);
+  template <typename T>
+  typename std::enable_if<std::is_integral<T>::value, iterator>::type
+      operator()(T value) {
+    // MSVC2013 fails to compile separate overloads for bool and char_type so
+    // use std::is_same instead.
+    if (std::is_same<T, bool>::value) {
+      format_specs &fmt_spec = this->spec();
+      if (fmt_spec.type_ != 's')
+        return base::operator()(value ? 1 : 0);
+      fmt_spec.type_ = 0;
+      this->write(value);
+    } else if (std::is_same<T, char_type>::value) {
+      format_specs &fmt_spec = this->spec();
+      if (fmt_spec.type_ && fmt_spec.type_ != 'c')
+        return (*this)(static_cast<int>(value));
+      fmt_spec.flags_ = 0;
+      fmt_spec.align_ = ALIGN_RIGHT;
+      return base::operator()(value);
+    } else {
+      return base::operator()(value);
+    }
     return this->out();
   }
 
-  /** Formats a character. */
-  iterator operator()(char_type value) {
-    format_specs &fmt_spec = this->spec();
-    if (fmt_spec.type_ && fmt_spec.type_ != 'c')
-      return (*this)(static_cast<int>(value));
-    fmt_spec.flags_ = 0;
-    fmt_spec.align_ = ALIGN_RIGHT;
+  template <typename T>
+  typename std::enable_if<std::is_floating_point<T>::value, iterator>::type
+      operator()(T value) {
     return base::operator()(value);
   }
 
