@@ -64,6 +64,7 @@ template <typename T>
 struct ConvertToIntImpl<T, true> {
   // Convert to int only if T doesn't have an overloaded operator<<.
   enum {
+#pragma warning(suppress: 4244)
     value = sizeof(convert(get<DummyStream>() << get<T>())) == sizeof(No)
   };
 };
