@@ -86,8 +86,8 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
 # define FMT_SWPRINTF swprintf
 #endif // defined(_WIN32) && defined(__MINGW32__) && !defined(__NO_ISOCEXT)
 
-const char RESET_COLOR[] = "\x1b[0m";
-const wchar_t WRESET_COLOR[] = L"\x1b[0m"; 
+static FMT_CONSTEXPR_DECL const char RESET_COLOR[] = "\x1b[0m";
+static FMT_CONSTEXPR_DECL const wchar_t WRESET_COLOR[] = L"\x1b[0m"; 
 
 typedef void (*FormatFunc)(internal::buffer &, int, string_view);
 
@@ -526,7 +526,6 @@ FMT_CONSTEXPR void to_esc(uint8_t c, char out[], int offset) {
 
 FMT_FUNC void vprint_rgb(rgb fd, string_view format, format_args args) {
   char escape_fd[] = "\x1b[38;2;000;000;000m";
-  static FMT_CONSTEXPR_DECL const char RESET_COLOR[] = "\x1b[0m";
   internal::to_esc(fd.r, escape_fd, 7);
   internal::to_esc(fd.g, escape_fd, 11);
   internal::to_esc(fd.b, escape_fd, 15);
@@ -539,7 +538,6 @@ FMT_FUNC void vprint_rgb(rgb fd, string_view format, format_args args) {
 FMT_FUNC void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
   char escape_fd[] = "\x1b[38;2;000;000;000m"; // foreground color
   char escape_bg[] = "\x1b[48;2;000;000;000m"; // background color
-  static FMT_CONSTEXPR_DECL const char RESET_COLOR[] = "\x1b[0m";
   internal::to_esc(fd.r, escape_fd, 7);
   internal::to_esc(fd.g, escape_fd, 11);
   internal::to_esc(fd.b, escape_fd, 15);
