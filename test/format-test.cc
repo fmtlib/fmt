@@ -1122,7 +1122,8 @@ class Answer {};
 FMT_BEGIN_NAMESPACE
 template <>
 struct formatter<Answer> : formatter<int> {
-  auto format(Answer, fmt::format_context &ctx) -> decltype(ctx.out()) {
+  template <typename FormatContext>
+  auto format(Answer, FormatContext &ctx) -> decltype(ctx.out()) {
     return formatter<int>::format(42, ctx);
   }
 };
@@ -1131,6 +1132,13 @@ FMT_END_NAMESPACE
 TEST(FormatterTest, CustomFormat) {
   EXPECT_EQ("42", format("{0}", Answer()));
   EXPECT_EQ("0042", format("{:04}", Answer()));
+}
+
+TEST(FormatterTest, CustomFormatTo) {
+  char buf[10] = {};
+  auto end = fmt::format_to(buf, "{}", Answer());
+  EXPECT_EQ(end, buf + 2);
+  EXPECT_STREQ(buf, "42");
 }
 
 TEST(FormatterTest, WideFormatString) {
