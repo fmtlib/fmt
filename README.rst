@@ -81,7 +81,7 @@ Format strings can be checked at compile time:
 
     // test.cc
     #include <fmt/format.h>
-    std::string s = fmt::format(fmt("{2}"), 42);
+    std::string s = format(fmt("{2}"), 42);
 
 .. code::
 

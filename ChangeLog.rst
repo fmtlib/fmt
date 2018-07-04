@@ -1,3 +1,84 @@
+5.1.0 - TBD
+-----------
+
+* Added experimental support for RGB color output enabled with
+  the ``FMT_EXTENDED_COLORS`` macro:
+
+  .. code:: c++
+
+     #define FMT_EXTENDED_COLORS
+     #define FMT_HEADER_ONLY // or compile fmt with FMT_EXTENDED_COLORS defined
+     #include <fmt/format.h>
+
+     fmt::print(fmt::color::steel_blue, "Some beautiful text");
+
+  The old API (the ``print_colored`` and ``vprint_colored`` functions and the
+  ``color`` enum) is now deprecated.
+  (`#762 <https://github.com/fmtlib/fmt/issues/762>`_
+  `#767 <https://github.com/fmtlib/fmt/pull/767>`_).
+  Thanks `@Remotion (Remo) <https://github.com/Remotion>`_.
+
+* Added quotes to strings in ranges and tuples
+  (`#766 <https://github.com/fmtlib/fmt/pull/766>`_).
+  Thanks `@Remotion (Remo) <https://github.com/Remotion>`_.
+
+* Made ``format_to`` work with ``basic_memory_buffer``
+  (`#776 <https://github.com/fmtlib/fmt/issues/776>`_).
+
+* Added ``vformat_to_n`` and ``wchar_t`` overload of ``format_to_n``
+  (`#764 <https://github.com/fmtlib/fmt/issues/764>`_,
+  `#769 <https://github.com/fmtlib/fmt/issues/769>`_).
+
+* Made ``is_range`` and ``is_tuple_like`` part of public (experimental) API
+  to allow specialization for user-defined types
+  (`#751 <https://github.com/fmtlib/fmt/issues/751>`_,
+  `#759 <https://github.com/fmtlib/fmt/pull/759>`_).
+  Thanks `@drrlvn (Dror Levin) <https://github.com/drrlvn>`_.
+
+* Added more compilers to continuous integration and increased ``FMT_PEDANTIC``
+  warning levels
+  (`#736 <https://github.com/fmtlib/fmt/pull/736>`_).
+  Thanks `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_.
+
+* Fixed compilation with MSVC 2013.
+
+* Fixed handling of user-defined types in ``format_to``
+  (`#793 <https://github.com/fmtlib/fmt/issues/793>`_).
+
+* Forced linking of inline ``vformat`` functions into the library
+  (`#795 <https://github.com/fmtlib/fmt/issues/795>`_).
+
+* Fixed incorrect call to on_align in ``'{:}='``
+  (`#750 <https://github.com/fmtlib/fmt/issues/750>`_).
+
+* Fixed floating-point formatting to a non-back_insert_iterator with sign &
+  numeric alignment specified
+  (`#756 <https://github.com/fmtlib/fmt/issues/756>`_).
+
+* Fixed formatting to an array with ``format_to_n``
+  (`#778 <https://github.com/fmtlib/fmt/issues/778>`_).
+
+* Fixed formatting of more than 15 named arguments
+  (`#754 <https://github.com/fmtlib/fmt/issues/754>`_).
+
+* Fixed handling of compile-time strings when including ``fmt/ostream.h``.
+  (`#768 <https://github.com/fmtlib/fmt/issues/768>`_).
+
+* Fixed various compiler warnings and errors
+  (`#742 <https://github.com/fmtlib/fmt/issues/742>`_,
+  `#748 <https://github.com/fmtlib/fmt/issues/748>`_,
+  `#752 <https://github.com/fmtlib/fmt/issues/752>`_,
+  `#770 <https://github.com/fmtlib/fmt/issues/770>`_,
+  `#775 <https://github.com/fmtlib/fmt/pull/775>`_,
+  `#779 <https://github.com/fmtlib/fmt/issues/779>`_,
+  `#780 <https://github.com/fmtlib/fmt/pull/780>`_,
+  `#790 <https://github.com/fmtlib/fmt/pull/790>`_,
+  `#792 <https://github.com/fmtlib/fmt/pull/792>`_).
+  Thanks `@Remotion (Remo) <https://github.com/Remotion>`_,
+  `@gabime (Gabi Melman) <https://github.com/gabime>`_,
+  `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_ and
+  `@Dark-Passenger (Dhruv Paranjape) <https://github.com/Dark-Passenger>`_.
+
 5.0.0 - 2018-05-21
 ------------------
 
@@ -134,8 +215,8 @@
        vreport_error(format, fmt::make_format_args(args...));
      }
 
-* Added the ``make_printf_args`` function for capturing ``printf`` arguments (
-  `#687 <https://github.com/fmtlib/fmt/issues/687>`_,
+* Added the ``make_printf_args`` function for capturing ``printf`` arguments
+  (`#687 <https://github.com/fmtlib/fmt/issues/687>`_,
   `#694 <https://github.com/fmtlib/fmt/pull/694>`_).
   Thanks `@Kronuz (Germán Méndez Bravo) <https://github.com/Kronuz>`_.
 
@@ -207,8 +288,8 @@
 * Disallowed formatting of multibyte strings into a wide character target
   (`#606 <https://github.com/fmtlib/fmt/pull/606>`_).
 
-* Improved documentation (
-  `#515 <https://github.com/fmtlib/fmt/pull/515>`_,
+* Improved documentation
+  (`#515 <https://github.com/fmtlib/fmt/pull/515>`_,
   `#614 <https://github.com/fmtlib/fmt/issues/614>`_,
   `#617 <https://github.com/fmtlib/fmt/pull/617>`_,
   `#661 <https://github.com/fmtlib/fmt/pull/661>`_,
@@ -257,8 +338,8 @@
   (`#626 <https://github.com/fmtlib/fmt/pull/626>`_).
   Thanks `@aroig (Abdó Roig-Maranges) <https://github.com/aroig>`_.
 
-* Fixed various compiler warnings (
-  `#640 <https://github.com/fmtlib/fmt/pull/640>`_,
+* Fixed various compiler warnings
+  (`#640 <https://github.com/fmtlib/fmt/pull/640>`_,
   `#656 <https://github.com/fmtlib/fmt/pull/656>`_,
   `#679 <https://github.com/fmtlib/fmt/pull/679>`_,
   `#681 <https://github.com/fmtlib/fmt/pull/681>`_,
@@ -1184,8 +1265,8 @@ Fixes
   `@Jopie64 (Johan) <https://github.com/Jopie64>`_.
 
 * Fixed portability issues (mostly causing test failures) on ARM, ppc64, ppc64le,
-  s390x and SunOS 5.11 i386 (
-  `#138 <https://github.com/fmtlib/fmt/issues/138>`_,
+  s390x and SunOS 5.11 i386
+  (`#138 <https://github.com/fmtlib/fmt/issues/138>`_,
   `#179 <https://github.com/fmtlib/fmt/issues/179>`_,
   `#180 <https://github.com/fmtlib/fmt/issues/180>`_,
   `#202 <https://github.com/fmtlib/fmt/issues/202>`_,

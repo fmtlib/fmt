@@ -18,10 +18,6 @@ environment:
   MSVC_DEFAULT_OPTIONS: ON
   BUILD: msvc
 
-matrix:
-  allow_failures:
-    - image: Visual Studio 2013
-
 before_build:
  - mkdir build
  - cd build
