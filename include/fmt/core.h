@@ -336,8 +336,8 @@ class basic_buffer {
   std::size_t capacity_;
 
  protected:
-  basic_buffer(T *p = FMT_NULL, std::size_t buf_size = 0, std::size_t buf_capacity = 0)
-    FMT_NOEXCEPT: ptr_(p), size_(buf_size), capacity_(buf_capacity) {}
+  basic_buffer(T *p = FMT_NULL, std::size_t sz = 0, std::size_t cap = 0)
+    FMT_NOEXCEPT: ptr_(p), size_(sz), capacity_(cap) {}
 
   /** Sets the buffer data and capacity. */
   void set(T *buf_data, std::size_t buf_capacity) FMT_NOEXCEPT {

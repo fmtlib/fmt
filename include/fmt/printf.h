@@ -250,8 +250,6 @@ class printf_arg_formatter:
     : base(back_insert_range<internal::basic_buffer<char_type>>(buffer), spec),
       context_(ctx) {}
 
-  using base::operator();
-
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, iterator>::type
       operator()(T value) {
@@ -262,7 +260,7 @@ class printf_arg_formatter:
       if (fmt_spec.type_ != 's')
         return base::operator()(value ? 1 : 0);
       fmt_spec.type_ = 0;
-      this->write(value);
+      this->write(value != 0);
     } else if (std::is_same<T, char_type>::value) {
       format_specs &fmt_spec = this->spec();
       if (fmt_spec.type_ && fmt_spec.type_ != 'c')
@@ -302,6 +300,14 @@ class printf_arg_formatter:
     else
       this->write(L"(null)");
     return this->out();
+  }
+
+  iterator operator()(basic_string_view<char_type> value) {
+    return base::operator()(value);
+  }
+
+  iterator operator()(monostate value) {
+    return base::operator()(value);
   }
 
   /** Formats a pointer. */

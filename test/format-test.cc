@@ -1423,10 +1423,16 @@ class mock_arg_formatter:
     EXPECT_CALL(*this, call(42));
   }
 
-  using base::operator();
-
-  iterator operator()(int value) {
+  template <typename T>
+  typename std::enable_if<std::is_integral<T>::value, iterator>::type
+      operator()(T value) {
     call(value);
+    return base::operator()(value);
+  }
+
+  template <typename T>
+  typename std::enable_if<!std::is_integral<T>::value, iterator>::type
+      operator()(T value) {
     return base::operator()(value);
   }
 

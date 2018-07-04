@@ -169,7 +169,8 @@ FMT_END_NAMESPACE
 #endif
 
 // A workaround for gcc 4.4 that doesn't support union members with ctors.
-#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 404
+#if (FMT_GCC_VERSION && FMT_GCC_VERSION <= 404) || \
+    (FMT_MSC_VER && FMT_MSC_VER <= 1800)
 # define FMT_UNION struct
 #else
 # define FMT_UNION union
@@ -1553,7 +1554,7 @@ class arg_formatter_base {
     if (std::is_same<T, bool>::value) {
       if (specs_.type_)
         return (*this)(value ? 1 : 0);
-      write(value);
+      write(value != 0);
     } else if (std::is_same<T, char_type>::value) {
       internal::handle_char_specs(
         specs_, char_spec_handler(*this, static_cast<char_type>(value)));

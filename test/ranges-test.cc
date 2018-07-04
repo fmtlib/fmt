@@ -11,6 +11,10 @@
 
 #include "fmt/ranges.h"
 
+/// Check if  'if constexpr' is supported.
+#if (__cplusplus > 201402L) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
+
 #include "gtest.h"
 
 #include <vector>
@@ -45,10 +49,6 @@ TEST(RangesTest, FormatTuple) {
                                               "this is tuple", 'i'};
   EXPECT_EQ("(42, 3.14159, \"this is tuple\", 'i')", fmt::format("{}", tu1));
 }
-
-/// Check if  'if constexpr' is supported.
-#if (__cplusplus > 201402L) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 
 struct my_struct {
   int32_t i;
