@@ -8,6 +8,11 @@
 #include "fmt/format-inl.h"
 
 FMT_BEGIN_NAMESPACE
+namespace internal {
+// Force linking of inline functions into the library.
+std::string (*vformat_ref)(string_view, format_args) = vformat;
+std::wstring (*vformat_wref)(wstring_view, wformat_args) = vformat;
+}
 
 template struct internal::basic_data<void>;
 
