@@ -73,11 +73,13 @@
   `#779 <https://github.com/fmtlib/fmt/issues/779>`_,
   `#780 <https://github.com/fmtlib/fmt/pull/780>`_,
   `#790 <https://github.com/fmtlib/fmt/pull/790>`_,
-  `#792 <https://github.com/fmtlib/fmt/pull/792>`_).
+  `#792 <https://github.com/fmtlib/fmt/pull/792>`_,
+  `#800 <https://github.com/fmtlib/fmt/pull/800>`_).
   Thanks `@Remotion (Remo) <https://github.com/Remotion>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
-  `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_ and
-  `@Dark-Passenger (Dhruv Paranjape) <https://github.com/Dark-Passenger>`_.
+  `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_,
+  `@Dark-Passenger (Dhruv Paranjape) <https://github.com/Dark-Passenger>`_, and
+  `@0x8000-0000 (Sign Bit) <https://github.com/0x8000-0000>`_.
 
 5.0.0 - 2018-05-21
 ------------------
