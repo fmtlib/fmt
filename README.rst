@@ -85,15 +85,15 @@ Format strings can be checked at compile time:
 
 .. code::
 
-    $ g++ -Iinclude test.cc -std=c++14
+    $ c++ -Iinclude -std=c++14 test.cc
     ...
-    test.cc:2:22: note: in instantiation of function template specialization 'fmt::format<S, int>' requested here
-    std::string s = fmt::format(fmt("{2}"), 42);
-                         ^
-    include/fmt/core.h:749:19: note: non-constexpr function 'on_error' cannot be used in a constant expression
+    test.cc:3:17: note: in instantiation of function template specialization 'fmt::v5::format<S, int>' requested here
+    std::string s = format(fmt("{2}"), 42);
+                    ^
+    include/fmt/core.h:778:19: note: non-constexpr function 'on_error' cannot be used in a constant expression
         ErrorHandler::on_error(message);
                       ^
-    include/fmt/format.h:2081:16: note: in call to '&checker.context_->on_error(&"argument index out of range"[0])'
+    include/fmt/format.h:2226:16: note: in call to '&checker.context_->on_error(&"argument index out of range"[0])'
           context_.on_error("argument index out of range");
                    ^
 
