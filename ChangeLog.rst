@@ -1,5 +1,5 @@
-5.1.0 - TBD
------------
+5.1.0 - 2018-07-05
+------------------
 
 * Added experimental support for RGB color output enabled with
   the ``FMT_EXTENDED_COLORS`` macro:
