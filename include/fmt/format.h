@@ -737,7 +737,7 @@ class null_terminating_iterator {
   FMT_CONSTEXPR explicit null_terminating_iterator(const Range &r)
     : ptr_(r.begin()), end_(r.end()) {}
 
-  null_terminating_iterator &operator=(const Char *ptr) {
+  FMT_CONSTEXPR null_terminating_iterator &operator=(const Char *ptr) {
     assert(ptr <= end_);
     ptr_ = ptr;
     return *this;
@@ -2138,25 +2138,28 @@ struct id_adapter {
   Handler &handler;
 };
 
-template <typename Iterator, typename Handler>
-FMT_CONSTEXPR void parse_format_string(Iterator it, Handler &&handler) {
-  typedef typename std::iterator_traits<Iterator>::value_type char_type;
-  auto start = it;
-  while (*it) {
-    char_type ch = *it++;
+template <typename Char, typename Handler>
+FMT_CONSTEXPR void parse_format_string(
+        basic_string_view<Char> format_str, Handler &&handler) {
+  auto begin = format_str.data();
+  auto end = begin + format_str.size();
+  auto p = begin;
+  while (p != end) {
+    Char ch = *p++;
     if (ch != '{' && ch != '}') continue;
-    if (*it == ch) {
-      handler.on_text(start, it);
-      start = ++it;
+    if (p != end && *p == ch) {
+      handler.on_text(begin, p);
+      begin = ++p;
       continue;
     }
     if (ch == '}') {
       handler.on_error("unmatched '}' in format string");
       return;
     }
-    handler.on_text(start, it - 1);
+    handler.on_text(begin, p - 1);
 
-    it = parse_arg_id(it, id_adapter<Handler, char_type>(handler));
+    internal::null_terminating_iterator<Char> it(p, end);
+    it = parse_arg_id(it, id_adapter<Handler, Char>(handler));
     if (*it == '}') {
       handler.on_replacement_field(it);
     } else if (*it == ':') {
@@ -2170,10 +2173,11 @@ FMT_CONSTEXPR void parse_format_string(Iterator it, Handler &&handler) {
       handler.on_error("missing '}' in format string");
       return;
     }
+    p = pointer_from(it);
 
-    start = ++it;
+    begin = ++p;
   }
-  handler.on_text(start, it);
+  handler.on_text(begin, p);
 }
 
 template <typename T, typename ParseContext>
@@ -2192,6 +2196,8 @@ class format_string_checker {
     : arg_id_(-1), context_(format_str, eh),
       parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 
+  typedef internal::null_terminating_iterator<Char> iterator;
+
   FMT_CONSTEXPR void on_text(const Char *, const Char *) {}
 
   FMT_CONSTEXPR void on_arg_id() {
@@ -2205,12 +2211,12 @@ class format_string_checker {
   }
   FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) {}
 
-  FMT_CONSTEXPR void on_replacement_field(const Char *) {}
+  FMT_CONSTEXPR void on_replacement_field(iterator) {}
 
-  FMT_CONSTEXPR const Char *on_format_specs(const Char *s) {
-    context_.advance_to(s);
-    return to_unsigned(arg_id_) < NUM_ARGS ?
-          parse_funcs_[arg_id_](context_) : s;
+  FMT_CONSTEXPR const Char *on_format_specs(iterator it) {
+    auto p = pointer_from(it);
+    context_.advance_to(p);
+    return to_unsigned(arg_id_) < NUM_ARGS ? parse_funcs_[arg_id_](context_) : p;
   }
 
   FMT_CONSTEXPR void on_error(const char *message) {
@@ -2238,7 +2244,7 @@ template <typename Char, typename ErrorHandler, typename... Args>
 FMT_CONSTEXPR bool check_format_string(
     basic_string_view<Char> s, ErrorHandler eh = ErrorHandler()) {
   format_string_checker<Char, ErrorHandler, Args...> checker(s, eh);
-  parse_format_string(s.begin(), checker);
+  parse_format_string(s, checker);
   return true;
 }
 
@@ -3297,7 +3303,7 @@ struct format_handler : internal::error_handler {
                  basic_format_args<Context> format_args)
     : context(r.begin(), str, format_args) {}
 
-  void on_text(iterator begin, iterator end) {
+  void on_text(const Char *begin, const Char *end) {
     auto size = internal::to_unsigned(end - begin);
     auto out = context.out();
     auto &&it = internal::reserve(out, size);
@@ -3348,9 +3354,8 @@ template <typename ArgFormatter, typename Char, typename Context>
 typename Context::iterator vformat_to(typename ArgFormatter::range out,
                                       basic_string_view<Char> format_str,
                                       basic_format_args<Context> args) {
-  typedef internal::null_terminating_iterator<Char> iterator;
   format_handler<ArgFormatter, Char, Context> h(out, format_str, args);
-  parse_format_string(iterator(format_str.begin(), format_str.end()), h);
+  parse_format_string(format_str, h);
   return h.context.out();
 }
 

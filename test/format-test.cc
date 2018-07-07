@@ -1760,16 +1760,18 @@ struct test_format_string_handler {
   template <typename T>
   FMT_CONSTEXPR void on_arg_id(T) {}
 
-  FMT_CONSTEXPR void on_replacement_field(const char *) {}
+  template <typename Iterator>
+  FMT_CONSTEXPR void on_replacement_field(Iterator) {}
 
-  FMT_CONSTEXPR const char *on_format_specs(const char *s) { return s; }
+  template <typename Iterator>
+  FMT_CONSTEXPR Iterator on_format_specs(Iterator it) { return it; }
 
   FMT_CONSTEXPR void on_error(const char *) { error = true; }
 
   bool error = false;
 };
 
-FMT_CONSTEXPR bool parse_string(const char *s) {
+FMT_CONSTEXPR bool parse_string(fmt::string_view s) {
   test_format_string_handler h;
   fmt::internal::parse_format_string(s, h);
   return !h.error;
