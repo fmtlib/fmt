@@ -71,16 +71,14 @@
 
 #ifndef FMT_OVERRIDE
 # if FMT_HAS_FEATURE(cxx_override) || \
-     (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
-     FMT_MSC_VER >= 1900
+     (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900
 #  define FMT_OVERRIDE override
 # else
 #  define FMT_OVERRIDE
 # endif
 #endif
 
-#if FMT_HAS_FEATURE(cxx_explicit_conversions) || \
-    FMT_MSC_VER >= 1800
+#if FMT_HAS_FEATURE(cxx_explicit_conversions) || FMT_MSC_VER >= 1800
 # define FMT_EXPLICIT explicit
 #else
 # define FMT_EXPLICIT
@@ -88,8 +86,7 @@
 
 #ifndef FMT_NULL
 # if FMT_HAS_FEATURE(cxx_nullptr) || \
-   (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
-   FMT_MSC_VER >= 1600
+   (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1600
 #  define FMT_NULL nullptr
 #  define FMT_USE_NULLPTR 1
 # else
@@ -123,8 +120,7 @@
 #endif
 
 #if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
-    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || \
-    FMT_MSC_VER >= 1900
+    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900
 # define FMT_DETECTED_NOEXCEPT noexcept
 #else
 # define FMT_DETECTED_NOEXCEPT throw()
@@ -198,7 +194,6 @@
 #endif
 
 FMT_BEGIN_NAMESPACE
-
 namespace internal {
 
 // An implementation of declval for pre-C++11 compilers such as gcc 4.
@@ -212,7 +207,14 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 
+// A constexpr std::char_traits::length replacement for pre-C++17.
+template <typename Char>
+FMT_CONSTEXPR size_t length(const Char *s) {
+  const Char *start = s;
+  while (*s) ++s;
+  return s - start;
 }
+}  // namespace internal
 
 /**
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
@@ -255,8 +257,8 @@ class basic_string_view {
     the size with ``std::char_traits<Char>::length``.
     \endrst
    */
-  basic_string_view(const Char *s)
-    : data_(s), size_(std::char_traits<Char>::length(s)) {}
+  FMT_CONSTEXPR basic_string_view(const Char *s)
+    : data_(s), size_(internal::length(s)) {}
 
   /** Constructs a string reference from a ``std::basic_string`` object. */
   template <typename Alloc>
@@ -268,7 +270,7 @@ class basic_string_view {
   : data_(s.data()), size_(s.size()) {}
 
   /** Returns a pointer to the string data. */
-  const Char *data() const { return data_; }
+  FMT_CONSTEXPR const Char *data() const { return data_; }
 
   /** Returns the string size. */
   FMT_CONSTEXPR size_t size() const { return size_; }
@@ -974,7 +976,7 @@ inline typename std::enable_if<!IS_PACKED, basic_format_arg<Context>>::type
     make_arg(const T &value) {
   return make_arg<Context>(value);
 }
-}
+}  // namespace internal
 
 /**
   \rst
@@ -1088,7 +1090,8 @@ class basic_format_args {
   format_arg do_get(size_type index) const {
     long long signed_types = static_cast<long long>(types_);
     if (signed_types < 0) {
-      unsigned long long num_args = static_cast<unsigned long long>(-signed_types);
+      unsigned long long num_args =
+          static_cast<unsigned long long>(-signed_types);
       return index < num_args ? args_[index] : format_arg();
     }
     format_arg arg;
