@@ -130,6 +130,25 @@ always be formatted in the same way. See ``formatter<tm>::parse`` in
 :file:`fmt/time.h` for an advanced example of how to parse the format string and
 customize the formatted output.
 
+You can also reuse existing formatters, for example::
+
+  enum color {red, green, blue};
+
+  template <>
+  struct fmt::formatter<color>: formatter<string_view> {
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    auto format(color c, FormatContext &ctx) {
+      string_view name = "unknown";
+      switch (c) {
+      case red:   name = "red"; break;
+      case green: name = "green"; break;
+      case blue:  name = "blue"; break;
+      }
+      return formatter<string_view>::format(name, ctx);
+    }
+  };
+
 This section shows how to define a custom format function for a user-defined
 type. The next section describes how to get ``fmt`` to use a conventional stream
 output ``operator<<`` when one is defined for a user-defined type.
