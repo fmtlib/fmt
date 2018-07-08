@@ -369,18 +369,18 @@ macOS Sierra, best of three) is shown in the following tables.
 ============= =============== ==================== ==================
 Method        Compile Time, s Executable size, KiB Stripped size, KiB
 ============= =============== ==================== ==================
-printf                    2.7                   29                 26
-printf+string            18.4                   29                 26
-IOStreams                34.6                   59                 55
-fmt                      22.0                   37                 34
-tinyformat               51.8                  103                 97
-Boost Format            120.5                  762                739
-Folly Format            158.7                  102                 87
+printf                    2.6                   29                 26
+printf+string            16.4                   29                 26
+IOStreams                31.1                   59                 55
+fmt                      19.0                   37                 34
+tinyformat               44.0                  103                 97
+Boost Format             91.9                  226                203
+Folly Format            115.7                  101                 88
 ============= =============== ==================== ==================
 
 As you can see, fmt has 60% less overhead in terms of resulting binary code
 size compared to IOStreams and comes pretty close to ``printf``. Boost Format
-has by far the largest overheads.
+and Folly Format have the largest overheads.
 
 ``printf+string`` is the same as ``printf`` but with extra ``<string>``
 include to measure the overhead of the latter.
@@ -390,13 +390,13 @@ include to measure the overhead of the latter.
 ============= =============== ==================== ==================
 Method        Compile Time, s Executable size, KiB Stripped size, KiB
 ============= =============== ==================== ==================
-printf                    2.4                   33                 30
-printf+string            18.5                   33                 30
-IOStreams                31.9                   56                 52
-fmt                      20.9                   56                 51
-tinyformat               38.9                   88                 82
-Boost Format             64.8                  366                304
-Folly Format            113.5                  442                428
+printf                    2.2                   33                 30
+printf+string            16.0                   33                 30
+IOStreams                28.3                   56                 52
+fmt                      18.2                   59                 50
+tinyformat               32.6                   88                 82
+Boost Format             54.1                  365                303
+Folly Format             79.9                  445                430
 ============= =============== ==================== ==================
 
 ``libc``, ``lib(std)c++`` and ``libfmt`` are all linked as shared
