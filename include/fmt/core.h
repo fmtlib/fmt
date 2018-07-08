@@ -212,14 +212,7 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 
-// A constexpr std::char_traits::length replacement for pre-C++17.
-template <typename Char>
-FMT_CONSTEXPR size_t length(const Char *s) {
-  const Char *start = s;
-  while (*s) ++s;
-  return s - start;
 }
-}  // namespace internal
 
 /**
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
@@ -262,8 +255,8 @@ class basic_string_view {
     the size with ``std::char_traits<Char>::length``.
     \endrst
    */
-  FMT_CONSTEXPR basic_string_view(const Char *s)
-    : data_(s), size_(internal::length(s)) {}
+  basic_string_view(const Char *s)
+    : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
   /** Constructs a string reference from a ``std::basic_string`` object. */
   template <typename Alloc>
@@ -275,7 +268,7 @@ class basic_string_view {
   : data_(s.data()), size_(s.size()) {}
 
   /** Returns a pointer to the string data. */
-  FMT_CONSTEXPR const Char *data() const { return data_; }
+  const Char *data() const { return data_; }
 
   /** Returns the string size. */
   FMT_CONSTEXPR size_t size() const { return size_; }
@@ -1095,8 +1088,7 @@ class basic_format_args {
   format_arg do_get(size_type index) const {
     long long signed_types = static_cast<long long>(types_);
     if (signed_types < 0) {
-      unsigned long long num_args =
-          static_cast<unsigned long long>(-signed_types);
+      unsigned long long num_args = static_cast<unsigned long long>(-signed_types);
       return index < num_args ? args_[index] : format_arg();
     }
     format_arg arg;
