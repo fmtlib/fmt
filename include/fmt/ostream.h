@@ -124,8 +124,7 @@ struct formatter<T, Char,
     basic_memory_buffer<Char> buffer;
     internal::format_value(buffer, value);
     basic_string_view<Char> str(buffer.data(), buffer.size());
-    formatter<basic_string_view<Char>, Char>::format(str, ctx);
-    return ctx.out();
+    return formatter<basic_string_view<Char>, Char>::format(str, ctx);
   }
 };
 

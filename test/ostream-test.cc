@@ -169,3 +169,25 @@ TEST(OStreamTest, ConstexprString) {
   EXPECT_EQ("42", format(fmt("{}"), std::string("42")));
 }
 #endif
+
+namespace fmt_test {
+struct ABC {};
+
+template <typename Output> Output &operator<<(Output &out, ABC) {
+  out << "ABC";
+  return out;
+}
+} // namespace fmt_test
+
+TEST(FormatTest, FormatToN) {
+  char buffer[4];
+  buffer[3] = 'x';
+  auto result = fmt::format_to_n(buffer, 3, "{}", fmt_test::ABC());
+  EXPECT_EQ(3u, result.size);
+  EXPECT_EQ(buffer + 3, result.out);
+  EXPECT_EQ("ABCx", fmt::string_view(buffer, 4));
+  result = fmt::format_to_n(buffer, 3, "x{}y", fmt_test::ABC());
+  EXPECT_EQ(5u, result.size);
+  EXPECT_EQ(buffer + 3, result.out);
+  EXPECT_EQ("xABx", fmt::string_view(buffer, 4));
+}
