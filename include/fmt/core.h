@@ -379,6 +379,11 @@ class basic_buffer {
     size_ = new_size;
   }
 
+  /** Clears this buffer. */
+  void clear() {
+    size_ = 0;
+  }
+
   /** Reserves space to store at least *capacity* elements. */
   void reserve(std::size_t new_capacity) {
     if (new_capacity > capacity_)
