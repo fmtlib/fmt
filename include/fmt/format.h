@@ -1476,7 +1476,6 @@ void arg_map<Context>::init(const basic_format_args<Context> &args) {
           break; // Do nothing.
       }
     }
-    return;
   }
   for (unsigned i = 0; ; ++i) {
     switch (args.args_[i].type_) {
