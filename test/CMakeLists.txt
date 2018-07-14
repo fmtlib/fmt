@@ -86,6 +86,7 @@ endfunction()
 
 add_fmt_test(assert-test)
 add_fmt_test(gtest-extra-test)
+add_fmt_test(folly-test)
 add_fmt_test(format-test)
 add_fmt_test(format-impl-test)
 add_fmt_test(ostream-test)
