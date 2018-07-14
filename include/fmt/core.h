@@ -1129,8 +1129,9 @@ class basic_format_args {
   /** Returns the argument at specified index. */
   format_arg get(size_type index) const {
     format_arg arg = do_get(index);
-    return arg.type_ == internal::named_arg_type ?
-          arg.value_.as_named_arg().template deserialize<Context>() : arg;
+    if (arg.type_ == internal::named_arg_type)
+      arg = arg.value_.as_named_arg().template deserialize<Context>();
+    return arg;
   }
 
   unsigned max_size() const {
