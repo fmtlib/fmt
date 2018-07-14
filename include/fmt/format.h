@@ -2137,25 +2137,62 @@ struct id_adapter {
   Handler &handler;
 };
 
-template <typename Char, typename Handler>
+template <bool IS_CONSTEXPR, class InputIt, class T>
+FMT_CONSTEXPR InputIt find(InputIt first, InputIt last, const T &value) {
+  for (; first != last; ++first) {
+    if (*first == value)
+      return first;
+  }
+  return last;
+}
+
+template <>
+inline const char *find<false, const char*, char>(
+    const char *first, const char *last, const char &value) {
+  auto result = static_cast<const char*>(
+        std::memchr(first, value, last - first));
+  return result ? result : last;
+}
+
+template <bool IS_CONSTEXPR, typename Char, typename Handler>
 FMT_CONSTEXPR void parse_format_string(
         basic_string_view<Char> format_str, Handler &&handler) {
+  struct writer {
+    FMT_CONSTEXPR void operator()(const Char *begin, const Char *end) {
+      for (;;) {
+        auto p = find<IS_CONSTEXPR>(begin, end, '}');
+        if (p == end) {
+          handler_.on_text(begin, end);
+          return;
+        }
+        ++p;
+        if (p == end || *p != '}') {
+          handler_.on_error("unmatched '}' in format string");
+          return;
+        }
+        handler_.on_text(begin, p);
+        begin = p + 1;
+      }
+    }
+    Handler &handler_;
+  } write{handler};
   auto begin = format_str.data();
   auto end = begin + format_str.size();
-  auto p = begin;
-  while (p != end) {
-    Char ch = *p++;
-    if (ch != '{' && ch != '}') continue;
-    if (p != end && *p == ch) {
-      handler.on_text(begin, p);
-      begin = ++p;
-      continue;
-    }
-    if (ch == '}') {
-      handler.on_error("unmatched '}' in format string");
+  for (;;) {
+    // Doing two passes with memchr (one for '{' and another for '}') is up to
+    // 2.5x faster than the naive one-pass implementation on long format strings.
+    auto p = find<IS_CONSTEXPR>(begin, end, '{');
+    if (p == end) {
+      write(begin, end);
       return;
     }
-    handler.on_text(begin, p - 1);
+    write(begin, p);
+    ++p;
+    if (p != end && *p == '{') {
+      handler.on_text(p, p + 1);
+      begin = p + 1;
+      continue;
+    }
 
     internal::null_terminating_iterator<Char> it(p, end);
     it = parse_arg_id(it, id_adapter<Handler, Char>(handler));
@@ -2172,11 +2209,8 @@ FMT_CONSTEXPR void parse_format_string(
       handler.on_error("missing '}' in format string");
       return;
     }
-    p = pointer_from(it);
-
-    begin = ++p;
+    begin = pointer_from(it) + 1;
   }
-  handler.on_text(begin, p);
 }
 
 template <typename T, typename ParseContext>
@@ -2243,7 +2277,7 @@ template <typename Char, typename ErrorHandler, typename... Args>
 FMT_CONSTEXPR bool check_format_string(
     basic_string_view<Char> s, ErrorHandler eh = ErrorHandler()) {
   format_string_checker<Char, ErrorHandler, Args...> checker(s, eh);
-  parse_format_string(s, checker);
+  parse_format_string<true>(s, checker);
   return true;
 }
 
@@ -3354,7 +3388,7 @@ typename Context::iterator vformat_to(typename ArgFormatter::range out,
                                       basic_string_view<Char> format_str,
                                       basic_format_args<Context> args) {
   format_handler<ArgFormatter, Char, Context> h(out, format_str, args);
-  parse_format_string(format_str, h);
+  internal::parse_format_string<false>(format_str, h);
   return h.context.out();
 }
 

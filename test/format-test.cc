@@ -1773,7 +1773,7 @@ struct test_format_string_handler {
 
 FMT_CONSTEXPR bool parse_string(fmt::string_view s) {
   test_format_string_handler h;
-  fmt::internal::parse_format_string(s, h);
+  fmt::internal::parse_format_string<true>(s, h);
   return !h.error;
 }
 
