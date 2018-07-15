@@ -1095,13 +1095,15 @@ class basic_format_args {
   void set_data(const format_arg *args) { args_ = args; }
 
   format_arg do_get(size_type index) const {
+    format_arg arg;
     long long signed_types = static_cast<long long>(types_);
     if (signed_types < 0) {
       unsigned long long num_args =
           static_cast<unsigned long long>(-signed_types);
-      return index < num_args ? args_[index] : format_arg();
+      if (index < num_args)
+        arg = args_[index];
+      return arg;;
     }
-    format_arg arg;
     if (index > internal::max_packed_args)
       return arg;
     arg.type_ = type(index);

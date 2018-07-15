@@ -1972,7 +1972,8 @@ FMT_CONSTEXPR Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
   do {
     c = *++it;
   } while (is_name_start(c) || ('0' <= c && c <= '9'));
-  handler(basic_string_view<char_type>(pointer_from(start), to_unsigned(it - start)));
+  handler(basic_string_view<char_type>(
+            pointer_from(start), to_unsigned(it - start)));
   return it;
 }
 
