@@ -1,12 +1,19 @@
-message(STATUS "CMake version: ${CMAKE_VERSION}")
-
 cmake_minimum_required(VERSION 3.1.0)
+
+# Use newer policies if available,
+# up to most recent tested version of CMake
+if(${CMAKE_VERSION} VERSION_LESS 3.11)
+    cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+else()
+    cmake_policy(VERSION 3.11)
+endif()
 
 # Determine if fmt is built as a subproject (using add_subdirectory)
 # or if it is the master project.
 set(MASTER_PROJECT OFF)
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(MASTER_PROJECT ON)
+  message(STATUS "CMake version: ${CMAKE_VERSION}")
 endif ()
 
 # Joins arguments and places the results in ${result_var}.
