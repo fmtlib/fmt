@@ -1102,7 +1102,7 @@ class basic_format_args {
           static_cast<unsigned long long>(-signed_types);
       if (index < num_args)
         arg = args_[index];
-      return arg;;
+      return arg;
     }
     if (index > internal::max_packed_args)
       return arg;
