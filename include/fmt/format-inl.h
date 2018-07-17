@@ -535,7 +535,35 @@ FMT_FUNC void vprint_rgb(rgb fd, string_view format, format_args args) {
   std::fputs(internal::data::RESET_COLOR, stdout);
 }
 
+FMT_FUNC void vprint_rgb(rgb fd, wstring_view format, wformat_args args) {
+  char escape_fd[] = "\x1b[38;2;000;000;000m";
+  internal::to_esc(fd.r, escape_fd, 7);
+  internal::to_esc(fd.g, escape_fd, 11);
+  internal::to_esc(fd.b, escape_fd, 15);
+
+  std::fputs(escape_fd, stdout);
+  vprint(format, args);
+  std::fputs(internal::data::RESET_COLOR, stdout);
+}
+
 FMT_FUNC void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
+  char escape_fd[] = "\x1b[38;2;000;000;000m"; // foreground color
+  char escape_bg[] = "\x1b[48;2;000;000;000m"; // background color
+  internal::to_esc(fd.r, escape_fd, 7);
+  internal::to_esc(fd.g, escape_fd, 11);
+  internal::to_esc(fd.b, escape_fd, 15);
+
+  internal::to_esc(bg.r, escape_bg, 7);
+  internal::to_esc(bg.g, escape_bg, 11);
+  internal::to_esc(bg.b, escape_bg, 15);
+
+  std::fputs(escape_fd, stdout);
+  std::fputs(escape_bg, stdout);
+  vprint(format, args);
+  std::fputs(internal::data::RESET_COLOR, stdout);
+}
+
+FMT_FUNC void vprint_rgb(rgb fd, rgb bg, wstring_view format, wformat_args args) {
   char escape_fd[] = "\x1b[38;2;000;000;000m"; // foreground color
   char escape_bg[] = "\x1b[48;2;000;000;000m"; // background color
   internal::to_esc(fd.r, escape_fd, 7);
