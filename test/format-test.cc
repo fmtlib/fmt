@@ -1085,13 +1085,24 @@ TEST(FormatterTest, FormatStdStringView) {
 }
 #endif
 
-struct ConvertibleToStringView {
+struct implicitly_convertible_to_string_view {
   operator fmt::string_view() const { return "foo"; }
 };
 
-TEST(FormatterTest, FormatConvertibleToStringView) {
-  EXPECT_EQ("foo", format("{}", ConvertibleToStringView()));
+TEST(FormatterTest, FormatImplicitlyConvertibleToStringView) {
+  EXPECT_EQ("foo", format("{}", implicitly_convertible_to_string_view()));
 }
+
+// std::is_constructible is broken in MSVC until version 2015.
+#if !FMT_MSC_VER || FMT_MSC_VER >= 1900
+struct explicitly_convertible_to_string_view {
+  explicit operator fmt::string_view() const { return "foo"; }
+};
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStringView) {
+  EXPECT_EQ("foo", format("{}", explicitly_convertible_to_string_view()));
+}
+#endif
 
 FMT_BEGIN_NAMESPACE
 template <>
