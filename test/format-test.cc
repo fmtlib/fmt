@@ -1102,6 +1102,18 @@ struct explicitly_convertible_to_string_view {
 TEST(FormatterTest, FormatExplicitlyConvertibleToStringView) {
   EXPECT_EQ("foo", format("{}", explicitly_convertible_to_string_view()));
 }
+
+struct explicitly_convertible_to_string_like {
+  template <
+      typename String,
+      typename = typename std::enable_if<
+        std::is_constructible<String, const char*, std::size_t>::value>::type>
+  explicit operator String() const { return String("foo", 3u); }
+};
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStringLike) {
+  EXPECT_EQ("foo", format("{}", explicitly_convertible_to_string_like()));
+}
 #endif
 
 FMT_BEGIN_NAMESPACE
