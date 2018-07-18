@@ -54,7 +54,7 @@
 # define FMT_MSC_VER 0
 #endif
 
-// Check if relaxed c++14 constexpr is supported.
+// Check if relaxed C++14 constexpr is supported.
 // GCC doesn't allow throw in constexpr until version 6 (bug 67371).
 #ifndef FMT_USE_CONSTEXPR
 # define FMT_USE_CONSTEXPR \
@@ -67,6 +67,16 @@
 #else
 # define FMT_CONSTEXPR inline
 # define FMT_CONSTEXPR_DECL
+#endif
+
+#ifndef FMT_USE_CONSTEXPR11
+# define FMT_USE_CONSTEXPR11 \
+    (FMT_MSC_VER >= 1900 || FMT_GCC_VERSION >= 406 || FMT_USE_CONSTEXPR)
+#endif
+#if FMT_USE_CONSTEXPR11
+# define FMT_CONSTEXPR11 constexpr
+#else
+# define FMT_CONSTEXPR11
 #endif
 
 #ifndef FMT_OVERRIDE
@@ -957,10 +967,10 @@ struct get_type {
 };
 
 template <typename Context>
-FMT_CONSTEXPR unsigned long long get_types() { return 0; }
+FMT_CONSTEXPR11 unsigned long long get_types() { return 0; }
 
 template <typename Context, typename Arg, typename... Args>
-FMT_CONSTEXPR unsigned long long get_types() {
+FMT_CONSTEXPR11 unsigned long long get_types() {
   return get_type<Context, Arg>::value | (get_types<Context, Args...>() << 4);
 }
 
@@ -1010,15 +1020,15 @@ class format_arg_store {
 
   friend class basic_format_args<Context>;
 
-  static FMT_CONSTEXPR long long get_types() {
+  static FMT_CONSTEXPR11 long long get_types() {
     return IS_PACKED ?
       static_cast<long long>(internal::get_types<Context, Args...>()) :
       -static_cast<long long>(NUM_ARGS);
   }
 
  public:
-#if FMT_USE_CONSTEXPR
-  static constexpr long long TYPES = get_types();
+#if FMT_USE_CONSTEXPR11
+  static FMT_CONSTEXPR11 long long TYPES = get_types();
 #else
   static const long long TYPES;
 #endif
@@ -1037,7 +1047,7 @@ class format_arg_store {
 #endif
 };
 
-#if !FMT_USE_CONSTEXPR
+#if !FMT_USE_CONSTEXPR11
 template <typename Context, typename ...Args>
 const long long format_arg_store<Context, Args...>::TYPES = get_types();
 #endif
