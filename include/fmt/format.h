@@ -3458,6 +3458,7 @@ auto join(const Range &range, wstring_view sep)
 /**
   \rst
   Converts *value* to ``std::string`` using the default format for type *T*.
+  It doesn't support user-defined types with custom formatters.
 
   **Example**::
 
