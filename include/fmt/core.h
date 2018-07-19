@@ -676,13 +676,13 @@ template <typename C, typename T, typename Char = typename C::char_type>
 inline typename std::enable_if<
     std::is_constructible<basic_string_view<Char>, T>::value,
     typed_value<C, string_type>>::type
-  make_value(const T &val) { return string_view(val); }
+  make_value(const T &val) { return basic_string_view<Char>(val); }
 
 template <typename C, typename T, typename Char = typename C::char_type>
 inline typename std::enable_if<
     !convert_to_int<T, Char>::value &&
     !std::is_convertible<T, basic_string_view<Char>>::value &&
-    !std::is_constructible<string_view, T>::value,
+    !std::is_constructible<basic_string_view<Char>, T>::value,
     // Implicit conversion to std::string is not handled here because it's
     // unsafe: https://github.com/fmtlib/fmt/issues/729
     typed_value<C, custom_type>>::type

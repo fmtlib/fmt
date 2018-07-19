@@ -1103,6 +1103,14 @@ TEST(FormatterTest, FormatExplicitlyConvertibleToStringView) {
   EXPECT_EQ("foo", format("{}", explicitly_convertible_to_string_view()));
 }
 
+struct explicitly_convertible_to_wstring_view {
+  explicit operator fmt::wstring_view() const { return L"foo"; }
+};
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToWStringView) {
+  EXPECT_EQ(L"foo", format(L"{}", explicitly_convertible_to_wstring_view()));
+}
+
 struct explicitly_convertible_to_string_like {
   template <
       typename String,
