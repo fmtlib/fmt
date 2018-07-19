@@ -1151,7 +1151,7 @@ class basic_format_args {
    \endrst
    */
   basic_format_args(const format_arg *args, size_type count)
-  : types_(-(int64_t)count) {
+  : types_(-static_cast<int64_t>(count)) {
     set_data(args);
   }
 
