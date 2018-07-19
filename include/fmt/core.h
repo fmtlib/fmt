@@ -1145,6 +1145,16 @@ class basic_format_args {
     set_data(store.data_);
   }
 
+  /**
+   \rst
+   Constructs a `basic_format_args` object from a dynamic set of arguments.
+   \endrst
+   */
+  basic_format_args(const format_arg *args, size_type count)
+  : types_(-(int64_t)count) {
+    set_data(args);
+  }
+
   /** Returns the argument at specified index. */
   format_arg get(size_type index) const {
     format_arg arg = do_get(index);
