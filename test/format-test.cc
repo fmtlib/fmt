@@ -1316,6 +1316,17 @@ TEST(FormatTest, Variadic) {
   EXPECT_EQ(L"abc1", format(L"{}c{}", L"ab", 1));
 }
 
+TEST(FormatTest, Dynamic) {
+  using ctx = fmt::format_context;
+  std::vector<fmt::basic_format_arg<ctx>> args;
+  args.emplace_back(fmt::internal::make_arg<ctx>(42));
+  args.emplace_back(fmt::internal::make_arg<ctx>("abc1"));
+  args.emplace_back(fmt::internal::make_arg<ctx>(1.2f));
+
+  std::string result = fmt::vformat("{} and {} and {}", fmt::basic_format_args<ctx>(args.data(), (unsigned)args.size()));
+  EXPECT_EQ("42 and abc1 and 1.2", result);
+}
+
 TEST(FormatTest, JoinArg) {
   using fmt::join;
   int v1[3] = { 1, 2, 3 };
