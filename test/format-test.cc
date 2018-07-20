@@ -1323,7 +1323,11 @@ TEST(FormatTest, Dynamic) {
   args.emplace_back(fmt::internal::make_arg<ctx>("abc1"));
   args.emplace_back(fmt::internal::make_arg<ctx>(1.2f));
 
-  std::string result = fmt::vformat("{} and {} and {}", fmt::basic_format_args<ctx>(args.data(), (unsigned)args.size()));
+  std::string result = fmt::vformat("{} and {} and {}",
+                                    fmt::basic_format_args<ctx>(
+                                        args.data(),
+                                        static_cast<unsigned>(args.size())));
+
   EXPECT_EQ("42 and abc1 and 1.2", result);
 }
 
