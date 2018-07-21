@@ -489,6 +489,37 @@ void basic_buffer<T>::append(const U *begin, const U *end) {
 }
 }  // namespace internal
 
+// A UTF-8 code unit type.
+struct char8_t {
+  char value;
+  FMT_CONSTEXPR explicit operator bool() const FMT_NOEXCEPT {
+    return value != 0;
+  }
+};
+
+// A UTF-8 string.
+class u8string_view : public basic_string_view<char8_t> {
+ private:
+   typedef basic_string_view<char8_t> base;
+
+ public:
+  using basic_string_view::basic_string_view;
+
+  u8string_view(const char *s)
+    : base(reinterpret_cast<const char8_t*>(s)) {}
+
+  u8string_view(const char *s, size_t count) FMT_NOEXCEPT
+    : base(reinterpret_cast<const char8_t*>(s), count) {}
+};
+
+#if FMT_USE_USER_DEFINED_LITERALS
+inline namespace literals {
+inline u8string_view operator"" _u(const char *s, std::size_t n) {
+  return u8string_view(s, n);
+}
+}
+#endif
+
 // A wrapper around std::locale used to reduce compile times since <locale>
 // is very heavy.
 class locale;
@@ -949,6 +980,9 @@ inline unsigned count_digits(uint64_t n) {
   }
 }
 #endif
+
+// Counts the number of code points in a UTF-8 string.
+FMT_API size_t count_code_points(u8string_view s);
 
 #if FMT_HAS_CPP_ATTRIBUTE(always_inline)
 # define FMT_ALWAYS_INLINE __attribute__((always_inline))
@@ -3514,7 +3548,8 @@ template <typename... Args, std::size_t SIZE = inline_buffer_size>
 inline wformat_context::iterator format_to(
     basic_memory_buffer<wchar_t, SIZE> &buf, wstring_view format_str,
     const Args & ... args) {
-  return vformat_to(buf, format_str, make_format_args<wformat_context>(args...));
+  return vformat_to(buf, format_str,
+                    make_format_args<wformat_context>(args...));
 }
 
 template <typename OutputIt, typename Char = char>
@@ -3573,7 +3608,8 @@ inline typename std::enable_if<
   is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
     format_to(std::back_insert_iterator<Container> out,
               wstring_view format_str, const Args & ... args) {
-  return vformat_to(out, format_str, make_format_args<wformat_context>(args...));
+  return vformat_to(out, format_str,
+                    make_format_args<wformat_context>(args...));
 }
 
 template <typename OutputIt>
@@ -3847,10 +3883,12 @@ inline void print(rgb fd, string_view format_str, const Args & ... args) {
   Formats a string and prints it to stdout using ANSI escape sequences to
   specify foreground color 'fd' and background color 'bg'.
   Example:
-    fmt::print(fmt::color::red, fmt::color::black, "Elapsed time: {0:.2f} seconds", 1.23);
+    fmt::print(fmt::color::red, fmt::color::black,
+               "Elapsed time: {0:.2f} seconds", 1.23);
  */
 template <typename... Args>
-inline void print(rgb fd, rgb bg, string_view format_str, const Args & ... args) {
+inline void print(rgb fd, rgb bg, string_view format_str,
+                  const Args & ... args) {
   vprint_rgb(fd, bg, format_str, make_format_args(args...));
 }
 #endif  // FMT_EXTENDED_COLORS

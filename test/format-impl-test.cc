@@ -118,9 +118,13 @@ TEST(FormatTest, FormatErrorCode) {
   }
 }
 
+TEST(FormatTest, CountCodePoints) {
+  EXPECT_EQ(4, fmt::internal::count_code_points(fmt::u8string_view("ёжик")));
+}
+
 TEST(ColorsTest, Colors) {
   EXPECT_WRITE(stdout, fmt::print(fmt::rgb(255,20,30), "rgb(255,20,30)"),
                "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
-  EXPECT_WRITE(stdout, fmt::print(fmt::color::blue,"blue"),
+  EXPECT_WRITE(stdout, fmt::print(fmt::color::blue, "blue"),
                "\x1b[38;2;000;000;255mblue\x1b[0m");
 }

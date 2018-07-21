@@ -1062,8 +1062,8 @@ const long long format_arg_store<Context, Args...>::TYPES = get_types();
 /**
   \rst
   Constructs an `~fmt::format_arg_store` object that contains references to
-  arguments and can be implicitly converted to `~fmt::format_args`. `Context` can
-  be omitted in which case it defaults to `~fmt::context`.
+  arguments and can be implicitly converted to `~fmt::format_args`. `Context`
+  can be omitted in which case it defaults to `~fmt::context`.
   \endrst
  */
 template <typename Context, typename ...Args>
@@ -1334,11 +1334,12 @@ inline void print(std::FILE *f, string_view format_str, const Args & ... args) {
   vprint(f, format_str, as);
 }
 /**
-  Prints formatted data to the file *f* which should be in wide-oriented mode set
-  via ``fwide(f, 1)`` or ``_setmode(_fileno(f), _O_U8TEXT)`` on Windows.
+  Prints formatted data to the file *f* which should be in wide-oriented mode
+  set via ``fwide(f, 1)`` or ``_setmode(_fileno(f), _O_U8TEXT)`` on Windows.
  */
 template <typename... Args>
-inline void print(std::FILE *f, wstring_view format_str, const Args & ... args) {
+inline void print(std::FILE *f, wstring_view format_str,
+                  const Args & ... args) {
   format_arg_store<wformat_context, Args...> as(args...);
   vprint(f, format_str, as);
 }

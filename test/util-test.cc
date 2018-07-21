@@ -868,7 +868,8 @@ TEST(UtilTest, IsEnumConvertibleToInt) {
 #endif
 
 TEST(UtilTest, ParseNonnegativeInt) {
-  if (std::numeric_limits<int>::max() != static_cast<int>(static_cast<unsigned>(1) << 31)) {
+  if (std::numeric_limits<int>::max() !=
+      static_cast<int>(static_cast<unsigned>(1) << 31)) {
     fmt::print("Skipping parse_nonnegative_int test\n");
     return;
   }
