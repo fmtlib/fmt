@@ -9,6 +9,7 @@
 #define FMT_CORE_H_
 
 #include <cassert>
+#include <cstdio>  // std::FILE
 #include <cstring>
 #include <iterator>
 #include <string>
@@ -203,6 +204,16 @@ namespace internal {
 // An implementation of declval for pre-C++11 compilers such as gcc 4.
 template <typename T>
 typename std::add_rvalue_reference<T>::type declval() FMT_NOEXCEPT;
+
+template <typename>
+struct result_of;
+
+template <typename F, typename... Args>
+struct result_of<F(Args...)> {
+  // A workaround for gcc 4.4 that doesn't allow F to be a reference.
+  typedef typename std::result_of<
+    typename std::remove_reference<F>::type(Args...)>::type type;
+};
 
 // Casts nonnegative integer to unsigned.
 template <typename Int>
@@ -692,16 +703,6 @@ enum { max_packed_args = 15 };
 
 template <typename Context>
 class arg_map;
-
-template <typename>
-struct result_of;
-
-template <typename F, typename... Args>
-struct result_of<F(Args...)> {
-  // A workaround for gcc 4.4 that doesn't allow F to be a reference.
-  typedef typename std::result_of<
-    typename std::remove_reference<F>::type(Args...)>::type type;
-};
 }  // namespace internal
 
 // A formatting argument. It is a trivially copyable/constructible type to
@@ -1320,10 +1321,9 @@ typename std::enable_if<
   is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
     vformat_to(std::back_insert_iterator<Container> out,
                string_view format_str, format_args args) {
-  auto& container = internal::get_container(out);
-  internal::container_buffer<Container> buf(container);
+  internal::container_buffer<Container> buf(internal::get_container(out));
   vformat_to(buf, format_str, args);
-  return std::back_inserter(container);
+  return out;
 }
 
 template <typename Container>
@@ -1331,10 +1331,9 @@ typename std::enable_if<
   is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
   vformat_to(std::back_insert_iterator<Container> out,
              wstring_view format_str, wformat_args args) {
-  auto& container = internal::get_container(out);
-  internal::container_buffer<Container> buf(container);
+  internal::container_buffer<Container> buf(internal::get_container(out));
   vformat_to(buf, format_str, args);
-  return std::back_inserter(container);
+  return out;
 }
 
 std::string vformat(string_view format_str, format_args args);
