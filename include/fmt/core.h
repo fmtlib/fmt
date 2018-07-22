@@ -711,7 +711,7 @@ struct result_of<F(Args...)> {
   typedef typename std::result_of<
     typename std::remove_reference<F>::type(Args...)>::type type;
 };
-}
+}  // namespace internal
 
 // A formatting argument. It is a trivially copyable/constructible type to
 // allow storage in basic_memory_buffer.
@@ -1292,6 +1292,44 @@ typename std::enable_if<
 std::string vformat(string_view format_str, format_args args);
 std::wstring vformat(wstring_view format_str, wformat_args args);
 
+namespace internal {
+// If S is a format string type, format_string_traints<S>::char_type gives its
+// character type.
+template <typename S>
+struct format_string_traits {
+ private:
+  // Use construtbility as a way to detect if format_string_traits is
+  // specialized because other methods are broken on MSVC2013.
+  format_string_traits();
+};
+
+template <typename Char>
+struct format_string_traits_base { typedef Char char_type; };
+
+template <typename Char>
+struct format_string_traits<const Char *>: format_string_traits_base<Char> {};
+
+template <typename Char>
+struct format_string_traits<Char *>: format_string_traits_base<Char> {};
+
+template <typename Char>
+struct format_string_traits<std::basic_string<Char>>:
+    format_string_traits_base<Char> {};
+
+template <typename Char>
+struct format_string_traits<basic_string_view<Char>>:
+    format_string_traits_base<Char> {};
+
+template <typename S>
+struct is_format_string:
+  std::integral_constant<
+    bool, std::is_constructible<format_string_traits<S>>::value> {};
+
+template <typename... Args, typename S>
+typename std::enable_if<is_format_string<S>::value>::type
+  check_format_string(S) {}
+}  // namespace internal
+
 /**
   \rst
   Formats arguments and returns the result as a string.
@@ -1302,17 +1340,17 @@ std::wstring vformat(wstring_view format_str, wformat_args args);
     std::string message = fmt::format("The answer is {}", 42);
   \endrst
 */
-template <typename... Args>
-inline std::string format(string_view format_str, const Args & ... args) {
+template <typename String, typename... Args>
+inline std::basic_string<
+  typename internal::format_string_traits<String>::char_type>
+    format(String format_str, const Args & ... args) {
+  typedef typename internal::format_string_traits<String>::char_type char_type;
+  internal::check_format_string<Args...>(format_str);
   // This should be just
   // return vformat(format_str, make_format_args(args...));
   // but gcc has trouble optimizing the latter, so break it down.
-  format_arg_store<format_context, Args...> as{args...};
-  return vformat(format_str, as);
-}
-template <typename... Args>
-inline std::wstring format(wstring_view format_str, const Args & ... args) {
-  format_arg_store<wformat_context, Args...> as{args...};
+  typedef typename buffer_context<char_type>::type context_type;
+  format_arg_store<context_type, Args...> as{args...};
   return vformat(format_str, as);
 }
 

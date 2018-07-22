@@ -1352,7 +1352,7 @@ FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
   return 0;
 }
 
-struct format_string {};
+struct compile_string {};
 
 namespace internal {
 
@@ -1646,8 +1646,8 @@ class arg_formatter_base {
 };
 
 template <typename S>
-struct is_format_string:
-  std::integral_constant<bool, std::is_base_of<format_string, S>::value> {};
+struct is_compile_string:
+  std::integral_constant<bool, std::is_base_of<compile_string, S>::value> {};
 
 template <typename Char>
 FMT_CONSTEXPR bool is_name_start(Char c) {
@@ -2317,7 +2317,8 @@ FMT_CONSTEXPR bool check_format_string(
 }
 
 template <typename... Args, typename String>
-void check_format_string(String format_str) {
+typename std::enable_if<is_compile_string<String>::value>::type
+    check_format_string(String format_str) {
   FMT_CONSTEXPR_DECL bool invalid_format =
       internal::check_format_string<char, internal::error_handler, Args...>(
         string_view(format_str.data(), format_str.size()));
@@ -3678,14 +3679,14 @@ inline std::wstring vformat(wstring_view format_str, wformat_args args) {
 
 template <typename String, typename... Args>
 inline typename std::enable_if<
-  internal::is_format_string<String>::value, std::string>::type
+  internal::is_compile_string<String>::value, std::string>::type
     format(String format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
   return vformat(format_str.data(), make_format_args(args...));
 }
 
 template <typename String, typename... Args>
-inline typename std::enable_if<internal::is_format_string<String>::value>::type
+inline typename std::enable_if<internal::is_compile_string<String>::value>::type
     print(String format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
   return vprint(format_str.data(), make_format_args(args...));
@@ -3979,7 +3980,7 @@ FMT_END_NAMESPACE
 
 #define FMT_STRING(s) [] { \
     typedef typename std::decay<decltype(s)>::type pointer; \
-    struct S : fmt::format_string { \
+    struct S : fmt::compile_string { \
       static FMT_CONSTEXPR pointer data() { return s; } \
       static FMT_CONSTEXPR size_t size() { return sizeof(s); } \
     }; \
