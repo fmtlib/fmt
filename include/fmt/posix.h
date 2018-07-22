@@ -184,7 +184,9 @@ public:
 
 #else
  private:
-  FMT_DISALLOW_COPY_AND_ASSIGN(buffered_file);
+  buffered_file(const buffered_file &) = delete;
+  void operator=(const buffered_file &) = delete;
+
 
  public:
   buffered_file(buffered_file &&other) FMT_NOEXCEPT : file_(other.file_) {
@@ -294,7 +296,8 @@ class file {
 
 #else
  private:
-  FMT_DISALLOW_COPY_AND_ASSIGN(file);
+  file(const file &) = delete;
+  void operator=(const file &) = delete;
 
  public:
   file(file &&other) FMT_NOEXCEPT : fd_(other.fd_) {
@@ -381,7 +384,8 @@ class Locale {
 
   locale_t locale_;
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(Locale);
+  Locale(const Locale &) = delete;
+  void operator=(const Locale &) = delete;
 
  public:
   typedef locale_t Type;

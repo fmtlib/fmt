@@ -142,8 +142,6 @@ class char_converter: public function<void> {
  private:
   basic_format_arg<Context> &arg_;
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(char_converter);
-
  public:
   explicit char_converter(basic_format_arg<Context> &arg) : arg_(arg) {}
 
@@ -168,8 +166,6 @@ class printf_width_handler: public function<unsigned> {
   typedef basic_format_specs<Char> format_specs;
 
   format_specs &spec_;
-
-  FMT_DISALLOW_COPY_AND_ASSIGN(printf_width_handler);
 
  public:
   explicit printf_width_handler(format_specs &spec) : spec_(spec) {}

@@ -38,7 +38,7 @@ arguments in the resulting string.
 
 .. _format:
 
-.. doxygenfunction:: format(string_view, const Args&...)
+.. doxygenfunction:: format(const String&, const Args&...)
 .. doxygenfunction:: vformat(string_view, format_args)
 
 .. _print:

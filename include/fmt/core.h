@@ -9,14 +9,13 @@
 #define FMT_CORE_H_
 
 #include <cassert>
-#include <cstdio>
 #include <cstring>
 #include <iterator>
 #include <string>
 #include <type_traits>
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 50100
+#define FMT_VERSION 50200
 
 #ifdef __has_feature
 # define FMT_HAS_FEATURE(x) __has_feature(x)
@@ -181,13 +180,6 @@
 # define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
 
-#define FMT_DELETED = delete
-
-// A macro to disallow the copy construction and assignment.
-#define FMT_DISALLOW_COPY_AND_ASSIGN(Type) \
-    Type(const Type &) FMT_DELETED; \
-    void operator=(const Type &) FMT_DELETED
-
 // libc++ supports string_view in pre-c++17.
 #if (FMT_HAS_INCLUDE(<string_view>) && \
       (__cplusplus > 201402L || defined(_LIBCPP_VERSION))) || \
@@ -343,7 +335,8 @@ namespace internal {
 template <typename T>
 class basic_buffer {
  private:
-  FMT_DISALLOW_COPY_AND_ASSIGN(basic_buffer);
+  basic_buffer(const basic_buffer &) = delete;
+  void operator=(const basic_buffer &) = delete;
 
   T *ptr_;
   std::size_t size_;
@@ -815,7 +808,8 @@ namespace internal {
 template <typename Context>
 class arg_map {
  private:
-  FMT_DISALLOW_COPY_AND_ASSIGN(arg_map);
+  arg_map(const arg_map &) = delete;
+  void operator=(const arg_map &) = delete;
 
   typedef typename Context::char_type char_type;
 
@@ -930,7 +924,8 @@ class basic_format_context :
  private:
   internal::arg_map<basic_format_context> map_;
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(basic_format_context);
+  basic_format_context(const basic_format_context &) = delete;
+  void operator=(const basic_format_context &) = delete;
 
   typedef internal::context_base<OutputIt, basic_format_context, Char> base;
   typedef typename base::format_arg format_arg;
@@ -1233,7 +1228,7 @@ inline internal::named_arg<T, wchar_t> arg(wstring_view name, const T &arg) {
 // This function template is deleted intentionally to disable nested named
 // arguments as in ``format("{}", arg("a", arg("b", 42)))``.
 template <typename S, typename T, typename Char>
-void arg(S, internal::named_arg<T, Char>) FMT_DELETED;
+void arg(S, internal::named_arg<T, Char>) = delete;
 
 #ifndef FMT_EXTENDED_COLORS
 // color and (v)print_colored are deprecated.
@@ -1251,6 +1246,61 @@ inline void print_colored(color c, wstring_view format_str,
   vprint_colored(c, format_str, make_format_args<wformat_context>(args...));
 }
 #endif
+
+// A base class for compile-time strings. It is defined in the fmt namespace to
+// make formatting functions visible via ADL, e.g. format(fmt("{}"), 42).
+struct compile_string {};
+
+namespace internal {
+// If S is a format string type, format_string_traints<S>::char_type gives its
+// character type.
+template <typename S, typename Enable = void>
+struct format_string_traits {
+ private:
+  // Use constructability as a way to detect if format_string_traits is
+  // specialized because other methods are broken on MSVC2013.
+  format_string_traits();
+};
+
+template <typename Char>
+struct format_string_traits_base { typedef Char char_type; };
+
+template <typename Char>
+struct format_string_traits<Char *> : format_string_traits_base<Char> {};
+
+template <typename Char>
+struct format_string_traits<const Char *> : format_string_traits_base<Char> {};
+
+template <typename Char, std::size_t N>
+struct format_string_traits<Char[N]> : format_string_traits_base<Char> {};
+
+template <typename Char, std::size_t N>
+struct format_string_traits<const Char[N]> : format_string_traits_base<Char> {};
+
+template <typename Char>
+struct format_string_traits<std::basic_string<Char>> :
+    format_string_traits_base<Char> {};
+
+template <typename Char>
+struct format_string_traits<basic_string_view<Char>> :
+    format_string_traits_base<Char> {};
+
+template <typename S>
+struct is_format_string :
+    std::integral_constant<
+      bool, std::is_constructible<format_string_traits<S>>::value> {};
+
+template <typename S>
+struct is_compile_string :
+    std::integral_constant<bool, std::is_base_of<compile_string, S>::value> {};
+
+template <typename... Args, typename S>
+typename std::enable_if<!is_compile_string<S>::value>::type
+    check_format_string(S) {}
+template <typename... Args, typename S>
+typename std::enable_if<is_compile_string<S>::value>::type
+    check_format_string(S);
+}  // namespace internal
 
 format_context::iterator vformat_to(
     internal::buffer &buf, string_view format_str, format_args args);
@@ -1292,44 +1342,6 @@ typename std::enable_if<
 std::string vformat(string_view format_str, format_args args);
 std::wstring vformat(wstring_view format_str, wformat_args args);
 
-namespace internal {
-// If S is a format string type, format_string_traints<S>::char_type gives its
-// character type.
-template <typename S>
-struct format_string_traits {
- private:
-  // Use construtbility as a way to detect if format_string_traits is
-  // specialized because other methods are broken on MSVC2013.
-  format_string_traits();
-};
-
-template <typename Char>
-struct format_string_traits_base { typedef Char char_type; };
-
-template <typename Char>
-struct format_string_traits<const Char *>: format_string_traits_base<Char> {};
-
-template <typename Char>
-struct format_string_traits<Char *>: format_string_traits_base<Char> {};
-
-template <typename Char>
-struct format_string_traits<std::basic_string<Char>>:
-    format_string_traits_base<Char> {};
-
-template <typename Char>
-struct format_string_traits<basic_string_view<Char>>:
-    format_string_traits_base<Char> {};
-
-template <typename S>
-struct is_format_string:
-  std::integral_constant<
-    bool, std::is_constructible<format_string_traits<S>>::value> {};
-
-template <typename... Args, typename S>
-typename std::enable_if<is_format_string<S>::value>::type
-  check_format_string(S) {}
-}  // namespace internal
-
 /**
   \rst
   Formats arguments and returns the result as a string.
@@ -1343,15 +1355,15 @@ typename std::enable_if<is_format_string<S>::value>::type
 template <typename String, typename... Args>
 inline std::basic_string<
   typename internal::format_string_traits<String>::char_type>
-    format(String format_str, const Args & ... args) {
+    format(const String &format_str, const Args & ... args) {
   typedef typename internal::format_string_traits<String>::char_type char_type;
   internal::check_format_string<Args...>(format_str);
   // This should be just
-  // return vformat(format_str, make_format_args(args...));
+  //   return vformat(format_str, make_format_args(args...));
   // but gcc has trouble optimizing the latter, so break it down.
   typedef typename buffer_context<char_type>::type context_type;
   format_arg_store<context_type, Args...> as{args...};
-  return vformat(format_str, as);
+  return vformat(basic_string_view<char_type>(format_str), as);
 }
 
 FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);

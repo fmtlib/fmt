@@ -1352,9 +1352,12 @@ FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
   return 0;
 }
 
-struct compile_string {};
-
 namespace internal {
+
+template <typename S>
+struct format_string_traits<
+  S, typename std::enable_if<std::is_base_of<compile_string, S>::value>::type>:
+    format_string_traits_base<char> {};
 
 template <typename Char, typename Handler>
 FMT_CONSTEXPR void handle_int_type_spec(Char spec, Handler &&handler) {
@@ -1536,8 +1539,6 @@ class arg_formatter_base {
   writer_type writer_;
   format_specs &specs_;
 
-  FMT_DISALLOW_COPY_AND_ASSIGN(arg_formatter_base);
-
   struct char_writer {
     char_type value;
     template <typename It>
@@ -1644,10 +1645,6 @@ class arg_formatter_base {
     return out();
   }
 };
-
-template <typename S>
-struct is_compile_string:
-  std::integral_constant<bool, std::is_base_of<compile_string, S>::value> {};
 
 template <typename Char>
 FMT_CONSTEXPR bool is_name_start(Char c) {
@@ -2464,12 +2461,8 @@ class basic_writer {
   typedef basic_format_specs<char_type> format_specs;
 
  private:
-  // Output iterator.
-  iterator out_;
-
+  iterator out_;  // Output iterator.
   std::unique_ptr<locale_provider> locale_;
-
-  FMT_DISALLOW_COPY_AND_ASSIGN(basic_writer);
 
   iterator out() const { return out_; }
 
@@ -3678,14 +3671,6 @@ inline std::wstring vformat(wstring_view format_str, wformat_args args) {
 }
 
 template <typename String, typename... Args>
-inline typename std::enable_if<
-  internal::is_compile_string<String>::value, std::string>::type
-    format(String format_str, const Args & ... args) {
-  internal::check_format_string<Args...>(format_str);
-  return vformat(format_str.data(), make_format_args(args...));
-}
-
-template <typename String, typename... Args>
 inline typename std::enable_if<internal::is_compile_string<String>::value>::type
     print(String format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
@@ -3983,6 +3968,7 @@ FMT_END_NAMESPACE
     struct S : fmt::compile_string { \
       static FMT_CONSTEXPR pointer data() { return s; } \
       static FMT_CONSTEXPR size_t size() { return sizeof(s); } \
+      explicit operator fmt::string_view() const { return s; } \
     }; \
     return S{}; \
   }()
