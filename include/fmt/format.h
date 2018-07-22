@@ -145,13 +145,6 @@ FMT_END_NAMESPACE
 # define FMT_USE_TRAILING_RETURN 0
 #endif
 
-#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_rvalue_references) || \
-    FMT_MSC_VER >= 1600
-# define FMT_USE_RVALUE_REFERENCES 1
-#else
-# define FMT_USE_RVALUE_REFERENCES 0
-#endif
-
 #ifndef FMT_USE_GRISU
 # define FMT_USE_GRISU 0
 #endif

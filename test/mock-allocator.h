@@ -25,37 +25,31 @@ class AllocatorRef {
  private:
   Allocator *alloc_;
 
- public:
-  typedef typename Allocator::value_type value_type;
-
-  explicit AllocatorRef(Allocator *alloc = nullptr) : alloc_(alloc) {}
-
-  AllocatorRef(const AllocatorRef &other) : alloc_(other.alloc_) {}
-
-  AllocatorRef& operator=(const AllocatorRef &other) {
-    alloc_ = other.alloc_;
-    return *this;
-  }
-
-#if FMT_USE_RVALUE_REFERENCES
- private:
   void move(AllocatorRef &other) {
     alloc_ = other.alloc_;
     other.alloc_ = nullptr;
   }
 
  public:
-  AllocatorRef(AllocatorRef &&other) {
-    move(other);
-  }
+  typedef typename Allocator::value_type value_type;
+
+  explicit AllocatorRef(Allocator *alloc = nullptr) : alloc_(alloc) {}
+
+  AllocatorRef(const AllocatorRef &other) : alloc_(other.alloc_) {}
+  AllocatorRef(AllocatorRef &&other) { move(other); }
 
   AllocatorRef& operator=(AllocatorRef &&other) {
     assert(this != &other);
     move(other);
     return *this;
   }
-#endif
 
+  AllocatorRef& operator=(const AllocatorRef &other) {
+    alloc_ = other.alloc_;
+    return *this;
+  }
+
+ public:
   Allocator *get() const { return alloc_; }
 
   value_type* allocate(std::size_t n) {

@@ -235,8 +235,6 @@ TEST(MemoryBufferTest, Ctor) {
   EXPECT_EQ(123u, buffer.capacity());
 }
 
-#if FMT_USE_RVALUE_REFERENCES
-
 typedef AllocatorRef< std::allocator<char> > TestAllocator;
 
 static void check_move_buffer(const char *str,
@@ -303,8 +301,6 @@ TEST(MemoryBufferTest, MoveAssignment) {
   EXPECT_EQ("testab", std::string(&buffer2[0], buffer2.size()));
   EXPECT_GT(buffer2.capacity(), 5u);
 }
-
-#endif  // FMT_USE_RVALUE_REFERENCES
 
 TEST(MemoryBufferTest, Grow) {
   typedef AllocatorRef< MockAllocator<int> > Allocator;
