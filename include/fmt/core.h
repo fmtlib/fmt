@@ -385,9 +385,7 @@ class basic_buffer {
   }
 
   /** Clears this buffer. */
-  void clear() {
-    size_ = 0;
-  }
+  void clear() { size_ = 0; }
 
   /** Reserves space to store at least *capacity* elements. */
   void reserve(std::size_t new_capacity) {
@@ -1356,14 +1354,13 @@ template <typename String, typename... Args>
 inline std::basic_string<
   typename internal::format_string_traits<String>::char_type>
     format(const String &format_str, const Args & ... args) {
-  typedef typename internal::format_string_traits<String>::char_type char_type;
   internal::check_format_string<Args...>(format_str);
   // This should be just
   //   return vformat(format_str, make_format_args(args...));
   // but gcc has trouble optimizing the latter, so break it down.
-  typedef typename buffer_context<char_type>::type context_type;
-  format_arg_store<context_type, Args...> as{args...};
-  return vformat(basic_string_view<char_type>(format_str), as);
+  typedef typename internal::format_string_traits<String>::char_type char_t;
+  format_arg_store<typename buffer_context<char_t>::type, Args...> as{args...};
+  return vformat(basic_string_view<char_t>(format_str), as);
 }
 
 FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
