@@ -1336,6 +1336,23 @@ typename std::enable_if<
   return out;
 }
 
+template <typename Container, typename... Args>
+inline typename std::enable_if<
+  is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
+    format_to(std::back_insert_iterator<Container> out,
+              string_view format_str, const Args & ... args) {
+  return vformat_to(out, format_str, make_format_args<format_context>(args...));
+}
+
+template <typename Container, typename... Args>
+inline typename std::enable_if<
+  is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
+    format_to(std::back_insert_iterator<Container> out,
+              wstring_view format_str, const Args & ... args) {
+  return vformat_to(out, format_str,
+                    make_format_args<wformat_context>(args...));
+}
+
 std::string vformat(string_view format_str, format_args args);
 std::wstring vformat(wstring_view format_str, wformat_args args);
 
