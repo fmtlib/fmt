@@ -24,7 +24,8 @@
 # define FMT_HAS_FEATURE(x) 0
 #endif
 
-#ifdef __has_include
+#if defined(__has_include) && \
+    (!defined(__INTEL_COMPILER) || __INTEL_COMPILER >= 1600)
 # define FMT_HAS_INCLUDE(x) __has_include(x)
 #else
 # define FMT_HAS_INCLUDE(x) 0
