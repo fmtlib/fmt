@@ -272,7 +272,7 @@ Boost Format library
 ~~~~~~~~~~~~~~~~~~~~
 
 This is a very powerful library which supports both printf-like format
-strings and positional arguments. The main its drawback is performance.
+strings and positional arguments. Its main drawback is performance.
 According to various benchmarks it is much slower than other methods
 considered here. Boost Format also has excessive build times and severe
 code bloat issues (see `Benchmarks`_).
