@@ -2322,10 +2322,6 @@ template <typename Context, typename T>
 struct format_type :
   std::integral_constant<bool, get_type<Context, T>::value != custom_type> {};
 
-// Specifies whether to format enums.
-template <typename T, typename Enable = void>
-struct format_enum : std::integral_constant<bool, std::is_enum<T>::value> {};
-
 template <template <typename> class Handler, typename Spec, typename Context>
 void handle_dynamic_spec(
     Spec &value, arg_ref<typename Context::char_type> ref, Context &ctx) {
@@ -3257,16 +3253,6 @@ struct formatter<
 
  private:
   internal::dynamic_format_specs<Char> specs_;
-};
-
-template <typename T, typename Char>
-struct formatter<T, Char,
-    typename std::enable_if<internal::format_enum<T>::value>::type>
-    : public formatter<int, Char> {
-  template <typename ParseContext>
-  auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
-  }
 };
 
 // A formatter for types known only at run time such as variant alternatives.

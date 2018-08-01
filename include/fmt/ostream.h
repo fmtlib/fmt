@@ -106,11 +106,6 @@ void format_value(basic_buffer<Char> &buffer, const T &value) {
   output << value;
   buffer.resize(buffer.size());
 }
-
-// Disable builtin formatting of enums and use operator<< instead.
-template <typename T>
-struct format_enum<T,
-    typename std::enable_if<std::is_enum<T>::value>::type> : std::false_type {};
 }  // namespace internal
 
 // Formats an object of type T that has an overloaded ostream operator<<.

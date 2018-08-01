@@ -1443,6 +1443,10 @@ TEST(FormatTest, Enum) {
   EXPECT_EQ("0", fmt::format("{}", A));
 }
 
+TEST(FormatTest, EnumFormatterUnambiguous) {
+  fmt::formatter<TestEnum> f;
+}
+
 #if FMT_HAS_FEATURE(cxx_strong_enums)
 enum TestFixedEnum : short { B };
 
