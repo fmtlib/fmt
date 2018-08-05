@@ -1281,9 +1281,11 @@ template <typename Char>
 struct format_string_traits<std::basic_string<Char>> :
     format_string_traits_base<Char> {};
 
-template <typename Char>
-struct format_string_traits<basic_string_view<Char>> :
-    format_string_traits_base<Char> {};
+template <typename S>
+struct format_string_traits<
+    S, typename std::enable_if<std::is_base_of<
+         basic_string_view<typename S::char_type>, S>::value>::type> :
+    format_string_traits_base<typename S::char_type> {};
 
 template <typename S>
 struct is_format_string :
@@ -1300,6 +1302,11 @@ typename std::enable_if<!is_compile_string<S>::value>::type
 template <typename... Args, typename S>
 typename std::enable_if<is_compile_string<S>::value>::type
     check_format_string(S);
+
+template <typename Char>
+std::basic_string<Char> vformat(
+    basic_string_view<Char> format_str,
+    basic_format_args<typename buffer_context<Char>::type> args);
 }  // namespace internal
 
 format_context::iterator vformat_to(
@@ -1354,8 +1361,15 @@ inline typename std::enable_if<
                     make_format_args<wformat_context>(args...));
 }
 
-std::string vformat(string_view format_str, format_args args);
-std::wstring vformat(wstring_view format_str, wformat_args args);
+template <
+    typename String,
+    typename Char = typename internal::format_string_traits<String>::char_type>
+inline std::basic_string<Char> vformat(
+    const String &format_str,
+    basic_format_args<typename buffer_context<Char>::type> args) {
+  // Convert format string to string_view to reduce the number of overloads.
+  return internal::vformat(basic_string_view<Char>(format_str), args);
+}
 
 /**
   \rst
@@ -1376,8 +1390,11 @@ inline std::basic_string<
   //   return vformat(format_str, make_format_args(args...));
   // but gcc has trouble optimizing the latter, so break it down.
   typedef typename internal::format_string_traits<String>::char_type char_t;
-  format_arg_store<typename buffer_context<char_t>::type, Args...> as{args...};
-  return vformat(basic_string_view<char_t>(format_str), as);
+  typedef typename buffer_context<char_t>::type context_t;
+  format_arg_store<context_t, Args...> as{args...};
+  return internal::vformat(
+        basic_string_view<char_t>(format_str),
+        basic_format_args<context_t>(as));
 }
 
 FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);

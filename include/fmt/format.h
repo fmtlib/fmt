@@ -490,13 +490,14 @@ struct char8_t {
   }
 };
 
-// A UTF-8 string.
+// A UTF-8 string view.
 class u8string_view : public basic_string_view<char8_t> {
  private:
-   typedef basic_string_view<char8_t> base;
+  typedef basic_string_view<char8_t> base;
 
  public:
   using basic_string_view::basic_string_view;
+  using basic_string_view::char_type;
 
   u8string_view(const char *s)
     : base(reinterpret_cast<const char8_t*>(s)) {}
@@ -3617,16 +3618,13 @@ inline format_to_n_result<OutputIt> format_to_n(
   return {it.base(), it.count()};
 }
 
-inline std::string vformat(string_view format_str, format_args args) {
-  memory_buffer buffer;
+template <typename Char>
+inline std::basic_string<Char> internal::vformat(
+    basic_string_view<Char> format_str,
+    basic_format_args<typename buffer_context<Char>::type> args) {
+  basic_memory_buffer<Char> buffer;
   vformat_to(buffer, format_str, args);
   return fmt::to_string(buffer);
-}
-
-inline std::wstring vformat(wstring_view format_str, wformat_args args) {
-  wmemory_buffer buffer;
-  vformat_to(buffer, format_str, args);
-  return to_string(buffer);
 }
 
 template <typename String, typename... Args>
