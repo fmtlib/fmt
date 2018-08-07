@@ -120,7 +120,7 @@ FMT_END_NAMESPACE
 # endif
 #endif
 
-#if FMT_USE_USER_DEFINED_LITERALS && !defined(FMT_ICC_VERSION) && \
+#if FMT_USE_USER_DEFINED_LITERALS && FMT_ICC_VERSION == 0 && \
     ((FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L) || \
     (defined(FMT_CLANG_VERSION) && FMT_CLANG_VERSION >= 304))
 # define FMT_UDL_TEMPLATE 1
