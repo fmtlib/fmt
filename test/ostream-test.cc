@@ -191,3 +191,10 @@ TEST(FormatTest, FormatToN) {
   EXPECT_EQ(buffer + 3, result.out);
   EXPECT_EQ("xABx", fmt::string_view(buffer, 4));
 }
+
+#if FMT_USE_USER_DEFINED_LITERALS
+TEST(FormatTest, UDL) {
+  using namespace fmt::literals;
+  EXPECT_EQ("{}"_format("test"), "test");
+}
+#endif

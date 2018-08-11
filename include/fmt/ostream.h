@@ -68,9 +68,7 @@ class is_streamable {
   typedef decltype(test<T>(0)) result;
 
  public:
-  // std::string operator<< is not considered user-defined because we handle strings
-  // specially.
-  static const bool value = result::value && !std::is_same<T, std::string>::value;
+  static const bool value = result::value;
 };
 
 // Disable conversion to int if T has an overloaded operator<< which is a free
@@ -111,7 +109,10 @@ void format_value(basic_buffer<Char> &buffer, const T &value) {
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename T, typename Char>
 struct formatter<T, Char,
-    typename std::enable_if<internal::is_streamable<T, Char>::value>::type>
+    typename std::enable_if<
+      internal::is_streamable<T, Char>::value &&
+      !internal::format_type<
+        typename buffer_context<Char>::type, T>::value>::type>
     : formatter<basic_string_view<Char>, Char> {
 
   template <typename Context>
