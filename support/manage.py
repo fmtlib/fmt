@@ -247,7 +247,8 @@ def release(args):
     package = 'fmt-{}.zip'.format(version)
     r = requests.post(
         '{}/{}/assets?name={}'.format(uploads_url, id, package),
-        params=params, files={package: open('build/fmt/' + package, 'rb')})
+        headers={'Content-Type': 'application/zip'},
+        params=params, data=open('build/fmt/' + package, 'rb'))
     if r.status_code != 201:
         raise Exception('Failed to upload an asset ' + str(r))
 
