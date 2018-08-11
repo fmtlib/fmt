@@ -1,3 +1,11 @@
+5.2.0 - TBD
+
+* Added support for dynamic argument lists
+  (`#766 <https://github.com/fmtlib/fmt/issue/814>`_,
+  `#766 <https://github.com/fmtlib/fmt/pull/819>`_).
+  Thanks `@MikePopoloski (Michael Popoloski)
+  <https://github.com/MikePopoloski>`_.
+
 5.1.0 - 2018-07-05
 ------------------
 
@@ -16,7 +24,7 @@
   ``color`` enum) is now deprecated.
   (`#762 <https://github.com/fmtlib/fmt/issues/762>`_
   `#767 <https://github.com/fmtlib/fmt/pull/767>`_).
-  Thanks `@Remotion (Remo) <https://github.com/Remotion>`_.
+  thanks `@remotion (remo) <https://github.com/remotion>`_.
 
 * Added quotes to strings in ranges and tuples
   (`#766 <https://github.com/fmtlib/fmt/pull/766>`_).
