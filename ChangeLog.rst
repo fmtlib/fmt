@@ -1,4 +1,5 @@
 5.2.0 - TBD
+-----------
 
 * Added support for dynamic argument lists
   (`#766 <https://github.com/fmtlib/fmt/issue/814>`_,
