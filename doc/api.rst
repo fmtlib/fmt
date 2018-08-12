@@ -39,7 +39,7 @@ arguments in the resulting string.
 .. _format:
 
 .. doxygenfunction:: format(const String&, const Args&...)
-.. doxygenfunction:: vformat(basic_string_view<Char>, basic_format_args<typename buffer_context<Char>::type>)
+.. doxygenfunction:: vformat(const String&, basic_format_args<typename buffer_context<Char>::type>)
 
 .. _print:
 
