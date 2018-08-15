@@ -2933,7 +2933,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     auto dec_pow = internal::get_cached_power(
         min_exp - (fp_value.e + internal::fp::significand_size), dec_exp);
     internal::fp product = fp_value * dec_pow;
-    // Generate output.
+    // Generate output using Grisu digit-gen-mix algorithm.
     internal::fp one(1ull << -product.e, product.e);
     uint64_t hi = product.f >> -one.e;
     uint64_t f = product.f & (one.f - 1);
