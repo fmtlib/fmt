@@ -429,6 +429,29 @@ or the bloat test::
 
     $ make bloat-test
 
+FAQ
+---
+
+Q: how can I capture formatting arguments and format them later?
+
+A: use ``std::tuple``:
+
+.. code:: c++
+
+   template <typename... Args>
+   auto capture(const Args&... args) {
+     return std::make_tuple(args...);
+   }
+
+   auto print_message = [](const auto&... args) {
+     fmt::print(args...);
+   };
+
+   // Capture and store arguments:
+   auto args = capture("{} {}", 42, "foo");
+   // Do formatting:
+   std::apply(print_message, args);
+
 License
 -------
 
