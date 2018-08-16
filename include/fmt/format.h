@@ -2923,8 +2923,8 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     return write_inf_or_nan(handler.upper ? "INF" : "inf");
 
   basic_memory_buffer<char_type> buffer;
-  if (FMT_USE_GRISU && sizeof(T) <= sizeof(double) &&
-      std::numeric_limits<double>::is_iec559) {
+  if (internal::const_check(FMT_USE_GRISU && sizeof(T) <= sizeof(double) &&
+      std::numeric_limits<double>::is_iec559)) {
     internal::fp fp_value(static_cast<double>(value));
     fp_value.normalize();
     // Find a cached power of 10 close to 1 / fp_value.
