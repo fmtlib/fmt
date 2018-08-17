@@ -18,7 +18,9 @@
 #include <cmath>
 #include <cstdarg>
 #include <cstddef>  // for std::ptrdiff_t
+#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
 #include <locale>
+#endif
 
 #if defined(_WIN32) && defined(__MINGW32__)
 # include <cstring>
@@ -193,6 +195,7 @@ void report_error(FormatFunc func, int error_code,
 }
 }  // namespace
 
+#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
 class locale {
  private:
   std::locale locale_;
@@ -201,6 +204,21 @@ class locale {
   explicit locale(std::locale loc = std::locale()) : locale_(loc) {}
   std::locale get() { return locale_; }
 };
+
+template <typename Char>
+FMT_FUNC Char internal::thousands_sep(locale_provider *lp) {
+  std::locale loc = lp ? lp->locale().get() : std::locale();
+  return std::use_facet<std::numpunct<Char>>(loc).thousands_sep();
+}
+
+#else
+  
+template <typename Char>
+FMT_FUNC Char internal::thousands_sep(locale_provider *lp) {
+        return FMT_STATIC_THOUSANDS_SEPARATOR;
+}
+
+#endif
 
 FMT_FUNC size_t internal::count_code_points(u8string_view s) {
   const char8_t *data = s.data();
@@ -212,11 +230,6 @@ FMT_FUNC size_t internal::count_code_points(u8string_view s) {
   return num_code_points;
 }
 
-template <typename Char>
-FMT_FUNC Char internal::thousands_sep(locale_provider *lp) {
-  std::locale loc = lp ? lp->locale().get() : std::locale();
-  return std::use_facet<std::numpunct<Char>>(loc).thousands_sep();
-}
 
 FMT_FUNC void system_error::init(
     int err_code, string_view format_str, format_args args) {
@@ -569,8 +582,9 @@ FMT_FUNC void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
   std::fputs(internal::data::RESET_COLOR, stdout);
 }
 #endif
-
+#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
 FMT_FUNC locale locale_provider::locale() { return fmt::locale(); }
+#endif
 
 FMT_END_NAMESPACE
 
