@@ -76,7 +76,7 @@ The general form of a *standard format specifier* is:
 
 .. productionlist:: sf
    format_spec: [[`fill`]`align`][`sign`]["#"]["0"][`width`]["." `precision`][`type`]
-   fill: <a character other than '{' or '}'>
+   fill: <a character other than '{', '}' or '\0'>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
    width: `integer` | "{" `arg_id` "}"
@@ -84,11 +84,11 @@ The general form of a *standard format specifier* is:
    type: `int_type` | "a" | "A" | "c" | "e" | "E" | "f" | "F" | "g" | "G" | "p" | "s"
    int_type: "b" | "B" | "d" | "n" | "o" | "x" | "X"
 
-The *fill* character can be any character other than '{' or '}'.  The presence
-of a fill character is signaled by the character following it, which must be
-one of the alignment options.  If the second character of *format_spec* is not
-a valid alignment option, then it is assumed that both the fill character and
-the alignment option are absent.
+The *fill* character can be any character other than '{', '}' or '\\0'. The
+presence of a fill character is signaled by the character following it, which
+must be one of the alignment options.  If the second character of *format_spec*
+is not a valid alignment option, then it is assumed that both the fill character
+and the alignment option are absent.
 
 The meaning of the various alignment options is as follows:
 
