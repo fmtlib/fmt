@@ -98,7 +98,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-reserved-id-macro
       -Wno-global-constructors -Wno-disabled-macro-expansion
       -Wno-switch-enum -Wno-documentation-unknown-command
-      -Wno-gnu-string-literal-operator-template -Wno-unused-member-function
+      -Wno-unused-member-function
       -Wno-format-nonliteral -Wno-missing-noreturn -Wno-undefined-func-template
       -Wno-shadow -Wno-sign-conversion -Wno-used-but-marked-unused
       -Wno-covered-switch-default -Wno-missing-variable-declarations
@@ -108,13 +108,17 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 
   check_cxx_compiler_flag(-Wno-zero-as-null-pointer-constant HAS_NULLPTR_WARNING)
   if (HAS_NULLPTR_WARNING)
-    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wno-zero-as-null-pointer-constant)
+    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
+        -Wno-zero-as-null-pointer-constant)
   endif ()
 
-  check_cxx_compiler_flag(-Wno-gnu-string-literal-operator-template HAS_GNU_UDL_WARNING)
-  if (HAS_GNU_UDL_WARNING)
-    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wno-gnu-string-literal-operator-template)
-  endif ()
+endif ()
+
+check_cxx_compiler_flag(
+  -Wno-gnu-string-literal-operator-template HAS_GNU_UDL_WARNING)
+if (HAS_GNU_UDL_WARNING)
+  set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
+      -Wno-gnu-string-literal-operator-template)
 endif ()
 
 if (MSVC)

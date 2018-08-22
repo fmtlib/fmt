@@ -37,10 +37,10 @@ static std::wostream &operator<<(std::wostream &os, TestEnum) {
 enum TestEnum2 {A};
 
 TEST(OStreamTest, Enum) {
-  EXPECT_FALSE((fmt::internal::convert_to_int<TestEnum, char>::value));
+  EXPECT_FALSE((fmt::convert_to_int<TestEnum, char>::value));
   EXPECT_EQ("TestEnum", fmt::format("{}", TestEnum()));
   EXPECT_EQ("0", fmt::format("{}", A));
-  EXPECT_FALSE((fmt::internal::convert_to_int<TestEnum, wchar_t>::value));
+  EXPECT_FALSE((fmt::convert_to_int<TestEnum, wchar_t>::value));
   EXPECT_EQ(L"TestEnum", fmt::format(L"{}", TestEnum()));
   EXPECT_EQ(L"0", fmt::format(L"{}", A));
 }

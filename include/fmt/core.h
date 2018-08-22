@@ -341,6 +341,13 @@ class basic_format_args;
 template <typename T, typename Char = char, typename Enable = void>
 struct formatter;
 
+template <typename T, typename Char, typename Enable = void>
+struct convert_to_int {
+  enum {
+    value = !std::is_arithmetic<T>::value && std::is_convertible<T, int>::value
+  };
+};
+
 namespace internal {
 
 /** A contiguous memory buffer with an optional growing ability. */
@@ -489,13 +496,6 @@ FMT_CONSTEXPR bool is_arithmetic(type t) {
   FMT_ASSERT(t != internal::named_arg_type, "invalid argument type");
   return t > internal::none_type && t <= internal::last_numeric_type;
 }
-
-template <typename T, typename Char, bool ENABLE = true>
-struct convert_to_int {
-  enum {
-    value = !std::is_arithmetic<T>::value && std::is_convertible<T, int>::value
-  };
-};
 
 template <typename Char>
 struct string_value {

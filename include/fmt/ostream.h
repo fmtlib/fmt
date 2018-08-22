@@ -71,15 +71,6 @@ class is_streamable {
   static const bool value = result::value;
 };
 
-// Disable conversion to int if T has an overloaded operator<< which is a free
-// function (not a member of std::ostream).
-template <typename T, typename Char>
-class convert_to_int<T, Char, true> {
- public:
-  static const bool value =
-    convert_to_int<T, Char, false>::value && !is_streamable<T, Char>::value;
-};
-
 // Write the content of buf to os.
 template <typename Char>
 void write(std::basic_ostream<Char> &os, basic_buffer<Char> &buf) {
@@ -105,6 +96,15 @@ void format_value(basic_buffer<Char> &buffer, const T &value) {
   buffer.resize(buffer.size());
 }
 }  // namespace internal
+
+// Disable conversion to int if T has an overloaded operator<< which is a free
+// function (not a member of std::ostream).
+template <typename T, typename Char>
+struct convert_to_int<T, Char, void> {
+  static const bool value =
+    convert_to_int<T, Char, int>::value &&
+    !internal::is_streamable<T, Char>::value;
+};
 
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename T, typename Char>
