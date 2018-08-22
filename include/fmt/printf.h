@@ -337,7 +337,9 @@ struct printf_formatter {
 /** This template formats data and writes the output to a writer. */
 template <typename OutputIt, typename Char, typename ArgFormatter>
 class basic_printf_context :
-  private internal::context_base<
+  // Inherit publicly as a workaround for the icc bug
+  // https://software.intel.com/en-us/forums/intel-c-compiler/topic/783476.
+  public internal::context_base<
     OutputIt, basic_printf_context<OutputIt, Char, ArgFormatter>, Char> {
  public:
   /** The character type for the output. */

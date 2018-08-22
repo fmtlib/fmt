@@ -123,7 +123,10 @@ else ()
 endif ()
 
 # Test that the library can be compiled with exceptions disabled.
-check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
+# -fno-exception is broken in icc: https://github.com/fmtlib/fmt/issues/822.
+if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+  check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
+endif ()
 if (HAVE_FNO_EXCEPTIONS_FLAG)
   add_library(noexception-test ../src/format.cc)
   target_include_directories(

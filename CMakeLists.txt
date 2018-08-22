@@ -92,7 +92,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(WERROR_FLAG -Werror)
 endif ()
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(PEDANTIC_COMPILE_FLAGS -Weverything -Wpedantic
       -Wno-weak-vtables -Wno-padded -Wno-gnu-statement-expression
       -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-reserved-id-macro
