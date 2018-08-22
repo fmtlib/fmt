@@ -111,14 +111,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
         -Wno-zero-as-null-pointer-constant)
   endif ()
-
-endif ()
-
-check_cxx_compiler_flag(
-  -Wno-gnu-string-literal-operator-template HAS_GNU_UDL_WARNING)
-if (HAS_GNU_UDL_WARNING)
-  set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
-      -Wno-gnu-string-literal-operator-template)
 endif ()
 
 if (MSVC)

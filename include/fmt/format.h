@@ -65,6 +65,10 @@
 # pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
+# if FMT_CLANG_VERSION
+#  pragma GCC diagnostic ignored "-Wgnu-string-literal-operator-template"
+# endif
+
 #ifdef _SECURE_SCL
 # define FMT_SECURE_SCL _SECURE_SCL
 #else
