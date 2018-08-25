@@ -275,11 +275,16 @@ const char basic_data<T>::DIGITS[] =
 
 template <typename T>
 const uint32_t basic_data<T>::POWERS_OF_10_32[] = {
+  1, FMT_POWERS_OF_10(1)
+};
+
+template <typename T>
+const uint32_t basic_data<T>::ZERO_OR_POWERS_OF_10_32[] = {
   0, FMT_POWERS_OF_10(1)
 };
 
 template <typename T>
-const uint64_t basic_data<T>::POWERS_OF_10_64[] = {
+const uint64_t basic_data<T>::ZERO_OR_POWERS_OF_10_64[] = {
   0,
   FMT_POWERS_OF_10(1),
   FMT_POWERS_OF_10(1000000000ull),
@@ -360,6 +365,78 @@ FMT_FUNC fp get_cached_power(int min_exponent, int &pow10_exponent) {
   index = (index - first_dec_exp - 1) / dec_exp_step + 1;
   pow10_exponent = first_dec_exp + index * dec_exp_step;
   return fp(data::POW10_SIGNIFICANDS[index], data::POW10_EXPONENTS[index]);
+}
+
+// Generates output using Grisu2 digit-gen algorithm.
+FMT_FUNC void grisu2_gen_digits(
+    const fp &scaled_value, const fp &scaled_upper, uint64_t delta,
+    char *buffer, size_t &size, int &dec_exp) {
+  internal::fp one(1ull << -scaled_upper.e, scaled_upper.e);
+  uint32_t hi = static_cast<uint32_t>(scaled_upper.f >> -one.e);  // p1 in Grisu
+  uint64_t lo = scaled_upper.f & (one.f - 1);                     // p2 in Grisu
+  size = 0;
+  auto kappa = count_digits(hi); // TODO: more descriptive name
+  while (kappa > 0) {
+    uint32_t digit = 0;
+    // This optimization by miloyip reduces the number of integer divisions by
+    // one per iteration.
+    switch (kappa) {
+    case 10: digit = hi / 1000000000; hi %= 1000000000; break;
+    case  9: digit = hi /  100000000; hi %=  100000000; break;
+    case  8: digit = hi /   10000000; hi %=   10000000; break;
+    case  7: digit = hi /    1000000; hi %=    1000000; break;
+    case  6: digit = hi /     100000; hi %=     100000; break;
+    case  5: digit = hi /      10000; hi %=      10000; break;
+    case  4: digit = hi /       1000; hi %=       1000; break;
+    case  3: digit = hi /        100; hi %=        100; break;
+    case  2: digit = hi /         10; hi %=         10; break;
+    case  1: digit = hi;              hi =           0; break;
+    default:
+      FMT_ASSERT(false, "invalid number of digits");
+    }
+    if (digit != 0 || size != 0)
+      buffer[size++] = '0' + static_cast<char>(digit);
+    --kappa;
+    uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
+    if (remainder <= delta) {
+      dec_exp += kappa;
+      // TODO: use scaled_value
+      (void)scaled_value;
+      return;
+    }
+  }
+  for (;;) {
+    lo *= 10;
+    delta *= 10;
+    char digit = static_cast<char>(lo >> -one.e);
+    if (digit != 0 || size != 0)
+      buffer[size++] = '0' + digit;
+    lo &= one.f - 1;
+    --kappa;
+    if (lo < delta) {
+      dec_exp += kappa;
+      return;
+    }
+  }
+}
+
+FMT_FUNC void grisu2_format(double value, char *buffer, size_t &size) {
+  fp fp_value(value);
+  fp lower, upper;
+  fp_value.compute_boundaries(lower, upper);
+  // Find a cached power of 10 close to 1 / upper.
+  int dec_exp = 0;  // K in Grisu paper.
+  const int min_exp = -60;
+  auto dec_pow = get_cached_power(
+      min_exp - (upper.e + fp::significand_size), dec_exp);
+  fp_value.normalize();
+  fp scaled_value = fp_value * dec_pow;
+  fp scaled_lower = lower * dec_pow;
+  fp scaled_upper = upper * dec_pow;
+  ++scaled_lower.f;  // +1 ulp
+  --scaled_upper.f;  // -1 ulp
+  uint64_t delta = scaled_upper.f - scaled_lower.f;
+  grisu2_gen_digits(scaled_value, scaled_upper, delta, buffer, size, dec_exp);
 }
 }  // namespace internal
 

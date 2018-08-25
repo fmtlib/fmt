@@ -365,6 +365,10 @@ FMT_API fp operator*(fp x, fp y);
 // (binary) exponent satisfies min_exponent <= c_k.e <= min_exponent + 3.
 FMT_API fp get_cached_power(int min_exponent, int &pow10_exponent);
 
+// Formats value using Grisu2 algorithm:
+// https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
+FMT_API void grisu2_format(double value, char *buffer, size_t &size);
+
 template <typename Allocator>
 typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {
 #if __cplusplus >= 201103L || FMT_MSC_VER >= 1700
@@ -952,7 +956,8 @@ struct int_traits {
 template <typename T = void>
 struct FMT_API basic_data {
   static const uint32_t POWERS_OF_10_32[];
-  static const uint64_t POWERS_OF_10_64[];
+  static const uint32_t ZERO_OR_POWERS_OF_10_32[];
+  static const uint64_t ZERO_OR_POWERS_OF_10_64[];
   static const uint64_t POW10_SIGNIFICANDS[];
   static const int16_t POW10_EXPONENTS[];
   static const char DIGITS[];
@@ -973,7 +978,7 @@ inline unsigned count_digits(uint64_t n) {
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
   int t = (64 - FMT_BUILTIN_CLZLL(n | 1)) * 1233 >> 12;
-  return to_unsigned(t) - (n < data::POWERS_OF_10_64[t]) + 1;
+  return to_unsigned(t) - (n < data::ZERO_OR_POWERS_OF_10_64[t]) + 1;
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
@@ -1043,7 +1048,8 @@ class decimal_formatter {
       // https://github.com/jeaiii/itoa
       unsigned n = N - 1;
       unsigned a = n / 5 * n * 53 / 16;
-      uint64_t t = ((1ULL << (32 + a)) / data::POWERS_OF_10_32[n] + 1 - n / 9);
+      uint64_t t = ((1ULL << (32 + a)) /
+                   data::ZERO_OR_POWERS_OF_10_32[n] + 1 - n / 9);
       t = ((t * u) >> a) + n / 5 * 4;
       write_pair(0, t >> 32);
       for (unsigned i = 2; i < N; i += 2) {
@@ -1075,7 +1081,7 @@ class decimal_formatter_null : public decimal_formatter {
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline unsigned count_digits(uint32_t n) {
   int t = (32 - FMT_BUILTIN_CLZ(n | 1)) * 1233 >> 12;
-  return to_unsigned(t) - (n < data::POWERS_OF_10_32[t]) + 1;
+  return to_unsigned(t) - (n < data::ZERO_OR_POWERS_OF_10_32[t]) + 1;
 }
 #endif
 
@@ -2943,31 +2949,10 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   basic_memory_buffer<char_type> buffer;
   if (internal::const_check(FMT_USE_GRISU && sizeof(T) <= sizeof(double) &&
       std::numeric_limits<double>::is_iec559)) {
-    internal::fp fp_value(static_cast<double>(value));
-    fp_value.normalize();
-    // Find a cached power of 10 close to 1 / fp_value.
-    int dec_exp = 0;
-    const int min_exp = -60;
-    auto dec_pow = internal::get_cached_power(
-        min_exp - (fp_value.e + internal::fp::significand_size), dec_exp);
-    internal::fp product = fp_value * dec_pow;
-    // Generate output using Grisu digit-gen-mix algorithm.
-    internal::fp one(1ull << -product.e, product.e);
-    uint64_t hi = product.f >> -one.e;
-    uint64_t f = product.f & (one.f - 1);
-    typedef back_insert_range<internal::basic_buffer<char_type>> range;
-    basic_writer<range> w{range(buffer)};
-    w.write(hi);
-    size_t digits = buffer.size();
-    w.write('.');
-    const unsigned max_digits = 18;
-    while (digits++ < max_digits) {
-      f *= 10;
-      w.write(static_cast<char>('0' + (f >> -one.e)));
-      f &= one.f - 1;
-    }
-    w.write('e');
-    w.write(-dec_exp);
+    char buf[100]; // TODO: max size
+    size_t size = 0;
+    internal::grisu2_format(static_cast<double>(value), buf, size);
+    buffer.append(buf, buf + size); // TODO: avoid extra copy
   } else {
     format_specs normalized_spec(spec);
     normalized_spec.type_ = handler.type;

@@ -73,7 +73,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Wcast-qual -Wformat=2 -Wmissing-include-dirs
       -Wcast-align -Wnon-virtual-dtor
       -Wctor-dtor-privacy -Wdisabled-optimization
-      -Winvalid-pch -Wmissing-declarations -Woverloaded-virtual
+      -Winvalid-pch -Woverloaded-virtual
       -Wno-ctor-dtor-privacy -Wno-dangling-else -Wno-float-equal
       -Wno-format-nonliteral -Wno-sign-conversion -Wno-shadow)
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
@@ -101,8 +101,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       -Wno-unused-member-function
       -Wno-format-nonliteral -Wno-missing-noreturn -Wno-undefined-func-template
       -Wno-shadow -Wno-sign-conversion -Wno-used-but-marked-unused
-      -Wno-covered-switch-default -Wno-missing-variable-declarations
-      -Wno-double-promotion)
+      -Wno-covered-switch-default -Wno-missing-prototypes
+      -Wno-missing-variable-declarations -Wno-double-promotion)
 
   set(WERROR_FLAG -Werror)
 
