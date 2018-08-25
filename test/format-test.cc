@@ -31,6 +31,77 @@ using fmt::format_error;
 using fmt::string_view;
 using fmt::memory_buffer;
 using fmt::wmemory_buffer;
+using fmt::internal::fp;
+
+template <bool is_iec559>
+void test_construct_from_double() {
+  fmt::print("warning: double is not IEC559, skipping FP tests\n");
+}
+
+template <>
+void test_construct_from_double<true>() {
+  auto v = fp(1.23);
+  EXPECT_EQ(v.f, 0x13ae147ae147aeu);
+  EXPECT_EQ(v.e, -52);
+}
+
+TEST(FPTest, ConstructFromDouble) {
+  test_construct_from_double<std::numeric_limits<double>::is_iec559>();
+}
+
+TEST(FPTest, Normalize) {
+  auto v = fp(0xbeef, 42);
+  v.normalize();
+  EXPECT_EQ(0xbeef000000000000, v.f);
+  EXPECT_EQ(-6, v.e);
+}
+
+TEST(FPTest, ComputeBoundariesSubnormal) {
+  auto v = fp(0xbeef, 42);
+  fp lower, upper;
+  v.compute_boundaries(lower, upper);
+  EXPECT_EQ(0xbeee800000000000, lower.f);
+  EXPECT_EQ(-6, lower.e);
+  EXPECT_EQ(0xbeef800000000000, upper.f);
+  EXPECT_EQ(-6, upper.e);
+}
+
+TEST(FPTest, ComputeBoundaries) {
+  auto v = fp(0x10000000000000, 42);
+  fp lower, upper;
+  v.compute_boundaries(lower, upper);
+  EXPECT_EQ(0x7ffffffffffffe00, lower.f);
+  EXPECT_EQ(31, lower.e);
+  EXPECT_EQ(0x8000000000000400, upper.f);
+  EXPECT_EQ(31, upper.e);
+}
+
+TEST(FPTest, Subtract) {
+  auto v = fp(123, 1) - fp(102, 1);
+  EXPECT_EQ(v.f, 21u);
+  EXPECT_EQ(v.e, 1);
+}
+
+TEST(FPTest, Multiply) {
+  auto v = fp(123ULL << 32, 4) * fp(56ULL << 32, 7);
+  EXPECT_EQ(v.f, 123u * 56u);
+  EXPECT_EQ(v.e, 4 + 7 + 64);
+  v = fp(123ULL << 32, 4) * fp(567ULL << 31, 8);
+  EXPECT_EQ(v.f, (123 * 567 + 1u) / 2);
+  EXPECT_EQ(v.e, 4 + 8 + 64);
+}
+
+TEST(FPTest, GetCachedPower) {
+  typedef std::numeric_limits<double> limits;
+  for (auto exp = limits::min_exponent; exp <= limits::max_exponent; ++exp) {
+    int dec_exp = 0;
+    auto fp = fmt::internal::get_cached_power(exp, dec_exp);
+    EXPECT_LE(exp, fp.e);
+    int dec_exp_step = 8;
+    EXPECT_LE(fp.e, exp + dec_exp_step * log2(10));
+    EXPECT_DOUBLE_EQ(pow(10, dec_exp), ldexp(fp.f, fp.e));
+  }
+}
 
 namespace {
 

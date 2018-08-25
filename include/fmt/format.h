@@ -297,6 +297,7 @@ class fp {
   static FMT_CONSTEXPR_DECL const int significand_size =
     sizeof(significand_type) * char_size;
 
+  fp(): f(0), e(0) {}
   fp(uint64_t f, int e): f(f), e(e) {}
 
   // Constructs fp from an IEEE754 double. It is a template to prevent compile
@@ -334,6 +335,19 @@ class fp {
     auto offset = significand_size - double_significand_size - SHIFT - 1;
     f <<= offset;
     e -= offset;
+  }
+
+  // Compute lower and upper boundaries (m^- and m^+ in the Grisu paper), where
+  // a boundary is a value half way between the number and its predecessor
+  // (lower) or successor (upper). The upper boundary is normalized and lower
+  // has the same exponent but may be not normalized.
+  void compute_boundaries(fp &lower, fp &upper) const {
+    lower = f == implicit_bit ?
+          fp((f << 2) - 1, e - 2) : fp((f << 1) - 1, e - 1);
+    upper = fp((f << 1) + 1, e - 1);
+    upper.normalize<1>();  // 1 is to account for the exponent shift above.
+    lower.f <<= lower.e - upper.e;
+    lower.e = upper.e;
   }
 };
 
