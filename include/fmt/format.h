@@ -2949,9 +2949,12 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   basic_memory_buffer<char_type> buffer;
   if (internal::const_check(FMT_USE_GRISU && sizeof(T) <= sizeof(double) &&
       std::numeric_limits<double>::is_iec559)) {
-    char buf[100]; // TODO: max size
+    // The max size = 10 (hi) + 20 (lo) + 5 (exp).
+    enum { BUF_SIZE = 35 };
+    char buf[BUF_SIZE];
     size_t size = 0;
     internal::grisu2_format(static_cast<double>(value), buf, size);
+    FMT_ASSERT(size <= BUF_SIZE, "buffer overflow");
     buffer.append(buf, buf + size); // TODO: avoid extra copy
   } else {
     format_specs normalized_spec(spec);
