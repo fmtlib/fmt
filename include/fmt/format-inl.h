@@ -395,7 +395,7 @@ FMT_FUNC void grisu2_gen_digits(
       FMT_ASSERT(false, "invalid number of digits");
     }
     if (digit != 0 || size != 0)
-      buffer[size++] = '0' + static_cast<char>(digit);
+      buffer[size++] = static_cast<char>('0' + static_cast<char>(digit));
     --kappa;
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
     if (remainder <= delta) {
@@ -410,7 +410,7 @@ FMT_FUNC void grisu2_gen_digits(
     delta *= 10;
     char digit = static_cast<char>(lo >> -one.e);
     if (digit != 0 || size != 0)
-      buffer[size++] = '0' + digit;
+      buffer[size++] = static_cast<char>('0' + digit);
     lo &= one.f - 1;
     --kappa;
     if (lo < delta) {
