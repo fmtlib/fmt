@@ -13,8 +13,12 @@
 
 FMT_BEGIN_NAMESPACE
 
+// Prevents expansion of a preceding token as a function-style macro.
+// Usage: f FMT_NOMACRO()
+#define FMT_NOMACRO
+
 namespace internal{
-inline null<> localtime_r(...) { return null<>(); }
+inline null<> localtime_r FMT_NOMACRO(...) { return null<>(); }
 inline null<> localtime_s(...) { return null<>(); }
 inline null<> gmtime_r(...) { return null<>(); }
 inline null<> gmtime_s(...) { return null<>(); }
