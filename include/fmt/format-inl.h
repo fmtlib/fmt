@@ -18,12 +18,9 @@
 #include <cmath>
 #include <cstdarg>
 #include <cstddef>  // for std::ptrdiff_t
+#include <cstring>  // for std::memmove
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
 # include <locale>
-#endif
-
-#if defined(_WIN32) && defined(__MINGW32__)
-# include <cstring>
 #endif
 
 #if FMT_USE_WINDOWS_H
@@ -367,20 +364,49 @@ FMT_FUNC fp get_cached_power(int min_exponent, int &pow10_exponent) {
   return fp(data::POW10_SIGNIFICANDS[index], data::POW10_EXPONENTS[index]);
 }
 
+// Writes the exponent exp in the form "[+-]d{1,3}" to buffer.
+FMT_FUNC char *write_exponent(char *buffer, int exp) {
+  FMT_ASSERT(-1000 < exp && exp < 1000, "exponent out of range");
+  if (exp < 0) {
+    *buffer++ = '-';
+    exp = -exp;
+  } else {
+    *buffer++ = '+';
+  }
+  if (exp >= 100) {
+    *buffer++ = '0' + static_cast<char>(exp / 100);
+    exp %= 100;
+    const char *d = data::DIGITS + exp * 2;
+    *buffer++ = d[0];
+    *buffer++ = d[1];
+  } else if (exp >= 10) {
+    const char *d = data::DIGITS + exp * 2;
+    *buffer++ = d[0];
+    *buffer++ = d[1];
+  } else {
+    *buffer++ = '0' + static_cast<char>(exp);
+  }
+  return buffer;
+}
+
 // Generates output using Grisu2 digit-gen algorithm.
 FMT_FUNC void grisu2_gen_digits(
     const fp &scaled_value, const fp &scaled_upper, uint64_t delta,
     char *buffer, size_t &size, int &dec_exp) {
   internal::fp one(1ull << -scaled_upper.e, scaled_upper.e);
-  uint32_t hi = static_cast<uint32_t>(scaled_upper.f >> -one.e);  // p1 in Grisu
-  uint64_t lo = scaled_upper.f & (one.f - 1);                     // p2 in Grisu
+  // hi (p1 in Grisu) contains the most significant digits of scaled_upper.
+  // hi = floor(scaled_upper / one).
+  uint32_t hi = static_cast<uint32_t>(scaled_upper.f >> -one.e);
+  // lo (p2 in Grisu) contains the least significants digits of scaled_upper.
+  // lo = scaled_upper mod 1.
+  uint64_t lo = scaled_upper.f & (one.f - 1);
   size = 0;
-  auto kappa = count_digits(hi); // TODO: more descriptive name
-  while (kappa > 0) {
+  auto exp = count_digits(hi);  // kappa in Grisu.
+  while (exp > 0) {
     uint32_t digit = 0;
     // This optimization by miloyip reduces the number of integer divisions by
     // one per iteration.
-    switch (kappa) {
+    switch (exp) {
     case 10: digit = hi / 1000000000; hi %= 1000000000; break;
     case  9: digit = hi /  100000000; hi %=  100000000; break;
     case  8: digit = hi /   10000000; hi %=   10000000; break;
@@ -396,10 +422,10 @@ FMT_FUNC void grisu2_gen_digits(
     }
     if (digit != 0 || size != 0)
       buffer[size++] = static_cast<char>('0' + static_cast<char>(digit));
-    --kappa;
+    --exp;
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
     if (remainder <= delta) {
-      dec_exp += kappa;
+      dec_exp += exp;
       // TODO: use scaled_value
       (void)scaled_value;
       return;
@@ -412,31 +438,102 @@ FMT_FUNC void grisu2_gen_digits(
     if (digit != 0 || size != 0)
       buffer[size++] = static_cast<char>('0' + digit);
     lo &= one.f - 1;
-    --kappa;
+    --exp;
     if (lo < delta) {
-      dec_exp += kappa;
+      dec_exp += exp;
       return;
     }
   }
 }
 
-FMT_FUNC void grisu2_format(double value, char *buffer, size_t &size) {
+// Prettifies the output of the Grisu2 algorithm.
+// The number is given as v = buffer * 10^exp.
+FMT_FUNC void grisu2_prettify(char *buffer, size_t &size, int exp, char type,
+                              size_t precision, bool print_decimal_point) {
+  int int_size = static_cast<int>(size);
+  // 10^(full_exp - 1) <= v <= 10^full_exp.
+  int full_exp = int_size + exp;
+  if (int_size <= full_exp && full_exp <= 21) {
+    // 1234e7 -> 12340000000
+    std::uninitialized_fill_n(buffer + int_size, full_exp - int_size, '0');
+    char *p = buffer + full_exp;
+    if (print_decimal_point && size < precision) {
+      *p++ = '.';
+      auto fill_size = precision - size;
+      std::uninitialized_fill_n(p, fill_size, '0');
+      p += fill_size;
+    }
+    size = to_unsigned(p - buffer);
+  } else if (0 < full_exp && full_exp <= 21) {
+    // 1234e-2 -> 12.34
+    size_t fractional_size = to_unsigned(int_size - full_exp);
+    std::memmove(buffer + full_exp + 1, buffer + full_exp, fractional_size);
+    buffer[full_exp] = '.';
+    if (type == 'f' && fractional_size < precision) {
+      size_t num_zeros = precision - fractional_size;
+      std::uninitialized_fill_n(buffer + size + 1, num_zeros, '0');
+      size += num_zeros;
+    }
+    ++size;
+  } else if (-6 < full_exp && full_exp <= 0) {
+    // 1234e-6 -> 0.001234
+    int offset = 2 - full_exp;
+    std::memmove(buffer + offset, buffer, size);
+    buffer[0] = '0';
+    buffer[1] = '.';
+    std::uninitialized_fill_n(buffer + 2, -full_exp, '0');
+    size = to_unsigned(int_size + offset);
+  } else {
+    // Insert a decimal point after the first digit and add an exponent.
+    std::memmove(buffer + 2, buffer + 1, size - 1);
+    buffer[1] = '.';
+    char *p = buffer + size + 1;
+    *p++ = 'e';
+    size = to_unsigned(write_exponent(p, full_exp - 1) - buffer);
+  }
+}
+
+FMT_FUNC void grisu2_format_positive(double value, char *buffer, size_t &size,
+                                     int &dec_exp) {
+  FMT_ASSERT(value > 0, "value is nonpositive");
   fp fp_value(value);
-  fp lower, upper;
+  fp lower, upper;  // w^- and w^+ in the Grisu paper.
   fp_value.compute_boundaries(lower, upper);
   // Find a cached power of 10 close to 1 / upper.
-  int dec_exp = 0;  // K in Grisu paper.
-  const int min_exp = -60;
-  auto dec_pow = get_cached_power(
+  const int min_exp = -60;  // alpha in Grisu.
+  auto dec_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
       min_exp - (upper.e + fp::significand_size), dec_exp);
+  dec_exp = -dec_exp;
   fp_value.normalize();
   fp scaled_value = fp_value * dec_pow;
-  fp scaled_lower = lower * dec_pow;
-  fp scaled_upper = upper * dec_pow;
-  ++scaled_lower.f;  // +1 ulp
-  --scaled_upper.f;  // -1 ulp
+  fp scaled_lower = lower * dec_pow;  // \tilde{M}^- in Grisu.
+  fp scaled_upper = upper * dec_pow;  // \tilde{M}^+ in Grisu.
+  ++scaled_lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
+  --scaled_upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
   uint64_t delta = scaled_upper.f - scaled_lower.f;
   grisu2_gen_digits(scaled_value, scaled_upper, delta, buffer, size, dec_exp);
+}
+
+// Formats value using Grisu2 algorithm. Grisu2 doesn't give any guarantees on
+// the shortness of the result.
+FMT_FUNC void grisu2_format(double value, char *buffer, size_t &size, char type,
+                            int precision, bool print_decimal_point) {
+  FMT_ASSERT(value >= 0, "value is negative");
+  int dec_exp = 0;  // K in Grisu.
+  if (value > 0) {
+    grisu2_format_positive(value, buffer, size, dec_exp);
+  } else {
+    *buffer = '0';
+    size = 1;
+  }
+  size_t unsigned_precision = precision >= 0 ? precision : 6;
+  if (size > unsigned_precision) {
+    // TODO: round instead of truncating
+    dec_exp += size - unsigned_precision;
+    size = unsigned_precision;
+  }
+  grisu2_prettify(buffer, size, dec_exp, type, unsigned_precision,
+                  print_decimal_point);
 }
 }  // namespace internal
 
