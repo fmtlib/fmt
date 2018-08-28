@@ -367,8 +367,7 @@ FMT_API fp get_cached_power(int min_exponent, int &pow10_exponent);
 
 // Formats value using Grisu2 algorithm:
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
-FMT_API void grisu2_format(double value, char *buffer, size_t &size, char type,
-                           int precision, bool print_decimal_point);
+FMT_API void grisu2_format(double value, char *buffer, size_t &size);
 
 template <typename Allocator>
 typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {
@@ -2950,12 +2949,12 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   basic_memory_buffer<char_type> buffer;
   if (internal::const_check(FMT_USE_GRISU && sizeof(T) <= sizeof(double) &&
       std::numeric_limits<double>::is_iec559)) {
-    char buf[100]; // TODO: correct buffer size
+    // The max size = 10 (hi) + 20 (lo) + 5 (exp).
+    enum { BUF_SIZE = 35 };
+    char buf[BUF_SIZE];
     size_t size = 0;
-    internal::grisu2_format(
-          static_cast<double>(value), buf, size, static_cast<char>(spec.type()),
-          spec.precision(), spec.flag(HASH_FLAG));
-    FMT_ASSERT(size <= 100, "buffer overflow");
+    internal::grisu2_format(static_cast<double>(value), buf, size);
+    FMT_ASSERT(size <= BUF_SIZE, "buffer overflow");
     buffer.append(buf, buf + size); // TODO: avoid extra copy
   } else {
     format_specs normalized_spec(spec);
