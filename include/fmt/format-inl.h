@@ -529,7 +529,7 @@ FMT_FUNC void grisu2_format(double value, char *buffer, size_t &size, char type,
   size_t unsigned_precision = precision >= 0 ? precision : 6;
   if (size > unsigned_precision) {
     // TODO: round instead of truncating
-    dec_exp += size - unsigned_precision;
+    dec_exp += static_cast<int>(size - unsigned_precision);
     size = unsigned_precision;
   }
   grisu2_prettify(buffer, size, dec_exp, type, unsigned_precision,
