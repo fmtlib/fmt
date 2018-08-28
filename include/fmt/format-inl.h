@@ -374,7 +374,7 @@ FMT_FUNC char *write_exponent(char *buffer, int exp) {
     *buffer++ = '+';
   }
   if (exp >= 100) {
-    *buffer++ = static_cast<char>('0' + static_cast<char>(exp / 100));
+    *buffer++ = static_cast<char>('0' + exp / 100);
     exp %= 100;
     const char *d = data::DIGITS + exp * 2;
     *buffer++ = d[0];
@@ -384,7 +384,7 @@ FMT_FUNC char *write_exponent(char *buffer, int exp) {
     *buffer++ = d[0];
     *buffer++ = d[1];
   } else {
-    *buffer++ = static_cast<char>('0' + static_cast<char>(exp));
+    *buffer++ = static_cast<char>('0' + exp);
   }
   return buffer;
 }
@@ -421,7 +421,7 @@ FMT_FUNC void grisu2_gen_digits(
       FMT_ASSERT(false, "invalid number of digits");
     }
     if (digit != 0 || size != 0)
-      buffer[size++] = static_cast<char>('0' + static_cast<char>(digit));
+      buffer[size++] = static_cast<char>('0' + digit);
     --exp;
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
     if (remainder <= delta) {
