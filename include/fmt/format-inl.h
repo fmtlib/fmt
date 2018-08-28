@@ -374,7 +374,7 @@ FMT_FUNC char *write_exponent(char *buffer, int exp) {
     *buffer++ = '+';
   }
   if (exp >= 100) {
-    *buffer++ = '0' + static_cast<char>(exp / 100);
+    *buffer++ = static_cast<char>('0' + static_cast<char>(exp / 100));
     exp %= 100;
     const char *d = data::DIGITS + exp * 2;
     *buffer++ = d[0];
@@ -384,7 +384,7 @@ FMT_FUNC char *write_exponent(char *buffer, int exp) {
     *buffer++ = d[0];
     *buffer++ = d[1];
   } else {
-    *buffer++ = '0' + static_cast<char>(exp);
+    *buffer++ = static_cast<char>('0' + static_cast<char>(exp));
   }
   return buffer;
 }
@@ -529,7 +529,7 @@ FMT_FUNC void grisu2_format(double value, char *buffer, size_t &size, char type,
   size_t unsigned_precision = precision >= 0 ? precision : 6;
   if (size > unsigned_precision) {
     // TODO: round instead of truncating
-    dec_exp += size - unsigned_precision;
+    dec_exp += static_cast<int>(size - unsigned_precision); 
     size = unsigned_precision;
   }
   grisu2_prettify(buffer, size, dec_exp, type, unsigned_precision,
