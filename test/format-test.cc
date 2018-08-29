@@ -1533,7 +1533,7 @@ class mock_arg_formatter:
       fmt::internal::arg_formatter_base<buffer_range>::iterator>,
     public fmt::internal::arg_formatter_base<buffer_range> {
  private:
-  MOCK_METHOD1(call, void (int value));
+  MOCK_METHOD1(call, void (long long value));
 
  public:
   typedef fmt::internal::arg_formatter_base<buffer_range> base;
