@@ -150,7 +150,7 @@ FMT_END_NAMESPACE
 #endif
 
 #ifndef FMT_USE_GRISU
-# define FMT_USE_GRISU 1
+# define FMT_USE_GRISU 0
 #endif
 
 // __builtin_clz is broken in clang with Microsoft CodeGen:
@@ -282,7 +282,7 @@ inline bool use_grisu() {
 // Formats value using Grisu2 algorithm:
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
 FMT_API void grisu2_format(double value, char *buffer, size_t &size, char type,
-                           int precision, bool print_decimal_point);
+                           int precision, bool write_decimal_point);
 
 template <typename Allocator>
 typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {

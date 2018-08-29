@@ -454,31 +454,6 @@ FMT_FUNC fp get_cached_power(int min_exponent, int &pow10_exponent) {
   return fp(data::POW10_SIGNIFICANDS[index], data::POW10_EXPONENTS[index]);
 }
 
-// Writes the exponent exp in the form "[+-]d{1,3}" to buffer.
-FMT_FUNC char *write_exponent(char *buffer, int exp) {
-  FMT_ASSERT(-1000 < exp && exp < 1000, "exponent out of range");
-  if (exp < 0) {
-    *buffer++ = '-';
-    exp = -exp;
-  } else {
-    *buffer++ = '+';
-  }
-  if (exp >= 100) {
-    *buffer++ = static_cast<char>('0' + exp / 100);
-    exp %= 100;
-    const char *d = data::DIGITS + exp * 2;
-    *buffer++ = d[0];
-    *buffer++ = d[1];
-  } else if (exp >= 10) {
-    const char *d = data::DIGITS + exp * 2;
-    *buffer++ = d[0];
-    *buffer++ = d[1];
-  } else {
-    *buffer++ = static_cast<char>('0' + exp);
-  }
-  return buffer;
-}
-
 // Generates output using Grisu2 digit-gen algorithm.
 FMT_FUNC void grisu2_gen_digits(
     const fp &scaled_value, const fp &scaled_upper, uint64_t delta,
@@ -557,13 +532,66 @@ FMT_FUNC void grisu2_format_positive(double value, char *buffer, size_t &size,
   grisu2_gen_digits(scaled_value, scaled_upper, delta, buffer, size, dec_exp);
 }
 
+FMT_FUNC void round(char *buffer, size_t &size, int &exp,
+                    int digits_to_remove) {
+  size -= to_unsigned(digits_to_remove);
+  exp += digits_to_remove;
+  int digit = buffer[size] - '0';
+  // TODO: proper rounding and carry
+  if (digit > 5 || (digit == 5 && (digits_to_remove > 1 ||
+                                   (buffer[size - 1] - '0') % 2) != 0)) {
+    ++buffer[size - 1];
+  }
+}
+
+// Writes the exponent exp in the form "[+-]d{1,3}" to buffer.
+FMT_FUNC char *write_exponent(char *buffer, int exp) {
+  FMT_ASSERT(-1000 < exp && exp < 1000, "exponent out of range");
+  if (exp < 0) {
+    *buffer++ = '-';
+    exp = -exp;
+  } else {
+    *buffer++ = '+';
+  }
+  if (exp >= 100) {
+    *buffer++ = static_cast<char>('0' + exp / 100);
+    exp %= 100;
+    const char *d = data::DIGITS + exp * 2;
+    *buffer++ = d[0];
+    *buffer++ = d[1];
+  } else {
+    const char *d = data::DIGITS + exp * 2;
+    *buffer++ = d[0];
+    *buffer++ = d[1];
+  }
+  return buffer;
+}
+
+FMT_FUNC void format_exp_notation(
+    char *buffer, size_t &size, int exp, int precision, bool upper) {
+  // Insert a decimal point after the first digit and add an exponent.
+  std::memmove(buffer + 2, buffer + 1, size - 1);
+  buffer[1] = '.';
+  exp += static_cast<int>(size) - 1;
+  int num_digits = precision - static_cast<int>(size) + 1;
+  if (num_digits > 0) {
+    std::uninitialized_fill_n(buffer + size + 1, num_digits, '0');
+    size += to_unsigned(num_digits);
+  } else if (num_digits < 0) {
+    round(buffer, size, exp, -num_digits);
+  }
+  char *p = buffer + size + 1;
+  *p++ = upper ? 'E' : 'e';
+  size = to_unsigned(write_exponent(p, exp) - buffer);
+}
+
 // Prettifies the output of the Grisu2 algorithm.
 // The number is given as v = buffer * 10^exp.
 FMT_FUNC void grisu2_prettify(char *buffer, size_t &size, int exp,
-                              int precision) {
+                              int precision, bool upper) {
   // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
-  int full_exp = static_cast<int>(size) + exp;
   int int_size = static_cast<int>(size);
+  int full_exp = int_size + exp;
   const int exp_threshold = 21;
   if (int_size <= full_exp && full_exp <= exp_threshold) {
     // 1234e7 -> 12340000000[.0+]
@@ -578,12 +606,13 @@ FMT_FUNC void grisu2_prettify(char *buffer, size_t &size, int exp,
   } else if (0 < full_exp && full_exp <= exp_threshold) {
     // 1234e-2 -> 12.34[0+]
     int fractional_size = -exp;
-    std::memmove(buffer + full_exp + 1, buffer + full_exp, fractional_size);
+    std::memmove(buffer + full_exp + 1, buffer + full_exp,
+                 to_unsigned(fractional_size));
     buffer[full_exp] = '.';
-    if (fractional_size < precision) {
-      int num_zeros = precision - fractional_size;
+    int num_zeros = precision - fractional_size;
+    if (num_zeros > 0) {
       std::uninitialized_fill_n(buffer + size + 1, num_zeros, '0');
-      size += num_zeros;
+      size += to_unsigned(num_zeros);
     }
     ++size;
   } else if (-6 < full_exp && full_exp <= 0) {
@@ -595,25 +624,20 @@ FMT_FUNC void grisu2_prettify(char *buffer, size_t &size, int exp,
     std::uninitialized_fill_n(buffer + 2, -full_exp, '0');
     size = to_unsigned(int_size + offset);
   } else {
-    // Insert a decimal point after the first digit and add an exponent.
-    std::memmove(buffer + 2, buffer + 1, size - 1);
-    buffer[1] = '.';
-    char *p = buffer + size + 1;
-    *p++ = 'e';
-    size = to_unsigned(write_exponent(p, full_exp - 1) - buffer);
+    format_exp_notation(buffer, size, exp, precision, upper);
   }
 }
 
-inline void round(char *, size_t &size, int &exp, int diff) {
-  // TODO: round instead of truncating
-  size -= to_unsigned(diff);
-  exp += diff;
-}
+#if FMT_CLANG_VERSION
+# define FMT_FALLTHROUGH [[clang::fallthrough]];
+#else
+# define FMT_FALLTHROUGH
+#endif
 
 // Formats a nonnegative value using Grisu2 algorithm. Grisu2 doesn't give any
 // guarantees on the shortness of the result.
 FMT_FUNC void grisu2_format(double value, char *buffer, size_t &size, char type,
-                            int precision, bool print_decimal_point) {
+                            int precision, bool write_decimal_point) {
   FMT_ASSERT(value >= 0, "value is negative");
   int dec_exp = 0;  // K in Grisu.
   if (value > 0) {
@@ -625,24 +649,43 @@ FMT_FUNC void grisu2_format(double value, char *buffer, size_t &size, char type,
   const int default_precision = 6;
   if (precision < 0)
     precision = default_precision;
-  if (!type || type == 'g' || type == 'G') {
-    int extra_digits = static_cast<int>(size) - precision;
-    if (extra_digits > 0)
-      round(buffer, size, dec_exp, extra_digits);
-    precision = 0;
-  } else if (type == 'f' || type == 'F') {
-    if (precision > 0)
-      print_decimal_point = true;
-    int extra_digits = -dec_exp - precision;
-    if (extra_digits > 0) {
-      if (extra_digits >= static_cast<int>(size))
-        extra_digits = static_cast<int>(size) - 1;
-      round(buffer, size, dec_exp, extra_digits);
+  bool upper = false;
+  switch (type) {
+  case 'G':
+    upper = true;
+    FMT_FALLTHROUGH
+  case '\0': case 'g': {
+    int digits_to_remove = static_cast<int>(size) - precision;
+    if (digits_to_remove > 0) {
+      round(buffer, size, dec_exp, digits_to_remove);
+      // Remove trailing zeros.
+      while (size > 0 && buffer[size - 1] == '0') {
+        --size;
+        ++dec_exp;
+      }
     }
+    precision = 0;
+    break;
   }
-  if (print_decimal_point && precision < 1)
+  case 'F':
+    upper = true;
+    FMT_FALLTHROUGH
+  case 'f': {
+    int digits_to_remove = -dec_exp - precision;
+    if (digits_to_remove > 0) {
+      if (digits_to_remove >= static_cast<int>(size))
+        digits_to_remove = static_cast<int>(size) - 1;
+      round(buffer, size, dec_exp, digits_to_remove);
+    }
+    break;
+  }
+  case 'e': case 'E':
+    format_exp_notation(buffer, size, dec_exp, precision, type == 'E');
+    return;
+  }
+  if (write_decimal_point && precision < 1)
     precision = 1;
-  grisu2_prettify(buffer, size, dec_exp, precision);
+  grisu2_prettify(buffer, size, dec_exp, precision, upper);
 }
 }  // namespace internal
 

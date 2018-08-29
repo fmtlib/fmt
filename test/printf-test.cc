@@ -180,8 +180,13 @@ TEST(PrintfTest, HashFlag) {
   safe_sprintf(buffer, "%#E", -42.0);
   EXPECT_PRINTF(buffer, "%#E", -42.0);
 
-  EXPECT_PRINTF("-42.0000", "%#g", -42.0);
-  EXPECT_PRINTF("-42.0000", "%#G", -42.0);
+  if (fmt::internal::use_grisu()) {
+    EXPECT_PRINTF("-42.0", "%#g", -42.0);
+    EXPECT_PRINTF("-42.0", "%#G", -42.0);
+  } else {
+    EXPECT_PRINTF("-42.0000", "%#g", -42.0);
+    EXPECT_PRINTF("-42.0000", "%#G", -42.0);
+  }
 
   safe_sprintf(buffer, "%#a", 16.0);
   EXPECT_PRINTF(buffer, "%#a", 16.0);
