@@ -150,7 +150,7 @@ FMT_END_NAMESPACE
 #endif
 
 #ifndef FMT_USE_GRISU
-# define FMT_USE_GRISU 0
+# define FMT_USE_GRISU 1
 #endif
 
 // __builtin_clz is broken in clang with Microsoft CodeGen:
@@ -275,95 +275,9 @@ inline dummy_int _finite(...) { return dummy_int(); }
 inline dummy_int isnan(...) { return dummy_int(); }
 inline dummy_int _isnan(...) { return dummy_int(); }
 
-// A handmade floating-point number f * pow(2, e).
-class fp {
- private:
-  typedef uint64_t significand_type;
-
-  // All sizes are in bits.
-  static FMT_CONSTEXPR_DECL const int char_size =
-    std::numeric_limits<unsigned char>::digits;
-  // Subtract 1 to account for an implicit most significant bit in the
-  // normalized form.
-  static FMT_CONSTEXPR_DECL const int double_significand_size =
-    std::numeric_limits<double>::digits - 1;
-  static FMT_CONSTEXPR_DECL const uint64_t implicit_bit =
-    1ull << double_significand_size;
-
- public:
-  significand_type f;
-  int e;
-
-  static FMT_CONSTEXPR_DECL const int significand_size =
-    sizeof(significand_type) * char_size;
-
-  fp(): f(0), e(0) {}
-  fp(uint64_t f, int e): f(f), e(e) {}
-
-  // Constructs fp from an IEEE754 double. It is a template to prevent compile
-  // errors on platforms where double is not IEEE754.
-  template <typename Double>
-  explicit fp(Double d) {
-    // Assume double is in the format [sign][exponent][significand].
-    typedef std::numeric_limits<Double> limits;
-    const int double_size = sizeof(Double) * char_size;
-    const int exponent_size =
-      double_size - double_significand_size - 1;  // -1 for sign
-    const uint64_t significand_mask = implicit_bit - 1;
-    const uint64_t exponent_mask = (~0ull >> 1) & ~significand_mask;
-    const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
-    auto u = bit_cast<uint64_t>(d);
-    auto biased_e = (u & exponent_mask) >> double_significand_size;
-    f = u & significand_mask;
-    if (biased_e != 0)
-      f += implicit_bit;
-    else
-      biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
-  }
-
-  // Normalizes the value converted from double and multiplied by (1 << SHIFT).
-  template <int SHIFT = 0>
-  void normalize() {
-    // Handle subnormals.
-    auto shifted_implicit_bit = implicit_bit << SHIFT;
-    while ((f & shifted_implicit_bit) == 0) {
-      f <<= 1;
-      --e;
-    }
-    // Subtract 1 to account for hidden bit.
-    auto offset = significand_size - double_significand_size - SHIFT - 1;
-    f <<= offset;
-    e -= offset;
-  }
-
-  // Compute lower and upper boundaries (m^- and m^+ in the Grisu paper), where
-  // a boundary is a value half way between the number and its predecessor
-  // (lower) or successor (upper). The upper boundary is normalized and lower
-  // has the same exponent but may be not normalized.
-  void compute_boundaries(fp &lower, fp &upper) const {
-    lower = f == implicit_bit ?
-          fp((f << 2) - 1, e - 2) : fp((f << 1) - 1, e - 1);
-    upper = fp((f << 1) + 1, e - 1);
-    upper.normalize<1>();  // 1 is to account for the exponent shift above.
-    lower.f <<= lower.e - upper.e;
-    lower.e = upper.e;
-  }
-};
-
-// Returns an fp number representing x - y. Result may not be normalized.
-inline fp operator-(fp x, fp y) {
-  FMT_ASSERT(x.f >= y.f && x.e == y.e, "invalid operands");
-  return fp(x.f - y.f, x.e);
+inline bool use_grisu() {
+  return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559;
 }
-
-// Computes an fp number r with r.f = x.f * y.f / pow(2, 64) rounded to nearest
-// with half-up tie breaking, r.e = x.e + y.e + 64. Result may not be normalized.
-FMT_API fp operator*(fp x, fp y);
-
-// Returns cached power (of 10) c_k = c_k.f * pow(2, c_k.e) such that its
-// (binary) exponent satisfies min_exponent <= c_k.e <= min_exponent + 3.
-FMT_API fp get_cached_power(int min_exponent, int &pow10_exponent);
 
 // Formats value using Grisu2 algorithm:
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
@@ -2948,13 +2862,14 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     return write_inf_or_nan(handler.upper ? "INF" : "inf");
 
   basic_memory_buffer<char_type> buffer;
-  if (internal::const_check(FMT_USE_GRISU && sizeof(T) <= sizeof(double) &&
-      std::numeric_limits<double>::is_iec559)) {
+  char type = static_cast<char>(spec.type());
+  if (internal::const_check(
+        internal::use_grisu() && sizeof(T) <= sizeof(double)) &&
+      type != 'a' && type != 'A') {
     char buf[100]; // TODO: correct buffer size
     size_t size = 0;
-    internal::grisu2_format(
-          static_cast<double>(value), buf, size, static_cast<char>(spec.type()),
-          spec.precision(), spec.flag(HASH_FLAG));
+    internal::grisu2_format(static_cast<double>(value), buf, size, type,
+                            spec.precision(), spec.flag(HASH_FLAG));
     FMT_ASSERT(size <= 100, "buffer overflow");
     buffer.append(buf, buf + size); // TODO: avoid extra copy
   } else {

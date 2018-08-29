@@ -340,6 +340,96 @@ const int16_t basic_data<T>::POW10_EXPONENTS[] = {
 template <typename T> const char basic_data<T>::RESET_COLOR[] = "\x1b[0m";
 template <typename T> const wchar_t basic_data<T>::WRESET_COLOR[] = L"\x1b[0m";
 
+// A handmade floating-point number f * pow(2, e).
+class fp {
+ private:
+  typedef uint64_t significand_type;
+
+  // All sizes are in bits.
+  static FMT_CONSTEXPR_DECL const int char_size =
+    std::numeric_limits<unsigned char>::digits;
+  // Subtract 1 to account for an implicit most significant bit in the
+  // normalized form.
+  static FMT_CONSTEXPR_DECL const int double_significand_size =
+    std::numeric_limits<double>::digits - 1;
+  static FMT_CONSTEXPR_DECL const uint64_t implicit_bit =
+    1ull << double_significand_size;
+
+ public:
+  significand_type f;
+  int e;
+
+  static FMT_CONSTEXPR_DECL const int significand_size =
+    sizeof(significand_type) * char_size;
+
+  fp(): f(0), e(0) {}
+  fp(uint64_t f, int e): f(f), e(e) {}
+
+  // Constructs fp from an IEEE754 double. It is a template to prevent compile
+  // errors on platforms where double is not IEEE754.
+  template <typename Double>
+  explicit fp(Double d) {
+    // Assume double is in the format [sign][exponent][significand].
+    typedef std::numeric_limits<Double> limits;
+    const int double_size = sizeof(Double) * char_size;
+    const int exponent_size =
+      double_size - double_significand_size - 1;  // -1 for sign
+    const uint64_t significand_mask = implicit_bit - 1;
+    const uint64_t exponent_mask = (~0ull >> 1) & ~significand_mask;
+    const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
+    auto u = bit_cast<uint64_t>(d);
+    auto biased_e = (u & exponent_mask) >> double_significand_size;
+    f = u & significand_mask;
+    if (biased_e != 0)
+      f += implicit_bit;
+    else
+      biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
+    e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
+  }
+
+  // Normalizes the value converted from double and multiplied by (1 << SHIFT).
+  template <int SHIFT = 0>
+  void normalize() {
+    // Handle subnormals.
+    auto shifted_implicit_bit = implicit_bit << SHIFT;
+    while ((f & shifted_implicit_bit) == 0) {
+      f <<= 1;
+      --e;
+    }
+    // Subtract 1 to account for hidden bit.
+    auto offset = significand_size - double_significand_size - SHIFT - 1;
+    f <<= offset;
+    e -= offset;
+  }
+
+  // Compute lower and upper boundaries (m^- and m^+ in the Grisu paper), where
+  // a boundary is a value half way between the number and its predecessor
+  // (lower) or successor (upper). The upper boundary is normalized and lower
+  // has the same exponent but may be not normalized.
+  void compute_boundaries(fp &lower, fp &upper) const {
+    lower = f == implicit_bit ?
+          fp((f << 2) - 1, e - 2) : fp((f << 1) - 1, e - 1);
+    upper = fp((f << 1) + 1, e - 1);
+    upper.normalize<1>();  // 1 is to account for the exponent shift above.
+    lower.f <<= lower.e - upper.e;
+    lower.e = upper.e;
+  }
+};
+
+// Returns an fp number representing x - y. Result may not be normalized.
+inline fp operator-(fp x, fp y) {
+  FMT_ASSERT(x.f >= y.f && x.e == y.e, "invalid operands");
+  return fp(x.f - y.f, x.e);
+}
+
+// Computes an fp number r with r.f = x.f * y.f / pow(2, 64) rounded to nearest
+// with half-up tie breaking, r.e = x.e + y.e + 64. Result may not be normalized.
+FMT_API fp operator*(fp x, fp y);
+
+// Returns cached power (of 10) c_k = c_k.f * pow(2, c_k.e) such that its
+// (binary) exponent satisfies min_exponent <= c_k.e <= min_exponent + 3.
+FMT_API fp get_cached_power(int min_exponent, int &pow10_exponent);
+
 FMT_FUNC fp operator*(fp x, fp y) {
   // Multiply 32-bit parts of significands.
   uint64_t mask = (1ULL << 32) - 1;
@@ -446,31 +536,52 @@ FMT_FUNC void grisu2_gen_digits(
   }
 }
 
+FMT_FUNC void grisu2_format_positive(double value, char *buffer, size_t &size,
+                                     int &dec_exp) {
+  FMT_ASSERT(value > 0, "value is nonpositive");
+  fp fp_value(value);
+  fp lower, upper;  // w^- and w^+ in the Grisu paper.
+  fp_value.compute_boundaries(lower, upper);
+  // Find a cached power of 10 close to 1 / upper.
+  const int min_exp = -60;  // alpha in Grisu.
+  auto dec_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
+      min_exp - (upper.e + fp::significand_size), dec_exp);
+  dec_exp = -dec_exp;
+  fp_value.normalize();
+  fp scaled_value = fp_value * dec_pow;
+  fp scaled_lower = lower * dec_pow;  // \tilde{M}^- in Grisu.
+  fp scaled_upper = upper * dec_pow;  // \tilde{M}^+ in Grisu.
+  ++scaled_lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
+  --scaled_upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
+  uint64_t delta = scaled_upper.f - scaled_lower.f;
+  grisu2_gen_digits(scaled_value, scaled_upper, delta, buffer, size, dec_exp);
+}
+
 // Prettifies the output of the Grisu2 algorithm.
 // The number is given as v = buffer * 10^exp.
-FMT_FUNC void grisu2_prettify(char *buffer, size_t &size, int exp, char type,
-                              size_t precision, bool print_decimal_point) {
+FMT_FUNC void grisu2_prettify(char *buffer, size_t &size, int exp,
+                              int precision) {
+  // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
+  int full_exp = static_cast<int>(size) + exp;
   int int_size = static_cast<int>(size);
-  // 10^(full_exp - 1) <= v <= 10^full_exp.
-  int full_exp = int_size + exp;
-  if (int_size <= full_exp && full_exp <= 21) {
-    // 1234e7 -> 12340000000
+  const int exp_threshold = 21;
+  if (int_size <= full_exp && full_exp <= exp_threshold) {
+    // 1234e7 -> 12340000000[.0+]
     std::uninitialized_fill_n(buffer + int_size, full_exp - int_size, '0');
     char *p = buffer + full_exp;
-    if (print_decimal_point && size < precision) {
+    if (precision > 0) {
       *p++ = '.';
-      auto fill_size = precision - size;
-      std::uninitialized_fill_n(p, fill_size, '0');
-      p += fill_size;
+      std::uninitialized_fill_n(p, precision, '0');
+      p += precision;
     }
     size = to_unsigned(p - buffer);
-  } else if (0 < full_exp && full_exp <= 21) {
-    // 1234e-2 -> 12.34
-    size_t fractional_size = to_unsigned(int_size - full_exp);
+  } else if (0 < full_exp && full_exp <= exp_threshold) {
+    // 1234e-2 -> 12.34[0+]
+    int fractional_size = -exp;
     std::memmove(buffer + full_exp + 1, buffer + full_exp, fractional_size);
     buffer[full_exp] = '.';
-    if (type == 'f' && fractional_size < precision) {
-      size_t num_zeros = precision - fractional_size;
+    if (fractional_size < precision) {
+      int num_zeros = precision - fractional_size;
       std::uninitialized_fill_n(buffer + size + 1, num_zeros, '0');
       size += num_zeros;
     }
@@ -493,29 +604,14 @@ FMT_FUNC void grisu2_prettify(char *buffer, size_t &size, int exp, char type,
   }
 }
 
-FMT_FUNC void grisu2_format_positive(double value, char *buffer, size_t &size,
-                                     int &dec_exp) {
-  FMT_ASSERT(value > 0, "value is nonpositive");
-  fp fp_value(value);
-  fp lower, upper;  // w^- and w^+ in the Grisu paper.
-  fp_value.compute_boundaries(lower, upper);
-  // Find a cached power of 10 close to 1 / upper.
-  const int min_exp = -60;  // alpha in Grisu.
-  auto dec_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
-      min_exp - (upper.e + fp::significand_size), dec_exp);
-  dec_exp = -dec_exp;
-  fp_value.normalize();
-  fp scaled_value = fp_value * dec_pow;
-  fp scaled_lower = lower * dec_pow;  // \tilde{M}^- in Grisu.
-  fp scaled_upper = upper * dec_pow;  // \tilde{M}^+ in Grisu.
-  ++scaled_lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
-  --scaled_upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
-  uint64_t delta = scaled_upper.f - scaled_lower.f;
-  grisu2_gen_digits(scaled_value, scaled_upper, delta, buffer, size, dec_exp);
+inline void round(char *, size_t &size, int &exp, int diff) {
+  // TODO: round instead of truncating
+  size -= to_unsigned(diff);
+  exp += diff;
 }
 
-// Formats value using Grisu2 algorithm. Grisu2 doesn't give any guarantees on
-// the shortness of the result.
+// Formats a nonnegative value using Grisu2 algorithm. Grisu2 doesn't give any
+// guarantees on the shortness of the result.
 FMT_FUNC void grisu2_format(double value, char *buffer, size_t &size, char type,
                             int precision, bool print_decimal_point) {
   FMT_ASSERT(value >= 0, "value is negative");
@@ -526,14 +622,27 @@ FMT_FUNC void grisu2_format(double value, char *buffer, size_t &size, char type,
     *buffer = '0';
     size = 1;
   }
-  size_t unsigned_precision = precision >= 0 ? precision : 6;
-  if (size > unsigned_precision) {
-    // TODO: round instead of truncating
-    dec_exp += static_cast<int>(size - unsigned_precision); 
-    size = unsigned_precision;
+  const int default_precision = 6;
+  if (precision < 0)
+    precision = default_precision;
+  if (!type || type == 'g' || type == 'G') {
+    int extra_digits = static_cast<int>(size) - precision;
+    if (extra_digits > 0)
+      round(buffer, size, dec_exp, extra_digits);
+    precision = 0;
+  } else if (type == 'f' || type == 'F') {
+    if (precision > 0)
+      print_decimal_point = true;
+    int extra_digits = -dec_exp - precision;
+    if (extra_digits > 0) {
+      if (extra_digits >= static_cast<int>(size))
+        extra_digits = static_cast<int>(size) - 1;
+      round(buffer, size, dec_exp, extra_digits);
+    }
   }
-  grisu2_prettify(buffer, size, dec_exp, type, unsigned_precision,
-                  print_decimal_point);
+  if (print_decimal_point && precision < 1)
+    precision = 1;
+  grisu2_prettify(buffer, size, dec_exp, precision);
 }
 }  // namespace internal
 
