@@ -1165,7 +1165,7 @@ struct monostate {};
  */
 template <typename Visitor, typename Context>
 FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, basic_format_arg<Context> arg) {
+    visit(Visitor &&vis, const basic_format_arg<Context> &arg) {
   typedef typename Context::char_type char_type;
   switch (arg.type_) {
   case internal::none_type:
@@ -2405,7 +2405,7 @@ class basic_writer {
   //   <left-padding><value><right-padding>
   // where <value> is written by f(it).
   template <typename F>
-  void write_padded(std::size_t size, const align_spec &spec, F f);
+  void write_padded(std::size_t size, const align_spec &spec, F &&f);
 
   template <typename F>
   struct padded_int_writer {
@@ -2755,7 +2755,7 @@ class basic_writer {
 template <typename Range>
 template <typename F>
 void basic_writer<Range>::write_padded(
-    std::size_t size, const align_spec &spec, F f) {
+    std::size_t size, const align_spec &spec, F &&f) {
   unsigned width = spec.width();
   if (width <= size)
     return f(reserve(size));
@@ -3250,7 +3250,8 @@ class dynamic_formatter {
 
 template <typename Range, typename Char>
 typename basic_format_context<Range, Char>::format_arg
-  basic_format_context<Range, Char>::get_arg(basic_string_view<char_type> name) {
+  basic_format_context<Range, Char>::get_arg(
+    basic_string_view<char_type> name) {
   map_.init(this->args());
   format_arg arg = map_.find(name);
   if (arg.type() == internal::none_type)

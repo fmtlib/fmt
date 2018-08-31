@@ -720,7 +720,7 @@ class basic_format_arg {
 
   template <typename Visitor, typename Ctx>
   friend FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, basic_format_arg<Ctx> arg);
+    visit(Visitor &&vis, const basic_format_arg<Ctx> &arg);
 
   friend class basic_format_args<Context>;
   friend class internal::arg_map<Context>;
