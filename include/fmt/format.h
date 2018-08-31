@@ -2148,7 +2148,8 @@ FMT_CONSTEXPR void parse_format_string(
     // 2.5x faster than the naive one-pass implementation on long format strings.
     auto p = find<IS_CONSTEXPR>(begin, end, '{');
     if (p == end) {
-      write(begin, end);
+      if (begin != end)
+        write(begin, end);
       return;
     }
     write(begin, p);
