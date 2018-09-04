@@ -2102,21 +2102,21 @@ struct id_adapter {
   Handler &handler;
 };
 
-template <bool IS_CONSTEXPR, class InputIt, class T>
-FMT_CONSTEXPR InputIt find(InputIt first, InputIt last, const T &value) {
-  for (; first != last; ++first) {
-    if (*first == value)
-      return first;
+// Return the result via the out param to workaround gcc bug 77539.
+template <bool IS_CONSTEXPR, typename T, typename Ptr = const T*>
+FMT_CONSTEXPR bool find(Ptr first, Ptr last, T value, Ptr &out) {
+  for (out = first; out != last; ++out) {
+    if (*out == value)
+      return true;
   }
-  return last;
+  return false;
 }
 
 template <>
-inline const char *find<false, const char*, char>(
-    const char *first, const char *last, const char &value) {
-  auto result = static_cast<const char*>(
-        std::memchr(first, value, last - first));
-  return result ? result : last;
+inline bool find<false, char>(
+    const char *first, const char *last, char value, const char *&out) {
+  out = static_cast<const char*>(std::memchr(first, value, last - first));
+  return out != FMT_NULL;
 }
 
 template <bool IS_CONSTEXPR, typename Char, typename Handler>
@@ -2125,8 +2125,8 @@ FMT_CONSTEXPR void parse_format_string(
   struct writer {
     FMT_CONSTEXPR void operator()(const Char *begin, const Char *end) {
       for (;;) {
-        auto p = find<IS_CONSTEXPR>(begin, end, '}');
-        if (p == end) {
+        const Char *p = FMT_NULL;
+        if (!find<IS_CONSTEXPR>(begin, end, '}', p)) {
           handler_.on_text(begin, end);
           return;
         }
@@ -2146,8 +2146,8 @@ FMT_CONSTEXPR void parse_format_string(
   for (;;) {
     // Doing two passes with memchr (one for '{' and another for '}') is up to
     // 2.5x faster than the naive one-pass implementation on long format strings.
-    auto p = find<IS_CONSTEXPR>(begin, end, '{');
-    if (p == end) {
+    const Char *p = FMT_NULL;
+    if (!find<IS_CONSTEXPR>(begin, end, '{', p)) {
       if (begin != end)
         write(begin, end);
       return;
@@ -2176,6 +2176,8 @@ FMT_CONSTEXPR void parse_format_string(
       return;
     }
     begin = pointer_from(it) + 1;
+    if (begin == end)
+      return;
   }
 }
 
