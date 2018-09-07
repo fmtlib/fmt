@@ -630,6 +630,8 @@ FMT_FUNC void grisu2_prettify(char *buffer, size_t &size, int exp,
 
 #if FMT_CLANG_VERSION
 # define FMT_FALLTHROUGH [[clang::fallthrough]];
+#elif FMT_GCC_VERSION >= 700
+# define FMT_FALLTHROUGH [[gnu::fallthrough]];
 #else
 # define FMT_FALLTHROUGH
 #endif
