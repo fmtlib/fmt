@@ -253,11 +253,10 @@ custom argument formatter class::
 
     using arg_formatter::operator();
 
-    void operator()(int value) {
+    auto operator()(int value) {
       if (spec().type() == 'x')
-        (*this)(static_cast<unsigned>(value)); // convert to unsigned and format
-      else
-        arg_formatter::operator()(value);
+        return (*this)(static_cast<unsigned>(value)); // convert to unsigned and format
+      return arg_formatter::operator()(value);
     }
   };
 

@@ -2145,7 +2145,7 @@ FMT_CONSTEXPR void parse_format_string(
   auto end = begin + format_str.size();
   for (;;) {
     // Doing two passes with memchr (one for '{' and another for '}') is up to
-    // 2.5x faster than the naive one-pass implementation on long format strings.
+    // 2.5x faster than the naive one-pass implementation on big format strings.
     const Char *p = FMT_NULL;
     if (!find<IS_CONSTEXPR>(begin, end, '{', p)) {
       if (begin != end)
@@ -2217,7 +2217,8 @@ class format_string_checker {
   FMT_CONSTEXPR const Char *on_format_specs(iterator it) {
     auto p = pointer_from(it);
     context_.advance_to(p);
-    return to_unsigned(arg_id_) < NUM_ARGS ? parse_funcs_[arg_id_](context_) : p;
+    return to_unsigned(arg_id_) < NUM_ARGS ?
+          parse_funcs_[arg_id_](context_) : p;
   }
 
   FMT_CONSTEXPR void on_error(const char *message) {
@@ -2747,7 +2748,8 @@ class basic_writer {
   }
 
   template <typename T>
-  typename std::enable_if<std::is_same<T, void>::value>::type write(const T* p) {
+  typename std::enable_if<std::is_same<T, void>::value>::type
+      write(const T *p) {
     format_specs specs;
     specs.flags_ = HASH_FLAG;
     specs.type_ = 'x';
@@ -3525,8 +3527,8 @@ inline format_to_n_result<OutputIt> vformat_to_n(
 /**
  \rst
  Formats arguments, writes up to ``n`` characters of the result to the output
- iterator ``out`` and returns the total output size and the iterator past the end
- of the output range.
+ iterator ``out`` and returns the total output size and the iterator past the
+ end of the output range.
  \endrst
  */
 template <typename OutputIt, typename... Args>
@@ -3537,7 +3539,8 @@ inline format_to_n_result<OutputIt> format_to_n(
 }
 template <typename OutputIt, typename... Args>
 inline format_to_n_result<OutputIt> format_to_n(
-    OutputIt out, std::size_t n, wstring_view format_str, const Args &... args) {
+    OutputIt out, std::size_t n, wstring_view format_str,
+    const Args &... args) {
   typedef internal::truncating_iterator<OutputIt> It;
   auto it = vformat_to(It(out, n), format_str,
       make_format_args<typename format_context_t<It, wchar_t>::type>(args...));
