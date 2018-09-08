@@ -576,12 +576,14 @@ class value {
   }
 };
 
-template <typename Context, type TYPE>
-struct typed_value : value<Context> {
+// Value initializer used to delay conversion to value and reduce memory churn.
+template <typename Context, typename T, type TYPE>
+struct init {
+  T val;
   static const type type_tag = TYPE;
 
-  template <typename T>
-  FMT_CONSTEXPR typed_value(const T &val) : value<Context>(val) {}
+  FMT_CONSTEXPR init(const T &v) : val(v) {}
+  FMT_CONSTEXPR operator value<Context>() const { return value<Context>(val); }
 };
 
 template <typename Context, typename T>
@@ -589,15 +591,13 @@ FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T &value);
 
 #define FMT_MAKE_VALUE(TAG, ArgType, ValueType) \
   template <typename C> \
-  FMT_CONSTEXPR typed_value<C, TAG> make_value(ArgType val) { \
+  FMT_CONSTEXPR init<C, ValueType, TAG> make_value(ArgType val) { \
     return static_cast<ValueType>(val); \
   }
 
 #define FMT_MAKE_VALUE_SAME(TAG, Type) \
   template <typename C> \
-  FMT_CONSTEXPR typed_value<C, TAG> make_value(Type val) { \
-    return val; \
-  }
+  FMT_CONSTEXPR init<C, Type, TAG> make_value(Type val) { return val; }
 
 FMT_MAKE_VALUE(bool_type, bool, int)
 FMT_MAKE_VALUE(int_type, short, int)
@@ -625,7 +625,7 @@ FMT_MAKE_VALUE(char_type, char, int)
 
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
 template <typename C>
-inline typed_value<C, char_type> make_value(wchar_t val) {
+inline init<C, int, char_type> make_value(wchar_t val) {
   require_wchar<typename C::char_type>();
   return static_cast<int>(val);
 }
@@ -672,13 +672,13 @@ typename std::enable_if<!std::is_same<T, typename C::char_type>::value>::type
 template <typename C, typename T>
 inline typename std::enable_if<
     std::is_enum<T>::value && convert_to_int<T, typename C::char_type>::value,
-    typed_value<C, int_type>>::type
+    init<C, int, int_type>>::type
   make_value(const T &val) { return static_cast<int>(val); }
 
 template <typename C, typename T, typename Char = typename C::char_type>
 inline typename std::enable_if<
     std::is_constructible<basic_string_view<Char>, T>::value,
-    typed_value<C, string_type>>::type
+    init<C, basic_string_view<Char>, string_type>>::type
   make_value(const T &val) { return basic_string_view<Char>(val); }
 
 template <typename C, typename T, typename Char = typename C::char_type>
@@ -688,11 +688,11 @@ inline typename std::enable_if<
     !std::is_constructible<basic_string_view<Char>, T>::value,
     // Implicit conversion to std::string is not handled here because it's
     // unsafe: https://github.com/fmtlib/fmt/issues/729
-    typed_value<C, custom_type>>::type
+    init<C, const T &, custom_type>>::type
   make_value(const T &val) { return val; }
 
 template <typename C, typename T>
-typed_value<C, named_arg_type>
+init<C, const void*, named_arg_type>
     make_value(const named_arg<T, typename C::char_type> &val) {
   basic_format_arg<C> arg = make_arg<C>(val.value);
   std::memcpy(val.data, &arg, sizeof(arg));
