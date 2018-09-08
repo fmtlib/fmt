@@ -230,6 +230,9 @@ FMT_CONSTEXPR size_t length(const Char *s) {
   while (*s) ++s;
   return s - start;
 }
+#if FMT_GCC_VERSION
+FMT_CONSTEXPR size_t length(const char *s) { return std::strlen(s); }
+#endif
 }  // namespace internal
 
 /**
