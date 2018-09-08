@@ -3859,7 +3859,7 @@ FMT_END_NAMESPACE
     return S{}; \
   }()
 
-#ifndef FMT_NO_FMT_STRING_ALIAS
+#if defined(FMT_STRING_ALIAS) && FMT_STRING_ALIAS
 /**
   \rst
   Constructs a compile-time format string.

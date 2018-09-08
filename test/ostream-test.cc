@@ -5,6 +5,7 @@
 //
 // For the license information refer to format.h.
 
+#define FMT_STRING_ALIAS 1
 #include "fmt/ostream.h"
 
 #include <sstream>
