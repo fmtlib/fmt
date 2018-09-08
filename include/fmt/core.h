@@ -1349,7 +1349,8 @@ inline typename std::enable_if<
   is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
     format_to(std::back_insert_iterator<Container> out,
               string_view format_str, const Args & ... args) {
-  return vformat_to(out, format_str, make_format_args<format_context>(args...));
+  format_arg_store<format_context, Args...> as{args...};
+  return vformat_to(out, format_str, as);
 }
 
 template <typename Container, typename... Args>
