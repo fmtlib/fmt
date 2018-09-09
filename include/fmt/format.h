@@ -2124,34 +2124,27 @@ FMT_CONSTEXPR void parse_format_string(
         basic_string_view<Char> format_str, Handler &&handler) {
   struct writer {
     FMT_CONSTEXPR void operator()(const Char *begin, const Char *end) {
+      if (begin == end) return;
       for (;;) {
         const Char *p = FMT_NULL;
-        if (!find<IS_CONSTEXPR>(begin, end, '}', p)) {
-          handler_.on_text(begin, end);
-          return;
-        }
+        if (!find<IS_CONSTEXPR>(begin, end, '}', p))
+          return handler_.on_text(begin, end);
         ++p;
-        if (p == end || *p != '}') {
-          handler_.on_error("unmatched '}' in format string");
-          return;
-        }
+        if (p == end || *p != '}')
+          return handler_.on_error("unmatched '}' in format string");
         handler_.on_text(begin, p);
         begin = p + 1;
       }
     }
     Handler &handler_;
   } write{handler};
-  auto begin = format_str.data();
-  auto end = begin + format_str.size();
+  auto begin = format_str.data(), end = begin + format_str.size();
   for (;;) {
     // Doing two passes with memchr (one for '{' and another for '}') is up to
     // 2.5x faster than the naive one-pass implementation on big format strings.
     const Char *p = FMT_NULL;
-    if (!find<IS_CONSTEXPR>(begin, end, '{', p)) {
-      if (begin != end)
-        write(begin, end);
-      return;
-    }
+    if (!find<IS_CONSTEXPR>(begin, end, '{', p))
+      return write(begin, end);
     write(begin, p);
     ++p;
     if (p != end && *p == '{') {
@@ -2159,7 +2152,6 @@ FMT_CONSTEXPR void parse_format_string(
       begin = p + 1;
       continue;
     }
-
     internal::null_terminating_iterator<Char> it(p, end);
     it = parse_arg_id(it, id_adapter<Handler, Char>(handler));
     if (*it == '}') {
@@ -2167,17 +2159,13 @@ FMT_CONSTEXPR void parse_format_string(
     } else if (*it == ':') {
       ++it;
       it = handler.on_format_specs(it);
-      if (*it != '}') {
-        handler.on_error("unknown format specifier");
-        return;
-      }
+      if (*it != '}')
+        return handler.on_error("unknown format specifier");
     } else {
-      handler.on_error("missing '}' in format string");
-      return;
+      return handler.on_error("missing '}' in format string");
     }
     begin = pointer_from(it) + 1;
-    if (begin == end)
-      return;
+    if (begin == end) return;
   }
 }
 
