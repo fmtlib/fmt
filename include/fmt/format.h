@@ -1584,8 +1584,9 @@ FMT_CONSTEXPR bool is_name_start(Char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
 }
 
-// Parses the input as an unsigned integer. This function assumes that the
-// first character is a digit and presence of a non-digit character at the end.
+// DEPRECATED: Parses the input as an unsigned integer. This function assumes
+// that the first character is a digit and presence of a non-digit character at
+// the end.
 // it: an iterator pointing to the beginning of the input range.
 template <typename Iterator, typename ErrorHandler>
 FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
@@ -1606,6 +1607,29 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
     ++next;
     it = next;
   } while ('0' <= *it && *it <= '9');
+  if (value > max_int)
+    eh.on_error("number is too big");
+  return value;
+}
+
+// Parses the range [begin, end) as an unsigned integer. This function assumes
+// that the range is non-empty and the first character is a digit.
+template <typename Char, typename ErrorHandler>
+FMT_CONSTEXPR unsigned parse_nonnegative_int(
+    const Char *&begin, const Char *end, ErrorHandler &&eh) {
+  assert(begin != end && '0' <= *begin && *begin <= '9');
+  unsigned value = 0;
+  // Convert to unsigned to prevent a warning.
+  unsigned max_int = (std::numeric_limits<int>::max)();
+  unsigned big = max_int / 10;
+  do {
+    // Check for overflow.
+    if (value > big) {
+      value = max_int + 1;
+      break;
+    }
+    value = value * 10 + unsigned(*begin++ - '0');
+  } while (begin != end && '0' <= *begin && *begin <= '9');
   if (value > max_int)
     eh.on_error("number is too big");
   return value;
@@ -1941,6 +1965,30 @@ FMT_CONSTEXPR Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
   return it;
 }
 
+template <typename Char, typename IDHandler>
+FMT_CONSTEXPR const Char *parse_arg_id(
+    const Char *begin, const Char *end, IDHandler &&handler) {
+  assert(begin != end);
+  Char c = *begin;
+  if (c == '}' || c == ':')
+    return handler(), begin;
+  if (c >= '0' && c <= '9') {
+    unsigned index = parse_nonnegative_int(begin, end, handler);
+    if (begin == end || (*begin != '}' && *begin != ':'))
+      return handler.on_error("invalid format string"), begin;
+    handler(index);
+    return begin;
+  }
+  if (!is_name_start(c))
+    return handler.on_error("invalid format string"), begin;
+  auto it = begin;
+  do {
+    c = *++it;
+  } while (it != end && (is_name_start(c) || ('0' <= c && c <= '9')));
+  handler(basic_string_view<Char>(begin, to_unsigned(it - begin)));
+  return it;
+}
+
 // Adapts SpecHandler to IDHandler API for dynamic width.
 template <typename SpecHandler, typename Char>
 struct width_adapter {
@@ -2085,23 +2133,6 @@ FMT_CONSTEXPR Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
   return it;
 }
 
-template <typename Handler, typename Char>
-struct id_adapter {
-  FMT_CONSTEXPR explicit id_adapter(Handler &h): handler(h) {}
-
-  FMT_CONSTEXPR void operator()() { handler.on_arg_id(); }
-  FMT_CONSTEXPR void operator()(unsigned id) { handler.on_arg_id(id); }
-  FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
-    handler.on_arg_id(id);
-  }
-
-  FMT_CONSTEXPR void on_error(const char *message) {
-    handler.on_error(message);
-  }
-
-  Handler &handler;
-};
-
 // Return the result via the out param to workaround gcc bug 77539.
 template <bool IS_CONSTEXPR, typename T, typename Ptr = const T*>
 FMT_CONSTEXPR bool find(Ptr first, Ptr last, T value, Ptr &out) {
@@ -2118,6 +2149,19 @@ inline bool find<false, char>(
   out = static_cast<const char*>(std::memchr(first, value, last - first));
   return out != FMT_NULL;
 }
+
+template <typename Handler, typename Char>
+struct id_adapter {
+  FMT_CONSTEXPR void operator()() { handler.on_arg_id(); }
+  FMT_CONSTEXPR void operator()(unsigned id) { handler.on_arg_id(id); }
+  FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
+    handler.on_arg_id(id);
+  }
+  FMT_CONSTEXPR void on_error(const char *message) {
+    handler.on_error(message);
+  }
+  Handler &handler;
+};
 
 template <bool IS_CONSTEXPR, typename Char, typename Handler>
 FMT_CONSTEXPR void parse_format_string(
@@ -2147,24 +2191,29 @@ FMT_CONSTEXPR void parse_format_string(
       return write(begin, end);
     write(begin, p);
     ++p;
-    if (p != end && *p == '{') {
+    if (p == end)
+      return handler.on_error("invalid format string");
+    if (*p == '}') {
+      handler.on_arg_id();
+      handler.on_replacement_field(p);
+    } else if (*p == '{') {
       handler.on_text(p, p + 1);
-      begin = p + 1;
-      continue;
-    }
-    internal::null_terminating_iterator<Char> it(p, end);
-    it = parse_arg_id(it, id_adapter<Handler, Char>(handler));
-    if (*it == '}') {
-      handler.on_replacement_field(it);
-    } else if (*it == ':') {
-      ++it;
-      it = handler.on_format_specs(it);
-      if (*it != '}')
-        return handler.on_error("unknown format specifier");
     } else {
-      return handler.on_error("missing '}' in format string");
+      p = parse_arg_id(p, end, id_adapter<Handler, Char>{handler});
+      Char c = p != end ? *p : 0;
+      if (c == '}') {
+        handler.on_replacement_field(p);
+      } else if (c == ':') {
+        internal::null_terminating_iterator<Char> it(p + 1, end);
+        it = handler.on_format_specs(it);
+        if (*it != '}')
+          return handler.on_error("unknown format specifier");
+        p = pointer_from(it);
+      } else {
+        return handler.on_error("missing '}' in format string");
+      }
     }
-    begin = pointer_from(it) + 1;
+    begin = p + 1;
   }
 }
 
@@ -2199,7 +2248,7 @@ class format_string_checker {
   }
   FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) {}
 
-  FMT_CONSTEXPR void on_replacement_field(iterator) {}
+  FMT_CONSTEXPR void on_replacement_field(const Char *) {}
 
   FMT_CONSTEXPR const Char *on_format_specs(iterator it) {
     auto p = pointer_from(it);
@@ -3277,8 +3326,8 @@ struct format_handler : internal::error_handler {
     arg = context.get_arg(id);
   }
 
-  void on_replacement_field(iterator it) {
-    context.parse_context().advance_to(pointer_from(it));
+  void on_replacement_field(const Char *p) {
+    context.parse_context().advance_to(p);
     if (visit(internal::custom_formatter<Char, Context>(context), arg))
       return;
     basic_format_specs<Char> specs;
