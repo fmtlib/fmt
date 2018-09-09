@@ -283,7 +283,7 @@ class basic_string_view {
   template <typename Alloc>
   FMT_CONSTEXPR basic_string_view(
       const std::basic_string<Char, Alloc> &s) FMT_NOEXCEPT
-  : data_(s.c_str()), size_(s.size()) {}
+  : data_(s.data()), size_(s.size()) {}
 
   FMT_CONSTEXPR basic_string_view(type s) FMT_NOEXCEPT
   : data_(s.data()), size_(s.size()) {}
@@ -1300,8 +1300,8 @@ struct is_compile_string :
     std::integral_constant<bool, std::is_base_of<compile_string, S>::value> {};
 
 template <typename... Args, typename S>
-typename std::enable_if<!is_compile_string<S>::value>::type
-    check_format_string(S) {}
+inline typename std::enable_if<!is_compile_string<S>::value>::type
+    check_format_string(const S &) {}
 template <typename... Args, typename S>
 typename std::enable_if<is_compile_string<S>::value>::type
     check_format_string(S);
