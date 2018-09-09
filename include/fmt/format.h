@@ -2139,11 +2139,11 @@ FMT_CONSTEXPR void parse_format_string(
     Handler &handler_;
   } write{handler};
   auto begin = format_str.data(), end = begin + format_str.size();
-  for (;;) {
+  while (begin != end) {
     // Doing two passes with memchr (one for '{' and another for '}') is up to
     // 2.5x faster than the naive one-pass implementation on big format strings.
-    const Char *p = FMT_NULL;
-    if (!find<IS_CONSTEXPR>(begin, end, '{', p))
+    const Char *p = begin;
+    if (*begin != '{' && !find<IS_CONSTEXPR>(begin, end, '{', p))
       return write(begin, end);
     write(begin, p);
     ++p;
@@ -2165,7 +2165,6 @@ FMT_CONSTEXPR void parse_format_string(
       return handler.on_error("missing '}' in format string");
     }
     begin = pointer_from(it) + 1;
-    if (begin == end) return;
   }
 }
 
