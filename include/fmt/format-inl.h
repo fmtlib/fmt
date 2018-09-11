@@ -371,7 +371,7 @@ class fp {
   explicit fp(Double d) {
     // Assume double is in the format [sign][exponent][significand].
     typedef std::numeric_limits<Double> limits;
-    const int double_size = sizeof(Double) * char_size;
+    const int double_size = static_cast<int>(sizeof(Double) * char_size);
     const int exponent_size =
       double_size - double_significand_size - 1;  // -1 for sign
     const uint64_t significand_mask = implicit_bit - 1;
