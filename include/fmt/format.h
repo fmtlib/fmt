@@ -3775,6 +3775,8 @@ struct rgb {
 
 void vprint_rgb(rgb fd, string_view format, format_args args);
 void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args);
+void vprint_rgb(rgb fd, wstring_view format, wformat_args args);
+void vprint_rgb(rgb fd, rgb bg, wstring_view format, wformat_args args);
 
 /**
   Formats a string and prints it to stdout using ANSI escape sequences to
@@ -3789,6 +3791,17 @@ inline void print(rgb fd, string_view format_str, const Args & ... args) {
 
 /**
   Formats a string and prints it to stdout using ANSI escape sequences to
+  specify foreground color 'fd'.
+  Example:
+    fmt::print(fmt::color::red, L"Elapsed time: {0:.2f} seconds", 1.23);
+ */
+template <typename... Args>
+inline void print(rgb fd, wstring_view format_str, const Args & ... args) {
+  vprint_rgb(fd, format_str, make_format_args<wformat_context>(args...));
+}
+
+/**
+  Formats a string and prints it to stdout using ANSI escape sequences to
   specify foreground color 'fd' and background color 'bg'.
   Example:
     fmt::print(fmt::color::red, fmt::color::black,
@@ -3798,6 +3811,17 @@ template <typename... Args>
 inline void print(rgb fd, rgb bg, string_view format_str,
                   const Args & ... args) {
   vprint_rgb(fd, bg, format_str, make_format_args(args...));
+}
+
+/**
+  Formats a string and prints it to stdout using ANSI escape sequences to
+  specify foreground color 'fd' and background color 'bg'.
+  Example:
+    fmt::print(fmt::color::red, fmt::color::black, L"Elapsed time: {0:.2f} seconds", 1.23);
+ */
+template <typename... Args>
+inline void print(rgb fd, rgb bg, wstring_view format_str, const Args & ... args) {
+  vprint_rgb(fd, bg, format_str, make_format_args<wformat_context>(args...));
 }
 #endif  // FMT_EXTENDED_COLORS
 

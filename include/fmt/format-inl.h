@@ -876,6 +876,12 @@ FMT_CONSTEXPR void to_esc(uint8_t c, char out[], int offset) {
   out[offset + 1] = static_cast<char>('0' + c / 10 % 10);
   out[offset + 2] = static_cast<char>('0' + c % 10);
 }
+
+FMT_CONSTEXPR void to_esc(uint8_t c, wchar_t out[], int offset) {
+  out[offset + 0] = static_cast<wchar_t>('0' + c / 100);
+  out[offset + 1] = static_cast<wchar_t>('0' + c / 10 % 10);
+  out[offset + 2] = static_cast<wchar_t>('0' + c % 10);
+}
 } // namespace internal
 
 FMT_FUNC void vprint_rgb(rgb fd, string_view format, format_args args) {
@@ -887,6 +893,17 @@ FMT_FUNC void vprint_rgb(rgb fd, string_view format, format_args args) {
   std::fputs(escape_fd, stdout);
   vprint(format, args);
   std::fputs(internal::data::RESET_COLOR, stdout);
+}
+
+FMT_FUNC void vprint_rgb(rgb fd, wstring_view format, wformat_args args) {
+  wchar_t escape_fd[] = L"\x1b[38;2;000;000;000m";
+  internal::to_esc(fd.r, escape_fd, 7);
+  internal::to_esc(fd.g, escape_fd, 11);
+  internal::to_esc(fd.b, escape_fd, 15);
+
+  std::fputws(escape_fd, stdout);
+  vprint(format, args);
+  std::fputws(internal::data::WRESET_COLOR, stdout);
 }
 
 FMT_FUNC void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
@@ -904,6 +921,23 @@ FMT_FUNC void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
   std::fputs(escape_bg, stdout);
   vprint(format, args);
   std::fputs(internal::data::RESET_COLOR, stdout);
+}
+
+FMT_FUNC void vprint_rgb(rgb fd, rgb bg, wstring_view format, wformat_args args) {
+  wchar_t escape_fd[] = L"\x1b[38;2;000;000;000m"; // foreground color
+  wchar_t escape_bg[] = L"\x1b[48;2;000;000;000m"; // background color
+  internal::to_esc(fd.r, escape_fd, 7);
+  internal::to_esc(fd.g, escape_fd, 11);
+  internal::to_esc(fd.b, escape_fd, 15);
+
+  internal::to_esc(bg.r, escape_bg, 7);
+  internal::to_esc(bg.g, escape_bg, 11);
+  internal::to_esc(bg.b, escape_bg, 15);
+
+  std::fputws(escape_fd, stdout);
+  std::fputws(escape_bg, stdout);
+  vprint(format, args);
+  std::fputws(internal::data::WRESET_COLOR, stdout);
 }
 #endif
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
