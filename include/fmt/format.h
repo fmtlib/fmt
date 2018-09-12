@@ -1338,12 +1338,10 @@ FMT_CONSTEXPR void handle_float_type_spec(Char spec, Handler &&handler) {
 
 template <typename Char, typename Handler>
 FMT_CONSTEXPR void handle_char_specs(
-    const basic_format_specs<Char> &specs, Handler &&handler) {
-  if (specs.type() && specs.type() != 'c') {
-    handler.on_int();
-    return;
-  }
-  if (specs.align() == ALIGN_NUMERIC || specs.flag(~0u) != 0)
+    const basic_format_specs<Char> *specs, Handler &&handler) {
+  if (!specs) return handler.on_char();
+  if (specs->type() && specs->type() != 'c') return handler.on_int();
+  if (specs->align() == ALIGN_NUMERIC || specs->flag(~0u) != 0)
     handler.on_error("invalid format specifier for char");
   handler.on_char();
 }
@@ -1470,7 +1468,7 @@ class arg_formatter_base {
  private:
   typedef basic_writer<Range> writer_type;
   writer_type writer_;
-  format_specs &specs_;
+  format_specs *specs_;
 
   struct char_writer {
     char_type value;
@@ -1479,11 +1477,14 @@ class arg_formatter_base {
   };
 
   void write_char(char_type value) {
-    writer_.write_padded(1, specs_, char_writer{value});
+    if (specs_)
+      writer_.write_padded(1, *specs_, char_writer{value});
+    else
+      writer_.write(value);
   }
 
   void write_pointer(const void *p) {
-    format_specs specs = specs_;
+    format_specs specs = specs_ ? *specs_ : format_specs();
     specs.flags_ = HASH_FLAG;
     specs.type_ = 'x';
     writer_.write_int(reinterpret_cast<uintptr_t>(p), specs);
@@ -1491,22 +1492,24 @@ class arg_formatter_base {
 
  protected:
   writer_type &writer() { return writer_; }
-  format_specs &spec() { return specs_; }
+  format_specs *spec() { return specs_; }
   iterator out() { return writer_.out(); }
 
   void write(bool value) {
-    writer_.write_str(string_view(value ? "true" : "false"), specs_);
+    string_view sv(value ? "true" : "false");
+    specs_ ? writer_.write_str(sv, *specs_) : writer_.write(sv);
   }
 
   void write(const char_type *value) {
     if (!value)
       FMT_THROW(format_error("string pointer is null"));
     auto length = std::char_traits<char_type>::length(value);
-    writer_.write_str(basic_string_view<char_type>(value, length), specs_);
+    basic_string_view<char_type> sv(value, length);
+    specs_ ? writer_.write_str(sv, *specs_) : writer_.write(sv);
   }
 
  public:
-  arg_formatter_base(Range r, format_specs &s): writer_(r), specs_(s) {}
+  arg_formatter_base(Range r, format_specs *s): writer_(r), specs_(s) {}
 
   iterator operator()(monostate) {
     FMT_ASSERT(false, "invalid argument type");
@@ -1519,14 +1522,14 @@ class arg_formatter_base {
     // MSVC2013 fails to compile separate overloads for bool and char_type so
     // use std::is_same instead.
     if (std::is_same<T, bool>::value) {
-      if (specs_.type_)
+      if (specs_ && specs_->type_)
         return (*this)(value ? 1 : 0);
       write(value != 0);
     } else if (std::is_same<T, char_type>::value) {
       internal::handle_char_specs(
         specs_, char_spec_handler(*this, static_cast<char_type>(value)));
     } else {
-      writer_.write_int(value, specs_);
+      specs_ ? writer_.write_int(value, *specs_) : writer_.write(value);
     }
     return out();
   }
@@ -1534,7 +1537,7 @@ class arg_formatter_base {
   template <typename T>
   typename std::enable_if<std::is_floating_point<T>::value, iterator>::type
       operator()(T value) {
-    writer_.write_double(value, specs_);
+    writer_.write_double(value, specs_ ? *specs_ : format_specs());
     return out();
   }
 
@@ -1545,7 +1548,12 @@ class arg_formatter_base {
     char_spec_handler(arg_formatter_base& f, char_type val)
       : formatter(f), value(val) {}
 
-    void on_int() { formatter.writer_.write_int(value, formatter.specs_); }
+    void on_int() {
+      if (formatter.specs_)
+        formatter.writer_.write_int(value, *formatter.specs_);
+      else
+        formatter.writer_.write(value);
+    }
     void on_char() { formatter.write_char(value); }
   };
 
@@ -1561,19 +1569,26 @@ class arg_formatter_base {
   };
 
   iterator operator()(const char_type *value) {
+    if (!specs_) return write(value), out();
     internal::handle_cstring_type_spec(
-          specs_.type_, cstring_spec_handler(*this, value));
+          specs_->type_, cstring_spec_handler(*this, value));
     return out();
   }
 
   iterator operator()(basic_string_view<char_type> value) {
-    internal::check_string_type_spec(specs_.type_, internal::error_handler());
-    writer_.write_str(value, specs_);
+    if (specs_) {
+      internal::check_string_type_spec(
+            specs_->type_, internal::error_handler());
+      writer_.write_str(value, *specs_);
+    } else {
+      writer_.write(value);
+    }
     return out();
   }
 
   iterator operator()(const void *value) {
-    check_pointer_type_spec(specs_.type_, internal::error_handler());
+    if (specs_)
+      check_pointer_type_spec(specs_->type_, internal::error_handler());
     write_pointer(value);
     return out();
   }
@@ -2346,7 +2361,7 @@ class arg_formatter:
     *spec* contains format specifier information for standard argument types.
     \endrst
    */
-  arg_formatter(context_type &ctx, format_specs &spec)
+  explicit arg_formatter(context_type &ctx, format_specs *spec = {})
   : base(Range(ctx.out()), spec), ctx_(ctx) {}
 
   using base::operator();
@@ -2500,7 +2515,7 @@ class basic_writer {
     auto &&it = reserve((is_negative ? 1 : 0) + num_digits);
     if (is_negative)
       *it++ = '-';
-    internal::format_decimal(it, abs_value, num_digits);
+    it = internal::format_decimal(it, abs_value, num_digits);
   }
 
   // The handle_int_type_spec handler that writes an integer.
@@ -2775,7 +2790,7 @@ class basic_writer {
   void write(wstring_view value) {
     internal::require_wchar<char_type>();
     auto &&it = reserve(value.size());
-    it = std::uninitialized_copy(value.begin(), value.end(), it);
+    it = std::copy(value.begin(), value.end(), it);
   }
 
   template <typename... FormatSpecs>
@@ -3176,7 +3191,7 @@ struct formatter<
       break;
     case internal::char_type:
       handle_char_specs(
-          specs_,
+          &specs_,
           internal::char_specs_checker<decltype(eh), decltype(type_spec)>(
               type_spec, eh));
       break;
@@ -3211,7 +3226,7 @@ struct formatter<
       specs_.precision_, specs_.precision_ref, ctx);
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type> range_type;
-    return visit(arg_formatter<range_type>(ctx, specs_),
+    return visit(arg_formatter<range_type>(ctx, &specs_),
                  internal::make_arg<FormatContext>(val));
   }
 
@@ -3272,7 +3287,7 @@ class dynamic_formatter {
       checker.end_precision();
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type> range;
-    visit(arg_formatter<range>(ctx, specs_),
+    visit(arg_formatter<range>(ctx, &specs_),
           internal::make_arg<FormatContext>(val));
     return ctx.out();
   }
@@ -3328,10 +3343,8 @@ struct format_handler : internal::error_handler {
 
   void on_replacement_field(const Char *p) {
     context.parse_context().advance_to(p);
-    if (visit(internal::custom_formatter<Char, Context>(context), arg))
-      return;
-    basic_format_specs<Char> specs;
-    context.advance_to(visit(ArgFormatter(context, specs), arg));
+    if (!visit(internal::custom_formatter<Char, Context>(context), arg))
+      context.advance_to(visit(ArgFormatter(context), arg));
   }
 
   iterator on_format_specs(iterator it) {
@@ -3347,7 +3360,7 @@ struct format_handler : internal::error_handler {
     if (*it != '}')
       on_error("missing '}' in format string");
     parse_ctx.advance_to(pointer_from(it));
-    context.advance_to(visit(ArgFormatter(context, specs), arg));
+    context.advance_to(visit(ArgFormatter(context, &specs), arg));
     return it;
   }
 

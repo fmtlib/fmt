@@ -50,7 +50,7 @@ typedef fmt::back_insert_range<fmt::internal::buffer> range;
 
 struct test_arg_formatter: fmt::arg_formatter<range> {
   test_arg_formatter(fmt::format_context &ctx, fmt::format_specs &s)
-    : fmt::arg_formatter<range>(ctx, s) {}
+    : fmt::arg_formatter<range>(ctx, &s) {}
 };
 
 TEST(OStreamTest, CustomArg) {

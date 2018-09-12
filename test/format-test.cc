@@ -1471,7 +1471,7 @@ class mock_arg_formatter:
   typedef fmt::internal::arg_formatter_base<buffer_range> base;
   typedef buffer_range range;
 
-  mock_arg_formatter(fmt::format_context &ctx, fmt::format_specs &s)
+  mock_arg_formatter(fmt::format_context &ctx, fmt::format_specs *s = FMT_NULL)
     : base(fmt::internal::get_container(ctx.out()), s) {
     EXPECT_CALL(*this, call(42));
   }

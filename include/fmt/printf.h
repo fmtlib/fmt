@@ -222,12 +222,12 @@ class printf_arg_formatter:
   context_type &context_;
 
   void write_null_pointer(char) {
-    this->spec().type_ = 0;
+    this->spec()->type_ = 0;
     this->write("(nil)");
   }
 
   void write_null_pointer(wchar_t) {
-    this->spec().type_ = 0;
+    this->spec()->type_ = 0;
     this->write(L"(nil)");
   }
 
@@ -243,7 +243,7 @@ class printf_arg_formatter:
    */
   printf_arg_formatter(internal::basic_buffer<char_type> &buffer,
                        format_specs &spec, context_type &ctx)
-    : base(back_insert_range<internal::basic_buffer<char_type>>(buffer), spec),
+    : base(back_insert_range<internal::basic_buffer<char_type>>(buffer), &spec),
       context_(ctx) {}
 
   template <typename T>
@@ -252,13 +252,13 @@ class printf_arg_formatter:
     // MSVC2013 fails to compile separate overloads for bool and char_type so
     // use std::is_same instead.
     if (std::is_same<T, bool>::value) {
-      format_specs &fmt_spec = this->spec();
+      format_specs &fmt_spec = *this->spec();
       if (fmt_spec.type_ != 's')
         return base::operator()(value ? 1 : 0);
       fmt_spec.type_ = 0;
       this->write(value != 0);
     } else if (std::is_same<T, char_type>::value) {
-      format_specs &fmt_spec = this->spec();
+      format_specs &fmt_spec = *this->spec();
       if (fmt_spec.type_ && fmt_spec.type_ != 'c')
         return (*this)(static_cast<int>(value));
       fmt_spec.flags_ = 0;
@@ -280,7 +280,7 @@ class printf_arg_formatter:
   iterator operator()(const char *value) {
     if (value)
       base::operator()(value);
-    else if (this->spec().type_ == 'p')
+    else if (this->spec()->type_ == 'p')
       write_null_pointer(char_type());
     else
       this->write("(null)");
@@ -291,7 +291,7 @@ class printf_arg_formatter:
   iterator operator()(const wchar_t *value) {
     if (value)
       base::operator()(value);
-    else if (this->spec().type_ == 'p')
+    else if (this->spec()->type_ == 'p')
       write_null_pointer(char_type());
     else
       this->write(L"(null)");
@@ -310,7 +310,7 @@ class printf_arg_formatter:
   iterator operator()(const void *value) {
     if (value)
       return base::operator()(value);
-    this->spec().type_ = 0;
+    this->spec()->type_ = 0;
     write_null_pointer(char_type());
     return this->out();
   }

@@ -19,14 +19,15 @@ class custom_arg_formatter :
   typedef fmt::back_insert_range<fmt::internal::buffer> range;
   typedef fmt::arg_formatter<range> base;
 
-  custom_arg_formatter(fmt::format_context &ctx, fmt::format_specs &s)
+  custom_arg_formatter(
+      fmt::format_context &ctx, fmt::format_specs *s = FMT_NULL)
   : base(ctx, s) {}
 
   using base::operator();
 
   iterator operator()(double value) {
     // Comparing a float to 0.0 is safe
-    if (round(value * pow(10, spec().precision())) == 0.0)
+    if (round(value * pow(10, spec()->precision())) == 0.0)
       value = 0;
     return base::operator()(value);
   }
