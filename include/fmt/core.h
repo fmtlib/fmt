@@ -365,6 +365,9 @@ class basic_buffer {
   std::size_t capacity_;
 
  protected:
+  // Don't initialize ptr_ since it is not accessed to save a few cycles.
+  basic_buffer(std::size_t sz) FMT_NOEXCEPT: size_(sz), capacity_(sz) {}
+
   basic_buffer(T *p = FMT_NULL, std::size_t sz = 0, std::size_t cap = 0)
     FMT_NOEXCEPT: ptr_(p), size_(sz), capacity_(cap) {}
 
@@ -445,8 +448,7 @@ class container_buffer : public basic_buffer<typename Container::value_type> {
 
  public:
   explicit container_buffer(Container &c)
-    : basic_buffer<typename Container::value_type>(&c[0], c.size(), c.size()),
-      container_(c) {}
+    : basic_buffer<typename Container::value_type>(c.size()), container_(c) {}
 };
 
 struct error_handler {
