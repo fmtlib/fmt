@@ -2365,6 +2365,10 @@ class arg_formatter:
   explicit arg_formatter(context_type &ctx, format_specs *spec = {})
   : base(Range(ctx.out()), spec), ctx_(ctx) {}
 
+  // Deprecated.
+  arg_formatter(context_type &ctx, format_specs &spec)
+  : base(Range(ctx.out()), &spec), ctx_(ctx) {}
+
   using base::operator();
 
   /** Formats an argument of a user-defined type. */

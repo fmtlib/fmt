@@ -3,8 +3,18 @@
 
 * Optimized format string parsing and argument processing
 
+* Changed the ``fmt`` macro from opt-out to opt-in to prevent name collisions.
+  To enable it define the ``FMT_STRING_ALIAS`` macro to 1 before including
+  ``fmt/format.h``:
+
+  .. code:: c++
+
+     #define FMT_STRING_ALIAS 1
+     #include <fmt/format.h>
+     std::string answer = format(fmt("{}"), 42);
+
 * Added compile-time format string checks to ``format_to`` overload that takes
-  ``fmt::memory_buffer`` (`#783 <https://github.com/fmtlib/fmt/issue/783>`_):
+  ``fmt::memory_buffer`` (`#783 <https://github.com/fmtlib/fmt/issues/783>`_):
 
   .. code:: c++
 
@@ -12,6 +22,9 @@
      // Compile-time error: invalid type specifier.
      fmt::format_to(buf, fmt("{:d}"), "foo");
 
+* Moved experimental color support to ``fmt/color.h`` and enabled the
+  new API by default. The old API can be enabled by defining the
+  ``FMT_DEPRECATED_COLORS`` macro.
 
 * Added formatting support for types explicitly convertible to
   ``fmt::string_view``:
@@ -26,11 +39,20 @@
   In particular, this makes formatting function work with
   ``folly::StringPiece``.
 
+* Implemented preliminary support for ``char*_t`` by replacing the ``format``
+  function overloads with a single function template parameterized on the string
+  type.
+
 * Added support for dynamic argument lists
-  (`#814 <https://github.com/fmtlib/fmt/issue/814>`_,
+  (`#814 <https://github.com/fmtlib/fmt/issues/814>`_,
   `#819 <https://github.com/fmtlib/fmt/pull/819>`_).
   Thanks `@MikePopoloski (Michael Popoloski)
   <https://github.com/MikePopoloski>`_.
+
+* Reduced executable size overhead for embedded targets using newlib nano by
+  making locale dependency optional
+  (`#839 <https://github.com/fmtlib/fmt/pull/839>`_).
+  Thanks `@teajay-fr (Thomas Benard) <https://github.com/teajay-fr>`_.
 
 * Keep ``noexcept`` specifier when exceptions are disabled
   (`#801 <https://github.com/fmtlib/fmt/issues/801>`_,
@@ -56,8 +78,19 @@
 * Fixed various compiler warnings and errors
   (`#804 <https://github.com/fmtlib/fmt/pull/804>`_,
   `#809 <https://github.com/fmtlib/fmt/issues/809>`_,
-  `#811 <https://github.com/fmtlib/fmt/pull/811>`_).
-  Thanks `@henryiii (Henry Schreiner) <https://github.com/henryiii>`_.
+  `#811 <https://github.com/fmtlib/fmt/pull/811>`_,
+  `#822 <https://github.com/fmtlib/fmt/issues/822>`_,
+  `#827 <https://github.com/fmtlib/fmt/pull/827>`_,
+  `#830 <https://github.com/fmtlib/fmt/issues/830>`_,
+  `#838 <https://github.com/fmtlib/fmt/pull/838>`_,
+  `#843 <https://github.com/fmtlib/fmt/issues/843>`_,
+  `#844 <https://github.com/fmtlib/fmt/pull/844>`_,
+  `#851 <https://github.com/fmtlib/fmt/issues/851>`_,
+  `#852 <https://github.com/fmtlib/fmt/pull/852>`_,
+  `#854 <https://github.com/fmtlib/fmt/pull/854>`_).
+  Thanks `@henryiii (Henry Schreiner) <https://github.com/henryiii>`_,
+  `@medithe <https://github.com/medithe>`_, and
+  `@eliasdaler (Elias Daler) <https://github.com/eliasdaler>`_.
 
 5.1.0 - 2018-07-05
 ------------------

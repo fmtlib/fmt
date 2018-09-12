@@ -80,6 +80,7 @@ Format strings can be checked at compile time:
 .. code:: c++
 
     // test.cc
+    #define FMT_STRING_ALIAS 1
     #include <fmt/format.h>
     std::string s = format(fmt("{2}"), 42);
 
@@ -87,7 +88,7 @@ Format strings can be checked at compile time:
 
     $ c++ -Iinclude -std=c++14 test.cc
     ...
-    test.cc:3:17: note: in instantiation of function template specialization 'fmt::v5::format<S, int>' requested here
+    test.cc:4:17: note: in instantiation of function template specialization 'fmt::v5::format<S, int>' requested here
     std::string s = format(fmt("{2}"), 42);
                     ^
     include/fmt/core.h:778:19: note: non-constexpr function 'on_error' cannot be used in a constant expression
