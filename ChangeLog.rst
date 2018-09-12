@@ -1,11 +1,63 @@
 5.2.0 - TBD
 -----------
 
+* Optimized format string parsing and argument processing
+
+* Added compile-time format string checks to ``format_to`` overload that takes
+  ``fmt::memory_buffer`` (`#783 <https://github.com/fmtlib/fmt/issue/783>`_):
+
+  .. code:: c++
+
+     fmt::memory_buffer buf;
+     // Compile-time error: invalid type specifier.
+     fmt::format_to(buf, fmt("{:d}"), "foo");
+
+
+* Added formatting support for types explicitly convertible to
+  ``fmt::string_view``:
+
+  .. code:: c++
+
+     struct foo {
+       explicit operator fmt::string_view() const { return "foo"; }
+     };
+     auto s = format("{}", foo());
+
+  In particular, this makes formatting function work with
+  ``folly::StringPiece``.
+
 * Added support for dynamic argument lists
-  (`#766 <https://github.com/fmtlib/fmt/issue/814>`_,
-  `#766 <https://github.com/fmtlib/fmt/pull/819>`_).
+  (`#814 <https://github.com/fmtlib/fmt/issue/814>`_,
+  `#819 <https://github.com/fmtlib/fmt/pull/819>`_).
   Thanks `@MikePopoloski (Michael Popoloski)
   <https://github.com/MikePopoloski>`_.
+
+* Keep ``noexcept`` specifier when exceptions are disabled
+  (`#801 <https://github.com/fmtlib/fmt/issues/801>`_,
+  `#810 <https://github.com/fmtlib/fmt/pull/810>`_).
+  Thanks `@qis (Alexej Harm) <https://github.com/qis>`_.
+
+* Fixed formatting of user-defined types providing ``operator<<`` with
+  ``format_to_n``
+  (`#806 <https://github.com/fmtlib/fmt/pull/806>`_).
+  Thanks `@mkurdej (Marek Kurdej) <https://github.com/mkurdej>`_.
+
+* Fixed dynamic linkage of new symbols
+  (`#808 <https://github.com/fmtlib/fmt/issues/808>`_).
+
+* Fixed global initialization issue
+  (`#807 <https://github.com/fmtlib/fmt/issues/807>`_):
+
+  .. code:: c++
+
+     // This works on compilers with constexpr support.
+     static const std::string answer = fmt::format("{}", 42);
+
+* Fixed various compiler warnings and errors
+  (`#804 <https://github.com/fmtlib/fmt/pull/804>`_,
+  `#809 <https://github.com/fmtlib/fmt/issues/809>`_,
+  `#811 <https://github.com/fmtlib/fmt/pull/811>`_).
+  Thanks `@henryiii (Henry Schreiner) <https://github.com/henryiii>`_.
 
 5.1.0 - 2018-07-05
 ------------------
