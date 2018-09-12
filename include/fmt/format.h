@@ -1825,7 +1825,7 @@ template <template <typename> class Handler, typename T,
           typename Context, typename ErrorHandler>
 FMT_CONSTEXPR void set_dynamic_spec(
     T &value, basic_format_arg<Context> arg, ErrorHandler eh) {
-  unsigned long long big_value = visit(Handler<ErrorHandler>(eh), arg);
+  unsigned long long big_value = fmt::visit(Handler<ErrorHandler>(eh), arg);
   if (big_value > (std::numeric_limits<int>::max)())
     eh.on_error("number is too big");
   value = static_cast<T>(big_value);
@@ -1839,7 +1839,8 @@ class specs_handler: public specs_setter<typename Context::char_type> {
  public:
   typedef typename Context::char_type char_type;
 
-  FMT_CONSTEXPR specs_handler(basic_format_specs<char_type> &specs, Context &ctx)
+  FMT_CONSTEXPR specs_handler(
+      basic_format_specs<char_type> &specs, Context &ctx)
     : specs_setter<char_type>(specs), context_(ctx) {}
 
   template <typename Id>
@@ -3343,14 +3344,14 @@ struct format_handler : internal::error_handler {
 
   void on_replacement_field(const Char *p) {
     context.parse_context().advance_to(p);
-    if (!visit(internal::custom_formatter<Char, Context>(context), arg))
-      context.advance_to(visit(ArgFormatter(context), arg));
+    if (!fmt::visit(internal::custom_formatter<Char, Context>(context), arg))
+      context.advance_to(fmt::visit(ArgFormatter(context), arg));
   }
 
   iterator on_format_specs(iterator it) {
     auto& parse_ctx = context.parse_context();
     parse_ctx.advance_to(pointer_from(it));
-    if (visit(internal::custom_formatter<Char, Context>(context), arg))
+    if (fmt::visit(internal::custom_formatter<Char, Context>(context), arg))
       return iterator(parse_ctx);
     basic_format_specs<Char> specs;
     using internal::specs_handler;
@@ -3360,7 +3361,7 @@ struct format_handler : internal::error_handler {
     if (*it != '}')
       on_error("missing '}' in format string");
     parse_ctx.advance_to(pointer_from(it));
-    context.advance_to(visit(ArgFormatter(context, &specs), arg));
+    context.advance_to(fmt::visit(ArgFormatter(context, &specs), arg));
     return it;
   }
 
