@@ -5,13 +5,13 @@
 //
 // For the license information refer to format.h.
 
-#define FMT_EXTENDED_COLORS
 #define FMT_NOEXCEPT
 #undef FMT_SHARED
 #include "test-assert.h"
 
 // Include format.cc instead of format.h to test implementation.
 #include "../src/format.cc"
+#include "fmt/color.h"
 #include "fmt/printf.h"
 
 #include <algorithm>
