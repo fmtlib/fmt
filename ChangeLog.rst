@@ -3,16 +3,16 @@
 
 * Optimized format string parsing and argument processing which resulted in up
   to 5x speed up on long format strings and significant performance boost on
-  various benchmarks. For example, version 5.2 is 2.2x faster than 5.1 on
+  various benchmarks. For example, version 5.2 is 2.22x faster than 5.1 on
   decimal integer formatting with ``format_to`` (macOS, clang-902.0.39.2):
 
   ==================  =======  =======
   Method              Time, s  Speedup
   ==================  =======  =======
   fmt::format 5.1      0.58
-  fmt::format 5.2      0.35     1.66
+  fmt::format 5.2      0.35     1.66x
   fmt::format_to 5.1   0.51
-  fmt::format_to 5.2   0.23     2.22
+  fmt::format_to 5.2   0.23     2.22x
   sprintf              0.71
   std::to_string       1.01
   std::stringstream    1.73
