@@ -3731,6 +3731,7 @@ FMT_END_NAMESPACE
 
   **Example**::
 
+    #define FMT_STRING_ALIAS 1
     #include <fmt/format.h>
     // A compile-time error because 'd' is an invalid specifier for strings.
     std::string s = format(fmt("{:d}"), "foo");

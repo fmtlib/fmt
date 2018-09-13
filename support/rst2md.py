@@ -113,8 +113,9 @@ class Translator(nodes.NodeVisitor):
         for i, entry in enumerate(row):
             text = entry[0][0] if len(entry) > 0 else ''
             if i != 0:
-                self.write(' ')
+                self.write('|')
             self.write('{:{}}'.format(text, widths[i]))
+        self.write('\n')
 
     def visit_table(self, node):
         table = node.children[0]
@@ -122,14 +123,13 @@ class Translator(nodes.NodeVisitor):
         thead = table[-2]
         tbody = table[-1]
         widths = [int(cs['colwidth']) for cs in colspecs]
-        sep = ' '.join(['-' * w for w in widths])
-        self.write(sep)
+        sep = '|'.join(['-' * w for w in widths]) + '\n'
+        self.write('\n\n')
         self.write_row(thead[0], widths)
         self.write(sep)
         for row in tbody:
             self.write_row(row, widths)
-        self.write(sep)
-        raise nodes.StopTraversal
+        raise nodes.SkipChildren
 
     def depart_table(self, node):
         pass
