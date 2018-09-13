@@ -109,6 +109,30 @@ class Translator(nodes.NodeVisitor):
     def depart_image(self, node):
         pass
 
+    def write_row(self, row, widths):
+        for i, entry in enumerate(row):
+            text = entry[0][0] if len(entry) > 0 else ''
+            if i != 0:
+                self.write(' ')
+            self.write('{:{}}'.format(text, widths[i]))
+
+    def visit_table(self, node):
+        table = node.children[0]
+        colspecs = table[:-2]
+        thead = table[-2]
+        tbody = table[-1]
+        widths = [int(cs['colwidth']) for cs in colspecs]
+        sep = ' '.join(['-' * w for w in widths])
+        self.write(sep)
+        self.write_row(thead[0], widths)
+        self.write(sep)
+        for row in tbody:
+            self.write_row(row, widths)
+        self.write(sep)
+        raise nodes.StopTraversal
+
+    def depart_table(self, node):
+        pass
 
 class MDWriter(writers.Writer):
     """GitHub-flavored markdown writer"""
