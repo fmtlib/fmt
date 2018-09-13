@@ -14,6 +14,8 @@
   fmt::format_to 5.1   0.51
   fmt::format_to 5.2   0.23     2.22
   sprintf              0.71
+  std::to_string       1.01
+  std::stringstream    1.73
   ==================  =======  =======
 
 * Changed the ``fmt`` macro from opt-out to opt-in to prevent name collisions.
