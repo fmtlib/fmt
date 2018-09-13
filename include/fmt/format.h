@@ -3725,7 +3725,9 @@ FMT_END_NAMESPACE
 #if defined(FMT_STRING_ALIAS) && FMT_STRING_ALIAS
 /**
   \rst
-  Constructs a compile-time format string.
+  Constructs a compile-time format string. This macro is disabled by default to
+  prevent potential name collisions. To enable it define ``FMT_STRING_ALIAS`` to
+  1 before including ``fmt/format.h``.
 
   **Example**::
 
