@@ -1,5 +1,5 @@
-5.2.0 - TBD
------------
+5.2.0 - 2018-09-13
+------------------
 
 * Optimized format string parsing and argument processing which resulted in up
   to 5x speed up on long format strings and significant performance boost on
