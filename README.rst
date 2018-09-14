@@ -108,24 +108,29 @@ Format strings can be checked at compile time:
     format_to(buf, "{:x}", 42);  // replaces itoa(42, buffer, 16)
     // access the string using to_string(buf) or buf.data()
 
-An object of any user-defined type for which there is an overloaded
-:code:`std::ostream` insertion operator (``operator<<``) can be formatted:
+Formatting of user-defined types is supported via a simple
+`extension API <http://fmtlib.net/latest/api.html#formatting-user-defined-types>`_:
 
 .. code:: c++
 
-    #include "fmt/ostream.h"
+    #include "fmt/format.h"
 
-    class Date {
-      int year_, month_, day_;
-     public:
-      Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
+    struct date {
+      int year, month, day;
+    };
 
-      friend std::ostream &operator<<(std::ostream &os, const Date &d) {
-        return os << d.year_ << '-' << d.month_ << '-' << d.day_;
+    template <>
+    struct fmt::formatter<date> {
+      template <typename ParseContext>
+      constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+
+      template <typename FormatContext>
+      auto format(const date &d, FormatContext &ctx) {
+        return format_to(ctx.begin(), "{}-{}-{}", d.year, d.month, d.day);
       }
     };
 
-    std::string s = fmt::format("The date is {}", Date(2012, 12, 9));
+    std::string s = fmt::format("The date is {}", date{2012, 12, 9});
     // s == "The date is 2012-12-9"
 
 You can create your own functions similar to `format
