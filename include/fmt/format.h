@@ -3231,8 +3231,8 @@ struct formatter<
       specs_.precision_, specs_.precision_ref, ctx);
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type> range_type;
-    return visit(arg_formatter<range_type>(ctx, &specs_),
-                 internal::make_arg<FormatContext>(val));
+    return fmt::visit(arg_formatter<range_type>(ctx, &specs_),
+                      internal::make_arg<FormatContext>(val));
   }
 
  private:
@@ -3292,8 +3292,8 @@ class dynamic_formatter {
       checker.end_precision();
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type> range;
-    visit(arg_formatter<range>(ctx, &specs_),
-          internal::make_arg<FormatContext>(val));
+    fmt::visit(arg_formatter<range>(ctx, &specs_),
+               internal::make_arg<FormatContext>(val));
     return ctx.out();
   }
 
