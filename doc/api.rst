@@ -132,7 +132,7 @@ customize the formatted output.
 
 You can also reuse existing formatters, for example::
 
-  enum color {red, green, blue};
+  enum class color {red, green, blue};
 
   template <>
   struct fmt::formatter<color>: formatter<string_view> {
@@ -141,9 +141,9 @@ You can also reuse existing formatters, for example::
     auto format(color c, FormatContext &ctx) {
       string_view name = "unknown";
       switch (c) {
-      case red:   name = "red"; break;
-      case green: name = "green"; break;
-      case blue:  name = "blue"; break;
+      case color::red:   name = "red"; break;
+      case color::green: name = "green"; break;
+      case color::blue:  name = "blue"; break;
       }
       return formatter<string_view>::format(name, ctx);
     }
