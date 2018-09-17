@@ -888,6 +888,8 @@ struct FMT_API basic_data {
   static const uint64_t POW10_SIGNIFICANDS[];
   static const int16_t POW10_EXPONENTS[];
   static const char DIGITS[];
+  static const char FOREGROUND_COLOR[];
+  static const char BACKGROUND_COLOR[];
   static const char RESET_COLOR[];
   static const wchar_t WRESET_COLOR[];
 };
