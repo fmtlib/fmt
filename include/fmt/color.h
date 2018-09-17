@@ -209,8 +209,85 @@ struct rgb {
   uint8_t b;
 };
 
-void vprint_rgb(rgb fd, string_view format, format_args args);
-void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args);
+namespace internal {
+
+template <typename Char>
+struct ansi_color_escape {
+  FMT_CONSTEXPR ansi_color_escape(rgb color, const char * esc) FMT_NOEXCEPT {
+    for (int i = 0; i < 7; i++) {
+      buffer[i] = static_cast<Char>(esc[i]);
+    }
+    to_esc(color.r, buffer +  7, ';');
+    to_esc(color.g, buffer + 11, ';');
+    to_esc(color.b, buffer + 15, 'm');
+    buffer[19] = static_cast<Char>(0);
+  }
+  FMT_CONSTEXPR operator const Char *() const FMT_NOEXCEPT { return buffer; }
+
+private:
+  Char buffer[7 + 3 * 4 + 1];
+
+  static FMT_CONSTEXPR void to_esc(uint8_t c, Char *out, char delimiter) FMT_NOEXCEPT {
+    out[0] = static_cast<Char>('0' + c / 100);
+    out[1] = static_cast<Char>('0' + c / 10 % 10);
+    out[2] = static_cast<Char>('0' + c % 10);
+    out[3] = static_cast<Char>(delimiter);
+  }
+};
+
+template <typename Char>
+FMT_CONSTEXPR ansi_color_escape<Char>
+make_foreground_color(rgb color) FMT_NOEXCEPT {
+  return ansi_color_escape<Char>(color, internal::data::FOREGROUND_COLOR);
+}
+
+template <typename Char>
+FMT_CONSTEXPR ansi_color_escape<Char>
+make_background_color(rgb color) FMT_NOEXCEPT {
+  return ansi_color_escape<Char>(color, internal::data::BACKGROUND_COLOR);
+}
+
+template <typename Char>
+inline void fputs(const Char *chars, FILE *stream) FMT_NOEXCEPT {
+  std::fputs(chars, stream);
+}
+
+template <>
+inline void fputs<wchar_t>(const wchar_t *chars, FILE *stream) FMT_NOEXCEPT {
+  std::fputws(chars, stream);
+}
+
+template <typename Char>
+inline void reset_color(FILE *stream) FMT_NOEXCEPT {
+  fputs(internal::data::RESET_COLOR, stream);
+}
+
+template <>
+inline void reset_color<wchar_t>(FILE *stream) FMT_NOEXCEPT {
+  fputs(internal::data::WRESET_COLOR, stream);
+}
+} // namespace internal
+
+template <
+  typename String,
+  typename Char = typename internal::format_string_traits<String>::char_type>
+void vprint_rgb(rgb fd, const String &format,
+                basic_format_args<typename buffer_context<Char>::type> args) {
+  internal::fputs<Char>(internal::make_foreground_color<Char>(fd), stdout);
+  vprint(format, args);
+  internal::reset_color<Char>(stdout);
+}
+
+template <
+  typename String,
+  typename Char = typename internal::format_string_traits<String>::char_type>
+void vprint_rgb(rgb fd, rgb bg, const String &format,
+                basic_format_args<typename buffer_context<Char>::type> args) {
+  internal::fputs<Char>(internal::make_foreground_color<Char>(fd), stdout);
+  internal::fputs<Char>(internal::make_background_color<Char>(bg), stdout);
+  vprint(format, args);
+  internal::reset_color<Char>(stdout);
+}
 
 /**
   Formats a string and prints it to stdout using ANSI escape sequences to
@@ -218,9 +295,14 @@ void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args);
   Example:
     fmt::print(fmt::color::red, "Elapsed time: {0:.2f} seconds", 1.23);
  */
-template <typename... Args>
-inline void print(rgb fd, string_view format_str, const Args & ... args) {
-  vprint_rgb(fd, format_str, make_format_args(args...));
+template <typename String, typename... Args>
+typename std::enable_if<internal::is_format_string<String>::value>::type
+print(rgb fd, const String &format_str, const Args & ... args) {
+  internal::check_format_string<Args...>(format_str);
+  typedef typename internal::format_string_traits<String>::char_type char_t;
+  typedef typename buffer_context<char_t>::type context_t;
+  format_arg_store<context_t, Args...> as{args...};
+  vprint_rgb(fd, format_str, basic_format_args<context_t>(as));
 }
 
 /**
@@ -230,45 +312,14 @@ inline void print(rgb fd, string_view format_str, const Args & ... args) {
     fmt::print(fmt::color::red, fmt::color::black,
                "Elapsed time: {0:.2f} seconds", 1.23);
  */
-template <typename... Args>
-inline void print(rgb fd, rgb bg, string_view format_str,
-                  const Args & ... args) {
-  vprint_rgb(fd, bg, format_str, make_format_args(args...));
-}
-namespace internal {
-FMT_CONSTEXPR void to_esc(uint8_t c, char out[], int offset) {
-  out[offset + 0] = static_cast<char>('0' + c / 100);
-  out[offset + 1] = static_cast<char>('0' + c / 10 % 10);
-  out[offset + 2] = static_cast<char>('0' + c % 10);
-}
-} // namespace internal
-
-inline void vprint_rgb(rgb fd, string_view format, format_args args) {
-  char escape_fd[] = "\x1b[38;2;000;000;000m";
-  internal::to_esc(fd.r, escape_fd, 7);
-  internal::to_esc(fd.g, escape_fd, 11);
-  internal::to_esc(fd.b, escape_fd, 15);
-
-  std::fputs(escape_fd, stdout);
-  vprint(format, args);
-  std::fputs(internal::data::RESET_COLOR, stdout);
-}
-
-inline void vprint_rgb(rgb fd, rgb bg, string_view format, format_args args) {
-  char escape_fd[] = "\x1b[38;2;000;000;000m"; // foreground color
-  char escape_bg[] = "\x1b[48;2;000;000;000m"; // background color
-  internal::to_esc(fd.r, escape_fd, 7);
-  internal::to_esc(fd.g, escape_fd, 11);
-  internal::to_esc(fd.b, escape_fd, 15);
-
-  internal::to_esc(bg.r, escape_bg, 7);
-  internal::to_esc(bg.g, escape_bg, 11);
-  internal::to_esc(bg.b, escape_bg, 15);
-
-  std::fputs(escape_fd, stdout);
-  std::fputs(escape_bg, stdout);
-  vprint(format, args);
-  std::fputs(internal::data::RESET_COLOR, stdout);
+template <typename String, typename... Args>
+typename std::enable_if<internal::is_format_string<String>::value>::type
+print(rgb fd, rgb bg, const String &format_str, const Args & ... args) {
+  internal::check_format_string<Args...>(format_str);
+  typedef typename internal::format_string_traits<String>::char_type char_t;
+  typedef typename buffer_context<char_t>::type context_t;
+  format_arg_store<context_t, Args...> as{args...};
+  vprint_rgb(fd, bg, format_str, basic_format_args<context_t>(as));
 }
 
 #endif

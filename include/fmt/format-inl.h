@@ -337,6 +337,8 @@ const int16_t basic_data<T>::POW10_EXPONENTS[] = {
     827,   853,   880,   907,   933,   960,   986,  1013,  1039,  1066
 };
 
+template <typename T> const char basic_data<T>::FOREGROUND_COLOR[] = "\x1b[38;2;";
+template <typename T> const char basic_data<T>::BACKGROUND_COLOR[] = "\x1b[48;2;";
 template <typename T> const char basic_data<T>::RESET_COLOR[] = "\x1b[0m";
 template <typename T> const wchar_t basic_data<T>::WRESET_COLOR[] = L"\x1b[0m";
 
