@@ -5,23 +5,22 @@
 //
 // For the license information refer to format.h.
 
-#ifndef FMT_TEST_ASSERT_H
-#define FMT_TEST_ASSERT_H
+#ifndef FMT_TEST_ASSERT_H_
+#define FMT_TEST_ASSERT_H_
 
 #include <stdexcept>
+#include "gtest.h"
 
-class AssertionFailure : public std::logic_error {
+class assertion_failure : public std::logic_error {
  public:
-  explicit AssertionFailure(const char *message) : std::logic_error(message) {}
+  explicit assertion_failure(const char *message) : std::logic_error(message) {}
 };
 
 #define FMT_ASSERT(condition, message) \
-  if (!(condition)) throw AssertionFailure(message);
-
-#include "gtest-extra.h"
+  if (!(condition)) throw assertion_failure(message);
 
 // Expects an assertion failure.
 #define EXPECT_ASSERT(stmt, message) \
-  EXPECT_THROW_MSG(stmt, AssertionFailure, message)
+  FMT_TEST_THROW_(stmt, assertion_failure, message, GTEST_NONFATAL_FAILURE_)
 
-#endif  // FMT_TEST_ASSERT_H
+#endif  // FMT_TEST_ASSERT_H_

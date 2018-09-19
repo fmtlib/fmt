@@ -14,23 +14,33 @@
 #include <memory>
 #include <stdint.h>
 
+// Check if fmt/format.h compiles with windows.h included before it.
+#ifdef _WIN32
+# include <windows.h>
+#endif
+
 #include "fmt/format.h"
 #include "gmock.h"
 #include "gtest-extra.h"
 #include "mock-allocator.h"
 #include "util.h"
 
+#undef ERROR
 #undef min
 #undef max
 
 using std::size_t;
 
+using fmt::basic_memory_buffer;
 using fmt::basic_writer;
 using fmt::format;
 using fmt::format_error;
 using fmt::string_view;
 using fmt::memory_buffer;
 using fmt::wmemory_buffer;
+
+using testing::Return;
+using testing::StrictMock;
 
 namespace {
 
@@ -100,6 +110,451 @@ struct WriteChecker {
 #define CHECK_WRITE_WCHAR(value) \
   EXPECT_PRED_FORMAT1(WriteChecker<wchar_t>(), value)
 }  // namespace
+
+// Tests fmt::internal::count_digits for integer type Int.
+template <typename Int>
+void test_count_digits() {
+  for (Int i = 0; i < 10; ++i)
+    EXPECT_EQ(1u, fmt::internal::count_digits(i));
+  for (Int i = 1, n = 1,
+      end = std::numeric_limits<Int>::max() / 10; n <= end; ++i) {
+    n *= 10;
+    EXPECT_EQ(i, fmt::internal::count_digits(n - 1));
+    EXPECT_EQ(i + 1, fmt::internal::count_digits(n));
+  }
+}
+
+TEST(UtilTest, CountDigits) {
+  test_count_digits<uint32_t>();
+  test_count_digits<uint64_t>();
+}
+
+struct uint32_pair {
+  uint32_t u[2];
+};
+
+TEST(UtilTest, BitCast) {
+  auto s = fmt::internal::bit_cast<uint32_pair>(uint64_t{42});
+  EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), 42ull);
+  s = fmt::internal::bit_cast<uint32_pair>(uint64_t(~0ull));
+  EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), ~0ull);
+}
+
+TEST(UtilTest, Increment) {
+  char s[10] = "123";
+  increment(s);
+  EXPECT_STREQ("124", s);
+  s[2] = '8';
+  increment(s);
+  EXPECT_STREQ("129", s);
+  increment(s);
+  EXPECT_STREQ("130", s);
+  s[1] = s[2] = '9';
+  increment(s);
+  EXPECT_STREQ("200", s);
+}
+
+TEST(UtilTest, ParseNonnegativeInt) {
+  if (std::numeric_limits<int>::max() !=
+      static_cast<int>(static_cast<unsigned>(1) << 31)) {
+    fmt::print("Skipping parse_nonnegative_int test\n");
+    return;
+  }
+  const char *s = "10000000000";
+  EXPECT_THROW_MSG(
+        parse_nonnegative_int(s, fmt::internal::error_handler()),
+        fmt::format_error, "number is too big");
+  s = "2147483649";
+  EXPECT_THROW_MSG(
+        parse_nonnegative_int(s, fmt::internal::error_handler()),
+        fmt::format_error, "number is too big");
+}
+
+TEST(IteratorTest, CountingIterator) {
+  fmt::internal::counting_iterator<char> it;
+  auto prev = it++;
+  EXPECT_EQ(prev.count(), 0);
+  EXPECT_EQ(it.count(), 1);
+}
+
+TEST(IteratorTest, TruncatingIterator) {
+  char *p = FMT_NULL;
+  fmt::internal::truncating_iterator<char*> it(p, 3);
+  auto prev = it++;
+  EXPECT_EQ(prev.base(), p);
+  EXPECT_EQ(it.base(), p + 1);
+}
+
+TEST(MemoryBufferTest, Ctor) {
+  basic_memory_buffer<char, 123> buffer;
+  EXPECT_EQ(static_cast<size_t>(0), buffer.size());
+  EXPECT_EQ(123u, buffer.capacity());
+}
+
+static void check_forwarding(
+    mock_allocator<int> &alloc, allocator_ref<mock_allocator<int>> &ref) {
+  int mem;
+  // Check if value_type is properly defined.
+  allocator_ref< mock_allocator<int> >::value_type *ptr = &mem;
+  // Check forwarding.
+  EXPECT_CALL(alloc, allocate(42)).WillOnce(testing::Return(ptr));
+  ref.allocate(42);
+  EXPECT_CALL(alloc, deallocate(ptr, 42));
+  ref.deallocate(ptr, 42);
+}
+
+TEST(AllocatorTest, allocator_ref) {
+  StrictMock< mock_allocator<int> > alloc;
+  typedef allocator_ref< mock_allocator<int> > test_allocator_ref;
+  test_allocator_ref ref(&alloc);
+  // Check if allocator_ref forwards to the underlying allocator.
+  check_forwarding(alloc, ref);
+  test_allocator_ref ref2(ref);
+  check_forwarding(alloc, ref2);
+  test_allocator_ref ref3;
+  EXPECT_EQ(nullptr, ref3.get());
+  ref3 = ref;
+  check_forwarding(alloc, ref3);
+}
+
+typedef allocator_ref< std::allocator<char> > TestAllocator;
+
+static void check_move_buffer(const char *str,
+                       basic_memory_buffer<char, 5, TestAllocator> &buffer) {
+  std::allocator<char> *alloc = buffer.get_allocator().get();
+  basic_memory_buffer<char, 5, TestAllocator> buffer2(std::move(buffer));
+  // Move shouldn't destroy the inline content of the first buffer.
+  EXPECT_EQ(str, std::string(&buffer[0], buffer.size()));
+  EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
+  EXPECT_EQ(5u, buffer2.capacity());
+  // Move should transfer allocator.
+  EXPECT_EQ(nullptr, buffer.get_allocator().get());
+  EXPECT_EQ(alloc, buffer2.get_allocator().get());
+}
+
+TEST(MemoryBufferTest, MoveCtor) {
+  std::allocator<char> alloc;
+  basic_memory_buffer<char, 5, TestAllocator> buffer((TestAllocator(&alloc)));
+  const char test[] = "test";
+  buffer.append(test, test + 4);
+  check_move_buffer("test", buffer);
+  // Adding one more character fills the inline buffer, but doesn't cause
+  // dynamic allocation.
+  buffer.push_back('a');
+  check_move_buffer("testa", buffer);
+  const char *inline_buffer_ptr = &buffer[0];
+  // Adding one more character causes the content to move from the inline to
+  // a dynamically allocated buffer.
+  buffer.push_back('b');
+  basic_memory_buffer<char, 5, TestAllocator> buffer2(std::move(buffer));
+  // Move should rip the guts of the first buffer.
+  EXPECT_EQ(inline_buffer_ptr, &buffer[0]);
+  EXPECT_EQ("testab", std::string(&buffer2[0], buffer2.size()));
+  EXPECT_GT(buffer2.capacity(), 5u);
+}
+
+static void check_move_assign_buffer(
+    const char *str, basic_memory_buffer<char, 5> &buffer) {
+  basic_memory_buffer<char, 5> buffer2;
+  buffer2 = std::move(buffer);
+  // Move shouldn't destroy the inline content of the first buffer.
+  EXPECT_EQ(str, std::string(&buffer[0], buffer.size()));
+  EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
+  EXPECT_EQ(5u, buffer2.capacity());
+}
+
+TEST(MemoryBufferTest, MoveAssignment) {
+  basic_memory_buffer<char, 5> buffer;
+  const char test[] = "test";
+  buffer.append(test, test + 4);
+  check_move_assign_buffer("test", buffer);
+  // Adding one more character fills the inline buffer, but doesn't cause
+  // dynamic allocation.
+  buffer.push_back('a');
+  check_move_assign_buffer("testa", buffer);
+  const char *inline_buffer_ptr = &buffer[0];
+  // Adding one more character causes the content to move from the inline to
+  // a dynamically allocated buffer.
+  buffer.push_back('b');
+  basic_memory_buffer<char, 5> buffer2;
+  buffer2 = std::move(buffer);
+  // Move should rip the guts of the first buffer.
+  EXPECT_EQ(inline_buffer_ptr, &buffer[0]);
+  EXPECT_EQ("testab", std::string(&buffer2[0], buffer2.size()));
+  EXPECT_GT(buffer2.capacity(), 5u);
+}
+
+TEST(MemoryBufferTest, Grow) {
+  typedef allocator_ref< mock_allocator<int> > Allocator;
+  typedef basic_memory_buffer<int, 10, Allocator> Base;
+  mock_allocator<int> alloc;
+  struct TestMemoryBuffer : Base {
+    TestMemoryBuffer(Allocator alloc) : Base(alloc) {}
+    void grow(std::size_t size) { Base::grow(size); }
+  } buffer((Allocator(&alloc)));
+  buffer.resize(7);
+  using fmt::internal::to_unsigned;
+  for (int i = 0; i < 7; ++i)
+    buffer[to_unsigned(i)] = i * i;
+  EXPECT_EQ(10u, buffer.capacity());
+  int mem[20];
+  mem[7] = 0xdead;
+  EXPECT_CALL(alloc, allocate(20)).WillOnce(Return(mem));
+  buffer.grow(20);
+  EXPECT_EQ(20u, buffer.capacity());
+  // Check if size elements have been copied
+  for (int i = 0; i < 7; ++i)
+    EXPECT_EQ(i * i, buffer[to_unsigned(i)]);
+  // and no more than that.
+  EXPECT_EQ(0xdead, buffer[7]);
+  EXPECT_CALL(alloc, deallocate(mem, 20));
+}
+
+TEST(MemoryBufferTest, Allocator) {
+  typedef allocator_ref< mock_allocator<char> > TestAllocator;
+  basic_memory_buffer<char, 10, TestAllocator> buffer;
+  EXPECT_EQ(nullptr, buffer.get_allocator().get());
+  StrictMock< mock_allocator<char> > alloc;
+  char mem;
+  {
+    basic_memory_buffer<char, 10, TestAllocator> buffer2((TestAllocator(&alloc)));
+    EXPECT_EQ(&alloc, buffer2.get_allocator().get());
+    std::size_t size = 2 * fmt::inline_buffer_size;
+    EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem));
+    buffer2.reserve(size);
+    EXPECT_CALL(alloc, deallocate(&mem, size));
+  }
+}
+
+TEST(MemoryBufferTest, ExceptionInDeallocate) {
+  typedef allocator_ref< mock_allocator<char> > TestAllocator;
+  StrictMock< mock_allocator<char> > alloc;
+  basic_memory_buffer<char, 10, TestAllocator> buffer((TestAllocator(&alloc)));
+  std::size_t size = 2 * fmt::inline_buffer_size;
+  std::vector<char> mem(size);
+  {
+    EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem[0]));
+    buffer.resize(size);
+    std::fill(&buffer[0], &buffer[0] + size, 'x');
+  }
+  std::vector<char> mem2(2 * size);
+  {
+    EXPECT_CALL(alloc, allocate(2 * size)).WillOnce(Return(&mem2[0]));
+    std::exception e;
+    EXPECT_CALL(alloc, deallocate(&mem[0], size)).WillOnce(testing::Throw(e));
+    EXPECT_THROW(buffer.reserve(2 * size), std::exception);
+    EXPECT_EQ(&mem2[0], &buffer[0]);
+    // Check that the data has been copied.
+    for (std::size_t i = 0; i < size; ++i)
+      EXPECT_EQ('x', buffer[i]);
+  }
+  EXPECT_CALL(alloc, deallocate(&mem2[0], 2 * size));
+}
+
+TEST(FixedBufferTest, Ctor) {
+  char array[10] = "garbage";
+  fmt::basic_fixed_buffer<char> buffer(array, sizeof(array));
+  EXPECT_EQ(static_cast<size_t>(0), buffer.size());
+  EXPECT_EQ(10u, buffer.capacity());
+  EXPECT_EQ(array, buffer.data());
+}
+
+TEST(FixedBufferTest, CompileTimeSizeCtor) {
+  char array[10] = "garbage";
+  fmt::basic_fixed_buffer<char> buffer(array);
+  EXPECT_EQ(static_cast<size_t>(0), buffer.size());
+  EXPECT_EQ(10u, buffer.capacity());
+  EXPECT_EQ(array, buffer.data());
+}
+
+TEST(FixedBufferTest, BufferOverflow) {
+  char array[10];
+  fmt::basic_fixed_buffer<char> buffer(array);
+  buffer.resize(10);
+  EXPECT_THROW_MSG(buffer.resize(11), std::runtime_error, "buffer overflow");
+}
+
+#ifdef _WIN32
+TEST(UtilTest, UTF16ToUTF8) {
+  std::string s = "ёжик";
+  fmt::internal::utf16_to_utf8 u(L"\x0451\x0436\x0438\x043A");
+  EXPECT_EQ(s, u.str());
+  EXPECT_EQ(s.size(), u.size());
+}
+
+TEST(UtilTest, UTF16ToUTF8EmptyString) {
+  std::string s = "";
+  fmt::internal::utf16_to_utf8 u(L"");
+  EXPECT_EQ(s, u.str());
+  EXPECT_EQ(s.size(), u.size());
+}
+
+TEST(UtilTest, UTF8ToUTF16) {
+  std::string s = "лошадка";
+  fmt::internal::utf8_to_utf16 u(s.c_str());
+  EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());
+  EXPECT_EQ(7, u.size());
+}
+
+TEST(UtilTest, UTF8ToUTF16EmptyString) {
+  std::string s = "";
+  fmt::internal::utf8_to_utf16 u(s.c_str());
+  EXPECT_EQ(L"", u.str());
+  EXPECT_EQ(s.size(), u.size());
+}
+
+template <typename Converter, typename Char>
+void check_utf_conversion_error(
+        const char *message,
+        fmt::basic_string_view<Char> str = fmt::basic_string_view<Char>(0, 1)) {
+  fmt::memory_buffer out;
+  fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
+  fmt::system_error error(0, "");
+  try {
+    (Converter)(str);
+  } catch (const fmt::system_error &e) {
+    error = e;
+  }
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, error.error_code());
+  EXPECT_EQ(fmt::to_string(out), error.what());
+}
+
+TEST(UtilTest, UTF16ToUTF8Error) {
+  check_utf_conversion_error<fmt::internal::utf16_to_utf8, wchar_t>(
+      "cannot convert string from UTF-16 to UTF-8");
+}
+
+TEST(UtilTest, UTF8ToUTF16Error) {
+  const char *message = "cannot convert string from UTF-8 to UTF-16";
+  check_utf_conversion_error<fmt::internal::utf8_to_utf16, char>(message);
+  check_utf_conversion_error<fmt::internal::utf8_to_utf16, char>(
+    message, fmt::string_view("foo", INT_MAX + 1u));
+}
+
+TEST(UtilTest, UTF16ToUTF8Convert) {
+  fmt::internal::utf16_to_utf8 u;
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::wstring_view(0, 1)));
+  EXPECT_EQ(ERROR_INVALID_PARAMETER,
+            u.convert(fmt::wstring_view(L"foo", INT_MAX + 1u)));
+}
+#endif  // _WIN32
+
+typedef void (*FormatErrorMessage)(
+        fmt::internal::buffer &out, int error_code, string_view message);
+
+template <typename Error>
+void check_throw_error(int error_code, FormatErrorMessage format) {
+  fmt::system_error error(0, "");
+  try {
+    throw Error(error_code, "test {}", "error");
+  } catch (const fmt::system_error &e) {
+    error = e;
+  }
+  fmt::memory_buffer message;
+  format(message, error_code, "test error");
+  EXPECT_EQ(to_string(message), error.what());
+  EXPECT_EQ(error_code, error.error_code());
+}
+
+TEST(UtilTest, FormatSystemError) {
+  fmt::memory_buffer message;
+  fmt::format_system_error(message, EDOM, "test");
+  EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)),
+            to_string(message));
+  message = fmt::memory_buffer();
+
+  // Check if std::allocator throws on allocating max size_t / 2 chars.
+  size_t max_size = std::numeric_limits<size_t>::max() / 2;
+  bool throws_on_alloc = false;
+  try {
+    std::allocator<char> alloc;
+    alloc.deallocate(alloc.allocate(max_size), max_size);
+  } catch (const std::bad_alloc&) {
+    throws_on_alloc = true;
+  }
+  if (!throws_on_alloc) {
+    fmt::print("warning: std::allocator allocates {} chars", max_size);
+    return;
+  }
+  fmt::format_system_error(message, EDOM, fmt::string_view(nullptr, max_size));
+  EXPECT_EQ(fmt::format("error {}", EDOM), to_string(message));
+}
+
+TEST(UtilTest, SystemError) {
+  fmt::system_error e(EDOM, "test");
+  EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)), e.what());
+  EXPECT_EQ(EDOM, e.error_code());
+  check_throw_error<fmt::system_error>(EDOM, fmt::format_system_error);
+}
+
+TEST(UtilTest, ReportSystemError) {
+  fmt::memory_buffer out;
+  fmt::format_system_error(out, EDOM, "test error");
+  out.push_back('\n');
+  EXPECT_WRITE(stderr, fmt::report_system_error(EDOM, "test error"),
+               to_string(out));
+}
+
+#ifdef _WIN32
+
+TEST(UtilTest, FormatWindowsError) {
+  LPWSTR message = 0;
+  FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
+      ERROR_FILE_EXISTS, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      reinterpret_cast<LPWSTR>(&message), 0, 0);
+  fmt::internal::utf16_to_utf8 utf8_message(message);
+  LocalFree(message);
+  fmt::memory_buffer actual_message;
+  fmt::internal::format_windows_error(
+      actual_message, ERROR_FILE_EXISTS, "test");
+  EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
+      fmt::to_string(actual_message));
+  actual_message.resize(0);
+  fmt::internal::format_windows_error(
+        actual_message, ERROR_FILE_EXISTS,
+        fmt::string_view(0, std::numeric_limits<size_t>::max()));
+  EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS),
+            fmt::to_string(actual_message));
+}
+
+TEST(UtilTest, FormatLongWindowsError) {
+  LPWSTR message = 0;
+  // this error code is not available on all Windows platforms and
+  // Windows SDKs, so do not fail the test if the error string cannot
+  // be retrieved.
+  const int provisioning_not_allowed = 0x80284013L /*TBS_E_PROVISIONING_NOT_ALLOWED*/;
+  if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0,
+      static_cast<DWORD>(provisioning_not_allowed),
+      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      reinterpret_cast<LPWSTR>(&message), 0, 0) == 0) {
+    return;
+  }
+  fmt::internal::utf16_to_utf8 utf8_message(message);
+  LocalFree(message);
+  fmt::memory_buffer actual_message;
+  fmt::internal::format_windows_error(
+      actual_message, provisioning_not_allowed, "test");
+  EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
+      fmt::to_string(actual_message));
+}
+
+TEST(UtilTest, WindowsError) {
+  check_throw_error<fmt::windows_error>(
+      ERROR_FILE_EXISTS, fmt::internal::format_windows_error);
+}
+
+TEST(UtilTest, ReportWindowsError) {
+  fmt::memory_buffer out;
+  fmt::internal::format_windows_error(out, ERROR_FILE_EXISTS, "test error");
+  out.push_back('\n');
+  EXPECT_WRITE(stderr,
+      fmt::report_windows_error(ERROR_FILE_EXISTS, "test error"),
+               fmt::to_string(out));
+}
+
+#endif  // _WIN32
 
 TEST(StringViewTest, Ctor) {
   EXPECT_STREQ("abc", string_view("abc").data());

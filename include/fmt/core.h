@@ -755,6 +755,54 @@ class basic_format_arg {
   bool is_arithmetic() const { return internal::is_arithmetic(type_); }
 };
 
+struct monostate {};
+
+/**
+  \rst
+  Visits an argument dispatching to the appropriate visit method based on
+  the argument type. For example, if the argument type is ``double`` then
+  ``vis(value)`` will be called with the value of type ``double``.
+  \endrst
+ */
+template <typename Visitor, typename Context>
+FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
+    visit(Visitor &&vis, const basic_format_arg<Context> &arg) {
+  typedef typename Context::char_type char_type;
+  switch (arg.type_) {
+  case internal::none_type:
+    break;
+  case internal::named_arg_type:
+    FMT_ASSERT(false, "invalid argument type");
+    break;
+  case internal::int_type:
+    return vis(arg.value_.int_value);
+  case internal::uint_type:
+    return vis(arg.value_.uint_value);
+  case internal::long_long_type:
+    return vis(arg.value_.long_long_value);
+  case internal::ulong_long_type:
+    return vis(arg.value_.ulong_long_value);
+  case internal::bool_type:
+    return vis(arg.value_.int_value != 0);
+  case internal::char_type:
+    return vis(static_cast<char_type>(arg.value_.int_value));
+  case internal::double_type:
+    return vis(arg.value_.double_value);
+  case internal::long_double_type:
+    return vis(arg.value_.long_double_value);
+  case internal::cstring_type:
+    return vis(arg.value_.string.value);
+  case internal::string_type:
+    return vis(basic_string_view<char_type>(
+                 arg.value_.string.value, arg.value_.string.size));
+  case internal::pointer_type:
+    return vis(arg.value_.pointer);
+  case internal::custom_type:
+    return vis(typename basic_format_arg<Context>::handle(arg.value_.custom));
+  }
+  return vis(monostate());
+}
+
 // Parsing context consisting of a format string range being parsed and an
 // argument counter for automatic indexing.
 template <typename Char, typename ErrorHandler = internal::error_handler>
