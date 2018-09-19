@@ -340,9 +340,22 @@ class basic_format_arg;
 template <typename Context>
 class basic_format_args;
 
+template <typename T>
+struct no_formatter_error : std::false_type {};
+
 // A formatter for objects of type T.
 template <typename T, typename Char = char, typename Enable = void>
-struct formatter;
+struct formatter {
+  static_assert(no_formatter_error<T>::value,
+    "don't know how to format the type, include fmt/ostream.h if it provides "
+    "an operator<< that should be used");
+
+  // The following functions are not defined intentionally.
+  template <typename ParseContext>
+  typename ParseContext::iterator parse(ParseContext &);
+  template <typename FormatContext>
+  auto format(const T &val, FormatContext &ctx) -> decltype(ctx.out());
+};
 
 template <typename T, typename Char, typename Enable = void>
 struct convert_to_int {
