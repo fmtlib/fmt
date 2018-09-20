@@ -84,38 +84,38 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
       # Android
-    - language: android
-      android:
-      addons:
-        apt:
-          update: true
-      components:
-        - tools
-        - platform-tools
-        - android-21
-        - sys-img-armeabi-v7a-android-21
-      env:
-        - ANDROID=true
-      before_install:
-        - git submodule update --init --recursive
-        - sudo apt-get install wget unzip tree
-      install:
-        # Accept SDK Licenses + Install NDK
-        - yes | sdkmanager --update > /dev/null 2>&1
-        - sdkmanager ndk-bundle > /dev/null 2>&1
-        # Download Gradle 4.3.1 
-        - wget https://services.gradle.org/distributions/gradle-4.3.1-bin.zip
-        - mkdir -p gradle
-        - unzip -q -d ./gradle gradle-4.3.1-bin.zip
-        - export GRADLE=${TRAVIS_BUILD_DIR}/gradle/gradle-4.3.1/bin/gradle
-      before_script:
-        - bash $GRADLE --version
-        - cd ./support
-      script:
-        - bash $GRADLE clean assemble
-      after_success:
-        - cd ${TRAVIS_BUILD_DIR}
-        - tree ./libs
+#    - language: android
+#      android:
+#      addons:
+#        apt:
+#          update: true
+#      components:
+#        - tools
+#        - platform-tools
+#        - android-21
+#        - sys-img-armeabi-v7a-android-21
+#      env:
+#        - ANDROID=true
+#      before_install:
+#        - git submodule update --init --recursive
+#        - sudo apt-get install wget unzip tree
+#      install:
+#        # Accept SDK Licenses + Install NDK
+#        - yes | sdkmanager --update > /dev/null 2>&1
+#        - sdkmanager ndk-bundle > /dev/null 2>&1
+#        # Download Gradle 4.3.1 
+#        - wget https://services.gradle.org/distributions/gradle-4.3.1-bin.zip
+#        - mkdir -p gradle
+#        - unzip -q -d ./gradle gradle-4.3.1-bin.zip
+#        - export GRADLE=${TRAVIS_BUILD_DIR}/gradle/gradle-4.3.1/bin/gradle
+#      before_script:
+#        - bash $GRADLE --version
+#        - cd ./support
+#      script:
+#        - bash $GRADLE clean assemble
+#      after_success:
+#        - cd ${TRAVIS_BUILD_DIR}
+#        - tree ./libs
   allow_failures:
       # Errors
     - env: COMPILER=g++-4.4 BUILD=Debug STANDARD=11
