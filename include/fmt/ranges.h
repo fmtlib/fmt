@@ -87,6 +87,9 @@ class is_like_std_string {
     !std::is_void<decltype(check<T>(FMT_NULL))>::value;
 };
 
+template <typename Char>
+struct is_like_std_string<fmt::basic_string_view<Char>> : std::true_type {};
+
 template <typename... Ts>
 struct conditional_helper {};
 
@@ -115,13 +118,6 @@ class is_tuple_like_ {
  public:
   static FMT_CONSTEXPR_DECL const bool value =
     !std::is_void<decltype(check<T>(FMT_NULL))>::value;
-};
-
-template <typename T>
-struct is_fmt_str_view : std::false_type {};
-
-template <typename Char>
-struct is_fmt_str_view<fmt::basic_string_view<Char>> : std::true_type {
 };
 
 // Check for integer_sequence
@@ -175,7 +171,6 @@ void for_each(Tuple &&tup, F &&f) {
 template<typename Arg>
 FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&, 
   typename std::enable_if<
-    !is_fmt_str_view<typename std::decay<Arg>::type>::value &&
     !is_like_std_string<typename std::decay<Arg>::type>::value>::type* = nullptr) {
   return add_space ? " {}" : "{}";
 }
@@ -183,7 +178,6 @@ FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&,
 template<typename Arg>
 FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&, 
   typename std::enable_if<
-    is_fmt_str_view<typename std::decay<Arg>::type>::value ||
     is_like_std_string<typename std::decay<Arg>::type>::value>::type* = nullptr) {
   return add_space ? " \"{}\"" : "\"{}\"";
 }
@@ -264,8 +258,7 @@ public:
 template <typename T>
 struct is_range {
   static FMT_CONSTEXPR_DECL const bool value =
-    internal::is_range_<T>::value && !internal::is_like_std_string<T>::value
-        && !internal::is_fmt_str_view<T>::value;
+    internal::is_range_<T>::value && !internal::is_like_std_string<T>::value;
 };
 
 template <typename RangeT, typename Char>
