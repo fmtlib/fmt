@@ -1,5 +1,5 @@
-5.2.1 - TBD
------------
+5.2.1 - 2018-09-21
+------------------
 
 * Fixed ``visit`` lookup issues on gcc 7 & 8
   (`#870 <https://github.com/fmtlib/fmt/pull/870>`_).
