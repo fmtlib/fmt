@@ -1,3 +1,28 @@
+5.2.1 - TBD
+-----------
+
+* Fixed ``visit`` lookup issues on gcc 7 & 8
+  (`#870 <https://github.com/fmtlib/fmt/pull/870>`_).
+  Thanks `@medithe <https://github.com/medithe>`_.
+
+* Fixed linkage errors on older gcc.
+
+* Prevented ``fmt/range.h`` from specializing ``fmt::basic_string_view``
+  (`#865 <https://github.com/fmtlib/fmt/issues/865>`_,
+  `#868 <https://github.com/fmtlib/fmt/pull/868>`_).
+  Thanks `@hhggit (dual) <https://github.com/hhggit>`_.
+
+* Improved error message when formatting unknown types
+  (`#872 <https://github.com/fmtlib/fmt/pull/872>`_).
+  Thanks `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_,
+
+* Disabled templated user-defined literals when compiled under nvcc
+  (`#875 <https://github.com/fmtlib/fmt/pull/875>`_).
+  Thanks `@CandyGumdrop (Candy Gumdrop) <https://github.com/CandyGumdrop>`_,
+
+* Fixed ``format_to`` formatting to ``wmemory_buffer``
+  (`#874 <https://github.com/fmtlib/fmt/issues/874>`_).
+
 5.2.0 - 2018-09-13
 ------------------
 
