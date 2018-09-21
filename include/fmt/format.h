@@ -3457,16 +3457,17 @@ inline wformat_context::iterator vformat_to(
   return vformat_to<arg_formatter<range>>(buf, format_str, args);
 }
 
-template <typename String, typename... Args,
-          std::size_t SIZE = inline_buffer_size>
-inline format_context::iterator format_to(
-    basic_memory_buffer<char, SIZE> &buf, const String &format_str,
+template <
+    typename String, typename... Args,
+    std::size_t SIZE = inline_buffer_size,
+    typename Char = typename internal::format_string_traits<String>::char_type>
+inline typename buffer_context<Char>::type::iterator format_to(
+    basic_memory_buffer<Char, SIZE> &buf, const String &format_str,
     const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename internal::format_string_traits<String>::char_type char_t;
   return vformat_to(
-        buf, basic_string_view<char_t>(format_str),
-        make_format_args<typename buffer_context<char_t>::type>(args...));
+        buf, basic_string_view<Char>(format_str),
+        make_format_args<typename buffer_context<Char>::type>(args...));
 }
 
 template <typename OutputIt, typename Char = char>

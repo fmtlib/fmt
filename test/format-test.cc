@@ -692,6 +692,9 @@ TEST(FormatToTest, FormatToMemoryBuffer) {
   fmt::basic_memory_buffer<char, 100> buffer;
   fmt::format_to(buffer, "{}", "foo");
   EXPECT_EQ("foo", to_string(buffer));
+  fmt::wmemory_buffer wbuffer;
+  fmt::format_to(wbuffer, L"{}", L"foo");
+  EXPECT_EQ(L"foo", to_string(wbuffer));
 }
 
 TEST(FormatterTest, Escape) {
