@@ -397,8 +397,7 @@ TEST(ArgTest, CustomArg) {
 }
 
 TEST(ArgTest, VisitInvalidArg) {
-  typedef mock_visitor<fmt::monostate> Visitor;
-  testing::StrictMock<Visitor> visitor;
+  testing::StrictMock< mock_visitor<fmt::monostate> > visitor;
   EXPECT_CALL(visitor, visit(_));
   fmt::basic_format_arg<fmt::format_context> arg;
   visit(visitor, arg);
@@ -446,7 +445,7 @@ TEST(CoreTest, ConvertToInt) {
   EXPECT_TRUE((fmt::convert_to_int<basic_enum, char>::value));
 }
 
-enum enum_with_underlying_type : char {TestValue};
+enum enum_with_underlying_type : char {};
 
 TEST(CoreTest, IsEnumConvertibleToInt) {
   EXPECT_TRUE((fmt::convert_to_int<enum_with_underlying_type, char>::value));
