@@ -1443,8 +1443,7 @@ inline std::basic_string<
   typedef typename buffer_context<char_t>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
   return internal::vformat(
-        basic_string_view<char_t>(format_str),
-        basic_format_args<context_t>(as));
+      basic_string_view<char_t>(format_str), basic_format_args<context_t>(as));
 }
 
 FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
