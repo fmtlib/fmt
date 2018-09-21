@@ -51,6 +51,12 @@
 # define FMT_ICC_VERSION 0
 #endif
 
+#ifdef __NVCC__
+# define FMT_CUDA_VERSION (__CUDACC_VER_MAJOR__ * 100 + __CUDACC_VER_MINOR__)
+#else
+# define FMT_CUDA_VERSION 0
+#endif
+
 #include "core.h"
 
 #if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
@@ -114,17 +120,23 @@ FMT_END_NAMESPACE
 #endif
 
 #ifndef FMT_USE_USER_DEFINED_LITERALS
-// For Intel's compiler both it and the system gcc/msc must support UDLs.
+// For Intel's compiler and NVIDIA's compiler both it and the system gcc/msc
+// must support UDLs.
 # if (FMT_HAS_FEATURE(cxx_user_literals) || \
       FMT_GCC_VERSION >= 407 || FMT_MSC_VER >= 1900) && \
-      (!FMT_ICC_VERSION || FMT_ICC_VERSION >= 1500)
+      (!(FMT_ICC_VERSION || FMT_CUDA_VERSION) || \
+       FMT_ICC_VERSION >= 1500 || FMT_CUDA_VERSION >= 700)
 #  define FMT_USE_USER_DEFINED_LITERALS 1
 # else
 #  define FMT_USE_USER_DEFINED_LITERALS 0
 # endif
 #endif
 
-#if FMT_USE_USER_DEFINED_LITERALS && FMT_ICC_VERSION == 0 && \
+// EDG C++ Front End based compilers (icc, nvcc) do not currently support UDL
+// templates.
+#if FMT_USE_USER_DEFINED_LITERALS && \
+    FMT_ICC_VERSION == 0 && \
+    FMT_CUDA_VERSION == 0 && \
     ((FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L) || \
     (defined(FMT_CLANG_VERSION) && FMT_CLANG_VERSION >= 304))
 # define FMT_UDL_TEMPLATE 1
