@@ -16,7 +16,7 @@
 #include <type_traits>
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 50200
+#define FMT_VERSION 50201
 
 #ifdef __has_feature
 # define FMT_HAS_FEATURE(x) __has_feature(x)
