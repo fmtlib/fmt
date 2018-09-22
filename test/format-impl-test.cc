@@ -24,6 +24,12 @@
 #undef min
 #undef max
 
+#if FMT_HAS_CPP_ATTRIBUTE(noreturn)
+# define FMT_NORETURN [[noreturn]]
+#else
+# define FMT_NORETURN
+#endif
+
 using fmt::internal::fp;
 
 template <bool is_iec559>

@@ -25,7 +25,7 @@
 #endif
 
 #if defined(__has_include) && !defined(__INTELLISENSE__) && \
-    (!defined(__INTEL_COMPILER) || __INTEL_COMPILER >= 1600)
+    !(defined(__INTEL_COMPILER) && __INTEL_COMPILER < 1600)
 # define FMT_HAS_INCLUDE(x) __has_include(x)
 #else
 # define FMT_HAS_INCLUDE(x) 0
@@ -72,7 +72,7 @@
 
 #ifndef FMT_USE_CONSTEXPR11
 # define FMT_USE_CONSTEXPR11 \
-    (FMT_MSC_VER >= 1900 || FMT_GCC_VERSION >= 406 || FMT_USE_CONSTEXPR)
+    (FMT_USE_CONSTEXPR || FMT_GCC_VERSION >= 406 || FMT_MSC_VER >= 1900)
 #endif
 #if FMT_USE_CONSTEXPR11
 # define FMT_CONSTEXPR11 constexpr
@@ -104,24 +104,15 @@
 #  define FMT_NULL NULL
 # endif
 #endif
-
 #ifndef FMT_USE_NULLPTR
 # define FMT_USE_NULLPTR 0
 #endif
 
-#if FMT_HAS_CPP_ATTRIBUTE(noreturn)
-# define FMT_NORETURN [[noreturn]]
-#else
-# define FMT_NORETURN
-#endif
-
 // Check if exceptions are disabled.
-#if defined(__GNUC__) && !defined(__EXCEPTIONS)
+#if (defined(__GNUC__) && !defined(__EXCEPTIONS)) || \
+    FMT_MSC_VER && !_HAS_EXCEPTIONS
 # define FMT_EXCEPTIONS 0
-#elif FMT_MSC_VER && !_HAS_EXCEPTIONS
-# define FMT_EXCEPTIONS 0
-#endif
-#ifndef FMT_EXCEPTIONS
+#else
 # define FMT_EXCEPTIONS 1
 #endif
 
@@ -147,8 +138,7 @@
 # endif
 #endif
 
-// This is needed because GCC still uses throw() in its headers when exceptions
-// are disabled.
+// GCC still uses throw() in its headers when exceptions are disabled.
 #if FMT_GCC_VERSION
 # define FMT_DTOR_NOEXCEPT FMT_DETECTED_NOEXCEPT
 #else
@@ -358,11 +348,8 @@ struct formatter {
 };
 
 template <typename T, typename Char, typename Enable = void>
-struct convert_to_int {
-  enum {
-    value = !std::is_arithmetic<T>::value && std::is_convertible<T, int>::value
-  };
-};
+struct convert_to_int: std::integral_constant<
+  bool, !std::is_arithmetic<T>::value && std::is_convertible<T, int>::value> {};
 
 namespace internal {
 
@@ -1115,13 +1102,13 @@ const long long format_arg_store<Context, Args...>::TYPES = get_types();
  */
 template <typename Context, typename ...Args>
 inline format_arg_store<Context, Args...>
-    make_format_args(const Args & ... args) {
+    make_format_args(const Args &... args) {
   return format_arg_store<Context, Args...>(args...);
 }
 
 template <typename ...Args>
 inline format_arg_store<format_context, Args...>
-    make_format_args(const Args & ... args) {
+    make_format_args(const Args &... args) {
   return format_arg_store<format_context, Args...>(args...);
 }
 
@@ -1222,12 +1209,12 @@ class basic_format_args {
 // It is a separate type rather than a typedef to make symbols readable.
 struct format_args: basic_format_args<format_context> {
   template <typename ...Args>
-  format_args(Args && ... arg)
+  format_args(Args &&... arg)
   : basic_format_args<format_context>(std::forward<Args>(arg)...) {}
 };
 struct wformat_args : basic_format_args<wformat_context> {
   template <typename ...Args>
-  wformat_args(Args && ... arg)
+  wformat_args(Args &&... arg)
   : basic_format_args<wformat_context>(std::forward<Args>(arg)...) {}
 };
 
@@ -1383,7 +1370,7 @@ template <typename Container, typename... Args>
 inline typename std::enable_if<
   is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
     format_to(std::back_insert_iterator<Container> out,
-              string_view format_str, const Args & ... args) {
+              string_view format_str, const Args &... args) {
   format_arg_store<format_context, Args...> as{args...};
   return vformat_to(out, format_str, as);
 }
@@ -1392,7 +1379,7 @@ template <typename Container, typename... Args>
 inline typename std::enable_if<
   is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
     format_to(std::back_insert_iterator<Container> out,
-              wstring_view format_str, const Args & ... args) {
+              wstring_view format_str, const Args &... args) {
   return vformat_to(out, format_str,
                     make_format_args<wformat_context>(args...));
 }
@@ -1420,7 +1407,7 @@ inline std::basic_string<Char> vformat(
 template <typename String, typename... Args>
 inline std::basic_string<
   typename internal::format_string_traits<String>::char_type>
-    format(const String &format_str, const Args & ... args) {
+    format(const String &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   // This should be just
   //   return vformat(format_str, make_format_args(args...));
@@ -1445,7 +1432,7 @@ FMT_API void vprint(std::FILE *f, wstring_view format_str, wformat_args args);
   \endrst
  */
 template <typename... Args>
-inline void print(std::FILE *f, string_view format_str, const Args & ... args) {
+inline void print(std::FILE *f, string_view format_str, const Args &... args) {
   format_arg_store<format_context, Args...> as(args...);
   vprint(f, format_str, as);
 }
@@ -1454,8 +1441,7 @@ inline void print(std::FILE *f, string_view format_str, const Args & ... args) {
   set via ``fwide(f, 1)`` or ``_setmode(_fileno(f), _O_U8TEXT)`` on Windows.
  */
 template <typename... Args>
-inline void print(std::FILE *f, wstring_view format_str,
-                  const Args & ... args) {
+inline void print(std::FILE *f, wstring_view format_str, const Args &... args) {
   format_arg_store<wformat_context, Args...> as(args...);
   vprint(f, format_str, as);
 }
@@ -1473,13 +1459,13 @@ FMT_API void vprint(wstring_view format_str, wformat_args args);
   \endrst
  */
 template <typename... Args>
-inline void print(string_view format_str, const Args & ... args) {
+inline void print(string_view format_str, const Args &... args) {
   format_arg_store<format_context, Args...> as{args...};
   vprint(format_str, as);
 }
 
 template <typename... Args>
-inline void print(wstring_view format_str, const Args & ... args) {
+inline void print(wstring_view format_str, const Args &... args) {
   format_arg_store<wformat_context, Args...> as(args...);
   vprint(format_str, as);
 }

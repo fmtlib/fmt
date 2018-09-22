@@ -2375,7 +2375,7 @@ class system_error : public std::runtime_error {
    \endrst
   */
   template <typename... Args>
-  system_error(int error_code, string_view message, const Args & ... args)
+  system_error(int error_code, string_view message, const Args &... args)
     : std::runtime_error("") {
     init(error_code, message, make_format_args(args...));
   }
@@ -2663,7 +2663,7 @@ class basic_writer {
   void write_double(T value, const format_specs &spec);
   template <typename T>
   void write_double_sprintf(T value, const format_specs &spec,
-                            internal::basic_buffer<char_type>& buffer);
+                            internal::basic_buffer<char_type> &buffer);
 
   template <typename Char>
   struct str_writer {
@@ -2924,7 +2924,7 @@ template <typename Range>
 template <typename T>
 void basic_writer<Range>::write_double_sprintf(
     T value, const format_specs &spec,
-    internal::basic_buffer<char_type>& buffer) {
+    internal::basic_buffer<char_type> &buffer) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buffer.capacity() != 0, "empty buffer");
 
@@ -3008,7 +3008,7 @@ class windows_error : public system_error {
    \endrst
   */
   template <typename... Args>
-  windows_error(int error_code, string_view message, const Args & ... args) {
+  windows_error(int error_code, string_view message, const Args &... args) {
     init(error_code, message, make_format_args(args...));
   }
 };
@@ -3315,7 +3315,7 @@ struct format_handler : internal::error_handler {
   }
 
   iterator on_format_specs(iterator it) {
-    auto& parse_ctx = context.parse_context();
+    auto &parse_ctx = context.parse_context();
     parse_ctx.advance_to(pointer_from(it));
     if (fmt::visit(internal::custom_formatter<Char, Context>(context), arg))
       return iterator(parse_ctx);
@@ -3461,7 +3461,7 @@ template <
     typename Char = typename internal::format_string_traits<String>::char_type>
 inline typename buffer_context<Char>::type::iterator format_to(
     basic_memory_buffer<Char, SIZE> &buf, const String &format_str,
-    const Args & ... args) {
+    const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   return vformat_to(
         buf, basic_string_view<Char>(format_str),
@@ -3506,7 +3506,7 @@ inline OutputIt vformat_to(
  */
 template <typename OutputIt, typename... Args>
 inline OutputIt format_to(OutputIt out, string_view format_str,
-                          const Args & ... args) {
+                          const Args &... args) {
   return vformat_to(out, format_str,
       make_format_args<typename format_context_t<OutputIt>::type>(args...));
 }
@@ -3528,7 +3528,7 @@ using format_to_n_args = fmt::basic_format_args<format_to_n_context<OutputIt>>;
 
 template <typename OutputIt, typename ...Args>
 inline format_arg_store<format_to_n_context<OutputIt>, Args...>
-    make_format_to_n_args(const Args & ... args) {
+    make_format_to_n_args(const Args &... args) {
   return format_arg_store<format_to_n_context<OutputIt>, Args...>(args...);
 }
 
@@ -3575,7 +3575,7 @@ inline std::basic_string<Char> internal::vformat(
 
 template <typename String, typename... Args>
 inline typename std::enable_if<internal::is_compile_string<String>::value>::type
-    print(String format_str, const Args & ... args) {
+    print(String format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   return vprint(format_str.data(), make_format_args(args...));
 }
@@ -3586,7 +3586,7 @@ inline typename std::enable_if<internal::is_compile_string<String>::value>::type
  */
 template <typename... Args>
 inline std::size_t formatted_size(string_view format_str,
-                                  const Args & ... args) {
+                                  const Args &... args) {
   auto it = format_to(internal::counting_iterator<char>(), format_str, args...);
   return it.count();
 }
@@ -3614,7 +3614,7 @@ struct udl_formatter {
   const Char *str;
 
   template <typename... Args>
-  auto operator()(Args && ... args) const
+  auto operator()(Args &&... args) const
                   -> decltype(format(str, std::forward<Args>(args)...)) {
     return format(str, std::forward<Args>(args)...);
   }
