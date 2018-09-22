@@ -2740,9 +2740,8 @@ class basic_writer {
   void write(char value) {
     *reserve(1) = value;
   }
-
   void write(wchar_t value) {
-    internal::require_wchar<char_type>();
+    static_assert(std::is_same<char_type, wchar_t>::value, "");
     *reserve(1) = value;
   }
 
@@ -2755,9 +2754,8 @@ class basic_writer {
     auto &&it = reserve(value.size());
     it = std::copy(value.begin(), value.end(), it);
   }
-
   void write(wstring_view value) {
-    internal::require_wchar<char_type>();
+    static_assert(std::is_same<char_type, wchar_t>::value, "");
     auto &&it = reserve(value.size());
     it = std::copy(value.begin(), value.end(), it);
   }

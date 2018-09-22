@@ -233,6 +233,9 @@ FMT_CONSTEXPR size_t length(const Char *s) {
 #if FMT_GCC_VERSION
 FMT_CONSTEXPR size_t length(const char *s) { return std::strlen(s); }
 #endif
+
+template <typename T>
+struct no_formatter_error : std::false_type {};
 }  // namespace internal
 
 /**
@@ -340,13 +343,10 @@ class basic_format_arg;
 template <typename Context>
 class basic_format_args;
 
-template <typename T>
-struct no_formatter_error : std::false_type {};
-
 // A formatter for objects of type T.
 template <typename T, typename Char = char, typename Enable = void>
 struct formatter {
-  static_assert(no_formatter_error<T>::value,
+  static_assert(internal::no_formatter_error<T>::value,
     "don't know how to format the type, include fmt/ostream.h if it provides "
     "an operator<< that should be used");
 
@@ -471,17 +471,6 @@ struct error_handler {
   // This function is intentionally not constexpr to give a compile-time error.
   FMT_API void on_error(const char *message);
 };
-
-// Formatting of wide characters and strings into a narrow output is disallowed:
-//   fmt::format("{}", L"test"); // error
-// To fix this, use a wide format string:
-//   fmt::format(L"{}", L"test");
-template <typename Char>
-inline void require_wchar() {
-  static_assert(
-      std::is_same<wchar_t, Char>::value,
-      "formatting of wide characters into a narrow output is disallowed");
-}
 
 template <typename Char>
 struct named_arg_base;
@@ -639,15 +628,12 @@ FMT_MAKE_VALUE_SAME(long_long_type, long long)
 FMT_MAKE_VALUE_SAME(ulong_long_type, unsigned long long)
 FMT_MAKE_VALUE(int_type, signed char, int)
 FMT_MAKE_VALUE(uint_type, unsigned char, unsigned)
-FMT_MAKE_VALUE(char_type, char, int)
+FMT_MAKE_VALUE(char_type, typename C::char_type, int)
 
-#if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
 template <typename C>
-inline init<C, int, char_type> make_value(wchar_t val) {
-  require_wchar<typename C::char_type>();
-  return static_cast<int>(val);
-}
-#endif
+FMT_CONSTEXPR typename std::enable_if<
+  !std::is_same<typename C::char_type, char>::value,
+  init<C, int, char_type>>::type make_value(char val) { return val; }
 
 FMT_MAKE_VALUE(double_type, float, double)
 FMT_MAKE_VALUE_SAME(double_type, double)
