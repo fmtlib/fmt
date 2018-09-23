@@ -138,13 +138,6 @@
 # endif
 #endif
 
-// GCC still uses throw() in its headers when exceptions are disabled.
-#if FMT_GCC_VERSION
-# define FMT_DTOR_NOEXCEPT FMT_DETECTED_NOEXCEPT
-#else
-# define FMT_DTOR_NOEXCEPT FMT_NOEXCEPT
-#endif
-
 #ifndef FMT_BEGIN_NAMESPACE
 # if FMT_HAS_FEATURE(cxx_inline_namespaces) || FMT_GCC_VERSION >= 404 || \
      FMT_MSC_VER >= 1900
