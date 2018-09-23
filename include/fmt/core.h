@@ -861,7 +861,7 @@ class arg_map {
       if (it->name == name)
         return it->arg;
     }
-    return basic_format_arg<Context>();
+    return {};
   }
 };
 
@@ -899,9 +899,8 @@ class context_base {
   }
 
  public:
-  basic_parse_context<char_type> &parse_context() {
-    return parse_context_;
-  }
+  basic_parse_context<char_type> &parse_context() { return parse_context_; }
+  basic_format_args<Context> args() const { return args_; }
 
   internal::error_handler error_handler() {
     return parse_context_.error_handler();
@@ -915,8 +914,6 @@ class context_base {
 
   // Advances the begin iterator to ``it``.
   void advance_to(iterator it) { out_ = it; }
-
-  basic_format_args<Context> args() const { return args_; }
 };
 
 // Extracts a reference to the container from back_insert_iterator.
@@ -1086,15 +1083,11 @@ const long long format_arg_store<Context, Args...>::TYPES = get_types();
  */
 template <typename Context, typename ...Args>
 inline format_arg_store<Context, Args...>
-    make_format_args(const Args &... args) {
-  return format_arg_store<Context, Args...>(args...);
-}
+  make_format_args(const Args &... args) { return {args...}; }
 
 template <typename ...Args>
 inline format_arg_store<format_context, Args...>
-    make_format_args(const Args &... args) {
-  return format_arg_store<format_context, Args...>(args...);
-}
+  make_format_args(const Args &... args) { return {args...}; }
 
 /** Formatting arguments. */
 template <typename Context>
@@ -1240,12 +1233,12 @@ struct named_arg : named_arg_base<Char> {
  */
 template <typename T>
 inline internal::named_arg<T, char> arg(string_view name, const T &arg) {
-  return internal::named_arg<T, char>(name, arg);
+  return {name, arg};
 }
 
 template <typename T>
 inline internal::named_arg<T, wchar_t> arg(wstring_view name, const T &arg) {
-  return internal::named_arg<T, wchar_t>(name, arg);
+  return {name, arg};
 }
 
 // This function template is deleted intentionally to disable nested named

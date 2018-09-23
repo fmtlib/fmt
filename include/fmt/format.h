@@ -434,31 +434,26 @@ void basic_buffer<T>::append(const U *begin, const U *end) {
 // A UTF-8 code unit type.
 struct char8_t {
   char value;
-  FMT_CONSTEXPR explicit operator bool() const FMT_NOEXCEPT {
+  FMT_CONSTEXPR FMT_EXPLICIT operator bool() const FMT_NOEXCEPT {
     return value != 0;
   }
 };
 
 // A UTF-8 string view.
 class u8string_view : public basic_string_view<char8_t> {
- private:
-  typedef basic_string_view<char8_t> base;
-
  public:
-  using basic_string_view::basic_string_view;
-  using basic_string_view::char_type;
+  typedef char8_t char_type;
 
-  u8string_view(const char *s)
-    : base(reinterpret_cast<const char8_t*>(s)) {}
-
-  u8string_view(const char *s, size_t count) FMT_NOEXCEPT
-    : base(reinterpret_cast<const char8_t*>(s), count) {}
+  u8string_view(const char *s):
+    basic_string_view<char8_t>(reinterpret_cast<const char8_t*>(s)) {}
+  u8string_view(const char *s, size_t count) FMT_NOEXCEPT:
+    basic_string_view<char8_t>(reinterpret_cast<const char8_t*>(s), count) {}
 };
 
 #if FMT_USE_USER_DEFINED_LITERALS
 inline namespace literals {
 inline u8string_view operator"" _u(const char *s, std::size_t n) {
-  return u8string_view(s, n);
+  return {s, n};
 }
 }
 #endif
