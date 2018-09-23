@@ -170,11 +170,10 @@
       (__cplusplus > 201402L || defined(_LIBCPP_VERSION))) || \
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 # include <string_view>
-# define FMT_USE_STD_STRING_VIEW
-#elif (FMT_HAS_INCLUDE(<experimental/string_view>) && \
-       __cplusplus >= 201402L)
+# define FMT_STRING_VIEW std::basic_string_view
+#elif FMT_HAS_INCLUDE(<experimental/string_view>) && __cplusplus >= 201402L
 # include <experimental/string_view>
-# define FMT_USE_EXPERIMENTAL_STRING_VIEW
+# define FMT_STRING_VIEW std::experimental::basic_string_view
 #endif
 
 // std::result_of is defined in <functional> in gcc 4.4.
@@ -238,18 +237,6 @@ class basic_string_view {
   typedef Char char_type;
   typedef const Char *iterator;
 
-  // Standard basic_string_view type.
-#if defined(FMT_USE_STD_STRING_VIEW)
-  typedef std::basic_string_view<Char> type;
-#elif defined(FMT_USE_EXPERIMENTAL_STRING_VIEW)
-  typedef std::experimental::basic_string_view<Char> type;
-#else
-  struct type {
-    const char *data() const { return FMT_NULL; }
-    size_t size() const { return 0; }
-  };
-#endif
-
   FMT_CONSTEXPR basic_string_view() FMT_NOEXCEPT : data_(FMT_NULL), size_(0) {}
 
   /** Constructs a string reference object from a C string and a size. */
@@ -271,8 +258,10 @@ class basic_string_view {
       const std::basic_string<Char, Alloc> &s) FMT_NOEXCEPT
   : data_(s.data()), size_(s.size()) {}
 
-  FMT_CONSTEXPR basic_string_view(type s) FMT_NOEXCEPT
+#ifdef FMT_STRING_VIEW
+  FMT_CONSTEXPR basic_string_view(FMT_STRING_VIEW<Char> s) FMT_NOEXCEPT
   : data_(s.data()), size_(s.size()) {}
+#endif
 
   /** Returns a pointer to the string data. */
   FMT_CONSTEXPR const Char *data() const { return data_; }
