@@ -447,12 +447,6 @@ struct named_arg_base;
 template <typename T, typename Char>
 struct named_arg;
 
-template <typename T>
-struct is_named_arg : std::false_type {};
-
-template <typename T, typename Char>
-struct is_named_arg<named_arg<T, Char>> : std::true_type {};
-
 enum type {
   none_type, named_arg_type,
   // Integer types should go first,
@@ -1366,9 +1360,9 @@ inline typename std::enable_if<
                     make_format_args<wformat_context>(args...));
 }
 
-template <
-    typename String,
-    typename Char = typename internal::format_string_traits<String>::char_type>
+#define FMT_CHAR(Str) typename internal::format_string_traits<Str>::char_type
+
+template <typename String, typename Char = FMT_CHAR(String) >
 inline std::basic_string<Char> vformat(
     const String &format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
@@ -1387,18 +1381,16 @@ inline std::basic_string<Char> vformat(
   \endrst
 */
 template <typename String, typename... Args>
-inline std::basic_string<
-  typename internal::format_string_traits<String>::char_type>
-    format(const String &format_str, const Args &... args) {
+inline std::basic_string< FMT_CHAR(String) > format(
+    const String &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   // This should be just
   //   return vformat(format_str, make_format_args(args...));
   // but gcc has trouble optimizing the latter, so break it down.
-  typedef typename internal::format_string_traits<String>::char_type char_t;
-  typedef typename buffer_context<char_t>::type context_t;
+  typedef typename buffer_context< FMT_CHAR(String) >::type context_t;
   format_arg_store<context_t, Args...> as{args...};
-  return internal::vformat(
-      basic_string_view<char_t>(format_str), basic_format_args<context_t>(as));
+  return internal::vformat(basic_string_view< FMT_CHAR(String) >(format_str),
+                           basic_format_args<context_t>(as));
 }
 
 FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
