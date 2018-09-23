@@ -216,6 +216,14 @@ FMT_CONSTEXPR size_t length(const Char *s) {
 FMT_CONSTEXPR size_t length(const char *s) { return std::strlen(s); }
 #endif
 
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 405
+template <typename... T>
+struct is_constructible: std::false_type {};
+#else
+template <typename... T>
+struct is_constructible: std::is_constructible<T...> {};
+#endif
+
 template <typename T>
 struct no_formatter_error : std::false_type {};
 }  // namespace internal
@@ -644,7 +652,7 @@ inline typename std::enable_if<
 
 template <typename C, typename T, typename Char = typename C::char_type>
 inline typename std::enable_if<
-    std::is_constructible<basic_string_view<Char>, T>::value,
+    internal::is_constructible<basic_string_view<Char>, T>::value,
     init<C, basic_string_view<Char>, string_type>>::type
   make_value(const T &val) { return basic_string_view<Char>(val); }
 
@@ -652,7 +660,7 @@ template <typename C, typename T, typename Char = typename C::char_type>
 inline typename std::enable_if<
     !convert_to_int<T, Char>::value &&
     !std::is_convertible<T, basic_string_view<Char>>::value &&
-    !std::is_constructible<basic_string_view<Char>, T>::value,
+    !internal::is_constructible<basic_string_view<Char>, T>::value,
     // Implicit conversion to std::string is not handled here because it's
     // unsafe: https://github.com/fmtlib/fmt/issues/729
     init<C, const T &, custom_type>>::type
@@ -1253,11 +1261,10 @@ namespace internal {
 // If S is a format string type, format_string_traints<S>::char_type gives its
 // character type.
 template <typename S, typename Enable = void>
-struct format_string_traits {
- private:
-  // Use constructability as a way to detect if format_string_traits is
-  // specialized because other methods are broken on MSVC2013.
-  format_string_traits();
+class format_string_traits {
+  // Use emptyness as a way to detect if format_string_traits is
+  // specialized because other methods are broken on MSVC2013 or gcc 4.4.
+  int dummy;
 };
 
 template <typename Char>
@@ -1284,11 +1291,6 @@ struct format_string_traits<
     S, typename std::enable_if<std::is_base_of<
          basic_string_view<typename S::char_type>, S>::value>::type> :
     format_string_traits_base<typename S::char_type> {};
-
-template <typename S>
-struct is_format_string :
-    std::integral_constant<
-      bool, std::is_constructible<format_string_traits<S>>::value> {};
 
 template <typename S>
 struct is_compile_string :

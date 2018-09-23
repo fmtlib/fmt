@@ -266,6 +266,10 @@ template <>
 inline void reset_color<wchar_t>(FILE *stream) FMT_NOEXCEPT {
   fputs(internal::data::WRESET_COLOR, stream);
 }
+
+template <typename S>
+struct is_format_string: std::integral_constant<
+    bool, std::is_empty<format_string_traits<S>>::value> {};
 } // namespace internal
 
 template <
