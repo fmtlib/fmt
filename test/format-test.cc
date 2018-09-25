@@ -682,6 +682,12 @@ TEST(FormatToTest, Format) {
   EXPECT_EQ("part1part2", s);
 }
 
+TEST(FormatToTest, WideString) {
+  std::vector<wchar_t> buf;
+  fmt::format_to(std::back_inserter(buf), L"{}{}", 42, L'\0');
+  EXPECT_STREQ(buf.data(), L"42");
+}
+
 TEST(FormatToTest, FormatToNonbackInsertIteratorWithSignAndNumericAlignment) {
   char buffer[16] = {};
   fmt::format_to(buffer, "{: =+}", 42.0);

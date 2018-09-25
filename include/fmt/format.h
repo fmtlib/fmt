@@ -3501,11 +3501,14 @@ inline OutputIt vformat_to(
    fmt::format_to(std::back_inserter(out), "{}", 42);
  \endrst
  */
-template <typename OutputIt, typename... Args>
-inline OutputIt format_to(OutputIt out, string_view format_str,
+template <typename OutputIt, typename String, typename... Args>
+inline OutputIt format_to(OutputIt out, const String &format_str,
                           const Args &... args) {
-  return vformat_to(out, format_str,
-      make_format_args<typename format_context_t<OutputIt>::type>(args...));
+  internal::check_format_string<Args...>(format_str);
+  typedef typename format_context_t<OutputIt, FMT_CHAR(String) >::type context_t;
+  format_arg_store<context_t, Args...> as{args...};
+  return vformat_to(out, basic_string_view< FMT_CHAR(String) >(format_str),
+                    basic_format_args<context_t>(as));
 }
 
 template <typename OutputIt>
