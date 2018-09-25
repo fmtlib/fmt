@@ -1286,6 +1286,9 @@ struct format_string_traits<
     format_string_traits_base<typename S::char_type> {};
 
 template <typename S>
+struct is_format_string : std::is_empty<format_string_traits<S>> {};
+
+template <typename S>
 struct is_compile_string :
     std::integral_constant<bool, std::is_base_of<compile_string, S>::value> {};
 
