@@ -3507,7 +3507,8 @@ inline OutputIt vformat_to(
  \endrst
  */
 template <typename OutputIt, typename String, typename... Args>
-inline OutputIt format_to(OutputIt out, const String &format_str,
+inline typename std::enable_if<internal::is_format_string<String>::value, OutputIt>::type
+  format_to(OutputIt out, const String &format_str,
                           const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename format_context_t<OutputIt, FMT_CHAR(String) >::type context_t;
