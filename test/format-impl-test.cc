@@ -102,6 +102,11 @@ TEST(FPTest, GetCachedPower) {
   }
 }
 
+TEST(FPTest, Grisu2FormatCompilesWithNonIEEEDouble) {
+  size_t size = 0;
+  fmt::internal::grisu2_format(4.2f, FMT_NULL, size, 0, 0, false);
+}
+
 template <typename T>
 struct ValueExtractor: fmt::internal::function<T> {
   T operator()(T value) {

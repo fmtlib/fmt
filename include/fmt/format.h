@@ -293,8 +293,13 @@ inline bool use_grisu() {
 
 // Formats value using Grisu2 algorithm:
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
-FMT_API void grisu2_format(double value, char *buffer, size_t &size, char type,
-                           int precision, bool write_decimal_point);
+template <typename Double>
+FMT_API typename std::enable_if<sizeof(Double) == sizeof(uint64_t)>::type
+  grisu2_format(Double value, char *buffer, size_t &size, char type,
+                int precision, bool write_decimal_point);
+template <typename Double>
+inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t)>::type
+  grisu2_format(Double, char *, size_t &, char, int, bool) {}
 
 template <typename Allocator>
 typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {

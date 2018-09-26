@@ -513,7 +513,8 @@ FMT_FUNC void grisu2_gen_digits(
   }
 }
 
-FMT_FUNC void grisu2_format_positive(double value, char *buffer, size_t &size,
+template <typename Double>
+FMT_FUNC void grisu2_format_positive(Double value, char *buffer, size_t &size,
                                      int &dec_exp) {
   FMT_ASSERT(value > 0, "value is nonpositive");
   fp fp_value(value);
@@ -640,8 +641,10 @@ FMT_FUNC void grisu2_prettify(char *buffer, size_t &size, int exp,
 
 // Formats a nonnegative value using Grisu2 algorithm. Grisu2 doesn't give any
 // guarantees on the shortness of the result.
-FMT_FUNC void grisu2_format(double value, char *buffer, size_t &size, char type,
-                            int precision, bool write_decimal_point) {
+template <typename Double>
+FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t)>::type
+  grisu2_format(Double value, char *buffer, size_t &size, char type,
+                int precision, bool write_decimal_point) {
   FMT_ASSERT(value >= 0, "value is negative");
   int dec_exp = 0;  // K in Grisu.
   if (value > 0) {
