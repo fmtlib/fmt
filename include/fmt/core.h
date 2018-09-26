@@ -89,7 +89,8 @@
 # endif
 #endif
 
-#if FMT_HAS_FEATURE(cxx_explicit_conversions) || FMT_MSC_VER >= 1800
+#if FMT_HAS_FEATURE(cxx_explicit_conversions) || \
+    FMT_GCC_VERSION >= 405 || FMT_MSC_VER >= 1800
 # define FMT_EXPLICIT explicit
 #else
 # define FMT_EXPLICIT

@@ -1583,7 +1583,7 @@ struct explicitly_convertible_to_string_like {
       typename String,
       typename = typename std::enable_if<
         std::is_constructible<String, const char*, std::size_t>::value>::type>
-  explicit operator String() const { return String("foo", 3u); }
+  FMT_EXPLICIT operator String() const { return String("foo", 3u); }
 };
 
 TEST(FormatterTest, FormatExplicitlyConvertibleToStringLike) {
