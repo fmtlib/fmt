@@ -2164,7 +2164,8 @@ FMT_CONSTEXPR void parse_format_string(
     }
     Handler &handler_;
   } write{handler};
-  auto begin = format_str.data(), end = begin + format_str.size();
+  auto begin = format_str.data();
+  auto end = begin + format_str.size();
   while (begin != end) {
     // Doing two passes with memchr (one for '{' and another for '}') is up to
     // 2.5x faster than the naive one-pass implementation on big format strings.
