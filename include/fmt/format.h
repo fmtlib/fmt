@@ -497,7 +497,7 @@ enum { inline_buffer_size = 500 };
      fmt::memory_buffer out;
      format_to(out, "The answer is {}.", 42);
 
-  This will write the following output to the ``out`` object:
+  This will append the following output to the ``out`` object:
 
   .. code-block:: none
 
