@@ -2407,17 +2407,17 @@ TEST(FormatTest, ConstructU8StringViewFromCString) {
   fmt::u8string_view s("ab");
   EXPECT_EQ(s.size(), 2u);
   const fmt::char8_t *data = s.data();
-  EXPECT_EQ(data[0].value, 'a');
-  EXPECT_EQ(data[1].value, 'b');
+  EXPECT_EQ(data[0], 'a');
+  EXPECT_EQ(data[1], 'b');
 }
 
 TEST(FormatTest, ConstructU8StringViewFromDataAndSize) {
   fmt::u8string_view s("foobar", 3);
   EXPECT_EQ(s.size(), 3u);
   const fmt::char8_t *data = s.data();
-  EXPECT_EQ(data[0].value, 'f');
-  EXPECT_EQ(data[1].value, 'o');
-  EXPECT_EQ(data[2].value, 'o');
+  EXPECT_EQ(data[0], 'f');
+  EXPECT_EQ(data[1], 'o');
+  EXPECT_EQ(data[2], 'o');
 }
 
 #if FMT_USE_USER_DEFINED_LITERALS
@@ -2426,7 +2426,7 @@ TEST(FormatTest, U8StringViewLiteral) {
   fmt::u8string_view s = "ab"_u;
   EXPECT_EQ(s.size(), 2u);
   const fmt::char8_t *data = s.data();
-  EXPECT_EQ(data[0].value, 'a');
-  EXPECT_EQ(data[1].value, 'b');
+  EXPECT_EQ(data[0], 'a');
+  EXPECT_EQ(data[1], 'b');
 }
 #endif

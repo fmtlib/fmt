@@ -206,7 +206,7 @@ FMT_FUNC size_t internal::count_code_points(u8string_view s) {
   const char8_t *data = s.data();
   int num_code_points = 0;
   for (size_t i = 0, size = s.size(); i != size; ++i) {
-    if ((data[i].value & 0xc0) != 0x80)
+    if ((data[i] & 0xc0) != 0x80)
       ++num_code_points;
   }
   return num_code_points;

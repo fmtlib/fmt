@@ -437,12 +437,7 @@ void basic_buffer<T>::append(const U *begin, const U *end) {
 }  // namespace internal
 
 // A UTF-8 code unit type.
-struct char8_t {
-  char value;
-  FMT_CONSTEXPR FMT_EXPLICIT operator bool() const FMT_NOEXCEPT {
-    return value != 0;
-  }
-};
+enum char8_t: unsigned char {};
 
 // A UTF-8 string view.
 class u8string_view : public basic_string_view<char8_t> {
