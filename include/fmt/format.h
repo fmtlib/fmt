@@ -925,6 +925,28 @@ inline unsigned count_digits(uint64_t n) {
 // Counts the number of code points in a UTF-8 string.
 FMT_API size_t count_code_points(u8string_view s);
 
+inline char8_t to_char8_t(char c) { return static_cast<char8_t>(c); }
+
+template <typename InputIt, typename OutChar>
+struct needs_conversion: std::integral_constant<bool,
+  std::is_same<
+    typename std::iterator_traits<InputIt>::value_type, char>::value &&
+  std::is_same<OutChar, char8_t>::value> {};
+
+template <typename OutChar, typename InputIt, typename OutputIt>
+typename std::enable_if<
+  !needs_conversion<InputIt, OutChar>::value, OutputIt>::type
+    copy_str(InputIt begin, InputIt end, OutputIt it) {
+  return std::copy(begin, end, it);
+}
+
+template <typename OutChar, typename InputIt, typename OutputIt>
+typename std::enable_if<
+  needs_conversion<InputIt, OutChar>::value, OutputIt>::type
+    copy_str(InputIt begin, InputIt end, OutputIt it) {
+  return std::transform(begin, end, it, to_char8_t);
+}
+
 #if FMT_HAS_CPP_ATTRIBUTE(always_inline)
 # define FMT_ALWAYS_INLINE __attribute__((always_inline))
 #else
@@ -1074,19 +1096,20 @@ inline Char *format_decimal(Char *buffer, UInt value, unsigned num_digits,
   return end;
 }
 
-template <typename UInt, typename Iterator, typename ThousandsSep>
+template <typename OutChar, typename UInt, typename Iterator,
+          typename ThousandsSep>
 inline Iterator format_decimal(
     Iterator out, UInt value, unsigned num_digits, ThousandsSep sep) {
   typedef typename ThousandsSep::char_type char_type;
   // Buffer should be large enough to hold all digits (digits10 + 1) and null.
   char_type buffer[std::numeric_limits<UInt>::digits10 + 2];
   format_decimal(buffer, value, num_digits, sep);
-  return std::copy_n(buffer, num_digits, out);
+  return internal::copy_str<OutChar>(buffer, buffer + num_digits, out);
 }
 
-template <typename It, typename UInt>
+template <typename OutChar, typename It, typename UInt>
 inline It format_decimal(It out, UInt value, unsigned num_digits) {
-  return format_decimal(out, value, num_digits, no_thousands_sep());
+  return format_decimal<OutChar>(out, value, num_digits, no_thousands_sep());
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
@@ -1102,14 +1125,14 @@ inline Char *format_uint(Char *buffer, UInt value, unsigned num_digits,
   return end;
 }
 
-template <unsigned BASE_BITS, typename It, typename UInt>
+template <unsigned BASE_BITS, typename Char, typename It, typename UInt>
 inline It format_uint(It out, UInt value, unsigned num_digits,
                       bool upper = false) {
   // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1)
   // and null.
   char buffer[std::numeric_limits<UInt>::digits / BASE_BITS + 2];
   format_uint<BASE_BITS>(buffer, value, num_digits, upper);
-  return std::copy_n(buffer, num_digits, out);
+  return internal::copy_str<Char>(buffer, buffer + num_digits, out);
 }
 
 #ifndef _WIN32
@@ -2300,28 +2323,6 @@ void handle_dynamic_spec(
     break;
   }
 }
-
-inline char8_t to_char8_t(char c) { return static_cast<char8_t>(c); }
-
-template <typename InputIt, typename OutChar>
-struct needs_conversion: std::integral_constant<bool,
-  std::is_same<
-    typename std::iterator_traits<InputIt>::value_type, char>::value &&
-  std::is_same<OutChar, char8_t>::value> {};
-
-template <typename OutChar, typename InputIt, typename OutputIt>
-typename std::enable_if<
-  !needs_conversion<InputIt, OutChar>::value, OutputIt>::type
-    copy_str(InputIt begin, InputIt end, OutputIt it) {
-  return std::copy(begin, end, it);
-}
-
-template <typename OutChar, typename InputIt, typename OutputIt>
-typename std::enable_if<
-  needs_conversion<InputIt, OutChar>::value, OutputIt>::type
-    copy_str(InputIt begin, InputIt end, OutputIt it) {
-  return std::transform(begin, end, it, to_char8_t);
-}
 }  // namespace internal
 
 /** The default argument formatter. */
@@ -2507,7 +2508,7 @@ class basic_writer {
     auto &&it = reserve((is_negative ? 1 : 0) + num_digits);
     if (is_negative)
       *it++ = static_cast<char_type>('-');
-    it = internal::format_decimal(it, abs_value, num_digits);
+    it = internal::format_decimal<char_type>(it, abs_value, num_digits);
   }
 
   // The handle_int_type_spec handler that writes an integer.
@@ -2553,7 +2554,7 @@ class basic_writer {
 
       template <typename It>
       void operator()(It &&it) const {
-        it = internal::format_decimal(it, abs_value, num_digits);
+        it = internal::format_decimal<char_type>(it, abs_value, num_digits);
       }
     };
 
@@ -2569,8 +2570,8 @@ class basic_writer {
 
       template <typename It>
       void operator()(It &&it) const {
-        it = internal::format_uint<4>(it, self.abs_value, num_digits,
-                                      self.spec.type() != 'x');
+        it = internal::format_uint<4, char_type>(
+              it, self.abs_value, num_digits, self.spec.type() != 'x');
       }
     };
 
@@ -2591,7 +2592,7 @@ class basic_writer {
 
       template <typename It>
       void operator()(It &&it) const {
-        it = internal::format_uint<BITS>(it, abs_value, num_digits);
+        it = internal::format_uint<BITS, char_type>(it, abs_value, num_digits);
       }
     };
 
@@ -2627,8 +2628,8 @@ class basic_writer {
       template <typename It>
       void operator()(It &&it) const {
         basic_string_view<char_type> s(&sep, SEP_SIZE);
-        it = format_decimal(it, abs_value, size,
-                            internal::add_thousands_sep<char_type>(s));
+        it = internal::format_decimal<char_type>(
+              it, abs_value, size, internal::add_thousands_sep<char_type>(s));
       }
     };
 
@@ -2670,7 +2671,7 @@ class basic_writer {
   struct double_writer {
     size_t n;
     char sign;
-    basic_memory_buffer<char_type> &buffer;
+    internal::buffer &buffer;
 
     template <typename It>
     void operator()(It &&it) {
@@ -2678,7 +2679,7 @@ class basic_writer {
         *it++ = static_cast<char_type>(sign);
         --n;
       }
-      it = std::copy_n(buffer.begin(), n, it);
+      it = internal::copy_str<char_type>(buffer.begin(), buffer.end(), it);
     }
   };
 
@@ -2687,7 +2688,7 @@ class basic_writer {
   void write_double(T value, const format_specs &spec);
   template <typename T>
   void write_double_sprintf(T value, const format_specs &spec,
-                            internal::basic_buffer<char_type> &buffer);
+                            internal::buffer &buffer);
 
   template <typename Char>
   struct str_writer {
@@ -2708,15 +2709,6 @@ class basic_writer {
 
   template <typename Char>
   void write_str(basic_string_view<Char> str, const format_specs &spec);
-
-  // Appends floating-point length specifier to the format string.
-  // The second argument is only used for overload resolution.
-  void append_float_length(char_type *&format_ptr, long double) {
-    *format_ptr++ = 'L';
-  }
-
-  template<typename T>
-  void append_float_length(char_type *&, T) {}
 
   template <typename Char>
   friend class internal::arg_formatter_base;
@@ -2907,7 +2899,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   if (internal::fputil::isinfinity(value))
     return write_inf_or_nan(handler.upper ? "INF" : "inf");
 
-  basic_memory_buffer<char_type> buffer;
+  memory_buffer buffer;
   char type = static_cast<char>(spec.type());
   if (internal::const_check(
         internal::use_grisu() && sizeof(T) <= sizeof(double)) &&
@@ -2946,15 +2938,14 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
 template <typename Range>
 template <typename T>
 void basic_writer<Range>::write_double_sprintf(
-    T value, const format_specs &spec,
-    internal::basic_buffer<char_type> &buffer) {
+    T value, const format_specs &spec, internal::buffer &buffer) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buffer.capacity() != 0, "empty buffer");
 
   // Build format string.
   enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
-  char_type format[MAX_FORMAT_SIZE];
-  char_type *format_ptr = format;
+  char format[MAX_FORMAT_SIZE];
+  char *format_ptr = format;
   *format_ptr++ = '%';
   if (spec.flag(HASH_FLAG))
     *format_ptr++ = '#';
@@ -2962,17 +2953,17 @@ void basic_writer<Range>::write_double_sprintf(
     *format_ptr++ = '.';
     *format_ptr++ = '*';
   }
-
-  append_float_length(format_ptr, value);
+  if (std::is_same<T, long double>::value)
+    *format_ptr++ = 'L';
   *format_ptr++ = spec.type();
   *format_ptr = '\0';
 
   // Format using snprintf.
-  char_type *start = FMT_NULL;
+  char *start = FMT_NULL;
   for (;;) {
     std::size_t buffer_size = buffer.capacity();
     start = &buffer[0];
-    int result = internal::char_traits<char_type>::format_float(
+    int result = internal::char_traits<char>::format_float(
         start, buffer_size, format, spec.precision(), value);
     if (result >= 0) {
       unsigned n = internal::to_unsigned(result);
@@ -3142,7 +3133,7 @@ inline void format_decimal(char *&buffer, T value) {
     return;
   }
   unsigned num_digits = internal::count_digits(abs_value);
-  internal::format_decimal(buffer, abs_value, num_digits);
+  internal::format_decimal<char>(buffer, abs_value, num_digits);
   buffer += num_digits;
 }
 

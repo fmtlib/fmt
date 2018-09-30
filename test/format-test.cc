@@ -2430,3 +2430,7 @@ TEST(FormatTest, U8StringViewLiteral) {
   EXPECT_EQ(data[1], 'b');
 }
 #endif
+
+TEST(FormatTest, FormatU8String) {
+  EXPECT_EQ(format(fmt::u8string_view("{}"), 42), fmt::u8string_view("42"));
+}
