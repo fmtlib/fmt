@@ -1306,10 +1306,12 @@ std::basic_string<Char> vformat(
     basic_format_args<typename buffer_context<Char>::type> args);
 }  // namespace internal
 
+#define FMT_CHAR(Str) typename internal::format_string_traits<Str>::char_type
+
+template <typename String>
 format_context::iterator vformat_to(
-    internal::buffer &buf, string_view format_str, format_args args);
-wformat_context::iterator vformat_to(
-    internal::wbuffer &buf, wstring_view format_str, wformat_args args);
+  internal::basic_buffer<FMT_CHAR(String) > &buf, const String &format_str,
+  basic_format_args<buffer_context<FMT_CHAR(String) > > args);
 
 template <typename Container>
 struct is_contiguous : std::false_type {};
@@ -1358,8 +1360,6 @@ inline typename std::enable_if<
   return vformat_to(out, format_str,
                     make_format_args<wformat_context>(args...));
 }
-
-#define FMT_CHAR(Str) typename internal::format_string_traits<Str>::char_type
 
 template <typename String, typename Char = FMT_CHAR(String) >
 inline std::basic_string<Char> vformat(

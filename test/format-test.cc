@@ -1836,7 +1836,7 @@ TEST(StrTest, Convert) {
   EXPECT_EQ("2012-12-9", s);
 }
 
-static std::string vformat_message(int id, const char *format, fmt::format_args args) {
+std::string vformat_message(int id, const char *format, fmt::format_args args) {
   fmt::memory_buffer buffer;
   format_to(buffer, "[{}] ", id);
   vformat_to(buffer, format, args);
