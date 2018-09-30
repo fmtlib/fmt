@@ -3465,12 +3465,6 @@ inline typename buffer_context<FMT_CHAR(String)>::type::iterator vformat_to(
     buf, basic_string_view<Char>(format_str), args);
 }
 
-inline wformat_context::iterator vformat_to(
-    internal::wbuffer &buf, wstring_view format_str, wformat_args args) {
-  typedef back_insert_range<internal::wbuffer> range;
-  return vformat_to<arg_formatter<range>>(buf, format_str, args);
-}
-
 template <
     typename String, typename... Args,
     std::size_t SIZE = inline_buffer_size,
@@ -3534,23 +3528,23 @@ struct format_to_n_result {
   std::size_t size;
 };
 
-template <typename OutputIt>
+template <typename OutputIt, typename Char = typename OutputIt::value_type>
 using format_to_n_context = typename fmt::format_context_t<
-  fmt::internal::truncating_iterator<OutputIt>>::type;
+  fmt::internal::truncating_iterator<OutputIt>, Char>::type;
 
-template <typename OutputIt>
-using format_to_n_args = fmt::basic_format_args<format_to_n_context<OutputIt>>;
+template <typename OutputIt, typename Char = typename OutputIt::value_type>
+using format_to_n_args = fmt::basic_format_args<format_to_n_context<OutputIt, Char>>;
 
-template <typename OutputIt, typename ...Args>
-inline format_arg_store<format_to_n_context<OutputIt>, Args...>
+template <typename OutputIt, typename Char, typename ...Args>
+inline format_arg_store<format_to_n_context<OutputIt, Char>, Args...>
     make_format_to_n_args(const Args &... args) {
-  return format_arg_store<format_to_n_context<OutputIt>, Args...>(args...);
+  return format_arg_store<format_to_n_context<OutputIt, Char>, Args...>(args...);
 }
 
-template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename Char, typename... Args>
 inline format_to_n_result<OutputIt> vformat_to_n(
-    OutputIt out, std::size_t n, string_view format_str,
-    format_to_n_args<OutputIt> args) {
+    OutputIt out, std::size_t n, basic_string_view<Char> format_str,
+    format_to_n_args<OutputIt, Char> args) {
   typedef internal::truncating_iterator<OutputIt> It;
   auto it = vformat_to(It(out, n), format_str, args);
   return {it.base(), it.count()};
@@ -3563,20 +3557,16 @@ inline format_to_n_result<OutputIt> vformat_to_n(
  end of the output range.
  \endrst
  */
-template <typename OutputIt, typename... Args>
-inline format_to_n_result<OutputIt> format_to_n(
-    OutputIt out, std::size_t n, string_view format_str, const Args &... args) {
-  return vformat_to_n<OutputIt>(
-    out, n, format_str, make_format_to_n_args<OutputIt>(args...));
-}
-template <typename OutputIt, typename... Args>
-inline format_to_n_result<OutputIt> format_to_n(
-    OutputIt out, std::size_t n, wstring_view format_str,
-    const Args &... args) {
-  typedef internal::truncating_iterator<OutputIt> It;
-  auto it = vformat_to(It(out, n), format_str,
-      make_format_args<typename format_context_t<It, wchar_t>::type>(args...));
-  return {it.base(), it.count()};
+template <typename OutputIt, typename String, typename... Args>
+inline typename std::enable_if<
+  internal::is_format_string<String>::value,
+  format_to_n_result<OutputIt>>::type format_to_n(
+    OutputIt out, std::size_t n, const String &format_str, const Args &... args) {
+  internal::check_format_string<Args...>(format_str);
+  typedef FMT_CHAR(String) Char;
+  format_arg_store<format_to_n_context<OutputIt, Char>, Args...> as{ args... };
+  return vformat_to_n(out, n, internal::to_string_view(format_str),
+                      format_to_n_args<OutputIt, Char>(as));
 }
 
 template <typename Char>
