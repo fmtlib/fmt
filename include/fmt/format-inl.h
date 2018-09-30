@@ -192,6 +192,16 @@ void report_error(FormatFunc func, int error_code,
 }
 }  // namespace
 
+FMT_FUNC size_t internal::count_code_points(u8string_view s) {
+  const char8_t *data = s.data();
+  size_t num_code_points = 0;
+  for (size_t i = 0, size = s.size(); i != size; ++i) {
+    if ((data[i] & 0xc0) != 0x80)
+      ++num_code_points;
+  }
+  return num_code_points;
+}
+
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
 class locale {
  private:
@@ -202,20 +212,15 @@ class locale {
   std::locale get() { return locale_; }
 };
 
-FMT_FUNC size_t internal::count_code_points(u8string_view s) {
-  const char8_t *data = s.data();
-  int num_code_points = 0;
-  for (size_t i = 0, size = s.size(); i != size; ++i) {
-    if ((data[i] & 0xc0) != 0x80)
-      ++num_code_points;
-  }
-  return num_code_points;
-}
-
+namespace internal {
 template <typename Char>
-FMT_FUNC Char internal::thousands_sep(locale_provider *lp) {
+FMT_FUNC Char thousands_sep(locale_provider *lp) {
   std::locale loc = lp ? lp->locale().get() : std::locale();
   return std::use_facet<std::numpunct<Char>>(loc).thousands_sep();
+}
+template <> FMT_FUNC char8_t thousands_sep<char8_t>(locale_provider *) {
+  return static_cast<char8_t>(',');
+}
 }
 #else
 template <typename Char>

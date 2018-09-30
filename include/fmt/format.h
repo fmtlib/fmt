@@ -713,7 +713,7 @@ class null_terminating_iterator {
   }
 
   FMT_CONSTEXPR Char operator*() const {
-    return ptr_ != end_ ? *ptr_ : 0;
+    return ptr_ != end_ ? *ptr_ : Char();
   }
 
   FMT_CONSTEXPR null_terminating_iterator operator++() {
@@ -1058,19 +1058,19 @@ inline Char *format_decimal(Char *buffer, UInt value, unsigned num_digits,
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     unsigned index = static_cast<unsigned>((value % 100) * 2);
     value /= 100;
-    *--buffer = data::DIGITS[index + 1];
+    *--buffer = static_cast<Char>(data::DIGITS[index + 1]);
     thousands_sep(buffer);
-    *--buffer = data::DIGITS[index];
+    *--buffer = static_cast<Char>(data::DIGITS[index]);
     thousands_sep(buffer);
   }
   if (value < 10) {
-    *--buffer = static_cast<char>('0' + value);
+    *--buffer = static_cast<Char>('0' + value);
     return end;
   }
   unsigned index = static_cast<unsigned>(value * 2);
-  *--buffer = data::DIGITS[index + 1];
+  *--buffer = static_cast<Char>(data::DIGITS[index + 1]);
   thousands_sep(buffer);
-  *--buffer = data::DIGITS[index];
+  *--buffer = static_cast<Char>(data::DIGITS[index]);
   return end;
 }
 
@@ -1097,7 +1097,7 @@ inline Char *format_uint(Char *buffer, UInt value, unsigned num_digits,
   do {
     const char *digits = upper ? "0123456789ABCDEF" : "0123456789abcdef";
     unsigned digit = (value & ((1 << BASE_BITS) - 1));
-    *--buffer = BASE_BITS < 4 ? static_cast<char>('0' + digit) : digits[digit];
+    *--buffer = static_cast<Char>(BASE_BITS < 4 ? '0' + digit : digits[digit]);
   } while ((value >>= BASE_BITS) != 0);
   return end;
 }
@@ -1225,7 +1225,7 @@ class basic_format_specs : public align_spec {
  public:
   unsigned flags_;
   int precision_;
-  Char type_;
+  char type_;
 
   FMT_CONSTEXPR basic_format_specs(
       unsigned width = 0, char type = 0, wchar_t fill = ' ')
@@ -1233,7 +1233,7 @@ class basic_format_specs : public align_spec {
 
   FMT_CONSTEXPR bool flag(unsigned f) const { return (flags_ & f) != 0; }
   FMT_CONSTEXPR int precision() const { return precision_; }
-  FMT_CONSTEXPR Char type() const { return type_; }
+  FMT_CONSTEXPR char type() const { return type_; }
 };
 
 typedef basic_format_specs<char> format_specs;
@@ -1253,8 +1253,8 @@ struct format_string_traits<
   S, typename std::enable_if<std::is_base_of<compile_string, S>::value>::type>:
     format_string_traits_base<char> {};
 
-template <typename Char, typename Handler>
-FMT_CONSTEXPR void handle_int_type_spec(Char spec, Handler &&handler) {
+template <typename Handler>
+FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler &&handler) {
   switch (spec) {
   case 0: case 'd':
     handler.on_dec();
@@ -1276,8 +1276,8 @@ FMT_CONSTEXPR void handle_int_type_spec(Char spec, Handler &&handler) {
   }
 }
 
-template <typename Char, typename Handler>
-FMT_CONSTEXPR void handle_float_type_spec(Char spec, Handler &&handler) {
+template <typename Handler>
+FMT_CONSTEXPR void handle_float_type_spec(char spec, Handler &&handler) {
   switch (spec) {
   case 0: case 'g': case 'G':
     handler.on_general();
@@ -1361,13 +1361,13 @@ class float_type_checker : private ErrorHandler {
   }
 };
 
-template <typename ErrorHandler, typename CharType>
+template <typename ErrorHandler>
 class char_specs_checker : public ErrorHandler {
  private:
-  CharType type_;
+  char type_;
 
  public:
-  FMT_CONSTEXPR char_specs_checker(CharType type, ErrorHandler eh)
+  FMT_CONSTEXPR char_specs_checker(char type, ErrorHandler eh)
     : ErrorHandler(eh), type_(type) {}
 
   FMT_CONSTEXPR void on_int() {
@@ -1478,8 +1478,9 @@ class arg_formatter_base {
   }
 
   template <typename T>
-  typename std::enable_if<std::is_integral<T>::value, iterator>::type
-      operator()(T value) {
+  typename std::enable_if<
+    std::is_integral<T>::value || std::is_same<T, char_type>::value,
+    iterator>::type operator()(T value) {
     // MSVC2013 fails to compile separate overloads for bool and char_type so
     // use std::is_same instead.
     if (std::is_same<T, bool>::value) {
@@ -1692,7 +1693,7 @@ class specs_setter {
   explicit FMT_CONSTEXPR specs_setter(basic_format_specs<Char> &specs):
     specs_(specs) {}
 
-  FMT_CONSTEXPR specs_setter(const specs_setter &other) : specs_(other.specs_) {}
+  FMT_CONSTEXPR specs_setter(const specs_setter &other): specs_(other.specs_) {}
 
   FMT_CONSTEXPR void on_align(alignment align) { specs_.align_ = align; }
   FMT_CONSTEXPR void on_fill(Char fill) { specs_.fill_ = fill; }
@@ -1712,7 +1713,9 @@ class specs_setter {
   }
   FMT_CONSTEXPR void end_precision() {}
 
-  FMT_CONSTEXPR void on_type(Char type) { specs_.type_ = type; }
+  FMT_CONSTEXPR void on_type(Char type) {
+    specs_.type_ = static_cast<char>(type);
+  }
 
  protected:
   basic_format_specs<Char> &specs_;
@@ -2019,19 +2022,19 @@ FMT_CONSTEXPR Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
   int i = 1;
   do {
     auto p = it + i;
-    switch (*p) {
-      case '<':
-        align = ALIGN_LEFT;
-        break;
-      case '>':
-        align = ALIGN_RIGHT;
-        break;
-      case '=':
-        align = ALIGN_NUMERIC;
-        break;
-      case '^':
-        align = ALIGN_CENTER;
-        break;
+    switch (static_cast<char>(*p)) {
+    case '<':
+      align = ALIGN_LEFT;
+      break;
+    case '>':
+      align = ALIGN_RIGHT;
+      break;
+    case '=':
+      align = ALIGN_NUMERIC;
+      break;
+    case '^':
+      align = ALIGN_CENTER;
+      break;
     }
     if (align != ALIGN_DEFAULT) {
       if (p != it) {
@@ -2048,19 +2051,19 @@ FMT_CONSTEXPR Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
   } while (--i >= 0);
 
   // Parse sign.
-  switch (*it) {
-    case '+':
-      handler.on_plus();
-      ++it;
-      break;
-    case '-':
-      handler.on_minus();
-      ++it;
-      break;
-    case ' ':
-      handler.on_space();
-      ++it;
-      break;
+  switch (static_cast<char>(*it)) {
+  case '+':
+    handler.on_plus();
+    ++it;
+    break;
+  case '-':
+    handler.on_minus();
+    ++it;
+    break;
+  case ' ':
+    handler.on_space();
+    ++it;
+    break;
   }
 
   if (*it == '#') {
@@ -2178,7 +2181,7 @@ FMT_CONSTEXPR void parse_format_string(
       handler.on_text(p, p + 1);
     } else {
       p = parse_arg_id(p, end, id_adapter<Handler, Char>{handler});
-      Char c = p != end ? *p : 0;
+      Char c = p != end ? *p : Char();
       if (c == '}') {
         handler.on_replacement_field(p);
       } else if (c == ':') {
@@ -2296,6 +2299,28 @@ void handle_dynamic_spec(
           value, ctx.get_arg(ref.name), ctx.error_handler());
     break;
   }
+}
+
+inline char8_t to_char8_t(char c) { return static_cast<char8_t>(c); }
+
+template <typename InputIt, typename OutChar>
+struct needs_conversion: std::integral_constant<bool,
+  std::is_same<
+    typename std::iterator_traits<InputIt>::value_type, char>::value &&
+  std::is_same<OutChar, char8_t>::value> {};
+
+template <typename OutChar, typename InputIt, typename OutputIt>
+typename std::enable_if<
+  !needs_conversion<InputIt, OutChar>::value, OutputIt>::type
+    copy_str(InputIt begin, InputIt end, OutputIt it) {
+  return std::copy(begin, end, it);
+}
+
+template <typename OutChar, typename InputIt, typename OutputIt>
+typename std::enable_if<
+  needs_conversion<InputIt, OutChar>::value, OutputIt>::type
+    copy_str(InputIt begin, InputIt end, OutputIt it) {
+  return std::transform(begin, end, it, to_char8_t);
 }
 }  // namespace internal
 
@@ -2439,7 +2464,7 @@ class basic_writer {
     template <typename It>
     void operator()(It &&it) const {
       if (prefix.size() != 0)
-        it = std::copy_n(prefix.data(), prefix.size(), it);
+        it = internal::copy_str<char_type>(prefix.begin(), prefix.end(), it);
       it = std::fill_n(it, padding, fill);
       f(it);
     }
@@ -2462,7 +2487,7 @@ class basic_writer {
     } else if (spec.precision() > static_cast<int>(num_digits)) {
       size = prefix.size() + static_cast<std::size_t>(spec.precision());
       padding = static_cast<std::size_t>(spec.precision()) - num_digits;
-      fill = '0';
+      fill = static_cast<char_type>('0');
     }
     align_spec as = spec;
     if (spec.align() == ALIGN_DEFAULT)
@@ -2481,7 +2506,7 @@ class basic_writer {
     unsigned num_digits = internal::count_digits(abs_value);
     auto &&it = reserve((is_negative ? 1 : 0) + num_digits);
     if (is_negative)
-      *it++ = '-';
+      *it++ = static_cast<char_type>('-');
     it = internal::format_decimal(it, abs_value, num_digits);
   }
 
@@ -2636,8 +2661,9 @@ class basic_writer {
     template <typename It>
     void operator()(It &&it) const {
       if (sign)
-        *it++ = sign;
-      it = std::copy_n(str, static_cast<std::size_t>(INF_SIZE), it);
+        *it++ = static_cast<char_type>(sign);
+      it = internal::copy_str<char_type>(
+            str, str + static_cast<std::size_t>(INF_SIZE), it);
     }
   };
 
@@ -2649,7 +2675,7 @@ class basic_writer {
     template <typename It>
     void operator()(It &&it) {
       if (sign) {
-        *it++ = sign;
+        *it++ = static_cast<char_type>(sign);
         --n;
       }
       it = std::copy_n(buffer.begin(), n, it);
@@ -2670,7 +2696,7 @@ class basic_writer {
 
     template <typename It>
     void operator()(It &&it) const {
-      it = std::copy_n(s, size, it);
+      it = internal::copy_str<char_type>(s, s + size, it);
     }
   };
 
@@ -2750,7 +2776,7 @@ class basic_writer {
    */
   void write(string_view value) {
     auto &&it = reserve(value.size());
-    it = std::copy(value.begin(), value.end(), it);
+    it = internal::copy_str<char_type>(value.begin(), value.end(), it);
   }
   void write(wstring_view value) {
     static_assert(std::is_same<char_type, wchar_t>::value, "");
@@ -2809,12 +2835,11 @@ void basic_writer<Range>::write_str(
   write_str(data, size, spec);
 }
 
-template <typename Char>
 struct float_spec_handler {
-  Char type;
+  char type;
   bool upper;
 
-  explicit float_spec_handler(Char t) : type(t), upper(false) {}
+  explicit float_spec_handler(char t) : type(t), upper(false) {}
 
   void on_general() {
     if (type == 'G')
@@ -2852,8 +2877,8 @@ template <typename Range>
 template <typename T>
 void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   // Check type.
-  float_spec_handler<char_type> handler(spec.type());
-  internal::handle_float_type_spec(spec.type(), handler);
+  float_spec_handler handler(static_cast<char>(spec.type()));
+  internal::handle_float_type_spec(handler.type, handler);
 
   char sign = 0;
   // Use isnegative instead of value < 0 because the latter is always
@@ -2903,7 +2928,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   if (spec.align() == ALIGN_NUMERIC) {
     if (sign) {
       auto &&it = reserve(1);
-      *it++ = sign;
+      *it++ = static_cast<char_type>(sign);
       sign = 0;
       if (as.width_)
         --as.width_;
@@ -3157,8 +3182,7 @@ struct formatter<
     case internal::char_type:
       handle_char_specs(
           &specs_,
-          internal::char_specs_checker<decltype(eh), decltype(type_spec)>(
-              type_spec, eh));
+          internal::char_specs_checker<decltype(eh)>(type_spec, eh));
       break;
     case internal::double_type:
     case internal::long_double_type:
@@ -3464,9 +3488,10 @@ inline typename buffer_context<Char>::type::iterator format_to(
     basic_memory_buffer<Char, SIZE> &buf, const String &format_str,
     const Args &... args) {
   internal::check_format_string<Args...>(format_str);
-  return vformat_to(
-        buf, basic_string_view<Char>(format_str),
-        make_format_args<typename buffer_context<Char>::type>(args...));
+  typedef typename buffer_context<Char>::type context;
+  format_arg_store<context, Args...> as{args...};
+  return vformat_to(buf, basic_string_view<Char>(format_str),
+                    basic_format_args<context>(as));
 }
 
 template <typename OutputIt, typename Char = char>
