@@ -2401,6 +2401,26 @@ TEST(FormatTest, FormatStringErrors) {
                "cannot switch from automatic to manual argument indexing",
                int, int);
 }
+
+TEST(FormatTest, VFormatTo) {
+  typedef fmt::format_context context;
+  fmt::basic_format_arg<context> arg = fmt::internal::make_arg<context>(42);
+  fmt::basic_format_args<context> args(&arg, 1);
+  std::string s;
+  fmt::vformat_to(std::back_inserter(s), "{}", args);
+  EXPECT_EQ("42", s);
+  s.clear();
+  fmt::vformat_to(std::back_inserter(s), FMT_STRING("{}"), args);
+  EXPECT_EQ("42", s);
+
+  typedef fmt::wformat_context wcontext;
+  fmt::basic_format_arg<wcontext> warg = fmt::internal::make_arg<wcontext>(42);
+  fmt::basic_format_args<wcontext> wargs(&warg, 1);
+  std::wstring w;
+  fmt::vformat_to(std::back_inserter(w), L"{}", wargs);
+  EXPECT_EQ(L"42", w);
+}
+
 #endif  // FMT_USE_CONSTEXPR
 
 TEST(FormatTest, ConstructU8StringViewFromCString) {

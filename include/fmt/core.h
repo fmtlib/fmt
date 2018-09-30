@@ -1340,23 +1340,14 @@ template <typename Char>
 struct is_contiguous<internal::basic_buffer<Char> >: std::true_type {};
 
 /** Formats a string and writes the output to ``out``. */
-template <typename Container>
+template <typename Container, typename S>
 typename std::enable_if<
   is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
     vformat_to(std::back_insert_iterator<Container> out,
-               string_view format_str, format_args args) {
+               const S &format_str,
+               basic_format_args<typename buffer_context<FMT_CHAR(S)>::type> args) {
   internal::container_buffer<Container> buf(internal::get_container(out));
-  vformat_to(buf, format_str, args);
-  return out;
-}
-
-template <typename Container>
-typename std::enable_if<
-  is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
-    vformat_to(std::back_insert_iterator<Container> out,
-               wstring_view format_str, wformat_args args) {
-  internal::container_buffer<Container> buf(internal::get_container(out));
-  vformat_to(buf, format_str, args);
+  vformat_to(buf, internal::to_string_view(format_str), args);
   return out;
 }
 
@@ -1366,8 +1357,8 @@ inline typename std::enable_if<
   std::back_insert_iterator<Container>>::type
     format_to(std::back_insert_iterator<Container> out, const S &format_str,
               const Args &... args) {
-  return vformat_to(out, internal::to_string_view(format_str),
-                    internal::checked_args<S, Args...>(format_str, args...));
+  internal::checked_args<S, Args...> ca(format_str, args...);
+  return vformat_to(out, internal::to_string_view(format_str), *ca);
 }
 
 template <typename S, typename Char = FMT_CHAR(S)>
