@@ -58,6 +58,7 @@ inline std::tm localtime(std::time_t time) {
     return lt.tm_;
   // Too big time values may be unsupported.
   FMT_THROW(format_error("time_t value out of range"));
+  return {};
 }
 
 // Thread-safe replacement for std::gmtime
@@ -93,6 +94,7 @@ inline std::tm gmtime(std::time_t time) {
     return gt.tm_;
   // Too big time values may be unsupported.
   FMT_THROW(format_error("time_t value out of range"));
+  return {};
 }
 
 namespace internal {
