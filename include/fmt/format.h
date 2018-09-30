@@ -3442,10 +3442,10 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE> &buf) {
 }
 
 template <typename String, typename Char = FMT_CHAR(String)>
-inline typename buffer_context<FMT_CHAR(String) >::type::iterator vformat_to(
+inline typename buffer_context<FMT_CHAR(String)>::type::iterator vformat_to(
     internal::basic_buffer<Char> &buf, const String &format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
-  typedef back_insert_range<internal::basic_buffer<FMT_CHAR(String) > > range;
+  typedef back_insert_range<internal::basic_buffer<FMT_CHAR(String)> > range;
   return vformat_to<arg_formatter<range>>(
     buf, basic_string_view<Char>(format_str), args);
 }
@@ -3483,8 +3483,8 @@ struct format_args_t {
 template <typename String, typename OutputIt, typename... Args>
 inline OutputIt vformat_to(
     OutputIt out, const String &format_str,
-    typename format_args_t<OutputIt, FMT_CHAR(String) >::type args) {
-  typedef output_range<OutputIt, FMT_CHAR(String) > range;
+    typename format_args_t<OutputIt, FMT_CHAR(String)>::type args) {
+  typedef output_range<OutputIt, FMT_CHAR(String)> range;
   return vformat_to<arg_formatter<range>>(range(out), format_str, args);
 }
 
@@ -3504,9 +3504,9 @@ inline typename std::enable_if<
   internal::is_format_string<String>::value, OutputIt>::type
     format_to(OutputIt out, const String &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename format_context_t<OutputIt, FMT_CHAR(String) >::type context;
+  typedef typename format_context_t<OutputIt, FMT_CHAR(String)>::type context;
   format_arg_store<context, Args...> as{args...};
-  return vformat_to(out, basic_string_view< FMT_CHAR(String) >(format_str),
+  return vformat_to(out, basic_string_view<FMT_CHAR(String)>(format_str),
                     basic_format_args<context>(as));
 }
 

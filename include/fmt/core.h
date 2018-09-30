@@ -1307,12 +1307,10 @@ std::basic_string<Char> vformat(
     basic_format_args<typename buffer_context<Char>::type> args);
 }  // namespace internal
 
-#define FMT_CHAR(Str) typename internal::format_string_traits<Str>::char_type
-
 template <typename String>
 format_context::iterator vformat_to(
-  internal::basic_buffer<FMT_CHAR(String) > &buf, const String &format_str,
-  basic_format_args<buffer_context<FMT_CHAR(String) > > args);
+  internal::basic_buffer<FMT_CHAR(String)> &buf, const String &format_str,
+  basic_format_args<buffer_context<FMT_CHAR(String)> > args);
 
 template <typename Container>
 struct is_contiguous : std::false_type {};
@@ -1351,13 +1349,13 @@ inline typename std::enable_if<
     format_to(std::back_insert_iterator<Container> out,
               const String &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename buffer_context< FMT_CHAR(String) >::type context_t;
+  typedef typename buffer_context< FMT_CHAR(String)>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
-  return vformat_to(out, basic_string_view< FMT_CHAR(String) >(format_str),
+  return vformat_to(out, basic_string_view< FMT_CHAR(String)>(format_str),
                     basic_format_args<context_t>(as));
 }
 
-template <typename String, typename Char = FMT_CHAR(String) >
+template <typename String, typename Char = FMT_CHAR(String)>
 inline std::basic_string<Char> vformat(
     const String &format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
@@ -1376,15 +1374,15 @@ inline std::basic_string<Char> vformat(
   \endrst
 */
 template <typename String, typename... Args>
-inline std::basic_string< FMT_CHAR(String) > format(
+inline std::basic_string< FMT_CHAR(String)> format(
     const String &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   // This should be just
   //   return vformat(format_str, make_format_args(args...));
   // but gcc has trouble optimizing the latter, so break it down.
-  typedef typename buffer_context< FMT_CHAR(String) >::type context_t;
+  typedef typename buffer_context< FMT_CHAR(String)>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
-  return internal::vformat(basic_string_view< FMT_CHAR(String) >(format_str),
+  return internal::vformat(basic_string_view<FMT_CHAR(String)>(format_str),
                            basic_format_args<context_t>(as));
 }
 
@@ -1407,9 +1405,9 @@ template <typename String, typename... Args>
 inline typename std::enable_if<internal::is_format_string<String>::value>::type
 print(std::FILE *f, const String &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename buffer_context< FMT_CHAR(String) >::type context_t;
+  typedef typename buffer_context< FMT_CHAR(String)>::type context_t;
   format_arg_store<context_t, Args...> as{ args... };
-  vprint(f, basic_string_view< FMT_CHAR(String) >(format_str),
+  vprint(f, basic_string_view< FMT_CHAR(String)>(format_str),
          basic_format_args<context_t>(as));
 }
 
@@ -1429,9 +1427,9 @@ template <typename String, typename... Args>
 inline typename std::enable_if<internal::is_format_string<String>::value>::type
 print(const String &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename buffer_context< FMT_CHAR(String) >::type context_t;
+  typedef typename buffer_context<FMT_CHAR(String)>::type context_t;
   format_arg_store<context_t, Args...> as{ args... };
-  vprint(basic_string_view< FMT_CHAR(String) >(format_str),
+  vprint(basic_string_view<FMT_CHAR(String)>(format_str),
          basic_format_args<context_t>(as));
 }
 FMT_END_NAMESPACE
