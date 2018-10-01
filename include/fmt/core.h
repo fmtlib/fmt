@@ -1068,6 +1068,8 @@ class format_arg_store {
   format_arg_store(const Args &... args)
     : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
 #endif
+
+  basic_format_args<Context> operator*() const { return *this; }
 };
 
 #if !FMT_USE_CONSTEXPR11
@@ -1296,30 +1298,30 @@ struct is_compile_string : std::is_base_of<compile_string, S> {};
 
 template <typename... Args, typename S>
 inline typename std::enable_if<!is_compile_string<S>::value>::type
-    check_format_string(const S &) {}
+  check_format_string(const S &) {}
 template <typename... Args, typename S>
 typename std::enable_if<is_compile_string<S>::value>::type
-    check_format_string(S);
+  check_format_string(S);
 
 template <typename Char>
 std::basic_string<Char> vformat(
-    basic_string_view<Char> format_str,
-    basic_format_args<typename buffer_context<Char>::type> args);
+  basic_string_view<Char> format_str,
+  basic_format_args<typename buffer_context<Char>::type> args);
 }  // namespace internal
 
-template <typename String>
+template <typename S>
 format_context::iterator vformat_to(
-  internal::basic_buffer<FMT_CHAR(String)> &buf, const String &format_str,
-  basic_format_args<buffer_context<FMT_CHAR(String)> > args);
+  internal::basic_buffer<FMT_CHAR(S)> &buf, const S &format_str,
+  basic_format_args<buffer_context<FMT_CHAR(S)> > args);
 
 template <typename Container>
-struct is_contiguous : std::false_type {};
+struct is_contiguous: std::false_type {};
 
 template <typename Char>
-struct is_contiguous<std::basic_string<Char>> : std::true_type {};
+struct is_contiguous<std::basic_string<Char> >: std::true_type {};
 
 template <typename Char>
-struct is_contiguous<internal::basic_buffer<Char>> : std::true_type {};
+struct is_contiguous<internal::basic_buffer<Char> >: std::true_type {};
 
 /** Formats a string and writes the output to ``out``. */
 template <typename Container>
@@ -1335,29 +1337,28 @@ typename std::enable_if<
 template <typename Container>
 typename std::enable_if<
   is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
-  vformat_to(std::back_insert_iterator<Container> out,
-             wstring_view format_str, wformat_args args) {
+    vformat_to(std::back_insert_iterator<Container> out,
+               wstring_view format_str, wformat_args args) {
   internal::container_buffer<Container> buf(internal::get_container(out));
   vformat_to(buf, format_str, args);
   return out;
 }
 
-template <typename Container, typename String, typename... Args>
+template <typename Container, typename S, typename... Args>
 inline typename std::enable_if<
-  is_contiguous<Container>::value && internal::is_format_string<String>::value,
+  is_contiguous<Container>::value && internal::is_format_string<S>::value,
   std::back_insert_iterator<Container>>::type
-    format_to(std::back_insert_iterator<Container> out,
-              const String &format_str, const Args &... args) {
+    format_to(std::back_insert_iterator<Container> out, const S &format_str,
+              const Args &... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename buffer_context< FMT_CHAR(String)>::type context_t;
-  format_arg_store<context_t, Args...> as{args...};
-  return vformat_to(out, basic_string_view< FMT_CHAR(String)>(format_str),
-                    basic_format_args<context_t>(as));
+  format_arg_store<
+    typename buffer_context<FMT_CHAR(S)>::type, Args...> as(args...);
+  return vformat_to(out, basic_string_view<FMT_CHAR(S)>(format_str), as);
 }
 
-template <typename String, typename Char = FMT_CHAR(String)>
+template <typename S, typename Char = FMT_CHAR(S)>
 inline std::basic_string<Char> vformat(
-    const String &format_str,
+    const S &format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
   // Convert format string to string_view to reduce the number of overloads.
   return internal::vformat(basic_string_view<Char>(format_str), args);
@@ -1373,17 +1374,16 @@ inline std::basic_string<Char> vformat(
     std::string message = fmt::format("The answer is {}", 42);
   \endrst
 */
-template <typename String, typename... Args>
-inline std::basic_string< FMT_CHAR(String)> format(
-    const String &format_str, const Args &... args) {
+template <typename S, typename... Args>
+inline std::basic_string<FMT_CHAR(S)> format(
+    const S &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   // This should be just
   //   return vformat(format_str, make_format_args(args...));
   // but gcc has trouble optimizing the latter, so break it down.
-  typedef typename buffer_context< FMT_CHAR(String)>::type context_t;
-  format_arg_store<context_t, Args...> as{args...};
-  return internal::vformat(basic_string_view<FMT_CHAR(String)>(format_str),
-                           basic_format_args<context_t>(as));
+  format_arg_store<
+    typename buffer_context<FMT_CHAR(S)>::type, Args...> as(args...);
+  return internal::vformat(basic_string_view<FMT_CHAR(S)>(format_str), *as);
 }
 
 FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
@@ -1398,17 +1398,15 @@ FMT_API void vprint(std::FILE *f, wstring_view format_str, wformat_args args);
   **Example**::
 
     fmt::print(stderr, "Don't {}!", "panic");
-
   \endrst
  */
-template <typename String, typename... Args>
-inline typename std::enable_if<internal::is_format_string<String>::value>::type
-print(std::FILE *f, const String &format_str, const Args &... args) {
+template <typename S, typename... Args>
+inline typename std::enable_if<internal::is_format_string<S>::value>::type
+    print(std::FILE *f, const S &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename buffer_context< FMT_CHAR(String)>::type context_t;
-  format_arg_store<context_t, Args...> as{ args... };
-  vprint(f, basic_string_view< FMT_CHAR(String)>(format_str),
-         basic_format_args<context_t>(as));
+  format_arg_store<
+    typename buffer_context<FMT_CHAR(S)>::type, Args...> as(args...);
+  vprint(f, basic_string_view<FMT_CHAR(S)>(format_str), as);
 }
 
 FMT_API void vprint(string_view format_str, format_args args);
@@ -1423,14 +1421,13 @@ FMT_API void vprint(wstring_view format_str, wformat_args args);
     fmt::print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-template <typename String, typename... Args>
-inline typename std::enable_if<internal::is_format_string<String>::value>::type
-print(const String &format_str, const Args &... args) {
+template <typename S, typename... Args>
+inline typename std::enable_if<internal::is_format_string<S>::value>::type
+    print(const S &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename buffer_context<FMT_CHAR(String)>::type context_t;
-  format_arg_store<context_t, Args...> as{ args... };
-  vprint(basic_string_view<FMT_CHAR(String)>(format_str),
-         basic_format_args<context_t>(as));
+  format_arg_store<
+    typename buffer_context<FMT_CHAR(S)>::type, Args...> as(args...);
+  vprint(basic_string_view<FMT_CHAR(S)>(format_str), as);
 }
 FMT_END_NAMESPACE
 
