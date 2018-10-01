@@ -1302,15 +1302,16 @@ typename std::enable_if<is_compile_string<S>::value>::type
   check_format_string(S);
 
 template <typename S, typename... Args>
-struct checked_format_args: format_arg_store<
+struct checked_args: format_arg_store<
   typename buffer_context<FMT_CHAR(S)>::type, Args...> {
-  checked_format_args(const S &format_str, const Args &... args):
-    format_arg_store<
-      typename buffer_context<FMT_CHAR(S)>::type, Args...>(args...) {
+  typedef typename buffer_context<FMT_CHAR(S)>::type context;
+
+  checked_args(const S &format_str, const Args &... args):
+    format_arg_store<context, Args...>(args...) {
     internal::check_format_string<Args...>(format_str);
   }
-  basic_format_args<typename buffer_context<FMT_CHAR(S)>::type>
-    operator*() const { return *this; }
+
+  basic_format_args<context> operator*() const { return *this; }
 };
 
 template <typename Char>
@@ -1362,15 +1363,15 @@ inline typename std::enable_if<
               const Args &... args) {
   return vformat_to(
     out, basic_string_view<FMT_CHAR(S)>(format_str),
-    *internal::checked_format_args<S, Args...>(format_str, args...));
+    internal::checked_args<S, Args...>(format_str, args...));
 }
 
-template <typename S, typename Char = FMT_CHAR(S)>
-inline std::basic_string<Char> vformat(
+template <typename S>
+inline std::basic_string<FMT_CHAR(S)> vformat(
     const S &format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+    basic_format_args<typename buffer_context<FMT_CHAR(S)>::type> args) {
   // Convert format string to string_view to reduce the number of overloads.
-  return internal::vformat(basic_string_view<Char>(format_str), args);
+  return internal::vformat(basic_string_view<FMT_CHAR(S)>(format_str), args);
 }
 
 /**
@@ -1388,7 +1389,7 @@ inline std::basic_string<FMT_CHAR(S)> format(
     const S &format_str, const Args &... args) {
   return internal::vformat(
     basic_string_view<FMT_CHAR(S)>(format_str),
-    *internal::checked_format_args<S, Args...>(format_str, args...));
+    *internal::checked_args<S, Args...>(format_str, args...));
 }
 
 FMT_API void vprint(std::FILE *f, string_view format_str, format_args args);
@@ -1409,7 +1410,7 @@ template <typename S, typename... Args>
 inline typename std::enable_if<internal::is_format_string<S>::value>::type
     print(std::FILE *f, const S &format_str, const Args &... args) {
   vprint(f, basic_string_view<FMT_CHAR(S)>(format_str),
-         *internal::checked_format_args<S, Args...>(format_str, args...));
+         internal::checked_args<S, Args...>(format_str, args...));
 }
 
 FMT_API void vprint(string_view format_str, format_args args);
@@ -1428,7 +1429,7 @@ template <typename S, typename... Args>
 inline typename std::enable_if<internal::is_format_string<S>::value>::type
     print(const S &format_str, const Args &... args) {
   vprint(basic_string_view<FMT_CHAR(S)>(format_str),
-         *internal::checked_format_args<S, Args...>(format_str, args...));
+         internal::checked_args<S, Args...>(format_str, args...));
 }
 FMT_END_NAMESPACE
 
