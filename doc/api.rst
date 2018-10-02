@@ -248,7 +248,8 @@ custom argument formatter class::
   // with the ``x`` format specifier.
   class custom_arg_formatter : public arg_formatter {
    public:
-    custom_arg_formatter(fmt::format_context &ctx, fmt::format_specs &spec)
+    custom_arg_formatter(fmt::format_context &ctx,
+                         fmt::format_specs *spec = nullptr)
       : arg_formatter(ctx, spec) {}
 
     using arg_formatter::operator();
