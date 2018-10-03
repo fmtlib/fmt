@@ -1370,10 +1370,10 @@ inline typename std::enable_if<
                     internal::checked_args<S, Args...>(format_str, args...));
 }
 
-template <typename S>
-inline std::basic_string<FMT_CHAR(S)> vformat(
+template <typename S, typename Char = FMT_CHAR(S)>
+inline std::basic_string<Char> vformat(
     const S &format_str,
-    basic_format_args<typename buffer_context<FMT_CHAR(S)>::type> args) {
+    basic_format_args<typename buffer_context<Char>::type> args) {
   return internal::vformat(internal::to_string_view(format_str), args);
 }
 
