@@ -38,18 +38,16 @@ arguments in the resulting string.
 
 .. _format:
 
-.. doxygenfunction:: format(const String&, const Args&...)
-.. doxygenfunction:: vformat(const String&, basic_format_args<typename buffer_context<Char>::type>)
+.. doxygenfunction:: format(const S&, const Args&...)
+.. doxygenfunction:: vformat(const S&, basic_format_args<typename buffer_context<Char>::type>)
 
 .. _print:
 
-.. doxygenfunction:: print(string_view, const Args&...)
+.. doxygenfunction:: print(const S&, const Args&...)
 .. doxygenfunction:: vprint(string_view, format_args)
 
-.. doxygenfunction:: print(std::FILE *, string_view, const Args&...)
+.. doxygenfunction:: print(std::FILE *, const S&, const Args&...)
 .. doxygenfunction:: vprint(std::FILE *, string_view, format_args)
-
-.. doxygenfunction:: print(std::FILE *, wstring_view, const Args&...)
 .. doxygenfunction:: vprint(std::FILE *, wstring_view, wformat_args)
 
 Named arguments
@@ -156,7 +154,7 @@ output ``operator<<`` when one is defined for a user-defined type.
 Output iterator support
 -----------------------
 
-.. doxygenfunction:: fmt::format_to(OutputIt, string_view, const Args&...)
+.. doxygenfunction:: fmt::format_to(OutputIt, const String&, const Args&...)
 .. doxygenfunction:: fmt::format_to_n(OutputIt, std::size_t, string_view, const Args&...)
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
