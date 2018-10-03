@@ -213,7 +213,7 @@ FMT_CONSTEXPR size_t length(const Char *s) {
   while (*s) ++s;
   return s - start;
 }
-#if FMT_GCC_VERSION
+#if FMT_GCC_VERSION && !defined(__arm__)
 FMT_CONSTEXPR size_t length(const char *s) { return std::strlen(s); }
 #endif
 
