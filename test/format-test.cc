@@ -2448,6 +2448,7 @@ TEST(FormatTest, U8StringViewLiteral) {
   const fmt::char8_t *data = s.data();
   EXPECT_EQ(data[0], 'a');
   EXPECT_EQ(data[1], 'b');
+  EXPECT_EQ(format("{:*^5}"_u, "🤡"_u), "**🤡**"_u);
 }
 #endif
 

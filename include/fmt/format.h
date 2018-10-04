@@ -922,8 +922,11 @@ inline unsigned count_digits(uint64_t n) {
 }
 #endif
 
+template <typename Char>
+inline size_t count_code_points(basic_string_view<Char> s) { return s.size(); }
+
 // Counts the number of code points in a UTF-8 string.
-FMT_API size_t count_code_points(u8string_view s);
+FMT_API size_t count_code_points(basic_string_view<char8_t> s);
 
 inline char8_t to_char8_t(char c) { return static_cast<char8_t>(c); }
 
@@ -1456,6 +1459,9 @@ class arg_formatter_base {
 
   struct char_writer {
     char_type value;
+
+    size_t size() const { return 1; }
+
     template <typename It>
     void operator()(It &&it) const { *it++ = value; }
   };
@@ -2457,10 +2463,13 @@ class basic_writer {
 
   template <typename F>
   struct padded_int_writer {
+    size_t size_;
     string_view prefix;
     char_type fill;
     std::size_t padding;
     F f;
+
+    size_t size() const { return size_; }
 
     template <typename It>
     void operator()(It &&it) const {
@@ -2493,7 +2502,7 @@ class basic_writer {
     align_spec as = spec;
     if (spec.align() == ALIGN_DEFAULT)
       as.align_ = ALIGN_RIGHT;
-    write_padded(size, as, padded_int_writer<F>{prefix, fill, padding, f});
+    write_padded(size, as, padded_int_writer<F>{size, prefix, fill, padding, f});
   }
 
   // Writes a decimal integer.
@@ -2659,6 +2668,8 @@ class basic_writer {
     char sign;
     const char *str;
 
+    size_t size() const { return static_cast<std::size_t>(INF_SIZE); }
+
     template <typename It>
     void operator()(It &&it) const {
       if (sign)
@@ -2672,6 +2683,8 @@ class basic_writer {
     size_t n;
     char sign;
     internal::buffer &buffer;
+
+    size_t size() const { return buffer.size() + (sign ? 1 : 0); }
 
     template <typename It>
     void operator()(It &&it) {
@@ -2693,11 +2706,15 @@ class basic_writer {
   template <typename Char>
   struct str_writer {
     const Char *s;
-    std::size_t size;
+    size_t size_;
+
+    size_t size() const {
+      return internal::count_code_points(basic_string_view<Char>(s, size_));
+    }
 
     template <typename It>
     void operator()(It &&it) const {
-      it = internal::copy_str<char_type>(s, s + size, it);
+      it = internal::copy_str<char_type>(s, s + size_, it);
     }
   };
 
@@ -2796,11 +2813,12 @@ template <typename F>
 void basic_writer<Range>::write_padded(
     std::size_t size, const align_spec &spec, F &&f) {
   unsigned width = spec.width();
-  if (width <= size)
+  size_t num_code_points = width != 0 ? f.size() : size;
+  if (width <= num_code_points)
     return f(reserve(size));
-  auto &&it = reserve(width);
+  auto &&it = reserve(width + (size - num_code_points));
   char_type fill = static_cast<char_type>(spec.fill());
-  std::size_t padding = width - size;
+  std::size_t padding = width - num_code_points;
   if (spec.align() == ALIGN_RIGHT) {
     it = std::fill_n(it, padding, fill);
     f(it);
@@ -3533,12 +3551,14 @@ using format_to_n_context = typename fmt::format_context_t<
   fmt::internal::truncating_iterator<OutputIt>, Char>::type;
 
 template <typename OutputIt, typename Char = typename OutputIt::value_type>
-using format_to_n_args = fmt::basic_format_args<format_to_n_context<OutputIt, Char>>;
+using format_to_n_args =
+  fmt::basic_format_args<format_to_n_context<OutputIt, Char>>;
 
 template <typename OutputIt, typename Char, typename ...Args>
 inline format_arg_store<format_to_n_context<OutputIt, Char>, Args...>
     make_format_to_n_args(const Args &... args) {
-  return format_arg_store<format_to_n_context<OutputIt, Char>, Args...>(args...);
+  return format_arg_store<
+      format_to_n_context<OutputIt, Char>, Args...>(args...);
 }
 
 template <typename OutputIt, typename Char, typename... Args>
@@ -3561,7 +3581,8 @@ template <typename OutputIt, typename String, typename... Args>
 inline typename std::enable_if<
   internal::is_format_string<String>::value,
   format_to_n_result<OutputIt>>::type format_to_n(
-    OutputIt out, std::size_t n, const String &format_str, const Args &... args) {
+    OutputIt out, std::size_t n, const String &format_str,
+    const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   typedef FMT_CHAR(String) Char;
   format_arg_store<format_to_n_context<OutputIt, Char>, Args...> as{ args... };
