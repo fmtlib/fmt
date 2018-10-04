@@ -1342,10 +1342,11 @@ struct is_contiguous<internal::basic_buffer<Char> >: std::true_type {};
 /** Formats a string and writes the output to ``out``. */
 template <typename Container, typename S>
 typename std::enable_if<
-  is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
-    vformat_to(std::back_insert_iterator<Container> out,
-               const S &format_str,
-               basic_format_args<typename buffer_context<FMT_CHAR(S)>::type> args) {
+    is_contiguous<Container>::value, std::back_insert_iterator<Container>>::type
+  vformat_to(
+    std::back_insert_iterator<Container> out,
+    const S &format_str,
+    basic_format_args<typename buffer_context<FMT_CHAR(S)>::type> args) {
   internal::container_buffer<Container> buf(internal::get_container(out));
   vformat_to(buf, internal::to_string_view(format_str), args);
   return out;
