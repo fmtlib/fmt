@@ -147,6 +147,35 @@ You can also reuse existing formatters, for example::
     }
   };
 
+You can also write a formatter for a hierarchy of classes::
+
+  #include <type_traits>
+  #include <fmt/format.h>
+
+  struct A {
+    virtual ~A() {}
+    virtual std::string name() const { return "A"; }
+  };
+
+  struct B : A {
+    virtual std::string name() const { return "B"; }
+  };
+
+  template <typename T>
+  struct fmt::formatter<T, std::enable_if_t<std::is_base_of<A, T>::value, char>> :
+      fmt::formatter<std::string> {
+    template <typename FormatCtx>
+    auto format(const A& a, FormatCtx& ctx) {
+      return fmt::formatter<std::string>::format(a.name(), ctx);
+    }
+  };
+
+  int main() {
+    B b;
+    A& a = b;
+    fmt::print("{}", a); // prints "B"
+  }
+
 This section shows how to define a custom format function for a user-defined
 type. The next section describes how to get ``fmt`` to use a conventional stream
 output ``operator<<`` when one is defined for a user-defined type.
