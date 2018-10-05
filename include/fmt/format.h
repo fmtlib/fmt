@@ -1818,7 +1818,8 @@ template <template <typename> class Handler, typename T,
           typename Context, typename ErrorHandler>
 FMT_CONSTEXPR void set_dynamic_spec(
     T &value, basic_format_arg<Context> arg, ErrorHandler eh) {
-  unsigned long long big_value = fmt::visit(Handler<ErrorHandler>(eh), arg);
+  unsigned long long big_value =
+      visit_format_arg(Handler<ErrorHandler>(eh), arg);
   if (big_value > (std::numeric_limits<int>::max)())
     eh.on_error("number is too big");
   value = static_cast<T>(big_value);
@@ -3224,7 +3225,7 @@ struct formatter<
       specs_.precision_, specs_.precision_ref, ctx);
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type> range_type;
-    return fmt::visit(arg_formatter<range_type>(ctx, &specs_),
+    return visit_format_arg(arg_formatter<range_type>(ctx, &specs_),
                       internal::make_arg<FormatContext>(val));
   }
 
@@ -3285,7 +3286,7 @@ class dynamic_formatter {
       checker.end_precision();
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type> range;
-    fmt::visit(arg_formatter<range>(ctx, &specs_),
+    visit_format_arg(arg_formatter<range>(ctx, &specs_),
                internal::make_arg<FormatContext>(val));
     return ctx.out();
   }
@@ -3341,14 +3342,16 @@ struct format_handler : internal::error_handler {
 
   void on_replacement_field(const Char *p) {
     context.parse_context().advance_to(p);
-    if (!fmt::visit(internal::custom_formatter<Char, Context>(context), arg))
-      context.advance_to(fmt::visit(ArgFormatter(context), arg));
+    internal::custom_formatter<Char, Context> f(context);
+    if (!visit_format_arg(f, arg))
+      context.advance_to(visit_format_arg(ArgFormatter(context), arg));
   }
 
   iterator on_format_specs(iterator it) {
     auto &parse_ctx = context.parse_context();
     parse_ctx.advance_to(pointer_from(it));
-    if (fmt::visit(internal::custom_formatter<Char, Context>(context), arg))
+    internal::custom_formatter<Char, Context> f(context);
+    if (visit_format_arg(f, arg))
       return iterator(parse_ctx);
     basic_format_specs<Char> specs;
     using internal::specs_handler;
@@ -3358,7 +3361,7 @@ struct format_handler : internal::error_handler {
     if (*it != '}')
       on_error("missing '}' in format string");
     parse_ctx.advance_to(pointer_from(it));
-    context.advance_to(fmt::visit(ArgFormatter(context, &specs), arg));
+    context.advance_to(visit_format_arg(ArgFormatter(context, &specs), arg));
     return it;
   }
 

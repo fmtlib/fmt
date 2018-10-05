@@ -753,7 +753,7 @@ class basic_format_arg {
 
   template <typename Visitor, typename Ctx>
   friend FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, const basic_format_arg<Ctx> &arg);
+    visit_format_arg(Visitor &&vis, const basic_format_arg<Ctx> &arg);
 
   friend class basic_format_args<Context>;
   friend class internal::arg_map<Context>;
@@ -794,7 +794,7 @@ struct monostate {};
  */
 template <typename Visitor, typename Context>
 FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
-    visit(Visitor &&vis, const basic_format_arg<Context> &arg) {
+    visit_format_arg(Visitor &&vis, const basic_format_arg<Context> &arg) {
   typedef typename Context::char_type char_type;
   switch (arg.type_) {
   case internal::none_type:
@@ -829,6 +829,12 @@ FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
     return vis(typename basic_format_arg<Context>::handle(arg.value_.custom));
   }
   return vis(monostate());
+}
+
+template <typename Visitor, typename Context>
+FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
+    visit(Visitor &&vis, const basic_format_arg<Context> &arg) {
+  return visit_format_arg(std::forward<Visitor>(vis), arg);
 }
 
 // Parsing context consisting of a format string range being parsed and an
