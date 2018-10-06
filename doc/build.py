@@ -92,7 +92,8 @@ def build_docs(version='dev', **kwargs):
                           FMT_API= \
                           "FMT_BEGIN_NAMESPACE=namespace fmt {{" \
                           "FMT_END_NAMESPACE=}}" \
-                          "FMT_STRING_ALIAS=1"
+                          "FMT_STRING_ALIAS=1" \
+                          "FMT_CHAR(S)=char_t<S>"
       EXCLUDE_SYMBOLS   = fmt::internal::* StringValue write_str
     '''.format(include_dir, doxyxml_dir).encode('UTF-8'))
   if p.returncode != 0:

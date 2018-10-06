@@ -505,8 +505,6 @@ struct is_format_string : std::is_empty<format_string_traits<S>> {};
 template <typename S>
 struct is_compile_string : std::is_base_of<compile_string, S> {};
 
-#define FMT_CHAR(Str) typename internal::format_string_traits<Str>::char_type
-
 template <typename Char>
 struct named_arg_base;
 
@@ -1245,6 +1243,14 @@ struct wformat_args : basic_format_args<wformat_context> {
   wformat_args(Args &&... arg)
   : basic_format_args<wformat_context>(std::forward<Args>(arg)...) {}
 };
+
+#if FMT_HAS_FEATURE(cxx_alias_templates)
+template <typename S>
+using char_t = typename internal::format_string_traits<S>::char_type;
+#define FMT_CHAR(S) char_t<S>
+#else
+#define FMT_CHAR(S) typename internal::format_string_traits<S>::char_type
+#endif
 
 namespace internal {
 template <typename Char>
