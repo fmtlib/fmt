@@ -1461,6 +1461,7 @@ class arg_formatter_base {
     char_type value;
 
     size_t size() const { return 1; }
+    size_t width() const { return 1; }
 
     template <typename It>
     void operator()(It &&it) const { *it++ = value; }
@@ -1468,7 +1469,7 @@ class arg_formatter_base {
 
   void write_char(char_type value) {
     if (specs_)
-      writer_.write_padded(1, *specs_, char_writer{value});
+      writer_.write_padded(*specs_, char_writer{value});
     else
       writer_.write(value);
   }
@@ -2460,7 +2461,7 @@ class basic_writer {
   //   <left-padding><value><right-padding>
   // where <value> is written by f(it).
   template <typename F>
-  void write_padded(std::size_t size, const align_spec &spec, F &&f);
+  void write_padded(const align_spec &spec, F &&f);
 
   template <typename F>
   struct padded_int_writer {
@@ -2471,6 +2472,7 @@ class basic_writer {
     F f;
 
     size_t size() const { return size_; }
+    size_t width() const { return size_; }
 
     template <typename It>
     void operator()(It &&it) const {
@@ -2503,7 +2505,7 @@ class basic_writer {
     align_spec as = spec;
     if (spec.align() == ALIGN_DEFAULT)
       as.align_ = ALIGN_RIGHT;
-    write_padded(size, as, padded_int_writer<F>{size, prefix, fill, padding, f});
+    write_padded(as, padded_int_writer<F>{size, prefix, fill, padding, f});
   }
 
   // Writes a decimal integer.
@@ -2669,7 +2671,10 @@ class basic_writer {
     char sign;
     const char *str;
 
-    size_t size() const { return static_cast<std::size_t>(INF_SIZE); }
+    size_t size() const {
+      return static_cast<std::size_t>(INF_SIZE + (sign ? 1 : 0));
+    }
+    size_t width() const { return size(); }
 
     template <typename It>
     void operator()(It &&it) const {
@@ -2686,6 +2691,7 @@ class basic_writer {
     internal::buffer &buffer;
 
     size_t size() const { return buffer.size() + (sign ? 1 : 0); }
+    size_t width() const { return size(); }
 
     template <typename It>
     void operator()(It &&it) {
@@ -2709,7 +2715,8 @@ class basic_writer {
     const Char *s;
     size_t size_;
 
-    size_t size() const {
+    size_t size() const { return size_; }
+    size_t width() const {
       return internal::count_code_points(basic_string_view<Char>(s, size_));
     }
 
@@ -2722,7 +2729,7 @@ class basic_writer {
   // Writes a formatted string.
   template <typename Char>
   void write_str(const Char *s, std::size_t size, const align_spec &spec) {
-    write_padded(size, spec, str_writer<Char>{s, size});
+    write_padded(spec, str_writer<Char>{s, size});
   }
 
   template <typename Char>
@@ -2811,10 +2818,10 @@ class basic_writer {
 
 template <typename Range>
 template <typename F>
-void basic_writer<Range>::write_padded(
-    std::size_t size, const align_spec &spec, F &&f) {
-  unsigned width = spec.width();
-  size_t num_code_points = width != 0 ? f.size() : size;
+void basic_writer<Range>::write_padded(const align_spec &spec, F &&f) {
+  unsigned width = spec.width(); // User-perceived width (in code points).
+  size_t size = f.size(); // The number of code units.
+  size_t num_code_points = width != 0 ? f.width() : size;
   if (width <= num_code_points)
     return f(reserve(size));
   auto &&it = reserve(width + (size - num_code_points));
@@ -2906,8 +2913,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     format_specs spec;
     char sign;
     void operator()(const char *str) const {
-      writer.write_padded(INF_SIZE + (sign ? 1 : 0), spec,
-                          inf_or_nan_writer{sign, str});
+      writer.write_padded(spec, inf_or_nan_writer{sign, str});
     }
   } write_inf_or_nan = {*this, spec, sign};
 
@@ -2951,7 +2957,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     if (sign)
       ++n;
   }
-  write_padded(n, as, double_writer{n, sign, buffer});
+  write_padded(as, double_writer{n, sign, buffer});
 }
 
 template <typename Range>
