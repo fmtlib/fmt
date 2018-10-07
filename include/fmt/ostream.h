@@ -141,16 +141,12 @@ inline void vprint(std::basic_ostream<Char> &os,
     fmt::print(cerr, "Don't {}!", "panic");
   \endrst
  */
-template <typename... Args>
-inline void print(std::ostream &os, string_view format_str,
-                  const Args & ... args) {
-  vprint<char>(os, format_str, make_format_args<format_context>(args...));
-}
-
-template <typename... Args>
-inline void print(std::wostream &os, wstring_view format_str,
-                  const Args & ... args) {
-  vprint<wchar_t>(os, format_str, make_format_args<wformat_context>(args...));
+template <typename S, typename... Args>
+inline typename std::enable_if<internal::is_format_string<S>::value>::type
+print(std::basic_ostream<FMT_CHAR(S)> &os, const S &format_str,
+      const Args & ... args) {
+  internal::checked_args<S, Args...> ca(format_str, args...);
+  vprint(os, internal::to_string_view(format_str), *ca);
 }
 FMT_END_NAMESPACE
 
