@@ -1258,7 +1258,7 @@ struct named_arg_base {
   basic_string_view<Char> name;
 
   // Serialized value<context>.
-  mutable char data[sizeof(basic_format_arg<format_context>)];
+  mutable char data[sizeof(basic_format_arg<typename buffer_context<Char>::type>)];
 
   named_arg_base(basic_string_view<Char> nm) : name(nm) {}
 
@@ -1334,7 +1334,7 @@ template <typename S, typename T, typename Char>
 void arg(S, internal::named_arg<T, Char>) = delete;
 
 template <typename S>
-format_context::iterator vformat_to(
+typename buffer_context<FMT_CHAR(S)>::type::iterator vformat_to(
   internal::basic_buffer<FMT_CHAR(S)> &buf, const S &format_str,
   basic_format_args<buffer_context<FMT_CHAR(S)> > args);
 
