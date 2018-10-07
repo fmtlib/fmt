@@ -32,6 +32,7 @@ using fmt::basic_format_arg;
 using fmt::internal::basic_buffer;
 using fmt::internal::value;
 using fmt::string_view;
+using fmt::wstring_view;
 
 using testing::_;
 using testing::StrictMock;
@@ -436,6 +437,31 @@ TEST(StringViewTest, Compare) {
   check_op<std::greater>();
   check_op<std::greater_equal>();
 }
+
+#if FMT_HAS_CTAD
+
+TEST(BasicStringViewTest, ClassTemplateArgumentDeduction) {
+  // Test that basic_string_view<Char> is correctly deduced
+  char str[] = "some string";
+  const std::size_t slen = strlen(str);
+  const string_view sv(str);
+  EXPECT_EQ(sv, fmt::basic_string_view(str));
+  EXPECT_EQ(sv, fmt::basic_string_view(str, slen));
+  EXPECT_EQ(sv, fmt::basic_string_view(std::string(str)));
+#ifdef FMT_STRING_VIEW
+  EXPECT_EQ(sv, fmt::basic_string_view(FMT_STRING_VIEW<char>(str)));
+#endif
+
+  // wide character types
+  const wchar_t *wstr = L"some string";
+  EXPECT_EQ(wstring_view(wstr), fmt::basic_string_view(wstr));
+  const char16_t *c16str = u"some string";
+  EXPECT_EQ(fmt::basic_string_view<char16_t>(c16str), fmt::basic_string_view(c16str));
+  const char32_t *c32str = U"some string";
+  EXPECT_EQ(fmt::basic_string_view<char32_t>(c32str), fmt::basic_string_view(c32str));
+}
+
+#endif
 
 enum basic_enum {};
 
