@@ -139,6 +139,13 @@
 # endif
 #endif
 
+#if FMT_HAS_FEATURE(__cpp_deduction_guides) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1914)
+# define FMT_HAS_CTAD 1
+#else
+# define FMT_HAS_CTAD 0
+#endif
+
 #ifndef FMT_BEGIN_NAMESPACE
 # if FMT_HAS_FEATURE(cxx_inline_namespaces) || FMT_GCC_VERSION >= 404 || \
      FMT_MSC_VER >= 1900
@@ -434,6 +441,18 @@ class basic_string_view {
 
 typedef basic_string_view<char> string_view;
 typedef basic_string_view<wchar_t> wstring_view;
+#if FMT_HAS_CTAD
+template<typename Char>
+basic_string_view(const Char *, size_t) -> basic_string_view<Char>;
+template<typename Char>
+basic_string_view(const Char *) -> basic_string_view<Char>;
+template<typename Char, typename Alloc>
+basic_string_view(const std::basic_string<Char, Alloc> &) -> basic_string_view<Char>;
+#ifdef FMT_STRING_VIEW
+template<typename Char>
+basic_string_view(FMT_STRING_VIEW<Char>) -> basic_string_view<Char>;
+#endif
+#endif
 
 // A base class for compile-time strings. It is defined in the fmt namespace to
 // make formatting functions visible via ADL, e.g. format(fmt("{}"), 42).
