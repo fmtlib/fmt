@@ -500,7 +500,7 @@ struct format_string_traits<
     format_string_traits_base<typename S::char_type> {};
 
 template <typename S>
-struct is_format_string : std::is_empty<format_string_traits<S>> {};
+struct is_string : std::is_empty<format_string_traits<S>> {};
 
 template <typename S>
 struct is_compile_string : std::is_base_of<compile_string, S> {};
@@ -1233,7 +1233,7 @@ class basic_format_args {
 
 /** An alias to ``basic_format_args<context>``. */
 // It is a separate type rather than a typedef to make symbols readable.
-struct format_args: basic_format_args<format_context> {
+struct format_args : basic_format_args<format_context> {
   template <typename ...Args>
   format_args(Args &&... arg)
   : basic_format_args<format_context>(std::forward<Args>(arg)...) {}
@@ -1244,12 +1244,23 @@ struct wformat_args : basic_format_args<wformat_context> {
   : basic_format_args<wformat_context>(std::forward<Args>(arg)...) {}
 };
 
-#if FMT_HAS_FEATURE(cxx_alias_templates)
+#ifndef FMT_USE_ALIAS_TEMPLATES
+# define FMT_USE_ALIAS_TEMPLATES FMT_HAS_FEATURE(cxx_alias_templates)
+#endif
+#if FMT_USE_ALIAS_TEMPLATES
+/** String's character type. */
 template <typename S>
 using char_t = typename internal::format_string_traits<S>::char_type;
 #define FMT_CHAR(S) char_t<S>
+
+template <typename S, typename T>
+using enable_if_string_t =
+  typename std::enable_if<internal::is_string<S>::value, T>::type;
+#define FMT_ENABLE_IF_STRING(S, T) enable_if_string_t<S, T>
 #else
 #define FMT_CHAR(S) typename internal::format_string_traits<S>::char_type
+#define FMT_ENABLE_IF_STRING(S, T) \
+  typename std::enable_if<internal::is_string<S>::value, T>::type
 #endif
 
 namespace internal {
@@ -1258,7 +1269,8 @@ struct named_arg_base {
   basic_string_view<Char> name;
 
   // Serialized value<context>.
-  mutable char data[sizeof(basic_format_arg<typename buffer_context<Char>::type>)];
+  mutable char data[
+    sizeof(basic_format_arg<typename buffer_context<Char>::type>)];
 
   named_arg_base(basic_string_view<Char> nm) : name(nm) {}
 
@@ -1362,7 +1374,7 @@ typename std::enable_if<
 
 template <typename Container, typename S, typename... Args>
 inline typename std::enable_if<
-  is_contiguous<Container>::value && internal::is_format_string<S>::value,
+  is_contiguous<Container>::value && internal::is_string<S>::value,
   std::back_insert_iterator<Container>>::type
     format_to(std::back_insert_iterator<Container> out, const S &format_str,
               const Args &... args) {
@@ -1410,7 +1422,7 @@ FMT_API void vprint(std::FILE *f, wstring_view format_str, wformat_args args);
   \endrst
  */
 template <typename S, typename... Args>
-inline typename std::enable_if<internal::is_format_string<S>::value>::type
+inline FMT_ENABLE_IF_STRING(S, void)
     print(std::FILE *f, const S &format_str, const Args &... args) {
   vprint(f, internal::to_string_view(format_str),
          internal::checked_args<S, Args...>(format_str, args...));
@@ -1429,7 +1441,7 @@ FMT_API void vprint(wstring_view format_str, wformat_args args);
   \endrst
  */
 template <typename S, typename... Args>
-inline typename std::enable_if<internal::is_format_string<S>::value>::type
+inline FMT_ENABLE_IF_STRING(S, void)
     print(const S &format_str, const Args &... args) {
   vprint(internal::to_string_view(format_str),
          internal::checked_args<S, Args...>(format_str, args...));

@@ -296,7 +296,7 @@ void vprint_rgb(rgb fd, rgb bg, const String &format,
     fmt::print(fmt::color::red, "Elapsed time: {0:.2f} seconds", 1.23);
  */
 template <typename String, typename... Args>
-typename std::enable_if<internal::is_format_string<String>::value>::type
+typename std::enable_if<internal::is_string<String>::value>::type
 print(rgb fd, const String &format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename internal::format_string_traits<String>::char_type char_t;
@@ -313,7 +313,7 @@ print(rgb fd, const String &format_str, const Args & ... args) {
                "Elapsed time: {0:.2f} seconds", 1.23);
  */
 template <typename String, typename... Args>
-typename std::enable_if<internal::is_format_string<String>::value>::type
+typename std::enable_if<internal::is_string<String>::value>::type
 print(rgb fd, rgb bg, const String &format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename internal::format_string_traits<String>::char_type char_t;

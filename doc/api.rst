@@ -183,7 +183,7 @@ output ``operator<<`` when one is defined for a user-defined type.
 Output iterator support
 -----------------------
 
-.. doxygenfunction:: fmt::format_to(OutputIt, const String&, const Args&...)
+.. doxygenfunction:: fmt::format_to(OutputIt, const S&, const Args&...)
 .. doxygenfunction:: fmt::format_to_n(OutputIt, std::size_t, string_view, const Args&...)
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
@@ -199,6 +199,8 @@ The following user-defined literals are defined in ``fmt/format.h``.
 
 Utilities
 ---------
+
+.. doxygentypedef:: fmt::char_t
 
 .. doxygenfunction:: fmt::formatted_size(string_view, const Args&...)
 

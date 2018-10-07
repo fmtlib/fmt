@@ -3530,14 +3530,13 @@ inline OutputIt vformat_to(
    fmt::format_to(std::back_inserter(out), "{}", 42);
  \endrst
  */
-template <typename OutputIt, typename String, typename... Args>
-inline typename std::enable_if<
-  internal::is_format_string<String>::value, OutputIt>::type
-    format_to(OutputIt out, const String &format_str, const Args &... args) {
+template <typename OutputIt, typename S, typename... Args>
+inline FMT_ENABLE_IF_STRING(S, OutputIt)
+    format_to(OutputIt out, const S &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename format_context_t<OutputIt, FMT_CHAR(String)>::type context;
+  typedef typename format_context_t<OutputIt, FMT_CHAR(S)>::type context;
   format_arg_store<context, Args...> as{args...};
-  return vformat_to(out, basic_string_view<FMT_CHAR(String)>(format_str),
+  return vformat_to(out, basic_string_view<FMT_CHAR(S)>(format_str),
                     basic_format_args<context>(as));
 }
 
@@ -3580,15 +3579,13 @@ inline format_to_n_result<OutputIt> vformat_to_n(
  end of the output range.
  \endrst
  */
-template <typename OutputIt, typename String, typename... Args>
-inline typename std::enable_if<
-  internal::is_format_string<String>::value,
-  format_to_n_result<OutputIt>>::type format_to_n(
-    OutputIt out, std::size_t n, const String &format_str,
-    const Args &... args) {
+template <typename OutputIt, typename S, typename... Args>
+inline FMT_ENABLE_IF_STRING(S, format_to_n_result<OutputIt>)
+    format_to_n(OutputIt out, std::size_t n, const S &format_str,
+                const Args &... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef FMT_CHAR(String) Char;
-  format_arg_store<format_to_n_context<OutputIt, Char>, Args...> as{ args... };
+  typedef FMT_CHAR(S) Char;
+  format_arg_store<format_to_n_context<OutputIt, Char>, Args...> as(args...);
   return vformat_to_n(out, n, internal::to_string_view(format_str),
                       format_to_n_args<OutputIt, Char>(as));
 }
