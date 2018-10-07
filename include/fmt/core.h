@@ -493,6 +493,12 @@ template <typename Char>
 struct format_string_traits<std::basic_string<Char>> :
     format_string_traits_base<Char> {};
 
+#ifdef FMT_STRING_VIEW
+template <typename Char>
+struct format_string_traits<FMT_STRING_VIEW<Char>> :
+    format_string_traits_base<Char> {};
+#endif
+
 template <typename S>
 struct format_string_traits<
     S, typename std::enable_if<std::is_base_of<

@@ -451,6 +451,30 @@ TEST(CoreTest, IsEnumConvertibleToInt) {
   EXPECT_TRUE((fmt::convert_to_int<enum_with_underlying_type, char>::value));
 }
 
+template <typename T>
+class IsStringTest : public testing::Test {};
+
+typedef ::testing::Types<char, wchar_t, char16_t, char32_t> StringCharTypes;
+TYPED_TEST_CASE(IsStringTest, StringCharTypes);
+
+namespace {
+template <typename Char>
+struct derived_from_string_view : fmt::basic_string_view<Char> {};
+}
+
+TYPED_TEST(IsStringTest, IsString) {
+  EXPECT_TRUE((fmt::internal::is_string<TypeParam *>::value));
+  EXPECT_TRUE((fmt::internal::is_string<const TypeParam *>::value));
+  EXPECT_TRUE((fmt::internal::is_string<TypeParam[2]>::value));
+  EXPECT_TRUE((fmt::internal::is_string<const TypeParam[2]>::value));
+  EXPECT_TRUE((fmt::internal::is_string<std::basic_string<TypeParam>>::value));
+  EXPECT_TRUE((fmt::internal::is_string<fmt::basic_string_view<TypeParam>>::value));
+  EXPECT_TRUE((fmt::internal::is_string<derived_from_string_view<TypeParam>>::value));
+#ifdef FMT_STRING_VIEW
+  EXPECT_TRUE((fmt::internal::is_string<FMT_STRING_VIEW<TypeParam>>::value));
+#endif
+}
+
 TEST(CoreTest, Format) {
   // This should work without including fmt/format.h.
 #ifdef FMT_FORMAT_H_
