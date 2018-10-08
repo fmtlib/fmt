@@ -822,11 +822,6 @@ FMT_FUNC void format_system_error(
   format_error_code(out, error_code, message);
 }
 
-template <typename Char>
-void basic_fixed_buffer<Char>::grow(std::size_t) {
-  FMT_THROW(std::runtime_error("buffer overflow"));
-}
-
 FMT_FUNC void internal::error_handler::on_error(const char *message) {
   FMT_THROW(format_error(message));
 }
