@@ -606,7 +606,7 @@ inline FMT_ENABLE_IF_STRING(S, std::basic_string<FMT_CHAR(S)>)
   typedef internal::basic_buffer<FMT_CHAR(S)> buffer;
   typedef typename printf_context<buffer>::type context;
   format_arg_store<context, Args...> as{ args... };
-  return vsprintf(internal::to_string_view(format_str),
+  return vsprintf(to_string_view(format_str),
                   basic_format_args<context>(as));
 }
 
@@ -637,7 +637,7 @@ inline FMT_ENABLE_IF_STRING(S, int)
   typedef internal::basic_buffer<FMT_CHAR(S)> buffer;
   typedef typename printf_context<buffer>::type context;
   format_arg_store<context, Args...> as{ args... };
-  return vfprintf(f, internal::to_string_view(format_str),
+  return vfprintf(f, to_string_view(format_str),
                   basic_format_args<context>(as));
 }
 
@@ -664,7 +664,7 @@ inline FMT_ENABLE_IF_STRING(S, int)
   typedef internal::basic_buffer<FMT_CHAR(S)> buffer;
   typedef typename printf_context<buffer>::type context;
   format_arg_store<context, Args...> as{ args... };
-  return vprintf(internal::to_string_view(format_str),
+  return vprintf(to_string_view(format_str),
                  basic_format_args<context>(as));
 }
 
@@ -696,7 +696,7 @@ inline FMT_ENABLE_IF_STRING(S, int)
   typedef internal::basic_buffer<FMT_CHAR(S)> buffer;
   typedef typename printf_context<buffer>::type context;
   format_arg_store<context, Args...> as{ args... };
-  return vfprintf(os, internal::to_string_view(format_str),
+  return vfprintf(os, to_string_view(format_str),
                   basic_format_args<context>(as));
 }
 FMT_END_NAMESPACE

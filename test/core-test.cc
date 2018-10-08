@@ -13,6 +13,7 @@
 #include <limits>
 #include <string>
 #include <type_traits>
+#include <memory>
 
 #include "test-assert.h"
 
@@ -451,6 +452,42 @@ TEST(CoreTest, IsEnumConvertibleToInt) {
   EXPECT_TRUE((fmt::convert_to_int<enum_with_underlying_type, char>::value));
 }
 
+namespace MyNamespace {
+template <typename Char>
+struct String {
+  String(const Char * S) : S_(S) {}
+  const Char * data() const FMT_NOEXCEPT { return S_.data(); }
+  std::size_t length() const FMT_NOEXCEPT { return S_.size(); }
+  operator const Char*() const { return S_.c_str(); }
+private:
+  std::basic_string<Char> S_;
+};
+
+template <typename Char>
+inline fmt::basic_string_view<Char> to_string_view(const String<Char> &S) FMT_NOEXCEPT {
+  return { S.data(), S.length() };
+}
+
+struct NoString {};
+}
+
+namespace FakeQt {
+struct QString {
+  QString(const wchar_t * S) : S_(std::make_shared<std::wstring>(S)) {}
+  const wchar_t * utf16() const FMT_NOEXCEPT { return S_->data(); }
+  int size() const FMT_NOEXCEPT { return static_cast<int>(S_->size()); }
+#ifdef FMT_STRING_VIEW
+  operator FMT_STRING_VIEW<wchar_t>() const FMT_NOEXCEPT { return *S_; }
+#endif
+private:
+  std::shared_ptr<std::wstring> S_;
+};
+
+inline fmt::basic_string_view<wchar_t> to_string_view(const QString &S) FMT_NOEXCEPT {
+  return { reinterpret_cast<const wchar_t *>(S.utf16()), static_cast<std::size_t>(S.size()) };
+}
+}
+
 template <typename T>
 class IsStringTest : public testing::Test {};
 
@@ -473,6 +510,9 @@ TYPED_TEST(IsStringTest, IsString) {
 #ifdef FMT_STRING_VIEW
   EXPECT_TRUE((fmt::internal::is_string<FMT_STRING_VIEW<TypeParam>>::value));
 #endif
+  EXPECT_TRUE((fmt::internal::is_string<MyNamespace::String<TypeParam>>::value));
+  EXPECT_FALSE((fmt::internal::is_string<MyNamespace::NoString>::value));
+  EXPECT_TRUE((fmt::internal::is_string<FakeQt::QString>::value));
 }
 
 TEST(CoreTest, Format) {
@@ -481,4 +521,30 @@ TEST(CoreTest, Format) {
 # error fmt/format.h must not be included in the core test
 #endif
   EXPECT_EQ(fmt::format("{}", 42), "42");
+}
+
+TEST(CoreTest, ToStringViewForeignStrings) {
+  using namespace MyNamespace;
+  using namespace FakeQt;
+  EXPECT_EQ(to_string_view(String<char>("42")), "42");
+  EXPECT_EQ(to_string_view(String<wchar_t>(L"42")), L"42");
+  EXPECT_EQ(to_string_view(QString(L"42")), L"42");
+  fmt::internal::type type = fmt::internal::get_type<fmt::format_context, String<char>>::value;
+  EXPECT_EQ(type, fmt::internal::string_type);
+  type = fmt::internal::get_type<fmt::wformat_context, String<wchar_t>>::value;
+  EXPECT_EQ(type, fmt::internal::string_type);
+  type = fmt::internal::get_type<fmt::wformat_context, QString>::value;
+  EXPECT_EQ(type, fmt::internal::string_type);
+  // does not compile: only wide format contexts are compatible with QString!
+  // type = fmt::internal::get_type<fmt::format_context, QString>::value;
+}
+
+TEST(CoreTest, FormatForeignStrings) {
+  using namespace MyNamespace;
+  using namespace FakeQt;
+  EXPECT_EQ(fmt::format(String<char>("{}"), 42), "42");
+  EXPECT_EQ(fmt::format(String<wchar_t>(L"{}"), 42), L"42");
+  EXPECT_EQ(fmt::format(QString(L"{}"), 42), L"42");
+  EXPECT_EQ(fmt::format(QString(L"{}"), String<wchar_t>(L"42")), L"42");
+  EXPECT_EQ(fmt::format(String<wchar_t>(L"{}"), QString(L"42")), L"42");
 }

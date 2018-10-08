@@ -1190,11 +1190,6 @@ inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t), bool>::type
 template <typename Double>
 void sprintf_format(Double, internal::buffer &, core_format_specs);
 
-template <typename S>
-struct format_string_traits<
-  S, typename std::enable_if<std::is_base_of<compile_string, S>::value>::type>:
-    format_string_traits_base<char> {};
-
 template <typename Handler>
 FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler &&handler) {
   switch (spec) {
@@ -3345,20 +3340,20 @@ inline typename buffer_context<FMT_CHAR(String)>::type::iterator vformat_to(
     basic_format_args<typename buffer_context<Char>::type> args) {
   typedef back_insert_range<internal::basic_buffer<FMT_CHAR(String)> > range;
   return vformat_to<arg_formatter<range>>(
-    buf, basic_string_view<Char>(format_str), args);
+    buf, to_string_view(format_str), args);
 }
 
 template <
     typename String, typename... Args,
     std::size_t SIZE = inline_buffer_size,
-    typename Char = typename internal::format_string_traits<String>::char_type>
+    typename Char = typename internal::has_to_string_view<String>::char_type>
 inline typename buffer_context<Char>::type::iterator format_to(
     basic_memory_buffer<Char, SIZE> &buf, const String &format_str,
     const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename buffer_context<Char>::type context;
   format_arg_store<context, Args...> as{args...};
-  return vformat_to(buf, basic_string_view<Char>(format_str),
+  return vformat_to(buf, to_string_view(format_str),
                     basic_format_args<context>(as));
 }
 
@@ -3378,7 +3373,8 @@ inline OutputIt vformat_to(
     OutputIt out, const String &format_str,
     typename format_args_t<OutputIt, FMT_CHAR(String)>::type args) {
   typedef output_range<OutputIt, FMT_CHAR(String)> range;
-  return vformat_to<arg_formatter<range>>(range(out), format_str, args);
+  return vformat_to<arg_formatter<range>>(range(out),
+                                          to_string_view(format_str), args);
 }
 
 /**
@@ -3398,7 +3394,7 @@ inline FMT_ENABLE_IF_STRING(S, OutputIt)
   internal::check_format_string<Args...>(format_str);
   typedef typename format_context_t<OutputIt, FMT_CHAR(S)>::type context;
   format_arg_store<context, Args...> as{args...};
-  return vformat_to(out, basic_string_view<FMT_CHAR(S)>(format_str),
+  return vformat_to(out, to_string_view(format_str),
                     basic_format_args<context>(as));
 }
 
@@ -3448,7 +3444,7 @@ inline FMT_ENABLE_IF_STRING(S, format_to_n_result<OutputIt>)
   internal::check_format_string<Args...>(format_str);
   typedef FMT_CHAR(S) Char;
   format_arg_store<format_to_n_context<OutputIt, Char>, Args...> as(args...);
-  return vformat_to_n(out, n, internal::to_string_view(format_str),
+  return vformat_to_n(out, n, to_string_view(format_str),
                       format_to_n_args<OutputIt, Char>(as));
 }
 
