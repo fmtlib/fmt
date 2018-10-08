@@ -592,43 +592,6 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
 typedef basic_memory_buffer<char> memory_buffer;
 typedef basic_memory_buffer<wchar_t> wmemory_buffer;
 
-/**
-  \rst
-  A fixed-size memory buffer. For a dynamically growing buffer use
-  :class:`fmt::basic_memory_buffer`.
-
-  Trying to increase the buffer size past the initial capacity will throw
-  ``std::runtime_error``.
-  \endrst
- */
-template <typename Char>
-class basic_fixed_buffer : public internal::basic_buffer<Char> {
- public:
-  /**
-   \rst
-   Constructs a :class:`fmt::basic_fixed_buffer` object for *array* of the
-   given size.
-   \endrst
-   */
-  basic_fixed_buffer(Char *array, std::size_t size) {
-    this->set(array, size);
-  }
-
-  /**
-   \rst
-   Constructs a :class:`fmt::basic_fixed_buffer` object for *array* of the
-   size known at compile time.
-   \endrst
-   */
-  template <std::size_t SIZE>
-  explicit basic_fixed_buffer(Char (&array)[SIZE]) {
-    this->set(array, SIZE);
-  }
-
- protected:
-  FMT_API void grow(std::size_t size) FMT_OVERRIDE;
-};
-
 namespace internal {
 
 template <typename Char>

@@ -351,29 +351,6 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
   EXPECT_CALL(alloc, deallocate(&mem2[0], 2 * size));
 }
 
-TEST(FixedBufferTest, Ctor) {
-  char array[10] = "garbage";
-  fmt::basic_fixed_buffer<char> buffer(array, sizeof(array));
-  EXPECT_EQ(static_cast<size_t>(0), buffer.size());
-  EXPECT_EQ(10u, buffer.capacity());
-  EXPECT_EQ(array, buffer.data());
-}
-
-TEST(FixedBufferTest, CompileTimeSizeCtor) {
-  char array[10] = "garbage";
-  fmt::basic_fixed_buffer<char> buffer(array);
-  EXPECT_EQ(static_cast<size_t>(0), buffer.size());
-  EXPECT_EQ(10u, buffer.capacity());
-  EXPECT_EQ(array, buffer.data());
-}
-
-TEST(FixedBufferTest, BufferOverflow) {
-  char array[10];
-  fmt::basic_fixed_buffer<char> buffer(array);
-  buffer.resize(10);
-  EXPECT_THROW_MSG(buffer.resize(11), std::runtime_error, "buffer overflow");
-}
-
 #ifdef _WIN32
 TEST(UtilTest, UTF16ToUTF8) {
   std::string s = "ёжик";

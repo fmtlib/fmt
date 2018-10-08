@@ -16,8 +16,6 @@ template FMT_API char internal::thousands_sep(locale_provider *lp);
 
 template void internal::basic_buffer<char>::append(const char *, const char *);
 
-template void basic_fixed_buffer<char>::grow(std::size_t);
-
 template void internal::arg_map<format_context>::init(
     const basic_format_args<format_context> &args);
 
@@ -36,8 +34,6 @@ template FMT_API wchar_t internal::thousands_sep(locale_provider *);
 
 template void internal::basic_buffer<wchar_t>::append(
     const wchar_t *, const wchar_t *);
-
-template void basic_fixed_buffer<wchar_t>::grow(std::size_t);
 
 template void internal::arg_map<wformat_context>::init(
     const basic_format_args<wformat_context> &);
