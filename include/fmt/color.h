@@ -270,7 +270,7 @@ inline void reset_color<wchar_t>(FILE *stream) FMT_NOEXCEPT {
 
 template <
   typename String,
-  typename Char = typename internal::format_string_traits<String>::char_type>
+  typename Char = typename internal::has_to_string_view<String>::char_type>
 void vprint_rgb(rgb fd, const String &format,
                 basic_format_args<typename buffer_context<Char>::type> args) {
   internal::fputs<Char>(internal::make_foreground_color<Char>(fd), stdout);
@@ -280,7 +280,7 @@ void vprint_rgb(rgb fd, const String &format,
 
 template <
   typename String,
-  typename Char = typename internal::format_string_traits<String>::char_type>
+  typename Char = typename internal::has_to_string_view<String>::char_type>
 void vprint_rgb(rgb fd, rgb bg, const String &format,
                 basic_format_args<typename buffer_context<Char>::type> args) {
   internal::fputs<Char>(internal::make_foreground_color<Char>(fd), stdout);
@@ -299,7 +299,7 @@ template <typename String, typename... Args>
 typename std::enable_if<internal::is_string<String>::value>::type
 print(rgb fd, const String &format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename internal::format_string_traits<String>::char_type char_t;
+  typedef typename internal::has_to_string_view<String>::char_type char_t;
   typedef typename buffer_context<char_t>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
   vprint_rgb(fd, format_str, basic_format_args<context_t>(as));
@@ -316,7 +316,7 @@ template <typename String, typename... Args>
 typename std::enable_if<internal::is_string<String>::value>::type
 print(rgb fd, rgb bg, const String &format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename internal::format_string_traits<String>::char_type char_t;
+  typedef typename internal::has_to_string_view<String>::char_type char_t;
   typedef typename buffer_context<char_t>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
   vprint_rgb(fd, bg, format_str, basic_format_args<context_t>(as));
