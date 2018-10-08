@@ -40,7 +40,7 @@ The ``fmt::format`` function returns a string "The answer is 42.". You can use
   format_to(out, "For a moment, {} happened.", "nothing");
   out.data(); // returns a pointer to the formatted data
 
-The ``fmt::print`` function performs formatting and writes the result to a file:
+The ``fmt::print`` function performs formatting and writes the result to a stream:
 
 .. code:: c++
 
@@ -94,7 +94,7 @@ Safety
 
 The library is fully type safe, automatic memory management prevents buffer
 overflow, errors in format strings are reported using exceptions or at compile
-tim. For example, the code
+time. For example, the code
 
 .. code:: c++
 
