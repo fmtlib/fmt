@@ -26,7 +26,7 @@ Core API
 and a lightweight subset of formatting functions.
 
 The following functions use :ref:`format string syntax <syntax>`
-imilar to that of Python's `str.format
+similar to that of Python's `str.format
 <http://docs.python.org/3/library/stdtypes.html#str.format>`_.
 They take *format_str* and *args* as arguments.
 
