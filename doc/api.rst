@@ -32,7 +32,8 @@ They take *format_str* and *args* as arguments.
 
 *format_str* is a format string that contains literal text and replacement
 fields surrounded by braces ``{}``. The fields are replaced with formatted
-arguments in the resulting string.
+arguments in the resulting string. A function taking *format_str* doesn't
+participate in an overload resolution if the latter is not a string.
 
 *args* is an argument list representing objects to be formatted.
 
