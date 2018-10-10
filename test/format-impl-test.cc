@@ -129,7 +129,7 @@ TEST(FormatTest, ArgConverter) {
 
 TEST(FormatTest, FormatNegativeNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
-  if (fmt::internal::fputil::isnegative(-nan))
+  if (std::signbit(-nan))
     EXPECT_EQ("-nan", fmt::format("{}", -nan));
   else
     fmt::print("Warning: compiler doesn't handle negative NaN correctly");
@@ -138,7 +138,8 @@ TEST(FormatTest, FormatNegativeNaN) {
 TEST(FormatTest, StrError) {
   char *message = nullptr;
   char buffer[BUFFER_SIZE];
-  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = nullptr, 0), "invalid buffer");
+  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = nullptr, 0),
+                "invalid buffer");
   EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = buffer, 0),
                 "invalid buffer");
   buffer[0] = 'x';
@@ -151,7 +152,7 @@ TEST(FormatTest, StrError) {
 #endif
 
   int result = fmt::safe_strerror(error_code, message = buffer, BUFFER_SIZE);
-  EXPECT_EQ(0, result);
+  EXPECT_EQ(result, 0);
   std::size_t message_size = std::strlen(message);
   EXPECT_GE(BUFFER_SIZE - 1u, message_size);
   EXPECT_EQ(get_system_error(error_code), message);

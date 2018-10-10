@@ -278,10 +278,8 @@ struct dummy_int {
 };
 typedef std::numeric_limits<internal::dummy_int> fputil;
 
-// Dummy implementations of system functions such as signbit and ecvt called
-// if the latter are not available.
-inline dummy_int signbit(...) { return dummy_int(); }
-inline dummy_int _ecvt_s(...) { return dummy_int(); }
+// Dummy implementations of system functions called if the latter are not
+// available.
 inline dummy_int isinf(...) { return dummy_int(); }
 inline dummy_int _finite(...) { return dummy_int(); }
 inline dummy_int isnan(...) { return dummy_int(); }
@@ -321,7 +319,7 @@ namespace std {
 // Standard permits specialization of std::numeric_limits. This specialization
 // is used to resolve ambiguity between isinf and std::isinf in glibc:
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48891
-// and the same for isnan and signbit.
+// and the same for isnan.
 template <>
 class numeric_limits<fmt::internal::dummy_int> :
     public std::numeric_limits<int> {
@@ -344,19 +342,6 @@ class numeric_limits<fmt::internal::dummy_int> :
     if (const_check(sizeof(isnan(x)) != sizeof(fmt::internal::dummy_int)))
       return isnan(x) != 0;
     return _isnan(static_cast<double>(x)) != 0;
-  }
-
-  // Portable version of signbit.
-  static bool isnegative(double x) {
-    using namespace fmt::internal;
-    if (const_check(sizeof(signbit(x)) != sizeof(fmt::internal::dummy_int)))
-      return signbit(x) != 0;
-    if (x < 0) return true;
-    if (!isnotanumber(x)) return false;
-    int dec = 0, sign = 0;
-    char buffer[2];  // The buffer size must be >= 2 or _ecvt_s will fail.
-    _ecvt_s(buffer, sizeof(buffer), x, 0, &dec, &sign);
-    return sign != 0;
   }
 };
 }  // namespace std
@@ -2862,9 +2847,9 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   internal::handle_float_type_spec(handler.type, handler);
 
   char sign = 0;
-  // Use isnegative instead of value < 0 because the latter is always
+  // Use signbit instead of value < 0 because the latter is always
   // false for NaN.
-  if (internal::fputil::isnegative(static_cast<double>(value))) {
+  if (std::signbit(value)) {
     sign = '-';
     value = -value;
   } else if (spec.flag(SIGN_FLAG)) {
