@@ -1583,7 +1583,8 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(
       value = max_int + 1;
       break;
     }
-    value = value * 10 + unsigned(*begin++ - '0');
+    value = value * 10 + unsigned(*begin - '0');
+    ++begin;
   } while (begin != end && '0' <= *begin && *begin <= '9');
   if (value > max_int)
     eh.on_error("number is too big");
