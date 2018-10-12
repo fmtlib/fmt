@@ -100,7 +100,8 @@ def build_docs(version='dev', **kwargs):
     raise CalledProcessError(p.returncode, cmd)
   html_dir = os.path.join(work_dir, 'html')
   main_versions = reversed(versions[-3:])
-  check_call(['sphinx-build',
+  sphinx_build = os.environ.get('SPHINX_EXECUTABLE', 'sphinx-build')
+  check_call([sphinx_build,
               '-Dbreathe_projects.format=' + os.path.abspath(doxyxml_dir),
               '-Dversion=' + version, '-Drelease=' + version,
               '-Aversion=' + version, '-Aversions=' + ','.join(main_versions),
