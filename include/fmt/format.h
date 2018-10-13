@@ -3560,13 +3560,6 @@ inline std::basic_string<Char> internal::vformat(
   return fmt::to_string(buffer);
 }
 
-template <typename String, typename... Args>
-inline typename std::enable_if<internal::is_compile_string<String>::value>::type
-    print(String format_str, const Args &... args) {
-  internal::check_format_string<Args...>(format_str);
-  return vprint(format_str.data(), make_format_args(args...));
-}
-
 /**
   Returns the number of characters in the output of
   ``format(format_str, args...)``.
