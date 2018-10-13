@@ -1378,6 +1378,8 @@ TEST(FormatterTest, FormatIntLocale) {
   EXPECT_EQ("123", format("{:n}", 123));
   EXPECT_EQ("1,234", format("{:n}", 1234));
   EXPECT_EQ("1,234,567", format("{:n}", 1234567));
+  EXPECT_EQ("4,294,967,295",
+            format("{:n}", std::numeric_limits<uint32_t>::max()));
 }
 
 struct ConvertibleToLongLong {

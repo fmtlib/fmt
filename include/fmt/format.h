@@ -988,6 +988,8 @@ struct no_thousands_sep {
 
   template <typename Char>
   void operator()(Char *) {}
+
+  enum { size = 0 };
 };
 
 // A functor that adds a thousands separator.
@@ -1012,6 +1014,8 @@ class add_thousands_sep {
     std::uninitialized_copy(sep_.data(), sep_.data() + sep_.size(),
                             internal::make_checked(buffer, sep_.size()));
   }
+
+  enum { size = 1 };
 };
 
 template <typename Char>
@@ -1052,10 +1056,12 @@ template <typename OutChar, typename UInt, typename Iterator,
 inline Iterator format_decimal(
     Iterator out, UInt value, unsigned num_digits, ThousandsSep sep) {
   typedef typename ThousandsSep::char_type char_type;
-  // Buffer should be large enough to hold all digits (digits10 + 1) and null.
-  char_type buffer[std::numeric_limits<UInt>::digits10 + 2];
-  format_decimal(buffer, value, num_digits, sep);
-  return internal::copy_str<OutChar>(buffer, buffer + num_digits, out);
+  // Buffer should be large enough to hold all digits (<= digits10 + 1).
+  enum { max_size = std::numeric_limits<UInt>::digits10 + 1 };
+  FMT_ASSERT(ThousandsSep::size <= 1, "invalid separator");
+  char_type buffer[max_size + max_size / 3];
+  auto end = format_decimal(buffer, value, num_digits, sep);
+  return internal::copy_str<OutChar>(buffer, end, out);
 }
 
 template <typename OutChar, typename It, typename UInt>
