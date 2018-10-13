@@ -461,19 +461,30 @@ FMT_FUNC fp get_cached_power(int min_exponent, int &pow10_exponent) {
   return fp(data::POW10_SIGNIFICANDS[index], data::POW10_EXPONENTS[index]);
 }
 
+FMT_FUNC void grisu2_round(char *buffer, size_t size, uint64_t delta,
+                           uint64_t remainder, uint64_t exp, uint64_t diff) {
+  while (remainder < diff && delta - remainder >= exp &&
+        (remainder + exp < diff || diff - remainder > remainder + exp - diff)) {
+    --buffer[size - 1];
+    remainder += exp;
+  }
+}
+
 // Generates output using Grisu2 digit-gen algorithm.
 FMT_FUNC void grisu2_gen_digits(
     const fp &scaled_value, const fp &scaled_upper, uint64_t delta,
     char *buffer, size_t &size, int &dec_exp) {
   internal::fp one(1ull << -scaled_upper.e, scaled_upper.e);
+  internal::fp diff = scaled_upper - scaled_value; // wp_w in Grisu.
   // hi (p1 in Grisu) contains the most significant digits of scaled_upper.
   // hi = floor(scaled_upper / one).
   uint32_t hi = static_cast<uint32_t>(scaled_upper.f >> -one.e);
   // lo (p2 in Grisu) contains the least significants digits of scaled_upper.
-  // lo = scaled_upper mod 1.
+  // lo = scaled_upper % one.
   uint64_t lo = scaled_upper.f & (one.f - 1);
   size = 0;
   auto exp = count_digits(hi);  // kappa in Grisu.
+  // Generate digits for the most significant part (hi).
   while (exp > 0) {
     uint32_t digit = 0;
     // This optimization by miloyip reduces the number of integer divisions by
@@ -498,11 +509,13 @@ FMT_FUNC void grisu2_gen_digits(
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
     if (remainder <= delta) {
       dec_exp += exp;
-      // TODO: use scaled_value
-      (void)scaled_value;
+      grisu2_round(buffer, size, delta, remainder,
+                   static_cast<uint64_t>(data::POWERS_OF_10_32[exp]) << -one.e,
+                   diff.f);
       return;
     }
   }
+  // Generate digits for the least significant part (lo).
   for (;;) {
     lo *= 10;
     delta *= 10;
@@ -513,6 +526,8 @@ FMT_FUNC void grisu2_gen_digits(
     --exp;
     if (lo < delta) {
       dec_exp += exp;
+      grisu2_round(buffer, size, delta, lo, one.f,
+                   diff.f * data::POWERS_OF_10_32[-exp]);
       return;
     }
   }
@@ -552,7 +567,7 @@ FMT_FUNC void round(char *buffer, size_t &size, int &exp,
   }
 }
 
-// Writes the exponent exp in the form "[+-]d{1,3}" to buffer.
+// Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
 FMT_FUNC char *write_exponent(char *buffer, int exp) {
   FMT_ASSERT(-1000 < exp && exp < 1000, "exponent out of range");
   if (exp < 0) {
