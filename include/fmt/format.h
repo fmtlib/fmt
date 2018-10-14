@@ -1155,33 +1155,6 @@ enum alignment {
 // Flags.
 enum {SIGN_FLAG = 1, PLUS_FLAG = 2, MINUS_FLAG = 4, HASH_FLAG = 8};
 
-enum format_spec_tag {fill_tag, align_tag, width_tag, type_tag};
-
-// Format specifier.
-template <typename T, format_spec_tag>
-class format_spec {
- private:
-  T value_;
-
- public:
-  typedef T value_type;
-
-  explicit format_spec(T value) : value_(value) {}
-
-  T value() const { return value_; }
-};
-
-// template <typename Char>
-// typedef format_spec<Char, fill_tag> fill_spec;
-template <typename Char>
-class fill_spec : public format_spec<Char, fill_tag> {
- public:
-  explicit fill_spec(Char value) : format_spec<Char, fill_tag>(value) {}
-};
-
-typedef format_spec<unsigned, width_tag> width_spec;
-typedef format_spec<char, type_tag> type_spec;
-
 // An empty format specifier.
 struct empty_spec {};
 
