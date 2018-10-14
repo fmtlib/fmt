@@ -68,13 +68,13 @@ include(CheckCXXCompilerFlag)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic
-      -Wold-style-cast -Wfloat-equal -Wlogical-op -Wundef
+      -Wold-style-cast -Wlogical-op -Wundef
       -Wredundant-decls -Wshadow -Wwrite-strings -Wpointer-arith
       -Wcast-qual -Wformat=2 -Wmissing-include-dirs
       -Wcast-align -Wnon-virtual-dtor
       -Wctor-dtor-privacy -Wdisabled-optimization
       -Winvalid-pch -Woverloaded-virtual
-      -Wno-ctor-dtor-privacy -Wno-dangling-else -Wno-float-equal
+      -Wno-ctor-dtor-privacy -Wno-dangling-else
       -Wno-format-nonliteral -Wno-sign-conversion -Wno-shadow)
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept)
@@ -93,7 +93,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(PEDANTIC_COMPILE_FLAGS -Weverything -Wpedantic
+  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wpedantic
       -Wno-weak-vtables -Wno-padded -Wno-gnu-statement-expression
       -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-reserved-id-macro
       -Wno-global-constructors -Wno-disabled-macro-expansion

@@ -104,7 +104,7 @@ TEST(FPTest, GetCachedPower) {
 
 TEST(FPTest, Grisu2FormatCompilesWithNonIEEEDouble) {
   size_t size = 0;
-  fmt::internal::grisu2_format(4.2f, FMT_NULL, size, 0, 0, false);
+  grisu2_format(4.2f, FMT_NULL, size, fmt::internal::grisu2_specs());
 }
 
 template <typename T>

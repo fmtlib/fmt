@@ -289,15 +289,20 @@ inline bool use_grisu() {
   return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559;
 }
 
+struct grisu2_specs {
+  int precision;
+  char type;
+  uint_least8_t flags;
+};
+
 // Formats value using Grisu2 algorithm:
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
 template <typename Double>
-FMT_API typename std::enable_if<sizeof(Double) == sizeof(uint64_t)>::type
-  grisu2_format(Double value, char *buffer, size_t &size, char type,
-                int precision, bool write_decimal_point);
+FMT_API typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
+  grisu2_format(Double value, char *buffer, size_t &size, grisu2_specs);
 template <typename Double>
-inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t)>::type
-  grisu2_format(Double, char *, size_t &, char, int, bool) {}
+inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t), bool>::type
+  grisu2_format(Double, char *, size_t &, grisu2_specs) { return false; }
 
 template <typename Allocator>
 typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {
@@ -1203,13 +1208,13 @@ struct align_spec : empty_spec {
 template <typename Char>
 class basic_format_specs : public align_spec {
  public:
-  unsigned flags_;
   int precision_;
+  uint_least8_t flags_;
   char type_;
 
   FMT_CONSTEXPR basic_format_specs(
       unsigned width = 0, char type = 0, wchar_t fill = ' ')
-  : align_spec(width, fill), flags_(0), precision_(-1), type_(type) {}
+  : align_spec(width, fill), precision_(-1), flags_(0), type_(type) {}
 
   FMT_CONSTEXPR bool flag(unsigned f) const { return (flags_ & f) != 0; }
   FMT_CONSTEXPR int precision() const { return precision_; }
@@ -2881,16 +2886,23 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
 
   memory_buffer buffer;
   char type = static_cast<char>(spec.type());
-  if (internal::const_check(
-        internal::use_grisu() && sizeof(T) <= sizeof(double)) &&
-      type != 'a' && type != 'A') {
+  bool use_grisu = internal::use_grisu() && sizeof(T) <= sizeof(double) &&
+      type != 'a' && type != 'A';
+  if (use_grisu) {
     char buf[100]; // TODO: correct buffer size
     size_t size = 0;
-    internal::grisu2_format(static_cast<double>(value), buf, size, type,
-                            spec.precision(), spec.flag(HASH_FLAG));
-    FMT_ASSERT(size <= 100, "buffer overflow");
-    buffer.append(buf, buf + size); // TODO: avoid extra copy
-  } else {
+    auto gs = internal::grisu2_specs();
+    gs.type = type;
+    gs.precision = spec.precision();
+    gs.flags = spec.flags_;
+    use_grisu = internal::grisu2_format(
+          static_cast<double>(value), buf, size, gs);
+    if (use_grisu) {
+      FMT_ASSERT(size <= 100, "buffer overflow");
+      buffer.append(buf, buf + size); // TODO: avoid extra copy
+    }
+  }
+  if (!use_grisu) {
     format_specs normalized_spec(spec);
     normalized_spec.type_ = handler.type;
     write_double_sprintf(value, normalized_spec, buffer);

@@ -461,29 +461,27 @@ FMT_FUNC fp get_cached_power(int min_exponent, int &pow10_exponent) {
   return fp(data::POW10_SIGNIFICANDS[index], data::POW10_EXPONENTS[index]);
 }
 
-FMT_FUNC void grisu2_round(char *buffer, size_t size, uint64_t delta,
-                           uint64_t remainder, uint64_t exp, uint64_t diff) {
+FMT_FUNC bool grisu2_round(
+    char *buffer, size_t &size, size_t max_digits, uint64_t delta,
+    uint64_t remainder, uint64_t exp, uint64_t diff, int &exp10) {
   while (remainder < diff && delta - remainder >= exp &&
         (remainder + exp < diff || diff - remainder > remainder + exp - diff)) {
     --buffer[size - 1];
     remainder += exp;
   }
+  if (size > max_digits) {
+    --size;
+    ++exp10;
+    if (buffer[size] >= '5')
+      return false;
+  }
+  return true;
 }
 
 // Generates output using Grisu2 digit-gen algorithm.
-FMT_FUNC void grisu2_gen_digits(
-    const fp &scaled_value, const fp &scaled_upper, uint64_t delta,
-    char *buffer, size_t &size, int &dec_exp) {
-  internal::fp one(1ull << -scaled_upper.e, scaled_upper.e);
-  internal::fp diff = scaled_upper - scaled_value; // wp_w in Grisu.
-  // hi (p1 in Grisu) contains the most significant digits of scaled_upper.
-  // hi = floor(scaled_upper / one).
-  uint32_t hi = static_cast<uint32_t>(scaled_upper.f >> -one.e);
-  // lo (p2 in Grisu) contains the least significants digits of scaled_upper.
-  // lo = scaled_upper % one.
-  uint64_t lo = scaled_upper.f & (one.f - 1);
-  size = 0;
-  auto exp = count_digits(hi);  // kappa in Grisu.
+FMT_FUNC bool grisu2_gen_digits(
+    char *buffer, size_t &size, uint32_t hi, uint64_t lo, int &exp,
+    uint64_t delta, const fp &one, const fp &diff, size_t max_digits) {
   // Generate digits for the most significant part (hi).
   while (exp > 0) {
     uint32_t digit = 0;
@@ -507,12 +505,11 @@ FMT_FUNC void grisu2_gen_digits(
       buffer[size++] = static_cast<char>('0' + digit);
     --exp;
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
-    if (remainder <= delta) {
-      dec_exp += exp;
-      grisu2_round(buffer, size, delta, remainder,
-                   static_cast<uint64_t>(data::POWERS_OF_10_32[exp]) << -one.e,
-                   diff.f);
-      return;
+    if (remainder <= delta || size > max_digits) {
+      return grisu2_round(
+            buffer, size, max_digits, delta, remainder,
+            static_cast<uint64_t>(data::POWERS_OF_10_32[exp]) << -one.e,
+            diff.f, exp);
     }
   }
   // Generate digits for the least significant part (lo).
@@ -524,46 +521,10 @@ FMT_FUNC void grisu2_gen_digits(
       buffer[size++] = static_cast<char>('0' + digit);
     lo &= one.f - 1;
     --exp;
-    if (lo < delta) {
-      dec_exp += exp;
-      grisu2_round(buffer, size, delta, lo, one.f,
-                   diff.f * data::POWERS_OF_10_32[-exp]);
-      return;
+    if (lo < delta || size > max_digits) {
+      return grisu2_round(buffer, size, max_digits, delta, lo, one.f,
+                          diff.f * data::POWERS_OF_10_32[-exp], exp);
     }
-  }
-}
-
-template <typename Double>
-FMT_FUNC void grisu2_format_positive(Double value, char *buffer, size_t &size,
-                                     int &dec_exp) {
-  FMT_ASSERT(value > 0, "value is nonpositive");
-  fp fp_value(value);
-  fp lower, upper;  // w^- and w^+ in the Grisu paper.
-  fp_value.compute_boundaries(lower, upper);
-  // Find a cached power of 10 close to 1 / upper.
-  const int min_exp = -60;  // alpha in Grisu.
-  auto dec_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
-      min_exp - (upper.e + fp::significand_size), dec_exp);
-  dec_exp = -dec_exp;
-  fp_value.normalize();
-  fp scaled_value = fp_value * dec_pow;
-  fp scaled_lower = lower * dec_pow;  // \tilde{M}^- in Grisu.
-  fp scaled_upper = upper * dec_pow;  // \tilde{M}^+ in Grisu.
-  ++scaled_lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
-  --scaled_upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
-  uint64_t delta = scaled_upper.f - scaled_lower.f;
-  grisu2_gen_digits(scaled_value, scaled_upper, delta, buffer, size, dec_exp);
-}
-
-FMT_FUNC void round(char *buffer, size_t &size, int &exp,
-                    int digits_to_remove) {
-  size -= to_unsigned(digits_to_remove);
-  exp += digits_to_remove;
-  int digit = buffer[size] - '0';
-  // TODO: proper rounding and carry
-  if (digit > 5 || (digit == 5 && (digits_to_remove > 1 ||
-                                   (buffer[size - 1] - '0') % 2) != 0)) {
-    ++buffer[size - 1];
   }
 }
 
@@ -590,67 +551,6 @@ FMT_FUNC char *write_exponent(char *buffer, int exp) {
   return buffer;
 }
 
-FMT_FUNC void format_exp_notation(
-    char *buffer, size_t &size, int exp, int precision, bool upper) {
-  // Insert a decimal point after the first digit and add an exponent.
-  std::memmove(buffer + 2, buffer + 1, size - 1);
-  buffer[1] = '.';
-  exp += static_cast<int>(size) - 1;
-  int num_digits = precision - static_cast<int>(size) + 1;
-  if (num_digits > 0) {
-    std::uninitialized_fill_n(buffer + size + 1, num_digits, '0');
-    size += to_unsigned(num_digits);
-  } else if (num_digits < 0) {
-    round(buffer, size, exp, -num_digits);
-  }
-  char *p = buffer + size + 1;
-  *p++ = upper ? 'E' : 'e';
-  size = to_unsigned(write_exponent(p, exp) - buffer);
-}
-
-// Prettifies the output of the Grisu2 algorithm.
-// The number is given as v = buffer * 10^exp.
-FMT_FUNC void grisu2_prettify(char *buffer, size_t &size, int exp,
-                              int precision, bool upper) {
-  // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
-  int int_size = static_cast<int>(size);
-  int full_exp = int_size + exp;
-  const int exp_threshold = 21;
-  if (int_size <= full_exp && full_exp <= exp_threshold) {
-    // 1234e7 -> 12340000000[.0+]
-    std::uninitialized_fill_n(buffer + int_size, full_exp - int_size, '0');
-    char *p = buffer + full_exp;
-    if (precision > 0) {
-      *p++ = '.';
-      std::uninitialized_fill_n(p, precision, '0');
-      p += precision;
-    }
-    size = to_unsigned(p - buffer);
-  } else if (0 < full_exp && full_exp <= exp_threshold) {
-    // 1234e-2 -> 12.34[0+]
-    int fractional_size = -exp;
-    std::memmove(buffer + full_exp + 1, buffer + full_exp,
-                 to_unsigned(fractional_size));
-    buffer[full_exp] = '.';
-    int num_zeros = precision - fractional_size;
-    if (num_zeros > 0) {
-      std::uninitialized_fill_n(buffer + size + 1, num_zeros, '0');
-      size += to_unsigned(num_zeros);
-    }
-    ++size;
-  } else if (-6 < full_exp && full_exp <= 0) {
-    // 1234e-6 -> 0.001234
-    int offset = 2 - full_exp;
-    std::memmove(buffer + offset, buffer, size);
-    buffer[0] = '0';
-    buffer[1] = '.';
-    std::uninitialized_fill_n(buffer + 2, -full_exp, '0');
-    size = to_unsigned(int_size + offset);
-  } else {
-    format_exp_notation(buffer, size, exp, precision, upper);
-  }
-}
-
 #if FMT_CLANG_VERSION
 # define FMT_FALLTHROUGH [[clang::fallthrough]];
 #elif FMT_GCC_VERSION >= 700
@@ -659,60 +559,159 @@ FMT_FUNC void grisu2_prettify(char *buffer, size_t &size, int exp,
 # define FMT_FALLTHROUGH
 #endif
 
-// Formats a nonnegative value using Grisu2 algorithm. Grisu2 doesn't give any
-// guarantees on the shortness of the result.
-template <typename Double>
-FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t)>::type
-  grisu2_format(Double value, char *buffer, size_t &size, char type,
-                int precision, bool write_decimal_point) {
-  FMT_ASSERT(value >= 0, "value is negative");
-  int dec_exp = 0;  // K in Grisu.
-  if (value > 0) {
-    grisu2_format_positive(value, buffer, size, dec_exp);
-  } else {
-    *buffer = '0';
-    size = 1;
-  }
-  const int default_precision = 6;
-  if (precision < 0)
-    precision = default_precision;
-  bool upper = false;
-  switch (type) {
-  case 'G':
-    upper = true;
-    FMT_FALLTHROUGH
-  case '\0': case 'g': {
-    int digits_to_remove = static_cast<int>(size) - precision;
-    if (digits_to_remove > 0) {
-      round(buffer, size, dec_exp, digits_to_remove);
-      // Remove trailing zeros.
-      while (size > 0 && buffer[size - 1] == '0') {
-        --size;
-        ++dec_exp;
+struct gen_digits_params {
+  unsigned min_digits;
+  unsigned max_digits;
+  bool fixed;
+  bool upper;
+  bool trailing_zeros;
+
+  // Creates digit generation parameters from format specifiers for a number in
+  // the range [pow(10, exp - 1), pow(10, exp) or 0 if exp == 1.
+  gen_digits_params(const grisu2_specs &specs, int exp)
+    : min_digits(specs.precision >= 0 ? to_unsigned(specs.precision) : 6),
+      fixed(false), upper(false), trailing_zeros(false) {
+    switch (specs.type) {
+    case 'G':
+      upper = true;
+      FMT_FALLTHROUGH
+    case '\0': case 'g':
+      trailing_zeros = (specs.flags & HASH_FLAG) != 0;
+      if (-4 <= exp && exp < static_cast<int>(min_digits) + 1) {
+        fixed = true;
+        if (!specs.type && trailing_zeros && exp >= 0)
+          min_digits = to_unsigned(exp) + 1;
       }
+      break;
+    case 'F':
+      upper = true;
+      FMT_FALLTHROUGH
+    case 'f': {
+      fixed = true;
+      trailing_zeros = true;
+      int adjusted_min_digits = static_cast<int>(min_digits) + exp;
+      if (adjusted_min_digits > 0)
+        min_digits = to_unsigned(adjusted_min_digits);
+      break;
     }
-    precision = 0;
-    break;
-  }
-  case 'F':
-    upper = true;
-    FMT_FALLTHROUGH
-  case 'f': {
-    int digits_to_remove = -dec_exp - precision;
-    if (digits_to_remove > 0) {
-      if (digits_to_remove >= static_cast<int>(size))
-        digits_to_remove = static_cast<int>(size) - 1;
-      round(buffer, size, dec_exp, digits_to_remove);
+    case 'E':
+      upper = true;
+      FMT_FALLTHROUGH
+    case 'e':
+      ++min_digits;
+      break;
     }
-    break;
+    max_digits = min_digits;
   }
-  case 'e': case 'E':
-    format_exp_notation(buffer, size, dec_exp, precision, type == 'E');
+};
+
+// The number is given as v = buffer * pow(10, exp).
+FMT_FUNC void format_float(char *buffer, size_t &size, int exp,
+                           const gen_digits_params &params) {
+  if (!params.fixed) {
+    // Insert a decimal point after the first digit and add an exponent.
+    std::memmove(buffer + 2, buffer + 1, size - 1);
+    buffer[1] = '.';
+    exp += static_cast<int>(size) - 1;
+    if (size < params.min_digits) {
+      std::uninitialized_fill_n(buffer + size + 1,
+                                params.min_digits - size, '0');
+      size = params.min_digits;
+    }
+    char *p = buffer + size + 1;
+    *p++ = params.upper ? 'E' : 'e';
+    size = to_unsigned(write_exponent(p, exp) - buffer);
     return;
   }
-  if (write_decimal_point && precision < 1)
-    precision = 1;
-  grisu2_prettify(buffer, size, dec_exp, precision, upper);
+  // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
+  int int_size = static_cast<int>(size);
+  int full_exp = int_size + exp;
+  const int exp_threshold = 21;
+  if (int_size <= full_exp && full_exp <= exp_threshold) {
+    // 1234e7 -> 12340000000[.0+]
+    std::uninitialized_fill_n(buffer + int_size, full_exp - int_size, '0');
+    char *p = buffer + full_exp;
+    int num_zeros = static_cast<int>(params.min_digits) - full_exp;
+    if (num_zeros > 0 && params.trailing_zeros) {
+      *p++ = '.';
+      std::uninitialized_fill_n(p, num_zeros, '0');
+      p += num_zeros;
+    }
+    size = to_unsigned(p - buffer);
+  } else if (full_exp > 0) {
+    // 1234e-2 -> 12.34[0+]
+    int fractional_size = -exp;
+    std::memmove(buffer + full_exp + 1, buffer + full_exp,
+                 to_unsigned(fractional_size));
+    buffer[full_exp] = '.';
+    ++size;
+    if (!params.trailing_zeros) {
+      // Remove trailing zeros.
+      while (buffer[size - 1] == '0') --size;
+    } else if (params.min_digits >= size) {
+      // Add trailing zeros.
+      size_t num_zeros = params.min_digits - size + 1;
+      std::uninitialized_fill_n(buffer + size, num_zeros, '0');
+      size += to_unsigned(num_zeros);
+    }
+  } else {
+    // 1234e-6 -> 0.001234
+    int offset = 2 - full_exp;
+    std::memmove(buffer + offset, buffer, size);
+    buffer[0] = '0';
+    buffer[1] = '.';
+    std::uninitialized_fill_n(buffer + 2, -full_exp, '0');
+    size = to_unsigned(int_size + offset);
+  }
+}
+
+template <typename Double>
+FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
+    grisu2_format(Double value, char *buffer, size_t &size,
+                  grisu2_specs specs) {
+  FMT_ASSERT(value >= 0, "value is negative");
+  if (value == 0) {
+    gen_digits_params params(specs, 1);
+    *buffer = '0';
+    size = 1;
+    format_float(buffer, size, 0, params);
+    return true;
+  }
+
+  fp fp_value(value);
+  fp lower, upper;  // w^- and w^+ in the Grisu paper.
+  fp_value.compute_boundaries(lower, upper);
+
+  // Find a cached power of 10 close to 1 / upper and use it to scale upper.
+  const int min_exp = -60;  // alpha in Grisu.
+  int cached_exp = 0;  // K in Grisu.
+  auto cached_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
+      min_exp - (upper.e + fp::significand_size), cached_exp);
+  cached_exp = -cached_exp;
+  upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
+  --upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
+  fp one(1ull << -upper.e, upper.e);
+  // hi (p1 in Grisu) contains the most significant digits of scaled_upper.
+  // hi = floor(upper / one).
+  uint32_t hi = static_cast<uint32_t>(upper.f >> -one.e);
+  int exp = static_cast<int>(count_digits(hi));  // kappa in Grisu.
+  gen_digits_params params(specs, cached_exp + exp);
+  fp_value.normalize();
+  fp scaled_value = fp_value * cached_pow;
+  lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
+  ++lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
+  uint64_t delta = upper.f - lower.f;
+  fp diff = upper - scaled_value; // wp_w in Grisu.
+  // lo (p2 in Grisu) contains the least significants digits of scaled_upper.
+  // lo = supper % one.
+  uint64_t lo = upper.f & (one.f - 1);
+  size = 0;
+  if (!grisu2_gen_digits(buffer, size, hi, lo, exp, delta, one, diff,
+                         params.max_digits)) {
+    return false;
+  }
+  format_float(buffer, size, cached_exp + exp, params);
+  return true;
 }
 }  // namespace internal
 
