@@ -560,8 +560,7 @@ FMT_FUNC char *write_exponent(char *buffer, int exp) {
 #endif
 
 struct gen_digits_params {
-  unsigned min_digits;
-  unsigned max_digits;
+  unsigned num_digits;
   bool fixed;
   bool upper;
   bool trailing_zeros;
@@ -569,7 +568,7 @@ struct gen_digits_params {
   // Creates digit generation parameters from format specifiers for a number in
   // the range [pow(10, exp - 1), pow(10, exp) or 0 if exp == 1.
   gen_digits_params(const core_format_specs &specs, int exp)
-    : min_digits(specs.precision >= 0 ? to_unsigned(specs.precision) : 6),
+    : num_digits(specs.precision >= 0 ? to_unsigned(specs.precision) : 6),
       fixed(false), upper(false), trailing_zeros(false) {
     switch (specs.type) {
     case 'G':
@@ -577,10 +576,10 @@ struct gen_digits_params {
       FMT_FALLTHROUGH
     case '\0': case 'g':
       trailing_zeros = (specs.flags & HASH_FLAG) != 0;
-      if (-4 <= exp && exp < static_cast<int>(min_digits) + 1) {
+      if (-4 <= exp && exp < static_cast<int>(num_digits) + 1) {
         fixed = true;
         if (!specs.type && trailing_zeros && exp >= 0)
-          min_digits = to_unsigned(exp) + 1;
+          num_digits = to_unsigned(exp) + 1;
       }
       break;
     case 'F':
@@ -589,19 +588,18 @@ struct gen_digits_params {
     case 'f': {
       fixed = true;
       trailing_zeros = true;
-      int adjusted_min_digits = static_cast<int>(min_digits) + exp;
+      int adjusted_min_digits = static_cast<int>(num_digits) + exp;
       if (adjusted_min_digits > 0)
-        min_digits = to_unsigned(adjusted_min_digits);
+        num_digits = to_unsigned(adjusted_min_digits);
       break;
     }
     case 'E':
       upper = true;
       FMT_FALLTHROUGH
     case 'e':
-      ++min_digits;
+      ++num_digits;
       break;
     }
-    max_digits = min_digits;
   }
 };
 
@@ -613,10 +611,10 @@ FMT_FUNC void format_float(char *buffer, size_t &size, int exp,
     std::memmove(buffer + 2, buffer + 1, size - 1);
     buffer[1] = '.';
     exp += static_cast<int>(size) - 1;
-    if (size < params.min_digits) {
+    if (size < params.num_digits) {
       std::uninitialized_fill_n(buffer + size + 1,
-                                params.min_digits - size, '0');
-      size = params.min_digits;
+                                params.num_digits - size, '0');
+      size = params.num_digits;
     }
     char *p = buffer + size + 1;
     *p++ = params.upper ? 'E' : 'e';
@@ -631,7 +629,7 @@ FMT_FUNC void format_float(char *buffer, size_t &size, int exp,
     // 1234e7 -> 12340000000[.0+]
     std::uninitialized_fill_n(buffer + int_size, full_exp - int_size, '0');
     char *p = buffer + full_exp;
-    int num_zeros = static_cast<int>(params.min_digits) - full_exp;
+    int num_zeros = static_cast<int>(params.num_digits) - full_exp;
     if (num_zeros > 0 && params.trailing_zeros) {
       *p++ = '.';
       std::uninitialized_fill_n(p, num_zeros, '0');
@@ -648,9 +646,9 @@ FMT_FUNC void format_float(char *buffer, size_t &size, int exp,
     if (!params.trailing_zeros) {
       // Remove trailing zeros.
       while (buffer[size - 1] == '0') --size;
-    } else if (params.min_digits >= size) {
+    } else if (params.num_digits >= size) {
       // Add trailing zeros.
-      size_t num_zeros = params.min_digits - size + 1;
+      size_t num_zeros = params.num_digits - size + 1;
       std::uninitialized_fill_n(buffer + size, num_zeros, '0');
       size += to_unsigned(num_zeros);
     }
@@ -671,10 +669,9 @@ FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
   FMT_ASSERT(value >= 0, "value is negative");
   char *buffer = buf.data();
   if (value == 0) {
-    gen_digits_params params(specs, 1);
     *buffer = '0';
     size_t size = 1;
-    format_float(buffer, size, 0, params);
+    format_float(buffer, size, 0, gen_digits_params(specs, 1));
     FMT_ASSERT(buf.capacity() >= size, "");
     buf.resize(size);
     return true;
@@ -709,7 +706,7 @@ FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
   uint64_t lo = upper.f & (one.f - 1);
   size_t size = 0;
   if (!grisu2_gen_digits(buffer, size, hi, lo, exp, delta, one, diff,
-                         params.max_digits)) {
+                         params.num_digits)) {
     buf.clear();
     return false;
   }
