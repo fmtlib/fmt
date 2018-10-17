@@ -1144,10 +1144,7 @@ struct align_spec {
   wchar_t fill_;
   alignment align_;
 
-  FMT_CONSTEXPR align_spec(
-      unsigned width, wchar_t fill, alignment align = ALIGN_DEFAULT)
-  : width_(width), fill_(fill), align_(align) {}
-
+  FMT_CONSTEXPR align_spec() : width_(0), fill_(' '), align_(ALIGN_DEFAULT) {}
   FMT_CONSTEXPR unsigned width() const { return width_; }
   FMT_CONSTEXPR wchar_t fill() const { return fill_; }
   FMT_CONSTEXPR alignment align() const { return align_; }
@@ -1158,19 +1155,14 @@ struct core_format_specs {
   uint_least8_t flags;
   char type;
 
+  FMT_CONSTEXPR core_format_specs() : precision(-1), flags(0), type(0) {}
   FMT_CONSTEXPR bool has(unsigned f) const { return (flags & f) != 0; }
 };
 
 // Format specifiers.
 template <typename Char>
 struct basic_format_specs : align_spec, core_format_specs {
-  FMT_CONSTEXPR basic_format_specs(
-      unsigned width = 0, char type_ = 0, wchar_t fill = ' ')
-  : align_spec(width, fill) {
-    precision = -1;
-    flags = 0;
-    type = type_;
-  }
+  FMT_CONSTEXPR basic_format_specs() {}
 };
 
 typedef basic_format_specs<char> format_specs;
