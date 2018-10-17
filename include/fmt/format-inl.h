@@ -667,14 +667,16 @@ FMT_FUNC void format_float(char *buffer, size_t &size, int exp,
 
 template <typename Double>
 FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-    grisu2_format(Double value, char *buffer, size_t &size,
-                  grisu2_specs specs) {
+    grisu2_format(Double value, buffer &buf, grisu2_specs specs) {
   FMT_ASSERT(value >= 0, "value is negative");
+  char *buffer = buf.data();
   if (value == 0) {
     gen_digits_params params(specs, 1);
     *buffer = '0';
-    size = 1;
+    size_t size = 1;
     format_float(buffer, size, 0, params);
+    FMT_ASSERT(buf.capacity() >= size, "");
+    buf.resize(size);
     return true;
   }
 
@@ -705,12 +707,14 @@ FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
   // lo (p2 in Grisu) contains the least significants digits of scaled_upper.
   // lo = supper % one.
   uint64_t lo = upper.f & (one.f - 1);
-  size = 0;
+  size_t size = 0;
   if (!grisu2_gen_digits(buffer, size, hi, lo, exp, delta, one, diff,
                          params.max_digits)) {
     return false;
   }
   format_float(buffer, size, cached_exp + exp, params);
+  FMT_ASSERT(buf.capacity() >= size, "");
+  buf.resize(size);
   return true;
 }
 }  // namespace internal

@@ -299,10 +299,10 @@ struct grisu2_specs {
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
 template <typename Double>
 FMT_API typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-  grisu2_format(Double value, char *buffer, size_t &size, grisu2_specs);
+  grisu2_format(Double value, buffer &buf, grisu2_specs);
 template <typename Double>
 inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t), bool>::type
-  grisu2_format(Double, char *, size_t &, grisu2_specs) { return false; }
+  grisu2_format(Double, buffer &, grisu2_specs) { return false; }
 
 template <typename Allocator>
 typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {
@@ -2862,22 +2862,16 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   bool use_grisu = internal::use_grisu() && sizeof(T) <= sizeof(double) &&
       type != 'a' && type != 'A';
   if (use_grisu) {
-    char buf[100]; // TODO: correct buffer size
-    size_t size = 0;
     auto gs = internal::grisu2_specs();
     gs.type = type;
     gs.precision = spec.precision();
     gs.flags = spec.flags_;
-    use_grisu = internal::grisu2_format(
-          static_cast<double>(value), buf, size, gs);
-    if (use_grisu) {
-      FMT_ASSERT(size <= 100, "buffer overflow");
-      buffer.append(buf, buf + size); // TODO: avoid extra copy
-    }
+    use_grisu = internal::grisu2_format(static_cast<double>(value), buffer, gs);
   }
   if (!use_grisu) {
     format_specs normalized_spec(spec);
     normalized_spec.type_ = handler.type;
+    buffer.clear();
     write_double_sprintf(value, normalized_spec, buffer);
   }
   size_t n = buffer.size();
