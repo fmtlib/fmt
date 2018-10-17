@@ -568,18 +568,18 @@ struct gen_digits_params {
 
   // Creates digit generation parameters from format specifiers for a number in
   // the range [pow(10, exp - 1), pow(10, exp) or 0 if exp == 1.
-  gen_digits_params(const grisu2_specs &specs, int exp)
-    : min_digits(specs.precision >= 0 ? to_unsigned(specs.precision) : 6),
+  gen_digits_params(const core_format_specs &specs, int exp)
+    : min_digits(specs.precision_ >= 0 ? to_unsigned(specs.precision_) : 6),
       fixed(false), upper(false), trailing_zeros(false) {
-    switch (specs.type) {
+    switch (specs.type_) {
     case 'G':
       upper = true;
       FMT_FALLTHROUGH
     case '\0': case 'g':
-      trailing_zeros = (specs.flags & HASH_FLAG) != 0;
+      trailing_zeros = (specs.flags_ & HASH_FLAG) != 0;
       if (-4 <= exp && exp < static_cast<int>(min_digits) + 1) {
         fixed = true;
-        if (!specs.type && trailing_zeros && exp >= 0)
+        if (!specs.type_ && trailing_zeros && exp >= 0)
           min_digits = to_unsigned(exp) + 1;
       }
       break;
@@ -667,7 +667,7 @@ FMT_FUNC void format_float(char *buffer, size_t &size, int exp,
 
 template <typename Double>
 FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-    grisu2_format(Double value, buffer &buf, grisu2_specs specs) {
+    grisu2_format(Double value, buffer &buf, core_format_specs specs) {
   FMT_ASSERT(value >= 0, "value is negative");
   char *buffer = buf.data();
   if (value == 0) {
@@ -710,6 +710,7 @@ FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
   size_t size = 0;
   if (!grisu2_gen_digits(buffer, size, hi, lo, exp, delta, one, diff,
                          params.max_digits)) {
+    buf.clear();
     return false;
   }
   format_float(buffer, size, cached_exp + exp, params);

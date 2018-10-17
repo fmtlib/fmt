@@ -285,25 +285,6 @@ inline dummy_int _finite(...) { return dummy_int(); }
 inline dummy_int isnan(...) { return dummy_int(); }
 inline dummy_int _isnan(...) { return dummy_int(); }
 
-inline bool use_grisu() {
-  return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559;
-}
-
-struct grisu2_specs {
-  int precision;
-  char type;
-  uint_least8_t flags;
-};
-
-// Formats value using Grisu2 algorithm:
-// https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
-template <typename Double>
-FMT_API typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-  grisu2_format(Double value, buffer &buf, grisu2_specs);
-template <typename Double>
-inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t), bool>::type
-  grisu2_format(Double, buffer &, grisu2_specs) { return false; }
-
 template <typename Allocator>
 typename Allocator::value_type *allocate(Allocator& alloc, std::size_t n) {
 #if __cplusplus >= 201103L || FMT_MSC_VER >= 1700
@@ -1174,17 +1155,23 @@ struct align_spec {
   int precision() const { return -1; }
 };
 
-// Format specifiers.
-template <typename Char>
-class basic_format_specs : public align_spec {
- public:
+struct core_format_specs {
   int precision_;
   uint_least8_t flags_;
   char type_;
+};
 
+// Format specifiers.
+template <typename Char>
+class basic_format_specs : public align_spec, public core_format_specs {
+ public:
   FMT_CONSTEXPR basic_format_specs(
       unsigned width = 0, char type = 0, wchar_t fill = ' ')
-  : align_spec(width, fill), precision_(-1), flags_(0), type_(type) {}
+  : align_spec(width, fill) {
+    precision_ = -1;
+    flags_ = 0;
+    type_ = type;
+  }
 
   FMT_CONSTEXPR bool flag(unsigned f) const { return (flags_ & f) != 0; }
   FMT_CONSTEXPR int precision() const { return precision_; }
@@ -1202,6 +1189,19 @@ FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
 }
 
 namespace internal {
+
+inline bool use_grisu() {
+  return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559;
+}
+
+// Formats value using Grisu2 algorithm:
+// https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
+template <typename Double>
+FMT_API typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
+  grisu2_format(Double value, buffer &buf, core_format_specs);
+template <typename Double>
+inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t), bool>::type
+  grisu2_format(Double, buffer &, core_format_specs) { return false; }
 
 template <typename S>
 struct format_string_traits<
@@ -2855,20 +2855,12 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     return write_inf_or_nan(handler.upper ? "INF" : "inf");
 
   memory_buffer buffer;
-  char type = static_cast<char>(spec.type());
   bool use_grisu = internal::use_grisu() && sizeof(T) <= sizeof(double) &&
-      type != 'a' && type != 'A';
-  if (use_grisu) {
-    auto gs = internal::grisu2_specs();
-    gs.type = type;
-    gs.precision = spec.precision();
-    gs.flags = spec.flags_;
-    use_grisu = internal::grisu2_format(static_cast<double>(value), buffer, gs);
-  }
+      spec.type() != 'a' && spec.type() != 'A' &&
+      internal::grisu2_format(static_cast<double>(value), buffer, spec);
   if (!use_grisu) {
     format_specs normalized_spec(spec);
     normalized_spec.type_ = handler.type;
-    buffer.clear();
     write_double_sprintf(value, normalized_spec, buffer);
   }
   size_t n = buffer.size();
