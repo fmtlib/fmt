@@ -569,17 +569,17 @@ struct gen_digits_params {
   // Creates digit generation parameters from format specifiers for a number in
   // the range [pow(10, exp - 1), pow(10, exp) or 0 if exp == 1.
   gen_digits_params(const core_format_specs &specs, int exp)
-    : min_digits(specs.precision_ >= 0 ? to_unsigned(specs.precision_) : 6),
+    : min_digits(specs.precision >= 0 ? to_unsigned(specs.precision) : 6),
       fixed(false), upper(false), trailing_zeros(false) {
-    switch (specs.type_) {
+    switch (specs.type) {
     case 'G':
       upper = true;
       FMT_FALLTHROUGH
     case '\0': case 'g':
-      trailing_zeros = (specs.flags_ & HASH_FLAG) != 0;
+      trailing_zeros = (specs.flags & HASH_FLAG) != 0;
       if (-4 <= exp && exp < static_cast<int>(min_digits) + 1) {
         fixed = true;
-        if (!specs.type_ && trailing_zeros && exp >= 0)
+        if (!specs.type && trailing_zeros && exp >= 0)
           min_digits = to_unsigned(exp) + 1;
       }
       break;
@@ -717,6 +717,50 @@ FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
   FMT_ASSERT(buf.capacity() >= size, "");
   buf.resize(size);
   return true;
+}
+
+template <typename Double>
+void sprintf_format(
+    Double value, internal::buffer &buffer, core_format_specs spec) {
+  // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
+  FMT_ASSERT(buffer.capacity() != 0, "empty buffer");
+
+  // Build format string.
+  enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
+  char format[MAX_FORMAT_SIZE];
+  char *format_ptr = format;
+  *format_ptr++ = '%';
+  if (spec.has(HASH_FLAG))
+    *format_ptr++ = '#';
+  if (spec.precision >= 0) {
+    *format_ptr++ = '.';
+    *format_ptr++ = '*';
+  }
+  if (std::is_same<Double, long double>::value)
+    *format_ptr++ = 'L';
+  *format_ptr++ = spec.type;
+  *format_ptr = '\0';
+
+  // Format using snprintf.
+  char *start = FMT_NULL;
+  for (;;) {
+    std::size_t buffer_size = buffer.capacity();
+    start = &buffer[0];
+    int result = internal::char_traits<char>::format_float(
+        start, buffer_size, format, spec.precision, value);
+    if (result >= 0) {
+      unsigned n = internal::to_unsigned(result);
+      if (n < buffer.capacity()) {
+        buffer.resize(n);
+        break;  // The buffer is large enough - continue with formatting.
+      }
+      buffer.reserve(n + 1);
+    } else {
+      // If result is negative we ask to increase the capacity by at least 1,
+      // but as std::vector, the buffer grows exponentially.
+      buffer.reserve(buffer.capacity() + 1);
+    }
+  }
 }
 }  // namespace internal
 

@@ -222,12 +222,12 @@ class printf_arg_formatter:
   context_type &context_;
 
   void write_null_pointer(char) {
-    this->spec()->type_ = 0;
+    this->spec()->type = 0;
     this->write("(nil)");
   }
 
   void write_null_pointer(wchar_t) {
-    this->spec()->type_ = 0;
+    this->spec()->type = 0;
     this->write(L"(nil)");
   }
 
@@ -253,15 +253,15 @@ class printf_arg_formatter:
     // use std::is_same instead.
     if (std::is_same<T, bool>::value) {
       format_specs &fmt_spec = *this->spec();
-      if (fmt_spec.type_ != 's')
+      if (fmt_spec.type != 's')
         return base::operator()(value ? 1 : 0);
-      fmt_spec.type_ = 0;
+      fmt_spec.type = 0;
       this->write(value != 0);
     } else if (std::is_same<T, char_type>::value) {
       format_specs &fmt_spec = *this->spec();
-      if (fmt_spec.type_ && fmt_spec.type_ != 'c')
+      if (fmt_spec.type && fmt_spec.type != 'c')
         return (*this)(static_cast<int>(value));
-      fmt_spec.flags_ = 0;
+      fmt_spec.flags = 0;
       fmt_spec.align_ = ALIGN_RIGHT;
       return base::operator()(value);
     } else {
@@ -280,7 +280,7 @@ class printf_arg_formatter:
   iterator operator()(const char *value) {
     if (value)
       base::operator()(value);
-    else if (this->spec()->type_ == 'p')
+    else if (this->spec()->type == 'p')
       write_null_pointer(char_type());
     else
       this->write("(null)");
@@ -291,7 +291,7 @@ class printf_arg_formatter:
   iterator operator()(const wchar_t *value) {
     if (value)
       base::operator()(value);
-    else if (this->spec()->type_ == 'p')
+    else if (this->spec()->type == 'p')
       write_null_pointer(char_type());
     else
       this->write(L"(null)");
@@ -310,7 +310,7 @@ class printf_arg_formatter:
   iterator operator()(const void *value) {
     if (value)
       return base::operator()(value);
-    this->spec()->type_ = 0;
+    this->spec()->type = 0;
     write_null_pointer(char_type());
     return this->out();
   }
@@ -394,16 +394,16 @@ void basic_printf_context<OutputIt, Char, AF>::parse_flags(
         spec.align_ = ALIGN_LEFT;
         break;
       case '+':
-        spec.flags_ |= SIGN_FLAG | PLUS_FLAG;
+        spec.flags |= SIGN_FLAG | PLUS_FLAG;
         break;
       case '0':
         spec.fill_ = '0';
         break;
       case ' ':
-        spec.flags_ |= SIGN_FLAG;
+        spec.flags |= SIGN_FLAG;
         break;
       case '#':
-        spec.flags_ |= HASH_FLAG;
+        spec.flags |= HASH_FLAG;
         break;
       default:
         --it;
@@ -486,19 +486,19 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
       ++it;
       if ('0' <= *it && *it <= '9') {
         internal::error_handler eh;
-        spec.precision_ = static_cast<int>(parse_nonnegative_int(it, eh));
+        spec.precision = static_cast<int>(parse_nonnegative_int(it, eh));
       } else if (*it == '*') {
         ++it;
-        spec.precision_ =
+        spec.precision =
             visit_format_arg(internal::printf_precision_handler(), get_arg(it));
       } else {
-        spec.precision_ = 0;
+        spec.precision = 0;
       }
     }
 
     format_arg arg = get_arg(it, arg_index);
-    if (spec.flag(HASH_FLAG) && visit_format_arg(internal::is_zero_int(), arg))
-      spec.flags_ &= ~internal::to_unsigned<int>(HASH_FLAG);
+    if (spec.has(HASH_FLAG) && visit_format_arg(internal::is_zero_int(), arg))
+      spec.flags &= ~internal::to_unsigned<int>(HASH_FLAG);
     if (spec.fill_ == '0') {
       if (arg.is_arithmetic())
         spec.align_ = ALIGN_NUMERIC;
@@ -542,12 +542,12 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
     // Parse type.
     if (!*it)
       FMT_THROW(format_error("invalid format string"));
-    spec.type_ = static_cast<char>(*it++);
+    spec.type = static_cast<char>(*it++);
     if (arg.is_integral()) {
       // Normalize type.
-      switch (spec.type_) {
+      switch (spec.type) {
       case 'i': case 'u':
-        spec.type_ = 'd';
+        spec.type = 'd';
         break;
       case 'c':
         // TODO: handle wchar_t better?

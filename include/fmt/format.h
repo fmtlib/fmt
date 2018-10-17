@@ -1151,31 +1151,26 @@ struct align_spec {
   FMT_CONSTEXPR unsigned width() const { return width_; }
   FMT_CONSTEXPR wchar_t fill() const { return fill_; }
   FMT_CONSTEXPR alignment align() const { return align_; }
-
-  int precision() const { return -1; }
 };
 
 struct core_format_specs {
-  int precision_;
-  uint_least8_t flags_;
-  char type_;
+  int precision;
+  uint_least8_t flags;
+  char type;
+
+  FMT_CONSTEXPR bool has(unsigned f) const { return (flags & f) != 0; }
 };
 
 // Format specifiers.
 template <typename Char>
-class basic_format_specs : public align_spec, public core_format_specs {
- public:
+struct basic_format_specs : align_spec, core_format_specs {
   FMT_CONSTEXPR basic_format_specs(
-      unsigned width = 0, char type = 0, wchar_t fill = ' ')
+      unsigned width = 0, char type_ = 0, wchar_t fill = ' ')
   : align_spec(width, fill) {
-    precision_ = -1;
-    flags_ = 0;
-    type_ = type;
+    precision = -1;
+    flags = 0;
+    type = type_;
   }
-
-  FMT_CONSTEXPR bool flag(unsigned f) const { return (flags_ & f) != 0; }
-  FMT_CONSTEXPR int precision() const { return precision_; }
-  FMT_CONSTEXPR char type() const { return type_; }
 };
 
 typedef basic_format_specs<char> format_specs;
@@ -1202,6 +1197,9 @@ FMT_API typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
 template <typename Double>
 inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t), bool>::type
   grisu2_format(Double, buffer &, core_format_specs) { return false; }
+
+template <typename Double>
+void sprintf_format(Double, internal::buffer &, core_format_specs);
 
 template <typename S>
 struct format_string_traits<
@@ -1256,8 +1254,8 @@ template <typename Char, typename Handler>
 FMT_CONSTEXPR void handle_char_specs(
     const basic_format_specs<Char> *specs, Handler &&handler) {
   if (!specs) return handler.on_char();
-  if (specs->type() && specs->type() != 'c') return handler.on_int();
-  if (specs->align() == ALIGN_NUMERIC || specs->flag(~0u) != 0)
+  if (specs->type && specs->type != 'c') return handler.on_int();
+  if (specs->align() == ALIGN_NUMERIC || specs->flags != 0)
     handler.on_error("invalid format specifier for char");
   handler.on_char();
 }
@@ -1405,8 +1403,8 @@ class arg_formatter_base {
 
   void write_pointer(const void *p) {
     format_specs specs = specs_ ? *specs_ : format_specs();
-    specs.flags_ = HASH_FLAG;
-    specs.type_ = 'x';
+    specs.flags = HASH_FLAG;
+    specs.type = 'x';
     writer_.write_int(reinterpret_cast<uintptr_t>(p), specs);
   }
 
@@ -1443,7 +1441,7 @@ class arg_formatter_base {
     // MSVC2013 fails to compile separate overloads for bool and char_type so
     // use std::is_same instead.
     if (std::is_same<T, bool>::value) {
-      if (specs_ && specs_->type_)
+      if (specs_ && specs_->type)
         return (*this)(value ? 1 : 0);
       write(value != 0);
     } else if (std::is_same<T, char_type>::value) {
@@ -1492,14 +1490,14 @@ class arg_formatter_base {
   iterator operator()(const char_type *value) {
     if (!specs_) return write(value), out();
     internal::handle_cstring_type_spec(
-          specs_->type_, cstring_spec_handler(*this, value));
+          specs_->type, cstring_spec_handler(*this, value));
     return out();
   }
 
   iterator operator()(basic_string_view<char_type> value) {
     if (specs_) {
       internal::check_string_type_spec(
-            specs_->type_, internal::error_handler());
+            specs_->type, internal::error_handler());
       writer_.write_str(value, *specs_);
     } else {
       writer_.write(value);
@@ -1509,7 +1507,7 @@ class arg_formatter_base {
 
   iterator operator()(const void *value) {
     if (specs_)
-      check_pointer_type_spec(specs_->type_, internal::error_handler());
+      check_pointer_type_spec(specs_->type, internal::error_handler());
     write_pointer(value);
     return out();
   }
@@ -1657,10 +1655,10 @@ class specs_setter {
 
   FMT_CONSTEXPR void on_align(alignment align) { specs_.align_ = align; }
   FMT_CONSTEXPR void on_fill(Char fill) { specs_.fill_ = fill; }
-  FMT_CONSTEXPR void on_plus() { specs_.flags_ |= SIGN_FLAG | PLUS_FLAG; }
-  FMT_CONSTEXPR void on_minus() { specs_.flags_ |= MINUS_FLAG; }
-  FMT_CONSTEXPR void on_space() { specs_.flags_ |= SIGN_FLAG; }
-  FMT_CONSTEXPR void on_hash() { specs_.flags_ |= HASH_FLAG; }
+  FMT_CONSTEXPR void on_plus() { specs_.flags |= SIGN_FLAG | PLUS_FLAG; }
+  FMT_CONSTEXPR void on_minus() { specs_.flags |= MINUS_FLAG; }
+  FMT_CONSTEXPR void on_space() { specs_.flags |= SIGN_FLAG; }
+  FMT_CONSTEXPR void on_hash() { specs_.flags |= HASH_FLAG; }
 
   FMT_CONSTEXPR void on_zero() {
     specs_.align_ = ALIGN_NUMERIC;
@@ -1669,12 +1667,12 @@ class specs_setter {
 
   FMT_CONSTEXPR void on_width(unsigned width) { specs_.width_ = width; }
   FMT_CONSTEXPR void on_precision(unsigned precision) {
-    specs_.precision_ = static_cast<int>(precision);
+    specs_.precision = static_cast<int>(precision);
   }
   FMT_CONSTEXPR void end_precision() {}
 
   FMT_CONSTEXPR void on_type(Char type) {
-    specs_.type_ = static_cast<char>(type);
+    specs_.type = static_cast<char>(type);
   }
 
  protected:
@@ -1777,7 +1775,7 @@ class specs_handler: public specs_setter<typename Context::char_type> {
   template <typename Id>
   FMT_CONSTEXPR void on_dynamic_precision(Id arg_id) {
     set_dynamic_spec<precision_checker>(
-          this->specs_.precision_, get_arg(arg_id), context_.error_handler());
+          this->specs_.precision, get_arg(arg_id), context_.error_handler());
   }
 
   void on_error(const char *message) {
@@ -2427,9 +2425,9 @@ class basic_writer {
         padding = spec.width() - size;
         size = spec.width();
       }
-    } else if (spec.precision() > static_cast<int>(num_digits)) {
-      size = prefix.size() + static_cast<std::size_t>(spec.precision());
-      padding = static_cast<std::size_t>(spec.precision()) - num_digits;
+    } else if (spec.precision > static_cast<int>(num_digits)) {
+      size = prefix.size() + internal::to_unsigned(spec.precision);
+      padding = internal::to_unsigned(spec.precision) - num_digits;
       fill = static_cast<char_type>('0');
     }
     align_spec as = spec;
@@ -2484,8 +2482,8 @@ class basic_writer {
         prefix[0] = '-';
         ++prefix_size;
         abs_value = 0 - abs_value;
-      } else if (spec.flag(SIGN_FLAG)) {
-        prefix[0] = spec.flag(PLUS_FLAG) ? '+' : ' ';
+      } else if (spec.has(SIGN_FLAG)) {
+        prefix[0] = spec.has(PLUS_FLAG) ? '+' : ' ';
         ++prefix_size;
       }
     }
@@ -2513,14 +2511,14 @@ class basic_writer {
       template <typename It>
       void operator()(It &&it) const {
         it = internal::format_uint<4, char_type>(
-              it, self.abs_value, num_digits, self.spec.type() != 'x');
+              it, self.abs_value, num_digits, self.spec.type != 'x');
       }
     };
 
     void on_hex() {
-      if (spec.flag(HASH_FLAG)) {
+      if (spec.has(HASH_FLAG)) {
         prefix[prefix_size++] = '0';
-        prefix[prefix_size++] = static_cast<char>(spec.type());
+        prefix[prefix_size++] = static_cast<char>(spec.type);
       }
       unsigned num_digits = count_digits<4>();
       writer.write_int(num_digits, get_prefix(), spec,
@@ -2539,9 +2537,9 @@ class basic_writer {
     };
 
     void on_bin() {
-      if (spec.flag(HASH_FLAG)) {
+      if (spec.has(HASH_FLAG)) {
         prefix[prefix_size++] = '0';
-        prefix[prefix_size++] = static_cast<char>(spec.type());
+        prefix[prefix_size++] = static_cast<char>(spec.type);
       }
       unsigned num_digits = count_digits<1>();
       writer.write_int(num_digits, get_prefix(), spec,
@@ -2550,8 +2548,8 @@ class basic_writer {
 
     void on_oct() {
       unsigned num_digits = count_digits<3>();
-      if (spec.flag(HASH_FLAG) &&
-          spec.precision() <= static_cast<int>(num_digits)) {
+      if (spec.has(HASH_FLAG) &&
+          spec.precision <= static_cast<int>(num_digits)) {
         // Octal prefix '0' is counted as a digit, so only add it if precision
         // is not greater than the number of digits.
         prefix[prefix_size++] = '0';
@@ -2591,7 +2589,7 @@ class basic_writer {
   // Writes a formatted integer.
   template <typename T, typename Spec>
   void write_int(T value, const Spec &spec) {
-    internal::handle_int_type_spec(spec.type(),
+    internal::handle_int_type_spec(spec.type,
                                    int_writer<T, Spec>(*this, value, spec));
   }
 
@@ -2636,9 +2634,6 @@ class basic_writer {
   // Formats a floating-point number (double or long double).
   template <typename T>
   void write_double(T value, const format_specs &spec);
-  template <typename T>
-  void write_double_sprintf(T value, const format_specs &spec,
-                            internal::buffer &buffer);
 
   template <typename Char>
   struct str_writer {
@@ -2740,8 +2735,8 @@ class basic_writer {
   typename std::enable_if<std::is_same<T, void>::value>::type
       write(const T *p) {
     format_specs specs;
-    specs.flags_ = HASH_FLAG;
-    specs.type_ = 'x';
+    specs.flags = HASH_FLAG;
+    specs.type = 'x';
     write_int(reinterpret_cast<uintptr_t>(p), specs);
   }
 };
@@ -2777,9 +2772,8 @@ void basic_writer<Range>::write_str(
     basic_string_view<Char> s, const format_specs &spec) {
   const Char *data = s.data();
   std::size_t size = s.size();
-  std::size_t precision = static_cast<std::size_t>(spec.precision_);
-  if (spec.precision_ >= 0 && precision < size)
-    size = precision;
+  if (spec.precision >= 0 && internal::to_unsigned(spec.precision) < size)
+    size = internal::to_unsigned(spec.precision);
   write_str(data, size, spec);
 }
 
@@ -2825,7 +2819,7 @@ template <typename Range>
 template <typename T>
 void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   // Check type.
-  float_spec_handler handler(static_cast<char>(spec.type()));
+  float_spec_handler handler(static_cast<char>(spec.type));
   internal::handle_float_type_spec(handler.type, handler);
 
   char sign = 0;
@@ -2834,8 +2828,8 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
   if (std::signbit(value)) {
     sign = '-';
     value = -value;
-  } else if (spec.flag(SIGN_FLAG)) {
-    sign = spec.flag(PLUS_FLAG) ? '+' : ' ';
+  } else if (spec.has(SIGN_FLAG)) {
+    sign = spec.has(PLUS_FLAG) ? '+' : ' ';
   }
 
   struct write_inf_or_nan_t {
@@ -2856,12 +2850,12 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
 
   memory_buffer buffer;
   bool use_grisu = internal::use_grisu() && sizeof(T) <= sizeof(double) &&
-      spec.type() != 'a' && spec.type() != 'A' &&
+      spec.type != 'a' && spec.type != 'A' &&
       internal::grisu2_format(static_cast<double>(value), buffer, spec);
   if (!use_grisu) {
     format_specs normalized_spec(spec);
-    normalized_spec.type_ = handler.type;
-    write_double_sprintf(value, normalized_spec, buffer);
+    normalized_spec.type = handler.type;
+    internal::sprintf_format(value, buffer, normalized_spec);
   }
   size_t n = buffer.size();
   align_spec as = spec;
@@ -2881,51 +2875,6 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
       ++n;
   }
   write_padded(as, double_writer{n, sign, buffer});
-}
-
-template <typename Range>
-template <typename T>
-void basic_writer<Range>::write_double_sprintf(
-    T value, const format_specs &spec, internal::buffer &buffer) {
-  // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
-  FMT_ASSERT(buffer.capacity() != 0, "empty buffer");
-
-  // Build format string.
-  enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
-  char format[MAX_FORMAT_SIZE];
-  char *format_ptr = format;
-  *format_ptr++ = '%';
-  if (spec.flag(HASH_FLAG))
-    *format_ptr++ = '#';
-  if (spec.precision() >= 0) {
-    *format_ptr++ = '.';
-    *format_ptr++ = '*';
-  }
-  if (std::is_same<T, long double>::value)
-    *format_ptr++ = 'L';
-  *format_ptr++ = spec.type();
-  *format_ptr = '\0';
-
-  // Format using snprintf.
-  char *start = FMT_NULL;
-  for (;;) {
-    std::size_t buffer_size = buffer.capacity();
-    start = &buffer[0];
-    int result = internal::char_traits<char>::format_float(
-        start, buffer_size, format, spec.precision(), value);
-    if (result >= 0) {
-      unsigned n = internal::to_unsigned(result);
-      if (n < buffer.capacity()) {
-        buffer.resize(n);
-        break;  // The buffer is large enough - continue with formatting.
-      }
-      buffer.reserve(n + 1);
-    } else {
-      // If result is negative we ask to increase the capacity by at least 1,
-      // but as std::vector, the buffer grows exponentially.
-      buffer.reserve(buffer.capacity() + 1);
-    }
-  }
 }
 
 // Reports a system error without throwing an exception.
@@ -3103,7 +3052,7 @@ struct formatter<
     internal::specs_checker<handler_type>
         handler(handler_type(specs_, ctx), type);
     it = parse_format_specs(it, handler);
-    auto type_spec = specs_.type();
+    auto type_spec = specs_.type;
     auto eh = ctx.error_handler();
     switch (type) {
     case internal::none_type:
@@ -3151,7 +3100,7 @@ struct formatter<
     internal::handle_dynamic_spec<internal::width_checker>(
       specs_.width_, specs_.width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
-      specs_.precision_, specs_.precision_ref, ctx);
+      specs_.precision, specs_.precision_ref, ctx);
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type> range_type;
     return visit_format_arg(arg_formatter<range_type>(ctx, &specs_),
@@ -3199,19 +3148,14 @@ class dynamic_formatter {
     internal::specs_checker<null_handler>
         checker(null_handler(), internal::get_type<FormatContext, T>::value);
     checker.on_align(specs_.align());
-    if (specs_.flags_ == 0) {
-      // Do nothing.
-    } else if (specs_.flag(SIGN_FLAG)) {
-      if (specs_.flag(PLUS_FLAG))
-        checker.on_plus();
-      else
-        checker.on_space();
-    } else if (specs_.flag(MINUS_FLAG)) {
+    if (specs_.flags == 0);  // Do nothing.
+    else if (specs_.has(SIGN_FLAG))
+      specs_.has(PLUS_FLAG) ? checker.on_plus() : checker.on_space();
+    else if (specs_.has(MINUS_FLAG))
       checker.on_minus();
-    } else if (specs_.flag(HASH_FLAG)) {
+    else if (specs_.has(HASH_FLAG))
       checker.on_hash();
-    }
-    if (specs_.precision_ != -1)
+    if (specs_.precision != -1)
       checker.end_precision();
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type> range;
@@ -3226,7 +3170,7 @@ class dynamic_formatter {
     internal::handle_dynamic_spec<internal::width_checker>(
       specs_.width_, specs_.width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
-      specs_.precision_, specs_.precision_ref, ctx);
+      specs_.precision, specs_.precision_ref, ctx);
   }
 
   internal::dynamic_format_specs<Char> specs_;

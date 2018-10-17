@@ -2182,19 +2182,19 @@ FMT_CONSTEXPR fmt::format_specs parse_specs(const char *s) {
 }
 
 TEST(FormatTest, ConstexprSpecsHandler) {
-  static_assert(parse_specs("<").align() == fmt::ALIGN_LEFT, "");
+  static_assert(parse_specs("<").align == fmt::ALIGN_LEFT, "");
   static_assert(parse_specs("*^").fill() == '*', "");
-  static_assert(parse_specs("+").flag(fmt::PLUS_FLAG), "");
-  static_assert(parse_specs("-").flag(fmt::MINUS_FLAG), "");
-  static_assert(parse_specs(" ").flag(fmt::SIGN_FLAG), "");
-  static_assert(parse_specs("#").flag(fmt::HASH_FLAG), "");
-  static_assert(parse_specs("0").align() == fmt::ALIGN_NUMERIC, "");
+  static_assert(parse_specs("+").has(fmt::PLUS_FLAG), "");
+  static_assert(parse_specs("-").has(fmt::MINUS_FLAG), "");
+  static_assert(parse_specs(" ").has(fmt::SIGN_FLAG), "");
+  static_assert(parse_specs("#").has(fmt::HASH_FLAG), "");
+  static_assert(parse_specs("0").align == fmt::ALIGN_NUMERIC, "");
   static_assert(parse_specs("42").width() == 42, "");
   static_assert(parse_specs("{}").width() == 11, "");
   static_assert(parse_specs("{0}").width() == 22, "");
-  static_assert(parse_specs(".42").precision() == 42, "");
-  static_assert(parse_specs(".{}").precision() == 11, "");
-  static_assert(parse_specs(".{0}").precision() == 22, "");
+  static_assert(parse_specs(".42").precision == 42, "");
+  static_assert(parse_specs(".{}").precision == 11, "");
+  static_assert(parse_specs(".{0}").precision == 22, "");
   static_assert(parse_specs("d").type() == 'd', "");
 }
 
@@ -2208,17 +2208,17 @@ FMT_CONSTEXPR fmt::internal::dynamic_format_specs<char>
 }
 
 TEST(FormatTest, ConstexprDynamicSpecsHandler) {
-  static_assert(parse_dynamic_specs("<").align() == fmt::ALIGN_LEFT, "");
+  static_assert(parse_dynamic_specs("<").align == fmt::ALIGN_LEFT, "");
   static_assert(parse_dynamic_specs("*^").fill() == '*', "");
-  static_assert(parse_dynamic_specs("+").flag(fmt::PLUS_FLAG), "");
-  static_assert(parse_dynamic_specs("-").flag(fmt::MINUS_FLAG), "");
-  static_assert(parse_dynamic_specs(" ").flag(fmt::SIGN_FLAG), "");
-  static_assert(parse_dynamic_specs("#").flag(fmt::HASH_FLAG), "");
-  static_assert(parse_dynamic_specs("0").align() == fmt::ALIGN_NUMERIC, "");
+  static_assert(parse_dynamic_specs("+").has(fmt::PLUS_FLAG), "");
+  static_assert(parse_dynamic_specs("-").has(fmt::MINUS_FLAG), "");
+  static_assert(parse_dynamic_specs(" ").has(fmt::SIGN_FLAG), "");
+  static_assert(parse_dynamic_specs("#").has(fmt::HASH_FLAG), "");
+  static_assert(parse_dynamic_specs("0").align == fmt::ALIGN_NUMERIC, "");
   static_assert(parse_dynamic_specs("42").width() == 42, "");
   static_assert(parse_dynamic_specs("{}").width_ref.index == 33, "");
   static_assert(parse_dynamic_specs("{42}").width_ref.index == 42, "");
-  static_assert(parse_dynamic_specs(".42").precision() == 42, "");
+  static_assert(parse_dynamic_specs(".42").precision == 42, "");
   static_assert(parse_dynamic_specs(".{}").precision_ref.index == 33, "");
   static_assert(parse_dynamic_specs(".{42}").precision_ref.index == 42, "");
   static_assert(parse_dynamic_specs("d").type() == 'd', "");

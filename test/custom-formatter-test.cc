@@ -26,8 +26,8 @@ class custom_arg_formatter :
   using base::operator();
 
   iterator operator()(double value) {
-    // Comparing a float to 0.0 is safe
-    if (round(value * pow(10, spec()->precision())) == 0.0)
+    // Comparing a float to 0.0 is safe.
+    if (round(value * pow(10, spec()->precision)) == 0.0)
       value = 0;
     return base::operator()(value);
   }
