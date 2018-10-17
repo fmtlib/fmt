@@ -1153,13 +1153,10 @@ enum alignment {
 };
 
 // Flags.
-enum {SIGN_FLAG = 1, PLUS_FLAG = 2, MINUS_FLAG = 4, HASH_FLAG = 8};
-
-// An empty format specifier.
-struct empty_spec {};
+enum { SIGN_FLAG = 1, PLUS_FLAG = 2, MINUS_FLAG = 4, HASH_FLAG = 8 };
 
 // An alignment specifier.
-struct align_spec : empty_spec {
+struct align_spec {
   unsigned width_;
   // Fill is always wchar_t and cast to char if necessary to avoid having
   // two specialization of AlignSpec and its subclasses.
