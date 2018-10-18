@@ -528,29 +528,6 @@ FMT_FUNC bool grisu2_gen_digits(
   }
 }
 
-// Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
-FMT_FUNC char *write_exponent(char *buffer, int exp) {
-  FMT_ASSERT(-1000 < exp && exp < 1000, "exponent out of range");
-  if (exp < 0) {
-    *buffer++ = '-';
-    exp = -exp;
-  } else {
-    *buffer++ = '+';
-  }
-  if (exp >= 100) {
-    *buffer++ = static_cast<char>('0' + exp / 100);
-    exp %= 100;
-    const char *d = data::DIGITS + exp * 2;
-    *buffer++ = d[0];
-    *buffer++ = d[1];
-  } else {
-    const char *d = data::DIGITS + exp * 2;
-    *buffer++ = d[0];
-    *buffer++ = d[1];
-  }
-  return buffer;
-}
-
 #if FMT_CLANG_VERSION
 # define FMT_FALLTHROUGH [[clang::fallthrough]];
 #elif FMT_GCC_VERSION >= 700
@@ -564,61 +541,80 @@ struct gen_digits_params {
   bool fixed;
   bool upper;
   bool trailing_zeros;
+};
 
-  // Creates digit generation parameters from format specifiers for a number in
-  // the range [pow(10, exp - 1), pow(10, exp) or 0 if exp == 1.
-  gen_digits_params(const core_format_specs &specs, int exp)
-    : num_digits(specs.precision >= 0 ? to_unsigned(specs.precision) : 6),
-      fixed(false), upper(false), trailing_zeros(false) {
-    switch (specs.type) {
-    case 'G':
-      upper = true;
-      FMT_FALLTHROUGH
-    case '\0': case 'g':
-      trailing_zeros = (specs.flags & HASH_FLAG) != 0;
-      if (-4 <= exp && exp < static_cast<int>(num_digits) + 1) {
-        fixed = true;
-        if (!specs.type && trailing_zeros && exp >= 0)
-          num_digits = to_unsigned(exp) + 1;
-      }
-      break;
-    case 'F':
-      upper = true;
-      FMT_FALLTHROUGH
-    case 'f': {
-      fixed = true;
-      trailing_zeros = true;
-      int adjusted_min_digits = static_cast<int>(num_digits) + exp;
-      if (adjusted_min_digits > 0)
-        num_digits = to_unsigned(adjusted_min_digits);
-      break;
-    }
-    case 'E':
-      upper = true;
-      FMT_FALLTHROUGH
-    case 'e':
-      ++num_digits;
-      break;
-    }
+struct prettify_handler {
+  char *data;
+  size_t size;
+  buffer &buf;
+
+  explicit prettify_handler(buffer &b, size_t n)
+    : data(b.data()), size(n), buf(b) {}
+  ~prettify_handler() {
+    assert(buf.size() >= size);
+    buf.resize(size);
+  }
+
+  template <typename F>
+  void insert(size_t pos, size_t n, F f) {
+    std::memmove(data + pos + n, data + pos, size - pos);
+    f(data + pos);
+    size += n;
+  }
+
+  void insert(size_t pos, char c) {
+    std::memmove(data + pos + 1, data + pos, size - pos);
+    data[pos] = c;
+    ++size;
+  }
+
+  void append(size_t n, char c) {
+    std::uninitialized_fill_n(data + size, n, c);
+    size += n;
+  }
+
+  void append(char c) { data[size++] = c; }
+
+  void remove_trailing(char c) {
+    while (data[size - 1] == c) --size;
   }
 };
 
-// The number is given as v = buffer * pow(10, exp).
-FMT_FUNC void format_float(char *buffer, size_t &size, int exp,
-                           const gen_digits_params &params) {
+// Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
+template <typename Handler>
+FMT_FUNC void write_exponent(int exp, Handler &&h) {
+  FMT_ASSERT(-1000 < exp && exp < 1000, "exponent out of range");
+  if (exp < 0) {
+    h.append('-');
+    exp = -exp;
+  } else {
+    h.append('+');
+  }
+  if (exp >= 100) {
+    h.append(static_cast<char>('0' + exp / 100));
+    exp %= 100;
+    const char *d = data::DIGITS + exp * 2;
+    h.append(d[0]);
+    h.append(d[1]);
+  } else {
+    const char *d = data::DIGITS + exp * 2;
+    h.append(d[0]);
+    h.append(d[1]);
+  }
+}
+
+// The number is given as v = f * pow(10, exp), where f has size digits.
+template <typename Handler>
+FMT_FUNC void grisu2_prettify(const gen_digits_params &params,
+                              size_t size, int exp, Handler &&handler) {
   if (!params.fixed) {
     // Insert a decimal point after the first digit and add an exponent.
-    std::memmove(buffer + 2, buffer + 1, size - 1);
-    buffer[1] = '.';
+    handler.insert(1, '.');
     exp += static_cast<int>(size) - 1;
-    if (size < params.num_digits) {
-      std::uninitialized_fill_n(buffer + size + 1,
-                                params.num_digits - size, '0');
-      size = params.num_digits;
-    }
-    char *p = buffer + size + 1;
-    *p++ = params.upper ? 'E' : 'e';
-    size = to_unsigned(write_exponent(p, exp) - buffer);
+    if (size < params.num_digits)
+      handler.append(params.num_digits - size, '0');
+    handler.append(params.upper ? 'E' : 'e');
+    write_exponent(exp, handler);
     return;
   }
   // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
@@ -627,53 +623,101 @@ FMT_FUNC void format_float(char *buffer, size_t &size, int exp,
   const int exp_threshold = 21;
   if (int_size <= full_exp && full_exp <= exp_threshold) {
     // 1234e7 -> 12340000000[.0+]
-    std::uninitialized_fill_n(buffer + int_size, full_exp - int_size, '0');
-    char *p = buffer + full_exp;
+    handler.append(full_exp - int_size, '0');
     int num_zeros = static_cast<int>(params.num_digits) - full_exp;
     if (num_zeros > 0 && params.trailing_zeros) {
-      *p++ = '.';
-      std::uninitialized_fill_n(p, num_zeros, '0');
-      p += num_zeros;
+      handler.append('.');
+      handler.append(num_zeros, '0');
     }
-    size = to_unsigned(p - buffer);
   } else if (full_exp > 0) {
     // 1234e-2 -> 12.34[0+]
-    int fractional_size = -exp;
-    std::memmove(buffer + full_exp + 1, buffer + full_exp,
-                 to_unsigned(fractional_size));
-    buffer[full_exp] = '.';
-    ++size;
+    handler.insert(full_exp, '.');
     if (!params.trailing_zeros) {
       // Remove trailing zeros.
-      while (buffer[size - 1] == '0') --size;
-    } else if (params.num_digits >= size) {
+      handler.remove_trailing('0');
+    } else if (params.num_digits > size) {
       // Add trailing zeros.
-      size_t num_zeros = params.num_digits - size + 1;
-      std::uninitialized_fill_n(buffer + size, num_zeros, '0');
-      size += to_unsigned(num_zeros);
+      size_t num_zeros = params.num_digits - size;
+      handler.append(num_zeros, '0');
     }
   } else {
     // 1234e-6 -> 0.001234
-    int offset = 2 - full_exp;
-    std::memmove(buffer + offset, buffer, size);
-    buffer[0] = '0';
-    buffer[1] = '.';
-    std::uninitialized_fill_n(buffer + 2, -full_exp, '0');
-    size = to_unsigned(int_size + offset);
+    struct fill {
+      size_t n;
+      void operator()(char *buffer) const {
+        buffer[0] = '0';
+        buffer[1] = '.';
+        std::uninitialized_fill_n(buffer + 2, n, '0');
+      }
+    };
+    handler.insert(0, 2 - full_exp, fill{to_unsigned(-full_exp)});
   }
+}
+
+struct char_counter {
+  size_t size;
+
+  template <typename F>
+  void insert(size_t, size_t n, F) { size += n; }
+  void insert(size_t, char) { ++size; }
+  void append(size_t n, char) { size += n; }
+  void append(char) { ++size; }
+  void remove_trailing(char) {}
+};
+
+// Converts format specifiers into parameters for digit generation and computes
+// output buffer size for a number in the range [pow(10, exp - 1), pow(10, exp)
+// or 0 if exp == 1.
+FMT_FUNC gen_digits_params process_specs(const core_format_specs &specs,
+                                         int exp, buffer &buf) {
+  auto params = gen_digits_params();
+  int num_digits = specs.precision >= 0 ? specs.precision : 6;
+  switch (specs.type) {
+  case 'G':
+    params.upper = true;
+    FMT_FALLTHROUGH
+  case '\0': case 'g':
+    params.trailing_zeros = (specs.flags & HASH_FLAG) != 0;
+    if (-4 <= exp && exp < num_digits + 1) {
+      params.fixed = true;
+      if (!specs.type && params.trailing_zeros && exp >= 0)
+        num_digits = exp + 1;
+    }
+    break;
+  case 'F':
+    params.upper = true;
+    FMT_FALLTHROUGH
+  case 'f': {
+    params.fixed = true;
+    params.trailing_zeros = true;
+    int adjusted_min_digits = num_digits + exp;
+    if (adjusted_min_digits > 0)
+      num_digits = adjusted_min_digits;
+    break;
+  }
+  case 'E':
+    params.upper = true;
+    FMT_FALLTHROUGH
+  case 'e':
+    ++num_digits;
+    break;
+  }
+  params.num_digits = to_unsigned(num_digits);
+  char_counter counter{params.num_digits};
+  grisu2_prettify(params, params.num_digits, exp - num_digits, counter);
+  buf.resize(counter.size);
+  return params;
 }
 
 template <typename Double>
 FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
     grisu2_format(Double value, buffer &buf, core_format_specs specs) {
   FMT_ASSERT(value >= 0, "value is negative");
-  char *buffer = buf.data();
   if (value == 0) {
-    *buffer = '0';
-    size_t size = 1;
-    format_float(buffer, size, 0, gen_digits_params(specs, 1));
-    FMT_ASSERT(buf.capacity() >= size, "");
-    buf.resize(size);
+    gen_digits_params params = process_specs(specs, 1, buf);
+    const size_t size = 1;
+    buf[0] = '0';
+    grisu2_prettify(params, size, 0, prettify_handler(buf, size));
     return true;
   }
 
@@ -694,7 +738,7 @@ FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
   // hi = floor(upper / one).
   uint32_t hi = static_cast<uint32_t>(upper.f >> -one.e);
   int exp = static_cast<int>(count_digits(hi));  // kappa in Grisu.
-  gen_digits_params params(specs, cached_exp + exp);
+  gen_digits_params params = process_specs(specs, cached_exp + exp, buf);
   fp_value.normalize();
   fp scaled_value = fp_value * cached_pow;
   lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
@@ -705,20 +749,18 @@ FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
   // lo = supper % one.
   uint64_t lo = upper.f & (one.f - 1);
   size_t size = 0;
-  if (!grisu2_gen_digits(buffer, size, hi, lo, exp, delta, one, diff,
+  if (!grisu2_gen_digits(buf.data(), size, hi, lo, exp, delta, one, diff,
                          params.num_digits)) {
     buf.clear();
     return false;
   }
-  format_float(buffer, size, cached_exp + exp, params);
-  FMT_ASSERT(buf.capacity() >= size, "");
-  buf.resize(size);
+  grisu2_prettify(params, size, cached_exp + exp, prettify_handler(buf, size));
   return true;
 }
 
 template <typename Double>
-void sprintf_format(
-    Double value, internal::buffer &buffer, core_format_specs spec) {
+void sprintf_format(Double value, internal::buffer &buffer,
+                    core_format_specs spec) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buffer.capacity() != 0, "empty buffer");
 
