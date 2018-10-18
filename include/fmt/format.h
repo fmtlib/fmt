@@ -163,6 +163,7 @@ FMT_END_NAMESPACE
 
 #ifndef FMT_USE_GRISU
 # define FMT_USE_GRISU 0
+//# define FMT_USE_GRISU std::numeric_limits<double>::is_iec559
 #endif
 
 // __builtin_clz is broken in clang with Microsoft CodeGen:
@@ -1176,10 +1177,6 @@ FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
 }
 
 namespace internal {
-
-inline bool use_grisu() {
-  return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559;
-}
 
 // Formats value using Grisu2 algorithm:
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
@@ -2841,7 +2838,7 @@ void basic_writer<Range>::write_double(T value, const format_specs &spec) {
     return write_inf_or_nan(handler.upper ? "INF" : "inf");
 
   memory_buffer buffer;
-  bool use_grisu = internal::use_grisu() && sizeof(T) <= sizeof(double) &&
+  bool use_grisu = FMT_USE_GRISU && sizeof(T) <= sizeof(double) &&
       spec.type != 'a' && spec.type != 'A' &&
       internal::grisu2_format(static_cast<double>(value), buffer, spec);
   if (!use_grisu) {

@@ -996,7 +996,7 @@ TEST(FormatterTest, HashFlag) {
   EXPECT_EQ("0x42", format("{0:#x}", 0x42ull));
   EXPECT_EQ("042", format("{0:#o}", 042ull));
 
-  if (fmt::internal::use_grisu())
+  if (FMT_USE_GRISU)
     EXPECT_EQ("-42.0", format("{0:#}", -42.0));
   else
     EXPECT_EQ("-42.0000", format("{0:#}", -42.0));
