@@ -1416,7 +1416,9 @@ TEST(FormatterTest, FormatDouble) {
 }
 
 TEST(FormatterTest, FormatDoubleBigPrecision) {
-  EXPECT_EQ(format("0.{:0<1000}", ""), format("{:.1000f}", 0.0));
+  // sprintf with big precision is broken in MSVC2013, so only test on Grisu.
+  if (FMT_USE_GRISU)
+    EXPECT_EQ(format("0.{:0<1000}", ""), format("{:.1000f}", 0.0));
 }
 
 TEST(FormatterTest, FormatNaN) {
