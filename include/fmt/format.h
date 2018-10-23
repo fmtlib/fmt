@@ -178,14 +178,6 @@ FMT_END_NAMESPACE
 # endif
 #endif
 
-// A workaround for gcc 4.4 that doesn't support union members with ctors.
-#if (FMT_GCC_VERSION && FMT_GCC_VERSION <= 404) || \
-    (FMT_MSC_VER && FMT_MSC_VER <= 1800)
-# define FMT_UNION struct
-#else
-# define FMT_UNION union
-#endif
-
 // Some compilers masquerade as both MSVC and GCC-likes or otherwise support
 // __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
 // MSVC intrinsics if the clz and clzll builtins are not available.
@@ -1787,7 +1779,8 @@ struct arg_ref {
 
   FMT_CONSTEXPR arg_ref() : kind(NONE), index(0) {}
   FMT_CONSTEXPR explicit arg_ref(unsigned index) : kind(INDEX), index(index) {}
-  explicit arg_ref(basic_string_view<Char> name) : kind(NAME), name(name) {}
+  explicit arg_ref(basic_string_view<Char> name)
+    : kind(NAME), name{name.data(), name.size()} {}
 
   FMT_CONSTEXPR arg_ref &operator=(unsigned idx) {
     kind = INDEX;
@@ -1796,9 +1789,9 @@ struct arg_ref {
   }
 
   Kind kind;
-  FMT_UNION {
+  union {
     unsigned index;
-    basic_string_view<Char> name;
+    string_value<Char> name;  // This is not string_view because of gcc 4.4.
   };
 };
 
@@ -2239,7 +2232,8 @@ void handle_dynamic_spec(
     break;
   case arg_ref<char_type>::NAME:
     internal::set_dynamic_spec<Handler>(
-          value, ctx.get_arg(ref.name), ctx.error_handler());
+          value, ctx.get_arg({ref.name.value, ref.name.size}),
+          ctx.error_handler());
     break;
   }
 }
@@ -2270,7 +2264,7 @@ class arg_formatter:
     *spec* contains format specifier information for standard argument types.
     \endrst
    */
-  explicit arg_formatter(context_type &ctx, format_specs *spec = {})
+  explicit arg_formatter(context_type &ctx, format_specs *spec = FMT_NULL)
   : base(Range(ctx.out()), spec), ctx_(ctx) {}
 
   // Deprecated.
