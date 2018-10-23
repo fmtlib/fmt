@@ -68,7 +68,7 @@ include(CheckCXXCompilerFlag)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic
-      -Wold-style-cast -Wlogical-op -Wundef
+      -Wold-style-cast -Wundef
       -Wredundant-decls -Wshadow -Wwrite-strings -Wpointer-arith
       -Wcast-qual -Wformat=2 -Wmissing-include-dirs
       -Wcast-align -Wnon-virtual-dtor

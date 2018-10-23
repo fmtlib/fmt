@@ -603,6 +603,15 @@ FMT_FUNC void write_exponent(int exp, Handler &&h) {
   }
 }
 
+struct fill {
+  size_t n;
+  void operator()(char *buffer) const {
+    buffer[0] = '0';
+    buffer[1] = '.';
+    std::uninitialized_fill_n(buffer + 2, n, '0');
+  }
+};
+
 // The number is given as v = f * pow(10, exp), where f has size digits.
 template <typename Handler>
 FMT_FUNC void grisu2_prettify(const gen_digits_params &params,
@@ -642,14 +651,6 @@ FMT_FUNC void grisu2_prettify(const gen_digits_params &params,
     }
   } else {
     // 1234e-6 -> 0.001234
-    struct fill {
-      size_t n;
-      void operator()(char *buffer) const {
-        buffer[0] = '0';
-        buffer[1] = '.';
-        std::uninitialized_fill_n(buffer + 2, n, '0');
-      }
-    };
     handler.insert(0, 2 - full_exp, fill{to_unsigned(-full_exp)});
   }
 }
