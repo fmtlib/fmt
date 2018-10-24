@@ -753,7 +753,7 @@ class truncating_iterator_base {
   typedef void difference_type;
   typedef void pointer;
   typedef void reference;
-  typedef truncating_iterator_base _Unchecked_type;  // Mark iterator as checked.
+  typedef truncating_iterator_base _Unchecked_type; // Mark iterator as checked.
 
   OutputIt base() const { return out_; }
   std::size_t count() const { return count_; }
@@ -811,9 +811,7 @@ class truncating_iterator<OutputIt, std::true_type>:
   }
 
   truncating_iterator& operator++() { return *this; }
-
   truncating_iterator& operator++(int) { return *this; }
-
   truncating_iterator& operator*() { return *this; }
 };
 
@@ -3377,11 +3375,11 @@ inline typename buffer_context<FMT_CHAR(String)>::type::iterator vformat_to(
 }
 
 template <
-    typename String, typename... Args,
+    typename S, typename... Args,
     std::size_t SIZE = inline_buffer_size,
-    typename Char = typename internal::has_to_string_view<String>::char_type>
+    typename Char = typename internal::char_t<S>::type>
 inline typename buffer_context<Char>::type::iterator format_to(
-    basic_memory_buffer<Char, SIZE> &buf, const String &format_str,
+    basic_memory_buffer<Char, SIZE> &buf, const S &format_str,
     const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename buffer_context<Char>::type context;

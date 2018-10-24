@@ -426,6 +426,32 @@ class basic_string_view {
 typedef basic_string_view<char> string_view;
 typedef basic_string_view<wchar_t> wstring_view;
 
+/**
+  \rst
+  The function ``to_string_view`` adapts non-intrusively any kind of string or
+  string-like type if the user provides a (possibly templated) overload of
+  ``to_string_view`` which takes an instance of the string class
+  ``StringType<Char>`` and returns a ``fmt::basic_string_view<Char>``.
+  The conversion function must live in the very same namespace as
+  ``StringType<Char>`` to be picked up by ADL. Non-templated string types
+  like f.e. QString must return a ``basic_string_view`` with a fixed matching
+  char type.
+
+  **Example**::
+
+    namespace my_ns {
+    inline string_view to_string_view(const my_string &s) {
+        return { s.data(), s.length() };
+    }
+    }
+
+    std::string message = fmt::format(my_string("The answer is {}"), 42);
+  \endrst
+ */
+template <typename Char>
+inline basic_string_view<Char>
+  to_string_view(basic_string_view<Char> s) { return s; }
+
 template <typename Char>
 inline basic_string_view<Char>
   to_string_view(const std::basic_string<Char> &s) { return s; }
@@ -476,28 +502,20 @@ struct convert_to_int: std::integral_constant<
 
 namespace internal {
 
-template <typename S>
-struct get_char_type {
-  typedef void char_type;
-};
-
-template <typename Char>
-struct get_char_type<basic_string_view<Char>> {
-  typedef Char char_type;
-};
-
+struct dummy_string_view { typedef void char_type; };
+dummy_string_view to_string_view(...);
 using fmt::v5::to_string_view;
 
-void to_string_view(...);
+// Specifies whether S is a string type convertible to fmt::basic_string_view.
+template <typename S>
+struct is_string : std::integral_constant<bool, !std::is_same<
+    dummy_string_view, decltype(to_string_view(declval<S>()))>::value> {};
 
 template <typename S>
-struct has_to_string_view {
-  typedef typename get_char_type<decltype(to_string_view(internal::declval<S>()))>::char_type char_type;
-  static const bool value = !std::is_same<void, decltype(to_string_view(internal::declval<S>()))>::value;
+struct char_t {
+  typedef decltype(to_string_view(declval<S>())) result;
+  typedef typename result::char_type type;
 };
-
-template <typename S>
-struct is_string : internal::has_to_string_view<S> {};
 
 template <typename Char>
 struct named_arg_base;
@@ -708,7 +726,7 @@ inline typename std::enable_if<
 template <typename C, typename T, typename Char = typename C::char_type>
 inline typename std::enable_if<
     internal::is_constructible<basic_string_view<Char>, T>::value &&
-    !internal::has_to_string_view<T>::value,
+    !internal::is_string<T>::value,
     init<C, basic_string_view<Char>, string_type>>::type
   make_value(const T &val) { return basic_string_view<Char>(val); }
 
@@ -717,7 +735,7 @@ inline typename std::enable_if<
     !convert_to_int<T, Char>::value && !std::is_same<T, Char>::value &&
     !std::is_convertible<T, basic_string_view<Char>>::value &&
     !internal::is_constructible<basic_string_view<Char>, T>::value &&
-    !internal::has_to_string_view<T>::value,
+    !internal::is_string<T>::value,
     // Implicit conversion to std::string is not handled here because it's
     // unsafe: https://github.com/fmtlib/fmt/issues/729
     init<C, const T &, custom_type>>::type
@@ -733,13 +751,12 @@ init<C, const void*, named_arg_type>
 
 template <typename C, typename S>
 FMT_CONSTEXPR11 typename std::enable_if<
-  internal::has_to_string_view<S>::value,
+  internal::is_string<S>::value,
   init<C, basic_string_view<typename C::char_type>, string_type>>::type
     make_value(const S &val) {
   // Handle adapted strings.
   static_assert(std::is_same<
-    typename C::char_type,
-    typename internal::has_to_string_view<S>::char_type>::value,
+    typename C::char_type, typename internal::char_t<S>::type>::value,
     "mismatch between char-types of context and argument");
   return to_string_view(val);
 }
@@ -1264,9 +1281,9 @@ struct wformat_args : basic_format_args<wformat_context> {
 #if FMT_USE_ALIAS_TEMPLATES
 /** String's character type. */
 template <typename S>
-using char_t = typename std::enable_if<internal::has_to_string_view<S>::value,
-  typename internal::has_to_string_view<S>::char_type>::type;
-#define FMT_CHAR(S) char_t<S>
+using char_t = typename std::enable_if<internal::is_string<S>::value,
+  typename internal::char_t<S>::type>::type;
+#define FMT_CHAR(S) fmt::char_t<S>
 
 template <typename S, typename T>
 using enable_if_string_t =
@@ -1275,8 +1292,7 @@ using enable_if_string_t =
 #else
 template <typename S>
 struct char_t : std::enable_if<
-    internal::has_to_string_view<S>::value,
-    typename internal::has_to_string_view<S>::char_type> {};
+    internal::is_string<S>::value, typename internal::char_t<S>::type> {};
 #define FMT_CHAR(S) typename char_t<S>::type
 
 #define FMT_ENABLE_IF_STRING(S, T) \
@@ -1334,33 +1350,6 @@ template <typename Char>
 std::basic_string<Char> vformat(
   basic_string_view<Char> format_str,
   basic_format_args<typename buffer_context<Char>::type> args);
-}
-
-/**
-  \rst
-  The function ``to_string_view`` adapts non-intrusively any kind of string or
-  string-like type if the user provides a (possibly templated) overload of
-  ``to_string_view`` which takes an instance of the string class
-  ``StringType<Char>`` and returns a ``fmt::basic_string_view<Char>``.
-  The conversion function must live in the very same namespace as
-  ``StringType<Char>`` to be picked up by ADL. Non-templated string types
-  like f.e. QString must return a ``basic_string_view`` with a fixed matching
-  char type.
-
-  **Example**::
-
-    namespace my_ns {
-    inline string_view to_string_view(const my_string &s) {
-        return { s.data(), s.length() };
-    }
-    }
-
-    std::string message = fmt::format(my_string("The answer is {}"), 42);
-  \endrst
- */
-template <typename Char>
-inline basic_string_view<Char> to_string_view(basic_string_view<Char> s) {
-  return s;
 }
 
 /**

@@ -269,9 +269,8 @@ inline void reset_color<wchar_t>(FILE *stream) FMT_NOEXCEPT {
 } // namespace internal
 
 template <
-  typename String,
-  typename Char = typename internal::has_to_string_view<String>::char_type>
-void vprint_rgb(rgb fd, const String &format,
+  typename S, typename Char = typename internal::char_t<S>::type>
+void vprint_rgb(rgb fd, const S &format,
                 basic_format_args<typename buffer_context<Char>::type> args) {
   internal::fputs<Char>(internal::make_foreground_color<Char>(fd), stdout);
   vprint(format, args);
@@ -279,9 +278,8 @@ void vprint_rgb(rgb fd, const String &format,
 }
 
 template <
-  typename String,
-  typename Char = typename internal::has_to_string_view<String>::char_type>
-void vprint_rgb(rgb fd, rgb bg, const String &format,
+  typename S, typename Char = typename internal::char_t<S>::type>
+void vprint_rgb(rgb fd, rgb bg, const S &format,
                 basic_format_args<typename buffer_context<Char>::type> args) {
   internal::fputs<Char>(internal::make_foreground_color<Char>(fd), stdout);
   internal::fputs<Char>(internal::make_background_color<Char>(bg), stdout);
@@ -299,7 +297,7 @@ template <typename String, typename... Args>
 typename std::enable_if<internal::is_string<String>::value>::type
 print(rgb fd, const String &format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename internal::has_to_string_view<String>::char_type char_t;
+  typedef typename internal::char_t<String>::type char_t;
   typedef typename buffer_context<char_t>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
   vprint_rgb(fd, format_str, basic_format_args<context_t>(as));
@@ -316,7 +314,7 @@ template <typename String, typename... Args>
 typename std::enable_if<internal::is_string<String>::value>::type
 print(rgb fd, rgb bg, const String &format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename internal::has_to_string_view<String>::char_type char_t;
+  typedef typename internal::is_string<String>::char_type char_t;
   typedef typename buffer_context<char_t>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
   vprint_rgb(fd, bg, format_str, basic_format_args<context_t>(as));
