@@ -426,11 +426,11 @@ TEST(PrintfTest, Char) {
 
 TEST(PrintfTest, String) {
   EXPECT_PRINTF("abc", "%s", "abc");
-  const char *null_str = nullptr;
+  const char *null_str = FMT_NULL;
   EXPECT_PRINTF("(null)", "%s", null_str);
   EXPECT_PRINTF("    (null)", "%10s", null_str);
   EXPECT_PRINTF(L"abc", L"%s", L"abc");
-  const wchar_t *null_wstr = nullptr;
+  const wchar_t *null_wstr = FMT_NULL;
   EXPECT_PRINTF(L"(null)", L"%s", null_wstr);
   EXPECT_PRINTF(L"    (null)", L"%10s", null_wstr);
 }
@@ -439,22 +439,22 @@ TEST(PrintfTest, Pointer) {
   int n;
   void *p = &n;
   EXPECT_PRINTF(fmt::format("{}", p), "%p", p);
-  p = nullptr;
+  p = FMT_NULL;
   EXPECT_PRINTF("(nil)", "%p", p);
   EXPECT_PRINTF("     (nil)", "%10p", p);
   const char *s = "test";
   EXPECT_PRINTF(fmt::format("{:p}", s), "%p", s);
-  const char *null_str = nullptr;
+  const char *null_str = FMT_NULL;
   EXPECT_PRINTF("(nil)", "%p", null_str);
 
   p = &n;
   EXPECT_PRINTF(fmt::format(L"{}", p), L"%p", p);
-  p = nullptr;
+  p = FMT_NULL;
   EXPECT_PRINTF(L"(nil)", L"%p", p);
   EXPECT_PRINTF(L"     (nil)", L"%10p", p);
   const wchar_t *w = L"test";
   EXPECT_PRINTF(fmt::format(L"{:p}", w), L"%p", w);
-  const wchar_t *null_wstr = nullptr;
+  const wchar_t *null_wstr = FMT_NULL;
   EXPECT_PRINTF(L"(nil)", L"%p", null_wstr);
 }
 

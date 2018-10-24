@@ -136,9 +136,9 @@ TEST(FormatTest, FormatNegativeNaN) {
 }
 
 TEST(FormatTest, StrError) {
-  char *message = nullptr;
+  char *message = FMT_NULL;
   char buffer[BUFFER_SIZE];
-  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = nullptr, 0),
+  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = FMT_NULL, 0),
                 "invalid buffer");
   EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = buffer, 0),
                 "invalid buffer");

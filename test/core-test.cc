@@ -65,6 +65,7 @@ struct formatter<test_struct, Char> {
 };
 FMT_END_NAMESPACE
 
+#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 470
 TEST(BufferTest, Noncopyable) {
   EXPECT_FALSE(std::is_copy_constructible<basic_buffer<char> >::value);
 #if !FMT_MSC_VER
@@ -80,11 +81,12 @@ TEST(BufferTest, Nonmoveable) {
   EXPECT_FALSE(std::is_move_assignable<basic_buffer<char> >::value);
 #endif
 }
+#endif
 
 // A test buffer with a dummy grow method.
 template <typename T>
 struct test_buffer : basic_buffer<T> {
-  void grow(std::size_t capacity) { this->set(nullptr, capacity); }
+  void grow(std::size_t capacity) { this->set(FMT_NULL, capacity); }
 };
 
 template <typename T>
@@ -104,7 +106,7 @@ struct mock_buffer : basic_buffer<T> {
 TEST(BufferTest, Ctor) {
   {
     mock_buffer<int> buffer;
-    EXPECT_EQ(nullptr, &buffer[0]);
+    EXPECT_EQ(FMT_NULL, &buffer[0]);
     EXPECT_EQ(static_cast<size_t>(0), buffer.size());
     EXPECT_EQ(static_cast<size_t>(0), buffer.capacity());
   }
@@ -219,7 +221,7 @@ struct custom_context {
 
       const char *format(const T &, custom_context& ctx) {
         ctx.called = true;
-        return nullptr;
+        return FMT_NULL;
       }
     };
   };
@@ -365,8 +367,8 @@ TEST(ArgTest, WStringArg) {
 }
 
 TEST(ArgTest, PointerArg) {
-  void *p = nullptr;
-  const void *cp = nullptr;
+  void *p = FMT_NULL;
+  const void *cp = FMT_NULL;
   CHECK_ARG_(char, cp, p);
   CHECK_ARG_(wchar_t, cp, p);
   CHECK_ARG(cp, );
@@ -377,7 +379,7 @@ struct check_custom {
       fmt::basic_format_arg<fmt::format_context>::handle h) const {
     struct test_buffer : fmt::internal::basic_buffer<char> {
       char data[10];
-      test_buffer() : basic_buffer(data, 0, 10) {}
+      test_buffer() : fmt::internal::basic_buffer<char>(data, 0, 10) {}
       void grow(std::size_t) {}
     } buffer;
     fmt::internal::basic_buffer<char> &base = buffer;

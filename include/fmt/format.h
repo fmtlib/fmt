@@ -1725,7 +1725,7 @@ FMT_CONSTEXPR void set_dynamic_spec(
     T &value, basic_format_arg<Context> arg, ErrorHandler eh) {
   unsigned long long big_value =
       visit_format_arg(Handler<ErrorHandler>(eh), arg);
-  if (big_value > (std::numeric_limits<int>::max)())
+  if (big_value > to_unsigned((std::numeric_limits<int>::max)()))
     eh.on_error("number is too big");
   value = static_cast<T>(big_value);
 }
@@ -2111,7 +2111,7 @@ FMT_CONSTEXPR void parse_format_string(
     ++p;
     if (p == end)
       return handler.on_error("invalid format string");
-    if (*p == '}') {
+    if (static_cast<char>(*p) == '}') {
       handler.on_arg_id();
       handler.on_replacement_field(p);
     } else if (*p == '{') {

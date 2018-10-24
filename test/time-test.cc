@@ -26,7 +26,7 @@ TEST(TimeTest, GrowBuffer) {
   for (int i = 0; i < 30; ++i)
     s += "%c";
   s += "}\n";
-  std::time_t t = std::time(nullptr);
+  std::time_t t = std::time(FMT_NULL);
   fmt::format(s, *std::localtime(&t));
 }
 
@@ -47,13 +47,13 @@ static bool EqualTime(const std::tm &lhs, const std::tm &rhs) {
 }
 
 TEST(TimeTest, LocalTime) {
-  std::time_t t = std::time(nullptr);
+  std::time_t t = std::time(FMT_NULL);
   std::tm tm = *std::localtime(&t);
   EXPECT_TRUE(EqualTime(tm, fmt::localtime(t)));
 }
 
 TEST(TimeTest, GMTime) {
-  std::time_t t = std::time(nullptr);
+  std::time_t t = std::time(FMT_NULL);
   std::tm tm = *std::gmtime(&t);
   EXPECT_TRUE(EqualTime(tm, fmt::gmtime(t)));
 }

@@ -28,13 +28,13 @@ class allocator_ref {
 
   void move(allocator_ref &other) {
     alloc_ = other.alloc_;
-    other.alloc_ = nullptr;
+    other.alloc_ = FMT_NULL;
   }
 
  public:
   typedef typename Allocator::value_type value_type;
 
-  explicit allocator_ref(Allocator *alloc = nullptr) : alloc_(alloc) {}
+  explicit allocator_ref(Allocator *alloc = FMT_NULL) : alloc_(alloc) {}
 
   allocator_ref(const allocator_ref &other) : alloc_(other.alloc_) {}
   allocator_ref(allocator_ref &&other) { move(other); }

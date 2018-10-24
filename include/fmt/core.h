@@ -91,8 +91,10 @@
 
 #if FMT_HAS_FEATURE(cxx_explicit_conversions) || \
     FMT_GCC_VERSION >= 405 || FMT_MSC_VER >= 1800
+# define FMT_USE_EXPLICIT 1
 # define FMT_EXPLICIT explicit
 #else
+# define FMT_USE_EXPLICIT 0
 # define FMT_EXPLICIT
 #endif
 
@@ -658,7 +660,12 @@ FMT_MAKE_VALUE_SAME(long_long_type, long long)
 FMT_MAKE_VALUE_SAME(ulong_long_type, unsigned long long)
 FMT_MAKE_VALUE(int_type, signed char, int)
 FMT_MAKE_VALUE(uint_type, unsigned char, unsigned)
-FMT_MAKE_VALUE(char_type, typename C::char_type, int)
+
+// This doesn't use FMT_MAKE_VALUE because of ambiguity in gcc 4.4.
+template <typename C, typename Char>
+FMT_CONSTEXPR typename std::enable_if<
+  std::is_same<typename C::char_type, Char>::value,
+  init<C, int, char_type>>::type make_value(Char val) { return val; }
 
 template <typename C>
 FMT_CONSTEXPR typename std::enable_if<
@@ -718,7 +725,7 @@ inline typename std::enable_if<
 
 template <typename C, typename T, typename Char = typename C::char_type>
 inline typename std::enable_if<
-    !convert_to_int<T, Char>::value &&
+    !convert_to_int<T, Char>::value && !std::is_same<T, Char>::value &&
     !std::is_convertible<T, basic_string_view<Char>>::value &&
     !internal::is_constructible<basic_string_view<Char>, T>::value &&
     !internal::has_to_string_view<T>::value,

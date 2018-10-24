@@ -212,7 +212,7 @@ TEST(AllocatorTest, allocator_ref) {
   test_allocator_ref ref2(ref);
   check_forwarding(alloc, ref2);
   test_allocator_ref ref3;
-  EXPECT_EQ(nullptr, ref3.get());
+  EXPECT_EQ(FMT_NULL, ref3.get());
   ref3 = ref;
   check_forwarding(alloc, ref3);
 }
@@ -228,7 +228,7 @@ static void check_move_buffer(const char *str,
   EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
   EXPECT_EQ(5u, buffer2.capacity());
   // Move should transfer allocator.
-  EXPECT_EQ(nullptr, buffer.get_allocator().get());
+  EXPECT_EQ(FMT_NULL, buffer.get_allocator().get());
   EXPECT_EQ(alloc, buffer2.get_allocator().get());
 }
 
@@ -313,7 +313,7 @@ TEST(MemoryBufferTest, Grow) {
 TEST(MemoryBufferTest, Allocator) {
   typedef allocator_ref< mock_allocator<char> > TestAllocator;
   basic_memory_buffer<char, 10, TestAllocator> buffer;
-  EXPECT_EQ(nullptr, buffer.get_allocator().get());
+  EXPECT_EQ(FMT_NULL, buffer.get_allocator().get());
   StrictMock< mock_allocator<char> > alloc;
   char mem;
   {
@@ -453,7 +453,7 @@ TEST(UtilTest, FormatSystemError) {
     fmt::print("warning: std::allocator allocates {} chars", max_size);
     return;
   }
-  fmt::format_system_error(message, EDOM, fmt::string_view(nullptr, max_size));
+  fmt::format_system_error(message, EDOM, fmt::string_view(FMT_NULL, max_size));
   EXPECT_EQ(fmt::format("error {}", EDOM), to_string(message));
 }
 
@@ -1489,7 +1489,7 @@ TEST(FormatterTest, FormatCString) {
   EXPECT_EQ("test", format("{0:s}", "test"));
   char nonconst[] = "nonconst";
   EXPECT_EQ("nonconst", format("{0}", nonconst));
-  EXPECT_THROW_MSG(format("{0}", static_cast<const char*>(nullptr)),
+  EXPECT_THROW_MSG(format("{0}", static_cast<const char*>(FMT_NULL)),
       format_error, "string pointer is null");
 }
 
@@ -1511,7 +1511,7 @@ TEST(FormatterTest, FormatUCharString) {
 
 TEST(FormatterTest, FormatPointer) {
   check_unknown_types(reinterpret_cast<void*>(0x1234), "p", "pointer");
-  EXPECT_EQ("0x0", format("{0}", static_cast<void*>(nullptr)));
+  EXPECT_EQ("0x0", format("{0}", static_cast<void*>(FMT_NULL)));
   EXPECT_EQ("0x1234", format("{0}", reinterpret_cast<void*>(0x1234)));
   EXPECT_EQ("0x1234", format("{0:p}", reinterpret_cast<void*>(0x1234)));
   EXPECT_EQ("0x" + std::string(sizeof(void*) * CHAR_BIT / 4, 'f'),
@@ -1546,7 +1546,7 @@ TEST(FormatterTest, FormatImplicitlyConvertibleToStringView) {
 }
 
 // std::is_constructible is broken in MSVC until version 2015.
-#if !FMT_MSC_VER || FMT_MSC_VER >= 1900
+#if FMT_USE_EXPLICIT && (!FMT_MSC_VER || FMT_MSC_VER >= 1900)
 struct explicitly_convertible_to_string_view {
   explicit operator fmt::string_view() const { return "foo"; }
 };
@@ -1652,7 +1652,7 @@ TEST(FormatterTest, FormatExamples) {
   FILE *ftest = safe_fopen(filename, "r");
   if (ftest) fclose(ftest);
   int error_code = errno;
-  EXPECT_TRUE(ftest == nullptr);
+  EXPECT_TRUE(ftest == FMT_NULL);
   EXPECT_SYSTEM_ERROR({
     FILE *f = safe_fopen(filename, "r");
     if (!f)
@@ -1769,7 +1769,7 @@ TEST(FormatTest, Variadic) {
 }
 
 TEST(FormatTest, Dynamic) {
-  using ctx = fmt::format_context;
+  typedef fmt::format_context ctx;
   std::vector<fmt::basic_format_arg<ctx>> args;
   args.emplace_back(fmt::internal::make_arg<ctx>(42));
   args.emplace_back(fmt::internal::make_arg<ctx>("abc1"));
@@ -2321,7 +2321,7 @@ FMT_CONSTEXPR bool equal(const char *s1, const char *s2) {
 
 template <typename... Args>
 FMT_CONSTEXPR bool test_error(const char *fmt, const char *expected_error) {
-  const char *actual_error = nullptr;
+  const char *actual_error = FMT_NULL;
   fmt::internal::check_format_string<char, test_error_handler, Args...>(
         string_view(fmt, len(fmt)), test_error_handler(actual_error));
   return equal(actual_error, expected_error);
@@ -2333,7 +2333,7 @@ FMT_CONSTEXPR bool test_error(const char *fmt, const char *expected_error) {
   static_assert(test_error<__VA_ARGS__>(fmt, error), "")
 
 TEST(FormatTest, FormatStringErrors) {
-  EXPECT_ERROR_NOARGS("foo", nullptr);
+  EXPECT_ERROR_NOARGS("foo", FMT_NULL);
   EXPECT_ERROR_NOARGS("}", "unmatched '}' in format string");
   EXPECT_ERROR("{0:s", "unknown format specifier", Date);
 #ifndef _MSC_VER

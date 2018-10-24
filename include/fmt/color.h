@@ -189,7 +189,7 @@ enum class color : uint32_t {
   white                   = 0xFFFFFF, // rgb(255,255,255)
   white_smoke             = 0xF5F5F5, // rgb(245,245,245)
   yellow                  = 0xFFFF00, // rgb(255,255,0)
-  yellow_green            = 0x9ACD32, // rgb(154,205,50)
+  yellow_green            = 0x9ACD32  // rgb(154,205,50)
 };  // enum class color
 
 // rgb is a struct for red, green and blue colors.
