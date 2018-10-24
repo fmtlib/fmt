@@ -738,35 +738,49 @@ class counting_iterator {
   T &operator*() const { return blackhole_; }
 };
 
-// An output iterator that truncates the output and counts the number of objects
-// written to it.
 template <typename OutputIt>
-class truncating_iterator {
- private:
-  typedef std::iterator_traits<OutputIt> traits;
-
+class truncating_iterator_base {
+ protected:
   OutputIt out_;
   std::size_t limit_;
   std::size_t count_;
-  mutable typename traits::value_type blackhole_;
+
+  truncating_iterator_base(OutputIt out, std::size_t limit)
+    : out_(out), limit_(limit), count_(0) {}
 
  public:
   typedef std::output_iterator_tag iterator_category;
-  typedef typename traits::value_type value_type;
-  typedef typename traits::difference_type difference_type;
-  typedef typename traits::pointer pointer;
-  typedef typename traits::reference reference;
-  typedef truncating_iterator _Unchecked_type;  // Mark iterator as checked.
-
-  truncating_iterator(OutputIt out, std::size_t limit)
-    : out_(out), limit_(limit), count_(0) {}
+  typedef void difference_type;
+  typedef void pointer;
+  typedef void reference;
+  typedef truncating_iterator_base _Unchecked_type;  // Mark iterator as checked.
 
   OutputIt base() const { return out_; }
   std::size_t count() const { return count_; }
+};
+
+// An output iterator that truncates the output and counts the number of objects
+// written to it.
+template <typename OutputIt, typename Enable = typename std::is_void<
+    typename std::iterator_traits<OutputIt>::value_type>::type>
+class truncating_iterator;
+
+template <typename OutputIt>
+class truncating_iterator<OutputIt, std::false_type>:
+  public truncating_iterator_base<OutputIt> {
+  typedef std::iterator_traits<OutputIt> traits;
+
+  mutable typename traits::value_type blackhole_;
+
+ public:
+  typedef typename traits::value_type value_type;
+
+  truncating_iterator(OutputIt out, std::size_t limit)
+    : truncating_iterator_base<OutputIt>(out, limit) {}
 
   truncating_iterator& operator++() {
-    if (count_++ < limit_)
-      ++out_;
+    if (this->count_++ < this->limit_)
+      ++this->out_;
     return *this;
   }
 
@@ -776,7 +790,31 @@ class truncating_iterator {
     return it;
   }
 
-  reference operator*() const { return count_ < limit_ ? *out_ : blackhole_; }
+  value_type& operator*() const {
+    return this->count_ < this->limit_ ? *this->out_ : blackhole_;
+  }
+};
+
+template <typename OutputIt>
+class truncating_iterator<OutputIt, std::true_type>:
+  public truncating_iterator_base<OutputIt> {
+ public:
+  typedef typename OutputIt::container_type::value_type value_type;
+
+  truncating_iterator(OutputIt out, std::size_t limit)
+    : truncating_iterator_base<OutputIt>(out, limit) {}
+
+  truncating_iterator& operator=(value_type val) {
+    if (this->count_++ < this->limit_)
+      this->out_ = val;
+    return *this;
+  }
+
+  truncating_iterator& operator++() { return *this; }
+
+  truncating_iterator& operator++(int) { return *this; }
+
+  truncating_iterator& operator*() { return *this; }
 };
 
 // Returns true if value is negative, false otherwise.
