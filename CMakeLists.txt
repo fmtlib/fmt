@@ -202,6 +202,7 @@ if (FMT_INSTALL)
     "Installation directory for cmake files, relative to ${CMAKE_INSTALL_PREFIX}.")
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
+  set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
   set(targets_export_name fmt-targets)
 
   set (INSTALL_TARGETS fmt)
@@ -215,11 +216,18 @@ if (FMT_INSTALL)
   set(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRING
       "Installation directory for include files, relative to ${CMAKE_INSTALL_PREFIX}.")
 
+  set(FMT_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH
+    "Installation directory for pkgconfig (.pc) files, relative to ${CMAKE_INSTALL_PREFIX}.")
+
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
     ${version_config}
     VERSION ${FMT_VERSION}
     COMPATIBILITY AnyNewerVersion)
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/support/cmake/fmt.pc.in"
+    "${pkgconfig}"
+    @ONLY)
   configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
     ${project_config}
@@ -240,6 +248,7 @@ if (FMT_INSTALL)
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
           DESTINATION ${FMT_LIB_DIR})
   install(FILES ${FMT_HEADERS} DESTINATION ${FMT_INC_DIR})
+  install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}")
 endif ()
 
 if (FMT_DOC)
