@@ -411,7 +411,6 @@ class basic_string_view {
   }
   friend bool operator<(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) < 0;
-
   }
   friend bool operator<=(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) <= 0;
