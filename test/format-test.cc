@@ -12,6 +12,7 @@
 #include <cstring>
 #include <list>
 #include <memory>
+#include <string>
 #include <stdint.h>
 
 // Check if fmt/format.h compiles with windows.h included before it.
@@ -183,6 +184,17 @@ TEST(IteratorTest, TruncatingIterator) {
   auto prev = it++;
   EXPECT_EQ(prev.base(), p);
   EXPECT_EQ(it.base(), p + 1);
+}
+
+TEST(IteratorTest, TruncatingBackInserter) {
+  std::string buffer;
+  auto bi = std::back_inserter(buffer);
+  fmt::internal::truncating_iterator<decltype(bi)> it(bi, 2);
+  *it++ = '4';
+  *it++ = '2';
+  *it++ = '1';
+  EXPECT_EQ(buffer.size(), 2);
+  EXPECT_EQ(buffer, "42");
 }
 
 TEST(MemoryBufferTest, Ctor) {
