@@ -116,10 +116,6 @@ matrix:
 #      after_success:
 #        - cd ${TRAVIS_BUILD_DIR}
 #        - tree ./libs
-  allow_failures:
-      # Errors
-    - env: COMPILER=g++-4.4 BUILD=Debug STANDARD=11
-      compiler: gcc
 
 before_script:
   - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then export CXX=${COMPILER}; fi
