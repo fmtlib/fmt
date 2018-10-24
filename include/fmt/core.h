@@ -208,17 +208,6 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 
-// A constexpr std::char_traits::length replacement for pre-C++17.
-template <typename Char>
-FMT_CONSTEXPR size_t length(const Char *s) {
-  const Char *start = s;
-  while (*s) ++s;
-  return s - start;
-}
-#if FMT_GCC_VERSION && !defined(__arm__)
-FMT_CONSTEXPR size_t length(const char *s) { return std::strlen(s); }
-#endif
-
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 405
 template <typename... T>
 struct is_constructible: std::false_type {};
@@ -377,8 +366,8 @@ class basic_string_view {
     the size with ``std::char_traits<Char>::length``.
     \endrst
    */
-  FMT_CONSTEXPR basic_string_view(const Char *s)
-    : data_(s), size_(internal::length(s)) {}
+  basic_string_view(const Char *s)
+    : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
   /** Constructs a string reference from a ``std::basic_string`` object. */
   template <typename Alloc>
@@ -422,6 +411,7 @@ class basic_string_view {
   }
   friend bool operator<(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) < 0;
+
   }
   friend bool operator<=(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) <= 0;

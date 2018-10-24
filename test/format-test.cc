@@ -2273,9 +2273,10 @@ struct test_format_string_handler {
   bool error = false;
 };
 
-FMT_CONSTEXPR bool parse_string(fmt::string_view s) {
+template <size_t N>
+FMT_CONSTEXPR bool parse_string(const char (&s)[N]) {
   test_format_string_handler h;
-  fmt::internal::parse_format_string<true>(s, h);
+  fmt::internal::parse_format_string<true>(fmt::string_view(s, N - 1), h);
   return !h.error;
 }
 
