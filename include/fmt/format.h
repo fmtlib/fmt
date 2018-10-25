@@ -3396,6 +3396,51 @@ inline typename buffer_context<Char>::type::iterator format_to(
                               basic_format_args<context>(as));
 }
 
+namespace internal {
+
+// Detect the iterator category of *any* given type in a SFINAE-friendly way.
+// Unfortunately, older implementations of std::iterator_traits are not safe
+// for use in a SFINAE-context.
+
+// the gist of C++17's void_t magic
+template<typename... Ts>
+struct void_ { typedef void type; };
+
+template <typename T, typename Enable = void>
+struct it_category : std::false_type {};
+
+template <typename T>
+struct it_category<T*> { typedef std::random_access_iterator_tag type; };
+
+template <typename T>
+struct it_category<T, typename void_<typename T::iterator_category>::type> {
+  typedef typename T::iterator_category type;
+};
+
+// Detect if *any* given type models the OutputIterator concept
+template <typename It>
+class is_output_iterator {
+  // Check for mutability because all iterator categories derived from
+  // std::input_iterator_tag *may* also meet the requirements of an
+  // OutputIterator, thereby falling into the category of 'mutable iterators'
+  // [iterator.requirements.general] clause 4.
+  // The compiler reveals this property only at the point of *actually
+  // dereferencing* the iterator!
+  template <typename U>
+  static decltype(*(internal::declval<U>())) test(std::input_iterator_tag);
+  template <typename U>
+  static char& test(std::output_iterator_tag);
+  template <typename U>
+  static const char& test(...);
+
+  typedef decltype(test<It>(typename it_category<It>::type{})) type;
+  typedef typename std::remove_reference<type>::type result;
+public:
+  static const bool value = !std::is_const<result>::value;
+};
+
+} // internal
+
 template <typename OutputIt, typename Char = char>
 //using format_context_t = basic_format_context<OutputIt, Char>;
 struct format_context_t { typedef basic_format_context<OutputIt, Char> type; };
@@ -3408,8 +3453,9 @@ struct format_args_t {
 };
 
 template <typename String, typename OutputIt, typename... Args>
-inline OutputIt vformat_to(
-    OutputIt out, const String &format_str,
+inline typename std::enable_if<internal::is_output_iterator<OutputIt>::value,
+                               OutputIt>::type
+    vformat_to(OutputIt out, const String &format_str,
     typename format_args_t<OutputIt, FMT_CHAR(String)>::type args) {
   typedef output_range<OutputIt, FMT_CHAR(String)> range;
   return vformat_to<arg_formatter<range>>(range(out),
@@ -3428,7 +3474,9 @@ inline OutputIt vformat_to(
  \endrst
  */
 template <typename OutputIt, typename S, typename... Args>
-inline FMT_ENABLE_IF_STRING(S, OutputIt)
+inline typename std::enable_if<
+    internal::is_string<S>::value &&
+    internal::is_output_iterator<OutputIt>::value, OutputIt>::type
     format_to(OutputIt out, const S &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename format_context_t<OutputIt, FMT_CHAR(S)>::type context;
@@ -3464,7 +3512,9 @@ inline format_arg_store<
 }
 
 template <typename OutputIt, typename Char, typename... Args>
-inline format_to_n_result<OutputIt> vformat_to_n(
+inline typename std::enable_if<
+    internal::is_output_iterator<OutputIt>::value,
+    format_to_n_result<OutputIt>>::type vformat_to_n(
     OutputIt out, std::size_t n, basic_string_view<Char> format_str,
     typename format_to_n_args<OutputIt, Char>::type args) {
   typedef internal::truncating_iterator<OutputIt> It;
@@ -3480,7 +3530,10 @@ inline format_to_n_result<OutputIt> vformat_to_n(
  \endrst
  */
 template <typename OutputIt, typename S, typename... Args>
-inline FMT_ENABLE_IF_STRING(S, format_to_n_result<OutputIt>)
+inline typename std::enable_if<
+    internal::is_string<S>::value &&
+    internal::is_output_iterator<OutputIt>::value,
+    format_to_n_result<OutputIt>>::type
     format_to_n(OutputIt out, std::size_t n, const S &format_str,
                 const Args &... args) {
   internal::check_format_string<Args...>(format_str);
