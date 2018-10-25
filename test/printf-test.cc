@@ -499,3 +499,13 @@ TEST(PrintfTest, OStream) {
   EXPECT_EQ("Don't panic!", os.str());
   EXPECT_EQ(12, ret);
 }
+
+TEST(PrintfTest, VPrintf) {
+  typedef fmt::printf_context<fmt::internal::buffer>::type context;
+  fmt::format_arg_store<context, int> as{42};
+  fmt::basic_format_args<context> args(as);
+  EXPECT_EQ(fmt::vsprintf("%d", args), "42");
+  EXPECT_WRITE(stdout, fmt::vprintf("%d", args), "42");
+  EXPECT_WRITE(stdout, fmt::vfprintf(stdout, "%d", args), "42");
+  EXPECT_WRITE(stdout, fmt::vfprintf(std::cout, "%d", args), "42");
+}

@@ -943,14 +943,14 @@ FMT_FUNC void report_windows_error(
 
 FMT_FUNC void vprint(std::FILE *f, string_view format_str, format_args args) {
   memory_buffer buffer;
-  vformat_to(buffer, format_str,
-             basic_format_args<buffer_context<char>::type>(args));
+  internal::vformat_to(buffer, format_str,
+                       basic_format_args<buffer_context<char>::type>(args));
   std::fwrite(buffer.data(), 1, buffer.size(), f);
 }
 
 FMT_FUNC void vprint(std::FILE *f, wstring_view format_str, wformat_args args) {
   wmemory_buffer buffer;
-  vformat_to(buffer, format_str, args);
+  internal::vformat_to(buffer, format_str, args);
   std::fwrite(buffer.data(), sizeof(wchar_t), buffer.size(), f);
 }
 

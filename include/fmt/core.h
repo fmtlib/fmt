@@ -1398,7 +1398,7 @@ typename std::enable_if<
     const S &format_str,
     basic_format_args<typename buffer_context<FMT_CHAR(S)>::type> args) {
   internal::container_buffer<Container> buf(internal::get_container(out));
-  vformat_to(buf, to_string_view(format_str), args);
+  internal::vformat_to(buf, to_string_view(format_str), args);
   return out;
 }
 

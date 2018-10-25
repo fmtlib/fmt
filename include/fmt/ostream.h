@@ -129,7 +129,7 @@ inline void vprint(std::basic_ostream<Char> &os,
                    basic_string_view<Char> format_str,
                    basic_format_args<typename buffer_context<Char>::type> args) {
   basic_memory_buffer<Char> buffer;
-  vformat_to(buffer, format_str, args);
+  internal::vformat_to(buffer, format_str, args);
   internal::write(os, buffer);
 }
 /**

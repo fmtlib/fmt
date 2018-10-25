@@ -3378,7 +3378,7 @@ template <typename S, typename Char = FMT_CHAR(S)>
 inline typename buffer_context<Char>::type::iterator vformat_to(
     internal::basic_buffer<Char> &buf, const S &format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
-  return vformat_to(buf, to_string_view(format_str), args);
+  return internal::vformat_to(buf, to_string_view(format_str), args);
 }
 
 template <
@@ -3391,8 +3391,8 @@ inline typename buffer_context<Char>::type::iterator format_to(
   internal::check_format_string<Args...>(format_str);
   typedef typename buffer_context<Char>::type context;
   format_arg_store<context, Args...> as{args...};
-  return vformat_to(buf, to_string_view(format_str),
-                    basic_format_args<context>(as));
+  return internal::vformat_to(buf, to_string_view(format_str),
+                              basic_format_args<context>(as));
 }
 
 template <typename OutputIt, typename Char = char>
@@ -3495,7 +3495,7 @@ inline std::basic_string<Char> internal::vformat(
     basic_string_view<Char> format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
   basic_memory_buffer<Char> buffer;
-  vformat_to(buffer, format_str, args);
+  internal::vformat_to(buffer, format_str, args);
   return fmt::to_string(buffer);
 }
 
