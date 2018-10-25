@@ -197,6 +197,24 @@ TEST(IteratorTest, TruncatingBackInserter) {
   EXPECT_EQ(buffer, "42");
 }
 
+TEST(IteratorTest, IsOutputIterator) {
+  EXPECT_TRUE(fmt::internal::is_output_iterator<char*>::value);
+  EXPECT_FALSE(fmt::internal::is_output_iterator<const char*>::value);
+  EXPECT_FALSE(fmt::internal::is_output_iterator<std::string>::value);
+  EXPECT_TRUE(fmt::internal::is_output_iterator<
+              std::back_insert_iterator<std::string>>::value);
+  EXPECT_TRUE(fmt::internal::is_output_iterator<
+              std::string::iterator>::value);
+  EXPECT_FALSE(fmt::internal::is_output_iterator<
+               std::string::const_iterator>::value);
+  EXPECT_FALSE(fmt::internal::is_output_iterator<std::list<char>>::value);
+  EXPECT_TRUE(fmt::internal::is_output_iterator<
+              std::list<char>::iterator>::value);
+  EXPECT_FALSE(fmt::internal::is_output_iterator<
+               std::list<char>::const_iterator>::value);
+  EXPECT_FALSE(fmt::internal::is_output_iterator<uint32_pair>::value);
+}
+
 TEST(MemoryBufferTest, Ctor) {
   basic_memory_buffer<char, 123> buffer;
   EXPECT_EQ(static_cast<size_t>(0), buffer.size());
