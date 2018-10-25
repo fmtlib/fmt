@@ -211,4 +211,7 @@ TEST(ColorsTest, Colors) {
                "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
   EXPECT_WRITE(stdout, fmt::print(fmt::color::blue, "blue"),
                "\x1b[38;2;000;000;255mblue\x1b[0m");
+  EXPECT_WRITE(stdout,
+               fmt::print(fmt::color::blue, fmt::color::red, "two color"),
+               "\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m");
 }
