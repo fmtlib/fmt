@@ -3365,13 +3365,20 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE> &buf) {
   return std::basic_string<Char>(buf.data(), buf.size());
 }
 
-template <typename String, typename Char = FMT_CHAR(String)>
-inline typename buffer_context<FMT_CHAR(String)>::type::iterator vformat_to(
-    internal::basic_buffer<Char> &buf, const String &format_str,
+template <typename Char>
+typename buffer_context<Char>::type::iterator internal::vformat_to(
+    internal::basic_buffer<Char> &buf, basic_string_view<Char> format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
-  typedef back_insert_range<internal::basic_buffer<FMT_CHAR(String)> > range;
+  typedef back_insert_range<internal::basic_buffer<Char> > range;
   return vformat_to<arg_formatter<range>>(
     buf, to_string_view(format_str), args);
+}
+
+template <typename S, typename Char = FMT_CHAR(S)>
+inline typename buffer_context<Char>::type::iterator vformat_to(
+    internal::basic_buffer<Char> &buf, const S &format_str,
+    basic_format_args<typename buffer_context<Char>::type> args) {
+  return vformat_to(buf, to_string_view(format_str), args);
 }
 
 template <

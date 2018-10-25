@@ -16,7 +16,7 @@
 #include <type_traits>
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 50201
+#define FMT_VERSION 50202
 
 #ifdef __has_feature
 # define FMT_HAS_FEATURE(x) __has_feature(x)
@@ -1350,6 +1350,11 @@ template <typename Char>
 std::basic_string<Char> vformat(
   basic_string_view<Char> format_str,
   basic_format_args<typename buffer_context<Char>::type> args);
+
+template <typename Char>
+typename buffer_context<Char>::type::iterator vformat_to(
+  internal::basic_buffer<Char> &buf, basic_string_view<Char> format_str,
+  basic_format_args<typename buffer_context<Char>::type> args);
 }
 
 /**
@@ -1371,15 +1376,9 @@ inline internal::named_arg<T, wchar_t> arg(wstring_view name, const T &arg) {
   return {name, arg};
 }
 
-// This function template is deleted intentionally to disable nested named
-// arguments as in ``format("{}", arg("a", arg("b", 42)))``.
+// Disable nested named arguments, e.g. ``arg("a", arg("b", 42))``.
 template <typename S, typename T, typename Char>
 void arg(S, internal::named_arg<T, Char>) = delete;
-
-template <typename S>
-typename buffer_context<FMT_CHAR(S)>::type::iterator vformat_to(
-  internal::basic_buffer<FMT_CHAR(S)> &buf, const S &format_str,
-  basic_format_args<buffer_context<FMT_CHAR(S)> > args);
 
 template <typename Container>
 struct is_contiguous: std::false_type {};

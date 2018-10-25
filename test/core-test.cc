@@ -532,6 +532,16 @@ TEST(CoreTest, Format) {
   EXPECT_EQ(fmt::format("{}", 42), "42");
 }
 
+TEST(CoreTest, FormatTo) {
+  // This should work without including fmt/format.h.
+#ifdef FMT_FORMAT_H_
+# error fmt/format.h must not be included in the core test
+#endif
+  std::string s;
+  fmt::format_to(std::back_inserter(s), "{}", 42);
+  EXPECT_EQ(s, "42");
+}
+
 TEST(CoreTest, ToStringViewForeignStrings) {
   using namespace my_ns;
   using namespace FakeQt;

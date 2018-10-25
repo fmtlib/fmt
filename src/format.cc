@@ -28,6 +28,9 @@ template FMT_API int internal::char_traits<char>::format_float(
 template FMT_API std::string internal::vformat<char>(
     string_view, basic_format_args<format_context>);
 
+template format_context::iterator internal::vformat_to(
+    internal::buffer &, string_view, basic_format_args<format_context>);
+
 template FMT_API void internal::sprintf_format(
     double, internal::buffer &, core_format_specs);
 template FMT_API void internal::sprintf_format(
