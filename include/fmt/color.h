@@ -314,7 +314,7 @@ template <typename String, typename... Args>
 typename std::enable_if<internal::is_string<String>::value>::type
 print(rgb fd, rgb bg, const String &format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename internal::is_string<String>::char_type char_t;
+  typedef typename internal::char_t<String>::type char_t;
   typedef typename buffer_context<char_t>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
   vprint_rgb(fd, bg, format_str, basic_format_args<context_t>(as));
