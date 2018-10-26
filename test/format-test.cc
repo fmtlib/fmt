@@ -1859,6 +1859,7 @@ TEST(FormatTest, UdlTemplate) {
   EXPECT_EQ("foo", "foo"_format());
   EXPECT_EQ("        42", "{0:10}"_format(42));
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
+  EXPECT_EQ(L"42", fmt::format(FMT_STRING(L"{}"), 42));
 }
 #endif // FMT_USE_USER_DEFINED_LITERALS
 
@@ -2378,6 +2379,9 @@ TEST(FormatTest, VFormatTo) {
   std::wstring w;
   fmt::vformat_to(std::back_inserter(w), L"{}", wargs);
   EXPECT_EQ(L"42", w);
+  w.clear();
+  fmt::vformat_to(std::back_inserter(w), FMT_STRING(L"{}"), args);
+  EXPECT_EQ("42", w);
 }
 
 #endif  // FMT_USE_CONSTEXPR
