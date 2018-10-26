@@ -2243,9 +2243,10 @@ FMT_CONSTEXPR bool check_format_string(
 template <typename... Args, typename String>
 typename std::enable_if<is_compile_string<String>::value>::type
     check_format_string(String format_str) {
+  typedef typename String::Char Char;
   FMT_CONSTEXPR_DECL bool invalid_format =
-      internal::check_format_string<char, internal::error_handler, Args...>(
-        string_view(format_str.data(), format_str.size()));
+      internal::check_format_string<Char, internal::error_handler, Args...>(
+        basic_string_view<Char>(format_str.data(), format_str.size()));
   (void)invalid_format;
 }
 
@@ -3597,9 +3598,10 @@ FMT_END_NAMESPACE
 #define FMT_STRING(s) [] { \
     typedef typename std::decay<decltype(s)>::type pointer; \
     struct S : fmt::compile_string { \
+      typedef typename std::remove_cv<std::remove_pointer<pointer>::type>::type Char;\
       static FMT_CONSTEXPR pointer data() { return s; } \
-      static FMT_CONSTEXPR size_t size() { return sizeof(s); } \
-      explicit operator fmt::string_view() const { return s; } \
+      static FMT_CONSTEXPR size_t size() { return sizeof(s) / sizeof(Char); } \
+      explicit operator fmt::basic_string_view<Char>() const { return s; } \
     }; \
     return S{}; \
   }()
