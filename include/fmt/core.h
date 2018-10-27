@@ -472,10 +472,10 @@ struct compile_string {};
 template <typename S>
 struct is_compile_string : std::is_base_of<compile_string, S> {};
 
-template <typename S, typename Enable = std::enable_if<is_compile_string<S>::value>>
-inline auto to_string_view(const S &s) -> basic_string_view<typename S::Char> { 
-  typedef typename S::Char Char;
-  return basic_string_view<Char>{s.data(), s.size() - 1}; 
+template <typename S, typename Enable = typename std::enable_if<is_compile_string<S>::value>::type>
+inline auto to_string_view(const S &s) -> basic_string_view<typename S::char_type> { 
+  typedef typename S::char_type char_type;
+  return basic_string_view<char_type>{s.data(), s.size() - 1}; 
 }
 
 template <typename Context>

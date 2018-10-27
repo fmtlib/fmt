@@ -2380,8 +2380,8 @@ TEST(FormatTest, VFormatTo) {
   fmt::vformat_to(std::back_inserter(w), L"{}", wargs);
   EXPECT_EQ(L"42", w);
   w.clear();
-  fmt::vformat_to(std::back_inserter(w), FMT_STRING(L"{}"), args);
-  EXPECT_EQ("42", w);
+  fmt::vformat_to(std::back_inserter(w), FMT_STRING(L"{}"), wargs);
+  EXPECT_EQ(L"42", w);
 }
 
 #endif  // FMT_USE_CONSTEXPR
