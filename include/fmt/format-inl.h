@@ -214,12 +214,9 @@ class locale {
 
 namespace internal {
 template <typename Char>
-FMT_FUNC Char thousands_sep(locale_provider *lp) {
+FMT_FUNC Char thousands_sep_impl(locale_provider *lp) {
   std::locale loc = lp ? lp->locale().get() : std::locale();
   return std::use_facet<std::numpunct<Char>>(loc).thousands_sep();
-}
-template <> FMT_FUNC char8_t thousands_sep<char8_t>(locale_provider *) {
-  return static_cast<char8_t>(',');
 }
 }
 #else

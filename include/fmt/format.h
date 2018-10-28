@@ -1034,7 +1034,17 @@ class add_thousands_sep {
 };
 
 template <typename Char>
-FMT_API Char thousands_sep(locale_provider *lp);
+FMT_API Char thousands_sep_impl(locale_provider *lp);
+
+template <typename Char>
+inline Char thousands_sep(locale_provider *lp) {
+  return Char(thousands_sep_impl<char>(lp));
+}
+
+template <>
+inline wchar_t thousands_sep(locale_provider *lp) {
+  return thousands_sep_impl<wchar_t>(lp);
+}
 
 // Formats a decimal unsigned integer value writing into buffer.
 // thousands_sep is a functor that is called after writing each char to
@@ -3416,7 +3426,7 @@ struct it_category<T, typename void_<typename T::iterator_category>::type> {
   typedef typename T::iterator_category type;
 };
 
-// Detect if *any* given type models the OutputIterator concept
+// Detect if *any* given type models the OutputIterator concept.
 template <typename It>
 class is_output_iterator {
   // Check for mutability because all iterator categories derived from
@@ -3434,10 +3444,9 @@ class is_output_iterator {
 
   typedef decltype(test<It>(typename it_category<It>::type{})) type;
   typedef typename std::remove_reference<type>::type result;
-public:
+ public:
   static const bool value = !std::is_const<result>::value;
 };
-
 } // internal
 
 template <typename OutputIt, typename Char = char>
