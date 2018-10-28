@@ -2240,13 +2240,12 @@ FMT_CONSTEXPR bool check_format_string(
   return true;
 }
 
-template <typename... Args, typename String>
-typename std::enable_if<is_compile_string<String>::value>::type
-    check_format_string(String format_str) {
-  typedef typename String::char_type char_type;
-  FMT_CONSTEXPR_DECL bool invalid_format =
-      internal::check_format_string<char_type, internal::error_handler, Args...>(
-        basic_string_view<char_type>(format_str.data(), format_str.size()));
+template <typename... Args, typename S>
+typename std::enable_if<is_compile_string<S>::value>::type
+    check_format_string(S format_str) {
+  typedef typename S::char_type char_t;
+  FMT_CONSTEXPR_DECL bool invalid_format = internal::check_format_string<
+      char_t, internal::error_handler, Args...>(to_string_view(format_str));
   (void)invalid_format;
 }
 
@@ -3649,14 +3648,15 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 FMT_END_NAMESPACE
 
 #define FMT_STRING(s) [] { \
-    typedef typename std::decay<decltype(s)>::type pointer; \
-    struct S : fmt::compile_string { \
-      typedef typename std::remove_cv<std::remove_pointer<pointer>::type>::type char_type;\
-      static FMT_CONSTEXPR pointer data() { return s; } \
-      static FMT_CONSTEXPR size_t size() { return sizeof(s) / sizeof(char_type); } \
-      explicit operator fmt::basic_string_view<char_type>() const { return s; } \
+    typedef typename std::remove_cv<std::remove_pointer< \
+      typename std::decay<decltype(s)>::type>::type>::type ct; \
+    struct str : fmt::compile_string { \
+      typedef ct char_type; \
+      FMT_CONSTEXPR operator fmt::basic_string_view<ct>() const { \
+        return {s, sizeof(s) / sizeof(ct) - 1}; \
+      } \
     }; \
-    return S{}; \
+    return str{}; \
   }()
 
 #if defined(FMT_STRING_ALIAS) && FMT_STRING_ALIAS
