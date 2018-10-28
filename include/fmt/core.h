@@ -208,14 +208,6 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 405
-template <typename... T>
-struct is_constructible: std::false_type {};
-#else
-template <typename... T>
-struct is_constructible : std::is_constructible<T...> {};
-#endif
-
 /** A contiguous memory buffer with an optional growing ability. */
 template <typename T>
 class basic_buffer {
@@ -336,6 +328,14 @@ struct error_handler {
 template <typename T>
 struct no_formatter_error : std::false_type {};
 }  // namespace internal
+
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 405
+template <typename... T>
+struct is_constructible: std::false_type {};
+#else
+template <typename... T>
+struct is_constructible : std::is_constructible<T...> {};
+#endif
 
 /**
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
@@ -725,7 +725,7 @@ inline typename std::enable_if<
 
 template <typename C, typename T, typename Char = typename C::char_type>
 inline typename std::enable_if<
-    internal::is_constructible<basic_string_view<Char>, T>::value &&
+    is_constructible<basic_string_view<Char>, T>::value &&
     !internal::is_string<T>::value,
     init<C, basic_string_view<Char>, string_type>>::type
   make_value(const T &val) { return basic_string_view<Char>(val); }
@@ -734,7 +734,7 @@ template <typename C, typename T, typename Char = typename C::char_type>
 inline typename std::enable_if<
     !convert_to_int<T, Char>::value && !std::is_same<T, Char>::value &&
     !std::is_convertible<T, basic_string_view<Char>>::value &&
-    !internal::is_constructible<basic_string_view<Char>, T>::value &&
+    !is_constructible<basic_string_view<Char>, T>::value &&
     !internal::is_string<T>::value,
     // Implicit conversion to std::string is not handled here because it's
     // unsafe: https://github.com/fmtlib/fmt/issues/729

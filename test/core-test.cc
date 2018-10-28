@@ -569,3 +569,43 @@ TEST(CoreTest, FormatForeignStrings) {
   EXPECT_EQ(fmt::format(QString(L"{}"), my_string<wchar_t>(L"42")), L"42");
   EXPECT_EQ(fmt::format(my_string<wchar_t>(L"{}"), QString(L"42")), L"42");
 }
+
+struct implicitly_convertible_to_string_view {
+  operator fmt::string_view() const { return "foo"; }
+};
+
+TEST(FormatterTest, FormatImplicitlyConvertibleToStringView) {
+  EXPECT_EQ("foo", fmt::format("{}", implicitly_convertible_to_string_view()));
+}
+
+// std::is_constructible is broken in MSVC until version 2015.
+#if FMT_USE_EXPLICIT && (!FMT_MSC_VER || FMT_MSC_VER >= 1900)
+struct explicitly_convertible_to_string_view {
+  explicit operator fmt::string_view() const { return "foo"; }
+};
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStringView) {
+  EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_view()));
+}
+
+struct explicitly_convertible_to_wstring_view {
+  explicit operator fmt::wstring_view() const { return L"foo"; }
+};
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToWStringView) {
+  EXPECT_EQ(L"foo",
+            fmt::format(L"{}", explicitly_convertible_to_wstring_view()));
+}
+
+struct explicitly_convertible_to_string_like {
+  template <
+      typename String,
+      typename = typename std::enable_if<
+        std::is_constructible<String, const char*, std::size_t>::value>::type>
+  FMT_EXPLICIT operator String() const { return String("foo", 3u); }
+};
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStringLike) {
+  EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_like()));
+}
+#endif
