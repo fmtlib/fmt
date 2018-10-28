@@ -350,7 +350,7 @@ user-defined types that have overloaded ``operator<<``::
   std::string s = fmt::format("The date is {}", date(2012, 12, 9));
   // s == "The date is 2012-12-9"
 
-.. doxygenfunction:: print(std::ostream&, string_view, const Args&...)
+.. doxygenfunction:: print(std::ostream&, const S&, const Args&...)
 
 .. _printf-api:
 
@@ -364,10 +364,10 @@ the POSIX extension for positional arguments. Unlike their standard
 counterparts, the ``fmt`` functions are type-safe and throw an exception if an
 argument type doesn't match its format specification.
 
-.. doxygenfunction:: printf(string_view, const Args&...)
+.. doxygenfunction:: printf(const S&, const Args&...)
 
-.. doxygenfunction:: fprintf(std::FILE *, string_view, const Args&...)
+.. doxygenfunction:: fprintf(std::FILE *, const S&, const Args&...)
 
-.. doxygenfunction:: fprintf(std::ostream&, string_view, const Args&...)
+.. doxygenfunction:: fprintf(std::ostream&, const S&, const Args&...)
 
-.. doxygenfunction:: sprintf(string_view, const Args&...)
+.. doxygenfunction:: sprintf(const S&, const Args&...)
