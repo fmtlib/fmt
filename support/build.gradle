@@ -4,12 +4,17 @@ buildscript {
         google()
         jcenter()
     }
-
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.1'
+        // Requires Gradle 4.4+
+        // https://developer.android.com/studio/releases/gradle-plugin
+        classpath 'com.android.tools.build:gradle:3.1.3'
     }
 }
-
+repositories {
+    google()
+    jcenter()
+}
+    
 // Output: Shared library (.so) for Android 
 apply plugin: 'com.android.library'
 
@@ -24,12 +29,9 @@ android {
     splits {
         abi {
             enable true
-            // Be general, as much as possible ...
-            // universalApk true 
-
             // Specify platforms for Application
             reset()
-            include "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
+            include  "arm64-v8a", "armeabi-v7a", "x86_64"
         }
     }
 
@@ -46,7 +48,7 @@ android {
                 arguments "-DBUILD_SHARED_LIBS=true"    // Build shared object
                 arguments "-DFMT_TEST=false"            // Skip test
                 arguments "-DFMT_DOC=false"             // Skip document
-                cppFlags  "-std=c++14"
+                cppFlags  "-std=c++17"
             }
         }
         println("Gradle CMake Plugin: ")
