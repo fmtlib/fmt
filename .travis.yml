@@ -83,7 +83,7 @@ matrix:
             - g++-4.4
           sources:
             - ubuntu-toolchain-r-test
-     # Android
+      # Android
     - language: android
       addons:
         apt:
@@ -115,7 +115,7 @@ matrix:
       before_script:
         - pushd ./support
       script:
-        - bash $GRADLE clean assemble
+        - bash ../$GRADLE clean assemble
       after_success:
         - popd;
         - tree ./libs
