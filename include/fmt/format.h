@@ -2243,7 +2243,7 @@ class format_string_checker {
 };
 
 template <typename Char, typename ErrorHandler, typename... Args>
-FMT_CONSTEXPR bool check_format_string(
+FMT_CONSTEXPR bool do_check_format_string(
     basic_string_view<Char> s, ErrorHandler eh = ErrorHandler()) {
   format_string_checker<Char, ErrorHandler, Args...> checker(s, eh);
   parse_format_string<true>(s, checker);
@@ -2254,7 +2254,7 @@ template <typename... Args, typename S>
 typename std::enable_if<is_compile_string<S>::value>::type
     check_format_string(S format_str) {
   typedef typename S::char_type char_t;
-  FMT_CONSTEXPR_DECL bool invalid_format = internal::check_format_string<
+  FMT_CONSTEXPR_DECL bool invalid_format = internal::do_check_format_string<
       char_t, internal::error_handler, Args...>(to_string_view(format_str));
   (void)invalid_format;
 }
@@ -3583,7 +3583,7 @@ class udl_formatter {
   std::basic_string<Char> operator()(const Args &... args) const {
     FMT_CONSTEXPR_DECL Char s[] = {CHARS..., '\0'};
     FMT_CONSTEXPR_DECL bool invalid_format =
-        check_format_string<Char, error_handler, Args...>(
+        do_check_format_string<Char, error_handler, Args...>(
           basic_string_view<Char>(s, sizeof...(CHARS)));
     (void)invalid_format;
     return format(s, args...);

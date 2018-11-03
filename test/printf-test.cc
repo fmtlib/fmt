@@ -509,3 +509,12 @@ TEST(PrintfTest, VPrintf) {
   EXPECT_WRITE(stdout, fmt::vfprintf(stdout, "%d", args), "42");
   EXPECT_WRITE(stdout, fmt::vfprintf(std::cout, "%d", args), "42");
 }
+
+template<typename... Args>
+void check_format_string_regression(fmt::string_view s, const Args&... args) {
+  fmt::sprintf(s, args...);
+}
+
+TEST(PrintfTest, CheckFormatStringRegression) {
+  check_format_string_regression("%c%s", 'x', "");
+}

@@ -1426,13 +1426,14 @@ TEST(FormatterTest, FormatFloat) {
 
 TEST(FormatterTest, FormatDouble) {
   check_unknown_types(1.2, "eEfFgGaA", "double");
-  EXPECT_EQ("0", format("{0:}", 0.0));
-  EXPECT_EQ("0.000000", format("{0:f}", 0.0));
-  EXPECT_EQ("392.65", format("{0:}", 392.65));
-  EXPECT_EQ("392.65", format("{0:g}", 392.65));
-  EXPECT_EQ("392.65", format("{0:G}", 392.65));
-  EXPECT_EQ("392.650000", format("{0:f}", 392.65));
-  EXPECT_EQ("392.650000", format("{0:F}", 392.65));
+  EXPECT_EQ("0", format("{:}", 0.0));
+  EXPECT_EQ("0.000000", format("{:f}", 0.0));
+  EXPECT_EQ("0", format("{:g}", 0.0));
+  EXPECT_EQ("392.65", format("{:}", 392.65));
+  EXPECT_EQ("392.65", format("{:g}", 392.65));
+  EXPECT_EQ("392.65", format("{:G}", 392.65));
+  EXPECT_EQ("392.650000", format("{:f}", 392.65));
+  EXPECT_EQ("392.650000", format("{:F}", 392.65));
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%e", 392.65);
   EXPECT_EQ(buffer, format("{0:e}", 392.65));
@@ -2315,7 +2316,7 @@ FMT_CONSTEXPR bool equal(const char *s1, const char *s2) {
 template <typename... Args>
 FMT_CONSTEXPR bool test_error(const char *fmt, const char *expected_error) {
   const char *actual_error = FMT_NULL;
-  fmt::internal::check_format_string<char, test_error_handler, Args...>(
+  fmt::internal::do_check_format_string<char, test_error_handler, Args...>(
         string_view(fmt, len(fmt)), test_error_handler(actual_error));
   return equal(actual_error, expected_error);
 }
