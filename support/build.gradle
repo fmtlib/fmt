@@ -1,3 +1,4 @@
+
 // General gradle arguments for root project
 buildscript {    
     repositories {
@@ -5,8 +6,12 @@ buildscript {
         jcenter()
     }
     dependencies {
-        // Requires Gradle 4.4+
+        //
         // https://developer.android.com/studio/releases/gradle-plugin
+        //
+        // Notice that 3.1.3 here is the version of [Android Gradle Plugin]
+        // Accroding to URL above you will need Gradle 4.4 or higher
+        //
         classpath 'com.android.tools.build:gradle:3.1.3'
     }
 }
@@ -38,8 +43,8 @@ android {
     defaultConfig {
         minSdkVersion 21    // Android 5.0+
         targetSdkVersion 25 // Follow Compile SDK
-        versionCode 16      // Follow release count
-        versionName "4.1.0" // Follow Official version
+        versionCode 20      // Follow release count
+        versionName "5.2.1" // Follow Official version
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         
         externalNativeBuild {
