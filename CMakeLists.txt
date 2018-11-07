@@ -69,7 +69,7 @@ include(CheckCXXCompilerFlag)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic
       -Wold-style-cast -Wundef
-      -Wredundant-decls -Wshadow -Wwrite-strings -Wpointer-arith
+      -Wredundant-decls -Wwrite-strings -Wpointer-arith
       -Wcast-qual -Wformat=2 -Wmissing-include-dirs
       -Wcast-align -Wnon-virtual-dtor
       -Wctor-dtor-privacy -Wdisabled-optimization
@@ -88,29 +88,17 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
           -Wnull-dereference -Wduplicated-cond)
   endif ()
-
   set(WERROR_FLAG -Werror)
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wpedantic
-      -Wno-weak-vtables -Wno-padded -Wno-gnu-statement-expression
-      -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-reserved-id-macro
-      -Wno-global-constructors -Wno-disabled-macro-expansion
-      -Wno-switch-enum -Wno-documentation-unknown-command
-      -Wno-unused-member-function
-      -Wno-format-nonliteral -Wno-missing-noreturn -Wno-undefined-func-template
-      -Wno-shadow -Wno-sign-conversion -Wno-used-but-marked-unused
-      -Wno-covered-switch-default -Wno-missing-prototypes
-      -Wno-missing-variable-declarations -Wno-double-promotion)
-
-  set(WERROR_FLAG -Werror)
-
-  check_cxx_compiler_flag(-Wno-zero-as-null-pointer-constant HAS_NULLPTR_WARNING)
+  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic)
+  check_cxx_compiler_flag(-Wzero-as-null-pointer-constant HAS_NULLPTR_WARNING)
   if (HAS_NULLPTR_WARNING)
     set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
-        -Wno-zero-as-null-pointer-constant)
+        -Wzero-as-null-pointer-constant)
   endif ()
+  set(WERROR_FLAG -Werror)
 endif ()
 
 if (MSVC)
