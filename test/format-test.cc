@@ -45,6 +45,22 @@ using testing::StrictMock;
 
 namespace {
 
+template <typename T>
+bool check_enabled_formatter() {
+  static_assert(std::is_default_constructible<fmt::formatter<T>>::value, "");
+  return true;
+}
+
+template <typename... T>
+void check_enabled_formatters() {
+  auto dummy = {check_enabled_formatter<T>()...};
+  (void)dummy;
+}
+
+TEST(FormatterTest, TestFormattersEnabled) {
+  check_enabled_formatters<char, signed char, unsigned char>();
+}
+
 // Format value using the standard library.
 template <typename Char, typename T>
 void std_format(const T &value, std::basic_string<Char> &result) {
@@ -768,7 +784,7 @@ TEST(FormatterTest, ArgErrors) {
 template <int N>
 struct TestFormat {
   template <typename... Args>
-  static std::string format(fmt::string_view format_str, const Args & ... args) {
+  static std::string format(fmt::string_view format_str, const Args &... args) {
     return TestFormat<N - 1>::format(format_str, N - 1, args...);
   }
 };
@@ -776,7 +792,7 @@ struct TestFormat {
 template <>
 struct TestFormat<0> {
   template <typename... Args>
-  static std::string format(fmt::string_view format_str, const Args & ... args) {
+  static std::string format(fmt::string_view format_str, const Args &... args) {
     return fmt::format(format_str, args...);
   }
 };
