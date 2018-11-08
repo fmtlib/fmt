@@ -1547,6 +1547,10 @@ FMT_CONSTEXPR bool is_name_start(Char c) {
 template <typename Iterator, typename ErrorHandler>
 FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
   assert('0' <= *it && *it <= '9');
+  if (*it == '0') {
+    ++it;
+    return 0;
+  }
   unsigned value = 0;
   // Convert to unsigned to prevent a warning.
   unsigned max_int = (std::numeric_limits<int>::max)();
@@ -1574,6 +1578,10 @@ template <typename Char, typename ErrorHandler>
 FMT_CONSTEXPR unsigned parse_nonnegative_int(
     const Char *&begin, const Char *end, ErrorHandler &&eh) {
   assert(begin != end && '0' <= *begin && *begin <= '9');
+  if (*begin == '0') {
+    ++begin;
+    return 0;
+  }
   unsigned value = 0;
   // Convert to unsigned to prevent a warning.
   unsigned max_int = (std::numeric_limits<int>::max)();
