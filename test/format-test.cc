@@ -45,6 +45,7 @@ using testing::StrictMock;
 
 namespace {
 
+#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 408
 template <typename T>
 bool check_enabled_formatter() {
   static_assert(std::is_default_constructible<fmt::formatter<T>>::value, "");
@@ -60,6 +61,7 @@ void check_enabled_formatters() {
 TEST(FormatterTest, TestFormattersEnabled) {
   check_enabled_formatters<char, signed char, unsigned char>();
 }
+#endif
 
 // Format value using the standard library.
 template <typename Char, typename T>
