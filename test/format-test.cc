@@ -46,20 +46,34 @@ using testing::StrictMock;
 namespace {
 
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 408
-template <typename T>
+template <typename Char, typename T>
 bool check_enabled_formatter() {
-  static_assert(std::is_default_constructible<fmt::formatter<T>>::value, "");
+  static_assert(
+        std::is_default_constructible<fmt::formatter<T, Char>>::value, "");
   return true;
 }
 
-template <typename... T>
+template <typename Char, typename... T>
 void check_enabled_formatters() {
-  auto dummy = {check_enabled_formatter<T>()...};
+  auto dummy = {check_enabled_formatter<Char, T>()...};
   (void)dummy;
 }
 
 TEST(FormatterTest, TestFormattersEnabled) {
-  check_enabled_formatters<char, signed char, unsigned char>();
+  check_enabled_formatters<char,
+      bool, char, signed char, unsigned char, short, unsigned short,
+      int, unsigned, long, unsigned long, long long, unsigned long long,
+      float, double, long double, void*, const void*,
+      char*, const char*, std::string>();
+  check_enabled_formatters<wchar_t,
+      bool, wchar_t, signed char, unsigned char, short, unsigned short,
+      int, unsigned, long, unsigned long, long long, unsigned long long,
+      float, double, long double, void*, const void*,
+      wchar_t*, const wchar_t*, std::wstring>();
+#if FMT_USE_NULLPTR
+  check_enabled_formatters<char, std::nullptr_t>();
+  check_enabled_formatters<wchar_t, std::nullptr_t>();
+#endif
 }
 #endif
 
