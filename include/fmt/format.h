@@ -3468,7 +3468,7 @@ template <typename String, typename OutputIt, typename... Args>
 inline typename std::enable_if<internal::is_output_iterator<OutputIt>::value,
                                OutputIt>::type
     vformat_to(OutputIt out, const String &format_str,
-    typename format_args_t<OutputIt, FMT_CHAR(String)>::type args) {
+               typename format_args_t<OutputIt, FMT_CHAR(String)>::type args) {
   typedef output_range<OutputIt, FMT_CHAR(String)> range;
   return vformat_to<arg_formatter<range>>(range(out),
                                           to_string_view(format_str), args);
