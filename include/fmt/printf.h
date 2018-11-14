@@ -243,7 +243,8 @@ class printf_arg_formatter:
    */
   printf_arg_formatter(internal::basic_buffer<char_type> &buffer,
                        format_specs &spec, context_type &ctx)
-    : base(back_insert_range<internal::basic_buffer<char_type>>(buffer), &spec),
+    : base(back_insert_range<internal::basic_buffer<char_type>>(buffer), &spec,
+           ctx.locale()),
       context_(ctx) {}
 
   template <typename T>

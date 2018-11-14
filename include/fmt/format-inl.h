@@ -203,25 +203,28 @@ FMT_FUNC size_t internal::count_code_points(basic_string_view<char8_t> s) {
 }
 
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
-class locale {
- private:
-  std::locale locale_;
-
- public:
-  explicit locale(std::locale loc = std::locale()) : locale_(loc) {}
-  std::locale get() { return locale_; }
-};
-
 namespace internal {
+
+template <typename Locale>
+locale_ref::locale_ref(const Locale &loc) : locale_(&loc) {
+  static_assert(std::is_same<Locale, std::locale>::value, "");
+}
+
+template <typename Locale>
+Locale locale_ref::get() const {
+  static_assert(std::is_same<Locale, std::locale>::value, "");
+  return locale_ ? *static_cast<const std::locale*>(locale_) : std::locale();
+}
+
 template <typename Char>
-FMT_FUNC Char thousands_sep_impl(locale_provider *lp) {
-  std::locale loc = lp ? lp->locale().get() : std::locale();
-  return std::use_facet<std::numpunct<Char>>(loc).thousands_sep();
+FMT_FUNC Char thousands_sep_impl(locale_ref loc) {
+  return std::use_facet<std::numpunct<Char> >(
+    loc.get<std::locale>()).thousands_sep();
 }
 }
 #else
 template <typename Char>
-FMT_FUNC Char internal::thousands_sep(locale_provider *lp) {
+FMT_FUNC Char internal::thousands_sep(locale_ref) {
   return FMT_STATIC_THOUSANDS_SEPARATOR;
 }
 #endif
@@ -958,10 +961,6 @@ FMT_FUNC void vprint(string_view format_str, format_args args) {
 FMT_FUNC void vprint(wstring_view format_str, wformat_args args) {
   vprint(stdout, format_str, args);
 }
-
-#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
-FMT_FUNC locale locale_provider::locale() { return fmt::locale(); }
-#endif
 
 FMT_END_NAMESPACE
 

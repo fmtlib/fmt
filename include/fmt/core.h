@@ -960,6 +960,22 @@ class arg_map {
   }
 };
 
+// A type-erased reference to an std::locale to avoid heavy <locale> include.
+class locale_ref {
+ private:
+  const void *locale_;  // A type-erased pointer to std::locale.
+  friend class locale;
+
+ public:
+  locale_ref() : locale_(FMT_NULL) {}
+
+  template <typename Locale>
+  explicit locale_ref(const Locale &loc);
+
+  template <typename Locale>
+  Locale get() const;
+};
+
 template <typename OutputIt, typename Context, typename Char>
 class context_base {
  public:
@@ -969,14 +985,16 @@ class context_base {
   basic_parse_context<Char> parse_context_;
   iterator out_;
   basic_format_args<Context> args_;
+  locale_ref loc_;
 
  protected:
   typedef Char char_type;
   typedef basic_format_arg<Context> format_arg;
 
   context_base(OutputIt out, basic_string_view<char_type> format_str,
-               basic_format_args<Context> ctx_args)
-  : parse_context_(format_str), out_(out), args_(ctx_args) {}
+               basic_format_args<Context> ctx_args,
+               locale_ref loc = locale_ref())
+  : parse_context_(format_str), out_(out), args_(ctx_args), loc_(loc) {}
 
   // Returns the argument with specified index.
   format_arg do_get_arg(unsigned arg_id) {
@@ -1009,6 +1027,8 @@ class context_base {
 
   // Advances the begin iterator to ``it``.
   void advance_to(iterator it) { out_ = it; }
+
+  locale_ref locale() { return loc_; }
 };
 
 template <typename Context, typename T>
@@ -1078,8 +1098,9 @@ class basic_format_context :
    stored in the object so make sure they have appropriate lifetimes.
    */
   basic_format_context(OutputIt out, basic_string_view<char_type> format_str,
-                basic_format_args<basic_format_context> ctx_args)
-    : base(out, format_str, ctx_args) {}
+                       basic_format_args<basic_format_context> ctx_args,
+                       internal::locale_ref loc = internal::locale_ref())
+    : base(out, format_str, ctx_args, loc) {}
 
   format_arg next_arg() {
     return this->do_get_arg(this->parse_context().next_arg_id());

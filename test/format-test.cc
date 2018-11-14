@@ -603,17 +603,6 @@ TEST(StringViewTest, Ctor) {
   EXPECT_EQ(4u, string_view(std::string("defg")).size());
 }
 
-// GCC 4.6 doesn't have std::is_copy_*.
-#if FMT_GCC_VERSION && FMT_GCC_VERSION >= 407
-TEST(WriterTest, NotCopyConstructible) {
-  EXPECT_FALSE(std::is_copy_constructible<fmt::writer>::value);
-}
-
-TEST(WriterTest, NotCopyAssignable) {
-  EXPECT_FALSE(std::is_copy_assignable<fmt::writer>::value);
-}
-#endif
-
 TEST(WriterTest, Data) {
   memory_buffer buf;
   fmt::writer w(buf);
@@ -1947,7 +1936,7 @@ class mock_arg_formatter:
   typedef buffer_range range;
 
   mock_arg_formatter(fmt::format_context &ctx, fmt::format_specs *s = FMT_NULL)
-    : base(fmt::internal::get_container(ctx.out()), s) {
+    : base(fmt::internal::get_container(ctx.out()), s, ctx.locale()) {
     EXPECT_CALL(*this, call(42));
   }
 

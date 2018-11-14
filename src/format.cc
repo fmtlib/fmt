@@ -9,10 +9,11 @@
 
 FMT_BEGIN_NAMESPACE
 template struct internal::basic_data<void>;
+template internal::locale_ref::locale_ref(const std::locale &loc);
 
 // Explicit instantiations for char.
 
-template FMT_API char internal::thousands_sep_impl(locale_provider *lp);
+template FMT_API char internal::thousands_sep_impl(locale_ref);
 
 template void internal::basic_buffer<char>::append(const char *, const char *);
 
@@ -38,7 +39,7 @@ template FMT_API void internal::sprintf_format(
 
 // Explicit instantiations for wchar_t.
 
-template FMT_API wchar_t internal::thousands_sep_impl(locale_provider *);
+template FMT_API wchar_t internal::thousands_sep_impl(locale_ref);
 
 template void internal::basic_buffer<wchar_t>::append(
     const wchar_t *, const wchar_t *);
