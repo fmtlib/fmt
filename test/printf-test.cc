@@ -520,7 +520,7 @@ TEST(PrintfTest, CheckFormatStringRegression) {
 }
 
 
-TEST(PrintfTest, VSPrintfMessageExample) {
+TEST(PrintfTest, VSPrintfMakeArgsExample) {
   EXPECT_EQ(
       "[42] something happened",
       fmt::vsprintf(
@@ -528,7 +528,7 @@ TEST(PrintfTest, VSPrintfMessageExample) {
 }
 
 
-TEST(PrintfTest, VSPrintfWMessageExample) {
+TEST(PrintfTest, VSPrintfMakeWArgsExample) {
   EXPECT_EQ(
       L"[42] something happened",
       fmt::vsprintf(

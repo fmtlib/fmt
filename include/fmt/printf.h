@@ -578,33 +578,30 @@ struct printf_context {
     std::back_insert_iterator<Buffer>, typename Buffer::value_type> type;
 };
 
-typedef basic_format_args<printf_context<internal::buffer>::type> printf_args;
-typedef basic_format_args<printf_context<internal::wbuffer>::type> wprintf_args;
-
 typedef printf_context<internal::buffer>::type printf_char_context;
 typedef printf_context<internal::wbuffer>::type printf_wchar_context;
 
+typedef basic_format_args<printf_char_context> printf_args;
+typedef basic_format_args<printf_wchar_context> wprintf_args;
 
 /**
   \rst
   Constructs an `~fmt::format_arg_store` object that contains references to
-  arguments and can be implicitly converted to `~fmt::printf_args`. `Context`
-  can be omitted in which case it defaults to `~fmt::printf_char_context`.
+  arguments and can be implicitly converted to `~fmt::printf_args`. 
   \endrst
  */
-template<typename Context=printf_char_context, typename... Args>
-inline format_arg_store<Context, Args...>
+template<typename... Args>
+inline format_arg_store<printf_char_context, Args...>
   make_printf_args(const Args &... args) { return {args...}; }
 
 /**
   \rst
   Constructs an `~fmt::format_arg_store` object that contains references to
-  arguments and can be implicitly converted to `~fmt::wprintf_args`. `Context`
-  can be omitted in which case it defaults to `~fmt::printf_wchar_context`.
+  arguments and can be implicitly converted to `~fmt::wprintf_args`. 
   \endrst
  */
-template<typename Context = printf_wchar_context, typename... Args>
-inline format_arg_store<Context, Args...>
+template<typename... Args>
+inline format_arg_store<printf_wchar_context, Args...>
   make_wprintf_args(const Args &... args) { return {args...}; }
 
 
