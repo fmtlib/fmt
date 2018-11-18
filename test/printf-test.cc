@@ -518,3 +518,19 @@ void check_format_string_regression(fmt::string_view s, const Args&... args) {
 TEST(PrintfTest, CheckFormatStringRegression) {
   check_format_string_regression("%c%s", 'x', "");
 }
+
+
+TEST(PrintfTest, VSPrintfMessageExample) {
+  EXPECT_EQ(
+      "[42] something happened",
+      fmt::vsprintf(
+          "[%d] %s happened", fmt::make_printf_args( 42, "something" ) ) );
+}
+
+
+TEST(PrintfTest, VSPrintfWMessageExample) {
+  EXPECT_EQ(
+      L"[42] something happened",
+      fmt::vsprintf(
+          L"[%d] %s happened", fmt::make_wprintf_args( 42, L"something" ) ) );
+}
