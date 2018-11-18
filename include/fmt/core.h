@@ -1184,12 +1184,8 @@ const long long format_arg_store<Context, Args...>::TYPES = get_types();
   can be omitted in which case it defaults to `~fmt::context`.
   \endrst
  */
-template <typename Context, typename ...Args>
+template <typename Context = format_context, typename ...Args>
 inline format_arg_store<Context, Args...>
-  make_format_args(const Args &... args) { return {args...}; }
-
-template <typename ...Args>
-inline format_arg_store<format_context, Args...>
   make_format_args(const Args &... args) { return {args...}; }
 
 /** Formatting arguments. */
