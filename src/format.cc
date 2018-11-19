@@ -15,7 +15,7 @@ template internal::locale_ref::locale_ref(const std::locale &loc);
 
 template FMT_API char internal::thousands_sep_impl(locale_ref);
 
-template void internal::basic_buffer<char>::append(const char *, const char *);
+template FMT_API void internal::basic_buffer<char>::append(const char *, const char *);
 
 template void internal::arg_map<format_context>::init(
     const basic_format_args<format_context> &args);
