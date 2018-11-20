@@ -224,7 +224,7 @@ FMT_FUNC Char thousands_sep_impl(locale_ref loc) {
 }
 #else
 template <typename Char>
-FMT_FUNC Char internal::thousands_sep(locale_ref) {
+FMT_FUNC Char internal::thousands_sep_impl(locale_ref) {
   return FMT_STATIC_THOUSANDS_SEPARATOR;
 }
 #endif
