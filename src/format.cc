@@ -9,7 +9,7 @@
 
 FMT_BEGIN_NAMESPACE
 template struct internal::basic_data<void>;
-template internal::locale_ref::locale_ref(const std::locale &loc);
+template FMT_API internal::locale_ref::locale_ref(const std::locale &loc);
 
 // Explicit instantiations for char.
 
@@ -17,7 +17,7 @@ template FMT_API char internal::thousands_sep_impl(locale_ref);
 
 template FMT_API void internal::basic_buffer<char>::append(const char *, const char *);
 
-template void internal::arg_map<format_context>::init(
+template FMT_API void internal::arg_map<format_context>::init(
     const basic_format_args<format_context> &args);
 
 template FMT_API int internal::char_traits<char>::format_float(
@@ -29,7 +29,7 @@ template FMT_API int internal::char_traits<char>::format_float(
 template FMT_API std::string internal::vformat<char>(
     string_view, basic_format_args<format_context>);
 
-template format_context::iterator internal::vformat_to(
+template FMT_API format_context::iterator internal::vformat_to(
     internal::buffer &, string_view, basic_format_args<format_context>);
 
 template FMT_API void internal::sprintf_format(
@@ -41,10 +41,10 @@ template FMT_API void internal::sprintf_format(
 
 template FMT_API wchar_t internal::thousands_sep_impl(locale_ref);
 
-template void internal::basic_buffer<wchar_t>::append(
+template FMT_API void internal::basic_buffer<wchar_t>::append(
     const wchar_t *, const wchar_t *);
 
-template void internal::arg_map<wformat_context>::init(
+template FMT_API void internal::arg_map<wformat_context>::init(
     const basic_format_args<wformat_context> &);
 
 template FMT_API int internal::char_traits<wchar_t>::format_float(
