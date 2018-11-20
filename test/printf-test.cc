@@ -521,14 +521,14 @@ TEST(PrintfTest, CheckFormatStringRegression) {
 
 
 TEST(PrintfTest, VSPrintfMakeArgsExample) {
-  fmt::printf_args args = fmt::make_printf_args( 42, "something");
   EXPECT_EQ("[42] something happened",
-      fmt::vsprintf( "[%d] %s happened", args));
+      fmt::vsprintf(
+          "[%d] %s happened", fmt::make_printf_args( 42, "something" ) ) );
 }
 
 
 TEST( PrintfTest, VSPrintfMakeWArgsExample ) {
-  fmt::wprintf_args args = fmt::make_wprintf_args(42, L"something");
   EXPECT_EQ(L"[42] something happened",
-      fmt::vsprintf(L"[%d] %s happened", args));
+      fmt::vsprintf(
+          L"[%d] %s happened", fmt::make_wprintf_args( 42, L"something" ) ) );
 }
