@@ -501,7 +501,7 @@ TEST(PrintfTest, OStream) {
 }
 
 TEST(PrintfTest, VPrintf) {
-  typedef fmt::printf_context<fmt::internal::buffer>::type context;
+  typedef fmt::basic_printf_context_t<fmt::internal::buffer>::type context;
   fmt::format_arg_store<context, int> as{42};
   fmt::basic_format_args<context> args(as);
   EXPECT_EQ(fmt::vsprintf("%d", args), "42");
@@ -521,16 +521,14 @@ TEST(PrintfTest, CheckFormatStringRegression) {
 
 
 TEST(PrintfTest, VSPrintfMakeArgsExample) {
-  EXPECT_EQ(
-      "[42] something happened",
-      fmt::vsprintf(
-          "[%d] %s happened", fmt::make_printf_args( 42, "something" ) ) );
+  fmt::printf_args args = fmt::make_printf_args( 42, "something");
+  EXPECT_EQ("[42] something happened",
+      fmt::vsprintf( "[%d] %s happened", args));
 }
 
 
-TEST(PrintfTest, VSPrintfMakeWArgsExample) {
-  EXPECT_EQ(
-      L"[42] something happened",
-      fmt::vsprintf(
-          L"[%d] %s happened", fmt::make_wprintf_args( 42, L"something" ) ) );
+TEST( PrintfTest, VSPrintfMakeWArgsExample ) {
+  fmt::wprintf_args args = fmt::make_wprintf_args(42, L"something");
+  EXPECT_EQ(L"[42] something happened",
+      fmt::vsprintf(L"[%d] %s happened", args));
 }
