@@ -501,9 +501,8 @@ TEST(PrintfTest, OStream) {
 }
 
 TEST(PrintfTest, VPrintf) {
-  typedef fmt::basic_printf_context_t<fmt::internal::buffer>::type context;
-  fmt::format_arg_store<context, int> as{42};
-  fmt::basic_format_args<context> args(as);
+  fmt::format_arg_store<fmt::printf_context, int> as{42};
+  fmt::basic_format_args<fmt::printf_context> args( as );
   EXPECT_EQ(fmt::vsprintf("%d", args), "42");
   EXPECT_WRITE(stdout, fmt::vprintf("%d", args), "42");
   EXPECT_WRITE(stdout, fmt::vfprintf(stdout, "%d", args), "42");
