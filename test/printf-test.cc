@@ -519,8 +519,8 @@ TEST(PrintfTest, CheckFormatStringRegression) {
 }
 
 TEST(PrintfTest, VSPrintfMakeArgsExample) {
-  fmt::format_arg_store<fmt::printf_context, int, const char *> as{42,
-                                                                   "something"};
+  fmt::format_arg_store<fmt::printf_context, int, const char *> as{
+      42, "something"};
   fmt::basic_format_args<fmt::printf_context> args(as);
   EXPECT_EQ(
       "[42] something happened", fmt::vsprintf("[%d] %s happened", args));
@@ -539,7 +539,7 @@ TEST(PrintfTest, VSPrintfMakeArgsExample) {
 
 TEST(PrintfTest, VSPrintfMakeWArgsExample) {
   fmt::format_arg_store<fmt::wprintf_context, int, const wchar_t *> as{
-     42,L"something"};
+     42, L"something"};
   fmt::basic_format_args<fmt::wprintf_context> args(as);
   EXPECT_EQ(
      L"[42] something happened",
