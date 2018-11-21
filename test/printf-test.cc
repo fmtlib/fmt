@@ -502,7 +502,7 @@ TEST(PrintfTest, OStream) {
 
 TEST(PrintfTest, VPrintf) {
   fmt::format_arg_store<fmt::printf_context, int> as{42};
-  fmt::basic_format_args<fmt::printf_context> args( as );
+  fmt::basic_format_args<fmt::printf_context> args(as);
   EXPECT_EQ(fmt::vsprintf("%d", args), "42");
   EXPECT_WRITE(stdout, fmt::vprintf("%d", args), "42");
   EXPECT_WRITE(stdout, fmt::vfprintf(stdout, "%d", args), "42");
@@ -518,18 +518,17 @@ TEST(PrintfTest, CheckFormatStringRegression) {
   check_format_string_regression("%c%s", 'x', "");
 }
 
-TEST( PrintfTest, VSPrintfMakeArgsExample ) {
+TEST(PrintfTest, VSPrintfMakeArgsExample) {
   fmt::format_arg_store<fmt::printf_context, int, const char *> as{42,
                                                                    "something"};
   fmt::basic_format_args<fmt::printf_context> args(as);
   EXPECT_EQ(
       "[42] something happened", fmt::vsprintf("[%d] %s happened", args));
-  fmt::format_arg_store<fmt::printf_context, int, char[10]> as2 =
-      fmt::make_printf_args(42, "something");
+  auto as2 = fmt::make_printf_args(42, "something");
   fmt::basic_format_args<fmt::printf_context> args2(as2);
   EXPECT_EQ(
       "[42] something happened", fmt::vsprintf("[%d] %s happened", args2));
-  //the older gcc versions can"t cast the return value
+  //the older gcc versions can't cast the return value
 #if !defined(__GNUC__) || (__GNUC__ > 4) 
   EXPECT_EQ(
       "[42] something happened",
@@ -538,18 +537,18 @@ TEST( PrintfTest, VSPrintfMakeArgsExample ) {
 #endif
 }
 
-TEST( PrintfTest, VSPrintfMakeWArgsExample ) {
+TEST(PrintfTest, VSPrintfMakeWArgsExample) {
   fmt::format_arg_store<fmt::wprintf_context, int, const wchar_t *> as{
      42,L"something"};
   fmt::basic_format_args<fmt::wprintf_context> args(as);
   EXPECT_EQ(
      L"[42] something happened",
      fmt::vsprintf(L"[%d] %s happened", args));
-  fmt::format_arg_store<fmt::wprintf_context, int, wchar_t[10]> as2 =
-      fmt::make_wprintf_args(42, L"something");
-  fmt::basic_format_args<fmt::wprintf_context> args2( as2 );
+  auto  as2 = fmt::make_wprintf_args(42, L"something");
+  fmt::basic_format_args<fmt::wprintf_context> args2(as2);
   EXPECT_EQ(
       L"[42] something happened", fmt::vsprintf(L"[%d] %s happened", args2));
+  // the older gcc versions can't cast the return value
 #if !defined(__GNUC__) || (__GNUC__ > 4)
   EXPECT_EQ(
       L"[42] something happened",
