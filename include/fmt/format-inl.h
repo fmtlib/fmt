@@ -45,12 +45,17 @@
 #endif
 
 #ifdef _MSC_VER
-# pragma warning(push)
-# pragma warning(disable: 4127)  // conditional expression is constant
-# pragma warning(disable: 4702)  // unreachable code
+# if FMT_CLANG_VERSION == 0
+#  pragma warning(push)
+#  pragma warning(disable: 4127)  // conditional expression is constant
+#  pragma warning(disable: 4702)  // unreachable code
 // Disable deprecation warning for strerror. The latter is not called but
 // MSVC fails to detect it.
-# pragma warning(disable: 4996)
+#  pragma warning(disable: 4996)
+# else
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdeprecated-declarations"
+# endif
 #endif
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
@@ -965,7 +970,11 @@ FMT_FUNC void vprint(wstring_view format_str, wformat_args args) {
 FMT_END_NAMESPACE
 
 #ifdef _MSC_VER
-# pragma warning(pop)
+# if FMT_CLANG_VERSION == 0
+#  pragma warning(pop)
+#else
+#  pragma clang diagnostic pop
+# endif
 #endif
 
 #endif  // FMT_FORMAT_INL_H_
