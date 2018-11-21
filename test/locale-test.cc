@@ -1,4 +1,4 @@
-// Formatting library for C++ - core tests
+// Formatting library for C++ - locale tests
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.

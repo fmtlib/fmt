@@ -228,7 +228,9 @@ struct custom_context {
 
   bool called;
 
-  fmt::parse_context parse_context() { return fmt::parse_context(""); }
+  fmt::format_parse_context parse_context() {
+    return fmt::format_parse_context("");
+  }
   void advance_to(const char *) {}
 };
 
