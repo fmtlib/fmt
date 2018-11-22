@@ -501,9 +501,8 @@ TEST(PrintfTest, OStream) {
 }
 
 TEST(PrintfTest, VPrintf) {
-  typedef fmt::printf_context<fmt::internal::buffer>::type context;
-  fmt::format_arg_store<context, int> as{42};
-  fmt::basic_format_args<context> args(as);
+  fmt::format_arg_store<fmt::printf_context, int> as{42};
+  fmt::basic_format_args<fmt::printf_context> args(as);
   EXPECT_EQ(fmt::vsprintf("%d", args), "42");
   EXPECT_WRITE(stdout, fmt::vprintf("%d", args), "42");
   EXPECT_WRITE(stdout, fmt::vfprintf(stdout, "%d", args), "42");
@@ -517,4 +516,43 @@ void check_format_string_regression(fmt::string_view s, const Args&... args) {
 
 TEST(PrintfTest, CheckFormatStringRegression) {
   check_format_string_regression("%c%s", 'x', "");
+}
+
+TEST(PrintfTest, VSPrintfMakeArgsExample) {
+  fmt::format_arg_store<fmt::printf_context, int, const char *> as{
+      42, "something"};
+  fmt::basic_format_args<fmt::printf_context> args(as);
+  EXPECT_EQ(
+      "[42] something happened", fmt::vsprintf("[%d] %s happened", args));
+  auto as2 = fmt::make_printf_args(42, "something");
+  fmt::basic_format_args<fmt::printf_context> args2(as2);
+  EXPECT_EQ(
+      "[42] something happened", fmt::vsprintf("[%d] %s happened", args2));
+  //the older gcc versions can't cast the return value
+#if !defined(__GNUC__) || (__GNUC__ > 4) 
+  EXPECT_EQ(
+      "[42] something happened",
+      fmt::vsprintf(
+          "[%d] %s happened", fmt::make_printf_args(42, "something")));
+#endif
+}
+
+TEST(PrintfTest, VSPrintfMakeWArgsExample) {
+  fmt::format_arg_store<fmt::wprintf_context, int, const wchar_t *> as{
+     42, L"something"};
+  fmt::basic_format_args<fmt::wprintf_context> args(as);
+  EXPECT_EQ(
+     L"[42] something happened",
+     fmt::vsprintf(L"[%d] %s happened", args));
+  auto  as2 = fmt::make_wprintf_args(42, L"something");
+  fmt::basic_format_args<fmt::wprintf_context> args2(as2);
+  EXPECT_EQ(
+      L"[42] something happened", fmt::vsprintf(L"[%d] %s happened", args2));
+  // the older gcc versions can't cast the return value
+#if !defined(__GNUC__) || (__GNUC__ > 4)
+  EXPECT_EQ(
+      L"[42] something happened",
+      fmt::vsprintf(
+          L"[%d] %s happened", fmt::make_wprintf_args(42, L"something")));
+#endif
 }
