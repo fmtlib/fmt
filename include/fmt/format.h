@@ -309,7 +309,7 @@ class numeric_limits<fmt::internal::dummy_int> :
     using namespace fmt::internal;
     // The resolution "priority" is:
     // isinf macro > std::isinf > ::isinf > fmt::internal::isinf
-    if (const_check(sizeof(isinf(x)) != sizeof(dummy_int)))
+    if (const_check(sizeof(isinf(x)) != sizeof(fmt::internal::dummy_int)))
       return isinf(x) != 0;
     return !_finite(static_cast<double>(x));
   }
