@@ -562,15 +562,32 @@ struct prettify_handler {
     size += n;
   }
 
+  template <typename F>
+  void insert(int pos, int n, F f) {
+    FMT_ASSERT(pos >= 0, "negative character offset");
+    FMT_ASSERT(n >= 0, "negative count of characters");
+    insert(static_cast<size_t>(pos), static_cast<size_t>(n), f);
+  }
+
   void insert(size_t pos, char c) {
     std::memmove(data + pos + 1, data + pos, size - pos);
     data[pos] = c;
     ++size;
   }
 
+  void insert(int pos, char c) {
+    FMT_ASSERT(pos >= 0, "negative character offset");
+    insert(static_cast<size_t>(pos), c);
+  }
+
   void append(size_t n, char c) {
     std::uninitialized_fill_n(data + size, n, c);
     size += n;
+  }
+
+  void append(int n, char c) {
+    FMT_ASSERT(n >= 0, "negative count of characters");
+    append(static_cast<size_t>(n), c);
   }
 
   void append(char c) { data[size++] = c; }
@@ -632,7 +649,7 @@ FMT_FUNC void grisu2_prettify(const gen_digits_params &params,
   const int exp_threshold = 21;
   if (int_size <= full_exp && full_exp <= exp_threshold) {
     // 1234e7 -> 12340000000[.0+]
-    handler.append(full_exp - int_size, '0');
+    handler.append(exp, '0');
     int num_zeros = static_cast<int>(params.num_digits) - full_exp;
     if (num_zeros > 0 && params.trailing_zeros) {
       handler.append('.');
@@ -660,8 +677,18 @@ struct char_counter {
 
   template <typename F>
   void insert(size_t, size_t n, F) { size += n; }
+  template <typename F>
+  void insert(size_t, int n, F) {
+     FMT_ASSERT(n >= 0, "negative count of characters");
+     size += static_cast<size_t>(n);
+  }
   void insert(size_t, char) { ++size; }
+  void insert(int, char) { ++size; }
   void append(size_t n, char) { size += n; }
+  void append(int n, char) {
+     FMT_ASSERT(n >= 0, "negative count of characters");
+     size += static_cast<size_t>(n);
+  }
   void append(char) { ++size; }
   void remove_trailing(char) {}
 };
