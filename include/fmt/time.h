@@ -46,12 +46,14 @@ inline std::tm localtime(std::time_t time) {
 
     bool fallback(int res) { return res == 0; }
 
+#if !FMT_MSC_VER
     bool fallback(internal::null<>) {
       using namespace fmt::internal;
       std::tm *tm = std::localtime(&time_);
       if (tm) tm_ = *tm;
       return tm != FMT_NULL;
     }
+#endif
   };
   dispatcher lt(time);
   if (lt.run())
@@ -83,11 +85,13 @@ inline std::tm gmtime(std::time_t time) {
 
     bool fallback(int res) { return res == 0; }
 
+#if !FMT_MSC_VER
     bool fallback(internal::null<>) {
       std::tm *tm = std::gmtime(&time_);
       if (tm) tm_ = *tm;
       return tm != FMT_NULL;
     }
+#endif
   };
   dispatcher gt(time);
   if (gt.run())
