@@ -221,14 +221,13 @@ enum class emphasis : uint8_t {
 // We use rgb as name because some editors will show it as color direct in the
 // editor.
 struct rgb {
-  FMT_CONSTEXPR_DECL rgb() : r(0), g(0), b(0) {}
-  FMT_CONSTEXPR_DECL rgb(uint8_t r_, uint8_t g_, uint8_t b_)
-    : r(r_), g(g_), b(b_) {}
-  FMT_CONSTEXPR_DECL rgb(uint32_t hex)
-    : r((hex >> 16) & 0xFF), g((hex >> 8) & 0xFF), b((hex) & 0xFF) {}
-  FMT_CONSTEXPR_DECL rgb(color hex)
-    : r((uint32_t(hex) >> 16) & 0xFF), g((uint32_t(hex) >> 8) & 0xFF),
-      b(uint32_t(hex) & 0xFF) {}
+  FMT_CONSTEXPR rgb() : r(0), g(0), b(0) {}
+  FMT_CONSTEXPR rgb(uint8_t r_, uint8_t g_, uint8_t b_) : r(r_), g(g_), b(b_) {}
+  FMT_CONSTEXPR rgb(uint32_t hex)
+      : r((hex >> 16) & 0xFF), g((hex >> 8) & 0xFF), b(hex & 0xFF) {}
+  FMT_CONSTEXPR rgb(color hex)
+      : r((uint32_t(hex) >> 16) & 0xFF), g((uint32_t(hex) >> 8) & 0xFF),
+        b(uint32_t(hex) & 0xFF) {}
   uint8_t r;
   uint8_t g;
   uint8_t b;

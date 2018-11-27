@@ -2172,9 +2172,9 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
   static_assert(parse_test_specs("#").res == handler::HASH, "");
   static_assert(parse_test_specs("0").res == handler::ZERO, "");
   static_assert(parse_test_specs("42").width == 42, "");
-  static_assert(parse_test_specs("{42}").width_ref.index == 42, "");
+  static_assert(parse_test_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_test_specs(".42").precision == 42, "");
-  static_assert(parse_test_specs(".{42}").precision_ref.index == 42, "");
+  static_assert(parse_test_specs(".{42}").precision_ref.val.index == 42, "");
   static_assert(parse_test_specs("d").type == 'd', "");
   static_assert(parse_test_specs("{<").res == handler::ERROR, "");
 }
@@ -2200,6 +2200,8 @@ struct test_context {
 
   FMT_CONSTEXPR test_context &parse_context() { return *this; }
   FMT_CONSTEXPR test_context error_handler() { return *this; }
+  FMT_CONSTEXPR const char *begin() { return FMT_NULL; }
+  FMT_CONSTEXPR const char *end() { return FMT_NULL; }
 };
 
 template <size_t N>
@@ -2247,11 +2249,11 @@ TEST(FormatTest, ConstexprDynamicSpecsHandler) {
   static_assert(parse_dynamic_specs("#").has(fmt::HASH_FLAG), "");
   static_assert(parse_dynamic_specs("0").align() == fmt::ALIGN_NUMERIC, "");
   static_assert(parse_dynamic_specs("42").width() == 42, "");
-  static_assert(parse_dynamic_specs("{}").width_ref.index == 33, "");
-  static_assert(parse_dynamic_specs("{42}").width_ref.index == 42, "");
+  static_assert(parse_dynamic_specs("{}").width_ref.val.index == 33, "");
+  static_assert(parse_dynamic_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_dynamic_specs(".42").precision == 42, "");
-  static_assert(parse_dynamic_specs(".{}").precision_ref.index == 33, "");
-  static_assert(parse_dynamic_specs(".{42}").precision_ref.index == 42, "");
+  static_assert(parse_dynamic_specs(".{}").precision_ref.val.index == 33, "");
+  static_assert(parse_dynamic_specs(".{42}").precision_ref.val.index == 42, "");
   static_assert(parse_dynamic_specs("d").type == 'd', "");
 }
 
@@ -2273,9 +2275,9 @@ TEST(FormatTest, ConstexprSpecsChecker) {
   static_assert(check_specs("#").res == handler::HASH, "");
   static_assert(check_specs("0").res == handler::ZERO, "");
   static_assert(check_specs("42").width == 42, "");
-  static_assert(check_specs("{42}").width_ref.index == 42, "");
+  static_assert(check_specs("{42}").width_ref.val.index == 42, "");
   static_assert(check_specs(".42").precision == 42, "");
-  static_assert(check_specs(".{42}").precision_ref.index == 42, "");
+  static_assert(check_specs(".{42}").precision_ref.val.index == 42, "");
   static_assert(check_specs("d").type == 'd', "");
   static_assert(check_specs("{<").res == handler::ERROR, "");
 }

@@ -454,9 +454,11 @@ template <typename Char>
 inline basic_string_view<Char>
   to_string_view(basic_string_view<Char> s) { return s; }
 
-template <typename Char>
+template <typename Char, typename Traits, typename Allocator>
 inline basic_string_view<Char>
-  to_string_view(const std::basic_string<Char> &s) { return s; }
+to_string_view(const std::basic_string<Char, Traits, Allocator> &s) {
+  return {s.data(), s.size()};
+}
 
 template <typename Char>
 inline basic_string_view<Char> to_string_view(const Char *s) { return s; }
@@ -913,7 +915,8 @@ class basic_parse_context : private ErrorHandler {
     next_arg_id_ = -1;
     return true;
   }
-  void check_arg_id(basic_string_view<Char>) {}
+
+  FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {}
 
   FMT_CONSTEXPR void on_error(const char *message) {
     ErrorHandler::on_error(message);
