@@ -454,9 +454,11 @@ template <typename Char>
 inline basic_string_view<Char>
   to_string_view(basic_string_view<Char> s) { return s; }
 
-template <typename Char>
+template <typename Char, typename Traits, typename Allocator>
 inline basic_string_view<Char>
-  to_string_view(const std::basic_string<Char> &s) { return s; }
+to_string_view(const std::basic_string<Char, Traits, Allocator> &s) {
+  return {s.data(), s.size()};
+}
 
 template <typename Char>
 inline basic_string_view<Char> to_string_view(const Char *s) { return s; }
@@ -503,6 +505,8 @@ struct formatter {
 template <typename T, typename Char, typename Enable = void>
 struct convert_to_int: std::integral_constant<
   bool, !std::is_arithmetic<T>::value && std::is_convertible<T, int>::value> {};
+
+template <typename Char> struct basic_format_specs;
 
 namespace internal {
 
@@ -877,16 +881,18 @@ FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
 template <typename Char, typename ErrorHandler = internal::error_handler>
 class basic_parse_context : private ErrorHandler {
  private:
-  basic_string_view<Char> format_str_;
-  int next_arg_id_;
+   basic_string_view<Char> primary_format_str_;
+   basic_string_view<Char> format_str_;
+   int next_arg_id_;
 
  public:
   typedef Char char_type;
   typedef typename basic_string_view<Char>::iterator iterator;
 
-  explicit FMT_CONSTEXPR basic_parse_context(
-      basic_string_view<Char> format_str, ErrorHandler eh = ErrorHandler())
-    : ErrorHandler(eh), format_str_(format_str), next_arg_id_(0) {}
+  explicit FMT_CONSTEXPR basic_parse_context(basic_string_view<Char> format_str,
+                                             ErrorHandler eh = ErrorHandler())
+      : ErrorHandler(eh), primary_format_str_(format_str),
+        format_str_(format_str), next_arg_id_(0) {}
 
   // Returns an iterator to the beginning of the format string range being
   // parsed.
@@ -913,13 +919,17 @@ class basic_parse_context : private ErrorHandler {
     next_arg_id_ = -1;
     return true;
   }
-  void check_arg_id(basic_string_view<Char>) {}
+
+  FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {}
 
   FMT_CONSTEXPR void on_error(const char *message) {
     ErrorHandler::on_error(message);
   }
 
   FMT_CONSTEXPR ErrorHandler error_handler() const { return *this; }
+  FMT_CONSTEXPR basic_string_view<Char> primary_format() const {
+    return primary_format_str_;
+  }
 };
 
 typedef basic_parse_context<char> format_parse_context;
@@ -1038,6 +1048,10 @@ class context_base {
   void advance_to(iterator it) { out_ = it; }
 
   locale_ref locale() { return loc_; }
+
+  basic_string_view<Char> primary_format() const {
+    return parse_context_.primary_format();
+  }
 };
 
 template <typename Context, typename T>

@@ -372,20 +372,26 @@ template <typename Rep, typename Period, typename Char>
 struct formatter<std::chrono::duration<Rep, Period>, Char> {
  private:
   align_spec spec;
-  internal::arg_ref<Char> width_ref;
+  typedef internal::arg_ref<Char> arg_ref_type;
+  arg_ref_type width_ref;
   mutable basic_string_view<Char> format_str;
   typedef std::chrono::duration<Rep, Period> duration;
 
   struct spec_handler {
     formatter &f;
     basic_parse_context<Char> &context;
-
-    typedef internal::arg_ref<Char> arg_ref_type;
+    basic_string_view<Char> format_str;
 
     template <typename Id>
     FMT_CONSTEXPR arg_ref_type make_arg_ref(Id arg_id) {
       context.check_arg_id(arg_id);
       return arg_ref_type(arg_id);
+    }
+
+    FMT_CONSTEXPR arg_ref_type make_arg_ref(basic_string_view<Char> arg_id) {
+      context.check_arg_id(arg_id);
+      const auto str_val = internal::string_view_metadata(format_str, arg_id);
+      return arg_ref_type(str_val);
     }
 
     FMT_CONSTEXPR arg_ref_type make_arg_ref(internal::auto_id) {
@@ -410,7 +416,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       -> decltype(ctx.begin()) {
     auto begin = ctx.begin(), end = ctx.end();
     if (begin == end) return begin;
-    spec_handler handler{*this, ctx};
+    spec_handler handler{*this, ctx, format_str};
     begin = internal::parse_align(begin, end, handler);
     if (begin == end) return begin;
     begin = internal::parse_width(begin, end, handler);

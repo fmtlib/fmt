@@ -154,7 +154,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
     EXPECT_CALL(streambuf, xsputn(data, static_cast<std::streamsize>(n)))
         .WillOnce(testing::Return(max_streamsize));
     data += n;
-    size -= n;
+    size -= static_cast<std::size_t>(n);
   } while (size != 0);
   fmt::internal::write(os, buffer);
 }
