@@ -57,3 +57,10 @@ TEST(TimeTest, GMTime) {
   std::tm tm = *std::gmtime(&t);
   EXPECT_TRUE(EqualTime(tm, fmt::gmtime(t)));
 }
+
+#if FMT_USE_CHRONO
+TEST(TimeTest, Chrono) {
+  EXPECT_EQ("42", fmt::format("{:%S}", std::chrono::seconds(42)));
+  EXPECT_EQ("01.234", fmt::format("{:%S}", std::chrono::milliseconds(1234)));
+}
+#endif
