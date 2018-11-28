@@ -69,6 +69,10 @@
 // Disable the warning about implicit conversions that may change the sign of
 // an integer; silencing it otherwise would require many explicit casts.
 # pragma GCC diagnostic ignored "-Wsign-conversion"
+
+// Disable the warning about nonliteral format strings because we construct
+// them dynamically when falling back to snprintf for FP formatting.
+# pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #endif
 
 # if FMT_CLANG_VERSION
