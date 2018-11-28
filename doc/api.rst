@@ -184,7 +184,7 @@ output ``operator<<`` when one is defined for a user-defined type.
 Output iterator support
 -----------------------
 
-.. doxygenfunction:: fmt::format_to(OutputIt, const S&, const Args&...)
+.. doxygenfunction:: fmt::format_to(OutputIt, const S &, const Args &...)
 .. doxygenfunction:: fmt::format_to_n(OutputIt, std::size_t, string_view, const Args&...)
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
@@ -350,7 +350,7 @@ user-defined types that have overloaded ``operator<<``::
   std::string s = fmt::format("The date is {}", date(2012, 12, 9));
   // s == "The date is 2012-12-9"
 
-.. doxygenfunction:: print(std::ostream&, const S&, const Args&...)
+.. doxygenfunction:: print(std::basic_ostream<fmt::char_t<S>>&, const S&, const Args&...)
 
 .. _printf-api:
 
@@ -368,6 +368,6 @@ argument type doesn't match its format specification.
 
 .. doxygenfunction:: fprintf(std::FILE *, const S&, const Args&...)
 
-.. doxygenfunction:: fprintf(std::ostream&, const S&, const Args&...)
+.. doxygenfunction:: fprintf(std::basic_ostream<fmt::char_t<S>>&, const S&, const Args&...)
 
 .. doxygenfunction:: sprintf(const S&, const Args&...)
