@@ -241,19 +241,19 @@ FMT_FUNC void system_error::init(
 namespace internal {
 template <typename T>
 int char_traits<char>::format_float(
-    char *buffer, std::size_t size, const char *format, int precision, T value) {
+    char *buf, std::size_t size, const char *format, int precision, T value) {
   return precision < 0 ?
-      FMT_SNPRINTF(buffer, size, format, value) :
-      FMT_SNPRINTF(buffer, size, format, precision, value);
+      FMT_SNPRINTF(buf, size, format, value) :
+      FMT_SNPRINTF(buf, size, format, precision, value);
 }
 
 template <typename T>
 int char_traits<wchar_t>::format_float(
-    wchar_t *buffer, std::size_t size, const wchar_t *format, int precision,
+    wchar_t *buf, std::size_t size, const wchar_t *format, int precision,
     T value) {
   return precision < 0 ?
-      FMT_SWPRINTF(buffer, size, format, value) :
-      FMT_SWPRINTF(buffer, size, format, precision, value);
+      FMT_SWPRINTF(buf, size, format, value) :
+      FMT_SWPRINTF(buf, size, format, precision, value);
 }
 
 template <typename T>
@@ -370,7 +370,7 @@ class fp {
     sizeof(significand_type) * char_size;
 
   fp(): f(0), e(0) {}
-  fp(uint64_t f, int e): f(f), e(e) {}
+  fp(uint64_t f_val, int e_val): f(f_val), e(e_val) {}
 
   // Constructs fp from an IEEE754 double. It is a template to prevent compile
   // errors on platforms where double is not IEEE754.
@@ -462,17 +462,17 @@ FMT_FUNC fp get_cached_power(int min_exponent, int &pow10_exponent) {
 }
 
 FMT_FUNC bool grisu2_round(
-    char *buffer, size_t &size, size_t max_digits, uint64_t delta,
+    char *buf, size_t &size, size_t max_digits, uint64_t delta,
     uint64_t remainder, uint64_t exp, uint64_t diff, int &exp10) {
   while (remainder < diff && delta - remainder >= exp &&
         (remainder + exp < diff || diff - remainder > remainder + exp - diff)) {
-    --buffer[size - 1];
+    --buf[size - 1];
     remainder += exp;
   }
   if (size > max_digits) {
     --size;
     ++exp10;
-    if (buffer[size] >= '5')
+    if (buf[size] >= '5')
       return false;
   }
   return true;
@@ -480,7 +480,7 @@ FMT_FUNC bool grisu2_round(
 
 // Generates output using Grisu2 digit-gen algorithm.
 FMT_FUNC bool grisu2_gen_digits(
-    char *buffer, size_t &size, uint32_t hi, uint64_t lo, int &exp,
+    char *buf, size_t &size, uint32_t hi, uint64_t lo, int &exp,
     uint64_t delta, const fp &one, const fp &diff, size_t max_digits) {
   // Generate digits for the most significant part (hi).
   while (exp > 0) {
@@ -502,12 +502,12 @@ FMT_FUNC bool grisu2_gen_digits(
       FMT_ASSERT(false, "invalid number of digits");
     }
     if (digit != 0 || size != 0)
-      buffer[size++] = static_cast<char>('0' + digit);
+      buf[size++] = static_cast<char>('0' + digit);
     --exp;
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
     if (remainder <= delta || size > max_digits) {
       return grisu2_round(
-            buffer, size, max_digits, delta, remainder,
+            buf, size, max_digits, delta, remainder,
             static_cast<uint64_t>(data::POWERS_OF_10_32[exp]) << -one.e,
             diff.f, exp);
     }
@@ -518,11 +518,11 @@ FMT_FUNC bool grisu2_gen_digits(
     delta *= 10;
     char digit = static_cast<char>(lo >> -one.e);
     if (digit != 0 || size != 0)
-      buffer[size++] = static_cast<char>('0' + digit);
+      buf[size++] = static_cast<char>('0' + digit);
     lo &= one.f - 1;
     --exp;
     if (lo < delta || size > max_digits) {
-      return grisu2_round(buffer, size, max_digits, delta, lo, one.f,
+      return grisu2_round(buf, size, max_digits, delta, lo, one.f,
                           diff.f * data::POWERS_OF_10_32[-exp], exp);
     }
   }
@@ -605,10 +605,10 @@ FMT_FUNC void write_exponent(int exp, Handler &&h) {
 
 struct fill {
   size_t n;
-  void operator()(char *buffer) const {
-    buffer[0] = '0';
-    buffer[1] = '.';
-    std::uninitialized_fill_n(buffer + 2, n, '0');
+  void operator()(char *buf) const {
+    buf[0] = '0';
+    buf[1] = '.';
+    std::uninitialized_fill_n(buf + 2, n, '0');
   }
 };
 
@@ -760,10 +760,10 @@ FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
 }
 
 template <typename Double>
-void sprintf_format(Double value, internal::buffer &buffer,
+void sprintf_format(Double value, internal::buffer &buf,
                     core_format_specs spec) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
-  FMT_ASSERT(buffer.capacity() != 0, "empty buffer");
+  FMT_ASSERT(buf.capacity() != 0, "empty buffer");
 
   // Build format string.
   enum { MAX_FORMAT_SIZE = 10}; // longest format: %#-*.*Lg
@@ -784,21 +784,21 @@ void sprintf_format(Double value, internal::buffer &buffer,
   // Format using snprintf.
   char *start = FMT_NULL;
   for (;;) {
-    std::size_t buffer_size = buffer.capacity();
-    start = &buffer[0];
+    std::size_t buffer_size = buf.capacity();
+    start = &buf[0];
     int result = internal::char_traits<char>::format_float(
         start, buffer_size, format, spec.precision, value);
     if (result >= 0) {
       unsigned n = internal::to_unsigned(result);
-      if (n < buffer.capacity()) {
-        buffer.resize(n);
+      if (n < buf.capacity()) {
+        buf.resize(n);
         break;  // The buffer is large enough - continue with formatting.
       }
-      buffer.reserve(n + 1);
+      buf.reserve(n + 1);
     } else {
       // If result is negative we ask to increase the capacity by at least 1,
       // but as std::vector, the buffer grows exponentially.
-      buffer.reserve(buffer.capacity() + 1);
+      buf.reserve(buf.capacity() + 1);
     }
   }
 }
