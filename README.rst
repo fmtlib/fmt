@@ -158,14 +158,19 @@ improve compile times and reduce code size compared to fully parameterized versi
 Projects using this library
 ---------------------------
 
-* `0 A.D. <http://play0ad.com/>`_: A free, open-source, cross-platform real-time strategy game
+* `0 A.D. <http://play0ad.com/>`_: A free, open-source, cross-platform real-time
+  strategy game
 
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   An open-source library for mathematical programming
   
-* `AvioBook <https://www.aviobook.aero/en>`_: A comprehensive aircraft operations suite
+* `AvioBook <https://www.aviobook.aero/en>`_: A comprehensive aircraft
+  operations suite
 
-* `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater vehicle
+* `Ceph <https://ceph.com/>`_: A scalable distributed storage system
+
+* `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater
+  vehicle
 
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
@@ -200,7 +205,8 @@ Projects using this library
 
 * `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
 
-* `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: A Redis cluster proxy
+* `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: A Redis cluster
+  proxy
 
 * `Saddy <https://github.com/mamontov-cpp/saddy-graphics-engine-2d>`_:
   Small crossplatform 2D graphic engine
@@ -208,11 +214,11 @@ Projects using this library
 * `Salesforce Analytics Cloud <http://www.salesforce.com/analytics-cloud/overview/>`_:
   Business intelligence software
 
-* `Scylla <http://www.scylladb.com/>`_: A Cassandra-compatible NoSQL data store that can handle
-  1 million transactions per second on a single server
+* `Scylla <http://www.scylladb.com/>`_: A Cassandra-compatible NoSQL data store
+  that can handle 1 million transactions per second on a single server
 
-* `Seastar <http://www.seastar-project.org/>`_: An advanced, open-source C++ framework for
-  high-performance server applications on modern hardware
+* `Seastar <http://www.seastar-project.org/>`_: An advanced, open-source C++
+  framework for high-performance server applications on modern hardware
 
 * `spdlog <https://github.com/gabime/spdlog>`_: Super fast C++ logging library
 
@@ -220,7 +226,8 @@ Projects using this library
 
 * `Touch Surgery <https://www.touchsurgery.com/>`_: Surgery simulator
 
-* `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: Open-source MMORPG framework
+* `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: Open-source
+  MMORPG framework
 
 `More... <https://github.com/search?q=cppformat&type=Code>`_
 
