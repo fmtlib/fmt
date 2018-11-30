@@ -545,30 +545,30 @@ struct gen_digits_params {
 
 struct prettify_handler {
   char *data;
-  size_t size;
+  ptrdiff_t size;
   buffer &buf;
 
-  explicit prettify_handler(buffer &b, size_t n)
+  explicit prettify_handler(buffer &b, ptrdiff_t n)
     : data(b.data()), size(n), buf(b) {}
   ~prettify_handler() {
-    assert(buf.size() >= size);
-    buf.resize(size);
+    assert(buf.size() >= to_unsigned(size));
+    buf.resize(to_unsigned(size));
   }
 
   template <typename F>
-  void insert(size_t pos, size_t n, F f) {
-    std::memmove(data + pos + n, data + pos, size - pos);
+  void insert(ptrdiff_t pos, ptrdiff_t n, F f) {
+    std::memmove(data + pos + n, data + pos, to_unsigned(size - pos));
     f(data + pos);
     size += n;
   }
 
-  void insert(size_t pos, char c) {
-    std::memmove(data + pos + 1, data + pos, size - pos);
+  void insert(ptrdiff_t pos, char c) {
+    std::memmove(data + pos + 1, data + pos, to_unsigned(size - pos));
     data[pos] = c;
     ++size;
   }
 
-  void append(size_t n, char c) {
+  void append(ptrdiff_t n, char c) {
     std::uninitialized_fill_n(data + size, n, c);
     size += n;
   }
@@ -615,7 +615,7 @@ struct fill {
 // The number is given as v = f * pow(10, exp), where f has size digits.
 template <typename Handler>
 FMT_FUNC void grisu2_prettify(const gen_digits_params &params,
-                              size_t size, int exp, Handler &&handler) {
+                              ptrdiff_t size, int exp, Handler &&handler) {
   if (!params.fixed) {
     // Insert a decimal point after the first digit and add an exponent.
     handler.insert(1, '.');
@@ -646,7 +646,7 @@ FMT_FUNC void grisu2_prettify(const gen_digits_params &params,
       handler.remove_trailing('0');
     } else if (params.num_digits > size) {
       // Add trailing zeros.
-      size_t num_zeros = params.num_digits - size;
+      ptrdiff_t num_zeros = params.num_digits - size;
       handler.append(num_zeros, '0');
     }
   } else {
@@ -656,12 +656,12 @@ FMT_FUNC void grisu2_prettify(const gen_digits_params &params,
 }
 
 struct char_counter {
-  size_t size;
+  ptrdiff_t size;
 
   template <typename F>
-  void insert(size_t, size_t n, F) { size += n; }
-  void insert(size_t, char) { ++size; }
-  void append(size_t n, char) { size += n; }
+  void insert(ptrdiff_t, ptrdiff_t n, F) { size += n; }
+  void insert(ptrdiff_t, char) { ++size; }
+  void append(ptrdiff_t n, char) { size += n; }
   void append(char) { ++size; }
   void remove_trailing(char) {}
 };
@@ -704,9 +704,9 @@ FMT_FUNC gen_digits_params process_specs(const core_format_specs &specs,
     break;
   }
   params.num_digits = to_unsigned(num_digits);
-  char_counter counter{params.num_digits};
+  char_counter counter{num_digits};
   grisu2_prettify(params, params.num_digits, exp - num_digits, counter);
-  buf.resize(counter.size);
+  buf.resize(to_unsigned(counter.size));
   return params;
 }
 
