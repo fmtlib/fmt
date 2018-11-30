@@ -10,12 +10,11 @@
 
 #include "format.h"
 #include <ctime>
+#include <locale>
 
-#ifndef FMT_USE_CHRONO
-# define FMT_USE_CHRONO 0
-#endif
-#if FMT_USE_CHRONO
+#if FMT_HAS_INCLUDE(<chrono>)
 # include <chrono>
+# include <sstream>
 #endif
 
 FMT_BEGIN_NAMESPACE
@@ -29,6 +28,11 @@ inline null<> localtime_r FMT_NOMACRO(...) { return null<>(); }
 inline null<> localtime_s(...) { return null<>(); }
 inline null<> gmtime_r(...) { return null<>(); }
 inline null<> gmtime_s(...) { return null<>(); }
+
+enum class numeric_system {
+  standard,
+  alternative
+};
 
 // Parses a put_time-like format string and invokes handler actions.
 template <typename Char, typename Handler>
@@ -44,11 +48,13 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
     }
     if (begin != ptr)
       handler.on_text(begin, ptr);
-    c = *++ptr;
-    begin = ptr;
+    ++ptr; // consume '%'
+    if (ptr == end)
+      throw format_error("invalid format");
+    c = *ptr++;
     switch (c) {
     case '%':
-      handler.on_text(ptr, ptr + 1);
+      handler.on_text(ptr - 1, ptr);
       break;
     // Day of the week:
     case 'a':
@@ -64,18 +70,48 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
       handler.on_dec1_weekday();
       break;
     // Month:
-    case 'b': case 'h':
+    case 'b':
       handler.on_abbr_month();
       break;
     case 'B':
       handler.on_full_month();
       break;
     // Hour, minute, second:
+    case 'H':
+      handler.on_24_hour(numeric_system::standard);
+      break;
+    case 'I':
+      handler.on_12_hour(numeric_system::standard);
+      break;
+    case 'M':
+      handler.on_minute(numeric_system::standard);
+      break;
     case 'S':
-      handler.on_second();
+      handler.on_second(numeric_system::standard);
+      break;
+    // Alternative numeric system:
+    case 'O':
+      if (ptr == end)
+        throw format_error("invalid format");
+      c = *ptr++;
+      switch (c) {
+      case 'H':
+        handler.on_24_hour(numeric_system::alternative);
+        break;
+      case 'I':
+        handler.on_12_hour(numeric_system::alternative);
+        break;
+      case 'M':
+        handler.on_minute(numeric_system::alternative);
+        break;
+      case 'S':
+        handler.on_second(numeric_system::alternative);
+        break;
+      }
       break;
       // TODO: parse more format specifiers
     }
+    begin = ptr;
   }
   if (begin != ptr)
     handler.on_text(begin, ptr);
@@ -91,20 +127,27 @@ struct chrono_format_checker {
   void on_dec1_weekday() {}
   void on_abbr_month() {}
   void on_full_month() {}
-  void on_second() {}
+  void on_24_hour(numeric_system) {}
+  void on_12_hour(numeric_system) {}
+  void on_minute(numeric_system) {}
+  void on_second(numeric_system) {}
 };
 }  // namespace internal
 
-#if FMT_USE_CHRONO
+#ifdef __cpp_lib_chrono
 namespace internal {
 
-template <typename OutputIt, typename Char>
+template <typename FormatContext>
 struct chrono_formatter {
-  OutputIt out;
+  FormatContext &context;
+  typename FormatContext::iterator out;
   std::chrono::seconds s;
   std::chrono::milliseconds ms;
 
-  explicit chrono_formatter(OutputIt o) : out(o) {}
+  using char_type = typename FormatContext::char_type;
+
+  explicit chrono_formatter(FormatContext &ctx)
+    : context(ctx), out(ctx.out()) {}
 
   template <typename Int>
   void write(Int value, int width) {
@@ -113,10 +156,13 @@ struct chrono_formatter {
     auto num_digits = internal::count_digits(n);
     if (width > num_digits)
       out = std::fill_n(out, width - num_digits, '0');
-    out = format_decimal<Char>(out, n, num_digits);
+    out = format_decimal<char_type>(out, n, num_digits);
   }
 
-  void on_text(const Char *, const Char *) {}
+  void on_text(const char_type *begin, const char_type *end) {
+    std::copy(begin, end, out);
+  }
+
   void on_abbr_weekday() {}
   void on_full_weekday() {}
   void on_dec0_weekday() {}
@@ -124,8 +170,34 @@ struct chrono_formatter {
   void on_abbr_month() {}
   void on_full_month() {}
 
-  void on_second() {
-    write(s.count(), 2);
+  void on_24_hour(numeric_system ns) {
+    auto hour = (s.count() / 3600) % 24;
+    if (ns == numeric_system::standard)
+      return write(hour, 2);
+    auto locale = context.locale().template get<std::locale>();
+    auto &facet = std::use_facet<std::time_put<char_type>>(locale);
+    std::basic_ostringstream<char_type> os;
+    os.imbue(locale);
+    auto time = tm();
+    time.tm_hour = hour;
+    const char format[] = {'%', 'O', 'H'};
+    facet.put(os, os, ' ', &time, format, format + sizeof(format));
+    auto str = os.str();
+    std::copy(str.begin(), str.end(), out);
+  }
+
+  void on_12_hour(numeric_system) {
+    auto hour = (s.count() / 3600) % 12;
+    write(hour > 0 ? hour : 12, 2);
+  }
+
+  void on_minute(numeric_system) {
+    auto minute = s.count() / 60;
+    write(minute % 60, 2);
+  }
+
+  void on_second(numeric_system) {
+    write(s.count() % 60, 2);
     if (ms != std::chrono::milliseconds()) {
       *out++ = '.';
       write(ms.count(), 3);
@@ -150,14 +222,14 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   template <typename FormatContext>
   auto format(const Duration &d, FormatContext &ctx)
       -> decltype(ctx.out()) {
-    internal::chrono_formatter<decltype(ctx.out()), Char> f(ctx.out());
+    internal::chrono_formatter<FormatContext> f(ctx);
     f.s = std::chrono::duration_cast<std::chrono::seconds>(d);
     f.ms = std::chrono::duration_cast<std::chrono::milliseconds>(d - f.s);
     parse_chrono_format(format_str.begin(), format_str.end(), f);
     return f.out;
   }
 };
-#endif  // FMT_USE_CHRONO
+#endif  // __cpp_lib_chrono
 
 // Thread-safe replacement for std::localtime
 inline std::tm localtime(std::time_t time) {

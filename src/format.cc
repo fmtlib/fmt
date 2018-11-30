@@ -10,6 +10,7 @@
 FMT_BEGIN_NAMESPACE
 template struct internal::basic_data<void>;
 template FMT_API internal::locale_ref::locale_ref(const std::locale &loc);
+template FMT_API std::locale internal::locale_ref::get<std::locale>() const;
 
 // Explicit instantiations for char.
 

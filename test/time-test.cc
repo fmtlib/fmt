@@ -10,6 +10,7 @@
 #endif
 
 #include "gmock.h"
+#include "fmt/locale.h"
 #include "fmt/time.h"
 
 TEST(TimeTest, Format) {
@@ -58,9 +59,46 @@ TEST(TimeTest, GMTime) {
   EXPECT_TRUE(EqualTime(tm, fmt::gmtime(t)));
 }
 
-#if FMT_USE_CHRONO
+#ifdef __cpp_lib_chrono
 TEST(TimeTest, Chrono) {
+  EXPECT_EQ("00", fmt::format("{:%S}", std::chrono::seconds(0)));
+  EXPECT_EQ("00", fmt::format("{:%S}", std::chrono::seconds(60)));
   EXPECT_EQ("42", fmt::format("{:%S}", std::chrono::seconds(42)));
   EXPECT_EQ("01.234", fmt::format("{:%S}", std::chrono::milliseconds(1234)));
+  EXPECT_EQ("00", fmt::format("{:%M}", std::chrono::minutes(0)));
+  EXPECT_EQ("00", fmt::format("{:%M}", std::chrono::minutes(60)));
+  EXPECT_EQ("42", fmt::format("{:%M}", std::chrono::minutes(42)));
+  EXPECT_EQ("01", fmt::format("{:%M}", std::chrono::seconds(61)));
+  EXPECT_EQ("00", fmt::format("{:%H}", std::chrono::hours(0)));
+  EXPECT_EQ("00", fmt::format("{:%H}", std::chrono::hours(24)));
+  EXPECT_EQ("14", fmt::format("{:%H}", std::chrono::hours(14)));
+  EXPECT_EQ("01", fmt::format("{:%H}", std::chrono::minutes(61)));
+  EXPECT_EQ("12", fmt::format("{:%I}", std::chrono::hours(0)));
+  EXPECT_EQ("12", fmt::format("{:%I}", std::chrono::hours(12)));
+  EXPECT_EQ("12", fmt::format("{:%I}", std::chrono::hours(24)));
+  EXPECT_EQ("04", fmt::format("{:%I}", std::chrono::hours(4)));
+  EXPECT_EQ("02", fmt::format("{:%I}", std::chrono::hours(14)));
+  EXPECT_EQ("03:25:45",
+            fmt::format("{:%H:%M:%S}", std::chrono::seconds(12345)));
+}
+
+TEST(TimeTest, ChronoLocale) {
+  const char *loc_name = "ja_JP.utf8";
+  bool has_locale = false;
+  std::locale loc;
+  try {
+    loc = std::locale(loc_name);
+    has_locale = true;
+  } catch (const std::runtime_error &) {}
+  if (!has_locale) {
+    fmt::print("{} locale is missing.\n", loc_name);
+    return;
+  }
+  std::ostringstream os;
+  os.imbue(loc);
+  auto time = std::tm();
+  time.tm_hour = 14;
+  os << std::put_time(&time, "%OH");
+  EXPECT_EQ(os.str(), fmt::format(loc, "{:%OH}", std::chrono::hours(14)));
 }
 #endif
