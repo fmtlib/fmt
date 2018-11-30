@@ -765,6 +765,7 @@ FMT_CONSTEXPR11 typename std::enable_if<
 
 // Maximum number of arguments with packed types.
 enum { max_packed_args = 15 };
+enum : unsigned long long { is_unpacked_bit = 1ull << 63 };
 
 template <typename Context>
 class arg_map;
@@ -1150,17 +1151,17 @@ class format_arg_store {
 
   friend class basic_format_args<Context>;
 
-  static FMT_CONSTEXPR11 long long get_types() {
+  static FMT_CONSTEXPR11 unsigned long long get_types() {
     return IS_PACKED ?
-      static_cast<long long>(internal::get_types<Context, Args...>()) :
-      -static_cast<long long>(NUM_ARGS);
+      internal::get_types<Context, Args...>() :
+      internal::is_unpacked_bit | NUM_ARGS;
   }
 
  public:
 #if FMT_USE_CONSTEXPR11
-  static FMT_CONSTEXPR11 long long TYPES = get_types();
+  static FMT_CONSTEXPR11 unsigned long long TYPES = get_types();
 #else
-  static const long long TYPES;
+  static const unsigned long long TYPES;
 #endif
 
 #if (FMT_GCC_VERSION && FMT_GCC_VERSION <= 405) || \
@@ -1179,7 +1180,8 @@ class format_arg_store {
 
 #if !FMT_USE_CONSTEXPR11
 template <typename Context, typename ...Args>
-const long long format_arg_store<Context, Args...>::TYPES = get_types();
+const unsigned long long format_arg_store<Context, Args...>::TYPES =
+    get_types();
 #endif
 
 /**
@@ -1214,11 +1216,12 @@ class basic_format_args {
     const format_arg *args_;
   };
 
+  bool is_packed() const { return (types_ & internal::is_unpacked_bit) == 0; }
+
   typename internal::type type(unsigned index) const {
     unsigned shift = index * 4;
-    unsigned long long mask = 0xf;
     return static_cast<typename internal::type>(
-      (types_ & (mask << shift)) >> shift);
+      (types_ & (0xfull << shift)) >> shift);
   }
 
   friend class internal::arg_map<Context>;
@@ -1228,10 +1231,8 @@ class basic_format_args {
 
   format_arg do_get(size_type index) const {
     format_arg arg;
-    long long signed_types = static_cast<long long>(types_);
-    if (signed_types < 0) {
-      unsigned long long num_args =
-          static_cast<unsigned long long>(-signed_types);
+    if (!is_packed()) {
+      auto num_args = max_size();
       if (index < num_args)
         arg = args_[index];
       return arg;
@@ -1266,7 +1267,7 @@ class basic_format_args {
    \endrst
    */
   basic_format_args(const format_arg *args, size_type count)
-  : types_(-static_cast<int64_t>(count)) {
+    : types_(internal::is_unpacked_bit | count) {
     set_data(args);
   }
 
@@ -1279,10 +1280,8 @@ class basic_format_args {
   }
 
   unsigned max_size() const {
-    long long signed_types = static_cast<long long>(types_);
-    return static_cast<unsigned>(
-        signed_types < 0 ?
-        -signed_types : static_cast<long long>(internal::max_packed_args));
+    unsigned long long max_packed = internal::max_packed_args;
+    return is_packed() ? max_packed : types_ & ~internal::is_unpacked_bit;
   }
 };
 
