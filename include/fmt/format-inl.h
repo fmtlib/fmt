@@ -136,12 +136,14 @@ int safe_strerror(
             ERANGE : result;
     }
 
+#if !FMT_MSC_VER
     // Fallback to strerror if strerror_r and strerror_s are not available.
     int fallback(internal::null<>) {
       errno = 0;
       buffer_ = strerror(error_code_);
       return errno;
     }
+#endif
 
    public:
     dispatcher(int err_code, char *&buf, std::size_t buf_size)
