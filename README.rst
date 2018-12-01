@@ -166,6 +166,8 @@ Projects using this library
   
 * `AvioBook <https://www.aviobook.aero/en>`_: A comprehensive aircraft
   operations suite
+  
+* `Celestia <https://celestia.space/>`_: Real-time 3D visualization of space
 
 * `Ceph <https://ceph.com/>`_: A scalable distributed storage system
 
