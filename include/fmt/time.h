@@ -159,6 +159,17 @@ struct chrono_formatter {
     out = format_decimal<char_type>(out, n, num_digits);
   }
 
+  void format_localized(const tm &time, char format) {
+    auto locale = context.locale().template get<std::locale>();
+    auto &facet = std::use_facet<std::time_put<char_type>>(locale);
+    std::basic_ostringstream<char_type> os;
+    os.imbue(locale);
+    const char format_str[] = {'%', 'O', format};
+    facet.put(os, os, ' ', &time, format_str, format_str + sizeof(format_str));
+    auto str = os.str();
+    std::copy(str.begin(), str.end(), out);
+  }
+
   void on_text(const char_type *begin, const char_type *end) {
     std::copy(begin, end, out);
   }
@@ -174,21 +185,19 @@ struct chrono_formatter {
     auto hour = (s.count() / 3600) % 24;
     if (ns == numeric_system::standard)
       return write(hour, 2);
-    auto locale = context.locale().template get<std::locale>();
-    auto &facet = std::use_facet<std::time_put<char_type>>(locale);
-    std::basic_ostringstream<char_type> os;
-    os.imbue(locale);
     auto time = tm();
     time.tm_hour = hour;
-    const char format[] = {'%', 'O', 'H'};
-    facet.put(os, os, ' ', &time, format, format + sizeof(format));
-    auto str = os.str();
-    std::copy(str.begin(), str.end(), out);
+    format_localized(time, 'H');
   }
 
-  void on_12_hour(numeric_system) {
+  void on_12_hour(numeric_system ns) {
     auto hour = (s.count() / 3600) % 12;
-    write(hour > 0 ? hour : 12, 2);
+    hour = hour > 0 ? hour : 12;
+    if (ns == numeric_system::standard)
+      return write(hour, 2);
+    auto time = tm();
+    time.tm_hour = hour;
+    format_localized(time, 'I');
   }
 
   void on_minute(numeric_system) {

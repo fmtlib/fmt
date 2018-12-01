@@ -95,10 +95,17 @@ TEST(TimeTest, ChronoLocale) {
     return;
   }
   std::ostringstream os;
+  auto str = [&] {
+    auto s = os.str();
+    os.str("");
+    return s;
+  };
   os.imbue(loc);
   auto time = std::tm();
   time.tm_hour = 14;
   os << std::put_time(&time, "%OH");
-  EXPECT_EQ(os.str(), fmt::format(loc, "{:%OH}", std::chrono::hours(14)));
+  EXPECT_EQ(str(), fmt::format(loc, "{:%OH}", std::chrono::hours(14)));
+  os << std::put_time(&time, "%OI");
+  EXPECT_EQ(str(), fmt::format(loc, "{:%OI}", std::chrono::hours(14)));
 }
 #endif
