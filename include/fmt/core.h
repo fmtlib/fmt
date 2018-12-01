@@ -1279,9 +1279,10 @@ class basic_format_args {
     return arg;
   }
 
-  unsigned max_size() const {
+  size_type max_size() const {
     unsigned long long max_packed = internal::max_packed_args;
-    return is_packed() ? max_packed : types_ & ~internal::is_unpacked_bit;
+    return static_cast<size_type>(
+      is_packed() ? max_packed : types_ & ~internal::is_unpacked_bit);
   }
 };
 
