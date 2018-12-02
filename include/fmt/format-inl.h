@@ -48,9 +48,6 @@
 # pragma warning(push)
 # pragma warning(disable: 4127)  // conditional expression is constant
 # pragma warning(disable: 4702)  // unreachable code
-// Disable deprecation warning for strerror. The latter is not called but
-// MSVC fails to detect it.
-# pragma warning(disable: 4996)
 #endif
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
@@ -617,11 +614,12 @@ struct fill {
 // The number is given as v = f * pow(10, exp), where f has size digits.
 template <typename Handler>
 FMT_FUNC void grisu2_prettify(const gen_digits_params &params,
-                              ptrdiff_t size, int exp, Handler &&handler) {
-  if (!params.fixed) {
+                              size_t size, int exp, Handler &&handler) {
+    const int int_size = static_cast<int>(size);
+    if (!params.fixed) {
     // Insert a decimal point after the first digit and add an exponent.
     handler.insert(1, '.');
-    exp += static_cast<int>(size) - 1;
+    exp += int_size - 1;
     if (size < params.num_digits)
       handler.append(params.num_digits - size, '0');
     handler.append(params.upper ? 'E' : 'e');
@@ -629,8 +627,7 @@ FMT_FUNC void grisu2_prettify(const gen_digits_params &params,
     return;
   }
   // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
-  int int_size = static_cast<int>(size);
-  int full_exp = int_size + exp;
+  const int full_exp = int_size + exp;
   const int exp_threshold = 21;
   if (int_size <= full_exp && full_exp <= exp_threshold) {
     // 1234e7 -> 12340000000[.0+]
