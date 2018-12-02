@@ -126,7 +126,7 @@ Formatting of user-defined types is supported via a simple
 
       template <typename FormatContext>
       auto format(const date &d, FormatContext &ctx) {
-        return format_to(ctx.begin(), "{}-{}-{}", d.year, d.month, d.day);
+        return format_to(ctx.out(), "{}-{}-{}", d.year, d.month, d.day);
       }
     };
 
