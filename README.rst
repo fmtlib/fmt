@@ -30,7 +30,7 @@ Features
   of `str.format <https://docs.python.org/2/library/stdtypes.html#str.format>`_
   in Python.
 * Safe `printf implementation
-  <http://fmtlib.net/latest/api.html#printf-formatting-functions>`_ including
+  <http://fmtlib.net/latest/api.html#printf-formatting>`_ including
   the POSIX extension for positional arguments.
 * Support for user-defined types.
 * High speed: performance of the format API is close to that of glibc's `printf
