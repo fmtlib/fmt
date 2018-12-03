@@ -112,11 +112,13 @@
 #endif
 
 // Check if exceptions are disabled.
+#ifndef FMT_EXCEPTIONS
 #if (defined(__GNUC__) && !defined(__EXCEPTIONS)) || \
     FMT_MSC_VER && !_HAS_EXCEPTIONS
 # define FMT_EXCEPTIONS 0
 #else
 # define FMT_EXCEPTIONS 1
+#endif
 #endif
 
 // Define FMT_USE_NOEXCEPT to make fmt use noexcept (C++11 feature).
