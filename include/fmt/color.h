@@ -194,7 +194,9 @@ enum class color : uint32_t {
 
 enum class emphasis : uint8_t {
   bold = 1,
-  underline = 4
+  italic = 3,
+  underline = 4,
+  strikethrough = 9
 };  // enum class emphasis
 
 // rgb is a struct for red, green and blue colors.
