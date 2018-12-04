@@ -192,6 +192,11 @@ enum class color : uint32_t {
   yellow_green            = 0x9ACD32  // rgb(154,205,50)
 };  // enum class color
 
+enum class emphasis : uint8_t {
+  bold = 1,
+  underline = 4,
+};  // enum class emphasis
+
 // rgb is a struct for red, green and blue colors.
 // We use rgb as name because some editors will show it as color direct in the
 // editor.
@@ -222,6 +227,13 @@ struct ansi_color_escape {
     to_esc(color.b, buffer + 15, 'm');
     buffer[19] = static_cast<Char>(0);
   }
+  FMT_CONSTEXPR ansi_color_escape(emphasis em) FMT_NOEXCEPT {
+    buffer[0] = '\x1b';
+    buffer[1] = '[';
+    buffer[2] = '0' + (uint8_t)em;
+    buffer[3] = 'm';
+    buffer[4] = '\0';
+  }
   FMT_CONSTEXPR operator const Char *() const FMT_NOEXCEPT { return buffer; }
 
 private:
@@ -245,6 +257,11 @@ template <typename Char>
 FMT_CONSTEXPR ansi_color_escape<Char>
 make_background_color(rgb color) FMT_NOEXCEPT {
   return ansi_color_escape<Char>(color, internal::data::BACKGROUND_COLOR);
+}
+
+template <typename Char>
+FMT_CONSTEXPR ansi_color_escape<Char> make_emphasis(emphasis em) FMT_NOEXCEPT {
+  return ansi_color_escape<Char>(em);
 }
 
 template <typename Char>
@@ -287,6 +304,36 @@ void vprint_rgb(rgb fd, rgb bg, const S &format,
   internal::reset_color<Char>(stdout);
 }
 
+template <typename S, typename Char = typename internal::char_t<S>::type>
+void vprint_emphasis(
+    emphasis em, const S &format,
+    basic_format_args<typename buffer_context<Char>::type> args) {
+  internal::fputs<Char>(internal::make_emphasis<Char>(em), stdout);
+  vprint(format, args);
+  internal::reset_color<Char>(stdout);
+}
+
+template <typename S, typename Char = typename internal::char_t<S>::type>
+void vprint_emphasis(
+    emphasis em, rgb fd, const S &format,
+    basic_format_args<typename buffer_context<Char>::type> args) {
+  internal::fputs<Char>(internal::make_emphasis<Char>(em), stdout);
+  internal::fputs<Char>(internal::make_foreground_color<Char>(fd), stdout);
+  vprint(format, args);
+  internal::reset_color<Char>(stdout);
+}
+
+template <typename S, typename Char = typename internal::char_t<S>::type>
+void vprint_emphasis(
+    emphasis em, rgb fd, rgb bg, const S &format,
+    basic_format_args<typename buffer_context<Char>::type> args) {
+  internal::fputs<Char>(internal::make_emphasis<Char>(em), stdout);
+  internal::fputs<Char>(internal::make_foreground_color<Char>(fd), stdout);
+  internal::fputs<Char>(internal::make_background_color<Char>(bg), stdout);
+  vprint(format, args);
+  internal::reset_color<Char>(stdout);
+}
+
 /**
   Formats a string and prints it to stdout using ANSI escape sequences to
   specify foreground color 'fd'.
@@ -318,6 +365,56 @@ print(rgb fd, rgb bg, const String &format_str, const Args & ... args) {
   typedef typename buffer_context<char_t>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
   vprint_rgb(fd, bg, format_str, basic_format_args<context_t>(as));
+}
+
+/**
+  Formats a string and prints it to stdout using ANSI escape sequences to
+  specify the text emphasis 'em'.
+  Example:
+    fmt::print(fmt::emphasis::bold, "Be careful!");
+ */
+template <typename String, typename... Args>
+typename std::enable_if<internal::is_string<String>::value>::type print(
+    emphasis em, const String &format_str, const Args &... args) {
+  internal::check_format_string<Args...>(format_str);
+  typedef typename internal::char_t<String>::type char_t;
+  typedef typename buffer_context<char_t>::type context_t;
+  format_arg_store<context_t, Args...> as{args...};
+  vprint_emphasis(em, format_str, basic_format_args<context_t>(as));
+}
+
+/**
+  Formats a string and prints it to stdout using ANSI escape sequences to
+  specify the text emphasis 'em' and the foreground color 'fd'.
+  Example:
+    fmt::print(fmt::emphasis::bold, fmt::color::red, "Be careful!");
+ */
+template <typename String, typename... Args>
+typename std::enable_if<internal::is_string<String>::value>::type print(
+    emphasis em, rgb fd, const String &format_str, const Args &... args) {
+  internal::check_format_string<Args...>(format_str);
+  typedef typename internal::char_t<String>::type char_t;
+  typedef typename buffer_context<char_t>::type context_t;
+  format_arg_store<context_t, Args...> as{args...};
+  vprint_emphasis(em, fd, format_str, basic_format_args<context_t>(as));
+}
+
+/**
+  Formats a string and prints it to stdout using ANSI escape sequences to
+  specify the text emphasis 'em', the foreground color 'fg' and the background
+  color 'bg'.
+  Example:
+    fmt::print(fmt::emphasis::bold, "Be careful!");
+ */
+template <typename String, typename... Args>
+typename std::enable_if<internal::is_string<String>::value>::type print(
+    emphasis em, rgb fg, rgb bg, const String &format_str,
+    const Args &... args) {
+  internal::check_format_string<Args...>(format_str);
+  typedef typename internal::char_t<String>::type char_t;
+  typedef typename buffer_context<char_t>::type context_t;
+  format_arg_store<context_t, Args...> as{args...};
+  vprint_emphasis(em, fg, bg, format_str, basic_format_args<context_t>(as));
 }
 
 #endif
