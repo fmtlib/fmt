@@ -194,7 +194,7 @@ enum class color : uint32_t {
 
 enum class emphasis : uint8_t {
   bold = 1,
-  underline = 4,
+  underline = 4
 };  // enum class emphasis
 
 // rgb is a struct for red, green and blue colors.
@@ -408,13 +408,13 @@ typename std::enable_if<internal::is_string<String>::value>::type print(
  */
 template <typename String, typename... Args>
 typename std::enable_if<internal::is_string<String>::value>::type print(
-    emphasis em, rgb fg, rgb bg, const String &format_str,
+    emphasis em, rgb fd, rgb bg, const String &format_str,
     const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename internal::char_t<String>::type char_t;
   typedef typename buffer_context<char_t>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
-  vprint_emphasis(em, fg, bg, format_str, basic_format_args<context_t>(as));
+  vprint_emphasis(em, fd, bg, format_str, basic_format_args<context_t>(as));
 }
 
 #endif
