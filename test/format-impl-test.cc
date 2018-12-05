@@ -224,5 +224,5 @@ TEST(ColorsTest, Colors) {
   EXPECT_WRITE(
       stdout,
       fmt::print(fg(fmt::color::blue) | fmt::emphasis::bold, "blue/bold"),
-      "\x1b[38;2;000;000;255m\x1b[1mblue/bold\x1b[0m");
+      "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m");
 }
