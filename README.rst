@@ -153,7 +153,8 @@ which take arbitrary arguments (`godbolt <https://godbolt.org/g/MHjHVf>`_):
     report_error("file not found: {}", path);
 
 Note that ``vreport_error`` is not parameterized on argument types which can
-improve compile times and reduce code size compared to fully parameterized version.
+improve compile times and reduce code size compared to fully parameterized
+version.
 
 Projects using this library
 ---------------------------
@@ -209,6 +210,9 @@ Projects using this library
 
 * `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: A Redis cluster
   proxy
+
+* `rpclib <http://rpclib.net/>`_: A modern C++ msgpack-RPC server and client
+  library
 
 * `Saddy <https://github.com/mamontov-cpp/saddy-graphics-engine-2d>`_:
   Small crossplatform 2D graphic engine
