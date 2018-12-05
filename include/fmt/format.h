@@ -3041,6 +3041,7 @@ class format_int {
   std::string str() const { return std::string(str_, size()); }
 };
 
+// DEPRECATED!
 // Formats a decimal integer value writing into buffer and returns
 // a pointer to the end of the formatted string. This function doesn't
 // write a terminating null character.
@@ -3063,7 +3064,8 @@ inline void format_decimal(char *&buffer, T value) {
     return;
   }
   unsigned num_digits = internal::count_digits(abs_value);
-  internal::format_decimal<char>(buffer, abs_value, num_digits);
+  internal::format_decimal<char>(
+        internal::make_checked(buffer, num_digits), abs_value, num_digits);
   buffer += num_digits;
 }
 
