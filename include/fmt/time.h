@@ -137,6 +137,13 @@ struct chrono_format_checker {
 #ifdef __cpp_lib_chrono
 namespace internal {
 
+template <typename Int>
+inline int to_int(Int value) {
+  FMT_ASSERT(value >= (std::numeric_limits<int>::min)() &&
+             value <= (std::numeric_limits<int>::max)(), "invalid value");
+  return static_cast<int>(value);
+}
+
 template <typename FormatContext>
 struct chrono_formatter {
   FormatContext &context;
@@ -149,9 +156,8 @@ struct chrono_formatter {
   explicit chrono_formatter(FormatContext &ctx)
     : context(ctx), out(ctx.out()) {}
 
-  template <typename Int>
-  void write(Int value, int width) {
-    typedef typename int_traits<Int>::main_type main_type;
+  void write(int value, int width) {
+    typedef typename int_traits<int>::main_type main_type;
     main_type n = value;
     auto num_digits = internal::count_digits(n);
     if (width > num_digits)
@@ -182,7 +188,7 @@ struct chrono_formatter {
   void on_full_month() {}
 
   void on_24_hour(numeric_system ns) {
-    auto hour = (s.count() / 3600) % 24;
+    auto hour = to_int((s.count() / 3600) % 24);
     if (ns == numeric_system::standard)
       return write(hour, 2);
     auto time = tm();
@@ -191,7 +197,7 @@ struct chrono_formatter {
   }
 
   void on_12_hour(numeric_system ns) {
-    auto hour = (s.count() / 3600) % 12;
+    auto hour = to_int((s.count() / 3600) % 12);
     hour = hour > 0 ? hour : 12;
     if (ns == numeric_system::standard)
       return write(hour, 2);
@@ -201,12 +207,12 @@ struct chrono_formatter {
   }
 
   void on_minute(numeric_system) {
-    auto minute = s.count() / 60;
-    write(minute % 60, 2);
+    auto minute = to_int((s.count() / 60) % 60);
+    write(minute, 2);
   }
 
   void on_second(numeric_system) {
-    write(s.count() % 60, 2);
+    write(to_int(s.count() % 60), 2);
     if (ms != std::chrono::milliseconds()) {
       *out++ = '.';
       write(ms.count(), 3);
