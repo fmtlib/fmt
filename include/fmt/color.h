@@ -218,34 +218,34 @@ struct rgb {
 // Experimental text formatting support.
 class text_format {
 public:
- FMT_CONSTEXPR_DECL text_format(emphasis em) FMT_NOEXCEPT
-     : set_foreground_color(),
-       set_background_color(),
-       ems(em) {}
+  FMT_CONSTEXPR_DECL text_format(emphasis em) FMT_NOEXCEPT
+      : set_foreground_color(),
+        set_background_color(),
+        ems(em) {}
 
- FMT_CONSTEXPR_DECL
- text_format &operator|=(const text_format &rhs) FMT_NOEXCEPT {
-   if (!set_foreground_color) {
-     set_foreground_color = rhs.set_foreground_color;
-     foreground_color = rhs.foreground_color;
-   } else if (rhs.set_foreground_color) {
-     foreground_color.r |= rhs.foreground_color.r;
-     foreground_color.g |= rhs.foreground_color.g;
-     foreground_color.b |= rhs.foreground_color.b;
+  FMT_CONSTEXPR_DECL
+  text_format &operator|=(const text_format &rhs) FMT_NOEXCEPT {
+    if (!set_foreground_color) {
+      set_foreground_color = rhs.set_foreground_color;
+      foreground_color = rhs.foreground_color;
+    } else if (rhs.set_foreground_color) {
+      foreground_color.r |= rhs.foreground_color.r;
+      foreground_color.g |= rhs.foreground_color.g;
+      foreground_color.b |= rhs.foreground_color.b;
+    }
+
+    if (!set_background_color) {
+      set_background_color = rhs.set_background_color;
+      background_color = rhs.background_color;
+    } else if (rhs.set_background_color) {
+      background_color.r |= rhs.background_color.r;
+      background_color.g |= rhs.background_color.g;
+      background_color.b |= rhs.background_color.b;
+    }
+
+    ems = (emphasis)((uint32_t)ems | (uint32_t)rhs.ems);
+    return *this;
   }
-
-   if (!set_background_color) {
-     set_background_color = rhs.set_background_color;
-     background_color = rhs.background_color;
-   } else if (rhs.set_background_color) {
-     background_color.r |= rhs.background_color.r;
-     background_color.g |= rhs.background_color.g;
-     background_color.b |= rhs.background_color.b;
-   }
-
-   ems = (emphasis)((uint32_t)ems | (uint32_t)rhs.ems);
-   return *this;
- }
 
   friend FMT_CONSTEXPR_DECL
   text_format operator|(text_format lhs, const text_format &rhs) FMT_NOEXCEPT {
@@ -299,7 +299,7 @@ public:
     return ems;
   }
 
- private:
+private:
   FMT_CONSTEXPR_DECL text_format(bool is_foreground,
                                  rgb text_color) FMT_NOEXCEPT
     : set_foreground_color(), set_background_color(), ems() {
