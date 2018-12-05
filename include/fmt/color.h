@@ -281,6 +281,24 @@ public:
     return lhs &= rhs;
   }
 
+  FMT_CONSTEXPR_DECL bool has_foreground() const FMT_NOEXCEPT {
+    return set_foreground_color;
+  }
+  FMT_CONSTEXPR_DECL bool has_background() const FMT_NOEXCEPT {
+    return set_background_color;
+  }
+  FMT_CONSTEXPR_DECL rgb get_foreground() const FMT_NOEXCEPT {
+    assert(set_foreground_color);
+    return foreground_color;
+  }
+  FMT_CONSTEXPR_DECL rgb get_background() const FMT_NOEXCEPT {
+    assert(set_background_color);
+    return background_color;
+  }
+  FMT_CONSTEXPR emphasis get_emphasis() const FMT_NOEXCEPT {
+    return ems;
+  }
+
  private:
   FMT_CONSTEXPR_DECL text_format(bool is_foreground,
                                  rgb text_color) FMT_NOEXCEPT
@@ -297,10 +315,6 @@ public:
 
   friend FMT_CONSTEXPR_DECL text_format fg(rgb foreground) FMT_NOEXCEPT;
   friend FMT_CONSTEXPR_DECL text_format bg(rgb background) FMT_NOEXCEPT;
-  template <typename S, typename Char>
-  friend void vprint_text_format(
-      const text_format &tf, const S &format,
-      basic_format_args<typename buffer_context<Char>::type> args);
 
   rgb foreground_color;
   rgb background_color;
@@ -408,14 +422,13 @@ template <
   typename S, typename Char = typename internal::char_t<S>::type>
 void vprint_text_format(const text_format &tf, const S &format,
                 basic_format_args<typename buffer_context<Char>::type> args) {
-  internal::fputs<Char>(internal::make_emphasis<Char>(tf.ems), stdout);
-
-  if (tf.set_foreground_color)
+  internal::fputs<Char>(internal::make_emphasis<Char>(tf.get_emphasis()), stdout);
+  if (tf.has_foreground())
     internal::fputs<Char>(
-        internal::make_foreground_color<Char>(tf.foreground_color), stdout);
-  if (tf.set_background_color)
+        internal::make_foreground_color<Char>(tf.get_foreground()), stdout);
+  if (tf.has_background())
     internal::fputs<Char>(
-        internal::make_background_color<Char>(tf.background_color), stdout);
+        internal::make_background_color<Char>(tf.get_background()), stdout);
   vprint(format, args);
   internal::reset_color<Char>(stdout);
 }
