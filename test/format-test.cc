@@ -718,7 +718,7 @@ TEST(FormatToTest, WideString) {
 
 TEST(FormatToTest, FormatToNonbackInsertIteratorWithSignAndNumericAlignment) {
   char buffer[16] = {};
-  fmt::format_to(buffer, "{: =+}", 42.0);
+  fmt::format_to(fmt::internal::make_checked(buffer, 16), "{: =+}", 42.0);
   EXPECT_STREQ("+42", buffer);
 }
 
@@ -1633,7 +1633,8 @@ TEST(FormatterTest, CustomFormat) {
 
 TEST(FormatterTest, CustomFormatTo) {
   char buf[10] = {};
-  auto end = fmt::format_to(buf, "{}", Answer());
+  auto end = &*fmt::format_to(
+        fmt::internal::make_checked(buf, 10), "{}", Answer());
   EXPECT_EQ(end, buf + 2);
   EXPECT_STREQ(buf, "42");
 }
