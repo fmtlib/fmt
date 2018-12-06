@@ -290,7 +290,7 @@ public:
     return set_background_color;
   }
   FMT_CONSTEXPR_DECL bool has_emphasis() const FMT_NOEXCEPT {
-    return static_cast<uint8_t>(ems);
+    return static_cast<uint8_t>(ems) != 0;
   }
   FMT_CONSTEXPR_DECL rgb get_foreground() const FMT_NOEXCEPT {
     assert(has_foreground() && "no foreground specified for this style");
