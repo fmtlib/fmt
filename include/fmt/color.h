@@ -289,6 +289,9 @@ public:
   FMT_CONSTEXPR_DECL bool has_background() const FMT_NOEXCEPT {
     return set_background_color;
   }
+  FMT_CONSTEXPR_DECL bool has_emphasis() const FMT_NOEXCEPT {
+    return static_cast<uint8_t>(ems);
+  }
   FMT_CONSTEXPR_DECL rgb get_foreground() const FMT_NOEXCEPT {
     assert(set_foreground_color);
     return foreground_color;
@@ -298,6 +301,7 @@ public:
     return background_color;
   }
   FMT_CONSTEXPR emphasis get_emphasis() const FMT_NOEXCEPT {
+    assert(ems);
     return ems;
   }
 
@@ -352,13 +356,14 @@ struct ansi_color_escape {
   }
   FMT_CONSTEXPR ansi_color_escape(emphasis em) FMT_NOEXCEPT {
     uint8_t em_codes[4] = {};
-    if ((uint32_t)em & (uint32_t)emphasis::bold)
+    uint8_t em_bits = static_cast<uint8_t>(em);
+    if (em_bits & static_cast<uint8_t>(emphasis::bold))
       em_codes[0] = 1;
-    if ((uint32_t)em & (uint32_t)emphasis::italic)
+    if (em_bits & static_cast<uint8_t>(emphasis::italic))
       em_codes[1] = 3;
-    if ((uint32_t)em & (uint32_t)emphasis::underline)
+    if (em_bits & static_cast<uint8_t>(emphasis::underline))
       em_codes[2] = 4;
-    if ((uint32_t)em & (uint32_t)emphasis::strikethrough)
+    if (em_bits & static_cast<uint8_t>(emphasis::strikethrough))
       em_codes[3] = 9;
 
     std::size_t index = 0;
@@ -428,7 +433,8 @@ template <
   typename S, typename Char = typename internal::char_t<S>::type>
 void vprint(const text_style &tf, const S &format,
                 basic_format_args<typename buffer_context<Char>::type> args) {
-  internal::fputs<Char>(internal::make_emphasis<Char>(tf.get_emphasis()), stdout);
+  if (tf.has_emphasis())
+    internal::fputs<Char>(internal::make_emphasis<Char>(tf.get_emphasis()), stdout);
   if (tf.has_foreground())
     internal::fputs<Char>(
         internal::make_foreground_color<Char>(tf.get_foreground()), stdout);
