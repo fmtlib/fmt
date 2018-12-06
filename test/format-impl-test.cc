@@ -207,11 +207,25 @@ TEST(FormatTest, CountCodePoints) {
 }
 
 TEST(ColorsTest, Colors) {
-  EXPECT_WRITE(stdout, fmt::print(fmt::rgb(255,20,30), "rgb(255,20,30)"),
+  EXPECT_WRITE(stdout, fmt::print(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
                "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
-  EXPECT_WRITE(stdout, fmt::print(fmt::color::blue, "blue"),
+  EXPECT_WRITE(stdout, fmt::print(fg(fmt::color::blue), "blue"),
                "\x1b[38;2;000;000;255mblue\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(fg(fmt::color::blue) | bg(fmt::color::red), "two color"),
+      "\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(fmt::emphasis::bold, "bold"),
+               "\x1b[1mbold\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(fmt::emphasis::italic, "italic"),
+               "\x1b[3mitalic\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(fmt::emphasis::underline, "underline"),
+               "\x1b[4munderline\x1b[0m");
   EXPECT_WRITE(stdout,
-               fmt::print(fmt::color::blue, fmt::color::red, "two color"),
-               "\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m");
+               fmt::print(fmt::emphasis::strikethrough, "strikethrough"),
+               "\x1b[9mstrikethrough\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(fg(fmt::color::blue) | fmt::emphasis::bold, "blue/bold"),
+      "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m");
 }
