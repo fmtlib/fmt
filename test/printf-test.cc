@@ -32,17 +32,21 @@ static std::wstring make_positional(fmt::wstring_view format) {
   return s;
 }
 
-#define EXPECT_PRINTF(expected_output, format, arg) \
-  EXPECT_EQ(expected_output, fmt::sprintf(format, arg)) \
-    << "format: " << format; \
-  EXPECT_EQ(expected_output, fmt::sprintf(make_positional(format), arg))
-
 // A wrapper around fmt::sprintf to workaround bogus warnings about invalid
 // format strings in MSVC.
-template <typename ...Args>
+template <typename... Args>
 std::string test_sprintf(fmt::string_view format, const Args &... args) {
   return fmt::sprintf(format, args...);
 }
+template <typename... Args>
+std::wstring test_sprintf(fmt::wstring_view format, const Args &... args) {
+  return fmt::sprintf(format, args...);
+}
+
+#define EXPECT_PRINTF(expected_output, format, arg) \
+  EXPECT_EQ(expected_output, test_sprintf(format, arg)) \
+    << "format: " << format; \
+  EXPECT_EQ(expected_output, fmt::sprintf(make_positional(format), arg))
 
 TEST(PrintfTest, NoArgs) {
   EXPECT_EQ("test", test_sprintf("test"));
