@@ -293,15 +293,15 @@ public:
     return static_cast<uint8_t>(ems);
   }
   FMT_CONSTEXPR_DECL rgb get_foreground() const FMT_NOEXCEPT {
-    assert(set_foreground_color);
+    assert(has_foreground() && "no foreground specified for this style");
     return foreground_color;
   }
   FMT_CONSTEXPR_DECL rgb get_background() const FMT_NOEXCEPT {
-    assert(set_background_color);
+    assert(has_background() && "no background specified for this style");
     return background_color;
   }
   FMT_CONSTEXPR emphasis get_emphasis() const FMT_NOEXCEPT {
-    assert(ems);
+    assert(has_emphasis() && "no emphasis specified for this style");
     return ems;
   }
 
