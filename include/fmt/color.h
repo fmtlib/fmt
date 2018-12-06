@@ -453,7 +453,7 @@ print(const text_style &tf, const String &format_str, const Args & ... args) {
   typedef typename internal::char_t<String>::type char_t;
   typedef typename buffer_context<char_t>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
-  vprint_text_style(tf, format_str, basic_format_args<context_t>(as));
+  vprint(tf, format_str, basic_format_args<context_t>(as));
 }
 
 #endif
