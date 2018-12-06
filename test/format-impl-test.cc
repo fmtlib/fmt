@@ -25,9 +25,9 @@
 #undef max
 
 #if FMT_HAS_CPP_ATTRIBUTE(noreturn)
-#define FMT_NORETURN [[noreturn]]
+# define FMT_NORETURN [[noreturn]]
 #else
-#define FMT_NORETURN
+# define FMT_NORETURN
 #endif
 
 using fmt::internal::fp;
@@ -108,8 +108,10 @@ TEST(FPTest, Grisu2FormatCompilesWithNonIEEEDouble) {
 }
 
 template <typename T>
-struct ValueExtractor : fmt::internal::function<T> {
-  T operator()(T value) { return value; }
+struct ValueExtractor: fmt::internal::function<T> {
+  T operator()(T value) {
+    return value;
+  }
 
   template <typename U>
   FMT_NORETURN T operator()(U) {
@@ -176,8 +178,8 @@ TEST(FormatTest, FormatErrorCode) {
   }
   {
     fmt::memory_buffer buffer;
-    std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size() + 1,
-                       'x');
+    std::string prefix(
+        fmt::inline_buffer_size - msg.size() - sep.size() + 1, 'x');
     fmt::format_error_code(buffer, 42, prefix);
     EXPECT_EQ(msg, to_string(buffer));
   }
@@ -186,7 +188,8 @@ TEST(FormatTest, FormatErrorCode) {
     // Test maximum buffer size.
     msg = fmt::format("error {}", codes[i]);
     fmt::memory_buffer buffer;
-    std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
+    std::string prefix(
+        fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
     fmt::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(prefix + sep + msg, to_string(buffer));
     std::size_t size = fmt::inline_buffer_size;

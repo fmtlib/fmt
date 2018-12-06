@@ -191,11 +191,11 @@ enum class color : uint32_t {
   yellow_green            = 0x9ACD32  // rgb(154,205,50)
 };  // enum class color
 
-enum class emphasis : uint32_t {
-  bold = 1 << 1,
-  italic = 1 << 3,
-  underline = 1 << 4,
-  strikethrough = 1 << 9
+enum class emphasis : uint8_t {
+  bold = 1,
+  italic = 1 << 1,
+  underline = 1 << 2,
+  strikethrough = 1 << 3
 };  // enum class emphasis
 
 // rgb is a struct for red, green and blue colors.
@@ -216,15 +216,15 @@ struct rgb {
 };
 
 // Experimental text formatting support.
-class text_format {
+class text_style {
 public:
-  FMT_CONSTEXPR_DECL text_format(emphasis em) FMT_NOEXCEPT
+  FMT_CONSTEXPR_DECL text_style(emphasis em) FMT_NOEXCEPT
       : set_foreground_color(),
         set_background_color(),
         ems(em) {}
 
   FMT_CONSTEXPR_DECL
-  text_format &operator|=(const text_format &rhs) FMT_NOEXCEPT {
+  text_style &operator|=(const text_style &rhs) FMT_NOEXCEPT {
     if (!set_foreground_color) {
       set_foreground_color = rhs.set_foreground_color;
       foreground_color = rhs.foreground_color;
@@ -243,17 +243,18 @@ public:
       background_color.b |= rhs.background_color.b;
     }
 
-    ems = (emphasis)((uint32_t)ems | (uint32_t)rhs.ems);
+    ems = static_cast<emphasis>(static_cast<uint8_t>(ems) |
+                                static_cast<uint8_t>(rhs.ems));
     return *this;
   }
 
   friend FMT_CONSTEXPR_DECL
-  text_format operator|(text_format lhs, const text_format &rhs) FMT_NOEXCEPT {
+  text_style operator|(text_style lhs, const text_style &rhs) FMT_NOEXCEPT {
     return lhs |= rhs;
   }
 
   FMT_CONSTEXPR_DECL
-  text_format &operator&=(const text_format &rhs) FMT_NOEXCEPT {
+  text_style &operator&=(const text_style &rhs) FMT_NOEXCEPT {
     if (!set_foreground_color) {
       set_foreground_color = rhs.set_foreground_color;
       foreground_color = rhs.foreground_color;
@@ -272,12 +273,13 @@ public:
       background_color.b &= rhs.background_color.b;
     }
 
-    ems = (emphasis)((uint32_t)ems & (uint32_t)rhs.ems);
+    ems = static_cast<emphasis>(static_cast<uint8_t>(ems) &
+                                static_cast<uint8_t>(rhs.ems));
     return *this;
   }
 
   friend FMT_CONSTEXPR_DECL
-  text_format operator&(text_format lhs, const text_format &rhs) FMT_NOEXCEPT {
+  text_style operator&(text_style lhs, const text_style &rhs) FMT_NOEXCEPT {
     return lhs &= rhs;
   }
 
@@ -300,7 +302,7 @@ public:
   }
 
 private:
-  FMT_CONSTEXPR_DECL text_format(bool is_foreground,
+  FMT_CONSTEXPR_DECL text_style(bool is_foreground,
                                  rgb text_color) FMT_NOEXCEPT
     : set_foreground_color(), set_background_color(), ems() {
     if (is_foreground) {
@@ -313,8 +315,8 @@ private:
     }
   }
 
-  friend FMT_CONSTEXPR_DECL text_format fg(rgb foreground) FMT_NOEXCEPT;
-  friend FMT_CONSTEXPR_DECL text_format bg(rgb background) FMT_NOEXCEPT;
+  friend FMT_CONSTEXPR_DECL text_style fg(rgb foreground) FMT_NOEXCEPT;
+  friend FMT_CONSTEXPR_DECL text_style bg(rgb background) FMT_NOEXCEPT;
 
   rgb foreground_color;
   rgb background_color;
@@ -323,16 +325,16 @@ private:
   emphasis ems;
 };
 
-FMT_CONSTEXPR_DECL text_format fg(rgb foreground) FMT_NOEXCEPT {
-  return text_format(/*is_foreground=*/true, foreground);
+FMT_CONSTEXPR_DECL text_style fg(rgb foreground) FMT_NOEXCEPT {
+  return text_style(/*is_foreground=*/true, foreground);
 }
 
-FMT_CONSTEXPR_DECL text_format bg(rgb background) FMT_NOEXCEPT {
-  return text_format(/*is_foreground=*/false, background);
+FMT_CONSTEXPR_DECL text_style bg(rgb background) FMT_NOEXCEPT {
+  return text_style(/*is_foreground=*/false, background);
 }
 
-FMT_CONSTEXPR_DECL text_format operator|(emphasis lhs, emphasis rhs) FMT_NOEXCEPT {
-  return text_format(lhs) | rhs;
+FMT_CONSTEXPR_DECL text_style operator|(emphasis lhs, emphasis rhs) FMT_NOEXCEPT {
+  return text_style(lhs) | rhs;
 }
 
 namespace internal {
@@ -424,7 +426,7 @@ inline void reset_color<wchar_t>(FILE *stream) FMT_NOEXCEPT {
 
 template <
   typename S, typename Char = typename internal::char_t<S>::type>
-void vprint_text_format(const text_format &tf, const S &format,
+void vprint(const text_style &tf, const S &format,
                 basic_format_args<typename buffer_context<Char>::type> args) {
   internal::fputs<Char>(internal::make_emphasis<Char>(tf.get_emphasis()), stdout);
   if (tf.has_foreground())
@@ -441,17 +443,17 @@ void vprint_text_format(const text_format &tf, const S &format,
   Formats a string and prints it to stdout using ANSI escape sequences to
   specify text formatting.
   Example:
-    fmt::print(fmt::emphasis::bold | fmt::color::red,
+    fmt::print(fmt::emphasis::bold | fg(fmt::color::red),
                "Elapsed time: {0:.2f} seconds", 1.23);
  */
 template <typename String, typename... Args>
 typename std::enable_if<internal::is_string<String>::value>::type
-print(const text_format &tf, const String &format_str, const Args & ... args) {
+print(const text_style &tf, const String &format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename internal::char_t<String>::type char_t;
   typedef typename buffer_context<char_t>::type context_t;
   format_arg_store<context_t, Args...> as{args...};
-  vprint_text_format(tf, format_str, basic_format_args<context_t>(as));
+  vprint_text_style(tf, format_str, basic_format_args<context_t>(as));
 }
 
 #endif
