@@ -159,7 +159,7 @@ struct chrono_formatter {
   void write(int value, int width) {
     typedef typename int_traits<int>::main_type main_type;
     main_type n = value;
-    auto num_digits = internal::count_digits(n);
+    int num_digits = internal::count_digits(n);
     if (width > num_digits)
       out = std::fill_n(out, width - num_digits, '0');
     out = format_decimal<char_type>(out, n, num_digits);
@@ -215,7 +215,7 @@ struct chrono_formatter {
     write(to_int(s.count() % 60), 2);
     if (ms != std::chrono::milliseconds()) {
       *out++ = '.';
-      write(ms.count(), 3);
+      write(to_int(ms.count()), 3);
     }
   }
 };
