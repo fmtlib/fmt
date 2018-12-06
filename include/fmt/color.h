@@ -331,6 +331,10 @@ FMT_CONSTEXPR_DECL text_format bg(rgb background) FMT_NOEXCEPT {
   return text_format(/*is_foreground=*/false, background);
 }
 
+FMT_CONSTEXPR_DECL text_format operator|(emphasis lhs, emphasis rhs) FMT_NOEXCEPT {
+  return text_format(lhs) | rhs;
+}
+
 namespace internal {
 
 template <typename Char>
@@ -348,9 +352,9 @@ struct ansi_color_escape {
     uint8_t em_codes[4] = {};
     if ((uint32_t)em & (uint32_t)emphasis::bold)
       em_codes[0] = 1;
-    if ((uint32_t)em & (uint32_t)emphasis::underline)
-      em_codes[1] = 3;
     if ((uint32_t)em & (uint32_t)emphasis::italic)
+      em_codes[1] = 3;
+    if ((uint32_t)em & (uint32_t)emphasis::underline)
       em_codes[2] = 4;
     if ((uint32_t)em & (uint32_t)emphasis::strikethrough)
       em_codes[3] = 9;
