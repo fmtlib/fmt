@@ -121,6 +121,6 @@ TEST(TimeTest, ChronoLocale) {
   EXPECT_TIME("%OH", tm_hour, 14, hours);
   EXPECT_TIME("%OI", tm_hour, 14, hours);
   EXPECT_TIME("%OM", tm_min, 42, minutes);
-  EXPECT_TIME("%OS", tm_min, 42, seconds);
+  EXPECT_TIME("%OS", tm_sec, 42, seconds);
 }
 #endif
