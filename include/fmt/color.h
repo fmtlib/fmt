@@ -217,11 +217,9 @@ struct rgb {
 
 // Experimental text formatting support.
 class text_style {
-public:
-  FMT_CONSTEXPR_DECL text_style(emphasis em) FMT_NOEXCEPT
-      : set_foreground_color(),
-        set_background_color(),
-        ems(em) {}
+ public:
+  FMT_CONSTEXPR text_style(emphasis em = emphasis()) FMT_NOEXCEPT
+      : set_foreground_color(), set_background_color(), ems(em) {}
 
   FMT_CONSTEXPR_DECL
   text_style &operator|=(const text_style &rhs) FMT_NOEXCEPT {
@@ -248,13 +246,12 @@ public:
     return *this;
   }
 
-  friend FMT_CONSTEXPR_DECL
+  friend FMT_CONSTEXPR
   text_style operator|(text_style lhs, const text_style &rhs) FMT_NOEXCEPT {
     return lhs |= rhs;
   }
 
-  FMT_CONSTEXPR_DECL
-  text_style &operator&=(const text_style &rhs) FMT_NOEXCEPT {
+  FMT_CONSTEXPR text_style &operator&=(const text_style &rhs) FMT_NOEXCEPT {
     if (!set_foreground_color) {
       set_foreground_color = rhs.set_foreground_color;
       foreground_color = rhs.foreground_color;
@@ -278,25 +275,25 @@ public:
     return *this;
   }
 
-  friend FMT_CONSTEXPR_DECL
+  friend FMT_CONSTEXPR
   text_style operator&(text_style lhs, const text_style &rhs) FMT_NOEXCEPT {
     return lhs &= rhs;
   }
 
-  FMT_CONSTEXPR_DECL bool has_foreground() const FMT_NOEXCEPT {
+  FMT_CONSTEXPR bool has_foreground() const FMT_NOEXCEPT {
     return set_foreground_color;
   }
-  FMT_CONSTEXPR_DECL bool has_background() const FMT_NOEXCEPT {
+  FMT_CONSTEXPR bool has_background() const FMT_NOEXCEPT {
     return set_background_color;
   }
-  FMT_CONSTEXPR_DECL bool has_emphasis() const FMT_NOEXCEPT {
+  FMT_CONSTEXPR bool has_emphasis() const FMT_NOEXCEPT {
     return static_cast<uint8_t>(ems) != 0;
   }
-  FMT_CONSTEXPR_DECL rgb get_foreground() const FMT_NOEXCEPT {
+  FMT_CONSTEXPR rgb get_foreground() const FMT_NOEXCEPT {
     assert(has_foreground() && "no foreground specified for this style");
     return foreground_color;
   }
-  FMT_CONSTEXPR_DECL rgb get_background() const FMT_NOEXCEPT {
+  FMT_CONSTEXPR rgb get_background() const FMT_NOEXCEPT {
     assert(has_background() && "no background specified for this style");
     return background_color;
   }
@@ -306,14 +303,12 @@ public:
   }
 
 private:
-  FMT_CONSTEXPR_DECL text_style(bool is_foreground,
-                                 rgb text_color) FMT_NOEXCEPT
+  FMT_CONSTEXPR text_style(bool is_foreground, rgb text_color) FMT_NOEXCEPT
     : set_foreground_color(), set_background_color(), ems() {
     if (is_foreground) {
       foreground_color = text_color;
       set_foreground_color = true;
-    }
-    else {
+    } else {
       background_color = text_color;
       set_background_color = true;
     }
@@ -329,15 +324,15 @@ private:
   emphasis ems;
 };
 
-FMT_CONSTEXPR_DECL text_style fg(rgb foreground) FMT_NOEXCEPT {
+FMT_CONSTEXPR text_style fg(rgb foreground) FMT_NOEXCEPT {
   return text_style(/*is_foreground=*/true, foreground);
 }
 
-FMT_CONSTEXPR_DECL text_style bg(rgb background) FMT_NOEXCEPT {
+FMT_CONSTEXPR text_style bg(rgb background) FMT_NOEXCEPT {
   return text_style(/*is_foreground=*/false, background);
 }
 
-FMT_CONSTEXPR_DECL text_style operator|(emphasis lhs, emphasis rhs) FMT_NOEXCEPT {
+FMT_CONSTEXPR text_style operator|(emphasis lhs, emphasis rhs) FMT_NOEXCEPT {
   return text_style(lhs) | rhs;
 }
 
@@ -382,7 +377,8 @@ struct ansi_color_escape {
 private:
   Char buffer[7 + 3 * 4 + 1];
 
-  static FMT_CONSTEXPR void to_esc(uint8_t c, Char *out, char delimiter) FMT_NOEXCEPT {
+  static FMT_CONSTEXPR void to_esc(uint8_t c, Char *out,
+                                   char delimiter) FMT_NOEXCEPT {
     out[0] = static_cast<Char>('0' + c / 100);
     out[1] = static_cast<Char>('0' + c / 10 % 10);
     out[2] = static_cast<Char>('0' + c % 10);
@@ -432,15 +428,19 @@ inline void reset_color<wchar_t>(FILE *stream) FMT_NOEXCEPT {
 template <
   typename S, typename Char = typename internal::char_t<S>::type>
 void vprint(const text_style &tf, const S &format,
-                basic_format_args<typename buffer_context<Char>::type> args) {
-  if (tf.has_emphasis())
-    internal::fputs<Char>(internal::make_emphasis<Char>(tf.get_emphasis()), stdout);
-  if (tf.has_foreground())
+            basic_format_args<typename buffer_context<Char>::type> args) {
+  if (tf.has_emphasis()) {
     internal::fputs<Char>(
-        internal::make_foreground_color<Char>(tf.get_foreground()), stdout);
-  if (tf.has_background())
+          internal::make_emphasis<Char>(tf.get_emphasis()), stdout);
+  }
+  if (tf.has_foreground()) {
+    internal::fputs<Char>(
+          internal::make_foreground_color<Char>(tf.get_foreground()), stdout);
+  }
+  if (tf.has_background()) {
     internal::fputs<Char>(
         internal::make_background_color<Char>(tf.get_background()), stdout);
+  }
   vprint(format, args);
   internal::reset_color<Char>(stdout);
 }
