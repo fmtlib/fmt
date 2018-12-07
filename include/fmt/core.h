@@ -508,6 +508,7 @@ namespace internal {
 
 struct dummy_string_view { typedef void char_type; };
 dummy_string_view to_string_view(...);
+dummy_string_view to_string_view(const std::FILE *);
 using fmt::v5::to_string_view;
 
 // Specifies whether S is a string type convertible to fmt::basic_string_view.
