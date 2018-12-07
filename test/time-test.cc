@@ -82,6 +82,22 @@ TEST(TimeTest, Chrono) {
             fmt::format("{:%H:%M:%S}", std::chrono::seconds(12345)));
 }
 
+std::string format_tm(const std::tm &time, const char *spec,
+                      const std::locale &loc) {
+  std::ostringstream os;
+  os.imbue(loc);
+  os << std::put_time(&time, spec);
+  return os.str();
+}
+
+#define EXPECT_TIME(spec, field, value, duration) { \
+    auto time = std::tm(); \
+    time.field = value; \
+    std::locale("ja_JP.utf8"); \
+    EXPECT_EQ(format_tm(time, spec, loc), \
+              fmt::format(loc, "{:" spec "}", std::chrono::duration(value))); \
+  }
+
 TEST(TimeTest, ChronoLocale) {
   const char *loc_name = "ja_JP.utf8";
   bool has_locale = false;
@@ -94,21 +110,9 @@ TEST(TimeTest, ChronoLocale) {
     fmt::print("{} locale is missing.\n", loc_name);
     return;
   }
-  std::ostringstream os;
-  auto str = [&] {
-    auto s = os.str();
-    os.str("");
-    return s;
-  };
-  os.imbue(loc);
-  auto time = std::tm();
-  time.tm_hour = 14;
-  os << std::put_time(&time, "%OH");
-  EXPECT_EQ(str(), fmt::format(loc, "{:%OH}", std::chrono::hours(14)));
-  os << std::put_time(&time, "%OI");
-  EXPECT_EQ(str(), fmt::format(loc, "{:%OI}", std::chrono::hours(14)));
-  time.tm_minute = 42;
-  os << std::put_time(&time, "%OM");
-  EXPECT_EQ(str(), fmt::format(loc, "{:%OM}", std::chrono::minutes(42)));
+  EXPECT_TIME("%OH", tm_hour, 14, hours);
+  EXPECT_TIME("%OI", tm_hour, 14, hours);
+  EXPECT_TIME("%OM", tm_min, 42, minutes);
+  EXPECT_TIME("%OS", tm_min, 42, seconds);
 }
 #endif

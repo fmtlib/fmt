@@ -31,6 +31,7 @@ inline null<> gmtime_s(...) { return null<>(); }
 
 enum class numeric_system {
   standard,
+  // Alternative numeric system, e.g. 十二 instead of 12 in ja_JP locale.
   alternative
 };
 
@@ -64,10 +65,10 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
       handler.on_full_weekday();
       break;
     case 'w':
-      handler.on_dec0_weekday();
+      handler.on_dec0_weekday(numeric_system::standard);
       break;
     case 'u':
-      handler.on_dec1_weekday();
+      handler.on_dec1_weekday(numeric_system::standard);
       break;
     // Month:
     case 'b':
@@ -95,6 +96,12 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
         throw format_error("invalid format");
       c = *ptr++;
       switch (c) {
+      case 'w':
+        handler.on_dec0_weekday(numeric_system::alternative);
+        break;
+      case 'u':
+        handler.on_dec1_weekday(numeric_system::alternative);
+        break;
       case 'H':
         handler.on_24_hour(numeric_system::alternative);
         break;
@@ -123,8 +130,8 @@ struct chrono_format_checker {
   void on_text(const Char *, const Char *) {}
   void on_abbr_weekday() {}
   void on_full_weekday() {}
-  void on_dec0_weekday() {}
-  void on_dec1_weekday() {}
+  void on_dec0_weekday(numeric_system) {}
+  void on_dec1_weekday(numeric_system) {}
   void on_abbr_month() {}
   void on_full_month() {}
   void on_24_hour(numeric_system) {}
@@ -158,8 +165,8 @@ struct chrono_formatter {
 
   void write(int value, int width) {
     typedef typename int_traits<int>::main_type main_type;
-    main_type n = value;
-    int num_digits = internal::count_digits(n);
+    main_type n = to_unsigned(value);
+    int num_digits = static_cast<int>(internal::count_digits(n));
     if (width > num_digits)
       out = std::fill_n(out, width - num_digits, '0');
     out = format_decimal<char_type>(out, n, num_digits);
@@ -182,8 +189,8 @@ struct chrono_formatter {
 
   void on_abbr_weekday() {}
   void on_full_weekday() {}
-  void on_dec0_weekday() {}
-  void on_dec1_weekday() {}
+  void on_dec0_weekday(numeric_system) {}
+  void on_dec1_weekday(numeric_system) {}
   void on_abbr_month() {}
   void on_full_month() {}
 
@@ -211,16 +218,23 @@ struct chrono_formatter {
     if (ns == numeric_system::standard)
       return write(minute, 2);
     auto time = tm();
-    time.tm_minute = minute;
+    time.tm_min = minute;
     format_localized(time, 'M');
   }
 
-  void on_second(numeric_system) {
-    write(to_int(s.count() % 60), 2);
-    if (ms != std::chrono::milliseconds()) {
-      *out++ = '.';
-      write(to_int(ms.count()), 3);
+  void on_second(numeric_system ns) {
+    auto second = to_int(s.count() % 60);
+    if (ns == numeric_system::standard) {
+      write(second, 2);
+      if (ms != std::chrono::milliseconds()) {
+        *out++ = '.';
+        write(to_int(ms.count()), 3);
+      }
+      return;
     }
+    auto time = tm();
+    time.tm_sec = second;
+    format_localized(time, 'S');
   }
 };
 }  // namespace internal
