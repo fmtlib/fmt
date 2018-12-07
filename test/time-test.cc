@@ -31,6 +31,14 @@ TEST(TimeTest, GrowBuffer) {
   fmt::format(s, *std::localtime(&t));
 }
 
+TEST(TimeTest, FormatToEmptyContainer) {
+  std::string s;
+  auto time = std::tm();
+  time.tm_sec = 42;
+  fmt::format_to(std::back_inserter(s), "{:%S}", time);
+  EXPECT_EQ(s, "42");
+}
+
 TEST(TimeTest, EmptyResult) {
   EXPECT_EQ("", fmt::format("{}", std::tm()));
 }
