@@ -206,9 +206,13 @@ struct chrono_formatter {
     format_localized(time, 'I');
   }
 
-  void on_minute(numeric_system) {
+  void on_minute(numeric_system ns) {
     auto minute = to_int((s.count() / 60) % 60);
-    write(minute, 2);
+    if (ns == numeric_system::standard)
+      return write(minute, 2);
+    auto time = tm();
+    time.tm_minute = minute;
+    format_localized(time, 'M');
   }
 
   void on_second(numeric_system) {

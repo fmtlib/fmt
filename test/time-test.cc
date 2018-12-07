@@ -107,5 +107,8 @@ TEST(TimeTest, ChronoLocale) {
   EXPECT_EQ(str(), fmt::format(loc, "{:%OH}", std::chrono::hours(14)));
   os << std::put_time(&time, "%OI");
   EXPECT_EQ(str(), fmt::format(loc, "{:%OI}", std::chrono::hours(14)));
+  time.tm_minute = 42;
+  os << std::put_time(&time, "%OM");
+  EXPECT_EQ(str(), fmt::format(loc, "{:%OM}", std::chrono::minutes(42)));
 }
 #endif
