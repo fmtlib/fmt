@@ -200,4 +200,8 @@ if (FMT_PEDANTIC AND NOT WIN32)
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
     "-DPEDANTIC_COMPILE_FLAGS=${PEDANTIC_COMPILE_FLAGS}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+
+  add_executable (hello_fmt hello_fmt.cc ../src/format.cc)
+  target_compile_options (hello_fmt PRIVATE -Wall -Wextra -Werror -pedantic -Wconversion -Wsign-conversion -Wunused -Wshadow -Wdouble-promotion -Wcast-align -Wnull-dereference)
+  target_include_directories( hello_fmt PRIVATE ${PROJECT_SOURCE_DIR}/include)
 endif ()
