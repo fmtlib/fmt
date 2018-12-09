@@ -6,7 +6,7 @@
 // For the license information refer to format.h.
 
 #include "fmt/chrono.h"
-#include "gtest.h"
+#include "gtest-extra.h"
 
 #include <iomanip>
 
@@ -49,7 +49,52 @@ std::string format_tm(const std::tm &time, const char *spec,
               fmt::format(loc, "{:" spec "}", duration)); \
   }
 
-TEST(ChronoTest, Format) {
+TEST(ChronoTest, FormatDefault) {
+  EXPECT_EQ("42s", fmt::format("{}", std::chrono::seconds(42)));
+  EXPECT_EQ("42as",
+            fmt::format("{}", std::chrono::duration<int, std::atto>(42)));
+  EXPECT_EQ("42fs",
+            fmt::format("{}", std::chrono::duration<int, std::femto>(42)));
+  EXPECT_EQ("42ps",
+            fmt::format("{}", std::chrono::duration<int, std::pico>(42)));
+  EXPECT_EQ("42ns", fmt::format("{}", std::chrono::nanoseconds(42)));
+  EXPECT_EQ("42µs", fmt::format("{}", std::chrono::microseconds(42)));
+  EXPECT_EQ("42ms", fmt::format("{}", std::chrono::milliseconds(42)));
+  EXPECT_EQ("42cs",
+            fmt::format("{}", std::chrono::duration<int, std::centi>(42)));
+  EXPECT_EQ("42ds",
+            fmt::format("{}", std::chrono::duration<int, std::deci>(42)));
+  EXPECT_EQ("42s", fmt::format("{}", std::chrono::seconds(42)));
+  EXPECT_EQ("42das",
+            fmt::format("{}", std::chrono::duration<int, std::deca>(42)));
+  EXPECT_EQ("42hs",
+            fmt::format("{}", std::chrono::duration<int, std::hecto>(42)));
+  EXPECT_EQ("42ks",
+            fmt::format("{}", std::chrono::duration<int, std::kilo>(42)));
+  EXPECT_EQ("42Ms",
+            fmt::format("{}", std::chrono::duration<int, std::mega>(42)));
+  EXPECT_EQ("42Gs",
+            fmt::format("{}", std::chrono::duration<int, std::giga>(42)));
+  EXPECT_EQ("42Ts",
+            fmt::format("{}", std::chrono::duration<int, std::tera>(42)));
+  EXPECT_EQ("42Ps",
+            fmt::format("{}", std::chrono::duration<int, std::peta>(42)));
+  EXPECT_EQ("42Es",
+            fmt::format("{}", std::chrono::duration<int, std::exa>(42)));
+  EXPECT_EQ("42m", fmt::format("{}", std::chrono::minutes(42)));
+  EXPECT_EQ("42h", fmt::format("{}", std::chrono::hours(42)));
+  EXPECT_EQ("42[15s]",
+            fmt::format("{}",
+                        std::chrono::duration<int, std::ratio<15, 1>>(42)));
+  EXPECT_EQ("42[15/4s]",
+            fmt::format("{}",
+                        std::chrono::duration<int, std::ratio<15, 4>>(42)));
+}
+
+TEST(ChronoTest, FormatSpecs) {
+  EXPECT_EQ("%", fmt::format("{:%%}", std::chrono::seconds(0)));
+  EXPECT_EQ("\n", fmt::format("{:%n}", std::chrono::seconds(0)));
+  EXPECT_EQ("\t", fmt::format("{:%t}", std::chrono::seconds(0)));
   EXPECT_EQ("00", fmt::format("{:%S}", std::chrono::seconds(0)));
   EXPECT_EQ("00", fmt::format("{:%S}", std::chrono::seconds(60)));
   EXPECT_EQ("42", fmt::format("{:%S}", std::chrono::seconds(42)));
@@ -69,9 +114,34 @@ TEST(ChronoTest, Format) {
   EXPECT_EQ("02", fmt::format("{:%I}", std::chrono::hours(14)));
   EXPECT_EQ("03:25:45",
             fmt::format("{:%H:%M:%S}", std::chrono::seconds(12345)));
-  EXPECT_EQ("01/00/00", fmt::format("{:%D}", std::chrono::seconds()));
-  EXPECT_EQ("0001-00-00", fmt::format("{:%F}", std::chrono::seconds()));
   EXPECT_EQ("03:25", fmt::format("{:%R}", std::chrono::seconds(12345)));
+  EXPECT_EQ("03:25:45", fmt::format("{:%T}", std::chrono::seconds(12345)));
+}
+
+TEST(ChronoTest, InvalidSpecs) {
+  auto sec = std::chrono::seconds(0);
+  EXPECT_THROW_MSG(fmt::format("{:%a}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%A}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%c}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%x}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%Ex}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%X}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%EX}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%D}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%F}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%Ec}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%w}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%u}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%b}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%B}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%z}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%Z}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format("{:%q}", sec), fmt::format_error,
+                   "invalid format");
+  EXPECT_THROW_MSG(fmt::format("{:%Eq}", sec), fmt::format_error,
+                   "invalid format");
+  EXPECT_THROW_MSG(fmt::format("{:%Oq}", sec), fmt::format_error,
+                   "invalid format");
 }
 
 TEST(ChronoTest, Locale) {
@@ -94,8 +164,7 @@ TEST(ChronoTest, Locale) {
   time.tm_hour = 3;
   time.tm_min = 25;
   time.tm_sec = 45;
-  EXPECT_TIME("%c", time, std::chrono::seconds(12345));
-  EXPECT_TIME("%x", time, std::chrono::seconds(12345));
-  EXPECT_TIME("%X", time, std::chrono::seconds(12345));
-  EXPECT_TIME("%r", time, std::chrono::seconds(12345));
+  auto sec = std::chrono::seconds(12345);
+  EXPECT_TIME("%r", time, sec);
+  EXPECT_TIME("%p", time, sec);
 }
