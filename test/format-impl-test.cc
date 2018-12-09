@@ -228,4 +228,14 @@ TEST(ColorsTest, Colors) {
       stdout,
       fmt::print(fg(fmt::color::blue) | fmt::emphasis::bold, "blue/bold"),
       "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(fg(fmt::terminal_color::red), "tred"),
+               "\x1b[31mtred\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(bg(fmt::terminal_color::cyan), "tcyan"),
+               "\x1b[46mtcyan\x1b[0m");
+  EXPECT_WRITE(stdout,
+               fmt::print(fg(fmt::terminal_color::bright_green), "tbgreen"),
+               "\x1b[92mtbgreen\x1b[0m");
+  EXPECT_WRITE(stdout,
+               fmt::print(bg(fmt::terminal_color::bright_magenta), "tbmagenta"),
+               "\x1b[105mtbmagenta\x1b[0m");
 }

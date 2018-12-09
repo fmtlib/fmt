@@ -191,6 +191,25 @@ enum class color : uint32_t {
   yellow_green            = 0x9ACD32  // rgb(154,205,50)
 };  // enum class color
 
+enum class terminal_color : uint8_t {
+  black = 30,
+  red,
+  green,
+  yellow,
+  blue,
+  magenta,
+  cyan,
+  white,
+  bright_black = 90,
+  bright_red,
+  bright_green,
+  bright_yellow,
+  bright_blue,
+  bright_magenta,
+  bright_cyan,
+  bright_white
+};  // enum class terminal_color
+
 enum class emphasis : uint8_t {
   bold = 1,
   italic = 1 << 1,
@@ -198,18 +217,23 @@ enum class emphasis : uint8_t {
   strikethrough = 1 << 3
 };  // enum class emphasis
 
-// rgb is a struct for red, green and blue colors.
+// rgb is a struct for red, green and blue colors plus an extra byte to store
+// a terminal color.
 // We use rgb as name because some editors will show it as color direct in the
 // editor.
 struct rgb {
-  FMT_CONSTEXPR_DECL rgb() : r(0), g(0), b(0) {}
+  FMT_CONSTEXPR_DECL rgb() : t(0), r(0), g(0), b(0) {}
   FMT_CONSTEXPR_DECL rgb(uint8_t r_, uint8_t g_, uint8_t b_)
-    : r(r_), g(g_), b(b_) {}
+    : t(0), r(r_), g(g_), b(b_) {}
   FMT_CONSTEXPR_DECL rgb(uint32_t hex)
-    : r((hex >> 16) & 0xFF), g((hex >> 8) & 0xFF), b((hex) & 0xFF) {}
+    : t((hex >> 24) & 0xFF), r((hex >> 16) & 0xFF), g((hex >> 8) & 0xFF),
+      b((hex)&0xFF) {}
   FMT_CONSTEXPR_DECL rgb(color hex)
-    : r((uint32_t(hex) >> 16) & 0xFF), g((uint32_t(hex) >> 8) & 0xFF),
+    : t(0), r((uint32_t(hex) >> 16) & 0xFF), g((uint32_t(hex) >> 8) & 0xFF),
       b(uint32_t(hex) & 0xFF) {}
+  FMT_CONSTEXPR_DECL rgb(terminal_color hex) FMT_NOEXCEPT
+    : t(uint8_t(hex)), r(0), g(0), b(0) {}
+  uint8_t t; // terminal color
   uint8_t r;
   uint8_t g;
   uint8_t b;
@@ -315,7 +339,11 @@ private:
   }
 
   friend FMT_CONSTEXPR_DECL text_style fg(rgb foreground) FMT_NOEXCEPT;
+  friend FMT_CONSTEXPR_DECL text_style fg(terminal_color foreground)
+      FMT_NOEXCEPT;
   friend FMT_CONSTEXPR_DECL text_style bg(rgb background) FMT_NOEXCEPT;
+  friend FMT_CONSTEXPR_DECL text_style bg(terminal_color background)
+      FMT_NOEXCEPT;
 
   rgb foreground_color;
   rgb background_color;
@@ -328,7 +356,15 @@ FMT_CONSTEXPR text_style fg(rgb foreground) FMT_NOEXCEPT {
   return text_style(/*is_foreground=*/true, foreground);
 }
 
+FMT_CONSTEXPR_DECL text_style fg(terminal_color foreground) FMT_NOEXCEPT {
+  return text_style(/*is_foreground=*/true, foreground);
+}
+
 FMT_CONSTEXPR text_style bg(rgb background) FMT_NOEXCEPT {
+  return text_style(/*is_foreground=*/false, background);
+}
+
+FMT_CONSTEXPR_DECL text_style bg(terminal_color background) FMT_NOEXCEPT {
   return text_style(/*is_foreground=*/false, background);
 }
 
@@ -341,6 +377,31 @@ namespace internal {
 template <typename Char>
 struct ansi_color_escape {
   FMT_CONSTEXPR ansi_color_escape(rgb color, const char * esc) FMT_NOEXCEPT {
+    // If we have a terminal color, we need to output another escape code
+    // sequence.
+    if (color.t) {
+      bool is_background = esc == internal::data::BACKGROUND_COLOR;
+      // Background ASCII codes are the same as the foreground ones but with
+      // 10 more.
+      if (is_background)
+        color.t += 10;
+
+      std::size_t index = 0;
+      buffer[index++] = static_cast<Char>('\x1b');
+      buffer[index++] = static_cast<Char>('[');
+
+      if (color.t >= 100) {
+        buffer[index++] = static_cast<Char>('1');
+        color.t %= 100;
+      }
+      buffer[index++] = static_cast<Char>('0' + color.t / 10);
+      buffer[index++] = static_cast<Char>('0' + color.t % 10);
+
+      buffer[index++] = static_cast<Char>('m');
+      buffer[index++] = static_cast<Char>('\0');
+      return;
+    }
+
     for (int i = 0; i < 7; i++) {
       buffer[i] = static_cast<Char>(esc[i]);
     }
