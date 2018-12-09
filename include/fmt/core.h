@@ -508,11 +508,6 @@ namespace internal {
 
 struct dummy_string_view { typedef void char_type; };
 dummy_string_view to_string_view(...);
-// The following overload disables using std::FILE as a character type, which is
-// needed because or else
-//   fmt::print(stderr, fmt::emphasis::bold, "");
-// would take stderr as the format string.
-dummy_string_view to_string_view(const std::FILE *);
 using fmt::v5::to_string_view;
 
 // Specifies whether S is a string type convertible to fmt::basic_string_view.

@@ -423,6 +423,15 @@ template <>
 inline void reset_color<wchar_t>(FILE *stream) FMT_NOEXCEPT {
   fputs(internal::data::WRESET_COLOR, stream);
 }
+
+// The following specialiazation disables using std::FILE as a character type,
+// which is needed because or else
+//   fmt::print(stderr, fmt::emphasis::bold, "");
+// would take stderr (a std::FILE *) as the format string.
+template <>
+struct is_string<std::FILE *> : std::false_type {};
+template <>
+struct is_string<const std::FILE *> : std::false_type {};
 } // namespace internal
 
 template <
