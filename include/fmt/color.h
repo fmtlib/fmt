@@ -423,26 +423,53 @@ template <>
 inline void reset_color<wchar_t>(FILE *stream) FMT_NOEXCEPT {
   fputs(internal::data::WRESET_COLOR, stream);
 }
+
+// The following specialiazation disables using std::FILE as a character type,
+// which is needed because or else
+//   fmt::print(stderr, fmt::emphasis::bold, "");
+// would take stderr (a std::FILE *) as the format string.
+template <>
+struct is_string<std::FILE *> : std::false_type {};
+template <>
+struct is_string<const std::FILE *> : std::false_type {};
 } // namespace internal
 
 template <
   typename S, typename Char = typename internal::char_t<S>::type>
-void vprint(const text_style &tf, const S &format,
+void vprint(std::FILE *f, const text_style &ts, const S &format,
             basic_format_args<typename buffer_context<Char>::type> args) {
-  if (tf.has_emphasis()) {
+  if (ts.has_emphasis()) {
     internal::fputs<Char>(
-          internal::make_emphasis<Char>(tf.get_emphasis()), stdout);
+          internal::make_emphasis<Char>(ts.get_emphasis()), f);
   }
-  if (tf.has_foreground()) {
+  if (ts.has_foreground()) {
     internal::fputs<Char>(
-          internal::make_foreground_color<Char>(tf.get_foreground()), stdout);
+          internal::make_foreground_color<Char>(ts.get_foreground()), f);
   }
-  if (tf.has_background()) {
+  if (ts.has_background()) {
     internal::fputs<Char>(
-        internal::make_background_color<Char>(tf.get_background()), stdout);
+        internal::make_background_color<Char>(ts.get_background()), f);
   }
-  vprint(format, args);
-  internal::reset_color<Char>(stdout);
+  vprint(f, format, args);
+  internal::reset_color<Char>(f);
+}
+
+/**
+  Formats a string and prints it to the specified file stream using ANSI
+  escape sequences to specify text formatting.
+  Example:
+    fmt::print(fmt::emphasis::bold | fg(fmt::color::red),
+               "Elapsed time: {0:.2f} seconds", 1.23);
+ */
+template <typename String, typename... Args>
+typename std::enable_if<internal::is_string<String>::value>::type print(
+    std::FILE *f, const text_style &ts, const String &format_str,
+    const Args &... args) {
+  internal::check_format_string<Args...>(format_str);
+  typedef typename internal::char_t<String>::type char_t;
+  typedef typename buffer_context<char_t>::type context_t;
+  format_arg_store<context_t, Args...> as{args...};
+  vprint(f, ts, format_str, basic_format_args<context_t>(as));
 }
 
 /**
@@ -453,13 +480,10 @@ void vprint(const text_style &tf, const S &format,
                "Elapsed time: {0:.2f} seconds", 1.23);
  */
 template <typename String, typename... Args>
-typename std::enable_if<internal::is_string<String>::value>::type
-print(const text_style &tf, const String &format_str, const Args & ... args) {
-  internal::check_format_string<Args...>(format_str);
-  typedef typename internal::char_t<String>::type char_t;
-  typedef typename buffer_context<char_t>::type context_t;
-  format_arg_store<context_t, Args...> as{args...};
-  vprint(tf, format_str, basic_format_args<context_t>(as));
+typename std::enable_if<internal::is_string<String>::value>::type print(
+    const text_style &ts, const String &format_str,
+    const Args &... args) {
+  return print(stdout, ts, format_str, args...);
 }
 
 #endif
