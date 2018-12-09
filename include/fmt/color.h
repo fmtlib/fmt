@@ -438,20 +438,26 @@ template <
   typename S, typename Char = typename internal::char_t<S>::type>
 void vprint(std::FILE *f, const text_style &ts, const S &format,
             basic_format_args<typename buffer_context<Char>::type> args) {
+  bool has_style = false;
   if (ts.has_emphasis()) {
+    has_style = true;
     internal::fputs<Char>(
           internal::make_emphasis<Char>(ts.get_emphasis()), f);
   }
   if (ts.has_foreground()) {
+    has_style = true;
     internal::fputs<Char>(
           internal::make_foreground_color<Char>(ts.get_foreground()), f);
   }
   if (ts.has_background()) {
+    has_style = true;
     internal::fputs<Char>(
         internal::make_background_color<Char>(ts.get_background()), f);
   }
   vprint(f, format, args);
-  internal::reset_color<Char>(f);
+  if (has_style) {
+    internal::reset_color<Char>(f);
+  }
 }
 
 /**
