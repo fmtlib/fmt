@@ -228,5 +228,9 @@ TEST(ColorsTest, Colors) {
       stdout,
       fmt::print(fg(fmt::color::blue) | fmt::emphasis::bold, "blue/bold"),
       "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m");
+  EXPECT_WRITE(stderr, fmt::print(stderr, fmt::emphasis::bold, "bold error"),
+               "\x1b[1mbold error\x1b[0m");
+  EXPECT_WRITE(stderr, fmt::print(stderr, fg(fmt::color::blue), "blue log"),
+                 "\x1b[38;2;000;000;255mblue log\x1b[0m");
   EXPECT_WRITE(stdout, fmt::print(fmt::text_style(), "hi"), "hi");
 }
