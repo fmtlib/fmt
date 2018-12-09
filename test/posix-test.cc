@@ -334,7 +334,7 @@ TEST(FileTest, Dup2NoExcept) {
   file copy = open_file();
   error_code ec;
   f.dup2(copy.descriptor(), ec);
-  EXPECT_EQ(0, ec.get());
+  EXPECT_EQ(ec.get(), 0);
   EXPECT_NE(f.descriptor(), copy.descriptor());
   EXPECT_READ(copy, FILE_CONTENT);
 }

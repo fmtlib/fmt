@@ -311,8 +311,8 @@ using fmt::error_code;
 using fmt::file;
 
 TEST(ErrorCodeTest, Ctor) {
-  EXPECT_EQ(0, error_code().get());
-  EXPECT_EQ(42, error_code(42).get());
+  EXPECT_EQ(error_code().get(), 0);
+  EXPECT_EQ(error_code(42).get(), 42);
 }
 
 TEST(OutputRedirectTest, ScopedRedirect) {

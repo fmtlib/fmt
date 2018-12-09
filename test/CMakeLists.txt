@@ -85,6 +85,7 @@ function(add_fmt_test name)
 endfunction()
 
 add_fmt_test(assert-test)
+add_fmt_test(chrono-test)
 add_fmt_test(core-test)
 add_fmt_test(gtest-extra-test)
 add_fmt_test(format-test mock-allocator.h)
