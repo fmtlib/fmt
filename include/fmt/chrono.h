@@ -48,6 +48,16 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
     case '%':
       handler.on_text(ptr - 1, ptr);
       break;
+    case 'n': {
+      const char newline[] = "\n";
+      handler.on_text(newline, newline + 1);
+      break;
+    }
+    case 't': {
+      const char tab[] = "\t";
+      handler.on_text(tab, tab + 1);
+      break;
+    }
     // Day of the week:
     case 'a':
       handler.on_abbr_weekday();
@@ -83,13 +93,13 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
       break;
     // Other:
     case 'c':
-      handler.on_std_datetime();
+      handler.on_datetime(numeric_system::standard);
       break;
     case 'x':
-      handler.on_loc_date();
+      handler.on_loc_date(numeric_system::standard);
       break;
     case 'X':
-      handler.on_loc_time();
+      handler.on_loc_time(numeric_system::standard);
       break;
     case 'D':
       handler.on_us_date();
@@ -103,7 +113,38 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
     case 'R':
       handler.on_24_hour_time();
       break;
-    // Alternative numeric system:
+    case 'T':
+      handler.on_iso_time();
+      break;
+    case 'p':
+      handler.on_am_pm();
+      break;
+    case 'z':
+      handler.on_utc_offset();
+      break;
+    case 'Z':
+      handler.on_tz_name();
+      break;
+    // Alternative representation:
+    case 'E': {
+      if (ptr == end)
+        throw format_error("invalid format");
+      c = *ptr++;
+      switch (c) {
+      case 'c':
+        handler.on_datetime(numeric_system::alternative);
+        break;
+      case 'x':
+        handler.on_loc_date(numeric_system::alternative);
+        break;
+      case 'X':
+        handler.on_loc_time(numeric_system::alternative);
+        break;
+      default:
+        throw format_error("invalid format");
+      }
+      break;
+    }
     case 'O':
       if (ptr == end)
         throw format_error("invalid format");
@@ -127,9 +168,12 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
       case 'S':
         handler.on_second(numeric_system::alternative);
         break;
+      default:
+        throw format_error("invalid format");
       }
       break;
-      // TODO: parse more format specifiers
+    default:
+      throw format_error("invalid format");
     }
     begin = ptr;
   }
@@ -139,25 +183,31 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
 }
 
 struct chrono_format_checker {
+  void report_no_date() { throw format_error("no date"); }
+
   template <typename Char>
   void on_text(const Char *, const Char *) {}
-  void on_abbr_weekday() {}
-  void on_full_weekday() {}
-  void on_dec0_weekday(numeric_system) {}
-  void on_dec1_weekday(numeric_system) {}
-  void on_abbr_month() {}
-  void on_full_month() {}
+  void on_abbr_weekday() { report_no_date(); }
+  void on_full_weekday() { report_no_date(); }
+  void on_dec0_weekday(numeric_system) { report_no_date(); }
+  void on_dec1_weekday(numeric_system) { report_no_date(); }
+  void on_abbr_month() { report_no_date(); }
+  void on_full_month() { report_no_date(); }
   void on_24_hour(numeric_system) {}
   void on_12_hour(numeric_system) {}
   void on_minute(numeric_system) {}
   void on_second(numeric_system) {}
-  void on_std_datetime() {}
-  void on_loc_date() {}
-  void on_loc_time() {}
-  void on_us_date() {}
-  void on_iso_date() {}
+  void on_datetime(numeric_system) { report_no_date(); }
+  void on_loc_date(numeric_system) { report_no_date(); }
+  void on_loc_time(numeric_system) { report_no_date(); }
+  void on_us_date() { report_no_date(); }
+  void on_iso_date() { report_no_date(); }
   void on_12_hour_time() {}
   void on_24_hour_time() {}
+  void on_iso_time() {}
+  void on_am_pm() {}
+  void on_utc_offset() { report_no_date(); }
+  void on_tz_name() { report_no_date(); }
 };
 
 template <typename Int>
@@ -197,18 +247,6 @@ struct chrono_formatter {
     return time;
   }
 
-  std::tm datetime() const {
-    auto t = time();
-    t.tm_mday = 1;
-    return t;
-  }
-
-  std::tm date() const {
-    auto t = std::tm();
-    t.tm_mday = 1;
-    return t;
-  }
-
   void write(int value, int width) {
     typedef typename int_traits<int>::main_type main_type;
     main_type n = to_unsigned(value);
@@ -232,12 +270,20 @@ struct chrono_formatter {
     std::copy(begin, end, out);
   }
 
+  // These are not implemented because durations don't have date information.
   void on_abbr_weekday() {}
   void on_full_weekday() {}
   void on_dec0_weekday(numeric_system) {}
   void on_dec1_weekday(numeric_system) {}
   void on_abbr_month() {}
   void on_full_month() {}
+  void on_datetime(numeric_system) {}
+  void on_loc_date(numeric_system) {}
+  void on_loc_time(numeric_system) {}
+  void on_us_date() {}
+  void on_iso_date() {}
+  void on_utc_offset() {}
+  void on_tz_name() {}
 
   void on_24_hour(numeric_system ns) {
     if (ns == numeric_system::standard)
@@ -277,26 +323,6 @@ struct chrono_formatter {
     format_localized(time, "%OS");
   }
 
-  void on_std_datetime() { format_localized(datetime(), "%c"); }
-  void on_loc_date() { format_localized(date(), "%x"); }
-  void on_loc_time() { format_localized(datetime(), "%X"); }
-
-  void on_us_date() {
-    write(1, 2);
-    *out++ = '/';
-    write(0, 2);
-    *out++ = '/';
-    write(0, 2);
-  }
-
-  void on_iso_date() {
-    write(1, 4);
-    *out++ = '-';
-    write(0, 2);
-    *out++ = '-';
-    write(0, 2);
-  }
-
   void on_12_hour_time() { format_localized(time(), "%r"); }
 
   void on_24_hour_time() {
@@ -304,8 +330,43 @@ struct chrono_formatter {
     *out++ = ':';
     write(minute(), 2);
   }
+
+  void on_iso_time() {
+    on_24_hour_time();
+    *out++ = ':';
+    write(second(), 2);
+  }
+
+  void on_am_pm() { format_localized(time(), "%p"); }
 };
 }  // namespace internal
+
+template <typename Period> FMT_CONSTEXPR const char *get_units() {
+  return FMT_NULL;
+}
+template <> FMT_CONSTEXPR const char *get_units<std::atto>() { return "as"; }
+template <> FMT_CONSTEXPR const char *get_units<std::femto>() { return "fs"; }
+template <> FMT_CONSTEXPR const char *get_units<std::pico>() { return "ps"; }
+template <> FMT_CONSTEXPR const char *get_units<std::nano>() { return "ns"; }
+template <> FMT_CONSTEXPR const char *get_units<std::micro>() { return "µs"; }
+template <> FMT_CONSTEXPR const char *get_units<std::milli>() { return "ms"; }
+template <> FMT_CONSTEXPR const char *get_units<std::centi>() { return "cs"; }
+template <> FMT_CONSTEXPR const char *get_units<std::deci>() { return "ds"; }
+template <> FMT_CONSTEXPR const char *get_units<std::ratio<1>>() { return "s"; }
+template <> FMT_CONSTEXPR const char *get_units<std::deca>() { return "das"; }
+template <> FMT_CONSTEXPR const char *get_units<std::hecto>() { return "hs"; }
+template <> FMT_CONSTEXPR const char *get_units<std::kilo>() { return "ks"; }
+template <> FMT_CONSTEXPR const char *get_units<std::mega>() { return "Ms"; }
+template <> FMT_CONSTEXPR const char *get_units<std::giga>() { return "Gs"; }
+template <> FMT_CONSTEXPR const char *get_units<std::tera>() { return "Ts"; }
+template <> FMT_CONSTEXPR const char *get_units<std::peta>() { return "Ps"; }
+template <> FMT_CONSTEXPR const char *get_units<std::exa>() { return "Es"; }
+template <> FMT_CONSTEXPR const char *get_units<std::ratio<60>>() {
+  return "m";
+}
+template <> FMT_CONSTEXPR const char *get_units<std::ratio<3600>>() {
+  return "h";
+}
 
 template <typename Rep, typename Period, typename Char>
 struct formatter<std::chrono::duration<Rep, Period>, Char> {
@@ -323,10 +384,19 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   template <typename FormatContext>
   auto format(const duration &d, FormatContext &ctx)
       -> decltype(ctx.out()) {
+    auto begin = format_str.begin(), end = format_str.end();
+    if (begin == end || *begin == '}') {
+      if (const char *unit = get_units<Period>())
+        return format_to(ctx.out(), "{}{}", d.count(), unit);
+      if (Period::den == 1)
+        return format_to(ctx.out(), "{}[{}s]", d.count(), Period::num);
+      return format_to(ctx.out(), "{}[{}/{}s]",
+                       d.count(), Period::num, Period::den);
+    }
     internal::chrono_formatter<FormatContext> f(ctx);
     f.s = std::chrono::duration_cast<std::chrono::seconds>(d);
     f.ms = std::chrono::duration_cast<std::chrono::milliseconds>(d - f.s);
-    parse_chrono_format(format_str.begin(), format_str.end(), f);
+    parse_chrono_format(begin, end, f);
     return f.out;
   }
 };

@@ -232,6 +232,7 @@ TEST(ColorsTest, Colors) {
                "\x1b[1mbold error\x1b[0m");
   EXPECT_WRITE(stderr, fmt::print(stderr, fg(fmt::color::blue), "blue log"),
                  "\x1b[38;2;000;000;255mblue log\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(fmt::text_style(), "hi"), "hi");
   EXPECT_WRITE(stdout, fmt::print(fg(fmt::terminal_color::red), "tred"),
                "\x1b[31mtred\x1b[0m");
   EXPECT_WRITE(stdout, fmt::print(bg(fmt::terminal_color::cyan), "tcyan"),
