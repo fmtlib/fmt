@@ -83,10 +83,10 @@ TEST(ChronoTest, FormatDefault) {
             fmt::format("{}", std::chrono::duration<int, std::exa>(42)));
   EXPECT_EQ("42m", fmt::format("{}", std::chrono::minutes(42)));
   EXPECT_EQ("42h", fmt::format("{}", std::chrono::hours(42)));
-  EXPECT_EQ("42[15s]",
+  EXPECT_EQ("42[15]s",
             fmt::format("{}",
                         std::chrono::duration<int, std::ratio<15, 1>>(42)));
-  EXPECT_EQ("42[15/4s]",
+  EXPECT_EQ("42[15/4]s",
             fmt::format("{}",
                         std::chrono::duration<int, std::ratio<15, 4>>(42)));
 }

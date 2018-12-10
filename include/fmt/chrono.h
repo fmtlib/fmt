@@ -389,8 +389,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       if (const char *unit = get_units<Period>())
         return format_to(ctx.out(), "{}{}", d.count(), unit);
       if (Period::den == 1)
-        return format_to(ctx.out(), "{}[{}s]", d.count(), Period::num);
-      return format_to(ctx.out(), "{}[{}/{}s]",
+        return format_to(ctx.out(), "{}[{}]s", d.count(), Period::num);
+      return format_to(ctx.out(), "{}[{}/{}]s",
                        d.count(), Period::num, Period::den);
     }
     internal::chrono_formatter<FormatContext> f(ctx);
