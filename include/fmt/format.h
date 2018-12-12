@@ -1952,8 +1952,8 @@ FMT_CONSTEXPR const Char *parse_arg_id(
     return handler.on_error("invalid format string"), begin;
   auto it = begin;
   do {
-    c = *++it;
-  } while (it != end && (is_name_start(c) || ('0' <= c && c <= '9')));
+    ++it;
+  } while (it != end && (is_name_start(c = *it) || ('0' <= c && c <= '9')));
   handler(basic_string_view<Char>(begin, to_unsigned(it - begin)));
   return it;
 }
