@@ -252,7 +252,7 @@ struct color_type {
     value.term_color = term_color;
   }
   union {
-    rgb rgb_color = color::black;
+    rgb rgb_color;
     terminal_color term_color;
   } value;
   bool is_rgb = false;
