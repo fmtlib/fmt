@@ -364,9 +364,7 @@ private:
   }
 
   friend FMT_CONSTEXPR_DECL text_style fg(color_type foreground) FMT_NOEXCEPT;
-      FMT_NOEXCEPT;
   friend FMT_CONSTEXPR_DECL text_style bg(color_type background) FMT_NOEXCEPT;
-      FMT_NOEXCEPT;
 
   color_type foreground_color;
   color_type background_color;
