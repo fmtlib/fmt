@@ -252,7 +252,7 @@ struct color_type {
     value.term_color = term_color;
   }
   union color_union {
-    color_union() : rgb_color(color::black) {}
+    FMT_CONSTEXPR color_union() FMT_NOEXCEPT : rgb_color(color::black) {}
     rgb rgb_color;
     terminal_color term_color;
   } value;
