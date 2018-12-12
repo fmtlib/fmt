@@ -251,7 +251,8 @@ struct color_type {
     : is_rgb() {
     value.term_color = term_color;
   }
-  union {
+  union color_union {
+    color_union() : rgb_color(color::black) {}
     rgb rgb_color;
     terminal_color term_color;
   } value;
