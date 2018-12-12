@@ -217,26 +217,43 @@ enum class emphasis : uint8_t {
   strikethrough = 1 << 3
 };  // enum class emphasis
 
-// rgb is a struct for red, green and blue colors plus an extra byte to store
-// a terminal color.
+// rgb is a struct for red, green and blue colors.
 // We use rgb as name because some editors will show it as color direct in the
 // editor.
 struct rgb {
-  FMT_CONSTEXPR_DECL rgb() : t(0), r(0), g(0), b(0) {}
+  FMT_CONSTEXPR_DECL rgb() : r(0), g(0), b(0) {}
   FMT_CONSTEXPR_DECL rgb(uint8_t r_, uint8_t g_, uint8_t b_)
-    : t(0), r(r_), g(g_), b(b_) {}
+    : r(r_), g(g_), b(b_) {}
   FMT_CONSTEXPR_DECL rgb(uint32_t hex)
-    : t((hex >> 24) & 0xFF), r((hex >> 16) & 0xFF), g((hex >> 8) & 0xFF),
-      b((hex)&0xFF) {}
+    : r((hex >> 16) & 0xFF), g((hex >> 8) & 0xFF), b((hex)&0xFF) {}
   FMT_CONSTEXPR_DECL rgb(color hex)
-    : t(0), r((uint32_t(hex) >> 16) & 0xFF), g((uint32_t(hex) >> 8) & 0xFF),
+    : r((uint32_t(hex) >> 16) & 0xFF), g((uint32_t(hex) >> 8) & 0xFF),
       b(uint32_t(hex) & 0xFF) {}
-  FMT_CONSTEXPR_DECL rgb(terminal_color hex) FMT_NOEXCEPT
-    : t(uint8_t(hex)), r(0), g(0), b(0) {}
-  uint8_t t; // terminal color
   uint8_t r;
   uint8_t g;
   uint8_t b;
+};
+
+// color is a struct of either a rgb color or a terminal color.
+struct color_type {
+  FMT_CONSTEXPR_DECL color_type() FMT_NOEXCEPT {}
+  FMT_CONSTEXPR_DECL color_type(color rgb_color) FMT_NOEXCEPT
+    :is_rgb(true) {
+    value.rgb_color = rgb_color;
+  }
+  FMT_CONSTEXPR_DECL color_type(rgb rgb_color) FMT_NOEXCEPT
+    : is_rgb(true) {
+    value.rgb_color = rgb_color;
+  }
+  FMT_CONSTEXPR_DECL color_type(terminal_color term_color) FMT_NOEXCEPT
+    : is_rgb() {
+    value.term_color = term_color;
+  }
+  union {
+    rgb rgb_color = color::black;
+    terminal_color term_color;
+  } value;
+  bool is_rgb = false;
 };
 
 // Experimental text formatting support.
@@ -251,18 +268,22 @@ class text_style {
       set_foreground_color = rhs.set_foreground_color;
       foreground_color = rhs.foreground_color;
     } else if (rhs.set_foreground_color) {
-      foreground_color.r |= rhs.foreground_color.r;
-      foreground_color.g |= rhs.foreground_color.g;
-      foreground_color.b |= rhs.foreground_color.b;
+      assert(foreground_color.is_rgb && rhs.foreground_color.is_rgb &&
+             "can't OR a terminal color");
+      foreground_color.value.rgb_color.r |= rhs.foreground_color.value.rgb_color.r;
+      foreground_color.value.rgb_color.g |= rhs.foreground_color.value.rgb_color.g;
+      foreground_color.value.rgb_color.b |= rhs.foreground_color.value.rgb_color.b;
     }
 
     if (!set_background_color) {
       set_background_color = rhs.set_background_color;
       background_color = rhs.background_color;
     } else if (rhs.set_background_color) {
-      background_color.r |= rhs.background_color.r;
-      background_color.g |= rhs.background_color.g;
-      background_color.b |= rhs.background_color.b;
+      assert(background_color.is_rgb && rhs.background_color.is_rgb &&
+             "can't OR a terminal color");
+      background_color.value.rgb_color.r |= rhs.background_color.value.rgb_color.r;
+      background_color.value.rgb_color.g |= rhs.background_color.value.rgb_color.g;
+      background_color.value.rgb_color.b |= rhs.background_color.value.rgb_color.b;
     }
 
     ems = static_cast<emphasis>(static_cast<uint8_t>(ems) |
@@ -280,18 +301,22 @@ class text_style {
       set_foreground_color = rhs.set_foreground_color;
       foreground_color = rhs.foreground_color;
     } else if (rhs.set_foreground_color) {
-      foreground_color.r &= rhs.foreground_color.r;
-      foreground_color.g &= rhs.foreground_color.g;
-      foreground_color.b &= rhs.foreground_color.b;
+      assert(foreground_color.is_rgb && rhs.foreground_color.is_rgb &&
+             "can't AND a terminal color");
+      foreground_color.value.rgb_color.r &= rhs.foreground_color.value.rgb_color.r;
+      foreground_color.value.rgb_color.g &= rhs.foreground_color.value.rgb_color.g;
+      foreground_color.value.rgb_color.b &= rhs.foreground_color.value.rgb_color.b;
     }
 
     if (!set_background_color) {
       set_background_color = rhs.set_background_color;
       background_color = rhs.background_color;
     } else if (rhs.set_background_color) {
-      background_color.r &= rhs.background_color.r;
-      background_color.g &= rhs.background_color.g;
-      background_color.b &= rhs.background_color.b;
+      assert(background_color.is_rgb && rhs.background_color.is_rgb &&
+             "can't AND a terminal color");
+      background_color.value.rgb_color.r &= rhs.background_color.value.rgb_color.r;
+      background_color.value.rgb_color.g &= rhs.background_color.value.rgb_color.g;
+      background_color.value.rgb_color.b &= rhs.background_color.value.rgb_color.b;
     }
 
     ems = static_cast<emphasis>(static_cast<uint8_t>(ems) &
@@ -313,11 +338,11 @@ class text_style {
   FMT_CONSTEXPR bool has_emphasis() const FMT_NOEXCEPT {
     return static_cast<uint8_t>(ems) != 0;
   }
-  FMT_CONSTEXPR rgb get_foreground() const FMT_NOEXCEPT {
+  FMT_CONSTEXPR color_type get_foreground() const FMT_NOEXCEPT {
     assert(has_foreground() && "no foreground specified for this style");
     return foreground_color;
   }
-  FMT_CONSTEXPR rgb get_background() const FMT_NOEXCEPT {
+  FMT_CONSTEXPR color_type get_background() const FMT_NOEXCEPT {
     assert(has_background() && "no background specified for this style");
     return background_color;
   }
@@ -327,7 +352,7 @@ class text_style {
   }
 
 private:
-  FMT_CONSTEXPR text_style(bool is_foreground, rgb text_color) FMT_NOEXCEPT
+  FMT_CONSTEXPR text_style(bool is_foreground, color_type text_color) FMT_NOEXCEPT
     : set_foreground_color(), set_background_color(), ems() {
     if (is_foreground) {
       foreground_color = text_color;
@@ -338,33 +363,23 @@ private:
     }
   }
 
-  friend FMT_CONSTEXPR_DECL text_style fg(rgb foreground) FMT_NOEXCEPT;
-  friend FMT_CONSTEXPR_DECL text_style fg(terminal_color foreground)
+  friend FMT_CONSTEXPR_DECL text_style fg(color_type foreground) FMT_NOEXCEPT;
       FMT_NOEXCEPT;
-  friend FMT_CONSTEXPR_DECL text_style bg(rgb background) FMT_NOEXCEPT;
-  friend FMT_CONSTEXPR_DECL text_style bg(terminal_color background)
+  friend FMT_CONSTEXPR_DECL text_style bg(color_type background) FMT_NOEXCEPT;
       FMT_NOEXCEPT;
 
-  rgb foreground_color;
-  rgb background_color;
+  color_type foreground_color;
+  color_type background_color;
   bool set_foreground_color;
   bool set_background_color;
   emphasis ems;
 };
 
-FMT_CONSTEXPR text_style fg(rgb foreground) FMT_NOEXCEPT {
+FMT_CONSTEXPR text_style fg(color_type foreground) FMT_NOEXCEPT {
   return text_style(/*is_foreground=*/true, foreground);
 }
 
-FMT_CONSTEXPR_DECL text_style fg(terminal_color foreground) FMT_NOEXCEPT {
-  return text_style(/*is_foreground=*/true, foreground);
-}
-
-FMT_CONSTEXPR text_style bg(rgb background) FMT_NOEXCEPT {
-  return text_style(/*is_foreground=*/false, background);
-}
-
-FMT_CONSTEXPR_DECL text_style bg(terminal_color background) FMT_NOEXCEPT {
+FMT_CONSTEXPR text_style bg(color_type background) FMT_NOEXCEPT {
   return text_style(/*is_foreground=*/false, background);
 }
 
@@ -376,26 +391,27 @@ namespace internal {
 
 template <typename Char>
 struct ansi_color_escape {
-  FMT_CONSTEXPR ansi_color_escape(rgb color, const char * esc) FMT_NOEXCEPT {
+  FMT_CONSTEXPR ansi_color_escape(color_type text_color, const char * esc) FMT_NOEXCEPT {
     // If we have a terminal color, we need to output another escape code
     // sequence.
-    if (color.t) {
+    if (!text_color.is_rgb) {
       bool is_background = esc == internal::data::BACKGROUND_COLOR;
+      uint8_t value = (uint8_t)text_color.value.term_color;
       // Background ASCII codes are the same as the foreground ones but with
       // 10 more.
       if (is_background)
-        color.t += 10;
+        value += 10;
 
       std::size_t index = 0;
       buffer[index++] = static_cast<Char>('\x1b');
       buffer[index++] = static_cast<Char>('[');
 
-      if (color.t >= 100) {
+      if (value >= 100) {
         buffer[index++] = static_cast<Char>('1');
-        color.t %= 100;
+        value %= 100;
       }
-      buffer[index++] = static_cast<Char>('0' + color.t / 10);
-      buffer[index++] = static_cast<Char>('0' + color.t % 10);
+      buffer[index++] = static_cast<Char>('0' + value / 10);
+      buffer[index++] = static_cast<Char>('0' + value % 10);
 
       buffer[index++] = static_cast<Char>('m');
       buffer[index++] = static_cast<Char>('\0');
@@ -405,9 +421,9 @@ struct ansi_color_escape {
     for (int i = 0; i < 7; i++) {
       buffer[i] = static_cast<Char>(esc[i]);
     }
-    to_esc(color.r, buffer +  7, ';');
-    to_esc(color.g, buffer + 11, ';');
-    to_esc(color.b, buffer + 15, 'm');
+    to_esc(text_color.value.rgb_color.r, buffer +  7, ';');
+    to_esc(text_color.value.rgb_color.g, buffer + 11, ';');
+    to_esc(text_color.value.rgb_color.b, buffer + 15, 'm');
     buffer[19] = static_cast<Char>(0);
   }
   FMT_CONSTEXPR ansi_color_escape(emphasis em) FMT_NOEXCEPT {
@@ -449,14 +465,14 @@ private:
 
 template <typename Char>
 FMT_CONSTEXPR ansi_color_escape<Char>
-make_foreground_color(rgb color) FMT_NOEXCEPT {
-  return ansi_color_escape<Char>(color, internal::data::FOREGROUND_COLOR);
+make_foreground_color(color_type foreground) FMT_NOEXCEPT {
+  return ansi_color_escape<Char>(foreground, internal::data::FOREGROUND_COLOR);
 }
 
 template <typename Char>
 FMT_CONSTEXPR ansi_color_escape<Char>
-make_background_color(rgb color) FMT_NOEXCEPT {
-  return ansi_color_escape<Char>(color, internal::data::BACKGROUND_COLOR);
+make_background_color(color_type background) FMT_NOEXCEPT {
+  return ansi_color_escape<Char>(background, internal::data::BACKGROUND_COLOR);
 }
 
 template <typename Char>
