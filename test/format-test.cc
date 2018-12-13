@@ -193,13 +193,16 @@ TEST(UtilTest, ParseNonnegativeInt) {
     fmt::print("Skipping parse_nonnegative_int test\n");
     return;
   }
-  const char *s = "10000000000";
+  fmt::string_view s = "10000000000";
+  auto begin = s.begin(), end = s.end();
   EXPECT_THROW_MSG(
-        parse_nonnegative_int(s, fmt::internal::error_handler()),
+        parse_nonnegative_int(begin, end, fmt::internal::error_handler()),
         fmt::format_error, "number is too big");
   s = "2147483649";
+  begin = s.begin();
+  end = s.end();
   EXPECT_THROW_MSG(
-        parse_nonnegative_int(s, fmt::internal::error_handler()),
+        parse_nonnegative_int(begin, end, fmt::internal::error_handler()),
         fmt::format_error, "number is too big");
 }
 
@@ -941,6 +944,7 @@ TEST(FormatterTest, Fill) {
   EXPECT_EQ("abc**", format("{0:*<5}", "abc"));
   EXPECT_EQ("**0xface", format("{0:*>8}", reinterpret_cast<void*>(0xface)));
   EXPECT_EQ("foo=", format("{:}=", "foo"));
+  EXPECT_EQ(std::string("\0\0\0*", 4), format(string_view("{:\0>4}", 6), '*'));
 }
 
 TEST(FormatterTest, PlusSign) {
@@ -2087,9 +2091,10 @@ struct test_arg_id_handler {
   FMT_CONSTEXPR void on_error(const char *) { res = ERROR; }
 };
 
-FMT_CONSTEXPR test_arg_id_handler parse_arg_id(const char* s) {
+template <size_t N>
+FMT_CONSTEXPR test_arg_id_handler parse_arg_id(const char (&s)[N]) {
   test_arg_id_handler h;
-  fmt::internal::parse_arg_id(s, h);
+  fmt::internal::parse_arg_id(s, s + N, h);
   return h;
 }
 
@@ -2149,9 +2154,10 @@ struct test_format_specs_handler {
   FMT_CONSTEXPR void on_error(const char *) { res = ERROR; }
 };
 
-FMT_CONSTEXPR test_format_specs_handler parse_test_specs(const char *s) {
+template <size_t N>
+FMT_CONSTEXPR test_format_specs_handler parse_test_specs(const char (&s)[N]) {
   test_format_specs_handler h;
-  fmt::internal::parse_format_specs(s, h);
+  fmt::internal::parse_format_specs(s, s + N, h);
   return h;
 }
 
@@ -2195,11 +2201,12 @@ struct test_context {
   FMT_CONSTEXPR test_context error_handler() { return *this; }
 };
 
-FMT_CONSTEXPR fmt::format_specs parse_specs(const char *s) {
+template <size_t N>
+FMT_CONSTEXPR fmt::format_specs parse_specs(const char (&s)[N]) {
   fmt::format_specs specs;
   test_context ctx{};
   fmt::internal::specs_handler<test_context> h(specs, ctx);
-  parse_format_specs(s, h);
+  parse_format_specs(s, s + N, h);
   return specs;
 }
 
@@ -2220,12 +2227,13 @@ TEST(FormatTest, ConstexprSpecsHandler) {
   static_assert(parse_specs("d").type == 'd', "");
 }
 
+template <size_t N>
 FMT_CONSTEXPR fmt::internal::dynamic_format_specs<char>
-    parse_dynamic_specs(const char *s) {
+    parse_dynamic_specs(const char (&s)[N]) {
   fmt::internal::dynamic_format_specs<char> specs;
   test_context ctx{};
   fmt::internal::dynamic_specs_handler<test_context> h(specs, ctx);
-  parse_format_specs(s, h);
+  parse_format_specs(s, s + N, h);
   return specs;
 }
 
@@ -2246,10 +2254,11 @@ TEST(FormatTest, ConstexprDynamicSpecsHandler) {
   static_assert(parse_dynamic_specs("d").type == 'd', "");
 }
 
-FMT_CONSTEXPR test_format_specs_handler check_specs(const char *s) {
+template <size_t N>
+FMT_CONSTEXPR test_format_specs_handler check_specs(const char (&s)[N]) {
   fmt::internal::specs_checker<test_format_specs_handler>
       checker(test_format_specs_handler(), fmt::internal::double_type);
-  parse_format_specs(s, checker);
+  parse_format_specs(s, s + N, checker);
   return checker;
 }
 
@@ -2278,11 +2287,11 @@ struct test_format_string_handler {
   template <typename T>
   FMT_CONSTEXPR void on_arg_id(T) {}
 
-  template <typename Iterator>
-  FMT_CONSTEXPR void on_replacement_field(Iterator) {}
+  FMT_CONSTEXPR void on_replacement_field(const char *) {}
 
-  template <typename Iterator>
-  FMT_CONSTEXPR Iterator on_format_specs(Iterator it) { return it; }
+  FMT_CONSTEXPR const char *on_format_specs(const char *begin, const char*) {
+    return begin;
+  }
 
   FMT_CONSTEXPR void on_error(const char *) { error = true; }
 

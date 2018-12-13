@@ -116,17 +116,16 @@ template <typename Char>
 struct formatter<std::tm, Char> {
   template <typename ParseContext>
   auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
-    auto it = internal::null_terminating_iterator<Char>(ctx);
-    if (*it == ':')
+    auto it = ctx.begin();
+    if (it != ctx.end() && *it == ':')
       ++it;
     auto end = it;
-    while (*end && *end != '}')
+    while (end != ctx.end() && *end != '}')
       ++end;
     tm_format.reserve(end - it + 1);
-    using internal::pointer_from;
-    tm_format.append(pointer_from(it), pointer_from(end));
+    tm_format.append(it, end);
     tm_format.push_back('\0');
-    return pointer_from(end);
+    return end;
   }
 
   template <typename FormatContext>

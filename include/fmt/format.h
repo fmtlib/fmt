@@ -610,98 +610,6 @@ class null_terminating_iterator;
 template <typename Char>
 FMT_CONSTEXPR_DECL const Char *pointer_from(null_terminating_iterator<Char> it);
 
-// An iterator that produces a null terminator on *end. This simplifies parsing
-// and allows comparing the performance of processing a null-terminated string
-// vs string_view.
-template <typename Char>
-class null_terminating_iterator {
- public:
-  typedef std::ptrdiff_t difference_type;
-  typedef Char value_type;
-  typedef const Char* pointer;
-  typedef const Char& reference;
-  typedef std::random_access_iterator_tag iterator_category;
-
-  null_terminating_iterator() : ptr_(0), end_(0) {}
-
-  FMT_CONSTEXPR null_terminating_iterator(const Char *ptr, const Char *end)
-    : ptr_(ptr), end_(end) {}
-
-  template <typename Range>
-  FMT_CONSTEXPR explicit null_terminating_iterator(const Range &r)
-    : ptr_(r.begin()), end_(r.end()) {}
-
-  FMT_CONSTEXPR null_terminating_iterator &operator=(const Char *ptr) {
-    assert(ptr <= end_);
-    ptr_ = ptr;
-    return *this;
-  }
-
-  FMT_CONSTEXPR Char operator*() const {
-    return ptr_ != end_ ? *ptr_ : Char();
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator++() {
-    ++ptr_;
-    return *this;
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator++(int) {
-    null_terminating_iterator result(*this);
-    ++ptr_;
-    return result;
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator--() {
-    --ptr_;
-    return *this;
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator+(difference_type n) {
-    return null_terminating_iterator(ptr_ + n, end_);
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator-(difference_type n) {
-    return null_terminating_iterator(ptr_ - n, end_);
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator+=(difference_type n) {
-    ptr_ += n;
-    return *this;
-  }
-
-  FMT_CONSTEXPR difference_type operator-(
-      null_terminating_iterator other) const {
-    return ptr_ - other.ptr_;
-  }
-
-  FMT_CONSTEXPR bool operator!=(null_terminating_iterator other) const {
-    return ptr_ != other.ptr_;
-  }
-
-  bool operator>=(null_terminating_iterator other) const {
-    return ptr_ >= other.ptr_;
-  }
-
-  // This should be a friend specialization pointer_from<Char> but the latter
-  // doesn't compile by gcc 5.1 due to a compiler bug.
-  template <typename CharT>
-  friend FMT_CONSTEXPR_DECL const CharT *pointer_from(
-      null_terminating_iterator<CharT> it);
-
- private:
-  const Char *ptr_;
-  const Char *end_;
-};
-
-template <typename T>
-FMT_CONSTEXPR const T *pointer_from(const T *p) { return p; }
-
-template <typename Char>
-FMT_CONSTEXPR const Char *pointer_from(null_terminating_iterator<Char> it) {
-  return it.ptr_;
-}
-
 // An output iterator that counts the number of objects written to it and
 // discards them.
 template <typename T>
@@ -1538,38 +1446,6 @@ FMT_CONSTEXPR bool is_name_start(Char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
 }
 
-// DEPRECATED: Parses the input as an unsigned integer. This function assumes
-// that the first character is a digit and presence of a non-digit character at
-// the end.
-// it: an iterator pointing to the beginning of the input range.
-template <typename Iterator, typename ErrorHandler>
-FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
-  assert('0' <= *it && *it <= '9');
-  if (*it == '0') {
-    ++it;
-    return 0;
-  }
-  unsigned value = 0;
-  // Convert to unsigned to prevent a warning.
-  unsigned max_int = (std::numeric_limits<int>::max)();
-  unsigned big = max_int / 10;
-  do {
-    // Check for overflow.
-    if (value > big) {
-      value = max_int + 1;
-      break;
-    }
-    value = value * 10 + unsigned(*it - '0');
-    // Workaround for MSVC "setup_exception stack overflow" error:
-    auto next = it;
-    ++next;
-    it = next;
-  } while ('0' <= *it && *it <= '9');
-  if (value > max_int)
-    eh.on_error("number is too big");
-  return value;
-}
-
 // Parses the range [begin, end) as an unsigned integer. This function assumes
 // that the range is non-empty and the first character is a digit.
 template <typename Char, typename ErrorHandler>
@@ -1904,36 +1780,6 @@ class dynamic_specs_handler :
   ParseContext &context_;
 };
 
-template <typename Iterator, typename IDHandler>
-FMT_CONSTEXPR Iterator parse_arg_id(Iterator it, IDHandler &&handler) {
-  typedef typename std::iterator_traits<Iterator>::value_type char_type;
-  char_type c = *it;
-  if (c == '}' || c == ':') {
-    handler();
-    return it;
-  }
-  if (c >= '0' && c <= '9') {
-    unsigned index = parse_nonnegative_int(it, handler);
-    if (*it != '}' && *it != ':') {
-      handler.on_error("invalid format string");
-      return it;
-    }
-    handler(index);
-    return it;
-  }
-  if (!is_name_start(c)) {
-    handler.on_error("invalid format string");
-    return it;
-  }
-  auto start = it;
-  do {
-    c = *++it;
-  } while (is_name_start(c) || ('0' <= c && c <= '9'));
-  handler(basic_string_view<char_type>(
-            pointer_from(start), to_unsigned(it - start)));
-  return it;
-}
-
 template <typename Char, typename IDHandler>
 FMT_CONSTEXPR const Char *parse_arg_id(
     const Char *begin, const Char *end, IDHandler &&handler) {
@@ -1996,22 +1842,18 @@ struct precision_adapter {
 
 // Parses standard format specifiers and sends notifications about parsed
 // components to handler.
-// it: an iterator pointing to the beginning of a null-terminated range of
-//     characters, possibly emulated via null_terminating_iterator, representing
-//     format specifiers.
-template <typename Iterator, typename SpecHandler>
-FMT_CONSTEXPR Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
-  typedef typename std::iterator_traits<Iterator>::value_type char_type;
-  char_type c = *it;
-  if (c == '}' || !c)
-    return it;
+template <typename Char, typename SpecHandler>
+FMT_CONSTEXPR const Char *parse_format_specs(
+    const Char *begin, const Char *end, SpecHandler &&handler) {
+  if (begin == end || *begin == '}')
+    return begin;
 
   // Parse fill and alignment.
   alignment align = ALIGN_DEFAULT;
-  int i = 1;
+  int i = 0;
+  if (begin + 1 != end) ++i;
   do {
-    auto p = it + i;
-    switch (static_cast<char>(*p)) {
+    switch (static_cast<char>(begin[i])) {
     case '<':
       align = ALIGN_LEFT;
       break;
@@ -2026,80 +1868,86 @@ FMT_CONSTEXPR Iterator parse_format_specs(Iterator it, SpecHandler &&handler) {
       break;
     }
     if (align != ALIGN_DEFAULT) {
-      if (p != it) {
-        if (c == '{') {
-          handler.on_error("invalid fill character '{'");
-          return it;
-        }
-        it += 2;
+      if (i > 0) {
+        auto c = *begin;
+        if (c == '{')
+          return handler.on_error("invalid fill character '{'"), begin;
+        begin += 2;
         handler.on_fill(c);
-      } else ++it;
+      } else ++begin;
       handler.on_align(align);
+      if (begin == end) return begin;
       break;
     }
-  } while (--i >= 0);
+  } while (i-- > 0);
 
   // Parse sign.
-  switch (static_cast<char>(*it)) {
+  switch (static_cast<char>(*begin)) {
   case '+':
     handler.on_plus();
-    ++it;
+    ++begin;
     break;
   case '-':
     handler.on_minus();
-    ++it;
+    ++begin;
     break;
   case ' ':
     handler.on_space();
-    ++it;
+    ++begin;
     break;
   }
+  if (begin == end) return begin;
 
-  if (*it == '#') {
+  if (*begin == '#') {
     handler.on_hash();
-    ++it;
+    if (++begin == end) return begin;
   }
 
   // Parse zero flag.
-  if (*it == '0') {
+  if (*begin == '0') {
     handler.on_zero();
-    ++it;
+    if (++begin == end) return begin;
   }
 
   // Parse width.
-  if ('0' <= *it && *it <= '9') {
-    handler.on_width(parse_nonnegative_int(it, handler));
-  } else if (*it == '{') {
-    it = parse_arg_id(it + 1, width_adapter<SpecHandler, char_type>(handler));
-    if (*it++ != '}') {
-      handler.on_error("invalid format string");
-      return it;
+  if ('0' <= *begin && *begin <= '9') {
+    handler.on_width(parse_nonnegative_int(begin, end, handler));
+    if (begin == end) return begin;
+  } else if (*begin == '{') {
+    ++begin;
+    if (begin != end) {
+      begin = parse_arg_id(
+            begin, end, width_adapter<SpecHandler, Char>(handler));
     }
+    if (begin == end || *begin != '}')
+      return handler.on_error("invalid format string"), begin;
+    if (++begin == end) return begin;
   }
 
   // Parse precision.
-  if (*it == '.') {
-    ++it;
-    if ('0' <= *it && *it <= '9') {
-      handler.on_precision(parse_nonnegative_int(it, handler));
-    } else if (*it == '{') {
-      it = parse_arg_id(
-            it + 1, precision_adapter<SpecHandler, char_type>(handler));
-      if (*it++ != '}') {
-        handler.on_error("invalid format string");
-        return it;
+  if (*begin == '.') {
+    ++begin;
+    auto c = begin != end ? *begin : 0;
+    if ('0' <= c && c <= '9') {
+      handler.on_precision(parse_nonnegative_int(begin, end, handler));
+    } else if (c == '{') {
+      ++begin;
+      if (begin != end) {
+        begin = parse_arg_id(
+              begin, end, precision_adapter<SpecHandler, Char>(handler));
       }
+      if (begin == end || *begin++ != '}')
+        return handler.on_error("invalid format string"), begin;
     } else {
-      handler.on_error("missing precision specifier");
-      return it;
+      return handler.on_error("missing precision specifier"), begin;
     }
     handler.end_precision();
   }
 
   // Parse type.
-  if (*it != '}' && *it)
-    handler.on_type(*it++);
-  return it;
+  if (begin != end && *begin != '}')
+    handler.on_type(*begin++);
+  return begin;
 }
 
 // Return the result via the out param to workaround gcc bug 77539.
@@ -2174,11 +2022,9 @@ FMT_CONSTEXPR void parse_format_string(
       if (c == '}') {
         handler.on_replacement_field(p);
       } else if (c == ':') {
-        internal::null_terminating_iterator<Char> it(p + 1, end);
-        it = handler.on_format_specs(it);
-        if (*it != '}')
+        p = handler.on_format_specs(p + 1, end);
+        if (p == end || *p != '}')
           return handler.on_error("unknown format specifier");
-        p = pointer_from(it);
       } else {
         return handler.on_error("missing '}' in format string");
       }
@@ -2203,8 +2049,6 @@ class format_string_checker {
     : arg_id_(-1), context_(format_str, eh),
       parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 
-  typedef internal::null_terminating_iterator<Char> iterator;
-
   FMT_CONSTEXPR void on_text(const Char *, const Char *) {}
 
   FMT_CONSTEXPR void on_arg_id() {
@@ -2220,11 +2064,10 @@ class format_string_checker {
 
   FMT_CONSTEXPR void on_replacement_field(const Char *) {}
 
-  FMT_CONSTEXPR const Char *on_format_specs(iterator it) {
-    auto p = pointer_from(it);
-    context_.advance_to(p);
+  FMT_CONSTEXPR const Char *on_format_specs(const Char *begin, const Char *) {
+    context_.advance_to(begin);
     return to_unsigned(arg_id_) < NUM_ARGS ?
-          parse_funcs_[arg_id_](context_) : p;
+          parse_funcs_[arg_id_](context_) : begin;
   }
 
   FMT_CONSTEXPR void on_error(const char *message) {
@@ -3080,13 +2923,12 @@ struct formatter<
   // terminating '}'.
   template <typename ParseContext>
   FMT_CONSTEXPR typename ParseContext::iterator parse(ParseContext &ctx) {
-    auto it = internal::null_terminating_iterator<Char>(ctx);
     typedef internal::dynamic_specs_handler<ParseContext> handler_type;
     auto type = internal::get_type<
       typename buffer_context<Char>::type, T>::value;
     internal::specs_checker<handler_type>
         handler(handler_type(specs_, ctx), type);
-    it = parse_format_specs(it, handler);
+    auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
     auto type_spec = specs_.type;
     auto eh = ctx.error_handler();
     switch (type) {
@@ -3127,7 +2969,7 @@ struct formatter<
       // formatter specializations.
       break;
     }
-    return pointer_from(it);
+    return it;
   }
 
   template <typename FormatContext>
@@ -3170,11 +3012,9 @@ class dynamic_formatter {
  public:
   template <typename ParseContext>
   auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
-    auto it = internal::null_terminating_iterator<Char>(ctx);
     // Checks are deferred to formatting time when the argument type is known.
     internal::dynamic_specs_handler<ParseContext> handler(specs_, ctx);
-    it = parse_format_specs(it, handler);
-    return pointer_from(it);
+    return parse_format_specs(ctx.begin(), ctx.end(), handler);
   }
 
   template <typename T, typename FormatContext>
@@ -3224,7 +3064,6 @@ typename basic_format_context<Range, Char>::format_arg
 
 template <typename ArgFormatter, typename Char, typename Context>
 struct format_handler : internal::error_handler {
-  typedef internal::null_terminating_iterator<Char> iterator;
   typedef typename ArgFormatter::range range;
 
   format_handler(range r, basic_string_view<Char> str,
@@ -3256,22 +3095,22 @@ struct format_handler : internal::error_handler {
       context.advance_to(visit_format_arg(ArgFormatter(context), arg));
   }
 
-  iterator on_format_specs(iterator it) {
+  const Char *on_format_specs(const Char *begin, const Char *end) {
     auto &parse_ctx = context.parse_context();
-    parse_ctx.advance_to(pointer_from(it));
+    parse_ctx.advance_to(begin);
     internal::custom_formatter<Char, Context> f(context);
     if (visit_format_arg(f, arg))
-      return iterator(parse_ctx);
+      return parse_ctx.begin();
     basic_format_specs<Char> specs;
     using internal::specs_handler;
     internal::specs_checker<specs_handler<Context>>
         handler(specs_handler<Context>(specs, context), arg.type());
-    it = parse_format_specs(it, handler);
-    if (*it != '}')
+    begin = parse_format_specs(begin, end, handler);
+    if (begin == end || *begin != '}')
       on_error("missing '}' in format string");
-    parse_ctx.advance_to(pointer_from(it));
+    parse_ctx.advance_to(begin);
     context.advance_to(visit_format_arg(ArgFormatter(context, &specs), arg));
-    return it;
+    return begin;
   }
 
   Context context;
