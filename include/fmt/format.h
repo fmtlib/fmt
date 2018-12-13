@@ -165,6 +165,8 @@ FMT_END_NAMESPACE
 # define FMT_USE_TRAILING_RETURN 0
 #endif
 
+#define FMT_ENABLE_IF_T(B, T) typename std::enable_if<B, T>::type
+
 #ifndef FMT_USE_GRISU
 # define FMT_USE_GRISU 0
 //# define FMT_USE_GRISU std::numeric_limits<double>::is_iec559
@@ -3495,9 +3497,9 @@ inline typename std::enable_if<internal::is_output_iterator<OutputIt>::value,
  \endrst
  */
 template <typename OutputIt, typename S, typename... Args>
-inline typename std::enable_if<
+inline FMT_ENABLE_IF_T(
     internal::is_string<S>::value &&
-    internal::is_output_iterator<OutputIt>::value, OutputIt>::type
+    internal::is_output_iterator<OutputIt>::value, OutputIt)
     format_to(OutputIt out, const S &format_str, const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename format_context_t<OutputIt, FMT_CHAR(S)>::type context;
@@ -3551,10 +3553,10 @@ inline typename std::enable_if<
  \endrst
  */
 template <typename OutputIt, typename S, typename... Args>
-inline typename std::enable_if<
+inline FMT_ENABLE_IF_T(
     internal::is_string<S>::value &&
     internal::is_output_iterator<OutputIt>::value,
-    format_to_n_result<OutputIt>>::type
+    format_to_n_result<OutputIt>)
     format_to_n(OutputIt out, std::size_t n, const S &format_str,
                 const Args &... args) {
   internal::check_format_string<Args...>(format_str);

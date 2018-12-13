@@ -184,7 +184,7 @@ output ``operator<<`` when one is defined for a user-defined type.
 Output iterator support
 -----------------------
 
-.. doxygenfunction:: fmt::format_to(OutputIt, const S &, const Args &...)
+.. doxygenfunction:: fmt::format_to(OutputIt, const S&, const Args&...)
 .. doxygenfunction:: fmt::format_to_n(OutputIt, std::size_t, string_view, const Args&...)
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
