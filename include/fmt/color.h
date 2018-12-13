@@ -238,25 +238,25 @@ namespace internal {
 
 // color is a struct of either a rgb color or a terminal color.
 struct color_type {
-  FMT_CONSTEXPR color_type() FMT_NOEXCEPT {}
+  FMT_CONSTEXPR color_type() FMT_NOEXCEPT
+    : is_rgb(), value{} {}
   FMT_CONSTEXPR color_type(color rgb_color) FMT_NOEXCEPT
-    :is_rgb(true) {
+    : is_rgb(true), value{} {
     value.rgb_color = rgb_color;
   }
   FMT_CONSTEXPR color_type(rgb rgb_color) FMT_NOEXCEPT
-    : is_rgb(true) {
+    : is_rgb(true), value{} {
     value.rgb_color = rgb_color;
   }
   FMT_CONSTEXPR color_type(terminal_color term_color) FMT_NOEXCEPT
-    : is_rgb() {
-    value.term_color = term_color;
+    : is_rgb(), value{} {
+    value.term_color = static_cast<uint8_t>(term_color);
   }
   union color_union {
-    FMT_CONSTEXPR color_union() FMT_NOEXCEPT : rgb_color(color::black) {}
+    uint8_t term_color;
     rgb rgb_color;
-    terminal_color term_color;
   } value;
-  bool is_rgb = false;
+  bool is_rgb;
 };
 } // namespace internal
 
@@ -403,7 +403,7 @@ struct ansi_color_escape {
     // sequence.
     if (!text_color.is_rgb) {
       bool is_background = esc == internal::data::BACKGROUND_COLOR;
-      uint8_t value = (uint8_t)text_color.value.term_color;
+      uint8_t value = text_color.value.term_color;
       // Background ASCII codes are the same as the foreground ones but with
       // 10 more.
       if (is_background)
