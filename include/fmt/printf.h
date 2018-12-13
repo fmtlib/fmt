@@ -192,7 +192,15 @@ class printf_width_handler: public function<unsigned> {
     return 0;
   }
 };
+
+template <typename Char, typename Context>
+void printf(basic_buffer<Char> &buf, basic_string_view<Char> format,
+            basic_format_args<Context> args) {
+  Context(std::back_inserter(buf), format, args).format();
+}
 }  // namespace internal
+
+using internal::printf;  // For printing into memory_buffer.
 
 template <typename Range>
 class printf_arg_formatter;
@@ -564,12 +572,6 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
     visit_format_arg(AF(buffer, spec, *this), arg);
   }
   buffer.append(pointer_from(start), pointer_from(it));
-}
-
-template <typename Char, typename Context>
-void printf(internal::basic_buffer<Char> &buf, basic_string_view<Char> format,
-            basic_format_args<Context> args) {
-  Context(std::back_inserter(buf), format, args).format();
 }
 
 template <typename Buffer>
