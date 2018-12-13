@@ -221,7 +221,7 @@ enum class emphasis : uint8_t {
 // We use rgb as name because some editors will show it as color direct in the
 // editor.
 struct rgb {
-  FMT_CONSTEXPR_DECL rgb() = default;
+  FMT_CONSTEXPR_DECL rgb() : r(0), g(0), b(0) {}
   FMT_CONSTEXPR_DECL rgb(uint8_t r_, uint8_t g_, uint8_t b_)
     : r(r_), g(g_), b(b_) {}
   FMT_CONSTEXPR_DECL rgb(uint32_t hex)
@@ -229,9 +229,9 @@ struct rgb {
   FMT_CONSTEXPR_DECL rgb(color hex)
     : r((uint32_t(hex) >> 16) & 0xFF), g((uint32_t(hex) >> 8) & 0xFF),
       b(uint32_t(hex) & 0xFF) {}
-  uint8_t r = 0;
-  uint8_t g = 0;
-  uint8_t b = 0;
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
 };
 
 namespace internal {
@@ -242,21 +242,21 @@ struct color_type {
     : is_rgb(), value{} {}
   FMT_CONSTEXPR color_type(color rgb_color) FMT_NOEXCEPT
     : is_rgb(true), value{} {
-    value.rgb_color = rgb_color;
+    value.rgb_color = static_cast<uint32_t>(rgb_color);
   }
   FMT_CONSTEXPR color_type(rgb rgb_color) FMT_NOEXCEPT
     : is_rgb(true), value{} {
-    value.rgb_color = rgb_color;
+    value.rgb_color = (rgb_color.r << 16) + (rgb_color.g << 8) + rgb_color.b;
   }
   FMT_CONSTEXPR color_type(terminal_color term_color) FMT_NOEXCEPT
     : is_rgb(), value{} {
     value.term_color = static_cast<uint8_t>(term_color);
   }
+  bool is_rgb;
   union color_union {
     uint8_t term_color;
-    rgb rgb_color;
+    uint32_t rgb_color;
   } value;
-  bool is_rgb;
 };
 } // namespace internal
 
@@ -274,9 +274,7 @@ class text_style {
     } else if (rhs.set_foreground_color) {
       if (!foreground_color.is_rgb || !rhs.foreground_color.is_rgb)
         throw format_error("can't OR a terminal color");
-      foreground_color.value.rgb_color.r |= rhs.foreground_color.value.rgb_color.r;
-      foreground_color.value.rgb_color.g |= rhs.foreground_color.value.rgb_color.g;
-      foreground_color.value.rgb_color.b |= rhs.foreground_color.value.rgb_color.b;
+      foreground_color.value.rgb_color |= rhs.foreground_color.value.rgb_color;
     }
 
     if (!set_background_color) {
@@ -285,9 +283,7 @@ class text_style {
     } else if (rhs.set_background_color) {
       if (!background_color.is_rgb || !rhs.background_color.is_rgb)
         throw format_error("can't OR a terminal color");
-      background_color.value.rgb_color.r |= rhs.background_color.value.rgb_color.r;
-      background_color.value.rgb_color.g |= rhs.background_color.value.rgb_color.g;
-      background_color.value.rgb_color.b |= rhs.background_color.value.rgb_color.b;
+      background_color.value.rgb_color |= rhs.background_color.value.rgb_color;
     }
 
     ems = static_cast<emphasis>(static_cast<uint8_t>(ems) |
@@ -307,9 +303,7 @@ class text_style {
     } else if (rhs.set_foreground_color) {
       if (!foreground_color.is_rgb || !rhs.foreground_color.is_rgb)
         throw format_error("can't AND a terminal color");
-      foreground_color.value.rgb_color.r &= rhs.foreground_color.value.rgb_color.r;
-      foreground_color.value.rgb_color.g &= rhs.foreground_color.value.rgb_color.g;
-      foreground_color.value.rgb_color.b &= rhs.foreground_color.value.rgb_color.b;
+      foreground_color.value.rgb_color &= rhs.foreground_color.value.rgb_color;
     }
 
     if (!set_background_color) {
@@ -318,9 +312,7 @@ class text_style {
     } else if (rhs.set_background_color) {
       if (!background_color.is_rgb || !rhs.background_color.is_rgb)
         throw format_error("can't AND a terminal color");
-      background_color.value.rgb_color.r &= rhs.background_color.value.rgb_color.r;
-      background_color.value.rgb_color.g &= rhs.background_color.value.rgb_color.g;
-      background_color.value.rgb_color.b &= rhs.background_color.value.rgb_color.b;
+      background_color.value.rgb_color &= rhs.background_color.value.rgb_color;
     }
 
     ems = static_cast<emphasis>(static_cast<uint8_t>(ems) &
@@ -428,9 +420,10 @@ struct ansi_color_escape {
     for (int i = 0; i < 7; i++) {
       buffer[i] = static_cast<Char>(esc[i]);
     }
-    to_esc(text_color.value.rgb_color.r, buffer +  7, ';');
-    to_esc(text_color.value.rgb_color.g, buffer + 11, ';');
-    to_esc(text_color.value.rgb_color.b, buffer + 15, 'm');
+    rgb color(text_color.value.rgb_color);
+    to_esc(color.r, buffer +  7, ';');
+    to_esc(color.g, buffer + 11, ';');
+    to_esc(color.b, buffer + 15, 'm');
     buffer[19] = static_cast<Char>(0);
   }
   FMT_CONSTEXPR ansi_color_escape(emphasis em) FMT_NOEXCEPT {
