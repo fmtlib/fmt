@@ -1301,28 +1301,22 @@ struct wformat_args : basic_format_args<wformat_context> {
   : basic_format_args<wformat_context>(std::forward<Args>(arg)...) {}
 };
 
+#define FMT_ENABLE_IF_T(B, T) typename std::enable_if<B, T>::type
+
 #ifndef FMT_USE_ALIAS_TEMPLATES
 # define FMT_USE_ALIAS_TEMPLATES FMT_HAS_FEATURE(cxx_alias_templates)
 #endif
 #if FMT_USE_ALIAS_TEMPLATES
 /** String's character type. */
 template <typename S>
-using char_t = typename std::enable_if<internal::is_string<S>::value,
-  typename internal::char_t<S>::type>::type;
+using char_t = FMT_ENABLE_IF_T(
+  internal::is_string<S>::value, typename internal::char_t<S>::type);
 #define FMT_CHAR(S) fmt::char_t<S>
-
-template <typename S, typename T>
-using enable_if_string_t =
-  typename std::enable_if<internal::is_string<S>::value, T>::type;
-#define FMT_ENABLE_IF_STRING(S, T) enable_if_string_t<S, T>
 #else
 template <typename S>
 struct char_t : std::enable_if<
     internal::is_string<S>::value, typename internal::char_t<S>::type> {};
 #define FMT_CHAR(S) typename char_t<S>::type
-
-#define FMT_ENABLE_IF_STRING(S, T) \
-  typename std::enable_if<internal::is_string<S>::value, T>::type
 #endif
 
 namespace internal {
@@ -1478,7 +1472,7 @@ FMT_API void vprint(std::FILE *f, wstring_view format_str, wformat_args args);
   \endrst
  */
 template <typename S, typename... Args>
-inline FMT_ENABLE_IF_STRING(S, void)
+inline FMT_ENABLE_IF_T(internal::is_string<S>::value, void)
     print(std::FILE *f, const S &format_str, const Args &... args) {
   vprint(f, to_string_view(format_str),
          internal::checked_args<S, Args...>(format_str, args...));
@@ -1497,7 +1491,7 @@ FMT_API void vprint(wstring_view format_str, wformat_args args);
   \endrst
  */
 template <typename S, typename... Args>
-inline FMT_ENABLE_IF_STRING(S, void)
+inline FMT_ENABLE_IF_T(internal::is_string<S>::value, void)
     print(const S &format_str, const Args &... args) {
   vprint(to_string_view(format_str),
          internal::checked_args<S, Args...>(format_str, args...));

@@ -626,7 +626,8 @@ vsprintf(const S &format,
   \endrst
 */
 template <typename S, typename... Args>
-inline FMT_ENABLE_IF_STRING(S, std::basic_string<FMT_CHAR(S)>)
+inline FMT_ENABLE_IF_T(
+    internal::is_string<S>::value, std::basic_string<FMT_CHAR(S)>)
     sprintf(const S &format, const Args & ... args) {
   internal::check_format_string<Args...>(format);
   typedef internal::basic_buffer<FMT_CHAR(S)> buffer;
@@ -657,7 +658,7 @@ inline int vfprintf(std::FILE *f, const S &format,
   \endrst
  */
 template <typename S, typename... Args>
-inline FMT_ENABLE_IF_STRING(S, int)
+inline FMT_ENABLE_IF_T(internal::is_string<S>::value, int)
     fprintf(std::FILE *f, const S &format, const Args & ... args) {
   internal::check_format_string<Args...>(format);
   typedef internal::basic_buffer<FMT_CHAR(S)> buffer;
@@ -684,7 +685,7 @@ inline int vprintf(const S &format,
   \endrst
  */
 template <typename S, typename... Args>
-inline FMT_ENABLE_IF_STRING(S, int)
+inline FMT_ENABLE_IF_T(internal::is_string<S>::value, int)
     printf(const S &format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);
   typedef internal::basic_buffer<FMT_CHAR(S)> buffer;
@@ -715,7 +716,7 @@ inline int vfprintf(std::basic_ostream<Char> &os,
   \endrst
  */
 template <typename S, typename... Args>
-inline FMT_ENABLE_IF_STRING(S, int)
+inline FMT_ENABLE_IF_T(internal::is_string<S>::value, int)
     fprintf(std::basic_ostream<FMT_CHAR(S)> &os,
             const S &format_str, const Args & ... args) {
   internal::check_format_string<Args...>(format_str);

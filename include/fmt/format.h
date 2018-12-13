@@ -165,8 +165,6 @@ FMT_END_NAMESPACE
 # define FMT_USE_TRAILING_RETURN 0
 #endif
 
-#define FMT_ENABLE_IF_T(B, T) typename std::enable_if<B, T>::type
-
 #ifndef FMT_USE_GRISU
 # define FMT_USE_GRISU 0
 //# define FMT_USE_GRISU std::numeric_limits<double>::is_iec559
