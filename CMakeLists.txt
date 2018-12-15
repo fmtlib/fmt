@@ -75,7 +75,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Wctor-dtor-privacy -Wdisabled-optimization
       -Winvalid-pch -Woverloaded-virtual
       -Wno-ctor-dtor-privacy -Wno-dangling-else
-      -Wno-format-nonliteral -Wno-sign-conversion -Wno-shadow)
+      -Wno-format-nonliteral -Wno-sign-conversion -Wno-shadow -Wno-unused-local-typedefs)
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept)
   endif ()
