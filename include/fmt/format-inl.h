@@ -464,14 +464,14 @@ FMT_FUNC fp get_cached_power(int min_exponent, int &pow10_exponent) {
 }
 
 FMT_FUNC bool grisu2_round(
-    char *buf, ptrdiff_t &size, size_t max_digits, uint64_t delta,
+    char *buf, int &size, size_t max_digits, uint64_t delta,
     uint64_t remainder, uint64_t exp, uint64_t diff, int &exp10) {
   while (remainder < diff && delta - remainder >= exp &&
         (remainder + exp < diff || diff - remainder > remainder + exp - diff)) {
     --buf[size - 1];
     remainder += exp;
   }
-  if (size > static_cast<ptrdiff_t>(max_digits)) {
+  if (size > static_cast<int>(max_digits)) {
     --size;
     ++exp10;
     if (buf[size] >= '5')
@@ -482,7 +482,7 @@ FMT_FUNC bool grisu2_round(
 
 // Generates output using Grisu2 digit-gen algorithm.
 FMT_FUNC bool grisu2_gen_digits(
-    char *buf, ptrdiff_t &size, uint32_t hi, uint64_t lo, int &exp,
+    char *buf, int &size, uint32_t hi, uint64_t lo, int &exp,
     uint64_t delta, const fp &one, const fp &diff, size_t max_digits) {
   // Generate digits for the most significant part (hi).
   while (exp > 0) {
@@ -507,7 +507,7 @@ FMT_FUNC bool grisu2_gen_digits(
       buf[size++] = static_cast<char>('0' + digit);
     --exp;
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
-    if (remainder <= delta || size > static_cast<ptrdiff_t>(max_digits)) {
+    if (remainder <= delta || size > static_cast<int>(max_digits)) {
       return grisu2_round(
             buf, size, max_digits, delta, remainder,
             static_cast<uint64_t>(data::POWERS_OF_10_32[exp]) << -one.e,
@@ -750,7 +750,7 @@ FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
   // lo (p2 in Grisu) contains the least significants digits of scaled_upper.
   // lo = supper % one.
   uint64_t lo = upper.f & (one.f - 1);
-  ptrdiff_t size = 0;
+  int size = 0;
   if (!grisu2_gen_digits(buf.data(), size, hi, lo, exp, delta, one, diff,
                          params.num_digits)) {
     buf.clear();
