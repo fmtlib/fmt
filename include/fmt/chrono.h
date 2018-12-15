@@ -377,7 +377,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       -> decltype(ctx.begin()) {
     auto begin = ctx.begin(), end = ctx.end();
     end = parse_chrono_format(begin, end, internal::chrono_format_checker());
-    format_str = basic_string_view<Char>(&*begin, end - begin);
+    format_str = basic_string_view<Char>(&*begin, static_cast<size_t>(end - begin));
     return end;
   }
 
