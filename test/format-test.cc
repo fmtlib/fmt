@@ -1917,6 +1917,7 @@ TEST(FormatTest, Enum) {
 
 TEST(FormatTest, EnumFormatterUnambiguous) {
   fmt::formatter<TestEnum> f;
+  ASSERT_GE(sizeof(f), 0); // use f to avoid compiler warning
 }
 
 #if FMT_HAS_FEATURE(cxx_strong_enums)
