@@ -471,7 +471,7 @@ FMT_FUNC bool grisu2_round(
     --buf[size - 1];
     remainder += exp;
   }
-  if (size > static_cast<int>(max_digits)) {
+  if (size > max_digits) {
     --size;
     ++exp10;
     if (buf[size] >= '5')
@@ -507,7 +507,7 @@ FMT_FUNC bool grisu2_gen_digits(
       buf[size++] = static_cast<char>('0' + digit);
     --exp;
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
-    if (remainder <= delta || size > static_cast<int>(max_digits)) {
+    if (remainder <= delta || size > max_digits) {
       return grisu2_round(
             buf, size, max_digits, delta, remainder,
             static_cast<uint64_t>(data::POWERS_OF_10_32[exp]) << -one.e,
@@ -523,7 +523,7 @@ FMT_FUNC bool grisu2_gen_digits(
       buf[size++] = static_cast<char>('0' + digit);
     lo &= one.f - 1;
     --exp;
-    if (lo < delta || size > static_cast<ptrdiff_t>(max_digits)) {
+    if (lo < delta || size > max_digits) {
       return grisu2_round(buf, size, max_digits, delta, lo, one.f,
                           diff.f * data::POWERS_OF_10_32[-exp], exp);
     }
