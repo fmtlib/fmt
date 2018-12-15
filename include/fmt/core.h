@@ -223,7 +223,7 @@ class basic_buffer {
 
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
-  basic_buffer(std::size_t sz) FMT_NOEXCEPT: size_(sz), capacity_(sz) {}
+  basic_buffer(std::size_t sz) FMT_NOEXCEPT: ptr_(FMT_NULL), size_(sz), capacity_(sz) {}
 
   basic_buffer(T *p = FMT_NULL, std::size_t sz = 0, std::size_t cap = 0)
     FMT_NOEXCEPT: ptr_(p), size_(sz), capacity_(cap) {}
@@ -1328,7 +1328,9 @@ struct named_arg_base {
   mutable char data[
     sizeof(basic_format_arg<typename buffer_context<Char>::type>)];
 
-  named_arg_base(basic_string_view<Char> nm) : name(nm) {}
+  named_arg_base(basic_string_view<Char> nm) : name(nm) {
+     std::memset(data, 0, sizeof(data));
+  }
 
   template <typename Context>
   basic_format_arg<Context> deserialize() const {
