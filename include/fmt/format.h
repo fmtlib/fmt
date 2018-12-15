@@ -956,8 +956,9 @@ inline wchar_t thousands_sep(locale_ref loc) {
 // thousands_sep is a functor that is called after writing each char to
 // add a thousands separator if necessary.
 template <typename UInt, typename Char, typename ThousandsSep>
-inline Char *format_decimal(Char *buffer, UInt value, unsigned num_digits,
+inline Char *format_decimal(Char *buffer, UInt value, int num_digits,
                             ThousandsSep thousands_sep) {
+  FMT_ASSERT(num_digits >= 0, "invalid digit count");
   buffer += num_digits;
   Char *end = buffer;
   while (value >= 100) {
@@ -985,7 +986,8 @@ inline Char *format_decimal(Char *buffer, UInt value, unsigned num_digits,
 template <typename OutChar, typename UInt, typename Iterator,
           typename ThousandsSep>
 inline Iterator format_decimal(
-    Iterator out, UInt value, unsigned num_digits, ThousandsSep sep) {
+    Iterator out, UInt value, int num_digits, ThousandsSep sep) {
+  FMT_ASSERT(num_digits >= 0, "invalid digit count");
   typedef typename ThousandsSep::char_type char_type;
   // Buffer should be large enough to hold all digits (<= digits10 + 1).
   enum { max_size = std::numeric_limits<UInt>::digits10 + 1 };
@@ -996,12 +998,12 @@ inline Iterator format_decimal(
 }
 
 template <typename OutChar, typename It, typename UInt>
-inline It format_decimal(It out, UInt value, unsigned num_digits) {
+inline It format_decimal(It out, UInt value, int num_digits) {
   return format_decimal<OutChar>(out, value, num_digits, no_thousands_sep());
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
-inline Char *format_uint(Char *buffer, UInt value, unsigned num_digits,
+inline Char *format_uint(Char *buffer, UInt value, int num_digits,
                          bool upper = false) {
   buffer += num_digits;
   Char *end = buffer;
@@ -1014,7 +1016,7 @@ inline Char *format_uint(Char *buffer, UInt value, unsigned num_digits,
 }
 
 template <unsigned BASE_BITS, typename Char, typename It, typename UInt>
-inline It format_uint(It out, UInt value, unsigned num_digits,
+inline It format_uint(It out, UInt value, int num_digits,
                       bool upper = false) {
   // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1)
   // and null.
