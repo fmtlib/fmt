@@ -266,8 +266,7 @@ class text_style {
   FMT_CONSTEXPR text_style(emphasis em = emphasis()) FMT_NOEXCEPT
       : set_foreground_color(), set_background_color(), ems(em) {}
 
-  FMT_CONSTEXPR_DECL
-  text_style &operator|=(const text_style &rhs) FMT_NOEXCEPT {
+  FMT_CONSTEXPR text_style &operator|=(const text_style &rhs) {
     if (!set_foreground_color) {
       set_foreground_color = rhs.set_foreground_color;
       foreground_color = rhs.foreground_color;
@@ -292,11 +291,11 @@ class text_style {
   }
 
   friend FMT_CONSTEXPR
-  text_style operator|(text_style lhs, const text_style &rhs) FMT_NOEXCEPT {
+  text_style operator|(text_style lhs, const text_style &rhs) {
     return lhs |= rhs;
   }
 
-  FMT_CONSTEXPR text_style &operator&=(const text_style &rhs) FMT_NOEXCEPT {
+  FMT_CONSTEXPR text_style &operator&=(const text_style &rhs) {
     if (!set_foreground_color) {
       set_foreground_color = rhs.set_foreground_color;
       foreground_color = rhs.foreground_color;
@@ -321,7 +320,7 @@ class text_style {
   }
 
   friend FMT_CONSTEXPR
-  text_style operator&(text_style lhs, const text_style &rhs) FMT_NOEXCEPT {
+  text_style operator&(text_style lhs, const text_style &rhs) {
     return lhs &= rhs;
   }
 
@@ -390,7 +389,8 @@ namespace internal {
 
 template <typename Char>
 struct ansi_color_escape {
-  FMT_CONSTEXPR ansi_color_escape(internal::color_type text_color, const char * esc) FMT_NOEXCEPT {
+  FMT_CONSTEXPR ansi_color_escape(internal::color_type text_color,
+                                  const char * esc) FMT_NOEXCEPT {
     // If we have a terminal color, we need to output another escape code
     // sequence.
     if (!text_color.is_rgb) {
