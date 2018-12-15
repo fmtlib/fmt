@@ -415,7 +415,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     if (begin == end) return begin;
     begin = internal::parse_width(begin, end, handler);
     end = parse_chrono_format(begin, end, internal::chrono_format_checker());
-    format_str = basic_string_view<Char>(&*begin, end - begin);
+    format_str = basic_string_view<Char>(&*begin, static_cast<size_t>(end - begin));
     return end;
   }
 
