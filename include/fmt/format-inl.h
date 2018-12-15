@@ -464,7 +464,7 @@ FMT_FUNC fp get_cached_power(int min_exponent, int &pow10_exponent) {
 }
 
 FMT_FUNC bool grisu2_round(
-    char *buf, int &size, size_t max_digits, uint64_t delta,
+    char *buf, int &size, int max_digits, uint64_t delta,
     uint64_t remainder, uint64_t exp, uint64_t diff, int &exp10) {
   while (remainder < diff && delta - remainder >= exp &&
         (remainder + exp < diff || diff - remainder > remainder + exp - diff)) {
@@ -483,7 +483,7 @@ FMT_FUNC bool grisu2_round(
 // Generates output using Grisu2 digit-gen algorithm.
 FMT_FUNC bool grisu2_gen_digits(
     char *buf, int &size, uint32_t hi, uint64_t lo, int &exp,
-    uint64_t delta, const fp &one, const fp &diff, size_t max_digits) {
+    uint64_t delta, const fp &one, const fp &diff, int max_digits) {
   // Generate digits for the most significant part (hi).
   while (exp > 0) {
     uint32_t digit = 0;
@@ -704,7 +704,7 @@ FMT_FUNC gen_digits_params process_specs(const core_format_specs &specs,
     ++num_digits;
     break;
   }
-  params.num_digits = to_unsigned(num_digits);
+  params.num_digits = num_digits;
   char_counter counter{num_digits};
   grisu2_prettify(params, params.num_digits, exp - num_digits, counter);
   buf.resize(to_unsigned(counter.size));
