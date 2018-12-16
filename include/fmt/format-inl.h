@@ -172,7 +172,7 @@ void format_error_code(internal::buffer &out, int error_code,
     abs_value = 0 - abs_value;
     ++error_code_size;
   }
-  error_code_size += internal::count_digits(abs_value);
+  error_code_size += static_cast<size_t>(internal::count_digits(abs_value));
   writer w(out);
   if (message.size() <= inline_buffer_size - error_code_size) {
     w.write(message);
@@ -739,7 +739,7 @@ FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
   // hi (p1 in Grisu) contains the most significant digits of scaled_upper.
   // hi = floor(upper / one).
   uint32_t hi = static_cast<uint32_t>(upper.f >> -one.e);
-  int exp = static_cast<int>(count_digits(hi));  // kappa in Grisu.
+  int exp = count_digits(hi);  // kappa in Grisu.
   gen_digits_params params = process_specs(specs, cached_exp + exp, buf);
   fp_value.normalize();
   fp scaled_value = fp_value * cached_pow;
