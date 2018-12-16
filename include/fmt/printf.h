@@ -631,7 +631,7 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
 
     format_arg arg = get_arg(it, arg_index);
     if (spec.has(HASH_FLAG) && visit_format_arg(internal::is_zero_int(), arg))
-      spec.flags &= ~internal::to_unsigned<int>(HASH_FLAG);
+      spec.flags = static_cast<uint_least8_t>(spec.flags & (~internal::to_unsigned<int>(HASH_FLAG)));
     if (spec.fill_ == '0') {
       if (arg.is_arithmetic())
         spec.align_ = ALIGN_NUMERIC;
