@@ -91,6 +91,14 @@ TEST(ChronoTest, FormatDefault) {
                         std::chrono::duration<int, std::ratio<15, 4>>(42)));
 }
 
+TEST(ChronoTest, Align) {
+  auto s = std::chrono::seconds(42);
+  EXPECT_EQ("42s  ", fmt::format("{:5}", s));
+  EXPECT_EQ("42s  ", fmt::format("{:{}}", s, 5));
+  EXPECT_EQ("  42s", fmt::format("{:>5}", s));
+  EXPECT_EQ("**42s**", fmt::format("{:*^7}", s));
+}
+
 TEST(ChronoTest, FormatSpecs) {
   EXPECT_EQ("%", fmt::format("{:%%}", std::chrono::seconds(0)));
   EXPECT_EQ("\n", fmt::format("{:%n}", std::chrono::seconds(0)));

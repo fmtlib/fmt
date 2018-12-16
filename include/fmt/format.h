@@ -1342,7 +1342,7 @@ class arg_formatter_base {
 
   void write(bool value) {
     string_view sv(value ? "true" : "false");
-    specs_ ? writer_.write_str(sv, *specs_) : writer_.write(sv);
+    specs_ ? writer_.write(sv, *specs_) : writer_.write(sv);
   }
 
   void write(const char_type *value) {
@@ -1350,7 +1350,7 @@ class arg_formatter_base {
       FMT_THROW(format_error("string pointer is null"));
     auto length = std::char_traits<char_type>::length(value);
     basic_string_view<char_type> sv(value, length);
-    specs_ ? writer_.write_str(sv, *specs_) : writer_.write(sv);
+    specs_ ? writer_.write(sv, *specs_) : writer_.write(sv);
   }
 
  public:
@@ -1426,7 +1426,7 @@ class arg_formatter_base {
     if (specs_) {
       internal::check_string_type_spec(
             specs_->type, internal::error_handler());
-      writer_.write_str(value, *specs_);
+      writer_.write(value, *specs_);
     } else {
       writer_.write(value);
     }
@@ -1840,15 +1840,11 @@ struct precision_adapter {
   SpecHandler &handler;
 };
 
-// Parses standard format specifiers and sends notifications about parsed
-// components to handler.
-template <typename Char, typename SpecHandler>
-FMT_CONSTEXPR const Char *parse_format_specs(
-    const Char *begin, const Char *end, SpecHandler &&handler) {
-  if (begin == end || *begin == '}')
-    return begin;
-
-  // Parse fill and alignment.
+// Parses fill and alignment.
+template <typename Char, typename Handler>
+FMT_CONSTEXPR const Char *parse_align(
+    const Char *begin, const Char *end, Handler &&handler) {
+  FMT_ASSERT(begin != end, "");
   alignment align = ALIGN_DEFAULT;
   int i = 0;
   if (begin + 1 != end) ++i;
@@ -1876,10 +1872,39 @@ FMT_CONSTEXPR const Char *parse_format_specs(
         handler.on_fill(c);
       } else ++begin;
       handler.on_align(align);
-      if (begin == end) return begin;
       break;
     }
   } while (i-- > 0);
+  return begin;
+}
+
+template <typename Char, typename Handler>
+FMT_CONSTEXPR const Char *parse_width(
+    const Char *begin, const Char *end, Handler &&handler) {
+  FMT_ASSERT(begin != end, "");
+  if ('0' <= *begin && *begin <= '9') {
+    handler.on_width(parse_nonnegative_int(begin, end, handler));
+  } else if (*begin == '{') {
+    ++begin;
+    if (begin != end)
+      begin = parse_arg_id(begin, end, width_adapter<Handler, Char>(handler));
+    if (begin == end || *begin != '}')
+      return handler.on_error("invalid format string"), begin;
+    ++begin;
+  }
+  return begin;
+}
+
+// Parses standard format specifiers and sends notifications about parsed
+// components to handler.
+template <typename Char, typename SpecHandler>
+FMT_CONSTEXPR const Char *parse_format_specs(
+    const Char *begin, const Char *end, SpecHandler &&handler) {
+  if (begin == end || *begin == '}')
+    return begin;
+
+  begin = parse_align(begin, end, handler);
+  if (begin == end) return begin;
 
   // Parse sign.
   switch (static_cast<char>(*begin)) {
@@ -1909,20 +1934,8 @@ FMT_CONSTEXPR const Char *parse_format_specs(
     if (++begin == end) return begin;
   }
 
-  // Parse width.
-  if ('0' <= *begin && *begin <= '9') {
-    handler.on_width(parse_nonnegative_int(begin, end, handler));
-    if (begin == end) return begin;
-  } else if (*begin == '{') {
-    ++begin;
-    if (begin != end) {
-      begin = parse_arg_id(
-            begin, end, width_adapter<SpecHandler, Char>(handler));
-    }
-    if (begin == end || *begin != '}')
-      return handler.on_error("invalid format string"), begin;
-    if (++begin == end) return begin;
-  }
+  begin = parse_width(begin, end, handler);
+  if (begin == end) return begin;
 
   // Parse precision.
   if (*begin == '.') {
@@ -2251,8 +2264,6 @@ class basic_writer {
   iterator out_;  // Output iterator.
   internal::locale_ref locale_;
 
-  iterator out() const { return out_; }
-
   // Attempts to reserve space for n extra characters in the output range.
   // Returns a pointer to the reserved range or a reference to out_.
   auto reserve(std::size_t n) -> decltype(internal::reserve(out_, n)) {
@@ -2263,7 +2274,28 @@ class basic_writer {
   //   <left-padding><value><right-padding>
   // where <value> is written by f(it).
   template <typename F>
-  void write_padded(const align_spec &spec, F &&f);
+  void write_padded(const align_spec &spec, F &&f) {
+    unsigned width = spec.width(); // User-perceived width (in code points).
+    size_t size = f.size(); // The number of code units.
+    size_t num_code_points = width != 0 ? f.width() : size;
+    if (width <= num_code_points)
+      return f(reserve(size));
+    auto &&it = reserve(width + (size - num_code_points));
+    char_type fill = static_cast<char_type>(spec.fill());
+    std::size_t padding = width - num_code_points;
+    if (spec.align() == ALIGN_RIGHT) {
+      it = std::fill_n(it, padding, fill);
+      f(it);
+    } else if (spec.align() == ALIGN_CENTER) {
+      std::size_t left_padding = padding / 2;
+      it = std::fill_n(it, left_padding, fill);
+      f(it);
+      it = std::fill_n(it, padding - left_padding, fill);
+    } else {
+      f(it);
+      it = std::fill_n(it, padding, fill);
+    }
+  }
 
   template <typename F>
   struct padded_int_writer {
@@ -2525,15 +2557,6 @@ class basic_writer {
     }
   };
 
-  // Writes a formatted string.
-  template <typename Char>
-  void write_str(const Char *s, std::size_t size, const align_spec &spec) {
-    write_padded(spec, str_writer<Char>{s, size});
-  }
-
-  template <typename Char>
-  void write_str(basic_string_view<Char> str, const format_specs &spec);
-
   template <typename Char>
   friend class internal::arg_formatter_base;
 
@@ -2542,6 +2565,8 @@ class basic_writer {
   explicit basic_writer(
       Range out, internal::locale_ref loc = internal::locale_ref())
     : out_(out.begin()), locale_(loc) {}
+
+  iterator out() const { return out_; }
 
   void write(int value) { write_decimal(value); }
   void write(long value) { write_decimal(value); }
@@ -2602,9 +2627,20 @@ class basic_writer {
     it = std::copy(value.begin(), value.end(), it);
   }
 
-  template <typename... FormatSpecs>
-  void write(basic_string_view<char_type> str, FormatSpecs... specs) {
-    write_str(str, format_specs(specs...));
+  // Writes a formatted string.
+  template <typename Char>
+  void write(const Char *s, std::size_t size, const align_spec &spec) {
+    write_padded(spec, str_writer<Char>{s, size});
+  }
+
+  template <typename Char>
+  void write(basic_string_view<Char> s,
+             const format_specs &spec = format_specs()) {
+    const Char *data = s.data();
+    std::size_t size = s.size();
+    if (spec.precision >= 0 && internal::to_unsigned(spec.precision) < size)
+      size = internal::to_unsigned(spec.precision);
+    write(data, size, spec);
   }
 
   template <typename T>
@@ -2616,42 +2652,6 @@ class basic_writer {
     write_int(reinterpret_cast<uintptr_t>(p), specs);
   }
 };
-
-template <typename Range>
-template <typename F>
-void basic_writer<Range>::write_padded(const align_spec &spec, F &&f) {
-  unsigned width = spec.width(); // User-perceived width (in code points).
-  size_t size = f.size(); // The number of code units.
-  size_t num_code_points = width != 0 ? f.width() : size;
-  if (width <= num_code_points)
-    return f(reserve(size));
-  auto &&it = reserve(width + (size - num_code_points));
-  char_type fill = static_cast<char_type>(spec.fill());
-  std::size_t padding = width - num_code_points;
-  if (spec.align() == ALIGN_RIGHT) {
-    it = std::fill_n(it, padding, fill);
-    f(it);
-  } else if (spec.align() == ALIGN_CENTER) {
-    std::size_t left_padding = padding / 2;
-    it = std::fill_n(it, left_padding, fill);
-    f(it);
-    it = std::fill_n(it, padding - left_padding, fill);
-  } else {
-    f(it);
-    it = std::fill_n(it, padding, fill);
-  }
-}
-
-template <typename Range>
-template <typename Char>
-void basic_writer<Range>::write_str(
-    basic_string_view<Char> s, const format_specs &spec) {
-  const Char *data = s.data();
-  std::size_t size = s.size();
-  if (spec.precision >= 0 && internal::to_unsigned(spec.precision) < size)
-    size = internal::to_unsigned(spec.precision);
-  write_str(data, size, spec);
-}
 
 struct float_spec_handler {
   char type;
