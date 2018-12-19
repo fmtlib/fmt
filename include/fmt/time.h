@@ -9,6 +9,7 @@
 #define FMT_TIME_H_
 
 #include "format.h"
+
 #include <ctime>
 #include <locale>
 
@@ -18,7 +19,7 @@ FMT_BEGIN_NAMESPACE
 // Usage: f FMT_NOMACRO()
 #define FMT_NOMACRO
 
-namespace internal{
+namespace internal {
 inline null<> localtime_r FMT_NOMACRO(...) { return null<>(); }
 inline null<> localtime_s(...) { return null<>(); }
 inline null<> gmtime_r(...) { return null<>(); }
@@ -31,7 +32,7 @@ inline std::tm localtime(std::time_t time) {
     std::time_t time_;
     std::tm tm_;
 
-    dispatcher(std::time_t t): time_(t) {}
+    dispatcher(std::time_t t) : time_(t) {}
 
     bool run() {
       using namespace fmt::internal;
@@ -51,7 +52,8 @@ inline std::tm localtime(std::time_t time) {
     bool fallback(internal::null<>) {
       using namespace fmt::internal;
       std::tm *tm = std::localtime(&time_);
-      if (tm) tm_ = *tm;
+      if (tm)
+        tm_ = *tm;
       return tm != FMT_NULL;
     }
 #endif
@@ -69,7 +71,7 @@ inline std::tm gmtime(std::time_t time) {
     std::time_t time_;
     std::tm tm_;
 
-    dispatcher(std::time_t t): time_(t) {}
+    dispatcher(std::time_t t) : time_(t) {}
 
     bool run() {
       using namespace fmt::internal;
@@ -88,7 +90,8 @@ inline std::tm gmtime(std::time_t time) {
 #if !FMT_MSC_VER
     bool fallback(internal::null<>) {
       std::tm *tm = std::gmtime(&time_);
-      if (tm) tm_ = *tm;
+      if (tm)
+        tm_ = *tm;
       return tm != FMT_NULL;
     }
 #endif
@@ -101,16 +104,19 @@ inline std::tm gmtime(std::time_t time) {
 }
 
 namespace internal {
-inline std::size_t strftime(char *str, std::size_t count, const char *format,
-                            const std::tm *time) {
+inline std::size_t strftime(
+    char *str, std::size_t count, const char *format, const std::tm *time) {
   return std::strftime(str, count, format, time);
 }
 
-inline std::size_t strftime(wchar_t *str, std::size_t count,
-                            const wchar_t *format, const std::tm *time) {
+inline std::size_t strftime(
+    wchar_t *str,
+    std::size_t count,
+    const wchar_t *format,
+    const std::tm *time) {
   return std::wcsftime(str, count, format, time);
 }
-}
+}  // namespace internal
 
 template <typename Char>
 struct formatter<std::tm, Char> {
@@ -120,8 +126,7 @@ struct formatter<std::tm, Char> {
     if (it != ctx.end() && *it == ':')
       ++it;
     auto end = it;
-    while (end != ctx.end() && *end != '}')
-      ++end;
+    while (end != ctx.end() && *end != '}') ++end;
     tm_format.reserve(end - it + 1);
     tm_format.append(it, end);
     tm_format.push_back('\0');
@@ -135,7 +140,7 @@ struct formatter<std::tm, Char> {
     for (;;) {
       std::size_t size = buf.capacity() - start;
       std::size_t count =
-        internal::strftime(&buf[start], size, &tm_format[0], &tm);
+          internal::strftime(&buf[start], size, &tm_format[0], &tm);
       if (count != 0) {
         buf.resize(start + count);
         break;

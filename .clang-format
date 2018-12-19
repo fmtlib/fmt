@@ -1,0 +1,12 @@
+BasedOnStyle: Google
+Language: Cpp
+Standard: Cpp11
+
+ColumnLimit: 80
+
+AlwaysBreakTemplateDeclarations: true
+AllowShortIfStatementsOnASingleLine: false
+
+AlignAfterOpenBracket: AlwaysBreak
+BinPackArguments: false
+BinPackParameters: false

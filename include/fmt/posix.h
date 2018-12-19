@@ -10,7 +10,7 @@
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 // Workaround MinGW bug https://sourceforge.net/p/mingw/bugs/2024/.
-# undef __STRICT_ANSI__
+#undef __STRICT_ANSI__
 #endif
 
 #include <errno.h>
@@ -22,42 +22,42 @@
 #include <cstddef>
 
 #if defined __APPLE__ || defined(__FreeBSD__)
-# include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
+#include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
 #endif
 
 #include "format.h"
 
 #ifndef FMT_POSIX
-# if defined(_WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
 // Fix warnings about deprecated symbols.
-#  define FMT_POSIX(call) _##call
-# else
-#  define FMT_POSIX(call) call
-# endif
+#define FMT_POSIX(call) _##call
+#else
+#define FMT_POSIX(call) call
+#endif
 #endif
 
 // Calls to system functions are wrapped in FMT_SYSTEM for testability.
 #ifdef FMT_SYSTEM
-# define FMT_POSIX_CALL(call) FMT_SYSTEM(call)
+#define FMT_POSIX_CALL(call) FMT_SYSTEM(call)
 #else
-# define FMT_SYSTEM(call) call
-# ifdef _WIN32
+#define FMT_SYSTEM(call) call
+#ifdef _WIN32
 // Fix warnings about deprecated symbols.
-#  define FMT_POSIX_CALL(call) ::_##call
-# else
-#  define FMT_POSIX_CALL(call) ::call
-# endif
+#define FMT_POSIX_CALL(call) ::_##call
+#else
+#define FMT_POSIX_CALL(call) ::call
+#endif
 #endif
 
 // Retries the expression while it evaluates to error_result and errno
 // equals to EINTR.
 #ifndef _WIN32
-# define FMT_RETRY_VAL(result, expression, error_result) \
-  do { \
-    result = (expression); \
+#define FMT_RETRY_VAL(result, expression, error_result) \
+  do {                                                  \
+    result = (expression);                              \
   } while (result == error_result && errno == EINTR)
 #else
-# define FMT_RETRY_VAL(result, expression, error_result) result = (expression)
+#define FMT_RETRY_VAL(result, expression, error_result) result = (expression)
 #endif
 
 #define FMT_RETRY(result, expression) FMT_RETRY_VAL(result, expression, -1)
@@ -143,13 +143,12 @@ class buffered_file {
   buffered_file(const buffered_file &) = delete;
   void operator=(const buffered_file &) = delete;
 
-
  public:
   buffered_file(buffered_file &&other) FMT_NOEXCEPT : file_(other.file_) {
     other.file_ = FMT_NULL;
   }
 
-  buffered_file& operator=(buffered_file &&other) {
+  buffered_file &operator=(buffered_file &&other) {
     close();
     file_ = other.file_;
     other.file_ = FMT_NULL;
@@ -167,14 +166,14 @@ class buffered_file {
 
   // We place parentheses around fileno to workaround a bug in some versions
   // of MinGW that define fileno as a macro.
-  FMT_API int (fileno)() const;
+  FMT_API int(fileno)() const;
 
   void vprint(string_view format_str, format_args args) {
     fmt::vprint(file_, format_str, args);
   }
 
   template <typename... Args>
-  inline void print(string_view format_str, const Args & ... args) {
+  inline void print(string_view format_str, const Args &... args) {
     vprint(format_str, make_format_args(args...));
   }
 };
@@ -195,9 +194,9 @@ class file {
  public:
   // Possible values for the oflag argument to the constructor.
   enum {
-    RDONLY = FMT_POSIX(O_RDONLY), // Open for reading only.
-    WRONLY = FMT_POSIX(O_WRONLY), // Open for writing only.
-    RDWR   = FMT_POSIX(O_RDWR)    // Open for reading and writing.
+    RDONLY = FMT_POSIX(O_RDONLY),  // Open for reading only.
+    WRONLY = FMT_POSIX(O_WRONLY),  // Open for writing only.
+    RDWR = FMT_POSIX(O_RDWR)       // Open for reading and writing.
   };
 
   // Constructs a file object which doesn't represent any file.
@@ -211,11 +210,9 @@ class file {
   void operator=(const file &) = delete;
 
  public:
-  file(file &&other) FMT_NOEXCEPT : fd_(other.fd_) {
-    other.fd_ = -1;
-  }
+  file(file &&other) FMT_NOEXCEPT : fd_(other.fd_) { other.fd_ = -1; }
 
-  file& operator=(file &&other) {
+  file &operator=(file &&other) {
     close();
     fd_ = other.fd_;
     other.fd_ = -1;
@@ -265,17 +262,17 @@ class file {
 // Returns the memory page size.
 long getpagesize();
 
-#if (defined(LC_NUMERIC_MASK) || defined(_MSC_VER)) && \
+#if (defined(LC_NUMERIC_MASK) || defined(_MSC_VER)) &&                        \
     !defined(__ANDROID__) && !defined(__CYGWIN__) && !defined(__OpenBSD__) && \
     !defined(__NEWLIB_H__)
-# define FMT_LOCALE
+#define FMT_LOCALE
 #endif
 
 #ifdef FMT_LOCALE
 // A "C" numeric locale.
 class Locale {
  private:
-# ifdef _MSC_VER
+#ifdef _MSC_VER
   typedef _locale_t locale_t;
 
   enum { LC_NUMERIC_MASK = LC_NUMERIC };
@@ -284,14 +281,12 @@ class Locale {
     return _create_locale(category_mask, locale);
   }
 
-  static void freelocale(locale_t locale) {
-    _free_locale(locale);
-  }
+  static void freelocale(locale_t locale) { _free_locale(locale); }
 
   static double strtod_l(const char *nptr, char **endptr, _locale_t locale) {
     return _strtod_l(nptr, endptr, locale);
   }
-# endif
+#endif
 
   locale_t locale_;
 
