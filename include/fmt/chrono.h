@@ -28,9 +28,8 @@ enum class numeric_system {
 
 // Parses a put_time-like format string and invokes handler actions.
 template <typename Char, typename Handler>
-FMT_CONSTEXPR const Char *parse_chrono_format(const Char *begin,
-                                              const Char *end,
-                                              Handler &&handler) {
+FMT_CONSTEXPR const Char *parse_chrono_format(
+    const Char *begin, const Char *end, Handler &&handler) {
   auto ptr = begin;
   while (ptr != end) {
     auto c = *ptr;
@@ -214,9 +213,10 @@ struct chrono_format_checker {
 
 template <typename Int>
 inline int to_int(Int value) {
-  FMT_ASSERT(value >= (std::numeric_limits<int>::min)() &&
-                 value <= (std::numeric_limits<int>::max)(),
-             "invalid value");
+  FMT_ASSERT(
+      value >= (std::numeric_limits<int>::min)() &&
+          value <= (std::numeric_limits<int>::max)(),
+      "invalid value");
   return static_cast<int>(value);
 }
 
@@ -491,8 +491,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
         format_to(buf, "{}[{}/{}]s", d.count(), Period::num, Period::den);
       typedef output_range<decltype(ctx.out()), Char> range;
       basic_writer<range> w(range(ctx.out()));
-      internal::handle_dynamic_spec<internal::width_checker>(spec.width_,
-                                                             width_ref, ctx);
+      internal::handle_dynamic_spec<internal::width_checker>(
+          spec.width_, width_ref, ctx);
       w.write(buf.data(), buf.size(), spec);
       return w.out();
     }

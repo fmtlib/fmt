@@ -16,10 +16,10 @@
 #include "fmt/ranges.h"
 #include "gtest.h"
 
-#include <vector>
 #include <array>
 #include <map>
 #include <string>
+#include <vector>
 
 TEST(RangesTest, FormatVector) {
   std::vector<int32_t> iv{1, 2, 3, 5, 7, 11};
@@ -44,8 +44,8 @@ TEST(RangesTest, FormatPair) {
 }
 
 TEST(RangesTest, FormatTuple) {
-  std::tuple<int64_t, float, std::string, char> tu1{42, 3.14159265358979f,
-                                              "this is tuple", 'i'};
+  std::tuple<int64_t, float, std::string, char> tu1{
+      42, 3.14159265358979f, "this is tuple", 'i'};
   EXPECT_EQ("(42, 3.14159, \"this is tuple\", 'i')", fmt::format("{}", tu1));
 }
 

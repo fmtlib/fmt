@@ -12,10 +12,10 @@
 #include <stdio.h>
 
 #ifdef _WIN32
-# include <windows.h>
+#include <windows.h>
 #else
-# include <sys/param.h>  // for FreeBSD version
-# include <sys/types.h>  // for ssize_t
+#include <sys/param.h>  // for FreeBSD version
+#include <sys/types.h>  // for ssize_t
 #endif
 
 #ifndef _MSC_VER
@@ -34,7 +34,7 @@ int fstat(int fd, struct stat *buf);
 typedef unsigned size_t;
 typedef int ssize_t;
 errno_t sopen_s(
-    int* pfh, const char *filename, int oflag, int shflag, int pmode);
+    int *pfh, const char *filename, int oflag, int shflag, int pmode);
 #endif
 
 #ifndef _WIN32
@@ -61,7 +61,7 @@ int pipe(int *pfds, unsigned psize, int textmode);
 
 FILE *fopen(const char *filename, const char *mode);
 int fclose(FILE *stream);
-int (fileno)(FILE *stream);
+int(fileno)(FILE *stream);
 }  // namespace test
 
 #define FMT_SYSTEM(call) test::call

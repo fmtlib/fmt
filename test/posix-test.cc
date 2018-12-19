@@ -13,7 +13,7 @@
 #include "util.h"
 
 #ifdef fileno
-# undef fileno
+#undef fileno
 #endif
 
 using fmt::buffered_file;
@@ -120,14 +120,17 @@ TEST(BufferedFileTest, CloseFileInDtor) {
 
 TEST(BufferedFileTest, CloseErrorInDtor) {
   scoped_ptr<buffered_file> f(new buffered_file(open_buffered_file()));
-  EXPECT_WRITE(stderr, {
-      // The close function must be called inside EXPECT_WRITE, otherwise
-      // the system may recycle closed file descriptor when redirecting the
-      // output in EXPECT_STDERR and the second close will break output
-      // redirection.
-      FMT_POSIX(close(f->fileno()));
-      SUPPRESS_ASSERT(f.reset(FMT_NULL));
-  }, format_system_error(EBADF, "cannot close file") + "\n");
+  EXPECT_WRITE(
+      stderr,
+      {
+        // The close function must be called inside EXPECT_WRITE, otherwise
+        // the system may recycle closed file descriptor when redirecting the
+        // output in EXPECT_STDERR and the second close will break output
+        // redirection.
+        FMT_POSIX(close(f->fileno()));
+        SUPPRESS_ASSERT(f.reset(FMT_NULL));
+      },
+      format_system_error(EBADF, "cannot close file") + "\n");
 }
 
 TEST(BufferedFileTest, Close) {
@@ -150,13 +153,15 @@ TEST(BufferedFileTest, Fileno) {
 #ifndef __COVERITY__
   // fileno on a null FILE pointer either crashes or returns an error.
   // Disable Coverity because this is intentional.
-  EXPECT_DEATH_IF_SUPPORTED({
-    try {
-      f.fileno();
-    } catch (const fmt::system_error&) {
-      std::exit(1);
-    }
-  }, "");
+  EXPECT_DEATH_IF_SUPPORTED(
+      {
+        try {
+          f.fileno();
+        } catch (const fmt::system_error &) {
+          std::exit(1);
+        }
+      },
+      "");
 #endif
   f = open_buffered_file();
   EXPECT_TRUE(f.fileno() != -1);
@@ -178,8 +183,10 @@ TEST(FileTest, OpenBufferedFileInCtor) {
 }
 
 TEST(FileTest, OpenBufferedFileError) {
-  EXPECT_SYSTEM_ERROR(file("nonexistent", file::RDONLY),
-      ENOENT, "cannot open file nonexistent");
+  EXPECT_SYSTEM_ERROR(
+      file("nonexistent", file::RDONLY),
+      ENOENT,
+      "cannot open file nonexistent");
 }
 
 TEST(FileTest, MoveCtor) {
@@ -247,14 +254,17 @@ TEST(FileTest, CloseFileInDtor) {
 
 TEST(FileTest, CloseErrorInDtor) {
   scoped_ptr<file> f(new file(open_file()));
-  EXPECT_WRITE(stderr, {
-      // The close function must be called inside EXPECT_WRITE, otherwise
-      // the system may recycle closed file descriptor when redirecting the
-      // output in EXPECT_STDERR and the second close will break output
-      // redirection.
-      FMT_POSIX(close(f->descriptor()));
-      SUPPRESS_ASSERT(f.reset(FMT_NULL));
-  }, format_system_error(EBADF, "cannot close file") + "\n");
+  EXPECT_WRITE(
+      stderr,
+      {
+        // The close function must be called inside EXPECT_WRITE, otherwise
+        // the system may recycle closed file descriptor when redirecting the
+        // output in EXPECT_STDERR and the second close will break output
+        // redirection.
+        FMT_POSIX(close(f->descriptor()));
+        SUPPRESS_ASSERT(f.reset(FMT_NULL));
+      },
+      format_system_error(EBADF, "cannot close file") + "\n");
 }
 
 TEST(FileTest, Close) {
@@ -310,8 +320,8 @@ TEST(FileTest, Dup) {
 #ifndef __COVERITY__
 TEST(FileTest, DupError) {
   int value = -1;
-  EXPECT_SYSTEM_ERROR_NOASSERT(file::dup(value),
-      EBADF, "cannot duplicate file descriptor -1");
+  EXPECT_SYSTEM_ERROR_NOASSERT(
+      file::dup(value), EBADF, "cannot duplicate file descriptor -1");
 }
 #endif
 
@@ -325,8 +335,10 @@ TEST(FileTest, Dup2) {
 
 TEST(FileTest, Dup2Error) {
   file f = open_file();
-  EXPECT_SYSTEM_ERROR_NOASSERT(f.dup2(-1), EBADF,
-    fmt::format("cannot duplicate file descriptor {} to -1", f.descriptor()));
+  EXPECT_SYSTEM_ERROR_NOASSERT(
+      f.dup2(-1),
+      EBADF,
+      fmt::format("cannot duplicate file descriptor {} to -1", f.descriptor()));
 }
 
 TEST(FileTest, Dup2NoExcept) {

@@ -13,7 +13,7 @@ using fmt::file;
 
 void OutputRedirect::flush() {
 #if EOF != -1
-# error "FMT_RETRY assumes return value of -1 indicating failure"
+#error "FMT_RETRY assumes return value of -1 indicating failure"
 #endif
   int result = 0;
   FMT_RETRY(result, fflush(file_));

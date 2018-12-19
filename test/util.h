@@ -11,12 +11,12 @@
 
 #include "fmt/posix.h"
 
-enum {BUFFER_SIZE = 256};
+enum { BUFFER_SIZE = 256 };
 
 #ifdef _MSC_VER
-# define FMT_VSNPRINTF vsprintf_s
+#define FMT_VSNPRINTF vsprintf_s
 #else
-# define FMT_VSNPRINTF vsnprintf
+#define FMT_VSNPRINTF vsnprintf
 #endif
 
 template <std::size_t SIZE>
@@ -76,6 +76,7 @@ std::basic_ostream<Char> &operator<<(
 
 class Date {
   int year_, month_, day_;
+
  public:
   Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
 

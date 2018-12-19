@@ -11,9 +11,9 @@
 #include <functional>
 #include <iterator>
 #include <limits>
+#include <memory>
 #include <string>
 #include <type_traits>
-#include <memory>
 
 #include "test-assert.h"
 
@@ -21,7 +21,7 @@
 
 // Check if fmt/core.h compiles with windows.h included before it.
 #ifdef _WIN32
-# include <windows.h>
+#include <windows.h>
 #endif
 
 #include "fmt/core.h"
@@ -30,9 +30,9 @@
 #undef max
 
 using fmt::basic_format_arg;
+using fmt::string_view;
 using fmt::internal::basic_buffer;
 using fmt::internal::value;
-using fmt::string_view;
 
 using testing::_;
 using testing::StrictMock;
@@ -67,18 +67,18 @@ FMT_END_NAMESPACE
 
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 470
 TEST(BufferTest, Noncopyable) {
-  EXPECT_FALSE(std::is_copy_constructible<basic_buffer<char> >::value);
+  EXPECT_FALSE(std::is_copy_constructible<basic_buffer<char>>::value);
 #if !FMT_MSC_VER
   // std::is_copy_assignable is broken in MSVC2013.
-  EXPECT_FALSE(std::is_copy_assignable<basic_buffer<char> >::value);
+  EXPECT_FALSE(std::is_copy_assignable<basic_buffer<char>>::value);
 #endif
 }
 
 TEST(BufferTest, Nonmoveable) {
-  EXPECT_FALSE(std::is_move_constructible<basic_buffer<char> >::value);
+  EXPECT_FALSE(std::is_move_constructible<basic_buffer<char>>::value);
 #if !FMT_MSC_VER
   // std::is_move_assignable is broken in MSVC2013.
-  EXPECT_FALSE(std::is_move_assignable<basic_buffer<char> >::value);
+  EXPECT_FALSE(std::is_move_assignable<basic_buffer<char>>::value);
 #endif
 }
 #endif
@@ -91,7 +91,7 @@ struct test_buffer : basic_buffer<T> {
 
 template <typename T>
 struct mock_buffer : basic_buffer<T> {
-  MOCK_METHOD1(do_grow, void (std::size_t capacity));
+  MOCK_METHOD1(do_grow, void(std::size_t capacity));
 
   void grow(std::size_t capacity) {
     this->set(this->data(), capacity);
@@ -219,7 +219,7 @@ struct custom_context {
         return ctx.begin();
       }
 
-      const char *format(const T &, custom_context& ctx) {
+      const char *format(const T &, custom_context &ctx) {
         ctx.called = true;
         return FMT_NULL;
       }
@@ -249,7 +249,7 @@ template <typename Char>
 bool operator==(custom_value<Char> lhs, custom_value<Char> rhs) {
   return lhs.value == rhs.value;
 }
-}
+}  // namespace internal
 FMT_END_NAMESPACE
 
 // Use a unique result type to make sure that there are no undesirable
@@ -259,14 +259,16 @@ struct test_result {};
 template <typename T>
 struct mock_visitor {
   template <typename U>
-  struct result { typedef test_result type; };
+  struct result {
+    typedef test_result type;
+  };
 
   mock_visitor() {
     ON_CALL(*this, visit(_)).WillByDefault(testing::Return(test_result()));
   }
 
-  MOCK_METHOD1_T(visit, test_result (T value));
-  MOCK_METHOD0_T(unexpected, void ());
+  MOCK_METHOD1_T(visit, test_result(T value));
+  MOCK_METHOD0_T(unexpected, void());
 
   test_result operator()(T value) { return visit(value); }
 
@@ -278,11 +280,15 @@ struct mock_visitor {
 };
 
 template <typename T>
-struct visit_type { typedef T Type; };
+struct visit_type {
+  typedef T Type;
+};
 
 #define VISIT_TYPE(Type_, visit_type_) \
-  template <> \
-  struct visit_type<Type_> { typedef visit_type_ Type; }
+  template <>                          \
+  struct visit_type<Type_> {           \
+    typedef visit_type_ Type;          \
+  }
 
 VISIT_TYPE(signed char, int);
 VISIT_TYPE(unsigned char, unsigned);
@@ -299,28 +305,42 @@ VISIT_TYPE(unsigned long, unsigned long long);
 
 VISIT_TYPE(float, double);
 
-#define CHECK_ARG_(Char, expected, value) { \
-  testing::StrictMock<mock_visitor<decltype(expected)>> visitor; \
-  EXPECT_CALL(visitor, visit(expected)); \
-  typedef std::back_insert_iterator<basic_buffer<Char>> iterator; \
-  fmt::visit(visitor, \
-      make_arg<fmt::basic_format_context<iterator, Char>>(value)); \
-}
+#define CHECK_ARG_(Char, expected, value)                                     \
+  {                                                                           \
+    testing::StrictMock<mock_visitor<decltype(expected)>> visitor;            \
+    EXPECT_CALL(visitor, visit(expected));                                    \
+    typedef std::back_insert_iterator<basic_buffer<Char>> iterator;           \
+    fmt::visit(                                                               \
+        visitor, make_arg<fmt::basic_format_context<iterator, Char>>(value)); \
+  }
 
-#define CHECK_ARG(value, typename_) { \
-  typedef decltype(value) value_type; \
-  typename_ visit_type<value_type>::Type expected = value; \
-  CHECK_ARG_(char, expected, value) \
-  CHECK_ARG_(wchar_t, expected, value) \
-}
+#define CHECK_ARG(value, typename_)                          \
+  {                                                          \
+    typedef decltype(value) value_type;                      \
+    typename_ visit_type<value_type>::Type expected = value; \
+    CHECK_ARG_(char, expected, value)                        \
+    CHECK_ARG_(wchar_t, expected, value)                     \
+  }
 
 template <typename T>
 class NumericArgTest : public testing::Test {};
 
 typedef ::testing::Types<
-  bool, signed char, unsigned char, signed, unsigned short,
-  int, unsigned, long, unsigned long, long long, unsigned long long,
-  float, double, long double> Types;
+    bool,
+    signed char,
+    unsigned char,
+    signed,
+    unsigned short,
+    int,
+    unsigned,
+    long,
+    unsigned long,
+    long long,
+    unsigned long long,
+    float,
+    double,
+    long double>
+    Types;
 TYPED_TEST_CASE(NumericArgTest, Types);
 
 template <typename T>
@@ -330,7 +350,7 @@ typename std::enable_if<std::is_integral<T>::value, T>::type test_value() {
 
 template <typename T>
 typename std::enable_if<std::is_floating_point<T>::value, T>::type
-    test_value() {
+test_value() {
   return static_cast<T>(4.2);
 }
 
@@ -395,14 +415,14 @@ struct check_custom {
 TEST(ArgTest, CustomArg) {
   test_struct test;
   typedef mock_visitor<fmt::basic_format_arg<fmt::format_context>::handle>
-    visitor;
+      visitor;
   testing::StrictMock<visitor> v;
   EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke(check_custom()));
   fmt::visit(v, make_arg<fmt::format_context>(test));
 }
 
 TEST(ArgTest, VisitInvalidArg) {
-  testing::StrictMock< mock_visitor<fmt::monostate> > visitor;
+  testing::StrictMock<mock_visitor<fmt::monostate>> visitor;
   EXPECT_CALL(visitor, visit(_));
   fmt::basic_format_arg<fmt::format_context> arg;
   visit(visitor, arg);
@@ -461,21 +481,22 @@ template <typename Char>
 class my_string {
  public:
   my_string(const Char *s) : s_(s) {}
-  const Char * data() const FMT_NOEXCEPT { return s_.data(); }
+  const Char *data() const FMT_NOEXCEPT { return s_.data(); }
   std::size_t length() const FMT_NOEXCEPT { return s_.size(); }
-  operator const Char*() const { return s_.c_str(); }
+  operator const Char *() const { return s_.c_str(); }
+
  private:
   std::basic_string<Char> s_;
 };
 
 template <typename Char>
-inline fmt::basic_string_view<Char>
-    to_string_view(const my_string<Char> &s) FMT_NOEXCEPT {
-  return { s.data(), s.length() };
+inline fmt::basic_string_view<Char> to_string_view(const my_string<Char> &s)
+    FMT_NOEXCEPT {
+  return {s.data(), s.length()};
 }
 
 struct non_string {};
-}
+}  // namespace my_ns
 
 namespace FakeQt {
 class QString {
@@ -490,12 +511,12 @@ class QString {
   std::shared_ptr<std::wstring> s_;
 };
 
-inline fmt::basic_string_view<wchar_t> to_string_view(
-    const QString &s) FMT_NOEXCEPT {
+inline fmt::basic_string_view<wchar_t> to_string_view(const QString &s)
+    FMT_NOEXCEPT {
   return {reinterpret_cast<const wchar_t *>(s.utf16()),
           static_cast<std::size_t>(s.size())};
 }
-}
+}  // namespace FakeQt
 
 template <typename T>
 class IsStringTest : public testing::Test {};
@@ -506,7 +527,7 @@ TYPED_TEST_CASE(IsStringTest, StringCharTypes);
 namespace {
 template <typename Char>
 struct derived_from_string_view : fmt::basic_string_view<Char> {};
-}
+}  // namespace
 
 TYPED_TEST(IsStringTest, IsString) {
   EXPECT_TRUE((fmt::internal::is_string<TypeParam *>::value));
@@ -515,9 +536,9 @@ TYPED_TEST(IsStringTest, IsString) {
   EXPECT_TRUE((fmt::internal::is_string<const TypeParam[2]>::value));
   EXPECT_TRUE((fmt::internal::is_string<std::basic_string<TypeParam>>::value));
   EXPECT_TRUE(
-        (fmt::internal::is_string<fmt::basic_string_view<TypeParam>>::value));
+      (fmt::internal::is_string<fmt::basic_string_view<TypeParam>>::value));
   EXPECT_TRUE(
-        (fmt::internal::is_string<derived_from_string_view<TypeParam>>::value));
+      (fmt::internal::is_string<derived_from_string_view<TypeParam>>::value));
 #ifdef FMT_STRING_VIEW
   EXPECT_TRUE((fmt::internal::is_string<FMT_STRING_VIEW<TypeParam>>::value));
 #endif
@@ -529,7 +550,7 @@ TYPED_TEST(IsStringTest, IsString) {
 TEST(CoreTest, Format) {
   // This should work without including fmt/format.h.
 #ifdef FMT_FORMAT_H_
-# error fmt/format.h must not be included in the core test
+#error fmt/format.h must not be included in the core test
 #endif
   EXPECT_EQ(fmt::format("{}", 42), "42");
 }
@@ -537,7 +558,7 @@ TEST(CoreTest, Format) {
 TEST(CoreTest, FormatTo) {
   // This should work without including fmt/format.h.
 #ifdef FMT_FORMAT_H_
-# error fmt/format.h must not be included in the core test
+#error fmt/format.h must not be included in the core test
 #endif
   std::string s;
   fmt::format_to(std::back_inserter(s), "{}", 42);
@@ -595,16 +616,19 @@ struct explicitly_convertible_to_wstring_view {
 };
 
 TEST(FormatterTest, FormatExplicitlyConvertibleToWStringView) {
-  EXPECT_EQ(L"foo",
-            fmt::format(L"{}", explicitly_convertible_to_wstring_view()));
+  EXPECT_EQ(
+      L"foo", fmt::format(L"{}", explicitly_convertible_to_wstring_view()));
 }
 
 struct explicitly_convertible_to_string_like {
   template <
       typename String,
       typename = typename std::enable_if<
-        std::is_constructible<String, const char*, std::size_t>::value>::type>
-  FMT_EXPLICIT operator String() const { return String("foo", 3u); }
+          std::is_constructible<String, const char *, std::size_t>::value>::
+          type>
+  FMT_EXPLICIT operator String() const {
+    return String("foo", 3u);
+  }
 };
 
 TEST(FormatterTest, FormatExplicitlyConvertibleToStringLike) {

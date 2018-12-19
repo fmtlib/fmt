@@ -13,15 +13,15 @@
 
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
-class custom_arg_formatter :
-    public fmt::arg_formatter<fmt::back_insert_range<fmt::internal::buffer>> {
+class custom_arg_formatter
+    : public fmt::arg_formatter<fmt::back_insert_range<fmt::internal::buffer>> {
  public:
   typedef fmt::back_insert_range<fmt::internal::buffer> range;
   typedef fmt::arg_formatter<range> base;
 
   custom_arg_formatter(
       fmt::format_context &ctx, fmt::format_specs *s = FMT_NULL)
-  : base(ctx, s) {}
+      : base(ctx, s) {}
 
   using base::operator();
 
@@ -41,7 +41,7 @@ std::string custom_vformat(fmt::string_view format_str, fmt::format_args args) {
 }
 
 template <typename... Args>
-std::string custom_format(const char *format_str, const Args & ... args) {
+std::string custom_format(const char *format_str, const Args &... args) {
   auto va = fmt::make_format_args(args...);
   return custom_vformat(format_str, va);
 }

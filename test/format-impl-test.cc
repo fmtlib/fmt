@@ -25,9 +25,9 @@
 #undef max
 
 #if FMT_HAS_CPP_ATTRIBUTE(noreturn)
-# define FMT_NORETURN [[noreturn]]
+#define FMT_NORETURN [[noreturn]]
 #else
-# define FMT_NORETURN
+#define FMT_NORETURN
 #endif
 
 using fmt::internal::fp;
@@ -108,10 +108,8 @@ TEST(FPTest, Grisu2FormatCompilesWithNonIEEEDouble) {
 }
 
 template <typename T>
-struct ValueExtractor: fmt::internal::function<T> {
-  T operator()(T value) {
-    return value;
-  }
+struct ValueExtractor : fmt::internal::function<T> {
+  T operator()(T value) { return value; }
 
   template <typename U>
   FMT_NORETURN T operator()(U) {
@@ -122,8 +120,9 @@ struct ValueExtractor: fmt::internal::function<T> {
 TEST(FormatTest, ArgConverter) {
   long long value = std::numeric_limits<long long>::max();
   auto arg = fmt::internal::make_arg<fmt::format_context>(value);
-  visit(fmt::internal::arg_converter<long long, fmt::format_context>(arg, 'd'),
-        arg);
+  visit(
+      fmt::internal::arg_converter<long long, fmt::format_context>(arg, 'd'),
+      arg);
   EXPECT_EQ(value, visit(ValueExtractor<long long>(), arg));
 }
 
@@ -138,10 +137,10 @@ TEST(FormatTest, FormatNegativeNaN) {
 TEST(FormatTest, StrError) {
   char *message = FMT_NULL;
   char buffer[BUFFER_SIZE];
-  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = FMT_NULL, 0),
-                "invalid buffer");
-  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = buffer, 0),
-                "invalid buffer");
+  EXPECT_ASSERT(
+      fmt::safe_strerror(EDOM, message = FMT_NULL, 0), "invalid buffer");
+  EXPECT_ASSERT(
+      fmt::safe_strerror(EDOM, message = buffer, 0), "invalid buffer");
   buffer[0] = 'x';
 #if defined(_GNU_SOURCE) && !defined(__COVERITY__)
   // Use invalid error code to make sure that safe_strerror returns an error
@@ -188,8 +187,7 @@ TEST(FormatTest, FormatErrorCode) {
     // Test maximum buffer size.
     msg = fmt::format("error {}", codes[i]);
     fmt::memory_buffer buffer;
-    std::string prefix(
-        fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
+    std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
     fmt::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(prefix + sep + msg, to_string(buffer));
     std::size_t size = fmt::inline_buffer_size;
@@ -207,40 +205,59 @@ TEST(FormatTest, CountCodePoints) {
 }
 
 TEST(ColorsTest, Colors) {
-  EXPECT_WRITE(stdout, fmt::print(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
-               "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
-  EXPECT_WRITE(stdout, fmt::print(fg(fmt::color::blue), "blue"),
-               "\x1b[38;2;000;000;255mblue\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
+      "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(fg(fmt::color::blue), "blue"),
+      "\x1b[38;2;000;000;255mblue\x1b[0m");
   EXPECT_WRITE(
       stdout,
       fmt::print(fg(fmt::color::blue) | bg(fmt::color::red), "two color"),
       "\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m");
-  EXPECT_WRITE(stdout, fmt::print(fmt::emphasis::bold, "bold"),
-               "\x1b[1mbold\x1b[0m");
-  EXPECT_WRITE(stdout, fmt::print(fmt::emphasis::italic, "italic"),
-               "\x1b[3mitalic\x1b[0m");
-  EXPECT_WRITE(stdout, fmt::print(fmt::emphasis::underline, "underline"),
-               "\x1b[4munderline\x1b[0m");
-  EXPECT_WRITE(stdout,
-               fmt::print(fmt::emphasis::strikethrough, "strikethrough"),
-               "\x1b[9mstrikethrough\x1b[0m");
+  EXPECT_WRITE(
+      stdout, fmt::print(fmt::emphasis::bold, "bold"), "\x1b[1mbold\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(fmt::emphasis::italic, "italic"),
+      "\x1b[3mitalic\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(fmt::emphasis::underline, "underline"),
+      "\x1b[4munderline\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(fmt::emphasis::strikethrough, "strikethrough"),
+      "\x1b[9mstrikethrough\x1b[0m");
   EXPECT_WRITE(
       stdout,
       fmt::print(fg(fmt::color::blue) | fmt::emphasis::bold, "blue/bold"),
       "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m");
-  EXPECT_WRITE(stderr, fmt::print(stderr, fmt::emphasis::bold, "bold error"),
-               "\x1b[1mbold error\x1b[0m");
-  EXPECT_WRITE(stderr, fmt::print(stderr, fg(fmt::color::blue), "blue log"),
-                 "\x1b[38;2;000;000;255mblue log\x1b[0m");
+  EXPECT_WRITE(
+      stderr,
+      fmt::print(stderr, fmt::emphasis::bold, "bold error"),
+      "\x1b[1mbold error\x1b[0m");
+  EXPECT_WRITE(
+      stderr,
+      fmt::print(stderr, fg(fmt::color::blue), "blue log"),
+      "\x1b[38;2;000;000;255mblue log\x1b[0m");
   EXPECT_WRITE(stdout, fmt::print(fmt::text_style(), "hi"), "hi");
-  EXPECT_WRITE(stdout, fmt::print(fg(fmt::terminal_color::red), "tred"),
-               "\x1b[31mtred\x1b[0m");
-  EXPECT_WRITE(stdout, fmt::print(bg(fmt::terminal_color::cyan), "tcyan"),
-               "\x1b[46mtcyan\x1b[0m");
-  EXPECT_WRITE(stdout,
-               fmt::print(fg(fmt::terminal_color::bright_green), "tbgreen"),
-               "\x1b[92mtbgreen\x1b[0m");
-  EXPECT_WRITE(stdout,
-               fmt::print(bg(fmt::terminal_color::bright_magenta), "tbmagenta"),
-               "\x1b[105mtbmagenta\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(fg(fmt::terminal_color::red), "tred"),
+      "\x1b[31mtred\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(bg(fmt::terminal_color::cyan), "tcyan"),
+      "\x1b[46mtcyan\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(fg(fmt::terminal_color::bright_green), "tbgreen"),
+      "\x1b[92mtbgreen\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(bg(fmt::terminal_color::bright_magenta), "tbmagenta"),
+      "\x1b[105mtbmagenta\x1b[0m");
 }

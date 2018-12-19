@@ -19,13 +19,13 @@ enum color { black, red, green, yellow, blue, magenta, cyan, white };
 FMT_API void vprint_colored(color c, string_view format, format_args args);
 FMT_API void vprint_colored(color c, wstring_view format, wformat_args args);
 template <typename... Args>
-inline void print_colored(color c, string_view format_str,
-                          const Args&... args) {
+inline void print_colored(
+    color c, string_view format_str, const Args&... args) {
   vprint_colored(c, format_str, make_format_args(args...));
 }
 template <typename... Args>
-inline void print_colored(color c, wstring_view format_str,
-                          const Args&... args) {
+inline void print_colored(
+    color c, wstring_view format_str, const Args&... args) {
   vprint_colored(c, format_str, make_format_args<wformat_context>(args...));
 }
 
@@ -290,13 +290,13 @@ class text_style {
       background_color.value.rgb_color |= rhs.background_color.value.rgb_color;
     }
 
-    ems = static_cast<emphasis>(static_cast<uint8_t>(ems) |
-                                static_cast<uint8_t>(rhs.ems));
+    ems = static_cast<emphasis>(
+        static_cast<uint8_t>(ems) | static_cast<uint8_t>(rhs.ems));
     return *this;
   }
 
-  friend FMT_CONSTEXPR text_style operator|(text_style lhs,
-                                            const text_style &rhs) {
+  friend FMT_CONSTEXPR text_style
+  operator|(text_style lhs, const text_style &rhs) {
     return lhs |= rhs;
   }
 
@@ -319,13 +319,13 @@ class text_style {
       background_color.value.rgb_color &= rhs.background_color.value.rgb_color;
     }
 
-    ems = static_cast<emphasis>(static_cast<uint8_t>(ems) &
-                                static_cast<uint8_t>(rhs.ems));
+    ems = static_cast<emphasis>(
+        static_cast<uint8_t>(ems) & static_cast<uint8_t>(rhs.ems));
     return *this;
   }
 
-  friend FMT_CONSTEXPR text_style operator&(text_style lhs,
-                                            const text_style &rhs) {
+  friend FMT_CONSTEXPR text_style
+  operator&(text_style lhs, const text_style &rhs) {
     return lhs &= rhs;
   }
 
@@ -352,11 +352,10 @@ class text_style {
   }
 
  private:
-  FMT_CONSTEXPR text_style(bool is_foreground,
-                           internal::color_type text_color) FMT_NOEXCEPT
-      : set_foreground_color(),
-        set_background_color(),
-        ems() {
+  FMT_CONSTEXPR text_style(bool is_foreground, internal::color_type text_color)
+      FMT_NOEXCEPT : set_foreground_color(),
+                     set_background_color(),
+                     ems() {
     if (is_foreground) {
       foreground_color = text_color;
       set_foreground_color = true;
@@ -394,8 +393,8 @@ namespace internal {
 
 template <typename Char>
 struct ansi_color_escape {
-  FMT_CONSTEXPR ansi_color_escape(internal::color_type text_color,
-                                  const char *esc) FMT_NOEXCEPT {
+  FMT_CONSTEXPR ansi_color_escape(
+      internal::color_type text_color, const char *esc) FMT_NOEXCEPT {
     // If we have a terminal color, we need to output another escape code
     // sequence.
     if (!text_color.is_rgb) {
@@ -459,8 +458,8 @@ struct ansi_color_escape {
  private:
   Char buffer[7 + 3 * 4 + 1];
 
-  static FMT_CONSTEXPR void to_esc(uint8_t c, Char *out,
-                                   char delimiter) FMT_NOEXCEPT {
+  static FMT_CONSTEXPR void to_esc(uint8_t c, Char *out, char delimiter)
+      FMT_NOEXCEPT {
     out[0] = static_cast<Char>('0' + c / 100);
     out[1] = static_cast<Char>('0' + c / 10 % 10);
     out[2] = static_cast<Char>('0' + c % 10);
@@ -516,8 +515,11 @@ struct is_string<const std::FILE *> : std::false_type {};
 }  // namespace internal
 
 template <typename S, typename Char = typename internal::char_t<S>::type>
-void vprint(std::FILE *f, const text_style &ts, const S &format,
-            basic_format_args<typename buffer_context<Char>::type> args) {
+void vprint(
+    std::FILE *f,
+    const text_style &ts,
+    const S &format,
+    basic_format_args<typename buffer_context<Char>::type> args) {
   bool has_style = false;
   if (ts.has_emphasis()) {
     has_style = true;
@@ -548,7 +550,9 @@ void vprint(std::FILE *f, const text_style &ts, const S &format,
  */
 template <typename String, typename... Args>
 typename std::enable_if<internal::is_string<String>::value>::type print(
-    std::FILE *f, const text_style &ts, const String &format_str,
+    std::FILE *f,
+    const text_style &ts,
+    const String &format_str,
     const Args &... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename internal::char_t<String>::type char_t;

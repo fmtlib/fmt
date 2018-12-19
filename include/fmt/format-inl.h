@@ -95,8 +95,8 @@ typedef void (*FormatFunc)(internal::buffer &, int, string_view);
 //   ERANGE - buffer is not large enough to store the error message
 //   other  - failure
 // Buffer should be at least of size 1.
-int safe_strerror(int error_code, char *&buffer,
-                  std::size_t buffer_size) FMT_NOEXCEPT {
+int safe_strerror(int error_code, char *&buffer, std::size_t buffer_size)
+    FMT_NOEXCEPT {
   FMT_ASSERT(buffer != FMT_NULL && buffer_size != 0, "invalid buffer");
 
   class dispatcher {
@@ -153,8 +153,8 @@ int safe_strerror(int error_code, char *&buffer,
   return dispatcher(error_code, buffer, buffer_size).run();
 }
 
-void format_error_code(internal::buffer &out, int error_code,
-                       string_view message) FMT_NOEXCEPT {
+void format_error_code(
+    internal::buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
   // inline_buffer_size to avoid dynamic memory allocation and potential
   // bad_alloc.
@@ -180,8 +180,8 @@ void format_error_code(internal::buffer &out, int error_code,
   assert(out.size() <= inline_buffer_size);
 }
 
-void report_error(FormatFunc func, int error_code,
-                  string_view message) FMT_NOEXCEPT {
+void report_error(FormatFunc func, int error_code, string_view message)
+    FMT_NOEXCEPT {
   memory_buffer full_message;
   func(full_message, error_code, message);
   // Use Writer::data instead of Writer::c_str to avoid potential memory
@@ -228,8 +228,8 @@ FMT_FUNC Char internal::thousands_sep_impl(locale_ref) {
 }
 #endif
 
-FMT_FUNC void system_error::init(int err_code, string_view format_str,
-                                 format_args args) {
+FMT_FUNC void system_error::init(
+    int err_code, string_view format_str, format_args args) {
   error_code_ = err_code;
   memory_buffer buffer;
   format_system_error(buffer, err_code, vformat(format_str, args));
@@ -239,17 +239,19 @@ FMT_FUNC void system_error::init(int err_code, string_view format_str,
 
 namespace internal {
 template <typename T>
-int char_traits<char>::format_float(char *buf, std::size_t size,
-                                    const char *format, int precision,
-                                    T value) {
+int char_traits<char>::format_float(
+    char *buf, std::size_t size, const char *format, int precision, T value) {
   return precision < 0 ? FMT_SNPRINTF(buf, size, format, value)
                        : FMT_SNPRINTF(buf, size, format, precision, value);
 }
 
 template <typename T>
-int char_traits<wchar_t>::format_float(wchar_t *buf, std::size_t size,
-                                       const wchar_t *format, int precision,
-                                       T value) {
+int char_traits<wchar_t>::format_float(
+    wchar_t *buf,
+    std::size_t size,
+    const wchar_t *format,
+    int precision,
+    T value) {
   return precision < 0 ? FMT_SWPRINTF(buf, size, format, value)
                        : FMT_SWPRINTF(buf, size, format, precision, value);
 }
@@ -276,7 +278,9 @@ const uint32_t basic_data<T>::ZERO_OR_POWERS_OF_10_32[] = {0,
 
 template <typename T>
 const uint64_t basic_data<T>::ZERO_OR_POWERS_OF_10_64[] = {
-    0, FMT_POWERS_OF_10(1), FMT_POWERS_OF_10(1000000000ull),
+    0,
+    FMT_POWERS_OF_10(1),
+    FMT_POWERS_OF_10(1000000000ull),
     10000000000000000000ull};
 
 // Normalized 64-bit significands of pow(10, k), for k = -348, -340, ..., 340.
@@ -451,9 +455,15 @@ FMT_FUNC fp get_cached_power(int min_exponent, int &pow10_exponent) {
   return fp(data::POW10_SIGNIFICANDS[index], data::POW10_EXPONENTS[index]);
 }
 
-FMT_FUNC bool grisu2_round(char *buf, ptrdiff_t &size, size_t max_digits,
-                           uint64_t delta, uint64_t remainder, uint64_t exp,
-                           uint64_t diff, int &exp10) {
+FMT_FUNC bool grisu2_round(
+    char *buf,
+    ptrdiff_t &size,
+    size_t max_digits,
+    uint64_t delta,
+    uint64_t remainder,
+    uint64_t exp,
+    uint64_t diff,
+    int &exp10) {
   while (
       remainder < diff && delta - remainder >= exp &&
       (remainder + exp < diff || diff - remainder > remainder + exp - diff)) {
@@ -470,10 +480,16 @@ FMT_FUNC bool grisu2_round(char *buf, ptrdiff_t &size, size_t max_digits,
 }
 
 // Generates output using Grisu2 digit-gen algorithm.
-FMT_FUNC bool grisu2_gen_digits(char *buf, ptrdiff_t &size, uint32_t hi,
-                                uint64_t lo, int &exp, uint64_t delta,
-                                const fp &one, const fp &diff,
-                                size_t max_digits) {
+FMT_FUNC bool grisu2_gen_digits(
+    char *buf,
+    ptrdiff_t &size,
+    uint32_t hi,
+    uint64_t lo,
+    int &exp,
+    uint64_t delta,
+    const fp &one,
+    const fp &diff,
+    size_t max_digits) {
   // Generate digits for the most significant part (hi).
   while (exp > 0) {
     uint32_t digit = 0;
@@ -529,8 +545,13 @@ FMT_FUNC bool grisu2_gen_digits(char *buf, ptrdiff_t &size, uint32_t hi,
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
     if (remainder <= delta || size > static_cast<ptrdiff_t>(max_digits)) {
       return grisu2_round(
-          buf, size, max_digits, delta, remainder,
-          static_cast<uint64_t>(data::POWERS_OF_10_32[exp]) << -one.e, diff.f,
+          buf,
+          size,
+          max_digits,
+          delta,
+          remainder,
+          static_cast<uint64_t>(data::POWERS_OF_10_32[exp]) << -one.e,
+          diff.f,
           exp);
     }
   }
@@ -544,8 +565,15 @@ FMT_FUNC bool grisu2_gen_digits(char *buf, ptrdiff_t &size, uint32_t hi,
     lo &= one.f - 1;
     --exp;
     if (lo < delta || size > static_cast<ptrdiff_t>(max_digits)) {
-      return grisu2_round(buf, size, max_digits, delta, lo, one.f,
-                          diff.f * data::POWERS_OF_10_32[-exp], exp);
+      return grisu2_round(
+          buf,
+          size,
+          max_digits,
+          delta,
+          lo,
+          one.f,
+          diff.f * data::POWERS_OF_10_32[-exp],
+          exp);
     }
   }
 }
@@ -636,8 +664,8 @@ struct fill {
 
 // The number is given as v = f * pow(10, exp), where f has size digits.
 template <typename Handler>
-FMT_FUNC void grisu2_prettify(const gen_digits_params &params, int size,
-                              int exp, Handler &&handler) {
+FMT_FUNC void grisu2_prettify(
+    const gen_digits_params &params, int size, int exp, Handler &&handler) {
   if (!params.fixed) {
     // Insert a decimal point after the first digit and add an exponent.
     handler.insert(1, '.');
@@ -692,8 +720,8 @@ struct char_counter {
 // Converts format specifiers into parameters for digit generation and computes
 // output buffer size for a number in the range [pow(10, exp - 1), pow(10, exp)
 // or 0 if exp == 1.
-FMT_FUNC gen_digits_params process_specs(const core_format_specs &specs,
-                                         int exp, buffer &buf) {
+FMT_FUNC gen_digits_params
+process_specs(const core_format_specs &specs, int exp, buffer &buf) {
   auto params = gen_digits_params();
   int num_digits = specs.precision >= 0 ? specs.precision : 6;
   switch (specs.type) {
@@ -754,7 +782,8 @@ grisu2_format(Double value, buffer &buf, core_format_specs specs) {
   const int min_exp = -60;             // alpha in Grisu.
   int cached_exp = 0;                  // K in Grisu.
   auto cached_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
-      min_exp - (upper.e + fp::significand_size), cached_exp);
+      min_exp - (upper.e + fp::significand_size),
+      cached_exp);
   cached_exp = -cached_exp;
   upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
   --upper.f;                   // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
@@ -774,8 +803,8 @@ grisu2_format(Double value, buffer &buf, core_format_specs specs) {
   // lo = supper % one.
   uint64_t lo = upper.f & (one.f - 1);
   ptrdiff_t size = 0;
-  if (!grisu2_gen_digits(buf.data(), size, hi, lo, exp, delta, one, diff,
-                         params.num_digits)) {
+  if (!grisu2_gen_digits(
+          buf.data(), size, hi, lo, exp, delta, one, diff, params.num_digits)) {
     buf.clear();
     return false;
   }
@@ -784,8 +813,8 @@ grisu2_format(Double value, buffer &buf, core_format_specs specs) {
 }
 
 template <typename Double>
-void sprintf_format(Double value, internal::buffer &buf,
-                    core_format_specs spec) {
+void sprintf_format(
+    Double value, internal::buffer &buf, core_format_specs spec) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buf.capacity() != 0, "empty buffer");
 
@@ -842,13 +871,13 @@ FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
     return;
   }
 
-  int length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s.data(),
-                                   s_size, FMT_NULL, 0);
+  int length = MultiByteToWideChar(
+      CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size, FMT_NULL, 0);
   if (length == 0)
     FMT_THROW(windows_error(GetLastError(), ERROR_MSG));
   buffer_.resize(length + 1);
-  length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size,
-                               &buffer_[0], length);
+  length = MultiByteToWideChar(
+      CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size, &buffer_[0], length);
   if (length == 0)
     FMT_THROW(windows_error(GetLastError(), ERROR_MSG));
   buffer_[length] = 0;
@@ -856,8 +885,8 @@ FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
 
 FMT_FUNC internal::utf16_to_utf8::utf16_to_utf8(wstring_view s) {
   if (int error_code = convert(s)) {
-    FMT_THROW(windows_error(error_code,
-                            "cannot convert string from UTF-16 to UTF-8"));
+    FMT_THROW(windows_error(
+        error_code, "cannot convert string from UTF-16 to UTF-8"));
   }
 }
 
@@ -872,21 +901,21 @@ FMT_FUNC int internal::utf16_to_utf8::convert(wstring_view s) {
     return 0;
   }
 
-  int length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, FMT_NULL, 0,
-                                   FMT_NULL, FMT_NULL);
+  int length = WideCharToMultiByte(
+      CP_UTF8, 0, s.data(), s_size, FMT_NULL, 0, FMT_NULL, FMT_NULL);
   if (length == 0)
     return GetLastError();
   buffer_.resize(length + 1);
-  length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, &buffer_[0],
-                               length, FMT_NULL, FMT_NULL);
+  length = WideCharToMultiByte(
+      CP_UTF8, 0, s.data(), s_size, &buffer_[0], length, FMT_NULL, FMT_NULL);
   if (length == 0)
     return GetLastError();
   buffer_[length] = 0;
   return 0;
 }
 
-FMT_FUNC void windows_error::init(int err_code, string_view format_str,
-                                  format_args args) {
+FMT_FUNC void windows_error::init(
+    int err_code, string_view format_str, format_args args) {
   error_code_ = err_code;
   memory_buffer buffer;
   internal::format_windows_error(buffer, err_code, vformat(format_str, args));
@@ -894,18 +923,21 @@ FMT_FUNC void windows_error::init(int err_code, string_view format_str,
   base = std::runtime_error(to_string(buffer));
 }
 
-FMT_FUNC void internal::format_windows_error(internal::buffer &out,
-                                             int error_code,
-                                             string_view message) FMT_NOEXCEPT {
+FMT_FUNC void internal::format_windows_error(
+    internal::buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
     wmemory_buffer buf;
     buf.resize(inline_buffer_size);
     for (;;) {
       wchar_t *system_message = &buf[0];
       int result = FormatMessageW(
-          FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, FMT_NULL,
-          error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), system_message,
-          static_cast<uint32_t>(buf.size()), FMT_NULL);
+          FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+          FMT_NULL,
+          error_code,
+          MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+          system_message,
+          static_cast<uint32_t>(buf.size()),
+          FMT_NULL);
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
@@ -928,8 +960,8 @@ FMT_FUNC void internal::format_windows_error(internal::buffer &out,
 
 #endif  // FMT_USE_WINDOWS_H
 
-FMT_FUNC void format_system_error(internal::buffer &out, int error_code,
-                                  string_view message) FMT_NOEXCEPT {
+FMT_FUNC void format_system_error(
+    internal::buffer &out, int error_code, string_view message) FMT_NOEXCEPT {
   FMT_TRY {
     memory_buffer buf;
     buf.resize(inline_buffer_size);
@@ -956,22 +988,22 @@ FMT_FUNC void internal::error_handler::on_error(const char *message) {
   FMT_THROW(format_error(message));
 }
 
-FMT_FUNC void report_system_error(int error_code,
-                                  fmt::string_view message) FMT_NOEXCEPT {
+FMT_FUNC void report_system_error(int error_code, fmt::string_view message)
+    FMT_NOEXCEPT {
   report_error(format_system_error, error_code, message);
 }
 
 #if FMT_USE_WINDOWS_H
-FMT_FUNC void report_windows_error(int error_code,
-                                   fmt::string_view message) FMT_NOEXCEPT {
+FMT_FUNC void report_windows_error(int error_code, fmt::string_view message)
+    FMT_NOEXCEPT {
   report_error(internal::format_windows_error, error_code, message);
 }
 #endif
 
 FMT_FUNC void vprint(std::FILE *f, string_view format_str, format_args args) {
   memory_buffer buffer;
-  internal::vformat_to(buffer, format_str,
-                       basic_format_args<buffer_context<char>::type>(args));
+  internal::vformat_to(
+      buffer, format_str, basic_format_args<buffer_context<char>::type>(args));
   std::fwrite(buffer.data(), 1, buffer.size(), f);
 }
 

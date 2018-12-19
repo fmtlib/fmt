@@ -34,8 +34,8 @@ std::tm make_second(int s) {
   return time;
 }
 
-std::string format_tm(const std::tm &time, const char *spec,
-                      const std::locale &loc) {
+std::string format_tm(
+    const std::tm &time, const char *spec, const std::locale &loc) {
   auto &facet = std::use_facet<std::time_put<char>>(loc);
   std::ostringstream os;
   os.imbue(loc);
@@ -43,52 +43,54 @@ std::string format_tm(const std::tm &time, const char *spec,
   return os.str();
 }
 
-#define EXPECT_TIME(spec, time, duration) { \
-    std::locale loc("ja_JP.utf8"); \
-    EXPECT_EQ(format_tm(time, spec, loc), \
-              fmt::format(loc, "{:" spec "}", duration)); \
+#define EXPECT_TIME(spec, time, duration)           \
+  {                                                 \
+    std::locale loc("ja_JP.utf8");                  \
+    EXPECT_EQ(                                      \
+        format_tm(time, spec, loc),                 \
+        fmt::format(loc, "{:" spec "}", duration)); \
   }
 
 TEST(ChronoTest, FormatDefault) {
   EXPECT_EQ("42s", fmt::format("{}", std::chrono::seconds(42)));
-  EXPECT_EQ("42as",
-            fmt::format("{}", std::chrono::duration<int, std::atto>(42)));
-  EXPECT_EQ("42fs",
-            fmt::format("{}", std::chrono::duration<int, std::femto>(42)));
-  EXPECT_EQ("42ps",
-            fmt::format("{}", std::chrono::duration<int, std::pico>(42)));
+  EXPECT_EQ(
+      "42as", fmt::format("{}", std::chrono::duration<int, std::atto>(42)));
+  EXPECT_EQ(
+      "42fs", fmt::format("{}", std::chrono::duration<int, std::femto>(42)));
+  EXPECT_EQ(
+      "42ps", fmt::format("{}", std::chrono::duration<int, std::pico>(42)));
   EXPECT_EQ("42ns", fmt::format("{}", std::chrono::nanoseconds(42)));
   EXPECT_EQ("42µs", fmt::format("{}", std::chrono::microseconds(42)));
   EXPECT_EQ("42ms", fmt::format("{}", std::chrono::milliseconds(42)));
-  EXPECT_EQ("42cs",
-            fmt::format("{}", std::chrono::duration<int, std::centi>(42)));
-  EXPECT_EQ("42ds",
-            fmt::format("{}", std::chrono::duration<int, std::deci>(42)));
+  EXPECT_EQ(
+      "42cs", fmt::format("{}", std::chrono::duration<int, std::centi>(42)));
+  EXPECT_EQ(
+      "42ds", fmt::format("{}", std::chrono::duration<int, std::deci>(42)));
   EXPECT_EQ("42s", fmt::format("{}", std::chrono::seconds(42)));
-  EXPECT_EQ("42das",
-            fmt::format("{}", std::chrono::duration<int, std::deca>(42)));
-  EXPECT_EQ("42hs",
-            fmt::format("{}", std::chrono::duration<int, std::hecto>(42)));
-  EXPECT_EQ("42ks",
-            fmt::format("{}", std::chrono::duration<int, std::kilo>(42)));
-  EXPECT_EQ("42Ms",
-            fmt::format("{}", std::chrono::duration<int, std::mega>(42)));
-  EXPECT_EQ("42Gs",
-            fmt::format("{}", std::chrono::duration<int, std::giga>(42)));
-  EXPECT_EQ("42Ts",
-            fmt::format("{}", std::chrono::duration<int, std::tera>(42)));
-  EXPECT_EQ("42Ps",
-            fmt::format("{}", std::chrono::duration<int, std::peta>(42)));
-  EXPECT_EQ("42Es",
-            fmt::format("{}", std::chrono::duration<int, std::exa>(42)));
+  EXPECT_EQ(
+      "42das", fmt::format("{}", std::chrono::duration<int, std::deca>(42)));
+  EXPECT_EQ(
+      "42hs", fmt::format("{}", std::chrono::duration<int, std::hecto>(42)));
+  EXPECT_EQ(
+      "42ks", fmt::format("{}", std::chrono::duration<int, std::kilo>(42)));
+  EXPECT_EQ(
+      "42Ms", fmt::format("{}", std::chrono::duration<int, std::mega>(42)));
+  EXPECT_EQ(
+      "42Gs", fmt::format("{}", std::chrono::duration<int, std::giga>(42)));
+  EXPECT_EQ(
+      "42Ts", fmt::format("{}", std::chrono::duration<int, std::tera>(42)));
+  EXPECT_EQ(
+      "42Ps", fmt::format("{}", std::chrono::duration<int, std::peta>(42)));
+  EXPECT_EQ(
+      "42Es", fmt::format("{}", std::chrono::duration<int, std::exa>(42)));
   EXPECT_EQ("42m", fmt::format("{}", std::chrono::minutes(42)));
   EXPECT_EQ("42h", fmt::format("{}", std::chrono::hours(42)));
-  EXPECT_EQ("42[15]s",
-            fmt::format("{}",
-                        std::chrono::duration<int, std::ratio<15, 1>>(42)));
-  EXPECT_EQ("42[15/4]s",
-            fmt::format("{}",
-                        std::chrono::duration<int, std::ratio<15, 4>>(42)));
+  EXPECT_EQ(
+      "42[15]s",
+      fmt::format("{}", std::chrono::duration<int, std::ratio<15, 1>>(42)));
+  EXPECT_EQ(
+      "42[15/4]s",
+      fmt::format("{}", std::chrono::duration<int, std::ratio<15, 4>>(42)));
 }
 
 TEST(ChronoTest, Align) {
@@ -120,8 +122,8 @@ TEST(ChronoTest, FormatSpecs) {
   EXPECT_EQ("12", fmt::format("{:%I}", std::chrono::hours(24)));
   EXPECT_EQ("04", fmt::format("{:%I}", std::chrono::hours(4)));
   EXPECT_EQ("02", fmt::format("{:%I}", std::chrono::hours(14)));
-  EXPECT_EQ("03:25:45",
-            fmt::format("{:%H:%M:%S}", std::chrono::seconds(12345)));
+  EXPECT_EQ(
+      "03:25:45", fmt::format("{:%H:%M:%S}", std::chrono::seconds(12345)));
   EXPECT_EQ("03:25", fmt::format("{:%R}", std::chrono::seconds(12345)));
   EXPECT_EQ("03:25:45", fmt::format("{:%T}", std::chrono::seconds(12345)));
 }
@@ -144,12 +146,12 @@ TEST(ChronoTest, InvalidSpecs) {
   EXPECT_THROW_MSG(fmt::format("{:%B}", sec), fmt::format_error, "no date");
   EXPECT_THROW_MSG(fmt::format("{:%z}", sec), fmt::format_error, "no date");
   EXPECT_THROW_MSG(fmt::format("{:%Z}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%q}", sec), fmt::format_error,
-                   "invalid format");
-  EXPECT_THROW_MSG(fmt::format("{:%Eq}", sec), fmt::format_error,
-                   "invalid format");
-  EXPECT_THROW_MSG(fmt::format("{:%Oq}", sec), fmt::format_error,
-                   "invalid format");
+  EXPECT_THROW_MSG(
+      fmt::format("{:%q}", sec), fmt::format_error, "invalid format");
+  EXPECT_THROW_MSG(
+      fmt::format("{:%Eq}", sec), fmt::format_error, "invalid format");
+  EXPECT_THROW_MSG(
+      fmt::format("{:%Oq}", sec), fmt::format_error, "invalid format");
 }
 
 TEST(ChronoTest, Locale) {
@@ -159,7 +161,8 @@ TEST(ChronoTest, Locale) {
   try {
     loc = std::locale(loc_name);
     has_locale = true;
-  } catch (const std::runtime_error &) {}
+  } catch (const std::runtime_error &) {
+  }
   if (!has_locale) {
     fmt::print("{} locale is missing.\n", loc_name);
     return;

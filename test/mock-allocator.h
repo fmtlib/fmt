@@ -8,8 +8,8 @@
 #ifndef FMT_MOCK_ALLOCATOR_H_
 #define FMT_MOCK_ALLOCATOR_H_
 
-#include "gmock.h"
 #include "fmt/format.h"
+#include "gmock.h"
 
 template <typename T>
 class mock_allocator {
@@ -17,8 +17,8 @@ class mock_allocator {
   mock_allocator() {}
   mock_allocator(const mock_allocator &) {}
   typedef T value_type;
-  MOCK_METHOD1_T(allocate, T* (std::size_t n));
-  MOCK_METHOD2_T(deallocate, void (T* p, std::size_t n));
+  MOCK_METHOD1_T(allocate, T *(std::size_t n));
+  MOCK_METHOD2_T(deallocate, void(T *p, std::size_t n));
 };
 
 template <typename Allocator>
@@ -39,13 +39,13 @@ class allocator_ref {
   allocator_ref(const allocator_ref &other) : alloc_(other.alloc_) {}
   allocator_ref(allocator_ref &&other) { move(other); }
 
-  allocator_ref& operator=(allocator_ref &&other) {
+  allocator_ref &operator=(allocator_ref &&other) {
     assert(this != &other);
     move(other);
     return *this;
   }
 
-  allocator_ref& operator=(const allocator_ref &other) {
+  allocator_ref &operator=(const allocator_ref &other) {
     alloc_ = other.alloc_;
     return *this;
   }
@@ -53,10 +53,10 @@ class allocator_ref {
  public:
   Allocator *get() const { return alloc_; }
 
-  value_type* allocate(std::size_t n) {
+  value_type *allocate(std::size_t n) {
     return fmt::internal::allocate(*alloc_, n);
   }
-  void deallocate(value_type* p, std::size_t n) { alloc_->deallocate(p, n); }
+  void deallocate(value_type *p, std::size_t n) { alloc_->deallocate(p, n); }
 };
 
 #endif  // FMT_MOCK_ALLOCATOR_H_

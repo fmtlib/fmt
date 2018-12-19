@@ -9,14 +9,14 @@
 #include "gtest.h"
 
 #ifdef _WIN32
-# include <windows.h>
+#include <windows.h>
 #endif
 
 #ifdef _MSC_VER
-# include <crtdbg.h>
+#include <crtdbg.h>
 #else
-# define _CrtSetReportFile(a, b)
-# define _CrtSetReportMode(a, b)
+#define _CrtSetReportFile(a, b)
+#define _CrtSetReportMode(a, b)
 #endif
 
 int main(int argc, char **argv) {
@@ -24,8 +24,8 @@ int main(int argc, char **argv) {
   // Don't display any error dialogs. This also suppresses message boxes
   // on assertion failures in MinGW where _set_error_mode/CrtSetReportMode
   // doesn't help.
-  SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
-    SEM_NOOPENFILEERRORBOX);
+  SetErrorMode(
+      SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 #endif
   // Disable message boxes on assertion failures.
   _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
