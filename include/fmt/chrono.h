@@ -217,17 +217,17 @@ inline int to_int(Int value) {
   return static_cast<int>(value);
 }
 
-template <typename FormatContext>
+template <typename FormatContext, typename OutputIt>
 struct chrono_formatter {
   FormatContext &context;
-  typename FormatContext::iterator out;
+  OutputIt out;
   std::chrono::seconds s;
   std::chrono::milliseconds ms;
 
   typedef typename FormatContext::char_type char_type;
 
-  explicit chrono_formatter(FormatContext &ctx)
-    : context(ctx), out(ctx.out()) {}
+  explicit chrono_formatter(FormatContext &ctx, OutputIt o)
+    : context(ctx), out(o) {}
 
   int hour() const { return to_int((s.count() / 3600) % 24); }
 
@@ -423,27 +423,27 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   auto format(const duration &d, FormatContext &ctx)
       -> decltype(ctx.out()) {
     auto begin = format_str.begin(), end = format_str.end();
+    memory_buffer buf;
+    typedef output_range<decltype(ctx.out()), Char> range;
+    basic_writer<range> w(range(ctx.out()));
     if (begin == end || *begin == '}') {
-      memory_buffer buf;
       if (const char *unit = get_units<Period>())
         format_to(buf, "{}{}", d.count(), unit);
       else if (Period::den == 1)
         format_to(buf, "{}[{}]s", d.count(), Period::num);
       else
         format_to(buf, "{}[{}/{}]s", d.count(), Period::num, Period::den);
-      typedef output_range<decltype(ctx.out()), Char> range;
-      basic_writer<range> w(range(ctx.out()));
       internal::handle_dynamic_spec<internal::width_checker>(
         spec.width_, width_ref, ctx);
-      w.write(buf.data(), buf.size(), spec);
-      return w.out();
+    } else {
+      auto out = std::back_inserter(buf);
+      internal::chrono_formatter<FormatContext, decltype(out)> f(ctx, out);
+      f.s = std::chrono::duration_cast<std::chrono::seconds>(d);
+      f.ms = std::chrono::duration_cast<std::chrono::milliseconds>(d - f.s);
+      parse_chrono_format(begin, end, f);
     }
-    // TODO: use fill and align
-    internal::chrono_formatter<FormatContext> f(ctx);
-    f.s = std::chrono::duration_cast<std::chrono::seconds>(d);
-    f.ms = std::chrono::duration_cast<std::chrono::milliseconds>(d - f.s);
-    parse_chrono_format(begin, end, f);
-    return f.out;
+    w.write(buf.data(), buf.size(), spec);
+    return w.out();
   }
 };
 

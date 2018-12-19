@@ -479,6 +479,9 @@ class basic_memory_buffer: private Allocator, public internal::basic_buffer<T> {
   void grow(std::size_t size) FMT_OVERRIDE;
 
  public:
+  typedef T value_type;
+  typedef const T &const_reference;
+
   explicit basic_memory_buffer(const Allocator &alloc = Allocator())
       : Allocator(alloc) {
     this->set(store_, SIZE);
