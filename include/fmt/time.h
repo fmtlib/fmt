@@ -122,7 +122,7 @@ struct formatter<std::tm, Char> {
     auto end = it;
     while (end != ctx.end() && *end != '}')
       ++end;
-    tm_format.reserve(end - it + 1);
+    tm_format.reserve(internal::to_unsigned(end - it + 1));
     tm_format.append(it, end);
     tm_format.push_back('\0');
     return end;

@@ -492,7 +492,7 @@ class QString {
 
 inline fmt::basic_string_view<wchar_t> to_string_view(
     const QString &s) FMT_NOEXCEPT {
-  return {reinterpret_cast<const wchar_t *>(s.utf16()),
+  return {s.utf16(),
           static_cast<std::size_t>(s.size())};
 }
 }

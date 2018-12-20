@@ -74,10 +74,11 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Wcast-align -Wnon-virtual-dtor
       -Wctor-dtor-privacy -Wdisabled-optimization
       -Winvalid-pch -Woverloaded-virtual
-      -Wno-ctor-dtor-privacy -Wno-dangling-else
-      -Wno-format-nonliteral -Wno-sign-conversion -Wno-shadow)
+      -Wconversion
+      -Wno-ctor-dtor-privacy -Wno-format-nonliteral -Wno-shadow)
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
-      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept)
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept
+         -Wno-dangling-else -Wno-unused-local-typedefs)
   endif ()
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wdouble-promotion
@@ -92,7 +93,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic)
+  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wconversion -Wno-sign-conversion)
   check_cxx_compiler_flag(-Wzero-as-null-pointer-constant HAS_NULLPTR_WARNING)
   if (HAS_NULLPTR_WARNING)
     set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}

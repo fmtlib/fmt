@@ -66,10 +66,6 @@
 // many valid cases.
 # pragma GCC diagnostic ignored "-Wshadow"
 
-// Disable the warning about implicit conversions that may change the sign of
-// an integer; silencing it otherwise would require many explicit casts.
-# pragma GCC diagnostic ignored "-Wsign-conversion"
-
 // Disable the warning about nonliteral format strings because we construct
 // them dynamically when falling back to snprintf for FP formatting.
 # pragma GCC diagnostic ignored "-Wformat-nonliteral"
@@ -770,16 +766,16 @@ typedef basic_data<> data;
 #ifdef FMT_BUILTIN_CLZLL
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
-inline unsigned count_digits(uint64_t n) {
+inline int count_digits(uint64_t n) {
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
   int t = (64 - FMT_BUILTIN_CLZLL(n | 1)) * 1233 >> 12;
-  return to_unsigned(t) - (n < data::ZERO_OR_POWERS_OF_10_64[t]) + 1;
+  return t - (n < data::ZERO_OR_POWERS_OF_10_64[t]) + 1;
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
-inline unsigned count_digits(uint64_t n) {
-  unsigned count = 1;
+inline int count_digits(uint64_t n) {
+  int count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
@@ -900,9 +896,9 @@ class decimal_formatter_null : public decimal_formatter {
 
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
-inline unsigned count_digits(uint32_t n) {
+inline int count_digits(uint32_t n) {
   int t = (32 - FMT_BUILTIN_CLZ(n | 1)) * 1233 >> 12;
-  return to_unsigned(t) - (n < data::ZERO_OR_POWERS_OF_10_32[t]) + 1;
+  return t - (n < data::ZERO_OR_POWERS_OF_10_32[t]) + 1;
 }
 #endif
 
@@ -959,8 +955,9 @@ inline wchar_t thousands_sep(locale_ref loc) {
 // thousands_sep is a functor that is called after writing each char to
 // add a thousands separator if necessary.
 template <typename UInt, typename Char, typename ThousandsSep>
-inline Char *format_decimal(Char *buffer, UInt value, unsigned num_digits,
+inline Char *format_decimal(Char *buffer, UInt value, int num_digits,
                             ThousandsSep thousands_sep) {
+  FMT_ASSERT(num_digits >= 0, "invalid digit count");
   buffer += num_digits;
   Char *end = buffer;
   while (value >= 100) {
@@ -988,7 +985,8 @@ inline Char *format_decimal(Char *buffer, UInt value, unsigned num_digits,
 template <typename OutChar, typename UInt, typename Iterator,
           typename ThousandsSep>
 inline Iterator format_decimal(
-    Iterator out, UInt value, unsigned num_digits, ThousandsSep sep) {
+    Iterator out, UInt value, int num_digits, ThousandsSep sep) {
+  FMT_ASSERT(num_digits >= 0, "invalid digit count");
   typedef typename ThousandsSep::char_type char_type;
   // Buffer should be large enough to hold all digits (<= digits10 + 1).
   enum { max_size = std::numeric_limits<UInt>::digits10 + 1 };
@@ -999,25 +997,26 @@ inline Iterator format_decimal(
 }
 
 template <typename OutChar, typename It, typename UInt>
-inline It format_decimal(It out, UInt value, unsigned num_digits) {
+inline It format_decimal(It out, UInt value, int num_digits) {
   return format_decimal<OutChar>(out, value, num_digits, no_thousands_sep());
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
-inline Char *format_uint(Char *buffer, UInt value, unsigned num_digits,
+inline Char *format_uint(Char *buffer, UInt value, int num_digits,
                          bool upper = false) {
   buffer += num_digits;
   Char *end = buffer;
   do {
     const char *digits = upper ? "0123456789ABCDEF" : "0123456789abcdef";
     unsigned digit = (value & ((1 << BASE_BITS) - 1));
-    *--buffer = static_cast<Char>(BASE_BITS < 4 ? '0' + digit : digits[digit]);
+    *--buffer = static_cast<Char>(BASE_BITS < 4 ? static_cast<char>('0' + digit)
+                                                : digits[digit]);
   } while ((value >>= BASE_BITS) != 0);
   return end;
 }
 
 template <unsigned BASE_BITS, typename Char, typename It, typename UInt>
-inline It format_uint(It out, UInt value, unsigned num_digits,
+inline It format_uint(It out, UInt value, int num_digits,
                       bool upper = false) {
   // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1)
   // and null.
@@ -1979,7 +1978,7 @@ FMT_CONSTEXPR bool find(Ptr first, Ptr last, T value, Ptr &out) {
 template <>
 inline bool find<false, char>(
     const char *first, const char *last, char value, const char *&out) {
-  out = static_cast<const char*>(std::memchr(first, value, last - first));
+  out = static_cast<const char*>(std::memchr(first, value, internal::to_unsigned(last - first)));
   return out != FMT_NULL;
 }
 
@@ -2062,7 +2061,7 @@ class format_string_checker {
  public:
   explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
-    : arg_id_(-1), context_(format_str, eh),
+    : arg_id_((std::numeric_limits<unsigned>::max)()), context_(format_str, eh),
       parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 
   FMT_CONSTEXPR void on_text(const Char *, const Char *) {}
@@ -2082,7 +2081,7 @@ class format_string_checker {
 
   FMT_CONSTEXPR const Char *on_format_specs(const Char *begin, const Char *) {
     context_.advance_to(begin);
-    return to_unsigned(arg_id_) < NUM_ARGS ?
+    return arg_id_ < NUM_ARGS ?
           parse_funcs_[arg_id_](context_) : begin;
   }
 
@@ -2095,14 +2094,14 @@ class format_string_checker {
   enum { NUM_ARGS = sizeof...(Args) };
 
   FMT_CONSTEXPR void check_arg_id() {
-    if (internal::to_unsigned(arg_id_) >= NUM_ARGS)
+    if (arg_id_ >= NUM_ARGS)
       context_.on_error("argument index out of range");
   }
 
   // Format specifier parsing function.
   typedef const Char *(*parse_func)(parse_context_type &);
 
-  int arg_id_;
+  unsigned arg_id_;
   parse_context_type context_;
   parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1];
 };
@@ -2324,9 +2323,9 @@ class basic_writer {
   //   <left-padding><prefix><numeric-padding><digits><right-padding>
   // where <digits> are written by f(it).
   template <typename Spec, typename F>
-  void write_int(unsigned num_digits, string_view prefix,
+  void write_int(int num_digits, string_view prefix,
                  const Spec &spec, F f) {
-    std::size_t size = prefix.size() + num_digits;
+    std::size_t size = prefix.size() + internal::to_unsigned(num_digits);
     char_type fill = static_cast<char_type>(spec.fill());
     std::size_t padding = 0;
     if (spec.align() == ALIGN_NUMERIC) {
@@ -2334,9 +2333,9 @@ class basic_writer {
         padding = spec.width() - size;
         size = spec.width();
       }
-    } else if (spec.precision > static_cast<int>(num_digits)) {
+    } else if (spec.precision > num_digits) {
       size = prefix.size() + internal::to_unsigned(spec.precision);
-      padding = internal::to_unsigned(spec.precision) - num_digits;
+      padding = internal::to_unsigned(spec.precision - num_digits);
       fill = static_cast<char_type>('0');
     }
     align_spec as = spec;
@@ -2353,8 +2352,8 @@ class basic_writer {
     bool is_negative = internal::is_negative(value);
     if (is_negative)
       abs_value = 0 - abs_value;
-    unsigned num_digits = internal::count_digits(abs_value);
-    auto &&it = reserve((is_negative ? 1 : 0) + num_digits);
+    int num_digits = internal::count_digits(abs_value);
+    auto &&it = reserve((is_negative ? 1 : 0) + static_cast<size_t>(num_digits));
     if (is_negative)
       *it++ = static_cast<char_type>('-');
     it = internal::format_decimal<char_type>(it, abs_value, num_digits);
@@ -2375,9 +2374,9 @@ class basic_writer {
 
     // Counts the number of digits in abs_value. BITS = log2(radix).
     template <unsigned BITS>
-    unsigned count_digits() const {
+    int count_digits() const {
       unsigned_type n = abs_value;
-      unsigned num_digits = 0;
+      int num_digits = 0;
       do {
         ++num_digits;
       } while ((n >>= BITS) != 0);
@@ -2399,7 +2398,7 @@ class basic_writer {
 
     struct dec_writer {
       unsigned_type abs_value;
-      unsigned num_digits;
+      int num_digits;
 
       template <typename It>
       void operator()(It &&it) const {
@@ -2408,14 +2407,14 @@ class basic_writer {
     };
 
     void on_dec() {
-      unsigned num_digits = internal::count_digits(abs_value);
+      int num_digits = internal::count_digits(abs_value);
       writer.write_int(num_digits, get_prefix(), spec,
                        dec_writer{abs_value, num_digits});
     }
 
     struct hex_writer {
       int_writer &self;
-      unsigned num_digits;
+      int num_digits;
 
       template <typename It>
       void operator()(It &&it) const {
@@ -2429,7 +2428,7 @@ class basic_writer {
         prefix[prefix_size++] = '0';
         prefix[prefix_size++] = static_cast<char>(spec.type);
       }
-      unsigned num_digits = count_digits<4>();
+      int num_digits = count_digits<4>();
       writer.write_int(num_digits, get_prefix(), spec,
                        hex_writer{*this, num_digits});
     }
@@ -2437,7 +2436,7 @@ class basic_writer {
     template <int BITS>
     struct bin_writer {
       unsigned_type abs_value;
-      unsigned num_digits;
+      int num_digits;
 
       template <typename It>
       void operator()(It &&it) const {
@@ -2450,15 +2449,15 @@ class basic_writer {
         prefix[prefix_size++] = '0';
         prefix[prefix_size++] = static_cast<char>(spec.type);
       }
-      unsigned num_digits = count_digits<1>();
+      int num_digits = count_digits<1>();
       writer.write_int(num_digits, get_prefix(), spec,
                        bin_writer<1>{abs_value, num_digits});
     }
 
     void on_oct() {
-      unsigned num_digits = count_digits<3>();
+      int num_digits = count_digits<3>();
       if (spec.has(HASH_FLAG) &&
-          spec.precision <= static_cast<int>(num_digits)) {
+          spec.precision <= num_digits) {
         // Octal prefix '0' is counted as a digit, so only add it if precision
         // is not greater than the number of digits.
         prefix[prefix_size++] = '0';
@@ -2471,7 +2470,7 @@ class basic_writer {
 
     struct num_writer {
       unsigned_type abs_value;
-      unsigned size;
+      int size;
       char_type sep;
 
       template <typename It>
@@ -2483,9 +2482,9 @@ class basic_writer {
     };
 
     void on_num() {
-      unsigned num_digits = internal::count_digits(abs_value);
+      int num_digits = internal::count_digits(abs_value);
       char_type sep = internal::thousands_sep<char_type>(writer.locale_);
-      unsigned size = num_digits + SEP_SIZE * ((num_digits - 1) / 3);
+      int size = num_digits + SEP_SIZE * ((num_digits - 1) / 3);
       writer.write_int(size, get_prefix(), spec,
                        num_writer{abs_value, size, sep});
     }
@@ -2909,9 +2908,9 @@ inline void format_decimal(char *&buffer, T value) {
     *buffer++ = internal::data::DIGITS[index + 1];
     return;
   }
-  unsigned num_digits = internal::count_digits(abs_value);
+  int num_digits = internal::count_digits(abs_value);
   internal::format_decimal<char>(
-        internal::make_checked(buffer, num_digits), abs_value, num_digits);
+        internal::make_checked(buffer, internal::to_unsigned(num_digits)), abs_value, num_digits);
   buffer += num_digits;
 }
 

@@ -246,7 +246,8 @@ struct color_type {
   }
   FMT_CONSTEXPR color_type(rgb rgb_color) FMT_NOEXCEPT
     : is_rgb(true), value{} {
-    value.rgb_color = (rgb_color.r << 16) + (rgb_color.g << 8) + rgb_color.b;
+    value.rgb_color = (static_cast<uint32_t>(rgb_color.r) << 16)
+       | (static_cast<uint32_t>(rgb_color.g) << 8) | rgb_color.b;
   }
   FMT_CONSTEXPR color_type(terminal_color term_color) FMT_NOEXCEPT
     : is_rgb(), value{} {
@@ -395,22 +396,22 @@ struct ansi_color_escape {
     // sequence.
     if (!text_color.is_rgb) {
       bool is_background = esc == internal::data::BACKGROUND_COLOR;
-      uint8_t value = text_color.value.term_color;
+      uint32_t value = text_color.value.term_color;
       // Background ASCII codes are the same as the foreground ones but with
       // 10 more.
       if (is_background)
-        value += 10;
+        value += 10u;
 
       std::size_t index = 0;
       buffer[index++] = static_cast<Char>('\x1b');
       buffer[index++] = static_cast<Char>('[');
 
-      if (value >= 100) {
+      if (value >= 100u) {
         buffer[index++] = static_cast<Char>('1');
-        value %= 100;
+        value %= 100u;
       }
-      buffer[index++] = static_cast<Char>('0' + value / 10);
-      buffer[index++] = static_cast<Char>('0' + value % 10);
+      buffer[index++] = static_cast<Char>('0' + value / 10u);
+      buffer[index++] = static_cast<Char>('0' + value % 10u);
 
       buffer[index++] = static_cast<Char>('m');
       buffer[index++] = static_cast<Char>('\0');
@@ -452,7 +453,7 @@ struct ansi_color_escape {
   FMT_CONSTEXPR operator const Char *() const FMT_NOEXCEPT { return buffer; }
 
 private:
-  Char buffer[7 + 3 * 4 + 1];
+  Char buffer[7u + 3u * 4u + 1u];
 
   static FMT_CONSTEXPR void to_esc(uint8_t c, Char *out,
                                    char delimiter) FMT_NOEXCEPT {

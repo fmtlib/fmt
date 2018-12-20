@@ -250,7 +250,7 @@ struct chrono_formatter {
   void write(int value, int width) {
     typedef typename int_traits<int>::main_type main_type;
     main_type n = to_unsigned(value);
-    int num_digits = static_cast<int>(internal::count_digits(n));
+    int num_digits = internal::count_digits(n);
     if (width > num_digits)
       out = std::fill_n(out, width - num_digits, '0');
     out = format_decimal<char_type>(out, n, num_digits);
@@ -415,7 +415,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     if (begin == end) return begin;
     begin = internal::parse_width(begin, end, handler);
     end = parse_chrono_format(begin, end, internal::chrono_format_checker());
-    format_str = basic_string_view<Char>(&*begin, end - begin);
+    format_str = basic_string_view<Char>(&*begin, internal::to_unsigned(end - begin));
     return end;
   }
 
