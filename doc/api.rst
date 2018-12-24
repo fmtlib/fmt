@@ -209,7 +209,7 @@ Utilities
 
 .. doxygenfunction:: fmt::to_wstring(const T&)
 
-.. doxygenfunction:: fmt::to_string_view(const T&)
+.. doxygenfunction:: fmt::to_string_view(basic_string_view<Char>)
 
 .. doxygenclass:: fmt::basic_memory_buffer
    :protected-members:

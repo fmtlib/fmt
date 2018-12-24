@@ -1,11 +1,13 @@
 5.3.0 - TBD
+-----------
 
 * Parameterized formatting functions on the type of the format string
   (`#880 <https://github.com/fmtlib/fmt/issues/880>`_,
   `#881 <https://github.com/fmtlib/fmt/pull/881>`_,
   `#883 <https://github.com/fmtlib/fmt/pull/883>`_,
-  `#889 <https://github.com/fmtlib/fmt/pull/889>`_,
-  `#897 <https://github.com/fmtlib/fmt/pull/897>`_).
+  `#885 <https://github.com/fmtlib/fmt/pull/885>`_,
+  `#897 <https://github.com/fmtlib/fmt/pull/897>`_,
+  `#920 <https://github.com/fmtlib/fmt/issues/920>`_).
   An object of a type that has an overloaded `to_string_view` returning
   `fmt::string_view` can be used as a format string:
 
@@ -30,12 +32,14 @@
 
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
-* Added experimental Unicode support
-  (`#628 <https://github.com/fmtlib/fmt/issues/628>`_,
-  `#891 <https://github.com/fmtlib/fmt/pull/891>`_):
+* Added wide string support to compile-time format string checks
+  (`#924 <https://github.com/fmtlib/fmt/pull/924>`_):
 
-  using namespace fmt::literals;
-  auto s = fmt::format("{:*^5}"_u, "🤡"_u); // s == "**🤡**"_u
+  .. code:: c++
+
+     print(fmt(L"{:f}"), 42); // compile-time error: invalid type specifier
+
+  Thanks `@XZiar <https://github.com/XZiar>`_.
 
 * Made colored print functions work with wide strings
   (`#867 <https://github.com/fmtlib/fmt/pull/867>`_):
@@ -50,7 +54,53 @@
 
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
-* Deprecated ``fmt::visit``. Use ``fmt::visit_format_arg`` instead.
+* Introduced experimental Unicode support
+  (`#628 <https://github.com/fmtlib/fmt/issues/628>`_,
+  `#891 <https://github.com/fmtlib/fmt/pull/891>`_):
+
+  .. code:: c++
+
+     using namespace fmt::literals;
+     auto s = fmt::format("{:*^5}"_u, "🤡"_u); // s == "**🤡**"_u
+
+* Improved locale support:
+
+  .. code:: c++
+
+     #include <fmt/locale.h>
+
+     struct numpunct : std::numpunct<char> {
+      protected:
+       char do_thousands_sep() const override { return '~'; }
+     };
+
+     std::locale loc;
+     auto s = fmt::format(std::locale(loc, new numpunct()), "{:n}", 1234567);
+     // s == "1~234~567"
+
+* Constrained formatting functions on proper iterator types
+  (`#921 <https://github.com/fmtlib/fmt/pull/921>`_):
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
+
+* Added ``make_printf_args`` and ``make_wprintf_args`` functions
+  (`#934 <https://github.com/fmtlib/fmt/pull/934>`_).
+  Thanks `@tnovotny <https://github.com/tnovotny>`_.
+
+* Deprecated ``fmt::visit``, ``parse_context``, and ``wparse_context``.
+  Use ``fmt::visit_format_arg``, ``format_parse_context``, and
+  ``wformat_parse_context`` instead.
+
+* Removed undocumented ``basic_fixed_buffer`` which has been superseded by the
+  iterator-based API
+  (`#873 <https://github.com/fmtlib/fmt/issues/873>`_,
+  `#902 <https://github.com/fmtlib/fmt/pull/902>`_).
+  Thanks `@superfunc (hollywood programmer) <https://github.com/superfunc>`_.
+
+* Disallowed repeated leading zeros in an argument ID:
+
+  .. code:: c++
+
+     fmt::print("{000}", 42); // error
 
 * Reintroduced support for gcc 4.4.
 
@@ -59,18 +109,50 @@
 
 * Improved documentation
   (`#877 <https://github.com/fmtlib/fmt/issues/877>`_,
-  `#901 <https://github.com/fmtlib/fmt/pull/901>`_).
-   Thanks `@kookjr (Mathew Cucuzella) <https://github.com/kookjr>`_.
+  `#901 <https://github.com/fmtlib/fmt/pull/901>`_,
+  `#906 <https://github.com/fmtlib/fmt/pull/906>`_).
+  Thanks `@kookjr (Mathew Cucuzella) <https://github.com/kookjr>`_,
+  `@DarkDimius (Dmitry Petrashko) <https://github.com/DarkDimius>`_.
+
+* Added `pkgconfig` support which makes it easier to consume the library from
+  `meson` and other build systems
+  (`#916 <https://github.com/fmtlib/fmt/pull/916>`_).
+   Thanks `@colemickens (Cole Mickens) <https://github.com/colemickens>`_.
+
+* Improved build config
+  (`#909 <https://github.com/fmtlib/fmt/pull/909>`_,
+  `#926 <https://github.com/fmtlib/fmt/pull/926>`_,
+  `#937 <https://github.com/fmtlib/fmt/pull/937>`_).
+  Thanks `@tchaikov (Kefu Chai) <https://github.com/tchaikov>`_,
+  `@luncliff (Park DongHa) <https://github.com/luncliff>`_,
+  `@AndreasSchoenle (Andreas Schönle) <https://github.com/AndreasSchoenle>`_.
+
+* Improved `string_view` construction performance
+  (`#914 <https://github.com/fmtlib/fmt/pull/914>`_).
+  Thanks `@gabime (Gabi Melman) <https://github.com/gabime>`_.
 
 * Fixed non-matching char types
   (`#895 <https://github.com/fmtlib/fmt/pull/895>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
+* Fixed ``format_to_n`` with ``std::back_insert_iterator``
+  (`#913 <https://github.com/fmtlib/fmt/pull/913>`_).
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
+
+* Fixed locale-dependent formatting
+  (`#905 <https://github.com/fmtlib/fmt/issues/905>`_).
+
 * Fixed various compiler warnings and errors
   (`#882 <https://github.com/fmtlib/fmt/pull/882>`_,
-  `#886 <https://github.com/fmtlib/fmt/pull/886>`_).
+  `#886 <https://github.com/fmtlib/fmt/pull/886>`_,
+  `#933 <https://github.com/fmtlib/fmt/pull/933>`_,
+  `#941 <https://github.com/fmtlib/fmt/pull/941>`_,
+  `#931 <https://github.com/fmtlib/fmt/issues/931>`_
+  `#943 <https://github.com/fmtlib/fmt/pull/943>`_).
   Thanks `@Luthaf (Guillaume Fraux) <https://github.com/Luthaf>`_,
-  `@stevenhoving (Steven Hoving) <https://github.com/stevenhoving>`_.
+  `@stevenhoving (Steven Hoving) <https://github.com/stevenhoving>`_,
+  `@christinaa (Kristina Brooks) <https://github.com/christinaa>`_,
+  `@lgritz (Larry Gritz) <https://github.com/lgritz>`_.
 
 5.2.1 - 2018-09-21
 ------------------
