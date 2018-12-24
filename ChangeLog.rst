@@ -57,12 +57,12 @@
        print(fg(fmt::terminal_color::red), "stop\n");
      }
 
-   Note that these colors vary by terminal:
+  Note that these colors vary by terminal:
 
-   .. image:: https://user-images.githubusercontent.com/576385/
-              50405925-dbfc7e00-0770-11e9-9b85-333fab0af9ac.png
+  .. image:: https://user-images.githubusercontent.com/576385/
+             50405925-dbfc7e00-0770-11e9-9b85-333fab0af9ac.png
 
-   Thanks `@Rakete1111 (Nicolas) <https://github.com/Rakete1111>`_.
+  Thanks `@Rakete1111 (Nicolas) <https://github.com/Rakete1111>`_.
 
 * Parameterized formatting functions on the type of the format string
   (`#880 <https://github.com/fmtlib/fmt/issues/880>`_,
