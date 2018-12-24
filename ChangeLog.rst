@@ -1,6 +1,69 @@
 5.3.0 - TBD
 -----------
 
+* Introduced experimental chrono formatting support:
+
+  .. code:: c++
+
+     #include <fmt/chrono.h>
+
+     int main() {
+       using namespace std::literals::chrono_literals;
+       fmt::print("Default format: {} {}\n", 42s, 100ms);
+       fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
+     }
+
+  prints::
+
+     Default format: 42s 100ms
+     strftime-like format: 03:15:30
+
+* Added experimental support for emphasis (bold, italic, underline,
+  strikethrough), colored output to a file stream, and improved colored
+  formatting API
+  (`#961 <https://github.com/fmtlib/fmt/pull/961>`_,
+  `#967 <https://github.com/fmtlib/fmt/pull/967>`_,
+  `#973 <https://github.com/fmtlib/fmt/pull/973>`_):
+
+  .. code:: c++
+
+     #include <fmt/color.h>
+
+     int main() {
+       print(fg(fmt::color::crimson) | fmt::emphasis::bold,
+             "Hello, {}!\n", "world");
+       print(fg(fmt::color::floral_white) | bg(fmt::color::slate_gray) |
+             fmt::emphasis::underline, "Hello, {}!\n", "мир");
+       print(fg(fmt::color::steel_blue) | fmt::emphasis::italic,
+             "Hello, {}!\n", "世界");
+     }
+
+  prints the following on modern terminals with RGB color support:
+
+  .. image:: https://user-images.githubusercontent.com/576385/
+             50405788-b66e7500-076e-11e9-9592-7324d1f951d8.png
+
+  Thanks `@Rakete1111 (Nicolas) <https://github.com/Rakete1111>`_.
+
+* Added support for 4-bit terminal colors
+  (`#968 <https://github.com/fmtlib/fmt/issues/968>`_,
+   `#974 <https://github.com/fmtlib/fmt/pull/974>`_)
+
+  .. code:: c++
+
+     #include <fmt/color.h>
+
+     int main() {
+       print(fg(fmt::terminal_color::red), "stop\n");
+     }
+
+   Note that these colors vary by terminal:
+
+   .. image:: https://user-images.githubusercontent.com/576385/
+              50405925-dbfc7e00-0770-11e9-9b85-333fab0af9ac.png
+
+   Thanks `@Rakete1111 (Nicolas) <https://github.com/Rakete1111>`_.
+
 * Parameterized formatting functions on the type of the format string
   (`#880 <https://github.com/fmtlib/fmt/issues/880>`_,
   `#881 <https://github.com/fmtlib/fmt/pull/881>`_,
@@ -8,8 +71,8 @@
   `#885 <https://github.com/fmtlib/fmt/pull/885>`_,
   `#897 <https://github.com/fmtlib/fmt/pull/897>`_,
   `#920 <https://github.com/fmtlib/fmt/issues/920>`_).
-  An object of a type that has an overloaded `to_string_view` returning
-  `fmt::string_view` can be used as a format string:
+  An object of type ``S`` that has an overloaded ``to_string_view(const S&)``
+  returning ``fmt::string_view`` can be used as a format string:
 
   .. code:: c++
 
@@ -108,24 +171,31 @@
   (`#878 <https://github.com/fmtlib/fmt/issues/878>`_).
 
 * Improved documentation
-  (`#877 <https://github.com/fmtlib/fmt/issues/877>`_,
+  (`#164 <https://github.com/fmtlib/fmt/issues/164>`_,
+  `#877 <https://github.com/fmtlib/fmt/issues/877>`_,
   `#901 <https://github.com/fmtlib/fmt/pull/901>`_,
-  `#906 <https://github.com/fmtlib/fmt/pull/906>`_).
+  `#906 <https://github.com/fmtlib/fmt/pull/906>`_,
+  `#979 <https://github.com/fmtlib/fmt/pull/979>`_).
   Thanks `@kookjr (Mathew Cucuzella) <https://github.com/kookjr>`_,
-  `@DarkDimius (Dmitry Petrashko) <https://github.com/DarkDimius>`_.
+  `@DarkDimius (Dmitry Petrashko) <https://github.com/DarkDimius>`_,
+  `@HecticSerenity <https://github.com/HecticSerenity>`_.
 
 * Added `pkgconfig` support which makes it easier to consume the library from
   `meson` and other build systems
   (`#916 <https://github.com/fmtlib/fmt/pull/916>`_).
-   Thanks `@colemickens (Cole Mickens) <https://github.com/colemickens>`_.
+  Thanks `@colemickens (Cole Mickens) <https://github.com/colemickens>`_.
 
-* Improved build config
+* Various build improvements
   (`#909 <https://github.com/fmtlib/fmt/pull/909>`_,
   `#926 <https://github.com/fmtlib/fmt/pull/926>`_,
-  `#937 <https://github.com/fmtlib/fmt/pull/937>`_).
+  `#937 <https://github.com/fmtlib/fmt/pull/937>`_,
+  `#953 <https://github.com/fmtlib/fmt/pull/953>`_,
+  `#959 <https://github.com/fmtlib/fmt/pull/959>`_).
   Thanks `@tchaikov (Kefu Chai) <https://github.com/tchaikov>`_,
   `@luncliff (Park DongHa) <https://github.com/luncliff>`_,
-  `@AndreasSchoenle (Andreas Schönle) <https://github.com/AndreasSchoenle>`_.
+  `@AndreasSchoenle (Andreas Schönle) <https://github.com/AndreasSchoenle>`_,
+  `@hotwatermorning <https://github.com/hotwatermorning>`_,
+  `@Zefz (JohanJansen) <https://github.com/Zefz>`_.
 
 * Improved `string_view` construction performance
   (`#914 <https://github.com/fmtlib/fmt/pull/914>`_).
@@ -147,12 +217,22 @@
   `#886 <https://github.com/fmtlib/fmt/pull/886>`_,
   `#933 <https://github.com/fmtlib/fmt/pull/933>`_,
   `#941 <https://github.com/fmtlib/fmt/pull/941>`_,
-  `#931 <https://github.com/fmtlib/fmt/issues/931>`_
-  `#943 <https://github.com/fmtlib/fmt/pull/943>`_).
+  `#931 <https://github.com/fmtlib/fmt/issues/931>`_,
+  `#943 <https://github.com/fmtlib/fmt/pull/943>`_,
+  `#954 <https://github.com/fmtlib/fmt/pull/954>`_,
+  `#956 <https://github.com/fmtlib/fmt/pull/956>`_,
+  `#962 <https://github.com/fmtlib/fmt/pull/962>`_,
+  `#965 <https://github.com/fmtlib/fmt/issues/965>`_,
+  `#977 <https://github.com/fmtlib/fmt/issues/977>`_,
+  `#983 <https://github.com/fmtlib/fmt/pull/983>`_,
+  `#989 <https://github.com/fmtlib/fmt/pull/989>`_).
   Thanks `@Luthaf (Guillaume Fraux) <https://github.com/Luthaf>`_,
   `@stevenhoving (Steven Hoving) <https://github.com/stevenhoving>`_,
   `@christinaa (Kristina Brooks) <https://github.com/christinaa>`_,
-  `@lgritz (Larry Gritz) <https://github.com/lgritz>`_.
+  `@lgritz (Larry Gritz) <https://github.com/lgritz>`_,
+  `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
+  `@0x8000-0000 (Sign Bit) <https://github.com/0x8000-0000>`_,
+  `@liuping1997 <https://github.com/liuping1997>`_.
 
 5.2.1 - 2018-09-21
 ------------------
