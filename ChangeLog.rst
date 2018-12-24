@@ -47,7 +47,7 @@
 
 * Added support for 4-bit terminal colors
   (`#968 <https://github.com/fmtlib/fmt/issues/968>`_,
-   `#974 <https://github.com/fmtlib/fmt/pull/974>`_)
+  `#974 <https://github.com/fmtlib/fmt/pull/974>`_)
 
   .. code:: c++
 
@@ -71,7 +71,7 @@
   `#885 <https://github.com/fmtlib/fmt/pull/885>`_,
   `#897 <https://github.com/fmtlib/fmt/pull/897>`_,
   `#920 <https://github.com/fmtlib/fmt/issues/920>`_).
-  An object of type ``S`` that has an overloaded ``to_string_view(const S&)``
+  Any object of type ``S`` that has an overloaded ``to_string_view(const S&)``
   returning ``fmt::string_view`` can be used as a format string:
 
   .. code:: c++
