@@ -209,6 +209,8 @@ Utilities
 
 .. doxygenfunction:: fmt::to_wstring(const T&)
 
+.. doxygenfunction:: fmt::to_string_view(const T&)
+
 .. doxygenclass:: fmt::basic_memory_buffer
    :protected-members:
    :members:

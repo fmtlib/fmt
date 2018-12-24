@@ -1,3 +1,52 @@
+5.2.2 - TBD
+
+* Parameterized and constrained formatting functions on the type of the format
+  string
+  (`#880 <https://github.com/fmtlib/fmt/issues/880>`_,
+   `#881 <https://github.com/fmtlib/fmt/pull/881>`_,
+   `#883 <https://github.com/fmtlib/fmt/pull/883>`_). An object of a type that
+   has an overloaded `to_string_view` returning `fmt::string_view` can be used
+   as a format string:
+
+  .. code:: c++
+
+     namespace my_ns {
+     inline string_view to_string_view(const my_string &s) {
+       return { s.data(), s.length() };
+     }
+     }
+
+     std::string message = fmt::format(my_string("The answer is {}"), 42);
+
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
+
+* Made colored print functions work with wide strings
+  (`#867 <https://github.com/fmtlib/fmt/pull/867>`_):
+
+  .. code:: c++
+
+     #include <fmt/color.h>
+
+     int main() {
+       print(fg(fmt::color::red), L"{}\n", 42);
+     }
+
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
+
+* Reintroduced support for gcc 4.4.
+
+* Fixed compilation on platforms with exotic ``double``
+  (`#878 <https://github.com/fmtlib/fmt/issues/878>`_).
+
+* Clarified that writing to ``memory_buffer`` appends
+  (`#877 <https://github.com/fmtlib/fmt/issues/877>`_).
+
+* Fixed various compiler warnings and errors
+  (`#882 <https://github.com/fmtlib/fmt/pull/882>`_,
+   `#886 <https://github.com/fmtlib/fmt/pull/886>`_).
+  Thanks `@Luthaf (Guillaume Fraux) <https://github.com/Luthaf>`_,
+  `@stevenhoving (Steven Hoving) <https://github.com/stevenhoving>`_.
+
 5.2.1 - 2018-09-21
 ------------------
 
