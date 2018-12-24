@@ -443,7 +443,7 @@ typedef basic_string_view<wchar_t> wstring_view;
 
     namespace my_ns {
     inline string_view to_string_view(const my_string &s) {
-        return { s.data(), s.length() };
+      return {s.data(), s.length()};
     }
     }
 
@@ -865,6 +865,7 @@ FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
   return vis(monostate());
 }
 
+// DEPRECATED!
 template <typename Visitor, typename Context>
 FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
     visit(Visitor &&vis, const basic_format_arg<Context> &arg) {

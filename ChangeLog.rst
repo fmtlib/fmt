@@ -1,24 +1,41 @@
-5.2.2 - TBD
+5.3.0 - TBD
 
-* Parameterized and constrained formatting functions on the type of the format
-  string
+* Parameterized formatting functions on the type of the format string
   (`#880 <https://github.com/fmtlib/fmt/issues/880>`_,
-   `#881 <https://github.com/fmtlib/fmt/pull/881>`_,
-   `#883 <https://github.com/fmtlib/fmt/pull/883>`_). An object of a type that
-   has an overloaded `to_string_view` returning `fmt::string_view` can be used
-   as a format string:
+  `#881 <https://github.com/fmtlib/fmt/pull/881>`_,
+  `#883 <https://github.com/fmtlib/fmt/pull/883>`_,
+  `#889 <https://github.com/fmtlib/fmt/pull/889>`_,
+  `#897 <https://github.com/fmtlib/fmt/pull/897>`_).
+  An object of a type that has an overloaded `to_string_view` returning
+  `fmt::string_view` can be used as a format string:
 
   .. code:: c++
 
      namespace my_ns {
-     inline string_view to_string_view(const my_string &s) {
-       return { s.data(), s.length() };
+     inline string_view to_string_view(const my_string& s) {
+       return {s.data(), s.length()};
      }
      }
 
-     std::string message = fmt::format(my_string("The answer is {}"), 42);
+     std::string message = fmt::format(my_string("The answer is {}."), 42);
 
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
+
+* Made ``std::[experimental::]string_view`` work as a format string
+  (`#898 <https://github.com/fmtlib/fmt/pull/898>`_):
+
+  .. code:: c++
+
+     auto message = fmt::format(std::string_view("The answer is {}."), 42);
+
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
+
+* Added experimental Unicode support
+  (`#628 <https://github.com/fmtlib/fmt/issues/628>`_,
+  `#891 <https://github.com/fmtlib/fmt/pull/891>`_):
+
+  using namespace fmt::literals;
+  auto s = fmt::format("{:*^5}"_u, "🤡"_u); // s == "**🤡**"_u
 
 * Made colored print functions work with wide strings
   (`#867 <https://github.com/fmtlib/fmt/pull/867>`_):
@@ -33,17 +50,25 @@
 
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
+* Deprecated ``fmt::visit``. Use ``fmt::visit_format_arg`` instead.
+
 * Reintroduced support for gcc 4.4.
 
 * Fixed compilation on platforms with exotic ``double``
   (`#878 <https://github.com/fmtlib/fmt/issues/878>`_).
 
-* Clarified that writing to ``memory_buffer`` appends
-  (`#877 <https://github.com/fmtlib/fmt/issues/877>`_).
+* Improved documentation
+  (`#877 <https://github.com/fmtlib/fmt/issues/877>`_,
+  `#901 <https://github.com/fmtlib/fmt/pull/901>`_).
+   Thanks `@kookjr (Mathew Cucuzella) <https://github.com/kookjr>`_.
+
+* Fixed non-matching char types
+  (`#895 <https://github.com/fmtlib/fmt/pull/895>`_).
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
 * Fixed various compiler warnings and errors
   (`#882 <https://github.com/fmtlib/fmt/pull/882>`_,
-   `#886 <https://github.com/fmtlib/fmt/pull/886>`_).
+  `#886 <https://github.com/fmtlib/fmt/pull/886>`_).
   Thanks `@Luthaf (Guillaume Fraux) <https://github.com/Luthaf>`_,
   `@stevenhoving (Steven Hoving) <https://github.com/stevenhoving>`_.
 
