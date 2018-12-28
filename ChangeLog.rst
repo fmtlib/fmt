@@ -180,8 +180,8 @@
   `@DarkDimius (Dmitry Petrashko) <https://github.com/DarkDimius>`_,
   `@HecticSerenity <https://github.com/HecticSerenity>`_.
 
-* Added `pkgconfig` support which makes it easier to consume the library from
-  `meson` and other build systems
+* Added pkgconfig support which makes it easier to consume the library from
+  meson and other build systems
   (`#916 <https://github.com/fmtlib/fmt/pull/916>`_).
   Thanks `@colemickens (Cole Mickens) <https://github.com/colemickens>`_.
 
@@ -197,7 +197,7 @@
   `@hotwatermorning <https://github.com/hotwatermorning>`_,
   `@Zefz (JohanJansen) <https://github.com/Zefz>`_.
 
-* Improved `string_view` construction performance
+* Improved ``string_view`` construction performance
   (`#914 <https://github.com/fmtlib/fmt/pull/914>`_).
   Thanks `@gabime (Gabi Melman) <https://github.com/gabime>`_.
 
