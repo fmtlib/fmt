@@ -142,7 +142,7 @@
      // s == "1~234~567"
 
 * Constrained formatting functions on proper iterator types
-  (`#921 <https://github.com/fmtlib/fmt/pull/921>`_):
+  (`#921 <https://github.com/fmtlib/fmt/pull/921>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
 * Added ``make_printf_args`` and ``make_wprintf_args`` functions
