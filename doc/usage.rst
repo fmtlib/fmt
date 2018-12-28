@@ -58,8 +58,14 @@ To build a `shared library`__ set the ``BUILD_SHARED_LIBS`` CMake variable to
 
 __ http://en.wikipedia.org/wiki/Library_%28computing%29#Shared_libraries
 
-Header-only usage with CMake
-============================
+Installing the library
+====================
+
+After building the library you can install it on a Unix-like system by running
+:command:`sudo make install`.
+
+Usage with CMake
+================
 
 You can add the ``fmt`` library directory into your project and include it in
 your ``CMakeLists.txt`` file::
