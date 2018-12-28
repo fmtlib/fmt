@@ -1,5 +1,5 @@
-5.3.0 - TBD
------------
+5.3.0 - 2018-12-28
+------------------
 
 * Introduced experimental chrono formatting support:
 
