@@ -452,6 +452,13 @@ struct ansi_color_escape {
   }
   FMT_CONSTEXPR operator const Char *() const FMT_NOEXCEPT { return buffer; }
 
+  FMT_CONSTEXPR const Char * begin() const FMT_NOEXCEPT {
+    return buffer;
+  }
+  FMT_CONSTEXPR const Char * end() const FMT_NOEXCEPT {
+    return buffer + std::strlen(buffer);
+  }
+
 private:
   Char buffer[7u + 3u * 4u + 1u];
 
@@ -502,6 +509,13 @@ inline void reset_color<wchar_t>(FILE *stream) FMT_NOEXCEPT {
   fputs(internal::data::WRESET_COLOR, stream);
 }
 
+template <typename Char>
+inline void reset_color(basic_memory_buffer<Char>& buffer) FMT_NOEXCEPT {
+  const char* begin = data::RESET_COLOR;
+  const char* end = begin + sizeof(data::RESET_COLOR) - 1;
+  buffer.append(begin, end);
+}
+
 // The following specialiazation disables using std::FILE as a character type,
 // which is needed because or else
 //   fmt::print(stderr, fmt::emphasis::bold, "");
@@ -510,6 +524,37 @@ template <>
 struct is_string<std::FILE *> : std::false_type {};
 template <>
 struct is_string<const std::FILE *> : std::false_type {};
+
+template <typename Char>
+std::basic_string<Char> vformat(
+    const text_style &ts, basic_string_view<Char> format_str,
+    basic_format_args<typename buffer_context<Char>::type> args) {
+  basic_memory_buffer<Char> buffer;
+  bool has_style = false;
+  if (ts.has_emphasis()) {
+    has_style = true;
+    ansi_color_escape<Char> escape =
+      make_emphasis<Char>(ts.get_emphasis());
+    buffer.append(escape.begin(), escape.end());
+  }
+  if (ts.has_foreground()) {
+    has_style = true;
+    ansi_color_escape<Char> escape =
+      make_foreground_color<Char>(ts.get_foreground());
+    buffer.append(escape.begin(), escape.end());
+  }
+  if (ts.has_background()) {
+    has_style = true;
+    ansi_color_escape<Char> escape =
+        make_background_color<Char>(ts.get_background());
+    buffer.append(escape.begin(), escape.end());
+  }
+  internal::vformat_to(buffer, format_str, args);
+  if (has_style) {
+    reset_color<Char>(buffer);
+  }
+  return fmt::to_string(buffer);
+}
 } // namespace internal
 
 template <
@@ -568,6 +613,35 @@ typename std::enable_if<internal::is_string<String>::value>::type print(
     const text_style &ts, const String &format_str,
     const Args &... args) {
   return print(stdout, ts, format_str, args...);
+}
+
+
+template <typename S, typename Char = FMT_CHAR(S)>
+inline std::basic_string<Char> vformat(
+    const text_style &ts,
+    const S &format_str,
+    basic_format_args<typename buffer_context<Char>::type> args) {
+  return internal::vformat(ts, to_string_view(format_str), args);
+}
+
+/**
+  \rst
+  Formats arguments and returns the result as a string using ANSI
+  escape sequences to specify text formatting.
+
+  **Example**::
+
+    #include <fmt/color.h>
+    std::string message = fmt::format(fmt::emphasis::bold | fg(fmt::color::red),
+                                      "The answer is {}", 42);
+  \endrst
+*/
+template <typename S, typename... Args>
+inline std::basic_string<FMT_CHAR(S)> format(
+    const text_style &ts, const S &format_str, const Args &... args) {
+  return internal::vformat(
+    ts, to_string_view(format_str),
+    *internal::checked_args<S, Args...>(format_str, args...));
 }
 
 #endif
