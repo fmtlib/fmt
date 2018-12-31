@@ -16,130 +16,6 @@
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
-// An iterator that produces a null terminator on *end. This simplifies parsing
-// and allows comparing the performance of processing a null-terminated string
-// vs string_view.
-template <typename Char>
-class null_terminating_iterator {
- public:
-  typedef std::ptrdiff_t difference_type;
-  typedef Char value_type;
-  typedef const Char* pointer;
-  typedef const Char& reference;
-  typedef std::random_access_iterator_tag iterator_category;
-
-  null_terminating_iterator() : ptr_(0), end_(0) {}
-
-  FMT_CONSTEXPR null_terminating_iterator(const Char *ptr, const Char *end)
-    : ptr_(ptr), end_(end) {}
-
-  template <typename Range>
-  FMT_CONSTEXPR explicit null_terminating_iterator(const Range &r)
-    : ptr_(r.begin()), end_(r.end()) {}
-
-  FMT_CONSTEXPR null_terminating_iterator &operator=(const Char *ptr) {
-    assert(ptr <= end_);
-    ptr_ = ptr;
-    return *this;
-  }
-
-  FMT_CONSTEXPR Char operator*() const {
-    return ptr_ != end_ ? *ptr_ : Char();
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator++() {
-    ++ptr_;
-    return *this;
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator++(int) {
-    null_terminating_iterator result(*this);
-    ++ptr_;
-    return result;
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator--() {
-    --ptr_;
-    return *this;
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator+(difference_type n) {
-    return null_terminating_iterator(ptr_ + n, end_);
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator-(difference_type n) {
-    return null_terminating_iterator(ptr_ - n, end_);
-  }
-
-  FMT_CONSTEXPR null_terminating_iterator operator+=(difference_type n) {
-    ptr_ += n;
-    return *this;
-  }
-
-  FMT_CONSTEXPR difference_type operator-(
-      null_terminating_iterator other) const {
-    return ptr_ - other.ptr_;
-  }
-
-  FMT_CONSTEXPR bool operator!=(null_terminating_iterator other) const {
-    return ptr_ != other.ptr_;
-  }
-
-  bool operator>=(null_terminating_iterator other) const {
-    return ptr_ >= other.ptr_;
-  }
-
-  // This should be a friend specialization pointer_from<Char> but the latter
-  // doesn't compile by gcc 5.1 due to a compiler bug.
-  template <typename CharT>
-  friend FMT_CONSTEXPR_DECL const CharT *pointer_from(
-      null_terminating_iterator<CharT> it);
-
- private:
-  const Char *ptr_;
-  const Char *end_;
-};
-
-template <typename T>
-FMT_CONSTEXPR const T *pointer_from(const T *p) { return p; }
-
-template <typename Char>
-FMT_CONSTEXPR const Char *pointer_from(null_terminating_iterator<Char> it) {
-  return it.ptr_;
-}
-
-// DEPRECATED: Parses the input as an unsigned integer. This function assumes
-// that the first character is a digit and presence of a non-digit character at
-// the end.
-// it: an iterator pointing to the beginning of the input range.
-template <typename Iterator, typename ErrorHandler>
-FMT_CONSTEXPR unsigned parse_nonnegative_int(Iterator &it, ErrorHandler &&eh) {
-  assert('0' <= *it && *it <= '9');
-  if (*it == '0') {
-    ++it;
-    return 0;
-  }
-  unsigned value = 0;
-  // Convert to unsigned to prevent a warning.
-  unsigned max_int = (std::numeric_limits<int>::max)();
-  unsigned big = max_int / 10;
-  do {
-    // Check for overflow.
-    if (value > big) {
-      value = max_int + 1;
-      break;
-    }
-    value = value * 10 + unsigned(*it - '0');
-    // Workaround for MSVC "setup_exception stack overflow" error:
-    auto next = it;
-    ++next;
-    it = next;
-  } while ('0' <= *it && *it <= '9');
-  if (value > max_int)
-    eh.on_error("number is too big");
-  return value;
-}
-
 // Checks if a value fits in int - used to avoid warnings about comparing
 // signed and unsigned integers.
 template <bool IsSigned>
@@ -485,18 +361,15 @@ class basic_printf_context :
   typedef internal::context_base<OutputIt, basic_printf_context, Char> base;
   typedef typename base::format_arg format_arg;
   typedef basic_format_specs<char_type> format_specs;
-  typedef internal::null_terminating_iterator<char_type> iterator;
 
-  void parse_flags(format_specs &spec, iterator &it);
+  static void parse_flags(format_specs &spec, const Char *&it, const Char *end);
 
   // Returns the argument with specified index or, if arg_index is equal
   // to the maximum unsigned value, the next argument.
-  format_arg get_arg(
-      iterator it,
-      unsigned arg_index = (std::numeric_limits<unsigned>::max)());
+  format_arg get_arg(unsigned arg_index = std::numeric_limits<unsigned>::max());
 
   // Parses argument index, flags and width and returns the argument index.
-  unsigned parse_header(iterator &it, format_specs &spec);
+  unsigned parse_header(const Char *&it, const Char *end, format_specs &spec);
 
  public:
   /**
@@ -520,9 +393,9 @@ class basic_printf_context :
 
 template <typename OutputIt, typename Char, typename AF>
 void basic_printf_context<OutputIt, Char, AF>::parse_flags(
-    format_specs &spec, iterator &it) {
-  for (;;) {
-    switch (*it++) {
+    format_specs &spec, const Char *&it, const Char *end) {
+  for (; it != end; ++it) {
+    switch (*it) {
       case '-':
         spec.align_ = ALIGN_LEFT;
         break;
@@ -539,7 +412,6 @@ void basic_printf_context<OutputIt, Char, AF>::parse_flags(
         spec.flags |= HASH_FLAG;
         break;
       default:
-        --it;
         return;
     }
   }
@@ -547,9 +419,7 @@ void basic_printf_context<OutputIt, Char, AF>::parse_flags(
 
 template <typename OutputIt, typename Char, typename AF>
 typename basic_printf_context<OutputIt, Char, AF>::format_arg
-  basic_printf_context<OutputIt, Char, AF>::get_arg(
-    iterator it, unsigned arg_index) {
-  (void)it;
+  basic_printf_context<OutputIt, Char, AF>::get_arg(unsigned arg_index) {
   if (arg_index == std::numeric_limits<unsigned>::max())
     return this->do_get_arg(this->parse_context().next_arg_id());
   return base::get_arg(arg_index - 1);
@@ -557,15 +427,15 @@ typename basic_printf_context<OutputIt, Char, AF>::format_arg
 
 template <typename OutputIt, typename Char, typename AF>
 unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
-  iterator &it, format_specs &spec) {
+  const Char *&it, const Char *end, format_specs &spec) {
   unsigned arg_index = std::numeric_limits<unsigned>::max();
   char_type c = *it;
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
     // preceded with '0' flag(s).
     internal::error_handler eh;
-    unsigned value = parse_nonnegative_int(it, eh);
-    if (*it == '$') {  // value is an argument index
+    unsigned value = parse_nonnegative_int(it, end, eh);
+    if (it != end && *it == '$') {  // value is an argument index
       ++it;
       arg_index = value;
     } else {
@@ -579,15 +449,17 @@ unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
       }
     }
   }
-  parse_flags(spec, it);
+  parse_flags(spec, it, end);
   // Parse width.
-  if (*it >= '0' && *it <= '9') {
-    internal::error_handler eh;
-    spec.width_ = parse_nonnegative_int(it, eh);
-  } else if (*it == '*') {
-    ++it;
-    spec.width_ = visit_format_arg(
-          internal::printf_width_handler<char_type>(spec), get_arg(it));
+  if (it != end) {
+    if (*it >= '0' && *it <= '9') {
+      internal::error_handler eh;
+      spec.width_ = parse_nonnegative_int(it, end, eh);
+    } else if (*it == '*') {
+      ++it;
+      spec.width_ = visit_format_arg(
+            internal::printf_width_handler<char_type>(spec), get_arg());
+    }
   }
   return arg_index;
 }
@@ -595,41 +467,43 @@ unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
 template <typename OutputIt, typename Char, typename AF>
 void basic_printf_context<OutputIt, Char, AF>::format() {
   auto &buffer = internal::get_container(this->out());
-  auto start = iterator(this->parse_context());
+  const auto range = this->parse_context();
+  const Char * end = range.end();
+  const Char * start = range.begin();
   auto it = start;
-  using internal::pointer_from;
-  while (*it) {
+  while (it != end) {
     char_type c = *it++;
     if (c != '%') continue;
-    if (*it == c) {
-      buffer.append(pointer_from(start), pointer_from(it));
+    if (it != end && *it == c) {
+      buffer.append(start, it);
       start = ++it;
       continue;
     }
-    buffer.append(pointer_from(start), pointer_from(it) - 1);
+    buffer.append(start, it - 1);
 
     format_specs spec;
     spec.align_ = ALIGN_RIGHT;
 
     // Parse argument index, flags and width.
-    unsigned arg_index = parse_header(it, spec);
+    unsigned arg_index = parse_header(it, end, spec);
 
     // Parse precision.
-    if (*it == '.') {
+    if (it != end && *it == '.') {
       ++it;
-      if ('0' <= *it && *it <= '9') {
+      c = it != end ? *it : 0;
+      if ('0' <= c && c <= '9') {
         internal::error_handler eh;
-        spec.precision = static_cast<int>(parse_nonnegative_int(it, eh));
-      } else if (*it == '*') {
+        spec.precision = static_cast<int>(parse_nonnegative_int(it, end, eh));
+      } else if (c == '*') {
         ++it;
         spec.precision =
-            visit_format_arg(internal::printf_precision_handler(), get_arg(it));
+            visit_format_arg(internal::printf_precision_handler(), get_arg());
       } else {
         spec.precision = 0;
       }
     }
 
-    format_arg arg = get_arg(it, arg_index);
+    format_arg arg = get_arg(arg_index);
     if (spec.has(HASH_FLAG) && visit_format_arg(internal::is_zero_int(), arg))
       spec.flags = static_cast<uint_least8_t>(spec.flags & (~internal::to_unsigned<int>(HASH_FLAG)));
     if (spec.fill_ == '0') {
@@ -640,28 +514,36 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
     }
 
     // Parse length and convert the argument to the required type.
+    c = it != end ? *it++ : 0;
+    char_type t = it != end ? *it : 0;
     using internal::convert_arg;
-    switch (*it++) {
+    switch (c) {
     case 'h':
-      if (*it == 'h')
-        convert_arg<signed char>(arg, *++it);
-      else
-        convert_arg<short>(arg, *it);
+      if (t == 'h') {
+        ++it;
+        t = it != end ? *it : 0;
+        convert_arg<signed char>(arg, t);
+      } else {
+        convert_arg<short>(arg, t);
+      }
       break;
     case 'l':
-      if (*it == 'l')
-        convert_arg<long long>(arg, *++it);
-      else
-        convert_arg<long>(arg, *it);
+      if (t == 'l') {
+        ++it;
+        t = it != end ? *it : 0;
+        convert_arg<long long>(arg, t);
+      } else {
+        convert_arg<long>(arg, t);
+      }
       break;
     case 'j':
-      convert_arg<intmax_t>(arg, *it);
+      convert_arg<intmax_t>(arg, t);
       break;
     case 'z':
-      convert_arg<std::size_t>(arg, *it);
+      convert_arg<std::size_t>(arg, t);
       break;
     case 't':
-      convert_arg<std::ptrdiff_t>(arg, *it);
+      convert_arg<std::ptrdiff_t>(arg, t);
       break;
     case 'L':
       // printf produces garbage when 'L' is omitted for long double, no
@@ -669,11 +551,11 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
       break;
     default:
       --it;
-      convert_arg<void>(arg, *it);
+      convert_arg<void>(arg, c);
     }
 
     // Parse type.
-    if (!*it)
+    if (it == end)
       FMT_THROW(format_error("invalid format string"));
     spec.type = static_cast<char>(*it++);
     if (arg.is_integral()) {
@@ -695,7 +577,7 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
     // Format argument.
     visit_format_arg(AF(buffer, spec, *this), arg);
   }
-  buffer.append(pointer_from(start), pointer_from(it));
+  buffer.append(start, it);
 }
 
 template <typename Buffer>
