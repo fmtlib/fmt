@@ -192,6 +192,13 @@ void printf(basic_buffer<Char>& buf, basic_string_view<Char> format,
             basic_format_args<Context> args) {
   Context(std::back_inserter(buf), format, args).format();
 }
+
+template <typename OutputIt, typename Char, typename Context>
+internal::truncating_iterator<OutputIt> printf(
+    internal::truncating_iterator<OutputIt> it, basic_string_view<Char> format,
+    basic_format_args<Context> args) {
+  return Context(it, format, args).format();
+}
 }  // namespace internal
 
 using internal::printf;  // For printing into memory_buffer.
@@ -217,7 +224,8 @@ class printf_arg_formatter
   typedef typename Range::value_type char_type;
   typedef decltype(internal::declval<Range>().begin()) iterator;
   typedef internal::arg_formatter_base<Range> base;
-  typedef basic_printf_context<iterator, char_type> context_type;
+  typedef basic_printf_context<iterator, char_type, printf_arg_formatter>
+      context_type;
 
   context_type& context_;
 
@@ -241,11 +249,8 @@ class printf_arg_formatter
     specifier information for standard argument types.
     \endrst
    */
-  printf_arg_formatter(internal::basic_buffer<char_type>& buffer,
-                       format_specs& spec, context_type& ctx)
-      : base(back_insert_range<internal::basic_buffer<char_type>>(buffer),
-             &spec, ctx.locale()),
-        context_(ctx) {}
+  printf_arg_formatter(iterator iter, format_specs& spec, context_type& ctx)
+      : base(Range(iter), &spec, ctx.locale()), context_(ctx) {}
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, iterator>::type
@@ -378,7 +383,7 @@ class basic_printf_context :
   using base::parse_context;
 
   /** Formats stored arguments and writes the output to the range. */
-  void format();
+  OutputIt format();
 };
 
 template <typename OutputIt, typename Char, typename AF>
@@ -455,21 +460,21 @@ unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
 }
 
 template <typename OutputIt, typename Char, typename AF>
-void basic_printf_context<OutputIt, Char, AF>::format() {
-  auto& buffer = internal::get_container(this->out());
+OutputIt basic_printf_context<OutputIt, Char, AF>::format() {
+  auto out = this->out();
   const auto range = this->parse_context();
-  const Char* end = range.end();
+  const Char* const end = range.end();
   const Char* start = range.begin();
   auto it = start;
   while (it != end) {
     char_type c = *it++;
     if (c != '%') continue;
     if (it != end && *it == c) {
-      buffer.append(start, it);
+      out = std::copy(start, it, out);
       start = ++it;
       continue;
     }
-    buffer.append(start, it - 1);
+    out = std::copy(start, it - 1, out);
 
     format_specs spec;
     spec.align_ = ALIGN_RIGHT;
@@ -566,9 +571,9 @@ void basic_printf_context<OutputIt, Char, AF>::format() {
     start = it;
 
     // Format argument.
-    visit_format_arg(AF(buffer, spec, *this), arg);
+    visit_format_arg(AF(out, spec, *this), arg);
   }
-  buffer.append(start, it);
+  return std::copy(start, it, out);
 }
 
 template <typename Buffer> struct basic_printf_context_t {
@@ -582,6 +587,14 @@ typedef basic_printf_context_t<internal::wbuffer>::type wprintf_context;
 
 typedef basic_format_args<printf_context> printf_args;
 typedef basic_format_args<wprintf_context> wprintf_args;
+
+template <typename OutputIt, typename Char = typename OutputIt::value_type>
+struct basic_printf_n_context_t {
+  typedef fmt::internal::truncating_iterator<OutputIt> OutputIter;
+  typedef output_range<OutputIter, Char> Range;
+  typedef basic_printf_context<OutputIter, Char, printf_arg_formatter<Range>>
+      type;
+};
 
 /**
   \rst
@@ -618,6 +631,18 @@ inline std::basic_string<Char> vsprintf(
   return to_string(buffer);
 }
 
+template <typename OutputIt, typename S, typename Char = FMT_CHAR(S)>
+inline typename std::enable_if<internal::is_output_iterator<OutputIt>::value,
+                               format_to_n_result<OutputIt>>::type
+vsnprintf(
+    OutputIt out, std::size_t n, const S& format,
+    basic_format_args<typename basic_printf_n_context_t<OutputIt, Char>::type>
+        args) {
+  typedef internal::truncating_iterator<OutputIt> It;
+  auto it = printf(It(out, n), to_string_view(format), args);
+  return {it.base(), it.count()};
+}
+
 /**
   \rst
   Formats arguments and returns the result as a string.
@@ -636,6 +661,34 @@ inline FMT_ENABLE_IF_T(internal::is_string<S>::value,
   typedef typename basic_printf_context_t<buffer>::type context;
   format_arg_store<context, Args...> as{args...};
   return vsprintf(to_string_view(format), basic_format_args<context>(as));
+}
+
+/**
+  \rst
+  Formats arguments for up to ``n`` characters stored through output iterator
+  ``out``. The function returns the updated iterator and the untruncated amount
+  of characters.
+
+  **Example**::
+    std::vector<char> out;
+
+    typedef fmt::format_to_n_result<
+      std::back_insert_iterator<std::vector<char>>> res;
+    res Res = fmt::snprintf(std::back_inserter(out), 5, "The answer is %d", 42);
+  \endrst
+*/
+template <typename OutputIt, typename S, typename... Args>
+inline FMT_ENABLE_IF_T(internal::is_string<S>::value&&
+                           internal::is_output_iterator<OutputIt>::value,
+                       format_to_n_result<OutputIt>)
+    snprintf(OutputIt out, std::size_t n, const S& format,
+             const Args&... args) {
+  internal::check_format_string<Args...>(format);
+  typedef FMT_CHAR(S) Char;
+  typedef typename basic_printf_n_context_t<OutputIt, Char>::type context;
+  format_arg_store<context, Args...> as{args...};
+  return vsnprintf(out, n, to_string_view(format),
+                   basic_format_args<context>(as));
 }
 
 template <typename S, typename Char = FMT_CHAR(S)>

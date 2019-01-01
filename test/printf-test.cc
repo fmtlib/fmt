@@ -555,3 +555,23 @@ TEST(PrintfTest, VSPrintfMakeWArgsExample) {
                           fmt::make_wprintf_args(42, L"something")));
 #endif
 }
+
+TEST(PrintfTest, snprintf) {
+  char buffer[4] = "xxx";
+  auto result = fmt::snprintf(buffer, 0, "test");
+  EXPECT_EQ("xxx", fmt::to_string_view(buffer));
+  EXPECT_EQ(4u, result.size);
+  EXPECT_EQ(buffer, result.out);
+  result = fmt::snprintf(buffer, 2, "test");
+  EXPECT_EQ("tex", fmt::to_string_view(buffer));
+  EXPECT_EQ(4u, result.size);
+  EXPECT_EQ(buffer + 2, result.out);
+  result = fmt::snprintf(buffer, 3, "test");
+  EXPECT_EQ("tes", fmt::to_string_view(buffer));
+  EXPECT_EQ(4u, result.size);
+  EXPECT_EQ(buffer + 3, result.out);
+  result = fmt::snprintf(buffer, 4, "test");
+  EXPECT_EQ("test", std::string(buffer, 4));
+  EXPECT_EQ(4u, result.size);
+  EXPECT_EQ(buffer + 4, result.out);
+}
