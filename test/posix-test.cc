@@ -7,6 +7,7 @@
 
 #include <cstdlib>  // std::exit
 #include <cstring>
+#include <memory>
 
 #include "fmt/posix.h"
 #include "gtest-extra.h"
@@ -19,8 +20,6 @@
 using fmt::buffered_file;
 using fmt::error_code;
 using fmt::file;
-
-using testing::internal::scoped_ptr;
 
 // Checks if the file is open by reading one character from it.
 static bool isopen(int fd) {
@@ -119,7 +118,7 @@ TEST(BufferedFileTest, CloseFileInDtor) {
 }
 
 TEST(BufferedFileTest, CloseErrorInDtor) {
-  scoped_ptr<buffered_file> f(new buffered_file(open_buffered_file()));
+  std::unique_ptr<buffered_file> f(new buffered_file(open_buffered_file()));
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
@@ -246,7 +245,7 @@ TEST(FileTest, CloseFileInDtor) {
 }
 
 TEST(FileTest, CloseErrorInDtor) {
-  scoped_ptr<file> f(new file(open_file()));
+  std::unique_ptr<file> f(new file(open_file()));
   EXPECT_WRITE(stderr, {
       // The close function must be called inside EXPECT_WRITE, otherwise
       // the system may recycle closed file descriptor when redirecting the
