@@ -7,8 +7,9 @@
 
 #include "gtest-extra.h"
 
-#include <cstring>
 #include <algorithm>
+#include <cstring>
+#include <memory>
 #include <stdexcept>
 #include <gtest/gtest-spi.h>
 
@@ -17,8 +18,6 @@
 #endif  // _WIN32
 
 #include "util.h"
-
-using testing::internal::scoped_ptr;
 
 namespace {
 
@@ -340,7 +339,7 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   FMT_POSIX(close(write_fd));
-  scoped_ptr<OutputRedirect> redir{FMT_NULL};
+  std::unique_ptr<OutputRedirect> redir{FMT_NULL};
   EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new OutputRedirect(f.get())),
       EBADF, "cannot flush stream");
   redir.reset(FMT_NULL);
@@ -352,7 +351,7 @@ TEST(OutputRedirectTest, DupErrorInCtor) {
   int fd = (f.fileno)();
   file copy = file::dup(fd);
   FMT_POSIX(close(fd));
-  scoped_ptr<OutputRedirect> redir{FMT_NULL};
+  std::unique_ptr<OutputRedirect> redir{FMT_NULL};
   EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new OutputRedirect(f.get())),
       EBADF, fmt::format("cannot duplicate file descriptor {}", fd));
   copy.dup2(fd);  // "undo" close or dtor will fail
@@ -394,7 +393,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
   int write_fd = write_end.descriptor();
   file write_copy = write_end.dup(write_fd);
   buffered_file f = write_end.fdopen("w");
-  scoped_ptr<OutputRedirect> redir(new OutputRedirect(f.get()));
+  std::unique_ptr<OutputRedirect> redir(new OutputRedirect(f.get()));
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   EXPECT_WRITE(stderr, {

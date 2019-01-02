@@ -13,9 +13,10 @@
 #include "posix-mock.h"
 #include "../src/posix.cc"
 
+#include <climits>
 #include <errno.h>
 #include <fcntl.h>
-#include <climits>
+#include <memory>
 
 #ifdef _WIN32
 # include <io.h>
@@ -31,7 +32,6 @@ using fmt::buffered_file;
 using fmt::error_code;
 using fmt::file;
 
-using testing::internal::scoped_ptr;
 using testing::_;
 using testing::StrEq;
 using testing::Return;
@@ -216,7 +216,7 @@ TEST(UtilTest, GetPageSize) {
 
 TEST(FileTest, OpenRetry) {
   write_file("test", "there must be something here");
-  scoped_ptr<file> f{FMT_NULL};
+  std::unique_ptr<file> f{FMT_NULL};
   EXPECT_RETRY(f.reset(new file("test", file::RDONLY)),
                open, "cannot open file test");
 #ifndef _WIN32
@@ -228,7 +228,7 @@ TEST(FileTest, OpenRetry) {
 TEST(FileTest, CloseNoRetryInDtor) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
-  scoped_ptr<file> f(new file(std::move(read_end)));
+  std::unique_ptr<file> f(new file(std::move(read_end)));
   int saved_close_count = 0;
   EXPECT_WRITE(stderr, {
     close_count = 1;
@@ -385,7 +385,7 @@ TEST(FileTest, FdopenNoRetry) {
 
 TEST(BufferedFileTest, OpenRetry) {
   write_file("test", "there must be something here");
-  scoped_ptr<buffered_file> f{FMT_NULL};
+  std::unique_ptr<buffered_file> f{FMT_NULL};
   EXPECT_RETRY(f.reset(new buffered_file("test", "r")),
                fopen, "cannot open file test");
 #ifndef _WIN32
@@ -398,7 +398,7 @@ TEST(BufferedFileTest, OpenRetry) {
 TEST(BufferedFileTest, CloseNoRetryInDtor) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
-  scoped_ptr<buffered_file> f(new buffered_file(read_end.fdopen("r")));
+  std::unique_ptr<buffered_file> f(new buffered_file(read_end.fdopen("r")));
   int saved_fclose_count = 0;
   EXPECT_WRITE(stderr, {
     fclose_count = 1;
