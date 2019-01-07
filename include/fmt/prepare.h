@@ -170,10 +170,9 @@ public:
                                             const Char *end) {
     const auto specs_offset = to_unsigned(begin - format_.begin());
 
-    typedef internal::dynamic_format_specs<Char> prepared_specs;
     typedef basic_parse_context<Char> parse_context;
-    prepared_specs parsed_specs;
-    dynamic_specs_handler<prepared_specs, parse_context> handler(
+    internal::dynamic_format_specs<Char> parsed_specs;
+    dynamic_specs_handler<parse_context> handler(
         parsed_specs, parse_context_);
     begin = parse_format_specs(begin, end, handler);
 

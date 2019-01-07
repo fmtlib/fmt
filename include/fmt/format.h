@@ -1784,19 +1784,19 @@ struct dynamic_format_specs : basic_format_specs<Char> {
 
 // Format spec handler that saves references to arguments representing dynamic
 // width and precision to be resolved at formatting time.
-template <typename Specs, typename ParseContext>
-class dynamic_specs_handler
-    : public specs_setter<typename ParseContext::char_type> {
-
-public:
+template <typename ParseContext>
+class dynamic_specs_handler :
+    public specs_setter<typename ParseContext::char_type> {
+ public:
   typedef typename ParseContext::char_type char_type;
 
-private:
-  typedef arg_ref<typename ParseContext::char_type> arg_ref_type;
+  FMT_CONSTEXPR dynamic_specs_handler(
+      dynamic_format_specs<char_type> &specs, ParseContext &ctx)
+    : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
 
-public:
-  FMT_CONSTEXPR dynamic_specs_handler(Specs &specs, ParseContext &ctx)
-      : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
+  FMT_CONSTEXPR dynamic_specs_handler(const dynamic_specs_handler &other)
+    : specs_setter<char_type>(other),
+      specs_(other.specs_), context_(other.context_) {}
 
   template <typename Id>
   FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
@@ -1813,9 +1813,11 @@ public:
   }
 
  private:
-   FMT_CONSTEXPR arg_ref_type make_arg_ref(unsigned arg_id) {
-     context_.check_arg_id(arg_id);
-     return arg_ref_type(arg_id);
+  typedef arg_ref<char_type> arg_ref_type;
+
+  FMT_CONSTEXPR arg_ref_type make_arg_ref(unsigned arg_id) {
+    context_.check_arg_id(arg_id);
+    return arg_ref_type(arg_id);
   }
 
   FMT_CONSTEXPR arg_ref_type make_arg_ref(auto_id) {
@@ -1829,8 +1831,7 @@ public:
     return arg_ref_type(id_metadata);
   }
 
-private:
-  Specs &specs_;
+  dynamic_format_specs<char_type> &specs_;
   ParseContext &context_;
 };
 
@@ -2183,8 +2184,8 @@ struct format_type :
   std::integral_constant<bool, get_type<Context, T>::value != custom_type> {};
 
 template <template <typename> class Handler, typename Spec, typename Context>
-void handle_dynamic_spec(Spec &value, arg_ref<typename Context::char_type> ref,
-                         Context &ctx) {
+void handle_dynamic_spec(
+    Spec &value, arg_ref<typename Context::char_type> ref, Context &ctx) {
   typedef typename Context::char_type char_type;
   typedef arg_ref<char_type> arg_ref_type;
   switch (ref.kind) {
@@ -2978,8 +2979,7 @@ struct formatter<
   // terminating '}'.
   template <typename ParseContext>
   FMT_CONSTEXPR typename ParseContext::iterator parse(ParseContext &ctx) {
-    typedef internal::dynamic_specs_handler<
-        internal::dynamic_format_specs<Char>, ParseContext>
+    typedef internal::dynamic_specs_handler<ParseContext>
         handler_type;
     auto type = internal::get_type<
       typename buffer_context<Char>::type, T>::value;
@@ -3071,8 +3071,7 @@ class dynamic_formatter {
 public:
   template <typename ParseContext>
   auto parse(ParseContext &ctx) -> decltype(ctx.begin()) {
-    typedef internal::dynamic_specs_handler<
-        internal::dynamic_format_specs<Char>, ParseContext>
+    typedef internal::dynamic_specs_handler<ParseContext>
         handler_type;
     handler_type handler(specs_, ctx);
     // Checks are deferred to formatting time when the argument type is known.
@@ -3081,27 +3080,23 @@ public:
 
   template <typename T, typename FormatContext>
   auto format(const T &val, FormatContext &ctx) -> decltype(ctx.out()) {
-    basic_format_specs<Char> specs;
     handle_specs(ctx);
-    specs = specs_;
-
-    internal::specs_checker<null_handler> checker(
-        null_handler(), internal::get_type<FormatContext, T>::value);
-    checker.on_align(specs.align());
-    if (specs.flags == 0)
-      ; // Do nothing.
-    else if (specs.has(SIGN_FLAG))
-      specs.has(PLUS_FLAG) ? checker.on_plus() : checker.on_space();
-    else if (specs.has(MINUS_FLAG))
+    internal::specs_checker<null_handler>
+        checker(null_handler(), internal::get_type<FormatContext, T>::value);
+    checker.on_align(specs_.align());
+    if (specs_.flags == 0);  // Do nothing.
+    else if (specs_.has(SIGN_FLAG))
+      specs_.has(PLUS_FLAG) ? checker.on_plus() : checker.on_space();
+    else if (specs_.has(MINUS_FLAG))
       checker.on_minus();
-    else if (specs.has(HASH_FLAG))
+    else if (specs_.has(HASH_FLAG))
       checker.on_hash();
-    if (specs.precision != -1)
+    if (specs_.precision != -1)
       checker.end_precision();
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type> range;
-    visit_format_arg(arg_formatter<range>(ctx, &specs),
-                     internal::make_arg<FormatContext>(val));
+    visit_format_arg(arg_formatter<range>(ctx, &specs_),
+               internal::make_arg<FormatContext>(val));
     return ctx.out();
   }
 
