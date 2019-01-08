@@ -1372,6 +1372,12 @@ std::basic_string<Char> vformat(
   basic_string_view<Char> format_str,
   basic_format_args<typename buffer_context<Char>::type> args);
 
+template <typename Char, typename OutString>
+OutString vformat_as(
+  const OutString *tag,
+  basic_string_view<Char> format_str,
+  basic_format_args<typename buffer_context<Char>::type> args);
+
 template <typename Char>
 typename buffer_context<Char>::type::iterator vformat_to(
   internal::basic_buffer<Char> &buf, basic_string_view<Char> format_str,
@@ -1454,6 +1460,78 @@ template <typename S, typename... Args>
 inline std::basic_string<FMT_CHAR(S)> format(
     const S &format_str, const Args &... args) {
   return internal::vformat(
+    to_string_view(format_str),
+    *internal::checked_args<S, Args...>(format_str, args...));
+}
+
+namespace internal {
+// the 'tag' serves 3 purposes:
+//  - determines the output string type
+//  - enables ADL to find 'to_string'
+//  - supplies the optional type-erased allocator argument to the string
+//    constructor. Its actual type is 'T::allocator_type'
+template <typename T>
+const T *out_string_tag(void *allocator) {
+  return reinterpret_cast<const T *>(allocator);
+}
+
+#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 404
+// gcc 4.4 is lacking std::uses_allocator from C++11
+template <typename T, typename Alloc>
+struct has_allocator_type {
+  // tests for suitable T::allocator_type
+  template <typename U>
+  static std::is_convertible<Alloc, typename U::allocator_type> test(int);
+  template<typename U>
+  static std::false_type test(...);
+
+  typedef decltype(test<T>(0)) type;
+  static const bool value = type::value;
+};
+
+# define FMT_USES_ALLOCATOR(S,A) internal::has_allocator_type<S, A>::value
+#else
+// if std::uses_allocator is available use it because it may be specialized!
+# define FMT_USES_ALLOCATOR(S,A) std::uses_allocator<S, A>::value
+#endif
+}
+
+/**
+  \rst
+  Formats arguments and returns the result as a string of given type.
+
+  **Example**::
+
+    #include <fmt/core.h>
+    auto message = fmt::format_as<std::pmr::string>("The answer is {}", 42);
+  \endrst
+*/
+template <typename OutString, typename S, typename... Args>
+inline OutString format_as(const S &format_str, const Args &... args) {
+  return internal::vformat_as(
+    internal::out_string_tag<OutString>(FMT_NULL), to_string_view(format_str),
+    *internal::checked_args<S, Args...>(format_str, args...));
+}
+
+/**
+  \rst
+  Formats arguments and returns the result as a string of given type.
+
+  **Example**::
+
+    #include <fmt/core.h>
+    std::pmr::memory_resource *mr = ...;
+    std::pmr::polymorphic_allocator alloc(mr);
+    auto message = fmt::format_as<std::pmr::string>(alloc, "Answer: {}", 42);
+  \endrst
+*/
+template <typename OutString, typename Alloc, typename S, typename... Args>
+inline typename
+  std::enable_if<FMT_USES_ALLOCATOR(OutString, Alloc), OutString>::type
+format_as(const Alloc &alloc, S &format_str, const Args &... args) {
+  typename OutString::allocator_type out_alloc = alloc;
+  return internal::vformat_as(
+    internal::out_string_tag<OutString>(&out_alloc),
     to_string_view(format_str),
     *internal::checked_args<S, Args...>(format_str, args...));
 }

@@ -3229,6 +3229,72 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE> &buf) {
   return std::basic_string<Char>(buf.data(), buf.size());
 }
 
+namespace internal {
+template <typename Char, typename OutString>
+struct output_traits;
+
+template <typename Char, typename Traits, typename Alloc>
+struct output_traits<Char, std::basic_string<Char, Traits, Alloc>> {
+  typedef std::basic_string<Char, Traits, Alloc> type;
+  static const Alloc &to_allocator(const type *tag) FMT_NOEXCEPT {
+    return *reinterpret_cast<const Alloc *>(tag);
+  }
+};
+
+template <typename T = void>
+struct lazy_false {
+  static const bool value = false;
+};
+}
+
+/**
+  \rst
+  The operator ``to_string`` converts a ``fmt::basic_memory_buffer<Char>`` to
+  any kind of string if the user provides a templated overload of
+  ``to_string`` which takes an instance of ``fmt::basic_memory_buffer<Char>``
+  and a ``const StringType *`` and returns a ``StringType``.
+  The conversion function must live in the very same namespace as
+  ``StringType`` to be picked up by ADL. The value of ``const StringType *``
+  is a type-erased reference to an opional allocator instance to be used by the
+  constructor of ``StringType``.
+
+  **Example**::
+
+    namespace my_ns {
+    template <typename Char, std::size_t SIZE>
+    inline my_string to_string(const basic_memory_buffer<Char, SIZE> &buf,
+                               const my_string *tag) {
+      if (tag) {
+        using my_allocator_type = my_string::allocator_type;
+        return my_string{buf.data(), buf.length(),
+                         *reinterpret_cast<const my_allocator_type *>(tag)};
+      } else {
+        return my_string{buf.data(), buf.length()};
+      }
+    }
+    }
+
+    my_ns::my_string message
+      = fmt::format_as<my_ns::my_string>("The answer is {}"), 42);
+  \endrst
+ */
+template <typename Char, std::size_t SIZE, typename OutString>
+OutString to_string(const basic_memory_buffer<Char, SIZE> &, OutString *) {
+  static_assert(internal::lazy_false<OutString>::value,
+                "cannot construct OutString from basic_memory_buffer<Char>");
+}
+
+template <typename Char, std::size_t SIZE, typename OutString>
+typename internal::output_traits<Char, OutString>::type
+to_string(const basic_memory_buffer<Char, SIZE> &buf,  const OutString *tag) {
+  typedef internal::output_traits<Char, OutString> traits;
+  if (!tag) {
+    return OutString(buf.data(), buf.size());
+  } else {
+    return OutString(buf.data(), buf.size(), traits::to_allocator(tag));
+  }
+}
+
 template <typename Char>
 typename buffer_context<Char>::type::iterator internal::vformat_to(
     internal::basic_buffer<Char> &buf, basic_string_view<Char> format_str,
@@ -3413,6 +3479,16 @@ inline std::basic_string<Char> internal::vformat(
   basic_memory_buffer<Char> buffer;
   internal::vformat_to(buffer, format_str, args);
   return fmt::to_string(buffer);
+}
+
+template <typename Char, typename OutString>
+inline OutString internal::vformat_as(
+    const OutString *tag,
+    basic_string_view<Char> format_str,
+    basic_format_args<typename buffer_context<Char>::type> args) {
+  basic_memory_buffer<Char> buffer;
+  internal::vformat_to(buffer, format_str, args);
+  return to_string(buffer, tag);
 }
 
 /**

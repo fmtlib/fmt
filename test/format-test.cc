@@ -14,6 +14,9 @@
 #include <memory>
 #include <string>
 #include <stdint.h>
+#if __cplusplus >= 201703 || _MSVC_LANG >= 201703
+#include <memory_resource>
+#endif
 
 // Check if fmt/format.h compiles with windows.h included before it.
 #ifdef _WIN32
@@ -2469,4 +2472,49 @@ TEST(FormatTest, U8StringViewLiteral) {
 
 TEST(FormatTest, FormatU8String) {
   EXPECT_EQ(format(fmt::u8string_view("{}"), 42), fmt::u8string_view("42"));
+}
+
+namespace FakeQt {
+class QString {
+public:
+  QString(const wchar_t *s, std::size_t len)
+    : s_(std::make_shared<std::wstring>(s, len)) {}
+  operator const std::wstring &() const FMT_NOEXCEPT { return *s_; }
+  int size() const FMT_NOEXCEPT { return static_cast<int>(s_->size()); }
+private:
+  std::shared_ptr<std::wstring> s_;
+};
+
+template <typename Char, std::size_t SIZE>
+typename std::enable_if<std::is_same<Char, wchar_t>::value, QString>::type
+to_string(const basic_memory_buffer<Char, SIZE> &buf, const QString *) {
+  return QString(buf.data(), buf.size());
+}
+}
+
+struct my_allocator : std::allocator<wchar_t> {};
+
+TEST(FormatTest, FormatAs) {
+  EXPECT_EQ(fmt::format_as<std::string>("{}", 42), "42");
+  EXPECT_EQ(fmt::format_as<std::wstring>(L"{}", 42), L"42");
+// This will fail with static_assert
+// "cannot construct OutString from basic_memory_buffer<Char>" and types
+// OutString=std::string, Char=char16_t
+// EXPECT_EQ(fmt::format_as<std::string>(u"{}", 42), std::string("42"));
+
+  typedef std::basic_string<
+    wchar_t, std::char_traits<wchar_t>, my_allocator> my_wstring;
+  EXPECT_EQ(fmt::format_as<my_wstring>(L"{}", 42), L"42");
+
+#if __cplusplus >= 201703 || _MSVC_LANG >= 201703
+  // taking a reference requires matching types
+  const std::pmr::string &ps = fmt::format_as<std::pmr::string>("{}", 42);
+  EXPECT_EQ(ps, "42");
+
+  std::pmr::polymorphic_allocator<char> alloc(std::pmr::new_delete_resource());
+  EXPECT_EQ(fmt::format_as<std::pmr::string>(alloc, "{}", 42), "42");
+#endif
+
+  const FakeQt::QString &qs = fmt::format_as<FakeQt::QString>(L"{}", 42);
+  EXPECT_EQ(static_cast<std::wstring>(qs), std::wstring(L"42"));
 }
