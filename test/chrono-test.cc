@@ -103,6 +103,8 @@ TEST(ChronoTest, Align) {
             fmt::format("{:>12%H:%M:%S}", std::chrono::seconds(12345)));
   EXPECT_EQ("~~03:25:45~~",
             fmt::format("{:~^12%H:%M:%S}", std::chrono::seconds(12345)));
+  EXPECT_EQ("03:25:45    ",
+            fmt::format("{:{}%H:%M:%S}", std::chrono::seconds(12345), 12));
 
 }
 

@@ -18,7 +18,7 @@
 
 FMT_BEGIN_NAMESPACE
 
-namespace internal{
+namespace internal {
 
 enum class numeric_system {
   standard,
@@ -415,7 +415,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     if (begin == end) return begin;
     begin = internal::parse_width(begin, end, handler);
     end = parse_chrono_format(begin, end, internal::chrono_format_checker());
-    format_str = basic_string_view<Char>(&*begin, internal::to_unsigned(end - begin));
+    format_str = basic_string_view<Char>(
+          &*begin, internal::to_unsigned(end - begin));
     return end;
   }
 
@@ -423,6 +424,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   auto format(const duration &d, FormatContext &ctx)
       -> decltype(ctx.out()) {
     auto begin = format_str.begin(), end = format_str.end();
+    // As a possible future optimization, we could avoid extra copying if width
+    // is not specified.
     memory_buffer buf;
     typedef output_range<decltype(ctx.out()), Char> range;
     basic_writer<range> w(range(ctx.out()));
@@ -433,8 +436,6 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
         format_to(buf, "{}[{}]s", d.count(), Period::num);
       else
         format_to(buf, "{}[{}/{}]s", d.count(), Period::num, Period::den);
-      internal::handle_dynamic_spec<internal::width_checker>(
-        spec.width_, width_ref, ctx);
     } else {
       auto out = std::back_inserter(buf);
       internal::chrono_formatter<FormatContext, decltype(out)> f(ctx, out);
@@ -442,6 +443,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       f.ms = std::chrono::duration_cast<std::chrono::milliseconds>(d - f.s);
       parse_chrono_format(begin, end, f);
     }
+    internal::handle_dynamic_spec<internal::width_checker>(
+      spec.width_, width_ref, ctx);
     w.write(buf.data(), buf.size(), spec);
     return w.out();
   }
