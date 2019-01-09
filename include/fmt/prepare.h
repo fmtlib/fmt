@@ -202,35 +202,6 @@ private:
   basic_parse_context<Char> parse_context_;
 };
 
-template <typename ErrorHandler> class parsed_specs_checker {
-public:
-  FMT_CONSTEXPR parsed_specs_checker(ErrorHandler &error_handler,
-                                     internal::type arg_type)
-      : checker_(error_handler, arg_type) {}
-
-  template <typename Char>
-  FMT_CONSTEXPR void check(const basic_format_specs<Char> &specs) {
-    if (specs.align_ == ALIGN_NUMERIC) {
-      checker_.require_numeric_argument();
-    }
-
-    if (specs.has(PLUS_FLAG | MINUS_FLAG | SIGN_FLAG)) {
-      checker_.check_sign();
-    }
-
-    if (specs.has(HASH_FLAG)) {
-      checker_.require_numeric_argument();
-    }
-
-    if (specs.has_precision()) {
-      checker_.check_precision();
-    }
-  }
-
-private:
-  numeric_specs_checker<ErrorHandler> checker_;
-};
-
 template <typename Format, typename PreparedPartsProvider, typename... Args>
 class prepared_format {
 public:
@@ -344,9 +315,7 @@ private:
         handle_dynamic_spec<internal::precision_checker>(
             specs.precision, specs.precision_ref, ctx);
 
-        internal::error_handler h;
-        parsed_specs_checker<internal::error_handler> checker(h, arg.type());
-        checker.check(specs);
+        check_prepared_specs(specs, arg.type());
         advance_parse_context_to_specification(ctx, part);
         ctx.advance_to(
             visit_format_arg(arg_formatter<Range>(ctx, &specs), arg));
@@ -371,6 +340,27 @@ private:
     const auto stopped_at =
         visit_format_arg(arg_formatter<Range>(ctx), ctx.get_arg(arg_id));
     ctx.advance_to(stopped_at);
+  }
+
+  template <typename Char>
+  void check_prepared_specs(const basic_format_specs<Char> &specs, internal::type arg_type) const {
+    internal::error_handler h;
+    numeric_specs_checker<internal::error_handler> checker(h, arg_type);
+    if (specs.align_ == ALIGN_NUMERIC) {
+      checker.require_numeric_argument();
+    }
+
+    if (specs.has(PLUS_FLAG | MINUS_FLAG | SIGN_FLAG)) {
+      checker.check_sign();
+    }
+
+    if (specs.has(HASH_FLAG)) {
+      checker.require_numeric_argument();
+    }
+
+    if (specs.has_precision()) {
+      checker.check_precision();
+    }
   }
 
 private:

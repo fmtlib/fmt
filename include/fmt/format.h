@@ -1596,7 +1596,8 @@ class specs_setter {
   basic_format_specs<Char> &specs_;
 };
 
-template <typename ErrorHandler> class numeric_specs_checker {
+template <typename ErrorHandler>
+class numeric_specs_checker {
 public:
   FMT_CONSTEXPR numeric_specs_checker(ErrorHandler &eh, internal::type arg_type)
       : error_handler_(eh), arg_type_(arg_type) {}

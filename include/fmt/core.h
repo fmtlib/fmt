@@ -881,9 +881,9 @@ FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
 template <typename Char, typename ErrorHandler = internal::error_handler>
 class basic_parse_context : private ErrorHandler {
  private:
-   basic_string_view<Char> primary_format_str_;
-   basic_string_view<Char> format_str_;
-   int next_arg_id_;
+  basic_string_view<Char> primary_format_str_;
+  basic_string_view<Char> format_str_;
+  int next_arg_id_;
 
  public:
   typedef Char char_type;
