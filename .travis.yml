@@ -91,6 +91,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
+            - ninja-build
             - wget
             - unzip
             - tree
