@@ -189,4 +189,33 @@ TEST(ChronoTest, Locale) {
   EXPECT_TIME("%p", time, sec);
 }
 
+typedef std::chrono::duration<double, std::milli> dms;
+
+TEST(ChronoTest, FormatDefaultFP) {
+  typedef std::chrono::duration<float> fs;
+  EXPECT_EQ("1.234s", fmt::format("{}", fs(1.234)));
+  typedef std::chrono::duration<float, std::milli> fms;
+  EXPECT_EQ("1.234ms", fmt::format("{}", fms(1.234)));
+  typedef std::chrono::duration<double> ds;
+  EXPECT_EQ("1.234s", fmt::format("{}", ds(1.234)));
+  EXPECT_EQ("1.234ms", fmt::format("{}", dms(1.234)));
+}
+
+TEST(ChronoTest, FormatPrecision) {
+  EXPECT_THROW_MSG(fmt::format("{:.2}", std::chrono::seconds(42)),
+                   fmt::format_error,
+                   "precision not allowed for this argument type");
+  EXPECT_EQ("1.2ms", fmt::format("{:.1}", dms(1.234)));
+  EXPECT_EQ("1.23ms", fmt::format("{:.{}}", dms(1.234), 2));
+}
+
+TEST(ChronoTest, FormatFullSpecs) {
+  EXPECT_EQ("1.2ms ", fmt::format("{:6.1}", dms(1.234)));
+  EXPECT_EQ("  1.23ms", fmt::format("{:>8.{}}", dms(1.234), 2));
+  EXPECT_EQ(" 1.2ms ", fmt::format("{:^{}.{}}", dms(1.234), 7, 1));
+  EXPECT_EQ(" 1.23ms ", fmt::format("{0:^{2}.{1}}", dms(1.234), 2, 8));
+  EXPECT_EQ("=1.234ms=", fmt::format("{:=^{}.{}}", dms(1.234), 9, 3));
+  EXPECT_EQ("*1.2340ms*", fmt::format("{:*^10.4}", dms(1.234), 10, 4));
+}
+
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

@@ -1935,6 +1935,28 @@ FMT_CONSTEXPR const Char* parse_width(const Char* begin, const Char* end,
   return begin;
 }
 
+template <typename Char, typename Handler>
+FMT_CONSTEXPR const Char* parse_precision(const Char* begin, const Char* end,
+                                          Handler&& handler) {
+  ++begin;
+  auto c = begin != end ? *begin : 0;
+  if ('0' <= c && c <= '9') {
+    handler.on_precision(parse_nonnegative_int(begin, end, handler));
+  } else if (c == '{') {
+    ++begin;
+    if (begin != end) {
+      begin =
+          parse_arg_id(begin, end, precision_adapter<Handler, Char>(handler));
+    }
+    if (begin == end || *begin++ != '}')
+      return handler.on_error("invalid format string"), begin;
+  } else {
+    return handler.on_error("missing precision specifier"), begin;
+  }
+  handler.end_precision();
+  return begin;
+}
+
 // Parses standard format specifiers and sends notifications about parsed
 // components to handler.
 template <typename Char, typename SpecHandler>
@@ -1978,22 +2000,7 @@ FMT_CONSTEXPR const Char* parse_format_specs(const Char* begin, const Char* end,
 
   // Parse precision.
   if (*begin == '.') {
-    ++begin;
-    auto c = begin != end ? *begin : 0;
-    if ('0' <= c && c <= '9') {
-      handler.on_precision(parse_nonnegative_int(begin, end, handler));
-    } else if (c == '{') {
-      ++begin;
-      if (begin != end) {
-        begin = parse_arg_id(begin, end,
-                             precision_adapter<SpecHandler, Char>(handler));
-      }
-      if (begin == end || *begin++ != '}')
-        return handler.on_error("invalid format string"), begin;
-    } else {
-      return handler.on_error("missing precision specifier"), begin;
-    }
-    handler.end_precision();
+    begin = parse_precision(begin, end, handler);
   }
 
   // Parse type.

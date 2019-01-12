@@ -362,8 +362,10 @@ template <typename Rep, typename Period, typename Char>
 struct formatter<std::chrono::duration<Rep, Period>, Char> {
  private:
   align_spec spec;
+  int precision;
   typedef internal::arg_ref<Char> arg_ref_type;
   arg_ref_type width_ref;
+  arg_ref_type precision_ref;
   mutable basic_string_view<Char> format_str;
   typedef std::chrono::duration<Rep, Period> duration;
 
@@ -391,14 +393,36 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     void on_fill(Char fill) { f.spec.fill_ = fill; }
     void on_align(alignment align) { f.spec.align_ = align; }
     void on_width(unsigned width) { f.spec.width_ = width; }
+    void on_precision(unsigned precision) { f.precision = precision; }
+    void end_precision() {}
 
     template <typename Id> void on_dynamic_width(Id arg_id) {
       f.width_ref = make_arg_ref(arg_id);
     }
+
+    template <typename Id> void on_dynamic_precision(Id arg_id) {
+      f.precision_ref = make_arg_ref(arg_id);
+    }
   };
 
+  template <typename OutputIt> OutputIt format_value(OutputIt out, Rep val) {
+    if (precision < 0)
+      return format_to(out, "{}", val);
+    else
+      return format_to(out, "{:.{}f}", val, precision);
+  }
+
+  template <typename OutputIt> static void format_unit(OutputIt out) {
+    if (const char* unit = get_units<Period>())
+      format_to(out, "{}", unit);
+    else if (Period::den == 1)
+      format_to(out, "[{}]s", Period::num);
+    else
+      format_to(out, "[{}/{}]s", Period::num, Period::den);
+  }
+
  public:
-  formatter() : spec() {}
+  formatter() : spec(), precision(-1) {}
 
   FMT_CONSTEXPR auto parse(basic_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
@@ -408,6 +432,13 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     begin = internal::parse_align(begin, end, handler);
     if (begin == end) return begin;
     begin = internal::parse_width(begin, end, handler);
+    if (begin == end) return begin;
+    if (*begin == '.') {
+      if (std::is_floating_point<Rep>::value)
+        begin = internal::parse_precision(begin, end, handler);
+      else
+        handler.on_error("precision not allowed for this argument type");
+    }
     end = parse_chrono_format(begin, end, internal::chrono_format_checker());
     format_str =
         basic_string_view<Char>(&*begin, internal::to_unsigned(end - begin));
@@ -419,25 +450,23 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     auto begin = format_str.begin(), end = format_str.end();
     // As a possible future optimization, we could avoid extra copying if width
     // is not specified.
-    memory_buffer buf;
+    basic_memory_buffer<Char> buf;
+    auto out = std::back_inserter(buf);
     typedef output_range<decltype(ctx.out()), Char> range;
     basic_writer<range> w(range(ctx.out()));
+    internal::handle_dynamic_spec<internal::width_checker>(spec.width_,
+                                                           width_ref, ctx);
     if (begin == end || *begin == '}') {
-      if (const char* unit = get_units<Period>())
-        format_to(buf, "{}{}", d.count(), unit);
-      else if (Period::den == 1)
-        format_to(buf, "{}[{}]s", d.count(), Period::num);
-      else
-        format_to(buf, "{}[{}/{}]s", d.count(), Period::num, Period::den);
+      internal::handle_dynamic_spec<internal::precision_checker>(
+          precision, precision_ref, ctx);
+      out = format_value(out, d.count());
+      format_unit(out);
     } else {
-      auto out = std::back_inserter(buf);
       internal::chrono_formatter<FormatContext, decltype(out)> f(ctx, out);
       f.s = std::chrono::duration_cast<std::chrono::seconds>(d);
       f.ms = std::chrono::duration_cast<std::chrono::milliseconds>(d - f.s);
       parse_chrono_format(begin, end, f);
     }
-    internal::handle_dynamic_spec<internal::width_checker>(spec.width_,
-                                                           width_ref, ctx);
     w.write(buf.data(), buf.size(), spec);
     return w.out();
   }
