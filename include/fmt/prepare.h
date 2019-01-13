@@ -263,10 +263,10 @@ class prepared_format {
       switch (part.which) {
       case format_part_t::which_value::text: {
         const auto text = value.text.to_view(format_view);
-        auto out = ctx.out();
-        auto&& it = internal::reserve(out, text.size());
+        auto output = ctx.out();
+        auto&& it = internal::reserve(output, text.size());
         it = std::copy_n(text.begin(), text.size(), it);
-        ctx.advance_to(out);
+        ctx.advance_to(output);
       } break;
 
       case format_part_t::which_value::argument_id: {
