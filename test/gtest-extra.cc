@@ -12,25 +12,23 @@
 using fmt::file;
 
 void OutputRedirect::flush() {
-#if EOF != -1
-# error "FMT_RETRY assumes return value of -1 indicating failure"
-#endif
+#  if EOF != -1
+#    error "FMT_RETRY assumes return value of -1 indicating failure"
+#  endif
   int result = 0;
   FMT_RETRY(result, fflush(file_));
-  if (result != 0)
-    throw fmt::system_error(errno, "cannot flush stream");
+  if (result != 0) throw fmt::system_error(errno, "cannot flush stream");
 }
 
 void OutputRedirect::restore() {
-  if (original_.descriptor() == -1)
-    return;  // Already restored.
+  if (original_.descriptor() == -1) return;  // Already restored.
   flush();
   // Restore the original file.
   original_.dup2(FMT_POSIX(fileno(file_)));
   original_.close();
 }
 
-OutputRedirect::OutputRedirect(FILE *f) : file_(f) {
+OutputRedirect::OutputRedirect(FILE* f) : file_(f) {
   flush();
   int fd = FMT_POSIX(fileno(f));
   // Create a file object referring to the original file.
@@ -45,7 +43,7 @@ OutputRedirect::OutputRedirect(FILE *f) : file_(f) {
 OutputRedirect::~OutputRedirect() FMT_NOEXCEPT {
   try {
     restore();
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     std::fputs(e.what(), stderr);
   }
 }
@@ -56,8 +54,7 @@ std::string OutputRedirect::restore_and_read() {
 
   // Read everything from the pipe.
   std::string content;
-  if (read_end_.descriptor() == -1)
-    return content;  // Already read.
+  if (read_end_.descriptor() == -1) return content;  // Already read.
   enum { BUFFER_SIZE = 4096 };
   char buffer[BUFFER_SIZE];
   std::size_t count = 0;
@@ -69,7 +66,7 @@ std::string OutputRedirect::restore_and_read() {
   return content;
 }
 
-std::string read(file &f, std::size_t count) {
+std::string read(file& f, std::size_t count) {
   std::string buffer(count, '\0');
   std::size_t n = 0, offset = 0;
   do {

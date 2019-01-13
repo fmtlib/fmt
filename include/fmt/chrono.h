@@ -28,8 +28,9 @@ enum class numeric_system {
 
 // Parses a put_time-like format string and invokes handler actions.
 template <typename Char, typename Handler>
-FMT_CONSTEXPR const Char *parse_chrono_format(
-    const Char *begin, const Char *end, Handler &&handler) {
+FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
+                                              const Char* end,
+                                              Handler&& handler) {
   auto ptr = begin;
   while (ptr != end) {
     auto c = *ptr;
@@ -38,11 +39,9 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
       ++ptr;
       continue;
     }
-    if (begin != ptr)
-      handler.on_text(begin, ptr);
-    ++ptr; // consume '%'
-    if (ptr == end)
-      throw format_error("invalid format");
+    if (begin != ptr) handler.on_text(begin, ptr);
+    ++ptr;  // consume '%'
+    if (ptr == end) throw format_error("invalid format");
     c = *ptr++;
     switch (c) {
     case '%':
@@ -127,8 +126,7 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
       break;
     // Alternative representation:
     case 'E': {
-      if (ptr == end)
-        throw format_error("invalid format");
+      if (ptr == end) throw format_error("invalid format");
       c = *ptr++;
       switch (c) {
       case 'c':
@@ -146,8 +144,7 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
       break;
     }
     case 'O':
-      if (ptr == end)
-        throw format_error("invalid format");
+      if (ptr == end) throw format_error("invalid format");
       c = *ptr++;
       switch (c) {
       case 'w':
@@ -177,16 +174,14 @@ FMT_CONSTEXPR const Char *parse_chrono_format(
     }
     begin = ptr;
   }
-  if (begin != ptr)
-    handler.on_text(begin, ptr);
+  if (begin != ptr) handler.on_text(begin, ptr);
   return ptr;
 }
 
 struct chrono_format_checker {
   void report_no_date() { throw format_error("no date"); }
 
-  template <typename Char>
-  void on_text(const Char *, const Char *) {}
+  template <typename Char> void on_text(const Char*, const Char*) {}
   void on_abbr_weekday() { report_no_date(); }
   void on_full_weekday() { report_no_date(); }
   void on_dec0_weekday(numeric_system) { report_no_date(); }
@@ -210,24 +205,23 @@ struct chrono_format_checker {
   void on_tz_name() { report_no_date(); }
 };
 
-template <typename Int>
-inline int to_int(Int value) {
+template <typename Int> inline int to_int(Int value) {
   FMT_ASSERT(value >= (std::numeric_limits<int>::min)() &&
-             value <= (std::numeric_limits<int>::max)(), "invalid value");
+                 value <= (std::numeric_limits<int>::max)(),
+             "invalid value");
   return static_cast<int>(value);
 }
 
-template <typename FormatContext, typename OutputIt>
-struct chrono_formatter {
-  FormatContext &context;
+template <typename FormatContext, typename OutputIt> struct chrono_formatter {
+  FormatContext& context;
   OutputIt out;
   std::chrono::seconds s;
   std::chrono::milliseconds ms;
 
   typedef typename FormatContext::char_type char_type;
 
-  explicit chrono_formatter(FormatContext &ctx, OutputIt o)
-    : context(ctx), out(o) {}
+  explicit chrono_formatter(FormatContext& ctx, OutputIt o)
+      : context(ctx), out(o) {}
 
   int hour() const { return to_int((s.count() / 3600) % 24); }
 
@@ -251,14 +245,13 @@ struct chrono_formatter {
     typedef typename int_traits<int>::main_type main_type;
     main_type n = to_unsigned(value);
     int num_digits = internal::count_digits(n);
-    if (width > num_digits)
-      out = std::fill_n(out, width - num_digits, '0');
+    if (width > num_digits) out = std::fill_n(out, width - num_digits, '0');
     out = format_decimal<char_type>(out, n, num_digits);
   }
 
-  void format_localized(const tm &time, const char *format) {
+  void format_localized(const tm& time, const char* format) {
     auto locale = context.locale().template get<std::locale>();
-    auto &facet = std::use_facet<std::time_put<char_type>>(locale);
+    auto& facet = std::use_facet<std::time_put<char_type>>(locale);
     std::basic_ostringstream<char_type> os;
     os.imbue(locale);
     facet.put(os, os, ' ', &time, format, format + std::strlen(format));
@@ -266,7 +259,7 @@ struct chrono_formatter {
     std::copy(str.begin(), str.end(), out);
   }
 
-  void on_text(const char_type *begin, const char_type *end) {
+  void on_text(const char_type* begin, const char_type* end) {
     std::copy(begin, end, out);
   }
 
@@ -286,24 +279,21 @@ struct chrono_formatter {
   void on_tz_name() {}
 
   void on_24_hour(numeric_system ns) {
-    if (ns == numeric_system::standard)
-      return write(hour(), 2);
+    if (ns == numeric_system::standard) return write(hour(), 2);
     auto time = tm();
     time.tm_hour = hour();
     format_localized(time, "%OH");
   }
 
   void on_12_hour(numeric_system ns) {
-    if (ns == numeric_system::standard)
-      return write(hour12(), 2);
+    if (ns == numeric_system::standard) return write(hour12(), 2);
     auto time = tm();
     time.tm_hour = hour();
     format_localized(time, "%OI");
   }
 
   void on_minute(numeric_system ns) {
-    if (ns == numeric_system::standard)
-      return write(minute(), 2);
+    if (ns == numeric_system::standard) return write(minute(), 2);
     auto time = tm();
     time.tm_min = minute();
     format_localized(time, "%OM");
@@ -341,30 +331,30 @@ struct chrono_formatter {
 };
 }  // namespace internal
 
-template <typename Period> FMT_CONSTEXPR const char *get_units() {
+template <typename Period> FMT_CONSTEXPR const char* get_units() {
   return FMT_NULL;
 }
-template <> FMT_CONSTEXPR const char *get_units<std::atto>() { return "as"; }
-template <> FMT_CONSTEXPR const char *get_units<std::femto>() { return "fs"; }
-template <> FMT_CONSTEXPR const char *get_units<std::pico>() { return "ps"; }
-template <> FMT_CONSTEXPR const char *get_units<std::nano>() { return "ns"; }
-template <> FMT_CONSTEXPR const char *get_units<std::micro>() { return "µs"; }
-template <> FMT_CONSTEXPR const char *get_units<std::milli>() { return "ms"; }
-template <> FMT_CONSTEXPR const char *get_units<std::centi>() { return "cs"; }
-template <> FMT_CONSTEXPR const char *get_units<std::deci>() { return "ds"; }
-template <> FMT_CONSTEXPR const char *get_units<std::ratio<1>>() { return "s"; }
-template <> FMT_CONSTEXPR const char *get_units<std::deca>() { return "das"; }
-template <> FMT_CONSTEXPR const char *get_units<std::hecto>() { return "hs"; }
-template <> FMT_CONSTEXPR const char *get_units<std::kilo>() { return "ks"; }
-template <> FMT_CONSTEXPR const char *get_units<std::mega>() { return "Ms"; }
-template <> FMT_CONSTEXPR const char *get_units<std::giga>() { return "Gs"; }
-template <> FMT_CONSTEXPR const char *get_units<std::tera>() { return "Ts"; }
-template <> FMT_CONSTEXPR const char *get_units<std::peta>() { return "Ps"; }
-template <> FMT_CONSTEXPR const char *get_units<std::exa>() { return "Es"; }
-template <> FMT_CONSTEXPR const char *get_units<std::ratio<60>>() {
+template <> FMT_CONSTEXPR const char* get_units<std::atto>() { return "as"; }
+template <> FMT_CONSTEXPR const char* get_units<std::femto>() { return "fs"; }
+template <> FMT_CONSTEXPR const char* get_units<std::pico>() { return "ps"; }
+template <> FMT_CONSTEXPR const char* get_units<std::nano>() { return "ns"; }
+template <> FMT_CONSTEXPR const char* get_units<std::micro>() { return "µs"; }
+template <> FMT_CONSTEXPR const char* get_units<std::milli>() { return "ms"; }
+template <> FMT_CONSTEXPR const char* get_units<std::centi>() { return "cs"; }
+template <> FMT_CONSTEXPR const char* get_units<std::deci>() { return "ds"; }
+template <> FMT_CONSTEXPR const char* get_units<std::ratio<1>>() { return "s"; }
+template <> FMT_CONSTEXPR const char* get_units<std::deca>() { return "das"; }
+template <> FMT_CONSTEXPR const char* get_units<std::hecto>() { return "hs"; }
+template <> FMT_CONSTEXPR const char* get_units<std::kilo>() { return "ks"; }
+template <> FMT_CONSTEXPR const char* get_units<std::mega>() { return "Ms"; }
+template <> FMT_CONSTEXPR const char* get_units<std::giga>() { return "Gs"; }
+template <> FMT_CONSTEXPR const char* get_units<std::tera>() { return "Ts"; }
+template <> FMT_CONSTEXPR const char* get_units<std::peta>() { return "Ps"; }
+template <> FMT_CONSTEXPR const char* get_units<std::exa>() { return "Es"; }
+template <> FMT_CONSTEXPR const char* get_units<std::ratio<60>>() {
   return "m";
 }
-template <> FMT_CONSTEXPR const char *get_units<std::ratio<3600>>() {
+template <> FMT_CONSTEXPR const char* get_units<std::ratio<3600>>() {
   return "h";
 }
 
@@ -378,12 +368,11 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   typedef std::chrono::duration<Rep, Period> duration;
 
   struct spec_handler {
-    formatter &f;
-    basic_parse_context<Char> &context;
+    formatter& f;
+    basic_parse_context<Char>& context;
     basic_string_view<Char> format_str;
 
-    template <typename Id>
-    FMT_CONSTEXPR arg_ref_type make_arg_ref(Id arg_id) {
+    template <typename Id> FMT_CONSTEXPR arg_ref_type make_arg_ref(Id arg_id) {
       context.check_arg_id(arg_id);
       return arg_ref_type(arg_id);
     }
@@ -398,13 +387,12 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       return arg_ref_type(context.next_arg_id());
     }
 
-    void on_error(const char *msg) { throw format_error(msg); }
+    void on_error(const char* msg) { throw format_error(msg); }
     void on_fill(Char fill) { f.spec.fill_ = fill; }
     void on_align(alignment align) { f.spec.align_ = align; }
     void on_width(unsigned width) { f.spec.width_ = width; }
 
-    template <typename Id>
-    void on_dynamic_width(Id arg_id) {
+    template <typename Id> void on_dynamic_width(Id arg_id) {
       f.width_ref = make_arg_ref(arg_id);
     }
   };
@@ -412,7 +400,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
  public:
   formatter() : spec() {}
 
-  FMT_CONSTEXPR auto parse(basic_parse_context<Char> &ctx)
+  FMT_CONSTEXPR auto parse(basic_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
     auto begin = ctx.begin(), end = ctx.end();
     if (begin == end) return begin;
@@ -421,14 +409,13 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     if (begin == end) return begin;
     begin = internal::parse_width(begin, end, handler);
     end = parse_chrono_format(begin, end, internal::chrono_format_checker());
-    format_str = basic_string_view<Char>(
-          &*begin, internal::to_unsigned(end - begin));
+    format_str =
+        basic_string_view<Char>(&*begin, internal::to_unsigned(end - begin));
     return end;
   }
 
   template <typename FormatContext>
-  auto format(const duration &d, FormatContext &ctx)
-      -> decltype(ctx.out()) {
+  auto format(const duration& d, FormatContext& ctx) -> decltype(ctx.out()) {
     auto begin = format_str.begin(), end = format_str.end();
     // As a possible future optimization, we could avoid extra copying if width
     // is not specified.
@@ -436,7 +423,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     typedef output_range<decltype(ctx.out()), Char> range;
     basic_writer<range> w(range(ctx.out()));
     if (begin == end || *begin == '}') {
-      if (const char *unit = get_units<Period>())
+      if (const char* unit = get_units<Period>())
         format_to(buf, "{}{}", d.count(), unit);
       else if (Period::den == 1)
         format_to(buf, "{}[{}]s", d.count(), Period::num);
@@ -449,8 +436,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       f.ms = std::chrono::duration_cast<std::chrono::milliseconds>(d - f.s);
       parse_chrono_format(begin, end, f);
     }
-    internal::handle_dynamic_spec<internal::width_checker>(
-      spec.width_, width_ref, ctx);
+    internal::handle_dynamic_spec<internal::width_checker>(spec.width_,
+                                                           width_ref, ctx);
     w.write(buf.data(), buf.size(), spec);
     return w.out();
   }

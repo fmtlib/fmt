@@ -34,18 +34,19 @@ std::tm make_second(int s) {
   return time;
 }
 
-std::string format_tm(const std::tm &time, const char *spec,
-                      const std::locale &loc) {
-  auto &facet = std::use_facet<std::time_put<char>>(loc);
+std::string format_tm(const std::tm& time, const char* spec,
+                      const std::locale& loc) {
+  auto& facet = std::use_facet<std::time_put<char>>(loc);
   std::ostringstream os;
   os.imbue(loc);
   facet.put(os, os, ' ', &time, spec, spec + std::strlen(spec));
   return os.str();
 }
 
-#define EXPECT_TIME(spec, time, duration) { \
-    std::locale loc("ja_JP.utf8"); \
-    EXPECT_EQ(format_tm(time, spec, loc), \
+#define EXPECT_TIME(spec, time, duration)                 \
+  {                                                       \
+    std::locale loc("ja_JP.utf8");                        \
+    EXPECT_EQ(format_tm(time, spec, loc),                 \
               fmt::format(loc, "{:" spec "}", duration)); \
   }
 
@@ -83,12 +84,12 @@ TEST(ChronoTest, FormatDefault) {
             fmt::format("{}", std::chrono::duration<int, std::exa>(42)));
   EXPECT_EQ("42m", fmt::format("{}", std::chrono::minutes(42)));
   EXPECT_EQ("42h", fmt::format("{}", std::chrono::hours(42)));
-  EXPECT_EQ("42[15]s",
-            fmt::format("{}",
-                        std::chrono::duration<int, std::ratio<15, 1>>(42)));
-  EXPECT_EQ("42[15/4]s",
-            fmt::format("{}",
-                        std::chrono::duration<int, std::ratio<15, 4>>(42)));
+  EXPECT_EQ(
+      "42[15]s",
+      fmt::format("{}", std::chrono::duration<int, std::ratio<15, 1>>(42)));
+  EXPECT_EQ(
+      "42[15/4]s",
+      fmt::format("{}", std::chrono::duration<int, std::ratio<15, 4>>(42)));
 }
 
 TEST(ChronoTest, Align) {
@@ -105,7 +106,6 @@ TEST(ChronoTest, Align) {
             fmt::format("{:~^12%H:%M:%S}", std::chrono::seconds(12345)));
   EXPECT_EQ("03:25:45    ",
             fmt::format("{:{}%H:%M:%S}", std::chrono::seconds(12345), 12));
-
 }
 
 TEST(ChronoTest, FormatSpecs) {
@@ -162,13 +162,14 @@ TEST(ChronoTest, InvalidSpecs) {
 }
 
 TEST(ChronoTest, Locale) {
-  const char *loc_name = "ja_JP.utf8";
+  const char* loc_name = "ja_JP.utf8";
   bool has_locale = false;
   std::locale loc;
   try {
     loc = std::locale(loc_name);
     has_locale = true;
-  } catch (const std::runtime_error &) {}
+  } catch (const std::runtime_error&) {
+  }
   if (!has_locale) {
     fmt::print("{} locale is missing.\n", loc_name);
     return;

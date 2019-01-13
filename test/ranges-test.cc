@@ -13,13 +13,13 @@
 #if (__cplusplus > 201402L) || \
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 
-#include "fmt/ranges.h"
-#include "gtest.h"
+#  include "fmt/ranges.h"
+#  include "gtest.h"
 
-#include <vector>
-#include <array>
-#include <map>
-#include <string>
+#  include <array>
+#  include <map>
+#  include <string>
+#  include <vector>
 
 TEST(RangesTest, FormatVector) {
   std::vector<int32_t> iv{1, 2, 3, 5, 7, 11};
@@ -45,15 +45,14 @@ TEST(RangesTest, FormatPair) {
 
 TEST(RangesTest, FormatTuple) {
   std::tuple<int64_t, float, std::string, char> tu1{42, 3.14159265358979f,
-                                              "this is tuple", 'i'};
+                                                    "this is tuple", 'i'};
   EXPECT_EQ("(42, 3.14159, \"this is tuple\", 'i')", fmt::format("{}", tu1));
 }
 
 struct my_struct {
   int32_t i;
   std::string str;  // can throw
-  template <std::size_t N>
-  decltype(auto) get() const noexcept {
+  template <std::size_t N> decltype(auto) get() const noexcept {
     if constexpr (N == 0)
       return i;
     else if constexpr (N == 1)
@@ -61,8 +60,7 @@ struct my_struct {
   }
 };
 
-template <std::size_t N>
-decltype(auto) get(const my_struct& s) noexcept {
+template <std::size_t N> decltype(auto) get(const my_struct& s) noexcept {
   return s.get<N>();
 }
 
@@ -71,8 +69,7 @@ namespace std {
 template <>
 struct tuple_size<my_struct> : std::integral_constant<std::size_t, 2> {};
 
-template <std::size_t N>
-struct tuple_element<N, my_struct> {
+template <std::size_t N> struct tuple_element<N, my_struct> {
   using type = decltype(std::declval<my_struct>().get<N>());
 };
 

@@ -8,8 +8,7 @@
 #include "fmt/locale.h"
 #include "gmock.h"
 
-template <typename Char>
-struct numpunct : std::numpunct<Char> {
+template <typename Char> struct numpunct : std::numpunct<Char> {
  protected:
   Char do_thousands_sep() const FMT_OVERRIDE { return '~'; }
 };

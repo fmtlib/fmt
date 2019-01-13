@@ -9,14 +9,14 @@
 #include "gtest.h"
 
 #if GTEST_HAS_DEATH_TEST
-# define EXPECT_DEBUG_DEATH_IF_SUPPORTED(statement, regex) \
+#  define EXPECT_DEBUG_DEATH_IF_SUPPORTED(statement, regex) \
     EXPECT_DEBUG_DEATH(statement, regex)
 #else
-# define EXPECT_DEBUG_DEATH_IF_SUPPORTED(statement, regex) \
+#  define EXPECT_DEBUG_DEATH_IF_SUPPORTED(statement, regex) \
     GTEST_UNSUPPORTED_DEATH_TEST_(statement, regex, )
 #endif
 
 TEST(AssertTest, Fail) {
-  EXPECT_DEBUG_DEATH_IF_SUPPORTED(
-      FMT_ASSERT(false, "don't panic!"), "don't panic!");
+  EXPECT_DEBUG_DEATH_IF_SUPPORTED(FMT_ASSERT(false, "don't panic!"),
+                                  "don't panic!");
 }

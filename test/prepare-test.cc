@@ -5,6 +5,7 @@
 //
 // For the license information refer to prepare.h.
 
+#include <stdint.h>
 #include <cctype>
 #include <cfloat>
 #include <climits>
@@ -13,12 +14,11 @@
 #include <deque>
 #include <list>
 #include <memory>
-#include <stdint.h>
 #include <string>
 
 // Check if fmt/prepare.h compiles with windows.h included before it.
 #ifdef _WIN32
-#include <windows.h>
+#  include <windows.h>
 #endif
 
 #include "fmt/prepare.h"
@@ -35,24 +35,24 @@ using testing::Return;
 using testing::StrictMock;
 
 class mock_parts_collector {
-public:
+ public:
   MOCK_METHOD1(add, void(fmt::format_part<char>));
   MOCK_METHOD1(substitute_last, void(fmt::format_part<char>));
   MOCK_METHOD0(last, fmt::format_part<char>());
 };
 
 FMT_BEGIN_NAMESPACE
-bool operator==(const internal::string_view_metadata &lhs,
-                const internal::string_view_metadata &rhs) {
+bool operator==(const internal::string_view_metadata& lhs,
+                const internal::string_view_metadata& rhs) {
   return std::tie(lhs.offset_, lhs.size_) == std::tie(rhs.offset_, rhs.size_);
 }
-bool operator!=(const internal::string_view_metadata &lhs,
-                const internal::string_view_metadata &rhs) {
+bool operator!=(const internal::string_view_metadata& lhs,
+                const internal::string_view_metadata& rhs) {
   return !(lhs == rhs);
 }
 
-bool operator==(const format_part<char>::specification &lhs,
-                const format_part<char>::specification &rhs) {
+bool operator==(const format_part<char>::specification& lhs,
+                const format_part<char>::specification& rhs) {
   if (lhs.arg_id.which != rhs.arg_id.which) {
     return false;
   }
@@ -79,13 +79,13 @@ bool operator==(const format_part<char>::specification &lhs,
                   rhs.parsed_specs.flags, rhs.parsed_specs.type);
 }
 
-bool operator!=(const format_part<char>::specification &lhs,
-                const format_part<char>::specification &rhs) {
+bool operator!=(const format_part<char>::specification& lhs,
+                const format_part<char>::specification& rhs) {
   return !(lhs == rhs);
 }
 
-bool operator==(const format_part<char> &lhs,
-                const fmt::format_part<char> &rhs) {
+bool operator==(const format_part<char>& lhs,
+                const fmt::format_part<char>& rhs) {
   typedef format_part<char>::which_value which_value;
 
   if (lhs.which != rhs.which ||
@@ -114,8 +114,8 @@ bool operator==(const format_part<char> &lhs,
   return false;
 }
 
-bool operator!=(const fmt::format_part<char> &lhs,
-                const fmt::format_part<char> &rhs) {
+bool operator!=(const fmt::format_part<char>& lhs,
+                const fmt::format_part<char>& rhs) {
   return !(lhs == rhs);
 }
 FMT_END_NAMESPACE
@@ -303,13 +303,15 @@ TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithPassedNamedId) {
   const auto expected_third_arg_id = fmt::string_view(format.data() + 6, 3);
   const auto expected_third_arg_view_metadata =
       fmt::internal::string_view_metadata(6, 3);
-  EXPECT_CALL(parts, add(format_part(
-                         named_argument_id(expected_first_arg_view_metadata))));
+  EXPECT_CALL(
+      parts,
+      add(format_part(named_argument_id(expected_first_arg_view_metadata))));
   EXPECT_CALL(
       parts,
       add(format_part(named_argument_id(expected_second_arg_view_metadata))));
-  EXPECT_CALL(parts, add(format_part(
-                         named_argument_id(expected_third_arg_view_metadata))));
+  EXPECT_CALL(
+      parts,
+      add(format_part(named_argument_id(expected_third_arg_view_metadata))));
 
   handler.on_arg_id(expected_first_arg_id);
   handler.on_arg_id(expected_second_arg_id);
@@ -423,13 +425,13 @@ TEST(PrepareTest, CompileTimePreparedPartsTypeProvider) {
   check_prepared_parts_type<3u>(FMT_STRING("text{}text"));
   check_prepared_parts_type<3u>(FMT_STRING("{:{}.{}} {:{}}"));
 
-  check_prepared_parts_type<3u>(FMT_STRING("{{{}}}"));  // '{', 'argument', '}'
-  check_prepared_parts_type<2u>(FMT_STRING("text{{"));  // 'text', '{'
-  check_prepared_parts_type<3u>(FMT_STRING("text{{ ")); // 'text', '{', ' '
-  check_prepared_parts_type<2u>(FMT_STRING("}}text"));  // '}', text
-  check_prepared_parts_type<2u>(FMT_STRING("text}}text")); // 'text}', 'text'
+  check_prepared_parts_type<3u>(FMT_STRING("{{{}}}"));   // '{', 'argument', '}'
+  check_prepared_parts_type<2u>(FMT_STRING("text{{"));   // 'text', '{'
+  check_prepared_parts_type<3u>(FMT_STRING("text{{ "));  // 'text', '{', ' '
+  check_prepared_parts_type<2u>(FMT_STRING("}}text"));   // '}', text
+  check_prepared_parts_type<2u>(FMT_STRING("text}}text"));  // 'text}', 'text'
   check_prepared_parts_type<4u>(
-      FMT_STRING("text{{}}text")); // 'text', '{', '}', 'text'
+      FMT_STRING("text{{}}text"));  // 'text', '{', '}', 'text'
 }
 #endif
 
@@ -500,13 +502,13 @@ TEST(PrepareTest, UserProvidedPartsContainerUnderlyingContainer) {
 }
 
 class custom_parts_container {
-public:
+ public:
   typedef fmt::format_part<char> format_part_type;
 
-private:
+ private:
   typedef std::deque<format_part_type> parts;
 
-public:
+ public:
   void add(format_part_type part) { parts_.push_back(std::move(part)); }
 
   void substitute_last(format_part_type part) {
@@ -532,7 +534,7 @@ public:
     return parts_.end();
   }
 
-private:
+ private:
   parts parts_;
 };
 
@@ -547,10 +549,10 @@ TEST(PrepareTest, UserProvidedPartsContainer) {
 }
 
 TEST(PrepareTest, PassConstCharPointerFormat) {
-  const char *c_format = "test {}";
+  const char* c_format = "test {}";
   const auto prepared = fmt::prepare<int>(c_format);
   EXPECT_EQ("test 42", prepared.format(42));
-  const wchar_t *wc_format = L"test {}";
+  const wchar_t* wc_format = L"test {}";
   const auto wprepared = fmt::prepare<int>(wc_format);
   EXPECT_EQ(L"test 42", wprepared.format(42));
 }
@@ -607,10 +609,10 @@ TEST(PrepareTest, PassCompileString) {
 
 template <typename T> struct user_allocator {
   typedef T value_type;
-  typedef value_type *pointer;
-  typedef const value_type *const_pointer;
-  typedef value_type &reference;
-  typedef const value_type &const_reference;
+  typedef value_type* pointer;
+  typedef const value_type* const_pointer;
+  typedef value_type& reference;
+  typedef const value_type& const_reference;
   typedef std::size_t size_type;
   typedef std::ptrdiff_t difference_type;
 
@@ -618,7 +620,7 @@ template <typename T> struct user_allocator {
 
   user_allocator() = default;
   ~user_allocator() = default;
-  template <typename U> user_allocator(const user_allocator<U> &) {}
+  template <typename U> user_allocator(const user_allocator<U>&) {}
 
   pointer allocate(size_type cnt,
                    typename std::allocator<void>::const_pointer = 0) {
@@ -627,12 +629,12 @@ template <typename T> struct user_allocator {
 
   void deallocate(pointer p, size_type cnt) { delete[] p; }
 
-  void construct(pointer p, const value_type &val) { new (p) value_type(val); }
+  void construct(pointer p, const value_type& val) { new (p) value_type(val); }
 
   void destroy(pointer p) { (*p).~value_type(); }
 
-  bool operator==(const user_allocator &other) const { return true; }
-  bool operator!=(const user_allocator &other) const { return false; }
+  bool operator==(const user_allocator& other) const { return true; }
+  bool operator!=(const user_allocator& other) const { return false; }
 };
 
 TEST(PrepareTest, PassUserTypeFormat) {

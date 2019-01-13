@@ -25,20 +25,18 @@
 #undef max
 
 #if FMT_HAS_CPP_ATTRIBUTE(noreturn)
-# define FMT_NORETURN [[noreturn]]
+#  define FMT_NORETURN [[noreturn]]
 #else
-# define FMT_NORETURN
+#  define FMT_NORETURN
 #endif
 
 using fmt::internal::fp;
 
-template <bool is_iec559>
-void test_construct_from_double() {
+template <bool is_iec559> void test_construct_from_double() {
   fmt::print("warning: double is not IEC559, skipping FP tests\n");
 }
 
-template <>
-void test_construct_from_double<true>() {
+template <> void test_construct_from_double<true>() {
   auto v = fp(1.23);
   EXPECT_EQ(v.f, 0x13ae147ae147aeu);
   EXPECT_EQ(v.e, -52);
@@ -107,14 +105,10 @@ TEST(FPTest, Grisu2FormatCompilesWithNonIEEEDouble) {
   grisu2_format(4.2f, buf, fmt::core_format_specs());
 }
 
-template <typename T>
-struct ValueExtractor: fmt::internal::function<T> {
-  T operator()(T value) {
-    return value;
-  }
+template <typename T> struct ValueExtractor : fmt::internal::function<T> {
+  T operator()(T value) { return value; }
 
-  template <typename U>
-  FMT_NORETURN T operator()(U) {
+  template <typename U> FMT_NORETURN T operator()(U) {
     throw std::runtime_error(fmt::format("invalid type {}", typeid(U).name()));
   }
 };
@@ -136,7 +130,7 @@ TEST(FormatTest, FormatNegativeNaN) {
 }
 
 TEST(FormatTest, StrError) {
-  char *message = FMT_NULL;
+  char* message = FMT_NULL;
   char buffer[BUFFER_SIZE];
   EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = FMT_NULL, 0),
                 "invalid buffer");
@@ -178,8 +172,8 @@ TEST(FormatTest, FormatErrorCode) {
   }
   {
     fmt::memory_buffer buffer;
-    std::string prefix(
-        fmt::inline_buffer_size - msg.size() - sep.size() + 1, 'x');
+    std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size() + 1,
+                       'x');
     fmt::format_error_code(buffer, 42, prefix);
     EXPECT_EQ(msg, to_string(buffer));
   }
@@ -188,8 +182,7 @@ TEST(FormatTest, FormatErrorCode) {
     // Test maximum buffer size.
     msg = fmt::format("error {}", codes[i]);
     fmt::memory_buffer buffer;
-    std::string prefix(
-        fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
+    std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
     fmt::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(prefix + sep + msg, to_string(buffer));
     std::size_t size = fmt::inline_buffer_size;
@@ -231,7 +224,7 @@ TEST(ColorsTest, ColorsPrint) {
   EXPECT_WRITE(stderr, fmt::print(stderr, fmt::emphasis::bold, "bold error"),
                "\x1b[1mbold error\x1b[0m");
   EXPECT_WRITE(stderr, fmt::print(stderr, fg(fmt::color::blue), "blue log"),
-                 "\x1b[38;2;000;000;255mblue log\x1b[0m");
+               "\x1b[38;2;000;000;255mblue log\x1b[0m");
   EXPECT_WRITE(stdout, fmt::print(fmt::text_style(), "hi"), "hi");
   EXPECT_WRITE(stdout, fmt::print(fg(fmt::terminal_color::red), "tred"),
                "\x1b[31mtred\x1b[0m");
@@ -250,18 +243,19 @@ TEST(ColorsTest, ColorsFormat) {
             "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
   EXPECT_EQ(fmt::format(fg(fmt::color::blue), "blue"),
             "\x1b[38;2;000;000;255mblue\x1b[0m");
-  EXPECT_EQ(fmt::format(fg(fmt::color::blue) | bg(fmt::color::red), "two color"),
-            "\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m");
-  EXPECT_EQ(fmt::format(fmt::emphasis::bold, "bold"),
-            "\x1b[1mbold\x1b[0m");
+  EXPECT_EQ(
+      fmt::format(fg(fmt::color::blue) | bg(fmt::color::red), "two color"),
+      "\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m");
+  EXPECT_EQ(fmt::format(fmt::emphasis::bold, "bold"), "\x1b[1mbold\x1b[0m");
   EXPECT_EQ(fmt::format(fmt::emphasis::italic, "italic"),
             "\x1b[3mitalic\x1b[0m");
   EXPECT_EQ(fmt::format(fmt::emphasis::underline, "underline"),
             "\x1b[4munderline\x1b[0m");
   EXPECT_EQ(fmt::format(fmt::emphasis::strikethrough, "strikethrough"),
             "\x1b[9mstrikethrough\x1b[0m");
-  EXPECT_EQ(fmt::format(fg(fmt::color::blue) | fmt::emphasis::bold, "blue/bold"),
-            "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m");
+  EXPECT_EQ(
+      fmt::format(fg(fmt::color::blue) | fmt::emphasis::bold, "blue/bold"),
+      "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m");
   EXPECT_EQ(fmt::format(fmt::emphasis::bold, "bold error"),
             "\x1b[1mbold error\x1b[0m");
   EXPECT_EQ(fmt::format(fg(fmt::color::blue), "blue log"),

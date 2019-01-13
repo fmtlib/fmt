@@ -13,7 +13,7 @@
 
 class assertion_failure : public std::logic_error {
  public:
-  explicit assertion_failure(const char *message) : std::logic_error(message) {}
+  explicit assertion_failure(const char* message) : std::logic_error(message) {}
 };
 
 #define FMT_ASSERT(condition, message) \

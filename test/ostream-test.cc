@@ -16,26 +16,26 @@
 using fmt::format;
 using fmt::format_error;
 
-static std::ostream &operator<<(std::ostream &os, const Date &d) {
+static std::ostream& operator<<(std::ostream& os, const Date& d) {
   os << d.year() << '-' << d.month() << '-' << d.day();
   return os;
 }
 
-static std::wostream &operator<<(std::wostream &os, const Date &d) {
+static std::wostream& operator<<(std::wostream& os, const Date& d) {
   os << d.year() << L'-' << d.month() << L'-' << d.day();
   return os;
 }
 
 enum TestEnum {};
-static std::ostream &operator<<(std::ostream &os, TestEnum) {
+static std::ostream& operator<<(std::ostream& os, TestEnum) {
   return os << "TestEnum";
 }
 
-static std::wostream &operator<<(std::wostream &os, TestEnum) {
+static std::wostream& operator<<(std::wostream& os, TestEnum) {
   return os << L"TestEnum";
 }
 
-enum TestEnum2 {A};
+enum TestEnum2 { A };
 
 TEST(OStreamTest, Enum) {
   EXPECT_FALSE((fmt::convert_to_int<TestEnum, char>::value));
@@ -48,14 +48,14 @@ TEST(OStreamTest, Enum) {
 
 typedef fmt::back_insert_range<fmt::internal::buffer> range;
 
-struct test_arg_formatter: fmt::arg_formatter<range> {
-  test_arg_formatter(fmt::format_context &ctx, fmt::format_specs &s)
-    : fmt::arg_formatter<range>(ctx, &s) {}
+struct test_arg_formatter : fmt::arg_formatter<range> {
+  test_arg_formatter(fmt::format_context& ctx, fmt::format_specs& s)
+      : fmt::arg_formatter<range>(ctx, &s) {}
 };
 
 TEST(OStreamTest, CustomArg) {
   fmt::memory_buffer buffer;
-  fmt::internal::buffer &base = buffer;
+  fmt::internal::buffer& base = buffer;
   fmt::format_context ctx(std::back_inserter(base), "", fmt::format_args());
   fmt::format_specs spec;
   test_arg_formatter af(ctx, spec);
@@ -75,20 +75,20 @@ TEST(OStreamTest, Format) {
 TEST(OStreamTest, FormatSpecs) {
   EXPECT_EQ("def  ", format("{0:<5}", TestString("def")));
   EXPECT_EQ("  def", format("{0:>5}", TestString("def")));
-  EXPECT_THROW_MSG(format("{0:=5}", TestString("def")),
-      format_error, "format specifier requires numeric argument");
+  EXPECT_THROW_MSG(format("{0:=5}", TestString("def")), format_error,
+                   "format specifier requires numeric argument");
   EXPECT_EQ(" def ", format("{0:^5}", TestString("def")));
   EXPECT_EQ("def**", format("{0:*<5}", TestString("def")));
-  EXPECT_THROW_MSG(format("{0:+}", TestString()),
-      format_error, "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(format("{0:-}", TestString()),
-      format_error, "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(format("{0: }", TestString()),
-      format_error, "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(format("{0:#}", TestString()),
-      format_error, "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(format("{0:05}", TestString()),
-      format_error, "format specifier requires numeric argument");
+  EXPECT_THROW_MSG(format("{0:+}", TestString()), format_error,
+                   "format specifier requires numeric argument");
+  EXPECT_THROW_MSG(format("{0:-}", TestString()), format_error,
+                   "format specifier requires numeric argument");
+  EXPECT_THROW_MSG(format("{0: }", TestString()), format_error,
+                   "format specifier requires numeric argument");
+  EXPECT_THROW_MSG(format("{0:#}", TestString()), format_error,
+                   "format specifier requires numeric argument");
+  EXPECT_THROW_MSG(format("{0:05}", TestString()), format_error,
+                   "format specifier requires numeric argument");
   EXPECT_EQ("test         ", format("{0:13}", TestString("test")));
   EXPECT_EQ("test         ", format("{0:{1}}", TestString("test"), 13));
   EXPECT_EQ("te", format("{0:.2}", TestString("test")));
@@ -96,7 +96,7 @@ TEST(OStreamTest, FormatSpecs) {
 }
 
 struct EmptyTest {};
-static std::ostream &operator<<(std::ostream &os, EmptyTest) {
+static std::ostream& operator<<(std::ostream& os, EmptyTest) {
   return os << "";
 }
 
@@ -116,7 +116,7 @@ TEST(OStreamTest, Print) {
 TEST(OStreamTest, WriteToOStream) {
   std::ostringstream os;
   fmt::memory_buffer buffer;
-  const char *foo = "foo";
+  const char* foo = "foo";
   buffer.append(foo, foo + std::strlen(foo));
   fmt::internal::write(os, buffer);
   EXPECT_EQ("foo", os.str());
@@ -125,8 +125,7 @@ TEST(OStreamTest, WriteToOStream) {
 TEST(OStreamTest, WriteToOStreamMaxSize) {
   std::size_t max_size = std::numeric_limits<std::size_t>::max();
   std::streamsize max_streamsize = std::numeric_limits<std::streamsize>::max();
-  if (max_size <= fmt::internal::to_unsigned(max_streamsize))
-    return;
+  if (max_size <= fmt::internal::to_unsigned(max_streamsize)) return;
 
   struct test_buffer : fmt::internal::buffer {
     explicit test_buffer(std::size_t size) { resize(size); }
@@ -134,19 +133,19 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   } buffer(max_size);
 
   struct mock_streambuf : std::streambuf {
-    MOCK_METHOD2(xsputn, std::streamsize (const void *s, std::streamsize n));
-    std::streamsize xsputn(const char *s, std::streamsize n) {
-      const void *v = s;
+    MOCK_METHOD2(xsputn, std::streamsize(const void* s, std::streamsize n));
+    std::streamsize xsputn(const char* s, std::streamsize n) {
+      const void* v = s;
       return xsputn(v, n);
     }
   } streambuf;
 
   struct test_ostream : std::ostream {
-    explicit test_ostream(mock_streambuf &buffer) : std::ostream(&buffer) {}
+    explicit test_ostream(mock_streambuf& buffer) : std::ostream(&buffer) {}
   } os(streambuf);
 
   testing::InSequence sequence;
-  const char *data = FMT_NULL;
+  const char* data = FMT_NULL;
   typedef std::make_unsigned<std::streamsize>::type ustreamsize;
   ustreamsize size = max_size;
   do {
@@ -173,11 +172,11 @@ TEST(OStreamTest, ConstexprString) {
 namespace fmt_test {
 struct ABC {};
 
-template <typename Output> Output &operator<<(Output &out, ABC) {
+template <typename Output> Output& operator<<(Output& out, ABC) {
   out << "ABC";
   return out;
 }
-} // namespace fmt_test
+}  // namespace fmt_test
 
 TEST(FormatTest, FormatToN) {
   char buffer[4];

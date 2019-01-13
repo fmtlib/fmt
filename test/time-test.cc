@@ -6,17 +6,17 @@
 // For the license information refer to format.h.
 
 #ifdef WIN32
-#define _CRT_SECURE_NO_WARNINGS
+#  define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include "gmock.h"
-#include "fmt/locale.h"
 #include "fmt/time.h"
+#include "fmt/locale.h"
+#include "gmock.h"
 
 TEST(TimeTest, Format) {
   std::tm tm = std::tm();
   tm.tm_year = 116;
-  tm.tm_mon  = 3;
+  tm.tm_mon = 3;
   tm.tm_mday = 25;
   EXPECT_EQ("The date is 2016-04-25.",
             fmt::format("The date is {:%Y-%m-%d}.", tm));
@@ -24,8 +24,7 @@ TEST(TimeTest, Format) {
 
 TEST(TimeTest, GrowBuffer) {
   std::string s = "{:";
-  for (int i = 0; i < 30; ++i)
-    s += "%c";
+  for (int i = 0; i < 30; ++i) s += "%c";
   s += "}\n";
   std::time_t t = std::time(FMT_NULL);
   fmt::format(s, *std::localtime(&t));
@@ -39,19 +38,13 @@ TEST(TimeTest, FormatToEmptyContainer) {
   EXPECT_EQ(s, "42");
 }
 
-TEST(TimeTest, EmptyResult) {
-  EXPECT_EQ("", fmt::format("{}", std::tm()));
-}
+TEST(TimeTest, EmptyResult) { EXPECT_EQ("", fmt::format("{}", std::tm())); }
 
-static bool EqualTime(const std::tm &lhs, const std::tm &rhs) {
-  return lhs.tm_sec == rhs.tm_sec &&
-         lhs.tm_min == rhs.tm_min &&
-         lhs.tm_hour == rhs.tm_hour &&
-         lhs.tm_mday == rhs.tm_mday &&
-         lhs.tm_mon == rhs.tm_mon &&
-         lhs.tm_year == rhs.tm_year &&
-         lhs.tm_wday == rhs.tm_wday &&
-         lhs.tm_yday == rhs.tm_yday &&
+static bool EqualTime(const std::tm& lhs, const std::tm& rhs) {
+  return lhs.tm_sec == rhs.tm_sec && lhs.tm_min == rhs.tm_min &&
+         lhs.tm_hour == rhs.tm_hour && lhs.tm_mday == rhs.tm_mday &&
+         lhs.tm_mon == rhs.tm_mon && lhs.tm_year == rhs.tm_year &&
+         lhs.tm_wday == rhs.tm_wday && lhs.tm_yday == rhs.tm_yday &&
          lhs.tm_isdst == rhs.tm_isdst;
 }
 
