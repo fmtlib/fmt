@@ -627,7 +627,7 @@ template <typename T> struct user_allocator {
     return new value_type[cnt];
   }
 
-  void deallocate(pointer p, size_type cnt) { delete[] p; }
+  void deallocate(pointer p, size_type) { delete[] p; }
 
   void construct(pointer p, const value_type& val) { new (p) value_type(val); }
 
