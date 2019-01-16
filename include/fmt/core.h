@@ -334,7 +334,8 @@ struct error_handler {
 template <typename T> struct no_formatter_error : std::false_type {};
 }  // namespace internal
 
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 405
+// GCC 4.6.x cannot expand `T...`.
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 407
 template <typename... T> struct is_constructible : std::false_type {};
 #else
 template <typename... T>
