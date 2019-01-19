@@ -2142,13 +2142,14 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
 
 struct test_context {
   typedef char char_type;
+  typedef fmt::basic_format_arg<test_context> format_arg;
 
   FMT_CONSTEXPR fmt::basic_format_arg<test_context> next_arg() {
     return fmt::internal::make_arg<test_context>(11);
   }
 
   template <typename Id>
-  FMT_CONSTEXPR fmt::basic_format_arg<test_context> get_arg(Id) {
+  FMT_CONSTEXPR fmt::basic_format_arg<test_context> arg(Id) {
     return fmt::internal::make_arg<test_context>(22);
   }
 

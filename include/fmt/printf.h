@@ -418,7 +418,7 @@ typename basic_printf_context<OutputIt, Char, AF>::format_arg
 basic_printf_context<OutputIt, Char, AF>::get_arg(unsigned arg_index) {
   if (arg_index == std::numeric_limits<unsigned>::max())
     return this->do_get_arg(this->parse_context().next_arg_id());
-  return base::get_arg(arg_index - 1);
+  return base::arg(arg_index - 1);
 }
 
 template <typename OutputIt, typename Char, typename AF>

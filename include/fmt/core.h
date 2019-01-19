@@ -1042,7 +1042,7 @@ class context_base {
 
   // Checks if manual indexing is used and returns the argument with
   // specified index.
-  format_arg get_arg(unsigned arg_id) {
+  format_arg arg(unsigned arg_id) {
     return this->parse_context().check_arg_id(arg_id) ? this->do_get_arg(arg_id)
                                                       : format_arg();
   }
@@ -1125,11 +1125,11 @@ class basic_format_context
   void operator=(const basic_format_context&) = delete;
 
   typedef internal::context_base<OutputIt, basic_format_context, Char> base;
-  typedef typename base::format_arg format_arg;
-  using base::get_arg;
+  using base::arg;
 
  public:
   using typename base::iterator;
+  typedef typename base::format_arg format_arg;
 
   /**
    Constructs a ``basic_format_context`` object. References to the arguments are
@@ -1143,11 +1143,15 @@ class basic_format_context
   format_arg next_arg() {
     return this->do_get_arg(this->parse_context().next_arg_id());
   }
-  format_arg get_arg(unsigned arg_id) { return this->do_get_arg(arg_id); }
+  format_arg arg(unsigned arg_id) { return this->do_get_arg(arg_id); }
 
   // Checks if manual indexing is used and returns the argument with the
   // specified name.
-  format_arg get_arg(basic_string_view<char_type> name);
+  format_arg arg(basic_string_view<char_type> name);
+
+  // DEPRECATED!
+  format_arg get_arg(unsigned arg_id) { return arg(arg_id); }
+  format_arg get_arg(basic_string_view<char_type> name) { return arg(name); }
 };
 
 template <typename Char> struct buffer_context {

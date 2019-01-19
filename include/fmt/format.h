@@ -1662,10 +1662,9 @@ template <typename Handler> class specs_checker : public Handler {
   numeric_specs_checker<Handler> checker_;
 };
 
-template <template <typename> class Handler, typename T, typename Context,
+template <template <typename> class Handler, typename T, typename FormatArg,
           typename ErrorHandler>
-FMT_CONSTEXPR void set_dynamic_spec(T& value, basic_format_arg<Context> arg,
-                                    ErrorHandler eh) {
+FMT_CONSTEXPR void set_dynamic_spec(T& value, FormatArg arg, ErrorHandler eh) {
   unsigned long long big_value =
       visit_format_arg(Handler<ErrorHandler>(eh), arg);
   if (big_value > to_unsigned((std::numeric_limits<int>::max)()))
@@ -1698,14 +1697,15 @@ class specs_handler : public specs_setter<typename Context::char_type> {
   void on_error(const char* message) { context_.on_error(message); }
 
  private:
-  FMT_CONSTEXPR basic_format_arg<Context> get_arg(auto_id) {
-    return context_.next_arg();
-  }
+  // This is only needed for compatibility with gcc 4.4.
+  typedef typename Context::format_arg format_arg;
+
+  FMT_CONSTEXPR format_arg get_arg(auto_id) { return context_.next_arg(); }
 
   template <typename Id>
-  FMT_CONSTEXPR basic_format_arg<Context> get_arg(Id arg_id) {
+  FMT_CONSTEXPR format_arg get_arg(Id arg_id) {
     context_.parse_context().check_arg_id(arg_id);
-    return context_.get_arg(arg_id);
+    return context_.arg(arg_id);
   }
 
   Context& context_;
@@ -2174,12 +2174,12 @@ void handle_dynamic_spec(Spec& value, arg_ref<typename Context::char_type> ref,
   case arg_ref<char_type>::NONE:
     break;
   case arg_ref<char_type>::INDEX:
-    internal::set_dynamic_spec<Handler>(value, ctx.get_arg(ref.val.index),
+    internal::set_dynamic_spec<Handler>(value, ctx.arg(ref.val.index),
                                         ctx.error_handler());
     break;
   case arg_ref<char_type>::NAME: {
     const auto arg_id = ref.val.name.to_view(ctx.parse_context().begin());
-    internal::set_dynamic_spec<Handler>(value, ctx.get_arg(arg_id),
+    internal::set_dynamic_spec<Handler>(value, ctx.arg(arg_id),
                                         ctx.error_handler());
   } break;
   }
@@ -3050,7 +3050,7 @@ template <typename Char = char> class dynamic_formatter {
 
 template <typename Range, typename Char>
 typename basic_format_context<Range, Char>::format_arg
-basic_format_context<Range, Char>::get_arg(basic_string_view<char_type> name) {
+basic_format_context<Range, Char>::arg(basic_string_view<char_type> name) {
   map_.init(this->args());
   format_arg arg = map_.find(name);
   if (arg.type() == internal::none_type) this->on_error("argument not found");
