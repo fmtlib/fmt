@@ -50,6 +50,8 @@ std::string format_tm(const std::tm& time, const char* spec,
               fmt::format(loc, "{:" spec "}", duration)); \
   }
 
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+
 TEST(ChronoTest, FormatDefault) {
   EXPECT_EQ("42s", fmt::format("{}", std::chrono::seconds(42)));
   EXPECT_EQ("42as",
@@ -186,3 +188,5 @@ TEST(ChronoTest, Locale) {
   EXPECT_TIME("%r", time, sec);
   EXPECT_TIME("%p", time, sec);
 }
+
+#endif  // FMT_STATIC_THOUSANDS_SEPARATOR

@@ -9,8 +9,11 @@
 
 FMT_BEGIN_NAMESPACE
 template struct internal::basic_data<void>;
+
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 template FMT_API internal::locale_ref::locale_ref(const std::locale& loc);
 template FMT_API std::locale internal::locale_ref::get<std::locale>() const;
+#endif
 
 // Explicit instantiations for char.
 
