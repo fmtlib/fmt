@@ -16,11 +16,6 @@ It can be used as a safe and fast alternative to (s)printf and IOStreams.
 
 `Documentation <http://fmtlib.net/latest/>`__
 
-This is a development branch that implements the C++ standards proposal `P0645
-Text Formatting <http://fmtlib.net/Text%20Formatting.html>`__.
-Released versions are available from the `Releases page
-<https://github.com/fmtlib/fmt/releases>`__.
-
 Features
 --------
 
@@ -32,6 +27,8 @@ Features
 * Safe `printf implementation
   <http://fmtlib.net/latest/api.html#printf-formatting>`_ including
   the POSIX extension for positional arguments.
+* Implementation of the ISO C++ standards proposal `P0645
+  Text Formatting <http://fmtlib.net/Text%20Formatting.html>`__.
 * Support for user-defined types.
 * High speed: performance of the format API is close to that of glibc's `printf
   <http://en.cppreference.com/w/cpp/io/c/fprintf>`_ and better than the
