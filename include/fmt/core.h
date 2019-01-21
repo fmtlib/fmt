@@ -333,22 +333,19 @@ struct error_handler {
 
 // GCC 4.6.x cannot expand `T...`.
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 407
-template <typename... T> struct is_constructible : std::false_type {};
-
 typedef char yes[1];
 typedef char no[2];
 
-template <typename T> struct is_default_constructible {
-  template <typename U> static yes& test(int (*)[sizeof(new U)]);
+template <typename T, typename V> struct is_constructible {
+  template <typename U> static yes& test(int (*)[sizeof(new U(declval<V>()))]);
   template <typename U> static no& test(...);
   enum { value = sizeof(test<T>(FMT_NULL)) == sizeof(yes) };
 };
 #else
 template <typename... T>
 struct is_constructible : std::is_constructible<T...> {};
-template <typename T>
-struct is_default_constructible : std::is_default_constructible<T> {};
 #endif
+struct dummy_formatter_arg {};  // Workaround broken is_constructible in MSVC.
 }  // namespace internal
 
 /**
@@ -506,7 +503,7 @@ template <typename Context> class basic_format_args;
 // A formatter for objects of type T.
 template <typename T, typename Char = char, typename Enable = void>
 struct formatter {
-  formatter() = delete;
+  explicit formatter(internal::dummy_formatter_arg);
 };
 
 template <typename T, typename Char, typename Enable = void>
@@ -632,11 +629,12 @@ template <typename Context> class value {
   }
   value(const void* val) { pointer = val; }
 
-  template <typename T,
-            typename std::enable_if<
-                is_default_constructible<
-                    typename Context::template formatter_type<T>::type>::value,
-                int>::type = 0>
+  template <
+      typename T,
+      typename std::enable_if<
+          !is_constructible<typename Context::template formatter_type<T>::type,
+                            internal::dummy_formatter_arg>::value,
+          int>::type = 0>
   explicit value(const T& val) {
     custom.value = &val;
     // Get the formatter type through the context to allow different contexts
@@ -646,11 +644,12 @@ template <typename Context> class value {
     custom.format = &format_custom_arg<T, formatter>;
   }
 
-  template <typename T,
-            typename std::enable_if<
-                !is_default_constructible<
-                    typename Context::template formatter_type<T>::type>::value,
-                int>::type = 0>
+  template <
+      typename T,
+      typename std::enable_if<
+          is_constructible<typename Context::template formatter_type<T>::type,
+                           internal::dummy_formatter_arg>::value,
+          int>::type = 0>
   explicit value(const T& val) {
     custom.value = &val;
     custom.format =
