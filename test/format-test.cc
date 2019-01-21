@@ -2144,6 +2144,10 @@ struct test_context {
   typedef char char_type;
   typedef fmt::basic_format_arg<test_context> format_arg;
 
+  template <typename T> struct formatter_type {
+    typedef fmt::formatter<T, char_type> type;
+  };
+
   FMT_CONSTEXPR fmt::basic_format_arg<test_context> next_arg() {
     return fmt::internal::make_arg<test_context>(11);
   }

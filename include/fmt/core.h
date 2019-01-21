@@ -331,16 +331,25 @@ struct error_handler {
   FMT_API void on_error(const char* message);
 };
 
-template <typename T> struct no_formatter_error : std::false_type {};
-}  // namespace internal
-
 // GCC 4.6.x cannot expand `T...`.
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 407
 template <typename... T> struct is_constructible : std::false_type {};
+
+typedef char yes[1];
+typedef char no[2];
+
+template <typename T> struct is_default_constructible {
+  template <typename U> static yes& test(int (*)[sizeof(new U)]);
+  template <typename U> static no& test(...);
+  enum { value = sizeof(test<T>(FMT_NULL)) == sizeof(yes) };
+};
 #else
 template <typename... T>
 struct is_constructible : std::is_constructible<T...> {};
+template <typename T>
+struct is_default_constructible : std::is_default_constructible<T> {};
 #endif
+}  // namespace internal
 
 /**
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
@@ -492,22 +501,12 @@ FMT_CONSTEXPR basic_string_view<typename S::char_type> to_string_view(
 }
 
 template <typename Context> class basic_format_arg;
-
 template <typename Context> class basic_format_args;
 
 // A formatter for objects of type T.
 template <typename T, typename Char = char, typename Enable = void>
 struct formatter {
-  static_assert(
-      internal::no_formatter_error<T>::value,
-      "don't know how to format the type, include fmt/ostream.h if it provides "
-      "an operator<< that should be used");
-
-  // The following functions are not defined intentionally.
-  template <typename ParseContext>
-  typename ParseContext::iterator parse(ParseContext&);
-  template <typename FormatContext>
-  auto format(const T& val, FormatContext& ctx) -> decltype(ctx.out());
+  formatter() = delete;
 };
 
 template <typename T, typename Char, typename Enable = void>
@@ -516,6 +515,16 @@ struct convert_to_int
                                        std::is_convertible<T, int>::value> {};
 
 namespace internal {
+
+template <typename T> struct no_formatter_error : std::false_type {};
+
+template <typename T, typename Char = char, typename Enable = void>
+struct fallback_formatter {
+  static_assert(
+      no_formatter_error<T>::value,
+      "don't know how to format the type, include fmt/ostream.h if it provides "
+      "an operator<< that should be used");
+};
 
 struct dummy_string_view {
   typedef void char_type;
@@ -623,9 +632,29 @@ template <typename Context> class value {
   }
   value(const void* val) { pointer = val; }
 
-  template <typename T> explicit value(const T& val) {
+  template <typename T,
+            typename std::enable_if<
+                is_default_constructible<
+                    typename Context::template formatter_type<T>::type>::value,
+                int>::type = 0>
+  explicit value(const T& val) {
     custom.value = &val;
-    custom.format = &format_custom_arg<T>;
+    // Get the formatter type through the context to allow different contexts
+    // have different extension points, e.g. `formatter<T>` for `format` and
+    // `printf_formatter<T>` for `printf`.
+    typedef typename Context::template formatter_type<T>::type formatter;
+    custom.format = &format_custom_arg<T, formatter>;
+  }
+
+  template <typename T,
+            typename std::enable_if<
+                !is_default_constructible<
+                    typename Context::template formatter_type<T>::type>::value,
+                int>::type = 0>
+  explicit value(const T& val) {
+    custom.value = &val;
+    custom.format =
+        &format_custom_arg<T, internal::fallback_formatter<T, char_type>>;
   }
 
   const named_arg_base<char_type>& as_named_arg() {
@@ -634,12 +663,9 @@ template <typename Context> class value {
 
  private:
   // Formats an argument of a custom type, such as a user-defined class.
-  template <typename T>
+  template <typename T, typename Formatter>
   static void format_custom_arg(const void* arg, Context& ctx) {
-    // Get the formatter type through the context to allow different contexts
-    // have different extension points, e.g. `formatter<T>` for `format` and
-    // `printf_formatter<T>` for `printf`.
-    typename Context::template formatter_type<T>::type f;
+    Formatter f;
     auto&& parse_ctx = ctx.parse_context();
     parse_ctx.advance_to(f.parse(parse_ctx));
     ctx.advance_to(f.format(*static_cast<const T*>(arg), ctx));

@@ -178,6 +178,29 @@ template <typename Output> Output& operator<<(Output& out, ABC) {
 }
 }  // namespace fmt_test
 
+template <typename T>
+struct TestTemplate {};
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, TestTemplate<T>) {
+  return os << 1;
+}
+
+namespace fmt {
+template <typename T>
+struct formatter<TestTemplate<T>> : formatter<int> {
+  template <typename FormatContext>
+  typename FormatContext::iterator format(TestTemplate<T>, FormatContext& ctx) {
+    return formatter<int>::format(2, ctx);
+  }
+};
+}
+
+#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 407
+TEST(OStreamTest, Template) {
+  EXPECT_EQ("2", fmt::format("{}", TestTemplate<int>()));
+}
+
 TEST(FormatTest, FormatToN) {
   char buffer[4];
   buffer[3] = 'x';
@@ -190,6 +213,7 @@ TEST(FormatTest, FormatToN) {
   EXPECT_EQ(buffer + 3, result.out);
   EXPECT_EQ("xABx", fmt::string_view(buffer, 4));
 }
+#endif
 
 #if FMT_USE_USER_DEFINED_LITERALS
 TEST(FormatTest, UDL) {

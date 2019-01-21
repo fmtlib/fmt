@@ -1702,8 +1702,7 @@ class specs_handler : public specs_setter<typename Context::char_type> {
 
   FMT_CONSTEXPR format_arg get_arg(auto_id) { return context_.next_arg(); }
 
-  template <typename Id>
-  FMT_CONSTEXPR format_arg get_arg(Id arg_id) {
+  template <typename Id> FMT_CONSTEXPR format_arg get_arg(Id arg_id) {
     context_.parse_context().check_arg_id(arg_id);
     return context_.arg(arg_id);
   }

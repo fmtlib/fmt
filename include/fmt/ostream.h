@@ -93,22 +93,12 @@ void format_value(basic_buffer<Char>& buffer, const T& value) {
   output << value;
   buffer.resize(buffer.size());
 }
-}  // namespace internal
-
-// Disable conversion to int if T has an overloaded operator<< which is a free
-// function (not a member of std::ostream).
-template <typename T, typename Char> struct convert_to_int<T, Char, void> {
-  static const bool value = convert_to_int<T, Char, int>::value &&
-                            !internal::is_streamable<T, Char>::value;
-};
 
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename T, typename Char>
-struct formatter<T, Char,
-                 typename std::enable_if<
-                     internal::is_streamable<T, Char>::value &&
-                     !internal::format_type<typename buffer_context<Char>::type,
-                                            T>::value>::type>
+struct fallback_formatter<
+    T, Char,
+    typename std::enable_if<internal::is_streamable<T, Char>::value>::type>
     : formatter<basic_string_view<Char>, Char> {
   template <typename Context>
   auto format(const T& value, Context& ctx) -> decltype(ctx.out()) {
@@ -117,6 +107,14 @@ struct formatter<T, Char,
     basic_string_view<Char> str(buffer.data(), buffer.size());
     return formatter<basic_string_view<Char>, Char>::format(str, ctx);
   }
+};
+}  // namespace internal
+
+// Disable conversion to int if T has an overloaded operator<< which is a free
+// function (not a member of std::ostream).
+template <typename T, typename Char> struct convert_to_int<T, Char, void> {
+  static const bool value = convert_to_int<T, Char, int>::value &&
+                            !internal::is_streamable<T, Char>::value;
 };
 
 template <typename Char>
