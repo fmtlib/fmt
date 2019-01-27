@@ -56,6 +56,8 @@ Named arguments
 
 .. doxygenfunction:: fmt::arg(string_view, const T&)
 
+Named arguments are not supported in compile-time checks at the moment.
+
 Argument lists
 --------------
 
@@ -92,6 +94,7 @@ string checks, output iterator and user-defined type support.
 Compile-time format string checks
 ---------------------------------
 
+.. doxygendefine:: FMT_STRING
 .. doxygendefine:: fmt
 
 Formatting user-defined types

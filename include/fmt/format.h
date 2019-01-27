@@ -2117,7 +2117,9 @@ class format_string_checker {
     context_.check_arg_id(id);
     check_arg_id();
   }
-  FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) {}
+  FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) {
+    on_error("compile-time checks don't support named arguments");
+  }
 
   FMT_CONSTEXPR void on_replacement_field(const Char*) {}
 
@@ -3495,6 +3497,16 @@ inline internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s, std::size_t) {
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 FMT_END_NAMESPACE
 
+/**
+  \rst
+  Constructs a compile-time format string.
+
+  **Example**::
+
+    // A compile-time error because 'd' is an invalid specifier for strings.
+    std::string s = format(FMT_STRING("{:d}"), "foo");
+  \endrst
+ */
 #define FMT_STRING(s)                                                     \
   [] {                                                                    \
     struct str : fmt::compile_string {                                    \

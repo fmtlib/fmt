@@ -2357,7 +2357,8 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:d}", "invalid type specifier", std::string);
   EXPECT_ERROR("{:s}", "invalid type specifier", void*);
 #  endif
-  EXPECT_ERROR("{foo", "missing '}' in format string", int);
+  EXPECT_ERROR("{foo",
+               "compile-time checks don't support named arguments", int);
   EXPECT_ERROR_NOARGS("{10000000000}", "number is too big");
   EXPECT_ERROR_NOARGS("{0x}", "invalid format string");
   EXPECT_ERROR_NOARGS("{-}", "invalid format string");
