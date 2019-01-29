@@ -290,13 +290,13 @@ VISIT_TYPE(unsigned long, unsigned long long);
 
 VISIT_TYPE(float, double);
 
-#define CHECK_ARG_(Char, expected, value)                                   \
-  {                                                                         \
-    testing::StrictMock<mock_visitor<decltype(expected)>> visitor;          \
-    EXPECT_CALL(visitor, visit(expected));                                  \
-    typedef std::back_insert_iterator<basic_buffer<Char>> iterator;         \
-    fmt::visit(visitor,                                                     \
-               make_arg<fmt::basic_format_context<iterator, Char>>(value)); \
+#define CHECK_ARG_(Char, expected, value)                                     \
+  {                                                                           \
+    testing::StrictMock<mock_visitor<decltype(expected)>> visitor;            \
+    EXPECT_CALL(visitor, visit(expected));                                    \
+    typedef std::back_insert_iterator<basic_buffer<Char>> iterator;           \
+    fmt::visit_format_arg(                                                    \
+        visitor, make_arg<fmt::basic_format_context<iterator, Char>>(value)); \
   }
 
 #define CHECK_ARG(value, typename_)                          \
@@ -391,14 +391,14 @@ TEST(ArgTest, CustomArg) {
       visitor;
   testing::StrictMock<visitor> v;
   EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke(check_custom()));
-  fmt::visit(v, make_arg<fmt::format_context>(test));
+  fmt::visit_format_arg(v, make_arg<fmt::format_context>(test));
 }
 
 TEST(ArgTest, VisitInvalidArg) {
   testing::StrictMock<mock_visitor<fmt::monostate>> visitor;
   EXPECT_CALL(visitor, visit(_));
   fmt::basic_format_arg<fmt::format_context> arg;
-  visit(visitor, arg);
+  fmt::visit_format_arg(visitor, arg);
 }
 
 TEST(StringViewTest, Length) {

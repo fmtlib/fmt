@@ -3084,9 +3084,9 @@ struct format_handler : internal::error_handler {
   void on_arg_id() { arg = context.next_arg(); }
   void on_arg_id(unsigned id) {
     context.parse_context().check_arg_id(id);
-    arg = context.get_arg(id);
+    arg = context.arg(id);
   }
-  void on_arg_id(basic_string_view<Char> id) { arg = context.get_arg(id); }
+  void on_arg_id(basic_string_view<Char> id) { arg = context.arg(id); }
 
   void on_replacement_field(const Char* p) {
     context.parse_context().advance_to(p);
