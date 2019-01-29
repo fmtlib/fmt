@@ -717,11 +717,17 @@ FMT_FUNC gen_digits_params process_specs(const core_format_specs& specs,
   return params;
 }
 
+inline bool almost_zero(const double x, const std::size_t ulp)
+{
+    // Inspired from https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
+    return std::abs(x) <= std::numeric_limits<double>::epsilon() * std::abs(x) * static_cast<double>(ulp);
+}
+
 template <typename Double>
 FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
 grisu2_format(Double value, buffer& buf, core_format_specs specs) {
   FMT_ASSERT(value >= 0, "value is negative");
-  if (value == 0) {
+  if (almost_zero(value, 1)) {
     gen_digits_params params = process_specs(specs, 1, buf);
     const size_t size = 1;
     buf[0] = '0';
