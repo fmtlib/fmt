@@ -15,21 +15,33 @@ FMT_BEGIN_NAMESPACE
 #ifdef FMT_DEPRECATED_COLORS
 
 // color and (v)print_colored are deprecated.
-enum color { black, red, green, yellow, blue, magenta, cyan, white };
-FMT_API void vprint_colored(color c, string_view format, format_args args);
-FMT_API void vprint_colored(color c, wstring_view format, wformat_args args);
+enum FMT_DEPRECATED color {
+  black,
+  red,
+  green,
+  yellow,
+  blue,
+  magenta,
+  cyan,
+  white
+};
+FMT_DEPRECATED FMT_API void vprint_colored(color c, string_view format,
+                                           format_args args);
+FMT_DEPRECATED FMT_API void vprint_colored(color c, wstring_view format,
+                                           wformat_args args);
 template <typename... Args>
-inline void print_colored(color c, string_view format_str,
-                          const Args&... args) {
+FMT_DEPRECATED inline void print_colored(color c, string_view format_str,
+                                         const Args&... args) {
   vprint_colored(c, format_str, make_format_args(args...));
 }
 template <typename... Args>
-inline void print_colored(color c, wstring_view format_str,
-                          const Args&... args) {
+FMT_DEPRECATED inline void print_colored(color c, wstring_view format_str,
+                                         const Args&... args) {
   vprint_colored(c, format_str, make_format_args<wformat_context>(args...));
 }
 
-inline void vprint_colored(color c, string_view format, format_args args) {
+FMT_DEPRECATED inline void vprint_colored(color c, string_view format,
+                                          format_args args) {
   char escape[] = "\x1b[30m";
   escape[3] = static_cast<char>('0' + c);
   std::fputs(escape, stdout);
@@ -37,7 +49,8 @@ inline void vprint_colored(color c, string_view format, format_args args) {
   std::fputs(internal::data::RESET_COLOR, stdout);
 }
 
-inline void vprint_colored(color c, wstring_view format, wformat_args args) {
+FMT_DEPRECATED inline void vprint_colored(color c, wstring_view format,
+                                          wformat_args args) {
   wchar_t escape[] = L"\x1b[30m";
   escape[3] = static_cast<wchar_t>('0' + c);
   std::fputws(escape, stdout);

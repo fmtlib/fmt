@@ -2222,8 +2222,7 @@ class arg_formatter
   explicit arg_formatter(context_type& ctx, format_specs* spec = FMT_NULL)
       : base(Range(ctx.out()), spec, ctx.locale()), ctx_(ctx) {}
 
-  // Deprecated.
-  arg_formatter(context_type& ctx, format_specs& spec)
+  FMT_DEPRECATED arg_formatter(context_type& ctx, format_specs& spec)
       : base(Range(ctx.out()), &spec), ctx_(ctx) {}
 
   using base::operator();
@@ -2892,11 +2891,11 @@ class format_int {
   std::string str() const { return std::string(str_, size()); }
 };
 
-// DEPRECATED!
 // Formats a decimal integer value writing into buffer and returns
 // a pointer to the end of the formatted string. This function doesn't
 // write a terminating null character.
-template <typename T> inline void format_decimal(char*& buffer, T value) {
+template <typename T>
+FMT_DEPRECATED inline void format_decimal(char*& buffer, T value) {
   typedef typename internal::int_traits<T>::main_type main_type;
   main_type abs_value = static_cast<main_type>(value);
   if (internal::is_negative(value)) {
