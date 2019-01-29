@@ -284,8 +284,8 @@ class prepared_format {
         const auto arg =
             value.spec.arg_id.which ==
                     format_part_t::argument_id::which_arg_id::index
-                ? ctx.get_arg(arg_id_value.index)
-                : ctx.get_arg(arg_id_value.named_index.to_view(format_));
+                ? ctx.arg(arg_id_value.index)
+                : ctx.arg(arg_id_value.named_index.to_view(format_));
 
         auto specs = value.spec.parsed_specs;
 
@@ -317,7 +317,7 @@ class prepared_format {
   void format_arg(Context& ctx, Id arg_id) const {
     ctx.parse_context().check_arg_id(arg_id);
     const auto stopped_at =
-        visit_format_arg(arg_formatter<Range>(ctx), ctx.get_arg(arg_id));
+        visit_format_arg(arg_formatter<Range>(ctx), ctx.arg(arg_id));
     ctx.advance_to(stopped_at);
   }
 
