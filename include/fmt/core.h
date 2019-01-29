@@ -143,6 +143,21 @@
 #  endif
 #endif
 
+#ifndef FMT_DEPRECATED
+#  if (FMT_HAS_CPP_ATTRIBUTE(deprecated) && __cplusplus >= 201402L) || \
+      FMT_MSC_VER >= 1900
+#    define FMT_DEPRECATED [[deprecated]]
+#  else
+#    if defined(__GNUC__) || defined(__clang__)
+#      define FMT_DEPRECATED __attribute__((deprecated))
+#    elif FMT_MSC_VER
+#      define FMT_DEPRECATED __declspec(deprecated)
+#    else
+#      define FMT_DEPRECATED /*deprecated*/
+#    endif
+#  endif
+#endif
+
 #ifndef FMT_BEGIN_NAMESPACE
 #  if FMT_HAS_FEATURE(cxx_inline_namespaces) || FMT_GCC_VERSION >= 404 || \
       FMT_MSC_VER >= 1900
@@ -911,10 +926,9 @@ FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type visit_format_arg(
   return vis(monostate());
 }
 
-// DEPRECATED!
 template <typename Visitor, typename Context>
-FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type visit(
-    Visitor&& vis, const basic_format_arg<Context>& arg) {
+FMT_DEPRECATED FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
+visit(Visitor&& vis, const basic_format_arg<Context>& arg) {
   return visit_format_arg(std::forward<Visitor>(vis), arg);
 }
 
@@ -972,9 +986,8 @@ class basic_parse_context : private ErrorHandler {
 typedef basic_parse_context<char> format_parse_context;
 typedef basic_parse_context<wchar_t> wformat_parse_context;
 
-// DEPRECATED!
-typedef basic_parse_context<char> parse_context;
-typedef basic_parse_context<wchar_t> wparse_context;
+FMT_DEPRECATED typedef basic_parse_context<char> parse_context;
+FMT_DEPRECATED typedef basic_parse_context<wchar_t> wparse_context;
 
 namespace internal {
 // A map from argument names to their values for named arguments.
@@ -1063,7 +1076,7 @@ class context_base {
 
  public:
   basic_parse_context<char_type>& parse_context() { return parse_context_; }
-  basic_format_args<Context> args() const { return args_; }  // DEPRECATED!
+  FMT_DEPRECATED basic_format_args<Context> args() const { return args_; }
   basic_format_arg<Context> arg(unsigned id) const { return args_.get(id); }
 
   internal::error_handler error_handler() {
@@ -1074,7 +1087,7 @@ class context_base {
 
   // Returns an iterator to the beginning of the output range.
   iterator out() { return out_; }
-  iterator begin() { return out_; }  // deprecated
+  FMT_DEPRECATED iterator begin() { return out_; }
 
   // Advances the begin iterator to ``it``.
   void advance_to(iterator it) { out_ = it; }
@@ -1163,9 +1176,10 @@ class basic_format_context
   // specified name.
   format_arg arg(basic_string_view<char_type> name);
 
-  // DEPRECATED!
-  format_arg get_arg(unsigned arg_id) { return arg(arg_id); }
-  format_arg get_arg(basic_string_view<char_type> name) { return arg(name); }
+  FMT_DEPRECATED format_arg get_arg(unsigned arg_id) { return arg(arg_id); }
+  FMT_DEPRECATED format_arg get_arg(basic_string_view<char_type> name) {
+    return arg(name);
+  }
 };
 
 template <typename Char> struct buffer_context {
