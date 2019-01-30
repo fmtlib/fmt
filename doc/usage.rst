@@ -2,9 +2,10 @@
 Usage
 *****
 
-To use the fmt library, add :file:`format.h` and :file:`format.cc` from
-a `release archive <https://github.com/fmtlib/fmt/releases/latest>`_
-or the `Git repository <https://github.com/fmtlib/fmt>`_ to your project.
+To use the {fmt} library, add :file:`fmt/core.h`, :file:`fmt/format.h`,
+:file:`fmt/format-inl.h`, :file:`src/format.cc` and optionally other headers
+from a `release archive <https://github.com/fmtlib/fmt/releases/latest>`_ or
+the `Git repository <https://github.com/fmtlib/fmt>`_ to your project.
 Alternatively, you can :ref:`build the library with CMake <building>`.
 
 If you are using Visual C++ with precompiled headers, you might need to add
