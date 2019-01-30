@@ -721,7 +721,7 @@ template <typename Double>
 FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
 grisu2_format(Double value, buffer& buf, core_format_specs specs) {
   FMT_ASSERT(value >= 0, "value is negative");
-  if (value == 0) {
+  if (value <= 0) {  // <= instead of == to silence a warning.
     gen_digits_params params = process_specs(specs, 1, buf);
     const size_t size = 1;
     buf[0] = '0';
