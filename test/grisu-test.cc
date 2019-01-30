@@ -25,5 +25,17 @@ bool reported_skipped;
   void test_fixture##test_name()
 
 TEST(GrisuTest, NaN) {
-  EXPECT_EQ("nan", fmt::format("{}", std::numeric_limits<double>::quiet_NaN()));
+  auto nan = std::numeric_limits<double>::quiet_NaN();
+  EXPECT_EQ("nan", fmt::format("{}", nan));
+  EXPECT_EQ("-nan", fmt::format("{}", -nan));
+}
+
+TEST(GrisuTest, Inf) {
+  auto inf = std::numeric_limits<double>::infinity();
+  EXPECT_EQ("inf", fmt::format("{}", inf));
+  EXPECT_EQ("-inf", fmt::format("{}", -inf));
+}
+
+TEST(GrisuTest, Zero) {
+  EXPECT_EQ("0", fmt::format("{}", 0.0));
 }
