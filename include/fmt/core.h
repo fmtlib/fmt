@@ -629,31 +629,20 @@ template <typename Context> class value {
   }
   value(const void* val) { pointer = val; }
 
-  template <
-      typename T,
-      typename std::enable_if<
-          !is_constructible<typename Context::template formatter_type<T>::type,
-                            internal::dummy_formatter_arg>::value,
-          int>::type = 0>
-  explicit value(const T& val) {
+  template <typename T> explicit value(const T& val) {
     custom.value = &val;
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
     typedef typename Context::template formatter_type<T>::type formatter;
-    custom.format = &format_custom_arg<T, formatter>;
-  }
-
-  template <
-      typename T,
-      typename std::enable_if<
-          is_constructible<typename Context::template formatter_type<T>::type,
-                           internal::dummy_formatter_arg>::value,
-          int>::type = 0>
-  explicit value(const T& val) {
-    custom.value = &val;
-    custom.format =
-        &format_custom_arg<T, internal::fallback_formatter<T, char_type>>;
+    enum {
+      formattable =
+          !is_constructible<formatter, internal::dummy_formatter_arg>::value
+    };
+    custom.format = &format_custom_arg<
+        T, typename std::conditional<
+               formattable, formatter,
+               internal::fallback_formatter<T, char_type>>::type>;
   }
 
   const named_arg_base<char_type>& as_named_arg() {
