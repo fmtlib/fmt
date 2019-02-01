@@ -1720,12 +1720,31 @@ TEST(FormatIntTest, FormatInt) {
             fmt::format_int(std::numeric_limits<int64_t>::max()).str());
 }
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
+#if FMT_MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4996) // Using a deprecated function
+#endif
+
 template <typename T> std::string format_decimal(T value) {
   char buffer[10];
   char* ptr = buffer;
-  fmt::format_decimal(ptr, value);
+  // TODO: Replace with safer, non-deprecated overload
+  fmt::format_decimal(ptr, value); 
   return std::string(buffer, ptr);
 }
+
+#if FMT_MSC_VER
+#pragma warning(pop)
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 TEST(FormatIntTest, FormatDec) {
   EXPECT_EQ("-42", format_decimal(static_cast<signed char>(-42)));

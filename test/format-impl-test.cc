@@ -116,9 +116,10 @@ template <typename T> struct ValueExtractor : fmt::internal::function<T> {
 TEST(FormatTest, ArgConverter) {
   long long value = std::numeric_limits<long long>::max();
   auto arg = fmt::internal::make_arg<fmt::format_context>(value);
-  visit(fmt::internal::arg_converter<long long, fmt::format_context>(arg, 'd'),
-        arg);
-  EXPECT_EQ(value, visit(ValueExtractor<long long>(), arg));
+  fmt::visit_format_arg(
+      fmt::internal::arg_converter<long long, fmt::format_context>(arg, 'd'),
+      arg);
+  EXPECT_EQ(value, fmt::visit_format_arg(ValueExtractor<long long>(), arg));
 }
 
 TEST(FormatTest, FormatNegativeNaN) {

@@ -1076,7 +1076,11 @@ class context_base {
 
  public:
   basic_parse_context<char_type>& parse_context() { return parse_context_; }
-  FMT_DEPRECATED basic_format_args<Context> args() const { return args_; }
+
+  // basic_format_context::arg() depends on this
+  // Cannot be marked as deprecated without causing warnings
+  /*FMT_DEPRECATED*/ basic_format_args<Context> args() const { return args_; }
+
   basic_format_arg<Context> arg(unsigned id) const { return args_.get(id); }
 
   internal::error_handler error_handler() {

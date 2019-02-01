@@ -59,7 +59,8 @@ TEST(OStreamTest, CustomArg) {
   fmt::format_context ctx(std::back_inserter(base), "", fmt::format_args());
   fmt::format_specs spec;
   test_arg_formatter af(ctx, spec);
-  visit(af, fmt::internal::make_arg<fmt::format_context>(TestEnum()));
+  fmt::visit_format_arg(
+      af, fmt::internal::make_arg<fmt::format_context>(TestEnum()));
   EXPECT_EQ("TestEnum", std::string(buffer.data(), buffer.size()));
 }
 
@@ -178,8 +179,7 @@ template <typename Output> Output& operator<<(Output& out, ABC) {
 }
 }  // namespace fmt_test
 
-template <typename T>
-struct TestTemplate {};
+template <typename T> struct TestTemplate {};
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, TestTemplate<T>) {
@@ -187,14 +187,13 @@ std::ostream& operator<<(std::ostream& os, TestTemplate<T>) {
 }
 
 namespace fmt {
-template <typename T>
-struct formatter<TestTemplate<T>> : formatter<int> {
+template <typename T> struct formatter<TestTemplate<T>> : formatter<int> {
   template <typename FormatContext>
   typename FormatContext::iterator format(TestTemplate<T>, FormatContext& ctx) {
     return formatter<int>::format(2, ctx);
   }
 };
-}
+}  // namespace fmt
 
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 407
 TEST(OStreamTest, Template) {
