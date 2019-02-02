@@ -332,14 +332,17 @@ const char basic_data<T>::BACKGROUND_COLOR[] = "\x1b[48;2;";
 template <typename T> const char basic_data<T>::RESET_COLOR[] = "\x1b[0m";
 template <typename T> const wchar_t basic_data<T>::WRESET_COLOR[] = L"\x1b[0m";
 
+template <typename T> struct bits {
+  static FMT_CONSTEXPR_DECL const int value =
+      sizeof(T) * std::numeric_limits<unsigned char>::digits;
+};
+
 // A handmade floating-point number f * pow(2, e).
 class fp {
  private:
   typedef uint64_t significand_type;
 
   // All sizes are in bits.
-  static FMT_CONSTEXPR_DECL const int char_size =
-      std::numeric_limits<unsigned char>::digits;
   // Subtract 1 to account for an implicit most significant bit in the
   // normalized form.
   static FMT_CONSTEXPR_DECL const int double_significand_size =
@@ -352,7 +355,7 @@ class fp {
   int e;
 
   static FMT_CONSTEXPR_DECL const int significand_size =
-      sizeof(significand_type) * char_size;
+      bits<significand_type>::value;
 
   fp() : f(0), e(0) {}
   fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
@@ -362,9 +365,8 @@ class fp {
   template <typename Double> explicit fp(Double d) {
     // Assume double is in the format [sign][exponent][significand].
     typedef std::numeric_limits<Double> limits;
-    const int double_size = static_cast<int>(sizeof(Double) * char_size);
     const int exponent_size =
-        double_size - double_significand_size - 1;  // -1 for sign
+        bits<Double>::value - double_significand_size - 1;  // -1 for sign
     const uint64_t significand_mask = implicit_bit - 1;
     const uint64_t exponent_mask = (~0ull >> 1) & ~significand_mask;
     const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
@@ -463,9 +465,10 @@ FMT_FUNC bool grisu2_round(char* buf, int& size, int max_digits, uint64_t delta,
 }
 
 // Generates output using Grisu2 digit-gen algorithm.
-FMT_FUNC bool grisu2_gen_digits(char* buf, int& size, uint32_t hi, uint64_t lo,
-                                int& exp, uint64_t delta, const fp& one,
-                                const fp& diff, int max_digits) {
+FMT_FUNC int grisu2_gen_digits(char* buf, uint32_t hi, uint64_t lo, int& exp,
+                               uint64_t delta, const fp& one, const fp& diff,
+                               int max_digits) {
+  int size = 0;
   // Generate digits for the most significant part (hi).
   while (exp > 0) {
     uint32_t digit = 0;
@@ -519,10 +522,12 @@ FMT_FUNC bool grisu2_gen_digits(char* buf, int& size, uint32_t hi, uint64_t lo,
     --exp;
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
     if (remainder <= delta || size > max_digits) {
-      return grisu2_round(
-          buf, size, max_digits, delta, remainder,
-          static_cast<uint64_t>(data::POWERS_OF_10_32[exp]) << -one.e, diff.f,
-          exp);
+      return grisu2_round(buf, size, max_digits, delta, remainder,
+                          static_cast<uint64_t>(data::POWERS_OF_10_32[exp])
+                              << -one.e,
+                          diff.f, exp)
+                 ? size
+                 : -1;
     }
   }
   // Generate digits for the least significant part (lo).
@@ -535,7 +540,9 @@ FMT_FUNC bool grisu2_gen_digits(char* buf, int& size, uint32_t hi, uint64_t lo,
     --exp;
     if (lo < delta || size > max_digits) {
       return grisu2_round(buf, size, max_digits, delta, lo, one.f,
-                          diff.f * data::POWERS_OF_10_32[-exp], exp);
+                          diff.f * data::POWERS_OF_10_32[-exp], exp)
+                 ? size
+                 : -1;
     }
   }
 }
@@ -742,11 +749,10 @@ grisu2_format(Double value, buffer& buf, core_format_specs specs) {
   upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
   --upper.f;                   // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
   fp one(1ull << -upper.e, upper.e);
-  // hi (p1 in Grisu) contains the most significant digits of scaled_upper.
+  // hi (p1 in Grisu) contains the most significant digits of scaled upper.
   // hi = floor(upper / one).
   uint32_t hi = static_cast<uint32_t>(upper.f >> -one.e);
   int exp = count_digits(hi);  // kappa in Grisu.
-  gen_digits_params params = process_specs(specs, cached_exp + exp, buf);
   fp_value.normalize();
   fp scaled_value = fp_value * cached_pow;
   lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
@@ -754,11 +760,12 @@ grisu2_format(Double value, buffer& buf, core_format_specs specs) {
   uint64_t delta = upper.f - lower.f;
   fp diff = upper - scaled_value;  // wp_w in Grisu.
   // lo (p2 in Grisu) contains the least significants digits of scaled_upper.
-  // lo = supper % one.
+  // lo = upper % one.
   uint64_t lo = upper.f & (one.f - 1);
-  int size = 0;
-  if (!grisu2_gen_digits(buf.data(), size, hi, lo, exp, delta, one, diff,
-                         params.num_digits)) {
+  gen_digits_params params = process_specs(specs, cached_exp + exp, buf);
+  int size = grisu2_gen_digits(buf.data(), hi, lo, exp, delta, one, diff,
+                               params.num_digits);
+  if (size < 0) {
     buf.clear();
     return false;
   }
