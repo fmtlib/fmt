@@ -750,7 +750,7 @@ template <typename T> struct int_traits {
 // Static data is placed in this class template to allow header-only
 // configuration.
 template <typename T = void> struct FMT_API basic_data {
-  static const uint32_t POWERS_OF_10_32[];
+  static const uint64_t POWERS_OF_10_64[];
   static const uint32_t ZERO_OR_POWERS_OF_10_32[];
   static const uint64_t ZERO_OR_POWERS_OF_10_64[];
   static const uint64_t POW10_SIGNIFICANDS[];

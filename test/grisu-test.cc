@@ -9,7 +9,7 @@
 #include "fmt/format.h"
 #include "gtest.h"
 
-bool reported_skipped;
+static bool reported_skipped;
 
 #undef TEST
 #define TEST(test_fixture, test_name)        \
@@ -38,4 +38,9 @@ TEST(GrisuTest, Inf) {
 
 TEST(GrisuTest, Zero) {
   EXPECT_EQ("0", fmt::format("{}", 0.0));
+}
+
+TEST(GrisuTest, Round) {
+  EXPECT_EQ("1.9156918820264798e-56",
+            fmt::format("{}", 1.9156918820264798e-56));
 }

@@ -266,7 +266,9 @@ const char basic_data<T>::DIGITS[] =
       factor * 1000000000
 
 template <typename T>
-const uint32_t basic_data<T>::POWERS_OF_10_32[] = {1, FMT_POWERS_OF_10(1)};
+const uint64_t basic_data<T>::POWERS_OF_10_64[] = {
+    1, FMT_POWERS_OF_10(1), FMT_POWERS_OF_10(1000000000ull),
+    10000000000000000000ull};
 
 template <typename T>
 const uint32_t basic_data<T>::ZERO_OR_POWERS_OF_10_32[] = {0,
@@ -334,7 +336,7 @@ template <typename T> const wchar_t basic_data<T>::WRESET_COLOR[] = L"\x1b[0m";
 
 template <typename T> struct bits {
   static FMT_CONSTEXPR_DECL const int value =
-      sizeof(T) * std::numeric_limits<unsigned char>::digits;
+      static_cast<int>(sizeof(T) * std::numeric_limits<unsigned char>::digits);
 };
 
 // A handmade floating-point number f * pow(2, e).
@@ -523,7 +525,7 @@ FMT_FUNC int grisu2_gen_digits(char* buf, uint32_t hi, uint64_t lo, int& exp,
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
     if (remainder <= delta || size > max_digits) {
       return grisu2_round(buf, size, max_digits, delta, remainder,
-                          static_cast<uint64_t>(data::POWERS_OF_10_32[exp])
+                          static_cast<uint64_t>(data::POWERS_OF_10_64[exp])
                               << -one.e,
                           diff.f, exp)
                  ? size
@@ -540,7 +542,7 @@ FMT_FUNC int grisu2_gen_digits(char* buf, uint32_t hi, uint64_t lo, int& exp,
     --exp;
     if (lo < delta || size > max_digits) {
       return grisu2_round(buf, size, max_digits, delta, lo, one.f,
-                          diff.f * data::POWERS_OF_10_32[-exp], exp)
+                          diff.f * data::POWERS_OF_10_64[-exp], exp)
                  ? size
                  : -1;
     }
@@ -692,6 +694,7 @@ FMT_FUNC gen_digits_params process_specs(const core_format_specs& specs,
     params.upper = true;
     FMT_FALLTHROUGH
   case '\0':
+    num_digits = 17;
   case 'g':
     params.trailing_zeros = (specs.flags & HASH_FLAG) != 0;
     if (-4 <= exp && exp < num_digits + 1) {
@@ -759,7 +762,7 @@ grisu2_format(Double value, buffer& buf, core_format_specs specs) {
   ++lower.f;                   // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
   uint64_t delta = upper.f - lower.f;
   fp diff = upper - scaled_value;  // wp_w in Grisu.
-  // lo (p2 in Grisu) contains the least significants digits of scaled_upper.
+  // lo (p2 in Grisu) contains the least significants digits of scaled upper.
   // lo = upper % one.
   uint64_t lo = upper.f & (one.f - 1);
   gen_digits_params params = process_specs(specs, cached_exp + exp, buf);
