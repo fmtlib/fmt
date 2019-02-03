@@ -56,8 +56,8 @@ template <typename Char> struct test_stream : std::basic_ostream<Char> {
 template <typename T, typename Char> class is_streamable {
  private:
   template <typename U>
-  static decltype(internal::declval<test_stream<Char>&>()
-                      << internal::declval<U>(),
+  static decltype((void)(internal::declval<test_stream<Char>&>()
+                      << internal::declval<U>()),
                   std::true_type())
   test(int);
 
