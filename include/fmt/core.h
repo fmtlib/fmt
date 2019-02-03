@@ -217,11 +217,17 @@ typename std::add_rvalue_reference<T>::type declval() FMT_NOEXCEPT;
 
 template <typename> struct result_of;
 
-template <typename F, typename... Args> struct result_of<F(Args...)> {
-  // A workaround for gcc 4.4 that doesn't allow F to be a reference.
-  typedef typename std::result_of<typename std::remove_reference<F>::type(
-      Args...)>::type type;
-};
+#if (__cplusplus >= 201703L ||                          \
+     (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)) && \
+    __cpp_lib_is_invocable >= 201703L
+template <typename F, typename... Args>
+struct result_of<F(Args...)> : std::invoke_result<F, Args...> {};
+#else
+// A workaround for gcc 4.4 that doesn't allow F to be a reference.
+template <typename F, typename... Args>
+struct result_of<F(Args...)>
+  : std::result_of<typename std::remove_reference<F>::type(Args...)> {};
+#endif
 
 // Casts nonnegative integer to unsigned.
 template <typename Int>
