@@ -172,11 +172,6 @@ FMT_END_NAMESPACE
 #  define FMT_USE_TRAILING_RETURN 0
 #endif
 
-#ifndef FMT_USE_GRISU
-#  define FMT_USE_GRISU 0
-//# define FMT_USE_GRISU std::numeric_limits<double>::is_iec559
-#endif
-
 // __builtin_clz is broken in clang with Microsoft CodeGen:
 // https://github.com/fmtlib/fmt/issues/519
 #ifndef _MSC_VER
@@ -244,6 +239,15 @@ FMT_END_NAMESPACE
 
 FMT_BEGIN_NAMESPACE
 namespace internal {
+
+#ifndef FMT_USE_GRISU
+#  define FMT_USE_GRISU 1
+#endif
+
+template <typename T> inline bool use_grisu() {
+  return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559 &&
+         sizeof(T) <= sizeof(double);
+}
 
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't produce
 // undefined behavior (e.g. due to type aliasing).
@@ -2675,10 +2679,7 @@ struct float_spec_handler {
   explicit float_spec_handler(char t) : type(t), upper(false) {}
 
   void on_general() {
-    if (type == 'G')
-      upper = true;
-    else
-      type = 'g';
+    if (type == 'G') upper = true;
   }
 
   void on_exp() {
@@ -2686,13 +2687,7 @@ struct float_spec_handler {
   }
 
   void on_fixed() {
-    if (type == 'F') {
-      upper = true;
-#if FMT_MSC_VER
-      // MSVC's printf doesn't support 'F'.
-      type = 'f';
-#endif
-    }
+    if (type == 'F') upper = true;
   }
 
   void on_hex() {
@@ -2737,14 +2732,9 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
 
   memory_buffer buffer;
   bool use_grisu =
-      FMT_USE_GRISU && sizeof(T) <= sizeof(double) && spec.type != 'a' &&
-      spec.type != 'A' &&
+      fmt::internal::use_grisu<T>() && !spec.type && !spec.has_precision() &&
       internal::grisu2_format(static_cast<double>(value), buffer, spec);
-  if (!use_grisu) {
-    format_specs normalized_spec(spec);
-    normalized_spec.type = handler.type;
-    internal::sprintf_format(value, buffer, normalized_spec);
-  }
+  if (!use_grisu) internal::sprintf_format(value, buffer, spec);
   size_t n = buffer.size();
   align_spec as = spec;
   if (spec.align() == ALIGN_NUMERIC) {

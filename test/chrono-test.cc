@@ -230,8 +230,8 @@ TEST(ChronoTest, FormatSimpleQq) {
 
 TEST(ChronoTest, FormatPrecisionQq) {
   EXPECT_THROW_MSG(fmt::format("{:.2%Q %q}", std::chrono::seconds(42)),
-    fmt::format_error,
-    "precision not allowed for this argument type");
+                   fmt::format_error,
+                   "precision not allowed for this argument type");
   EXPECT_EQ("1.2 ms", fmt::format("{:.1%Q %q}", dms(1.234)));
   EXPECT_EQ("1.23 ms", fmt::format("{:.{}%Q %q}", dms(1.234), 2));
 }

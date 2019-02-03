@@ -368,8 +368,8 @@ TEST(PrintfTest, Length) {
   TestLength<std::size_t>("z");
   TestLength<std::ptrdiff_t>("t");
   long double max = std::numeric_limits<long double>::max();
-  EXPECT_PRINTF(fmt::format("{}", max), "%g", max);
-  EXPECT_PRINTF(fmt::format("{}", max), "%Lg", max);
+  EXPECT_PRINTF(fmt::format("{:.6}", max), "%g", max);
+  EXPECT_PRINTF(fmt::format("{:.6}", max), "%Lg", max);
 }
 
 TEST(PrintfTest, Bool) {

@@ -249,10 +249,11 @@ template <typename Int> inline int to_int(Int value) {
 template <typename Rep, typename OutputIt>
 OutputIt static format_chrono_duration_value(OutputIt out, Rep val,
                                              int precision) {
-  if (precision < 0)
-    return format_to(out, "{}", val);
-  else
-    return format_to(out, "{:.{}f}", val, precision);
+  if (precision < 0) {
+    return format_to(out, std::is_floating_point<Rep>::value ? "{:g}" : "{}",
+                     val);
+  }
+  return format_to(out, "{:.{}f}", val, precision);
 }
 
 template <typename Period, typename OutputIt>

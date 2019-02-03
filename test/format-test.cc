@@ -635,8 +635,15 @@ TEST(WriterTest, WriteLongLong) {
 TEST(WriterTest, WriteDouble) {
   CHECK_WRITE(4.2);
   CHECK_WRITE(-4.2);
-  CHECK_WRITE(std::numeric_limits<double>::min());
-  CHECK_WRITE(std::numeric_limits<double>::max());
+  auto min = std::numeric_limits<double>::min();
+  auto max = std::numeric_limits<double>::max();
+  if (fmt::internal::use_grisu<double>()) {
+    EXPECT_EQ("2.2250738585072014e-308", fmt::format("{}", min));
+    EXPECT_EQ("1.7976931348623157e+308", fmt::format("{}", max));
+  } else {
+    CHECK_WRITE(min);
+    CHECK_WRITE(max);
+  }
 }
 
 TEST(WriterTest, WriteLongDouble) {
@@ -648,8 +655,15 @@ TEST(WriterTest, WriteLongDouble) {
     CHECK_WRITE_WCHAR(-4.2l);
   else
     fmt::print("warning: long double formatting with std::swprintf is broken");
-  CHECK_WRITE(std::numeric_limits<long double>::min());
-  CHECK_WRITE(std::numeric_limits<long double>::max());
+  auto min = std::numeric_limits<long double>::min();
+  auto max = std::numeric_limits<long double>::max();
+  if (fmt::internal::use_grisu<long double>()) {
+    EXPECT_EQ("2.2250738585072014e-308", fmt::format("{}", min));
+    EXPECT_EQ("1.7976931348623157e+308", fmt::format("{}", max));
+  } else {
+    CHECK_WRITE(min);
+    CHECK_WRITE(max);
+  }
 }
 
 TEST(WriterTest, WriteDoubleAtBufferBoundary) {
@@ -709,7 +723,7 @@ TEST(FormatToTest, WideString) {
 TEST(FormatToTest, FormatToNonbackInsertIteratorWithSignAndNumericAlignment) {
   char buffer[16] = {};
   fmt::format_to(fmt::internal::make_checked(buffer, 16), "{: =+}", 42.0);
-  EXPECT_STREQ("+42", buffer);
+  EXPECT_STREQ("+42.0", buffer);
 }
 
 TEST(FormatToTest, FormatToMemoryBuffer) {
@@ -841,8 +855,8 @@ TEST(FormatterTest, LeftAlign) {
   EXPECT_EQ("42   ", format("{0:<5}", 42ul));
   EXPECT_EQ("-42  ", format("{0:<5}", -42ll));
   EXPECT_EQ("42   ", format("{0:<5}", 42ull));
-  EXPECT_EQ("-42  ", format("{0:<5}", -42.0));
-  EXPECT_EQ("-42  ", format("{0:<5}", -42.0l));
+  EXPECT_EQ("-42.0  ", format("{0:<7}", -42.0));
+  EXPECT_EQ("-42.0  ", format("{0:<7}", -42.0l));
   EXPECT_EQ("c    ", format("{0:<5}", 'c'));
   EXPECT_EQ("abc  ", format("{0:<5}", "abc"));
   EXPECT_EQ("0xface  ", format("{0:<8}", reinterpret_cast<void*>(0xface)));
@@ -858,8 +872,8 @@ TEST(FormatterTest, RightAlign) {
   EXPECT_EQ("   42", format("{0:>5}", 42ul));
   EXPECT_EQ("  -42", format("{0:>5}", -42ll));
   EXPECT_EQ("   42", format("{0:>5}", 42ull));
-  EXPECT_EQ("  -42", format("{0:>5}", -42.0));
-  EXPECT_EQ("  -42", format("{0:>5}", -42.0l));
+  EXPECT_EQ("  -42.0", format("{0:>7}", -42.0));
+  EXPECT_EQ("  -42.0", format("{0:>7}", -42.0l));
   EXPECT_EQ("    c", format("{0:>5}", 'c'));
   EXPECT_EQ("  abc", format("{0:>5}", "abc"));
   EXPECT_EQ("  0xface", format("{0:>8}", reinterpret_cast<void*>(0xface)));
@@ -878,8 +892,8 @@ TEST(FormatterTest, NumericAlign) {
   EXPECT_EQ("   42", format("{0:=5}", 42ul));
   EXPECT_EQ("-  42", format("{0:=5}", -42ll));
   EXPECT_EQ("   42", format("{0:=5}", 42ull));
-  EXPECT_EQ("-  42", format("{0:=5}", -42.0));
-  EXPECT_EQ("-  42", format("{0:=5}", -42.0l));
+  EXPECT_EQ("-  42.0", format("{0:=7}", -42.0));
+  EXPECT_EQ("-  42.0", format("{0:=7}", -42.0l));
   EXPECT_THROW_MSG(format("{0:=5", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:=5}", 'c'), format_error,
@@ -888,7 +902,7 @@ TEST(FormatterTest, NumericAlign) {
                    "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{0:=8}", reinterpret_cast<void*>(0xface)),
                    format_error, "format specifier requires numeric argument");
-  EXPECT_EQ(" 1", fmt::format("{:= }", 1.0));
+  EXPECT_EQ(" 1.0", fmt::format("{:= }", 1.0));
 }
 
 TEST(FormatterTest, CenterAlign) {
@@ -901,8 +915,8 @@ TEST(FormatterTest, CenterAlign) {
   EXPECT_EQ(" 42  ", format("{0:^5}", 42ul));
   EXPECT_EQ(" -42 ", format("{0:^5}", -42ll));
   EXPECT_EQ(" 42  ", format("{0:^5}", 42ull));
-  EXPECT_EQ(" -42  ", format("{0:^6}", -42.0));
-  EXPECT_EQ(" -42 ", format("{0:^5}", -42.0l));
+  EXPECT_EQ(" -42.0 ", format("{0:^7}", -42.0));
+  EXPECT_EQ(" -42.0 ", format("{0:^7}", -42.0l));
   EXPECT_EQ("  c  ", format("{0:^5}", 'c'));
   EXPECT_EQ(" abc  ", format("{0:^6}", "abc"));
   EXPECT_EQ(" 0xface ", format("{0:^8}", reinterpret_cast<void*>(0xface)));
@@ -920,8 +934,8 @@ TEST(FormatterTest, Fill) {
   EXPECT_EQ("***42", format("{0:*>5}", 42ul));
   EXPECT_EQ("**-42", format("{0:*>5}", -42ll));
   EXPECT_EQ("***42", format("{0:*>5}", 42ull));
-  EXPECT_EQ("**-42", format("{0:*>5}", -42.0));
-  EXPECT_EQ("**-42", format("{0:*>5}", -42.0l));
+  EXPECT_EQ("**-42.0", format("{0:*>7}", -42.0));
+  EXPECT_EQ("**-42.0", format("{0:*>7}", -42.0l));
   EXPECT_EQ("c****", format("{0:*<5}", 'c'));
   EXPECT_EQ("abc**", format("{0:*<5}", "abc"));
   EXPECT_EQ("**0xface", format("{0:*>8}", reinterpret_cast<void*>(0xface)));
@@ -941,8 +955,8 @@ TEST(FormatterTest, PlusSign) {
   EXPECT_EQ("+42", format("{0:+}", 42ll));
   EXPECT_THROW_MSG(format("{0:+}", 42ull), format_error,
                    "format specifier requires signed argument");
-  EXPECT_EQ("+42", format("{0:+}", 42.0));
-  EXPECT_EQ("+42", format("{0:+}", 42.0l));
+  EXPECT_EQ("+42.0", format("{0:+}", 42.0));
+  EXPECT_EQ("+42.0", format("{0:+}", 42.0l));
   EXPECT_THROW_MSG(format("{0:+", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:+}", 'c'), format_error,
@@ -965,8 +979,8 @@ TEST(FormatterTest, MinusSign) {
   EXPECT_EQ("42", format("{0:-}", 42ll));
   EXPECT_THROW_MSG(format("{0:-}", 42ull), format_error,
                    "format specifier requires signed argument");
-  EXPECT_EQ("42", format("{0:-}", 42.0));
-  EXPECT_EQ("42", format("{0:-}", 42.0l));
+  EXPECT_EQ("42.0", format("{0:-}", 42.0));
+  EXPECT_EQ("42.0", format("{0:-}", 42.0l));
   EXPECT_THROW_MSG(format("{0:-", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:-}", 'c'), format_error,
@@ -989,8 +1003,8 @@ TEST(FormatterTest, SpaceSign) {
   EXPECT_EQ(" 42", format("{0: }", 42ll));
   EXPECT_THROW_MSG(format("{0: }", 42ull), format_error,
                    "format specifier requires signed argument");
-  EXPECT_EQ(" 42", format("{0: }", 42.0));
-  EXPECT_EQ(" 42", format("{0: }", 42.0l));
+  EXPECT_EQ(" 42.0", format("{0: }", 42.0));
+  EXPECT_EQ(" 42.0", format("{0: }", 42.0l));
   EXPECT_THROW_MSG(format("{0: ", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0: }", 'c'), format_error,
@@ -1034,11 +1048,8 @@ TEST(FormatterTest, HashFlag) {
   EXPECT_EQ("0x42", format("{0:#x}", 0x42ull));
   EXPECT_EQ("042", format("{0:#o}", 042ull));
 
-  if (FMT_USE_GRISU)
-    EXPECT_EQ("-42.0", format("{0:#}", -42.0));
-  else
-    EXPECT_EQ("-42.0000", format("{0:#}", -42.0));
-  EXPECT_EQ("-42.0000", format("{0:#}", -42.0l));
+  EXPECT_EQ("-42.0", format("{0:#}", -42.0));
+  EXPECT_EQ("-42.0", format("{0:#}", -42.0l));
   EXPECT_THROW_MSG(format("{0:#", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:#}", 'c'), format_error,
@@ -1057,8 +1068,8 @@ TEST(FormatterTest, ZeroFlag) {
   EXPECT_EQ("00042", format("{0:05}", 42ul));
   EXPECT_EQ("-0042", format("{0:05}", -42ll));
   EXPECT_EQ("00042", format("{0:05}", 42ull));
-  EXPECT_EQ("-0042", format("{0:05}", -42.0));
-  EXPECT_EQ("-0042", format("{0:05}", -42.0l));
+  EXPECT_EQ("-0042.0", format("{0:07}", -42.0));
+  EXPECT_EQ("-0042.0", format("{0:07}", -42.0l));
   EXPECT_THROW_MSG(format("{0:0", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:05}", 'c'), format_error,
@@ -1433,7 +1444,7 @@ TEST(FormatterTest, FormatFloat) {
 
 TEST(FormatterTest, FormatDouble) {
   check_unknown_types(1.2, "eEfFgGaA", "double");
-  EXPECT_EQ("0", format("{:}", 0.0));
+  EXPECT_EQ("0.0", format("{:}", 0.0));
   EXPECT_EQ("0.000000", format("{:f}", 0.0));
   EXPECT_EQ("0", format("{:g}", 0.0));
   EXPECT_EQ("392.65", format("{:}", 392.65));
@@ -1451,12 +1462,6 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ(buffer, format("{:a}", -42.0));
   safe_sprintf(buffer, "%A", -42.0);
   EXPECT_EQ(buffer, format("{:A}", -42.0));
-}
-
-TEST(FormatterTest, FormatDoubleBigPrecision) {
-  // sprintf with big precision is broken in MSVC2013, so only test on Grisu.
-  if (FMT_USE_GRISU)
-    EXPECT_EQ(format("0.{:0<1000}", ""), format("{:.1000f}", 0.0));
 }
 
 TEST(FormatterTest, FormatNaN) {
@@ -1483,7 +1488,7 @@ TEST(FormatterTest, FormatInfinity) {
 }
 
 TEST(FormatterTest, FormatLongDouble) {
-  EXPECT_EQ("0", format("{0:}", 0.0l));
+  EXPECT_EQ("0.0", format("{0:}", 0.0l));
   EXPECT_EQ("0.000000", format("{0:f}", 0.0l));
   EXPECT_EQ("392.65", format("{0:}", 392.65l));
   EXPECT_EQ("392.65", format("{0:g}", 392.65l));
@@ -1721,29 +1726,29 @@ TEST(FormatIntTest, FormatInt) {
 }
 
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 #if FMT_MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4996) // Using a deprecated function
+#  pragma warning(push)
+#  pragma warning(disable : 4996)  // Using a deprecated function
 #endif
 
 template <typename T> std::string format_decimal(T value) {
   char buffer[10];
   char* ptr = buffer;
   // TODO: Replace with safer, non-deprecated overload
-  fmt::format_decimal(ptr, value); 
+  fmt::format_decimal(ptr, value);
   return std::string(buffer, ptr);
 }
 
 #if FMT_MSC_VER
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
+#  pragma GCC diagnostic pop
 #endif
 
 TEST(FormatIntTest, FormatDec) {
@@ -1781,13 +1786,13 @@ TEST(FormatTest, Dynamic) {
   std::vector<fmt::basic_format_arg<ctx>> args;
   args.emplace_back(fmt::internal::make_arg<ctx>(42));
   args.emplace_back(fmt::internal::make_arg<ctx>("abc1"));
-  args.emplace_back(fmt::internal::make_arg<ctx>(1.2f));
+  args.emplace_back(fmt::internal::make_arg<ctx>(1.5f));
 
   std::string result = fmt::vformat(
       "{} and {} and {}", fmt::basic_format_args<ctx>(
                               args.data(), static_cast<unsigned>(args.size())));
 
-  EXPECT_EQ("42 and abc1 and 1.2", result);
+  EXPECT_EQ("42 and abc1 and 1.5", result);
 }
 
 TEST(FormatTest, JoinArg) {
@@ -2376,8 +2381,8 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:d}", "invalid type specifier", std::string);
   EXPECT_ERROR("{:s}", "invalid type specifier", void*);
 #  endif
-  EXPECT_ERROR("{foo",
-               "compile-time checks don't support named arguments", int);
+  EXPECT_ERROR("{foo", "compile-time checks don't support named arguments",
+               int);
   EXPECT_ERROR_NOARGS("{10000000000}", "number is too big");
   EXPECT_ERROR_NOARGS("{0x}", "invalid format string");
   EXPECT_ERROR_NOARGS("{-}", "invalid format string");
