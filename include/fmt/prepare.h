@@ -383,7 +383,6 @@ template <typename Format> class compiletime_prepared_parts_type_provider {
    private:
     FMT_CONSTEXPR const char_type* find_matching_brace(const char_type* begin,
                                                        const char_type* end) {
-      FMT_CONSTEXPR_DECL const basic_string_view<char_type> text = Format{};
       unsigned braces_counter{0u};
       for (; begin != end; ++begin) {
         if (*begin == '{') {

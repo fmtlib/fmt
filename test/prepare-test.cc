@@ -169,7 +169,6 @@ TEST(PrepareTest, FormatPart_ComparisonOperators) {
     auto rhs = format_part(specs);
     EXPECT_EQ(lhs, rhs);
 
-    const auto specs_text = fmt::string_view("<10");
     specs.parsed_specs = prepared_specs();
     lhs = format_part(specs);
     rhs = format_part(specs);
@@ -191,8 +190,6 @@ TEST(PrepareTest, FormatPart_ComparisonOperators) {
     rhs = format_part(rhs_spec);
     EXPECT_NE(lhs, rhs);
 
-    const auto lhs_specs_text = fmt::string_view("<10");
-    const auto rhs_specs_text = fmt::string_view("<42");
     lhs_spec = format_part::specification(specs_argument_id);
     rhs_spec = format_part::specification(specs_argument_id);
     lhs_spec.parsed_specs.precision = 1;
@@ -202,7 +199,6 @@ TEST(PrepareTest, FormatPart_ComparisonOperators) {
     EXPECT_NE(lhs, rhs);
   }
   {
-    const auto specs_text = fmt::string_view{"<10"};
     const auto specs_argument_id = 0u;
     const auto specs_named_argument_id =
         fmt::internal::string_view_metadata(0, 42);
@@ -623,7 +619,7 @@ template <typename T> struct user_allocator {
   template <typename U> user_allocator(const user_allocator<U>&) {}
 
   pointer allocate(size_type cnt,
-                   typename std::allocator<void>::const_pointer = 0) {
+                   typename std::allocator<void>::const_pointer = FMT_NULL) {
     return new value_type[cnt];
   }
 
@@ -633,8 +629,8 @@ template <typename T> struct user_allocator {
 
   void destroy(pointer p) { (*p).~value_type(); }
 
-  bool operator==(const user_allocator& other) const { return true; }
-  bool operator!=(const user_allocator& other) const { return false; }
+  bool operator==(const user_allocator&) const { return true; }
+  bool operator!=(const user_allocator&) const { return false; }
 };
 
 TEST(PrepareTest, PassUserTypeFormat) {
