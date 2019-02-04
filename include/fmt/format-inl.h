@@ -767,11 +767,11 @@ void sprintf_format(Double value, internal::buffer& buf,
             if (*p == '0') ++p;
             const char* end = buf.data() + n;
             while (p != end && *p >= '1' && *p <= '9') ++p;
-            char* start = p;
+            char* where = p;
             while (p != end && *p == '0') ++p;
             if (p == end || *p < '0' || *p > '9') {
-              if (p != end) std::memmove(start, p, to_unsigned(end - p));
-              n -= static_cast<unsigned>(p - start);
+              if (p != end) std::memmove(where, p, to_unsigned(end - p));
+              n -= static_cast<unsigned>(p - where);
             }
           }
         }
