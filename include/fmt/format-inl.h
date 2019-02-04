@@ -470,7 +470,10 @@ FMT_FUNC bool grisu2_round(char* buf, int& size, int max_digits, uint64_t delta,
 FMT_FUNC int grisu2_gen_digits(char* buf, uint32_t hi, uint64_t lo, int& exp,
                                uint64_t delta, const fp& one, const fp& diff,
                                int max_digits) {
-  assert(exp <= 10);
+  // hi cannot be zero because it contains top 32 bits of a product of two
+  // 64-bit numbers with MSB set (due to normalization) - 1, shifted right by at
+  // most 60 bits.
+  FMT_ASSERT(hi != 0, "");
   int size = 0;
   // Generate digits for the most significant part (hi). This can produce up to
   // 10 digits.
@@ -522,7 +525,7 @@ FMT_FUNC int grisu2_gen_digits(char* buf, uint32_t hi, uint64_t lo, int& exp,
     default:
       FMT_ASSERT(false, "invalid number of digits");
     }
-    if (digit != 0 || size != 0) buf[size++] = static_cast<char>('0' + digit);
+    buf[size++] = static_cast<char>('0' + digit);
     --exp;
     uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
     if (remainder <= delta || size > max_digits) {
@@ -537,7 +540,7 @@ FMT_FUNC int grisu2_gen_digits(char* buf, uint32_t hi, uint64_t lo, int& exp,
     lo *= 10;
     delta *= 10;
     char digit = static_cast<char>(lo >> -one.e);
-    if (digit != 0 || size != 0) buf[size++] = static_cast<char>('0' + digit);
+    buf[size++] = static_cast<char>('0' + digit);
     lo &= one.f - 1;
     --exp;
     if (lo < delta || size > max_digits) {
