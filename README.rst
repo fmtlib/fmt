@@ -352,12 +352,12 @@ further details see the `source
 ================= ============= ===========
 Library           Method        Run Time, s
 ================= ============= ===========
-libc              printf          1.35
-libc++            std::ostream    3.42
-fmt 534bff7       fmt::print      1.56
-tinyformat 2.0.1  tfm::printf     3.73
-Boost Format 1.54 boost::format   8.44
-Folly Format      folly::format   2.54
+libc              printf          1.01
+libc++            std::ostream    2.98
+fmt 31510cb       fmt::print      1.13
+tinyformat 2.0.1  tfm::printf     3.23
+Boost Format 1.54 boost::format   7.34
+Folly Format      folly::format   2.23
 ================= ============= ===========
 
 As you can see ``boost::format`` is much slower than the alternative methods; this
