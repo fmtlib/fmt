@@ -1135,11 +1135,94 @@ namespace internal {
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
 template <typename Double>
 FMT_API typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-grisu2_format(Double value, buffer& buf, core_format_specs);
+grisu2_format(Double value, buffer& buf, core_format_specs, int& exp);
 template <typename Double>
 inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t), bool>::type
-grisu2_format(Double, buffer&, core_format_specs) {
+grisu2_format(Double, buffer&, core_format_specs, int&) {
   return false;
+}
+
+struct gen_digits_params {
+  int num_digits;
+  bool fixed;
+  bool upper;
+  bool trailing_zeros;
+};
+
+// Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
+template <typename Char, typename It> It write_exponent(int exp, It it) {
+  FMT_ASSERT(-1000 < exp && exp < 1000, "exponent out of range");
+  if (exp < 0) {
+    *it++ = static_cast<Char>('-');
+    exp = -exp;
+  } else {
+    *it++ = static_cast<Char>('+');
+  }
+  if (exp >= 100) {
+    *it++ = static_cast<Char>(static_cast<char>('0' + exp / 100));
+    exp %= 100;
+    const char* d = data::DIGITS + exp * 2;
+    *it++ = static_cast<Char>(d[0]);
+    *it++ = static_cast<Char>(d[1]);
+  } else {
+    const char* d = data::DIGITS + exp * 2;
+    if (d[0] != '0') *it++ = static_cast<Char>(d[0]);
+    *it++ = static_cast<Char>(d[1]);
+  }
+  return it;
+}
+
+// The number is given as v = digits * pow(10, exp).
+template <typename Char, typename It>
+It grisu2_prettify(const char* digits, int size, int exp, It it) {
+  // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
+  int full_exp = size + exp;
+  auto params = gen_digits_params();
+  params.fixed = (full_exp - 1) >= -4 && (full_exp - 1) <= 10;
+  if (!params.fixed) {
+    // Insert a decimal point after the first digit and add an exponent.
+    *it++ = static_cast<Char>(*digits);
+    if (size > 1) *it++ = static_cast<Char>('.');
+    exp += size - 1;
+    it = copy_str<Char>(digits + 1, digits + size, it);
+    if (size < params.num_digits)
+      it = std::fill_n(it, params.num_digits - size, static_cast<Char>('0'));
+    *it++ = static_cast<Char>(params.upper ? 'E' : 'e');
+    return write_exponent<Char>(exp, it);
+  }
+  params.trailing_zeros = true;
+  const int exp_threshold = 21;
+  if (size <= full_exp && full_exp <= exp_threshold) {
+    // 1234e7 -> 12340000000[.0+]
+    it = copy_str<Char>(digits, digits + size, it);
+    it = std::fill_n(it, full_exp - size, static_cast<Char>('0'));
+    int num_zeros = (std::max)(params.num_digits - full_exp, 1);
+    if (params.trailing_zeros) {
+      *it++ = static_cast<Char>('.');
+      it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
+    }
+  } else if (full_exp > 0) {
+    // 1234e-2 -> 12.34[0+]
+    it = copy_str<Char>(digits, digits + full_exp, it);
+    *it++ = static_cast<Char>('.');
+    it = copy_str<Char>(digits + full_exp, digits + size, it);
+    if (!params.trailing_zeros) {
+      // Remove trailing zeros.
+      // TODO
+      // handler.remove_trailing('0');
+    } else if (params.num_digits > size) {
+      // Add trailing zeros.
+      int num_zeros = params.num_digits - size;
+      it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
+    }
+  } else {
+    // 1234e-6 -> 0.001234
+    *it++ = static_cast<Char>('0');
+    *it++ = static_cast<Char>('.');
+    it = std::fill_n(it, -full_exp, static_cast<Char>('0'));
+    it = copy_str<Char>(digits, digits + size, it);
+  }
+  return it;
 }
 
 template <typename Double>
@@ -2550,7 +2633,6 @@ template <typename Range> class basic_writer {
   };
 
   struct double_writer {
-    size_t n;
     char sign;
     internal::buffer& buffer;
 
@@ -2558,11 +2640,35 @@ template <typename Range> class basic_writer {
     size_t width() const { return size(); }
 
     template <typename It> void operator()(It&& it) {
-      if (sign) {
-        *it++ = static_cast<char_type>(sign);
-        --n;
-      }
+      if (sign) *it++ = static_cast<char_type>(sign);
       it = internal::copy_str<char_type>(buffer.begin(), buffer.end(), it);
+    }
+  };
+
+  class grisu_writer {
+   private:
+    internal::buffer& digits_;
+    size_t size_;
+    char sign_;
+    int exp_;
+
+   public:
+    grisu_writer(char sign, internal::buffer& digits, int exp)
+        : digits_(digits), sign_(sign), exp_(exp) {
+      int num_digits = static_cast<int>(digits.size());
+      auto it = internal::grisu2_prettify<char>(
+          digits.data(), num_digits, exp, internal::counting_iterator<char>());
+      size_ = it.count();
+    }
+
+    size_t size() const { return size_ + (sign_ ? 1 : 0); }
+    size_t width() const { return size(); }
+
+    template <typename It> void operator()(It&& it) {
+      if (sign_) *it++ = static_cast<char_type>(sign_);
+      int num_digits = static_cast<int>(digits_.size());
+      it = internal::grisu2_prettify<char_type>(digits_.data(), num_digits,
+                                                exp_, it);
     }
   };
 
@@ -2731,11 +2837,11 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
     return write_inf_or_nan(handler.upper ? "INF" : "inf");
 
   memory_buffer buffer;
+  int exp = 0;
   bool use_grisu =
       fmt::internal::use_grisu<T>() && !spec.type && !spec.has_precision() &&
-      internal::grisu2_format(static_cast<double>(value), buffer, spec);
+      internal::grisu2_format(static_cast<double>(value), buffer, spec, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
-  size_t n = buffer.size();
   align_spec as = spec;
   if (spec.align() == ALIGN_NUMERIC) {
     if (sign) {
@@ -2745,11 +2851,13 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
       if (as.width_) --as.width_;
     }
     as.align_ = ALIGN_RIGHT;
-  } else {
-    if (spec.align() == ALIGN_DEFAULT) as.align_ = ALIGN_RIGHT;
-    if (sign) ++n;
+  } else if (spec.align() == ALIGN_DEFAULT) {
+    as.align_ = ALIGN_RIGHT;
   }
-  write_padded(as, double_writer{n, sign, buffer});
+  if (use_grisu)
+    write_padded(as, grisu_writer{sign, buffer, exp});
+  else
+    write_padded(as, double_writer{sign, buffer});
 }
 
 // Reports a system error without throwing an exception.

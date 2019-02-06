@@ -559,131 +559,13 @@ FMT_FUNC int grisu2_gen_digits(char* buf, uint32_t hi, uint64_t lo, int& exp,
 #  define FMT_FALLTHROUGH
 #endif
 
-struct gen_digits_params {
-  int num_digits;
-  bool fixed;
-  bool upper;
-  bool trailing_zeros;
-};
-
-struct prettify_handler {
-  char* data;
-  ptrdiff_t size;
-  buffer& buf;
-
-  explicit prettify_handler(buffer& b, ptrdiff_t n)
-      : data(b.data()), size(n), buf(b) {}
-  ~prettify_handler() {
-    assert(size <= inline_buffer_size);
-    buf.resize(to_unsigned(size));
-  }
-
-  template <typename F> void insert(ptrdiff_t pos, ptrdiff_t n, F f) {
-    std::memmove(data + pos + n, data + pos, to_unsigned(size - pos));
-    f(data + pos);
-    size += n;
-  }
-
-  void insert(ptrdiff_t pos, char c) {
-    std::memmove(data + pos + 1, data + pos, to_unsigned(size - pos));
-    data[pos] = c;
-    ++size;
-  }
-
-  void append(ptrdiff_t n, char c) {
-    std::uninitialized_fill_n(data + size, n, c);
-    size += n;
-  }
-
-  void append(char c) { data[size++] = c; }
-
-  void remove_trailing(char c) {
-    while (data[size - 1] == c) --size;
-  }
-};
-
-// Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
-template <typename Handler> FMT_FUNC void write_exponent(int exp, Handler&& h) {
-  FMT_ASSERT(-1000 < exp && exp < 1000, "exponent out of range");
-  if (exp < 0) {
-    h.append('-');
-    exp = -exp;
-  } else {
-    h.append('+');
-  }
-  if (exp >= 100) {
-    h.append(static_cast<char>('0' + exp / 100));
-    exp %= 100;
-    const char* d = data::DIGITS + exp * 2;
-    h.append(d[0]);
-    h.append(d[1]);
-  } else {
-    const char* d = data::DIGITS + exp * 2;
-    if (d[0] != '0') h.append(d[0]);
-    h.append(d[1]);
-  }
-}
-
-struct fill {
-  size_t n;
-  void operator()(char* buf) const {
-    buf[0] = '0';
-    buf[1] = '.';
-    std::uninitialized_fill_n(buf + 2, n, '0');
-  }
-};
-
-// The number is given as v = f * pow(10, exp), where f has size digits.
-template <typename Handler>
-FMT_FUNC void grisu2_prettify(int size, int exp, Handler&& handler) {
-  // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
-  int full_exp = size + exp;
-  auto params = gen_digits_params();
-  params.fixed = (full_exp - 1) >= -4 && (full_exp - 1) <= 10;
-  if (!params.fixed) {
-    // Insert a decimal point after the first digit and add an exponent.
-    if (size > 1) handler.insert(1, '.');
-    exp += size - 1;
-    if (size < params.num_digits) handler.append(params.num_digits - size, '0');
-    handler.append(params.upper ? 'E' : 'e');
-    write_exponent(exp, handler);
-    return;
-  }
-  params.trailing_zeros = true;
-  const int exp_threshold = 21;
-  if (size <= full_exp && full_exp <= exp_threshold) {
-    // 1234e7 -> 12340000000[.0+]
-    handler.append(full_exp - size, '0');
-    int num_zeros = std::max(params.num_digits - full_exp, 1);
-    if (params.trailing_zeros) {
-      handler.append('.');
-      handler.append(num_zeros, '0');
-    }
-  } else if (full_exp > 0) {
-    // 1234e-2 -> 12.34[0+]
-    handler.insert(full_exp, '.');
-    if (!params.trailing_zeros) {
-      // Remove trailing zeros.
-      handler.remove_trailing('0');
-    } else if (params.num_digits > size) {
-      // Add trailing zeros.
-      ptrdiff_t num_zeros = params.num_digits - size;
-      handler.append(num_zeros, '0');
-    }
-  } else {
-    // 1234e-6 -> 0.001234
-    handler.insert(0, 2 - full_exp, fill{to_unsigned(-full_exp)});
-  }
-}
-
 template <typename Double>
 FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-grisu2_format(Double value, buffer& buf, core_format_specs) {
+grisu2_format(Double value, buffer& buf, core_format_specs, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
   if (value <= 0) {  // <= instead of == to silence a warning.
-    buf[0] = '0';
-    const int size = 1;
-    grisu2_prettify(size, 0, prettify_handler(buf, size));
+    buf.push_back('0');
+    exp = 0;
     return true;
   }
 
@@ -704,7 +586,7 @@ grisu2_format(Double value, buffer& buf, core_format_specs) {
   // hi (p1 in Grisu) contains the most significant digits of scaled upper.
   // hi = floor(upper / one).
   uint32_t hi = static_cast<uint32_t>(upper.f >> -one.e);
-  int exp = count_digits(hi);  // kappa in Grisu.
+  exp = count_digits(hi);  // kappa in Grisu.
   fp_value.normalize();
   fp scaled_value = fp_value * cached_pow;
   lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
@@ -718,7 +600,8 @@ grisu2_format(Double value, buffer& buf, core_format_specs) {
   int size =
       grisu2_gen_digits(buf.data(), hi, lo, exp, delta, one, diff, max_digits);
   if (size < 0) return false;
-  grisu2_prettify(size, cached_exp + exp, prettify_handler(buf, size));
+  buf.resize(to_unsigned(size));
+  exp += cached_exp;
   return true;
 }
 

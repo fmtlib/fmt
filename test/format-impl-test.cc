@@ -102,7 +102,8 @@ TEST(FPTest, GetCachedPower) {
 
 TEST(FPTest, Grisu2FormatCompilesWithNonIEEEDouble) {
   fmt::memory_buffer buf;
-  grisu2_format(4.2f, buf, fmt::core_format_specs());
+  int exp = 0;
+  grisu2_format(4.2f, buf, fmt::core_format_specs(), exp);
 }
 
 template <typename T> struct ValueExtractor : fmt::internal::function<T> {

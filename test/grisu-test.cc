@@ -51,5 +51,4 @@ TEST(GrisuTest, Prettify) {
   EXPECT_EQ("12340000000.0", fmt::format("{}", 1234e7));
   EXPECT_EQ("12.34", fmt::format("{}", 1234e-2));
   EXPECT_EQ("0.001234", fmt::format("{}", 1234e-6));
-
 }
