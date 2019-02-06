@@ -551,14 +551,6 @@ FMT_FUNC int grisu2_gen_digits(char* buf, uint32_t hi, uint64_t lo, int& exp,
   }
 }
 
-#if FMT_CLANG_VERSION
-#  define FMT_FALLTHROUGH [[clang::fallthrough]];
-#elif FMT_GCC_VERSION >= 700
-#  define FMT_FALLTHROUGH [[gnu::fallthrough]];
-#else
-#  define FMT_FALLTHROUGH
-#endif
-
 template <typename Double>
 FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
 grisu2_format(Double value, buffer& buf, core_format_specs, int& exp) {
