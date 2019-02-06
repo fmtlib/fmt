@@ -618,8 +618,9 @@ template <typename T> struct user_allocator {
   ~user_allocator() = default;
   template <typename U> user_allocator(const user_allocator<U>&) {}
 
-  pointer allocate(size_type cnt,
-                   typename std::allocator<void>::const_pointer = FMT_NULL) {
+  pointer allocate(
+      size_type cnt,
+      typename std::allocator<fmt::monostate>::const_pointer = FMT_NULL) {
     return new value_type[cnt];
   }
 
