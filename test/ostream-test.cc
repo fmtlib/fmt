@@ -26,6 +26,11 @@ static std::wostream& operator<<(std::wostream& os, const Date& d) {
   return os;
 }
 
+// Make sure that overloaded comma operators do no harm to is_streamable.
+struct type_with_comma_op {};
+template <typename T> void operator,(type_with_comma_op, const T&);
+template <typename T> type_with_comma_op operator<<(T&, const Date&);
+
 enum TestEnum {};
 static std::ostream& operator<<(std::ostream& os, TestEnum) {
   return os << "TestEnum";
