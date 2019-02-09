@@ -273,7 +273,7 @@ namespace std {
       explicit basic_format_arg(const T* p) noexcept;                  // exposition only
 
     template<class T, typename = std::enable_if_t<
-               !Integral<T> && is_default_constructible_v<formatter<T, char_type>>>>
+               !Integral<T> && is_default_constructible_v<typename Context::template formatter_type<T>>>>
       explicit basic_format_arg(const T& v) noexcept;                  // exposition only
 
     explicit operator bool() const noexcept;
