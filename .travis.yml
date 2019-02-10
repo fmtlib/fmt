@@ -83,8 +83,8 @@ matrix:
             - g++-4.4
           sources:
             - ubuntu-toolchain-r-test
-      # Android
-    - language: android
+    - name: Android NDK (Gradle)
+      language: android
       addons:
         apt:
           update: true
@@ -92,23 +92,24 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - ninja-build
-            - wget
-            - unzip
+            - curl
             - tree
       android:
         components:
           - tools
           - platform-tools
-          - android-21
-      env:
-        - ANDROID=true
+          - android-25 # 7.0
+          - android-27 # 8.1
+          - android-28 # 9.0
+          - build-tools-28.0.3
       before_install:
-        # Download/Install Gradle 
-        - wget https://services.gradle.org/distributions/gradle-4.10.2-bin.zip
-        - mkdir -p gradle
-        - unzip -q -d ./gradle gradle-4.10.2-bin.zip
-        - export GRADLE=gradle/gradle-4.10.2/bin/gradle
-        - bash $GRADLE --version
+        # Install Gradle from https://sdkman.io/
+        - curl -s "https://get.sdkman.io" | bash > /dev/null
+        - source "$HOME/.sdkman/bin/sdkman-init.sh"
+        - sdk version
+        - sdk install gradle
+        - sdk use gradle
+        - gradle --version
       install:
         # Accept SDK Licenses + Install NDK
         - yes | sdkmanager --update > /dev/null 2>&1
@@ -116,7 +117,8 @@ matrix:
       before_script:
         - pushd ./support
       script:
-        - bash ../$GRADLE clean assemble
+        - gradle clean
+        - gradle assemble
       after_success:
         - popd;
         - tree ./libs
