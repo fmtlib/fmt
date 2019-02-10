@@ -253,7 +253,8 @@ class prepared_format {
   typename Context::iterator vformat_to(Range out,
                                         basic_format_args<Context> args) const {
     const auto format_view = internal::to_string_view(format_);
-    Context ctx(out.begin(), format_view, args);
+    basic_parse_context<char_type> parse_ctx(format_view);
+    Context ctx(out.begin(), args);
 
     const auto& parts = parts_provider_.parts();
     for (auto part_it = parts.begin(); part_it != parts.end(); ++part_it) {
@@ -270,14 +271,14 @@ class prepared_format {
       } break;
 
       case format_part_t::which_value::argument_id: {
-        advance_parse_context_to_specification(ctx, part);
-        format_arg<Range>(ctx, value.arg_id);
+        advance_parse_context_to_specification(parse_ctx, part);
+        format_arg<Range>(parse_ctx, ctx, value.arg_id);
       } break;
 
       case format_part_t::which_value::named_argument_id: {
-        advance_parse_context_to_specification(ctx, part);
+        advance_parse_context_to_specification(parse_ctx, part);
         const auto named_arg_id = value.named_arg_id.to_view(format_view);
-        format_arg<Range>(ctx, named_arg_id);
+        format_arg<Range>(parse_ctx, ctx, named_arg_id);
       } break;
       case format_part_t::which_value::specification: {
         const auto& arg_id_value = value.spec.arg_id.val;
@@ -289,15 +290,15 @@ class prepared_format {
 
         auto specs = value.spec.parsed_specs;
 
-        handle_dynamic_spec<internal::width_checker>(specs.width_,
-                                                     specs.width_ref, ctx);
+        handle_dynamic_spec<internal::width_checker>(
+            specs.width_, specs.width_ref, ctx, format_view.begin());
         handle_dynamic_spec<internal::precision_checker>(
-            specs.precision, specs.precision_ref, ctx);
+            specs.precision, specs.precision_ref, ctx, format_view.begin());
 
         check_prepared_specs(specs, arg.type());
-        advance_parse_context_to_specification(ctx, part);
+        advance_parse_context_to_specification(parse_ctx, part);
         ctx.advance_to(
-            visit_format_arg(arg_formatter<Range>(ctx, &specs), arg));
+            visit_format_arg(arg_formatter<Range>(ctx, FMT_NULL, &specs), arg));
       } break;
       }
     }
@@ -305,17 +306,18 @@ class prepared_format {
     return ctx.out();
   }
 
-  template <typename Context>
-  void advance_parse_context_to_specification(Context& ctx,
-                                              const format_part_t& part) const {
+  void advance_parse_context_to_specification(
+      basic_parse_context<char_type>& parse_ctx,
+      const format_part_t& part) const {
     const auto view = to_string_view(format_);
     const auto specification_begin = view.data() + part.end_of_argument_id;
-    get_parse_context(ctx).advance_to(specification_begin);
+    parse_ctx.advance_to(specification_begin);
   }
 
   template <typename Range, typename Context, typename Id>
-  void format_arg(Context& ctx, Id arg_id) const {
-    get_parse_context(ctx).check_arg_id(arg_id);
+  void format_arg(basic_parse_context<char_type>& parse_ctx, Context& ctx,
+                  Id arg_id) const {
+    parse_ctx.check_arg_id(arg_id);
     const auto stopped_at =
         visit_format_arg(arg_formatter<Range>(ctx), ctx.arg(arg_id));
     ctx.advance_to(stopped_at);

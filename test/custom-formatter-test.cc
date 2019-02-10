@@ -20,8 +20,9 @@ class custom_arg_formatter
   typedef fmt::arg_formatter<range> base;
 
   custom_arg_formatter(fmt::format_context& ctx,
+                       fmt::format_parse_context* parse_ctx,
                        fmt::format_specs* s = FMT_NULL)
-      : base(ctx, s) {}
+      : base(ctx, parse_ctx, s) {}
 
   using base::operator();
 

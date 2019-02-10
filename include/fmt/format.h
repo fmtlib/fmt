@@ -1567,16 +1567,20 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(const Char*& begin,
   return value;
 }
 
-template <typename Char, typename Context>
-class custom_formatter : public function<bool> {
+template <typename Context> class custom_formatter : public function<bool> {
  private:
+  typedef typename Context::char_type char_type;
+
+  basic_parse_context<char_type>& parse_ctx_;
   Context& ctx_;
 
  public:
-  explicit custom_formatter(Context& ctx) : ctx_(ctx) {}
+  explicit custom_formatter(basic_parse_context<char_type>& parse_ctx,
+                            Context& ctx)
+      : parse_ctx_(parse_ctx), ctx_(ctx) {}
 
   bool operator()(typename basic_format_arg<Context>::handle h) const {
-    h.format(get_parse_context(ctx_), ctx_);
+    h.format(parse_ctx_, ctx_);
     return true;
   }
 
@@ -1769,7 +1773,9 @@ class specs_handler : public specs_setter<typename Context::char_type> {
 
   FMT_CONSTEXPR specs_handler(basic_format_specs<char_type>& specs,
                               ParseContext& parse_ctx, Context& ctx)
-      : specs_setter<char_type>(specs), parse_ctx_(parse_ctx), context_(ctx) {}
+      : specs_setter<char_type>(specs),
+        parse_context_(parse_ctx),
+        context_(ctx) {}
 
   template <typename Id> FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
     set_dynamic_spec<width_checker>(this->specs_.width_, get_arg(arg_id),
@@ -1787,14 +1793,21 @@ class specs_handler : public specs_setter<typename Context::char_type> {
   // This is only needed for compatibility with gcc 4.4.
   typedef typename Context::format_arg format_arg;
 
-  FMT_CONSTEXPR format_arg get_arg(auto_id) { return context_.next_arg(); }
+  FMT_CONSTEXPR format_arg get_arg(auto_id) {
+    return internal::get_arg(context_, parse_context_.next_arg_id());
+  }
 
-  template <typename Id> FMT_CONSTEXPR format_arg get_arg(Id arg_id) {
-    parse_ctx_.check_arg_id(arg_id);
+  FMT_CONSTEXPR format_arg get_arg(unsigned arg_id) {
+    parse_context_.check_arg_id(arg_id);
+    return internal::get_arg(context_, arg_id);
+  }
+
+  FMT_CONSTEXPR format_arg get_arg(basic_string_view<char_type> arg_id) {
+    parse_context_.check_arg_id(arg_id);
     return context_.arg(arg_id);
   }
 
-  ParseContext& parse_ctx_;
+  ParseContext& parse_context_;
   Context& context_;
 };
 
@@ -2264,7 +2277,8 @@ struct format_type
 
 template <template <typename> class Handler, typename Spec, typename Context>
 void handle_dynamic_spec(Spec& value, arg_ref<typename Context::char_type> ref,
-                         Context& ctx) {
+                         Context& ctx,
+                         const typename Context::char_type* format_str) {
   typedef typename Context::char_type char_type;
   switch (ref.kind) {
   case arg_ref<char_type>::NONE:
@@ -2274,7 +2288,7 @@ void handle_dynamic_spec(Spec& value, arg_ref<typename Context::char_type> ref,
                                         ctx.error_handler());
     break;
   case arg_ref<char_type>::NAME: {
-    const auto arg_id = ref.val.name.to_view(get_parse_context(ctx).begin());
+    const auto arg_id = ref.val.name.to_view(format_str);
     internal::set_dynamic_spec<Handler>(value, ctx.arg(arg_id),
                                         ctx.error_handler());
   } break;
@@ -2294,6 +2308,7 @@ class arg_formatter
   typedef basic_format_context<typename base::iterator, char_type> context_type;
 
   context_type& ctx_;
+  basic_parse_context<char_type>* parse_ctx_;
 
  public:
   typedef Range range;
@@ -2307,8 +2322,12 @@ class arg_formatter
     *spec* contains format specifier information for standard argument types.
     \endrst
    */
-  explicit arg_formatter(context_type& ctx, format_specs* spec = FMT_NULL)
-      : base(Range(ctx.out()), spec, ctx.locale()), ctx_(ctx) {}
+  explicit arg_formatter(context_type& ctx,
+                         basic_parse_context<char_type>* parse_ctx = FMT_NULL,
+                         format_specs* spec = FMT_NULL)
+      : base(Range(ctx.out()), spec, ctx.locale()),
+        ctx_(ctx),
+        parse_ctx_(parse_ctx) {}
 
   FMT_DEPRECATED arg_formatter(context_type& ctx, format_specs& spec)
       : base(Range(ctx.out()), &spec), ctx_(ctx) {}
@@ -2317,7 +2336,7 @@ class arg_formatter
 
   /** Formats an argument of a user-defined type. */
   iterator operator()(typename basic_format_arg<context_type>::handle handle) {
-    handle.format(get_parse_context(ctx_), ctx_);
+    handle.format(*parse_ctx_, ctx_);
     return this->out();
   }
 };
@@ -3023,10 +3042,13 @@ template <typename T, typename Char>
 struct formatter<T, Char,
                  typename std::enable_if<internal::format_type<
                      typename buffer_context<Char>::type, T>::value>::type> {
+  FMT_CONSTEXPR formatter() : format_str_(FMT_NULL) {}
+
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.
   template <typename ParseContext>
   FMT_CONSTEXPR typename ParseContext::iterator parse(ParseContext& ctx) {
+    format_str_ = ctx.begin();
     typedef internal::dynamic_specs_handler<ParseContext> handler_type;
     auto type =
         internal::get_type<typename buffer_context<Char>::type, T>::value;
@@ -3078,18 +3100,19 @@ struct formatter<T, Char,
   template <typename FormatContext>
   auto format(const T& val, FormatContext& ctx) -> decltype(ctx.out()) {
     internal::handle_dynamic_spec<internal::width_checker>(
-        specs_.width_, specs_.width_ref, ctx);
+        specs_.width_, specs_.width_ref, ctx, format_str_);
     internal::handle_dynamic_spec<internal::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx);
+        specs_.precision, specs_.precision_ref, ctx, format_str_);
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type>
         range_type;
-    return visit_format_arg(arg_formatter<range_type>(ctx, &specs_),
+    return visit_format_arg(arg_formatter<range_type>(ctx, FMT_NULL, &specs_),
                             internal::make_arg<FormatContext>(val));
   }
 
  private:
   internal::dynamic_format_specs<Char> specs_;
+  const Char* format_str_;
 };
 
 // A formatter for types known only at run time such as variant alternatives.
@@ -3115,6 +3138,7 @@ template <typename Char = char> class dynamic_formatter {
  public:
   template <typename ParseContext>
   auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    format_str_ = ctx.begin();
     // Checks are deferred to formatting time when the argument type is known.
     internal::dynamic_specs_handler<ParseContext> handler(specs_, ctx);
     return parse_format_specs(ctx.begin(), ctx.end(), handler);
@@ -3138,7 +3162,7 @@ template <typename Char = char> class dynamic_formatter {
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type>
         range;
-    visit_format_arg(arg_formatter<range>(ctx, &specs_),
+    visit_format_arg(arg_formatter<range>(ctx, FMT_NULL, &specs_),
                      internal::make_arg<FormatContext>(val));
     return ctx.out();
   }
@@ -3146,18 +3170,19 @@ template <typename Char = char> class dynamic_formatter {
  private:
   template <typename Context> void handle_specs(Context& ctx) {
     internal::handle_dynamic_spec<internal::width_checker>(
-        specs_.width_, specs_.width_ref, ctx);
+        specs_.width_, specs_.width_ref, ctx, format_str_);
     internal::handle_dynamic_spec<internal::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx);
+        specs_.precision, specs_.precision_ref, ctx, format_str_);
   }
 
   internal::dynamic_format_specs<Char> specs_;
+  const Char* format_str_;
 };
 
 template <typename Range, typename Char>
 typename basic_format_context<Range, Char>::format_arg
 basic_format_context<Range, Char>::arg(basic_string_view<char_type> name) {
-  map_.init(this->args());
+  map_.init(args_);
   format_arg arg = map_.find(name);
   if (arg.type() == internal::none_type) this->on_error("argument not found");
   return arg;
@@ -3170,7 +3195,7 @@ struct format_handler : internal::error_handler {
   format_handler(range r, basic_string_view<Char> str,
                  basic_format_args<Context> format_args,
                  internal::locale_ref loc)
-      : context(r.begin(), str, format_args, loc) {}
+      : parse_context(str), context(r.begin(), format_args, loc) {}
 
   void on_text(const Char* begin, const Char* end) {
     auto size = internal::to_unsigned(end - begin);
@@ -3180,39 +3205,42 @@ struct format_handler : internal::error_handler {
     context.advance_to(out);
   }
 
-  void on_arg_id() { arg = context.next_arg(); }
+  void get_arg(unsigned id) { arg = internal::get_arg(context, id); }
+
+  void on_arg_id() { get_arg(parse_context.next_arg_id()); }
   void on_arg_id(unsigned id) {
-    get_parse_context(context).check_arg_id(id);
-    arg = context.arg(id);
+    parse_context.check_arg_id(id);
+    get_arg(id);
   }
   void on_arg_id(basic_string_view<Char> id) { arg = context.arg(id); }
 
   void on_replacement_field(const Char* p) {
-    get_parse_context(context).advance_to(p);
-    internal::custom_formatter<Char, Context> f(context);
+    parse_context.advance_to(p);
+    internal::custom_formatter<Context> f(parse_context, context);
     if (!visit_format_arg(f, arg))
-      context.advance_to(visit_format_arg(ArgFormatter(context), arg));
+      context.advance_to(
+          visit_format_arg(ArgFormatter(context, &parse_context), arg));
   }
 
   const Char* on_format_specs(const Char* begin, const Char* end) {
-    auto& parse_ctx = get_parse_context(context);
-    parse_ctx.advance_to(begin);
-    internal::custom_formatter<Char, Context> f(context);
-    if (visit_format_arg(f, arg)) return parse_ctx.begin();
+    parse_context.advance_to(begin);
+    internal::custom_formatter<Context> f(parse_context, context);
+    if (visit_format_arg(f, arg)) return parse_context.begin();
     basic_format_specs<Char> specs;
     using internal::specs_handler;
-    typedef basic_parse_context<Char> parse_context;
-    internal::specs_checker<specs_handler<parse_context, Context>> handler(
-        specs_handler<parse_context, Context>(specs, get_parse_context(context),
-                                              context),
+    typedef basic_parse_context<Char> parse_context_t;
+    internal::specs_checker<specs_handler<parse_context_t, Context>> handler(
+        specs_handler<parse_context_t, Context>(specs, parse_context, context),
         arg.type());
     begin = parse_format_specs(begin, end, handler);
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
-    parse_ctx.advance_to(begin);
-    context.advance_to(visit_format_arg(ArgFormatter(context, &specs), arg));
+    parse_context.advance_to(begin);
+    context.advance_to(
+        visit_format_arg(ArgFormatter(context, &parse_context, &specs), arg));
     return begin;
   }
 
+  basic_parse_context<Char> parse_context;
   Context context;
   basic_format_arg<Context> arg;
 };

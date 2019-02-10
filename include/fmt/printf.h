@@ -250,7 +250,7 @@ class printf_arg_formatter
     \endrst
    */
   printf_arg_formatter(iterator iter, format_specs& spec, context_type& ctx)
-      : base(Range(iter), &spec, ctx.locale()), context_(ctx) {}
+      : base(Range(iter), &spec, internal::locale_ref()), context_(ctx) {}
 
   template <typename T>
   typename std::enable_if<std::is_integral<T>::value, iterator>::type
@@ -319,7 +319,7 @@ class printf_arg_formatter
 
   /** Formats an argument of a custom (user-defined) type. */
   iterator operator()(typename basic_format_arg<context_type>::handle handle) {
-    handle.format(get_parse_context(context_), context_);
+    handle.format(context_.parse_context(), context_);
     return this->out();
   }
 };
@@ -339,11 +339,7 @@ template <typename T> struct printf_formatter {
 
 /** This template formats data and writes the output to a writer. */
 template <typename OutputIt, typename Char, typename ArgFormatter>
-class basic_printf_context :
-    // Inherit publicly as a workaround for the icc bug
-    // https://software.intel.com/en-us/forums/intel-c-compiler/topic/783476.
-    public internal::context_base<
-        OutputIt, basic_printf_context<OutputIt, Char, ArgFormatter>, Char> {
+class basic_printf_context {
  public:
   /** The character type for the output. */
   typedef Char char_type;
@@ -354,8 +350,12 @@ class basic_printf_context :
 
  private:
   typedef internal::context_base<OutputIt, basic_printf_context, Char> base;
-  typedef typename base::format_arg format_arg;
+  typedef basic_format_arg<basic_printf_context> format_arg;
   typedef basic_format_specs<char_type> format_specs;
+
+  OutputIt out_;
+  basic_format_args<basic_printf_context> args_;
+  basic_parse_context<Char> parse_ctx_;
 
   static void parse_flags(format_specs& spec, const Char*& it, const Char* end);
 
@@ -376,10 +376,18 @@ class basic_printf_context :
    */
   basic_printf_context(OutputIt out, basic_string_view<char_type> format_str,
                        basic_format_args<basic_printf_context> args)
-      : base(out, format_str, args) {}
+      : out_(out), args_(args), parse_ctx_(format_str) {}
 
-  using base::advance_to;
-  using base::out;
+  OutputIt out() { return out_; }
+  void advance_to(OutputIt it) { out_ = it; }
+
+  format_arg arg(unsigned id) const { return args_.get(id); }
+
+  basic_parse_context<Char>& parse_context() { return parse_ctx_; }
+
+  FMT_CONSTEXPR void on_error(const char* message) {
+    parse_ctx_.on_error(message);
+  }
 
   /** Formats stored arguments and writes the output to the range. */
   OutputIt format();
@@ -416,8 +424,10 @@ template <typename OutputIt, typename Char, typename AF>
 typename basic_printf_context<OutputIt, Char, AF>::format_arg
 basic_printf_context<OutputIt, Char, AF>::get_arg(unsigned arg_index) {
   if (arg_index == std::numeric_limits<unsigned>::max())
-    return this->do_get_arg(get_parse_context(*this).next_arg_id());
-  return base::arg(arg_index - 1);
+    arg_index = parse_ctx_.next_arg_id();
+  else
+    parse_ctx_.check_arg_id(--arg_index);
+  return internal::get_arg(*this, arg_index);
 }
 
 template <typename OutputIt, typename Char, typename AF>
@@ -461,9 +471,8 @@ unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
 template <typename OutputIt, typename Char, typename AF>
 OutputIt basic_printf_context<OutputIt, Char, AF>::format() {
   auto out = this->out();
-  const auto range = get_parse_context(*this);
-  const Char* const end = range.end();
-  const Char* start = range.begin();
+  const Char* start = parse_ctx_.begin();
+  const Char* end = parse_ctx_.end();
   auto it = start;
   while (it != end) {
     char_type c = *it++;

@@ -1927,7 +1927,8 @@ class mock_arg_formatter
   typedef fmt::internal::arg_formatter_base<buffer_range> base;
   typedef buffer_range range;
 
-  mock_arg_formatter(fmt::format_context& ctx, fmt::format_specs* s = FMT_NULL)
+  mock_arg_formatter(fmt::format_context& ctx, fmt::format_parse_context*,
+                     fmt::format_specs* s = FMT_NULL)
       : base(fmt::internal::get_container(ctx.out()), s, ctx.locale()) {
     EXPECT_CALL(*this, call(42));
   }
@@ -2167,7 +2168,7 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
 struct test_parse_context {
   typedef char char_type;
 
-  FMT_CONSTEXPR unsigned next_arg_id() { return 33; }
+  FMT_CONSTEXPR unsigned next_arg_id() { return 11; }
   template <typename Id> FMT_CONSTEXPR void check_arg_id(Id) {}
 
   FMT_CONSTEXPR const char* begin() { return FMT_NULL; }
@@ -2184,13 +2185,9 @@ struct test_context {
     typedef fmt::formatter<T, char_type> type;
   };
 
-  FMT_CONSTEXPR fmt::basic_format_arg<test_context> next_arg() {
-    return fmt::internal::make_arg<test_context>(11);
-  }
-
   template <typename Id>
-  FMT_CONSTEXPR fmt::basic_format_arg<test_context> arg(Id) {
-    return fmt::internal::make_arg<test_context>(22);
+  FMT_CONSTEXPR fmt::basic_format_arg<test_context> arg(Id id) {
+    return fmt::internal::make_arg<test_context>(id);
   }
 
   void on_error(const char*) {}
@@ -2219,10 +2216,10 @@ TEST(FormatTest, ConstexprSpecsHandler) {
   static_assert(parse_specs("0").align() == fmt::ALIGN_NUMERIC, "");
   static_assert(parse_specs("42").width() == 42, "");
   static_assert(parse_specs("{}").width() == 11, "");
-  static_assert(parse_specs("{0}").width() == 22, "");
+  static_assert(parse_specs("{22}").width() == 22, "");
   static_assert(parse_specs(".42").precision == 42, "");
   static_assert(parse_specs(".{}").precision == 11, "");
-  static_assert(parse_specs(".{0}").precision == 22, "");
+  static_assert(parse_specs(".{22}").precision == 22, "");
   static_assert(parse_specs("d").type == 'd', "");
 }
 
@@ -2245,10 +2242,10 @@ TEST(FormatTest, ConstexprDynamicSpecsHandler) {
   static_assert(parse_dynamic_specs("#").has(fmt::HASH_FLAG), "");
   static_assert(parse_dynamic_specs("0").align() == fmt::ALIGN_NUMERIC, "");
   static_assert(parse_dynamic_specs("42").width() == 42, "");
-  static_assert(parse_dynamic_specs("{}").width_ref.val.index == 33, "");
+  static_assert(parse_dynamic_specs("{}").width_ref.val.index == 11, "");
   static_assert(parse_dynamic_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_dynamic_specs(".42").precision == 42, "");
-  static_assert(parse_dynamic_specs(".{}").precision_ref.val.index == 33, "");
+  static_assert(parse_dynamic_specs(".{}").precision_ref.val.index == 11, "");
   static_assert(parse_dynamic_specs(".{42}").precision_ref.val.index == 42, "");
   static_assert(parse_dynamic_specs("d").type == 'd', "");
 }

@@ -687,7 +687,7 @@ template <typename Context> class value {
   };
 
   FMT_CONSTEXPR value(int val = 0) : int_value(val) {}
-  value(unsigned val) { uint_value = val; }
+  FMT_CONSTEXPR value(unsigned val) : uint_value(val) {}
   value(long long val) { long_long_value = val; }
   value(unsigned long long val) { ulong_long_value = val; }
   value(double val) { double_value = val; }
@@ -936,7 +936,7 @@ template <typename Context> class basic_format_arg {
 
   FMT_CONSTEXPR basic_format_arg() : type_(internal::none_type) {}
 
-  FMT_EXPLICIT operator bool() const FMT_NOEXCEPT {
+  FMT_CONSTEXPR FMT_EXPLICIT operator bool() const FMT_NOEXCEPT {
     return type_ != internal::none_type;
   }
 
@@ -1045,76 +1045,13 @@ class locale_ref {
 
  public:
   locale_ref() : locale_(FMT_NULL) {}
-
   template <typename Locale> explicit locale_ref(const Locale& loc);
 
   template <typename Locale> Locale get() const;
 };
 
 template <typename OutputIt, typename Context, typename Char>
-class context_base {
- public:
-  typedef OutputIt iterator;
-
- private:
-  basic_parse_context<Char> parse_context_;
-  iterator out_;
-  basic_format_args<Context> args_;
-  locale_ref loc_;
-
- protected:
-  typedef Char char_type;
-  typedef basic_format_arg<Context> format_arg;
-
-  context_base(OutputIt out, basic_string_view<char_type> format_str,
-               basic_format_args<Context> ctx_args,
-               locale_ref loc = locale_ref())
-      : parse_context_(format_str), out_(out), args_(ctx_args), loc_(loc) {}
-
-  // Returns the argument with specified index.
-  format_arg do_get_arg(unsigned arg_id) {
-    format_arg arg = args_.get(arg_id);
-    if (!arg) parse_context_.on_error("argument index out of range");
-    return arg;
-  }
-
-  friend basic_parse_context<Char>& get_parse_context(context_base& ctx) {
-    return ctx.parse_context_;
-  }
-
-  // Checks if manual indexing is used and returns the argument with
-  // specified index.
-  format_arg arg(unsigned arg_id) {
-    return parse_context_.check_arg_id(arg_id) ? this->do_get_arg(arg_id)
-                                               : format_arg();
-  }
-
- public:
-  FMT_DEPRECATED basic_parse_context<Char>& parse_context() {
-    return parse_context_;
-  }
-
-  // basic_format_context::arg() depends on this
-  // Cannot be marked as deprecated without causing warnings
-  /*FMT_DEPRECATED*/ basic_format_args<Context> args() const { return args_; }
-
-  basic_format_arg<Context> arg(unsigned id) const { return args_.get(id); }
-
-  internal::error_handler error_handler() {
-    return parse_context_.error_handler();
-  }
-
-  void on_error(const char* message) { parse_context_.on_error(message); }
-
-  // Returns an iterator to the beginning of the output range.
-  iterator out() { return out_; }
-  FMT_DEPRECATED iterator begin() { return out_; }
-
-  // Advances the begin iterator to ``it``.
-  void advance_to(iterator it) { out_ = it; }
-
-  locale_ref locale() { return loc_; }
-};
+class context_base {};
 
 template <typename Context, typename T> struct get_type {
   typedef decltype(
@@ -1153,54 +1090,54 @@ make_arg(const T& value) {
 }  // namespace internal
 
 // Formatting context.
-template <typename OutputIt, typename Char>
-class basic_format_context
-    : public internal::context_base<
-          OutputIt, basic_format_context<OutputIt, Char>, Char> {
+template <typename OutputIt, typename Char> class basic_format_context {
  public:
   /** The character type for the output. */
   typedef Char char_type;
+
+ private:
+  OutputIt out_;
+  basic_format_args<basic_format_context> args_;
+  internal::arg_map<basic_format_context> map_;
+  internal::locale_ref loc_;
+
+  basic_format_context(const basic_format_context&) = delete;
+  void operator=(const basic_format_context&) = delete;
+
+ public:
+  typedef OutputIt iterator;
+  typedef basic_format_arg<basic_format_context> format_arg;
 
   // using formatter_type = formatter<T, char_type>;
   template <typename T> struct formatter_type {
     typedef formatter<T, char_type> type;
   };
 
- private:
-  internal::arg_map<basic_format_context> map_;
-
-  basic_format_context(const basic_format_context&) = delete;
-  void operator=(const basic_format_context&) = delete;
-
-  typedef internal::context_base<OutputIt, basic_format_context, Char> base;
-  using base::arg;
-
- public:
-  using typename base::iterator;
-  typedef typename base::format_arg format_arg;
-
   /**
    Constructs a ``basic_format_context`` object. References to the arguments are
    stored in the object so make sure they have appropriate lifetimes.
    */
-  basic_format_context(OutputIt out, basic_string_view<char_type> format_str,
+  basic_format_context(OutputIt out,
                        basic_format_args<basic_format_context> ctx_args,
                        internal::locale_ref loc = internal::locale_ref())
-      : base(out, format_str, ctx_args, loc) {}
+      : out_(out), args_(ctx_args), loc_(loc) {}
 
-  format_arg next_arg() {
-    return this->do_get_arg(get_parse_context(*this).next_arg_id());
-  }
-  format_arg arg(unsigned arg_id) { return this->do_get_arg(arg_id); }
+  format_arg arg(unsigned id) const { return args_.get(id); }
 
   // Checks if manual indexing is used and returns the argument with the
   // specified name.
   format_arg arg(basic_string_view<char_type> name);
 
-  FMT_DEPRECATED format_arg get_arg(unsigned arg_id) { return arg(arg_id); }
-  FMT_DEPRECATED format_arg get_arg(basic_string_view<char_type> name) {
-    return arg(name);
-  }
+  internal::error_handler error_handler() { return {}; }
+  void on_error(const char* message) { error_handler().on_error(message); }
+
+  // Returns an iterator to the beginning of the output range.
+  iterator out() { return out_; }
+
+  // Advances the begin iterator to ``it``.
+  void advance_to(iterator it) { out_ = it; }
+
+  internal::locale_ref locale() { return loc_; }
 };
 
 template <typename Char> struct buffer_context {
@@ -1399,6 +1336,13 @@ struct char_t : std::enable_if<internal::is_string<S>::value,
 #endif
 
 namespace internal {
+template <typename Context>
+FMT_CONSTEXPR basic_format_arg<Context> get_arg(Context& ctx, unsigned id) {
+  auto arg = ctx.arg(id);
+  if (!arg) ctx.on_error("argument index out of range");
+  return arg;
+}
+
 template <typename Char> struct named_arg_base {
   basic_string_view<Char> name;
 

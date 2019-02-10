@@ -377,8 +377,9 @@ struct check_custom {
       void grow(std::size_t) {}
     } buffer;
     fmt::internal::basic_buffer<char>& base = buffer;
-    fmt::format_context ctx(std::back_inserter(base), "", fmt::format_args());
-    h.format(get_parse_context(ctx), ctx);
+    fmt::format_parse_context parse_ctx("");
+    fmt::format_context ctx(std::back_inserter(base), fmt::format_args());
+    h.format(parse_ctx, ctx);
     EXPECT_EQ("test", std::string(buffer.data, buffer.size()));
     return test_result();
   }
