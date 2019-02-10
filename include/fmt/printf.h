@@ -350,7 +350,6 @@ class basic_printf_context {
   };
 
  private:
-  typedef internal::context_base<OutputIt, basic_printf_context, Char> base;
   typedef basic_format_specs<char_type> format_specs;
 
   OutputIt out_;
