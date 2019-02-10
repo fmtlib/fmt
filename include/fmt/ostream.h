@@ -57,7 +57,7 @@ template <typename T, typename Char> class is_streamable {
  private:
   template <typename U>
   static decltype((void)(internal::declval<test_stream<Char>&>()
-                      << internal::declval<U>()),
+                         << internal::declval<U>()),
                   std::true_type())
   test(int);
 

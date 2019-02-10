@@ -319,7 +319,7 @@ class printf_arg_formatter
 
   /** Formats an argument of a custom (user-defined) type. */
   iterator operator()(typename basic_format_arg<context_type>::handle handle) {
-    handle.format(context_);
+    handle.format(get_parse_context(context_), context_);
     return this->out();
   }
 };
@@ -380,7 +380,6 @@ class basic_printf_context :
 
   using base::advance_to;
   using base::out;
-  using base::parse_context;
 
   /** Formats stored arguments and writes the output to the range. */
   OutputIt format();
@@ -417,7 +416,7 @@ template <typename OutputIt, typename Char, typename AF>
 typename basic_printf_context<OutputIt, Char, AF>::format_arg
 basic_printf_context<OutputIt, Char, AF>::get_arg(unsigned arg_index) {
   if (arg_index == std::numeric_limits<unsigned>::max())
-    return this->do_get_arg(this->parse_context().next_arg_id());
+    return this->do_get_arg(get_parse_context(*this).next_arg_id());
   return base::arg(arg_index - 1);
 }
 
@@ -462,7 +461,7 @@ unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
 template <typename OutputIt, typename Char, typename AF>
 OutputIt basic_printf_context<OutputIt, Char, AF>::format() {
   auto out = this->out();
-  const auto range = this->parse_context();
+  const auto range = get_parse_context(*this);
   const Char* const end = range.end();
   const Char* start = range.begin();
   auto it = start;

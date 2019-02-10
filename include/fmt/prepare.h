@@ -310,12 +310,12 @@ class prepared_format {
                                               const format_part_t& part) const {
     const auto view = to_string_view(format_);
     const auto specification_begin = view.data() + part.end_of_argument_id;
-    ctx.parse_context().advance_to(specification_begin);
+    get_parse_context(ctx).advance_to(specification_begin);
   }
 
   template <typename Range, typename Context, typename Id>
   void format_arg(Context& ctx, Id arg_id) const {
-    ctx.parse_context().check_arg_id(arg_id);
+    get_parse_context(ctx).check_arg_id(arg_id);
     const auto stopped_at =
         visit_format_arg(arg_formatter<Range>(ctx), ctx.arg(arg_id));
     ctx.advance_to(stopped_at);
@@ -537,9 +537,9 @@ struct parts_container_concept_check : std::true_type {
 
   template <typename T> static std::false_type has_add_check(check_second);
   template <typename T>
-  static decltype((void)declval<T>().add(
-                      declval<typename T::format_part_type>()),
-                  std::true_type()) has_add_check(check_first);
+  static decltype(
+      (void)declval<T>().add(declval<typename T::format_part_type>()),
+      std::true_type()) has_add_check(check_first);
   typedef decltype(has_add_check<PartsContainer>(check_first())) has_add;
   static_assert(has_add::value, "PartsContainer doesn't provide add() method");
 
@@ -554,10 +554,9 @@ struct parts_container_concept_check : std::true_type {
   template <typename T>
   static std::false_type has_substitute_last_check(check_second);
   template <typename T>
-  static decltype(
-      (void)declval<T>().substitute_last(
-          declval<typename T::format_part_type>()),
-      std::true_type()) has_substitute_last_check(check_first);
+  static decltype((void)declval<T>().substitute_last(
+                      declval<typename T::format_part_type>()),
+                  std::true_type()) has_substitute_last_check(check_first);
   typedef decltype(has_substitute_last_check<PartsContainer>(
       check_first())) has_substitute_last;
   static_assert(has_substitute_last::value,

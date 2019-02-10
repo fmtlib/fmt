@@ -104,11 +104,10 @@ struct is_range_<
 /// tuple_size and tuple_element check.
 template <typename T> class is_tuple_like_ {
   template <typename U>
-  static auto check(U* p)
-      -> decltype(std::tuple_size<U>::value,
-                  (void)internal::declval<
-                      typename std::tuple_element<0, U>::type>(),
-                  int());
+  static auto check(U* p) -> decltype(
+      std::tuple_size<U>::value,
+      (void)internal::declval<typename std::tuple_element<0, U>::type>(),
+      int());
   template <typename> static void check(...);
 
  public:

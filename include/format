@@ -582,8 +582,9 @@ struct format_handler : fmt::internal::error_handler {
     if (visit_format_arg(f, arg)) return parse_ctx.begin();
     fmt::basic_format_specs<Char> specs;
     using fmt::internal::specs_handler;
-    fmt::internal::specs_checker<specs_handler<Context>> handler(
-        specs_handler<Context>(specs, context), get_type(arg));
+    using parse_context = basic_format_parse_context<Char>;
+    fmt::internal::specs_checker<specs_handler<parse_context, Context>> handler(
+        specs_handler<parse_context, Context>(specs, parse_ctx, context), get_type(arg));
     begin = parse_format_specs(begin, end, handler);
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
     parse_ctx.advance_to(begin);

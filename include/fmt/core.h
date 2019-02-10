@@ -226,7 +226,7 @@ struct result_of<F(Args...)> : std::invoke_result<F, Args...> {};
 // A workaround for gcc 4.4 that doesn't allow F to be a reference.
 template <typename F, typename... Args>
 struct result_of<F(Args...)>
-  : std::result_of<typename std::remove_reference<F>::type(Args...)> {};
+    : std::result_of<typename std::remove_reference<F>::type(Args...)> {};
 #endif
 
 // Casts nonnegative integer to unsigned.
@@ -518,6 +518,63 @@ FMT_CONSTEXPR basic_string_view<typename S::char_type> to_string_view(
   return s;
 }
 
+// Parsing context consisting of a format string range being parsed and an
+// argument counter for automatic indexing.
+template <typename Char, typename ErrorHandler = internal::error_handler>
+class basic_parse_context : private ErrorHandler {
+ private:
+  basic_string_view<Char> format_str_;
+  int next_arg_id_;
+
+ public:
+  typedef Char char_type;
+  typedef typename basic_string_view<Char>::iterator iterator;
+
+  explicit FMT_CONSTEXPR basic_parse_context(basic_string_view<Char> format_str,
+                                             ErrorHandler eh = ErrorHandler())
+      : ErrorHandler(eh), format_str_(format_str), next_arg_id_(0) {}
+
+  // Returns an iterator to the beginning of the format string range being
+  // parsed.
+  FMT_CONSTEXPR iterator begin() const FMT_NOEXCEPT {
+    return format_str_.begin();
+  }
+
+  // Returns an iterator past the end of the format string range being parsed.
+  FMT_CONSTEXPR iterator end() const FMT_NOEXCEPT { return format_str_.end(); }
+
+  // Advances the begin iterator to ``it``.
+  FMT_CONSTEXPR void advance_to(iterator it) {
+    format_str_.remove_prefix(internal::to_unsigned(it - begin()));
+  }
+
+  // Returns the next argument index.
+  FMT_CONSTEXPR unsigned next_arg_id();
+
+  FMT_CONSTEXPR bool check_arg_id(unsigned) {
+    if (next_arg_id_ > 0) {
+      on_error("cannot switch from automatic to manual argument indexing");
+      return false;
+    }
+    next_arg_id_ = -1;
+    return true;
+  }
+
+  FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {}
+
+  FMT_CONSTEXPR void on_error(const char* message) {
+    ErrorHandler::on_error(message);
+  }
+
+  FMT_CONSTEXPR ErrorHandler error_handler() const { return *this; }
+};
+
+typedef basic_parse_context<char> format_parse_context;
+typedef basic_parse_context<wchar_t> wformat_parse_context;
+
+FMT_DEPRECATED typedef basic_parse_context<char> parse_context;
+FMT_DEPRECATED typedef basic_parse_context<wchar_t> wparse_context;
+
 template <typename Context> class basic_format_arg;
 template <typename Context> class basic_format_args;
 
@@ -605,7 +662,9 @@ template <typename Char> struct string_value {
 
 template <typename Context> struct custom_value {
   const void* value;
-  void (*format)(const void* arg, Context& ctx);
+  void (*format)(const void* arg,
+                 basic_parse_context<typename Context::char_type>& parse_ctx,
+                 Context& ctx);
 };
 
 // A formatting argument value.
@@ -673,9 +732,10 @@ template <typename Context> class value {
  private:
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T, typename Formatter>
-  static void format_custom_arg(const void* arg, Context& ctx) {
+  static void format_custom_arg(const void* arg,
+                                basic_parse_context<char_type>& parse_ctx,
+                                Context& ctx) {
     Formatter f;
-    auto&& parse_ctx = ctx.parse_context();
     parse_ctx.advance_to(f.parse(parse_ctx));
     ctx.advance_to(f.format(*static_cast<const T*>(arg), ctx));
   }
@@ -866,7 +926,9 @@ template <typename Context> class basic_format_arg {
    public:
     explicit handle(internal::custom_value<Context> custom) : custom_(custom) {}
 
-    void format(Context& ctx) const { custom_.format(custom_.value, ctx); }
+    void format(basic_parse_context<char_type>& parse_ctx, Context& ctx) const {
+      custom_.format(custom_.value, parse_ctx, ctx);
+    }
 
    private:
     internal::custom_value<Context> custom_;
@@ -937,63 +999,6 @@ FMT_DEPRECATED FMT_CONSTEXPR typename internal::result_of<Visitor(int)>::type
 visit(Visitor&& vis, const basic_format_arg<Context>& arg) {
   return visit_format_arg(std::forward<Visitor>(vis), arg);
 }
-
-// Parsing context consisting of a format string range being parsed and an
-// argument counter for automatic indexing.
-template <typename Char, typename ErrorHandler = internal::error_handler>
-class basic_parse_context : private ErrorHandler {
- private:
-  basic_string_view<Char> format_str_;
-  int next_arg_id_;
-
- public:
-  typedef Char char_type;
-  typedef typename basic_string_view<Char>::iterator iterator;
-
-  explicit FMT_CONSTEXPR basic_parse_context(basic_string_view<Char> format_str,
-                                             ErrorHandler eh = ErrorHandler())
-      : ErrorHandler(eh), format_str_(format_str), next_arg_id_(0) {}
-
-  // Returns an iterator to the beginning of the format string range being
-  // parsed.
-  FMT_CONSTEXPR iterator begin() const FMT_NOEXCEPT {
-    return format_str_.begin();
-  }
-
-  // Returns an iterator past the end of the format string range being parsed.
-  FMT_CONSTEXPR iterator end() const FMT_NOEXCEPT { return format_str_.end(); }
-
-  // Advances the begin iterator to ``it``.
-  FMT_CONSTEXPR void advance_to(iterator it) {
-    format_str_.remove_prefix(internal::to_unsigned(it - begin()));
-  }
-
-  // Returns the next argument index.
-  FMT_CONSTEXPR unsigned next_arg_id();
-
-  FMT_CONSTEXPR bool check_arg_id(unsigned) {
-    if (next_arg_id_ > 0) {
-      on_error("cannot switch from automatic to manual argument indexing");
-      return false;
-    }
-    next_arg_id_ = -1;
-    return true;
-  }
-
-  FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {}
-
-  FMT_CONSTEXPR void on_error(const char* message) {
-    ErrorHandler::on_error(message);
-  }
-
-  FMT_CONSTEXPR ErrorHandler error_handler() const { return *this; }
-};
-
-typedef basic_parse_context<char> format_parse_context;
-typedef basic_parse_context<wchar_t> wformat_parse_context;
-
-FMT_DEPRECATED typedef basic_parse_context<char> parse_context;
-FMT_DEPRECATED typedef basic_parse_context<wchar_t> wparse_context;
 
 namespace internal {
 // A map from argument names to their values for named arguments.
@@ -1073,15 +1078,21 @@ class context_base {
     return arg;
   }
 
+  friend basic_parse_context<Char>& get_parse_context(context_base& ctx) {
+    return ctx.parse_context_;
+  }
+
   // Checks if manual indexing is used and returns the argument with
   // specified index.
   format_arg arg(unsigned arg_id) {
-    return this->parse_context().check_arg_id(arg_id) ? this->do_get_arg(arg_id)
-                                                      : format_arg();
+    return parse_context_.check_arg_id(arg_id) ? this->do_get_arg(arg_id)
+                                               : format_arg();
   }
 
  public:
-  basic_parse_context<char_type>& parse_context() { return parse_context_; }
+  FMT_DEPRECATED basic_parse_context<Char>& parse_context() {
+    return parse_context_;
+  }
 
   // basic_format_context::arg() depends on this
   // Cannot be marked as deprecated without causing warnings
@@ -1178,7 +1189,7 @@ class basic_format_context
       : base(out, format_str, ctx_args, loc) {}
 
   format_arg next_arg() {
-    return this->do_get_arg(this->parse_context().next_arg_id());
+    return this->do_get_arg(get_parse_context(*this).next_arg_id());
   }
   format_arg arg(unsigned arg_id) { return this->do_get_arg(arg_id); }
 

@@ -2164,6 +2164,18 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
   static_assert(parse_test_specs("{<").res == handler::ERROR, "");
 }
 
+struct test_parse_context {
+  typedef char char_type;
+
+  FMT_CONSTEXPR unsigned next_arg_id() { return 33; }
+  template <typename Id> FMT_CONSTEXPR void check_arg_id(Id) {}
+
+  FMT_CONSTEXPR const char* begin() { return FMT_NULL; }
+  FMT_CONSTEXPR const char* end() { return FMT_NULL; }
+
+  void on_error(const char*) {}
+};
+
 struct test_context {
   typedef char char_type;
   typedef fmt::basic_format_arg<test_context> format_arg;
@@ -2181,23 +2193,18 @@ struct test_context {
     return fmt::internal::make_arg<test_context>(22);
   }
 
-  template <typename Id> FMT_CONSTEXPR void check_arg_id(Id) {}
-
-  FMT_CONSTEXPR unsigned next_arg_id() { return 33; }
-
   void on_error(const char*) {}
 
-  FMT_CONSTEXPR test_context& parse_context() { return *this; }
   FMT_CONSTEXPR test_context error_handler() { return *this; }
-  FMT_CONSTEXPR const char* begin() { return FMT_NULL; }
-  FMT_CONSTEXPR const char* end() { return FMT_NULL; }
 };
 
 template <size_t N>
 FMT_CONSTEXPR fmt::format_specs parse_specs(const char (&s)[N]) {
   fmt::format_specs specs;
+  test_parse_context parse_ctx;
   test_context ctx{};
-  fmt::internal::specs_handler<test_context> h(specs, ctx);
+  fmt::internal::specs_handler<test_parse_context, test_context> h(
+      specs, parse_ctx, ctx);
   parse_format_specs(s, s + N, h);
   return specs;
 }
@@ -2223,8 +2230,8 @@ template <size_t N>
 FMT_CONSTEXPR fmt::internal::dynamic_format_specs<char> parse_dynamic_specs(
     const char (&s)[N]) {
   fmt::internal::dynamic_format_specs<char> specs;
-  test_context ctx{};
-  fmt::internal::dynamic_specs_handler<test_context> h(specs, ctx);
+  test_parse_context ctx{};
+  fmt::internal::dynamic_specs_handler<test_parse_context> h(specs, ctx);
   parse_format_specs(s, s + N, h);
   return specs;
 }

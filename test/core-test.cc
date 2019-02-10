@@ -223,10 +223,9 @@ struct custom_context {
   };
 
   bool called;
+  fmt::format_parse_context ctx;
 
-  fmt::format_parse_context parse_context() {
-    return fmt::format_parse_context("");
-  }
+  fmt::format_parse_context& parse_context() { return ctx; }
   void advance_to(const char*) {}
 };
 
@@ -234,8 +233,8 @@ TEST(ArgTest, MakeValueWithCustomContext) {
   test_struct t;
   fmt::internal::value<custom_context> arg =
       fmt::internal::make_value<custom_context>(t);
-  custom_context ctx = {false};
-  arg.custom.format(&t, ctx);
+  custom_context ctx = {false, fmt::format_parse_context("")};
+  arg.custom.format(&t, ctx.parse_context(), ctx);
   EXPECT_TRUE(ctx.called);
 }
 
@@ -379,7 +378,7 @@ struct check_custom {
     } buffer;
     fmt::internal::basic_buffer<char>& base = buffer;
     fmt::format_context ctx(std::back_inserter(base), "", fmt::format_args());
-    h.format(ctx);
+    h.format(get_parse_context(ctx), ctx);
     EXPECT_EQ("test", std::string(buffer.data, buffer.size()));
     return test_result();
   }
