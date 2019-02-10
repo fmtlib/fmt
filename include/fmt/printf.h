@@ -343,6 +343,7 @@ class basic_printf_context {
  public:
   /** The character type for the output. */
   typedef Char char_type;
+  typedef basic_format_arg<basic_printf_context> format_arg;
 
   template <typename T> struct formatter_type {
     typedef printf_formatter<T> type;
@@ -350,7 +351,6 @@ class basic_printf_context {
 
  private:
   typedef internal::context_base<OutputIt, basic_printf_context, Char> base;
-  typedef basic_format_arg<basic_printf_context> format_arg;
   typedef basic_format_specs<char_type> format_specs;
 
   OutputIt out_;

@@ -191,9 +191,8 @@ constexpr void basic_format_parse_context<charT>::check_arg_id(size_t) {
 namespace std {
   template<class O, class charT> FMT_REQUIRES(OutputIterator<O, const charT&>)
   class basic_format_context {
-    basic_format_parse_context<charT> parse_context_; // exposition only
-    basic_format_args<basic_format_context> args_;    // exposition only
-    O out_;                                           // exposition only
+    basic_format_args<basic_format_context> args_; // exposition only
+    O out_;                                        // exposition only
 
   public:
     using iterator = O;
@@ -202,7 +201,6 @@ namespace std {
     template<class T>
       using formatter_type = formatter<T>;
 
-    basic_format_parse_context<charT>& parse_context() noexcept;
     basic_format_arg<basic_format_context> arg(size_t id) const;
 
     iterator out();
@@ -210,11 +208,8 @@ namespace std {
 
     // Implementation details:
     using format_arg = basic_format_arg<basic_format_context>;
-    basic_format_context(O out, fmt::string_view fmt, basic_format_args<basic_format_context> args, fmt::internal::locale_ref)
-    : out_(out), parse_context_({fmt.data(), fmt.size()}), args_(args) {}
-    basic_format_arg<basic_format_context> next_arg() {
-      return arg(parse_context_.next_arg_id());
-    }
+    basic_format_context(O out, basic_format_args<basic_format_context> args, fmt::internal::locale_ref)
+    : out_(out), args_(args) {}
     fmt::internal::error_handler error_handler() const { return {}; }
     basic_format_arg<basic_format_context> arg(fmt::basic_string_view<charT>) const {
       return {}; // unused: named arguments are not supported yet
@@ -224,9 +219,6 @@ namespace std {
 }
 
 namespace std {
-template<class O, class charT>
-basic_format_parse_context<charT>& basic_format_context<O, charT>::parse_context() noexcept { return parse_context_; }
-
 template<class O, class charT>
 basic_format_arg<basic_format_context<O, charT>> basic_format_context<O, charT>::arg(size_t id) const { return args_.get(id); }
 
@@ -360,33 +352,39 @@ template<class Context>
 template<class T, typename>
 /* explicit */ basic_format_arg<Context>::basic_format_arg(const T& v) noexcept
   : value(handle(v)) {}
+
+template<class Context>
+/* explicit */ basic_format_arg<Context>::operator bool() const noexcept {
+    return !holds_alternative<monostate>(value);
+}
 }
 
 namespace std {
   template<class Context>
   class basic_format_arg<Context>::handle {
     const void* ptr_;                                         // exposition only
-    void (*format_)(Context&, const void*);                   // exposition only
+      void (*format_)(basic_format_parse_context<char_type>&,
+                      Context&, const void*);                   // exposition only
 
-  public:
-    template<class T> explicit handle(const T& val) noexcept; // exposition only
+    public:
+      template<class T> explicit handle(const T& val) noexcept; // exposition only
 
-    void format(Context& ctx) const;
+      void format(basic_format_parse_context<char_type>&, Context& ctx) const;
   };
 }
 
 namespace std {
 template<class Context>
 template<class T> /* explicit */ basic_format_arg<Context>::handle::handle(const T& val) noexcept
-  : ptr_(&val), format_([](Context& ctx, const void* ptr) {
-        typename Context::template formatter_type<T> f;
-        ctx.parse_context().advance_to(f.parse(ctx.parse_context()));
-        ctx.advance_to(f.format(*static_cast<const T*>(ptr), ctx));
+  : ptr_(&val), format_([](basic_format_parse_context<char_type>& parse_ctx, Context& format_ctx, const void* ptr) {
+  typename Context::template formatter_type<T> f;
+  parse_ctx.advance_to(f.parse(parse_ctx));
+  format_ctx.advance_to(f.format(*static_cast<const T*>(ptr), format_ctx));
 }) {}
 
 template<class Context>
-void basic_format_arg<Context>::handle::format(Context& ctx) const {
-  format_(ctx, ptr_);
+void basic_format_arg<Context>::handle::format(basic_format_parse_context<char_type>& parse_ctx, Context& format_ctx) const {
+  format_(parse_ctx, format_ctx, ptr_);
 }
 
 // http://fmtlib.net/Text%20Formatting.html#format.visit
@@ -460,11 +458,13 @@ class arg_formatter
           typename fmt::internal::arg_formatter_base<Range>::iterator>,
       public fmt::internal::arg_formatter_base<Range> {
  private:
-  typedef typename Range::value_type char_type;
-  typedef fmt::internal::arg_formatter_base<Range> base;
-  typedef std::basic_format_context<typename base::iterator, char_type> context_type;
+  using char_type = typename Range::value_type;
+  using base = fmt::internal::arg_formatter_base<Range>;
+  using format_context = std::basic_format_context<typename base::iterator, char_type>;
+  using parse_context = basic_format_parse_context<char_type>;
 
-  context_type& ctx_;
+  parse_context& parse_ctx_;
+  format_context& ctx_;
 
  public:
   typedef Range range;
@@ -478,14 +478,14 @@ class arg_formatter
     *spec* contains format specifier information for standard argument types.
     \endrst
    */
-  explicit arg_formatter(context_type& ctx, fmt::format_specs* spec = FMT_NULL)
-      : base(Range(ctx.out()), spec, {}), ctx_(ctx) {}
+  arg_formatter(parse_context& parse_ctx, format_context& ctx, fmt::format_specs* spec = FMT_NULL)
+      : base(Range(ctx.out()), spec, {}), parse_ctx_(parse_ctx), ctx_(ctx) {}
 
   using base::operator();
 
   /** Formats an argument of a user-defined type. */
-  iterator operator()(typename std::basic_format_arg<context_type>::handle handle) {
-    handle.format(ctx_);
+  iterator operator()(typename std::basic_format_arg<format_context>::handle handle) {
+    handle.format(parse_ctx_, ctx_);
     return this->out();
   }
 
@@ -528,16 +528,18 @@ inline fmt::internal::type get_type(basic_format_arg<Context> arg) {
   }, arg);
 }
 
-template <typename Char, typename Context>
+template <typename Context>
 class custom_formatter {
  private:
-  Context& ctx_;
+  using parse_context = basic_format_parse_context<typename Context::char_type>;
+  parse_context& parse_ctx_;
+  Context& format_ctx_;
 
  public:
-  explicit custom_formatter(Context& ctx) : ctx_(ctx) {}
+  custom_formatter(parse_context& parse_ctx, Context& ctx) : parse_ctx_(parse_ctx), format_ctx_(ctx) {}
 
   bool operator()(typename basic_format_arg<Context>::handle h) const {
-    h.format(ctx_);
+    h.format(parse_ctx_, format_ctx_);
     return true;
   }
 
@@ -551,7 +553,7 @@ struct format_handler : fmt::internal::error_handler {
   format_handler(range r, basic_string_view<Char> str,
                  basic_format_args<Context> format_args,
                  fmt::internal::locale_ref loc)
-      : context(r.begin(), str, format_args, loc) {}
+      : parse_ctx(str), context(r.begin(), format_args, loc) {}
 
   void on_text(const Char* begin, const Char* end) {
     auto size = fmt::internal::to_unsigned(end - begin);
@@ -561,24 +563,25 @@ struct format_handler : fmt::internal::error_handler {
     context.advance_to(out);
   }
 
-  void on_arg_id() { arg = context.next_arg(); }
+  void on_arg_id() {
+    arg = context.arg(parse_ctx.next_arg_id());
+  }
   void on_arg_id(unsigned id) {
-    context.parse_context().check_arg_id(id);
+    parse_ctx.check_arg_id(id);
     arg = context.arg(id);
   }
   void on_arg_id(fmt::basic_string_view<Char> id) {}
 
   void on_replacement_field(const Char* p) {
-    context.parse_context().advance_to(p);
-    custom_formatter<Char, Context> f(context);
+    parse_ctx.advance_to(p);
+    custom_formatter<Context> f(parse_ctx, context);
     if (!visit_format_arg(f, arg))
-      context.advance_to(visit_format_arg(ArgFormatter(context), arg));
+      context.advance_to(visit_format_arg(ArgFormatter(parse_ctx, context), arg));
   }
 
   const Char* on_format_specs(const Char* begin, const Char* end) {
-    auto& parse_ctx = context.parse_context();
     parse_ctx.advance_to(begin);
-    custom_formatter<Char, Context> f(context);
+    custom_formatter<Context> f(parse_ctx, context);
     if (visit_format_arg(f, arg)) return parse_ctx.begin();
     fmt::basic_format_specs<Char> specs;
     using fmt::internal::specs_handler;
@@ -588,10 +591,11 @@ struct format_handler : fmt::internal::error_handler {
     begin = parse_format_specs(begin, end, handler);
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
     parse_ctx.advance_to(begin);
-    context.advance_to(visit_format_arg(ArgFormatter(context, &specs), arg));
+    context.advance_to(visit_format_arg(ArgFormatter(parse_ctx, context, &specs), arg));
     return begin;
   }
 
+  basic_format_parse_context<Char> parse_ctx;
   Context context;
   basic_format_arg<Context> arg;
 };
@@ -705,7 +709,7 @@ template<FMT_CONCEPT(OutputIterator<const wchar_t&>) O, class... Args>
 template<FMT_CONCEPT(OutputIterator<const char&>) O>
   O vformat_to(O out, string_view fmt, format_args_t<O, char> args) {
     typedef fmt::output_range<O, char> range;
-    detail::format_handler<detail::arg_formatter<range>, char, format_context>
+    detail::format_handler<detail::arg_formatter<range>, char, basic_format_context<O, char>>
       h(range(out), fmt, args, {});
     fmt::internal::parse_format_string<false>(fmt::to_string_view(fmt), h);
     return h.context.out();

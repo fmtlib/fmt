@@ -1337,7 +1337,7 @@ struct char_t : std::enable_if<internal::is_string<S>::value,
 
 namespace internal {
 template <typename Context>
-FMT_CONSTEXPR basic_format_arg<Context> get_arg(Context& ctx, unsigned id) {
+FMT_CONSTEXPR typename Context::format_arg get_arg(Context& ctx, unsigned id) {
   auto arg = ctx.arg(id);
   if (!arg) ctx.on_error("argument index out of range");
   return arg;
