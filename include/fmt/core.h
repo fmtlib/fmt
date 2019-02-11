@@ -1362,17 +1362,11 @@ FMT_ENABLE_IF_T(is_compile_string<S>::value)
 check_format_string(S);
 
 template <typename S, typename... Args>
-struct checked_args
-    : format_arg_store<typename buffer_context<FMT_CHAR(S)>::type, Args...> {
-  typedef typename buffer_context<FMT_CHAR(S)>::type context;
-
-  checked_args(const S& format_str, const Args&... args)
-      : format_arg_store<context, Args...>(args...) {
-    internal::check_format_string<Args...>(format_str);
-  }
-
-  basic_format_args<context> operator*() const { return *this; }
-};
+inline format_arg_store<typename buffer_context<FMT_CHAR(S)>::type, Args...>
+make_args_checked(const S& format_str, const Args&... args) {
+  internal::check_format_string<Args...>(format_str);
+  return {args...};
+}
 
 template <typename Char>
 std::basic_string<Char> vformat(
@@ -1434,7 +1428,7 @@ inline FMT_ENABLE_IF_T(
     format_to(std::back_insert_iterator<Container> out, const S& format_str,
               const Args&... args) {
   return vformat_to(out, to_string_view(format_str),
-                    {internal::checked_args<S, Args...>(format_str, args...)});
+                    {internal::make_args_checked(format_str, args...)});
 }
 
 template <typename S, typename Char = FMT_CHAR(S)>
@@ -1457,9 +1451,8 @@ inline std::basic_string<Char> vformat(
 template <typename S, typename... Args>
 inline std::basic_string<FMT_CHAR(S)> format(const S& format_str,
                                              const Args&... args) {
-  return internal::vformat(
-      to_string_view(format_str),
-      {internal::checked_args<S, Args...>(format_str, args...)});
+  return internal::vformat(to_string_view(format_str),
+                           {internal::make_args_checked(format_str, args...)});
 }
 
 FMT_API void vprint(std::FILE* f, string_view format_str, format_args args);
@@ -1480,7 +1473,7 @@ template <typename S, typename... Args>
 inline FMT_ENABLE_IF_T(internal::is_string<S>::value, void)
     print(std::FILE* f, const S& format_str, const Args&... args) {
   vprint(f, to_string_view(format_str),
-         internal::checked_args<S, Args...>(format_str, args...));
+         internal::make_args_checked(format_str, args...));
 }
 
 FMT_API void vprint(string_view format_str, format_args args);
@@ -1499,7 +1492,7 @@ template <typename S, typename... Args>
 inline FMT_ENABLE_IF_T(internal::is_string<S>::value, void)
     print(const S& format_str, const Args&... args) {
   vprint(to_string_view(format_str),
-         internal::checked_args<S, Args...>(format_str, args...));
+         internal::make_args_checked(format_str, args...));
 }
 FMT_END_NAMESPACE
 

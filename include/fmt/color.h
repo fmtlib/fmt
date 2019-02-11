@@ -634,9 +634,8 @@ template <typename S, typename... Args>
 inline std::basic_string<FMT_CHAR(S)> format(const text_style& ts,
                                              const S& format_str,
                                              const Args&... args) {
-  return internal::vformat(
-      ts, to_string_view(format_str),
-      *internal::checked_args<S, Args...>(format_str, args...));
+  return internal::vformat(ts, to_string_view(format_str),
+                           {internal::make_args_checked(format_str, args...)});
 }
 
 #endif
