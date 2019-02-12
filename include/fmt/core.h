@@ -111,6 +111,22 @@
 # define FMT_USE_NULLPTR 0
 #endif
 
+#ifndef FMT_MAYBE_UNUSED
+# ifdef __has_cpp_attribute
+#  if __has_cpp_attribute(maybe_unused)
+#   define FMT_MAYBE_UNUSED [[maybe_unused]]
+#  endif
+# else
+#  if (__cplusplus >= 201603L && FMT_GCC_VERSION >= 700) || \
+    FMT_MSC_VER >= 1911
+#    define FMT_MAYBE_UNUSED [[maybe_unused]]
+#  endif
+# endif
+#endif
+#ifndef FMT_MAYBE_UNUSED
+# define FMT_MAYBE_UNUSED
+#endif
+
 // Check if exceptions are disabled.
 #ifndef FMT_EXCEPTIONS
 # if (defined(__GNUC__) && !defined(__EXCEPTIONS)) || \
