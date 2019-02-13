@@ -419,12 +419,6 @@ inline fp operator-(fp x, fp y) {
 // Computes an fp number r with r.f = x.f * y.f / pow(2, 64) rounded to nearest
 // with half-up tie breaking, r.e = x.e + y.e + 64. Result may not be
 // normalized.
-FMT_API fp operator*(fp x, fp y);
-
-// Returns cached power (of 10) c_k = c_k.f * pow(2, c_k.e) such that its
-// (binary) exponent satisfies min_exponent <= c_k.e <= min_exponent + 3.
-FMT_API fp get_cached_power(int min_exponent, int& pow10_exponent);
-
 FMT_FUNC fp operator*(fp x, fp y) {
   // Multiply 32-bit parts of significands.
   uint64_t mask = (1ULL << 32) - 1;
@@ -436,6 +430,8 @@ FMT_FUNC fp operator*(fp x, fp y) {
   return fp(ac + (ad >> 32) + (bc >> 32) + (mid >> 32), x.e + y.e + 64);
 }
 
+// Returns cached power (of 10) c_k = c_k.f * pow(2, c_k.e) such that its
+// (binary) exponent satisfies min_exponent <= c_k.e <= min_exponent + 28.
 FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
   const double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
   int index = static_cast<int>(

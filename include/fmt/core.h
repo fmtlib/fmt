@@ -1388,13 +1388,8 @@ typename buffer_context<Char>::type::iterator vformat_to(
     fmt::print("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23));
   \endrst
  */
-template <typename T>
-inline internal::named_arg<T, char> arg(string_view name, const T& arg) {
-  return {name, arg};
-}
-
-template <typename T>
-inline internal::named_arg<T, wchar_t> arg(wstring_view name, const T& arg) {
+template <typename S, typename T>
+inline internal::named_arg<T, FMT_CHAR(S)> arg(const S& name, const T& arg) {
   return {name, arg};
 }
 
