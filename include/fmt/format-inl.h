@@ -445,26 +445,21 @@ FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
   return fp(data::POW10_SIGNIFICANDS[index], data::POW10_EXPONENTS[index]);
 }
 
-FMT_FUNC bool grisu2_round(char* buf, int& size, int max_digits, uint64_t delta,
-                           uint64_t remainder, uint64_t exp, uint64_t diff,
-                           int& exp10) {
+FMT_FUNC bool grisu2_round(char* buf, int& size, uint64_t delta,
+                           uint64_t remainder, uint64_t exp, uint64_t diff) {
   while (
       remainder < diff && delta - remainder >= exp &&
       (remainder + exp < diff || diff - remainder > remainder + exp - diff)) {
     --buf[size - 1];
     remainder += exp;
   }
-  if (size > max_digits) {
-    --size;
-    ++exp10;
-    if (buf[size] >= '5') return false;
-  }
   return true;
 }
 
 // Generates output using Grisu2 digit-gen algorithm.
-FMT_FUNC int grisu2_gen_digits(char* buf, fp upper, int& exp, uint64_t delta,
-                               const fp& diff, int max_digits) {
+template <typename Stop>
+int grisu2_gen_digits(char* buf, fp upper, uint64_t error_ulp, int& exp,
+                      Stop stop) {
   fp one(1ull << -upper.e, upper.e);
   // The integral part of scaled upper (p1 in Grisu) = upper / one. It cannot be
   // zero because it contains a product of two 64-bit numbers with MSB set (due
@@ -529,33 +524,55 @@ FMT_FUNC int grisu2_gen_digits(char* buf, fp upper, int& exp, uint64_t delta,
     --exp;
     uint64_t remainder =
         (static_cast<uint64_t>(integral) << -one.e) + fractional;
-    if (remainder <= delta || size > max_digits) {
-      return grisu2_round(buf, size, max_digits, delta, remainder,
-                          data::POWERS_OF_10_64[exp] << -one.e, diff.f, exp)
-                 ? size
-                 : -1;
-    }
+    if (stop(buf, size, remainder, one, error_ulp, exp, true)) return size;
   } while (exp > 0);
   // Generate digits for the fractional part.
   for (;;) {
     fractional *= 10;
-    delta *= 10;
+    error_ulp *= 10;
     char digit = static_cast<char>(fractional >> -one.e);
     buf[size++] = static_cast<char>('0' + digit);
     fractional &= one.f - 1;
     --exp;
-    if (fractional < delta || size > max_digits) {
-      return grisu2_round(buf, size, max_digits, delta, fractional, one.f,
-                          diff.f * data::POWERS_OF_10_64[-exp], exp)
-                 ? size
-                 : -1;
-    }
+    if (stop(buf, size, fractional, one, error_ulp, exp, false)) return size;
   }
 }
 
+// Stopping condition for the fixed precision.
+struct fixed_stop {
+  int precision;
+
+  bool operator()(char* buf, int size, uint64_t remainder, fp,
+                  uint64_t error_ulp, int&, bool) {
+    if (size != precision) return false;
+    // TODO: pass correct arguments to round
+    if (!grisu2_round(buf, size, error_ulp, remainder, 0, 0)) {
+      size = -1;
+    }
+    return true;
+  }
+};
+
+// Stopping condition for the shortest representation.
+struct shortest_stop {
+  fp diff;  // wp_w in Grisu.
+
+  bool operator()(char* buf, int size, uint64_t remainder, fp one,
+                  uint64_t error_ulp, int& exp, bool integral) {
+    if (remainder > error_ulp) return false;
+    if (!grisu2_round(
+            buf, size, error_ulp, remainder,
+            integral ? data::POWERS_OF_10_64[exp] << -one.e : one.f,
+            integral ? diff.f : diff.f * data::POWERS_OF_10_64[-exp])) {
+      size = -1;
+    }
+    return true;
+  }
+};
+
 template <typename Double>
 FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-grisu2_format(Double value, buffer& buf, core_format_specs, int& exp) {
+grisu2_format(Double value, buffer& buf, core_format_specs specs, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
   if (value <= 0) {  // <= instead of == to silence a warning.
     buf.push_back('0');
@@ -564,29 +581,38 @@ grisu2_format(Double value, buffer& buf, core_format_specs, int& exp) {
   }
 
   fp fp_value(value);
-  fp lower, upper;  // w^- and w^+ in the Grisu paper.
-  fp_value.compute_boundaries(lower, upper);
-
-  // Find a cached power of 10 close to 1 / upper and use it to scale upper.
-  const int min_exp = -60;             // alpha in Grisu.
-  int cached_exp = 0;                  // K in Grisu.
-  auto cached_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
-      min_exp - (upper.e + fp::significand_size), cached_exp);
-  cached_exp = -cached_exp;
-  upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
-  --upper.f;                   // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
-  assert(min_exp <= upper.e && upper.e <= -32);
-  fp_value.normalize();
-  fp scaled_value = fp_value * cached_pow;
-  lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
-  ++lower.f;                   // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
-  uint64_t delta = upper.f - lower.f;
-  fp diff = upper - scaled_value;  // wp_w in Grisu.
-  const int max_digits = 20;
-  int size = grisu2_gen_digits(buf.data(), upper, exp, delta, diff, max_digits);
-  if (size < 0) return false;
-  buf.resize(to_unsigned(size));
-  exp += cached_exp;
+  const int min_exp = -60;  // alpha in Grisu.
+  int cached_exp10 = 0;     // K in Grisu.
+  if (specs.precision != -1) {
+    if (specs.precision > 17) return false;
+    fp_value.normalize();
+    auto cached_pow = get_cached_power(
+        min_exp - (fp_value.e + fp::significand_size), cached_exp10);
+    fp_value = fp_value * cached_pow;
+    int size = grisu2_gen_digits(buf.data(), fp_value, 1, exp,
+                                 fixed_stop{specs.precision});
+    if (size < 0) return false;
+    buf.resize(to_unsigned(size));
+  } else {
+    fp lower, upper;  // w^- and w^+ in the Grisu paper.
+    fp_value.compute_boundaries(lower, upper);
+    // Find a cached power of 10 such that multiplying upper by it will bring
+    // the exponent in the range [min_exp, -32].
+    auto cached_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
+        min_exp - (upper.e + fp::significand_size), cached_exp10);
+    upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
+    --upper.f;                   // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
+    assert(min_exp <= upper.e && upper.e <= -32);
+    fp_value.normalize();
+    fp_value = fp_value * cached_pow;
+    lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
+    ++lower.f;                   // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
+    int size = grisu2_gen_digits(buf.data(), upper, upper.f - lower.f, exp,
+                                 shortest_stop{upper - fp_value});
+    if (size < 0) return false;
+    buf.resize(to_unsigned(size));
+  }
+  exp -= cached_exp10;
   return true;
 }
 
