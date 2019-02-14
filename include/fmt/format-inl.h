@@ -463,83 +463,89 @@ FMT_FUNC bool grisu2_round(char* buf, int& size, int max_digits, uint64_t delta,
 }
 
 // Generates output using Grisu2 digit-gen algorithm.
-FMT_FUNC int grisu2_gen_digits(char* buf, uint32_t hi, uint64_t lo, int& exp,
-                               uint64_t delta, const fp& one, const fp& diff,
-                               int max_digits) {
-  // hi cannot be zero because it contains a product of two 64-bit numbers with
-  // MSB set (due to normalization) - 1, shifted right by at most 60 bits.
-  FMT_ASSERT(hi != 0, "");
+FMT_FUNC int grisu2_gen_digits(char* buf, fp upper, int& exp, uint64_t delta,
+                               const fp& diff, int max_digits) {
+  fp one(1ull << -upper.e, upper.e);
+  // The integral part of scaled upper (p1 in Grisu) = upper / one. It cannot be
+  // zero because it contains a product of two 64-bit numbers with MSB set (due
+  // to normalization) - 1, shifted right by at most 60 bits.
+  uint32_t integral = static_cast<uint32_t>(upper.f >> -one.e);
+  FMT_ASSERT(integral != 0, "");
+  FMT_ASSERT(integral == upper.f >> -one.e, "");
+  // The fractional part of scaled upper (p2 in Grisu) c = upper % one.
+  uint64_t fractional = upper.f & (one.f - 1);
+  exp = count_digits(integral);  // kappa in Grisu.
   int size = 0;
-  // Generate digits for the most significant part (hi). This can produce up to
-  // 10 digits.
-  while (exp > 0) {
+  // Generate digits for the integral part. This can produce up to 10 digits.
+  do {
     uint32_t digit = 0;
     // This optimization by miloyip reduces the number of integer divisions by
     // one per iteration.
     switch (exp) {
     case 10:
-      digit = hi / 1000000000;
-      hi %= 1000000000;
+      digit = integral / 1000000000;
+      integral %= 1000000000;
       break;
     case 9:
-      digit = hi / 100000000;
-      hi %= 100000000;
+      digit = integral / 100000000;
+      integral %= 100000000;
       break;
     case 8:
-      digit = hi / 10000000;
-      hi %= 10000000;
+      digit = integral / 10000000;
+      integral %= 10000000;
       break;
     case 7:
-      digit = hi / 1000000;
-      hi %= 1000000;
+      digit = integral / 1000000;
+      integral %= 1000000;
       break;
     case 6:
-      digit = hi / 100000;
-      hi %= 100000;
+      digit = integral / 100000;
+      integral %= 100000;
       break;
     case 5:
-      digit = hi / 10000;
-      hi %= 10000;
+      digit = integral / 10000;
+      integral %= 10000;
       break;
     case 4:
-      digit = hi / 1000;
-      hi %= 1000;
+      digit = integral / 1000;
+      integral %= 1000;
       break;
     case 3:
-      digit = hi / 100;
-      hi %= 100;
+      digit = integral / 100;
+      integral %= 100;
       break;
     case 2:
-      digit = hi / 10;
-      hi %= 10;
+      digit = integral / 10;
+      integral %= 10;
       break;
     case 1:
-      digit = hi;
-      hi = 0;
+      digit = integral;
+      integral = 0;
       break;
     default:
       FMT_ASSERT(false, "invalid number of digits");
     }
     buf[size++] = static_cast<char>('0' + digit);
     --exp;
-    uint64_t remainder = (static_cast<uint64_t>(hi) << -one.e) + lo;
+    uint64_t remainder =
+        (static_cast<uint64_t>(integral) << -one.e) + fractional;
     if (remainder <= delta || size > max_digits) {
       return grisu2_round(buf, size, max_digits, delta, remainder,
                           data::POWERS_OF_10_64[exp] << -one.e, diff.f, exp)
                  ? size
                  : -1;
     }
-  }
-  // Generate digits for the least significant part (lo).
+  } while (exp > 0);
+  // Generate digits for the fractional part.
   for (;;) {
-    lo *= 10;
+    fractional *= 10;
     delta *= 10;
-    char digit = static_cast<char>(lo >> -one.e);
+    char digit = static_cast<char>(fractional >> -one.e);
     buf[size++] = static_cast<char>('0' + digit);
-    lo &= one.f - 1;
+    fractional &= one.f - 1;
     --exp;
-    if (lo < delta || size > max_digits) {
-      return grisu2_round(buf, size, max_digits, delta, lo, one.f,
+    if (fractional < delta || size > max_digits) {
+      return grisu2_round(buf, size, max_digits, delta, fractional, one.f,
                           diff.f * data::POWERS_OF_10_64[-exp], exp)
                  ? size
                  : -1;
@@ -569,24 +575,15 @@ grisu2_format(Double value, buffer& buf, core_format_specs, int& exp) {
   cached_exp = -cached_exp;
   upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
   --upper.f;                   // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
-  fp one(1ull << -upper.e, upper.e);
-  assert(-60 <= upper.e && upper.e <= -32);
-  // hi (p1 in Grisu) contains the most significant digits of scaled upper.
-  // hi = floor(upper / one).
-  uint32_t hi = static_cast<uint32_t>(upper.f >> -one.e);
-  exp = count_digits(hi);  // kappa in Grisu.
+  assert(min_exp <= upper.e && upper.e <= -32);
   fp_value.normalize();
   fp scaled_value = fp_value * cached_pow;
   lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
   ++lower.f;                   // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
   uint64_t delta = upper.f - lower.f;
   fp diff = upper - scaled_value;  // wp_w in Grisu.
-  // lo (p2 in Grisu) contains the least significants digits of scaled upper.
-  // lo = upper % one.
-  uint64_t lo = upper.f & (one.f - 1);
   const int max_digits = 20;
-  int size =
-      grisu2_gen_digits(buf.data(), hi, lo, exp, delta, one, diff, max_digits);
+  int size = grisu2_gen_digits(buf.data(), upper, exp, delta, diff, max_digits);
   if (size < 0) return false;
   buf.resize(to_unsigned(size));
   exp += cached_exp;
