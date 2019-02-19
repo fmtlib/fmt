@@ -3644,8 +3644,10 @@ FMT_END_NAMESPACE
       FMT_CONSTEXPR operator fmt::basic_string_view<char_type>() const {  \
         return {s, sizeof(s) / sizeof(char_type) - 1};                    \
       }                                                                   \
-    };                                                                    \
-    return str{};                                                         \
+    } result;                                                             \
+    /* Suppress Qt Creator warning about unused operator. */              \
+    (void)static_cast<fmt::basic_string_view<str::char_type>>(result);    \
+    return result;                                                        \
   }()
 
 #if defined(FMT_STRING_ALIAS) && FMT_STRING_ALIAS
