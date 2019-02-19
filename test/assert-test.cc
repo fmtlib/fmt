@@ -13,7 +13,7 @@
     EXPECT_DEBUG_DEATH(statement, regex)
 #else
 #  define EXPECT_DEBUG_DEATH_IF_SUPPORTED(statement, regex) \
-    GTEST_UNSUPPORTED_DEATH_TEST_(statement, regex, )
+    GTEST_UNSUPPORTED_DEATH_TEST(statement, regex, )
 #endif
 
 TEST(AssertTest, Fail) {
