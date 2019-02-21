@@ -130,6 +130,11 @@ typedef __int64          intmax_t;
 # define FMT_HAS_GXX_CXX11 0
 #endif
 
+#ifdef __BORLANDC__
+#pragma warn -8072 // disable "suspicious pointer arithmetic" warning on access of the digits array
+#pragma warn -8004 // disable "assigned value that is never used" warning
+#endif
+
 #if defined(__INTEL_COMPILER)
 # define FMT_ICC_VERSION __INTEL_COMPILER
 #elif defined(__ICL)
@@ -1328,6 +1333,7 @@ template <typename T, T> struct LConvCheck {
   LConvCheck(int) {}
 };
 
+#ifndef __BORLANDC__
 // Returns the thousands separator for the current locale.
 // We check if ``lconv`` contains ``thousands_sep`` because on Android
 // ``lconv`` is stubbed as an empty struct.
@@ -1336,6 +1342,7 @@ inline StringRef thousands_sep(
     LConv *lc, LConvCheck<char *LConv::*, &LConv::thousands_sep> = 0) {
   return lc->thousands_sep;
 }
+#endif
 
 inline fmt::StringRef thousands_sep(...) { return ""; }
 
@@ -2138,6 +2145,8 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
 
   // workaround MSVC two-phase lookup issue
   typedef internal::Arg Arg;
+  typedef Char          CharType;
+  typedef BasicWriter<Char> WriterType;
 
  protected:
   BasicWriter<Char> &writer() { return writer_; }
@@ -2182,8 +2191,8 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     }
     if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
       FMT_THROW(FormatError("invalid format specifier for char"));
-    typedef typename BasicWriter<Char>::CharPtr CharPtr;
-    Char fill = internal::CharTraits<Char>::cast(spec_.fill());
+    typedef typename WriterType::CharPtr CharPtr;
+    CharType fill = internal::CharTraits<CharType>::cast(spec_.fill());
     CharPtr out = CharPtr();
     const unsigned CHAR_SIZE = 1;
     if (spec_.width_ > CHAR_SIZE) {
@@ -2201,7 +2210,7 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     } else {
       out = writer_.grow_buffer(CHAR_SIZE);
     }
-    *out = internal::CharTraits<Char>::cast(value);
+    *out = internal::CharTraits<CharType>::cast(value);
   }
 
   void visit_cstring(const char *value) {
@@ -2403,6 +2412,7 @@ inline uint64_t make_type(const T &arg) {
   return MakeValue< BasicFormatter<char> >::type(arg);
 }
 
+#ifndef __BORLANDC__
 template <std::size_t N, bool/*IsPacked*/= (N < ArgList::MAX_PACKED_ARGS)>
 struct ArgArray;
 
@@ -2432,6 +2442,25 @@ struct ArgArray<N, false/*IsPacked*/> {
   template <typename Formatter, typename T>
   static Arg make(const T &value) { return MakeArg<Formatter>(value); }
 };
+#else
+template <std::size_t N>
+struct ArgArray {
+  typedef Value Type[N > 0 ? N : 1];
+
+  template <typename Formatter, typename T>
+  static Value make(const T & value) {
+#ifdef __clang__
+    Value result = MakeValue<Formatter>(value);
+    // Workaround a bug in Apple LLVM version 4.2 (clang-425.0.28) of clang:
+    // https://github.com/fmtlib/fmt/issues/276
+    (void)result.custom.format;
+    return result;
+#else
+    return MakeValue<Formatter>(value);
+#endif
+  }
+};
+#endif
 
 #if FMT_USE_VARIADIC_TEMPLATES
 template <typename Arg, typename... Args>
@@ -2469,74 +2498,6 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_ASSIGN_wchar_t(n) \
   arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<wchar_t> >(v##n)
 
-#if FMT_USE_VARIADIC_TEMPLATES
-// Defines a variadic function returning void.
-# define FMT_VARIADIC_VOID(func, arg_type) \
-  template <typename... Args> \
-  void func(arg_type arg0, const Args & ... args) { \
-    typedef fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
-    typename ArgArray::Type array{ \
-      ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
-    func(arg0, fmt::ArgList(fmt::internal::make_type(args...), array)); \
-  }
-
-// Defines a variadic constructor.
-# define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
-  template <typename... Args> \
-  ctor(arg0_type arg0, arg1_type arg1, const Args & ... args) { \
-    typedef fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
-    typename ArgArray::Type array{ \
-      ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
-    func(arg0, arg1, fmt::ArgList(fmt::internal::make_type(args...), array)); \
-  }
-
-#else
-
-# define FMT_MAKE_REF(n) \
-  fmt::internal::MakeValue< fmt::BasicFormatter<Char> >(v##n)
-# define FMT_MAKE_REF2(n) v##n
-
-// Defines a wrapper for a function taking one argument of type arg_type
-// and n additional arguments of arbitrary types.
-# define FMT_WRAP1(func, arg_type, n) \
-  template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
-  inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
-    func(arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
-  }
-
-// Emulates a variadic function returning void on a pre-C++11 compiler.
-# define FMT_VARIADIC_VOID(func, arg_type) \
-  inline void func(arg_type arg) { func(arg, fmt::ArgList()); } \
-  FMT_WRAP1(func, arg_type, 1) FMT_WRAP1(func, arg_type, 2) \
-  FMT_WRAP1(func, arg_type, 3) FMT_WRAP1(func, arg_type, 4) \
-  FMT_WRAP1(func, arg_type, 5) FMT_WRAP1(func, arg_type, 6) \
-  FMT_WRAP1(func, arg_type, 7) FMT_WRAP1(func, arg_type, 8) \
-  FMT_WRAP1(func, arg_type, 9) FMT_WRAP1(func, arg_type, 10)
-
-# define FMT_CTOR(ctor, func, arg0_type, arg1_type, n) \
-  template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
-  ctor(arg0_type arg0, arg1_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
-    func(arg0, arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
-  }
-
-// Emulates a variadic constructor on a pre-C++11 compiler.
-# define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
-  FMT_CTOR(ctor, func, arg0_type, arg1_type, 1) \
-  FMT_CTOR(ctor, func, arg0_type, arg1_type, 2) \
-  FMT_CTOR(ctor, func, arg0_type, arg1_type, 3) \
-  FMT_CTOR(ctor, func, arg0_type, arg1_type, 4) \
-  FMT_CTOR(ctor, func, arg0_type, arg1_type, 5) \
-  FMT_CTOR(ctor, func, arg0_type, arg1_type, 6) \
-  FMT_CTOR(ctor, func, arg0_type, arg1_type, 7) \
-  FMT_CTOR(ctor, func, arg0_type, arg1_type, 8) \
-  FMT_CTOR(ctor, func, arg0_type, arg1_type, 9) \
-  FMT_CTOR(ctor, func, arg0_type, arg1_type, 10)
-#endif
-
 // Generates a comma-separated list with results of applying f to pairs
 // (argument, index).
 #define FMT_FOR_EACH1(f, x0) f(x0, 0)
@@ -2558,6 +2519,147 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
   FMT_FOR_EACH8(f, x0, x1, x2, x3, x4, x5, x6, x7), f(x8, 8)
 #define FMT_FOR_EACH10(f, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) \
   FMT_FOR_EACH9(f, x0, x1, x2, x3, x4, x5, x6, x7, x8), f(x9, 9)
+
+// This is used to work around VC++ bugs in handling variadic macros.
+#define FMT_EXPAND(args) args
+
+// Returns the number of arguments.
+// Based on https://groups.google.com/forum/#!topic/comp.std.c/d-6Mj5Lko_s.
+#define FMT_NARG(...) FMT_NARG_(__VA_ARGS__, FMT_RSEQ_N())
+#define FMT_NARG_(...) FMT_EXPAND(FMT_ARG_N(__VA_ARGS__))
+#define FMT_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+#define FMT_RSEQ_N() 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
+
+#define FMT_FOR_EACH_(N, f, ...) \
+  FMT_EXPAND(FMT_CONCAT(FMT_FOR_EACH, N)(f, __VA_ARGS__))
+#define FMT_FOR_EACH(f, ...) \
+  FMT_EXPAND(FMT_FOR_EACH_(FMT_NARG(__VA_ARGS__), f, __VA_ARGS__))
+
+#define FMT_ADD_ARG_NAME(type, index) type arg##index
+#define FMT_GET_ARG_NAME(type, index) arg##index
+
+#if FMT_USE_VARIADIC_TEMPLATES
+# define FMT_VARIADIC_(Const, Char, ReturnType, func, call, ...) \
+  template <typename... Args> \
+  ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
+      const Args & ... args) Const { \
+    typedef fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
+    typename ArgArray::Type array{ \
+      ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
+    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
+      fmt::ArgList(fmt::internal::make_type(args...), array)); \
+  }
+# define FMT_VARIADIC_VAR_ARG(Const, Char, ReturnType, func, call, ...) \
+  FMT_VARIADIC_(Const, Char, ReturnType, func, call, __VA_ARGS__)
+
+#else
+# define FMT_MAKE_REF(n) \
+  fmt::internal::MakeValue< fmt::BasicFormatter<Char> >(v##n)
+# define FMT_MAKE_REF2(n) v##n
+// Defines a wrapper for a function taking __VA_ARGS__ arguments
+// and n additional arguments of arbitrary types.
+# define FMT_WRAP(Const, Char, ReturnType, func, call, n, ...) \
+  template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
+  inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
+      FMT_GEN(n, FMT_MAKE_ARG)) Const { \
+    fmt::internal::ArgArray<n>::Type arr; \
+    FMT_GEN(n, FMT_ASSIGN_##Char); \
+    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), arr)); \
+  }
+# define FMT_VARIADIC_ZERO_ARG(Const, Char, ReturnType, func, call, ...) \
+  inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) Const { \
+    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList()); \
+  }
+# define FMT_VARIADIC_VAR_ARG(Const, Char, ReturnType, func, call, ...)\
+  FMT_WRAP(Const, Char, ReturnType, func, call, 1, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 2, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 3, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 4, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 5, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 6, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 7, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 8, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 9, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 10, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 11, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 12, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 13, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 14, __VA_ARGS__) \
+  FMT_WRAP(Const, Char, ReturnType, func, call, 15, __VA_ARGS__)
+
+# define FMT_VARIADIC_(Const, Char, ReturnType, func, call, ...) \
+  FMT_VARIADIC_ZERO_ARG(Const, Char, ReturnType, func, call, __VA_ARGS__) \
+  FMT_VARIADIC_VAR_ARG(Const, Char, ReturnType, func, call, __VA_ARGS__)
+
+#endif  // FMT_USE_VARIADIC_TEMPLATES
+
+/**
+  \rst
+  Defines a variadic function with the specified return type, function name
+  and argument types passed as variable arguments to this macro.
+
+  **Example**::
+
+    void print_error(const char *file, int line, const char *format,
+                     fmt::ArgList args) {
+      fmt::print("{}: {}: ", file, line);
+      fmt::print(format, args);
+    }
+    FMT_VARIADIC(void, print_error, const char *, int, const char *)
+
+  ``FMT_VARIADIC`` is used for compatibility with legacy C++ compilers that
+  don't implement variadic templates. You don't have to use this macro if
+  you don't need legacy compiler support and can use variadic templates
+  directly::
+
+    template <typename... Args>
+    void print_error(const char *file, int line, const char *format,
+                     const Args & ... args) {
+      fmt::print("{}: {}: ", file, line);
+      fmt::print(format, args...);
+    }
+  \endrst
+ */
+#define FMT_VARIADIC(ReturnType, func, ...) \
+  FMT_VARIADIC_(, char, ReturnType, func, return func, __VA_ARGS__)
+
+#define FMT_VARIADIC_CONST(ReturnType, func, ...) \
+  FMT_VARIADIC_(const, char, ReturnType, func, return func, __VA_ARGS__)
+
+#define FMT_VARIADIC_W(ReturnType, func, ...) \
+  FMT_VARIADIC_(, wchar_t, ReturnType, func, return func, __VA_ARGS__)
+
+#define FMT_VARIADIC_CONST_W(ReturnType, func, ...) \
+  FMT_VARIADIC_(const, wchar_t, ReturnType, func, return func, __VA_ARGS__)
+
+#define FMT_VARIADIC_CTOR(ctor, func, arg0_type, arg1_type) \
+  FMT_VARIADIC_VAR_ARG(, char, , ctor, func, arg0_type, arg1_type)
+
+#define FMT_VARIADIC_VOID(func, arg_type) \
+  FMT_VARIADIC(void,func, arg_type)
+
+#define FMT_CAPTURE_ARG_(id, index) ::fmt::arg(#id, id)
+
+#define FMT_CAPTURE_ARG_W_(id, index) ::fmt::arg(L## #id, id)
+
+/**
+  \rst
+  Convenient macro to capture the arguments' names and values into several
+  ``fmt::arg(name, value)``.
+
+  **Example**::
+
+    int x = 1, y = 2;
+    print("point: ({x}, {y})", FMT_CAPTURE(x, y));
+    // same as:
+    // print("point: ({x}, {y})", arg("x", x), arg("y", y));
+
+  \endrst
+ */
+#define FMT_CAPTURE(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_, __VA_ARGS__)
+
+#define FMT_CAPTURE_W(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_W_, __VA_ARGS__)
 
 /**
  An error returned by an operating system or a language runtime,
@@ -3653,130 +3755,6 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 # pragma GCC system_header
 #endif
 
-// This is used to work around VC++ bugs in handling variadic macros.
-#define FMT_EXPAND(args) args
-
-// Returns the number of arguments.
-// Based on https://groups.google.com/forum/#!topic/comp.std.c/d-6Mj5Lko_s.
-#define FMT_NARG(...) FMT_NARG_(__VA_ARGS__, FMT_RSEQ_N())
-#define FMT_NARG_(...) FMT_EXPAND(FMT_ARG_N(__VA_ARGS__))
-#define FMT_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
-#define FMT_RSEQ_N() 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
-
-#define FMT_FOR_EACH_(N, f, ...) \
-  FMT_EXPAND(FMT_CONCAT(FMT_FOR_EACH, N)(f, __VA_ARGS__))
-#define FMT_FOR_EACH(f, ...) \
-  FMT_EXPAND(FMT_FOR_EACH_(FMT_NARG(__VA_ARGS__), f, __VA_ARGS__))
-
-#define FMT_ADD_ARG_NAME(type, index) type arg##index
-#define FMT_GET_ARG_NAME(type, index) arg##index
-
-#if FMT_USE_VARIADIC_TEMPLATES
-# define FMT_VARIADIC_(Const, Char, ReturnType, func, call, ...) \
-  template <typename... Args> \
-  ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
-      const Args & ... args) Const { \
-    typedef fmt::internal::ArgArray<sizeof...(Args)> ArgArray; \
-    typename ArgArray::Type array{ \
-      ArgArray::template make<fmt::BasicFormatter<Char> >(args)...}; \
-    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), \
-      fmt::ArgList(fmt::internal::make_type(args...), array)); \
-  }
-#else
-// Defines a wrapper for a function taking __VA_ARGS__ arguments
-// and n additional arguments of arbitrary types.
-# define FMT_WRAP(Const, Char, ReturnType, func, call, n, ...) \
-  template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
-  inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__), \
-      FMT_GEN(n, FMT_MAKE_ARG)) Const { \
-    fmt::internal::ArgArray<n>::Type arr; \
-    FMT_GEN(n, FMT_ASSIGN_##Char); \
-    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), arr)); \
-  }
-
-# define FMT_VARIADIC_(Const, Char, ReturnType, func, call, ...) \
-  inline ReturnType func(FMT_FOR_EACH(FMT_ADD_ARG_NAME, __VA_ARGS__)) Const { \
-    call(FMT_FOR_EACH(FMT_GET_ARG_NAME, __VA_ARGS__), fmt::ArgList()); \
-  } \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 1, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 2, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 3, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 4, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 5, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 6, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 7, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 8, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 9, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 10, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 11, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 12, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 13, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 14, __VA_ARGS__) \
-  FMT_WRAP(Const, Char, ReturnType, func, call, 15, __VA_ARGS__)
-#endif  // FMT_USE_VARIADIC_TEMPLATES
-
-/**
-  \rst
-  Defines a variadic function with the specified return type, function name
-  and argument types passed as variable arguments to this macro.
-
-  **Example**::
-
-    void print_error(const char *file, int line, const char *format,
-                     fmt::ArgList args) {
-      fmt::print("{}: {}: ", file, line);
-      fmt::print(format, args);
-    }
-    FMT_VARIADIC(void, print_error, const char *, int, const char *)
-
-  ``FMT_VARIADIC`` is used for compatibility with legacy C++ compilers that
-  don't implement variadic templates. You don't have to use this macro if
-  you don't need legacy compiler support and can use variadic templates
-  directly::
-
-    template <typename... Args>
-    void print_error(const char *file, int line, const char *format,
-                     const Args & ... args) {
-      fmt::print("{}: {}: ", file, line);
-      fmt::print(format, args...);
-    }
-  \endrst
- */
-#define FMT_VARIADIC(ReturnType, func, ...) \
-  FMT_VARIADIC_(, char, ReturnType, func, return func, __VA_ARGS__)
-
-#define FMT_VARIADIC_CONST(ReturnType, func, ...) \
-  FMT_VARIADIC_(const, char, ReturnType, func, return func, __VA_ARGS__)
-
-#define FMT_VARIADIC_W(ReturnType, func, ...) \
-  FMT_VARIADIC_(, wchar_t, ReturnType, func, return func, __VA_ARGS__)
-
-#define FMT_VARIADIC_CONST_W(ReturnType, func, ...) \
-  FMT_VARIADIC_(const, wchar_t, ReturnType, func, return func, __VA_ARGS__)
-
-#define FMT_CAPTURE_ARG_(id, index) ::fmt::arg(#id, id)
-
-#define FMT_CAPTURE_ARG_W_(id, index) ::fmt::arg(L###id, id)
-
-/**
-  \rst
-  Convenient macro to capture the arguments' names and values into several
-  ``fmt::arg(name, value)``.
-
-  **Example**::
-
-    int x = 1, y = 2;
-    print("point: ({x}, {y})", FMT_CAPTURE(x, y));
-    // same as:
-    // print("point: ({x}, {y})", arg("x", x), arg("y", y));
-
-  \endrst
- */
-#define FMT_CAPTURE(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_, __VA_ARGS__)
-
-#define FMT_CAPTURE_W(...) FMT_FOR_EACH(FMT_CAPTURE_ARG_W_, __VA_ARGS__)
-
 namespace fmt {
 FMT_VARIADIC(std::string, format, CStringRef)
 FMT_VARIADIC_W(std::wstring, format, WCStringRef)
@@ -4211,6 +4189,11 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 # include "format.cc"
 #else
 # define FMT_FUNC
+#endif
+
+#ifdef __BORLANDC__
+#pragma warn .8072 // restore "suspicious pointer arithmetic" warning on access of the digits array
+#pragma warn .8004 // restore "assigned value that is never used" warning
 #endif
 
 #endif  // FMT_FORMAT_H_

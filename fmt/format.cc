@@ -83,7 +83,10 @@ static inline fmt::internal::Null<> strerror_s(char *, std::size_t, ...) {
 
 namespace fmt {
 
-FMT_FUNC internal::RuntimeError::~RuntimeError() FMT_DTOR_NOEXCEPT {}
+namespace internal {
+FMT_FUNC RuntimeError::~RuntimeError() FMT_DTOR_NOEXCEPT {}
+} // namespace internal
+
 FMT_FUNC FormatError::~FormatError() FMT_DTOR_NOEXCEPT {}
 FMT_FUNC SystemError::~SystemError() FMT_DTOR_NOEXCEPT {}
 
@@ -231,8 +234,9 @@ FMT_FUNC void SystemError::init(
   base = std::runtime_error(w.str());
 }
 
+namespace internal {
 template <typename T>
-int internal::CharTraits<char>::format_float(
+int CharTraits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, T value) {
   if (width == 0) {
@@ -246,7 +250,7 @@ int internal::CharTraits<char>::format_float(
 }
 
 template <typename T>
-int internal::CharTraits<wchar_t>::format_float(
+int CharTraits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, T value) {
   if (width == 0) {
@@ -260,7 +264,7 @@ int internal::CharTraits<wchar_t>::format_float(
 }
 
 template <typename T>
-const char internal::BasicData<T>::DIGITS[] =
+const char BasicData<T>::DIGITS[] =
     "0001020304050607080910111213141516171819"
     "2021222324252627282930313233343536373839"
     "4041424344454647484950515253545556575859"
@@ -279,12 +283,12 @@ const char internal::BasicData<T>::DIGITS[] =
   factor * 1000000000
 
 template <typename T>
-const uint32_t internal::BasicData<T>::POWERS_OF_10_32[] = {
+const uint32_t BasicData<T>::POWERS_OF_10_32[] = {
   0, FMT_POWERS_OF_10(1)
 };
 
 template <typename T>
-const uint64_t internal::BasicData<T>::POWERS_OF_10_64[] = {
+const uint64_t BasicData<T>::POWERS_OF_10_64[] = {
   0,
   FMT_POWERS_OF_10(1),
   FMT_POWERS_OF_10(ULongLong(1000000000)),
@@ -293,7 +297,7 @@ const uint64_t internal::BasicData<T>::POWERS_OF_10_64[] = {
   ULongLong(1000000000) * ULongLong(1000000000) * 10
 };
 
-FMT_FUNC void internal::report_unknown_type(char code, const char *type) {
+FMT_FUNC void report_unknown_type(char code, const char *type) {
   (void)type;
   if (std::isprint(static_cast<unsigned char>(code))) {
     FMT_THROW(FormatError(
@@ -306,7 +310,7 @@ FMT_FUNC void internal::report_unknown_type(char code, const char *type) {
 
 #if FMT_USE_WINDOWS_H
 
-FMT_FUNC internal::UTF8ToUTF16::UTF8ToUTF16(StringRef s) {
+FMT_FUNC UTF8ToUTF16::UTF8ToUTF16(StringRef s) {
   static const char ERROR_MSG[] = "cannot convert string from UTF-8 to UTF-16";
   if (s.size() > INT_MAX)
     FMT_THROW(WindowsError(ERROR_INVALID_PARAMETER, ERROR_MSG));
@@ -323,14 +327,14 @@ FMT_FUNC internal::UTF8ToUTF16::UTF8ToUTF16(StringRef s) {
   buffer_[length] = 0;
 }
 
-FMT_FUNC internal::UTF16ToUTF8::UTF16ToUTF8(WStringRef s) {
+FMT_FUNC UTF16ToUTF8::UTF16ToUTF8(WStringRef s) {
   if (int error_code = convert(s)) {
     FMT_THROW(WindowsError(error_code,
         "cannot convert string from UTF-16 to UTF-8"));
   }
 }
 
-FMT_FUNC int internal::UTF16ToUTF8::convert(WStringRef s) {
+FMT_FUNC int UTF16ToUTF8::convert(WStringRef s) {
   if (s.size() > INT_MAX)
     return ERROR_INVALID_PARAMETER;
   int s_size = static_cast<int>(s.size());
@@ -346,6 +350,7 @@ FMT_FUNC int internal::UTF16ToUTF8::convert(WStringRef s) {
   buffer_[length] = 0;
   return 0;
 }
+} // namespace internal
 
 FMT_FUNC void WindowsError::init(
     int err_code, CStringRef format_str, ArgList args) {
@@ -356,7 +361,8 @@ FMT_FUNC void WindowsError::init(
   base = std::runtime_error(w.str());
 }
 
-FMT_FUNC void internal::format_windows_error(
+namespace internal {
+FMT_FUNC void format_windows_error(
     Writer &out, int error_code, StringRef message) FMT_NOEXCEPT {
   FMT_TRY {
     MemoryBuffer<wchar_t, INLINE_BUFFER_SIZE> buffer;
@@ -384,7 +390,7 @@ FMT_FUNC void internal::format_windows_error(
 }
 
 #endif  // FMT_USE_WINDOWS_H
-
+} // namespace internal
 FMT_FUNC void format_system_error(
     Writer &out, int error_code, StringRef message) FMT_NOEXCEPT {
   FMT_TRY {
@@ -404,38 +410,37 @@ FMT_FUNC void format_system_error(
   } FMT_CATCH(...) {}
   fmt::format_error_code(out, error_code, message);  // 'fmt::' is for bcc32.
 }
+} // namespace fmt
 
 template <typename Char>
-void internal::FixedBuffer<Char>::grow(std::size_t) {
+void fmt::internal::FixedBuffer<Char>::grow(std::size_t) {
   FMT_THROW(std::runtime_error("buffer overflow"));
 }
 
-FMT_FUNC internal::Arg internal::FormatterBase::do_get_arg(
+FMT_FUNC fmt::internal::Arg fmt::internal::FormatterBase::do_get_arg(
     unsigned arg_index, const char *&error) {
-  internal::Arg arg = args_[arg_index];
+  fmt::internal::Arg arg = args_[arg_index];
   switch (arg.type) {
-  case internal::Arg::NONE:
+  case fmt::internal::Arg::NONE:
     error = "argument index out of range";
     break;
-  case internal::Arg::NAMED_ARG:
-    arg = *static_cast<const internal::Arg*>(arg.pointer);
+  case fmt::internal::Arg::NAMED_ARG:
+    arg = *static_cast<const fmt::internal::Arg*>(arg.pointer);
     break;
   default:
     /*nothing*/;
   }
   return arg;
 }
-
+namespace fmt {
 FMT_FUNC void report_system_error(
-    int error_code, fmt::StringRef message) FMT_NOEXCEPT {
-  // 'fmt::' is for bcc32.
+    int error_code, StringRef message) FMT_NOEXCEPT {
   report_error(format_system_error, error_code, message);
 }
 
 #if FMT_USE_WINDOWS_H
 FMT_FUNC void report_windows_error(
-    int error_code, fmt::StringRef message) FMT_NOEXCEPT {
-  // 'fmt::' is for bcc32.
+    int error_code, StringRef message) FMT_NOEXCEPT {
   report_error(internal::format_windows_error, error_code, message);
 }
 #endif
@@ -463,28 +468,29 @@ FMT_FUNC void print_colored(Color c, CStringRef format, ArgList args) {
 template struct internal::BasicData<void>;
 
 // Explicit instantiations for char.
+namespace internal {
+template void FixedBuffer<char>::grow(std::size_t);
 
-template void internal::FixedBuffer<char>::grow(std::size_t);
-
-template FMT_API int internal::CharTraits<char>::format_float(
+template FMT_API int CharTraits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, double value);
 
-template FMT_API int internal::CharTraits<char>::format_float(
+template FMT_API int CharTraits<char>::format_float(
     char *buffer, std::size_t size, const char *format,
     unsigned width, int precision, long double value);
 
 // Explicit instantiations for wchar_t.
 
-template void internal::FixedBuffer<wchar_t>::grow(std::size_t);
+template void FixedBuffer<wchar_t>::grow(std::size_t);
 
-template FMT_API int internal::CharTraits<wchar_t>::format_float(
+template FMT_API int CharTraits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, double value);
 
-template FMT_API int internal::CharTraits<wchar_t>::format_float(
+template FMT_API int CharTraits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
     unsigned width, int precision, long double value);
+} //namespace internal
 
 #endif  // FMT_HEADER_ONLY
 

@@ -76,13 +76,6 @@ int result;
 MAKE_TEST(test_func)
 
 typedef char Char;
-FMT_WRAP1(test_func, const char *, 1)
-
-TEST(UtilTest, Wrap1) {
-  result = 0;
-  test_func("", 42);
-  EXPECT_EQ(42, result);
-}
 
 MAKE_TEST(test_variadic_void)
 FMT_VARIADIC_VOID(test_variadic_void, const char *)

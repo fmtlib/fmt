@@ -46,6 +46,10 @@
 # ifdef _WIN32
 // Fix warnings about deprecated symbols.
 #  define FMT_POSIX_CALL(call) ::_##call
+#    if defined(__BORLANDC__) && !defined(_dup2)
+// for some reason the borland headers do define _dup but not _dup2
+#      define _dup2 dup2
+#    endif
 # else
 #  define FMT_POSIX_CALL(call) ::call
 # endif

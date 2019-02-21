@@ -333,7 +333,7 @@ class PrintfFormatter : private internal::FormatterBase {
    \endrst
    */
   explicit PrintfFormatter(const ArgList &al, BasicWriter<Char> &w)
-    : FormatterBase(al), writer_(w) {}
+    : internal::FormatterBase(al), writer_(w) {}
 
   /** Formats stored arguments and writes the output to the writer. */
   void format(BasicCStringRef<Char> format_str);
@@ -371,7 +371,7 @@ internal::Arg PrintfFormatter<Char, AF>::get_arg(const Char *s,
   (void)s;
   const char *error = FMT_NULL;
   internal::Arg arg = arg_index == std::numeric_limits<unsigned>::max() ?
-    next_arg(error) : FormatterBase::get_arg(arg_index - 1, error);
+    next_arg(error) : internal::FormatterBase::get_arg(arg_index - 1, error);
   if (error)
     FMT_THROW(FormatError(!*s ? "invalid format string" : error));
   return arg;
