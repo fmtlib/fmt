@@ -1200,6 +1200,7 @@ const unsigned long long format_arg_store<Context, Args...>::TYPES =
   Constructs an `~fmt::format_arg_store` object that contains references to
   arguments and can be implicitly converted to `~fmt::format_args`. `Context`
   can be omitted in which case it defaults to `~fmt::context`.
+  See `~fmt::arg` for lifetime considerations.
   \endrst
  */
 template <typename Context = format_context, typename... Args>
@@ -1384,6 +1385,12 @@ typename buffer_context<Char>::type::iterator vformat_to(
   \rst
   Returns a named argument to be used in a formatting function.
 
+  Usage is analogous to `std::reference_wrapper
+  <https://en.cppreference.com/w/cpp/utility/functional/reference_wrapper>`_,
+  except that rvalues references are not disabled.
+  The user should take care to only pass in temporaries when
+  the named argument is itself a temporary, as per the following example.
+
   **Example**::
 
     fmt::print("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23));
@@ -1394,9 +1401,11 @@ inline internal::named_arg<T, FMT_CHAR(S)> arg(const S& name, const T& arg) {
   return {name, arg};
 }
 
+/// \cond
 // Disable nested named arguments, e.g. ``arg("a", arg("b", 42))``.
 template <typename S, typename T, typename Char>
 void arg(S, internal::named_arg<T, Char>) = delete;
+/// \endcond
 
 template <typename Container> struct is_contiguous : std::false_type {};
 
