@@ -26,10 +26,13 @@
 # endif
 # include <windows.h>
 # include <io.h>
-
-# define O_CREAT _O_CREAT
-# define O_TRUNC _O_TRUNC
-
+#include <algorithm>
+# ifndef O_CREAT
+#  define O_CREAT _O_CREAT
+# endif
+# ifndef O_TRUNC
+#  define O_TRUNC _O_TRUNC
+# endif
 # ifndef S_IRUSR
 #  define S_IRUSR _S_IREAD
 # endif
@@ -56,7 +59,7 @@ typedef int RWResult;
 // On Windows the count argument to read and write is unsigned, so convert
 // it from size_t preventing integer overflow.
 inline unsigned convert_rwcount(std::size_t count) {
-  return count <= UINT_MAX ? static_cast<unsigned>(count) : UINT_MAX;
+  return static_cast<unsigned>(std::min<std::size_t>(count, UINT_MAX));
 }
 #else
 // Return type of read and write functions.
@@ -99,7 +102,7 @@ int fmt::BufferedFile::fileno() const {
 
 fmt::File::File(fmt::CStringRef path, int oflag) {
   int mode = S_IRUSR | S_IWUSR;
-#if defined(_WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__) && !defined(__BORLANDC__)
   fd_ = -1;
   FMT_POSIX_CALL(sopen_s(&fd_, path.c_str(), oflag, _SH_DENYNO, mode));
 #else

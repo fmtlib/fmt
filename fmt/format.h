@@ -130,6 +130,11 @@ typedef __int64          intmax_t;
 # define FMT_HAS_GXX_CXX11 0
 #endif
 
+#ifdef __BORLANDC__
+#pragma warn -8072 // disable "suspicious pointer arithmetic" warning on access of the digits array
+#pragma warn -8004 // disable "assigned value that is never used" warning
+#endif
+
 #if defined(__INTEL_COMPILER)
 # define FMT_ICC_VERSION __INTEL_COMPILER
 #elif defined(__ICL)
@@ -1328,6 +1333,7 @@ template <typename T, T> struct LConvCheck {
   LConvCheck(int) {}
 };
 
+#ifndef __BORLANDC__
 // Returns the thousands separator for the current locale.
 // We check if ``lconv`` contains ``thousands_sep`` because on Android
 // ``lconv`` is stubbed as an empty struct.
@@ -1336,6 +1342,7 @@ inline StringRef thousands_sep(
     LConv *lc, LConvCheck<char *LConv::*, &LConv::thousands_sep> = 0) {
   return lc->thousands_sep;
 }
+#endif
 
 inline fmt::StringRef thousands_sep(...) { return ""; }
 
@@ -2138,6 +2145,8 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
 
   // workaround MSVC two-phase lookup issue
   typedef internal::Arg Arg;
+  typedef Char          CharType;
+  typedef BasicWriter<Char> WriterType;
 
  protected:
   BasicWriter<Char> &writer() { return writer_; }
@@ -2182,8 +2191,8 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     }
     if (spec_.align_ == ALIGN_NUMERIC || spec_.flags_ != 0)
       FMT_THROW(FormatError("invalid format specifier for char"));
-    typedef typename BasicWriter<Char>::CharPtr CharPtr;
-    Char fill = internal::CharTraits<Char>::cast(spec_.fill());
+    typedef typename WriterType::CharPtr CharPtr;
+    CharType fill = internal::CharTraits<CharType>::cast(spec_.fill());
     CharPtr out = CharPtr();
     const unsigned CHAR_SIZE = 1;
     if (spec_.width_ > CHAR_SIZE) {
@@ -2201,7 +2210,7 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     } else {
       out = writer_.grow_buffer(CHAR_SIZE);
     }
-    *out = internal::CharTraits<Char>::cast(value);
+    *out = internal::CharTraits<CharType>::cast(value);
   }
 
   void visit_cstring(const char *value) {
@@ -2403,6 +2412,7 @@ inline uint64_t make_type(const T &arg) {
   return MakeValue< BasicFormatter<char> >::type(arg);
 }
 
+#ifndef __BORLANDC__
 template <std::size_t N, bool/*IsPacked*/= (N < ArgList::MAX_PACKED_ARGS)>
 struct ArgArray;
 
@@ -2432,6 +2442,25 @@ struct ArgArray<N, false/*IsPacked*/> {
   template <typename Formatter, typename T>
   static Arg make(const T &value) { return MakeArg<Formatter>(value); }
 };
+#else
+template <std::size_t N>
+struct ArgArray {
+  typedef Value Type[N > 0 ? N : 1];
+
+  template <typename Formatter, typename T>
+  static Value make(const T & value) {
+#ifdef __clang__
+    Value result = MakeValue<Formatter>(value);
+    // Workaround a bug in Apple LLVM version 4.2 (clang-425.0.28) of clang:
+    // https://github.com/fmtlib/fmt/issues/276
+    (void)result.custom.format;
+    return result;
+#else
+    return MakeValue<Formatter>(value);
+#endif
+  }
+};
+#endif
 
 #if FMT_USE_VARIADIC_TEMPLATES
 template <typename Arg, typename... Args>
@@ -4211,6 +4240,11 @@ operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
 # include "format.cc"
 #else
 # define FMT_FUNC
+#endif
+
+#ifdef __BORLANDC__
+#pragma warn .8072 // restore "suspicious pointer arithmetic" warning on access of the digits array
+#pragma warn .8004 // restore "assigned value that is never used" warning
 #endif
 
 #endif  // FMT_FORMAT_H_
