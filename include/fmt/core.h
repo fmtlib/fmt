@@ -1200,6 +1200,7 @@ const unsigned long long format_arg_store<Context, Args...>::TYPES =
   Constructs an `~fmt::format_arg_store` object that contains references to
   arguments and can be implicitly converted to `~fmt::format_args`. `Context`
   can be omitted in which case it defaults to `~fmt::context`.
+  See `~fmt::arg` for lifetime considerations.
   \endrst
  */
 template <typename Context = format_context, typename... Args>
@@ -1383,6 +1384,12 @@ typename buffer_context<Char>::type::iterator vformat_to(
 /**
   \rst
   Returns a named argument to be used in a formatting function.
+
+  The named argument holds a reference and does not extend the lifetime
+  of its arguments.
+  Consequently, a dangling reference can accidentally be created.
+  The user should take care to only pass this function temporaries when
+  the named argument is itself a temporary, as per the following example.
 
   **Example**::
 
