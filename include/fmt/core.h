@@ -1385,10 +1385,10 @@ typename buffer_context<Char>::type::iterator vformat_to(
   \rst
   Returns a named argument to be used in a formatting function.
 
-  Usage is analogous to `std::reference_wrapper
-  <https://en.cppreference.com/w/cpp/utility/functional/reference_wrapper>`_,
-  except that rvalues references are not disabled.
-  The user should take care to only pass in temporaries when
+  The named argument holds a reference and does not extend the lifetime
+  of its arguments.
+  Consequently, a dangling reference can accidentally be created.
+  The user should take care to only pass this function temporaries when
   the named argument is itself a temporary, as per the following example.
 
   **Example**::
@@ -1401,11 +1401,9 @@ inline internal::named_arg<T, FMT_CHAR(S)> arg(const S& name, const T& arg) {
   return {name, arg};
 }
 
-/// \cond
 // Disable nested named arguments, e.g. ``arg("a", arg("b", 42))``.
 template <typename S, typename T, typename Char>
 void arg(S, internal::named_arg<T, Char>) = delete;
-/// \endcond
 
 template <typename Container> struct is_contiguous : std::false_type {};
 
