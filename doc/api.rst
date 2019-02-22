@@ -54,7 +54,7 @@ participate in an overload resolution if the latter is not a string.
 Named arguments
 ---------------
 
-.. doxygenfunction:: fmt::arg(string_view, const T&)
+.. doxygenfunction:: fmt::arg(const S&, const T&)
 
 Named arguments are not supported in compile-time checks at the moment.
 
