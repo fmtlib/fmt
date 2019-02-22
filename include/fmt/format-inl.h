@@ -445,31 +445,21 @@ FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
   return fp(data::POW10_SIGNIFICANDS[index], data::POW10_EXPONENTS[index]);
 }
 
-FMT_FUNC bool grisu2_round(char* buf, int& size, uint64_t delta,
-                           uint64_t remainder, uint64_t exp, uint64_t diff) {
-  while (
-      remainder < diff && delta - remainder >= exp &&
-      (remainder + exp < diff || diff - remainder > remainder + exp - diff)) {
-    --buf[size - 1];
-    remainder += exp;
-  }
-  return true;
-}
-
 // Generates output using Grisu2 digit-gen algorithm.
 template <typename Stop>
-int grisu2_gen_digits(char* buf, fp upper, uint64_t error_ulp, int& exp,
+int grisu2_gen_digits(char* buf, fp value, uint64_t error_ulp, int& exp,
                       Stop stop) {
-  fp one(1ull << -upper.e, upper.e);
-  // The integral part of scaled upper (p1 in Grisu) = upper / one. It cannot be
+  fp one(1ull << -value.e, value.e);
+  // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
   // zero because it contains a product of two 64-bit numbers with MSB set (due
   // to normalization) - 1, shifted right by at most 60 bits.
-  uint32_t integral = static_cast<uint32_t>(upper.f >> -one.e);
+  uint32_t integral = static_cast<uint32_t>(value.f >> -one.e);
   FMT_ASSERT(integral != 0, "");
-  FMT_ASSERT(integral == upper.f >> -one.e, "");
-  // The fractional part of scaled upper (p2 in Grisu) c = upper % one.
-  uint64_t fractional = upper.f & (one.f - 1);
+  FMT_ASSERT(integral == value.f >> -one.e, "");
+  // The fractional part of scaled value (p2 in Grisu) c = value % one.
+  uint64_t fractional = value.f & (one.f - 1);
   exp = count_digits(integral);  // kappa in Grisu.
+  stop.on_exp(exp);
   int size = 0;
   // Generate digits for the integral part. This can produce up to 10 digits.
   do {
@@ -524,7 +514,9 @@ int grisu2_gen_digits(char* buf, fp upper, uint64_t error_ulp, int& exp,
     --exp;
     uint64_t remainder =
         (static_cast<uint64_t>(integral) << -one.e) + fractional;
-    if (stop(buf, size, remainder, one, error_ulp, exp, true)) return size;
+    if (stop(buf, size, remainder, data::POWERS_OF_10_64[exp] << -one.e,
+             error_ulp, exp, true))
+      return size;
   } while (exp > 0);
   // Generate digits for the fractional part.
   for (;;) {
@@ -534,21 +526,36 @@ int grisu2_gen_digits(char* buf, fp upper, uint64_t error_ulp, int& exp,
     buf[size++] = static_cast<char>('0' + digit);
     fractional &= one.f - 1;
     --exp;
-    if (stop(buf, size, fractional, one, error_ulp, exp, false)) return size;
+    if (stop(buf, size, fractional, one.f, error_ulp, exp, false)) return size;
   }
 }
 
 // Stopping condition for the fixed precision.
 struct fixed_stop {
   int precision;
+  int exp10;
 
-  bool operator()(char* buf, int size, uint64_t remainder, fp,
-                  uint64_t error_ulp, int&, bool) {
+  void on_exp(int exp) { precision += exp + exp10; }
+
+  bool operator()(char*, int& size, uint64_t remainder, uint64_t divisor,
+                  uint64_t error, int&, bool integral) {
+    assert(remainder < divisor);
     if (size != precision) return false;
-    // TODO: pass correct arguments to round
-    if (!grisu2_round(buf, size, error_ulp, remainder, 0, 0)) {
-      size = -1;
-    }
+    if (!integral) {
+      // Check if error * 2 < divisor with overflow prevention.
+      // The check is not needed for the integral part because error = 1
+      // and divisor > (1 << 32) there.
+      if (error >= divisor || error >= divisor - error) {
+        size = -1;
+        return true;
+      }
+    } else
+      assert(error == 1 && divisor > 2);
+    // Round down if (remainder + error) * 2 <= divisor.
+    if (remainder < divisor - remainder && error * 2 <= divisor - remainder * 2)
+      return true;
+    // TODO: round up
+    size = -1;
     return true;
   }
 };
@@ -557,14 +564,17 @@ struct fixed_stop {
 struct shortest_stop {
   fp diff;  // wp_w in Grisu.
 
-  bool operator()(char* buf, int size, uint64_t remainder, fp one,
-                  uint64_t error_ulp, int& exp, bool integral) {
-    if (remainder > error_ulp) return false;
-    if (!grisu2_round(
-            buf, size, error_ulp, remainder,
-            integral ? data::POWERS_OF_10_64[exp] << -one.e : one.f,
-            integral ? diff.f : diff.f * data::POWERS_OF_10_64[-exp])) {
-      size = -1;
+  void on_exp(int) {}
+
+  bool operator()(char* buf, int& size, uint64_t remainder, uint64_t divisor,
+                  uint64_t error, int& exp, bool integral) {
+    if (remainder > error) return false;
+    uint64_t d = integral ? diff.f : diff.f * data::POWERS_OF_10_64[-exp];
+    while (
+        remainder < d && error - remainder >= divisor &&
+        (remainder + divisor < d || d - remainder > remainder + divisor - d)) {
+      --buf[size - 1];
+      remainder += divisor;
     }
     return true;
   }
@@ -572,25 +582,31 @@ struct shortest_stop {
 
 template <typename Double>
 FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-grisu2_format(Double value, buffer& buf, core_format_specs specs, int& exp) {
+grisu2_format(Double value, buffer& buf, int precision, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
   if (value <= 0) {  // <= instead of == to silence a warning.
-    buf.push_back('0');
-    exp = 0;
+    if (precision < 0) {
+      exp = 0;
+      buf.push_back('0');
+    } else {
+      exp = -precision;
+      buf.resize(precision);
+      std::uninitialized_fill_n(buf.data(), precision, '0');
+    }
     return true;
   }
 
   fp fp_value(value);
   const int min_exp = -60;  // alpha in Grisu.
   int cached_exp10 = 0;     // K in Grisu.
-  if (specs.precision != -1) {
-    if (specs.precision > 17) return false;
+  if (precision != -1) {
+    if (precision > 17) return false;
     fp_value.normalize();
     auto cached_pow = get_cached_power(
         min_exp - (fp_value.e + fp::significand_size), cached_exp10);
     fp_value = fp_value * cached_pow;
     int size = grisu2_gen_digits(buf.data(), fp_value, 1, exp,
-                                 fixed_stop{specs.precision});
+                                 fixed_stop{precision, -cached_exp10});
     if (size < 0) return false;
     buf.resize(to_unsigned(size));
   } else {

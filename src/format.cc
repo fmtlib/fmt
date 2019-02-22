@@ -11,7 +11,7 @@ FMT_BEGIN_NAMESPACE
 template struct internal::basic_data<void>;
 
 // Workaround a bug in MSVC2013 that prevents instantiation of grisu2_format.
-bool (*instantiate_grisu2_format)(double, internal::buffer&, core_format_specs,
+bool (*instantiate_grisu2_format)(double, internal::buffer&, int,
                                   int&) = internal::grisu2_format;
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR

@@ -1135,10 +1135,10 @@ namespace internal {
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
 template <typename Double>
 FMT_API typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-grisu2_format(Double value, buffer& buf, core_format_specs, int& exp);
+grisu2_format(Double value, buffer& buf, int precision, int& exp);
 template <typename Double>
 inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t), bool>::type
-grisu2_format(Double, buffer&, core_format_specs, int&) {
+grisu2_format(Double, buffer&, int, int&) {
   return false;
 }
 
@@ -2801,8 +2801,9 @@ template <typename Range> class basic_writer {
 struct float_spec_handler {
   char type;
   bool upper;
+  bool fixed;
 
-  explicit float_spec_handler(char t) : type(t), upper(false) {}
+  explicit float_spec_handler(char t) : type(t), upper(false), fixed(false) {}
 
   void on_general() {
     if (type == 'G') upper = true;
@@ -2813,6 +2814,7 @@ struct float_spec_handler {
   }
 
   void on_fixed() {
+    fixed = true;
     if (type == 'F') upper = true;
   }
 
@@ -2858,9 +2860,11 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
 
   memory_buffer buffer;
   int exp = 0;
-  bool use_grisu =
-      fmt::internal::use_grisu<T>() && !spec.type && !spec.has_precision() &&
-      internal::grisu2_format(static_cast<double>(value), buffer, spec, exp);
+  int precision = spec.has_precision() || !spec.type ? spec.precision : 6;
+  bool use_grisu = fmt::internal::use_grisu<T>() &&
+                   (!spec.type || handler.fixed) && !spec.has_precision() &&
+                   internal::grisu2_format(static_cast<double>(value), buffer,
+                                           precision, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
   align_spec as = spec;
   if (spec.align() == ALIGN_NUMERIC) {
