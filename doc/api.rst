@@ -165,8 +165,8 @@ You can also write a formatter for a hierarchy of classes::
     virtual std::string name() const { return "B"; }
   };
 
-  template <typename T>
-  struct fmt::formatter<T, std::enable_if_t<std::is_base_of<A, T>::value, char>> :
+  template <typename T, typename Char>
+  struct fmt::formatter<T, Char, std::enable_if_t<std::is_base_of<A, T>::value>> :
       fmt::formatter<std::string> {
     template <typename FormatCtx>
     auto format(const A& a, FormatCtx& ctx) {
