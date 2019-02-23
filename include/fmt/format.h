@@ -1139,10 +1139,10 @@ namespace internal {
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
 template <typename Double>
 FMT_API typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-grisu2_format(Double value, buffer& buf, int precision, int& exp);
+grisu2_format(Double value, buffer& buf, int precision, bool fixed, int& exp);
 template <typename Double>
 inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t), bool>::type
-grisu2_format(Double, buffer&, int, int&) {
+grisu2_format(Double, buffer&, int, bool, int&) {
   return false;
 }
 
@@ -2866,9 +2866,9 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   int exp = 0;
   int precision = spec.has_precision() || !spec.type ? spec.precision : 6;
   bool use_grisu = fmt::internal::use_grisu<T>() &&
-                   (!spec.type || handler.fixed) && !spec.has_precision() &&
+                   (!spec.type || handler.fixed) &&
                    internal::grisu2_format(static_cast<double>(value), buffer,
-                                           precision, exp);
+                                           precision, handler.fixed, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
   align_spec as = spec;
   if (spec.align() == ALIGN_NUMERIC) {

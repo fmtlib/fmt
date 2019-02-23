@@ -534,8 +534,14 @@ int grisu2_gen_digits(char* buf, fp value, uint64_t error_ulp, int& exp,
 struct fixed_stop {
   int precision;
   int exp10;
+  bool fixed;
 
-  void on_exp(int exp) { precision += exp + exp10; }
+  void on_exp(int exp) {
+    if (!fixed) return;
+    exp += exp10;
+    if (exp >= 0)
+      precision += exp;
+  }
 
   bool operator()(char*, int& size, uint64_t remainder, uint64_t divisor,
                   uint64_t error, int&, bool integral) {
@@ -549,8 +555,9 @@ struct fixed_stop {
         size = -1;
         return true;
       }
-    } else
+    } else {
       assert(error == 1 && divisor > 2);
+    }
     // Round down if (remainder + error) * 2 <= divisor.
     if (remainder < divisor - remainder && error * 2 <= divisor - remainder * 2)
       return true;
@@ -582,7 +589,7 @@ struct shortest_stop {
 
 template <typename Double>
 FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-grisu2_format(Double value, buffer& buf, int precision, int& exp) {
+grisu2_format(Double value, buffer& buf, int precision, bool fixed, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
   if (value <= 0) {  // <= instead of == to silence a warning.
     if (precision < 0) {
@@ -606,7 +613,7 @@ grisu2_format(Double value, buffer& buf, int precision, int& exp) {
         min_exp - (fp_value.e + fp::significand_size), cached_exp10);
     fp_value = fp_value * cached_pow;
     int size = grisu2_gen_digits(buf.data(), fp_value, 1, exp,
-                                 fixed_stop{precision, -cached_exp10});
+                                 fixed_stop{precision, -cached_exp10, fixed});
     if (size < 0) return false;
     buf.resize(to_unsigned(size));
   } else {
