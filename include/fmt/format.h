@@ -1798,7 +1798,8 @@ class specs_handler : public specs_setter<typename Context::char_type> {
   typedef typename Context::format_arg format_arg;
 
   FMT_CONSTEXPR format_arg get_arg(auto_id) {
-    return internal::get_arg(context_, parse_context_.next_arg_id());
+    return internal::get_arg(
+        context_, static_cast<unsigned>(parse_context_.next_arg_id()));
   }
 
   FMT_CONSTEXPR format_arg get_arg(unsigned arg_id) {
