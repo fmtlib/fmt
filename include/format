@@ -209,7 +209,7 @@ namespace std {
     // Implementation details:
     using format_arg = basic_format_arg<basic_format_context>;
     basic_format_context(O out, basic_format_args<basic_format_context> args, fmt::internal::locale_ref)
-    : out_(out), args_(args) {}
+    : args_(args), out_(out) {}
     fmt::internal::error_handler error_handler() const { return {}; }
     basic_format_arg<basic_format_context> arg(fmt::basic_string_view<charT>) const {
       return {}; // unused: named arguments are not supported yet
@@ -570,7 +570,7 @@ struct format_handler : fmt::internal::error_handler {
     parse_ctx.check_arg_id(id);
     arg = context.arg(id);
   }
-  void on_arg_id(fmt::basic_string_view<Char> id) {}
+  void on_arg_id(fmt::basic_string_view<Char>) {}
 
   void on_replacement_field(const Char* p) {
     parse_ctx.advance_to(p);

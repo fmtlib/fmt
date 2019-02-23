@@ -62,6 +62,10 @@
 #if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
 #  pragma GCC diagnostic push
 
+// Disable warning about not handling all enums in switch statement even with
+// a default case
+#  pragma GCC diagnostic ignored "-Wswitch-enum"
+
 // Disable the warning about declaration shadowing because it affects too
 // many valid cases.
 #  pragma GCC diagnostic ignored "-Wshadow"
