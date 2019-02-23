@@ -570,7 +570,7 @@ struct format_handler : fmt::internal::error_handler {
     parse_ctx.check_arg_id(id);
     arg = context.arg(id);
   }
-  void on_arg_id(fmt::basic_string_view<Char> id) {}
+  void on_arg_id(fmt::basic_string_view<Char>) {}
 
   void on_replacement_field(const Char* p) {
     parse_ctx.advance_to(p);
