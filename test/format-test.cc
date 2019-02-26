@@ -2040,6 +2040,17 @@ TEST(FormatTest, FormatToN) {
   EXPECT_EQ(6u, result.size);
   EXPECT_EQ(buffer + 3, result.out);
   EXPECT_EQ("foox", fmt::string_view(buffer, 4));
+  buffer[0] = 'x';
+  buffer[1] = 'x';
+  buffer[2] = 'x';
+  result = fmt::format_to_n(buffer, 3, "{}", 'A');
+  EXPECT_EQ(1u, result.size);
+  EXPECT_EQ(buffer + 1, result.out);
+  EXPECT_EQ("Axxx", fmt::string_view(buffer, 4));
+  result = fmt::format_to_n(buffer, 3, "{}{} ", 'B', 'C');
+  EXPECT_EQ(3u, result.size);
+  EXPECT_EQ(buffer + 3, result.out);
+  EXPECT_EQ("BC x", fmt::string_view(buffer, 4));
 }
 
 TEST(FormatTest, WideFormatToN) {
@@ -2049,6 +2060,17 @@ TEST(FormatTest, WideFormatToN) {
   EXPECT_EQ(5u, result.size);
   EXPECT_EQ(buffer + 3, result.out);
   EXPECT_EQ(L"123x", fmt::wstring_view(buffer, 4));
+  buffer[0] = L'x';
+  buffer[1] = L'x';
+  buffer[2] = L'x';
+  result = fmt::format_to_n(buffer, 3, L"{}", L'A');
+  EXPECT_EQ(1u, result.size);
+  EXPECT_EQ(buffer + 1, result.out);
+  EXPECT_EQ(L"Axxx", fmt::wstring_view(buffer, 4));
+  result = fmt::format_to_n(buffer, 3, L"{}{} ", L'B', L'C');
+  EXPECT_EQ(3u, result.size);
+  EXPECT_EQ(buffer + 3, result.out);
+  EXPECT_EQ(L"BC x", fmt::wstring_view(buffer, 4));
 }
 
 #if FMT_USE_CONSTEXPR
