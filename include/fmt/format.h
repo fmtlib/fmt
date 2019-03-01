@@ -1274,6 +1274,9 @@ FMT_CONSTEXPR void handle_float_type_spec(char spec, Handler&& handler) {
   case 'F':
     handler.on_fixed();
     break;
+  case '%':
+    handler.on_percent();
+    break;
   case 'a':
   case 'A':
     handler.on_hex();
@@ -1338,6 +1341,7 @@ class float_type_checker : private ErrorHandler {
   FMT_CONSTEXPR void on_general() {}
   FMT_CONSTEXPR void on_exp() {}
   FMT_CONSTEXPR void on_fixed() {}
+  FMT_CONSTEXPR void on_percent() {}
   FMT_CONSTEXPR void on_hex() {}
 
   FMT_CONSTEXPR void on_error() {
@@ -2642,10 +2646,12 @@ template <typename Range> class basic_writer {
 
   struct inf_or_nan_writer {
     char sign;
+    bool as_percentage;
     const char* str;
 
     size_t size() const {
-      return static_cast<std::size_t>(INF_SIZE + (sign ? 1 : 0));
+      return static_cast<std::size_t>(INF_SIZE + (sign ? 1 : 0) +
+                                      (as_percentage ? 1 : 0));
     }
     size_t width() const { return size(); }
 
@@ -2653,6 +2659,7 @@ template <typename Range> class basic_writer {
       if (sign) *it++ = static_cast<char_type>(sign);
       it = internal::copy_str<char_type>(
           str, str + static_cast<std::size_t>(INF_SIZE), it);
+      if (as_percentage) *it++ = static_cast<char_type>('%');
     }
   };
 
@@ -2810,8 +2817,10 @@ struct float_spec_handler {
   char type;
   bool upper;
   bool fixed;
+  bool as_percentage;
 
-  explicit float_spec_handler(char t) : type(t), upper(false), fixed(false) {}
+  explicit float_spec_handler(char t)
+      : type(t), upper(false), fixed(false), as_percentage(false) {}
 
   void on_general() {
     if (type == 'G') upper = true;
@@ -2824,6 +2833,11 @@ struct float_spec_handler {
   void on_fixed() {
     fixed = true;
     if (type == 'F') upper = true;
+  }
+
+  void on_percent() {
+    fixed = true;
+    as_percentage = true;
   }
 
   void on_hex() {
@@ -2854,10 +2868,11 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
     basic_writer& writer;
     format_specs spec;
     char sign;
+    bool as_percentage;
     void operator()(const char* str) const {
-      writer.write_padded(spec, inf_or_nan_writer{sign, str});
+      writer.write_padded(spec, inf_or_nan_writer{sign, as_percentage, str});
     }
-  } write_inf_or_nan = {*this, spec, sign};
+  } write_inf_or_nan = {*this, spec, sign, handler.as_percentage};
 
   // Format NaN and ininity ourselves because sprintf's output is not consistent
   // across platforms.
@@ -2869,11 +2884,19 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   memory_buffer buffer;
   int exp = 0;
   int precision = spec.has_precision() || !spec.type ? spec.precision : 6;
+
+  if (handler.as_percentage) value *= 100.;
+
   bool use_grisu = fmt::internal::use_grisu<T>() &&
                    (!spec.type || handler.fixed) &&
                    internal::grisu2_format(static_cast<double>(value), buffer,
                                            precision, handler.fixed, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
+
+  if (handler.as_percentage) {
+    buffer.push_back('%');
+    --exp;  // Adjust decimal place position.
+  }
   align_spec as = spec;
   if (spec.align() == ALIGN_NUMERIC) {
     if (sign) {

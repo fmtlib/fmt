@@ -539,8 +539,7 @@ struct fixed_stop {
   void on_exp(int exp) {
     if (!fixed) return;
     exp += exp10;
-    if (exp >= 0)
-      precision += exp;
+    if (exp >= 0) precision += exp;
   }
 
   bool operator()(char*, int& size, uint64_t remainder, uint64_t divisor,
@@ -656,7 +655,13 @@ void sprintf_format(Double value, internal::buffer& buf,
     *format_ptr++ = '*';
   }
   if (std::is_same<Double, long double>::value) *format_ptr++ = 'L';
-  char type = spec.type ? spec.type : 'g';
+
+  char type = spec.type;
+
+  if (type == '%')
+    type = 'f';
+  else if (type == 0)
+    type = 'g';
 #if FMT_MSC_VER
   if (type == 'F') {
     // MSVC's printf doesn't support 'F'.
