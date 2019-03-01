@@ -1274,6 +1274,9 @@ FMT_CONSTEXPR void handle_float_type_spec(char spec, Handler&& handler) {
   case 'F':
     handler.on_fixed();
     break;
+  case '%':
+    handler.on_percent();
+    break;
   case 'a':
   case 'A':
     handler.on_hex();
@@ -1338,6 +1341,7 @@ class float_type_checker : private ErrorHandler {
   FMT_CONSTEXPR void on_general() {}
   FMT_CONSTEXPR void on_exp() {}
   FMT_CONSTEXPR void on_fixed() {}
+  FMT_CONSTEXPR void on_percent() {}
   FMT_CONSTEXPR void on_hex() {}
 
   FMT_CONSTEXPR void on_error() {
@@ -2808,10 +2812,11 @@ template <typename Range> class basic_writer {
 
 struct float_spec_handler {
   char type;
-  bool upper;
-  bool fixed;
+  bool upper{false};
+  bool fixed{false};
+  bool as_percentage{false};
 
-  explicit float_spec_handler(char t) : type(t), upper(false), fixed(false) {}
+  explicit float_spec_handler(char t) : type(t) {}
 
   void on_general() {
     if (type == 'G') upper = true;
@@ -2824,6 +2829,11 @@ struct float_spec_handler {
   void on_fixed() {
     fixed = true;
     if (type == 'F') upper = true;
+  }
+
+  void on_percent() {
+      fixed = true;
+      as_percentage = true;
   }
 
   void on_hex() {
@@ -2869,11 +2879,19 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   memory_buffer buffer;
   int exp = 0;
   int precision = spec.has_precision() || !spec.type ? spec.precision : 6;
+
+  if (handler.as_percentage) value *= 100.;
+
   bool use_grisu = fmt::internal::use_grisu<T>() &&
                    (!spec.type || handler.fixed) &&
                    internal::grisu2_format(static_cast<double>(value), buffer,
                                            precision, handler.fixed, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
+
+  if (handler.as_percentage) {
+      buffer.push_back('%');
+      --exp; // Adjust decimal place position.
+  }
   align_spec as = spec;
   if (spec.align() == ALIGN_NUMERIC) {
     if (sign) {

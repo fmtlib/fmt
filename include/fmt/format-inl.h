@@ -656,7 +656,14 @@ void sprintf_format(Double value, internal::buffer& buf,
     *format_ptr++ = '*';
   }
   if (std::is_same<Double, long double>::value) *format_ptr++ = 'L';
-  char type = spec.type ? spec.type : 'g';
+
+  char type = spec.type;
+
+  if (type == '%') {
+      type = 'f';
+  } else if (type == 0) {
+      type = 'g';
+  }
 #if FMT_MSC_VER
   if (type == 'F') {
     // MSVC's printf doesn't support 'F'.
