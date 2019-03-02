@@ -172,7 +172,7 @@ constexpr void basic_format_parse_context<charT>::advance_to(typename basic_form
 template<class charT>
 constexpr size_t basic_format_parse_context<charT>::next_arg_id() {
   if (indexing_ == manual)
-    throw format_error("manual to automatic indexing");
+    FMT_THROW(format_error("manual to automatic indexing"));
   if (indexing_ == unknown)
     indexing_ = automatic;
   return next_arg_id_++;
@@ -181,7 +181,7 @@ constexpr size_t basic_format_parse_context<charT>::next_arg_id() {
 template<class charT>
 constexpr void basic_format_parse_context<charT>::check_arg_id(size_t) {
   if (indexing_ == automatic)
-    throw format_error("automatic to manual indexing");
+    FMT_THROW(format_error("automatic to manual indexing"));
   if (indexing_ == unknown)
     indexing_ = manual;
 }
@@ -490,7 +490,7 @@ class arg_formatter
   }
 
   iterator operator()(monostate) {
-    throw format_error("");
+    FMT_THROW(format_error(""));
   }
 };
 
