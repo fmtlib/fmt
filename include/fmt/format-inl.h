@@ -539,8 +539,7 @@ struct fixed_stop {
   void on_exp(int exp) {
     if (!fixed) return;
     exp += exp10;
-    if (exp >= 0)
-      precision += exp;
+    if (exp >= 0) precision += exp;
   }
 
   bool operator()(char*, int& size, uint64_t remainder, uint64_t divisor,
@@ -660,9 +659,9 @@ void sprintf_format(Double value, internal::buffer& buf,
   char type = spec.type;
 
   if (type == '%') {
-      type = 'f';
+    type = 'f';
   } else if (type == 0) {
-      type = 'g';
+    type = 'g';
   }
 #if FMT_MSC_VER
   if (type == 'F') {

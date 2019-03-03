@@ -2646,10 +2646,12 @@ template <typename Range> class basic_writer {
 
   struct inf_or_nan_writer {
     char sign;
+    bool as_percentage;
     const char* str;
 
     size_t size() const {
-      return static_cast<std::size_t>(INF_SIZE + (sign ? 1 : 0));
+      return static_cast<std::size_t>(INF_SIZE + (sign ? 1 : 0) +
+                                      (as_percentage ? 1 : 0));
     }
     size_t width() const { return size(); }
 
@@ -2657,6 +2659,7 @@ template <typename Range> class basic_writer {
       if (sign) *it++ = static_cast<char_type>(sign);
       it = internal::copy_str<char_type>(
           str, str + static_cast<std::size_t>(INF_SIZE), it);
+      if (as_percentage) *it++ = static_cast<char_type>('%');
     }
   };
 
@@ -2832,8 +2835,8 @@ struct float_spec_handler {
   }
 
   void on_percent() {
-      fixed = true;
-      as_percentage = true;
+    fixed = true;
+    as_percentage = true;
   }
 
   void on_hex() {
@@ -2864,17 +2867,22 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
     basic_writer& writer;
     format_specs spec;
     char sign;
+    bool as_percentage;
     void operator()(const char* str) const {
-      writer.write_padded(spec, inf_or_nan_writer{sign, str});
+      writer.write_padded(spec, inf_or_nan_writer{sign, as_percentage, str});
     }
-  } write_inf_or_nan = {*this, spec, sign};
+  } write_inf_or_nan = {*this, spec, sign, handler.as_percentage};
 
   // Format NaN and ininity ourselves because sprintf's output is not consistent
   // across platforms.
-  if (internal::fputil::isnotanumber(value))
-    return write_inf_or_nan(handler.upper ? "NAN" : "nan");
-  if (internal::fputil::isinfinity(value))
-    return write_inf_or_nan(handler.upper ? "INF" : "inf");
+  if (internal::fputil::isnotanumber(value)) {
+    write_inf_or_nan(handler.upper ? "NAN" : "nan");
+    return;
+  }
+  if (internal::fputil::isinfinity(value)) {
+    write_inf_or_nan(handler.upper ? "INF" : "inf");
+    return;
+  }
 
   memory_buffer buffer;
   int exp = 0;
@@ -2889,8 +2897,8 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
 
   if (handler.as_percentage) {
-      buffer.push_back('%');
-      --exp; // Adjust decimal place position.
+    buffer.push_back('%');
+    --exp;  // Adjust decimal place position.
   }
   align_spec as = spec;
   if (spec.align() == ALIGN_NUMERIC) {
