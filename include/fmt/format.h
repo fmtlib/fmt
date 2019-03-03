@@ -2815,11 +2815,11 @@ template <typename Range> class basic_writer {
 
 struct float_spec_handler {
   char type;
-  bool upper{false};
-  bool fixed{false};
-  bool as_percentage{false};
+  bool upper;
+  bool fixed;
+  bool as_percentage;
 
-  explicit float_spec_handler(char t) : type(t) {}
+  explicit float_spec_handler(char t) : type(t), upper(false), fixed(false), as_percentage(false) {}
 
   void on_general() {
     if (type == 'G') upper = true;
