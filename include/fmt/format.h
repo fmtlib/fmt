@@ -2875,14 +2875,10 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
 
   // Format NaN and ininity ourselves because sprintf's output is not consistent
   // across platforms.
-  if (internal::fputil::isnotanumber(value)) {
-    write_inf_or_nan(handler.upper ? "NAN" : "nan");
-    return;
-  }
-  if (internal::fputil::isinfinity(value)) {
-    write_inf_or_nan(handler.upper ? "INF" : "inf");
-    return;
-  }
+  if (internal::fputil::isnotanumber(value))
+    return write_inf_or_nan(handler.upper ? "NAN" : "nan");
+  if (internal::fputil::isinfinity(value))
+    return write_inf_or_nan(handler.upper ? "INF" : "inf");
 
   memory_buffer buffer;
   int exp = 0;
