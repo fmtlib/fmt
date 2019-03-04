@@ -514,7 +514,7 @@ template <> inline void reset_color<wchar_t>(FILE* stream) FMT_NOEXCEPT {
 template <typename Char>
 inline void reset_color(basic_memory_buffer<Char>& buffer) FMT_NOEXCEPT {
   const char* begin = data::RESET_COLOR;
-  const char* end = begin + sizeof(data::RESET_COLOR) - 1;
+  const char* end = begin + std::char_traits<char>::length(data::RESET_COLOR);
   buffer.append(begin, end);
 }
 
