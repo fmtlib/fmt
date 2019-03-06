@@ -39,14 +39,14 @@ TEST(RangesTest, FormatMap) {
 }
 
 TEST(RangesTest, FormatPair) {
-  std::pair<int64_t, float> pa1{42, 3.14159265358979f};
-  EXPECT_EQ("(42, 3.14159)", fmt::format("{}", pa1));
+  std::pair<int64_t, float> pa1{42, 1.5f};
+  EXPECT_EQ("(42, 1.5)", fmt::format("{}", pa1));
 }
 
 TEST(RangesTest, FormatTuple) {
-  std::tuple<int64_t, float, std::string, char> tu1{42, 3.14159265358979f,
+  std::tuple<int64_t, float, std::string, char> tu1{42, 1.5f,
                                                     "this is tuple", 'i'};
-  EXPECT_EQ("(42, 3.14159, \"this is tuple\", 'i')", fmt::format("{}", tu1));
+  EXPECT_EQ("(42, 1.5, \"this is tuple\", 'i')", fmt::format("{}", tu1));
 }
 
 struct my_struct {
@@ -78,6 +78,13 @@ template <std::size_t N> struct tuple_element<N, my_struct> {
 TEST(RangesTest, FormatStruct) {
   my_struct mst{13, "my struct"};
   EXPECT_EQ("(13, \"my struct\")", fmt::format("{}", mst));
+}
+
+TEST(RangesTest, FormatTo) {
+  char buf[10];
+  auto end = fmt::format_to(buf, "{}", std::vector{1, 2, 3});
+  *end = '\0';
+  EXPECT_STREQ(buf, "{1, 2, 3}");
 }
 
 #endif  // (__cplusplus > 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >

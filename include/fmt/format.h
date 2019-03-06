@@ -2819,7 +2819,8 @@ struct float_spec_handler {
   bool fixed;
   bool as_percentage;
 
-  explicit float_spec_handler(char t) : type(t), upper(false), fixed(false), as_percentage(false) {}
+  explicit float_spec_handler(char t)
+      : type(t), upper(false), fixed(false), as_percentage(false) {}
 
   void on_general() {
     if (type == 'G') upper = true;

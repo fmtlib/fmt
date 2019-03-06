@@ -658,11 +658,11 @@ void sprintf_format(Double value, internal::buffer& buf,
 
   char type = spec.type;
 
-  if (type == '%') {
+  if (type == '%')
     type = 'f';
-  } else if (type == 0) {
+  else if (type == 0)
     type = 'g';
-  }
+
 #if FMT_MSC_VER
   if (type == 'F') {
     // MSVC's printf doesn't support 'F'.
