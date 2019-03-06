@@ -662,7 +662,6 @@ void sprintf_format(Double value, internal::buffer& buf,
     type = 'f';
   else if (type == 0)
     type = 'g';
-
 #if FMT_MSC_VER
   if (type == 'F') {
     // MSVC's printf doesn't support 'F'.
