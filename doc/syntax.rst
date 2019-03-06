@@ -264,6 +264,10 @@ The available presentation types for floating-point values are:
 |         | ``'E'`` if the number gets too large. The                |
 |         | representations of infinity and NaN are uppercased, too. |
 +---------+----------------------------------------------------------+
+| ``'%'`` | Fixed point as a percentage. This is similar to ``'f'``, |
+|         | but the argument is multiplied by 100 and a percent sign |
+|         | ``%`` is appended.                                       |
++---------+----------------------------------------------------------+
 | none    | The same as ``'g'``.                                     |
 +---------+----------------------------------------------------------+
 
@@ -357,6 +361,13 @@ Replacing ``%+f``, ``%-f``, and ``% f`` and specifying a sign::
    format("{:-f}; {:-f}", 3.14, -3.14);  // show only the minus -- same as '{:f}; {:f}'
    // Result: "3.140000; -3.140000"
 
+As a percentage::
+
+   format("{0:f} or {0:%}", .635);
+   // Result: "0.635000 or 63.500000%"
+   format("{:*^{}.{}%}", 1., 15, 2); // With fill, dynamic width and dynamic precision.
+   // Result: "****100.00%****"
+
 Replacing ``%x`` and ``%o`` and converting the value to different bases::
 
    format("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
@@ -412,4 +423,3 @@ Padded hex byte with prefix and always prints both hex characters::
           9     9    11  1001
          10     A    12  1010
          11     B    13  1011
-
