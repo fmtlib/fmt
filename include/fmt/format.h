@@ -766,8 +766,8 @@ template <typename T = void> struct FMT_API basic_data {
   static const char DIGITS[];
   static const char FOREGROUND_COLOR[];
   static const char BACKGROUND_COLOR[];
-  static const char RESET_COLOR[];
-  static const wchar_t WRESET_COLOR[];
+  static const char RESET_COLOR[5];
+  static const wchar_t WRESET_COLOR[5];
 };
 
 #if FMT_USE_EXTERN_TEMPLATES

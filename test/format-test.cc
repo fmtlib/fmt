@@ -21,6 +21,7 @@
 #endif
 
 #include "fmt/format.h"
+#include "fmt/color.h"
 #include "gmock.h"
 #include "gtest-extra.h"
 #include "mock-allocator.h"
@@ -2491,4 +2492,10 @@ TEST(FormatTest, U8StringViewLiteral) {
 
 TEST(FormatTest, FormatU8String) {
   EXPECT_EQ(format(fmt::u8string_view("{}"), 42), fmt::u8string_view("42"));
+}
+
+TEST(FormatTest, EmphasisNonHeaderOnly) {
+  // ensure this compiles even if FMT_HEADER_ONLY is not defined.
+  EXPECT_EQ(fmt::format(fmt::emphasis::bold, "bold error"),
+            "\x1b[1mbold error\x1b[0m");
 }
