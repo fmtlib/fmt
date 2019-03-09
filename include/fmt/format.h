@@ -2888,7 +2888,7 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   if (handler.as_percentage) value *= 100.;
 
   bool use_grisu = fmt::internal::use_grisu<T>() &&
-                   (!spec.type || handler.fixed) &&
+                   !spec.type &&
                    internal::grisu2_format(static_cast<double>(value), buffer,
                                            precision, handler.fixed, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
