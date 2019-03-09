@@ -1178,10 +1178,10 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
 
 // The number is given as v = digits * pow(10, exp).
 template <typename Char, typename It>
-It grisu2_prettify(const char* digits, int size, int exp, It it) {
+It grisu2_prettify(const char* digits, int size, int exp, It it,
+                   gen_digits_params params) {
   // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
   int full_exp = size + exp;
-  auto params = gen_digits_params();
   params.fixed = (full_exp - 1) >= -4 && (full_exp - 1) <= 10;
   if (!params.fixed) {
     // Insert a decimal point after the first digit and add an exponent.
@@ -1194,7 +1194,6 @@ It grisu2_prettify(const char* digits, int size, int exp, It it) {
     *it++ = static_cast<Char>(params.upper ? 'E' : 'e');
     return write_exponent<Char>(exp, it);
   }
-  params.trailing_zeros = true;
   const int exp_threshold = 21;
   if (size <= full_exp && full_exp <= exp_threshold) {
     // 1234e7 -> 12340000000[.0+]
@@ -2682,13 +2681,16 @@ template <typename Range> class basic_writer {
     size_t size_;
     char sign_;
     int exp_;
+    internal::gen_digits_params params_;
 
    public:
-    grisu_writer(char sign, internal::buffer& digits, int exp)
-        : digits_(digits), sign_(sign), exp_(exp) {
+    grisu_writer(char sign, internal::buffer& digits, int exp,
+                 const internal::gen_digits_params& params)
+        : digits_(digits), sign_(sign), exp_(exp), params_(params) {
       int num_digits = static_cast<int>(digits.size());
       auto it = internal::grisu2_prettify<char>(
-          digits.data(), num_digits, exp, internal::counting_iterator<char>());
+          digits.data(), num_digits, exp, internal::counting_iterator<char>(),
+          params_);
       size_ = it.count();
     }
 
@@ -2699,7 +2701,7 @@ template <typename Range> class basic_writer {
       if (sign_) *it++ = static_cast<char_type>(sign_);
       int num_digits = static_cast<int>(digits_.size());
       it = internal::grisu2_prettify<char_type>(digits_.data(), num_digits,
-                                                exp_, it);
+                                                exp_, it, params_);
     }
   };
 
@@ -2855,8 +2857,7 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   internal::handle_float_type_spec(handler.type, handler);
 
   char sign = 0;
-  // Use signbit instead of value < 0 because the latter is always
-  // false for NaN.
+  // Use signbit instead of value < 0 since the latter is always false for NaN.
   if (std::signbit(value)) {
     sign = '-';
     value = -value;
@@ -2874,21 +2875,20 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
     }
   } write_inf_or_nan = {*this, spec, sign, handler.as_percentage};
 
-  // Format NaN and ininity ourselves because sprintf's output is not consistent
+  // Format ininity and NaN ourselves because sprintf's output is not consistent
   // across platforms.
-  if (internal::fputil::isnotanumber(value))
-    return write_inf_or_nan(handler.upper ? "NAN" : "nan");
   if (internal::fputil::isinfinity(value))
     return write_inf_or_nan(handler.upper ? "INF" : "inf");
+  if (internal::fputil::isnotanumber(value))
+    return write_inf_or_nan(handler.upper ? "NAN" : "nan");
+
+  if (handler.as_percentage) value *= 100;
 
   memory_buffer buffer;
   int exp = 0;
   int precision = spec.has_precision() || !spec.type ? spec.precision : 6;
-
-  if (handler.as_percentage) value *= 100.;
-
   bool use_grisu = fmt::internal::use_grisu<T>() &&
-                   !spec.type &&
+                   (!spec.type || handler.fixed) &&
                    internal::grisu2_format(static_cast<double>(value), buffer,
                                            precision, handler.fixed, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
@@ -2909,10 +2909,13 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   } else if (spec.align() == ALIGN_DEFAULT) {
     as.align_ = ALIGN_RIGHT;
   }
-  if (use_grisu)
-    write_padded(as, grisu_writer{sign, buffer, exp});
-  else
+  if (use_grisu) {
+    auto params = internal::gen_digits_params();
+    if (precision != 0) params.trailing_zeros = true;
+    write_padded(as, grisu_writer{sign, buffer, exp, params});
+  } else {
     write_padded(as, double_writer{sign, buffer});
+  }
 }
 
 // Reports a system error without throwing an exception.

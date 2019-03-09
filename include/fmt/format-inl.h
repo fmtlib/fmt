@@ -515,8 +515,9 @@ int grisu2_gen_digits(char* buf, fp value, uint64_t error_ulp, int& exp,
     uint64_t remainder =
         (static_cast<uint64_t>(integral) << -one.e) + fractional;
     if (stop(buf, size, remainder, data::POWERS_OF_10_64[exp] << -one.e,
-             error_ulp, exp, true))
+             error_ulp, exp, true)) {
       return size;
+    }
   } while (exp > 0);
   // Generate digits for the fractional part.
   for (;;) {
@@ -542,8 +543,9 @@ struct fixed_stop {
     if (exp >= 0) precision += exp;
   }
 
-  bool operator()(char*, int& size, uint64_t remainder, uint64_t divisor,
-                  uint64_t error, int&, bool integral) {
+  // TODO: test
+  bool operator()(char* buf, int& size, uint64_t remainder, uint64_t divisor,
+                  uint64_t error, int& exp, bool integral) {
     assert(remainder < divisor);
     if (size != precision) return false;
     if (!integral) {
@@ -560,7 +562,20 @@ struct fixed_stop {
     // Round down if (remainder + error) * 2 <= divisor.
     if (remainder < divisor - remainder && error * 2 <= divisor - remainder * 2)
       return true;
-    // TODO: round up
+    // Round up if (remainder - error) * 2 >= divisor.
+    if (remainder >= error &&
+        remainder - error >= divisor - (remainder - error)) {
+      ++buf[size - 1];
+      for (int i = size - 1; i > 0 && buf[i] > '9'; --i) {
+        buf[i] = '0';
+        ++buf[i - 1];
+      }
+      if (buf[0] > '9') {
+        buf[0] = '1';
+        ++exp;
+      }
+      return true;
+    }
     size = -1;
     return true;
   }
