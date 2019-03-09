@@ -459,8 +459,8 @@ int grisu2_gen_digits(char* buf, fp value, uint64_t error_ulp, int& exp,
   // The fractional part of scaled value (p2 in Grisu) c = value % one.
   uint64_t fractional = value.f & (one.f - 1);
   exp = count_digits(integral);  // kappa in Grisu.
-  stop.on_exp(exp);
   int size = 0;
+  if (stop.on_exp(exp)) return size;
   // Generate digits for the integral part. This can produce up to 10 digits.
   do {
     uint32_t digit = 0;
@@ -537,17 +537,23 @@ struct fixed_stop {
   int exp10;
   bool fixed;
 
-  void on_exp(int exp) {
-    if (!fixed) return;
+  bool enough_precision(int full_exp) const {
+    return full_exp <= 0 && -full_exp >= precision;
+  }
+
+  bool on_exp(int exp) {
+    if (!fixed) return false;
     exp += exp10;
     if (exp >= 0) precision += exp;
+    // TODO: round
+    return enough_precision(exp);
   }
 
   // TODO: test
   bool operator()(char* buf, int& size, uint64_t remainder, uint64_t divisor,
                   uint64_t error, int& exp, bool integral) {
     assert(remainder < divisor);
-    if (size != precision) return false;
+    if (size != precision && !enough_precision(exp + exp10)) return false;
     if (!integral) {
       // Check if error * 2 < divisor with overflow prevention.
       // The check is not needed for the integral part because error = 1
@@ -585,7 +591,7 @@ struct fixed_stop {
 struct shortest_stop {
   fp diff;  // wp_w in Grisu.
 
-  void on_exp(int) {}
+  bool on_exp(int) { return false; }
 
   bool operator()(char* buf, int& size, uint64_t remainder, uint64_t divisor,
                   uint64_t error, int& exp, bool integral) {

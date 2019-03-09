@@ -2892,7 +2892,7 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   int exp = 0;
   int precision = spec.has_precision() || !spec.type ? spec.precision : 6;
   bool use_grisu = fmt::internal::use_grisu<T>() &&
-                   !spec.type &&
+                   (!spec.type || handler.fixed) &&
                    internal::grisu2_format(static_cast<double>(value), buffer,
                                            precision, handler.fixed, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);

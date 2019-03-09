@@ -1470,6 +1470,10 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ(buffer, format("{:A}", -42.0));
 }
 
+TEST(FormatterTest, PrecisionRounding) {
+  EXPECT_EQ("0.000", format("{:.3f}", 0.00049));
+}
+
 TEST(FormatterTest, FormatNaN) {
   double nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ("nan", format("{}", nan));
