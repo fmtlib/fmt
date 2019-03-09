@@ -460,7 +460,10 @@ int grisu2_gen_digits(char* buf, fp value, uint64_t error_ulp, int& exp,
   uint64_t fractional = value.f & (one.f - 1);
   exp = count_digits(integral);  // kappa in Grisu.
   int size = 0;
-  if (stop.on_exp(exp)) return size;
+  if (stop.init(buf, size, value.f, data::POWERS_OF_10_64[exp] << -one.e,
+                error_ulp, exp)) {
+    return size;
+  }
   // Generate digits for the integral part. This can produce up to 10 digits.
   do {
     uint32_t digit = 0;
@@ -541,17 +544,44 @@ struct fixed_stop {
     return full_exp <= 0 && -full_exp >= precision;
   }
 
-  bool on_exp(int exp) {
+  enum round_direction { unknown, up, down };
+
+  static round_direction round(uint64_t remainder, uint64_t divisor,
+                               uint64_t error) {
+    assert(error < divisor && error < divisor - error);
+    // Round down if (remainder + error) * 2 <= divisor.
+    if (remainder < divisor - remainder && error * 2 <= divisor - remainder * 2)
+      return down;
+    // Round up if (remainder - error) * 2 >= divisor.
+    if (remainder >= error &&
+        remainder - error >= divisor - (remainder - error)) {
+      return up;
+    }
+    return unknown;
+  }
+
+  bool init(char* buf, int& size, uint64_t remainder, uint64_t divisor,
+            uint64_t error, int& exp) {
     if (!fixed) return false;
-    exp += exp10;
-    if (exp >= 0) precision += exp;
-    // TODO: round
-    return enough_precision(exp);
+    int full_exp = exp + exp10;
+    if (full_exp >= 0) precision += full_exp;
+    if (!enough_precision(full_exp)) return false;
+    switch (round(remainder, divisor, error)) {
+    case unknown:
+      size = -1;
+      break;
+    case up:
+      buf[size++] = '1';
+      break;
+    case down:
+      break;
+    }
+    return true;
   }
 
   // TODO: test
   bool operator()(char* buf, int& size, uint64_t remainder, uint64_t divisor,
-                  uint64_t error, int& exp, bool integral) {
+                  uint64_t error, int& exp, bool integral) const {
     assert(remainder < divisor);
     if (size != precision && !enough_precision(exp + exp10)) return false;
     if (!integral) {
@@ -565,12 +595,11 @@ struct fixed_stop {
     } else {
       assert(error == 1 && divisor > 2);
     }
-    // Round down if (remainder + error) * 2 <= divisor.
-    if (remainder < divisor - remainder && error * 2 <= divisor - remainder * 2)
-      return true;
-    // Round up if (remainder - error) * 2 >= divisor.
-    if (remainder >= error &&
-        remainder - error >= divisor - (remainder - error)) {
+    switch (round(remainder, divisor, error)) {
+    case unknown:
+      size = -1;
+      break;
+    case up:
       ++buf[size - 1];
       for (int i = size - 1; i > 0 && buf[i] > '9'; --i) {
         buf[i] = '0';
@@ -580,9 +609,10 @@ struct fixed_stop {
         buf[0] = '1';
         ++exp;
       }
-      return true;
+      break;
+    case down:
+      break;
     }
-    size = -1;
     return true;
   }
 };
@@ -591,7 +621,7 @@ struct fixed_stop {
 struct shortest_stop {
   fp diff;  // wp_w in Grisu.
 
-  bool on_exp(int) { return false; }
+  bool init(char*, int&, uint64_t, uint64_t, uint64_t, int&) { return false; }
 
   bool operator()(char* buf, int& size, uint64_t remainder, uint64_t divisor,
                   uint64_t error, int& exp, bool integral) {
