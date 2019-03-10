@@ -119,7 +119,7 @@ class arg_converter : public function<void> {
 
   template <typename U>
   typename std::enable_if<!std::is_integral<U>::value>::type operator()(U) {
-    // No coversion needed for non-integral types.
+    // No conversion needed for non-integral types.
   }
 };
 
@@ -149,7 +149,7 @@ template <typename Context> class char_converter : public function<void> {
 
   template <typename T>
   typename std::enable_if<!std::is_integral<T>::value>::type operator()(T) {
-    // No coversion needed for non-integral types.
+    // No conversion needed for non-integral types.
   }
 };
 
