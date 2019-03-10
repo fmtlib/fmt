@@ -86,6 +86,7 @@ endfunction()
 
 add_fmt_test(assert-test)
 add_fmt_test(chrono-test)
+add_fmt_test(color-test)
 add_fmt_test(core-test)
 add_fmt_test(grisu-test)
 target_compile_definitions(grisu-test PRIVATE FMT_USE_GRISU=1)
