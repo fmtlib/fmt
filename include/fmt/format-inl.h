@@ -467,10 +467,18 @@ inline round_direction get_round_direction(uint64_t divisor, uint64_t remainder,
   return unknown;
 }
 
+namespace digits {
+enum result {
+  more,  // Generate more digits.
+  done,  // Done generating digits.
+  error  // Digit generation cancelled due to an error.
+};
+}
+
 // Generates output using Grisu2 digit-gen algorithm.
 template <typename Handler>
-int grisu2_gen_digits(char* buf, fp value, uint64_t error, int& exp,
-                      Handler handler) {
+digits::result grisu2_gen_digits(fp value, uint64_t error, int& exp,
+                                 Handler& handler) {
   fp one(1ull << -value.e, value.e);
   // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
   // zero because it contains a product of two 64-bit numbers with MSB set (due
@@ -481,11 +489,9 @@ int grisu2_gen_digits(char* buf, fp value, uint64_t error, int& exp,
   // The fractional part of scaled value (p2 in Grisu) c = value % one.
   uint64_t fractional = value.f & (one.f - 1);
   exp = count_digits(integral);  // kappa in Grisu.
-  int size = 0;
-  if (handler.on_start(buf, size, data::POWERS_OF_10_64[exp] << -one.e, value.f,
-                       error, exp)) {
-    return size;
-  }
+  auto result = handler.on_start(data::POWERS_OF_10_64[exp] << -one.e, value.f,
+                                 error, exp);
+  if (result != digits::more) return result;
   // Generate digits for the integral part. This can produce up to 10 digits.
   do {
     uint32_t digit = 0;
@@ -535,29 +541,31 @@ int grisu2_gen_digits(char* buf, fp value, uint64_t error, int& exp,
     default:
       FMT_ASSERT(false, "invalid number of digits");
     }
-    buf[size++] = static_cast<char>('0' + digit);
     --exp;
     uint64_t remainder =
         (static_cast<uint64_t>(integral) << -one.e) + fractional;
-    if (handler(buf, size, data::POWERS_OF_10_64[exp] << -one.e, remainder,
-                error, exp, true)) {
-      return size;
-    }
+    auto result = handler.on_digit(static_cast<char>('0' + digit),
+                          data::POWERS_OF_10_64[exp] << -one.e, remainder,
+                          error, exp, true);
+    if (result != digits::more) return result;
   } while (exp > 0);
   // Generate digits for the fractional part.
   for (;;) {
     fractional *= 10;
     error *= 10;
-    char digit = static_cast<char>(fractional >> -one.e);
-    buf[size++] = static_cast<char>('0' + digit);
+    char digit =
+        static_cast<char>('0' + static_cast<char>(fractional >> -one.e));
     fractional &= one.f - 1;
     --exp;
-    if (handler(buf, size, one.f, fractional, error, exp, false)) return size;
+    auto result = handler.on_digit(digit, one.f, fractional, error, exp, false);
+    if (result != digits::more) return result;
   }
 }
 
 // The fixed precision digit handler.
 struct fixed_handler {
+  char* buf;
+  int size;
   int precision;
   int exp10;
   bool fixed;
@@ -566,74 +574,61 @@ struct fixed_handler {
     return full_exp <= 0 && -full_exp >= precision;
   }
 
-  bool on_start(char* buf, int& size, uint64_t divisor, uint64_t remainder,
-                uint64_t error, int& exp) {
-    if (!fixed) return false;
+  digits::result on_start(uint64_t divisor, uint64_t remainder, uint64_t error,
+                int& exp) {
+    if (!fixed) return digits::more;
     int full_exp = exp + exp10;
     if (full_exp >= 0) precision += full_exp;
-    if (!enough_precision(full_exp)) return false;
-    switch (get_round_direction(divisor, remainder, error)) {
-    case unknown:
-      size = -1;
-      break;
-    case up:
-      buf[size++] = '1';
-      break;
-    case down:
-      break;
-    }
-    return true;
+    if (!enough_precision(full_exp)) return digits::more;
+    auto dir = get_round_direction(divisor, remainder, error);
+    if (dir == up) buf[size++] = '1';
+    return dir != unknown ? digits::done : digits::error;
   }
 
   // TODO: test
-  bool operator()(char* buf, int& size, uint64_t divisor, uint64_t remainder,
-                  uint64_t error, int& exp, bool integral) const {
+  digits::result on_digit(char digit, uint64_t divisor, uint64_t remainder,
+                          uint64_t error, int& exp, bool integral) {
     assert(remainder < divisor);
-    if (size != precision && !enough_precision(exp + exp10)) return false;
+    buf[size++] = digit;
+    if (size != precision && !enough_precision(exp + exp10))
+      return digits::more;
     if (!integral) {
       // Check if error * 2 < divisor with overflow prevention.
       // The check is not needed for the integral part because error = 1
       // and divisor > (1 << 32) there.
-      if (error >= divisor || error >= divisor - error) {
-        size = -1;
-        return true;
-      }
+      if (error >= divisor || error >= divisor - error)
+        return digits::error;
     } else {
       assert(error == 1 && divisor > 2);
     }
-    switch (get_round_direction(divisor, remainder, error)) {
-    case unknown:
-      size = -1;
-      break;
-    case up:
-      ++buf[size - 1];
-      for (int i = size - 1; i > 0 && buf[i] > '9'; --i) {
-        buf[i] = '0';
-        ++buf[i - 1];
-      }
-      if (buf[0] > '9') {
-        buf[0] = '1';
-        ++exp;
-      }
-      break;
-    case down:
-      break;
+    auto dir = get_round_direction(divisor, remainder, error);
+    if (dir != up) return dir == down ? digits::done : digits::error;
+    ++buf[size - 1];
+    for (int i = size - 1; i > 0 && buf[i] > '9'; --i) {
+      buf[i] = '0';
+      ++buf[i - 1];
     }
-    return true;
+    if (buf[0] > '9') {
+      buf[0] = '1';
+      ++exp;
+    }
+    return digits::done;
   }
 };
 
 // The shortest representation digit handler.
 struct shortest_handler {
+  char* buf;
+  int size;
   fp diff;  // wp_w in Grisu.
 
-  bool on_start(char*, int&, uint64_t, uint64_t, uint64_t, int&) {
-    return false;
+  digits::result on_start(uint64_t, uint64_t, uint64_t, int&) {
+    return digits::more;
   }
-
-  bool operator()(char* buf, int& size, uint64_t divisor, uint64_t remainder,
-                  uint64_t error, int& exp, bool integral) {
-    if (remainder > error) return false;
+  digits::result on_digit(char digit, uint64_t divisor, uint64_t remainder,
+                          uint64_t error, int exp, bool integral) {
+    buf[size++] = digit;
+    if (remainder > error) return digits::more;
     uint64_t d = integral ? diff.f : diff.f * data::POWERS_OF_10_64[-exp];
     while (
         remainder < d && error - remainder >= divisor &&
@@ -641,7 +636,7 @@ struct shortest_handler {
       --buf[size - 1];
       remainder += divisor;
     }
-    return true;
+    return digits::done;
   }
 };
 
@@ -670,11 +665,10 @@ grisu2_format(Double value, buffer& buf, int precision, bool fixed, int& exp) {
     auto cached_pow = get_cached_power(
         min_exp - (fp_value.e + fp::significand_size), cached_exp10);
     fp_value = fp_value * cached_pow;
-    int size =
-        grisu2_gen_digits(buf.data(), fp_value, 1, exp,
-                          fixed_handler{precision, -cached_exp10, fixed});
-    if (size < 0) return false;
-    buf.resize(to_unsigned(size));
+    fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
+    if (grisu2_gen_digits(fp_value, 1, exp, handler) == digits::error)
+      return false;
+    buf.resize(to_unsigned(handler.size));
   } else {
     fp lower, upper;  // w^- and w^+ in the Grisu paper.
     fp_value.compute_boundaries(lower, upper);
@@ -689,10 +683,10 @@ grisu2_format(Double value, buffer& buf, int precision, bool fixed, int& exp) {
     fp_value = fp_value * cached_pow;
     lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
     ++lower.f;                   // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
-    int size = grisu2_gen_digits(buf.data(), upper, upper.f - lower.f, exp,
-                                 shortest_handler{upper - fp_value});
-    if (size < 0) return false;
-    buf.resize(to_unsigned(size));
+    shortest_handler handler{buf.data(), 0, upper - fp_value};
+    auto result = grisu2_gen_digits(upper, upper.f - lower.f, exp, handler);
+    if (result == digits::error) return false;
+    buf.resize(to_unsigned(handler.size));
   }
   exp -= cached_exp10;
   return true;
