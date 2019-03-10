@@ -445,6 +445,28 @@ FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
   return fp(data::POW10_SIGNIFICANDS[index], data::POW10_EXPONENTS[index]);
 }
 
+enum round_direction { unknown, up, down };
+
+// Given the divisor (normally a power of 10), the remainder = v % divisor for
+// some number v and the error, returns whether v should be rounded up, down, or
+// whether the rounding direction can't be determined due to error.
+// error should be less than divisor / 2.
+inline round_direction get_round_direction(uint64_t divisor, uint64_t remainder,
+                                           uint64_t error) {
+  FMT_ASSERT(remainder < divisor, "");  // divisor - remainder won't overflow.
+  FMT_ASSERT(error < divisor, "");      // divisor - error won't overflow.
+  FMT_ASSERT(error < divisor - error, "");  // error * 2 won't overflow.
+  // Round down if (remainder + error) * 2 <= divisor.
+  if (remainder <= divisor - remainder && error * 2 <= divisor - remainder * 2)
+    return down;
+  // Round up if (remainder - error) * 2 >= divisor.
+  if (remainder >= error &&
+      remainder - error >= divisor - (remainder - error)) {
+    return up;
+  }
+  return unknown;
+}
+
 // Generates output using Grisu2 digit-gen algorithm.
 template <typename Stop>
 int grisu2_gen_digits(char* buf, fp value, uint64_t error_ulp, int& exp,
@@ -544,29 +566,13 @@ struct fixed_stop {
     return full_exp <= 0 && -full_exp >= precision;
   }
 
-  enum round_direction { unknown, up, down };
-
-  static round_direction round(uint64_t remainder, uint64_t divisor,
-                               uint64_t error) {
-    assert(error < divisor && error < divisor - error);
-    // Round down if (remainder + error) * 2 <= divisor.
-    if (remainder < divisor - remainder && error * 2 <= divisor - remainder * 2)
-      return down;
-    // Round up if (remainder - error) * 2 >= divisor.
-    if (remainder >= error &&
-        remainder - error >= divisor - (remainder - error)) {
-      return up;
-    }
-    return unknown;
-  }
-
   bool init(char* buf, int& size, uint64_t remainder, uint64_t divisor,
             uint64_t error, int& exp) {
     if (!fixed) return false;
     int full_exp = exp + exp10;
     if (full_exp >= 0) precision += full_exp;
     if (!enough_precision(full_exp)) return false;
-    switch (round(remainder, divisor, error)) {
+    switch (get_round_direction(divisor, remainder, error)) {
     case unknown:
       size = -1;
       break;
@@ -595,7 +601,7 @@ struct fixed_stop {
     } else {
       assert(error == 1 && divisor > 2);
     }
-    switch (round(remainder, divisor, error)) {
+    switch (get_round_direction(divisor, remainder, error)) {
     case unknown:
       size = -1;
       break;
@@ -696,8 +702,8 @@ void sprintf_format(Double value, internal::buffer& buf,
   FMT_ASSERT(buf.capacity() != 0, "empty buffer");
 
   // Build format string.
-  enum { MAX_FORMAT_SIZE = 10 };  // longest format: %#-*.*Lg
-  char format[MAX_FORMAT_SIZE];
+  enum { max_format_size = 10 };  // longest format: %#-*.*Lg
+  char format[max_format_size];
   char* format_ptr = format;
   *format_ptr++ = '%';
   if (spec.has(HASH_FLAG) || !spec.type) *format_ptr++ = '#';
