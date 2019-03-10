@@ -468,9 +468,9 @@ inline round_direction get_round_direction(uint64_t divisor, uint64_t remainder,
 }
 
 // Generates output using Grisu2 digit-gen algorithm.
-template <typename Stop>
+template <typename Handler>
 int grisu2_gen_digits(char* buf, fp value, uint64_t error, int& exp,
-                      Stop stop) {
+                      Handler handler) {
   fp one(1ull << -value.e, value.e);
   // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
   // zero because it contains a product of two 64-bit numbers with MSB set (due
@@ -482,8 +482,8 @@ int grisu2_gen_digits(char* buf, fp value, uint64_t error, int& exp,
   uint64_t fractional = value.f & (one.f - 1);
   exp = count_digits(integral);  // kappa in Grisu.
   int size = 0;
-  if (stop.init(buf, size, value.f, data::POWERS_OF_10_64[exp] << -one.e,
-                error, exp)) {
+  if (handler.on_start(buf, size, data::POWERS_OF_10_64[exp] << -one.e, value.f,
+                       error, exp)) {
     return size;
   }
   // Generate digits for the integral part. This can produce up to 10 digits.
@@ -539,8 +539,8 @@ int grisu2_gen_digits(char* buf, fp value, uint64_t error, int& exp,
     --exp;
     uint64_t remainder =
         (static_cast<uint64_t>(integral) << -one.e) + fractional;
-    if (stop(buf, size, remainder, data::POWERS_OF_10_64[exp] << -one.e,
-             error, exp, true)) {
+    if (handler(buf, size, data::POWERS_OF_10_64[exp] << -one.e, remainder,
+                error, exp, true)) {
       return size;
     }
   } while (exp > 0);
@@ -552,12 +552,12 @@ int grisu2_gen_digits(char* buf, fp value, uint64_t error, int& exp,
     buf[size++] = static_cast<char>('0' + digit);
     fractional &= one.f - 1;
     --exp;
-    if (stop(buf, size, fractional, one.f, error, exp, false)) return size;
+    if (handler(buf, size, one.f, fractional, error, exp, false)) return size;
   }
 }
 
-// Stopping condition for the fixed precision.
-struct fixed_stop {
+// The fixed precision digit handler.
+struct fixed_handler {
   int precision;
   int exp10;
   bool fixed;
@@ -566,8 +566,8 @@ struct fixed_stop {
     return full_exp <= 0 && -full_exp >= precision;
   }
 
-  bool init(char* buf, int& size, uint64_t remainder, uint64_t divisor,
-            uint64_t error, int& exp) {
+  bool on_start(char* buf, int& size, uint64_t divisor, uint64_t remainder,
+                uint64_t error, int& exp) {
     if (!fixed) return false;
     int full_exp = exp + exp10;
     if (full_exp >= 0) precision += full_exp;
@@ -586,7 +586,7 @@ struct fixed_stop {
   }
 
   // TODO: test
-  bool operator()(char* buf, int& size, uint64_t remainder, uint64_t divisor,
+  bool operator()(char* buf, int& size, uint64_t divisor, uint64_t remainder,
                   uint64_t error, int& exp, bool integral) const {
     assert(remainder < divisor);
     if (size != precision && !enough_precision(exp + exp10)) return false;
@@ -623,13 +623,15 @@ struct fixed_stop {
   }
 };
 
-// Stopping condition for the shortest representation.
-struct shortest_stop {
+// The shortest representation digit handler.
+struct shortest_handler {
   fp diff;  // wp_w in Grisu.
 
-  bool init(char*, int&, uint64_t, uint64_t, uint64_t, int&) { return false; }
+  bool on_start(char*, int&, uint64_t, uint64_t, uint64_t, int&) {
+    return false;
+  }
 
-  bool operator()(char* buf, int& size, uint64_t remainder, uint64_t divisor,
+  bool operator()(char* buf, int& size, uint64_t divisor, uint64_t remainder,
                   uint64_t error, int& exp, bool integral) {
     if (remainder > error) return false;
     uint64_t d = integral ? diff.f : diff.f * data::POWERS_OF_10_64[-exp];
@@ -668,8 +670,9 @@ grisu2_format(Double value, buffer& buf, int precision, bool fixed, int& exp) {
     auto cached_pow = get_cached_power(
         min_exp - (fp_value.e + fp::significand_size), cached_exp10);
     fp_value = fp_value * cached_pow;
-    int size = grisu2_gen_digits(buf.data(), fp_value, 1, exp,
-                                 fixed_stop{precision, -cached_exp10, fixed});
+    int size =
+        grisu2_gen_digits(buf.data(), fp_value, 1, exp,
+                          fixed_handler{precision, -cached_exp10, fixed});
     if (size < 0) return false;
     buf.resize(to_unsigned(size));
   } else {
@@ -687,7 +690,7 @@ grisu2_format(Double value, buffer& buf, int precision, bool fixed, int& exp) {
     lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
     ++lower.f;                   // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
     int size = grisu2_gen_digits(buf.data(), upper, upper.f - lower.f, exp,
-                                 shortest_stop{upper - fp_value});
+                                 shortest_handler{upper - fp_value});
     if (size < 0) return false;
     buf.resize(to_unsigned(size));
   }
