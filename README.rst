@@ -347,7 +347,7 @@ libc              printf          1.01
 libc++            std::ostream    3.04
 fmt 1632f72       fmt::print      0.86
 tinyformat 2.0.1  tfm::printf     3.23
-Boost Format 1.54 boost::format   7.98
+Boost Format 1.67 boost::format   7.98
 Folly Format      folly::format   2.23
 ================= ============= ===========
 
