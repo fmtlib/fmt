@@ -130,25 +130,31 @@ else ()
   target_compile_definitions(header-only-test PRIVATE FMT_HEADER_ONLY=1)
 endif ()
 
-# Test that the library can be compiled with exceptions disabled.
-# -fno-exception is broken in icc: https://github.com/fmtlib/fmt/issues/822.
-if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-  check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
-endif ()
-if (HAVE_FNO_EXCEPTIONS_FLAG)
-  add_library(noexception-test ../src/format.cc)
-  target_include_directories(
-    noexception-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
-  target_compile_options(noexception-test PRIVATE -fno-exceptions)
-  if (FMT_PEDANTIC)
-    target_compile_options(noexception-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
-  endif ()
-  target_include_directories(noexception-test SYSTEM PUBLIC gtest gmock)
-endif ()
-
 message(STATUS "FMT_PEDANTIC: ${FMT_PEDANTIC}")
 
 if (FMT_PEDANTIC)
+  # Test that the library can be compiled with exceptions disabled.
+  # -fno-exception is broken in icc: https://github.com/fmtlib/fmt/issues/822.
+  if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
+  endif ()
+  if (HAVE_FNO_EXCEPTIONS_FLAG)
+    add_library(noexception-test ../src/format.cc)
+    target_include_directories(
+      noexception-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+    target_compile_options(noexception-test PRIVATE -fno-exceptions)
+    if (FMT_PEDANTIC)
+      target_compile_options(noexception-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
+    endif ()
+  endif ()
+
+  # Test that the library compiles without locale.
+  add_library(nolocale-test ../src/format.cc)
+  target_include_directories(
+    nolocale-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+  target_compile_definitions(
+    nolocale-test PRIVATE FMT_STATIC_THOUSANDS_SEPARATOR=1)
+
   # Test that the library compiles without windows.h.
   if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     add_library(no-windows-h-test ../src/format.cc)
