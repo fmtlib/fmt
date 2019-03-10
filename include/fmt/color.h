@@ -518,7 +518,7 @@ inline void reset_color(basic_memory_buffer<Char>& buffer) FMT_NOEXCEPT {
   buffer.append(begin, end);
 }
 
-// The following specialiazation disables using std::FILE as a character type,
+// The following specialization disables using std::FILE as a character type,
 // which is needed because or else
 //   fmt::print(stderr, fmt::emphasis::bold, "");
 // would take stderr (a std::FILE *) as the format string.

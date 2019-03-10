@@ -1870,7 +1870,7 @@ template <typename Char> struct arg_ref {
 
 // Format specifiers with width and precision resolved at formatting rather
 // than parsing time to allow re-using the same parsed specifiers with
-// differents sets of arguments (precompilation of format strings).
+// different sets of arguments (precompilation of format strings).
 template <typename Char>
 struct dynamic_format_specs : basic_format_specs<Char> {
   arg_ref<Char> width_ref;
@@ -2879,7 +2879,7 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
     }
   } write_inf_or_nan = {*this, spec, sign, handler.as_percentage};
 
-  // Format ininity and NaN ourselves because sprintf's output is not consistent
+  // Format infinity and NaN ourselves because sprintf's output is not consistent
   // across platforms.
   if (internal::fputil::isinfinity(value))
     return write_inf_or_nan(handler.upper ? "INF" : "inf");
