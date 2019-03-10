@@ -353,10 +353,10 @@ further details see the `source
 Library           Method        Run Time, s
 ================= ============= ===========
 libc              printf          1.01
-libc++            std::ostream    2.98
-fmt 31510cb       fmt::print      1.13
+libc++            std::ostream    3.04
+fmt 1632f72       fmt::print      0.86
 tinyformat 2.0.1  tfm::printf     3.23
-Boost Format 1.54 boost::format   7.34
+Boost Format 1.54 boost::format   7.98
 Folly Format      folly::format   2.23
 ================= ============= ===========
 
