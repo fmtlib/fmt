@@ -469,7 +469,7 @@ inline round_direction get_round_direction(uint64_t divisor, uint64_t remainder,
 
 // Generates output using Grisu2 digit-gen algorithm.
 template <typename Stop>
-int grisu2_gen_digits(char* buf, fp value, uint64_t error_ulp, int& exp,
+int grisu2_gen_digits(char* buf, fp value, uint64_t error, int& exp,
                       Stop stop) {
   fp one(1ull << -value.e, value.e);
   // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
@@ -483,7 +483,7 @@ int grisu2_gen_digits(char* buf, fp value, uint64_t error_ulp, int& exp,
   exp = count_digits(integral);  // kappa in Grisu.
   int size = 0;
   if (stop.init(buf, size, value.f, data::POWERS_OF_10_64[exp] << -one.e,
-                error_ulp, exp)) {
+                error, exp)) {
     return size;
   }
   // Generate digits for the integral part. This can produce up to 10 digits.
@@ -540,19 +540,19 @@ int grisu2_gen_digits(char* buf, fp value, uint64_t error_ulp, int& exp,
     uint64_t remainder =
         (static_cast<uint64_t>(integral) << -one.e) + fractional;
     if (stop(buf, size, remainder, data::POWERS_OF_10_64[exp] << -one.e,
-             error_ulp, exp, true)) {
+             error, exp, true)) {
       return size;
     }
   } while (exp > 0);
   // Generate digits for the fractional part.
   for (;;) {
     fractional *= 10;
-    error_ulp *= 10;
+    error *= 10;
     char digit = static_cast<char>(fractional >> -one.e);
     buf[size++] = static_cast<char>('0' + digit);
     fractional &= one.f - 1;
     --exp;
-    if (stop(buf, size, fractional, one.f, error_ulp, exp, false)) return size;
+    if (stop(buf, size, fractional, one.f, error, exp, false)) return size;
   }
 }
 
