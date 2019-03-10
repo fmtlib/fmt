@@ -30,10 +30,9 @@ Features
 * Implementation of the ISO C++ standards proposal `P0645
   Text Formatting <http://fmtlib.net/Text%20Formatting.html>`__.
 * Support for user-defined types.
-* High speed: performance of the format API is close to that of glibc's `printf
-  <http://en.cppreference.com/w/cpp/io/c/fprintf>`_ and better than the
-  performance of IOStreams. See `Speed tests`_ and
-  `Fast integer to string conversion in C++
+* High performance: faster than common standard library implementations of
+  `printf <http://en.cppreference.com/w/cpp/io/c/fprintf>`_ and
+  IOStreams. See `Speed tests`_ and `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 * Small code size both in terms of source code (the minimum configuration
   consists of just three header files, ``core.h``, ``format.h`` and
