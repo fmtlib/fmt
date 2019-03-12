@@ -243,8 +243,8 @@ Motivation
 So why yet another formatting library?
 
 There are plenty of methods for doing this task, from standard ones like
-the printf family of function and IOStreams to Boost Format library and
-FastFormat. The reason for creating a new library is that every existing
+the printf family of function and IOStreams to Boost Format and FastFormat
+libraries. The reason for creating a new library is that every existing
 solution that I found either had serious issues or didn't provide
 all the features I needed.
 
@@ -276,9 +276,8 @@ which is a lot of typing compared to printf:
 
     printf("%.2f\n", 1.23456);
 
-Matthew Wilson, the author of FastFormat, referred to this situation with
-IOStreams as "chevron hell". IOStreams doesn't support positional arguments
-by design.
+Matthew Wilson, the author of FastFormat, called this "chevron hell". IOStreams
+doesn't support positional arguments by design.
 
 The good part is that IOStreams supports user-defined types and is safe
 although error reporting is awkward.
