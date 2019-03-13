@@ -489,8 +489,9 @@ digits::result grisu2_gen_digits(fp value, uint64_t error, int& exp,
   // The fractional part of scaled value (p2 in Grisu) c = value % one.
   uint64_t fractional = value.f & (one.f - 1);
   exp = count_digits(integral);  // kappa in Grisu.
-  auto result = handler.on_start(data::POWERS_OF_10_64[exp] << -one.e, value.f,
-                                 error, exp);
+  // Divide by 10 to prevent overflow.
+  auto result = handler.on_start(data::POWERS_OF_10_64[exp - 1] << -one.e,
+                                 value.f / 10, error * 10, exp);
   if (result != digits::more) return result;
   // Generate digits for the integral part. This can produce up to 10 digits.
   do {
@@ -571,18 +572,22 @@ struct fixed_handler {
   bool fixed;
 
   bool enough_precision(int full_exp) const {
-    return full_exp <= 0 && -full_exp >= precision;
+    return /*full_exp <= 0 &&*/ -full_exp >= precision;
   }
 
   digits::result on_start(uint64_t divisor, uint64_t remainder, uint64_t error,
                           int& exp) {
+    // Non-fixed formats require at least one digit and no precision adjustment.
     if (!fixed) return digits::more;
     int full_exp = exp + exp10;
-    if (full_exp >= 0) precision += full_exp;
+    // Increase precision by the number of integer digits, e.g.
+    // format("{:.2f}", 1.23) should produce "1.23", not "1.2".
+    if (full_exp > 0) precision += full_exp;
     if (!enough_precision(full_exp)) return digits::more;
     auto dir = get_round_direction(divisor, remainder, error);
-    if (dir == up) buf[size++] = '1';
-    return dir != unknown ? digits::done : digits::error;
+    if (dir == unknown) return digits::error;
+    buf[size++] = dir == up ? '1' : '0';
+    return digits::done;
   }
 
   // TODO: test
