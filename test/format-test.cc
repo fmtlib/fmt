@@ -1474,6 +1474,9 @@ TEST(FormatterTest, PrecisionRounding) {
   EXPECT_EQ("0", format("{:.0f}", 0.1));
   EXPECT_EQ("0.000", format("{:.3f}", 0.00049));
   EXPECT_EQ("0.001", format("{:.3f}", 0.0005));
+  EXPECT_EQ("0.001", format("{:.3f}", 0.00149));
+  EXPECT_EQ("0.002", format("{:.3f}", 0.0015));
+  EXPECT_EQ("0.00123", format("{:.3}", 0.00123));
 }
 
 TEST(FormatterTest, FormatNaN) {

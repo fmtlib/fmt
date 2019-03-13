@@ -121,6 +121,28 @@ TEST(FPTest, GetRoundDirection) {
   EXPECT_EQ(fmt::internal::up, get_round_direction(max, max - 1, 1));
 }
 
+TEST(FPTest, FixedHandler) {
+  struct handler : fmt::internal::fixed_handler {
+    char buffer[10];
+    handler(int prec = 0) : fmt::internal::fixed_handler() {
+      buf = buffer;
+      precision = prec;
+    }
+  };
+  int exp = 0;
+  handler().on_digit('0', 100, 99, 0, exp, false);
+  EXPECT_THROW(handler().on_digit('0', 100, 100, 0, exp, false),
+               assertion_failure);
+  namespace digits = fmt::internal::digits;
+  EXPECT_EQ(handler(1).on_digit('0', 100, 10, 10, exp, false), digits::done);
+  // Check that divisor - error doesn't overflow.
+  EXPECT_EQ(handler(1).on_digit('0', 100, 10, 101, exp, false), digits::error);
+  // Check that 2 * error doesn't overflow.
+  uint64_t max = std::numeric_limits<uint64_t>::max();
+  EXPECT_EQ(handler(1).on_digit('0', max, 10, max - 1, exp, false),
+            digits::error);
+}
+
 TEST(FPTest, Grisu2FormatCompilesWithNonIEEEDouble) {
   fmt::memory_buffer buf;
   int exp = 0;

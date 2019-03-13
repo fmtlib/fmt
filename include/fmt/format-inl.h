@@ -571,41 +571,37 @@ struct fixed_handler {
   int exp10;
   bool fixed;
 
-  bool enough_precision(int full_exp) const {
-    return /*full_exp <= 0 &&*/ -full_exp >= precision;
-  }
-
   digits::result on_start(uint64_t divisor, uint64_t remainder, uint64_t error,
                           int& exp) {
     // Non-fixed formats require at least one digit and no precision adjustment.
     if (!fixed) return digits::more;
-    int full_exp = exp + exp10;
-    // Increase precision by the number of integer digits, e.g.
-    // format("{:.2f}", 1.23) should produce "1.23", not "1.2".
-    if (full_exp > 0) precision += full_exp;
-    if (!enough_precision(full_exp)) return digits::more;
+    // Adjust fixed precision by exponent because it is relative to decimal
+    // point.
+    precision += exp + exp10;
+    // Check if precision is satisfied just by leading zeros, e.g.
+    // format("{:.2f}", 0.001) gives "0.00" without generating any digits.
+    if (precision > 0) return digits::more;
     auto dir = get_round_direction(divisor, remainder, error);
     if (dir == unknown) return digits::error;
     buf[size++] = dir == up ? '1' : '0';
     return digits::done;
   }
 
-  // TODO: test
   digits::result on_digit(char digit, uint64_t divisor, uint64_t remainder,
                           uint64_t error, int& exp, bool integral) {
-    assert(remainder < divisor);
+    FMT_ASSERT(remainder < divisor, "");
     buf[size++] = digit;
-    if (size != precision && !enough_precision(exp + exp10))
-      return digits::more;
+    if (size != precision) return digits::more;
     if (!integral) {
       // Check if error * 2 < divisor with overflow prevention.
       // The check is not needed for the integral part because error = 1
       // and divisor > (1 << 32) there.
       if (error >= divisor || error >= divisor - error) return digits::error;
     } else {
-      assert(error == 1 && divisor > 2);
+      FMT_ASSERT(error == 1 && divisor > 2, "");
     }
     auto dir = get_round_direction(divisor, remainder, error);
+    // TODO: test rounding
     if (dir != up) return dir == down ? digits::done : digits::error;
     ++buf[size - 1];
     for (int i = size - 1; i > 0 && buf[i] > '9'; --i) {
