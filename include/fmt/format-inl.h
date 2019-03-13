@@ -489,9 +489,9 @@ digits::result grisu2_gen_digits(fp value, uint64_t error, int& exp,
   // The fractional part of scaled value (p2 in Grisu) c = value % one.
   uint64_t fractional = value.f & (one.f - 1);
   exp = count_digits(integral);  // kappa in Grisu.
-  auto result1 = handler.on_start(data::POWERS_OF_10_64[exp] << -one.e, value.f,
+  auto result = handler.on_start(data::POWERS_OF_10_64[exp] << -one.e, value.f,
                                  error, exp);
-  if (result1 != digits::more) return result1;
+  if (result != digits::more) return result;
   // Generate digits for the integral part. This can produce up to 10 digits.
   do {
     uint32_t digit = 0;
@@ -544,10 +544,10 @@ digits::result grisu2_gen_digits(fp value, uint64_t error, int& exp,
     --exp;
     uint64_t remainder =
         (static_cast<uint64_t>(integral) << -one.e) + fractional;
-    auto result2 = handler.on_digit(static_cast<char>('0' + digit),
-                          data::POWERS_OF_10_64[exp] << -one.e, remainder,
-                          error, exp, true);
-    if (result2 != digits::more) return result2;
+    result = handler.on_digit(static_cast<char>('0' + digit),
+                              data::POWERS_OF_10_64[exp] << -one.e, remainder,
+                              error, exp, true);
+    if (result != digits::more) return result;
   } while (exp > 0);
   // Generate digits for the fractional part.
   for (;;) {
@@ -557,8 +557,8 @@ digits::result grisu2_gen_digits(fp value, uint64_t error, int& exp,
         static_cast<char>('0' + static_cast<char>(fractional >> -one.e));
     fractional &= one.f - 1;
     --exp;
-    auto result3 = handler.on_digit(digit, one.f, fractional, error, exp, false);
-    if (result3 != digits::more) return result3;
+    result = handler.on_digit(digit, one.f, fractional, error, exp, false);
+    if (result != digits::more) return result;
   }
 }
 
@@ -575,7 +575,7 @@ struct fixed_handler {
   }
 
   digits::result on_start(uint64_t divisor, uint64_t remainder, uint64_t error,
-                int& exp) {
+                          int& exp) {
     if (!fixed) return digits::more;
     int full_exp = exp + exp10;
     if (full_exp >= 0) precision += full_exp;
@@ -596,8 +596,7 @@ struct fixed_handler {
       // Check if error * 2 < divisor with overflow prevention.
       // The check is not needed for the integral part because error = 1
       // and divisor > (1 << 32) there.
-      if (error >= divisor || error >= divisor - error)
-        return digits::error;
+      if (error >= divisor || error >= divisor - error) return digits::error;
     } else {
       assert(error == 1 && divisor > 2);
     }
