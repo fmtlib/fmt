@@ -206,7 +206,7 @@ if (FMT_INSTALL)
   set(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRING
       "Installation directory for include files, relative to ${CMAKE_INSTALL_PREFIX}.")
 
-  set(FMT_PKGCONFIG_DIR "${CMAKE_INSTALL_PREFIX}/share/pkgconfig" CACHE PATH
+  set(FMT_PKGCONFIG_DIR "share/pkgconfig" CACHE PATH
     "Installation directory for pkgconfig (.pc) files, relative to ${CMAKE_INSTALL_PREFIX}.")
 
   # Generate the version, config and target files into the build directory.
