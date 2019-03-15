@@ -67,7 +67,7 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
     }
     if (begin != ptr) handler.on_text(begin, ptr);
     ++ptr;  // consume '%'
-    if (ptr == end) throw format_error("invalid format");
+    if (ptr == end) FMT_THROW(format_error("invalid format"));
     c = *ptr++;
     switch (c) {
     case '%':
@@ -158,7 +158,7 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
       break;
     // Alternative representation:
     case 'E': {
-      if (ptr == end) throw format_error("invalid format");
+      if (ptr == end) FMT_THROW(format_error("invalid format"));
       c = *ptr++;
       switch (c) {
       case 'c':
@@ -171,12 +171,12 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
         handler.on_loc_time(numeric_system::alternative);
         break;
       default:
-        throw format_error("invalid format");
+        FMT_THROW(format_error("invalid format"));
       }
       break;
     }
     case 'O':
-      if (ptr == end) throw format_error("invalid format");
+      if (ptr == end) FMT_THROW(format_error("invalid format"));
       c = *ptr++;
       switch (c) {
       case 'w':
@@ -198,11 +198,11 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
         handler.on_second(numeric_system::alternative);
         break;
       default:
-        throw format_error("invalid format");
+        FMT_THROW(format_error("invalid format"));
       }
       break;
     default:
-      throw format_error("invalid format");
+      FMT_THROW(format_error("invalid format"));
     }
     begin = ptr;
   }
@@ -211,7 +211,7 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
 }
 
 struct chrono_format_checker {
-  void report_no_date() { throw format_error("no date"); }
+  void report_no_date() { FMT_THROW(format_error("no date")); }
 
   template <typename Char> void on_text(const Char*, const Char*) {}
   void on_abbr_weekday() { report_no_date(); }
@@ -432,7 +432,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       return arg_ref_type(context.next_arg_id());
     }
 
-    void on_error(const char* msg) { throw format_error(msg); }
+    void on_error(const char* msg) { FMT_THROW(format_error(msg)); }
     void on_fill(Char fill) { f.spec.fill_ = fill; }
     void on_align(alignment align) { f.spec.align_ = align; }
     void on_width(unsigned width) { f.spec.width_ = width; }
