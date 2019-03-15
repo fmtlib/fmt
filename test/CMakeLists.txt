@@ -99,7 +99,6 @@ add_fmt_test(locale-test)
 add_fmt_test(ostream-test)
 add_fmt_test(prepare-test)
 add_fmt_test(printf-test)
-add_fmt_test(time-test)
 add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
 
