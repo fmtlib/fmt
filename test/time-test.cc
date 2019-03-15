@@ -9,7 +9,7 @@
 #  define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include "fmt/time.h"
+#include "fmt/chrono.h"
 #include "fmt/locale.h"
 #include "gmock.h"
 
