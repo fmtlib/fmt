@@ -198,10 +198,10 @@ class prepared_format {
     return it.count();
   }
 
-  template <typename OutputIt>
-  inline typename std::enable_if<internal::is_output_iterator<OutputIt>::value,
-                                 format_to_n_result<OutputIt>>::type
-  format_to_n(OutputIt out, unsigned n, const Args&... args) const {
+  template <typename OutputIt,
+            FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
+  inline format_to_n_result<OutputIt> format_to_n(OutputIt out, unsigned n,
+                                                  const Args&... args) const {
     format_arg_store<typename format_to_n_context<OutputIt, char_type>::type,
                      Args...>
     as(args...);
@@ -221,11 +221,9 @@ class prepared_format {
     return to_string(buffer);
   }
 
-  template <typename Container>
-  inline typename std::enable_if<is_contiguous<Container>::value,
-                                 std::back_insert_iterator<Container>>::type
-  format_to(std::back_insert_iterator<Container> out,
-            const Args&... args) const {
+  template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
+  inline std::back_insert_iterator<Container> format_to(
+      std::back_insert_iterator<Container> out, const Args&... args) const {
     internal::container_buffer<Container> buffer(internal::get_container(out));
     typedef back_insert_range<internal::basic_buffer<char_type>> range;
     this->vformat_to(range(buffer), make_args_checked(format_, args...));

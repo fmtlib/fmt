@@ -587,10 +587,10 @@ void vprint(std::FILE* f, const text_style& ts, const S& format,
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red),
                "Elapsed time: {0:.2f} seconds", 1.23);
  */
-template <typename String, typename... Args>
-typename std::enable_if<internal::is_string<String>::value>::type print(
-    std::FILE* f, const text_style& ts, const String& format_str,
-    const Args&... args) {
+template <typename String, typename... Args,
+          FMT_ENABLE_IF(internal::is_string<String>::value)>
+void print(std::FILE* f, const text_style& ts, const String& format_str,
+           const Args&... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename internal::char_t<String>::type char_t;
   typedef typename buffer_context<char_t>::type context_t;
@@ -605,9 +605,10 @@ typename std::enable_if<internal::is_string<String>::value>::type print(
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red),
                "Elapsed time: {0:.2f} seconds", 1.23);
  */
-template <typename String, typename... Args>
-typename std::enable_if<internal::is_string<String>::value>::type print(
-    const text_style& ts, const String& format_str, const Args&... args) {
+template <typename String, typename... Args,
+          FMT_ENABLE_IF(internal::is_string<String>::value)>
+void print(const text_style& ts, const String& format_str,
+           const Args&... args) {
   return print(stdout, ts, format_str, args...);
 }
 

@@ -161,21 +161,15 @@ template <class Tuple, class F> void for_each(Tuple&& tup, F&& f) {
   for_each(indexes, std::forward<Tuple>(tup), std::forward<F>(f));
 }
 
-template <typename Arg>
-FMT_CONSTEXPR const char* format_str_quoted(
-    bool add_space, const Arg&,
-    typename std::enable_if<
-        !is_like_std_string<typename std::decay<Arg>::type>::value>::type* =
-        nullptr) {
+template <typename Arg, FMT_ENABLE_IF(!is_like_std_string<
+                                      typename std::decay<Arg>::type>::value)>
+FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&) {
   return add_space ? " {}" : "{}";
 }
 
-template <typename Arg>
-FMT_CONSTEXPR const char* format_str_quoted(
-    bool add_space, const Arg&,
-    typename std::enable_if<
-        is_like_std_string<typename std::decay<Arg>::type>::value>::type* =
-        nullptr) {
+template <typename Arg, FMT_ENABLE_IF(is_like_std_string<
+                                      typename std::decay<Arg>::type>::value)>
+FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&) {
   return add_space ? " \"{}\"" : "\"{}\"";
 }
 

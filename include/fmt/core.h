@@ -208,7 +208,9 @@
 #  include <functional>
 #endif
 
-#define FMT_ENABLE_IF_T(...) typename std::enable_if<__VA_ARGS__>::type
+// An enable_if helper to be used in template parameters. enable_if in template
+// parameters results in much shorter symbols: https://godbolt.org/z/sWw4vP.
+#define FMT_ENABLE_IF(...) typename std::enable_if<__VA_ARGS__, int>::type = 0
 
 FMT_BEGIN_NAMESPACE
 namespace internal {
@@ -513,8 +515,7 @@ struct compile_string {};
 template <typename S>
 struct is_compile_string : std::is_base_of<compile_string, S> {};
 
-template <typename S,
-          typename Enable = FMT_ENABLE_IF_T(is_compile_string<S>::value)>
+template <typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
 FMT_CONSTEXPR basic_string_view<typename S::char_type> to_string_view(
     const S& s) {
   return s;
@@ -791,15 +792,15 @@ FMT_MAKE_VALUE(int_type, signed char, int)
 FMT_MAKE_VALUE(uint_type, unsigned char, unsigned)
 
 // This doesn't use FMT_MAKE_VALUE because of ambiguity in gcc 4.4.
-template <typename C, typename Char>
-FMT_CONSTEXPR FMT_ENABLE_IF_T(std::is_same<typename C::char_type, Char>::value,
-                              init<C, int, char_type>) make_value(Char val) {
+template <typename C, typename Char,
+          FMT_ENABLE_IF(std::is_same<typename C::char_type, Char>::value)>
+FMT_CONSTEXPR init<C, int, char_type> make_value(Char val) {
   return val;
 }
 
-template <typename C>
-FMT_CONSTEXPR FMT_ENABLE_IF_T(!std::is_same<typename C::char_type, char>::value,
-                              init<C, int, char_type>) make_value(char val) {
+template <typename C,
+          FMT_ENABLE_IF(!std::is_same<typename C::char_type, char>::value)>
+FMT_CONSTEXPR init<C, int, char_type> make_value(char val) {
   return val;
 }
 
@@ -835,36 +836,36 @@ FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
 // pointer cast it to "void *" or "const void *". In particular, this forbids
 // formatting of "[const] volatile char *" which is printed as bool by
 // iostreams.
-template <typename C, typename T>
-FMT_ENABLE_IF_T(!std::is_same<T, typename C::char_type>::value)
-make_value(const T*) {
+template <typename C, typename T,
+          FMT_ENABLE_IF(!std::is_same<T, typename C::char_type>::value)>
+void make_value(const T*) {
   static_assert(!sizeof(T), "formatting of non-void pointers is disallowed");
 }
 
-template <typename C, typename T>
-inline FMT_ENABLE_IF_T(
-    std::is_enum<T>::value&& convert_to_int<T, typename C::char_type>::value,
-    init<C, int, int_type>) make_value(const T& val) {
+template <typename C, typename T,
+          FMT_ENABLE_IF(convert_to_int<T, typename C::char_type>::value&&
+                            std::is_enum<T>::value)>
+inline init<C, int, int_type> make_value(const T& val) {
   return static_cast<int>(val);
 }
 
-template <typename C, typename T, typename Char = typename C::char_type>
-inline FMT_ENABLE_IF_T(is_constructible<basic_string_view<Char>, T>::value &&
-                           !internal::is_string<T>::value,
-                       init<C, basic_string_view<Char>, string_type>)
-    make_value(const T& val) {
+template <typename C, typename T, typename Char = typename C::char_type,
+          FMT_ENABLE_IF(is_constructible<basic_string_view<Char>, T>::value &&
+                        !internal::is_string<T>::value)>
+inline init<C, basic_string_view<Char>, string_type> make_value(const T& val) {
   return basic_string_view<Char>(val);
 }
 
-template <typename C, typename T, typename Char = typename C::char_type>
-inline FMT_ENABLE_IF_T(
-    !convert_to_int<T, Char>::value && !std::is_same<T, Char>::value &&
-        !std::is_convertible<T, basic_string_view<Char>>::value &&
-        !is_constructible<basic_string_view<Char>, T>::value &&
-        !internal::is_string<T>::value,
-    // Implicit conversion to std::string is not handled here because it's
-    // unsafe: https://github.com/fmtlib/fmt/issues/729
-    init<C, const T&, custom_type>) make_value(const T& val) {
+// Implicit conversion to std::string is not handled here because it's
+// unsafe: https://github.com/fmtlib/fmt/issues/729
+template <
+    typename C, typename T, typename Char = typename C::char_type,
+    FMT_ENABLE_IF(!convert_to_int<T, Char>::value &&
+                  !std::is_same<T, Char>::value &&
+                  !std::is_convertible<T, basic_string_view<Char>>::value &&
+                  !is_constructible<basic_string_view<Char>, T>::value &&
+                  !internal::is_string<T>::value)>
+inline init<C, const T&, custom_type> make_value(const T& val) {
   return val;
 }
 
@@ -876,11 +877,9 @@ init<C, const void*, named_arg_type> make_value(
   return static_cast<const void*>(&val);
 }
 
-template <typename C, typename S>
-FMT_CONSTEXPR11 FMT_ENABLE_IF_T(
-    internal::is_string<S>::value,
-    init<C, basic_string_view<typename C::char_type>, string_type>)
-    make_value(const S& val) {
+template <typename C, typename S, FMT_ENABLE_IF(internal::is_string<S>::value)>
+FMT_CONSTEXPR11 init<C, basic_string_view<typename C::char_type>, string_type>
+make_value(const S& val) {
   // Handle adapted strings.
   static_assert(std::is_same<typename C::char_type,
                              typename internal::char_t<S>::type>::value,
@@ -1067,14 +1066,15 @@ FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T& value) {
   return arg;
 }
 
-template <bool IS_PACKED, typename Context, typename T>
-inline FMT_ENABLE_IF_T(IS_PACKED, value<Context>) make_arg(const T& value) {
+template <bool IS_PACKED, typename Context, typename T,
+          FMT_ENABLE_IF(IS_PACKED)>
+inline value<Context> make_arg(const T& value) {
   return make_value<Context>(value);
 }
 
-template <bool IS_PACKED, typename Context, typename T>
-inline FMT_ENABLE_IF_T(!IS_PACKED, basic_format_arg<Context>)
-    make_arg(const T& value) {
+template <bool IS_PACKED, typename Context, typename T,
+          FMT_ENABLE_IF(!IS_PACKED)>
+inline basic_format_arg<Context> make_arg(const T& value) {
   return make_arg<Context>(value);
 }
 }  // namespace internal
@@ -1314,15 +1314,10 @@ struct wformat_args : basic_format_args<wformat_context> {
 #endif
 #if FMT_USE_ALIAS_TEMPLATES
 /** String's character type. */
-template <typename S>
-using char_t = FMT_ENABLE_IF_T(internal::is_string<S>::value,
-                               typename internal::char_t<S>::type);
+template <typename S> using char_t = typename internal::char_t<S>::type;
 #  define FMT_CHAR(S) fmt::char_t<S>
 #else
-template <typename S>
-struct char_t : std::enable_if<internal::is_string<S>::value,
-                               typename internal::char_t<S>::type> {};
-#  define FMT_CHAR(S) typename char_t<S>::type
+#  define FMT_CHAR(S) typename internal::char_t<S>::type
 #endif
 
 namespace internal {
@@ -1356,14 +1351,15 @@ template <typename T, typename Char> struct named_arg : named_arg_base<Char> {
       : named_arg_base<Char>(name), value(val) {}
 };
 
-template <typename... Args, typename S>
-inline FMT_ENABLE_IF_T(!is_compile_string<S>::value)
-    check_format_string(const S&) {}
-template <typename... Args, typename S>
-FMT_ENABLE_IF_T(is_compile_string<S>::value)
-check_format_string(S);
+template <typename... Args, typename S,
+          FMT_ENABLE_IF(!is_compile_string<S>::value)>
+inline void check_format_string(const S&) {}
+template <typename... Args, typename S,
+          FMT_ENABLE_IF(is_compile_string<S>::value)>
+void check_format_string(S);
 
-template <typename S, typename... Args>
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline format_arg_store<typename buffer_context<FMT_CHAR(S)>::type, Args...>
 make_args_checked(const S& format_str, const Args&... args) {
   internal::check_format_string<Args...>(format_str);
@@ -1396,7 +1392,7 @@ typename buffer_context<Char>::type::iterator vformat_to(
     fmt::print("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23));
   \endrst
  */
-template <typename S, typename T>
+template <typename S, typename T, FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline internal::named_arg<T, FMT_CHAR(S)> arg(const S& name, const T& arg) {
   return {name, arg};
 }
@@ -1415,8 +1411,8 @@ struct is_contiguous<internal::basic_buffer<Char>> : std::true_type {};
 
 /** Formats a string and writes the output to ``out``. */
 template <typename Container, typename S>
-FMT_ENABLE_IF_T(is_contiguous<Container>::value,
-                std::back_insert_iterator<Container>)
+typename std::enable_if<is_contiguous<Container>::value,
+                        std::back_insert_iterator<Container>>::type
 vformat_to(std::back_insert_iterator<Container> out, const S& format_str,
            basic_format_args<typename buffer_context<FMT_CHAR(S)>::type> args) {
   internal::container_buffer<Container> buf(internal::get_container(out));
@@ -1424,17 +1420,18 @@ vformat_to(std::back_insert_iterator<Container> out, const S& format_str,
   return out;
 }
 
-template <typename Container, typename S, typename... Args>
-inline FMT_ENABLE_IF_T(
-    is_contiguous<Container>::value&& internal::is_string<S>::value,
-    std::back_insert_iterator<Container>)
-    format_to(std::back_insert_iterator<Container> out, const S& format_str,
-              const Args&... args) {
+template <typename Container, typename S, typename... Args,
+          FMT_ENABLE_IF(
+              is_contiguous<Container>::value&& internal::is_string<S>::value)>
+inline std::back_insert_iterator<Container> format_to(
+    std::back_insert_iterator<Container> out, const S& format_str,
+    const Args&... args) {
   return vformat_to(out, to_string_view(format_str),
                     {internal::make_args_checked(format_str, args...)});
 }
 
-template <typename S, typename Char = FMT_CHAR(S)>
+template <typename S, typename Char = FMT_CHAR(S),
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline std::basic_string<Char> vformat(
     const S& format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
@@ -1451,7 +1448,8 @@ inline std::basic_string<Char> vformat(
     std::string message = fmt::format("The answer is {}", 42);
   \endrst
 */
-template <typename S, typename... Args>
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline std::basic_string<FMT_CHAR(S)> format(const S& format_str,
                                              const Args&... args) {
   return internal::vformat(to_string_view(format_str),
@@ -1472,9 +1470,9 @@ FMT_API void vprint(std::FILE* f, wstring_view format_str, wformat_args args);
     fmt::print(stderr, "Don't {}!", "panic");
   \endrst
  */
-template <typename S, typename... Args>
-inline FMT_ENABLE_IF_T(internal::is_string<S>::value, void)
-    print(std::FILE* f, const S& format_str, const Args&... args) {
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
+inline void print(std::FILE* f, const S& format_str, const Args&... args) {
   vprint(f, to_string_view(format_str),
          internal::make_args_checked(format_str, args...));
 }
@@ -1491,9 +1489,9 @@ FMT_API void vprint(wstring_view format_str, wformat_args args);
     fmt::print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-template <typename S, typename... Args>
-inline FMT_ENABLE_IF_T(internal::is_string<S>::value, void)
-    print(const S& format_str, const Args&... args) {
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
+inline void print(const S& format_str, const Args&... args) {
   vprint(to_string_view(format_str),
          internal::make_args_checked(format_str, args...));
 }

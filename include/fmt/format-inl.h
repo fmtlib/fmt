@@ -639,9 +639,10 @@ struct shortest_handler {
   }
 };
 
-template <typename Double>
-FMT_FUNC typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-grisu2_format(Double value, buffer& buf, int precision, bool fixed, int& exp) {
+template <typename Double, typename std::enable_if<
+                               sizeof(Double) == sizeof(uint64_t), int>::type>
+FMT_FUNC bool grisu2_format(Double value, buffer& buf, int precision,
+                            bool fixed, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
   if (value <= 0) {  // <= instead of == to silence a warning.
     if (precision < 0) {

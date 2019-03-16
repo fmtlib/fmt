@@ -603,11 +603,9 @@ extern template int char_traits<wchar_t>::format_float<long double>(
     long double value);
 #endif
 
-template <typename Container>
-inline typename std::enable_if<
-    is_contiguous<Container>::value,
-    typename checked<typename Container::value_type>::type>::type
-reserve(std::back_insert_iterator<Container>& it, std::size_t n) {
+template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
+inline typename checked<typename Container::value_type>::type reserve(
+    std::back_insert_iterator<Container>& it, std::size_t n) {
   Container& c = internal::get_container(it);
   std::size_t size = c.size();
   c.resize(size + n);
@@ -735,16 +733,12 @@ class truncating_iterator<OutputIt, std::true_type>
 
 // Returns true if value is negative, false otherwise.
 // Same as (value < 0) but doesn't produce warnings if T is an unsigned type.
-template <typename T>
-FMT_CONSTEXPR
-    typename std::enable_if<std::numeric_limits<T>::is_signed, bool>::type
-    is_negative(T value) {
+template <typename T, FMT_ENABLE_IF(std::numeric_limits<T>::is_signed)>
+FMT_CONSTEXPR bool is_negative(T value) {
   return value < 0;
 }
-template <typename T>
-FMT_CONSTEXPR
-    typename std::enable_if<!std::numeric_limits<T>::is_signed, bool>::type
-    is_negative(T) {
+template <typename T, FMT_ENABLE_IF(!std::numeric_limits<T>::is_signed)>
+FMT_CONSTEXPR bool is_negative(T) {
   return false;
 }
 
@@ -820,17 +814,15 @@ struct needs_conversion
                              char>::value &&
                     std::is_same<OutChar, char8_t>::value> {};
 
-template <typename OutChar, typename InputIt, typename OutputIt>
-typename std::enable_if<!needs_conversion<InputIt, OutChar>::value,
-                        OutputIt>::type
-copy_str(InputIt begin, InputIt end, OutputIt it) {
+template <typename OutChar, typename InputIt, typename OutputIt,
+          FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
+OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
   return std::copy(begin, end, it);
 }
 
-template <typename OutChar, typename InputIt, typename OutputIt>
-typename std::enable_if<needs_conversion<InputIt, OutChar>::value,
-                        OutputIt>::type
-copy_str(InputIt begin, InputIt end, OutputIt it) {
+template <typename OutChar, typename InputIt, typename OutputIt,
+          FMT_ENABLE_IF(needs_conversion<InputIt, OutChar>::value)>
+OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
   return std::transform(begin, end, it, to_char8_t);
 }
 
@@ -1137,12 +1129,11 @@ namespace internal {
 
 // Formats value using Grisu2 algorithm:
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
-template <typename Double>
-FMT_API typename std::enable_if<sizeof(Double) == sizeof(uint64_t), bool>::type
-grisu2_format(Double value, buffer& buf, int precision, bool fixed, int& exp);
-template <typename Double>
-inline typename std::enable_if<sizeof(Double) != sizeof(uint64_t), bool>::type
-grisu2_format(Double, buffer&, int, bool, int&) {
+template <typename Double, FMT_ENABLE_IF(sizeof(Double) == sizeof(uint64_t))>
+FMT_API bool grisu2_format(Double value, buffer& buf, int precision, bool fixed,
+                           int& exp);
+template <typename Double, FMT_ENABLE_IF(sizeof(Double) != sizeof(uint64_t))>
+inline bool grisu2_format(Double, buffer&, int, bool, int&) {
   return false;
 }
 
@@ -1466,11 +1457,9 @@ template <typename Range> class arg_formatter_base {
     return out();
   }
 
-  template <typename T>
-  typename std::enable_if<std::is_integral<T>::value ||
-                              std::is_same<T, char_type>::value,
-                          iterator>::type
-  operator()(T value) {
+  template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value ||
+                                      std::is_same<T, char_type>::value)>
+  iterator operator()(T value) {
     // MSVC2013 fails to compile separate overloads for bool and char_type so
     // use std::is_same instead.
     if (std::is_same<T, bool>::value) {
@@ -1485,9 +1474,8 @@ template <typename Range> class arg_formatter_base {
     return out();
   }
 
-  template <typename T>
-  typename std::enable_if<std::is_floating_point<T>::value, iterator>::type
-  operator()(T value) {
+  template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
+  iterator operator()(T value) {
     writer_.write_double(value, specs_ ? *specs_ : format_specs());
     return out();
   }
@@ -1608,18 +1596,14 @@ class width_checker : public function<unsigned long long> {
  public:
   explicit FMT_CONSTEXPR width_checker(ErrorHandler& eh) : handler_(eh) {}
 
-  template <typename T>
-  FMT_CONSTEXPR
-      typename std::enable_if<is_integer<T>::value, unsigned long long>::type
-      operator()(T value) {
+  template <typename T, FMT_ENABLE_IF(is_integer<T>::value)>
+  FMT_CONSTEXPR unsigned long long operator()(T value) {
     if (is_negative(value)) handler_.on_error("negative width");
     return static_cast<unsigned long long>(value);
   }
 
-  template <typename T>
-  FMT_CONSTEXPR
-      typename std::enable_if<!is_integer<T>::value, unsigned long long>::type
-      operator()(T) {
+  template <typename T, FMT_ENABLE_IF(!is_integer<T>::value)>
+  FMT_CONSTEXPR unsigned long long operator()(T) {
     handler_.on_error("width is not integer");
     return 0;
   }
@@ -1633,18 +1617,14 @@ class precision_checker : public function<unsigned long long> {
  public:
   explicit FMT_CONSTEXPR precision_checker(ErrorHandler& eh) : handler_(eh) {}
 
-  template <typename T>
-  FMT_CONSTEXPR
-      typename std::enable_if<is_integer<T>::value, unsigned long long>::type
-      operator()(T value) {
+  template <typename T, FMT_ENABLE_IF(is_integer<T>::value)>
+  FMT_CONSTEXPR unsigned long long operator()(T value) {
     if (is_negative(value)) handler_.on_error("negative precision");
     return static_cast<unsigned long long>(value);
   }
 
-  template <typename T>
-  FMT_CONSTEXPR
-      typename std::enable_if<!is_integer<T>::value, unsigned long long>::type
-      operator()(T) {
+  template <typename T, FMT_ENABLE_IF(!is_integer<T>::value)>
+  FMT_CONSTEXPR unsigned long long operator()(T) {
     handler_.on_error("precision is not integer");
     return 0;
   }
@@ -1828,10 +1808,8 @@ struct string_view_metadata {
       : offset_(view.data() - primary_string.data()), size_(view.size()) {}
   FMT_CONSTEXPR string_view_metadata(std::size_t offset, std::size_t size)
       : offset_(offset), size_(size) {}
-  template <typename S>
-  FMT_CONSTEXPR typename std::enable_if<internal::is_string<S>::value,
-                                        basic_string_view<FMT_CHAR(S)>>::type
-  to_view(S&& str) const {
+  template <typename S, FMT_ENABLE_IF(internal::is_string<S>::value)>
+  FMT_CONSTEXPR basic_string_view<FMT_CHAR(S)> to_view(S&& str) const {
     const auto view = to_string_view(str);
     return basic_string_view<FMT_CHAR(S)>(view.data() + offset_, size_);
   }
@@ -2266,9 +2244,9 @@ FMT_CONSTEXPR bool do_check_format_string(basic_string_view<Char> s,
   return true;
 }
 
-template <typename... Args, typename S>
-typename std::enable_if<is_compile_string<S>::value>::type check_format_string(
-    S format_str) {
+template <typename... Args, typename S,
+          typename std::enable_if<is_compile_string<S>::value, int>::type>
+void check_format_string(S format_str) {
   typedef typename S::char_type char_t;
   FMT_CONSTEXPR_DECL bool invalid_format =
       internal::do_check_format_string<char_t, internal::error_handler,
@@ -2749,9 +2727,9 @@ template <typename Range> class basic_writer {
     Formats *value* and writes it to the buffer.
     \endrst
    */
-  template <typename T, typename FormatSpec, typename... FormatSpecs>
-  typename std::enable_if<std::is_integral<T>::value, void>::type write(
-      T value, FormatSpec spec, FormatSpecs... specs) {
+  template <typename T, typename FormatSpec, typename... FormatSpecs,
+            FMT_ENABLE_IF(std::is_integral<T>::value)>
+  void write(T value, FormatSpec spec, FormatSpecs... specs) {
     format_specs s(spec, specs...);
     s.align_ = ALIGN_RIGHT;
     write_int(value, s);
@@ -2809,9 +2787,8 @@ template <typename Range> class basic_writer {
     write(data, size, spec);
   }
 
-  template <typename T>
-  typename std::enable_if<std::is_same<T, void>::value>::type write(
-      const T* p) {
+  template <typename T, FMT_ENABLE_IF(std::is_same<T, void>::value)>
+  void write(const T* p) {
     format_specs specs;
     specs.flags = HASH_FLAG;
     specs.type = 'x';
@@ -2879,8 +2856,8 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
     }
   } write_inf_or_nan = {*this, spec, sign, handler.as_percentage};
 
-  // Format infinity and NaN ourselves because sprintf's output is not consistent
-  // across platforms.
+  // Format infinity and NaN ourselves because sprintf's output is not
+  // consistent across platforms.
   if (internal::fputil::isinfinity(value))
     return write_inf_or_nan(handler.upper ? "INF" : "inf");
   if (internal::fputil::isnotanumber(value))
@@ -3403,7 +3380,8 @@ typename buffer_context<Char>::type::iterator internal::vformat_to(
                                           args);
 }
 
-template <typename S, typename Char = FMT_CHAR(S)>
+template <typename S, typename Char = FMT_CHAR(S),
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline typename buffer_context<Char>::type::iterator vformat_to(
     internal::basic_buffer<Char>& buf, const S& format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
@@ -3477,11 +3455,11 @@ struct format_args_t {
       type;
 };
 
-template <typename String, typename OutputIt, typename... Args>
-inline typename std::enable_if<internal::is_output_iterator<OutputIt>::value,
-                               OutputIt>::type
-vformat_to(OutputIt out, const String& format_str,
-           typename format_args_t<OutputIt, FMT_CHAR(String)>::type args) {
+template <typename String, typename OutputIt, typename... Args,
+          FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
+inline OutputIt vformat_to(
+    OutputIt out, const String& format_str,
+    typename format_args_t<OutputIt, FMT_CHAR(String)>::type args) {
   typedef output_range<OutputIt, FMT_CHAR(String)> range;
   return vformat_to<arg_formatter<range>>(range(out),
                                           to_string_view(format_str), args);
@@ -3499,9 +3477,10 @@ vformat_to(OutputIt out, const String& format_str,
  \endrst
  */
 template <typename OutputIt, typename S, typename... Args>
-inline FMT_ENABLE_IF_T(internal::is_string<S>::value&&
-                           internal::is_output_iterator<OutputIt>::value,
-                       OutputIt)
+inline
+    typename std::enable_if<internal::is_string<S>::value &&
+                                internal::is_output_iterator<OutputIt>::value,
+                            OutputIt>::type
     format_to(OutputIt out, const S& format_str, const Args&... args) {
   internal::check_format_string<Args...>(format_str);
   typedef typename format_context_t<OutputIt, FMT_CHAR(S)>::type context;
@@ -3535,11 +3514,11 @@ make_format_to_n_args(const Args&... args) {
                           Args...>(args...);
 }
 
-template <typename OutputIt, typename Char, typename... Args>
-inline typename std::enable_if<internal::is_output_iterator<OutputIt>::value,
-                               format_to_n_result<OutputIt>>::type
-vformat_to_n(OutputIt out, std::size_t n, basic_string_view<Char> format_str,
-             typename format_to_n_args<OutputIt, Char>::type args) {
+template <typename OutputIt, typename Char, typename... Args,
+          FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
+inline format_to_n_result<OutputIt> vformat_to_n(
+    OutputIt out, std::size_t n, basic_string_view<Char> format_str,
+    typename format_to_n_args<OutputIt, Char>::type args) {
   typedef internal::truncating_iterator<OutputIt> It;
   auto it = vformat_to(It(out, n), format_str, args);
   return {it.base(), it.count()};
@@ -3552,12 +3531,12 @@ vformat_to_n(OutputIt out, std::size_t n, basic_string_view<Char> format_str,
  end of the output range.
  \endrst
  */
-template <typename OutputIt, typename S, typename... Args>
-inline FMT_ENABLE_IF_T(internal::is_string<S>::value&&
-                           internal::is_output_iterator<OutputIt>::value,
-                       format_to_n_result<OutputIt>)
-    format_to_n(OutputIt out, std::size_t n, const S& format_str,
-                const Args&... args) {
+template <typename OutputIt, typename S, typename... Args,
+          FMT_ENABLE_IF(internal::is_string<S>::value&&
+                            internal::is_output_iterator<OutputIt>::value)>
+inline format_to_n_result<OutputIt> format_to_n(OutputIt out, std::size_t n,
+                                                const S& format_str,
+                                                const Args&... args) {
   internal::check_format_string<Args...>(format_str);
   typedef FMT_CHAR(S) Char;
   format_arg_store<typename format_to_n_context<OutputIt, Char>::type, Args...>
