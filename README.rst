@@ -64,6 +64,12 @@ Print ``Hello, world!`` to ``stdout``:
     fmt::print("Hello, {}!", "world");  // uses Python-like format string syntax
     fmt::printf("Hello, %s!", "world"); // uses printf format string syntax
 
+Format a string and use positional arguments:
+
+.. code:: c++
+
+    std::string s = fmt::format("I'd rather be {1} than {0}.", "right", "happy");
+
 Check a format string at compile time:
 
 .. code:: c++
