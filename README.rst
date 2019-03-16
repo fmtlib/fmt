@@ -12,7 +12,7 @@
    :target: https://gitter.im/fmtlib/fmt
 
 **{fmt}** is an open-source formatting library for C++.
-It can be used as a safe and fast alternative to (s)printf and IOStreams.
+It can be used as a safe and fast alternative to (s)printf and iostreams.
 
 `Documentation <http://fmtlib.net/latest/>`__
 
@@ -32,7 +32,7 @@ Features
 * Support for user-defined types.
 * High performance: faster than common standard library implementations of
   `printf <http://en.cppreference.com/w/cpp/io/c/fprintf>`_ and
-  IOStreams. See `Speed tests`_ and `Fast integer to string conversion in C++
+  iostreams. See `Speed tests`_ and `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 * Small code size both in terms of source code (the minimum configuration
   consists of just three header files, ``core.h``, ``format.h`` and
@@ -243,7 +243,7 @@ Motivation
 So why yet another formatting library?
 
 There are plenty of methods for doing this task, from standard ones like
-the printf family of function and IOStreams to Boost Format and FastFormat
+the printf family of function and iostreams to Boost Format and FastFormat
 libraries. The reason for creating a new library is that every existing
 solution that I found either had serious issues or didn't provide
 all the features I needed.
@@ -261,10 +261,10 @@ There is a POSIX extension that adds positional arguments required for
 to printf but it is not a part of C99 and may not be available on some
 platforms.
 
-IOStreams
+iostreams
 ~~~~~~~~~
 
-The main issue with IOStreams is best illustrated with an example:
+The main issue with iostreams is best illustrated with an example:
 
 .. code:: c++
 
@@ -276,11 +276,11 @@ which is a lot of typing compared to printf:
 
     printf("%.2f\n", 1.23456);
 
-Matthew Wilson, the author of FastFormat, called this "chevron hell". IOStreams
-doesn't support positional arguments by design.
+Matthew Wilson, the author of FastFormat, called this "chevron hell". iostreams
+don't support positional arguments by design.
 
-The good part is that IOStreams supports user-defined types and is safe
-although error reporting is awkward.
+The good part is that iostreams support user-defined types and are safe although
+error reporting is awkward.
 
 Boost Format library
 ~~~~~~~~~~~~~~~~~~~~
@@ -321,13 +321,13 @@ Tinyformat
 This library supports printf-like format strings and is very small and
 fast. Unfortunately it doesn't support positional arguments and wrapping
 it in C++98 is somewhat difficult. Also its performance and code compactness
-are limited by IOStreams.
+are limited by iostreams.
 
 Boost Spirit.Karma
 ~~~~~~~~~~~~~~~~~~
 
 This is not really a formatting library but I decided to include it here
-for completeness. As IOStreams it suffers from the problem of mixing
+for completeness. As iostreams it suffers from the problem of mixing
 verbatim text with arguments. The library is pretty fast, but slower
 on integer formatting than ``fmt::Writer`` on Karma's own benchmark,
 see `Fast integer to string conversion in C++
@@ -378,7 +378,7 @@ Method        Compile Time, s Executable size, KiB Stripped size, KiB
 ============= =============== ==================== ==================
 printf                    2.6                   29                 26
 printf+string            16.4                   29                 26
-IOStreams                31.1                   59                 55
+iostreams                31.1                   59                 55
 fmt                      19.0                   37                 34
 tinyformat               44.0                  103                 97
 Boost Format             91.9                  226                203
@@ -386,7 +386,7 @@ Folly Format            115.7                  101                 88
 ============= =============== ==================== ==================
 
 As you can see, fmt has 60% less overhead in terms of resulting binary code
-size compared to IOStreams and comes pretty close to ``printf``. Boost Format
+size compared to iostreams and comes pretty close to ``printf``. Boost Format
 and Folly Format have the largest overheads.
 
 ``printf+string`` is the same as ``printf`` but with extra ``<string>``
@@ -399,7 +399,7 @@ Method        Compile Time, s Executable size, KiB Stripped size, KiB
 ============= =============== ==================== ==================
 printf                    2.2                   33                 30
 printf+string            16.0                   33                 30
-IOStreams                28.3                   56                 52
+iostreams                28.3                   56                 52
 fmt                      18.2                   59                 50
 tinyformat               32.6                   88                 82
 Boost Format             54.1                  365                303
