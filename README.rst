@@ -377,13 +377,13 @@ Method        Compile Time, s Executable size, KiB Stripped size, KiB
 printf                    2.6                   29                 26
 printf+string            16.4                   29                 26
 iostreams                31.1                   59                 55
-fmt                      19.0                   37                 34
+{fmt}                    19.0                   37                 34
 tinyformat               44.0                  103                 97
 Boost Format             91.9                  226                203
 Folly Format            115.7                  101                 88
 ============= =============== ==================== ==================
 
-As you can see, fmt has 60% less overhead in terms of resulting binary code
+As you can see, {fmt} has 60% less overhead in terms of resulting binary code
 size compared to iostreams and comes pretty close to ``printf``. Boost Format
 and Folly Format have the largest overheads.
 
@@ -398,16 +398,15 @@ Method        Compile Time, s Executable size, KiB Stripped size, KiB
 printf                    2.2                   33                 30
 printf+string            16.0                   33                 30
 iostreams                28.3                   56                 52
-fmt                      18.2                   59                 50
+{fmt}                    18.2                   59                 50
 tinyformat               32.6                   88                 82
 Boost Format             54.1                  365                303
 Folly Format             79.9                  445                430
 ============= =============== ==================== ==================
 
-``libc``, ``lib(std)c++`` and ``libfmt`` are all linked as shared
-libraries to compare formatting function overhead only. Boost Format
-and tinyformat are header-only libraries so they don't provide any
-linkage options.
+``libc``, ``lib(std)c++`` and ``libfmt`` are all linked as shared libraries to
+compare formatting function overhead only. Boost Format and tinyformat are
+header-only libraries so they don't provide any linkage options.
 
 Running the tests
 ~~~~~~~~~~~~~~~~~
