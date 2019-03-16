@@ -1161,7 +1161,7 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
     *it++ = static_cast<Char>(d[1]);
   } else {
     const char* d = data::DIGITS + exp * 2;
-    if (d[0] != '0') *it++ = static_cast<Char>(d[0]);
+    *it++ = static_cast<Char>(d[0]);
     *it++ = static_cast<Char>(d[1]);
   }
   return it;
@@ -1198,12 +1198,14 @@ It grisu2_prettify(const char* digits, int size, int exp, It it,
     // 1234e-2 -> 12.34[0+]
     it = copy_str<Char>(digits, digits + full_exp, it);
     *it++ = static_cast<Char>('.');
-    it = copy_str<Char>(digits + full_exp, digits + size, it);
     if (!params.trailing_zeros) {
       // Remove trailing zeros.
-      // TODO
-      // handler.remove_trailing('0');
-    } else if (params.num_digits > size) {
+      while (size > full_exp && digits[size - 1] == '0')
+        --size;
+      return copy_str<Char>(digits + full_exp, digits + size, it);
+    }
+    it = copy_str<Char>(digits + full_exp, digits + size, it);
+    if (params.num_digits > size) {
       // Add trailing zeros.
       int num_zeros = params.num_digits - size;
       it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
@@ -2668,8 +2670,9 @@ template <typename Range> class basic_writer {
                  const internal::gen_digits_params& params)
         : digits_(digits), sign_(sign), exp_(exp), params_(params) {
       int num_digits = static_cast<int>(digits.size());
-      int full_exp = num_digits + exp;
-      params_.fixed |= (full_exp - 1) >= -4 && (full_exp - 1) <= 10;
+      int full_exp = num_digits + exp - 1;
+      int precision = params.num_digits > 0 ? params.num_digits : 11;
+      params_.fixed |= full_exp >= -4 && full_exp < precision;
       auto it = internal::grisu2_prettify<char>(
           digits.data(), num_digits, exp, internal::counting_iterator<char>(),
           params_);
@@ -2869,7 +2872,8 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   int exp = 0;
   int precision = spec.has_precision() || !spec.type ? spec.precision : 6;
   bool use_grisu = fmt::internal::use_grisu<T>() &&
-                   (!spec.type || handler.fixed) &&
+                   (spec.type != 'a' && spec.type != 'A' &&
+                    spec.type != 'e' && spec.type != 'E') &&
                    internal::grisu2_format(static_cast<double>(value), buffer,
                                            precision, handler.fixed, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
@@ -2894,7 +2898,8 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
     auto params = internal::gen_digits_params();
     params.fixed = handler.fixed;
     params.num_digits = precision;
-    if (precision != 0) params.trailing_zeros = true;
+    params.trailing_zeros =
+      (precision != 0 && (handler.fixed || !spec.type)) || spec.has(HASH_FLAG);
     write_padded(as, grisu_writer{sign, buffer, exp, params});
   } else {
     write_padded(as, double_writer{sign, buffer});

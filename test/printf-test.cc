@@ -252,8 +252,7 @@ TEST(PrintfTest, FloatPrecision) {
   safe_sprintf(buffer, "%.3e", 1234.5678);
   EXPECT_PRINTF(buffer, "%.3e", 1234.5678);
   EXPECT_PRINTF("1234.568", "%.3f", 1234.5678);
-  safe_sprintf(buffer, "%.3g", 1234.5678);
-  EXPECT_PRINTF(buffer, "%.3g", 1234.5678);
+  EXPECT_PRINTF("1.23e+03", "%.3g", 1234.5678);
   safe_sprintf(buffer, "%.3a", 1234.5678);
   EXPECT_PRINTF(buffer, "%.3a", 1234.5678);
 }
