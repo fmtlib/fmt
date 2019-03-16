@@ -104,8 +104,8 @@ Use {fmt} as a safe portable replacement for ``itoa``
     format_to(buf, "{:x}", 42);  // replaces itoa(42, buffer, 16)
     // access the string with to_string(buf) or buf.data()
 
-Formatting of user-defined types is supported via a simple
-`extension API <http://fmtlib.net/latest/api.html#formatting-user-defined-types>`_:
+Format objects of user-defined types via a simple `extension API
+<http://fmtlib.net/latest/api.html#formatting-user-defined-types>`_:
 
 .. code:: c++
 

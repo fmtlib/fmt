@@ -84,7 +84,7 @@ def build_docs(version='dev', **kwargs):
       XML_OUTPUT        = {1}
       ALIASES           = "rst=\verbatim embed:rst"
       ALIASES          += "endrst=\endverbatim"
-      INLINE_INHERITED_MEMB = YES
+      INLINE_INHERITED_MEMBERS = YES
       MACRO_EXPANSION   = YES
       PREDEFINED        = _WIN32=1 \
                           FMT_USE_VARIADIC_TEMPLATES=1 \
