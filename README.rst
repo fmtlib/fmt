@@ -61,14 +61,15 @@ Print ``Hello, world!`` to ``stdout``:
 
 .. code:: c++
 
-    fmt::print("Hello, {}!", "world");  // uses Python-like format string syntax
-    fmt::printf("Hello, %s!", "world"); // uses printf format string syntax
+    fmt::print("Hello, {}!", "world");  // Python-like format string syntax
+    fmt::printf("Hello, %s!", "world"); // printf format string syntax
 
 Format a string and use positional arguments:
 
 .. code:: c++
 
     std::string s = fmt::format("I'd rather be {1} than {0}.", "right", "happy");
+    // s == "I'd rather be happy than right."
 
 Check a format string at compile time:
 
@@ -101,7 +102,7 @@ Use {fmt} as a safe portable replacement for ``itoa``
     fmt::memory_buffer buf;
     format_to(buf, "{}", 42);    // replaces itoa(42, buffer, 10)
     format_to(buf, "{:x}", 42);  // replaces itoa(42, buffer, 16)
-    // access the string using to_string(buf) or buf.data()
+    // access the string with to_string(buf) or buf.data()
 
 Formatting of user-defined types is supported via a simple
 `extension API <http://fmtlib.net/latest/api.html#formatting-user-defined-types>`_:
@@ -148,7 +149,7 @@ which take arbitrary arguments (`godbolt <https://godbolt.org/g/MHjHVf>`_):
     report_error("file not found: {}", path);
 
 Note that ``vreport_error`` is not parameterized on argument types which can
-improve compile times and reduce code size compared to fully parameterized
+improve compile times and reduce code size compared to a fully parameterized
 version.
 
 Benchmarks
