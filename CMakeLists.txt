@@ -27,7 +27,7 @@ endfunction()
 # Set the default CMAKE_BUILD_TYPE to Release.
 # This should be done before the project command since the latter can set
 # CMAKE_BUILD_TYPE itself (it does so for nmake).
-if (NOT CMAKE_BUILD_TYPE)
+if (MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
   join(doc "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or "
            "CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
   set(CMAKE_BUILD_TYPE Release CACHE STRING ${doc})
