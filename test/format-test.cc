@@ -1107,6 +1107,7 @@ TEST(FormatterTest, Width) {
   EXPECT_EQ("x          ", format("{0:11}", 'x'));
   EXPECT_EQ("str         ", format("{0:12}", "str"));
 }
+template <typename T> inline T const_check(T value) { return value; }
 
 TEST(FormatterTest, RuntimeWidth) {
   char format_str[BUFFER_SIZE];
@@ -1135,7 +1136,7 @@ TEST(FormatterTest, RuntimeWidth) {
   EXPECT_THROW_MSG(format("{0:{1}}", 0, (INT_MAX + 1u)), format_error,
                    "number is too big");
   EXPECT_THROW_MSG(format("{0:{1}}", 0, -1l), format_error, "negative width");
-  if (fmt::internal::const_check(sizeof(long) > sizeof(int))) {
+  if (const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG(format("{0:{1}}", 0, (value + 1)), format_error,
                      "number is too big");
@@ -1257,7 +1258,7 @@ TEST(FormatterTest, RuntimePrecision) {
                    "number is too big");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0, -1l), format_error,
                    "negative precision");
-  if (fmt::internal::const_check(sizeof(long) > sizeof(int))) {
+  if (const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG(format("{0:.{1}}", 0, (value + 1)), format_error,
                      "number is too big");

@@ -286,17 +286,6 @@ template <typename Result> struct function {
   template <typename T> struct result { typedef Result type; };
 };
 
-struct dummy_int {
-  int data[2];
-  operator int() const { return 0; }
-};
-typedef std::numeric_limits<internal::dummy_int> fputil;
-
-// Dummy implementations of system functions called if the latter are not
-// available.
-inline dummy_int isinf(...) { return dummy_int(); }
-inline dummy_int _finite(...) { return dummy_int(); }
-
 template <typename Allocator>
 typename Allocator::value_type* allocate(Allocator& alloc, std::size_t n) {
 #if __cplusplus >= 201103L || FMT_MSC_VER >= 1700
@@ -305,33 +294,8 @@ typename Allocator::value_type* allocate(Allocator& alloc, std::size_t n) {
   return alloc.allocate(n);
 #endif
 }
-
-// A helper function to suppress bogus "conditional expression is constant"
-// warnings.
-template <typename T> inline T const_check(T value) { return value; }
 }  // namespace internal
 FMT_END_NAMESPACE
-
-namespace std {
-// Standard permits specialization of std::numeric_limits. This specialization
-// is used to resolve ambiguity between isinf and std::isinf in glibc:
-// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48891
-// and the same for isnan.
-template <>
-class numeric_limits<fmt::internal::dummy_int>
-    : public std::numeric_limits<int> {
- public:
-  // Portable version of isinf.
-  template <typename T> static bool isinfinity(T x) {
-    using namespace fmt::internal;
-    // The resolution "priority" is:
-    // isinf macro > std::isinf > ::isinf > fmt::internal::isinf
-    if (const_check(sizeof(isinf(x)) != sizeof(fmt::internal::dummy_int)))
-      return isinf(x) != 0;
-    return !_finite(static_cast<double>(x));
-  }
-};
-}  // namespace std
 
 FMT_BEGIN_NAMESPACE
 template <typename Range> class basic_writer;
@@ -2841,9 +2805,8 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   if (!std::isfinite(value)) {
     // Format infinity and NaN ourselves because sprintf's output is not
     // consistent across platforms.
-    const char* str = internal::fputil::isinfinity(value)
-                          ? (handler.upper ? "INF" : "inf")
-                          : (handler.upper ? "NAN" : "nan");
+    const char* str = std::isinf(value) ? (handler.upper ? "INF" : "inf")
+                                        : (handler.upper ? "NAN" : "nan");
     return write_padded(spec,
                         inf_or_nan_writer{sign, handler.as_percentage, str});
   }
