@@ -244,7 +244,7 @@ The available presentation types for floating-point values are:
 |         | notation using the letter 'e' to indicate the exponent.  |
 +---------+----------------------------------------------------------+
 | ``'E'`` | Exponent notation. Same as ``'e'`` except it uses an     |
-|         | upper-case 'E' as the separator character.               |
+|         | upper-case ``'E'`` as the separator character.           |
 +---------+----------------------------------------------------------+
 | ``'f'`` | Fixed point. Displays the number as a fixed-point        |
 |         | number.                                                  |
@@ -270,8 +270,6 @@ The available presentation types for floating-point values are:
 +---------+----------------------------------------------------------+
 | none    | The same as ``'g'``.                                     |
 +---------+----------------------------------------------------------+
-
-Floating-point formatting is locale-dependent.
 
 .. ifconfig:: False
 
