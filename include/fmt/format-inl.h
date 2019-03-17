@@ -735,13 +735,17 @@ void sprintf_format(Double value, internal::buffer& buf,
     if (result >= 0) {
       unsigned n = internal::to_unsigned(result);
       if (n < buf.capacity()) {
-        if (!spec.type) {
-          // Keep only one trailing zero after the decimal point.
-          auto p = static_cast<char*>(std::memchr(buf.data(), '.', n));
-          if (p) {
+        // Find the decimal point.
+        auto p = buf.data(), end = p + n;
+        if (*p == '+' || *p == '-') ++p;
+        if (spec.type == 'a' || spec.type == 'A') p += 2;  // Skip "0x".
+        while (p < end && *p >= '0' && *p <= '9') ++p;
+        if (p < end && *p != 'e' && *p != 'E') {
+          if (*p != '.') *p = '.';
+          if (!spec.type) {
+            // Keep only one trailing zero after the decimal point.
             ++p;
             if (*p == '0') ++p;
-            const char* end = buf.data() + n;
             while (p != end && *p >= '1' && *p <= '9') ++p;
             char* where = p;
             while (p != end && *p == '0') ++p;
