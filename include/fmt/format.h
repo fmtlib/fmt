@@ -296,8 +296,6 @@ typedef std::numeric_limits<internal::dummy_int> fputil;
 // available.
 inline dummy_int isinf(...) { return dummy_int(); }
 inline dummy_int _finite(...) { return dummy_int(); }
-inline dummy_int isnan(...) { return dummy_int(); }
-inline dummy_int _isnan(...) { return dummy_int(); }
 
 template <typename Allocator>
 typename Allocator::value_type* allocate(Allocator& alloc, std::size_t n) {
@@ -331,14 +329,6 @@ class numeric_limits<fmt::internal::dummy_int>
     if (const_check(sizeof(isinf(x)) != sizeof(fmt::internal::dummy_int)))
       return isinf(x) != 0;
     return !_finite(static_cast<double>(x));
-  }
-
-  // Portable version of isnan.
-  template <typename T> static bool isnotanumber(T x) {
-    using namespace fmt::internal;
-    if (const_check(sizeof(isnan(x)) != sizeof(fmt::internal::dummy_int)))
-      return isnan(x) != 0;
-    return _isnan(static_cast<double>(x)) != 0;
   }
 };
 }  // namespace std
@@ -1200,8 +1190,7 @@ It grisu2_prettify(const char* digits, int size, int exp, It it,
     *it++ = static_cast<Char>('.');
     if (!params.trailing_zeros) {
       // Remove trailing zeros.
-      while (size > full_exp && digits[size - 1] == '0')
-        --size;
+      while (size > full_exp && digits[size - 1] == '0') --size;
       return copy_str<Char>(digits + full_exp, digits + size, it);
     }
     it = copy_str<Char>(digits + full_exp, digits + size, it);
@@ -2849,22 +2838,15 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
     sign = spec.has(PLUS_FLAG) ? '+' : ' ';
   }
 
-  struct write_inf_or_nan_t {
-    basic_writer& writer;
-    format_specs spec;
-    char sign;
-    bool as_percentage;
-    void operator()(const char* str) const {
-      writer.write_padded(spec, inf_or_nan_writer{sign, as_percentage, str});
-    }
-  } write_inf_or_nan = {*this, spec, sign, handler.as_percentage};
-
-  // Format infinity and NaN ourselves because sprintf's output is not
-  // consistent across platforms.
-  if (internal::fputil::isinfinity(value))
-    return write_inf_or_nan(handler.upper ? "INF" : "inf");
-  if (internal::fputil::isnotanumber(value))
-    return write_inf_or_nan(handler.upper ? "NAN" : "nan");
+  if (!std::isfinite(value)) {
+    // Format infinity and NaN ourselves because sprintf's output is not
+    // consistent across platforms.
+    const char* str = internal::fputil::isinfinity(value)
+                          ? (handler.upper ? "INF" : "inf")
+                          : (handler.upper ? "NAN" : "nan");
+    return write_padded(spec,
+                        inf_or_nan_writer{sign, handler.as_percentage, str});
+  }
 
   if (handler.as_percentage) value *= 100;
 
@@ -2872,8 +2854,8 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   int exp = 0;
   int precision = spec.has_precision() || !spec.type ? spec.precision : 6;
   bool use_grisu = fmt::internal::use_grisu<T>() &&
-                   (spec.type != 'a' && spec.type != 'A' &&
-                    spec.type != 'e' && spec.type != 'E') &&
+                   (spec.type != 'a' && spec.type != 'A' && spec.type != 'e' &&
+                    spec.type != 'E') &&
                    internal::grisu2_format(static_cast<double>(value), buffer,
                                            precision, handler.fixed, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
@@ -2898,8 +2880,8 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
     auto params = internal::gen_digits_params();
     params.fixed = handler.fixed;
     params.num_digits = precision;
-    params.trailing_zeros =
-      (precision != 0 && (handler.fixed || !spec.type)) || spec.has(HASH_FLAG);
+    params.trailing_zeros = (precision != 0 && (handler.fixed || !spec.type)) ||
+                            spec.has(HASH_FLAG);
     write_padded(as, grisu_writer{sign, buffer, exp, params});
   } else {
     write_padded(as, double_writer{sign, buffer});
