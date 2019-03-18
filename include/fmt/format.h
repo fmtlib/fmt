@@ -3589,11 +3589,15 @@ inline std::size_t formatted_size(string_view format_str, const Args&... args) {
 namespace internal {
 
 #  if FMT_UDL_TEMPLATE
-template <typename Char, Char... CHARS> class udl_formatter {
+template <typename Char, Char... CHARS> class udl_formatter : fmt::compile_string {
  public:
+  typedef Char char_type;
+  static FMT_CONSTEXPR_DECL Char s[] = {CHARS..., '\0'};
+  FMT_CONSTEXPR operator fmt::basic_string_view<Char>() const {
+    return {s, sizeof...(CHARS)};
+  }
   template <typename... Args>
   std::basic_string<Char> operator()(const Args&... args) const {
-    FMT_CONSTEXPR_DECL Char s[] = {CHARS..., '\0'};
     FMT_CONSTEXPR_DECL bool invalid_format =
         do_check_format_string<Char, error_handler, Args...>(
             basic_string_view<Char>(s, sizeof...(CHARS)));
@@ -3603,7 +3607,12 @@ template <typename Char, Char... CHARS> class udl_formatter {
 };
 #  else
 template <typename Char> struct udl_formatter {
-  const Char* str;
+  typedef Char char_type;
+  basic_string_view<Char> str;
+  udl_formatter(const Char *s, std::size_t n) : str(s,n) {}
+  operator fmt::basic_string_view<Char>() const {
+    return str;
+  }
 
   template <typename... Args>
   auto operator()(Args&&... args) const
@@ -3611,6 +3620,10 @@ template <typename Char> struct udl_formatter {
     return format(str, std::forward<Args>(args)...);
   }
 };
+template <typename Char>
+basic_string_view<Char> to_string_view(const udl_formatter<Char> &s) {
+  return s;
+}
 #  endif  // FMT_UDL_TEMPLATE
 
 template <typename Char> struct udl_arg {
@@ -3641,12 +3654,12 @@ FMT_CONSTEXPR internal::udl_formatter<Char, CHARS...> operator""_format() {
   \endrst
  */
 inline internal::udl_formatter<char> operator"" _format(const char* s,
-                                                        std::size_t) {
-  return {s};
+                                                        std::size_t n) {
+  return {s, n};
 }
 inline internal::udl_formatter<wchar_t> operator"" _format(const wchar_t* s,
-                                                           std::size_t) {
-  return {s};
+                                                           std::size_t n) {
+  return {s, n};
 }
 #  endif  // FMT_UDL_TEMPLATE
 

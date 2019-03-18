@@ -1922,6 +1922,13 @@ TEST(FormatTest, UdlTemplate) {
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(L"{}"), 42));
 }
+
+TEST(LiteralsTest, FormatUdl) {
+  auto udl_format = format("{}c{}"_format, "ab", 1);
+  EXPECT_EQ(format("{}c{}", "ab", 1), udl_format);
+  auto udl_format_w = format(L"{}c{}"_format, L"ab", 1);
+  EXPECT_EQ(format(L"{}c{}", L"ab", 1), udl_format_w);
+}
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 
 enum TestEnum { A };
