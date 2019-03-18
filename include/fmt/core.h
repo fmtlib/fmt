@@ -618,6 +618,10 @@ struct is_string
                               decltype(to_string_view(declval<S>()))>::value> {
 };
 
+// Forward declare FILE* specialization defined in color.h
+template <> struct is_string<std::FILE*>;
+template <> struct is_string<const std::FILE*>;
+
 template <typename S> struct char_t {
   typedef decltype(to_string_view(declval<S>())) result;
   typedef typename result::char_type type;
