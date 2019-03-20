@@ -463,7 +463,7 @@ class arg_formatter
   using format_context = std::basic_format_context<typename base::iterator, char_type>;
   using parse_context = basic_format_parse_context<char_type>;
 
-  parse_context& parse_ctx_;
+  parse_context* parse_ctx_;
   format_context& ctx_;
 
  public:
@@ -478,14 +478,14 @@ class arg_formatter
     *spec* contains format specifier information for standard argument types.
     \endrst
    */
-  arg_formatter(parse_context& parse_ctx, format_context& ctx, fmt::format_specs* spec = FMT_NULL)
+  arg_formatter(format_context& ctx, parse_context* parse_ctx = FMT_NULL, fmt::format_specs* spec = FMT_NULL)
       : base(Range(ctx.out()), spec, {}), parse_ctx_(parse_ctx), ctx_(ctx) {}
 
   using base::operator();
 
   /** Formats an argument of a user-defined type. */
   iterator operator()(typename std::basic_format_arg<format_context>::handle handle) {
-    handle.format(parse_ctx_, ctx_);
+    handle.format(*parse_ctx_, ctx_);
     return this->out();
   }
 
@@ -576,7 +576,7 @@ struct format_handler : fmt::internal::error_handler {
     parse_ctx.advance_to(p);
     custom_formatter<Context> f(parse_ctx, context);
     if (!visit_format_arg(f, arg))
-      context.advance_to(visit_format_arg(ArgFormatter(parse_ctx, context), arg));
+      context.advance_to(visit_format_arg(ArgFormatter(context, &parse_ctx), arg));
   }
 
   const Char* on_format_specs(const Char* begin, const Char* end) {
@@ -591,7 +591,7 @@ struct format_handler : fmt::internal::error_handler {
     begin = parse_format_specs(begin, end, handler);
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
     parse_ctx.advance_to(begin);
-    context.advance_to(visit_format_arg(ArgFormatter(parse_ctx, context, &specs), arg));
+    context.advance_to(visit_format_arg(ArgFormatter(context, &parse_ctx, &specs), arg));
     return begin;
   }
 
@@ -658,13 +658,13 @@ struct formatter {
   template <typename FormatContext>
   auto format(const T& val, FormatContext& ctx) -> decltype(ctx.out()) {
     fmt::internal::handle_dynamic_spec<fmt::internal::width_checker>(
-        specs_.width_, specs_.width_ref, ctx);
+        specs_.width_, specs_.width_ref, ctx, FMT_NULL);
     fmt::internal::handle_dynamic_spec<fmt::internal::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx);
+        specs_.precision, specs_.precision_ref, ctx, FMT_NULL);
     typedef fmt::output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type>
         range_type;
-    return visit_format_arg(arg_formatter<range_type>(ctx, &specs_),
+    return visit_format_arg(arg_formatter<range_type>(ctx, FMT_NULL, &specs_),
                             basic_format_arg<FormatContext>(val));
   }
 
