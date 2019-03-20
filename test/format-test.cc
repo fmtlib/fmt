@@ -2477,6 +2477,15 @@ TEST(FormatTest, VFormatTo) {
 
 #endif  // FMT_USE_CONSTEXPR
 
+template <typename T> static std::string FmtToString(const T& t) {
+  return fmt::format(FMT_STRING("{}"), t);
+}
+
+TEST(FormatTest, FmtStringInTemplate) {
+  EXPECT_EQ(FmtToString(1), "1");
+  EXPECT_EQ(FmtToString(0), "0");
+}
+
 TEST(FormatTest, ConstructU8StringViewFromCString) {
   fmt::u8string_view s("ab");
   EXPECT_EQ(s.size(), 2u);

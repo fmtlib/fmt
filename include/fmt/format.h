@@ -3619,7 +3619,8 @@ FMT_END_NAMESPACE
       }                                                                   \
     } result;                                                             \
     /* Suppress Qt Creator warning about unused operator. */              \
-    (void)static_cast<fmt::basic_string_view<str::char_type>>(result);    \
+    (void)static_cast<fmt::basic_string_view<typename str::char_type>>(   \
+        result);                                                          \
     return result;                                                        \
   }()
 
