@@ -2137,9 +2137,9 @@ FMT_CONSTEXPR const typename ParseContext::char_type* parse_format_specs(
     ParseContext& ctx) {
   // GCC 7.2 requires initializer.
   typedef typename ParseContext::char_type char_type;
-  typename std::conditional<
-    is_formattable<T, format_context>::value,
-    formatter<T, char_type>, internal::fallback_formatter<T, char_type>>::type f;
+  typename std::conditional<is_formattable<T, format_context>::value,
+                            formatter<T, char_type>,
+                            internal::fallback_formatter<T, char_type>>::type f;
   return f.parse(ctx);
 }
 

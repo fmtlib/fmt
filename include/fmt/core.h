@@ -674,12 +674,11 @@ template <typename Context> struct custom_value {
                  Context& ctx);
 };
 
-template <typename T, typename Context>
-struct is_formattable {
+template <typename T, typename Context> struct is_formattable {
   enum {
-    value = !is_constructible<
-      typename Context::template formatter_type<T>::type,
-      internal::dummy_formatter_arg>::value
+    value =
+        !is_constructible<typename Context::template formatter_type<T>::type,
+                          internal::dummy_formatter_arg>::value
   };
 };
 
