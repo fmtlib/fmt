@@ -557,13 +557,22 @@ extern template int char_traits<wchar_t>::format_float<long double>(
     long double value);
 #endif
 
+// A workaround for std::string not having mutable data() until C++17.
+template <typename Char> inline Char* get_data(std::basic_string<Char>& s) {
+  return &s[0];
+}
+template <typename Container>
+inline typename Container::value_type* get_data(Container& c) {
+  return c.data();
+}
+
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
 inline typename checked<typename Container::value_type>::type reserve(
     std::back_insert_iterator<Container>& it, std::size_t n) {
   Container& c = internal::get_container(it);
   std::size_t size = c.size();
   c.resize(size + n);
-  return make_checked(&c[size], n);
+  return make_checked(get_data(c) + size, n);
 }
 
 template <typename Iterator>
