@@ -674,6 +674,15 @@ template <typename Context> struct custom_value {
                  Context& ctx);
 };
 
+template <typename T, typename Context>
+struct is_formattable {
+  enum {
+    value = !is_constructible<
+      typename Context::template formatter_type<T>::type,
+      internal::dummy_formatter_arg>::value
+  };
+};
+
 // A formatting argument value.
 template <typename Context> class value {
  public:
@@ -721,14 +730,10 @@ template <typename Context> class value {
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
-    typedef typename Context::template formatter_type<T>::type formatter;
-    enum {
-      formattable =
-          !is_constructible<formatter, internal::dummy_formatter_arg>::value
-    };
     custom.format = &format_custom_arg<
         T, typename std::conditional<
-               formattable, formatter,
+               is_formattable<T, Context>::value,
+               typename Context::template formatter_type<T>::type,
                internal::fallback_formatter<T, char_type>>::type>;
   }
 

@@ -173,6 +173,7 @@ TEST(OStreamTest, Join) {
 #if FMT_USE_CONSTEXPR
 TEST(OStreamTest, ConstexprString) {
   EXPECT_EQ("42", format(fmt("{}"), std::string("42")));
+  EXPECT_EQ("a string", format(fmt("{0}"), TestString("a string")));
 }
 #endif
 
