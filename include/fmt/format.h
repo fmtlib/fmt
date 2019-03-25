@@ -2703,7 +2703,9 @@ template <typename Range> class basic_writer {
     write_int(value, s);
   }
 
-  void write(double value) { write_double(value, format_specs()); }
+  void write(double value, const format_specs& spec = format_specs()) {
+    write_double(value, spec);
+  }
 
   /**
     \rst
@@ -2711,7 +2713,9 @@ template <typename Range> class basic_writer {
     (``'g'``) and writes it to the buffer.
     \endrst
    */
-  void write(long double value) { write_double(value, format_specs()); }
+  void write(long double value, const format_specs& spec = format_specs()) {
+    write_double(value, spec);
+  }
 
   /** Writes a character to the buffer. */
   void write(char value) {
