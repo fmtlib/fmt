@@ -2497,6 +2497,8 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
   arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<char> >(v##n)
 # define FMT_ASSIGN_wchar_t(n) \
   arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<wchar_t> >(v##n)
+# define FMT_ASSIGN_Char(n) \
+  arr[n] = fmt::internal::MakeValue< fmt::BasicFormatter<Char> >(v##n)
 
 #if FMT_USE_VARIADIC_TEMPLATES
 // Defines a variadic function returning void.
@@ -2530,9 +2532,10 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_WRAP1(func, arg_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   inline void func(arg_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    fmt::internal::ArgArray<n>::Type arr; \
+    FMT_GEN(n, FMT_ASSIGN_Char) ; \
     func(arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), arr)); \
   }
 
 // Emulates a variadic function returning void on a pre-C++11 compiler.
@@ -2547,9 +2550,10 @@ inline uint64_t make_type(FMT_GEN15(FMT_ARG_TYPE_DEFAULT)) {
 # define FMT_CTOR(ctor, func, arg0_type, arg1_type, n) \
   template <FMT_GEN(n, FMT_MAKE_TEMPLATE_ARG)> \
   ctor(arg0_type arg0, arg1_type arg1, FMT_GEN(n, FMT_MAKE_ARG)) { \
-    const fmt::internal::ArgArray<n>::Type array = {FMT_GEN(n, FMT_MAKE_REF)}; \
+    fmt::internal::ArgArray<n>::Type arr; \
+    FMT_GEN(n, FMT_ASSIGN_Char) ; \
     func(arg0, arg1, fmt::ArgList( \
-      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), array)); \
+      fmt::internal::make_type(FMT_GEN(n, FMT_MAKE_REF2)), arr)); \
   }
 
 // Emulates a variadic constructor on a pre-C++11 compiler.
