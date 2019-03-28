@@ -181,13 +181,21 @@ void format_error_code(internal::buffer& out, int error_code,
   assert(out.size() <= inline_buffer_size);
 }
 
+// try an fwrite, FMT_THROW on failure
+void fwrite_fully(const void *ptr, size_t size, size_t count, FILE *stream) {
+  size_t written = std::fwrite(ptr, size, count, stream);
+  if (written < count) {
+    FMT_THROW(system_error(errno, "cannot write to file"));
+  }
+}
+
 void report_error(FormatFunc func, int error_code,
                   string_view message) FMT_NOEXCEPT {
   memory_buffer full_message;
   func(full_message, error_code, message);
   // Use Writer::data instead of Writer::c_str to avoid potential memory
   // allocation.
-  std::fwrite(full_message.data(), full_message.size(), 1, stderr);
+  fwrite_fully(full_message.data(), 1, full_message.size(), stderr);
   std::fputc('\n', stderr);
 }
 }  // namespace
@@ -907,13 +915,13 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   memory_buffer buffer;
   internal::vformat_to(buffer, format_str,
                        basic_format_args<buffer_context<char>::type>(args));
-  std::fwrite(buffer.data(), 1, buffer.size(), f);
+  fwrite_fully(buffer.data(), 1, buffer.size(), f);
 }
 
 FMT_FUNC void vprint(std::FILE* f, wstring_view format_str, wformat_args args) {
   wmemory_buffer buffer;
   internal::vformat_to(buffer, format_str, args);
-  std::fwrite(buffer.data(), sizeof(wchar_t), buffer.size(), f);
+  fwrite_fully(buffer.data(), sizeof(wchar_t), buffer.size(), f);
 }
 
 FMT_FUNC void vprint(string_view format_str, format_args args) {
