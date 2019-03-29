@@ -182,7 +182,7 @@ void format_error_code(internal::buffer& out, int error_code,
 }
 
 // try an fwrite, FMT_THROW on failure
-void fwrite_fully(const void *ptr, size_t size, size_t count, FILE *stream) {
+void fwrite_fully(const void* ptr, size_t size, size_t count, FILE* stream) {
   size_t written = std::fwrite(ptr, size, count, stream);
   if (written < count) {
     FMT_THROW(system_error(errno, "cannot write to file"));
