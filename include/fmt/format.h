@@ -28,10 +28,10 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
-#include <stdint.h>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <limits>
 #include <memory>
@@ -248,6 +248,12 @@ namespace internal {
 #  define FMT_USE_GRISU 1
 #endif
 
+// A fallback implementation of uintptr_t for systems that lack it.
+struct uintptr_t {
+  unsigned char value[sizeof(void*)];
+};
+typedef std::numeric_limits<uintptr_t> numutil;
+
 template <typename T> inline bool use_grisu() {
   return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559 &&
          sizeof(T) <= sizeof(double);
@@ -296,6 +302,20 @@ typename Allocator::value_type* allocate(Allocator& alloc, std::size_t n) {
 }
 }  // namespace internal
 FMT_END_NAMESPACE
+
+namespace std {
+using namespace fmt::internal;
+// Standard permits specialization of std::numeric_limits. This specialization
+// is used to detect presence of uintptr_t.
+template <>
+class numeric_limits<fmt::internal::uintptr_t>
+    : public std::numeric_limits<int> {
+ public:
+  static uintptr_t to_uint(const void* p) {
+    return fmt::internal::bit_cast<uintptr_t>(p);
+  }
+};
+}  // namespace std
 
 FMT_BEGIN_NAMESPACE
 template <typename Range> class basic_writer;
@@ -1392,7 +1412,7 @@ template <typename Range> class arg_formatter_base {
     format_specs specs = specs_ ? *specs_ : format_specs();
     specs.flags = HASH_FLAG;
     specs.type = 'x';
-    writer_.write_int(reinterpret_cast<uintptr_t>(p), specs);
+    writer_.write_int(internal::numutil::to_uint(p), specs);
   }
 
  protected:
@@ -2764,7 +2784,7 @@ template <typename Range> class basic_writer {
     format_specs specs;
     specs.flags = HASH_FLAG;
     specs.type = 'x';
-    write_int(reinterpret_cast<uintptr_t>(p), specs);
+    write_int(internal::numutil::to_uint(p), specs);
   }
 };
 
