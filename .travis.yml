@@ -126,7 +126,6 @@ matrix:
 before_script:
   - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then export CXX=${COMPILER}; fi
   - if [[ "${BUILD}" != "Doc" ]]; then ${CXX} --version; fi
-  - if [[ "${BUILD}" == "Doc" ]]; then sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6B05F25D762E3157; fi
 
 script:
   - support/travis-build.py
