@@ -3335,21 +3335,15 @@ auto join(const Range& range, wstring_view sep)
     std::string answer = fmt::to_string(42);
   \endrst
  */
-template <typename T> std::string to_string(const T& value) {
-  std::string str;
-  internal::container_buffer<std::string> buf(str);
-  writer(buf).write(value);
-  return str;
+template <typename T> inline std::string to_string(const T& value) {
+  return format("{}", value);
 }
 
 /**
   Converts *value* to ``std::wstring`` using the default format for type *T*.
  */
-template <typename T> std::wstring to_wstring(const T& value) {
-  std::wstring str;
-  internal::container_buffer<std::wstring> buf(str);
-  wwriter(buf).write(value);
-  return str;
+template <typename T> inline std::wstring to_wstring(const T& value) {
+  return format(L"{}", value);
 }
 
 template <typename Char, std::size_t SIZE>
