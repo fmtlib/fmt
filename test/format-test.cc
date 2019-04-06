@@ -706,6 +706,7 @@ TEST(WriterTest, WriteUIntPtr) {
   fmt::writer writer(buf);
   writer.write_pointer(fmt::internal::bit_cast<fmt::internal::uintptr_t>(
     reinterpret_cast<void*>(0xface)), FMT_NULL);
+  EXPECT_EQ("0xface", to_string(buf));
 }
 
 TEST(FormatToTest, FormatWithoutArgs) {
