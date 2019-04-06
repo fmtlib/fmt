@@ -314,6 +314,8 @@ class numeric_limits<fmt::internal::uintptr_t>
   static uintptr_t to_uint(const void* p) {
     return fmt::internal::bit_cast<uintptr_t>(p);
   }
+
+  typedef uintptr_t uintptr_type;
 };
 }  // namespace std
 
@@ -779,6 +781,15 @@ inline int count_digits(uint64_t n) {
   }
 }
 #endif
+
+// Counts the number of digits in n. BITS = log2(radix).
+template <unsigned BITS, typename UInt> inline int count_digits(UInt n) {
+  int num_digits = 0;
+  do {
+    ++num_digits;
+  } while ((n >>= BITS) != 0);
+  return num_digits;
+}
 
 template <typename Char>
 inline size_t count_code_points(basic_string_view<Char> s) {
@@ -1409,10 +1420,7 @@ template <typename Range> class arg_formatter_base {
   }
 
   void write_pointer(const void* p) {
-    format_specs specs = specs_ ? *specs_ : format_specs();
-    specs.flags = HASH_FLAG;
-    specs.type = 'x';
-    writer_.write_int(internal::numutil::to_uint(p), specs);
+    writer_.write(p, specs_);
   }
 
  protected:
@@ -2486,16 +2494,6 @@ template <typename Range> class basic_writer {
 
     string_view get_prefix() const { return string_view(prefix, prefix_size); }
 
-    // Counts the number of digits in abs_value. BITS = log2(radix).
-    template <unsigned BITS> int count_digits() const {
-      unsigned_type n = abs_value;
-      int num_digits = 0;
-      do {
-        ++num_digits;
-      } while ((n >>= BITS) != 0);
-      return num_digits;
-    }
-
     int_writer(basic_writer<Range>& w, Int value, const Spec& s)
         : writer(w),
           spec(s),
@@ -2541,7 +2539,7 @@ template <typename Range> class basic_writer {
         prefix[prefix_size++] = '0';
         prefix[prefix_size++] = static_cast<char>(spec.type);
       }
-      int num_digits = count_digits<4>();
+      int num_digits = internal::count_digits<4>(abs_value);
       writer.write_int(num_digits, get_prefix(), spec,
                        hex_writer{*this, num_digits});
     }
@@ -2560,13 +2558,13 @@ template <typename Range> class basic_writer {
         prefix[prefix_size++] = '0';
         prefix[prefix_size++] = static_cast<char>(spec.type);
       }
-      int num_digits = count_digits<1>();
+      int num_digits = internal::count_digits<1>(abs_value);
       writer.write_int(num_digits, get_prefix(), spec,
                        bin_writer<1>{abs_value, num_digits});
     }
 
     void on_oct() {
-      int num_digits = count_digits<3>();
+      int num_digits = internal::count_digits<3>(abs_value);
       if (spec.has(HASH_FLAG) && spec.precision <= num_digits) {
         // Octal prefix '0' is counted as a digit, so only add it if precision
         // is not greater than the number of digits.
@@ -2692,6 +2690,20 @@ template <typename Range> class basic_writer {
     }
   };
 
+  struct pointer_writer {
+    internal::numutil::uintptr_type value;
+    int num_digits;
+
+    size_t size() const { return num_digits + 2; }
+    size_t width() const { return size(); }
+
+    template <typename It> void operator()(It&& it) const {
+      *it++ = static_cast<char_type>('0');
+      *it++ = static_cast<char_type>('x');
+      it = internal::format_uint<4, char_type>(it, value, num_digits, false);
+    }
+  };
+
   template <typename Char> friend class internal::arg_formatter_base;
 
  public:
@@ -2780,11 +2792,14 @@ template <typename Range> class basic_writer {
   }
 
   template <typename T, FMT_ENABLE_IF(std::is_same<T, void>::value)>
-  void write(const T* p) {
-    format_specs specs;
-    specs.flags = HASH_FLAG;
-    specs.type = 'x';
-    write_int(internal::numutil::to_uint(p), specs);
+  void write(const T* p, const align_spec* spec) {
+    auto value = internal::numutil::to_uint(p);
+    int num_digits = internal::count_digits<4>(value);
+    auto pw = pointer_writer{value, num_digits};
+    if (!spec) return pw(reserve(num_digits + 2));
+    align_spec as = *spec;
+    if (as.align() == ALIGN_DEFAULT) as.align_ = ALIGN_RIGHT;
+    write_padded(as, pw);
   }
 };
 
