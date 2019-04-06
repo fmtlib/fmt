@@ -128,4 +128,5 @@ before_script:
   - if [[ "${BUILD}" != "Doc" ]]; then ${CXX} --version; fi
 
 script:
+  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6B05F25D762E3157
   - support/travis-build.py
