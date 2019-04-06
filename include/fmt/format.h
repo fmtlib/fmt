@@ -304,7 +304,7 @@ typename Allocator::value_type* allocate(Allocator& alloc, std::size_t n) {
 FMT_END_NAMESPACE
 
 namespace std {
-using namespace fmt::internal;
+using namespace fmt::v5::internal;
 // Standard permits specialization of std::numeric_limits. This specialization
 // is used to detect presence of uintptr_t.
 template <>
@@ -2713,8 +2713,7 @@ template <typename Range> class basic_writer {
     }
   };
 
-  template <typename UIntPtr>
-  struct pointer_writer {
+  template <typename UIntPtr> struct pointer_writer {
     UIntPtr value;
     int num_digits;
 
