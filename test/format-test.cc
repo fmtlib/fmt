@@ -701,6 +701,13 @@ TEST(WriterTest, WriteWideString) {
   // std::declval<fmt::basic_writer<fmt::wbuffer>>().write("abc");
 }
 
+TEST(WriterTest, WriteUIntPtr) {
+  memory_buffer buf;
+  fmt::writer writer(buf);
+  writer.write_pointer(fmt::internal::bit_cast<fmt::internal::uintptr_t>(
+    reinterpret_cast<void*>(0xface)), FMT_NULL);
+}
+
 TEST(FormatToTest, FormatWithoutArgs) {
   std::string s;
   fmt::format_to(std::back_inserter(s), "test");

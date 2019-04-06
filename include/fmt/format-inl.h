@@ -244,6 +244,15 @@ FMT_FUNC void system_error::init(int err_code, string_view format_str,
 }
 
 namespace internal {
+
+template <> FMT_FUNC int count_digits<4>(internal::uintptr_t n) {
+  // Assume little endian; pointer formatting is implementation-defined anyway.
+  int i = static_cast<int>(sizeof(void*)) - 1;
+  while (i > 0 && n.value[i] == 0) --i;
+  auto char_digits = std::numeric_limits<unsigned char>::digits / 4;
+  return i >= 0 ? i * char_digits + count_digits<4, unsigned>(n.value[i]) : 1;
+}
+
 template <typename T>
 int char_traits<char>::format_float(char* buf, std::size_t size,
                                     const char* format, int precision,
@@ -267,6 +276,9 @@ const char basic_data<T>::DIGITS[] =
     "4041424344454647484950515253545556575859"
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
+
+template <typename T>
+const char basic_data<T>::HEX_DIGITS[] = "0123456789abcdef";
 
 #define FMT_POWERS_OF_10(factor)                                             \
   factor * 10, factor * 100, factor * 1000, factor * 10000, factor * 100000, \

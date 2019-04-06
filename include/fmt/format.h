@@ -311,11 +311,11 @@ template <>
 class numeric_limits<fmt::internal::uintptr_t>
     : public std::numeric_limits<int> {
  public:
-  static uintptr_t to_uint(const void* p) {
-    return fmt::internal::bit_cast<uintptr_t>(p);
-  }
-
   typedef uintptr_t uintptr_type;
+
+  static uintptr_type to_uint(const void* p) {
+    return fmt::internal::bit_cast<uintptr_type>(p);
+  }
 };
 }  // namespace std
 
@@ -743,6 +743,7 @@ template <typename T = void> struct FMT_API basic_data {
   static const uint64_t POW10_SIGNIFICANDS[];
   static const int16_t POW10_EXPONENTS[];
   static const char DIGITS[];
+  static const char HEX_DIGITS[];
   static const char FOREGROUND_COLOR[];
   static const char BACKGROUND_COLOR[];
   static const char RESET_COLOR[5];
@@ -790,6 +791,8 @@ template <unsigned BITS, typename UInt> inline int count_digits(UInt n) {
   } while ((n >>= BITS) != 0);
   return num_digits;
 }
+
+template <> int count_digits<4>(internal::uintptr_t n);
 
 template <typename Char>
 inline size_t count_code_points(basic_string_view<Char> s) {
@@ -1002,12 +1005,32 @@ inline Char* format_uint(Char* buffer, UInt value, int num_digits,
   buffer += num_digits;
   Char* end = buffer;
   do {
-    const char* digits = upper ? "0123456789ABCDEF" : "0123456789abcdef";
+    const char* digits = upper ? "0123456789ABCDEF" : data::HEX_DIGITS;
     unsigned digit = (value & ((1 << BASE_BITS) - 1));
     *--buffer = static_cast<Char>(BASE_BITS < 4 ? static_cast<char>('0' + digit)
                                                 : digits[digit]);
   } while ((value >>= BASE_BITS) != 0);
   return end;
+}
+
+template <unsigned BASE_BITS, typename Char>
+Char* format_uint(Char* buffer, internal::uintptr_t n, int num_digits,
+                  bool = false) {
+  auto char_digits = std::numeric_limits<unsigned char>::digits / 4;
+  int start = (num_digits + char_digits - 1) / char_digits - 1;
+  if (int start_digits = num_digits % char_digits)
+    buffer = format_uint<BASE_BITS>(buffer, n.value[start--], start_digits);
+  for (; start >= 0; --start) {
+    auto value = n.value[start];
+    buffer += char_digits;
+    auto p = buffer;
+    for (int i = 0; i < char_digits; ++i) {
+      unsigned digit = (value & ((1 << BASE_BITS) - 1));
+      *--p = static_cast<Char>(data::HEX_DIGITS[digit]);
+      value >>= BASE_BITS;
+    }
+  }
+  return buffer;
 }
 
 template <unsigned BASE_BITS, typename Char, typename It, typename UInt>
@@ -1420,7 +1443,7 @@ template <typename Range> class arg_formatter_base {
   }
 
   void write_pointer(const void* p) {
-    writer_.write(p, specs_);
+    writer_.write_pointer(internal::numutil::to_uint(p), specs_);
   }
 
  protected:
@@ -2690,8 +2713,9 @@ template <typename Range> class basic_writer {
     }
   };
 
+  template <typename UIntPtr>
   struct pointer_writer {
-    internal::numutil::uintptr_type value;
+    UIntPtr value;
     int num_digits;
 
     size_t size() const { return num_digits + 2; }
@@ -2700,7 +2724,7 @@ template <typename Range> class basic_writer {
     template <typename It> void operator()(It&& it) const {
       *it++ = static_cast<char_type>('0');
       *it++ = static_cast<char_type>('x');
-      it = internal::format_uint<4, char_type>(it, value, num_digits, false);
+      it = internal::format_uint<4, char_type>(it, value, num_digits);
     }
   };
 
@@ -2791,11 +2815,10 @@ template <typename Range> class basic_writer {
     write(data, size, spec);
   }
 
-  template <typename T, FMT_ENABLE_IF(std::is_same<T, void>::value)>
-  void write(const T* p, const align_spec* spec) {
-    auto value = internal::numutil::to_uint(p);
+  template <typename UIntPtr>
+  void write_pointer(UIntPtr value, const align_spec* spec) {
     int num_digits = internal::count_digits<4>(value);
-    auto pw = pointer_writer{value, num_digits};
+    auto pw = pointer_writer<UIntPtr>{value, num_digits};
     if (!spec) return pw(reserve(num_digits + 2));
     align_spec as = *spec;
     if (as.align() == ALIGN_DEFAULT) as.align_ = ALIGN_RIGHT;
