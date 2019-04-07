@@ -1018,10 +1018,12 @@ Char* format_uint(Char* buffer, internal::uintptr_t n, int num_digits,
                   bool = false) {
   auto char_digits = std::numeric_limits<unsigned char>::digits / 4;
   int start = (num_digits + char_digits - 1) / char_digits - 1;
-  if (int start_digits = num_digits % char_digits)
-    buffer = format_uint<BASE_BITS>(buffer, n.value[start--], start_digits);
+  if (int start_digits = num_digits % char_digits) {
+    unsigned value = n.value[start--];
+    buffer = format_uint<BASE_BITS>(buffer, value, start_digits);
+  }
   for (; start >= 0; --start) {
-    auto value = n.value[start];
+    unsigned value = n.value[start];
     buffer += char_digits;
     auto p = buffer;
     for (int i = 0; i < char_digits; ++i) {
