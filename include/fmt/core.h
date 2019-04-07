@@ -241,10 +241,10 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
 }
 
 /** A contiguous memory buffer with an optional growing ability. */
-template <typename T> class basic_buffer {
+template <typename T> class buffer {
  private:
-  basic_buffer(const basic_buffer&) = delete;
-  void operator=(const basic_buffer&) = delete;
+  buffer(const buffer&) = delete;
+  void operator=(const buffer&) = delete;
 
   T* ptr_;
   std::size_t size_;
@@ -252,12 +252,12 @@ template <typename T> class basic_buffer {
 
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
-  basic_buffer(std::size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
+  buffer(std::size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
 
-  basic_buffer(T* p = FMT_NULL, std::size_t sz = 0,
-               std::size_t cap = 0) FMT_NOEXCEPT : ptr_(p),
-                                                   size_(sz),
-                                                   capacity_(cap) {}
+  buffer(T* p = FMT_NULL, std::size_t sz = 0, std::size_t cap = 0) FMT_NOEXCEPT
+      : ptr_(p),
+        size_(sz),
+        capacity_(cap) {}
 
   /** Sets the buffer data and capacity. */
   void set(T* buf_data, std::size_t buf_capacity) FMT_NOEXCEPT {
@@ -272,7 +272,7 @@ template <typename T> class basic_buffer {
   typedef T value_type;
   typedef const T& const_reference;
 
-  virtual ~basic_buffer() {}
+  virtual ~buffer() {}
 
   T* begin() FMT_NOEXCEPT { return ptr_; }
   T* end() FMT_NOEXCEPT { return ptr_ + size_; }
@@ -317,12 +317,9 @@ template <typename T> class basic_buffer {
   const T& operator[](std::size_t index) const { return ptr_[index]; }
 };
 
-typedef basic_buffer<char> buffer;
-typedef basic_buffer<wchar_t> wbuffer;
-
 // A container-backed buffer.
 template <typename Container>
-class container_buffer : public basic_buffer<typename Container::value_type> {
+class container_buffer : public buffer<typename Container::value_type> {
  private:
   Container& container_;
 
@@ -334,7 +331,7 @@ class container_buffer : public basic_buffer<typename Container::value_type> {
 
  public:
   explicit container_buffer(Container& c)
-      : basic_buffer<typename Container::value_type>(c.size()), container_(c) {}
+      : buffer<typename Container::value_type>(c.size()), container_(c) {}
 };
 
 // Extracts a reference to the container from back_insert_iterator.
@@ -1141,7 +1138,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
 
 template <typename Char> struct buffer_context {
   typedef basic_format_context<
-      std::back_insert_iterator<internal::basic_buffer<Char>>, Char>
+      std::back_insert_iterator<internal::buffer<Char>>, Char>
       type;
 };
 typedef buffer_context<char>::type format_context;
@@ -1381,7 +1378,7 @@ std::basic_string<Char> vformat(
 
 template <typename Char>
 typename buffer_context<Char>::type::iterator vformat_to(
-    internal::basic_buffer<Char>& buf, basic_string_view<Char> format_str,
+    internal::buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<typename buffer_context<Char>::type> args);
 }  // namespace internal
 
@@ -1415,7 +1412,7 @@ template <typename Char>
 struct is_contiguous<std::basic_string<Char>> : std::true_type {};
 
 template <typename Char>
-struct is_contiguous<internal::basic_buffer<Char>> : std::true_type {};
+struct is_contiguous<internal::buffer<Char>> : std::true_type {};
 
 /** Formats a string and writes the output to ``out``. */
 template <typename Container, typename S>

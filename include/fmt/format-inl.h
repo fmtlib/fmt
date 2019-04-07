@@ -85,7 +85,7 @@ inline int fmt_snprintf(char* buffer, size_t size, const char* format, ...) {
 #  define FMT_SWPRINTF swprintf
 #endif  // defined(_WIN32) && defined(__MINGW32__) && !defined(__NO_ISOCEXT)
 
-typedef void (*FormatFunc)(internal::buffer&, int, string_view);
+typedef void (*FormatFunc)(internal::buffer<char>&, int, string_view);
 
 // Portable thread-safe version of strerror.
 // Sets buffer to point to a string describing the error code.
@@ -154,7 +154,7 @@ int safe_strerror(int error_code, char*& buffer,
   return dispatcher(error_code, buffer, buffer_size).run();
 }
 
-void format_error_code(internal::buffer& out, int error_code,
+void format_error_code(internal::buffer<char>& out, int error_code,
                        string_view message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
   // inline_buffer_size to avoid dynamic memory allocation and potential
@@ -661,7 +661,7 @@ struct shortest_handler {
 
 template <typename Double, typename std::enable_if<
                                sizeof(Double) == sizeof(uint64_t), int>::type>
-FMT_FUNC bool grisu2_format(Double value, buffer& buf, int precision,
+FMT_FUNC bool grisu2_format(Double value, buffer<char>& buf, int precision,
                             bool fixed, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
   if (value <= 0) {  // <= instead of == to silence a warning.
@@ -713,7 +713,7 @@ FMT_FUNC bool grisu2_format(Double value, buffer& buf, int precision,
 }
 
 template <typename Double>
-void sprintf_format(Double value, internal::buffer& buf,
+void sprintf_format(Double value, internal::buffer<char>& buf,
                     core_format_specs spec) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buf.capacity() != 0, "empty buffer");
@@ -849,7 +849,7 @@ FMT_FUNC void windows_error::init(int err_code, string_view format_str,
   base = std::runtime_error(to_string(buffer));
 }
 
-FMT_FUNC void internal::format_windows_error(internal::buffer& out,
+FMT_FUNC void internal::format_windows_error(internal::buffer<char>& out,
                                              int error_code,
                                              string_view message) FMT_NOEXCEPT {
   FMT_TRY {
@@ -883,7 +883,7 @@ FMT_FUNC void internal::format_windows_error(internal::buffer& out,
 
 #endif  // FMT_USE_WINDOWS_H
 
-FMT_FUNC void format_system_error(internal::buffer& out, int error_code,
+FMT_FUNC void format_system_error(internal::buffer<char>& out, int error_code,
                                   string_view message) FMT_NOEXCEPT {
   FMT_TRY {
     memory_buffer buf;

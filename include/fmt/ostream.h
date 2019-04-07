@@ -19,10 +19,10 @@ template <class Char> class formatbuf : public std::basic_streambuf<Char> {
   typedef typename std::basic_streambuf<Char>::int_type int_type;
   typedef typename std::basic_streambuf<Char>::traits_type traits_type;
 
-  basic_buffer<Char>& buffer_;
+  buffer<Char>& buffer_;
 
  public:
-  formatbuf(basic_buffer<Char>& buffer) : buffer_(buffer) {}
+  formatbuf(buffer<Char>& buffer) : buffer_(buffer) {}
 
  protected:
   // The put-area is actually always empty. This makes the implementation
@@ -71,7 +71,7 @@ template <typename T, typename Char> class is_streamable {
 
 // Write the content of buf to os.
 template <typename Char>
-void write(std::basic_ostream<Char>& os, basic_buffer<Char>& buf) {
+void write(std::basic_ostream<Char>& os, buffer<Char>& buf) {
   const Char* data = buf.data();
   typedef std::make_unsigned<std::streamsize>::type UnsignedStreamSize;
   UnsignedStreamSize size = buf.size();
@@ -86,7 +86,7 @@ void write(std::basic_ostream<Char>& os, basic_buffer<Char>& buf) {
 }
 
 template <typename Char, typename T>
-void format_value(basic_buffer<Char>& buffer, const T& value) {
+void format_value(buffer<Char>& buffer, const T& value) {
   internal::formatbuf<Char> format_buf(buffer);
   std::basic_ostream<Char> output(&format_buf);
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);

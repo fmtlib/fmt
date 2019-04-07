@@ -352,8 +352,8 @@ class back_insert_range
   back_insert_range(typename base::iterator it) : base(it) {}
 };
 
-typedef basic_writer<back_insert_range<internal::buffer>> writer;
-typedef basic_writer<back_insert_range<internal::wbuffer>> wwriter;
+typedef basic_writer<back_insert_range<internal::buffer<char>>> writer;
+typedef basic_writer<back_insert_range<internal::buffer<wchar_t>>> wwriter;
 
 /** A formatting error such as invalid format string. */
 class format_error : public std::runtime_error {
@@ -383,7 +383,7 @@ template <typename T> inline T* make_checked(T* p, std::size_t) { return p; }
 
 template <typename T>
 template <typename U>
-void basic_buffer<T>::append(const U* begin, const U* end) {
+void buffer<T>::append(const U* begin, const U* end) {
   std::size_t new_size = size_ + internal::to_unsigned(end - begin);
   reserve(new_size);
   std::uninitialized_copy(begin, end,
@@ -454,8 +454,7 @@ enum { inline_buffer_size = 500 };
  */
 template <typename T, std::size_t SIZE = inline_buffer_size,
           typename Allocator = std::allocator<T>>
-class basic_memory_buffer : private Allocator,
-                            public internal::basic_buffer<T> {
+class basic_memory_buffer : private Allocator, public internal::buffer<T> {
  private:
   T store_[SIZE];
 
@@ -1087,7 +1086,8 @@ class utf16_to_utf8 {
   FMT_API int convert(wstring_view s);
 };
 
-FMT_API void format_windows_error(fmt::internal::buffer& out, int error_code,
+FMT_API void format_windows_error(fmt::internal::buffer<char>& out,
+                                  int error_code,
                                   fmt::string_view message) FMT_NOEXCEPT;
 #endif
 
@@ -1149,10 +1149,10 @@ namespace internal {
 // Formats value using Grisu2 algorithm:
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
 template <typename Double, FMT_ENABLE_IF(sizeof(Double) == sizeof(uint64_t))>
-FMT_API bool grisu2_format(Double value, buffer& buf, int precision, bool fixed,
-                           int& exp);
+FMT_API bool grisu2_format(Double value, buffer<char>& buf, int precision,
+                           bool fixed, int& exp);
 template <typename Double, FMT_ENABLE_IF(sizeof(Double) != sizeof(uint64_t))>
-inline bool grisu2_format(Double, buffer&, int, bool, int&) {
+inline bool grisu2_format(Double, buffer<char>&, int, bool, int&) {
   return false;
 }
 
@@ -1242,7 +1242,7 @@ It grisu2_prettify(const char* digits, int size, int exp, It it,
 }
 
 template <typename Double>
-void sprintf_format(Double, internal::buffer&, core_format_specs);
+void sprintf_format(Double, internal::buffer<char>&, core_format_specs);
 
 template <typename Handler>
 FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
@@ -2405,7 +2405,7 @@ class system_error : public std::runtime_error {
   may look like "Unknown error -1" and is platform-dependent.
   \endrst
  */
-FMT_API void format_system_error(internal::buffer& out, int error_code,
+FMT_API void format_system_error(internal::buffer<char>& out, int error_code,
                                  fmt::string_view message) FMT_NOEXCEPT;
 
 /**
@@ -2654,7 +2654,7 @@ template <typename Range> class basic_writer {
 
   struct double_writer {
     char sign;
-    internal::buffer& buffer;
+    internal::buffer<char>& buffer;
 
     size_t size() const { return buffer.size() + (sign ? 1 : 0); }
     size_t width() const { return size(); }
@@ -2667,14 +2667,14 @@ template <typename Range> class basic_writer {
 
   class grisu_writer {
    private:
-    internal::buffer& digits_;
+    internal::buffer<char>& digits_;
     size_t size_;
     char sign_;
     int exp_;
     internal::gen_digits_params params_;
 
    public:
-    grisu_writer(char sign, internal::buffer& digits, int exp,
+    grisu_writer(char sign, internal::buffer<char>& digits, int exp,
                  const internal::gen_digits_params& params)
         : digits_(digits), sign_(sign), exp_(exp), params_(params) {
       int num_digits = static_cast<int>(digits.size());
@@ -3392,9 +3392,9 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE>& buf) {
 
 template <typename Char>
 typename buffer_context<Char>::type::iterator internal::vformat_to(
-    internal::basic_buffer<Char>& buf, basic_string_view<Char> format_str,
+    internal::buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
-  typedef back_insert_range<internal::basic_buffer<Char>> range;
+  typedef back_insert_range<internal::buffer<Char>> range;
   return vformat_to<arg_formatter<range>>(buf, to_string_view(format_str),
                                           args);
 }
@@ -3402,7 +3402,7 @@ typename buffer_context<Char>::type::iterator internal::vformat_to(
 template <typename S, typename Char = FMT_CHAR(S),
           FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline typename buffer_context<Char>::type::iterator vformat_to(
-    internal::basic_buffer<Char>& buf, const S& format_str,
+    internal::buffer<Char>& buf, const S& format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
   return internal::vformat_to(buf, to_string_view(format_str), args);
 }

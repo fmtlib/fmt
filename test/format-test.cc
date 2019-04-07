@@ -20,8 +20,8 @@
 #  include <windows.h>
 #endif
 
-#include "fmt/format.h"
 #include "fmt/color.h"
+#include "fmt/format.h"
 #include "gmock.h"
 #include "gtest-extra.h"
 #include "mock-allocator.h"
@@ -103,7 +103,7 @@ void std_format(long double value, std::wstring& result) {
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T& value, const char* type) {
   fmt::basic_memory_buffer<Char> buffer;
-  typedef fmt::back_insert_range<fmt::internal::basic_buffer<Char>> range;
+  typedef fmt::back_insert_range<fmt::internal::buffer<Char>> range;
   fmt::basic_writer<range> writer(buffer);
   writer.write(value);
   std::basic_string<Char> actual = to_string(buffer);
@@ -472,8 +472,8 @@ TEST(UtilTest, UTF16ToUTF8Convert) {
 }
 #endif  // _WIN32
 
-typedef void (*FormatErrorMessage)(fmt::internal::buffer& out, int error_code,
-                                   string_view message);
+typedef void (*FormatErrorMessage)(fmt::internal::buffer<char>& out,
+                                   int error_code, string_view message);
 
 template <typename Error>
 void check_throw_error(int error_code, FormatErrorMessage format) {
@@ -705,7 +705,8 @@ TEST(WriterTest, WriteUIntPtr) {
   memory_buffer buf;
   fmt::writer writer(buf);
   writer.write_pointer(fmt::internal::bit_cast<fmt::internal::uintptr_t>(
-    reinterpret_cast<void*>(0xface)), FMT_NULL);
+                           reinterpret_cast<void*>(0xface)),
+                       FMT_NULL);
   EXPECT_EQ("0xface", to_string(buf));
 }
 
@@ -1948,7 +1949,7 @@ enum TestFixedEnum : short { B };
 TEST(FormatTest, FixedEnum) { EXPECT_EQ("0", fmt::format("{}", B)); }
 #endif
 
-typedef fmt::back_insert_range<fmt::internal::buffer> buffer_range;
+typedef fmt::back_insert_range<fmt::internal::buffer<char>> buffer_range;
 
 class mock_arg_formatter
     : public fmt::internal::function<

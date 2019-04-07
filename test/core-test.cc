@@ -31,7 +31,7 @@
 
 using fmt::basic_format_arg;
 using fmt::string_view;
-using fmt::internal::basic_buffer;
+using fmt::internal::buffer;
 using fmt::internal::value;
 
 using testing::_;
@@ -54,7 +54,7 @@ template <typename Char> struct formatter<test_struct, Char> {
     return ctx.begin();
   }
 
-  typedef std::back_insert_iterator<basic_buffer<Char>> iterator;
+  typedef std::back_insert_iterator<buffer<Char>> iterator;
 
   auto format(test_struct, basic_format_context<iterator, char>& ctx)
       -> decltype(ctx.out()) {
@@ -66,28 +66,28 @@ FMT_END_NAMESPACE
 
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 470
 TEST(BufferTest, Noncopyable) {
-  EXPECT_FALSE(std::is_copy_constructible<basic_buffer<char>>::value);
+  EXPECT_FALSE(std::is_copy_constructible<buffer<char>>::value);
 #  if !FMT_MSC_VER
   // std::is_copy_assignable is broken in MSVC2013.
-  EXPECT_FALSE(std::is_copy_assignable<basic_buffer<char>>::value);
+  EXPECT_FALSE(std::is_copy_assignable<buffer<char>>::value);
 #  endif
 }
 
 TEST(BufferTest, Nonmoveable) {
-  EXPECT_FALSE(std::is_move_constructible<basic_buffer<char>>::value);
+  EXPECT_FALSE(std::is_move_constructible<buffer<char>>::value);
 #  if !FMT_MSC_VER
   // std::is_move_assignable is broken in MSVC2013.
-  EXPECT_FALSE(std::is_move_assignable<basic_buffer<char>>::value);
+  EXPECT_FALSE(std::is_move_assignable<buffer<char>>::value);
 #  endif
 }
 #endif
 
 // A test buffer with a dummy grow method.
-template <typename T> struct test_buffer : basic_buffer<T> {
+template <typename T> struct test_buffer : buffer<T> {
   void grow(std::size_t capacity) { this->set(FMT_NULL, capacity); }
 };
 
-template <typename T> struct mock_buffer : basic_buffer<T> {
+template <typename T> struct mock_buffer : buffer<T> {
   MOCK_METHOD1(do_grow, void(std::size_t capacity));
 
   void grow(std::size_t capacity) {
@@ -133,7 +133,7 @@ TEST(BufferTest, VirtualDtor) {
   typedef StrictMock<dying_buffer> stict_mock_buffer;
   stict_mock_buffer* mock_buffer = new stict_mock_buffer();
   EXPECT_CALL(*mock_buffer, die());
-  basic_buffer<int>* buffer = mock_buffer;
+  buffer<int>* buffer = mock_buffer;
   delete buffer;
 }
 
@@ -144,7 +144,7 @@ TEST(BufferTest, Access) {
   EXPECT_EQ(11, buffer[0]);
   buffer[3] = 42;
   EXPECT_EQ(42, *(&buffer[0] + 3));
-  const basic_buffer<char>& const_buffer = buffer;
+  const fmt::internal::buffer<char>& const_buffer = buffer;
   EXPECT_EQ(42, const_buffer[3]);
 }
 
@@ -293,7 +293,7 @@ VISIT_TYPE(float, double);
   {                                                                           \
     testing::StrictMock<mock_visitor<decltype(expected)>> visitor;            \
     EXPECT_CALL(visitor, visit(expected));                                    \
-    typedef std::back_insert_iterator<basic_buffer<Char>> iterator;           \
+    typedef std::back_insert_iterator<buffer<Char>> iterator;                 \
     fmt::visit_format_arg(                                                    \
         visitor, make_arg<fmt::basic_format_context<iterator, Char>>(value)); \
   }
@@ -371,12 +371,12 @@ TEST(ArgTest, PointerArg) {
 struct check_custom {
   test_result operator()(
       fmt::basic_format_arg<fmt::format_context>::handle h) const {
-    struct test_buffer : fmt::internal::basic_buffer<char> {
+    struct test_buffer : fmt::internal::buffer<char> {
       char data[10];
-      test_buffer() : fmt::internal::basic_buffer<char>(data, 0, 10) {}
+      test_buffer() : fmt::internal::buffer<char>(data, 0, 10) {}
       void grow(std::size_t) {}
     } buffer;
-    fmt::internal::basic_buffer<char>& base = buffer;
+    fmt::internal::buffer<char>& base = buffer;
     fmt::format_parse_context parse_ctx("");
     fmt::format_context ctx(std::back_inserter(base), fmt::format_args());
     h.format(parse_ctx, ctx);

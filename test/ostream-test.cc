@@ -51,7 +51,7 @@ TEST(OStreamTest, Enum) {
   EXPECT_EQ(L"0", fmt::format(L"{}", A));
 }
 
-typedef fmt::back_insert_range<fmt::internal::buffer> range;
+typedef fmt::back_insert_range<fmt::internal::buffer<char>> range;
 
 struct test_arg_formatter : fmt::arg_formatter<range> {
   fmt::format_parse_context parse_ctx;
@@ -61,7 +61,7 @@ struct test_arg_formatter : fmt::arg_formatter<range> {
 
 TEST(OStreamTest, CustomArg) {
   fmt::memory_buffer buffer;
-  fmt::internal::buffer& base = buffer;
+  fmt::internal::buffer<char>& base = buffer;
   fmt::format_context ctx(std::back_inserter(base), fmt::format_args());
   fmt::format_specs spec;
   test_arg_formatter af(ctx, spec);
@@ -134,7 +134,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   std::streamsize max_streamsize = std::numeric_limits<std::streamsize>::max();
   if (max_size <= fmt::internal::to_unsigned(max_streamsize)) return;
 
-  struct test_buffer : fmt::internal::buffer {
+  struct test_buffer : fmt::internal::buffer<char> {
     explicit test_buffer(std::size_t size) { resize(size); }
     void grow(std::size_t) {}
   } buffer(max_size);

@@ -41,10 +41,10 @@ namespace std {
   template<class O, class charT> FMT_REQUIRES(OutputIterator<O, const charT&>)
     class basic_format_context;
   using format_context = basic_format_context<
-    /* unspecified */ std::back_insert_iterator<fmt::internal::basic_buffer<char>>,
+    /* unspecified */ std::back_insert_iterator<fmt::internal::buffer<char>>,
     char>;
   using wformat_context = basic_format_context<
-    /* unspecified */ std::back_insert_iterator<fmt::internal::basic_buffer<wchar_t>>,
+    /* unspecified */ std::back_insert_iterator<fmt::internal::buffer<wchar_t>>,
     wchar_t>;
 
   template<class T, class charT = char> struct formatter {
@@ -686,8 +686,8 @@ template<class... Args>
 
 string vformat(string_view fmt, format_args args) {
   fmt::memory_buffer mbuf;
-  fmt::internal::buffer& buf = mbuf;
-  typedef fmt::back_insert_range<fmt::internal::buffer> range;
+  fmt::internal::buffer<char>& buf = mbuf;
+  typedef fmt::back_insert_range<fmt::internal::buffer<char>> range;
   detail::format_handler<detail::arg_formatter<range>, char, format_context>
     h(range(std::back_inserter(buf)), fmt, args, {});
   fmt::internal::parse_format_string<false>(fmt::to_string_view(fmt), h);

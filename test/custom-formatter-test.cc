@@ -14,9 +14,10 @@
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
 class custom_arg_formatter
-    : public fmt::arg_formatter<fmt::back_insert_range<fmt::internal::buffer>> {
+    : public fmt::arg_formatter<
+          fmt::back_insert_range<fmt::internal::buffer<char>>> {
  public:
-  typedef fmt::back_insert_range<fmt::internal::buffer> range;
+  typedef fmt::back_insert_range<fmt::internal::buffer<char>> range;
   typedef fmt::arg_formatter<range> base;
 
   custom_arg_formatter(fmt::format_context& ctx,

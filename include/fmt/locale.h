@@ -16,10 +16,10 @@ FMT_BEGIN_NAMESPACE
 namespace internal {
 template <typename Char>
 typename buffer_context<Char>::type::iterator vformat_to(
-    const std::locale& loc, basic_buffer<Char>& buf,
+    const std::locale& loc, buffer<Char>& buf,
     basic_string_view<Char> format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
-  typedef back_insert_range<basic_buffer<Char>> range;
+  typedef back_insert_range<buffer<Char>> range;
   return vformat_to<arg_formatter<range>>(buf, to_string_view(format_str), args,
                                           internal::locale_ref(loc));
 }

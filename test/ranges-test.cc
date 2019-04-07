@@ -44,8 +44,8 @@ TEST(RangesTest, FormatPair) {
 }
 
 TEST(RangesTest, FormatTuple) {
-  std::tuple<int64_t, float, std::string, char> tu1{42, 1.5f,
-                                                    "this is tuple", 'i'};
+  std::tuple<int64_t, float, std::string, char> tu1{42, 1.5f, "this is tuple",
+                                                    'i'};
   EXPECT_EQ("(42, 1.5, \"this is tuple\", 'i')", fmt::format("{}", tu1));
 }
 
