@@ -2621,7 +2621,7 @@ template <typename Range> class basic_writer {
                        num_writer{abs_value, size, sep});
     }
 
-    void on_error() { FMT_THROW(format_error("invalid type specifier")); }
+    FMT_NORETURN void on_error() { FMT_THROW(format_error("invalid type specifier")); }
   };
 
   // Writes a formatted integer.
@@ -2858,7 +2858,7 @@ struct float_spec_handler {
     if (type == 'A') upper = true;
   }
 
-  void on_error() { FMT_THROW(format_error("invalid type specifier")); }
+  FMT_NORETURN void on_error() { FMT_THROW(format_error("invalid type specifier")); }
 };
 
 template <typename Range>

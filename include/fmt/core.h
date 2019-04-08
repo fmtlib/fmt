@@ -143,6 +143,12 @@
 #  endif
 #endif
 
+#if FMT_EXCEPTIONS && FMT_HAS_CPP_ATTRIBUTE(noreturn)
+#  define FMT_NORETURN [[noreturn]]
+#else
+#  define FMT_NORETURN
+#endif
+
 #ifndef FMT_DEPRECATED
 #  if (FMT_HAS_CPP_ATTRIBUTE(deprecated) && __cplusplus >= 201402L) || \
       FMT_MSC_VER >= 1900
@@ -350,7 +356,7 @@ struct error_handler {
   FMT_CONSTEXPR error_handler(const error_handler&) {}
 
   // This function is intentionally not constexpr to give a compile-time error.
-  FMT_API void on_error(const char* message);
+  FMT_API FMT_NORETURN void on_error(const char* message);
 };
 
 // GCC 4.6.x cannot expand `T...`.

@@ -348,32 +348,32 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
 }
 
 struct chrono_format_checker {
-  void report_no_date() { FMT_THROW(format_error("no date")); }
+  FMT_NORETURN void report_no_date() { FMT_THROW(format_error("no date")); }
 
   template <typename Char> void on_text(const Char*, const Char*) {}
-  void on_abbr_weekday() { report_no_date(); }
-  void on_full_weekday() { report_no_date(); }
-  void on_dec0_weekday(numeric_system) { report_no_date(); }
-  void on_dec1_weekday(numeric_system) { report_no_date(); }
-  void on_abbr_month() { report_no_date(); }
-  void on_full_month() { report_no_date(); }
+  FMT_NORETURN void on_abbr_weekday() { report_no_date(); }
+  FMT_NORETURN void on_full_weekday() { report_no_date(); }
+  FMT_NORETURN void on_dec0_weekday(numeric_system) { report_no_date(); }
+  FMT_NORETURN void on_dec1_weekday(numeric_system) { report_no_date(); }
+  FMT_NORETURN void on_abbr_month() { report_no_date(); }
+  FMT_NORETURN void on_full_month() { report_no_date(); }
   void on_24_hour(numeric_system) {}
   void on_12_hour(numeric_system) {}
   void on_minute(numeric_system) {}
   void on_second(numeric_system) {}
-  void on_datetime(numeric_system) { report_no_date(); }
-  void on_loc_date(numeric_system) { report_no_date(); }
-  void on_loc_time(numeric_system) { report_no_date(); }
-  void on_us_date() { report_no_date(); }
-  void on_iso_date() { report_no_date(); }
+  FMT_NORETURN void on_datetime(numeric_system) { report_no_date(); }
+  FMT_NORETURN void on_loc_date(numeric_system) { report_no_date(); }
+  FMT_NORETURN void on_loc_time(numeric_system) { report_no_date(); }
+  FMT_NORETURN void on_us_date() { report_no_date(); }
+  FMT_NORETURN void on_iso_date() { report_no_date(); }
   void on_12_hour_time() {}
   void on_24_hour_time() {}
   void on_iso_time() {}
   void on_am_pm() {}
   void on_duration_value() {}
   void on_duration_unit() {}
-  void on_utc_offset() { report_no_date(); }
-  void on_tz_name() { report_no_date(); }
+  FMT_NORETURN void on_utc_offset() { report_no_date(); }
+  FMT_NORETURN void on_tz_name() { report_no_date(); }
 };
 
 template <typename Int> inline int to_int(Int value) {
