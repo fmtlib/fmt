@@ -52,9 +52,9 @@ int SingleEvaluationTest::b_;
 
 void do_nothing() {}
 
-void throw_exception() { throw std::runtime_error("test"); }
+FMT_NORETURN void throw_exception() { throw std::runtime_error("test"); }
 
-void throw_system_error() { throw fmt::system_error(EDOM, "test"); }
+FMT_NORETURN void throw_system_error() { throw fmt::system_error(EDOM, "test"); }
 
 // Tests that when EXPECT_THROW_MSG fails, it evaluates its message argument
 // exactly once.
