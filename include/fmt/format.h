@@ -57,6 +57,11 @@
 #  define FMT_CUDA_VERSION 0
 #endif
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable: 4702) // C4702: unreachable code
+#endif
+
 #include "core.h"
 
 #if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
@@ -3721,6 +3726,10 @@ FMT_END_NAMESPACE
 // Restore warnings.
 #if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
 #  pragma GCC diagnostic pop
+#endif
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
 #endif
 
 #endif  // FMT_FORMAT_H_
