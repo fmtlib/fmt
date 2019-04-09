@@ -753,7 +753,8 @@ template <typename T = void> struct FMT_API basic_data {
 extern template struct basic_data<void>;
 #endif
 
-typedef basic_data<> data;
+// This is a struct rather than a typedef to avoid shadowing warnings in gcc.
+struct data : basic_data<> {};
 
 #ifdef FMT_BUILTIN_CLZLL
 // Returns the number of decimal digits in n. Leading zeros are not counted
@@ -2621,7 +2622,9 @@ template <typename Range> class basic_writer {
                        num_writer{abs_value, size, sep});
     }
 
-    FMT_NORETURN void on_error() { FMT_THROW(format_error("invalid type specifier")); }
+    FMT_NORETURN void on_error() {
+      FMT_THROW(format_error("invalid type specifier"));
+    }
   };
 
   // Writes a formatted integer.
@@ -2858,7 +2861,9 @@ struct float_spec_handler {
     if (type == 'A') upper = true;
   }
 
-  FMT_NORETURN void on_error() { FMT_THROW(format_error("invalid type specifier")); }
+  FMT_NORETURN void on_error() {
+    FMT_THROW(format_error("invalid type specifier"));
+  }
 };
 
 template <typename Range>
