@@ -37,20 +37,17 @@ namespace std {
   template<class charT> class basic_format_parse_context;
   using format_parse_context = basic_format_parse_context<char>;
   using wformat_parse_context = basic_format_parse_context<wchar_t>;
-
-  template<class O, class charT> FMT_REQUIRES(OutputIterator<O, const charT&>)
-    class basic_format_context;
+  
+  template<class Out, class charT> class basic_format_context;
   using format_context = basic_format_context<
-    /* unspecified */ std::back_insert_iterator<fmt::internal::buffer<char>>,
-    char>;
+    /* unspecified */ std::back_insert_iterator<fmt::internal::buffer<char>>, char>;
   using wformat_context = basic_format_context<
-    /* unspecified */ std::back_insert_iterator<fmt::internal::buffer<wchar_t>>,
-    wchar_t>;
+    /* unspecified */ std::back_insert_iterator<fmt::internal::buffer<wchar_t>>, wchar_t>;
 
   template<class T, class charT = char> struct formatter {
     formatter() = delete;
   };
-
+  
   // [format.arguments], arguments
   template<class Context> class basic_format_arg;
 
@@ -63,8 +60,8 @@ namespace std {
   using format_args = basic_format_args<format_context>;
   using wformat_args = basic_format_args<wformat_context>;
 
-  template<class O, class charT>
-    using format_args_t = basic_format_args<basic_format_context<O, charT>>;
+  template<class Out, class charT>
+    using format_args_t = basic_format_args<basic_format_context<Out, charT>>;
 
   template<class Context = format_context, class... Args>
     format_arg_store<Context, Args...>
@@ -82,28 +79,28 @@ namespace std {
   string vformat(string_view fmt, format_args args);
   wstring vformat(wstring_view fmt, wformat_args args);
 
-  template<FMT_CONCEPT(OutputIterator<const char&>) O, class... Args>
-    O format_to(O out, string_view fmt, const Args&... args);
-  template<FMT_CONCEPT(OutputIterator<const wchar_t&>) O, class... Args>
-    O format_to(O out, wstring_view fmt, const Args&... args);
+  template<class Out, class... Args>
+    Out format_to(Out out, string_view fmt, const Args&... args);
+  template<class Out, class... Args>
+    Out format_to(Out out, wstring_view fmt, const Args&... args);
 
-  template<FMT_CONCEPT(OutputIterator<const char&>) O>
-    O vformat_to(O out, string_view fmt, format_args_t<O, char> args);
-  template<FMT_CONCEPT(OutputIterator<const wchar_t&>) O>
-    O vformat_to(O out, wstring_view fmt, format_args_t<O, wchar_t> args);
+  template<class Out>
+    Out vformat_to(Out out, string_view fmt, format_args_t<Out, char> args);
+  template<class Out>
+    Out vformat_to(Out out, wstring_view fmt, format_args_t<Out, wchar_t> args);
 
-  template<class O>
+  template<class Out>
     struct format_to_n_result {
-      O out;
-      iter_difference_t<O> size;
+      Out out;
+      iter_difference_t<Out> size;
     };
-
-  template<FMT_CONCEPT(OutputIterator<const char&>) O, class... Args>
-    format_to_n_result<O> format_to_n(O out, iter_difference_t<O> n,
-                                      string_view fmt, const Args&... args);
-  template<FMT_CONCEPT(OutputIterator<const wchar_t&>) O, class... Args>
-    format_to_n_result<O> format_to_n(O out, iter_difference_t<O> n,
-                                      wstring_view fmt, const Args&... args);
+  
+  template<class Out, class... Args>
+    format_to_n_result<Out> format_to_n(Out out, iter_difference_t<Out> n,
+                                        string_view fmt, const Args&... args);
+  template<class Out, class... Args>
+    format_to_n_result<Out> format_to_n(Out out, iter_difference_t<Out> n,
+                                        wstring_view fmt, const Args&... args);
 
   template<class... Args>
     size_t formatted_size(string_view fmt, const Args&... args);
@@ -229,6 +226,8 @@ template<class O, class charT>
 void basic_format_context<O, charT>::advance_to(typename basic_format_context<O, charT>::iterator it) { out_ = it; }
 }
 
+namespace std {
+namespace detail {
 template <typename T>
 constexpr bool is_standard_integer_v =
     std::is_same_v<T, signed char> ||
@@ -244,6 +243,10 @@ constexpr bool is_standard_unsigned_integer_v =
     std::is_same_v<T, unsigned int> ||
     std::is_same_v<T, unsigned long int> ||
     std::is_same_v<T, unsigned long long int>;
+
+template <typename T, typename Char> struct formatter;
+}
+}
 
 // http://fmtlib.net/Text%20Formatting.html#format.arg
 namespace std {
@@ -269,10 +272,11 @@ namespace std {
         std::is_same_v<I, bool> ||
         std::is_same_v<I, char_type> ||
         (std::is_same_v<I, char> && std::is_same_v<char_type, wchar_t>) ||
-        is_standard_integer_v<I> ||
-        is_standard_unsigned_integer_v<I> 
+        detail::is_standard_integer_v<I> ||
+        detail::is_standard_unsigned_integer_v<I> ||
+        is_default_constructible_v<typename Context::template formatter_type<I>>
         >>
-    explicit basic_format_arg(I n) noexcept;      // exposition only
+    explicit basic_format_arg(const I& n) noexcept;      // exposition only
     explicit basic_format_arg(float n) noexcept;                       // exposition only
     explicit basic_format_arg(double n) noexcept;                      // exposition only
     explicit basic_format_arg(long double n) noexcept;                 // exposition only
@@ -290,16 +294,14 @@ namespace std {
     template<class T, typename = std::enable_if_t<std::is_same_v<T, void>>>
       explicit basic_format_arg(const T* p) noexcept;                  // exposition only
 
-    template<class T, typename = std::enable_if_t<
-               !Integral<T> && is_default_constructible_v<typename Context::template formatter_type<T>>>>
-    explicit basic_format_arg(const T& v) noexcept;                  // exposition only
-
     //template<class Visitor>
     //  friend auto std::visit_format_arg(Visitor&& vis, basic_format_arg<Context> arg);
 
     template<class Ctx, class... Args>
       friend format_arg_store<Ctx, Args...>
         make_format_args(const Args&... args);                         // exposition only
+
+    template <typename T, typename Char> friend struct detail::formatter;
 
   public:
     basic_format_arg() noexcept;
@@ -314,19 +316,21 @@ basic_format_arg<Context>::basic_format_arg() noexcept {}
 
 template<class Context>
 template<FMT_CONCEPT(Integral) I, typename>
-/* explicit */ basic_format_arg<Context>::basic_format_arg(I n) noexcept {
-  if (std::is_same_v<I, bool> || std::is_same_v<I, char_type>)
+/* explicit */ basic_format_arg<Context>::basic_format_arg(const I& n) noexcept {
+  if constexpr (std::is_same_v<I, bool> || std::is_same_v<I, char_type>)
     value = n;
-  else if (std::is_same_v<I, char> && std::is_same_v<char_type, wchar_t>)
+  else if constexpr (std::is_same_v<I, char> && std::is_same_v<char_type, wchar_t>)
     value = static_cast<wchar_t>(n);
-  else if (is_standard_integer_v<I> && sizeof(I) <= sizeof(int))
+  else if constexpr (detail::is_standard_integer_v<I> && sizeof(I) <= sizeof(int))
     value = static_cast<int>(n);
-  else if (is_standard_unsigned_integer_v<I> && sizeof(I) <= sizeof(unsigned))
+  else if constexpr (detail::is_standard_unsigned_integer_v<I> && sizeof(I) <= sizeof(unsigned))
     value = static_cast<unsigned>(n);
-  else if (is_standard_integer_v<I>)
+  else if constexpr (detail::is_standard_integer_v<I>)
     value = static_cast<long long int>(n);
-  else if (is_standard_unsigned_integer_v<I>)
+  else if constexpr (detail::is_standard_unsigned_integer_v<I>)
     value = static_cast<unsigned long long int>(n);
+  else if constexpr (is_default_constructible_v<typename Context::template formatter_type<I>>)
+    value = handle(n);
 }
 
 template<class Context>
@@ -368,11 +372,6 @@ template<class T, typename> /* explicit */ basic_format_arg<Context>::basic_form
   : value(p) {}
 
 template<class Context>
-template<class T, typename>
-/* explicit */ basic_format_arg<Context>::basic_format_arg(const T& v) noexcept
-  : value(handle(v)) {}
-
-template<class Context>
 /* explicit */ basic_format_arg<Context>::operator bool() const noexcept {
     return !holds_alternative<monostate>(value);
 }
@@ -386,6 +385,8 @@ namespace std {
                     Context&, const void*);                   // exposition only
 
     template<class T> explicit handle(const T& val) noexcept; // exposition only
+
+    friend class basic_format_arg<Context>;
 
   public:
     void format(basic_format_parse_context<char_type>&, Context& ctx) const;
