@@ -229,6 +229,22 @@ template<class O, class charT>
 void basic_format_context<O, charT>::advance_to(typename basic_format_context<O, charT>::iterator it) { out_ = it; }
 }
 
+template <typename T>
+constexpr bool is_standard_integer_v =
+    std::is_same_v<T, signed char> ||
+    std::is_same_v<T, short int> ||
+    std::is_same_v<T, int> ||
+    std::is_same_v<T, long int> ||
+    std::is_same_v<T, long long int>;
+
+template <typename T>
+constexpr bool is_standard_unsigned_integer_v =
+    std::is_same_v<T, unsigned char> ||
+    std::is_same_v<T, unsigned short int> ||
+    std::is_same_v<T, unsigned int> ||
+    std::is_same_v<T, unsigned long int> ||
+    std::is_same_v<T, unsigned long long int>;
+
 // http://fmtlib.net/Text%20Formatting.html#format.arg
 namespace std {
   template<class Context>
@@ -236,17 +252,27 @@ namespace std {
   public:
     class handle;
 
+  private:
     using char_type = typename Context::char_type;                     // exposition only
 
+  public: // public to workaround a bug in clang
     variant<monostate, bool, char_type,
             int, unsigned int, long long int, unsigned long long int,
             double, long double,
             const char_type*, basic_string_view<char_type>,
             const void*, handle> value;                                // exposition only
 
-    basic_format_arg() noexcept;
-
-    template<FMT_CONCEPT(Integral) I, typename = std::enable_if_t<Integral<I>>> explicit basic_format_arg(I n) noexcept;      // exposition only
+  private:
+    template<
+      FMT_CONCEPT(Integral) I,
+      typename = enable_if_t<
+        std::is_same_v<I, bool> ||
+        std::is_same_v<I, char_type> ||
+        (std::is_same_v<I, char> && std::is_same_v<char_type, wchar_t>) ||
+        is_standard_integer_v<I> ||
+        is_standard_unsigned_integer_v<I> 
+        >>
+    explicit basic_format_arg(I n) noexcept;      // exposition only
     explicit basic_format_arg(float n) noexcept;                       // exposition only
     explicit basic_format_arg(double n) noexcept;                      // exposition only
     explicit basic_format_arg(long double n) noexcept;                 // exposition only
@@ -266,7 +292,17 @@ namespace std {
 
     template<class T, typename = std::enable_if_t<
                !Integral<T> && is_default_constructible_v<typename Context::template formatter_type<T>>>>
-      explicit basic_format_arg(const T& v) noexcept;                  // exposition only
+    explicit basic_format_arg(const T& v) noexcept;                  // exposition only
+
+    //template<class Visitor>
+    //  friend auto std::visit_format_arg(Visitor&& vis, basic_format_arg<Context> arg);
+
+    template<class Ctx, class... Args>
+      friend format_arg_store<Ctx, Args...>
+        make_format_args(const Args&... args);                         // exposition only
+
+  public:
+    basic_format_arg() noexcept;
 
     explicit operator bool() const noexcept;
   };
@@ -276,38 +312,21 @@ namespace std {
 template<class Context>
 basic_format_arg<Context>::basic_format_arg() noexcept {}
 
-template <typename T>
-constexpr bool is_standard_integer_v =
-    std::is_same_v<T, signed char> ||
-    std::is_same_v<T, short int> ||
-    std::is_same_v<T, int> ||
-    std::is_same_v<T, long int> ||
-    std::is_same_v<T, long long int>;
-
-template <typename T>
-constexpr bool is_standard_unsigned_integer_v =
-    std::is_same_v<T, unsigned char> ||
-    std::is_same_v<T, unsigned short int> ||
-    std::is_same_v<T, unsigned int> ||
-    std::is_same_v<T, unsigned long int> ||
-    std::is_same_v<T, unsigned long long int>;
-
 template<class Context>
 template<FMT_CONCEPT(Integral) I, typename>
 /* explicit */ basic_format_arg<Context>::basic_format_arg(I n) noexcept {
   if (std::is_same_v<I, bool> || std::is_same_v<I, char_type>)
     value = n;
-  else if (std::is_same_v<I, char> || std::is_same_v<char_type, wchar_t>)
+  else if (std::is_same_v<I, char> && std::is_same_v<char_type, wchar_t>)
     value = static_cast<wchar_t>(n);
-  else if (std::is_standard_integer_v<I> && sizeof(I) <= sizeof(int))
+  else if (is_standard_integer_v<I> && sizeof(I) <= sizeof(int))
     value = static_cast<int>(n);
-  else if (std::is_standard_integer_v<I> && sizeof(I) <= sizeof(unsigned))
+  else if (is_standard_unsigned_integer_v<I> && sizeof(I) <= sizeof(unsigned))
     value = static_cast<unsigned>(n);
-  else if (std::is_standard_integer_v<I>)
+  else if (is_standard_integer_v<I>)
     value = static_cast<long long int>(n);
-  else if (std::is_standard_integer_v<I>)
+  else if (is_standard_unsigned_integer_v<I>)
     value = static_cast<unsigned long long int>(n);
-  else assert(false); // should be a compile-time error instead
 }
 
 template<class Context>
@@ -363,13 +382,13 @@ namespace std {
   template<class Context>
   class basic_format_arg<Context>::handle {
     const void* ptr_;                                         // exposition only
-      void (*format_)(basic_format_parse_context<char_type>&,
-                      Context&, const void*);                   // exposition only
+    void (*format_)(basic_format_parse_context<char_type>&,
+                    Context&, const void*);                   // exposition only
 
-    public:
-      template<class T> explicit handle(const T& val) noexcept; // exposition only
+    template<class T> explicit handle(const T& val) noexcept; // exposition only
 
-      void format(basic_format_parse_context<char_type>&, Context& ctx) const;
+  public:
+    void format(basic_format_parse_context<char_type>&, Context& ctx) const;
   };
 }
 
