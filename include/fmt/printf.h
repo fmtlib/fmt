@@ -197,9 +197,7 @@ using internal::printf;  // For printing into memory_buffer.
 
 template <typename Range> class printf_arg_formatter;
 
-template <typename OutputIt, typename Char,
-          typename ArgFormatter =
-              printf_arg_formatter<back_insert_range<internal::buffer<Char>>>>
+template <typename OutputIt, typename Char>
 class basic_printf_context;
 
 /**
@@ -212,12 +210,12 @@ class printf_arg_formatter
     : public internal::function<
           typename internal::arg_formatter_base<Range>::iterator>,
       public internal::arg_formatter_base<Range> {
+ public:
+  typedef decltype(internal::declval<Range>().begin()) iterator;
  private:
   typedef typename Range::value_type char_type;
-  typedef decltype(internal::declval<Range>().begin()) iterator;
   typedef internal::arg_formatter_base<Range> base;
-  typedef basic_printf_context<iterator, char_type, printf_arg_formatter>
-      context_type;
+  typedef basic_printf_context<iterator, char_type> context_type;
 
   context_type& context_;
 
@@ -328,7 +326,7 @@ template <typename T> struct printf_formatter {
 };
 
 /** This template formats data and writes the output to a writer. */
-template <typename OutputIt, typename Char, typename ArgFormatter>
+template <typename OutputIt, typename Char>
 class basic_printf_context {
  public:
   /** The character type for the output. */
@@ -379,11 +377,12 @@ class basic_printf_context {
   }
 
   /** Formats stored arguments and writes the output to the range. */
+  template<typename ArgFormatter = printf_arg_formatter<back_insert_range<internal::buffer<Char>>>>
   OutputIt format();
 };
 
-template <typename OutputIt, typename Char, typename AF>
-void basic_printf_context<OutputIt, Char, AF>::parse_flags(format_specs& spec,
+template <typename OutputIt, typename Char>
+void basic_printf_context<OutputIt, Char>::parse_flags(format_specs& spec,
                                                            const Char*& it,
                                                            const Char* end) {
   for (; it != end; ++it) {
@@ -409,9 +408,9 @@ void basic_printf_context<OutputIt, Char, AF>::parse_flags(format_specs& spec,
   }
 }
 
-template <typename OutputIt, typename Char, typename AF>
-typename basic_printf_context<OutputIt, Char, AF>::format_arg
-basic_printf_context<OutputIt, Char, AF>::get_arg(unsigned arg_index) {
+template <typename OutputIt, typename Char>
+typename basic_printf_context<OutputIt, Char>::format_arg
+basic_printf_context<OutputIt, Char>::get_arg(unsigned arg_index) {
   if (arg_index == std::numeric_limits<unsigned>::max())
     arg_index = parse_ctx_.next_arg_id();
   else
@@ -419,8 +418,8 @@ basic_printf_context<OutputIt, Char, AF>::get_arg(unsigned arg_index) {
   return internal::get_arg(*this, arg_index);
 }
 
-template <typename OutputIt, typename Char, typename AF>
-unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
+template <typename OutputIt, typename Char>
+unsigned basic_printf_context<OutputIt, Char>::parse_header(
     const Char*& it, const Char* end, format_specs& spec) {
   unsigned arg_index = std::numeric_limits<unsigned>::max();
   char_type c = *it;
@@ -457,8 +456,9 @@ unsigned basic_printf_context<OutputIt, Char, AF>::parse_header(
   return arg_index;
 }
 
-template <typename OutputIt, typename Char, typename AF>
-OutputIt basic_printf_context<OutputIt, Char, AF>::format() {
+template <typename OutputIt, typename Char>
+template <typename ArgFormatter>
+OutputIt basic_printf_context<OutputIt, Char>::format() {
   auto out = this->out();
   const Char* start = parse_ctx_.begin();
   const Char* end = parse_ctx_.end();
@@ -567,7 +567,7 @@ OutputIt basic_printf_context<OutputIt, Char, AF>::format() {
     start = it;
 
     // Format argument.
-    visit_format_arg(AF(out, spec, *this), arg);
+    visit_format_arg(ArgFormatter(out, spec, *this), arg);
   }
   return std::copy(start, it, out);
 }
@@ -711,6 +711,19 @@ inline int vfprintf(
   internal::write(os, buffer);
   return static_cast<int>(buffer.size());
 }
+
+/** Formats arguments and writes the output to the range. */
+template <typename ArgFormatter, typename Char,
+    typename Context = basic_printf_context<
+        typename ArgFormatter::iterator, Char>>
+typename ArgFormatter::iterator vprintf(internal::buffer<Char>& out,
+                                        basic_string_view<Char> format_str,
+                                        basic_format_args<Context> args) {
+  typename ArgFormatter::iterator iter(out);
+  Context(iter, format_str, args).template format<ArgFormatter>();
+  return iter;
+}
+
 
 /**
   \rst
