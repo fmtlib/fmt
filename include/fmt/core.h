@@ -143,7 +143,8 @@
 #  endif
 #endif
 
-#if FMT_EXCEPTIONS && FMT_HAS_CPP_ATTRIBUTE(noreturn)
+// [[noreturn]] is disabled on MSVC because of bogus unreachable code warnings.
+#if FMT_EXCEPTIONS && FMT_HAS_CPP_ATTRIBUTE(noreturn) && !FMT_MSC_VER
 #  define FMT_NORETURN [[noreturn]]
 #else
 #  define FMT_NORETURN
