@@ -109,7 +109,8 @@ string", because the argument ``"forty-two"`` is a string while the format code
   format(fmt("The answer is {:d}"), "forty-two");
 
 reports a compile-time error for the same reason on compilers that support
-relaxed ``constexpr``.
+relaxed ``constexpr``. See `here <api.html#c.fmt>`_ for how to enable
+compile-time checks.
 
 The following code
 
