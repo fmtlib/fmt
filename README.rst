@@ -299,6 +299,8 @@ Projects using this library
 
 * `FiveM <https://fivem.net/>`_: a modification framework for GTA V
 
+* `MongoDB <https://mongodb.com/>`_: Distributed document database
+
 * `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to
   generate randomized datasets
 
