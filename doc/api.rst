@@ -10,7 +10,7 @@ The {fmt} library API consists of the following parts:
   facilities and a lightweight subset of formatting functions
 * :ref:`fmt/format.h <format-api>`: the full format API providing compile-time
   format string checks, output iterator and user-defined type support
-* :ref:`fmt/time.h <time-api>`: date and time formatting
+* :ref:`fmt/chrono.h <chrono-api>`: date and time formatting
 * :ref:`fmt/ostream.h <ostream-api>`: ``std::ostream`` support
 * :ref:`fmt/printf.h <printf-api>`: ``printf`` formatting
 
@@ -314,7 +314,7 @@ custom argument formatter class::
 .. doxygenclass:: fmt::arg_formatter
    :members:
 
-.. _time-api:
+.. _chrono-api:
 
 Date and time formatting
 ========================
@@ -323,7 +323,7 @@ The library supports `strftime
 <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_-like date and time
 formatting::
 
-  #include <fmt/time.h>
+  #include <fmt/chrono.h>
 
   std::time_t t = std::time(nullptr);
   // Prints "The date is 2016-04-29." (with the current date)
