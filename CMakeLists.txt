@@ -34,7 +34,8 @@ if (MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
 endif ()
 
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
-option(FMT_WERROR "Halt the compilation with an error on compiler warnings." OFF)
+option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
+       OFF)
 
 # Options that control generation of various targets.
 option(FMT_DOC "Generate the doc target." ${MASTER_PROJECT})
@@ -95,7 +96,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wconversion -Wno-sign-conversion)
+  set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wconversion
+      -Wno-sign-conversion)
   check_cxx_compiler_flag(-Wzero-as-null-pointer-constant HAS_NULLPTR_WARNING)
   if (HAS_NULLPTR_WARNING)
     set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
@@ -195,7 +197,7 @@ if (FMT_INSTALL)
   include(GNUInstallDirs)
   include(CMakePackageConfigHelpers)
   set(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
-    "Installation directory for cmake files, relative to ${CMAKE_INSTALL_PREFIX}.")
+      "Installation directory for cmake files, relative to ${CMAKE_INSTALL_PREFIX}.")
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
   set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
@@ -213,7 +215,7 @@ if (FMT_INSTALL)
       "Installation directory for include files, relative to ${CMAKE_INSTALL_PREFIX}.")
 
   set(FMT_PKGCONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig CACHE PATH
-    "Installation directory for pkgconfig (.pc) files, relative to ${CMAKE_INSTALL_PREFIX}.")
+      "Installation directory for pkgconfig (.pc) files, relative to ${CMAKE_INSTALL_PREFIX}.")
 
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
@@ -244,7 +246,8 @@ if (FMT_INSTALL)
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
           DESTINATION ${FMT_LIB_DIR})
 
-  install(FILES $<TARGET_PDB_FILE:${INSTALL_TARGETS}> DESTINATION ${FMT_LIB_DIR} OPTIONAL)
+  install(FILES $<TARGET_PDB_FILE:${INSTALL_TARGETS}>
+          DESTINATION ${FMT_LIB_DIR} OPTIONAL)
   install(FILES ${FMT_HEADERS} DESTINATION ${FMT_INC_DIR})
   install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}")
 endif ()

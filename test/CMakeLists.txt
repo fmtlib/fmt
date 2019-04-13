@@ -17,7 +17,7 @@ else ()
   target_compile_definitions(gmock PUBLIC GTEST_HAS_PTHREAD=0)
 endif ()
 
-if (NOT SUPPORTS_VARIADIC_TEMPLATES OR NOT SUPPORTS_INITIALIZER_LIST)
+if (NOT SUPPORTS_VARIADIC_TEMPLATES)
   target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
 endif ()
 
@@ -74,9 +74,6 @@ function(add_fmt_test name)
   target_link_libraries(${name} test-main)
 
   # Define if certain C++ features can be used.
-  target_compile_definitions(${name} PRIVATE
-    FMT_USE_TYPE_TRAITS=$<BOOL:${SUPPORTS_TYPE_TRAITS}>
-    FMT_USE_ENUM_BASE=$<BOOL:${SUPPORTS_ENUM_BASE}>)
   if (FMT_PEDANTIC)
     target_compile_options(${name} PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()

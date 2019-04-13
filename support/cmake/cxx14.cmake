@@ -50,39 +50,13 @@ set(CMAKE_REQUIRED_FLAGS ${CXX_STANDARD_FLAG})
 
 # Check if variadic templates are working and not affected by GCC bug 39653:
 # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39653
+# Can be removed once gcc 4.4 support is dropped.
 check_cxx_source_compiles("
   template <class T, class ...Types>
   struct S { typedef typename S<Types...>::type type; };
   int main() {}" SUPPORTS_VARIADIC_TEMPLATES)
 if (NOT SUPPORTS_VARIADIC_TEMPLATES)
   set (SUPPORTS_VARIADIC_TEMPLATES OFF)
-endif ()
-
-# Check if initializer lists are supported.
-check_cxx_source_compiles("
-  #include <initializer_list>
-  int main() {}" SUPPORTS_INITIALIZER_LIST)
-if (NOT SUPPORTS_INITIALIZER_LIST)
-  set (SUPPORTS_INITIALIZER_LIST OFF)
-endif ()
-
-# Check if enum bases are available
-check_cxx_source_compiles("
-  enum C : char {A};
-  int main() {}"
-  SUPPORTS_ENUM_BASE)
-if (NOT SUPPORTS_ENUM_BASE)
-  set (SUPPORTS_ENUM_BASE OFF)
-endif ()
-
-# Check if type traits are available
-check_cxx_source_compiles("
-  #include <type_traits>
-  class C { void operator=(const C&); };
-  int main() { static_assert(!std::is_copy_assignable<C>::value, \"\"); }"
-  SUPPORTS_TYPE_TRAITS)
-if (NOT SUPPORTS_TYPE_TRAITS)
-  set (SUPPORTS_TYPE_TRAITS OFF)
 endif ()
 
 # Check if user-defined literals are available
