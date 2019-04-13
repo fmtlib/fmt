@@ -68,4 +68,14 @@ if (NOT SUPPORTS_USER_DEFINED_LITERALS)
   set (SUPPORTS_USER_DEFINED_LITERALS OFF)
 endif ()
 
+# Check if <variant> is available
+set(CMAKE_REQUIRED_FLAGS -std=c++1z)
+check_cxx_source_compiles("
+  #include <variant>
+  int main() {}"
+  FMT_HAS_VARIANT)
+if (NOT FMT_HAS_VARIANT)
+  set (FMT_HAS_VARIANT OFF)
+endif ()
+
 set(CMAKE_REQUIRED_FLAGS )

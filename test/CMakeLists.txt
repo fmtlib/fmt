@@ -33,7 +33,7 @@ endif ()
 
 # Silence MSVC tr1 deprecation warning in gmock.
 target_compile_definitions(gmock
-  PUBLIC _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING=0)
+  PUBLIC _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING=1)
 
 #------------------------------------------------------------------------------
 # Build the actual library tests
@@ -98,6 +98,12 @@ add_fmt_test(prepare-test)
 add_fmt_test(printf-test)
 add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
+
+# MSVC fails to compile GMock when C++17 is enabled.
+if (FMT_HAS_VARIANT AND NOT MSVC)
+  add_fmt_test(std-format-test)
+  set_property(TARGET std-format-test PROPERTY CXX_STANDARD 17)
+endif ()
 
 if (HAVE_OPEN)
   add_fmt_executable(posix-mock-test

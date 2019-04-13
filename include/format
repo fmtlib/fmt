@@ -17,9 +17,6 @@
 // std::variant and should store packed argument type tags separately from
 // values in basic_format_args for small number of arguments.
 
-#define FMT_REQUIRES(...)
-#define FMT_CONCEPT(C) typename
-
 namespace std {
 template<class T>
 constexpr bool Integral = is_integral_v<T>;
@@ -117,6 +114,17 @@ namespace std {
   };
 }
 
+namespace std {
+namespace detail {
+struct error_handler {
+  // This function is intentionally not constexpr to give a compile-time error.
+  void on_error(const char* message) {
+    throw std::format_error(message);
+  }
+};
+}
+}
+
 // http://fmtlib.net/Text%20Formatting.html#format.parse_context
 namespace std {
   template<class charT>
@@ -149,7 +157,7 @@ namespace std {
 
     // Implementation detail:
     constexpr void check_arg_id(fmt::string_view) {}
-    fmt::internal::error_handler error_handler() const { return {}; }
+    detail::error_handler error_handler() const { return {}; }
     void on_error(const char* msg) { error_handler().on_error(msg); }
   };
 }
@@ -212,7 +220,7 @@ namespace std {
     using format_arg = basic_format_arg<basic_format_context>;
     basic_format_context(Out out, basic_format_args<basic_format_context> args, fmt::internal::locale_ref)
     : args_(args), out_(out) {}
-    fmt::internal::error_handler error_handler() const { return {}; }
+    detail::error_handler error_handler() const { return {}; }
     basic_format_arg<basic_format_context> arg(fmt::basic_string_view<charT>) const {
       return {}; // unused: named arguments are not supported yet
     }
@@ -482,11 +490,11 @@ namespace detail {
 template <typename Range>
 class arg_formatter
     : public fmt::internal::function<
-          typename fmt::internal::arg_formatter_base<Range>::iterator>,
-      public fmt::internal::arg_formatter_base<Range> {
+          typename fmt::internal::arg_formatter_base<Range, error_handler>::iterator>,
+      public fmt::internal::arg_formatter_base<Range, error_handler> {
  private:
   using char_type = typename Range::value_type;
-  using base = fmt::internal::arg_formatter_base<Range>;
+  using base = fmt::internal::arg_formatter_base<Range, error_handler>;
   using format_context = std::basic_format_context<typename base::iterator, char_type>;
   using parse_context = basic_format_parse_context<char_type>;
 
@@ -574,7 +582,7 @@ class custom_formatter {
 };
 
 template <typename ArgFormatter, typename Char, typename Context>
-struct format_handler : fmt::internal::error_handler {
+struct format_handler : detail::error_handler {
   typedef typename ArgFormatter::range range;
 
   format_handler(range r, basic_string_view<Char> str,
@@ -852,52 +860,6 @@ template <> struct formatter<long double, charT> : detail::formatter<long double
   template<> struct formatter<const wchar_t, char> {
     formatter() = delete;
   };
-}
-
-inline void test0() {
-  using namespace std;
-  string s = format("{0}-{{", 8); // s == "8-{"
-}
-
-inline void test1() {
-  using namespace std;
-  string s0 = format("{} to {}",   "a", "b"); // OK: automatic indexing
-  string s1 = format("{1} to {0}", "a", "b"); // OK: manual indexing
-  string s2 = format("{0} to {}",  "a", "b"); // Error: mixing automatic and manual indexing
-  string s3 = format("{} to {1}",  "a", "b"); // Error: mixing automatic and manual indexing
-}
-
-inline void test2() {
-  using namespace std;
-  char c = 120;
-  string s0 = format("{:6}", 42);      // s0 == "    42"
-  string s1 = format("{:6}", 'x');     // s1 == "x     "
-  string s2 = format("{:*<6}", 'x');   // s2 == "x*****"
-  string s3 = format("{:*>6}", 'x');   // s3 == "*****x"
-  string s4 = format("{:*^6}", 'x');   // s4 == "**x***"
-  string s5 = format("{:=6}", 'x');    // Error: '=' with charT and no integer presentation type
-  string s6 = format("{:6d}", c);      // s6 == "   120"
-  string s7 = format("{:=+06d}", c);   // s7 == "+00120"
-  string s8 = format("{:0=#6x}", 0xa); // s8 == "0x000a"
-  string s9 = format("{:6}", true);    // s9 == "true  "
-}
-
-inline void test3() {
-  using namespace std;
-  double inf = numeric_limits<double>::infinity();
-  double nan = numeric_limits<double>::quiet_NaN();
-  string s0 = format("{0:} {0:+} {0:-} {0: }", 1);   // s0 == "1 +1 1  1"
-  string s1 = format("{0:} {0:+} {0:-} {0: }", -1);  // s1 == "-1 -1 -1 -1"
-  string s2 = format("{0:} {0:+} {0:-} {0: }", inf); // s2 == "inf +inf inf  inf"
-  string s3 = format("{0:} {0:+} {0:-} {0: }", nan); // s3 == "nan +nan nan  nan"
-}
-
-inline void test4() {
-  using namespace std;
-  string s0 = format("{}", 42);                      // s0 == "42"
-  string s1 = format("{0:b} {0:d} {0:o} {0:x}", 42); // s1 == "101010 42 52 2a"
-  string s2 = format("{0:#x} {0:#X}", 42);           // s2 == "0x2a 0X2A"
-  string s3 = format("{:n}", 1234);                  // s3 == "1,234" (depends on the locale)
 }
 
 #endif  // FMT_FORMAT_

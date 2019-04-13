@@ -176,6 +176,10 @@ FMT_END_NAMESPACE
 #  define FMT_USE_TRAILING_RETURN 0
 #endif
 
+#ifndef FMT_USE_INT128
+# define FMT_USE_INT128 (__SIZEOF_INT128__ != 0)
+#endif
+
 // __builtin_clz is broken in clang with Microsoft CodeGen:
 // https://github.com/fmtlib/fmt/issues/519
 #ifndef _MSC_VER
@@ -1418,7 +1422,8 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
   }
 }
 
-template <typename Range> class arg_formatter_base {
+template <typename Range, typename ErrorHandler = internal::error_handler>
+class arg_formatter_base {
  public:
   typedef typename Range::value_type char_type;
   typedef decltype(internal::declval<Range>().begin()) iterator;
@@ -1498,7 +1503,7 @@ template <typename Range> class arg_formatter_base {
     return out();
   }
 
-  struct char_spec_handler : internal::error_handler {
+  struct char_spec_handler : ErrorHandler {
     arg_formatter_base& formatter;
     char_type value;
 
@@ -2732,7 +2737,8 @@ template <typename Range> class basic_writer {
     }
   };
 
-  template <typename Char> friend class internal::arg_formatter_base;
+  template <typename Char, typename ErrorHandler>
+  friend class internal::arg_formatter_base;
 
  public:
   /** Constructs a ``basic_writer`` object. */
