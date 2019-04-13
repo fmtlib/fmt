@@ -440,6 +440,13 @@ inline fp operator-(fp x, fp y) {
 // with half-up tie breaking, r.e = x.e + y.e + 64. Result may not be
 // normalized.
 FMT_FUNC fp operator*(fp x, fp y) {
+  int exp = x.e + y.e + 64;
+#if FMT_USE_INT128
+  auto product = static_cast<__uint128_t>(x.f) * y.f;
+  auto f = static_cast<uint64_t>(product >> 64);
+  if ((static_cast<uint64_t>(product) & (1ULL << 63)) != 0) ++f;
+  return fp(f, exp);
+#else
   // Multiply 32-bit parts of significands.
   uint64_t mask = (1ULL << 32) - 1;
   uint64_t a = x.f >> 32, b = x.f & mask;
@@ -447,7 +454,8 @@ FMT_FUNC fp operator*(fp x, fp y) {
   uint64_t ac = a * c, bc = b * c, ad = a * d, bd = b * d;
   // Compute mid 64-bit of result and round.
   uint64_t mid = (bd >> 32) + (ad & mask) + (bc & mask) + (1U << 31);
-  return fp(ac + (ad >> 32) + (bc >> 32) + (mid >> 32), x.e + y.e + 64);
+  return fp(ac + (ad >> 32) + (bc >> 32) + (mid >> 32), exp);
+#endif
 }
 
 // Returns cached power (of 10) c_k = c_k.f * pow(2, c_k.e) such that its
