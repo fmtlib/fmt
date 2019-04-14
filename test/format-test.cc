@@ -1550,6 +1550,11 @@ TEST(FormatterTest, FormatChar) {
   EXPECT_EQ(fmt::format("{:02X}", n), fmt::format("{:02X}", 'x'));
 }
 
+TEST(FormatterTest, FormatVolatileChar) {
+  volatile char c = 'x';
+  EXPECT_EQ("x", format("{}", c));
+}
+
 TEST(FormatterTest, FormatUnsignedChar) {
   EXPECT_EQ("42", format("{}", static_cast<unsigned char>(42)));
   EXPECT_EQ("42", format("{}", static_cast<uint8_t>(42)));

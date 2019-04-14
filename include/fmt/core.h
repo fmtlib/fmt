@@ -872,11 +872,12 @@ inline init<C, basic_string_view<Char>, string_type> make_value(const T& val) {
 // unsafe: https://github.com/fmtlib/fmt/issues/729
 template <
     typename C, typename T, typename Char = typename C::char_type,
-    FMT_ENABLE_IF(!convert_to_int<T, Char>::value &&
-                  !std::is_same<T, Char>::value &&
-                  !std::is_convertible<T, basic_string_view<Char>>::value &&
-                  !is_constructible<basic_string_view<Char>, T>::value &&
-                  !internal::is_string<T>::value)>
+    typename U = typename std::remove_volatile<T>::type,
+    FMT_ENABLE_IF(!convert_to_int<U, Char>::value &&
+                  !std::is_same<U, Char>::value &&
+                  !std::is_convertible<U, basic_string_view<Char>>::value &&
+                  !is_constructible<basic_string_view<Char>, U>::value &&
+                  !internal::is_string<U>::value)>
 inline init<C, const T&, custom_type> make_value(const T& val) {
   return val;
 }
