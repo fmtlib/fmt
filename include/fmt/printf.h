@@ -197,8 +197,7 @@ using internal::printf;  // For printing into memory_buffer.
 
 template <typename Range> class printf_arg_formatter;
 
-template <typename OutputIt, typename Char>
-class basic_printf_context;
+template <typename OutputIt, typename Char> class basic_printf_context;
 
 /**
   \rst
@@ -212,6 +211,7 @@ class printf_arg_formatter
       public internal::arg_formatter_base<Range> {
  public:
   typedef decltype(internal::declval<Range>().begin()) iterator;
+
  private:
   typedef typename Range::value_type char_type;
   typedef internal::arg_formatter_base<Range> base;
@@ -326,8 +326,7 @@ template <typename T> struct printf_formatter {
 };
 
 /** This template formats data and writes the output to a writer. */
-template <typename OutputIt, typename Char>
-class basic_printf_context {
+template <typename OutputIt, typename Char> class basic_printf_context {
  public:
   /** The character type for the output. */
   typedef Char char_type;
@@ -377,14 +376,15 @@ class basic_printf_context {
   }
 
   /** Formats stored arguments and writes the output to the range. */
-  template<typename ArgFormatter = printf_arg_formatter<back_insert_range<internal::buffer<Char>>>>
+  template <typename ArgFormatter =
+                printf_arg_formatter<back_insert_range<internal::buffer<Char>>>>
   OutputIt format();
 };
 
 template <typename OutputIt, typename Char>
 void basic_printf_context<OutputIt, Char>::parse_flags(format_specs& spec,
-                                                           const Char*& it,
-                                                           const Char* end) {
+                                                       const Char*& it,
+                                                       const Char* end) {
   for (; it != end; ++it) {
     switch (*it) {
     case '-':
@@ -714,8 +714,8 @@ inline int vfprintf(
 
 /** Formats arguments and writes the output to the range. */
 template <typename ArgFormatter, typename Char,
-    typename Context = basic_printf_context<
-        typename ArgFormatter::iterator, Char>>
+          typename Context =
+              basic_printf_context<typename ArgFormatter::iterator, Char>>
 typename ArgFormatter::iterator vprintf(internal::buffer<Char>& out,
                                         basic_string_view<Char> format_str,
                                         basic_format_args<Context> args) {
@@ -723,7 +723,6 @@ typename ArgFormatter::iterator vprintf(internal::buffer<Char>& out,
   Context(iter, format_str, args).template format<ArgFormatter>();
   return iter;
 }
-
 
 /**
   \rst

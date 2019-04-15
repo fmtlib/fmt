@@ -556,31 +556,34 @@ TEST(PrintfTest, VSPrintfMakeWArgsExample) {
 }
 
 typedef fmt::printf_arg_formatter<
-    fmt::back_insert_range<fmt::internal::buffer<char>>> formatter_t;
+    fmt::back_insert_range<fmt::internal::buffer<char>>>
+    formatter_t;
 typedef fmt::basic_printf_context<formatter_t::iterator, char> context_t;
 
 // A custom printf argument formatter that doesn't print `-` for floating-point
 // values rounded to 0.
 class custom_printf_arg_formatter : public formatter_t {
  public:
-    using formatter_t::iterator;
+  using formatter_t::iterator;
 
-  custom_printf_arg_formatter(formatter_t::iterator iter, formatter_t::format_specs& spec, context_t& ctx)
+  custom_printf_arg_formatter(formatter_t::iterator iter,
+                              formatter_t::format_specs& spec, context_t& ctx)
       : formatter_t(iter, spec, ctx) {}
 
   using formatter_t::operator();
 
 #if FMT_MSC_VER > 0 && FMT_MSC_VER <= 1804
-      template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-      iterator operator()(T value) {
+  template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
+  iterator operator()(T value){
 #else
-      iterator operator()(double value) {
+  iterator operator()(double value) {
 #endif
-     // Comparing a float to 0.0 is safe.
-     if (round(value * pow(10, spec()->precision)) == 0.0) value = 0;
-     return formatter_t::operator()(value);
-  }
-};
+      // Comparing a float to 0.0 is safe.
+      if (round(value * pow(10, spec()->precision)) == 0.0) value = 0;
+  return formatter_t::operator()(value);
+}
+}
+;
 
 typedef fmt::basic_format_args<context_t> format_args_t;
 
@@ -592,7 +595,7 @@ std::string custom_vformat(fmt::string_view format_str, format_args_t args) {
 
 template <typename... Args>
 std::string custom_format(const char* format_str, const Args&... args) {
-  auto va = fmt::make_printf_args (args...);
+  auto va = fmt::make_printf_args(args...);
   return custom_vformat(format_str, va);
 }
 
