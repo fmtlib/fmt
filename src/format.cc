@@ -28,16 +28,6 @@ template FMT_API void internal::buffer<char>::append(const char*, const char*);
 template FMT_API void internal::arg_map<format_context>::init(
     const basic_format_args<format_context>& args);
 
-template FMT_API int internal::char_traits<char>::format_float(char*,
-                                                               std::size_t,
-                                                               const char*, int,
-                                                               double);
-
-template FMT_API int internal::char_traits<char>::format_float(char*,
-                                                               std::size_t,
-                                                               const char*, int,
-                                                               long double);
-
 template FMT_API std::string internal::vformat<char>(
     string_view, basic_format_args<format_context>);
 
@@ -59,12 +49,6 @@ template FMT_API void internal::buffer<wchar_t>::append(const wchar_t*,
 
 template FMT_API void internal::arg_map<wformat_context>::init(
     const basic_format_args<wformat_context>&);
-
-template FMT_API int internal::char_traits<wchar_t>::format_float(
-    wchar_t*, std::size_t, const wchar_t*, int, double);
-
-template FMT_API int internal::char_traits<wchar_t>::format_float(
-    wchar_t*, std::size_t, const wchar_t*, int, long double);
 
 template FMT_API std::wstring internal::vformat<wchar_t>(
     wstring_view, basic_format_args<wformat_context>);

@@ -2538,3 +2538,8 @@ TEST(FormatTest, EmphasisNonHeaderOnly) {
   EXPECT_EQ(fmt::format(fmt::emphasis::bold, "bold error"),
             "\x1b[1mbold error\x1b[0m");
 }
+
+TEST(FormatTest, CharTraitsIsNotAmbiguous) {
+  using namespace std;
+  char_traits<char>::char_type c;
+}

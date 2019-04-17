@@ -254,19 +254,10 @@ template <> FMT_FUNC int count_digits<4>(internal::uintptr_t n) {
 }
 
 template <typename T>
-int char_traits<char>::format_float(char* buf, std::size_t size,
-                                    const char* format, int precision,
-                                    T value) {
+int format_float(char* buf, std::size_t size, const char* format, int precision,
+                 T value) {
   return precision < 0 ? FMT_SNPRINTF(buf, size, format, value)
                        : FMT_SNPRINTF(buf, size, format, precision, value);
-}
-
-template <typename T>
-int char_traits<wchar_t>::format_float(wchar_t* buf, std::size_t size,
-                                       const wchar_t* format, int precision,
-                                       T value) {
-  return precision < 0 ? FMT_SWPRINTF(buf, size, format, value)
-                       : FMT_SWPRINTF(buf, size, format, precision, value);
 }
 
 template <typename T>
@@ -758,8 +749,8 @@ void sprintf_format(Double value, internal::buffer<char>& buf,
   for (;;) {
     std::size_t buffer_size = buf.capacity();
     start = &buf[0];
-    int result = internal::char_traits<char>::format_float(
-        start, buffer_size, format, spec.precision, value);
+    int result =
+        format_float(start, buffer_size, format, spec.precision, value);
     if (result >= 0) {
       unsigned n = internal::to_unsigned(result);
       if (n < buf.capacity()) {

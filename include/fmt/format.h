@@ -552,40 +552,6 @@ typedef basic_memory_buffer<wchar_t> wmemory_buffer;
 
 namespace internal {
 
-template <typename Char> struct char_traits;
-
-template <> struct char_traits<char> {
-  // Formats a floating-point number.
-  template <typename T>
-  FMT_API static int format_float(char* buffer, std::size_t size,
-                                  const char* format, int precision, T value);
-};
-
-template <> struct char_traits<wchar_t> {
-  template <typename T>
-  FMT_API static int format_float(wchar_t* buffer, std::size_t size,
-                                  const wchar_t* format, int precision,
-                                  T value);
-};
-
-#if FMT_USE_EXTERN_TEMPLATES
-extern template int char_traits<char>::format_float<double>(char* buffer,
-                                                            std::size_t size,
-                                                            const char* format,
-                                                            int precision,
-                                                            double value);
-extern template int char_traits<char>::format_float<long double>(
-    char* buffer, std::size_t size, const char* format, int precision,
-    long double value);
-
-extern template int char_traits<wchar_t>::format_float<double>(
-    wchar_t* buffer, std::size_t size, const wchar_t* format, int precision,
-    double value);
-extern template int char_traits<wchar_t>::format_float<long double>(
-    wchar_t* buffer, std::size_t size, const wchar_t* format, int precision,
-    long double value);
-#endif
-
 // A workaround for std::string not having mutable data() until C++17.
 template <typename Char> inline Char* get_data(std::basic_string<Char>& s) {
   return &s[0];
