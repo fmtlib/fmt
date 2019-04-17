@@ -257,9 +257,12 @@ namespace internal {
 #endif
 
 // A fallback implementation of uintptr_t for systems that lack it.
+namespace uintptr {
 struct uintptr_t {
   unsigned char value[sizeof(void*)];
 };
+}
+using uintptr::uintptr_t;
 typedef std::numeric_limits<uintptr_t> numutil;
 
 template <typename T> inline bool use_grisu() {
@@ -312,7 +315,7 @@ typename Allocator::value_type* allocate(Allocator& alloc, std::size_t n) {
 FMT_END_NAMESPACE
 
 namespace std {
-using namespace fmt::v5::internal;
+using namespace fmt::v5::internal::uintptr;
 // Standard permits specialization of std::numeric_limits. This specialization
 // is used to detect presence of uintptr_t.
 template <>
