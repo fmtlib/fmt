@@ -42,7 +42,7 @@ option(FMT_DOC "Generate the doc target." ${MASTER_PROJECT})
 option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
 
-project(FMT)
+project(FMT CXX)
 
 # Get version from core.h
 file(READ include/fmt/core.h core_h)
