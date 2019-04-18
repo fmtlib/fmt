@@ -1600,6 +1600,10 @@ TEST(FormatterTest, FormatPointer) {
   EXPECT_EQ("0x" + std::string(sizeof(void*) * CHAR_BIT / 4, 'f'),
             format("{0}", reinterpret_cast<void*>(~uintptr_t())));
   EXPECT_EQ("0x1234", format("{}", fmt::ptr(reinterpret_cast<int*>(0x1234))));
+  std::unique_ptr<int> up(new int(1));
+  EXPECT_EQ(format("{}", fmt::ptr(up.get())), format("{}", fmt::ptr(up)));
+  std::shared_ptr<int> sp(new int(1));
+  EXPECT_EQ(format("{}", fmt::ptr(sp.get())), format("{}", fmt::ptr(sp)));
 #if FMT_USE_NULLPTR
   EXPECT_EQ("0x0", format("{}", FMT_NULL));
 #endif
