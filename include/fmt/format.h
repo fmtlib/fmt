@@ -3290,6 +3290,12 @@ typename Context::iterator vformat_to(
 // Example:
 //   auto s = format("{}", ptr(p));
 template <typename T> inline const void* ptr(const T* p) { return p; }
+template <typename T> inline const void* ptr(const std::unique_ptr<T>& p) {
+  return p.get();
+}
+template <typename T> inline const void* ptr(const std::shared_ptr<T>& p) {
+  return p.get();
+}
 
 template <typename It, typename Char> struct arg_join {
   It begin;
