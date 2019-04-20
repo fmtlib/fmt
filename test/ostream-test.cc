@@ -6,6 +6,21 @@
 // For the license information refer to format.h.
 
 #define FMT_STRING_ALIAS 1
+#include "fmt/format.h"
+
+struct test {};
+
+// Test that there is no issues with specializations when fmt/ostream.h is
+// included after fmt/format.h.
+namespace fmt {
+template <> struct formatter<test> : formatter<int> {
+  template <typename FormatContext>
+  typename FormatContext::iterator format(const test&, FormatContext& ctx) {
+    return formatter<int>::format(42, ctx);
+  }
+};
+}  // namespace fmt
+
 #include "fmt/ostream.h"
 
 #include <sstream>
