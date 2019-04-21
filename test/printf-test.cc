@@ -520,6 +520,10 @@ TEST(PrintfTest, CheckFormatStringRegression) {
   check_format_string_regression("%c%s", 'x', "");
 }
 
+TEST(PrintfTest, FixedLargeExponent) {
+  EXPECT_EQ("1000000000000000000000", fmt::sprintf("%.*f", -13, 1e21));
+}
+
 TEST(PrintfTest, VSPrintfMakeArgsExample) {
   fmt::format_arg_store<fmt::printf_context, int, const char*> as{42,
                                                                   "something"};
@@ -599,7 +603,7 @@ std::string custom_format(const char* format_str, const Args&... args) {
   return custom_vformat(format_str, va);
 }
 
-TEST(CustomFormatterTest, Format) {
+TEST(PrintfTest, CustomFormat) {
   EXPECT_EQ("0.00", custom_format("%.2f", -.00001));
   EXPECT_EQ("0.00", custom_format("%.2f", .00001));
   EXPECT_EQ("1.00", custom_format("%.2f", 1.00001));

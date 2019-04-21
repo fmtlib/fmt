@@ -1181,8 +1181,7 @@ It grisu2_prettify(const char* digits, int size, int exp, It it,
     *it++ = static_cast<Char>(params.upper ? 'E' : 'e');
     return write_exponent<Char>(exp, it);
   }
-  const int exp_threshold = 21;
-  if (size <= full_exp && full_exp <= exp_threshold) {
+  if (size <= full_exp) {
     // 1234e7 -> 12340000000[.0+]
     it = copy_str<Char>(digits, digits + size, it);
     it = std::fill_n(it, full_exp - size, static_cast<Char>('0'));
