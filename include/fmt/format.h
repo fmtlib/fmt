@@ -1213,6 +1213,8 @@ It grisu2_prettify(const char* digits, int size, int exp, It it,
     if (params.num_digits >= 0 && params.num_digits < num_zeros)
       num_zeros = params.num_digits;
     it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
+    if (!params.trailing_zeros)
+      while (size > 0 && digits[size - 1] == '0') --size;
     it = copy_str<Char>(digits, digits + size, it);
   }
   return it;
