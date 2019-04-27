@@ -1124,13 +1124,19 @@ FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
 
 namespace internal {
 
-// Formats value using Grisu2 algorithm:
+namespace grisu_options {
+enum {
+  fixed = 1,
+  grisu3 = 2
+};
+}
+
+// Formats value using the Grisu algorithm:
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
 template <typename Double, FMT_ENABLE_IF(sizeof(Double) == sizeof(uint64_t))>
-FMT_API bool grisu2_format(Double value, buffer<char>& buf, int precision,
-                           bool fixed, int& exp);
+FMT_API bool grisu_format(Double, buffer<char>&, int, unsigned, int&);
 template <typename Double, FMT_ENABLE_IF(sizeof(Double) != sizeof(uint64_t))>
-inline bool grisu2_format(Double, buffer<char>&, int, bool, int&) {
+inline bool grisu_format(Double, buffer<char>&, int, unsigned, int&) {
   return false;
 }
 
@@ -1166,8 +1172,8 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
 
 // The number is given as v = digits * pow(10, exp).
 template <typename Char, typename It>
-It grisu2_prettify(const char* digits, int size, int exp, It it,
-                   gen_digits_params params) {
+It grisu_prettify(const char* digits, int size, int exp, It it,
+                  gen_digits_params params) {
   // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
   int full_exp = size + exp;
   if (!params.fixed) {
@@ -2663,7 +2669,7 @@ template <typename Range> class basic_writer {
       int full_exp = num_digits + exp - 1;
       int precision = params.num_digits > 0 ? params.num_digits : 11;
       params_.fixed |= full_exp >= -4 && full_exp < precision;
-      auto it = internal::grisu2_prettify<char>(
+      auto it = internal::grisu_prettify<char>(
           digits.data(), num_digits, exp, internal::counting_iterator<char>(),
           params_);
       size_ = it.count();
@@ -2675,8 +2681,8 @@ template <typename Range> class basic_writer {
     template <typename It> void operator()(It&& it) {
       if (sign_) *it++ = static_cast<char_type>(sign_);
       int num_digits = static_cast<int>(digits_.size());
-      it = internal::grisu2_prettify<char_type>(digits_.data(), num_digits,
-                                                exp_, it, params_);
+      it = internal::grisu_prettify<char_type>(digits_.data(), num_digits, exp_,
+                                               it, params_);
     }
   };
 
@@ -2876,11 +2882,12 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
   memory_buffer buffer;
   int exp = 0;
   int precision = spec.has_precision() || !spec.type ? spec.precision : 6;
+  unsigned options = handler.fixed ? internal::grisu_options::fixed : 0;
   bool use_grisu = fmt::internal::use_grisu<T>() &&
                    (spec.type != 'a' && spec.type != 'A' && spec.type != 'e' &&
                     spec.type != 'E') &&
-                   internal::grisu2_format(static_cast<double>(value), buffer,
-                                           precision, handler.fixed, exp);
+                   internal::grisu_format(static_cast<double>(value), buffer,
+                                           precision, options, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
 
   if (handler.as_percentage) {
