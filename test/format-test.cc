@@ -2451,7 +2451,7 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:d}", "invalid type specifier", std::string);
   EXPECT_ERROR("{:s}", "invalid type specifier", void*);
 #  else
-  fmt::print("warning: constexpr is broken in this versio of MSVC\n");
+  fmt::print("warning: constexpr is broken in this version of MSVC\n");
 #  endif
   EXPECT_ERROR("{foo", "compile-time checks don't support named arguments",
                int);
