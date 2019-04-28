@@ -296,4 +296,13 @@ TEST(ChronoTest, FormatFullSpecsQq) {
   EXPECT_EQ("*1.2340 ms*", fmt::format("{:*^11.4%Q %q}", dms(1.234)));
 }
 
+TEST(ChronoTest, InvalidWidthId) {
+  EXPECT_THROW(fmt::format("{:{o}", std::chrono::seconds(0)),
+               fmt::format_error);
+}
+
+TEST(ChronoTest, InvalidColons) {
+  EXPECT_THROW(fmt::format("{0}=:{0::", std::chrono::seconds(0)),
+               fmt::format_error);
+}
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
