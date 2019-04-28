@@ -1488,6 +1488,7 @@ TEST(FormatterTest, PrecisionRounding) {
   EXPECT_EQ("0.002", format("{:.3f}", 0.0015));
   EXPECT_EQ("1.000", format("{:.3f}", 0.9999));
   EXPECT_EQ("0.00123", format("{:.3}", 0.00123));
+  EXPECT_EQ("0.1", format("{:.16g}", 0.1));
   // Trigger rounding error in Grisu by a carefully chosen number.
   auto n = 3788512123356.985352;
   char buffer[64];
@@ -2451,7 +2452,7 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:d}", "invalid type specifier", std::string);
   EXPECT_ERROR("{:s}", "invalid type specifier", void*);
 #  else
-  fmt::print("warning: constexpr is broken in this versio of MSVC\n");
+  fmt::print("warning: constexpr is broken in this version of MSVC\n");
 #  endif
   EXPECT_ERROR("{foo", "compile-time checks don't support named arguments",
                int);

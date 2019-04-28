@@ -305,4 +305,5 @@ TEST(ChronoTest, InvalidColons) {
   EXPECT_THROW(fmt::format("{0}=:{0::", std::chrono::seconds(0)),
                fmt::format_error);
 }
+
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

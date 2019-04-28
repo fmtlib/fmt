@@ -10,9 +10,9 @@
 FMT_BEGIN_NAMESPACE
 template struct internal::basic_data<void>;
 
-// Workaround a bug in MSVC2013 that prevents instantiation of grisu2_format.
-bool (*instantiate_grisu2_format)(double, internal::buffer<char>&, int, bool,
-                                  int&) = internal::grisu2_format;
+// Workaround a bug in MSVC2013 that prevents instantiation of grisu_format.
+bool (*instantiate_grisu_format)(double, internal::buffer<char>&, int, unsigned,
+                                 int&) = internal::grisu_format;
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 template FMT_API internal::locale_ref::locale_ref(const std::locale& loc);
