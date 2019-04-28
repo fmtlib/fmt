@@ -727,7 +727,7 @@ template <typename T = void> struct FMT_API basic_data {
 };
 
 #if FMT_USE_EXTERN_TEMPLATES
-extern template struct basic_data<void>;
+extern template struct FMT_API basic_data<void>;
 #endif
 
 // This is a struct rather than a typedef to avoid shadowing warnings in gcc.
