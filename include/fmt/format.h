@@ -169,6 +169,26 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
+#if FMT_USE_EXTERN_TEMPLATES
+#  if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
+#    ifdef FMT_EXPORT
+//     When DLL exporting an "explicit class template instantiation declaration",
+//     we should not designate __declspec(dllexport) at both 
+//     - class template definition 
+//     - explicit class template instantiation declaration.
+//     
+//     (Instead, designate __declspec(dllexport) somewhere else
+//     and only at a single point where we have
+//     the "explicit class template instantiation definition.")
+#      define FMT_EXTERN_TEMPLATE_HEADER_FILE_API
+#    endif
+#  endif
+#endif
+#ifndef FMT_EXTERN_TEMPLATE_HEADER_FILE_API
+// In other cases, we can just follow FMT_API there.
+#  define FMT_EXTERN_TEMPLATE_HEADER_FILE_API FMT_API
+#endif
+
 #if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_trailing_return) || \
     FMT_MSC_VER >= 1600
 #  define FMT_USE_TRAILING_RETURN 1
@@ -712,7 +732,7 @@ template <typename T> struct int_traits {
 
 // Static data is placed in this class template to allow header-only
 // configuration.
-template <typename T = void> struct FMT_API basic_data {
+template <typename T = void> struct FMT_EXTERN_TEMPLATE_HEADER_FILE_API basic_data {
   static const uint64_t POWERS_OF_10_64[];
   static const uint32_t ZERO_OR_POWERS_OF_10_32[];
   static const uint64_t ZERO_OR_POWERS_OF_10_64[];
@@ -727,7 +747,7 @@ template <typename T = void> struct FMT_API basic_data {
 };
 
 #if FMT_USE_EXTERN_TEMPLATES
-extern template struct FMT_API basic_data<void>;
+extern template struct basic_data<void>;
 #endif
 
 // This is a struct rather than a typedef to avoid shadowing warnings in gcc.
