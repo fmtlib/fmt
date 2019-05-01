@@ -593,12 +593,12 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
 
   FMT_CONSTEXPR parse_range do_parse(basic_parse_context<Char>& ctx) {
     auto begin = ctx.begin(), end = ctx.end();
-    if (begin == end) return {begin, end};
+    if (begin == end || *begin == '}') return {begin, begin};
     spec_handler handler{*this, ctx, format_str};
     begin = internal::parse_align(begin, end, handler);
-    if (begin == end) return {begin, end};
+    if (begin == end) return {begin, begin};
     begin = internal::parse_width(begin, end, handler);
-    if (begin == end) return {begin, end};
+    if (begin == end) return {begin, begin};
     if (*begin == '.') {
       if (std::is_floating_point<Rep>::value)
         begin = internal::parse_precision(begin, end, handler);
