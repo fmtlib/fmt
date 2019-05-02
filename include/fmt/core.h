@@ -199,7 +199,7 @@
 #  define FMT_EXTERN_TEMPLATE_API
 #endif
 
-#if !define(FMT_HEADER_ONLY)
+#ifndef FMT_HEADER_ONLY
 #  define FMT_EXTERN extern
 #else
 #  define FMT_EXTERN
