@@ -159,16 +159,6 @@ FMT_END_NAMESPACE
 #  define FMT_UDL_TEMPLATE 0
 #endif
 
-#ifndef FMT_USE_EXTERN_TEMPLATES
-#  ifndef FMT_HEADER_ONLY
-#    define FMT_USE_EXTERN_TEMPLATES                           \
-      ((FMT_CLANG_VERSION >= 209 && __cplusplus >= 201103L) || \
-       (FMT_GCC_VERSION >= 303 && FMT_HAS_GXX_CXX11))
-#  else
-#    define FMT_USE_EXTERN_TEMPLATES 0
-#  endif
-#endif
-
 #if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_trailing_return) || \
     FMT_MSC_VER >= 1600
 #  define FMT_USE_TRAILING_RETURN 1
@@ -712,7 +702,7 @@ template <typename T> struct int_traits {
 
 // Static data is placed in this class template to allow header-only
 // configuration.
-template <typename T = void> struct FMT_API basic_data {
+template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const uint64_t POWERS_OF_10_64[];
   static const uint32_t ZERO_OR_POWERS_OF_10_32[];
   static const uint64_t ZERO_OR_POWERS_OF_10_64[];
@@ -726,9 +716,7 @@ template <typename T = void> struct FMT_API basic_data {
   static const wchar_t WRESET_COLOR[5];
 };
 
-#if FMT_USE_EXTERN_TEMPLATES
-extern template struct basic_data<void>;
-#endif
+FMT_EXTERN template struct basic_data<void>;
 
 // This is a struct rather than a typedef to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};

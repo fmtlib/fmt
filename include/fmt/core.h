@@ -189,10 +189,20 @@
 #    define FMT_API __declspec(dllexport)
 #  elif defined(FMT_SHARED)
 #    define FMT_API __declspec(dllimport)
+#    define FMT_EXTERN_TEMPLATE_API FMT_API
 #  endif
 #endif
 #ifndef FMT_API
 #  define FMT_API
+#endif
+#ifndef FMT_EXTERN_TEMPLATE_API
+#  define FMT_EXTERN_TEMPLATE_API
+#endif
+
+#ifndef FMT_HEADER_ONLY
+#  define FMT_EXTERN extern
+#else
+#  define FMT_EXTERN
 #endif
 
 #ifndef FMT_ASSERT
