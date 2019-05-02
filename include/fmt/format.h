@@ -716,7 +716,7 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const wchar_t WRESET_COLOR[5];
 };
 
-extern template struct basic_data<void>;
+FMT_EXTERN template struct basic_data<void>;
 
 // This is a struct rather than a typedef to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};
