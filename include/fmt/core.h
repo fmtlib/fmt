@@ -199,6 +199,12 @@
 #  define FMT_EXTERN_TEMPLATE_API
 #endif
 
+#if !define(FMT_HEADER_ONLY)
+#  define FMT_EXTERN extern
+#else
+#  define FMT_EXTERN
+#endif
+
 #ifndef FMT_ASSERT
 #  define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
