@@ -306,4 +306,8 @@ TEST(ChronoTest, InvalidColons) {
                fmt::format_error);
 }
 
+TEST(ChronoTest, LargeDuration) {
+  EXPECT_EQ("40", fmt::format("{:%S}", std::chrono::duration<double>(1e20)));
+}
+
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

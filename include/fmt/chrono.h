@@ -376,11 +376,22 @@ struct chrono_format_checker {
   FMT_NORETURN void on_tz_name() { report_no_date(); }
 };
 
-template <typename Int> inline int to_int(Int value) {
+template <typename T> inline int to_int(T value) {
   FMT_ASSERT(value >= (std::numeric_limits<int>::min)() &&
                  value <= (std::numeric_limits<int>::max)(),
              "invalid value");
   return static_cast<int>(value);
+}
+
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
+inline T mod(T x, int y) {
+  return x % y;
+}
+template <typename T, typename std::enable_if<std::is_floating_point<T>::value,
+                                              int>::type = 0>
+inline T mod(T x, int y) {
+  return std::fmod(x, y);
 }
 
 template <typename Rep, typename OutputIt>
@@ -410,8 +421,9 @@ struct chrono_formatter {
   OutputIt out;
   int precision;
   Rep val;
+  typedef std::chrono::duration<Rep> seconds;
+  seconds s;
   typedef std::chrono::duration<Rep, std::milli> milliseconds;
-  std::chrono::seconds s;
   milliseconds ms;
 
   typedef typename FormatContext::char_type char_type;
@@ -421,18 +433,18 @@ struct chrono_formatter {
       : context(ctx),
         out(o),
         val(d.count()),
-        s(std::chrono::duration_cast<std::chrono::seconds>(d)),
+        s(std::chrono::duration_cast<seconds>(d)),
         ms(std::chrono::duration_cast<milliseconds>(d - s)) {}
 
-  int hour() const { return to_int((s.count() / 3600) % 24); }
+  int hour() const { return to_int(mod((s.count() / 3600), 24)); }
 
   int hour12() const {
-    auto hour = to_int((s.count() / 3600) % 12);
+    auto hour = to_int(mod((s.count() / 3600), 12));
     return hour > 0 ? hour : 12;
   }
 
-  int minute() const { return to_int((s.count() / 60) % 60); }
-  int second() const { return to_int(s.count() % 60); }
+  int minute() const { return to_int(mod((s.count() / 60), 60)); }
+  int second() const { return to_int(mod(s.count(), 60)); }
 
   std::tm time() const {
     auto time = std::tm();
