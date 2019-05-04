@@ -310,4 +310,8 @@ TEST(ChronoTest, LargeDuration) {
   EXPECT_EQ("40", fmt::format("{:%S}", std::chrono::duration<double>(1e20)));
 }
 
+TEST(ChronoTest, NegativeDuration) {
+  EXPECT_EQ("-00:01", fmt::format("{:%M:%S}", std::chrono::duration<double>(-1)));
+}
+
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
