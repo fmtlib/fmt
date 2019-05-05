@@ -376,9 +376,20 @@ struct chrono_format_checker {
   FMT_NORETURN void on_tz_name() { report_no_date(); }
 };
 
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
+inline bool isnan(T) {
+  return false;
+}
+template <typename T, typename std::enable_if<std::is_floating_point<T>::value,
+                                              int>::type = 0>
+inline bool isnan(T value) {
+  return std::isnan(value);
+}
+
 template <typename T> inline int to_int(T value) {
-  FMT_ASSERT(value >= (std::numeric_limits<int>::min)() &&
-                 value <= (std::numeric_limits<int>::max)(),
+  FMT_ASSERT(isnan(value) || (value >= (std::numeric_limits<int>::min)() &&
+                              value <= (std::numeric_limits<int>::max)()),
              "invalid value");
   return static_cast<int>(value);
 }
@@ -439,33 +450,37 @@ struct chrono_formatter {
     ms = std::chrono::duration_cast<milliseconds>(d - s);
   }
 
-  int hour() const { return to_int(mod((s.count() / 3600), 24)); }
+  Rep hour() const { return mod((s.count() / 3600), 24); }
 
-  int hour12() const {
-    auto hour = to_int(mod((s.count() / 3600), 12));
-    return hour > 0 ? hour : 12;
+  Rep hour12() const {
+    Rep hour = mod((s.count() / 3600), 12);
+    return hour <= 0 ? 12 : hour;
   }
 
-  int minute() const { return to_int(mod((s.count() / 60), 60)); }
-  int second() const { return to_int(mod(s.count(), 60)); }
+  Rep minute() const { return mod((s.count() / 60), 60); }
+  Rep second() const { return mod(s.count(), 60); }
 
   std::tm time() const {
     auto time = std::tm();
-    time.tm_hour = hour();
-    time.tm_min = minute();
-    time.tm_sec = second();
+    time.tm_hour = to_int(hour());
+    time.tm_min = to_int(minute());
+    time.tm_sec = to_int(second());
     return time;
   }
 
-  void write(int value, int width) {
+  void write(Rep value, int width) {
+    if (isnan(value)) return write_nan();
     typedef typename int_traits<int>::main_type main_type;
-    main_type n = to_unsigned(value);
+    main_type n = to_unsigned(to_int(value));
     int num_digits = internal::count_digits(n);
     if (width > num_digits) out = std::fill_n(out, width - num_digits, '0');
     out = format_decimal<char_type>(out, n, num_digits);
   }
 
+  void write_nan() { std::copy_n("nan", 3, out); }
+
   void format_localized(const tm& time, const char* format) {
+    if (isnan(val)) return write_nan();
     auto locale = context.locale().template get<std::locale>();
     auto& facet = std::use_facet<std::time_put<char_type>>(locale);
     std::basic_ostringstream<char_type> os;
@@ -497,14 +512,14 @@ struct chrono_formatter {
   void on_24_hour(numeric_system ns) {
     if (ns == numeric_system::standard) return write(hour(), 2);
     auto time = tm();
-    time.tm_hour = hour();
+    time.tm_hour = to_int(hour());
     format_localized(time, "%OH");
   }
 
   void on_12_hour(numeric_system ns) {
     if (ns == numeric_system::standard) return write(hour12(), 2);
     auto time = tm();
-    time.tm_hour = hour();
+    time.tm_hour = hour12();
     format_localized(time, "%OI");
   }
 
@@ -520,7 +535,7 @@ struct chrono_formatter {
       write(second(), 2);
       if (ms != std::chrono::milliseconds(0)) {
         *out++ = '.';
-        write(to_int(ms.count()), 3);
+        write(ms.count(), 3);
       }
       return;
     }
