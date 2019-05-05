@@ -10,6 +10,10 @@
 
 #include "chrono.h"
 
+#ifdef _MSC_VER
+#pragma message("fmt/time.h is deprecated, use fmt/chrono.h instead")
+#else
 #warning fmt/time.h is deprecated, use fmt/chrono.h instead
+#endif
 
 #endif  // FMT_TIME_H_
