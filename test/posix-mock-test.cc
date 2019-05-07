@@ -6,10 +6,8 @@
 // For the license information refer to format.h.
 
 // Disable bogus MSVC warnings.
-#ifdef _MSC_VER
-#  ifndef _CRT_SECURE_NO_WARNINGS
-#    define _CRT_SECURE_NO_WARNINGS
-#  endif
+#ifndef _CRT_SECURE_NO_WARNINGS
+#  define _CRT_SECURE_NO_WARNINGS
 #endif
 
 #include "posix-mock.h"
