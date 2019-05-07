@@ -749,7 +749,7 @@ inline int count_digits(uint64_t n) {
 #endif
 
 // Counts the number of digits in n. BITS = log2(radix).
-template <unsigned BITS, typename UInt> inline FMT_EXTERN_TEMPLATE_API int count_digits(UInt n) {
+template <unsigned BITS, typename UInt> inline int count_digits(UInt n) {
   int num_digits = 0;
   do {
     ++num_digits;
