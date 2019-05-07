@@ -5,6 +5,10 @@
 //
 // For the license information refer to format.h.
 
+#ifndef _CRT_SECURE_NO_WARNINGS
+#  define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "fmt/format.h"
 #include "gtest-extra.h"
 
