@@ -140,22 +140,6 @@ template <typename Char> struct WriteChecker {
   EXPECT_PRED_FORMAT1(WriteChecker<wchar_t>(), value)
 }  // namespace
 
-// Tests fmt::internal::count_digits for integer type Int.
-template <typename Int> void test_count_digits() {
-  for (Int i = 0; i < 10; ++i) EXPECT_EQ(1u, fmt::internal::count_digits(i));
-  for (Int i = 1, n = 1, end = std::numeric_limits<Int>::max() / 10; n <= end;
-       ++i) {
-    n *= 10;
-    EXPECT_EQ(i, fmt::internal::count_digits(n - 1));
-    EXPECT_EQ(i + 1, fmt::internal::count_digits(n));
-  }
-}
-
-TEST(UtilTest, CountDigits) {
-  test_count_digits<uint32_t>();
-  test_count_digits<uint64_t>();
-}
-
 struct uint32_pair {
   uint32_t u[2];
 };
