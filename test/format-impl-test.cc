@@ -237,3 +237,19 @@ TEST(FormatTest, FormatErrorCode) {
 TEST(FormatTest, CountCodePoints) {
   EXPECT_EQ(4, fmt::internal::count_code_points(fmt::u8string_view("ёжик")));
 }
+
+// Tests fmt::internal::count_digits for integer type Int.
+template <typename Int> void test_count_digits() {
+  for (Int i = 0; i < 10; ++i) EXPECT_EQ(1u, fmt::internal::count_digits(i));
+  for (Int i = 1, n = 1, end = std::numeric_limits<Int>::max() / 10; n <= end;
+       ++i) {
+    n *= 10;
+    EXPECT_EQ(i, fmt::internal::count_digits(n - 1));
+    EXPECT_EQ(i + 1, fmt::internal::count_digits(n));
+  }
+}
+
+TEST(UtilTest, CountDigits) {
+  test_count_digits<uint32_t>();
+  test_count_digits<uint64_t>();
+}
