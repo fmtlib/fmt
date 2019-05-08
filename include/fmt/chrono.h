@@ -376,13 +376,11 @@ struct chrono_format_checker {
   FMT_NORETURN void on_tz_name() { report_no_date(); }
 };
 
-template <typename T,
-          typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
+template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline bool isnan(T) {
   return false;
 }
-template <typename T, typename std::enable_if<std::is_floating_point<T>::value,
-                                              int>::type = 0>
+template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
 inline bool isnan(T value) {
   return std::isnan(value);
 }
@@ -394,13 +392,11 @@ template <typename T> inline int to_int(T value) {
   return static_cast<int>(value);
 }
 
-template <typename T,
-          typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
+template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline T mod(T x, int y) {
   return x % y;
 }
-template <typename T, typename std::enable_if<std::is_floating_point<T>::value,
-                                              int>::type = 0>
+template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
 inline T mod(T x, int y) {
   return std::fmod(x, y);
 }
