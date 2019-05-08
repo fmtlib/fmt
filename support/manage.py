@@ -142,6 +142,7 @@ def update_site(env):
                 b.data = b.data.replace('std::FILE*', 'std::FILE *')
                 b.data = b.data.replace('unsigned int', 'unsigned')
                 b.data = b.data.replace('operator""_', 'operator"" _')
+                b.data = b.data.replace(', size_t', ', std::size_t')
         # Fix a broken link in index.rst.
         index = os.path.join(target_doc_dir, 'index.rst')
         with rewrite(index) as b:
