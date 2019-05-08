@@ -161,6 +161,9 @@ endif ()
 if (FMT_PEDANTIC)
   target_compile_options(fmt PRIVATE ${PEDANTIC_COMPILE_FLAGS})
 endif ()
+if (MSVC)
+  target_compile_options(fmt PRIVATE /EHsc)
+endif ()
 
 target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
 
