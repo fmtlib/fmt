@@ -461,6 +461,10 @@ struct LocaleMock {
 #  ifdef _MSC_VER
 #    pragma warning(push)
 #    pragma warning(disable : 4273)
+#    ifdef __clang__
+#      pragma clang diagnostic push
+#      pragma clang diagnostic ignored "-Winconsistent-dllimport"
+#    endif
 
 _locale_t _create_locale(int category, const char* locale) {
   return LocaleMock::instance->newlocale(category, locale, 0);
@@ -473,6 +477,9 @@ void _free_locale(_locale_t locale) {
 double _strtod_l(const char* nptr, char** endptr, _locale_t locale) {
   return LocaleMock::instance->strtod_l(nptr, endptr, locale);
 }
+#    ifdef __clang__
+#      pragma clang diagnostic pop
+#    endif
 #    pragma warning(pop)
 #  endif
 
