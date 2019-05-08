@@ -401,6 +401,24 @@ inline T mod(T x, int y) {
   return std::fmod(x, y);
 }
 
+template <typename Rep, typename Period,
+          typename std::enable_if<std::is_integral<Rep>::value, int>::type = 0>
+inline std::chrono::duration<Rep, std::milli> get_milliseconds(
+    std::chrono::duration<Rep, Period> d) {
+  auto s = std::chrono::duration_cast<std::chrono::seconds>(d);
+  return std::chrono::duration_cast<std::chrono::milliseconds>(d - s);
+}
+
+template <
+    typename Rep, typename Period,
+    typename std::enable_if<std::is_floating_point<Rep>::value, int>::type = 0>
+inline std::chrono::duration<Rep, std::milli> get_milliseconds(
+    std::chrono::duration<Rep, Period> d) {
+  auto ms =
+      std::chrono::duration_cast<std::chrono::duration<Rep, std::milli>>(d);
+  return std::chrono::duration<Rep, std::milli>(mod(ms.count(), 1000));
+}
+
 template <typename Rep, typename OutputIt>
 OutputIt static format_chrono_duration_value(OutputIt out, Rep val,
                                              int precision) {
@@ -443,7 +461,7 @@ struct chrono_formatter {
       *out++ = '-';
     }
     s = std::chrono::duration_cast<seconds>(d);
-    ms = std::chrono::duration_cast<milliseconds>(d - s);
+    ms = get_milliseconds(d);
   }
 
   Rep hour() const { return mod((s.count() / 3600), 24); }
