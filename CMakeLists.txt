@@ -164,12 +164,11 @@ endif ()
 
 # Insert FMT_MSVC_EH if user provides.
 # If not, default to /EHsc in clang target msvc.
-if (MSVC)
+if (MSVC AND WIN32)
   if (FMT_MSVC_EH)
     set(FMT_CUSTOM_MSVC_EH ${FMT_MSVC_EH})
   else ()
-    if ( (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	     AND WIN32 )
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       set(FMT_CUSTOM_MSVC_EH /EHsc)
     else ()
       set(FMT_CUSTOM_MSVC_EH)
