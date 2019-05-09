@@ -45,7 +45,7 @@ if (MSVC AND WIN32)
     else ()
       set(FMT_CUSTOM_MSVC_EH)
   endif ()
-  target_compile_options(fmt PRIVATE ${FMT_CUSTOM_MSVC_EH})
+  target_compile_options(gmock PUBLIC ${FMT_CUSTOM_MSVC_EH})
 endif ()
 
 # GTest doesn't detect <tuple> with clang.
