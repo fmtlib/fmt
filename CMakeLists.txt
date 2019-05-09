@@ -161,8 +161,20 @@ endif ()
 if (FMT_PEDANTIC)
   target_compile_options(fmt PRIVATE ${PEDANTIC_COMPILE_FLAGS})
 endif ()
-if (MSVC AND CMAKE_CXX_COMPILER_ID MATCHES "Clang") # mirroring cl default
-  target_compile_options(fmt PRIVATE /EHsc)
+
+# Insert FMT_MSVC_EH if user provides.
+# If not, default to /EHsc in clang target msvc.
+if (MSVC)
+  if (FMT_MSVC_EH)
+    set(FMT_CUSTOM_MSVC_EH ${FMT_MSVC_EH})
+  else ()
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang") )
+      set(FMT_CUSTOM_MSVC_EH /EHsc)
+    else ()
+      set(FMT_CUSTOM_MSVC_EH)
+    endif ()
+  endif ()
+  target_compile_options(fmt PRIVATE ${FMT_CUSTOM_MSVC_EH})
 endif ()
 
 target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
