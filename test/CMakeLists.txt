@@ -29,9 +29,19 @@ if (MSVC)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Disable MSVC warnings of POSIX functions.
     target_compile_options(gmock PUBLIC -Wno-deprecated-declarations)
-    # Mirroring MSVC cl default
-    target_compile_options(gmock PUBLIC /EHsc)
   endif ()
+  # Insert FMT_MSVC_EH if user provides.
+  # if not, default to /EHsc in clang target msvc.
+  if (FMT_MSVC_EH)
+    set(FMT_CUSTOM_MSVC_EH ${FMT_MSVC_EH})
+    endif ()
+  else ()
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang") )
+      set(FMT_CUSTOM_MSVC_EH /EHsc)
+    else ()
+      set(FMT_CUSTOM_MSVC_EH)
+  endif ()
+  target_compile_options(fmt PRIVATE ${FMT_CUSTOM_MSVC_EH})
 endif ()
 
 # GTest doesn't detect <tuple> with clang.
