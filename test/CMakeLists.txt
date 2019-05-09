@@ -24,12 +24,13 @@ endif ()
 if (MSVC)
   # Workaround a bug in implementation of variadic templates in MSVC11.
   target_compile_definitions(gmock PUBLIC _VARIADIC_MAX=10)
-  # Automatic enable exception
-  target_compile_options(gmock PUBLIC /EHsc)
-  # Disable MSVC warning  of _CRT_INSECURE_DEPRECATE functions and POSIX functions
+  # Disable MSVC warnings of _CRT_INSECURE_DEPRECATE functions.
   target_compile_definitions(gmock PUBLIC _CRT_SECURE_NO_WARNINGS)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Disable MSVC warnings of POSIX functions.
     target_compile_options(gmock PUBLIC -Wno-deprecated-declarations)
+    # Mirroring MSVC cl default
+    target_compile_options(gmock PUBLIC /EHsc)
   endif ()
 endif ()
 
