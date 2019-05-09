@@ -161,7 +161,7 @@ endif ()
 if (FMT_PEDANTIC)
   target_compile_options(fmt PRIVATE ${PEDANTIC_COMPILE_FLAGS})
 endif ()
-if (MSVC)
+if (MSVC AND CMAKE_CXX_COMPILER_ID MATCHES "Clang") # mirroring cl default
   target_compile_options(fmt PRIVATE /EHsc)
 endif ()
 
