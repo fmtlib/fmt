@@ -21,18 +21,17 @@ if (NOT SUPPORTS_VARIADIC_TEMPLATES)
   target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
 endif ()
 
-# Workaround a bug in implementation of variadic templates in MSVC11.
 if (MSVC)
+  # Workaround a bug in implementation of variadic templates in MSVC11.
   target_compile_definitions(gmock PUBLIC _VARIADIC_MAX=10)
-endif ()
-
-if (MSVC AND WIN32)
+  
   # Disable MSVC warnings of _CRT_INSECURE_DEPRECATE functions.
   target_compile_definitions(gmock PUBLIC _CRT_SECURE_NO_WARNINGS)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Disable MSVC warnings of POSIX functions.
     target_compile_options(gmock PUBLIC -Wno-deprecated-declarations)
   endif ()
+  
   # Insert FMT_MSVC_EH if user provides.
   # if not, default to /EHsc in clang target msvc.
   if (FMT_MSVC_EH)
