@@ -21,7 +21,7 @@ if (NOT SUPPORTS_VARIADIC_TEMPLATES)
   target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
 endif ()
 
-if (MSVC)
+if (MSVC AND WIN32)
   # Workaround a bug in implementation of variadic templates in MSVC11.
   target_compile_definitions(gmock PUBLIC _VARIADIC_MAX=10)
   # Disable MSVC warnings of _CRT_INSECURE_DEPRECATE functions.
