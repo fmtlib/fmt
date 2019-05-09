@@ -37,7 +37,6 @@ if (MSVC AND WIN32)
   # if not, default to /EHsc in clang target msvc.
   if (FMT_MSVC_EH)
     set(FMT_CUSTOM_MSVC_EH ${FMT_MSVC_EH})
-    endif ()
   else ()
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       set(FMT_CUSTOM_MSVC_EH /EHsc)
