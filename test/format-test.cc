@@ -2495,7 +2495,7 @@ TEST(FormatTest, FmtStringInTemplate) {
 // type in this mode. If this is the case __cpp_char8_t will be defined.
 #ifndef __cpp_char8_t
 // Locally provide type char8_t defined in format.h
-using fmt::char8_t
+using fmt::char8_t;
 #endif
 
 TEST(FormatTest, ConstructU8StringViewFromCString) {
