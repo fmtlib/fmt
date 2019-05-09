@@ -2494,16 +2494,14 @@ TEST(FormatTest, FmtStringInTemplate) {
 // C++20 feature test, since r346892 Clang considers char8_t a fundamental
 // type in this mode. If this is the case __cpp_char8_t will be defined.
 #ifndef __cpp_char8_t
-// A UTF-8 code unit type.
-#define CHAR8_T fmt::char8_t
-#else
-#define CHAR8_T char8_t
+// Locally provide type char8_t defined in format.h
+using fmt::char8_t
 #endif
 
 TEST(FormatTest, ConstructU8StringViewFromCString) {
   fmt::u8string_view s("ab");
   EXPECT_EQ(s.size(), 2u);
-  const CHAR8_T* data = s.data();
+  const char8_t* data = s.data();
   EXPECT_EQ(data[0], 'a');
   EXPECT_EQ(data[1], 'b');
 }
@@ -2511,7 +2509,7 @@ TEST(FormatTest, ConstructU8StringViewFromCString) {
 TEST(FormatTest, ConstructU8StringViewFromDataAndSize) {
   fmt::u8string_view s("foobar", 3);
   EXPECT_EQ(s.size(), 3u);
-  const CHAR8_T* data = s.data();
+  const char8_t* data = s.data();
   EXPECT_EQ(data[0], 'f');
   EXPECT_EQ(data[1], 'o');
   EXPECT_EQ(data[2], 'o');
@@ -2522,7 +2520,7 @@ TEST(FormatTest, U8StringViewLiteral) {
   using namespace fmt::literals;
   fmt::u8string_view s = "ab"_u;
   EXPECT_EQ(s.size(), 2u);
-  const CHAR8_T* data = s.data();
+  const char8_t* data = s.data();
   EXPECT_EQ(data[0], 'a');
   EXPECT_EQ(data[1], 'b');
   EXPECT_EQ(format("{:*^5}"_u, "🤡"_u), "**🤡**"_u);
