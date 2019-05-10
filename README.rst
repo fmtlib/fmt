@@ -16,7 +16,7 @@ It can be used as a safe and fast alternative to (s)printf and iostreams.
 
 `Documentation <http://fmtlib.net/latest/>`__
 
-Q&A: ask questions at StackOverflow with the tag `fmt <http://stackoverflow.com/questions/tagged/fmt>`_.
+Q&A: ask questions on `StackOverflow with the tag fmt <http://stackoverflow.com/questions/tagged/fmt>`_.
 
 Features
 --------
