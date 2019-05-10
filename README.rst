@@ -6,10 +6,10 @@
 
 .. image:: https://ci.appveyor.com/api/projects/status/ehjkiefde6gucy1v
    :target: https://ci.appveyor.com/project/vitaut/fmt
-   
-.. image:: https://badges.gitter.im/Join%20Chat.svg
-   :alt: Join the chat at https://gitter.im/fmtlib/fmt
-   :target: https://gitter.im/fmtlib/fmt
+
+.. image:: https://img.shields.io/badge/stackoverflow-fmt-blue.svg
+   :alt: Ask questions at StackOverflow with the tag fmt
+   :target: http://stackoverflow.com/questions/tagged/fmt
 
 **{fmt}** is an open-source formatting library for C++.
 It can be used as a safe and fast alternative to (s)printf and iostreams.
