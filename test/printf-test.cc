@@ -406,6 +406,8 @@ TEST(PrintfTest, Float) {
   EXPECT_PRINTF(buffer, "%E", 392.65);
   EXPECT_PRINTF("392.65", "%g", 392.65);
   EXPECT_PRINTF("392.65", "%G", 392.65);
+  EXPECT_PRINTF("392", "%g", 392.0);
+  EXPECT_PRINTF("392", "%G", 392.0);
   safe_sprintf(buffer, "%a", -392.65);
   EXPECT_EQ(buffer, format("{:a}", -392.65));
   safe_sprintf(buffer, "%A", -392.65);
