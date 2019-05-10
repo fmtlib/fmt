@@ -80,6 +80,16 @@
 #  define FMT_CONSTEXPR11
 #endif
 
+#ifndef FMT_USE_MAYBE_UNUSED
+#  define FMT_USE_MAYBE_UNUSED \
+    (__cplusplus >= 201703L)
+#endif
+#if FMT_USE_MAYBE_UNUSED
+#  define FMT_MAYBE_UNUSED [[maybe_unused]]
+#else
+#  define FMT_MAYBE_UNUSED
+#endif
+
 #ifndef FMT_OVERRIDE
 #  if FMT_HAS_FEATURE(cxx_override) || \
       (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900
