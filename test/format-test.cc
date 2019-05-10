@@ -2540,9 +2540,9 @@ TEST(FormatTest, EmphasisNonHeaderOnly) {
 TEST(FormatTest, CharTraitsIsNotAmbiguous) {
   // Test that we don't inject internal names into the std namespace.
   using namespace std;
-  char_traits<char>::char_type c;
+  FMT_MAYBE_UNUSED char_traits<char>::char_type c;
 #if __cplusplus >= 201103L
   std::string s;
-  auto lval = begin(s);
+  FMT_MAYBE_UNUSED auto lval = begin(s);
 #endif
 }
