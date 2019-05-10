@@ -1187,12 +1187,14 @@ It grisu_prettify(const char* digits, int size, int exp, It it,
   } else if (full_exp > 0) {
     // 1234e-2 -> 12.34[0+]
     it = copy_str<Char>(digits, digits + full_exp, it);
-    *it++ = static_cast<Char>('.');
     if (!params.trailing_zeros) {
       // Remove trailing zeros.
       while (size > full_exp && digits[size - 1] == '0') --size;
+      if (size != full_exp)
+        *it++ = static_cast<Char>('.');
       return copy_str<Char>(digits + full_exp, digits + size, it);
     }
+    *it++ = static_cast<Char>('.');
     it = copy_str<Char>(digits + full_exp, digits + size, it);
     if (params.num_digits > size) {
       // Add trailing zeros.
