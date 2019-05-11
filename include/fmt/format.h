@@ -1122,7 +1122,7 @@ enum {
 // Formats value using the Grisu algorithm:
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
 template <typename Double, FMT_ENABLE_IF(sizeof(Double) == sizeof(uint64_t))>
-FMT_API bool grisu_format(Double, buffer<char>&, int, unsigned, int&);
+bool grisu_format(Double, buffer<char>&, int, unsigned, int&);
 template <typename Double, FMT_ENABLE_IF(sizeof(Double) != sizeof(uint64_t))>
 inline bool grisu_format(Double, buffer<char>&, int, unsigned, int&) {
   return false;
