@@ -253,3 +253,12 @@ TEST(UtilTest, CountDigits) {
   test_count_digits<uint32_t>();
   test_count_digits<uint64_t>();
 }
+
+TEST(UtilTest, WriteUIntPtr) {
+  fmt::memory_buffer buf;
+  fmt::writer writer(buf);
+  writer.write_pointer(fmt::internal::bit_cast<fmt::internal::uintptr_t>(
+                           reinterpret_cast<void*>(0xface)),
+                       FMT_NULL);
+  EXPECT_EQ("0xface", to_string(buf));
+}
