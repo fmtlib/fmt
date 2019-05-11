@@ -251,7 +251,7 @@ namespace uintptr {
 struct uintptr_t {
   unsigned char value[sizeof(void*)];
 };
-}
+}  // namespace uintptr
 using uintptr::uintptr_t;
 typedef std::numeric_limits<uintptr_t> numutil;
 
@@ -1113,10 +1113,7 @@ FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
 namespace internal {
 
 namespace grisu_options {
-enum {
-  fixed = 1,
-  grisu3 = 2
-};
+enum { fixed = 1, grisu3 = 2 };
 }
 
 // Formats value using the Grisu algorithm:
@@ -1190,8 +1187,7 @@ It grisu_prettify(const char* digits, int size, int exp, It it,
     if (!params.trailing_zeros) {
       // Remove trailing zeros.
       while (size > full_exp && digits[size - 1] == '0') --size;
-      if (size != full_exp)
-        *it++ = static_cast<Char>('.');
+      if (size != full_exp) *it++ = static_cast<Char>('.');
       return copy_str<Char>(digits + full_exp, digits + size, it);
     }
     *it++ = static_cast<Char>('.');
@@ -2877,7 +2873,7 @@ void basic_writer<Range>::write_double(T value, const format_specs& spec) {
                    (spec.type != 'a' && spec.type != 'A' && spec.type != 'e' &&
                     spec.type != 'E') &&
                    internal::grisu_format(static_cast<double>(value), buffer,
-                                           precision, options, exp);
+                                          precision, options, exp);
   if (!use_grisu) internal::sprintf_format(value, buffer, spec);
 
   if (handler.as_percentage) {

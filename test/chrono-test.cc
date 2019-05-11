@@ -318,6 +318,10 @@ TEST(ChronoTest, SpecialDurations) {
       fmt::format("{:%I %H %M %S %R %r}", std::chrono::duration<double>(nan)));
   fmt::format("{:%S}",
               std::chrono::duration<float, std::atto>(1.79400457e+31f));
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<float, std::exa>(1)),
+            "1Es");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<float, std::atto>(1)),
+            "1as");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

@@ -414,9 +414,8 @@ template <
     typename std::enable_if<std::is_floating_point<Rep>::value, int>::type = 0>
 inline std::chrono::duration<Rep, std::milli> get_milliseconds(
     std::chrono::duration<Rep, Period> d) {
-  auto ms =
-      std::chrono::duration_cast<std::chrono::duration<Rep, std::milli>>(d);
-  return std::chrono::duration<Rep, std::milli>(mod(ms.count(), 1000));
+  return std::chrono::duration<Rep, std::milli>(
+      mod(d.count() * Period::num / Period::den * 1000, 1000));
 }
 
 template <typename Rep, typename OutputIt>
@@ -431,12 +430,9 @@ OutputIt static format_chrono_duration_value(OutputIt out, Rep val,
 
 template <typename Period, typename OutputIt>
 static OutputIt format_chrono_duration_unit(OutputIt out) {
-  if (const char* unit = get_units<Period>())
-    return format_to(out, "{}", unit);
-  else if (Period::den == 1)
-    return format_to(out, "[{}]s", Period::num);
-  else
-    return format_to(out, "[{}/{}]s", Period::num, Period::den);
+  if (const char* unit = get_units<Period>()) return format_to(out, "{}", unit);
+  if (Period::den == 1) return format_to(out, "[{}]s", Period::num);
+  return format_to(out, "[{}/{}]s", Period::num, Period::den);
 }
 
 template <typename FormatContext, typename OutputIt, typename Rep,
@@ -449,7 +445,6 @@ struct chrono_formatter {
   typedef std::chrono::duration<Rep> seconds;
   seconds s;
   typedef std::chrono::duration<Rep, std::milli> milliseconds;
-  milliseconds ms;
 
   typedef typename FormatContext::char_type char_type;
 
@@ -461,7 +456,6 @@ struct chrono_formatter {
       *out++ = '-';
     }
     s = std::chrono::duration_cast<seconds>(d);
-    ms = get_milliseconds(d);
   }
 
   Rep hour() const { return mod((s.count() / 3600), 24); }
@@ -547,6 +541,7 @@ struct chrono_formatter {
   void on_second(numeric_system ns) {
     if (ns == numeric_system::standard) {
       write(second(), 2);
+      auto ms = get_milliseconds(std::chrono::duration<Rep, Period>(val));
       if (ms != std::chrono::milliseconds(0)) {
         *out++ = '.';
         write(ms.count(), 3);
