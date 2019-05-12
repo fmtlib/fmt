@@ -2207,7 +2207,7 @@ class format_string_checker {
   FMT_CONSTEXPR void on_replacement_field(const Char*) {}
 
   FMT_CONSTEXPR const Char* on_format_specs(const Char* begin, const Char*) {
-    context_.advance_to(begin);
+    advance_to(context_, begin);
     return arg_id_ < NUM_ARGS ? parse_funcs_[arg_id_](context_) : begin;
   }
 
@@ -3215,6 +3215,12 @@ basic_format_context<Range, Char>::arg(basic_string_view<char_type> name) {
   return arg;
 }
 
+template <typename Char, typename ErrorHandler>
+FMT_CONSTEXPR void advance_to(basic_parse_context<Char, ErrorHandler>& ctx,
+                              const Char* p) {
+  ctx.advance_to(ctx.begin() + (p - &*ctx.begin()));
+}
+
 template <typename ArgFormatter, typename Char, typename Context>
 struct format_handler : internal::error_handler {
   typedef typename ArgFormatter::range range;
@@ -3242,7 +3248,7 @@ struct format_handler : internal::error_handler {
   void on_arg_id(basic_string_view<Char> id) { arg = context.arg(id); }
 
   void on_replacement_field(const Char* p) {
-    parse_context.advance_to(p);
+    advance_to(parse_context, p);
     internal::custom_formatter<Context> f(parse_context, context);
     if (!visit_format_arg(f, arg))
       context.advance_to(
@@ -3250,7 +3256,7 @@ struct format_handler : internal::error_handler {
   }
 
   const Char* on_format_specs(const Char* begin, const Char* end) {
-    parse_context.advance_to(begin);
+    advance_to(parse_context, begin);
     internal::custom_formatter<Context> f(parse_context, context);
     if (visit_format_arg(f, arg)) return parse_context.begin();
     basic_format_specs<Char> specs;
@@ -3261,7 +3267,7 @@ struct format_handler : internal::error_handler {
         arg.type());
     begin = parse_format_specs(begin, end, handler);
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
-    parse_context.advance_to(begin);
+    advance_to(parse_context, begin);
     context.advance_to(
         visit_format_arg(ArgFormatter(context, &parse_context, &specs), arg));
     return begin;
