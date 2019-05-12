@@ -310,7 +310,7 @@ class prepared_format {
       const format_part_t& part) const {
     const auto view = to_string_view(format_);
     const auto specification_begin = view.data() + part.end_of_argument_id;
-    parse_ctx.advance_to(specification_begin);
+    advance_to(parse_ctx, specification_begin);
   }
 
   template <typename Range, typename Context, typename Id>
