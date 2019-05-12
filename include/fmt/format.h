@@ -3216,7 +3216,7 @@ basic_format_context<Range, Char>::arg(basic_string_view<char_type> name) {
 }
 
 template <typename Char, typename ErrorHandler>
-inline void advance_to(basic_parse_context<Char, ErrorHandler>& ctx,
+FMT_CONSTEXPR inline void advance_to(basic_parse_context<Char, ErrorHandler>& ctx,
                        const Char* p) {
   ctx.advance_to(ctx.begin() + (p - &*ctx.begin()));
 }
