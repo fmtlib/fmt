@@ -82,7 +82,7 @@ template <typename T> class is_like_std_string {
 
  public:
   static FMT_CONSTEXPR_DECL const bool value =
-      !std::is_void<decltype(check<T>(FMT_NULL))>::value;
+      is_string<T>::value || !std::is_void<decltype(check<T>(FMT_NULL))>::value;
 };
 
 template <typename Char>
