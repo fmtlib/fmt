@@ -656,21 +656,21 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
       uint64_t d = integral ? diff : diff * data::POWERS_OF_10_64[-exp];
       while (remainder < d && error - remainder >= divisor &&
              (remainder + divisor < d ||
-              d - remainder > remainder + divisor - d)) {
+              d - remainder >= remainder + divisor - d)) {
         --buf[size - 1];
         remainder += divisor;
       }
       return digits::done;
     }
     uint64_t unit = integral ? 1 : data::POWERS_OF_10_64[-exp];
-    uint64_t up = diff + unit;  // wp_Wup
+    uint64_t up = (diff - 1) * unit;  // wp_Wup
     while (remainder < up && error - remainder >= divisor &&
            (remainder + divisor < up ||
-            up - remainder > remainder + divisor - up)) {
+            up - remainder >= remainder + divisor - up)) {
       --buf[size - 1];
       remainder += divisor;
     }
-    uint64_t down = diff - unit;  // wp_Wdown
+    uint64_t down = (diff + 1) * unit;  // wp_Wdown
     if (remainder < down && error - remainder >= divisor &&
         (remainder + divisor < down ||
          down - remainder > remainder + divisor - down)) {
