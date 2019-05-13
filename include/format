@@ -608,16 +608,16 @@ struct format_handler : detail::error_handler {
   void on_arg_id(fmt::basic_string_view<Char>) {}
 
   void on_replacement_field(const Char* p) {
-    parse_ctx.advance_to(p);
+    parse_ctx.advance_to(parse_ctx.begin() + (p - &*parse_ctx.begin()));
     custom_formatter<Context> f(parse_ctx, context);
     if (!visit_format_arg(f, arg))
       context.advance_to(visit_format_arg(ArgFormatter(context, &parse_ctx), arg));
   }
 
   const Char* on_format_specs(const Char* begin, const Char* end) {
-    parse_ctx.advance_to(begin);
+    parse_ctx.advance_to(parse_ctx.begin() + (begin - &*parse_ctx.begin()));
     custom_formatter<Context> f(parse_ctx, context);
-    if (visit_format_arg(f, arg)) return parse_ctx.begin();
+    if (visit_format_arg(f, arg)) return &*parse_ctx.begin();
     fmt::basic_format_specs<Char> specs;
     using fmt::internal::specs_handler;
     using parse_context = basic_format_parse_context<Char>;
@@ -625,7 +625,7 @@ struct format_handler : detail::error_handler {
         specs_handler<parse_context, Context>(specs, parse_ctx, context), get_type(arg));
     begin = parse_format_specs(begin, end, handler);
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
-    parse_ctx.advance_to(begin);
+    parse_ctx.advance_to(parse_ctx.begin() + (begin - &*parse_ctx.begin()));
     context.advance_to(visit_format_arg(ArgFormatter(context, &parse_ctx, &specs), arg));
     return begin;
   }
