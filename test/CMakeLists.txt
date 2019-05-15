@@ -105,6 +105,7 @@ add_fmt_test(prepare-test)
 add_fmt_test(printf-test)
 add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
+add_fmt_test(scan-test)
 
 # MSVC fails to compile GMock when C++17 is enabled.
 if (FMT_HAS_VARIANT AND NOT MSVC)
