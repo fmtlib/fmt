@@ -6,7 +6,7 @@
 // For the license information refer to format.h.
 
 #include <array>
-#include <limits>
+#include <climits>
 
 #include "fmt/format.h"
 #include "gmock.h"
@@ -25,7 +25,7 @@ struct scan_args {
   template <size_t N>
   scan_args(const std::array<scan_arg, N>& store)
       : size(N), data(store.data()) {
-    static_assert(N < std::numeric_limits<int>::max(), "too many arguments");
+    static_assert(N < INT_MAX, "too many arguments");
   }
 };
 
