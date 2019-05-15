@@ -647,29 +647,30 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
     return digits::more;
   }
 
-  // This implements Grisu3's round_weed.
+  // Decrement the generated number approaching value from above.
+  void round(uint64_t d, uint64_t divisor, uint64_t& remainder,
+             uint64_t error) {
+    while (remainder < d && error - remainder >= divisor &&
+            (remainder + divisor < d ||
+            d - remainder >= remainder + divisor - d)) {
+      --buf[size - 1];
+      remainder += divisor;
+    }
+  }
+
+  // Implements Grisu's round_weed.
   digits::result on_digit(char digit, uint64_t divisor, uint64_t remainder,
                           uint64_t error, int exp, bool integral) {
     buf[size++] = digit;
     if (remainder >= error) return digits::more;
     if (GRISU_VERSION != 3) {
       uint64_t d = integral ? diff : diff * data::POWERS_OF_10_64[-exp];
-      while (remainder < d && error - remainder >= divisor &&
-             (remainder + divisor < d ||
-              d - remainder >= remainder + divisor - d)) {
-        --buf[size - 1];
-        remainder += divisor;
-      }
+      round(d, divisor, remainder, error);
       return digits::done;
     }
     uint64_t unit = integral ? 1 : data::POWERS_OF_10_64[-exp];
     uint64_t up = (diff - 1) * unit;  // wp_Wup
-    while (remainder < up && error - remainder >= divisor &&
-           (remainder + divisor < up ||
-            up - remainder >= remainder + divisor - up)) {
-      --buf[size - 1];
-      remainder += divisor;
-    }
+    round(up, divisor, remainder, error);
     uint64_t down = (diff + 1) * unit;  // wp_Wdown
     if (remainder < down && error - remainder >= divisor &&
         (remainder + divisor < down ||
