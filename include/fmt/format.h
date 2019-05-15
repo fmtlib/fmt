@@ -3036,34 +3036,6 @@ class format_int {
   std::string str() const { return std::string(str_, size()); }
 };
 
-// Formats a decimal integer value writing into buffer and returns
-// a pointer to the end of the formatted string. This function doesn't
-// write a terminating null character.
-template <typename T>
-FMT_DEPRECATED inline void format_decimal(char*& buffer, T value) {
-  typedef typename internal::int_traits<T>::main_type main_type;
-  main_type abs_value = static_cast<main_type>(value);
-  if (internal::is_negative(value)) {
-    *buffer++ = '-';
-    abs_value = 0 - abs_value;
-  }
-  if (abs_value < 100) {
-    if (abs_value < 10) {
-      *buffer++ = static_cast<char>('0' + abs_value);
-      return;
-    }
-    unsigned index = static_cast<unsigned>(abs_value * 2);
-    *buffer++ = internal::data::DIGITS[index];
-    *buffer++ = internal::data::DIGITS[index + 1];
-    return;
-  }
-  int num_digits = internal::count_digits(abs_value);
-  internal::format_decimal<char>(
-      internal::make_checked(buffer, internal::to_unsigned(num_digits)),
-      abs_value, num_digits);
-  buffer += num_digits;
-}
-
 // Formatter of objects of type T.
 template <typename T, typename Char>
 struct formatter<T, Char,
