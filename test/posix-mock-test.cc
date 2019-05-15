@@ -13,7 +13,7 @@
 #include "posix-mock.h"
 #include "../src/posix.cc"
 
-#include <errno.h>
+#include <cerrno>
 #include <fcntl.h>
 #include <climits>
 #include <memory>

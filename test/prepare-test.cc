@@ -5,7 +5,7 @@
 //
 // For the license information refer to prepare.h.
 
-#include <stdint.h>
+#include <cstdint>
 #include <cctype>
 #include <cfloat>
 #include <climits>

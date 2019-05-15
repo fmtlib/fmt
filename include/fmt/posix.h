@@ -13,11 +13,11 @@
 #  undef __STRICT_ANSI__
 #endif
 
-#include <errno.h>
+#include <cerrno>
 #include <fcntl.h>   // for O_RDONLY
-#include <locale.h>  // for locale_t
-#include <stdio.h>
-#include <stdlib.h>  // for strtod_l
+#include <clocale>  // for locale_t
+#include <cstdio>
+#include <cstdlib>  // for strtod_l
 
 #include <cstddef>
 

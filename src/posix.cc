@@ -12,7 +12,7 @@
 
 #include "fmt/posix.h"
 
-#include <limits.h>
+#include <climits>
 #include <sys/stat.h>
 #include <sys/types.h>
 

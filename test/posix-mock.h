@@ -8,8 +8,8 @@
 #ifndef FMT_POSIX_TEST_H
 #define FMT_POSIX_TEST_H
 
-#include <errno.h>
-#include <stdio.h>
+#include <cerrno>
+#include <cstdio>
 
 #ifdef _WIN32
 #  include <windows.h>
