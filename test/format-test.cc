@@ -1745,49 +1745,6 @@ TEST(FormatIntTest, FormatInt) {
             fmt::format_int(std::numeric_limits<int64_t>::max()).str());
 }
 
-#if defined(__GNUC__) || defined(__clang__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
-#if FMT_MSC_VER
-#  pragma warning(push)
-#  pragma warning(disable : 4996)  // Using a deprecated function
-#endif
-
-template <typename T> std::string format_decimal(T value) {
-  char buffer[10];
-  char* ptr = buffer;
-  // TODO: Replace with safer, non-deprecated overload
-  fmt::format_decimal(ptr, value);
-  return std::string(buffer, ptr);
-}
-
-#if FMT_MSC_VER
-#  pragma warning(pop)
-#endif
-
-#if defined(__GNUC__) || defined(__clang__)
-#  pragma GCC diagnostic pop
-#endif
-
-TEST(FormatIntTest, FormatDec) {
-  EXPECT_EQ("-42", format_decimal(static_cast<signed char>(-42)));
-  EXPECT_EQ("-42", format_decimal(static_cast<short>(-42)));
-  std::ostringstream os;
-  os << std::numeric_limits<unsigned short>::max();
-  EXPECT_EQ(os.str(),
-            format_decimal(std::numeric_limits<unsigned short>::max()));
-  EXPECT_EQ("1", format_decimal(1));
-  EXPECT_EQ("-1", format_decimal(-1));
-  EXPECT_EQ("42", format_decimal(42));
-  EXPECT_EQ("-42", format_decimal(-42));
-  EXPECT_EQ("42", format_decimal(42l));
-  EXPECT_EQ("42", format_decimal(42ul));
-  EXPECT_EQ("42", format_decimal(42ll));
-  EXPECT_EQ("42", format_decimal(42ull));
-}
-
 TEST(FormatTest, Print) {
 #if FMT_USE_FILE_DESCRIPTORS
   EXPECT_WRITE(stdout, fmt::print("Don't {}!", "panic"), "Don't panic!");
