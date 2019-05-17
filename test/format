@@ -25,7 +25,7 @@ template <class O>
   using iter_difference_t = ptrdiff_t;
 }
 
-// http://fmtlib.net/Text%20Formatting.html#format.syn
+// https://fmt.dev/Text%20Formatting.html#format.syn
 namespace std {
   // [format.error], class format_error
   class format_error;
@@ -105,7 +105,7 @@ namespace std {
     size_t formatted_size(wstring_view fmt, const Args&... args);
 }
 
-// http://fmtlib.net/Text%20Formatting.html#format.error
+// https://fmt.dev/Text%20Formatting.html#format.error
 namespace std {
   class format_error : public runtime_error {
   public:
@@ -125,7 +125,7 @@ struct error_handler {
 }
 }
 
-// http://fmtlib.net/Text%20Formatting.html#format.parse_context
+// https://fmt.dev/Text%20Formatting.html#format.parse_context
 namespace std {
   template<class charT>
   class basic_format_parse_context {
@@ -199,7 +199,7 @@ constexpr void basic_format_parse_context<charT>::check_arg_id(size_t id) {
 }
 }
 
-// http://fmtlib.net/Text%20Formatting.html#format.context
+// https://fmt.dev/Text%20Formatting.html#format.context
 namespace std {
   template<class Out, class charT>
   class basic_format_context {
@@ -261,7 +261,7 @@ template <typename T, typename Char> struct formatter;
 }
 }
 
-// http://fmtlib.net/Text%20Formatting.html#format.arg
+// https://fmt.dev/Text%20Formatting.html#format.arg
 namespace std {
   template<class Context>
   class basic_format_arg {
@@ -422,14 +422,14 @@ void basic_format_arg<Context>::handle::format(basic_format_parse_context<char_t
   format_(parse_ctx, format_ctx, ptr_);
 }
 
-// http://fmtlib.net/Text%20Formatting.html#format.visit
+// https://fmt.dev/Text%20Formatting.html#format.visit
 template<class Visitor, class Context>
   auto visit_format_arg(Visitor&& vis, basic_format_arg<Context> arg) {
     return visit(vis, get_value(arg));
   }
 }
 
-// http://fmtlib.net/Text%20Formatting.html#format.store
+// https://fmt.dev/Text%20Formatting.html#format.store
 namespace std {
   template<class Context, class... Args>
   struct format_arg_store { // exposition only
@@ -437,7 +437,7 @@ namespace std {
   };
 }
 
-// http://fmtlib.net/Text%20Formatting.html#format.basic_args
+// https://fmt.dev/Text%20Formatting.html#format.basic_args
 namespace std {
   template<class Context>
   class basic_format_args {
@@ -471,13 +471,13 @@ basic_format_arg<Context> basic_format_args<Context>::get(size_t i) const noexce
 }
 
 namespace std {
-// http://fmtlib.net/Text%20Formatting.html#format.make_args
+// https://fmt.dev/Text%20Formatting.html#format.make_args
 template<class Context /*= format_context*/, class... Args>
   format_arg_store<Context, Args...> make_format_args(const Args&... args) {
     return {basic_format_arg<Context>(args)...};
   }
 
-// http://fmtlib.net/Text%20Formatting.html#format.make_wargs
+// https://fmt.dev/Text%20Formatting.html#format.make_wargs
 template<class... Args>
   format_arg_store<wformat_context, Args...> make_wformat_args(const Args&... args) {
     return make_format_args<wformat_context>(args...);
@@ -708,7 +708,7 @@ struct formatter {
 };
 }  // namespace detail
 
-// http://fmtlib.net/Text%20Formatting.html#format.functions
+// https://fmt.dev/Text%20Formatting.html#format.functions
 template<class... Args>
   string format(string_view fmt, const Args&... args) {
     return vformat(fmt, make_format_args(args...));

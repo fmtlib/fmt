@@ -14,23 +14,23 @@
 **{fmt}** is an open-source formatting library for C++.
 It can be used as a safe and fast alternative to (s)printf and iostreams.
 
-`Documentation <http://fmtlib.net/latest/>`__
+`Documentation <https://fmt.dev/latest/>`__
 
 Q&A: ask questions on `StackOverflow with the tag fmt <http://stackoverflow.com/questions/tagged/fmt>`_.
 
 Features
 --------
 
-* Replacement-based `format API <http://fmtlib.net/dev/api.html>`_ with
+* Replacement-based `format API <https://fmt.dev/dev/api.html>`_ with
   positional arguments for localization.
-* `Format string syntax <http://fmtlib.net/dev/syntax.html>`_ similar to the one
+* `Format string syntax <https://fmt.dev/dev/syntax.html>`_ similar to the one
   of `str.format <https://docs.python.org/2/library/stdtypes.html#str.format>`_
   in Python.
 * Safe `printf implementation
-  <http://fmtlib.net/latest/api.html#printf-formatting>`_ including
+  <https://fmt.dev/latest/api.html#printf-formatting>`_ including
   the POSIX extension for positional arguments.
 * Implementation of the ISO C++ standards proposal `P0645
-  Text Formatting <http://fmtlib.net/Text%20Formatting.html>`__.
+  Text Formatting <https://fmt.dev/Text%20Formatting.html>`__.
 * Support for user-defined types.
 * High performance: faster than common standard library implementations of
   `printf <http://en.cppreference.com/w/cpp/io/c/fprintf>`_ and
@@ -47,14 +47,14 @@ Features
 * Ease of use: small self-contained code base, no external dependencies,
   permissive BSD `license
   <https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_
-* `Portability <http://fmtlib.net/latest/index.html#portability>`_ with
+* `Portability <https://fmt.dev/latest/index.html#portability>`_ with
   consistent output across platforms and support for older compilers.
 * Clean warning-free codebase even on high warning levels
   (``-Wall -Wextra -pedantic``).
 * Support for wide strings.
 * Optional header-only configuration enabled with the ``FMT_HEADER_ONLY`` macro.
 
-See the `documentation <http://fmtlib.net/latest/>`_ for more details.
+See the `documentation <https://fmt.dev/latest/>`_ for more details.
 
 Examples
 --------
@@ -107,7 +107,7 @@ Use {fmt} as a safe portable replacement for ``itoa``
     // access the string with to_string(buf) or buf.data()
 
 Format objects of user-defined types via a simple `extension API
-<http://fmtlib.net/latest/api.html#formatting-user-defined-types>`_:
+<https://fmt.dev/latest/api.html#formatting-user-defined-types>`_:
 
 .. code:: c++
 
@@ -132,8 +132,8 @@ Format objects of user-defined types via a simple `extension API
     // s == "The date is 2012-12-9"
 
 Create your own functions similar to `format
-<http://fmtlib.net/latest/api.html#format>`_ and
-`print <http://fmtlib.net/latest/api.html#print>`_
+<https://fmt.dev/latest/api.html#format>`_ and
+`print <https://fmt.dev/latest/api.html#print>`_
 which take arbitrary arguments (`godbolt <https://godbolt.org/g/MHjHVf>`_):
 
 .. code:: c++
@@ -185,7 +185,7 @@ formatting (`dtoa-benchmark <https://github.com/fmtlib/dtoa-benchmark>`_)
 and as fast as `double-conversion <https://github.com/google/double-conversion>`_:
 
 .. image:: https://user-images.githubusercontent.com/576385/54883977-9fe8c000-4e28-11e9-8bde-272d122e7c52.jpg
-   :target: http://fmtlib.net/unknown_mac64_clang10.0.html
+   :target: https://fmt.dev/unknown_mac64_clang10.0.html
 
 Compile time and code bloat
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -244,7 +244,7 @@ Running the tests
 Please refer to `Building the library`__ for the instructions on how to build
 the library and run the unit tests.
 
-__ http://fmtlib.net/latest/usage.html#building-the-library
+__ https://fmt.dev/latest/usage.html#building-the-library
 
 Benchmarks reside in a separate repository,
 `format-benchmarks <https://github.com/fmtlib/format-benchmark>`_,
@@ -474,7 +474,7 @@ License
 <https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_.
 
 The `Format String Syntax
-<http://fmtlib.net/latest/syntax.html>`_
+<https://fmt.dev/latest/syntax.html>`_
 section in the documentation is based on the one from Python `string module
 documentation <https://docs.python.org/3/library/string.html#module-string>`_
 adapted for the current library. For this reason the documentation is

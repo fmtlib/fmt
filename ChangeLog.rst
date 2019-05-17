@@ -467,7 +467,7 @@
 
 * Implemented ``constexpr`` parsing of format strings and `compile-time format
   string checks
-  <http://fmtlib.net/dev/api.html#compile-time-format-string-checks>`_. For
+  <https://fmt.dev/dev/api.html#compile-time-format-string-checks>`_. For
   example
 
   .. code:: c++
@@ -528,7 +528,7 @@
             throw format_error("invalid specifier");
 
 * Added `iterator support
-  <http://fmtlib.net/dev/api.html#output-iterator-support>`_:
+  <https://fmt.dev/dev/api.html#output-iterator-support>`_:
 
   .. code:: c++
 
@@ -539,7 +539,7 @@
      fmt::format_to(std::back_inserter(out), "{}", 42);
 
 * Added the `format_to_n
-  <http://fmtlib.net/dev/api.html#_CPPv2N3fmt11format_to_nE8OutputItNSt6size_tE11string_viewDpRK4Args>`_
+  <https://fmt.dev/dev/api.html#_CPPv2N3fmt11format_to_nE8OutputItNSt6size_tE11string_viewDpRK4Args>`_
   function that restricts the output to the specified number of characters
   (`#298 <https://github.com/fmtlib/fmt/issues/298>`_):
 
@@ -550,7 +550,7 @@
      // out == "1234" (without terminating '\0')
 
 * Added the `formatted_size
-  <http://fmtlib.net/dev/api.html#_CPPv2N3fmt14formatted_sizeE11string_viewDpRK4Args>`_
+  <https://fmt.dev/dev/api.html#_CPPv2N3fmt14formatted_sizeE11string_viewDpRK4Args>`_
   function for computing the output size:
 
   .. code:: c++
@@ -560,7 +560,7 @@
      auto size = fmt::formatted_size("{}", 12345); // size == 5
 
 * Improved compile times by reducing dependencies on standard headers and
-  providing a lightweight `core API <http://fmtlib.net/dev/api.html#core-api>`_:
+  providing a lightweight `core API <https://fmt.dev/dev/api.html#core-api>`_:
 
   .. code:: c++
 
@@ -572,7 +572,7 @@
   <https://github.com/fmtlib/fmt#compile-time-and-code-bloat>`_.
 
 * Added the `make_format_args
-  <http://fmtlib.net/dev/api.html#_CPPv2N3fmt16make_format_argsEDpRK4Args>`_
+  <https://fmt.dev/dev/api.html#_CPPv2N3fmt16make_format_argsEDpRK4Args>`_
   function for capturing formatting arguments:
 
   .. code:: c++
@@ -654,7 +654,7 @@
      fmt::format("{} {two}", 1, fmt::arg("two", 2));
 
 * Removed the write API in favor of the `format API
-  <http://fmtlib.net/dev/api.html#format-api>`_ with compile-time handling of
+  <https://fmt.dev/dev/api.html#format-api>`_ with compile-time handling of
   format strings.
 
 * Disallowed formatting of multibyte strings into a wide character target
@@ -1115,10 +1115,10 @@
   Including ``format.h`` from the ``cppformat`` directory is deprecated
   but works via a proxy header which will be removed in the next major version.
   
-  The documentation is now available at http://fmtlib.net.
+  The documentation is now available at https://fmt.dev.
 
 * Added support for `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_-like
-  `date and time formatting <http://fmtlib.net/3.0.0/api.html#date-and-time-formatting>`_
+  `date and time formatting <https://fmt.dev/3.0.0/api.html#date-and-time-formatting>`_
   (`#283 <https://github.com/fmtlib/fmt/issues/283>`_):
 
   .. code:: c++
@@ -1150,7 +1150,7 @@
     // s == "The date is 2012-12-9"
 
 * Added support for `custom argument formatters
-  <http://fmtlib.net/3.0.0/api.html#argument-formatters>`_
+  <https://fmt.dev/3.0.0/api.html#argument-formatters>`_
   (`#235 <https://github.com/fmtlib/fmt/issues/235>`_).
 
 * Added support for locale-specific integer formatting with the ``n`` specifier
@@ -1530,7 +1530,7 @@ Documentation
 
 
 * Added `Building the documentation
-  <http://fmtlib.net/2.0.0/usage.html#building-the-documentation>`_
+  <https://fmt.dev/2.0.0/usage.html#building-the-documentation>`_
   section to the documentation.
 
 * Documentation build script is now compatible with Python 3 and newer pip versions.
