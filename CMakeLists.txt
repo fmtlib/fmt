@@ -151,6 +151,10 @@ if (HAVE_OPEN)
   set(FMT_SOURCES ${FMT_SOURCES} src/posix.cc)
 endif ()
 
+if (NOT MASTER_PROJECT)
+  set(FMT_INCLUDE_SYSTEM SYSTEM)
+endif()
+
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
 add_library(fmt::fmt ALIAS fmt)
 
@@ -163,7 +167,7 @@ endif ()
 
 target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
 
-target_include_directories(fmt PUBLIC
+target_include_directories(fmt ${FMT_INCLUDE_SYSTEM} PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
@@ -187,7 +191,7 @@ target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 
 target_compile_features(fmt-header-only INTERFACE ${FMT_REQUIRED_FEATURES})
 
-target_include_directories(fmt-header-only INTERFACE
+target_include_directories(fmt-header-only ${FMT_INCLUDE_SYSTEM} INTERFACE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
