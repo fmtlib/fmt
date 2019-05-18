@@ -14,23 +14,10 @@
 
 FMT_BEGIN_NAMESPACE
 namespace internal {
-
 struct scan_arg {
   int* value;
   // TODO: more types
 };
-
-template <typename Handler>
-void parse_scan_format(string_view format_str, Handler&& handler) {
-  const char* p = format_str.data();
-  const char* end = p + format_str.size();
-  while (p != end) {
-    char c = *p++;
-    if (c != '{' || p == end || *p++ != '}')
-      throw format_error("invalid format string");
-    handler.on_arg();
-  }
-}
 }  // namespace internal
 
 struct scan_args {
@@ -45,7 +32,7 @@ struct scan_args {
 };
 
 namespace internal {
-struct scan_handler {
+struct scan_handler : error_handler {
   const char* begin;
   const char* end;
   scan_args args;
@@ -57,22 +44,33 @@ struct scan_handler {
         args(args),
         next_arg_id(0) {}
 
-  void on_arg() {
+  void on_text(const char*, const char*) { on_error("invalid format"); }
+
+  void on_arg_id() {
+    if (next_arg_id >= args.size) on_error("argument index out of range");
+  }
+  void on_arg_id(unsigned) { on_error("invalid format"); }
+  void on_arg_id(string_view) { on_error("invalid format"); }
+
+  void on_replacement_field(const char*) {
     int value = 0;
     while (begin != end) {
       char c = *begin++;
-      if (c < '0' || c > '9') throw format_error("invalid input");
+      if (c < '0' || c > '9') on_error("invalid input");
       value = value * 10 + (c - '0');
     }
-    if (next_arg_id >= args.size)
-      throw format_error("argument index out of range");
     *args.data[0].value = value;
+  }
+
+  const char* on_format_specs(const char* begin, const char*) {
+    return begin;
   }
 };
 }  // namespace internal
 
 void vscan(string_view input, string_view format_str, scan_args args) {
-  internal::parse_scan_format(format_str, internal::scan_handler(input, args));
+  internal::parse_format_string<false>(format_str,
+                                       internal::scan_handler(input, args));
 }
 
 template <typename... Args>
