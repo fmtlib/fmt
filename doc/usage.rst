@@ -52,8 +52,8 @@ To build a `shared library`__ set the ``BUILD_SHARED_LIBS`` CMake variable to
 
 __ http://en.wikipedia.org/wiki/Library_%28computing%29#Shared_libraries
 
-Installing the library
-====================
+Installing the Library
+======================
 
 After building the library you can install it on a Unix-like system by running
 :command:`sudo make install`.
