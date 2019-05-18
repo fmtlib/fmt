@@ -51,14 +51,14 @@ participate in an overload resolution if the latter is not a string.
 .. doxygenfunction:: vprint(std::FILE *, string_view, format_args)
 .. doxygenfunction:: vprint(std::FILE *, wstring_view, wformat_args)
 
-Named arguments
+Named Arguments
 ---------------
 
 .. doxygenfunction:: fmt::arg(const S&, const T&)
 
 Named arguments are not supported in compile-time checks at the moment.
 
-Argument lists
+Argument Lists
 --------------
 
 .. doxygenfunction:: fmt::make_format_args(const Args&...)
@@ -91,13 +91,13 @@ Format API
 ``fmt/format.h`` defines the full format API providing compile-time format
 string checks, output iterator and user-defined type support.
 
-Compile-time format string checks
+Compile-time Format String Checks
 ---------------------------------
 
 .. doxygendefine:: FMT_STRING
 .. doxygendefine:: fmt
 
-Formatting user-defined types
+Formatting User-defined Types
 -----------------------------
 
 To make a user-defined type formattable, specialize the ``formatter<T>`` struct
@@ -184,10 +184,10 @@ This section shows how to define a custom format function for a user-defined
 type. The next section describes how to get ``fmt`` to use a conventional stream
 output ``operator<<`` when one is defined for a user-defined type.
 
-Output iterator support
+Output Iterator Support
 -----------------------
 
-.. doxygenfunction:: fmt::format_to(OutputIt, const S&, const Args&...)
+.. doxygenfunction:: fmt::format_to(OutputIt, const S &, const Args &...)
 .. doxygenfunction:: fmt::format_to_n(OutputIt, std::size_t, string_view, const Args&...)
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
