@@ -8,13 +8,6 @@ from a `release archive <https://github.com/fmtlib/fmt/releases/latest>`_ or
 the `Git repository <https://github.com/fmtlib/fmt>`_ to your project.
 Alternatively, you can :ref:`build the library with CMake <building>`.
 
-If you are using Visual C++ with precompiled headers, you might need to add
-the line ::
-
-   #include "stdafx.h"
-
-before other includes in :file:`format.cc`.
-
 .. _building:
 
 Building the Library
