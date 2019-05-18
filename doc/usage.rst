@@ -17,7 +17,7 @@ before other includes in :file:`format.cc`.
 
 .. _building:
 
-Building the library
+Building the Library
 ====================
 
 The included `CMake build script`__ can be used to build the fmt
@@ -90,7 +90,7 @@ Setting up your target to use a header-only version of ``fmt`` is equaly easy::
 
    target_link_libraries(<your-target> PRIVATE fmt-header-only)
 
-Building the documentation
+Building the Documentation
 ==========================
 
 To build the documentation you need the following software installed on your

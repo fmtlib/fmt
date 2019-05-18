@@ -130,7 +130,7 @@ its numeric value being written to the stream (i.e. 1070 instead of letter 'ю'
 which is represented by ``L'\x42e'`` if we use Unicode) which is rarely what is
 needed.
 
-Compact binary code
+Compact Binary Code
 -------------------
 
 The library is designed to produce compact per-call compiled code. For example

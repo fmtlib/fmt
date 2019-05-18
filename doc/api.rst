@@ -218,7 +218,7 @@ Utilities
    :protected-members:
    :members:
 
-System errors
+System Errors
 -------------
 
 fmt does not use ``errno`` to communicate errors to the user, but it may call
@@ -235,7 +235,7 @@ the value of ``errno`` being preserved by library functions.
 
 .. _formatstrings:
 
-Custom allocators
+Custom Allocators
 -----------------
 
 The {fmt} library supports custom dynamic memory allocators.
@@ -270,7 +270,7 @@ arguments, the container that stores pointers to them will be allocated using
 the default allocator. Also floating-point formatting falls back on ``sprintf``
 which may do allocations.
 
-Custom formatting of built-in types
+Custom Formatting of Built-in Types
 -----------------------------------
 
 It is possible to change the way arguments are formatted by providing a
@@ -316,7 +316,7 @@ custom argument formatter class::
 
 .. _chrono-api:
 
-Date and time formatting
+Date and Time Formatting
 ========================
 
 The library supports `strftime
@@ -334,7 +334,7 @@ The format string syntax is described in the documentation of
 
 .. _ostream-api:
 
-``std::ostream`` support
+``std::ostream`` Support
 ========================
 
 ``fmt/ostream.h`` provides ``std::ostream`` support including formatting of
@@ -359,7 +359,7 @@ user-defined types that have overloaded ``operator<<``::
 
 .. _printf-api:
 
-``printf`` formatting
+``printf`` Formatting
 =====================
 
 The header ``fmt/printf.h`` provides ``printf``-like formatting functionality.

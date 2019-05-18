@@ -305,7 +305,7 @@ The available presentation types for pointers are:
 
 .. _formatexamples:
 
-Format examples
+Format Examples
 ===============
 
 This section contains examples of the format syntax and comparison with
