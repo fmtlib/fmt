@@ -475,7 +475,7 @@ TEST(PrepareTest, CopyPreparedFormat_InternalStringViewsAreNotInvalidated) {
   }
 }
 
-TEST(PepareTest, ReusedPreparedFormatType) {
+TEST(PrepareTest, ReusedPreparedFormatType) {
   typedef fmt::prepared_format<std::string, int>::type prepared_format;
 
   prepared_format prepared = fmt::prepare<prepared_format>("The {} is {}.");
@@ -636,4 +636,59 @@ TEST(PrepareTest, PassUserTypeFormat) {
       user_format;
   const auto prepared = fmt::prepare<int>(user_format("test {}"));
   EXPECT_EQ("test 42", prepared.format(42));
+}
+
+TEST(PrepareTest, FormatToArrayOfChars) {
+  char buffer[32] = {0};
+  const auto prepared = fmt::prepare<int>("4{}");
+  prepared.format_to(buffer, 2);
+  EXPECT_EQ(std::string("42"), buffer);
+  wchar_t wbuffer[32] = {0};
+  const auto wprepared = fmt::prepare<int>(L"4{}");
+  wprepared.format_to(wbuffer, 2);
+  EXPECT_EQ(std::wstring(L"42"), wbuffer);
+}
+
+TEST(PrepareTest, FormatToIterator) {
+  std::string s(2, ' ');
+  const auto prepared = fmt::prepare<int>("4{}");
+  prepared.format_to(s.begin(), 2);
+  EXPECT_EQ("42", s);
+  std::wstring ws(2, L' ');
+  const auto wprepared = fmt::prepare<int>(L"4{}");
+  wprepared.format_to(ws.begin(), 2);
+  EXPECT_EQ(L"42", ws);
+}
+
+TEST(PrepareTest, FormatToBackInserter) {
+  std::string s;
+  const auto prepared = fmt::prepare<int>("4{}");
+  prepared.format_to(std::back_inserter(s), 2);
+  EXPECT_EQ("42", s);
+  std::wstring ws;
+  const auto wprepared = fmt::prepare<int>(L"4{}");
+  wprepared.format_to(std::back_inserter(ws), 2);
+  EXPECT_EQ(L"42", ws);
+}
+
+TEST(PrepareTest, FormatToBasicMemoryBuffer) {
+  fmt::basic_memory_buffer<char, 100> buffer;
+  const auto prepared = fmt::prepare<int>("4{}");
+  prepared.format_to(buffer, 2);
+  EXPECT_EQ("42", to_string(buffer));
+  fmt::basic_memory_buffer<wchar_t, 100> wbuffer;
+  const auto wprepared = fmt::prepare<int>(L"4{}");
+  wprepared.format_to(wbuffer, 2);
+  EXPECT_EQ(L"42", to_string(wbuffer));
+}
+
+TEST(PrepareTest, FormatToMemoryBuffer) {
+  fmt::memory_buffer buffer;
+  const auto prepared = fmt::prepare<int>("4{}");
+  prepared.format_to(buffer, 2);
+  EXPECT_EQ("42", to_string(buffer));
+  fmt::wmemory_buffer wbuffer;
+  const auto wprepared = fmt::prepare<int>(L"4{}");
+  wprepared.format_to(wbuffer, 2);
+  EXPECT_EQ(L"42", to_string(wbuffer));
 }
