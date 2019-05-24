@@ -632,7 +632,6 @@ template <typename S, typename... Args,
           FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline std::basic_string<FMT_CHAR(S)> sprintf(const S& format,
                                               const Args&... args) {
-  internal::check_format_string<Args...>(format);
   typedef internal::buffer<FMT_CHAR(S)> buffer;
   typedef typename basic_printf_context_t<buffer>::type context;
   format_arg_store<context, Args...> as{args...};
@@ -665,7 +664,6 @@ inline int vfprintf(
 template <typename S, typename... Args,
           FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline int fprintf(std::FILE* f, const S& format, const Args&... args) {
-  internal::check_format_string<Args...>(format);
   typedef internal::buffer<FMT_CHAR(S)> buffer;
   typedef typename basic_printf_context_t<buffer>::type context;
   format_arg_store<context, Args...> as{args...};
