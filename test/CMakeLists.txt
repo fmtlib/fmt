@@ -107,12 +107,6 @@ add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
 add_fmt_test(scan-test)
 
-# MSVC fails to compile GMock when C++17 is enabled.
-if (FMT_HAS_VARIANT AND NOT MSVC)
-  add_fmt_test(std-format-test)
-  set_property(TARGET std-format-test PROPERTY CXX_STANDARD 17)
-endif ()
-
 if (HAVE_OPEN)
   add_fmt_executable(posix-mock-test
     posix-mock-test.cc ../src/format.cc ${TEST_MAIN_SRC})
@@ -143,6 +137,12 @@ endif ()
 message(STATUS "FMT_PEDANTIC: ${FMT_PEDANTIC}")
 
 if (FMT_PEDANTIC)
+  # MSVC fails to compile GMock when C++17 is enabled.
+  if (FMT_HAS_VARIANT AND NOT MSVC)
+    add_fmt_test(std-format-test)
+    set_property(TARGET std-format-test PROPERTY CXX_STANDARD 17)
+  endif ()
+
   # Test that the library can be compiled with exceptions disabled.
   # -fno-exception is broken in icc: https://github.com/fmtlib/fmt/issues/822.
   if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
