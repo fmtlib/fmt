@@ -162,13 +162,6 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
-#if FMT_HAS_GXX_CXX11 || FMT_HAS_FEATURE(cxx_trailing_return) || \
-    FMT_MSC_VER >= 1600
-#  define FMT_USE_TRAILING_RETURN 1
-#else
-#  define FMT_USE_TRAILING_RETURN 0
-#endif
-
 #ifdef FMT_USE_INT128
 // Do nothing.
 #elif defined(__SIZEOF_INT128__)
@@ -290,6 +283,12 @@ template <typename T, std::size_t N>
 FMT_CONSTEXPR T* end(T (&array)[N]) FMT_NOEXCEPT {
   return array + N;
 }
+
+// An implementation of iterator_t for pre-C++20 compilers such as gcc 4.
+template <typename T>
+struct iterator_t {
+  typedef decltype(internal::begin(internal::declval<const T&>())) type;
+};
 
 // For std::result_of in gcc 4.4.
 template <typename Result> struct function {
@@ -3302,6 +3301,10 @@ struct formatter<arg_join<It, Char>, Char>
   }
 };
 
+/**
+  Returns an object that formats the iterator range `[begin, end)` with elements
+  separated by `sep`.
+ */
 template <typename It>
 arg_join<It, char> join(It begin, It end, string_view sep) {
   return arg_join<It, char>(begin, end, sep);
@@ -3312,17 +3315,28 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
   return arg_join<It, wchar_t>(begin, end, sep);
 }
 
-// The following causes ICE in gcc 4.4.
-#if FMT_USE_TRAILING_RETURN && (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 405)
+// gcc 4.4 on join: internal compiler error: in tsubst_copy, at cp/pt.c:10122
+#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 405
+/**
+  \rst
+  Returns an object that formats `range` with elements separated by `sep`.
+
+  **Example**::
+
+    std::vector<int> v = {1, 2, 3};
+    fmt::print("{}", fmt::join(v, ", "));
+    // Output: "1, 2, 3"
+  \endrst
+ */
 template <typename Range>
-auto join(const Range& range, string_view sep)
-    -> arg_join<decltype(internal::begin(range)), char> {
+arg_join<typename internal::iterator_t<Range>::type, char>
+    join(const Range& range, string_view sep) {
   return join(internal::begin(range), internal::end(range), sep);
 }
 
 template <typename Range>
-auto join(const Range& range, wstring_view sep)
-    -> arg_join<decltype(internal::begin(range)), wchar_t> {
+arg_join<typename internal::iterator_t<Range>::type, wchar_t>
+    join(const Range& range, wstring_view sep) {
   return join(internal::begin(range), internal::end(range), sep);
 }
 #endif

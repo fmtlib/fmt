@@ -1793,7 +1793,7 @@ TEST(FormatTest, JoinArg) {
   EXPECT_EQ(format("{}, {}", v3[0], v3[1]),
             format("{}", join(v3, v3 + 2, ", ")));
 
-#if FMT_USE_TRAILING_RETURN && (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 405)
+#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 405
   EXPECT_EQ("(1, 2, 3)", format("({})", join(v1, ", ")));
   EXPECT_EQ("(+01.20, +03.40)", format("({:+06.2f})", join(v2, ", ")));
 #endif

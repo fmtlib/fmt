@@ -180,10 +180,6 @@ You can also write a formatter for a hierarchy of classes::
     fmt::print("{}", a); // prints "B"
   }
 
-This section shows how to define a custom format function for a user-defined
-type. The next section describes how to get ``fmt`` to use a conventional stream
-output ``operator<<`` when one is defined for a user-defined type.
-
 Output Iterator Support
 -----------------------
 
@@ -213,6 +209,10 @@ Utilities
 .. doxygenfunction:: fmt::to_wstring(const T&)
 
 .. doxygenfunction:: fmt::to_string_view(basic_string_view<Char>)
+
+.. doxygenfunction:: fmt::join(const Range&, string_view)
+
+.. doxygenfunction:: fmt::join(It, It, string_view)
 
 .. doxygenclass:: fmt::basic_memory_buffer
    :protected-members:
