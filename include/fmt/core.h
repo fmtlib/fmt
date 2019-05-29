@@ -1416,8 +1416,9 @@ typename buffer_context<Char>::type::iterator vformat_to(
     fmt::print("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23));
   \endrst
  */
-template <typename S, typename T, FMT_ENABLE_IF(internal::is_string<S>::value)>
+template <typename S, typename T>
 inline internal::named_arg<T, FMT_CHAR(S)> arg(const S& name, const T& arg) {
+  static_assert(internal::is_string<S>::value, "");
   return {name, arg};
 }
 
@@ -1472,6 +1473,7 @@ inline std::basic_string<Char> vformat(
     std::string message = fmt::format("The answer is {}", 42);
   \endrst
 */
+// Use SFINAE instead of static_assert because of color overload of fmt::format.
 template <typename S, typename... Args,
           FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline std::basic_string<FMT_CHAR(S)> format(const S& format_str,
