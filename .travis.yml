@@ -39,6 +39,17 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-6
+     # g++ 8 on Linux with C++17
+    - env: COMPILER=g++-8 BUILD=Debug STANDARD=17
+      compiler: gcc
+      addons:
+        apt:
+          update: true
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+
       # Apple clang on OS X with C++14
     - env: BUILD=Debug STANDARD=14
       compiler: clang
