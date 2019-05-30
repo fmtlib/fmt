@@ -131,7 +131,7 @@ int test::dup2(int fildes, int fildes2) {
 }
 
 FILE* test::fdopen(int fildes, const char* mode) {
-  EMULATE_EINTR(fdopen, FMT_NULL);
+  EMULATE_EINTR(fdopen, nullptr);
   return ::FMT_POSIX(fdopen(fildes, mode));
 }
 
@@ -160,7 +160,7 @@ int test::pipe(int* pfds, unsigned psize, int textmode) {
 #endif
 
 FILE* test::fopen(const char* filename, const char* mode) {
-  EMULATE_EINTR(fopen, FMT_NULL);
+  EMULATE_EINTR(fopen, nullptr);
   return ::fopen(filename, mode);
 }
 
@@ -214,7 +214,7 @@ TEST(UtilTest, GetPageSize) {
 
 TEST(FileTest, OpenRetry) {
   write_file("test", "there must be something here");
-  std::unique_ptr<file> f{FMT_NULL};
+  std::unique_ptr<file> f{nullptr};
   EXPECT_RETRY(f.reset(new file("test", file::RDONLY)), open,
                "cannot open file test");
 #ifndef _WIN32
@@ -231,7 +231,7 @@ TEST(FileTest, CloseNoRetryInDtor) {
   EXPECT_WRITE(stderr,
                {
                  close_count = 1;
-                 f.reset(FMT_NULL);
+                 f.reset(nullptr);
                  saved_close_count = close_count;
                  close_count = 0;
                },
@@ -384,7 +384,7 @@ TEST(FileTest, FdopenNoRetry) {
 
 TEST(BufferedFileTest, OpenRetry) {
   write_file("test", "there must be something here");
-  std::unique_ptr<buffered_file> f{FMT_NULL};
+  std::unique_ptr<buffered_file> f{nullptr};
   EXPECT_RETRY(f.reset(new buffered_file("test", "r")), fopen,
                "cannot open file test");
 #ifndef _WIN32
@@ -402,7 +402,7 @@ TEST(BufferedFileTest, CloseNoRetryInDtor) {
   EXPECT_WRITE(stderr,
                {
                  fclose_count = 1;
-                 f.reset(FMT_NULL);
+                 f.reset(nullptr);
                  saved_fclose_count = fclose_count;
                  fclose_count = 0;
                },
@@ -441,7 +441,7 @@ TEST(ScopedMock, Scope) {
     TestMock& copy = mock;
     static_cast<void>(copy);
   }
-  EXPECT_EQ(FMT_NULL, TestMock::instance);
+  EXPECT_EQ(nullptr, TestMock::instance);
 }
 
 #ifdef FMT_LOCALE
@@ -526,7 +526,7 @@ TEST(LocaleTest, Locale) {
 #  endif
   ScopedMock<LocaleMock> mock;
   LocaleType impl = reinterpret_cast<LocaleType>(42);
-  EXPECT_CALL(mock, newlocale(LC_NUMERIC_MASK, StrEq("C"), FMT_NULL))
+  EXPECT_CALL(mock, newlocale(LC_NUMERIC_MASK, StrEq("C"), nullptr))
       .WillOnce(Return(impl));
   EXPECT_CALL(mock, freelocale(impl));
   fmt::Locale locale;

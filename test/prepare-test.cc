@@ -620,7 +620,7 @@ template <typename T> struct user_allocator {
 
   pointer allocate(
       size_type cnt,
-      typename std::allocator<fmt::monostate>::const_pointer = FMT_NULL) {
+      typename std::allocator<fmt::monostate>::const_pointer = nullptr) {
     return new value_type[cnt];
   }
 

@@ -285,8 +285,7 @@ FMT_CONSTEXPR T* end(T (&array)[N]) FMT_NOEXCEPT {
 }
 
 // An implementation of iterator_t for pre-C++20 compilers such as gcc 4.
-template <typename T>
-struct iterator_t {
+template <typename T> struct iterator_t {
   typedef decltype(internal::begin(internal::declval<const T&>())) type;
 };
 
@@ -2101,7 +2100,7 @@ inline bool find<false, char>(const char* first, const char* last, char value,
                               const char*& out) {
   out = static_cast<const char*>(
       std::memchr(first, value, internal::to_unsigned(last - first)));
-  return out != FMT_NULL;
+  return out != nullptr;
 }
 
 template <typename Handler, typename Char> struct id_adapter {
@@ -2123,7 +2122,7 @@ FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
     FMT_CONSTEXPR void operator()(const Char* begin, const Char* end) {
       if (begin == end) return;
       for (;;) {
-        const Char* p = FMT_NULL;
+        const Char* p = nullptr;
         if (!find<IS_CONSTEXPR>(begin, end, '}', p))
           return handler_.on_text(begin, end);
         ++p;
@@ -2304,8 +2303,8 @@ class arg_formatter
     \endrst
    */
   explicit arg_formatter(context_type& ctx,
-                         basic_parse_context<char_type>* parse_ctx = FMT_NULL,
-                         format_specs* spec = FMT_NULL)
+                         basic_parse_context<char_type>* parse_ctx = nullptr,
+                         format_specs* spec = nullptr)
       : base(Range(ctx.out()), spec, ctx.locale()),
         ctx_(ctx),
         parse_ctx_(parse_ctx) {}
@@ -3040,7 +3039,7 @@ template <typename T, typename Char>
 struct formatter<T, Char,
                  typename std::enable_if<internal::format_type<
                      typename buffer_context<Char>::type, T>::value>::type> {
-  FMT_CONSTEXPR formatter() : format_str_(FMT_NULL) {}
+  FMT_CONSTEXPR formatter() : format_str_(nullptr) {}
 
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.
@@ -3104,7 +3103,7 @@ struct formatter<T, Char,
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type>
         range_type;
-    return visit_format_arg(arg_formatter<range_type>(ctx, FMT_NULL, &specs_),
+    return visit_format_arg(arg_formatter<range_type>(ctx, nullptr, &specs_),
                             internal::make_arg<FormatContext>(val));
   }
 
@@ -3160,7 +3159,7 @@ template <typename Char = char> class dynamic_formatter {
     typedef output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type>
         range;
-    visit_format_arg(arg_formatter<range>(ctx, FMT_NULL, &specs_),
+    visit_format_arg(arg_formatter<range>(ctx, nullptr, &specs_),
                      internal::make_arg<FormatContext>(val));
     return ctx.out();
   }
@@ -3329,14 +3328,14 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
   \endrst
  */
 template <typename Range>
-arg_join<typename internal::iterator_t<Range>::type, char>
-    join(const Range& range, string_view sep) {
+arg_join<typename internal::iterator_t<Range>::type, char> join(
+    const Range& range, string_view sep) {
   return join(internal::begin(range), internal::end(range), sep);
 }
 
 template <typename Range>
-arg_join<typename internal::iterator_t<Range>::type, wchar_t>
-    join(const Range& range, wstring_view sep) {
+arg_join<typename internal::iterator_t<Range>::type, wchar_t> join(
+    const Range& range, wstring_view sep) {
   return join(internal::begin(range), internal::end(range), sep);
 }
 #endif

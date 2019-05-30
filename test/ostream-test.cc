@@ -167,7 +167,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   } os(streambuf);
 
   testing::InSequence sequence;
-  const char* data = FMT_NULL;
+  const char* data = nullptr;
   typedef std::make_unsigned<std::streamsize>::type ustreamsize;
   ustreamsize size = max_size;
   do {

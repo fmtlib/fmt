@@ -35,7 +35,7 @@ std::string get_system_error(int error_code);
 extern const char* const FILE_CONTENT;
 
 // Opens a buffered file for reading.
-fmt::buffered_file open_buffered_file(FILE** fp = FMT_NULL);
+fmt::buffered_file open_buffered_file(FILE** fp = nullptr);
 
 inline FILE* safe_fopen(const char* filename, const char* mode) {
 #if defined(_WIN32) && !defined(__MINGW32__)

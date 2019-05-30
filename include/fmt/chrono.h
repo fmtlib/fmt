@@ -42,7 +42,7 @@ inline std::tm localtime(std::time_t time) {
       return handle(localtime_r(&time_, &tm_));
     }
 
-    bool handle(std::tm* tm) { return tm != FMT_NULL; }
+    bool handle(std::tm* tm) { return tm != nullptr; }
 
     bool handle(internal::null<>) {
       using namespace fmt::internal;
@@ -56,7 +56,7 @@ inline std::tm localtime(std::time_t time) {
       using namespace fmt::internal;
       std::tm* tm = std::localtime(&time_);
       if (tm) tm_ = *tm;
-      return tm != FMT_NULL;
+      return tm != nullptr;
     }
 #endif
   };
@@ -79,7 +79,7 @@ inline std::tm gmtime(std::time_t time) {
       return handle(gmtime_r(&time_, &tm_));
     }
 
-    bool handle(std::tm* tm) { return tm != FMT_NULL; }
+    bool handle(std::tm* tm) { return tm != nullptr; }
 
     bool handle(internal::null<>) {
       using namespace fmt::internal;
@@ -92,7 +92,7 @@ inline std::tm gmtime(std::time_t time) {
     bool fallback(internal::null<>) {
       std::tm* tm = std::gmtime(&time_);
       if (tm) tm_ = *tm;
-      return tm != FMT_NULL;
+      return tm != nullptr;
     }
 #endif
   };
@@ -157,7 +157,7 @@ template <typename Char> struct formatter<std::tm, Char> {
 
 namespace internal {
 template <typename Period> FMT_CONSTEXPR const char* get_units() {
-  return FMT_NULL;
+  return nullptr;
 }
 template <> FMT_CONSTEXPR const char* get_units<std::atto>() { return "as"; }
 template <> FMT_CONSTEXPR const char* get_units<std::femto>() { return "fs"; }

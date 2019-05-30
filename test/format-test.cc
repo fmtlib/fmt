@@ -63,16 +63,12 @@ TEST(FormatterTest, TestFormattersEnabled) {
                            unsigned short, int, unsigned, long, unsigned long,
                            long long, unsigned long long, float, double,
                            long double, void*, const void*, char*, const char*,
-                           std::string>();
+                           std::string, std::nullptr_t>();
   check_enabled_formatters<wchar_t, bool, wchar_t, signed char, unsigned char,
                            short, unsigned short, int, unsigned, long,
                            unsigned long, long long, unsigned long long, float,
                            double, long double, void*, const void*, wchar_t*,
-                           const wchar_t*, std::wstring>();
-#  if FMT_USE_NULLPTR
-  check_enabled_formatters<char, std::nullptr_t>();
-  check_enabled_formatters<wchar_t, std::nullptr_t>();
-#  endif
+                           const wchar_t*, std::wstring, std::nullptr_t>();
 }
 #endif
 
@@ -192,7 +188,7 @@ TEST(IteratorTest, CountingIterator) {
 }
 
 TEST(IteratorTest, TruncatingIterator) {
-  char* p = FMT_NULL;
+  char* p = nullptr;
   fmt::internal::truncating_iterator<char*> it(p, 3);
   auto prev = it++;
   EXPECT_EQ(prev.base(), p);
@@ -254,7 +250,7 @@ TEST(AllocatorTest, allocator_ref) {
   test_allocator_ref ref2(ref);
   check_forwarding(alloc, ref2);
   test_allocator_ref ref3;
-  EXPECT_EQ(FMT_NULL, ref3.get());
+  EXPECT_EQ(nullptr, ref3.get());
   ref3 = ref;
   check_forwarding(alloc, ref3);
 }
@@ -270,7 +266,7 @@ static void check_move_buffer(
   EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
   EXPECT_EQ(5u, buffer2.capacity());
   // Move should transfer allocator.
-  EXPECT_EQ(FMT_NULL, buffer.get_allocator().get());
+  EXPECT_EQ(nullptr, buffer.get_allocator().get());
   EXPECT_EQ(alloc, buffer2.get_allocator().get());
 }
 
@@ -353,7 +349,7 @@ TEST(MemoryBufferTest, Grow) {
 TEST(MemoryBufferTest, Allocator) {
   typedef allocator_ref<mock_allocator<char>> TestAllocator;
   basic_memory_buffer<char, 10, TestAllocator> buffer;
-  EXPECT_EQ(FMT_NULL, buffer.get_allocator().get());
+  EXPECT_EQ(nullptr, buffer.get_allocator().get());
   StrictMock<mock_allocator<char>> alloc;
   char mem;
   {
@@ -493,7 +489,7 @@ TEST(UtilTest, FormatSystemError) {
     fmt::print("warning: std::allocator allocates {} chars", max_size);
     return;
   }
-  fmt::format_system_error(message, EDOM, fmt::string_view(FMT_NULL, max_size));
+  fmt::format_system_error(message, EDOM, fmt::string_view(nullptr, max_size));
   EXPECT_EQ(fmt::format("error {}", EDOM), to_string(message));
 }
 
@@ -1548,7 +1544,7 @@ TEST(FormatterTest, FormatCString) {
   EXPECT_EQ("test", format("{0:s}", "test"));
   char nonconst[] = "nonconst";
   EXPECT_EQ("nonconst", format("{0}", nonconst));
-  EXPECT_THROW_MSG(format("{0}", static_cast<const char*>(FMT_NULL)),
+  EXPECT_THROW_MSG(format("{0}", static_cast<const char*>(nullptr)),
                    format_error, "string pointer is null");
 }
 
@@ -1570,7 +1566,7 @@ TEST(FormatterTest, FormatUCharString) {
 
 TEST(FormatterTest, FormatPointer) {
   check_unknown_types(reinterpret_cast<void*>(0x1234), "p", "pointer");
-  EXPECT_EQ("0x0", format("{0}", static_cast<void*>(FMT_NULL)));
+  EXPECT_EQ("0x0", format("{0}", static_cast<void*>(nullptr)));
   EXPECT_EQ("0x1234", format("{0}", reinterpret_cast<void*>(0x1234)));
   EXPECT_EQ("0x1234", format("{0:p}", reinterpret_cast<void*>(0x1234)));
   EXPECT_EQ("0x" + std::string(sizeof(void*) * CHAR_BIT / 4, 'f'),
@@ -1581,7 +1577,7 @@ TEST(FormatterTest, FormatPointer) {
   std::shared_ptr<int> sp(new int(1));
   EXPECT_EQ(format("{}", fmt::ptr(sp.get())), format("{}", fmt::ptr(sp)));
 #if FMT_USE_NULLPTR
-  EXPECT_EQ("0x0", format("{}", FMT_NULL));
+  EXPECT_EQ("0x0", format("{}", nullptr));
 #endif
 }
 
@@ -1674,7 +1670,7 @@ TEST(FormatterTest, FormatExamples) {
   FILE* ftest = safe_fopen(filename, "r");
   if (ftest) fclose(ftest);
   int error_code = errno;
-  EXPECT_TRUE(ftest == FMT_NULL);
+  EXPECT_TRUE(ftest == nullptr);
   EXPECT_SYSTEM_ERROR(
       {
         FILE* f = safe_fopen(filename, "r");
@@ -1905,7 +1901,7 @@ class mock_arg_formatter
   typedef buffer_range range;
 
   mock_arg_formatter(fmt::format_context& ctx, fmt::format_parse_context*,
-                     fmt::format_specs* s = FMT_NULL)
+                     fmt::format_specs* s = nullptr)
       : base(fmt::internal::get_container(ctx.out()), s, ctx.locale()) {
     EXPECT_CALL(*this, call(42));
   }
@@ -2170,8 +2166,8 @@ struct test_parse_context {
   FMT_CONSTEXPR unsigned next_arg_id() { return 11; }
   template <typename Id> FMT_CONSTEXPR void check_arg_id(Id) {}
 
-  FMT_CONSTEXPR const char* begin() { return FMT_NULL; }
-  FMT_CONSTEXPR const char* end() { return FMT_NULL; }
+  FMT_CONSTEXPR const char* begin() { return nullptr; }
+  FMT_CONSTEXPR const char* end() { return nullptr; }
 
   void on_error(const char*) {}
 };
@@ -2337,7 +2333,7 @@ FMT_CONSTEXPR bool equal(const char* s1, const char* s2) {
 
 template <typename... Args>
 FMT_CONSTEXPR bool test_error(const char* fmt, const char* expected_error) {
-  const char* actual_error = FMT_NULL;
+  const char* actual_error = nullptr;
   fmt::internal::do_check_format_string<char, test_error_handler, Args...>(
       string_view(fmt, len(fmt)), test_error_handler(actual_error));
   return equal(actual_error, expected_error);
@@ -2349,7 +2345,7 @@ FMT_CONSTEXPR bool test_error(const char* fmt, const char* expected_error) {
     static_assert(test_error<__VA_ARGS__>(fmt, error), "")
 
 TEST(FormatTest, FormatStringErrors) {
-  EXPECT_ERROR_NOARGS("foo", FMT_NULL);
+  EXPECT_ERROR_NOARGS("foo", nullptr);
   EXPECT_ERROR_NOARGS("}", "unmatched '}' in format string");
   EXPECT_ERROR("{0:s", "unknown format specifier", Date);
 #  if FMT_MSC_VER >= 1916

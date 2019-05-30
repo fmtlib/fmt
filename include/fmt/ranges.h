@@ -82,7 +82,7 @@ template <typename T> class is_like_std_string {
 
  public:
   static FMT_CONSTEXPR_DECL const bool value =
-      is_string<T>::value || !std::is_void<decltype(check<T>(FMT_NULL))>::value;
+      is_string<T>::value || !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
 template <typename Char>
@@ -113,7 +113,7 @@ template <typename T> class is_tuple_like_ {
 
  public:
   static FMT_CONSTEXPR_DECL const bool value =
-      !std::is_void<decltype(check<T>(FMT_NULL))>::value;
+      !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
 // Check for integer_sequence

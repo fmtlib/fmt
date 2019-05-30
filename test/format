@@ -513,7 +513,7 @@ class arg_formatter
     *spec* contains format specifier information for standard argument types.
     \endrst
    */
-  arg_formatter(format_context& ctx, parse_context* parse_ctx = FMT_NULL, fmt::format_specs* spec = FMT_NULL)
+  arg_formatter(format_context& ctx, parse_context* parse_ctx = nullptr, fmt::format_specs* spec = nullptr)
       : base(Range(ctx.out()), spec, {}), parse_ctx_(parse_ctx), ctx_(ctx) {}
 
   using base::operator();
@@ -693,13 +693,13 @@ struct formatter {
   template <typename FormatContext>
   auto format(const T& val, FormatContext& ctx) -> decltype(ctx.out()) {
     fmt::internal::handle_dynamic_spec<fmt::internal::width_checker>(
-        specs_.width_, specs_.width_ref, ctx, FMT_NULL);
+        specs_.width_, specs_.width_ref, ctx, nullptr);
     fmt::internal::handle_dynamic_spec<fmt::internal::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx, FMT_NULL);
+        specs_.precision, specs_.precision_ref, ctx, nullptr);
     typedef fmt::output_range<typename FormatContext::iterator,
                          typename FormatContext::char_type>
         range_type;
-    return visit_format_arg(arg_formatter<range_type>(ctx, FMT_NULL, &specs_),
+    return visit_format_arg(arg_formatter<range_type>(ctx, nullptr, &specs_),
                             basic_format_arg<FormatContext>(val));
   }
 

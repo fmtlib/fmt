@@ -89,28 +89,6 @@
 #  endif
 #endif
 
-#if FMT_HAS_FEATURE(cxx_explicit_conversions) || FMT_GCC_VERSION >= 405 || \
-    FMT_MSC_VER >= 1800
-#  define FMT_USE_EXPLICIT 1
-#  define FMT_EXPLICIT explicit
-#else
-#  define FMT_USE_EXPLICIT 0
-#  define FMT_EXPLICIT
-#endif
-
-#ifndef FMT_NULL
-#  if FMT_HAS_FEATURE(cxx_nullptr) || \
-      (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1600
-#    define FMT_NULL nullptr
-#    define FMT_USE_NULLPTR 1
-#  else
-#    define FMT_NULL NULL
-#  endif
-#endif
-#ifndef FMT_USE_NULLPTR
-#  define FMT_USE_NULLPTR 0
-#endif
-
 // Check if exceptions are disabled.
 #ifndef FMT_EXCEPTIONS
 #  if (defined(__GNUC__) && !defined(__EXCEPTIONS)) || \
@@ -220,11 +198,6 @@
 #  define FMT_STRING_VIEW std::experimental::basic_string_view
 #endif
 
-// std::result_of is defined in <functional> in gcc 4.4.
-#if FMT_GCC_VERSION && FMT_GCC_VERSION <= 404
-#  include <functional>
-#endif
-
 // An enable_if helper to be used in template parameters. enable_if in template
 // parameters results in much shorter symbols: https://godbolt.org/z/sWw4vP.
 #define FMT_ENABLE_IF_T(...) typename std::enable_if<(__VA_ARGS__), int>::type
@@ -272,7 +245,7 @@ template <typename T> class buffer {
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
   buffer(std::size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
 
-  buffer(T* p = FMT_NULL, std::size_t sz = 0, std::size_t cap = 0) FMT_NOEXCEPT
+  buffer(T* p = nullptr, std::size_t sz = 0, std::size_t cap = 0) FMT_NOEXCEPT
       : ptr_(p),
         size_(sz),
         capacity_(cap) {}
@@ -379,7 +352,7 @@ typedef char no[2];
 template <typename T, typename V> struct is_constructible {
   template <typename U> static yes& test(int (*)[sizeof(new U(declval<V>()))]);
   template <typename U> static no& test(...);
-  enum { value = sizeof(test<T>(FMT_NULL)) == sizeof(yes) };
+  enum { value = sizeof(test<T>(nullptr)) == sizeof(yes) };
 };
 #else
 template <typename... T>
@@ -404,7 +377,7 @@ template <typename Char> class basic_string_view {
   typedef Char char_type;
   typedef const Char* iterator;
 
-  FMT_CONSTEXPR basic_string_view() FMT_NOEXCEPT : data_(FMT_NULL), size_(0) {}
+  FMT_CONSTEXPR basic_string_view() FMT_NOEXCEPT : data_(nullptr), size_(0) {}
 
   /** Constructs a string reference object from a C string and a size. */
   FMT_CONSTEXPR basic_string_view(const Char* s, size_t count) FMT_NOEXCEPT
@@ -850,10 +823,7 @@ FMT_MAKE_VALUE(string_type, const std::basic_string<typename C::char_type>&,
                basic_string_view<typename C::char_type>)
 FMT_MAKE_VALUE(pointer_type, void*, const void*)
 FMT_MAKE_VALUE_SAME(pointer_type, const void*)
-
-#if FMT_USE_NULLPTR
 FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
-#endif
 
 // Formatting of arbitrary pointers is disallowed. If you want to output a
 // pointer cast it to "void *" or "const void *". In particular, this forbids
@@ -953,7 +923,7 @@ template <typename Context> class basic_format_arg {
 
   FMT_CONSTEXPR basic_format_arg() : type_(internal::none_type) {}
 
-  FMT_CONSTEXPR FMT_EXPLICIT operator bool() const FMT_NOEXCEPT {
+  FMT_CONSTEXPR explicit operator bool() const FMT_NOEXCEPT {
     return type_ != internal::none_type;
   }
 
@@ -1041,7 +1011,7 @@ template <typename Context> class arg_map {
   }
 
  public:
-  arg_map() : map_(FMT_NULL), size_(0) {}
+  arg_map() : map_(nullptr), size_(0) {}
   void init(const basic_format_args<Context>& args);
   ~arg_map() { delete[] map_; }
 
@@ -1061,7 +1031,7 @@ class locale_ref {
   friend class locale;
 
  public:
-  locale_ref() : locale_(FMT_NULL) {}
+  locale_ref() : locale_(nullptr) {}
   template <typename Locale> explicit locale_ref(const Locale& loc);
 
   template <typename Locale> Locale get() const;

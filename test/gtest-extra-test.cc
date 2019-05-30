@@ -54,7 +54,9 @@ void do_nothing() {}
 
 FMT_NORETURN void throw_exception() { throw std::runtime_error("test"); }
 
-FMT_NORETURN void throw_system_error() { throw fmt::system_error(EDOM, "test"); }
+FMT_NORETURN void throw_system_error() {
+  throw fmt::system_error(EDOM, "test");
+}
 
 // Tests that when EXPECT_THROW_MSG fails, it evaluates its message argument
 // exactly once.
@@ -355,10 +357,10 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   FMT_POSIX(close(write_fd));
-  std::unique_ptr<OutputRedirect> redir{FMT_NULL};
+  std::unique_ptr<OutputRedirect> redir{nullptr};
   EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new OutputRedirect(f.get())), EBADF,
                                "cannot flush stream");
-  redir.reset(FMT_NULL);
+  redir.reset(nullptr);
   write_copy.dup2(write_fd);  // "undo" close or dtor will fail
 }
 
@@ -367,7 +369,7 @@ TEST(OutputRedirectTest, DupErrorInCtor) {
   int fd = (f.fileno)();
   file copy = file::dup(fd);
   FMT_POSIX(close(fd));
-  std::unique_ptr<OutputRedirect> redir{FMT_NULL};
+  std::unique_ptr<OutputRedirect> redir{nullptr};
   EXPECT_SYSTEM_ERROR_NOASSERT(
       redir.reset(new OutputRedirect(f.get())), EBADF,
       fmt::format("cannot duplicate file descriptor {}", fd));
@@ -420,7 +422,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
                  // redirecting the output in EXPECT_STDERR and the second close
                  // will break output redirection.
                  FMT_POSIX(close(write_fd));
-                 SUPPRESS_ASSERT(redir.reset(FMT_NULL));
+                 SUPPRESS_ASSERT(redir.reset(nullptr));
                },
                format_system_error(EBADF, "cannot flush stream"));
   write_copy.dup2(write_fd);  // "undo" close or dtor of buffered_file will fail

@@ -98,7 +98,7 @@ typedef void (*FormatFunc)(internal::buffer<char>&, int, string_view);
 // Buffer should be at least of size 1.
 int safe_strerror(int error_code, char*& buffer,
                   std::size_t buffer_size) FMT_NOEXCEPT {
-  FMT_ASSERT(buffer != FMT_NULL && buffer_size != 0, "invalid buffer");
+  FMT_ASSERT(buffer != nullptr && buffer_size != 0, "invalid buffer");
 
   class dispatcher {
    private:
@@ -650,9 +650,9 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
   // Decrement the generated number approaching value from above.
   void round(uint64_t d, uint64_t divisor, uint64_t& remainder,
              uint64_t error) {
-    while (remainder < d && error - remainder >= divisor &&
-            (remainder + divisor < d ||
-            d - remainder >= remainder + divisor - d)) {
+    while (
+        remainder < d && error - remainder >= divisor &&
+        (remainder + divisor < d || d - remainder >= remainder + divisor - d)) {
       --buf[size - 1];
       remainder += divisor;
     }
@@ -782,7 +782,7 @@ void sprintf_format(Double value, internal::buffer<char>& buf,
   *format_ptr = '\0';
 
   // Format using snprintf.
-  char* start = FMT_NULL;
+  char* start = nullptr;
   for (;;) {
     std::size_t buffer_size = buf.capacity();
     start = &buf[0];
@@ -839,7 +839,7 @@ FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
   }
 
   int length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s.data(),
-                                   s_size, FMT_NULL, 0);
+                                   s_size, nullptr, 0);
   if (length == 0) FMT_THROW(windows_error(GetLastError(), ERROR_MSG));
   buffer_.resize(length + 1);
   length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size,
@@ -865,12 +865,12 @@ FMT_FUNC int internal::utf16_to_utf8::convert(wstring_view s) {
     return 0;
   }
 
-  int length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, FMT_NULL, 0,
-                                   FMT_NULL, FMT_NULL);
+  int length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, nullptr, 0,
+                                   nullptr, nullptr);
   if (length == 0) return GetLastError();
   buffer_.resize(length + 1);
   length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, &buffer_[0],
-                               length, FMT_NULL, FMT_NULL);
+                               length, nullptr, nullptr);
   if (length == 0) return GetLastError();
   buffer_[length] = 0;
   return 0;
@@ -894,9 +894,9 @@ FMT_FUNC void internal::format_windows_error(internal::buffer<char>& out,
     for (;;) {
       wchar_t* system_message = &buf[0];
       int result = FormatMessageW(
-          FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, FMT_NULL,
+          FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
           error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), system_message,
-          static_cast<uint32_t>(buf.size()), FMT_NULL);
+          static_cast<uint32_t>(buf.size()), nullptr);
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {

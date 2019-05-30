@@ -297,7 +297,7 @@ class prepared_format {
         check_prepared_specs(specs, arg.type());
         advance_parse_context_to_specification(parse_ctx, part);
         ctx.advance_to(
-            visit_format_arg(arg_formatter<Range>(ctx, FMT_NULL, &specs), arg));
+            visit_format_arg(arg_formatter<Range>(ctx, nullptr, &specs), arg));
       } break;
       }
     }

@@ -169,9 +169,9 @@ TEST(FormatTest, FormatNegativeNaN) {
 }
 
 TEST(FormatTest, StrError) {
-  char* message = FMT_NULL;
+  char* message = nullptr;
   char buffer[BUFFER_SIZE];
-  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = FMT_NULL, 0),
+  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = nullptr, 0),
                 "invalid buffer");
   EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = buffer, 0),
                 "invalid buffer");
@@ -259,6 +259,6 @@ TEST(UtilTest, WriteUIntPtr) {
   fmt::writer writer(buf);
   writer.write_pointer(fmt::internal::bit_cast<fmt::internal::uintptr_t>(
                            reinterpret_cast<void*>(0xface)),
-                       FMT_NULL);
+                       nullptr);
   EXPECT_EQ("0xface", to_string(buf));
 }

@@ -58,26 +58,26 @@ static void write(file& f, fmt::string_view s) {
 
 TEST(BufferedFileTest, DefaultCtor) {
   buffered_file f;
-  EXPECT_TRUE(f.get() == FMT_NULL);
+  EXPECT_TRUE(f.get() == nullptr);
 }
 
 TEST(BufferedFileTest, MoveCtor) {
   buffered_file bf = open_buffered_file();
   FILE* fp = bf.get();
-  EXPECT_TRUE(fp != FMT_NULL);
+  EXPECT_TRUE(fp != nullptr);
   buffered_file bf2(std::move(bf));
   EXPECT_EQ(fp, bf2.get());
-  EXPECT_TRUE(bf.get() == FMT_NULL);
+  EXPECT_TRUE(bf.get() == nullptr);
 }
 
 TEST(BufferedFileTest, MoveAssignment) {
   buffered_file bf = open_buffered_file();
   FILE* fp = bf.get();
-  EXPECT_TRUE(fp != FMT_NULL);
+  EXPECT_TRUE(fp != nullptr);
   buffered_file bf2;
   bf2 = std::move(bf);
   EXPECT_EQ(fp, bf2.get());
-  EXPECT_TRUE(bf.get() == FMT_NULL);
+  EXPECT_TRUE(bf.get() == nullptr);
 }
 
 TEST(BufferedFileTest, MoveAssignmentClosesFile) {
@@ -89,13 +89,13 @@ TEST(BufferedFileTest, MoveAssignmentClosesFile) {
 }
 
 TEST(BufferedFileTest, MoveFromTemporaryInCtor) {
-  FILE* fp = FMT_NULL;
+  FILE* fp = nullptr;
   buffered_file f(open_buffered_file(&fp));
   EXPECT_EQ(fp, f.get());
 }
 
 TEST(BufferedFileTest, MoveFromTemporaryInAssignment) {
-  FILE* fp = FMT_NULL;
+  FILE* fp = nullptr;
   buffered_file f;
   f = open_buffered_file(&fp);
   EXPECT_EQ(fp, f.get());
@@ -126,7 +126,7 @@ TEST(BufferedFileTest, CloseErrorInDtor) {
                  // redirecting the output in EXPECT_STDERR and the second close
                  // will break output redirection.
                  FMT_POSIX(close(f->fileno()));
-                 SUPPRESS_ASSERT(f.reset(FMT_NULL));
+                 SUPPRESS_ASSERT(f.reset(nullptr));
                },
                format_system_error(EBADF, "cannot close file") + "\n");
 }
@@ -135,7 +135,7 @@ TEST(BufferedFileTest, Close) {
   buffered_file f = open_buffered_file();
   int fd = f.fileno();
   f.close();
-  EXPECT_TRUE(f.get() == FMT_NULL);
+  EXPECT_TRUE(f.get() == nullptr);
   EXPECT_TRUE(isclosed(fd));
 }
 
@@ -143,7 +143,7 @@ TEST(BufferedFileTest, CloseError) {
   buffered_file f = open_buffered_file();
   FMT_POSIX(close(f.fileno()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
-  EXPECT_TRUE(f.get() == FMT_NULL);
+  EXPECT_TRUE(f.get() == nullptr);
 }
 
 TEST(BufferedFileTest, Fileno) {
@@ -257,7 +257,7 @@ TEST(FileTest, CloseErrorInDtor) {
                  // redirecting the output in EXPECT_STDERR and the second close
                  // will break output redirection.
                  FMT_POSIX(close(f->descriptor()));
-                 SUPPRESS_ASSERT(f.reset(FMT_NULL));
+                 SUPPRESS_ASSERT(f.reset(nullptr));
                },
                format_system_error(EBADF, "cannot close file") + "\n");
 }

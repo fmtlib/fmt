@@ -84,7 +84,7 @@ TEST(BufferTest, Nonmoveable) {
 
 // A test buffer with a dummy grow method.
 template <typename T> struct test_buffer : buffer<T> {
-  void grow(std::size_t capacity) { this->set(FMT_NULL, capacity); }
+  void grow(std::size_t capacity) { this->set(nullptr, capacity); }
 };
 
 template <typename T> struct mock_buffer : buffer<T> {
@@ -103,7 +103,7 @@ template <typename T> struct mock_buffer : buffer<T> {
 TEST(BufferTest, Ctor) {
   {
     mock_buffer<int> buffer;
-    EXPECT_EQ(FMT_NULL, &buffer[0]);
+    EXPECT_EQ(nullptr, &buffer[0]);
     EXPECT_EQ(static_cast<size_t>(0), buffer.size());
     EXPECT_EQ(static_cast<size_t>(0), buffer.capacity());
   }
@@ -217,7 +217,7 @@ struct custom_context {
 
       const char* format(const T&, custom_context& ctx) {
         ctx.called = true;
-        return FMT_NULL;
+        return nullptr;
       }
     };
   };
@@ -361,8 +361,8 @@ TEST(ArgTest, WStringArg) {
 }
 
 TEST(ArgTest, PointerArg) {
-  void* p = FMT_NULL;
-  const void* cp = FMT_NULL;
+  void* p = nullptr;
+  const void* cp = nullptr;
   CHECK_ARG_(char, cp, p);
   CHECK_ARG_(wchar_t, cp, p);
   CHECK_ARG(cp, );
@@ -571,7 +571,7 @@ TEST(FormatterTest, FormatImplicitlyConvertibleToStringView) {
 }
 
 // std::is_constructible is broken in MSVC until version 2015.
-#if FMT_USE_EXPLICIT && (!FMT_MSC_VER || FMT_MSC_VER >= 1900)
+#if !FMT_MSC_VER || FMT_MSC_VER >= 1900
 struct explicitly_convertible_to_string_view {
   explicit operator fmt::string_view() const { return "foo"; }
 };
@@ -593,7 +593,7 @@ struct explicitly_convertible_to_string_like {
   template <typename String,
             typename = typename std::enable_if<std::is_constructible<
                 String, const char*, std::size_t>::value>::type>
-  FMT_EXPLICIT operator String() const {
+  explicit operator String() const {
     return String("foo", 3u);
   }
 };

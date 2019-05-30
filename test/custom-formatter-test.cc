@@ -6,7 +6,7 @@
 // For the license information refer to format.h.
 
 #ifndef _CRT_SECURE_NO_WARNINGS
-#  define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 #endif
 
 #include "fmt/format.h"
@@ -26,7 +26,7 @@ class custom_arg_formatter
 
   custom_arg_formatter(fmt::format_context& ctx,
                        fmt::format_parse_context* parse_ctx,
-                       fmt::format_specs* s = FMT_NULL)
+                       fmt::format_specs* s = nullptr)
       : base(ctx, parse_ctx, s) {}
 
   using base::operator();

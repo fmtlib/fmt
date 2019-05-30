@@ -155,7 +155,7 @@ std::string read(fmt::file& f, std::size_t count);
 
 template <typename Mock> struct ScopedMock : testing::StrictMock<Mock> {
   ScopedMock() { Mock::instance = this; }
-  ~ScopedMock() { Mock::instance = FMT_NULL; }
+  ~ScopedMock() { Mock::instance = nullptr; }
 };
 
 #endif  // FMT_GTEST_EXTRA_H_
