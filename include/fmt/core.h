@@ -193,7 +193,7 @@
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 #  include <string_view>
 #  define FMT_STRING_VIEW std::basic_string_view
-#elif FMT_HAS_INCLUDE(<experimental / string_view>) && __cplusplus >= 201402L
+#elif FMT_HAS_INCLUDE("experimental/string_view") && __cplusplus >= 201402L
 #  include <experimental/string_view>
 #  define FMT_STRING_VIEW std::experimental::basic_string_view
 #endif
