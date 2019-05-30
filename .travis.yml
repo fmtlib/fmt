@@ -7,7 +7,6 @@ os: linux
 git:
   depth: 1
 
-
 env:
   global:
     - secure: |-
@@ -93,16 +92,6 @@ matrix:
       # g++ 4.8 on Linux with C++11
     - env: COMPILER=g++-4.8 BUILD=Debug STANDARD=11
       compiler: gcc
-      # g++ 4.4 on Linux with C++11
-    - env: COMPILER=g++-4.4 BUILD=Debug STANDARD=11
-      compiler: gcc
-      addons:
-        apt:
-          update: true
-          packages:
-            - g++-4.4
-          sources:
-            - ubuntu-toolchain-r-test
     - name: Android NDK (Gradle)
       language: android
       addons:
