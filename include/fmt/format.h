@@ -286,7 +286,7 @@ FMT_CONSTEXPR T* end(T (&array)[N]) FMT_NOEXCEPT {
 
 // An implementation of iterator_t for pre-C++20 compilers such as gcc 4.
 template <typename T> struct iterator_t {
-  typedef decltype(internal::begin(internal::declval<const T&>())) type;
+  typedef decltype(internal::begin(std::declval<const T&>())) type;
 };
 
 // For std::result_of in gcc 4.4.
@@ -1393,7 +1393,7 @@ template <typename Range, typename ErrorHandler = internal::error_handler>
 class arg_formatter_base {
  public:
   typedef typename Range::value_type char_type;
-  typedef decltype(internal::declval<Range>().begin()) iterator;
+  typedef decltype(std::declval<Range>().begin()) iterator;
   typedef basic_format_specs<char_type> format_specs;
 
  private:
@@ -2388,7 +2388,7 @@ FMT_API void format_system_error(internal::buffer<char>& out, int error_code,
 template <typename Range> class basic_writer {
  public:
   typedef typename Range::value_type char_type;
-  typedef decltype(internal::declval<Range>().begin()) iterator;
+  typedef decltype(std::declval<Range>().begin()) iterator;
   typedef basic_format_specs<char_type> format_specs;
 
  private:
@@ -3427,7 +3427,7 @@ template <typename It> class is_output_iterator {
   // The compiler reveals this property only at the point of *actually
   // dereferencing* the iterator!
   template <typename U>
-  static decltype(*(internal::declval<U>())) test(std::input_iterator_tag);
+  static decltype(*(std::declval<U>())) test(std::input_iterator_tag);
   template <typename U> static char& test(std::output_iterator_tag);
   template <typename U> static const char& test(...);
 

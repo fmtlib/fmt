@@ -434,8 +434,8 @@ TEST(PrepareTest, CompileTimePreparedPartsTypeProvider) {
 // Use the struct instead of a function to workaround GCC 4.4's 'sorry,
 // unimplemented: mangling template_id_expr' issue.
 template <typename... Args> struct copied_prepared_format_creator {
-  static decltype(fmt::prepare<Args...>(fmt::internal::declval<std::string>()))
-  make(std::string format_str) {
+  static decltype(fmt::prepare<Args...>(std::declval<std::string>())) make(
+      std::string format_str) {
     auto prepared_format = fmt::prepare<Args...>(std::move(format_str));
     auto copied_prepared_format = prepared_format;
     prepared_format = fmt::prepare<Args...>("");
@@ -513,20 +513,17 @@ class custom_parts_container {
 
   format_part_type last() { return parts_.back(); }
 
-  auto begin() -> decltype(fmt::internal::declval<parts>().begin()) {
+  auto begin() -> decltype(std::declval<parts>().begin()) {
     return parts_.begin();
   }
 
-  auto begin() const
-      -> decltype(fmt::internal::declval<const parts>().begin()) {
+  auto begin() const -> decltype(std::declval<const parts>().begin()) {
     return parts_.begin();
   }
 
-  auto end() -> decltype(fmt::internal::declval<parts>().begin()) {
-    return parts_.end();
-  }
+  auto end() -> decltype(std::declval<parts>().begin()) { return parts_.end(); }
 
-  auto end() const -> decltype(fmt::internal::declval<const parts>().begin()) {
+  auto end() const -> decltype(std::declval<const parts>().begin()) {
     return parts_.end();
   }
 

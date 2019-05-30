@@ -539,14 +539,14 @@ struct parts_container_concept_check : std::true_type {
   template <typename T> static std::false_type has_add_check(check_second);
   template <typename T>
   static decltype(
-      (void)declval<T>().add(declval<typename T::format_part_type>()),
+      (void)std::declval<T>().add(std::declval<typename T::format_part_type>()),
       std::true_type()) has_add_check(check_first);
   typedef decltype(has_add_check<PartsContainer>(check_first())) has_add;
   static_assert(has_add::value, "PartsContainer doesn't provide add() method");
 
   template <typename T> static std::false_type has_last_check(check_second);
   template <typename T>
-  static decltype((void)declval<T>().last(),
+  static decltype((void)std::declval<T>().last(),
                   std::true_type()) has_last_check(check_first);
   typedef decltype(has_last_check<PartsContainer>(check_first())) has_last;
   static_assert(has_last::value,
@@ -555,8 +555,8 @@ struct parts_container_concept_check : std::true_type {
   template <typename T>
   static std::false_type has_substitute_last_check(check_second);
   template <typename T>
-  static decltype((void)declval<T>().substitute_last(
-                      declval<typename T::format_part_type>()),
+  static decltype((void)std::declval<T>().substitute_last(
+                      std::declval<typename T::format_part_type>()),
                   std::true_type()) has_substitute_last_check(check_first);
   typedef decltype(has_substitute_last_check<PartsContainer>(
       check_first())) has_substitute_last;
@@ -565,7 +565,7 @@ struct parts_container_concept_check : std::true_type {
 
   template <typename T> static std::false_type has_begin_check(check_second);
   template <typename T>
-  static decltype((void)declval<T>().begin(),
+  static decltype((void)std::declval<T>().begin(),
                   std::true_type()) has_begin_check(check_first);
   typedef decltype(has_begin_check<PartsContainer>(check_first())) has_begin;
   static_assert(has_begin::value,
@@ -573,7 +573,7 @@ struct parts_container_concept_check : std::true_type {
 
   template <typename T> static std::false_type has_end_check(check_second);
   template <typename T>
-  static decltype((void)declval<T>().end(),
+  static decltype((void)std::declval<T>().end(),
                   std::true_type()) has_end_check(check_first);
   typedef decltype(has_end_check<PartsContainer>(check_first())) has_end;
   static_assert(has_end::value, "PartsContainer doesn't provide end() method");
@@ -626,19 +626,19 @@ class parts_container {
 
   format_part_type last() { return parts_.back(); }
 
-  auto begin() -> decltype(internal::declval<Container>().begin()) {
+  auto begin() -> decltype(std::declval<Container>().begin()) {
     return parts_.begin();
   }
 
-  auto begin() const -> decltype(internal::declval<const Container>().begin()) {
+  auto begin() const -> decltype(std::declval<const Container>().begin()) {
     return parts_.begin();
   }
 
-  auto end() -> decltype(internal::declval<Container>().end()) {
+  auto end() -> decltype(std::declval<Container>().end()) {
     return parts_.end();
   }
 
-  auto end() const -> decltype(internal::declval<const Container>().end()) {
+  auto end() const -> decltype(std::declval<const Container>().end()) {
     return parts_.end();
   }
 

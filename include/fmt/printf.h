@@ -210,7 +210,7 @@ class printf_arg_formatter
           typename internal::arg_formatter_base<Range>::iterator>,
       public internal::arg_formatter_base<Range> {
  public:
-  typedef decltype(internal::declval<Range>().begin()) iterator;
+  typedef decltype(std::declval<Range>().begin()) iterator;
 
  private:
   typedef typename Range::value_type char_type;

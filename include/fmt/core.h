@@ -206,10 +206,6 @@
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
-// An implementation of declval for pre-C++11 compilers such as gcc 4.
-template <typename T>
-typename std::add_rvalue_reference<T>::type declval() FMT_NOEXCEPT;
-
 template <typename> struct result_of;
 
 #if (__cplusplus >= 201703L ||                          \
@@ -350,7 +346,8 @@ typedef char yes[1];
 typedef char no[2];
 
 template <typename T, typename V> struct is_constructible {
-  template <typename U> static yes& test(int (*)[sizeof(new U(declval<V>()))]);
+  template <typename U>
+  static yes& test(int (*)[sizeof(new U(std::declval<V>()))]);
   template <typename U> static no& test(...);
   enum { value = sizeof(test<T>(nullptr)) == sizeof(yes) };
 };
@@ -602,16 +599,16 @@ using fmt::v5::to_string_view;
 template <typename S>
 struct is_string
     : std::integral_constant<
-          bool, !std::is_same<dummy_string_view,
-                              decltype(to_string_view(declval<S>()))>::value> {
-};
+          bool,
+          !std::is_same<dummy_string_view,
+                        decltype(to_string_view(std::declval<S>()))>::value> {};
 
 // Forward declare FILE* specialization defined in color.h
 template <> struct is_string<std::FILE*>;
 template <> struct is_string<const std::FILE*>;
 
 template <typename S> struct char_t {
-  typedef decltype(to_string_view(declval<S>())) result;
+  typedef decltype(to_string_view(std::declval<S>())) result;
   typedef typename result::char_type type;
 };
 
@@ -1038,8 +1035,8 @@ class locale_ref {
 };
 
 template <typename Context, typename T> struct get_type {
-  typedef decltype(
-      make_value<Context>(declval<typename std::decay<T>::type&>())) value_type;
+  typedef decltype(make_value<Context>(
+      std::declval<typename std::decay<T>::type&>())) value_type;
   static const type value = value_type::type_tag;
 };
 

@@ -94,21 +94,20 @@ template <typename T, typename _ = void> struct is_range_ : std::false_type {};
 
 #if !FMT_MSC_VER || FMT_MSC_VER > 1800
 template <typename T>
-struct is_range_<
-    T, typename std::conditional<
-           false,
-           conditional_helper<decltype(internal::declval<T>().begin()),
-                              decltype(internal::declval<T>().end())>,
-           void>::type> : std::true_type {};
+struct is_range_<T, typename std::conditional<
+                        false,
+                        conditional_helper<decltype(std::declval<T>().begin()),
+                                           decltype(std::declval<T>().end())>,
+                        void>::type> : std::true_type {};
 #endif
 
 /// tuple_size and tuple_element check.
 template <typename T> class is_tuple_like_ {
   template <typename U>
-  static auto check(U* p) -> decltype(
-      std::tuple_size<U>::value,
-      (void)internal::declval<typename std::tuple_element<0, U>::type>(),
-      int());
+  static auto check(U* p)
+      -> decltype(std::tuple_size<U>::value,
+                  (void)std::declval<typename std::tuple_element<0, U>::type>(),
+                  int());
   template <typename> static void check(...);
 
  public:
