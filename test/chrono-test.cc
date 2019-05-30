@@ -306,12 +306,22 @@ TEST(ChronoTest, InvalidColons) {
                fmt::format_error);
 }
 
+TEST(ChronoTest, NegativeDuration) {
+  EXPECT_EQ("-12345", fmt::format("{:%Q}", std::chrono::seconds(-12345)));
+  EXPECT_EQ("-03:25:45",
+            fmt::format("{:%H:%M:%S}", std::chrono::seconds(-12345)));
+  EXPECT_EQ("-00:01",
+            fmt::format("{:%M:%S}", std::chrono::duration<double>(-1)));
+  EXPECT_EQ("s", fmt::format("{:%q}", std::chrono::seconds(-12345)));
+  EXPECT_EQ("-00.127",
+            fmt::format("{:%S}",
+                        std::chrono::duration<signed char, std::milli>{-127}));
+}
+
 TEST(ChronoTest, SpecialDurations) {
   EXPECT_EQ(
       "40.",
       fmt::format("{:%S}", std::chrono::duration<double>(1e20)).substr(0, 3));
-  EXPECT_EQ("-00:01",
-            fmt::format("{:%M:%S}", std::chrono::duration<double>(-1)));
   auto nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ(
       "nan nan nan nan.nan nan:nan nan",
@@ -322,6 +332,10 @@ TEST(ChronoTest, SpecialDurations) {
             "1Es");
   EXPECT_EQ(fmt::format("{}", std::chrono::duration<float, std::atto>(1)),
             "1as");
+  EXPECT_EQ(fmt::format("{:%R}", std::chrono::duration<char, std::mega>{2}),
+            "03:33");
+  EXPECT_EQ(fmt::format("{:%T}", std::chrono::duration<char, std::mega>{2}),
+            "03:33:20");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
