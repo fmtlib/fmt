@@ -3566,14 +3566,17 @@ namespace internal {
 
 #  if FMT_USE_UDL_TEMPLATE
 template <typename Char, Char... CHARS> class udl_formatter {
- public:
   template <typename... Args>
+  FMT_CONSTEXPR11 static bool is_valid() {
+    return do_check_format_string<Char, error_handler, Args...>(
+      basic_string_view<Char>(
+        std::initializer_list<Char>{CHARS...}.begin(),
+        sizeof...(CHARS)));
+  }
+ public:
+  template <typename... Args, FMT_ENABLE_IF(is_valid<Args...>())>
   std::basic_string<Char> operator()(const Args&... args) const {
     FMT_CONSTEXPR_DECL Char s[] = {CHARS..., '\0'};
-    FMT_CONSTEXPR_DECL bool invalid_format =
-        do_check_format_string<Char, error_handler, Args...>(
-            basic_string_view<Char>(s, sizeof...(CHARS)));
-    (void)invalid_format;
     return format(s, args...);
   }
 };
