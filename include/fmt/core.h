@@ -187,24 +187,33 @@
 #  define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
 
-// libc++ supports string_view in pre-c++17.
-#if (FMT_HAS_INCLUDE(<string_view>) &&                       \
-     (__cplusplus > 201402L || defined(_LIBCPP_VERSION))) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
-#  include <string_view>
-#  define FMT_STRING_VIEW std::basic_string_view
-#elif FMT_HAS_INCLUDE("experimental/string_view") && __cplusplus >= 201402L
-#  include <experimental/string_view>
-#  define FMT_STRING_VIEW std::experimental::basic_string_view
-#endif
-
 // An enable_if helper to be used in template parameters. enable_if in template
 // parameters results in much shorter symbols: https://godbolt.org/z/sWw4vP.
 #define FMT_ENABLE_IF_T(...) typename std::enable_if<(__VA_ARGS__), int>::type
 #define FMT_ENABLE_IF(...) FMT_ENABLE_IF_T(__VA_ARGS__) = 0
 
+// libc++ supports string_view in pre-c++17.
+#if (FMT_HAS_INCLUDE(<string_view>) &&                       \
+     (__cplusplus > 201402L || defined(_LIBCPP_VERSION))) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
+#  include <string_view>
+#  define FMT_USE_STRING_VIEW
+#elif FMT_HAS_INCLUDE("experimental/string_view") && __cplusplus >= 201402L
+#  include <experimental/string_view>
+#  define FMT_USE_EXPERIMENTAL_STRING_VIEW
+#endif
+
 FMT_BEGIN_NAMESPACE
 namespace internal {
+
+#if defined(FMT_USE_STRING_VIEW)
+template <typename Char> using std_string_view = std::basic_string_view<Char>;
+#elif defined(FMT_USE_EXPERIMENTAL_STRING_VIEW)
+template <typename Char>
+using std_string_view = std::experimental::basic_string_view<Char>;
+#else
+template <typename T> struct std_string_view {};
+#endif
 
 template <typename> struct result_of;
 
@@ -396,11 +405,11 @@ template <typename Char> class basic_string_view {
       FMT_NOEXCEPT : data_(s.data()),
                      size_(s.size()) {}
 
-#ifdef FMT_STRING_VIEW
-  FMT_CONSTEXPR basic_string_view(FMT_STRING_VIEW<Char> s) FMT_NOEXCEPT
-      : data_(s.data()),
-        size_(s.size()) {}
-#endif
+  template <
+      typename S,
+      FMT_ENABLE_IF(std::is_same<S, internal::std_string_view<Char>>::value)>
+  FMT_CONSTEXPR basic_string_view(S s) FMT_NOEXCEPT : data_(s.data()),
+                                                      size_(s.size()) {}
 
   /** Returns a pointer to the string data. */
   FMT_CONSTEXPR const Char* data() const { return data_; }
@@ -486,12 +495,12 @@ inline basic_string_view<Char> to_string_view(const Char* s) {
   return s;
 }
 
-#ifdef FMT_STRING_VIEW
-template <typename Char>
-inline basic_string_view<Char> to_string_view(FMT_STRING_VIEW<Char> s) {
+template <typename Char,
+          FMT_ENABLE_IF(!std::is_empty<internal::std_string_view<Char>>::value)>
+inline basic_string_view<Char> to_string_view(
+    internal::std_string_view<Char> s) {
   return s;
 }
-#endif
 
 // A base class for compile-time strings. It is defined in the fmt namespace to
 // make formatting functions visible via ADL, e.g. format(fmt("{}"), 42).

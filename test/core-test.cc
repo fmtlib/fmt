@@ -475,9 +475,7 @@ class QString {
   QString(const wchar_t* s) : s_(std::make_shared<std::wstring>(s)) {}
   const wchar_t* utf16() const FMT_NOEXCEPT { return s_->data(); }
   int size() const FMT_NOEXCEPT { return static_cast<int>(s_->size()); }
-#ifdef FMT_STRING_VIEW
-  operator FMT_STRING_VIEW<wchar_t>() const FMT_NOEXCEPT { return *s_; }
-#endif
+
  private:
   std::shared_ptr<std::wstring> s_;
 };
@@ -499,21 +497,21 @@ struct derived_from_string_view : fmt::basic_string_view<Char> {};
 }  // namespace
 
 TYPED_TEST(IsStringTest, IsString) {
-  EXPECT_TRUE((fmt::internal::is_string<TypeParam*>::value));
-  EXPECT_TRUE((fmt::internal::is_string<const TypeParam*>::value));
-  EXPECT_TRUE((fmt::internal::is_string<TypeParam[2]>::value));
-  EXPECT_TRUE((fmt::internal::is_string<const TypeParam[2]>::value));
-  EXPECT_TRUE((fmt::internal::is_string<std::basic_string<TypeParam>>::value));
+  EXPECT_TRUE(fmt::internal::is_string<TypeParam*>::value);
+  EXPECT_TRUE(fmt::internal::is_string<const TypeParam*>::value);
+  EXPECT_TRUE(fmt::internal::is_string<TypeParam[2]>::value);
+  EXPECT_TRUE(fmt::internal::is_string<const TypeParam[2]>::value);
+  EXPECT_TRUE(fmt::internal::is_string<std::basic_string<TypeParam>>::value);
   EXPECT_TRUE(
-      (fmt::internal::is_string<fmt::basic_string_view<TypeParam>>::value));
+      fmt::internal::is_string<fmt::basic_string_view<TypeParam>>::value);
   EXPECT_TRUE(
-      (fmt::internal::is_string<derived_from_string_view<TypeParam>>::value));
-#ifdef FMT_STRING_VIEW
-  EXPECT_TRUE((fmt::internal::is_string<FMT_STRING_VIEW<TypeParam>>::value));
-#endif
-  EXPECT_TRUE((fmt::internal::is_string<my_ns::my_string<TypeParam>>::value));
-  EXPECT_FALSE((fmt::internal::is_string<my_ns::non_string>::value));
-  EXPECT_TRUE((fmt::internal::is_string<FakeQt::QString>::value));
+      fmt::internal::is_string<derived_from_string_view<TypeParam>>::value);
+  using string_view = fmt::internal::std_string_view<TypeParam>;
+  EXPECT_TRUE(std::is_empty<string_view>::value !=
+              fmt::internal::is_string<string_view>::value);
+  EXPECT_TRUE(fmt::internal::is_string<my_ns::my_string<TypeParam>>::value);
+  EXPECT_FALSE(fmt::internal::is_string<my_ns::non_string>::value);
+  EXPECT_TRUE(fmt::internal::is_string<FakeQt::QString>::value);
 }
 
 TEST(CoreTest, Format) {
