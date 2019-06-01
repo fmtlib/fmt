@@ -1306,16 +1306,9 @@ struct wformat_args : basic_format_args<wformat_context> {
       : basic_format_args<wformat_context>(std::forward<Args>(arg)...) {}
 };
 
-#ifndef FMT_USE_ALIAS_TEMPLATES
-#  define FMT_USE_ALIAS_TEMPLATES FMT_HAS_FEATURE(cxx_alias_templates)
-#endif
-#if FMT_USE_ALIAS_TEMPLATES
 /** String's character type. */
 template <typename S> using char_t = typename internal::char_t<S>::type;
-#  define FMT_CHAR(S) fmt::char_t<S>
-#else
-#  define FMT_CHAR(S) typename internal::char_t<S>::type
-#endif
+#define FMT_CHAR(S) fmt::char_t<S>
 
 namespace internal {
 template <typename Context>

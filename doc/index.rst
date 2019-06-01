@@ -175,8 +175,9 @@ The library is highly portable and relies only on a small set of C++11 features:
 * decltype
 * trailing return types
 * deleted functions
+* alias templates
 
-These are available since GCC 4.4, Clang 2.9 and MSVC 18.0 (2013). For older
+These are available since GCC 4.8, Clang 3.0 and MSVC 19.0 (2015). For older
 compilers use fmt `version 4.x
 <https://github.com/fmtlib/fmt/releases/tag/4.1.0>`_ which continues to be
 maintained and only requires C++98.
