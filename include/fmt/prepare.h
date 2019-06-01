@@ -185,8 +185,8 @@ class format_preparation_handler : public internal::error_handler {
 template <typename Format, typename PreparedPartsProvider, typename... Args>
 class prepared_format {
  public:
-  typedef FMT_CHAR(Format) char_type;
-  typedef format_part<char_type> format_part_t;
+  using char_type = char_t<Format>;
+  using format_part_t = format_part<char_type>;
 
   prepared_format(Format f)
       : format_(std::move(f)), parts_provider_(to_string_view(format_)) {}
@@ -351,7 +351,7 @@ class prepared_format {
 
 template <typename Format> class compiletime_prepared_parts_type_provider {
  private:
-  typedef FMT_CHAR(Format) char_type;
+  using char_type = char_t<Format>;
 
   class count_handler {
    private:
@@ -649,7 +649,7 @@ class parts_container {
 // Delegate preparing to preparator, to take advantage of a partial
 // specialization.
 template <typename Format, typename... Args> struct preparator {
-  typedef parts_container<FMT_CHAR(Format)> container;
+  typedef parts_container<char_t<Format>> container;
   typedef typename basic_prepared_format<Format, container, Args...>::type
       prepared_format_type;
 

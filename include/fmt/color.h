@@ -556,7 +556,7 @@ std::basic_string<Char> vformat(
 }
 }  // namespace internal
 
-template <typename S, typename Char = typename internal::char_t<S>::type>
+template <typename S, typename Char = char_t<S> >
 void vprint(std::FILE* f, const text_style& ts, const S& format,
             basic_format_args<typename buffer_context<Char>::type> args) {
   bool has_style = false;
@@ -587,13 +587,12 @@ void vprint(std::FILE* f, const text_style& ts, const S& format,
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red),
                "Elapsed time: {0:.2f} seconds", 1.23);
  */
-template <typename String, typename... Args,
-          FMT_ENABLE_IF(internal::is_string<String>::value)>
-void print(std::FILE* f, const text_style& ts, const String& format_str,
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
+void print(std::FILE* f, const text_style& ts, const S& format_str,
            const Args&... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename internal::char_t<String>::type char_t;
-  typedef typename buffer_context<char_t>::type context_t;
+  typedef typename buffer_context<char_t<S> >::type context_t;
   format_arg_store<context_t, Args...> as{args...};
   vprint(f, ts, format_str, basic_format_args<context_t>(as));
 }
@@ -605,14 +604,13 @@ void print(std::FILE* f, const text_style& ts, const String& format_str,
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red),
                "Elapsed time: {0:.2f} seconds", 1.23);
  */
-template <typename String, typename... Args,
-          FMT_ENABLE_IF(internal::is_string<String>::value)>
-void print(const text_style& ts, const String& format_str,
-           const Args&... args) {
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
+void print(const text_style& ts, const S& format_str, const Args&... args) {
   return print(stdout, ts, format_str, args...);
 }
 
-template <typename S, typename Char = FMT_CHAR(S)>
+template <typename S, typename Char = char_t<S> >
 inline std::basic_string<Char> vformat(
     const text_style& ts, const S& format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
@@ -631,10 +629,9 @@ inline std::basic_string<Char> vformat(
                                       "The answer is {}", 42);
   \endrst
 */
-template <typename S, typename... Args>
-inline std::basic_string<FMT_CHAR(S)> format(const text_style& ts,
-                                             const S& format_str,
-                                             const Args&... args) {
+template <typename S, typename... Args, typename Char = char_t<S> >
+inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
+                                      const Args&... args) {
   return internal::vformat(ts, to_string_view(format_str),
                            {internal::make_args_checked(format_str, args...)});
 }

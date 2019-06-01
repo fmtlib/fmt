@@ -120,13 +120,13 @@ struct convert_to_int<
 };
 
 template <typename Char>
-inline void vprint(
-    std::basic_ostream<Char>& os, basic_string_view<Char> format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+void vprint(std::basic_ostream<Char>& os, basic_string_view<Char> format_str,
+            basic_format_args<typename buffer_context<Char>::type> args) {
   basic_memory_buffer<Char> buffer;
   internal::vformat_to(buffer, format_str, args);
   internal::write(os, buffer);
 }
+
 /**
   \rst
   Prints formatted data to the stream *os*.
@@ -137,8 +137,8 @@ inline void vprint(
   \endrst
  */
 template <typename S, typename... Args,
-          FMT_ENABLE_IF(internal::is_string<S>::value)>
-inline void print(std::basic_ostream<FMT_CHAR(S)>& os, const S& format_str,
+          typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
+inline void print(std::basic_ostream<Char>& os, const S& format_str,
                   const Args&... args) {
   vprint(os, to_string_view(format_str),
          {internal::make_args_checked(format_str, args...)});

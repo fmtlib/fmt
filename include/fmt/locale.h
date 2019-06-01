@@ -34,38 +34,39 @@ std::basic_string<Char> vformat(
 }
 }  // namespace internal
 
-template <typename S, typename Char = FMT_CHAR(S)>
+template <typename S, typename Char = char_t<S>>
 inline std::basic_string<Char> vformat(
     const std::locale& loc, const S& format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
   return internal::vformat(loc, to_string_view(format_str), args);
 }
 
-template <typename S, typename... Args>
-inline std::basic_string<FMT_CHAR(S)> format(const std::locale& loc,
-                                             const S& format_str,
-                                             const Args&... args) {
+template <typename S, typename... Args, typename Char = char_t<S>>
+inline std::basic_string<Char> format(const std::locale& loc,
+                                      const S& format_str,
+                                      const Args&... args) {
   return internal::vformat(loc, to_string_view(format_str),
                            {internal::make_args_checked(format_str, args...)});
 }
 
-template <typename String, typename OutputIt, typename... Args,
-          FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
-inline OutputIt vformat_to(
-    OutputIt out, const std::locale& loc, const String& format_str,
-    typename format_args_t<OutputIt, FMT_CHAR(String)>::type args) {
-  typedef output_range<OutputIt, FMT_CHAR(String)> range;
+template <typename S, typename OutputIt, typename... Args,
+          typename Char = enable_if_t<
+              internal::is_output_iterator<OutputIt>::value, char_t<S>>>
+inline OutputIt vformat_to(OutputIt out, const std::locale& loc,
+                           const S& format_str,
+                           typename format_args_t<OutputIt, Char>::type args) {
+  using range = output_range<OutputIt, Char>;
   return vformat_to<arg_formatter<range>>(
       range(out), to_string_view(format_str), args, internal::locale_ref(loc));
 }
 
 template <typename OutputIt, typename S, typename... Args,
-          FMT_ENABLE_IF(internal::is_string<S>::value&&
-                            internal::is_output_iterator<OutputIt>::value)>
+          FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value&&
+                            internal::is_string<S>::value)>
 inline OutputIt format_to(OutputIt out, const std::locale& loc,
                           const S& format_str, const Args&... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename format_context_t<OutputIt, FMT_CHAR(S)>::type context;
+  using context = typename format_context_t<OutputIt, char_t<S>>::type;
   format_arg_store<context, Args...> as{args...};
   return vformat_to(out, loc, to_string_view(format_str),
                     basic_format_args<context>(as));
