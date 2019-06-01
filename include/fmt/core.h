@@ -1443,11 +1443,11 @@ inline std::basic_string<Char> vformat(
     std::string message = fmt::format("The answer is {}", 42);
   \endrst
 */
-// Use SFINAE instead of static_assert because of color overload of fmt::format.
+// Pass fmt::char_t as a default template parameter instead of using
+// std::basic_string<fmt::char_t<S>> to reduce the symbol size.
 template <typename S, typename... Args,
-          FMT_ENABLE_IF(internal::is_string<S>::value)>
-inline std::basic_string<FMT_CHAR(S)> format(const S& format_str,
-                                             const Args&... args) {
+          typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
+inline std::basic_string<Char> format(const S& format_str, const Args&... args) {
   return internal::vformat(to_string_view(format_str),
                            {internal::make_args_checked(format_str, args...)});
 }
