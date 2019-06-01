@@ -1352,10 +1352,9 @@ template <typename... Args, typename S,
           FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S);
 
-template <
-    typename S, typename... Args,
-    typename Char = enable_if_t<internal::is_string<S>::value, fmt::char_t<S>>>
-inline format_arg_store<typename buffer_context<Char>::type, Args...>
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
+inline format_arg_store<typename buffer_context<FMT_CHAR(S)>::type, Args...>
 make_args_checked(const S& format_str, const Args&... args) {
   internal::check_format_string<Args...>(format_str);
   return {args...};
@@ -1387,8 +1386,8 @@ typename buffer_context<Char>::type::iterator vformat_to(
     fmt::print("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23));
   \endrst
  */
-template <typename S, typename T, typename Char = char_t<S>>
-inline internal::named_arg<T, Char> arg(const S& name, const T& arg) {
+template <typename S, typename T>
+inline internal::named_arg<T, FMT_CHAR(S)> arg(const S& name, const T& arg) {
   static_assert(internal::is_string<S>::value, "");
   return {name, arg};
 }
@@ -1406,12 +1405,11 @@ template <typename Char>
 struct is_contiguous<internal::buffer<Char>> : std::true_type {};
 
 /** Formats a string and writes the output to ``out``. */
-template <
-    typename Container, typename S,
-    typename Char = enable_if_t<is_contiguous<Container>::value, char_t<S>>>
-std::back_insert_iterator<Container> vformat_to(
-    std::back_insert_iterator<Container> out, const S& format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+template <typename Container, typename S>
+typename std::enable_if<is_contiguous<Container>::value,
+                        std::back_insert_iterator<Container>>::type
+vformat_to(std::back_insert_iterator<Container> out, const S& format_str,
+           basic_format_args<typename buffer_context<FMT_CHAR(S)>::type> args) {
   internal::container_buffer<Container> buf(internal::get_container(out));
   internal::vformat_to(buf, to_string_view(format_str), args);
   return out;
@@ -1427,8 +1425,8 @@ inline std::back_insert_iterator<Container> format_to(
                     {internal::make_args_checked(format_str, args...)});
 }
 
-template <typename S,
-          typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
+template <typename S, typename Char = FMT_CHAR(S),
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline std::basic_string<Char> vformat(
     const S& format_str,
     basic_format_args<typename buffer_context<Char>::type> args) {
@@ -1449,8 +1447,7 @@ inline std::basic_string<Char> vformat(
 // std::basic_string<fmt::char_t<S>> to reduce the symbol size.
 template <typename S, typename... Args,
           typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
-inline std::basic_string<Char> format(const S& format_str,
-                                      const Args&... args) {
+inline std::basic_string<Char> format(const S& format_str, const Args&... args) {
   return internal::vformat(to_string_view(format_str),
                            {internal::make_args_checked(format_str, args...)});
 }
