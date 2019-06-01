@@ -306,7 +306,7 @@ TEST(ChronoTest, InvalidColons) {
                fmt::format_error);
 }
 
-TEST(ChronoTest, NegativeDuration) {
+TEST(ChronoTest, NegativeDurations) {
   EXPECT_EQ("-12345", fmt::format("{:%Q}", std::chrono::seconds(-12345)));
   EXPECT_EQ("-03:25:45",
             fmt::format("{:%H:%M:%S}", std::chrono::seconds(-12345)));
@@ -316,6 +316,9 @@ TEST(ChronoTest, NegativeDuration) {
   EXPECT_EQ("-00.127",
             fmt::format("{:%S}",
                         std::chrono::duration<signed char, std::milli>{-127}));
+  auto min = std::numeric_limits<int>::min();
+  EXPECT_EQ(fmt::format("{}", min),
+            fmt::format("{:%Q}", std::chrono::duration<int>(min)));
 }
 
 TEST(ChronoTest, SpecialDurations) {
