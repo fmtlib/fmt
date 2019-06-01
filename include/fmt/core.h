@@ -199,6 +199,11 @@
 #endif
 
 FMT_BEGIN_NAMESPACE
+
+// An implementation of enable_if_t for pre-C++14 systems.
+template <bool B, class T = void>
+using enable_if_t = typename std::enable_if<B, T>::type;
+
 namespace internal {
 
 #if defined(FMT_USE_STRING_VIEW)
@@ -210,10 +215,9 @@ using std_string_view = std::experimental::basic_string_view<Char>;
 template <typename T> struct std_string_view {};
 #endif
 
-// An enable_if helper to be used in template parameters. enable_if in template
-// parameters results in much shorter symbols: https://godbolt.org/z/sWw4vP.
-template <bool B> using enable_if_t = typename std::enable_if<B, int>::type;
-#define FMT_ENABLE_IF(...) internal::enable_if_t<__VA_ARGS__> = 0
+// An enable_if helper to be used in template parameters which results in much
+// shorter symbols: https://godbolt.org/z/sWw4vP.
+#define FMT_ENABLE_IF(...) enable_if_t<__VA_ARGS__, int> = 0
 
 #if (__cplusplus >= 201703L ||                          \
      (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)) && \
