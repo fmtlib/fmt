@@ -187,11 +187,6 @@
 #  define FMT_ASSERT(condition, message) assert((condition) && message)
 #endif
 
-// An enable_if helper to be used in template parameters. enable_if in template
-// parameters results in much shorter symbols: https://godbolt.org/z/sWw4vP.
-#define FMT_ENABLE_IF_T(...) typename std::enable_if<(__VA_ARGS__), int>::type
-#define FMT_ENABLE_IF(...) FMT_ENABLE_IF_T(__VA_ARGS__) = 0
-
 // libc++ supports string_view in pre-c++17.
 #if (FMT_HAS_INCLUDE(<string_view>) &&                       \
      (__cplusplus > 201402L || defined(_LIBCPP_VERSION))) || \
@@ -214,6 +209,11 @@ using std_string_view = std::experimental::basic_string_view<Char>;
 #else
 template <typename T> struct std_string_view {};
 #endif
+
+// An enable_if helper to be used in template parameters. enable_if in template
+// parameters results in much shorter symbols: https://godbolt.org/z/sWw4vP.
+template <bool B> using enable_if_t = typename std::enable_if<B, int>::type;
+#define FMT_ENABLE_IF(...) internal::enable_if_t<__VA_ARGS__> = 0
 
 #if (__cplusplus >= 201703L ||                          \
      (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)) && \

@@ -223,7 +223,7 @@ template <typename Locale> Locale locale_ref::get() const {
 }
 
 template <typename Char> FMT_FUNC Char thousands_sep_impl(locale_ref loc) {
-  return std::use_facet<std::numpunct<Char> >(loc.get<std::locale>())
+  return std::use_facet<std::numpunct<Char>>(loc.get<std::locale>())
       .thousands_sep();
 }
 }  // namespace internal
@@ -683,7 +683,7 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
   }
 };
 
-template <typename Double, FMT_ENABLE_IF_T(sizeof(Double) == sizeof(uint64_t))>
+template <typename Double, enable_if_t<sizeof(Double) == sizeof(uint64_t)>>
 FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
                           unsigned options, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
