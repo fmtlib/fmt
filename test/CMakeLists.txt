@@ -26,7 +26,7 @@ if (MSVC)
   target_compile_definitions(gmock PUBLIC _VARIADIC_MAX=10)
   
   # Disable MSVC warnings of _CRT_INSECURE_DEPRECATE functions.
-  target_compile_definitions(gmock PUBLIC _CRT_SECURE_NO_WARNINGS)
+  target_compile_definitions(gmock PRIVATE _CRT_SECURE_NO_WARNINGS)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Disable MSVC warnings of POSIX functions.
     target_compile_options(gmock PUBLIC -Wno-deprecated-declarations)
