@@ -766,7 +766,14 @@ inline size_t count_code_points(basic_string_view<Char> s) {
 }
 
 // Counts the number of code points in a UTF-8 string.
-FMT_API size_t count_code_points(basic_string_view<char8_t> s);
+inline size_t count_code_points(basic_string_view<char8_t> s) {
+  const char8_t* data = s.data();
+  size_t num_code_points = 0;
+  for (size_t i = 0, size = s.size(); i != size; ++i) {
+    if ((data[i] & 0xc0) != 0x80) ++num_code_points;
+  }
+  return num_code_points;
+}
 
 inline char8_t to_char8_t(char c) { return static_cast<char8_t>(c); }
 
