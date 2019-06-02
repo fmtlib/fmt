@@ -21,6 +21,7 @@ struct scan_arg {
     unsigned* uint_value;
     long long* long_long_value;
     unsigned long long* ulong_long_value;
+    std::string* string;
     // TODO: more types
   };
 
@@ -31,6 +32,7 @@ struct scan_arg {
       : arg_type(long_long_type), long_long_value(&value) {}
   scan_arg(unsigned long long& value)
       : arg_type(ulong_long_type), ulong_long_value(&value) {}
+  scan_arg(std::string& value) : arg_type(string_type), string(&value) {}
 };
 }  // namespace internal
 
@@ -112,6 +114,11 @@ struct scan_handler : error_handler {
     case ulong_long_type:
       *arg_.ulong_long_value = read_uint<unsigned long long>();
       break;
+    case string_type: {
+      while (begin_ != end_ && *begin_ != ' ')
+        arg_.string->push_back(*begin_++);
+      break;
+    }
     default:
       assert(false);
     }
@@ -178,10 +185,23 @@ TEST(ScanTest, ReadULongLong) {
   EXPECT_THROW_MSG(fmt::scan("-42", "{}", n), fmt::format_error,
                    "invalid input");
 }
+TEST(ScanTest, ReadString) {
+  std::string s;
+  fmt::scan("foo", "{}", s);
+  EXPECT_EQ(s, "foo");
+}
 
 TEST(ScanTest, InvalidFormat) {
   EXPECT_THROW_MSG(fmt::scan("", "{}"), fmt::format_error,
                    "argument index out of range");
   EXPECT_THROW_MSG(fmt::scan("", "{"), fmt::format_error,
                    "invalid format string");
+}
+
+TEST(ScanTest, Example) {
+  std::string key;
+  int value;
+  fmt::scan("answer = 42", "{} = {}", key, value);
+  EXPECT_EQ(key, "answer");
+  EXPECT_EQ(value, 42);
 }
