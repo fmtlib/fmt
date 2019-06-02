@@ -209,17 +209,15 @@ struct custom_context {
   typedef char char_type;
 
   template <typename T> struct formatter_type {
-    struct type {
-      template <typename ParseContext>
-      auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-        return ctx.begin();
-      }
+    template <typename ParseContext>
+    auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+      return ctx.begin();
+    }
 
-      const char* format(const T&, custom_context& ctx) {
-        ctx.called = true;
-        return nullptr;
-      }
-    };
+    const char* format(const T&, custom_context& ctx) {
+      ctx.called = true;
+      return nullptr;
+    }
   };
 
   bool called;

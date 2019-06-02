@@ -204,6 +204,10 @@ FMT_BEGIN_NAMESPACE
 template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
+// An enable_if helper to be used in template parameters which results in much
+// shorter symbols: https://godbolt.org/z/sWw4vP.
+#define FMT_ENABLE_IF(...) enable_if_t<__VA_ARGS__, int> = 0
+
 namespace internal {
 
 #if defined(FMT_USE_STRING_VIEW)
@@ -214,10 +218,6 @@ using std_string_view = std::experimental::basic_string_view<Char>;
 #else
 template <typename T> struct std_string_view {};
 #endif
-
-// An enable_if helper to be used in template parameters which results in much
-// shorter symbols: https://godbolt.org/z/sWw4vP.
-#define FMT_ENABLE_IF(...) enable_if_t<__VA_ARGS__, int> = 0
 
 #if (__cplusplus >= 201703L ||                          \
      (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)) && \
@@ -266,8 +266,8 @@ template <typename T> class buffer {
   virtual void grow(std::size_t capacity) = 0;
 
  public:
-  typedef T value_type;
-  typedef const T& const_reference;
+  using value_type = T;
+  using const_reference = const T&;
 
   virtual ~buffer() {}
 
@@ -334,7 +334,7 @@ class container_buffer : public buffer<typename Container::value_type> {
 // Extracts a reference to the container from back_insert_iterator.
 template <typename Container>
 inline Container& get_container(std::back_insert_iterator<Container> it) {
-  typedef std::back_insert_iterator<Container> bi_iterator;
+  using bi_iterator = std::back_insert_iterator<Container>;
   struct accessor : bi_iterator {
     accessor(bi_iterator iter) : bi_iterator(iter) {}
     using bi_iterator::container;
@@ -349,23 +349,6 @@ struct error_handler {
   // This function is intentionally not constexpr to give a compile-time error.
   FMT_API FMT_NORETURN void on_error(const char* message);
 };
-
-// GCC 4.6.x cannot expand `T...`.
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 407
-typedef char yes[1];
-typedef char no[2];
-
-template <typename T, typename V> struct is_constructible {
-  template <typename U>
-  static yes& test(int (*)[sizeof(new U(std::declval<V>()))]);
-  template <typename U> static no& test(...);
-  enum { value = sizeof(test<T>(nullptr)) == sizeof(yes) };
-};
-#else
-template <typename... T>
-struct is_constructible : std::is_constructible<T...> {};
-#endif
-struct dummy_formatter_arg {};  // Workaround broken is_constructible in MSVC.
 }  // namespace internal
 
 /**
@@ -381,8 +364,8 @@ template <typename Char> class basic_string_view {
   size_t size_;
 
  public:
-  typedef Char char_type;
-  typedef const Char* iterator;
+  using char_type = Char;
+  using iterator = const Char*;
 
   FMT_CONSTEXPR basic_string_view() FMT_NOEXCEPT : data_(nullptr), size_(0) {}
 
@@ -455,8 +438,8 @@ template <typename Char> class basic_string_view {
   }
 };
 
-typedef basic_string_view<char> string_view;
-typedef basic_string_view<wchar_t> wstring_view;
+using string_view = basic_string_view<char>;
+using wstring_view = basic_string_view<wchar_t>;
 
 /**
   \rst
@@ -525,8 +508,8 @@ class basic_parse_context : private ErrorHandler {
   int next_arg_id_;
 
  public:
-  typedef Char char_type;
-  typedef typename basic_string_view<Char>::iterator iterator;
+  using char_type = Char;
+  using iterator = typename basic_string_view<Char>::iterator;
 
   explicit FMT_CONSTEXPR basic_parse_context(basic_string_view<Char> format_str,
                                              ErrorHandler eh = ErrorHandler())
@@ -567,11 +550,11 @@ class basic_parse_context : private ErrorHandler {
   FMT_CONSTEXPR ErrorHandler error_handler() const { return *this; }
 };
 
-typedef basic_parse_context<char> format_parse_context;
-typedef basic_parse_context<wchar_t> wformat_parse_context;
+using format_parse_context = basic_parse_context<char>;
+using wformat_parse_context = basic_parse_context<wchar_t>;
 
-FMT_DEPRECATED typedef basic_parse_context<char> parse_context;
-FMT_DEPRECATED typedef basic_parse_context<wchar_t> wparse_context;
+using parse_context FMT_DEPRECATED = basic_parse_context<char>;
+using wparse_context FMT_DEPRECATED = basic_parse_context<wchar_t>;
 
 template <typename Context> class basic_format_arg;
 template <typename Context> class basic_format_args;
@@ -579,7 +562,7 @@ template <typename Context> class basic_format_args;
 // A formatter for objects of type T.
 template <typename T, typename Char = char, typename Enable = void>
 struct formatter {
-  explicit formatter(internal::dummy_formatter_arg);
+  formatter() = delete;
 };
 
 template <typename T, typename Char, typename Enable = void>
@@ -669,18 +652,14 @@ template <typename Context> struct custom_value {
                  Context& ctx);
 };
 
-template <typename T, typename Context> struct is_formattable {
-  enum {
-    value =
-        !is_constructible<typename Context::template formatter_type<T>::type,
-                          internal::dummy_formatter_arg>::value
-  };
-};
+template <typename T, typename Context>
+using is_formattable =
+    std::is_constructible<typename Context::template formatter_type<T>>;
 
 // A formatting argument value.
 template <typename Context> class value {
  public:
-  typedef typename Context::char_type char_type;
+  using char_type = typename Context::char_type;
 
   union {
     int int_value;
@@ -727,7 +706,7 @@ template <typename Context> class value {
     custom.format = &format_custom_arg<
         T, typename std::conditional<
                is_formattable<T, Context>::value,
-               typename Context::template formatter_type<T>::type,
+               typename Context::template formatter_type<T>,
                internal::fallback_formatter<T, char_type>>::type>;
   }
 
@@ -779,12 +758,12 @@ FMT_MAKE_VALUE_SAME(uint_type, unsigned)
 
 // To minimize the number of types we need to deal with, long is translated
 // either to int or to long long depending on its size.
-typedef std::conditional<sizeof(long) == sizeof(int), int, long long>::type
-    long_type;
+using long_type =
+    std::conditional<sizeof(long) == sizeof(int), int, long long>::type;
 FMT_MAKE_VALUE((sizeof(long) == sizeof(int) ? int_type : long_long_type), long,
                long_type)
-typedef std::conditional<sizeof(unsigned long) == sizeof(unsigned), unsigned,
-                         unsigned long long>::type ulong_type;
+using ulong_type = std::conditional<sizeof(unsigned long) == sizeof(unsigned),
+                                    unsigned, unsigned long long>::type;
 FMT_MAKE_VALUE((sizeof(unsigned long) == sizeof(unsigned) ? uint_type
                                                           : ulong_long_type),
                unsigned long, ulong_type)
@@ -849,9 +828,10 @@ inline init<C, int, int_type> make_value(const T& val) {
   return static_cast<int>(val);
 }
 
-template <typename C, typename T, typename Char = typename C::char_type,
-          FMT_ENABLE_IF(is_constructible<basic_string_view<Char>, T>::value &&
-                        !internal::is_string<T>::value)>
+template <
+    typename C, typename T, typename Char = typename C::char_type,
+    FMT_ENABLE_IF(std::is_constructible<basic_string_view<Char>, T>::value &&
+                  !internal::is_string<T>::value)>
 inline init<C, basic_string_view<Char>, string_type> make_value(const T& val) {
   return basic_string_view<Char>(val);
 }
@@ -864,7 +844,7 @@ template <
     FMT_ENABLE_IF(!convert_to_int<U, Char>::value &&
                   !std::is_same<U, Char>::value &&
                   !std::is_convertible<U, basic_string_view<Char>>::value &&
-                  !is_constructible<basic_string_view<Char>, U>::value &&
+                  !std::is_constructible<basic_string_view<Char>, U>::value &&
                   !internal::is_string<U>::value)>
 inline init<C, const T&, custom_type> make_value(const T& val) {
   return val;
@@ -913,7 +893,7 @@ template <typename Context> class basic_format_arg {
   friend class basic_format_args<Context>;
   friend class internal::arg_map<Context>;
 
-  typedef typename Context::char_type char_type;
+  using char_type = typename Context::char_type;
 
  public:
   class handle {
@@ -952,7 +932,7 @@ struct monostate {};
 template <typename Visitor, typename Context>
 FMT_CONSTEXPR internal::invoke_result_t<Visitor, int> visit_format_arg(
     Visitor&& vis, const basic_format_arg<Context>& arg) {
-  typedef typename Context::char_type char_type;
+  using char_type = typename Context::char_type;
   switch (arg.type_) {
   case internal::none_type:
     break;
@@ -1001,7 +981,7 @@ template <typename Context> class arg_map {
   arg_map(const arg_map&) = delete;
   void operator=(const arg_map&) = delete;
 
-  typedef typename Context::char_type char_type;
+  using char_type = typename Context::char_type;
 
   struct entry {
     basic_string_view<char_type> name;
@@ -1084,7 +1064,7 @@ inline basic_format_arg<Context> make_arg(const T& value) {
 template <typename OutputIt, typename Char> class basic_format_context {
  public:
   /** The character type for the output. */
-  typedef Char char_type;
+  using char_type = Char;
 
  private:
   OutputIt out_;
@@ -1096,13 +1076,9 @@ template <typename OutputIt, typename Char> class basic_format_context {
   void operator=(const basic_format_context&) = delete;
 
  public:
-  typedef OutputIt iterator;
-  typedef basic_format_arg<basic_format_context> format_arg;
-
-  // using formatter_type = formatter<T, char_type>;
-  template <typename T> struct formatter_type {
-    typedef formatter<T, char_type> type;
-  };
+  using iterator = OutputIt;
+  using format_arg = basic_format_arg<basic_format_context> ;
+  template <typename T> using formatter_type = formatter<T, char_type>;
 
   /**
    Constructs a ``basic_format_context`` object. References to the arguments are
@@ -1137,8 +1113,8 @@ template <typename Char> struct buffer_context {
       std::back_insert_iterator<internal::buffer<Char>>, Char>
       type;
 };
-typedef buffer_context<char>::type format_context;
-typedef buffer_context<wchar_t>::type wformat_context;
+using format_context = buffer_context<char>::type;
+using wformat_context = buffer_context<wchar_t>::type;
 
 /**
   \rst
@@ -1154,8 +1130,8 @@ template <typename Context, typename... Args> class format_arg_store {
   // Packed is a macro on MinGW so use IS_PACKED instead.
   static const bool IS_PACKED = NUM_ARGS < internal::max_packed_args;
 
-  typedef typename std::conditional<IS_PACKED, internal::value<Context>,
-                                    basic_format_arg<Context>>::type value_type;
+  using value_type = typename std::conditional<IS_PACKED, internal::value<Context>,
+                                    basic_format_arg<Context>>::type;
 
   // If the arguments are not packed, add one more element to mark the end.
   static const size_t DATA_SIZE =
@@ -1213,8 +1189,8 @@ inline format_arg_store<Context, Args...> make_format_args(
 /** Formatting arguments. */
 template <typename Context> class basic_format_args {
  public:
-  typedef unsigned size_type;
-  typedef basic_format_arg<Context> format_arg;
+  using size_type = unsigned;
+  using format_arg = basic_format_arg<Context>;
 
  private:
   // To reduce compiled code size per formatting function call, types of first

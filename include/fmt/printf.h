@@ -329,12 +329,9 @@ template <typename T> struct printf_formatter {
 template <typename OutputIt, typename Char> class basic_printf_context {
  public:
   /** The character type for the output. */
-  typedef Char char_type;
-  typedef basic_format_arg<basic_printf_context> format_arg;
-
-  template <typename T> struct formatter_type {
-    typedef printf_formatter<T> type;
-  };
+  using char_type = Char;
+  using format_arg = basic_format_arg<basic_printf_context>;
+  template <typename T> using formatter_type = printf_formatter<T>;
 
  private:
   typedef basic_format_specs<char_type> format_specs;
