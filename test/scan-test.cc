@@ -14,25 +14,40 @@
 
 FMT_BEGIN_NAMESPACE
 namespace internal {
+enum class scan_type {
+  none_type,
+  int_type,
+  uint_type,
+  long_long_type,
+  ulong_long_type,
+  string_type,
+  string_view_type
+};
+
 struct scan_arg {
-  type arg_type;
+  scan_type arg_type;
   union {
     int* int_value;
     unsigned* uint_value;
     long long* long_long_value;
     unsigned long long* ulong_long_value;
     std::string* string;
+    fmt::string_view* string_view;
     // TODO: more types
   };
 
-  scan_arg() : arg_type(none_type) {}
-  scan_arg(int& value) : arg_type(int_type), int_value(&value) {}
-  scan_arg(unsigned& value) : arg_type(uint_type), uint_value(&value) {}
+  scan_arg() : arg_type(scan_type::none_type) {}
+  scan_arg(int& value) : arg_type(scan_type::int_type), int_value(&value) {}
+  scan_arg(unsigned& value)
+      : arg_type(scan_type::uint_type), uint_value(&value) {}
   scan_arg(long long& value)
-      : arg_type(long_long_type), long_long_value(&value) {}
+      : arg_type(scan_type::long_long_type), long_long_value(&value) {}
   scan_arg(unsigned long long& value)
-      : arg_type(ulong_long_type), ulong_long_value(&value) {}
-  scan_arg(std::string& value) : arg_type(string_type), string(&value) {}
+      : arg_type(scan_type::ulong_long_type), ulong_long_value(&value) {}
+  scan_arg(std::string& value)
+      : arg_type(scan_type::string_type), string(&value) {}
+  scan_arg(fmt::string_view& value)
+      : arg_type(scan_type::string_view_type), string_view(&value) {}
 };
 }  // namespace internal
 
@@ -102,21 +117,27 @@ struct scan_handler : error_handler {
 
   void on_replacement_field(const char*) {
     switch (arg_.arg_type) {
-    case int_type:
+    case scan_type::int_type:
       *arg_.int_value = read_int();
       break;
-    case uint_type:
+    case scan_type::uint_type:
       *arg_.uint_value = read_uint();
       break;
-    case long_long_type:
+    case scan_type::long_long_type:
       *arg_.long_long_value = read_int<long long>();
       break;
-    case ulong_long_type:
+    case scan_type::ulong_long_type:
       *arg_.ulong_long_value = read_uint<unsigned long long>();
       break;
-    case string_type: {
+    case scan_type::string_type:
       while (begin_ != end_ && *begin_ != ' ')
         arg_.string->push_back(*begin_++);
+      break;
+    case scan_type::string_view_type: {
+      auto s = begin_;
+      while (begin_ != end_ && *begin_ != ' ')
+        ++begin_;
+      *arg_.string_view = fmt::string_view(s, begin_ - s);
       break;
     }
     default:
@@ -185,8 +206,15 @@ TEST(ScanTest, ReadULongLong) {
   EXPECT_THROW_MSG(fmt::scan("-42", "{}", n), fmt::format_error,
                    "invalid input");
 }
+
 TEST(ScanTest, ReadString) {
   std::string s;
+  fmt::scan("foo", "{}", s);
+  EXPECT_EQ(s, "foo");
+}
+
+TEST(ScanTest, ReadStringView) {
+  fmt::string_view s;
   fmt::scan("foo", "{}", s);
   EXPECT_EQ(s, "foo");
 }
