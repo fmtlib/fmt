@@ -2492,3 +2492,21 @@ TEST(FormatTest, CharTraitsIsNotAmbiguous) {
   (void)lval;
 #endif
 }
+
+struct mychar {
+  int value;
+  mychar() = default;
+  mychar(char val) : value(val) {}
+  operator int() const { return value; }
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct is_char<mychar> : std::true_type {};
+FMT_END_NAMESPACE
+
+TEST(FormatTest, FormatCustomChar) {
+  const mychar format[] = {'{', '}', 0};
+  auto result = fmt::format(format, mychar('x'));
+  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result[0], mychar('x'));
+}

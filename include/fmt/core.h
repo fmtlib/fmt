@@ -771,7 +771,7 @@ FMT_MAKE_VALUE(uint_type, unsigned char, unsigned)
 template <typename C, typename Char,
           FMT_ENABLE_IF(std::is_same<typename C::char_type, Char>::value)>
 FMT_CONSTEXPR init<C, int, char_type> make_value(Char val) {
-  return val;
+  return {val};
 }
 
 template <typename C,

@@ -2025,7 +2025,7 @@ template <typename Char, typename Handler>
 FMT_CONSTEXPR const Char* parse_precision(const Char* begin, const Char* end,
                                           Handler&& handler) {
   ++begin;
-  auto c = begin != end ? *begin : 0;
+  auto c = begin != end ? *begin : Char();
   if ('0' <= c && c <= '9') {
     handler.on_precision(parse_nonnegative_int(begin, end, handler));
   } else if (c == '{') {
@@ -2763,8 +2763,9 @@ template <typename Range> class basic_writer {
     auto&& it = reserve(1);
     *it++ = value;
   }
-  void write(wchar_t value) {
-    static_assert(std::is_same<char_type, wchar_t>::value, "");
+
+  template <typename Char, FMT_ENABLE_IF(std::is_same<Char, char_type>::value)>
+  void write(Char value) {
     auto&& it = reserve(1);
     *it++ = value;
   }
