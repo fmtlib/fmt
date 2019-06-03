@@ -206,7 +206,8 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 
 // enable_if helpers to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP.
-#define FMT_ENABLE_IF_T(...) enable_if_t<__VA_ARGS__, int>
+// Also include fix for VS2019 compilation issue (see #1140 and #1186).
+#define FMT_ENABLE_IF_T(...) enable_if_t<(__VA_ARGS__), int>
 #define FMT_ENABLE_IF(...) FMT_ENABLE_IF_T(__VA_ARGS__) = 0
 
 namespace internal {
