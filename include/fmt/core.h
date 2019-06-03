@@ -202,7 +202,7 @@ FMT_BEGIN_NAMESPACE
 
 // An implementation of enable_if_t for pre-C++14 systems.
 template <bool B, class T = void>
-using enable_if_t = typename std::enable_if<B, T>::type;
+using enable_if_t = typename std::enable_if<(B), T>::type;
 
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP.
