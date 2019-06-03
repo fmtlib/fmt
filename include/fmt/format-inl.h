@@ -674,7 +674,8 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
   }
 };
 
-template <typename Double, enable_if_t<sizeof(Double) == sizeof(uint64_t), int>>
+template <typename Double,
+          enable_if_t<(sizeof(Double) == sizeof(uint64_t)), int>>
 FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
                           unsigned options, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
