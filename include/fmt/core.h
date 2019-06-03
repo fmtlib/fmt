@@ -461,6 +461,11 @@ template <typename T> struct is_char : std::is_integral<T> {};
     std::string message = fmt::format(my_string("The answer is {}"), 42);
   \endrst
  */
+template <typename Char, FMT_ENABLE_IF(is_char<Char>::value)>
+inline basic_string_view<Char> to_string_view(const Char* s) {
+  return s;
+}
+
 template <typename Char, typename Traits, typename Allocator>
 inline basic_string_view<Char> to_string_view(
     const std::basic_string<Char, Traits, Allocator>& s) {
@@ -469,11 +474,6 @@ inline basic_string_view<Char> to_string_view(
 
 template <typename Char>
 inline basic_string_view<Char> to_string_view(basic_string_view<Char> s) {
-  return s;
-}
-
-template <typename Char, FMT_ENABLE_IF(is_char<Char>::value)>
-inline basic_string_view<Char> to_string_view(const Char* s) {
   return s;
 }
 
