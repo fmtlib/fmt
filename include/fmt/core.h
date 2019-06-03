@@ -442,33 +442,25 @@ template <typename Char> class basic_string_view {
 using string_view = basic_string_view<char>;
 using wstring_view = basic_string_view<wchar_t>;
 
+/** Specifies if ``T`` is a character type. Can be specialized by users. */
+template <typename T> struct is_char : std::is_integral<T> {};
+
 /**
   \rst
-  The function ``to_string_view`` adapts non-intrusively any kind of string or
-  string-like type if the user provides a (possibly templated) overload of
-  ``to_string_view`` which takes an instance of the string class
-  ``StringType<Char>`` and returns a ``fmt::basic_string_view<Char>``.
-  The conversion function must live in the very same namespace as
-  ``StringType<Char>`` to be picked up by ADL. Non-templated string types
-  like f.e. QString must return a ``basic_string_view`` with a fixed matching
-  char type.
+  Returns a string view of `s`. In order to add custom string type support to
+  {fmt} provide an overload of `to_string_view` for it in the same namespace as
+  the type for the argument-dependent lookup to work.
 
   **Example**::
 
     namespace my_ns {
-    inline string_view to_string_view(const my_string &s) {
+    inline string_view to_string_view(const my_string& s) {
       return {s.data(), s.length()};
     }
     }
-
     std::string message = fmt::format(my_string("The answer is {}"), 42);
   \endrst
  */
-template <typename Char>
-inline basic_string_view<Char> to_string_view(basic_string_view<Char> s) {
-  return s;
-}
-
 template <typename Char, typename Traits, typename Allocator>
 inline basic_string_view<Char> to_string_view(
     const std::basic_string<Char, Traits, Allocator>& s) {
@@ -476,6 +468,11 @@ inline basic_string_view<Char> to_string_view(
 }
 
 template <typename Char>
+inline basic_string_view<Char> to_string_view(basic_string_view<Char> s) {
+  return s;
+}
+
+template <typename Char, FMT_ENABLE_IF(is_char<Char>::value)>
 inline basic_string_view<Char> to_string_view(const Char* s) {
   return s;
 }
@@ -596,10 +593,6 @@ struct is_string
           bool,
           !std::is_same<dummy_string_view,
                         decltype(to_string_view(std::declval<S>()))>::value> {};
-
-// Forward declare FILE* specialization defined in color.h
-template <> struct is_string<std::FILE*>;
-template <> struct is_string<const std::FILE*>;
 
 template <typename S> struct char_t_impl {
   typedef decltype(to_string_view(std::declval<S>())) result;

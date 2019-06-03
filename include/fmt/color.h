@@ -518,13 +518,6 @@ inline void reset_color(basic_memory_buffer<Char>& buffer) FMT_NOEXCEPT {
   buffer.append(begin, end);
 }
 
-// The following specialization disables using std::FILE as a character type,
-// which is needed because or else
-//   fmt::print(stderr, fmt::emphasis::bold, "");
-// would take stderr (a std::FILE *) as the format string.
-template <> struct is_string<std::FILE*> : std::false_type {};
-template <> struct is_string<const std::FILE*> : std::false_type {};
-
 template <typename Char>
 std::basic_string<Char> vformat(const text_style& ts,
                                 basic_string_view<Char> format_str,
