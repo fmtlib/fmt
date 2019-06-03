@@ -3046,7 +3046,7 @@ class format_int {
 template <typename T, typename Char>
 struct formatter<T, Char,
                  typename std::enable_if<internal::format_type<
-                     typename buffer_context<Char>::type, T>::value>::type> {
+                     buffer_context<Char>, T>::value>::type> {
   FMT_CONSTEXPR formatter() : format_str_(nullptr) {}
 
   // Parses format specifiers stopping either at the end of the range or at the
@@ -3055,8 +3055,7 @@ struct formatter<T, Char,
   FMT_CONSTEXPR typename ParseContext::iterator parse(ParseContext& ctx) {
     format_str_ = ctx.begin();
     typedef internal::dynamic_specs_handler<ParseContext> handler_type;
-    auto type =
-        internal::get_type<typename buffer_context<Char>::type, T>::value;
+    auto type = internal::get_type<buffer_context<Char>, T>::value;
     internal::specs_checker<handler_type> handler(handler_type(specs_, ctx),
                                                   type);
     auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
@@ -3377,9 +3376,9 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE>& buf) {
 }
 
 template <typename Char>
-typename buffer_context<Char>::type::iterator internal::vformat_to(
+typename buffer_context<Char>::iterator internal::vformat_to(
     internal::buffer<Char>& buf, basic_string_view<Char> format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+    basic_format_args<buffer_context<Char>> args) {
   typedef back_insert_range<internal::buffer<Char>> range;
   return vformat_to<arg_formatter<range>>(buf, to_string_view(format_str),
                                           args);
@@ -3387,19 +3386,19 @@ typename buffer_context<Char>::type::iterator internal::vformat_to(
 
 template <typename S, typename Char = char_t<S>,
           FMT_ENABLE_IF(internal::is_string<S>::value)>
-inline typename buffer_context<Char>::type::iterator vformat_to(
+inline typename buffer_context<Char>::iterator vformat_to(
     internal::buffer<Char>& buf, const S& format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+    basic_format_args<buffer_context<Char>> args) {
   return internal::vformat_to(buf, to_string_view(format_str), args);
 }
 
 template <typename S, typename... Args, std::size_t SIZE = inline_buffer_size,
           typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
-inline typename buffer_context<Char>::type::iterator format_to(
+inline typename buffer_context<Char>::iterator format_to(
     basic_memory_buffer<Char, SIZE>& buf, const S& format_str,
     const Args&... args) {
   internal::check_format_string<Args...>(format_str);
-  using context = typename buffer_context<Char>::type;
+  using context = buffer_context<Char>;
   format_arg_store<context, Args...> as{args...};
   return internal::vformat_to(buf, to_string_view(format_str),
                               basic_format_args<context>(as));
@@ -3554,7 +3553,7 @@ inline format_to_n_result<OutputIt> format_to_n(OutputIt out, std::size_t n,
 template <typename Char>
 inline std::basic_string<Char> internal::vformat(
     basic_string_view<Char> format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+    basic_format_args<buffer_context<Char>> args) {
   basic_memory_buffer<Char> buffer;
   internal::vformat_to(buffer, format_str, args);
   return fmt::to_string(buffer);

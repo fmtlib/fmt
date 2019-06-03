@@ -1077,7 +1077,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
 
  public:
   using iterator = OutputIt;
-  using format_arg = basic_format_arg<basic_format_context> ;
+  using format_arg = basic_format_arg<basic_format_context>;
   template <typename T> using formatter_type = formatter<T, char_type>;
 
   /**
@@ -1108,13 +1108,12 @@ template <typename OutputIt, typename Char> class basic_format_context {
   internal::locale_ref locale() { return loc_; }
 };
 
-template <typename Char> struct buffer_context {
-  typedef basic_format_context<
-      std::back_insert_iterator<internal::buffer<Char>>, Char>
-      type;
-};
-using format_context = buffer_context<char>::type;
-using wformat_context = buffer_context<wchar_t>::type;
+template <typename Char>
+using buffer_context =
+    basic_format_context<std::back_insert_iterator<internal::buffer<Char>>,
+                         Char>;
+using format_context = buffer_context<char>;
+using wformat_context = buffer_context<wchar_t>;
 
 /**
   \rst
@@ -1130,8 +1129,9 @@ template <typename Context, typename... Args> class format_arg_store {
   // Packed is a macro on MinGW so use IS_PACKED instead.
   static const bool IS_PACKED = NUM_ARGS < internal::max_packed_args;
 
-  using value_type = typename std::conditional<IS_PACKED, internal::value<Context>,
-                                    basic_format_arg<Context>>::type;
+  using value_type =
+      typename std::conditional<IS_PACKED, internal::value<Context>,
+                                basic_format_arg<Context>>::type;
 
   // If the arguments are not packed, add one more element to mark the end.
   static const size_t DATA_SIZE =
@@ -1301,8 +1301,7 @@ template <typename Char> struct named_arg_base {
   basic_string_view<Char> name;
 
   // Serialized value<context>.
-  mutable char
-      data[sizeof(basic_format_arg<typename buffer_context<Char>::type>)];
+  mutable char data[sizeof(basic_format_arg<buffer_context<Char>>)];
 
   named_arg_base(basic_string_view<Char> nm) : name(nm) {}
 
@@ -1329,21 +1328,20 @@ void check_format_string(S);
 
 template <typename S, typename... Args,
           typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
-inline format_arg_store<typename buffer_context<Char>::type, Args...>
-make_args_checked(const S& format_str, const Args&... args) {
+inline format_arg_store<buffer_context<Char>, Args...> make_args_checked(
+    const S& format_str, const Args&... args) {
   internal::check_format_string<Args...>(format_str);
   return {args...};
 }
 
 template <typename Char>
-std::basic_string<Char> vformat(
-    basic_string_view<Char> format_str,
-    basic_format_args<typename buffer_context<Char>::type> args);
+std::basic_string<Char> vformat(basic_string_view<Char> format_str,
+                                basic_format_args<buffer_context<Char>> args);
 
 template <typename Char>
-typename buffer_context<Char>::type::iterator vformat_to(
+typename buffer_context<Char>::iterator vformat_to(
     internal::buffer<Char>& buf, basic_string_view<Char> format_str,
-    basic_format_args<typename buffer_context<Char>::type> args);
+    basic_format_args<buffer_context<Char>> args);
 }  // namespace internal
 
 /**
@@ -1387,12 +1385,10 @@ struct is_contiguous_back_insert_iterator<std::back_insert_iterator<Container>>
     : is_contiguous<Container> {};
 
 /** Formats a string and writes the output to ``out``. */
-template <typename OutputIt, typename S,
-          typename Char = enable_if_t<
-              is_contiguous_back_insert_iterator<OutputIt>::value, char_t<S>>>
-OutputIt vformat_to(
-    OutputIt out, const S& format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+template <typename OutputIt, typename S, typename Char = char_t<S>,
+          FMT_ENABLE_IF(is_contiguous_back_insert_iterator<OutputIt>::value)>
+OutputIt vformat_to(OutputIt out, const S& format_str,
+                    basic_format_args<buffer_context<Char>> args) {
   using container = typename std::remove_reference<decltype(
       internal::get_container(out))>::type;
   internal::container_buffer<container> buf((internal::get_container(out)));
@@ -1413,8 +1409,7 @@ inline std::back_insert_iterator<Container> format_to(
 template <typename S,
           typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
 inline std::basic_string<Char> vformat(
-    const S& format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+    const S& format_str, basic_format_args<buffer_context<Char>> args) {
   return internal::vformat(to_string_view(format_str), args);
 }
 

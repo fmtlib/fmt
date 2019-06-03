@@ -526,9 +526,9 @@ template <> struct is_string<std::FILE*> : std::false_type {};
 template <> struct is_string<const std::FILE*> : std::false_type {};
 
 template <typename Char>
-std::basic_string<Char> vformat(
-    const text_style& ts, basic_string_view<Char> format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+std::basic_string<Char> vformat(const text_style& ts,
+                                basic_string_view<Char> format_str,
+                                basic_format_args<buffer_context<Char> > args) {
   basic_memory_buffer<Char> buffer;
   bool has_style = false;
   if (ts.has_emphasis()) {
@@ -558,7 +558,7 @@ std::basic_string<Char> vformat(
 
 template <typename S, typename Char = char_t<S> >
 void vprint(std::FILE* f, const text_style& ts, const S& format,
-            basic_format_args<typename buffer_context<Char>::type> args) {
+            basic_format_args<buffer_context<Char> > args) {
   bool has_style = false;
   if (ts.has_emphasis()) {
     has_style = true;
@@ -592,9 +592,9 @@ template <typename S, typename... Args,
 void print(std::FILE* f, const text_style& ts, const S& format_str,
            const Args&... args) {
   internal::check_format_string<Args...>(format_str);
-  typedef typename buffer_context<char_t<S> >::type context_t;
-  format_arg_store<context_t, Args...> as{args...};
-  vprint(f, ts, format_str, basic_format_args<context_t>(as));
+  using context = buffer_context<char_t<S> >;
+  format_arg_store<context, Args...> as{args...};
+  vprint(f, ts, format_str, basic_format_args<context>(as));
 }
 
 /**
@@ -613,7 +613,7 @@ void print(const text_style& ts, const S& format_str, const Args&... args) {
 template <typename S, typename Char = char_t<S> >
 inline std::basic_string<Char> vformat(
     const text_style& ts, const S& format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+    basic_format_args<buffer_context<Char> > args) {
   return internal::vformat(ts, to_string_view(format_str), args);
 }
 

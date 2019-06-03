@@ -953,7 +953,7 @@ FMT_FUNC void report_windows_error(int error_code,
 FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   memory_buffer buffer;
   internal::vformat_to(buffer, format_str,
-                       basic_format_args<buffer_context<char>::type>(args));
+                       basic_format_args<buffer_context<char>>(args));
   fwrite_fully(buffer.data(), 1, buffer.size(), f);
 }
 

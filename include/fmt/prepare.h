@@ -239,14 +239,14 @@ class prepared_format {
   }
 
   template <std::size_t SIZE = inline_buffer_size>
-  inline typename buffer_context<char_type>::type::iterator format_to(
+  inline typename buffer_context<char_type>::iterator format_to(
       basic_memory_buffer<char_type, SIZE>& buf, const Args&... args) const {
     typedef back_insert_range<internal::buffer<char_type>> range;
     return this->vformat_to(range(buf), make_args_checked(format_, args...));
   }
 
  private:
-  typedef typename buffer_context<char_type>::type context;
+  typedef buffer_context<char_type> context;
 
   template <typename Range>
   typename context::iterator vformat_to(Range out,

@@ -15,19 +15,19 @@ FMT_BEGIN_NAMESPACE
 
 namespace internal {
 template <typename Char>
-typename buffer_context<Char>::type::iterator vformat_to(
+typename buffer_context<Char>::iterator vformat_to(
     const std::locale& loc, buffer<Char>& buf,
     basic_string_view<Char> format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+    basic_format_args<buffer_context<Char>> args) {
   typedef back_insert_range<buffer<Char>> range;
   return vformat_to<arg_formatter<range>>(buf, to_string_view(format_str), args,
                                           internal::locale_ref(loc));
 }
 
 template <typename Char>
-std::basic_string<Char> vformat(
-    const std::locale& loc, basic_string_view<Char> format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+std::basic_string<Char> vformat(const std::locale& loc,
+                                basic_string_view<Char> format_str,
+                                basic_format_args<buffer_context<Char>> args) {
   basic_memory_buffer<Char> buffer;
   internal::vformat_to(loc, buffer, format_str, args);
   return fmt::to_string(buffer);
@@ -37,7 +37,7 @@ std::basic_string<Char> vformat(
 template <typename S, typename Char = char_t<S>>
 inline std::basic_string<Char> vformat(
     const std::locale& loc, const S& format_str,
-    basic_format_args<typename buffer_context<Char>::type> args) {
+    basic_format_args<buffer_context<Char>> args) {
   return internal::vformat(loc, to_string_view(format_str), args);
 }
 
