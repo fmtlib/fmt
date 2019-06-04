@@ -204,9 +204,9 @@ FMT_BEGIN_NAMESPACE
 template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
-// enable_if helpers to be used in template parameters which results in much
-// shorter symbols: https://godbolt.org/z/sWw4vP.
-// Also include fix for VS2019 compilation issue (see #1140 and #1186).
+// An enable_if helper to be used in template parameters which results in much
+// shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
+// to workaround a bug in MSVC 2019 (see #1140 and #1186).
 #define FMT_ENABLE_IF(...) enable_if_t<(__VA_ARGS__), int> = 0
 
 namespace internal {
@@ -587,6 +587,8 @@ dummy_string_view to_string_view(...);
 using fmt::v5::to_string_view;
 
 // Specifies whether S is a string type convertible to fmt::basic_string_view.
+// It should be a constexpr function but MSVC 2017 fails to compile it in
+// enable_if.
 template <typename S>
 struct is_string
     : std::integral_constant<
