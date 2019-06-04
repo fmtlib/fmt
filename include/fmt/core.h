@@ -1381,6 +1381,8 @@ struct is_contiguous_back_insert_iterator<std::back_insert_iterator<Container>>
     : is_contiguous<Container> {};
 
 /** Formats a string and writes the output to ``out``. */
+// GCC 8 and earlier cannot handle std::back_insert_iterator<Container> with
+// vformat_to<ArgFormatter>(...) overload, so SFINAE on iterator type instead.
 template <typename OutputIt, typename S, typename Char = char_t<S>,
           FMT_ENABLE_IF(is_contiguous_back_insert_iterator<OutputIt>::value)>
 OutputIt vformat_to(OutputIt out, const S& format_str,
