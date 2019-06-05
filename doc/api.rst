@@ -40,7 +40,7 @@ participate in an overload resolution if the latter is not a string.
 .. _format:
 
 .. doxygenfunction:: format(const S&, const Args&...)
-.. doxygenfunction:: vformat(const S&, basic_format_args<typename buffer_context<Char>::type>)
+.. doxygenfunction:: vformat(const S&, basic_format_args<buffer_context<Char>>)
 
 .. _print:
 
@@ -183,7 +183,7 @@ You can also write a formatter for a hierarchy of classes::
 Output Iterator Support
 -----------------------
 
-.. doxygenfunction:: fmt::format_to(OutputIt, const S &, const Args &...)
+.. doxygenfunction:: fmt::format_to(OutputIt, const S&, const Args&...)
 .. doxygenfunction:: fmt::format_to_n(OutputIt, std::size_t, string_view, const Args&...)
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
@@ -200,7 +200,7 @@ The following user-defined literals are defined in ``fmt/format.h``.
 Utilities
 ---------
 
-.. doxygenclass:: fmt::is_char
+.. doxygenstruct:: fmt::is_char
 
 .. doxygentypedef:: fmt::char_t
 
@@ -357,7 +357,7 @@ user-defined types that have overloaded ``operator<<``::
   std::string s = fmt::format("The date is {}", date(2012, 12, 9));
   // s == "The date is 2012-12-9"
 
-.. doxygenfunction:: print(std::basic_ostream<fmt::char_t<S>>&, const S&, const Args&...)
+.. doxygenfunction:: print(std::basic_ostream<Char>&, const S&, const Args&...)
 
 .. _printf-api:
 
@@ -375,6 +375,6 @@ argument type doesn't match its format specification.
 
 .. doxygenfunction:: fprintf(std::FILE *, const S&, const Args&...)
 
-.. doxygenfunction:: fprintf(std::basic_ostream<fmt::char_t<S>>&, const S&, const Args&...)
+.. doxygenfunction:: fprintf(std::basic_ostream<Char>&, const S&, const Args&...)
 
 .. doxygenfunction:: sprintf(const S&, const Args&...)
