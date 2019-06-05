@@ -780,10 +780,10 @@ inline char8_t to_char8_t(char c) { return static_cast<char8_t>(c); }
 
 template <typename InputIt, typename OutChar>
 struct needs_conversion
-    : std::integral_constant<
-          bool, std::is_same<typename std::iterator_traits<InputIt>::value_type,
-                             char>::value &&
-                    std::is_same<OutChar, char8_t>::value> {};
+    : bool_constant<
+          std::is_same<typename std::iterator_traits<InputIt>::value_type,
+                       char>::value &&
+          std::is_same<OutChar, char8_t>::value> {};
 
 template <typename OutChar, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
@@ -2261,9 +2261,7 @@ void check_format_string(S format_str) {
 // It is not possible to use get_type in formatter specialization directly
 // because of a bug in MSVC.
 template <typename Context, typename T>
-struct format_type
-    : std::integral_constant<bool, get_type<Context, T>::value != custom_type> {
-};
+using format_type = bool_constant<get_type<Context, T>::value != custom_type>;
 
 template <template <typename> class Handler, typename Spec, typename Context>
 void handle_dynamic_spec(Spec& value, arg_ref<typename Context::char_type> ref,

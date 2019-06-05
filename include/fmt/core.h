@@ -400,7 +400,7 @@ using fmt::v5::to_string_view;
 
 // Specifies whether S is a string type convertible to fmt::basic_string_view.
 // It should be a constexpr function but MSVC 2017 fails to compile it in
-// enable_if.
+// enable_if. MSVC 2015 fails to compile it as an alias template.
 template <typename S>
 struct is_string
     : bool_constant<
@@ -483,9 +483,8 @@ struct formatter {
 };
 
 template <typename T, typename Char, typename Enable = void>
-struct convert_to_int
-    : std::integral_constant<bool, !std::is_arithmetic<T>::value &&
-                                       std::is_convertible<T, int>::value> {};
+struct convert_to_int : bool_constant<!std::is_arithmetic<T>::value &&
+                                      std::is_convertible<T, int>::value> {};
 
 namespace internal {
 
