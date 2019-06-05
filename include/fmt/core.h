@@ -392,19 +392,14 @@ FMT_CONSTEXPR basic_string_view<typename S::char_type> to_string_view(
 }
 
 namespace internal {
-struct dummy_string_view {
-  using char_type = void;
-};
-dummy_string_view to_string_view(...);
+void to_string_view(...);
 using fmt::v5::to_string_view;
 
 // Specifies whether S is a string type convertible to fmt::basic_string_view.
 // It should be a constexpr function but MSVC 2017 fails to compile it in
-// enable_if. MSVC 2015 fails to compile it as an alias template.
+// enable_if and MSVC 2015 fails to compile it as an alias template.
 template <typename S>
-struct is_string
-    : bool_constant<
-          !std::is_empty<decltype(to_string_view(std::declval<S>()))>::value> {
+struct is_string : std::is_class<decltype(to_string_view(std::declval<S>()))> {
 };
 
 struct error_handler {
@@ -603,7 +598,8 @@ struct fallback_formatter {
       "an operator<< that should be used");
 };
 
-template <typename S> struct char_t_impl {
+template <typename S, typename = void> struct char_t_impl {};
+template <typename S> struct char_t_impl<S, enable_if_t<is_string<S>::value>> {
   typedef decltype(to_string_view(std::declval<S>())) result;
   typedef typename result::char_type type;
 };
