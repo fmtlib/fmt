@@ -91,15 +91,14 @@ class arg_converter : public function<void> {
   template <typename U, FMT_ENABLE_IF(std::is_integral<U>::value)>
   void operator()(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
-    typedef typename std::conditional<std::is_same<T, void>::value, U, T>::type
-        TargetType;
-    if (const_check(sizeof(TargetType) <= sizeof(int))) {
+    using target_type = conditional_t<std::is_same<T, void>::value, U, T>;
+    if (const_check(sizeof(target_type) <= sizeof(int))) {
       // Extra casts are used to silence warnings.
       if (is_signed) {
         arg_ = internal::make_arg<Context>(
-            static_cast<int>(static_cast<TargetType>(value)));
+            static_cast<int>(static_cast<target_type>(value)));
       } else {
-        typedef typename make_unsigned_or_bool<TargetType>::type Unsigned;
+        typedef typename make_unsigned_or_bool<target_type>::type Unsigned;
         arg_ = internal::make_arg<Context>(
             static_cast<unsigned>(static_cast<Unsigned>(value)));
       }

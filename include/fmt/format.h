@@ -698,8 +698,8 @@ FMT_CONSTEXPR bool is_negative(T) {
 template <typename T> struct int_traits {
   // Smallest of uint32_t and uint64_t that is large enough to represent
   // all values of T.
-  typedef typename std::conditional<std::numeric_limits<T>::digits <= 32,
-                                    uint32_t, uint64_t>::type main_type;
+  using main_type =
+      conditional_t<std::numeric_limits<T>::digits <= 32, uint32_t, uint64_t>;
 };
 
 // Static data is placed in this class template to allow header-only
@@ -2181,9 +2181,10 @@ FMT_CONSTEXPR const typename ParseContext::char_type* parse_format_specs(
     ParseContext& ctx) {
   // GCC 7.2 requires initializer.
   typedef typename ParseContext::char_type char_type;
-  typename std::conditional<is_formattable<T, format_context>::value,
-                            formatter<T, char_type>,
-                            internal::fallback_formatter<T, char_type>>::type f;
+  conditional_t<is_formattable<T, format_context>::value,
+                formatter<T, char_type>,
+                internal::fallback_formatter<T, char_type>>
+      f;
   return f.parse(ctx);
 }
 

@@ -440,9 +440,8 @@ template <typename Format> class compiletime_prepared_parts_type_provider {
     typedef format_part<char_type> value_type;
   };
 
-  typedef typename std::conditional<static_cast<bool>(number_of_format_parts),
-                                    format_parts_array<number_of_format_parts>,
-                                    empty>::type type;
+  using type = conditional_t<static_cast<bool>(number_of_format_parts),
+                             format_parts_array<number_of_format_parts>, empty>;
 };
 
 template <typename Parts> class compiletime_prepared_parts_collector {
@@ -674,9 +673,8 @@ struct compiletime_format_tag {};
 struct runtime_format_tag {};
 
 template <typename Format> struct format_tag {
-  typedef typename std::conditional<is_compile_string<Format>::value,
-                                    compiletime_format_tag,
-                                    runtime_format_tag>::type type;
+  using type = conditional_t<is_compile_string<Format>::value,
+                             compiletime_format_tag, runtime_format_tag>;
 };
 
 #if FMT_USE_CONSTEXPR

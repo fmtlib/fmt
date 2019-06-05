@@ -94,11 +94,11 @@ template <typename T, typename _ = void> struct is_range_ : std::false_type {};
 
 #if !FMT_MSC_VER || FMT_MSC_VER > 1800
 template <typename T>
-struct is_range_<T, typename std::conditional<
-                        false,
-                        conditional_helper<decltype(std::declval<T>().begin()),
-                                           decltype(std::declval<T>().end())>,
-                        void>::type> : std::true_type {};
+struct is_range_<
+    T, conditional_t<false,
+                     conditional_helper<decltype(std::declval<T>().begin()),
+                                        decltype(std::declval<T>().end())>,
+                     void>> : std::true_type {};
 #endif
 
 /// tuple_size and tuple_element check.

@@ -200,9 +200,11 @@
 
 FMT_BEGIN_NAMESPACE
 
-// An implementation of enable_if_t for pre-C++14 systems.
+// Implementations of enable_if_t and other types for pre-C++14 systems.
 template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
+template <bool B, class T, class F>
+using conditional_t = typename std::conditional<B, T, F>::type;
 
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
@@ -646,10 +648,9 @@ template <typename Char> struct string_value {
 };
 
 template <typename Context> struct custom_value {
+  using parse_context = basic_parse_context<typename Context::char_type>;
   const void* value;
-  void (*format)(const void* arg,
-                 basic_parse_context<typename Context::char_type>& parse_ctx,
-                 Context& ctx);
+  void (*format)(const void* arg, parse_context& parse_ctx, Context& ctx);
 };
 
 template <typename T, typename Context>
@@ -704,10 +705,9 @@ template <typename Context> class value {
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
     custom.format = &format_custom_arg<
-        T, typename std::conditional<
-               is_formattable<T, Context>::value,
-               typename Context::template formatter_type<T>,
-               internal::fallback_formatter<T, char_type>>::type>;
+        T, conditional_t<is_formattable<T, Context>::value,
+                         typename Context::template formatter_type<T>,
+                         internal::fallback_formatter<T, char_type>>>;
   }
 
   const named_arg_base<char_type>& as_named_arg() {
@@ -758,12 +758,11 @@ FMT_MAKE_VALUE_SAME(uint_type, unsigned)
 
 // To minimize the number of types we need to deal with, long is translated
 // either to int or to long long depending on its size.
-using long_type =
-    std::conditional<sizeof(long) == sizeof(int), int, long long>::type;
+using long_type = conditional_t<sizeof(long) == sizeof(int), int, long long>;
 FMT_MAKE_VALUE((sizeof(long) == sizeof(int) ? int_type : long_long_type), long,
                long_type)
-using ulong_type = std::conditional<sizeof(unsigned long) == sizeof(unsigned),
-                                    unsigned, unsigned long long>::type;
+using ulong_type = conditional_t<sizeof(unsigned long) == sizeof(unsigned),
+                                 unsigned, unsigned long long>;
 FMT_MAKE_VALUE((sizeof(unsigned long) == sizeof(unsigned) ? uint_type
                                                           : ulong_long_type),
                unsigned long, ulong_type)
@@ -1129,9 +1128,8 @@ template <typename Context, typename... Args> class format_arg_store {
   // Packed is a macro on MinGW so use IS_PACKED instead.
   static const bool IS_PACKED = NUM_ARGS < internal::max_packed_args;
 
-  using value_type =
-      typename std::conditional<IS_PACKED, internal::value<Context>,
-                                basic_format_arg<Context>>::type;
+  using value_type = conditional_t<IS_PACKED, internal::value<Context>,
+                                   basic_format_arg<Context>>;
 
   // If the arguments are not packed, add one more element to mark the end.
   static const size_t DATA_SIZE =
@@ -1274,7 +1272,7 @@ template <typename Context> class basic_format_args {
 };
 
 /** An alias to ``basic_format_args<context>``. */
-// It is a separate type rather than a typedef to make symbols readable.
+// It is a separate type rather than an alias to make symbols readable.
 struct format_args : basic_format_args<format_context> {
   template <typename... Args>
   format_args(Args&&... arg)
