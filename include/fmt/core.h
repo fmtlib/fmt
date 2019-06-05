@@ -402,6 +402,12 @@ template <typename S>
 struct is_string : std::is_class<decltype(to_string_view(std::declval<S>()))> {
 };
 
+template <typename S, typename = void> struct char_t_impl {};
+template <typename S> struct char_t_impl<S, enable_if_t<is_string<S>::value>> {
+  using result = decltype(to_string_view(std::declval<S>()));
+  using type = typename result::char_type;
+};
+
 struct error_handler {
   FMT_CONSTEXPR error_handler() {}
   FMT_CONSTEXPR error_handler(const error_handler&) {}
@@ -410,6 +416,9 @@ struct error_handler {
   FMT_API FMT_NORETURN void on_error(const char* message);
 };
 }  // namespace internal
+
+/** String's character type. */
+template <typename S> using char_t = typename internal::char_t_impl<S>::type;
 
 // Parsing context consisting of a format string range being parsed and an
 // argument counter for automatic indexing.
@@ -596,12 +605,6 @@ struct fallback_formatter {
       no_formatter_error<T>::value,
       "don't know how to format the type, include fmt/ostream.h if it provides "
       "an operator<< that should be used");
-};
-
-template <typename S, typename = void> struct char_t_impl {};
-template <typename S> struct char_t_impl<S, enable_if_t<is_string<S>::value>> {
-  typedef decltype(to_string_view(std::declval<S>())) result;
-  typedef typename result::char_type type;
 };
 
 template <typename Char> struct named_arg_base;
@@ -1281,9 +1284,6 @@ struct wformat_args : basic_format_args<wformat_context> {
       : basic_format_args<wformat_context>(std::forward<Args>(arg)...) {}
 };
 
-/** String's character type. */
-template <typename S> using char_t = typename internal::char_t_impl<S>::type;
-
 namespace internal {
 template <typename Context>
 FMT_CONSTEXPR typename Context::format_arg get_arg(Context& ctx, unsigned id) {
@@ -1321,8 +1321,7 @@ template <typename... Args, typename S,
           FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S);
 
-template <typename S, typename... Args,
-          typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
+template <typename S, typename... Args, typename Char = char_t<S>>
 inline format_arg_store<buffer_context<Char>, Args...> make_args_checked(
     const S& format_str, const Args&... args) {
   internal::check_format_string<Args...>(format_str);
@@ -1403,8 +1402,7 @@ inline std::back_insert_iterator<Container> format_to(
                     {internal::make_args_checked(format_str, args...)});
 }
 
-template <typename S,
-          typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
+template <typename S, typename Char = char_t<S>>
 inline std::basic_string<Char> vformat(
     const S& format_str, basic_format_args<buffer_context<Char>> args) {
   return internal::vformat(to_string_view(format_str), args);
@@ -1422,8 +1420,7 @@ inline std::basic_string<Char> vformat(
 */
 // Pass char_t as a default template parameter instead of using
 // std::basic_string<char_t<S>> to reduce the symbol size.
-template <typename S, typename... Args,
-          typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
+template <typename S, typename... Args, typename Char = char_t<S>>
 inline std::basic_string<Char> format(const S& format_str,
                                       const Args&... args) {
   return internal::vformat(to_string_view(format_str),
