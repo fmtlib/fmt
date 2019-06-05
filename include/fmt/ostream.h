@@ -96,9 +96,8 @@ void format_value(buffer<Char>& buf, const T& value) {
 
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename T, typename Char>
-struct fallback_formatter<
-    T, Char,
-    typename std::enable_if<internal::is_streamable<T, Char>::value>::type>
+struct fallback_formatter<T, Char,
+                          enable_if_t<internal::is_streamable<T, Char>::value>>
     : formatter<basic_string_view<Char>, Char> {
   template <typename Context>
   auto format(const T& value, Context& ctx) -> decltype(ctx.out()) {
@@ -113,9 +112,8 @@ struct fallback_formatter<
 // Disable conversion to int if T has an overloaded operator<< which is a free
 // function (not a member of std::ostream).
 template <typename T, typename Char>
-struct convert_to_int<
-    T, Char,
-    typename std::enable_if<internal::is_streamable<T, Char>::value>::type> {
+struct convert_to_int<T, Char,
+                      enable_if_t<internal::is_streamable<T, Char>::value>> {
   static const bool value = false;
 };
 

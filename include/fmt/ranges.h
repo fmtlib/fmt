@@ -194,9 +194,7 @@ template <typename T> struct is_tuple_like {
 };
 
 template <typename TupleT, typename Char>
-struct formatter<
-    TupleT, Char,
-    typename std::enable_if<fmt::is_tuple_like<TupleT>::value>::type> {
+struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
  private:
   // C++11 generic lambda for format()
   template <typename FormatContext> struct format_each {
@@ -250,8 +248,7 @@ template <typename T> struct is_range {
 };
 
 template <typename RangeT, typename Char>
-struct formatter<RangeT, Char,
-                 typename std::enable_if<fmt::is_range<RangeT>::value>::type> {
+struct formatter<RangeT, Char, enable_if_t<fmt::is_range<RangeT>::value>> {
   formatting_range<Char> formatting;
 
   template <typename ParseContext>

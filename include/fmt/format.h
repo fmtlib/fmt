@@ -3047,9 +3047,9 @@ class format_int {
 
 // Formatter of objects of type T.
 template <typename T, typename Char>
-struct formatter<T, Char,
-                 typename std::enable_if<internal::format_type<
-                     buffer_context<Char>, T>::value>::type> {
+struct formatter<
+    T, Char,
+    enable_if_t<internal::format_type<buffer_context<Char>, T>::value>> {
   FMT_CONSTEXPR formatter() : format_str_(nullptr) {}
 
   // Parses format specifiers stopping either at the end of the range or at the

@@ -413,16 +413,15 @@ template <typename T> struct make_unsigned_or_unchanged<T, true> {
 };
 
 template <typename Rep, typename Period,
-          typename std::enable_if<std::is_integral<Rep>::value, int>::type = 0>
+          FMT_ENABLE_IF(std::is_integral<Rep>::value)>
 inline std::chrono::duration<Rep, std::milli> get_milliseconds(
     std::chrono::duration<Rep, Period> d) {
   auto s = std::chrono::duration_cast<std::chrono::seconds>(d);
   return std::chrono::duration_cast<std::chrono::milliseconds>(d - s);
 }
 
-template <
-    typename Rep, typename Period,
-    typename std::enable_if<std::is_floating_point<Rep>::value, int>::type = 0>
+template <typename Rep, typename Period,
+          FMT_ENABLE_IF(std::is_floating_point<Rep>::value)>
 inline std::chrono::duration<Rep, std::milli> get_milliseconds(
     std::chrono::duration<Rep, Period> d) {
   return std::chrono::duration<Rep, std::milli>(
