@@ -205,6 +205,7 @@ template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 template <bool B, class T, class F>
 using conditional_t = typename std::conditional<B, T, F>::type;
+template <bool B> using bool_constant = std::integral_constant<bool, B>;
 
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
@@ -239,119 +240,6 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   FMT_ASSERT(value >= 0, "negative value");
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
-
-/** A contiguous memory buffer with an optional growing ability. */
-template <typename T> class buffer {
- private:
-  buffer(const buffer&) = delete;
-  void operator=(const buffer&) = delete;
-
-  T* ptr_;
-  std::size_t size_;
-  std::size_t capacity_;
-
- protected:
-  // Don't initialize ptr_ since it is not accessed to save a few cycles.
-  buffer(std::size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
-
-  buffer(T* p = nullptr, std::size_t sz = 0, std::size_t cap = 0) FMT_NOEXCEPT
-      : ptr_(p),
-        size_(sz),
-        capacity_(cap) {}
-
-  /** Sets the buffer data and capacity. */
-  void set(T* buf_data, std::size_t buf_capacity) FMT_NOEXCEPT {
-    ptr_ = buf_data;
-    capacity_ = buf_capacity;
-  }
-
-  /** Increases the buffer capacity to hold at least *capacity* elements. */
-  virtual void grow(std::size_t capacity) = 0;
-
- public:
-  using value_type = T;
-  using const_reference = const T&;
-
-  virtual ~buffer() {}
-
-  T* begin() FMT_NOEXCEPT { return ptr_; }
-  T* end() FMT_NOEXCEPT { return ptr_ + size_; }
-
-  /** Returns the size of this buffer. */
-  std::size_t size() const FMT_NOEXCEPT { return size_; }
-
-  /** Returns the capacity of this buffer. */
-  std::size_t capacity() const FMT_NOEXCEPT { return capacity_; }
-
-  /** Returns a pointer to the buffer data. */
-  T* data() FMT_NOEXCEPT { return ptr_; }
-
-  /** Returns a pointer to the buffer data. */
-  const T* data() const FMT_NOEXCEPT { return ptr_; }
-
-  /**
-    Resizes the buffer. If T is a POD type new elements may not be initialized.
-   */
-  void resize(std::size_t new_size) {
-    reserve(new_size);
-    size_ = new_size;
-  }
-
-  /** Clears this buffer. */
-  void clear() { size_ = 0; }
-
-  /** Reserves space to store at least *capacity* elements. */
-  void reserve(std::size_t new_capacity) {
-    if (new_capacity > capacity_) grow(new_capacity);
-  }
-
-  void push_back(const T& value) {
-    reserve(size_ + 1);
-    ptr_[size_++] = value;
-  }
-
-  /** Appends data to the end of the buffer. */
-  template <typename U> void append(const U* begin, const U* end);
-
-  T& operator[](std::size_t index) { return ptr_[index]; }
-  const T& operator[](std::size_t index) const { return ptr_[index]; }
-};
-
-// A container-backed buffer.
-template <typename Container>
-class container_buffer : public buffer<typename Container::value_type> {
- private:
-  Container& container_;
-
- protected:
-  void grow(std::size_t capacity) FMT_OVERRIDE {
-    container_.resize(capacity);
-    this->set(&container_[0], capacity);
-  }
-
- public:
-  explicit container_buffer(Container& c)
-      : buffer<typename Container::value_type>(c.size()), container_(c) {}
-};
-
-// Extracts a reference to the container from back_insert_iterator.
-template <typename Container>
-inline Container& get_container(std::back_insert_iterator<Container> it) {
-  using bi_iterator = std::back_insert_iterator<Container>;
-  struct accessor : bi_iterator {
-    accessor(bi_iterator iter) : bi_iterator(iter) {}
-    using bi_iterator::container;
-  };
-  return *accessor(it).container;
-}
-
-struct error_handler {
-  FMT_CONSTEXPR error_handler() {}
-  FMT_CONSTEXPR error_handler(const error_handler&) {}
-
-  // This function is intentionally not constexpr to give a compile-time error.
-  FMT_API FMT_NORETURN void on_error(const char* message);
-};
 }  // namespace internal
 
 /**
@@ -503,6 +391,31 @@ FMT_CONSTEXPR basic_string_view<typename S::char_type> to_string_view(
   return s;
 }
 
+namespace internal {
+struct dummy_string_view {
+  using char_type = void;
+};
+dummy_string_view to_string_view(...);
+using fmt::v5::to_string_view;
+
+// Specifies whether S is a string type convertible to fmt::basic_string_view.
+// It should be a constexpr function but MSVC 2017 fails to compile it in
+// enable_if.
+template <typename S>
+struct is_string
+    : bool_constant<
+          !std::is_empty<decltype(to_string_view(std::declval<S>()))>::value> {
+};
+
+struct error_handler {
+  FMT_CONSTEXPR error_handler() {}
+  FMT_CONSTEXPR error_handler(const error_handler&) {}
+
+  // This function is intentionally not constexpr to give a compile-time error.
+  FMT_API FMT_NORETURN void on_error(const char* message);
+};
+}  // namespace internal
+
 // Parsing context consisting of a format string range being parsed and an
 // argument counter for automatic indexing.
 template <typename Char, typename ErrorHandler = internal::error_handler>
@@ -576,6 +489,111 @@ struct convert_to_int
 
 namespace internal {
 
+/** A contiguous memory buffer with an optional growing ability. */
+template <typename T> class buffer {
+ private:
+  buffer(const buffer&) = delete;
+  void operator=(const buffer&) = delete;
+
+  T* ptr_;
+  std::size_t size_;
+  std::size_t capacity_;
+
+ protected:
+  // Don't initialize ptr_ since it is not accessed to save a few cycles.
+  buffer(std::size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
+
+  buffer(T* p = nullptr, std::size_t sz = 0, std::size_t cap = 0) FMT_NOEXCEPT
+      : ptr_(p),
+        size_(sz),
+        capacity_(cap) {}
+
+  /** Sets the buffer data and capacity. */
+  void set(T* buf_data, std::size_t buf_capacity) FMT_NOEXCEPT {
+    ptr_ = buf_data;
+    capacity_ = buf_capacity;
+  }
+
+  /** Increases the buffer capacity to hold at least *capacity* elements. */
+  virtual void grow(std::size_t capacity) = 0;
+
+ public:
+  using value_type = T;
+  using const_reference = const T&;
+
+  virtual ~buffer() {}
+
+  T* begin() FMT_NOEXCEPT { return ptr_; }
+  T* end() FMT_NOEXCEPT { return ptr_ + size_; }
+
+  /** Returns the size of this buffer. */
+  std::size_t size() const FMT_NOEXCEPT { return size_; }
+
+  /** Returns the capacity of this buffer. */
+  std::size_t capacity() const FMT_NOEXCEPT { return capacity_; }
+
+  /** Returns a pointer to the buffer data. */
+  T* data() FMT_NOEXCEPT { return ptr_; }
+
+  /** Returns a pointer to the buffer data. */
+  const T* data() const FMT_NOEXCEPT { return ptr_; }
+
+  /**
+    Resizes the buffer. If T is a POD type new elements may not be initialized.
+   */
+  void resize(std::size_t new_size) {
+    reserve(new_size);
+    size_ = new_size;
+  }
+
+  /** Clears this buffer. */
+  void clear() { size_ = 0; }
+
+  /** Reserves space to store at least *capacity* elements. */
+  void reserve(std::size_t new_capacity) {
+    if (new_capacity > capacity_) grow(new_capacity);
+  }
+
+  void push_back(const T& value) {
+    reserve(size_ + 1);
+    ptr_[size_++] = value;
+  }
+
+  /** Appends data to the end of the buffer. */
+  template <typename U> void append(const U* begin, const U* end);
+
+  T& operator[](std::size_t index) { return ptr_[index]; }
+  const T& operator[](std::size_t index) const { return ptr_[index]; }
+};
+
+// A container-backed buffer.
+template <typename Container>
+class container_buffer : public buffer<typename Container::value_type> {
+ private:
+  Container& container_;
+
+ protected:
+  void grow(std::size_t capacity) FMT_OVERRIDE {
+    container_.resize(capacity);
+    this->set(&container_[0], capacity);
+  }
+
+ public:
+  explicit container_buffer(Container& c)
+      : buffer<typename Container::value_type>(c.size()), container_(c) {}
+};
+
+// Extracts a reference to the container from back_insert_iterator.
+template <typename Container>
+inline Container& get_container(std::back_insert_iterator<Container> it) {
+  using bi_iterator = std::back_insert_iterator<Container>;
+  struct accessor : bi_iterator {
+    accessor(bi_iterator iter) : bi_iterator(iter) {}
+    using bi_iterator::container;
+  };
+  return *accessor(it).container;
+}
+
 template <typename T> struct no_formatter_error : std::false_type {};
 
 template <typename T, typename Char = char, typename Enable = void>
@@ -585,22 +603,6 @@ struct fallback_formatter {
       "don't know how to format the type, include fmt/ostream.h if it provides "
       "an operator<< that should be used");
 };
-
-struct dummy_string_view {
-  typedef void char_type;
-};
-dummy_string_view to_string_view(...);
-using fmt::v5::to_string_view;
-
-// Specifies whether S is a string type convertible to fmt::basic_string_view.
-// It should be a constexpr function but MSVC 2017 fails to compile it in
-// enable_if.
-template <typename S>
-struct is_string
-    : std::integral_constant<
-          bool,
-          !std::is_same<dummy_string_view,
-                        decltype(to_string_view(std::declval<S>()))>::value> {};
 
 template <typename S> struct char_t_impl {
   typedef decltype(to_string_view(std::declval<S>())) result;
