@@ -433,16 +433,12 @@ TEST(StringViewTest, Compare) {
 }
 
 enum basic_enum {};
+enum enum_with_underlying_type : char {};
 
 TEST(CoreTest, ConvertToInt) {
   EXPECT_FALSE((fmt::convert_to_int<char, char>::value));
   EXPECT_FALSE((fmt::convert_to_int<const char*, char>::value));
   EXPECT_TRUE((fmt::convert_to_int<basic_enum, char>::value));
-}
-
-enum enum_with_underlying_type : char {};
-
-TEST(CoreTest, IsEnumConvertibleToInt) {
   EXPECT_TRUE((fmt::convert_to_int<enum_with_underlying_type, char>::value));
 }
 
