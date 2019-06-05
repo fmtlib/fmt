@@ -262,7 +262,7 @@ class prepared_format {
 
       switch (part.which) {
       case format_part_t::which_value::text: {
-        const auto text = value.text.to_view(format_view);
+        const auto text = value.text.to_view(format_view.data());
         auto output = ctx.out();
         auto&& it = internal::reserve(output, text.size());
         it = std::copy_n(text.begin(), text.size(), it);
@@ -276,16 +276,17 @@ class prepared_format {
 
       case format_part_t::which_value::named_argument_id: {
         advance_parse_context_to_specification(parse_ctx, part);
-        const auto named_arg_id = value.named_arg_id.to_view(format_view);
+        const auto named_arg_id =
+            value.named_arg_id.to_view(format_view.data());
         format_arg<Range>(parse_ctx, ctx, named_arg_id);
       } break;
       case format_part_t::which_value::specification: {
         const auto& arg_id_value = value.spec.arg_id.val;
-        const auto arg =
-            value.spec.arg_id.which ==
-                    format_part_t::argument_id::which_arg_id::index
-                ? ctx.arg(arg_id_value.index)
-                : ctx.arg(arg_id_value.named_index.to_view(format_));
+        const auto arg = value.spec.arg_id.which ==
+                                 format_part_t::argument_id::which_arg_id::index
+                             ? ctx.arg(arg_id_value.index)
+                             : ctx.arg(arg_id_value.named_index.to_view(
+                                   to_string_view(format_).data()));
 
         auto specs = value.spec.parsed_specs;
 

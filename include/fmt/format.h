@@ -1806,11 +1806,9 @@ struct string_view_metadata {
       : offset_(view.data() - primary_string.data()), size_(view.size()) {}
   FMT_CONSTEXPR string_view_metadata(std::size_t offset, std::size_t size)
       : offset_(offset), size_(size) {}
-  template <typename S, typename Char = enable_if_t<
-                            internal::is_string<S>::value, char_t<S>>>
-  FMT_CONSTEXPR basic_string_view<Char> to_view(S&& str) const {
-    const auto view = to_string_view(str);
-    return basic_string_view<Char>(view.data() + offset_, size_);
+  template <typename Char>
+  FMT_CONSTEXPR basic_string_view<Char> to_view(const Char* str) const {
+    return {str + offset_, size_};
   }
 
   std::size_t offset_;
