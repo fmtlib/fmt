@@ -400,6 +400,7 @@ void buffer<T>::append(const U* begin, const U* end) {
 // A UTF-8 code unit type.
 enum char8_t : unsigned char {};
 #endif
+template <> struct is_char<char8_t> : std::true_type {};
 
 // A UTF-8 string view.
 class u8string_view : public basic_string_view<char8_t> {

@@ -443,7 +443,11 @@ using string_view = basic_string_view<char>;
 using wstring_view = basic_string_view<wchar_t>;
 
 /** Specifies if ``T`` is a character type. Can be specialized by users. */
-template <typename T> struct is_char : std::is_integral<T> {};
+template <typename T> struct is_char : std::false_type {};
+template <> struct is_char<char> : std::true_type {};
+template <> struct is_char<wchar_t> : std::true_type {};
+template <> struct is_char<char16_t> : std::true_type {};
+template <> struct is_char<char32_t> : std::true_type {};
 
 /**
   \rst
