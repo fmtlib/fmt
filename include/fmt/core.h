@@ -835,8 +835,8 @@ inline init<C, basic_string_view<Char>, string_type> make_value(const T& val) {
   return basic_string_view<Char>(val);
 }
 
-// Implicit conversion to std::string is not handled here because it's
-// unsafe: https://github.com/fmtlib/fmt/issues/729
+// Implicit conversion to std::string is disallowed because it would be unsafe:
+// https://github.com/fmtlib/fmt/issues/729
 template <
     typename C, typename T, typename Char = typename C::char_type,
     typename U = typename std::remove_volatile<T>::type,
@@ -861,8 +861,7 @@ template <typename C, typename S, FMT_ENABLE_IF(internal::is_string<S>::value)>
 FMT_CONSTEXPR11 init<C, basic_string_view<typename C::char_type>, string_type>
 make_value(const S& val) {
   // Handle adapted strings.
-  static_assert(std::is_same<typename C::char_type,
-                             typename internal::char_t_impl<S>::type>::value,
+  static_assert(std::is_same<typename C::char_type, char_t<S>>::value,
                 "mismatch between char-types of context and argument");
   return to_string_view(val);
 }
