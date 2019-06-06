@@ -795,17 +795,27 @@ FMT_MAKE_VALUE(cstring_type, typename C::char_type*,
                const typename C::char_type*)
 FMT_MAKE_VALUE(cstring_type, const typename C::char_type*,
                const typename C::char_type*)
-
 FMT_MAKE_VALUE(cstring_type, signed char*, const signed char*)
 FMT_MAKE_VALUE_SAME(cstring_type, const signed char*)
 FMT_MAKE_VALUE(cstring_type, unsigned char*, const unsigned char*)
 FMT_MAKE_VALUE_SAME(cstring_type, const unsigned char*)
-FMT_MAKE_VALUE_SAME(string_type, basic_string_view<typename C::char_type>)
-FMT_MAKE_VALUE(string_type,
-               typename basic_string_view<typename C::char_type>::type,
-               basic_string_view<typename C::char_type>)
-FMT_MAKE_VALUE(string_type, const std::basic_string<typename C::char_type>&,
-               basic_string_view<typename C::char_type>)
+
+template <typename C, typename S, FMT_ENABLE_IF(internal::is_string<S>::value)>
+FMT_CONSTEXPR11 init<C, basic_string_view<typename C::char_type>, string_type>
+make_value(const S& val) {
+  static_assert(std::is_same<typename C::char_type, char_t<S>>::value,
+                "mismatch between char-types of context and argument");
+  return to_string_view(val);
+}
+
+template <
+    typename C, typename T, typename Char = typename C::char_type,
+    FMT_ENABLE_IF(std::is_constructible<basic_string_view<Char>, T>::value &&
+                  !internal::is_string<T>::value)>
+inline init<C, basic_string_view<Char>, string_type> make_value(const T& val) {
+  return basic_string_view<Char>(val);
+}
+
 FMT_MAKE_VALUE(pointer_type, void*, const void*)
 FMT_MAKE_VALUE_SAME(pointer_type, const void*)
 FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
@@ -825,14 +835,6 @@ template <typename C, typename T,
                             std::is_enum<T>::value)>
 inline init<C, int, int_type> make_value(const T& val) {
   return static_cast<int>(val);
-}
-
-template <
-    typename C, typename T, typename Char = typename C::char_type,
-    FMT_ENABLE_IF(std::is_constructible<basic_string_view<Char>, T>::value &&
-                  !internal::is_string<T>::value)>
-inline init<C, basic_string_view<Char>, string_type> make_value(const T& val) {
-  return basic_string_view<Char>(val);
 }
 
 // Implicit conversion to std::string is disallowed because it would be unsafe:
@@ -855,15 +857,6 @@ init<C, const void*, named_arg_type> make_value(
   basic_format_arg<C> arg = make_arg<C>(val.value);
   std::memcpy(val.data, &arg, sizeof(arg));
   return static_cast<const void*>(&val);
-}
-
-template <typename C, typename S, FMT_ENABLE_IF(internal::is_string<S>::value)>
-FMT_CONSTEXPR11 init<C, basic_string_view<typename C::char_type>, string_type>
-make_value(const S& val) {
-  // Handle adapted strings.
-  static_assert(std::is_same<typename C::char_type, char_t<S>>::value,
-                "mismatch between char-types of context and argument");
-  return to_string_view(val);
 }
 
 // Maximum number of arguments with packed types.
@@ -1313,11 +1306,9 @@ template <typename T, typename Char> struct named_arg : named_arg_base<Char> {
       : named_arg_base<Char>(name), value(val) {}
 };
 
-template <typename... Args, typename S,
-          FMT_ENABLE_IF(!is_compile_string<S>::value)>
+template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
 inline void check_format_string(const S&) {}
-template <typename... Args, typename S,
-          FMT_ENABLE_IF(is_compile_string<S>::value)>
+template <typename..., typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S);
 
 template <typename S, typename... Args, typename Char = char_t<S>>
