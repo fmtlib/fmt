@@ -2179,7 +2179,7 @@ FMT_CONSTEXPR const typename ParseContext::char_type* parse_format_specs(
     ParseContext& ctx) {
   // GCC 7.2 requires initializer.
   typedef typename ParseContext::char_type char_type;
-  conditional_t<is_formattable<T, format_context>::value,
+  conditional_t<is_formattable<T, buffer_context<char_type>>::value,
                 formatter<T, char_type>,
                 internal::fallback_formatter<T, char_type>>
       f;
@@ -2254,12 +2254,6 @@ void check_format_string(S format_str) {
                                        Args...>(to_string_view(format_str));
   (void)invalid_format;
 }
-
-// Specifies whether to format T using the standard formatter.
-// It is not possible to use get_type in formatter specialization directly
-// because of a bug in MSVC.
-template <typename Context, typename T>
-using format_type = bool_constant<get_type<Context, T>::value != custom_type>;
 
 template <template <typename> class Handler, typename Spec, typename Context>
 void handle_dynamic_spec(Spec& value, arg_ref<typename Context::char_type> ref,
@@ -3041,24 +3035,24 @@ class format_int {
   std::string str() const { return std::string(str_, size()); }
 };
 
-// Formatter of objects of type T.
+// formatter specializations for the core types corresponding to internal::type
+// constants.
 template <typename T, typename Char>
-struct formatter<
-    T, Char,
-    enable_if_t<internal::format_type<buffer_context<Char>, T>::value>> {
+struct formatter<T, Char,
+                 enable_if_t<internal::type_constant<T, Char>::value !=
+                             internal::none_type>> {
   FMT_CONSTEXPR formatter() : format_str_(nullptr) {}
 
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.
   template <typename ParseContext>
-  FMT_CONSTEXPR typename ParseContext::iterator parse(ParseContext& ctx) {
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     format_str_ = ctx.begin();
-    typedef internal::dynamic_specs_handler<ParseContext> handler_type;
-    auto type = internal::get_type<buffer_context<Char>, T>::value;
+    using handler_type = internal::dynamic_specs_handler<ParseContext>;
+    auto type = internal::type_constant<T, Char>::value;
     internal::specs_checker<handler_type> handler(handler_type(specs_, ctx),
                                                   type);
     auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
-    auto type_spec = specs_.type;
     auto eh = ctx.error_handler();
     switch (type) {
     case internal::none_type:
@@ -3070,27 +3064,27 @@ struct formatter<
     case internal::long_long_type:
     case internal::ulong_long_type:
     case internal::bool_type:
-      handle_int_type_spec(type_spec,
+      handle_int_type_spec(specs_.type,
                            internal::int_type_checker<decltype(eh)>(eh));
       break;
     case internal::char_type:
       handle_char_specs(
-          &specs_, internal::char_specs_checker<decltype(eh)>(type_spec, eh));
+          &specs_, internal::char_specs_checker<decltype(eh)>(specs_.type, eh));
       break;
     case internal::double_type:
     case internal::long_double_type:
-      handle_float_type_spec(type_spec,
+      handle_float_type_spec(specs_.type,
                              internal::float_type_checker<decltype(eh)>(eh));
       break;
     case internal::cstring_type:
       internal::handle_cstring_type_spec(
-          type_spec, internal::cstring_type_checker<decltype(eh)>(eh));
+          specs_.type, internal::cstring_type_checker<decltype(eh)>(eh));
       break;
     case internal::string_type:
-      internal::check_string_type_spec(type_spec, eh);
+      internal::check_string_type_spec(specs_.type, eh);
       break;
     case internal::pointer_type:
-      internal::check_pointer_type_spec(type_spec, eh);
+      internal::check_pointer_type_spec(specs_.type, eh);
       break;
     case internal::custom_type:
       // Custom format specifiers should be checked in parse functions of
@@ -3106,9 +3100,8 @@ struct formatter<
         specs_.width_, specs_.width_ref, ctx, format_str_);
     internal::handle_dynamic_spec<internal::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx, format_str_);
-    typedef output_range<typename FormatContext::iterator,
-                         typename FormatContext::char_type>
-        range_type;
+    using range_type = output_range<typename FormatContext::iterator,
+                                    typename FormatContext::char_type>;
     return visit_format_arg(arg_formatter<range_type>(ctx, nullptr, &specs_),
                             internal::make_arg<FormatContext>(val));
   }
@@ -3116,6 +3109,44 @@ struct formatter<
  private:
   internal::dynamic_format_specs<Char> specs_;
   const Char* format_str_;
+};
+
+#define FMT_FORMAT_AS(Type, Base)                                             \
+  template <typename Char>                                                    \
+  struct formatter<Type, Char> : formatter<Base, Char> {                      \
+    template <typename FormatContext>                                         \
+    auto format(const Type& val, FormatContext& ctx) -> decltype(ctx.out()) { \
+      return formatter<Base, Char>::format(val, ctx);                         \
+    }                                                                         \
+  }
+
+FMT_FORMAT_AS(signed char, int);
+FMT_FORMAT_AS(unsigned char, unsigned);
+FMT_FORMAT_AS(short, int);
+FMT_FORMAT_AS(unsigned short, unsigned);
+FMT_FORMAT_AS(long, long long);
+FMT_FORMAT_AS(unsigned long, unsigned long long);
+FMT_FORMAT_AS(float, double);
+FMT_FORMAT_AS(Char*, const Char*);
+FMT_FORMAT_AS(std::basic_string<Char>, basic_string_view<Char>);
+FMT_FORMAT_AS(std::nullptr_t, const void*);
+
+#undef FMT_FORMAT_AS
+
+template <typename Char>
+struct formatter<void*, Char> : formatter<const void*, Char> {
+  template <typename FormatContext>
+  auto format(void* val, FormatContext& ctx) -> decltype(ctx.out()) {
+    return formatter<const void*, Char>::format(val, ctx);
+  }
+};
+
+template <typename Char, size_t N>
+struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {
+  template <typename FormatContext>
+  auto format(const Char* val, FormatContext& ctx) -> decltype(ctx.out()) {
+    return formatter<basic_string_view<Char>, Char>::format(val, ctx);
+  }
 };
 
 // A formatter for types known only at run time such as variant alternatives.

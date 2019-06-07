@@ -632,6 +632,28 @@ enum type {
   custom_type
 };
 
+// Maps core type T to the corresponding type enum constant.
+template <typename T, typename Char>
+struct type_constant : std::integral_constant<type, none_type> {};
+
+#define FMT_TYPE_CONSTANT(Type, constant) \
+  template <typename Char>                \
+  struct type_constant<Type, Char> : std::integral_constant<type, constant> {}
+
+FMT_TYPE_CONSTANT(int, int_type);
+FMT_TYPE_CONSTANT(unsigned, uint_type);
+FMT_TYPE_CONSTANT(long long, long_long_type);
+FMT_TYPE_CONSTANT(unsigned long long, ulong_long_type);
+FMT_TYPE_CONSTANT(bool, bool_type);
+FMT_TYPE_CONSTANT(Char, char_type);
+FMT_TYPE_CONSTANT(double, double_type);
+FMT_TYPE_CONSTANT(long double, long_double_type);
+FMT_TYPE_CONSTANT(const Char*, cstring_type);
+FMT_TYPE_CONSTANT(basic_string_view<Char>, string_type);
+FMT_TYPE_CONSTANT(const void*, pointer_type);
+
+#undef FMT_TYPE_CONSTANT
+
 FMT_CONSTEXPR bool is_integral(type t) {
   FMT_ASSERT(t != internal::named_arg_type, "invalid argument type");
   return t > internal::none_type && t <= internal::last_integer_type;

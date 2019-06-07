@@ -1876,9 +1876,9 @@ enum TestEnum { A };
 
 TEST(FormatTest, Enum) { EXPECT_EQ("0", fmt::format("{}", A)); }
 
-TEST(FormatTest, EnumFormatterUnambiguous) {
-  fmt::formatter<TestEnum> f;
-  ASSERT_GE(sizeof(f), 0);  // use f to avoid compiler warning
+TEST(FormatTest, FormatterNotSpecialized) {
+  EXPECT_FALSE((fmt::internal::is_formattable<
+    fmt::formatter<TestEnum>, fmt::format_context>::value));
 }
 
 #if FMT_HAS_FEATURE(cxx_strong_enums)
