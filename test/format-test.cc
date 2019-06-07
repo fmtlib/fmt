@@ -1877,7 +1877,7 @@ enum TestEnum { A };
 TEST(FormatTest, Enum) { EXPECT_EQ("0", fmt::format("{}", A)); }
 
 TEST(FormatTest, FormatterNotSpecialized) {
-  EXPECT_FALSE((fmt::internal::is_formattable<
+  EXPECT_FALSE((fmt::internal::has_formatter<
     fmt::formatter<TestEnum>, fmt::format_context>::value));
 }
 

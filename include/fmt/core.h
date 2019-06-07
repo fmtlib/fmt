@@ -492,6 +492,12 @@ struct convert_to_int : bool_constant<!std::is_arithmetic<T>::value &&
 
 namespace internal {
 
+// Specifies if T has an enabled formatter specialization. The type can be
+// formattable even if it doesn't have a formatter e.g. via conversion.
+template <typename T, typename Context>
+using has_formatter =
+    std::is_constructible<typename Context::template formatter_type<T>>;
+
 /** A contiguous memory buffer with an optional growing ability. */
 template <typename T> class buffer {
  private:
@@ -675,10 +681,6 @@ template <typename Context> struct custom_value {
   void (*format)(const void* arg, parse_context& parse_ctx, Context& ctx);
 };
 
-template <typename T, typename Context>
-using is_formattable =
-    std::is_constructible<typename Context::template formatter_type<T>>;
-
 // A formatting argument value.
 template <typename Context> class value {
  public:
@@ -727,7 +729,7 @@ template <typename Context> class value {
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
     custom.format = &format_custom_arg<
-        T, conditional_t<is_formattable<T, Context>::value,
+        T, conditional_t<has_formatter<T, Context>::value,
                          typename Context::template formatter_type<T>,
                          internal::fallback_formatter<T, char_type>>>;
   }
@@ -875,7 +877,7 @@ inline init<C, const T&, custom_type> make_value(const T& val) {
 
 template <typename C, typename T,
           FMT_ENABLE_IF(std::is_class<T>::value&& std::is_convertible<
-                            T, int>::value&& is_formattable<T, C>::value &&
+                            T, int>::value&& has_formatter<T, C>::value &&
                         !std::is_same<T, typename C::char_type>::value)>
 inline init<C, const T&, custom_type> make_value(const T& val) {
   return val;
