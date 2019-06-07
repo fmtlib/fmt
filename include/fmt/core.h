@@ -853,8 +853,8 @@ void make_value(const T*) {
 }
 
 template <typename C, typename T,
-          FMT_ENABLE_IF(convert_to_int<T, typename C::char_type>::value&&
-                            std::is_enum<T>::value)>
+          FMT_ENABLE_IF(std::is_enum<T>::value&&
+                            convert_to_int<T, typename C::char_type>::value)>
 inline init<C, int, int_type> make_value(const T& val) {
   return static_cast<int>(val);
 }
@@ -869,6 +869,14 @@ template <
                   !std::is_convertible<U, basic_string_view<Char>>::value &&
                   !std::is_constructible<basic_string_view<Char>, U>::value &&
                   !internal::is_string<U>::value)>
+inline init<C, const T&, custom_type> make_value(const T& val) {
+  return val;
+}
+
+template <typename C, typename T,
+          FMT_ENABLE_IF(std::is_class<T>::value&& std::is_convertible<
+                            T, int>::value&& is_formattable<T, C>::value &&
+                        !std::is_same<T, typename C::char_type>::value)>
 inline init<C, const T&, custom_type> make_value(const T& val) {
   return val;
 }

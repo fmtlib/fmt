@@ -442,6 +442,25 @@ TEST(CoreTest, ConvertToInt) {
   EXPECT_TRUE((fmt::convert_to_int<enum_with_underlying_type, char>::value));
 }
 
+struct convertible_to_int {
+  operator int() const { return 42; }
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<convertible_to_int> {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+  auto format(convertible_to_int, format_context& ctx) -> decltype(ctx.out()) {
+    return std::copy_n("foo", 3, ctx.out());
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(CoreTest, FormatterOverridesImplicitConversion) {
+  EXPECT_EQ(fmt::format("{}", convertible_to_int()), "foo");
+}
+
 namespace my_ns {
 template <typename Char> class my_string {
  public:
