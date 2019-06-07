@@ -432,14 +432,29 @@ TEST(StringViewTest, Compare) {
   check_op<std::greater_equal>();
 }
 
-enum basic_enum {};
-enum enum_with_underlying_type : char {};
+struct enabled_formatter {};
+struct disabled_formatter {};
+struct disabled_formatter_convertible {
+  operator int() const { return 42; }
+};
 
-TEST(CoreTest, ConvertToInt) {
-  EXPECT_FALSE((fmt::convert_to_int<char, char>::value));
-  EXPECT_FALSE((fmt::convert_to_int<const char*, char>::value));
-  EXPECT_TRUE((fmt::convert_to_int<basic_enum, char>::value));
-  EXPECT_TRUE((fmt::convert_to_int<enum_with_underlying_type, char>::value));
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<enabled_formatter> {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+  auto format(enabled_formatter, format_context& ctx) -> decltype(ctx.out()) {
+    return ctx.out();
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(CoreTest, HasFormatter) {
+  using fmt::internal::has_formatter;
+  using context = fmt::format_context;
+  EXPECT_TRUE((has_formatter<enabled_formatter, context>::value));
+  EXPECT_FALSE((has_formatter<disabled_formatter, context>::value));
+  EXPECT_FALSE((has_formatter<disabled_formatter_convertible, context>::value));
 }
 
 struct convertible_to_int {

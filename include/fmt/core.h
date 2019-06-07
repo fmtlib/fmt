@@ -483,17 +483,19 @@ template <typename Context> class basic_format_args;
 // A formatter for objects of type T.
 template <typename T, typename Char = char, typename Enable = void>
 struct formatter {
+  // A deleted default constructor indicates a disabled formatter.
   formatter() = delete;
 };
 
 template <typename T, typename Char, typename Enable = void>
-struct convert_to_int : bool_constant<!std::is_arithmetic<T>::value &&
-                                      std::is_convertible<T, int>::value> {};
+struct FMT_DEPRECATED convert_to_int
+    : bool_constant<!std::is_arithmetic<T>::value &&
+                    std::is_convertible<T, int>::value> {};
 
 namespace internal {
 
-// Specifies if T has an enabled formatter specialization. The type can be
-// formattable even if it doesn't have a formatter e.g. via conversion.
+// Specifies if T has an enabled formatter specialization. A type can be
+// formattable even if it doesn't have a formatter e.g. via a conversion.
 template <typename T, typename Context>
 using has_formatter =
     std::is_constructible<typename Context::template formatter_type<T>>;
@@ -603,15 +605,15 @@ inline Container& get_container(std::back_insert_iterator<Container> it) {
   return *accessor(it).container;
 }
 
-template <typename T> struct no_formatter_error : std::false_type {};
-
 template <typename T, typename Char = char, typename Enable = void>
 struct fallback_formatter {
-  static_assert(
-      no_formatter_error<T>::value,
-      "don't know how to format the type, include fmt/ostream.h if it provides "
-      "an operator<< that should be used");
+  fallback_formatter() = delete;
 };
+
+// Specifies if T has an enabled fallback_formatter specialization.
+template <typename T, typename Context>
+using has_fallback_formatter =
+    std::is_constructible<fallback_formatter<T, typename Context::char_type>>;
 
 template <typename Char> struct named_arg_base;
 
@@ -657,8 +659,6 @@ FMT_TYPE_CONSTANT(long double, long_double_type);
 FMT_TYPE_CONSTANT(const Char*, cstring_type);
 FMT_TYPE_CONSTANT(basic_string_view<Char>, string_type);
 FMT_TYPE_CONSTANT(const void*, pointer_type);
-
-#undef FMT_TYPE_CONSTANT
 
 FMT_CONSTEXPR bool is_integral(type t) {
   FMT_ASSERT(t != internal::named_arg_type, "invalid argument type");
@@ -795,6 +795,7 @@ FMT_MAKE_VALUE_SAME(long_long_type, long long)
 FMT_MAKE_VALUE_SAME(ulong_long_type, unsigned long long)
 FMT_MAKE_VALUE(int_type, signed char, int)
 FMT_MAKE_VALUE(uint_type, unsigned char, unsigned)
+FMT_MAKE_VALUE(char_type, char, int)
 
 // This doesn't use FMT_MAKE_VALUE because of ambiguity in gcc 4.4.
 template <typename C, typename Char,
@@ -803,10 +804,11 @@ FMT_CONSTEXPR init<C, int, char_type> make_value(Char val) {
   return {val};
 }
 
-template <typename C,
-          FMT_ENABLE_IF(!std::is_same<typename C::char_type, char>::value)>
-FMT_CONSTEXPR init<C, int, char_type> make_value(char val) {
-  return val;
+template <typename C, typename T,
+          FMT_ENABLE_IF(is_char<T>::value && !std::is_same<T, char>::value &&
+                        !std::is_same<T, typename C::char_type>::value)>
+FMT_CONSTEXPR init<C, int, char_type> make_value(const T&) {
+  static_assert(!sizeof(T), "mixing character types is disallowed");
 }
 
 FMT_MAKE_VALUE(double_type, float, double)
@@ -855,8 +857,8 @@ void make_value(const T*) {
 }
 
 template <typename C, typename T,
-          FMT_ENABLE_IF(std::is_enum<T>::value&&
-                            convert_to_int<T, typename C::char_type>::value)>
+          FMT_ENABLE_IF(std::is_enum<T>::value && !has_formatter<T, C>::value &&
+                        !has_fallback_formatter<T, C>::value)>
 inline init<C, int, int_type> make_value(const T& val) {
   return static_cast<int>(val);
 }
@@ -866,8 +868,9 @@ inline init<C, int, int_type> make_value(const T& val) {
 template <
     typename C, typename T, typename Char = typename C::char_type,
     typename U = typename std::remove_volatile<T>::type,
-    FMT_ENABLE_IF(!convert_to_int<U, Char>::value &&
-                  !std::is_same<U, Char>::value &&
+    FMT_ENABLE_IF(!std::is_same<U, Char>::value &&
+                  (!std::is_convertible<U, int>::value ||
+                   has_fallback_formatter<U, C>::value) &&
                   !std::is_convertible<U, basic_string_view<Char>>::value &&
                   !std::is_constructible<basic_string_view<Char>, U>::value &&
                   !internal::is_string<U>::value)>

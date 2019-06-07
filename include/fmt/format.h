@@ -3035,7 +3035,7 @@ class format_int {
   std::string str() const { return std::string(str_, size()); }
 };
 
-// formatter specializations for the core types corresponding to internal::type
+// A formatter specialization for the core types corresponding to internal::type
 // constants.
 template <typename T, typename Char>
 struct formatter<T, Char,
@@ -3130,8 +3130,6 @@ FMT_FORMAT_AS(float, double);
 FMT_FORMAT_AS(Char*, const Char*);
 FMT_FORMAT_AS(std::basic_string<Char>, basic_string_view<Char>);
 FMT_FORMAT_AS(std::nullptr_t, const void*);
-
-#undef FMT_FORMAT_AS
 
 template <typename Char>
 struct formatter<void*, Char> : formatter<const void*, Char> {

@@ -109,14 +109,6 @@ struct fallback_formatter<T, Char,
 };
 }  // namespace internal
 
-// Disable conversion to int if T has an overloaded operator<< which is a free
-// function (not a member of std::ostream).
-template <typename T, typename Char>
-struct convert_to_int<T, Char,
-                      enable_if_t<internal::is_streamable<T, Char>::value>> {
-  static const bool value = false;
-};
-
 template <typename Char>
 void vprint(std::basic_ostream<Char>& os, basic_string_view<Char> format_str,
             basic_format_args<buffer_context<Char>> args) {
