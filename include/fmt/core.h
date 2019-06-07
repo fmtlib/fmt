@@ -70,16 +70,6 @@
 #  define FMT_CONSTEXPR_DECL
 #endif
 
-#ifndef FMT_USE_CONSTEXPR11
-#  define FMT_USE_CONSTEXPR11 \
-    (FMT_USE_CONSTEXPR || FMT_GCC_VERSION >= 406 || FMT_MSC_VER >= 1900)
-#endif
-#if FMT_USE_CONSTEXPR11
-#  define FMT_CONSTEXPR11 constexpr
-#else
-#  define FMT_CONSTEXPR11
-#endif
-
 #ifndef FMT_OVERRIDE
 #  if FMT_HAS_FEATURE(cxx_override) || \
       (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900
@@ -451,7 +441,11 @@ class basic_parse_context : private ErrorHandler {
   }
 
   // Returns the next argument index.
-  FMT_CONSTEXPR unsigned next_arg_id();
+  FMT_CONSTEXPR unsigned next_arg_id() {
+    if (next_arg_id_ >= 0) return internal::to_unsigned(next_arg_id_++);
+    on_error("cannot switch from manual to automatic argument indexing");
+    return 0;
+  }
 
   FMT_CONSTEXPR bool check_arg_id(unsigned) {
     if (next_arg_id_ > 0) {
@@ -827,7 +821,7 @@ FMT_MAKE_VALUE(cstring_type, unsigned char*, const unsigned char*)
 FMT_MAKE_VALUE_SAME(cstring_type, const unsigned char*)
 
 template <typename C, typename S, FMT_ENABLE_IF(internal::is_string<S>::value)>
-FMT_CONSTEXPR11 init<C, basic_string_view<typename C::char_type>, string_type>
+constexpr init<C, basic_string_view<typename C::char_type>, string_type>
 make_value(const S& val) {
   static_assert(std::is_same<typename C::char_type, char_t<S>>::value,
                 "mismatch between char-types of context and argument");
@@ -1056,12 +1050,12 @@ template <typename Context, typename T> struct get_type {
   static const type value = value_type::type_tag;
 };
 
-template <typename Context> FMT_CONSTEXPR11 unsigned long long get_types() {
+template <typename Context> constexpr unsigned long long get_types() {
   return 0;
 }
 
 template <typename Context, typename Arg, typename... Args>
-FMT_CONSTEXPR11 unsigned long long get_types() {
+constexpr unsigned long long get_types() {
   return get_type<Context, Arg>::value | (get_types<Context, Args...>() << 4);
 }
 
@@ -1150,52 +1144,25 @@ using wformat_context = buffer_context<wchar_t>;
  */
 template <typename Context, typename... Args> class format_arg_store {
  private:
-  static const size_t NUM_ARGS = sizeof...(Args);
+  static const size_t num_args = sizeof...(Args);
+  static const bool is_packed = num_args < internal::max_packed_args;
 
-  // Packed is a macro on MinGW so use IS_PACKED instead.
-  static const bool IS_PACKED = NUM_ARGS < internal::max_packed_args;
-
-  using value_type = conditional_t<IS_PACKED, internal::value<Context>,
+  using value_type = conditional_t<is_packed, internal::value<Context>,
                                    basic_format_arg<Context>>;
 
   // If the arguments are not packed, add one more element to mark the end.
-  static const size_t DATA_SIZE =
-      NUM_ARGS + (IS_PACKED && NUM_ARGS != 0 ? 0 : 1);
-  value_type data_[DATA_SIZE];
+  value_type data_[num_args + (!is_packed || num_args == 0 ? 1 : 0)];
 
   friend class basic_format_args<Context>;
 
-  static FMT_CONSTEXPR11 unsigned long long get_types() {
-    return IS_PACKED ? internal::get_types<Context, Args...>()
-                     : internal::is_unpacked_bit | NUM_ARGS;
-  }
-
  public:
-#if FMT_USE_CONSTEXPR11
-  static FMT_CONSTEXPR11 unsigned long long TYPES = get_types();
-#else
-  static const unsigned long long TYPES;
-#endif
+  static constexpr unsigned long long TYPES =
+    is_packed ? internal::get_types<Context, Args...>()
+                     : internal::is_unpacked_bit | num_args;
 
-#if (FMT_GCC_VERSION && FMT_GCC_VERSION <= 405) || \
-    (FMT_MSC_VER && FMT_MSC_VER <= 1800)
-  // Workaround array initialization issues in gcc <= 4.5 and MSVC <= 2013.
-  format_arg_store(const Args&... args) {
-    value_type init[DATA_SIZE] = {
-        internal::make_arg<IS_PACKED, Context>(args)...};
-    std::memcpy(data_, init, sizeof(init));
-  }
-#else
   format_arg_store(const Args&... args)
-      : data_{internal::make_arg<IS_PACKED, Context>(args)...} {}
-#endif
+      : data_{internal::make_arg<is_packed, Context>(args)...} {}
 };
-
-#if !FMT_USE_CONSTEXPR11
-template <typename Context, typename... Args>
-const unsigned long long format_arg_store<Context, Args...>::TYPES =
-    get_types();
-#endif
 
 /**
   \rst

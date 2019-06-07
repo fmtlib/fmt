@@ -1112,13 +1112,6 @@ struct basic_format_specs : align_spec, core_format_specs {
 
 typedef basic_format_specs<char> format_specs;
 
-template <typename Char, typename ErrorHandler>
-FMT_CONSTEXPR unsigned basic_parse_context<Char, ErrorHandler>::next_arg_id() {
-  if (next_arg_id_ >= 0) return internal::to_unsigned(next_arg_id_++);
-  on_error("cannot switch from manual to automatic argument indexing");
-  return 0;
-}
-
 namespace internal {
 
 namespace grisu_options {
