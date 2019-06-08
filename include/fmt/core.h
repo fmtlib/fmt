@@ -687,34 +687,32 @@ template <typename Context> class value {
     long double long_double_value;
     const void* pointer;
     string_value<char_type> string;
-    string_value<signed char> sstring;
-    string_value<unsigned char> ustring;
     custom_value<Context> custom;
     const named_arg_base<char_type>* named_arg;
   };
 
   FMT_CONSTEXPR value(int val = 0) : int_value(val) {}
   FMT_CONSTEXPR value(unsigned val) : uint_value(val) {}
-  value(long long val) { long_long_value = val; }
-  value(unsigned long long val) { ulong_long_value = val; }
-  value(double val) { double_value = val; }
-  value(long double val) { long_double_value = val; }
+  value(long long val) : long_long_value(val) {}
+  value(unsigned long long val) : ulong_long_value(val) {}
+  value(double val) : double_value(val) {}
+  value(long double val) : long_double_value(val) {}
   value(const char_type* val) { string.value = val; }
   value(const signed char* val) {
     static_assert(std::is_same<char, char_type>::value,
                   "incompatible string types");
-    sstring.value = val;
+    string.value = reinterpret_cast<const char*>(val);
   }
   value(const unsigned char* val) {
     static_assert(std::is_same<char, char_type>::value,
                   "incompatible string types");
-    ustring.value = val;
+    string.value = reinterpret_cast<const char*>(val);
   }
   value(basic_string_view<char_type> val) {
     string.value = val.data();
     string.size = val.size();
   }
-  value(const void* val) { pointer = val; }
+  value(const void* val) : pointer(val) {}
 
   template <typename T> explicit value(const T& val) {
     custom.value = &val;
@@ -727,7 +725,7 @@ template <typename Context> class value {
                          internal::fallback_formatter<T, char_type>>>;
   }
 
-  value(const named_arg_base<char_type>& arg) { named_arg = &arg; }
+  value(const named_arg_base<char_type>& val) { named_arg = &val; }
 
  private:
   // Formats an argument of a custom type, such as a user-defined class.
