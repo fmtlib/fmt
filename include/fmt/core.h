@@ -376,8 +376,7 @@ template <typename S>
 struct is_compile_string : std::is_base_of<compile_string, S> {};
 
 template <typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
-FMT_CONSTEXPR basic_string_view<typename S::char_type> to_string_view(
-    const S& s) {
+constexpr basic_string_view<typename S::char_type> to_string_view(const S& s) {
   return s;
 }
 
@@ -610,7 +609,6 @@ using has_fallback_formatter =
     std::is_constructible<fallback_formatter<T, typename Context::char_type>>;
 
 template <typename Char> struct named_arg_base;
-
 template <typename T, typename Char> struct named_arg;
 
 enum type {
@@ -692,6 +690,7 @@ template <typename Context> class value {
     string_value<signed char> sstring;
     string_value<unsigned char> ustring;
     custom_value<Context> custom;
+    const named_arg_base<char_type>* named_arg;
   };
 
   FMT_CONSTEXPR value(int val = 0) : int_value(val) {}
@@ -728,9 +727,7 @@ template <typename Context> class value {
                          internal::fallback_formatter<T, char_type>>>;
   }
 
-  const named_arg_base<char_type>& as_named_arg() {
-    return *static_cast<const named_arg_base<char_type>*>(pointer);
-  }
+  value(const named_arg_base<char_type>& arg) { named_arg = &arg; }
 
  private:
   // Formats an argument of a custom type, such as a user-defined class.
@@ -880,12 +877,12 @@ inline init<C, const T&, custom_type> make_value(const T& val) {
   return val;
 }
 
-template <typename C, typename T>
-init<C, const void*, named_arg_type> make_value(
-    const named_arg<T, typename C::char_type>& val) {
+template <typename C, typename T, typename Char = typename C::char_type>
+init<C, const named_arg_base<Char>&, named_arg_type> make_value(
+    const named_arg<T, Char>& val) {
   basic_format_arg<C> arg = make_arg<C>(val.value);
   std::memcpy(val.data, &arg, sizeof(arg));
-  return static_cast<const void*>(&val);
+  return val;
 }
 
 // Maximum number of arguments with packed types.
@@ -1012,7 +1009,7 @@ template <typename Context> class arg_map {
   unsigned size_;
 
   void push_back(value<Context> val) {
-    const internal::named_arg_base<char_type>& named = val.as_named_arg();
+    const auto& named = *val.named_arg;
     map_[size_] = entry{named.name, named.template deserialize<Context>()};
     ++size_;
   }
@@ -1157,8 +1154,8 @@ template <typename Context, typename... Args> class format_arg_store {
 
  public:
   static constexpr unsigned long long TYPES =
-    is_packed ? internal::get_types<Context, Args...>()
-                     : internal::is_unpacked_bit | num_args;
+      is_packed ? internal::get_types<Context, Args...>()
+                : internal::is_unpacked_bit | num_args;
 
   format_arg_store(const Args&... args)
       : data_{internal::make_arg<is_packed, Context>(args)...} {}
@@ -1254,7 +1251,7 @@ template <typename Context> class basic_format_args {
   format_arg get(size_type index) const {
     format_arg arg = do_get(index);
     if (arg.type_ == internal::named_arg_type)
-      arg = arg.value_.as_named_arg().template deserialize<Context>();
+      arg = arg.value_.named_arg->template deserialize<Context>();
     return arg;
   }
 
