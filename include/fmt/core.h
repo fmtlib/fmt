@@ -322,10 +322,16 @@ template <typename Char> class basic_string_view {
 using string_view = basic_string_view<char>;
 using wstring_view = basic_string_view<wchar_t>;
 
+#ifndef __cpp_char8_t
+// A UTF-8 code unit type.
+enum char8_t : unsigned char {};
+#endif
+
 /** Specifies if ``T`` is a character type. Can be specialized by users. */
 template <typename T> struct is_char : std::false_type {};
 template <> struct is_char<char> : std::true_type {};
 template <> struct is_char<wchar_t> : std::true_type {};
+template <> struct is_char<char8_t> : std::true_type {};
 template <> struct is_char<char16_t> : std::true_type {};
 template <> struct is_char<char32_t> : std::true_type {};
 
@@ -719,7 +725,7 @@ template <typename Context> class value {
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
-    custom.format = &format_custom_arg<
+    custom.format = format_custom_arg<
         T, conditional_t<has_formatter<T, Context>::value,
                          typename Context::template formatter_type<T>,
                          internal::fallback_formatter<T, char_type>>>;
@@ -1030,7 +1036,6 @@ template <typename Context> class arg_map {
 class locale_ref {
  private:
   const void* locale_;  // A type-erased pointer to std::locale.
-  friend class locale;
 
  public:
   locale_ref() : locale_(nullptr) {}
