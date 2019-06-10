@@ -229,8 +229,8 @@ struct custom_context {
 
 TEST(ArgTest, MakeValueWithCustomContext) {
   test_struct t;
-  fmt::internal::value<custom_context> arg =
-      fmt::internal::make_value<custom_context>(t);
+  fmt::internal::value<custom_context> arg(
+      fmt::internal::arg_mapper<custom_context>().map(t));
   custom_context ctx = {false, fmt::format_parse_context("")};
   arg.custom.format(&t, ctx.parse_context(), ctx);
   EXPECT_TRUE(ctx.called);
@@ -587,6 +587,10 @@ TEST(CoreTest, FormatForeignStrings) {
   EXPECT_EQ(fmt::format(QString(L"{}"), my_string<wchar_t>(L"42")), L"42");
   EXPECT_EQ(fmt::format(my_string<wchar_t>(L"{}"), QString(L"42")), L"42");
 }
+
+struct implicitly_convertible_to_string {
+  operator std::string() const { return "foo"; }
+};
 
 struct implicitly_convertible_to_string_view {
   operator fmt::string_view() const { return "foo"; }

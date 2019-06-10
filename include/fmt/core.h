@@ -640,12 +640,13 @@ enum type {
 
 // Maps core type T to the corresponding type enum constant.
 template <typename T, typename Char>
-struct type_constant : std::integral_constant<type, none_type> {};
+struct type_constant : std::integral_constant<type, custom_type> {};
 
 #define FMT_TYPE_CONSTANT(Type, constant) \
   template <typename Char>                \
   struct type_constant<Type, Char> : std::integral_constant<type, constant> {}
 
+FMT_TYPE_CONSTANT(const named_arg_base<Char>&, named_arg_type);
 FMT_TYPE_CONSTANT(int, int_type);
 FMT_TYPE_CONSTANT(unsigned, uint_type);
 FMT_TYPE_CONSTANT(long long, long_long_type);
@@ -703,24 +704,16 @@ template <typename Context> class value {
   value(unsigned long long val) : ulong_long_value(val) {}
   value(double val) : double_value(val) {}
   value(long double val) : long_double_value(val) {}
+  value(bool val) : int_value(val) {}
+  value(char_type val) : int_value(val) {}
   value(const char_type* val) { string.value = val; }
-  value(const signed char* val) {
-    static_assert(std::is_same<char, char_type>::value,
-                  "incompatible string types");
-    string.value = reinterpret_cast<const char*>(val);
-  }
-  value(const unsigned char* val) {
-    static_assert(std::is_same<char, char_type>::value,
-                  "incompatible string types");
-    string.value = reinterpret_cast<const char*>(val);
-  }
   value(basic_string_view<char_type> val) {
     string.value = val.data();
     string.size = val.size();
   }
   value(const void* val) : pointer(val) {}
 
-  template <typename T> explicit value(const T& val) {
+  template <typename T> value(const T& val) {
     custom.value = &val;
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
@@ -745,149 +738,101 @@ template <typename Context> class value {
   }
 };
 
-// Value initializer used to delay conversion to value and reduce memory churn.
-template <typename Context, typename T, type TYPE> struct init {
-  T val;
-  static const type type_tag = TYPE;
-
-  FMT_CONSTEXPR init(const T& v) : val(v) {}
-  FMT_CONSTEXPR operator value<Context>() const { return value<Context>(val); }
-};
-
 template <typename Context, typename T>
 FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T& value);
 
-#define FMT_MAKE_VALUE(TAG, ArgType, ValueType)                   \
-  template <typename C>                                           \
-  FMT_CONSTEXPR init<C, ValueType, TAG> make_value(ArgType val) { \
-    return static_cast<ValueType>(val);                           \
-  }
-
-#define FMT_MAKE_VALUE_SAME(TAG, Type)                    \
-  template <typename C>                                   \
-  FMT_CONSTEXPR init<C, Type, TAG> make_value(Type val) { \
-    return val;                                           \
-  }
-
-FMT_MAKE_VALUE(bool_type, bool, int)
-FMT_MAKE_VALUE(int_type, short, int)
-FMT_MAKE_VALUE(uint_type, unsigned short, unsigned)
-FMT_MAKE_VALUE_SAME(int_type, int)
-FMT_MAKE_VALUE_SAME(uint_type, unsigned)
-
 // To minimize the number of types we need to deal with, long is translated
 // either to int or to long long depending on its size.
-using long_type = conditional_t<sizeof(long) == sizeof(int), int, long long>;
-FMT_MAKE_VALUE((sizeof(long) == sizeof(int) ? int_type : long_long_type), long,
-               long_type)
-using ulong_type = conditional_t<sizeof(unsigned long) == sizeof(unsigned),
-                                 unsigned, unsigned long long>;
-FMT_MAKE_VALUE((sizeof(unsigned long) == sizeof(unsigned) ? uint_type
-                                                          : ulong_long_type),
-               unsigned long, ulong_type)
+enum { long_short = sizeof(long) == sizeof(int) };
+using long_type = conditional_t<long_short, int, long long>;
+using ulong_type = conditional_t<long_short, unsigned, unsigned long long>;
 
-FMT_MAKE_VALUE_SAME(long_long_type, long long)
-FMT_MAKE_VALUE_SAME(ulong_long_type, unsigned long long)
-FMT_MAKE_VALUE(int_type, signed char, int)
-FMT_MAKE_VALUE(uint_type, unsigned char, unsigned)
-FMT_MAKE_VALUE(char_type, char, int)
+// Maps formatting arguments to core types.
+template <typename Context> struct arg_mapper {
+  using char_type = typename Context::char_type;
 
-// This doesn't use FMT_MAKE_VALUE because of ambiguity in gcc 4.4.
-template <typename C, typename Char,
-          FMT_ENABLE_IF(std::is_same<typename C::char_type, Char>::value)>
-FMT_CONSTEXPR init<C, int, char_type> make_value(Char val) {
-  return {val};
-}
+  FMT_CONSTEXPR int map(signed char val) { return val; }
+  FMT_CONSTEXPR unsigned map(unsigned char val) { return val; }
+  FMT_CONSTEXPR int map(short val) { return val; }
+  FMT_CONSTEXPR unsigned map(unsigned short val) { return val; }
+  FMT_CONSTEXPR int map(int val) { return val; }
+  FMT_CONSTEXPR unsigned map(unsigned val) { return val; }
+  FMT_CONSTEXPR long_type map(long val) { return val; }
+  FMT_CONSTEXPR ulong_type map(unsigned long val) { return val; }
+  FMT_CONSTEXPR long long map(long long val) { return val; }
+  FMT_CONSTEXPR unsigned long long map(unsigned long long val) { return val; }
+  FMT_CONSTEXPR bool map(bool val) { return val; }
 
-template <typename C, typename T,
-          FMT_ENABLE_IF(is_char<T>::value && !std::is_same<T, char>::value &&
-                        !std::is_same<T, typename C::char_type>::value)>
-FMT_CONSTEXPR init<C, int, char_type> make_value(const T&) {
-  static_assert(!sizeof(T), "mixing character types is disallowed");
-}
+  template <typename T, FMT_ENABLE_IF(is_char<T>::value)>
+  FMT_CONSTEXPR char_type map(const T& val) {
+    static_assert(
+        std::is_same<T, char>::value || std::is_same<T, char_type>::value,
+        "mixing character types is disallowed");
+    return val;
+  }
 
-FMT_MAKE_VALUE(double_type, float, double)
-FMT_MAKE_VALUE_SAME(double_type, double)
-FMT_MAKE_VALUE_SAME(long_double_type, long double)
+  FMT_CONSTEXPR double map(float val) { return val; }
+  FMT_CONSTEXPR double map(double val) { return val; }
+  FMT_CONSTEXPR long double map(long double val) { return val; }
 
-// Formatting of wide strings into a narrow buffer and multibyte strings
-// into a wide buffer is disallowed (https://github.com/fmtlib/fmt/pull/606).
-FMT_MAKE_VALUE(cstring_type, typename C::char_type*,
-               const typename C::char_type*)
-FMT_MAKE_VALUE(cstring_type, const typename C::char_type*,
-               const typename C::char_type*)
-FMT_MAKE_VALUE(cstring_type, signed char*, const signed char*)
-FMT_MAKE_VALUE_SAME(cstring_type, const signed char*)
-FMT_MAKE_VALUE(cstring_type, unsigned char*, const unsigned char*)
-FMT_MAKE_VALUE_SAME(cstring_type, const unsigned char*)
+  FMT_CONSTEXPR const char_type* map(char_type* val) { return val; }
+  FMT_CONSTEXPR const char_type* map(const char_type* val) { return val; }
+  template <typename T, FMT_ENABLE_IF(is_string<T>::value)>
+  FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
+    static_assert(std::is_same<char_type, char_t<T>>::value,
+                  "mixing character types is disallowed");
+    return to_string_view(val);
+  }
+  template <typename T,
+            FMT_ENABLE_IF(
+                std::is_constructible<basic_string_view<char_type>, T>::value &&
+                !internal::is_string<T>::value)>
+  FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
+    return basic_string_view<char_type>(val);  // TODO: move to to_string_view
+  }
+  FMT_CONSTEXPR const char* map(const signed char* val) {
+    static_assert(std::is_same<char_type, char>::value, "invalid string type");
+    return reinterpret_cast<const char*>(val);
+  }
+  FMT_CONSTEXPR const char* map(const unsigned char* val) {
+    static_assert(std::is_same<char_type, char>::value, "invalid string type");
+    return reinterpret_cast<const char*>(val);
+  }
 
-template <typename C, typename S, FMT_ENABLE_IF(internal::is_string<S>::value)>
-constexpr init<C, basic_string_view<typename C::char_type>, string_type>
-make_value(const S& val) {
-  static_assert(std::is_same<typename C::char_type, char_t<S>>::value,
-                "mismatch between char-types of context and argument");
-  return to_string_view(val);
-}
+  FMT_CONSTEXPR const void* map(void* val) { return val; }
+  FMT_CONSTEXPR const void* map(const void* val) { return val; }
+  template <typename T> FMT_CONSTEXPR int map(const T*) {
+    // Formatting of arbitrary pointers is disallowed. If you want to output
+    // a pointer cast it to "void *" or "const void *". In particular, this
+    // forbids formatting of "[const] volatile char *" which is printed as bool
+    // by iostreams.
+    static_assert(!sizeof(T), "formatting of non-void pointers is disallowed");
+    return 0;
+  }
 
-template <
-    typename C, typename T, typename Char = typename C::char_type,
-    FMT_ENABLE_IF(std::is_constructible<basic_string_view<Char>, T>::value &&
-                  !internal::is_string<T>::value)>
-inline init<C, basic_string_view<Char>, string_type> make_value(const T& val) {
-  return basic_string_view<Char>(val);
-}
+  template <typename T,
+            FMT_ENABLE_IF(std::is_enum<T>::value &&
+                          !has_formatter<T, Context>::value &&
+                          !has_fallback_formatter<T, Context>::value)>
+  FMT_CONSTEXPR int map(const T& val) {
+    return static_cast<int>(val);
+  }
+  template <typename T,
+            FMT_ENABLE_IF(!is_string<T>::value && !is_char<T>::value &&
+                          (has_formatter<T, Context>::value ||
+                           has_fallback_formatter<T, Context>::value))>
+  FMT_CONSTEXPR const T& map(const T& val) {
+    return val;
+  }
 
-FMT_MAKE_VALUE(pointer_type, void*, const void*)
-FMT_MAKE_VALUE_SAME(pointer_type, const void*)
-FMT_MAKE_VALUE(pointer_type, std::nullptr_t, const void*)
-
-// Formatting of arbitrary pointers is disallowed. If you want to output a
-// pointer cast it to "void *" or "const void *". In particular, this forbids
-// formatting of "[const] volatile char *" which is printed as bool by
-// iostreams.
-template <typename C, typename T,
-          FMT_ENABLE_IF(!std::is_same<T, typename C::char_type>::value)>
-void make_value(const T*) {
-  static_assert(!sizeof(T), "formatting of non-void pointers is disallowed");
-}
-
-template <typename C, typename T,
-          FMT_ENABLE_IF(std::is_enum<T>::value && !has_formatter<T, C>::value &&
-                        !has_fallback_formatter<T, C>::value)>
-inline init<C, int, int_type> make_value(const T& val) {
-  return static_cast<int>(val);
-}
-
-// Implicit conversion to std::string is disallowed because it would be unsafe:
-// https://github.com/fmtlib/fmt/issues/729
-template <
-    typename C, typename T, typename Char = typename C::char_type,
-    typename U = typename std::remove_volatile<T>::type,
-    FMT_ENABLE_IF(!std::is_same<U, Char>::value &&
-                  (!std::is_convertible<U, int>::value ||
-                   has_fallback_formatter<U, C>::value) &&
-                  !std::is_convertible<U, basic_string_view<Char>>::value &&
-                  !std::is_constructible<basic_string_view<Char>, U>::value &&
-                  !internal::is_string<U>::value)>
-inline init<C, const T&, custom_type> make_value(const T& val) {
-  return val;
-}
-
-template <typename C, typename T,
-          FMT_ENABLE_IF(std::is_class<T>::value&& std::is_convertible<
-                            T, int>::value&& has_formatter<T, C>::value &&
-                        !std::is_same<T, typename C::char_type>::value)>
-inline init<C, const T&, custom_type> make_value(const T& val) {
-  return val;
-}
-
-template <typename C, typename T, typename Char = typename C::char_type>
-init<C, const named_arg_base<Char>&, named_arg_type> make_value(
-    const named_arg<T, Char>& val) {
-  basic_format_arg<C> arg = make_arg<C>(val.value);
-  std::memcpy(val.data, &arg, sizeof(arg));
-  return val;
-}
+  template <typename T>
+  FMT_CONSTEXPR const named_arg_base<char_type>& map(
+      const named_arg<T, char_type>& val) {
+    auto arg = make_arg<Context>(val.value);
+    std::memcpy(val.data, &arg, sizeof(arg));
+    return val;
+  }
+};
 
 // Maximum number of arguments with packed types.
 enum { max_packed_args = 15 };
@@ -1045,9 +990,10 @@ class locale_ref {
 };
 
 template <typename Context, typename T> struct get_type {
-  typedef decltype(make_value<Context>(
-      std::declval<typename std::decay<T>::type&>())) value_type;
-  static const type value = value_type::type_tag;
+  static const type value = type_constant<
+      decltype(arg_mapper<Context>().map(
+          std::declval<typename std::remove_volatile<T>::type>())),
+      typename Context::char_type>::value;
 };
 
 template <typename Context> constexpr unsigned long long get_types() {
@@ -1063,14 +1009,14 @@ template <typename Context, typename T>
 FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T& value) {
   basic_format_arg<Context> arg;
   arg.type_ = get_type<Context, T>::value;
-  arg.value_ = make_value<Context>(value);
+  arg.value_ = arg_mapper<Context>().map(value);
   return arg;
 }
 
 template <bool IS_PACKED, typename Context, typename T,
           FMT_ENABLE_IF(IS_PACKED)>
-inline value<Context> make_arg(const T& value) {
-  return make_value<Context>(value);
+inline value<Context> make_arg(const T& val) {
+  return arg_mapper<Context>().map(val);
 }
 
 template <bool IS_PACKED, typename Context, typename T,

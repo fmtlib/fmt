@@ -3025,7 +3025,7 @@ class format_int {
 template <typename T, typename Char>
 struct formatter<T, Char,
                  enable_if_t<internal::type_constant<T, Char>::value !=
-                             internal::none_type>> {
+                             internal::custom_type>> {
   FMT_CONSTEXPR formatter() : format_str_(nullptr) {}
 
   // Parses format specifiers stopping either at the end of the range or at the
