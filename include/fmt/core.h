@@ -670,7 +670,7 @@ FMT_CONSTEXPR bool is_arithmetic(type t) {
 }
 
 template <typename Char> struct string_value {
-  const Char* value;
+  const Char* data;
   std::size_t size;
 };
 
@@ -690,6 +690,8 @@ template <typename Context> class value {
     unsigned uint_value;
     long long long_long_value;
     unsigned long long ulong_long_value;
+    bool bool_value;
+    char_type char_value;
     double double_value;
     long double long_double_value;
     const void* pointer;
@@ -704,11 +706,11 @@ template <typename Context> class value {
   value(unsigned long long val) : ulong_long_value(val) {}
   value(double val) : double_value(val) {}
   value(long double val) : long_double_value(val) {}
-  value(bool val) : int_value(val) {}
-  value(char_type val) : int_value(val) {}
-  value(const char_type* val) { string.value = val; }
+  value(bool val) : bool_value(val) {}
+  value(char_type val) : char_value(val) {}
+  value(const char_type* val) { string.data = val; }
   value(basic_string_view<char_type> val) {
-    string.value = val.data();
+    string.data = val.data();
     string.size = val.size();
   }
   value(const void* val) : pointer(val) {}
@@ -914,17 +916,17 @@ FMT_CONSTEXPR internal::invoke_result_t<Visitor, int> visit_format_arg(
   case internal::ulong_long_type:
     return vis(arg.value_.ulong_long_value);
   case internal::bool_type:
-    return vis(arg.value_.int_value != 0);
+    return vis(arg.value_.bool_value);
   case internal::char_type:
-    return vis(static_cast<char_type>(arg.value_.int_value));
+    return vis(arg.value_.char_value);
   case internal::double_type:
     return vis(arg.value_.double_value);
   case internal::long_double_type:
     return vis(arg.value_.long_double_value);
   case internal::cstring_type:
-    return vis(arg.value_.string.value);
+    return vis(arg.value_.string.data);
   case internal::string_type:
-    return vis(basic_string_view<char_type>(arg.value_.string.value,
+    return vis(basic_string_view<char_type>(arg.value_.string.data,
                                             arg.value_.string.size));
   case internal::pointer_type:
     return vis(arg.value_.pointer);
