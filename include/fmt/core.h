@@ -213,17 +213,6 @@ using std_string_view = std::experimental::basic_string_view<Char>;
 template <typename T> struct std_string_view {};
 #endif
 
-#if (__cplusplus >= 201703L ||                          \
-     (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)) && \
-    __cpp_lib_is_invocable >= 201703L
-template <typename F, typename... Args>
-using invoke_result_t = std::invoke_result_t<F, Args...>;
-#else
-// An implementation of invoke_result for pre-C++17.
-template <typename F, typename... Args>
-using invoke_result_t = typename std::result_of<F(Args...)>::type;
-#endif
-
 // Casts nonnegative integer to unsigned.
 template <typename Int>
 FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
@@ -855,8 +844,8 @@ template <typename Context> class basic_format_arg {
       const T& value);
 
   template <typename Visitor, typename Ctx>
-  friend FMT_CONSTEXPR internal::invoke_result_t<Visitor, int> visit_format_arg(
-      Visitor&& vis, const basic_format_arg<Ctx>& arg);
+  friend FMT_CONSTEXPR auto visit_format_arg(
+      Visitor&& vis, const basic_format_arg<Ctx>& arg) -> decltype(vis(0));
 
   friend class basic_format_args<Context>;
   friend class internal::arg_map<Context>;
@@ -898,8 +887,8 @@ struct monostate {};
   \endrst
  */
 template <typename Visitor, typename Context>
-FMT_CONSTEXPR internal::invoke_result_t<Visitor, int> visit_format_arg(
-    Visitor&& vis, const basic_format_arg<Context>& arg) {
+FMT_CONSTEXPR auto visit_format_arg(
+    Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
   using char_type = typename Context::char_type;
   switch (arg.type_) {
   case internal::none_type:
@@ -937,8 +926,8 @@ FMT_CONSTEXPR internal::invoke_result_t<Visitor, int> visit_format_arg(
 }
 
 template <typename Visitor, typename Context>
-FMT_DEPRECATED FMT_CONSTEXPR internal::invoke_result_t<Visitor, int> visit(
-    Visitor&& vis, const basic_format_arg<Context>& arg) {
+FMT_DEPRECATED FMT_CONSTEXPR auto visit(
+    Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
   return visit_format_arg(std::forward<Visitor>(vis), arg);
 }
 
