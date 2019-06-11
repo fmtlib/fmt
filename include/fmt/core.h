@@ -197,6 +197,8 @@ template <bool B, class T, class F>
 using conditional_t = typename std::conditional<B, T, F>::type;
 template <bool B> using bool_constant = std::integral_constant<bool, B>;
 
+struct monostate {};
+
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
 // to workaround a bug in MSVC 2019 (see #1140 and #1186).
@@ -844,8 +846,9 @@ template <typename Context> class basic_format_arg {
       const T& value);
 
   template <typename Visitor, typename Ctx>
-  friend FMT_CONSTEXPR auto visit_format_arg(
-      Visitor&& vis, const basic_format_arg<Ctx>& arg) -> decltype(vis(0));
+  friend FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
+                                             const basic_format_arg<Ctx>& arg)
+      -> decltype(vis(0));
 
   friend class basic_format_args<Context>;
   friend class internal::arg_map<Context>;
@@ -877,8 +880,6 @@ template <typename Context> class basic_format_arg {
   bool is_arithmetic() const { return internal::is_arithmetic(type_); }
 };
 
-struct monostate {};
-
 /**
   \rst
   Visits an argument dispatching to the appropriate visit method based on
@@ -887,8 +888,9 @@ struct monostate {};
   \endrst
  */
 template <typename Visitor, typename Context>
-FMT_CONSTEXPR auto visit_format_arg(
-    Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
+FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
+                                    const basic_format_arg<Context>& arg)
+    -> decltype(vis(0)) {
   using char_type = typename Context::char_type;
   switch (arg.type_) {
   case internal::none_type:
@@ -926,8 +928,9 @@ FMT_CONSTEXPR auto visit_format_arg(
 }
 
 template <typename Visitor, typename Context>
-FMT_DEPRECATED FMT_CONSTEXPR auto visit(
-    Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
+FMT_DEPRECATED FMT_CONSTEXPR auto visit(Visitor&& vis,
+                                        const basic_format_arg<Context>& arg)
+    -> decltype(vis(0)) {
   return visit_format_arg(std::forward<Visitor>(vis), arg);
 }
 
@@ -950,7 +953,7 @@ template <typename Context> class arg_map {
 
   void push_back(value<Context> val) {
     const auto& named = *val.named_arg;
-    map_[size_] = entry{named.name, named.template deserialize<Context>()};
+    map_[size_] = {named.name, named.template deserialize<Context>()};
     ++size_;
   }
 
@@ -980,12 +983,11 @@ class locale_ref {
   template <typename Locale> Locale get() const;
 };
 
-template <typename Context, typename T> struct get_type {
-  static const type value = type_constant<
-      decltype(arg_mapper<Context>().map(
-          std::declval<typename std::remove_volatile<T>::type>())),
-      typename Context::char_type>::value;
-};
+template <typename Context, typename T>
+using get_type =
+    type_constant<decltype(arg_mapper<Context>().map(
+                      std::declval<typename std::remove_volatile<T>::type>())),
+                  typename Context::char_type>;
 
 template <typename Context> constexpr unsigned long long get_types() {
   return 0;
