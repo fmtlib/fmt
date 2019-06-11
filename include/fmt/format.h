@@ -3165,7 +3165,8 @@ template <typename Char = char> class dynamic_formatter {
   auto format(const T& val, FormatContext& ctx) -> decltype(ctx.out()) {
     handle_specs(ctx);
     internal::specs_checker<null_handler> checker(
-        null_handler(), internal::get_type<FormatContext, T>::value);
+        null_handler(),
+        internal::mapped_type_constant<T, FormatContext>::value);
     checker.on_align(specs_.align());
     if (specs_.flags == 0)
       ;  // Do nothing.

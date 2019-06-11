@@ -827,6 +827,12 @@ template <typename Context> struct arg_mapper {
   }
 };
 
+// A type constant after applying arg_mapper<Context>.
+template <typename T, typename Context>
+using mapped_type_constant =
+    type_constant<decltype(arg_mapper<Context>().map(std::declval<T>())),
+                  typename Context::char_type>;
+
 // Maximum number of arguments with packed types.
 enum { max_packed_args = 15 };
 enum : unsigned long long { is_unpacked_bit = 1ull << 63 };
@@ -983,22 +989,18 @@ class locale_ref {
   template <typename Locale> Locale get() const;
 };
 
-template <typename Context, typename T>
-using get_type =
-    type_constant<decltype(arg_mapper<Context>().map(std::declval<T>())),
-                  typename Context::char_type>;
-
 template <typename> constexpr unsigned long long get_types() { return 0; }
 
 template <typename Context, typename Arg, typename... Args>
 constexpr unsigned long long get_types() {
-  return get_type<Context, Arg>::value | (get_types<Context, Args...>() << 4);
+  return mapped_type_constant<Arg, Context>::value |
+         (get_types<Context, Args...>() << 4);
 }
 
 template <typename Context, typename T>
 FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T& value) {
   basic_format_arg<Context> arg;
-  arg.type_ = get_type<Context, T>::value;
+  arg.type_ = mapped_type_constant<T, Context>::value;
   arg.value_ = arg_mapper<Context>().map(value);
   return arg;
 }

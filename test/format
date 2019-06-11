@@ -643,7 +643,7 @@ struct formatter {
   FMT_CONSTEXPR typename ParseContext::iterator parse(ParseContext& ctx) {
     namespace internal = fmt::internal;
     typedef internal::dynamic_specs_handler<ParseContext> handler_type;
-    auto type = internal::get_type<fmt::buffer_context<Char>, T>::value;
+    auto type = internal::mapped_type_constant<T, fmt::buffer_context<Char>>::value;
     internal::specs_checker<handler_type> handler(handler_type(specs_, ctx),
                                                   type);
     auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
