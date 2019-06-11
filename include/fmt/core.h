@@ -1138,10 +1138,9 @@ template <typename Context> class basic_format_args {
 
   bool is_packed() const { return (types_ & internal::is_unpacked_bit) == 0; }
 
-  typename internal::type type(unsigned index) const {
+  internal::type type(unsigned index) const {
     unsigned shift = index * 4;
-    return static_cast<typename internal::type>((types_ & (0xfull << shift)) >>
-                                                shift);
+    return static_cast<internal::type>((types_ & (0xfull << shift)) >> shift);
   }
 
   friend class internal::arg_map<Context>;
