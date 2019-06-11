@@ -757,7 +757,7 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR bool map(bool val) { return val; }
 
   template <typename T, FMT_ENABLE_IF(is_char<T>::value)>
-  FMT_CONSTEXPR char_type map(const T& val) {
+  FMT_CONSTEXPR char_type map(T val) {
     static_assert(
         std::is_same<T, char>::value || std::is_same<T, char_type>::value,
         "mixing character types is disallowed");
@@ -985,13 +985,10 @@ class locale_ref {
 
 template <typename Context, typename T>
 using get_type =
-    type_constant<decltype(arg_mapper<Context>().map(
-                      std::declval<typename std::remove_volatile<T>::type>())),
+    type_constant<decltype(arg_mapper<Context>().map(std::declval<T>())),
                   typename Context::char_type>;
 
-template <typename Context> constexpr unsigned long long get_types() {
-  return 0;
-}
+template <typename> constexpr unsigned long long get_types() { return 0; }
 
 template <typename Context, typename Arg, typename... Args>
 constexpr unsigned long long get_types() {
