@@ -3481,8 +3481,9 @@ struct format_args_t {
 };
 
 template <typename S, typename OutputIt, typename... Args,
-          FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value &&
-                        !is_contiguous_back_insert_iterator<OutputIt>::value)>
+          FMT_ENABLE_IF(
+              internal::is_output_iterator<OutputIt>::value &&
+              !internal::is_contiguous_back_insert_iterator<OutputIt>::value)>
 inline OutputIt vformat_to(
     OutputIt out, const S& format_str,
     typename format_args_t<OutputIt, char_t<S>>::type args) {

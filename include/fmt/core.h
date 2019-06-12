@@ -1216,7 +1216,24 @@ struct wformat_args : basic_format_args<wformat_context> {
       : basic_format_args<wformat_context>(std::forward<Args>(args)...) {}
 };
 
+template <typename Container> struct is_contiguous : std::false_type {};
+
+template <typename Char>
+struct is_contiguous<std::basic_string<Char>> : std::true_type {};
+
+template <typename Char>
+struct is_contiguous<internal::buffer<Char>> : std::true_type {};
+
 namespace internal {
+
+// Workaround for a SFINAE issue in gcc < 9:
+// https://stackoverflow.com/q/56436995/471164
+template <typename OutputIt>
+struct is_contiguous_back_insert_iterator : std::false_type {};
+template <typename Container>
+struct is_contiguous_back_insert_iterator<std::back_insert_iterator<Container>>
+    : is_contiguous<Container> {};
+
 template <typename Char> struct named_arg_base {
   basic_string_view<Char> name;
 
@@ -1286,26 +1303,12 @@ inline internal::named_arg<T, Char> arg(const S& name, const T& arg) {
 template <typename S, typename T, typename Char>
 void arg(S, internal::named_arg<T, Char>) = delete;
 
-template <typename Container> struct is_contiguous : std::false_type {};
-
-template <typename Char>
-struct is_contiguous<std::basic_string<Char>> : std::true_type {};
-
-template <typename Char>
-struct is_contiguous<internal::buffer<Char>> : std::true_type {};
-
-template <typename OutputIt>
-struct is_contiguous_back_insert_iterator : std::false_type {};
-
-template <typename Container>
-struct is_contiguous_back_insert_iterator<std::back_insert_iterator<Container>>
-    : is_contiguous<Container> {};
-
 /** Formats a string and writes the output to ``out``. */
 // GCC 8 and earlier cannot handle std::back_insert_iterator<Container> with
 // vformat_to<ArgFormatter>(...) overload, so SFINAE on iterator type instead.
 template <typename OutputIt, typename S, typename Char = char_t<S>,
-          FMT_ENABLE_IF(is_contiguous_back_insert_iterator<OutputIt>::value)>
+          FMT_ENABLE_IF(
+              internal::is_contiguous_back_insert_iterator<OutputIt>::value)>
 OutputIt vformat_to(OutputIt out, const S& format_str,
                     basic_format_args<buffer_context<Char>> args) {
   using container = typename std::remove_reference<decltype(
