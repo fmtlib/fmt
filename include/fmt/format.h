@@ -3460,7 +3460,7 @@ template <typename It> class is_output_iterator {
   template <typename U> static const char& test(...);
 
   typedef decltype(test<It>(typename it_category<It>::type{})) type;
-  typedef typename std::remove_reference<type>::type result;
+  typedef remove_reference_t<type> result;
 
  public:
   static const bool value = !std::is_const<result>::value;

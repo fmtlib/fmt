@@ -196,6 +196,8 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 template <bool B, class T, class F>
 using conditional_t = typename std::conditional<B, T, F>::type;
 template <bool B> using bool_constant = std::integral_constant<bool, B>;
+template <typename T>
+using remove_reference_t = typename std::remove_reference<T>::type;
 
 struct monostate {};
 
@@ -1311,8 +1313,7 @@ template <typename OutputIt, typename S, typename Char = char_t<S>,
               internal::is_contiguous_back_insert_iterator<OutputIt>::value)>
 OutputIt vformat_to(OutputIt out, const S& format_str,
                     basic_format_args<buffer_context<Char>> args) {
-  using container = typename std::remove_reference<decltype(
-      internal::get_container(out))>::type;
+  using container = remove_reference_t<decltype(internal::get_container(out))>;
   internal::container_buffer<container> buf((internal::get_container(out)));
   internal::vformat_to(buf, to_string_view(format_str), args);
   return out;
