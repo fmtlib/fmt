@@ -796,6 +796,7 @@ template <typename Context> struct arg_mapper {
 
   FMT_CONSTEXPR const void* map(void* val) { return val; }
   FMT_CONSTEXPR const void* map(const void* val) { return val; }
+  FMT_CONSTEXPR const void* map(std::nullptr_t val) { return val; }
   template <typename T> FMT_CONSTEXPR int map(const T*) {
     // Formatting of arbitrary pointers is disallowed. If you want to output
     // a pointer cast it to "void *" or "const void *". In particular, this

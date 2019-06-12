@@ -1576,9 +1576,7 @@ TEST(FormatterTest, FormatPointer) {
   EXPECT_EQ(format("{}", fmt::ptr(up.get())), format("{}", fmt::ptr(up)));
   std::shared_ptr<int> sp(new int(1));
   EXPECT_EQ(format("{}", fmt::ptr(sp.get())), format("{}", fmt::ptr(sp)));
-#if FMT_USE_NULLPTR
   EXPECT_EQ("0x0", format("{}", nullptr));
-#endif
 }
 
 TEST(FormatterTest, FormatString) {
