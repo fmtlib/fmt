@@ -1094,9 +1094,10 @@ template <typename Context, typename... Args> class format_arg_store {
   friend class basic_format_args<Context>;
 
  public:
-  static constexpr unsigned long long TYPES =
+  static constexpr unsigned long long types =
       is_packed ? internal::encode_types<Context, Args...>()
                 : internal::is_unpacked_bit | num_args;
+  FMT_DEPRECATED static constexpr unsigned long long TYPES = types;
 
   format_arg_store(const Args&... args)
       : data_{internal::make_arg<is_packed, Context>(args)...} {}
@@ -1173,7 +1174,7 @@ template <typename Context> class basic_format_args {
    */
   template <typename... Args>
   basic_format_args(const format_arg_store<Context, Args...>& store)
-      : types_(static_cast<unsigned long long>(store.TYPES)) {
+      : types_(static_cast<unsigned long long>(store.types)) {
     set_data(store.data_);
   }
 
@@ -1206,23 +1207,16 @@ template <typename Context> class basic_format_args {
 // It is a separate type rather than an alias to make symbols readable.
 struct format_args : basic_format_args<format_context> {
   template <typename... Args>
-  format_args(Args&&... arg)
-      : basic_format_args<format_context>(std::forward<Args>(arg)...) {}
+  format_args(Args&&... args)
+      : basic_format_args<format_context>(std::forward<Args>(args)...) {}
 };
 struct wformat_args : basic_format_args<wformat_context> {
   template <typename... Args>
-  wformat_args(Args&&... arg)
-      : basic_format_args<wformat_context>(std::forward<Args>(arg)...) {}
+  wformat_args(Args&&... args)
+      : basic_format_args<wformat_context>(std::forward<Args>(args)...) {}
 };
 
 namespace internal {
-template <typename Context>
-FMT_CONSTEXPR typename Context::format_arg get_arg(Context& ctx, unsigned id) {
-  auto arg = ctx.arg(id);
-  if (!arg) ctx.on_error("argument index out of range");
-  return arg;
-}
-
 template <typename Char> struct named_arg_base {
   basic_string_view<Char> name;
 

@@ -1737,6 +1737,13 @@ FMT_CONSTEXPR void set_dynamic_spec(T& value, FormatArg arg, ErrorHandler eh) {
 
 struct auto_id {};
 
+template <typename Context>
+FMT_CONSTEXPR typename Context::format_arg get_arg(Context& ctx, unsigned id) {
+  auto arg = ctx.arg(id);
+  if (!arg) ctx.on_error("argument index out of range");
+  return arg;
+}
+
 // The standard format specifier handler with checking.
 template <typename ParseContext, typename Context>
 class specs_handler : public specs_setter<typename Context::char_type> {
