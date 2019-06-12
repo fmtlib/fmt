@@ -243,13 +243,14 @@ namespace internal {
 #endif
 
 // A fallback implementation of uintptr_t for systems that lack it.
-namespace uintptr {
-struct uintptr_t {
+struct uintptr {
   unsigned char value[sizeof(void*)];
 };
-}  // namespace uintptr
-using uintptr::uintptr_t;
-typedef std::numeric_limits<uintptr_t> numutil;
+#ifdef UINTPTR_MAX
+using uintptr_t = ::uintptr_t;
+#else
+using uintptr_t = uintptr;
+#endif
 
 template <typename T> inline bool use_grisu() {
   return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559 &&
@@ -303,25 +304,7 @@ typename Allocator::value_type* allocate(Allocator& alloc, std::size_t n) {
 #endif
 }
 }  // namespace internal
-FMT_END_NAMESPACE
 
-namespace std {
-using namespace fmt::v5::internal::uintptr;
-// Standard permits specialization of std::numeric_limits. This specialization
-// is used to detect presence of uintptr_t.
-template <>
-class numeric_limits<fmt::internal::uintptr_t>
-    : public std::numeric_limits<int> {
- public:
-  typedef uintptr_t uintptr_type;
-
-  static uintptr_type to_uint(const void* p) {
-    return fmt::internal::bit_cast<uintptr_type>(p);
-  }
-};
-}  // namespace std
-
-FMT_BEGIN_NAMESPACE
 template <typename Range> class basic_writer;
 
 template <typename OutputIt, typename T = typename OutputIt::value_type>
@@ -751,7 +734,7 @@ template <unsigned BITS, typename UInt> inline int count_digits(UInt n) {
   return num_digits;
 }
 
-template <> int count_digits<4>(internal::uintptr_t n);
+template <> int count_digits<4>(internal::uintptr n);
 
 template <typename Char>
 inline size_t count_code_points(basic_string_view<Char> s) {
@@ -980,7 +963,7 @@ inline Char* format_uint(Char* buffer, UInt value, int num_digits,
 }
 
 template <unsigned BASE_BITS, typename Char>
-Char* format_uint(Char* buffer, internal::uintptr_t n, int num_digits,
+Char* format_uint(Char* buffer, internal::uintptr n, int num_digits,
                   bool = false) {
   auto char_digits = std::numeric_limits<unsigned char>::digits / 4;
   int start = (num_digits + char_digits - 1) / char_digits - 1;
@@ -1411,7 +1394,7 @@ class arg_formatter_base {
   }
 
   void write_pointer(const void* p) {
-    writer_.write_pointer(internal::numutil::to_uint(p), specs_);
+    writer_.write_pointer(internal::bit_cast<internal::uintptr_t>(p), specs_);
   }
 
  protected:

@@ -236,7 +236,7 @@ FMT_FUNC void system_error::init(int err_code, string_view format_str,
 
 namespace internal {
 
-template <> FMT_FUNC int count_digits<4>(internal::uintptr_t n) {
+template <> FMT_FUNC int count_digits<4>(internal::uintptr n) {
   // Assume little endian; pointer formatting is implementation-defined anyway.
   int i = static_cast<int>(sizeof(void*)) - 1;
   while (i > 0 && n.value[i] == 0) --i;
