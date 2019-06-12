@@ -716,7 +716,7 @@ template <typename Context> class value {
     custom.format = format_custom_arg<
         T, conditional_t<has_formatter<T, Context>::value,
                          typename Context::template formatter_type<T>,
-                         internal::fallback_formatter<T, char_type>>>;
+                         fallback_formatter<T, char_type>>>;
   }
 
   value(const named_arg_base<char_type>& val) { named_arg = &val; }
@@ -781,7 +781,7 @@ template <typename Context> struct arg_mapper {
   template <typename T,
             FMT_ENABLE_IF(
                 std::is_constructible<basic_string_view<char_type>, T>::value &&
-                !internal::is_string<T>::value)>
+                !is_string<T>::value)>
   FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
     return basic_string_view<char_type>(val);
   }
@@ -1266,7 +1266,7 @@ void check_format_string(S);
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline format_arg_store<buffer_context<Char>, Args...> make_args_checked(
     const S& format_str, const Args&... args) {
-  internal::check_format_string<Args...>(format_str);
+  check_format_string<Args...>(format_str);
   return {args...};
 }
 
@@ -1276,7 +1276,7 @@ std::basic_string<Char> vformat(basic_string_view<Char> format_str,
 
 template <typename Char>
 typename buffer_context<Char>::iterator vformat_to(
-    internal::buffer<Char>& buf, basic_string_view<Char> format_str,
+    buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<Char>> args);
 }  // namespace internal
 
