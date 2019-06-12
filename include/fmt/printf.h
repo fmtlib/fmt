@@ -204,10 +204,7 @@ template <typename OutputIt, typename Char> class basic_printf_context;
   \endrst
  */
 template <typename Range>
-class printf_arg_formatter
-    : public internal::function<
-          typename internal::arg_formatter_base<Range>::iterator>,
-      public internal::arg_formatter_base<Range> {
+class printf_arg_formatter : public internal::arg_formatter_base<Range> {
  public:
   typedef decltype(std::declval<Range>().begin()) iterator;
 

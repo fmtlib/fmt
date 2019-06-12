@@ -1228,8 +1228,6 @@ struct is_contiguous<internal::buffer<Char>> : std::true_type {};
 
 namespace internal {
 
-// Workaround for a SFINAE issue in gcc < 9:
-// https://stackoverflow.com/q/56436995/471164
 template <typename OutputIt>
 struct is_contiguous_back_insert_iterator : std::false_type {};
 template <typename Container>

@@ -37,6 +37,8 @@
 #include <memory>
 #include <stdexcept>
 
+#include "core.h"
+
 #ifdef __clang__
 #  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 #else
@@ -56,8 +58,6 @@
 #else
 #  define FMT_CUDA_VERSION 0
 #endif
-
-#include "core.h"
 
 #if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
 #  pragma GCC diagnostic push
@@ -2270,10 +2270,7 @@ void handle_dynamic_spec(Spec& value, arg_ref<typename Context::char_type> ref,
 
 /** The default argument formatter. */
 template <typename Range>
-class arg_formatter
-    : public internal::function<
-          typename internal::arg_formatter_base<Range>::iterator>,
-      public internal::arg_formatter_base<Range> {
+class arg_formatter : public internal::arg_formatter_base<Range> {
  private:
   typedef typename Range::value_type char_type;
   typedef internal::arg_formatter_base<Range> base;
