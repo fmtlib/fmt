@@ -33,6 +33,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -92,10 +93,6 @@
 #  else
 #    define FMT_UNRESTRICTED_UNION struct
 #  endif
-#endif
-
-#if FMT_SECURE_SCL
-#  include <iterator>
 #endif
 
 #ifdef __has_builtin
