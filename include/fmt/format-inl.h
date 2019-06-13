@@ -786,20 +786,21 @@ void sprintf_format(Double value, internal::buffer<char>& buf,
         // Find the decimal point.
         auto p = buf.data(), end = p + n;
         if (*p == '+' || *p == '-') ++p;
-        if (spec.type == 'a' || spec.type == 'A') p += 2;  // Skip "0x".
-        while (p < end && *p >= '0' && *p <= '9') ++p;
-        if (p < end && *p != 'e' && *p != 'E') {
-          if (*p != '.') *p = '.';
-          if (!spec.type) {
-            // Keep only one trailing zero after the decimal point.
-            ++p;
-            if (*p == '0') ++p;
-            while (p != end && *p >= '1' && *p <= '9') ++p;
-            char* where = p;
-            while (p != end && *p == '0') ++p;
-            if (p == end || *p < '0' || *p > '9') {
-              if (p != end) std::memmove(where, p, to_unsigned(end - p));
-              n -= static_cast<unsigned>(p - where);
+        if (spec.type != 'a' && spec.type != 'A') {
+          while (p < end && *p >= '0' && *p <= '9') ++p;
+          if (p < end && *p != 'e' && *p != 'E') {
+            if (*p != '.') *p = '.';
+            if (!spec.type) {
+              // Keep only one trailing zero after the decimal point.
+              ++p;
+              if (*p == '0') ++p;
+              while (p != end && *p >= '1' && *p <= '9') ++p;
+              char* where = p;
+              while (p != end && *p == '0') ++p;
+              if (p == end || *p < '0' || *p > '9') {
+                if (p != end) std::memmove(where, p, to_unsigned(end - p));
+                n -= static_cast<unsigned>(p - where);
+              }
             }
           }
         }

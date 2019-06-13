@@ -1506,6 +1506,8 @@ TEST(FormatterTest, FormatLongDouble) {
   safe_sprintf(buffer, "%Le", 392.65l);
   EXPECT_EQ(buffer, format("{0:e}", 392.65l));
   EXPECT_EQ("+0000392.6", format("{0:+010.4g}", 392.64l));
+  safe_sprintf(buffer, "%La", 3.31l);
+  EXPECT_EQ(buffer, format("{:a}", 3.31l));
 }
 
 TEST(FormatterTest, FormatChar) {
