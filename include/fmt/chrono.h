@@ -386,9 +386,16 @@ inline bool isnan(T value) {
 }
 
 // Convers value to int and checks that it's in the range [0, upper).
-template <typename T> inline int to_int(T value, int upper) {
-  FMT_ASSERT(isnan(value) || (value >= 0 && value <= upper),
-             "invalid value");
+template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
+inline int to_nonnegative_int(T value, int upper) {
+  FMT_ASSERT(value >= 0 && value <= upper, "invalid value");
+  return static_cast<int>(value);
+}
+template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
+inline int to_nonnegative_int(T value, int upper) {
+  FMT_ASSERT(
+      std::isnan(value) || (value >= 0 && value <= static_cast<T>(upper)),
+      "invalid value");
   return static_cast<int>(value);
 }
 
@@ -483,9 +490,9 @@ struct chrono_formatter {
 
   std::tm time() const {
     auto time = std::tm();
-    time.tm_hour = to_int(hour(), 24);
-    time.tm_min = to_int(minute(), 60);
-    time.tm_sec = to_int(second(), 60);
+    time.tm_hour = to_nonnegative_int(hour(), 24);
+    time.tm_min = to_nonnegative_int(minute(), 60);
+    time.tm_sec = to_nonnegative_int(second(), 60);
     return time;
   }
 
@@ -500,7 +507,8 @@ struct chrono_formatter {
     write_sign();
     if (isnan(value)) return write_nan();
     typedef typename int_traits<int>::main_type main_type;
-    main_type n = to_unsigned(to_int(value, (std::numeric_limits<int>::max)()));
+    main_type n = to_unsigned(
+        to_nonnegative_int(value, (std::numeric_limits<int>::max)()));
     int num_digits = internal::count_digits(n);
     if (width > num_digits) out = std::fill_n(out, width - num_digits, '0');
     out = format_decimal<char_type>(out, n, num_digits);
@@ -541,21 +549,21 @@ struct chrono_formatter {
   void on_24_hour(numeric_system ns) {
     if (ns == numeric_system::standard) return write(hour(), 2);
     auto time = tm();
-    time.tm_hour = to_int(hour(), 24);
+    time.tm_hour = to_nonnegative_int(hour(), 24);
     format_localized(time, "%OH");
   }
 
   void on_12_hour(numeric_system ns) {
     if (ns == numeric_system::standard) return write(hour12(), 2);
     auto time = tm();
-    time.tm_hour = to_int(hour12(), 12);
+    time.tm_hour = to_nonnegative_int(hour12(), 12);
     format_localized(time, "%OI");
   }
 
   void on_minute(numeric_system ns) {
     if (ns == numeric_system::standard) return write(minute(), 2);
     auto time = tm();
-    time.tm_min = to_int(minute(), 60);
+    time.tm_min = to_nonnegative_int(minute(), 60);
     format_localized(time, "%OM");
   }
 
@@ -570,7 +578,7 @@ struct chrono_formatter {
       return;
     }
     auto time = tm();
-    time.tm_sec = to_int(second(), 60);
+    time.tm_sec = to_nonnegative_int(second(), 60);
     format_localized(time, "%OS");
   }
 
