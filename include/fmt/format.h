@@ -1423,20 +1423,24 @@ class arg_formatter_base {
     return out();
   }
 
-  template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value ||
-                                      std::is_same<T, char_type>::value)>
+  template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   iterator operator()(T value) {
-    // MSVC2013 fails to compile separate overloads for bool and char_type so
-    // use std::is_same instead.
-    if (std::is_same<T, bool>::value) {
-      if (specs_ && specs_->type) return (*this)(value ? 1 : 0);
-      write(value != 0);
-    } else if (std::is_same<T, char_type>::value) {
-      internal::handle_char_specs(
-          specs_, char_spec_handler(*this, static_cast<char_type>(value)));
-    } else {
-      specs_ ? writer_.write_int(value, *specs_) : writer_.write(value);
-    }
+    if (specs_)
+      writer_.write_int(value, *specs_);
+    else
+      writer_.write(value);
+    return out();
+  }
+
+  iterator operator()(char_type value) {
+    internal::handle_char_specs(
+        specs_, char_spec_handler(*this, static_cast<char_type>(value)));
+    return out();
+  }
+
+  iterator operator()(bool value) {
+    if (specs_ && specs_->type) return (*this)(value ? 1 : 0);
+    write(value != 0);
     return out();
   }
 

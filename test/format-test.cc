@@ -2494,7 +2494,9 @@ TEST(FormatTest, CharTraitsIsNotAmbiguous) {
 struct mychar {
   int value;
   mychar() = default;
-  mychar(char val) : value(val) {}
+
+  template <typename T> mychar(T val) : value(static_cast<int>(val)) {}
+
   operator int() const { return value; }
 };
 
