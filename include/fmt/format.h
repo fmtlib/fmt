@@ -70,10 +70,6 @@
 // Disable the warning about declaration shadowing because it affects too
 // many valid cases.
 #  pragma GCC diagnostic ignored "-Wshadow"
-
-// Disable the warning about nonliteral format strings because we construct
-// them dynamically when falling back to snprintf for FP formatting.
-#  pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #endif
 
 #if FMT_CLANG_VERSION

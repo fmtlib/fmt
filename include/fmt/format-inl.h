@@ -247,8 +247,10 @@ template <> FMT_FUNC int count_digits<4>(internal::uintptr n) {
 template <typename T>
 int format_float(char* buf, std::size_t size, const char* format, int precision,
                  T value) {
-  return precision < 0 ? FMT_SNPRINTF(buf, size, format, value)
-                       : FMT_SNPRINTF(buf, size, format, precision, value);
+  // Suppress the warning about nonliteral format string.
+  auto snprintf_ptr = FMT_SNPRINTF;
+  return precision < 0 ? snprintf_ptr(buf, size, format, value)
+                       : snprintf_ptr(buf, size, format, precision, value);
 }
 
 template <typename T>
