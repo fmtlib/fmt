@@ -266,9 +266,8 @@ inline Dest bit_cast(const Source& source) {
 }
 
 // An implementation of iterator_t for pre-C++20 systems.
-template <typename T> struct iterator_t {
-  typedef decltype(std::begin(std::declval<const T&>())) type;
-};
+template <typename T>
+using iterator_t = decltype(std::begin(std::declval<T&>()));
 
 template <typename Allocator>
 typename Allocator::value_type* allocate(Allocator& alloc, std::size_t n) {
@@ -3313,13 +3312,13 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
   \endrst
  */
 template <typename Range>
-arg_join<typename internal::iterator_t<Range>::type, char> join(
+arg_join<internal::iterator_t<const Range>, char> join(
     const Range& range, string_view sep) {
   return join(std::begin(range), std::end(range), sep);
 }
 
 template <typename Range>
-arg_join<typename internal::iterator_t<Range>::type, wchar_t> join(
+arg_join<internal::iterator_t<const Range>, wchar_t> join(
     const Range& range, wstring_view sep) {
   return join(std::begin(range), std::end(range), sep);
 }
