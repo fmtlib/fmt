@@ -38,7 +38,7 @@ template <> struct int_checker<true> {
   static bool fits_in_int(int) { return true; }
 };
 
-class printf_precision_handler : public function<int> {
+class printf_precision_handler {
  public:
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   int operator()(T value) {
@@ -55,7 +55,7 @@ class printf_precision_handler : public function<int> {
 };
 
 // An argument visitor that returns true iff arg is a zero integer.
-class is_zero_int : public function<bool> {
+class is_zero_int {
  public:
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   bool operator()(T value) {
@@ -72,8 +72,7 @@ template <typename T> struct make_unsigned_or_bool : std::make_unsigned<T> {};
 
 template <> struct make_unsigned_or_bool<bool> { typedef bool type; };
 
-template <typename T, typename Context>
-class arg_converter : public function<void> {
+template <typename T, typename Context> class arg_converter {
  private:
   typedef typename Context::char_type Char;
 
@@ -129,7 +128,7 @@ void convert_arg(basic_format_arg<Context>& arg, Char type) {
 }
 
 // Converts an integer argument to char for printf.
-template <typename Context> class char_converter : public function<void> {
+template <typename Context> class char_converter {
  private:
   basic_format_arg<Context>& arg_;
 
@@ -148,8 +147,7 @@ template <typename Context> class char_converter : public function<void> {
 
 // Checks if an argument is a valid printf width specifier and sets
 // left alignment if it is negative.
-template <typename Char>
-class printf_width_handler : public function<unsigned> {
+template <typename Char> class printf_width_handler {
  private:
   typedef basic_format_specs<Char> format_specs;
 

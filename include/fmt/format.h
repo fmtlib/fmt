@@ -265,31 +265,9 @@ inline Dest bit_cast(const Source& source) {
   return dest;
 }
 
-// An implementation of begin and end for pre-C++11 compilers such as gcc 4.
-template <typename C>
-FMT_CONSTEXPR auto begin(const C& c) -> decltype(c.begin()) {
-  return c.begin();
-}
-template <typename T, std::size_t N>
-FMT_CONSTEXPR T* begin(T (&array)[N]) FMT_NOEXCEPT {
-  return array;
-}
-template <typename C> FMT_CONSTEXPR auto end(const C& c) -> decltype(c.end()) {
-  return c.end();
-}
-template <typename T, std::size_t N>
-FMT_CONSTEXPR T* end(T (&array)[N]) FMT_NOEXCEPT {
-  return array + N;
-}
-
-// An implementation of iterator_t for pre-C++20 compilers such as gcc 4.
+// An implementation of iterator_t for pre-C++20 systems.
 template <typename T> struct iterator_t {
-  typedef decltype(internal::begin(std::declval<const T&>())) type;
-};
-
-// For std::result_of in gcc 4.4.
-template <typename Result> struct function {
-  template <typename T> struct result { typedef Result type; };
+  typedef decltype(std::begin(std::declval<const T&>())) type;
 };
 
 template <typename Allocator>
@@ -1531,7 +1509,7 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(const Char*& begin,
   return value;
 }
 
-template <typename Context> class custom_formatter : public function<bool> {
+template <typename Context> class custom_formatter {
  private:
   typedef typename Context::char_type char_type;
 
@@ -1558,8 +1536,7 @@ template <typename T> struct is_integer {
   };
 };
 
-template <typename ErrorHandler>
-class width_checker : public function<unsigned long long> {
+template <typename ErrorHandler> class width_checker {
  public:
   explicit FMT_CONSTEXPR width_checker(ErrorHandler& eh) : handler_(eh) {}
 
@@ -1579,8 +1556,7 @@ class width_checker : public function<unsigned long long> {
   ErrorHandler& handler_;
 };
 
-template <typename ErrorHandler>
-class precision_checker : public function<unsigned long long> {
+template <typename ErrorHandler> class precision_checker {
  public:
   explicit FMT_CONSTEXPR precision_checker(ErrorHandler& eh) : handler_(eh) {}
 
@@ -3339,13 +3315,13 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
 template <typename Range>
 arg_join<typename internal::iterator_t<Range>::type, char> join(
     const Range& range, string_view sep) {
-  return join(internal::begin(range), internal::end(range), sep);
+  return join(std::begin(range), std::end(range), sep);
 }
 
 template <typename Range>
 arg_join<typename internal::iterator_t<Range>::type, wchar_t> join(
     const Range& range, wstring_view sep) {
-  return join(internal::begin(range), internal::end(range), sep);
+  return join(std::begin(range), std::end(range), sep);
 }
 #endif
 

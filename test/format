@@ -489,9 +489,7 @@ namespace detail {
 
 template <typename Range>
 class arg_formatter
-    : public fmt::internal::function<
-          typename fmt::internal::arg_formatter_base<Range, error_handler>::iterator>,
-      public fmt::internal::arg_formatter_base<Range, error_handler> {
+    : public fmt::internal::arg_formatter_base<Range, error_handler> {
  private:
   using char_type = typename Range::value_type;
   using base = fmt::internal::arg_formatter_base<Range, error_handler>;

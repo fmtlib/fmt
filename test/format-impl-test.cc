@@ -143,7 +143,7 @@ TEST(FPTest, GrisuFormatCompilesWithNonIEEEDouble) {
   grisu_format(4.2f, buf, -1, false, exp);
 }
 
-template <typename T> struct ValueExtractor : fmt::internal::function<T> {
+template <typename T> struct value_extractor {
   T operator()(T value) { return value; }
 
   template <typename U> FMT_NORETURN T operator()(U) {
@@ -157,7 +157,7 @@ TEST(FormatTest, ArgConverter) {
   fmt::visit_format_arg(
       fmt::internal::arg_converter<long long, fmt::format_context>(arg, 'd'),
       arg);
-  EXPECT_EQ(value, fmt::visit_format_arg(ValueExtractor<long long>(), arg));
+  EXPECT_EQ(value, fmt::visit_format_arg(value_extractor<long long>(), arg));
 }
 
 TEST(FormatTest, FormatNegativeNaN) {

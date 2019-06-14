@@ -1890,9 +1890,7 @@ TEST(FormatTest, FixedEnum) { EXPECT_EQ("0", fmt::format("{}", B)); }
 typedef fmt::back_insert_range<fmt::internal::buffer<char>> buffer_range;
 
 class mock_arg_formatter
-    : public fmt::internal::function<
-          fmt::internal::arg_formatter_base<buffer_range>::iterator>,
-      public fmt::internal::arg_formatter_base<buffer_range> {
+    : public fmt::internal::arg_formatter_base<buffer_range> {
  private:
   MOCK_METHOD1(call, void(long long value));
 
