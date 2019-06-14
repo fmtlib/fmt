@@ -60,12 +60,8 @@
 #  define FMT_CUDA_VERSION 0
 #endif
 
-#if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
+#if FMT_GCC_VERSION || FMT_CLANG_VERSION
 #  pragma GCC diagnostic push
-
-// Disable warning about not handling all enums in switch statement even with
-// a default case
-#  pragma GCC diagnostic ignored "-Wswitch-enum"
 
 // Disable the warning about declaration shadowing because it affects too
 // many valid cases.
@@ -124,7 +120,7 @@ FMT_END_NAMESPACE
       do {                            \
         static_cast<void>(sizeof(x)); \
         assert(false);                \
-      } while (false);
+      } while (false)
 #  endif
 #endif
 
@@ -1311,27 +1307,14 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
   if (args.is_packed()) {
     for (unsigned i = 0; /*nothing*/; ++i) {
       internal::type arg_type = args.type(i);
-      switch (arg_type) {
-      case internal::none_type:
-        return;
-      case internal::named_arg_type:
-        push_back(args.values_[i]);
-        break;
-      default:
-        break;  // Do nothing.
-      }
+      if (arg_type == internal::none_type) return;
+      if (arg_type == internal::named_arg_type) push_back(args.values_[i]);
     }
   }
   for (unsigned i = 0;; ++i) {
-    switch (args.args_[i].type_) {
-    case internal::none_type:
-      return;
-    case internal::named_arg_type:
-      push_back(args.args_[i].value_);
-      break;
-    default:
-      break;  // Do nothing.
-    }
+    auto type = args.args_[i].type_;
+    if (type == internal::none_type) return;
+    if (type == internal::named_arg_type) push_back(args.args_[i].value_);
   }
 }
 
@@ -3308,14 +3291,14 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
   \endrst
  */
 template <typename Range>
-arg_join<internal::iterator_t<const Range>, char> join(
-    const Range& range, string_view sep) {
+arg_join<internal::iterator_t<const Range>, char> join(const Range& range,
+                                                       string_view sep) {
   return join(std::begin(range), std::end(range), sep);
 }
 
 template <typename Range>
-arg_join<internal::iterator_t<const Range>, wchar_t> join(
-    const Range& range, wstring_view sep) {
+arg_join<internal::iterator_t<const Range>, wchar_t> join(const Range& range,
+                                                          wstring_view sep) {
   return join(std::begin(range), std::end(range), sep);
 }
 #endif

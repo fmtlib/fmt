@@ -171,9 +171,9 @@ TEST(FormatTest, FormatNegativeNaN) {
 TEST(FormatTest, StrError) {
   char* message = nullptr;
   char buffer[BUFFER_SIZE];
-  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = nullptr, 0),
+  EXPECT_ASSERT(fmt::internal::safe_strerror(EDOM, message = nullptr, 0),
                 "invalid buffer");
-  EXPECT_ASSERT(fmt::safe_strerror(EDOM, message = buffer, 0),
+  EXPECT_ASSERT(fmt::internal::safe_strerror(EDOM, message = buffer, 0),
                 "invalid buffer");
   buffer[0] = 'x';
 #if defined(_GNU_SOURCE) && !defined(__COVERITY__)
@@ -184,7 +184,8 @@ TEST(FormatTest, StrError) {
   int error_code = EDOM;
 #endif
 
-  int result = fmt::safe_strerror(error_code, message = buffer, BUFFER_SIZE);
+  int result =
+      fmt::internal::safe_strerror(error_code, message = buffer, BUFFER_SIZE);
   EXPECT_EQ(result, 0);
   std::size_t message_size = std::strlen(message);
   EXPECT_GE(BUFFER_SIZE - 1u, message_size);
@@ -192,9 +193,10 @@ TEST(FormatTest, StrError) {
 
   // safe_strerror never uses buffer on MinGW.
 #ifndef __MINGW32__
-  result = fmt::safe_strerror(error_code, message = buffer, message_size);
+  result =
+      fmt::internal::safe_strerror(error_code, message = buffer, message_size);
   EXPECT_EQ(ERANGE, result);
-  result = fmt::safe_strerror(error_code, message = buffer, 1);
+  result = fmt::internal::safe_strerror(error_code, message = buffer, 1);
   EXPECT_EQ(buffer, message);  // Message should point to buffer.
   EXPECT_EQ(ERANGE, result);
   EXPECT_STREQ("", message);
@@ -206,14 +208,14 @@ TEST(FormatTest, FormatErrorCode) {
   {
     fmt::memory_buffer buffer;
     format_to(buffer, "garbage");
-    fmt::format_error_code(buffer, 42, "test");
+    fmt::internal::format_error_code(buffer, 42, "test");
     EXPECT_EQ("test: " + msg, to_string(buffer));
   }
   {
     fmt::memory_buffer buffer;
     std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size() + 1,
                        'x');
-    fmt::format_error_code(buffer, 42, prefix);
+    fmt::internal::format_error_code(buffer, 42, prefix);
     EXPECT_EQ(msg, to_string(buffer));
   }
   int codes[] = {42, -1};
@@ -222,14 +224,14 @@ TEST(FormatTest, FormatErrorCode) {
     msg = fmt::format("error {}", codes[i]);
     fmt::memory_buffer buffer;
     std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
-    fmt::format_error_code(buffer, codes[i], prefix);
+    fmt::internal::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(prefix + sep + msg, to_string(buffer));
     std::size_t size = fmt::inline_buffer_size;
     EXPECT_EQ(size, buffer.size());
     buffer.resize(0);
     // Test with a message that doesn't fit into the buffer.
     prefix += 'x';
-    fmt::format_error_code(buffer, codes[i], prefix);
+    fmt::internal::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(msg, to_string(buffer));
   }
 }
