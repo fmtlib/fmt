@@ -52,7 +52,7 @@ template <typename Allocator> class allocator_ref {
   Allocator* get() const { return alloc_; }
 
   value_type* allocate(std::size_t n) {
-    return fmt::internal::allocate(*alloc_, n);
+    return std::allocator_traits<Allocator>::allocate(*alloc_, n);
   }
   void deallocate(value_type* p, std::size_t n) { alloc_->deallocate(p, n); }
 };

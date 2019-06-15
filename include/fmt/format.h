@@ -60,6 +60,11 @@
 #  define FMT_CUDA_VERSION 0
 #endif
 
+#ifdef __GNUC_LIBSTD__
+#  define FMT_GNUC_LIBSTD_VERSION \
+    (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
+#endif
+
 #if FMT_GCC_VERSION || FMT_CLANG_VERSION
 #  pragma GCC diagnostic push
 
@@ -93,11 +98,6 @@
 #  define FMT_HAS_BUILTIN(x) 0
 #endif
 
-#ifdef __GNUC_LIBSTD__
-#  define FMT_GNUC_LIBSTD_VERSION \
-    (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
-#endif
-
 #ifndef FMT_THROW
 #  if FMT_EXCEPTIONS
 #    if FMT_MSC_VER
@@ -125,8 +125,7 @@ FMT_END_NAMESPACE
 #endif
 
 #ifndef FMT_USE_USER_DEFINED_LITERALS
-// For Intel's compiler and NVIDIA's compiler both it and the system gcc/msc
-// must support UDLs.
+// For Intel and NVIDIA compilers both they and the system gcc/msc support UDLs.
 #  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 407 ||      \
        FMT_MSC_VER >= 1900) &&                                              \
       (!(FMT_ICC_VERSION || FMT_CUDA_VERSION) || FMT_ICC_VERSION >= 1500 || \
@@ -162,11 +161,11 @@ FMT_END_NAMESPACE
 // __builtin_clz is broken in clang with Microsoft CodeGen:
 // https://github.com/fmtlib/fmt/issues/519
 #ifndef _MSC_VER
-#  if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clz)
+#  if FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clz)
 #    define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
 #  endif
 
-#  if FMT_GCC_VERSION >= 400 || FMT_HAS_BUILTIN(__builtin_clzll)
+#  if FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clzll)
 #    define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #  endif
 #endif
@@ -260,18 +259,7 @@ inline Dest bit_cast(const Source& source) {
 // An implementation of iterator_t for pre-C++20 systems.
 template <typename T>
 using iterator_t = decltype(std::begin(std::declval<T&>()));
-
-template <typename Allocator>
-typename Allocator::value_type* allocate(Allocator& alloc, std::size_t n) {
-#if __cplusplus >= 201103L || FMT_MSC_VER >= 1700
-  return std::allocator_traits<Allocator>::allocate(alloc, n);
-#else
-  return alloc.allocate(n);
-#endif
-}
 }  // namespace internal
-
-template <typename Range> class basic_writer;
 
 template <typename OutputIt, typename T = typename OutputIt::value_type>
 class output_range {
@@ -294,17 +282,18 @@ class output_range {
 template <typename Container>
 class back_insert_range
     : public output_range<std::back_insert_iterator<Container>> {
-  typedef output_range<std::back_insert_iterator<Container>> base;
+  using base = output_range<std::back_insert_iterator<Container>>;
 
  public:
-  typedef typename Container::value_type value_type;
+  using value_type = typename Container::value_type;
 
   back_insert_range(Container& c) : base(std::back_inserter(c)) {}
   back_insert_range(typename base::iterator it) : base(it) {}
 };
 
-typedef basic_writer<back_insert_range<internal::buffer<char>>> writer;
-typedef basic_writer<back_insert_range<internal::buffer<wchar_t>>> wwriter;
+template <typename Range> class basic_writer;
+using writer = basic_writer<back_insert_range<internal::buffer<char>>>;
+using wwriter = basic_writer<back_insert_range<internal::buffer<wchar_t>>>;
 
 /** A formatting error such as invalid format string. */
 class format_error : public std::runtime_error {
@@ -472,7 +461,7 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
   std::size_t new_capacity = old_capacity + old_capacity / 2;
   if (size > new_capacity) new_capacity = size;
   T* old_data = this->data();
-  T* new_data = internal::allocate<Allocator>(*this, new_capacity);
+  T* new_data = std::allocator_traits<Allocator>::allocate(*this, new_capacity);
   // The following code doesn't throw, so the raw pointer above doesn't leak.
   std::uninitialized_copy(old_data, old_data + this->size(),
                           internal::make_checked(new_data, new_capacity));
