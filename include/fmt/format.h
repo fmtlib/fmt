@@ -232,13 +232,13 @@ namespace internal {
 #endif
 
 // A fallback implementation of uintptr_t for systems that lack it.
-struct uintptr {
+struct fallback_uintptr {
   unsigned char value[sizeof(void*)];
 };
 #ifdef UINTPTR_MAX
 using uintptr_t = ::uintptr_t;
 #else
-using uintptr_t = uintptr;
+using uintptr_t = fallback_uintptr;
 #endif
 
 template <typename T> inline bool use_grisu() {
@@ -700,7 +700,7 @@ template <unsigned BITS, typename UInt> inline int count_digits(UInt n) {
   return num_digits;
 }
 
-template <> int count_digits<4>(internal::uintptr n);
+template <> int count_digits<4>(internal::fallback_uintptr n);
 
 template <typename Char>
 inline size_t count_code_points(basic_string_view<Char> s) {
@@ -929,7 +929,7 @@ inline Char* format_uint(Char* buffer, UInt value, int num_digits,
 }
 
 template <unsigned BASE_BITS, typename Char>
-Char* format_uint(Char* buffer, internal::uintptr n, int num_digits,
+Char* format_uint(Char* buffer, internal::fallback_uintptr n, int num_digits,
                   bool = false) {
   auto char_digits = std::numeric_limits<unsigned char>::digits / 4;
   int start = (num_digits + char_digits - 1) / char_digits - 1;
