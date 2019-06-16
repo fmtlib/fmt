@@ -1836,6 +1836,15 @@ TEST(FormatTest, UnpackedArgs) {
                         6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f', 'g'));
 }
 
+struct string_like {};
+fmt::string_view to_string_view(string_like) { return "foo"; }
+
+TEST(FormatTest, CompileTimeString) {
+  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
+  EXPECT_EQ(L"42", fmt::format(FMT_STRING(L"{}"), 42));
+  EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), string_like()));
+}
+
 #if FMT_USE_USER_DEFINED_LITERALS
 // Passing user-defined literals directly to EXPECT_EQ causes problems
 // with macro argument stringification (#) on some versions of GCC.
@@ -1867,8 +1876,6 @@ TEST(LiteralsTest, NamedArg) {
 TEST(FormatTest, UdlTemplate) {
   EXPECT_EQ("foo", "foo"_format());
   EXPECT_EQ("        42", "{0:10}"_format(42));
-  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
-  EXPECT_EQ(L"42", fmt::format(FMT_STRING(L"{}"), 42));
 }
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 

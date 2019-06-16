@@ -2096,10 +2096,14 @@ FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
 template <typename T, typename ParseContext>
 FMT_CONSTEXPR const typename ParseContext::char_type* parse_format_specs(
     ParseContext& ctx) {
-  // GCC 7.2 requires initializer.
-  typedef typename ParseContext::char_type char_type;
-  conditional_t<has_formatter<T, buffer_context<char_type>>::value,
-                formatter<T, char_type>,
+  using char_type = typename ParseContext::char_type;
+  using context = buffer_context<char_type>;
+  using mapped_type =
+      conditional_t<internal::mapped_type_constant<T, context>::value !=
+                        internal::custom_type,
+                    decltype(arg_mapper<context>().map(std::declval<T>())), T>;
+  conditional_t<has_formatter<mapped_type, context>::value,
+                formatter<mapped_type, char_type>,
                 internal::fallback_formatter<T, char_type>>
       f;
   return f.parse(ctx);
