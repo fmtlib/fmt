@@ -65,20 +65,6 @@
     (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
 #endif
 
-#if FMT_GCC_VERSION || FMT_CLANG_VERSION
-#  pragma GCC diagnostic push
-
-// Disable the warning about declaration shadowing because it affects too
-// many valid cases.
-#  pragma GCC diagnostic ignored "-Wshadow"
-#endif
-
-#ifdef _SECURE_SCL
-#  define FMT_SECURE_SCL _SECURE_SCL
-#else
-#  define FMT_SECURE_SCL 0
-#endif
-
 // Check whether we can use unrestricted unions and use struct if not.
 #ifndef FMT_UNRESTRICTED_UNION
 #  if FMT_MSC_VER >= 1900 || FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION >= 303
@@ -139,7 +125,7 @@ FMT_END_NAMESPACE
       FMT_CUDA_VERSION == 0 &&                                 \
       ((FMT_GCC_VERSION >= 600 && FMT_GCC_VERSION <= 900 &&    \
         __cplusplus >= 201402L) ||                             \
-       (defined(FMT_CLANG_VERSION) && FMT_CLANG_VERSION >= 304))
+       FMT_CLANG_VERSION >= 304)
 #    define FMT_USE_UDL_TEMPLATE 1
 #  else
 #    define FMT_USE_UDL_TEMPLATE 0
@@ -302,7 +288,7 @@ class format_error : public std::runtime_error {
 
 namespace internal {
 
-#if FMT_SECURE_SCL
+#ifdef _SECURE_SCL
 // Make a checked iterator to avoid MSVC warnings.
 template <typename T> using checked_ptr = stdext::checked_array_iterator<T*>;
 template <typename T> checked_ptr<T> make_checked(T* p, std::size_t size) {
@@ -327,8 +313,6 @@ void buffer<T>::append(const U* begin, const U* end) {
 // A UTF-8 string view.
 class u8string_view : public basic_string_view<char8_t> {
  public:
-  typedef char8_t char_type;
-
   u8string_view(const char* s)
       : basic_string_view<char8_t>(reinterpret_cast<const char8_t*>(s)) {}
   u8string_view(const char* s, size_t count) FMT_NOEXCEPT
@@ -3223,9 +3207,6 @@ template <typename It, typename Char> struct arg_join {
   It begin;
   It end;
   basic_string_view<Char> sep;
-
-  arg_join(It begin, It end, basic_string_view<Char> sep)
-      : begin(begin), end(end), sep(sep) {}
 };
 
 template <typename It, typename Char>
@@ -3255,12 +3236,12 @@ struct formatter<arg_join<It, Char>, Char>
  */
 template <typename It>
 arg_join<It, char> join(It begin, It end, string_view sep) {
-  return arg_join<It, char>(begin, end, sep);
+  return {begin, end, sep};
 }
 
 template <typename It>
 arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
-  return arg_join<It, wchar_t>(begin, end, sep);
+  return {begin, end, sep};
 }
 
 // gcc 4.4 on join: internal compiler error: in tsubst_copy, at cp/pt.c:10122
@@ -3650,11 +3631,6 @@ FMT_END_NAMESPACE
 #  include "format-inl.h"
 #else
 #  define FMT_FUNC
-#endif
-
-// Restore warnings.
-#if FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION
-#  pragma GCC diagnostic pop
 #endif
 
 #endif  // FMT_FORMAT_H_
