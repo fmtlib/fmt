@@ -766,7 +766,7 @@ template <typename Context> struct arg_mapper {
     return val;
   }
 
-  FMT_CONSTEXPR double map(float val) { return val; }
+  FMT_CONSTEXPR double map(float val) { return static_cast<double>(val); }
   FMT_CONSTEXPR double map(double val) { return val; }
   FMT_CONSTEXPR long double map(long double val) { return val; }
 

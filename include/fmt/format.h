@@ -73,10 +73,6 @@
 #  pragma GCC diagnostic ignored "-Wshadow"
 #endif
 
-#if FMT_CLANG_VERSION
-#  pragma GCC diagnostic ignored "-Wgnu-string-literal-operator-template"
-#endif
-
 #ifdef _SECURE_SCL
 #  define FMT_SECURE_SCL _SECURE_SCL
 #else
@@ -299,9 +295,9 @@ using wwriter = basic_writer<back_insert_range<internal::buffer<wchar_t>>>;
 class format_error : public std::runtime_error {
  public:
   explicit format_error(const char* message) : std::runtime_error(message) {}
-
   explicit format_error(const std::string& message)
       : std::runtime_error(message) {}
+  ~format_error() FMT_NOEXCEPT;
 };
 
 namespace internal {
@@ -2274,6 +2270,7 @@ class system_error : public std::runtime_error {
       : std::runtime_error("") {
     init(error_code, message, make_format_args(args...));
   }
+  ~system_error() FMT_NOEXCEPT;
 
   int error_code() const { return error_code_; }
 };
@@ -3555,10 +3552,15 @@ template <typename Char> struct udl_arg {
 
 inline namespace literals {
 #  if FMT_USE_UDL_TEMPLATE
+#    pragma GCC diagnostic push
+#    if FMT_CLANG_VERSION
+#      pragma GCC diagnostic ignored "-Wgnu-string-literal-operator-template"
+#    endif
 template <typename Char, Char... CHARS>
 FMT_CONSTEXPR internal::udl_formatter<Char, CHARS...> operator""_format() {
   return {};
 }
+#    pragma GCC diagnostic pop
 #  else
 /**
   \rst
