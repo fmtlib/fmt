@@ -307,17 +307,13 @@ class format_error : public std::runtime_error {
 namespace internal {
 
 #if FMT_SECURE_SCL
-template <typename T> struct checked {
-  typedef stdext::checked_array_iterator<T*> type;
-};
-
-// Make a checked iterator to avoid warnings on MSVC.
-template <typename T>
-inline stdext::checked_array_iterator<T*> make_checked(T* p, std::size_t size) {
+// Make a checked iterator to avoid MSVC warnings.
+template <typename T> using checked_ptr = stdext::checked_array_iterator<T*>;
+template <typename T> checked_ptr<T> make_checked(T* p, std::size_t size) {
   return {p, size};
 }
 #else
-template <typename T> struct checked { typedef T* type; };
+template <typename T> using checked_ptr = T*;
 template <typename T> inline T* make_checked(T* p, std::size_t) { return p; }
 #endif
 
@@ -487,7 +483,7 @@ inline typename Container::value_type* get_data(Container& c) {
 }
 
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
-inline typename checked<typename Container::value_type>::type reserve(
+inline checked_ptr<typename Container::value_type> reserve(
     std::back_insert_iterator<Container>& it, std::size_t n) {
   Container& c = internal::get_container(it);
   std::size_t size = c.size();
