@@ -89,8 +89,8 @@ typedef void (*FormatFunc)(internal::buffer<char>&, int, string_view);
 //   ERANGE - buffer is not large enough to store the error message
 //   other  - failure
 // Buffer should be at least of size 1.
-int safe_strerror(int error_code, char*& buffer,
-                  std::size_t buffer_size) FMT_NOEXCEPT {
+FMT_FUNC int safe_strerror(int error_code, char*& buffer,
+                           std::size_t buffer_size) FMT_NOEXCEPT {
   FMT_ASSERT(buffer != nullptr && buffer_size != 0, "invalid buffer");
 
   class dispatcher {
@@ -147,8 +147,8 @@ int safe_strerror(int error_code, char*& buffer,
   return dispatcher(error_code, buffer, buffer_size).run();
 }
 
-void format_error_code(internal::buffer<char>& out, int error_code,
-                       string_view message) FMT_NOEXCEPT {
+FMT_FUNC void format_error_code(internal::buffer<char>& out, int error_code,
+                                string_view message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
   // inline_buffer_size to avoid dynamic memory allocation and potential
   // bad_alloc.
@@ -175,15 +175,16 @@ void format_error_code(internal::buffer<char>& out, int error_code,
 }
 
 // try an fwrite, FMT_THROW on failure
-void fwrite_fully(const void* ptr, size_t size, size_t count, FILE* stream) {
+FMT_FUNC void fwrite_fully(const void* ptr, size_t size, size_t count,
+                           FILE* stream) {
   size_t written = std::fwrite(ptr, size, count, stream);
   if (written < count) {
     FMT_THROW(system_error(errno, "cannot write to file"));
   }
 }
 
-void report_error(FormatFunc func, int error_code,
-                  string_view message) FMT_NOEXCEPT {
+FMT_FUNC void report_error(FormatFunc func, int error_code,
+                           string_view message) FMT_NOEXCEPT {
   memory_buffer full_message;
   func(full_message, error_code, message);
   // Use Writer::data instead of Writer::c_str to avoid potential memory
