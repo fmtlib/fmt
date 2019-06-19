@@ -40,7 +40,7 @@ template <typename Char> struct format_part {
 
     which_arg_id which;
 
-    FMT_UNRESTRICTED_UNION value {
+    union value {
       FMT_CONSTEXPR value() : index(0u) {}
       FMT_CONSTEXPR value(unsigned id) : index(id) {}
       FMT_CONSTEXPR value(internal::string_view_metadata id)
@@ -48,8 +48,7 @@ template <typename Char> struct format_part {
 
       unsigned index;
       internal::string_view_metadata named_index;
-    }
-    val;
+    } val;
   };
 
   struct specification {
@@ -89,7 +88,7 @@ template <typename Char> struct format_part {
 
   which_value which;
   std::size_t end_of_argument_id;
-  FMT_UNRESTRICTED_UNION value {
+  union value {
     FMT_CONSTEXPR value() : arg_id(0u) {}
     FMT_CONSTEXPR value(unsigned id) : arg_id(id) {}
     FMT_CONSTEXPR value(named_argument_id named_id)
@@ -100,8 +99,7 @@ template <typename Char> struct format_part {
     internal::string_view_metadata named_arg_id;
     internal::string_view_metadata text;
     specification spec;
-  }
-  val;
+  } val;
 };
 
 namespace internal {

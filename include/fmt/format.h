@@ -60,20 +60,6 @@
 #  define FMT_CUDA_VERSION 0
 #endif
 
-#ifdef __GNUC_LIBSTD__
-#  define FMT_GNUC_LIBSTD_VERSION \
-    (__GNUC_LIBSTD__ * 100 + __GNUC_LIBSTD_MINOR__)
-#endif
-
-// Check whether we can use unrestricted unions and use struct if not.
-#ifndef FMT_UNRESTRICTED_UNION
-#  if FMT_MSC_VER >= 1900 || FMT_GCC_VERSION >= 406 || FMT_CLANG_VERSION >= 303
-#    define FMT_UNRESTRICTED_UNION union
-#  else
-#    define FMT_UNRESTRICTED_UNION struct
-#  endif
-#endif
-
 #ifdef __has_builtin
 #  define FMT_HAS_BUILTIN(x) __has_builtin(x)
 #else
@@ -142,14 +128,11 @@ FMT_END_NAMESPACE
 
 // __builtin_clz is broken in clang with Microsoft CodeGen:
 // https://github.com/fmtlib/fmt/issues/519
-#ifndef _MSC_VER
-#  if FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clz)
-#    define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
-#  endif
-
-#  if FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clzll)
-#    define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
-#  endif
+#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clz)) && !FMT_MSC_VER
+#  define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
+#endif
+#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clzll)) && !FMT_MSC_VER
+#  define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
 
 // Some compilers masquerade as both MSVC and GCC-likes or otherwise support
@@ -1727,15 +1710,14 @@ template <typename Char> struct arg_ref {
   }
 
   Kind kind;
-  FMT_UNRESTRICTED_UNION value {
+  union value {
     FMT_CONSTEXPR value() : index(0u) {}
     FMT_CONSTEXPR value(unsigned id) : index(id) {}
     FMT_CONSTEXPR value(string_view_metadata n) : name(n) {}
 
     unsigned index;
     string_view_metadata name;
-  }
-  val;
+  } val;
 };
 
 // Format specifiers with width and precision resolved at formatting rather
