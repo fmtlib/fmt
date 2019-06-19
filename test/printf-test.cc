@@ -561,8 +561,7 @@ TEST(PrintfTest, VSPrintfMakeWArgsExample) {
 #endif
 }
 
-typedef fmt::printf_arg_formatter<
-    fmt::back_insert_range<fmt::internal::buffer<char>>>
+typedef fmt::printf_arg_formatter<fmt::internal::buffer_range<char>>
     formatter_t;
 typedef fmt::basic_printf_context<formatter_t::iterator, char> context_t;
 

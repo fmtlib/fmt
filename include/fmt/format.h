@@ -191,10 +191,6 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
-#ifndef FMT_USE_GRISU
-#  define FMT_USE_GRISU 1
-#endif
-
 // A fallback implementation of uintptr_t for systems that lack it.
 struct fallback_uintptr {
   unsigned char value[sizeof(void*)];
@@ -204,11 +200,6 @@ using uintptr_t = ::uintptr_t;
 #else
 using uintptr_t = fallback_uintptr;
 #endif
-
-template <typename T> inline bool use_grisu() {
-  return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559 &&
-         sizeof(T) <= sizeof(double);
-}
 
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't produce
 // undefined behavior (e.g. due to type aliasing).
@@ -224,6 +215,30 @@ inline Dest bit_cast(const Source& source) {
 // An implementation of iterator_t for pre-C++20 systems.
 template <typename T>
 using iterator_t = decltype(std::begin(std::declval<T&>()));
+
+#ifndef FMT_USE_GRISU
+#  define FMT_USE_GRISU 1
+#endif
+
+template <typename T> inline bool use_grisu() {
+  return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559 &&
+         sizeof(T) <= sizeof(double);
+}
+
+// A range whose output iterator appends to a buffer.
+template <typename T> class buffer_range {
+ public:
+  using value_type = T;
+  using iterator = std::back_insert_iterator<internal::buffer<T>>;
+
+ private:
+  iterator begin_;
+
+ public:
+  buffer_range(internal::buffer<T>& buf) : begin_(std::back_inserter(buf)) {}
+  explicit buffer_range(iterator it) : begin_(it) {}
+  iterator begin() const { return begin_; }
+};
 }  // namespace internal
 
 template <typename OutputIt, typename T = typename OutputIt::value_type>
@@ -243,22 +258,9 @@ class output_range {
   OutputIt begin() const { return it_; }
 };
 
-// A range where begin() returns back_insert_iterator.
-template <typename Container>
-class back_insert_range
-    : public output_range<std::back_insert_iterator<Container>> {
-  using base = output_range<std::back_insert_iterator<Container>>;
-
- public:
-  using value_type = typename Container::value_type;
-
-  back_insert_range(Container& c) : base(std::back_inserter(c)) {}
-  back_insert_range(typename base::iterator it) : base(it) {}
-};
-
 template <typename Range> class basic_writer;
-using writer = basic_writer<back_insert_range<internal::buffer<char>>>;
-using wwriter = basic_writer<back_insert_range<internal::buffer<wchar_t>>>;
+using writer = basic_writer<internal::buffer_range<char>>;
+using wwriter = basic_writer<internal::buffer_range<wchar_t>>;
 
 /** A formatting error such as invalid format string. */
 class format_error : public std::runtime_error {
@@ -3284,7 +3286,7 @@ template <typename Char>
 typename buffer_context<Char>::iterator internal::vformat_to(
     internal::buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<Char>> args) {
-  typedef back_insert_range<internal::buffer<Char>> range;
+  using range = buffer_range<Char>;
   return vformat_to<arg_formatter<range>>(buf, to_string_view(format_str),
                                           args);
 }

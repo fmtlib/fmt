@@ -19,7 +19,7 @@ typename buffer_context<Char>::iterator vformat_to(
     const std::locale& loc, buffer<Char>& buf,
     basic_string_view<Char> format_str,
     basic_format_args<buffer_context<Char>> args) {
-  typedef back_insert_range<buffer<Char>> range;
+  using range = buffer_range<Char>;
   return vformat_to<arg_formatter<range>>(buf, to_string_view(format_str), args,
                                           internal::locale_ref(loc));
 }

@@ -719,7 +719,7 @@ template<class... Args>
 string vformat(string_view fmt, format_args args) {
   fmt::memory_buffer mbuf;
   fmt::internal::buffer<char>& buf = mbuf;
-  typedef fmt::back_insert_range<fmt::internal::buffer<char>> range;
+  using range = fmt::internal::buffer_range<char>;
   detail::format_handler<detail::arg_formatter<range>, char, format_context>
     h(range(std::back_inserter(buf)), fmt, args, {});
   fmt::internal::parse_format_string<false>(fmt::to_string_view(fmt), h);

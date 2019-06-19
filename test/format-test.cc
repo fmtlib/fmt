@@ -99,7 +99,7 @@ void std_format(long double value, std::wstring& result) {
 template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T& value, const char* type) {
   fmt::basic_memory_buffer<Char> buffer;
-  typedef fmt::back_insert_range<fmt::internal::buffer<Char>> range;
+  using range = fmt::internal::buffer_range<Char>;
   fmt::basic_writer<range> writer(buffer);
   writer.write(value);
   std::basic_string<Char> actual = to_string(buffer);
@@ -1894,7 +1894,7 @@ enum TestFixedEnum : short { B };
 TEST(FormatTest, FixedEnum) { EXPECT_EQ("0", fmt::format("{}", B)); }
 #endif
 
-typedef fmt::back_insert_range<fmt::internal::buffer<char>> buffer_range;
+using buffer_range = fmt::internal::buffer_range<char>;
 
 class mock_arg_formatter
     : public fmt::internal::arg_formatter_base<buffer_range> {

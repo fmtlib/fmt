@@ -214,7 +214,7 @@ class prepared_format {
 
   std::basic_string<char_type> format(const Args&... args) const {
     basic_memory_buffer<char_type> buffer;
-    typedef back_insert_range<internal::buffer<char_type>> range;
+    using range = buffer_range<char_type>;
     this->vformat_to(range(buffer), basic_format_args<context>{
                                         make_args_checked(format_, args...)});
     return to_string(buffer);
@@ -224,7 +224,7 @@ class prepared_format {
   inline std::back_insert_iterator<Container> format_to(
       std::back_insert_iterator<Container> out, const Args&... args) const {
     internal::container_buffer<Container> buffer(internal::get_container(out));
-    typedef back_insert_range<internal::buffer<char_type>> range;
+    using range = buffer_range<char_type>;
     this->vformat_to(range(buffer), basic_format_args<context>{
                                         make_args_checked(format_, args...)});
     return out;
@@ -241,7 +241,7 @@ class prepared_format {
   template <std::size_t SIZE = inline_buffer_size>
   inline typename buffer_context<char_type>::iterator format_to(
       basic_memory_buffer<char_type, SIZE>& buf, const Args&... args) const {
-    typedef back_insert_range<internal::buffer<char_type>> range;
+    using range = buffer_range<char_type>;
     return this->vformat_to(
         range(buf),
         basic_format_args<context>{make_args_checked(format_, args...)});

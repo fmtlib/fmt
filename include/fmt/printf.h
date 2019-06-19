@@ -368,7 +368,7 @@ template <typename OutputIt, typename Char> class basic_printf_context {
 
   /** Formats stored arguments and writes the output to the range. */
   template <typename ArgFormatter =
-                printf_arg_formatter<back_insert_range<internal::buffer<Char>>>>
+                printf_arg_formatter<internal::buffer_range<Char>>>
   OutputIt format();
 };
 

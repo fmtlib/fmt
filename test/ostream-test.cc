@@ -64,7 +64,7 @@ TEST(OStreamTest, Enum) {
   EXPECT_EQ(L"0", fmt::format(L"{}", unstreamable_enum()));
 }
 
-typedef fmt::back_insert_range<fmt::internal::buffer<char>> range;
+using range = fmt::internal::buffer_range<char>;
 
 struct test_arg_formatter : fmt::arg_formatter<range> {
   fmt::format_parse_context parse_ctx;
