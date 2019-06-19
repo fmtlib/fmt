@@ -693,9 +693,8 @@ struct formatter {
         specs_.width_, specs_.width_ref, ctx, nullptr);
     fmt::internal::handle_dynamic_spec<fmt::internal::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx, nullptr);
-    typedef fmt::output_range<typename FormatContext::iterator,
-                         typename FormatContext::char_type>
-        range_type;
+    using range_type = fmt::internal::output_range<typename FormatContext::iterator,
+                         typename FormatContext::char_type>;
     return visit_format_arg(arg_formatter<range_type>(ctx, nullptr, &specs_),
                             basic_format_arg<FormatContext>(val));
   }
@@ -742,7 +741,7 @@ template<class Out, class... Args>
 
 template<class Out>
   Out vformat_to(Out out, string_view fmt, format_args_t<Out, char> args) {
-    typedef fmt::output_range<Out, char> range;
+    using range = fmt::internal::output_range<Out, char>;
     detail::format_handler<detail::arg_formatter<range>, char, basic_format_context<Out, char>>
       h(range(out), fmt, args, {});
     fmt::internal::parse_format_string<false>(fmt::to_string_view(fmt), h);

@@ -696,7 +696,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     // is not specified.
     basic_memory_buffer<Char> buf;
     auto out = std::back_inserter(buf);
-    typedef output_range<decltype(ctx.out()), Char> range;
+    using range = internal::output_range<decltype(ctx.out()), Char>;
     basic_writer<range> w(range(ctx.out()));
     internal::handle_dynamic_spec<internal::width_checker>(
         spec.width_, width_ref, ctx, format_str.begin());

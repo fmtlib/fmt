@@ -225,53 +225,34 @@ template <typename T> inline bool use_grisu() {
          sizeof(T) <= sizeof(double);
 }
 
-// A range whose output iterator appends to a buffer.
+// A range with an iterator appending to a buffer.
 template <typename T> class buffer_range {
  public:
   using value_type = T;
-  using iterator = std::back_insert_iterator<internal::buffer<T>>;
+  using iterator = std::back_insert_iterator<buffer<T>>;
 
  private:
   iterator begin_;
 
  public:
-  buffer_range(internal::buffer<T>& buf) : begin_(std::back_inserter(buf)) {}
+  buffer_range(buffer<T>& buf) : begin_(std::back_inserter(buf)) {}
   explicit buffer_range(iterator it) : begin_(it) {}
   iterator begin() const { return begin_; }
 };
-}  // namespace internal
 
+// A range with the specified output iterator and value type.
 template <typename OutputIt, typename T = typename OutputIt::value_type>
 class output_range {
  private:
   OutputIt it_;
 
-  // Unused yet.
-  typedef void sentinel;
-  sentinel end() const;
-
  public:
-  typedef OutputIt iterator;
-  typedef T value_type;
+  using value_type = T;
+  using iterator = OutputIt;
 
   explicit output_range(OutputIt it) : it_(it) {}
   OutputIt begin() const { return it_; }
 };
-
-template <typename Range> class basic_writer;
-using writer = basic_writer<internal::buffer_range<char>>;
-using wwriter = basic_writer<internal::buffer_range<wchar_t>>;
-
-/** A formatting error such as invalid format string. */
-class format_error : public std::runtime_error {
- public:
-  explicit format_error(const char* message) : std::runtime_error(message) {}
-  explicit format_error(const std::string& message)
-      : std::runtime_error(message) {}
-  ~format_error() FMT_NOEXCEPT;
-};
-
-namespace internal {
 
 #ifdef _SECURE_SCL
 // Make a checked iterator to avoid MSVC warnings.
@@ -287,10 +268,9 @@ template <typename T> inline T* make_checked(T* p, std::size_t) { return p; }
 template <typename T>
 template <typename U>
 void buffer<T>::append(const U* begin, const U* end) {
-  std::size_t new_size = size_ + internal::to_unsigned(end - begin);
+  std::size_t new_size = size_ + to_unsigned(end - begin);
   reserve(new_size);
-  std::uninitialized_copy(begin, end,
-                          internal::make_checked(ptr_, capacity_) + size_);
+  std::uninitialized_copy(begin, end, make_checked(ptr_, capacity_) + size_);
   size_ = new_size;
 }
 }  // namespace internal
@@ -435,6 +415,19 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
 
 typedef basic_memory_buffer<char> memory_buffer;
 typedef basic_memory_buffer<wchar_t> wmemory_buffer;
+
+/** A formatting error such as invalid format string. */
+class format_error : public std::runtime_error {
+ public:
+  explicit format_error(const char* message) : std::runtime_error(message) {}
+  explicit format_error(const std::string& message)
+      : std::runtime_error(message) {}
+  ~format_error() FMT_NOEXCEPT;
+};
+
+template <typename Range> class basic_writer;
+using writer = basic_writer<internal::buffer_range<char>>;
+using wwriter = basic_writer<internal::buffer_range<wchar_t>>;
 
 namespace internal {
 
@@ -2981,8 +2974,9 @@ struct formatter<T, Char,
         specs_.width_, specs_.width_ref, ctx, format_str_);
     internal::handle_dynamic_spec<internal::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx, format_str_);
-    using range_type = output_range<typename FormatContext::iterator,
-                                    typename FormatContext::char_type>;
+    using range_type =
+        internal::output_range<typename FormatContext::iterator,
+                               typename FormatContext::char_type>;
     return visit_format_arg(arg_formatter<range_type>(ctx, nullptr, &specs_),
                             internal::make_arg<FormatContext>(val));
   }
@@ -3073,8 +3067,8 @@ template <typename Char = char> class dynamic_formatter {
     else if (specs_.has(HASH_FLAG))
       checker.on_hash();
     if (specs_.precision != -1) checker.end_precision();
-    typedef output_range<typename FormatContext::iterator,
-                         typename FormatContext::char_type>
+    typedef internal::output_range<typename FormatContext::iterator,
+                                   typename FormatContext::char_type>
         range;
     visit_format_arg(arg_formatter<range>(ctx, nullptr, &specs_),
                      internal::make_arg<FormatContext>(val));
@@ -3373,7 +3367,7 @@ template <typename S, typename OutputIt, typename... Args,
 inline OutputIt vformat_to(
     OutputIt out, const S& format_str,
     typename format_args_t<OutputIt, char_t<S>>::type args) {
-  typedef output_range<OutputIt, char_t<S>> range;
+  typedef internal::output_range<OutputIt, char_t<S>> range;
   return vformat_to<arg_formatter<range>>(range(out),
                                           to_string_view(format_str), args);
 }

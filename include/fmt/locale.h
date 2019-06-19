@@ -55,7 +55,7 @@ template <typename S, typename OutputIt, typename... Args,
 inline OutputIt vformat_to(OutputIt out, const std::locale& loc,
                            const S& format_str,
                            typename format_args_t<OutputIt, Char>::type args) {
-  using range = output_range<OutputIt, Char>;
+  using range = internal::output_range<OutputIt, Char>;
   return vformat_to<arg_formatter<range>>(
       range(out), to_string_view(format_str), args, internal::locale_ref(loc));
 }
