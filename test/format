@@ -284,7 +284,7 @@ namespace std {
         (std::is_same_v<T, char> && std::is_same_v<char_type, wchar_t>) ||
         detail::is_standard_integer_v<T> ||
         detail::is_standard_unsigned_integer_v<T> ||
-        is_default_constructible_v<typename Context::template formatter_type<T>>
+        sizeof(typename Context::template formatter_type<T>().format(declval<const T&>(), declval<Context&>())) != 0
     >> explicit basic_format_arg(const T& v) noexcept; // exposition only
     explicit basic_format_arg(float n) noexcept;                         // exposition only
     explicit basic_format_arg(double n) noexcept;                        // exposition only
@@ -344,7 +344,7 @@ template<class T, typename> /* explicit */ basic_format_arg<Context>::basic_form
     value = static_cast<long long int>(v);
   else if constexpr (detail::is_standard_unsigned_integer_v<T>)
     value = static_cast<unsigned long long int>(v);
-  else if constexpr (is_default_constructible_v<typename Context::template formatter_type<T>>)
+  else if constexpr (sizeof(typename Context::template formatter_type<T>().format(declval<const T&>(), declval<Context&>())) != 0)
     value = handle(v);
 }
 
