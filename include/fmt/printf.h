@@ -679,7 +679,6 @@ inline int vprintf(
 template <typename S, typename... Args,
           FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline int printf(const S& format_str, const Args&... args) {
-  internal::check_format_string<Args...>(format_str);
   using buffer = internal::buffer<char_t<S>>;
   using context = typename basic_printf_context_t<buffer>::type;
   format_arg_store<context, Args...> as{args...};
@@ -722,7 +721,6 @@ typename ArgFormatter::iterator vprintf(internal::buffer<Char>& out,
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline int fprintf(std::basic_ostream<Char>& os, const S& format_str,
                    const Args&... args) {
-  internal::check_format_string<Args...>(format_str);
   using context = typename basic_printf_context_t<internal::buffer<Char>>::type;
   format_arg_store<context, Args...> as{args...};
   return vfprintf(os, to_string_view(format_str),
