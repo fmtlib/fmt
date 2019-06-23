@@ -1590,9 +1590,20 @@ TEST(FormatterTest, FormatStringView) {
   EXPECT_EQ("", format("{}", string_view()));
 }
 
-#ifdef FMT_USE_STD_STRING_VIEW
+#ifdef FMT_USE_STRING_VIEW
+struct string_viewable {};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<string_viewable> : formatter<std::string_view> {
+  auto format(string_viewable, format_context& ctx) -> decltype(ctx.out()) {
+    return formatter<std::string_view>::format("foo", ctx);
+  }
+};
+FMT_END_NAMESPACE
+
 TEST(FormatterTest, FormatStdStringView) {
-  EXPECT_EQ("test", format("{0}", std::string_view("test")));
+  EXPECT_EQ("test", format("{}", std::string_view("test")));
+  EXPECT_EQ("foo", format("{}", string_viewable()));
 }
 #endif
 
