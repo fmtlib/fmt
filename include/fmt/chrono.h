@@ -433,8 +433,8 @@ template <typename Rep, typename Period,
           FMT_ENABLE_IF(std::is_floating_point<Rep>::value)>
 inline std::chrono::duration<Rep, std::milli> get_milliseconds(
     std::chrono::duration<Rep, Period> d) {
-  return std::chrono::duration<Rep, std::milli>(
-      mod(d.count() * Period::num / Period::den * 1000, 1000));
+  auto ms = mod(d.count() * Period::num / Period::den * 1000, 1000);
+  return std::chrono::duration<Rep, std::milli>(static_cast<Rep>(ms));
 }
 
 template <typename Rep, typename OutputIt>
