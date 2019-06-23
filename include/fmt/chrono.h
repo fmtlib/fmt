@@ -480,7 +480,9 @@ struct chrono_formatter {
         std::chrono::duration<rep, Period>(val));
   }
 
-  Rep hour() const { return mod((s.count() / 3600), 24); }
+  Rep hour() const {
+    return static_cast<Rep>(mod((s.count() / 3600), 24));
+  }
 
   Rep hour12() const {
     Rep hour = mod((s.count() / 3600), 12);
