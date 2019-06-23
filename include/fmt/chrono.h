@@ -389,6 +389,7 @@ inline bool isnan(T value) {
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline int to_nonnegative_int(T value, int upper) {
   FMT_ASSERT(value >= 0 && value <= upper, "invalid value");
+  (void)upper;
   return static_cast<int>(value);
 }
 template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
@@ -396,6 +397,7 @@ inline int to_nonnegative_int(T value, int upper) {
   FMT_ASSERT(
       std::isnan(value) || (value >= 0 && value <= static_cast<T>(upper)),
       "invalid value");
+  (void)upper;
   return static_cast<int>(value);
 }
 
