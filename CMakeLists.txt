@@ -127,11 +127,18 @@ if (MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
     ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"${netfxpath}\" %*")
 endif ()
 
+set(strtod_l_headers stdlib.h)
+if (APPLE)
+  set(strtod_l_headers ${strtod_l_headers} xlocale.h)
+endif ()
+
 include(CheckSymbolExists)
 if (WIN32)
   check_symbol_exists(open io.h HAVE_OPEN)
+  check_symbol_exists(_strtod_l "${strtod_l_headers}" HAVE_STRTOD_L)
 else ()
   check_symbol_exists(open fcntl.h HAVE_OPEN)
+  check_symbol_exists(strtod_l "${strtod_l_headers}" HAVE_STRTOD_L)
 endif ()
 
 function(add_headers VAR)
@@ -153,6 +160,10 @@ endif ()
 
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
 add_library(fmt::fmt ALIAS fmt)
+
+if (HAVE_STRTOD_L)
+  target_compile_definitions(fmt PUBLIC FMT_LOCALE)
+endif ()
 
 if (FMT_WERROR)
   target_compile_options(fmt PRIVATE ${WERROR_FLAG})
