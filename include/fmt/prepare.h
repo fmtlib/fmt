@@ -1,4 +1,4 @@
-// Formatting library for C++ - format string compilation
+// Formatting library for C++ - experimental format string compilation
 //
 // Copyright (c) 2012 - present, Victor Zverovich and fmt contributors
 // All rights reserved.
@@ -722,8 +722,6 @@ template <typename... Args> struct wprepared_format {
                                      Args...>::type type;
 };
 
-#if FMT_USE_ALIAS_TEMPLATES
-
 template <typename Char, typename Container = std::vector<format_part<Char>>>
 using parts_container_t = typename parts_container<Char, Container>::type;
 
@@ -739,8 +737,6 @@ using prepared_format_t =
 template <typename... Args>
 using wprepared_format_t =
     basic_prepared_format_t<std::wstring, parts_container<wchar_t>, Args...>;
-
-#endif
 
 #if FMT_USE_CONSTEXPR
 

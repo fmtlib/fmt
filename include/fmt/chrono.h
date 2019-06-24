@@ -407,7 +407,7 @@ inline T mod(T x, int y) {
 }
 template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
 inline T mod(T x, int y) {
-  return std::fmod(x, y);
+  return std::fmod(x, static_cast<T>(y));
 }
 
 // If T is an integral type, maps T to its unsigned counterpart, otherwise
