@@ -219,8 +219,8 @@ FMT_FUNC Char internal::thousands_sep_impl(locale_ref) {
 }
 #endif
 
-FMT_FUNC format_error::~format_error() FMT_NOEXCEPT {}
-FMT_FUNC system_error::~system_error() FMT_NOEXCEPT {}
+FMT_API FMT_FUNC format_error::~format_error() FMT_NOEXCEPT {}
+FMT_API FMT_FUNC system_error::~system_error() FMT_NOEXCEPT {}
 
 FMT_FUNC void system_error::init(int err_code, string_view format_str,
                                  format_args args) {
