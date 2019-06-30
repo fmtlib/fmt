@@ -83,19 +83,24 @@ install_dir    = os.path.join(fmt_dir, "_install")
 build_dir      = os.path.join(fmt_dir, "_build")
 test_build_dir = os.path.join(fmt_dir, "_build_test")
 
-# Configure library.
+# Configure the library.
 makedirs_if_not_exist(build_dir)
 cmake_flags = [
     '-DCMAKE_INSTALL_PREFIX=' + install_dir, '-DCMAKE_BUILD_TYPE=' + build,
     '-DCMAKE_CXX_STANDARD=' + standard
 ]
+
+# make sure the fuzzers still compile
+if 'ENABLE_FUZZING' in os.environ:
+    cmake_flags += ['-DFMT_FUZZ=ON', '-DFMT_FUZZ_LINKMAIN=On']
+
 check_call(['cmake', '-DFMT_DOC=OFF', '-DFMT_PEDANTIC=ON', '-DFMT_WERROR=ON', fmt_dir] +
            cmake_flags, cwd=build_dir)
 
-# Build library.
-check_call(['make', '-j4'], cwd=build_dir)
+# Build the library.
+check_call(['cmake', '--build','.'], cwd=build_dir)
 
-# Test library.
+# Test the library.
 env = os.environ.copy()
 env['CTEST_OUTPUT_ON_FAILURE'] = '1'
 if call(['make', 'test'], env=env, cwd=build_dir):
@@ -103,7 +108,7 @@ if call(['make', 'test'], env=env, cwd=build_dir):
         print(f.read())
     sys.exit(-1)
 
-# Install library.
+# Install the library.
 check_call(['make', 'install'], cwd=build_dir)
 
 # Test installation.
