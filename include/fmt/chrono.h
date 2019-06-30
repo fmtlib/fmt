@@ -18,7 +18,7 @@
 
 // enable safe chrono durations, unless explicitly disabled
 #ifndef FMT_SAFE_DURATION_CAST
-#   define FMT_SAFE_DURATION_CAST 1
+#  define FMT_SAFE_DURATION_CAST 1
 #endif
 
 #if FMT_SAFE_DURATION_CAST
@@ -443,12 +443,10 @@ template <typename T> struct make_unsigned_or_unchanged<T, true> {
 // throwing version of safe_duration_cast
 template <typename To, typename FromRep, typename FromPeriod>
 To fmt_safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
-    int ec;
-    To to= safe_duration_cast::safe_duration_cast<To>(from,ec);
-    if (ec) {
-      FMT_THROW(format_error("cannot format duration"));
-    }
-    return to;
+  int ec;
+  To to = safe_duration_cast::safe_duration_cast<To>(from, ec);
+  if (ec) FMT_THROW(format_error("cannot format duration"));
+  return to;
 }
 #endif
 
@@ -463,11 +461,11 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
       typename std::common_type<decltype(d), std::chrono::seconds>::type;
   const auto d_as_common = fmt_safe_duration_cast<CommonSecondsType>(d);
   const auto d_as_whole_seconds =
-          fmt_safe_duration_cast<std::chrono::seconds>(d_as_common);
+      fmt_safe_duration_cast<std::chrono::seconds>(d_as_common);
   // this conversion should be nonproblematic
   const auto diff = d_as_common - d_as_whole_seconds;
   const auto ms =
-          fmt_safe_duration_cast<std::chrono::duration<Rep, std::milli>>(diff);
+      fmt_safe_duration_cast<std::chrono::duration<Rep, std::milli>>(diff);
   return ms;
 #else
   auto s = std::chrono::duration_cast<std::chrono::seconds>(d);
@@ -624,9 +622,7 @@ struct chrono_formatter {
   void on_tz_name() {}
 
   void on_24_hour(numeric_system ns) {
-    if (handle_nan_inf()) {
-      return;
-    }
+    if (handle_nan_inf()) return;
 
     if (ns == numeric_system::standard) return write(hour(), 2);
     auto time = tm();
@@ -635,9 +631,7 @@ struct chrono_formatter {
   }
 
   void on_12_hour(numeric_system ns) {
-    if (handle_nan_inf()) {
-      return;
-    }
+    if (handle_nan_inf()) return;
 
     if (ns == numeric_system::standard) return write(hour12(), 2);
     auto time = tm();
@@ -646,9 +640,7 @@ struct chrono_formatter {
   }
 
   void on_minute(numeric_system ns) {
-    if (handle_nan_inf()) {
-      return;
-    }
+    if (handle_nan_inf()) return;
 
     if (ns == numeric_system::standard) return write(minute(), 2);
     auto time = tm();
@@ -657,9 +649,7 @@ struct chrono_formatter {
   }
 
   void on_second(numeric_system ns) {
-    if (handle_nan_inf()) {
-      return;
-    }
+    if (handle_nan_inf()) return;
 
     if (ns == numeric_system::standard) {
       write(second(), 2);
@@ -684,9 +674,7 @@ struct chrono_formatter {
   }
 
   void on_12_hour_time() {
-    if (handle_nan_inf()) {
-      return;
-    }
+    if (handle_nan_inf()) return;
 
     format_localized(time(), "%r");
   }
@@ -706,24 +694,17 @@ struct chrono_formatter {
   void on_iso_time() {
     on_24_hour_time();
     *out++ = ':';
-    if (handle_nan_inf()) {
-      return;
-    }
+    if (handle_nan_inf()) return;
     write(second(), 2);
   }
 
   void on_am_pm() {
-    if (handle_nan_inf()) {
-      return;
-    }
-
+    if (handle_nan_inf()) return;
     format_localized(time(), "%p");
   }
 
   void on_duration_value() {
-    if (handle_nan_inf()) {
-      return;
-    }
+    if (handle_nan_inf()) return;
     write_sign();
     out = format_chrono_duration_value(out, val, precision);
   }
