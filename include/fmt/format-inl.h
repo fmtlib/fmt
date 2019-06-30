@@ -685,7 +685,7 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
   FMT_ASSERT(value >= 0, "value is negative");
   bool fixed = (options & grisu_options::fixed) != 0;
   if (value <= 0) {  // <= instead of == to silence a warning.
-    if (precision < 0 || !fixed) {
+    if (precision <= 0 || !fixed) {
       exp = 0;
       buf.push_back('0');
     } else {
