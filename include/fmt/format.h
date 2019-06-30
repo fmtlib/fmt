@@ -1096,14 +1096,16 @@ It grisu_prettify(const char* digits, int size, int exp, It it,
   } else {
     // 1234e-6 -> 0.001234
     *it++ = static_cast<Char>('0');
-    *it++ = static_cast<Char>('.');
     int num_zeros = -full_exp;
     if (params.num_digits >= 0 && params.num_digits < num_zeros)
       num_zeros = params.num_digits;
-    it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
     if (!params.trailing_zeros)
       while (size > 0 && digits[size - 1] == '0') --size;
-    it = copy_str<Char>(digits, digits + size, it);
+    if (num_zeros != 0 || size != 0) {
+      *it++ = static_cast<Char>('.');
+      it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
+      it = copy_str<Char>(digits, digits + size, it);
+    }
   }
   return it;
 }
