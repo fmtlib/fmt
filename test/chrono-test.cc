@@ -327,7 +327,7 @@ TEST(ChronoTest, SpecialDurations) {
       fmt::format("{:%S}", std::chrono::duration<double>(1e20)).substr(0, 3));
   auto nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ(
-      "nan nan nan nan.nan nan:nan nan",
+      "nan nan nan nan nan:nan nan",
       fmt::format("{:%I %H %M %S %R %r}", std::chrono::duration<double>(nan)));
   fmt::format("{:%S}",
               std::chrono::duration<float, std::atto>(1.79400457e+31f));

@@ -41,6 +41,7 @@ option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
 option(FMT_DOC "Generate the doc target." ${MASTER_PROJECT})
 option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
+option(FMT_FUZZ "Generate the fuzz target." OFF)
 
 project(FMT CXX)
 
@@ -151,7 +152,7 @@ endfunction()
 
 # Define the fmt library, its includes and the needed defines.
 add_headers(FMT_HEADERS chrono.h color.h core.h format.h format-inl.h locale.h
-                        ostream.h prepare.h printf.h ranges.h)
+                        ostream.h prepare.h printf.h ranges.h safe-duration-cast.h)
 set(FMT_SOURCES src/format.cc)
 if (HAVE_OPEN)
   add_headers(FMT_HEADERS posix.h)
@@ -190,6 +191,9 @@ if (BUILD_SHARED_LIBS)
   endif ()
   target_compile_definitions(fmt PRIVATE FMT_EXPORT INTERFACE FMT_SHARED)
 endif ()
+if (FMT_SAFE_DURATION_CAST)
+    target_compile_definitions(fmt PUBLIC FMT_SAFE_DURATION_CAST)
+endif()
 
 add_library(fmt-header-only INTERFACE)
 add_library(fmt::fmt-header-only ALIAS fmt-header-only)
@@ -269,6 +273,11 @@ endif ()
 if (FMT_TEST)
   enable_testing()
   add_subdirectory(test)
+endif ()
+
+# control fuzzing independent of the unit tests
+if (FMT_FUZZ)
+  add_subdirectory(test/fuzzing)
 endif ()
 
 set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)

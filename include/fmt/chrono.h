@@ -16,6 +16,15 @@
 #include <locale>
 #include <sstream>
 
+// enable safe chrono durations, unless explicitly disabled
+#ifndef FMT_SAFE_DURATION_CAST
+#   define FMT_SAFE_DURATION_CAST 1
+#endif
+
+#if FMT_SAFE_DURATION_CAST
+#  include "safe-duration-cast.h"
+#endif
+
 FMT_BEGIN_NAMESPACE
 
 // Prevents expansion of a preceding token as a function-style macro.
@@ -385,6 +394,15 @@ inline bool isnan(T value) {
   return std::isnan(value);
 }
 
+template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
+inline bool isfinite(T) {
+  return true;
+}
+template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
+inline bool isfinite(T value) {
+  return std::isfinite(value);
+}
+
 // Convers value to int and checks that it's in the range [0, upper).
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline int to_nonnegative_int(T value, int upper) {
@@ -421,12 +439,40 @@ template <typename T> struct make_unsigned_or_unchanged<T, true> {
   using type = typename std::make_unsigned<T>::type;
 };
 
+#if FMT_SAFE_DURATION_CAST
+// throwing version of safe_duration_cast
+template <typename To, typename FromRep, typename FromPeriod>
+To fmt_safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
+    int ec;
+    To to= safe_duration_cast::safe_duration_cast<To>(from,ec);
+    if (ec) {
+      FMT_THROW(format_error("cannot format duration"));
+    }
+    return to;
+}
+#endif
+
 template <typename Rep, typename Period,
           FMT_ENABLE_IF(std::is_integral<Rep>::value)>
 inline std::chrono::duration<Rep, std::milli> get_milliseconds(
     std::chrono::duration<Rep, Period> d) {
+  // this may overflow and/or the result may not fit in the
+  // target type.
+#if FMT_SAFE_DURATION_CAST
+  using CommonSecondsType =
+      typename std::common_type<decltype(d), std::chrono::seconds>::type;
+  const auto d_as_common = fmt_safe_duration_cast<CommonSecondsType>(d);
+  const auto d_as_whole_seconds =
+          fmt_safe_duration_cast<std::chrono::seconds>(d_as_common);
+  // this conversion should be nonproblematic
+  const auto diff = d_as_common - d_as_whole_seconds;
+  const auto ms =
+          fmt_safe_duration_cast<std::chrono::duration<Rep, std::milli>>(diff);
+  return ms;
+#else
   auto s = std::chrono::duration_cast<std::chrono::seconds>(d);
   return std::chrono::duration_cast<std::chrono::milliseconds>(d - s);
+#endif
 }
 
 template <typename Rep, typename Period,
@@ -476,8 +522,35 @@ struct chrono_formatter {
       val = -val;
       negative = true;
     }
+
+    // this may overflow and/or the result may not fit in the
+    // target type.
+#if FMT_SAFE_DURATION_CAST
+    // might need checked conversion (rep!=Rep)
+    auto tmpval = std::chrono::duration<rep, Period>(val);
+    s = fmt_safe_duration_cast<seconds>(tmpval);
+#else
     s = std::chrono::duration_cast<seconds>(
         std::chrono::duration<rep, Period>(val));
+#endif
+  }
+
+  // returns true if nan or inf, writes to out.
+  bool handle_nan_inf() {
+    if (isfinite(val)) {
+      return false;
+    }
+    if (isnan(val)) {
+      write_nan();
+      return true;
+    }
+    // must be +-inf
+    if (val > 0) {
+      write_pinf();
+    } else {
+      write_ninf();
+    }
+    return true;
   }
 
   Rep hour() const { return static_cast<Rep>(mod((s.count() / 3600), 24)); }
@@ -517,6 +590,8 @@ struct chrono_formatter {
   }
 
   void write_nan() { std::copy_n("nan", 3, out); }
+  void write_pinf() { std::copy_n("inf", 3, out); }
+  void write_ninf() { std::copy_n("-inf", 4, out); }
 
   void format_localized(const tm& time, const char* format) {
     if (isnan(val)) return write_nan();
@@ -549,6 +624,10 @@ struct chrono_formatter {
   void on_tz_name() {}
 
   void on_24_hour(numeric_system ns) {
+    if (handle_nan_inf()) {
+      return;
+    }
+
     if (ns == numeric_system::standard) return write(hour(), 2);
     auto time = tm();
     time.tm_hour = to_nonnegative_int(hour(), 24);
@@ -556,6 +635,10 @@ struct chrono_formatter {
   }
 
   void on_12_hour(numeric_system ns) {
+    if (handle_nan_inf()) {
+      return;
+    }
+
     if (ns == numeric_system::standard) return write(hour12(), 2);
     auto time = tm();
     time.tm_hour = to_nonnegative_int(hour12(), 12);
@@ -563,6 +646,10 @@ struct chrono_formatter {
   }
 
   void on_minute(numeric_system ns) {
+    if (handle_nan_inf()) {
+      return;
+    }
+
     if (ns == numeric_system::standard) return write(minute(), 2);
     auto time = tm();
     time.tm_min = to_nonnegative_int(minute(), 60);
@@ -570,9 +657,21 @@ struct chrono_formatter {
   }
 
   void on_second(numeric_system ns) {
+    if (handle_nan_inf()) {
+      return;
+    }
+
     if (ns == numeric_system::standard) {
       write(second(), 2);
-      auto ms = get_milliseconds(std::chrono::duration<Rep, Period>(val));
+#if FMT_SAFE_DURATION_CAST
+      // convert rep->Rep
+      using duration_rep = std::chrono::duration<rep, Period>;
+      using duration_Rep = std::chrono::duration<Rep, Period>;
+      auto tmpval = fmt_safe_duration_cast<duration_Rep>(duration_rep{val});
+#else
+      auto tmpval = std::chrono::duration<Rep, Period>(val);
+#endif
+      auto ms = get_milliseconds(tmpval);
       if (ms != std::chrono::milliseconds(0)) {
         *out++ = '.';
         write(ms.count(), 3);
@@ -584,9 +683,21 @@ struct chrono_formatter {
     format_localized(time, "%OS");
   }
 
-  void on_12_hour_time() { format_localized(time(), "%r"); }
+  void on_12_hour_time() {
+    if (handle_nan_inf()) {
+      return;
+    }
+
+    format_localized(time(), "%r");
+  }
 
   void on_24_hour_time() {
+    if (handle_nan_inf()) {
+      *out++ = ':';
+      handle_nan_inf();
+      return;
+    }
+
     write(hour(), 2);
     *out++ = ':';
     write(minute(), 2);
@@ -595,12 +706,24 @@ struct chrono_formatter {
   void on_iso_time() {
     on_24_hour_time();
     *out++ = ':';
+    if (handle_nan_inf()) {
+      return;
+    }
     write(second(), 2);
   }
 
-  void on_am_pm() { format_localized(time(), "%p"); }
+  void on_am_pm() {
+    if (handle_nan_inf()) {
+      return;
+    }
+
+    format_localized(time(), "%p");
+  }
 
   void on_duration_value() {
+    if (handle_nan_inf()) {
+      return;
+    }
     write_sign();
     out = format_chrono_duration_value(out, val, precision);
   }
