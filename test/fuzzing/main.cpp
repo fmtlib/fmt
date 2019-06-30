@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
     assert(in);
     in.seekg(0, std::ios_base::end);
     const auto pos = in.tellg();
-    assert(pos>=0);
+    assert(pos >= 0);
     in.seekg(0, std::ios_base::beg);
     std::vector<char> buf(static_cast<std::size_t>(pos));
     in.read(buf.data(), static_cast<long>(buf.size()));

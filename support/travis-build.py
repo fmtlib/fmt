@@ -90,7 +90,7 @@ cmake_flags = [
     '-DCMAKE_CXX_STANDARD=' + standard
 ]
 
-# make sure the fuzzers still compile
+# Make sure the fuzzers still compile.
 if 'ENABLE_FUZZING' in os.environ:
     cmake_flags += ['-DFMT_FUZZ=ON', '-DFMT_FUZZ_LINKMAIN=On']
 

@@ -7,7 +7,7 @@
 
 #include "fuzzer_common.h"
 
-constexpr auto Nfixed=fmt_fuzzer::Nfixed;
+constexpr auto Nfixed = fmt_fuzzer::Nfixed;
 
 template <typename Item1, typename Item2>
 void invoke_fmt(const uint8_t* Data, std::size_t Size) {
@@ -18,11 +18,11 @@ void invoke_fmt(const uint8_t* Data, std::size_t Size) {
   if (Size <= Nfixed + Nfixed) {
     return;
   }
-  const Item1 item1=fmt_fuzzer::assignFromBuf<Item1>(Data);
+  const Item1 item1 = fmt_fuzzer::assignFromBuf<Item1>(Data);
   Data += Nfixed;
   Size -= Nfixed;
 
-  const Item2 item2=fmt_fuzzer::assignFromBuf<Item2>(Data);
+  const Item2 item2 = fmt_fuzzer::assignFromBuf<Item2>(Data);
   Data += Nfixed;
   Size -= Nfixed;
 

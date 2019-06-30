@@ -4,9 +4,9 @@
 // Copyright (c) 2019, Paul Dreik
 // License: see LICENSE.rst in the fmt root directory
 
-#include <cstring>     // memcpy
-#include <type_traits> // trivially copyable
-#include <cstdint>     // std::uint8_t
+#include <cstdint>      // std::uint8_t
+#include <cstring>      // memcpy
+#include <type_traits>  // trivially copyable
 
 // one can format to either a string, or a buf. buf is faster,
 // but one may be interested in formatting to a string instead to
@@ -25,36 +25,33 @@
 // is likely interesting.
 // For this, we must know the size of the largest possible type in use.
 
-// There are some problems on travis, claiming Nfixed is not a constant expression
-// which seems to be an issue with older versions of libstdc++
-#if  _GLIBCXX_RELEASE >= 7
-# include <algorithm>
+// There are some problems on travis, claiming Nfixed is not a constant
+// expression which seems to be an issue with older versions of libstdc++
+#if _GLIBCXX_RELEASE >= 7
+#  include <algorithm>
 namespace fmt_fuzzer {
-  constexpr auto Nfixed = std::max(sizeof(long double), sizeof(std::intmax_t));
+constexpr auto Nfixed = std::max(sizeof(long double), sizeof(std::intmax_t));
 }
 #else
 namespace fmt_fuzzer {
-  constexpr auto Nfixed=16;
+constexpr auto Nfixed = 16;
 }
 #endif
 
 namespace fmt_fuzzer {
 // view data as a c char pointer.
-template <typename T>
-inline const char* as_chars(const T* data) {
-    return static_cast<const char*>(static_cast<const void*>(data));
+template <typename T> inline const char* as_chars(const T* data) {
+  return static_cast<const char*>(static_cast<const void*>(data));
 }
 
 // view data as a byte pointer
-template <typename T>
-inline const std::uint8_t* as_bytes(const T* data) {
-    return static_cast<const std::uint8_t*>(static_cast<const void*>(data));
+template <typename T> inline const std::uint8_t* as_bytes(const T* data) {
+  return static_cast<const std::uint8_t*>(static_cast<const void*>(data));
 }
 
 // blits bytes from Data to form an (assumed trivially constructible) object
 // of type Item
-template <class Item>
-inline Item assignFromBuf(const std::uint8_t* Data) {
+template <class Item> inline Item assignFromBuf(const std::uint8_t* Data) {
   Item item{};
   std::memcpy(&item, Data, sizeof(Item));
   return item;
@@ -65,7 +62,6 @@ template <> inline bool assignFromBuf<bool>(const std::uint8_t* Data) {
   return !!Data[0];
 }
 
-} // namespace fmt_fuzzer
+}  // namespace fmt_fuzzer
 
-
-#endif // FUZZER_COMMON_H
+#endif  // FUZZER_COMMON_H

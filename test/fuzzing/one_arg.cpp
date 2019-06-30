@@ -15,7 +15,7 @@ using fmt_fuzzer::Nfixed;
 template <typename Item>
 void invoke_fmt(const uint8_t* Data, std::size_t Size) {
   constexpr auto N = sizeof(Item);
-  static_assert (N<=Nfixed,"Nfixed is too small");
+  static_assert(N <= Nfixed, "Nfixed is too small");
   if (Size <= Nfixed) {
     return;
   }
@@ -43,7 +43,7 @@ void invoke_fmt(const uint8_t* Data, std::size_t Size) {
 void invoke_fmt_time(const uint8_t* Data, std::size_t Size) {
   using Item = std::time_t;
   constexpr auto N = sizeof(Item);
-  static_assert (N<=Nfixed,"Nfixed too small");
+  static_assert(N <= Nfixed, "Nfixed too small");
   if (Size <= Nfixed) {
     return;
   }

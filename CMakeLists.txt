@@ -192,7 +192,7 @@ if (BUILD_SHARED_LIBS)
   target_compile_definitions(fmt PRIVATE FMT_EXPORT INTERFACE FMT_SHARED)
 endif ()
 if (FMT_SAFE_DURATION_CAST)
-    target_compile_definitions(fmt PUBLIC FMT_SAFE_DURATION_CAST)
+  target_compile_definitions(fmt PUBLIC FMT_SAFE_DURATION_CAST)
 endif()
 
 add_library(fmt-header-only INTERFACE)
@@ -275,7 +275,7 @@ if (FMT_TEST)
   add_subdirectory(test)
 endif ()
 
-# control fuzzing independent of the unit tests
+# Control fuzzing independent of the unit tests.
 if (FMT_FUZZ)
   add_subdirectory(test/fuzzing)
 endif ()
