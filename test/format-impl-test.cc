@@ -192,7 +192,7 @@ TEST(FormatTest, StrError) {
   EXPECT_EQ(get_system_error(error_code), message);
 
   // safe_strerror never uses buffer on MinGW.
-#ifndef __MINGW32__
+#if !defined(__MINGW32__) && !defined(__sun)
   result =
       fmt::internal::safe_strerror(error_code, message = buffer, message_size);
   EXPECT_EQ(ERANGE, result);
