@@ -359,15 +359,6 @@ class truncating_iterator<OutputIt, std::true_type>
   truncating_iterator& operator*() { return *this; }
 };
 
-#ifndef FMT_USE_GRISU
-#  define FMT_USE_GRISU 1
-#endif
-
-template <typename T> constexpr bool use_grisu() {
-  return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559 &&
-         sizeof(T) <= sizeof(double);
-}
-
 // A range with the specified output iterator and value type.
 template <typename OutputIt, typename T = typename OutputIt::value_type>
 class output_range {
@@ -394,6 +385,50 @@ class buffer_range
   buffer_range(buffer<T>& buf)
       : output_range<iterator, T>(std::back_inserter(buf)) {}
 };
+
+template <typename Char>
+inline size_t count_code_points(basic_string_view<Char> s) {
+  return s.size();
+}
+
+// Counts the number of code points in a UTF-8 string.
+inline size_t count_code_points(basic_string_view<char8_t> s) {
+  const char8_t* data = s.data();
+  size_t num_code_points = 0;
+  for (size_t i = 0, size = s.size(); i != size; ++i) {
+    if ((data[i] & 0xc0) != 0x80) ++num_code_points;
+  }
+  return num_code_points;
+}
+
+inline char8_t to_char8_t(char c) { return static_cast<char8_t>(c); }
+
+template <typename InputIt, typename OutChar>
+using needs_conversion = bool_constant<
+    std::is_same<typename std::iterator_traits<InputIt>::value_type,
+                 char>::value &&
+    std::is_same<OutChar, char8_t>::value>;
+
+template <typename OutChar, typename InputIt, typename OutputIt,
+          FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
+OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
+  return std::copy(begin, end, it);
+}
+
+template <typename OutChar, typename InputIt, typename OutputIt,
+          FMT_ENABLE_IF(needs_conversion<InputIt, OutChar>::value)>
+OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
+  return std::transform(begin, end, it, to_char8_t);
+}
+
+#ifndef FMT_USE_GRISU
+#  define FMT_USE_GRISU 1
+#endif
+
+template <typename T> constexpr bool use_grisu() {
+  return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559 &&
+         sizeof(T) <= sizeof(double);
+}
 
 template <typename T>
 template <typename U>
@@ -578,8 +613,7 @@ template <typename T> struct int_traits {
       conditional_t<std::numeric_limits<T>::digits <= 32, uint32_t, uint64_t>;
 };
 
-// Static data is placed in this class template to allow header-only
-// configuration.
+// Static data is placed in this class template for the header-only config.
 template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const uint64_t POWERS_OF_10_64[];
   static const uint32_t ZERO_OR_POWERS_OF_10_32[];
@@ -596,7 +630,7 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
 
 FMT_EXTERN template struct basic_data<void>;
 
-// This is a struct rather than a typedef to avoid shadowing warnings in gcc.
+// This is a struct rather than an alias to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};
 
 #ifdef FMT_BUILTIN_CLZLL
@@ -636,42 +670,6 @@ template <unsigned BITS, typename UInt> inline int count_digits(UInt n) {
 }
 
 template <> int count_digits<4>(internal::fallback_uintptr n);
-
-template <typename Char>
-inline size_t count_code_points(basic_string_view<Char> s) {
-  return s.size();
-}
-
-// Counts the number of code points in a UTF-8 string.
-inline size_t count_code_points(basic_string_view<char8_t> s) {
-  const char8_t* data = s.data();
-  size_t num_code_points = 0;
-  for (size_t i = 0, size = s.size(); i != size; ++i) {
-    if ((data[i] & 0xc0) != 0x80) ++num_code_points;
-  }
-  return num_code_points;
-}
-
-inline char8_t to_char8_t(char c) { return static_cast<char8_t>(c); }
-
-template <typename InputIt, typename OutChar>
-struct needs_conversion
-    : bool_constant<
-          std::is_same<typename std::iterator_traits<InputIt>::value_type,
-                       char>::value &&
-          std::is_same<OutChar, char8_t>::value> {};
-
-template <typename OutChar, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
-OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
-  return std::copy(begin, end, it);
-}
-
-template <typename OutChar, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(needs_conversion<InputIt, OutChar>::value)>
-OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
-  return std::transform(begin, end, it, to_char8_t);
-}
 
 #if FMT_HAS_CPP_ATTRIBUTE(always_inline)
 #  define FMT_ALWAYS_INLINE __attribute__((always_inline))
@@ -736,18 +734,6 @@ class decimal_formatter {
   }
 };
 
-// An lg handler that formats a decimal number with a terminating null.
-class decimal_formatter_null : public decimal_formatter {
- public:
-  explicit decimal_formatter_null(char* buf) : decimal_formatter(buf) {}
-
-  template <unsigned N> char* on(uint32_t u) {
-    char* buf = decimal_formatter::on<N>(u);
-    *buf = '\0';
-    return buf;
-  }
-};
-
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline int count_digits(uint32_t n) {
@@ -756,16 +742,7 @@ inline int count_digits(uint32_t n) {
 }
 #endif
 
-// A functor that doesn't add a thousands separator.
-struct no_thousands_sep {
-  typedef char char_type;
-
-  template <typename Char> void operator()(Char*) {}
-
-  enum { size = 0 };
-};
-
-// A functor that adds a thousands separator.
+// A callable that adds a thousands separator.
 template <typename Char> class add_thousands_sep {
  private:
   basic_string_view<Char> sep_;
@@ -774,8 +751,6 @@ template <typename Char> class add_thousands_sep {
   unsigned digit_index_;
 
  public:
-  typedef Char char_type;
-
   explicit add_thousands_sep(basic_string_view<Char> sep)
       : sep_(sep), digit_index_(0) {}
 
@@ -785,8 +760,6 @@ template <typename Char> class add_thousands_sep {
     std::uninitialized_copy(sep_.data(), sep_.data() + sep_.size(),
                             internal::make_checked(buffer, sep_.size()));
   }
-
-  enum { size = 1 };
 };
 
 template <typename Char> FMT_API Char thousands_sep_impl(locale_ref loc);
@@ -830,23 +803,21 @@ inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
   return end;
 }
 
-template <typename OutChar, typename UInt, typename Iterator,
+template <typename Char, typename UInt, typename Iterator,
           typename ThousandsSep>
 inline Iterator format_decimal(Iterator out, UInt value, int num_digits,
                                ThousandsSep sep) {
   FMT_ASSERT(num_digits >= 0, "invalid digit count");
-  typedef typename ThousandsSep::char_type char_type;
   // Buffer should be large enough to hold all digits (<= digits10 + 1).
   enum { max_size = std::numeric_limits<UInt>::digits10 + 1 };
-  FMT_ASSERT(ThousandsSep::size <= 1, "invalid separator");
-  char_type buffer[max_size + max_size / 3];
+  Char buffer[max_size + max_size / 3];
   auto end = format_decimal(buffer, value, num_digits, sep);
-  return internal::copy_str<OutChar>(buffer, end, out);
+  return internal::copy_str<Char>(buffer, end, out);
 }
 
-template <typename OutChar, typename It, typename UInt>
+template <typename Char, typename It, typename UInt>
 inline It format_decimal(It out, UInt value, int num_digits) {
-  return format_decimal<OutChar>(out, value, num_digits, no_thousands_sep());
+  return format_decimal<Char>(out, value, num_digits, [](Char*) {});
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
