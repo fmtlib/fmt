@@ -3195,8 +3195,6 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
   return {begin, end, sep};
 }
 
-// gcc 4.4 on join: internal compiler error: in tsubst_copy, at cp/pt.c:10122
-#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 405
 /**
   \rst
   Returns an object that formats `range` with elements separated by `sep`.
@@ -3219,7 +3217,6 @@ arg_join<internal::iterator_t<const Range>, wchar_t> join(const Range& range,
                                                           wstring_view sep) {
   return join(std::begin(range), std::end(range), sep);
 }
-#endif
 
 /**
   \rst
