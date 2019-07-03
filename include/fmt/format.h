@@ -216,6 +216,149 @@ inline Dest bit_cast(const Source& source) {
 template <typename T>
 using iterator_t = decltype(std::begin(std::declval<T&>()));
 
+// A workaround for std::string not having mutable data() until C++17.
+template <typename Char> inline Char* get_data(std::basic_string<Char>& s) {
+  return &s[0];
+}
+template <typename Container>
+inline typename Container::value_type* get_data(Container& c) {
+  return c.data();
+}
+
+#ifdef _SECURE_SCL
+// Make a checked iterator to avoid MSVC warnings.
+template <typename T> using checked_ptr = stdext::checked_array_iterator<T*>;
+template <typename T> checked_ptr<T> make_checked(T* p, std::size_t size) {
+  return {p, size};
+}
+#else
+template <typename T> using checked_ptr = T*;
+template <typename T> inline T* make_checked(T* p, std::size_t) { return p; }
+#endif
+
+template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
+inline checked_ptr<typename Container::value_type> reserve(
+    std::back_insert_iterator<Container>& it, std::size_t n) {
+  Container& c = get_container(it);
+  std::size_t size = c.size();
+  c.resize(size + n);
+  return make_checked(get_data(c) + size, n);
+}
+
+template <typename Iterator>
+inline Iterator& reserve(Iterator& it, std::size_t) {
+  return it;
+}
+
+// An output iterator that counts the number of objects written to it and
+// discards them.
+template <typename T> class counting_iterator {
+ private:
+  std::size_t count_;
+  mutable T blackhole_;
+
+ public:
+  using iterator_category = std::output_iterator_tag;
+  using value_type = T;
+  using difference_type = std::ptrdiff_t;
+  using pointer = T*;
+  using reference = T&;
+  using _Unchecked_type = counting_iterator;  // Mark iterator as checked.
+
+  counting_iterator() : count_(0) {}
+
+  std::size_t count() const { return count_; }
+
+  counting_iterator& operator++() {
+    ++count_;
+    return *this;
+  }
+
+  counting_iterator operator++(int) {
+    auto it = *this;
+    ++*this;
+    return it;
+  }
+
+  T& operator*() const { return blackhole_; }
+};
+
+template <typename OutputIt> class truncating_iterator_base {
+ protected:
+  OutputIt out_;
+  std::size_t limit_;
+  std::size_t count_;
+
+  truncating_iterator_base(OutputIt out, std::size_t limit)
+      : out_(out), limit_(limit), count_(0) {}
+
+ public:
+  using iterator_category = std::output_iterator_tag;
+  using difference_type = void;
+  using pointer = void;
+  using reference = void;
+  using _Unchecked_type =
+      truncating_iterator_base;  // Mark iterator as checked.
+
+  OutputIt base() const { return out_; }
+  std::size_t count() const { return count_; }
+};
+
+// An output iterator that truncates the output and counts the number of objects
+// written to it.
+template <typename OutputIt,
+          typename Enable = typename std::is_void<
+              typename std::iterator_traits<OutputIt>::value_type>::type>
+class truncating_iterator;
+
+template <typename OutputIt>
+class truncating_iterator<OutputIt, std::false_type>
+    : public truncating_iterator_base<OutputIt> {
+  using traits = std::iterator_traits<OutputIt>;
+
+  mutable typename traits::value_type blackhole_;
+
+ public:
+  using value_type = typename traits::value_type;
+
+  truncating_iterator(OutputIt out, std::size_t limit)
+      : truncating_iterator_base<OutputIt>(out, limit) {}
+
+  truncating_iterator& operator++() {
+    if (this->count_++ < this->limit_) ++this->out_;
+    return *this;
+  }
+
+  truncating_iterator operator++(int) {
+    auto it = *this;
+    ++*this;
+    return it;
+  }
+
+  value_type& operator*() const {
+    return this->count_ < this->limit_ ? *this->out_ : blackhole_;
+  }
+};
+
+template <typename OutputIt>
+class truncating_iterator<OutputIt, std::true_type>
+    : public truncating_iterator_base<OutputIt> {
+ public:
+  using value_type = typename OutputIt::container_type::value_type;
+
+  truncating_iterator(OutputIt out, std::size_t limit)
+      : truncating_iterator_base<OutputIt>(out, limit) {}
+
+  truncating_iterator& operator=(value_type val) {
+    if (this->count_++ < this->limit_) this->out_ = val;
+    return *this;
+  }
+
+  truncating_iterator& operator++() { return *this; }
+  truncating_iterator& operator++(int) { return *this; }
+  truncating_iterator& operator*() { return *this; }
+};
+
 #ifndef FMT_USE_GRISU
 #  define FMT_USE_GRISU 1
 #endif
@@ -251,17 +394,6 @@ class buffer_range
   buffer_range(buffer<T>& buf)
       : output_range<iterator, T>(std::back_inserter(buf)) {}
 };
-
-#ifdef _SECURE_SCL
-// Make a checked iterator to avoid MSVC warnings.
-template <typename T> using checked_ptr = stdext::checked_array_iterator<T*>;
-template <typename T> checked_ptr<T> make_checked(T* p, std::size_t size) {
-  return {p, size};
-}
-#else
-template <typename T> using checked_ptr = T*;
-template <typename T> inline T* make_checked(T* p, std::size_t) { return p; }
-#endif
 
 template <typename T>
 template <typename U>
@@ -427,138 +559,6 @@ class FMT_API format_error : public std::runtime_error {
 };
 
 namespace internal {
-
-// A workaround for std::string not having mutable data() until C++17.
-template <typename Char> inline Char* get_data(std::basic_string<Char>& s) {
-  return &s[0];
-}
-template <typename Container>
-inline typename Container::value_type* get_data(Container& c) {
-  return c.data();
-}
-
-template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
-inline checked_ptr<typename Container::value_type> reserve(
-    std::back_insert_iterator<Container>& it, std::size_t n) {
-  Container& c = internal::get_container(it);
-  std::size_t size = c.size();
-  c.resize(size + n);
-  return make_checked(get_data(c) + size, n);
-}
-
-template <typename Iterator>
-inline Iterator& reserve(Iterator& it, std::size_t) {
-  return it;
-}
-
-// An output iterator that counts the number of objects written to it and
-// discards them.
-template <typename T> class counting_iterator {
- private:
-  std::size_t count_;
-  mutable T blackhole_;
-
- public:
-  using iterator_category = std::output_iterator_tag;
-  using value_type = T;
-  using difference_type = std::ptrdiff_t;
-  using pointer = T*;
-  using reference = T&;
-  using _Unchecked_type = counting_iterator;  // Mark iterator as checked.
-
-  counting_iterator() : count_(0) {}
-
-  std::size_t count() const { return count_; }
-
-  counting_iterator& operator++() {
-    ++count_;
-    return *this;
-  }
-
-  counting_iterator operator++(int) {
-    auto it = *this;
-    ++*this;
-    return it;
-  }
-
-  T& operator*() const { return blackhole_; }
-};
-
-template <typename OutputIt> class truncating_iterator_base {
- protected:
-  OutputIt out_;
-  std::size_t limit_;
-  std::size_t count_;
-
-  truncating_iterator_base(OutputIt out, std::size_t limit)
-      : out_(out), limit_(limit), count_(0) {}
-
- public:
-  using iterator_category = std::output_iterator_tag;
-  using difference_type = void;
-  using pointer = void;
-  using reference = void;
-  using _Unchecked_type =
-      truncating_iterator_base;  // Mark iterator as checked.
-
-  OutputIt base() const { return out_; }
-  std::size_t count() const { return count_; }
-};
-
-// An output iterator that truncates the output and counts the number of objects
-// written to it.
-template <typename OutputIt,
-          typename Enable = typename std::is_void<
-              typename std::iterator_traits<OutputIt>::value_type>::type>
-class truncating_iterator;
-
-template <typename OutputIt>
-class truncating_iterator<OutputIt, std::false_type>
-    : public truncating_iterator_base<OutputIt> {
-  using traits = std::iterator_traits<OutputIt>;
-
-  mutable typename traits::value_type blackhole_;
-
- public:
-  using value_type = typename traits::value_type;
-
-  truncating_iterator(OutputIt out, std::size_t limit)
-      : truncating_iterator_base<OutputIt>(out, limit) {}
-
-  truncating_iterator& operator++() {
-    if (this->count_++ < this->limit_) ++this->out_;
-    return *this;
-  }
-
-  truncating_iterator operator++(int) {
-    auto it = *this;
-    ++*this;
-    return it;
-  }
-
-  value_type& operator*() const {
-    return this->count_ < this->limit_ ? *this->out_ : blackhole_;
-  }
-};
-
-template <typename OutputIt>
-class truncating_iterator<OutputIt, std::true_type>
-    : public truncating_iterator_base<OutputIt> {
- public:
-  using value_type = typename OutputIt::container_type::value_type;
-
-  truncating_iterator(OutputIt out, std::size_t limit)
-      : truncating_iterator_base<OutputIt>(out, limit) {}
-
-  truncating_iterator& operator=(value_type val) {
-    if (this->count_++ < this->limit_) this->out_ = val;
-    return *this;
-  }
-
-  truncating_iterator& operator++() { return *this; }
-  truncating_iterator& operator++(int) { return *this; }
-  truncating_iterator& operator*() { return *this; }
-};
 
 // Returns true if value is negative, false otherwise.
 // Same as `value < 0` but doesn't produce warnings if T is an unsigned type.

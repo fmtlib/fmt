@@ -258,7 +258,7 @@ TEST(UtilTest, CountDigits) {
 
 TEST(UtilTest, WriteUIntPtr) {
   fmt::memory_buffer buf;
-  fmt::writer writer(buf);
+  fmt::internal::writer writer(buf);
   writer.write_pointer(fmt::internal::bit_cast<fmt::internal::fallback_uintptr>(
                            reinterpret_cast<void*>(0xface)),
                        nullptr);

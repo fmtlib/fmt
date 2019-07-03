@@ -936,13 +936,6 @@ FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
   return vis(monostate());
 }
 
-template <typename Visitor, typename Context>
-FMT_DEPRECATED FMT_CONSTEXPR auto visit(Visitor&& vis,
-                                        const basic_format_arg<Context>& arg)
-    -> decltype(vis(0)) {
-  return visit_format_arg(std::forward<Visitor>(vis), arg);
-}
-
 namespace internal {
 // A map from argument names to their values for named arguments.
 template <typename Context> class arg_map {
