@@ -157,8 +157,7 @@ FMT_FUNC void format_error_code(internal::buffer<char>& out, int error_code,
   static const char ERROR_STR[] = "error ";
   // Subtract 2 to account for terminating null characters in SEP and ERROR_STR.
   std::size_t error_code_size = sizeof(SEP) + sizeof(ERROR_STR) - 2;
-  typedef internal::int_traits<int>::main_type main_type;
-  main_type abs_value = static_cast<main_type>(error_code);
+  auto abs_value = static_cast<uint32_or_64_t<int>>(error_code);
   if (internal::is_negative(error_code)) {
     abs_value = 0 - abs_value;
     ++error_code_size;

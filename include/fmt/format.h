@@ -606,12 +606,11 @@ FMT_CONSTEXPR bool is_negative(T) {
   return false;
 }
 
-template <typename T> struct int_traits {
-  // Smallest of uint32_t and uint64_t that is large enough to represent
-  // all values of T.
-  using main_type =
-      conditional_t<std::numeric_limits<T>::digits <= 32, uint32_t, uint64_t>;
-};
+// Smallest of uint32_t and uint64_t that is large enough to represent all
+// values of T.
+template <typename T>
+using uint32_or_64_t =
+    conditional_t<std::numeric_limits<T>::digits <= 32, uint32_t, uint64_t>;
 
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
@@ -1273,8 +1272,7 @@ template <typename Range> class basic_writer {
 
   // Writes a decimal integer.
   template <typename Int> void write_decimal(Int value) {
-    typedef typename internal::int_traits<Int>::main_type main_type;
-    main_type abs_value = static_cast<main_type>(value);
+    auto abs_value = static_cast<uint32_or_64_t<Int>>(value);
     bool is_negative = internal::is_negative(value);
     if (is_negative) abs_value = 0 - abs_value;
     int num_digits = internal::count_digits(abs_value);
@@ -1286,7 +1284,7 @@ template <typename Range> class basic_writer {
 
   // The handle_int_type_spec handler that writes an integer.
   template <typename Int, typename Spec> struct int_writer {
-    typedef typename internal::int_traits<Int>::main_type unsigned_type;
+    using unsigned_type = uint32_or_64_t<Int>;
 
     basic_writer<Range>& writer;
     const Spec& spec;
