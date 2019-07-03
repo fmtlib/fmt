@@ -212,7 +212,7 @@ inline Dest bit_cast(const Source& source) {
   return dest;
 }
 
-// An implementation of iterator_t for pre-C++20 systems.
+// An approximation of iterator_t for pre-C++20 systems.
 template <typename T>
 using iterator_t = decltype(std::begin(std::declval<T&>()));
 
@@ -220,25 +220,10 @@ using iterator_t = decltype(std::begin(std::declval<T&>()));
 #  define FMT_USE_GRISU 1
 #endif
 
-template <typename T> inline bool use_grisu() {
+template <typename T> constexpr bool use_grisu() {
   return FMT_USE_GRISU && std::numeric_limits<double>::is_iec559 &&
          sizeof(T) <= sizeof(double);
 }
-
-// A range with an iterator appending to a buffer.
-template <typename T> class buffer_range {
- public:
-  using value_type = T;
-  using iterator = std::back_insert_iterator<buffer<T>>;
-
- private:
-  iterator begin_;
-
- public:
-  buffer_range(buffer<T>& buf) : begin_(std::back_inserter(buf)) {}
-  explicit buffer_range(iterator it) : begin_(it) {}
-  iterator begin() const { return begin_; }
-};
 
 // A range with the specified output iterator and value type.
 template <typename OutputIt, typename T = typename OutputIt::value_type>
@@ -249,9 +234,22 @@ class output_range {
  public:
   using value_type = T;
   using iterator = OutputIt;
+  struct sentinel {};
 
   explicit output_range(OutputIt it) : it_(it) {}
   OutputIt begin() const { return it_; }
+  sentinel end() const { return {}; }  // Sentinel is not used yet.
+};
+
+// A range with an iterator appending to a buffer.
+template <typename T>
+class buffer_range
+    : public output_range<std::back_insert_iterator<buffer<T>>, T> {
+ public:
+  using iterator = std::back_insert_iterator<buffer<T>>;
+  using output_range<iterator, T>::output_range;
+  buffer_range(buffer<T>& buf)
+      : output_range<iterator, T>(std::back_inserter(buf)) {}
 };
 
 #ifdef _SECURE_SCL
