@@ -451,11 +451,6 @@ inline Iterator& reserve(Iterator& it, std::size_t) {
   return it;
 }
 
-template <typename Char> class null_terminating_iterator;
-
-template <typename Char>
-FMT_CONSTEXPR_DECL const Char* pointer_from(null_terminating_iterator<Char> it);
-
 // An output iterator that counts the number of objects written to it and
 // discards them.
 template <typename T> class counting_iterator {

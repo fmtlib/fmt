@@ -109,7 +109,7 @@ class format_preparation_handler : public internal::error_handler {
   typedef format_part<Char> part;
 
  public:
-  typedef internal::null_terminating_iterator<Char> iterator;
+  typedef typename basic_string_view<Char>::iterator iterator;
 
   FMT_CONSTEXPR format_preparation_handler(basic_string_view<Char> format,
                                            PartsContainer& parts)
@@ -357,9 +357,6 @@ template <typename Format> class compiletime_prepared_parts_type_provider {
   using char_type = char_t<Format>;
 
   class count_handler {
-   private:
-    typedef internal::null_terminating_iterator<char_type> iterator;
-
    public:
     FMT_CONSTEXPR count_handler() : counter_(0u) {}
 
