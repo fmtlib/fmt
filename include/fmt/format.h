@@ -1097,6 +1097,9 @@ FMT_CONSTEXPR void handle_float_type_spec(char spec, Handler&& handler) {
   case 'A':
     handler.on_hex();
     break;
+  case 'n':
+    handler.on_num();
+    break;
   default:
     handler.on_error();
     break;
@@ -1159,6 +1162,7 @@ class float_type_checker : private ErrorHandler {
   FMT_CONSTEXPR void on_fixed() {}
   FMT_CONSTEXPR void on_percent() {}
   FMT_CONSTEXPR void on_hex() {}
+  FMT_CONSTEXPR void on_num() {}
 
   FMT_CONSTEXPR void on_error() {
     ErrorHandler::on_error("invalid type specifier");
@@ -2642,9 +2646,14 @@ struct float_spec_handler {
   bool upper;
   bool fixed;
   bool as_percentage;
+  bool use_locale;
 
   explicit float_spec_handler(char t)
-      : type(t), upper(false), fixed(false), as_percentage(false) {}
+      : type(t),
+        upper(false),
+        fixed(false),
+        as_percentage(false),
+        use_locale(false) {}
 
   void on_general() {
     if (type == 'G') upper = true;
@@ -2667,6 +2676,8 @@ struct float_spec_handler {
   void on_hex() {
     if (type == 'A') upper = true;
   }
+
+  void on_num() { use_locale = true; }
 
   FMT_NORETURN void on_error() {
     FMT_THROW(format_error("invalid type specifier"));
@@ -2728,6 +2739,7 @@ void internal::basic_writer<Range>::write_double(T value,
   } else if (spec.align() == ALIGN_DEFAULT) {
     as.align_ = ALIGN_RIGHT;
   }
+  // TODO: add thousands separators if handler.use_locale is set
   if (use_grisu) {
     auto params = internal::gen_digits_params();
     params.fixed = handler.fixed;

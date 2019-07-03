@@ -1424,7 +1424,7 @@ TEST(FormatterTest, FormatFloat) {
 }
 
 TEST(FormatterTest, FormatDouble) {
-  check_unknown_types(1.2, "eEfFgGaA%", "double");
+  check_unknown_types(1.2, "eEfFgGaAn%", "double");
   EXPECT_EQ("0.0", format("{:}", 0.0));
   EXPECT_EQ("0.000000", format("{:f}", 0.0));
   EXPECT_EQ("0", format("{:g}", 0.0));
@@ -1445,6 +1445,10 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ(buffer, format("{:a}", -42.0));
   safe_sprintf(buffer, "%A", -42.0);
   EXPECT_EQ(buffer, format("{:A}", -42.0));
+}
+
+TEST(FormatterTest, FormatDoubleLocale) {
+  EXPECT_EQ("1.23", format("{:n}", 1.23));
 }
 
 TEST(FormatterTest, PrecisionRounding) {
