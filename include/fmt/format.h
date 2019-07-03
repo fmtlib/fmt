@@ -742,26 +742,6 @@ inline int count_digits(uint32_t n) {
 }
 #endif
 
-// A callable that adds a thousands separator.
-template <typename Char> class add_thousands_sep {
- private:
-  basic_string_view<Char> sep_;
-
-  // Index of a decimal digit with the least significant digit having index 0.
-  unsigned digit_index_;
-
- public:
-  explicit add_thousands_sep(basic_string_view<Char> sep)
-      : sep_(sep), digit_index_(0) {}
-
-  void operator()(Char*& buffer) {
-    if (++digit_index_ % 3 != 0) return;
-    buffer -= sep_.size();
-    std::uninitialized_copy(sep_.data(), sep_.data() + sep_.size(),
-                            internal::make_checked(buffer, sep_.size()));
-  }
-};
-
 template <typename Char> FMT_API Char thousands_sep_impl(locale_ref loc);
 
 template <typename Char> inline Char thousands_sep(locale_ref loc) {
@@ -1405,8 +1385,16 @@ template <typename Range> class basic_writer {
 
       template <typename It> void operator()(It&& it) const {
         basic_string_view<char_type> s(&sep, SEP_SIZE);
+        // Index of a decimal digit with the least significant digit having
+        // index 0.
+        unsigned digit_index = 0;
         it = internal::format_decimal<char_type>(
-            it, abs_value, size, internal::add_thousands_sep<char_type>(s));
+            it, abs_value, size, [s, &digit_index](char_type*& buffer) {
+              if (++digit_index % 3 != 0) return;
+              buffer -= s.size();
+              std::uninitialized_copy(s.data(), s.data() + s.size(),
+                                      internal::make_checked(buffer, s.size()));
+            });
       }
     };
 
