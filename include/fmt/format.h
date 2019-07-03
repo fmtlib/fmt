@@ -752,11 +752,11 @@ template <> inline wchar_t thousands_sep(locale_ref loc) {
 }
 
 // Formats a decimal unsigned integer value writing into buffer.
-// thousands_sep is a functor that is called after writing each char to
-// add a thousands separator if necessary.
-template <typename UInt, typename Char, typename ThousandsSep>
+// add_thousands_sep is called after writing each char to add a thousands
+// separator if necessary.
+template <typename UInt, typename Char, typename F>
 inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
-                            ThousandsSep thousands_sep) {
+                            F add_thousands_sep) {
   FMT_ASSERT(num_digits >= 0, "invalid digit count");
   buffer += num_digits;
   Char* end = buffer;
@@ -767,9 +767,9 @@ inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
     unsigned index = static_cast<unsigned>((value % 100) * 2);
     value /= 100;
     *--buffer = static_cast<Char>(data::digits[index + 1]);
-    thousands_sep(buffer);
+    add_thousands_sep(buffer);
     *--buffer = static_cast<Char>(data::digits[index]);
-    thousands_sep(buffer);
+    add_thousands_sep(buffer);
   }
   if (value < 10) {
     *--buffer = static_cast<Char>('0' + value);
@@ -777,20 +777,19 @@ inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
   }
   unsigned index = static_cast<unsigned>(value * 2);
   *--buffer = static_cast<Char>(data::digits[index + 1]);
-  thousands_sep(buffer);
+  add_thousands_sep(buffer);
   *--buffer = static_cast<Char>(data::digits[index]);
   return end;
 }
 
-template <typename Char, typename UInt, typename Iterator,
-          typename ThousandsSep>
+template <typename Char, typename UInt, typename Iterator, typename F>
 inline Iterator format_decimal(Iterator out, UInt value, int num_digits,
-                               ThousandsSep sep) {
+                               F add_thousands_sep) {
   FMT_ASSERT(num_digits >= 0, "invalid digit count");
   // Buffer should be large enough to hold all digits (<= digits10 + 1).
   enum { max_size = std::numeric_limits<UInt>::digits10 + 1 };
   Char buffer[max_size + max_size / 3];
-  auto end = format_decimal(buffer, value, num_digits, sep);
+  auto end = format_decimal(buffer, value, num_digits, add_thousands_sep);
   return internal::copy_str<Char>(buffer, end, out);
 }
 
