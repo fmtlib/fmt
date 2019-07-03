@@ -464,12 +464,12 @@ template <typename T> class counting_iterator {
   mutable T blackhole_;
 
  public:
-  typedef std::output_iterator_tag iterator_category;
-  typedef T value_type;
-  typedef std::ptrdiff_t difference_type;
-  typedef T* pointer;
-  typedef T& reference;
-  typedef counting_iterator _Unchecked_type;  // Mark iterator as checked.
+  using iterator_category = std::output_iterator_tag;
+  using value_type = T;
+  using difference_type = std::ptrdiff_t;
+  using pointer = T*;
+  using reference = T&;
+  using _Unchecked_type = counting_iterator;  // Mark iterator as checked.
 
   counting_iterator() : count_(0) {}
 
@@ -499,12 +499,12 @@ template <typename OutputIt> class truncating_iterator_base {
       : out_(out), limit_(limit), count_(0) {}
 
  public:
-  typedef std::output_iterator_tag iterator_category;
-  typedef void difference_type;
-  typedef void pointer;
-  typedef void reference;
-  typedef truncating_iterator_base
-      _Unchecked_type;  // Mark iterator as checked.
+  using iterator_category = std::output_iterator_tag;
+  using difference_type = void;
+  using pointer = void;
+  using reference = void;
+  using _Unchecked_type =
+      truncating_iterator_base;  // Mark iterator as checked.
 
   OutputIt base() const { return out_; }
   std::size_t count() const { return count_; }
@@ -520,12 +520,12 @@ class truncating_iterator;
 template <typename OutputIt>
 class truncating_iterator<OutputIt, std::false_type>
     : public truncating_iterator_base<OutputIt> {
-  typedef std::iterator_traits<OutputIt> traits;
+  using traits = std::iterator_traits<OutputIt>;
 
   mutable typename traits::value_type blackhole_;
 
  public:
-  typedef typename traits::value_type value_type;
+  using value_type = typename traits::value_type;
 
   truncating_iterator(OutputIt out, std::size_t limit)
       : truncating_iterator_base<OutputIt>(out, limit) {}
@@ -550,7 +550,7 @@ template <typename OutputIt>
 class truncating_iterator<OutputIt, std::true_type>
     : public truncating_iterator_base<OutputIt> {
  public:
-  typedef typename OutputIt::container_type::value_type value_type;
+  using value_type = typename OutputIt::container_type::value_type;
 
   truncating_iterator(OutputIt out, std::size_t limit)
       : truncating_iterator_base<OutputIt>(out, limit) {}
@@ -566,7 +566,7 @@ class truncating_iterator<OutputIt, std::true_type>
 };
 
 // Returns true if value is negative, false otherwise.
-// Same as (value < 0) but doesn't produce warnings if T is an unsigned type.
+// Same as `value < 0` but doesn't produce warnings if T is an unsigned type.
 template <typename T, FMT_ENABLE_IF(std::numeric_limits<T>::is_signed)>
 FMT_CONSTEXPR bool is_negative(T value) {
   return value < 0;
