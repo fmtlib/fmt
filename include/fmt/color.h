@@ -358,7 +358,7 @@ template <typename Char> struct ansi_color_escape {
     // If we have a terminal color, we need to output another escape code
     // sequence.
     if (!text_color.is_rgb) {
-      bool is_background = esc == internal::data::BACKGROUND_COLOR;
+      bool is_background = esc == internal::data::background_color;
       uint32_t value = text_color.value.term_color;
       // Background ASCII codes are the same as the foreground ones but with
       // 10 more.
@@ -430,13 +430,13 @@ template <typename Char> struct ansi_color_escape {
 template <typename Char>
 FMT_CONSTEXPR ansi_color_escape<Char> make_foreground_color(
     internal::color_type foreground) FMT_NOEXCEPT {
-  return ansi_color_escape<Char>(foreground, internal::data::FOREGROUND_COLOR);
+  return ansi_color_escape<Char>(foreground, internal::data::foreground_color);
 }
 
 template <typename Char>
 FMT_CONSTEXPR ansi_color_escape<Char> make_background_color(
     internal::color_type background) FMT_NOEXCEPT {
-  return ansi_color_escape<Char>(background, internal::data::BACKGROUND_COLOR);
+  return ansi_color_escape<Char>(background, internal::data::background_color);
 }
 
 template <typename Char>
@@ -455,17 +455,17 @@ inline void fputs<wchar_t>(const wchar_t* chars, FILE* stream) FMT_NOEXCEPT {
 }
 
 template <typename Char> inline void reset_color(FILE* stream) FMT_NOEXCEPT {
-  fputs(internal::data::RESET_COLOR, stream);
+  fputs(internal::data::reset_color, stream);
 }
 
 template <> inline void reset_color<wchar_t>(FILE* stream) FMT_NOEXCEPT {
-  fputs(internal::data::WRESET_COLOR, stream);
+  fputs(internal::data::wreset_color, stream);
 }
 
 template <typename Char>
 inline void reset_color(basic_memory_buffer<Char>& buffer) FMT_NOEXCEPT {
-  const char* begin = data::RESET_COLOR;
-  const char* end = begin + sizeof(data::RESET_COLOR) - 1;
+  const char* begin = data::reset_color;
+  const char* end = begin + sizeof(data::reset_color) - 1;
   buffer.append(begin, end);
 }
 

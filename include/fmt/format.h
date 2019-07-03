@@ -614,17 +614,17 @@ using uint32_or_64_t =
 
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
-  static const uint64_t POWERS_OF_10_64[];
-  static const uint32_t ZERO_OR_POWERS_OF_10_32[];
-  static const uint64_t ZERO_OR_POWERS_OF_10_64[];
-  static const uint64_t POW10_SIGNIFICANDS[];
-  static const int16_t POW10_EXPONENTS[];
-  static const char DIGITS[];
-  static const char HEX_DIGITS[];
-  static const char FOREGROUND_COLOR[];
-  static const char BACKGROUND_COLOR[];
-  static const char RESET_COLOR[5];
-  static const wchar_t WRESET_COLOR[5];
+  static const uint64_t powers_of_10_64[];
+  static const uint32_t zero_or_powers_of_10_32[];
+  static const uint64_t zero_or_powers_of_10_64[];
+  static const uint64_t pow10_significands[];
+  static const int16_t pow10_exponents[];
+  static const char digits[];
+  static const char hex_digits[];
+  static const char foreground_color[];
+  static const char background_color[];
+  static const char reset_color[5];
+  static const wchar_t wreset_color[5];
 };
 
 FMT_EXTERN template struct basic_data<void>;
@@ -639,7 +639,7 @@ inline int count_digits(uint64_t n) {
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
   int t = (64 - FMT_BUILTIN_CLZLL(n | 1)) * 1233 >> 12;
-  return t - (n < data::ZERO_OR_POWERS_OF_10_64[t]) + 1;
+  return t - (n < data::zero_or_powers_of_10_64[t]) + 1;
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
@@ -700,7 +700,7 @@ class decimal_formatter {
   char* buffer_;
 
   void write_pair(unsigned N, uint32_t index) {
-    std::memcpy(buffer_ + N, data::DIGITS + index * 2, 2);
+    std::memcpy(buffer_ + N, data::digits + index * 2, 2);
   }
 
  public:
@@ -717,7 +717,7 @@ class decimal_formatter {
       unsigned n = N - 1;
       unsigned a = n / 5 * n * 53 / 16;
       uint64_t t =
-          ((1ULL << (32 + a)) / data::ZERO_OR_POWERS_OF_10_32[n] + 1 - n / 9);
+          ((1ULL << (32 + a)) / data::zero_or_powers_of_10_32[n] + 1 - n / 9);
       t = ((t * u) >> a) + n / 5 * 4;
       write_pair(0, t >> 32);
       for (unsigned i = 2; i < N; i += 2) {
@@ -737,7 +737,7 @@ class decimal_formatter {
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline int count_digits(uint32_t n) {
   int t = (32 - FMT_BUILTIN_CLZ(n | 1)) * 1233 >> 12;
-  return t - (n < data::ZERO_OR_POWERS_OF_10_32[t]) + 1;
+  return t - (n < data::zero_or_powers_of_10_32[t]) + 1;
 }
 #endif
 
@@ -766,9 +766,9 @@ inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     unsigned index = static_cast<unsigned>((value % 100) * 2);
     value /= 100;
-    *--buffer = static_cast<Char>(data::DIGITS[index + 1]);
+    *--buffer = static_cast<Char>(data::digits[index + 1]);
     thousands_sep(buffer);
-    *--buffer = static_cast<Char>(data::DIGITS[index]);
+    *--buffer = static_cast<Char>(data::digits[index]);
     thousands_sep(buffer);
   }
   if (value < 10) {
@@ -776,9 +776,9 @@ inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
     return end;
   }
   unsigned index = static_cast<unsigned>(value * 2);
-  *--buffer = static_cast<Char>(data::DIGITS[index + 1]);
+  *--buffer = static_cast<Char>(data::digits[index + 1]);
   thousands_sep(buffer);
-  *--buffer = static_cast<Char>(data::DIGITS[index]);
+  *--buffer = static_cast<Char>(data::digits[index]);
   return end;
 }
 
@@ -805,7 +805,7 @@ inline Char* format_uint(Char* buffer, UInt value, int num_digits,
   buffer += num_digits;
   Char* end = buffer;
   do {
-    const char* digits = upper ? "0123456789ABCDEF" : data::HEX_DIGITS;
+    const char* digits = upper ? "0123456789ABCDEF" : data::hex_digits;
     unsigned digit = (value & ((1 << BASE_BITS) - 1));
     *--buffer = static_cast<Char>(BASE_BITS < 4 ? static_cast<char>('0' + digit)
                                                 : digits[digit]);
@@ -828,7 +828,7 @@ Char* format_uint(Char* buffer, internal::fallback_uintptr n, int num_digits,
     auto p = buffer;
     for (int i = 0; i < char_digits; ++i) {
       unsigned digit = (value & ((1 << BASE_BITS) - 1));
-      *--p = static_cast<Char>(data::HEX_DIGITS[digit]);
+      *--p = static_cast<Char>(data::hex_digits[digit]);
       value >>= BASE_BITS;
     }
   }
@@ -972,11 +972,11 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
   if (exp >= 100) {
     *it++ = static_cast<Char>(static_cast<char>('0' + exp / 100));
     exp %= 100;
-    const char* d = data::DIGITS + exp * 2;
+    const char* d = data::digits + exp * 2;
     *it++ = static_cast<Char>(d[0]);
     *it++ = static_cast<Char>(d[1]);
   } else {
-    const char* d = data::DIGITS + exp * 2;
+    const char* d = data::digits + exp * 2;
     *it++ = static_cast<Char>(d[0]);
     *it++ = static_cast<Char>(d[1]);
   }
@@ -2813,16 +2813,16 @@ class format_int {
       // "Three Optimization Tips for C++". See speed-test for a comparison.
       unsigned index = static_cast<unsigned>((value % 100) * 2);
       value /= 100;
-      *--ptr = internal::data::DIGITS[index + 1];
-      *--ptr = internal::data::DIGITS[index];
+      *--ptr = internal::data::digits[index + 1];
+      *--ptr = internal::data::digits[index];
     }
     if (value < 10) {
       *--ptr = static_cast<char>('0' + value);
       return ptr;
     }
     unsigned index = static_cast<unsigned>(value * 2);
-    *--ptr = internal::data::DIGITS[index + 1];
-    *--ptr = internal::data::DIGITS[index];
+    *--ptr = internal::data::digits[index + 1];
+    *--ptr = internal::data::digits[index];
     return ptr;
   }
 
