@@ -803,7 +803,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     basic_memory_buffer<Char> buf;
     auto out = std::back_inserter(buf);
     using range = internal::output_range<decltype(ctx.out()), Char>;
-    basic_writer<range> w(range(ctx.out()));
+    internal::basic_writer<range> w(range(ctx.out()));
     internal::handle_dynamic_spec<internal::width_checker>(
         spec.width_, width_ref, ctx, format_str.begin());
     internal::handle_dynamic_spec<internal::precision_checker>(

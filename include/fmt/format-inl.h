@@ -164,7 +164,7 @@ FMT_FUNC void format_error_code(internal::buffer<char>& out, int error_code,
     ++error_code_size;
   }
   error_code_size += internal::to_unsigned(internal::count_digits(abs_value));
-  writer w(out);
+  internal::writer w(out);
   if (message.size() <= inline_buffer_size - error_code_size) {
     w.write(message);
     w.write(SEP);
@@ -245,10 +245,9 @@ template <typename T>
 int format_float(char* buf, std::size_t size, const char* format, int precision,
                  T value) {
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-  if (precision > 100000) {
+  if (precision > 100000)
     throw std::runtime_error(
         "fuzz mode - avoid large allocation inside snprintf");
-  }
 #endif
   // Suppress the warning about nonliteral format string.
   auto snprintf_ptr = FMT_SNPRINTF;
@@ -898,7 +897,7 @@ FMT_FUNC void internal::format_windows_error(internal::buffer<char>& out,
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          writer w(out);
+          internal::writer w(out);
           w.write(message);
           w.write(": ");
           w.write(utf8_message);
@@ -927,7 +926,7 @@ FMT_FUNC void format_system_error(internal::buffer<char>& out, int error_code,
       int result =
           internal::safe_strerror(error_code, system_message, buf.size());
       if (result == 0) {
-        writer w(out);
+        internal::writer w(out);
         w.write(message);
         w.write(": ");
         w.write(system_message);

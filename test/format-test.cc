@@ -34,7 +34,7 @@
 using std::size_t;
 
 using fmt::basic_memory_buffer;
-using fmt::basic_writer;
+using fmt::internal::basic_writer;
 using fmt::format;
 using fmt::format_error;
 using fmt::memory_buffer;
@@ -100,7 +100,7 @@ template <typename Char, typename T>
 ::testing::AssertionResult check_write(const T& value, const char* type) {
   fmt::basic_memory_buffer<Char> buffer;
   using range = fmt::internal::buffer_range<Char>;
-  fmt::basic_writer<range> writer(buffer);
+  basic_writer<range> writer(buffer);
   writer.write(value);
   std::basic_string<Char> actual = to_string(buffer);
   std::basic_string<Char> expected;
@@ -582,7 +582,7 @@ TEST(StringViewTest, Ctor) {
 
 TEST(WriterTest, Data) {
   memory_buffer buf;
-  fmt::writer w(buf);
+  fmt::internal::writer w(buf);
   w.write(42);
   EXPECT_EQ("42", to_string(buf));
 }
@@ -649,13 +649,13 @@ TEST(WriterTest, WriteLongDouble) {
 
 TEST(WriterTest, WriteDoubleAtBufferBoundary) {
   memory_buffer buf;
-  fmt::writer writer(buf);
+  fmt::internal::writer writer(buf);
   for (int i = 0; i < 100; ++i) writer.write(1.23456789);
 }
 
 TEST(WriterTest, WriteDoubleWithFilledBuffer) {
   memory_buffer buf;
-  fmt::writer writer(buf);
+  fmt::internal::writer writer(buf);
   // Fill the buffer.
   for (int i = 0; i < fmt::inline_buffer_size; ++i) writer.write(' ');
   writer.write(1.2);
@@ -671,14 +671,10 @@ TEST(WriterTest, WriteWideChar) { CHECK_WRITE_WCHAR(L'a'); }
 TEST(WriterTest, WriteString) {
   CHECK_WRITE_CHAR("abc");
   CHECK_WRITE_WCHAR("abc");
-  // The following line shouldn't compile:
-  // std::declval<fmt::basic_writer<fmt::buffer>>().write(L"abc");
 }
 
 TEST(WriterTest, WriteWideString) {
   CHECK_WRITE_WCHAR(L"abc");
-  // The following line shouldn't compile:
-  // std::declval<fmt::basic_writer<fmt::wbuffer>>().write("abc");
 }
 
 TEST(FormatToTest, FormatWithoutArgs) {
