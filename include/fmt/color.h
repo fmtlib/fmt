@@ -12,54 +12,6 @@
 
 FMT_BEGIN_NAMESPACE
 
-#ifdef FMT_DEPRECATED_COLORS
-
-// color and (v)print_colored are deprecated.
-enum FMT_DEPRECATED color {
-  black,
-  red,
-  green,
-  yellow,
-  blue,
-  magenta,
-  cyan,
-  white
-};
-FMT_DEPRECATED FMT_API void vprint_colored(color c, string_view format,
-                                           format_args args);
-FMT_DEPRECATED FMT_API void vprint_colored(color c, wstring_view format,
-                                           wformat_args args);
-template <typename... Args>
-FMT_DEPRECATED inline void print_colored(color c, string_view format_str,
-                                         const Args&... args) {
-  vprint_colored(c, format_str, make_format_args(args...));
-}
-template <typename... Args>
-FMT_DEPRECATED inline void print_colored(color c, wstring_view format_str,
-                                         const Args&... args) {
-  vprint_colored(c, format_str, make_format_args<wformat_context>(args...));
-}
-
-FMT_DEPRECATED inline void vprint_colored(color c, string_view format,
-                                          format_args args) {
-  char escape[] = "\x1b[30m";
-  escape[3] = static_cast<char>('0' + c);
-  std::fputs(escape, stdout);
-  vprint(format, args);
-  std::fputs(internal::data::RESET_COLOR, stdout);
-}
-
-FMT_DEPRECATED inline void vprint_colored(color c, wstring_view format,
-                                          wformat_args args) {
-  wchar_t escape[] = L"\x1b[30m";
-  escape[3] = static_cast<wchar_t>('0' + c);
-  std::fputws(escape, stdout);
-  vprint(format, args);
-  std::fputws(internal::data::WRESET_COLOR, stdout);
-}
-
-#else
-
 enum class color : uint32_t {
   alice_blue = 0xF0F8FF,               // rgb(240,248,255)
   antique_white = 0xFAEBD7,            // rgb(250,235,215)
@@ -221,18 +173,17 @@ enum class terminal_color : uint8_t {
   bright_magenta,
   bright_cyan,
   bright_white
-};  // enum class terminal_color
+};
 
 enum class emphasis : uint8_t {
   bold = 1,
   italic = 1 << 1,
   underline = 1 << 2,
   strikethrough = 1 << 3
-};  // enum class emphasis
+};
 
 // rgb is a struct for red, green and blue colors.
-// We use rgb as name because some editors will show it as color direct in the
-// editor.
+// Using the name "rgb" makes some editors show the color in a tooltip.
 struct rgb {
   FMT_CONSTEXPR rgb() : r(0), g(0), b(0) {}
   FMT_CONSTEXPR rgb(uint8_t r_, uint8_t g_, uint8_t b_) : r(r_), g(g_), b(b_) {}
@@ -628,8 +579,6 @@ inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
   return internal::vformat(ts, to_string_view(format_str),
                            {internal::make_args_checked(format_str, args...)});
 }
-
-#endif
 
 FMT_END_NAMESPACE
 
