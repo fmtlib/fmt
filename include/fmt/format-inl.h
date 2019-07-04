@@ -210,11 +210,19 @@ template <typename Char> FMT_FUNC Char thousands_sep_impl(locale_ref loc) {
   return std::use_facet<std::numpunct<Char>>(loc.get<std::locale>())
       .thousands_sep();
 }
+template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref loc) {
+  return std::use_facet<std::numpunct<Char>>(loc.get<std::locale>())
+      .decimal_point();
+}
 }  // namespace internal
 #else
 template <typename Char>
 FMT_FUNC Char internal::thousands_sep_impl(locale_ref) {
   return FMT_STATIC_THOUSANDS_SEPARATOR;
+}
+template <typename Char>
+FMT_FUNC Char internal::decimal_point_impl(locale_ref) {
+  return '.';
 }
 #endif
 

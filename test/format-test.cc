@@ -1447,10 +1447,6 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ(buffer, format("{:A}", -42.0));
 }
 
-TEST(FormatterTest, FormatDoubleLocale) {
-  EXPECT_EQ("1.23", format("{:n}", 1.23));
-}
-
 TEST(FormatterTest, PrecisionRounding) {
   EXPECT_EQ("0", format("{:.0f}", 0.0));
   EXPECT_EQ("0", format("{:.0f}", 0.01));

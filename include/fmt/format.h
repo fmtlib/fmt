@@ -742,13 +742,19 @@ inline int count_digits(uint32_t n) {
 #endif
 
 template <typename Char> FMT_API Char thousands_sep_impl(locale_ref loc);
-
 template <typename Char> inline Char thousands_sep(locale_ref loc) {
   return Char(thousands_sep_impl<char>(loc));
 }
-
 template <> inline wchar_t thousands_sep(locale_ref loc) {
   return thousands_sep_impl<wchar_t>(loc);
+}
+
+template <typename Char> FMT_API Char decimal_point_impl(locale_ref loc);
+template <typename Char> inline Char decimal_point(locale_ref loc) {
+  return Char(decimal_point_impl<char>(loc));
+}
+template <> inline wchar_t decimal_point(locale_ref loc) {
+  return decimal_point_impl<wchar_t>(loc);
 }
 
 // Formats a decimal unsigned integer value writing into buffer.
@@ -985,13 +991,13 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
 // The number is given as v = digits * pow(10, exp).
 template <typename Char, typename It>
 It grisu_prettify(const char* digits, int size, int exp, It it,
-                  gen_digits_params params) {
+                  gen_digits_params params, Char decimal_point) {
   // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
   int full_exp = size + exp;
   if (!params.fixed) {
     // Insert a decimal point after the first digit and add an exponent.
     *it++ = static_cast<Char>(*digits);
-    if (size > 1) *it++ = static_cast<Char>('.');
+    if (size > 1) *it++ = decimal_point;
     exp += size - 1;
     it = copy_str<Char>(digits + 1, digits + size, it);
     if (size < params.num_digits)
@@ -1005,7 +1011,7 @@ It grisu_prettify(const char* digits, int size, int exp, It it,
     it = std::fill_n(it, full_exp - size, static_cast<Char>('0'));
     int num_zeros = (std::max)(params.num_digits - full_exp, 1);
     if (params.trailing_zeros) {
-      *it++ = static_cast<Char>('.');
+      *it++ = decimal_point;
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
       if (num_zeros > 1000)
         throw std::runtime_error("fuzz mode - avoiding excessive cpu use");
@@ -1018,10 +1024,10 @@ It grisu_prettify(const char* digits, int size, int exp, It it,
     if (!params.trailing_zeros) {
       // Remove trailing zeros.
       while (size > full_exp && digits[size - 1] == '0') --size;
-      if (size != full_exp) *it++ = static_cast<Char>('.');
+      if (size != full_exp) *it++ = decimal_point;
       return copy_str<Char>(digits + full_exp, digits + size, it);
     }
-    *it++ = static_cast<Char>('.');
+    *it++ = decimal_point;
     it = copy_str<Char>(digits + full_exp, digits + size, it);
     if (params.num_digits > size) {
       // Add trailing zeros.
@@ -1037,7 +1043,7 @@ It grisu_prettify(const char* digits, int size, int exp, It it,
     if (!params.trailing_zeros)
       while (size > 0 && digits[size - 1] == '0') --size;
     if (num_zeros != 0 || size != 0) {
-      *it++ = static_cast<Char>('.');
+      *it++ = decimal_point;
       it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
       it = copy_str<Char>(digits, digits + size, it);
     }
@@ -1453,18 +1459,24 @@ template <typename Range> class basic_writer {
     char sign_;
     int exp_;
     internal::gen_digits_params params_;
+    char_type decimal_point_;
 
    public:
     grisu_writer(char sign, internal::buffer<char>& digits, int exp,
-                 const internal::gen_digits_params& params)
-        : digits_(digits), sign_(sign), exp_(exp), params_(params) {
+                 const internal::gen_digits_params& params,
+                 char_type decimal_point)
+        : digits_(digits),
+          sign_(sign),
+          exp_(exp),
+          params_(params),
+          decimal_point_(decimal_point) {
       int num_digits = static_cast<int>(digits.size());
       int full_exp = num_digits + exp - 1;
       int precision = params.num_digits > 0 ? params.num_digits : 11;
       params_.fixed |= full_exp >= -4 && full_exp < precision;
       auto it = internal::grisu_prettify<char>(
           digits.data(), num_digits, exp, internal::counting_iterator<char>(),
-          params_);
+          params_, '.');
       size_ = it.count();
     }
 
@@ -1475,7 +1487,7 @@ template <typename Range> class basic_writer {
       if (sign_) *it++ = static_cast<char_type>(sign_);
       int num_digits = static_cast<int>(digits_.size());
       it = internal::grisu_prettify<char_type>(digits_.data(), num_digits, exp_,
-                                               it, params_);
+                                               it, params_, decimal_point_);
     }
   };
 
@@ -2739,15 +2751,18 @@ void internal::basic_writer<Range>::write_double(T value,
   } else if (spec.align() == ALIGN_DEFAULT) {
     as.align_ = ALIGN_RIGHT;
   }
-  // TODO: add thousands separators if handler.use_locale is set
+  char_type decimal_point = handler.use_locale
+                                ? internal::decimal_point<char_type>(locale_)
+                                : static_cast<char_type>('.');
   if (use_grisu) {
     auto params = internal::gen_digits_params();
     params.fixed = handler.fixed;
     params.num_digits = precision;
     params.trailing_zeros = (precision != 0 && (handler.fixed || !spec.type)) ||
                             spec.has(HASH_FLAG);
-    write_padded(as, grisu_writer{sign, buffer, exp, params});
+    write_padded(as, grisu_writer(sign, buffer, exp, params, decimal_point));
   } else {
+    // TODO: set decimal point
     write_padded(as, double_writer{sign, buffer});
   }
 }

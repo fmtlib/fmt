@@ -22,6 +22,7 @@ template FMT_API std::locale internal::locale_ref::get<std::locale>() const;
 // Explicit instantiations for char.
 
 template FMT_API char internal::thousands_sep_impl(locale_ref);
+template FMT_API char internal::decimal_point_impl(locale_ref);
 
 template FMT_API void internal::buffer<char>::append(const char*, const char*);
 
@@ -43,6 +44,7 @@ template FMT_API void internal::sprintf_format(long double,
 // Explicit instantiations for wchar_t.
 
 template FMT_API wchar_t internal::thousands_sep_impl(locale_ref);
+template FMT_API wchar_t internal::decimal_point_impl(locale_ref);
 
 template FMT_API void internal::buffer<wchar_t>::append(const wchar_t*,
                                                         const wchar_t*);

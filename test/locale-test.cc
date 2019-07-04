@@ -11,8 +11,14 @@
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 template <typename Char> struct numpunct : std::numpunct<Char> {
  protected:
+  Char do_decimal_point() const FMT_OVERRIDE { return '?'; }
   Char do_thousands_sep() const FMT_OVERRIDE { return '~'; }
 };
+
+TEST(LocaleTest, DoubleDecimalPoint) {
+  std::locale loc(std::locale(), new numpunct<char>());
+  EXPECT_EQ("1?23", fmt::format(loc, "{:n}", 1.23));
+}
 
 TEST(LocaleTest, Format) {
   std::locale loc(std::locale(), new numpunct<char>());
