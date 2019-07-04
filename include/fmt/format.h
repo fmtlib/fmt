@@ -1052,7 +1052,7 @@ It grisu_prettify(const char* digits, int size, int exp, It it,
 }
 
 template <typename Double>
-void sprintf_format(Double, internal::buffer<char>&, core_format_specs);
+char* sprintf_format(Double, internal::buffer<char>&, core_format_specs);
 
 template <typename Handler>
 FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
@@ -1442,13 +1442,21 @@ template <typename Range> class basic_writer {
   struct double_writer {
     char sign;
     internal::buffer<char>& buffer;
+    char* decimal_point_pos;
+    char_type decimal_point;
 
     size_t size() const { return buffer.size() + (sign ? 1 : 0); }
     size_t width() const { return size(); }
 
     template <typename It> void operator()(It&& it) {
       if (sign) *it++ = static_cast<char_type>(sign);
-      it = internal::copy_str<char_type>(buffer.begin(), buffer.end(), it);
+      auto begin = buffer.begin();
+      if (decimal_point_pos) {
+        it = internal::copy_str<char_type>(begin, decimal_point_pos, it);
+        *it++ = decimal_point;
+        begin = decimal_point_pos + 1;
+      }
+      it = internal::copy_str<char_type>(begin, buffer.end(), it);
     }
   };
 
@@ -1595,7 +1603,8 @@ template <typename Range> class basic_writer {
   }
 
   // Formats a floating-point number (double or long double).
-  template <typename T> void write_double(T value, const format_specs& spec);
+  template <typename T, bool USE_GRISU = fmt::internal::use_grisu<T>()>
+  void write_double(T value, const format_specs& spec);
 
   /** Writes a character to the buffer. */
   void write(char value) {
@@ -2697,7 +2706,7 @@ struct float_spec_handler {
 };
 
 template <typename Range>
-template <typename T>
+template <typename T, bool USE_GRISU>
 void internal::basic_writer<Range>::write_double(T value,
                                                  const format_specs& spec) {
   // Check type.
@@ -2728,12 +2737,14 @@ void internal::basic_writer<Range>::write_double(T value,
   int exp = 0;
   int precision = spec.has_precision() || !spec.type ? spec.precision : 6;
   unsigned options = handler.fixed ? internal::grisu_options::fixed : 0;
-  bool use_grisu = fmt::internal::use_grisu<T>() &&
+  bool use_grisu = USE_GRISU &&
                    (spec.type != 'a' && spec.type != 'A' && spec.type != 'e' &&
                     spec.type != 'E') &&
                    internal::grisu_format(static_cast<double>(value), buffer,
                                           precision, options, exp);
-  if (!use_grisu) internal::sprintf_format(value, buffer, spec);
+  char* decimal_point_pos = nullptr;
+  if (!use_grisu)
+    decimal_point_pos = internal::sprintf_format(value, buffer, spec);
 
   if (handler.as_percentage) {
     buffer.push_back('%');
@@ -2762,8 +2773,8 @@ void internal::basic_writer<Range>::write_double(T value,
                             spec.has(HASH_FLAG);
     write_padded(as, grisu_writer(sign, buffer, exp, params, decimal_point));
   } else {
-    // TODO: set decimal point
-    write_padded(as, double_writer{sign, buffer});
+    write_padded(as,
+                 double_writer{sign, buffer, decimal_point_pos, decimal_point});
   }
 }
 

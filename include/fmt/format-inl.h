@@ -753,8 +753,8 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
 }
 
 template <typename Double>
-void sprintf_format(Double value, internal::buffer<char>& buf,
-                    core_format_specs spec) {
+char* sprintf_format(Double value, internal::buffer<char>& buf,
+                     core_format_specs spec) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buf.capacity() != 0, "empty buffer");
 
@@ -774,7 +774,7 @@ void sprintf_format(Double value, internal::buffer<char>& buf,
 
   if (type == '%')
     type = 'f';
-  else if (type == 0)
+  else if (type == 0 || type == 'n')
     type = 'g';
 #if FMT_MSC_VER
   if (type == 'F') {
@@ -787,6 +787,7 @@ void sprintf_format(Double value, internal::buffer<char>& buf,
 
   // Format using snprintf.
   char* start = nullptr;
+  char* decimal_point_pos = nullptr;
   for (;;) {
     std::size_t buffer_size = buf.capacity();
     start = &buf[0];
@@ -801,7 +802,7 @@ void sprintf_format(Double value, internal::buffer<char>& buf,
         if (spec.type != 'a' && spec.type != 'A') {
           while (p < end && *p >= '0' && *p <= '9') ++p;
           if (p < end && *p != 'e' && *p != 'E') {
-            if (*p != '.') *p = '.';
+            decimal_point_pos = p;
             if (!spec.type) {
               // Keep only one trailing zero after the decimal point.
               ++p;
@@ -826,6 +827,7 @@ void sprintf_format(Double value, internal::buffer<char>& buf,
       buf.reserve(buf.capacity() + 1);
     }
   }
+  return decimal_point_pos;
 }
 }  // namespace internal
 
