@@ -653,13 +653,13 @@ FMT_TYPE_CONSTANT(basic_string_view<Char>, string_type);
 FMT_TYPE_CONSTANT(const void*, pointer_type);
 
 FMT_CONSTEXPR bool is_integral(type t) {
-  FMT_ASSERT(t != internal::named_arg_type, "invalid argument type");
-  return t > internal::none_type && t <= internal::last_integer_type;
+  FMT_ASSERT(t != named_arg_type, "invalid argument type");
+  return t > none_type && t <= last_integer_type;
 }
 
 FMT_CONSTEXPR bool is_arithmetic(type t) {
-  FMT_ASSERT(t != internal::named_arg_type, "invalid argument type");
-  return t > internal::none_type && t <= internal::last_numeric_type;
+  FMT_ASSERT(t != named_arg_type, "invalid argument type");
+  return t > none_type && t <= last_numeric_type;
 }
 
 template <typename Char> struct string_value {
