@@ -40,6 +40,7 @@ TEST(GrisuTest, Zero) { EXPECT_EQ("0.0", fmt::format("{}", 0.0)); }
 TEST(GrisuTest, Round) {
   EXPECT_EQ("1.9156918820264798e-56",
             fmt::format("{}", 1.9156918820264798e-56));
+  EXPECT_EQ("0.0000", fmt::format("{:.4f}", 7.2809479766055470e-15));
 }
 
 TEST(GrisuTest, Prettify) {

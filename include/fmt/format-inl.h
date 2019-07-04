@@ -604,6 +604,7 @@ struct fixed_handler {
     // Check if precision is satisfied just by leading zeros, e.g.
     // format("{:.2f}", 0.001) gives "0.00" without generating any digits.
     if (precision > 0) return digits::more;
+    if (precision < 0) return digits::done;
     auto dir = get_round_direction(divisor, remainder, error);
     if (dir == unknown) return digits::error;
     buf[size++] = dir == up ? '1' : '0';
