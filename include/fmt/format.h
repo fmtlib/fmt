@@ -915,7 +915,7 @@ enum { SIGN_FLAG = 1, PLUS_FLAG = 2, MINUS_FLAG = 4, HASH_FLAG = 8 };
 struct align_spec {
   unsigned width_;
   // Fill is always wchar_t and cast to char if necessary to avoid having
-  // two specialization of AlignSpec and its subclasses.
+  // two specialization of align_spec and its subclasses.
   wchar_t fill_;
   alignment align_;
 
@@ -2588,9 +2588,6 @@ class arg_formatter : public internal::arg_formatter_base<Range> {
       : base(Range(ctx.out()), spec, ctx.locale()),
         ctx_(ctx),
         parse_ctx_(parse_ctx) {}
-
-  FMT_DEPRECATED arg_formatter(context_type& ctx, format_specs& spec)
-      : base(Range(ctx.out()), &spec), ctx_(ctx) {}
 
   using base::operator();
 

@@ -1054,7 +1054,6 @@ template <typename OutputIt, typename Char> class basic_format_context {
 
   // Returns an iterator to the beginning of the output range.
   iterator out() { return out_; }
-  FMT_DEPRECATED iterator begin() { return out_; }
 
   // Advances the begin iterator to ``it``.
   void advance_to(iterator it) { out_ = it; }
