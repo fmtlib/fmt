@@ -514,9 +514,8 @@ struct parts_container_concept_check : std::true_type {
   template <typename T, typename = void>
   struct has_format_part_type : std::false_type {};
   template <typename T>
-  struct has_format_part_type<
-      T, typename void_<typename T::format_part_type>::type> : std::true_type {
-  };
+  struct has_format_part_type<T, void_t<typename T::format_part_type>>
+      : std::true_type {};
 
   static_assert(has_format_part_type<PartsContainer>::value,
                 "PartsContainer doesn't provide format_part_type typedef");

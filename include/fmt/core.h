@@ -208,6 +208,9 @@ struct monostate {};
 
 namespace internal {
 
+// A workaround for gcc 4.8 to make void_t work in a SFINAE context.
+template <typename... Ts> struct void_t_impl { using type = void; };
+
 #if defined(FMT_USE_STRING_VIEW)
 template <typename Char> using std_string_view = std::basic_string_view<Char>;
 #elif defined(FMT_USE_EXPERIMENTAL_STRING_VIEW)
@@ -224,6 +227,9 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 }  // namespace internal
+
+template <typename... Ts>
+using void_t = typename internal::void_t_impl<Ts...>::type;
 
 /**
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a

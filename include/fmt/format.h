@@ -216,6 +216,39 @@ inline Dest bit_cast(const Source& source) {
 template <typename T>
 using iterator_t = decltype(std::begin(std::declval<T&>()));
 
+// Detect the iterator category of *any* given type in a SFINAE-friendly way.
+// Unfortunately, older implementations of std::iterator_traits are not safe
+// for use in a SFINAE-context.
+template <typename It, typename Enable = void>
+struct iterator_category : std::false_type {};
+
+template <typename T> struct iterator_category<T*> {
+  using type = std::random_access_iterator_tag;
+};
+
+template <typename It>
+struct iterator_category<It, void_t<typename It::iterator_category>> {
+  using type = typename It::iterator_category;
+};
+
+// Detect if *any* given type models the OutputIterator concept.
+template <typename It> class is_output_iterator {
+  // Check for mutability because all iterator categories derived from
+  // std::input_iterator_tag *may* also meet the requirements of an
+  // OutputIterator, thereby falling into the category of 'mutable iterators'
+  // [iterator.requirements.general] clause 4. The compiler reveals this
+  // property only at the point of *actually dereferencing* the iterator!
+  template <typename U>
+  static decltype(*(std::declval<U>())) test(std::input_iterator_tag);
+  template <typename U> static char& test(std::output_iterator_tag);
+  template <typename U> static const char& test(...);
+
+  using type = decltype(test<It>(typename iterator_category<It>::type{}));
+
+ public:
+  static const bool value = !std::is_const<remove_reference_t<type>>::value;
+};
+
 // A workaround for std::string not having mutable data() until C++17.
 template <typename Char> inline Char* get_data(std::basic_string<Char>& s) {
   return &s[0];
@@ -3305,48 +3338,6 @@ inline typename buffer_context<Char>::iterator format_to(
   return internal::vformat_to(buf, to_string_view(format_str),
                               basic_format_args<context>(as));
 }
-
-namespace internal {
-
-// Detect the iterator category of *any* given type in a SFINAE-friendly way.
-// Unfortunately, older implementations of std::iterator_traits are not safe
-// for use in a SFINAE-context.
-
-// the gist of C++17's void_t magic
-template <typename... Ts> struct void_ { typedef void type; };
-
-template <typename T, typename Enable = void>
-struct it_category : std::false_type {};
-
-template <typename T> struct it_category<T*> {
-  typedef std::random_access_iterator_tag type;
-};
-
-template <typename T>
-struct it_category<T, typename void_<typename T::iterator_category>::type> {
-  typedef typename T::iterator_category type;
-};
-
-// Detect if *any* given type models the OutputIterator concept.
-template <typename It> class is_output_iterator {
-  // Check for mutability because all iterator categories derived from
-  // std::input_iterator_tag *may* also meet the requirements of an
-  // OutputIterator, thereby falling into the category of 'mutable iterators'
-  // [iterator.requirements.general] clause 4.
-  // The compiler reveals this property only at the point of *actually
-  // dereferencing* the iterator!
-  template <typename U>
-  static decltype(*(std::declval<U>())) test(std::input_iterator_tag);
-  template <typename U> static char& test(std::output_iterator_tag);
-  template <typename U> static const char& test(...);
-
-  typedef decltype(test<It>(typename it_category<It>::type{})) type;
-  typedef remove_reference_t<type> result;
-
- public:
-  static const bool value = !std::is_const<result>::value;
-};
-}  // namespace internal
 
 template <typename OutputIt, typename Char = char>
 // using format_context_t = basic_format_context<OutputIt, Char>;
