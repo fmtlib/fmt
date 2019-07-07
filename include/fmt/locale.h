@@ -54,7 +54,7 @@ template <typename S, typename OutputIt, typename... Args,
               internal::is_output_iterator<OutputIt>::value, char_t<S>>>
 inline OutputIt vformat_to(OutputIt out, const std::locale& loc,
                            const S& format_str,
-                           typename format_args_t<OutputIt, Char>::type args) {
+                           format_args_t<OutputIt, Char> args) {
   using range = internal::output_range<OutputIt, Char>;
   return vformat_to<arg_formatter<range>>(
       range(out), to_string_view(format_str), args, internal::locale_ref(loc));
@@ -66,7 +66,7 @@ template <typename OutputIt, typename S, typename... Args,
 inline OutputIt format_to(OutputIt out, const std::locale& loc,
                           const S& format_str, const Args&... args) {
   internal::check_format_string<Args...>(format_str);
-  using context = typename format_context_t<OutputIt, char_t<S>>::type;
+  using context = format_context_t<OutputIt, char_t<S>>;
   format_arg_store<context, Args...> as{args...};
   return vformat_to(out, loc, to_string_view(format_str),
                     basic_format_args<context>(as));

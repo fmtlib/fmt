@@ -3340,25 +3340,17 @@ inline typename buffer_context<Char>::iterator format_to(
 }
 
 template <typename OutputIt, typename Char = char>
-// using format_context_t = basic_format_context<OutputIt, Char>;
-struct format_context_t {
-  typedef basic_format_context<OutputIt, Char> type;
-};
+using format_context_t = basic_format_context<OutputIt, Char>;
 
 template <typename OutputIt, typename Char = char>
-// using format_args_t = basic_format_args<format_context_t<OutputIt, Char>>;
-struct format_args_t {
-  typedef basic_format_args<typename format_context_t<OutputIt, Char>::type>
-      type;
-};
+using format_args_t = basic_format_args<format_context_t<OutputIt, Char>>;
 
 template <typename S, typename OutputIt, typename... Args,
           FMT_ENABLE_IF(
               internal::is_output_iterator<OutputIt>::value &&
               !internal::is_contiguous_back_insert_iterator<OutputIt>::value)>
-inline OutputIt vformat_to(
-    OutputIt out, const S& format_str,
-    typename format_args_t<OutputIt, char_t<S>>::type args) {
+inline OutputIt vformat_to(OutputIt out, const S& format_str,
+                           format_args_t<OutputIt, char_t<S>> args) {
   typedef internal::output_range<OutputIt, char_t<S>> range;
   return vformat_to<arg_formatter<range>>(range(out),
                                           to_string_view(format_str), args);
@@ -3382,7 +3374,7 @@ inline OutputIt format_to(OutputIt out, const S& format_str,
                     internal::is_string<S>::value,
                 "");
   internal::check_format_string<Args...>(format_str);
-  typedef typename format_context_t<OutputIt, char_t<S>>::type context;
+  typedef format_context_t<OutputIt, char_t<S>> context;
   format_arg_store<context, Args...> as{args...};
   return vformat_to(out, to_string_view(format_str),
                     basic_format_args<context>(as));
@@ -3396,28 +3388,24 @@ template <typename OutputIt> struct format_to_n_result {
 };
 
 template <typename OutputIt, typename Char = typename OutputIt::value_type>
-struct format_to_n_context
-    : format_context_t<fmt::internal::truncating_iterator<OutputIt>, Char> {};
+using format_to_n_context =
+    format_context_t<fmt::internal::truncating_iterator<OutputIt>, Char>;
 
 template <typename OutputIt, typename Char = typename OutputIt::value_type>
-struct format_to_n_args {
-  typedef basic_format_args<typename format_to_n_context<OutputIt, Char>::type>
-      type;
-};
+using format_to_n_args = basic_format_args<format_to_n_context<OutputIt, Char>>;
 
 template <typename OutputIt, typename Char, typename... Args>
-inline format_arg_store<typename format_to_n_context<OutputIt, Char>::type,
-                        Args...>
+inline format_arg_store<format_to_n_context<OutputIt, Char>, Args...>
 make_format_to_n_args(const Args&... args) {
-  return format_arg_store<typename format_to_n_context<OutputIt, Char>::type,
-                          Args...>(args...);
+  return format_arg_store<format_to_n_context<OutputIt, Char>, Args...>(
+      args...);
 }
 
 template <typename OutputIt, typename Char, typename... Args,
           FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
 inline format_to_n_result<OutputIt> vformat_to_n(
     OutputIt out, std::size_t n, basic_string_view<Char> format_str,
-    typename format_to_n_args<OutputIt, Char>::type args) {
+    format_to_n_args<OutputIt, Char> args) {
   typedef internal::truncating_iterator<OutputIt> It;
   auto it = vformat_to(It(out, n), format_str, args);
   return {it.base(), it.count()};
@@ -3438,10 +3426,9 @@ inline format_to_n_result<OutputIt> format_to_n(OutputIt out, std::size_t n,
                                                 const Args&... args) {
   internal::check_format_string<Args...>(format_str);
   using Char = char_t<S>;
-  format_arg_store<typename format_to_n_context<OutputIt, Char>::type, Args...>
-  as(args...);
+  format_arg_store<format_to_n_context<OutputIt, Char>, Args...> as(args...);
   return vformat_to_n(out, n, to_string_view(format_str),
-                      typename format_to_n_args<OutputIt, Char>::type(as));
+                      format_to_n_args<OutputIt, Char>(as));
 }
 
 template <typename Char>

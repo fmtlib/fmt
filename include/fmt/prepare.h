@@ -232,7 +232,7 @@ class prepared_format {
 
   template <typename OutputIt>
   inline OutputIt format_to(OutputIt out, const Args&... args) const {
-    typedef typename format_context_t<OutputIt, char_type>::type context;
+    typedef format_context_t<OutputIt, char_type> context;
     typedef output_range<OutputIt, char_type> range;
     format_arg_store<context, Args...> as(args...);
     return this->vformat_to(range(out), basic_format_args<context>(as));
