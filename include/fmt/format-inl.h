@@ -754,7 +754,7 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
 
 template <typename Double>
 char* sprintf_format(Double value, internal::buffer<char>& buf,
-                     core_format_specs specs) {
+                     sprintf_specs specs) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buf.capacity() != 0, "empty buffer");
 

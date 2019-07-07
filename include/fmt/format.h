@@ -954,38 +954,6 @@ using format_specs = basic_format_specs<char>;
 
 namespace internal {
 
-struct core_format_specs {
-  int precision;
-  char type;
-  bool alt : 1;
-
-  template <typename Char>
-  constexpr core_format_specs(basic_format_specs<Char> specs)
-      : precision(specs.precision), type(specs.type), alt(specs.alt) {}
-
-  constexpr bool has_precision() const { return precision >= 0; }
-};
-
-namespace grisu_options {
-enum { fixed = 1, grisu3 = 2 };
-}
-
-// Formats value using the Grisu algorithm:
-// https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
-template <typename Double, FMT_ENABLE_IF(sizeof(Double) == sizeof(uint64_t))>
-FMT_API bool grisu_format(Double, buffer<char>&, int, unsigned, int&);
-template <typename Double, FMT_ENABLE_IF(sizeof(Double) != sizeof(uint64_t))>
-inline bool grisu_format(Double, buffer<char>&, int, unsigned, int&) {
-  return false;
-}
-
-struct gen_digits_params {
-  int num_digits;
-  bool fixed;
-  bool upper;
-  bool trailing_zeros;
-};
-
 // Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
 template <typename Char, typename It> It write_exponent(int exp, It it) {
   FMT_ASSERT(-1000 < exp && exp < 1000, "exponent out of range");
@@ -1008,6 +976,13 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
   }
   return it;
 }
+
+struct gen_digits_params {
+  int num_digits;
+  bool fixed;
+  bool upper;
+  bool trailing_zeros;
+};
 
 // The number is given as v = digits * pow(10, exp).
 template <typename Char, typename It>
@@ -1072,8 +1047,33 @@ It grisu_prettify(const char* digits, int size, int exp, It it,
   return it;
 }
 
+namespace grisu_options {
+enum { fixed = 1, grisu3 = 2 };
+}
+
+// Formats value using the Grisu algorithm:
+// https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
+template <typename Double, FMT_ENABLE_IF(sizeof(Double) == sizeof(uint64_t))>
+FMT_API bool grisu_format(Double, buffer<char>&, int, unsigned, int&);
+template <typename Double, FMT_ENABLE_IF(sizeof(Double) != sizeof(uint64_t))>
+inline bool grisu_format(Double, buffer<char>&, int, unsigned, int&) {
+  return false;
+}
+
+struct sprintf_specs {
+  int precision;
+  char type;
+  bool alt : 1;
+
+  template <typename Char>
+  constexpr sprintf_specs(basic_format_specs<Char> specs)
+      : precision(specs.precision), type(specs.type), alt(specs.alt) {}
+
+  constexpr bool has_precision() const { return precision >= 0; }
+};
+
 template <typename Double>
-char* sprintf_format(Double, internal::buffer<char>&, core_format_specs);
+char* sprintf_format(Double, internal::buffer<char>&, sprintf_specs);
 
 template <typename Handler>
 FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
