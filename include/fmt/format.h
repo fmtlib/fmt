@@ -1834,7 +1834,7 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(const Char*& begin,
 
 template <typename Context> class custom_formatter {
  private:
-  typedef typename Context::char_type char_type;
+  using char_type = typename Context::char_type;
 
   basic_parse_context<char_type>& parse_ctx_;
   Context& ctx_;
@@ -1852,12 +1852,11 @@ template <typename Context> class custom_formatter {
   template <typename T> bool operator()(T) const { return false; }
 };
 
-template <typename T> struct is_integer {
-  enum {
-    value = std::is_integral<T>::value && !std::is_same<T, bool>::value &&
-            !std::is_same<T, char>::value && !std::is_same<T, wchar_t>::value
-  };
-};
+template <typename T>
+using is_integer =
+    bool_constant<std::is_integral<T>::value && !std::is_same<T, bool>::value &&
+                  !std::is_same<T, char>::value &&
+                  !std::is_same<T, wchar_t>::value>;
 
 template <typename ErrorHandler> class width_checker {
  public:
@@ -2031,7 +2030,7 @@ FMT_CONSTEXPR typename Context::format_arg get_arg(Context& ctx, unsigned id) {
 template <typename ParseContext, typename Context>
 class specs_handler : public specs_setter<typename Context::char_type> {
  public:
-  typedef typename Context::char_type char_type;
+  using char_type = typename Context::char_type;
 
   FMT_CONSTEXPR specs_handler(basic_format_specs<char_type>& specs,
                               ParseContext& parse_ctx, Context& ctx)
@@ -2053,7 +2052,7 @@ class specs_handler : public specs_setter<typename Context::char_type> {
 
  private:
   // This is only needed for compatibility with gcc 4.4.
-  typedef typename Context::format_arg format_arg;
+  using format_arg = typename Context::format_arg;
 
   FMT_CONSTEXPR format_arg get_arg(auto_id) {
     return internal::get_arg(context_, parse_context_.next_arg_id());
@@ -2090,23 +2089,25 @@ struct string_view_metadata {
   std::size_t size_;
 };
 
+enum class arg_id_kind { none, index, name };
+
 // An argument reference.
 template <typename Char> struct arg_ref {
-  enum Kind { NONE, INDEX, NAME };
   typedef Char char_type;
 
-  FMT_CONSTEXPR arg_ref() : kind(NONE), val() {}
-  FMT_CONSTEXPR explicit arg_ref(unsigned index) : kind(INDEX), val(index) {}
+  FMT_CONSTEXPR arg_ref() : kind(arg_id_kind::none), val() {}
+  FMT_CONSTEXPR explicit arg_ref(unsigned index)
+      : kind(arg_id_kind::index), val(index) {}
   FMT_CONSTEXPR explicit arg_ref(string_view_metadata name)
-      : kind(NAME), val(name) {}
+      : kind(arg_id_kind::name), val(name) {}
 
   FMT_CONSTEXPR arg_ref& operator=(unsigned idx) {
-    kind = INDEX;
+    kind = arg_id_kind::index;
     val.index = idx;
     return *this;
   }
 
-  Kind kind;
+  arg_id_kind kind;
   union value {
     FMT_CONSTEXPR value() : index(0u) {}
     FMT_CONSTEXPR value(unsigned id) : index(id) {}
@@ -2537,19 +2538,19 @@ template <template <typename> class Handler, typename Spec, typename Context>
 void handle_dynamic_spec(Spec& value, arg_ref<typename Context::char_type> ref,
                          Context& ctx,
                          const typename Context::char_type* format_str) {
-  typedef typename Context::char_type char_type;
   switch (ref.kind) {
-  case arg_ref<char_type>::NONE:
+  case arg_id_kind::none:
     break;
-  case arg_ref<char_type>::INDEX:
+  case arg_id_kind::index:
     internal::set_dynamic_spec<Handler>(value, ctx.arg(ref.val.index),
                                         ctx.error_handler());
     break;
-  case arg_ref<char_type>::NAME: {
+  case arg_id_kind::name: {
     const auto arg_id = ref.val.name.to_view(format_str);
     internal::set_dynamic_spec<Handler>(value, ctx.arg(arg_id),
                                         ctx.error_handler());
-  } break;
+    break;
+  }
   }
 }
 }  // namespace internal
@@ -2838,13 +2839,13 @@ class format_int {
  private:
   // Buffer should be large enough to hold all digits (digits10 + 1),
   // a sign and a null character.
-  enum { BUFFER_SIZE = std::numeric_limits<unsigned long long>::digits10 + 3 };
-  mutable char buffer_[BUFFER_SIZE];
+  enum { buffer_size = std::numeric_limits<unsigned long long>::digits10 + 3 };
+  mutable char buffer_[buffer_size];
   char* str_;
 
   // Formats value in reverse and returns a pointer to the beginning.
   char* format_decimal(unsigned long long value) {
-    char* ptr = buffer_ + (BUFFER_SIZE - 1);  // Parens to workaround MSVC bug.
+    char* ptr = buffer_ + (buffer_size - 1);  // Parens to workaround MSVC bug.
     while (value >= 100) {
       // Integer division is slow so do it for a group of two digits instead
       // of for every digit. The idea comes from the talk by Alexandrescu
@@ -2882,7 +2883,7 @@ class format_int {
 
   /** Returns the number of characters written to the output buffer. */
   std::size_t size() const {
-    return internal::to_unsigned(buffer_ - str_ + BUFFER_SIZE - 1);
+    return internal::to_unsigned(buffer_ - str_ + buffer_size - 1);
   }
 
   /**
@@ -2896,7 +2897,7 @@ class format_int {
     character appended.
    */
   const char* c_str() const {
-    buffer_[BUFFER_SIZE - 1] = '\0';
+    buffer_[buffer_size - 1] = '\0';
     return str_;
   }
 
