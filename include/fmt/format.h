@@ -2093,8 +2093,6 @@ enum class arg_id_kind { none, index, name };
 
 // An argument reference.
 template <typename Char> struct arg_ref {
-  typedef Char char_type;
-
   FMT_CONSTEXPR arg_ref() : kind(arg_id_kind::none), val() {}
   FMT_CONSTEXPR explicit arg_ref(unsigned index)
       : kind(arg_id_kind::index), val(index) {}
@@ -2133,7 +2131,7 @@ template <typename ParseContext>
 class dynamic_specs_handler
     : public specs_setter<typename ParseContext::char_type> {
  public:
-  typedef typename ParseContext::char_type char_type;
+  using char_type = typename ParseContext::char_type;
 
   FMT_CONSTEXPR dynamic_specs_handler(dynamic_format_specs<char_type>& specs,
                                       ParseContext& ctx)
@@ -2157,7 +2155,7 @@ class dynamic_specs_handler
   }
 
  private:
-  typedef arg_ref<char_type> arg_ref_type;
+  using arg_ref_type = arg_ref<char_type>;
 
   FMT_CONSTEXPR arg_ref_type make_arg_ref(unsigned arg_id) {
     context_.check_arg_id(arg_id);
@@ -2493,7 +2491,7 @@ class format_string_checker {
 
   FMT_CONSTEXPR const Char* on_format_specs(const Char* begin, const Char*) {
     advance_to(context_, begin);
-    return arg_id_ < NUM_ARGS ? parse_funcs_[arg_id_](context_) : begin;
+    return arg_id_ < num_args ? parse_funcs_[arg_id_](context_) : begin;
   }
 
   FMT_CONSTEXPR void on_error(const char* message) {
@@ -2501,19 +2499,19 @@ class format_string_checker {
   }
 
  private:
-  typedef basic_parse_context<Char, ErrorHandler> parse_context_type;
-  enum { NUM_ARGS = sizeof...(Args) };
+  using parse_context_type = basic_parse_context<Char, ErrorHandler>;
+  enum { num_args = sizeof...(Args) };
 
   FMT_CONSTEXPR void check_arg_id() {
-    if (arg_id_ >= NUM_ARGS) context_.on_error("argument index out of range");
+    if (arg_id_ >= num_args) context_.on_error("argument index out of range");
   }
 
   // Format specifier parsing function.
-  typedef const Char* (*parse_func)(parse_context_type&);
+  using parse_func = const Char* (*)(parse_context_type&);
 
   unsigned arg_id_;
   parse_context_type context_;
-  parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1];
+  parse_func parse_funcs_[num_args > 0 ? num_args : 1];
 };
 
 template <typename Char, typename ErrorHandler, typename... Args>
@@ -2527,10 +2525,10 @@ FMT_CONSTEXPR bool do_check_format_string(basic_string_view<Char> s,
 template <typename... Args, typename S,
           enable_if_t<(is_compile_string<S>::value), int>>
 void check_format_string(S format_str) {
-  typedef typename S::char_type char_t;
   FMT_CONSTEXPR_DECL bool invalid_format =
-      internal::do_check_format_string<char_t, internal::error_handler,
-                                       Args...>(to_string_view(format_str));
+      internal::do_check_format_string<typename S::char_type,
+                                       internal::error_handler, Args...>(
+          to_string_view(format_str));
   (void)invalid_format;
 }
 
@@ -2565,17 +2563,17 @@ using wwriter FMT_DEPRECATED =
 template <typename Range>
 class arg_formatter : public internal::arg_formatter_base<Range> {
  private:
-  typedef typename Range::value_type char_type;
-  typedef internal::arg_formatter_base<Range> base;
-  typedef basic_format_context<typename base::iterator, char_type> context_type;
+  using char_type = typename Range::value_type;
+  using base = internal::arg_formatter_base<Range>;
+  using context_type = basic_format_context<typename base::iterator, char_type>;
 
   context_type& ctx_;
   basic_parse_context<char_type>* parse_ctx_;
 
  public:
-  typedef Range range;
-  typedef typename base::iterator iterator;
-  typedef typename base::format_specs format_specs;
+  using range = Range;
+  using iterator = typename base::iterator;
+  using format_specs = typename base::format_specs;
 
   /**
     \rst
@@ -3026,7 +3024,7 @@ struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {
 // A formatter for types known only at run time such as variant alternatives.
 //
 // Usage:
-//   typedef std::variant<int, std::string> variant;
+//   using variant = std::variant<int, std::string>;
 //   template <>
 //   struct formatter<variant>: dynamic_formatter<> {
 //     void format(buffer &buf, const variant &v, context &ctx) {
@@ -3074,9 +3072,8 @@ template <typename Char = char> class dynamic_formatter {
     }
     if (specs_.alt) checker.on_hash();
     if (specs_.precision >= 0) checker.end_precision();
-    typedef internal::output_range<typename FormatContext::iterator,
-                                   typename FormatContext::char_type>
-        range;
+    using range = internal::output_range<typename FormatContext::iterator,
+                                         typename FormatContext::char_type>;
     visit_format_arg(arg_formatter<range>(ctx, nullptr, &specs_),
                      internal::make_arg<FormatContext>(val));
     return ctx.out();
@@ -3111,7 +3108,7 @@ FMT_CONSTEXPR void advance_to(basic_parse_context<Char, ErrorHandler>& ctx,
 
 template <typename ArgFormatter, typename Char, typename Context>
 struct format_handler : internal::error_handler {
-  typedef typename ArgFormatter::range range;
+  using range = typename ArgFormatter::range;
 
   format_handler(range r, basic_string_view<Char> str,
                  basic_format_args<Context> format_args,
@@ -3149,7 +3146,7 @@ struct format_handler : internal::error_handler {
     if (visit_format_arg(f, arg)) return parse_context.begin();
     basic_format_specs<Char> specs;
     using internal::specs_handler;
-    typedef basic_parse_context<Char> parse_context_t;
+    using parse_context_t = basic_parse_context<Char>;
     internal::specs_checker<specs_handler<parse_context_t, Context>> handler(
         specs_handler<parse_context_t, Context>(specs, parse_context, context),
         arg.type());
@@ -3200,7 +3197,7 @@ struct formatter<arg_join<It, Char>, Char>
   template <typename FormatContext>
   auto format(const arg_join<It, Char>& value, FormatContext& ctx)
       -> decltype(ctx.out()) {
-    typedef formatter<typename std::iterator_traits<It>::value_type, Char> base;
+    using base = formatter<typename std::iterator_traits<It>::value_type, Char>;
     auto it = value.begin;
     auto out = ctx.out();
     if (it != value.end) {
