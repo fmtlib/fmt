@@ -16,8 +16,8 @@ namespace internal {
 
 template <class Char> class formatbuf : public std::basic_streambuf<Char> {
  private:
-  typedef typename std::basic_streambuf<Char>::int_type int_type;
-  typedef typename std::basic_streambuf<Char>::traits_type traits_type;
+  using int_type = typename std::basic_streambuf<Char>::int_type;
+  using traits_type = typename std::basic_streambuf<Char>::traits_type;
 
   buffer<Char>& buffer_;
 
@@ -63,7 +63,7 @@ template <typename T, typename Char> class is_streamable {
 
   template <typename> static std::false_type test(...);
 
-  typedef decltype(test<T>(0)) result;
+  using result = decltype(test<T>(0));
 
  public:
   static const bool value = result::value;
@@ -73,12 +73,12 @@ template <typename T, typename Char> class is_streamable {
 template <typename Char>
 void write(std::basic_ostream<Char>& os, buffer<Char>& buf) {
   const Char* buf_data = buf.data();
-  typedef std::make_unsigned<std::streamsize>::type UnsignedStreamSize;
-  UnsignedStreamSize size = buf.size();
-  UnsignedStreamSize max_size =
-      internal::to_unsigned((std::numeric_limits<std::streamsize>::max)());
+  using unsigned_streamsize = std::make_unsigned<std::streamsize>::type;
+  unsigned_streamsize size = buf.size();
+  unsigned_streamsize max_size =
+      to_unsigned((std::numeric_limits<std::streamsize>::max)());
   do {
-    UnsignedStreamSize n = size <= max_size ? size : max_size;
+    unsigned_streamsize n = size <= max_size ? size : max_size;
     os.write(buf_data, static_cast<std::streamsize>(n));
     buf_data += n;
     size -= n;
@@ -87,7 +87,7 @@ void write(std::basic_ostream<Char>& os, buffer<Char>& buf) {
 
 template <typename Char, typename T>
 void format_value(buffer<Char>& buf, const T& value) {
-  internal::formatbuf<Char> format_buf(buf);
+  formatbuf<Char> format_buf(buf);
   std::basic_ostream<Char> output(&format_buf);
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
   output << value;
@@ -96,13 +96,12 @@ void format_value(buffer<Char>& buf, const T& value) {
 
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename T, typename Char>
-struct fallback_formatter<T, Char,
-                          enable_if_t<internal::is_streamable<T, Char>::value>>
+struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
     : formatter<basic_string_view<Char>, Char> {
   template <typename Context>
   auto format(const T& value, Context& ctx) -> decltype(ctx.out()) {
     basic_memory_buffer<Char> buffer;
-    internal::format_value(buffer, value);
+    format_value(buffer, value);
     basic_string_view<Char> str(buffer.data(), buffer.size());
     return formatter<basic_string_view<Char>, Char>::format(str, ctx);
   }

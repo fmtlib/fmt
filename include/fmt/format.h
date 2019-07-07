@@ -842,9 +842,8 @@ Char* format_uint(Char* buffer, internal::fallback_uintptr n, int num_digits,
 
 template <unsigned BASE_BITS, typename Char, typename It, typename UInt>
 inline It format_uint(It out, UInt value, int num_digits, bool upper = false) {
-  // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1)
-  // and null.
-  char buffer[std::numeric_limits<UInt>::digits / BASE_BITS + 2];
+  // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1).
+  char buffer[std::numeric_limits<UInt>::digits / BASE_BITS + 1];
   format_uint<BASE_BITS>(buffer, value, num_digits, upper);
   return internal::copy_str<Char>(buffer, buffer + num_digits, out);
 }
@@ -966,14 +965,10 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
   if (exp >= 100) {
     *it++ = static_cast<Char>(static_cast<char>('0' + exp / 100));
     exp %= 100;
-    const char* d = data::digits + exp * 2;
-    *it++ = static_cast<Char>(d[0]);
-    *it++ = static_cast<Char>(d[1]);
-  } else {
-    const char* d = data::digits + exp * 2;
-    *it++ = static_cast<Char>(d[0]);
-    *it++ = static_cast<Char>(d[1]);
   }
+  const char* d = data::digits + exp * 2;
+  *it++ = static_cast<Char>(d[0]);
+  *it++ = static_cast<Char>(d[1]);
   return it;
 }
 
@@ -1226,7 +1221,7 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
   if (map_) return;
   map_ = new entry[args.max_size()];
   if (args.is_packed()) {
-    for (unsigned i = 0; /*nothing*/; ++i) {
+    for (unsigned i = 0;; ++i) {
       internal::type arg_type = args.type(i);
       if (arg_type == internal::none_type) return;
       if (arg_type == internal::named_arg_type) push_back(args.values_[i]);
@@ -1239,15 +1234,13 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
   }
 }
 
-/**
-  This template provides operations for formatting and writing data into a
-  character range.
- */
+// This template provides operations for formatting and writing data into a
+// character range.
 template <typename Range> class basic_writer {
  public:
-  typedef typename Range::value_type char_type;
-  typedef decltype(std::declval<Range>().begin()) iterator;
-  typedef basic_format_specs<char_type> format_specs;
+  using char_type = typename Range::value_type;
+  using iterator = typename Range::iterator;
+  using format_specs = basic_format_specs<char_type>;
 
  private:
   iterator out_;  // Output iterator.
@@ -1403,7 +1396,7 @@ template <typename Range> class basic_writer {
                        bin_writer<3>{abs_value, num_digits});
     }
 
-    enum { SEP_SIZE = 1 };
+    enum { sep_size = 1 };
 
     struct num_writer {
       unsigned_type abs_value;
@@ -1411,7 +1404,7 @@ template <typename Range> class basic_writer {
       char_type sep;
 
       template <typename It> void operator()(It&& it) const {
-        basic_string_view<char_type> s(&sep, SEP_SIZE);
+        basic_string_view<char_type> s(&sep, sep_size);
         // Index of a decimal digit with the least significant digit having
         // index 0.
         unsigned digit_index = 0;
@@ -1428,7 +1421,7 @@ template <typename Range> class basic_writer {
     void on_num() {
       int num_digits = internal::count_digits(abs_value);
       char_type sep = internal::thousands_sep<char_type>(writer.locale_);
-      int size = num_digits + SEP_SIZE * ((num_digits - 1) / 3);
+      int size = num_digits + sep_size * ((num_digits - 1) / 3);
       writer.write_int(size, get_prefix(), specs,
                        num_writer{abs_value, size, sep});
     }
@@ -1438,7 +1431,7 @@ template <typename Range> class basic_writer {
     }
   };
 
-  enum { INF_SIZE = 3 };  // This is an enum to workaround a bug in MSVC.
+  enum { inf_size = 3 };  // This is an enum to workaround a bug in MSVC.
 
   struct inf_or_nan_writer {
     char sign;
@@ -1446,7 +1439,7 @@ template <typename Range> class basic_writer {
     const char* str;
 
     size_t size() const {
-      return static_cast<std::size_t>(INF_SIZE + (sign ? 1 : 0) +
+      return static_cast<std::size_t>(inf_size + (sign ? 1 : 0) +
                                       (as_percentage ? 1 : 0));
     }
     size_t width() const { return size(); }
@@ -1454,7 +1447,7 @@ template <typename Range> class basic_writer {
     template <typename It> void operator()(It&& it) const {
       if (sign) *it++ = static_cast<char_type>(sign);
       it = internal::copy_str<char_type>(
-          str, str + static_cast<std::size_t>(INF_SIZE), it);
+          str, str + static_cast<std::size_t>(inf_size), it);
       if (as_percentage) *it++ = static_cast<char_type>('%');
     }
   };
@@ -1672,12 +1665,12 @@ using writer = basic_writer<buffer_range<char>>;
 template <typename Range, typename ErrorHandler = internal::error_handler>
 class arg_formatter_base {
  public:
-  typedef typename Range::value_type char_type;
-  typedef decltype(std::declval<Range>().begin()) iterator;
-  typedef basic_format_specs<char_type> format_specs;
+  using char_type = typename Range::value_type;
+  using iterator = typename Range::iterator;
+  using format_specs = basic_format_specs<char_type>;
 
  private:
-  typedef basic_writer<Range> writer_type;
+  using writer_type = basic_writer<Range>;
   writer_type writer_;
   format_specs* specs_;
 
