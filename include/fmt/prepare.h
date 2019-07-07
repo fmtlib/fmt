@@ -293,7 +293,7 @@ class prepared_format {
         auto specs = value.spec.parsed_specs;
 
         handle_dynamic_spec<internal::width_checker>(
-            specs.width_, specs.width_ref, ctx, format_view.begin());
+            specs.width, specs.width_ref, ctx, format_view.begin());
         handle_dynamic_spec<internal::precision_checker>(
             specs.precision, specs.precision_ref, ctx, format_view.begin());
 
@@ -330,21 +330,10 @@ class prepared_format {
                             internal::type arg_type) const {
     internal::error_handler h;
     numeric_specs_checker<internal::error_handler> checker(h, arg_type);
-    if (specs.align_ == ALIGN_NUMERIC) {
-      checker.require_numeric_argument();
-    }
-
-    if (specs.has(PLUS_FLAG | MINUS_FLAG | SIGN_FLAG)) {
-      checker.check_sign();
-    }
-
-    if (specs.has(HASH_FLAG)) {
-      checker.require_numeric_argument();
-    }
-
-    if (specs.has_precision()) {
-      checker.check_precision();
-    }
+    if (specs.align == align::numeric) checker.require_numeric_argument();
+    if (specs.sign != sign::none) checker.check_sign();
+    if (specs.alt) checker.require_numeric_argument();
+    if (specs.precision >= 0) checker.check_precision();
   }
 
  private:

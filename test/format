@@ -690,7 +690,7 @@ struct formatter {
   template <typename FormatContext>
   auto format(const T& val, FormatContext& ctx) -> decltype(ctx.out()) {
     fmt::internal::handle_dynamic_spec<fmt::internal::width_checker>(
-        specs_.width_, specs_.width_ref, ctx, nullptr);
+        specs_.width, specs_.width_ref, ctx, nullptr);
     fmt::internal::handle_dynamic_spec<fmt::internal::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx, nullptr);
     using range_type = fmt::internal::output_range<typename FormatContext::iterator,

@@ -898,52 +898,73 @@ FMT_API void format_windows_error(fmt::internal::buffer<char>& out,
 #endif
 
 template <typename T = void> struct null {};
+
+// Workaround an array initialization issue in gcc 4.8.
+template <typename Char> struct fill_t {
+ private:
+  Char data_[6];
+
+ public:
+  FMT_CONSTEXPR Char& operator[](size_t index) { return data_[index]; }
+  FMT_CONSTEXPR const Char& operator[](size_t index) const {
+    return data_[index];
+  }
+
+  static FMT_CONSTEXPR fill_t<Char> make() {
+    auto fill = fill_t<Char>();
+    fill[0] = Char(' ');
+    return fill;
+  }
+};
 }  // namespace internal
 
-enum alignment {
-  ALIGN_DEFAULT,
-  ALIGN_LEFT,
-  ALIGN_RIGHT,
-  ALIGN_CENTER,
-  ALIGN_NUMERIC
+// We cannot use enum classes as bit fields because of a gcc bug
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61414.
+namespace align {
+enum type { none, left, right, center, numeric };
+}
+using align_t = align::type;
+
+namespace sign {
+enum type { none, minus, plus, space };
+}
+using sign_t = sign::type;
+
+// Format specifiers for built-in and string types.
+template <typename Char> struct basic_format_specs {
+  int width;
+  int precision;
+  char type;
+  align_t align : 4;
+  sign_t sign : 3;
+  bool alt : 1;  // Alternate form ('#').
+  internal::fill_t<Char> fill;
+
+  constexpr basic_format_specs()
+      : width(0),
+        precision(-1),
+        type(0),
+        align(align::none),
+        sign(sign::none),
+        alt(false),
+        fill(internal::fill_t<Char>::make()) {}
 };
 
-// Flags.
-enum { SIGN_FLAG = 1, PLUS_FLAG = 2, MINUS_FLAG = 4, HASH_FLAG = 8 };
+using format_specs = basic_format_specs<char>;
 
-// An alignment specifier.
-struct align_spec {
-  unsigned width_;
-  // Fill is always wchar_t and cast to char if necessary to avoid having
-  // two specialization of align_spec and its subclasses.
-  wchar_t fill_;
-  alignment align_;
-
-  FMT_CONSTEXPR align_spec() : width_(0), fill_(' '), align_(ALIGN_DEFAULT) {}
-  FMT_CONSTEXPR unsigned width() const { return width_; }
-  FMT_CONSTEXPR wchar_t fill() const { return fill_; }
-  FMT_CONSTEXPR alignment align() const { return align_; }
-};
+namespace internal {
 
 struct core_format_specs {
   int precision;
-  uint_least8_t flags;
   char type;
+  bool alt : 1;
 
-  FMT_CONSTEXPR core_format_specs() : precision(-1), flags(0), type(0) {}
-  FMT_CONSTEXPR bool has(unsigned f) const { return (flags & f) != 0; }
-  FMT_CONSTEXPR bool has_precision() const { return precision != -1; }
+  template <typename Char>
+  constexpr core_format_specs(basic_format_specs<Char> specs)
+      : precision(specs.precision), type(specs.type), alt(specs.alt) {}
+
+  constexpr bool has_precision() const { return precision >= 0; }
 };
-
-// Format specifiers.
-template <typename Char>
-struct basic_format_specs : align_spec, core_format_specs {
-  FMT_CONSTEXPR basic_format_specs() {}
-};
-
-typedef basic_format_specs<char> format_specs;
-
-namespace internal {
 
 namespace grisu_options {
 enum { fixed = 1, grisu3 = 2 };
@@ -1117,7 +1138,7 @@ FMT_CONSTEXPR void handle_char_specs(const basic_format_specs<Char>* specs,
                                      Handler&& handler) {
   if (!specs) return handler.on_char();
   if (specs->type && specs->type != 'c') return handler.on_int();
-  if (specs->align() == ALIGN_NUMERIC || specs->flags != 0)
+  if (specs->align == align::numeric || specs->sign != sign::none || specs->alt)
     handler.on_error("invalid format specifier for char");
   handler.on_char();
 }
@@ -1262,20 +1283,20 @@ template <typename Range> class basic_writer {
   template <typename Spec, typename F>
   void write_int(int num_digits, string_view prefix, const Spec& spec, F f) {
     std::size_t size = prefix.size() + internal::to_unsigned(num_digits);
-    char_type fill = static_cast<char_type>(spec.fill());
+    char_type fill = spec.fill[0];
     std::size_t padding = 0;
-    if (spec.align() == ALIGN_NUMERIC) {
-      if (spec.width() > size) {
-        padding = spec.width() - size;
-        size = spec.width();
+    if (spec.align == align::numeric) {
+      if (internal::to_unsigned(spec.width) > size) {
+        padding = spec.width - size;
+        size = spec.width;
       }
     } else if (spec.precision > num_digits) {
       size = prefix.size() + internal::to_unsigned(spec.precision);
       padding = internal::to_unsigned(spec.precision - num_digits);
       fill = static_cast<char_type>('0');
     }
-    align_spec as = spec;
-    if (spec.align() == ALIGN_DEFAULT) as.align_ = ALIGN_RIGHT;
+    format_specs as = spec;
+    if (spec.align == align::none) as.align = align::right;
     write_padded(as, padded_int_writer<F>{size, prefix, fill, padding, f});
   }
 
@@ -1312,8 +1333,8 @@ template <typename Range> class basic_writer {
         prefix[0] = '-';
         ++prefix_size;
         abs_value = 0 - abs_value;
-      } else if (spec.has(SIGN_FLAG)) {
-        prefix[0] = spec.has(PLUS_FLAG) ? '+' : ' ';
+      } else if (spec.sign != sign::none && spec.sign != sign::minus) {
+        prefix[0] = spec.sign == sign::plus ? '+' : ' ';
         ++prefix_size;
       }
     }
@@ -1344,9 +1365,9 @@ template <typename Range> class basic_writer {
     };
 
     void on_hex() {
-      if (spec.has(HASH_FLAG)) {
+      if (spec.alt) {
         prefix[prefix_size++] = '0';
-        prefix[prefix_size++] = static_cast<char>(spec.type);
+        prefix[prefix_size++] = spec.type;
       }
       int num_digits = internal::count_digits<4>(abs_value);
       writer.write_int(num_digits, get_prefix(), spec,
@@ -1363,7 +1384,7 @@ template <typename Range> class basic_writer {
     };
 
     void on_bin() {
-      if (spec.has(HASH_FLAG)) {
+      if (spec.alt) {
         prefix[prefix_size++] = '0';
         prefix[prefix_size++] = static_cast<char>(spec.type);
       }
@@ -1374,7 +1395,7 @@ template <typename Range> class basic_writer {
 
     void on_oct() {
       int num_digits = internal::count_digits<3>(abs_value);
-      if (spec.has(HASH_FLAG) && spec.precision <= num_digits) {
+      if (spec.alt && spec.precision <= num_digits) {
         // Octal prefix '0' is counted as a digit, so only add it if precision
         // is not greater than the number of digits.
         prefix[prefix_size++] = '0';
@@ -1538,18 +1559,18 @@ template <typename Range> class basic_writer {
   // Writes a value in the format
   //   <left-padding><value><right-padding>
   // where <value> is written by f(it).
-  template <typename F> void write_padded(const align_spec& spec, F&& f) {
-    unsigned width = spec.width();  // User-perceived width (in code points).
-    size_t size = f.size();         // The number of code units.
+  template <typename F> void write_padded(const format_specs& spec, F&& f) {
+    unsigned width = spec.width;  // User-perceived width (in code points).
+    size_t size = f.size();       // The number of code units.
     size_t num_code_points = width != 0 ? f.width() : size;
     if (width <= num_code_points) return f(reserve(size));
     auto&& it = reserve(width + (size - num_code_points));
-    char_type fill = static_cast<char_type>(spec.fill());
+    char_type fill = spec.fill[0];
     std::size_t padding = width - num_code_points;
-    if (spec.align() == ALIGN_RIGHT) {
+    if (spec.align == align::right) {
       it = std::fill_n(it, padding, fill);
       f(it);
-    } else if (spec.align() == ALIGN_CENTER) {
+    } else if (spec.align == align::center) {
       std::size_t left_padding = padding / 2;
       it = std::fill_n(it, left_padding, fill);
       f(it);
@@ -1584,7 +1605,7 @@ template <typename Range> class basic_writer {
             FMT_ENABLE_IF(std::is_integral<T>::value)>
   void write(T value, FormatSpec spec, FormatSpecs... specs) {
     format_specs s(spec, specs...);
-    s.align_ = ALIGN_RIGHT;
+    s.align = align::right;
     write_int(value, s);
   }
 
@@ -1635,7 +1656,7 @@ template <typename Range> class basic_writer {
 
   // Writes a formatted string.
   template <typename Char>
-  void write(const Char* s, std::size_t size, const align_spec& spec) {
+  void write(const Char* s, std::size_t size, const format_specs& spec) {
     write_padded(spec, str_writer<Char>{s, size});
   }
 
@@ -1650,12 +1671,12 @@ template <typename Range> class basic_writer {
   }
 
   template <typename UIntPtr>
-  void write_pointer(UIntPtr value, const align_spec* spec) {
+  void write_pointer(UIntPtr value, const format_specs* spec) {
     int num_digits = internal::count_digits<4>(value);
     auto pw = pointer_writer<UIntPtr>{value, num_digits};
     if (!spec) return pw(reserve(num_digits + 2));
-    align_spec as = *spec;
-    if (as.align() == ALIGN_DEFAULT) as.align_ = ALIGN_RIGHT;
+    format_specs as = *spec;
+    if (as.align == align::none) as.align = align::right;
     write_padded(as, pw);
   }
 };
@@ -1907,19 +1928,19 @@ template <typename Char> class specs_setter {
   FMT_CONSTEXPR specs_setter(const specs_setter& other)
       : specs_(other.specs_) {}
 
-  FMT_CONSTEXPR void on_align(alignment align) { specs_.align_ = align; }
-  FMT_CONSTEXPR void on_fill(Char fill) { specs_.fill_ = fill; }
-  FMT_CONSTEXPR void on_plus() { specs_.flags |= SIGN_FLAG | PLUS_FLAG; }
-  FMT_CONSTEXPR void on_minus() { specs_.flags |= MINUS_FLAG; }
-  FMT_CONSTEXPR void on_space() { specs_.flags |= SIGN_FLAG; }
-  FMT_CONSTEXPR void on_hash() { specs_.flags |= HASH_FLAG; }
+  FMT_CONSTEXPR void on_align(align_t align) { specs_.align = align; }
+  FMT_CONSTEXPR void on_fill(Char fill) { specs_.fill[0] = fill; }
+  FMT_CONSTEXPR void on_plus() { specs_.sign = sign::plus; }
+  FMT_CONSTEXPR void on_minus() { specs_.sign = sign::minus; }
+  FMT_CONSTEXPR void on_space() { specs_.sign = sign::space; }
+  FMT_CONSTEXPR void on_hash() { specs_.alt = true; }
 
   FMT_CONSTEXPR void on_zero() {
-    specs_.align_ = ALIGN_NUMERIC;
-    specs_.fill_ = '0';
+    specs_.align = align::numeric;
+    specs_.fill[0] = Char('0');
   }
 
-  FMT_CONSTEXPR void on_width(unsigned width) { specs_.width_ = width; }
+  FMT_CONSTEXPR void on_width(unsigned width) { specs_.width = width; }
   FMT_CONSTEXPR void on_precision(unsigned precision) {
     specs_.precision = static_cast<int>(precision);
   }
@@ -1971,8 +1992,8 @@ template <typename Handler> class specs_checker : public Handler {
   FMT_CONSTEXPR specs_checker(const specs_checker& other)
       : Handler(other), checker_(*this, other.arg_type_) {}
 
-  FMT_CONSTEXPR void on_align(alignment align) {
-    if (align == ALIGN_NUMERIC) checker_.require_numeric_argument();
+  FMT_CONSTEXPR void on_align(align_t align) {
+    if (align == align::numeric) checker_.require_numeric_argument();
     Handler::on_align(align);
   }
 
@@ -2039,7 +2060,7 @@ class specs_handler : public specs_setter<typename Context::char_type> {
         context_(ctx) {}
 
   template <typename Id> FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
-    set_dynamic_spec<width_checker>(this->specs_.width_, get_arg(arg_id),
+    set_dynamic_spec<width_checker>(this->specs_.width, get_arg(arg_id),
                                     context_.error_handler());
   }
 
@@ -2242,25 +2263,25 @@ template <typename Char, typename Handler>
 FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
                                       Handler&& handler) {
   FMT_ASSERT(begin != end, "");
-  alignment align = ALIGN_DEFAULT;
+  auto align = align::none;
   int i = 0;
   if (begin + 1 != end) ++i;
   do {
     switch (static_cast<char>(begin[i])) {
     case '<':
-      align = ALIGN_LEFT;
+      align = align::left;
       break;
     case '>':
-      align = ALIGN_RIGHT;
+      align = align::right;
       break;
     case '=':
-      align = ALIGN_NUMERIC;
+      align = align::numeric;
       break;
     case '^':
-      align = ALIGN_CENTER;
+      align = align::center;
       break;
     }
-    if (align != ALIGN_DEFAULT) {
+    if (align != align::none) {
       if (i > 0) {
         auto c = *begin;
         if (c == '{')
@@ -2715,8 +2736,11 @@ void internal::basic_writer<Range>::write_double(T value,
   if (std::signbit(value)) {
     sign = '-';
     value = -value;
-  } else if (spec.has(SIGN_FLAG)) {
-    sign = spec.has(PLUS_FLAG) ? '+' : ' ';
+  } else if (spec.sign != sign::none) {
+    if (spec.sign == sign::plus)
+      sign = '+';
+    else if (spec.sign == sign::space)
+      sign = ' ';
   }
 
   if (!std::isfinite(value)) {
@@ -2732,7 +2756,7 @@ void internal::basic_writer<Range>::write_double(T value,
 
   memory_buffer buffer;
   int exp = 0;
-  int precision = spec.has_precision() || !spec.type ? spec.precision : 6;
+  int precision = spec.precision >= 0 || !spec.type ? spec.precision : 6;
   unsigned options = handler.fixed ? internal::grisu_options::fixed : 0;
   bool use_grisu = USE_GRISU &&
                    (spec.type != 'a' && spec.type != 'A' && spec.type != 'e' &&
@@ -2747,17 +2771,17 @@ void internal::basic_writer<Range>::write_double(T value,
     buffer.push_back('%');
     --exp;  // Adjust decimal place position.
   }
-  align_spec as = spec;
-  if (spec.align() == ALIGN_NUMERIC) {
+  format_specs as = spec;
+  if (spec.align == align::numeric) {
     if (sign) {
       auto&& it = reserve(1);
       *it++ = static_cast<char_type>(sign);
       sign = 0;
-      if (as.width_) --as.width_;
+      if (as.width) --as.width;
     }
-    as.align_ = ALIGN_RIGHT;
-  } else if (spec.align() == ALIGN_DEFAULT) {
-    as.align_ = ALIGN_RIGHT;
+    as.align = align::right;
+  } else if (spec.align == align::none) {
+    as.align = align::right;
   }
   char_type decimal_point = handler.use_locale
                                 ? internal::decimal_point<char_type>(locale_)
@@ -2766,8 +2790,8 @@ void internal::basic_writer<Range>::write_double(T value,
     auto params = internal::gen_digits_params();
     params.fixed = handler.fixed;
     params.num_digits = precision;
-    params.trailing_zeros = (precision != 0 && (handler.fixed || !spec.type)) ||
-                            spec.has(HASH_FLAG);
+    params.trailing_zeros =
+        (precision != 0 && (handler.fixed || !spec.type)) || spec.alt;
     write_padded(as, grisu_writer(sign, buffer, exp, params, decimal_point));
   } else {
     write_padded(as,
@@ -2966,7 +2990,7 @@ struct formatter<T, Char,
   template <typename FormatContext>
   auto format(const T& val, FormatContext& ctx) -> decltype(ctx.out()) {
     internal::handle_dynamic_spec<internal::width_checker>(
-        specs_.width_, specs_.width_ref, ctx, format_str_);
+        specs_.width, specs_.width_ref, ctx, format_str_);
     internal::handle_dynamic_spec<internal::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx, format_str_);
     using range_type =
@@ -3031,7 +3055,7 @@ struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {
 template <typename Char = char> class dynamic_formatter {
  private:
   struct null_handler : internal::error_handler {
-    void on_align(alignment) {}
+    void on_align(align_t) {}
     void on_plus() {}
     void on_minus() {}
     void on_space() {}
@@ -3053,16 +3077,22 @@ template <typename Char = char> class dynamic_formatter {
     internal::specs_checker<null_handler> checker(
         null_handler(),
         internal::mapped_type_constant<T, FormatContext>::value);
-    checker.on_align(specs_.align());
-    if (specs_.flags == 0)
-      ;  // Do nothing.
-    else if (specs_.has(SIGN_FLAG))
-      specs_.has(PLUS_FLAG) ? checker.on_plus() : checker.on_space();
-    else if (specs_.has(MINUS_FLAG))
+    checker.on_align(specs_.align);
+    switch (specs_.sign) {
+    case sign::none:
+      break;
+    case sign::plus:
+      checker.on_plus();
+      break;
+    case sign::minus:
       checker.on_minus();
-    else if (specs_.has(HASH_FLAG))
-      checker.on_hash();
-    if (specs_.precision != -1) checker.end_precision();
+      break;
+    case sign::space:
+      checker.on_space();
+      break;
+    }
+    if (specs_.alt) checker.on_hash();
+    if (specs_.precision >= 0) checker.end_precision();
     typedef internal::output_range<typename FormatContext::iterator,
                                    typename FormatContext::char_type>
         range;
@@ -3074,7 +3104,7 @@ template <typename Char = char> class dynamic_formatter {
  private:
   template <typename Context> void handle_specs(Context& ctx) {
     internal::handle_dynamic_spec<internal::width_checker>(
-        specs_.width_, specs_.width_ref, ctx, format_str_);
+        specs_.width, specs_.width_ref, ctx, format_str_);
     internal::handle_dynamic_spec<internal::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx, format_str_);
   }

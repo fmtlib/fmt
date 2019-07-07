@@ -763,7 +763,7 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
   char format[max_format_size];
   char* format_ptr = format;
   *format_ptr++ = '%';
-  if (spec.has(HASH_FLAG) || !spec.type) *format_ptr++ = '#';
+  if (spec.alt || !spec.type) *format_ptr++ = '#';
   if (spec.precision >= 0) {
     *format_ptr++ = '.';
     *format_ptr++ = '*';

@@ -2103,7 +2103,7 @@ struct test_format_specs_handler {
   enum Result { NONE, PLUS, MINUS, SPACE, HASH, ZERO, ERROR };
   Result res = NONE;
 
-  fmt::alignment align_ = fmt::ALIGN_DEFAULT;
+  fmt::align_t align = fmt::align::none;
   char fill = 0;
   unsigned width = 0;
   fmt::internal::arg_ref<char> width_ref;
@@ -2117,7 +2117,7 @@ struct test_format_specs_handler {
   FMT_CONSTEXPR test_format_specs_handler(
       const test_format_specs_handler& other)
       : res(other.res),
-        align_(other.align_),
+        align(other.align),
         fill(other.fill),
         width(other.width),
         width_ref(other.width_ref),
@@ -2125,7 +2125,7 @@ struct test_format_specs_handler {
         precision_ref(other.precision_ref),
         type(other.type) {}
 
-  FMT_CONSTEXPR void on_align(fmt::alignment a) { align_ = a; }
+  FMT_CONSTEXPR void on_align(fmt::align_t a) { align = a; }
   FMT_CONSTEXPR void on_fill(char f) { fill = f; }
   FMT_CONSTEXPR void on_plus() { res = PLUS; }
   FMT_CONSTEXPR void on_minus() { res = MINUS; }
@@ -2159,7 +2159,7 @@ FMT_CONSTEXPR test_format_specs_handler parse_test_specs(const char (&s)[N]) {
 
 TEST(FormatTest, ConstexprParseFormatSpecs) {
   typedef test_format_specs_handler handler;
-  static_assert(parse_test_specs("<").align_ == fmt::ALIGN_LEFT, "");
+  static_assert(parse_test_specs("<").align == fmt::align::left, "");
   static_assert(parse_test_specs("*^").fill == '*', "");
   static_assert(parse_test_specs("+").res == handler::PLUS, "");
   static_assert(parse_test_specs("-").res == handler::MINUS, "");
@@ -2216,16 +2216,16 @@ FMT_CONSTEXPR fmt::format_specs parse_specs(const char (&s)[N]) {
 }
 
 TEST(FormatTest, ConstexprSpecsHandler) {
-  static_assert(parse_specs("<").align() == fmt::ALIGN_LEFT, "");
-  static_assert(parse_specs("*^").fill() == '*', "");
-  static_assert(parse_specs("+").has(fmt::PLUS_FLAG), "");
-  static_assert(parse_specs("-").has(fmt::MINUS_FLAG), "");
-  static_assert(parse_specs(" ").has(fmt::SIGN_FLAG), "");
-  static_assert(parse_specs("#").has(fmt::HASH_FLAG), "");
-  static_assert(parse_specs("0").align() == fmt::ALIGN_NUMERIC, "");
-  static_assert(parse_specs("42").width() == 42, "");
-  static_assert(parse_specs("{}").width() == 11, "");
-  static_assert(parse_specs("{22}").width() == 22, "");
+  static_assert(parse_specs("<").align == fmt::align::left, "");
+  static_assert(parse_specs("*^").fill[0] == '*', "");
+  static_assert(parse_specs("+").sign == fmt::sign::plus, "");
+  static_assert(parse_specs("-").sign == fmt::sign::minus, "");
+  static_assert(parse_specs(" ").sign == fmt::sign::space, "");
+  static_assert(parse_specs("#").alt, "");
+  static_assert(parse_specs("0").align == fmt::align::numeric, "");
+  static_assert(parse_specs("42").width == 42, "");
+  static_assert(parse_specs("{}").width == 11, "");
+  static_assert(parse_specs("{22}").width == 22, "");
   static_assert(parse_specs(".42").precision == 42, "");
   static_assert(parse_specs(".{}").precision == 11, "");
   static_assert(parse_specs(".{22}").precision == 22, "");
@@ -2243,14 +2243,14 @@ FMT_CONSTEXPR fmt::internal::dynamic_format_specs<char> parse_dynamic_specs(
 }
 
 TEST(FormatTest, ConstexprDynamicSpecsHandler) {
-  static_assert(parse_dynamic_specs("<").align() == fmt::ALIGN_LEFT, "");
-  static_assert(parse_dynamic_specs("*^").fill() == '*', "");
-  static_assert(parse_dynamic_specs("+").has(fmt::PLUS_FLAG), "");
-  static_assert(parse_dynamic_specs("-").has(fmt::MINUS_FLAG), "");
-  static_assert(parse_dynamic_specs(" ").has(fmt::SIGN_FLAG), "");
-  static_assert(parse_dynamic_specs("#").has(fmt::HASH_FLAG), "");
-  static_assert(parse_dynamic_specs("0").align() == fmt::ALIGN_NUMERIC, "");
-  static_assert(parse_dynamic_specs("42").width() == 42, "");
+  static_assert(parse_dynamic_specs("<").align == fmt::align::left, "");
+  static_assert(parse_dynamic_specs("*^").fill[0] == '*', "");
+  static_assert(parse_dynamic_specs("+").sign == fmt::sign::plus, "");
+  static_assert(parse_dynamic_specs("-").sign == fmt::sign::minus, "");
+  static_assert(parse_dynamic_specs(" ").sign == fmt::sign::space, "");
+  static_assert(parse_dynamic_specs("#").alt, "");
+  static_assert(parse_dynamic_specs("0").align == fmt::align::numeric, "");
+  static_assert(parse_dynamic_specs("42").width == 42, "");
   static_assert(parse_dynamic_specs("{}").width_ref.val.index == 11, "");
   static_assert(parse_dynamic_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_dynamic_specs(".42").precision == 42, "");
@@ -2269,7 +2269,7 @@ FMT_CONSTEXPR test_format_specs_handler check_specs(const char (&s)[N]) {
 
 TEST(FormatTest, ConstexprSpecsChecker) {
   typedef test_format_specs_handler handler;
-  static_assert(check_specs("<").align_ == fmt::ALIGN_LEFT, "");
+  static_assert(check_specs("<").align == fmt::align::left, "");
   static_assert(check_specs("*^").fill == '*', "");
   static_assert(check_specs("+").res == handler::PLUS, "");
   static_assert(check_specs("-").res == handler::MINUS, "");

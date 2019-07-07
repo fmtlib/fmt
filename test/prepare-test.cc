@@ -71,12 +71,12 @@ bool operator==(const format_part<char>::specification& lhs,
   } break;
   }
 
-  return std::tie(lhs.parsed_specs.width_, lhs.parsed_specs.fill_,
-                  lhs.parsed_specs.align_, lhs.parsed_specs.precision,
-                  lhs.parsed_specs.flags, lhs.parsed_specs.type) ==
-         std::tie(rhs.parsed_specs.width_, rhs.parsed_specs.fill_,
-                  rhs.parsed_specs.align_, rhs.parsed_specs.precision,
-                  rhs.parsed_specs.flags, rhs.parsed_specs.type);
+  return std::tie(lhs.parsed_specs.width, lhs.parsed_specs.fill[0],
+                  lhs.parsed_specs.align, lhs.parsed_specs.precision,
+                  lhs.parsed_specs.sign, lhs.parsed_specs.type) ==
+         std::tie(rhs.parsed_specs.width, rhs.parsed_specs.fill[0],
+                  rhs.parsed_specs.align, rhs.parsed_specs.precision,
+                  rhs.parsed_specs.sign, rhs.parsed_specs.type);
 }
 
 bool operator!=(const format_part<char>::specification& lhs,
@@ -352,8 +352,8 @@ TEST(
   const auto last_part = format_part(0u);
   format_part::specification expected_specification(0u);
   fmt::internal::dynamic_format_specs<char> specs{};
-  specs.align_ = fmt::alignment::ALIGN_LEFT;
-  specs.width_ = 10;
+  specs.align = fmt::align::left;
+  specs.width = 10;
   expected_specification.parsed_specs = specs;
 
   auto expected_substitution_part = format_part(expected_specification);
@@ -384,8 +384,8 @@ TEST(
   const auto last_part = format_part(format_part::named_argument_id(arg_id));
   format_part::specification expected_specification(arg_id);
   fmt::internal::dynamic_format_specs<char> specs{};
-  specs.align_ = fmt::alignment::ALIGN_LEFT;
-  specs.width_ = 10;
+  specs.align = fmt::align::left;
+  specs.width = 10;
   expected_specification.parsed_specs = specs;
 
   auto expected_substitution_part = format_part(expected_specification);

@@ -160,7 +160,7 @@ template <typename Char> class printf_width_handler {
   unsigned operator()(T value) {
     auto width = static_cast<uint32_or_64_t<T>>(value);
     if (internal::is_negative(value)) {
-      spec_.align_ = ALIGN_LEFT;
+      spec_.align = align::left;
       width = 0 - width;
     }
     unsigned int_max = std::numeric_limits<int>::max();
@@ -248,8 +248,9 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
       format_specs& fmt_spec = *this->spec();
       if (fmt_spec.type && fmt_spec.type != 'c')
         return (*this)(static_cast<int>(value));
-      fmt_spec.flags = 0;
-      fmt_spec.align_ = ALIGN_RIGHT;
+      fmt_spec.sign = sign::none;
+      fmt_spec.alt = false;
+      fmt_spec.align = align::right;
       return base::operator()(value);
     } else {
       return base::operator()(value);
@@ -378,19 +379,19 @@ void basic_printf_context<OutputIt, Char>::parse_flags(format_specs& spec,
   for (; it != end; ++it) {
     switch (*it) {
     case '-':
-      spec.align_ = ALIGN_LEFT;
+      spec.align = align::left;
       break;
     case '+':
-      spec.flags |= SIGN_FLAG | PLUS_FLAG;
+      spec.sign = sign::plus;
       break;
     case '0':
-      spec.fill_ = '0';
+      spec.fill[0] = '0';
       break;
     case ' ':
-      spec.flags |= SIGN_FLAG;
+      spec.sign = sign::space;
       break;
     case '#':
-      spec.flags |= HASH_FLAG;
+      spec.alt = true;
       break;
     default:
       return;
@@ -422,11 +423,11 @@ unsigned basic_printf_context<OutputIt, Char>::parse_header(
       ++it;
       arg_index = value;
     } else {
-      if (c == '0') spec.fill_ = '0';
+      if (c == '0') spec.fill[0] = '0';
       if (value != 0) {
         // Nonzero value means that we parsed width and don't need to
         // parse it or flags again, so return now.
-        spec.width_ = value;
+        spec.width = value;
         return arg_index;
       }
     }
@@ -436,10 +437,10 @@ unsigned basic_printf_context<OutputIt, Char>::parse_header(
   if (it != end) {
     if (*it >= '0' && *it <= '9') {
       internal::error_handler eh;
-      spec.width_ = parse_nonnegative_int(it, end, eh);
+      spec.width = parse_nonnegative_int(it, end, eh);
     } else if (*it == '*') {
       ++it;
-      spec.width_ = visit_format_arg(
+      spec.width = visit_format_arg(
           internal::printf_width_handler<char_type>(spec), get_arg());
     }
   }
@@ -464,7 +465,7 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     out = std::copy(start, it - 1, out);
 
     format_specs spec;
-    spec.align_ = ALIGN_RIGHT;
+    spec.align = align::right;
 
     // Parse argument index, flags and width.
     unsigned arg_index = parse_header(it, end, spec);
@@ -486,14 +487,13 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     }
 
     format_arg arg = get_arg(arg_index);
-    if (spec.has(HASH_FLAG) && visit_format_arg(internal::is_zero_int(), arg))
-      spec.flags = static_cast<uint_least8_t>(
-          spec.flags & (~internal::to_unsigned<int>(HASH_FLAG)));
-    if (spec.fill_ == '0') {
+    if (spec.alt && visit_format_arg(internal::is_zero_int(), arg))
+      spec.alt = false;
+    if (spec.fill[0] == '0') {
       if (arg.is_arithmetic())
-        spec.align_ = ALIGN_NUMERIC;
+        spec.align = align::numeric;
       else
-        spec.fill_ = ' ';  // Ignore '0' flag for non-numeric types.
+        spec.fill[0] = ' ';  // Ignore '0' flag for non-numeric types.
     }
 
     // Parse length and convert the argument to the required type.
