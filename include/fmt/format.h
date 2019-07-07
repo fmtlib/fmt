@@ -3334,9 +3334,8 @@ inline typename buffer_context<Char>::iterator format_to(
     const Args&... args) {
   internal::check_format_string<Args...>(format_str);
   using context = buffer_context<Char>;
-  format_arg_store<context, Args...> as{args...};
   return internal::vformat_to(buf, to_string_view(format_str),
-                              basic_format_args<context>(as));
+                              {make_format_args<context>(args...)});
 }
 
 template <typename OutputIt, typename Char = char>
@@ -3351,7 +3350,7 @@ template <typename S, typename OutputIt, typename... Args,
               !internal::is_contiguous_back_insert_iterator<OutputIt>::value)>
 inline OutputIt vformat_to(OutputIt out, const S& format_str,
                            format_args_t<OutputIt, char_t<S>> args) {
-  typedef internal::output_range<OutputIt, char_t<S>> range;
+  using range = internal::output_range<OutputIt, char_t<S>>;
   return vformat_to<arg_formatter<range>>(range(out),
                                           to_string_view(format_str), args);
 }
@@ -3374,10 +3373,9 @@ inline OutputIt format_to(OutputIt out, const S& format_str,
                     internal::is_string<S>::value,
                 "");
   internal::check_format_string<Args...>(format_str);
-  typedef format_context_t<OutputIt, char_t<S>> context;
-  format_arg_store<context, Args...> as{args...};
+  using context = format_context_t<OutputIt, char_t<S>>;
   return vformat_to(out, to_string_view(format_str),
-                    basic_format_args<context>(as));
+                    {make_format_args<context>(args...)});
 }
 
 template <typename OutputIt> struct format_to_n_result {
@@ -3406,8 +3404,8 @@ template <typename OutputIt, typename Char, typename... Args,
 inline format_to_n_result<OutputIt> vformat_to_n(
     OutputIt out, std::size_t n, basic_string_view<Char> format_str,
     format_to_n_args<OutputIt, Char> args) {
-  typedef internal::truncating_iterator<OutputIt> It;
-  auto it = vformat_to(It(out, n), format_str, args);
+  auto it = vformat_to(internal::truncating_iterator<OutputIt>(out, n),
+                       format_str, args);
   return {it.base(), it.count()};
 }
 
@@ -3425,10 +3423,9 @@ inline format_to_n_result<OutputIt> format_to_n(OutputIt out, std::size_t n,
                                                 const S& format_str,
                                                 const Args&... args) {
   internal::check_format_string<Args...>(format_str);
-  using Char = char_t<S>;
-  format_arg_store<format_to_n_context<OutputIt, Char>, Args...> as(args...);
+  using context = format_to_n_context<OutputIt, char_t<S>>;
   return vformat_to_n(out, n, to_string_view(format_str),
-                      format_to_n_args<OutputIt, Char>(as));
+                      {make_format_args<context>(args...)});
 }
 
 template <typename Char>
@@ -3550,19 +3547,19 @@ FMT_END_NAMESPACE
     std::string s = format(FMT_STRING("{:d}"), "foo");
   \endrst
  */
-#define FMT_STRING(s)                                                     \
-  [] {                                                                    \
-    struct str : fmt::compile_string {                                    \
-      typedef typename std::remove_cv<std::remove_pointer<                \
-          typename std::decay<decltype(s)>::type>::type>::type char_type; \
-      FMT_CONSTEXPR operator fmt::basic_string_view<char_type>() const {  \
-        return {s, sizeof(s) / sizeof(char_type) - 1};                    \
-      }                                                                   \
-    } result;                                                             \
-    /* Suppress Qt Creator warning about unused operator. */              \
-    (void)static_cast<fmt::basic_string_view<typename str::char_type>>(   \
-        result);                                                          \
-    return result;                                                        \
+#define FMT_STRING(s)                                                    \
+  [] {                                                                   \
+    struct str : fmt::compile_string {                                   \
+      using char_type = typename std::remove_cv<std::remove_pointer<     \
+          typename std::decay<decltype(s)>::type>::type>::type;          \
+      FMT_CONSTEXPR operator fmt::basic_string_view<char_type>() const { \
+        return {s, sizeof(s) / sizeof(char_type) - 1};                   \
+      }                                                                  \
+    } result;                                                            \
+    /* Suppress Qt Creator warning about unused operator. */             \
+    (void)static_cast<fmt::basic_string_view<typename str::char_type>>(  \
+        result);                                                         \
+    return result;                                                       \
   }()
 
 #if defined(FMT_STRING_ALIAS) && FMT_STRING_ALIAS
