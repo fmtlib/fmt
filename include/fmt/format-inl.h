@@ -754,7 +754,7 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
 
 template <typename Double>
 char* sprintf_format(Double value, internal::buffer<char>& buf,
-                     core_format_specs spec) {
+                     core_format_specs specs) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buf.capacity() != 0, "empty buffer");
 
@@ -763,14 +763,14 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
   char format[max_format_size];
   char* format_ptr = format;
   *format_ptr++ = '%';
-  if (spec.alt || !spec.type) *format_ptr++ = '#';
-  if (spec.precision >= 0) {
+  if (specs.alt || !specs.type) *format_ptr++ = '#';
+  if (specs.precision >= 0) {
     *format_ptr++ = '.';
     *format_ptr++ = '*';
   }
   if (std::is_same<Double, long double>::value) *format_ptr++ = 'L';
 
-  char type = spec.type;
+  char type = specs.type;
 
   if (type == '%')
     type = 'f';
@@ -792,18 +792,18 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
     std::size_t buffer_size = buf.capacity();
     start = &buf[0];
     int result =
-        format_float(start, buffer_size, format, spec.precision, value);
+        format_float(start, buffer_size, format, specs.precision, value);
     if (result >= 0) {
       unsigned n = internal::to_unsigned(result);
       if (n < buf.capacity()) {
         // Find the decimal point.
         auto p = buf.data(), end = p + n;
         if (*p == '+' || *p == '-') ++p;
-        if (spec.type != 'a' && spec.type != 'A') {
+        if (specs.type != 'a' && specs.type != 'A') {
           while (p < end && *p >= '0' && *p <= '9') ++p;
           if (p < end && *p != 'e' && *p != 'E') {
             decimal_point_pos = p;
-            if (!spec.type) {
+            if (!specs.type) {
               // Keep only one trailing zero after the decimal point.
               ++p;
               if (*p == '0') ++p;

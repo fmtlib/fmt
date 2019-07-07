@@ -572,8 +572,8 @@ class custom_printf_arg_formatter : public formatter_t {
   using formatter_t::iterator;
 
   custom_printf_arg_formatter(formatter_t::iterator iter,
-                              formatter_t::format_specs& spec, context_t& ctx)
-      : formatter_t(iter, spec, ctx) {}
+                              formatter_t::format_specs& specs, context_t& ctx)
+      : formatter_t(iter, specs, ctx) {}
 
   using formatter_t::operator();
 
@@ -584,7 +584,7 @@ class custom_printf_arg_formatter : public formatter_t {
   iterator operator()(double value) {
 #endif
       // Comparing a float to 0.0 is safe.
-      if (round(value * pow(10, spec()->precision)) == 0.0) value = 0;
+      if (round(value * pow(10, specs()->precision)) == 0.0) value = 0;
   return formatter_t::operator()(value);
 }
 }

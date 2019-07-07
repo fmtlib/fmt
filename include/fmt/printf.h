@@ -151,16 +151,16 @@ template <typename Char> class printf_width_handler {
  private:
   typedef basic_format_specs<Char> format_specs;
 
-  format_specs& spec_;
+  format_specs& specs_;
 
  public:
-  explicit printf_width_handler(format_specs& spec) : spec_(spec) {}
+  explicit printf_width_handler(format_specs& specs) : specs_(specs) {}
 
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   unsigned operator()(T value) {
     auto width = static_cast<uint32_or_64_t<T>>(value);
     if (internal::is_negative(value)) {
-      spec_.align = align::left;
+      specs_.align = align::left;
       width = 0 - width;
     }
     unsigned int_max = std::numeric_limits<int>::max();
@@ -213,12 +213,12 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
   context_type& context_;
 
   void write_null_pointer(char) {
-    this->spec()->type = 0;
+    this->specs()->type = 0;
     this->write("(nil)");
   }
 
   void write_null_pointer(wchar_t) {
-    this->spec()->type = 0;
+    this->specs()->type = 0;
     this->write(L"(nil)");
   }
 
@@ -228,29 +228,29 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
   /**
     \rst
     Constructs an argument formatter object.
-    *buffer* is a reference to the output buffer and *spec* contains format
+    *buffer* is a reference to the output buffer and *specs* contains format
     specifier information for standard argument types.
     \endrst
    */
-  printf_arg_formatter(iterator iter, format_specs& spec, context_type& ctx)
-      : base(Range(iter), &spec, internal::locale_ref()), context_(ctx) {}
+  printf_arg_formatter(iterator iter, format_specs& specs, context_type& ctx)
+      : base(Range(iter), &specs, internal::locale_ref()), context_(ctx) {}
 
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   iterator operator()(T value) {
     // MSVC2013 fails to compile separate overloads for bool and char_type so
     // use std::is_same instead.
     if (std::is_same<T, bool>::value) {
-      format_specs& fmt_spec = *this->spec();
-      if (fmt_spec.type != 's') return base::operator()(value ? 1 : 0);
-      fmt_spec.type = 0;
+      format_specs& fmt_specs = *this->specs();
+      if (fmt_specs.type != 's') return base::operator()(value ? 1 : 0);
+      fmt_specs.type = 0;
       this->write(value != 0);
     } else if (std::is_same<T, char_type>::value) {
-      format_specs& fmt_spec = *this->spec();
-      if (fmt_spec.type && fmt_spec.type != 'c')
+      format_specs& fmt_specs = *this->specs();
+      if (fmt_specs.type && fmt_specs.type != 'c')
         return (*this)(static_cast<int>(value));
-      fmt_spec.sign = sign::none;
-      fmt_spec.alt = false;
-      fmt_spec.align = align::right;
+      fmt_specs.sign = sign::none;
+      fmt_specs.alt = false;
+      fmt_specs.align = align::right;
       return base::operator()(value);
     } else {
       return base::operator()(value);
@@ -267,7 +267,7 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
   iterator operator()(const char* value) {
     if (value)
       base::operator()(value);
-    else if (this->spec()->type == 'p')
+    else if (this->specs()->type == 'p')
       write_null_pointer(char_type());
     else
       this->write("(null)");
@@ -278,7 +278,7 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
   iterator operator()(const wchar_t* value) {
     if (value)
       base::operator()(value);
-    else if (this->spec()->type == 'p')
+    else if (this->specs()->type == 'p')
       write_null_pointer(char_type());
     else
       this->write(L"(null)");
@@ -294,7 +294,7 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
   /** Formats a pointer. */
   iterator operator()(const void* value) {
     if (value) return base::operator()(value);
-    this->spec()->type = 0;
+    this->specs()->type = 0;
     write_null_pointer(char_type());
     return this->out();
   }
@@ -334,14 +334,15 @@ template <typename OutputIt, typename Char> class basic_printf_context {
   basic_format_args<basic_printf_context> args_;
   basic_parse_context<Char> parse_ctx_;
 
-  static void parse_flags(format_specs& spec, const Char*& it, const Char* end);
+  static void parse_flags(format_specs& specs, const Char*& it,
+                          const Char* end);
 
   // Returns the argument with specified index or, if arg_index is equal
   // to the maximum unsigned value, the next argument.
   format_arg get_arg(unsigned arg_index = std::numeric_limits<unsigned>::max());
 
   // Parses argument index, flags and width and returns the argument index.
-  unsigned parse_header(const Char*& it, const Char* end, format_specs& spec);
+  unsigned parse_header(const Char*& it, const Char* end, format_specs& specs);
 
  public:
   /**
@@ -373,25 +374,25 @@ template <typename OutputIt, typename Char> class basic_printf_context {
 };
 
 template <typename OutputIt, typename Char>
-void basic_printf_context<OutputIt, Char>::parse_flags(format_specs& spec,
+void basic_printf_context<OutputIt, Char>::parse_flags(format_specs& specs,
                                                        const Char*& it,
                                                        const Char* end) {
   for (; it != end; ++it) {
     switch (*it) {
     case '-':
-      spec.align = align::left;
+      specs.align = align::left;
       break;
     case '+':
-      spec.sign = sign::plus;
+      specs.sign = sign::plus;
       break;
     case '0':
-      spec.fill[0] = '0';
+      specs.fill[0] = '0';
       break;
     case ' ':
-      spec.sign = sign::space;
+      specs.sign = sign::space;
       break;
     case '#':
-      spec.alt = true;
+      specs.alt = true;
       break;
     default:
       return;
@@ -411,7 +412,7 @@ basic_printf_context<OutputIt, Char>::get_arg(unsigned arg_index) {
 
 template <typename OutputIt, typename Char>
 unsigned basic_printf_context<OutputIt, Char>::parse_header(
-    const Char*& it, const Char* end, format_specs& spec) {
+    const Char*& it, const Char* end, format_specs& specs) {
   unsigned arg_index = std::numeric_limits<unsigned>::max();
   char_type c = *it;
   if (c >= '0' && c <= '9') {
@@ -423,25 +424,25 @@ unsigned basic_printf_context<OutputIt, Char>::parse_header(
       ++it;
       arg_index = value;
     } else {
-      if (c == '0') spec.fill[0] = '0';
+      if (c == '0') specs.fill[0] = '0';
       if (value != 0) {
         // Nonzero value means that we parsed width and don't need to
         // parse it or flags again, so return now.
-        spec.width = value;
+        specs.width = value;
         return arg_index;
       }
     }
   }
-  parse_flags(spec, it, end);
+  parse_flags(specs, it, end);
   // Parse width.
   if (it != end) {
     if (*it >= '0' && *it <= '9') {
       internal::error_handler eh;
-      spec.width = parse_nonnegative_int(it, end, eh);
+      specs.width = parse_nonnegative_int(it, end, eh);
     } else if (*it == '*') {
       ++it;
-      spec.width = visit_format_arg(
-          internal::printf_width_handler<char_type>(spec), get_arg());
+      specs.width = visit_format_arg(
+          internal::printf_width_handler<char_type>(specs), get_arg());
     }
   }
   return arg_index;
@@ -464,11 +465,11 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     }
     out = std::copy(start, it - 1, out);
 
-    format_specs spec;
-    spec.align = align::right;
+    format_specs specs;
+    specs.align = align::right;
 
     // Parse argument index, flags and width.
-    unsigned arg_index = parse_header(it, end, spec);
+    unsigned arg_index = parse_header(it, end, specs);
 
     // Parse precision.
     if (it != end && *it == '.') {
@@ -476,24 +477,24 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
       c = it != end ? *it : 0;
       if ('0' <= c && c <= '9') {
         internal::error_handler eh;
-        spec.precision = static_cast<int>(parse_nonnegative_int(it, end, eh));
+        specs.precision = static_cast<int>(parse_nonnegative_int(it, end, eh));
       } else if (c == '*') {
         ++it;
-        spec.precision =
+        specs.precision =
             visit_format_arg(internal::printf_precision_handler(), get_arg());
       } else {
-        spec.precision = 0;
+        specs.precision = 0;
       }
     }
 
     format_arg arg = get_arg(arg_index);
-    if (spec.alt && visit_format_arg(internal::is_zero_int(), arg))
-      spec.alt = false;
-    if (spec.fill[0] == '0') {
+    if (specs.alt && visit_format_arg(internal::is_zero_int(), arg))
+      specs.alt = false;
+    if (specs.fill[0] == '0') {
       if (arg.is_arithmetic())
-        spec.align = align::numeric;
+        specs.align = align::numeric;
       else
-        spec.fill[0] = ' ';  // Ignore '0' flag for non-numeric types.
+        specs.fill[0] = ' ';  // Ignore '0' flag for non-numeric types.
     }
 
     // Parse length and convert the argument to the required type.
@@ -539,13 +540,13 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
 
     // Parse type.
     if (it == end) FMT_THROW(format_error("invalid format string"));
-    spec.type = static_cast<char>(*it++);
+    specs.type = static_cast<char>(*it++);
     if (arg.is_integral()) {
       // Normalize type.
-      switch (spec.type) {
+      switch (specs.type) {
       case 'i':
       case 'u':
-        spec.type = 'd';
+        specs.type = 'd';
         break;
       case 'c':
         visit_format_arg(internal::char_converter<basic_printf_context>(arg),
@@ -557,7 +558,7 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     start = it;
 
     // Format argument.
-    visit_format_arg(ArgFormatter(out, spec, *this), arg);
+    visit_format_arg(ArgFormatter(out, specs, *this), arg);
   }
   return std::copy(start, it, out);
 }

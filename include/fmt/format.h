@@ -1280,24 +1280,23 @@ template <typename Range> class basic_writer {
   // Writes an integer in the format
   //   <left-padding><prefix><numeric-padding><digits><right-padding>
   // where <digits> are written by f(it).
-  template <typename Spec, typename F>
-  void write_int(int num_digits, string_view prefix, const Spec& spec, F f) {
+  template <typename F>
+  void write_int(int num_digits, string_view prefix, format_specs specs, F f) {
     std::size_t size = prefix.size() + internal::to_unsigned(num_digits);
-    char_type fill = spec.fill[0];
+    char_type fill = specs.fill[0];
     std::size_t padding = 0;
-    if (spec.align == align::numeric) {
-      if (internal::to_unsigned(spec.width) > size) {
-        padding = spec.width - size;
-        size = spec.width;
+    if (specs.align == align::numeric) {
+      if (internal::to_unsigned(specs.width) > size) {
+        padding = specs.width - size;
+        size = specs.width;
       }
-    } else if (spec.precision > num_digits) {
-      size = prefix.size() + internal::to_unsigned(spec.precision);
-      padding = internal::to_unsigned(spec.precision - num_digits);
+    } else if (specs.precision > num_digits) {
+      size = prefix.size() + internal::to_unsigned(specs.precision);
+      padding = internal::to_unsigned(specs.precision - num_digits);
       fill = static_cast<char_type>('0');
     }
-    format_specs as = spec;
-    if (spec.align == align::none) as.align = align::right;
-    write_padded(as, padded_int_writer<F>{size, prefix, fill, padding, f});
+    if (specs.align == align::none) specs.align = align::right;
+    write_padded(specs, padded_int_writer<F>{size, prefix, fill, padding, f});
   }
 
   // Writes a decimal integer.
@@ -1313,28 +1312,28 @@ template <typename Range> class basic_writer {
   }
 
   // The handle_int_type_spec handler that writes an integer.
-  template <typename Int, typename Spec> struct int_writer {
+  template <typename Int, typename Specs> struct int_writer {
     using unsigned_type = uint32_or_64_t<Int>;
 
     basic_writer<Range>& writer;
-    const Spec& spec;
+    const Specs& specs;
     unsigned_type abs_value;
     char prefix[4];
     unsigned prefix_size;
 
     string_view get_prefix() const { return string_view(prefix, prefix_size); }
 
-    int_writer(basic_writer<Range>& w, Int value, const Spec& s)
+    int_writer(basic_writer<Range>& w, Int value, const Specs& s)
         : writer(w),
-          spec(s),
+          specs(s),
           abs_value(static_cast<unsigned_type>(value)),
           prefix_size(0) {
       if (internal::is_negative(value)) {
         prefix[0] = '-';
         ++prefix_size;
         abs_value = 0 - abs_value;
-      } else if (spec.sign != sign::none && spec.sign != sign::minus) {
-        prefix[0] = spec.sign == sign::plus ? '+' : ' ';
+      } else if (specs.sign != sign::none && specs.sign != sign::minus) {
+        prefix[0] = specs.sign == sign::plus ? '+' : ' ';
         ++prefix_size;
       }
     }
@@ -1350,7 +1349,7 @@ template <typename Range> class basic_writer {
 
     void on_dec() {
       int num_digits = internal::count_digits(abs_value);
-      writer.write_int(num_digits, get_prefix(), spec,
+      writer.write_int(num_digits, get_prefix(), specs,
                        dec_writer{abs_value, num_digits});
     }
 
@@ -1360,17 +1359,17 @@ template <typename Range> class basic_writer {
 
       template <typename It> void operator()(It&& it) const {
         it = internal::format_uint<4, char_type>(it, self.abs_value, num_digits,
-                                                 self.spec.type != 'x');
+                                                 self.specs.type != 'x');
       }
     };
 
     void on_hex() {
-      if (spec.alt) {
+      if (specs.alt) {
         prefix[prefix_size++] = '0';
-        prefix[prefix_size++] = spec.type;
+        prefix[prefix_size++] = specs.type;
       }
       int num_digits = internal::count_digits<4>(abs_value);
-      writer.write_int(num_digits, get_prefix(), spec,
+      writer.write_int(num_digits, get_prefix(), specs,
                        hex_writer{*this, num_digits});
     }
 
@@ -1384,23 +1383,23 @@ template <typename Range> class basic_writer {
     };
 
     void on_bin() {
-      if (spec.alt) {
+      if (specs.alt) {
         prefix[prefix_size++] = '0';
-        prefix[prefix_size++] = static_cast<char>(spec.type);
+        prefix[prefix_size++] = static_cast<char>(specs.type);
       }
       int num_digits = internal::count_digits<1>(abs_value);
-      writer.write_int(num_digits, get_prefix(), spec,
+      writer.write_int(num_digits, get_prefix(), specs,
                        bin_writer<1>{abs_value, num_digits});
     }
 
     void on_oct() {
       int num_digits = internal::count_digits<3>(abs_value);
-      if (spec.alt && spec.precision <= num_digits) {
+      if (specs.alt && specs.precision <= num_digits) {
         // Octal prefix '0' is counted as a digit, so only add it if precision
         // is not greater than the number of digits.
         prefix[prefix_size++] = '0';
       }
-      writer.write_int(num_digits, get_prefix(), spec,
+      writer.write_int(num_digits, get_prefix(), specs,
                        bin_writer<3>{abs_value, num_digits});
     }
 
@@ -1430,7 +1429,7 @@ template <typename Range> class basic_writer {
       int num_digits = internal::count_digits(abs_value);
       char_type sep = internal::thousands_sep<char_type>(writer.locale_);
       int size = num_digits + SEP_SIZE * ((num_digits - 1) / 3);
-      writer.write_int(size, get_prefix(), spec,
+      writer.write_int(size, get_prefix(), specs,
                        num_writer{abs_value, size, sep});
     }
 
@@ -1559,18 +1558,18 @@ template <typename Range> class basic_writer {
   // Writes a value in the format
   //   <left-padding><value><right-padding>
   // where <value> is written by f(it).
-  template <typename F> void write_padded(const format_specs& spec, F&& f) {
-    unsigned width = spec.width;  // User-perceived width (in code points).
-    size_t size = f.size();       // The number of code units.
+  template <typename F> void write_padded(const format_specs& specs, F&& f) {
+    unsigned width = specs.width;  // User-perceived width (in code points).
+    size_t size = f.size();        // The number of code units.
     size_t num_code_points = width != 0 ? f.width() : size;
     if (width <= num_code_points) return f(reserve(size));
     auto&& it = reserve(width + (size - num_code_points));
-    char_type fill = spec.fill[0];
+    char_type fill = specs.fill[0];
     std::size_t padding = width - num_code_points;
-    if (spec.align == align::right) {
+    if (specs.align == align::right) {
       it = std::fill_n(it, padding, fill);
       f(it);
-    } else if (spec.align == align::center) {
+    } else if (specs.align == align::center) {
       std::size_t left_padding = padding / 2;
       it = std::fill_n(it, left_padding, fill);
       f(it);
@@ -1596,21 +1595,8 @@ template <typename Range> class basic_writer {
                                    int_writer<T, Spec>(*this, value, spec));
   }
 
-  /**
-    \rst
-    Formats *value* and writes it to the buffer.
-    \endrst
-   */
-  template <typename T, typename FormatSpec, typename... FormatSpecs,
-            FMT_ENABLE_IF(std::is_integral<T>::value)>
-  void write(T value, FormatSpec spec, FormatSpecs... specs) {
-    format_specs s(spec, specs...);
-    s.align = align::right;
-    write_int(value, s);
-  }
-
-  void write(double value, const format_specs& spec = format_specs()) {
-    write_double(value, spec);
+  void write(double value, const format_specs& specs = format_specs()) {
+    write_double(value, specs);
   }
 
   /**
@@ -1619,13 +1605,13 @@ template <typename Range> class basic_writer {
     (``'g'``) and writes it to the buffer.
     \endrst
    */
-  void write(long double value, const format_specs& spec = format_specs()) {
-    write_double(value, spec);
+  void write(long double value, const format_specs& specs = format_specs()) {
+    write_double(value, specs);
   }
 
   // Formats a floating-point number (double or long double).
   template <typename T, bool USE_GRISU = fmt::internal::use_grisu<T>()>
-  void write_double(T value, const format_specs& spec);
+  void write_double(T value, const format_specs& specs);
 
   /** Writes a character to the buffer. */
   void write(char value) {
@@ -1656,28 +1642,28 @@ template <typename Range> class basic_writer {
 
   // Writes a formatted string.
   template <typename Char>
-  void write(const Char* s, std::size_t size, const format_specs& spec) {
-    write_padded(spec, str_writer<Char>{s, size});
+  void write(const Char* s, std::size_t size, const format_specs& specs) {
+    write_padded(specs, str_writer<Char>{s, size});
   }
 
   template <typename Char>
   void write(basic_string_view<Char> s,
-             const format_specs& spec = format_specs()) {
+             const format_specs& specs = format_specs()) {
     const Char* data = s.data();
     std::size_t size = s.size();
-    if (spec.precision >= 0 && internal::to_unsigned(spec.precision) < size)
-      size = internal::to_unsigned(spec.precision);
-    write(data, size, spec);
+    if (specs.precision >= 0 && internal::to_unsigned(specs.precision) < size)
+      size = internal::to_unsigned(specs.precision);
+    write(data, size, specs);
   }
 
   template <typename UIntPtr>
-  void write_pointer(UIntPtr value, const format_specs* spec) {
+  void write_pointer(UIntPtr value, const format_specs* specs) {
     int num_digits = internal::count_digits<4>(value);
     auto pw = pointer_writer<UIntPtr>{value, num_digits};
-    if (!spec) return pw(reserve(num_digits + 2));
-    format_specs as = *spec;
-    if (as.align == align::none) as.align = align::right;
-    write_padded(as, pw);
+    if (!specs) return pw(reserve(num_digits + 2));
+    format_specs specs_copy = *specs;
+    if (specs_copy.align == align::none) specs_copy.align = align::right;
+    write_padded(specs_copy, pw);
   }
 };
 
@@ -1717,7 +1703,8 @@ class arg_formatter_base {
 
  protected:
   writer_type& writer() { return writer_; }
-  format_specs* spec() { return specs_; }
+  FMT_DEPRECATED format_specs* spec() { return specs_; }
+  format_specs* specs() { return specs_; }
   iterator out() { return writer_.out(); }
 
   void write(bool value) {
@@ -2600,13 +2587,13 @@ class arg_formatter : public internal::arg_formatter_base<Range> {
     \rst
     Constructs an argument formatter object.
     *ctx* is a reference to the formatting context,
-    *spec* contains format specifier information for standard argument types.
+    *specs* contains format specifier information for standard argument types.
     \endrst
    */
   explicit arg_formatter(context_type& ctx,
                          basic_parse_context<char_type>* parse_ctx = nullptr,
-                         format_specs* spec = nullptr)
-      : base(Range(ctx.out()), spec, ctx.locale()),
+                         format_specs* specs = nullptr)
+      : base(Range(ctx.out()), specs, ctx.locale()),
         ctx_(ctx),
         parse_ctx_(parse_ctx) {}
 
@@ -2726,9 +2713,9 @@ struct float_spec_handler {
 template <typename Range>
 template <typename T, bool USE_GRISU>
 void internal::basic_writer<Range>::write_double(T value,
-                                                 const format_specs& spec) {
+                                                 const format_specs& specs) {
   // Check type.
-  float_spec_handler handler(static_cast<char>(spec.type));
+  float_spec_handler handler(static_cast<char>(specs.type));
   internal::handle_float_type_spec(handler.type, handler);
 
   char sign = 0;
@@ -2736,10 +2723,10 @@ void internal::basic_writer<Range>::write_double(T value,
   if (std::signbit(value)) {
     sign = '-';
     value = -value;
-  } else if (spec.sign != sign::none) {
-    if (spec.sign == sign::plus)
+  } else if (specs.sign != sign::none) {
+    if (specs.sign == sign::plus)
       sign = '+';
-    else if (spec.sign == sign::space)
+    else if (specs.sign == sign::space)
       sign = ' ';
   }
 
@@ -2748,7 +2735,7 @@ void internal::basic_writer<Range>::write_double(T value,
     // consistent across platforms.
     const char* str = std::isinf(value) ? (handler.upper ? "INF" : "inf")
                                         : (handler.upper ? "NAN" : "nan");
-    return write_padded(spec,
+    return write_padded(specs,
                         inf_or_nan_writer{sign, handler.as_percentage, str});
   }
 
@@ -2756,23 +2743,23 @@ void internal::basic_writer<Range>::write_double(T value,
 
   memory_buffer buffer;
   int exp = 0;
-  int precision = spec.precision >= 0 || !spec.type ? spec.precision : 6;
+  int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
   unsigned options = handler.fixed ? internal::grisu_options::fixed : 0;
   bool use_grisu = USE_GRISU &&
-                   (spec.type != 'a' && spec.type != 'A' && spec.type != 'e' &&
-                    spec.type != 'E') &&
+                   (specs.type != 'a' && specs.type != 'A' &&
+                    specs.type != 'e' && specs.type != 'E') &&
                    internal::grisu_format(static_cast<double>(value), buffer,
                                           precision, options, exp);
   char* decimal_point_pos = nullptr;
   if (!use_grisu)
-    decimal_point_pos = internal::sprintf_format(value, buffer, spec);
+    decimal_point_pos = internal::sprintf_format(value, buffer, specs);
 
   if (handler.as_percentage) {
     buffer.push_back('%');
     --exp;  // Adjust decimal place position.
   }
-  format_specs as = spec;
-  if (spec.align == align::numeric) {
+  format_specs as = specs;
+  if (specs.align == align::numeric) {
     if (sign) {
       auto&& it = reserve(1);
       *it++ = static_cast<char_type>(sign);
@@ -2780,7 +2767,7 @@ void internal::basic_writer<Range>::write_double(T value,
       if (as.width) --as.width;
     }
     as.align = align::right;
-  } else if (spec.align == align::none) {
+  } else if (specs.align == align::none) {
     as.align = align::right;
   }
   char_type decimal_point = handler.use_locale
@@ -2791,7 +2778,7 @@ void internal::basic_writer<Range>::write_double(T value,
     params.fixed = handler.fixed;
     params.num_digits = precision;
     params.trailing_zeros =
-        (precision != 0 && (handler.fixed || !spec.type)) || spec.alt;
+        (precision != 0 && (handler.fixed || !specs.type)) || specs.alt;
     write_padded(as, grisu_writer(sign, buffer, exp, params, decimal_point));
   } else {
     write_padded(as,

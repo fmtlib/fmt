@@ -715,7 +715,7 @@ struct chrono_formatter {
 template <typename Rep, typename Period, typename Char>
 struct formatter<std::chrono::duration<Rep, Period>, Char> {
  private:
-  basic_format_specs<Char> spec;
+  basic_format_specs<Char> specs;
   int precision;
   typedef internal::arg_ref<Char> arg_ref_type;
   arg_ref_type width_ref;
@@ -744,9 +744,9 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     }
 
     void on_error(const char* msg) { FMT_THROW(format_error(msg)); }
-    void on_fill(Char fill) { f.spec.fill[0] = fill; }
-    void on_align(align_t align) { f.spec.align = align; }
-    void on_width(unsigned width) { f.spec.width = width; }
+    void on_fill(Char fill) { f.specs.fill[0] = fill; }
+    void on_align(align_t align) { f.specs.align = align; }
+    void on_width(unsigned width) { f.specs.width = width; }
     void on_precision(unsigned precision) { f.precision = precision; }
     void end_precision() {}
 
@@ -784,7 +784,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   }
 
  public:
-  formatter() : spec(), precision(-1) {}
+  formatter() : precision(-1) {}
 
   FMT_CONSTEXPR auto parse(basic_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
@@ -804,7 +804,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     using range = internal::output_range<decltype(ctx.out()), Char>;
     internal::basic_writer<range> w(range(ctx.out()));
     internal::handle_dynamic_spec<internal::width_checker>(
-        spec.width, width_ref, ctx, format_str.begin());
+        specs.width, width_ref, ctx, format_str.begin());
     internal::handle_dynamic_spec<internal::precision_checker>(
         precision, precision_ref, ctx, format_str.begin());
     if (begin == end || *begin == '}') {
@@ -816,7 +816,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       f.precision = precision;
       parse_chrono_format(begin, end, f);
     }
-    w.write(buf.data(), buf.size(), spec);
+    w.write(buf.data(), buf.size(), specs);
     return w.out();
   }
 };
