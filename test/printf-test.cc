@@ -535,11 +535,11 @@ TEST(PrintfTest, VSPrintfMakeArgsExample) {
   fmt::basic_format_args<fmt::printf_context> args2(as2);
   EXPECT_EQ("[42] something happened",
             fmt::vsprintf("[%d] %s happened", args2));
-  // the older gcc versions can't cast the return value
+  // The older gcc versions can't cast the return value.
 #if !defined(__GNUC__) || (__GNUC__ > 4)
   EXPECT_EQ("[42] something happened",
             fmt::vsprintf("[%d] %s happened",
-                          fmt::make_printf_args(42, "something")));
+                          {fmt::make_printf_args(42, "something")}));
 #endif
 }
 
@@ -557,7 +557,7 @@ TEST(PrintfTest, VSPrintfMakeWArgsExample) {
 #if !defined(__GNUC__) || (__GNUC__ > 4)
   EXPECT_EQ(L"[42] something happened",
             fmt::vsprintf(L"[%d] %s happened",
-                          fmt::make_wprintf_args(42, L"something")));
+                          {fmt::make_wprintf_args(42, L"something")}));
 #endif
 }
 
@@ -601,7 +601,7 @@ std::string custom_vformat(fmt::string_view format_str, format_args_t args) {
 template <typename... Args>
 std::string custom_format(const char* format_str, const Args&... args) {
   auto va = fmt::make_printf_args(args...);
-  return custom_vformat(format_str, va);
+  return custom_vformat(format_str, {va});
 }
 
 TEST(PrintfTest, CustomFormat) {

@@ -506,12 +506,12 @@ struct chrono_formatter {
       conditional_t<std::is_integral<Rep>::value && sizeof(Rep) < sizeof(int),
                     unsigned, typename make_unsigned_or_unchanged<Rep>::type>;
   rep val;
-  typedef std::chrono::duration<rep> seconds;
+  using seconds = std::chrono::duration<rep>;
   seconds s;
-  typedef std::chrono::duration<rep, std::milli> milliseconds;
+  using milliseconds = std::chrono::duration<rep, std::milli>;
   bool negative;
 
-  typedef typename FormatContext::char_type char_type;
+  using char_type = typename FormatContext::char_type;
 
   explicit chrono_formatter(FormatContext& ctx, OutputIt o,
                             std::chrono::duration<Rep, Period> d)
@@ -717,11 +717,11 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
  private:
   basic_format_specs<Char> specs;
   int precision;
-  typedef internal::arg_ref<Char> arg_ref_type;
+  using arg_ref_type = internal::arg_ref<Char>;
   arg_ref_type width_ref;
   arg_ref_type precision_ref;
   mutable basic_string_view<Char> format_str;
-  typedef std::chrono::duration<Rep, Period> duration;
+  using duration = std::chrono::duration<Rep, Period>;
 
   struct spec_handler {
     formatter& f;
@@ -759,7 +759,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     }
   };
 
-  typedef typename basic_parse_context<Char>::iterator iterator;
+  using iterator = typename basic_parse_context<Char>::iterator;
   struct parse_range {
     iterator begin;
     iterator end;

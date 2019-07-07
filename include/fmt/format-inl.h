@@ -78,7 +78,7 @@ inline int fmt_snprintf(char* buffer, size_t size, const char* format, ...) {
 #  define FMT_SNPRINTF fmt_snprintf
 #endif  // _MSC_VER
 
-typedef void (*FormatFunc)(internal::buffer<char>&, int, string_view);
+using format_func = void (*)(internal::buffer<char>&, int, string_view);
 
 // Portable thread-safe version of strerror.
 // Sets buffer to point to a string describing the error code.
@@ -182,7 +182,7 @@ FMT_FUNC void fwrite_fully(const void* ptr, size_t size, size_t count,
   }
 }
 
-FMT_FUNC void report_error(FormatFunc func, int error_code,
+FMT_FUNC void report_error(format_func func, int error_code,
                            string_view message) FMT_NOEXCEPT {
   memory_buffer full_message;
   func(full_message, error_code, message);
@@ -355,7 +355,7 @@ template <typename T> struct bits {
 // A handmade floating-point number f * pow(2, e).
 class fp {
  private:
-  typedef uint64_t significand_type;
+  using significand_type = uint64_t;
 
   // All sizes are in bits.
   // Subtract 1 to account for an implicit most significant bit in the
@@ -379,7 +379,7 @@ class fp {
   // errors on platforms where double is not IEEE754.
   template <typename Double> explicit fp(Double d) {
     // Assume double is in the format [sign][exponent][significand].
-    typedef std::numeric_limits<Double> limits;
+    using limits = std::numeric_limits<Double>;
     const int exponent_size =
         bits<Double>::value - double_significand_size - 1;  // -1 for sign
     const uint64_t significand_mask = implicit_bit - 1;

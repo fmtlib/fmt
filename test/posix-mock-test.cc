@@ -446,7 +446,7 @@ TEST(ScopedMock, Scope) {
 
 #ifdef FMT_LOCALE
 
-typedef fmt::Locale::Type LocaleType;
+typedef fmt::Locale::type LocaleType;
 
 struct LocaleMock {
   static LocaleMock* instance;

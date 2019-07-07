@@ -124,7 +124,7 @@ template <std::size_t N>
 using make_index_sequence = std::make_index_sequence<N>;
 #else
 template <typename T, T... N> struct integer_sequence {
-  typedef T value_type;
+  using value_type = T;
 
   static FMT_CONSTEXPR std::size_t size() { return sizeof...(N); }
 };
