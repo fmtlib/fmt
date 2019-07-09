@@ -127,10 +127,9 @@ void vprint(std::basic_ostream<Char>& os, basic_string_view<Char> format_str,
  */
 template <typename S, typename... Args,
           typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
-void print(std::basic_ostream<Char>& os, const S& format_str,
-           const Args&... args) {
+void print(std::basic_ostream<Char>& os, const S& format_str, Args&&... args) {
   vprint(os, to_string_view(format_str),
-         {internal::make_args_checked(format_str, args...)});
+         {internal::make_args_checked<Args...>(format_str, args...)});
 }
 FMT_END_NAMESPACE
 

@@ -215,18 +215,20 @@ class prepared_format {
   std::basic_string<char_type> format(const Args&... args) const {
     basic_memory_buffer<char_type> buffer;
     using range = buffer_range<char_type>;
-    this->vformat_to(range(buffer), basic_format_args<context>{
-                                        make_args_checked(format_, args...)});
+    this->vformat_to(range(buffer),
+                     basic_format_args<context>{
+                         make_args_checked<Args...>(format_, args...)});
     return to_string(buffer);
   }
 
   template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
   inline std::back_insert_iterator<Container> format_to(
-      std::back_insert_iterator<Container> out, const Args&... args) const {
+      std::back_insert_iterator<Container> out, Args&&... args) const {
     internal::container_buffer<Container> buffer(internal::get_container(out));
     using range = buffer_range<char_type>;
-    this->vformat_to(range(buffer), basic_format_args<context>{
-                                        make_args_checked(format_, args...)});
+    this->vformat_to(range(buffer),
+                     basic_format_args<context>{
+                         make_args_checked<Args...>(format_, args...)});
     return out;
   }
 
@@ -242,9 +244,9 @@ class prepared_format {
   inline typename buffer_context<char_type>::iterator format_to(
       basic_memory_buffer<char_type, SIZE>& buf, const Args&... args) const {
     using range = buffer_range<char_type>;
-    return this->vformat_to(
-        range(buf),
-        basic_format_args<context>{make_args_checked(format_, args...)});
+    return this->vformat_to(range(buf),
+                            basic_format_args<context>{
+                                make_args_checked<Args...>(format_, args...)});
   }
 
  private:

@@ -1260,10 +1260,20 @@ inline void check_format_string(const S&) {}
 template <typename..., typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S);
 
-template <typename S, typename... Args, typename Char = char_t<S>>
-inline format_arg_store<buffer_context<Char>, Args...> make_args_checked(
-    const S& format_str, const Args&... args) {
-  check_format_string<Args...>(format_str);
+struct view {};
+template <bool...> struct bool_pack;
+template <bool... Args>
+using all_true =
+    std::is_same<bool_pack<Args..., true>, bool_pack<true, Args...>>;
+
+template <typename... Args, typename S, typename Char = char_t<S>>
+inline format_arg_store<buffer_context<Char>, remove_reference_t<Args>...>
+make_args_checked(const S& format_str,
+                  const remove_reference_t<Args>&... args) {
+  static_assert(all_true<(!std::is_base_of<view, remove_reference_t<Args>>() ||
+                          !std::is_reference<Args>())...>::value,
+                "passing views as lvalues is disallowed");
+  check_format_string<remove_reference_t<Args>...>(format_str);
   return {args...};
 }
 
@@ -1321,9 +1331,10 @@ template <typename Container, typename S, typename... Args,
               is_contiguous<Container>::value&& internal::is_string<S>::value)>
 inline std::back_insert_iterator<Container> format_to(
     std::back_insert_iterator<Container> out, const S& format_str,
-    const Args&... args) {
-  return vformat_to(out, to_string_view(format_str),
-                    {internal::make_args_checked(format_str, args...)});
+    Args&&... args) {
+  return vformat_to(
+      out, to_string_view(format_str),
+      {internal::make_args_checked<Args...>(format_str, args...)});
 }
 
 template <typename S, typename Char = char_t<S>>
@@ -1345,10 +1356,10 @@ inline std::basic_string<Char> vformat(
 // Pass char_t as a default template parameter instead of using
 // std::basic_string<char_t<S>> to reduce the symbol size.
 template <typename S, typename... Args, typename Char = char_t<S>>
-inline std::basic_string<Char> format(const S& format_str,
-                                      const Args&... args) {
-  return internal::vformat(to_string_view(format_str),
-                           {internal::make_args_checked(format_str, args...)});
+inline std::basic_string<Char> format(const S& format_str, Args&&... args) {
+  return internal::vformat(
+      to_string_view(format_str),
+      {internal::make_args_checked<Args...>(format_str, args...)});
 }
 
 FMT_API void vprint(std::FILE* f, string_view format_str, format_args args);
@@ -1367,9 +1378,9 @@ FMT_API void vprint(std::FILE* f, wstring_view format_str, wformat_args args);
  */
 template <typename S, typename... Args,
           FMT_ENABLE_IF(internal::is_string<S>::value)>
-inline void print(std::FILE* f, const S& format_str, const Args&... args) {
+inline void print(std::FILE* f, const S& format_str, Args&&... args) {
   vprint(f, to_string_view(format_str),
-         internal::make_args_checked(format_str, args...));
+         internal::make_args_checked<Args...>(format_str, args...));
 }
 
 FMT_API void vprint(string_view format_str, format_args args);
@@ -1386,9 +1397,9 @@ FMT_API void vprint(wstring_view format_str, wformat_args args);
  */
 template <typename S, typename... Args,
           FMT_ENABLE_IF(internal::is_string<S>::value)>
-inline void print(const S& format_str, const Args&... args) {
+inline void print(const S& format_str, Args&&... args) {
   vprint(to_string_view(format_str),
-         internal::make_args_checked(format_str, args...));
+         internal::make_args_checked<Args...>(format_str, args...));
 }
 FMT_END_NAMESPACE
 

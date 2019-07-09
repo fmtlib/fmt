@@ -3218,10 +3218,12 @@ template <typename T> inline const void* ptr(const std::shared_ptr<T>& p) {
   return p.get();
 }
 
-template <typename It, typename Char> struct arg_join {
+template <typename It, typename Char> struct arg_join : internal::view {
   It begin;
   It end;
   basic_string_view<Char> sep;
+
+  arg_join(It b, It e, basic_string_view<Char> s) : begin(b), end(e), sep(s) {}
 };
 
 template <typename It, typename Char>
@@ -3330,8 +3332,7 @@ inline typename buffer_context<Char>::iterator vformat_to(
 template <typename S, typename... Args, std::size_t SIZE = inline_buffer_size,
           typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
 inline typename buffer_context<Char>::iterator format_to(
-    basic_memory_buffer<Char, SIZE>& buf, const S& format_str,
-    const Args&... args) {
+    basic_memory_buffer<Char, SIZE>& buf, const S& format_str, Args&&... args) {
   internal::check_format_string<Args...>(format_str);
   using context = buffer_context<Char>;
   return internal::vformat_to(buf, to_string_view(format_str),
@@ -3367,8 +3368,7 @@ inline OutputIt vformat_to(OutputIt out, const S& format_str,
  \endrst
  */
 template <typename OutputIt, typename S, typename... Args>
-inline OutputIt format_to(OutputIt out, const S& format_str,
-                          const Args&... args) {
+inline OutputIt format_to(OutputIt out, const S& format_str, Args&&... args) {
   static_assert(internal::is_output_iterator<OutputIt>::value &&
                     internal::is_string<S>::value,
                 "");
