@@ -357,7 +357,7 @@ user-defined types that have overloaded ``operator<<``::
   std::string s = fmt::format("The date is {}", date(2012, 12, 9));
   // s == "The date is 2012-12-9"
 
-.. doxygenfunction:: print(std::basic_ostream<Char>&, const S&, const Args&...)
+.. doxygenfunction:: print(std::basic_ostream<Char>&, const S&, Args&&...)
 
 .. _printf-api:
 
