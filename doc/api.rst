@@ -39,15 +39,15 @@ participate in an overload resolution if the latter is not a string.
 
 .. _format:
 
-.. doxygenfunction:: format(const S&, const Args&...)
+.. doxygenfunction:: format(const S&, Args&&...)
 .. doxygenfunction:: vformat(const S&, basic_format_args<buffer_context<Char>>)
 
 .. _print:
 
-.. doxygenfunction:: print(const S&, const Args&...)
+.. doxygenfunction:: print(const S&, Args&&...)
 .. doxygenfunction:: vprint(string_view, format_args)
 
-.. doxygenfunction:: print(std::FILE *, const S&, const Args&...)
+.. doxygenfunction:: print(std::FILE *, const S&, Args&&...)
 .. doxygenfunction:: vprint(std::FILE *, string_view, format_args)
 .. doxygenfunction:: vprint(std::FILE *, wstring_view, wformat_args)
 
@@ -183,8 +183,8 @@ You can also write a formatter for a hierarchy of classes::
 Output Iterator Support
 -----------------------
 
-.. doxygenfunction:: fmt::format_to(OutputIt, const S&, const Args&...)
-.. doxygenfunction:: fmt::format_to_n(OutputIt, std::size_t, string_view, const Args&...)
+.. doxygenfunction:: fmt::format_to(OutputIt, const S&, Args&&...)
+.. doxygenfunction:: fmt::format_to_n(OutputIt, std::size_t, string_view, Args&&...)
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
 
