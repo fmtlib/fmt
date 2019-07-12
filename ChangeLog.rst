@@ -1,6 +1,32 @@
 6.0.0 - TBD
 -----------
 
+* Made floating-point formatting locale-independent:
+
+  .. code:: c++
+
+     #include <locale>
+     #include <fmt/core.h>
+
+     int main() {
+       std::locale::global(std::locale("ru_RU.UTF-8"));
+       fmt::print("value = {}", 4.2);
+     }
+
+  prints "value = 4.2" regardless of the locale.
+
+  For locale-specific formatting use the ``n`` specifier:
+
+  .. code:: c++
+
+     std::locale::global(std::locale("ru_RU.UTF-8"));
+     fmt::print("value = {:n}", 4.2);
+
+  prints "value = 4,2".
+
+* Stopped setting ``CMAKE_BUILD_TYPE`` if fmt is a subproject
+  (`#1081 <https://github.com/fmtlib/fmt/issues/1081>`_).
+
 5.3.0 - 2018-12-28
 ------------------
 
