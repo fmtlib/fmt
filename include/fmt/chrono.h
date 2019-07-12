@@ -477,7 +477,10 @@ template <typename Rep, typename Period,
           FMT_ENABLE_IF(std::is_floating_point<Rep>::value)>
 inline std::chrono::duration<Rep, std::milli> get_milliseconds(
     std::chrono::duration<Rep, Period> d) {
-  auto ms = mod(d.count() * Period::num / Period::den * 1000, 1000);
+  using common_type = typename std::common_type<Rep, std::intmax_t>::type;
+  auto ms = mod(d.count() * static_cast<common_type>(Period::num) /
+                    static_cast<common_type>(Period::den) * 1000,
+                1000);
   return std::chrono::duration<Rep, std::milli>(static_cast<Rep>(ms));
 }
 

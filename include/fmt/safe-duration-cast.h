@@ -20,12 +20,10 @@ FMT_BEGIN_NAMESPACE
 
 namespace safe_duration_cast {
 
-/**
- * converts From to To, without loss. If the dynamic value of from
- * can't be converted to To without loss, ec is set.
- */
 template <typename To, typename From,
-          FMT_ENABLE_IF(!std::is_same<From, To>::value)>
+          FMT_ENABLE_IF(!std::is_same<From, To>::value &&
+                        std::numeric_limits<From>::is_signed ==
+                            std::numeric_limits<To>::is_signed)>
 FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
   ec = 0;
   using F = std::numeric_limits<From>;
@@ -33,19 +31,34 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
   static_assert(F::is_integer, "From must be integral");
   static_assert(T::is_integer, "To must be integral");
 
-  if (F::is_signed == T::is_signed) {
-    // A and B are both signed, or both unsigned.
-    if (F::digits <= T::digits) {
-      // From fits in To without any problem
-    } else {
-      // From does not always fit in To, resort to a dynamic check.
-      if (from < T::min() || from > T::max()) {
-        // outside range.
-        ec = 1;
-        return {};
-      }
+  // A and B are both signed, or both unsigned.
+  if (F::digits <= T::digits) {
+    // From fits in To without any problem.
+  } else {
+    // From does not always fit in To, resort to a dynamic check.
+    if (from < T::min() || from > T::max()) {
+      // outside range.
+      ec = 1;
+      return {};
     }
   }
+  return static_cast<To>(from);
+}
+
+/**
+ * converts From to To, without loss. If the dynamic value of from
+ * can't be converted to To without loss, ec is set.
+ */
+template <typename To, typename From,
+          FMT_ENABLE_IF(!std::is_same<From, To>::value &&
+                        std::numeric_limits<From>::is_signed !=
+                            std::numeric_limits<To>::is_signed)>
+FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
+  ec = 0;
+  using F = std::numeric_limits<From>;
+  using T = std::numeric_limits<To>;
+  static_assert(F::is_integer, "From must be integral");
+  static_assert(T::is_integer, "To must be integral");
 
   if (F::is_signed && !T::is_signed) {
     // From may be negative, not allowed!
@@ -261,7 +274,8 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
 
   // this can't go wrong, right? den>0 is checked earlier.
   if (Factor::den != 1) {
-    count /= Factor::den;
+    using common_t = typename std::common_type<IntermediateRep, intmax_t>::type;
+    count /= static_cast<common_t>(Factor::den);
   }
 
   // convert to the to type, safely
