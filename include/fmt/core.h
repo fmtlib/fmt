@@ -1258,7 +1258,13 @@ template <typename T, typename Char> struct named_arg : named_arg_base<Char> {
 };
 
 template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
-inline void check_format_string(const S&) {}
+inline void check_format_string(const S&) {
+#if defined(FMT_ENFORCE_COMPILE_STRING)
+  static_assert(is_compile_string<S>::value,
+                "FMT_ENFORCE_COMPILE_STRING requires all format strings to "
+                "utilize FMT_STRING() or fmt().");
+#endif
+}
 template <typename..., typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S);
 
