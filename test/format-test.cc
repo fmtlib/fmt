@@ -1854,6 +1854,14 @@ TEST(FormatTest, CompileTimeString) {
   EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), string_like()));
 }
 
+TEST(FormatTest, CustomFormatCompileTimeString) {
+  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), Answer()));
+  Answer answer;
+  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), answer));
+  const Answer const_answer;
+  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), const_answer));
+}
+
 #if FMT_USE_USER_DEFINED_LITERALS
 // Passing user-defined literals directly to EXPECT_EQ causes problems
 // with macro argument stringification (#) on some versions of GCC.
