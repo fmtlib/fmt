@@ -198,6 +198,8 @@ using conditional_t = typename std::conditional<B, T, F>::type;
 template <bool B> using bool_constant = std::integral_constant<bool, B>;
 template <typename T>
 using remove_reference_t = typename std::remove_reference<T>::type;
+template <typename T>
+using remove_const_t = typename std::remove_const<T>::type;
 
 struct monostate {};
 
@@ -1273,7 +1275,7 @@ make_args_checked(const S& format_str,
   static_assert(all_true<(!std::is_base_of<view, remove_reference_t<Args>>() ||
                           !std::is_reference<Args>())...>::value,
                 "passing views as lvalues is disallowed");
-  check_format_string<remove_reference_t<Args>...>(format_str);
+  check_format_string<remove_const_t<remove_reference_t<Args>>...>(format_str);
   return {args...};
 }
 
