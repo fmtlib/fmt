@@ -1254,13 +1254,13 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
   if (map_) return;
   map_ = new entry[args.max_size()];
   if (args.is_packed()) {
-    for (unsigned i = 0;; ++i) {
+    for (int i = 0;; ++i) {
       internal::type arg_type = args.type(i);
       if (arg_type == internal::none_type) return;
       if (arg_type == internal::named_arg_type) push_back(args.values_[i]);
     }
   }
-  for (unsigned i = 0;; ++i) {
+  for (int i = 0;; ++i) {
     auto type = args.args_[i].type_;
     if (type == internal::none_type) return;
     if (type == internal::named_arg_type) push_back(args.args_[i].value_);
@@ -1312,9 +1312,10 @@ template <typename Range> class basic_writer {
     char_type fill = specs.fill[0];
     std::size_t padding = 0;
     if (specs.align == align::numeric) {
-      if (internal::to_unsigned(specs.width) > size) {
-        padding = specs.width - size;
-        size = specs.width;
+      auto unsiged_width = internal::to_unsigned(specs.width);
+      if (unsiged_width > size) {
+        padding = unsiged_width - size;
+        size = unsiged_width;
       }
     } else if (specs.precision > num_digits) {
       size = prefix.size() + internal::to_unsigned(specs.precision);
@@ -1563,7 +1564,7 @@ template <typename Range> class basic_writer {
     UIntPtr value;
     int num_digits;
 
-    size_t size() const { return num_digits + 2; }
+    size_t size() const { return to_unsigned(num_digits) + 2; }
     size_t width() const { return size(); }
 
     template <typename It> void operator()(It&& it) const {
@@ -1585,7 +1586,8 @@ template <typename Range> class basic_writer {
   //   <left-padding><value><right-padding>
   // where <value> is written by f(it).
   template <typename F> void write_padded(const format_specs& specs, F&& f) {
-    unsigned width = specs.width;  // User-perceived width (in code points).
+    // User-perceived width (in code points).
+    unsigned width = to_unsigned(specs.width);
     size_t size = f.size();        // The number of code units.
     size_t num_code_points = width != 0 ? f.width() : size;
     if (width <= num_code_points) return f(reserve(size));
@@ -1686,7 +1688,7 @@ template <typename Range> class basic_writer {
   void write_pointer(UIntPtr value, const format_specs* specs) {
     int num_digits = internal::count_digits<4>(value);
     auto pw = pointer_writer<UIntPtr>{value, num_digits};
-    if (!specs) return pw(reserve(num_digits + 2));
+    if (!specs) return pw(reserve(to_unsigned(num_digits) + 2));
     format_specs specs_copy = *specs;
     if (specs_copy.align == align::none) specs_copy.align = align::right;
     write_padded(specs_copy, pw);
@@ -1840,9 +1842,8 @@ template <typename Char> FMT_CONSTEXPR bool is_name_start(Char c) {
 // Parses the range [begin, end) as an unsigned integer. This function assumes
 // that the range is non-empty and the first character is a digit.
 template <typename Char, typename ErrorHandler>
-FMT_CONSTEXPR unsigned parse_nonnegative_int(const Char*& begin,
-                                             const Char* end,
-                                             ErrorHandler&& eh) {
+FMT_CONSTEXPR int parse_nonnegative_int(const Char*& begin, const Char* end,
+                                        ErrorHandler&& eh) {
   assert(begin != end && '0' <= *begin && *begin <= '9');
   if (*begin == '0') {
     ++begin;
@@ -1862,7 +1863,7 @@ FMT_CONSTEXPR unsigned parse_nonnegative_int(const Char*& begin,
     ++begin;
   } while (begin != end && '0' <= *begin && *begin <= '9');
   if (value > max_int) eh.on_error("number is too big");
-  return value;
+  return static_cast<int>(value);
 }
 
 template <typename Context> class custom_formatter {
@@ -1952,9 +1953,9 @@ template <typename Char> class specs_setter {
     specs_.fill[0] = Char('0');
   }
 
-  FMT_CONSTEXPR void on_width(unsigned width) { specs_.width = width; }
-  FMT_CONSTEXPR void on_precision(unsigned precision) {
-    specs_.precision = static_cast<int>(precision);
+  FMT_CONSTEXPR void on_width(int width) { specs_.width = width; }
+  FMT_CONSTEXPR void on_precision(int precision) {
+    specs_.precision = precision;
   }
   FMT_CONSTEXPR void end_precision() {}
 
@@ -2110,7 +2111,7 @@ struct string_view_metadata {
   template <typename Char>
   FMT_CONSTEXPR string_view_metadata(basic_string_view<Char> primary_string,
                                      basic_string_view<Char> view)
-      : offset_(view.data() - primary_string.data()), size_(view.size()) {}
+      : offset_(to_unsigned(view.data() - primary_string.data())), size_(view.size()) {}
   FMT_CONSTEXPR string_view_metadata(std::size_t offset, std::size_t size)
       : offset_(offset), size_(size) {}
   template <typename Char>
@@ -2127,12 +2128,12 @@ enum class arg_id_kind { none, index, name };
 // An argument reference.
 template <typename Char> struct arg_ref {
   FMT_CONSTEXPR arg_ref() : kind(arg_id_kind::none), val() {}
-  FMT_CONSTEXPR explicit arg_ref(unsigned index)
+  FMT_CONSTEXPR explicit arg_ref(int index)
       : kind(arg_id_kind::index), val(index) {}
   FMT_CONSTEXPR explicit arg_ref(string_view_metadata name)
       : kind(arg_id_kind::name), val(name) {}
 
-  FMT_CONSTEXPR arg_ref& operator=(unsigned idx) {
+  FMT_CONSTEXPR arg_ref& operator=(int idx) {
     kind = arg_id_kind::index;
     val.index = idx;
     return *this;
@@ -2141,10 +2142,10 @@ template <typename Char> struct arg_ref {
   arg_id_kind kind;
   union value {
     FMT_CONSTEXPR value() : index(0u) {}
-    FMT_CONSTEXPR value(unsigned id) : index(id) {}
+    FMT_CONSTEXPR value(int id) : index(id) {}
     FMT_CONSTEXPR value(string_view_metadata n) : name(n) {}
 
-    unsigned index;
+    int index;
     string_view_metadata name;
   } val;
 };
@@ -2190,7 +2191,7 @@ class dynamic_specs_handler
  private:
   using arg_ref_type = arg_ref<char_type>;
 
-  FMT_CONSTEXPR arg_ref_type make_arg_ref(unsigned arg_id) {
+  FMT_CONSTEXPR arg_ref_type make_arg_ref(int arg_id) {
     context_.check_arg_id(arg_id);
     return arg_ref_type(arg_id);
   }
@@ -2202,7 +2203,7 @@ class dynamic_specs_handler
   FMT_CONSTEXPR arg_ref_type make_arg_ref(basic_string_view<char_type> arg_id) {
     context_.check_arg_id(arg_id);
     basic_string_view<char_type> format_str(context_.begin(),
-                                            context_.end() - context_.begin());
+                                            to_unsigned(context_.end() - context_.begin()));
     const auto id_metadata = string_view_metadata(format_str, arg_id);
     return arg_ref_type(id_metadata);
   }
@@ -2218,7 +2219,7 @@ FMT_CONSTEXPR const Char* parse_arg_id(const Char* begin, const Char* end,
   Char c = *begin;
   if (c == '}' || c == ':') return handler(), begin;
   if (c >= '0' && c <= '9') {
-    unsigned index = parse_nonnegative_int(begin, end, handler);
+    int index = parse_nonnegative_int(begin, end, handler);
     if (begin == end || (*begin != '}' && *begin != ':'))
       return handler.on_error("invalid format string"), begin;
     handler(index);
@@ -2239,7 +2240,7 @@ template <typename SpecHandler, typename Char> struct width_adapter {
   explicit FMT_CONSTEXPR width_adapter(SpecHandler& h) : handler(h) {}
 
   FMT_CONSTEXPR void operator()() { handler.on_dynamic_width(auto_id()); }
-  FMT_CONSTEXPR void operator()(unsigned id) { handler.on_dynamic_width(id); }
+  FMT_CONSTEXPR void operator()(int id) { handler.on_dynamic_width(id); }
   FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
     handler.on_dynamic_width(id);
   }
@@ -2256,7 +2257,7 @@ template <typename SpecHandler, typename Char> struct precision_adapter {
   explicit FMT_CONSTEXPR precision_adapter(SpecHandler& h) : handler(h) {}
 
   FMT_CONSTEXPR void operator()() { handler.on_dynamic_precision(auto_id()); }
-  FMT_CONSTEXPR void operator()(unsigned id) {
+  FMT_CONSTEXPR void operator()(int id) {
     handler.on_dynamic_precision(id);
   }
   FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {

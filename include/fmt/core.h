@@ -447,13 +447,13 @@ class basic_parse_context : private ErrorHandler {
   }
 
   // Returns the next argument index.
-  FMT_CONSTEXPR unsigned next_arg_id() {
-    if (next_arg_id_ >= 0) return internal::to_unsigned(next_arg_id_++);
+  FMT_CONSTEXPR int next_arg_id() {
+    if (next_arg_id_ >= 0) return next_arg_id_++;
     on_error("cannot switch from manual to automatic argument indexing");
     return 0;
   }
 
-  FMT_CONSTEXPR bool check_arg_id(unsigned) {
+  FMT_CONSTEXPR bool check_arg_id(int) {
     if (next_arg_id_ > 0) {
       on_error("cannot switch from automatic to manual argument indexing");
       return false;
@@ -1051,7 +1051,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
                        internal::locale_ref loc = internal::locale_ref())
       : out_(out), args_(ctx_args), loc_(loc) {}
 
-  format_arg arg(unsigned id) const { return args_.get(id); }
+  format_arg arg(int id) const { return args_.get(id); }
 
   // Checks if manual indexing is used and returns the argument with the
   // specified name.
@@ -1123,7 +1123,7 @@ inline format_arg_store<Context, Args...> make_format_args(
 /** Formatting arguments. */
 template <typename Context> class basic_format_args {
  public:
-  using size_type = unsigned;
+  using size_type = int;
   using format_arg = basic_format_arg<Context>;
 
  private:
@@ -1142,8 +1142,8 @@ template <typename Context> class basic_format_args {
 
   bool is_packed() const { return (types_ & internal::is_unpacked_bit) == 0; }
 
-  internal::type type(unsigned index) const {
-    unsigned shift = index * 4;
+  internal::type type(int index) const {
+    int shift = index * 4;
     return static_cast<internal::type>((types_ & (0xfull << shift)) >> shift);
   }
 
@@ -1152,7 +1152,7 @@ template <typename Context> class basic_format_args {
   void set_data(const internal::value<Context>* values) { values_ = values; }
   void set_data(const format_arg* args) { args_ = args; }
 
-  format_arg do_get(size_type index) const {
+  format_arg do_get(int index) const {
     format_arg arg;
     if (!is_packed()) {
       auto num_args = max_size();
@@ -1192,14 +1192,14 @@ template <typename Context> class basic_format_args {
   }
 
   /** Returns the argument at specified index. */
-  format_arg get(size_type index) const {
+  format_arg get(int index) const {
     format_arg arg = do_get(index);
     if (arg.type_ == internal::named_arg_type)
       arg = arg.value_.named_arg->template deserialize<Context>();
     return arg;
   }
 
-  size_type max_size() const {
+  int max_size() const {
     unsigned long long max_packed = internal::max_packed_args;
     return static_cast<size_type>(
         is_packed() ? max_packed : types_ & ~internal::is_unpacked_bit);
