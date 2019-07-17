@@ -1252,7 +1252,7 @@ class cstring_type_checker : public ErrorHandler {
 template <typename Context>
 void arg_map<Context>::init(const basic_format_args<Context>& args) {
   if (map_) return;
-  map_ = new entry[args.max_size()];
+  map_ = new entry[internal::to_unsigned(args.max_size())];
   if (args.is_packed()) {
     for (int i = 0;; ++i) {
       internal::type arg_type = args.type(i);

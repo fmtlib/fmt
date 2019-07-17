@@ -1186,8 +1186,8 @@ template <typename Context> class basic_format_args {
    Constructs a `basic_format_args` object from a dynamic set of arguments.
    \endrst
    */
-  basic_format_args(const format_arg* args, size_type count)
-      : types_(internal::is_unpacked_bit | count) {
+  basic_format_args(const format_arg* args, int count)
+      : types_(internal::is_unpacked_bit | internal::to_unsigned(count)) {
     set_data(args);
   }
 
@@ -1201,7 +1201,7 @@ template <typename Context> class basic_format_args {
 
   int max_size() const {
     unsigned long long max_packed = internal::max_packed_args;
-    return static_cast<size_type>(
+    return static_cast<int>(
         is_packed() ? max_packed : types_ & ~internal::is_unpacked_bit);
   }
 };
