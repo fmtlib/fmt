@@ -2637,7 +2637,7 @@ class arg_formatter : public internal::arg_formatter_base<Range> {
 */
 class FMT_API system_error : public std::runtime_error {
  private:
-  FMT_API void init(int err_code, string_view format_str, format_args args);
+  void init(int err_code, string_view format_str, format_args args);
 
  protected:
   int error_code_;
