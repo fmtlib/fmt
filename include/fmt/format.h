@@ -1588,7 +1588,7 @@ template <typename Range> class basic_writer {
   template <typename F> void write_padded(const format_specs& specs, F&& f) {
     // User-perceived width (in code points).
     unsigned width = to_unsigned(specs.width);
-    size_t size = f.size();        // The number of code units.
+    size_t size = f.size();  // The number of code units.
     size_t num_code_points = width != 0 ? f.width() : size;
     if (width <= num_code_points) return f(reserve(size));
     auto&& it = reserve(width + (size - num_code_points));
@@ -2111,7 +2111,8 @@ struct string_view_metadata {
   template <typename Char>
   FMT_CONSTEXPR string_view_metadata(basic_string_view<Char> primary_string,
                                      basic_string_view<Char> view)
-      : offset_(to_unsigned(view.data() - primary_string.data())), size_(view.size()) {}
+      : offset_(to_unsigned(view.data() - primary_string.data())),
+        size_(view.size()) {}
   FMT_CONSTEXPR string_view_metadata(std::size_t offset, std::size_t size)
       : offset_(offset), size_(size) {}
   template <typename Char>
@@ -2202,8 +2203,8 @@ class dynamic_specs_handler
 
   FMT_CONSTEXPR arg_ref_type make_arg_ref(basic_string_view<char_type> arg_id) {
     context_.check_arg_id(arg_id);
-    basic_string_view<char_type> format_str(context_.begin(),
-                                            to_unsigned(context_.end() - context_.begin()));
+    basic_string_view<char_type> format_str(
+        context_.begin(), to_unsigned(context_.end() - context_.begin()));
     const auto id_metadata = string_view_metadata(format_str, arg_id);
     return arg_ref_type(id_metadata);
   }
@@ -2257,9 +2258,7 @@ template <typename SpecHandler, typename Char> struct precision_adapter {
   explicit FMT_CONSTEXPR precision_adapter(SpecHandler& h) : handler(h) {}
 
   FMT_CONSTEXPR void operator()() { handler.on_dynamic_precision(auto_id()); }
-  FMT_CONSTEXPR void operator()(int id) {
-    handler.on_dynamic_precision(id);
-  }
+  FMT_CONSTEXPR void operator()(int id) { handler.on_dynamic_precision(id); }
   FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
     handler.on_dynamic_precision(id);
   }

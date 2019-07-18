@@ -1201,8 +1201,8 @@ template <typename Context> class basic_format_args {
 
   int max_size() const {
     unsigned long long max_packed = internal::max_packed_args;
-    return static_cast<int>(
-        is_packed() ? max_packed : types_ & ~internal::is_unpacked_bit);
+    return static_cast<int>(is_packed() ? max_packed
+                                        : types_ & ~internal::is_unpacked_bit);
   }
 };
 
