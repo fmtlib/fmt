@@ -126,11 +126,11 @@ template <> struct std::formatter<S> {
           if constexpr (!is_integral_v<decltype(value)>)
             throw format_error("width is not integral");
           // else if (value < 0 || value > numeric_limits<int>::max())
-          else if (fmt::internal::is_negative(value) < 0 ||
+          else if (fmt::internal::is_negative(value) ||
                    value > numeric_limits<int>::max())
             throw format_error("invalid width");
           else
-            return value;
+            return static_cast<int>(value);
         },
         ctx.arg(width_arg_id));
     return format_to(ctx.out(), "{0:{1}}", s.value, width);
