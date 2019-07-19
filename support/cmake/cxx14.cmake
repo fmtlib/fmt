@@ -3,10 +3,11 @@
 include(CheckCXXSourceCompiles)
 include(CheckCXXCompilerFlag)
 
-if (NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 11)
+if (CMAKE_CXX_STANDARD)
+  message(STATUS "CXX_STANDARD: ${CMAKE_CXX_STANDARD}")
+else()
+  message(STATUS "CXX_STANDARD: Default")
 endif()
-message(STATUS "CXX_STANDARD: ${CMAKE_CXX_STANDARD}")
 
 if (CMAKE_CXX_STANDARD EQUAL 20)
   check_cxx_compiler_flag(-std=c++20 has_std_20_flag)
@@ -35,7 +36,7 @@ elseif (CMAKE_CXX_STANDARD EQUAL 14)
   elseif (has_std_1y_flag)
     set(CXX_STANDARD_FLAG -std=c++1y)
   endif ()
-elseif (CMAKE_CXX_STANDARD EQUAL 11)
+else ()
   check_cxx_compiler_flag(-std=c++11 has_std_11_flag)
   check_cxx_compiler_flag(-std=c++0x has_std_0x_flag)
 
