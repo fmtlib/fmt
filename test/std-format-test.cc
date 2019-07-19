@@ -107,7 +107,8 @@ template <> struct std::formatter<S> {
   // Parses a width argument id in the format { <digit> }.
   constexpr auto parse(format_parse_context& ctx) {
     auto iter = ctx.begin();
-    auto get_char = [&]() { return iter != ctx.end() ? *iter : 0; };
+    // auto get_char = [&]() { return iter != ctx.end() ? *iter : 0; };
+    auto get_char = [&]() { return iter != ctx.end() ? *iter : '\0'; };
     if (get_char() != '{') return iter;
     ++iter;
     char c = get_char();
@@ -124,7 +125,9 @@ template <> struct std::formatter<S> {
         [](auto value) -> int {
           if constexpr (!is_integral_v<decltype(value)>)
             throw format_error("width is not integral");
-          else if (value < 0 || value > numeric_limits<int>::max())
+          // else if (value < 0 || value > numeric_limits<int>::max())
+          else if (fmt::internal::is_negative(value) < 0 ||
+                   value > numeric_limits<int>::max())
             throw format_error("invalid width");
           else
             return value;

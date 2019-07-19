@@ -271,7 +271,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
       ec = 1;
       return {};
     }
-    count *= Factor::num;
+    count *= static_cast<IntermediateRep>(Factor::num);
   }
 
   // this can't go wrong, right? den>0 is checked earlier.

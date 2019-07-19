@@ -167,7 +167,7 @@ struct scan_handler : error_handler {
   }
 
   void on_arg_id() { on_arg_id(next_arg_id_++); }
-  void on_arg_id(unsigned id) {
+  void on_arg_id(int id) {
     if (id >= args_.size) on_error("argument index out of range");
     arg_ = args_.data[id];
   }
