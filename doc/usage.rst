@@ -79,7 +79,7 @@ You can detect and use an installed version of {fmt} as follows::
    find_package(fmt)
    target_link_libraries(<your-target> fmt::fmt)
 
-Setting up your target to use a header-only version of ``fmt`` is equaly easy::
+Setting up your target to use a header-only version of ``fmt`` is equally easy::
 
    target_link_libraries(<your-target> PRIVATE fmt-header-only)
 
