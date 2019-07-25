@@ -24,8 +24,50 @@
 
   prints "value = 4,2".
 
+* Introduced ``fmt::prepare`` function that allows precompilation of format
+  strings:
+
+  .. code:: c++
+
+     auto f = fmt::prepare<int>("{}");
+     std::string s = f.format(42); // can be called multiple times to format
+                                   // different values
+
+  This API is experimental and will likely change in the next minor release.
+
+  Thanks `@stryku (Mateusz Janek) <https://github.com/stryku>`_.
+
+* Fixed handling of dynamic width in chrono formatter:
+
+ .. code:: c++
+
+    auto s = fmt::format("{0:{1}%H:%M:%S}", std::chrono::seconds(12345), 12);
+    //                        ^ width argument index                     ^ width
+    // s == "03:25:45    "
+
+  Thanks Howard Hinnant.
+
+* Added `fmt::format` and `fmt::vformat` overloads that take `text_style`
+  (`#993 <https://github.com/fmtlib/fmt/issues/993>`_,
+  `#994 <https://github.com/fmtlib/fmt/pull/994>`_):
+
+  .. code:: c++
+
+     #include <fmt/color.h>
+
+     std::string message = fmt::format(fmt::emphasis::bold | fg(fmt::color::red),
+                                       "The answer is {}.", 42);
+
+  Thanks `@Naios (Denis Blank) <https://github.com/Naios>`_.
+
 * Stopped setting ``CMAKE_BUILD_TYPE`` if fmt is a subproject
   (`#1081 <https://github.com/fmtlib/fmt/issues/1081>`_).
+
+* Various fixes (`#980 <https://github.com/fmtlib/fmt/issues/980>`_,
+  `#995 <https://github.com/fmtlib/fmt/pull/995>`_
+  `#998 <https://github.com/fmtlib/fmt/pull/998>`_).
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
+  `@mwinterb <https://github.com/mwinterb>`_.
 
 5.3.0 - 2018-12-28
 ------------------
