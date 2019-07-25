@@ -44,5 +44,9 @@ TEST(LocaleTest, WFormat) {
   EXPECT_EQ(L"1~234~567", fmt::format(loc, L"{:n}", 1234567));
   fmt::format_arg_store<fmt::wformat_context, int> as{1234567};
   EXPECT_EQ(L"1~234~567", fmt::vformat(loc, L"{:n}", fmt::wformat_args(as)));
+  auto sep =
+      std::use_facet<std::numpunct<wchar_t>>(std::locale("C")).thousands_sep();
+  auto result = sep == ',' ? L"1,234,567" : L"1234567";
+  EXPECT_EQ(result, fmt::format(std::locale("C"), L"{:n}", 1234567));
 }
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

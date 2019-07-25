@@ -1453,8 +1453,9 @@ template <typename Range> class basic_writer {
     };
 
     void on_num() {
-      int num_digits = internal::count_digits(abs_value);
       char_type sep = internal::thousands_sep<char_type>(writer.locale_);
+      if (!sep) return on_dec();
+      int num_digits = internal::count_digits(abs_value);
       int size = num_digits + sep_size * ((num_digits - 1) / 3);
       writer.write_int(size, get_prefix(), specs,
                        num_writer{abs_value, size, sep});
