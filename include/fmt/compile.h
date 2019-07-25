@@ -5,8 +5,8 @@
 //
 // For the license information refer to format.h.
 
-#ifndef FMT_PREPARE_H_
-#define FMT_PREPARE_H_
+#ifndef FMT_COMPILE_H_
+#define FMT_COMPILE_H_
 
 #ifndef FMT_HAS_CONSTRUCTIBLE_TRAITS
 #  define FMT_HAS_CONSTRUCTIBLE_TRAITS \
@@ -728,41 +728,41 @@ using wprepared_format_t =
 #if FMT_USE_CONSTEXPR
 
 template <typename... Args, typename Format>
-FMT_CONSTEXPR auto prepare(Format format) {
+FMT_CONSTEXPR auto compile(Format format) {
   return internal::do_prepare<Format, Args...>(
       typename internal::format_tag<Format>::type{}, std::move(format));
 }
 #else
 
 template <typename... Args, typename Format>
-auto prepare(Format format) ->
+auto compile(Format format) ->
     typename internal::preparator<Format, Args...>::prepared_format_type {
   return internal::preparator<Format, Args...>::prepare(std::move(format));
 }
 #endif
 
 template <typename... Args, typename Char>
-auto prepare(const Char* format) ->
+auto compile(const Char* format) ->
     typename internal::preparator<std::basic_string<Char>,
                                   Args...>::prepared_format_type {
-  return prepare<Args...>(internal::to_runtime_format(format));
+  return compile<Args...>(internal::to_runtime_format(format));
 }
 
 template <typename... Args, typename Char, unsigned N>
-auto prepare(const Char(format)[N]) ->
+auto compile(const Char(format)[N]) ->
     typename internal::preparator<std::basic_string<Char>,
                                   Args...>::prepared_format_type {
   const auto view = basic_string_view<Char>(format, N);
-  return prepare<Args...>(internal::to_runtime_format(view));
+  return compile<Args...>(internal::to_runtime_format(view));
 }
 
 template <typename... Args, typename Char>
-auto prepare(basic_string_view<Char> format) ->
+auto compile(basic_string_view<Char> format) ->
     typename internal::preparator<std::basic_string<Char>,
                                   Args...>::prepared_format_type {
-  return prepare<Args...>(internal::to_runtime_format(format));
+  return compile<Args...>(internal::to_runtime_format(format));
 }
 
 FMT_END_NAMESPACE
 
-#endif  // FMT_PREPARE_H_
+#endif  // FMT_COMPILE_H_

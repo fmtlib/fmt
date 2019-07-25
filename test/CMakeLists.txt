@@ -101,7 +101,7 @@ if (NOT (MSVC AND BUILD_SHARED_LIBS))
 endif ()
 add_fmt_test(locale-test)
 add_fmt_test(ostream-test)
-add_fmt_test(prepare-test)
+add_fmt_test(compile-test)
 add_fmt_test(printf-test)
 add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
@@ -180,10 +180,10 @@ if (FMT_PEDANTIC)
     target_include_directories(no-windows-h-test SYSTEM PUBLIC gtest gmock)
   endif ()
 
-  add_test(compile-test ${CMAKE_CTEST_COMMAND}
+  add_test(compile-error-test ${CMAKE_CTEST_COMMAND}
     --build-and-test
-    "${CMAKE_CURRENT_SOURCE_DIR}/compile-test"
-    "${CMAKE_CURRENT_BINARY_DIR}/compile-test"
+    "${CMAKE_CURRENT_SOURCE_DIR}/compile-error-test"
+    "${CMAKE_CURRENT_BINARY_DIR}/compile-error-test"
     --build-generator ${CMAKE_GENERATOR}
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
     --build-options

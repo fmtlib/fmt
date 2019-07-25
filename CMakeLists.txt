@@ -151,8 +151,9 @@ function(add_headers VAR)
 endfunction()
 
 # Define the fmt library, its includes and the needed defines.
-add_headers(FMT_HEADERS chrono.h color.h core.h format.h format-inl.h locale.h
-                        ostream.h prepare.h printf.h ranges.h safe-duration-cast.h)
+add_headers(FMT_HEADERS chrono.h color.h compile.h core.h format.h format-inl.h
+                        locale.h ostream.h printf.h ranges.h
+                        safe-duration-cast.h)
 set(FMT_SOURCES src/format.cc)
 if (HAVE_OPEN)
   add_headers(FMT_HEADERS posix.h)
