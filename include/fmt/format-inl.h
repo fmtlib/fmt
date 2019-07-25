@@ -19,6 +19,7 @@
 #include <cstdarg>
 #include <cstddef>  // for std::ptrdiff_t
 #include <cstring>  // for std::memmove
+#include <cwchar>
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
 #  include <locale>
 #endif
@@ -977,7 +978,10 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
 FMT_FUNC void vprint(std::FILE* f, wstring_view format_str, wformat_args args) {
   wmemory_buffer buffer;
   internal::vformat_to(buffer, format_str, args);
-  internal::fwrite_fully(buffer.data(), sizeof(wchar_t), buffer.size(), f);
+  buffer.push_back(L'\0');
+  if (std::fputws(buffer.data(), f) == -1) {
+    FMT_THROW(system_error(errno, "cannot write to file"));
+  }
 }
 
 FMT_FUNC void vprint(string_view format_str, format_args args) {
