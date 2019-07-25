@@ -24,30 +24,30 @@
 
   prints "value = 4,2".
 
-* Introduced ``fmt::prepare`` function that allows precompilation of format
-  strings:
+* Introduced the ``fmt::compile`` function that does format string compilation:
 
   .. code:: c++
 
-     auto f = fmt::prepare<int>("{}");
+     #include <fmt/compile.h>
+
+     auto f = fmt::compile<int>("{}");
      std::string s = f.format(42); // can be called multiple times to format
                                    // different values
-
-  This API is experimental and will likely change in the next minor release.
+     // s == "42"
 
   Thanks `@stryku (Mateusz Janek) <https://github.com/stryku>`_.
 
 * Fixed handling of dynamic width in chrono formatter:
 
- .. code:: c++
+  .. code:: c++
 
-    auto s = fmt::format("{0:{1}%H:%M:%S}", std::chrono::seconds(12345), 12);
-    //                        ^ width argument index                     ^ width
-    // s == "03:25:45    "
+     auto s = fmt::format("{0:{1}%H:%M:%S}", std::chrono::seconds(12345), 12);
+     //                        ^ width argument index                     ^ width
+     // s == "03:25:45    "
 
   Thanks Howard Hinnant.
 
-* Added `fmt::format` and `fmt::vformat` overloads that take `text_style`
+* Added ``fmt::format`` and ``fmt::vformat`` overloads that take ``text_style``
   (`#993 <https://github.com/fmtlib/fmt/issues/993>`_,
   `#994 <https://github.com/fmtlib/fmt/pull/994>`_):
 
