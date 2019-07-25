@@ -8,14 +8,8 @@
 #ifndef FMT_COMPILE_H_
 #define FMT_COMPILE_H_
 
-#ifndef FMT_HAS_CONSTRUCTIBLE_TRAITS
-#  define FMT_HAS_CONSTRUCTIBLE_TRAITS \
-    (FMT_GCC_VERSION >= 407 || FMT_CLANG_VERSION || FMT_MSC_VER)
-#endif
-
-#include "format.h"
-
 #include <vector>
+#include "format.h"
 
 FMT_BEGIN_NAMESPACE
 
@@ -506,12 +500,10 @@ struct compiletime_parts_provider {
 
 template <typename PartsContainer>
 struct parts_container_concept_check : std::true_type {
-#if FMT_HAS_CONSTRUCTIBLE_TRAITS
   static_assert(std::is_copy_constructible<PartsContainer>::value,
                 "PartsContainer is not copy constructible");
   static_assert(std::is_move_constructible<PartsContainer>::value,
                 "PartsContainer is not move constructible");
-#endif
 
   template <typename T, typename = void>
   struct has_format_part_type : std::false_type {};
@@ -669,98 +661,77 @@ template <typename Format> struct format_tag {
 
 #if FMT_USE_CONSTEXPR
 template <typename Format, typename... Args>
-auto do_prepare(runtime_format_tag, Format format) {
+auto do_compile(runtime_format_tag, Format format) {
   return preparator<Format, Args...>::prepare(std::move(format));
 }
 
 template <typename Format, typename... Args>
-FMT_CONSTEXPR auto do_prepare(compiletime_format_tag, const Format& format) {
+FMT_CONSTEXPR auto do_compile(compiletime_format_tag, const Format& format) {
   return typename basic_prepared_format<Format, void, Args...>::type(format);
 }
 #else
 template <typename Format, typename... Args>
-auto do_prepare(const Format& format)
+auto do_compile(const Format& format)
     -> decltype(preparator<Format, Args...>::prepare(format)) {
   return preparator<Format, Args...>::prepare(format);
 }
 #endif
 }  // namespace internal
 
-template <typename Char, typename Container = std::vector<format_part<Char>>>
-struct parts_container {
-  typedef internal::parts_container<Char, Container> type;
-};
-
-template <typename Format, typename PartsContainer, typename... Args>
-struct basic_prepared_format {
-  typedef typename internal::basic_prepared_format<Format, PartsContainer,
-                                                   Args...>::type type;
-};
-
 template <typename... Args> struct prepared_format {
-  typedef typename basic_prepared_format<
-      std::string, typename parts_container<char>::type, Args...>::type type;
+  typedef typename internal::basic_prepared_format<
+      std::string, internal::parts_container<char>, Args...>::type type;
 };
 
 template <typename... Args> struct wprepared_format {
-  typedef
-      typename basic_prepared_format<std::wstring,
-                                     typename parts_container<wchar_t>::type,
-                                     Args...>::type type;
+  typedef typename internal::basic_prepared_format<
+      std::wstring, internal::parts_container<wchar_t>, Args...>::type type;
 };
 
-template <typename Char, typename Container = std::vector<format_part<Char>>>
-using parts_container_t = typename parts_container<Char, Container>::type;
-
-template <typename Format, typename PreparedPartsContainer, typename... Args>
-using basic_prepared_format_t =
-    typename basic_prepared_format<Format, PreparedPartsContainer,
-                                   Args...>::type;
+template <typename... Args>
+using prepared_format_t = typename internal::basic_prepared_format<
+    std::string, internal::parts_container<char>, Args...>::type;
 
 template <typename... Args>
-using prepared_format_t =
-    basic_prepared_format_t<std::string, parts_container<char>, Args...>;
-
-template <typename... Args>
-using wprepared_format_t =
-    basic_prepared_format_t<std::wstring, parts_container<wchar_t>, Args...>;
+using wprepared_format_t = typename internal::basic_prepared_format<
+    std::wstring, internal::parts_container<wchar_t>, Args...>::type;
 
 #if FMT_USE_CONSTEXPR
 
-template <typename... Args, typename Format>
-FMT_CONSTEXPR auto compile(Format format) {
-  return internal::do_prepare<Format, Args...>(
-      typename internal::format_tag<Format>::type{}, std::move(format));
+template <typename... Args, typename S>
+FMT_CONSTEXPR auto compile(S format_str) {
+  return internal::do_compile<S, Args...>(
+      typename internal::format_tag<S>::type{}, std::move(format_str));
 }
 #else
 
-template <typename... Args, typename Format>
-auto compile(Format format) ->
-    typename internal::preparator<Format, Args...>::prepared_format_type {
-  return internal::preparator<Format, Args...>::prepare(std::move(format));
+template <typename... Args, typename S>
+auto compile(S format_str) ->
+    typename internal::preparator<S, Args...>::prepared_format_type {
+  return internal::preparator<S, Args...>::prepare(std::move(format_str));
 }
 #endif
 
 template <typename... Args, typename Char>
-auto compile(const Char* format) ->
+auto compile(const Char* format_str) ->
     typename internal::preparator<std::basic_string<Char>,
                                   Args...>::prepared_format_type {
-  return compile<Args...>(internal::to_runtime_format(format));
+  return compile<Args...>(internal::to_runtime_format(format_str));
 }
 
 template <typename... Args, typename Char, unsigned N>
-auto compile(const Char(format)[N]) ->
+auto compile(const Char(format_str)[N]) ->
     typename internal::preparator<std::basic_string<Char>,
                                   Args...>::prepared_format_type {
-  const auto view = basic_string_view<Char>(format, N);
+  const auto view = basic_string_view<Char>(format_str, N);
   return compile<Args...>(internal::to_runtime_format(view));
 }
 
 template <typename... Args, typename Char>
-auto compile(basic_string_view<Char> format) ->
+auto compile(basic_string_view<Char> format_str) ->
     typename internal::preparator<std::basic_string<Char>,
                                   Args...>::prepared_format_type {
-  return compile<Args...>(internal::to_runtime_format(format));
+  return compile<Args...>(internal::to_runtime_format(format_str));
 }
 
 FMT_END_NAMESPACE

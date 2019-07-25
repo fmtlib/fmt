@@ -486,9 +486,9 @@ TEST(PrepareTest, ReusedPreparedFormatType) {
 
 TEST(PrepareTest, UserProvidedPartsContainerUnderlyingContainer) {
   typedef fmt::format_part<char> format_part;
-  typedef fmt::parts_container<char, std::list<format_part>>::type
+  typedef fmt::internal::parts_container<char, std::list<format_part>>
       parts_container;
-  typedef fmt::basic_prepared_format<std::string, parts_container, std::string,
+  typedef fmt::internal::basic_prepared_format<std::string, parts_container, std::string,
                                      int>::type prepared_format;
 
   prepared_format prepared = fmt::compile<prepared_format>("The {} is {}.");
@@ -532,7 +532,7 @@ class custom_parts_container {
 };
 
 TEST(PrepareTest, UserProvidedPartsContainer) {
-  typedef fmt::basic_prepared_format<std::string, custom_parts_container,
+  typedef fmt::internal::basic_prepared_format<std::string, custom_parts_container,
                                      std::string, int>::type prepared_format;
 
   prepared_format prepared = fmt::compile<prepared_format>("The {} is {}.");
