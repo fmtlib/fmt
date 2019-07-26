@@ -476,7 +476,7 @@ TEST(PrepareTest, CopyPreparedFormat_InternalStringViewsAreNotInvalidated) {
 }
 
 TEST(PrepareTest, ReusedPreparedFormatType) {
-  typedef fmt::prepared_format<std::string, int>::type prepared_format;
+  using prepared_format = fmt::internal::prepared_format_t<std::string, int>;
 
   prepared_format prepared = fmt::compile<prepared_format>("The {} is {}.");
   EXPECT_EQ("The answer is 42.", prepared.format("answer", 42));

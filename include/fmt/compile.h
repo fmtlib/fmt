@@ -676,25 +676,11 @@ auto do_compile(const Format& format)
   return preparator<Format, Args...>::prepare(format);
 }
 #endif
+
+template <typename... Args> using prepared_format_t =
+  typename basic_prepared_format<
+      std::string, parts_container<char>, Args...>::type;
 }  // namespace internal
-
-template <typename... Args> struct prepared_format {
-  typedef typename internal::basic_prepared_format<
-      std::string, internal::parts_container<char>, Args...>::type type;
-};
-
-template <typename... Args> struct wprepared_format {
-  typedef typename internal::basic_prepared_format<
-      std::wstring, internal::parts_container<wchar_t>, Args...>::type type;
-};
-
-template <typename... Args>
-using prepared_format_t = typename internal::basic_prepared_format<
-    std::string, internal::parts_container<char>, Args...>::type;
-
-template <typename... Args>
-using wprepared_format_t = typename internal::basic_prepared_format<
-    std::wstring, internal::parts_container<wchar_t>, Args...>::type;
 
 #if FMT_USE_CONSTEXPR
 
