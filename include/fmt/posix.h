@@ -265,7 +265,7 @@ long getpagesize();
 // A "C" numeric locale.
 class Locale {
  private:
-#  ifdef _MSC_VER
+#  ifdef _WIN32
   using locale_t = _locale_t;
 
   enum { LC_NUMERIC_MASK = LC_NUMERIC };
