@@ -36,12 +36,13 @@ using testing::StrictMock;
 
 class mock_parts_collector {
  public:
-  MOCK_METHOD1(add, void(fmt::format_part<char>));
-  MOCK_METHOD1(substitute_last, void(fmt::format_part<char>));
-  MOCK_METHOD0(last, fmt::format_part<char>());
+  MOCK_METHOD1(add, void(fmt::internal::format_part<char>));
+  MOCK_METHOD1(substitute_last, void(fmt::internal::format_part<char>));
+  MOCK_METHOD0(last, fmt::internal::format_part<char>());
 };
 
 FMT_BEGIN_NAMESPACE
+namespace internal {
 bool operator==(const internal::string_view_metadata& lhs,
                 const internal::string_view_metadata& rhs) {
   return std::tie(lhs.offset_, lhs.size_) == std::tie(rhs.offset_, rhs.size_);
@@ -85,7 +86,7 @@ bool operator!=(const format_part<char>::specification& lhs,
 }
 
 bool operator==(const format_part<char>& lhs,
-                const fmt::format_part<char>& rhs) {
+                const fmt::internal::format_part<char>& rhs) {
   typedef format_part<char>::which_value which_value;
 
   if (lhs.which != rhs.which ||
@@ -114,14 +115,15 @@ bool operator==(const format_part<char>& lhs,
   return false;
 }
 
-bool operator!=(const fmt::format_part<char>& lhs,
-                const fmt::format_part<char>& rhs) {
+bool operator!=(const fmt::internal::format_part<char>& lhs,
+                const fmt::internal::format_part<char>& rhs) {
   return !(lhs == rhs);
+}
 }
 FMT_END_NAMESPACE
 
 TEST(PrepareTest, FormatPart_ComparisonOperators) {
-  typedef fmt::format_part<char> format_part;
+  typedef fmt::internal::format_part<char> format_part;
   typedef fmt::internal::dynamic_format_specs<char> prepared_specs;
 
   {
@@ -226,7 +228,7 @@ TEST(PrepareTest, FormatPart_ComparisonOperators) {
 }
 
 TEST(PrepareTest, FormatPreparationHandler_OnText_AddsPartWithText) {
-  typedef fmt::format_part<char> format_part;
+  typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
 
   parts_mock parts;
@@ -242,7 +244,7 @@ TEST(PrepareTest, FormatPreparationHandler_OnText_AddsPartWithText) {
 }
 
 TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithIncrementedId) {
-  typedef fmt::format_part<char> format_part;
+  typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
 
   parts_mock parts;
@@ -260,7 +262,7 @@ TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithIncrementedId) {
 }
 
 TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithPassedId) {
-  typedef fmt::format_part<char> format_part;
+  typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
 
   parts_mock parts;
@@ -281,7 +283,7 @@ TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithPassedId) {
 }
 
 TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithPassedNamedId) {
-  typedef fmt::format_part<char> format_part;
+  typedef fmt::internal::format_part<char> format_part;
   typedef format_part::named_argument_id named_argument_id;
   typedef StrictMock<mock_parts_collector> parts_mock;
 
@@ -316,7 +318,7 @@ TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithPassedNamedId) {
 
 TEST(PrepareTest,
      FormatPreparationHandler_OnReplacementField_SetsEndOfArgumentId) {
-  typedef fmt::format_part<char> format_part;
+  typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
 
   const auto format = fmt::internal::to_string_view("{:<}");
@@ -338,7 +340,7 @@ TEST(PrepareTest,
 TEST(
     PrepareTest,
     FormatPreparationHandlerLastPartArgIndex_OnFormatSpecs_UpdatesLastAddedPart) {
-  typedef fmt::format_part<char> format_part;
+  typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
 
   parts_mock parts;
@@ -369,7 +371,7 @@ TEST(
 TEST(
     PrepareTest,
     FormatPreparationHandlerLastPartNamedArgIndex_OnFormatSpecs_UpdatesLastAddedPart) {
-  typedef fmt::format_part<char> format_part;
+  typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
 
   parts_mock parts;
@@ -485,7 +487,7 @@ TEST(PrepareTest, ReusedPreparedFormatType) {
 }
 
 TEST(PrepareTest, UserProvidedPartsContainerUnderlyingContainer) {
-  typedef fmt::format_part<char> format_part;
+  typedef fmt::internal::format_part<char> format_part;
   typedef fmt::internal::parts_container<char, std::list<format_part>>
       parts_container;
   typedef fmt::internal::basic_prepared_format<std::string, parts_container, std::string,
@@ -499,7 +501,7 @@ TEST(PrepareTest, UserProvidedPartsContainerUnderlyingContainer) {
 
 class custom_parts_container {
  public:
-  typedef fmt::format_part<char> format_part_type;
+  typedef fmt::internal::format_part<char> format_part_type;
 
  private:
   typedef std::deque<format_part_type> parts;

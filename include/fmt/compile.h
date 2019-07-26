@@ -12,6 +12,7 @@
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
+namespace internal {
 
 template <typename Char> struct format_part {
  public:
@@ -96,7 +97,6 @@ template <typename Char> struct format_part {
   } val;
 };
 
-namespace internal {
 template <typename Char, typename PartsContainer>
 class format_preparation_handler : public internal::error_handler {
  private:
