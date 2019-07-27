@@ -3527,11 +3527,13 @@ FMT_CONSTEXPR internal::udl_formatter<wchar_t> operator"" _format(
     fmt::print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
   \endrst
  */
-inline internal::udl_arg<char> operator"" _a(const char* s, std::size_t) {
-  return {s};
+FMT_CONSTEXPR internal::udl_arg<char> operator"" _a(const char* s,
+                                                    std::size_t n) {
+  return {{s, n}};
 }
-inline internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s, std::size_t) {
-  return {s};
+FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
+                                                       std::size_t n) {
+  return {{s, n}};
 }
 }  // namespace literals
 #endif  // FMT_USE_USER_DEFINED_LITERALS
