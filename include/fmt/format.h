@@ -3469,8 +3469,7 @@ template <typename Char> struct udl_formatter {
   basic_string_view<Char> str;
 
   template <typename... Args>
-  auto operator()(Args&&... args) const
-      -> decltype(format(str, std::forward<Args>(args)...)) {
+  std::basic_string<Char> operator()(Args&&... args) const {
     return format(str, std::forward<Args>(args)...);
   }
 };
