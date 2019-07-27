@@ -25,7 +25,7 @@ workflow starts with::
 
   mkdir build          # Create a directory to hold the build output.
   cd build
-  cmake <path/to/fmt>  # Generate native build scripts.
+  cmake ..  # Generate native build scripts.
 
 where :file:`{<path/to/fmt>}` is a path to the ``fmt`` repository.
 
