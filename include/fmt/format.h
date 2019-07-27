@@ -3466,7 +3466,7 @@ template <typename Char, Char... CHARS> class udl_formatter {
 };
 #  else
 template <typename Char> struct udl_formatter {
-  const Char* str;
+  basic_string_view<Char> str;
 
   template <typename... Args>
   auto operator()(Args&&... args) const
@@ -3477,7 +3477,7 @@ template <typename Char> struct udl_formatter {
 #  endif  // FMT_USE_UDL_TEMPLATE
 
 template <typename Char> struct udl_arg {
-  const Char* str;
+  basic_string_view<Char> str;
 
   template <typename T> named_arg<T, Char> operator=(T&& value) const {
     return {str, std::forward<T>(value)};
@@ -3508,13 +3508,13 @@ FMT_CONSTEXPR internal::udl_formatter<Char, CHARS...> operator""_format() {
     std::string message = "The answer is {}"_format(42);
   \endrst
  */
-inline internal::udl_formatter<char> operator"" _format(const char* s,
-                                                        std::size_t) {
-  return {s};
+FMT_CONSTEXPR internal::udl_formatter<char> operator"" _format(const char* s,
+                                                               std::size_t n) {
+  return {{s, n}};
 }
-inline internal::udl_formatter<wchar_t> operator"" _format(const wchar_t* s,
-                                                           std::size_t) {
-  return {s};
+FMT_CONSTEXPR internal::udl_formatter<wchar_t> operator"" _format(
+    const wchar_t* s, std::size_t n) {
+  return {{s, n}};
 }
 #  endif  // FMT_USE_UDL_TEMPLATE
 
