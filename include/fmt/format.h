@@ -3368,10 +3368,11 @@ inline OutputIt vformat_to(OutputIt out, const S& format_str,
    fmt::format_to(std::back_inserter(out), "{}", 42);
  \endrst
  */
-template <typename OutputIt, typename S, typename... Args,
-          FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value&&
-                            internal::is_string<S>::value)>
+template <typename OutputIt, typename S, typename... Args>
 inline OutputIt format_to(OutputIt out, const S& format_str, Args&&... args) {
+  static_assert(internal::is_output_iterator<OutputIt>::value &&
+                    internal::is_string<S>::value,
+                "");
   internal::check_format_string<Args...>(format_str);
   using context = format_context_t<OutputIt, char_t<S>>;
   return vformat_to(out, to_string_view(format_str),

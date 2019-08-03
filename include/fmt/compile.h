@@ -185,6 +185,14 @@ class prepared_format {
 
   prepared_format() = delete;
 
+  template <typename OutputIt>
+  inline OutputIt format_to(OutputIt out, const Args&... args) const {
+    typedef format_context_t<OutputIt, char_type> context;
+    typedef output_range<OutputIt, char_type> range;
+    format_arg_store<context, Args...> as(args...);
+    return this->vformat_to(range(out), basic_format_args<context>(as));
+  }
+
   typedef buffer_context<char_type> context;
 
   template <typename Range, typename Context>
@@ -672,17 +680,6 @@ std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   cf.template vformat_to<range, context>(range(buffer),
                                          {make_format_args<context>(args...)});
   return to_string(buffer);
-}
-
-template <typename OutputIt, typename CompiledFormat, typename... Args>
-OutputIt format_to(OutputIt out, const CompiledFormat& cf,
-                   const Args&... args) {
-  using char_type = typename CompiledFormat::char_type;
-  using range = internal::output_range<OutputIt, char_type>;
-  using context = format_context_t<OutputIt, char_type>;
-  format_arg_store<context, Args...> as(args...);
-  return cf.template vformat_to<range, context>(
-      range(out), {make_format_args<context>(args...)});
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,
