@@ -185,27 +185,6 @@ class prepared_format {
 
   prepared_format() = delete;
 
-  std::size_t formatted_size(const Args&... args) const {
-    const auto it = this->format_to(counting_iterator<char_type>(), args...);
-    return it.count();
-  }
-
-  template <typename OutputIt,
-            FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
-  inline format_to_n_result<OutputIt> format_to_n(OutputIt out, unsigned n,
-                                                  const Args&... args) const {
-    format_arg_store<typename format_to_n_context<OutputIt, char_type>::type,
-                     Args...>
-    as(args...);
-
-    typedef truncating_iterator<OutputIt> trunc_it;
-    typedef output_range<trunc_it, char_type> range;
-    range r(trunc_it(out, n));
-    auto it = this->vformat_to(
-        r, typename format_to_n_args<OutputIt, char_type>::type(as));
-    return {it.base(), it.count()};
-  }
-
   template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
   inline std::back_insert_iterator<Container> format_to(
       std::back_insert_iterator<Container> out, Args&&... args) const {
@@ -721,6 +700,26 @@ std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   cf.template vformat_to<range, context>(range(buffer),
                                          {make_format_args<context>(args...)});
   return to_string(buffer);
+}
+
+template <typename OutputIt, typename CompiledFormat, typename... Args,
+          FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
+format_to_n_result<OutputIt> format_to_n(OutputIt out, unsigned n,
+                                         const CompiledFormat& cf,
+                                         const Args&... args) {
+  auto it =
+      cf.format_to(internal::truncating_iterator<OutputIt>(out, n), args...)
+          .count();
+  return {it.base(), it.count()};
+}
+
+template <typename CompiledFormat, typename... Args>
+std::size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
+  return cf
+      .format_to(
+          internal::counting_iterator<typename CompiledFormat::char_type>(),
+          args...)
+      .count();
 }
 
 FMT_END_NAMESPACE
