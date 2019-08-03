@@ -449,11 +449,11 @@ template <typename... Args> struct copied_prepared_format_creator {
 TEST(PrepareTest, CopyPreparedFormat_InternalStringViewsAreNotInvalidated) {
   auto prepared = copied_prepared_format_creator<int, std::string>::make(
       "before {} middle {} after");
-  EXPECT_EQ("before 42 middle text after", prepared.format(42, "text"));
+  EXPECT_EQ("before 42 middle text after", fmt::format(prepared, 42, "text"));
 
   prepared = copied_prepared_format_creator<int, std::string>::make(
       "before {0} middle {1} after");
-  EXPECT_EQ("before 42 middle text after", prepared.format(42, "text"));
+  EXPECT_EQ("before 42 middle text after", fmt::format(prepared, 42, "text"));
 
   {
     typedef decltype(fmt::arg("first", 42)) argument0;
@@ -462,7 +462,7 @@ TEST(PrepareTest, CopyPreparedFormat_InternalStringViewsAreNotInvalidated) {
         copied_prepared_format_creator<argument0, argument1>::make(
             "before {first} middle {second} after");
     EXPECT_EQ("before 42 middle text after",
-              named_prepared.format(fmt::arg("first", 42),
+              fmt::format(named_prepared, fmt::arg("first", 42),
                                     fmt::arg("second", "text")));
   }
   {
@@ -472,7 +472,7 @@ TEST(PrepareTest, CopyPreparedFormat_InternalStringViewsAreNotInvalidated) {
         copied_prepared_format_creator<argument0, argument1>::make(
             ">>>{value:>{width}}<<<");
     EXPECT_EQ(">>>     12345<<<",
-              named_prepared.format(fmt::arg("value", "12345"),
+              fmt::format(named_prepared, fmt::arg("value", "12345"),
                                     fmt::arg("width", 10)));
   }
 }
@@ -481,9 +481,9 @@ TEST(PrepareTest, ReusedPreparedFormatType) {
   using prepared_format = fmt::internal::prepared_format_t<std::string, int>;
 
   prepared_format prepared = fmt::compile<prepared_format>("The {} is {}.");
-  EXPECT_EQ("The answer is 42.", prepared.format("answer", 42));
+  EXPECT_EQ("The answer is 42.", fmt::format(prepared, "answer", 42));
   prepared = fmt::compile<prepared_format>("40 {} 2 = {}");
-  EXPECT_EQ("40 + 2 = 42", prepared.format("+", 42));
+  EXPECT_EQ("40 + 2 = 42", fmt::format(prepared, "+", 42));
 }
 
 TEST(PrepareTest, UserProvidedPartsContainerUnderlyingContainer) {
@@ -494,9 +494,9 @@ TEST(PrepareTest, UserProvidedPartsContainerUnderlyingContainer) {
                                      int>::type prepared_format;
 
   prepared_format prepared = fmt::compile<prepared_format>("The {} is {}.");
-  EXPECT_EQ("The answer is 42.", prepared.format("answer", 42));
+  EXPECT_EQ("The answer is 42.", fmt::format(prepared, "answer", 42));
   prepared = fmt::compile<prepared_format>("40 {} 2 = {}");
-  EXPECT_EQ("40 + 2 = 42", prepared.format("+", 42));
+  EXPECT_EQ("40 + 2 = 42", fmt::format(prepared, "+", 42));
 }
 
 class custom_parts_container {
@@ -538,67 +538,67 @@ TEST(PrepareTest, UserProvidedPartsContainer) {
                                      std::string, int>::type prepared_format;
 
   prepared_format prepared = fmt::compile<prepared_format>("The {} is {}.");
-  EXPECT_EQ("The answer is 42.", prepared.format("answer", 42));
+  EXPECT_EQ("The answer is 42.", fmt::format(prepared, "answer", 42));
   prepared = fmt::compile<prepared_format>("40 {} 2 = {}");
-  EXPECT_EQ("40 + 2 = 42", prepared.format("+", 42));
+  EXPECT_EQ("40 + 2 = 42", fmt::format(prepared, "+", 42));
 }
 
 TEST(PrepareTest, PassConstCharPointerFormat) {
   const char* c_format = "test {}";
   const auto prepared = fmt::compile<int>(c_format);
-  EXPECT_EQ("test 42", prepared.format(42));
+  EXPECT_EQ("test 42", fmt::format(prepared, 42));
   const wchar_t* wc_format = L"test {}";
   const auto wprepared = fmt::compile<int>(wc_format);
-  EXPECT_EQ(L"test 42", wprepared.format(42));
+  EXPECT_EQ(L"test 42", fmt::format(wprepared, 42));
 }
 
 TEST(PrepareTest, PassCharArrayFormat) {
   char c_format[] = "test {}";
   const auto prepared = fmt::compile<int>(c_format);
-  EXPECT_EQ("test 42", prepared.format(42));
+  EXPECT_EQ("test 42", fmt::format(prepared, 42));
   wchar_t wc_format[] = L"test {}";
   const auto wprepared = fmt::compile<int>(wc_format);
-  EXPECT_EQ(L"test 42", wprepared.format(42));
+  EXPECT_EQ(L"test 42", fmt::format(wprepared, 42));
 }
 
 TEST(PrepareTest, PassConstCharArrayFormat) {
   const char c_format[] = "test {}";
   const auto prepared = fmt::compile<int>(c_format);
-  EXPECT_EQ("test 42", prepared.format(42));
+  EXPECT_EQ("test 42", fmt::format(prepared, 42));
   const wchar_t wc_format[] = L"test {}";
   const auto wprepared = fmt::compile<int>(wc_format);
-  EXPECT_EQ(L"test 42", wprepared.format(42));
+  EXPECT_EQ(L"test 42", fmt::format(wprepared, 42));
 }
 
 TEST(PrepareTest, PassStringLiteralFormat) {
   const auto prepared = fmt::compile<int>("test {}");
-  EXPECT_EQ("test 42", prepared.format(42));
+  EXPECT_EQ("test 42", fmt::format(prepared, 42));
   const auto wprepared = fmt::compile<int>(L"test {}");
-  EXPECT_EQ(L"test 42", wprepared.format(42));
+  EXPECT_EQ(L"test 42", fmt::format(wprepared, 42));
 }
 
 TEST(PrepareTest, PassStringViewFormat) {
   const auto prepared =
       fmt::compile<int>(fmt::basic_string_view<char>("test {}"));
-  EXPECT_EQ("test 42", prepared.format(42));
+  EXPECT_EQ("test 42", fmt::format(prepared, 42));
   const auto wprepared =
       fmt::compile<int>(fmt::basic_string_view<wchar_t>(L"test {}"));
-  EXPECT_EQ(L"test 42", wprepared.format(42));
+  EXPECT_EQ(L"test 42", fmt::format(wprepared, 42));
 }
 
 TEST(PrepareTest, PassBasicStringFormat) {
   const auto prepared = fmt::compile<int>(std::string("test {}"));
-  EXPECT_EQ("test 42", prepared.format(42));
+  EXPECT_EQ("test 42", fmt::format(prepared, 42));
   const auto wprepared = fmt::compile<int>(std::wstring(L"test {}"));
-  EXPECT_EQ(L"test 42", wprepared.format(42));
+  EXPECT_EQ(L"test 42", fmt::format(wprepared, 42));
 }
 
 #if FMT_USE_CONSTEXPR
 TEST(PrepareTest, PassCompileString) {
   const auto prepared = fmt::compile<int>(FMT_STRING("test {}"));
-  EXPECT_EQ("test 42", prepared.format(42));
+  EXPECT_EQ("test 42", fmt::format(prepared, 42));
   const auto wprepared = fmt::compile<int>(FMT_STRING(L"test {}"));
-  EXPECT_EQ(L"test 42", wprepared.format(42));
+  EXPECT_EQ(L"test 42", fmt::format(wprepared, 42));
 }
 #endif
 
@@ -637,7 +637,7 @@ TEST(PrepareTest, PassUserTypeFormat) {
   typedef std::basic_string<char, std::char_traits<char>, user_allocator<char>>
       user_format;
   const auto prepared = fmt::compile<int>(user_format("test {}"));
-  EXPECT_EQ("test 42", prepared.format(42));
+  EXPECT_EQ("test 42", fmt::format(prepared, 42));
 }
 
 TEST(PrepareTest, FormatToArrayOfChars) {

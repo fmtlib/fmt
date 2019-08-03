@@ -206,15 +206,6 @@ class prepared_format {
     return {it.base(), it.count()};
   }
 
-  std::basic_string<char_type> format(const Args&... args) const {
-    basic_memory_buffer<char_type> buffer;
-    using range = buffer_range<char_type>;
-    this->vformat_to(range(buffer),
-                     basic_format_args<context>{
-                         make_args_checked<Args...>(format_, args...)});
-    return to_string(buffer);
-  }
-
   template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
   inline std::back_insert_iterator<Container> format_to(
       std::back_insert_iterator<Container> out, Args&&... args) const {
@@ -243,7 +234,6 @@ class prepared_format {
                                 make_args_checked<Args...>(format_, args...)});
   }
 
- private:
   typedef buffer_context<char_type> context;
 
   template <typename Range, typename Context>
@@ -304,6 +294,7 @@ class prepared_format {
     return ctx.out();
   }
 
+ private:
   void advance_parse_context_to_specification(
       basic_parse_context<char_type>& parse_ctx,
       const format_part_t& part) const {
@@ -677,9 +668,10 @@ auto do_compile(const Format& format)
 }
 #endif
 
-template <typename... Args> using prepared_format_t =
-  typename basic_prepared_format<
-      std::string, parts_container<char>, Args...>::type;
+template <typename... Args>
+using prepared_format_t =
+    typename basic_prepared_format<std::string, parts_container<char>,
+                                   Args...>::type;
 }  // namespace internal
 
 #if FMT_USE_CONSTEXPR
@@ -718,6 +710,17 @@ auto compile(basic_string_view<Char> format_str) ->
     typename internal::preparator<std::basic_string<Char>,
                                   Args...>::prepared_format_type {
   return compile<Args...>(internal::to_runtime_format(format_str));
+}
+
+template <typename CompiledFormat, typename... Args,
+          typename Char = typename CompiledFormat::char_type>
+std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
+  basic_memory_buffer<Char> buffer;
+  using range = internal::buffer_range<Char>;
+  using context = buffer_context<Char>;
+  cf.template vformat_to<range, context>(range(buffer),
+                                         {make_format_args<context>(args...)});
+  return to_string(buffer);
 }
 
 FMT_END_NAMESPACE
