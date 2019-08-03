@@ -643,32 +643,32 @@ TEST(PrepareTest, PassUserTypeFormat) {
 TEST(PrepareTest, FormatToArrayOfChars) {
   char buffer[32] = {0};
   const auto prepared = fmt::compile<int>("4{}");
-  prepared.format_to(buffer, 2);
+  fmt::format_to(buffer, prepared, 2);
   EXPECT_EQ(std::string("42"), buffer);
   wchar_t wbuffer[32] = {0};
   const auto wprepared = fmt::compile<int>(L"4{}");
-  wprepared.format_to(wbuffer, 2);
+  fmt::format_to(wbuffer, wprepared, 2);
   EXPECT_EQ(std::wstring(L"42"), wbuffer);
 }
 
 TEST(PrepareTest, FormatToIterator) {
   std::string s(2, ' ');
   const auto prepared = fmt::compile<int>("4{}");
-  prepared.format_to(s.begin(), 2);
+  fmt::format_to(s.begin(), prepared, 2);
   EXPECT_EQ("42", s);
   std::wstring ws(2, L' ');
   const auto wprepared = fmt::compile<int>(L"4{}");
-  wprepared.format_to(ws.begin(), 2);
+  fmt::format_to(ws.begin(), wprepared, 2);
   EXPECT_EQ(L"42", ws);
 }
 
 TEST(PrepareTest, FormatToBackInserter) {
   std::string s;
   const auto prepared = fmt::compile<int>("4{}");
-  prepared.format_to(std::back_inserter(s), 2);
+  fmt::format_to(std::back_inserter(s), prepared, 2);
   EXPECT_EQ("42", s);
   std::wstring ws;
   const auto wprepared = fmt::compile<int>(L"4{}");
-  wprepared.format_to(std::back_inserter(ws), 2);
+  fmt::format_to(std::back_inserter(ws), wprepared, 2);
   EXPECT_EQ(L"42", ws);
 }
