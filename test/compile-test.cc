@@ -672,25 +672,3 @@ TEST(PrepareTest, FormatToBackInserter) {
   wprepared.format_to(std::back_inserter(ws), 2);
   EXPECT_EQ(L"42", ws);
 }
-
-TEST(PrepareTest, FormatToBasicMemoryBuffer) {
-  fmt::basic_memory_buffer<char, 100> buffer;
-  const auto prepared = fmt::compile<int>("4{}");
-  prepared.format_to(buffer, 2);
-  EXPECT_EQ("42", to_string(buffer));
-  fmt::basic_memory_buffer<wchar_t, 100> wbuffer;
-  const auto wprepared = fmt::compile<int>(L"4{}");
-  wprepared.format_to(wbuffer, 2);
-  EXPECT_EQ(L"42", to_string(wbuffer));
-}
-
-TEST(PrepareTest, FormatToMemoryBuffer) {
-  fmt::memory_buffer buffer;
-  const auto prepared = fmt::compile<int>("4{}");
-  prepared.format_to(buffer, 2);
-  EXPECT_EQ("42", to_string(buffer));
-  fmt::wmemory_buffer wbuffer;
-  const auto wprepared = fmt::compile<int>(L"4{}");
-  wprepared.format_to(wbuffer, 2);
-  EXPECT_EQ(L"42", to_string(wbuffer));
-}
