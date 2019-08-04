@@ -174,7 +174,7 @@ FMT_FUNC void format_error_code(internal::buffer<char>& out, int error_code,
   assert(out.size() <= inline_buffer_size);
 }
 
-// try an fwrite, FMT_THROW on failure
+// A wrapper around fwrite that throws on error.
 FMT_FUNC void fwrite_fully(const void* ptr, size_t size, size_t count,
                            FILE* stream) {
   size_t written = std::fwrite(ptr, size, count, stream);
@@ -187,9 +187,8 @@ FMT_FUNC void report_error(format_func func, int error_code,
                            string_view message) FMT_NOEXCEPT {
   memory_buffer full_message;
   func(full_message, error_code, message);
-  // Use Writer::data instead of Writer::c_str to avoid potential memory
-  // allocation.
-  fwrite_fully(full_message.data(), 1, full_message.size(), stderr);
+  // Don't use fwrite_fully because the latter may throw.
+  (void)std::fwrite(full_message.data(), full_message.size(), 1, stderr);
   std::fputc('\n', stderr);
 }
 }  // namespace internal
