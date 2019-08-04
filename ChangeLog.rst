@@ -24,6 +24,27 @@
 
   prints "value = 4,2".
 
+* Added an experimental Grisu floating-point formatting algorithm
+  implementation (disabled by default). To enable it define ``FMT_USE_GRISU``
+  macro to 1 before including ``fmt/format.h``:
+
+  .. code:: c++
+
+     #define FMT_USE_GRISU 1
+     #include <fmt/format.h>
+
+     auto s = fmt::format("{}", 4.2); // formats 4.2 using Grisu
+
+  With Grisu enabled, {fmt} is 13x faster than ``std::ostringstream`` and
+  10x faster than ``sprintf`` on the `dtoa-benchmark
+  <https://github.com/fmtlib/dtoa-benchmark>`_ floating-point formatting
+  benchmark:
+
+  .. image:: https://user-images.githubusercontent.com/576385/
+             54883977-9fe8c000-4e28-11e9-8bde-272d122e7c52.jpg
+
+  `Full benchmark results <https://fmt.dev/unknown_mac64_clang10.0.html>`_
+
 * ``formatter`` specializations now always take precedence over ``operator<<``
   (`#952 <https://github.com/fmtlib/fmt/issues/952>`_):
 
@@ -66,6 +87,16 @@
   which can be beneficial when identically formatting many objects of the same
   types. Thanks `@stryku (Mateusz Janek) <https://github.com/stryku>`_.
 
+* Added the ``%`` format specifier that formats floating-point values as
+  percentages (`#1060 <https://github.com/fmtlib/fmt/pull/1060>`_,
+  `#1071 <https://github.com/fmtlib/fmt/pull/1071>`_):
+
+  .. code:: c++
+
+     auto s = fmt::format("{:.1%}", 0.42); // s == "42.0%"
+
+  Thanks `@gawain-bolton (Gawain Bolton) <https://github.com/gawain-bolton>`_:
+
 * Implemented precision for floating-point durations
   (`#1004 <https://github.com/fmtlib/fmt/issues/1004>`_,
   `#1012 <https://github.com/fmtlib/fmt/pull/1012>`_):
@@ -80,8 +111,10 @@
 * Implemented ``chrono`` format specifiers ``%Q`` and ``%q`` that give the value
   and the unit respectively (`#1019 <https://github.com/fmtlib/fmt/pull/1019>`_):
 
-  auto value = fmt::format("{:%Q}", 42s); // value == "42"
-  auto unit  = fmt::format("{:%q}", 42s); // unit == "s"
+  .. code:: c++
+
+     auto value = fmt::format("{:%Q}", 42s); // value == "42"
+     auto unit  = fmt::format("{:%q}", 42s); // unit == "s"
 
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
@@ -94,6 +127,8 @@
      // s == "03:25:45    "
 
   Thanks Howard Hinnant.
+
+* Removed deprecated ``fmt/time.h``. Use ``fmt/chrono.h`` instead.
 
 * Added ``fmt::format`` and ``fmt::vformat`` overloads that take ``text_style``
   (`#993 <https://github.com/fmtlib/fmt/issues/993>`_,
@@ -108,22 +143,70 @@
 
   Thanks `@Naios (Denis Blank) <https://github.com/Naios>`_.
 
+* Separated formatting and parsing contexts, removing the undocumented
+  ``basic_format_context::parse_context()`` function.
+
 * Marked deprecated APIs with the ``[[deprecated]]`` attribute and removed
   internal uses of deprecated APIs
   (`#1022 <https://github.com/fmtlib/fmt/pull/1022>`_).
   Thanks `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_.
 
-* Stopped setting ``CMAKE_BUILD_TYPE`` if fmt is a subproject
+* Moved the undocumented ``basic_writer``, ``writer``, and ``wwriter`` types
+  to the ``internal`` namespace.
+
+* Moved SFINAE to template parameters to reduce symbol sizes.
+
+* Stopped setting ``CMAKE_BUILD_TYPE`` if {fmt} is a subproject
   (`#1081 <https://github.com/fmtlib/fmt/issues/1081>`_).
 
-* Various fixes (`#980 <https://github.com/fmtlib/fmt/issues/980>`_,
+* Various build improvements
+  (`#1039 <https://github.com/fmtlib/fmt/pull/1039>`_,
+  `#1078 <https://github.com/fmtlib/fmt/pull/1078>`_).
+  Thanks `@luncliff (Park DongHa) <https://github.com/luncliff>`_,
+  `@jasonszang (Jason Shuo Zang) <https://github.com/jasonszang>`_.
+
+* Added `Sublime Text syntax highlighting config
+  <https://github.com/fmtlib/fmt/blob/master/support/C%2B%2B.sublime-syntax>`_
+  (`#1037 <https://github.com/fmtlib/fmt/issues/1037>`_).
+  Thanks `@Kronuz (Germán Méndez Bravo) <https://github.com/Kronuz>`_.
+
+* Improved documentation
+  (`#1051 <https://github.com/fmtlib/fmt/pull/1051>`_).
+  Thanks `@mikelui (Michael Lui) <https://github.com/mikelui>`_,
+
+* Various warning and bug fixes
+  (`#980 <https://github.com/fmtlib/fmt/issues/980>`_,
   `#995 <https://github.com/fmtlib/fmt/pull/995>`_,
   `#998 <https://github.com/fmtlib/fmt/pull/998>`_,
   `#1006 <https://github.com/fmtlib/fmt/pull/1006>`_,
   `#1008 <https://github.com/fmtlib/fmt/issues/1008>`_,
-  `#1011 <https://github.com/fmtlib/fmt/issues/1011>`_).
+  `#1011 <https://github.com/fmtlib/fmt/issues/1011>`_,
+  `#1025 <https://github.com/fmtlib/fmt/issues/1025>`_,
+  `#1027 <https://github.com/fmtlib/fmt/pull/1027>`_,
+  `#1028 <https://github.com/fmtlib/fmt/pull/1028>`_,
+  `#1029 <https://github.com/fmtlib/fmt/pull/1029>`_,
+  `#1030 <https://github.com/fmtlib/fmt/pull/1030>`_,
+  `#1031 <https://github.com/fmtlib/fmt/pull/1031>`_,
+  `#1054 <https://github.com/fmtlib/fmt/pull/1054>`_,
+  `#1056 <https://github.com/fmtlib/fmt/issues/1056>`_,
+  `#1058 <https://github.com/fmtlib/fmt/pull/1058>`_,
+  `#1062 <https://github.com/fmtlib/fmt/issues/1062>`_,
+  `#1063 <https://github.com/fmtlib/fmt/issues/1063>`_,
+  `#1068 <https://github.com/fmtlib/fmt/pull/1068>`_,
+  `#1072 <https://github.com/fmtlib/fmt/issues/1072>`_,
+  `#1074 <https://github.com/fmtlib/fmt/pull/1074>`_,
+  `#1075 <https://github.com/fmtlib/fmt/pull/1075>`_,
+  `#1086 <https://github.com/fmtlib/fmt/pull/1086>`_,
+  `#1088 <https://github.com/fmtlib/fmt/issues/1088>`_,
+  `#1089 <https://github.com/fmtlib/fmt/pull/1089>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
-  `@mwinterb <https://github.com/mwinterb>`_.
+  `@mwinterb <https://github.com/mwinterb>`_,
+  `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_,
+  `@morinmorin <https://github.com/morinmorin>`_,
+  `@ricco19 (Brian Ricciardelli) <https://github.com/ricco19>`_,
+  `@abolz (Alexander Bolz) <https://github.com/abolz>`_,
+  `@waywardmonkeys (Bruce Mitchener) <https://github.com/waywardmonkeys>`_,
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
 
 5.3.0 - 2018-12-28
 ------------------
