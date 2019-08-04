@@ -35,8 +35,8 @@
 
      auto s = fmt::format("{}", 4.2); // formats 4.2 using Grisu
 
-  With Grisu enabled, {fmt} is 13x faster than ``std::ostringstream`` and
-  10x faster than ``sprintf`` on the `dtoa-benchmark
+  With Grisu enabled, {fmt} is 13x faster than ``std::ostringstream`` (libc++)
+  and 10x faster than ``sprintf`` on the `dtoa-benchmark
   <https://github.com/fmtlib/dtoa-benchmark>`_ floating-point formatting
   benchmark:
 
@@ -143,6 +143,19 @@
 
   Thanks `@Naios (Denis Blank) <https://github.com/Naios>`_.
 
+* Made ``std::unique_ptr`` and ``std::shared_ptr`` formattable as pointers via
+  ``fmt::ptr``:
+
+  .. code:: c++
+
+     std::unique_ptr<int> p = ...;
+     fmt::print("{}", fmt::ptr(p)); // prints p as a pointer
+
+* Made ``print`` and ``vprint`` report I/O errors
+  (`#1098 <https://github.com/fmtlib/fmt/issues/1098>`_,
+  `#1099 <https://github.com/fmtlib/fmt/pull/1099>`_).
+  Thanks `@BillyDonahue (Billy Donahue) <https://github.com/BillyDonahue>`_.
+
 * Separated formatting and parsing contexts, removing the undocumented
   ``basic_format_context::parse_context()`` function.
 
@@ -156,23 +169,34 @@
 
 * Moved SFINAE to template parameters to reduce symbol sizes.
 
+* Added support for exotic platforms without ``uintptr_t`` such as IBM i
+  (AS/400) with 128-bit pointers and only 64-bit integers
+  (`#1059 <https://github.com/fmtlib/fmt/issues/1059>`_).
+
 * Stopped setting ``CMAKE_BUILD_TYPE`` if {fmt} is a subproject
   (`#1081 <https://github.com/fmtlib/fmt/issues/1081>`_).
-
-* Various build improvements
-  (`#1039 <https://github.com/fmtlib/fmt/pull/1039>`_,
-  `#1078 <https://github.com/fmtlib/fmt/pull/1078>`_).
-  Thanks `@luncliff (Park DongHa) <https://github.com/luncliff>`_,
-  `@jasonszang (Jason Shuo Zang) <https://github.com/jasonszang>`_.
 
 * Added `Sublime Text syntax highlighting config
   <https://github.com/fmtlib/fmt/blob/master/support/C%2B%2B.sublime-syntax>`_
   (`#1037 <https://github.com/fmtlib/fmt/issues/1037>`_).
   Thanks `@Kronuz (Germán Méndez Bravo) <https://github.com/Kronuz>`_.
 
+* Various build improvements
+  (`#1039 <https://github.com/fmtlib/fmt/pull/1039>`_,
+  `#1078 <https://github.com/fmtlib/fmt/pull/1078>`_,
+  `#1091 <https://github.com/fmtlib/fmt/pull/1091>`_,
+  `#1103 <https://github.com/fmtlib/fmt/pull/1103>`_).
+  Thanks `@luncliff (Park DongHa) <https://github.com/luncliff>`_,
+  `@jasonszang (Jason Shuo Zang) <https://github.com/jasonszang>`_,
+  `@olafhering (Olaf Hering) <https://github.com/olafhering>`_,
+  `@Lecetem <https://github.com/Lectem>`_.
+
 * Improved documentation
-  (`#1051 <https://github.com/fmtlib/fmt/pull/1051>`_).
+  (`#1051 <https://github.com/fmtlib/fmt/pull/1051>`_,
+  `#1113 <https://github.com/fmtlib/fmt/pull/1113>`_
+  `#1114 <https://github.com/fmtlib/fmt/pull/1114>`_).
   Thanks `@mikelui (Michael Lui) <https://github.com/mikelui>`_,
+  `@BillyDonahue (Billy Donahue) <https://github.com/BillyDonahue>`_.
 
 * Various warning and bug fixes
   (`#980 <https://github.com/fmtlib/fmt/issues/980>`_,
@@ -198,7 +222,15 @@
   `#1075 <https://github.com/fmtlib/fmt/pull/1075>`_,
   `#1086 <https://github.com/fmtlib/fmt/pull/1086>`_,
   `#1088 <https://github.com/fmtlib/fmt/issues/1088>`_,
-  `#1089 <https://github.com/fmtlib/fmt/pull/1089>`_).
+  `#1089 <https://github.com/fmtlib/fmt/pull/1089>`_,
+  `#1102 <https://github.com/fmtlib/fmt/pull/1102>`_,
+  `#1105 <https://github.com/fmtlib/fmt/issues/1105>`_,
+  `#1107 <https://github.com/fmtlib/fmt/pull/1107>`_,
+  `#1115 <https://github.com/fmtlib/fmt/issues/1115>`_,
+  `#1117 <https://github.com/fmtlib/fmt/issues/1117>`_,
+  `#1120 <https://github.com/fmtlib/fmt/issues/1120>`_,
+  `#1127 <https://github.com/fmtlib/fmt/issues/1127>`_,
+  `#1132 <https://github.com/fmtlib/fmt/issues/1132>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
   `@mwinterb <https://github.com/mwinterb>`_,
   `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_,
@@ -206,7 +238,8 @@
   `@ricco19 (Brian Ricciardelli) <https://github.com/ricco19>`_,
   `@abolz (Alexander Bolz) <https://github.com/abolz>`_,
   `@waywardmonkeys (Bruce Mitchener) <https://github.com/waywardmonkeys>`_,
-  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
+  `@remyabel <https://github.com/remyabel>`_.
 
 5.3.0 - 2018-12-28
 ------------------
