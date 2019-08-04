@@ -1,7 +1,7 @@
 6.0.0 - TBD
 -----------
 
-* Made floating-point formatting locale-independent:
+* Floating-point formatting is now locale-independent:
 
   .. code:: c++
 
@@ -24,18 +24,66 @@
 
   prints "value = 4,2".
 
-* Introduced the ``fmt::compile`` function that does format string compilation:
+* ``formatter`` specializations now always take precedence over ``operator<<``
+  (`#952 <https://github.com/fmtlib/fmt/issues/952>`_):
+
+  .. code:: c++
+
+     #include <iostream>
+     #include <fmt/ostream.h>
+
+     struct S {};
+
+     std::ostream& operator<<(std::ostream& os, S) {
+       return os << 1;
+     }
+
+     template <>
+     struct fmt::formatter<S> : fmt::formatter<int> {
+       auto format(S, format_context& ctx) {
+         return formatter<int>::format(2, ctx);
+       }
+     };
+
+     int main() {
+       std::cout << S() << "\n"; // prints 1 using operator<<
+       fmt::print("{}\n", S());  // prints 2 using formatter
+     }
+
+* Introduced the experimental ``fmt::compile`` function that does format string
+  compilation (`#618 <https://github.com/fmtlib/fmt/issues/618>`_):
 
   .. code:: c++
 
      #include <fmt/compile.h>
 
      auto f = fmt::compile<int>("{}");
-     std::string s = f.format(42); // can be called multiple times to format
-                                   // different values
+     std::string s = fmt::format(f, 42); // can be called multiple times to format
+                                         // different values
      // s == "42"
 
-  Thanks `@stryku (Mateusz Janek) <https://github.com/stryku>`_.
+  It moves the cost of parsing a format string outside of the format function
+  which can be beneficial when identically formatting many objects of the same
+  types. Thanks `@stryku (Mateusz Janek) <https://github.com/stryku>`_.
+
+* Implemented precision for floating-point durations
+  (`#1004 <https://github.com/fmtlib/fmt/issues/1004>`_,
+  `#1012 <https://github.com/fmtlib/fmt/pull/1012>`_):
+
+  .. code:: c++
+
+     auto s = fmt::format("{:.1}", std::chrono::duration<double>(1.234));
+     // s == 1.2s
+
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
+
+* Implemented ``chrono`` format specifiers ``%Q`` and ``%q`` that give the value
+  and the unit respectively (`#1019 <https://github.com/fmtlib/fmt/pull/1019>`_):
+
+  auto value = fmt::format("{:%Q}", 42s); // value == "42"
+  auto unit  = fmt::format("{:%q}", 42s); // unit == "s"
+
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
 * Fixed handling of dynamic width in chrono formatter:
 
@@ -60,12 +108,20 @@
 
   Thanks `@Naios (Denis Blank) <https://github.com/Naios>`_.
 
+* Marked deprecated APIs with the ``[[deprecated]]`` attribute and removed
+  internal uses of deprecated APIs
+  (`#1022 <https://github.com/fmtlib/fmt/pull/1022>`_).
+  Thanks `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_.
+
 * Stopped setting ``CMAKE_BUILD_TYPE`` if fmt is a subproject
   (`#1081 <https://github.com/fmtlib/fmt/issues/1081>`_).
 
 * Various fixes (`#980 <https://github.com/fmtlib/fmt/issues/980>`_,
-  `#995 <https://github.com/fmtlib/fmt/pull/995>`_
-  `#998 <https://github.com/fmtlib/fmt/pull/998>`_).
+  `#995 <https://github.com/fmtlib/fmt/pull/995>`_,
+  `#998 <https://github.com/fmtlib/fmt/pull/998>`_,
+  `#1006 <https://github.com/fmtlib/fmt/pull/1006>`_,
+  `#1008 <https://github.com/fmtlib/fmt/issues/1008>`_,
+  `#1011 <https://github.com/fmtlib/fmt/issues/1011>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
   `@mwinterb <https://github.com/mwinterb>`_.
 
