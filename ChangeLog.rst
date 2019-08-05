@@ -185,11 +185,13 @@
   (`#1039 <https://github.com/fmtlib/fmt/pull/1039>`_,
   `#1078 <https://github.com/fmtlib/fmt/pull/1078>`_,
   `#1091 <https://github.com/fmtlib/fmt/pull/1091>`_,
-  `#1103 <https://github.com/fmtlib/fmt/pull/1103>`_).
+  `#1103 <https://github.com/fmtlib/fmt/pull/1103>`_,
+  `#1177 <https://github.com/fmtlib/fmt/pull/1177>`_).
   Thanks `@luncliff (Park DongHa) <https://github.com/luncliff>`_,
   `@jasonszang (Jason Shuo Zang) <https://github.com/jasonszang>`_,
   `@olafhering (Olaf Hering) <https://github.com/olafhering>`_,
-  `@Lecetem <https://github.com/Lectem>`_.
+  `@Lecetem <https://github.com/Lectem>`_,
+  `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_.
 
 * Improved documentation
   (`#1051 <https://github.com/fmtlib/fmt/pull/1051>`_,
@@ -198,11 +200,42 @@
   Thanks `@mikelui (Michael Lui) <https://github.com/mikelui>`_,
   `@BillyDonahue (Billy Donahue) <https://github.com/BillyDonahue>`_.
 
-* Various warning and bug fixes
-  (`#980 <https://github.com/fmtlib/fmt/issues/980>`_,
-  `#995 <https://github.com/fmtlib/fmt/pull/995>`_,
-  `#998 <https://github.com/fmtlib/fmt/pull/998>`_,
-  `#1006 <https://github.com/fmtlib/fmt/pull/1006>`_,
+* Fixed ambiguous formatter specialization in ``fmt/ranges.h``
+  (`#1123 <https://github.com/fmtlib/fmt/issues/1123>`_).
+
+* Fixed handling of general output iterators when formatting characters
+  (`#1056 <https://github.com/fmtlib/fmt/issues/1056>`_,
+  `#1058 <https://github.com/fmtlib/fmt/pull/1058>`_).
+  Thanks `@abolz (Alexander Bolz) <https://github.com/abolz>`_.
+
+* Made chrono formatting work with exceptions disabled
+  (`#1062 <https://github.com/fmtlib/fmt/issues/1062>`_).
+
+* Fixed DLL visibility issues
+  (`#1135 <https://github.com/fmtlib/fmt/pull/1135>`_,
+  `#1147 <https://github.com/fmtlib/fmt/pull/1147>`_)
+  Thanks `@denchat <https://github.com/denchat>`_.
+
+* Disabled the use of UDL template extension on GCC 9
+  (`#1148 <https://github.com/fmtlib/fmt/issues/1148>`_).
+
+* Removed ``format`` compile-time checks from ``printf``
+  (`#1173 <https://github.com/fmtlib/fmt/issues/1173>`_).
+
+* Fixed issues in the experimental floating-point formatter
+  (`#1072 <https://github.com/fmtlib/fmt/issues/1072>`_,
+  `#1153 <https://github.com/fmtlib/fmt/issues/1153>`_,
+  `#1155 <https://github.com/fmtlib/fmt/pull/1155>`_)
+  Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
+
+* Fixed crashes discovered by fuzzing in the experimental floating-point
+  formatter and the chrono formatter
+  (`#1127 <https://github.com/fmtlib/fmt/issues/1127>`_,
+  `#1132 <https://github.com/fmtlib/fmt/issues/1132>`_).
+  Thanks `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_.
+
+* Fixed various warnings and compile issues
+  (`#1006 <https://github.com/fmtlib/fmt/pull/1006>`_,
   `#1008 <https://github.com/fmtlib/fmt/issues/1008>`_,
   `#1011 <https://github.com/fmtlib/fmt/issues/1011>`_,
   `#1025 <https://github.com/fmtlib/fmt/issues/1025>`_,
@@ -212,12 +245,8 @@
   `#1030 <https://github.com/fmtlib/fmt/pull/1030>`_,
   `#1031 <https://github.com/fmtlib/fmt/pull/1031>`_,
   `#1054 <https://github.com/fmtlib/fmt/pull/1054>`_,
-  `#1056 <https://github.com/fmtlib/fmt/issues/1056>`_,
-  `#1058 <https://github.com/fmtlib/fmt/pull/1058>`_,
-  `#1062 <https://github.com/fmtlib/fmt/issues/1062>`_,
   `#1063 <https://github.com/fmtlib/fmt/issues/1063>`_,
   `#1068 <https://github.com/fmtlib/fmt/pull/1068>`_,
-  `#1072 <https://github.com/fmtlib/fmt/issues/1072>`_,
   `#1074 <https://github.com/fmtlib/fmt/pull/1074>`_,
   `#1075 <https://github.com/fmtlib/fmt/pull/1075>`_,
   `#1086 <https://github.com/fmtlib/fmt/pull/1086>`_,
@@ -229,17 +258,28 @@
   `#1115 <https://github.com/fmtlib/fmt/issues/1115>`_,
   `#1117 <https://github.com/fmtlib/fmt/issues/1117>`_,
   `#1120 <https://github.com/fmtlib/fmt/issues/1120>`_,
-  `#1127 <https://github.com/fmtlib/fmt/issues/1127>`_,
-  `#1132 <https://github.com/fmtlib/fmt/issues/1132>`_).
+  `#1134 <https://github.com/fmtlib/fmt/pull/1134>`_,
+  `#1139 <https://github.com/fmtlib/fmt/pull/1139>`_,
+  `#1144 <https://github.com/fmtlib/fmt/pull/1144>`_,
+  `#1150 <https://github.com/fmtlib/fmt/pull/1150>`_,
+  `#1151 <https://github.com/fmtlib/fmt/pull/1151>`_,
+  `#1152 <https://github.com/fmtlib/fmt/issues/1152>`_,
+  `#1154 <https://github.com/fmtlib/fmt/issues/1154>`_,
+  `#1156 <https://github.com/fmtlib/fmt/issues/1156>`_
+  `#1159 <https://github.com/fmtlib/fmt/pull/1159>`_,).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
   `@mwinterb <https://github.com/mwinterb>`_,
   `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_,
   `@morinmorin <https://github.com/morinmorin>`_,
   `@ricco19 (Brian Ricciardelli) <https://github.com/ricco19>`_,
-  `@abolz (Alexander Bolz) <https://github.com/abolz>`_,
   `@waywardmonkeys (Bruce Mitchener) <https://github.com/waywardmonkeys>`_,
   `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
-  `@remyabel <https://github.com/remyabel>`_.
+  `@remyabel <https://github.com/remyabel>`_,
+  `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_,
+  `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
+  `@rcane (Ronny Krüger) <https://github.com/rcane>`_,
+  `@mocabe <https://github.com/mocabe>`_,
+  `@denchat <https://github.com/denchat>`_.
 
 5.3.0 - 2018-12-28
 ------------------
