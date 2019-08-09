@@ -1092,7 +1092,7 @@ template <typename Context, typename... Args> class format_arg_store {
                                    basic_format_arg<Context>>;
 
   // If the arguments are not packed, add one more element to mark the end.
-  value_type data_[num_args + (!is_packed || num_args == 0 ? 1 : 0)];
+  value_type data_[num_args + (num_args == 0 ? 1 : 0)];
 
   friend class basic_format_args<Context>;
 

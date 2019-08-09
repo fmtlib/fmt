@@ -1260,9 +1260,8 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
       if (arg_type == internal::named_arg_type) push_back(args.values_[i]);
     }
   }
-  for (int i = 0;; ++i) {
+  for (int i = 0, n = args.max_size(); i < n; ++i) {
     auto type = args.args_[i].type_;
-    if (type == internal::none_type) return;
     if (type == internal::named_arg_type) push_back(args.args_[i].value_);
   }
 }
