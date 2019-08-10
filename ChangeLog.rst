@@ -26,7 +26,7 @@
 
 * Added an experimental Grisu floating-point formatting algorithm
   implementation (disabled by default). To enable it compile with the
-  ``FMT_USE_GRISU`` macro defined 1 before:
+  ``FMT_USE_GRISU`` macro defined to 1:
 
   .. code:: c++
 
@@ -43,7 +43,7 @@
   .. image:: https://user-images.githubusercontent.com/576385/
              54883977-9fe8c000-4e28-11e9-8bde-272d122e7c52.jpg
 
-* Added oss-fuzz support
+* Added `oss-fuzz <https://github.com/google/oss-fuzz>`_ support
   (`#1199 <https://github.com/fmtlib/fmt/pull/1199>`_).
   Thanks `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_
 
@@ -93,6 +93,7 @@
 
 * Added the ``%`` format specifier that formats floating-point values as
   percentages (`#1060 <https://github.com/fmtlib/fmt/pull/1060>`_,
+  `#1069 <https://github.com/fmtlib/fmt/pull/1069>`_,
   `#1071 <https://github.com/fmtlib/fmt/pull/1071>`_):
 
   .. code:: c++
@@ -235,6 +236,7 @@
 * Improved documentation
   (`#1049 <https://github.com/fmtlib/fmt/issues/1049>`_,
   `#1051 <https://github.com/fmtlib/fmt/pull/1051>`_,
+  `#1083 <https://github.com/fmtlib/fmt/pull/1083>`_,
   `#1113 <https://github.com/fmtlib/fmt/pull/1113>`_,
   `#1114 <https://github.com/fmtlib/fmt/pull/1114>`_,
   `#1146 <https://github.com/fmtlib/fmt/issues/1146>`_,
@@ -242,6 +244,7 @@
   `#1250 <https://github.com/fmtlib/fmt/pull/1250>`_,
   `#1252 <https://github.com/fmtlib/fmt/pull/1252>`_).
   Thanks `@mikelui (Michael Lui) <https://github.com/mikelui>`_,
+  `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_,
   `@BillyDonahue (Billy Donahue) <https://github.com/BillyDonahue>`_,
   `@jwakely (Jonathan Wakely) <https://github.com/jwakely>`_,
   `@kaisbe (Kais Ben Salah) <https://github.com/kaisbe>`_.
@@ -264,7 +267,7 @@
   (`#1062 <https://github.com/fmtlib/fmt/issues/1062>`_).
 
 * Fixed DLL visibility issues
-  (`#1135 <https://github.com/fmtlib/fmt/pull/1135>`_,
+  (`#1134 <https://github.com/fmtlib/fmt/pull/1134>`_,
   `#1147 <https://github.com/fmtlib/fmt/pull/1147>`_).
   Thanks `@denchat <https://github.com/denchat>`_.
 
@@ -287,6 +290,7 @@
   (`#1124 <https://github.com/fmtlib/fmt/issues/1124>`_,
   `#1127 <https://github.com/fmtlib/fmt/issues/1127>`_,
   `#1132 <https://github.com/fmtlib/fmt/issues/1132>`_,
+  `#1135 <https://github.com/fmtlib/fmt/pull/1135>`_,
   `#1136 <https://github.com/fmtlib/fmt/issues/1136>`_,
   `#1141 <https://github.com/fmtlib/fmt/issues/1141>`_,
   `#1142 <https://github.com/fmtlib/fmt/issues/1142>`_,
@@ -299,8 +303,9 @@
   (`#1043 <https://github.com/fmtlib/fmt/issues/1043>`_).
   Thanks `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
 
-* Fixed various warnings and compile issues
-  (`#1006 <https://github.com/fmtlib/fmt/pull/1006>`_,
+* Fixed various warnings and compilation issues
+  (`#998 <https://github.com/fmtlib/fmt/pull/998>`_,
+  `#1006 <https://github.com/fmtlib/fmt/pull/1006>`_,
   `#1008 <https://github.com/fmtlib/fmt/issues/1008>`_,
   `#1011 <https://github.com/fmtlib/fmt/issues/1011>`_,
   `#1025 <https://github.com/fmtlib/fmt/issues/1025>`_,
@@ -314,6 +319,7 @@
   `#1068 <https://github.com/fmtlib/fmt/pull/1068>`_,
   `#1074 <https://github.com/fmtlib/fmt/pull/1074>`_,
   `#1075 <https://github.com/fmtlib/fmt/pull/1075>`_,
+  `#1079 <https://github.com/fmtlib/fmt/pull/1079>`_,
   `#1086 <https://github.com/fmtlib/fmt/pull/1086>`_,
   `#1088 <https://github.com/fmtlib/fmt/issues/1088>`_,
   `#1089 <https://github.com/fmtlib/fmt/pull/1089>`_,
@@ -327,7 +333,6 @@
   `#1118 <https://github.com/fmtlib/fmt/issues/1118>`_,
   `#1120 <https://github.com/fmtlib/fmt/issues/1120>`_,
   `#1123 <https://github.com/fmtlib/fmt/issues/1123>`_,
-  `#1134 <https://github.com/fmtlib/fmt/pull/1134>`_,
   `#1139 <https://github.com/fmtlib/fmt/pull/1139>`_,
   `#1140 <https://github.com/fmtlib/fmt/issues/1140>`_,
   `#1143 <https://github.com/fmtlib/fmt/issues/1143>`_,
@@ -374,7 +379,8 @@
   `@HazardyKnusperkeks (Björn Schäpers) <https://github.com/HazardyKnusperkeks>`_,
   `@vedranmiletic (Vedran Miletić) <https://github.com/vedranmiletic>`_,
   `@jackoalan (Jack Andersen) <https://github.com/jackoalan>`_,
-  `@DaanDeMeyer (Daan De Meyer) <https://github.com/DaanDeMeyer>`_.
+  `@DaanDeMeyer (Daan De Meyer) <https://github.com/DaanDeMeyer>`_,
+  `@starkmapper (Mark Stapper) <https://github.com/starkmapper>`_.
 
 5.3.0 - 2018-12-28
 ------------------
