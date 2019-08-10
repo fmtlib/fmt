@@ -151,12 +151,14 @@
   ``print`` overloads that take ``text_style`` instead.
 
 * Made ``std::unique_ptr`` and ``std::shared_ptr`` formattable as pointers via
-  ``fmt::ptr``:
+  ``fmt::ptr`` (`#1121 <https://github.com/fmtlib/fmt/pull/1121>`_):
 
   .. code:: c++
 
      std::unique_ptr<int> p = ...;
      fmt::print("{}", fmt::ptr(p)); // prints p as a pointer
+
+  Thanks `@sighingnow (Tao He) <https://github.com/sighingnow>`_.
 
 * Made ``print`` and ``vprint`` report I/O errors
   (`#1098 <https://github.com/fmtlib/fmt/issues/1098>`_,
@@ -191,8 +193,10 @@
 
 * Moved SFINAE to template parameters to reduce symbol sizes.
 
-* Switched to ``fputws`` for outputting wide strings
-  (`#1243 <https://github.com/fmtlib/fmt/pull/1243>`_).
+* Switched to ``fputws`` for writing wide strings so that it's no longer
+  required to call ``_setmode`` on Windows
+  (`#1229 <https://github.com/fmtlib/fmt/issues/1229>`_,
+  `#1243 <https://github.com/fmtlib/fmt/pull/1243>`_).
   Thanks `@jackoalan (Jack Andersen) <https://github.com/jackoalan>`_.
 
 * Improved literal-based API
@@ -229,9 +233,12 @@
   `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_.
 
 * Improved documentation
-  (`#1051 <https://github.com/fmtlib/fmt/pull/1051>`_,
+  (`#1049 <https://github.com/fmtlib/fmt/issues/1049>`_,
+  `#1051 <https://github.com/fmtlib/fmt/pull/1051>`_,
   `#1113 <https://github.com/fmtlib/fmt/pull/1113>`_,
   `#1114 <https://github.com/fmtlib/fmt/pull/1114>`_,
+  `#1146 <https://github.com/fmtlib/fmt/issues/1146>`_,
+  `#1180 <https://github.com/fmtlib/fmt/issues/1180>`_,
   `#1250 <https://github.com/fmtlib/fmt/pull/1250>`_,
   `#1252 <https://github.com/fmtlib/fmt/pull/1252>`_).
   Thanks `@mikelui (Michael Lui) <https://github.com/mikelui>`_,
@@ -247,33 +254,50 @@
   `#1058 <https://github.com/fmtlib/fmt/pull/1058>`_).
   Thanks `@abolz (Alexander Bolz) <https://github.com/abolz>`_.
 
+* Fixed handling of output iterators in ``formatter`` specialization for
+  ranges (`#1064 <https://github.com/fmtlib/fmt/issues/1064>`_).
+
+* Fixed handling of exotic character types
+  (`#1188 <https://github.com/fmtlib/fmt/issues/1188>`_).
+
 * Made chrono formatting work with exceptions disabled
   (`#1062 <https://github.com/fmtlib/fmt/issues/1062>`_).
 
 * Fixed DLL visibility issues
   (`#1135 <https://github.com/fmtlib/fmt/pull/1135>`_,
-  `#1147 <https://github.com/fmtlib/fmt/pull/1147>`_)
+  `#1147 <https://github.com/fmtlib/fmt/pull/1147>`_).
   Thanks `@denchat <https://github.com/denchat>`_.
 
 * Disabled the use of UDL template extension on GCC 9
   (`#1148 <https://github.com/fmtlib/fmt/issues/1148>`_).
 
-* Removed ``format`` compile-time checks from ``printf``
+* Removed misplaced ``format`` compile-time checks from ``printf``
   (`#1173 <https://github.com/fmtlib/fmt/issues/1173>`_).
 
 * Fixed issues in the experimental floating-point formatter
   (`#1072 <https://github.com/fmtlib/fmt/issues/1072>`_,
+  `#1129 <https://github.com/fmtlib/fmt/issues/1129>`_,
   `#1153 <https://github.com/fmtlib/fmt/issues/1153>`_,
   `#1155 <https://github.com/fmtlib/fmt/pull/1155>`_,
-  `#1210 <https://github.com/fmtlib/fmt/issues/1210>`_).
+  `#1210 <https://github.com/fmtlib/fmt/issues/1210>`_,
+  `#1222 <https://github.com/fmtlib/fmt/issues/1222>`_).
   Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
 
-* Fixed bugs discovered by fuzzing in the experimental floating-point
-  formatter and the chrono formatter
-  (`#1127 <https://github.com/fmtlib/fmt/issues/1127>`_,
+* Fixed bugs discovered by fuzzing or during fuzzing integation
+  (`#1124 <https://github.com/fmtlib/fmt/issues/1124>`_,
+  `#1127 <https://github.com/fmtlib/fmt/issues/1127>`_,
   `#1132 <https://github.com/fmtlib/fmt/issues/1132>`_,
-  `#1178 <https://github.com/fmtlib/fmt/issues/1178>`_).
+  `#1136 <https://github.com/fmtlib/fmt/issues/1136>`_,
+  `#1141 <https://github.com/fmtlib/fmt/issues/1141>`_,
+  `#1142 <https://github.com/fmtlib/fmt/issues/1142>`_,
+  `#1178 <https://github.com/fmtlib/fmt/issues/1178>`_,
+  `#1179 <https://github.com/fmtlib/fmt/issues/1179>`_,
+  `#1194 <https://github.com/fmtlib/fmt/issues/1194>`_).
   Thanks `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_.
+
+* Fixed building tests on FreeBSD and Hurd
+  (`#1043 <https://github.com/fmtlib/fmt/issues/1043>`_).
+  Thanks `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
 
 * Fixed various warnings and compile issues
   (`#1006 <https://github.com/fmtlib/fmt/pull/1006>`_,
@@ -293,14 +317,20 @@
   `#1086 <https://github.com/fmtlib/fmt/pull/1086>`_,
   `#1088 <https://github.com/fmtlib/fmt/issues/1088>`_,
   `#1089 <https://github.com/fmtlib/fmt/pull/1089>`_,
+  `#1094 <https://github.com/fmtlib/fmt/pull/1094>`_,
+  `#1101 <https://github.com/fmtlib/fmt/issues/1101>`_,
   `#1102 <https://github.com/fmtlib/fmt/pull/1102>`_,
   `#1105 <https://github.com/fmtlib/fmt/issues/1105>`_,
   `#1107 <https://github.com/fmtlib/fmt/pull/1107>`_,
   `#1115 <https://github.com/fmtlib/fmt/issues/1115>`_,
   `#1117 <https://github.com/fmtlib/fmt/issues/1117>`_,
+  `#1118 <https://github.com/fmtlib/fmt/issues/1118>`_,
   `#1120 <https://github.com/fmtlib/fmt/issues/1120>`_,
+  `#1123 <https://github.com/fmtlib/fmt/issues/1123>`_,
   `#1134 <https://github.com/fmtlib/fmt/pull/1134>`_,
   `#1139 <https://github.com/fmtlib/fmt/pull/1139>`_,
+  `#1140 <https://github.com/fmtlib/fmt/issues/1140>`_,
+  `#1143 <https://github.com/fmtlib/fmt/issues/1143>`_,
   `#1144 <https://github.com/fmtlib/fmt/pull/1144>`_,
   `#1150 <https://github.com/fmtlib/fmt/pull/1150>`_,
   `#1151 <https://github.com/fmtlib/fmt/pull/1151>`_,
@@ -308,17 +338,25 @@
   `#1154 <https://github.com/fmtlib/fmt/issues/1154>`_,
   `#1156 <https://github.com/fmtlib/fmt/issues/1156>`_,
   `#1159 <https://github.com/fmtlib/fmt/pull/1159>`_,
+  `#1175 <https://github.com/fmtlib/fmt/issues/1175>`_,
+  `#1181 <https://github.com/fmtlib/fmt/issues/1181>`_,
   `#1186 <https://github.com/fmtlib/fmt/issues/1186>`_,
   `#1187 <https://github.com/fmtlib/fmt/pull/1187>`_,
   `#1191 <https://github.com/fmtlib/fmt/pull/1191>`_,
+  `#1197 <https://github.com/fmtlib/fmt/issues/1197>`_,
   `#1200 <https://github.com/fmtlib/fmt/issues/1200>`_,
+  `#1203 <https://github.com/fmtlib/fmt/issues/1203>`_,
+  `#1205 <https://github.com/fmtlib/fmt/issues/1205>`_,
   `#1206 <https://github.com/fmtlib/fmt/pull/1206>`_,
-  `#1217 <https://github.com/fmtlib/fmt/pull/1217>`_,
+  `#1213 <https://github.com/fmtlib/fmt/issues/1213>`_,
   `#1214 <https://github.com/fmtlib/fmt/issues/1214>`_,
+  `#1217 <https://github.com/fmtlib/fmt/pull/1217>`_,
+  `#1228 <https://github.com/fmtlib/fmt/issues/1228>`_,
   `#1230 <https://github.com/fmtlib/fmt/pull/1230>`_,
   `#1232 <https://github.com/fmtlib/fmt/issues/1232>`_,
   `#1235 <https://github.com/fmtlib/fmt/pull/1235>`_,
-  `#1236 <https://github.com/fmtlib/fmt/pull/1236>`_).
+  `#1236 <https://github.com/fmtlib/fmt/pull/1236>`_,
+  `#1240 <https://github.com/fmtlib/fmt/issues/1240>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
   `@mwinterb <https://github.com/mwinterb>`_,
   `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_,
