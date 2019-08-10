@@ -91,11 +91,12 @@ cmake_flags = [
 ]
 
 # Make sure the fuzzers still compile.
+main_cmake_flags = list(cmake_flags)
 if 'ENABLE_FUZZING' in os.environ:
-    cmake_flags += ['-DFMT_FUZZ=ON', '-DFMT_FUZZ_LINKMAIN=On']
+    main_cmake_flags += ['-DFMT_FUZZ=ON', '-DFMT_FUZZ_LINKMAIN=On']
 
 check_call(['cmake', '-DFMT_DOC=OFF', '-DFMT_PEDANTIC=ON', '-DFMT_WERROR=ON', fmt_dir] +
-           cmake_flags, cwd=build_dir)
+           main_cmake_flags, cwd=build_dir)
 
 # Build the library.
 check_call(['cmake', '--build','.'], cwd=build_dir)

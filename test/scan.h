@@ -215,7 +215,7 @@ struct scan_handler : error_handler {
 
 template <typename... Args>
 std::array<internal::scan_arg, sizeof...(Args)> make_scan_args(Args&... args) {
-  return std::array<internal::scan_arg, sizeof...(Args)>{args...};
+  return {{args...}};
 }
 
 string_view::iterator vscan(string_view input, string_view format_str,

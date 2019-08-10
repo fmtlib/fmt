@@ -123,7 +123,8 @@ template <> struct std::formatter<S> {
   auto format(S s, format_context& ctx) {
     int width = visit_format_arg(
         [](auto value) -> int {
-          if constexpr (!is_integral_v<decltype(value)>)
+          using type = decltype(value);
+          if constexpr (!is_integral_v<type> || is_same_v<type, bool>)
             throw format_error("width is not integral");
           // else if (value < 0 || value > numeric_limits<int>::max())
           else if (fmt::internal::is_negative(value) ||
