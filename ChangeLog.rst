@@ -25,8 +25,8 @@
   prints "value = 4,2".
 
 * Added an experimental Grisu floating-point formatting algorithm
-  implementation (disabled by default). To enable it define ``FMT_USE_GRISU``
-  macro to 1 before including ``fmt/format.h``:
+  implementation (disabled by default). To enable it compile with the
+  ``FMT_USE_GRISU`` macro defined 1 before:
 
   .. code:: c++
 
@@ -36,14 +36,16 @@
      auto s = fmt::format("{}", 4.2); // formats 4.2 using Grisu
 
   With Grisu enabled, {fmt} is 13x faster than ``std::ostringstream`` (libc++)
-  and 10x faster than ``sprintf`` on the `dtoa-benchmark
-  <https://github.com/fmtlib/dtoa-benchmark>`_ floating-point formatting
-  benchmark:
+  and 10x faster than ``sprintf`` on `dtoa-benchmark
+  <https://github.com/fmtlib/dtoa-benchmark>`_ (`full results
+  <https://fmt.dev/unknown_mac64_clang10.0.html>`_):
 
   .. image:: https://user-images.githubusercontent.com/576385/
              54883977-9fe8c000-4e28-11e9-8bde-272d122e7c52.jpg
 
-  `Full benchmark results <https://fmt.dev/unknown_mac64_clang10.0.html>`_
+* Added oss-fuzz support
+  (`#1199 <https://github.com/fmtlib/fmt/pull/1199>`_).
+  Thanks `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_
 
 * ``formatter`` specializations now always take precedence over ``operator<<``
   (`#952 <https://github.com/fmtlib/fmt/issues/952>`_):
@@ -72,7 +74,9 @@
      }
 
 * Introduced the experimental ``fmt::compile`` function that does format string
-  compilation (`#618 <https://github.com/fmtlib/fmt/issues/618>`_):
+  compilation (`#618 <https://github.com/fmtlib/fmt/issues/618>`_,
+  `#1169 <https://github.com/fmtlib/fmt/issues/1169>`_,
+  `#1171 <https://github.com/fmtlib/fmt/pull/1171>`_):
 
   .. code:: c++
 
@@ -143,6 +147,9 @@
 
   Thanks `@Naios (Denis Blank) <https://github.com/Naios>`_.
 
+* Removed the deprecated color API (``print_colored``). Use the new API, namely
+  ``print`` overloads that take ``text_style`` instead.
+
 * Made ``std::unique_ptr`` and ``std::shared_ptr`` formattable as pointers via
   ``fmt::ptr``:
 
@@ -164,22 +171,50 @@
   (`#1022 <https://github.com/fmtlib/fmt/pull/1022>`_).
   Thanks `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_.
 
+* Modernized the codebase using more C++11 features and removing workarounds.
+  Most importantly, ``buffer_context`` is now an alias template, so
+  use ``buffer_context<T>`` instead of ``buffer_context<T>::type`.
+
+* ``formatter`` specializations now always take precedence over implicit
+  conversions to ``int`` and the undocumented ``convert_to_int`` trait
+  is now deprecated.
+
 * Moved the undocumented ``basic_writer``, ``writer``, and ``wwriter`` types
   to the ``internal`` namespace.
 
+* Removed deprecated ``basic_format_context::begin()``. Use ``out()`` instead.
+
+* Disallowed passing the result of ``join`` as an lvalue to prevent misuse.
+
+* Refactored the undocumented structs that represent parsed format specifiers
+  to simplify the API and allow multibyte fill.
+
 * Moved SFINAE to template parameters to reduce symbol sizes.
 
-* Added support for exotic platforms without ``uintptr_t`` such as IBM i
-  (AS/400) with 128-bit pointers and only 64-bit integers
-  (`#1059 <https://github.com/fmtlib/fmt/issues/1059>`_).
+* Switched to ``fputws`` for outputting wide strings
+  (`#1243 <https://github.com/fmtlib/fmt/pull/1243>`_).
+  Thanks `@jackoalan (Jack Andersen) <https://github.com/jackoalan>`_.
 
-* Stopped setting ``CMAKE_BUILD_TYPE`` if {fmt} is a subproject
-  (`#1081 <https://github.com/fmtlib/fmt/issues/1081>`_).
+* Improved literal-based API
+  (`#1254 <https://github.com/fmtlib/fmt/pull/1254>`_).
+  Thanks `@sylveon (Charles Milette) <https://github.com/sylveon>`_.
+
+* Added support for exotic platforms without ``uintptr_t`` such as IBM i
+  (AS/400) which has 128-bit pointers and only 64-bit integers
+  (`#1059 <https://github.com/fmtlib/fmt/issues/1059>`_).
 
 * Added `Sublime Text syntax highlighting config
   <https://github.com/fmtlib/fmt/blob/master/support/C%2B%2B.sublime-syntax>`_
   (`#1037 <https://github.com/fmtlib/fmt/issues/1037>`_).
   Thanks `@Kronuz (Germán Méndez Bravo) <https://github.com/Kronuz>`_.
+
+* Added the ``FMT_ENFORCE_COMPILE_STRING`` macro to enforce the use of
+  compile-time format strings
+  (`#1231 <https://github.com/fmtlib/fmt/pull/1231>`_).
+  Thanks `@jackoalan (Jack Andersen) <https://github.com/jackoalan>`_.
+
+* Stopped setting ``CMAKE_BUILD_TYPE`` if {fmt} is a subproject
+  (`#1081 <https://github.com/fmtlib/fmt/issues/1081>`_).
 
 * Various build improvements
   (`#1039 <https://github.com/fmtlib/fmt/pull/1039>`_,
@@ -195,10 +230,14 @@
 
 * Improved documentation
   (`#1051 <https://github.com/fmtlib/fmt/pull/1051>`_,
-  `#1113 <https://github.com/fmtlib/fmt/pull/1113>`_
-  `#1114 <https://github.com/fmtlib/fmt/pull/1114>`_).
+  `#1113 <https://github.com/fmtlib/fmt/pull/1113>`_,
+  `#1114 <https://github.com/fmtlib/fmt/pull/1114>`_,
+  `#1250 <https://github.com/fmtlib/fmt/pull/1250>`_,
+  `#1252 <https://github.com/fmtlib/fmt/pull/1252>`_).
   Thanks `@mikelui (Michael Lui) <https://github.com/mikelui>`_,
-  `@BillyDonahue (Billy Donahue) <https://github.com/BillyDonahue>`_.
+  `@BillyDonahue (Billy Donahue) <https://github.com/BillyDonahue>`_,
+  `@jwakely (Jonathan Wakely) <https://github.com/jwakely>`_,
+  `@kaisbe (Kais Ben Salah) <https://github.com/kaisbe>`_.
 
 * Fixed ambiguous formatter specialization in ``fmt/ranges.h``
   (`#1123 <https://github.com/fmtlib/fmt/issues/1123>`_).
@@ -225,13 +264,15 @@
 * Fixed issues in the experimental floating-point formatter
   (`#1072 <https://github.com/fmtlib/fmt/issues/1072>`_,
   `#1153 <https://github.com/fmtlib/fmt/issues/1153>`_,
-  `#1155 <https://github.com/fmtlib/fmt/pull/1155>`_)
+  `#1155 <https://github.com/fmtlib/fmt/pull/1155>`_,
+  `#1210 <https://github.com/fmtlib/fmt/issues/1210>`_).
   Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
 
-* Fixed crashes discovered by fuzzing in the experimental floating-point
+* Fixed bugs discovered by fuzzing in the experimental floating-point
   formatter and the chrono formatter
   (`#1127 <https://github.com/fmtlib/fmt/issues/1127>`_,
-  `#1132 <https://github.com/fmtlib/fmt/issues/1132>`_).
+  `#1132 <https://github.com/fmtlib/fmt/issues/1132>`_,
+  `#1178 <https://github.com/fmtlib/fmt/issues/1178>`_).
   Thanks `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_.
 
 * Fixed various warnings and compile issues
@@ -265,8 +306,19 @@
   `#1151 <https://github.com/fmtlib/fmt/pull/1151>`_,
   `#1152 <https://github.com/fmtlib/fmt/issues/1152>`_,
   `#1154 <https://github.com/fmtlib/fmt/issues/1154>`_,
-  `#1156 <https://github.com/fmtlib/fmt/issues/1156>`_
-  `#1159 <https://github.com/fmtlib/fmt/pull/1159>`_,).
+  `#1156 <https://github.com/fmtlib/fmt/issues/1156>`_,
+  `#1159 <https://github.com/fmtlib/fmt/pull/1159>`_,
+  `#1186 <https://github.com/fmtlib/fmt/issues/1186>`_,
+  `#1187 <https://github.com/fmtlib/fmt/pull/1187>`_,
+  `#1191 <https://github.com/fmtlib/fmt/pull/1191>`_,
+  `#1200 <https://github.com/fmtlib/fmt/issues/1200>`_,
+  `#1206 <https://github.com/fmtlib/fmt/pull/1206>`_,
+  `#1217 <https://github.com/fmtlib/fmt/pull/1217>`_,
+  `#1214 <https://github.com/fmtlib/fmt/issues/1214>`_,
+  `#1230 <https://github.com/fmtlib/fmt/pull/1230>`_,
+  `#1232 <https://github.com/fmtlib/fmt/issues/1232>`_,
+  `#1235 <https://github.com/fmtlib/fmt/pull/1235>`_,
+  `#1236 <https://github.com/fmtlib/fmt/pull/1236>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
   `@mwinterb <https://github.com/mwinterb>`_,
   `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_,
@@ -279,7 +331,12 @@
   `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@rcane (Ronny Krüger) <https://github.com/rcane>`_,
   `@mocabe <https://github.com/mocabe>`_,
-  `@denchat <https://github.com/denchat>`_.
+  `@denchat <https://github.com/denchat>`_,
+  `@cjdb (Christopher Di Bella) <https://github.com/cjdb>`_,
+  `@HazardyKnusperkeks (Björn Schäpers) <https://github.com/HazardyKnusperkeks>`_,
+  `@vedranmiletic (Vedran Miletić) <https://github.com/vedranmiletic>`_,
+  `@jackoalan (Jack Andersen) <https://github.com/jackoalan>`_,
+  `@DaanDeMeyer (Daan De Meyer) <https://github.com/DaanDeMeyer>`_.
 
 5.3.0 - 2018-12-28
 ------------------
