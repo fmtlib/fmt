@@ -147,7 +147,7 @@ template <> struct std::formatter<__int128_t> : std::formatter<long long> {
   auto format(__int128_t n, format_context& ctx) {
     // Format as a long long since we only want to check if it is possible to
     // specialize formatter for __int128_t.
-    return formatter<long long>::format(n, ctx);
+    return formatter<long long>::format(static_cast<long long>(n), ctx);
   }
 };
 
