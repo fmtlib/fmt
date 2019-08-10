@@ -1,7 +1,7 @@
 6.0.0 - TBD
 -----------
 
-* Floating-point formatting is now locale-independent:
+* Floating-point formatting is now locale-independent by default:
 
   .. code:: c++
 
@@ -45,7 +45,7 @@
 
 * Added `oss-fuzz <https://github.com/google/oss-fuzz>`_ support
   (`#1199 <https://github.com/fmtlib/fmt/pull/1199>`_).
-  Thanks `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_
+  Thanks `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_.
 
 * ``formatter`` specializations now always take precedence over ``operator<<``
   (`#952 <https://github.com/fmtlib/fmt/issues/952>`_):
@@ -100,7 +100,7 @@
 
      auto s = fmt::format("{:.1%}", 0.42); // s == "42.0%"
 
-  Thanks `@gawain-bolton (Gawain Bolton) <https://github.com/gawain-bolton>`_:
+  Thanks `@gawain-bolton (Gawain Bolton) <https://github.com/gawain-bolton>`_.
 
 * Implemented precision for floating-point durations
   (`#1004 <https://github.com/fmtlib/fmt/issues/1004>`_,
