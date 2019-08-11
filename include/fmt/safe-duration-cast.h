@@ -72,7 +72,7 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
       // yes, From always fits in To.
     } else {
       // from may not fit in To, we have to do a dynamic check
-      if (from > T::max()) {
+      if (from > static_cast<From>(T::max())) {
         ec = 1;
         return {};
       }
@@ -85,7 +85,7 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
       // yes, From always fits in To.
     } else {
       // from may not fit in To, we have to do a dynamic check
-      if (from > T::max()) {
+      if (from > static_cast<From>(T::max())) {
         // outside range.
         ec = 1;
         return {};

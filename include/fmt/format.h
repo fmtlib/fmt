@@ -1741,10 +1741,13 @@ class arg_formatter_base {
   }
 
   void write(const char_type* value) {
-    if (!value) FMT_THROW(format_error("string pointer is null"));
-    auto length = std::char_traits<char_type>::length(value);
-    basic_string_view<char_type> sv(value, length);
-    specs_ ? writer_.write(sv, *specs_) : writer_.write(sv);
+    if (!value) {
+      FMT_THROW(format_error("string pointer is null"));
+    } else {
+      auto length = std::char_traits<char_type>::length(value);
+      basic_string_view<char_type> sv(value, length);
+      specs_ ? writer_.write(sv, *specs_) : writer_.write(sv);
+    }
   }
 
  public:
@@ -1851,7 +1854,7 @@ FMT_CONSTEXPR int parse_nonnegative_int(const Char*& begin, const Char* end,
   }
   unsigned value = 0;
   // Convert to unsigned to prevent a warning.
-  unsigned max_int = (std::numeric_limits<int>::max)();
+  constexpr unsigned max_int = (std::numeric_limits<int>::max)();
   unsigned big = max_int / 10;
   do {
     // Check for overflow.
@@ -2054,7 +2057,7 @@ FMT_CONSTEXPR void set_dynamic_spec(T& value, FormatArg arg, ErrorHandler eh) {
 struct auto_id {};
 
 template <typename Context>
-FMT_CONSTEXPR typename Context::format_arg get_arg(Context& ctx, unsigned id) {
+FMT_CONSTEXPR typename Context::format_arg get_arg(Context& ctx, int id) {
   auto arg = ctx.arg(id);
   if (!arg) ctx.on_error("argument index out of range");
   return arg;
@@ -2092,7 +2095,7 @@ class specs_handler : public specs_setter<typename Context::char_type> {
     return internal::get_arg(context_, parse_context_.next_arg_id());
   }
 
-  FMT_CONSTEXPR format_arg get_arg(unsigned arg_id) {
+  FMT_CONSTEXPR format_arg get_arg(int arg_id) {
     parse_context_.check_arg_id(arg_id);
     return internal::get_arg(context_, arg_id);
   }
@@ -2418,7 +2421,7 @@ inline bool find<false, char>(const char* first, const char* last, char value,
 
 template <typename Handler, typename Char> struct id_adapter {
   FMT_CONSTEXPR void operator()() { handler.on_arg_id(); }
-  FMT_CONSTEXPR void operator()(unsigned id) { handler.on_arg_id(id); }
+  FMT_CONSTEXPR void operator()(int id) { handler.on_arg_id(id); }
   FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
     handler.on_arg_id(id);
   }
@@ -2511,7 +2514,7 @@ class format_string_checker {
     arg_id_ = context_.next_arg_id();
     check_arg_id();
   }
-  FMT_CONSTEXPR void on_arg_id(unsigned id) {
+  FMT_CONSTEXPR void on_arg_id(int id) {
     arg_id_ = id;
     context_.check_arg_id(id);
     check_arg_id();
@@ -2642,7 +2645,7 @@ class FMT_API system_error : public std::runtime_error {
  protected:
   int error_code_;
 
-  system_error() : std::runtime_error("") {}
+  system_error() : std::runtime_error(""), error_code_(0) {}
 
  public:
   /**
@@ -3156,10 +3159,10 @@ struct format_handler : internal::error_handler {
     context.advance_to(out);
   }
 
-  void get_arg(unsigned id) { arg = internal::get_arg(context, id); }
+  void get_arg(int id) { arg = internal::get_arg(context, id); }
 
   void on_arg_id() { get_arg(parse_context.next_arg_id()); }
-  void on_arg_id(unsigned id) {
+  void on_arg_id(int id) {
     parse_context.check_arg_id(id);
     get_arg(id);
   }

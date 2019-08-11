@@ -358,7 +358,7 @@ template <typename Format> class compiletime_prepared_parts_type_provider {
     using value_type = format_part<char_type>;
   };
 
-  using type = conditional_t<static_cast<bool>(number_of_format_parts),
+  using type = conditional_t<number_of_format_parts != 0,
                              format_parts_array<number_of_format_parts>, empty>;
 };
 

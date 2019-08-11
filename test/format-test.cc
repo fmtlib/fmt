@@ -1461,7 +1461,7 @@ TEST(FormatterTest, PrecisionRounding) {
   // Trigger rounding error in Grisu by a carefully chosen number.
   auto n = 3788512123356.985352;
   char buffer[64];
-  sprintf(buffer, "%f", n);
+  safe_sprintf(buffer, "%f", n);
   EXPECT_EQ(buffer, format("{:f}", n));
 }
 

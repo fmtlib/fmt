@@ -520,7 +520,7 @@ struct chrono_formatter {
                             std::chrono::duration<Rep, Period> d)
       : context(ctx), out(o), val(d.count()), negative(false) {
     if (d.count() < 0) {
-      val = -val;
+      val = 0 - val;
       negative = true;
     }
 
