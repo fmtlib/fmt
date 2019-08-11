@@ -161,8 +161,10 @@ struct scan_handler : error_handler {
   void on_text(const char* begin, const char* end) {
     auto size = end - begin;
     auto it = scan_ctx_.begin();
-    if (it + size > scan_ctx_.end() || !std::equal(begin, end, it))
+    if (it + size > scan_ctx_.end() ||
+        !std::equal(begin, end, make_checked(it, size))) {
       on_error("invalid input");
+    }
     scan_ctx_.advance_to(it + size);
   }
 
