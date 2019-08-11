@@ -486,11 +486,11 @@ TEST(PrepareTest, PassCompileString) {
 TEST(PrepareTest, FormatToArrayOfChars) {
   char buffer[32] = {0};
   const auto prepared = fmt::compile<int>("4{}");
-  fmt::format_to(buffer, prepared, 2);
+  fmt::format_to(fmt::internal::make_checked(buffer, 32), prepared, 2);
   EXPECT_EQ(std::string("42"), buffer);
   wchar_t wbuffer[32] = {0};
   const auto wprepared = fmt::compile<int>(L"4{}");
-  fmt::format_to(wbuffer, wprepared, 2);
+  fmt::format_to(fmt::internal::make_checked(wbuffer, 32), wprepared, 2);
   EXPECT_EQ(std::wstring(L"42"), wbuffer);
 }
 
