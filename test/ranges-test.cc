@@ -87,5 +87,16 @@ TEST(RangesTest, FormatTo) {
   EXPECT_STREQ(buf, "{1, 2, 3}");
 }
 
+struct path_like {
+  const path_like* begin() const;
+  const path_like* end() const;
+
+  operator std::string() const;
+};
+
+TEST(RangesTest, PathLike) {
+  EXPECT_FALSE((fmt::is_range<path_like, char>::value));
+}
+
 #endif  // (__cplusplus > 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >
         // 201402L && _MSC_VER >= 1910)

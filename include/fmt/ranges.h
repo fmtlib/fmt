@@ -242,13 +242,16 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
   }
 };
 
-template <typename T> struct is_range {
+template <typename T, typename Char> struct is_range {
   static FMT_CONSTEXPR_DECL const bool value =
-      internal::is_range_<T>::value && !internal::is_like_std_string<T>::value;
+      internal::is_range_<T>::value &&
+      !internal::is_like_std_string<T>::value &&
+      !std::is_convertible<T, std::basic_string<Char>>::value;
 };
 
 template <typename RangeT, typename Char>
-struct formatter<RangeT, Char, enable_if_t<fmt::is_range<RangeT>::value>> {
+struct formatter<RangeT, Char,
+                 enable_if_t<fmt::is_range<RangeT, Char>::value>> {
   formatting_range<Char> formatting;
 
   template <typename ParseContext>
