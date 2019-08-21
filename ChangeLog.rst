@@ -242,15 +242,21 @@
   `#1146 <https://github.com/fmtlib/fmt/issues/1146>`_,
   `#1180 <https://github.com/fmtlib/fmt/issues/1180>`_,
   `#1250 <https://github.com/fmtlib/fmt/pull/1250>`_,
-  `#1252 <https://github.com/fmtlib/fmt/pull/1252>`_).
+  `#1252 <https://github.com/fmtlib/fmt/pull/1252>`_,
+  `#1265 <https://github.com/fmtlib/fmt/pull/1265>`_).
   Thanks `@mikelui (Michael Lui) <https://github.com/mikelui>`_,
   `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_,
   `@BillyDonahue (Billy Donahue) <https://github.com/BillyDonahue>`_,
   `@jwakely (Jonathan Wakely) <https://github.com/jwakely>`_,
-  `@kaisbe (Kais Ben Salah) <https://github.com/kaisbe>`_.
+  `@kaisbe (Kais Ben Salah) <https://github.com/kaisbe>`_,
+  `@sdebionne (Samuel Debionne) <https://github.com/sdebionne>`_.
 
 * Fixed ambiguous formatter specialization in ``fmt/ranges.h``
   (`#1123 <https://github.com/fmtlib/fmt/issues/1123>`_).
+
+* Fixed formatting of a non-empty ``std::filesystem::path`` which is an
+  infinitely deep range of its components
+  (`#1268 <https://github.com/fmtlib/fmt/issues/1268>`_).
 
 * Fixed handling of general output iterators when formatting characters
   (`#1056 <https://github.com/fmtlib/fmt/issues/1056>`_,
