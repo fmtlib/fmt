@@ -268,7 +268,10 @@ The available presentation types for floating-point values are:
 |         | but the argument is multiplied by 100 and a percent sign |
 |         | ``%`` is appended.                                       |
 +---------+----------------------------------------------------------+
-| none    | The same as ``'g'``.                                     |
+| none    | Similar to ``'g'``, except that fixed-point notation,    |
+|         | when used, has at least one digit past the decimal       |
+|         | point. The default precision is as high as needed to     |
+|         | represent the particular value.                          |
 +---------+----------------------------------------------------------+
 
 .. ifconfig:: False
