@@ -431,68 +431,6 @@ struct compiletime_parts_provider {
   }
 };
 
-template <typename PartsContainer>
-struct parts_container_concept_check : std::true_type {
-  static_assert(std::is_copy_constructible<PartsContainer>::value,
-                "PartsContainer is not copy constructible");
-  static_assert(std::is_move_constructible<PartsContainer>::value,
-                "PartsContainer is not move constructible");
-
-  template <typename T, typename = void>
-  struct has_format_part_type : std::false_type {};
-  template <typename T>
-  struct has_format_part_type<T, void_t<typename T::format_part_type>>
-      : std::true_type {};
-
-  static_assert(has_format_part_type<PartsContainer>::value,
-                "PartsContainer doesn't provide format_part_type");
-
-  struct check_second {};
-  struct check_first : check_second {};
-
-  template <typename T> static std::false_type has_add_check(check_second);
-  template <typename T>
-  static decltype(
-      (void)std::declval<T>().add(std::declval<typename T::format_part_type>()),
-      std::true_type()) has_add_check(check_first);
-  using has_add = decltype(has_add_check<PartsContainer>(check_first()));
-  static_assert(has_add::value, "PartsContainer doesn't provide add() method");
-
-  template <typename T> static std::false_type has_last_check(check_second);
-  template <typename T>
-  static decltype((void)std::declval<T>().last(),
-                  std::true_type()) has_last_check(check_first);
-  using has_last = decltype(has_last_check<PartsContainer>(check_first()));
-  static_assert(has_last::value,
-                "PartsContainer doesn't provide last() method");
-
-  template <typename T>
-  static std::false_type has_substitute_last_check(check_second);
-  template <typename T>
-  static decltype((void)std::declval<T>().substitute_last(
-                      std::declval<typename T::format_part_type>()),
-                  std::true_type()) has_substitute_last_check(check_first);
-  using has_substitute_last =
-      decltype(has_substitute_last_check<PartsContainer>(check_first()));
-  static_assert(has_substitute_last::value,
-                "PartsContainer doesn't provide substitute_last() method");
-
-  template <typename T> static std::false_type has_begin_check(check_second);
-  template <typename T>
-  static decltype((void)std::declval<T>().begin(),
-                  std::true_type()) has_begin_check(check_first);
-  using has_begin = decltype(has_begin_check<PartsContainer>(check_first()));
-  static_assert(has_begin::value,
-                "PartsContainer doesn't provide begin() method");
-
-  template <typename T> static std::false_type has_end_check(check_second);
-  template <typename T>
-  static decltype((void)std::declval<T>().end(),
-                  std::true_type()) has_end_check(check_first);
-  using has_end = decltype(has_end_check<PartsContainer>(check_first()));
-  static_assert(has_end::value, "PartsContainer doesn't provide end() method");
-};
-
 template <bool IS_CONSTEXPR, typename Format, typename /*PartsContainer*/>
 struct parts_provider_type {
   using type = compiletime_parts_provider<
@@ -501,8 +439,6 @@ struct parts_provider_type {
 
 template <typename Format, typename PartsContainer>
 struct parts_provider_type</*IS_CONSTEXPR=*/false, Format, PartsContainer> {
-  static_assert(parts_container_concept_check<PartsContainer>::value,
-                "Parts container doesn't meet the concept");
   using type = runtime_parts_provider<PartsContainer>;
 };
 
