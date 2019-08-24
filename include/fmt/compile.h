@@ -506,18 +506,6 @@ template <typename Format, typename... Args> struct preparator {
     return prepared_format_type(std::move(format));
   }
 };
-
-template <typename PassedFormat, typename PreparedFormatFormat,
-          typename PartsContainer, typename... Args>
-struct preparator<PassedFormat, prepared_format<PreparedFormatFormat,
-                                                PartsContainer, Args...>> {
-  using prepared_format_type =
-      prepared_format<PreparedFormatFormat, PartsContainer, Args...>;
-
-  static auto prepare(PassedFormat format) -> prepared_format_type {
-    return prepared_format_type(std::move(format));
-  }
-};
 }  // namespace internal
 
 #if FMT_USE_CONSTEXPR
