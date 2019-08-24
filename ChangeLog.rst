@@ -182,7 +182,7 @@
 
 * Modernized the codebase using more C++11 features and removing workarounds.
   Most importantly, ``buffer_context`` is now an alias template, so
-  use ``buffer_context<T>`` instead of ``buffer_context<T>::type`.
+  use ``buffer_context<T>`` instead of ``buffer_context<T>::type``.
 
 * ``formatter`` specializations now always take precedence over implicit
   conversions to ``int`` and the undocumented ``convert_to_int`` trait
@@ -782,7 +782,7 @@
   ``color`` enum) is now deprecated.
   (`#762 <https://github.com/fmtlib/fmt/issues/762>`_
   `#767 <https://github.com/fmtlib/fmt/pull/767>`_).
-  thanks `@remotion (remo) <https://github.com/remotion>`_.
+  thanks `@Remotion (Remo) <https://github.com/Remotion>`_.
 
 * Added quotes to strings in ranges and tuples
   (`#766 <https://github.com/fmtlib/fmt/pull/766>`_).
