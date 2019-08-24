@@ -176,7 +176,7 @@ class prepared_format {
   using char_type = char_t<Format>;
   using format_part_t = format_part<char_type>;
 
-  prepared_format(Format f)
+  constexpr prepared_format(Format f)
       : format_(std::move(f)), parts_provider_(to_string_view(format_)) {}
 
   prepared_format() = delete;
@@ -518,45 +518,14 @@ struct preparator<PassedFormat, prepared_format<PreparedFormatFormat,
     return prepared_format_type(std::move(format));
   }
 };
-
-struct compiletime_format_tag {};
-struct runtime_format_tag {};
-
-template <typename Format> struct format_tag {
-  using type = conditional_t<is_compile_string<Format>::value,
-                             compiletime_format_tag, runtime_format_tag>;
-};
-
-#if FMT_USE_CONSTEXPR
-template <typename Format, typename... Args>
-auto do_compile(runtime_format_tag, Format format) {
-  return preparator<Format, Args...>::prepare(std::move(format));
-}
-
-template <typename Format, typename... Args>
-FMT_CONSTEXPR auto do_compile(compiletime_format_tag, const Format& format) {
-  return typename basic_prepared_format<Format, void, Args...>::type(format);
-}
-#else
-template <typename Format, typename... Args>
-auto do_compile(const Format& format)
-    -> decltype(preparator<Format, Args...>::prepare(format)) {
-  return preparator<Format, Args...>::prepare(format);
-}
-#endif
-
-template <typename... Args>
-using prepared_format_t =
-    typename basic_prepared_format<std::string, parts_container<char>,
-                                   Args...>::type;
 }  // namespace internal
 
 #if FMT_USE_CONSTEXPR
 template <typename... Args, typename S,
           FMT_ENABLE_IF(is_compile_string<S>::value)>
 FMT_CONSTEXPR auto compile(S format_str) {
-  return internal::do_compile<S, Args...>(
-      typename internal::format_tag<S>::type{}, std::move(format_str));
+  return typename internal::basic_prepared_format<S, void, Args...>::type(
+      format_str);
 }
 #endif
 
@@ -566,7 +535,7 @@ auto compile(const Char (&format_str)[N]) ->
                                   Args...>::prepared_format_type {
   const auto view = basic_string_view<Char>(format_str, N - 1);
   return internal::preparator<std::basic_string<Char>, Args...>::prepare(
-    internal::to_runtime_format(view));
+      internal::to_runtime_format(view));
 }
 
 template <typename CompiledFormat, typename... Args,
