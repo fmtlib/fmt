@@ -592,7 +592,6 @@ OutputIt format_to(OutputIt out, const CompiledFormat& cf,
   using char_type = typename CompiledFormat::char_type;
   using range = internal::output_range<OutputIt, char_type>;
   using context = format_context_t<OutputIt, char_type>;
-  format_arg_store<context, Args...> as(args...);
   return cf.template vformat_to<range, context>(
       range(out), {make_format_args<context>(args...)});
 }
