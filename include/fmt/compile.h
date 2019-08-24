@@ -602,8 +602,7 @@ format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                                          const CompiledFormat& cf,
                                          const Args&... args) {
   auto it =
-      cf.format_to(internal::truncating_iterator<OutputIt>(out, n), args...)
-          .count();
+      cf.format_to(internal::truncating_iterator<OutputIt>(out, n), args...);
   return {it.base(), it.count()};
 }
 
