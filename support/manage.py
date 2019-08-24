@@ -3,11 +3,10 @@
 """Manage site and releases.
 
 Usage:
-  FMT_TOKEN=<token> manage.py release [<branch>]
+  manage.py release [<branch>]  Create a new release. $FTM_TOKEN should contain
+                                a GitHub personal access token obtained from
+                                https://github.com/settings/tokens.
   manage.py site
-
-  where <token> is a GitHub personal access token that can be obtained from
-  https://github.com/settings/tokens.
 """
 
 from __future__ import print_function
