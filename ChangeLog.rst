@@ -49,7 +49,7 @@
              54883977-9fe8c000-4e28-11e9-8bde-272d122e7c52.jpg
 
 * Separated formatting and parsing contexts for consistency with
-  `C++20 ``std::format`` <http://eel.is/c++draft/format>`_, removing the
+  `C++20 std::format <http://eel.is/c++draft/format>`_, removing the
   undocumented ``basic_format_context::parse_context()`` function.
 
 * Added `oss-fuzz <https://github.com/google/oss-fuzz>`_ support
