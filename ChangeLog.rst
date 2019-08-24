@@ -1,6 +1,11 @@
 6.0.0 - TBD
 -----------
 
+* Switched to the `MIT license
+  <https://github.com/fmtlib/fmt/blob/5a4b24613ba16cc689977c3b5bd8274a3ba1dd1f/LICENSE.rst>`_
+  with an optional exception that allows distributing binary code without
+  attribution.
+
 * Floating-point formatting is now locale-independent by default:
 
   .. code:: c++
@@ -42,6 +47,10 @@
 
   .. image:: https://user-images.githubusercontent.com/576385/
              54883977-9fe8c000-4e28-11e9-8bde-272d122e7c52.jpg
+
+* Separated formatting and parsing contexts for consistency with
+  `C++20 ``std::format`` <http://eel.is/c++draft/format>`_, removing the
+  undocumented ``basic_format_context::parse_context()`` function.
 
 * Added `oss-fuzz <https://github.com/google/oss-fuzz>`_ support
   (`#1199 <https://github.com/fmtlib/fmt/pull/1199>`_).
@@ -165,9 +174,6 @@
   (`#1098 <https://github.com/fmtlib/fmt/issues/1098>`_,
   `#1099 <https://github.com/fmtlib/fmt/pull/1099>`_).
   Thanks `@BillyDonahue (Billy Donahue) <https://github.com/BillyDonahue>`_.
-
-* Separated formatting and parsing contexts, removing the undocumented
-  ``basic_format_context::parse_context()`` function.
 
 * Marked deprecated APIs with the ``[[deprecated]]`` attribute and removed
   internal uses of deprecated APIs
