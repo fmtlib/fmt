@@ -3,8 +3,11 @@
 """Manage site and releases.
 
 Usage:
-  manage.py release [<branch>]
+  FMT_TOKEN=<token> manage.py release [<branch>]
   manage.py site
+
+  where <token> is a GitHub personal access token that can be obtained from
+  https://github.com/settings/tokens.
 """
 
 from __future__ import print_function
