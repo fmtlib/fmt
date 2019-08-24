@@ -631,7 +631,7 @@ FMT_CONSTEXPR auto compile(S format_str) {
 }
 #endif
 
-template <typename... Args, typename Char, unsigned N>
+template <typename... Args, typename Char, size_t N>
 auto compile(const Char (&format_str)[N]) ->
     typename internal::preparator<std::basic_string<Char>,
                                   Args...>::prepared_format_type {
@@ -663,7 +663,7 @@ OutputIt format_to(OutputIt out, const CompiledFormat& cf,
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,
           FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
-format_to_n_result<OutputIt> format_to_n(OutputIt out, unsigned n,
+format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                                          const CompiledFormat& cf,
                                          const Args&... args) {
   auto it =
