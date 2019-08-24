@@ -549,16 +549,9 @@ template <typename... Args>
 using prepared_format_t =
     typename basic_prepared_format<std::string, parts_container<char>,
                                    Args...>::type;
-
-template <typename... Args, typename S>
-auto compile(S format_str) ->
-    typename internal::preparator<S, Args...>::prepared_format_type {
-  return internal::preparator<S, Args...>::prepare(std::move(format_str));
-}
 }  // namespace internal
 
 #if FMT_USE_CONSTEXPR
-
 template <typename... Args, typename S,
           FMT_ENABLE_IF(is_compile_string<S>::value)>
 FMT_CONSTEXPR auto compile(S format_str) {
@@ -572,7 +565,8 @@ auto compile(const Char (&format_str)[N]) ->
     typename internal::preparator<std::basic_string<Char>,
                                   Args...>::prepared_format_type {
   const auto view = basic_string_view<Char>(format_str, N - 1);
-  return internal::compile<Args...>(internal::to_runtime_format(view));
+  return internal::preparator<std::basic_string<Char>, Args...>::prepare(
+    internal::to_runtime_format(view));
 }
 
 template <typename CompiledFormat, typename... Args,
