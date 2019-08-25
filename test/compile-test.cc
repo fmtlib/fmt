@@ -122,7 +122,7 @@ bool operator!=(const fmt::internal::format_part<char>& lhs,
 }
 FMT_END_NAMESPACE
 
-TEST(PrepareTest, FormatPart_ComparisonOperators) {
+TEST(CompileTest, FormatPart_ComparisonOperators) {
   typedef fmt::internal::format_part<char> format_part;
   typedef fmt::internal::dynamic_format_specs<char> prepared_specs;
 
@@ -227,7 +227,7 @@ TEST(PrepareTest, FormatPart_ComparisonOperators) {
   }
 }
 
-TEST(PrepareTest, FormatPreparationHandler_OnText_AddsPartWithText) {
+TEST(CompileTest, FormatPreparationHandler_OnText_AddsPartWithText) {
   typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
 
@@ -243,7 +243,7 @@ TEST(PrepareTest, FormatPreparationHandler_OnText_AddsPartWithText) {
   handler.on_text(format.begin(), format.end());
 }
 
-TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithIncrementedId) {
+TEST(CompileTest, FormatPreparationHandler_OnArgId_AddsPartWithIncrementedId) {
   typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
 
@@ -261,7 +261,7 @@ TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithIncrementedId) {
   handler.on_arg_id();
 }
 
-TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithPassedId) {
+TEST(CompileTest, FormatPreparationHandler_OnArgId_AddsPartWithPassedId) {
   typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
 
@@ -282,7 +282,7 @@ TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithPassedId) {
   handler.on_arg_id(expected_third_arg_id);
 }
 
-TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithPassedNamedId) {
+TEST(CompileTest, FormatPreparationHandler_OnArgId_AddsPartWithPassedNamedId) {
   typedef fmt::internal::format_part<char> format_part;
   typedef format_part::named_argument_id named_argument_id;
   typedef StrictMock<mock_parts_collector> parts_mock;
@@ -316,7 +316,7 @@ TEST(PrepareTest, FormatPreparationHandler_OnArgId_AddsPartWithPassedNamedId) {
   handler.on_arg_id(expected_third_arg_id);
 }
 
-TEST(PrepareTest,
+TEST(CompileTest,
      FormatPreparationHandler_OnReplacementField_SetsEndOfArgumentId) {
   typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
@@ -338,7 +338,7 @@ TEST(PrepareTest,
 }
 
 TEST(
-    PrepareTest,
+    CompileTest,
     FormatPreparationHandlerLastPartArgIndex_OnFormatSpecs_UpdatesLastAddedPart) {
   typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
@@ -369,7 +369,7 @@ TEST(
 }
 
 TEST(
-    PrepareTest,
+    CompileTest,
     FormatPreparationHandlerLastPartNamedArgIndex_OnFormatSpecs_UpdatesLastAddedPart) {
   typedef fmt::internal::format_part<char> format_part;
   typedef StrictMock<mock_parts_collector> parts_mock;
@@ -415,7 +415,7 @@ void check_prepared_parts_type(Format format) {
       "CompileTimePreparedPartsTypeProvider test failed");
 }
 
-TEST(PrepareTest, CompileTimePreparedPartsTypeProvider) {
+TEST(CompileTest, CompileTimePreparedPartsTypeProvider) {
   check_prepared_parts_type<1u>(FMT_STRING("text"));
   check_prepared_parts_type<1u>(FMT_STRING("{}"));
   check_prepared_parts_type<2u>(FMT_STRING("text{}"));
@@ -467,7 +467,7 @@ class custom_parts_container {
   parts parts_;
 };
 
-TEST(PrepareTest, PassStringLiteralFormat) {
+TEST(CompileTest, PassStringLiteralFormat) {
   const auto prepared = fmt::compile<int>("test {}");
   EXPECT_EQ("test 42", fmt::format(prepared, 42));
   const auto wprepared = fmt::compile<int>(L"test {}");
@@ -475,7 +475,7 @@ TEST(PrepareTest, PassStringLiteralFormat) {
 }
 
 #if FMT_USE_CONSTEXPR
-TEST(PrepareTest, PassCompileString) {
+TEST(CompileTest, PassCompileString) {
   const auto prepared = fmt::compile<int>(FMT_STRING("test {}"));
   EXPECT_EQ("test 42", fmt::format(prepared, 42));
   const auto wprepared = fmt::compile<int>(FMT_STRING(L"test {}"));
@@ -483,7 +483,7 @@ TEST(PrepareTest, PassCompileString) {
 }
 #endif
 
-TEST(PrepareTest, FormatToArrayOfChars) {
+TEST(CompileTest, FormatToArrayOfChars) {
   char buffer[32] = {0};
   const auto prepared = fmt::compile<int>("4{}");
   fmt::format_to(fmt::internal::make_checked(buffer, 32), prepared, 2);
@@ -494,7 +494,7 @@ TEST(PrepareTest, FormatToArrayOfChars) {
   EXPECT_EQ(std::wstring(L"42"), wbuffer);
 }
 
-TEST(PrepareTest, FormatToIterator) {
+TEST(CompileTest, FormatToIterator) {
   std::string s(2, ' ');
   const auto prepared = fmt::compile<int>("4{}");
   fmt::format_to(s.begin(), prepared, 2);
@@ -505,7 +505,7 @@ TEST(PrepareTest, FormatToIterator) {
   EXPECT_EQ(L"42", ws);
 }
 
-TEST(PrepareTest, FormatToBackInserter) {
+TEST(CompileTest, FormatToBackInserter) {
   std::string s;
   const auto prepared = fmt::compile<int>("4{}");
   fmt::format_to(std::back_inserter(s), prepared, 2);
