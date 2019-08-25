@@ -494,18 +494,6 @@ class parts_container {
  private:
   Container parts_;
 };
-
-// Delegate preparing to preparator, to take advantage of a partial
-// specialization.
-template <typename Format, typename... Args> struct preparator {
-  using container = parts_container<char_t<Format>>;
-  using prepared_format_type =
-      typename basic_prepared_format<Format, container, Args...>::type;
-
-  static auto prepare(Format format) -> prepared_format_type {
-    return prepared_format_type(std::move(format));
-  }
-};
 }  // namespace internal
 
 #if FMT_USE_CONSTEXPR
@@ -519,11 +507,11 @@ FMT_CONSTEXPR auto compile(S format_str) {
 
 template <typename... Args, typename Char, size_t N>
 auto compile(const Char (&format_str)[N]) ->
-    typename internal::preparator<std::basic_string<Char>,
-                                  Args...>::prepared_format_type {
+    typename internal::basic_prepared_format<std::basic_string<Char>,
+                                             internal::parts_container<Char>,
+                                             Args...>::type {
   const auto view = basic_string_view<Char>(format_str, N - 1);
-  return internal::preparator<std::basic_string<Char>, Args...>::prepare(
-      internal::to_runtime_format(view));
+  return internal::to_runtime_format(view);
 }
 
 template <typename CompiledFormat, typename... Args,
