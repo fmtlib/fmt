@@ -261,16 +261,15 @@ class prepared_format {
 };
 
 template <typename Char> struct part_counter {
- public:
-  FMT_CONSTEXPR part_counter() : counter_(0u) {}
+  unsigned num_parts = 0;
 
   FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
-    if (begin != end) ++counter_;
+    if (begin != end) ++num_parts;
   }
 
-  FMT_CONSTEXPR void on_arg_id() { ++counter_; }
-  FMT_CONSTEXPR void on_arg_id(unsigned) { ++counter_; }
-  FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) { ++counter_; }
+  FMT_CONSTEXPR void on_arg_id() { ++num_parts; }
+  FMT_CONSTEXPR void on_arg_id(unsigned) { ++num_parts; }
+  FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) { ++num_parts; }
 
   FMT_CONSTEXPR void on_replacement_field(const Char*) {}
 
@@ -290,11 +289,6 @@ template <typename Char> struct part_counter {
   }
 
   FMT_CONSTEXPR void on_error(const char*) {}
-
-  FMT_CONSTEXPR unsigned result() const { return counter_; }
-
- private:
-  unsigned counter_;
 };
 
 template <typename Format> class compiletime_prepared_parts_type_provider {
@@ -305,7 +299,7 @@ template <typename Format> class compiletime_prepared_parts_type_provider {
     FMT_CONSTEXPR_DECL const auto text = to_string_view(Format{});
     part_counter<char_type> counter;
     internal::parse_format_string</*IS_CONSTEXPR=*/true>(text, counter);
-    return counter.result();
+    return counter.num_parts;
   }
 
 // Workaround for old compilers. Compiletime parts preparation will not be
