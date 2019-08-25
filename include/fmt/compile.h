@@ -417,31 +417,26 @@ struct compiletime_parts_provider {
     return prepared_parts;
   }
 };
-
-template <typename Format, typename PreparedPartsContainer, typename... Args>
-using basic_prepared_format = internal::prepared_format<
-    Format,
-    conditional_t<is_compile_string<Format>::value,
-                  compiletime_parts_provider<
-                      Format, typename compiletime_prepared_parts_type_provider<
-                                  Format>::type>,
-                  runtime_parts_provider<PreparedPartsContainer>>,
-    Args...>;
 }  // namespace internal
 
 #if FMT_USE_CONSTEXPR
 template <typename... Args, typename S,
           FMT_ENABLE_IF(is_compile_string<S>::value)>
-FMT_CONSTEXPR auto compile(S format_str) {
-  return internal::basic_prepared_format<S, void, Args...>(format_str);
+FMT_CONSTEXPR auto compile(S format_str) -> internal::prepared_format<
+    S,
+    internal::compiletime_parts_provider<
+        S,
+        typename internal::compiletime_prepared_parts_type_provider<S>::type>,
+    Args...> {
+  return format_str;
 }
 #endif
 
 template <typename... Args, typename Char, size_t N>
-auto compile(const Char (&format_str)[N])
-    -> internal::basic_prepared_format<std::basic_string<Char>,
-                                       std::vector<internal::format_part<Char>>,
-                                       Args...> {
+auto compile(const Char (&format_str)[N]) -> internal::prepared_format<
+    std::basic_string<Char>,
+    internal::runtime_parts_provider<std::vector<internal::format_part<Char>>>,
+    Args...> {
   return std::basic_string<Char>(format_str, N - 1);
 }
 
