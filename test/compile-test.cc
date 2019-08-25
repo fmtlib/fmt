@@ -80,7 +80,7 @@ bool operator!=(const format_part<char>::specification& lhs,
 
 bool operator==(const format_part<char>& lhs,
                 const fmt::internal::format_part<char>& rhs) {
-  typedef format_part<char>::which_value which_value;
+  typedef format_part<char>::kind kind;
 
   if (lhs.which != rhs.which ||
       lhs.end_of_argument_id != rhs.end_of_argument_id) {
@@ -88,19 +88,19 @@ bool operator==(const format_part<char>& lhs,
   }
 
   switch (lhs.which) {
-  case which_value::argument_id: {
+  case kind::argument_id: {
     return lhs.val.arg_id == rhs.val.arg_id;
   }
 
-  case which_value::named_argument_id: {
+  case kind::named_argument_id: {
     return lhs.val.named_arg_id == rhs.val.named_arg_id;
   }
 
-  case which_value::text: {
+  case kind::text: {
     return lhs.val.text == rhs.val.text;
   }
 
-  case which_value::specification: {
+  case kind::specification: {
     return lhs.val.spec == rhs.val.spec;
   }
   }

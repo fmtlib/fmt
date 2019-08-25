@@ -58,30 +58,23 @@ template <typename Char> struct format_part {
   };
 
   FMT_CONSTEXPR format_part()
-      : which(which_value::argument_id), end_of_argument_id(0u), val(0u) {}
+      : which(kind::argument_id), end_of_argument_id(0u), val(0u) {}
 
   FMT_CONSTEXPR format_part(internal::string_view_metadata text)
-      : which(which_value::text), end_of_argument_id(0u), val(text) {}
+      : which(kind::text), end_of_argument_id(0u), val(text) {}
 
   FMT_CONSTEXPR format_part(unsigned id)
-      : which(which_value::argument_id), end_of_argument_id(0u), val(id) {}
+      : which(kind::argument_id), end_of_argument_id(0u), val(id) {}
 
   FMT_CONSTEXPR format_part(named_argument_id arg_id)
-      : which(which_value::named_argument_id),
-        end_of_argument_id(0u),
-        val(arg_id) {}
+      : which(kind::named_argument_id), end_of_argument_id(0u), val(arg_id) {}
 
   FMT_CONSTEXPR format_part(specification spec)
-      : which(which_value::specification), end_of_argument_id(0u), val(spec) {}
+      : which(kind::specification), end_of_argument_id(0u), val(spec) {}
 
-  enum class which_value {
-    argument_id,
-    named_argument_id,
-    text,
-    specification
-  };
+  enum class kind { argument_id, named_argument_id, text, specification };
 
-  which_value which;
+  kind which;
   std::size_t end_of_argument_id;
   union value {
     FMT_CONSTEXPR value() : arg_id(0u) {}
@@ -147,7 +140,7 @@ class format_preparation_handler : public internal::error_handler {
     if (*begin != '}') on_error("missing '}' in format string");
 
     auto& last_part = parts_.back();
-    auto specs = last_part.which == part::which_value::argument_id
+    auto specs = last_part.which == part::kind::argument_id
                      ? typename part::specification(last_part.val.arg_id)
                      : typename part::specification(last_part.val.named_arg_id);
     specs.parsed_specs = parsed_specs;
@@ -188,7 +181,7 @@ class prepared_format {
       const auto& value = part.val;
 
       switch (part.which) {
-      case format_part_t::which_value::text: {
+      case format_part_t::kind::text: {
         const auto text = value.text.to_view(format_view.data());
         auto output = ctx.out();
         auto&& it = internal::reserve(output, text.size());
@@ -196,18 +189,18 @@ class prepared_format {
         ctx.advance_to(output);
       } break;
 
-      case format_part_t::which_value::argument_id: {
+      case format_part_t::kind::argument_id: {
         advance_parse_context_to_specification(parse_ctx, part);
         format_arg<Range>(parse_ctx, ctx, value.arg_id);
       } break;
 
-      case format_part_t::which_value::named_argument_id: {
+      case format_part_t::kind::named_argument_id: {
         advance_parse_context_to_specification(parse_ctx, part);
         const auto named_arg_id =
             value.named_arg_id.to_view(format_view.data());
         format_arg<Range>(parse_ctx, ctx, named_arg_id);
       } break;
-      case format_part_t::which_value::specification: {
+      case format_part_t::kind::specification: {
         const auto& arg_id_value = value.spec.arg_id.val;
         const auto arg = value.spec.arg_id.which ==
                                  format_part_t::argument_id::which_arg_id::index
