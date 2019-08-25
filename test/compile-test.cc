@@ -505,13 +505,16 @@ TEST(CompileTest, FormatToIterator) {
   EXPECT_EQ(L"42", ws);
 }
 
-TEST(CompileTest, FormatToBackInserter) {
-  std::string s;
-  const auto prepared = fmt::compile<int>("4{}");
-  fmt::format_to(std::back_inserter(s), prepared, 2);
-  EXPECT_EQ("42", s);
-  std::wstring ws;
-  const auto wprepared = fmt::compile<int>(L"4{}");
-  fmt::format_to(std::back_inserter(ws), wprepared, 2);
-  EXPECT_EQ(L"42", ws);
+TEST(CompileTest, FormatToN) {
+  char buf[5];
+  auto f = fmt::compile<int>("{:10}");
+  auto result = fmt::format_to_n(buf, 5, f, 42);
+  EXPECT_EQ(result.size, 10);
+  EXPECT_EQ(result.out, buf + 5);
+  EXPECT_EQ(fmt::string_view(buf, 5), "     ");
+}
+
+TEST(CompileTest, FormattedSize) {
+  auto f = fmt::compile<int>("{:10}");
+  EXPECT_EQ(fmt::formatted_size(f, 42), 10);
 }
