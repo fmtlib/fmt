@@ -260,57 +260,52 @@ class prepared_format {
   PreparedPartsProvider parts_provider_;
 };
 
+template <typename Char> struct part_counter {
+ public:
+  FMT_CONSTEXPR part_counter() : counter_(0u) {}
+
+  FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
+    if (begin != end) ++counter_;
+  }
+
+  FMT_CONSTEXPR void on_arg_id() { ++counter_; }
+  FMT_CONSTEXPR void on_arg_id(unsigned) { ++counter_; }
+  FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) { ++counter_; }
+
+  FMT_CONSTEXPR void on_replacement_field(const Char*) {}
+
+  FMT_CONSTEXPR const Char* on_format_specs(const Char* begin,
+                                            const Char* end) {
+    // Find the matching brace.
+    unsigned braces_counter = 0;
+    for (; begin != end; ++begin) {
+      if (*begin == '{') {
+        ++braces_counter;
+      } else if (*begin == '}') {
+        if (braces_counter == 0u) break;
+        --braces_counter;
+      }
+    }
+    return begin;
+  }
+
+  FMT_CONSTEXPR void on_error(const char*) {}
+
+  FMT_CONSTEXPR unsigned result() const { return counter_; }
+
+ private:
+  unsigned counter_;
+};
+
 template <typename Format> class compiletime_prepared_parts_type_provider {
  private:
   using char_type = char_t<Format>;
 
-  class count_handler {
-   public:
-    FMT_CONSTEXPR count_handler() : counter_(0u) {}
-
-    FMT_CONSTEXPR void on_text(const char_type* begin, const char_type* end) {
-      if (begin != end) ++counter_;
-    }
-
-    FMT_CONSTEXPR void on_arg_id() { ++counter_; }
-    FMT_CONSTEXPR void on_arg_id(unsigned) { ++counter_; }
-    FMT_CONSTEXPR void on_arg_id(basic_string_view<char_type>) { ++counter_; }
-
-    FMT_CONSTEXPR void on_replacement_field(const char_type*) {}
-
-    FMT_CONSTEXPR const char_type* on_format_specs(const char_type* begin,
-                                                   const char_type* end) {
-      return find_matching_brace(begin, end);
-    }
-
-    FMT_CONSTEXPR void on_error(const char*) {}
-
-    FMT_CONSTEXPR unsigned result() const { return counter_; }
-
-   private:
-    FMT_CONSTEXPR const char_type* find_matching_brace(const char_type* begin,
-                                                       const char_type* end) {
-      unsigned braces_counter{0u};
-      for (; begin != end; ++begin) {
-        if (*begin == '{') {
-          ++braces_counter;
-        } else if (*begin == '}') {
-          if (braces_counter == 0u) break;
-          --braces_counter;
-        }
-      }
-      return begin;
-    }
-
-   private:
-    unsigned counter_;
-  };
-
   static FMT_CONSTEXPR unsigned count_parts() {
     FMT_CONSTEXPR_DECL const auto text = to_string_view(Format{});
-    count_handler handler;
-    internal::parse_format_string</*IS_CONSTEXPR=*/true>(text, handler);
-    return handler.result();
+    part_counter<char_type> counter;
+    internal::parse_format_string</*IS_CONSTEXPR=*/true>(text, counter);
+    return counter.result();
   }
 
 // Workaround for old compilers. Compiletime parts preparation will not be
