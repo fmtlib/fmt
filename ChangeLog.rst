@@ -1,5 +1,5 @@
-6.0.0 - TBD
------------
+6.0.0 - 2019-08-26
+------------------
 
 * Switched to the `MIT license
   <https://github.com/fmtlib/fmt/blob/5a4b24613ba16cc689977c3b5bd8274a3ba1dd1f/LICENSE.rst>`_
