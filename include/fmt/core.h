@@ -119,17 +119,17 @@
 #endif
 
 #ifndef FMT_DEPRECATED
-#  if (FMT_HAS_CPP_ATTRIBUTE(deprecated) && __cplusplus >= 201402L) || \
+#  if defined(__INTEL_COMPILER)
+#    define FMT_DEPRECATED [[gnu::deprecated]]
+#  elif (FMT_HAS_CPP_ATTRIBUTE(deprecated) && __cplusplus >= 201402L) || \
       FMT_MSC_VER >= 1900
 #    define FMT_DEPRECATED [[deprecated]]
+#  elif defined(__GNUC__) || defined(__clang__)
+#    define FMT_DEPRECATED __attribute__((deprecated))
+#  elif FMT_MSC_VER
+#    define FMT_DEPRECATED __declspec(deprecated)
 #  else
-#    if defined(__GNUC__) || defined(__clang__)
-#      define FMT_DEPRECATED __attribute__((deprecated))
-#    elif FMT_MSC_VER
-#      define FMT_DEPRECATED __declspec(deprecated)
-#    else
-#      define FMT_DEPRECATED /* deprecated */
-#    endif
+#    define FMT_DEPRECATED /* deprecated */
 #  endif
 #endif
 
