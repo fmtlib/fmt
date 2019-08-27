@@ -119,7 +119,7 @@
 #endif
 
 #ifndef FMT_DEPRECATED
-#  if defined(__INTEL_COMPILER)
+#  if defined(__INTEL_COMPILER) // Tested with Intel Compiler v19.0 at all available language levels.
 #    define FMT_DEPRECATED [[gnu::deprecated]]
 #  elif (FMT_HAS_CPP_ATTRIBUTE(deprecated) && __cplusplus >= 201402L) || \
       FMT_MSC_VER >= 1900
