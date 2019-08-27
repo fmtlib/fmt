@@ -298,7 +298,7 @@
   `#1222 <https://github.com/fmtlib/fmt/issues/1222>`_).
   Thanks `@alabuzhev (Alex Alabuzhev) <https://github.com/alabuzhev>`_.
 
-* Fixed bugs discovered by fuzzing or during fuzzing integation
+* Fixed bugs discovered by fuzzing or during fuzzing integration
   (`#1124 <https://github.com/fmtlib/fmt/issues/1124>`_,
   `#1127 <https://github.com/fmtlib/fmt/issues/1127>`_,
   `#1132 <https://github.com/fmtlib/fmt/issues/1132>`_,
