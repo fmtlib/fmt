@@ -750,7 +750,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     void on_fill(Char fill) { f.specs.fill[0] = fill; }
     void on_align(align_t align) { f.specs.align = align; }
     void on_width(unsigned width) { f.specs.width = width; }
-    void on_precision(unsigned precision) { f.precision = precision; }
+    void on_precision(unsigned _precision) { f.precision = _precision; }
     void end_precision() {}
 
     template <typename Id> void on_dynamic_width(Id arg_id) {
