@@ -227,10 +227,10 @@ if (FMT_PEDANTIC AND NOT WIN32)
 endif ()
 
 #
-# Activate CUDA related tests (Optional)
-# if and only if we can find the CUDA in current CMake run.
+# Activate CUDA related tests if we can find CUDA from CMake. This is optional.
+# For version selection, see https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#cpp14-language-features
 #
-find_package(CUDA 9.2)
+find_package(CUDA 9.0)
 if(CUDA_FOUND)
   add_test(cuda-test ${CMAKE_CTEST_COMMAND}
     -C ${CMAKE_BUILD_TYPE}

@@ -24,9 +24,11 @@ static_assert(__cplusplus >= 201402L, "expect C++ 2014 for nvcc");
 // Since we don't know the actual case in this header, checking both macro
 // will prevent possible pitfalls ...
 //
-#if defined(__NVCC__) || defined(__CUDACC__)
-#  define FMT_DEPRECATED
-#endif
+// --- this check is moved into the <fmt/core.h> ---
+//
+// #if defined(__NVCC__) || defined(__CUDACC__)
+// #  define FMT_DEPRECATED // suppress [[deprecated]] attribute
+// #endif
 #include <fmt/core.h>
 
 #include <cuda.h>
