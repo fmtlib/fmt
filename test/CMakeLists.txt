@@ -225,3 +225,22 @@ if (FMT_PEDANTIC AND NOT WIN32)
     "-DPEDANTIC_COMPILE_FLAGS=${PEDANTIC_COMPILE_FLAGS}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()
+
+#
+# Activate CUDA related tests (Optional)
+# if and only if we can find the CUDA in current CMake run.
+#
+find_package(CUDA 9.2)
+if(CUDA_FOUND)
+  add_test(cuda-test ${CMAKE_CTEST_COMMAND}
+    -C ${CMAKE_BUILD_TYPE}
+    --build-and-test
+    "${CMAKE_CURRENT_SOURCE_DIR}/cuda-test"
+    "${CMAKE_CURRENT_BINARY_DIR}/cuda-test"
+    --build-generator ${CMAKE_GENERATOR}
+    --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+    --build-options
+      "-DFMT_DIR=${PROJECT_BINARY_DIR}"
+      "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+  )
+endif()
