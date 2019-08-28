@@ -413,17 +413,6 @@ class output_range {
   sentinel end() const { return {}; }  // Sentinel is not used yet.
 };
 
-// A range with an iterator appending to a buffer.
-template <typename T>
-class buffer_range
-    : public output_range<std::back_insert_iterator<buffer<T>>, T> {
- public:
-  using iterator = std::back_insert_iterator<buffer<T>>;
-  using output_range<iterator, T>::output_range;
-  buffer_range(buffer<T>& buf)
-      : output_range<iterator, T>(std::back_inserter(buf)) {}
-};
-
 template <typename Char>
 inline size_t count_code_points(basic_string_view<Char> s) {
   return s.size();
@@ -477,6 +466,17 @@ void buffer<T>::append(const U* begin, const U* end) {
   size_ = new_size;
 }
 }  // namespace internal
+
+// A range with an iterator appending to a buffer.
+template <typename T>
+class buffer_range : public internal::output_range<
+                         std::back_insert_iterator<internal::buffer<T>>, T> {
+ public:
+  using iterator = std::back_insert_iterator<internal::buffer<T>>;
+  using internal::output_range<iterator, T>::output_range;
+  buffer_range(internal::buffer<T>& buf)
+      : internal::output_range<iterator, T>(std::back_inserter(buf)) {}
+};
 
 // A UTF-8 string view.
 class u8string_view : public basic_string_view<char8_t> {
@@ -2598,7 +2598,7 @@ template <typename Range>
 using basic_writer FMT_DEPRECATED_ALIAS = internal::basic_writer<Range>;
 using writer FMT_DEPRECATED_ALIAS = internal::writer;
 using wwriter FMT_DEPRECATED_ALIAS =
-    internal::basic_writer<internal::buffer_range<wchar_t>>;
+    internal::basic_writer<buffer_range<wchar_t>>;
 
 /** The default argument formatter. */
 template <typename Range>

@@ -278,21 +278,21 @@ Custom Formatting of Built-in Types
 It is possible to change the way arguments are formatted by providing a
 custom argument formatter class::
 
-  using arg_formatter =
-    fmt::arg_formatter<fmt::back_insert_range<fmt::internal::buffer>>;
+  using arg_formatter = fmt::arg_formatter<fmt::buffer_range<char>>;
 
   // A custom argument formatter that formats negative integers as unsigned
   // with the ``x`` format specifier.
   class custom_arg_formatter : public arg_formatter {
    public:
-    custom_arg_formatter(fmt::format_context &ctx,
-                         fmt::format_specs *spec = nullptr)
-      : arg_formatter(ctx, spec) {}
+    custom_arg_formatter(fmt::format_context& ctx,
+                         fmt::format_parse_context* parse_ctx = nullptr,
+                         fmt::format_specs* spec = nullptr)
+      : arg_formatter(ctx, parse_ctx, spec) {}
 
     using arg_formatter::operator();
 
     auto operator()(int value) {
-      if (spec().type() == 'x')
+      if (specs() && specs()->type == 'x')
         return (*this)(static_cast<unsigned>(value)); // convert to unsigned and format
       return arg_formatter::operator()(value);
     }

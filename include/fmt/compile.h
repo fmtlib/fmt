@@ -426,7 +426,7 @@ template <typename CompiledFormat, typename... Args,
           typename Char = typename CompiledFormat::char_type>
 std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   basic_memory_buffer<Char> buffer;
-  using range = internal::buffer_range<Char>;
+  using range = buffer_range<Char>;
   using context = buffer_context<Char>;
   cf.template vformat_to<range, context>(range(buffer),
                                          {make_format_args<context>(args...)});

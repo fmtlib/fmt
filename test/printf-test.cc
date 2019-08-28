@@ -561,8 +561,7 @@ TEST(PrintfTest, VSPrintfMakeWArgsExample) {
 #endif
 }
 
-typedef fmt::printf_arg_formatter<fmt::internal::buffer_range<char>>
-    formatter_t;
+typedef fmt::printf_arg_formatter<fmt::buffer_range<char>> formatter_t;
 typedef fmt::basic_printf_context<formatter_t::iterator, char> context_t;
 
 // A custom printf argument formatter that doesn't print `-` for floating-point
