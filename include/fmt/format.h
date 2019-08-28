@@ -2595,9 +2595,9 @@ void handle_dynamic_spec(Spec& value, arg_ref<typename Context::char_type> ref,
 }  // namespace internal
 
 template <typename Range>
-using basic_writer FMT_DEPRECATED = internal::basic_writer<Range>;
-using writer FMT_DEPRECATED = internal::writer;
-using wwriter FMT_DEPRECATED =
+using basic_writer FMT_DEPRECATED_ALIAS = internal::basic_writer<Range>;
+using writer FMT_DEPRECATED_ALIAS = internal::writer;
+using wwriter FMT_DEPRECATED_ALIAS =
     internal::basic_writer<internal::buffer_range<wchar_t>>;
 
 /** The default argument formatter. */

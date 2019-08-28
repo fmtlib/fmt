@@ -132,6 +132,12 @@
 #    endif
 #  endif
 #endif
+// Workaround broken [[deprecated]] in the Intel compiler.
+#ifdef __INTEL_COMPILER
+#  define FMT_DEPRECATED_ALIAS
+#else
+#  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
+#endif
 
 #ifndef FMT_BEGIN_NAMESPACE
 #  if FMT_HAS_FEATURE(cxx_inline_namespaces) || FMT_GCC_VERSION >= 404 || \
@@ -474,8 +480,8 @@ class basic_parse_context : private ErrorHandler {
 using format_parse_context = basic_parse_context<char>;
 using wformat_parse_context = basic_parse_context<wchar_t>;
 
-using parse_context FMT_DEPRECATED = basic_parse_context<char>;
-using wparse_context FMT_DEPRECATED = basic_parse_context<wchar_t>;
+using parse_context FMT_DEPRECATED_ALIAS = basic_parse_context<char>;
+using wparse_context FMT_DEPRECATED_ALIAS = basic_parse_context<wchar_t>;
 
 template <typename Context> class basic_format_arg;
 template <typename Context> class basic_format_args;
