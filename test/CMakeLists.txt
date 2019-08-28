@@ -225,3 +225,11 @@ if (FMT_PEDANTIC AND NOT WIN32)
     "-DPEDANTIC_COMPILE_FLAGS=${PEDANTIC_COMPILE_FLAGS}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()
+
+# Activate optional CUDA tests if CUDA is found. For version selection, see
+# https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#cpp14-language-features
+find_package(CUDA 9.0)
+if (CUDA_FOUND)
+  add_subdirectory(cuda-test)
+  add_test(NAME cuda-test COMMAND fmt-in-cuda-test)
+endif ()
