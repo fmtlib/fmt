@@ -645,6 +645,8 @@ enum type {
   uint_type,
   long_long_type,
   ulong_long_type,
+  int128_type,
+  uint128_type,
   bool_type,
   char_type,
   last_integer_type = char_type,
@@ -671,6 +673,10 @@ FMT_TYPE_CONSTANT(int, int_type);
 FMT_TYPE_CONSTANT(unsigned, uint_type);
 FMT_TYPE_CONSTANT(long long, long_long_type);
 FMT_TYPE_CONSTANT(unsigned long long, ulong_long_type);
+#if FMT_USE_INT128
+FMT_TYPE_CONSTANT(__int128_t, int128_type);
+FMT_TYPE_CONSTANT(__uint128_t, uint128_type);
+#endif
 FMT_TYPE_CONSTANT(bool, bool_type);
 FMT_TYPE_CONSTANT(Char, char_type);
 FMT_TYPE_CONSTANT(double, double_type);
@@ -710,6 +716,10 @@ template <typename Context> class value {
     unsigned uint_value;
     long long long_long_value;
     unsigned long long ulong_long_value;
+#if FMT_USE_INT128
+    __int128_t int128_value;
+    __uint128_t uint128_value;
+#endif
     bool bool_value;
     char_type char_value;
     double double_value;
@@ -724,6 +734,10 @@ template <typename Context> class value {
   FMT_CONSTEXPR value(unsigned val) : uint_value(val) {}
   value(long long val) : long_long_value(val) {}
   value(unsigned long long val) : ulong_long_value(val) {}
+#if FMT_USE_INT128
+  value(__int128_t val) : int128_value(val) {}
+  value(__uint128_t val) : uint128_value(val) {}
+#endif
   value(double val) : double_value(val) {}
   value(long double val) : long_double_value(val) {}
   value(bool val) : bool_value(val) {}
@@ -783,6 +797,10 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR ulong_type map(unsigned long val) { return val; }
   FMT_CONSTEXPR long long map(long long val) { return val; }
   FMT_CONSTEXPR unsigned long long map(unsigned long long val) { return val; }
+#if FMT_USE_INT128
+  FMT_CONSTEXPR __int128_t map(__int128_t val) { return val; }
+  FMT_CONSTEXPR __uint128_t map(__uint128_t val) { return val; }
+#endif
   FMT_CONSTEXPR bool map(bool val) { return val; }
 
   template <typename T, FMT_ENABLE_IF(is_char<T>::value)>
@@ -943,6 +961,12 @@ FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
     return vis(arg.value_.long_long_value);
   case internal::ulong_long_type:
     return vis(arg.value_.ulong_long_value);
+#if FMT_USE_INT128
+  case internal::int128_type:
+    return vis(arg.value_.int128_value);
+  case internal::uint128_type:
+    return vis(arg.value_.uint128_value);
+#endif
   case internal::bool_type:
     return vis(arg.value_.bool_value);
   case internal::char_type:

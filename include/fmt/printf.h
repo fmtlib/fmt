@@ -158,7 +158,7 @@ template <typename Char> class printf_width_handler {
 
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   unsigned operator()(T value) {
-    auto width = static_cast<uint32_or_64_t<T>>(value);
+    auto width = static_cast<uint32_or_64_or_128_t<T>>(value);
     if (internal::is_negative(value)) {
       specs_.align = align::left;
       width = 0 - width;

@@ -636,11 +636,20 @@ FMT_CONSTEXPR bool is_negative(T) {
   return false;
 }
 
+#if FMT_USE_INT128
+// Smallest of uint32_t, uint64_t, unsigned __int128 that is large enough to
+// represent all values of T.
+template <typename T>
+using uint32_or_64_or_128_t = conditional_t<
+    std::numeric_limits<T>::digits <= 32, uint32_t,
+    conditional_t<std::numeric_limits<T>::digits <= 64, uint64_t, __uint128_t>>;
+#else
 // Smallest of uint32_t and uint64_t that is large enough to represent all
 // values of T.
 template <typename T>
-using uint32_or_64_t =
+using uint32_or_64_or_128_t =
     conditional_t<std::numeric_limits<T>::digits <= 32, uint32_t, uint64_t>;
+#endif
 
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
@@ -674,6 +683,23 @@ inline int count_digits(uint64_t n) {
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
 inline int count_digits(uint64_t n) {
+  int count = 1;
+  for (;;) {
+    // Integer division is slow so do it for a group of four digits instead
+    // of for every digit. The idea comes from the talk by Alexandrescu
+    // "Three Optimization Tips for C++". See speed-test for a comparison.
+    if (n < 10) return count;
+    if (n < 100) return count + 1;
+    if (n < 1000) return count + 2;
+    if (n < 10000) return count + 3;
+    n /= 10000u;
+    count += 4;
+  }
+}
+#endif
+
+#if FMT_USE_INT128
+inline int count_digits(__uint128_t n) {
   int count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
@@ -818,12 +844,22 @@ inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
   return end;
 }
 
+template <typename Int> constexpr int digits10() noexcept {
+  return std::numeric_limits<Int>::digits10;
+}
+
+#if FMT_USE_INT128
+template <> constexpr int digits10<__int128_t>() noexcept { return 38; }
+
+template <> constexpr int digits10<__uint128_t>() noexcept { return 38; }
+#endif
+
 template <typename Char, typename UInt, typename Iterator, typename F>
 inline Iterator format_decimal(Iterator out, UInt value, int num_digits,
                                F add_thousands_sep) {
   FMT_ASSERT(num_digits >= 0, "invalid digit count");
   // Buffer should be large enough to hold all digits (<= digits10 + 1).
-  enum { max_size = std::numeric_limits<UInt>::digits10 + 1 };
+  enum { max_size = digits10<UInt>() + 1 };
   Char buffer[max_size + max_size / 3];
   auto end = format_decimal(buffer, value, num_digits, add_thousands_sep);
   return internal::copy_str<Char>(buffer, end, out);
@@ -1324,7 +1360,7 @@ template <typename Range> class basic_writer {
 
   // Writes a decimal integer.
   template <typename Int> void write_decimal(Int value) {
-    auto abs_value = static_cast<uint32_or_64_t<Int>>(value);
+    auto abs_value = static_cast<uint32_or_64_or_128_t<Int>>(value);
     bool is_negative = internal::is_negative(value);
     if (is_negative) abs_value = 0 - abs_value;
     int num_digits = internal::count_digits(abs_value);
@@ -1336,7 +1372,7 @@ template <typename Range> class basic_writer {
 
   // The handle_int_type_spec handler that writes an integer.
   template <typename Int, typename Specs> struct int_writer {
-    using unsigned_type = uint32_or_64_t<Int>;
+    using unsigned_type = uint32_or_64_or_128_t<Int>;
 
     basic_writer<Range>& writer;
     const Specs& specs;
@@ -1608,10 +1644,16 @@ template <typename Range> class basic_writer {
   void write(int value) { write_decimal(value); }
   void write(long value) { write_decimal(value); }
   void write(long long value) { write_decimal(value); }
+#if FMT_USE_INT128
+  void write(__int128_t value) { write_decimal(value); }
+#endif
 
   void write(unsigned value) { write_decimal(value); }
   void write(unsigned long value) { write_decimal(value); }
   void write(unsigned long long value) { write_decimal(value); }
+#if FMT_USE_INT128
+  void write(__uint128_t value) { write_decimal(value); }
+#endif
 
   // Writes a formatted integer.
   template <typename T, typename Spec>
@@ -1694,6 +1736,14 @@ template <typename Range> class basic_writer {
 
 using writer = basic_writer<buffer_range<char>>;
 
+template <typename T> struct is_integral : std::is_integral<T> {};
+
+#if FMT_USE_INT128
+template <> struct is_integral<__int128_t> : std::true_type {};
+
+template <> struct is_integral<__uint128_t> : std::true_type {};
+#endif
+
 template <typename Range, typename ErrorHandler = internal::error_handler>
 class arg_formatter_base {
  public:
@@ -1756,7 +1806,7 @@ class arg_formatter_base {
     return out();
   }
 
-  template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
+  template <typename T, FMT_ENABLE_IF(is_integral<T>::value)>
   iterator operator()(T value) {
     if (specs_)
       writer_.write_int(value, *specs_);
@@ -1888,7 +1938,7 @@ template <typename Context> class custom_formatter {
 
 template <typename T>
 using is_integer =
-    bool_constant<std::is_integral<T>::value && !std::is_same<T, bool>::value &&
+    bool_constant<is_integral<T>::value && !std::is_same<T, bool>::value &&
                   !std::is_same<T, char>::value &&
                   !std::is_same<T, wchar_t>::value>;
 
@@ -2947,6 +2997,8 @@ struct formatter<T, Char,
     case internal::uint_type:
     case internal::long_long_type:
     case internal::ulong_long_type:
+    case internal::int128_type:
+    case internal::uint128_type:
     case internal::bool_type:
       handle_int_type_spec(specs_.type,
                            internal::int_type_checker<decltype(eh)>(eh));
