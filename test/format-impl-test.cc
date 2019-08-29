@@ -149,6 +149,17 @@ template <typename T> struct value_extractor {
   template <typename U> FMT_NORETURN T operator()(U) {
     throw std::runtime_error(fmt::format("invalid type {}", typeid(U).name()));
   }
+
+#ifdef __apple_build_version__
+  // Apple Clang does not define typeid for __int128_t and __uint128_t.
+  FMT_NORETURN T operator()(__int128_t) {
+    throw std::runtime_error(fmt::format("invalid type {}", "__int128_t"));
+  }
+
+  FMT_NORETURN T operator()(__uint128_t) {
+    throw std::runtime_error(fmt::format("invalid type {}", "__uint128_t"));
+  }
+#endif
 };
 
 TEST(FormatTest, ArgConverter) {

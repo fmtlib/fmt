@@ -1333,6 +1333,14 @@ TEST(FormatterTest, FormatBin) {
             format("{0:b}", std::numeric_limits<uint32_t>::max()));
 }
 
+#if FMT_USE_INT128
+constexpr auto INT128_MAX = static_cast<__int128_t>(
+    (static_cast<__uint128_t>(1) << ((__SIZEOF_INT128__ * CHAR_BIT) - 1)) - 1);
+constexpr auto INT128_MIN = -INT128_MAX - 1;
+
+constexpr auto UINT128_MAX = ~static_cast<__uint128_t>(0);
+#endif
+
 TEST(FormatterTest, FormatDec) {
   EXPECT_EQ("0", format("{0}", 0));
   EXPECT_EQ("42", format("{0}", 42));
@@ -1341,6 +1349,23 @@ TEST(FormatterTest, FormatDec) {
   EXPECT_EQ("-42", format("{0}", -42));
   EXPECT_EQ("12345", format("{0}", 12345));
   EXPECT_EQ("67890", format("{0}", 67890));
+#if FMT_USE_INT128
+  EXPECT_EQ("0", format("{0}", static_cast<__int128_t>(0)));
+  EXPECT_EQ("0", format("{0}", static_cast<__uint128_t>(0)));
+  EXPECT_EQ("9223372036854775808",
+            format("{0}", static_cast<__int128_t>(INT64_MAX) + 1));
+  EXPECT_EQ("-9223372036854775809",
+            format("{0}", static_cast<__int128_t>(INT64_MIN) - 1));
+  EXPECT_EQ("18446744073709551616",
+            format("{0}", static_cast<__int128_t>(UINT64_MAX) + 1));
+  EXPECT_EQ("170141183460469231731687303715884105727",
+            format("{0}", INT128_MAX));
+  EXPECT_EQ("-170141183460469231731687303715884105728",
+            format("{0}", INT128_MIN));
+  EXPECT_EQ("340282366920938463463374607431768211455",
+            format("{0}", UINT128_MAX));
+#endif
+
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%d", INT_MIN);
   EXPECT_EQ(buffer, format("{0}", INT_MIN));
@@ -1365,6 +1390,19 @@ TEST(FormatterTest, FormatHex) {
   EXPECT_EQ("90abcdef", format("{0:x}", 0x90abcdef));
   EXPECT_EQ("12345678", format("{0:X}", 0x12345678));
   EXPECT_EQ("90ABCDEF", format("{0:X}", 0x90ABCDEF));
+#if FMT_USE_INT128
+  EXPECT_EQ("0", format("{0:x}", static_cast<__int128_t>(0)));
+  EXPECT_EQ("0", format("{0:x}", static_cast<__uint128_t>(0)));
+  EXPECT_EQ("8000000000000000",
+            format("{0:x}", static_cast<__int128_t>(INT64_MAX) + 1));
+  EXPECT_EQ("-8000000000000001",
+            format("{0:x}", static_cast<__int128_t>(INT64_MIN) - 1));
+  EXPECT_EQ("10000000000000000",
+            format("{0:x}", static_cast<__int128_t>(UINT64_MAX) + 1));
+  EXPECT_EQ("7fffffffffffffffffffffffffffffff", format("{0:x}", INT128_MAX));
+  EXPECT_EQ("-80000000000000000000000000000000", format("{0:x}", INT128_MIN));
+  EXPECT_EQ("ffffffffffffffffffffffffffffffff", format("{0:x}", UINT128_MAX));
+#endif
 
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "-%x", 0 - static_cast<unsigned>(INT_MIN));
@@ -1387,6 +1425,23 @@ TEST(FormatterTest, FormatOct) {
   EXPECT_EQ("42", format("{0:o}", 042u));
   EXPECT_EQ("-42", format("{0:o}", -042));
   EXPECT_EQ("12345670", format("{0:o}", 012345670));
+#if FMT_USE_INT128
+  EXPECT_EQ("0", format("{0:o}", static_cast<__int128_t>(0)));
+  EXPECT_EQ("0", format("{0:o}", static_cast<__uint128_t>(0)));
+  EXPECT_EQ("1000000000000000000000",
+            format("{0:o}", static_cast<__int128_t>(INT64_MAX) + 1));
+  EXPECT_EQ("-1000000000000000000001",
+            format("{0:o}", static_cast<__int128_t>(INT64_MIN) - 1));
+  EXPECT_EQ("2000000000000000000000",
+            format("{0:o}", static_cast<__int128_t>(UINT64_MAX) + 1));
+  EXPECT_EQ("1777777777777777777777777777777777777777777",
+            format("{0:o}", INT128_MAX));
+  EXPECT_EQ("-2000000000000000000000000000000000000000000",
+            format("{0:o}", INT128_MIN));
+  EXPECT_EQ("3777777777777777777777777777777777777777777",
+            format("{0:o}", UINT128_MAX));
+#endif
+
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "-%o", 0 - static_cast<unsigned>(INT_MIN));
   EXPECT_EQ(buffer, format("{0:o}", INT_MIN));
@@ -1923,7 +1978,11 @@ using buffer_range = fmt::buffer_range<char>;
 class mock_arg_formatter
     : public fmt::internal::arg_formatter_base<buffer_range> {
  private:
+#if FMT_USE_INT128
+  MOCK_METHOD1(call, void(__int128_t value));
+#else
   MOCK_METHOD1(call, void(long long value));
+#endif
 
  public:
   typedef fmt::internal::arg_formatter_base<buffer_range> base;
@@ -1936,14 +1995,14 @@ class mock_arg_formatter
   }
 
   template <typename T>
-  typename std::enable_if<std::is_integral<T>::value, iterator>::type
+  typename std::enable_if<fmt::internal::is_integral<T>::value, iterator>::type
   operator()(T value) {
     call(value);
     return base::operator()(value);
   }
 
   template <typename T>
-  typename std::enable_if<!std::is_integral<T>::value, iterator>::type
+  typename std::enable_if<!fmt::internal::is_integral<T>::value, iterator>::type
   operator()(T value) {
     return base::operator()(value);
   }
