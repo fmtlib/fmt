@@ -34,14 +34,12 @@ static_assert(__cplusplus >= 201402L, "expect C++ 2014 for nvcc");
 #include <cuda.h>
 #include <iostream>
 
-using namespace std;
-
 extern auto make_message_cpp() -> std::string;
 extern auto make_message_cuda() -> std::string;
 
 int main(int, char*[]) {
-  cout << make_message_cuda() << endl;
-  cout << make_message_cpp() << endl;
+  std::cout << make_message_cuda() << std::endl;
+  std::cout << make_message_cpp() << std::endl;
 }
 
 auto make_message_cuda() -> std::string {

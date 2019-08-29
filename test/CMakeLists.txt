@@ -232,15 +232,6 @@ endif ()
 #
 find_package(CUDA 9.0)
 if(CUDA_FOUND)
-  add_test(cuda-test ${CMAKE_CTEST_COMMAND}
-    -C ${CMAKE_BUILD_TYPE}
-    --build-and-test
-    "${CMAKE_CURRENT_SOURCE_DIR}/cuda-test"
-    "${CMAKE_CURRENT_BINARY_DIR}/cuda-test"
-    --build-generator ${CMAKE_GENERATOR}
-    --build-makeprogram ${CMAKE_MAKE_PROGRAM}
-    --build-options
-      "-DFMT_DIR=${PROJECT_BINARY_DIR}"
-      "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-  )
+  add_subdirectory(cuda-test)
+  add_test(NAME cuda-test COMMAND fmt-in-cuda-test)
 endif()

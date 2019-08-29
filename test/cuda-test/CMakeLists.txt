@@ -24,13 +24,10 @@
 
 # Follow the Root CMakeLists.txt
 cmake_minimum_required(VERSION 3.1) 
-project(fmt-cuda-test LANGUAGES CXX)
 
-# See 'test/CMakeLists.txt'. It's using ${PROJECT_BINARY_DIR}
-find_package(FMT    REQUIRED) 
-
-# The environment variables (CUDA_BIN_PATH & CUDA_PATH) must be specified
-find_package(CUDA   REQUIRED)
+# We already knows the packages. This part shows example.
+# find_package(CUDA 9.0 REQUIRED)
+# find_package(FMT  6.0 REQUIRED)
 
 #
 # Update these when NVCC becomes ready for C++ 17 features
@@ -39,6 +36,9 @@ find_package(CUDA   REQUIRED)
 set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED 14)
 
+#
+# https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html
+#
 list(APPEND CUDA_NVCC_FLAGS "-std=c++14")
 if(MSVC)
     # this is the solution of pytorch
@@ -62,27 +62,20 @@ cuda_add_executable(fmt-in-cuda-test
     cpp14.cc
 )
 
-#
-# https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html
-#
-set_target_properties(fmt-in-cuda-test
-PROPERTIES
-    CXX_STANDARD 14 # Notice this is for C++ code
-)
 target_compile_features(fmt-in-cuda-test
 PRIVATE
     cxx_std_14 # just make sure of the property
 )
 
-get_target_property(cuda_standard 
+get_target_property(IN_USE_CUDA_STANDARD 
     fmt-in-cuda-test CUDA_STANDARD
 )
-message(STATUS "cuda_standard:          ${cuda_standard}")
+message(STATUS "cuda_standard:          ${IN_USE_CUDA_STANDARD}")
 
-get_target_property(cuda_standard_required
+get_target_property(IN_USE_CUDA_STANDARD_REQUIRED
     fmt-in-cuda-test CUDA_STANDARD_REQUIRED
 )
-message(STATUS "cuda_standard_required: ${cuda_standard_required}")
+message(STATUS "cuda_standard_required: ${IN_USE_CUDA_STANDARD_REQUIRED}")
 
 #
 # https://cmake.org/cmake/help/latest/module/FindCUDA.html

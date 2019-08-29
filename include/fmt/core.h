@@ -133,15 +133,8 @@
 #  endif
 #endif
 
-// Workaround broken [[deprecated]] in the Intel compiler.
-#ifdef __INTEL_COMPILER
-#  define FMT_DEPRECATED_ALIAS
-#else
-#  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
-#endif
-
-// Workaround broken [[deprecated]] for the NVCC (CUDA with C++14)
-#if defined(__NVCC__) || defined(__CUDACC__)
+// Workaround broken [[deprecated]] in the Intel compiler and NVCC
+#if defined(__INTEL_COMPILER) || defined(__NVCC__) || defined(__CUDACC__)
 #  define FMT_DEPRECATED_ALIAS
 #else
 #  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
