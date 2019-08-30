@@ -168,6 +168,8 @@ struct scan_handler : error_handler {
     scan_ctx_.advance_to(it + size);
   }
 
+  void on_text_end() {}
+
   void on_arg_id() { on_arg_id(next_arg_id_++); }
   void on_arg_id(int id) {
     if (id >= args_.size) on_error("argument index out of range");

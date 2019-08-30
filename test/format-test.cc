@@ -6,6 +6,7 @@
 // For the license information refer to format.h.
 
 #include <stdint.h>
+
 #include <cctype>
 #include <cfloat>
 #include <climits>
@@ -34,12 +35,12 @@
 using std::size_t;
 
 using fmt::basic_memory_buffer;
-using fmt::internal::basic_writer;
 using fmt::format;
 using fmt::format_error;
 using fmt::memory_buffer;
 using fmt::string_view;
 using fmt::wmemory_buffer;
+using fmt::internal::basic_writer;
 
 using testing::Return;
 using testing::StrictMock;
@@ -673,9 +674,7 @@ TEST(WriterTest, WriteString) {
   CHECK_WRITE_WCHAR("abc");
 }
 
-TEST(WriterTest, WriteWideString) {
-  CHECK_WRITE_WCHAR(L"abc");
-}
+TEST(WriterTest, WriteWideString) { CHECK_WRITE_WCHAR(L"abc"); }
 
 TEST(FormatToTest, FormatWithoutArgs) {
   std::string s;
@@ -2294,6 +2293,8 @@ TEST(FormatTest, ConstexprSpecsChecker) {
 
 struct test_format_string_handler {
   FMT_CONSTEXPR void on_text(const char*, const char*) {}
+
+  FMT_CONSTEXPR void on_text_end() {}
 
   FMT_CONSTEXPR void on_arg_id() {}
 

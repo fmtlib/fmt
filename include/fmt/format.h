@@ -2461,8 +2461,10 @@ FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
     // Doing two passes with memchr (one for '{' and another for '}') is up to
     // 2.5x faster than the naive one-pass implementation on big format strings.
     const Char* p = begin;
-    if (*begin != '{' && !find<IS_CONSTEXPR>(begin, end, '{', p))
+    if (*begin != '{' && !find<IS_CONSTEXPR>(begin, end, '{', p)) {
+      handler.on_text_end();
       return write(begin, end);
+    }
     write(begin, p);
     ++p;
     if (p == end) return handler.on_error("invalid format string");
@@ -2486,6 +2488,7 @@ FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
     }
     begin = p + 1;
   }
+  handler.on_text_end();  // Handle empty format strings.
 }
 
 template <typename T, typename ParseContext>
@@ -2510,17 +2513,31 @@ class format_string_checker {
   explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
       : arg_id_((std::numeric_limits<unsigned>::max)()),
+        max_arg_id_((std::numeric_limits<unsigned>::min)()),
         context_(format_str, eh),
         parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
 
+  FMT_CONSTEXPR void on_text_end() {
+    // Do not check when using manual indexing.
+    if (max_arg_id_ == (std::numeric_limits<unsigned>::max)()) return;
+
+    if (((arg_id_ == (std::numeric_limits<unsigned>::max)()) &&
+         (num_args > 0)) ||            // No argument used.
+        (num_args > max_arg_id_ + 1))  // More arguments given than used.
+      return on_error("too many arguments");
+  }
+
   FMT_CONSTEXPR void on_arg_id() {
     arg_id_ = context_.next_arg_id();
+    max_arg_id_ = ((arg_id_ > max_arg_id_) ? arg_id_ : max_arg_id_);
     check_arg_id();
   }
   FMT_CONSTEXPR void on_arg_id(int id) {
     arg_id_ = id;
+    // Do not check for too many arguments when using manual argument indexing.
+    max_arg_id_ = (std::numeric_limits<unsigned>::max)();
     context_.check_arg_id(id);
     check_arg_id();
   }
@@ -2551,6 +2568,7 @@ class format_string_checker {
   using parse_func = const Char* (*)(parse_context_type&);
 
   unsigned arg_id_;
+  unsigned max_arg_id_;
   parse_context_type context_;
   parse_func parse_funcs_[num_args > 0 ? num_args : 1];
 };
@@ -3163,6 +3181,8 @@ struct format_handler : internal::error_handler {
     it = std::copy_n(begin, size, it);
     context.advance_to(out);
   }
+
+  void on_text_end() {}
 
   void get_arg(int id) { arg = internal::get_arg(context, id); }
 

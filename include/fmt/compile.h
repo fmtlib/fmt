@@ -9,6 +9,7 @@
 #define FMT_COMPILE_H_
 
 #include <vector>
+
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
@@ -108,6 +109,8 @@ class format_preparation_handler : public internal::error_handler {
     const auto size = end - begin;
     parts_.push_back(part(string_view_metadata(offset, size)));
   }
+
+  FMT_CONSTEXPR void on_text_end() {}
 
   FMT_CONSTEXPR void on_arg_id() {
     parts_.push_back(part(parse_context_.next_arg_id()));
@@ -266,6 +269,8 @@ template <typename Char> struct part_counter {
   FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
     if (begin != end) ++num_parts;
   }
+
+  FMT_CONSTEXPR void on_text_end() {}
 
   FMT_CONSTEXPR void on_arg_id() { ++num_parts; }
   FMT_CONSTEXPR void on_arg_id(unsigned) { ++num_parts; }
