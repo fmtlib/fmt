@@ -1906,9 +1906,11 @@ TEST(FormatTest, FormatterNotSpecialized) {
 }
 
 #if FMT_HAS_FEATURE(cxx_strong_enums)
-enum TestFixedEnum : short { B = 1 };
+enum big_enum : unsigned long long { big_enum_value = 5000000000ULL };
 
-TEST(FormatTest, FixedEnum) { EXPECT_EQ("1", fmt::format("{}", B)); }
+TEST(FormatTest, StrongEnum) {
+  EXPECT_EQ("5000000000", fmt::format("{}", big_enum_value));
+}
 #endif
 
 using buffer_range = fmt::buffer_range<char>;
