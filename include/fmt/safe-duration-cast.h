@@ -62,7 +62,7 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
 
   if (F::is_signed && !T::is_signed) {
     // From may be negative, not allowed!
-    if (from < 0) {
+    if (fmt::internal::is_negative(from)) {
       ec = 1;
       return {};
     }
@@ -182,14 +182,12 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
   }
   // multiply with Factor::num without overflow or underflow
   if (Factor::num != 1) {
-    constexpr auto max1 =
-        std::numeric_limits<IntermediateRep>::max() / Factor::num;
+    const auto max1 = std::numeric_limits<IntermediateRep>::max() / Factor::num;
     if (count > max1) {
       ec = 1;
       return {};
     }
-    constexpr auto min1 =
-        std::numeric_limits<IntermediateRep>::min() / Factor::num;
+    const auto min1 = std::numeric_limits<IntermediateRep>::min() / Factor::num;
     if (count < min1) {
       ec = 1;
       return {};
