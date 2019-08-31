@@ -264,6 +264,10 @@ The available presentation types for floating-point values are:
 |         | ``'E'`` if the number gets too large. The                |
 |         | representations of infinity and NaN are uppercased, too. |
 +---------+----------------------------------------------------------+
+| ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
+|         | the current locale setting to insert the appropriate     |
+|         | number separator characters.                             |
++---------+----------------------------------------------------------+
 | ``'%'`` | Fixed point as a percentage. This is similar to ``'f'``, |
 |         | but the argument is multiplied by 100 and a percent sign |
 |         | ``%`` is appended.                                       |
