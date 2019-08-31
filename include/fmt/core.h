@@ -825,8 +825,8 @@ template <typename Context> struct arg_mapper {
             FMT_ENABLE_IF(std::is_enum<T>::value &&
                           !has_formatter<T, Context>::value &&
                           !has_fallback_formatter<T, Context>::value)>
-  FMT_CONSTEXPR int map(const T& val) {
-    return static_cast<int>(val);
+  FMT_CONSTEXPR auto map(const T& val) -> decltype(map(static_cast<typename std::underlying_type<T>::type>(val))) {
+    return map(static_cast<typename std::underlying_type<T>::type>(val));
   }
   template <typename T,
             FMT_ENABLE_IF(!is_string<T>::value && !is_char<T>::value &&

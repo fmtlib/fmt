@@ -1906,9 +1906,9 @@ TEST(FormatTest, FormatterNotSpecialized) {
 }
 
 #if FMT_HAS_FEATURE(cxx_strong_enums)
-enum TestFixedEnum : short { B };
+enum TestFixedEnum : short { B = 1 };
 
-TEST(FormatTest, FixedEnum) { EXPECT_EQ("0", fmt::format("{}", B)); }
+TEST(FormatTest, FixedEnum) { EXPECT_EQ("1", fmt::format("{}", B)); }
 #endif
 
 using buffer_range = fmt::buffer_range<char>;
