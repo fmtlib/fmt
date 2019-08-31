@@ -1894,6 +1894,11 @@ TEST(FormatTest, UdlTemplate) {
   EXPECT_EQ("foo", "foo"_format());
   EXPECT_EQ("        42", "{0:10}"_format(42));
 }
+
+TEST(FormatTest, UdlPassUserDefinedObjectAsLvalue) {
+  Date date(2015, 10, 21);
+  EXPECT_EQ("2015-10-21", "{}"_format(date));
+}
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 
 enum TestEnum { A };

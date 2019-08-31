@@ -207,6 +207,8 @@ template <typename T>
 using remove_reference_t = typename std::remove_reference<T>::type;
 template <typename T>
 using remove_const_t = typename std::remove_const<T>::type;
+template <typename T>
+using remove_cvref_t = typename std::remove_cv<remove_reference_t<T>>::type;
 
 struct monostate {};
 

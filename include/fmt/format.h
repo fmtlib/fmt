@@ -3466,7 +3466,7 @@ template <typename Char, Char... CHARS> class udl_formatter {
   std::basic_string<Char> operator()(Args&&... args) const {
     FMT_CONSTEXPR_DECL Char s[] = {CHARS..., '\0'};
     FMT_CONSTEXPR_DECL bool invalid_format =
-        do_check_format_string<Char, error_handler, Args...>(
+        do_check_format_string<Char, error_handler, remove_cvref_t<Args>...>(
             basic_string_view<Char>(s, sizeof...(CHARS)));
     (void)invalid_format;
     return format(s, std::forward<Args>(args)...);
