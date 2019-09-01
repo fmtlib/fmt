@@ -34,7 +34,8 @@ template <typename Char> struct format_part {
     FMT_CONSTEXPR value(basic_string_view<Char> s) : str(s) {}
     FMT_CONSTEXPR value(replacement r) : repl(r) {}
   } val;
-  std::size_t arg_id_end = 0;  // Position past the end of the argument id.
+  // Position past the end of the argument id.
+  const Char* arg_id_end = nullptr;
 
   FMT_CONSTEXPR format_part(kind k = kind::arg_index, value v = {})
       : part_kind(k), val(v) {}
@@ -97,6 +98,11 @@ class format_string_compiler : public error_handler {
  private:
   using part = format_part<Char>;
 
+  PartHandler handler_;
+  part part_;
+  basic_string_view<Char> format_str_;
+  basic_parse_context<Char> parse_context_;
+
  public:
   FMT_CONSTEXPR format_string_compiler(basic_string_view<Char> format_str,
                                        PartHandler handler)
@@ -123,34 +129,25 @@ class format_string_compiler : public error_handler {
   }
 
   FMT_CONSTEXPR void on_replacement_field(const Char* ptr) {
-    part_.arg_id_end = ptr - format_str_.begin();
+    part_.arg_id_end = ptr;
     handler_(part_);
   }
 
   FMT_CONSTEXPR const Char* on_format_specs(const Char* begin,
                                             const Char* end) {
-    const auto specs_offset = to_unsigned(begin - format_str_.begin());
-
     auto repl = typename part::replacement();
     dynamic_specs_handler<basic_parse_context<Char>> handler(repl.specs,
                                                              parse_context_);
-    begin = parse_format_specs(begin, end, handler);
-    if (*begin != '}') on_error("missing '}' in format string");
-
+    auto it = parse_format_specs(begin, end, handler);
+    if (*it != '}') on_error("missing '}' in format string");
     repl.arg_id = part_.part_kind == part::kind::arg_index
                       ? arg_ref<Char>(part_.val.arg_index)
                       : arg_ref<Char>(part_.val.str);
     auto part = part::make_replacement(repl);
-    part.arg_id_end = specs_offset;
+    part.arg_id_end = begin;
     handler_(part);
-    return begin;
+    return it;
   }
-
- private:
-  PartHandler handler_;
-  part part_;
-  basic_string_view<Char> format_str_;
-  basic_parse_context<Char> parse_context_;
 };
 
 // Compiles a format string and invokes handler(part) for each parsed part.
@@ -162,101 +159,93 @@ FMT_CONSTEXPR void compile_format_string(basic_string_view<Char> format_str,
       format_string_compiler<Char, PartHandler>(format_str, handler));
 }
 
-template <typename Format, typename PreparedPartsProvider, typename... Args>
-class compiled_format {
- public:
-  using char_type = char_t<Format>;
-  using format_part_t = format_part<char_type>;
+template <typename Range, typename Context, typename Id>
+void format_arg(basic_parse_context<typename Range::value_type>& parse_ctx,
+                Context& ctx, Id arg_id) {
+  ctx.advance_to(
+      visit_format_arg(arg_formatter<Range>(ctx, &parse_ctx), ctx.arg(arg_id)));
+}
 
-  constexpr compiled_format(Format f)
-      : format_(std::move(f)), parts_provider_(to_string_view(format_)) {}
+// vformat_to is defined in a subnamespace to prevent ADL.
+namespace cf {
+template <typename Context, typename Range, typename CompiledFormat>
+auto vformat_to(Range out, CompiledFormat& cf, basic_format_args<Context> args)
+    -> typename Context::iterator {
+  using char_type = typename Context::char_type;
+  basic_parse_context<char_type> parse_ctx(to_string_view(cf.format_));
+  Context ctx(out.begin(), args);
+
+  const auto& parts = cf.parts_provider_.parts();
+  for (auto part_it = parts.begin(); part_it != parts.end(); ++part_it) {
+    const auto& part = *part_it;
+    const auto& value = part.val;
+
+    using format_part_t = format_part<char_type>;
+    switch (part.part_kind) {
+    case format_part_t::kind::text: {
+      const auto text = value.str;
+      auto output = ctx.out();
+      auto&& it = reserve(output, text.size());
+      it = std::copy_n(text.begin(), text.size(), it);
+      ctx.advance_to(output);
+    } break;
+
+    case format_part_t::kind::arg_index:
+      advance_to(parse_ctx, part.arg_id_end);
+      internal::format_arg<Range>(parse_ctx, ctx, value.arg_index);
+      break;
+
+    case format_part_t::kind::arg_name:
+      advance_to(parse_ctx, part.arg_id_end);
+      internal::format_arg<Range>(parse_ctx, ctx, value.str);
+      break;
+
+    case format_part_t::kind::replacement: {
+      const auto& arg_id_value = value.repl.arg_id.val;
+      const auto arg = value.repl.arg_id.kind == arg_id_kind::index
+                           ? ctx.arg(arg_id_value.index)
+                           : ctx.arg(arg_id_value.name);
+
+      auto specs = value.repl.specs;
+
+      handle_dynamic_spec<width_checker>(specs.width, specs.width_ref, ctx);
+      handle_dynamic_spec<precision_checker>(specs.precision,
+                                             specs.precision_ref, ctx);
+
+      error_handler h;
+      numeric_specs_checker<error_handler> checker(h, arg.type());
+      if (specs.align == align::numeric) checker.require_numeric_argument();
+      if (specs.sign != sign::none) checker.check_sign();
+      if (specs.alt) checker.require_numeric_argument();
+      if (specs.precision >= 0) checker.check_precision();
+
+      advance_to(parse_ctx, part.arg_id_end);
+      ctx.advance_to(
+          visit_format_arg(arg_formatter<Range>(ctx, nullptr, &specs), arg));
+    } break;
+    }
+  }
+  return ctx.out();
+}
+}  // namespace cf
+
+template <typename S, typename PreparedPartsProvider, typename... Args>
+class compiled_format {
+ private:
+  S format_;
+  PreparedPartsProvider parts_provider_;
+
+  template <typename Context, typename Range, typename CompiledFormat>
+  friend auto cf::vformat_to(Range out, CompiledFormat& cf,
+                             basic_format_args<Context> args) ->
+      typename Context::iterator;
+
+ public:
+  using char_type = char_t<S>;
 
   compiled_format() = delete;
-
-  template <typename Range, typename Context>
-  auto vformat_to(Range out, basic_format_args<Context> args) const ->
-      typename Context::iterator {
-    const auto format_view = internal::to_string_view(format_);
-    basic_parse_context<char_type> parse_ctx(format_view);
-    Context ctx(out.begin(), args);
-
-    const auto& parts = parts_provider_.parts();
-    for (auto part_it = parts.begin(); part_it != parts.end(); ++part_it) {
-      const auto& part = *part_it;
-      const auto& value = part.val;
-
-      switch (part.part_kind) {
-      case format_part_t::kind::text: {
-        const auto text = value.str;
-        auto output = ctx.out();
-        auto&& it = internal::reserve(output, text.size());
-        it = std::copy_n(text.begin(), text.size(), it);
-        ctx.advance_to(output);
-      } break;
-
-      case format_part_t::kind::arg_index: {
-        advance_parse_context_to_specification(parse_ctx, part);
-        format_arg<Range>(parse_ctx, ctx, value.arg_index);
-      } break;
-
-      case format_part_t::kind::arg_name: {
-        advance_parse_context_to_specification(parse_ctx, part);
-        format_arg<Range>(parse_ctx, ctx, value.str);
-      } break;
-      case format_part_t::kind::replacement: {
-        const auto& arg_id_value = value.repl.arg_id.val;
-        const auto arg = value.repl.arg_id.kind == arg_id_kind::index
-                             ? ctx.arg(arg_id_value.index)
-                             : ctx.arg(arg_id_value.name);
-
-        auto specs = value.repl.specs;
-
-        handle_dynamic_spec<internal::width_checker>(
-            specs.width, specs.width_ref, ctx, format_view.begin());
-        handle_dynamic_spec<internal::precision_checker>(
-            specs.precision, specs.precision_ref, ctx, format_view.begin());
-
-        check_prepared_specs(specs, arg.type());
-        advance_parse_context_to_specification(parse_ctx, part);
-        ctx.advance_to(
-            visit_format_arg(arg_formatter<Range>(ctx, nullptr, &specs), arg));
-      } break;
-      }
-    }
-
-    return ctx.out();
-  }
-
- private:
-  void advance_parse_context_to_specification(
-      basic_parse_context<char_type>& parse_ctx,
-      const format_part_t& part) const {
-    const auto view = to_string_view(format_);
-    const auto specification_begin = view.data() + part.arg_id_end;
-    advance_to(parse_ctx, specification_begin);
-  }
-
-  template <typename Range, typename Context, typename Id>
-  void format_arg(basic_parse_context<char_type>& parse_ctx, Context& ctx,
-                  Id arg_id) const {
-    ctx.advance_to(visit_format_arg(arg_formatter<Range>(ctx, &parse_ctx),
-                                    ctx.arg(arg_id)));
-  }
-
-  template <typename Char>
-  void check_prepared_specs(const basic_format_specs<Char>& specs,
-                            internal::type arg_type) const {
-    internal::error_handler h;
-    numeric_specs_checker<internal::error_handler> checker(h, arg_type);
-    if (specs.align == align::numeric) checker.require_numeric_argument();
-    if (specs.sign != sign::none) checker.check_sign();
-    if (specs.alt) checker.require_numeric_argument();
-    if (specs.precision >= 0) checker.check_precision();
-  }
-
- private:
-  Format format_;
-  PreparedPartsProvider parts_provider_;
+  constexpr compiled_format(S f)
+      : format_(std::move(f)), parts_provider_(to_string_view(format_)) {}
 };
 
 template <typename Format> class compiletime_prepared_parts_type_provider {
@@ -367,8 +356,8 @@ std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   basic_memory_buffer<Char> buffer;
   using range = buffer_range<Char>;
   using context = buffer_context<Char>;
-  cf.template vformat_to<range, context>(range(buffer),
-                                         {make_format_args<context>(args...)});
+  internal::cf::vformat_to<context>(range(buffer), cf,
+                                    {make_format_args<context>(args...)});
   return to_string(buffer);
 }
 
@@ -378,8 +367,8 @@ OutputIt format_to(OutputIt out, const CompiledFormat& cf,
   using char_type = typename CompiledFormat::char_type;
   using range = internal::output_range<OutputIt, char_type>;
   using context = format_context_t<OutputIt, char_type>;
-  return cf.template vformat_to<range, context>(
-      range(out), {make_format_args<context>(args...)});
+  return internal::cf::vformat_to<context>(
+      range(out), cf, {make_format_args<context>(args...)});
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,

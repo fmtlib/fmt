@@ -2556,8 +2556,7 @@ void check_format_string(S format_str) {
 
 template <template <typename> class Handler, typename Spec, typename Context>
 void handle_dynamic_spec(Spec& value, arg_ref<typename Context::char_type> ref,
-                         Context& ctx,
-                         const typename Context::char_type* format_str) {
+                         Context& ctx) {
   switch (ref.kind) {
   case arg_id_kind::none:
     break;
@@ -2935,13 +2934,12 @@ template <typename T, typename Char>
 struct formatter<T, Char,
                  enable_if_t<internal::type_constant<T, Char>::value !=
                              internal::custom_type>> {
-  FMT_CONSTEXPR formatter() : format_str_(nullptr) {}
+  FMT_CONSTEXPR formatter() {}
 
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    format_str_ = ctx.begin();
     using handler_type = internal::dynamic_specs_handler<ParseContext>;
     auto type = internal::type_constant<T, Char>::value;
     internal::specs_checker<handler_type> handler(handler_type(specs_, ctx),
@@ -2991,9 +2989,9 @@ struct formatter<T, Char,
   template <typename FormatContext>
   auto format(const T& val, FormatContext& ctx) -> decltype(ctx.out()) {
     internal::handle_dynamic_spec<internal::width_checker>(
-        specs_.width, specs_.width_ref, ctx, format_str_);
+        specs_.width, specs_.width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx, format_str_);
+        specs_.precision, specs_.precision_ref, ctx);
     using range_type =
         internal::output_range<typename FormatContext::iterator,
                                typename FormatContext::char_type>;
@@ -3003,7 +3001,6 @@ struct formatter<T, Char,
 
  private:
   internal::dynamic_format_specs<Char> specs_;
-  const Char* format_str_;
 };
 
 #define FMT_FORMAT_AS(Type, Base)                                             \
@@ -3104,9 +3101,9 @@ template <typename Char = char> class dynamic_formatter {
  private:
   template <typename Context> void handle_specs(Context& ctx) {
     internal::handle_dynamic_spec<internal::width_checker>(
-        specs_.width, specs_.width_ref, ctx, format_str_);
+        specs_.width, specs_.width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx, format_str_);
+        specs_.precision, specs_.precision_ref, ctx);
   }
 
   internal::dynamic_format_specs<Char> specs_;

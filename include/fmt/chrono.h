@@ -805,10 +805,10 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     auto out = std::back_inserter(buf);
     using range = internal::output_range<decltype(ctx.out()), Char>;
     internal::basic_writer<range> w(range(ctx.out()));
-    internal::handle_dynamic_spec<internal::width_checker>(
-        specs.width, width_ref, ctx, format_str.begin());
+    internal::handle_dynamic_spec<internal::width_checker>(specs.width,
+                                                           width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
-        precision, precision_ref, ctx, format_str.begin());
+        precision, precision_ref, ctx);
     if (begin == end || *begin == '}') {
       out = internal::format_chrono_duration_value(out, d.count(), precision);
       internal::format_chrono_duration_unit<Period>(out);

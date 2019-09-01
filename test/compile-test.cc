@@ -67,40 +67,6 @@ TEST(CompileTest, CompileTimePreparedPartsTypeProvider) {
 }
 #endif
 
-class custom_parts_container {
- public:
-  typedef fmt::internal::format_part<char> format_part_type;
-
- private:
-  typedef std::deque<format_part_type> parts;
-
- public:
-  void add(format_part_type part) { parts_.push_back(std::move(part)); }
-
-  void substitute_last(format_part_type part) {
-    parts_.back() = std::move(part);
-  }
-
-  format_part_type last() { return parts_.back(); }
-
-  auto begin() -> decltype(std::declval<parts>().begin()) {
-    return parts_.begin();
-  }
-
-  auto begin() const -> decltype(std::declval<const parts>().begin()) {
-    return parts_.begin();
-  }
-
-  auto end() -> decltype(std::declval<parts>().begin()) { return parts_.end(); }
-
-  auto end() const -> decltype(std::declval<const parts>().begin()) {
-    return parts_.end();
-  }
-
- private:
-  parts parts_;
-};
-
 TEST(CompileTest, PassStringLiteralFormat) {
   const auto prepared = fmt::compile<int>("test {}");
   EXPECT_EQ("test 42", fmt::format(prepared, 42));
@@ -155,12 +121,14 @@ TEST(CompileTest, FormattedSize) {
 
 struct formattable {};
 
+FMT_BEGIN_NAMESPACE
 template <>
-struct fmt::formatter<formattable> : formatter<const char*> {
+struct formatter<formattable> : formatter<const char*> {
   auto format(formattable, format_context& ctx) -> decltype(ctx.out()) {
     return formatter<const char*>::format("foo", ctx);
   }
 };
+FMT_END_NAMESPACE
 
 TEST(CompileTest, FormatUserDefinedType) {
   auto f = fmt::compile<formattable>("{}");
