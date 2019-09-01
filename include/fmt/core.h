@@ -195,6 +195,14 @@
 #  define FMT_USE_EXPERIMENTAL_STRING_VIEW
 #endif
 
+#ifdef FMT_USE_INT128
+// Do nothing.
+#elif defined(__SIZEOF_INT128__)
+#  define FMT_USE_INT128 1
+#else
+#  define FMT_USE_INT128 0
+#endif
+
 FMT_BEGIN_NAMESPACE
 
 // Implementations of enable_if_t and other types for pre-C++14 systems.
