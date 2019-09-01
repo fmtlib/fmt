@@ -14,116 +14,155 @@
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
+// Part of a compiled format string. It can be either literal text or a
+// replacement field.
 template <typename Char> struct format_part {
-  struct named_arg_id {
-    FMT_CONSTEXPR named_arg_id(string_view_metadata id) : id(id) {}
-    string_view_metadata id;
-  };
-
-  struct replacement {
-    FMT_CONSTEXPR replacement() : arg_id(0u) {}
-    FMT_CONSTEXPR replacement(unsigned id) : arg_id(id) {}
-
-    FMT_CONSTEXPR replacement(string_view_metadata id) : arg_id(id) {}
-
-    arg_ref<Char> arg_id;
-    dynamic_format_specs<Char> parsed_specs;
-  };
-
   enum class kind { arg_index, arg_name, text, replacement };
 
+  struct replacement {
+    arg_ref<Char> arg_id;
+    dynamic_format_specs<Char> specs;
+  };
+
   kind part_kind;
-  std::size_t end_of_argument_id;
   union value {
-    FMT_CONSTEXPR value() : arg_index(0u) {}
-    FMT_CONSTEXPR value(unsigned id) : arg_index(id) {}
-    FMT_CONSTEXPR value(named_arg_id named_id) : arg_name(named_id.id) {}
-    FMT_CONSTEXPR value(string_view_metadata t) : text(t) {}
-    FMT_CONSTEXPR value(replacement r) : repl(r) {}
     unsigned arg_index;
-    string_view_metadata arg_name;
-    string_view_metadata text;
+    string_view_metadata str;
     replacement repl;
+
+    FMT_CONSTEXPR value(unsigned index = 0) : arg_index(index) {}
+    FMT_CONSTEXPR value(string_view_metadata s) : str(s) {}
+    FMT_CONSTEXPR value(replacement r) : repl(r) {}
   } val;
+  std::size_t arg_id_end = 0;  // Position past the end of the argument id.
 
-  FMT_CONSTEXPR format_part()
-      : part_kind(kind::arg_index), end_of_argument_id(0u), val(0u) {}
+  FMT_CONSTEXPR format_part(kind k = kind::arg_index, value v = {})
+      : part_kind(k), val(v) {}
 
-  FMT_CONSTEXPR format_part(unsigned arg_index)
-      : part_kind(kind::arg_index), end_of_argument_id(0u), val(arg_index) {}
-
-  FMT_CONSTEXPR format_part(named_arg_id arg_name)
-      : part_kind(kind::arg_name), end_of_argument_id(0u), val(arg_name) {}
-
-  FMT_CONSTEXPR format_part(string_view_metadata text)
-      : part_kind(kind::text), end_of_argument_id(0u), val(text) {}
-
-  FMT_CONSTEXPR format_part(replacement repl)
-      : part_kind(kind::replacement), end_of_argument_id(0u), val(repl) {}
+  static FMT_CONSTEXPR format_part make_arg_index(unsigned index) {
+    return format_part(kind::arg_index, index);
+  }
+  static FMT_CONSTEXPR format_part make_arg_name(string_view_metadata name) {
+    return format_part(kind::arg_name, name);
+  }
+  static FMT_CONSTEXPR format_part make_text(string_view_metadata text) {
+    return format_part(kind::text, text);
+  }
+  static FMT_CONSTEXPR format_part make_replacement(replacement repl) {
+    return format_part(kind::replacement, repl);
+  }
 };
 
-template <typename Char, typename PartsContainer>
-class format_preparation_handler : public internal::error_handler {
+template <typename Char> struct part_counter {
+  unsigned num_parts = 0;
+
+  FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
+    if (begin != end) ++num_parts;
+  }
+
+  FMT_CONSTEXPR void on_arg_id() { ++num_parts; }
+  FMT_CONSTEXPR void on_arg_id(unsigned) { ++num_parts; }
+  FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) { ++num_parts; }
+
+  FMT_CONSTEXPR void on_replacement_field(const Char*) {}
+
+  FMT_CONSTEXPR const Char* on_format_specs(const Char* begin,
+                                            const Char* end) {
+    // Find the matching brace.
+    unsigned brace_counter = 0;
+    for (; begin != end; ++begin) {
+      if (*begin == '{') {
+        ++brace_counter;
+      } else if (*begin == '}') {
+        if (brace_counter == 0u) break;
+        --brace_counter;
+      }
+    }
+    return begin;
+  }
+
+  FMT_CONSTEXPR void on_error(const char*) {}
+};
+
+// Counts the number of parts in a format string.
+template <typename Char>
+FMT_CONSTEXPR unsigned count_parts(basic_string_view<Char> format_str) {
+  part_counter<Char> counter;
+  parse_format_string<true>(format_str, counter);
+  return counter.num_parts;
+}
+
+template <typename Char, typename PartHandler>
+class format_string_compiler : public error_handler {
  private:
   using part = format_part<Char>;
 
  public:
-  FMT_CONSTEXPR format_preparation_handler(basic_string_view<Char> format,
-                                           PartsContainer& parts)
-      : parts_(parts), format_(format), parse_context_(format) {}
+  FMT_CONSTEXPR format_string_compiler(basic_string_view<Char> format_str,
+                                       PartHandler handler)
+      : handler_(handler),
+        format_str_(format_str),
+        parse_context_(format_str) {}
 
   FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
     if (begin == end) return;
-    const auto offset = begin - format_.data();
+    const auto offset = begin - format_str_.data();
     const auto size = end - begin;
-    parts_.push_back(part(string_view_metadata(offset, size)));
+    handler_(part::make_text(string_view_metadata(offset, size)));
   }
 
   FMT_CONSTEXPR void on_arg_id() {
-    parts_.push_back(part(parse_context_.next_arg_id()));
+    part_ = part::make_arg_index(parse_context_.next_arg_id());
   }
 
   FMT_CONSTEXPR void on_arg_id(unsigned id) {
     parse_context_.check_arg_id(id);
-    parts_.push_back(part(id));
+    part_ = part::make_arg_index(id);
   }
 
   FMT_CONSTEXPR void on_arg_id(basic_string_view<Char> id) {
-    const auto view = string_view_metadata(format_, id);
-    const auto arg_id = typename part::named_arg_id(view);
-    parts_.push_back(part(arg_id));
+    part_ = part::make_arg_name(string_view_metadata(format_str_, id));
   }
 
   FMT_CONSTEXPR void on_replacement_field(const Char* ptr) {
-    parts_.back().end_of_argument_id = ptr - format_.begin();
+    part_.arg_id_end = ptr - format_str_.begin();
+    handler_(part_);
   }
 
   FMT_CONSTEXPR const Char* on_format_specs(const Char* begin,
                                             const Char* end) {
-    const auto specs_offset = to_unsigned(begin - format_.begin());
+    const auto specs_offset = to_unsigned(begin - format_str_.begin());
 
-    using parse_context = basic_parse_context<Char>;
-    internal::dynamic_format_specs<Char> parsed_specs;
-    dynamic_specs_handler<parse_context> handler(parsed_specs, parse_context_);
+    auto repl = typename part::replacement();
+    dynamic_specs_handler<basic_parse_context<Char>> handler(repl.specs,
+                                                             parse_context_);
     begin = parse_format_specs(begin, end, handler);
-
     if (*begin != '}') on_error("missing '}' in format string");
 
-    auto& last_part = parts_.back();
-    auto specs = last_part.part_kind == part::kind::arg_index
-                     ? typename part::replacement(last_part.val.arg_index)
-                     : typename part::replacement(last_part.val.arg_name);
-    specs.parsed_specs = parsed_specs;
-    last_part = part(specs);
-    last_part.end_of_argument_id = specs_offset;
+    repl.arg_id = part_.part_kind == part::kind::arg_index
+                      ? arg_ref<Char>(part_.val.arg_index)
+                      : arg_ref<Char>(part_.val.str);
+    auto part = part::make_replacement(repl);
+    part.arg_id_end = specs_offset;
+    handler_(part);
     return begin;
   }
 
  private:
-  PartsContainer& parts_;
-  basic_string_view<Char> format_;
+  PartHandler handler_;
+  part part_;
+  basic_string_view<Char> format_str_;
   basic_parse_context<Char> parse_context_;
 };
+
+// Compiles a format string and invokes handler(part) for each parsed part.
+template <bool IS_CONSTEXPR, typename Char, typename PartHandler>
+FMT_CONSTEXPR void compile_format_string(basic_string_view<Char> format_str,
+                                         PartHandler handler) {
+  parse_format_string<IS_CONSTEXPR>(
+      format_str,
+      format_string_compiler<Char, PartHandler>(format_str, handler));
+}
 
 template <typename Format, typename PreparedPartsProvider, typename... Args>
 class compiled_format {
@@ -152,7 +191,7 @@ class compiled_format {
 
       switch (part.part_kind) {
       case format_part_t::kind::text: {
-        const auto text = value.text.to_view(format_view.data());
+        const auto text = value.str.to_view(format_view.data());
         auto output = ctx.out();
         auto&& it = internal::reserve(output, text.size());
         it = std::copy_n(text.begin(), text.size(), it);
@@ -166,7 +205,7 @@ class compiled_format {
 
       case format_part_t::kind::arg_name: {
         advance_parse_context_to_specification(parse_ctx, part);
-        const auto named_arg_id = value.arg_name.to_view(format_view.data());
+        const auto named_arg_id = value.str.to_view(format_view.data());
         format_arg<Range>(parse_ctx, ctx, named_arg_id);
       } break;
       case format_part_t::kind::replacement: {
@@ -176,7 +215,7 @@ class compiled_format {
                              : ctx.arg(arg_id_value.name.to_view(
                                    to_string_view(format_).data()));
 
-        auto specs = value.repl.parsed_specs;
+        auto specs = value.repl.specs;
 
         handle_dynamic_spec<internal::width_checker>(
             specs.width, specs.width_ref, ctx, format_view.begin());
@@ -199,7 +238,7 @@ class compiled_format {
       basic_parse_context<char_type>& parse_ctx,
       const format_part_t& part) const {
     const auto view = to_string_view(format_);
-    const auto specification_begin = view.data() + part.end_of_argument_id;
+    const auto specification_begin = view.data() + part.arg_id_end;
     advance_to(parse_ctx, specification_begin);
   }
 
@@ -228,53 +267,15 @@ class compiled_format {
   PreparedPartsProvider parts_provider_;
 };
 
-template <typename Char> struct part_counter {
-  unsigned num_parts = 0;
-
-  FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
-    if (begin != end) ++num_parts;
-  }
-
-  FMT_CONSTEXPR void on_arg_id() { ++num_parts; }
-  FMT_CONSTEXPR void on_arg_id(unsigned) { ++num_parts; }
-  FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) { ++num_parts; }
-
-  FMT_CONSTEXPR void on_replacement_field(const Char*) {}
-
-  FMT_CONSTEXPR const Char* on_format_specs(const Char* begin,
-                                            const Char* end) {
-    // Find the matching brace.
-    unsigned braces_counter = 0;
-    for (; begin != end; ++begin) {
-      if (*begin == '{') {
-        ++braces_counter;
-      } else if (*begin == '}') {
-        if (braces_counter == 0u) break;
-        --braces_counter;
-      }
-    }
-    return begin;
-  }
-
-  FMT_CONSTEXPR void on_error(const char*) {}
-};
-
 template <typename Format> class compiletime_prepared_parts_type_provider {
  private:
   using char_type = char_t<Format>;
-
-  static FMT_CONSTEXPR unsigned count_parts() {
-    FMT_CONSTEXPR_DECL const auto text = to_string_view(Format{});
-    part_counter<char_type> counter;
-    internal::parse_format_string</*IS_CONSTEXPR=*/true>(text, counter);
-    return counter.num_parts;
-  }
 
 // Workaround for old compilers. Compiletime parts preparation will not be
 // performed with them anyway.
 #if FMT_USE_CONSTEXPR
   static FMT_CONSTEXPR_DECL const unsigned number_of_format_parts =
-      compiletime_prepared_parts_type_provider::count_parts();
+      count_parts(to_string_view(Format()));
 #else
   static const unsigned number_of_format_parts = 0u;
 #endif
@@ -303,32 +304,19 @@ template <typename Format> class compiletime_prepared_parts_type_provider {
                              format_parts_array<number_of_format_parts>, empty>;
 };
 
-template <typename Parts> class compiletime_prepared_parts_collector {
- private:
-  using format_part = typename Parts::value_type;
-
- public:
-  FMT_CONSTEXPR explicit compiletime_prepared_parts_collector(Parts& parts)
-      : parts_{parts}, counter_{0u} {}
-
-  FMT_CONSTEXPR void push_back(format_part part) { parts_[counter_++] = part; }
-
-  FMT_CONSTEXPR format_part& back() { return parts_[counter_ - 1]; }
-
- private:
-  Parts& parts_;
-  unsigned counter_;
-};
-
 template <typename PartsContainer, typename Char>
 FMT_CONSTEXPR PartsContainer
-prepare_compiletime_parts(basic_string_view<Char> format) {
-  using collector = compiletime_prepared_parts_collector<PartsContainer>;
-
+prepare_compiletime_parts(basic_string_view<Char> format_str) {
+  // This is not a lambda for compatibility with older compilers.
+  struct collector {
+    PartsContainer& parts;
+    unsigned counter = 0;
+    FMT_CONSTEXPR void operator()(const format_part<Char>& part) {
+      parts[counter++] = part;
+    }
+  };
   PartsContainer parts;
-  collector c(parts);
-  internal::parse_format_string</*IS_CONSTEXPR=*/true>(
-      format, format_preparation_handler<Char, collector>(format, c));
+  compile_format_string<true>(format_str, collector{parts});
   return parts;
 }
 
@@ -336,10 +324,10 @@ template <typename Char> class runtime_parts_provider {
  public:
   using parts_container = std::vector<internal::format_part<Char>>;
 
-  runtime_parts_provider(basic_string_view<Char> format) {
-    internal::parse_format_string<false>(
-        format,
-        format_preparation_handler<Char, parts_container>(format, parts_));
+  runtime_parts_provider(basic_string_view<Char> format_str) {
+    compile_format_string<false>(
+        format_str,
+        [this](const format_part<Char>& part) { parts_.push_back(part); });
   }
 
   const parts_container& parts() const { return parts_; }
