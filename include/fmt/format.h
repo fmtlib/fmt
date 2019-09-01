@@ -123,14 +123,6 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
-#ifdef FMT_USE_INT128
-// Do nothing.
-#elif defined(__SIZEOF_INT128__)
-#  define FMT_USE_INT128 1
-#else
-#  define FMT_USE_INT128 0
-#endif
-
 // __builtin_clz is broken in clang with Microsoft CodeGen:
 // https://github.com/fmtlib/fmt/issues/519
 #if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clz)) && !FMT_MSC_VER
