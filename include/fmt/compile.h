@@ -27,11 +27,11 @@ template <typename Char> struct format_part {
   kind part_kind;
   union value {
     unsigned arg_index;
-    string_view_metadata str;
+    basic_string_view<Char> str;
     replacement repl;
 
     FMT_CONSTEXPR value(unsigned index = 0) : arg_index(index) {}
-    FMT_CONSTEXPR value(string_view_metadata s) : str(s) {}
+    FMT_CONSTEXPR value(basic_string_view<Char> s) : str(s) {}
     FMT_CONSTEXPR value(replacement r) : repl(r) {}
   } val;
   std::size_t arg_id_end = 0;  // Position past the end of the argument id.
@@ -42,10 +42,10 @@ template <typename Char> struct format_part {
   static FMT_CONSTEXPR format_part make_arg_index(unsigned index) {
     return format_part(kind::arg_index, index);
   }
-  static FMT_CONSTEXPR format_part make_arg_name(string_view_metadata name) {
+  static FMT_CONSTEXPR format_part make_arg_name(basic_string_view<Char> name) {
     return format_part(kind::arg_name, name);
   }
-  static FMT_CONSTEXPR format_part make_text(string_view_metadata text) {
+  static FMT_CONSTEXPR format_part make_text(basic_string_view<Char> text) {
     return format_part(kind::text, text);
   }
   static FMT_CONSTEXPR format_part make_replacement(replacement repl) {
@@ -105,10 +105,8 @@ class format_string_compiler : public error_handler {
         parse_context_(format_str) {}
 
   FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
-    if (begin == end) return;
-    const auto offset = begin - format_str_.data();
-    const auto size = end - begin;
-    handler_(part::make_text(string_view_metadata(offset, size)));
+    if (begin != end)
+      handler_(part::make_text({begin, to_unsigned(end - begin)}));
   }
 
   FMT_CONSTEXPR void on_arg_id() {
@@ -121,7 +119,7 @@ class format_string_compiler : public error_handler {
   }
 
   FMT_CONSTEXPR void on_arg_id(basic_string_view<Char> id) {
-    part_ = part::make_arg_name(string_view_metadata(format_str_, id));
+    part_ = part::make_arg_name(id);
   }
 
   FMT_CONSTEXPR void on_replacement_field(const Char* ptr) {
@@ -191,7 +189,7 @@ class compiled_format {
 
       switch (part.part_kind) {
       case format_part_t::kind::text: {
-        const auto text = value.str.to_view(format_view.data());
+        const auto text = value.str;
         auto output = ctx.out();
         auto&& it = internal::reserve(output, text.size());
         it = std::copy_n(text.begin(), text.size(), it);
@@ -205,15 +203,14 @@ class compiled_format {
 
       case format_part_t::kind::arg_name: {
         advance_parse_context_to_specification(parse_ctx, part);
-        const auto named_arg_id = value.str.to_view(format_view.data());
+        const auto named_arg_id = value.str;
         format_arg<Range>(parse_ctx, ctx, named_arg_id);
       } break;
       case format_part_t::kind::replacement: {
         const auto& arg_id_value = value.repl.arg_id.val;
         const auto arg = value.repl.arg_id.kind == arg_id_kind::index
                              ? ctx.arg(arg_id_value.index)
-                             : ctx.arg(arg_id_value.name.to_view(
-                                   to_string_view(format_).data()));
+                             : ctx.arg(arg_id_value.name);
 
         auto specs = value.repl.specs;
 

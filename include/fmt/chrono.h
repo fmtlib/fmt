@@ -738,8 +738,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
 
     FMT_CONSTEXPR arg_ref_type make_arg_ref(basic_string_view<Char> arg_id) {
       context.check_arg_id(arg_id);
-      const auto str_val = internal::string_view_metadata(format_str, arg_id);
-      return arg_ref_type(str_val);
+      return arg_ref_type(arg_id);
     }
 
     FMT_CONSTEXPR arg_ref_type make_arg_ref(internal::auto_id) {

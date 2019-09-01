@@ -2114,24 +2114,6 @@ class specs_handler : public specs_setter<typename Context::char_type> {
   Context& context_;
 };
 
-struct string_view_metadata {
-  FMT_CONSTEXPR string_view_metadata() : offset_(0u), size_(0u) {}
-  template <typename Char>
-  FMT_CONSTEXPR string_view_metadata(basic_string_view<Char> primary_string,
-                                     basic_string_view<Char> view)
-      : offset_(to_unsigned(view.data() - primary_string.data())),
-        size_(view.size()) {}
-  FMT_CONSTEXPR string_view_metadata(std::size_t offset, std::size_t size)
-      : offset_(offset), size_(size) {}
-  template <typename Char>
-  FMT_CONSTEXPR basic_string_view<Char> to_view(const Char* str) const {
-    return {str + offset_, size_};
-  }
-
-  std::size_t offset_;
-  std::size_t size_;
-};
-
 enum class arg_id_kind { none, index, name };
 
 // An argument reference.
@@ -2139,7 +2121,7 @@ template <typename Char> struct arg_ref {
   FMT_CONSTEXPR arg_ref() : kind(arg_id_kind::none), val() {}
   FMT_CONSTEXPR explicit arg_ref(int index)
       : kind(arg_id_kind::index), val(index) {}
-  FMT_CONSTEXPR explicit arg_ref(string_view_metadata name)
+  FMT_CONSTEXPR explicit arg_ref(basic_string_view<Char> name)
       : kind(arg_id_kind::name), val(name) {}
 
   FMT_CONSTEXPR arg_ref& operator=(int idx) {
@@ -2152,10 +2134,10 @@ template <typename Char> struct arg_ref {
   union value {
     FMT_CONSTEXPR value() : index(0u) {}
     FMT_CONSTEXPR value(int id) : index(id) {}
-    FMT_CONSTEXPR value(string_view_metadata n) : name(n) {}
+    FMT_CONSTEXPR value(basic_string_view<Char> n) : name(n) {}
 
     int index;
-    string_view_metadata name;
+    basic_string_view<Char> name;
   } val;
 };
 
@@ -2213,8 +2195,7 @@ class dynamic_specs_handler
     context_.check_arg_id(arg_id);
     basic_string_view<char_type> format_str(
         context_.begin(), to_unsigned(context_.end() - context_.begin()));
-    const auto id_metadata = string_view_metadata(format_str, arg_id);
-    return arg_ref_type(id_metadata);
+    return arg_ref_type(arg_id);
   }
 
   dynamic_format_specs<char_type>& specs_;
@@ -2585,7 +2566,7 @@ void handle_dynamic_spec(Spec& value, arg_ref<typename Context::char_type> ref,
                                         ctx.error_handler());
     break;
   case arg_id_kind::name: {
-    const auto arg_id = ref.val.name.to_view(format_str);
+    const auto arg_id = ref.val.name;
     internal::set_dynamic_spec<Handler>(value, ctx.arg(arg_id),
                                         ctx.error_handler());
     break;
