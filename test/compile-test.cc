@@ -39,14 +39,12 @@ using testing::StrictMock;
 #if FMT_USE_CONSTEXPR
 template <unsigned EXPECTED_PARTS_COUNT, typename Format>
 void check_prepared_parts_type(Format format) {
-  typedef fmt::internal::compiletime_prepared_parts_type_provider<decltype(
-      format)>
-      provider;
-  typedef typename provider::template format_parts_array<EXPECTED_PARTS_COUNT>
-      expected_parts_type;
-  static_assert(
-      std::is_same<typename provider::type, expected_parts_type>::value,
-      "CompileTimePreparedPartsTypeProvider test failed");
+  typedef fmt::internal::compiled_format_base<decltype(format)> provider;
+  typedef fmt::internal::format_part<char>
+      expected_parts_type[EXPECTED_PARTS_COUNT];
+  static_assert(std::is_same<typename provider::parts_container,
+                             expected_parts_type>::value,
+                "CompileTimePreparedPartsTypeProvider test failed");
 }
 
 TEST(CompileTest, CompileTimePreparedPartsTypeProvider) {
@@ -122,8 +120,7 @@ TEST(CompileTest, FormattedSize) {
 struct formattable {};
 
 FMT_BEGIN_NAMESPACE
-template <>
-struct formatter<formattable> : formatter<const char*> {
+template <> struct formatter<formattable> : formatter<const char*> {
   auto format(formattable, format_context& ctx) -> decltype(ctx.out()) {
     return formatter<const char*>::format("foo", ctx);
   }
@@ -133,4 +130,9 @@ FMT_END_NAMESPACE
 TEST(CompileTest, FormatUserDefinedType) {
   auto f = fmt::compile<formattable>("{}");
   EXPECT_EQ(fmt::format(f, formattable()), "foo");
+}
+
+TEST(CompileTest, EmptyFormatString) {
+  auto f = fmt::compile<>("");
+  EXPECT_EQ(fmt::format(f), "");
 }

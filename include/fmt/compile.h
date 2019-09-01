@@ -172,11 +172,12 @@ template <typename Context, typename Range, typename CompiledFormat>
 auto vformat_to(Range out, CompiledFormat& cf, basic_format_args<Context> args)
     -> typename Context::iterator {
   using char_type = typename Context::char_type;
-  basic_parse_context<char_type> parse_ctx(to_string_view(cf.format_));
+  basic_parse_context<char_type> parse_ctx(to_string_view(cf.format_str_));
   Context ctx(out.begin(), args);
 
-  const auto& parts = cf.parts_provider_.parts();
-  for (auto part_it = parts.begin(); part_it != parts.end(); ++part_it) {
+  const auto& parts = cf.parts();
+  for (auto part_it = std::begin(parts); part_it != std::end(parts);
+       ++part_it) {
     const auto& part = *part_it;
     const auto& value = part.val;
 
@@ -188,7 +189,8 @@ auto vformat_to(Range out, CompiledFormat& cf, basic_format_args<Context> args)
       auto&& it = reserve(output, text.size());
       it = std::copy_n(text.begin(), text.size(), it);
       ctx.advance_to(output);
-    } break;
+      break;
+    }
 
     case format_part_t::kind::arg_index:
       advance_to(parse_ctx, part.arg_id_end);
@@ -222,18 +224,92 @@ auto vformat_to(Range out, CompiledFormat& cf, basic_format_args<Context> args)
       advance_to(parse_ctx, part.arg_id_end);
       ctx.advance_to(
           visit_format_arg(arg_formatter<Range>(ctx, nullptr, &specs), arg));
-    } break;
+      break;
+    }
     }
   }
   return ctx.out();
 }
 }  // namespace cf
 
-template <typename S, typename PreparedPartsProvider, typename... Args>
-class compiled_format {
+template <typename S, typename = void> struct compiled_format_base {
+  using char_type = char_t<S>;
+  using parts_container = std::vector<internal::format_part<char_type>>;
+
+  parts_container compiled_parts;
+
+  explicit compiled_format_base(basic_string_view<char_type> format_str) {
+    compile_format_string<false>(format_str,
+                                 [this](const format_part<char_type>& part) {
+                                   compiled_parts.push_back(part);
+                                 });
+  }
+
+  const parts_container& parts() const { return compiled_parts; }
+};
+
+template <typename Char, unsigned N> struct format_part_array {
+  format_part<Char> data[N] = {};
+  FMT_CONSTEXPR format_part_array() = default;
+};
+
+template <typename Char, unsigned N>
+FMT_CONSTEXPR format_part_array<Char, N> compile_to_parts(
+    basic_string_view<Char> format_str) {
+  format_part_array<Char, N> parts;
+  unsigned counter = 0;
+  // This is not a lambda for compatibility with older compilers.
+  struct {
+    format_part<Char>* parts;
+    unsigned* counter;
+    FMT_CONSTEXPR void operator()(const format_part<Char>& part) {
+      parts[(*counter)++] = part;
+    }
+  } collector{parts.data, &counter};
+  compile_format_string<true>(format_str, collector);
+  if (counter < N) {
+    parts.data[counter] =
+        format_part<Char>::make_text(basic_string_view<Char>());
+  }
+  return parts;
+}
+
+template <typename T> constexpr const T& constexpr_max(const T& a, const T& b) {
+  return (a < b) ? b : a;
+}
+
+template <typename S>
+struct compiled_format_base<S, enable_if_t<is_compile_string<S>::value>> {
+  using char_type = char_t<S>;
+
+  FMT_CONSTEXPR explicit compiled_format_base(basic_string_view<char_type>) {}
+
+// Workaround for old compilers. Format string compilation will not be
+// performed there anyway.
+#if FMT_USE_CONSTEXPR
+  static FMT_CONSTEXPR_DECL const unsigned num_format_parts =
+      constexpr_max(count_parts(to_string_view(S())), 1u);
+#else
+  static const unsigned num_format_parts = 1;
+#endif
+
+  using parts_container = format_part<char_type>[num_format_parts];
+
+  const parts_container& parts() const {
+    static FMT_CONSTEXPR_DECL const auto compiled_parts =
+        compile_to_parts<char_type, num_format_parts>(
+            internal::to_string_view(S()));
+    return compiled_parts.data;
+  }
+};
+
+template <typename S, typename... Args>
+class compiled_format : private compiled_format_base<S> {
+ public:
+  using typename compiled_format_base<S>::char_type;
+
  private:
-  S format_;
-  PreparedPartsProvider parts_provider_;
+  basic_string_view<char_type> format_str_;
 
   template <typename Context, typename Range, typename CompiledFormat>
   friend auto cf::vformat_to(Range out, CompiledFormat& cf,
@@ -241,95 +317,9 @@ class compiled_format {
       typename Context::iterator;
 
  public:
-  using char_type = char_t<S>;
-
   compiled_format() = delete;
-  constexpr compiled_format(S f)
-      : format_(std::move(f)), parts_provider_(to_string_view(format_)) {}
-};
-
-template <typename Format> class compiletime_prepared_parts_type_provider {
- private:
-  using char_type = char_t<Format>;
-
-// Workaround for old compilers. Compiletime parts preparation will not be
-// performed with them anyway.
-#if FMT_USE_CONSTEXPR
-  static FMT_CONSTEXPR_DECL const unsigned number_of_format_parts =
-      count_parts(to_string_view(Format()));
-#else
-  static const unsigned number_of_format_parts = 0u;
-#endif
-
- public:
-  template <unsigned N> struct format_parts_array {
-    using value_type = format_part<char_type>;
-
-    FMT_CONSTEXPR format_parts_array() : arr{} {}
-
-    FMT_CONSTEXPR value_type& operator[](unsigned ind) { return arr[ind]; }
-
-    FMT_CONSTEXPR const value_type* begin() const { return arr; }
-    FMT_CONSTEXPR const value_type* end() const { return begin() + N; }
-
-   private:
-    value_type arr[N];
-  };
-
-  struct empty {
-    // Parts preparator will search for it
-    using value_type = format_part<char_type>;
-  };
-
-  using type = conditional_t<number_of_format_parts != 0,
-                             format_parts_array<number_of_format_parts>, empty>;
-};
-
-template <typename PartsContainer, typename Char>
-FMT_CONSTEXPR PartsContainer
-prepare_compiletime_parts(basic_string_view<Char> format_str) {
-  // This is not a lambda for compatibility with older compilers.
-  struct collector {
-    PartsContainer& parts;
-    unsigned counter = 0;
-    FMT_CONSTEXPR void operator()(const format_part<Char>& part) {
-      parts[counter++] = part;
-    }
-  };
-  PartsContainer parts;
-  compile_format_string<true>(format_str, collector{parts});
-  return parts;
-}
-
-template <typename Char> class runtime_parts_provider {
- public:
-  using parts_container = std::vector<internal::format_part<Char>>;
-
-  runtime_parts_provider(basic_string_view<Char> format_str) {
-    compile_format_string<false>(
-        format_str,
-        [this](const format_part<Char>& part) { parts_.push_back(part); });
-  }
-
-  const parts_container& parts() const { return parts_; }
-
- private:
-  parts_container parts_;
-};
-
-template <typename Format> struct compiletime_parts_provider {
-  using parts_container =
-      typename internal::compiletime_prepared_parts_type_provider<Format>::type;
-
-  template <typename Char>
-  FMT_CONSTEXPR compiletime_parts_provider(basic_string_view<Char>) {}
-
-  const parts_container& parts() const {
-    static FMT_CONSTEXPR_DECL const parts_container prepared_parts =
-        prepare_compiletime_parts<parts_container>(
-            internal::to_string_view(Format()));
-    return prepared_parts;
-  }
+  explicit constexpr compiled_format(basic_string_view<char_type> format_str)
+      : compiled_format_base<S>(format_str), format_str_(format_str) {}
 };
 }  // namespace internal
 
@@ -337,17 +327,17 @@ template <typename Format> struct compiletime_parts_provider {
 template <typename... Args, typename S,
           FMT_ENABLE_IF(is_compile_string<S>::value)>
 FMT_CONSTEXPR auto compile(S format_str)
-    -> internal::compiled_format<S, internal::compiletime_parts_provider<S>,
-                                 Args...> {
-  return format_str;
+    -> internal::compiled_format<S, Args...> {
+  return internal::compiled_format<S, Args...>(to_string_view(format_str));
 }
 #endif
 
 // Compiles the format string which must be a string literal.
 template <typename... Args, typename Char, size_t N>
-auto compile(const Char (&format_str)[N]) -> internal::compiled_format<
-    std::basic_string<Char>, internal::runtime_parts_provider<Char>, Args...> {
-  return std::basic_string<Char>(format_str, N - 1);
+auto compile(const Char (&format_str)[N])
+    -> internal::compiled_format<const Char*, Args...> {
+  return internal::compiled_format<const Char*, Args...>(
+      basic_string_view<Char>(format_str, N - 1));
 }
 
 template <typename CompiledFormat, typename... Args,
@@ -383,7 +373,7 @@ format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
 
 template <typename CompiledFormat, typename... Args>
 std::size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
-  return fmt::format_to(
+  return format_to(
              internal::counting_iterator<typename CompiledFormat::char_type>(),
              cf, args...)
       .count();
