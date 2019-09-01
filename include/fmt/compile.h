@@ -173,8 +173,6 @@ class compiled_format {
 
   compiled_format() = delete;
 
-  using context = buffer_context<char_type>;
-
   template <typename Range, typename Context>
   auto vformat_to(Range out, basic_format_args<Context> args) const ->
       typename Context::iterator {
@@ -203,8 +201,7 @@ class compiled_format {
 
       case format_part_t::kind::arg_name: {
         advance_parse_context_to_specification(parse_ctx, part);
-        const auto named_arg_id = value.str;
-        format_arg<Range>(parse_ctx, ctx, named_arg_id);
+        format_arg<Range>(parse_ctx, ctx, value.str);
       } break;
       case format_part_t::kind::replacement: {
         const auto& arg_id_value = value.repl.arg_id.val;
@@ -242,10 +239,8 @@ class compiled_format {
   template <typename Range, typename Context, typename Id>
   void format_arg(basic_parse_context<char_type>& parse_ctx, Context& ctx,
                   Id arg_id) const {
-    parse_ctx.check_arg_id(arg_id);
-    const auto stopped_at =
-        visit_format_arg(arg_formatter<Range>(ctx), ctx.arg(arg_id));
-    ctx.advance_to(stopped_at);
+    ctx.advance_to(visit_format_arg(arg_formatter<Range>(ctx, &parse_ctx),
+                                    ctx.arg(arg_id)));
   }
 
   template <typename Char>
@@ -359,6 +354,7 @@ FMT_CONSTEXPR auto compile(S format_str)
 }
 #endif
 
+// Compiles the format string which must be a string literal.
 template <typename... Args, typename Char, size_t N>
 auto compile(const Char (&format_str)[N]) -> internal::compiled_format<
     std::basic_string<Char>, internal::runtime_parts_provider<Char>, Args...> {

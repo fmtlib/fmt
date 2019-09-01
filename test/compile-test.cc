@@ -152,3 +152,17 @@ TEST(CompileTest, FormattedSize) {
   auto f = fmt::compile<int>("{:10}");
   EXPECT_EQ(fmt::formatted_size(f, 42), 10);
 }
+
+struct formattable {};
+
+template <>
+struct fmt::formatter<formattable> : formatter<const char*> {
+  auto format(formattable, format_context& ctx) -> decltype(ctx.out()) {
+    return formatter<const char*>::format("foo", ctx);
+  }
+};
+
+TEST(CompileTest, FormatUserDefinedType) {
+  auto f = fmt::compile<formattable>("{}");
+  EXPECT_EQ(fmt::format(f, formattable()), "foo");
+}
