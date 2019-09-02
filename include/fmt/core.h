@@ -671,12 +671,12 @@ FMT_TYPE_CONSTANT(const Char*, cstring_type);
 FMT_TYPE_CONSTANT(basic_string_view<Char>, string_type);
 FMT_TYPE_CONSTANT(const void*, pointer_type);
 
-FMT_CONSTEXPR bool is_integral(type t) {
+FMT_CONSTEXPR bool is_integral_type(type t) {
   FMT_ASSERT(t != named_arg_type, "invalid argument type");
   return t > none_type && t <= last_integer_type;
 }
 
-FMT_CONSTEXPR bool is_arithmetic(type t) {
+FMT_CONSTEXPR bool is_arithmetic_type(type t) {
   FMT_ASSERT(t != named_arg_type, "invalid argument type");
   return t > none_type && t <= last_numeric_type;
 }
@@ -905,8 +905,8 @@ template <typename Context> class basic_format_arg {
 
   internal::type type() const { return type_; }
 
-  bool is_integral() const { return internal::is_integral(type_); }
-  bool is_arithmetic() const { return internal::is_arithmetic(type_); }
+  bool is_integral() const { return internal::is_integral_type(type_); }
+  bool is_arithmetic() const { return internal::is_arithmetic_type(type_); }
 };
 
 /**
