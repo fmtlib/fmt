@@ -1981,20 +1981,20 @@ template <typename ErrorHandler> class numeric_specs_checker {
       : error_handler_(eh), arg_type_(arg_type) {}
 
   FMT_CONSTEXPR void require_numeric_argument() {
-    if (!is_arithmetic(arg_type_))
+    if (!is_arithmetic_type(arg_type_))
       error_handler_.on_error("format specifier requires numeric argument");
   }
 
   FMT_CONSTEXPR void check_sign() {
     require_numeric_argument();
-    if (is_integral(arg_type_) && arg_type_ != int_type &&
+    if (is_integral_type(arg_type_) && arg_type_ != int_type &&
         arg_type_ != long_long_type && arg_type_ != internal::char_type) {
       error_handler_.on_error("format specifier requires signed argument");
     }
   }
 
   FMT_CONSTEXPR void check_precision() {
-    if (is_integral(arg_type_) || arg_type_ == internal::pointer_type)
+    if (is_integral_type(arg_type_) || arg_type_ == internal::pointer_type)
       error_handler_.on_error("precision not allowed for this argument type");
   }
 
