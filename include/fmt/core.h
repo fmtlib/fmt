@@ -295,6 +295,8 @@ template <typename Char> class basic_string_view {
   FMT_CONSTEXPR iterator begin() const { return data_; }
   FMT_CONSTEXPR iterator end() const { return data_ + size_; }
 
+  FMT_CONSTEXPR const Char& operator[](size_t pos) const { return data_[pos]; }
+
   FMT_CONSTEXPR void remove_prefix(size_t n) {
     data_ += n;
     size_ -= n;

@@ -321,6 +321,140 @@ class compiled_format : private compiled_format_base<S> {
   explicit constexpr compiled_format(basic_string_view<char_type> format_str)
       : compiled_format_base<S>(format_str), format_str_(format_str) {}
 };
+
+#ifdef __cpp_if_constexpr
+template <typename... Args> struct type_list {};
+
+// Returns a reference to the argument at index N from [first, rest...].
+template <int N, typename T, typename... Args>
+const auto& get(const T& first, const Args&... rest) {
+  if constexpr (sizeof...(Args) == 0)
+    return first;
+  else
+    return get(rest...);
+}
+
+template <int N, typename> struct get_type_impl;
+
+template <int N, typename... Args> struct get_type_impl<N, type_list<Args...>> {
+  using type = remove_cvref_t<decltype(get<N>(std::declval<Args>()...))>;
+};
+
+template <int N, typename T>
+using get_type = typename get_type_impl<N, T>::type;
+
+template <typename Char> struct text {
+  basic_string_view<Char> data;
+
+  template <typename OutputIt, typename... Args>
+  OutputIt format(OutputIt out, const Args&...) {
+    // TODO: reserve
+    return copy_str<Char>(data.begin(), data.end(), out);
+  }
+};
+
+template <typename Char>
+constexpr text<Char> make_text(basic_string_view<Char> s, size_t pos,
+                               size_t size) {
+  return {{&s[pos], size}};
+}
+
+template <typename Char, typename OutputIt, typename T,
+          std::enable_if_t<std::is_integral_v<T>, int> = 0>
+OutputIt format_default(OutputIt out, T value) {
+  // TODO: reserve
+  format_int fi(value);
+  return std::copy(fi.data(), fi.data() + fi.size(), out);
+}
+
+template <typename Char, typename OutputIt>
+OutputIt format_default(OutputIt out, Char value) {
+  *out++ = value;
+  return out;
+}
+
+template <typename Char, typename OutputIt>
+OutputIt format_default(OutputIt out, const Char* value) {
+  auto length = std::char_traits<Char>::length(value);
+  return copy_str<Char>(value, value + length, out);
+}
+
+// A replacement field that refers to argument N.
+template <typename Char, typename T, int N> struct field {
+  template <typename OutputIt, typename... Args>
+  OutputIt format(OutputIt out, const Args&... args) {
+    // This ensures that the argument type is convertile to `const T&`.
+    const T& arg = get<N>(args...);
+    return format_default<Char>(out, arg);
+  }
+};
+
+template <typename L, typename R> struct concat {
+  L lhs;
+  R rhs;
+
+  template <typename OutputIt, typename... Args>
+  OutputIt format(OutputIt out, const Args&... args) {
+    out = lhs.format(out, args...);
+    return rhs.format(out, args...);
+  }
+};
+
+template <typename L, typename R>
+constexpr concat<L, R> make_concat(L lhs, R rhs) {
+  return {lhs, rhs};
+}
+
+template <typename Char>
+constexpr size_t parse_text(basic_string_view<Char> str, size_t pos) {
+  for (size_t size = str.size(); pos != size; ++pos) {
+    if (str[pos] == '{' || str[pos] == '}') break;
+  }
+  return pos;
+}
+
+template <typename Args, size_t POS, int ID, typename S>
+constexpr auto compile_format_string(S format_str);
+
+template <typename Args, size_t POS, int ID, typename T, typename S>
+auto parse_tail(T head, S format_str) {
+  if constexpr (POS != to_string_view(format_str).size())
+    return make_concat(head, compile_format_string<Args, POS, ID>(format_str));
+  else
+    return head;
+}
+
+template <typename Args, size_t POS, int ID, typename S>
+constexpr auto compile_format_string(S format_str) {
+  using char_type = char_t<S>;
+  constexpr basic_string_view<char_type> str = format_str;
+  if constexpr (str.size() == 0) {
+    return make_text(str, 0, 0);
+  } else if constexpr (str[POS] == '{') {
+    if (POS + 1 == str.size())
+      throw format_error("unmatched '{' in format string");
+    if constexpr (str[POS + 1] == '{') {
+      return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
+    } else if constexpr (str[POS + 1] == '}') {
+      return parse_tail<Args, POS + 2, ID + 1>(
+          field<char_type, get_type<ID, Args>, ID>(), format_str);
+    } else {
+      throw format_error("invalid format string");
+    }
+  } else if constexpr (str[POS] == '}') {
+    if (POS + 1 == str.size())
+      throw format_error("unmatched '}' in format string");
+    return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
+  } else {
+    constexpr auto end = parse_text(str, POS + 1);
+    return parse_tail<Args, end, ID>(make_text(str, POS, end - POS),
+                                     format_str);
+  }
+}
+template <typename... Args, typename S> constexpr auto compile(S format_str) {
+  return compile_format_string<type_list<Args...>, 0, 0>(format_str);
+}
+#endif  // __cpp_if_constexpr
 }  // namespace internal
 
 #if FMT_USE_CONSTEXPR
