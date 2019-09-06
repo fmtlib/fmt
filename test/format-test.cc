@@ -1001,6 +1001,7 @@ TEST(FormatterTest, HashFlag) {
   EXPECT_EQ("0x42", format("{0:#x}", 0x42));
   EXPECT_EQ("0X42", format("{0:#X}", 0x42));
   EXPECT_EQ("-0x42", format("{0:#x}", -0x42));
+  EXPECT_EQ("0", format("{0:#o}", 0));
   EXPECT_EQ("042", format("{0:#o}", 042));
   EXPECT_EQ("-042", format("{0:#o}", -042));
   EXPECT_EQ("42", format("{0:#}", 42u));
