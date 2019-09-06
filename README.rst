@@ -44,7 +44,7 @@ Features
   reported at compile time, automatic memory management prevents buffer overflow
   errors.
 * Ease of use: small self-contained code base, no external dependencies,
-  permissive BSD `license
+  permissive MIT `license
   <https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_
 * `Portability <https://fmt.dev/latest/index.html#portability>`_ with
   consistent output across platforms and support for older compilers.
@@ -471,7 +471,7 @@ A: use ``std::tuple``:
 License
 -------
 
-{fmt} is distributed under the BSD `license
+{fmt} is distributed under the MIT `license
 <https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_.
 
 The `Format String Syntax
