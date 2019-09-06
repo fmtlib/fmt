@@ -278,6 +278,8 @@ Projects using this library
 
 * `Ceph <https://ceph.com/>`_: A scalable distributed storage system
 
+* `ccache <https://ccache.dev/>`_: A compiler cache
+
 * `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater
   vehicle
 
