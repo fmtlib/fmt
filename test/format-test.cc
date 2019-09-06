@@ -1334,11 +1334,11 @@ TEST(FormatterTest, FormatBin) {
 }
 
 #if FMT_USE_INT128
-constexpr auto INT128_MAX = static_cast<__int128_t>(
+constexpr auto int128_max = static_cast<__int128_t>(
     (static_cast<__uint128_t>(1) << ((__SIZEOF_INT128__ * CHAR_BIT) - 1)) - 1);
-constexpr auto INT128_MIN = -INT128_MAX - 1;
+constexpr auto int128_min = -int128_max - 1;
 
-constexpr auto UINT128_MAX = ~static_cast<__uint128_t>(0);
+constexpr auto uint128_max = ~static_cast<__uint128_t>(0);
 #endif
 
 TEST(FormatterTest, FormatDec) {
@@ -1359,11 +1359,11 @@ TEST(FormatterTest, FormatDec) {
   EXPECT_EQ("18446744073709551616",
             format("{0}", static_cast<__int128_t>(UINT64_MAX) + 1));
   EXPECT_EQ("170141183460469231731687303715884105727",
-            format("{0}", INT128_MAX));
+            format("{0}", int128_max));
   EXPECT_EQ("-170141183460469231731687303715884105728",
-            format("{0}", INT128_MIN));
+            format("{0}", int128_min));
   EXPECT_EQ("340282366920938463463374607431768211455",
-            format("{0}", UINT128_MAX));
+            format("{0}", uint128_max));
 #endif
 
   char buffer[BUFFER_SIZE];
@@ -1399,9 +1399,9 @@ TEST(FormatterTest, FormatHex) {
             format("{0:x}", static_cast<__int128_t>(INT64_MIN) - 1));
   EXPECT_EQ("10000000000000000",
             format("{0:x}", static_cast<__int128_t>(UINT64_MAX) + 1));
-  EXPECT_EQ("7fffffffffffffffffffffffffffffff", format("{0:x}", INT128_MAX));
-  EXPECT_EQ("-80000000000000000000000000000000", format("{0:x}", INT128_MIN));
-  EXPECT_EQ("ffffffffffffffffffffffffffffffff", format("{0:x}", UINT128_MAX));
+  EXPECT_EQ("7fffffffffffffffffffffffffffffff", format("{0:x}", int128_max));
+  EXPECT_EQ("-80000000000000000000000000000000", format("{0:x}", int128_min));
+  EXPECT_EQ("ffffffffffffffffffffffffffffffff", format("{0:x}", uint128_max));
 #endif
 
   char buffer[BUFFER_SIZE];
@@ -1435,11 +1435,11 @@ TEST(FormatterTest, FormatOct) {
   EXPECT_EQ("2000000000000000000000",
             format("{0:o}", static_cast<__int128_t>(UINT64_MAX) + 1));
   EXPECT_EQ("1777777777777777777777777777777777777777777",
-            format("{0:o}", INT128_MAX));
+            format("{0:o}", int128_max));
   EXPECT_EQ("-2000000000000000000000000000000000000000000",
-            format("{0:o}", INT128_MIN));
+            format("{0:o}", int128_min));
   EXPECT_EQ("3777777777777777777777777777777777777777777",
-            format("{0:o}", UINT128_MAX));
+            format("{0:o}", uint128_max));
 #endif
 
   char buffer[BUFFER_SIZE];
