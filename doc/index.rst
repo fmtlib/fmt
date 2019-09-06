@@ -1,7 +1,7 @@
 Overview
 ========
 
-**fmt** (formerly cppformat) is an open-source formatting library.
+**fmt** is an open-source formatting library.
 It can be used as a fast and safe alternative to printf and IOStreams.
 
 .. raw:: html
