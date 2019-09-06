@@ -345,7 +345,7 @@ Projects using this library
 * `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: Open-source
   MMORPG framework
 
-`More... <https://github.com/search?q=cppformat&type=Code>`_
+`More... <https://github.com/search?q=fmtlib&type=Code>`_
 
 If you are aware of other projects using this library, please let me know
 by `email <mailto:victor.zverovich@gmail.com>`_ or by submitting an
