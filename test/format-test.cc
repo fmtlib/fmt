@@ -697,12 +697,6 @@ TEST(FormatToTest, WideString) {
   EXPECT_STREQ(buf.data(), L"42");
 }
 
-TEST(FormatToTest, FormatToNonbackInsertIteratorWithSignAndNumericAlignment) {
-  char buffer[16] = {};
-  fmt::format_to(fmt::internal::make_checked(buffer, 16), "{: =+}", 42.0);
-  EXPECT_STREQ("+42.0", buffer);
-}
-
 TEST(FormatToTest, FormatToMemoryBuffer) {
   fmt::basic_memory_buffer<char, 100> buffer;
   fmt::format_to(buffer, "{}", "foo");
@@ -856,6 +850,7 @@ TEST(FormatterTest, RightAlign) {
   EXPECT_EQ("  0xface", format("{0:>8}", reinterpret_cast<void*>(0xface)));
 }
 
+#if FMT_NUMERIC_ALIGN
 TEST(FormatterTest, NumericAlign) {
   EXPECT_EQ("  42", format("{0:=4}", 42));
   EXPECT_EQ("+ 42", format("{0:=+4}", 42));
@@ -881,6 +876,13 @@ TEST(FormatterTest, NumericAlign) {
                    format_error, "format specifier requires numeric argument");
   EXPECT_EQ(" 1.0", fmt::format("{:= }", 1.0));
 }
+
+TEST(FormatToTest, FormatToNonbackInsertIteratorWithSignAndNumericAlignment) {
+  char buffer[16] = {};
+  fmt::format_to(fmt::internal::make_checked(buffer, 16), "{: =+}", 42.0);
+  EXPECT_STREQ("+42.0", buffer);
+}
+#endif
 
 TEST(FormatterTest, CenterAlign) {
   EXPECT_EQ(" 42  ", format("{0:^5}", 42));
@@ -2055,8 +2057,10 @@ TEST(FormatTest, DynamicFormatter) {
                    "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{:{0}}", num), format_error,
                    "cannot switch from automatic to manual argument indexing");
+#if FMT_NUMERIC_ALIGN
   EXPECT_THROW_MSG(format("{:=}", str), format_error,
                    "format specifier requires numeric argument");
+#endif
   EXPECT_THROW_MSG(format("{:+}", str), format_error,
                    "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format("{:-}", str), format_error,
@@ -2439,13 +2443,15 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{0:s", "unknown format specifier", Date);
 #  if FMT_MSC_VER >= 1916
   // This causes an internal compiler error in MSVC2017.
-  EXPECT_ERROR("{0:=5", "unknown format specifier", int);
   EXPECT_ERROR("{:{<}", "invalid fill character '{'", int);
   EXPECT_ERROR("{:10000000000}", "number is too big", int);
   EXPECT_ERROR("{:.10000000000}", "number is too big", int);
   EXPECT_ERROR_NOARGS("{:x}", "argument index out of range");
+#if FMT_NUMERIC_ALIGN
+  EXPECT_ERROR("{0:=5", "unknown format specifier", int);
   EXPECT_ERROR("{:=}", "format specifier requires numeric argument",
                const char*);
+#endif
   EXPECT_ERROR("{:+}", "format specifier requires numeric argument",
                const char*);
   EXPECT_ERROR("{:-}", "format specifier requires numeric argument",

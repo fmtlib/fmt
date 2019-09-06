@@ -185,6 +185,10 @@ inline uint32_t clzll(uint64_t x) {
 FMT_END_NAMESPACE
 #endif
 
+#ifndef FMT_NUMERIC_ALIGN
+# define FMT_NUMERIC_ALIGN 1
+#endif
+
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
@@ -2300,9 +2304,11 @@ FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
     case '>':
       align = align::right;
       break;
+#if FMT_NUMERIC_ALIGN
     case '=':
       align = align::numeric;
       break;
+#endif
     case '^':
       align = align::center;
       break;

@@ -95,8 +95,10 @@ TEST(OStreamTest, Format) {
 TEST(OStreamTest, FormatSpecs) {
   EXPECT_EQ("def  ", format("{0:<5}", TestString("def")));
   EXPECT_EQ("  def", format("{0:>5}", TestString("def")));
+#if FMT_NUMERIC_ALIGN
   EXPECT_THROW_MSG(format("{0:=5}", TestString("def")), format_error,
                    "format specifier requires numeric argument");
+#endif
   EXPECT_EQ(" def ", format("{0:^5}", TestString("def")));
   EXPECT_EQ("def**", format("{0:*<5}", TestString("def")));
   EXPECT_THROW_MSG(format("{0:+}", TestString()), format_error,

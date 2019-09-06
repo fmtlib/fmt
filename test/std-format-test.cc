@@ -30,18 +30,14 @@ TEST(StdFormatTest, Alignment) {
   // Error: '=' with charT and no integer presentation type
   EXPECT_THROW(string s5 = format("{:=6}", 'x'), std::format_error);
   string s6 = format("{:6d}", c);       // s6 == "   120"
-  string s7 = format("{:=+06d}", c);    // s7 == "+00120"
-  string s8 = format("{:0=#6x}", 0xa);  // s8 == "0x000a"
-  string s9 = format("{:6}", true);     // s9 == "true  "
+  string s7 = format("{:6}", true);     // s9 == "true  "
   EXPECT_EQ(s0, "    42");
   EXPECT_EQ(s1, "x     ");
   EXPECT_EQ(s2, "x*****");
   EXPECT_EQ(s3, "*****x");
   EXPECT_EQ(s4, "**x***");
   EXPECT_EQ(s6, "   120");
-  EXPECT_EQ(s7, "+00120");
-  EXPECT_EQ(s8, "0x000a");
-  EXPECT_EQ(s9, "true  ");
+  EXPECT_EQ(s7, "true  ");
 }
 
 TEST(StdFormatTest, Float) {
