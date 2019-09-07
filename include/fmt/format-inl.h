@@ -451,8 +451,8 @@ FMT_FUNC fp operator*(fp x, fp y) {
 #endif
 }
 
-// Returns cached power (of 10) c_k = c_k.f * pow(2, c_k.e) such that its
-// (binary) exponent satisfies min_exponent <= c_k.e <= min_exponent + 28.
+// Returns a cached power of 10 `c_k = c_k.f * pow(2, c_k.e)` such that its
+// (binary) exponent satisfies `min_exponent <= c_k.e <= min_exponent + 28`.
 FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
   const double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
   int index = static_cast<int>(
