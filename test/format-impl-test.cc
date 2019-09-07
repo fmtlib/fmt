@@ -22,7 +22,16 @@
 
 #undef max
 
+using fmt::internal::bigint;
 using fmt::internal::fp;
+
+static_assert(!std::is_copy_constructible<bigint>::value, "");
+static_assert(!std::is_copy_assignable<bigint>::value, "");
+
+TEST(BigIntTest, Construct) {
+  EXPECT_EQ("42", fmt::format("{}", bigint(0x42)));
+  EXPECT_EQ("123456789abcedf0", fmt::format("{}", bigint(0x123456789abcedf0)));
+}
 
 template <bool is_iec559> void test_construct_from_double() {
   fmt::print("warning: double is not IEC559, skipping FP tests\n");

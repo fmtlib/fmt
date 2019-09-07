@@ -445,7 +445,7 @@ OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
 }
 
 #ifndef FMT_USE_GRISU
-#  define FMT_USE_GRISU 0
+#  define FMT_USE_GRISU 1
 #endif
 
 template <typename T> constexpr bool use_grisu() {

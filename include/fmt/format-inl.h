@@ -466,6 +466,24 @@ FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
   return fp(data::pow10_significands[index], data::pow10_exponents[index]);
 }
 
+class bigint {
+ private:
+  basic_memory_buffer<uint32_t> value_;
+  static FMT_CONSTEXPR_DECL const int radix = 32;
+
+  friend struct formatter<bigint>;
+
+ public:
+  explicit bigint(uint64_t n) {
+    value_.resize(2);
+    value_[0] = n & ~uint32_t(0);
+    value_[1] = static_cast<uint32_t>(n >> 32);
+  }
+
+  bigint(const bigint&) = delete;
+  void operator=(const bigint&) = delete;
+};
+
 enum round_direction { unknown, up, down };
 
 // Given the divisor (normally a power of 10), the remainder = v % divisor for
@@ -710,7 +728,7 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
   if (precision != -1) {
     if (precision > 17) return false;
     fp_value.normalize();
-    auto cached_pow = get_cached_power(
+    const auto cached_pow = get_cached_power(
         min_exp - (fp_value.e + fp::significand_size), cached_exp10);
     fp_value = fp_value * cached_pow;
     fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
@@ -738,14 +756,18 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
       grisu_shortest_handler<3> handler{buf.data(), 0, (upper - fp_value).f};
       result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
       size = handler.size;
+      if (result == digits::error) {
+        // TODO: use fallback
+        return false;
+      }
     } else {
       ++lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
       --upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
       grisu_shortest_handler<2> handler{buf.data(), 0, (upper - fp_value).f};
       result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
       size = handler.size;
+      assert(result != digits::error);
     }
-    if (result == digits::error) return false;
     buf.resize(to_unsigned(size));
   }
   exp -= cached_exp10;
@@ -830,6 +852,29 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
   return decimal_point_pos;
 }
 }  // namespace internal
+
+template <> struct formatter<internal::bigint> {
+  format_parse_context::iterator parse(format_parse_context& ctx) {
+    return ctx.begin();
+  }
+
+  format_context::iterator format(const internal::bigint& n,
+                                  format_context& ctx) {
+    auto out = ctx.out();
+    bool first = true;
+    for (auto i = n.value_.size(); i > 0; --i) {
+      auto value = n.value_[i - 1];
+      if (first) {
+        if (value == 0 && i > 1) continue;
+        out = format_to(out, "{:x}", value);
+        first = false;
+        continue;
+      }
+      out = format_to(out, "{:08x}", value);
+    }
+    return out;
+  }
+};
 
 #if FMT_USE_WINDOWS_H
 
