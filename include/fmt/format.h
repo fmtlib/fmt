@@ -186,7 +186,7 @@ FMT_END_NAMESPACE
 #endif
 
 #ifndef FMT_NUMERIC_ALIGN
-# define FMT_NUMERIC_ALIGN 1
+#  define FMT_NUMERIC_ALIGN 1
 #endif
 
 FMT_BEGIN_NAMESPACE
@@ -2791,8 +2791,9 @@ void internal::basic_writer<Range>::write_double(T value,
   bool use_grisu = USE_GRISU &&
                    (specs.type != 'a' && specs.type != 'A' &&
                     specs.type != 'e' && specs.type != 'E') &&
-                   internal::grisu_format(static_cast<double>(value), buffer,
-                                          precision, handler.fixed ? internal::grisu_options::fixed : 0, exp);
+                   internal::grisu_format(
+                       static_cast<double>(value), buffer, precision,
+                       handler.fixed ? internal::grisu_options::fixed : 0, exp);
   char* decimal_point_pos = nullptr;
   if (!use_grisu)
     decimal_point_pos = internal::sprintf_format(value, buffer, specs);
