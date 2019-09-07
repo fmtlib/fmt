@@ -468,16 +468,23 @@ FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
 
 class bigint {
  private:
-  basic_memory_buffer<uint32_t> value_;
-  static FMT_CONSTEXPR_DECL const int radix = 32;
+  // A bigint is stored as an array of bigits (big digits), with bigit at index
+  // 0 being the least significant one.
+  using bigit = uint32_t;
+  basic_memory_buffer<bigit> bigits_;
+
+  static FMT_CONSTEXPR_DECL const int bigit_bits = bits<bigit>::value;
 
   friend struct formatter<bigint>;
 
  public:
   explicit bigint(uint64_t n) {
-    value_.resize(2);
-    value_[0] = n & ~uint32_t(0);
-    value_[1] = static_cast<uint32_t>(n >> 32);
+    int num_bigits = bits<uint64_t>::value / bigit_bits;
+    bigits_.resize(num_bigits);
+    for (int i = 0; i < num_bigits; ++i) {
+      bigits_[i] = n & ~bigit(0);
+      n >>= bigit_bits;
+    }
   }
 
   bigint(const bigint&) = delete;
@@ -862,8 +869,8 @@ template <> struct formatter<internal::bigint> {
                                   format_context& ctx) {
     auto out = ctx.out();
     bool first = true;
-    for (auto i = n.value_.size(); i > 0; --i) {
-      auto value = n.value_[i - 1];
+    for (auto i = n.bigits_.size(); i > 0; --i) {
+      auto value = n.bigits_[i - 1];
       if (first) {
         if (value == 0 && i > 1) continue;
         out = format_to(out, "{:x}", value);
