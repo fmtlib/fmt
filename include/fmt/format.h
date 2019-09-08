@@ -213,6 +213,11 @@ inline Dest bit_cast(const Source& source) {
   return dest;
 }
 
+// Returns the largest possible value for type T. Same as
+// std::numeric_limits<T>::max() but shorter and not affected by the max macro.
+template <typename T>
+constexpr T max_value() { return (std::numeric_limits<T>::max)(); }
+
 // An approximation of iterator_t for pre-C++20 systems.
 template <typename T>
 using iterator_t = decltype(std::begin(std::declval<T&>()));
@@ -1888,7 +1893,7 @@ FMT_CONSTEXPR int parse_nonnegative_int(const Char*& begin, const Char* end,
   }
   unsigned value = 0;
   // Convert to unsigned to prevent a warning.
-  constexpr unsigned max_int = (std::numeric_limits<int>::max)();
+  constexpr unsigned max_int = max_value<int>();
   unsigned big = max_int / 10;
   do {
     // Check for overflow.
@@ -2083,8 +2088,7 @@ template <template <typename> class Handler, typename T, typename FormatArg,
 FMT_CONSTEXPR void set_dynamic_spec(T& value, FormatArg arg, ErrorHandler eh) {
   unsigned long long big_value =
       visit_format_arg(Handler<ErrorHandler>(eh), arg);
-  if (big_value > to_unsigned((std::numeric_limits<int>::max)()))
-    eh.on_error("number is too big");
+  if (big_value > max_value<int>()) eh.on_error("number is too big");
   value = static_cast<T>(big_value);
 }
 
@@ -2521,7 +2525,7 @@ class format_string_checker {
  public:
   explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
-      : arg_id_((std::numeric_limits<unsigned>::max)()),
+      : arg_id_(max_value<unsigned>()),
         context_(format_str, eh),
         parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 

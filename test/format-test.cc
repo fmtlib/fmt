@@ -35,6 +35,7 @@ using std::size_t;
 
 using fmt::basic_memory_buffer;
 using fmt::internal::basic_writer;
+using fmt::internal::max_value;
 using fmt::format;
 using fmt::format_error;
 using fmt::memory_buffer;
@@ -162,7 +163,7 @@ TEST(UtilTest, Increment) {
 }
 
 TEST(UtilTest, ParseNonnegativeInt) {
-  if (std::numeric_limits<int>::max() !=
+  if (max_value<int>() !=
       static_cast<int>(static_cast<unsigned>(1) << 31)) {
     fmt::print("Skipping parse_nonnegative_int test\n");
     return;
@@ -477,7 +478,7 @@ TEST(UtilTest, FormatSystemError) {
   message = fmt::memory_buffer();
 
   // Check if std::allocator throws on allocating max size_t / 2 chars.
-  size_t max_size = std::numeric_limits<size_t>::max() / 2;
+  size_t max_size = max_value<size_t>() / 2;
   bool throws_on_alloc = false;
   try {
     std::allocator<char> alloc;
@@ -527,7 +528,7 @@ TEST(UtilTest, FormatWindowsError) {
   actual_message.resize(0);
   fmt::internal::format_windows_error(
       actual_message, ERROR_FILE_EXISTS,
-      fmt::string_view(0, std::numeric_limits<size_t>::max()));
+      fmt::string_view(0, max_value<size_t>()));
   EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS),
             fmt::to_string(actual_message));
 }
@@ -593,31 +594,31 @@ TEST(WriterTest, WriteInt) {
   CHECK_WRITE(static_cast<short>(12));
   CHECK_WRITE(34u);
   CHECK_WRITE(std::numeric_limits<int>::min());
-  CHECK_WRITE(std::numeric_limits<int>::max());
-  CHECK_WRITE(std::numeric_limits<unsigned>::max());
+  CHECK_WRITE(max_value<int>());
+  CHECK_WRITE(max_value<unsigned>());
 }
 
 TEST(WriterTest, WriteLong) {
   CHECK_WRITE(56l);
   CHECK_WRITE(78ul);
   CHECK_WRITE(std::numeric_limits<long>::min());
-  CHECK_WRITE(std::numeric_limits<long>::max());
-  CHECK_WRITE(std::numeric_limits<unsigned long>::max());
+  CHECK_WRITE(max_value<long>());
+  CHECK_WRITE(max_value<unsigned long>());
 }
 
 TEST(WriterTest, WriteLongLong) {
   CHECK_WRITE(56ll);
   CHECK_WRITE(78ull);
   CHECK_WRITE(std::numeric_limits<long long>::min());
-  CHECK_WRITE(std::numeric_limits<long long>::max());
-  CHECK_WRITE(std::numeric_limits<unsigned long long>::max());
+  CHECK_WRITE(max_value<long long>());
+  CHECK_WRITE(max_value<unsigned long long>());
 }
 
 TEST(WriterTest, WriteDouble) {
   CHECK_WRITE(4.2);
   CHECK_WRITE(-4.2);
   auto min = std::numeric_limits<double>::min();
-  auto max = std::numeric_limits<double>::max();
+  auto max = max_value<double>();
   if (fmt::internal::use_grisu<double>()) {
     EXPECT_EQ("2.2250738585072014e-308", fmt::format("{}", min));
     EXPECT_EQ("1.7976931348623157e+308", fmt::format("{}", max));
@@ -637,7 +638,7 @@ TEST(WriterTest, WriteLongDouble) {
   else
     fmt::print("warning: long double formatting with std::swprintf is broken");
   auto min = std::numeric_limits<long double>::min();
-  auto max = std::numeric_limits<long double>::max();
+  auto max = max_value<long double>();
   if (fmt::internal::use_grisu<long double>()) {
     EXPECT_EQ("2.2250738585072014e-308", fmt::format("{}", min));
     EXPECT_EQ("1.7976931348623157e+308", fmt::format("{}", max));
@@ -1333,7 +1334,7 @@ TEST(FormatterTest, FormatBin) {
   EXPECT_EQ("10010001101000101011001111000", format("{0:b}", 0x12345678));
   EXPECT_EQ("10010000101010111100110111101111", format("{0:b}", 0x90ABCDEF));
   EXPECT_EQ("11111111111111111111111111111111",
-            format("{0:b}", std::numeric_limits<uint32_t>::max()));
+            format("{0:b}", max_value<uint32_t>()));
 }
 
 #if FMT_USE_INT128
@@ -1465,7 +1466,7 @@ TEST(FormatterTest, FormatIntLocale) {
   EXPECT_EQ("1,234", format("{:n}", 1234));
   EXPECT_EQ("1,234,567", format("{:n}", 1234567));
   EXPECT_EQ("4,294,967,295",
-            format("{:n}", std::numeric_limits<uint32_t>::max()));
+            format("{:n}", max_value<uint32_t>()));
 }
 
 struct ConvertibleToLongLong {
@@ -1803,9 +1804,9 @@ TEST(FormatIntTest, FormatInt) {
   EXPECT_EQ("42", fmt::format_int(42ull).str());
   EXPECT_EQ("-42", fmt::format_int(-42ll).str());
   std::ostringstream os;
-  os << std::numeric_limits<int64_t>::max();
+  os << max_value<int64_t>();
   EXPECT_EQ(os.str(),
-            fmt::format_int(std::numeric_limits<int64_t>::max()).str());
+            fmt::format_int(max_value<int64_t>()).str());
 }
 
 TEST(FormatTest, Print) {

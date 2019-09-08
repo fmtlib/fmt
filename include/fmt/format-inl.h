@@ -535,8 +535,8 @@ class bigint {
   bigint& operator*=(uint32_t value) {
     assert(value > 0);
     // Verify that the computation doesn't overflow.
-    constexpr double_bigit max32 = (std::numeric_limits<bigit>::max)();
-    constexpr double_bigit max64 = (std::numeric_limits<double_bigit>::max)();
+    constexpr double_bigit max32 = max_value<bigit>();
+    constexpr double_bigit max64 = max_value<double_bigit>();
     static_assert(max32 * max32 <= max64 - max32, "");
     bigit carry = 0;
     const double_bigit wide_value = value;

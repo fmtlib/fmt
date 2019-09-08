@@ -182,7 +182,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
   }
   // multiply with Factor::num without overflow or underflow
   if (Factor::num != 1) {
-    const auto max1 = std::numeric_limits<IntermediateRep>::max() / Factor::num;
+    const auto max1 = internal::max_value<IntermediateRep>() / Factor::num;
     if (count > max1) {
       ec = 1;
       return {};
@@ -255,7 +255,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
 
   // multiply with Factor::num without overflow or underflow
   if (Factor::num != 1) {
-    constexpr auto max1 = std::numeric_limits<IntermediateRep>::max() /
+    constexpr auto max1 = internal::max_value<IntermediateRep>() /
                           static_cast<IntermediateRep>(Factor::num);
     if (count > max1) {
       ec = 1;

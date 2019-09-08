@@ -145,8 +145,8 @@ TEST(OStreamTest, WriteToOStream) {
 }
 
 TEST(OStreamTest, WriteToOStreamMaxSize) {
-  std::size_t max_size = std::numeric_limits<std::size_t>::max();
-  std::streamsize max_streamsize = std::numeric_limits<std::streamsize>::max();
+  std::size_t max_size = fmt::internal::max_value<std::size_t>();
+  std::streamsize max_streamsize = fmt::internal::max_value<std::streamsize>();
   if (max_size <= fmt::internal::to_unsigned(max_streamsize)) return;
 
   struct test_buffer : fmt::internal::buffer<char> {

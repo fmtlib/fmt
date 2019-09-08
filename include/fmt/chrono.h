@@ -583,7 +583,7 @@ struct chrono_formatter {
     write_sign();
     if (isnan(value)) return write_nan();
     uint32_or_64_or_128_t<int> n = to_unsigned(
-        to_nonnegative_int(value, (std::numeric_limits<int>::max)()));
+        to_nonnegative_int(value, max_value<int>()));
     int num_digits = internal::count_digits(n);
     if (width > num_digits) out = std::fill_n(out, width - num_digits, '0');
     out = format_decimal<char_type>(out, n, num_digits);

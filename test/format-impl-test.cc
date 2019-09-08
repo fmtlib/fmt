@@ -24,6 +24,7 @@
 
 using fmt::internal::bigint;
 using fmt::internal::fp;
+using fmt::internal::max_value;
 
 static_assert(!std::is_copy_constructible<bigint>::value, "");
 static_assert(!std::is_copy_assignable<bigint>::value, "");
@@ -52,7 +53,7 @@ TEST(BigIntTest, Multiply) {
   EXPECT_EQ("84", fmt::format("{}", n));
   n *= 0x12345678;
   EXPECT_EQ("962fc95e0", fmt::format("{}", n));
-  auto max = (std::numeric_limits<uint32_t>::max)();
+  auto max = max_value<uint32_t>();
   bigint bigmax(max);
   bigmax *= max;
   EXPECT_EQ("fffffffe00000001", fmt::format("{}", bigmax));
@@ -134,7 +135,7 @@ TEST(FPTest, GetRoundDirection) {
   EXPECT_EQ(fmt::internal::up, get_round_direction(100, 60, 10));
   for (int i = 41; i < 60; ++i)
     EXPECT_EQ(fmt::internal::unknown, get_round_direction(100, i, 10));
-  uint64_t max = std::numeric_limits<uint64_t>::max();
+  uint64_t max = max_value<uint64_t>();
   EXPECT_THROW(get_round_direction(100, 100, 0), assertion_failure);
   EXPECT_THROW(get_round_direction(100, 0, 100), assertion_failure);
   EXPECT_THROW(get_round_direction(100, 0, 50), assertion_failure);
@@ -166,7 +167,7 @@ TEST(FPTest, FixedHandler) {
   // Check that divisor - error doesn't overflow.
   EXPECT_EQ(handler(1).on_digit('0', 100, 10, 101, exp, false), digits::error);
   // Check that 2 * error doesn't overflow.
-  uint64_t max = std::numeric_limits<uint64_t>::max();
+  uint64_t max = max_value<uint64_t>();
   EXPECT_EQ(handler(1).on_digit('0', max, 10, max - 1, exp, false),
             digits::error);
 }
@@ -197,7 +198,7 @@ template <typename T> struct value_extractor {
 };
 
 TEST(FormatTest, ArgConverter) {
-  long long value = std::numeric_limits<long long>::max();
+  long long value = max_value<long long>();
   auto arg = fmt::internal::make_arg<fmt::format_context>(value);
   fmt::visit_format_arg(
       fmt::internal::arg_converter<long long, fmt::format_context>(arg, 'd'),
@@ -288,7 +289,7 @@ TEST(FormatTest, CountCodePoints) {
 // Tests fmt::internal::count_digits for integer type Int.
 template <typename Int> void test_count_digits() {
   for (Int i = 0; i < 10; ++i) EXPECT_EQ(1u, fmt::internal::count_digits(i));
-  for (Int i = 1, n = 1, end = std::numeric_limits<Int>::max() / 10; n <= end;
+  for (Int i = 1, n = 1, end = max_value<Int>() / 10; n <= end;
        ++i) {
     n *= 10;
     EXPECT_EQ(i, fmt::internal::count_digits(n - 1));
