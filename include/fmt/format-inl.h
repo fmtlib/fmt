@@ -49,9 +49,6 @@
 #  pragma warning(push)
 #  pragma warning(disable : 4127)  // conditional expression is constant
 #  pragma warning(disable : 4702)  // unreachable code
-// Disable deprecation warning for strerror. The latter is not called but
-// MSVC fails to detect it.
-#  pragma warning(disable : 4996)
 #endif
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
@@ -81,7 +78,7 @@ inline int fmt_snprintf(char* buffer, size_t size, const char* format, ...) {
 
 using format_func = void (*)(internal::buffer<char>&, int, string_view);
 
-// Portable thread-safe version of strerror.
+// A portable thread-safe version of strerror.
 // Sets buffer to point to a string describing the error code.
 // This can be either a pointer to a string stored in buffer,
 // or a pointer to some static immutable string.
@@ -352,6 +349,9 @@ template <typename T> struct bits {
       static_cast<int>(sizeof(T) * std::numeric_limits<unsigned char>::digits);
 };
 
+class fp;
+template <int SHIFT = 0> fp normalize(fp value);
+
 // A handmade floating-point number f * pow(2, e).
 class fp {
  private:
@@ -396,28 +396,29 @@ class fp {
   }
 
   // Normalizes the value converted from double and multiplied by (1 << SHIFT).
-  template <int SHIFT = 0> void normalize() {
+  template <int SHIFT> friend fp normalize(fp value) {
     // Handle subnormals.
-    auto shifted_implicit_bit = implicit_bit << SHIFT;
-    while ((f & shifted_implicit_bit) == 0) {
-      f <<= 1;
-      --e;
+    const auto shifted_implicit_bit = implicit_bit << SHIFT;
+    while ((value.f & shifted_implicit_bit) == 0) {
+      value.f <<= 1;
+      --value.e;
     }
     // Subtract 1 to account for hidden bit.
-    auto offset = significand_size - double_significand_size - SHIFT - 1;
-    f <<= offset;
-    e -= offset;
+    const auto offset = significand_size - double_significand_size - SHIFT - 1;
+    value.f <<= offset;
+    value.e -= offset;
+    return value;
   }
 
-  // Compute lower and upper boundaries (m^- and m^+ in the Grisu paper), where
+  // Computes lower and upper boundaries (m^- and m^+ in the Grisu paper), where
   // a boundary is a value half way between the number and its predecessor
   // (lower) or successor (upper). The upper boundary is normalized and lower
   // has the same exponent but may be not normalized.
   void compute_boundaries(fp& lower, fp& upper) const {
     lower =
         f == implicit_bit ? fp((f << 2) - 1, e - 2) : fp((f << 1) - 1, e - 1);
-    upper = fp((f << 1) + 1, e - 1);
-    upper.normalize<1>();  // 1 is to account for the exponent shift above.
+    // 1 in normalize accounts for the exponent shift above.
+    upper = normalize<1>(fp((f << 1) + 1, e - 1));
     lower.f <<= lower.e - upper.e;
     lower.e = upper.e;
   }
@@ -716,7 +717,7 @@ template <typename Double,
 FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
                           unsigned options, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
-  bool fixed = (options & grisu_options::fixed) != 0;
+  const bool fixed = (options & grisu_options::fixed) != 0;
   if (value <= 0) {  // <= instead of == to silence a warning.
     if (precision <= 0 || !fixed) {
       exp = 0;
@@ -729,17 +730,17 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
     return true;
   }
 
-  fp fp_value(value);
+  const fp fp_value(value);
   const int min_exp = -60;  // alpha in Grisu.
   int cached_exp10 = 0;     // K in Grisu.
   if (precision != -1) {
     if (precision > 17) return false;
-    fp_value.normalize();
+    fp normalized = normalize(fp_value);
     const auto cached_pow = get_cached_power(
-        min_exp - (fp_value.e + fp::significand_size), cached_exp10);
-    fp_value = fp_value * cached_pow;
+        min_exp - (normalized.e + fp::significand_size), cached_exp10);
+    normalized = normalized * cached_pow;
     fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
-    if (grisu_gen_digits(fp_value, 1, exp, handler) == digits::error)
+    if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error)
       return false;
     buf.resize(to_unsigned(handler.size));
   } else {
@@ -747,10 +748,10 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
     fp_value.compute_boundaries(lower, upper);
     // Find a cached power of 10 such that multiplying upper by it will bring
     // the exponent in the range [min_exp, -32].
-    auto cached_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
+    const auto cached_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
         min_exp - (upper.e + fp::significand_size), cached_exp10);
-    fp_value.normalize();
-    fp_value = fp_value * cached_pow;
+    fp normalized = normalize(fp_value);
+    normalized = normalized * cached_pow;
     lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
     upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
     assert(min_exp <= upper.e && upper.e <= -32);
@@ -760,7 +761,7 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
       --lower.f;  // \tilde{M}^- - 1 ulp -> M^-_{\downarrow}.
       ++upper.f;  // \tilde{M}^+ + 1 ulp -> M^+_{\uparrow}.
       // Numbers outside of (lower, upper) definitely do not round to value.
-      grisu_shortest_handler<3> handler{buf.data(), 0, (upper - fp_value).f};
+      grisu_shortest_handler<3> handler{buf.data(), 0, (upper - normalized).f};
       result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
       size = handler.size;
       if (result == digits::error) {

@@ -245,7 +245,7 @@ struct int128_t {};
 struct uint128_t {};
 #endif
 
-// Casts nonnegative integer to unsigned.
+// Casts a nonnegative integer to unsigned.
 template <typename Int>
 FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   FMT_ASSERT(value >= 0, "negative value");

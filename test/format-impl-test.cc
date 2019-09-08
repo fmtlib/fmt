@@ -48,10 +48,10 @@ TEST(FPTest, ConstructFromDouble) {
 }
 
 TEST(FPTest, Normalize) {
-  auto v = fp(0xbeef, 42);
-  v.normalize();
-  EXPECT_EQ(0xbeef000000000000, v.f);
-  EXPECT_EQ(-6, v.e);
+  const auto v = fp(0xbeef, 42);
+  auto normalized = normalize(v);
+  EXPECT_EQ(0xbeef000000000000, normalized.f);
+  EXPECT_EQ(-6, normalized.e);
 }
 
 TEST(FPTest, ComputeBoundariesSubnormal) {
