@@ -473,14 +473,14 @@ class bigint {
   // A bigint is stored as an array of bigits (big digits), with bigit at index
   // 0 being the least significant one.
   using bigit = uint32_t;
+  using double_bigit = uint64_t;
   basic_memory_buffer<bigit> bigits_;
 
   static FMT_CONSTEXPR_DECL const int bigit_bits = bits<bigit>::value;
 
   friend struct formatter<bigint>;
 
- public:
-  explicit bigint(uint64_t n) {
+  void assign(uint64_t n) {
     int num_bigits = bits<uint64_t>::value / bigit_bits;
     bigits_.resize(num_bigits);
     for (int i = 0; i < num_bigits; ++i) {
@@ -489,8 +489,36 @@ class bigint {
     }
   }
 
+ public:
+  bigint() {}
+  explicit bigint(uint64_t n) { assign(n); }
+
+  // Assigns pow(10, exp) to this bigint.
+  void assign_pow10(int exp) {
+    assert(exp >= 0);
+    if (exp == 0) return assign(1);
+    // Find the top bit.
+    int bitmask = 1;
+    while (exp >= bitmask) bitmask <<= 1;
+    bitmask >>= 1;
+    // pow(10, exp) = pow(5, exp) * pow(2, exp). First compute pow(5, exp) by
+    // repeated squaring and multiplication.
+    assign(5);
+    bitmask >>= 1;
+    while (bitmask != 0) {
+      square();
+      if ((exp & bitmask) != 0) *this *= 5;
+      bitmask >>= 1;
+    }
+    *this <<= exp;  // Multiply by pow(2, exp) by shifting.
+  }
+
   bigint(const bigint&) = delete;
   void operator=(const bigint&) = delete;
+
+  void square() {
+    // TODO
+  }
 
   bigint& operator<<=(int shift) {
     assert(shift >= 0 && shift < bigit_bits);
@@ -499,6 +527,23 @@ class bigint {
       bigit c = shift != 0 ? bigits_[i] >> (bigit_bits - shift) : 0;
       bigits_[i] = (bigits_[i] << shift) + carry;
       carry = c;
+    }
+    if (carry != 0) bigits_.push_back(carry);
+    return *this;
+  }
+
+  bigint& operator*=(uint32_t value) {
+    assert(value > 0);
+    // Verify that the computation doesn't overflow.
+    constexpr double_bigit max32 = (std::numeric_limits<bigit>::max)();
+    constexpr double_bigit max64 = (std::numeric_limits<double_bigit>::max)();
+    static_assert(max32 * max32 <= max64 - max32, "");
+    bigit carry = 0;
+    const double_bigit wide_value = value;
+    for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
+      double_bigit result = bigits_[i] * wide_value + carry;
+      bigits_[i] = static_cast<bigit>(result);
+      carry = static_cast<bigit>(result >> bigit_bits);
     }
     if (carry != 0) bigits_.push_back(carry);
     return *this;
@@ -725,8 +770,9 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
   }
 };
 
-FMT_API void fallback_format(const fp& value) {
+FMT_API void fallback_format(const fp& value, int exp10) {
   (void)value; // TODO
+  (void)exp10;
 }
 
 template <typename Double,
@@ -782,7 +828,7 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
       result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
       size = handler.size;
       if (result == digits::error) {
-        fallback_format(fp_value);
+        fallback_format(fp_value, exp - cached_exp10);
         return false;
       }
     } else {

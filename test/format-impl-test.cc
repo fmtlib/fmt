@@ -29,6 +29,7 @@ static_assert(!std::is_copy_constructible<bigint>::value, "");
 static_assert(!std::is_copy_assignable<bigint>::value, "");
 
 TEST(BigIntTest, Construct) {
+  EXPECT_EQ("", fmt::format("{}", bigint()));
   EXPECT_EQ("42", fmt::format("{}", bigint(0x42)));
   EXPECT_EQ("123456789abcedf0", fmt::format("{}", bigint(0x123456789abcedf0)));
 }
@@ -41,6 +42,20 @@ TEST(BigIntTest, ShiftLeft) {
   EXPECT_EQ("84", fmt::format("{}", n));
   n <<= 25;
   EXPECT_EQ("108000000", fmt::format("{}", n));
+}
+
+TEST(BigIntTest, Multiply) {
+  bigint n(0x42);
+  n *= 1;
+  EXPECT_EQ("42", fmt::format("{}", n));
+  n *= 2;
+  EXPECT_EQ("84", fmt::format("{}", n));
+  n *= 0x12345678;
+  EXPECT_EQ("962fc95e0", fmt::format("{}", n));
+  auto max = (std::numeric_limits<uint32_t>::max)();
+  bigint bigmax(max);
+  bigmax *= max;
+  EXPECT_EQ("fffffffe00000001", fmt::format("{}", bigmax));
 }
 
 template <bool is_iec559> void test_construct_from_double() {
