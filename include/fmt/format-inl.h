@@ -398,13 +398,14 @@ class fp {
   // Normalizes the value converted from double and multiplied by (1 << SHIFT).
   template <int SHIFT> friend fp normalize(fp value) {
     // Handle subnormals.
-    const auto shifted_implicit_bit = implicit_bit << SHIFT;
+    const auto shifted_implicit_bit = fp::implicit_bit << SHIFT;
     while ((value.f & shifted_implicit_bit) == 0) {
       value.f <<= 1;
       --value.e;
     }
     // Subtract 1 to account for hidden bit.
-    const auto offset = significand_size - double_significand_size - SHIFT - 1;
+    const auto offset =
+      fp::significand_size - fp::double_significand_size - SHIFT - 1;
     value.f <<= offset;
     value.e -= offset;
     return value;
@@ -490,6 +491,18 @@ class bigint {
 
   bigint(const bigint&) = delete;
   void operator=(const bigint&) = delete;
+
+  bigint& operator<<=(int shift) {
+    assert(shift >= 0 && shift < bigit_bits);
+    bigit carry = 0;
+    for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
+      bigit c = shift != 0 ? bigits_[i] >> (bigit_bits - shift) : 0;
+      bigits_[i] = (bigits_[i] << shift) + carry;
+      carry = c;
+    }
+    if (carry != 0) bigits_.push_back(carry);
+    return *this;
+  }
 };
 
 enum round_direction { unknown, up, down };
@@ -712,6 +725,10 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
   }
 };
 
+FMT_API void fallback_format(const fp& value) {
+  (void)value; // TODO
+}
+
 template <typename Double,
           enable_if_t<(sizeof(Double) == sizeof(uint64_t)), int>>
 FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
@@ -765,13 +782,13 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
       result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
       size = handler.size;
       if (result == digits::error) {
-        // TODO: use fallback
+        fallback_format(fp_value);
         return false;
       }
     } else {
       ++lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
       --upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
-      grisu_shortest_handler<2> handler{buf.data(), 0, (upper - fp_value).f};
+      grisu_shortest_handler<2> handler{buf.data(), 0, (upper - normalized).f};
       result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
       size = handler.size;
       assert(result != digits::error);

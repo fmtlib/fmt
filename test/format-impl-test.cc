@@ -33,6 +33,16 @@ TEST(BigIntTest, Construct) {
   EXPECT_EQ("123456789abcedf0", fmt::format("{}", bigint(0x123456789abcedf0)));
 }
 
+TEST(BigIntTest, ShiftLeft) {
+  bigint n(0x42);
+  n <<= 0;
+  EXPECT_EQ("42", fmt::format("{}", n));
+  n <<= 1;
+  EXPECT_EQ("84", fmt::format("{}", n));
+  n <<= 25;
+  EXPECT_EQ("108000000", fmt::format("{}", n));
+}
+
 template <bool is_iec559> void test_construct_from_double() {
   fmt::print("warning: double is not IEC559, skipping FP tests\n");
 }
