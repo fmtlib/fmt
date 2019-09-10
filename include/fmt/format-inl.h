@@ -770,7 +770,7 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
   }
 };
 
-FMT_API void fallback_format(const fp& value, int exp10) {
+FMT_FUNC void fallback_format(const fp& value, int exp10) {
   (void)value; // TODO
   (void)exp10;
 }
