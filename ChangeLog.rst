@@ -183,6 +183,7 @@
 * Modernized the codebase using more C++11 features and removing workarounds.
   Most importantly, ``buffer_context`` is now an alias template, so
   use ``buffer_context<T>`` instead of ``buffer_context<T>::type``.
+  These features require GCC 4.8 or later.
 
 * ``formatter`` specializations now always take precedence over implicit
   conversions to ``int`` and the undocumented ``convert_to_int`` trait
