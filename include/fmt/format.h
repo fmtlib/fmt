@@ -45,6 +45,13 @@
 
 #include "core.h"
 
+#ifndef FMT_USE_TEXT
+# define FMT_USE_TEXT 0
+#endif
+#if FMT_USE_TEXT
+# include <boost/text/grapheme_break.hpp>
+#endif
+
 #ifdef __clang__
 #  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 #else
@@ -414,11 +421,6 @@ class output_range {
   OutputIt begin() const { return it_; }
   sentinel end() const { return {}; }  // Sentinel is not used yet.
 };
-
-template <typename Char>
-inline size_t count_code_points(basic_string_view<Char> s) {
-  return s.size();
-}
 
 // Counts the number of code points in a UTF-8 string.
 inline size_t count_code_points(basic_string_view<char8_t> s) {
@@ -910,6 +912,32 @@ inline It format_uint(It out, UInt value, int num_digits, bool upper = false) {
   char buffer[std::numeric_limits<UInt>::digits / BASE_BITS + 1];
   format_uint<BASE_BITS>(buffer, value, num_digits, upper);
   return internal::copy_str<Char>(buffer, buffer + num_digits, out);
+}
+
+template <typename Char>
+inline size_t compute_width(basic_string_view<Char> s) {
+  return s.size();
+}
+
+inline size_t compute_width(string_view s) {
+#if FMT_USE_TEXT
+  basic_memory_buffer<uint32_t> code_points;
+  for (auto cp: boost::text::make_to_utf32_range(s)) code_points.push_back(cp);
+  size_t num_graphemes = 0;
+  for (auto g: boost::text::graphemes(code_points)) ++num_graphemes;
+  return num_graphemes;
+#else
+  return s.size();
+#endif  // FMT_USE_TEXT
+}
+
+inline size_t compute_width(basic_string_view<char8_t> s) {
+#if FMT_USE_TEXT
+  return compute_width(string_view(
+    reinterpret_cast<const char*>(s.data(), s.size())));
+#else
+  return count_code_points(s);
+#endif  // FMT_USE_TEXT
 }
 
 #ifndef _WIN32
@@ -1583,7 +1611,7 @@ template <typename Range> class basic_writer {
 
     size_t size() const { return size_; }
     size_t width() const {
-      return internal::count_code_points(basic_string_view<Char>(s, size_));
+      return internal::compute_width(basic_string_view<Char>(s, size_));
     }
 
     template <typename It> void operator()(It&& it) const {
