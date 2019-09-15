@@ -33,6 +33,8 @@ if (MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING ${doc})
 endif ()
 
+option(FMT_USE_TEXT "Use the text library." OFF)
+
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
        OFF)
@@ -160,6 +162,10 @@ if (HAVE_OPEN)
   set(FMT_SOURCES ${FMT_SOURCES} src/posix.cc)
 endif ()
 
+if (FMT_USE_TEXT)
+  set(FMT_SOURCES ${FMT_SOURCES} src/text/grapheme_break.cpp)
+endif ()
+
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
 add_library(fmt::fmt ALIAS fmt)
 
@@ -179,6 +185,11 @@ target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
 target_include_directories(fmt PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
+
+if (FMT_USE_TEXT)
+  target_include_directories(fmt PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/text>)
+endif ()
 
 set_target_properties(fmt PROPERTIES
   VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}

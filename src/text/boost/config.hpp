@@ -1,0 +1,3 @@
+#ifndef BOOST_CXX14_CONSTEXPR
+# define BOOST_CXX14_CONSTEXPR
+#endif
