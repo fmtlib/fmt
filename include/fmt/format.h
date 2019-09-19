@@ -215,8 +215,9 @@ inline Dest bit_cast(const Source& source) {
 
 // Returns the largest possible value for type T. Same as
 // std::numeric_limits<T>::max() but shorter and not affected by the max macro.
-template <typename T>
-constexpr T max_value() { return (std::numeric_limits<T>::max)(); }
+template <typename T> constexpr T max_value() {
+  return (std::numeric_limits<T>::max)();
+}
 
 // An approximation of iterator_t for pre-C++20 systems.
 template <typename T>
@@ -2083,13 +2084,12 @@ template <typename Handler> class specs_checker : public Handler {
   numeric_specs_checker<Handler> checker_;
 };
 
-template <template <typename> class Handler, typename T, typename FormatArg,
+template <template <typename> class Handler, typename FormatArg,
           typename ErrorHandler>
-FMT_CONSTEXPR void set_dynamic_spec(T& value, FormatArg arg, ErrorHandler eh) {
-  unsigned long long big_value =
-      visit_format_arg(Handler<ErrorHandler>(eh), arg);
-  if (big_value > max_value<int>()) eh.on_error("number is too big");
-  value = static_cast<T>(big_value);
+FMT_CONSTEXPR int get_dynamic_spec(FormatArg arg, ErrorHandler eh) {
+  unsigned long long value = visit_format_arg(Handler<ErrorHandler>(eh), arg);
+  if (value > to_unsigned(max_value<int>())) eh.on_error("number is too big");
+  return static_cast<int>(value);
 }
 
 struct auto_id {};
@@ -2114,13 +2114,13 @@ class specs_handler : public specs_setter<typename Context::char_type> {
         context_(ctx) {}
 
   template <typename Id> FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
-    set_dynamic_spec<width_checker>(this->specs_.width, get_arg(arg_id),
-                                    context_.error_handler());
+    this->specs_.width = get_dynamic_spec<width_checker>(
+        get_arg(arg_id), context_.error_handler());
   }
 
   template <typename Id> FMT_CONSTEXPR void on_dynamic_precision(Id arg_id) {
-    set_dynamic_spec<precision_checker>(this->specs_.precision, get_arg(arg_id),
-                                        context_.error_handler());
+    this->specs_.precision = get_dynamic_spec<precision_checker>(
+        get_arg(arg_id), context_.error_handler());
   }
 
   void on_error(const char* message) { context_.on_error(message); }
@@ -2589,22 +2589,20 @@ void check_format_string(S format_str) {
   (void)invalid_format;
 }
 
-template <template <typename> class Handler, typename Spec, typename Context>
-void handle_dynamic_spec(Spec& value, arg_ref<typename Context::char_type> ref,
+template <template <typename> class Handler, typename Context>
+void handle_dynamic_spec(int& value, arg_ref<typename Context::char_type> ref,
                          Context& ctx) {
   switch (ref.kind) {
   case arg_id_kind::none:
     break;
   case arg_id_kind::index:
-    internal::set_dynamic_spec<Handler>(value, ctx.arg(ref.val.index),
-                                        ctx.error_handler());
+    value = internal::get_dynamic_spec<Handler>(ctx.arg(ref.val.index),
+                                                ctx.error_handler());
     break;
-  case arg_id_kind::name: {
-    const auto arg_id = ref.val.name;
-    internal::set_dynamic_spec<Handler>(value, ctx.arg(arg_id),
-                                        ctx.error_handler());
+  case arg_id_kind::name:
+    value = internal::get_dynamic_spec<Handler>(ctx.arg(ref.val.name),
+                                                ctx.error_handler());
     break;
-  }
   }
 }
 }  // namespace internal
