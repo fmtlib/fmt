@@ -7,7 +7,7 @@ else()
   cmake_policy(VERSION 3.11)
 endif()
 
-if (${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.15)
+if (NOT ${CMAKE_VERSION} VERSION_LESS 3.15)
   # Set policy to accept MSVC runtime selector (requires CMake >= 3.15)
   cmake_policy (SET CMP0091 NEW)
   option(MSVC_BUILD_STATIC "Enable building with static CRT." OFF)
