@@ -99,6 +99,9 @@ add_fmt_test(grisu-test)
 target_compile_definitions(grisu-test PRIVATE FMT_USE_GRISU=1)
 add_fmt_test(gtest-extra-test)
 add_fmt_test(format-test mock-allocator.h)
+if (MSVC)
+  target_compile_options(format-test PRIVATE /bigobj)
+endif ()
 if (NOT (MSVC AND BUILD_SHARED_LIBS))
   add_fmt_test(format-impl-test)
 endif ()
@@ -110,7 +113,7 @@ add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
 add_fmt_test(scan-test)
 
-if (HAVE_OPEN)
+if (HAVE_OPEN AND NOT MSVC_BUILD_STATIC)
   add_fmt_executable(posix-mock-test
     posix-mock-test.cc ../src/format.cc ${TEST_MAIN_SRC})
   target_include_directories(
@@ -231,7 +234,17 @@ endif ()
 
 # Activate optional CUDA tests if CUDA is found. For version selection, see
 # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#cpp14-language-features
-find_package(CUDA 9.0)
+if (${CMAKE_VERSION} VERSION_LESS 3.15)
+  find_package(CUDA 9.0)
+else ()
+  include(CheckLanguage)
+  check_language(CUDA)
+  if (CMAKE_CUDA_COMPILER)
+    enable_language(CUDA OPTIONAL)
+    set(CUDA_FOUND TRUE)
+  endif ()
+endif ()
+
 if (CUDA_FOUND)
   add_subdirectory(cuda-test)
   add_test(NAME cuda-test COMMAND fmt-in-cuda-test)
