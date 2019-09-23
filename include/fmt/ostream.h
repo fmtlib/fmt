@@ -46,9 +46,9 @@ template <class Char> class formatbuf : public std::basic_streambuf<Char> {
 
 template <typename Char> struct test_stream : std::basic_ostream<Char> {
  private:
-  struct null;
   // Hide all operator<< from std::basic_ostream<Char>.
-  void operator<<(null);
+  void_t<> operator<<(null<>);
+  void_t<> operator<<(const Char*);
 };
 
 // Checks if T has a user-defined operator<< (e.g. not a member of
@@ -56,9 +56,9 @@ template <typename Char> struct test_stream : std::basic_ostream<Char> {
 template <typename T, typename Char> class is_streamable {
  private:
   template <typename U>
-  static decltype((void)(std::declval<test_stream<Char>&>()
-                         << std::declval<U>()),
-                  std::true_type())
+  static bool_constant<!std::is_same<decltype(std::declval<test_stream<Char>&>()
+                                              << std::declval<U>()),
+                                     void_t<>>::value>
   test(int);
 
   template <typename> static std::false_type test(...);

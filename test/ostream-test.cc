@@ -242,3 +242,15 @@ TEST(FormatTest, UDL) {
   EXPECT_EQ("{}"_format("test"), "test");
 }
 #endif
+
+template <typename T>
+struct convertible {
+  T value;
+  explicit convertible(const T& val) : value(val) {}
+  operator T() const { return value; }
+};
+
+TEST(OStreamTest, ConvertibleToCString) {
+  EXPECT_EQ("x", fmt::format("{}", convertible<char>('x')));
+  EXPECT_EQ("foo", fmt::format("{}", convertible<const char*>("foo")));
+}
