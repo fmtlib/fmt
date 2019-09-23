@@ -368,12 +368,6 @@ TEST(FileTest, Fdopen) {
   EXPECT_EQ(read_fd, FMT_POSIX(fileno(read_end.fdopen("r").get())));
 }
 
-TEST(FileTest, FdopenError) {
-  file f;
-  EXPECT_SYSTEM_ERROR_NOASSERT(f.fdopen("r"), EBADF,
-                               "cannot associate stream with file descriptor");
-}
-
 #ifdef FMT_LOCALE
 TEST(LocaleTest, Strtod) {
   fmt::Locale locale;
