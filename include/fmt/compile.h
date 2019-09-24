@@ -331,11 +331,12 @@ template <typename... Args> struct type_list {};
 
 // Returns a reference to the argument at index N from [first, rest...].
 template <int N, typename T, typename... Args>
-const auto& get(const T& first, const Args&... rest) {
-  if constexpr (sizeof...(Args) == 0)
+constexpr const auto& get(const T& first, const Args&... rest) {
+  static_assert(N < 1 + sizeof...(Args), "index is out of bounds");
+  if constexpr (N == 0)
     return first;
   else
-    return get(rest...);
+    return get<N - 1>(rest...);
 }
 
 template <int N, typename> struct get_type_impl;
