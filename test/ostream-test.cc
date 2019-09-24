@@ -250,7 +250,8 @@ struct convertible {
   operator T() const { return value; }
 };
 
-TEST(OStreamTest, ConvertibleToCString) {
-  EXPECT_EQ("x", fmt::format("{}", convertible<char>('x')));
+TEST(OStreamTest, DisableBuiltinOStreamOperators) {
+  EXPECT_EQ("42", fmt::format("{:d}", convertible<unsigned short>(42)));
+  EXPECT_EQ(L"42", fmt::format(L"{:d}", convertible<unsigned short>(42)));
   EXPECT_EQ("foo", fmt::format("{}", convertible<const char*>("foo")));
 }

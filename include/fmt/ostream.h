@@ -49,6 +49,10 @@ template <typename Char> struct test_stream : std::basic_ostream<Char> {
   // Hide all operator<< from std::basic_ostream<Char>.
   void_t<> operator<<(null<>);
   void_t<> operator<<(const Char*);
+
+  template <typename T, FMT_ENABLE_IF(std::is_convertible<T, int>::value &&
+                                      !std::is_enum<T>::value)>
+  void_t<> operator<<(T);
 };
 
 // Checks if T has a user-defined operator<< (e.g. not a member of
