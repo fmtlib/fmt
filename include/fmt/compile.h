@@ -82,6 +82,8 @@ template <typename Char> struct part_counter {
     return begin;
   }
 
+  FMT_CONSTEXPR void on_end_of_string() {}
+
   FMT_CONSTEXPR void on_error(const char*) {}
 };
 
@@ -148,6 +150,8 @@ class format_string_compiler : public error_handler {
     handler_(part);
     return it;
   }
+
+  FMT_CONSTEXPR void on_end_of_string() {}
 };
 
 // Compiles a format string and invokes handler(part) for each parsed part.

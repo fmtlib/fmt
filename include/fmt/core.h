@@ -489,6 +489,9 @@ class basic_parse_context : private ErrorHandler {
 
   FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {}
 
+  FMT_CONSTEXPR bool is_auto_arg_indexing() { return next_arg_id_ >= 0; }
+  FMT_CONSTEXPR int num_auto_args() { return next_arg_id_; }
+
   FMT_CONSTEXPR void on_error(const char* message) {
     ErrorHandler::on_error(message);
   }

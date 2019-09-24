@@ -2377,6 +2377,8 @@ struct test_format_string_handler {
     return begin;
   }
 
+  FMT_CONSTEXPR void on_end_of_string() {}
+
   FMT_CONSTEXPR void on_error(const char*) { error = true; }
 
   bool error = false;
@@ -2496,6 +2498,8 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{}{1}",
                "cannot switch from automatic to manual argument indexing", int,
                int);
+  EXPECT_ERROR("", "number of arguments in format string is less than number of arguments provided", int);
+  EXPECT_ERROR("{}", "number of arguments in format string is less than number of arguments provided", int, int);
 }
 
 TEST(FormatTest, VFormatTo) {

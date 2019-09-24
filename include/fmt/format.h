@@ -2477,8 +2477,10 @@ FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
     // Doing two passes with memchr (one for '{' and another for '}') is up to
     // 2.5x faster than the naive one-pass implementation on big format strings.
     const Char* p = begin;
-    if (*begin != '{' && !find<IS_CONSTEXPR>(begin, end, '{', p))
+    if (*begin != '{' && !find<IS_CONSTEXPR>(begin, end, '{', p)) {
+      handler.on_end_of_string();
       return write(begin, end);
+    }
     write(begin, p);
     ++p;
     if (p == end) return handler.on_error("invalid format string");
@@ -2502,6 +2504,7 @@ FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
     }
     begin = p + 1;
   }
+  handler.on_end_of_string();
 }
 
 template <typename T, typename ParseContext>
@@ -2549,6 +2552,11 @@ class format_string_checker {
   FMT_CONSTEXPR const Char* on_format_specs(const Char* begin, const Char*) {
     advance_to(context_, begin);
     return arg_id_ < num_args ? parse_funcs_[arg_id_](context_) : begin;
+  }
+
+  FMT_CONSTEXPR void on_end_of_string() {
+  if (context_.is_auto_arg_indexing() && context_.num_auto_args() < num_args)
+     context_.on_error("number of arguments in format string is less than number of arguments provided");
   }
 
   FMT_CONSTEXPR void on_error(const char* message) {
@@ -3211,6 +3219,8 @@ struct format_handler : internal::error_handler {
         visit_format_arg(ArgFormatter(context, &parse_context, &specs), arg));
     return begin;
   }
+
+  void on_end_of_string() {}
 
   basic_parse_context<Char> parse_context;
   Context context;

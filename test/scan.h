@@ -212,6 +212,8 @@ struct scan_handler : error_handler {
     arg_.custom.scan(arg_.custom.value, parse_ctx_, scan_ctx_);
     return parse_ctx_.begin();
   }
+
+  void on_end_of_string() {}
 };
 }  // namespace internal
 
