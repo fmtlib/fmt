@@ -117,6 +117,11 @@ TEST(CompileTest, FormattedSize) {
   EXPECT_EQ(fmt::formatted_size(f, 42), 10);
 }
 
+TEST(CompileTest, MultipleTypes) {
+  auto f = fmt::compile<int, int>("{} {}");
+  EXPECT_EQ(fmt::format(f, 42, 42), "42 42");
+}
+
 struct formattable {};
 
 FMT_BEGIN_NAMESPACE
