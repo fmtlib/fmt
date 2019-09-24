@@ -414,7 +414,7 @@ constexpr concat<L, R> make_concat(L lhs, R rhs) {
   return {lhs, rhs};
 }
 
-struct unknown {};
+struct unknown_format {};
 
 template <typename Char>
 constexpr size_t parse_text(basic_string_view<Char> str, size_t pos) {
@@ -431,7 +431,8 @@ template <typename Args, size_t POS, int ID, typename T, typename S>
 constexpr auto parse_tail(T head, S format_str) {
   if constexpr (POS != to_string_view(format_str).size()) {
     constexpr auto tail = compile_format_string<Args, POS, ID>(format_str);
-    if constexpr (std::is_same<remove_cvref_t<decltype(tail)>, unknown>())
+    if constexpr (std::is_same<remove_cvref_t<decltype(tail)>,
+                               unknown_format>())
       return tail;
     else
       return make_concat(head, tail);
@@ -441,7 +442,7 @@ constexpr auto parse_tail(T head, S format_str) {
 }
 
 // Compiles a non-empty format string and returns the compiled representation
-// or unknown() on unrecognized input.
+// or unknown_format() on unrecognized input.
 template <typename Args, size_t POS, int ID, typename S>
 constexpr auto compile_format_string(S format_str) {
   using char_type = typename S::char_type;
@@ -457,10 +458,10 @@ constexpr auto compile_format_string(S format_str) {
         return parse_tail<Args, POS + 2, ID + 1>(field<char_type, type, ID>(),
                                                  format_str);
       } else {
-        return unknown();
+        return unknown_format();
       }
     } else {
-      return unknown();
+      return unknown_format();
     }
   } else if constexpr (str[POS] == '}') {
     if (POS + 1 == str.size())
@@ -488,7 +489,7 @@ constexpr auto compile(S format_str) {
         internal::compile_format_string<internal::type_list<Args...>, 0, 0>(
             format_str);
     if constexpr (std::is_same<remove_cvref_t<decltype(result)>,
-                               internal::unknown>()) {
+                               internal::unknown_format>()) {
       return internal::compiled_format<S, Args...>(to_string_view(format_str));
     } else {
       return result;
