@@ -43,7 +43,7 @@ Features
   consists of just three header files, ``core.h``, ``format.h`` and
   ``format-inl.h``) and compiled code. See `Compile time and code bloat`_.
 * Reliability: the library has an extensive set of `unit tests
-  <https://github.com/fmtlib/fmt/tree/master/test>`_.
+  <https://github.com/fmtlib/fmt/tree/master/test>`_ and is continuously fuzzed.
 * Safety: the library is fully type safe, errors in format strings can be
   reported at compile time, automatic memory management prevents buffer overflow
   errors.
