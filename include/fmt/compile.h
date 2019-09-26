@@ -603,6 +603,26 @@ std::size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
       .count();
 }
 
+template <typename CompiledFormat, typename... Args,
+          FMT_ENABLE_IF(internal::is_compiled_format<CompiledFormat>::value)>
+inline void print(std::FILE* f, const CompiledFormat& cf, Args&&... args) {
+  using Char = char_t<CompiledFormat>;
+  using context = buffer_context<Char>;
+  basic_memory_buffer<Char> buffer;
+  format_to(std::back_inserter(buffer), cf, args...);
+  vprint(f, {buffer.begin(), buffer.size()}, {make_format_args<context>()});
+}
+
+template <typename CompiledFormat, typename... Args,
+          FMT_ENABLE_IF(internal::is_compiled_format<CompiledFormat>::value)>
+inline void print(const CompiledFormat& cf, Args&&... args) {
+  using Char = char_t<CompiledFormat>;
+  using context = buffer_context<Char>;
+  basic_memory_buffer<Char> buffer;
+  format_to(std::back_inserter(buffer), cf, args...);
+  vprint({buffer.begin(), buffer.size()}, {make_format_args<context>()});
+}
+
 FMT_END_NAMESPACE
 
 #endif  // FMT_COMPILE_H_
