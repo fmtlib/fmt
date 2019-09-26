@@ -3351,7 +3351,8 @@ inline typename buffer_context<Char>::iterator vformat_to(
 }
 
 template <typename S, typename... Args, std::size_t SIZE = inline_buffer_size,
-          typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
+          typename Char = char_t<S>,
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline typename buffer_context<Char>::iterator format_to(
     basic_memory_buffer<Char, SIZE>& buf, const S& format_str, Args&&... args) {
   internal::check_format_string<Args...>(format_str);

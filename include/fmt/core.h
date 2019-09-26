@@ -1409,7 +1409,8 @@ inline std::basic_string<Char> vformat(
 */
 // Pass char_t as a default template parameter instead of using
 // std::basic_string<char_t<S>> to reduce the symbol size.
-template <typename S, typename... Args, typename Char = char_t<S>>
+template <typename S, typename... Args, typename Char = char_t<S>,
+          FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline std::basic_string<Char> format(const S& format_str, Args&&... args) {
   return internal::vformat(
       to_string_view(format_str),
