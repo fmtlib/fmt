@@ -492,6 +492,12 @@ template <typename Char>
 struct is_constexpr_compiled_format<text<Char>> : std::true_type {};
 
 #endif  // __cpp_if_constexpr
+
+template <typename T>
+struct char_t_impl<T, enable_if_t<is_compiled_format<T>::value>> {
+  using type = typename T::char_type;
+};
+
 }  // namespace internal
 
 #if FMT_USE_CONSTEXPR
