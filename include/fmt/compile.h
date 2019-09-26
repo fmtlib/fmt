@@ -326,6 +326,17 @@ class compiled_format : private compiled_format_base<S> {
       : compiled_format_base<S>(format_str), format_str_(format_str) {}
 };
 
+template <typename T>
+struct is_runtime_compiled_format
+    : std::is_base_of<internal::basic_compiled_format, T> {};
+
+template <typename T> struct is_constexpr_compiled_format : std::false_type {};
+
+template <typename T> struct is_compiled_format {
+  constexpr static bool value = is_runtime_compiled_format<T>::value ||
+                                is_constexpr_compiled_format<T>::value;
+};
+
 #ifdef __cpp_if_constexpr
 template <typename... Args> struct type_list {};
 
@@ -473,6 +484,13 @@ constexpr auto compile_format_string(S format_str) {
                                      format_str);
   }
 }
+
+template <typename L, typename R>
+struct is_constexpr_compiled_format<concat<L, R>> : std::true_type {};
+
+template <typename Char>
+struct is_constexpr_compiled_format<text<Char>> : std::true_type {};
+
 #endif  // __cpp_if_constexpr
 }  // namespace internal
 
@@ -499,8 +517,8 @@ constexpr auto compile(S format_str) {
 
 template <typename CompiledFormat, typename... Args,
           typename Char = typename CompiledFormat::char_type,
-          FMT_ENABLE_IF(!std::is_base_of<internal::basic_compiled_format,
-                                         CompiledFormat>::value)>
+          FMT_ENABLE_IF(
+              internal::is_constexpr_compiled_format<CompiledFormat>::value)>
 std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   basic_memory_buffer<Char> buffer;
   using range = buffer_range<Char>;
@@ -510,8 +528,8 @@ std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,
-          FMT_ENABLE_IF(!std::is_base_of<internal::basic_compiled_format,
-                                         CompiledFormat>::value)>
+          FMT_ENABLE_IF(
+              internal::is_constexpr_compiled_format<CompiledFormat>::value)>
 OutputIt format_to(OutputIt out, const CompiledFormat& cf,
                    const Args&... args) {
   return cf.format(out, args...);
@@ -533,10 +551,10 @@ auto compile(const Char (&format_str)[N])
       basic_string_view<Char>(format_str, N - 1));
 }
 
-template <typename CompiledFormat, typename... Args,
-          typename Char = typename CompiledFormat::char_type,
-          FMT_ENABLE_IF(std::is_base_of<internal::basic_compiled_format,
-                                        CompiledFormat>::value)>
+template <
+    typename CompiledFormat, typename... Args,
+    typename Char = typename CompiledFormat::char_type,
+    FMT_ENABLE_IF(internal::is_runtime_compiled_format<CompiledFormat>::value)>
 std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   basic_memory_buffer<Char> buffer;
   using range = buffer_range<Char>;
@@ -546,9 +564,9 @@ std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   return to_string(buffer);
 }
 
-template <typename OutputIt, typename CompiledFormat, typename... Args,
-          FMT_ENABLE_IF(std::is_base_of<internal::basic_compiled_format,
-                                        CompiledFormat>::value)>
+template <
+    typename OutputIt, typename CompiledFormat, typename... Args,
+    FMT_ENABLE_IF(internal::is_runtime_compiled_format<CompiledFormat>::value)>
 OutputIt format_to(OutputIt out, const CompiledFormat& cf,
                    const Args&... args) {
   using char_type = typename CompiledFormat::char_type;
@@ -558,8 +576,10 @@ OutputIt format_to(OutputIt out, const CompiledFormat& cf,
       range(out), cf, {make_format_args<context>(args...)});
 }
 
-template <typename OutputIt, typename CompiledFormat, typename... Args,
-          FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
+template <
+    typename OutputIt, typename CompiledFormat, typename... Args,
+    FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value&&
+                      internal::is_compiled_format<CompiledFormat>::value)>
 format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                                          const CompiledFormat& cf,
                                          const Args&... args) {
@@ -568,7 +588,8 @@ format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
   return {it.base(), it.count()};
 }
 
-template <typename CompiledFormat, typename... Args>
+template <typename CompiledFormat, typename... Args,
+          FMT_ENABLE_IF(internal::is_compiled_format<CompiledFormat>::value)>
 std::size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
   return format_to(
              internal::counting_iterator<typename CompiledFormat::char_type>(),
