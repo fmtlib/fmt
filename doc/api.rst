@@ -10,6 +10,8 @@ The {fmt} library API consists of the following parts:
   facilities and a lightweight subset of formatting functions
 * :ref:`fmt/format.h <format-api>`: the full format API providing compile-time
   format string checks, output iterator and user-defined type support
+* :ref:`fmt/ranges.h <ranges-api>`: additional formatting support for ranges
+  and tuples
 * :ref:`fmt/chrono.h <chrono-api>`: date and time formatting
 * :ref:`fmt/ostream.h <ostream-api>`: ``std::ostream`` support
 * :ref:`fmt/printf.h <printf-api>`: ``printf`` formatting
@@ -316,6 +318,31 @@ custom argument formatter class::
 
 .. doxygenclass:: fmt::arg_formatter
    :members:
+
+.. _ranges-api:
+
+Ranges and Tuple Formatting
+===========================
+
+The library also supports convenient formatting of ranges and tuples::
+
+  #include <fmt/ranges.h>
+
+  std::tuple<char, int, float> t{'a', 1, 2.0f};
+  // Prints "('a', 1, 2.0)"
+  fmt::print("{}", t);
+
+
+NOTE: currently, the overload of ``fmt::join`` for iterables exists in the main
+``format.h`` header, but expect this to change in the future.
+
+Using ``fmt::join``, you can separate tuple elements with a custom separator::
+
+  #include <fmt/ranges.h>
+
+  std::tuple<int, char> t = {1, 'a'};
+  // Prints "1, a"
+  fmt::print("{}", fmt::join(t, ", "));
 
 .. _chrono-api:
 
