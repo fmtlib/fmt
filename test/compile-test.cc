@@ -22,6 +22,7 @@
 #endif
 
 #include "fmt/compile.h"
+#include "fmt/ostream.h"
 #include "gmock.h"
 #include "gtest-extra.h"
 #include "mock-allocator.h"
@@ -140,4 +141,21 @@ TEST(CompileTest, FormatUserDefinedType) {
 TEST(CompileTest, EmptyFormatString) {
   auto f = fmt::compile<>("");
   EXPECT_EQ(fmt::format(f), "");
+}
+
+TEST(CompileTest, Print) {
+  std::ostringstream os;
+  auto f = fmt::compile<fmt::string_view>("Don't {}!");
+  fmt::print(os, f, "panic");
+  EXPECT_EQ("Don't panic!", os.str());
+
+  auto wf = fmt::compile<fmt::wstring_view>(L"Don't {}!");
+  std::wostringstream wos;
+  fmt::print(wos, wf, L"panic");
+  EXPECT_EQ(L"Don't panic!", wos.str());
+
+#if FMT_USE_FILE_DESCRIPTORS
+  EXPECT_WRITE(stdout, fmt::print(f, "panic"), "Don't panic!");
+  EXPECT_WRITE(stderr, fmt::print(stderr, f, "panic"), "Don't panic!");
+#endif
 }
