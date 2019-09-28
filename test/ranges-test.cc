@@ -9,12 +9,12 @@
 // All Rights Reserved
 // {fmt} support for ranges, containers and types tuple interface.
 
-/// Check if  'if constexpr' is supported.
+#include "fmt/ranges.h"
+#include "gtest.h"
+
+// Check if  'if constexpr' is supported.
 #if (__cplusplus > 201402L) || \
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
-
-#  include "fmt/ranges.h"
-#  include "gtest.h"
 
 #  include <array>
 #  include <map>
@@ -119,3 +119,16 @@ TEST(RangesTest, PathLike) {
 
 #endif  // (__cplusplus > 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >
         // 201402L && _MSC_VER >= 1910)
+
+#ifdef FMT_USE_STRING_VIEW
+struct string_like {
+  const char* begin();
+  const char* end();
+  explicit operator fmt::string_view() const { return "foo"; }
+  explicit operator std::string_view() const { return "foo"; }
+};
+
+TEST(RangesTest, FormatStringLike) {
+  EXPECT_EQ("foo", fmt::format("{}", string_like()));
+}
+#endif  // FMT_USE_STRING_VIEW

@@ -246,7 +246,8 @@ template <typename T, typename Char> struct is_range {
   static FMT_CONSTEXPR_DECL const bool value =
       internal::is_range_<T>::value &&
       !internal::is_like_std_string<T>::value &&
-      !std::is_convertible<T, std::basic_string<Char>>::value;
+      !std::is_convertible<T, std::basic_string<Char>>::value &&
+      !std::is_constructible<internal::std_string_view<Char>, T>::value;
 };
 
 template <typename RangeT, typename Char>
