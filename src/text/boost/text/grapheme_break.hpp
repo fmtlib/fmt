@@ -1,13 +1,12 @@
 #ifndef BOOST_TEXT_GRAPHEME_BREAK_HPP
 #define BOOST_TEXT_GRAPHEME_BREAK_HPP
 
-#include <boost/text/config.hpp>
-
 #include <array>
 #include <unordered_map>
 
 #include <stdint.h>
 
+#define BOOST_TEXT_DECL
 
 namespace boost { namespace text {
 

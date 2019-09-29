@@ -1,8 +1,6 @@
 #ifndef BOOST_TEXT_CONFIG_HPP
 #define BOOST_TEXT_CONFIG_HPP
 
-#include <boost/config.hpp>
-
 
 /** There are ICU-based implementations of many operations, but those are only
     defined when BOOST_TEXT_HAS_ICU is nonzero.  If you define this, you must
@@ -38,7 +36,7 @@
 #    define BOOST_TEXT_CXX14_CONSTEXPR
 #    define BOOST_TEXT_NO_CXX14_CONSTEXPR
 #else
-#    define BOOST_TEXT_CXX14_CONSTEXPR BOOST_CXX14_CONSTEXPR
+#    define BOOST_TEXT_CXX14_CONSTEXPR
 #    if defined(BOOST_NO_CXX14_CONSTEXPR)
 #        define BOOST_TEXT_NO_CXX14_CONSTEXPR
 #    endif

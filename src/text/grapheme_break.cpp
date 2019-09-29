@@ -2,8 +2,6 @@
 #include <boost/text/grapheme_break.hpp>
 #include <boost/text/detail/break_prop_iter.hpp>
 
-#include <boost/assert.hpp>
-
 #include <algorithm>
 #include <array>
 #include <unordered_map>
@@ -3583,8 +3581,8 @@ std::copy(
     compressed.begin(),
     compressed.end(),
     lzw_to_break_prop_iter<grapheme_property>(retval, buf));
-BOOST_ASSERT(buf.empty());
-BOOST_ASSERT(retval.size() == 15958);
+assert(buf.empty());
+assert(retval.size() == 15958);
 return retval;
 }
 
