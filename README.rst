@@ -28,7 +28,7 @@ Features
 * Replacement-based `format API <https://fmt.dev/dev/api.html>`_ with
   positional arguments for localization.
 * `Format string syntax <https://fmt.dev/dev/syntax.html>`_ similar to the one
-  of `str.format <https://docs.python.org/2/library/stdtypes.html#str.format>`_
+  of `str.format <https://docs.python.org/3/library/stdtypes.html#str.format>`_
   in Python.
 * Safe `printf implementation
   <https://fmt.dev/latest/api.html#printf-formatting>`_ including
