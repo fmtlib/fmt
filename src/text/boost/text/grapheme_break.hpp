@@ -2,7 +2,6 @@
 #define BOOST_TEXT_GRAPHEME_BREAK_HPP
 
 #include <boost/text/algorithm.hpp>
-#include <boost/text/lazy_segment_range.hpp>
 #include <boost/text/utility.hpp>
 
 #include <boost/assert.hpp>
@@ -365,117 +364,6 @@ constexpr std::array<std::array<bool, 15>, 15> grapheme_breaks = {{
             }
         };
     }
-
-#if 0
-    /** Returns the bounds of the grapheme that `it` lies within. */
-    template<typename CPIter, typename Sentinel>
-    cp_range<CPIter> grapheme(CPIter first, CPIter it, Sentinel last) noexcept
-    {
-        first = prev_grapheme_break(first, it, last);
-        return cp_range<CPIter>{first, next_grapheme_break(first, last)};
-    }
-#endif
-
-#ifdef BOOST_TEXT_DOXYGEN
-
-#if 0
-    /** Returns the bounds of the grapheme that `it` lies within,
-        as a cp_range. */
-    template<typename CPRange, typename CPIter>
-    detail::undefined grapheme(CPRange & range, CPIter it) noexcept;
-#endif
-
-    /** Returns a lazy range of the code point ranges delimiting graphemes in
-        `[first, last)`. */
-    template<typename CPIter, typename Sentinel>
-    detail::undefined graphemes(CPIter first, Sentinel last) noexcept;
-
-    /** Returns a lazy range of the code point ranges delimiting graphemes in
-        `range`. */
-    template<typename CPRange>
-    detail::undefined graphemes(CPRange & range) noexcept;
-
-    /** Returns a lazy range of the code point ranges delimiting graphemes in
-        `[first, last)`, in reverse. */
-    template<typename CPIter>
-    detail::undefined reversed_graphemes(CPIter first, CPIter last) noexcept;
-
-    /** Returns a lazy range of the code point ranges delimiting graphemes in
-        `range`, in reverse. */
-    template<typename CPRange>
-    detail::undefined reversed_graphemes(CPRange & range) noexcept;
-
-#else
-
-#if 0
-    template<typename CPRange, typename CPIter>
-    auto grapheme(CPRange & range, CPIter it) noexcept
-        -> cp_range<detail::iterator_t<CPRange>>
-    {
-        auto first =
-            prev_grapheme_break(std::begin(range), it, std::end(range));
-        return cp_range<CPIter>{first, next_grapheme_break(first, range.end())};
-    }
-#endif
-
-    template<typename CPIter, typename Sentinel>
-    lazy_segment_range<
-        CPIter,
-        Sentinel,
-        detail::next_grapheme_callable<CPIter, Sentinel>>
-    graphemes(CPIter first, Sentinel last) noexcept
-    {
-        detail::next_grapheme_callable<CPIter, Sentinel> next;
-        return {std::move(next), {first, last}, {last}};
-    }
-
-    template<typename CPRange>
-    auto graphemes(CPRange & range) noexcept -> lazy_segment_range<
-        detail::iterator_t<CPRange>,
-        detail::sentinel_t<CPRange>,
-        detail::next_grapheme_callable<
-            detail::iterator_t<CPRange>,
-            detail::sentinel_t<CPRange>>>
-    {
-        detail::next_grapheme_callable<
-            detail::iterator_t<CPRange>,
-            detail::sentinel_t<CPRange>>
-            next;
-        return {std::move(next),
-                {std::begin(range), std::end(range)},
-                {std::end(range)}};
-    }
-
-    template<typename CPIter>
-    lazy_segment_range<
-        CPIter,
-        CPIter,
-        detail::prev_grapheme_callable<CPIter>,
-        cp_range<CPIter>,
-        detail::const_reverse_lazy_segment_iterator,
-        true>
-    reversed_graphemes(CPIter first, CPIter last) noexcept
-    {
-        detail::prev_grapheme_callable<CPIter> prev;
-        return {std::move(prev), {first, last, last}, {first, first, last}};
-    }
-
-    template<typename CPRange>
-    auto reversed_graphemes(CPRange & range) noexcept -> lazy_segment_range<
-        detail::iterator_t<CPRange>,
-        detail::sentinel_t<CPRange>,
-        detail::prev_grapheme_callable<detail::iterator_t<CPRange>>,
-        cp_range<detail::iterator_t<CPRange>>,
-        detail::const_reverse_lazy_segment_iterator,
-        true>
-    {
-        detail::prev_grapheme_callable<detail::iterator_t<CPRange>> prev;
-        return {std::move(prev),
-                {std::begin(range), std::end(range), std::end(range)},
-                {std::begin(range), std::begin(range), std::end(range)}};
-    }
-
-#endif
 
 }}
 

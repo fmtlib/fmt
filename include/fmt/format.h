@@ -46,10 +46,10 @@
 #include "core.h"
 
 #ifndef FMT_USE_TEXT
-# define FMT_USE_TEXT 0
+#  define FMT_USE_TEXT 0
 #endif
 #if FMT_USE_TEXT
-# include <boost/text/grapheme_break.hpp>
+#  include <boost/text/grapheme_break.hpp>
 #endif
 
 #ifdef __clang__
@@ -922,30 +922,31 @@ inline size_t compute_width(basic_string_view<Char> s) {
 inline size_t compute_width(string_view s) {
 #if FMT_USE_TEXT
   basic_memory_buffer<uint32_t> code_points;
-  for (auto cp: boost::text::make_to_utf32_range(s)) code_points.push_back(cp);
+  for (auto cp : boost::text::make_to_utf32_range(s)) code_points.push_back(cp);
   size_t width = 0;
-  for (auto g: boost::text::graphemes(code_points)) {
-    auto cp = *g.begin();
+  for (auto it = code_points.begin(), end = code_points.end(); it != end;
+       it = boost::text::next_grapheme_break(it, end)) {
+    auto cp = *it;
     // Based on http://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c by Markus Kuhn.
-    width += 1 +
-      (cp >= 0x1100 &&
-      (cp <= 0x115f ||   // Hangul Jamo init. consonants
-        cp == 0x2329 ||  // LEFT-POINTING ANGLE BRACKET〈
-        cp == 0x232a ||  // RIGHT-POINTING ANGLE BRACKET 〉
-        // CJK ... Yi except Unicode Character “〿”:
-        (cp >= 0x2e80 && cp <= 0xa4cf && cp != 0x303f) ||
-        (cp >= 0xac00 && cp <= 0xd7a3) ||  // Hangul Syllables
-        (cp >= 0xf900 && cp <= 0xfaff) ||  // CJK Compatibility Ideographs
-        (cp >= 0xfe10 && cp <= 0xfe19) ||  // Vertical Forms
-        (cp >= 0xfe30 && cp <= 0xfe6f) ||  // CJK Compatibility Forms
-        (cp >= 0xff00 && cp <= 0xff60) ||  // Fullwidth Forms
-        (cp >= 0xffe0 && cp <= 0xffe6) ||  // Fullwidth Forms
-        (cp >= 0x20000 && cp <= 0x2fffd) ||  // CJK
-        (cp >= 0x30000 && cp <= 0x3fffd) ||
-        // Miscellaneous Symbols and Pictographs + Emoticons:
-        (cp >= 0x1f300 && cp <= 0x1f64f) ||
-        // Supplemental Symbols and Pictographs:
-        (cp >= 0x1f900 && cp <= 0x1f9ff)));
+    width +=
+        1 + (cp >= 0x1100 &&
+             (cp <= 0x115f ||  // Hangul Jamo init. consonants
+              cp == 0x2329 ||  // LEFT-POINTING ANGLE BRACKET〈
+              cp == 0x232a ||  // RIGHT-POINTING ANGLE BRACKET 〉
+              // CJK ... Yi except Unicode Character “〿”:
+              (cp >= 0x2e80 && cp <= 0xa4cf && cp != 0x303f) ||
+              (cp >= 0xac00 && cp <= 0xd7a3) ||  // Hangul Syllables
+              (cp >= 0xf900 && cp <= 0xfaff) ||  // CJK Compatibility Ideographs
+              (cp >= 0xfe10 && cp <= 0xfe19) ||  // Vertical Forms
+              (cp >= 0xfe30 && cp <= 0xfe6f) ||  // CJK Compatibility Forms
+              (cp >= 0xff00 && cp <= 0xff60) ||  // Fullwidth Forms
+              (cp >= 0xffe0 && cp <= 0xffe6) ||  // Fullwidth Forms
+              (cp >= 0x20000 && cp <= 0x2fffd) ||  // CJK
+              (cp >= 0x30000 && cp <= 0x3fffd) ||
+              // Miscellaneous Symbols and Pictographs + Emoticons:
+              (cp >= 0x1f300 && cp <= 0x1f64f) ||
+              // Supplemental Symbols and Pictographs:
+              (cp >= 0x1f900 && cp <= 0x1f9ff)));
   }
   return width;
 #else
@@ -955,8 +956,8 @@ inline size_t compute_width(string_view s) {
 
 inline size_t compute_width(basic_string_view<char8_t> s) {
 #if FMT_USE_TEXT
-  return compute_width(string_view(
-    reinterpret_cast<const char*>(s.data(), s.size())));
+  return compute_width(
+      string_view(reinterpret_cast<const char*>(s.data(), s.size())));
 #else
   return count_code_points(s);
 #endif  // FMT_USE_TEXT
