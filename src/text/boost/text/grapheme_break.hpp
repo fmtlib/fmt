@@ -1,7 +1,6 @@
 #ifndef BOOST_TEXT_GRAPHEME_BREAK_HPP
 #define BOOST_TEXT_GRAPHEME_BREAK_HPP
 
-#include <boost/text/algorithm.hpp>
 #include <boost/text/config.hpp>
 
 #include <array>
@@ -11,6 +10,19 @@
 
 
 namespace boost { namespace text {
+
+    /** Analogue of `std::find()` that finds the last value `v` in `[first,
+        last)` for which `p(v)` is true. */
+    template<typename BidiIter, typename Pred>
+    BidiIter find_if_backward(BidiIter first, BidiIter last, Pred p)
+    {
+        auto it = last;
+        while (it != first) {
+            if (p(*--it))
+                return it;
+        }
+        return last;
+    }
 
     /** The grapheme properties defined by Unicode. */
     enum class grapheme_property {
