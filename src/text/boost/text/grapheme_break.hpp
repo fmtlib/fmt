@@ -4,8 +4,6 @@
 #include <boost/text/algorithm.hpp>
 #include <boost/text/utility.hpp>
 
-#include <boost/assert.hpp>
-
 #include <array>
 #include <unordered_map>
 
@@ -158,123 +156,6 @@ constexpr std::array<std::array<bool, 15>, 15> grapheme_breaks = {{
         }
     }
 
-#ifdef BOOST_TEXT_DOXYGEN
-
-    /** Finds the nearest grapheme break at or before before `it`.  If `it ==
-        first`, that is returned.  Otherwise, the first code point of the
-        grapheme that `it` is within is returned (even if `it` is already at
-        the first code point of a grapheme).
-
-        This function only participates in overload resolution if `CPIter`
-        models the CPIter concept. */
-    template<typename CPIter, typename Sentinel>
-    CPIter prev_grapheme_break(CPIter first, CPIter it, Sentinel last) noexcept;
-
-    /** Finds the next word break after `first`.  This will be the first code
-        point after the current word, or `last` if no next word exists.
-
-        This function only participates in overload resolution if `CPIter`
-        models the CPIter concept.
-
-        \pre `first` is at the beginning of a word. */
-    template<typename CPIter, typename Sentinel>
-    CPIter next_grapheme_break(CPIter first, Sentinel last) noexcept;
-
-    /** Finds the nearest grapheme break at or before before `it`.  If `it ==
-        range.begin()`, that is returned.  Otherwise, the first code point of
-        the grapheme that `it` is within is returned (even if `it` is already
-        at the first code point of a grapheme).
-
-        This function only participates in overload resolution if `CPRange`
-        models the CPRange concept. */
-    template<typename CPRange, typename CPIter>
-    detail::undefined prev_grapheme_break(CPRange & range, CPIter it) noexcept;
-
-    /** Finds the next grapheme break after `it`.  This will be the first code
-        point after the current grapheme, or `range.end()` if no next grapheme
-        exists.
-
-        This function only participates in overload resolution if `CPRange`
-        models the CPRange concept.
-
-        \pre `it` is at the beginning of a grapheme. */
-    template<typename CPRange, typename CPIter>
-    detail::undefined next_grapheme_break(CPRange & range, CPIter it) noexcept;
-
-#else
-
-    template<typename CPIter, typename Sentinel>
-    auto prev_grapheme_break(CPIter first, CPIter it, Sentinel last) noexcept
-        -> detail::cp_iter_ret_t<CPIter, CPIter>
-    {
-        if (it == first)
-            return it;
-
-        if (it == last && --it == first)
-            return it;
-
-        detail::grapheme_break_state<CPIter> state;
-        state.it = it;
-        state.prop = grapheme_prop(*state.it);
-        state.prev_prop = grapheme_prop(*std::prev(state.it));
-        state.emoji_state = detail::grapheme_break_emoji_state_t::none;
-
-        for (; state.it != first; state = prev(state)) {
-            state.prev_prop = grapheme_prop(*std::prev(state.it));
-
-            // When we see an RI, back up to the first RI so we can see what
-            // emoji state we're supposed to be in here.
-            if (state.emoji_state ==
-                    detail::grapheme_break_emoji_state_t::none &&
-                state.prop == grapheme_property::Regional_Indicator) {
-                int ris_before = 0;
-                find_if_not_backward(
-                    first, state.it, [&ris_before](uint32_t cp) {
-                        bool const ri = grapheme_prop(cp) ==
-                                        grapheme_property::Regional_Indicator;
-                        if (ri)
-                            ++ris_before;
-                        return ri;
-                    });
-                state.emoji_state =
-                    (ris_before % 2 == 0)
-                        ? detail::grapheme_break_emoji_state_t::first_emoji
-                        : detail::grapheme_break_emoji_state_t::second_emoji;
-            }
-
-            // GB11
-            if (state.prev_prop == grapheme_property::ZWJ &&
-                state.prop == grapheme_property::ExtPict &&
-                detail::gb11_prefix(first, std::prev(state.it))) {
-                continue;
-            }
-
-            if (state.emoji_state ==
-                detail::grapheme_break_emoji_state_t::first_emoji) {
-                if (state.prev_prop == grapheme_property::Regional_Indicator) {
-                    state.emoji_state =
-                        detail::grapheme_break_emoji_state_t::second_emoji;
-                    return state.it;
-                } else {
-                    state.emoji_state =
-                        detail::grapheme_break_emoji_state_t::none;
-                }
-            } else if (
-                state.emoji_state ==
-                    detail::grapheme_break_emoji_state_t::second_emoji &&
-                state.prev_prop == grapheme_property::Regional_Indicator) {
-                state.emoji_state =
-                    detail::grapheme_break_emoji_state_t::first_emoji;
-                continue;
-            }
-
-            if (detail::table_grapheme_break(state.prev_prop, state.prop))
-                return state.it;
-        }
-
-        return first;
-    }
-
     template<typename CPIter, typename Sentinel>
     auto next_grapheme_break(CPIter first, Sentinel last) noexcept
         -> detail::cp_iter_ret_t<CPIter, CPIter>
@@ -326,43 +207,6 @@ constexpr std::array<std::array<bool, 15>, 15> grapheme_breaks = {{
         }
 
         return state.it;
-    }
-
-    template<typename CPRange, typename CPIter>
-    auto prev_grapheme_break(CPRange & range, CPIter it) noexcept
-        -> detail::cp_rng_alg_ret_t<detail::iterator_t<CPRange>, CPRange>
-    {
-        return prev_grapheme_break(std::begin(range), it, std::end(range));
-    }
-
-    template<typename CPRange, typename CPIter>
-    auto next_grapheme_break(CPRange & range, CPIter it) noexcept
-        -> detail::cp_rng_alg_ret_t<detail::iterator_t<CPRange>, CPRange>
-    {
-        return next_grapheme_break(it, std::end(range));
-    }
-
-#endif
-
-    namespace detail {
-        template<typename CPIter, typename Sentinel>
-        struct next_grapheme_callable
-        {
-            CPIter operator()(CPIter it, Sentinel last) const noexcept
-            {
-                return next_grapheme_break(it, last);
-            }
-        };
-
-        template<typename CPIter>
-        struct prev_grapheme_callable
-        {
-            CPIter operator()(CPIter first, CPIter it, CPIter last) const
-                noexcept
-            {
-                return prev_grapheme_break(first, it, last);
-            }
-        };
     }
 
 }}
