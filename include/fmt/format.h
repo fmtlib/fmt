@@ -50,6 +50,7 @@
 #endif
 #if FMT_USE_TEXT
 #  include <boost/text/grapheme_break.hpp>
+#  include <boost/text/transcode_iterator.hpp>
 #endif
 
 #ifdef __clang__
@@ -922,7 +923,11 @@ inline size_t compute_width(basic_string_view<Char> s) {
 inline size_t compute_width(string_view s) {
 #if FMT_USE_TEXT
   basic_memory_buffer<uint32_t> code_points;
-  for (auto cp : boost::text::make_to_utf32_range(s)) code_points.push_back(cp);
+  const char* s_end = s.data() + s.size();
+  boost::text::utf_8_to_32_iterator<const char*> begin(s.data(), s.data(),
+                                                       s_end),
+      end(s.data(), s_end, s_end);
+  for (auto it = begin; it != end; ++it) code_points.push_back(*it);
   size_t width = 0;
   for (auto it = code_points.begin(), end = code_points.end(); it != end;
        it = boost::text::next_grapheme_break(it, end)) {

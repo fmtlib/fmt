@@ -2,7 +2,7 @@
 #define BOOST_TEXT_GRAPHEME_BREAK_HPP
 
 #include <boost/text/algorithm.hpp>
-#include <boost/text/utility.hpp>
+#include <boost/text/config.hpp>
 
 #include <array>
 #include <unordered_map>
@@ -157,8 +157,7 @@ constexpr std::array<std::array<bool, 15>, 15> grapheme_breaks = {{
     }
 
     template<typename CPIter, typename Sentinel>
-    auto next_grapheme_break(CPIter first, Sentinel last) noexcept
-        -> detail::cp_iter_ret_t<CPIter, CPIter>
+    CPIter next_grapheme_break(CPIter first, Sentinel last) noexcept
     {
         if (first == last)
             return first;

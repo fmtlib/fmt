@@ -1,6 +1,7 @@
 #ifndef BOOST_TEXT_DETAIL_LZW_HPP
 #define BOOST_TEXT_DETAIL_LZW_HPP
 
+#include <boost/assert.hpp>
 #include <boost/container/small_vector.hpp>
 
 #include <vector>
