@@ -630,7 +630,6 @@ class FMT_API format_error : public std::runtime_error {
   explicit format_error(const char* message) : std::runtime_error(message) {}
   explicit format_error(const std::string& message)
       : std::runtime_error(message) {}
-  ~format_error() FMT_NOEXCEPT;
 };
 
 namespace internal {
@@ -2689,7 +2688,6 @@ class FMT_API system_error : public std::runtime_error {
       : std::runtime_error("") {
     init(error_code, message, make_format_args(args...));
   }
-  ~system_error() FMT_NOEXCEPT;
 
   int error_code() const { return error_code_; }
 };
