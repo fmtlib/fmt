@@ -508,7 +508,7 @@ Some ideas used in the implementation are borrowed from `Loki
 <http://clang.llvm.org/doxygen/classclang_1_1Diagnostic.html>`_ in
 `Clang <http://clang.llvm.org/>`_.
 Format string syntax and the documentation are based on Python's `str.format
-<http://docs.python.org/2/library/stdtypes.html#str.format>`_.
+<https://docs.python.org/3/library/stdtypes.html#str.format>`_.
 Thanks `Doug Turnbull <https://github.com/softwaredoug>`_ for his valuable
 comments and contribution to the design of the type-safe API and
 `Gregory Czajkowski <https://github.com/gcflymoto>`_ for implementing binary
