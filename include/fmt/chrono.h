@@ -47,6 +47,7 @@ inline std::tm localtime(std::time_t time) {
     dispatcher(std::time_t t) : time_(t) {}
 
     bool run() {
+      tzset();
       using namespace fmt::internal;
       return handle(localtime_r(&time_, &tm_));
     }
