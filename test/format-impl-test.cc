@@ -59,6 +59,38 @@ TEST(BigIntTest, Multiply) {
   EXPECT_EQ("fffffffe00000001", fmt::format("{}", bigmax));
 }
 
+TEST(BigIntTest, Accumulator) {
+  fmt::internal::accumulator acc;
+  EXPECT_EQ(acc.lower, 0);
+  EXPECT_EQ(acc.upper, 0);
+  acc.upper = 12;
+  acc.lower = 34;
+  EXPECT_EQ(static_cast<uint32_t>(acc), 34);
+  acc += 56;
+  EXPECT_EQ(acc.lower, 90);
+  acc += fmt::internal::max_value<uint64_t>();
+  EXPECT_EQ(acc.upper, 13);
+  EXPECT_EQ(acc.lower, 89);
+  acc >>= 32;
+  EXPECT_EQ(acc.upper, 0);
+  EXPECT_EQ(acc.lower, 13 * 0x100000000);
+}
+
+TEST(BigIntTest, Square) {
+  bigint n0(0);
+  n0.square();
+  EXPECT_EQ("0", fmt::format("{}", n0));
+  bigint n1(0x100);
+  n1.square();
+  EXPECT_EQ("10000", fmt::format("{}", n1));
+  bigint n2(0xfffffffff);
+  n2.square();
+  EXPECT_EQ("ffffffffe000000001", fmt::format("{}", n2));
+  bigint n3(max_value<uint64_t>());
+  n3.square();
+  EXPECT_EQ("fffffffffffffffe0000000000000001", fmt::format("{}", n3));
+}
+
 template <bool is_iec559> void test_construct_from_double() {
   fmt::print("warning: double is not IEC559, skipping FP tests\n");
 }
