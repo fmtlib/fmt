@@ -405,7 +405,7 @@ class fp {
     }
     // Subtract 1 to account for hidden bit.
     const auto offset =
-      fp::significand_size - fp::double_significand_size - SHIFT - 1;
+        fp::significand_size - fp::double_significand_size - SHIFT - 1;
     value.f <<= offset;
     value.e -= offset;
     return value;
@@ -468,6 +468,27 @@ FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
   return fp(data::pow10_significands[index], data::pow10_exponents[index]);
 }
 
+// A simple accumulator to hold the sums of terms in bigint::square if uint128_t
+// is not available.
+struct accumulator {
+  uint64_t lower;
+  uint64_t upper;
+
+  accumulator() : lower(0), upper(0) {}
+  explicit operator uint32_t() const { return static_cast<uint32_t>(lower); }
+
+  void operator+=(uint64_t n) {
+    lower += n;
+    if (lower < n) ++upper;
+  }
+  void operator>>=(int shift) {
+    assert(shift == 32);
+    (void)shift;
+    lower = (upper << 32) | (lower >> 32);
+    upper >>= 32;
+  }
+};
+
 class bigint {
  private:
   // A bigint is stored as an array of bigits (big digits), with bigit at index
@@ -517,7 +538,32 @@ class bigint {
   void operator=(const bigint&) = delete;
 
   void square() {
-    // TODO
+    basic_memory_buffer<bigit> n(std::move(bigits_));
+    int num_bigits = static_cast<int>(bigits_.size());
+    int num_result_bigints = 2 * num_bigits;
+    bigits_.resize(num_result_bigints);
+    using accumulator_t = conditional_t<FMT_USE_INT128, uint128_t, accumulator>;
+    auto sum = accumulator_t();
+    for (int bigit_index = 0; bigit_index < num_bigits; ++bigit_index) {
+      // Compute bigit at position bigit_index of the result by adding
+      // cross-product terms n[i] * n[j] such that i + j == bigit_index.
+      for (int i = 0, j = bigit_index; j >= 0; ++i, --j) {
+        // Most terms are multiplied twice which can be optimized in the future.
+        sum += static_cast<double_bigit>(n[i]) * n[j];
+      }
+      bigits_[bigit_index] = static_cast<bigit>(sum);
+      sum >>= bits<bigit>::value;  // Compute the carry.
+    }
+    // Do the same for the top half.
+    for (int bigit_index = num_bigits; bigit_index < num_result_bigints;
+         ++bigit_index) {
+      for (int j = num_bigits - 1, i = bigit_index - j; i < num_bigits;
+           ++i, --j) {
+        sum += static_cast<double_bigit>(n[i]) * n[j];
+      }
+      bigits_[bigit_index] = static_cast<bigit>(sum);
+      sum >>= bits<bigit>::value;
+    }
   }
 
   bigint& operator<<=(int shift) {
@@ -771,8 +817,12 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
 };
 
 FMT_FUNC void fallback_format(const fp& value, int exp10) {
-  (void)value; // TODO
-  (void)exp10;
+  bigint big_value(value.f), pow10;
+  if (value.e >= 0) {
+    big_value <<= value.e;
+    pow10.assign_pow10(exp10);
+  }
+  // TODO
 }
 
 template <typename Double,
@@ -869,12 +919,8 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
     type = 'f';
   else if (type == 0 || type == 'n')
     type = 'g';
-#if FMT_MSC_VER
-  if (type == 'F') {
-    // MSVC's printf doesn't support 'F'.
-    type = 'f';
-  }
-#endif
+  if (FMT_MSC_VER && type == 'F')
+    type = 'f';  // // MSVC's printf doesn't support 'F'.
   *format_ptr++ = type;
   *format_ptr = '\0';
 
