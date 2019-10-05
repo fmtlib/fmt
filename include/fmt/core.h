@@ -828,6 +828,14 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
     return basic_string_view<char_type>(val);
   }
+  template <typename T,
+            FMT_ENABLE_IF(
+                std::is_constructible<std_string_view<char_type>, T>::value &&
+                !std::is_constructible<basic_string_view<char_type>, T>::value &&
+                !is_string<T>::value)>
+  FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
+    return std_string_view<char_type>(val);
+  }
   FMT_CONSTEXPR const char* map(const signed char* val) {
     static_assert(std::is_same<char_type, char>::value, "invalid string type");
     return reinterpret_cast<const char*>(val);
