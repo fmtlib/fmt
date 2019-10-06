@@ -35,6 +35,21 @@ TEST(BigIntTest, Construct) {
   EXPECT_EQ("123456789abcedf0", fmt::format("{}", bigint(0x123456789abcedf0)));
 }
 
+TEST(BigIntTest, LessEqual) {
+  bigint n1(42);
+  bigint n2(42);
+  EXPECT_TRUE(n1 <= n2);
+  n2 <<= 32;
+  EXPECT_TRUE(n1 <= n2);
+  EXPECT_FALSE(n2 <= n1);
+  bigint n3(43);
+  EXPECT_TRUE(n1 <= n3);
+  EXPECT_FALSE(n3 <= n1);
+  bigint n4(42 * 0x100000001);
+  EXPECT_TRUE(n2 <= n4);
+  EXPECT_FALSE(n4 <= n2);
+}
+
 TEST(BigIntTest, ShiftLeft) {
   bigint n(0x42);
   n <<= 0;
@@ -89,6 +104,9 @@ TEST(BigIntTest, Square) {
   bigint n3(max_value<uint64_t>());
   n3.square();
   EXPECT_EQ("fffffffffffffffe0000000000000001", fmt::format("{}", n3));
+  bigint n4;
+  n4.assign_pow10(10);
+  EXPECT_EQ("2540be400", fmt::format("{}", n4));
 }
 
 template <bool is_iec559> void test_construct_from_double() {
@@ -321,8 +339,7 @@ TEST(FormatTest, CountCodePoints) {
 // Tests fmt::internal::count_digits for integer type Int.
 template <typename Int> void test_count_digits() {
   for (Int i = 0; i < 10; ++i) EXPECT_EQ(1u, fmt::internal::count_digits(i));
-  for (Int i = 1, n = 1, end = max_value<Int>() / 10; n <= end;
-       ++i) {
+  for (Int i = 1, n = 1, end = max_value<Int>() / 10; n <= end; ++i) {
     n *= 10;
     EXPECT_EQ(i, fmt::internal::count_digits(n - 1));
     EXPECT_EQ(i + 1, fmt::internal::count_digits(n));

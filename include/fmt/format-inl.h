@@ -496,23 +496,81 @@ class bigint {
   using bigit = uint32_t;
   using double_bigit = uint64_t;
   basic_memory_buffer<bigit> bigits_;
+  int exp_;
 
   static FMT_CONSTEXPR_DECL const int bigit_bits = bits<bigit>::value;
 
   friend struct formatter<bigint>;
 
   void assign(uint64_t n) {
-    int num_bigits = bits<uint64_t>::value / bigit_bits;
-    bigits_.resize(num_bigits);
-    for (int i = 0; i < num_bigits; ++i) {
-      bigits_[i] = n & ~bigit(0);
+    int num_bigits = 0;
+    do {
+      bigits_[num_bigits++] = n & ~bigit(0);
       n >>= bigit_bits;
-    }
+    } while (n != 0);
+    bigits_.resize(num_bigits);
   }
 
  public:
-  bigint() {}
-  explicit bigint(uint64_t n) { assign(n); }
+  bigint() : exp_(0) {}
+
+  template <typename Int> explicit bigint(Int n) : exp_(0) {
+    assign(uint32_or_64_or_128_t<Int>(to_unsigned(n)));
+  }
+
+  bigint(const bigint&) = delete;
+  void operator=(const bigint&) = delete;
+
+  int num_bigits() const { return static_cast<int>(bigits_.size()) + exp_; }
+
+  bigint& operator<<=(int shift) {
+    assert(shift >= 0);
+    exp_ += shift / bigit_bits;
+    shift %= bigit_bits;
+    if (shift == 0) return *this;
+    bigit carry = 0;
+    for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
+      bigit c = bigits_[i] >> (bigit_bits - shift);
+      bigits_[i] = (bigits_[i] << shift) + carry;
+      carry = c;
+    }
+    if (carry != 0) bigits_.push_back(carry);
+    return *this;
+  }
+
+  bigint& operator*=(uint32_t value) {
+    assert(value > 0);
+    // Verify that the computation cannot overflow.
+    constexpr double_bigit max_bigit = max_value<bigit>();
+    constexpr double_bigit max_double_bigit = max_value<double_bigit>();
+    static_assert(max_bigit * max_bigit <= max_double_bigit - max_bigit, "");
+    bigit carry = 0;
+    const double_bigit wide_value = value;
+    for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
+      double_bigit result = bigits_[i] * wide_value + carry;
+      bigits_[i] = static_cast<bigit>(result);
+      carry = static_cast<bigit>(result >> bigit_bits);
+    }
+    if (carry != 0) bigits_.push_back(carry);
+    return *this;
+  }
+
+  friend bool operator<=(const bigint& lhs, const bigint& rhs) {
+    int num_lhs_bigits = lhs.num_bigits(), num_rhs_bigits = rhs.num_bigits();
+    if (num_lhs_bigits != num_rhs_bigits)
+      return num_lhs_bigits < num_rhs_bigits;
+    int lhs_bigit_index = static_cast<int>(lhs.bigits_.size()) - 1;
+    int rhs_bigit_index = static_cast<int>(rhs.bigits_.size()) - 1;
+    int end = lhs_bigit_index > rhs_bigit_index
+                  ? lhs_bigit_index - rhs_bigit_index
+                  : 0;
+    for (; lhs_bigit_index >= end; --lhs_bigit_index, --rhs_bigit_index) {
+      bigit lhs_bigit = lhs.bigits_[lhs_bigit_index];
+      bigit rhs_bigit = rhs.bigits_[rhs_bigit_index];
+      if (lhs_bigit != rhs_bigit) return lhs_bigit < rhs_bigit;
+    }
+    return lhs_bigit_index <= rhs_bigit_index;
+  }
 
   // Assigns pow(10, exp) to this bigint.
   void assign_pow10(int exp) {
@@ -534,14 +592,11 @@ class bigint {
     *this <<= exp;  // Multiply by pow(2, exp) by shifting.
   }
 
-  bigint(const bigint&) = delete;
-  void operator=(const bigint&) = delete;
-
   void square() {
     basic_memory_buffer<bigit> n(std::move(bigits_));
     int num_bigits = static_cast<int>(bigits_.size());
-    int num_result_bigints = 2 * num_bigits;
-    bigits_.resize(num_result_bigints);
+    int num_result_bigits = 2 * num_bigits;
+    bigits_.resize(num_result_bigits);
     using accumulator_t = conditional_t<FMT_USE_INT128, uint128_t, accumulator>;
     auto sum = accumulator_t();
     for (int bigit_index = 0; bigit_index < num_bigits; ++bigit_index) {
@@ -555,7 +610,7 @@ class bigint {
       sum >>= bits<bigit>::value;  // Compute the carry.
     }
     // Do the same for the top half.
-    for (int bigit_index = num_bigits; bigit_index < num_result_bigints;
+    for (int bigit_index = num_bigits; bigit_index < num_result_bigits;
          ++bigit_index) {
       for (int j = num_bigits - 1, i = bigit_index - j; i < num_bigits;
            ++i, --j) {
@@ -564,35 +619,26 @@ class bigint {
       bigits_[bigit_index] = static_cast<bigit>(sum);
       sum >>= bits<bigit>::value;
     }
+    // Remove leading zeros.
+    --num_result_bigits;
+    while (num_result_bigits > 0 && bigits_[num_result_bigits] == 0)
+      --num_result_bigits;
+    bigits_.resize(num_result_bigits + 1);
+    exp_ *= 2;
   }
 
-  bigint& operator<<=(int shift) {
-    assert(shift >= 0 && shift < bigit_bits);
-    bigit carry = 0;
-    for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
-      bigit c = shift != 0 ? bigits_[i] >> (bigit_bits - shift) : 0;
-      bigits_[i] = (bigits_[i] << shift) + carry;
-      carry = c;
+  // Divides this bignum by divisor, assigning the remainder to this and
+  // returning the quotient.
+  int divmod_assign(const bigint& divisor) {
+    bigit lhs_bigit = bigits_[bigits_.size() - 1];
+    bigit rhs_bigit = divisor.bigits_[divisor.bigits_.size() - 1];
+    // TODO: test the case of rhs == max
+    bigit quotient =
+        (rhs_bigit + 1 != 0) ? lhs_bigit / (rhs_bigit + 1) : lhs_bigit;
+    while (divisor <= *this) {
+      // TODO: subtract
     }
-    if (carry != 0) bigits_.push_back(carry);
-    return *this;
-  }
-
-  bigint& operator*=(uint32_t value) {
-    assert(value > 0);
-    // Verify that the computation doesn't overflow.
-    constexpr double_bigit max32 = max_value<bigit>();
-    constexpr double_bigit max64 = max_value<double_bigit>();
-    static_assert(max32 * max32 <= max64 - max32, "");
-    bigit carry = 0;
-    const double_bigit wide_value = value;
-    for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
-      double_bigit result = bigits_[i] * wide_value + carry;
-      bigits_[i] = static_cast<bigit>(result);
-      carry = static_cast<bigit>(result >> bigit_bits);
-    }
-    if (carry != 0) bigits_.push_back(carry);
-    return *this;
+    return quotient;
   }
 };
 
@@ -816,12 +862,25 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
   }
 };
 
+// Format value using a variation of the Fixed-Precision Positive Floating-Point
+// Printout ((FPP)^2) algorithm by Steele & White.
 FMT_FUNC void fallback_format(const fp& value, int exp10) {
-  bigint big_value(value.f), pow10;
+  bigint big_value(value.f);  // R in (FPP)^2.
+  bigint pow10;               // S in (FPP)^2.
+  bigint lower(uint32_t(1));  // M^- in (FPP)^2.
+  bigint upper(uint32_t(1));  // M^+ in (FPP)^2.
   if (value.e >= 0) {
-    big_value <<= value.e;
+    big_value <<= value.e + 1;
     pow10.assign_pow10(exp10);
+    pow10 <<= 1;
+    lower <<= value.e;
+    upper <<= value.e;
+  } else {
+    // TODO: handle negative exponent
   }
+  // v = (big_value / pow10) * pow(10, exp10).
+  int digit = big_value.divmod_assign(pow10);
+  (void)digit;
   // TODO
 }
 
@@ -982,13 +1041,14 @@ template <> struct formatter<internal::bigint> {
     for (auto i = n.bigits_.size(); i > 0; --i) {
       auto value = n.bigits_[i - 1];
       if (first) {
-        if (value == 0 && i > 1) continue;
         out = format_to(out, "{:x}", value);
         first = false;
         continue;
       }
       out = format_to(out, "{:08x}", value);
     }
+    if (n.exp_ > 0)
+      out = format_to(out, "p{}", n.exp_ * internal::bigint::bigit_bits);
     return out;
   }
 };
