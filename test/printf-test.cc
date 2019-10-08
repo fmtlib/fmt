@@ -112,7 +112,7 @@ TEST(PrintfTest, SwitchArgIndexing) {
 
 TEST(PrintfTest, InvalidArgIndex) {
   EXPECT_THROW_MSG(test_sprintf("%0$d", 42), format_error,
-                   "argument index out of range");
+                   "argument index 0 is out of range");
   EXPECT_THROW_MSG(test_sprintf("%2$d", 42), format_error,
                    "argument index out of range");
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", INT_MAX), 42), format_error,
@@ -337,7 +337,9 @@ template <typename T> void TestLength(const char* length_spec) {
   TestLength<T>(length_spec, -42);
   TestLength<T>(length_spec, min);
   TestLength<T>(length_spec, max);
-  TestLength<T>(length_spec, static_cast<long long>(min) - 1);
+  long long long_long_min = std::numeric_limits<long long>::min();
+  if (static_cast<long long>(min) > long_long_min)
+    TestLength<T>(length_spec, static_cast<long long>(min) - 1);
   unsigned long long long_long_max = max_value<long long>();
   if (static_cast<unsigned long long>(max) < long_long_max)
     TestLength<T>(length_spec, static_cast<long long>(max) + 1);
