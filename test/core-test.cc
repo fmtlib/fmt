@@ -103,7 +103,7 @@ template <typename T> struct mock_buffer : buffer<T> {
 TEST(BufferTest, Ctor) {
   {
     mock_buffer<int> buffer;
-    EXPECT_EQ(nullptr, &buffer[0]);
+    EXPECT_EQ(nullptr, buffer.data());
     EXPECT_EQ(static_cast<size_t>(0), buffer.size());
     EXPECT_EQ(static_cast<size_t>(0), buffer.capacity());
   }
