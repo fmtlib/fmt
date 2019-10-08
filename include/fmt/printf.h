@@ -469,6 +469,8 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
 
     // Parse argument index, flags and width.
     unsigned arg_index = parse_header(it, end, specs);
+    if (arg_index == 0)
+      on_error("argument index 0 is out of range");
 
     // Parse precision.
     if (it != end && *it == '.') {
