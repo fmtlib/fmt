@@ -337,7 +337,9 @@ template <typename T> void TestLength(const char* length_spec) {
   TestLength<T>(length_spec, -42);
   TestLength<T>(length_spec, min);
   TestLength<T>(length_spec, max);
-  TestLength<T>(length_spec, static_cast<long long>(min) - 1);
+  long long long_long_min = std::numeric_limits<long long>::min();
+  if (static_cast<long long>(min) > long_long_min)
+    TestLength<T>(length_spec, static_cast<long long>(min) - 1);
   unsigned long long long_long_max = max_value<long long>();
   if (static_cast<unsigned long long>(max) < long_long_max)
     TestLength<T>(length_spec, static_cast<long long>(max) + 1);
