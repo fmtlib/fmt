@@ -271,7 +271,7 @@ static void check_move_buffer(
   EXPECT_EQ(alloc, buffer2.get_allocator().get());
 }
 
-TEST(MemoryBufferTest, MoveCtor) {
+TEST(MemoryBufferTest, MoveCtorInlineBuffer) {
   std::allocator<char> alloc;
   basic_memory_buffer<char, 5, TestAllocator> buffer((TestAllocator(&alloc)));
   const char test[] = "test";
@@ -281,15 +281,22 @@ TEST(MemoryBufferTest, MoveCtor) {
   // dynamic allocation.
   buffer.push_back('a');
   check_move_buffer("testa", buffer);
+}
+
+TEST(MemoryBufferTest, MoveCtorDynamicBuffer) {
+  std::allocator<char> alloc;
+  basic_memory_buffer<char, 4, TestAllocator> buffer((TestAllocator(&alloc)));
+  const char test[] = "test";
+  buffer.append(test, test + 4);
   const char* inline_buffer_ptr = &buffer[0];
   // Adding one more character causes the content to move from the inline to
   // a dynamically allocated buffer.
-  buffer.push_back('b');
-  basic_memory_buffer<char, 5, TestAllocator> buffer2(std::move(buffer));
+  buffer.push_back('a');
+  basic_memory_buffer<char, 4, TestAllocator> buffer2(std::move(buffer));
   // Move should rip the guts of the first buffer.
   EXPECT_EQ(inline_buffer_ptr, &buffer[0]);
-  EXPECT_EQ("testab", std::string(&buffer2[0], buffer2.size()));
-  EXPECT_GT(buffer2.capacity(), 5u);
+  EXPECT_EQ("testa", std::string(&buffer2[0], buffer2.size()));
+  EXPECT_GT(buffer2.capacity(), 4u);
 }
 
 static void check_move_assign_buffer(const char* str,
