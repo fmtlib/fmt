@@ -112,7 +112,7 @@ TEST(PrintfTest, SwitchArgIndexing) {
 
 TEST(PrintfTest, InvalidArgIndex) {
   EXPECT_THROW_MSG(test_sprintf("%0$d", 42), format_error,
-                   "argument index 0 is out of range");
+                   "argument index out of range");
   EXPECT_THROW_MSG(test_sprintf("%2$d", 42), format_error,
                    "argument index out of range");
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", INT_MAX), 42), format_error,

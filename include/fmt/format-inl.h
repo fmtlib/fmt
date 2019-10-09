@@ -511,6 +511,25 @@ class bigint {
     bigits_.resize(num_bigits);
   }
 
+  void subtract_bigits(int index, bigit other, bigit& borrow) {
+    auto result = static_cast<double_bigit>(bigits_[index]) - other - borrow;
+    bigits_[index] = static_cast<bigit>(result);
+    borrow = static_cast<bigit>(result >> (bigit_bits * 2 - 1));
+  }
+
+  // Computes *this -= other assuming aligned bigints and *this >= other.
+  void subtract_aligned(const bigint& other) {
+    FMT_ASSERT(other.exp_ >= exp_, "unaligned bigints");
+    FMT_ASSERT(*this >= other, "");
+    bigit borrow = 0;
+    int i = other.exp_ - exp_;
+    for (int j = 0, n = static_cast<int>(other.bigits_.size()); j != n;
+         ++i, ++j) {
+      subtract_bigits(i, other.bigits_[j], borrow);
+    }
+    while (borrow > 0) subtract_bigits(i, 0, borrow);
+  }
+
  public:
   bigint() : exp_(0) {}
 
@@ -555,21 +574,20 @@ class bigint {
     return *this;
   }
 
-  friend bool operator<=(const bigint& lhs, const bigint& rhs) {
+  friend bool operator>=(const bigint& lhs, const bigint& rhs) {
     int num_lhs_bigits = lhs.num_bigits(), num_rhs_bigits = rhs.num_bigits();
     if (num_lhs_bigits != num_rhs_bigits)
-      return num_lhs_bigits < num_rhs_bigits;
+      return num_lhs_bigits > num_rhs_bigits;
     int lhs_bigit_index = static_cast<int>(lhs.bigits_.size()) - 1;
     int rhs_bigit_index = static_cast<int>(rhs.bigits_.size()) - 1;
-    int end = lhs_bigit_index > rhs_bigit_index
-                  ? lhs_bigit_index - rhs_bigit_index
-                  : 0;
+    int end = lhs_bigit_index - rhs_bigit_index;
+    if (end < 0) end = 0;
     for (; lhs_bigit_index >= end; --lhs_bigit_index, --rhs_bigit_index) {
       bigit lhs_bigit = lhs.bigits_[lhs_bigit_index];
       bigit rhs_bigit = rhs.bigits_[rhs_bigit_index];
-      if (lhs_bigit != rhs_bigit) return lhs_bigit < rhs_bigit;
+      if (lhs_bigit != rhs_bigit) return lhs_bigit > rhs_bigit;
     }
-    return lhs_bigit_index <= rhs_bigit_index;
+    return lhs_bigit_index >= rhs_bigit_index;
   }
 
   // Assigns pow(10, exp) to this bigint.
@@ -612,10 +630,8 @@ class bigint {
     // Do the same for the top half.
     for (int bigit_index = num_bigits; bigit_index < num_result_bigits;
          ++bigit_index) {
-      for (int j = num_bigits - 1, i = bigit_index - j; i < num_bigits;
-           ++i, --j) {
-        sum += static_cast<double_bigit>(n[i]) * n[j];
-      }
+      for (int j = num_bigits - 1, i = bigit_index - j; i < num_bigits;)
+        sum += static_cast<double_bigit>(n[i++]) * n[j--];
       bigits_[bigit_index] = static_cast<bigit>(sum);
       sum >>= bits<bigit>::value;
     }
@@ -630,14 +646,24 @@ class bigint {
   // Divides this bignum by divisor, assigning the remainder to this and
   // returning the quotient.
   int divmod_assign(const bigint& divisor) {
-    bigit lhs_bigit = bigits_[bigits_.size() - 1];
-    bigit rhs_bigit = divisor.bigits_[divisor.bigits_.size() - 1];
-    // TODO: test the case of rhs == max
-    bigit quotient =
-        (rhs_bigit + 1 != 0) ? lhs_bigit / (rhs_bigit + 1) : lhs_bigit;
-    while (divisor <= *this) {
-      // TODO: subtract
+    FMT_ASSERT(this != &divisor, "");
+    if (!(*this >= divisor)) return 0;
+    int num_bigits = static_cast<int>(bigits_.size());
+    FMT_ASSERT(divisor.bigits_[divisor.bigits_.size() - 1] != 0, "");
+    int exp_difference = exp_ - divisor.exp_;
+    if (exp_difference > 0) {
+      // Align bigints by adding trailing zeros to simplify subtraction.
+      bigits_.resize(num_bigits + exp_difference);
+      for (int i = num_bigits - 1, j = i + exp_difference; i >= 0; --i, --j)
+        bigits_[j] = bigits_[i];
+      std::uninitialized_fill_n(bigits_.data(), exp_difference, 0);
+      exp_ -= exp_difference;
     }
+    int quotient = 0;
+    do {
+      subtract_aligned(divisor);
+      ++quotient;
+    } while (*this >= divisor);
     return quotient;
   }
 };

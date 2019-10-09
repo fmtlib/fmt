@@ -35,19 +35,19 @@ TEST(BigIntTest, Construct) {
   EXPECT_EQ("123456789abcedf0", fmt::format("{}", bigint(0x123456789abcedf0)));
 }
 
-TEST(BigIntTest, LessEqual) {
+TEST(BigIntTest, GreaterEqual) {
   bigint n1(42);
   bigint n2(42);
-  EXPECT_TRUE(n1 <= n2);
+  EXPECT_TRUE(n1 >= n2);
   n2 <<= 32;
-  EXPECT_TRUE(n1 <= n2);
-  EXPECT_FALSE(n2 <= n1);
+  EXPECT_FALSE(n1 >= n2);
+  EXPECT_TRUE(n2 >= n1);
   bigint n3(43);
-  EXPECT_TRUE(n1 <= n3);
-  EXPECT_FALSE(n3 <= n1);
+  EXPECT_FALSE(n1 >= n3);
+  EXPECT_TRUE(n3 >= n1);
   bigint n4(42 * 0x100000001);
-  EXPECT_TRUE(n2 <= n4);
-  EXPECT_FALSE(n4 <= n2);
+  EXPECT_FALSE(n2 >= n4);
+  EXPECT_TRUE(n4 >= n2);
 }
 
 TEST(BigIntTest, ShiftLeft) {
@@ -107,6 +107,49 @@ TEST(BigIntTest, Square) {
   bigint n4;
   n4.assign_pow10(10);
   EXPECT_EQ("2540be400", fmt::format("{}", n4));
+}
+
+TEST(BigIntTest, DivModAssignZeroDivisor) {
+  bigint zero(0);
+  EXPECT_THROW(bigint(0).divmod_assign(zero), assertion_failure);
+  EXPECT_THROW(bigint(42).divmod_assign(zero), assertion_failure);
+}
+
+TEST(BigIntTest, DivModAssignSelf) {
+  bigint n(100);
+  EXPECT_THROW(n.divmod_assign(n), assertion_failure);
+}
+
+TEST(BigIntTest, DivModAssignUnaligned) {
+  // (42 << 340) / pow(10, 100):
+  bigint n1(42);
+  n1 <<= 340;
+  bigint n2;
+  n2.assign_pow10(100);
+  int result = n1.divmod_assign(n2);
+  EXPECT_EQ(result, 9406);
+  EXPECT_EQ("10f8353019583bfc29ffc8f564e1b9f9d819dbb4cf783e4507eca1539220p96",
+            fmt::format("{}", n1));
+}
+
+TEST(BigIntTest, DivModAssign) {
+  // 100 / 10:
+  bigint n1(100);
+  int result = n1.divmod_assign(bigint(10));
+  EXPECT_EQ(result, 10);
+  EXPECT_EQ("0", fmt::format("{}", n1));
+  // pow(10, 100) / (42 << 320):
+  n1.assign_pow10(100);
+  result = n1.divmod_assign(bigint(42) <<= 320);
+  EXPECT_EQ(result, 111);
+  EXPECT_EQ("13ad2594c37ceb0b2784c4ce0bf38ace408e211a7caab24308a82e8f10p96",
+            fmt::format("{}", n1));
+  // 42 / 100:
+  bigint n2(42);
+  n1.assign_pow10(2);
+  result = n2.divmod_assign(n1);
+  EXPECT_EQ(result, 0);
+  EXPECT_EQ("2a", fmt::format("{}", n2));
 }
 
 template <bool is_iec559> void test_construct_from_double() {
