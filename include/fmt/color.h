@@ -524,8 +524,7 @@ void vprint(std::FILE* f, const text_style& ts, const S& format,
   format_to( buf, "{}", format );
 
   if (has_style) {
-     size_t retset_color_char_count = sizeof( internal::data::reset_color ) / (*internal::data::reset_color);
-     buf.append(internal::data::reset_color, internal::data::reset_color + retset_color_char_count);
+    reset_color( buf );
   }
 
 
