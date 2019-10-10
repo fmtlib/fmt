@@ -534,7 +534,7 @@ void vprint(std::FILE* f, const text_style& ts, const S& format,
   Formats a string and prints it to the specified file stream using ANSI
   escape sequences to specify text formatting.
   Example:
-    fmt::print(fmt::emphasis::bold | fg(fmt::color::red),
+    fmt::print(stderr, fmt::emphasis::bold | fg(fmt::color::red),
                "Elapsed time: {0:.2f} seconds", 1.23);
  */
 template <typename S, typename... Args,
