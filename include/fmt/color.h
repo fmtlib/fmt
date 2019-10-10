@@ -512,23 +512,21 @@ void vprint(std::FILE* f, const text_style& ts, const S& format,
   }
   if (ts.has_foreground()) {
     has_style = true;
-    auto foreground = internal::make_foreground_color<Char>(ts.get_foreground());
+    auto foreground =
+        internal::make_foreground_color<Char>(ts.get_foreground());
     buf.append(foreground.begin(), foreground.end());
   }
   if (ts.has_background()) {
     has_style = true;
-    auto background = internal::make_background_color<Char>(ts.get_background());
+    auto background =
+        internal::make_background_color<Char>(ts.get_background());
     buf.append(background.begin(), background.end());
   }
-
-  format_to( buf, "{}", format );
-
+  vformat_to(buf, format, args);
   if (has_style) {
-    reset_color( buf );
+    reset_color(buf);
   }
-
-
-  vprint(f, buf.data(), args);
+  internal::fputs(buf.data(), f);
 }
 
 /**
