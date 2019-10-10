@@ -470,41 +470,10 @@ inline void reset_color(basic_memory_buffer<Char>& buffer) FMT_NOEXCEPT {
 }
 
 template <typename Char>
-std::basic_string<Char> vformat(const text_style& ts,
-                                basic_string_view<Char> format_str,
-                                basic_format_args<buffer_context<Char> > args) {
-  basic_memory_buffer<Char> buffer;
+void vformat_to(basic_memory_buffer<Char>& buf, const text_style& ts,
+                basic_string_view<Char> format_str,
+                basic_format_args<buffer_context<Char>> args) {
   bool has_style = false;
-  if (ts.has_emphasis()) {
-    has_style = true;
-    ansi_color_escape<Char> escape = make_emphasis<Char>(ts.get_emphasis());
-    buffer.append(escape.begin(), escape.end());
-  }
-  if (ts.has_foreground()) {
-    has_style = true;
-    ansi_color_escape<Char> escape =
-        make_foreground_color<Char>(ts.get_foreground());
-    buffer.append(escape.begin(), escape.end());
-  }
-  if (ts.has_background()) {
-    has_style = true;
-    ansi_color_escape<Char> escape =
-        make_background_color<Char>(ts.get_background());
-    buffer.append(escape.begin(), escape.end());
-  }
-  internal::vformat_to(buffer, format_str, args);
-  if (has_style) {
-    reset_color<Char>(buffer);
-  }
-  return fmt::to_string(buffer);
-}
-}  // namespace internal
-
-template <typename S, typename Char = char_t<S> >
-void vprint(std::FILE* f, const text_style& ts, const S& format,
-            basic_format_args<buffer_context<Char> > args) {
-  bool has_style = false;
-  basic_memory_buffer<Char> buf;
   if (ts.has_emphasis()) {
     has_style = true;
     auto emphasis = internal::make_emphasis<Char>(ts.get_emphasis());
@@ -522,10 +491,18 @@ void vprint(std::FILE* f, const text_style& ts, const S& format,
         internal::make_background_color<Char>(ts.get_background());
     buf.append(background.begin(), background.end());
   }
-  vformat_to(buf, format, args);
+  vformat_to(buf, format_str, args);
   if (has_style) {
     internal::reset_color<Char>(buf);
   }
+}
+}  // namespace internal
+
+template <typename S, typename Char = char_t<S> >
+void vprint(std::FILE* f, const text_style& ts, const S& format,
+            basic_format_args<buffer_context<Char> > args) {
+  basic_memory_buffer<Char> buf;
+  internal::vformat_to(buf, ts, to_string_view(format), args);
   buf.push_back(Char(0));
   internal::fputs(buf.data(), f);
 }
@@ -564,7 +541,9 @@ template <typename S, typename Char = char_t<S> >
 inline std::basic_string<Char> vformat(
     const text_style& ts, const S& format_str,
     basic_format_args<buffer_context<Char> > args) {
-  return internal::vformat(ts, to_string_view(format_str), args);
+  basic_memory_buffer<Char> buf;
+  internal::vformat_to(buf, ts, to_string_view(format_str), args);
+  return fmt::to_string(buf);
 }
 
 /**
@@ -582,7 +561,7 @@ inline std::basic_string<Char> vformat(
 template <typename S, typename... Args, typename Char = char_t<S> >
 inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
                                       const Args&... args) {
-  return internal::vformat(
+  return vformat(
       ts, to_string_view(format_str),
       {internal::make_args_checked<Args...>(format_str, args...)});
 }
