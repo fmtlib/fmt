@@ -524,8 +524,9 @@ void vprint(std::FILE* f, const text_style& ts, const S& format,
   }
   vformat_to(buf, format, args);
   if (has_style) {
-    reset_color(buf);
+    internal::reset_color<Char>(buf);
   }
+  buf.push_back(Char(0));
   internal::fputs(buf.data(), f);
 }
 
