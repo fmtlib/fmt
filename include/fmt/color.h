@@ -444,22 +444,12 @@ FMT_CONSTEXPR ansi_color_escape<Char> make_emphasis(emphasis em) FMT_NOEXCEPT {
   return ansi_color_escape<Char>(em);
 }
 
-template <typename Char>
-inline void fputs(const Char* chars, FILE* stream) FMT_NOEXCEPT {
-  std::fputs(chars, stream);
-}
-
-template <>
-inline void fputs<wchar_t>(const wchar_t* chars, FILE* stream) FMT_NOEXCEPT {
-  std::fputws(chars, stream);
-}
-
 template <typename Char> inline void reset_color(FILE* stream) FMT_NOEXCEPT {
-  fputs(internal::data::reset_color, stream);
+  std::fwrite(internal::data::reset_color, 1, sizeof(internal::data::reset_color), stream);
 }
 
 template <> inline void reset_color<wchar_t>(FILE* stream) FMT_NOEXCEPT {
-  fputs(internal::data::wreset_color, stream);
+  std::fputws(internal::data::wreset_color, stream);
 }
 
 template <typename Char>
