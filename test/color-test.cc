@@ -45,6 +45,8 @@ TEST(ColorsTest, ColorsPrint) {
   EXPECT_WRITE(stdout,
                fmt::print(bg(fmt::terminal_color::bright_magenta), "tbmagenta"),
                "\x1b[105mtbmagenta\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(fmt::emphasis::bold, "{}", std::string("a\0b", 3)),
+               std::string("\x1b[1ma\0b\x1b[0m", 11));
 }
 
 TEST(ColorsTest, Format) {

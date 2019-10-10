@@ -503,8 +503,7 @@ void vprint(std::FILE* f, const text_style& ts, const S& format,
             basic_format_args<buffer_context<Char> > args) {
   basic_memory_buffer<Char> buf;
   internal::vformat_to(buf, ts, to_string_view(format), args);
-  buf.push_back(Char(0));
-  internal::fputs(buf.data(), f);
+  std::fwrite(buf.data(), 1, buf.size(), f);
 }
 
 /**
