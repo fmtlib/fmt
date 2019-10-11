@@ -630,6 +630,10 @@ class FMT_API format_error : public std::runtime_error {
   explicit format_error(const char* message) : std::runtime_error(message) {}
   explicit format_error(const std::string& message)
       : std::runtime_error(message) {}
+  format_error(const format_error&) = default;
+  format_error& operator=(const format_error&) = default;
+  format_error(format_error&&) = default;
+  format_error& operator=(format_error&&) = default;
   ~format_error() FMT_NOEXCEPT;
 };
 
@@ -2689,6 +2693,10 @@ class FMT_API system_error : public std::runtime_error {
       : std::runtime_error("") {
     init(error_code, message, make_format_args(args...));
   }
+  system_error(const system_error&) = default;
+  system_error& operator=(const system_error&) = default;
+  system_error(system_error&&) = default;
+  system_error& operator=(system_error&&) = default;
   ~system_error() FMT_NOEXCEPT;
 
   int error_code() const { return error_code_; }

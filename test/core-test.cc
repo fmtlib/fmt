@@ -127,7 +127,12 @@ TEST(BufferTest, Ctor) {
 struct dying_buffer : test_buffer<int> {
   MOCK_METHOD0(die, void());
   ~dying_buffer() { die(); }
+
+ private:
+  virtual void avoid_weak_vtable();
 };
+
+void dying_buffer::avoid_weak_vtable() {}
 
 TEST(BufferTest, VirtualDtor) {
   typedef StrictMock<dying_buffer> stict_mock_buffer;
