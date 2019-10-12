@@ -221,6 +221,36 @@ TEST(FPTest, ComputeBoundaries) {
   EXPECT_EQ(31, upper.e);
 }
 
+TEST(FPTest, ComputeFloatBoundaries) {
+  struct {
+    double x, lower, upper;
+  } tests[] = {
+      // regular
+      {1.5f, 1.4999999403953552, 1.5000000596046448},
+      // boundary
+      {1.0f, 0.9999999701976776, 1.0000000596046448},
+      // min normal
+      {1.1754944e-38f, 1.1754942807573643e-38, 1.1754944208872107e-38},
+      // max subnormal
+      {1.1754942e-38f, 1.1754941406275179e-38, 1.1754942807573643e-38},
+      // min subnormal
+      {1e-45f, 7.006492321624085e-46, 2.1019476964872256e-45},
+  };
+  for (auto test : tests) {
+    auto v = fp(test.x);
+    fp vlower = normalize(fp(test.lower));
+    fp vupper = normalize(fp(test.upper));
+    vlower.f >>= vupper.e - vlower.e;
+    vlower.e = vupper.e;
+    fp lower, upper;
+    v.compute_float_boundaries(lower, upper);
+    EXPECT_EQ(vlower.f, lower.f);
+    EXPECT_EQ(vlower.e, lower.e);
+    EXPECT_EQ(vupper.f, upper.f);
+    EXPECT_EQ(vupper.e, upper.e);
+  }
+}
+
 TEST(FPTest, Subtract) {
   auto v = fp(123, 1) - fp(102, 1);
   EXPECT_EQ(v.f, 21u);

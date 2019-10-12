@@ -422,6 +422,18 @@ class fp {
     lower.f <<= lower.e - upper.e;
     lower.e = upper.e;
   }
+
+  void compute_float_boundaries(fp& lower, fp& upper) const {
+    constexpr int min_normal_e = std::numeric_limits<float>::min_exponent -
+                                 std::numeric_limits<double>::digits;
+    significand_type half_ulp = 1 << (std::numeric_limits<double>::digits -
+                                      std::numeric_limits<float>::digits - 1);
+    if (min_normal_e > e) half_ulp <<= min_normal_e - e;
+    upper = normalize<0>(fp(f + half_ulp, e));
+    lower = fp(f - (half_ulp >> (f == implicit_bit && e > min_normal_e)), e);
+    lower.f <<= lower.e - upper.e;
+    lower.e = upper.e;
+  }
 };
 
 // Returns an fp number representing x - y. Result may not be normalized.
@@ -1046,7 +1058,11 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
     buf.resize(to_unsigned(handler.size));
   } else {
     fp lower, upper;  // w^- and w^+ in the Grisu paper.
-    fp_value.compute_boundaries(lower, upper);
+    if ((options & grisu_options::binary32) != 0)
+      fp_value.compute_float_boundaries(lower, upper);
+    else
+      fp_value.compute_boundaries(lower, upper);
+
     // Find a cached power of 10 such that multiplying upper by it will bring
     // the exponent in the range [min_exp, -32].
     const auto cached_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
