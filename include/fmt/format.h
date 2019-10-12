@@ -1663,6 +1663,10 @@ template <typename Range> class basic_writer {
                                    int_writer<T, Spec>(*this, value, spec));
   }
 
+  void write(float value, const format_specs& specs = format_specs()) {
+    write_double(value, specs);
+  }
+
   void write(double value, const format_specs& specs = format_specs()) {
     write_double(value, specs);
   }
@@ -1677,7 +1681,7 @@ template <typename Range> class basic_writer {
     write_double(value, specs);
   }
 
-  // Formats a floating-point number (double or long double).
+  // Formats a floating-point number (float, double, or long double).
   template <typename T, bool USE_GRISU = fmt::internal::use_grisu<T>()>
   void write_double(T value, const format_specs& specs);
 
@@ -3006,6 +3010,7 @@ struct formatter<T, Char,
       handle_char_specs(
           &specs_, internal::char_specs_checker<decltype(eh)>(specs_.type, eh));
       break;
+    case internal::float_type:
     case internal::double_type:
     case internal::long_double_type:
       handle_float_type_spec(specs_.type,
@@ -3061,7 +3066,6 @@ FMT_FORMAT_AS(short, int);
 FMT_FORMAT_AS(unsigned short, unsigned);
 FMT_FORMAT_AS(long, long long);
 FMT_FORMAT_AS(unsigned long, unsigned long long);
-FMT_FORMAT_AS(float, double);
 FMT_FORMAT_AS(Char*, const Char*);
 FMT_FORMAT_AS(std::basic_string<Char>, basic_string_view<Char>);
 FMT_FORMAT_AS(std::nullptr_t, const void*);

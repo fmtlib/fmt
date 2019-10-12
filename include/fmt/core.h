@@ -657,6 +657,7 @@ enum type {
   char_type,
   last_integer_type = char_type,
   // followed by floating-point types.
+  float_type,
   double_type,
   long_double_type,
   last_numeric_type = long_double_type,
@@ -683,6 +684,7 @@ FMT_TYPE_CONSTANT(int128_t, int128_type);
 FMT_TYPE_CONSTANT(uint128_t, uint128_type);
 FMT_TYPE_CONSTANT(bool, bool_type);
 FMT_TYPE_CONSTANT(Char, char_type);
+FMT_TYPE_CONSTANT(float, float_type);
 FMT_TYPE_CONSTANT(double, double_type);
 FMT_TYPE_CONSTANT(long double, long_double_type);
 FMT_TYPE_CONSTANT(const Char*, cstring_type);
@@ -724,6 +726,7 @@ template <typename Context> class value {
     uint128_t uint128_value;
     bool bool_value;
     char_type char_value;
+    float float_value;
     double double_value;
     long double long_double_value;
     const void* pointer;
@@ -738,6 +741,7 @@ template <typename Context> class value {
   value(unsigned long long val) : ulong_long_value(val) {}
   value(int128_t val) : int128_value(val) {}
   value(uint128_t val) : uint128_value(val) {}
+  value(float val) : float_value(val) {}
   value(double val) : double_value(val) {}
   value(long double val) : long_double_value(val) {}
   value(bool val) : bool_value(val) {}
@@ -809,7 +813,7 @@ template <typename Context> struct arg_mapper {
     return val;
   }
 
-  FMT_CONSTEXPR double map(float val) { return static_cast<double>(val); }
+  FMT_CONSTEXPR float map(float val) { return val; }
   FMT_CONSTEXPR double map(double val) { return val; }
   FMT_CONSTEXPR long double map(long double val) { return val; }
 
@@ -985,6 +989,8 @@ FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
     return vis(arg.value_.bool_value);
   case internal::char_type:
     return vis(arg.value_.char_value);
+  case internal::float_type:
+    return vis(arg.value_.float_value);
   case internal::double_type:
     return vis(arg.value_.double_value);
   case internal::long_double_type:

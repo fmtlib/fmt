@@ -290,8 +290,6 @@ VISIT_TYPE(long, long long);
 VISIT_TYPE(unsigned long, unsigned long long);
 #endif
 
-VISIT_TYPE(float, double);
-
 #define CHECK_ARG_(Char, expected, value)                                     \
   {                                                                           \
     testing::StrictMock<mock_visitor<decltype(expected)>> visitor;            \
