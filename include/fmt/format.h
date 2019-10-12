@@ -1664,11 +1664,11 @@ template <typename Range> class basic_writer {
   }
 
   void write(float value, const format_specs& specs = format_specs()) {
-    write_double(value, specs);
+    write_fp(value, specs);
   }
 
   void write(double value, const format_specs& specs = format_specs()) {
-    write_double(value, specs);
+    write_fp(value, specs);
   }
 
   /**
@@ -1678,12 +1678,12 @@ template <typename Range> class basic_writer {
     \endrst
    */
   void write(long double value, const format_specs& specs = format_specs()) {
-    write_double(value, specs);
+    write_fp(value, specs);
   }
 
   // Formats a floating-point number (float, double, or long double).
   template <typename T, bool USE_GRISU = fmt::internal::use_grisu<T>()>
-  void write_double(T value, const format_specs& specs);
+  void write_fp(T value, const format_specs& specs);
 
   /** Writes a character to the buffer. */
   void write(char value) {
@@ -1830,7 +1830,7 @@ class arg_formatter_base {
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
   iterator operator()(T value) {
-    writer_.write_double(value, specs_ ? *specs_ : format_specs());
+    writer_.write_fp(value, specs_ ? *specs_ : format_specs());
     return out();
   }
 
@@ -2770,8 +2770,8 @@ struct float_spec_handler {
 
 template <typename Range>
 template <typename T, bool USE_GRISU>
-void internal::basic_writer<Range>::write_double(T value,
-                                                 const format_specs& specs) {
+void internal::basic_writer<Range>::write_fp(T value,
+                                             const format_specs& specs) {
   // Check type.
   float_spec_handler handler(static_cast<char>(specs.type));
   internal::handle_float_type_spec(handler.type, handler);
