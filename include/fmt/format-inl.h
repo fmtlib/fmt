@@ -530,6 +530,24 @@ class bigint {
     while (borrow > 0) subtract_bigits(i, 0, borrow);
   }
 
+  friend int compare(const bigint& lhs, const bigint& rhs) {
+    int num_lhs_bigits = lhs.num_bigits(), num_rhs_bigits = rhs.num_bigits();
+    if (num_lhs_bigits != num_rhs_bigits)
+      return num_lhs_bigits > num_rhs_bigits ? 1 : -1;
+    int lhs_bigit_index = static_cast<int>(lhs.bigits_.size()) - 1;
+    int rhs_bigit_index = static_cast<int>(rhs.bigits_.size()) - 1;
+    int end = lhs_bigit_index - rhs_bigit_index;
+    if (end < 0) end = 0;
+    for (; lhs_bigit_index >= end; --lhs_bigit_index, --rhs_bigit_index) {
+      bigit lhs_bigit = lhs.bigits_[lhs_bigit_index];
+      bigit rhs_bigit = rhs.bigits_[rhs_bigit_index];
+      if (lhs_bigit != rhs_bigit) return lhs_bigit > rhs_bigit ? 1 : -1;
+    }
+    if (lhs_bigit_index != rhs_bigit_index)
+      return lhs_bigit_index > rhs_bigit_index ? 1 : -1;
+    return 0;
+  }
+
  public:
   bigint() : exp_(0) {}
 
@@ -574,20 +592,17 @@ class bigint {
     return *this;
   }
 
+  friend bool operator<(const bigint& lhs, const bigint& rhs) {
+    return compare(lhs, rhs) < 0;
+  }
+  friend bool operator>(const bigint& lhs, const bigint& rhs) {
+    return compare(lhs, rhs) > 0;
+  }
+  friend bool operator<=(const bigint& lhs, const bigint& rhs) {
+    return compare(lhs, rhs) <= 0;
+  }
   friend bool operator>=(const bigint& lhs, const bigint& rhs) {
-    int num_lhs_bigits = lhs.num_bigits(), num_rhs_bigits = rhs.num_bigits();
-    if (num_lhs_bigits != num_rhs_bigits)
-      return num_lhs_bigits > num_rhs_bigits;
-    int lhs_bigit_index = static_cast<int>(lhs.bigits_.size()) - 1;
-    int rhs_bigit_index = static_cast<int>(rhs.bigits_.size()) - 1;
-    int end = lhs_bigit_index - rhs_bigit_index;
-    if (end < 0) end = 0;
-    for (; lhs_bigit_index >= end; --lhs_bigit_index, --rhs_bigit_index) {
-      bigit lhs_bigit = lhs.bigits_[lhs_bigit_index];
-      bigit rhs_bigit = rhs.bigits_[rhs_bigit_index];
-      if (lhs_bigit != rhs_bigit) return lhs_bigit > rhs_bigit;
-    }
-    return lhs_bigit_index >= rhs_bigit_index;
+    return compare(lhs, rhs) >= 0;
   }
 
   // Assigns pow(10, exp) to this bigint.
@@ -721,44 +736,39 @@ digits::result grisu_gen_digits(fp value, uint64_t error, int& exp,
   // Generate digits for the integral part. This can produce up to 10 digits.
   do {
     uint32_t digit = 0;
+    auto divmod_integral = [&](uint32_t divisor) {
+      digit = integral / divisor;
+      integral %= divisor;
+    };
     // This optimization by miloyip reduces the number of integer divisions by
     // one per iteration.
     switch (exp) {
     case 10:
-      digit = integral / 1000000000;
-      integral %= 1000000000;
+      divmod_integral(1000000000);
       break;
     case 9:
-      digit = integral / 100000000;
-      integral %= 100000000;
+      divmod_integral(100000000);
       break;
     case 8:
-      digit = integral / 10000000;
-      integral %= 10000000;
+      divmod_integral(10000000);
       break;
     case 7:
-      digit = integral / 1000000;
-      integral %= 1000000;
+      divmod_integral(1000000);
       break;
     case 6:
-      digit = integral / 100000;
-      integral %= 100000;
+      divmod_integral(100000);
       break;
     case 5:
-      digit = integral / 10000;
-      integral %= 10000;
+      divmod_integral(10000);
       break;
     case 4:
-      digit = integral / 1000;
-      integral %= 1000;
+      divmod_integral(1000);
       break;
     case 3:
-      digit = integral / 100;
-      integral %= 100;
+      divmod_integral(100);
       break;
     case 2:
-      digit = integral / 10;
-      integral %= 10;
+      divmod_integral(10);
       break;
     case 1:
       digit = integral;
@@ -890,23 +900,36 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
 
 // Format value using a variation of the Fixed-Precision Positive Floating-Point
 // Printout ((FPP)^2) algorithm by Steele & White.
-FMT_FUNC void fallback_format(const fp& value, int exp10) {
-  bigint big_value(value.f);  // R in (FPP)^2.
-  bigint pow10;               // S in (FPP)^2.
-  bigint lower(uint32_t(1));  // M^- in (FPP)^2.
-  bigint upper(uint32_t(1));  // M^+ in (FPP)^2.
-  if (value.e >= 0) {
-    big_value <<= value.e + 1;
-    pow10.assign_pow10(exp10);
-    pow10 <<= 1;
-    lower <<= value.e;
-    upper <<= value.e;
+template <typename Double> FMT_FUNC void fallback_format(Double v, int exp10) {
+  (void)exp10;
+  fp fp_value(v);
+  // Shift to account for unequal gaps when lower boundary is 2 times closer.
+  // TODO: handle denormals
+  int shift = fp_value.f == 1 ? 1 : 0;
+  // Shift value and pow10 by an extra bit to make lower and upper which are
+  // half ulp integers. This eliminates multiplication by 2 during later
+  // computations in (FPP)^2.
+  bigint value(fp_value.f << (shift + 1));  // R in (FPP)^2.
+  bigint pow10(1 << (shift + 1));           // S in (FPP)^2.
+  bigint lower(1);                          // M^- in (FPP)^2.
+  bigint upper(1 << shift);                 // M^+ in (FPP)^2.
+  if (fp_value.e >= 0) {
+    value <<= fp_value.e;
+    lower <<= fp_value.e;
+    upper <<= fp_value.e;
   } else {
-    // TODO: handle negative exponent
+    pow10 <<= -fp_value.e;
+    // TODO: fixup
   }
-  // v = (big_value / pow10) * pow(10, exp10).
-  int digit = big_value.divmod_assign(pow10);
-  (void)digit;
+  // fp_value = value / pow10.
+  while (value /* + upper */ >= pow10) pow10 *= 10;
+  do {
+    value *= 10;
+    int digit = value.divmod_assign(pow10);
+    (void)digit;
+    lower *= 10;
+    upper *= 10;
+  } while (value >= lower && value <= pow10 /* - upper */);
   // TODO
 }
 
@@ -963,7 +986,7 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
       result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
       size = handler.size;
       if (result == digits::error) {
-        fallback_format(fp_value, exp - cached_exp10);
+        fallback_format(value, exp - cached_exp10);
         return false;
       }
     } else {
