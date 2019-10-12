@@ -23,7 +23,7 @@ TEST(LocaleTest, DoubleDecimalPoint) {
   fmt::internal::writer w(buf, fmt::internal::locale_ref(loc));
   auto specs = fmt::format_specs();
   specs.type = 'n';
-  w.write_double<double, false>(1.23, specs);
+  w.write_fp<double, false>(1.23, specs);
   EXPECT_EQ(fmt::to_string(buf), "1?23");
 }
 
