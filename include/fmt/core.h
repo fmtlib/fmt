@@ -889,7 +889,7 @@ using mapped_type_constant =
                   typename Context::char_type>;
 
 // Maximum number of arguments with packed types.
-enum { max_packed_args = 15 };
+enum { max_packed_args = 12 };
 enum : unsigned long long { is_unpacked_bit = 1ull << 63 };
 
 template <typename Context> class arg_map;
@@ -1052,7 +1052,7 @@ template <typename> constexpr unsigned long long encode_types() { return 0; }
 template <typename Context, typename Arg, typename... Args>
 constexpr unsigned long long encode_types() {
   return mapped_type_constant<Arg, Context>::value |
-         (encode_types<Context, Args...>() << 4);
+         (encode_types<Context, Args...>() << 5);
 }
 
 template <typename Context, typename T>
@@ -1197,8 +1197,8 @@ template <typename Context> class basic_format_args {
   bool is_packed() const { return (types_ & internal::is_unpacked_bit) == 0; }
 
   internal::type type(int index) const {
-    int shift = index * 4;
-    return static_cast<internal::type>((types_ & (0xfull << shift)) >> shift);
+    int shift = index * 5;
+    return static_cast<internal::type>((types_ >> shift) & 0x1f);
   }
 
   friend class internal::arg_map<Context>;
