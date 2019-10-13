@@ -87,16 +87,19 @@ TEST(BigIntTest, ShiftLeft) {
 
 TEST(BigIntTest, Multiply) {
   bigint n(0x42);
+  EXPECT_THROW(n *= 0, assertion_failure);
   n *= 1;
   EXPECT_EQ("42", fmt::format("{}", n));
   n *= 2;
   EXPECT_EQ("84", fmt::format("{}", n));
   n *= 0x12345678;
   EXPECT_EQ("962fc95e0", fmt::format("{}", n));
-  auto max = max_value<uint32_t>();
-  bigint bigmax(max);
-  bigmax *= max;
+  bigint bigmax(max_value<uint32_t>());
+  bigmax *= max_value<uint32_t>();
   EXPECT_EQ("fffffffe00000001", fmt::format("{}", bigmax));
+  bigmax.assign(max_value<uint64_t>());
+  bigmax *= max_value<uint64_t>();
+  EXPECT_EQ("fffffffffffffffe0000000000000001", fmt::format("{}", bigmax));
 }
 
 TEST(BigIntTest, Accumulator) {

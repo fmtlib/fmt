@@ -1111,7 +1111,7 @@ It grisu_prettify(const char* digits, int size, int exp, It it,
 }
 
 namespace grisu_options {
-enum { fixed = 1, grisu3 = 2 };
+enum { fixed = 1, grisu2 = 2 };
 }
 
 // Formats value using the Grisu algorithm:

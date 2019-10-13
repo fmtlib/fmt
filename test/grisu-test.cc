@@ -55,3 +55,12 @@ TEST(GrisuTest, Prettify) {
 }
 
 TEST(GrisuTest, ZeroPrecision) { EXPECT_EQ("1", fmt::format("{:.0}", 1.0)); }
+
+TEST(GrisuTest, Fallback) {
+  EXPECT_EQ("1e+23", fmt::format("{}", 1e23));
+  EXPECT_EQ("9e-265", fmt::format("{}", 9e-265));
+  EXPECT_EQ("5.423717798060526e+125",
+            fmt::format("{}", 5.423717798060526e+125));
+  EXPECT_EQ("1.372371880954233e-288",
+            fmt::format("{}", 1.372371880954233e-288));
+}

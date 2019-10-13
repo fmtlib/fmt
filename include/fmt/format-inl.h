@@ -502,19 +502,16 @@ class bigint {
 
   friend struct formatter<bigint>;
 
-  void assign(uint64_t n) {
-    int num_bigits = 0;
-    do {
-      bigits_[num_bigits++] = n & ~bigit(0);
-      n >>= bigit_bits;
-    } while (n != 0);
-    bigits_.resize(num_bigits);
-  }
-
   void subtract_bigits(int index, bigit other, bigit& borrow) {
     auto result = static_cast<double_bigit>(bigits_[index]) - other - borrow;
     bigits_[index] = static_cast<bigit>(result);
     borrow = static_cast<bigit>(result >> (bigit_bits * 2 - 1));
+  }
+
+  void remove_leading_zeros() {
+    int num_bigits = static_cast<int>(bigits_.size()) - 1;
+    while (num_bigits > 0 && bigits_[num_bigits] == 0) --num_bigits;
+    bigits_.resize(num_bigits + 1);
   }
 
   // Computes *this -= other assuming aligned bigints and *this >= other.
@@ -528,17 +525,60 @@ class bigint {
       subtract_bigits(i, other.bigits_[j], borrow);
     }
     while (borrow > 0) subtract_bigits(i, 0, borrow);
+    remove_leading_zeros();
+  }
+
+  void multiply(uint32_t value) {
+    const double_bigit wide_value = value;
+    bigit carry = 0;
+    for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
+      double_bigit result = bigits_[i] * wide_value + carry;
+      bigits_[i] = static_cast<bigit>(result);
+      carry = static_cast<bigit>(result >> bigit_bits);
+    }
+    if (carry != 0) bigits_.push_back(carry);
+  }
+
+  void multiply(uint64_t value) {
+    const bigit mask = ~bigit(0);
+    const double_bigit lower = value & mask;
+    const double_bigit upper = value >> bigit_bits;
+    double_bigit carry = 0;
+    for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
+      double_bigit result = bigits_[i] * lower + (carry & mask);
+      carry =
+          bigits_[i] * upper + (result >> bigit_bits) + (carry >> bigit_bits);
+      bigits_[i] = static_cast<bigit>(result);
+    }
+    while (carry != 0) {
+      bigits_.push_back(carry & mask);
+      carry >>= bigit_bits;
+    }
   }
 
  public:
   bigint() : exp_(0) {}
-
-  template <typename Int> explicit bigint(Int n) : exp_(0) {
-    assign(uint32_or_64_or_128_t<Int>(to_unsigned(n)));
-  }
+  explicit bigint(uint64_t n) { assign(n); }
 
   bigint(const bigint&) = delete;
   void operator=(const bigint&) = delete;
+
+  void assign(const bigint& other) {
+    bigits_.resize(other.bigits_.size());
+    auto data = other.bigits_.data();
+    std::copy(data, data + other.bigits_.size(), bigits_.data());
+    exp_ = other.exp_;
+  }
+
+  void assign(uint64_t n) {
+    int num_bigits = 0;
+    do {
+      bigits_[num_bigits++] = n & ~bigit(0);
+      n >>= bigit_bits;
+    } while (n != 0);
+    bigits_.resize(num_bigits);
+    exp_ = 0;
+  }
 
   int num_bigits() const { return static_cast<int>(bigits_.size()) + exp_; }
 
@@ -557,20 +597,9 @@ class bigint {
     return *this;
   }
 
-  bigint& operator*=(uint32_t value) {
-    assert(value > 0);
-    // Verify that the computation cannot overflow.
-    constexpr double_bigit max_bigit = max_value<bigit>();
-    constexpr double_bigit max_double_bigit = max_value<double_bigit>();
-    static_assert(max_bigit * max_bigit <= max_double_bigit - max_bigit, "");
-    bigit carry = 0;
-    const double_bigit wide_value = value;
-    for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
-      double_bigit result = bigits_[i] * wide_value + carry;
-      bigits_[i] = static_cast<bigit>(result);
-      carry = static_cast<bigit>(result >> bigit_bits);
-    }
-    if (carry != 0) bigits_.push_back(carry);
+  template <typename Int> bigint& operator*=(Int value) {
+    FMT_ASSERT(value > 0, "");
+    multiply(uint32_or_64_or_128_t<Int>(value));
     return *this;
   }
 
@@ -659,11 +688,8 @@ class bigint {
       bigits_[bigit_index] = static_cast<bigit>(sum);
       sum >>= bits<bigit>::value;
     }
-    // Remove leading zeros.
     --num_result_bigits;
-    while (num_result_bigits > 0 && bigits_[num_result_bigits] == 0)
-      --num_result_bigits;
-    bigits_.resize(num_result_bigits + 1);
+    remove_leading_zeros();
     exp_ *= 2;
   }
 
@@ -907,7 +933,7 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
   }
 };
 
-// Format value using a variation of the Fixed-Precision Positive Floating-Point
+// Formats v using a variation of the Fixed-Precision Positive Floating-Point
 // Printout ((FPP)^2) algorithm by Steele & White:
 // http://kurtstephens.com/files/p372-steele.pdf.
 template <typename Double>
@@ -916,52 +942,74 @@ FMT_FUNC void fallback_format(Double v, buffer<char>& buf, int& exp10) {
   // Shift to account for unequal gaps when lower boundary is 2 times closer.
   // TODO: handle denormals
   int shift = fp_value.f == 1 ? 1 : 0;
-  // Shift value and pow10 by an extra bit to make lower and upper which are
-  // normally half ulp integers. This eliminates multiplication by 2 during
-  // later computations.
-  bigint value(fp_value.f << (shift + 1));  // 2 * R in (FPP)^2.
-  bigint pow10;                             // 2 * S in (FPP)^2.
-  bigint lower(1);                          // (M^- in (FPP)^2).
-  bigint upper(1 << shift);                 // (M^+ in (FPP)^2).
+  bigint numerator;          // 2 * R in (FPP)^2.
+  bigint denominator;        // 2 * S in (FPP)^2.
+  bigint lower;              // (M^- in (FPP)^2).
+  bigint upper_store;
+  bigint *upper = nullptr;   // (M^+ in (FPP)^2).
+  // Shift numerator and denominator by an extra bit to make lower and upper
+  // which are normally half ulp integers. This eliminates multiplication by 2
+  // during later computations.
+  uint64_t significand = fp_value.f << (shift + 1);
   if (fp_value.e >= 0) {
-    value <<= fp_value.e;
+    numerator.assign(significand);
+    numerator <<= fp_value.e;
+    lower.assign(1);
     lower <<= fp_value.e;
-    upper <<= fp_value.e;
-    pow10.assign_pow10(exp10);
-    pow10 <<= 1;
+    if (shift != 0) {
+      upper_store.assign(1);
+      upper_store <<= fp_value.e + shift;
+      upper = &upper_store;
+    } else {
+      upper = &lower;
+    }
+    denominator.assign_pow10(exp10);
+    denominator <<= 1;
   } else {
-    pow10 <<= -fp_value.e;
-    // TODO: fixup
+    numerator.assign_pow10(-exp10);
+    lower.assign(numerator);
+    if (shift != 0) {
+      upper_store.assign(numerator);
+      upper_store <<= 1;
+      upper = &upper_store;
+    } else {
+      upper = &lower;
+    }
+    numerator *= significand;
+    denominator.assign(1);
+    denominator <<= 1 - fp_value.e;
   }
-  // Invariant: fp_value == (value / pow10) * pow(10, exp10).
+  // Invariant: fp_value == (numerator / denominator) * pow(10, exp10).
   bool even = (fp_value.f & 1) == 0;
   int num_digits = 0;
   char* data = buf.data();
   for (;;) {
-    int digit = value.divmod_assign(pow10);
-    bool low = compare(value, lower) - even < 0;  // value <[=] lower.
-    bool high = add_compare(value, upper, pow10) + even >
-                0;  // value + upper >[=] pow10.
+    int digit = numerator.divmod_assign(denominator);
+    bool low = compare(numerator, lower) - even < 0;  // numerator <[=] lower.
+    bool high = add_compare(numerator, *upper, denominator) + even >
+                0;  // numerator + upper >[=] pow10.
     if (low || high) {
       if (!low) {
         ++digit;
       } else if (high) {
-        // TODO: round up if 2 * value >= pow10
+        // TODO: round up if 2 * numerator >= denominator
       }
       data[num_digits++] = static_cast<char>('0' + digit);
       buf.resize(num_digits);
+      exp10 -= num_digits -1;
       return;
     }
     data[num_digits++] = static_cast<char>('0' + digit);
+    numerator *= 10;
     lower *= 10;
-    upper *= 10;
+    if (upper != &lower) *upper *= 10;
   }
 }
 
 template <typename Double,
           enable_if_t<(sizeof(Double) == sizeof(uint64_t)), int>>
-FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
-                          unsigned options, int& exp) {
+bool grisu_format(Double value, buffer<char>& buf, int precision,
+                  unsigned options, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
   const bool fixed = (options & grisu_options::fixed) != 0;
   if (value <= 0) {  // <= instead of == to silence a warning.
@@ -1003,7 +1051,14 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
     assert(min_exp <= upper.e && upper.e <= -32);
     auto result = digits::result();
     int size = 0;
-    if ((options & grisu_options::grisu3) != 0) {
+    if ((options & grisu_options::grisu2) != 0) {
+      ++lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
+      --upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
+      grisu_shortest_handler<2> handler{buf.data(), 0, (upper - normalized).f};
+      result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
+      size = handler.size;
+      assert(result != digits::error);
+    } else {
       --lower.f;  // \tilde{M}^- - 1 ulp -> M^-_{\downarrow}.
       ++upper.f;  // \tilde{M}^+ + 1 ulp -> M^+_{\uparrow}.
       // Numbers outside of (lower, upper) definitely do not round to value.
@@ -1011,17 +1066,10 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
       result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
       size = handler.size;
       if (result == digits::error) {
-        exp -= cached_exp10;
+        exp = exp + size - cached_exp10 - 1;
         fallback_format(value, buf, exp);
         return true;
       }
-    } else {
-      ++lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
-      --upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
-      grisu_shortest_handler<2> handler{buf.data(), 0, (upper - normalized).f};
-      result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
-      size = handler.size;
-      assert(result != digits::error);
     }
     buf.resize(to_unsigned(size));
   }
