@@ -95,6 +95,32 @@ TEST(BigIntTest, GreaterEqual) {
   EXPECT_TRUE(n4 >= n2);
 }
 
+TEST(BigIntTest, AddCompare) {
+  EXPECT_LT(
+      add_compare(bigint(0xffffffff), bigint(0xffffffff), bigint(1) <<= 64), 0);
+  EXPECT_LT(add_compare(bigint(1) <<= 32, bigint(1), bigint(1) <<= 96), 0);
+  EXPECT_GT(add_compare(bigint(1) <<= 32, bigint(0), bigint(0xffffffff)), 0);
+  EXPECT_GT(add_compare(bigint(0), bigint(1) <<= 32, bigint(0xffffffff)), 0);
+  EXPECT_GT(add_compare(bigint(42), bigint(1), bigint(42)), 0);
+  EXPECT_GT(add_compare(bigint(0xffffffff), bigint(1), bigint(0xffffffff)), 0);
+  EXPECT_LT(add_compare(bigint(10), bigint(10), bigint(22)), 0);
+  EXPECT_LT(add_compare(bigint(0x100000010), bigint(0x100000010),
+                        bigint(0x300000010)),
+            0);
+  EXPECT_GT(add_compare(bigint(0x1ffffffff), bigint(0x100000002),
+                        bigint(0x300000000)),
+            0);
+  EXPECT_EQ(add_compare(bigint(0x1ffffffff), bigint(0x100000002),
+                        bigint(0x300000001)),
+            0);
+  EXPECT_LT(add_compare(bigint(0x1ffffffff), bigint(0x100000002),
+                        bigint(0x300000002)),
+            0);
+  EXPECT_LT(add_compare(bigint(0x1ffffffff), bigint(0x100000002),
+                        bigint(0x300000003)),
+            0);
+}
+
 TEST(BigIntTest, ShiftLeft) {
   bigint n(0x42);
   n <<= 0;

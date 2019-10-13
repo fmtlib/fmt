@@ -534,17 +534,15 @@ class bigint {
     int num_lhs_bigits = lhs.num_bigits(), num_rhs_bigits = rhs.num_bigits();
     if (num_lhs_bigits != num_rhs_bigits)
       return num_lhs_bigits > num_rhs_bigits ? 1 : -1;
-    int lhs_bigit_index = static_cast<int>(lhs.bigits_.size()) - 1;
-    int rhs_bigit_index = static_cast<int>(rhs.bigits_.size()) - 1;
-    int end = lhs_bigit_index - rhs_bigit_index;
+    int i = static_cast<int>(lhs.bigits_.size()) - 1;
+    int j = static_cast<int>(rhs.bigits_.size()) - 1;
+    int end = i - j;
     if (end < 0) end = 0;
-    for (; lhs_bigit_index >= end; --lhs_bigit_index, --rhs_bigit_index) {
-      bigit lhs_bigit = lhs.bigits_[lhs_bigit_index];
-      bigit rhs_bigit = rhs.bigits_[rhs_bigit_index];
+    for (; i >= end; --i, --j) {
+      bigit lhs_bigit = lhs.bigits_[i], rhs_bigit = rhs.bigits_[j];
       if (lhs_bigit != rhs_bigit) return lhs_bigit > rhs_bigit ? 1 : -1;
     }
-    if (lhs_bigit_index != rhs_bigit_index)
-      return lhs_bigit_index > rhs_bigit_index ? 1 : -1;
+    if (i != j) return i > j ? 1 : -1;
     return 0;
   }
 
@@ -603,6 +601,30 @@ class bigint {
   }
   friend bool operator>=(const bigint& lhs, const bigint& rhs) {
     return compare(lhs, rhs) >= 0;
+  }
+
+  // Returns compare(lhs1 + lhs2, rhs).
+  friend int add_compare(const bigint& lhs1, const bigint& lhs2,
+                         const bigint& rhs) {
+    int max_lhs_bigits = (std::max)(lhs1.num_bigits(), lhs2.num_bigits());
+    int num_rhs_bigits = rhs.num_bigits();
+    if (max_lhs_bigits + 1 < num_rhs_bigits) return -1;
+    if (max_lhs_bigits > num_rhs_bigits) return 1;
+    auto get_bigit = [](const bigint& n, int i) -> bigit {
+      return i >= n.exp_ && i < n.num_bigits() ? n.bigits_[i - n.exp_] : 0;
+    };
+    double_bigit borrow = 0;
+    int min_exp = (std::min)((std::min)(lhs1.exp_, lhs2.exp_), rhs.exp_);
+    for (int i = num_rhs_bigits - 1; i >= min_exp; --i) {
+      double_bigit sum =
+          static_cast<double_bigit>(get_bigit(lhs1, i)) + get_bigit(lhs2, i);
+      bigit rhs_bigit = get_bigit(rhs, i);
+      if (sum > rhs_bigit + borrow) return 1;
+      borrow = rhs_bigit + borrow - sum;
+      if (borrow > 1) return -1;
+      borrow <<= bigit_bits;
+    }
+    return borrow != 0 ? -1 : 0;
   }
 
   // Assigns pow(10, exp) to this bigint.
@@ -900,17 +922,17 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
 
 // Format value using a variation of the Fixed-Precision Positive Floating-Point
 // Printout ((FPP)^2) algorithm by Steele & White.
-template <typename Double> FMT_FUNC void fallback_format(Double v, int exp10) {
-  (void)exp10;
+template <typename Double>
+FMT_FUNC void fallback_format(Double v, buffer<char>& buf, int& exp10) {
   fp fp_value(v);
   // Shift to account for unequal gaps when lower boundary is 2 times closer.
   // TODO: handle denormals
   int shift = fp_value.f == 1 ? 1 : 0;
   // Shift value and pow10 by an extra bit to make lower and upper which are
   // half ulp integers. This eliminates multiplication by 2 during later
-  // computations in (FPP)^2.
-  bigint value(fp_value.f << (shift + 1));  // R in (FPP)^2.
-  bigint pow10(1 << (shift + 1));           // S in (FPP)^2.
+  // computations.
+  bigint value(fp_value.f << (shift + 1));  // 2 * R in (FPP)^2.
+  bigint pow10(1 << (shift + 1));           // 2 * S in (FPP)^2.
   bigint lower(1);                          // M^- in (FPP)^2.
   bigint upper(1 << shift);                 // M^+ in (FPP)^2.
   if (fp_value.e >= 0) {
@@ -921,16 +943,30 @@ template <typename Double> FMT_FUNC void fallback_format(Double v, int exp10) {
     pow10 <<= -fp_value.e;
     // TODO: fixup
   }
-  // fp_value = value / pow10.
-  while (value /* + upper */ >= pow10) pow10 *= 10;
-  do {
+  // fp_value == value / pow10.
+  int exp = 0;
+  while (add_compare(value, upper, pow10) >= 0) {
+    pow10 *= 10;
+    ++exp;
+  }
+  int num_digits = 0;
+  char* data = buf.data();
+  for (;;) {
     value *= 10;
     int digit = value.divmod_assign(pow10);
-    (void)digit;
     lower *= 10;
     upper *= 10;
-  } while (value >= lower && value <= pow10 /* - upper */);
-  // TODO
+    bool low = value < lower;
+    bool high = add_compare(value, upper, pow10) > 0;  // value + upper > pow10
+    if (low || high) {
+      if (!low) ++digit;
+      data[num_digits++] = static_cast<char>('0' + digit);
+      buf.resize(num_digits);
+      exp10 = exp - num_digits;
+      return;
+    }
+    data[num_digits++] = static_cast<char>('0' + digit);
+  }
 }
 
 template <typename Double,
@@ -986,8 +1022,9 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
       result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
       size = handler.size;
       if (result == digits::error) {
-        fallback_format(value, exp - cached_exp10);
-        return false;
+        exp -= cached_exp10;
+        fallback_format(value, buf, exp);
+        return true;
       }
     } else {
       ++lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
