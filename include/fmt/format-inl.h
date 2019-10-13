@@ -520,7 +520,7 @@ class bigint {
   // Computes *this -= other assuming aligned bigints and *this >= other.
   void subtract_aligned(const bigint& other) {
     FMT_ASSERT(other.exp_ >= exp_, "unaligned bigints");
-    FMT_ASSERT(*this >= other, "");
+    FMT_ASSERT(compare(*this, other) >= 0, "");
     bigit borrow = 0;
     int i = other.exp_ - exp_;
     for (int j = 0, n = static_cast<int>(other.bigits_.size()); j != n;
@@ -528,22 +528,6 @@ class bigint {
       subtract_bigits(i, other.bigits_[j], borrow);
     }
     while (borrow > 0) subtract_bigits(i, 0, borrow);
-  }
-
-  friend int compare(const bigint& lhs, const bigint& rhs) {
-    int num_lhs_bigits = lhs.num_bigits(), num_rhs_bigits = rhs.num_bigits();
-    if (num_lhs_bigits != num_rhs_bigits)
-      return num_lhs_bigits > num_rhs_bigits ? 1 : -1;
-    int i = static_cast<int>(lhs.bigits_.size()) - 1;
-    int j = static_cast<int>(rhs.bigits_.size()) - 1;
-    int end = i - j;
-    if (end < 0) end = 0;
-    for (; i >= end; --i, --j) {
-      bigit lhs_bigit = lhs.bigits_[i], rhs_bigit = rhs.bigits_[j];
-      if (lhs_bigit != rhs_bigit) return lhs_bigit > rhs_bigit ? 1 : -1;
-    }
-    if (i != j) return i > j ? 1 : -1;
-    return 0;
   }
 
  public:
@@ -590,17 +574,20 @@ class bigint {
     return *this;
   }
 
-  friend bool operator<(const bigint& lhs, const bigint& rhs) {
-    return compare(lhs, rhs) < 0;
-  }
-  friend bool operator>(const bigint& lhs, const bigint& rhs) {
-    return compare(lhs, rhs) > 0;
-  }
-  friend bool operator<=(const bigint& lhs, const bigint& rhs) {
-    return compare(lhs, rhs) <= 0;
-  }
-  friend bool operator>=(const bigint& lhs, const bigint& rhs) {
-    return compare(lhs, rhs) >= 0;
+  friend int compare(const bigint& lhs, const bigint& rhs) {
+    int num_lhs_bigits = lhs.num_bigits(), num_rhs_bigits = rhs.num_bigits();
+    if (num_lhs_bigits != num_rhs_bigits)
+      return num_lhs_bigits > num_rhs_bigits ? 1 : -1;
+    int i = static_cast<int>(lhs.bigits_.size()) - 1;
+    int j = static_cast<int>(rhs.bigits_.size()) - 1;
+    int end = i - j;
+    if (end < 0) end = 0;
+    for (; i >= end; --i, --j) {
+      bigit lhs_bigit = lhs.bigits_[i], rhs_bigit = rhs.bigits_[j];
+      if (lhs_bigit != rhs_bigit) return lhs_bigit > rhs_bigit ? 1 : -1;
+    }
+    if (i != j) return i > j ? 1 : -1;
+    return 0;
   }
 
   // Returns compare(lhs1 + lhs2, rhs).
@@ -684,7 +671,7 @@ class bigint {
   // returning the quotient.
   int divmod_assign(const bigint& divisor) {
     FMT_ASSERT(this != &divisor, "");
-    if (!(*this >= divisor)) return 0;
+    if (compare(*this, divisor) < 0) return 0;
     int num_bigits = static_cast<int>(bigits_.size());
     FMT_ASSERT(divisor.bigits_[divisor.bigits_.size() - 1] != 0, "");
     int exp_difference = exp_ - divisor.exp_;
@@ -700,7 +687,7 @@ class bigint {
     do {
       subtract_aligned(divisor);
       ++quotient;
-    } while (*this >= divisor);
+    } while (compare(*this, divisor) >= 0);
     return quotient;
   }
 };
@@ -921,7 +908,8 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
 };
 
 // Format value using a variation of the Fixed-Precision Positive Floating-Point
-// Printout ((FPP)^2) algorithm by Steele & White.
+// Printout ((FPP)^2) algorithm by Steele & White:
+// http://kurtstephens.com/files/p372-steele.pdf.
 template <typename Double>
 FMT_FUNC void fallback_format(Double v, buffer<char>& buf, int& exp10) {
   fp fp_value(v);
@@ -929,43 +917,44 @@ FMT_FUNC void fallback_format(Double v, buffer<char>& buf, int& exp10) {
   // TODO: handle denormals
   int shift = fp_value.f == 1 ? 1 : 0;
   // Shift value and pow10 by an extra bit to make lower and upper which are
-  // half ulp integers. This eliminates multiplication by 2 during later
-  // computations.
+  // normally half ulp integers. This eliminates multiplication by 2 during
+  // later computations.
   bigint value(fp_value.f << (shift + 1));  // 2 * R in (FPP)^2.
-  bigint pow10(1 << (shift + 1));           // 2 * S in (FPP)^2.
-  bigint lower(1);                          // M^- in (FPP)^2.
-  bigint upper(1 << shift);                 // M^+ in (FPP)^2.
+  bigint pow10;                             // 2 * S in (FPP)^2.
+  bigint lower(1);                          // (M^- in (FPP)^2).
+  bigint upper(1 << shift);                 // (M^+ in (FPP)^2).
   if (fp_value.e >= 0) {
     value <<= fp_value.e;
     lower <<= fp_value.e;
     upper <<= fp_value.e;
+    pow10.assign_pow10(exp10);
+    pow10 <<= 1;
   } else {
     pow10 <<= -fp_value.e;
     // TODO: fixup
   }
-  // fp_value == value / pow10.
-  int exp = 0;
-  while (add_compare(value, upper, pow10) >= 0) {
-    pow10 *= 10;
-    ++exp;
-  }
+  // Invariant: fp_value == (value / pow10) * pow(10, exp10).
+  bool even = (fp_value.f & 1) == 0;
   int num_digits = 0;
   char* data = buf.data();
   for (;;) {
-    value *= 10;
     int digit = value.divmod_assign(pow10);
-    lower *= 10;
-    upper *= 10;
-    bool low = value < lower;
-    bool high = add_compare(value, upper, pow10) > 0;  // value + upper > pow10
+    bool low = compare(value, lower) - even < 0;  // value <[=] lower.
+    bool high = add_compare(value, upper, pow10) + even >
+                0;  // value + upper >[=] pow10.
     if (low || high) {
-      if (!low) ++digit;
+      if (!low) {
+        ++digit;
+      } else if (high) {
+        // TODO: round up if 2 * value >= pow10
+      }
       data[num_digits++] = static_cast<char>('0' + digit);
       buf.resize(num_digits);
-      exp10 = exp - num_digits;
       return;
     }
     data[num_digits++] = static_cast<char>('0' + digit);
+    lower *= 10;
+    upper *= 10;
   }
 }
 

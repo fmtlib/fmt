@@ -35,64 +35,18 @@ TEST(BigIntTest, Construct) {
   EXPECT_EQ("123456789abcedf0", fmt::format("{}", bigint(0x123456789abcedf0)));
 }
 
-TEST(BigIntTest, Less) {
+TEST(BigIntTest, Compare) {
   bigint n1(42);
   bigint n2(42);
-  EXPECT_FALSE(n1 < n2);
+  EXPECT_EQ(compare(n1, n2), 0);
   n2 <<= 32;
-  EXPECT_TRUE(n1 < n2);
-  EXPECT_FALSE(n2 < n1);
+  EXPECT_LT(compare(n1, n2), 0);
   bigint n3(43);
-  EXPECT_TRUE(n1 < n3);
-  EXPECT_FALSE(n3 < n1);
+  EXPECT_LT(compare(n1, n3), 0);
+  EXPECT_GT(compare(n3, n1), 0);
   bigint n4(42 * 0x100000001);
-  EXPECT_TRUE(n2 < n4);
-  EXPECT_FALSE(n4 < n2);
-}
-
-TEST(BigIntTest, LessEqual) {
-  bigint n1(42);
-  bigint n2(42);
-  EXPECT_TRUE(n1 <= n2);
-  n2 <<= 32;
-  EXPECT_TRUE(n1 <= n2);
-  EXPECT_FALSE(n2 <= n1);
-  bigint n3(43);
-  EXPECT_TRUE(n1 <= n3);
-  EXPECT_FALSE(n3 <= n1);
-  bigint n4(42 * 0x100000001);
-  EXPECT_TRUE(n2 <= n4);
-  EXPECT_FALSE(n4 <= n2);
-}
-
-TEST(BigIntTest, Greater) {
-  bigint n1(42);
-  bigint n2(42);
-  EXPECT_FALSE(n1 > n2);
-  n2 <<= 32;
-  EXPECT_FALSE(n1 > n2);
-  EXPECT_TRUE(n2 > n1);
-  bigint n3(43);
-  EXPECT_FALSE(n1 > n3);
-  EXPECT_TRUE(n3 > n1);
-  bigint n4(42 * 0x100000001);
-  EXPECT_FALSE(n2 > n4);
-  EXPECT_TRUE(n4 > n2);
-}
-
-TEST(BigIntTest, GreaterEqual) {
-  bigint n1(42);
-  bigint n2(42);
-  EXPECT_TRUE(n1 >= n2);
-  n2 <<= 32;
-  EXPECT_FALSE(n1 >= n2);
-  EXPECT_TRUE(n2 >= n1);
-  bigint n3(43);
-  EXPECT_FALSE(n1 >= n3);
-  EXPECT_TRUE(n3 >= n1);
-  bigint n4(42 * 0x100000001);
-  EXPECT_FALSE(n2 >= n4);
-  EXPECT_TRUE(n4 >= n2);
+  EXPECT_LT(compare(n2, n4), 0);
+  EXPECT_GT(compare(n4, n2), 0);
 }
 
 TEST(BigIntTest, AddCompare) {
