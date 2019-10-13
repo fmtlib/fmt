@@ -960,25 +960,31 @@ FMT_FUNC void fallback_format(Double v, buffer<char>& buf, int& exp10) {
       upper_store.assign(1);
       upper_store <<= fp_value.e + shift;
       upper = &upper_store;
-    } else {
-      upper = &lower;
     }
     denominator.assign_pow10(exp10);
     denominator <<= 1;
-  } else {
+  } else if (exp10 < 0) {
     numerator.assign_pow10(-exp10);
     lower.assign(numerator);
     if (shift != 0) {
       upper_store.assign(numerator);
       upper_store <<= 1;
       upper = &upper_store;
-    } else {
-      upper = &lower;
     }
     numerator *= significand;
     denominator.assign(1);
     denominator <<= 1 - fp_value.e;
+  } else {
+    numerator.assign(significand);
+    denominator.assign_pow10(exp10);
+    denominator <<= 1 - fp_value.e;
+    lower.assign(1);
+    if (shift != 0) {
+      upper_store.assign(1 << shift);
+      upper = &upper_store;
+    }
   }
+  if (!upper) upper = &lower;
   // Invariant: fp_value == (numerator / denominator) * pow(10, exp10).
   bool even = (fp_value.f & 1) == 0;
   int num_digits = 0;
