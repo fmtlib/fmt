@@ -17,7 +17,6 @@
 #include <climits>
 #include <cmath>
 #include <cstdarg>
-#include <cstddef>  // for std::ptrdiff_t
 #include <cstring>  // for std::memmove
 #include <cwchar>
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
@@ -495,7 +494,8 @@ class bigint {
   // 0 being the least significant one.
   using bigit = uint32_t;
   using double_bigit = uint64_t;
-  basic_memory_buffer<bigit> bigits_;
+  enum { bigits_capacity = 32 };
+  basic_memory_buffer<bigit, bigits_capacity> bigits_;
   int exp_;
 
   static FMT_CONSTEXPR_DECL const int bigit_bits = bits<bigit>::value;
@@ -559,6 +559,7 @@ class bigint {
  public:
   bigint() : exp_(0) {}
   explicit bigint(uint64_t n) { assign(n); }
+  ~bigint() { assert(bigits_.capacity() <= bigits_capacity); }
 
   bigint(const bigint&) = delete;
   void operator=(const bigint&) = delete;
@@ -664,7 +665,7 @@ class bigint {
   }
 
   void square() {
-    basic_memory_buffer<bigit> n(std::move(bigits_));
+    basic_memory_buffer<bigit, bigits_capacity> n(std::move(bigits_));
     int num_bigits = static_cast<int>(bigits_.size());
     int num_result_bigits = 2 * num_bigits;
     bigits_.resize(num_result_bigits);
@@ -941,7 +942,7 @@ FMT_FUNC void fallback_format(Double v, buffer<char>& buf, int& exp10) {
   fp fp_value(v);
   // Shift to account for unequal gaps when lower boundary is 2 times closer.
   // TODO: handle denormals
-  int shift = fp_value.f == 1 ? 1 : 0;
+  int shift = 0; //fp_value.f == 1 ? 1 : 0;
   bigint numerator;          // 2 * R in (FPP)^2.
   bigint denominator;        // 2 * S in (FPP)^2.
   bigint lower;              // (M^- in (FPP)^2).
