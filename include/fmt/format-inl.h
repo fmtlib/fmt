@@ -1040,13 +1040,6 @@ FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
   return true;
 }
 
-template <>
-char* sprintf_format<float>(float value, internal::buffer<char>& buf,
-                            sprintf_specs specs) {
-  // printf does not have a float format modifier, it only supports double.
-  return sprintf_format<double>(value, buf, specs);
-}
-
 template <typename Double>
 char* sprintf_format(Double value, internal::buffer<char>& buf,
                      sprintf_specs specs) {

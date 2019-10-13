@@ -1138,6 +1138,13 @@ struct sprintf_specs {
 template <typename Double>
 char* sprintf_format(Double, internal::buffer<char>&, sprintf_specs);
 
+template <>
+inline char* sprintf_format<float>(float value, internal::buffer<char>& buf,
+                                   sprintf_specs specs) {
+  // printf does not have a float format specifier, it only supports double.
+  return sprintf_format<double>(value, buf, specs);
+}
+
 template <typename Handler>
 FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
   switch (spec) {
