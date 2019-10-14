@@ -946,20 +946,20 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
   }
 };
 
-// Formats v using a variation of the Fixed-Precision Positive Floating-Point
-// Printout ((FPP)^2) algorithm by Steele & White:
+// Formats value using a variation of the Fixed-Precision Positive
+// Floating-Point Printout ((FPP)^2) algorithm by Steele & White:
 // http://kurtstephens.com/files/p372-steele.pdf.
 template <typename Double>
-FMT_FUNC void fallback_format(Double v, buffer<char>& buf, int& exp10) {
-  fp fp_value(v);
+FMT_FUNC void fallback_format(Double value, buffer<char>& buf, int& exp10) {
+  fp fp_value(value);
   // Shift to account for unequal gaps when lower boundary is 2 times closer.
   // TODO: handle denormals
-  int shift = 0; //fp_value.f == 1 ? 1 : 0;
-  bigint numerator;          // 2 * R in (FPP)^2.
-  bigint denominator;        // 2 * S in (FPP)^2.
-  bigint lower;              // (M^- in (FPP)^2).
+  int shift = 0;       // fp_value.f == 1 ? 1 : 0;
+  bigint numerator;    // 2 * R in (FPP)^2.
+  bigint denominator;  // 2 * S in (FPP)^2.
+  bigint lower;        // (M^- in (FPP)^2).
   bigint upper_store;
-  bigint *upper = nullptr;   // (M^+ in (FPP)^2).
+  bigint* upper = nullptr;  // (M^+ in (FPP)^2).
   // Shift numerator and denominator by an extra bit to make lower and upper
   // which are normally half ulp integers. This eliminates multiplication by 2
   // during later computations.
@@ -998,27 +998,29 @@ FMT_FUNC void fallback_format(Double v, buffer<char>& buf, int& exp10) {
     }
   }
   if (!upper) upper = &lower;
-  // Invariant: fp_value == (numerator / denominator) * pow(10, exp10).
+  // Invariant: value == (numerator / denominator) * pow(10, exp10).
   bool even = (fp_value.f & 1) == 0;
   int num_digits = 0;
   char* data = buf.data();
   for (;;) {
     int digit = numerator.divmod_assign(denominator);
     bool low = compare(numerator, lower) - even < 0;  // numerator <[=] lower.
-    bool high = add_compare(numerator, *upper, denominator) + even >
-                0;  // numerator + upper >[=] pow10.
+    // numerator + upper >[=] pow10:
+    bool high = add_compare(numerator, *upper, denominator) + even > 0;
+    data[num_digits++] = static_cast<char>('0' + digit);
     if (low || high) {
       if (!low) {
-        ++digit;
+        ++data[num_digits - 1];
       } else if (high) {
-        // TODO: round up if 2 * numerator >= denominator
+        int result = add_compare(numerator, numerator, denominator);
+        // Round half to even.
+        if (result > 0 || (result == 0 && (digit % 2) != 0))
+          ++data[num_digits - 1];
       }
-      data[num_digits++] = static_cast<char>('0' + digit);
       buf.resize(num_digits);
-      exp10 -= num_digits -1;
+      exp10 -= num_digits - 1;
       return;
     }
-    data[num_digits++] = static_cast<char>('0' + digit);
     numerator *= 10;
     lower *= 10;
     if (upper != &lower) *upper *= 10;

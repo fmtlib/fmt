@@ -1569,7 +1569,7 @@ template <typename Range> class basic_writer {
           decimal_point_(decimal_point) {
       int num_digits = static_cast<int>(digits.size());
       int full_exp = num_digits + exp - 1;
-      int precision = params.num_digits > 0 ? params.num_digits : 11;
+      int precision = params.num_digits > 0 ? params.num_digits : 16;
       params_.fixed |= full_exp >= -4 && full_exp < precision;
       auto it = internal::grisu_prettify<char>(
           digits.data(), num_digits, exp, internal::counting_iterator<char>(),
