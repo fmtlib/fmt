@@ -832,11 +832,12 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
     return basic_string_view<char_type>(val);
   }
-  template <typename T,
-            FMT_ENABLE_IF(
-                std::is_constructible<std_string_view<char_type>, T>::value &&
-                !std::is_constructible<basic_string_view<char_type>, T>::value &&
-                !is_string<T>::value)>
+  template <
+      typename T,
+      FMT_ENABLE_IF(
+          std::is_constructible<std_string_view<char_type>, T>::value &&
+          !std::is_constructible<basic_string_view<char_type>, T>::value &&
+          !is_string<T>::value)>
   FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
     return std_string_view<char_type>(val);
   }
@@ -1208,7 +1209,8 @@ template <typename Context> class basic_format_args {
 
   internal::type type(int index) const {
     int shift = index * internal::packed_arg_bitsize;
-    return static_cast<internal::type>((types_ >> shift) & internal::packed_arg_mask);
+    return static_cast<internal::type>((types_ >> shift) &
+                                       internal::packed_arg_mask);
   }
 
   friend class internal::arg_map<Context>;
