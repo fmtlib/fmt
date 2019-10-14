@@ -981,7 +981,7 @@ FMT_FUNC void fallback_format(Double v, buffer<char>& buf, int& exp10) {
     denominator <<= 1 - fp_value.e;
     lower.assign(1);
     if (shift != 0) {
-      upper_store.assign(1 << shift);
+      upper_store.assign(1ull << shift);
       upper = &upper_store;
     }
   }
