@@ -364,6 +364,29 @@ class fp {
   static FMT_CONSTEXPR_DECL const uint64_t implicit_bit =
       1ull << double_significand_size;
 
+  // Assigns d to this and return true iff predecessor is closer than successor.
+  template <typename Double> bool assign(Double d) {
+    // Assume double is in the format [sign][exponent][significand].
+    using limits = std::numeric_limits<Double>;
+    const int exponent_size =
+        bits<Double>::value - double_significand_size - 1;  // -1 for sign
+    const uint64_t significand_mask = implicit_bit - 1;
+    const uint64_t exponent_mask = (~0ull >> 1) & ~significand_mask;
+    const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
+    auto u = bit_cast<uint64_t>(d);
+    f = u & significand_mask;
+    auto biased_e = (u & exponent_mask) >> double_significand_size;
+    // Predecessor is closer if d is a normalized power of 2 (f == 0) other than
+    // the smallest normalized number (biased_e > 1).
+    bool is_predecessor_closer = f == 0 && biased_e > 1;
+    if (biased_e != 0)
+      f += implicit_bit;
+    else
+      biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
+    e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
+    return is_predecessor_closer;
+  }
+
  public:
   significand_type f;
   int e;
@@ -376,23 +399,7 @@ class fp {
 
   // Constructs fp from an IEEE754 double. It is a template to prevent compile
   // errors on platforms where double is not IEEE754.
-  template <typename Double> explicit fp(Double d) {
-    // Assume double is in the format [sign][exponent][significand].
-    using limits = std::numeric_limits<Double>;
-    const int exponent_size =
-        bits<Double>::value - double_significand_size - 1;  // -1 for sign
-    const uint64_t significand_mask = implicit_bit - 1;
-    const uint64_t exponent_mask = (~0ull >> 1) & ~significand_mask;
-    const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
-    auto u = bit_cast<uint64_t>(d);
-    auto biased_e = (u & exponent_mask) >> double_significand_size;
-    f = u & significand_mask;
-    if (biased_e != 0)
-      f += implicit_bit;
-    else
-      biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
-  }
+  template <typename Double> explicit fp(Double d) { assign(d); }
 
   // Normalizes the value converted from double and multiplied by (1 << SHIFT).
   template <int SHIFT> friend fp normalize(fp value) {
@@ -410,20 +417,23 @@ class fp {
     return value;
   }
 
-  // Computes lower and upper boundaries (m^- and m^+ in the Grisu paper), where
-  // a boundary is a value half way between the number and its predecessor
+  // Assigns d to this together with computing lower and upper boundaries,
+  // where a boundary is a value half way between the number and its predecessor
   // (lower) or successor (upper). The upper boundary is normalized and lower
   // has the same exponent but may be not normalized.
-  void compute_boundaries(fp& lower, fp& upper) const {
-    lower =
-        f == implicit_bit ? fp((f << 2) - 1, e - 2) : fp((f << 1) - 1, e - 1);
+  template <typename Double>
+  void assign_with_boundaries(Double d, fp& lower, fp& upper) {
+    bool is_lower_closer = assign(d);
+    lower = is_lower_closer ? fp((f << 2) - 1, e - 2) : fp((f << 1) - 1, e - 1);
     // 1 in normalize accounts for the exponent shift above.
     upper = normalize<1>(fp((f << 1) + 1, e - 1));
     lower.f <<= lower.e - upper.e;
     lower.e = upper.e;
   }
 
-  void compute_float_boundaries(fp& lower, fp& upper) const {
+  template <typename Double>
+  void assign_float_with_boundaries(Double d, fp& lower, fp& upper) {
+    assign(d);
     constexpr int min_normal_e = std::numeric_limits<float>::min_exponent -
                                  std::numeric_limits<double>::digits;
     significand_type half_ulp = 1 << (std::numeric_limits<double>::digits -
@@ -435,6 +445,8 @@ class fp {
     lower.e = upper.e;
   }
 };
+
+inline bool operator==(fp x, fp y) { return x.f == y.f && x.e == y.e; }
 
 // Returns an fp number representing x - y. Result may not be normalized.
 inline fp operator-(fp x, fp y) {
@@ -948,30 +960,28 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
 
 // Formats value using a variation of the Fixed-Precision Positive
 // Floating-Point Printout ((FPP)^2) algorithm by Steele & White:
-// http://kurtstephens.com/files/p372-steele.pdf.
-template <typename Double>
-FMT_FUNC void fallback_format(Double value, buffer<char>& buf, int& exp10) {
-  fp fp_value(value);
+// https://fmt.dev/p372-steele.pdf.
+FMT_FUNC void fallback_format(fp value, buffer<char>& buf, int& exp10) {
   // Shift to account for unequal gaps when lower boundary is 2 times closer.
   // TODO: handle denormals
-  int shift = 0;       // fp_value.f == 1 ? 1 : 0;
-  bigint numerator;    // 2 * R in (FPP)^2.
-  bigint denominator;  // 2 * S in (FPP)^2.
-  bigint lower;        // (M^- in (FPP)^2).
-  bigint upper_store;
+  int shift = 0;            // fp_value.f == 1 ? 1 : 0;
+  bigint numerator;         // 2 * R in (FPP)^2.
+  bigint denominator;       // 2 * S in (FPP)^2.
+  bigint lower;             // (M^- in (FPP)^2).
+  bigint upper_store;       // upper's value if different from lower.
   bigint* upper = nullptr;  // (M^+ in (FPP)^2).
   // Shift numerator and denominator by an extra bit to make lower and upper
   // which are normally half ulp integers. This eliminates multiplication by 2
   // during later computations.
-  uint64_t significand = fp_value.f << (shift + 1);
-  if (fp_value.e >= 0) {
+  uint64_t significand = value.f << (shift + 1);
+  if (value.e >= 0) {
     numerator.assign(significand);
-    numerator <<= fp_value.e;
+    numerator <<= value.e;
     lower.assign(1);
-    lower <<= fp_value.e;
+    lower <<= value.e;
     if (shift != 0) {
       upper_store.assign(1);
-      upper_store <<= fp_value.e + shift;
+      upper_store <<= value.e + shift;
       upper = &upper_store;
     }
     denominator.assign_pow10(exp10);
@@ -986,11 +996,11 @@ FMT_FUNC void fallback_format(Double value, buffer<char>& buf, int& exp10) {
     }
     numerator *= significand;
     denominator.assign(1);
-    denominator <<= 1 - fp_value.e;
+    denominator <<= 1 - value.e;
   } else {
     numerator.assign(significand);
     denominator.assign_pow10(exp10);
-    denominator <<= 1 - fp_value.e;
+    denominator <<= 1 - value.e;
     lower.assign(1);
     if (shift != 0) {
       upper_store.assign(1ull << shift);
@@ -999,7 +1009,7 @@ FMT_FUNC void fallback_format(Double value, buffer<char>& buf, int& exp10) {
   }
   if (!upper) upper = &lower;
   // Invariant: value == (numerator / denominator) * pow(10, exp10).
-  bool even = (fp_value.f & 1) == 0;
+  bool even = (value.f & 1) == 0;
   int num_digits = 0;
   char* data = buf.data();
   for (;;) {
@@ -1045,11 +1055,11 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
     return true;
   }
 
-  const fp fp_value(value);
   const int min_exp = -60;  // alpha in Grisu.
   int cached_exp10 = 0;     // K in Grisu.
   if (precision != -1) {
     if (precision > 17) return false;
+    fp fp_value(value);
     fp normalized = normalize(fp_value);
     const auto cached_pow = get_cached_power(
         min_exp - (normalized.e + fp::significand_size), cached_exp10);
@@ -1059,11 +1069,12 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
       return false;
     buf.resize(to_unsigned(handler.size));
   } else {
+    fp fp_value;
     fp lower, upper;  // w^- and w^+ in the Grisu paper.
     if ((options & grisu_options::binary32) != 0)
-      fp_value.compute_float_boundaries(lower, upper);
+      fp_value.assign_float_with_boundaries(value, lower, upper);
     else
-      fp_value.compute_boundaries(lower, upper);
+      fp_value.assign_with_boundaries(value, lower, upper);
 
     // Find a cached power of 10 such that multiplying upper by it will bring
     // the exponent in the range [min_exp, -32].
@@ -1092,7 +1103,7 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
       size = handler.size;
       if (result == digits::error) {
         exp = exp + size - cached_exp10 - 1;
-        fallback_format(value, buf, exp);
+        fallback_format(fp_value, buf, exp);
         return true;
       }
     }

@@ -180,18 +180,40 @@ TEST(BigIntTest, DivModAssign) {
   EXPECT_EQ("2a", fmt::format("{}", n2));
 }
 
-template <bool is_iec559> void test_construct_from_double() {
+template <bool is_iec559> void run_double_tests() {
   fmt::print("warning: double is not IEC559, skipping FP tests\n");
 }
 
-template <> void test_construct_from_double<true>() {
-  auto v = fp(1.23);
-  EXPECT_EQ(v.f, 0x13ae147ae147aeu);
-  EXPECT_EQ(v.e, -52);
+template <> void run_double_tests<true>() {
+  // Construct from double.
+  EXPECT_EQ(fp(1.23), fp(0x13ae147ae147aeu, -52));
+
+  // Compute boundaries:
+  fp value, lower, upper;
+  // Normalized & not power of 2 - equidistant boundaries:
+  value.assign_with_boundaries(1.23, lower, upper);
+  EXPECT_EQ(value, fp(0x0013ae147ae147ae, -52));
+  EXPECT_EQ(lower, fp(0x9d70a3d70a3d6c00, -63));
+  EXPECT_EQ(upper, fp(0x9d70a3d70a3d7400, -63));
+  // Normalized power of 2 - lower boundary is closer:
+  value.assign_with_boundaries(1.9807040628566084e+28, lower, upper);  // 2**94
+  EXPECT_EQ(value, fp(0x0010000000000000, 42));
+  EXPECT_EQ(lower, fp(0x7ffffffffffffe00, 31));
+  EXPECT_EQ(upper, fp(0x8000000000000400, 31));
+  // Smallest normalized double - equidistant boundaries:
+  value.assign_with_boundaries(2.2250738585072014e-308, lower, upper);
+  EXPECT_EQ(value, fp(0x0010000000000000, -1074));
+  EXPECT_EQ(lower, fp(0x7ffffffffffffc00, -1085));
+  EXPECT_EQ(upper, fp(0x8000000000000400, -1085));
+  // Subnormal - equidistant boundaries:
+  value.assign_with_boundaries(4.9406564584124654e-324, lower, upper);
+  EXPECT_EQ(value, fp(0x0000000000000001, -1074));
+  EXPECT_EQ(lower, fp(0x4000000000000000, -1137));
+  EXPECT_EQ(upper, fp(0xc000000000000000, -1137));
 }
 
-TEST(FPTest, ConstructFromDouble) {
-  test_construct_from_double<std::numeric_limits<double>::is_iec559>();
+TEST(FPTest, DoubleTests) {
+  run_double_tests<std::numeric_limits<double>::is_iec559>();
 }
 
 TEST(FPTest, Normalize) {
@@ -199,26 +221,6 @@ TEST(FPTest, Normalize) {
   auto normalized = normalize(v);
   EXPECT_EQ(0xbeef000000000000, normalized.f);
   EXPECT_EQ(-6, normalized.e);
-}
-
-TEST(FPTest, ComputeBoundariesSubnormal) {
-  auto v = fp(0xbeef, 42);
-  fp lower, upper;
-  v.compute_boundaries(lower, upper);
-  EXPECT_EQ(0xbeee800000000000, lower.f);
-  EXPECT_EQ(-6, lower.e);
-  EXPECT_EQ(0xbeef800000000000, upper.f);
-  EXPECT_EQ(-6, upper.e);
-}
-
-TEST(FPTest, ComputeBoundaries) {
-  auto v = fp(0x10000000000000, 42);
-  fp lower, upper;
-  v.compute_boundaries(lower, upper);
-  EXPECT_EQ(0x7ffffffffffffe00, lower.f);
-  EXPECT_EQ(31, lower.e);
-  EXPECT_EQ(0x8000000000000400, upper.f);
-  EXPECT_EQ(31, upper.e);
 }
 
 TEST(FPTest, ComputeFloatBoundaries) {
@@ -237,13 +239,12 @@ TEST(FPTest, ComputeFloatBoundaries) {
       {1e-45f, 7.006492321624085e-46, 2.1019476964872256e-45},
   };
   for (auto test : tests) {
-    auto v = fp(test.x);
     fp vlower = normalize(fp(test.lower));
     fp vupper = normalize(fp(test.upper));
     vlower.f >>= vupper.e - vlower.e;
     vlower.e = vupper.e;
-    fp lower, upper;
-    v.compute_float_boundaries(lower, upper);
+    fp value, lower, upper;
+    value.assign_float_with_boundaries(test.x, lower, upper);
     EXPECT_EQ(vlower.f, lower.f);
     EXPECT_EQ(vlower.e, lower.e);
     EXPECT_EQ(vupper.f, upper.f);
