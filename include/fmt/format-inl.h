@@ -364,29 +364,6 @@ class fp {
   static FMT_CONSTEXPR_DECL const uint64_t implicit_bit =
       1ull << double_significand_size;
 
-  // Assigns d to this and return true iff predecessor is closer than successor.
-  template <typename Double> bool assign(Double d) {
-    // Assume double is in the format [sign][exponent][significand].
-    using limits = std::numeric_limits<Double>;
-    const int exponent_size =
-        bits<Double>::value - double_significand_size - 1;  // -1 for sign
-    const uint64_t significand_mask = implicit_bit - 1;
-    const uint64_t exponent_mask = (~0ull >> 1) & ~significand_mask;
-    const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
-    auto u = bit_cast<uint64_t>(d);
-    f = u & significand_mask;
-    auto biased_e = (u & exponent_mask) >> double_significand_size;
-    // Predecessor is closer if d is a normalized power of 2 (f == 0) other than
-    // the smallest normalized number (biased_e > 1).
-    bool is_predecessor_closer = f == 0 && biased_e > 1;
-    if (biased_e != 0)
-      f += implicit_bit;
-    else
-      biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
-    return is_predecessor_closer;
-  }
-
  public:
   significand_type f;
   int e;
@@ -415,6 +392,29 @@ class fp {
     value.f <<= offset;
     value.e -= offset;
     return value;
+  }
+
+  // Assigns d to this and return true iff predecessor is closer than successor.
+  template <typename Double> bool assign(Double d) {
+    // Assume double is in the format [sign][exponent][significand].
+    using limits = std::numeric_limits<Double>;
+    const int exponent_size =
+        bits<Double>::value - double_significand_size - 1;  // -1 for sign
+    const uint64_t significand_mask = implicit_bit - 1;
+    const uint64_t exponent_mask = (~0ull >> 1) & ~significand_mask;
+    const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
+    auto u = bit_cast<uint64_t>(d);
+    f = u & significand_mask;
+    auto biased_e = (u & exponent_mask) >> double_significand_size;
+    // Predecessor is closer if d is a normalized power of 2 (f == 0) other than
+    // the smallest normalized number (biased_e > 1).
+    bool is_predecessor_closer = f == 0 && biased_e > 1;
+    if (biased_e != 0)
+      f += implicit_bit;
+    else
+      biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
+    e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
+    return is_predecessor_closer;
   }
 
   // Assigns d to this together with computing lower and upper boundaries,
@@ -779,7 +779,7 @@ enum result {
 template <typename Handler>
 digits::result grisu_gen_digits(fp value, uint64_t error, int& exp,
                                 Handler& handler) {
-  fp one(1ull << -value.e, value.e);
+  const fp one(1ull << -value.e, value.e);
   // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
   // zero because it contains a product of two 64-bit numbers with MSB set (due
   // to normalization) - 1, shifted right by at most 60 bits.
@@ -800,7 +800,7 @@ digits::result grisu_gen_digits(fp value, uint64_t error, int& exp,
       digit = integral / divisor;
       integral %= divisor;
     };
-    // This optimization by miloyip reduces the number of integer divisions by
+    // This optimization by Milo Yip reduces the number of integer divisions by
     // one per iteration.
     switch (exp) {
     case 10:
@@ -961,27 +961,29 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
 // Formats value using a variation of the Fixed-Precision Positive
 // Floating-Point Printout ((FPP)^2) algorithm by Steele & White:
 // https://fmt.dev/p372-steele.pdf.
-FMT_FUNC void fallback_format(fp value, buffer<char>& buf, int& exp10) {
-  // Shift to account for unequal gaps when lower boundary is 2 times closer.
-  // TODO: handle denormals
-  int shift = 0;            // fp_value.f == 1 ? 1 : 0;
-  bigint numerator;         // 2 * R in (FPP)^2.
-  bigint denominator;       // 2 * S in (FPP)^2.
+template <typename Double>
+void fallback_format(Double d, buffer<char>& buf, int& exp10) {
+  bigint numerator;    // 2 * R in (FPP)^2.
+  bigint denominator;  // 2 * S in (FPP)^2.
+  // lower and upper are differences between value and corresponding boundaries.
   bigint lower;             // (M^- in (FPP)^2).
   bigint upper_store;       // upper's value if different from lower.
   bigint* upper = nullptr;  // (M^+ in (FPP)^2).
-  // Shift numerator and denominator by an extra bit to make lower and upper
-  // which are normally half ulp integers. This eliminates multiplication by 2
-  // during later computations.
-  uint64_t significand = value.f << (shift + 1);
+  fp value;
+  // Shift numerator and denominator by an extra bit or two (if lower boundary
+  // is closer) to make lower and upper integers. This eliminates multiplication
+  // by 2 during later computations.
+  // TODO: handle float
+  int shift = value.assign(d) ? 2 : 1;
+  uint64_t significand = value.f << shift;
   if (value.e >= 0) {
     numerator.assign(significand);
     numerator <<= value.e;
     lower.assign(1);
     lower <<= value.e;
-    if (shift != 0) {
+    if (shift != 1) {
       upper_store.assign(1);
-      upper_store <<= value.e + shift;
+      upper_store <<= value.e + 1;
       upper = &upper_store;
     }
     denominator.assign_pow10(exp10);
@@ -989,21 +991,21 @@ FMT_FUNC void fallback_format(fp value, buffer<char>& buf, int& exp10) {
   } else if (exp10 < 0) {
     numerator.assign_pow10(-exp10);
     lower.assign(numerator);
-    if (shift != 0) {
+    if (shift != 1) {
       upper_store.assign(numerator);
       upper_store <<= 1;
       upper = &upper_store;
     }
     numerator *= significand;
     denominator.assign(1);
-    denominator <<= 1 - value.e;
+    denominator <<= shift - value.e;
   } else {
     numerator.assign(significand);
     denominator.assign_pow10(exp10);
-    denominator <<= 1 - value.e;
+    denominator <<= shift - value.e;
     lower.assign(1);
-    if (shift != 0) {
-      upper_store.assign(1ull << shift);
+    if (shift != 1) {
+      upper_store.assign(1ull << 1);
       upper = &upper_store;
     }
   }
@@ -1103,7 +1105,7 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
       size = handler.size;
       if (result == digits::error) {
         exp = exp + size - cached_exp10 - 1;
-        fallback_format(fp_value, buf, exp);
+        fallback_format(value, buf, exp);
         return true;
       }
     }

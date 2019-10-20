@@ -69,4 +69,7 @@ TEST(GrisuTest, Fallback) {
   EXPECT_EQ("2.2506787569811123e-253",
             fmt::format("{}", 2.2506787569811123e-253));
   EXPECT_EQ("1103618912042992.8", fmt::format("{}", 1103618912042992.8));
+  // pow(2, -25) - assymetric boundaries:
+  EXPECT_EQ("2.9802322387695312e-08",
+            fmt::format("{}", 2.9802322387695312e-08));
 }
