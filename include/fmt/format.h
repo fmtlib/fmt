@@ -2528,10 +2528,9 @@ FMT_CONSTEXPR const typename ParseContext::char_type* parse_format_specs(
       conditional_t<internal::mapped_type_constant<T, context>::value !=
                         internal::custom_type,
                     decltype(arg_mapper<context>().map(std::declval<T>())), T>;
-  conditional_t<has_formatter<mapped_type, context>::value,
-                formatter<mapped_type, char_type>,
-                internal::fallback_formatter<T, char_type>>
-      f;
+  auto f = conditional_t<has_formatter<mapped_type, context>::value,
+                         formatter<mapped_type, char_type>,
+                         internal::fallback_formatter<T, char_type>>();
   return f.parse(ctx);
 }
 
@@ -2816,9 +2815,8 @@ void internal::basic_writer<Range>::write_fp(T value,
   bool use_grisu = USE_GRISU &&
                    (specs.type != 'a' && specs.type != 'A' &&
                     specs.type != 'e' && specs.type != 'E') &&
-                   internal::grisu_format(
-                       static_cast<double>(value), buffer, precision,
-                       options, exp);
+                   internal::grisu_format(static_cast<double>(value), buffer,
+                                          precision, options, exp);
   char* decimal_point_pos = nullptr;
   if (!use_grisu)
     decimal_point_pos = internal::sprintf_format(value, buffer, specs);

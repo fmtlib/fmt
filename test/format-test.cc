@@ -2293,9 +2293,9 @@ struct test_context {
 
 template <size_t N>
 FMT_CONSTEXPR fmt::format_specs parse_specs(const char (&s)[N]) {
-  fmt::format_specs specs;
-  test_parse_context parse_ctx;
-  test_context ctx{};
+  auto specs = fmt::format_specs();
+  auto parse_ctx = test_parse_context();
+  auto ctx = test_context();
   fmt::internal::specs_handler<test_parse_context, test_context> h(
       specs, parse_ctx, ctx);
   parse_format_specs(s, s + N, h);
