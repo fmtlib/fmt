@@ -71,6 +71,11 @@
 #  define FMT_HAS_BUILTIN(x) 0
 #endif
 
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4127)  // conditional expression is constant
+#endif
+
 #ifndef FMT_THROW
 #  if FMT_EXCEPTIONS
 #    if FMT_MSC_VER
@@ -2805,7 +2810,7 @@ void internal::basic_writer<Range>::write_fp(T value,
   int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
   unsigned options = 0;
   if (handler.fixed) options |= grisu_options::fixed;
-  if constexpr (sizeof(value) == sizeof(float)) options |= grisu_options::binary32;
+  if (sizeof(value) == sizeof(float)) options |= grisu_options::binary32;
   bool use_grisu =
       USE_GRISU &&
       (specs.type != 'a' && specs.type != 'A' && specs.type != 'e' &&
@@ -3576,6 +3581,10 @@ FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
 }  // namespace literals
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 FMT_END_NAMESPACE
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 /**
   \rst
