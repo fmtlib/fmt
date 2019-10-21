@@ -46,7 +46,6 @@
 
 #ifdef _MSC_VER
 #  pragma warning(push)
-#  pragma warning(disable : 4127)  // conditional expression is constant
 #  pragma warning(disable : 4702)  // unreachable code
 #endif
 
@@ -939,7 +938,11 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
                           uint64_t error, int exp, bool integral) {
     buf[size++] = digit;
     if (remainder >= error) return digits::more;
+#ifdef __cpp_if_constexpr
+    if constexpr (GRISU_VERSION != 3) {
+#else
     if (GRISU_VERSION != 3) {
+#endif
       uint64_t d = integral ? diff : diff * data::powers_of_10_64[-exp];
       round(d, divisor, remainder, error);
       return digits::done;
