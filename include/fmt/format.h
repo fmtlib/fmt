@@ -2805,7 +2805,7 @@ void internal::basic_writer<Range>::write_fp(T value,
   int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
   unsigned options = 0;
   if (handler.fixed) options |= grisu_options::fixed;
-  if (sizeof(value) == sizeof(float)) options |= grisu_options::binary32;
+  if constexpr (sizeof(value) == sizeof(float)) options |= grisu_options::binary32;
   bool use_grisu =
       USE_GRISU &&
       (specs.type != 'a' && specs.type != 'A' && specs.type != 'e' &&
