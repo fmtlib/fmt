@@ -670,6 +670,7 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const char background_color[];
   static const char reset_color[5];
   static const wchar_t wreset_color[5];
+  static const char signs[];
 };
 
 FMT_EXTERN template struct basic_data<void>;
@@ -1042,6 +1043,7 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
 
 struct gen_digits_params {
   int num_digits;
+  sign_t sign : 3;
   bool fixed;
   bool upper;
   bool trailing_zeros;
@@ -1308,6 +1310,41 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
   }
 }
 
+template <typename Char> class grisu_writer {
+ private:
+  buffer<char>& digits_;
+  size_t size_;
+  int exp_;
+  gen_digits_params params_;
+  Char decimal_point_;
+
+ public:
+  grisu_writer(buffer<char>& digits, int exp,
+               const internal::gen_digits_params& params, Char decimal_point)
+      : digits_(digits),
+        exp_(exp),
+        params_(params),
+        decimal_point_(decimal_point) {
+    int num_digits = static_cast<int>(digits.size());
+    int full_exp = num_digits + exp - 1;
+    int precision = params.num_digits > 0 ? params.num_digits : 16;
+    params_.fixed |= full_exp >= -4 && full_exp < precision;
+    auto it = grisu_prettify(digits.data(), num_digits, exp,
+                             counting_iterator<char>(), params_, '\0');
+    size_ = it.count();
+  }
+
+  size_t size() const { return size_ + (params_.sign ? 1 : 0); }
+  size_t width() const { return size(); }
+
+  template <typename It> void operator()(It&& it) {
+    if (params_.sign) *it++ = static_cast<Char>(data::signs[params_.sign]);
+    int num_digits = static_cast<int>(digits_.size());
+    it = grisu_prettify(digits_.data(), num_digits, exp_, it, params_,
+                        decimal_point_);
+  }
+};
+
 // This template provides operations for formatting and writing data into a
 // character range.
 template <typename Range> class basic_writer {
@@ -1510,7 +1547,7 @@ template <typename Range> class basic_writer {
   enum { inf_size = 3 };  // This is an enum to workaround a bug in MSVC.
 
   struct inf_or_nan_writer {
-    char sign;
+    sign_t sign;
     bool as_percentage;
     const char* str;
 
@@ -1521,7 +1558,7 @@ template <typename Range> class basic_writer {
     size_t width() const { return size(); }
 
     template <typename It> void operator()(It&& it) const {
-      if (sign) *it++ = static_cast<char_type>(sign);
+      if (sign) *it++ = static_cast<char_type>(data::signs[sign]);
       it = internal::copy_str<char_type>(
           str, str + static_cast<std::size_t>(inf_size), it);
       if (as_percentage) *it++ = static_cast<char_type>('%');
@@ -1529,7 +1566,7 @@ template <typename Range> class basic_writer {
   };
 
   struct double_writer {
-    char sign;
+    sign_t sign;
     internal::buffer<char>& buffer;
     char* decimal_point_pos;
     char_type decimal_point;
@@ -1538,7 +1575,7 @@ template <typename Range> class basic_writer {
     size_t width() const { return size(); }
 
     template <typename It> void operator()(It&& it) {
-      if (sign) *it++ = static_cast<char_type>(sign);
+      if (sign) *it++ = static_cast<char_type>(data::signs[sign]);
       auto begin = buffer.begin();
       if (decimal_point_pos) {
         it = internal::copy_str<char_type>(begin, decimal_point_pos, it);
@@ -1546,45 +1583,6 @@ template <typename Range> class basic_writer {
         begin = decimal_point_pos + 1;
       }
       it = internal::copy_str<char_type>(begin, buffer.end(), it);
-    }
-  };
-
-  class grisu_writer {
-   private:
-    internal::buffer<char>& digits_;
-    size_t size_;
-    char sign_;
-    int exp_;
-    internal::gen_digits_params params_;
-    char_type decimal_point_;
-
-   public:
-    grisu_writer(char sign, internal::buffer<char>& digits, int exp,
-                 const internal::gen_digits_params& params,
-                 char_type decimal_point)
-        : digits_(digits),
-          sign_(sign),
-          exp_(exp),
-          params_(params),
-          decimal_point_(decimal_point) {
-      int num_digits = static_cast<int>(digits.size());
-      int full_exp = num_digits + exp - 1;
-      int precision = params.num_digits > 0 ? params.num_digits : 16;
-      params_.fixed |= full_exp >= -4 && full_exp < precision;
-      auto it = internal::grisu_prettify<char>(
-          digits.data(), num_digits, exp, internal::counting_iterator<char>(),
-          params_, '.');
-      size_ = it.count();
-    }
-
-    size_t size() const { return size_ + (sign_ ? 1 : 0); }
-    size_t width() const { return size(); }
-
-    template <typename It> void operator()(It&& it) {
-      if (sign_) *it++ = static_cast<char_type>(sign_);
-      int num_digits = static_cast<int>(digits_.size());
-      it = internal::grisu_prettify<char_type>(digits_.data(), num_digits, exp_,
-                                               it, params_, decimal_point_);
     }
   };
 
@@ -2780,18 +2778,15 @@ void internal::basic_writer<Range>::write_fp(T value,
                                              const format_specs& specs) {
   // Check type.
   float_spec_handler handler(static_cast<char>(specs.type));
-  internal::handle_float_type_spec(handler.type, handler);
+  handle_float_type_spec(handler.type, handler);
 
-  char sign = 0;
+  auto sign = specs.sign;
   // Use signbit instead of value < 0 since the latter is always false for NaN.
   if (std::signbit(value)) {
-    sign = '-';
+    sign = sign::minus;
     value = -value;
-  } else if (specs.sign != sign::none) {
-    if (specs.sign == sign::plus)
-      sign = '+';
-    else if (specs.sign == sign::space)
-      sign = ' ';
+  } else if (sign == sign::minus) {
+    sign = sign::none;
   }
 
   if (!std::isfinite(value)) {
@@ -2809,17 +2804,15 @@ void internal::basic_writer<Range>::write_fp(T value,
   int exp = 0;
   int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
   unsigned options = 0;
-  if (handler.fixed) options |= internal::grisu_options::fixed;
-  if (sizeof(value) == sizeof(float))
-    options |= internal::grisu_options::binary32;
-  bool use_grisu = USE_GRISU &&
-                   (specs.type != 'a' && specs.type != 'A' &&
-                    specs.type != 'e' && specs.type != 'E') &&
-                   internal::grisu_format(static_cast<double>(value), buffer,
-                                          precision, options, exp);
+  if (handler.fixed) options |= grisu_options::fixed;
+  if (sizeof(value) == sizeof(float)) options |= grisu_options::binary32;
+  bool use_grisu =
+      USE_GRISU &&
+      (specs.type != 'a' && specs.type != 'A' && specs.type != 'e' &&
+       specs.type != 'E') &&
+      grisu_format(static_cast<double>(value), buffer, precision, options, exp);
   char* decimal_point_pos = nullptr;
-  if (!use_grisu)
-    decimal_point_pos = internal::sprintf_format(value, buffer, specs);
+  if (!use_grisu) decimal_point_pos = sprintf_format(value, buffer, specs);
 
   if (handler.as_percentage) {
     buffer.push_back('%');
@@ -2829,8 +2822,8 @@ void internal::basic_writer<Range>::write_fp(T value,
   if (specs.align == align::numeric) {
     if (sign) {
       auto&& it = reserve(1);
-      *it++ = static_cast<char_type>(sign);
-      sign = 0;
+      *it++ = static_cast<char_type>(data::signs[sign]);
+      sign = sign::none;
       if (as.width) --as.width;
     }
     as.align = align::right;
@@ -2841,12 +2834,14 @@ void internal::basic_writer<Range>::write_fp(T value,
                                 ? internal::decimal_point<char_type>(locale_)
                                 : static_cast<char_type>('.');
   if (use_grisu) {
-    auto params = internal::gen_digits_params();
+    auto params = gen_digits_params();
+    params.sign = sign;
     params.fixed = handler.fixed;
     params.num_digits = precision;
     params.trailing_zeros =
         (precision != 0 && (handler.fixed || !specs.type)) || specs.alt;
-    write_padded(as, grisu_writer(sign, buffer, exp, params, decimal_point));
+    write_padded(as,
+                 grisu_writer<char_type>(buffer, exp, params, decimal_point));
   } else {
     write_padded(as,
                  double_writer{sign, buffer, decimal_point_pos, decimal_point});

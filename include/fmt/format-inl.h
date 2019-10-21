@@ -342,6 +342,7 @@ template <typename T>
 const char basic_data<T>::background_color[] = "\x1b[48;2;";
 template <typename T> const char basic_data<T>::reset_color[] = "\x1b[0m";
 template <typename T> const wchar_t basic_data<T>::wreset_color[] = L"\x1b[0m";
+template <typename T> const char basic_data<T>::signs[] = {0, '-', '+', ' '};
 
 template <typename T> struct bits {
   static FMT_CONSTEXPR_DECL const int value =
