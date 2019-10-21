@@ -570,10 +570,7 @@ format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
 
 template <typename CompiledFormat, typename... Args>
 std::size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
-  return format_to(
-             internal::counting_iterator<typename CompiledFormat::char_type>(),
-             cf, args...)
-      .count();
+  return format_to(internal::counting_iterator(), cf, args...).count();
 }
 
 FMT_END_NAMESPACE

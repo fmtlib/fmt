@@ -182,7 +182,7 @@ TEST(UtilTest, ParseNonnegativeInt) {
 }
 
 TEST(IteratorTest, CountingIterator) {
-  fmt::internal::counting_iterator<char> it;
+  fmt::internal::counting_iterator it;
   auto prev = it++;
   EXPECT_EQ(prev.count(), 0);
   EXPECT_EQ(it.count(), 1);

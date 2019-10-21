@@ -498,9 +498,9 @@ void vformat_to(basic_memory_buffer<Char>& buf, const text_style& ts,
 }
 }  // namespace internal
 
-template <typename S, typename Char = char_t<S> >
+template <typename S, typename Char = char_t<S>>
 void vprint(std::FILE* f, const text_style& ts, const S& format,
-            basic_format_args<buffer_context<Char> > args) {
+            basic_format_args<buffer_context<Char>> args) {
   basic_memory_buffer<Char> buf;
   internal::vformat_to(buf, ts, to_string_view(format), args);
   buf.push_back(Char(0));
@@ -519,7 +519,7 @@ template <typename S, typename... Args,
 void print(std::FILE* f, const text_style& ts, const S& format_str,
            const Args&... args) {
   internal::check_format_string<Args...>(format_str);
-  using context = buffer_context<char_t<S> >;
+  using context = buffer_context<char_t<S>>;
   format_arg_store<context, Args...> as{args...};
   vprint(f, ts, format_str, basic_format_args<context>(as));
 }
@@ -537,10 +537,10 @@ void print(const text_style& ts, const S& format_str, const Args&... args) {
   return print(stdout, ts, format_str, args...);
 }
 
-template <typename S, typename Char = char_t<S> >
+template <typename S, typename Char = char_t<S>>
 inline std::basic_string<Char> vformat(
     const text_style& ts, const S& format_str,
-    basic_format_args<buffer_context<Char> > args) {
+    basic_format_args<buffer_context<Char>> args) {
   basic_memory_buffer<Char> buf;
   internal::vformat_to(buf, ts, to_string_view(format_str), args);
   return fmt::to_string(buf);
@@ -558,12 +558,11 @@ inline std::basic_string<Char> vformat(
                                       "The answer is {}", 42);
   \endrst
 */
-template <typename S, typename... Args, typename Char = char_t<S> >
+template <typename S, typename... Args, typename Char = char_t<S>>
 inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
                                       const Args&... args) {
-  return vformat(
-      ts, to_string_view(format_str),
-      {internal::make_args_checked<Args...>(format_str, args...)});
+  return vformat(ts, to_string_view(format_str),
+                 {internal::make_args_checked<Args...>(format_str, args...)});
 }
 
 FMT_END_NAMESPACE

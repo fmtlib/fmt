@@ -292,18 +292,20 @@ inline Iterator& reserve(Iterator& it, std::size_t) {
 
 // An output iterator that counts the number of objects written to it and
 // discards them.
-template <typename T> class counting_iterator {
+class counting_iterator {
  private:
   std::size_t count_;
-  mutable T blackhole_;
 
  public:
   using iterator_category = std::output_iterator_tag;
-  using value_type = T;
   using difference_type = std::ptrdiff_t;
-  using pointer = T*;
-  using reference = T&;
+  using pointer = void;
+  using reference = void;
   using _Unchecked_type = counting_iterator;  // Mark iterator as checked.
+
+  struct value_type {
+    template <typename T> void operator=(const T&) {}
+  };
 
   counting_iterator() : count_(0) {}
 
@@ -320,7 +322,7 @@ template <typename T> class counting_iterator {
     return it;
   }
 
-  T& operator*() const { return blackhole_; }
+  value_type operator*() const { return {}; }
 };
 
 template <typename OutputIt> class truncating_iterator_base {
@@ -1132,7 +1134,7 @@ template <typename Char> class grisu_writer {
     int full_exp = num_digits + exp - 1;
     int precision = params.num_digits > 0 ? params.num_digits : 16;
     params_.fixed |= full_exp >= -4 && full_exp < precision;
-    auto it = grisu_prettify(digits, num_digits, exp, counting_iterator<char>(),
+    auto it = grisu_prettify(digits, num_digits, exp, counting_iterator(),
                              params_, '\0');
     size_ = it.count();
   }
@@ -3482,7 +3484,7 @@ inline std::basic_string<Char> internal::vformat(
  */
 template <typename... Args>
 inline std::size_t formatted_size(string_view format_str, const Args&... args) {
-  auto it = format_to(internal::counting_iterator<char>(), format_str, args...);
+  auto it = format_to(internal::counting_iterator(), format_str, args...);
   return it.count();
 }
 
