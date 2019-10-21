@@ -1112,6 +1112,41 @@ It grisu_prettify(const char* digits, int size, int exp, It it,
   return it;
 }
 
+template <typename Char> class grisu_writer {
+ private:
+  const char* digits_;
+  int num_digits_;
+  int exp_;
+  size_t size_;
+  gen_digits_params params_;
+  Char decimal_point_;
+
+ public:
+  grisu_writer(const char* digits, int num_digits, int exp,
+               gen_digits_params params, Char decimal_point)
+      : digits_(digits),
+        num_digits_(num_digits),
+        exp_(exp),
+        params_(params),
+        decimal_point_(decimal_point) {
+    int full_exp = num_digits + exp - 1;
+    int precision = params.num_digits > 0 ? params.num_digits : 16;
+    params_.fixed |= full_exp >= -4 && full_exp < precision;
+    auto it = grisu_prettify(digits, num_digits, exp, counting_iterator<char>(),
+                             params_, '\0');
+    size_ = it.count();
+  }
+
+  size_t size() const { return size_ + (params_.sign ? 1 : 0); }
+  size_t width() const { return size(); }
+
+  template <typename It> void operator()(It&& it) {
+    if (params_.sign) *it++ = static_cast<Char>(data::signs[params_.sign]);
+    it =
+        grisu_prettify(digits_, num_digits_, exp_, it, params_, decimal_point_);
+  }
+};
+
 namespace grisu_options {
 enum { fixed = 1, grisu2 = 2, binary32 = 4 };
 }
@@ -1309,41 +1344,6 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
     if (type == internal::named_arg_type) push_back(args.args_[i].value_);
   }
 }
-
-template <typename Char> class grisu_writer {
- private:
-  buffer<char>& digits_;
-  size_t size_;
-  int exp_;
-  gen_digits_params params_;
-  Char decimal_point_;
-
- public:
-  grisu_writer(buffer<char>& digits, int exp,
-               const internal::gen_digits_params& params, Char decimal_point)
-      : digits_(digits),
-        exp_(exp),
-        params_(params),
-        decimal_point_(decimal_point) {
-    int num_digits = static_cast<int>(digits.size());
-    int full_exp = num_digits + exp - 1;
-    int precision = params.num_digits > 0 ? params.num_digits : 16;
-    params_.fixed |= full_exp >= -4 && full_exp < precision;
-    auto it = grisu_prettify(digits.data(), num_digits, exp,
-                             counting_iterator<char>(), params_, '\0');
-    size_ = it.count();
-  }
-
-  size_t size() const { return size_ + (params_.sign ? 1 : 0); }
-  size_t width() const { return size(); }
-
-  template <typename It> void operator()(It&& it) {
-    if (params_.sign) *it++ = static_cast<Char>(data::signs[params_.sign]);
-    int num_digits = static_cast<int>(digits_.size());
-    it = grisu_prettify(digits_.data(), num_digits, exp_, it, params_,
-                        decimal_point_);
-  }
-};
 
 // This template provides operations for formatting and writing data into a
 // character range.
@@ -2840,8 +2840,9 @@ void internal::basic_writer<Range>::write_fp(T value,
     params.num_digits = precision;
     params.trailing_zeros =
         (precision != 0 && (handler.fixed || !specs.type)) || specs.alt;
-    write_padded(as,
-                 grisu_writer<char_type>(buffer, exp, params, decimal_point));
+    int num_digits = static_cast<int>(buffer.size());
+    write_padded(as, grisu_writer<char_type>(buffer.data(), num_digits, exp,
+                                             params, decimal_point));
   } else {
     write_padded(as,
                  double_writer{sign, buffer, decimal_point_pos, decimal_point});
