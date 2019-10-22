@@ -1028,6 +1028,14 @@ using format_specs = basic_format_specs<char>;
 
 namespace internal {
 
+struct gen_digits_params {
+  int num_digits;
+  sign_t sign : 3;
+  bool fixed;
+  bool upper;
+  bool trailing_zeros;
+};
+
 // Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
 template <typename Char, typename It> It write_exponent(int exp, It it) {
   FMT_ASSERT(-1000 < exp && exp < 1000, "exponent out of range");
@@ -1047,85 +1055,79 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
   return it;
 }
 
-struct gen_digits_params {
-  int num_digits;
-  sign_t sign : 3;
-  bool fixed;
-  bool upper;
-  bool trailing_zeros;
-};
-
-// The number is given as v = digits * pow(10, exp).
-template <typename Char, typename It>
-It grisu_prettify(const char* digits, int size, int exp, It it,
-                  gen_digits_params params, Char decimal_point) {
-  // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
-  int full_exp = size + exp;
-  if (!params.fixed) {
-    // Insert a decimal point after the first digit and add an exponent.
-    *it++ = static_cast<Char>(*digits);
-    if (size > 1) *it++ = decimal_point;
-    exp += size - 1;
-    it = copy_str<Char>(digits + 1, digits + size, it);
-    if (size < params.num_digits)
-      it = std::fill_n(it, params.num_digits - size, static_cast<Char>('0'));
-    *it++ = static_cast<Char>(params.upper ? 'E' : 'e');
-    return write_exponent<Char>(exp, it);
-  }
-  if (size <= full_exp) {
-    // 1234e7 -> 12340000000[.0+]
-    it = copy_str<Char>(digits, digits + size, it);
-    it = std::fill_n(it, full_exp - size, static_cast<Char>('0'));
-    int num_zeros = (std::max)(params.num_digits - full_exp, 1);
-    if (params.trailing_zeros) {
-      *it++ = decimal_point;
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-      if (num_zeros > 1000)
-        throw std::runtime_error("fuzz mode - avoiding excessive cpu use");
-#endif
-      it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
-    }
-  } else if (full_exp > 0) {
-    // 1234e-2 -> 12.34[0+]
-    it = copy_str<Char>(digits, digits + full_exp, it);
-    if (!params.trailing_zeros) {
-      // Remove trailing zeros.
-      while (size > full_exp && digits[size - 1] == '0') --size;
-      if (size != full_exp) *it++ = decimal_point;
-      return copy_str<Char>(digits + full_exp, digits + size, it);
-    }
-    *it++ = decimal_point;
-    it = copy_str<Char>(digits + full_exp, digits + size, it);
-    if (params.num_digits > size) {
-      // Add trailing zeros.
-      int num_zeros = params.num_digits - size;
-      it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
-    }
-  } else {
-    // 1234e-6 -> 0.001234
-    *it++ = static_cast<Char>('0');
-    int num_zeros = -full_exp;
-    if (params.num_digits >= 0 && params.num_digits < num_zeros)
-      num_zeros = params.num_digits;
-    if (!params.trailing_zeros)
-      while (size > 0 && digits[size - 1] == '0') --size;
-    if (num_zeros != 0 || size != 0) {
-      *it++ = decimal_point;
-      it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
-      it = copy_str<Char>(digits, digits + size, it);
-    }
-  }
-  return it;
-}
-
 template <typename Char> class grisu_writer {
  private:
+  // The number is given as v = digits_ * pow(10, exp_).
   const char* digits_;
   int num_digits_;
   int exp_;
   size_t size_;
   gen_digits_params params_;
   Char decimal_point_;
+
+  template <typename It> It grisu_prettify(It it) const {
+    // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
+    int full_exp = num_digits_ + exp_;
+    if (!params_.fixed) {
+      // Insert a decimal point after the first digit and add an exponent.
+      *it++ = static_cast<Char>(*digits_);
+      if (num_digits_ > 1) *it++ = decimal_point_;
+      it = copy_str<Char>(digits_ + 1, digits_ + num_digits_, it);
+      if (num_digits_ < params_.num_digits) {
+        it = std::fill_n(it, params_.num_digits - num_digits_,
+                         static_cast<Char>('0'));
+      }
+      *it++ = static_cast<Char>(params_.upper ? 'E' : 'e');
+      return write_exponent<Char>(full_exp - 1, it);
+    }
+    if (num_digits_ <= full_exp) {
+      // 1234e7 -> 12340000000[.0+]
+      it = copy_str<Char>(digits_, digits_ + num_digits_, it);
+      it = std::fill_n(it, full_exp - num_digits_, static_cast<Char>('0'));
+      int num_zeros = (std::max)(params_.num_digits - full_exp, 1);
+      if (params_.trailing_zeros) {
+        *it++ = decimal_point_;
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+        if (num_zeros > 1000)
+          throw std::runtime_error("fuzz mode - avoiding excessive cpu use");
+#endif
+        it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
+      }
+    } else if (full_exp > 0) {
+      // 1234e-2 -> 12.34[0+]
+      it = copy_str<Char>(digits_, digits_ + full_exp, it);
+      if (!params_.trailing_zeros) {
+        // Remove trailing zeros.
+        int num_digits = num_digits_;
+        while (num_digits > full_exp && digits_[num_digits - 1] == '0')
+          --num_digits;
+        if (num_digits != full_exp) *it++ = decimal_point_;
+        return copy_str<Char>(digits_ + full_exp, digits_ + num_digits, it);
+      }
+      *it++ = decimal_point_;
+      it = copy_str<Char>(digits_ + full_exp, digits_ + num_digits_, it);
+      if (params_.num_digits > num_digits_) {
+        // Add trailing zeros.
+        int num_zeros = params_.num_digits - num_digits_;
+        it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
+      }
+    } else {
+      // 1234e-6 -> 0.001234
+      *it++ = static_cast<Char>('0');
+      int num_zeros = -full_exp;
+      if (params_.num_digits >= 0 && params_.num_digits < num_zeros)
+        num_zeros = params_.num_digits;
+      int num_digits = num_digits_;
+      if (!params_.trailing_zeros)
+        while (num_digits > 0 && digits_[num_digits - 1] == '0') --num_digits;
+      if (num_zeros != 0 || num_digits != 0) {
+        *it++ = decimal_point_;
+        it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
+        it = copy_str<Char>(digits_, digits_ + num_digits, it);
+      }
+    }
+    return it;
+  }
 
  public:
   grisu_writer(const char* digits, int num_digits, int exp,
@@ -1138,18 +1140,16 @@ template <typename Char> class grisu_writer {
     int full_exp = num_digits + exp - 1;
     int precision = params.num_digits > 0 ? params.num_digits : 16;
     params_.fixed |= full_exp >= -4 && full_exp < precision;
-    auto it = grisu_prettify(digits, num_digits, exp, counting_iterator(),
-                             params_, '\0');
-    size_ = it.count();
+    size_ = grisu_prettify(counting_iterator()).count();
+    size_ += params_.sign ? 1 : 0;
   }
 
-  size_t size() const { return size_ + (params_.sign ? 1 : 0); }
+  size_t size() const { return size_; }
   size_t width() const { return size(); }
 
   template <typename It> void operator()(It&& it) {
     if (params_.sign) *it++ = static_cast<Char>(data::signs[params_.sign]);
-    it =
-        grisu_prettify(digits_, num_digits_, exp_, it, params_, decimal_point_);
+    it = grisu_prettify(it);
   }
 };
 
