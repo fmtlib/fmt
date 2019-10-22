@@ -192,6 +192,10 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
+// A helper function to suppress bogus "conditional expression is constant"
+// warnings.
+template <typename T> inline T const_check(T value) { return value; }
+
 // A fallback implementation of uintptr_t for systems that lack it.
 struct fallback_uintptr {
   unsigned char value[sizeof(void*)];
