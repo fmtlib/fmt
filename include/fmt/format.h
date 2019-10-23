@@ -2796,8 +2796,6 @@ void internal::basic_writer<Range>::write_fp(T value,
   }
 
   if (!std::isfinite(value)) {
-    // Format infinity and NaN ourselves because sprintf's output is not
-    // consistent across platforms.
     const char* str = std::isinf(value) ? (handler.upper ? "INF" : "inf")
                                         : (handler.upper ? "NAN" : "nan");
     return write_padded(specs,
@@ -2811,7 +2809,8 @@ void internal::basic_writer<Range>::write_fp(T value,
   int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
   unsigned options = 0;
   if (handler.fixed) options |= grisu_options::fixed;
-  if (const_check(sizeof(value) == sizeof(float))) options |= grisu_options::binary32;
+  if (const_check(sizeof(value) == sizeof(float)))
+    options |= grisu_options::binary32;
   bool use_grisu =
       USE_GRISU &&
       (specs.type != 'a' && specs.type != 'A' && specs.type != 'e' &&
