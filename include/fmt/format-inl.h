@@ -440,7 +440,8 @@ class fp {
                                       std::numeric_limits<float>::digits - 1);
     if (min_normal_e > e) half_ulp <<= min_normal_e - e;
     upper = normalize<0>(fp(f + half_ulp, e));
-    lower = fp(f - (half_ulp >> ((f == implicit_bit && e > min_normal_e) ? 1 : 0)), e);
+    lower = fp(
+        f - (half_ulp >> ((f == implicit_bit && e > min_normal_e) ? 1 : 0)), e);
     lower.f <<= lower.e - upper.e;
     lower.e = upper.e;
   }
