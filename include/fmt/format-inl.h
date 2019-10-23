@@ -46,7 +46,6 @@
 
 #ifdef _MSC_VER
 #  pragma warning(push)
-#  pragma warning(disable : 4127)  // conditional expression is constant
 #  pragma warning(disable : 4702)  // unreachable code
 #endif
 
@@ -441,7 +440,7 @@ class fp {
                                       std::numeric_limits<float>::digits - 1);
     if (min_normal_e > e) half_ulp <<= min_normal_e - e;
     upper = normalize<0>(fp(f + half_ulp, e));
-    lower = fp(f - (half_ulp >> (f == implicit_bit && e > min_normal_e)), e);
+    lower = fp(f - (half_ulp >> ((f == implicit_bit && e > min_normal_e) ? 1 : 0)), e);
     lower.f <<= lower.e - upper.e;
     lower.e = upper.e;
   }
@@ -939,7 +938,7 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
                           uint64_t error, int exp, bool integral) {
     buf[size++] = digit;
     if (remainder >= error) return digits::more;
-    if (GRISU_VERSION != 3) {
+    if (const_check(GRISU_VERSION != 3)) {
       uint64_t d = integral ? diff : diff * data::powers_of_10_64[-exp];
       round(d, divisor, remainder, error);
       return digits::done;

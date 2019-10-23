@@ -16,10 +16,6 @@
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
-// A helper function to suppress bogus "conditional expression is constant"
-// warnings.
-template <typename T> inline T const_check(T value) { return value; }
-
 // Checks if a value fits in int - used to avoid warnings about comparing
 // signed and unsigned integers.
 template <bool IsSigned> struct int_checker {

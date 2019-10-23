@@ -192,6 +192,10 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
+// A helper function to suppress bogus "conditional expression is constant"
+// warnings.
+template <typename T> inline T const_check(T value) { return value; }
+
 // A fallback implementation of uintptr_t for systems that lack it.
 struct fallback_uintptr {
   unsigned char value[sizeof(void*)];
@@ -2807,7 +2811,7 @@ void internal::basic_writer<Range>::write_fp(T value,
   int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
   unsigned options = 0;
   if (handler.fixed) options |= grisu_options::fixed;
-  if (sizeof(value) == sizeof(float)) options |= grisu_options::binary32;
+  if (const_check(sizeof(value) == sizeof(float))) options |= grisu_options::binary32;
   bool use_grisu =
       USE_GRISU &&
       (specs.type != 'a' && specs.type != 'A' && specs.type != 'e' &&
