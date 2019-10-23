@@ -49,6 +49,12 @@
 #  define FMT_HAS_GXX_CXX11 0
 #endif
 
+#ifdef __NVCC__
+#  define FMT_NVCC __NVCC__
+#else
+#  define FMT_NVCC 0
+#endif
+
 #ifdef _MSC_VER
 #  define FMT_MSC_VER _MSC_VER
 #else
@@ -58,11 +64,10 @@
 // Check if relaxed C++14 constexpr is supported.
 // GCC doesn't allow throw in constexpr until version 6 (bug 67371).
 #ifndef FMT_USE_CONSTEXPR
-#if !defined(__NVCC__)
 #  define FMT_USE_CONSTEXPR                                           \
     (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VER >= 1910 || \
-     (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L))
-#endif
+     (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L)) &&           \
+        !FMT_NVCC
 #endif
 #if FMT_USE_CONSTEXPR
 #  define FMT_CONSTEXPR constexpr
@@ -136,7 +141,7 @@
 #endif
 
 // Workaround broken [[deprecated]] in the Intel compiler and NVCC.
-#if defined(__INTEL_COMPILER) || defined(__NVCC__) || defined(__CUDACC__)
+#if defined(__INTEL_COMPILER) || FMT_NVCC
 #  define FMT_DEPRECATED_ALIAS
 #else
 #  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
