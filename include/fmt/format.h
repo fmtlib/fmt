@@ -1410,7 +1410,8 @@ template <typename Range> class basic_writer {
   template <typename Int> void write_decimal(Int value) {
     auto abs_value = static_cast<uint32_or_64_or_128_t<Int>>(value);
     bool is_negative = internal::is_negative(value);
-    if (is_negative) abs_value = 0 - abs_value;
+    // Don't do -abs_value since it trips unsigned-integer-overflow sanitizer.
+    if (is_negative) abs_value = ~abs_value + 1;
     int num_digits = internal::count_digits(abs_value);
     auto&& it =
         reserve((is_negative ? 1 : 0) + static_cast<size_t>(num_digits));
