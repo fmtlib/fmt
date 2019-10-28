@@ -1073,10 +1073,6 @@ template <typename Char> class grisu_writer {
       *it++ = static_cast<Char>(*digits_);
       if (num_digits_ > 1) *it++ = decimal_point_;
       it = copy_str<Char>(digits_ + 1, digits_ + num_digits_, it);
-      if (num_digits_ < params_.num_digits) {
-        it = std::fill_n(it, params_.num_digits - num_digits_,
-                         static_cast<Char>('0'));
-      }
       *it++ = static_cast<Char>(params_.upper ? 'E' : 'e');
       return write_exponent<Char>(full_exp - 1, it);
     }

@@ -1070,7 +1070,15 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
     fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
     if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error)
       return false;
-    buf.resize(to_unsigned(handler.size));
+    int num_digits = handler.size;
+    if (!fixed) {
+      // Remove trailing zeros.
+      while (num_digits > 0 && buf[num_digits - 1] == '0') {
+        --num_digits;
+        ++exp;
+      }
+    }
+    buf.resize(to_unsigned(num_digits));
   } else {
     fp fp_value;
     fp lower, upper;  // w^- and w^+ in the Grisu paper.
