@@ -480,9 +480,14 @@ FMT_FUNC fp operator*(fp x, fp y) {
 // Returns a cached power of 10 `c_k = c_k.f * pow(2, c_k.e)` such that its
 // (binary) exponent satisfies `min_exponent <= c_k.e <= min_exponent + 28`.
 FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
-  const double one_over_log2_10 = 0.30102999566398114;  // 1 / log2(10)
+  const uint64_t one_over_log2_10 = 0x4d104d42;  // round(pow(2, 32) / log2(10))
   int index = static_cast<int>(
-      std::ceil((min_exponent + fp::significand_size - 1) * one_over_log2_10));
+      static_cast<int64_t>(
+          (min_exponent + fp::significand_size - 1) * one_over_log2_10 +
+          ((uint64_t(1) << 32) - 1)  // ceil
+          ) >>
+      32  // arithmetic shift
+  );
   // Decimal exponent of the first (smallest) cached power of 10.
   const int first_dec_exp = -348;
   // Difference between 2 consecutive decimal exponents in cached powers of 10.
