@@ -739,17 +739,14 @@ template <unsigned BITS, typename UInt> inline int count_digits(UInt n) {
 
 template <> int count_digits<4>(internal::fallback_uintptr n);
 
-#if FMT_HAS_CPP_ATTRIBUTE(always_inline)
-#  define FMT_ALWAYS_INLINE __attribute__((always_inline))
+#if FMT_GCC_VERSION || FMT_CLANG_VERSION
+#  define FMT_ALWAYS_INLINE inline __attribute__((always_inline))
 #else
 #  define FMT_ALWAYS_INLINE
 #endif
 
-template <typename Handler>
-inline char* lg(uint32_t n, Handler h) FMT_ALWAYS_INLINE;
-
 // Computes g = floor(log10(n)) and calls h.on<g>(n);
-template <typename Handler> inline char* lg(uint32_t n, Handler h) {
+template <typename Handler> FMT_ALWAYS_INLINE char* lg(uint32_t n, Handler h) {
   return n < 100 ? n < 10 ? h.template on<0>(n) : h.template on<1>(n)
                  : n < 1000000
                        ? n < 10000 ? n < 1000 ? h.template on<2>(n)

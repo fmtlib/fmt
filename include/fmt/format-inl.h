@@ -44,6 +44,10 @@
 #  define FMT_CATCH(x) if (false)
 #endif
 
+#ifndef FMT_ENABLE_GRISU2
+#  define FMT_ENABLE_GRISU2 0
+#endif
+
 #ifdef _MSC_VER
 #  pragma warning(push)
 #  pragma warning(disable : 4702)  // unreachable code
@@ -783,8 +787,8 @@ enum result {
 // error: the size of the region (lower, upper) outside of which numbers
 // definitely do not round to value (Delta in Grisu3).
 template <typename Handler>
-digits::result grisu_gen_digits(fp value, uint64_t error, int& exp,
-                                Handler& handler) {
+FMT_ALWAYS_INLINE digits::result grisu_gen_digits(fp value, uint64_t error,
+                                                  int& exp, Handler& handler) {
   const fp one(1ull << -value.e, value.e);
   // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
   // zero because it contains a product of two 64-bit numbers with MSB set (due
@@ -1103,7 +1107,8 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
     assert(min_exp <= upper.e && upper.e <= -32);
     auto result = digits::result();
     int size = 0;
-    if ((options & grisu_options::grisu2) != 0) {
+    if (const_check(FMT_ENABLE_GRISU2 &&
+                    (options & grisu_options::grisu2) != 0)) {
       ++lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
       --upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
       grisu_shortest_handler<2> handler{buf.data(), 0, (upper - normalized).f};
