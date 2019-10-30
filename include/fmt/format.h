@@ -2663,7 +2663,7 @@ class arg_formatter : public internal::arg_formatter_base<Range> {
   /** Formats an argument of a user-defined type. */
   iterator operator()(typename basic_format_arg<context_type>::handle handle) {
     handle.format(*parse_ctx_, ctx_);
-    return this->out();
+    return ctx_.out();
   }
 };
 
@@ -3207,10 +3207,8 @@ struct format_handler : internal::error_handler {
 
   void on_replacement_field(const Char* p) {
     advance_to(parse_context, p);
-    internal::custom_formatter<Context> f(parse_context, context);
-    if (!visit_format_arg(f, arg))
-      context.advance_to(
-          visit_format_arg(ArgFormatter(context, &parse_context), arg));
+    context.advance_to(
+        visit_format_arg(ArgFormatter(context, &parse_context), arg));
   }
 
   const Char* on_format_specs(const Char* begin, const Char* end) {
