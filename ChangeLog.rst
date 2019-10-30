@@ -483,7 +483,7 @@
 
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
-* Made ``std::string_view`` work as a format string
+* Made ``std::string_view`` return a format string
   (`#898 <https://github.com/fmtlib/fmt/pull/898>`_):
 
   .. code:: c++
