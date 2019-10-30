@@ -40,7 +40,7 @@ Features
   iostreams. See `Speed tests`_ and `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 * Small code size both in terms of source code (the minimum configuration
-  consists of just three header files, ``core.h``, ``format.h`` and
+  consists of just three header files (``core.h``, ``format.h`` and
   ``format-inl.h``) and compiled code. See `Compile time and code bloat`_.
 * Reliability: the library has an extensive set of `unit tests
   <https://github.com/fmtlib/fmt/tree/master/test>`_ and is continuously fuzzed.
