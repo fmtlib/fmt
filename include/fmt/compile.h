@@ -374,6 +374,13 @@ OutputIt format_default(OutputIt out, T value) {
 }
 
 template <typename Char, typename OutputIt>
+OutputIt format_default(OutputIt out, double value) {
+  writer w(out);
+  w.write(value);
+  return w.out();
+}
+
+template <typename Char, typename OutputIt>
 OutputIt format_default(OutputIt out, Char value) {
   *out++ = value;
   return out;
