@@ -423,11 +423,24 @@ namespace internal {
 void to_string_view(...);
 using fmt::v6::to_string_view;
 
+template <std::size_t N> struct priority_tag : priority_tag<N - 1> {};
+
+template <> struct priority_tag<0> {};
+
+// This is required to handle types privately inheriting from std::string,
+// which triggers a compilation failure.
+template <typename S>
+auto is_string_impl(priority_tag<1>)
+    -> decltype(to_string_view(std::declval<S>()));
+
+template <typename S> void is_string_impl(priority_tag<0>);
+
 // Specifies whether S is a string type convertible to fmt::basic_string_view.
 // It should be a constexpr function but MSVC 2017 fails to compile it in
 // enable_if and MSVC 2015 fails to compile it as an alias template.
-template <typename S>
-struct is_string : std::is_class<decltype(to_string_view(std::declval<S>()))> {
+template <typename S> struct is_string {
+  static constexpr bool value = std::is_class<decltype(
+      is_string_impl<S>(std::declval<priority_tag<1>>()))>::value;
 };
 
 template <typename S, typename = void> struct char_t_impl {};
@@ -827,7 +840,8 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR const char_type* map(char_type* val) { return val; }
   FMT_CONSTEXPR const char_type* map(const char_type* val) { return val; }
   template <typename T, FMT_ENABLE_IF(is_string<T>::value)>
-  FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
+  FMT_CONSTEXPR basic_string_view<char_type> map_impl(const T& val,
+                                                      priority_tag<4>) {
     static_assert(std::is_same<char_type, char_t<T>>::value,
                   "mixing character types is disallowed");
     return to_string_view(val);
@@ -836,7 +850,8 @@ template <typename Context> struct arg_mapper {
             FMT_ENABLE_IF(
                 std::is_constructible<basic_string_view<char_type>, T>::value &&
                 !is_string<T>::value)>
-  FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
+  FMT_CONSTEXPR auto map_impl(const T& val, priority_tag<3>)
+      -> decltype(basic_string_view<char_type>(val)) {
     return basic_string_view<char_type>(val);
   }
   template <
@@ -845,8 +860,30 @@ template <typename Context> struct arg_mapper {
           std::is_constructible<std_string_view<char_type>, T>::value &&
           !std::is_constructible<basic_string_view<char_type>, T>::value &&
           !is_string<T>::value)>
-  FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
+  FMT_CONSTEXPR auto map_impl(const T& val, priority_tag<2>)
+      -> decltype(std_string_view<char_type>(val),
+                  basic_string_view<char_type>{}) {
     return std_string_view<char_type>(val);
+  }
+  template <typename T,
+            FMT_ENABLE_IF(std::is_enum<T>::value &&
+                          !has_formatter<T, Context>::value &&
+                          !has_fallback_formatter<T, Context>::value)>
+  FMT_CONSTEXPR auto map_impl(const T& val, priority_tag<1>) -> decltype(
+      map(static_cast<typename std::underlying_type<T>::type>(val))) {
+    return map(static_cast<typename std::underlying_type<T>::type>(val));
+  }
+  template <typename T,
+            FMT_ENABLE_IF(!is_string<T>::value && !is_char<T>::value &&
+                          (has_formatter<T, Context>::value ||
+                           has_fallback_formatter<T, Context>::value))>
+  FMT_CONSTEXPR const T& map_impl(const T& val, priority_tag<0>) {
+    return val;
+  }
+  template <typename T>
+  FMT_CONSTEXPR auto map(const T& val)
+      -> decltype(std::declval<arg_mapper>().map_impl(val, priority_tag<4>{})) {
+    return map_impl(val, priority_tag<4>{});
   }
   FMT_CONSTEXPR const char* map(const signed char* val) {
     static_assert(std::is_same<char_type, char>::value, "invalid string type");
@@ -867,22 +904,6 @@ template <typename Context> struct arg_mapper {
     // by iostreams.
     static_assert(!sizeof(T), "formatting of non-void pointers is disallowed");
     return 0;
-  }
-
-  template <typename T,
-            FMT_ENABLE_IF(std::is_enum<T>::value &&
-                          !has_formatter<T, Context>::value &&
-                          !has_fallback_formatter<T, Context>::value)>
-  FMT_CONSTEXPR auto map(const T& val) -> decltype(
-      map(static_cast<typename std::underlying_type<T>::type>(val))) {
-    return map(static_cast<typename std::underlying_type<T>::type>(val));
-  }
-  template <typename T,
-            FMT_ENABLE_IF(!is_string<T>::value && !is_char<T>::value &&
-                          (has_formatter<T, Context>::value ||
-                           has_fallback_formatter<T, Context>::value))>
-  FMT_CONSTEXPR const T& map(const T& val) {
-    return val;
   }
 
   template <typename T>

@@ -53,4 +53,29 @@ std::string custom_format(const char* format_str, const Args&... args) {
 TEST(CustomFormatterTest, Format) {
   EXPECT_EQ("0.00", custom_format("{:.2f}", -.00001));
 }
+
+template <typename T> class string_wrapper : std::string {
+ public:
+  string_wrapper(std::string const& s) : std::string(s) {}
+
+  std::string const& string() const { return *this; }
+};
+
+FMT_BEGIN_NAMESPACE
+template <typename Tag>
+struct formatter<string_wrapper<Tag>, char>
+    : formatter<fmt::basic_string_view<char>, char> {
+  template <typename FormatContext>
+  auto format(string_wrapper<Tag> const& str, FormatContext& ctx)
+      -> decltype(ctx.out()) {
+    return formatter<fmt::basic_string_view<char>, char>::format(str.string(),
+                                                                 ctx);
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(CustomFormatterTest, FormatStringWrapperPrivateInheritance) {
+  // static_assert(fmt::internal::is_string<string_wrapper<struct Tag>>::value);
+  EXPECT_EQ("foo", fmt::format("{}", string_wrapper<struct Tag>("foo")));
+}
 #endif

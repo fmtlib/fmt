@@ -120,6 +120,31 @@ TEST(RangesTest, PathLike) {
 #endif  // (__cplusplus > 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >
         // 201402L && _MSC_VER >= 1910)
 
+template <typename T> class string_wrapper : std::string {
+ public:
+  string_wrapper(std::string const& s) : std::string(s) {}
+
+  std::string const& string() const { return *this; }
+};
+
+FMT_BEGIN_NAMESPACE
+template <typename Tag>
+struct formatter<string_wrapper<Tag>, char>
+    : formatter<fmt::basic_string_view<char>, char> {
+  template <typename FormatContext>
+  auto format(string_wrapper<Tag> const& str, FormatContext& ctx)
+      -> decltype(ctx.out()) {
+    return formatter<fmt::basic_string_view<char>, char>::format(str.string(),
+                                                                 ctx);
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(RangesTest, FormatStringWrapperPrivateInheritance) {
+  std::vector<string_wrapper<struct Tag2>> strs = {{"foo"}, {"bar"}};
+  EXPECT_EQ("foo, bar", fmt::format("{}", fmt::join(strs, ", ")));
+}
+
 #ifdef FMT_USE_STRING_VIEW
 struct string_like {
   const char* begin();
