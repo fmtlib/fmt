@@ -20,8 +20,14 @@
 #  include <windows.h>
 #endif
 
+// Check if fmt/format.h compiles with the X11 index macro defined.
+#define index(x, y) no nice things
+
 #include "fmt/color.h"
 #include "fmt/format.h"
+
+#undef index
+
 #include "gmock.h"
 #include "gtest-extra.h"
 #include "mock-allocator.h"

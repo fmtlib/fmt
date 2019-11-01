@@ -2178,8 +2178,8 @@ template <typename Char> struct arg_ref {
 
   arg_id_kind kind;
   union value {
-    FMT_CONSTEXPR value() : index(0u) {}
-    FMT_CONSTEXPR value(int id) : index(id) {}
+    FMT_CONSTEXPR value() : index{0u} {}
+    FMT_CONSTEXPR value(int id) : index{id} {}
     FMT_CONSTEXPR value(basic_string_view<Char> n) : name(n) {}
 
     int index;
