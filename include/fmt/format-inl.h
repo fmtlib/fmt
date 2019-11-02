@@ -205,6 +205,9 @@ template <typename Locale> Locale locale_ref::get() const {
   return locale_ ? *static_cast<const std::locale*>(locale_) : std::locale();
 }
 
+template <typename Char> FMT_FUNC std::string grouping_impl(locale_ref loc) {
+  return std::use_facet<std::numpunct<Char>>(loc.get<std::locale>()).grouping();
+}
 template <typename Char> FMT_FUNC Char thousands_sep_impl(locale_ref loc) {
   return std::use_facet<std::numpunct<Char>>(loc.get<std::locale>())
       .thousands_sep();
@@ -215,6 +218,10 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref loc) {
 }
 }  // namespace internal
 #else
+template <typename Char>
+FMT_FUNC std::string internal::grouping_impl(locale_ref) {
+  return "\03";
+}
 template <typename Char>
 FMT_FUNC Char internal::thousands_sep_impl(locale_ref) {
   return FMT_STATIC_THOUSANDS_SEPARATOR;
