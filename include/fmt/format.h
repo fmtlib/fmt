@@ -436,6 +436,24 @@ inline size_t count_code_points(basic_string_view<char8_t> s) {
   return num_code_points;
 }
 
+template <typename Char>
+inline size_t code_point_index(basic_string_view<Char> s, size_t n) {
+  size_t size = s.size();
+  return n < size ? n : size;
+}
+
+// Calculates the index of the nth code point in a UTF-8 string.
+inline size_t code_point_index(basic_string_view<char8_t> s, size_t n) {
+  const char8_t* data = s.data();
+  size_t num_code_points = 0;
+  for (size_t i = 0, size = s.size(); i != size; ++i) {
+    if ((data[i] & 0xc0) != 0x80 && ++num_code_points > n) {
+      return i;
+    }
+  }
+  return s.size();
+}
+
 inline char8_t to_char8_t(char c) { return static_cast<char8_t>(c); }
 
 template <typename InputIt, typename OutChar>
@@ -1729,7 +1747,8 @@ template <typename Range> class basic_writer {
     const Char* data = s.data();
     std::size_t size = s.size();
     if (specs.precision >= 0 && internal::to_unsigned(specs.precision) < size)
-      size = internal::to_unsigned(specs.precision);
+      size = internal::code_point_index(s,
+                                        internal::to_unsigned(specs.precision));
     write(data, size, specs);
   }
 

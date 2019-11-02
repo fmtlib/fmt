@@ -2621,3 +2621,13 @@ TEST(FormatTest, FormatCustomChar) {
   EXPECT_EQ(result.size(), 1);
   EXPECT_EQ(result[0], mychar('x'));
 }
+
+TEST(FormatTest, FormatUTF8Precision) {
+  using str_type = std::basic_string<char8_t>;
+  str_type format(reinterpret_cast<const char8_t*>(u8"{:.4}"));
+  str_type str(reinterpret_cast<const char8_t*>(u8"caf\u00e9s")); // cafés
+  auto result = fmt::format(format, str);
+  EXPECT_EQ(fmt::internal::count_code_points(result), 4);
+  EXPECT_EQ(result.size(), 5);
+  EXPECT_EQ(result, str.substr(0, 5));
+}
