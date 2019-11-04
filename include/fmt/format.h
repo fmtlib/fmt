@@ -1747,8 +1747,8 @@ template <typename Range> class basic_writer {
     const Char* data = s.data();
     std::size_t size = s.size();
     if (specs.precision >= 0 && internal::to_unsigned(specs.precision) < size)
-      size = internal::code_point_index(s,
-                                        internal::to_unsigned(specs.precision));
+      size =
+          internal::code_point_index(s, internal::to_unsigned(specs.precision));
     write(data, size, specs);
   }
 
@@ -1945,11 +1945,11 @@ template <typename Context> class custom_formatter {
  private:
   using char_type = typename Context::char_type;
 
-  basic_parse_context<char_type>& parse_ctx_;
+  basic_format_parse_context<char_type>& parse_ctx_;
   Context& ctx_;
 
  public:
-  explicit custom_formatter(basic_parse_context<char_type>& parse_ctx,
+  explicit custom_formatter(basic_format_parse_context<char_type>& parse_ctx,
                             Context& ctx)
       : parse_ctx_(parse_ctx), ctx_(ctx) {}
 
@@ -2586,7 +2586,7 @@ class format_string_checker {
   }
 
  private:
-  using parse_context_type = basic_parse_context<Char, ErrorHandler>;
+  using parse_context_type = basic_format_parse_context<Char, ErrorHandler>;
   enum { num_args = sizeof...(Args) };
 
   FMT_CONSTEXPR void check_arg_id() {
@@ -2652,7 +2652,7 @@ class arg_formatter : public internal::arg_formatter_base<Range> {
   using context_type = basic_format_context<typename base::iterator, char_type>;
 
   context_type& ctx_;
-  basic_parse_context<char_type>* parse_ctx_;
+  basic_format_parse_context<char_type>* parse_ctx_;
 
  public:
   using range = Range;
@@ -2666,9 +2666,10 @@ class arg_formatter : public internal::arg_formatter_base<Range> {
     *specs* contains format specifier information for standard argument types.
     \endrst
    */
-  explicit arg_formatter(context_type& ctx,
-                         basic_parse_context<char_type>* parse_ctx = nullptr,
-                         format_specs* specs = nullptr)
+  explicit arg_formatter(
+      context_type& ctx,
+      basic_format_parse_context<char_type>* parse_ctx = nullptr,
+      format_specs* specs = nullptr)
       : base(Range(ctx.out()), specs, ctx.locale()),
         ctx_(ctx),
         parse_ctx_(parse_ctx) {}
@@ -3189,8 +3190,8 @@ basic_format_context<Range, Char>::arg(basic_string_view<char_type> name) {
 }
 
 template <typename Char, typename ErrorHandler>
-FMT_CONSTEXPR void advance_to(basic_parse_context<Char, ErrorHandler>& ctx,
-                              const Char* p) {
+FMT_CONSTEXPR void advance_to(
+    basic_format_parse_context<Char, ErrorHandler>& ctx, const Char* p) {
   ctx.advance_to(ctx.begin() + (p - &*ctx.begin()));
 }
 
@@ -3232,7 +3233,7 @@ struct format_handler : internal::error_handler {
     if (visit_format_arg(f, arg)) return parse_context.begin();
     basic_format_specs<Char> specs;
     using internal::specs_handler;
-    using parse_context_t = basic_parse_context<Char>;
+    using parse_context_t = basic_format_parse_context<Char>;
     internal::specs_checker<specs_handler<parse_context_t, Context>> handler(
         specs_handler<parse_context_t, Context>(specs, parse_context, context),
         arg.type());
@@ -3244,7 +3245,7 @@ struct format_handler : internal::error_handler {
     return begin;
   }
 
-  basic_parse_context<Char> parse_context;
+  basic_format_parse_context<Char> parse_context;
   Context context;
   basic_format_arg<Context> arg;
 };

@@ -113,8 +113,7 @@ template and implement ``parse`` and ``format`` methods::
   namespace fmt {
   template <>
   struct formatter<point> {
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+    constexpr auto parse(format_parse_context &ctx) { return ctx.begin(); }
 
     template <typename FormatContext>
     auto format(const point &p, FormatContext &ctx) {
@@ -182,6 +181,8 @@ You can also write a formatter for a hierarchy of classes::
     A& a = b;
     fmt::print("{}", a); // prints "B"
   }
+
+.. doxygenclass: fmt::basic_format_parse_context
 
 Output Iterator Support
 -----------------------

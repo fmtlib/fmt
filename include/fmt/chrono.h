@@ -728,7 +728,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
 
   struct spec_handler {
     formatter& f;
-    basic_parse_context<Char>& context;
+    basic_format_parse_context<Char>& context;
     basic_string_view<Char> format_str;
 
     template <typename Id> FMT_CONSTEXPR arg_ref_type make_arg_ref(Id arg_id) {
@@ -761,13 +761,13 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     }
   };
 
-  using iterator = typename basic_parse_context<Char>::iterator;
+  using iterator = typename basic_format_parse_context<Char>::iterator;
   struct parse_range {
     iterator begin;
     iterator end;
   };
 
-  FMT_CONSTEXPR parse_range do_parse(basic_parse_context<Char>& ctx) {
+  FMT_CONSTEXPR parse_range do_parse(basic_format_parse_context<Char>& ctx) {
     auto begin = ctx.begin(), end = ctx.end();
     if (begin == end || *begin == '}') return {begin, begin};
     spec_handler handler{*this, ctx, format_str};
@@ -788,7 +788,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
  public:
   formatter() : precision(-1) {}
 
-  FMT_CONSTEXPR auto parse(basic_parse_context<Char>& ctx)
+  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
     auto range = do_parse(ctx);
     format_str = basic_string_view<Char>(
