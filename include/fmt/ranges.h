@@ -74,15 +74,8 @@ OutputIterator copy(char ch, OutputIterator out) {
 }
 
 /// Return true value if T has std::string interface, like std::string_view.
-template <typename T> class is_like_std_string {
-  template <typename U>
-  static auto check(U* p)
-      -> decltype((void)p->find('a'), p->length(), (void)p->data(), int());
-  template <typename> static void check(...);
-
- public:
-  static FMT_CONSTEXPR_DECL const bool value =
-      is_string<T>::value || !std::is_void<decltype(check<T>(nullptr))>::value;
+template <typename T> struct is_like_std_string {
+  static FMT_CONSTEXPR_DECL const bool value = is_string<T>::value;
 };
 
 template <typename Char>
