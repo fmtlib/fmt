@@ -183,6 +183,7 @@ You can also write a formatter for a hierarchy of classes::
   }
 
 .. doxygenclass: fmt::basic_format_parse_context
+   :members:
 
 Output Iterator Support
 -----------------------
