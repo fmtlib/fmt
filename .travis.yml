@@ -117,7 +117,7 @@ matrix:
         - source "$HOME/.sdkman/bin/sdkman-init.sh"
         - sdk version
         - sdk install gradle
-        - sdk use gradle
+        #- sdk use gradle
         - gradle --version
       install:
         # Accept SDK Licenses + Install NDK
