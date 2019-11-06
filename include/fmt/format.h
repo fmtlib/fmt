@@ -825,6 +825,14 @@ inline int count_digits(uint32_t n) {
 }
 #endif
 
+template <typename Char> FMT_API std::string grouping_impl(locale_ref loc);
+template <typename Char> inline std::string grouping(locale_ref loc) {
+  return grouping_impl<char>(loc);
+}
+template <> inline std::string grouping<wchar_t>(locale_ref loc) {
+  return grouping_impl<wchar_t>(loc);
+}
+
 template <typename Char> FMT_API Char thousands_sep_impl(locale_ref loc);
 template <typename Char> inline Char thousands_sep(locale_ref loc) {
   return Char(thousands_sep_impl<char>(loc));
@@ -884,7 +892,7 @@ inline Iterator format_decimal(Iterator out, UInt value, int num_digits,
   FMT_ASSERT(num_digits >= 0, "invalid digit count");
   // Buffer should be large enough to hold all digits (<= digits10 + 1).
   enum { max_size = digits10<UInt>() + 1 };
-  Char buffer[max_size + max_size / 3];
+  Char buffer[2 * max_size];
   auto end = format_decimal(buffer, value, num_digits, add_thousands_sep);
   return internal::copy_str<Char>(buffer, end, out);
 }
@@ -1531,6 +1539,7 @@ template <typename Range> class basic_writer {
     struct num_writer {
       unsigned_type abs_value;
       int size;
+      const std::string& groups;
       char_type sep;
 
       template <typename It> void operator()(It&& it) const {
@@ -1538,9 +1547,17 @@ template <typename Range> class basic_writer {
         // Index of a decimal digit with the least significant digit having
         // index 0.
         unsigned digit_index = 0;
+        std::string::const_iterator group = groups.cbegin();
         it = internal::format_decimal<char_type>(
-            it, abs_value, size, [s, &digit_index](char_type*& buffer) {
-              if (++digit_index % 3 != 0) return;
+            it, abs_value, size,
+            [this, s, &group, &digit_index](char_type*& buffer) {
+              if (*group <= 0 || ++digit_index % *group != 0 ||
+                  *group == max_value<char>())
+                return;
+              if (group + 1 != groups.cend()) {
+                digit_index = 0;
+                ++group;
+              }
               buffer -= s.size();
               std::uninitialized_copy(s.data(), s.data() + s.size(),
                                       internal::make_checked(buffer, s.size()));
@@ -1549,12 +1566,23 @@ template <typename Range> class basic_writer {
     };
 
     void on_num() {
+      std::string groups = internal::grouping<char_type>(writer.locale_);
+      if (groups.empty()) return on_dec();
       char_type sep = internal::thousands_sep<char_type>(writer.locale_);
       if (!sep) return on_dec();
       int num_digits = internal::count_digits(abs_value);
-      int size = num_digits + sep_size * ((num_digits - 1) / 3);
+      int size = num_digits;
+      std::string::const_iterator group = groups.cbegin();
+      while (group != groups.cend() && num_digits > *group && *group > 0 &&
+             *group != max_value<char>()) {
+        size += sep_size;
+        num_digits -= *group;
+        ++group;
+      }
+      if (group == groups.cend())
+        size += sep_size * ((num_digits - 1) / groups.back());
       writer.write_int(size, get_prefix(), specs,
-                       num_writer{abs_value, size, sep});
+                       num_writer{abs_value, size, groups, sep});
     }
 
     FMT_NORETURN void on_error() {

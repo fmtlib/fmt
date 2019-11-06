@@ -61,11 +61,11 @@ TEST(StdFormatTest, Int) {
   string s0 = format("{}", 42);                       // s0 == "42"
   string s1 = format("{0:b} {0:d} {0:o} {0:x}", 42);  // s1 == "101010 42 52 2a"
   string s2 = format("{0:#x} {0:#X}", 42);            // s2 == "0x2a 0X2A"
-  string s3 = format("{:n}", 1234);  // s3 == "1,234" (depends on the locale)
+  string s3 = format("{:n}", 1234);  // s3 == "1234" (depends on the locale)
   EXPECT_EQ(s0, "42");
   EXPECT_EQ(s1, "101010 42 52 2a");
   EXPECT_EQ(s2, "0x2a 0X2A");
-  EXPECT_EQ(s3, "1,234");
+  EXPECT_EQ(s3, "1234");
 }
 
 #include <format>
