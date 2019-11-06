@@ -182,7 +182,7 @@ You can also write a formatter for a hierarchy of classes::
     fmt::print("{}", a); // prints "B"
   }
 
-.. doxygenclass: fmt::basic_format_parse_context
+.. doxygenclass:: fmt::basic_format_parse_context
    :members:
 
 Output Iterator Support
