@@ -449,6 +449,7 @@ struct error_handler {
 template <typename S> using char_t = typename internal::char_t_impl<S>::type;
 
 /**
+  \rst
   Parsing context consisting of a format string range being parsed and an
   argument counter for automatic indexing.
 
@@ -461,6 +462,7 @@ template <typename S> using char_t = typename internal::char_t_impl<S>::type;
   +-----------------------+-------------------------------------+
   | wformat_parse_context | basic_format_parse_context<wchar_t> |
   +-----------------------+-------------------------------------+
+  \endrst
  */
 template <typename Char, typename ErrorHandler = internal::error_handler>
 class basic_format_parse_context : private ErrorHandler {
