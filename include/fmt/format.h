@@ -607,14 +607,14 @@ class basic_memory_buffer : private Allocator, public internal::buffer<T> {
     of the other object to it.
     \endrst
    */
-  basic_memory_buffer(basic_memory_buffer&& other) { move(other); }
+  basic_memory_buffer(basic_memory_buffer&& other) FMT_NOEXCEPT { move(other); }
 
   /**
     \rst
     Moves the content of the other ``basic_memory_buffer`` object to this one.
     \endrst
    */
-  basic_memory_buffer& operator=(basic_memory_buffer&& other) {
+  basic_memory_buffer& operator=(basic_memory_buffer&& other) FMT_NOEXCEPT {
     assert(this != &other);
     deallocate();
     move(other);

@@ -146,7 +146,7 @@ class buffered_file {
     other.file_ = nullptr;
   }
 
-  buffered_file& operator=(buffered_file&& other) {
+  buffered_file& operator=(buffered_file&& other) FMT_NOEXCEPT {
     close();
     file_ = other.file_;
     other.file_ = nullptr;
@@ -209,7 +209,7 @@ class file {
 
   file(file&& other) FMT_NOEXCEPT : fd_(other.fd_) { other.fd_ = -1; }
 
-  file& operator=(file&& other) {
+  file& operator=(file&& other) FMT_NOEXCEPT {
     close();
     fd_ = other.fd_;
     other.fd_ = -1;
