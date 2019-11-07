@@ -437,8 +437,8 @@ template <typename S> struct char_t_impl<S, enable_if_t<is_string<S>::value>> {
 };
 
 struct error_handler {
-  FMT_CONSTEXPR error_handler() {}
-  FMT_CONSTEXPR error_handler(const error_handler&) {}
+  FMT_CONSTEXPR error_handler() = default;
+  FMT_CONSTEXPR error_handler(const error_handler&) = default;
 
   // This function is intentionally not constexpr to give a compile-time error.
   FMT_NORETURN FMT_API void on_error(const char* message);
@@ -580,7 +580,7 @@ template <typename T> class buffer {
 
   buffer(const buffer&) = delete;
   void operator=(const buffer&) = delete;
-  virtual ~buffer() {}
+  virtual ~buffer() = default;
 
   T* begin() FMT_NOEXCEPT { return ptr_; }
   T* end() FMT_NOEXCEPT { return ptr_ + size_; }
