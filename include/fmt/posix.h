@@ -54,8 +54,8 @@
 #ifndef _WIN32
 #  define FMT_RETRY_VAL(result, expression, error_result) \
     do {                                                  \
-      result = (expression);                              \
-    } while (result == error_result && errno == EINTR)
+      (result) = (expression);                              \
+    } while ((result) == (error_result) && errno == EINTR)
 #else
 #  define FMT_RETRY_VAL(result, expression, error_result) result = (expression)
 #endif

@@ -280,9 +280,9 @@ template <typename T>
 const char basic_data<T>::hex_digits[] = "0123456789abcdef";
 
 #define FMT_POWERS_OF_10(factor)                                             \
-  factor * 10, factor * 100, factor * 1000, factor * 10000, factor * 100000, \
-      factor * 1000000, factor * 10000000, factor * 100000000,               \
-      factor * 1000000000
+  factor * 10, (factor) * 100, (factor) * 1000, (factor) * 10000, (factor) * 100000, \
+      (factor) * 1000000, (factor) * 10000000, (factor) * 100000000,               \
+      (factor) * 1000000000
 
 template <typename T>
 const uint64_t basic_data<T>::powers_of_10_64[] = {

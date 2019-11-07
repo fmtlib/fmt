@@ -188,7 +188,7 @@
 #endif
 
 #ifndef FMT_ASSERT
-#  define FMT_ASSERT(condition, message) assert((condition) && message)
+#  define FMT_ASSERT(condition, message) assert((condition) && (message))
 #endif
 
 // libc++ supports string_view in pre-c++17.
