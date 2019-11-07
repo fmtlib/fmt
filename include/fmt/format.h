@@ -3030,7 +3030,7 @@ template <typename T, typename Char>
 struct formatter<T, Char,
                  enable_if_t<internal::type_constant<T, Char>::value !=
                              internal::custom_type>> {
-  FMT_CONSTEXPR formatter() {}
+  FMT_CONSTEXPR formatter() = default;
 
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.
