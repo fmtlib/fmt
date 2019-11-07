@@ -552,9 +552,6 @@ using has_formatter =
 /** A contiguous memory buffer with an optional growing ability. */
 template <typename T> class buffer {
  private:
-  buffer(const buffer&) = delete;
-  void operator=(const buffer&) = delete;
-
   T* ptr_;
   std::size_t size_;
   std::size_t capacity_;
@@ -581,6 +578,8 @@ template <typename T> class buffer {
   using value_type = T;
   using const_reference = const T&;
 
+  buffer(const buffer&) = delete;
+  void operator=(const buffer&) = delete;
   virtual ~buffer() {}
 
   T* begin() FMT_NOEXCEPT { return ptr_; }
@@ -1035,9 +1034,6 @@ namespace internal {
 // A map from argument names to their values for named arguments.
 template <typename Context> class arg_map {
  private:
-  arg_map(const arg_map&) = delete;
-  void operator=(const arg_map&) = delete;
-
   using char_type = typename Context::char_type;
 
   struct entry {
@@ -1055,6 +1051,8 @@ template <typename Context> class arg_map {
   }
 
  public:
+  arg_map(const arg_map&) = delete;
+  void operator=(const arg_map&) = delete;
   arg_map() : map_(nullptr), size_(0) {}
   void init(const basic_format_args<Context>& args);
   ~arg_map() { delete[] map_; }
@@ -1121,14 +1119,13 @@ template <typename OutputIt, typename Char> class basic_format_context {
   internal::arg_map<basic_format_context> map_;
   internal::locale_ref loc_;
 
-  basic_format_context(const basic_format_context&) = delete;
-  void operator=(const basic_format_context&) = delete;
-
  public:
   using iterator = OutputIt;
   using format_arg = basic_format_arg<basic_format_context>;
   template <typename T> using formatter_type = formatter<T, char_type>;
 
+  basic_format_context(const basic_format_context&) = delete;
+  void operator=(const basic_format_context&) = delete;
   /**
    Constructs a ``basic_format_context`` object. References to the arguments are
    stored in the object so make sure they have appropriate lifetimes.
