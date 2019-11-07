@@ -56,10 +56,10 @@
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
 inline fmt::internal::null<> strerror_r(int, char*, ...) {
-  return fmt::internal::null<>();
+  return {};
 }
 inline fmt::internal::null<> strerror_s(char*, std::size_t, ...) {
-  return fmt::internal::null<>();
+  return {};
 }
 
 FMT_BEGIN_NAMESPACE
@@ -463,7 +463,7 @@ inline bool operator==(fp x, fp y) { return x.f == y.f && x.e == y.e; }
 // Returns an fp number representing x - y. Result may not be normalized.
 inline fp operator-(fp x, fp y) {
   FMT_ASSERT(x.f >= y.f && x.e == y.e, "invalid operands");
-  return fp(x.f - y.f, x.e);
+  return {x.f - y.f, x.e};
 }
 
 // Computes an fp number r with r.f = x.f * y.f / pow(2, 64) rounded to nearest
@@ -475,7 +475,7 @@ FMT_FUNC fp operator*(fp x, fp y) {
   auto product = static_cast<__uint128_t>(x.f) * y.f;
   auto f = static_cast<uint64_t>(product >> 64);
   if ((static_cast<uint64_t>(product) & (1ULL << 63)) != 0) ++f;
-  return fp(f, exp);
+  return {f, exp};
 #else
   // Multiply 32-bit parts of significands.
   uint64_t mask = (1ULL << 32) - 1;
@@ -505,7 +505,7 @@ FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
   const int dec_exp_step = 8;
   index = (index - first_dec_exp - 1) / dec_exp_step + 1;
   pow10_exponent = first_dec_exp + index * dec_exp_step;
-  return fp(data::pow10_significands[index], data::pow10_exponents[index]);
+  return {data::pow10_significands[index], data::pow10_exponents[index]};
 }
 
 // A simple accumulator to hold the sums of terms in bigint::square if uint128_t
