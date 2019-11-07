@@ -919,7 +919,7 @@ using mapped_type_constant =
 enum { packed_arg_bits = 5 };
 // Maximum number of arguments with packed types.
 enum { max_packed_args = 63 / packed_arg_bits };
-enum : unsigned long long { is_unpacked_bit = 1ull << 63 };
+enum : unsigned long long { is_unpacked_bit = 1ULL << 63 };
 
 template <typename Context> class arg_map;
 }  // namespace internal
