@@ -740,7 +740,7 @@ inline int count_digits(uint128_t n) {
     if (n < 100) return count + 1;
     if (n < 1000) return count + 2;
     if (n < 10000) return count + 3;
-    n /= 10000u;
+    n /= 10000U;
     count += 4;
   }
 }
