@@ -132,15 +132,14 @@ class buffered_file {
   explicit buffered_file(FILE* f) : file_(f) {}
 
  public:
+  buffered_file(const buffered_file&) = delete;
+  void operator=(const buffered_file&) = delete;
+
   // Constructs a buffered_file object which doesn't represent any file.
   buffered_file() FMT_NOEXCEPT : file_(nullptr) {}
 
   // Destroys the object closing the file it represents if any.
   FMT_API ~buffered_file() FMT_NOEXCEPT;
-
- private:
-  buffered_file(const buffered_file&) = delete;
-  void operator=(const buffered_file&) = delete;
 
  public:
   buffered_file(buffered_file&& other) FMT_NOEXCEPT : file_(other.file_) {
@@ -204,11 +203,10 @@ class file {
   // Opens a file and constructs a file object representing this file.
   FMT_API file(cstring_view path, int oflag);
 
- private:
+ public:
   file(const file&) = delete;
   void operator=(const file&) = delete;
 
- public:
   file(file&& other) FMT_NOEXCEPT : fd_(other.fd_) { other.fd_ = -1; }
 
   file& operator=(file&& other) {
@@ -283,11 +281,10 @@ class Locale {
 
   locale_t locale_;
 
-  Locale(const Locale&) = delete;
-  void operator=(const Locale&) = delete;
-
  public:
   using type = locale_t;
+  Locale(const Locale&) = delete;
+  void operator=(const Locale&) = delete;
 
   Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", nullptr)) {
     if (!locale_) FMT_THROW(system_error(errno, "cannot create locale"));
