@@ -862,7 +862,7 @@ inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
     // Integer division is slow so do it for a group of two digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
-    unsigned index = static_cast<unsigned>((value % 100) * 2);
+    auto index = static_cast<unsigned>((value % 100) * 2);
     value /= 100;
     *--buffer = static_cast<Char>(data::digits[index + 1]);
     add_thousands_sep(buffer);
@@ -873,7 +873,7 @@ inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
     *--buffer = static_cast<Char>('0' + value);
     return end;
   }
-  unsigned index = static_cast<unsigned>(value * 2);
+  auto index = static_cast<unsigned>(value * 2);
   *--buffer = static_cast<Char>(data::digits[index + 1]);
   add_thousands_sep(buffer);
   *--buffer = static_cast<Char>(data::digits[index]);
@@ -1568,7 +1568,7 @@ template <typename Range> class basic_writer {
     void on_num() {
       std::string groups = internal::grouping<char_type>(writer.locale_);
       if (groups.empty()) return on_dec();
-      char_type sep = internal::thousands_sep<char_type>(writer.locale_);
+      auto sep = internal::thousands_sep<char_type>(writer.locale_);
       if (!sep) return on_dec();
       int num_digits = internal::count_digits(abs_value);
       int size = num_digits;
@@ -2965,7 +2965,7 @@ class format_int {
       // Integer division is slow so do it for a group of two digits instead
       // of for every digit. The idea comes from the talk by Alexandrescu
       // "Three Optimization Tips for C++". See speed-test for a comparison.
-      unsigned index = static_cast<unsigned>((value % 100) * 2);
+      auto index = static_cast<unsigned>((value % 100) * 2);
       value /= 100;
       *--ptr = internal::data::digits[index + 1];
       *--ptr = internal::data::digits[index];
@@ -2974,14 +2974,14 @@ class format_int {
       *--ptr = static_cast<char>('0' + value);
       return ptr;
     }
-    unsigned index = static_cast<unsigned>(value * 2);
+    auto index = static_cast<unsigned>(value * 2);
     *--ptr = internal::data::digits[index + 1];
     *--ptr = internal::data::digits[index];
     return ptr;
   }
 
   void format_signed(long long value) {
-    unsigned long long abs_value = static_cast<unsigned long long>(value);
+    auto abs_value = static_cast<unsigned long long>(value);
     bool negative = value < 0;
     if (negative) abs_value = 0 - abs_value;
     str_ = format_decimal(abs_value);
