@@ -800,7 +800,7 @@ FMT_ALWAYS_INLINE digits::result grisu_gen_digits(fp value, uint64_t error,
   // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
   // zero because it contains a product of two 64-bit numbers with MSB set (due
   // to normalization) - 1, shifted right by at most 60 bits.
-  uint32_t integral = static_cast<uint32_t>(value.f >> -one.e);
+  auto integral = static_cast<uint32_t>(value.f >> -one.e);
   FMT_ASSERT(integral != 0, "");
   FMT_ASSERT(integral == value.f >> -one.e, "");
   // The fractional part of scaled value (p2 in Grisu) c = value % one.
