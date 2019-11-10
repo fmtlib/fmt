@@ -850,33 +850,27 @@ template <> inline wchar_t decimal_point(locale_ref loc) {
 }
 
 // Formats a decimal unsigned integer value writing into buffer.
-// add_thousands_sep is called after writing each char to add a thousands
-// separator if necessary.
-template <typename UInt, typename Char, typename F>
-inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
-                            F add_thousands_sep) {
+template <typename UInt>
+inline char* format_decimal(char* buffer, UInt value, int num_digits) {
   FMT_ASSERT(num_digits >= 0, "invalid digit count");
   buffer += num_digits;
-  Char* end = buffer;
+  char* end = buffer;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     auto index = static_cast<unsigned>((value % 100) * 2);
     value /= 100;
-    *--buffer = static_cast<Char>(data::digits[index + 1]);
-    add_thousands_sep(buffer);
-    *--buffer = static_cast<Char>(data::digits[index]);
-    add_thousands_sep(buffer);
+    *--buffer = data::digits[index + 1];
+    *--buffer = data::digits[index];
   }
   if (value < 10) {
-    *--buffer = static_cast<Char>('0' + value);
+    *--buffer = static_cast<char>('0' + value);
     return end;
   }
   auto index = static_cast<unsigned>(value * 2);
-  *--buffer = static_cast<Char>(data::digits[index + 1]);
-  add_thousands_sep(buffer);
-  *--buffer = static_cast<Char>(data::digits[index]);
+  *--buffer = data::digits[index + 1];
+  *--buffer = data::digits[index];
   return end;
 }
 
@@ -886,20 +880,93 @@ template <typename Int> constexpr int digits10() noexcept {
 template <> constexpr int digits10<int128_t>() noexcept { return 38; }
 template <> constexpr int digits10<uint128_t>() noexcept { return 38; }
 
-template <typename Char, typename UInt, typename Iterator, typename F>
-inline Iterator format_decimal(Iterator out, UInt value, int num_digits,
-                               F add_thousands_sep) {
+template <typename Char> class thousand_formatter {
+  const std::string& groups_;
+  Char sep_;
+  int num_digits_;
+
+  std::string::const_reverse_iterator group_;
+  unsigned count_;
+  int pos_;
+  size_t size_;
+
+ public:
+  thousand_formatter(const std::string& groups, Char sep, int num_digits)
+      : groups_(groups),
+        sep_(sep),
+        num_digits_(num_digits),
+        group_(groups.crbegin()),
+        count_(0),
+        pos_(0),
+        size_(0) {
+    auto group = groups_.cbegin();
+    while (group != groups_.cend() && num_digits > *group && *group > 0 &&
+           *group != max_value<char>()) {
+      pos_ += *group;
+      ++size_;
+      num_digits -= *group;
+      ++group;
+    }
+    if (group == groups.cend()) {
+      count_ = (num_digits - 1) / groups.back();
+      pos_ += count_ * groups.back();
+      size_ += count_;
+      ++count_;
+    } else {
+      size_t dist = group - groups_.cbegin();
+      group_ += groups.end() - group - (dist == size_ ? 1 : 0);
+    }
+  }
+
+  size_t size() const { return size_; }
+
+  template <typename It> void operator()(char c, It&& it) {
+    *it++ = static_cast<Char>(c);
+    --num_digits_;
+    if (num_digits_ != pos_ || !num_digits_) return;
+
+    *it++ = sep_;
+    if (count_)
+      --count_;
+    else
+      ++group_;
+    pos_ -= *group_;
+  }
+
+  template <typename It>
+  void operator()(const char* begin, const char* end, It&& it) {
+    while (begin != end) {
+      operator()(*begin, it);
+      ++begin;
+    }
+  }
+};
+
+template <typename Char> class no_thousand_formatter {
+ public:
+  size_t size() const { return 0; }
+
+  template <typename It> void operator()(char c, It&& it) {
+    *it++ = static_cast<Char>(c);
+  }
+  template <typename It>
+  void operator()(const char* begin, const char* end, It&& it) {
+    it = copy_str<Char>(begin, end, it);
+  }
+};
+
+template <typename Char, typename UInt, typename Iterator,
+          typename F = no_thousand_formatter<Char>>
+inline Iterator format_decimal(
+    Iterator out, UInt value, int num_digits,
+    F add_thousands_sep = no_thousand_formatter<Char>{}) {
   FMT_ASSERT(num_digits >= 0, "invalid digit count");
   // Buffer should be large enough to hold all digits (<= digits10 + 1).
   enum { max_size = digits10<UInt>() + 1 };
-  Char buffer[2 * max_size];
-  auto end = format_decimal(buffer, value, num_digits, add_thousands_sep);
-  return internal::copy_str<Char>(buffer, end, out);
-}
-
-template <typename Char, typename It, typename UInt>
-inline It format_decimal(It out, UInt value, int num_digits) {
-  return format_decimal<Char>(out, value, num_digits, [](Char*) {});
+  char buffer[max_size];
+  auto end = format_decimal(buffer, value, num_digits);
+  add_thousands_sep(buffer, end, out);
+  return out;
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
@@ -1078,7 +1145,8 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
   return it;
 }
 
-template <typename Char> class grisu_writer {
+template <typename Char, typename F = no_thousand_formatter<Char>>
+class grisu_writer {
  private:
   // The number is given as v = digits_ * pow(10, exp_).
   const char* digits_;
@@ -1087,6 +1155,7 @@ template <typename Char> class grisu_writer {
   size_t size_;
   gen_digits_params params_;
   Char decimal_point_;
+  F add_thousands_sep_;
 
   template <typename It> It grisu_prettify(It it) const {
     // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
@@ -1101,8 +1170,13 @@ template <typename Char> class grisu_writer {
     }
     if (num_digits_ <= full_exp) {
       // 1234e7 -> 12340000000[.0+]
-      it = copy_str<Char>(digits_, digits_ + num_digits_, it);
-      it = std::fill_n(it, full_exp - num_digits_, static_cast<Char>('0'));
+      typename std::decay<F>::type add_thousands_sep(add_thousands_sep_);
+      add_thousands_sep(digits_, digits_ + num_digits_, it);
+      int n = full_exp - num_digits_;
+      while (n > 0) {
+        add_thousands_sep('0', it);
+        --n;
+      }
       int num_zeros = (std::max)(params_.num_digits - full_exp, 1);
       if (params_.trailing_zeros) {
         *it++ = decimal_point_;
@@ -1114,7 +1188,8 @@ template <typename Char> class grisu_writer {
       }
     } else if (full_exp > 0) {
       // 1234e-2 -> 12.34[0+]
-      it = copy_str<Char>(digits_, digits_ + full_exp, it);
+      typename std::decay<F>::type add_thousands_sep(add_thousands_sep_);
+      add_thousands_sep(digits_, digits_ + full_exp, it);
       if (!params_.trailing_zeros) {
         // Remove trailing zeros.
         int num_digits = num_digits_;
@@ -1150,12 +1225,14 @@ template <typename Char> class grisu_writer {
 
  public:
   grisu_writer(const char* digits, int num_digits, int exp,
-               gen_digits_params params, Char decimal_point)
+               gen_digits_params params, Char decimal_point,
+               F add_thousands_sep = no_thousand_formatter<Char>{})
       : digits_(digits),
         num_digits_(num_digits),
         exp_(exp),
         params_(params),
-        decimal_point_(decimal_point) {
+        decimal_point_(decimal_point),
+        add_thousands_sep_(add_thousands_sep) {
     int full_exp = num_digits + exp - 1;
     int precision = params.num_digits > 0 ? params.num_digits : 16;
     params_.fixed |= full_exp >= -4 && full_exp < precision;
@@ -1198,13 +1275,13 @@ struct sprintf_specs {
 };
 
 template <typename Double>
-char* sprintf_format(Double, internal::buffer<char>&, sprintf_specs);
+char* sprintf_format(Double, internal::buffer<char>&, sprintf_specs, bool&);
 
 template <>
 inline char* sprintf_format<float>(float value, internal::buffer<char>& buf,
-                                   sprintf_specs specs) {
+                                   sprintf_specs specs, bool& fixed) {
   // printf does not have a float format specifier, it only supports double.
-  return sprintf_format<double>(value, buf, specs);
+  return sprintf_format<double>(value, buf, specs, fixed);
 }
 
 template <typename Handler>
@@ -1398,7 +1475,7 @@ template <typename Range> class basic_writer {
     size_t size() const { return size_; }
     size_t width() const { return size_; }
 
-    template <typename It> void operator()(It&& it) const {
+    template <typename It> void operator()(It&& it) {
       if (prefix.size() != 0)
         it = internal::copy_str<char_type>(prefix.begin(), prefix.end(), it);
       it = std::fill_n(it, padding, fill);
@@ -1469,19 +1546,28 @@ template <typename Range> class basic_writer {
       }
     }
 
-    struct dec_writer {
-      unsigned_type abs_value;
-      int num_digits;
+    template <typename F = no_thousand_formatter<char_type>> class dec_writer {
+      unsigned_type abs_value_;
+      int num_digits_;
+      F add_thousands_sep_;
 
-      template <typename It> void operator()(It&& it) const {
-        it = internal::format_decimal<char_type>(it, abs_value, num_digits);
+     public:
+      dec_writer(unsigned_type abs_value, int num_digits,
+                 F add_thousands_sep = no_thousand_formatter<char_type>{})
+          : abs_value_(abs_value),
+            num_digits_(num_digits),
+            add_thousands_sep_(add_thousands_sep) {}
+
+      template <typename It> void operator()(It&& it) {
+        it = internal::format_decimal<char_type>(it, abs_value_, num_digits_,
+                                                 add_thousands_sep_);
       }
     };
 
     void on_dec() {
       int num_digits = internal::count_digits(abs_value);
       writer.write_int(num_digits, get_prefix(), specs,
-                       dec_writer{abs_value, num_digits});
+                       dec_writer<>(abs_value, num_digits));
     }
 
     struct hex_writer {
@@ -1534,55 +1620,18 @@ template <typename Range> class basic_writer {
                        bin_writer<3>{abs_value, num_digits});
     }
 
-    enum { sep_size = 1 };
-
-    struct num_writer {
-      unsigned_type abs_value;
-      int size;
-      const std::string& groups;
-      char_type sep;
-
-      template <typename It> void operator()(It&& it) const {
-        basic_string_view<char_type> s(&sep, sep_size);
-        // Index of a decimal digit with the least significant digit having
-        // index 0.
-        unsigned digit_index = 0;
-        std::string::const_iterator group = groups.cbegin();
-        it = internal::format_decimal<char_type>(
-            it, abs_value, size,
-            [this, s, &group, &digit_index](char_type*& buffer) {
-              if (*group <= 0 || ++digit_index % *group != 0 ||
-                  *group == max_value<char>())
-                return;
-              if (group + 1 != groups.cend()) {
-                digit_index = 0;
-                ++group;
-              }
-              buffer -= s.size();
-              std::uninitialized_copy(s.data(), s.data() + s.size(),
-                                      internal::make_checked(buffer, s.size()));
-            });
-      }
-    };
-
     void on_num() {
       std::string groups = internal::grouping<char_type>(writer.locale_);
       if (groups.empty()) return on_dec();
       auto sep = internal::thousands_sep<char_type>(writer.locale_);
       if (!sep) return on_dec();
       int num_digits = internal::count_digits(abs_value);
-      int size = num_digits;
-      std::string::const_iterator group = groups.cbegin();
-      while (group != groups.cend() && num_digits > *group && *group > 0 &&
-             *group != max_value<char>()) {
-        size += sep_size;
-        num_digits -= *group;
-        ++group;
-      }
-      if (group == groups.cend())
-        size += sep_size * ((num_digits - 1) / groups.back());
-      writer.write_int(size, get_prefix(), specs,
-                       num_writer{abs_value, size, groups, sep});
+      thousand_formatter<char_type> add_thousands_sep{groups, sep, num_digits};
+      if (!add_thousands_sep.size()) return on_dec();
+      writer.write_int(num_digits + static_cast<int>(add_thousands_sep.size()),
+                       get_prefix(), specs,
+                       dec_writer<const thousand_formatter<char_type>&>(
+                           abs_value, num_digits, add_thousands_sep));
     }
 
     FMT_NORETURN void on_error() {
@@ -1611,24 +1660,38 @@ template <typename Range> class basic_writer {
     }
   };
 
-  struct double_writer {
-    sign_t sign;
-    internal::buffer<char>& buffer;
-    char* decimal_point_pos;
-    char_type decimal_point;
+  template <typename F = no_thousand_formatter<char_type>> class double_writer {
+    sign_t sign_;
+    internal::buffer<char>& buffer_;
+    char* decimal_point_pos_;
+    char_type decimal_point_;
+    F add_thousands_sep_;
 
-    size_t size() const { return buffer.size() + (sign ? 1 : 0); }
+   public:
+    double_writer(sign_t sign, internal::buffer<char>& buffer,
+                  char* decimal_point_pos, char_type decimal_point,
+                  F add_thousands_sep = no_thousand_formatter<char_type>{})
+        : sign_(sign),
+          buffer_(buffer),
+          decimal_point_pos_(decimal_point_pos),
+          decimal_point_(decimal_point),
+          add_thousands_sep_(add_thousands_sep) {}
+
+    size_t size() const {
+      return buffer_.size() + add_thousands_sep_.size() + (sign_ ? 1 : 0);
+    }
     size_t width() const { return size(); }
 
     template <typename It> void operator()(It&& it) {
-      if (sign) *it++ = static_cast<char_type>(data::signs[sign]);
-      auto begin = buffer.begin();
-      if (decimal_point_pos) {
-        it = internal::copy_str<char_type>(begin, decimal_point_pos, it);
-        *it++ = decimal_point;
-        begin = decimal_point_pos + 1;
+      if (sign_) *it++ = static_cast<char_type>(data::signs[sign_]);
+      if (decimal_point_pos_) {
+        add_thousands_sep_(buffer_.begin(), decimal_point_pos_, it);
+        *it++ = decimal_point_;
+        it = internal::copy_str<char_type>(decimal_point_pos_ + 1,
+                                           buffer_.end(), it);
+      } else {
+        add_thousands_sep_(buffer_.begin(), buffer_.end(), it);
       }
-      it = internal::copy_str<char_type>(begin, buffer.end(), it);
     }
   };
 
@@ -2857,8 +2920,10 @@ void internal::basic_writer<Range>::write_fp(T value,
       (specs.type != 'a' && specs.type != 'A' && specs.type != 'e' &&
        specs.type != 'E') &&
       grisu_format(static_cast<double>(value), buffer, precision, options, exp);
+  bool fixed = false;
   char* decimal_point_pos = nullptr;
-  if (!use_grisu) decimal_point_pos = sprintf_format(value, buffer, specs);
+  if (!use_grisu)
+    decimal_point_pos = sprintf_format(value, buffer, specs, fixed);
 
   if (handler.as_percentage) {
     buffer.push_back('%');
@@ -2887,12 +2952,58 @@ void internal::basic_writer<Range>::write_fp(T value,
     params.trailing_zeros =
         (precision != 0 && (handler.fixed || !specs.type)) || specs.alt;
     int num_digits = static_cast<int>(buffer.size());
-    write_padded(as, grisu_writer<char_type>(buffer.data(), num_digits, exp,
-                                             params, decimal_point));
-  } else {
-    write_padded(as,
-                 double_writer{sign, buffer, decimal_point_pos, decimal_point});
+
+    if (!handler.use_locale) {
+      return write_padded(
+          as, grisu_writer<char_type>(buffer.data(), num_digits, exp, params,
+                                      decimal_point));
+    }
+    std::string groups = internal::grouping<char_type>(locale_);
+    if (groups.empty()) {
+      return write_padded(
+          as, grisu_writer<char_type>(buffer.data(), num_digits, exp, params,
+                                      decimal_point));
+    }
+    char_type sep = internal::thousands_sep<char_type>(locale_);
+    if (!sep) {
+      return write_padded(
+          as, grisu_writer<char_type>(buffer.data(), num_digits, exp, params,
+                                      decimal_point));
+    }
+    thousand_formatter<char_type> add(groups, sep, num_digits + exp);
+    if (!add.size()) {
+      return write_padded(
+          as, grisu_writer<char_type>(buffer.data(), num_digits, exp, params,
+                                      decimal_point));
+    }
+    return write_padded(
+        as, grisu_writer<char_type, const thousand_formatter<char_type>&>(
+                buffer.data(), num_digits, exp, params, decimal_point, add));
   }
+
+  if (!handler.use_locale || !fixed) {
+    return write_padded(
+        as, double_writer<>(sign, buffer, decimal_point_pos, decimal_point));
+  }
+  std::string groups = internal::grouping<char_type>(locale_);
+  if (groups.empty()) {
+    return write_padded(
+        as, double_writer<>(sign, buffer, decimal_point_pos, decimal_point));
+  }
+  char_type sep = internal::thousands_sep<char_type>(locale_);
+  if (!sep) {
+    return write_padded(
+        as, double_writer<>(sign, buffer, decimal_point_pos, decimal_point));
+  }
+  int num_digits = static_cast<int>(
+      decimal_point_pos ? decimal_point_pos - buffer.begin() : buffer.size());
+  thousand_formatter<char_type> add(groups, sep, num_digits);
+  if (!add.size()) {
+    return write_padded(
+        as, double_writer<>(sign, buffer, decimal_point_pos, decimal_point));
+  }
+  write_padded(as, double_writer<thousand_formatter<char_type>&>(
+                       sign, buffer, decimal_point_pos, decimal_point, add));
 }
 
 // Reports a system error without throwing an exception.

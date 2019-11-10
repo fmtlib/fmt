@@ -37,10 +37,10 @@ template FMT_API format_context::iterator internal::vformat_to(
     internal::buffer<char>&, string_view, basic_format_args<format_context>);
 
 template FMT_API char* internal::sprintf_format(double, internal::buffer<char>&,
-                                                sprintf_specs);
+                                                sprintf_specs, bool& fixed);
 template FMT_API char* internal::sprintf_format(long double,
                                                 internal::buffer<char>&,
-                                                sprintf_specs);
+                                                sprintf_specs, bool& fixed);
 
 // Explicit instantiations for wchar_t.
 

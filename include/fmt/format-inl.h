@@ -220,7 +220,7 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref loc) {
 #else
 template <typename Char>
 FMT_FUNC std::string internal::grouping_impl(locale_ref) {
-  return "\03";
+  return "\3";
 }
 template <typename Char>
 FMT_FUNC Char internal::thousands_sep_impl(locale_ref) {
@@ -1143,7 +1143,7 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
 
 template <typename Double>
 char* sprintf_format(Double value, internal::buffer<char>& buf,
-                     sprintf_specs specs) {
+                     sprintf_specs specs, bool& fixed) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buf.capacity() != 0, "empty buffer");
 
@@ -1171,6 +1171,7 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
   *format_ptr = '\0';
 
   // Format using snprintf.
+  fixed = true;
   char* start = nullptr;
   char* decimal_point_pos = nullptr;
   for (;;) {
@@ -1186,18 +1187,22 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
         if (*p == '+' || *p == '-') ++p;
         if (specs.type != 'a' && specs.type != 'A') {
           while (p < end && *p >= '0' && *p <= '9') ++p;
-          if (p < end && *p != 'e' && *p != 'E') {
-            decimal_point_pos = p;
-            if (!specs.type) {
-              // Keep only one trailing zero after the decimal point.
-              ++p;
-              if (*p == '0') ++p;
-              while (p != end && *p >= '1' && *p <= '9') ++p;
-              char* where = p;
-              while (p != end && *p == '0') ++p;
-              if (p == end || *p < '0' || *p > '9') {
-                if (p != end) std::memmove(where, p, to_unsigned(end - p));
-                n -= static_cast<unsigned>(p - where);
+          if (p < end) {
+            if (*p == 'e' || *p == 'E') {
+              fixed = false;
+            } else {
+              decimal_point_pos = p;
+              if (!specs.type) {
+                // Keep only one trailing zero after the decimal point.
+                ++p;
+                if (*p == '0') ++p;
+                while (p != end && *p >= '1' && *p <= '9') ++p;
+                char* where = p;
+                while (p != end && *p == '0') ++p;
+                if (p == end || *p < '0' || *p > '9') {
+                  if (p != end) std::memmove(where, p, to_unsigned(end - p));
+                  n -= static_cast<unsigned>(p - where);
+                }
               }
             }
           }

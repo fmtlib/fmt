@@ -14,7 +14,7 @@ using fmt::internal::max_value;
 template <typename Char> struct numpunct : std::numpunct<Char> {
  protected:
   Char do_decimal_point() const FMT_OVERRIDE { return '?'; }
-  std::string do_grouping() const FMT_OVERRIDE { return "\03"; }
+  std::string do_grouping() const FMT_OVERRIDE { return "\3"; }
   Char do_thousands_sep() const FMT_OVERRIDE { return '~'; }
 };
 
@@ -28,27 +28,30 @@ template <typename Char> struct no_grouping : std::numpunct<Char> {
 template <typename Char> struct special_grouping : std::numpunct<Char> {
  protected:
   Char do_decimal_point() const FMT_OVERRIDE { return '.'; }
-  std::string do_grouping() const FMT_OVERRIDE { return "\03\02"; }
+  std::string do_grouping() const FMT_OVERRIDE { return "\3\2"; }
   Char do_thousands_sep() const FMT_OVERRIDE { return ','; }
 };
 
 template <typename Char> struct small_grouping : std::numpunct<Char> {
  protected:
   Char do_decimal_point() const FMT_OVERRIDE { return '.'; }
-  std::string do_grouping() const FMT_OVERRIDE { return "\01"; }
+  std::string do_grouping() const FMT_OVERRIDE { return "\1"; }
   Char do_thousands_sep() const FMT_OVERRIDE { return ','; }
 };
 
 TEST(LocaleTest, DoubleDecimalPoint) {
   std::locale loc(std::locale(), new numpunct<char>());
-  EXPECT_EQ("1?23", fmt::format(loc, "{:n}", 1.23));
+  EXPECT_EQ("1~234?56", fmt::format(loc, "{:n}", 1234.56));
+  EXPECT_EQ("1~230", fmt::format(loc, "{:n}", 123e1));
+  EXPECT_EQ("1?23456e+10", fmt::format(loc, "{:n}", 1.23456e10));
+  EXPECT_EQ("0?123456", fmt::format(loc, "{:n}", 123456e-6));
   // Test with Grisu disabled.
   fmt::memory_buffer buf;
   fmt::internal::writer w(buf, fmt::internal::locale_ref(loc));
   auto specs = fmt::format_specs();
   specs.type = 'n';
-  w.write_fp<double, false>(1.23, specs);
-  EXPECT_EQ(fmt::to_string(buf), "1?23");
+  w.write_fp<double, false>(1234.56, specs);
+  EXPECT_EQ(fmt::to_string(buf), "1~234?56");
 }
 
 TEST(LocaleTest, Format) {
