@@ -70,15 +70,6 @@
 #else
 #  define FMT_HAS_BUILTIN(x) 0
 #endif
-FMT_BEGIN_NAMESPACE
-// terror == terminating error
-[[noreturn]] inline  void terror(const char msg_[BUFSIZ]) {
-	::puts("\n\n\nFast exit on {fmt} error with message: ");
-	::puts(msg_);
-	::perror("\nPOSIX error message: ");
-	std::exit(EXIT_FAILURE);
-}
-FMT_END_NAMESPACE
 
 FMT_BEGIN_NAMESPACE
 // terror == terminating error
