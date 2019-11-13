@@ -73,7 +73,7 @@
 
 FMT_BEGIN_NAMESPACE
 // 
-[[noreturn]] inline  void fail_fast(const char msg_[BUFSIZ]) {
+inline  void fail_fast(const char msg_[BUFSIZ]) {
 	::puts("\n\n\nFast exit on {fmt} error with message: ");
 	::puts(msg_);
 	::perror("\nPOSIX error message: ");
