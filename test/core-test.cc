@@ -455,9 +455,9 @@ FMT_END_NAMESPACE
 TEST(CoreTest, HasFormatter) {
   using fmt::has_formatter;
   using context = fmt::format_context;
-  static_assert(has_formatter<enabled_formatter, context>::value);
-  static_assert(!has_formatter<disabled_formatter, context>::value);
-  static_assert(!has_formatter<disabled_formatter_convertible, context>::value);
+  static_assert(has_formatter<enabled_formatter, context>::value, "");
+  static_assert(!has_formatter<disabled_formatter, context>::value, "");
+  static_assert(!has_formatter<disabled_formatter_convertible, context>::value, "");
 }
 
 struct convertible_to_int {
