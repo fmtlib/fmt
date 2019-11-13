@@ -72,23 +72,21 @@
 #endif
 
 FMT_BEGIN_NAMESPACE
-// terror == terminating error
-[[noreturn]] inline  void terror(const char msg_[BUFSIZ]) {
+// 
+[[noreturn]] inline  void fail_fast(const char msg_[BUFSIZ]) {
 	::puts("\n\n\nFast exit on {fmt} error with message: ");
 	::puts(msg_);
 	::perror("\nPOSIX error message: ");
 	std::exit(EXIT_FAILURE);
 }
 namespace internal {
-	template <typename Exception> 
-#ifndef FMT_EXCEPTIONS
-	[[noreturn]] 
-#endif
-	inline void do_throw(const Exception& x) {
+template <typename Exception> 
+inline void do_throw(const Exception& x) {
 #if FMT_EXCEPTIONS
-		throw x;
+    volatile bool b = true ;
+    if (b) throw x;
 #else
-		terror(x.what());
+    fail_fast(x.what());
 #endif
 	}
 }  // namespace internal
