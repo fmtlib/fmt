@@ -70,29 +70,46 @@
 #else
 #  define FMT_HAS_BUILTIN(x) 0
 #endif
+FMT_BEGIN_NAMESPACE
+// terror == terminating error
+[[noreturn]] inline  void terror(const char msg_[BUFSIZ]) {
+	::puts("\n\n\nFast exit on {fmt} error with message: ");
+	::puts(msg_);
+	::perror("\nPOSIX error message: ");
+	std::exit(EXIT_FAILURE);
+}
+FMT_END_NAMESPACE
 
 #ifndef FMT_THROW
 #  if FMT_EXCEPTIONS
 #    if FMT_MSC_VER
+//TODO: why is this only for MSVC builds?
 FMT_BEGIN_NAMESPACE
 namespace internal {
+#define FMT_FAST_FAIL 1 /*TODO: remove before relase, here for testing purposes */
+#if FMT_FAST_FAIL
+	template <typename Exception> [[noreturn]] inline  void do_throw(const Exception& x) {
+		terror(x.what());
+	}
+#else
 template <typename Exception> inline void do_throw(const Exception& x) {
   // Silence unreachable code warnings in MSVC because these are nearly
   // impossible to fix in a generic code.
   volatile bool b = true;
   if (b) throw x;
 }
+#endif
 }  // namespace internal
 FMT_END_NAMESPACE
-#      define FMT_THROW(x) fmt::internal::do_throw(x)
+//TODO: why is do_throw() only for MSVC builds?
+#      define FMT_THROW(x) fmt :: internal::do_throw(x) 
 #    else
 #      define FMT_THROW(x) throw x
 #    endif
 #  else
-#    define FMT_THROW(x)              \
-      do {                            \
-        static_cast<void>(sizeof(x)); \
-        assert(false);                \
+#    define FMT_THROW(x)                        \
+      do {                                      \
+       fmt :: terror(x.what())  \
       } while (false)
 #  endif
 #endif
