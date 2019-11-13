@@ -1076,6 +1076,8 @@ class locale_ref {
   locale_ref() : locale_(nullptr) {}
   template <typename Locale> explicit locale_ref(const Locale& loc);
 
+  explicit operator bool() const FMT_NOEXCEPT { return locale_ != nullptr; }
+
   template <typename Locale> Locale get() const;
 };
 
