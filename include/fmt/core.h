@@ -296,10 +296,11 @@ template <typename Char> class basic_string_view {
       : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
   /** Constructs a string reference from a ``std::basic_string`` object. */
-  template <typename Alloc>
-  FMT_CONSTEXPR basic_string_view(const std::basic_string<Char, Alloc>& s)
-      FMT_NOEXCEPT : data_(s.data()),
-                     size_(s.size()) {}
+  template <typename Traits, typename Alloc>
+  FMT_CONSTEXPR basic_string_view(
+      const std::basic_string<Char, Traits, Alloc>& s) FMT_NOEXCEPT
+      : data_(s.data()),
+        size_(s.size()) {}
 
   template <
       typename S,
@@ -389,10 +390,10 @@ inline basic_string_view<Char> to_string_view(const Char* s) {
   return s;
 }
 
-template <typename Char, typename Traits, typename Allocator>
+template <typename Char, typename Traits, typename Alloc>
 inline basic_string_view<Char> to_string_view(
-    const std::basic_string<Char, Traits, Allocator>& s) {
-  return {s.data(), s.size()};
+    const std::basic_string<Char, Traits, Alloc>& s) {
+  return s;
 }
 
 template <typename Char>
