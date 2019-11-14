@@ -92,45 +92,6 @@ matrix:
       # g++ 4.8 on Linux with C++11
     - env: COMPILER=g++-4.8 BUILD=Debug STANDARD=11
       compiler: gcc
-    - name: Android NDK (Gradle)
-      language: android
-      addons:
-        apt:
-          update: true
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - ninja-build
-            - curl
-            - tree
-      android:
-        components:
-          - tools
-          - platform-tools
-          - android-25 # 7.0
-          - android-27 # 8.1
-          - android-28 # 9.0
-          - build-tools-28.0.3
-      before_install:
-        # Install Gradle from https://sdkman.io/
-        - curl -s "https://get.sdkman.io" | bash > /dev/null
-        - source "$HOME/.sdkman/bin/sdkman-init.sh"
-        - sdk version
-        - sdk install gradle
-        #- sdk use gradle
-        - gradle --version
-      install:
-        # Accept SDK Licenses + Install NDK
-        - yes | sdkmanager --update > /dev/null 2>&1
-        - sdkmanager ndk-bundle > /dev/null 2>&1
-      before_script:
-        - pushd ./support
-      script:
-        - gradle clean
-        - gradle assemble
-      after_success:
-        - popd;
-        - tree ./libs
 
 before_script:
   - if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then export CXX=${COMPILER}; fi
