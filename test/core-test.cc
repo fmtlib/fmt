@@ -453,11 +453,11 @@ template <> struct formatter<enabled_formatter> {
 FMT_END_NAMESPACE
 
 TEST(CoreTest, HasFormatter) {
-  using fmt::internal::has_formatter;
+  using fmt::has_formatter;
   using context = fmt::format_context;
-  EXPECT_TRUE((has_formatter<enabled_formatter, context>::value));
-  EXPECT_FALSE((has_formatter<disabled_formatter, context>::value));
-  EXPECT_FALSE((has_formatter<disabled_formatter_convertible, context>::value));
+  static_assert(has_formatter<enabled_formatter, context>::value, "");
+  static_assert(!has_formatter<disabled_formatter, context>::value, "");
+  static_assert(!has_formatter<disabled_formatter_convertible, context>::value, "");
 }
 
 struct convertible_to_int {

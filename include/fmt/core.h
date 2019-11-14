@@ -542,13 +542,13 @@ struct FMT_DEPRECATED convert_to_int
     : bool_constant<!std::is_arithmetic<T>::value &&
                     std::is_convertible<T, int>::value> {};
 
-namespace internal {
-
 // Specifies if T has an enabled formatter specialization. A type can be
 // formattable even if it doesn't have a formatter e.g. via a conversion.
 template <typename T, typename Context>
 using has_formatter =
     std::is_constructible<typename Context::template formatter_type<T>>;
+
+namespace internal {
 
 /** A contiguous memory buffer with an optional growing ability. */
 template <typename T> class buffer {
