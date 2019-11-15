@@ -19,6 +19,9 @@
 
 using fmt::buffered_file;
 using fmt::error_code;
+
+#if FMT_USE_FCNTL
+
 using fmt::file;
 
 // Checks if the file is open by reading one character from it.
@@ -376,3 +379,4 @@ TEST(LocaleTest, Strtod) {
   EXPECT_EQ(start + 3, ptr);
 }
 #endif
+#endif  // FMT_USE_FCNTL

@@ -74,14 +74,6 @@ TEST_F(SingleEvaluationTest, FailedEXPECT_SYSTEM_ERROR) {
   EXPECT_EQ(s_ + 1, p_);
 }
 
-// Tests that when EXPECT_WRITE fails, it evaluates its message argument
-// exactly once.
-TEST_F(SingleEvaluationTest, FailedEXPECT_WRITE) {
-  EXPECT_NONFATAL_FAILURE(EXPECT_WRITE(stdout, std::printf("test"), p_++),
-                          "01234");
-  EXPECT_EQ(s_ + 1, p_);
-}
-
 // Tests that assertion arguments are evaluated exactly once.
 TEST_F(SingleEvaluationTest, ExceptionTests) {
   // successful EXPECT_THROW_MSG
@@ -163,6 +155,15 @@ TEST_F(SingleEvaluationTest, SystemErrorTests) {
   EXPECT_EQ(4, b_);
 }
 
+#if FMT_USE_FCNTL
+// Tests that when EXPECT_WRITE fails, it evaluates its message argument
+// exactly once.
+TEST_F(SingleEvaluationTest, FailedEXPECT_WRITE) {
+  EXPECT_NONFATAL_FAILURE(EXPECT_WRITE(stdout, std::printf("test"), p_++),
+                          "01234");
+  EXPECT_EQ(s_ + 1, p_);
+}
+
 // Tests that assertion arguments are evaluated exactly once.
 TEST_F(SingleEvaluationTest, WriteTests) {
   // successful EXPECT_WRITE
@@ -186,6 +187,24 @@ TEST_F(SingleEvaluationTest, WriteTests) {
   EXPECT_EQ(2, a_);
   EXPECT_EQ(2, b_);
 }
+
+// Tests EXPECT_WRITE.
+TEST(ExpectTest, EXPECT_WRITE) {
+  EXPECT_WRITE(stdout, do_nothing(), "");
+  EXPECT_WRITE(stdout, std::printf("test"), "test");
+  EXPECT_WRITE(stderr, std::fprintf(stderr, "test"), "test");
+  EXPECT_NONFATAL_FAILURE(EXPECT_WRITE(stdout, std::printf("that"), "this"),
+                          "Expected: this\n"
+                          "  Actual: that");
+}
+
+TEST(StreamingAssertionsTest, EXPECT_WRITE) {
+  EXPECT_WRITE(stdout, std::printf("test"), "test") << "unexpected failure";
+  EXPECT_NONFATAL_FAILURE(EXPECT_WRITE(stdout, std::printf("test"), "other")
+                              << "expected failure",
+                          "expected failure");
+}
+#endif  // FMT_USE_FCNTL
 
 // Tests that the compiler will not complain about unreachable code in the
 // EXPECT_THROW_MSG macro.
@@ -280,16 +299,6 @@ TEST(ExpectTest, EXPECT_SYSTEM_ERROR) {
           format_system_error(EDOM, "test")));
 }
 
-// Tests EXPECT_WRITE.
-TEST(ExpectTest, EXPECT_WRITE) {
-  EXPECT_WRITE(stdout, do_nothing(), "");
-  EXPECT_WRITE(stdout, std::printf("test"), "test");
-  EXPECT_WRITE(stderr, std::fprintf(stderr, "test"), "test");
-  EXPECT_NONFATAL_FAILURE(EXPECT_WRITE(stdout, std::printf("that"), "this"),
-                          "Expected: this\n"
-                          "  Actual: that");
-}
-
 TEST(StreamingAssertionsTest, EXPECT_THROW_MSG) {
   EXPECT_THROW_MSG(throw_exception(), std::exception, "test")
       << "unexpected failure";
@@ -308,20 +317,13 @@ TEST(StreamingAssertionsTest, EXPECT_SYSTEM_ERROR) {
       "expected failure");
 }
 
-TEST(StreamingAssertionsTest, EXPECT_WRITE) {
-  EXPECT_WRITE(stdout, std::printf("test"), "test") << "unexpected failure";
-  EXPECT_NONFATAL_FAILURE(EXPECT_WRITE(stdout, std::printf("test"), "other")
-                              << "expected failure",
-                          "expected failure");
-}
-
 TEST(UtilTest, FormatSystemError) {
   fmt::memory_buffer out;
   fmt::format_system_error(out, EDOM, "test message");
   EXPECT_EQ(to_string(out), format_system_error(EDOM, "test message"));
 }
 
-#if FMT_USE_FILE_DESCRIPTORS
+#if FMT_USE_FCNTL
 
 using fmt::buffered_file;
 using fmt::error_code;

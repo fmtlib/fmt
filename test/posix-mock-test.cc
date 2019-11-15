@@ -30,7 +30,6 @@
 
 using fmt::buffered_file;
 using fmt::error_code;
-using fmt::file;
 
 using testing::_;
 using testing::Return;
@@ -197,6 +196,9 @@ static void write_file(fmt::cstring_view filename, fmt::string_view content) {
   fmt::buffered_file f(filename, "w");
   f.print("{}", content);
 }
+
+#if FMT_USE_FCNTL
+using fmt::file;
 
 TEST(UtilTest, GetPageSize) {
 #ifdef _WIN32
@@ -429,6 +431,7 @@ TEST(BufferedFileTest, FilenoNoRetry) {
   EXPECT_EQ(2, fileno_count);
   fileno_count = 0;
 }
+#endif  // FMT_USE_FCNTL
 
 struct TestMock {
   static TestMock* instance;

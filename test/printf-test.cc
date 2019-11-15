@@ -477,7 +477,7 @@ enum E { A = 42 };
 
 TEST(PrintfTest, Enum) { EXPECT_PRINTF("42", "%d", A); }
 
-#if FMT_USE_FILE_DESCRIPTORS
+#if FMT_USE_FCNTL
 TEST(PrintfTest, Examples) {
   const char* weekday = "Thursday";
   const char* month = "August";

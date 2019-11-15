@@ -14,7 +14,6 @@
 #endif
 
 #include <cerrno>
-#include <fcntl.h>   // for O_RDONLY
 #include <clocale>  // for locale_t
 #include <cstdio>
 #include <cstdlib>  // for strtod_l
@@ -26,6 +25,13 @@
 #endif
 
 #include "format.h"
+
+#if FMT_HAS_INCLUDE("fcntl.h")
+#  include <fcntl.h>  // for O_RDONLY
+#  define FMT_USE_FCNTL 1
+#else
+#  define FMT_USE_FCNTL 0
+#endif
 
 #ifndef FMT_POSIX
 #  if defined(_WIN32) && !defined(__MINGW32__)
@@ -176,6 +182,7 @@ class buffered_file {
   }
 };
 
+#if FMT_USE_FCNTL
 // A file. Closed file is represented by a file object with descriptor -1.
 // Methods that are not declared with FMT_NOEXCEPT may throw
 // fmt::system_error in case of failure. Note that some errors such as
@@ -258,6 +265,7 @@ class file {
 
 // Returns the memory page size.
 long getpagesize();
+#endif  // FMT_USE_FCNTL
 
 #ifdef FMT_LOCALE
 // A "C" numeric locale.

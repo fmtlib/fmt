@@ -47,8 +47,6 @@ target_compile_definitions(gmock
 
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
-target_compile_definitions(test-main PUBLIC
-  FMT_USE_FILE_DESCRIPTORS=$<BOOL:${HAVE_OPEN}>)
 target_include_directories(test-main SYSTEM PUBLIC gtest gmock)
 target_link_libraries(test-main gmock fmt)
 
@@ -113,7 +111,7 @@ add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
 add_fmt_test(scan-test)
 
-if (HAVE_OPEN AND NOT MSVC_BUILD_STATIC)
+if (NOT MSVC_BUILD_STATIC)
   add_fmt_executable(posix-mock-test
     posix-mock-test.cc ../src/format.cc ${TEST_MAIN_SRC})
   target_include_directories(

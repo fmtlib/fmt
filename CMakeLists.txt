@@ -135,10 +135,8 @@ endif ()
 
 include(CheckSymbolExists)
 if (WIN32)
-  check_symbol_exists(open io.h HAVE_OPEN)
   check_symbol_exists(_strtod_l "${strtod_l_headers}" HAVE_STRTOD_L)
 else ()
-  check_symbol_exists(open fcntl.h HAVE_OPEN)
   check_symbol_exists(strtod_l "${strtod_l_headers}" HAVE_STRTOD_L)
 endif ()
 
@@ -152,13 +150,9 @@ endfunction()
 
 # Define the fmt library, its includes and the needed defines.
 add_headers(FMT_HEADERS chrono.h color.h compile.h core.h format.h format-inl.h
-                        locale.h ostream.h printf.h ranges.h
+                        locale.h ostream.h posix.h printf.h ranges.h
                         safe-duration-cast.h)
-set(FMT_SOURCES src/format.cc)
-if (HAVE_OPEN)
-  add_headers(FMT_HEADERS posix.h)
-  set(FMT_SOURCES ${FMT_SOURCES} src/posix.cc)
-endif ()
+set(FMT_SOURCES src/format.cc src/posix.cc)
 
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
 add_library(fmt::fmt ALIAS fmt)

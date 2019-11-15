@@ -7,7 +7,7 @@
 
 #include "gtest-extra.h"
 
-#if FMT_USE_FILE_DESCRIPTORS
+#if FMT_USE_FCNTL
 
 using fmt::file;
 
