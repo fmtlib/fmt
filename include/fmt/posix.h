@@ -26,7 +26,12 @@
 
 #include "format.h"
 
-#if FMT_HAS_INCLUDE("fcntl.h")
+// UWP doesn't provide _pipe.
+#if FMT_HAS_INCLUDE("winapifamily.h")
+#  include <winapifamily.h>
+#endif
+#if FMT_HAS_INCLUDE("fcntl.h") && \
+    (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
 #  include <fcntl.h>  // for O_RDONLY
 #  define FMT_USE_FCNTL 1
 #else
@@ -60,7 +65,7 @@
 #ifndef _WIN32
 #  define FMT_RETRY_VAL(result, expression, error_result) \
     do {                                                  \
-      (result) = (expression);                              \
+      (result) = (expression);                            \
     } while ((result) == (error_result) && errno == EINTR)
 #else
 #  define FMT_RETRY_VAL(result, expression, error_result) result = (expression)

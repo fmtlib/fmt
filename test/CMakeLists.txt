@@ -116,7 +116,6 @@ if (NOT MSVC_BUILD_STATIC)
     posix-mock-test.cc ../src/format.cc ${TEST_MAIN_SRC})
   target_include_directories(
     posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
-  target_compile_definitions(posix-mock-test PRIVATE FMT_USE_FILE_DESCRIPTORS=1)
   target_link_libraries(posix-mock-test gmock)
   target_include_directories(posix-mock-test SYSTEM PUBLIC gtest gmock)
   if (FMT_PEDANTIC)

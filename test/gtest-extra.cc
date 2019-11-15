@@ -78,7 +78,7 @@ std::string read(file& f, std::size_t count) {
   return buffer;
 }
 
-#endif  // FMT_USE_FILE_DESCRIPTORS
+#endif  // FMT_USE_FCNTL
 
 std::string format_system_error(int error_code, fmt::string_view message) {
   fmt::memory_buffer out;
