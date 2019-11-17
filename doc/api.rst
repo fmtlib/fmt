@@ -149,7 +149,7 @@ template and implement ``parse`` and ``format`` methods::
           ctx.out(),
           presentation == 'f' ? "({:.1f}, {:.1f})" : "({:.1e}, {:.1e})",
           p.x, p.y);
-  }
+    }
   };
 
 Then you can pass objects of type ``point`` to any formatting function::
