@@ -185,6 +185,7 @@ inline uint32_t clzll(uint64_t x) {
 FMT_END_NAMESPACE
 #endif
 
+// Enable the deprecated numeric alignment.
 #ifndef FMT_NUMERIC_ALIGN
 #  define FMT_NUMERIC_ALIGN 1
 #endif
