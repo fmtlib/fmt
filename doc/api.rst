@@ -110,31 +110,55 @@ template and implement ``parse`` and ``format`` methods::
 
   struct point { double x, y; };
 
-  namespace fmt {
   template <>
-  struct formatter<point> {
-    constexpr auto parse(format_parse_context &ctx) { return ctx.begin(); }
+  struct fmt::formatter<point> {
+    // Presentation format: 'f' - fixed, 'e' - exponential.
+    char presentation = 'f';
 
-    template <typename FormatContext>
-    auto format(const point &p, FormatContext &ctx) {
-      return format_to(ctx.out(), "({:.1f}, {:.1f})", p.x, p.y);
+    // Parses format specifications of the form ['f' | 'e'].
+    constexpr auto parse(format_parse_context &ctx) {
+      // [ctx.begin(), ctx.end()) is a character range that contains a part of
+      // the format string starting from the format specifications to be parsed,
+      // e.g. in
+      //
+      //   fmt::format("{:f} - point of interest", point{1, 2});
+      //
+      // the range will contain "f} - point of interest". The formatter should
+      // parse specifiers until '}' or the end of the range. In this example,
+      // the formatter should parse the 'f' specifier and return an iterator
+      // pointing to '}'.
+
+      // Parse presentation format and store the parse result in the formatter:
+      auto it = ctx.begin(), end = ctx.end();
+      if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
+
+      // Check if reached the end of the range:
+      if (it != end && *it != '}')
+        throw format_error("invalid format");
+
+      // Return an iterator past the end of the parsed range:
+      return it;
     }
-  };
+
+    // Formats the point p using parsed format specification (presentation)
+    // stored in this formatter.
+    template <typename FormatContext>
+    auto format(const point& p, FormatContext& ctx) {
+      return format_to(
+          ctx.out(),
+          presentation == 'f' ? "({:.1f}, {:.1f})" : "({:.1e}, {:.1e})",
+          p.x, p.y);
   }
+  };
 
 Then you can pass objects of type ``point`` to any formatting function::
 
   point p = {1, 2};
-  std::string s = fmt::format("{}", p);
+  std::string s = fmt::format("{:f}", p);
   // s == "(1.0, 2.0)"
 
-In the example above the ``formatter<point>::parse`` function ignores the
-contents of the format string referred to by ``ctx.begin()`` so the object will
-always be formatted in the same way. See ``formatter<tm>::parse`` in
-:file:`fmt/chrono.h` for an advanced example of how to parse the format string and
-customize the formatted output.
-
-You can also reuse existing formatters, for example::
+You can also reuse existing formatters via inheritance or composition, for
+example::
 
   enum class color {red, green, blue};
 
