@@ -116,7 +116,7 @@ template and implement ``parse`` and ``format`` methods::
     char presentation = 'f';
 
     // Parses format specifications of the form ['f' | 'e'].
-    constexpr auto parse(format_parse_context &ctx) {
+    constexpr auto parse(format_parse_context& ctx) {
       // [ctx.begin(), ctx.end()) is a character range that contains a part of
       // the format string starting from the format specifications to be parsed,
       // e.g. in
