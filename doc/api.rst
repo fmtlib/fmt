@@ -167,7 +167,7 @@ example::
   struct fmt::formatter<color>: formatter<string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
-    auto format(color c, FormatContext &ctx) {
+    auto format(color c, FormatContext& ctx) {
       string_view name = "unknown";
       switch (c) {
       case color::red:   name = "red"; break;
@@ -293,7 +293,7 @@ allocator::
     template <typename ...Args>
     inline custom_string format(custom_allocator alloc,
                                 fmt::string_view format_str,
-                                const Args & ... args) {
+                                const Args& ... args) {
       return vformat(alloc, format_str, fmt::make_format_args(args...));
     }
 
@@ -337,7 +337,7 @@ custom argument formatter class::
 
   template <typename ...Args>
   inline std::string custom_format(
-      fmt::string_view format_str, const Args &... args) {
+      fmt::string_view format_str, const Args&... args) {
     return custom_vformat(format_str, fmt::make_format_args(args...));
   }
 
@@ -404,7 +404,7 @@ user-defined types that have overloaded ``operator<<``::
   public:
     date(int year, int month, int day): year_(year), month_(month), day_(day) {}
 
-    friend std::ostream &operator<<(std::ostream &os, const date &d) {
+    friend std::ostream& operator<<(std::ostream& os, const date& d) {
       return os << d.year_ << '-' << d.month_ << '-' << d.day_;
     }
   };
