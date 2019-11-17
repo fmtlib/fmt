@@ -91,7 +91,7 @@ FMT_END_NAMESPACE
 #    define FMT_THROW(x)              \
       do {                            \
         static_cast<void>(sizeof(x)); \
-        FMT_ASSERT(false, "");            \
+        FMT_ASSERT(false, "");        \
       } while (false)
 #  endif
 #endif
@@ -1051,10 +1051,17 @@ using format_specs = basic_format_specs<char>;
 
 namespace internal {
 
+// A floating-point presentation format.
+enum class float_format {
+  general,  // General: shortest of exponential and fixed.
+  exp,      // Exponential: 1e42
+  fixed     // Fixed: 1.42
+};
+
 struct gen_digits_params {
   int num_digits;
   sign_t sign : 3;
-  bool fixed;
+  float_format format;
   bool upper;
   bool trailing_zeros;
 };
@@ -1091,7 +1098,7 @@ template <typename Char> class grisu_writer {
   template <typename It> It grisu_prettify(It it) const {
     // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
     int full_exp = num_digits_ + exp_;
-    if (!params_.fixed) {
+    if (params_.format == float_format::exp) {
       // Insert a decimal point after the first digit and add an exponent.
       *it++ = static_cast<Char>(*digits_);
       if (num_digits_ > 1) *it++ = decimal_point_;
@@ -1158,7 +1165,11 @@ template <typename Char> class grisu_writer {
         decimal_point_(decimal_point) {
     int full_exp = num_digits + exp - 1;
     int precision = params.num_digits > 0 ? params.num_digits : 16;
-    params_.fixed |= full_exp >= -4 && full_exp < precision;
+    if (params_.format == float_format::general) {
+      params_.format = full_exp >= -4 && full_exp < precision
+                           ? float_format::fixed
+                           : float_format::exp;
+    }
     size_ = grisu_prettify(counting_iterator()).count();
     size_ += params_.sign ? 1 : 0;
   }
@@ -1331,14 +1342,14 @@ class float_type_checker : private ErrorHandler {
 struct float_spec_handler {
   char type;
   bool upper;
-  bool fixed;
+  float_format format;
   bool as_percentage;
   bool use_locale;
 
   explicit float_spec_handler(char t)
       : type(t),
         upper(false),
-        fixed(false),
+        format(float_format::general),
         as_percentage(false),
         use_locale(false) {}
 
@@ -1347,16 +1358,17 @@ struct float_spec_handler {
   }
 
   void on_exp() {
+    format = float_format::exp;
     if (type == 'E') upper = true;
   }
 
   void on_fixed() {
-    fixed = true;
+    format = float_format::fixed;
     if (type == 'F') upper = true;
   }
 
   void on_percent() {
-    fixed = true;
+    format = float_format::fixed;
     as_percentage = true;
   }
 
@@ -2849,7 +2861,7 @@ void internal::basic_writer<Range>::write_fp(T value,
   int exp = 0;
   int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
   unsigned options = 0;
-  if (handler.fixed) options |= grisu_options::fixed;
+  if (handler.format == float_format::fixed) options |= grisu_options::fixed;
   if (const_check(sizeof(value) == sizeof(float)))
     options |= grisu_options::binary32;
   bool use_grisu =
@@ -2882,10 +2894,12 @@ void internal::basic_writer<Range>::write_fp(T value,
   if (use_grisu) {
     auto params = gen_digits_params();
     params.sign = sign;
-    params.fixed = handler.fixed;
+    params.format = handler.format;
     params.num_digits = precision;
     params.trailing_zeros =
-        (precision != 0 && (handler.fixed || !specs.type)) || specs.alt;
+        (precision != 0 &&
+         (handler.format == float_format::fixed || !specs.type)) ||
+        specs.alt;
     int num_digits = static_cast<int>(buffer.size());
     write_padded(as, grisu_writer<char_type>(buffer.data(), num_digits, exp,
                                              params, decimal_point));
