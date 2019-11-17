@@ -124,11 +124,11 @@ template and implement ``parse`` and ``format`` methods::
       //   fmt::format("{:f} - point of interest", point{1, 2});
       //
       // the range will contain "f} - point of interest". The formatter should
-      // parse specifiers until '}' or the end of the range. In this example,
+      // parse specifiers until '}' or the end of the range. In this example
       // the formatter should parse the 'f' specifier and return an iterator
       // pointing to '}'.
 
-      // Parse presentation format and store the parse result in the formatter:
+      // Parse the presentation format and store it in the formatter:
       auto it = ctx.begin(), end = ctx.end();
       if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
 
@@ -140,10 +140,11 @@ template and implement ``parse`` and ``format`` methods::
       return it;
     }
 
-    // Formats the point p using parsed format specification (presentation)
+    // Formats the point p using the parsed format specification (presentation)
     // stored in this formatter.
     template <typename FormatContext>
     auto format(const point& p, FormatContext& ctx) {
+      // ctx.out() is an output iterator to write to.
       return format_to(
           ctx.out(),
           presentation == 'f' ? "({:.1f}, {:.1f})" : "({:.1e}, {:.1e})",
