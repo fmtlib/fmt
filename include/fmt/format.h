@@ -34,7 +34,6 @@
 #define FMT_FORMAT_H_
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -92,7 +91,7 @@ FMT_END_NAMESPACE
 #    define FMT_THROW(x)              \
       do {                            \
         static_cast<void>(sizeof(x)); \
-        assert(false);                \
+        FMT_ASSERT(false, "");            \
       } while (false)
 #  endif
 #endif
@@ -148,7 +147,7 @@ inline uint32_t clz(uint32_t x) {
   unsigned long r = 0;
   _BitScanReverse(&r, x);
 
-  assert(x != 0);
+  FMT_ASSERT(x != 0, "");
   // Static analysis complains about using uninitialized data
   // "r", but the only way that can happen is if "x" is 0,
   // which the callers guarantee to not happen.
@@ -173,7 +172,7 @@ inline uint32_t clzll(uint64_t x) {
   _BitScanReverse(&r, static_cast<uint32_t>(x));
 #  endif
 
-  assert(x != 0);
+  FMT_ASSERT(x != 0, "");
   // Static analysis complains about using uninitialized data
   // "r", but the only way that can happen is if "x" is 0,
   // which the callers guarantee to not happen.
@@ -616,7 +615,7 @@ class basic_memory_buffer : private Allocator, public internal::buffer<T> {
     \endrst
    */
   basic_memory_buffer& operator=(basic_memory_buffer&& other) FMT_NOEXCEPT {
-    assert(this != &other);
+    FMT_ASSERT(this != &other, "");
     deallocate();
     move(other);
     return *this;
@@ -1329,6 +1328,49 @@ class float_type_checker : private ErrorHandler {
   }
 };
 
+struct float_spec_handler {
+  char type;
+  bool upper;
+  bool fixed;
+  bool as_percentage;
+  bool use_locale;
+
+  explicit float_spec_handler(char t)
+      : type(t),
+        upper(false),
+        fixed(false),
+        as_percentage(false),
+        use_locale(false) {}
+
+  void on_general() {
+    if (type == 'G') upper = true;
+  }
+
+  void on_exp() {
+    if (type == 'E') upper = true;
+  }
+
+  void on_fixed() {
+    fixed = true;
+    if (type == 'F') upper = true;
+  }
+
+  void on_percent() {
+    fixed = true;
+    as_percentage = true;
+  }
+
+  void on_hex() {
+    if (type == 'A') upper = true;
+  }
+
+  void on_num() { use_locale = true; }
+
+  FMT_NORETURN void on_error() {
+    FMT_THROW(format_error("invalid type specifier"));
+  }
+};
+
 template <typename ErrorHandler>
 class char_specs_checker : public ErrorHandler {
  private:
@@ -1948,7 +1990,7 @@ template <typename Char> FMT_CONSTEXPR bool is_name_start(Char c) {
 template <typename Char, typename ErrorHandler>
 FMT_CONSTEXPR int parse_nonnegative_int(const Char*& begin, const Char* end,
                                         ErrorHandler&& eh) {
-  assert(begin != end && '0' <= *begin && *begin <= '9');
+  FMT_ASSERT(begin != end && '0' <= *begin && *begin <= '9', "");
   if (*begin == '0') {
     ++begin;
     return 0;
@@ -2298,7 +2340,7 @@ class dynamic_specs_handler
 template <typename Char, typename IDHandler>
 FMT_CONSTEXPR const Char* parse_arg_id(const Char* begin, const Char* end,
                                        IDHandler&& handler) {
-  assert(begin != end);
+  FMT_ASSERT(begin != end, "");
   Char c = *begin;
   if (c == '}' || c == ':') return handler(), begin;
   if (c >= '0' && c <= '9') {
@@ -2777,55 +2819,12 @@ class FMT_API system_error : public std::runtime_error {
 FMT_API void format_system_error(internal::buffer<char>& out, int error_code,
                                  fmt::string_view message) FMT_NOEXCEPT;
 
-struct float_spec_handler {
-  char type;
-  bool upper;
-  bool fixed;
-  bool as_percentage;
-  bool use_locale;
-
-  explicit float_spec_handler(char t)
-      : type(t),
-        upper(false),
-        fixed(false),
-        as_percentage(false),
-        use_locale(false) {}
-
-  void on_general() {
-    if (type == 'G') upper = true;
-  }
-
-  void on_exp() {
-    if (type == 'E') upper = true;
-  }
-
-  void on_fixed() {
-    fixed = true;
-    if (type == 'F') upper = true;
-  }
-
-  void on_percent() {
-    fixed = true;
-    as_percentage = true;
-  }
-
-  void on_hex() {
-    if (type == 'A') upper = true;
-  }
-
-  void on_num() { use_locale = true; }
-
-  FMT_NORETURN void on_error() {
-    FMT_THROW(format_error("invalid type specifier"));
-  }
-};
-
 template <typename Range>
 template <typename T, bool USE_GRISU>
 void internal::basic_writer<Range>::write_fp(T value,
                                              const format_specs& specs) {
   // Check type.
-  float_spec_handler handler(static_cast<char>(specs.type));
+  float_spec_handler handler(specs.type);
   handle_float_type_spec(handler.type, handler);
 
   auto sign = specs.sign;
