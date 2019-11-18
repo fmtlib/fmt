@@ -1202,8 +1202,6 @@ TEST(FormatterTest, Precision) {
                    "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.2f}", 42ull), format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG(format("{0:.2%}", 42), format_error,
-                   "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:3.0}", 'x'), format_error,
                    "precision not allowed for this argument type");
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345));
@@ -1488,7 +1486,6 @@ TEST(FormatterTest, FormatConvertibleToLongLong) {
 
 TEST(FormatterTest, FormatFloat) {
   EXPECT_EQ("392.500000", format("{0:f}", 392.5f));
-  EXPECT_EQ("12.500000%", format("{0:%}", 0.125f));
 }
 
 TEST(FormatterTest, FormatDouble) {
@@ -1501,8 +1498,6 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ("392.65", format("{:G}", 392.65));
   EXPECT_EQ("392.650000", format("{:f}", 392.65));
   EXPECT_EQ("392.650000", format("{:F}", 392.65));
-  EXPECT_EQ("12.500000%", format("{:%}", 0.125));
-  EXPECT_EQ("12.34%", format("{:.2%}", 0.1234432));
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%e", 392.65);
   EXPECT_EQ(buffer, format("{0:e}", 392.65));
@@ -1542,7 +1537,6 @@ TEST(FormatterTest, FormatNaN) {
   EXPECT_EQ("nan    ", format("{:<7}", nan));
   EXPECT_EQ("  nan  ", format("{:^7}", nan));
   EXPECT_EQ("    nan", format("{:>7}", nan));
-  EXPECT_EQ("nan%", format("{:%}", nan));
 }
 
 TEST(FormatterTest, FormatInfinity) {
@@ -1555,7 +1549,6 @@ TEST(FormatterTest, FormatInfinity) {
   EXPECT_EQ("inf    ", format("{:<7}", inf));
   EXPECT_EQ("  inf  ", format("{:^7}", inf));
   EXPECT_EQ("    inf", format("{:>7}", inf));
-  EXPECT_EQ("inf%", format("{:%}", inf));
 }
 
 TEST(FormatterTest, FormatLongDouble) {
@@ -1566,8 +1559,6 @@ TEST(FormatterTest, FormatLongDouble) {
   EXPECT_EQ("392.65", format("{0:G}", 392.65l));
   EXPECT_EQ("392.650000", format("{0:f}", 392.65l));
   EXPECT_EQ("392.650000", format("{0:F}", 392.65l));
-  EXPECT_EQ("12.500000%", format("{:%}", 0.125l));
-  EXPECT_EQ("12.34%", format("{:.2%}", 0.1234432l));
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%Le", 392.65l);
   EXPECT_EQ(buffer, format("{0:e}", 392.65l));

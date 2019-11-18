@@ -195,6 +195,11 @@ FMT_END_NAMESPACE
 #  define FMT_NUMERIC_ALIGN 1
 #endif
 
+// Enable the deprecated percent specifier.
+#ifndef FMT_DEPRECATED_PERCENT
+#  define FMT_DEPRECATED_PERCENT 0
+#endif
+
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
@@ -1284,8 +1289,10 @@ FMT_CONSTEXPR float_spec parse_float_type_spec(char spec,
     result.format = float_format::fixed;
     break;
   case '%':
+#if FMT_DEPRECATED_PERCENT
     result.format = float_format::fixed;
     result.percent = true;
+#endif
     break;
   case 'A':
     result.upper = true;
