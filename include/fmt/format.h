@@ -70,6 +70,12 @@
 #  define FMT_HAS_BUILTIN(x) 0
 #endif
 
+#if FMT_HAS_CPP_ATTRIBUTE(fallthrough) >= 201603 && __cplusplus >= 201703
+#  define FMT_FALLTHROUGH [[fallthrough]]
+#else
+#  define FMT_FALLTHROUGH
+#endif
+
 #ifndef FMT_THROW
 #  if FMT_EXCEPTIONS
 #    if FMT_MSC_VER
@@ -1053,9 +1059,18 @@ namespace internal {
 
 // A floating-point presentation format.
 enum class float_format {
-  general,  // General: shortest of exponential and fixed.
-  exp,      // Exponential: 1e42
-  fixed     // Fixed: 1.42
+  shortest,  // Shortest round-trip format.
+  general,   // General: exponent notation or fixed point based on magnitude.
+  exp,       // Exponent notation with the default precision of 6, e.g. 1.2e-3.
+  fixed,     // Fixed point with the default precision of 6, e.g. 0.0012.
+  hex
+};
+
+struct float_spec {
+  float_format format;
+  bool upper;
+  bool locale;
+  bool percent;
 };
 
 struct gen_digits_params {
@@ -1244,36 +1259,48 @@ FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
   }
 }
 
-template <typename Handler>
-FMT_CONSTEXPR void handle_float_type_spec(char spec, Handler&& handler) {
+template <typename ErrorHandler = error_handler>
+FMT_CONSTEXPR float_spec parse_float_type_spec(char spec,
+                                               ErrorHandler&& eh = {}) {
+  auto result = float_spec();
   switch (spec) {
+  case 'G':
+    result.upper = true;
+    FMT_FALLTHROUGH;
   case 0:
   case 'g':
-  case 'G':
-    handler.on_general();
+    result.format = float_format::general;
     break;
-  case 'e':
   case 'E':
-    handler.on_exp();
+    result.upper = true;
+    FMT_FALLTHROUGH;
+  case 'e':
+    result.format = float_format::exp;
     break;
-  case 'f':
   case 'F':
-    handler.on_fixed();
+    result.upper = true;
+    FMT_FALLTHROUGH;
+  case 'f':
+    result.format = float_format::fixed;
     break;
   case '%':
-    handler.on_percent();
+    result.format = float_format::fixed;
+    result.percent = true;
     break;
-  case 'a':
   case 'A':
-    handler.on_hex();
+    result.upper = true;
+    FMT_FALLTHROUGH;
+  case 'a':
+    result.format = float_format::hex;
     break;
   case 'n':
-    handler.on_num();
+    result.locale = true;
     break;
   default:
-    handler.on_error();
+    eh.on_error("invalid type specifier");
     break;
   }
+  return result;
 }
 
 template <typename Char, typename Handler>
@@ -1318,68 +1345,6 @@ template <typename ErrorHandler> class int_type_checker : private ErrorHandler {
 
   FMT_CONSTEXPR void on_error() {
     ErrorHandler::on_error("invalid type specifier");
-  }
-};
-
-template <typename ErrorHandler>
-class float_type_checker : private ErrorHandler {
- public:
-  FMT_CONSTEXPR explicit float_type_checker(ErrorHandler eh)
-      : ErrorHandler(eh) {}
-
-  FMT_CONSTEXPR void on_general() {}
-  FMT_CONSTEXPR void on_exp() {}
-  FMT_CONSTEXPR void on_fixed() {}
-  FMT_CONSTEXPR void on_percent() {}
-  FMT_CONSTEXPR void on_hex() {}
-  FMT_CONSTEXPR void on_num() {}
-
-  FMT_CONSTEXPR void on_error() {
-    ErrorHandler::on_error("invalid type specifier");
-  }
-};
-
-struct float_spec_handler {
-  char type;
-  bool upper;
-  float_format format;
-  bool as_percentage;
-  bool use_locale;
-
-  explicit float_spec_handler(char t)
-      : type(t),
-        upper(false),
-        format(float_format::general),
-        as_percentage(false),
-        use_locale(false) {}
-
-  void on_general() {
-    if (type == 'G') upper = true;
-  }
-
-  void on_exp() {
-    format = float_format::exp;
-    if (type == 'E') upper = true;
-  }
-
-  void on_fixed() {
-    format = float_format::fixed;
-    if (type == 'F') upper = true;
-  }
-
-  void on_percent() {
-    format = float_format::fixed;
-    as_percentage = true;
-  }
-
-  void on_hex() {
-    if (type == 'A') upper = true;
-  }
-
-  void on_num() { use_locale = true; }
-
-  FMT_NORETURN void on_error() {
-    FMT_THROW(format_error("invalid type specifier"));
   }
 };
 
@@ -2835,10 +2800,6 @@ template <typename Range>
 template <typename T, bool USE_GRISU>
 void internal::basic_writer<Range>::write_fp(T value,
                                              const format_specs& specs) {
-  // Check type.
-  float_spec_handler handler(specs.type);
-  handle_float_type_spec(handler.type, handler);
-
   auto sign = specs.sign;
   // Use signbit instead of value < 0 since the latter is always false for NaN.
   if (std::signbit(value)) {
@@ -2848,20 +2809,20 @@ void internal::basic_writer<Range>::write_fp(T value,
     sign = sign::none;
   }
 
+  float_spec fspec = parse_float_type_spec(specs.type);
   if (!std::isfinite(value)) {
-    const char* str = std::isinf(value) ? (handler.upper ? "INF" : "inf")
-                                        : (handler.upper ? "NAN" : "nan");
-    return write_padded(specs,
-                        inf_or_nan_writer{sign, handler.as_percentage, str});
+    const char* str = std::isinf(value) ? (fspec.upper ? "INF" : "inf")
+                                        : (fspec.upper ? "NAN" : "nan");
+    return write_padded(specs, inf_or_nan_writer{sign, fspec.percent, str});
   }
 
-  if (handler.as_percentage) value *= 100;
+  if (fspec.percent) value *= 100;
 
   memory_buffer buffer;
   int exp = 0;
   int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
   unsigned options = 0;
-  if (handler.format == float_format::fixed) options |= grisu_options::fixed;
+  if (fspec.format == float_format::fixed) options |= grisu_options::fixed;
   if (const_check(sizeof(value) == sizeof(float)))
     options |= grisu_options::binary32;
   bool use_grisu =
@@ -2872,7 +2833,7 @@ void internal::basic_writer<Range>::write_fp(T value,
   char* decimal_point_pos = nullptr;
   if (!use_grisu) decimal_point_pos = sprintf_format(value, buffer, specs);
 
-  if (handler.as_percentage) {
+  if (fspec.percent) {
     buffer.push_back('%');
     --exp;  // Adjust decimal place position.
   }
@@ -2888,17 +2849,17 @@ void internal::basic_writer<Range>::write_fp(T value,
   } else if (specs.align == align::none) {
     as.align = align::right;
   }
-  char_type decimal_point = handler.use_locale
+  char_type decimal_point = fspec.locale
                                 ? internal::decimal_point<char_type>(locale_)
                                 : static_cast<char_type>('.');
   if (use_grisu) {
     auto params = gen_digits_params();
     params.sign = sign;
-    params.format = handler.format;
+    params.format = fspec.format;
     params.num_digits = precision;
     params.trailing_zeros =
         (precision != 0 &&
-         (handler.format == float_format::fixed || !specs.type)) ||
+         (fspec.format == float_format::fixed || !specs.type)) ||
         specs.alt;
     int num_digits = static_cast<int>(buffer.size());
     write_padded(as, grisu_writer<char_type>(buffer.data(), num_digits, exp,
@@ -3078,8 +3039,7 @@ struct formatter<T, Char,
     case internal::float_type:
     case internal::double_type:
     case internal::long_double_type:
-      handle_float_type_spec(specs_.type,
-                             internal::float_type_checker<decltype(eh)>(eh));
+      internal::parse_float_type_spec(specs_.type, eh);
       break;
     case internal::cstring_type:
       internal::handle_cstring_type_spec(
