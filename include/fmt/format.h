@@ -3602,6 +3602,22 @@ FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 FMT_END_NAMESPACE
 
+#define FMT_STRING_IMPL(s, ...)                                          \
+  [] {                                                                   \
+    struct str : fmt::compile_string {                                   \
+      using char_type = typename std::remove_cv<std::remove_pointer<     \
+          typename std::decay<decltype(s)>::type>::type>::type;          \
+      __VA_ARGS__ FMT_CONSTEXPR \
+        operator fmt::basic_string_view<char_type>() const { \
+        return {s, sizeof(s) / sizeof(char_type) - 1};                   \
+      }                                                                  \
+    } result;                                                            \
+    /* Suppress Qt Creator warning about unused operator. */             \
+    (void)static_cast<fmt::basic_string_view<typename str::char_type>>(  \
+        result);                                                         \
+    return result;                                                       \
+  }()
+
 /**
   \rst
   Constructs a compile-time format string.
@@ -3612,37 +3628,10 @@ FMT_END_NAMESPACE
     std::string s = format(FMT_STRING("{:d}"), "foo");
   \endrst
  */
-#define FMT_STRING(s)                                                    \
-  [] {                                                                   \
-    struct str : fmt::compile_string {                                   \
-      using char_type = typename std::remove_cv<std::remove_pointer<     \
-          typename std::decay<decltype(s)>::type>::type>::type;          \
-      FMT_CONSTEXPR operator fmt::basic_string_view<char_type>() const { \
-        return {s, sizeof(s) / sizeof(char_type) - 1};                   \
-      }                                                                  \
-    } result;                                                            \
-    /* Suppress Qt Creator warning about unused operator. */             \
-    (void)static_cast<fmt::basic_string_view<typename str::char_type>>(  \
-        result);                                                         \
-    return result;                                                       \
-  }()
+#define FMT_STRING(s) FMT_STRING_IMPL(s, )
 
 #if defined(FMT_STRING_ALIAS) && FMT_STRING_ALIAS
-/**
-  \rst
-  Constructs a compile-time format string. This macro is disabled by default to
-  prevent potential name collisions. To enable it define ``FMT_STRING_ALIAS`` to
-  1 before including ``fmt/format.h``.
-
-  **Example**::
-
-    #define FMT_STRING_ALIAS 1
-    #include <fmt/format.h>
-    // A compile-time error because 'd' is an invalid specifier for strings.
-    std::string s = format(fmt("{:d}"), "foo");
-  \endrst
- */
-#  define fmt(s) FMT_STRING(s)
+#  define fmt(s) FMT_STRING_IMPL(s, [[deprecated]])
 #endif
 
 #ifdef FMT_HEADER_ONLY

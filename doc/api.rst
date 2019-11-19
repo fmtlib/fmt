@@ -17,7 +17,7 @@ The {fmt} library API consists of the following parts:
 * :ref:`fmt/printf.h <printf-api>`: ``printf`` formatting
 
 All functions and types provided by the library reside in namespace ``fmt`` and
-macros have prefix ``FMT_`` or ``fmt``.
+macros have prefix ``FMT_``.
 
 .. _core-api:
 
@@ -98,7 +98,6 @@ Compile-time Format String Checks
 ---------------------------------
 
 .. doxygendefine:: FMT_STRING
-.. doxygendefine:: fmt
 
 Formatting User-defined Types
 -----------------------------
