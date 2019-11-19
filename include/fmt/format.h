@@ -1288,12 +1288,12 @@ FMT_CONSTEXPR float_spec parse_float_type_spec(char spec,
   case 'f':
     result.format = float_format::fixed;
     break;
-  case '%':
 #if FMT_DEPRECATED_PERCENT
+  case '%':
     result.format = float_format::fixed;
     result.percent = true;
-#endif
     break;
+#endif
   case 'A':
     result.upper = true;
     FMT_FALLTHROUGH;
