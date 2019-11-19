@@ -1123,6 +1123,9 @@ template <typename Char> class grisu_writer {
       *it++ = static_cast<Char>(*digits_);
       if (num_digits_ > 1) *it++ = decimal_point_;
       it = copy_str<Char>(digits_ + 1, digits_ + num_digits_, it);
+      int num_zeros = params_.num_digits - num_digits_;
+      if (num_zeros > 0 && params_.trailing_zeros)
+        it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
       *it++ = static_cast<Char>(params_.upper ? 'E' : 'e');
       return write_exponent<Char>(full_exp - 1, it);
     }
@@ -2808,8 +2811,7 @@ template <typename T, bool USE_GRISU>
 void internal::basic_writer<Range>::write_fp(T value,
                                              const format_specs& specs) {
   auto sign = specs.sign;
-  // Use signbit instead of value < 0 since the latter is always false for NaN.
-  if (std::signbit(value)) {
+  if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
     sign = sign::minus;
     value = -value;
   } else if (sign == sign::minus) {
@@ -2828,15 +2830,15 @@ void internal::basic_writer<Range>::write_fp(T value,
   memory_buffer buffer;
   int exp = 0;
   int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
+  int num_digits =
+      fspec.format == float_format::exp ? precision + 1 : precision;
   unsigned options = 0;
   if (fspec.format == float_format::fixed) options |= grisu_options::fixed;
   if (const_check(sizeof(value) == sizeof(float)))
     options |= grisu_options::binary32;
-  bool use_grisu =
-      USE_GRISU &&
-      (specs.type != 'a' && specs.type != 'A' && specs.type != 'e' &&
-       specs.type != 'E') &&
-      grisu_format(static_cast<double>(value), buffer, precision, options, exp);
+  bool use_grisu = USE_GRISU && (specs.type != 'a' && specs.type != 'A') &&
+                   grisu_format(static_cast<double>(value), buffer, num_digits,
+                                options, exp);
   char* decimal_point_pos = nullptr;
   if (!use_grisu) decimal_point_pos = sprintf_format(value, buffer, specs);
 
@@ -2863,11 +2865,13 @@ void internal::basic_writer<Range>::write_fp(T value,
     auto params = gen_digits_params();
     params.sign = sign;
     params.format = fspec.format;
-    params.num_digits = precision;
+    params.num_digits = num_digits;
     params.trailing_zeros =
         (precision != 0 &&
-         (fspec.format == float_format::fixed || !specs.type)) ||
+         (!specs.type || fspec.format == float_format::fixed ||
+          fspec.format == float_format::exp)) ||
         specs.alt;
+    params.upper = fspec.upper;
     int num_digits = static_cast<int>(buffer.size());
     write_padded(as, grisu_writer<char_type>(buffer.data(), num_digits, exp,
                                              params, decimal_point));
@@ -3602,20 +3606,20 @@ FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 FMT_END_NAMESPACE
 
-#define FMT_STRING_IMPL(s, ...)                                          \
-  [] {                                                                   \
-    struct str : fmt::compile_string {                                   \
-      using char_type = typename std::remove_cv<std::remove_pointer<     \
-          typename std::decay<decltype(s)>::type>::type>::type;          \
-      __VA_ARGS__ FMT_CONSTEXPR \
-        operator fmt::basic_string_view<char_type>() const { \
-        return {s, sizeof(s) / sizeof(char_type) - 1};                   \
-      }                                                                  \
-    } result;                                                            \
-    /* Suppress Qt Creator warning about unused operator. */             \
-    (void)static_cast<fmt::basic_string_view<typename str::char_type>>(  \
-        result);                                                         \
-    return result;                                                       \
+#define FMT_STRING_IMPL(s, ...)                                         \
+  [] {                                                                  \
+    struct str : fmt::compile_string {                                  \
+      using char_type = typename std::remove_cv<std::remove_pointer<    \
+          typename std::decay<decltype(s)>::type>::type>::type;         \
+      __VA_ARGS__ FMT_CONSTEXPR                                         \
+      operator fmt::basic_string_view<char_type>() const {              \
+        return {s, sizeof(s) / sizeof(char_type) - 1};                  \
+      }                                                                 \
+    } result;                                                           \
+    /* Suppress Qt Creator warning about unused operator. */            \
+    (void)static_cast<fmt::basic_string_view<typename str::char_type>>( \
+        result);                                                        \
+    return result;                                                      \
   }()
 
 /**

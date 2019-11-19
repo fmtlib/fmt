@@ -1206,6 +1206,7 @@ TEST(FormatterTest, Precision) {
                    "precision not allowed for this argument type");
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345));
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345l));
+  EXPECT_EQ("1.2e+56", format("{:.2}", 1.234e56));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
                    format_error,
