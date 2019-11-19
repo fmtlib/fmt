@@ -1204,7 +1204,7 @@ template <typename Char> class grisu_writer {
 };
 
 namespace grisu_options {
-enum { fixed = 1, grisu2 = 2, binary32 = 4 };
+enum { fixed = 1, binary32 = 2 };
 }
 
 // Formats value using the Grisu algorithm:

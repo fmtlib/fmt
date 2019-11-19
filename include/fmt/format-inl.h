@@ -44,10 +44,6 @@
 #  define FMT_CATCH(x) if (false)
 #endif
 
-#ifndef FMT_ENABLE_GRISU2
-#  define FMT_ENABLE_GRISU2 0
-#endif
-
 #ifdef _MSC_VER
 #  pragma warning(push)
 #  pragma warning(disable : 4702)  // unreachable code
@@ -929,7 +925,7 @@ struct fixed_handler {
 };
 
 // The shortest representation digit handler.
-template <int GRISU_VERSION> struct grisu_shortest_handler {
+struct grisu_shortest_handler {
   char* buf;
   int size;
   // Distance between scaled value and upper bound (wp_W in Grisu3).
@@ -955,11 +951,6 @@ template <int GRISU_VERSION> struct grisu_shortest_handler {
                           uint64_t error, int exp, bool integral) {
     buf[size++] = digit;
     if (remainder >= error) return digits::more;
-    if (const_check(GRISU_VERSION != 3)) {
-      uint64_t d = integral ? diff : diff * data::powers_of_10_64[-exp];
-      round(d, divisor, remainder, error);
-      return digits::done;
-    }
     uint64_t unit = integral ? 1 : data::powers_of_10_64[-exp];
     uint64_t up = (diff - 1) * unit;  // wp_Wup
     round(up, divisor, remainder, error);
@@ -1113,27 +1104,16 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
     upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
     assert(min_exp <= upper.e && upper.e <= -32);
     auto result = digits::result();
-    int size = 0;
-    if (const_check(FMT_ENABLE_GRISU2 &&
-                    (options & grisu_options::grisu2) != 0)) {
-      ++lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
-      --upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
-      grisu_shortest_handler<2> handler{buf.data(), 0, (upper - normalized).f};
-      result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
-      size = handler.size;
-      assert(result != digits::error);
-    } else {
-      --lower.f;  // \tilde{M}^- - 1 ulp -> M^-_{\downarrow}.
-      ++upper.f;  // \tilde{M}^+ + 1 ulp -> M^+_{\uparrow}.
-      // Numbers outside of (lower, upper) definitely do not round to value.
-      grisu_shortest_handler<3> handler{buf.data(), 0, (upper - normalized).f};
-      result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
-      size = handler.size;
-      if (result == digits::error) {
-        exp = exp + size - cached_exp10 - 1;
-        fallback_format(value, buf, exp);
-        return true;
-      }
+    --lower.f;  // \tilde{M}^- - 1 ulp -> M^-_{\downarrow}.
+    ++upper.f;  // \tilde{M}^+ + 1 ulp -> M^+_{\uparrow}.
+    // Numbers outside of (lower, upper) definitely do not round to value.
+    grisu_shortest_handler handler{buf.data(), 0, (upper - normalized).f};
+    result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
+    int size = handler.size;
+    if (result == digits::error) {
+      exp = exp + size - cached_exp10 - 1;
+      fallback_format(value, buf, exp);
+      return true;
     }
     buf.resize(to_unsigned(size));
   }
