@@ -89,7 +89,7 @@ template <typename Exception> inline void do_throw(const Exception& x) {
 }
 }  // namespace internal
 FMT_END_NAMESPACE
-#      define FMT_THROW(x) fmt::internal::do_throw(x)
+#      define FMT_THROW(x) internal::do_throw(x)
 #    else
 #      define FMT_THROW(x) throw x
 #    endif
@@ -160,7 +160,7 @@ inline uint32_t clz(uint32_t x) {
 #  pragma warning(suppress : 6102)
   return 31 - r;
 }
-#  define FMT_BUILTIN_CLZ(n) fmt::internal::clz(n)
+#  define FMT_BUILTIN_CLZ(n) internal::clz(n)
 
 #  if defined(_WIN64) && !defined(__clang__)
 #    pragma intrinsic(_BitScanReverse64)
@@ -185,7 +185,7 @@ inline uint32_t clzll(uint64_t x) {
 #  pragma warning(suppress : 6102)
   return 63 - r;
 }
-#  define FMT_BUILTIN_CLZLL(n) fmt::internal::clzll(n)
+#  define FMT_BUILTIN_CLZLL(n) internal::clzll(n)
 }  // namespace internal
 FMT_END_NAMESPACE
 #endif
@@ -1000,9 +1000,8 @@ class utf16_to_utf8 {
   FMT_API int convert(wstring_view s);
 };
 
-FMT_API void format_windows_error(fmt::internal::buffer<char>& out,
-                                  int error_code,
-                                  fmt::string_view message) FMT_NOEXCEPT;
+FMT_API void format_windows_error(internal::buffer<char>& out, int error_code,
+                                  string_view message) FMT_NOEXCEPT;
 #endif
 
 template <typename T = void> struct null {};
@@ -1763,7 +1762,7 @@ template <typename Range> class basic_writer {
   }
 
   // Formats a floating-point number (float, double, or long double).
-  template <typename T, bool USE_GRISU = fmt::internal::use_grisu<T>()>
+  template <typename T, bool USE_GRISU = internal::use_grisu<T>()>
   void write_fp(T value, const format_specs& specs);
 
   /** Writes a character to the buffer. */
@@ -2804,7 +2803,7 @@ class FMT_API system_error : public std::runtime_error {
   \endrst
  */
 FMT_API void format_system_error(internal::buffer<char>& out, int error_code,
-                                 fmt::string_view message) FMT_NOEXCEPT;
+                                 string_view message) FMT_NOEXCEPT;
 
 template <typename Range>
 template <typename T, bool USE_GRISU>
@@ -3455,7 +3454,7 @@ template <typename OutputIt> struct format_to_n_result {
 
 template <typename OutputIt, typename Char = typename OutputIt::value_type>
 using format_to_n_context =
-    format_context_t<fmt::internal::truncating_iterator<OutputIt>, Char>;
+    format_context_t<internal::truncating_iterator<OutputIt>, Char>;
 
 template <typename OutputIt, typename Char = typename OutputIt::value_type>
 using format_to_n_args = basic_format_args<format_to_n_context<OutputIt, Char>>;
@@ -3502,7 +3501,7 @@ inline std::basic_string<Char> internal::vformat(
     basic_format_args<buffer_context<Char>> args) {
   basic_memory_buffer<Char> buffer;
   internal::vformat_to(buffer, format_str, args);
-  return fmt::to_string(buffer);
+  return to_string(buffer);
 }
 
 /**
