@@ -1623,12 +1623,10 @@ template <typename Range> class basic_writer {
 
   struct inf_or_nan_writer {
     sign_t sign;
-    bool as_percentage;
     const char* str;
 
     size_t size() const {
-      return static_cast<std::size_t>(inf_size + (sign ? 1 : 0) +
-                                      (as_percentage ? 1 : 0));
+      return static_cast<std::size_t>(inf_size + (sign ? 1 : 0));
     }
     size_t width() const { return size(); }
 
@@ -1636,7 +1634,6 @@ template <typename Range> class basic_writer {
       if (sign) *it++ = static_cast<char_type>(data::signs[sign]);
       it = internal::copy_str<char_type>(
           str, str + static_cast<std::size_t>(inf_size), it);
-      if (as_percentage) *it++ = static_cast<char_type>('%');
     }
   };
 
@@ -1754,9 +1751,9 @@ template <typename Range> class basic_writer {
 
     float_spec fspec = parse_float_type_spec(specs.type);
     if (!std::isfinite(value)) {
-      const char* str = std::isinf(value) ? (fspec.upper ? "INF" : "inf")
+      auto str = std::isinf(value) ? (fspec.upper ? "INF" : "inf")
                                           : (fspec.upper ? "NAN" : "nan");
-      return write_padded(specs, inf_or_nan_writer{sign, fspec.percent, str});
+      return write_padded(specs, inf_or_nan_writer{sign, str});
     }
 
     if (fspec.percent) value *= 100;
