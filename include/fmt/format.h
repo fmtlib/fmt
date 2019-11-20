@@ -1820,6 +1820,78 @@ template <typename Range> class basic_writer {
   }
 };
 
+template <typename Range>
+template <typename T, bool USE_GRISU>
+void basic_writer<Range>::write_fp(T value, const format_specs& specs) {
+  auto sign = specs.sign;
+  if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
+    sign = sign::minus;
+    value = -value;
+  } else if (sign == sign::minus) {
+    sign = sign::none;
+  }
+
+  float_spec fspec = parse_float_type_spec(specs.type);
+  if (!std::isfinite(value)) {
+    const char* str = std::isinf(value) ? (fspec.upper ? "INF" : "inf")
+                                        : (fspec.upper ? "NAN" : "nan");
+    return write_padded(specs, inf_or_nan_writer{sign, fspec.percent, str});
+  }
+
+  if (fspec.percent) value *= 100;
+
+  memory_buffer buffer;
+  int exp = 0;
+  int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
+  int num_digits =
+      fspec.format == float_format::exp ? precision + 1 : precision;
+  unsigned options = 0;
+  if (fspec.format == float_format::fixed) options |= grisu_options::fixed;
+  if (const_check(sizeof(value) == sizeof(float)))
+    options |= grisu_options::binary32;
+  bool use_grisu = USE_GRISU && (specs.type != 'a' && specs.type != 'A') &&
+                   grisu_format(static_cast<double>(value), buffer, num_digits,
+                                options, exp);
+  char* decimal_point_pos = nullptr;
+  if (!use_grisu) decimal_point_pos = sprintf_format(value, buffer, specs);
+
+  if (fspec.percent) {
+    buffer.push_back('%');
+    --exp;  // Adjust decimal place position.
+  }
+  format_specs as = specs;
+  if (specs.align == align::numeric) {
+    if (sign) {
+      auto&& it = reserve(1);
+      *it++ = static_cast<char_type>(data::signs[sign]);
+      sign = sign::none;
+      if (as.width) --as.width;
+    }
+    as.align = align::right;
+  } else if (specs.align == align::none) {
+    as.align = align::right;
+  }
+  char_type point = fspec.locale ? decimal_point<char_type>(locale_)
+                                 : static_cast<char_type>('.');
+  if (use_grisu) {
+    auto params = gen_digits_params();
+    params.sign = sign;
+    params.format = fspec.format;
+    params.num_digits = num_digits;
+    params.trailing_zeros =
+        (precision != 0 &&
+         (!specs.type || fspec.format == float_format::fixed ||
+          fspec.format == float_format::exp)) ||
+        specs.alt;
+    params.upper = fspec.upper;
+    num_digits = static_cast<int>(buffer.size());
+    write_padded(as, grisu_writer<char_type>(buffer.data(), num_digits, exp,
+                                             params, point));
+  } else {
+    write_padded(as, double_writer{sign, buffer, decimal_point_pos, point});
+  }
+}
+
 using writer = basic_writer<buffer_range<char>>;
 
 template <typename T> struct is_integral : std::is_integral<T> {};
@@ -2810,81 +2882,6 @@ class FMT_API system_error : public std::runtime_error {
  */
 FMT_API void format_system_error(internal::buffer<char>& out, int error_code,
                                  string_view message) FMT_NOEXCEPT;
-
-template <typename Range>
-template <typename T, bool USE_GRISU>
-void internal::basic_writer<Range>::write_fp(T value,
-                                             const format_specs& specs) {
-  auto sign = specs.sign;
-  if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
-    sign = sign::minus;
-    value = -value;
-  } else if (sign == sign::minus) {
-    sign = sign::none;
-  }
-
-  float_spec fspec = parse_float_type_spec(specs.type);
-  if (!std::isfinite(value)) {
-    const char* str = std::isinf(value) ? (fspec.upper ? "INF" : "inf")
-                                        : (fspec.upper ? "NAN" : "nan");
-    return write_padded(specs, inf_or_nan_writer{sign, fspec.percent, str});
-  }
-
-  if (fspec.percent) value *= 100;
-
-  memory_buffer buffer;
-  int exp = 0;
-  int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
-  int num_digits =
-      fspec.format == float_format::exp ? precision + 1 : precision;
-  unsigned options = 0;
-  if (fspec.format == float_format::fixed) options |= grisu_options::fixed;
-  if (const_check(sizeof(value) == sizeof(float)))
-    options |= grisu_options::binary32;
-  bool use_grisu = USE_GRISU && (specs.type != 'a' && specs.type != 'A') &&
-                   grisu_format(static_cast<double>(value), buffer, num_digits,
-                                options, exp);
-  char* decimal_point_pos = nullptr;
-  if (!use_grisu) decimal_point_pos = sprintf_format(value, buffer, specs);
-
-  if (fspec.percent) {
-    buffer.push_back('%');
-    --exp;  // Adjust decimal place position.
-  }
-  format_specs as = specs;
-  if (specs.align == align::numeric) {
-    if (sign) {
-      auto&& it = reserve(1);
-      *it++ = static_cast<char_type>(data::signs[sign]);
-      sign = sign::none;
-      if (as.width) --as.width;
-    }
-    as.align = align::right;
-  } else if (specs.align == align::none) {
-    as.align = align::right;
-  }
-  char_type decimal_point = fspec.locale
-                                ? internal::decimal_point<char_type>(locale_)
-                                : static_cast<char_type>('.');
-  if (use_grisu) {
-    auto params = gen_digits_params();
-    params.sign = sign;
-    params.format = fspec.format;
-    params.num_digits = num_digits;
-    params.trailing_zeros =
-        (precision != 0 &&
-         (!specs.type || fspec.format == float_format::fixed ||
-          fspec.format == float_format::exp)) ||
-        specs.alt;
-    params.upper = fspec.upper;
-    num_digits = static_cast<int>(buffer.size());
-    write_padded(as, grisu_writer<char_type>(buffer.data(), num_digits, exp,
-                                             params, decimal_point));
-  } else {
-    write_padded(as,
-                 double_writer{sign, buffer, decimal_point_pos, decimal_point});
-  }
-}
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
