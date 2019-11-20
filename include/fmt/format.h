@@ -2872,7 +2872,7 @@ void internal::basic_writer<Range>::write_fp(T value,
           fspec.format == float_format::exp)) ||
         specs.alt;
     params.upper = fspec.upper;
-    int num_digits = static_cast<int>(buffer.size());
+    num_digits = static_cast<int>(buffer.size());
     write_padded(as, grisu_writer<char_type>(buffer.data(), num_digits, exp,
                                              params, decimal_point));
   } else {
