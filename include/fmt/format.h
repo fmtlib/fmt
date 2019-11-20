@@ -1063,10 +1063,9 @@ namespace internal {
 
 // A floating-point presentation format.
 enum class float_format {
-  shortest,  // Shortest round-trip format.
-  general,   // General: exponent notation or fixed point based on magnitude.
-  exp,       // Exponent notation with the default precision of 6, e.g. 1.2e-3.
-  fixed,     // Fixed point with the default precision of 6, e.g. 0.0012.
+  general,  // General: exponent notation or fixed point based on magnitude.
+  exp,      // Exponent notation with the default precision of 6, e.g. 1.2e-3.
+  fixed,    // Fixed point with the default precision of 6, e.g. 0.0012.
   hex
 };
 
@@ -1399,6 +1398,20 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
   }
 }
 
+template <typename Char> struct inf_or_nan_writer {
+  sign_t sign;
+  const char* str;
+  static constexpr size_t str_size = 3;
+
+  size_t size() const { return str_size + (sign ? 1 : 0); }
+  size_t width() const { return size(); }
+
+  template <typename It> void operator()(It&& it) const {
+    if (sign) *it++ = static_cast<Char>(data::signs[sign]);
+    it = copy_str<Char>(str, str + str_size, it);
+  }
+};
+
 // This template provides operations for formatting and writing data into a
 // character range.
 template <typename Range> class basic_writer {
@@ -1619,24 +1632,6 @@ template <typename Range> class basic_writer {
     }
   };
 
-  enum { inf_size = 3 };  // This is an enum to workaround a bug in MSVC.
-
-  struct inf_or_nan_writer {
-    sign_t sign;
-    const char* str;
-
-    size_t size() const {
-      return static_cast<std::size_t>(inf_size + (sign ? 1 : 0));
-    }
-    size_t width() const { return size(); }
-
-    template <typename It> void operator()(It&& it) const {
-      if (sign) *it++ = static_cast<char_type>(data::signs[sign]);
-      it = internal::copy_str<char_type>(
-          str, str + static_cast<std::size_t>(inf_size), it);
-    }
-  };
-
   struct double_writer {
     sign_t sign;
     internal::buffer<char>& buffer;
@@ -1752,11 +1747,9 @@ template <typename Range> class basic_writer {
     float_spec fspec = parse_float_type_spec(specs.type);
     if (!std::isfinite(value)) {
       auto str = std::isinf(value) ? (fspec.upper ? "INF" : "inf")
-                                          : (fspec.upper ? "NAN" : "nan");
-      return write_padded(specs, inf_or_nan_writer{sign, str});
+                                   : (fspec.upper ? "NAN" : "nan");
+      return write_padded(specs, inf_or_nan_writer<char_type>{sign, str});
     }
-
-    if (fspec.percent) value *= 100;
 
     memory_buffer buffer;
     int exp = 0;
@@ -1767,6 +1760,7 @@ template <typename Range> class basic_writer {
     if (fspec.format == float_format::fixed) options |= grisu_options::fixed;
     if (const_check(sizeof(value) == sizeof(float)))
       options |= grisu_options::binary32;
+    if (const_check(FMT_DEPRECATED_PERCENT) && fspec.percent) value *= 100;
     bool use_grisu = internal::use_grisu<T>() &&
                      (specs.type != 'a' && specs.type != 'A') &&
                      grisu_format(static_cast<double>(value), buffer,
@@ -1774,7 +1768,7 @@ template <typename Range> class basic_writer {
     char* decimal_point_pos = nullptr;
     if (!use_grisu) decimal_point_pos = sprintf_format(value, buffer, specs);
 
-    if (fspec.percent) {
+    if (const_check(FMT_DEPRECATED_PERCENT) && fspec.percent) {
       buffer.push_back('%');
       --exp;  // Adjust decimal place position.
     }
