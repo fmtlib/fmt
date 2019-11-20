@@ -81,16 +81,15 @@ Check a format string at compile time:
 .. code:: c++
 
     // test.cc
-    #define FMT_STRING_ALIAS 1
     #include <fmt/format.h>
-    std::string s = format(fmt("{2}"), 42);
+    std::string s = format(FMT_STRING("{2}"), 42);
 
 .. code::
 
     $ c++ -Iinclude -std=c++14 test.cc
     ...
     test.cc:4:17: note: in instantiation of function template specialization 'fmt::v5::format<S, int>' requested here
-    std::string s = format(fmt("{2}"), 42);
+    std::string s = format(FMT_STRING("{2}"), 42);
                     ^
     include/fmt/core.h:778:19: note: non-constexpr function 'on_error' cannot be used in a constant expression
         ErrorHandler::on_error(message);
@@ -122,11 +121,10 @@ Format objects of user-defined types via a simple `extension API
 
     template <>
     struct fmt::formatter<date> {
-      template <typename ParseContext>
-      constexpr auto parse(ParseContext &ctx) { return ctx.begin(); }
+      constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
 
       template <typename FormatContext>
-      auto format(const date &d, FormatContext &ctx) {
+      auto format(const date& d, FormatContext& ctx) {
         return format_to(ctx.out(), "{}-{}-{}", d.year, d.month, d.day);
       }
     };
@@ -142,12 +140,12 @@ which take arbitrary arguments (`godbolt <https://godbolt.org/g/MHjHVf>`_):
 .. code:: c++
 
     // Prints formatted error message.
-    void vreport_error(const char *format, fmt::format_args args) {
+    void vreport_error(const char* format, fmt::format_args args) {
       fmt::print("Error: ");
       fmt::vprint(format, args);
     }
     template <typename... Args>
-    void report_error(const char *format, const Args & ... args) {
+    void report_error(const char* format, const Args & ... args) {
       vreport_error(format, fmt::make_format_args(args...));
     }
 
@@ -210,7 +208,6 @@ printf                    2.6                   29                 26
 printf+string            16.4                   29                 26
 iostreams                31.1                   59                 55
 {fmt}                    19.0                   37                 34
-tinyformat               44.0                  103                 97
 Boost Format             91.9                  226                203
 Folly Format            115.7                  101                 88
 ============= =============== ==================== ==================
@@ -231,14 +228,13 @@ printf                    2.2                   33                 30
 printf+string            16.0                   33                 30
 iostreams                28.3                   56                 52
 {fmt}                    18.2                   59                 50
-tinyformat               32.6                   88                 82
 Boost Format             54.1                  365                303
 Folly Format             79.9                  445                430
 ============= =============== ==================== ==================
 
 ``libc``, ``lib(std)c++`` and ``libfmt`` are all linked as shared libraries to
-compare formatting function overhead only. Boost Format and tinyformat are
-header-only libraries so they don't provide any linkage options.
+compare formatting function overhead only. Boost Format is a
+header-only library so it doesn't provide any linkage options.
 
 Running the tests
 ~~~~~~~~~~~~~~~~~
@@ -423,20 +419,6 @@ arguments. However it has significant limitations, citing its author:
 
 It is also quite big and has a heavy dependency, STLSoft, which might be
 too restrictive for using it in some projects.
-
-Loki SafeFormat
-~~~~~~~~~~~~~~~
-
-SafeFormat is a formatting library which uses ``printf``-like format strings and
-is type safe. It doesn't support user-defined types or positional arguments and
-makes unconventional use of ``operator()`` for passing format arguments.
-
-Tinyformat
-~~~~~~~~~~
-
-This library supports ``printf``-like format strings and is very small .
-It doesn't support positional arguments and wrapping it in C++98 is somewhat
-difficult. Tinyformat relies on iostreams which limits its performance.
 
 Boost Spirit.Karma
 ~~~~~~~~~~~~~~~~~~
