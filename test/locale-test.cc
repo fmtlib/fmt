@@ -42,13 +42,6 @@ template <typename Char> struct small_grouping : std::numpunct<Char> {
 TEST(LocaleTest, DoubleDecimalPoint) {
   std::locale loc(std::locale(), new numpunct<char>());
   EXPECT_EQ("1?23", fmt::format(loc, "{:n}", 1.23));
-  // Test with Grisu disabled.
-  fmt::memory_buffer buf;
-  fmt::internal::writer w(buf, fmt::internal::locale_ref(loc));
-  auto specs = fmt::format_specs();
-  specs.type = 'n';
-  w.write_fp<double, false>(1.23, specs);
-  EXPECT_EQ(fmt::to_string(buf), "1?23");
 }
 
 TEST(LocaleTest, Format) {
