@@ -1029,12 +1029,12 @@ void fallback_format(Double d, buffer<char>& buf, int& exp10) {
   }
 }
 
-template <typename Double,
-          enable_if_t<(sizeof(Double) == sizeof(uint64_t)), int>>
-bool grisu_format(Double value, buffer<char>& buf, int precision,
-                  unsigned options, int& exp) {
+template <typename Float, enable_if_t<(sizeof(Float) == sizeof(uint64_t)), int>>
+bool grisu_format(Float value, int precision, buffer<char>& buf,
+                  float_spec spec, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
-  const bool fixed = (options & grisu_options::fixed) != 0;
+
+  const bool fixed = spec.format == float_format::fixed;
   if (value <= 0) {  // <= instead of == to silence a warning.
     if (precision <= 0 || !fixed) {
       exp = 0;
@@ -1071,7 +1071,7 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
   } else {
     fp fp_value;
     fp lower, upper;  // w^- and w^+ in the Grisu paper.
-    if ((options & grisu_options::binary32) != 0)
+    if (spec.binary32)
       fp_value.assign_float_with_boundaries(value, lower, upper);
     else
       fp_value.assign_with_boundaries(value, lower, upper);

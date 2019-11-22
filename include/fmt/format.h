@@ -1075,6 +1075,7 @@ struct float_spec {
   bool locale;
   bool percent;
   bool alt;
+  bool binary32;
 };
 
 struct gen_digits_params {
@@ -1116,7 +1117,7 @@ template <typename Char> class float_writer {
   gen_digits_params params_;
   Char decimal_point_;
 
-  template <typename It> It grisu_prettify(It it) const {
+  template <typename It> It prettify(It it) const {
     // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
     int full_exp = num_digits_ + exp_;
     if (params_.format == float_format::exp) {
@@ -1194,7 +1195,7 @@ template <typename Char> class float_writer {
                            ? float_format::fixed
                            : float_format::exp;
     }
-    size_ = grisu_prettify(counting_iterator()).count();
+    size_ = prettify(counting_iterator()).count();
     size_ += params_.sign ? 1 : 0;
   }
 
@@ -1203,20 +1204,16 @@ template <typename Char> class float_writer {
 
   template <typename It> void operator()(It&& it) {
     if (params_.sign) *it++ = static_cast<Char>(data::signs[params_.sign]);
-    it = grisu_prettify(it);
+    it = prettify(it);
   }
 };
 
-namespace grisu_options {
-enum { fixed = 1, binary32 = 2 };
-}
-
 // Formats value using the Grisu algorithm:
 // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
-template <typename Double, FMT_ENABLE_IF(sizeof(Double) == sizeof(uint64_t))>
-FMT_API bool grisu_format(Double, buffer<char>&, int, unsigned, int&);
-template <typename Double, FMT_ENABLE_IF(sizeof(Double) != sizeof(uint64_t))>
-inline bool grisu_format(Double, buffer<char>&, int, unsigned, int&) {
+template <typename Float, FMT_ENABLE_IF(sizeof(Float) == sizeof(uint64_t))>
+FMT_API bool grisu_format(Float, int, buffer<char>&, float_spec, int&);
+template <typename Float, FMT_ENABLE_IF(sizeof(Float) != sizeof(uint64_t))>
+inline bool grisu_format(Float, int, buffer<char>&, float_spec, int&) {
   return false;
 }
 
@@ -1739,17 +1736,13 @@ template <typename Range> class basic_writer {
       return;
     }
     int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
-    int num_digits =
-        fspec.format == float_format::exp ? precision + 1 : precision;
-    unsigned options = 0;
-    if (fspec.format == float_format::fixed) options |= grisu_options::fixed;
-    if (const_check(std::is_same<T, float>()))
-      options |= grisu_options::binary32;
+    if (fspec.format == float_format::exp) ++precision;
+    if (const_check(std::is_same<T, float>())) fspec.binary32 = true;
     if (const_check(FMT_DEPRECATED_PERCENT) && fspec.percent) value *= 100;
     int exp = 0;
-    bool use_grisu = internal::use_grisu<T>() &&
-                     grisu_format(static_cast<double>(value), buffer,
-                                  num_digits, options, exp);
+    bool use_grisu =
+        internal::use_grisu<T>() &&
+        grisu_format(static_cast<double>(value), precision, buffer, fspec, exp);
     if (!use_grisu) exp = sprintf_format(value, precision, fspec, buffer);
 
     if (const_check(FMT_DEPRECATED_PERCENT) && fspec.percent) {
@@ -1759,18 +1752,18 @@ template <typename Range> class basic_writer {
     auto params = gen_digits_params();
     params.sign = sign;
     params.format = fspec.format;
-    params.num_digits = num_digits;
+    params.num_digits = precision;
     params.trailing_zeros =
         (precision != 0 &&
          (!specs.type || fspec.format == float_format::fixed ||
           fspec.format == float_format::exp)) ||
         specs.alt;
     params.upper = fspec.upper;
-    num_digits = static_cast<int>(buffer.size());
     char_type point = fspec.locale ? decimal_point<char_type>(locale_)
                                    : static_cast<char_type>('.');
-    write_padded(specs, float_writer<char_type>(buffer.data(), num_digits, exp,
-                                                params, point));
+    write_padded(specs, float_writer<char_type>(buffer.data(),
+                                                static_cast<int>(buffer.size()),
+                                                exp, params, point));
   }
 
   void write(char value) {
