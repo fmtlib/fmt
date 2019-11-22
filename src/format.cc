@@ -36,11 +36,11 @@ template FMT_API std::string internal::vformat<char>(
 template FMT_API format_context::iterator internal::vformat_to(
     internal::buffer<char>&, string_view, basic_format_args<format_context>);
 
-template FMT_API char* internal::sprintf_format(double, internal::buffer<char>&,
-                                                sprintf_specs);
-template FMT_API char* internal::sprintf_format(long double,
-                                                internal::buffer<char>&,
-                                                sprintf_specs);
+template FMT_API int internal::sprintf_format(double, int, internal::float_spec,
+                                              internal::buffer<char>&);
+template FMT_API int internal::sprintf_format(long double, int,
+                                              internal::float_spec,
+                                              internal::buffer<char>&);
 
 // Explicit instantiations for wchar_t.
 
