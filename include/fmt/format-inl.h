@@ -51,12 +51,8 @@
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
-inline fmt::internal::null<> strerror_r(int, char*, ...) {
-  return {};
-}
-inline fmt::internal::null<> strerror_s(char*, std::size_t, ...) {
-  return {};
-}
+inline fmt::internal::null<> strerror_r(int, char*, ...) { return {}; }
+inline fmt::internal::null<> strerror_s(char*, std::size_t, ...) { return {}; }
 
 FMT_BEGIN_NAMESPACE
 namespace internal {
@@ -251,20 +247,6 @@ template <> FMT_FUNC int count_digits<4>(internal::fallback_uintptr n) {
 }
 
 template <typename T>
-int format_float(char* buf, std::size_t size, const char* format, int precision,
-                 T value) {
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-  if (precision > 100000)
-    throw std::runtime_error(
-        "fuzz mode - avoid large allocation inside snprintf");
-#endif
-  // Suppress the warning about nonliteral format string.
-  auto snprintf_ptr = FMT_SNPRINTF;
-  return precision < 0 ? snprintf_ptr(buf, size, format, value)
-                       : snprintf_ptr(buf, size, format, precision, value);
-}
-
-template <typename T>
 const char basic_data<T>::digits[] =
     "0001020304050607080910111213141516171819"
     "2021222324252627282930313233343536373839"
@@ -276,9 +258,9 @@ template <typename T>
 const char basic_data<T>::hex_digits[] = "0123456789abcdef";
 
 #define FMT_POWERS_OF_10(factor)                                             \
-  factor * 10, (factor) * 100, (factor) * 1000, (factor) * 10000, (factor) * 100000, \
-      (factor) * 1000000, (factor) * 10000000, (factor) * 100000000,               \
-      (factor) * 1000000000
+  factor * 10, (factor)*100, (factor)*1000, (factor)*10000, (factor)*100000, \
+      (factor)*1000000, (factor)*10000000, (factor)*100000000,               \
+      (factor)*1000000000
 
 template <typename T>
 const uint64_t basic_data<T>::powers_of_10_64[] = {
@@ -1121,78 +1103,99 @@ bool grisu_format(Double value, buffer<char>& buf, int precision,
   return true;
 }
 
-template <typename Double>
-char* sprintf_format(Double value, internal::buffer<char>& buf,
-                     sprintf_specs specs) {
+template <typename Float>
+int sprintf_format(Float value, int precision, float_spec spec,
+                   buffer<char>& buf) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
-  FMT_ASSERT(buf.capacity() != 0, "empty buffer");
+  FMT_ASSERT(buf.capacity() > buf.size(), "empty buffer");
 
-  // Build format string.
-  enum { max_format_size = 10 };  // longest format: %#-*.*Lg
+  // Subtract 1 to account for the difference in precision since we use %e for
+  // both general and exponent format.
+  if (spec.format == float_format::general)
+    precision = (precision >= 0 ? precision : 6) - 1;
+
+  // Build the format string.
+  enum { max_format_size = 7 };  // Ths longest format is "%#.*Le".
   char format[max_format_size];
   char* format_ptr = format;
   *format_ptr++ = '%';
-  if (specs.alt || !specs.type) *format_ptr++ = '#';
-  if (specs.precision >= 0) {
+  if (spec.alt) *format_ptr++ = '#';
+  if (precision > 0) {
     *format_ptr++ = '.';
     *format_ptr++ = '*';
   }
-  if (std::is_same<Double, long double>::value) *format_ptr++ = 'L';
-
-  char type = specs.type;
-
-  if (type == '%')
-    type = 'f';
-  else if (type == 0 || type == 'n')
-    type = 'g';
-  if (FMT_MSC_VER && type == 'F')
-    type = 'f';  // // MSVC's printf doesn't support 'F'.
-  *format_ptr++ = type;
+  if (std::is_same<Float, long double>()) *format_ptr++ = 'L';
+  *format_ptr++ = spec.format != float_format::hex
+                      ? (spec.format == float_format::fixed ? 'f' : 'e')
+                      : (spec.upper ? 'A' : 'a');
   *format_ptr = '\0';
 
   // Format using snprintf.
-  char* start = nullptr;
-  char* decimal_point_pos = nullptr;
+  auto offset = buf.size();
   for (;;) {
-    std::size_t buffer_size = buf.capacity();
-    start = &buf[0];
-    int result =
-        format_float(start, buffer_size, format, specs.precision, value);
-    if (result >= 0) {
-      unsigned n = internal::to_unsigned(result);
-      if (n < buf.capacity()) {
-        // Find the decimal point.
-        auto p = buf.data(), end = p + n;
-        if (*p == '+' || *p == '-') ++p;
-        if (specs.type != 'a' && specs.type != 'A') {
-          while (p < end && *p >= '0' && *p <= '9') ++p;
-          if (p < end && *p != 'e' && *p != 'E') {
-            decimal_point_pos = p;
-            if (!specs.type) {
-              // Keep only one trailing zero after the decimal point.
-              ++p;
-              if (*p == '0') ++p;
-              while (p != end && *p >= '1' && *p <= '9') ++p;
-              char* where = p;
-              while (p != end && *p == '0') ++p;
-              if (p == end || *p < '0' || *p > '9') {
-                if (p != end) std::memmove(where, p, to_unsigned(end - p));
-                n -= static_cast<unsigned>(p - where);
-              }
-            }
-          }
-        }
-        buf.resize(n);
-        break;  // The buffer is large enough - continue with formatting.
-      }
-      buf.reserve(n + 1);
-    } else {
-      // If result is negative we ask to increase the capacity by at least 1,
-      // but as std::vector, the buffer grows exponentially.
-      buf.reserve(buf.capacity() + 1);
+    auto begin = buf.data() + offset;
+    auto capacity = buf.capacity() - offset;
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+    if (precision > 100000)
+      throw std::runtime_error(
+          "fuzz mode - avoid large allocation inside snprintf");
+#endif
+    // Suppress the warning about a nonliteral format string.
+    auto snprintf_ptr = FMT_SNPRINTF;
+    int result = precision > 0
+                     ? snprintf_ptr(begin, capacity, format, precision, value)
+                     : snprintf_ptr(begin, capacity, format, value);
+    if (result < 0) {
+      buf.reserve(capacity + 1);  // The buffer will grow exponentially.
+      continue;
     }
+    unsigned size = to_unsigned(result);
+    if (size > capacity) {
+      buf.reserve(size + 1);  // Add 1 for the terminating '\0'.
+      continue;
+    }
+    auto is_digit = [](char c) { return c >= '0' && c <= '9'; };
+    if (spec.format == float_format::fixed) {
+      // Find and remove the decimal point.
+      auto end = begin + size, p = end;
+      do {
+        --p;
+      } while (is_digit(*p));
+      int fraction_size = static_cast<int>(end - p - 1);
+      std::memmove(p, p + 1, fraction_size);
+      buf.resize(size - 1);
+      return -fraction_size;
+    }
+    if (spec.format == float_format::hex) {
+      buf.resize(size + offset);
+      return 0;
+    }
+    // Find and parse the exponent.
+    auto end = begin + size, exp_pos = end;
+    do {
+      --exp_pos;
+    } while (*exp_pos != 'e');
+    char sign = exp_pos[1];
+    assert(sign == '+' || sign == '-');
+    int exp = 0;
+    auto p = exp_pos + 2;  // Skip 'e' and sign.
+    do {
+      assert(is_digit(*p));
+      exp = exp * 10 + (*p++ - '0');
+    } while (p != end);
+    if (sign == '-') exp = -exp;
+    if (exp_pos != begin + 1) {
+      // Remove trailing zeros.
+      auto fraction_end = exp_pos - 1;
+      while (*fraction_end == '0') --fraction_end;
+      // Move the fractional part left to get rid of the decimal point.
+      int fraction_size = static_cast<int>(fraction_end - begin - 1);
+      std::memmove(begin + 1, begin + 2, fraction_size);
+      buf.resize(fraction_size + offset + 1);
+      exp -= fraction_size;
+    }
+    return exp;
   }
-  return decimal_point_pos;
 }
 }  // namespace internal
 

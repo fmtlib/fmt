@@ -1063,10 +1063,9 @@ namespace internal {
 
 // A floating-point presentation format.
 enum class float_format {
-  shortest,  // Shortest round-trip format.
-  general,   // General: exponent notation or fixed point based on magnitude.
-  exp,       // Exponent notation with the default precision of 6, e.g. 1.2e-3.
-  fixed,     // Fixed point with the default precision of 6, e.g. 0.0012.
+  general,  // General: exponent notation or fixed point based on magnitude.
+  exp,      // Exponent notation with the default precision of 6, e.g. 1.2e-3.
+  fixed,    // Fixed point with the default precision of 6, e.g. 0.0012.
   hex
 };
 
@@ -1075,6 +1074,7 @@ struct float_spec {
   bool upper;
   bool locale;
   bool percent;
+  bool alt;
 };
 
 struct gen_digits_params {
@@ -1087,7 +1087,7 @@ struct gen_digits_params {
 
 // Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
 template <typename Char, typename It> It write_exponent(int exp, It it) {
-  FMT_ASSERT(-1000 < exp && exp < 1000, "exponent out of range");
+  FMT_ASSERT(-10000 < exp && exp < 10000, "exponent out of range");
   if (exp < 0) {
     *it++ = static_cast<Char>('-');
     exp = -exp;
@@ -1095,7 +1095,9 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
     *it++ = static_cast<Char>('+');
   }
   if (exp >= 100) {
-    *it++ = static_cast<Char>(static_cast<char>('0' + exp / 100));
+    const char* top = data::digits + (exp / 100) * 2;
+    if (exp >= 1000) *it++ = static_cast<Char>(top[0]);
+    *it++ = static_cast<Char>(top[1]);
     exp %= 100;
   }
   const char* d = data::digits + exp * 2;
@@ -1104,7 +1106,7 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
   return it;
 }
 
-template <typename Char> class grisu_writer {
+template <typename Char> class float_writer {
  private:
   // The number is given as v = digits_ * pow(10, exp_).
   const char* digits_;
@@ -1178,7 +1180,7 @@ template <typename Char> class grisu_writer {
   }
 
  public:
-  grisu_writer(const char* digits, int num_digits, int exp,
+  float_writer(const char* digits, int num_digits, int exp,
                gen_digits_params params, Char decimal_point)
       : digits_(digits),
         num_digits_(num_digits),
@@ -1218,26 +1220,15 @@ inline bool grisu_format(Double, buffer<char>&, int, unsigned, int&) {
   return false;
 }
 
-struct sprintf_specs {
-  int precision;
-  char type;
-  bool alt : 1;
-
-  template <typename Char>
-  constexpr sprintf_specs(basic_format_specs<Char> specs)
-      : precision(specs.precision), type(specs.type), alt(specs.alt) {}
-
-  constexpr bool has_precision() const { return precision >= 0; }
-};
-
-template <typename Double>
-char* sprintf_format(Double, internal::buffer<char>&, sprintf_specs);
+template <typename Float>
+int sprintf_format(Float value, int precision, float_spec spec,
+                   buffer<char>& buf);
 
 template <>
-inline char* sprintf_format<float>(float value, internal::buffer<char>& buf,
-                                   sprintf_specs specs) {
-  // printf does not have a float format specifier, it only supports double.
-  return sprintf_format<double>(value, buf, specs);
+inline int sprintf_format<float>(float value, int precision, float_spec spec,
+                                 buffer<char>& buf) {
+  // sprintf does not support float so convert to double.
+  return sprintf_format<double>(value, precision, spec, buf);
 }
 
 template <typename Handler>
@@ -1399,6 +1390,20 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
   }
 }
 
+template <typename Char> struct inf_or_nan_writer {
+  sign_t sign;
+  const char* str;
+  static constexpr size_t str_size = 3;
+
+  size_t size() const { return str_size + (sign ? 1 : 0); }
+  size_t width() const { return size(); }
+
+  template <typename It> void operator()(It&& it) const {
+    if (sign) *it++ = static_cast<Char>(data::signs[sign]);
+    it = copy_str<Char>(str, str + str_size, it);
+  }
+};
+
 // This template provides operations for formatting and writing data into a
 // character range.
 template <typename Range> class basic_writer {
@@ -1409,7 +1414,7 @@ template <typename Range> class basic_writer {
 
  private:
   iterator out_;  // Output iterator.
-  internal::locale_ref locale_;
+  locale_ref locale_;
 
   // Attempts to reserve space for n extra characters in the output range.
   // Returns a pointer to the reserved range or a reference to out_.
@@ -1429,7 +1434,7 @@ template <typename Range> class basic_writer {
 
     template <typename It> void operator()(It&& it) const {
       if (prefix.size() != 0)
-        it = internal::copy_str<char_type>(prefix.begin(), prefix.end(), it);
+        it = copy_str<char_type>(prefix.begin(), prefix.end(), it);
       it = std::fill_n(it, padding, fill);
       f(it);
     }
@@ -1440,18 +1445,18 @@ template <typename Range> class basic_writer {
   // where <digits> are written by f(it).
   template <typename F>
   void write_int(int num_digits, string_view prefix, format_specs specs, F f) {
-    std::size_t size = prefix.size() + internal::to_unsigned(num_digits);
+    std::size_t size = prefix.size() + to_unsigned(num_digits);
     char_type fill = specs.fill[0];
     std::size_t padding = 0;
     if (specs.align == align::numeric) {
-      auto unsiged_width = internal::to_unsigned(specs.width);
+      auto unsiged_width = to_unsigned(specs.width);
       if (unsiged_width > size) {
         padding = unsiged_width - size;
         size = unsiged_width;
       }
     } else if (specs.precision > num_digits) {
-      size = prefix.size() + internal::to_unsigned(specs.precision);
-      padding = internal::to_unsigned(specs.precision - num_digits);
+      size = prefix.size() + to_unsigned(specs.precision);
+      padding = to_unsigned(specs.precision - num_digits);
       fill = static_cast<char_type>('0');
     }
     if (specs.align == align::none) specs.align = align::right;
@@ -1461,14 +1466,13 @@ template <typename Range> class basic_writer {
   // Writes a decimal integer.
   template <typename Int> void write_decimal(Int value) {
     auto abs_value = static_cast<uint32_or_64_or_128_t<Int>>(value);
-    bool is_negative = internal::is_negative(value);
+    bool negative = is_negative(value);
     // Don't do -abs_value since it trips unsigned-integer-overflow sanitizer.
-    if (is_negative) abs_value = ~abs_value + 1;
-    int num_digits = internal::count_digits(abs_value);
-    auto&& it =
-        reserve((is_negative ? 1 : 0) + static_cast<size_t>(num_digits));
-    if (is_negative) *it++ = static_cast<char_type>('-');
-    it = internal::format_decimal<char_type>(it, abs_value, num_digits);
+    if (negative) abs_value = ~abs_value + 1;
+    int num_digits = count_digits(abs_value);
+    auto&& it = reserve((negative ? 1 : 0) + static_cast<size_t>(num_digits));
+    if (negative) *it++ = static_cast<char_type>('-');
+    it = format_decimal<char_type>(it, abs_value, num_digits);
   }
 
   // The handle_int_type_spec handler that writes an integer.
@@ -1488,7 +1492,7 @@ template <typename Range> class basic_writer {
           specs(s),
           abs_value(static_cast<unsigned_type>(value)),
           prefix_size(0) {
-      if (internal::is_negative(value)) {
+      if (is_negative(value)) {
         prefix[0] = '-';
         ++prefix_size;
         abs_value = 0 - abs_value;
@@ -1508,7 +1512,7 @@ template <typename Range> class basic_writer {
     };
 
     void on_dec() {
-      int num_digits = internal::count_digits(abs_value);
+      int num_digits = count_digits(abs_value);
       writer.write_int(num_digits, get_prefix(), specs,
                        dec_writer{abs_value, num_digits});
     }
@@ -1518,8 +1522,8 @@ template <typename Range> class basic_writer {
       int num_digits;
 
       template <typename It> void operator()(It&& it) const {
-        it = internal::format_uint<4, char_type>(it, self.abs_value, num_digits,
-                                                 self.specs.type != 'x');
+        it = format_uint<4, char_type>(it, self.abs_value, num_digits,
+                                       self.specs.type != 'x');
       }
     };
 
@@ -1528,7 +1532,7 @@ template <typename Range> class basic_writer {
         prefix[prefix_size++] = '0';
         prefix[prefix_size++] = specs.type;
       }
-      int num_digits = internal::count_digits<4>(abs_value);
+      int num_digits = count_digits<4>(abs_value);
       writer.write_int(num_digits, get_prefix(), specs,
                        hex_writer{*this, num_digits});
     }
@@ -1538,7 +1542,7 @@ template <typename Range> class basic_writer {
       int num_digits;
 
       template <typename It> void operator()(It&& it) const {
-        it = internal::format_uint<BITS, char_type>(it, abs_value, num_digits);
+        it = format_uint<BITS, char_type>(it, abs_value, num_digits);
       }
     };
 
@@ -1547,13 +1551,13 @@ template <typename Range> class basic_writer {
         prefix[prefix_size++] = '0';
         prefix[prefix_size++] = static_cast<char>(specs.type);
       }
-      int num_digits = internal::count_digits<1>(abs_value);
+      int num_digits = count_digits<1>(abs_value);
       writer.write_int(num_digits, get_prefix(), specs,
                        bin_writer<1>{abs_value, num_digits});
     }
 
     void on_oct() {
-      int num_digits = internal::count_digits<3>(abs_value);
+      int num_digits = count_digits<3>(abs_value);
       if (specs.alt && specs.precision <= num_digits && abs_value != 0) {
         // Octal prefix '0' is counted as a digit, so only add it if precision
         // is not greater than the number of digits.
@@ -1577,7 +1581,7 @@ template <typename Range> class basic_writer {
         // index 0.
         unsigned digit_index = 0;
         std::string::const_iterator group = groups.cbegin();
-        it = internal::format_decimal<char_type>(
+        it = format_decimal<char_type>(
             it, abs_value, size,
             [this, s, &group, &digit_index](char_type*& buffer) {
               if (*group <= 0 || ++digit_index % *group != 0 ||
@@ -1589,17 +1593,17 @@ template <typename Range> class basic_writer {
               }
               buffer -= s.size();
               std::uninitialized_copy(s.data(), s.data() + s.size(),
-                                      internal::make_checked(buffer, s.size()));
+                                      make_checked(buffer, s.size()));
             });
       }
     };
 
     void on_num() {
-      std::string groups = internal::grouping<char_type>(writer.locale_);
+      std::string groups = grouping<char_type>(writer.locale_);
       if (groups.empty()) return on_dec();
-      auto sep = internal::thousands_sep<char_type>(writer.locale_);
+      auto sep = thousands_sep<char_type>(writer.locale_);
       if (!sep) return on_dec();
-      int num_digits = internal::count_digits(abs_value);
+      int num_digits = count_digits(abs_value);
       int size = num_digits;
       std::string::const_iterator group = groups.cbegin();
       while (group != groups.cend() && num_digits > *group && *group > 0 &&
@@ -1619,59 +1623,17 @@ template <typename Range> class basic_writer {
     }
   };
 
-  enum { inf_size = 3 };  // This is an enum to workaround a bug in MSVC.
-
-  struct inf_or_nan_writer {
-    sign_t sign;
-    bool as_percentage;
-    const char* str;
-
-    size_t size() const {
-      return static_cast<std::size_t>(inf_size + (sign ? 1 : 0) +
-                                      (as_percentage ? 1 : 0));
-    }
-    size_t width() const { return size(); }
-
-    template <typename It> void operator()(It&& it) const {
-      if (sign) *it++ = static_cast<char_type>(data::signs[sign]);
-      it = internal::copy_str<char_type>(
-          str, str + static_cast<std::size_t>(inf_size), it);
-      if (as_percentage) *it++ = static_cast<char_type>('%');
-    }
-  };
-
-  struct double_writer {
-    sign_t sign;
-    internal::buffer<char>& buffer;
-    char* decimal_point_pos;
-    char_type decimal_point;
-
-    size_t size() const { return buffer.size() + (sign ? 1 : 0); }
-    size_t width() const { return size(); }
-
-    template <typename It> void operator()(It&& it) {
-      if (sign) *it++ = static_cast<char_type>(data::signs[sign]);
-      auto begin = buffer.begin();
-      if (decimal_point_pos) {
-        it = internal::copy_str<char_type>(begin, decimal_point_pos, it);
-        *it++ = decimal_point;
-        begin = decimal_point_pos + 1;
-      }
-      it = internal::copy_str<char_type>(begin, buffer.end(), it);
-    }
-  };
-
   template <typename Char> struct str_writer {
     const Char* s;
     size_t size_;
 
     size_t size() const { return size_; }
     size_t width() const {
-      return internal::count_code_points(basic_string_view<Char>(s, size_));
+      return count_code_points(basic_string_view<Char>(s, size_));
     }
 
     template <typename It> void operator()(It&& it) const {
-      it = internal::copy_str<char_type>(s, s + size_, it);
+      it = copy_str<char_type>(s, s + size_, it);
     }
   };
 
@@ -1685,13 +1647,12 @@ template <typename Range> class basic_writer {
     template <typename It> void operator()(It&& it) const {
       *it++ = static_cast<char_type>('0');
       *it++ = static_cast<char_type>('x');
-      it = internal::format_uint<4, char_type>(it, value, num_digits);
+      it = format_uint<4, char_type>(it, value, num_digits);
     }
   };
 
  public:
-  explicit basic_writer(Range out,
-                        internal::locale_ref loc = internal::locale_ref())
+  explicit basic_writer(Range out, locale_ref loc = locale_ref())
       : out_(out.begin()), locale_(loc) {}
 
   iterator out() const { return out_; }
@@ -1735,15 +1696,13 @@ template <typename Range> class basic_writer {
   void write(uint128_t value) { write_decimal(value); }
 #endif
 
-  // Writes a formatted integer.
   template <typename T, typename Spec>
   void write_int(T value, const Spec& spec) {
-    internal::handle_int_type_spec(spec.type,
-                                   int_writer<T, Spec>(*this, value, spec));
+    handle_int_type_spec(spec.type, int_writer<T, Spec>(*this, value, spec));
   }
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-  void write(T value, const format_specs& specs = {}) {
+  void write(T value, format_specs specs = {}) {
     auto sign = specs.sign;
     if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
       sign = sign::minus;
@@ -1754,67 +1713,66 @@ template <typename Range> class basic_writer {
 
     float_spec fspec = parse_float_type_spec(specs.type);
     if (!std::isfinite(value)) {
-      const char* str = std::isinf(value) ? (fspec.upper ? "INF" : "inf")
-                                          : (fspec.upper ? "NAN" : "nan");
-      return write_padded(specs, inf_or_nan_writer{sign, fspec.percent, str});
+      auto str = std::isinf(value) ? (fspec.upper ? "INF" : "inf")
+                                   : (fspec.upper ? "NAN" : "nan");
+      return write_padded(specs, inf_or_nan_writer<char_type>{sign, str});
     }
 
-    if (fspec.percent) value *= 100;
-
-    memory_buffer buffer;
-    int exp = 0;
-    int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
-    int num_digits =
-        fspec.format == float_format::exp ? precision + 1 : precision;
-    unsigned options = 0;
-    if (fspec.format == float_format::fixed) options |= grisu_options::fixed;
-    if (const_check(sizeof(value) == sizeof(float)))
-      options |= grisu_options::binary32;
-    bool use_grisu = internal::use_grisu<T>() &&
-                     (specs.type != 'a' && specs.type != 'A') &&
-                     grisu_format(static_cast<double>(value), buffer,
-                                  num_digits, options, exp);
-    char* decimal_point_pos = nullptr;
-    if (!use_grisu) decimal_point_pos = sprintf_format(value, buffer, specs);
-
-    if (fspec.percent) {
-      buffer.push_back('%');
-      --exp;  // Adjust decimal place position.
-    }
-    format_specs as = specs;
     if (specs.align == align::numeric) {
       if (sign) {
         auto&& it = reserve(1);
         *it++ = static_cast<char_type>(data::signs[sign]);
         sign = sign::none;
-        if (as.width) --as.width;
+        if (specs.width != 0) --specs.width;
       }
-      as.align = align::right;
+      specs.align = align::right;
     } else if (specs.align == align::none) {
-      as.align = align::right;
+      specs.align = align::right;
     }
+
+    memory_buffer buffer;
+    if (fspec.format == float_format::hex) {
+      if (sign) buffer.push_back(data::signs[sign]);
+      fspec.alt = specs.alt;
+      sprintf_format(value, specs.precision, fspec, buffer);
+      write_padded(specs, str_writer<char>{buffer.data(), buffer.size()});
+      return;
+    }
+    int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
+    int num_digits =
+        fspec.format == float_format::exp ? precision + 1 : precision;
+    unsigned options = 0;
+    if (fspec.format == float_format::fixed) options |= grisu_options::fixed;
+    if (const_check(std::is_same<T, float>()))
+      options |= grisu_options::binary32;
+    if (const_check(FMT_DEPRECATED_PERCENT) && fspec.percent) value *= 100;
+    int exp = 0;
+    bool use_grisu = internal::use_grisu<T>() &&
+                     grisu_format(static_cast<double>(value), buffer,
+                                  num_digits, options, exp);
+    if (!use_grisu) exp = sprintf_format(value, precision, fspec, buffer);
+
+    if (const_check(FMT_DEPRECATED_PERCENT) && fspec.percent) {
+      buffer.push_back('%');
+      --exp;  // Adjust decimal place position.
+    }
+    auto params = gen_digits_params();
+    params.sign = sign;
+    params.format = fspec.format;
+    params.num_digits = num_digits;
+    params.trailing_zeros =
+        (precision != 0 &&
+         (!specs.type || fspec.format == float_format::fixed ||
+          fspec.format == float_format::exp)) ||
+        specs.alt;
+    params.upper = fspec.upper;
+    num_digits = static_cast<int>(buffer.size());
     char_type point = fspec.locale ? decimal_point<char_type>(locale_)
                                    : static_cast<char_type>('.');
-    if (use_grisu) {
-      auto params = gen_digits_params();
-      params.sign = sign;
-      params.format = fspec.format;
-      params.num_digits = num_digits;
-      params.trailing_zeros =
-          (precision != 0 &&
-           (!specs.type || fspec.format == float_format::fixed ||
-            fspec.format == float_format::exp)) ||
-          specs.alt;
-      params.upper = fspec.upper;
-      num_digits = static_cast<int>(buffer.size());
-      write_padded(as, grisu_writer<char_type>(buffer.data(), num_digits, exp,
-                                               params, point));
-    } else {
-      write_padded(as, double_writer{sign, buffer, decimal_point_pos, point});
-    }
+    write_padded(specs, float_writer<char_type>(buffer.data(), num_digits, exp,
+                                                params, point));
   }
 
-  // Writes a character to the buffer.
   void write(char value) {
     auto&& it = reserve(1);
     *it++ = value;
@@ -1826,10 +1784,9 @@ template <typename Range> class basic_writer {
     *it++ = value;
   }
 
-  // Writes value to the buffer.
   void write(string_view value) {
     auto&& it = reserve(value.size());
-    it = internal::copy_str<char_type>(value.begin(), value.end(), it);
+    it = copy_str<char_type>(value.begin(), value.end(), it);
   }
   void write(wstring_view value) {
     static_assert(std::is_same<char_type, wchar_t>::value, "");
@@ -1837,26 +1794,23 @@ template <typename Range> class basic_writer {
     it = std::copy(value.begin(), value.end(), it);
   }
 
-  // Writes a formatted string.
   template <typename Char>
   void write(const Char* s, std::size_t size, const format_specs& specs) {
     write_padded(specs, str_writer<Char>{s, size});
   }
 
   template <typename Char>
-  void write(basic_string_view<Char> s,
-             const format_specs& specs = format_specs()) {
+  void write(basic_string_view<Char> s, const format_specs& specs = {}) {
     const Char* data = s.data();
     std::size_t size = s.size();
-    if (specs.precision >= 0 && internal::to_unsigned(specs.precision) < size)
-      size =
-          internal::code_point_index(s, internal::to_unsigned(specs.precision));
+    if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
+      size = code_point_index(s, to_unsigned(specs.precision));
     write(data, size, specs);
   }
 
   template <typename UIntPtr>
   void write_pointer(UIntPtr value, const format_specs* specs) {
-    int num_digits = internal::count_digits<4>(value);
+    int num_digits = count_digits<4>(value);
     auto pw = pointer_writer<UIntPtr>{value, num_digits};
     if (!specs) return pw(reserve(to_unsigned(num_digits) + 2));
     format_specs specs_copy = *specs;
@@ -3486,8 +3440,7 @@ inline std::basic_string<Char> internal::vformat(
  */
 template <typename... Args>
 inline std::size_t formatted_size(string_view format_str, const Args&... args) {
-  auto it = format_to(internal::counting_iterator(), format_str, args...);
-  return it.count();
+  return format_to(internal::counting_iterator(), format_str, args...).count();
 }
 
 #if FMT_USE_USER_DEFINED_LITERALS
