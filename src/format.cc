@@ -10,10 +10,10 @@
 FMT_BEGIN_NAMESPACE
 template struct FMT_API internal::basic_data<void>;
 
-// Workaround a bug in MSVC2013 that prevents instantiation of grisu_format.
-bool (*instantiate_grisu_format)(double, int, internal::buffer<char>&,
-                                 internal::float_spec,
-                                 int&) = internal::grisu_format;
+// Workaround a bug in MSVC2013 that prevents instantiation of format_float.
+int (*instantiate_format_float)(double, int, internal::float_spec,
+                                internal::buffer<char>&) =
+    internal::format_float;
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 template FMT_API internal::locale_ref::locale_ref(const std::locale& loc);
@@ -37,11 +37,11 @@ template FMT_API std::string internal::vformat<char>(
 template FMT_API format_context::iterator internal::vformat_to(
     internal::buffer<char>&, string_view, basic_format_args<format_context>);
 
-template FMT_API int internal::sprintf_format(double, int, internal::float_spec,
-                                              internal::buffer<char>&);
-template FMT_API int internal::sprintf_format(long double, int,
-                                              internal::float_spec,
-                                              internal::buffer<char>&);
+template FMT_API int internal::format_float(double, int, internal::float_spec,
+                                            internal::buffer<char>&);
+template FMT_API int internal::format_float(long double, int,
+                                            internal::float_spec,
+                                            internal::buffer<char>&);
 
 // Explicit instantiations for wchar_t.
 

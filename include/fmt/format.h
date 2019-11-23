@@ -1076,6 +1076,7 @@ struct float_spec {
   bool percent;
   bool alt;
   bool binary32;
+  bool use_grisu;
 };
 
 struct gen_digits_params {
@@ -1208,25 +1209,15 @@ template <typename Char> class float_writer {
   }
 };
 
-// Formats value using the Grisu algorithm:
-// https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf
-template <typename Float, FMT_ENABLE_IF(sizeof(Float) == sizeof(uint64_t))>
-FMT_API bool grisu_format(Float, int, buffer<char>&, float_spec, int&);
-template <typename Float, FMT_ENABLE_IF(sizeof(Float) != sizeof(uint64_t))>
-inline bool grisu_format(Float, int, buffer<char>&, float_spec, int&) {
-  return false;
-}
+template <typename T>
+int format_float(T value, int precision, float_spec spec, buffer<char>& buf);
 
-template <typename Float>
-int sprintf_format(Float value, int precision, float_spec spec,
-                   buffer<char>& buf);
+// Formats a floating-point number with snprintf.
+template <typename T>
+int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf);
 
-template <>
-inline int sprintf_format<float>(float value, int precision, float_spec spec,
-                                 buffer<char>& buf) {
-  // sprintf does not support float so convert to double.
-  return sprintf_format<double>(value, precision, spec, buf);
-}
+template <typename T> T promote_float(T value) { return value; }
+inline double promote_float(float value) { return value; }
 
 template <typename Handler>
 FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
@@ -1715,7 +1706,9 @@ template <typename Range> class basic_writer {
       return write_padded(specs, inf_or_nan_writer<char_type>{sign, str});
     }
 
-    if (specs.align == align::numeric) {
+    if (specs.align == align::none) {
+      specs.align = align::right;
+    } else if (specs.align == align::numeric) {
       if (sign) {
         auto&& it = reserve(1);
         *it++ = static_cast<char_type>(data::signs[sign]);
@@ -1723,28 +1716,22 @@ template <typename Range> class basic_writer {
         if (specs.width != 0) --specs.width;
       }
       specs.align = align::right;
-    } else if (specs.align == align::none) {
-      specs.align = align::right;
     }
 
     memory_buffer buffer;
     if (fspec.format == float_format::hex) {
       if (sign) buffer.push_back(data::signs[sign]);
       fspec.alt = specs.alt;
-      sprintf_format(value, specs.precision, fspec, buffer);
+      snprintf_float(promote_float(value), specs.precision, fspec, buffer);
       write_padded(specs, str_writer<char>{buffer.data(), buffer.size()});
       return;
     }
     int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
     if (fspec.format == float_format::exp) ++precision;
     if (const_check(std::is_same<T, float>())) fspec.binary32 = true;
+    fspec.use_grisu = use_grisu<T>();
     if (const_check(FMT_DEPRECATED_PERCENT) && fspec.percent) value *= 100;
-    int exp = 0;
-    bool use_grisu =
-        internal::use_grisu<T>() &&
-        grisu_format(static_cast<double>(value), precision, buffer, fspec, exp);
-    if (!use_grisu) exp = sprintf_format(value, precision, fspec, buffer);
-
+    int exp = format_float(promote_float(value), precision, fspec, buffer);
     if (const_check(FMT_DEPRECATED_PERCENT) && fspec.percent) {
       buffer.push_back('%');
       --exp;  // Adjust decimal place position.

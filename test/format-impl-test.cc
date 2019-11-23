@@ -326,8 +326,7 @@ TEST(FPTest, FixedHandler) {
 
 TEST(FPTest, GrisuFormatCompilesWithNonIEEEDouble) {
   fmt::memory_buffer buf;
-  int exp = 0;
-  grisu_format(4.2f, -1, buf, fmt::internal::float_spec(), exp);
+  format_float(0.42, -1, fmt::internal::float_spec(), buf);
 }
 
 template <typename T> struct value_extractor {

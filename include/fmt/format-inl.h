@@ -384,7 +384,8 @@ class fp {
   }
 
   // Assigns d to this and return true iff predecessor is closer than successor.
-  template <typename Double> bool assign(Double d) {
+  template <typename Double, FMT_ENABLE_IF(sizeof(Double) == sizeof(uint64_t))>
+  bool assign(Double d) {
     // Assume double is in the format [sign][exponent][significand].
     using limits = std::numeric_limits<Double>;
     const int exponent_size =
@@ -404,6 +405,12 @@ class fp {
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
     e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
     return is_predecessor_closer;
+  }
+
+  template <typename Double, FMT_ENABLE_IF(sizeof(Double) != sizeof(uint64_t))>
+  bool assign(Double) {
+    *this = fp();
+    return false;
   }
 
   // Assigns d to this together with computing lower and upper boundaries,
@@ -1029,28 +1036,32 @@ void fallback_format(Double d, buffer<char>& buf, int& exp10) {
   }
 }
 
-template <typename Float, enable_if_t<(sizeof(Float) == sizeof(uint64_t)), int>>
-bool grisu_format(Float value, int precision, buffer<char>& buf,
-                  float_spec spec, int& exp) {
+// Formats value using the Grisu algorithm
+// (https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf)
+// if Float is a IEEE754 binary32 or binary64 and snprintf otherwise.
+template <typename T>
+int format_float(T value, int precision, float_spec spec, buffer<char>& buf) {
   FMT_ASSERT(value >= 0, "value is negative");
+  static_assert(!std::is_same<T, float>(), "");
 
   const bool fixed = spec.format == float_format::fixed;
   if (value <= 0) {  // <= instead of == to silence a warning.
     if (precision <= 0 || !fixed) {
-      exp = 0;
       buf.push_back('0');
-    } else {
-      exp = -precision;
-      buf.resize(to_unsigned(precision));
-      std::uninitialized_fill_n(buf.data(), precision, '0');
+      return 0;
     }
-    return true;
+    buf.resize(to_unsigned(precision));
+    std::uninitialized_fill_n(buf.data(), precision, '0');
+    return -precision;
   }
 
+  if (!spec.use_grisu) return snprintf_float(value, precision, spec, buf);
+
+  int exp = 0;
   const int min_exp = -60;  // alpha in Grisu.
   int cached_exp10 = 0;     // K in Grisu.
   if (precision != -1) {
-    if (precision > 17) return false;
+    if (precision > 17) return snprintf_float(value, precision, spec, buf);
     fp fp_value(value);
     fp normalized = normalize(fp_value);
     const auto cached_pow = get_cached_power(
@@ -1058,7 +1069,7 @@ bool grisu_format(Float value, int precision, buffer<char>& buf,
     normalized = normalized * cached_pow;
     fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
     if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error)
-      return false;
+      return snprintf_float(value, precision, spec, buf);
     int num_digits = handler.size;
     if (!fixed) {
       // Remove trailing zeros.
@@ -1075,7 +1086,6 @@ bool grisu_format(Float value, int precision, buffer<char>& buf,
       fp_value.assign_float_with_boundaries(value, lower, upper);
     else
       fp_value.assign_with_boundaries(value, lower, upper);
-
     // Find a cached power of 10 such that multiplying upper by it will bring
     // the exponent in the range [min_exp, -32].
     const auto cached_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
@@ -1095,19 +1105,18 @@ bool grisu_format(Float value, int precision, buffer<char>& buf,
     if (result == digits::error) {
       exp = exp + size - cached_exp10 - 1;
       fallback_format(value, buf, exp);
-      return true;
+      return exp;
     }
     buf.resize(to_unsigned(size));
   }
-  exp -= cached_exp10;
-  return true;
+  return exp - cached_exp10;
 }
 
-template <typename Float>
-int sprintf_format(Float value, int precision, float_spec spec,
-                   buffer<char>& buf) {
+template <typename T>
+int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buf.capacity() > buf.size(), "empty buffer");
+  static_assert(!std::is_same<T, float>(), "");
 
   // Subtract 1 to account for the difference in precision since we use %e for
   // both general and exponent format.
@@ -1124,7 +1133,7 @@ int sprintf_format(Float value, int precision, float_spec spec,
     *format_ptr++ = '.';
     *format_ptr++ = '*';
   }
-  if (std::is_same<Float, long double>()) *format_ptr++ = 'L';
+  if (std::is_same<T, long double>()) *format_ptr++ = 'L';
   *format_ptr++ = spec.format != float_format::hex
                       ? (spec.format == float_format::fixed ? 'f' : 'e')
                       : (spec.upper ? 'A' : 'a');
