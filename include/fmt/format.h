@@ -1136,9 +1136,14 @@ template <typename Char> class float_writer {
       // 1234e7 -> 12340000000[.0+]
       it = copy_str<Char>(digits_, digits_ + num_digits_, it);
       it = std::fill_n(it, full_exp - num_digits_, static_cast<Char>('0'));
-      int num_zeros = (std::max)(params_.num_digits - full_exp, 1);
       if (params_.trailing_zeros) {
         *it++ = decimal_point_;
+        int num_zeros = params_.num_digits - full_exp;
+        if (num_zeros <= 0) {
+          if (params_.format != float_format::fixed)
+            *it++ = static_cast<Char>('0');
+          return it;
+        }
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
         if (num_zeros > 1000)
           throw std::runtime_error("fuzz mode - avoiding excessive cpu use");
@@ -1191,10 +1196,9 @@ template <typename Char> class float_writer {
         decimal_point_(decimal_point) {
     int full_exp = num_digits + exp - 1;
     int precision = params.num_digits > 0 ? params.num_digits : 16;
-    if (params_.format == float_format::general) {
-      params_.format = full_exp >= -4 && full_exp < precision
-                           ? float_format::fixed
-                           : float_format::exp;
+    if (params_.format == float_format::general &&
+        !(full_exp >= -4 && full_exp < precision)) {
+      params_.format = float_format::exp;
     }
     size_ = prettify(counting_iterator()).count();
     size_ += params_.sign ? 1 : 0;
