@@ -189,27 +189,27 @@ template <> void run_double_tests<true>() {
   EXPECT_EQ(fp(1.23), fp(0x13ae147ae147aeu, -52));
 
   // Compute boundaries:
-  fp value, lower, upper;
+  fp value;
   // Normalized & not power of 2 - equidistant boundaries:
-  value.assign_with_boundaries(1.23, lower, upper);
+  auto b = value.assign_with_boundaries(1.23);
   EXPECT_EQ(value, fp(0x0013ae147ae147ae, -52));
-  EXPECT_EQ(lower, fp(0x9d70a3d70a3d6c00, -63));
-  EXPECT_EQ(upper, fp(0x9d70a3d70a3d7400, -63));
+  EXPECT_EQ(b.lower, 0x9d70a3d70a3d6c00);
+  EXPECT_EQ(b.upper, 0x9d70a3d70a3d7400);
   // Normalized power of 2 - lower boundary is closer:
-  value.assign_with_boundaries(1.9807040628566084e+28, lower, upper);  // 2**94
+  b = value.assign_with_boundaries(1.9807040628566084e+28);  // 2**94
   EXPECT_EQ(value, fp(0x0010000000000000, 42));
-  EXPECT_EQ(lower, fp(0x7ffffffffffffe00, 31));
-  EXPECT_EQ(upper, fp(0x8000000000000400, 31));
+  EXPECT_EQ(b.lower, 0x7ffffffffffffe00);
+  EXPECT_EQ(b.upper, 0x8000000000000400);
   // Smallest normalized double - equidistant boundaries:
-  value.assign_with_boundaries(2.2250738585072014e-308, lower, upper);
+  b = value.assign_with_boundaries(2.2250738585072014e-308);
   EXPECT_EQ(value, fp(0x0010000000000000, -1074));
-  EXPECT_EQ(lower, fp(0x7ffffffffffffc00, -1085));
-  EXPECT_EQ(upper, fp(0x8000000000000400, -1085));
+  EXPECT_EQ(b.lower, 0x7ffffffffffffc00);
+  EXPECT_EQ(b.upper, 0x8000000000000400);
   // Subnormal - equidistant boundaries:
-  value.assign_with_boundaries(4.9406564584124654e-324, lower, upper);
+  b = value.assign_with_boundaries(4.9406564584124654e-324);
   EXPECT_EQ(value, fp(0x0000000000000001, -1074));
-  EXPECT_EQ(lower, fp(0x4000000000000000, -1137));
-  EXPECT_EQ(upper, fp(0xc000000000000000, -1137));
+  EXPECT_EQ(b.lower, 0x4000000000000000);
+  EXPECT_EQ(b.upper, 0xc000000000000000);
 }
 
 TEST(FPTest, DoubleTests) {
@@ -243,12 +243,10 @@ TEST(FPTest, ComputeFloatBoundaries) {
     fp vupper = normalize(fp(test.upper));
     vlower.f >>= vupper.e - vlower.e;
     vlower.e = vupper.e;
-    fp value, lower, upper;
-    value.assign_float_with_boundaries(test.x, lower, upper);
-    EXPECT_EQ(vlower.f, lower.f);
-    EXPECT_EQ(vlower.e, lower.e);
-    EXPECT_EQ(vupper.f, upper.f);
-    EXPECT_EQ(vupper.e, upper.e);
+    fp value;
+    auto b = value.assign_float_with_boundaries(test.x);
+    EXPECT_EQ(vlower.f, b.lower);
+    EXPECT_EQ(vupper.f, b.upper);
   }
 }
 

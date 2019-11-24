@@ -340,6 +340,14 @@ template <typename T> struct bits {
 class fp;
 template <int SHIFT = 0> fp normalize(fp value);
 
+// Lower (upper) boundary is a value half way between a floating-point value
+// and its predecessor (successor). Boundaries have the same exponent as the
+// value so only significands are stored.
+struct boundaries {
+  uint64_t lower;
+  uint64_t upper;
+};
+
 // A handmade floating-point number f * pow(2, e).
 class fp {
  private:
@@ -417,29 +425,28 @@ class fp {
   // where a boundary is a value half way between the number and its predecessor
   // (lower) or successor (upper). The upper boundary is normalized and lower
   // has the same exponent but may be not normalized.
-  template <typename Double>
-  void assign_with_boundaries(Double d, fp& lower, fp& upper) {
+  template <typename Double> boundaries assign_with_boundaries(Double d) {
     bool is_lower_closer = assign(d);
-    lower = is_lower_closer ? fp((f << 2) - 1, e - 2) : fp((f << 1) - 1, e - 1);
+    fp lower =
+        is_lower_closer ? fp((f << 2) - 1, e - 2) : fp((f << 1) - 1, e - 1);
     // 1 in normalize accounts for the exponent shift above.
-    upper = normalize<1>(fp((f << 1) + 1, e - 1));
+    fp upper = normalize<1>(fp((f << 1) + 1, e - 1));
     lower.f <<= lower.e - upper.e;
-    lower.e = upper.e;
+    return boundaries{lower.f, upper.f};
   }
 
-  template <typename Double>
-  void assign_float_with_boundaries(Double d, fp& lower, fp& upper) {
+  template <typename Double> boundaries assign_float_with_boundaries(Double d) {
     assign(d);
     constexpr int min_normal_e = std::numeric_limits<float>::min_exponent -
                                  std::numeric_limits<double>::digits;
     significand_type half_ulp = 1 << (std::numeric_limits<double>::digits -
                                       std::numeric_limits<float>::digits - 1);
     if (min_normal_e > e) half_ulp <<= min_normal_e - e;
-    upper = normalize<0>(fp(f + half_ulp, e));
-    lower = fp(
+    fp upper = normalize<0>(fp(f + half_ulp, e));
+    fp lower = fp(
         f - (half_ulp >> ((f == implicit_bit && e > min_normal_e) ? 1 : 0)), e);
     lower.f <<= lower.e - upper.e;
-    lower.e = upper.e;
+    return boundaries{lower.f, upper.f};
   }
 };
 
@@ -451,27 +458,27 @@ inline fp operator-(fp x, fp y) {
   return {x.f - y.f, x.e};
 }
 
-// Computes an fp number r with r.f = x.f * y.f / pow(2, 64) rounded to nearest
-// with half-up tie breaking, r.e = x.e + y.e + 64. Result may not be
-// normalized.
-FMT_FUNC fp operator*(fp x, fp y) {
-  int exp = x.e + y.e + 64;
+inline uint64_t multiply(uint64_t lhs, uint64_t rhs) {
 #if FMT_USE_INT128
-  auto product = static_cast<__uint128_t>(x.f) * y.f;
+  auto product = static_cast<__uint128_t>(lhs) * rhs;
   auto f = static_cast<uint64_t>(product >> 64);
-  if ((static_cast<uint64_t>(product) & (1ULL << 63)) != 0) ++f;
-  return {f, exp};
+  return (static_cast<uint64_t>(product) & (1ULL << 63)) != 0 ? f + 1 : f;
 #else
   // Multiply 32-bit parts of significands.
   uint64_t mask = (1ULL << 32) - 1;
-  uint64_t a = x.f >> 32, b = x.f & mask;
-  uint64_t c = y.f >> 32, d = y.f & mask;
+  uint64_t a = lhs >> 32, b = lhs & mask;
+  uint64_t c = rhs >> 32, d = rhs & mask;
   uint64_t ac = a * c, bc = b * c, ad = a * d, bd = b * d;
   // Compute mid 64-bit of result and round.
   uint64_t mid = (bd >> 32) + (ad & mask) + (bc & mask) + (1U << 31);
-  return fp(ac + (ad >> 32) + (bc >> 32) + (mid >> 32), exp);
+  return ac + (ad >> 32) + (bc >> 32) + (mid >> 32);
 #endif
 }
+
+// Computes an fp number r with r.f = x.f * y.f / pow(2, 64) rounded to nearest
+// with half-up tie breaking, r.e = x.e + y.e + 64. Result may not be
+// normalized.
+inline fp operator*(fp x, fp y) { return {multiply(x.f, y.f), x.e + y.e + 64}; }
 
 // Returns a cached power of 10 `c_k = c_k.f * pow(2, c_k.e)` such that its
 // (binary) exponent satisfies `min_exponent <= c_k.e <= min_exponent + 28`.
@@ -1062,8 +1069,7 @@ int format_float(T value, int precision, float_spec spec, buffer<char>& buf) {
   int cached_exp10 = 0;     // K in Grisu.
   if (precision != -1) {
     if (precision > 17) return snprintf_float(value, precision, spec, buf);
-    fp fp_value(value);
-    fp normalized = normalize(fp_value);
+    fp normalized = normalize(fp(value));
     const auto cached_pow = get_cached_power(
         min_exp - (normalized.e + fp::significand_size), cached_exp10);
     normalized = normalized * cached_pow;
@@ -1081,33 +1087,33 @@ int format_float(T value, int precision, float_spec spec, buffer<char>& buf) {
     buf.resize(to_unsigned(num_digits));
   } else {
     fp fp_value;
-    fp lower, upper;  // w^- and w^+ in the Grisu paper.
-    if (spec.binary32)
-      fp_value.assign_float_with_boundaries(value, lower, upper);
-    else
-      fp_value.assign_with_boundaries(value, lower, upper);
-    // Find a cached power of 10 such that multiplying upper by it will bring
+    auto boundaries = spec.binary32
+                          ? fp_value.assign_float_with_boundaries(value)
+                          : fp_value.assign_with_boundaries(value);
+    fp_value = normalize(fp_value);
+    // Find a cached power of 10 such that multiplying value by it will bring
     // the exponent in the range [min_exp, -32].
-    const auto cached_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
-        min_exp - (upper.e + fp::significand_size), cached_exp10);
-    fp normalized = normalize(fp_value);
-    normalized = normalized * cached_pow;
-    lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
-    upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
-    assert(min_exp <= upper.e && upper.e <= -32);
-    auto result = digits::result();
-    --lower.f;  // \tilde{M}^- - 1 ulp -> M^-_{\downarrow}.
-    ++upper.f;  // \tilde{M}^+ + 1 ulp -> M^+_{\uparrow}.
+    const fp cached_pow = get_cached_power(
+        min_exp - (fp_value.e + fp::significand_size), cached_exp10);
+    // Multiply value and boundaries by the cached power of 10.
+    fp_value = fp_value * cached_pow;
+    boundaries.lower = multiply(boundaries.lower, cached_pow.f);
+    boundaries.upper = multiply(boundaries.upper, cached_pow.f);
+    assert(min_exp <= fp_value.e && fp_value.e <= -32);
+    --boundaries.lower;  // \tilde{M}^- - 1 ulp -> M^-_{\downarrow}.
+    ++boundaries.upper;  // \tilde{M}^+ + 1 ulp -> M^+_{\uparrow}.
     // Numbers outside of (lower, upper) definitely do not round to value.
-    grisu_shortest_handler handler{buf.data(), 0, (upper - normalized).f};
-    result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
-    int size = handler.size;
+    grisu_shortest_handler handler{buf.data(), 0,
+                                   boundaries.upper - fp_value.f};
+    auto result =
+        grisu_gen_digits(fp(boundaries.upper, fp_value.e),
+                         boundaries.upper - boundaries.lower, exp, handler);
     if (result == digits::error) {
-      exp = exp + size - cached_exp10 - 1;
+      exp += handler.size - cached_exp10 - 1;
       fallback_format(value, buf, exp);
       return exp;
     }
-    buf.resize(to_unsigned(size));
+    buf.resize(to_unsigned(handler.size));
   }
   return exp - cached_exp10;
 }
