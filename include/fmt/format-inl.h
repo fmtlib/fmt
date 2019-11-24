@@ -1038,11 +1038,11 @@ void fallback_format(Double d, buffer<char>& buf, int& exp10) {
 
 // Formats value using the Grisu algorithm
 // (https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf)
-// if Float is a IEEE754 binary32 or binary64 and snprintf otherwise.
+// if T is a IEEE754 binary32 or binary64 and snprintf otherwise.
 template <typename T>
 int format_float(T value, int precision, float_spec spec, buffer<char>& buf) {
-  FMT_ASSERT(value >= 0, "value is negative");
   static_assert(!std::is_same<T, float>(), "");
+  FMT_ASSERT(value >= 0, "value is negative");
 
   const bool fixed = spec.format == float_format::fixed;
   if (value <= 0) {  // <= instead of == to silence a warning.
