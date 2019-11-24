@@ -250,12 +250,6 @@ TEST(FPTest, ComputeFloatBoundaries) {
   }
 }
 
-TEST(FPTest, Subtract) {
-  auto v = fp(123, 1) - fp(102, 1);
-  EXPECT_EQ(v.f, 21u);
-  EXPECT_EQ(v.e, 1);
-}
-
 TEST(FPTest, Multiply) {
   auto v = fp(123ULL << 32, 4) * fp(56ULL << 32, 7);
   EXPECT_EQ(v.f, 123u * 56u);

@@ -452,12 +452,6 @@ class fp {
 
 inline bool operator==(fp x, fp y) { return x.f == y.f && x.e == y.e; }
 
-// Returns an fp number representing x - y. Result may not be normalized.
-inline fp operator-(fp x, fp y) {
-  FMT_ASSERT(x.f >= y.f && x.e == y.e, "invalid operands");
-  return {x.f - y.f, x.e};
-}
-
 inline uint64_t multiply(uint64_t lhs, uint64_t rhs) {
 #if FMT_USE_INT128
   auto product = static_cast<__uint128_t>(lhs) * rhs;
