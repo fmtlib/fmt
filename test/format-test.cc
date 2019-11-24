@@ -40,13 +40,13 @@
 using std::size_t;
 
 using fmt::basic_memory_buffer;
-using fmt::internal::basic_writer;
-using fmt::internal::max_value;
 using fmt::format;
 using fmt::format_error;
 using fmt::memory_buffer;
 using fmt::string_view;
 using fmt::wmemory_buffer;
+using fmt::internal::basic_writer;
+using fmt::internal::max_value;
 
 using testing::Return;
 using testing::StrictMock;
@@ -169,8 +169,7 @@ TEST(UtilTest, Increment) {
 }
 
 TEST(UtilTest, ParseNonnegativeInt) {
-  if (max_value<int>() !=
-      static_cast<int>(static_cast<unsigned>(1) << 31)) {
+  if (max_value<int>() != static_cast<int>(static_cast<unsigned>(1) << 31)) {
     fmt::print("Skipping parse_nonnegative_int test\n");
     return;
   }
@@ -539,9 +538,8 @@ TEST(UtilTest, FormatWindowsError) {
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
             fmt::to_string(actual_message));
   actual_message.resize(0);
-  fmt::internal::format_windows_error(
-      actual_message, ERROR_FILE_EXISTS,
-      fmt::string_view(0, max_value<size_t>()));
+  fmt::internal::format_windows_error(actual_message, ERROR_FILE_EXISTS,
+                                      fmt::string_view(0, max_value<size_t>()));
   EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS),
             fmt::to_string(actual_message));
 }
@@ -687,9 +685,7 @@ TEST(WriterTest, WriteString) {
   CHECK_WRITE_WCHAR("abc");
 }
 
-TEST(WriterTest, WriteWideString) {
-  CHECK_WRITE_WCHAR(L"abc");
-}
+TEST(WriterTest, WriteWideString) { CHECK_WRITE_WCHAR(L"abc"); }
 
 TEST(FormatToTest, FormatWithoutArgs) {
   std::string s;
@@ -1207,6 +1203,15 @@ TEST(FormatterTest, Precision) {
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345));
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345l));
   EXPECT_EQ("1.2e+56", format("{:.2}", 1.234e56));
+  EXPECT_EQ(
+      "4.9406564584124654417656879286822137236505980261432476442558568250067550"
+      "727020875186529983636163599237979656469544571773092665671035593979639877"
+      "479601078187812630071319031140452784581716784898210368871863605699873072"
+      "305000638740915356498438731247339727316961514003171538539807412623856559"
+      "117102665855668676818703956031062493194527159149245532930545654440112748"
+      "012970999954193198940908041656332452475714786901472678015935523861155013"
+      "480352649347201937902681071074917033322268447533357208324319361e-324",
+      format("{:.494}", 4.9406564584124654E-324));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
                    format_error,
@@ -1806,8 +1811,7 @@ TEST(FormatIntTest, FormatInt) {
   EXPECT_EQ("-42", fmt::format_int(-42ll).str());
   std::ostringstream os;
   os << max_value<int64_t>();
-  EXPECT_EQ(os.str(),
-            fmt::format_int(max_value<int64_t>()).str());
+  EXPECT_EQ(os.str(), fmt::format_int(max_value<int64_t>()).str());
 }
 
 TEST(FormatTest, Print) {
@@ -1966,8 +1970,9 @@ enum TestEnum { A };
 TEST(FormatTest, Enum) { EXPECT_EQ("0", fmt::format("{}", A)); }
 
 TEST(FormatTest, FormatterNotSpecialized) {
-  static_assert(!fmt::has_formatter<fmt::formatter<TestEnum>,
-                                    fmt::format_context>::value, "");
+  static_assert(
+      !fmt::has_formatter<fmt::formatter<TestEnum>, fmt::format_context>::value,
+      "");
 }
 
 #if FMT_HAS_FEATURE(cxx_strong_enums)
@@ -2449,11 +2454,11 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:10000000000}", "number is too big", int);
   EXPECT_ERROR("{:.10000000000}", "number is too big", int);
   EXPECT_ERROR_NOARGS("{:x}", "argument index out of range");
-#if FMT_NUMERIC_ALIGN
+#    if FMT_NUMERIC_ALIGN
   EXPECT_ERROR("{0:=5", "unknown format specifier", int);
   EXPECT_ERROR("{:=}", "format specifier requires numeric argument",
                const char*);
-#endif
+#    endif
   EXPECT_ERROR("{:+}", "format specifier requires numeric argument",
                const char*);
   EXPECT_ERROR("{:-}", "format specifier requires numeric argument",
@@ -2613,7 +2618,7 @@ TEST(FormatTest, FormatCustomChar) {
 TEST(FormatTest, FormatUTF8Precision) {
   using str_type = std::basic_string<char8_t>;
   str_type format(reinterpret_cast<const char8_t*>(u8"{:.4}"));
-  str_type str(reinterpret_cast<const char8_t*>(u8"caf\u00e9s")); // cafés
+  str_type str(reinterpret_cast<const char8_t*>(u8"caf\u00e9s"));  // cafés
   auto result = fmt::format(format, str);
   EXPECT_EQ(fmt::internal::count_code_points(result), 4);
   EXPECT_EQ(result.size(), 5);

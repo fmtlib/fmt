@@ -1159,7 +1159,8 @@ int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf) {
       continue;
     }
     unsigned size = to_unsigned(result);
-    if (size > capacity) {
+    // Size equal to capacity means that the last character was truncated.
+    if (size >= capacity) {
       buf.reserve(size + 1);  // Add 1 for the terminating '\0'.
       continue;
     }
