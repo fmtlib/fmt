@@ -452,6 +452,7 @@ class fp {
 
 inline bool operator==(fp x, fp y) { return x.f == y.f && x.e == y.e; }
 
+// Computes lhs * rhs / pow(2, 64) rounded to nearest with half-up tie breaking.
 inline uint64_t multiply(uint64_t lhs, uint64_t rhs) {
 #if FMT_USE_INT128
   auto product = static_cast<__uint128_t>(lhs) * rhs;
@@ -469,9 +470,6 @@ inline uint64_t multiply(uint64_t lhs, uint64_t rhs) {
 #endif
 }
 
-// Computes an fp number r with r.f = x.f * y.f / pow(2, 64) rounded to nearest
-// with half-up tie breaking, r.e = x.e + y.e + 64. Result may not be
-// normalized.
 inline fp operator*(fp x, fp y) { return {multiply(x.f, y.f), x.e + y.e + 64}; }
 
 // Returns a cached power of 10 `c_k = c_k.f * pow(2, c_k.e)` such that its
