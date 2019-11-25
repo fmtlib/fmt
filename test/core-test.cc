@@ -649,3 +649,14 @@ TEST(FormatterTest, FormatExplicitlyConvertibleToStringLike) {
   EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_like()));
 }
 #endif
+
+struct disabled_rvalue_conversion {
+  operator const char*() const& { return "foo"; }
+  operator const char*()& { return "foo"; }
+  operator const char*() const&& = delete;
+  operator const char*()&& = delete;
+};
+
+TEST(FormatterTest, DisabledRValueConversion) {
+  EXPECT_EQ("foo", fmt::format("{}", disabled_rvalue_conversion()));
+}
