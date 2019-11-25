@@ -1153,13 +1153,13 @@ int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf) {
                      ? snprintf_ptr(begin, capacity, format, precision, value)
                      : snprintf_ptr(begin, capacity, format, value);
     if (result < 0) {
-      buf.reserve(capacity + 1);  // The buffer will grow exponentially.
+      buf.reserve(buf.capacity() + 1);  // The buffer will grow exponentially.
       continue;
     }
     unsigned size = to_unsigned(result);
     // Size equal to capacity means that the last character was truncated.
     if (size >= capacity) {
-      buf.reserve(size + 1);  // Add 1 for the terminating '\0'.
+      buf.reserve(size + offset + 1);  // Add 1 for the terminating '\0'.
       continue;
     }
     auto is_digit = [](char c) { return c >= '0' && c <= '9'; };
