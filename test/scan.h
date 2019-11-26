@@ -201,7 +201,8 @@ struct scan_handler : error_handler {
       scan_ctx_.advance_to(it);
       break;
     }
-    default:
+    case scan_type::none_type:
+    case scan_type::custom_type:
       assert(false);
     }
   }
