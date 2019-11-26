@@ -1039,11 +1039,11 @@ void fallback_format(Double d, buffer<char>& buf, int& exp10) {
 // (https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf)
 // if T is a IEEE754 binary32 or binary64 and snprintf otherwise.
 template <typename T>
-int format_float(T value, int precision, float_spec spec, buffer<char>& buf) {
+int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
   static_assert(!std::is_same<T, float>(), "");
   FMT_ASSERT(value >= 0, "value is negative");
 
-  const bool fixed = spec.format == float_format::fixed;
+  const bool fixed = specs.format == float_format::fixed;
   if (value <= 0) {  // <= instead of == to silence a warning.
     if (precision <= 0 || !fixed) {
       buf.push_back('0');
@@ -1054,20 +1054,20 @@ int format_float(T value, int precision, float_spec spec, buffer<char>& buf) {
     return -precision;
   }
 
-  if (!spec.use_grisu) return snprintf_float(value, precision, spec, buf);
+  if (!specs.use_grisu) return snprintf_float(value, precision, specs, buf);
 
   int exp = 0;
   const int min_exp = -60;  // alpha in Grisu.
   int cached_exp10 = 0;     // K in Grisu.
   if (precision != -1) {
-    if (precision > 17) return snprintf_float(value, precision, spec, buf);
+    if (precision > 17) return snprintf_float(value, precision, specs, buf);
     fp normalized = normalize(fp(value));
     const auto cached_pow = get_cached_power(
         min_exp - (normalized.e + fp::significand_size), cached_exp10);
     normalized = normalized * cached_pow;
     fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
     if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error)
-      return snprintf_float(value, precision, spec, buf);
+      return snprintf_float(value, precision, specs, buf);
     int num_digits = handler.size;
     if (!fixed) {
       // Remove trailing zeros.
@@ -1079,7 +1079,7 @@ int format_float(T value, int precision, float_spec spec, buffer<char>& buf) {
     buf.resize(to_unsigned(num_digits));
   } else {
     fp fp_value;
-    auto boundaries = spec.binary32
+    auto boundaries = specs.binary32
                           ? fp_value.assign_float_with_boundaries(value)
                           : fp_value.assign_with_boundaries(value);
     fp_value = normalize(fp_value);
@@ -1111,14 +1111,16 @@ int format_float(T value, int precision, float_spec spec, buffer<char>& buf) {
 }
 
 template <typename T>
-int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf) {
+int snprintf_float(T value, int precision, float_specs specs,
+                   buffer<char>& buf) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buf.capacity() > buf.size(), "empty buffer");
   static_assert(!std::is_same<T, float>(), "");
 
   // Subtract 1 to account for the difference in precision since we use %e for
   // both general and exponent format.
-  if (spec.format == float_format::general || spec.format == float_format::exp)
+  if (specs.format == float_format::general ||
+      specs.format == float_format::exp)
     precision = (precision >= 0 ? precision : 6) - 1;
 
   // Build the format string.
@@ -1126,15 +1128,15 @@ int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf) {
   char format[max_format_size];
   char* format_ptr = format;
   *format_ptr++ = '%';
-  if (spec.alt) *format_ptr++ = '#';
+  if (specs.alt) *format_ptr++ = '#';
   if (precision >= 0) {
     *format_ptr++ = '.';
     *format_ptr++ = '*';
   }
   if (std::is_same<T, long double>()) *format_ptr++ = 'L';
-  *format_ptr++ = spec.format != float_format::hex
-                      ? (spec.format == float_format::fixed ? 'f' : 'e')
-                      : (spec.upper ? 'A' : 'a');
+  *format_ptr++ = specs.format != float_format::hex
+                      ? (specs.format == float_format::fixed ? 'f' : 'e')
+                      : (specs.upper ? 'A' : 'a');
   *format_ptr = '\0';
 
   // Format using snprintf.
@@ -1163,7 +1165,7 @@ int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf) {
       continue;
     }
     auto is_digit = [](char c) { return c >= '0' && c <= '9'; };
-    if (spec.format == float_format::fixed) {
+    if (specs.format == float_format::fixed) {
       if (precision == 0) {
         buf.resize(size);
         return 0;
@@ -1178,7 +1180,7 @@ int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf) {
       buf.resize(size - 1);
       return -fraction_size;
     }
-    if (spec.format == float_format::hex) {
+    if (specs.format == float_format::hex) {
       buf.resize(size + offset);
       return 0;
     }

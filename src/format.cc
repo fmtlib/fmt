@@ -11,7 +11,7 @@ FMT_BEGIN_NAMESPACE
 template struct FMT_API internal::basic_data<void>;
 
 // Workaround a bug in MSVC2013 that prevents instantiation of format_float.
-int (*instantiate_format_float)(double, int, internal::float_spec,
+int (*instantiate_format_float)(double, int, internal::float_specs,
                                 internal::buffer<char>&) =
     internal::format_float;
 
@@ -37,15 +37,16 @@ template FMT_API std::string internal::vformat<char>(
 template FMT_API format_context::iterator internal::vformat_to(
     internal::buffer<char>&, string_view, basic_format_args<format_context>);
 
-template FMT_API int internal::snprintf_float(double, int, internal::float_spec,
+template FMT_API int internal::snprintf_float(double, int,
+                                              internal::float_specs,
                                               internal::buffer<char>&);
 template FMT_API int internal::snprintf_float(long double, int,
-                                              internal::float_spec,
+                                              internal::float_specs,
                                               internal::buffer<char>&);
-template FMT_API int internal::format_float(double, int, internal::float_spec,
+template FMT_API int internal::format_float(double, int, internal::float_specs,
                                             internal::buffer<char>&);
 template FMT_API int internal::format_float(long double, int,
-                                            internal::float_spec,
+                                            internal::float_specs,
                                             internal::buffer<char>&);
 
 // Explicit instantiations for wchar_t.
