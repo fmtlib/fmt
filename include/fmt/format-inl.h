@@ -1118,7 +1118,7 @@ int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf) {
 
   // Subtract 1 to account for the difference in precision since we use %e for
   // both general and exponent format.
-  if (spec.format == float_format::general)
+  if (spec.format == float_format::general || spec.format == float_format::exp)
     precision = (precision >= 0 ? precision : 6) - 1;
 
   // Build the format string.
@@ -1127,7 +1127,7 @@ int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf) {
   char* format_ptr = format;
   *format_ptr++ = '%';
   if (spec.alt) *format_ptr++ = '#';
-  if (precision > 0) {
+  if (precision >= 0) {
     *format_ptr++ = '.';
     *format_ptr++ = '*';
   }
@@ -1149,7 +1149,7 @@ int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf) {
 #endif
     // Suppress the warning about a nonliteral format string.
     auto snprintf_ptr = FMT_SNPRINTF;
-    int result = precision > 0
+    int result = precision >= 0
                      ? snprintf_ptr(begin, capacity, format, precision, value)
                      : snprintf_ptr(begin, capacity, format, value);
     if (result < 0) {
@@ -1164,6 +1164,10 @@ int snprintf_float(T value, int precision, float_spec spec, buffer<char>& buf) {
     }
     auto is_digit = [](char c) { return c >= '0' && c <= '9'; };
     if (spec.format == float_format::fixed) {
+      if (precision == 0) {
+        buf.resize(size);
+        return 0;
+      }
       // Find and remove the decimal point.
       auto end = begin + size, p = end;
       do {
