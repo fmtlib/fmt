@@ -243,8 +243,7 @@ TEST(FormatTest, UDL) {
 }
 #endif
 
-template <typename T>
-struct convertible {
+template <typename T> struct convertible {
   T value;
   explicit convertible(const T& val) : value(val) {}
   operator T() const { return value; }
@@ -254,4 +253,26 @@ TEST(OStreamTest, DisableBuiltinOStreamOperators) {
   EXPECT_EQ("42", fmt::format("{:d}", convertible<unsigned short>(42)));
   EXPECT_EQ(L"42", fmt::format(L"{:d}", convertible<unsigned short>(42)));
   EXPECT_EQ("foo", fmt::format("{}", convertible<const char*>("foo")));
+}
+
+struct explicitly_convertible_to_string_like {
+  template <typename String,
+            typename = typename std::enable_if<std::is_constructible<
+                String, const char*, std::size_t>::value>::type>
+  explicit operator String() const {
+    return String("foo", 3u);
+  }
+};
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStringLike) {
+  EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_like()));
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         explicitly_convertible_to_string_like) {
+  return os << "bar";
+}
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStringLikeIgnoreInserter) {
+  EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_like()));
 }
