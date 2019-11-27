@@ -1572,7 +1572,7 @@ template <typename Range> class basic_writer {
         basic_string_view<char_type> s(&sep, sep_size);
         // Index of a decimal digit with the least significant digit having
         // index 0.
-        unsigned digit_index = 0;
+        int digit_index = 0;
         std::string::const_iterator group = groups.cbegin();
         it = format_decimal<char_type>(
             it, abs_value, size,
