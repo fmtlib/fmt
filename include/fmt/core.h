@@ -1242,7 +1242,7 @@ template <typename Context> class basic_format_args {
 
   internal::type type(int index) const {
     int shift = index * internal::packed_arg_bits;
-    int mask = (1 << internal::packed_arg_bits) - 1;
+    unsigned int mask = (1 << internal::packed_arg_bits) - 1;
     return static_cast<internal::type>((types_ >> shift) & mask);
   }
 

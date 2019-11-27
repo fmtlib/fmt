@@ -1572,7 +1572,7 @@ template <typename Range> class basic_writer {
         it = format_decimal<char_type>(
             it, abs_value, size,
             [this, s, &group, &digit_index](char_type*& buffer) {
-              if (*group <= 0 || ++digit_index % *group != 0 ||
+              if (*group <= 0 || ++digit_index % static_cast<unsigned int>(*group) != 0 ||
                   *group == max_value<char>())
                 return;
               if (group + 1 != groups.cend()) {
