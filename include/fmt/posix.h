@@ -157,7 +157,7 @@ class buffered_file {
     other.file_ = nullptr;
   }
 
-  buffered_file& operator=(buffered_file&& other) FMT_NOEXCEPT {
+  buffered_file& operator=(buffered_file&& other) {
     close();
     file_ = other.file_;
     other.file_ = nullptr;
