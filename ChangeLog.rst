@@ -1,3 +1,124 @@
+6.1.0 - TBD
+-----------
+
+* {fmt} now formats IEEE 754 ``float`` and ``double`` using the shortest decimal
+  representation with correct rounding by default:
+
+  .. code:: c++
+
+     #include <cmath>
+     #include <fmt/core.h>
+
+     int main() {
+       fmt::print("{}", M_PI);
+     }
+
+  prints "3.141592653589793".
+
+* Made the fast binary to decimal floating point formatter the default and
+  sligthly improved its performance. {fmt} is now 15x faster than libc++'s
+  ``std::ostringstream``, 11x faster than ``printf`` and 10% faster than
+  double-conversion on dtoa-benchmark::
+
+    Function       Time (ns)	Speedup
+    ostringstream  1,346.300    1.00x
+    ostrstream     1,195.741    1.13x
+    sprintf          995.082    1.35x
+    doubleconv        99.100   13.59x
+    fmt               88.335   15.24x
+
+  .. image:: https://user-images.githubusercontent.com/576385/
+             69767160-cdaca400-112f-11ea-9fc5-347c9f83caad.png
+
+* Added support for ``int128_t``
+  (`#1287 <https://github.com/fmtlib/fmt/pull/1287>`_):
+
+  .. code:: c++
+
+     fmt::print("{}", std::numeric_limits<__int128_t>::max());
+
+  prints "170141183460469231731687303715884105727".
+
+  Thanks `@denizevrenci (Deniz Evrenci) <https://github.com/denizevrenci>`_.
+
+* {fmt} can now be installed on Linux, macOS and Windows with
+  `Conda <https://docs.conda.io/en/latest/>`__ using its
+  `conda-forge <https://conda-forge.org>`__
+  `package <https://github.com/conda-forge/fmt-feedstock>`__
+  (`#1410 <https://github.com/fmtlib/fmt/pull/1410>`_)::
+
+    conda install -c conda-forge fmt
+
+  Thanks `@tdegeus (Tom de Geus) <https://github.com/tdegeus>`_.
+
+* The locale is now passed to ostream insertion (``<<``) operators
+  (`#1406 <https://github.com/fmtlib/fmt/pull/1406>`_):
+
+  .. code:: c++
+
+     #include <fmt/locale.h>
+     #include <fmt/ostream.h>
+
+     struct S {
+       double value;
+     };
+
+     std::ostream& operator<<(std::ostream& os, S s) {
+       return os << s.value;
+     }
+
+     int main() {
+       auto s = fmt::format(std::locale("fr_FR.UTF-8"), "{}", S{0.42});
+       // s == "0,42"
+     }
+
+  Thanks `@dlaugt (Daniel Laügt) <https://github.com/dlaugt>`_.
+
+* Changed formatting of octal zero with prefix from "0o0" to "0":
+
+  .. code:: c++
+
+     fmt::print("{:#o}", 0);
+
+  prints "0".
+
+* Enums are now mapped to correct underlying types instead of ``int``
+  (`#1286 <https://github.com/fmtlib/fmt/pull/1286>`_).
+  Thanks `@agmt (Egor Seredin) <https://github.com/agmt>`_.
+
+* Added a CUDA test. Thanks
+  `@luncliff (Park DongHa) <https://github.com/luncliff>`_.
+
+* Improved documentation (`#1051 <https://github.com/fmtlib/fmt/pull/1276>`_,
+  `#1291 <https://github.com/fmtlib/fmt/issues/1291>`_,
+  `#1296 <https://github.com/fmtlib/fmt/issues/1296>`_).
+  Thanks
+  `@waywardmonkeys (Bruce Mitchener) <https://github.com/waywardmonkeys>`_.
+
+* Fixed compile-time format string checks for user-defined types
+  (`#1292 <https://github.com/fmtlib/fmt/issues/1292>`_).
+
+* Fixed various warnings and compilation issues
+  (`#1273 <https://github.com/fmtlib/fmt/issues/1273>`_,
+   `#1278 <https://github.com/fmtlib/fmt/pull/1278>`_,
+   `#1280 <https://github.com/fmtlib/fmt/pull/1280>`_,
+   `#1281 <https://github.com/fmtlib/fmt/issues/1281>`_,
+   `#1288 <https://github.com/fmtlib/fmt/issues/1288>`_,
+   `#1290 <https://github.com/fmtlib/fmt/pull/1290>`_,
+   `#1301 <https://github.com/fmtlib/fmt/pull/1301>`_,
+   `#1305 <https://github.com/fmtlib/fmt/issues/1305>`_,
+   `#1306 <https://github.com/fmtlib/fmt/issues/1306>`_,
+   `#1312 <https://github.com/fmtlib/fmt/pull/1312>`_,
+   `#1397 <https://github.com/fmtlib/fmt/pull/1397>`_,
+   `#1414 <https://github.com/fmtlib/fmt/pull/1414>`_,
+   `#1416 <https://github.com/fmtlib/fmt/pull/1416>`_).
+  Thanks `@hhb <https://github.com/hhb>`_,
+  `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
+  `@gabime (Gabi Melman) <https://github.com/gabime>`_,
+  `@neheb (Rosen Penev) <https://github.com/neheb>`_,
+  `@leonklingele <https://github.com/leonklingele>`_,
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
+
 6.0.0 - 2019-08-26
 ------------------
 
