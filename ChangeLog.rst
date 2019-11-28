@@ -13,22 +13,40 @@
        fmt::print("{}", M_PI);
      }
 
-  prints "3.141592653589793".
+  prints ``3.141592653589793``.
 
-* Made the fast binary to decimal floating point formatter the default and
+* Made the fast binary to decimal floating-point formatter the default and
   sligthly improved its performance. {fmt} is now 15x faster than libc++'s
   ``std::ostringstream``, 11x faster than ``printf`` and 10% faster than
-  double-conversion on dtoa-benchmark::
+  double-conversion on dtoa-benchmark:
 
-    Function       Time (ns)	Speedup
-    ostringstream  1,346.300    1.00x
-    ostrstream     1,195.741    1.13x
-    sprintf          995.082    1.35x
-    doubleconv        99.100   13.59x
-    fmt               88.335   15.24x
+  ==================  =========  =======
+  Function            Time (ns)  Speedup
+  ==================  =========  =======
+  ostringstream        1,346.30    1.00x
+  ostrstream           1,195.74    1.13x
+  sprintf                995.08    1.35x
+  doubleconv              99.10   13.59x
+  fmt                     88.34   15.24x
+  ==================  =========  =======
 
   .. image:: https://user-images.githubusercontent.com/576385/
              69767160-cdaca400-112f-11ea-9fc5-347c9f83caad.png
+
+* {fmt} no longer converts ``float`` arguments to ``double``. In particular this
+  improves the default (shortest) representation of ``float``s and makes
+  ``fmt::format`` consistent with ``std::format`` specs
+  (`#1336 <https://github.com/fmtlib/fmt/issues/1336>`_,
+  `#1360 <https://github.com/fmtlib/fmt/pull/1360>`_,
+  `#1361 <https://github.com/fmtlib/fmt/pull/1361>`_):
+
+  .. code:: c++
+
+     fmt::print("{}", 0.1f);
+
+  prints ``0.1`` instead of ``0.10000000149011612``.
+
+  Thanks `@orivej (Orivej Desh) <https://github.com/orivej>`_.
 
 * Added support for ``int128_t``
   (`#1287 <https://github.com/fmtlib/fmt/pull/1287>`_):
@@ -37,19 +55,40 @@
 
      fmt::print("{}", std::numeric_limits<__int128_t>::max());
 
-  prints "170141183460469231731687303715884105727".
+  prints ``170141183460469231731687303715884105727``.
 
   Thanks `@denizevrenci (Deniz Evrenci) <https://github.com/denizevrenci>`_.
 
-* {fmt} can now be installed on Linux, macOS and Windows with
-  `Conda <https://docs.conda.io/en/latest/>`__ using its
-  `conda-forge <https://conda-forge.org>`__
-  `package <https://github.com/conda-forge/fmt-feedstock>`__
-  (`#1410 <https://github.com/fmtlib/fmt/pull/1410>`_)::
+* The overload of ``print`` that takes ``text_style`` is now atomic, i.e. the
+  output from different threads doesn't interleave
+  (`#1351 <https://github.com/fmtlib/fmt/pull/1351>`_).
+  Thanks `@tankiJong (Tanki Zhang) <https://github.com/tankiJong>`_.
 
-    conda install -c conda-forge fmt
+* Added an overload of ``fmt::join`` that works with tuples
+  (`#1322 <https://github.com/fmtlib/fmt/issues/1322>`_,
+  `#1330 <https://github.com/fmtlib/fmt/pull/1330>`_):
 
-  Thanks `@tdegeus (Tom de Geus) <https://github.com/tdegeus>`_.
+  .. code:: c++
+
+     #include <tuple>
+     #include <fmt/ranges.h>
+
+     int main() {
+       std::tuple<char, int, float> t{'a', 1, 2.0f};
+       fmt::print("{}", t);
+     }
+
+  prints ``('a', 1, 2.0)``.
+
+  Thanks `@jeremyong (Jeremy Ong) <https://github.com/jeremyong>`_.
+
+* Changed formatting of octal zero with prefix from "0o0" to "0":
+
+  .. code:: c++
+
+     fmt::print("{:#o}", 0);
+
+  prints ``0``.
 
 * The locale is now passed to ostream insertion (``<<``) operators
   (`#1406 <https://github.com/fmtlib/fmt/pull/1406>`_):
@@ -74,29 +113,37 @@
 
   Thanks `@dlaugt (Daniel Laügt) <https://github.com/dlaugt>`_.
 
-* Changed formatting of octal zero with prefix from "0o0" to "0":
-
-  .. code:: c++
-
-     fmt::print("{:#o}", 0);
-
-  prints "0".
-
 * Enums are now mapped to correct underlying types instead of ``int``
   (`#1286 <https://github.com/fmtlib/fmt/pull/1286>`_).
   Thanks `@agmt (Egor Seredin) <https://github.com/agmt>`_.
 
-* Added a CUDA test. Thanks
-  `@luncliff (Park DongHa) <https://github.com/luncliff>`_.
+* {fmt} can now be installed on Linux, macOS and Windows with
+  `Conda <https://docs.conda.io/en/latest/>`__ using its
+  `conda-forge <https://conda-forge.org>`__
+  `package <https://github.com/conda-forge/fmt-feedstock>`__
+  (`#1410 <https://github.com/fmtlib/fmt/pull/1410>`_)::
+
+    conda install -c conda-forge fmt
+
+  Thanks `@tdegeus (Tom de Geus) <https://github.com/tdegeus>`_.
+
+* Added a CUDA test (`#1285 <https://github.com/fmtlib/fmt/pull/1285>`_,
+  `#1317 <https://github.com/fmtlib/fmt/pull/1317>`_).
+  Thanks `@luncliff (Park DongHa) <https://github.com/luncliff>`_ and
+  `@risa2000 <https://github.com/risa2000>`_.
 
 * Improved documentation (`#1051 <https://github.com/fmtlib/fmt/pull/1276>`_,
   `#1291 <https://github.com/fmtlib/fmt/issues/1291>`_,
-  `#1296 <https://github.com/fmtlib/fmt/issues/1296>`_).
+  `#1296 <https://github.com/fmtlib/fmt/issues/1296>`_,
+  `#1332 <https://github.com/fmtlib/fmt/pull/1332>`_,
+  `#1337 <https://github.com/fmtlib/fmt/pull/1337>`_).
   Thanks
-  `@waywardmonkeys (Bruce Mitchener) <https://github.com/waywardmonkeys>`_.
+  `@waywardmonkeys (Bruce Mitchener) <https://github.com/waywardmonkeys>`_,
+  `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_,
+  `@jackoalan (Jack Andersen) <https://github.com/jackoalan>`_.
 
 * Fixed compile-time format string checks for user-defined types
-  (`#1292 <https://github.com/fmtlib/fmt/issues/1292>`_).
+  (`#1292 <https://github.com/fmtlib/fmt/issues/1292>`_). 
 
 * Fixed various warnings and compilation issues
   (`#1273 <https://github.com/fmtlib/fmt/issues/1273>`_,
@@ -108,7 +155,21 @@
    `#1301 <https://github.com/fmtlib/fmt/pull/1301>`_,
    `#1305 <https://github.com/fmtlib/fmt/issues/1305>`_,
    `#1306 <https://github.com/fmtlib/fmt/issues/1306>`_,
+   `#1309 <https://github.com/fmtlib/fmt/issues/1309>`_,
    `#1312 <https://github.com/fmtlib/fmt/pull/1312>`_,
+   `#1313 <https://github.com/fmtlib/fmt/issues/1313>`_,
+   `#1316 <https://github.com/fmtlib/fmt/issues/1316>`_,
+   `#1319 <https://github.com/fmtlib/fmt/issues/1319>`_,
+   `#1320 <https://github.com/fmtlib/fmt/pull/1320>`_,
+   `#1326 <https://github.com/fmtlib/fmt/pull/1326>`_,
+   `#1328 <https://github.com/fmtlib/fmt/pull/1328>`_,
+   `#1345 <https://github.com/fmtlib/fmt/pull/1345>`_,
+   `#1347 <https://github.com/fmtlib/fmt/pull/1347>`_,
+   `#1349 <https://github.com/fmtlib/fmt/pull/1349>`_,
+   `#1354 <https://github.com/fmtlib/fmt/issues/1354>`_,
+   `#1362 <https://github.com/fmtlib/fmt/issues/1362>`_,
+   `#1364 <https://github.com/fmtlib/fmt/pull/1364>`_,
+   `#1370 <https://github.com/fmtlib/fmt/pull/1370>`_,
    `#1397 <https://github.com/fmtlib/fmt/pull/1397>`_,
    `#1414 <https://github.com/fmtlib/fmt/pull/1414>`_,
    `#1416 <https://github.com/fmtlib/fmt/pull/1416>`_).
@@ -116,8 +177,14 @@
   `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
   `@neheb (Rosen Penev) <https://github.com/neheb>`_,
+  `@vedranmiletic (Vedran Miletić) <https://github.com/vedranmiletic>`_,
+  `@dkavolis (Daumantas Kavolis) <https://github.com/dkavolis>`_,
+  `@mwinterb <https://github.com/mwinterb>`_,
+  `@orivej (Orivej Desh) <https://github.com/orivej>`_,
+  `@denizevrenci (Deniz Evrenci) <https://github.com/denizevrenci>`_
   `@leonklingele <https://github.com/leonklingele>`_,
-  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
+  `@kent-tri <https://github.com/kent-tri>`_.
 
 6.0.0 - 2019-08-26
 ------------------
