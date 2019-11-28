@@ -1,17 +1,18 @@
 Overview
 ========
 
-**fmt** is an open-source formatting library.
-It can be used as a fast and safe alternative to printf and IOStreams.
+**{fmt}** is an open-source formatting library providing a fast and safe
+alternative to C stdio and C++ iostreams.
 
 .. raw:: html
 
    <div class="panel panel-default">
      <div class="panel-heading">What users say:</div>
      <div class="panel-body">
-       Thanks for creating this library. It’s been a hole in C++ for a long
-       time. I’ve used both boost::format and loki::SPrintf, and neither felt
-       like the right answer. This does.
+       Thanks for creating this library. It’s been a hole in C++ for
+       aa long time. I’ve used both <code>boost::format</code> and
+       <code>loki::SPrintf</code>, and neither felt like the right answer.
+       This does.
      </div>
    </div>
 
@@ -20,12 +21,13 @@ It can be used as a fast and safe alternative to printf and IOStreams.
 Format API
 ----------
 
-The replacement-based Format API provides a safe alternative to ``printf``,
-``sprintf`` and friends with comparable or `better performance
-<http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
+The format API is similar in spirit to the C ``printf`` family of function but
+is safer, simpler and serveral times `faster
+<http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_
+than common standard library implementations.
 The `format string syntax <syntax.html>`_ is similar to the one used by
-`str.format <http://docs.python.org/3/library/stdtypes.html#str.format>`_
-in Python:
+`str.format <http://docs.python.org/3/library/stdtypes.html#str.format>`_ in
+Python:
 
 .. code:: c++
 
@@ -60,7 +62,7 @@ The Format API also supports positional arguments useful for localization:
   fmt::print("I'd rather be {1} than {0}.", "right", "happy");
 
 Named arguments can be created with ``fmt::arg``. This makes it easier to track 
-what goes where when multiple values are being inserted:
+what goes where when multiple arguments are being formatted:
 
 .. code:: c++
 
@@ -72,20 +74,9 @@ an alternative, slightly terser syntax for named arguments:
 
 .. code:: c++
 
+  using namespace fmt::literals;
   fmt::print("Hello, {name}! The answer is {number}. Goodbye, {name}.",
              "name"_a="World", "number"_a=42);
-
-The ``_format`` suffix may be used to format string literals similar to Python:
-
-.. code:: c++
-
-  std::string message = "{0}{1}{0}"_format("abra", "cad"); 
-
-Other than the placement of the format string on the left of the operator, 
-``_format`` is functionally identical to ``fmt::format``. In order to use the 
-literal operators, they must be made visible with the directive 
-``using namespace fmt::literals;``. Note that this brings in only ``_a`` and 
-``_format`` but nothing else from the ``fmt`` namespace.
 
 .. _safety:
 
@@ -106,11 +97,10 @@ string", because the argument ``"forty-two"`` is a string while the format code
 
 .. code:: c++
 
-  format(fmt("The answer is {:d}"), "forty-two");
+  format(FMT_STRING("The answer is {:d}"), "forty-two");
 
 reports a compile-time error for the same reason on compilers that support
-relaxed ``constexpr``. See `here <api.html#c.fmt>`_ for how to enable
-compile-time checks.
+relaxed ``constexpr``. See `here <api.html#c.fmt>`_ for details.
 
 The following code
 
@@ -178,13 +168,13 @@ The library is highly portable and relies only on a small set of C++11 features:
 * alias templates
 
 These are available since GCC 4.8, Clang 3.0 and MSVC 19.0 (2015). For older
-compilers use fmt `version 4.x
+compilers use {fmt} `version 4.x
 <https://github.com/fmtlib/fmt/releases/tag/4.1.0>`_ which continues to be
 maintained and only requires C++98.
 
 The output of all formatting functions is consistent across platforms. In
 particular, formatting a floating-point infinity always gives ``inf`` while the
-output of ``printf`` is platform-dependent in this case. For example,
+output of ``printf`` is platform-dependent. For example,
 
 .. code::
 
@@ -197,9 +187,9 @@ always prints ``inf``.
 Ease of Use
 -----------
 
-fmt has a small self-contained code base with the core library consisting of
+{fmt} has a small self-contained code base with the core library consisting of
 just three header files and no external dependencies.
-A permissive BSD `license <https://github.com/fmtlib/fmt#license>`_ allows
+A permissive MIT `license <https://github.com/fmtlib/fmt#license>`_ allows
 using the library both in open-source and commercial projects.
 
 .. raw:: html
