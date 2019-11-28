@@ -116,11 +116,11 @@ class format_string_compiler : public error_handler {
   }
 
   FMT_CONSTEXPR void on_arg_id() {
-    part_ = part::make_arg_index(parse_context_.next_arg_id());
+    part_ = part::make_arg_index(static_cast<unsigned>(parse_context_.next_arg_id()));
   }
 
   FMT_CONSTEXPR void on_arg_id(unsigned id) {
-    parse_context_.check_arg_id(id);
+    parse_context_.check_arg_id(static_cast<int>(id));
     part_ = part::make_arg_index(id);
   }
 
@@ -141,7 +141,7 @@ class format_string_compiler : public error_handler {
     auto it = parse_format_specs(begin, end, handler);
     if (*it != '}') on_error("missing '}' in format string");
     repl.arg_id = part_.part_kind == part::kind::arg_index
-                      ? arg_ref<Char>(part_.val.arg_index)
+                      ? arg_ref<Char>(static_cast<int>(part_.val.arg_index))
                       : arg_ref<Char>(part_.val.str);
     auto part = part::make_replacement(repl);
     part.arg_id_end = begin;

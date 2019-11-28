@@ -1851,7 +1851,7 @@ TEST(FormatTest, Dynamic) {
 
   std::string result = fmt::vformat(
       "{} and {} and {}", fmt::basic_format_args<ctx>(
-                              args.data(), static_cast<unsigned>(args.size())));
+                              args.data(), static_cast<int>(args.size())));
 
   EXPECT_EQ("42 and abc1 and 1.5", result);
 }
