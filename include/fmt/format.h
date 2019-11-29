@@ -207,17 +207,7 @@ namespace internal {
 // warnings.
 template <typename T> inline T const_check(T value) { return value; }
 
-// A fallback implementation of uintptr_t for systems that lack it.
-struct fallback_uintptr {
-  unsigned char value[sizeof(void*)];
-};
-#ifdef UINTPTR_MAX
-using uintptr_t = ::uintptr_t;
-#else
-using uintptr_t = fallback_uintptr;
-#endif
-
-// An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't produce
+// An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
 // undefined behavior (e.g. due to type aliasing).
 // Example: uint64_t d = bit_cast<uint64_t>(2.718);
 template <typename Dest, typename Source>
@@ -227,6 +217,32 @@ inline Dest bit_cast(const Source& source) {
   std::memcpy(&dest, &source, sizeof(dest));
   return dest;
 }
+
+inline bool is_big_endian() {
+  auto u = 1u;
+  struct bytes { char data[sizeof(u)]; };
+  return bit_cast<bytes>(u).data[0] == 0;
+}
+
+// A fallback implementation of uintptr_t for systems that lack it.
+struct fallback_uintptr {
+  unsigned char value[sizeof(void*)];
+
+  fallback_uintptr() = default;
+  explicit fallback_uintptr(const void* p) {
+    *this = bit_cast<fallback_uintptr>(p);
+    if (is_big_endian()) std::memmove(value, value, sizeof(void*));
+  }
+};
+#ifdef UINTPTR_MAX
+using uintptr_t = ::uintptr_t;
+inline uintptr_t to_uintptr(const void* p) { return bit_cast<uintptr_t>(p); }
+#else
+using uintptr_t = fallback_uintptr;
+inline fallback_uintptr to_uintptr(const void* p) {
+  return fallback_uintptr(p);
+}
+#endif
 
 // Returns the largest possible value for type T. Same as
 // std::numeric_limits<T>::max() but shorter and not affected by the max macro.
@@ -1829,7 +1845,7 @@ class arg_formatter_base {
   }
 
   void write_pointer(const void* p) {
-    writer_.write_pointer(internal::bit_cast<internal::uintptr_t>(p), specs_);
+    writer_.write_pointer(internal::to_uintptr(p), specs_);
   }
 
  protected:

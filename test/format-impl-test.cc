@@ -447,7 +447,7 @@ TEST(UtilTest, CountDigits) {
 TEST(UtilTest, WriteUIntPtr) {
   fmt::memory_buffer buf;
   fmt::internal::writer writer(buf);
-  writer.write_pointer(fmt::internal::bit_cast<fmt::internal::fallback_uintptr>(
+  writer.write_pointer(fmt::internal::fallback_uintptr(
                            reinterpret_cast<void*>(0xface)),
                        nullptr);
   EXPECT_EQ("0xface", to_string(buf));

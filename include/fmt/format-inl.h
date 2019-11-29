@@ -239,7 +239,7 @@ FMT_FUNC void system_error::init(int err_code, string_view format_str,
 namespace internal {
 
 template <> FMT_FUNC int count_digits<4>(internal::fallback_uintptr n) {
-  // Assume little endian; pointer formatting is implementation-defined anyway.
+  // fallback_uintptr is always stored in little endian.
   int i = static_cast<int>(sizeof(void*)) - 1;
   while (i > 0 && n.value[i] == 0) --i;
   auto char_digits = std::numeric_limits<unsigned char>::digits / 4;
