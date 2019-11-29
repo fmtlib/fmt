@@ -15,6 +15,10 @@
    :alt: Ask questions at StackOverflow with the tag fmt
    :target: http://stackoverflow.com/questions/tagged/fmt
 
+.. image:: https://img.shields.io/conda/vn/conda-forge/fmt.svg
+   :alt: Conda Version
+   :target: https://anaconda.org/conda-forge/fmt
+
 **{fmt}** is an open-source formatting library for C++.
 It can be used as a safe and fast alternative to (s)printf and iostreams.
 
@@ -269,10 +273,10 @@ Projects using this library
 
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   An open-source library for mathematical programming
-  
+
 * `AvioBook <https://www.aviobook.aero/en>`_: A comprehensive aircraft
   operations suite
-  
+
 * `Celestia <https://celestia.space/>`_: Real-time 3D visualization of space
 
 * `Ceph <https://ceph.com/>`_: A scalable distributed storage system
