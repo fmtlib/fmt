@@ -8,6 +8,7 @@
 #ifndef FMT_FORMAT_
 #define FMT_FORMAT_
 
+#include <cassert>
 #include <variant>
 #include "fmt/format.h"
 

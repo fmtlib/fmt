@@ -220,7 +220,9 @@ inline Dest bit_cast(const Source& source) {
 
 inline bool is_big_endian() {
   auto u = 1u;
-  struct bytes { char data[sizeof(u)]; };
+  struct bytes {
+    char data[sizeof(u)];
+  };
   return bit_cast<bytes>(u).data[0] == 0;
 }
 

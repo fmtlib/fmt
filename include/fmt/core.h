@@ -8,7 +8,6 @@
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
-#include <cassert>
 #include <cstdio>  // std::FILE
 #include <cstring>
 #include <iterator>
@@ -187,10 +186,6 @@
 #  define FMT_EXTERN
 #endif
 
-#ifndef FMT_ASSERT
-#  define FMT_ASSERT(condition, message) assert((condition) && (message))
-#endif
-
 // libc++ supports string_view in pre-c++17.
 #if (FMT_HAS_INCLUDE(<string_view>) &&                       \
      (__cplusplus > 201402L || defined(_LIBCPP_VERSION))) || \
@@ -228,6 +223,18 @@ namespace internal {
 
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
 template <typename... Ts> struct void_t_impl { using type = void; };
+
+void assert_fail(const char* file, int line, const char* message);
+
+#ifndef FMT_ASSERT
+#  ifdef NDEBUG
+#    define FMT_ASSERT(condition, message)
+#  else
+#    define FMT_ASSERT(condition, message) \
+      if (!(condition))                    \
+      fmt::internal::assert_fail(__FILE__, __LINE__, (message))
+#  endif
+#endif
 
 #if defined(FMT_USE_STRING_VIEW)
 template <typename Char> using std_string_view = std::basic_string_view<Char>;
