@@ -219,6 +219,9 @@ if (FMT_INSTALL)
   set(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
       "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
 
+  set(FMT_BIN_DIR ${CMAKE_INSTALL_BINDIR} CACHE STRING
+      "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
+
   set(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRING
       "Installation directory for include files, relative to ${CMAKE_INSTALL_PREFIX}.")
 
@@ -252,7 +255,9 @@ if (FMT_INSTALL)
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
-          DESTINATION ${FMT_LIB_DIR})
+          LIBRARY DESTINATION ${FMT_LIB_DIR}
+          ARCHIVE DESTINATION ${FMT_LIB_DIR}
+          RUNTIME DESTINATION ${FMT_BIN_DIR})
 
   install(FILES $<TARGET_PDB_FILE:${INSTALL_TARGETS}>
           DESTINATION ${FMT_LIB_DIR} OPTIONAL)
