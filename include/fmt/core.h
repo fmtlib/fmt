@@ -167,9 +167,9 @@
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
 #  ifdef FMT_EXPORT
-#    define FMT_API __declspec(dllexport)
+#    define FMT_API __pragma(warning(suppress : 4275)) __declspec(dllexport)
 #  elif defined(FMT_SHARED)
-#    define FMT_API __declspec(dllimport)
+#    define FMT_API __pragma(warning(suppress : 4275)) __declspec(dllimport)
 #    define FMT_EXTERN_TEMPLATE_API FMT_API
 #  endif
 #endif
