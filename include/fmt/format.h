@@ -231,7 +231,10 @@ struct fallback_uintptr {
   fallback_uintptr() = default;
   explicit fallback_uintptr(const void* p) {
     *this = bit_cast<fallback_uintptr>(p);
-    if (is_big_endian()) std::memmove(value, value, sizeof(void*));
+    if (is_big_endian()) {
+      for (size_t i = 0, j = sizeof(void*) - 1; i < j; ++i, --j)
+        std::swap(value[i], value[j]);
+    }
   }
 };
 #ifdef UINTPTR_MAX
