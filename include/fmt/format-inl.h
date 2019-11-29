@@ -1198,17 +1198,17 @@ int snprintf_float(T value, int precision, float_specs specs,
       exp = exp * 10 + (*p++ - '0');
     } while (p != end);
     if (sign == '-') exp = -exp;
+    int fraction_size = 0;
     if (exp_pos != begin + 1) {
       // Remove trailing zeros.
       auto fraction_end = exp_pos - 1;
       while (*fraction_end == '0') --fraction_end;
       // Move the fractional part left to get rid of the decimal point.
-      int fraction_size = static_cast<int>(fraction_end - begin - 1);
+      fraction_size = static_cast<int>(fraction_end - begin - 1);
       std::memmove(begin + 1, begin + 2, fraction_size);
-      buf.resize(fraction_size + offset + 1);
-      exp -= fraction_size;
     }
-    return exp;
+    buf.resize(fraction_size + offset + 1);
+    return exp - fraction_size;
   }
 }
 }  // namespace internal
