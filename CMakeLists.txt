@@ -252,6 +252,9 @@ if (FMT_INSTALL)
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
+          LIBRARY DESTINATION "lib"
+          ARCHIVE DESTINATION "lib"
+          RUNTIME DESTINATION "bin"
           DESTINATION ${FMT_LIB_DIR})
 
   install(FILES $<TARGET_PDB_FILE:${INSTALL_TARGETS}>
