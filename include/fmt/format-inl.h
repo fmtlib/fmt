@@ -19,6 +19,7 @@
 #include <cstdarg>
 #include <cstring>  // for std::memmove
 #include <cwchar>
+#include <memory>    // for std::uninitialized_fill_n
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
 #  include <locale>
 #endif
@@ -478,8 +479,8 @@ FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
   const uint64_t one_over_log2_10 = 0x4d104d42;  // round(pow(2, 32) / log2(10))
   int index = static_cast<int>(
       static_cast<int64_t>(
-          (min_exponent + fp::significand_size - 1) * one_over_log2_10 +
-          ((uint64_t(1) << 32) - 1)  // ceil
+          static_cast<uint64_t>(min_exponent + fp::significand_size - 1) * one_over_log2_10 +
+          ((1ULL << 32) - 1)  // ceil
           ) >>
       32  // arithmetic shift
   );
@@ -527,14 +528,14 @@ class bigint {
 
   friend struct formatter<bigint>;
 
-  void subtract_bigits(int index, bigit other, bigit& borrow) {
+  void subtract_bigits(size_t index, bigit other, bigit& borrow) {
     auto result = static_cast<double_bigit>(bigits_[index]) - other - borrow;
     bigits_[index] = static_cast<bigit>(result);
     borrow = static_cast<bigit>(result >> (bigit_bits * 2 - 1));
   }
 
   void remove_leading_zeros() {
-    int num_bigits = static_cast<int>(bigits_.size()) - 1;
+    size_t num_bigits = bigits_.size() - 1;
     while (num_bigits > 0 && bigits_[num_bigits] == 0) --num_bigits;
     bigits_.resize(num_bigits + 1);
   }
@@ -544,8 +545,8 @@ class bigint {
     FMT_ASSERT(other.exp_ >= exp_, "unaligned bigints");
     FMT_ASSERT(compare(*this, other) >= 0, "");
     bigit borrow = 0;
-    int i = other.exp_ - exp_;
-    for (int j = 0, n = static_cast<int>(other.bigits_.size()); j != n;
+    size_t i = static_cast<size_t>(other.exp_ - exp_);
+    for (size_t j = 0, n = other.bigits_.size(); j != n;
          ++i, ++j) {
       subtract_bigits(i, other.bigits_[j], borrow);
     }
@@ -597,7 +598,7 @@ class bigint {
   }
 
   void assign(uint64_t n) {
-    int num_bigits = 0;
+    size_t num_bigits = 0;
     do {
       bigits_[num_bigits++] = n & ~bigit(0);
       n >>= bigit_bits;
@@ -633,11 +634,11 @@ class bigint {
     int num_lhs_bigits = lhs.num_bigits(), num_rhs_bigits = rhs.num_bigits();
     if (num_lhs_bigits != num_rhs_bigits)
       return num_lhs_bigits > num_rhs_bigits ? 1 : -1;
-    int i = static_cast<int>(lhs.bigits_.size()) - 1;
-    int j = static_cast<int>(rhs.bigits_.size()) - 1;
-    int end = i - j;
-    if (end < 0) end = 0;
-    for (; i >= end; --i, --j) {
+    size_t i = lhs.bigits_.size();
+    size_t j = rhs.bigits_.size();
+    while ((i != 0) && (j != 0)) {
+      -- i;
+      -- j;
       bigit lhs_bigit = lhs.bigits_[i], rhs_bigit = rhs.bigits_[j];
       if (lhs_bigit != rhs_bigit) return lhs_bigit > rhs_bigit ? 1 : -1;
     }
@@ -653,7 +654,7 @@ class bigint {
     if (max_lhs_bigits + 1 < num_rhs_bigits) return -1;
     if (max_lhs_bigits > num_rhs_bigits) return 1;
     auto get_bigit = [](const bigint& n, int i) -> bigit {
-      return i >= n.exp_ && i < n.num_bigits() ? n.bigits_[i - n.exp_] : 0;
+      return i >= n.exp_ && i < n.num_bigits() ? n.bigits_[static_cast<size_t>(i - n.exp_)] : 0;
     };
     double_bigit borrow = 0;
     int min_exp = (std::min)((std::min)(lhs1.exp_, lhs2.exp_), rhs.exp_);
@@ -691,25 +692,25 @@ class bigint {
 
   void square() {
     basic_memory_buffer<bigit, bigits_capacity> n(std::move(bigits_));
-    int num_bigits = static_cast<int>(bigits_.size());
-    int num_result_bigits = 2 * num_bigits;
+    size_t num_bigits = bigits_.size();
+    size_t num_result_bigits = 2 * num_bigits;
     bigits_.resize(num_result_bigits);
     using accumulator_t = conditional_t<FMT_USE_INT128, uint128_t, accumulator>;
     auto sum = accumulator_t();
-    for (int bigit_index = 0; bigit_index < num_bigits; ++bigit_index) {
+    for (size_t bigit_index = 0; bigit_index < num_bigits; ++bigit_index) {
       // Compute bigit at position bigit_index of the result by adding
       // cross-product terms n[i] * n[j] such that i + j == bigit_index.
-      for (int i = 0, j = bigit_index; j >= 0; ++i, --j) {
+      for (size_t i = 0; i <= bigit_index; ++ i) {
         // Most terms are multiplied twice which can be optimized in the future.
-        sum += static_cast<double_bigit>(n[i]) * n[j];
+        sum += static_cast<double_bigit>(n[i]) * n[bigit_index - i];
       }
       bigits_[bigit_index] = static_cast<bigit>(sum);
       sum >>= bits<bigit>::value;  // Compute the carry.
     }
     // Do the same for the top half.
-    for (int bigit_index = num_bigits; bigit_index < num_result_bigits;
+    for (size_t bigit_index = num_bigits; bigit_index < num_result_bigits;
          ++bigit_index) {
-      for (int j = num_bigits - 1, i = bigit_index - j; i < num_bigits;)
+      for (size_t j = num_bigits - 1, i = bigit_index - j; i < num_bigits;)
         sum += static_cast<double_bigit>(n[i++]) * n[j--];
       bigits_[bigit_index] = static_cast<bigit>(sum);
       sum >>= bits<bigit>::value;
@@ -724,16 +725,15 @@ class bigint {
   int divmod_assign(const bigint& divisor) {
     FMT_ASSERT(this != &divisor, "");
     if (compare(*this, divisor) < 0) return 0;
-    int num_bigits = static_cast<int>(bigits_.size());
+    size_t num_bigits = bigits_.size();
     FMT_ASSERT(divisor.bigits_[divisor.bigits_.size() - 1] != 0, "");
-    int exp_difference = exp_ - divisor.exp_;
-    if (exp_difference > 0) {
+    if (exp_ > divisor.exp_) {
+      const auto exp_difference = static_cast<size_t>(exp_ - divisor.exp_);
       // Align bigints by adding trailing zeros to simplify subtraction.
       bigits_.resize(num_bigits + exp_difference);
-      for (int i = num_bigits - 1, j = i + exp_difference; i >= 0; --i, --j)
-        bigits_[j] = bigits_[i];
+      std::memmove(&bigits_[exp_difference], &bigits_[0], num_bigits * sizeof(bigits_[0]));
       std::uninitialized_fill_n(bigits_.data(), exp_difference, 0);
-      exp_ -= exp_difference;
+      exp_ = divisor.exp_;
     }
     int quotient = 0;
     do {
@@ -1008,7 +1008,7 @@ void fallback_format(Double d, buffer<char>& buf, int& exp10) {
   if (!upper) upper = &lower;
   // Invariant: value == (numerator / denominator) * pow(10, exp10).
   bool even = (value.f & 1) == 0;
-  int num_digits = 0;
+  size_t num_digits = 0;
   char* data = buf.data();
   for (;;) {
     int digit = numerator.divmod_assign(denominator);
@@ -1026,7 +1026,7 @@ void fallback_format(Double d, buffer<char>& buf, int& exp10) {
           ++data[num_digits - 1];
       }
       buf.resize(num_digits);
-      exp10 -= num_digits - 1;
+      exp10 -= static_cast<int>(num_digits - 1);
       return;
     }
     numerator *= 10;
@@ -1068,7 +1068,7 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
     fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
     if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error)
       return snprintf_float(value, precision, specs, buf);
-    int num_digits = handler.size;
+    auto num_digits = static_cast<size_t>(handler.size);
     if (!fixed) {
       // Remove trailing zeros.
       while (num_digits > 0 && buf[num_digits - 1] == '0') {
@@ -1076,7 +1076,7 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
         ++exp;
       }
     }
-    buf.resize(to_unsigned(num_digits));
+    buf.resize(num_digits);
   } else {
     fp fp_value;
     auto boundaries = specs.binary32
@@ -1175,10 +1175,10 @@ int snprintf_float(T value, int precision, float_specs specs,
       do {
         --p;
       } while (is_digit(*p));
-      int fraction_size = static_cast<int>(end - p - 1);
-      std::memmove(p, p + 1, fraction_size);
+      auto fraction_size = end - p - 1;
+      std::memmove(p, p + 1, static_cast<size_t>(fraction_size));
       buf.resize(size - 1);
-      return -fraction_size;
+      return static_cast<int>(-fraction_size);
     }
     if (specs.format == float_format::hex) {
       buf.resize(size + offset);
@@ -1203,10 +1203,10 @@ int snprintf_float(T value, int precision, float_specs specs,
       auto fraction_end = exp_pos - 1;
       while (*fraction_end == '0') --fraction_end;
       // Move the fractional part left to get rid of the decimal point.
-      int fraction_size = static_cast<int>(fraction_end - begin - 1);
+      const auto fraction_size = static_cast<size_t>(fraction_end - begin - 1);
       std::memmove(begin + 1, begin + 2, fraction_size);
       buf.resize(fraction_size + offset + 1);
-      exp -= fraction_size;
+      exp -= static_cast<int>(fraction_size);
     }
     return exp;
   }
