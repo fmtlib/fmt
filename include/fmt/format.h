@@ -1244,7 +1244,7 @@ int snprintf_float(T value, int precision, float_specs specs,
                    buffer<char>& buf);
 
 template <typename T> T promote_float(T value) { return value; }
-inline double promote_float(float value) { return value; }
+inline double promote_float(float value) { return static_cast<double>(value); }
 
 template <typename Handler>
 FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
@@ -2627,11 +2627,11 @@ class format_string_checker {
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
 
   FMT_CONSTEXPR void on_arg_id() {
-    arg_id_ = context_.next_arg_id();
+    arg_id_ = static_cast<unsigned>(context_.next_arg_id());
     check_arg_id();
   }
   FMT_CONSTEXPR void on_arg_id(int id) {
-    arg_id_ = id;
+    arg_id_ = static_cast<unsigned>(id);
     context_.check_arg_id(id);
     check_arg_id();
   }

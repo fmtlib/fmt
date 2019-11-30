@@ -355,7 +355,7 @@ template <typename OutputIt, typename Char> class basic_printf_context {
   OutputIt out() { return out_; }
   void advance_to(OutputIt it) { out_ = it; }
 
-  format_arg arg(unsigned id) const { return args_.get(id); }
+  format_arg arg(int id) const { return args_.get(id); }
 
   basic_format_parse_context<Char>& parse_context() { return parse_ctx_; }
 
@@ -399,10 +399,10 @@ template <typename OutputIt, typename Char>
 typename basic_printf_context<OutputIt, Char>::format_arg
 basic_printf_context<OutputIt, Char>::get_arg(unsigned arg_index) {
   if (arg_index == internal::max_value<unsigned>())
-    arg_index = parse_ctx_.next_arg_id();
+    arg_index = static_cast<unsigned>(parse_ctx_.next_arg_id());
   else
-    parse_ctx_.check_arg_id(--arg_index);
-  return internal::get_arg(*this, arg_index);
+    parse_ctx_.check_arg_id(static_cast<int>(--arg_index));
+  return internal::get_arg(*this, static_cast<int>(arg_index));
 }
 
 template <typename OutputIt, typename Char>
@@ -414,10 +414,10 @@ unsigned basic_printf_context<OutputIt, Char>::parse_header(
     // Parse an argument index (if followed by '$') or a width possibly
     // preceded with '0' flag(s).
     internal::error_handler eh;
-    unsigned value = parse_nonnegative_int(it, end, eh);
+    int value = parse_nonnegative_int(it, end, eh);
     if (it != end && *it == '$') {  // value is an argument index
       ++it;
-      arg_index = value;
+      arg_index = static_cast<unsigned>(value);
     } else {
       if (c == '0') specs.fill[0] = '0';
       if (value != 0) {
@@ -436,8 +436,8 @@ unsigned basic_printf_context<OutputIt, Char>::parse_header(
       specs.width = parse_nonnegative_int(it, end, eh);
     } else if (*it == '*') {
       ++it;
-      specs.width = visit_format_arg(
-          internal::printf_width_handler<char_type>(specs), get_arg());
+      specs.width = static_cast<int>(visit_format_arg(
+          internal::printf_width_handler<char_type>(specs), get_arg()));
     }
   }
   return arg_index;
@@ -473,11 +473,11 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
       c = it != end ? *it : 0;
       if ('0' <= c && c <= '9') {
         internal::error_handler eh;
-        specs.precision = static_cast<int>(parse_nonnegative_int(it, end, eh));
+        specs.precision = parse_nonnegative_int(it, end, eh);
       } else if (c == '*') {
         ++it;
         specs.precision =
-            visit_format_arg(internal::printf_precision_handler(), get_arg());
+            static_cast<int>(visit_format_arg(internal::printf_precision_handler(), get_arg()));
       } else {
         specs.precision = 0;
       }
