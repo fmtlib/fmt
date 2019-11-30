@@ -20,3 +20,14 @@ TEST(AssertTest, Fail) {
   EXPECT_DEBUG_DEATH_IF_SUPPORTED(FMT_ASSERT(false, "don't panic!"),
                                   "don't panic!");
 }
+
+bool test_condition = false;
+
+TEST(AssertTest, DanglingElse) {
+  bool executed_else = false;
+  if (test_condition)
+    FMT_ASSERT(true, "");
+  else
+    executed_else = true;
+  EXPECT_TRUE(executed_else);
+}

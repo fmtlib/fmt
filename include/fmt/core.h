@@ -231,8 +231,9 @@ void assert_fail(const char* file, int line, const char* message);
 #    define FMT_ASSERT(condition, message)
 #  else
 #    define FMT_ASSERT(condition, message) \
-      if (!(condition))                    \
-      fmt::internal::assert_fail(__FILE__, __LINE__, (message))
+      ((condition)                         \
+           ? void()                        \
+           : fmt::internal::assert_fail(__FILE__, __LINE__, (message)))
 #  endif
 #endif
 
