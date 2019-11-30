@@ -224,19 +224,23 @@ TEST(FPTest, Normalize) {
 }
 
 TEST(FPTest, ComputeFloatBoundaries) {
+  /*
+   * TODO: investigate why changing type of x to 'float' and removing the
+   * static casts causes the test to fail.
+   */
   struct {
     double x, lower, upper;
   } tests[] = {
       // regular
-      {1.5f, 1.4999999403953552, 1.5000000596046448},
+      {static_cast<double>(1.5f), 1.4999999403953552, 1.5000000596046448},
       // boundary
-      {1.0f, 0.9999999701976776, 1.0000000596046448},
+      {static_cast<double>(1.0f), 0.9999999701976776, 1.0000000596046448},
       // min normal
-      {1.1754944e-38f, 1.1754942807573643e-38, 1.1754944208872107e-38},
+      {static_cast<double>(1.1754944e-38f), 1.1754942807573643e-38, 1.1754944208872107e-38},
       // max subnormal
-      {1.1754942e-38f, 1.1754941406275179e-38, 1.1754942807573643e-38},
+      {static_cast<double>(1.1754942e-38f), 1.1754941406275179e-38, 1.1754942807573643e-38},
       // min subnormal
-      {1e-45f, 7.006492321624085e-46, 2.1019476964872256e-45},
+      {static_cast<double>(1e-45f), 7.006492321624085e-46, 2.1019476964872256e-45},
   };
   for (auto test : tests) {
     fp vlower = normalize(fp(test.lower));
@@ -277,7 +281,7 @@ TEST(FPTest, GetRoundDirection) {
   EXPECT_EQ(fmt::internal::up, get_round_direction(100, 51, 0));
   EXPECT_EQ(fmt::internal::down, get_round_direction(100, 40, 10));
   EXPECT_EQ(fmt::internal::up, get_round_direction(100, 60, 10));
-  for (int i = 41; i < 60; ++i)
+  for (size_t i = 41; i < 60; ++i)
     EXPECT_EQ(fmt::internal::unknown, get_round_direction(100, i, 10));
   uint64_t max = max_value<uint64_t>();
   EXPECT_THROW(get_round_direction(100, 100, 0), assertion_failure);
