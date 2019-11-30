@@ -34,7 +34,7 @@
              69767160-cdaca400-112f-11ea-9fc5-347c9f83caad.png
 
 * {fmt} no longer converts ``float`` arguments to ``double``. In particular this
-  improves the default (shortest) representation of ``float``s and makes
+  improves the default (shortest) representation of floats and makes
   ``fmt::format`` consistent with ``std::format`` specs
   (`#1336 <https://github.com/fmtlib/fmt/issues/1336>`_,
   `#1360 <https://github.com/fmtlib/fmt/pull/1360>`_,
@@ -48,7 +48,7 @@
 
   Thanks `@orivej (Orivej Desh) <https://github.com/orivej>`_.
 
-* Added support for ``int128_t``
+* Added support for 128-bit integers
   (`#1287 <https://github.com/fmtlib/fmt/pull/1287>`_):
 
   .. code:: c++
@@ -147,32 +147,32 @@
 
 * Fixed various warnings and compilation issues
   (`#1273 <https://github.com/fmtlib/fmt/issues/1273>`_,
-   `#1278 <https://github.com/fmtlib/fmt/pull/1278>`_,
-   `#1280 <https://github.com/fmtlib/fmt/pull/1280>`_,
-   `#1281 <https://github.com/fmtlib/fmt/issues/1281>`_,
-   `#1288 <https://github.com/fmtlib/fmt/issues/1288>`_,
-   `#1290 <https://github.com/fmtlib/fmt/pull/1290>`_,
-   `#1301 <https://github.com/fmtlib/fmt/pull/1301>`_,
-   `#1305 <https://github.com/fmtlib/fmt/issues/1305>`_,
-   `#1306 <https://github.com/fmtlib/fmt/issues/1306>`_,
-   `#1309 <https://github.com/fmtlib/fmt/issues/1309>`_,
-   `#1312 <https://github.com/fmtlib/fmt/pull/1312>`_,
-   `#1313 <https://github.com/fmtlib/fmt/issues/1313>`_,
-   `#1316 <https://github.com/fmtlib/fmt/issues/1316>`_,
-   `#1319 <https://github.com/fmtlib/fmt/issues/1319>`_,
-   `#1320 <https://github.com/fmtlib/fmt/pull/1320>`_,
-   `#1326 <https://github.com/fmtlib/fmt/pull/1326>`_,
-   `#1328 <https://github.com/fmtlib/fmt/pull/1328>`_,
-   `#1345 <https://github.com/fmtlib/fmt/pull/1345>`_,
-   `#1347 <https://github.com/fmtlib/fmt/pull/1347>`_,
-   `#1349 <https://github.com/fmtlib/fmt/pull/1349>`_,
-   `#1354 <https://github.com/fmtlib/fmt/issues/1354>`_,
-   `#1362 <https://github.com/fmtlib/fmt/issues/1362>`_,
-   `#1364 <https://github.com/fmtlib/fmt/pull/1364>`_,
-   `#1370 <https://github.com/fmtlib/fmt/pull/1370>`_,
-   `#1397 <https://github.com/fmtlib/fmt/pull/1397>`_,
-   `#1414 <https://github.com/fmtlib/fmt/pull/1414>`_,
-   `#1416 <https://github.com/fmtlib/fmt/pull/1416>`_).
+  `#1278 <https://github.com/fmtlib/fmt/pull/1278>`_,
+  `#1280 <https://github.com/fmtlib/fmt/pull/1280>`_,
+  `#1281 <https://github.com/fmtlib/fmt/issues/1281>`_,
+  `#1288 <https://github.com/fmtlib/fmt/issues/1288>`_,
+  `#1290 <https://github.com/fmtlib/fmt/pull/1290>`_,
+  `#1301 <https://github.com/fmtlib/fmt/pull/1301>`_,
+  `#1305 <https://github.com/fmtlib/fmt/issues/1305>`_,
+  `#1306 <https://github.com/fmtlib/fmt/issues/1306>`_,
+  `#1309 <https://github.com/fmtlib/fmt/issues/1309>`_,
+  `#1312 <https://github.com/fmtlib/fmt/pull/1312>`_,
+  `#1313 <https://github.com/fmtlib/fmt/issues/1313>`_,
+  `#1316 <https://github.com/fmtlib/fmt/issues/1316>`_,
+  `#1319 <https://github.com/fmtlib/fmt/issues/1319>`_,
+  `#1320 <https://github.com/fmtlib/fmt/pull/1320>`_,
+  `#1326 <https://github.com/fmtlib/fmt/pull/1326>`_,
+  `#1328 <https://github.com/fmtlib/fmt/pull/1328>`_,
+  `#1345 <https://github.com/fmtlib/fmt/pull/1345>`_,
+  `#1347 <https://github.com/fmtlib/fmt/pull/1347>`_,
+  `#1349 <https://github.com/fmtlib/fmt/pull/1349>`_,
+  `#1354 <https://github.com/fmtlib/fmt/issues/1354>`_,
+  `#1362 <https://github.com/fmtlib/fmt/issues/1362>`_,
+  `#1364 <https://github.com/fmtlib/fmt/pull/1364>`_,
+  `#1370 <https://github.com/fmtlib/fmt/pull/1370>`_,
+  `#1397 <https://github.com/fmtlib/fmt/pull/1397>`_,
+  `#1414 <https://github.com/fmtlib/fmt/pull/1414>`_,
+  `#1416 <https://github.com/fmtlib/fmt/pull/1416>`_).
   Thanks `@hhb <https://github.com/hhb>`_,
   `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
