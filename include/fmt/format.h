@@ -254,11 +254,12 @@ inline fallback_uintptr to_uintptr(const void* p) {
 template <typename T> constexpr T max_value() {
   return (std::numeric_limits<T>::max)();
 }
-template <typename T> constexpr int digits() {
+template <typename T> constexpr int num_bits() {
   return std::numeric_limits<T>::digits;
 }
-template <> constexpr int digits<fallback_uintptr>() {
-  return sizeof(void*) * std::numeric_limits<unsigned char>::digits;
+template <> constexpr int num_bits<fallback_uintptr>() {
+  return static_cast<int>(sizeof(void*) *
+                          std::numeric_limits<unsigned char>::digits);
 }
 
 // An approximation of iterator_t for pre-C++20 systems.
@@ -979,7 +980,7 @@ Char* format_uint(Char* buffer, internal::fallback_uintptr n, int num_digits,
 template <unsigned BASE_BITS, typename Char, typename It, typename UInt>
 inline It format_uint(It out, UInt value, int num_digits, bool upper = false) {
   // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1).
-  char buffer[digits<UInt>() / BASE_BITS + 1];
+  char buffer[num_bits<UInt>() / BASE_BITS + 1];
   format_uint<BASE_BITS>(buffer, value, num_digits, upper);
   return internal::copy_str<Char>(buffer, buffer + num_digits, out);
 }
