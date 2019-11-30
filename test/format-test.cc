@@ -2005,9 +2005,11 @@ class mock_arg_formatter
     : public fmt::internal::arg_formatter_base<buffer_range> {
  private:
 #if FMT_USE_INT128
-  MOCK_METHOD1(call, void(__int128_t value));
+  MOCK_METHOD1(callSigned, void(__int128_t value));
+  MOCK_METHOD1(callUnsigned, void(__uint128_t value));
 #else
-  MOCK_METHOD1(call, void(long long value));
+  MOCK_METHOD1(callSigned, void(long long value));
+  MOCK_METHOD1(callUnsigned, void(unsigned long long value));
 #endif
 
  public:
@@ -2017,13 +2019,20 @@ class mock_arg_formatter
   mock_arg_formatter(fmt::format_context& ctx, fmt::format_parse_context*,
                      fmt::format_specs* s = nullptr)
       : base(fmt::internal::get_container(ctx.out()), s, ctx.locale()) {
-    EXPECT_CALL(*this, call(42));
+    EXPECT_CALL(*this, callSigned(42));
   }
 
   template <typename T>
-  typename std::enable_if<fmt::internal::is_integral<T>::value, iterator>::type
+  typename std::enable_if<fmt::internal::is_integral<T>::value && std::is_signed<T>::value, iterator>::type
   operator()(T value) {
-    call(value);
+    callSigned(value);
+    return base::operator()(value);
+  }
+
+  template <typename T>
+  typename std::enable_if<fmt::internal::is_integral<T>::value && !std::is_signed<T>::value, iterator>::type
+  operator()(T value) {
+    callUnsigned(value);
     return base::operator()(value);
   }
 
