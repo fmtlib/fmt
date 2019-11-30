@@ -110,7 +110,7 @@ template <> struct std::formatter<S> {
     char c = get_char();
     if (!isdigit(c) || (++iter, get_char()) != '}')
       throw format_error("invalid format");
-    width_arg_id = c - '0';
+    width_arg_id = static_cast<size_t>(c - '0');
     ctx.check_arg_id(width_arg_id);
     return ++iter;
   }
