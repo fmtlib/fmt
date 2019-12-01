@@ -183,6 +183,12 @@ internal::truncating_iterator<OutputIt> printf(
     basic_format_args<Context> args) {
   return Context(it, format, args).format();
 }
+
+enum
+{
+   ARG_INDEX_SENTINEL = -1
+};
+
 }  // namespace internal
 
 using internal::printf;  // For printing into memory_buffer.
@@ -335,10 +341,10 @@ template <typename OutputIt, typename Char> class basic_printf_context {
 
   // Returns the argument with specified index or, if arg_index is equal
   // to the maximum unsigned value, the next argument.
-  format_arg get_arg(unsigned arg_index = internal::max_value<unsigned>());
+  format_arg get_arg(int arg_index = internal::ARG_INDEX_SENTINEL);
 
   // Parses argument index, flags and width and returns the argument index.
-  unsigned parse_header(const Char*& it, const Char* end, format_specs& specs);
+  int parse_header(const Char*& it, const Char* end, format_specs& specs);
 
  public:
   /**
@@ -397,18 +403,18 @@ void basic_printf_context<OutputIt, Char>::parse_flags(format_specs& specs,
 
 template <typename OutputIt, typename Char>
 typename basic_printf_context<OutputIt, Char>::format_arg
-basic_printf_context<OutputIt, Char>::get_arg(unsigned arg_index) {
-  if (arg_index == internal::max_value<unsigned>())
-    arg_index = static_cast<unsigned>(parse_ctx_.next_arg_id());
+basic_printf_context<OutputIt, Char>::get_arg(int arg_index) {
+  if (arg_index == internal::ARG_INDEX_SENTINEL)
+    arg_index = parse_ctx_.next_arg_id();
   else
-    parse_ctx_.check_arg_id(static_cast<int>(--arg_index));
-  return internal::get_arg(*this, static_cast<int>(arg_index));
+    parse_ctx_.check_arg_id(--arg_index);
+  return internal::get_arg(*this, arg_index);
 }
 
 template <typename OutputIt, typename Char>
-unsigned basic_printf_context<OutputIt, Char>::parse_header(
+int basic_printf_context<OutputIt, Char>::parse_header(
     const Char*& it, const Char* end, format_specs& specs) {
-  unsigned arg_index = internal::max_value<unsigned>();
+  int arg_index = internal::ARG_INDEX_SENTINEL;
   char_type c = *it;
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
@@ -417,7 +423,7 @@ unsigned basic_printf_context<OutputIt, Char>::parse_header(
     int value = parse_nonnegative_int(it, end, eh);
     if (it != end && *it == '$') {  // value is an argument index
       ++it;
-      arg_index = static_cast<unsigned>(value);
+      arg_index = value;
     } else {
       if (c == '0') specs.fill[0] = '0';
       if (value != 0) {
@@ -464,7 +470,7 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     specs.align = align::right;
 
     // Parse argument index, flags and width.
-    unsigned arg_index = parse_header(it, end, specs);
+    int arg_index = parse_header(it, end, specs);
     if (arg_index == 0) on_error("argument index out of range");
 
     // Parse precision.

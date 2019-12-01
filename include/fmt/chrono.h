@@ -795,6 +795,15 @@ struct chrono_formatter {
                             std::chrono::duration<Rep, Period> d)
       : context(ctx), out(o), val(static_cast<rep>(std::abs(d.count()))), negative(d.count() < 0) {
 
+   if (d.count() < 0) {
+      val = static_cast<rep>(- d.count());
+      negative = true;
+   }
+   else {
+      val = static_cast<rep>(d.count());
+      negative = false;
+   }
+
     // this may overflow and/or the result may not fit in the
     // target type.
 #if FMT_SAFE_DURATION_CAST

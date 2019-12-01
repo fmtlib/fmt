@@ -1244,7 +1244,7 @@ int snprintf_float(T value, int precision, float_specs specs,
                    buffer<char>& buf);
 
 template <typename T> T promote_float(T value) { return value; }
-inline double promote_float(float value) { return static_cast<double>(value); }
+inline double promote_float(float value) { return value; }
 
 template <typename Handler>
 FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
@@ -2620,18 +2620,18 @@ class format_string_checker {
  public:
   explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
-      : arg_id_(max_value<unsigned>()),
+      : arg_id_(ARG_ID_SENTINEL),
         context_(format_str, eh),
         parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
 
   FMT_CONSTEXPR void on_arg_id() {
-    arg_id_ = static_cast<unsigned>(context_.next_arg_id());
+    arg_id_ = context_.next_arg_id();
     check_arg_id();
   }
   FMT_CONSTEXPR void on_arg_id(int id) {
-    arg_id_ = static_cast<unsigned>(id);
+    arg_id_ = id;
     context_.check_arg_id(id);
     check_arg_id();
   }
@@ -2661,7 +2661,9 @@ class format_string_checker {
   // Format specifier parsing function.
   using parse_func = const Char* (*)(parse_context_type&);
 
-  unsigned arg_id_;
+  enum { ARG_ID_SENTINEL = -1 };
+
+  int arg_id_;
   parse_context_type context_;
   parse_func parse_funcs_[num_args > 0 ? num_args : 1];
 };

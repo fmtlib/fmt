@@ -141,7 +141,7 @@ class format_string_compiler : public error_handler {
     auto it = parse_format_specs(begin, end, handler);
     if (*it != '}') on_error("missing '}' in format string");
     repl.arg_id = part_.part_kind == part::kind::arg_index
-                      ? arg_ref<Char>(static_cast<int>(part_.val.arg_index))
+                      ? arg_ref<Char>(part_.val.arg_index)
                       : arg_ref<Char>(part_.val.str);
     auto part = part::make_replacement(repl);
     part.arg_id_end = begin;
