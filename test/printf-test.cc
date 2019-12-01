@@ -5,12 +5,13 @@
 //
 // For the license information refer to format.h.
 
+#include "fmt/printf.h"
+
 #include <cctype>
 #include <climits>
 #include <cstring>
 
 #include "fmt/core.h"
-#include "fmt/printf.h"
 #include "gtest-extra.h"
 #include "util.h"
 
@@ -300,15 +301,15 @@ void TestLength(const char* length_spec, U value) {
   using fmt::internal::const_check;
   if (const_check(max <= static_cast<unsigned>(max_value<int>()))) {
     signed_value = static_cast<int>(value);
-    unsigned_value = static_cast<unsigned>(value);
+    unsigned_value = static_cast<unsigned long long>(value);
   } else if (const_check(max <= max_value<unsigned>())) {
     signed_value = static_cast<unsigned>(value);
-    unsigned_value = static_cast<unsigned>(value);
+    unsigned_value = static_cast<unsigned long long>(value);
   }
   if (sizeof(U) <= sizeof(int) && sizeof(int) < sizeof(T)) {
     signed_value = static_cast<long long>(value);
-    unsigned_value =
-        static_cast<typename std::make_unsigned<unsigned>::type>(value);
+    unsigned_value = static_cast<unsigned long long>(
+        static_cast<typename std::make_unsigned<unsigned>::type>(value));
   } else {
     signed_value = static_cast<typename make_signed<T>::type>(value);
     unsigned_value = static_cast<typename std::make_unsigned<T>::type>(value);

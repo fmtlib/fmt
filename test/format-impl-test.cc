@@ -277,7 +277,7 @@ TEST(FPTest, GetRoundDirection) {
   EXPECT_EQ(fmt::internal::up, get_round_direction(100, 51, 0));
   EXPECT_EQ(fmt::internal::down, get_round_direction(100, 40, 10));
   EXPECT_EQ(fmt::internal::up, get_round_direction(100, 60, 10));
-  for (int i = 41; i < 60; ++i)
+  for (size_t i = 41; i < 60; ++i)
     EXPECT_EQ(fmt::internal::unknown, get_round_direction(100, i, 10));
   uint64_t max = max_value<uint64_t>();
   EXPECT_THROW(get_round_direction(100, 100, 0), assertion_failure);
