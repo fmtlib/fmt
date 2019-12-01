@@ -482,8 +482,7 @@ inline fp operator*(fp x, fp y) { return {multiply(x.f, y.f), x.e + y.e + 64}; }
 FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
   const uint64_t one_over_log2_10 = 0x4d104d42;  // round(pow(2, 32) / log2(10))
   int index = static_cast<int>(
-      static_cast<int64_t>(
-          static_cast<uint64_t>(min_exponent + fp::significand_size - 1) * one_over_log2_10 +
+      (static_cast<uint64_t>(min_exponent + fp::significand_size - 1) * one_over_log2_10 +
           ((1ULL << 32) - 1)  // ceil
           ) >>
       32  // arithmetic shift
