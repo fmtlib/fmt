@@ -16,9 +16,9 @@
   prints ``3.141592653589793``.
 
 * Made the fast binary to decimal floating-point formatter the default,
-  simplified it and improved performance. {fmt} is now 15x faster than libc++'s
-  ``std::ostringstream``, 11x faster than ``printf`` and 10% faster than
-  double-conversion on `dtoa-benchmark
+  simplified it and improved performance. {fmt} is now 15 times faster than
+  libc++'s ``std::ostringstream``, 11 times faster than ``printf`` and 10%
+  faster than double-conversion on `dtoa-benchmark
   <https://github.com/fmtlib/dtoa-benchmark>`_:
 
   ==================  =========  =======
