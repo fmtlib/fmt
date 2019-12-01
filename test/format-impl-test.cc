@@ -224,23 +224,19 @@ TEST(FPTest, Normalize) {
 }
 
 TEST(FPTest, ComputeFloatBoundaries) {
-  /*
-   * TODO: investigate why changing type of x to 'float' and removing the
-   * static casts causes the test to fail.
-   */
   struct {
     double x, lower, upper;
   } tests[] = {
       // regular
-      {static_cast<double>(1.5f), 1.4999999403953552, 1.5000000596046448},
+      {1.5f, 1.4999999403953552, 1.5000000596046448},
       // boundary
-      {static_cast<double>(1.0f), 0.9999999701976776, 1.0000000596046448},
+      {1.0f, 0.9999999701976776, 1.0000000596046448},
       // min normal
-      {static_cast<double>(1.1754944e-38f), 1.1754942807573643e-38, 1.1754944208872107e-38},
+      {1.1754944e-38f, 1.1754942807573643e-38, 1.1754944208872107e-38},
       // max subnormal
-      {static_cast<double>(1.1754942e-38f), 1.1754941406275179e-38, 1.1754942807573643e-38},
+      {1.1754942e-38f, 1.1754941406275179e-38, 1.1754942807573643e-38},
       // min subnormal
-      {static_cast<double>(1e-45f), 7.006492321624085e-46, 2.1019476964872256e-45},
+      {1e-45f, 7.006492321624085e-46, 2.1019476964872256e-45},
   };
   for (auto test : tests) {
     fp vlower = normalize(fp(test.lower));
