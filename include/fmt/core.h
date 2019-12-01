@@ -1478,6 +1478,7 @@ inline std::basic_string<Char> format(const S& format_str, Args&&... args) {
 }
 
 FMT_API void vprint(std::FILE* f, string_view format_str, format_args args);
+FMT_API void vprint(string_view format_str, format_args args);
 
 /**
   \rst
@@ -1496,8 +1497,6 @@ inline void print(std::FILE* f, const S& format_str, Args&&... args) {
   vprint(f, to_string_view(format_str),
          internal::make_args_checked<Args...>(format_str, args...));
 }
-
-FMT_API void vprint(string_view format_str, format_args args);
 
 /**
   \rst
