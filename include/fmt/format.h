@@ -33,17 +33,15 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
+#include "core.h"
+
 #include <algorithm>
 #include <cerrno>
 #include <cmath>
 #include <cstdint>
-#include <cstring>
-#include <iterator>
 #include <limits>
 #include <memory>
 #include <stdexcept>
-
-#include "core.h"
 
 #ifdef __clang__
 #  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
