@@ -52,7 +52,6 @@ participate in an overload resolution if the latter is not a string.
 
 .. doxygenfunction:: print(std::FILE *, const S&, Args&&...)
 .. doxygenfunction:: vprint(std::FILE *, string_view, format_args)
-.. doxygenfunction:: vprint(std::FILE *, wstring_view, wformat_args)
 
 Named Arguments
 ---------------
