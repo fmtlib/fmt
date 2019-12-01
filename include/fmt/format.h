@@ -34,6 +34,7 @@
 #define FMT_FORMAT_H_
 
 #include <algorithm>
+#include <cerrno>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -3444,6 +3445,21 @@ inline std::basic_string<Char> internal::vformat(
 template <typename... Args>
 inline std::size_t formatted_size(string_view format_str, const Args&... args) {
   return format_to(internal::counting_iterator(), format_str, args...).count();
+}
+
+template <typename Char, FMT_ENABLE_IF(std::is_same<Char, wchar_t>::value)>
+void vprint(std::FILE* f, basic_string_view<Char> format_str,
+            wformat_args args) {
+  wmemory_buffer buffer;
+  internal::vformat_to(buffer, format_str, args);
+  buffer.push_back(L'\0');
+  if (std::fputws(buffer.data(), f) == -1)
+    FMT_THROW(system_error(errno, "cannot write to file"));
+}
+
+template <typename Char, FMT_ENABLE_IF(std::is_same<Char, wchar_t>::value)>
+void vprint(basic_string_view<Char> format_str, wformat_args args) {
+  vprint(stdout, format_str, args);
 }
 
 #if FMT_USE_USER_DEFINED_LITERALS

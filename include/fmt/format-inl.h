@@ -12,7 +12,6 @@
 
 #include <cassert>
 #include <cctype>
-#include <cerrno>
 #include <climits>
 #include <cmath>
 #include <cstdarg>
@@ -1384,20 +1383,7 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   internal::fwrite_fully(buffer.data(), 1, buffer.size(), f);
 }
 
-FMT_FUNC void vprint(std::FILE* f, wstring_view format_str, wformat_args args) {
-  wmemory_buffer buffer;
-  internal::vformat_to(buffer, format_str, args);
-  buffer.push_back(L'\0');
-  if (std::fputws(buffer.data(), f) == -1) {
-    FMT_THROW(system_error(errno, "cannot write to file"));
-  }
-}
-
 FMT_FUNC void vprint(string_view format_str, format_args args) {
-  vprint(stdout, format_str, args);
-}
-
-FMT_FUNC void vprint(wstring_view format_str, wformat_args args) {
   vprint(stdout, format_str, args);
 }
 
