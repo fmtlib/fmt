@@ -18,7 +18,8 @@
 * Made the fast binary to decimal floating-point formatter the default,
   simplified it and improved performance. {fmt} is now 15x faster than libc++'s
   ``std::ostringstream``, 11x faster than ``printf`` and 10% faster than
-  double-conversion on dtoa-benchmark:
+  double-conversion on `dtoa-benchmark
+  <https://github.com/fmtlib/dtoa-benchmark>`_:
 
   ==================  =========  =======
   Function            Time (ns)  Speedup
@@ -37,6 +38,7 @@
   improves the default (shortest) representation of floats and makes
   ``fmt::format`` consistent with ``std::format`` specs
   (`#1336 <https://github.com/fmtlib/fmt/issues/1336>`_,
+  `#1353 <https://github.com/fmtlib/fmt/issues/1353>`_,
   `#1360 <https://github.com/fmtlib/fmt/pull/1360>`_,
   `#1361 <https://github.com/fmtlib/fmt/pull/1361>`_):
 
@@ -120,6 +122,11 @@
 
   Thanks `@dlaugt (Daniel Laügt) <https://github.com/dlaugt>`_.
 
+* Locale-specific number formatting now uses grouping
+  (`#1393 <https://github.com/fmtlib/fmt/issues/1393>`_
+  `#1394 <https://github.com/fmtlib/fmt/pull/1394>`_).
+  Thanks `@skrdaniel <https://github.com/skrdaniel>`_.
+
 * Fixed handling of types with deleted implicit rvalue conversion to
   ``const char**`` (`#1421 <https://github.com/fmtlib/fmt/issues/1421>`_):
 
@@ -134,19 +141,19 @@
      mystring str;
      fmt::print("{}", str); // now compiles
 
-* Locale-specific number formatting now uses grouping
-  (`#1394 <https://github.com/fmtlib/fmt/pull/1394>`_).
-  Thanks `@skrdaniel <https://github.com/skrdaniel>`_.
-
 * Enums are now mapped to correct underlying types instead of ``int``
   (`#1286 <https://github.com/fmtlib/fmt/pull/1286>`_).
   Thanks `@agmt (Egor Seredin) <https://github.com/agmt>`_.
+
+* Enum classes are no longer implicitly converted to ``int``
+  (`#1424 <https://github.com/fmtlib/fmt/issues/1424>`_).
 
 * Added ``basic_format_parse_context`` for consistency with C++20
   ``std::format`` and deprecated ``basic_parse_context``.
 
 * Fixed handling of UTF-8 in precision
-  (`#1390 <https://github.com/fmtlib/fmt/pull/1390>`_).
+  (`#1389 <https://github.com/fmtlib/fmt/issues/1389>`_,
+  `#1390 <https://github.com/fmtlib/fmt/pull/1390>`_).
   Thanks `@tajtiattila (Attila Tajti) <https://github.com/tajtiattila>`_.
 
 * {fmt} can now be installed on Linux, macOS and Windows with
@@ -167,13 +174,21 @@
 * Improved documentation (`#1051 <https://github.com/fmtlib/fmt/pull/1276>`_,
   `#1291 <https://github.com/fmtlib/fmt/issues/1291>`_,
   `#1296 <https://github.com/fmtlib/fmt/issues/1296>`_,
+  `#1315 <https://github.com/fmtlib/fmt/pull/1315>`_,
   `#1332 <https://github.com/fmtlib/fmt/pull/1332>`_,
   `#1337 <https://github.com/fmtlib/fmt/pull/1337>`_,
+  `#1395 <https://github.com/fmtlib/fmt/issues/1395>`_
   `#1418 <https://github.com/fmtlib/fmt/pull/1418>`_).
   Thanks
   `@waywardmonkeys (Bruce Mitchener) <https://github.com/waywardmonkeys>`_,
   `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_,
   `@jackoalan (Jack Andersen) <https://github.com/jackoalan>`_.
+
+* Various code improvements
+  (`#1358 <https://github.com/fmtlib/fmt/pull/1358>`_,
+  `#1407 <https://github.com/fmtlib/fmt/pull/1407>`_).
+  Thanks `@orivej (Orivej Desh) <https://github.com/orivej>`_,
+  `@dpacbach (David P. Sicilia) <https://github.com/dpacbach>`_,
 
 * Fixed compile-time format string checks for user-defined types
   (`#1292 <https://github.com/fmtlib/fmt/issues/1292>`_).
@@ -199,19 +214,24 @@
   `#1320 <https://github.com/fmtlib/fmt/pull/1320>`_,
   `#1326 <https://github.com/fmtlib/fmt/pull/1326>`_,
   `#1328 <https://github.com/fmtlib/fmt/pull/1328>`_,
+  `#1344 <https://github.com/fmtlib/fmt/issues/1344>`_,
   `#1345 <https://github.com/fmtlib/fmt/pull/1345>`_,
   `#1347 <https://github.com/fmtlib/fmt/pull/1347>`_,
   `#1349 <https://github.com/fmtlib/fmt/pull/1349>`_,
   `#1354 <https://github.com/fmtlib/fmt/issues/1354>`_,
   `#1362 <https://github.com/fmtlib/fmt/issues/1362>`_,
+  `#1366 <https://github.com/fmtlib/fmt/issues/1366>`_,
   `#1364 <https://github.com/fmtlib/fmt/pull/1364>`_,
   `#1370 <https://github.com/fmtlib/fmt/pull/1370>`_,
   `#1371 <https://github.com/fmtlib/fmt/pull/1371>`_,
+  `#1385 <https://github.com/fmtlib/fmt/issues/1385>`_,
   `#1388 <https://github.com/fmtlib/fmt/issues/1388>`_,
   `#1397 <https://github.com/fmtlib/fmt/pull/1397>`_,
   `#1414 <https://github.com/fmtlib/fmt/pull/1414>`_,
   `#1416 <https://github.com/fmtlib/fmt/pull/1416>`_,
+  `#1422 <https://github.com/fmtlib/fmt/issues/1422>`_
   `#1427 <https://github.com/fmtlib/fmt/pull/1427>`_,
+  `#1431 <https://github.com/fmtlib/fmt/issues/1431>`_,
   `#1433 <https://github.com/fmtlib/fmt/pull/1433>`_).
   Thanks `@hhb <https://github.com/hhb>`_,
   `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
