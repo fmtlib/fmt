@@ -15,8 +15,8 @@
 
   prints ``3.141592653589793``.
 
-* Made the fast binary to decimal floating-point formatter the default and
-  sligthly improved its performance. {fmt} is now 15x faster than libc++'s
+* Made the fast binary to decimal floating-point formatter the default,
+  simplified it and improved performance. {fmt} is now 15x faster than libc++'s
   ``std::ostringstream``, 11x faster than ``printf`` and 10% faster than
   double-conversion on dtoa-benchmark:
 
@@ -48,6 +48,10 @@
 
   Thanks `@orivej (Orivej Desh) <https://github.com/orivej>`_.
 
+* Made floating-point formatting output consistent with ``printf``/iostreams
+  (`#1336 <https://github.com/fmtlib/fmt/issues/1376>`_,
+  `#1417 <https://github.com/fmtlib/fmt/issues/1417>`_).
+
 * Added support for 128-bit integers
   (`#1287 <https://github.com/fmtlib/fmt/pull/1287>`_):
 
@@ -63,6 +67,9 @@
   output from different threads doesn't interleave
   (`#1351 <https://github.com/fmtlib/fmt/pull/1351>`_).
   Thanks `@tankiJong (Tanki Zhang) <https://github.com/tankiJong>`_.
+
+* Made compile time in the header-only mode ~20% faster by reducing the number
+  of template instantiations.
 
 * Added an overload of ``fmt::join`` that works with tuples
   (`#1322 <https://github.com/fmtlib/fmt/issues/1322>`_,
@@ -113,9 +120,34 @@
 
   Thanks `@dlaugt (Daniel Laügt) <https://github.com/dlaugt>`_.
 
+* Fixed handling of types with deleted implicit rvalue conversion to
+  ``const char**`` (`#1421 <https://github.com/fmtlib/fmt/issues/1421>`_):
+
+  .. code:: c++
+
+     struct mystring {
+       operator const char*() const&;
+       operator const char*() &;
+       operator const char*() const&& = delete;
+       operator const char*() && = delete;
+     };
+     mystring str;
+     fmt::print("{}", str); // now compiles
+
+* Locale-specific number formatting now uses grouping
+  (`#1394 <https://github.com/fmtlib/fmt/pull/1394>`_).
+  Thanks `@skrdaniel <https://github.com/skrdaniel>`_.
+
 * Enums are now mapped to correct underlying types instead of ``int``
   (`#1286 <https://github.com/fmtlib/fmt/pull/1286>`_).
   Thanks `@agmt (Egor Seredin) <https://github.com/agmt>`_.
+
+* Added ``basic_format_parse_context`` for consistency with C++20
+  ``std::format`` and deprecated ``basic_parse_context``.
+
+* Fixed handling of UTF-8 in precision
+  (`#1390 <https://github.com/fmtlib/fmt/pull/1390>`_).
+  Thanks `@tajtiattila (Attila Tajti) <https://github.com/tajtiattila>`_.
 
 * {fmt} can now be installed on Linux, macOS and Windows with
   `Conda <https://docs.conda.io/en/latest/>`__ using its
@@ -136,14 +168,18 @@
   `#1291 <https://github.com/fmtlib/fmt/issues/1291>`_,
   `#1296 <https://github.com/fmtlib/fmt/issues/1296>`_,
   `#1332 <https://github.com/fmtlib/fmt/pull/1332>`_,
-  `#1337 <https://github.com/fmtlib/fmt/pull/1337>`_).
+  `#1337 <https://github.com/fmtlib/fmt/pull/1337>`_,
+  `#1418 <https://github.com/fmtlib/fmt/pull/1418>`_).
   Thanks
   `@waywardmonkeys (Bruce Mitchener) <https://github.com/waywardmonkeys>`_,
   `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_,
   `@jackoalan (Jack Andersen) <https://github.com/jackoalan>`_.
 
 * Fixed compile-time format string checks for user-defined types
-  (`#1292 <https://github.com/fmtlib/fmt/issues/1292>`_). 
+  (`#1292 <https://github.com/fmtlib/fmt/issues/1292>`_).
+
+* Worked around a false positive in ``unsigned-integer-overflow`` sanitizer
+  (`#1377 <https://github.com/fmtlib/fmt/issues/1377>`_).
 
 * Fixed various warnings and compilation issues
   (`#1273 <https://github.com/fmtlib/fmt/issues/1273>`_,
@@ -170,9 +206,13 @@
   `#1362 <https://github.com/fmtlib/fmt/issues/1362>`_,
   `#1364 <https://github.com/fmtlib/fmt/pull/1364>`_,
   `#1370 <https://github.com/fmtlib/fmt/pull/1370>`_,
+  `#1371 <https://github.com/fmtlib/fmt/pull/1371>`_,
+  `#1388 <https://github.com/fmtlib/fmt/issues/1388>`_,
   `#1397 <https://github.com/fmtlib/fmt/pull/1397>`_,
   `#1414 <https://github.com/fmtlib/fmt/pull/1414>`_,
-  `#1416 <https://github.com/fmtlib/fmt/pull/1416>`_).
+  `#1416 <https://github.com/fmtlib/fmt/pull/1416>`_,
+  `#1427 <https://github.com/fmtlib/fmt/pull/1427>`_,
+  `#1433 <https://github.com/fmtlib/fmt/pull/1433>`_).
   Thanks `@hhb <https://github.com/hhb>`_,
   `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
@@ -184,7 +224,9 @@
   `@denizevrenci (Deniz Evrenci) <https://github.com/denizevrenci>`_
   `@leonklingele <https://github.com/leonklingele>`_,
   `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
-  `@kent-tri <https://github.com/kent-tri>`_.
+  `@kent-tri <https://github.com/kent-tri>`_,
+  `@0x8000-0000 (Florin Iucha) <https://github.com/0x8000-0000>`_,
+  `@marti4d (Chris Martin) <https://github.com/marti4d>`_.
 
 6.0.0 - 2019-08-26
 ------------------
