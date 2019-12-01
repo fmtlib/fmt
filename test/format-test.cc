@@ -1875,7 +1875,7 @@ TEST(FormatTest, Dynamic) {
 
   std::string result = fmt::vformat(
       "{} and {} and {}", fmt::basic_format_args<ctx>(
-                              args.data(), static_cast<unsigned>(args.size())));
+                              args.data(), static_cast<int>(args.size())));
 
   EXPECT_EQ("42 and abc1 and 1.5", result);
 }
@@ -2189,12 +2189,12 @@ TEST(FormatTest, WideFormatToN) {
 struct test_arg_id_handler {
   enum result { NONE, EMPTY, INDEX, NAME, ERROR };
   result res = NONE;
-  unsigned index = 0;
+  int index = 0;
   string_view name;
 
   FMT_CONSTEXPR void operator()() { res = EMPTY; }
 
-  FMT_CONSTEXPR void operator()(unsigned i) {
+  FMT_CONSTEXPR void operator()(int i) {
     res = INDEX;
     index = i;
   }
@@ -2230,9 +2230,9 @@ struct test_format_specs_handler {
 
   fmt::align_t align = fmt::align::none;
   char fill = 0;
-  unsigned width = 0;
+  int width = 0;
   fmt::internal::arg_ref<char> width_ref;
-  unsigned precision = 0;
+  int precision = 0;
   fmt::internal::arg_ref<char> precision_ref;
   char type = 0;
 
@@ -2258,14 +2258,14 @@ struct test_format_specs_handler {
   FMT_CONSTEXPR void on_hash() { res = HASH; }
   FMT_CONSTEXPR void on_zero() { res = ZERO; }
 
-  FMT_CONSTEXPR void on_width(unsigned w) { width = w; }
+  FMT_CONSTEXPR void on_width(int w) { width = w; }
   FMT_CONSTEXPR void on_dynamic_width(fmt::internal::auto_id) {}
-  FMT_CONSTEXPR void on_dynamic_width(unsigned index) { width_ref = index; }
+  FMT_CONSTEXPR void on_dynamic_width(int index) { width_ref = index; }
   FMT_CONSTEXPR void on_dynamic_width(string_view) {}
 
-  FMT_CONSTEXPR void on_precision(unsigned p) { precision = p; }
+  FMT_CONSTEXPR void on_precision(int p) { precision = p; }
   FMT_CONSTEXPR void on_dynamic_precision(fmt::internal::auto_id) {}
-  FMT_CONSTEXPR void on_dynamic_precision(unsigned index) {
+  FMT_CONSTEXPR void on_dynamic_precision(int index) {
     precision_ref = index;
   }
   FMT_CONSTEXPR void on_dynamic_precision(string_view) {}
@@ -2302,7 +2302,7 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
 struct test_parse_context {
   typedef char char_type;
 
-  FMT_CONSTEXPR unsigned next_arg_id() { return 11; }
+  FMT_CONSTEXPR int next_arg_id() { return 11; }
   template <typename Id> FMT_CONSTEXPR void check_arg_id(Id) {}
 
   FMT_CONSTEXPR const char* begin() { return nullptr; }
