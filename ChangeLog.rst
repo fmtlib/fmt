@@ -51,7 +51,7 @@
   Thanks `@orivej (Orivej Desh) <https://github.com/orivej>`_.
 
 * Made floating-point formatting output consistent with ``printf``/iostreams
-  (`#1336 <https://github.com/fmtlib/fmt/issues/1376>`_,
+  (`#1376 <https://github.com/fmtlib/fmt/issues/1376>`_,
   `#1417 <https://github.com/fmtlib/fmt/issues/1417>`_).
 
 * Added support for 128-bit integers
@@ -172,7 +172,7 @@
   Thanks `@luncliff (Park DongHa) <https://github.com/luncliff>`_ and
   `@risa2000 <https://github.com/risa2000>`_.
 
-* Improved documentation (`#1051 <https://github.com/fmtlib/fmt/pull/1276>`_,
+* Improved documentation (`#1276 <https://github.com/fmtlib/fmt/pull/1276>`_,
   `#1291 <https://github.com/fmtlib/fmt/issues/1291>`_,
   `#1296 <https://github.com/fmtlib/fmt/issues/1296>`_,
   `#1315 <https://github.com/fmtlib/fmt/pull/1315>`_,
