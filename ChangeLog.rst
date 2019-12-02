@@ -1,5 +1,5 @@
-6.1.0 - TBD
------------
+6.1.0 - 2019-12-01
+------------------
 
 * {fmt} now formats IEEE 754 ``float`` and ``double`` using the shortest decimal
   representation with correct rounding by default:
