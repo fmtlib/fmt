@@ -71,7 +71,8 @@
   Thanks `@tankiJong (Tanki Zhang) <https://github.com/tankiJong>`_.
 
 * Made compile time in the header-only mode ~20% faster by reducing the number
-  of template instantiations.
+  of template instantiations. ``wchar_t`` overload of ``vprint`` was moved from
+  ``fmt/core.h`` to ``fmt/format.h``.
 
 * Added an overload of ``fmt::join`` that works with tuples
   (`#1322 <https://github.com/fmtlib/fmt/issues/1322>`_,
