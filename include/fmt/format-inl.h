@@ -55,7 +55,7 @@ inline fmt::internal::null<> strerror_s(char*, std::size_t, ...) { return {}; }
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
-FMT_API FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
+FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
   print(stderr, "{}:{}: assertion failed: {}", file, line, message);
   std::abort();
 }
