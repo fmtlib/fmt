@@ -92,7 +92,7 @@
 
   Thanks `@jeremyong (Jeremy Ong) <https://github.com/jeremyong>`_.
 
-* Changed formatting of octal zero with prefix from "0o0" to "0":
+* Changed formatting of octal zero with prefix from "00" to "0":
 
   .. code:: c++
 
