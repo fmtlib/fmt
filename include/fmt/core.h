@@ -1211,7 +1211,6 @@ template <typename Context, typename... Args> class format_arg_store {
   static constexpr unsigned long long types =
       is_packed ? internal::encode_types<Context, Args...>()
                 : internal::is_unpacked_bit | num_args;
-  FMT_DEPRECATED static constexpr unsigned long long TYPES = types;
 
   format_arg_store(const Args&... args)
       : data_{internal::make_arg<is_packed, Context>(args)...} {}
