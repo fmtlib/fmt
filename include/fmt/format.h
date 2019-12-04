@@ -33,8 +33,6 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
-#include "core.h"
-
 #include <algorithm>
 #include <cerrno>
 #include <cmath>
@@ -42,6 +40,8 @@
 #include <limits>
 #include <memory>
 #include <stdexcept>
+
+#include "core.h"
 
 #ifdef __clang__
 #  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
@@ -3217,12 +3217,15 @@ template <typename T> inline const void* ptr(const std::shared_ptr<T>& p) {
   return p.get();
 }
 
-template <typename It, typename Char> struct arg_join : internal::view {
-  It begin;
-  It end;
+template <typename It, typename Char>
+struct arg_join : internal::view {
+  It first;
+  It last;
   basic_string_view<Char> sep;
 
-  arg_join(It b, It e, basic_string_view<Char> s) : begin(b), end(e), sep(s) {}
+  arg_join(It b, It e, basic_string_view<Char> s) : first(b), last(e), sep(s) {}
+  It begin() const { return first; }
+  It end() const { return last; }
 };
 
 template <typename It, typename Char>
@@ -3232,11 +3235,11 @@ struct formatter<arg_join<It, Char>, Char>
   auto format(const arg_join<It, Char>& value, FormatContext& ctx)
       -> decltype(ctx.out()) {
     using base = formatter<typename std::iterator_traits<It>::value_type, Char>;
-    auto it = value.begin;
+    auto it = value.begin();
     auto out = ctx.out();
-    if (it != value.end) {
+    if (it != value.end()) {
       out = base::format(*it++, ctx);
-      while (it != value.end) {
+      while (it != value.end()) {
         out = std::copy(value.sep.begin(), value.sep.end(), out);
         ctx.advance_to(out);
         out = base::format(*it++, ctx);
@@ -3272,14 +3275,14 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
   \endrst
  */
 template <typename Range>
-arg_join<internal::iterator_t<const Range>, char> join(const Range& range,
-                                                       string_view sep) {
+arg_join<internal::iterator_t<const Range>, char>
+join(const Range& range, string_view sep) {
   return join(std::begin(range), std::end(range), sep);
 }
 
 template <typename Range>
-arg_join<internal::iterator_t<const Range>, wchar_t> join(const Range& range,
-                                                          wstring_view sep) {
+arg_join<internal::iterator_t<const Range>, wchar_t>
+join(const Range& range, wstring_view sep) {
   return join(std::begin(range), std::end(range), sep);
 }
 
