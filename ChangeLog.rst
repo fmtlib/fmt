@@ -1,3 +1,12 @@
+6.1.1 - TBD
+-----------
+
+* Fixed shared library build on Windows.
+
+* Added a missing decimal point in exponent notation with trailing zeros.
+
+* Removed deprecated ``format_arg_store::TYPES``.
+
 6.1.0 - 2019-12-01
 ------------------
 
