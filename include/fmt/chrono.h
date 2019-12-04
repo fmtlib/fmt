@@ -8,13 +8,13 @@
 #ifndef FMT_CHRONO_H_
 #define FMT_CHRONO_H_
 
-#include "format.h"
-#include "locale.h"
-
 #include <chrono>
 #include <ctime>
 #include <locale>
 #include <sstream>
+
+#include "format.h"
+#include "locale.h"
 
 FMT_BEGIN_NAMESPACE
 
@@ -1038,8 +1038,11 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
 
   using iterator = typename basic_format_parse_context<Char>::iterator;
   struct parse_range {
-    iterator begin;
-    iterator end;
+    iterator first;
+    iterator last;
+
+    iterator begin() const { return first; }
+    iterator end() const { return last; }
   };
 
   FMT_CONSTEXPR parse_range do_parse(basic_format_parse_context<Char>& ctx) {
@@ -1067,8 +1070,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       -> decltype(ctx.begin()) {
     auto range = do_parse(ctx);
     format_str = basic_string_view<Char>(
-        &*range.begin, internal::to_unsigned(range.end - range.begin));
-    return range.end;
+        &*range.begin(), internal::to_unsigned(range.end() - range.begin()));
+    return range.end();
   }
 
   template <typename FormatContext>
