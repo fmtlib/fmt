@@ -1,5 +1,5 @@
-6.1.1 - TBD
------------
+6.1.1 - 2019-12-04
+------------------
 
 * Fixed shared library build on Windows
   (`#1443 <https://github.com/fmtlib/fmt/pull/1443>`_,
