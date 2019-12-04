@@ -5,7 +5,7 @@
   (`#1443 <https://github.com/fmtlib/fmt/pull/1443>`_,
   `#1445 <https://github.com/fmtlib/fmt/issues/1445>`_,
   `#1446 <https://github.com/fmtlib/fmt/pull/1446>`_,
-  `#1450 <https://github.com/fmtlib/fmt/issues/1450>`_,).
+  `#1450 <https://github.com/fmtlib/fmt/issues/1450>`_).
   Thanks `@egorpugin (Egor Pugin) <https://github.com/egorpugin>`_,
   `@bbolli (Beat Bolli) <https://github.com/bbolli>`_.
 
