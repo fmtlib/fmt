@@ -1685,6 +1685,28 @@ TEST(FormatterTest, FormatStdStringView) {
   EXPECT_EQ("test", format("{}", std::string_view("test")));
   EXPECT_EQ("foo", format("{}", string_viewable()));
 }
+
+struct explicitly_convertible_to_std_string_view {
+  explicit operator std::string_view() const { return "foo"; }
+};
+
+namespace fmt {
+
+template <>
+struct formatter<explicitly_convertible_to_std_string_view>
+    : formatter<std::string_view> {
+  auto format(const explicitly_convertible_to_std_string_view& v,
+              format_context& ctx) {
+    return format_to(ctx.out(), "'{}'", std::string_view(v));
+  }
+};
+
+}  // namespace fmt
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringView) {
+  EXPECT_EQ("'foo'",
+            fmt::format("{}", explicitly_convertible_to_std_string_view()));
+}
 #endif
 
 FMT_BEGIN_NAMESPACE
