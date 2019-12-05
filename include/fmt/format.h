@@ -69,7 +69,8 @@
 #  define FMT_HAS_BUILTIN(x) 0
 #endif
 
-#if FMT_HAS_CPP_ATTRIBUTE(fallthrough) >= 201603 && __cplusplus >= 201703
+#if FMT_HAS_CPP_ATTRIBUTE(fallthrough) && \
+    (__cplusplus >= 201703 || FMT_GCC_VERSION != 0)
 #  define FMT_FALLTHROUGH [[fallthrough]]
 #else
 #  define FMT_FALLTHROUGH
