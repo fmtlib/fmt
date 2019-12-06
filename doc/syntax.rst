@@ -265,10 +265,6 @@ The available presentation types for floating-point values are:
 |         | the current locale setting to insert the appropriate     |
 |         | number separator characters.                             |
 +---------+----------------------------------------------------------+
-| ``'%'`` | Fixed point as a percentage. This is similar to ``'f'``, |
-|         | but the argument is multiplied by 100 and a percent sign |
-|         | ``%`` is appended.                                       |
-+---------+----------------------------------------------------------+
 | none    | Similar to ``'g'``, except that fixed-point notation,    |
 |         | when used, has at least one digit past the decimal       |
 |         | point. The default precision is as high as needed to     |
