@@ -166,7 +166,7 @@ Library           Method        Run Time, s
 ================= ============= ===========
 libc              printf          1.04
 libc++            std::ostream    3.05
-{fmt} 6.1.1      fmt::print       0.75
+{fmt} 6.1.1       fmt::print      0.75
 Boost Format 1.67 boost::format   7.24
 Folly Format      folly::format   2.23
 ================= ============= ===========
