@@ -6,8 +6,6 @@
 // For the license information refer to format.h.
 
 #include <array>
-#include <cassert>
-#include <climits>
 
 #include "fmt/format.h"
 
@@ -137,20 +135,21 @@ struct scan_handler : error_handler {
       char c = *it++;
       if (c < '0' || c > '9') on_error("invalid input");
       // TODO: check overflow
-      value = value * 10 + static_cast<unsigned>(c - '0');
+      value = value * 10 + (c - '0');
     }
     scan_ctx_.advance_to(it);
     return value;
   }
 
   template <typename T = int> T read_int() {
+    T value = 0;
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
     bool negative = it != end && *it == '-';
     if (negative) ++it;
     scan_ctx_.advance_to(it);
-    const auto value = read_uint<typename std::make_unsigned<T>::type>();
-    if (negative) return -static_cast<T>(value);
-    return static_cast<T>(value);
+    value = read_uint<typename std::make_unsigned<T>::type>();
+    if (negative) value = -value;
+    return value;
   }
 
  public:
@@ -160,7 +159,7 @@ struct scan_handler : error_handler {
   const char* pos() const { return scan_ctx_.begin(); }
 
   void on_text(const char* begin, const char* end) {
-    auto size = to_unsigned(end - begin);
+    auto size = end - begin;
     auto it = scan_ctx_.begin();
     if (it + size > scan_ctx_.end() ||
         !std::equal(begin, end, make_checked(it, size))) {
@@ -198,7 +197,7 @@ struct scan_handler : error_handler {
     case scan_type::string_view_type: {
       auto s = it;
       while (it != end && *it != ' ') ++it;
-      *arg_.string_view = fmt::string_view(s, to_unsigned(it - s));
+      *arg_.string_view = fmt::string_view(s, it - s);
       scan_ctx_.advance_to(it);
       break;
     }
