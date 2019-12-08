@@ -809,13 +809,25 @@ template <typename Context> class value {
 
  private:
   // Formats an argument of a custom type, such as a user-defined class.
-  template <typename T, typename Formatter>
+  template <typename T, typename Formatter,
+            FMT_ENABLE_IF(has_formatter<T, Context>::value ||
+                          has_fallback_formatter<T, Context>::value)>
   static void format_custom_arg(
       const void* arg, basic_format_parse_context<char_type>& parse_ctx,
       Context& ctx) {
     Formatter f;
     parse_ctx.advance_to(f.parse(parse_ctx));
     ctx.advance_to(f.format(*static_cast<const T*>(arg), ctx));
+  }
+  template <typename T, typename Formatter,
+            FMT_ENABLE_IF(!has_formatter<T, Context>::value &&
+                          !has_fallback_formatter<T, Context>::value)>
+  static void format_custom_arg(
+      const void* arg, basic_format_parse_context<char_type>& parse_ctx,
+      Context& ctx) {
+    (void)arg;
+    (void)parse_ctx;
+    (void)ctx;
   }
 };
 
@@ -827,6 +839,14 @@ FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T& value);
 enum { long_short = sizeof(long) == sizeof(int) };
 using long_type = conditional_t<long_short, int, long long>;
 using ulong_type = conditional_t<long_short, unsigned, unsigned long long>;
+
+template <typename From, typename... To> struct is_convertible_to_any {};
+template <typename From>
+struct is_convertible_to_any<From> : std::false_type {};
+template <typename From, typename FirstTo, typename... To>
+struct is_convertible_to_any<From, FirstTo, To...>
+    : conditional_t<std::is_convertible<From, FirstTo>::value, std::true_type,
+                    is_convertible_to_any<From, To...>> {};
 
 // Maps formatting arguments to core types.
 template <typename Context> struct arg_mapper {
@@ -878,8 +898,7 @@ template <typename Context> struct arg_mapper {
       FMT_ENABLE_IF(
           std::is_constructible<std_string_view<char_type>, T>::value &&
           !std::is_constructible<basic_string_view<char_type>, T>::value &&
-          !is_string<T>::value &&
-          !has_formatter<T, Context>::value &&
+          !is_string<T>::value && !has_formatter<T, Context>::value &&
           !has_fallback_formatter<T, Context>::value)>
   FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
     return std_string_view<char_type>(val);
@@ -920,6 +939,32 @@ template <typename Context> struct arg_mapper {
                           (has_formatter<T, Context>::value ||
                            has_fallback_formatter<T, Context>::value))>
   FMT_CONSTEXPR const T& map(const T& val) {
+    return val;
+  }
+
+  template <
+      typename T,
+      FMT_ENABLE_IF(
+          !is_convertible_to_any<
+              const T&, signed char, unsigned char, short, unsigned short, int,
+              unsigned, long, unsigned long, long long, unsigned long long,
+              int128_t, uint128_t, bool, float, double, long double, char_type*,
+              const char_type*, const char*, const signed char*,
+              const unsigned char*, void*, const void*,
+              std::nullptr_t>::value &&
+          !std::is_constructible<basic_string_view<char_type>, T>::value &&
+          !std::is_constructible<std_string_view<char_type>, T>::value &&
+          !is_string<T>::value && !is_char<T>::value &&
+          !std::is_enum<T>::value && !has_formatter<T, Context>::value &&
+          !has_fallback_formatter<T, Context>::value)>
+  FMT_CONSTEXPR const T& map(const T& val) {
+    static_assert(
+        has_formatter<T, Context>::value ||
+            has_fallback_formatter<T, Context>::value,
+        "Cannot format argument. To enable the use of ostream operator<< "
+        "include fmt/ostream.h. Otherwise specialize the formatter<T> struct "
+        "template and implement parse and format methods.");
+
     return val;
   }
 
