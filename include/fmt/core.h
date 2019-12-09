@@ -681,6 +681,12 @@ template <typename T, typename Context>
 using has_fallback_formatter =
     std::is_constructible<fallback_formatter<T, typename Context::char_type>>;
 
+// Speicifies if T has an enabled formatter or fallback_formatter specialization
+template <typename T, typename Context>
+struct has_any_formatter
+    : conditional_t<has_formatter<T, Context>::value, std::true_type,
+                    has_fallback_formatter<T, Context>> {};
+
 template <typename Char> struct named_arg_base;
 template <typename T, typename Char> struct named_arg;
 
@@ -794,7 +800,8 @@ template <typename Context> class value {
   }
   value(const void* val) : pointer(val) {}
 
-  template <typename T> value(const T& val) {
+  template <typename T, FMT_ENABLE_IF(has_any_formatter<T, Context>::value)>
+  value(const T& val) {
     custom.value = &val;
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
@@ -803,6 +810,10 @@ template <typename Context> class value {
         T, conditional_t<has_formatter<T, Context>::value,
                          typename Context::template formatter_type<T>,
                          fallback_formatter<T, char_type>>>;
+  }
+  template <typename T, FMT_ENABLE_IF(!has_any_formatter<T, Context>::value)>
+  value(const T& val) {
+    (void)val;
   }
 
   value(const named_arg_base<char_type>& val) { named_arg = &val; }
@@ -829,7 +840,7 @@ using long_type = conditional_t<long_short, int, long long>;
 using ulong_type = conditional_t<long_short, unsigned, unsigned long long>;
 
 // Maps formatting arguments to core types.
-template <typename Context> struct arg_mapper {
+template <typename Context> struct arg_mapper_impl {
   using char_type = typename Context::char_type;
 
   FMT_CONSTEXPR int map(signed char val) { return val; }
@@ -878,9 +889,7 @@ template <typename Context> struct arg_mapper {
       FMT_ENABLE_IF(
           std::is_constructible<std_string_view<char_type>, T>::value &&
           !std::is_constructible<basic_string_view<char_type>, T>::value &&
-          !is_string<T>::value &&
-          !has_formatter<T, Context>::value &&
-          !has_fallback_formatter<T, Context>::value)>
+          !is_string<T>::value && !has_any_formatter<T, Context>::value)>
   FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
     return std_string_view<char_type>(val);
   }
@@ -905,10 +914,8 @@ template <typename Context> struct arg_mapper {
     return 0;
   }
 
-  template <typename T,
-            FMT_ENABLE_IF(std::is_enum<T>::value &&
-                          !has_formatter<T, Context>::value &&
-                          !has_fallback_formatter<T, Context>::value)>
+  template <typename T, FMT_ENABLE_IF(std::is_enum<T>::value &&
+                                      !has_any_formatter<T, Context>::value)>
   FMT_CONSTEXPR auto map(const T& val) -> decltype(
       map(static_cast<typename std::underlying_type<T>::type>(val))) {
     return map(static_cast<typename std::underlying_type<T>::type>(val));
@@ -917,8 +924,7 @@ template <typename Context> struct arg_mapper {
             FMT_ENABLE_IF(!is_string<T>::value && !is_char<T>::value &&
                           !std::is_constructible<basic_string_view<char_type>,
                                                  T>::value &&
-                          (has_formatter<T, Context>::value ||
-                           has_fallback_formatter<T, Context>::value))>
+                          has_any_formatter<T, Context>::value)>
   FMT_CONSTEXPR const T& map(const T& val) {
     return val;
   }
@@ -928,6 +934,36 @@ template <typename Context> struct arg_mapper {
       const named_arg<T, char_type>& val) {
     auto arg = make_arg<Context>(val.value);
     std::memcpy(val.data, &arg, sizeof(arg));
+    return val;
+  }
+};
+
+template <typename Context> struct arg_mapper {
+  template <typename T> struct always_true : std::true_type {};
+
+  // Checks if arg_mapper_impl<Context>().map(val) can be valid
+  template <typename T, typename Enable = void>
+  struct is_mappable : std::false_type {};
+  template <typename T>
+  struct is_mappable<
+      T, enable_if_t<always_true<decltype(arg_mapper_impl<Context>().map(
+             std::declval<const T&>()))>::value>> : std::true_type {
+    using return_type =
+        decltype(arg_mapper_impl<Context>().map(std::declval<const T&>()));
+  };
+
+  template <typename T, FMT_ENABLE_IF(is_mappable<T>::value)>
+  FMT_CONSTEXPR typename is_mappable<T>::return_type map(const T& val) {
+    return arg_mapper_impl<Context>().map(val);
+  }
+
+  template <typename T, FMT_ENABLE_IF(!is_mappable<T>::value)>
+  FMT_CONSTEXPR const T& map(const T& val) {
+    static_assert(
+        has_any_formatter<T, Context>::value,
+        "Cannot format argument. To enable the use of ostream operator<< "
+        "include fmt/ostream.h. Otherwise specialize the formatter<T> struct "
+        "template and implement parse and format methods.");
     return val;
   }
 };
