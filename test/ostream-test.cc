@@ -276,3 +276,25 @@ std::ostream& operator<<(std::ostream& os,
 TEST(FormatterTest, FormatExplicitlyConvertibleToStringLikeIgnoreInserter) {
   EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_like()));
 }
+
+#ifdef FMT_USE_STRING_VIEW
+struct explicitly_convertible_to_std_string_view {
+  explicit operator fmt::internal::std_string_view<char>() const {
+    return {"foo", 3u};
+  }
+};
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringView) {
+  EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_like()));
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         explicitly_convertible_to_std_string_view) {
+  return os << "bar";
+}
+
+TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringViewIgnoreInserter) {
+  EXPECT_EQ("foo",
+            fmt::format("{}", explicitly_convertible_to_std_string_view()));
+}
+#endif  // FMT_USE_STRING_VIEW

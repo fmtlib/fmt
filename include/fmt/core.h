@@ -878,9 +878,7 @@ template <typename Context> struct arg_mapper {
       FMT_ENABLE_IF(
           std::is_constructible<std_string_view<char_type>, T>::value &&
           !std::is_constructible<basic_string_view<char_type>, T>::value &&
-          !is_string<T>::value &&
-          !has_formatter<T, Context>::value &&
-          !has_fallback_formatter<T, Context>::value)>
+          !is_string<T>::value && !has_formatter<T, Context>::value)>
   FMT_CONSTEXPR basic_string_view<char_type> map(const T& val) {
     return std_string_view<char_type>(val);
   }
@@ -913,12 +911,14 @@ template <typename Context> struct arg_mapper {
       map(static_cast<typename std::underlying_type<T>::type>(val))) {
     return map(static_cast<typename std::underlying_type<T>::type>(val));
   }
-  template <typename T,
-            FMT_ENABLE_IF(!is_string<T>::value && !is_char<T>::value &&
-                          !std::is_constructible<basic_string_view<char_type>,
-                                                 T>::value &&
-                          (has_formatter<T, Context>::value ||
-                           has_fallback_formatter<T, Context>::value))>
+  template <
+      typename T,
+      FMT_ENABLE_IF(
+          !is_string<T>::value && !is_char<T>::value &&
+          !std::is_constructible<basic_string_view<char_type>, T>::value &&
+          (has_formatter<T, Context>::value ||
+           (has_fallback_formatter<T, Context>::value &&
+            !std::is_constructible<std_string_view<char_type>, T>::value)))>
   FMT_CONSTEXPR const T& map(const T& val) {
     return val;
   }
