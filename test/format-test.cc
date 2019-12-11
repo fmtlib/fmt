@@ -1691,16 +1691,14 @@ struct explicitly_convertible_to_std_string_view {
 };
 
 namespace fmt {
-
 template <>
 struct formatter<explicitly_convertible_to_std_string_view>
     : formatter<std::string_view> {
   auto format(const explicitly_convertible_to_std_string_view& v,
-              format_context& ctx) {
+              format_context& ctx) -> decltype(ctx.out()) {
     return format_to(ctx.out(), "'{}'", std::string_view(v));
   }
 };
-
 }  // namespace fmt
 
 TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringView) {
