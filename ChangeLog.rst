@@ -1,5 +1,5 @@
-6.1.2 - TBD
------------
+6.1.2 - 2019-12-11
+------------------
 
 * Fixed ABI compatibility with ``libfmt.so.6.0.0``
   (`#1471 <https://github.com/fmtlib/fmt/issues/1471>`_).
