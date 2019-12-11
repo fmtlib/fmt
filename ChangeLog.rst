@@ -1,3 +1,18 @@
+6.1.2 - TBD
+-----------
+
+* Fixed ABI compatibility with ``libfmt.so.6.0.0``.
+
+* Fixed handling types convertible to ``std::string_view``
+  (`#1451 <https://github.com/fmtlib/fmt/pull/1451>`_).
+  Thanks `@denizevrenci (Deniz Evrenci) <https://github.com/denizevrenci>`_.
+
+* Made CUDA test an opt-in enabled via the ``FMT_CUDA_TEST`` CMake option.
+
+* Fixed sign conversion warnings
+  (`#1440 <https://github.com/fmtlib/fmt/pull/1440>`_).
+  Thanks `@0x8000-0000 (Florin Iucha) <https://github.com/0x8000-0000>`_.
+
 6.1.1 - 2019-12-04
 ------------------
 
