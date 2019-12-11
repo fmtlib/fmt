@@ -1,7 +1,8 @@
 6.1.2 - TBD
 -----------
 
-* Fixed ABI compatibility with ``libfmt.so.6.0.0``.
+* Fixed ABI compatibility with ``libfmt.so.6.0.0``
+  (`#1471 <https://github.com/fmtlib/fmt/issues/1471>`_).
 
 * Fixed handling types convertible to ``std::string_view``
   (`#1451 <https://github.com/fmtlib/fmt/pull/1451>`_).
