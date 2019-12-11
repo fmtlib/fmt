@@ -72,7 +72,7 @@
 #if __cplusplus  == 201103L || __cplusplus  == 201402L
 #  if defined(__clang__)
 #    define FMT_FALLTHROUGH [[clang::fallthrough]];
-#  elif defined(__GNUC__) && __GNUC__ >= 7
+#  elif FMT_GCC_VERSION >= 700
 #    define FMT_FALLTHROUGH [[gnu::fallthrough]];
 #  else
 #    define FMT_FALLTHROUGH
