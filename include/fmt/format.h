@@ -696,6 +696,7 @@ using memory_buffer = basic_memory_buffer<char>;
 using wmemory_buffer = basic_memory_buffer<wchar_t>;
 
 /** A formatting error such as invalid format string. */
+FMT_CLASS_API
 class FMT_API format_error : public std::runtime_error {
  public:
   explicit format_error(const char* message) : std::runtime_error(message) {}
@@ -2707,6 +2708,7 @@ class arg_formatter : public internal::arg_formatter_base<Range> {
  An error returned by an operating system or a language runtime,
  for example a file opening error.
 */
+FMT_CLASS_API
 class FMT_API system_error : public std::runtime_error {
  private:
   void init(int err_code, string_view format_str, format_args args);

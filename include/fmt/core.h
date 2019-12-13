@@ -166,12 +166,21 @@
 #endif
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
+#  if FMT_MSC_VER
+#    define FMT_NO_W4275 __pragma(warning(suppress : 4275))
+#  else
+#    define FMT_NO_W4275
+#  endif
+#  define FMT_CLASS_API FMT_NO_W4275
 #  ifdef FMT_EXPORT
 #    define FMT_API __declspec(dllexport)
 #  elif defined(FMT_SHARED)
 #    define FMT_API __declspec(dllimport)
 #    define FMT_EXTERN_TEMPLATE_API FMT_API
 #  endif
+#endif
+#ifndef FMT_CLASS_API
+#  define FMT_CLASS_API
 #endif
 #ifndef FMT_API
 #  define FMT_API
