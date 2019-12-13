@@ -10,7 +10,7 @@ alternative to C stdio and C++ iostreams.
      <div class="panel-heading">What users say:</div>
      <div class="panel-body">
        Thanks for creating this library. It’s been a hole in C++ for
-       aa long time. I’ve used both <code>boost::format</code> and
+       a long time. I’ve used both <code>boost::format</code> and
        <code>loki::SPrintf</code>, and neither felt like the right answer.
        This does.
      </div>
