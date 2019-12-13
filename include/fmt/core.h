@@ -930,6 +930,16 @@ template <typename Context> struct arg_mapper {
     std::memcpy(val.data, &arg, sizeof(arg));
     return val;
   }
+
+  int map(...) {
+    constexpr bool formattable = sizeof(Context) == 0;
+    static_assert(
+        formattable,
+        "Cannot format argument. To make type T formattable provide a "
+        "formatter<T> specialization: "
+        "https://fmt.dev/latest/api.html#formatting-user-defined-types");
+    return 0;
+  }
 };
 
 // A type constant after applying arg_mapper<Context>.
