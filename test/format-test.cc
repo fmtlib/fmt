@@ -1236,6 +1236,9 @@ TEST(FormatterTest, Precision) {
   EXPECT_THROW_MSG(format("{0:.2f}", reinterpret_cast<void*>(0xcafe)),
                    format_error,
                    "precision not allowed for this argument type");
+  EXPECT_THROW_MSG(format("{:.{}e}", 42.0, fmt::internal::max_value<int>()),
+                   format_error,
+                   "number is too big");
 
   EXPECT_EQ("st", format("{0:.2}", "str"));
 }

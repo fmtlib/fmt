@@ -1715,7 +1715,12 @@ template <typename Range> class basic_writer {
       return;
     }
     int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
-    if (fspecs.format == float_format::exp) ++precision;
+    if (fspecs.format == float_format::exp) {
+      if (precision == max_value<int>())
+        FMT_THROW(format_error("number is too big"));
+      else
+        ++precision;
+    }
     if (const_check(std::is_same<T, float>())) fspecs.binary32 = true;
     fspecs.use_grisu = use_grisu<T>();
     if (const_check(FMT_DEPRECATED_PERCENT) && fspecs.percent) value *= 100;
