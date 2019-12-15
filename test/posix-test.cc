@@ -9,6 +9,7 @@
 #include <cstring>
 #include <memory>
 
+#include "fmt/os.h"
 #include "fmt/posix.h"
 #include "gtest-extra.h"
 #include "util.h"
@@ -19,6 +20,122 @@
 
 using fmt::buffered_file;
 using fmt::error_code;
+
+#ifdef _WIN32
+
+#include <windows.h>
+
+TEST(UtilTest, UTF16ToUTF8) {
+  std::string s = "ёжик";
+  fmt::internal::utf16_to_utf8 u(L"\x0451\x0436\x0438\x043A");
+  EXPECT_EQ(s, u.str());
+  EXPECT_EQ(s.size(), u.size());
+}
+
+TEST(UtilTest, UTF16ToUTF8EmptyString) {
+  std::string s = "";
+  fmt::internal::utf16_to_utf8 u(L"");
+  EXPECT_EQ(s, u.str());
+  EXPECT_EQ(s.size(), u.size());
+}
+
+template <typename Converter, typename Char>
+void check_utf_conversion_error(
+    const char* message,
+    fmt::basic_string_view<Char> str = fmt::basic_string_view<Char>(0, 1)) {
+  fmt::memory_buffer out;
+  fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
+  fmt::system_error error(0, "");
+  try {
+    (Converter)(str);
+  } catch (const fmt::system_error& e) {
+    error = e;
+  }
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, error.error_code());
+  EXPECT_EQ(fmt::to_string(out), error.what());
+}
+
+TEST(UtilTest, UTF16ToUTF8Error) {
+  check_utf_conversion_error<fmt::internal::utf16_to_utf8, wchar_t>(
+      "cannot convert string from UTF-16 to UTF-8");
+}
+
+TEST(UtilTest, UTF16ToUTF8Convert) {
+  fmt::internal::utf16_to_utf8 u;
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::wstring_view(0, 1)));
+  EXPECT_EQ(ERROR_INVALID_PARAMETER,
+            u.convert(fmt::wstring_view(L"foo", INT_MAX + 1u)));
+}
+
+TEST(UtilTest, FormatWindowsError) {
+  LPWSTR message = 0;
+  FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+                     FORMAT_MESSAGE_IGNORE_INSERTS,
+                 0, ERROR_FILE_EXISTS,
+                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                 reinterpret_cast<LPWSTR>(&message), 0, 0);
+  fmt::internal::utf16_to_utf8 utf8_message(message);
+  LocalFree(message);
+  fmt::memory_buffer actual_message;
+  fmt::internal::format_windows_error(actual_message, ERROR_FILE_EXISTS,
+                                      "test");
+  EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
+            fmt::to_string(actual_message));
+  actual_message.resize(0);
+  auto max_size = fmt::internal::max_value<size_t>();
+  fmt::internal::format_windows_error(actual_message, ERROR_FILE_EXISTS,
+                                      fmt::string_view(0, max_size));
+  EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS),
+            fmt::to_string(actual_message));
+}
+
+TEST(UtilTest, FormatLongWindowsError) {
+  LPWSTR message = 0;
+  // this error code is not available on all Windows platforms and
+  // Windows SDKs, so do not fail the test if the error string cannot
+  // be retrieved.
+  const int provisioning_not_allowed =
+      0x80284013L /*TBS_E_PROVISIONING_NOT_ALLOWED*/;
+  if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                         FORMAT_MESSAGE_FROM_SYSTEM |
+                         FORMAT_MESSAGE_IGNORE_INSERTS,
+                     0, static_cast<DWORD>(provisioning_not_allowed),
+                     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                     reinterpret_cast<LPWSTR>(&message), 0, 0) == 0) {
+    return;
+  }
+  fmt::internal::utf16_to_utf8 utf8_message(message);
+  LocalFree(message);
+  fmt::memory_buffer actual_message;
+  fmt::internal::format_windows_error(actual_message, provisioning_not_allowed,
+                                      "test");
+  EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
+            fmt::to_string(actual_message));
+}
+
+TEST(UtilTest, WindowsError) {
+  fmt::system_error error(0, "");
+  try {
+    throw fmt::windows_error(ERROR_FILE_EXISTS, "test {}", "error");
+  } catch (const fmt::system_error& e) {
+    error = e;
+  }
+  fmt::memory_buffer message;
+  fmt::internal::format_windows_error(message, ERROR_FILE_EXISTS, "test error");
+  EXPECT_EQ(to_string(message), error.what());
+  EXPECT_EQ(ERROR_FILE_EXISTS, error.error_code());
+}
+
+TEST(UtilTest, ReportWindowsError) {
+  fmt::memory_buffer out;
+  fmt::internal::format_windows_error(out, ERROR_FILE_EXISTS, "test error");
+  out.push_back('\n');
+  EXPECT_WRITE(stderr,
+               fmt::report_windows_error(ERROR_FILE_EXISTS, "test error"),
+               fmt::to_string(out));
+}
+
+#endif  // _WIN32
 
 #if FMT_USE_FCNTL
 

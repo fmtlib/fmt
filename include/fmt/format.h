@@ -69,7 +69,7 @@
 #  define FMT_HAS_BUILTIN(x) 0
 #endif
 
-#if __cplusplus  == 201103L || __cplusplus  == 201402L
+#if __cplusplus == 201103L || __cplusplus == 201402L
 #  if defined(__clang__)
 #    define FMT_FALLTHROUGH [[clang::fallthrough]]
 #  elif FMT_GCC_VERSION >= 700
@@ -78,7 +78,7 @@
 #    define FMT_FALLTHROUGH
 #  endif
 #elif (FMT_HAS_CPP_ATTRIBUTE(fallthrough) && (__cplusplus >= 201703)) || \
-      (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #  define FMT_FALLTHROUGH [[fallthrough]]
 #else
 #  define FMT_FALLTHROUGH
@@ -108,6 +108,14 @@ FMT_END_NAMESPACE
         FMT_ASSERT(false, "");        \
       } while (false)
 #  endif
+#endif
+
+#if FMT_EXCEPTIONS
+#  define FMT_TRY try
+#  define FMT_CATCH(x) catch (x)
+#else
+#  define FMT_TRY if (true)
+#  define FMT_CATCH(x) if (false)
 #endif
 
 #ifndef FMT_USE_USER_DEFINED_LITERALS
@@ -952,39 +960,6 @@ class utf8_to_utf16 {
   const wchar_t* c_str() const { return &buffer_[0]; }
   std::wstring str() const { return {&buffer_[0], size()}; }
 };
-
-// Define FMT_USE_WINDOWS_H to 0 to disable use of windows.h.
-// All the functionality that relies on it will be disabled too.
-#ifndef _WIN32
-#  define FMT_USE_WINDOWS_H 0
-#elif !defined(FMT_USE_WINDOWS_H)
-#  define FMT_USE_WINDOWS_H 1
-#endif
-
-#if FMT_USE_WINDOWS_H
-// A converter from UTF-16 to UTF-8.
-// It is only provided for Windows since other systems support UTF-8 natively.
-class utf16_to_utf8 {
- private:
-  memory_buffer buffer_;
-
- public:
-  utf16_to_utf8() {}
-  FMT_API explicit utf16_to_utf8(wstring_view s);
-  operator string_view() const { return string_view(&buffer_[0], size()); }
-  size_t size() const { return buffer_.size() - 1; }
-  const char* c_str() const { return &buffer_[0]; }
-  std::string str() const { return std::string(&buffer_[0], size()); }
-
-  // Performs conversion returning a system error code instead of
-  // throwing exception on conversion error. This method may still throw
-  // in case of memory allocation error.
-  FMT_API int convert(wstring_view s);
-};
-
-FMT_API void format_windows_error(internal::buffer<char>& out, int error_code,
-                                  string_view message) FMT_NOEXCEPT;
-#endif
 
 template <typename T = void> struct null {};
 
@@ -2660,6 +2635,14 @@ void handle_dynamic_spec(int& value, arg_ref<typename Context::char_type> ref,
     break;
   }
 }
+
+using format_func = void (*)(internal::buffer<char>&, int, string_view);
+
+FMT_API void format_error_code(buffer<char>& out, int error_code,
+                               string_view message) FMT_NOEXCEPT;
+
+FMT_API void report_error(format_func func, int error_code,
+                          string_view message) FMT_NOEXCEPT;
 }  // namespace internal
 
 template <typename Range>
@@ -2778,55 +2761,6 @@ FMT_API void format_system_error(internal::buffer<char>& out, int error_code,
 // Can be used to report errors from destructors.
 FMT_API void report_system_error(int error_code,
                                  string_view message) FMT_NOEXCEPT;
-
-#if FMT_USE_WINDOWS_H
-
-/** A Windows error. */
-class windows_error : public system_error {
- private:
-  FMT_API void init(int error_code, string_view format_str, format_args args);
-
- public:
-  /**
-   \rst
-   Constructs a :class:`fmt::windows_error` object with the description
-   of the form
-
-   .. parsed-literal::
-     *<message>*: *<system-message>*
-
-   where *<message>* is the formatted message and *<system-message>* is the
-   system message corresponding to the error code.
-   *error_code* is a Windows error code as given by ``GetLastError``.
-   If *error_code* is not a valid error code such as -1, the system message
-   will look like "error -1".
-
-   **Example**::
-
-     // This throws a windows_error with the description
-     //   cannot open file 'madeup': The system cannot find the file specified.
-     // or similar (system message may vary).
-     const char *filename = "madeup";
-     LPOFSTRUCT of = LPOFSTRUCT();
-     HFILE file = OpenFile(filename, &of, OF_READ);
-     if (file == HFILE_ERROR) {
-       throw fmt::windows_error(GetLastError(),
-                                "cannot open file '{}'", filename);
-     }
-   \endrst
-  */
-  template <typename... Args>
-  windows_error(int error_code, string_view message, const Args&... args) {
-    init(error_code, message, make_format_args(args...));
-  }
-};
-
-// Reports a Windows error without throwing an exception.
-// Can be used to report errors from destructors.
-FMT_API void report_windows_error(int error_code,
-                                  string_view message) FMT_NOEXCEPT;
-
-#endif
 
 /** Fast integer formatter. */
 class format_int {
@@ -3513,18 +3447,18 @@ FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 FMT_END_NAMESPACE
 
-#define FMT_STRING_IMPL(s, ...)                                         \
-  [] {                                                                  \
-    /* Use a macro-like name to avoid shadowing warnings. */            \
-    struct FMT_STRING : fmt::compile_string {                           \
-      using char_type = typename std::remove_cv<std::remove_pointer<    \
-          typename std::decay<decltype(s)>::type>::type>::type;         \
-      __VA_ARGS__ FMT_CONSTEXPR                                         \
-      operator fmt::basic_string_view<char_type>() const {              \
-        return {s, sizeof(s) / sizeof(char_type) - 1};                  \
-      }                                                                 \
-    };                                                                  \
-    return FMT_STRING();                                                \
+#define FMT_STRING_IMPL(s, ...)                                      \
+  [] {                                                               \
+    /* Use a macro-like name to avoid shadowing warnings. */         \
+    struct FMT_STRING : fmt::compile_string {                        \
+      using char_type = typename std::remove_cv<std::remove_pointer< \
+          typename std::decay<decltype(s)>::type>::type>::type;      \
+      __VA_ARGS__ FMT_CONSTEXPR                                      \
+      operator fmt::basic_string_view<char_type>() const {           \
+        return {s, sizeof(s) / sizeof(char_type) - 1};               \
+      }                                                              \
+    };                                                               \
+    return FMT_STRING();                                             \
   }()
 
 /**
