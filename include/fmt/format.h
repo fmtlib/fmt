@@ -701,11 +701,11 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
 }
 
 template <std::size_t SIZE = inline_buffer_size,
-          typename Allocator = std::allocator<T>>
+          typename Allocator = std::allocator<char>>
 using memory_buffer = basic_memory_buffer<char, SIZE, Allocator>;
 
 template <std::size_t SIZE = inline_buffer_size,
-          typename Allocator = std::allocator<T>>
+          typename Allocator = std::allocator<wchar_t>>
 using wmemory_buffer = basic_memory_buffer<wchar_t, SIZE, Allocator>;
 
 /** A formatting error such as invalid format string. */
