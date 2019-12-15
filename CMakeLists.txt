@@ -152,7 +152,7 @@ endfunction()
 # Define the fmt library, its includes and the needed defines.
 add_headers(FMT_HEADERS chrono.h color.h compile.h core.h format.h format-inl.h
                         locale.h os.h ostream.h posix.h printf.h ranges.h)
-set(FMT_SOURCES src/format.cc src/posix.cc)
+set(FMT_SOURCES src/format.cc src/os.cc)
 
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
 add_library(fmt::fmt ALIAS fmt)

@@ -1,4 +1,4 @@
-// A C++ interface to POSIX functions.
+// Formatting library for C++ - optional OS-specific functionality
 //
 // Copyright (c) 2012 - 2016, Victor Zverovich
 // All rights reserved.
@@ -10,7 +10,6 @@
 #  define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include "fmt/posix.h"
 #include "fmt/os.h"
 
 #include <climits>

@@ -11,7 +11,7 @@
 #endif
 
 #include "posix-mock.h"
-#include "../src/posix.cc"
+#include "../src/os.cc"
 
 #include <errno.h>
 #include <fcntl.h>
