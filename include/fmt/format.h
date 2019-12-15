@@ -940,29 +940,28 @@ inline It format_uint(It out, UInt value, int num_digits, bool upper = false) {
   return internal::copy_str<Char>(buffer, buffer + num_digits, out);
 }
 
-#ifndef _WIN32
-#  define FMT_USE_WINDOWS_H 0
-#elif !defined(FMT_USE_WINDOWS_H)
-#  define FMT_USE_WINDOWS_H 1
-#endif
-
-// Define FMT_USE_WINDOWS_H to 0 to disable use of windows.h.
-// All the functionality that relies on it will be disabled too.
-#if FMT_USE_WINDOWS_H
 // A converter from UTF-8 to UTF-16.
-// It is only provided for Windows since other systems support UTF-8 natively.
 class utf8_to_utf16 {
  private:
   wmemory_buffer buffer_;
 
  public:
   FMT_API explicit utf8_to_utf16(string_view s);
-  operator wstring_view() const { return wstring_view(&buffer_[0], size()); }
+  operator wstring_view() const { return {&buffer_[0], size()}; }
   size_t size() const { return buffer_.size() - 1; }
   const wchar_t* c_str() const { return &buffer_[0]; }
-  std::wstring str() const { return std::wstring(&buffer_[0], size()); }
+  std::wstring str() const { return {&buffer_[0], size()}; }
 };
 
+// Define FMT_USE_WINDOWS_H to 0 to disable use of windows.h.
+// All the functionality that relies on it will be disabled too.
+#ifndef _WIN32
+#  define FMT_USE_WINDOWS_H 0
+#elif !defined(FMT_USE_WINDOWS_H)
+#  define FMT_USE_WINDOWS_H 1
+#endif
+
+#if FMT_USE_WINDOWS_H
 // A converter from UTF-16 to UTF-8.
 // It is only provided for Windows since other systems support UTF-8 natively.
 class utf16_to_utf8 {

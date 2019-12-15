@@ -400,6 +400,23 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
   EXPECT_CALL(alloc, deallocate(&mem2[0], 2 * size));
 }
 
+TEST(UtilTest, UTF8ToUTF16) {
+  fmt::internal::utf8_to_utf16 u("лошадка");
+  EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());
+  EXPECT_EQ(7, u.size());
+  // U+10437 { DESERET SMALL LETTER YEE }
+  EXPECT_EQ(L"\xD801\xDC37", fmt::internal::utf8_to_utf16("𐐷").str());
+  EXPECT_THROW_MSG(fmt::internal::utf8_to_utf16("\xc3\x28"), std::runtime_error,
+                   "invalid utf8");
+}
+
+TEST(UtilTest, UTF8ToUTF16EmptyString) {
+  std::string s = "";
+  fmt::internal::utf8_to_utf16 u(s.c_str());
+  EXPECT_EQ(L"", u.str());
+  EXPECT_EQ(s.size(), u.size());
+}
+
 #ifdef _WIN32
 TEST(UtilTest, UTF16ToUTF8) {
   std::string s = "ёжик";
@@ -412,20 +429,6 @@ TEST(UtilTest, UTF16ToUTF8EmptyString) {
   std::string s = "";
   fmt::internal::utf16_to_utf8 u(L"");
   EXPECT_EQ(s, u.str());
-  EXPECT_EQ(s.size(), u.size());
-}
-
-TEST(UtilTest, UTF8ToUTF16) {
-  std::string s = "лошадка";
-  fmt::internal::utf8_to_utf16 u(s.c_str());
-  EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());
-  EXPECT_EQ(7, u.size());
-}
-
-TEST(UtilTest, UTF8ToUTF16EmptyString) {
-  std::string s = "";
-  fmt::internal::utf8_to_utf16 u(s.c_str());
-  EXPECT_EQ(L"", u.str());
   EXPECT_EQ(s.size(), u.size());
 }
 
@@ -448,13 +451,6 @@ void check_utf_conversion_error(
 TEST(UtilTest, UTF16ToUTF8Error) {
   check_utf_conversion_error<fmt::internal::utf16_to_utf8, wchar_t>(
       "cannot convert string from UTF-16 to UTF-8");
-}
-
-TEST(UtilTest, UTF8ToUTF16Error) {
-  const char* message = "cannot convert string from UTF-8 to UTF-16";
-  check_utf_conversion_error<fmt::internal::utf8_to_utf16, char>(message);
-  check_utf_conversion_error<fmt::internal::utf8_to_utf16, char>(
-      message, fmt::string_view("foo", INT_MAX + 1u));
 }
 
 TEST(UtilTest, UTF16ToUTF8Convert) {
@@ -1237,8 +1233,7 @@ TEST(FormatterTest, Precision) {
                    format_error,
                    "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{:.{}e}", 42.0, fmt::internal::max_value<int>()),
-                   format_error,
-                   "number is too big");
+                   format_error, "number is too big");
 
   EXPECT_EQ("st", format("{0:.2}", "str"));
 }
@@ -1875,8 +1870,8 @@ TEST(FormatTest, Dynamic) {
   args.emplace_back(fmt::internal::make_arg<ctx>(1.5f));
 
   std::string result = fmt::vformat(
-      "{} and {} and {}", fmt::basic_format_args<ctx>(
-                              args.data(), static_cast<int>(args.size())));
+      "{} and {} and {}",
+      fmt::basic_format_args<ctx>(args.data(), static_cast<int>(args.size())));
 
   EXPECT_EQ("42 and abc1 and 1.5", result);
 }
@@ -2266,9 +2261,7 @@ struct test_format_specs_handler {
 
   FMT_CONSTEXPR void on_precision(int p) { precision = p; }
   FMT_CONSTEXPR void on_dynamic_precision(fmt::internal::auto_id) {}
-  FMT_CONSTEXPR void on_dynamic_precision(int index) {
-    precision_ref = index;
-  }
+  FMT_CONSTEXPR void on_dynamic_precision(int index) { precision_ref = index; }
   FMT_CONSTEXPR void on_dynamic_precision(string_view) {}
 
   FMT_CONSTEXPR void end_precision() {}

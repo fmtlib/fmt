@@ -1214,6 +1214,61 @@ int snprintf_float(T value, int precision, float_specs specs,
     return exp - fraction_size;
   }
 }
+
+// A public domain branchless UTF-8 decoder by Christopher Wellons:
+// https://github.com/skeeto/branchless-utf8
+/* Decode the next character, c, from buf, reporting errors in e.
+ *
+ * Since this is a branchless decoder, four bytes will be read from the
+ * buffer regardless of the actual length of the next character. This
+ * means the buffer _must_ have at least three bytes of zero padding
+ * following the end of the data stream.
+ *
+ * Errors are reported in e, which will be non-zero if the parsed
+ * character was somehow invalid: invalid byte sequence, non-canonical
+ * encoding, or a surrogate half.
+ *
+ * The function returns a pointer to the next character. When an error
+ * occurs, this pointer will be a guess that depends on the particular
+ * error, but it will always advance at least one byte.
+ */
+FMT_FUNC const char* utf8_decode(const char* buf, uint32_t* c, int* e) {
+  static const char lengths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+                                 0, 0, 2, 2, 2, 2, 3, 3, 4, 0};
+  static const int masks[] = {0x00, 0x7f, 0x1f, 0x0f, 0x07};
+  static const uint32_t mins[] = {4194304, 0, 128, 2048, 65536};
+  static const int shiftc[] = {0, 18, 12, 6, 0};
+  static const int shifte[] = {0, 6, 4, 2, 0};
+
+  auto s = reinterpret_cast<const unsigned char*>(buf);
+  int len = lengths[s[0] >> 3];
+
+  // Compute the pointer to the next character early so that the next
+  // iteration can start working on the next character. Neither Clang
+  // nor GCC figure out this reordering on their own.
+  const char* next = buf + len + !len;
+
+  // Assume a four-byte character and load four bytes. Unused bits are
+  // shifted out.
+  *c = uint32_t(s[0] & masks[len]) << 18;
+  *c |= uint32_t(s[1] & 0x3f) << 12;
+  *c |= uint32_t(s[2] & 0x3f) << 6;
+  *c |= uint32_t(s[3] & 0x3f) << 0;
+  *c >>= shiftc[len];
+
+  // Accumulate the various error conditions.
+  *e = (*c < mins[len]) << 6;       // non-canonical encoding
+  *e |= ((*c >> 11) == 0x1b) << 7;  // surrogate half?
+  *e |= (*c > 0x10FFFF) << 8;       // out of range?
+  *e |= (s[1] & 0xc0) >> 2;
+  *e |= (s[2] & 0xc0) >> 4;
+  *e |= (s[3]) >> 6;
+  *e ^= 0x2a;  // top two bits of each tail byte correct?
+  *e >>= shifte[len];
+
+  return next;
+}
 }  // namespace internal
 
 template <> struct formatter<internal::bigint> {
@@ -1240,87 +1295,24 @@ template <> struct formatter<internal::bigint> {
   }
 };
 
-// A public domain branchless UTF-8 decoder:
-// https://github.com/skeeto/branchless-utf8
-/* Decode the next character, C, from BUF, reporting errors in E.
- *
- * Since this is a branchless decoder, four bytes will be read from the
- * buffer regardless of the actual length of the next character. This
- * means the buffer _must_ have at least three bytes of zero padding
- * following the end of the data stream.
- *
- * Errors are reported in E, which will be non-zero if the parsed
- * character was somehow invalid: invalid byte sequence, non-canonical
- * encoding, or a surrogate half.
- *
- * The function returns a pointer to the next character. When an error
- * occurs, this pointer will be a guess that depends on the particular
- * error, but it will always advance at least one byte.
- */
-static void* utf8_decode(void* buf, uint32_t* c, int* e) {
-  static const char lengths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
-                                 0, 0, 2, 2, 2, 2, 3, 3, 4, 0};
-  static const int masks[] = {0x00, 0x7f, 0x1f, 0x0f, 0x07};
-  static const uint32_t mins[] = {4194304, 0, 128, 2048, 65536};
-  static const int shiftc[] = {0, 18, 12, 6, 0};
-  static const int shifte[] = {0, 6, 4, 2, 0};
-
-  auto s = reinterpret_cast<unsigned char*>(buf);
-  int len = lengths[s[0] >> 3];
-
-  /* Compute the pointer to the next character early so that the next
-   * iteration can start working on the next character. Neither Clang
-   * nor GCC figure out this reordering on their own.
-   */
-  unsigned char* next = s + len + !len;
-
-  /* Assume a four-byte character and load four bytes. Unused bits are
-   * shifted out.
-   */
-  *c = (uint32_t)(s[0] & masks[len]) << 18;
-  *c |= (uint32_t)(s[1] & 0x3f) << 12;
-  *c |= (uint32_t)(s[2] & 0x3f) << 6;
-  *c |= (uint32_t)(s[3] & 0x3f) << 0;
-  *c >>= shiftc[len];
-
-  /* Accumulate the various error conditions. */
-  *e = (*c < mins[len]) << 6;       // non-canonical encoding
-  *e |= ((*c >> 11) == 0x1b) << 7;  // surrogate half?
-  *e |= (*c > 0x10FFFF) << 8;       // out of range?
-  *e |= (s[1] & 0xc0) >> 2;
-  *e |= (s[2] & 0xc0) >> 4;
-  *e |= (s[3]) >> 6;
-  *e ^= 0x2a;  // top two bits of each tail byte correct?
-  *e >>= shifte[len];
-
-  return next;
+FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
+  for (auto p = s.data(), end = p + s.size(); p != end;) {
+    auto cp = uint32_t();
+    auto error = 0;
+    p = utf8_decode(p, &cp, &error);
+    if (error != 0) FMT_THROW(std::runtime_error("invalid utf8"));
+    if (cp <= 0xFFFF) {
+      buffer_.push_back(static_cast<wchar_t>(cp));
+    } else {
+      cp -= 0x10000;
+      buffer_.push_back(static_cast<wchar_t>(0xD800 + (cp >> 10)));
+      buffer_.push_back(static_cast<wchar_t>(0xDC00 + (cp & 0x3FF)));
+    }
+  }
+  buffer_.push_back(0);
 }
 
 #if FMT_USE_WINDOWS_H
-
-FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
-  static const char ERROR_MSG[] = "cannot convert string from UTF-8 to UTF-16";
-  if (s.size() > INT_MAX)
-    FMT_THROW(windows_error(ERROR_INVALID_PARAMETER, ERROR_MSG));
-  int s_size = static_cast<int>(s.size());
-  if (s_size == 0) {
-    // MultiByteToWideChar does not support zero length, handle separately.
-    buffer_.resize(1);
-    buffer_[0] = 0;
-    return;
-  }
-
-  int length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s.data(),
-                                   s_size, nullptr, 0);
-  if (length == 0) FMT_THROW(windows_error(GetLastError(), ERROR_MSG));
-  buffer_.resize(length + 1);
-  length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s.data(), s_size,
-                               &buffer_[0], length);
-  if (length == 0) FMT_THROW(windows_error(GetLastError(), ERROR_MSG));
-  buffer_[length] = 0;
-}
-
 FMT_FUNC internal::utf16_to_utf8::utf16_to_utf8(wstring_view s) {
   if (int error_code = convert(s)) {
     FMT_THROW(windows_error(error_code,
@@ -1389,7 +1381,6 @@ FMT_FUNC void internal::format_windows_error(internal::buffer<char>& out,
   FMT_CATCH(...) {}
   format_error_code(out, error_code, message);
 }
-
 #endif  // FMT_USE_WINDOWS_H
 
 FMT_FUNC void format_system_error(internal::buffer<char>& out, int error_code,
