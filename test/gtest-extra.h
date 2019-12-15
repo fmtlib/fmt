@@ -10,7 +10,7 @@
 
 #include <string>
 #include "gmock.h"
-#include "fmt/posix.h"
+#include "fmt/os.h"
 
 #define FMT_TEST_THROW_(statement, expected_exception, expected_message, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_                                                \

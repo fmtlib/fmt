@@ -1,4 +1,4 @@
-// Formatting library for C++ - tests of the C++ interface to POSIX functions
+// Formatting library for C++ - tests of the OS-specific functionality
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.
@@ -10,7 +10,6 @@
 #include <memory>
 
 #include "fmt/os.h"
-#include "fmt/posix.h"
 #include "gtest-extra.h"
 #include "util.h"
 

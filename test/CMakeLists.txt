@@ -125,7 +125,7 @@ if (NOT MSVC_BUILD_STATIC)
     target_compile_definitions(posix-mock-test PRIVATE FMT_LOCALE)
   endif ()
   add_test(NAME posix-mock-test COMMAND posix-mock-test)
-  add_fmt_test(posix-test)
+  add_fmt_test(os-test)
 endif ()
 
 add_fmt_executable(header-only-test

@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <string>
 
-#include "fmt/posix.h"
+#include "fmt/os.h"
 
 enum { BUFFER_SIZE = 256 };
 
