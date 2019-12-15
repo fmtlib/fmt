@@ -700,6 +700,7 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
   if (old_data != store_) Allocator::deallocate(old_data, old_capacity);
 }
 
+#if defined(__cpp_deduction_guides) && __cpp_deduction_guides >= 201907L
 template <std::size_t SIZE = inline_buffer_size,
           typename Allocator = std::allocator<char>>
 using memory_buffer = basic_memory_buffer<char, SIZE, Allocator>;
@@ -707,6 +708,10 @@ using memory_buffer = basic_memory_buffer<char, SIZE, Allocator>;
 template <std::size_t SIZE = inline_buffer_size,
           typename Allocator = std::allocator<wchar_t>>
 using wmemory_buffer = basic_memory_buffer<wchar_t, SIZE, Allocator>;
+#else
+using memory_buffer = basic_memory_buffer<char>;
+using wmemory_buffer = basic_memory_buffer<wchar_t>;
+#endif // defined(__cpp_deduction_guides) && __cpp_deduction_guides >= 201907L
 
 /** A formatting error such as invalid format string. */
 FMT_CLASS_API
