@@ -28,7 +28,7 @@ template <bool IsSigned> struct int_checker {
 
 template <> struct int_checker<true> {
   template <typename T> static bool fits_in_int(T value) {
-    return value >= std::numeric_limits<int>::min() &&
+    return value >= (std::numeric_limits<int>::min)() &&
            value <= max_value<int>();
   }
   static bool fits_in_int(int) { return true; }
