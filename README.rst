@@ -13,14 +13,14 @@
 
 .. image:: https://img.shields.io/badge/stackoverflow-fmt-blue.svg
    :alt: Ask questions at StackOverflow with the tag fmt
-   :target: http://stackoverflow.com/questions/tagged/fmt
+   :target: https://stackoverflow.com/questions/tagged/fmt
 
 **{fmt}** is an open-source formatting library for C++.
 It can be used as a safe and fast alternative to (s)printf and iostreams.
 
 `Documentation <https://fmt.dev/latest/>`__
 
-Q&A: ask questions on `StackOverflow with the tag fmt <http://stackoverflow.com/questions/tagged/fmt>`_.
+Q&A: ask questions on `StackOverflow with the tag fmt <https://stackoverflow.com/questions/tagged/fmt>`_.
 
 Features
 --------
@@ -36,7 +36,7 @@ Features
 * Implementation of `C++20 std::format <https://fmt.dev/Text%20Formatting.html>`__.
 * Support for user-defined types.
 * High performance: faster than common standard library implementations of
-  `printf <http://en.cppreference.com/w/cpp/io/c/fprintf>`_ and
+  `printf <https://en.cppreference.com/w/cpp/io/c/fprintf>`_ and
   iostreams. See `Speed tests`_ and `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 * Small code size both in terms of source code (the minimum configuration
@@ -264,7 +264,7 @@ or the bloat test::
 Projects using this library
 ---------------------------
 
-* `0 A.D. <http://play0ad.com/>`_: A free, open-source, cross-platform real-time
+* `0 A.D. <https://play0ad.com/>`_: A free, open-source, cross-platform real-time
   strategy game
 
 * `AMPL/MP <https://github.com/ampl/mp>`_:
@@ -285,15 +285,15 @@ Projects using this library
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
 
-* `KBEngine <http://kbengine.org/>`_: An open-source MMOG server engine
+* `KBEngine <https://kbengine.org/>`_: An open-source MMOG server engine
 
-* `Keypirinha <http://keypirinha.com/>`_: A semantic launcher for Windows
+* `Keypirinha <https://keypirinha.com/>`_: A semantic launcher for Windows
 
 * `Kodi <https://kodi.tv/>`_ (formerly xbmc): Home theater software
 
 * `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
 
-* `Drake <http://drake.mit.edu/>`_: A planning, control, and analysis toolbox
+* `Drake <https://drake.mit.edu/>`_: A planning, control, and analysis toolbox
   for nonlinear dynamical systems (MIT)
 
 * `Envoy <https://lyft.github.io/envoy/>`_: C++ L7 proxy and communication bus
@@ -306,10 +306,10 @@ Projects using this library
 * `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to
   generate randomized datasets
 
-* `OpenSpace <http://openspaceproject.com/>`_: An open-source astrovisualization
+* `OpenSpace <https://openspaceproject.com/>`_: An open-source astrovisualization
   framework
 
-* `PenUltima Online (POL) <http://www.polserver.com/>`_:
+* `PenUltima Online (POL) <https://www.polserver.com/>`_:
   An MMO server, compatible with most Ultima Online clients
 
 * `quasardb <https://www.quasardb.net/>`_: A distributed, high-performance,
@@ -326,10 +326,10 @@ Projects using this library
 * `Saddy <https://github.com/mamontov-cpp/saddy-graphics-engine-2d>`_:
   Small crossplatform 2D graphic engine
 
-* `Salesforce Analytics Cloud <http://www.salesforce.com/analytics-cloud/overview/>`_:
+* `Salesforce Analytics Cloud <https://www.salesforce.com/analytics-cloud/overview/>`_:
   Business intelligence software
 
-* `Scylla <http://www.scylladb.com/>`_: A Cassandra-compatible NoSQL data store
+* `Scylla <https://www.scylladb.com/>`_: A Cassandra-compatible NoSQL data store
   that can handle 1 million transactions per second on a single server
 
 * `Seastar <http://www.seastar-project.org/>`_: An advanced, open-source C++
@@ -368,7 +368,7 @@ The good thing about ``printf`` is that it is pretty fast and readily available
 being a part of the C standard library. The main drawback is that it
 doesn't support user-defined types. ``printf`` also has safety issues although
 they are somewhat mitigated with `__attribute__ ((format (printf, ...))
-<http://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html>`_ in GCC.
+<https://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html>`_ in GCC.
 There is a POSIX extension that adds positional arguments required for
 `i18n <https://en.wikipedia.org/wiki/Internationalization_and_localization>`_
 to ``printf`` but it is not a part of C99 and may not be available on some
@@ -486,8 +486,8 @@ written by Chris Foster.  Boost Format library is acknowledged transitively
 since it had some influence on tinyformat.
 Some ideas used in the implementation are borrowed from `Loki
 <http://loki-lib.sourceforge.net/>`_ SafeFormat and `Diagnostic API
-<http://clang.llvm.org/doxygen/classclang_1_1Diagnostic.html>`_ in
-`Clang <http://clang.llvm.org/>`_.
+<https://clang.llvm.org/doxygen/classclang_1_1Diagnostic.html>`_ in
+`Clang <https://clang.llvm.org/>`_.
 Format string syntax and the documentation are based on Python's `str.format
 <https://docs.python.org/3/library/stdtypes.html#str.format>`_.
 Thanks `Doug Turnbull <https://github.com/softwaredoug>`_ for his valuable
