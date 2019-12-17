@@ -38,7 +38,7 @@ Features
 * High performance: faster than common standard library implementations of
   `printf <https://en.cppreference.com/w/cpp/io/c/fprintf>`_ and
   iostreams. See `Speed tests`_ and `Fast integer to string conversion in C++
-  <https://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
+  <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 * Small code size both in terms of source code (the minimum configuration
   consists of just three header files, ``core.h``, ``format.h`` and
   ``format-inl.h``) and compiled code. See `Compile time and code bloat`_.
@@ -428,7 +428,7 @@ completeness. As iostreams, it suffers from the problem of mixing verbatim text
 with arguments. The library is pretty fast, but slower on integer formatting
 than ``fmt::format_int`` on Karma's own benchmark,
 see `Fast integer to string conversion in C++
-<https://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
+<http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 
 FAQ
 ---
