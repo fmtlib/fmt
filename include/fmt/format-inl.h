@@ -158,8 +158,7 @@ FMT_FUNC void report_error(format_func func, int error_code,
 FMT_FUNC void fwrite_fully(const void* ptr, size_t size, size_t count,
                            FILE* stream) {
   size_t written = std::fwrite(ptr, size, count, stream);
-  if (written < count)
-    FMT_THROW(system_error(errno, "cannot write to file"));
+  if (written < count) FMT_THROW(system_error(errno, "cannot write to file"));
 }
 }  // namespace internal
 
@@ -1272,7 +1271,7 @@ template <> struct formatter<internal::bigint> {
 };
 
 FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
-  for (auto p = s.data(), end = p + s.size(); p != end;) {
+  auto transcode = [this](const char* p) {
     auto cp = uint32_t();
     auto error = 0;
     p = utf8_decode(p, &cp, &error);
@@ -1284,6 +1283,17 @@ FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
       buffer_.push_back(static_cast<wchar_t>(0xD800 + (cp >> 10)));
       buffer_.push_back(static_cast<wchar_t>(0xDC00 + (cp & 0x3FF)));
     }
+    return p;
+  };
+  auto p = s.data();
+  const size_t block_size = 4;  // utf8_decode always reads blocks of 4 chars.
+  if (s.size() >= block_size) {
+    for (auto end = p + s.size() - block_size + 1; p < end;) p = transcode(p);
+  }
+  if (auto num_chars_left = s.data() + s.size() - p) {
+    char buf[4] = {};
+    memcpy(buf, p, num_chars_left);
+    transcode(buf);
   }
   buffer_.push_back(0);
 }
