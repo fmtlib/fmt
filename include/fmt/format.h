@@ -86,12 +86,12 @@
 
 #ifndef FMT_THROW
 #  if FMT_EXCEPTIONS
-#    if FMT_MSC_VER
+#    if FMT_MSC_VER || FMT_NVCC
 FMT_BEGIN_NAMESPACE
 namespace internal {
 template <typename Exception> inline void do_throw(const Exception& x) {
-  // Silence unreachable code warnings in MSVC because these are nearly
-  // impossible to fix in a generic code.
+  // Silence unreachable code warnings in MSVC and NVCC because these 
+  // are nearly impossible to fix in a generic code.
   volatile bool b = true;
   if (b) throw x;
 }
