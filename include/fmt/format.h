@@ -1076,10 +1076,9 @@ template <typename Char> class float_writer {
       // Insert a decimal point after the first digit and add an exponent.
       *it++ = static_cast<Char>(*digits_);
       int num_zeros = specs_.precision - num_digits_;
-      bool trailing_zeros = num_zeros > 0 && specs_.showpoint;
-      if (num_digits_ > 1 || trailing_zeros) *it++ = decimal_point_;
+      if (num_digits_ > 1 || specs_.showpoint) *it++ = decimal_point_;
       it = copy_str<Char>(digits_ + 1, digits_ + num_digits_, it);
-      if (trailing_zeros)
+      if (num_zeros > 0 && specs_.showpoint)
         it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
       *it++ = static_cast<Char>(specs_.upper ? 'E' : 'e');
       return write_exponent<Char>(full_exp - 1, it);
@@ -1088,7 +1087,7 @@ template <typename Char> class float_writer {
       // 1234e7 -> 12340000000[.0+]
       it = copy_str<Char>(digits_, digits_ + num_digits_, it);
       it = std::fill_n(it, full_exp - num_digits_, static_cast<Char>('0'));
-      if (specs_.showpoint) {
+      if (specs_.showpoint || specs_.precision < 0) {
         *it++ = decimal_point_;
         int num_zeros = specs_.precision - full_exp;
         if (num_zeros <= 0) {
@@ -1210,7 +1209,7 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
   switch (specs.type) {
   case 0:
     result.format = float_format::general;
-    result.showpoint |= specs.precision != 0;
+    result.showpoint |= specs.precision > 0;
     break;
   case 'G':
     result.upper = true;
