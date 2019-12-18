@@ -3447,18 +3447,17 @@ FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 FMT_END_NAMESPACE
 
-#define FMT_STRING_IMPL(s, ...)                                      \
-  [] {                                                               \
-    /* Use a macro-like name to avoid shadowing warnings. */         \
-    struct FMT_STRING : fmt::compile_string {                        \
-      using char_type = typename std::remove_cv<std::remove_pointer< \
-          typename std::decay<decltype(s)>::type>::type>::type;      \
-      __VA_ARGS__ FMT_CONSTEXPR                                      \
-      operator fmt::basic_string_view<char_type>() const {           \
-        return {s, sizeof(s) / sizeof(char_type) - 1};               \
-      }                                                              \
-    };                                                               \
-    return FMT_STRING();                                             \
+#define FMT_STRING_IMPL(s, ...)                              \
+  [] {                                                       \
+    /* Use a macro-like name to avoid shadowing warnings. */ \
+    struct FMT_STRING : fmt::compile_string {                \
+      using char_type = fmt::remove_cvref_t<decltype(*s)>;   \
+      __VA_ARGS__ FMT_CONSTEXPR                              \
+      operator fmt::basic_string_view<char_type>() const {   \
+        return {s, sizeof(s) / sizeof(char_type) - 1};       \
+      }                                                      \
+    };                                                       \
+    return FMT_STRING();                                     \
   }()
 
 /**
