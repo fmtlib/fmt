@@ -117,8 +117,10 @@
 #  endif
 #endif
 
-// [[noreturn]] is disabled on MSVC and NVCC because of bogus unreachable code warnings.
-#if FMT_EXCEPTIONS && FMT_HAS_CPP_ATTRIBUTE(noreturn) && !FMT_MSC_VER && !FMT_NVCC
+// [[noreturn]] is disabled on MSVC and NVCC because of bogus unreachable code
+// warnings.
+#if FMT_EXCEPTIONS && FMT_HAS_CPP_ATTRIBUTE(noreturn) && !FMT_MSC_VER && \
+    !FMT_NVCC
 #  define FMT_NORETURN [[noreturn]]
 #else
 #  define FMT_NORETURN
@@ -208,7 +210,7 @@
 
 FMT_BEGIN_NAMESPACE
 
-// Implementations of enable_if_t and other types for pre-C++14 systems.
+// Implementations of enable_if_t and other metafunctions for pre-C++14 systems.
 template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 template <bool B, class T, class F>

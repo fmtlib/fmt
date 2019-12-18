@@ -5,8 +5,8 @@
 //
 // For the license information refer to format.h.
 
-#ifndef FMT_POSIX_H_
-#define FMT_POSIX_H_
+#ifndef FMT_OS_H_
+#define FMT_OS_H_
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 // Workaround MinGW bug https://sourceforge.net/p/mingw/bugs/2024/.
@@ -397,4 +397,4 @@ class Locale {
 #endif  // FMT_LOCALE
 FMT_END_NAMESPACE
 
-#endif  // FMT_POSIX_H_
+#endif  // FMT_OS_H_

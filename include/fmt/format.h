@@ -90,7 +90,7 @@
 FMT_BEGIN_NAMESPACE
 namespace internal {
 template <typename Exception> inline void do_throw(const Exception& x) {
-  // Silence unreachable code warnings in MSVC and NVCC because these 
+  // Silence unreachable code warnings in MSVC and NVCC because these
   // are nearly impossible to fix in a generic code.
   volatile bool b = true;
   if (b) throw x;
