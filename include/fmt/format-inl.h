@@ -1106,7 +1106,7 @@ int snprintf_float(T value, int precision, float_specs specs,
   char format[max_format_size];
   char* format_ptr = format;
   *format_ptr++ = '%';
-  if (specs.trailing_zeros) *format_ptr++ = '#';
+  if (specs.showpoint) *format_ptr++ = '#';
   if (precision >= 0) {
     *format_ptr++ = '.';
     *format_ptr++ = '*';

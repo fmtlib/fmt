@@ -924,6 +924,7 @@ TEST(FormatterTest, HashFlag) {
 
   EXPECT_EQ("-42.0", format("{0:#}", -42.0));
   EXPECT_EQ("-42.0", format("{0:#}", -42.0l));
+  EXPECT_EQ("4.e+01", format("{:#.0e}", 42.0));
   EXPECT_THROW_MSG(format("{0:#", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:#}", 'c'), format_error,
