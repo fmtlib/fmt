@@ -590,7 +590,8 @@ class custom_printf_arg_formatter : public formatter_t {
       if (round(value * pow(10, specs()->precision)) == 0.0) value = 0;
   return formatter_t::operator()(value);
 }
-};
+}
+;
 
 typedef fmt::basic_format_args<context_t> format_args_t;
 

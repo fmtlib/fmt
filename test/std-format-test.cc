@@ -29,8 +29,8 @@ TEST(StdFormatTest, Alignment) {
   string s4 = format("{:*^6}", 'x');  // s4 == "**x***"
   // Error: '=' with charT and no integer presentation type
   EXPECT_THROW(string s5 = format("{:=6}", 'x'), std::format_error);
-  string s6 = format("{:6d}", c);       // s6 == "   120"
-  string s7 = format("{:6}", true);     // s9 == "true  "
+  string s6 = format("{:6d}", c);    // s6 == "   120"
+  string s7 = format("{:6}", true);  // s9 == "true  "
   EXPECT_EQ(s0, "    42");
   EXPECT_EQ(s1, "x     ");
   EXPECT_EQ(s2, "x*****");

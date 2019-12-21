@@ -272,8 +272,8 @@ TEST(FPTest, GetCachedPower) {
 }
 
 TEST(FPTest, GetRoundDirection) {
-  using fmt::internal::round_direction;
   using fmt::internal::get_round_direction;
+  using fmt::internal::round_direction;
   EXPECT_EQ(round_direction::down, get_round_direction(100, 50, 0));
   EXPECT_EQ(round_direction::up, get_round_direction(100, 51, 0));
   EXPECT_EQ(round_direction::down, get_round_direction(100, 40, 10));
@@ -448,8 +448,8 @@ TEST(UtilTest, CountDigits) {
 TEST(UtilTest, WriteUIntPtr) {
   fmt::memory_buffer buf;
   fmt::internal::writer writer(buf);
-  writer.write_pointer(fmt::internal::fallback_uintptr(
-                           reinterpret_cast<void*>(0xface)),
-                       nullptr);
+  writer.write_pointer(
+      fmt::internal::fallback_uintptr(reinterpret_cast<void*>(0xface)),
+      nullptr);
   EXPECT_EQ("0xface", to_string(buf));
 }

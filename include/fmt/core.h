@@ -725,7 +725,8 @@ struct type_constant : std::integral_constant<type, type::custom_type> {};
 
 #define FMT_TYPE_CONSTANT(Type, constant) \
   template <typename Char>                \
-  struct type_constant<Type, Char> : std::integral_constant<type, type::constant> {}
+  struct type_constant<Type, Char>        \
+      : std::integral_constant<type, type::constant> {}
 
 FMT_TYPE_CONSTANT(const named_arg_base<Char>&, named_arg_type);
 FMT_TYPE_CONSTANT(int, int_type);

@@ -406,8 +406,9 @@ basic_printf_context<OutputIt, Char>::get_arg(int arg_index) {
 }
 
 template <typename OutputIt, typename Char>
-int basic_printf_context<OutputIt, Char>::parse_header(
-    const Char*& it, const Char* end, format_specs& specs) {
+int basic_printf_context<OutputIt, Char>::parse_header(const Char*& it,
+                                                       const Char* end,
+                                                       format_specs& specs) {
   int arg_index = -1;
   char_type c = *it;
   if (c >= '0' && c <= '9') {
@@ -476,8 +477,8 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
         specs.precision = parse_nonnegative_int(it, end, eh);
       } else if (c == '*') {
         ++it;
-        specs.precision =
-            static_cast<int>(visit_format_arg(internal::printf_precision_handler(), get_arg()));
+        specs.precision = static_cast<int>(
+            visit_format_arg(internal::printf_precision_handler(), get_arg()));
       } else {
         specs.precision = 0;
       }

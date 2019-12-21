@@ -201,17 +201,17 @@ static void write_file(fmt::cstring_view filename, fmt::string_view content) {
 using fmt::file;
 
 TEST(UtilTest, GetPageSize) {
-#ifdef _WIN32
+#  ifdef _WIN32
   SYSTEM_INFO si = {};
   GetSystemInfo(&si);
   EXPECT_EQ(si.dwPageSize, fmt::getpagesize());
-#else
+#  else
   EXPECT_EQ(sysconf(_SC_PAGESIZE), fmt::getpagesize());
   sysconf_error = true;
   EXPECT_SYSTEM_ERROR(fmt::getpagesize(), EINVAL,
                       "cannot get memory page size");
   sysconf_error = false;
-#endif
+#  endif
 }
 
 TEST(FileTest, OpenRetry) {
@@ -219,10 +219,10 @@ TEST(FileTest, OpenRetry) {
   std::unique_ptr<file> f{nullptr};
   EXPECT_RETRY(f.reset(new file("test", file::RDONLY)), open,
                "cannot open file test");
-#ifndef _WIN32
+#  ifndef _WIN32
   char c = 0;
   f->read(&c, 1);
-#endif
+#  endif
 }
 
 TEST(FileTest, CloseNoRetryInDtor) {
@@ -256,17 +256,17 @@ TEST(FileTest, Size) {
   file f("test", file::RDONLY);
   EXPECT_GE(f.size(), 0);
   EXPECT_EQ(content.size(), static_cast<unsigned long long>(f.size()));
-#ifdef _WIN32
+#  ifdef _WIN32
   fmt::memory_buffer message;
   fmt::internal::format_windows_error(message, ERROR_ACCESS_DENIED,
                                       "cannot get file size");
   fstat_sim = ERROR;
   EXPECT_THROW_MSG(f.size(), fmt::windows_error, fmt::to_string(message));
   fstat_sim = NONE;
-#else
+#  else
   f.close();
   EXPECT_SYSTEM_ERROR(f.size(), EBADF, "cannot get file attributes");
-#endif
+#  endif
 }
 
 TEST(FileTest, MaxSize) {
@@ -299,16 +299,16 @@ TEST(FileTest, WriteRetry) {
   EXPECT_RETRY(count = write_end.write("test", SIZE), write,
                "cannot write to file");
   write_end.close();
-#ifndef _WIN32
+#  ifndef _WIN32
   EXPECT_EQ(static_cast<std::streamsize>(SIZE), count);
   char buffer[SIZE + 1];
   read_end.read(buffer, SIZE);
   buffer[SIZE] = '\0';
   EXPECT_STREQ("test", buffer);
-#endif
+#  endif
 }
 
-#ifdef _WIN32
+#  ifdef _WIN32
 TEST(FileTest, ConvertReadCount) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
@@ -334,7 +334,7 @@ TEST(FileTest, ConvertWriteCount) {
   write_count = 0;
   EXPECT_EQ(UINT_MAX, write_nbyte);
 }
-#endif
+#  endif
 
 TEST(FileTest, DupNoRetry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
@@ -359,11 +359,11 @@ TEST(FileTest, Dup2NoExceptRetry) {
   error_code ec;
   dup2_count = 1;
   f1.dup2(f2.descriptor(), ec);
-#ifndef _WIN32
+#  ifndef _WIN32
   EXPECT_EQ(4, dup2_count);
-#else
+#  else
   EXPECT_EQ(EINTR, ec.get());
-#endif
+#  endif
   dup2_count = 0;
 }
 
@@ -389,11 +389,11 @@ TEST(BufferedFileTest, OpenRetry) {
   std::unique_ptr<buffered_file> f{nullptr};
   EXPECT_RETRY(f.reset(new buffered_file("test", "r")), fopen,
                "cannot open file test");
-#ifndef _WIN32
+#  ifndef _WIN32
   char c = 0;
   if (fread(&c, 1, 1, f->get()) < 1)
     throw fmt::system_error(errno, "fread failed");
-#endif
+#  endif
 }
 
 TEST(BufferedFileTest, CloseNoRetryInDtor) {
