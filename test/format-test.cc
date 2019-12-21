@@ -2270,7 +2270,7 @@ TEST(FormatTest, ConstexprDynamicSpecsHandler) {
 template <size_t N>
 FMT_CONSTEXPR test_format_specs_handler check_specs(const char (&s)[N]) {
   fmt::internal::specs_checker<test_format_specs_handler> checker(
-      test_format_specs_handler(), fmt::internal::double_type);
+      test_format_specs_handler(), fmt::internal::type::double_type);
   parse_format_specs(s, s + N, checker);
   return checker;
 }

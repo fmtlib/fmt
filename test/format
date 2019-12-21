@@ -534,31 +534,31 @@ inline fmt::internal::type get_type(basic_format_arg<Context> arg) {
     using char_type = typename Context::char_type;
     using T = decltype(val);
     if (std::is_same_v<T, monostate>)
-      return fmt::internal::none_type;
+      return fmt::internal::type::none_type;
     if (std::is_same_v<T, bool>)
-      return fmt::internal::bool_type;
+      return fmt::internal::type::bool_type;
     if (std::is_same_v<T, char_type>)
-      return fmt::internal::char_type;
+      return fmt::internal::type::char_type;
     if (std::is_same_v<T, int>)
-      return fmt::internal::int_type;
+      return fmt::internal::type::int_type;
     if (std::is_same_v<T, unsigned int>)
-      return fmt::internal::uint_type;
+      return fmt::internal::type::uint_type;
     if (std::is_same_v<T, long long int>)
-      return fmt::internal::long_long_type;
+      return fmt::internal::type::long_long_type;
     if (std::is_same_v<T, unsigned long long int>)
-      return fmt::internal::ulong_long_type;
+      return fmt::internal::type::ulong_long_type;
     if (std::is_same_v<T, double>)
-      return fmt::internal::double_type;
+      return fmt::internal::type::double_type;
     if (std::is_same_v<T, long double>)
-      return fmt::internal::long_double_type;
+      return fmt::internal::type::long_double_type;
     if (std::is_same_v<T, const char_type*>)
-      return fmt::internal::cstring_type;
+      return fmt::internal::type::cstring_type;
     if (std::is_same_v<T, basic_string_view<char_type>>)
-      return fmt::internal::string_type;
+      return fmt::internal::type::string_type;
     if (std::is_same_v<T, const void*>)
-      return fmt::internal::pointer_type;
+      return fmt::internal::type::pointer_type;
     assert(get_value(arg).index() == 12);
-    return fmt::internal::custom_type;
+    return fmt::internal::type::custom_type;
   }, arg);
 }
 
@@ -649,37 +649,37 @@ struct formatter {
     auto type_spec = specs_.type;
     auto eh = ctx.error_handler();
     switch (type) {
-    case internal::none_type:
-    case internal::named_arg_type:
+    case internal::type::none_type:
+    case internal::type::named_arg_type:
       FMT_ASSERT(false, "invalid argument type");
       break;
-    case internal::int_type:
-    case internal::uint_type:
-    case internal::long_long_type:
-    case internal::ulong_long_type:
-    case internal::bool_type:
+    case internal::type::int_type:
+    case internal::type::uint_type:
+    case internal::type::long_long_type:
+    case internal::type::ulong_long_type:
+    case internal::type::bool_type:
       handle_int_type_spec(type_spec,
                            internal::int_type_checker<decltype(eh)>(eh));
       break;
-    case internal::char_type:
+    case internal::type::char_type:
       handle_char_specs(
           &specs_, internal::char_specs_checker<decltype(eh)>(type_spec, eh));
       break;
-    case internal::double_type:
-    case internal::long_double_type:
+    case internal::type::double_type:
+    case internal::type::long_double_type:
       internal::parse_float_type_spec(specs_, eh);
       break;
-    case internal::cstring_type:
+    case internal::type::cstring_type:
       internal::handle_cstring_type_spec(
           type_spec, internal::cstring_type_checker<decltype(eh)>(eh));
       break;
-    case internal::string_type:
+    case internal::type::string_type:
       internal::check_string_type_spec(type_spec, eh);
       break;
-    case internal::pointer_type:
+    case internal::type::pointer_type:
       internal::check_pointer_type_spec(type_spec, eh);
       break;
-    case internal::custom_type:
+    case internal::type::custom_type:
       // Custom format specifiers should be checked in parse functions of
       // formatter specializations.
       break;

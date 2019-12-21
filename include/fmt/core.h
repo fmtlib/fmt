@@ -695,7 +695,7 @@ using has_fallback_formatter =
 template <typename Char> struct named_arg_base;
 template <typename T, typename Char> struct named_arg;
 
-enum type {
+enum class type {
   none_type,
   named_arg_type,
   // Integer types should go first,
@@ -721,11 +721,11 @@ enum type {
 
 // Maps core type T to the corresponding type enum constant.
 template <typename T, typename Char>
-struct type_constant : std::integral_constant<type, custom_type> {};
+struct type_constant : std::integral_constant<type, type::custom_type> {};
 
 #define FMT_TYPE_CONSTANT(Type, constant) \
   template <typename Char>                \
-  struct type_constant<Type, Char> : std::integral_constant<type, constant> {}
+  struct type_constant<Type, Char> : std::integral_constant<type, type::constant> {}
 
 FMT_TYPE_CONSTANT(const named_arg_base<Char>&, named_arg_type);
 FMT_TYPE_CONSTANT(int, int_type);
@@ -744,13 +744,13 @@ FMT_TYPE_CONSTANT(basic_string_view<Char>, string_type);
 FMT_TYPE_CONSTANT(const void*, pointer_type);
 
 FMT_CONSTEXPR bool is_integral_type(type t) {
-  FMT_ASSERT(t != named_arg_type, "invalid argument type");
-  return t > none_type && t <= last_integer_type;
+  FMT_ASSERT(t != type::named_arg_type, "invalid argument type");
+  return t > type::none_type && t <= type::last_integer_type;
 }
 
 FMT_CONSTEXPR bool is_arithmetic_type(type t) {
-  FMT_ASSERT(t != named_arg_type, "invalid argument type");
-  return t > none_type && t <= last_numeric_type;
+  FMT_ASSERT(t != type::named_arg_type, "invalid argument type");
+  return t > type::none_type && t <= type::last_numeric_type;
 }
 
 template <typename Char> struct string_value {
@@ -1002,10 +1002,10 @@ template <typename Context> class basic_format_arg {
     internal::custom_value<Context> custom_;
   };
 
-  FMT_CONSTEXPR basic_format_arg() : type_(internal::none_type) {}
+  FMT_CONSTEXPR basic_format_arg() : type_(internal::type::none_type) {}
 
   FMT_CONSTEXPR explicit operator bool() const FMT_NOEXCEPT {
-    return type_ != internal::none_type;
+    return type_ != internal::type::none_type;
   }
 
   internal::type type() const { return type_; }
@@ -1027,47 +1027,47 @@ FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
     -> decltype(vis(0)) {
   using char_type = typename Context::char_type;
   switch (arg.type_) {
-  case internal::none_type:
+  case internal::type::none_type:
     break;
-  case internal::named_arg_type:
+  case internal::type::named_arg_type:
     FMT_ASSERT(false, "invalid argument type");
     break;
-  case internal::int_type:
+  case internal::type::int_type:
     return vis(arg.value_.int_value);
-  case internal::uint_type:
+  case internal::type::uint_type:
     return vis(arg.value_.uint_value);
-  case internal::long_long_type:
+  case internal::type::long_long_type:
     return vis(arg.value_.long_long_value);
-  case internal::ulong_long_type:
+  case internal::type::ulong_long_type:
     return vis(arg.value_.ulong_long_value);
 #if FMT_USE_INT128
-  case internal::int128_type:
+  case internal::type::int128_type:
     return vis(arg.value_.int128_value);
-  case internal::uint128_type:
+  case internal::type::uint128_type:
     return vis(arg.value_.uint128_value);
 #else
-  case internal::int128_type:
-  case internal::uint128_type:
+  case internal::type::int128_type:
+  case internal::type::uint128_type:
     break;
 #endif
-  case internal::bool_type:
+  case internal::type::bool_type:
     return vis(arg.value_.bool_value);
-  case internal::char_type:
+  case internal::type::char_type:
     return vis(arg.value_.char_value);
-  case internal::float_type:
+  case internal::type::float_type:
     return vis(arg.value_.float_value);
-  case internal::double_type:
+  case internal::type::double_type:
     return vis(arg.value_.double_value);
-  case internal::long_double_type:
+  case internal::type::long_double_type:
     return vis(arg.value_.long_double_value);
-  case internal::cstring_type:
+  case internal::type::cstring_type:
     return vis(arg.value_.string.data);
-  case internal::string_type:
+  case internal::type::string_type:
     return vis(basic_string_view<char_type>(arg.value_.string.data,
                                             arg.value_.string.size));
-  case internal::pointer_type:
+  case internal::type::pointer_type:
     return vis(arg.value_.pointer);
-  case internal::custom_type:
+  case internal::type::custom_type:
     return vis(typename basic_format_arg<Context>::handle(arg.value_.custom));
   }
   return vis(monostate());
@@ -1127,7 +1127,7 @@ template <typename> constexpr unsigned long long encode_types() { return 0; }
 
 template <typename Context, typename Arg, typename... Args>
 constexpr unsigned long long encode_types() {
-  return mapped_type_constant<Arg, Context>::value |
+  return static_cast<unsigned>(mapped_type_constant<Arg, Context>::value) |
          (encode_types<Context, Args...>() << packed_arg_bits);
 }
 
@@ -1290,7 +1290,7 @@ template <typename Context> class basic_format_args {
     }
     if (index > internal::max_packed_args) return arg;
     arg.type_ = type(index);
-    if (arg.type_ == internal::none_type) return arg;
+    if (arg.type_ == internal::type::none_type) return arg;
     internal::value<Context>& val = arg.value_;
     val = values_[index];
     return arg;
@@ -1323,7 +1323,7 @@ template <typename Context> class basic_format_args {
   /** Returns the argument at specified index. */
   format_arg get(int index) const {
     format_arg arg = do_get(index);
-    if (arg.type_ == internal::named_arg_type)
+    if (arg.type_ == internal::type::named_arg_type)
       arg = arg.value_.named_arg->template deserialize<Context>();
     return arg;
   }

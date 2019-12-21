@@ -1330,13 +1330,14 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
   if (args.is_packed()) {
     for (int i = 0;; ++i) {
       internal::type arg_type = args.type(i);
-      if (arg_type == internal::none_type) return;
-      if (arg_type == internal::named_arg_type) push_back(args.values_[i]);
+      if (arg_type == internal::type::none_type) return;
+      if (arg_type == internal::type::named_arg_type)
+        push_back(args.values_[i]);
     }
   }
   for (int i = 0, n = args.max_size(); i < n; ++i) {
     auto type = args.args_[i].type_;
-    if (type == internal::named_arg_type) push_back(args.args_[i].value_);
+    if (type == internal::type::named_arg_type) push_back(args.args_[i].value_);
   }
 }
 
@@ -2047,14 +2048,14 @@ template <typename ErrorHandler> class numeric_specs_checker {
 
   FMT_CONSTEXPR void check_sign() {
     require_numeric_argument();
-    if (is_integral_type(arg_type_) && arg_type_ != int_type &&
-        arg_type_ != long_long_type && arg_type_ != internal::char_type) {
+    if (is_integral_type(arg_type_) && arg_type_ != type::int_type &&
+        arg_type_ != type::long_long_type && arg_type_ != type::char_type) {
       error_handler_.on_error("format specifier requires signed argument");
     }
   }
 
   FMT_CONSTEXPR void check_precision() {
-    if (is_integral_type(arg_type_) || arg_type_ == internal::pointer_type)
+    if (is_integral_type(arg_type_) || arg_type_ == type::pointer_type)
       error_handler_.on_error("precision not allowed for this argument type");
   }
 
@@ -2541,7 +2542,7 @@ FMT_CONSTEXPR const typename ParseContext::char_type* parse_format_specs(
   using context = buffer_context<char_type>;
   using mapped_type =
       conditional_t<internal::mapped_type_constant<T, context>::value !=
-                        internal::custom_type,
+                        type::custom_type,
                     decltype(arg_mapper<context>().map(std::declval<T>())), T>;
   auto f = conditional_t<has_formatter<mapped_type, context>::value,
                          formatter<mapped_type, char_type>,
@@ -2841,7 +2842,7 @@ class format_int {
 template <typename T, typename Char>
 struct formatter<T, Char,
                  enable_if_t<internal::type_constant<T, Char>::value !=
-                             internal::custom_type>> {
+                             internal::type::custom_type>> {
   FMT_CONSTEXPR formatter() = default;
 
   // Parses format specifiers stopping either at the end of the range or at the
@@ -2855,40 +2856,40 @@ struct formatter<T, Char,
     auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
     auto eh = ctx.error_handler();
     switch (type) {
-    case internal::none_type:
-    case internal::named_arg_type:
+    case internal::type::none_type:
+    case internal::type::named_arg_type:
       FMT_ASSERT(false, "invalid argument type");
       break;
-    case internal::int_type:
-    case internal::uint_type:
-    case internal::long_long_type:
-    case internal::ulong_long_type:
-    case internal::int128_type:
-    case internal::uint128_type:
-    case internal::bool_type:
+    case internal::type::int_type:
+    case internal::type::uint_type:
+    case internal::type::long_long_type:
+    case internal::type::ulong_long_type:
+    case internal::type::int128_type:
+    case internal::type::uint128_type:
+    case internal::type::bool_type:
       handle_int_type_spec(specs_.type,
                            internal::int_type_checker<decltype(eh)>(eh));
       break;
-    case internal::char_type:
+    case internal::type::char_type:
       handle_char_specs(
           &specs_, internal::char_specs_checker<decltype(eh)>(specs_.type, eh));
       break;
-    case internal::float_type:
-    case internal::double_type:
-    case internal::long_double_type:
+    case internal::type::float_type:
+    case internal::type::double_type:
+    case internal::type::long_double_type:
       internal::parse_float_type_spec(specs_, eh);
       break;
-    case internal::cstring_type:
+    case internal::type::cstring_type:
       internal::handle_cstring_type_spec(
           specs_.type, internal::cstring_type_checker<decltype(eh)>(eh));
       break;
-    case internal::string_type:
+    case internal::type::string_type:
       internal::check_string_type_spec(specs_.type, eh);
       break;
-    case internal::pointer_type:
+    case internal::type::pointer_type:
       internal::check_pointer_type_spec(specs_.type, eh);
       break;
-    case internal::custom_type:
+    case internal::type::custom_type:
       // Custom format specifiers should be checked in parse functions of
       // formatter specializations.
       break;
@@ -3024,7 +3025,8 @@ typename basic_format_context<Range, Char>::format_arg
 basic_format_context<Range, Char>::arg(basic_string_view<char_type> name) {
   map_.init(args_);
   format_arg arg = map_.find(name);
-  if (arg.type() == internal::none_type) this->on_error("argument not found");
+  if (arg.type() == internal::type::none_type)
+    this->on_error("argument not found");
   return arg;
 }
 

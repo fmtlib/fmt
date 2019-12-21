@@ -572,13 +572,13 @@ TEST(CoreTest, ToStringViewForeignStrings) {
   fmt::internal::type type =
       fmt::internal::mapped_type_constant<my_string<char>,
                                           fmt::format_context>::value;
-  EXPECT_EQ(type, fmt::internal::string_type);
+  EXPECT_EQ(type, fmt::internal::type::string_type);
   type = fmt::internal::mapped_type_constant<my_string<wchar_t>,
                                              fmt::wformat_context>::value;
-  EXPECT_EQ(type, fmt::internal::string_type);
+  EXPECT_EQ(type, fmt::internal::type::string_type);
   type =
       fmt::internal::mapped_type_constant<QString, fmt::wformat_context>::value;
-  EXPECT_EQ(type, fmt::internal::string_type);
+  EXPECT_EQ(type, fmt::internal::type::string_type);
   // Does not compile: only wide format contexts are compatible with QString!
   // type = fmt::internal::mapped_type_constant<QString,
   // fmt::format_context>::value;
