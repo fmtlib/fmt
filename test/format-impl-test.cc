@@ -272,26 +272,27 @@ TEST(FPTest, GetCachedPower) {
 }
 
 TEST(FPTest, GetRoundDirection) {
+  using fmt::internal::round_direction;
   using fmt::internal::get_round_direction;
-  EXPECT_EQ(fmt::internal::down, get_round_direction(100, 50, 0));
-  EXPECT_EQ(fmt::internal::up, get_round_direction(100, 51, 0));
-  EXPECT_EQ(fmt::internal::down, get_round_direction(100, 40, 10));
-  EXPECT_EQ(fmt::internal::up, get_round_direction(100, 60, 10));
+  EXPECT_EQ(round_direction::down, get_round_direction(100, 50, 0));
+  EXPECT_EQ(round_direction::up, get_round_direction(100, 51, 0));
+  EXPECT_EQ(round_direction::down, get_round_direction(100, 40, 10));
+  EXPECT_EQ(round_direction::up, get_round_direction(100, 60, 10));
   for (size_t i = 41; i < 60; ++i)
-    EXPECT_EQ(fmt::internal::unknown, get_round_direction(100, i, 10));
+    EXPECT_EQ(round_direction::unknown, get_round_direction(100, i, 10));
   uint64_t max = max_value<uint64_t>();
   EXPECT_THROW(get_round_direction(100, 100, 0), assertion_failure);
   EXPECT_THROW(get_round_direction(100, 0, 100), assertion_failure);
   EXPECT_THROW(get_round_direction(100, 0, 50), assertion_failure);
   // Check that remainder + error doesn't overflow.
-  EXPECT_EQ(fmt::internal::up, get_round_direction(max, max - 1, 2));
+  EXPECT_EQ(round_direction::up, get_round_direction(max, max - 1, 2));
   // Check that 2 * (remainder + error) doesn't overflow.
-  EXPECT_EQ(fmt::internal::unknown,
+  EXPECT_EQ(round_direction::unknown,
             get_round_direction(max, max / 2 + 1, max / 2));
   // Check that remainder - error doesn't overflow.
-  EXPECT_EQ(fmt::internal::unknown, get_round_direction(100, 40, 41));
+  EXPECT_EQ(round_direction::unknown, get_round_direction(100, 40, 41));
   // Check that 2 * (remainder - error) doesn't overflow.
-  EXPECT_EQ(fmt::internal::up, get_round_direction(max, max - 1, 1));
+  EXPECT_EQ(round_direction::up, get_round_direction(max, max - 1, 1));
 }
 
 TEST(FPTest, FixedHandler) {

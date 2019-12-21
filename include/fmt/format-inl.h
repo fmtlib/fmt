@@ -722,7 +722,7 @@ class bigint {
   }
 };
 
-enum round_direction { unknown, up, down };
+enum class round_direction { unknown, up, down };
 
 // Given the divisor (normally a power of 10), the remainder = v % divisor for
 // some number v and the error, returns whether v should be rounded up, down, or
@@ -735,13 +735,13 @@ inline round_direction get_round_direction(uint64_t divisor, uint64_t remainder,
   FMT_ASSERT(error < divisor - error, "");  // error * 2 won't overflow.
   // Round down if (remainder + error) * 2 <= divisor.
   if (remainder <= divisor - remainder && error * 2 <= divisor - remainder * 2)
-    return down;
+    return round_direction::down;
   // Round up if (remainder - error) * 2 >= divisor.
   if (remainder >= error &&
       remainder - error >= divisor - (remainder - error)) {
-    return up;
+    return round_direction::up;
   }
-  return unknown;
+  return round_direction::unknown;
 }
 
 namespace digits {
@@ -857,8 +857,8 @@ struct fixed_handler {
     if (precision > 0) return digits::more;
     if (precision < 0) return digits::done;
     auto dir = get_round_direction(divisor, remainder, error);
-    if (dir == unknown) return digits::error;
-    buf[size++] = dir == up ? '1' : '0';
+    if (dir == round_direction::unknown) return digits::error;
+    buf[size++] = dir == round_direction::up ? '1' : '0';
     return digits::done;
   }
 
@@ -876,7 +876,8 @@ struct fixed_handler {
       FMT_ASSERT(error == 1 && divisor > 2, "");
     }
     auto dir = get_round_direction(divisor, remainder, error);
-    if (dir != up) return dir == down ? digits::done : digits::error;
+    if (dir != round_direction::up)
+      return dir == round_direction::down ? digits::done : digits::error;
     ++buf[size - 1];
     for (int i = size - 1; i > 0 && buf[i] > '9'; --i) {
       buf[i] = '0';
