@@ -410,6 +410,7 @@ TEST(UtilTest, UTF8ToUTF16) {
                    "invalid utf8");
   EXPECT_THROW_MSG(fmt::internal::utf8_to_utf16(fmt::string_view("л", 1)),
                    std::runtime_error, "invalid utf8");
+  EXPECT_EQ(L"123456", fmt::internal::utf8_to_utf16("123456").str());
 }
 
 TEST(UtilTest, UTF8ToUTF16EmptyString) {
