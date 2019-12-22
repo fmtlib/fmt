@@ -1341,12 +1341,12 @@ template <typename Context> class basic_format_args {
 struct format_args : basic_format_args<format_context> {
   template <typename... Args>
   format_args(Args&&... args)
-      : basic_format_args<format_context>(std::forward<Args>(args)...) {}
+      : basic_format_args<format_context>(static_cast<Args&&>(args)...) {}
 };
 struct wformat_args : basic_format_args<wformat_context> {
   template <typename... Args>
   wformat_args(Args&&... args)
-      : basic_format_args<wformat_context>(std::forward<Args>(args)...) {}
+      : basic_format_args<wformat_context>(static_cast<Args&&>(args)...) {}
 };
 
 template <typename Container> struct is_contiguous : std::false_type {};
