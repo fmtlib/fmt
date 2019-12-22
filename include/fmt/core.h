@@ -208,6 +208,13 @@
 #  define FMT_USE_EXPERIMENTAL_STRING_VIEW
 #endif
 
+#ifndef FMT_UNICODE
+#  define FMT_UNICODE 0
+#endif
+#if FMT_UNICODE
+#  pragma execution_character_set("utf-8")
+#endif
+
 FMT_BEGIN_NAMESPACE
 
 // Implementations of enable_if_t and other metafunctions for pre-C++14 systems.

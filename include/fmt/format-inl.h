@@ -21,6 +21,11 @@
 #  include <locale>
 #endif
 
+#if FMT_UNICODE
+#include <windows.h>
+#include <io.h>
+#endif
+
 #ifdef _MSC_VER
 #  pragma warning(push)
 #  pragma warning(disable : 4702)  // unreachable code
@@ -1336,20 +1341,24 @@ FMT_FUNC void report_system_error(int error_code,
   report_error(format_system_error, error_code, message);
 }
 
-#ifndef FMT_UNICODE
-#  define FMT_UNICODE 0
-#endif
-
 FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   memory_buffer buffer;
   internal::vformat_to(buffer, format_str,
                        basic_format_args<buffer_context<char>>(args));
-#if FMT_UNICODE
-  internal::utf8_to_utf16 u16(string_view(buffer.data(), buffer.size()));
-  std::fputws(u16.c_str(), f);
-#else
-  internal::fwrite_fully(buffer.data(), 1, buffer.size(), f);
+#if defined(_WIN32) && FMT_UNICODE
+  auto fd = _fileno(f);
+  if (_isatty(fd)) {
+    internal::utf8_to_utf16 u16(string_view(buffer.data(), buffer.size()));
+    auto written = DWORD();
+    if (!WriteConsoleW(
+      reinterpret_cast<HANDLE>(_get_osfhandle(fd)),
+      u16.c_str(), u16.size(), &written, nullptr)) {
+      throw format_error("failed to write to console");
+    }
+    return;
+  }
 #endif
+  internal::fwrite_fully(buffer.data(), 1, buffer.size(), f);
 }
 
 FMT_FUNC void vprint(string_view format_str, format_args args) {
