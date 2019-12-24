@@ -427,7 +427,11 @@ TEST(FormatTest, FormatErrorCode) {
 }
 
 TEST(FormatTest, CountCodePoints) {
-  EXPECT_EQ(4, fmt::internal::count_code_points(fmt::u8string_view("ёжик")));
+#ifndef __cpp_char8_t
+  using fmt::char8_t;
+#endif
+  EXPECT_EQ(4, fmt::internal::count_code_points(
+    fmt::basic_string_view<char8_t>(reinterpret_cast<const char8_t*>("ёжик"))));
 }
 
 // Tests fmt::internal::count_digits for integer type Int.

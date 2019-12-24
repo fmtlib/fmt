@@ -2467,27 +2467,10 @@ TEST(FormatTest, FmtStringInTemplate) {
 using fmt::char8_t;
 #endif
 
-TEST(FormatTest, ConstructU8StringViewFromCString) {
-  fmt::u8string_view s("ab");
-  EXPECT_EQ(s.size(), 2u);
-  const char8_t* data = s.data();
-  EXPECT_EQ(data[0], 'a');
-  EXPECT_EQ(data[1], 'b');
-}
-
-TEST(FormatTest, ConstructU8StringViewFromDataAndSize) {
-  fmt::u8string_view s("foobar", 3);
-  EXPECT_EQ(s.size(), 3u);
-  const char8_t* data = s.data();
-  EXPECT_EQ(data[0], 'f');
-  EXPECT_EQ(data[1], 'o');
-  EXPECT_EQ(data[2], 'o');
-}
-
 #if FMT_USE_USER_DEFINED_LITERALS
 TEST(FormatTest, U8StringViewLiteral) {
   using namespace fmt::literals;
-  fmt::u8string_view s = "ab"_u;
+  fmt::basic_string_view<char8_t> s = "ab"_u;
   EXPECT_EQ(s.size(), 2u);
   const char8_t* data = s.data();
   EXPECT_EQ(data[0], 'a');
@@ -2495,10 +2478,6 @@ TEST(FormatTest, U8StringViewLiteral) {
   EXPECT_EQ(format("{:*^5}"_u, "🤡"_u), "**🤡**"_u);
 }
 #endif
-
-TEST(FormatTest, FormatU8String) {
-  EXPECT_EQ(format(fmt::u8string_view("{}"), 42), fmt::u8string_view("42"));
-}
 
 TEST(FormatTest, EmphasisNonHeaderOnly) {
   // Ensure this compiles even if FMT_HEADER_ONLY is not defined.

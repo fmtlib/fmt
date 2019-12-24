@@ -1535,7 +1535,8 @@ inline void print(std::FILE* f, const S& format_str, Args&&... args) {
 
 /**
   \rst
-  Prints formatted data to ``stdout``.
+  Formats ``args`` according to specifications in ``format_str`` and writes the
+  output to ``stdout``.
 
   **Example**::
 
