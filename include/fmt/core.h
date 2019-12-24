@@ -1507,8 +1507,10 @@ inline std::basic_string<Char> format(const S& format_str, Args&&... args) {
       {internal::make_args_checked<Args...>(format_str, args...)});
 }
 
-FMT_API void vprint(std::FILE* f, string_view format_str, format_args args);
 FMT_API void vprint(string_view format_str, format_args args);
+FMT_API void vprint(std::FILE* f, string_view format_str, format_args args);
+FMT_API void vprint_mojibake(std::FILE* f, string_view format_str,
+                             format_args args);
 
 /**
   \rst
@@ -1539,8 +1541,13 @@ inline void print(std::FILE* f, const S& format_str, Args&&... args) {
 template <typename S, typename... Args,
           FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline void print(const S& format_str, Args&&... args) {
+#if !defined(_WIN32) || FMT_UNICODE
   vprint(to_string_view(format_str),
          internal::make_args_checked<Args...>(format_str, args...));
+#else
+  vprint_mojibake(stdout, to_string_view(format_str),
+                  internal::make_args_checked<Args...>(format_str, args...));
+#endif
 }
 FMT_END_NAMESPACE
 
