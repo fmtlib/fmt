@@ -1513,8 +1513,9 @@ FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 
 /**
   \rst
-  Prints formatted data to the file *f*. Strings are assumed to be
-  Unicode-encoded unless the ``FMT_UNICODE`` macro is set to 0.
+  Formats ``args`` according to specifications in ``format_str`` and writes the
+  output to the file ``f``. Strings are assumed to be Unicode-encoded unless the
+  ``FMT_UNICODE`` macro is set to 0.
 
   **Example**::
 
