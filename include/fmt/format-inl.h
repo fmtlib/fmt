@@ -21,7 +21,7 @@
 #  include <locale>
 #endif
 
-#if FMT_UNICODE
+#ifdef _WIN32
 #  include <io.h>
 #  include <windows.h>
 #endif
@@ -1345,7 +1345,7 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   memory_buffer buffer;
   internal::vformat_to(buffer, format_str,
                        basic_format_args<buffer_context<char>>(args));
-#if defined(_WIN32) && FMT_UNICODE
+#ifdef _WIN32
   auto fd = _fileno(f);
   if (_isatty(fd)) {
     internal::utf8_to_utf16 u16(string_view(buffer.data(), buffer.size()));
@@ -1361,6 +1361,7 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
 }
 
 #ifdef _WIN32
+// Print assuming legacy (non-Unicode) encoding.
 FMT_FUNC void vprint_mojibake(std::FILE* f, string_view format_str,
                               format_args args) {
   memory_buffer buffer;
