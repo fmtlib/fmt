@@ -33,6 +33,7 @@ if (MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING ${doc})
 endif ()
 
+option(FMT_FPIC "If ON, force FMT to be built as position independent code" OFF)
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
        OFF)
@@ -161,6 +162,9 @@ if (HAVE_STRTOD_L)
   target_compile_definitions(fmt PUBLIC FMT_LOCALE)
 endif ()
 
+if(FMT_FPIC)
+  set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
 if (FMT_WERROR)
   target_compile_options(fmt PRIVATE ${WERROR_FLAG})
 endif ()
