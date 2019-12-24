@@ -1766,6 +1766,12 @@ TEST(FormatTest, Dynamic) {
   EXPECT_EQ("42 and abc1 and 1.5", result);
 }
 
+TEST(FormatTest, Bytes) {
+  auto s = fmt::format("{:10}", fmt::bytes("ёжик"));
+  EXPECT_EQ("ёжик  ", s);
+  EXPECT_EQ(10, s.size());
+}
+
 TEST(FormatTest, JoinArg) {
   using fmt::join;
   int v1[3] = {1, 2, 3};

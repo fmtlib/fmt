@@ -3112,6 +3112,22 @@ template <typename T> inline const void* ptr(const std::shared_ptr<T>& p) {
   return p.get();
 }
 
+class bytes {
+ private:
+  string_view data_;
+  friend struct formatter<bytes>;
+
+ public:
+  explicit bytes(string_view data) : data_(data) {}
+};
+
+template <> struct formatter<bytes> : formatter<string_view> {
+  template <typename FormatContext>
+  auto format(bytes b, FormatContext& ctx) -> decltype(ctx.out()) {
+    return formatter<string_view>::format(b.data_, ctx);
+  }
+};
+
 template <typename It, typename Char> struct arg_join : internal::view {
   It begin;
   It end;

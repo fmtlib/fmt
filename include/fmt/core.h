@@ -1513,8 +1513,8 @@ FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 
 /**
   \rst
-  Prints formatted data to the file *f*. For wide format strings *f* should be
-  in wide-oriented mode set via ``fwide(f, 1)``.
+  Prints formatted data to the file *f*. Strings are assumed to be
+  Unicode-encoded unless the ``FMT_UNICODE`` macro is set to 0.
 
   **Example**::
 
@@ -1535,8 +1535,9 @@ inline void print(std::FILE* f, const S& format_str, Args&&... args) {
 
 /**
   \rst
-  Formats ``args`` according to specifications in ``format_str`` and writes the
-  output to ``stdout``.
+  Formats ``args`` according to specifications in ``format_str`` and writes
+  the output to ``stdout``. Strings are assumed to be Unicode-encoded unless
+  the ``FMT_UNICODE`` macro is set to 0.
 
   **Example**::
 
