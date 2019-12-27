@@ -359,13 +359,6 @@ Replacing ``%+f``, ``%-f``, and ``% f`` and specifying a sign::
    format("{:-f}; {:-f}", 3.14, -3.14);  // show only the minus -- same as '{:f}; {:f}'
    // Result: "3.140000; -3.140000"
 
-As a percentage::
-
-   format("{0:f} or {0:%}", .635);
-   // Result: "0.635000 or 63.500000%"
-   format("{:*^{}.{}%}", 1., 15, 2); // With fill, dynamic width and dynamic precision.
-   // Result: "****100.00%****"
-
 Replacing ``%x`` and ``%o`` and converting the value to different bases::
 
    format("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
