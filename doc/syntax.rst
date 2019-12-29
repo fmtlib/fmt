@@ -77,7 +77,7 @@ The general form of a *standard format specifier* is:
 .. productionlist:: sf
    format_spec: [[`fill`]`align`][`sign`]["#"]["0"][`width`]["." `precision`][`type`]
    fill: <a character other than '{', '}' or '\0'>
-   align: "<" | ">" | "=" | "^"
+   align: "<" | ">" | "^"
    sign: "+" | "-" | " "
    width: `integer` | "{" `arg_id` "}"
    precision: `integer` | "{" `arg_id` "}"
