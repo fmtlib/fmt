@@ -1256,7 +1256,16 @@ inline format_arg_store<Context, Args...> make_format_args(
   return {args...};
 }
 
-/** Formatting arguments. */
+/**
+  \rst
+  A view of a collection of formatting arguments. To avoid lifetime issues it
+  should only be used as a parameter type in type-erased functions such as
+  ``vformat``::
+
+    void vlog(fmt::string_view format_str, fmt::format_args args);  // OK
+    fmt::format_args args = fmt::make_format_args(42);  // Error: dangling reference
+  \endrst
+ */
 template <typename Context> class basic_format_args {
  public:
   using size_type = int;
