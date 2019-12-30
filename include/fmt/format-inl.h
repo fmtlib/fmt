@@ -1112,7 +1112,7 @@ int snprintf_float(T value, int precision, float_specs specs,
   char format[max_format_size];
   char* format_ptr = format;
   *format_ptr++ = '%';
-  if (specs.showpoint) *format_ptr++ = '#';
+  if (specs.showpoint && specs.format == float_format::hex) *format_ptr++ = '#';
   if (precision >= 0) {
     *format_ptr++ = '.';
     *format_ptr++ = '*';
@@ -1351,7 +1351,8 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
     internal::utf8_to_utf16 u16(string_view(buffer.data(), buffer.size()));
     auto written = DWORD();
     if (!WriteConsoleW(reinterpret_cast<HANDLE>(_get_osfhandle(fd)),
-                       u16.c_str(), static_cast<DWORD>(u16.size()), &written, nullptr)) {
+                       u16.c_str(), static_cast<DWORD>(u16.size()), &written,
+                       nullptr)) {
       throw format_error("failed to write to console");
     }
     return;

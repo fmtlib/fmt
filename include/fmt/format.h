@@ -1125,9 +1125,10 @@ template <typename Char> class float_writer {
       if (specs_.precision >= 0 && specs_.precision < num_zeros)
         num_zeros = specs_.precision;
       int num_digits = num_digits_;
+      // Remove trailing zeros.
       if (!specs_.showpoint)
         while (num_digits > 0 && digits_[num_digits - 1] == '0') --num_digits;
-      if (num_zeros != 0 || num_digits != 0) {
+      if (num_zeros != 0 || num_digits != 0 || specs_.showpoint) {
         *it++ = decimal_point_;
         it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
         it = copy_str<Char>(digits_, digits_ + num_digits, it);
