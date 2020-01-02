@@ -1262,8 +1262,8 @@ inline format_arg_store<Context, Args...> make_format_args(
   should only be used as a parameter type in type-erased functions such as
   ``vformat``::
 
-    void vlog(fmt::string_view format_str, fmt::format_args args);  // OK
-    fmt::format_args args = fmt::make_format_args(42);  // Error: dangling reference
+    void vlog(string_view format_str, format_args args);  // OK
+    format_args args = make_format_args(42);  // Error: dangling reference
   \endrst
  */
 template <typename Context> class basic_format_args {
