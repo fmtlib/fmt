@@ -1173,7 +1173,7 @@ int snprintf_float(T value, int precision, float_specs specs,
                    buffer<char>& buf);
 
 template <typename T> T promote_float(T value) { return value; }
-inline double promote_float(float value) { return value; }
+inline double promote_float(float value) { return static_cast<double>(value); }
 
 template <typename Handler>
 FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
