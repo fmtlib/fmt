@@ -2476,15 +2476,27 @@ TEST(FormatTest, FmtStringInTemplate) {
 using fmt::char8_t;
 #endif
 
+// Convert 'char8_t' character sequences to 'char' sequences
+// Otherwise GTest will insist on inserting 'char8_t' NTBS into a 'char' stream,
+// but basic_ostream<char>::operator<< overloads taking 'char8_t' arguments
+// are defined as deleted by P1423.
+// Handling individual 'char8_t's is done inline.
+std::string from_u8str(const std::basic_string<char8_t>& str) {
+  return std::string(str.begin(), str.end());
+}
+std::string from_u8str(const fmt::basic_string_view<char8_t>& str) {
+  return std::string(str.begin(), str.end());
+}
+
 #if FMT_USE_USER_DEFINED_LITERALS
 TEST(FormatTest, U8StringViewLiteral) {
   using namespace fmt::literals;
   fmt::basic_string_view<char8_t> s = "ab"_u;
   EXPECT_EQ(s.size(), 2u);
   const char8_t* data = s.data();
-  EXPECT_EQ(data[0], 'a');
-  EXPECT_EQ(data[1], 'b');
-  EXPECT_EQ(format("{:*^5}"_u, "🤡"_u), "**🤡**"_u);
+  EXPECT_EQ(char(data[0]), 'a');
+  EXPECT_EQ(char(data[1]), 'b');
+  EXPECT_EQ(from_u8str(format("{:*^5}"_u, "🤡"_u)), from_u8str("**🤡**"_u));
 }
 #endif
 
@@ -2533,5 +2545,5 @@ TEST(FormatTest, FormatUTF8Precision) {
   auto result = fmt::format(format, str);
   EXPECT_EQ(fmt::internal::count_code_points(result), 4);
   EXPECT_EQ(result.size(), 5);
-  EXPECT_EQ(result, str.substr(0, 5));
+  EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
 }
