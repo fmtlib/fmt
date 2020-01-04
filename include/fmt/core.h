@@ -1396,7 +1396,10 @@ template <typename Char> struct named_arg_base {
   }
 };
 
-template <typename T, typename Char> struct named_arg : named_arg_base<Char> {
+struct view {};
+
+template <typename T, typename Char>
+struct named_arg : view, named_arg_base<Char> {
   const T& value;
 
   named_arg(basic_string_view<Char> name, const T& val)
@@ -1414,7 +1417,6 @@ inline void check_format_string(const S&) {
 template <typename..., typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S);
 
-struct view {};
 template <bool...> struct bool_pack;
 template <bool... Args>
 using all_true =
@@ -1443,13 +1445,8 @@ typename buffer_context<Char>::iterator vformat_to(
 
 /**
   \rst
-  Returns a named argument to be used in a formatting function.
-
-  The named argument holds a reference and does not extend the lifetime
-  of its arguments.
-  Consequently, a dangling reference can accidentally be created.
-  The user should take care to only pass this function temporaries when
-  the named argument is itself a temporary, as per the following example.
+  Returns a named argument to be used in a formatting function. It should only
+  be used in a call to a formatting function.
 
   **Example**::
 
