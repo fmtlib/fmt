@@ -1441,6 +1441,8 @@ template <typename Char>
 typename buffer_context<Char>::iterator vformat_to(
     buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<Char>> args);
+
+FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 }  // namespace internal
 
 /**
@@ -1515,7 +1517,6 @@ inline std::basic_string<Char> format(const S& format_str, Args&&... args) {
 
 FMT_API void vprint(string_view, format_args);
 FMT_API void vprint(std::FILE*, string_view, format_args);
-FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 
 /**
   \rst
@@ -1535,8 +1536,9 @@ inline void print(std::FILE* f, const S& format_str, Args&&... args) {
   vprint(f, to_string_view(format_str),
          internal::make_args_checked<Args...>(format_str, args...));
 #else
-  vprint_mojibake(f, to_string_view(format_str),
-                  internal::make_args_checked<Args...>(format_str, args...));
+  internal::vprint_mojibake(
+      f, to_string_view(format_str),
+      internal::make_args_checked<Args...>(format_str, args...));
 #endif
 }
 
@@ -1558,8 +1560,9 @@ inline void print(const S& format_str, Args&&... args) {
   vprint(to_string_view(format_str),
          internal::make_args_checked<Args...>(format_str, args...));
 #else
-  vprint_mojibake(stdout, to_string_view(format_str),
-                  internal::make_args_checked<Args...>(format_str, args...));
+  internal::vprint_mojibake(
+      stdout, to_string_view(format_str),
+      internal::make_args_checked<Args...>(format_str, args...));
 #endif
 }
 FMT_END_NAMESPACE
