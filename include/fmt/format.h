@@ -395,6 +395,7 @@ template <typename OutputIt> class truncating_iterator_base {
 
  public:
   using iterator_category = std::output_iterator_tag;
+  using value_type = typename std::iterator_traits<OutputIt>::value_type;
   using difference_type = void;
   using pointer = void;
   using reference = void;
@@ -415,12 +416,10 @@ class truncating_iterator;
 template <typename OutputIt>
 class truncating_iterator<OutputIt, std::false_type>
     : public truncating_iterator_base<OutputIt> {
-  using traits = std::iterator_traits<OutputIt>;
-
-  mutable typename traits::value_type blackhole_;
+  mutable typename truncating_iterator_base<OutputIt>::value_type blackhole_;
 
  public:
-  using value_type = typename traits::value_type;
+  using value_type = typename truncating_iterator_base<OutputIt>::value_type;
 
   truncating_iterator(OutputIt out, std::size_t limit)
       : truncating_iterator_base<OutputIt>(out, limit) {}
@@ -445,13 +444,11 @@ template <typename OutputIt>
 class truncating_iterator<OutputIt, std::true_type>
     : public truncating_iterator_base<OutputIt> {
  public:
-  using value_type = typename OutputIt::container_type::value_type;
-
   truncating_iterator(OutputIt out, std::size_t limit)
       : truncating_iterator_base<OutputIt>(out, limit) {}
 
-  truncating_iterator& operator=(value_type val) {
-    if (this->count_++ < this->limit_) this->out_ = val;
+  template <typename T> truncating_iterator& operator=(T val) {
+    if (this->count_++ < this->limit_) *this->out_++ = val;
     return *this;
   }
 

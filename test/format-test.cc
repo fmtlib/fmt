@@ -2080,6 +2080,33 @@ TEST(FormatTest, WideFormatToN) {
   EXPECT_EQ(L"BC x", fmt::wstring_view(buffer, 4));
 }
 
+struct test_output_iterator {
+  char* data;
+
+  using iterator_category = std::output_iterator_tag;
+  using value_type = void;
+  using difference_type = void;
+  using pointer = void;
+  using reference = void;
+
+  test_output_iterator& operator++() {
+    ++data;
+    return *this;
+  }
+  test_output_iterator operator++(int) {
+    auto tmp = *this;
+    ++data;
+    return tmp;
+  }
+  char& operator*() { return *data; }
+};
+
+TEST(FormatTest, FormatToNOutputIterator) {
+  char buf[10] = {};
+  fmt::format_to_n(test_output_iterator{buf}, 10, "{}", 42);
+  EXPECT_STREQ(buf, "42");
+}
+
 #if FMT_USE_CONSTEXPR
 struct test_arg_id_handler {
   enum result { NONE, EMPTY, INDEX, NAME, ERROR };
