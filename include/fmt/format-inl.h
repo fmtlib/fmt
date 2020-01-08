@@ -457,7 +457,7 @@ inline fp operator*(fp x, fp y) { return {multiply(x.f, y.f), x.e + y.e + 64}; }
 
 // Returns a cached power of 10 `c_k = c_k.f * pow(2, c_k.e)` such that its
 // (binary) exponent satisfies `min_exponent <= c_k.e <= min_exponent + 28`.
-FMT_FUNC fp get_cached_power(int min_exponent, int& pow10_exponent) {
+inline fp get_cached_power(int min_exponent, int& pow10_exponent) {
   const uint64_t one_over_log2_10 = 0x4d104d42;  // round(pow(2, 32) / log2(10))
   int index = static_cast<int>(
       static_cast<int64_t>(
@@ -1043,25 +1043,7 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
   int exp = 0;
   const int min_exp = -60;  // alpha in Grisu.
   int cached_exp10 = 0;     // K in Grisu.
-  if (precision != -1) {
-    if (precision > 17) return snprintf_float(value, precision, specs, buf);
-    fp normalized = normalize(fp(value));
-    const auto cached_pow = get_cached_power(
-        min_exp - (normalized.e + fp::significand_size), cached_exp10);
-    normalized = normalized * cached_pow;
-    fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
-    if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error)
-      return snprintf_float(value, precision, specs, buf);
-    int num_digits = handler.size;
-    if (!fixed) {
-      // Remove trailing zeros.
-      while (num_digits > 0 && buf[num_digits - 1] == '0') {
-        --num_digits;
-        ++exp;
-      }
-    }
-    buf.resize(to_unsigned(num_digits));
-  } else {
+  if (precision < 0) {
     fp fp_value;
     auto boundaries = specs.binary32
                           ? fp_value.assign_float_with_boundaries(value)
@@ -1090,6 +1072,24 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
       return exp;
     }
     buf.resize(to_unsigned(handler.size));
+  } else {
+    if (precision > 17) return snprintf_float(value, precision, specs, buf);
+    fp normalized = normalize(fp(value));
+    const auto cached_pow = get_cached_power(
+        min_exp - (normalized.e + fp::significand_size), cached_exp10);
+    normalized = normalized * cached_pow;
+    fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
+    if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error)
+      return snprintf_float(value, precision, specs, buf);
+    int num_digits = handler.size;
+    if (!fixed) {
+      // Remove trailing zeros.
+      while (num_digits > 0 && buf[num_digits - 1] == '0') {
+        --num_digits;
+        ++exp;
+      }
+    }
+    buf.resize(to_unsigned(num_digits));
   }
   return exp - cached_exp10;
 }
