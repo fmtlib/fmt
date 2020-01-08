@@ -757,6 +757,20 @@ enum result {
 };
 }
 
+// A version of count_digits optimized for grisu_gen_digits.
+inline unsigned grisu_count_digits(uint32_t n) {
+  if (n < 10) return 1;
+  if (n < 100) return 2;
+  if (n < 1000) return 3;
+  if (n < 10000) return 4;
+  if (n < 100000) return 5;
+  if (n < 1000000) return 6;
+  if (n < 10000000) return 7;
+  if (n < 100000000) return 8;
+  if (n < 1000000000) return 9;
+  return 10;
+}
+
 // Generates output using the Grisu digit-gen algorithm.
 // error: the size of the region (lower, upper) outside of which numbers
 // definitely do not round to value (Delta in Grisu3).
@@ -772,7 +786,7 @@ FMT_ALWAYS_INLINE digits::result grisu_gen_digits(fp value, uint64_t error,
   FMT_ASSERT(integral == value.f >> -one.e, "");
   // The fractional part of scaled value (p2 in Grisu) c = value % one.
   uint64_t fractional = value.f & (one.f - 1);
-  exp = count_digits(integral);  // kappa in Grisu.
+  exp = grisu_count_digits(integral);  // kappa in Grisu.
   // Divide by 10 to prevent overflow.
   auto result = handler.on_start(data::powers_of_10_64[exp - 1] << -one.e,
                                  value.f / 10, error * 10, exp);
@@ -1366,8 +1380,7 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
 FMT_FUNC void internal::vprint_mojibake(std::FILE* f, string_view format_str,
                                         format_args args) {
   memory_buffer buffer;
-  vformat_to(buffer, format_str,
-                       basic_format_args<buffer_context<char>>(args));
+  vformat_to(buffer, format_str, basic_format_args<buffer_context<char>>(args));
   fwrite_fully(buffer.data(), 1, buffer.size(), f);
 }
 #endif
