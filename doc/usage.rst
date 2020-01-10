@@ -58,6 +58,21 @@ Installing the Library
 After building the library you can install it on a Unix-like system by running
 :command:`sudo make install`.
 
+The installation can be broken up into specific sub-components, if desired.
+The library provides the following components:
+
+* ``FMT_Runtime`` - the shared library
+* ``FMT_Development`` - the static library, headers, and package configuration files
+* ``FMT_Documentation`` - the html documentation
+
+As an example, the shared library can be selectively installed by running::
+
+  cmake -DCOMPONENT=FMT_Runtime -P cmake_install.cmake
+
+If using CMake 3.15 or later, then the CMake install command can be used instead::
+
+  cmake --install . --component FMT_Runtime
+
 Usage with CMake
 ================
 
