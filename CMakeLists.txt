@@ -247,20 +247,20 @@ if (FMT_INSTALL)
   # Install version, config and target files.
   install(
     FILES ${project_config} ${version_config}
-    DESTINATION ${FMT_CMAKE_DIR})
+    DESTINATION ${FMT_CMAKE_DIR} COMPONENT FMT_Development)
   install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR}
-          NAMESPACE fmt::)
+          NAMESPACE fmt:: COMPONENT FMT_Development)
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
-          LIBRARY DESTINATION ${FMT_LIB_DIR}
-          ARCHIVE DESTINATION ${FMT_LIB_DIR}
-          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+          LIBRARY DESTINATION ${FMT_LIB_DIR} COMPONENT FMT_Runtime
+	  ARCHIVE DESTINATION ${FMT_LIB_DIR} COMPONENT FMT_Development
+	  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT FMT_Runtime)
 
   install(FILES $<TARGET_PDB_FILE:${INSTALL_TARGETS}>
-          DESTINATION ${FMT_LIB_DIR} OPTIONAL)
-  install(FILES ${FMT_HEADERS} DESTINATION ${FMT_INC_DIR})
-  install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}")
+          DESTINATION ${FMT_LIB_DIR} OPTIONAL COMPONENT FMT_Development)
+  install(FILES ${FMT_HEADERS} DESTINATION ${FMT_INC_DIR} COMPONENT FMT_Development)
+  install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}" COMPONENT FMT_Development)
 endif ()
 
 if (FMT_DOC)
