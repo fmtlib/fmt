@@ -3178,6 +3178,11 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
     std::vector<int> v = {1, 2, 3};
     fmt::print("{}", fmt::join(v, ", "));
     // Output: "1, 2, 3"
+
+  ``fmt::join`` applies passed format specifiers to the range elements::
+
+    fmt::print("{:02}", fmt::join(v, ", "));
+    // Output: "01, 02, 03"
   \endrst
  */
 template <typename Range>
