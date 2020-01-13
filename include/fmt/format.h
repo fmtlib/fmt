@@ -878,11 +878,11 @@ inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
   return end;
 }
 
-template <typename Int> constexpr int digits10() noexcept {
+template <typename Int> constexpr int digits10() FMT_NOEXCEPT {
   return std::numeric_limits<Int>::digits10;
 }
-template <> constexpr int digits10<int128_t>() noexcept { return 38; }
-template <> constexpr int digits10<uint128_t>() noexcept { return 38; }
+template <> constexpr int digits10<int128_t>() FMT_NOEXCEPT { return 38; }
+template <> constexpr int digits10<uint128_t>() FMT_NOEXCEPT { return 38; }
 
 template <typename Char, typename UInt, typename Iterator, typename F>
 inline Iterator format_decimal(Iterator out, UInt value, int num_digits,
