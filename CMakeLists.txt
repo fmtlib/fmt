@@ -15,6 +15,16 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   message(STATUS "CMake version: ${CMAKE_VERSION}")
 endif ()
 
+if(MINGW)
+  # If _POSIX is set, mingw will no longer prefix *some* function names with an
+  # underscore, which is expected by libfmt. Rather than handling them case by
+  # case, we'll just undefine the following.
+  remove_definitions(-D_POSIX=1)
+  remove_definitions(-D_POSIX_C_SOURCE=1)
+  remove_definitions(-D_POSIX_=1)
+  remove_definitions(-D_POSIX_THREADS=1)
+endif()
+
 # Joins arguments and places the results in ${result_var}.
 function(join result_var)
   set(result )
