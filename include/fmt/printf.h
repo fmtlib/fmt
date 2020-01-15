@@ -597,7 +597,8 @@ inline format_arg_store<wprintf_context, Args...> make_wprintf_args(
 
 template <typename S, typename Char = char_t<S>>
 inline std::basic_string<Char> vsprintf(
-    const S& format, basic_format_args<basic_printf_context_t<Char>> args) {
+    const S& format,
+    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
   printf(buffer, to_string_view(format), args);
   return to_string(buffer);
@@ -616,12 +617,13 @@ template <typename S, typename... Args,
           typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
 inline std::basic_string<Char> sprintf(const S& format, const Args&... args) {
   using context = basic_printf_context_t<Char>;
-  return vsprintf(to_string_view(format), {make_format_args<context>(args...)});
+  return vsprintf(to_string_view(format), make_format_args<context>(args...));
 }
 
 template <typename S, typename Char = char_t<S>>
-inline int vfprintf(std::FILE* f, const S& format,
-                    basic_format_args<basic_printf_context_t<Char>> args) {
+inline int vfprintf(
+    std::FILE* f, const S& format,
+    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
   printf(buffer, to_string_view(format), args);
   std::size_t size = buffer.size();
@@ -644,12 +646,13 @@ template <typename S, typename... Args,
 inline int fprintf(std::FILE* f, const S& format, const Args&... args) {
   using context = basic_printf_context_t<Char>;
   return vfprintf(f, to_string_view(format),
-                  {make_format_args<context>(args...)});
+                  make_format_args<context>(args...));
 }
 
 template <typename S, typename Char = char_t<S>>
-inline int vprintf(const S& format,
-                   basic_format_args<basic_printf_context_t<Char>> args) {
+inline int vprintf(
+    const S& format,
+    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
   return vfprintf(stdout, to_string_view(format), args);
 }
 
@@ -667,12 +670,13 @@ template <typename S, typename... Args,
 inline int printf(const S& format_str, const Args&... args) {
   using context = basic_printf_context_t<char_t<S>>;
   return vprintf(to_string_view(format_str),
-                 {make_format_args<context>(args...)});
+                 make_format_args<context>(args...));
 }
 
 template <typename S, typename Char = char_t<S>>
-inline int vfprintf(std::basic_ostream<Char>& os, const S& format,
-                    basic_format_args<basic_printf_context_t<Char>> args) {
+inline int vfprintf(
+    std::basic_ostream<Char>& os, const S& format,
+    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
   printf(buffer, to_string_view(format), args);
   internal::write(os, buffer);
@@ -683,9 +687,9 @@ inline int vfprintf(std::basic_ostream<Char>& os, const S& format,
 template <typename ArgFormatter, typename Char,
           typename Context =
               basic_printf_context<typename ArgFormatter::iterator, Char>>
-typename ArgFormatter::iterator vprintf(internal::buffer<Char>& out,
-                                        basic_string_view<Char> format_str,
-                                        basic_format_args<Context> args) {
+typename ArgFormatter::iterator vprintf(
+    internal::buffer<Char>& out, basic_string_view<Char> format_str,
+    basic_format_args<type_identity_t<Context>> args) {
   typename ArgFormatter::iterator iter(out);
   Context(iter, format_str, args).template format<ArgFormatter>();
   return iter;
@@ -705,7 +709,7 @@ inline int fprintf(std::basic_ostream<Char>& os, const S& format_str,
                    const Args&... args) {
   using context = basic_printf_context_t<Char>;
   return vfprintf(os, to_string_view(format_str),
-                  {make_format_args<context>(args...)});
+                  make_format_args<context>(args...));
 }
 FMT_END_NAMESPACE
 

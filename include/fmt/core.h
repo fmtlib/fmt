@@ -217,7 +217,7 @@
 
 FMT_BEGIN_NAMESPACE
 
-// Implementations of enable_if_t and other metafunctions for pre-C++14 systems.
+// Implementations of enable_if_t and other metafunctions for older systems.
 template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 template <bool B, class T, class F>
@@ -229,6 +229,8 @@ template <typename T>
 using remove_const_t = typename std::remove_const<T>::type;
 template <typename T>
 using remove_cvref_t = typename std::remove_cv<remove_reference_t<T>>::type;
+template <typename T> struct type_identity { using type = T; };
+template <typename T> using type_identity_t = typename type_identity<T>::type;
 
 struct monostate {};
 
@@ -1220,7 +1222,13 @@ using wformat_context = buffer_context<wchar_t>;
   such as `~fmt::vformat`.
   \endrst
  */
-template <typename Context, typename... Args> class format_arg_store {
+template <typename Context, typename... Args>
+class format_arg_store
+#if FMT_GCC_VERSION < 409
+    // Workaround a GCC template argument substitution bug.
+    : public basic_format_args<Context>
+#endif
+{
  private:
   static const size_t num_args = sizeof...(Args);
   static const bool is_packed = num_args < internal::max_packed_args;
@@ -1239,7 +1247,12 @@ template <typename Context, typename... Args> class format_arg_store {
                 : internal::is_unpacked_bit | num_args;
 
   format_arg_store(const Args&... args)
-      : data_{internal::make_arg<is_packed, Context>(args)...} {}
+      :
+#if FMT_GCC_VERSION < 409
+        basic_format_args<Context>(*this),
+#endif
+        data_{internal::make_arg<is_packed, Context>(args)...} {
+  }
 };
 
 /**
@@ -1426,9 +1439,10 @@ template <typename... Args, typename S, typename Char = char_t<S>>
 inline format_arg_store<buffer_context<Char>, remove_reference_t<Args>...>
 make_args_checked(const S& format_str,
                   const remove_reference_t<Args>&... args) {
-  static_assert(all_true<(!std::is_base_of<view, remove_reference_t<Args>>::value ||
-                          !std::is_reference<Args>::value)...>::value,
-                "passing views as lvalues is disallowed");
+  static_assert(
+      all_true<(!std::is_base_of<view, remove_reference_t<Args>>::value ||
+                !std::is_reference<Args>::value)...>::value,
+      "passing views as lvalues is disallowed");
   check_format_string<remove_const_t<remove_reference_t<Args>>...>(format_str);
   return {args...};
 }
@@ -1440,7 +1454,7 @@ std::basic_string<Char> vformat(basic_string_view<Char> format_str,
 template <typename Char>
 typename buffer_context<Char>::iterator vformat_to(
     buffer<Char>& buf, basic_string_view<Char> format_str,
-    basic_format_args<buffer_context<Char>> args);
+    basic_format_args<buffer_context<type_identity_t<Char>>> args);
 
 FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 }  // namespace internal

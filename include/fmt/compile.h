@@ -9,6 +9,7 @@
 #define FMT_COMPILE_H_
 
 #include <vector>
+
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
@@ -549,7 +550,7 @@ std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   using range = buffer_range<Char>;
   using context = buffer_context<Char>;
   internal::cf::vformat_to<context>(range(buffer), cf,
-                                    {make_format_args<context>(args...)});
+                                    make_format_args<context>(args...));
   return to_string(buffer);
 }
 
@@ -561,8 +562,8 @@ OutputIt format_to(OutputIt out, const CompiledFormat& cf,
   using char_type = typename CompiledFormat::char_type;
   using range = internal::output_range<OutputIt, char_type>;
   using context = format_context_t<OutputIt, char_type>;
-  return internal::cf::vformat_to<context>(
-      range(out), cf, {make_format_args<context>(args...)});
+  return internal::cf::vformat_to<context>(range(out), cf,
+                                           make_format_args<context>(args...));
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,

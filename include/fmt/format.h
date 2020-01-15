@@ -33,8 +33,6 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
-#include "core.h"
-
 #include <algorithm>
 #include <cerrno>
 #include <cmath>
@@ -42,6 +40,8 @@
 #include <limits>
 #include <memory>
 #include <stdexcept>
+
+#include "core.h"
 
 #ifdef __clang__
 #  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
@@ -3228,7 +3228,7 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE>& buf) {
 template <typename Char>
 typename buffer_context<Char>::iterator internal::vformat_to(
     internal::buffer<Char>& buf, basic_string_view<Char> format_str,
-    basic_format_args<buffer_context<Char>> args) {
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   using range = buffer_range<Char>;
   return vformat_to<arg_formatter<range>>(buf, to_string_view(format_str),
                                           args);
@@ -3238,7 +3238,7 @@ template <typename S, typename Char = char_t<S>,
           FMT_ENABLE_IF(internal::is_string<S>::value)>
 inline typename buffer_context<Char>::iterator vformat_to(
     internal::buffer<Char>& buf, const S& format_str,
-    basic_format_args<buffer_context<Char>> args) {
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   return internal::vformat_to(buf, to_string_view(format_str), args);
 }
 
@@ -3262,8 +3262,9 @@ template <typename S, typename OutputIt, typename... Args,
           FMT_ENABLE_IF(
               internal::is_output_iterator<OutputIt>::value &&
               !internal::is_contiguous_back_insert_iterator<OutputIt>::value)>
-inline OutputIt vformat_to(OutputIt out, const S& format_str,
-                           format_args_t<OutputIt, char_t<S>> args) {
+inline OutputIt vformat_to(
+    OutputIt out, const S& format_str,
+    format_args_t<type_identity_t<OutputIt>, char_t<S>> args) {
   using range = internal::output_range<OutputIt, char_t<S>>;
   return vformat_to<arg_formatter<range>>(range(out),
                                           to_string_view(format_str), args);
@@ -3289,7 +3290,7 @@ inline OutputIt format_to(OutputIt out, const S& format_str, Args&&... args) {
   internal::check_format_string<Args...>(format_str);
   using context = format_context_t<OutputIt, char_t<S>>;
   return vformat_to(out, to_string_view(format_str),
-                    {make_format_args<context>(args...)});
+                    make_format_args<context>(args...));
 }
 
 template <typename OutputIt> struct format_to_n_result {
@@ -3317,7 +3318,7 @@ template <typename OutputIt, typename Char, typename... Args,
           FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
 inline format_to_n_result<OutputIt> vformat_to_n(
     OutputIt out, std::size_t n, basic_string_view<Char> format_str,
-    format_to_n_args<OutputIt, Char> args) {
+    format_to_n_args<type_identity_t<OutputIt>, type_identity_t<Char>> args) {
   auto it = vformat_to(internal::truncating_iterator<OutputIt>(out, n),
                        format_str, args);
   return {it.base(), it.count()};
@@ -3339,7 +3340,7 @@ inline format_to_n_result<OutputIt> format_to_n(OutputIt out, std::size_t n,
   internal::check_format_string<Args...>(format_str);
   using context = format_to_n_context<OutputIt, char_t<S>>;
   return vformat_to_n(out, n, to_string_view(format_str),
-                      {make_format_args<context>(args...)});
+                      make_format_args<context>(args...));
 }
 
 template <typename Char>

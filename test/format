@@ -83,9 +83,9 @@ namespace std {
     Out format_to(Out out, wstring_view fmt, const Args&... args);
 
   template<class Out>
-    Out vformat_to(Out out, string_view fmt, format_args_t<Out, char> args);
+    Out vformat_to(Out out, string_view fmt, format_args_t<fmt::type_identity_t<Out>, char> args);
   template<class Out>
-    Out vformat_to(Out out, wstring_view fmt, format_args_t<Out, wchar_t> args);
+    Out vformat_to(Out out, wstring_view fmt, format_args_t<fmt::type_identity_t<Out>, wchar_t> args);
 
   template<class Out>
     struct format_to_n_result {
@@ -730,17 +730,17 @@ wstring vformat(wstring_view fmt, wformat_args args);
 template<class Out, class... Args>
   Out format_to(Out out, string_view fmt, const Args&... args) {
     using context = basic_format_context<Out, decltype(fmt)::value_type>;
-    return vformat_to(out, fmt, {make_format_args<context>(args...)});
+    return vformat_to(out, fmt, make_format_args<context>(args...));
   }
 
 template<class Out, class... Args>
   Out format_to(Out out, wstring_view fmt, const Args&... args) {
     using context = basic_format_context<Out, decltype(fmt)::value_type>;
-    return vformat_to(out, fmt, {make_format_args<context>(args...)});
+    return vformat_to(out, fmt, make_format_args<context>(args...));
   }
 
 template<class Out>
-  Out vformat_to(Out out, string_view fmt, format_args_t<Out, char> args) {
+  Out vformat_to(Out out, string_view fmt, format_args_t<fmt::type_identity_t<Out>, char> args) {
     using range = fmt::internal::output_range<Out, char>;
     detail::format_handler<detail::arg_formatter<range>, char, basic_format_context<Out, char>>
       h(range(out), fmt, args, {});
@@ -749,7 +749,7 @@ template<class Out>
   }
 
 template<class Out>
-  Out vformat_to(Out out, wstring_view fmt, format_args_t<Out, wchar_t> args);
+  Out vformat_to(Out out, wstring_view fmt, format_args_t<fmt::type_identity_t<Out>, wchar_t> args);
 
 template<class Out, class... Args>
   format_to_n_result<Out> format_to_n(Out out, iter_difference_t<Out> n,

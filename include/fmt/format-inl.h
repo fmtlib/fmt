@@ -8,8 +8,6 @@
 #ifndef FMT_FORMAT_INL_H_
 #define FMT_FORMAT_INL_H_
 
-#include "format.h"
-
 #include <cassert>
 #include <cctype>
 #include <climits>
@@ -17,6 +15,8 @@
 #include <cstdarg>
 #include <cstring>  // for std::memmove
 #include <cwchar>
+
+#include "format.h"
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
 #  include <locale>
 #endif
@@ -1380,7 +1380,8 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
 FMT_FUNC void internal::vprint_mojibake(std::FILE* f, string_view format_str,
                                         format_args args) {
   memory_buffer buffer;
-  vformat_to(buffer, format_str, basic_format_args<buffer_context<char>>(args));
+  internal::vformat_to(buffer, format_str,
+                       basic_format_args<buffer_context<char>>(args));
   fwrite_fully(buffer.data(), 1, buffer.size(), f);
 }
 #endif
