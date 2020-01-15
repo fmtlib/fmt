@@ -3249,7 +3249,7 @@ inline typename buffer_context<Char>::iterator format_to(
   internal::check_format_string<Args...>(format_str);
   using context = buffer_context<Char>;
   return internal::vformat_to(buf, to_string_view(format_str),
-                              {make_format_args<context>(args...)});
+                              make_format_args<context>(args...));
 }
 
 template <typename OutputIt, typename Char = char>
@@ -3346,7 +3346,7 @@ inline format_to_n_result<OutputIt> format_to_n(OutputIt out, std::size_t n,
 template <typename Char>
 inline std::basic_string<Char> internal::vformat(
     basic_string_view<Char> format_str,
-    basic_format_args<buffer_context<Char>> args) {
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
   internal::vformat_to(buffer, format_str, args);
   return to_string(buffer);

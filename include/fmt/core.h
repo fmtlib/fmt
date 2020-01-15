@@ -1448,8 +1448,9 @@ make_args_checked(const S& format_str,
 }
 
 template <typename Char>
-std::basic_string<Char> vformat(basic_string_view<Char> format_str,
-                                basic_format_args<buffer_context<Char>> args);
+std::basic_string<Char> vformat(
+    basic_string_view<Char> format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args);
 
 template <typename Char>
 typename buffer_context<Char>::iterator vformat_to(
@@ -1485,8 +1486,9 @@ void arg(S, internal::named_arg<T, Char>) = delete;
 template <typename OutputIt, typename S, typename Char = char_t<S>,
           FMT_ENABLE_IF(
               internal::is_contiguous_back_insert_iterator<OutputIt>::value)>
-OutputIt vformat_to(OutputIt out, const S& format_str,
-                    basic_format_args<buffer_context<Char>> args) {
+OutputIt vformat_to(
+    OutputIt out, const S& format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   using container = remove_reference_t<decltype(internal::get_container(out))>;
   internal::container_buffer<container> buf((internal::get_container(out)));
   internal::vformat_to(buf, to_string_view(format_str), args);
@@ -1499,14 +1501,14 @@ template <typename Container, typename S, typename... Args,
 inline std::back_insert_iterator<Container> format_to(
     std::back_insert_iterator<Container> out, const S& format_str,
     Args&&... args) {
-  return vformat_to(
-      out, to_string_view(format_str),
-      {internal::make_args_checked<Args...>(format_str, args...)});
+  return vformat_to(out, to_string_view(format_str),
+                    internal::make_args_checked<Args...>(format_str, args...));
 }
 
 template <typename S, typename Char = char_t<S>>
 inline std::basic_string<Char> vformat(
-    const S& format_str, basic_format_args<buffer_context<Char>> args) {
+    const S& format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   return internal::vformat(to_string_view(format_str), args);
 }
 
@@ -1526,7 +1528,7 @@ template <typename S, typename... Args, typename Char = char_t<S>>
 inline std::basic_string<Char> format(const S& format_str, Args&&... args) {
   return internal::vformat(
       to_string_view(format_str),
-      {internal::make_args_checked<Args...>(format_str, args...)});
+      internal::make_args_checked<Args...>(format_str, args...));
 }
 
 FMT_API void vprint(string_view, format_args);
