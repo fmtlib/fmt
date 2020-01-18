@@ -760,14 +760,14 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 }
 
 template <typename Rep, typename OutputIt>
-OutputIt format_chrono_duration_value(OutputIt out, Rep val, int precision) {
+OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
   if (precision >= 0) return format_to(out, "{:.{}f}", val, precision);
   return format_to(out, std::is_floating_point<Rep>::value ? "{:g}" : "{}",
                    val);
 }
 
 template <typename Period, typename OutputIt>
-static OutputIt format_chrono_duration_unit(OutputIt out) {
+OutputIt format_duration_unit(OutputIt out) {
   if (const char* unit = get_units<Period>()) return format_to(out, "{}", unit);
   if (Period::den == 1) return format_to(out, "[{}]s", Period::num);
   return format_to(out, "[{}/{}]s", Period::num, Period::den);
@@ -986,10 +986,10 @@ struct chrono_formatter {
   void on_duration_value() {
     if (handle_nan_inf()) return;
     write_sign();
-    out = format_chrono_duration_value(out, val, precision);
+    out = format_duration_value(out, val, precision);
   }
 
-  void on_duration_unit() { out = format_chrono_duration_unit<Period>(out); }
+  void on_duration_unit() { out = format_duration_unit<Period>(out); }
 };
 }  // namespace internal
 
@@ -1088,8 +1088,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     internal::handle_dynamic_spec<internal::precision_checker>(
         precision, precision_ref, ctx);
     if (begin == end || *begin == '}') {
-      out = internal::format_chrono_duration_value(out, d.count(), precision);
-      internal::format_chrono_duration_unit<Period>(out);
+      out = internal::format_duration_value(out, d.count(), precision);
+      internal::format_duration_unit<Period>(out);
     } else {
       internal::chrono_formatter<FormatContext, decltype(out), Rep, Period> f(
           ctx, out, d);
