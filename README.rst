@@ -236,23 +236,6 @@ Folly Format             79.9                  445                430
 compare formatting function overhead only. Boost Format is a
 header-only library so it doesn't provide any linkage options.
 
-
-Quick build
-~~~~~~~~~~~
-
-You can download and install fmt using the `vcpkg <https://github.com/Microsoft/vcpkg>`_ dependency manager::
-
-    $ git clone https://github.com/Microsoft/vcpkg.git
-    $ cd vcpkg
-    $ ./bootstrap-vcpkg.sh
-    $ ./vcpkg integrate install
-    $ ./vcpkg install fmt
-
-The fmt port in vcpkg is kept up to date by Microsoft team members and
-community contributors.
-If the version is out of date, please `create an issue or pull request <https://github.com/Microsoft/vcpkg>`_
-on the vcpkg repository.
-
 Running the tests
 ~~~~~~~~~~~~~~~~~
 
