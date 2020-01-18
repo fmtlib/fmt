@@ -386,7 +386,8 @@ class fp {
     const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
     auto u = bit_cast<uint64_t>(d);
     f = u & significand_mask;
-    auto biased_e = (u & exponent_mask) >> double_significand_size;
+    int biased_e =
+        static_cast<int>((u & exponent_mask) >> double_significand_size);
     // Predecessor is closer if d is a normalized power of 2 (f == 0) other than
     // the smallest normalized number (biased_e > 1).
     bool is_predecessor_closer = f == 0 && biased_e > 1;
@@ -394,7 +395,7 @@ class fp {
       f += implicit_bit;
     else
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
+    e = biased_e - exponent_bias - double_significand_size;
     return is_predecessor_closer;
   }
 
@@ -458,13 +459,11 @@ inline fp operator*(fp x, fp y) { return {multiply(x.f, y.f), x.e + y.e + 64}; }
 // Returns a cached power of 10 `c_k = c_k.f * pow(2, c_k.e)` such that its
 // (binary) exponent satisfies `min_exponent <= c_k.e <= min_exponent + 28`.
 inline fp get_cached_power(int min_exponent, int& pow10_exponent) {
-  const uint64_t one_over_log2_10 = 0x4d104d42;  // round(pow(2, 32) / log2(10))
+  const int64_t one_over_log2_10 = 0x4d104d42;  // round(pow(2, 32) / log2(10))
   int index = static_cast<int>(
-      static_cast<int64_t>(
-          (min_exponent + fp::significand_size - 1) * one_over_log2_10 +
-          ((uint64_t(1) << 32) - 1)  // ceil
-          ) >>
-      32  // arithmetic shift
+      ((min_exponent + fp::significand_size - 1) * one_over_log2_10 +
+       ((int64_t(1) << 32) - 1))  // ceil
+      >> 32                       // arithmetic shift
   );
   // Decimal exponent of the first (smallest) cached power of 10.
   const int first_dec_exp = -348;
