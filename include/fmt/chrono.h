@@ -1024,7 +1024,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     }
 
     void on_error(const char* msg) { FMT_THROW(format_error(msg)); }
-    void on_fill(Char fill) { f.specs.fill[0] = fill; }
+    void on_fill(basic_string_view<Char> fill) { f.specs.fill = fill; }
     void on_align(align_t align) { f.specs.align = align; }
     void on_width(int width) { f.specs.width = width; }
     void on_precision(int _precision) { f.precision = _precision; }

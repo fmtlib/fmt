@@ -962,9 +962,28 @@ template <typename T = void> struct null {};
 // Workaround an array initialization issue in gcc 4.8.
 template <typename Char> struct fill_t {
  private:
-  Char data_[6];
+  enum { max_size = 5 };
+  Char data_[max_size + 1];
 
  public:
+  FMT_CONSTEXPR void operator=(basic_string_view<Char> s) {
+    auto size = s.size();
+    if (size > max_size) {
+      FMT_THROW(format_error("invalid fill"));
+      return;
+    }
+    for (size_t i = 0; i < size; ++i) data_[i] = s[i];
+    data_[size] = Char();
+  }
+
+  size_t size() const {
+    size_t i = 1;
+    while (data_[i] && i <= max_size) ++i;
+    return i;
+  }
+
+  const Char* data() const { return data_; }
+
   FMT_CONSTEXPR Char& operator[](size_t index) { return data_[index]; }
   FMT_CONSTEXPR const Char& operator[](size_t index) const {
     return data_[index];
@@ -1352,6 +1371,14 @@ template <typename Char> struct nonfinite_writer {
   }
 };
 
+template <typename OutputIt, typename Char>
+OutputIt fill(OutputIt it, size_t n, const fill_t<Char>& fill) {
+  auto fill_size = fill.size();
+  if (fill_size == 1) return std::fill_n(it, n, fill[0]);
+  for (size_t i = 0; i < n; ++i) it = std::copy_n(fill.data(), fill_size, it);
+  return it;
+}
+
 // This template provides operations for formatting and writing data into a
 // character range.
 template <typename Range> class basic_writer {
@@ -1614,20 +1641,20 @@ template <typename Range> class basic_writer {
     size_t size = f.size();  // The number of code units.
     size_t num_code_points = width != 0 ? f.width() : size;
     if (width <= num_code_points) return f(reserve(size));
-    auto&& it = reserve(width + (size - num_code_points));
-    char_type fill = specs.fill[0];
-    std::size_t padding = width - num_code_points;
+    size_t padding = width - num_code_points;
+    size_t fill_size = specs.fill.size();
+    auto&& it = reserve(size + padding * fill_size);
     if (specs.align == align::right) {
-      it = std::fill_n(it, padding, fill);
+      it = fill(it, padding, specs.fill);
       f(it);
     } else if (specs.align == align::center) {
       std::size_t left_padding = padding / 2;
-      it = std::fill_n(it, left_padding, fill);
+      it = fill(it, left_padding, specs.fill);
       f(it);
-      it = std::fill_n(it, padding - left_padding, fill);
+      it = fill(it, padding - left_padding, specs.fill);
     } else {
       f(it);
-      it = std::fill_n(it, padding, fill);
+      it = fill(it, padding, specs.fill);
     }
   }
 
@@ -2008,7 +2035,9 @@ template <typename Char> class specs_setter {
       : specs_(other.specs_) {}
 
   FMT_CONSTEXPR void on_align(align_t align) { specs_.align = align; }
-  FMT_CONSTEXPR void on_fill(Char fill) { specs_.fill[0] = fill; }
+  FMT_CONSTEXPR void on_fill(basic_string_view<Char> fill) {
+    specs_.fill = fill;
+  }
   FMT_CONSTEXPR void on_plus() { specs_.sign = sign::plus; }
   FMT_CONSTEXPR void on_minus() { specs_.sign = sign::minus; }
   FMT_CONSTEXPR void on_space() { specs_.sign = sign::space; }
@@ -2320,16 +2349,25 @@ template <typename SpecHandler, typename Char> struct precision_adapter {
   SpecHandler& handler;
 };
 
+template <typename Char>
+FMT_CONSTEXPR const Char* next_code_point(const Char* begin, const Char* end) {
+  if (sizeof(Char) != 1 || (*begin & 0x80) == 0) return begin + 1;
+  do {
+    ++begin;
+  } while (begin != end && (*begin & 0xc0) == 0x80);
+  return begin;
+}
+
 // Parses fill and alignment.
 template <typename Char, typename Handler>
 FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
                                       Handler&& handler) {
   FMT_ASSERT(begin != end, "");
   auto align = align::none;
-  int i = 0;
-  if (begin + 1 != end) ++i;
-  do {
-    switch (static_cast<char>(begin[i])) {
+  auto p = next_code_point(begin, end);
+  if (p == end) p = begin;
+  for (;;) {
+    switch (static_cast<char>(*p)) {
     case '<':
       align = align::left;
       break;
@@ -2346,18 +2384,21 @@ FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
       break;
     }
     if (align != align::none) {
-      if (i > 0) {
+      if (p != begin) {
         auto c = *begin;
         if (c == '{')
           return handler.on_error("invalid fill character '{'"), begin;
-        begin += 2;
-        handler.on_fill(c);
+        handler.on_fill(basic_string_view<Char>(begin, p - begin));
+        begin = p + 1;
       } else
         ++begin;
       handler.on_align(align);
       break;
+    } else if (p == begin) {
+      break;
     }
-  } while (i-- > 0);
+    p = begin;
+  }
   return begin;
 }
 
