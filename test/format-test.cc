@@ -816,6 +816,8 @@ TEST(FormatterTest, Fill) {
   EXPECT_EQ("foo=", format("{:}=", "foo"));
   EXPECT_EQ(std::string("\0\0\0*", 4), format(string_view("{:\0>4}", 6), '*'));
   EXPECT_EQ("жж42", format("{0:ж>4}", 42));
+  EXPECT_THROW_MSG(format("{:\x80\x80\x80\x80\x80>}", 0), format_error,
+                   "invalid fill");
 }
 
 TEST(FormatterTest, PlusSign) {

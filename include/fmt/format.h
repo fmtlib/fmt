@@ -962,8 +962,9 @@ template <typename T = void> struct null {};
 // Workaround an array initialization issue in gcc 4.8.
 template <typename Char> struct fill_t {
  private:
-  enum { max_size = 5 };
-  Char data_[max_size + 1];
+  enum { max_size = 4 };
+  Char data_[max_size];
+  unsigned char size_;
 
  public:
   FMT_CONSTEXPR void operator=(basic_string_view<Char> s) {
@@ -973,15 +974,10 @@ template <typename Char> struct fill_t {
       return;
     }
     for (size_t i = 0; i < size; ++i) data_[i] = s[i];
-    data_[size] = Char();
+    size_ = static_cast<unsigned char>(size);
   }
 
-  size_t size() const {
-    size_t i = 1;
-    while (data_[i] && i <= max_size) ++i;
-    return i;
-  }
-
+  size_t size() const { return size_; }
   const Char* data() const { return data_; }
 
   FMT_CONSTEXPR Char& operator[](size_t index) { return data_[index]; }
@@ -992,6 +988,7 @@ template <typename Char> struct fill_t {
   static FMT_CONSTEXPR fill_t<Char> make() {
     auto fill = fill_t<Char>();
     fill[0] = Char(' ');
+    fill.size_ = 1;
     return fill;
   }
 };
