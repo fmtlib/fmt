@@ -221,7 +221,7 @@ namespace internal {
 
 // A helper function to suppress bogus "conditional expression is constant"
 // warnings.
-template <typename T> inline T const_check(T value) { return value; }
+template <typename T> FMT_CONSTEXPR T const_check(T value) { return value; }
 
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
 // undefined behavior (e.g. due to type aliasing).
@@ -2348,7 +2348,7 @@ template <typename SpecHandler, typename Char> struct precision_adapter {
 
 template <typename Char>
 FMT_CONSTEXPR const Char* next_code_point(const Char* begin, const Char* end) {
-  if (sizeof(Char) != 1 || (*begin & 0x80) == 0) return begin + 1;
+  if (const_check(sizeof(Char) != 1) || (*begin & 0x80) == 0) return begin + 1;
   do {
     ++begin;
   } while (begin != end && (*begin & 0xc0) == 0x80);
