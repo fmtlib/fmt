@@ -320,56 +320,56 @@ following examples.
 
 Accessing arguments by position::
 
-   format("{0}, {1}, {2}", 'a', 'b', 'c');
+   fmt::format("{0}, {1}, {2}", 'a', 'b', 'c');
    // Result: "a, b, c"
-   format("{}, {}, {}", 'a', 'b', 'c');
+   fmt::format("{}, {}, {}", 'a', 'b', 'c');
    // Result: "a, b, c"
-   format("{2}, {1}, {0}", 'a', 'b', 'c');
+   fmt::format("{2}, {1}, {0}", 'a', 'b', 'c');
    // Result: "c, b, a"
-   format("{0}{1}{0}", "abra", "cad");  // arguments' indices can be repeated
+   fmt::format("{0}{1}{0}", "abra", "cad");  // arguments' indices can be repeated
    // Result: "abracadabra"
 
 Aligning the text and specifying a width::
 
-   format("{:<30}", "left aligned");
+   fmt::format("{:<30}", "left aligned");
    // Result: "left aligned                  "
-   format("{:>30}", "right aligned");
+   fmt::format("{:>30}", "right aligned");
    // Result: "                 right aligned"
-   format("{:^30}", "centered");
+   fmt::format("{:^30}", "centered");
    // Result: "           centered           "
-   format("{:*^30}", "centered");  // use '*' as a fill char
+   fmt::format("{:*^30}", "centered");  // use '*' as a fill char
    // Result: "***********centered***********"
 
 Dynamic width::
 
-   format("{:<{}}", "left aligned", 30);
+   fmt::format("{:<{}}", "left aligned", 30);
    // Result: "left aligned                  "
 
 Dynamic precision::
 
-   format("{:.{}f}", 3.14, 1);
+   fmt::format("{:.{}f}", 3.14, 1);
    // Result: "3.1"
 
 Replacing ``%+f``, ``%-f``, and ``% f`` and specifying a sign::
 
-   format("{:+f}; {:+f}", 3.14, -3.14);  // show it always
+   fmt::format("{:+f}; {:+f}", 3.14, -3.14);  // show it always
    // Result: "+3.140000; -3.140000"
-   format("{: f}; {: f}", 3.14, -3.14);  // show a space for positive numbers
+   fmt::format("{: f}; {: f}", 3.14, -3.14);  // show a space for positive numbers
    // Result: " 3.140000; -3.140000"
-   format("{:-f}; {:-f}", 3.14, -3.14);  // show only the minus -- same as '{:f}; {:f}'
+   fmt::format("{:-f}; {:-f}", 3.14, -3.14);  // show only the minus -- same as '{:f}; {:f}'
    // Result: "3.140000; -3.140000"
 
 Replacing ``%x`` and ``%o`` and converting the value to different bases::
 
-   format("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
+   fmt::format("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
    // Result: "int: 42;  hex: 2a;  oct: 52; bin: 101010"
    // with 0x or 0 or 0b as prefix:
-   format("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}", 42);
+   fmt::format("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}", 42);
    // Result: "int: 42;  hex: 0x2a;  oct: 052;  bin: 0b101010"
 
 Padded hex byte with prefix and always prints both hex characters::
 
-   format("{:#04x}", 0);
+   fmt::format("{:#04x}", 0);
    // Result: "0x00"
 
 Box drawing using Unicode fill::
