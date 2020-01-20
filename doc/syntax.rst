@@ -399,12 +399,14 @@ Using type-specific formatting::
    fmt::print("{:%Y-%m-%d %H:%M:%S}", t);
    // Prints: 2010-08-04 12:15:58
 
+Using the comma as a thousands separator::
+
+   #include <fmt/locale.h>
+
+   auto s = fmt::format(std::locale("en_US.UTF-8"), "{:n}", 1234567890);
+   // s == "1,234,567,890"
+
 .. ifconfig:: False
-
-   Using the comma as a thousands separator::
-
-      format("{:,}", 1234567890);
-      '1,234,567,890'
 
    Nesting arguments and more complex examples::
 
