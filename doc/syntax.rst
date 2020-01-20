@@ -372,19 +372,39 @@ Padded hex byte with prefix and always prints both hex characters::
    format("{:#04x}", 0);
    // Result: "0x00"
 
+Box drawing using Unicode fill::
+
+   fmt::print(
+     "┌{0:─^{2}}┐\n"
+     "│{1: ^{2}}│\n"
+     "└{0:─^{2}}┘\n", "", "Hello, world!", 20);
+
+prints::
+
+   ┌────────────────────┐
+   │   Hello, world!    │
+   └────────────────────┘
+
+Using type-specific formatting::
+
+   #include <fmt/chrono.h>
+
+   auto t = tm();
+   t.tm_year = 2010 - 1900;
+   t.tm_mon = 6;
+   t.tm_mday = 4;
+   t.tm_hour = 12;
+   t.tm_min = 15;
+   t.tm_sec = 58;
+   fmt::print("{:%Y-%m-%d %H:%M:%S}", t);
+   // Prints: 2010-08-04 12:15:58
+
 .. ifconfig:: False
 
    Using the comma as a thousands separator::
 
       format("{:,}", 1234567890);
       '1,234,567,890'
-
-   Using type-specific formatting::
-
-      >>> import datetime
-      >>> d = datetime.datetime(2010, 7, 4, 12, 15, 58)
-      Format("{:%Y-%m-%d %H:%M:%S}") << d)
-      '2010-07-04 12:15:58'
 
    Nesting arguments and more complex examples::
 
