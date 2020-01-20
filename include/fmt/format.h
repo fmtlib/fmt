@@ -2348,16 +2348,20 @@ template <typename SpecHandler, typename Char> struct precision_adapter {
 
 template <typename Char>
 FMT_CONSTEXPR const Char* next_code_point(const Char* begin, const Char* end) {
-
 #ifdef __cpp_if_constexpr
-  if (constexpr (sizeof(Char) != 1) || (*begin & 0x80) == 0) return begin + 1;
+  if constexpr (sizeof(Char) == 1) {
 #else
-  if (sizeof(Char) != 1 || (*begin & 0x80) == 0) return begin + 1;
+  if (sizeof(Char) == 1) {
 #endif
-  do {
-    ++begin;
-  } while (begin != end && (*begin & 0xc0) == 0x80);
-  return begin;
+    if ((*begin & 0x80) != 0) {
+      do {
+        ++begin;
+      } while (begin != end && (*begin & 0xc0) == 0x80);
+      return begin;
+    }
+  }
+  (void)end; // 'end': unreferenced formal parameter
+  return begin + 1;
 }
 
 // Parses fill and alignment.
