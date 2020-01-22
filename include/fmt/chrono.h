@@ -907,7 +907,7 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) return write(hour(), 2);
     auto time = tm();
     time.tm_hour = to_nonnegative_int(hour(), 24);
-    char_type format[] { '%', 'O', 'H', 0 };
+    const char_type format[] { '%', 'O', 'H', 0 };
     format_localized(time, format);
   }
 
@@ -917,7 +917,7 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) return write(hour12(), 2);
     auto time = tm();
     time.tm_hour = to_nonnegative_int(hour12(), 12);
-    char_type format[] { '%', 'O', 'I', 0 };
+    const char_type format[] { '%', 'O', 'I', 0 };
     format_localized(time, format);
   }
 
@@ -927,7 +927,7 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) return write(minute(), 2);
     auto time = tm();
     time.tm_min = to_nonnegative_int(minute(), 60);
-    char_type format[] { '%', 'O', 'M', 0 };
+    const char_type format[] { '%', 'O', 'M', 0 };
     format_localized(time, format);
   }
 
@@ -953,14 +953,14 @@ struct chrono_formatter {
     }
     auto time = tm();
     time.tm_sec = to_nonnegative_int(second(), 60);
-    char_type format[] { '%', 'O', 'S', 0 };
+    const char_type format[] { '%', 'O', 'S', 0 };
     format_localized(time, format);
   }
 
   void on_12_hour_time() {
     if (handle_nan_inf()) return;
 
-    char_type format[] { '%', 'r', 0 };
+    const char_type format[] { '%', 'r', 0 };
     format_localized(time(), format);
   }
 
@@ -985,7 +985,7 @@ struct chrono_formatter {
 
   void on_am_pm() {
     if (handle_nan_inf()) return;
-    char_type format[] { '%', 'p', 0 };
+    const char_type format[] { '%', 'p', 0 };
     format_localized(time(), format);
   }
 
