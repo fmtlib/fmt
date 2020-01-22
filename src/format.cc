@@ -19,7 +19,7 @@ int format_float(char* buf, std::size_t size, const char* format, int precision,
         "fuzz mode - avoid large allocation inside snprintf");
 #endif
   // Suppress the warning about nonliteral format string.
-  auto snprintf_ptr = FMT_SNPRINTF;
+  int (*snprintf_ptr)(char*, size_t, const char*, ...) = FMT_SNPRINTF;
   return precision < 0 ? snprintf_ptr(buf, size, format, value)
                        : snprintf_ptr(buf, size, format, precision, value);
 }
