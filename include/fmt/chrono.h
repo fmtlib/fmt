@@ -495,12 +495,12 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
       handler.on_text(ptr - 1, ptr);
       break;
     case 'n': {
-      const char newline[] = "\n";
+      const Char newline[] { '\n', 0 };
       handler.on_text(newline, newline + 1);
       break;
     }
     case 't': {
-      const char tab[] = "\t";
+      const Char tab[] { '\t', 0 };
       handler.on_text(tab, tab + 1);
       break;
     }
@@ -871,13 +871,13 @@ struct chrono_formatter {
   void write_pinf() { std::copy_n("inf", 3, out); }
   void write_ninf() { std::copy_n("-inf", 4, out); }
 
-  void format_localized(const tm& time, const char* format) {
+  void format_localized(const tm& time, const char_type* format) {
     if (isnan(val)) return write_nan();
     auto locale = context.locale().template get<std::locale>();
     auto& facet = std::use_facet<std::time_put<char_type>>(locale);
     std::basic_ostringstream<char_type> os;
     os.imbue(locale);
-    facet.put(os, os, ' ', &time, format, format + std::strlen(format));
+    facet.put(os, os, ' ', &time, format, format + std::char_traits<char_type>::length(format));
     auto str = os.str();
     std::copy(str.begin(), str.end(), out);
   }
@@ -907,7 +907,8 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) return write(hour(), 2);
     auto time = tm();
     time.tm_hour = to_nonnegative_int(hour(), 24);
-    format_localized(time, "%OH");
+    char_type format[] { '%', 'O', 'H', 0 };
+    format_localized(time, format);
   }
 
   void on_12_hour(numeric_system ns) {
@@ -916,7 +917,8 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) return write(hour12(), 2);
     auto time = tm();
     time.tm_hour = to_nonnegative_int(hour12(), 12);
-    format_localized(time, "%OI");
+    char_type format[] { '%', 'O', 'I', 0 };
+    format_localized(time, format);
   }
 
   void on_minute(numeric_system ns) {
@@ -925,7 +927,8 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) return write(minute(), 2);
     auto time = tm();
     time.tm_min = to_nonnegative_int(minute(), 60);
-    format_localized(time, "%OM");
+    char_type format[] { '%', 'O', 'M', 0 };
+    format_localized(time, format);
   }
 
   void on_second(numeric_system ns) {
@@ -950,13 +953,15 @@ struct chrono_formatter {
     }
     auto time = tm();
     time.tm_sec = to_nonnegative_int(second(), 60);
-    format_localized(time, "%OS");
+    char_type format[] { '%', 'O', 'S', 0 };
+    format_localized(time, format);
   }
 
   void on_12_hour_time() {
     if (handle_nan_inf()) return;
 
-    format_localized(time(), "%r");
+    char_type format[] { '%', 'r', 0 };
+    format_localized(time(), format);
   }
 
   void on_24_hour_time() {
@@ -980,7 +985,8 @@ struct chrono_formatter {
 
   void on_am_pm() {
     if (handle_nan_inf()) return;
-    format_localized(time(), "%p");
+    char_type format[] { '%', 'p', 0 };
+    format_localized(time(), format);
   }
 
   void on_duration_value() {
