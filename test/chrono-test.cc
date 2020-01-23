@@ -154,7 +154,7 @@ TEST(ChronoTest, FormatWide) {
   EXPECT_EQ(L"42ps",
             fmt::format(L"{}", std::chrono::duration<int, std::pico>(42)));
   EXPECT_EQ(L"42ns", fmt::format(L"{}", std::chrono::nanoseconds(42)));
-  EXPECT_EQ(L"42µs", fmt::format(L"{}", std::chrono::microseconds(42)));
+  EXPECT_EQ(L"42\u00B5s", fmt::format(L"{}", std::chrono::microseconds(42)));
   EXPECT_EQ(L"42ms", fmt::format(L"{}", std::chrono::milliseconds(42)));
   EXPECT_EQ(L"42cs",
             fmt::format(L"{}", std::chrono::duration<int, std::centi>(42)));
