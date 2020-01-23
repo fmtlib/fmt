@@ -766,7 +766,7 @@ template <typename Char, typename Period, typename OutputIt>
 OutputIt format_duration_unit(OutputIt out) {
   if (const char* unit = get_units<Period>()) {
     string_view s(unit);
-    if FMT_CONSTEXPR (std::is_same<Char, wchar_t>::value) {
+    if (std::is_same<Char, wchar_t>::value) {
       utf8_to_utf16 u(s);
       return std::copy(u.c_str(), u.c_str() + u.size(), out);
     } else {
