@@ -440,7 +440,6 @@ template <typename Char> struct formatter<std::tm, Char> {
 };
 
 namespace internal {
-
 template <typename Period> FMT_CONSTEXPR const char* get_units() { return nullptr; }
 template <> FMT_CONSTEXPR const char* get_units<std::atto>() { return "as"; }
 template <> FMT_CONSTEXPR const char* get_units<std::femto>() { return "fs"; }
@@ -491,12 +490,12 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
       break;
     case 'n': {
       const Char newline[] { '\n', 0 };
-      handler.on_text(newline, &newline[1]);
+      handler.on_text(newline, newline + 1);
       break;
     }
     case 't': {
       const Char tab[] { '\t', 0 };
-      handler.on_text(tab, &tab[1]);
+      handler.on_text(tab, tab + 1);
       break;
     }
     // Day of the week:
