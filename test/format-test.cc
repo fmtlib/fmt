@@ -1849,7 +1849,10 @@ TEST(FormatTest, UnpackedArgs) {
 struct string_like {};
 fmt::string_view to_string_view(string_like) { return "foo"; }
 
+FMT_CONSTEXPR_DECL const char* format_str_ptr = "0123456789";
+
 TEST(FormatTest, CompileTimeString) {
+  EXPECT_EQ(format_str_ptr, fmt::format(FMT_STRING(format_str_ptr)));
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(L"{}"), 42));
   EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), string_like()));

@@ -3449,6 +3449,13 @@ template <typename Char> struct udl_arg {
   }
 };
 
+// A constexpr version of strlen.
+template <typename Char> FMT_CONSTEXPR size_t compute_length(const Char* s) {
+  size_t len = 0;
+  while (*s++) ++len;
+  return len;
+}
+
 }  // namespace internal
 
 inline namespace literals {
@@ -3512,7 +3519,7 @@ FMT_END_NAMESPACE
       using char_type = fmt::remove_cvref_t<decltype(*s)>;   \
       __VA_ARGS__ FMT_CONSTEXPR                              \
       operator fmt::basic_string_view<char_type>() const {   \
-        return {s, sizeof(s) / sizeof(char_type) - 1};       \
+        return {s, fmt::internal::compute_length(s)};        \
       }                                                      \
     };                                                       \
     return FMT_STRING();                                     \
