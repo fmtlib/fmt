@@ -771,12 +771,13 @@ OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
 
 template <typename Char, typename Period, typename OutputIt>
 OutputIt format_duration_unit(OutputIt out) {
-  if (string_view unit = get_units<Period>()) {
+  if (const char* unit = get_units<Period>()) {
+    string_view s(unit);
     if (const_check(std::is_same<Char, wchar_t>())) {
-      utf8_to_utf16 u(unit);
+      utf8_to_utf16 u(s);
       return std::copy(u.c_str(), u.c_str() + u.size(), out);
     }
-    return std::copy(unit.begin(), unit.end(), out);
+    return std::copy(s.begin(), s.end(), out);
   }
   const Char num_f[]{'[', '{', '}', ']', 's', 0};
   if (Period::den == 1) return format_to(out, num_f, Period::num);
