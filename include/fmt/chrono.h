@@ -8,13 +8,13 @@
 #ifndef FMT_CHRONO_H_
 #define FMT_CHRONO_H_
 
-#include "format.h"
-#include "locale.h"
-
 #include <chrono>
 #include <ctime>
 #include <locale>
 #include <sstream>
+
+#include "format.h"
+#include "locale.h"
 
 FMT_BEGIN_NAMESPACE
 
@@ -440,7 +440,9 @@ template <typename Char> struct formatter<std::tm, Char> {
 };
 
 namespace internal {
-template <typename Period> FMT_CONSTEXPR const char* get_units() { return nullptr; }
+template <typename Period> FMT_CONSTEXPR const char* get_units() {
+  return nullptr;
+}
 template <> FMT_CONSTEXPR const char* get_units<std::atto>() { return "as"; }
 template <> FMT_CONSTEXPR const char* get_units<std::femto>() { return "fs"; }
 template <> FMT_CONSTEXPR const char* get_units<std::pico>() { return "ps"; }
@@ -458,8 +460,12 @@ template <> FMT_CONSTEXPR const char* get_units<std::giga>() { return "Gs"; }
 template <> FMT_CONSTEXPR const char* get_units<std::tera>() { return "Ts"; }
 template <> FMT_CONSTEXPR const char* get_units<std::peta>() { return "Ps"; }
 template <> FMT_CONSTEXPR const char* get_units<std::exa>() { return "Es"; }
-template <> FMT_CONSTEXPR const char* get_units<std::ratio<60>>() { return "m"; }
-template <> FMT_CONSTEXPR const char* get_units<std::ratio<3600>>() { return "h"; }
+template <> FMT_CONSTEXPR const char* get_units<std::ratio<60>>() {
+  return "m";
+}
+template <> FMT_CONSTEXPR const char* get_units<std::ratio<3600>>() {
+  return "h";
+}
 
 enum class numeric_system {
   standard,
@@ -489,12 +495,12 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
       handler.on_text(ptr - 1, ptr);
       break;
     case 'n': {
-      const Char newline[] { '\n', 0 };
+      const Char newline[]{'\n', 0};
       handler.on_text(newline, newline + 1);
       break;
     }
     case 't': {
-      const Char tab[] { '\t', 0 };
+      const Char tab[]{'\t', 0};
       handler.on_text(tab, tab + 1);
       break;
     }
@@ -755,11 +761,12 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 
 template <typename Char, typename Rep, typename OutputIt>
 OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
-  const Char pr_f[] { '{', ':', '.', '{', '}', 'f', '}', 0 };
+  const Char pr_f[]{'{', ':', '.', '{', '}', 'f', '}', 0};
   if (precision >= 0) return format_to(out, pr_f, val, precision);
-  const Char fp_f[] { '{', ':', 'g', '}', 0 };
-  const Char format[] { '{', '}', 0 };
-  return format_to(out, std::is_floating_point<Rep>::value ? fp_f : format, val);
+  const Char fp_f[]{'{', ':', 'g', '}', 0};
+  const Char format[]{'{', '}', 0};
+  return format_to(out, std::is_floating_point<Rep>::value ? fp_f : format,
+                   val);
 }
 
 template <typename Char, typename Period, typename OutputIt>
@@ -771,9 +778,9 @@ OutputIt format_duration_unit(OutputIt out) {
     }
     return std::copy(unit.begin(), unit.end(), out);
   }
-  const Char num_f[] { '[', '{', '}', ']', 's', 0 };
+  const Char num_f[]{'[', '{', '}', ']', 's', 0};
   if (Period::den == 1) return format_to(out, num_f, Period::num);
-  const Char num_def_f[] { '[', '{', '}', '/', '{', '}', ']', 's', 0 };
+  const Char num_def_f[]{'[', '{', '}', '/', '{', '}', ']', 's', 0};
   return format_to(out, num_def_f, Period::num, Period::den);
 }
 
@@ -911,7 +918,7 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) return write(hour(), 2);
     auto time = tm();
     time.tm_hour = to_nonnegative_int(hour(), 24);
-    format_localized(time,  'H', 'O');
+    format_localized(time, 'H', 'O');
   }
 
   void on_12_hour(numeric_system ns) {
@@ -992,7 +999,9 @@ struct chrono_formatter {
     out = format_duration_value<char_type>(out, val, precision);
   }
 
-  void on_duration_unit() { out = format_duration_unit<char_type, Period>(out); }
+  void on_duration_unit() {
+    out = format_duration_unit<char_type, Period>(out);
+  }
 };
 }  // namespace internal
 
