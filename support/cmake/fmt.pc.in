@@ -6,6 +6,6 @@ includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 Name: fmt
 Description: A modern formatting library
 Version: @FMT_VERSION@
-Libs: -L${libdir} -lfmt
+Libs: -L${libdir} -l@FMT_LIB_NAME@
 Cflags: -I${includedir}
 
