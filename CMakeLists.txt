@@ -173,18 +173,19 @@ target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
 target_include_directories(fmt PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
+  
+set(FMT_DEBUG_POSTFIX d)
 
 set_target_properties(fmt PROPERTIES
   OUTPUT_NAME fmt
   VERSION ${FMT_VERSION}
   SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
-  DEBUG_POSTFIX d)
+  DEBUG_POSTFIX ${FMT_DEBUG_POSTFIX})
 
 # Configure pkg-config fmt.pc properly
 get_target_property(FMT_LIB_NAME fmt OUTPUT_NAME)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  get_target_property(_FMT_LIB_POSTFIX fmt DEBUG_POSTFIX)
-  set(FMT_LIB_NAME ${FMT_LIB_NAME}${_FMT_LIB_POSTFIX})
+  set(FMT_LIB_NAME ${FMT_LIB_NAME}${FMT_DEBUG_POSTFIX})
 endif()
 
 if (BUILD_SHARED_LIBS)
