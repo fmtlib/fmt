@@ -8,8 +8,6 @@
 #ifndef FMT_FORMAT_INL_H_
 #define FMT_FORMAT_INL_H_
 
-#include "format.h"
-
 #include <cassert>
 #include <cctype>
 #include <climits>
@@ -17,6 +15,8 @@
 #include <cstdarg>
 #include <cstring>  // for std::memmove
 #include <cwchar>
+
+#include "format.h"
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
 #  include <locale>
 #endif
@@ -386,7 +386,8 @@ class fp {
     const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
     auto u = bit_cast<uint64_t>(d);
     f = u & significand_mask;
-    auto biased_e = (u & exponent_mask) >> double_significand_size;
+    int biased_e =
+        static_cast<int>((u & exponent_mask) >> double_significand_size);
     // Predecessor is closer if d is a normalized power of 2 (f == 0) other than
     // the smallest normalized number (biased_e > 1).
     bool is_predecessor_closer = f == 0 && biased_e > 1;
@@ -394,7 +395,7 @@ class fp {
       f += implicit_bit;
     else
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    e = static_cast<int>(biased_e - exponent_bias - double_significand_size);
+    e = biased_e - exponent_bias - double_significand_size;
     return is_predecessor_closer;
   }
 
@@ -458,13 +459,11 @@ inline fp operator*(fp x, fp y) { return {multiply(x.f, y.f), x.e + y.e + 64}; }
 // Returns a cached power of 10 `c_k = c_k.f * pow(2, c_k.e)` such that its
 // (binary) exponent satisfies `min_exponent <= c_k.e <= min_exponent + 28`.
 inline fp get_cached_power(int min_exponent, int& pow10_exponent) {
-  const uint64_t one_over_log2_10 = 0x4d104d42;  // round(pow(2, 32) / log2(10))
+  const int64_t one_over_log2_10 = 0x4d104d42;  // round(pow(2, 32) / log2(10))
   int index = static_cast<int>(
-      static_cast<int64_t>(
-          (min_exponent + fp::significand_size - 1) * one_over_log2_10 +
-          ((uint64_t(1) << 32) - 1)  // ceil
-          ) >>
-      32  // arithmetic shift
+      ((min_exponent + fp::significand_size - 1) * one_over_log2_10 +
+       ((int64_t(1) << 32) - 1))  // ceil
+      >> 32                       // arithmetic shift
   );
   // Decimal exponent of the first (smallest) cached power of 10.
   const int first_dec_exp = -348;
@@ -1038,7 +1037,7 @@ void fallback_format(Double d, buffer<char>& buf, int& exp10) {
 // if T is a IEEE754 binary32 or binary64 and snprintf otherwise.
 template <typename T>
 int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
-  static_assert(!std::is_same<T, float>(), "");
+  static_assert(!std::is_same<T, float>::value, "");
   FMT_ASSERT(value >= 0, "value is negative");
 
   const bool fixed = specs.format == float_format::fixed;
@@ -1113,7 +1112,7 @@ int snprintf_float(T value, int precision, float_specs specs,
                    buffer<char>& buf) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buf.capacity() > buf.size(), "empty buffer");
-  static_assert(!std::is_same<T, float>(), "");
+  static_assert(!std::is_same<T, float>::value, "");
 
   // Subtract 1 to account for the difference in precision since we use %e for
   // both general and exponent format.
@@ -1148,7 +1147,8 @@ int snprintf_float(T value, int precision, float_specs specs,
           "fuzz mode - avoid large allocation inside snprintf");
 #endif
     // Suppress the warning about a nonliteral format string.
-    auto snprintf_ptr = FMT_SNPRINTF;
+    // Cannot use auto becase of a bug in MinGW (#1532).
+    int (*snprintf_ptr)(char*, size_t, const char*, ...) = FMT_SNPRINTF;
     int result = precision >= 0
                      ? snprintf_ptr(begin, capacity, format, precision, value)
                      : snprintf_ptr(begin, capacity, format, value);
@@ -1380,7 +1380,8 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
 FMT_FUNC void internal::vprint_mojibake(std::FILE* f, string_view format_str,
                                         format_args args) {
   memory_buffer buffer;
-  vformat_to(buffer, format_str, basic_format_args<buffer_context<char>>(args));
+  internal::vformat_to(buffer, format_str,
+                       basic_format_args<buffer_context<char>>(args));
   fwrite_fully(buffer.data(), 1, buffer.size(), f);
 }
 #endif

@@ -145,6 +145,48 @@ TEST(ChronoTest, FormatDefault) {
       fmt::format("{}", std::chrono::duration<int, std::ratio<15, 4>>(42)));
 }
 
+TEST(ChronoTest, FormatWide) {
+  EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds(42)));
+  EXPECT_EQ(L"42as",
+            fmt::format(L"{}", std::chrono::duration<int, std::atto>(42)));
+  EXPECT_EQ(L"42fs",
+            fmt::format(L"{}", std::chrono::duration<int, std::femto>(42)));
+  EXPECT_EQ(L"42ps",
+            fmt::format(L"{}", std::chrono::duration<int, std::pico>(42)));
+  EXPECT_EQ(L"42ns", fmt::format(L"{}", std::chrono::nanoseconds(42)));
+  EXPECT_EQ(L"42\u00B5s", fmt::format(L"{}", std::chrono::microseconds(42)));
+  EXPECT_EQ(L"42ms", fmt::format(L"{}", std::chrono::milliseconds(42)));
+  EXPECT_EQ(L"42cs",
+            fmt::format(L"{}", std::chrono::duration<int, std::centi>(42)));
+  EXPECT_EQ(L"42ds",
+            fmt::format(L"{}", std::chrono::duration<int, std::deci>(42)));
+  EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds(42)));
+  EXPECT_EQ(L"42das",
+            fmt::format(L"{}", std::chrono::duration<int, std::deca>(42)));
+  EXPECT_EQ(L"42hs",
+            fmt::format(L"{}", std::chrono::duration<int, std::hecto>(42)));
+  EXPECT_EQ(L"42ks",
+            fmt::format(L"{}", std::chrono::duration<int, std::kilo>(42)));
+  EXPECT_EQ(L"42Ms",
+            fmt::format(L"{}", std::chrono::duration<int, std::mega>(42)));
+  EXPECT_EQ(L"42Gs",
+            fmt::format(L"{}", std::chrono::duration<int, std::giga>(42)));
+  EXPECT_EQ(L"42Ts",
+            fmt::format(L"{}", std::chrono::duration<int, std::tera>(42)));
+  EXPECT_EQ(L"42Ps",
+            fmt::format(L"{}", std::chrono::duration<int, std::peta>(42)));
+  EXPECT_EQ(L"42Es",
+            fmt::format(L"{}", std::chrono::duration<int, std::exa>(42)));
+  EXPECT_EQ(L"42m", fmt::format(L"{}", std::chrono::minutes(42)));
+  EXPECT_EQ(L"42h", fmt::format(L"{}", std::chrono::hours(42)));
+  EXPECT_EQ(
+      L"42[15]s",
+      fmt::format(L"{}", std::chrono::duration<int, std::ratio<15, 1>>(42)));
+  EXPECT_EQ(
+      L"42[15/4]s",
+      fmt::format(L"{}", std::chrono::duration<int, std::ratio<15, 4>>(42)));
+}
+
 TEST(ChronoTest, Align) {
   auto s = std::chrono::seconds(42);
   EXPECT_EQ("42s  ", fmt::format("{:5}", s));

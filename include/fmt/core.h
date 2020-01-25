@@ -15,7 +15,7 @@
 #include <type_traits>
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 60102
+#define FMT_VERSION 60103
 
 #ifdef __has_feature
 #  define FMT_HAS_FEATURE(x) __has_feature(x)
@@ -217,7 +217,7 @@
 
 FMT_BEGIN_NAMESPACE
 
-// Implementations of enable_if_t and other metafunctions for pre-C++14 systems.
+// Implementations of enable_if_t and other metafunctions for older systems.
 template <bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 template <bool B, class T, class F>
@@ -229,6 +229,8 @@ template <typename T>
 using remove_const_t = typename std::remove_const<T>::type;
 template <typename T>
 using remove_cvref_t = typename std::remove_cv<remove_reference_t<T>>::type;
+template <typename T> struct type_identity { using type = T; };
+template <typename T> using type_identity_t = typename type_identity<T>::type;
 
 struct monostate {};
 
@@ -251,7 +253,7 @@ FMT_API void assert_fail(const char* file, int line, const char* message);
 #    define FMT_ASSERT(condition, message) \
       ((condition)                         \
            ? void()                        \
-           : fmt::internal::assert_fail(__FILE__, __LINE__, (message)))
+           : ::fmt::internal::assert_fail(__FILE__, __LINE__, (message)))
 #  endif
 #endif
 
@@ -266,7 +268,7 @@ template <typename T> struct std_string_view {};
 
 #ifdef FMT_USE_INT128
 // Do nothing.
-#elif defined(__SIZEOF_INT128__)
+#elif defined(__SIZEOF_INT128__) && !FMT_NVCC
 #  define FMT_USE_INT128 1
 using int128_t = __int128_t;
 using uint128_t = __uint128_t;
@@ -1220,7 +1222,13 @@ using wformat_context = buffer_context<wchar_t>;
   such as `~fmt::vformat`.
   \endrst
  */
-template <typename Context, typename... Args> class format_arg_store {
+template <typename Context, typename... Args>
+class format_arg_store
+#if FMT_GCC_VERSION < 409
+    // Workaround a GCC template argument substitution bug.
+    : public basic_format_args<Context>
+#endif
+{
  private:
   static const size_t num_args = sizeof...(Args);
   static const bool is_packed = num_args < internal::max_packed_args;
@@ -1239,7 +1247,12 @@ template <typename Context, typename... Args> class format_arg_store {
                 : internal::is_unpacked_bit | num_args;
 
   format_arg_store(const Args&... args)
-      : data_{internal::make_arg<is_packed, Context>(args)...} {}
+      :
+#if FMT_GCC_VERSION < 409
+        basic_format_args<Context>(*this),
+#endif
+        data_{internal::make_arg<is_packed, Context>(args)...} {
+  }
 };
 
 /**
@@ -1426,21 +1439,23 @@ template <typename... Args, typename S, typename Char = char_t<S>>
 inline format_arg_store<buffer_context<Char>, remove_reference_t<Args>...>
 make_args_checked(const S& format_str,
                   const remove_reference_t<Args>&... args) {
-  static_assert(all_true<(!std::is_base_of<view, remove_reference_t<Args>>() ||
-                          !std::is_reference<Args>())...>::value,
-                "passing views as lvalues is disallowed");
+  static_assert(
+      all_true<(!std::is_base_of<view, remove_reference_t<Args>>::value ||
+                !std::is_reference<Args>::value)...>::value,
+      "passing views as lvalues is disallowed");
   check_format_string<remove_const_t<remove_reference_t<Args>>...>(format_str);
   return {args...};
 }
 
 template <typename Char>
-std::basic_string<Char> vformat(basic_string_view<Char> format_str,
-                                basic_format_args<buffer_context<Char>> args);
+std::basic_string<Char> vformat(
+    basic_string_view<Char> format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args);
 
 template <typename Char>
 typename buffer_context<Char>::iterator vformat_to(
     buffer<Char>& buf, basic_string_view<Char> format_str,
-    basic_format_args<buffer_context<Char>> args);
+    basic_format_args<buffer_context<type_identity_t<Char>>> args);
 
 FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 }  // namespace internal
@@ -1471,8 +1486,9 @@ void arg(S, internal::named_arg<T, Char>) = delete;
 template <typename OutputIt, typename S, typename Char = char_t<S>,
           FMT_ENABLE_IF(
               internal::is_contiguous_back_insert_iterator<OutputIt>::value)>
-OutputIt vformat_to(OutputIt out, const S& format_str,
-                    basic_format_args<buffer_context<Char>> args) {
+OutputIt vformat_to(
+    OutputIt out, const S& format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   using container = remove_reference_t<decltype(internal::get_container(out))>;
   internal::container_buffer<container> buf((internal::get_container(out)));
   internal::vformat_to(buf, to_string_view(format_str), args);
@@ -1485,14 +1501,14 @@ template <typename Container, typename S, typename... Args,
 inline std::back_insert_iterator<Container> format_to(
     std::back_insert_iterator<Container> out, const S& format_str,
     Args&&... args) {
-  return vformat_to(
-      out, to_string_view(format_str),
-      {internal::make_args_checked<Args...>(format_str, args...)});
+  return vformat_to(out, to_string_view(format_str),
+                    internal::make_args_checked<Args...>(format_str, args...));
 }
 
 template <typename S, typename Char = char_t<S>>
 inline std::basic_string<Char> vformat(
-    const S& format_str, basic_format_args<buffer_context<Char>> args) {
+    const S& format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   return internal::vformat(to_string_view(format_str), args);
 }
 
@@ -1512,7 +1528,7 @@ template <typename S, typename... Args, typename Char = char_t<S>>
 inline std::basic_string<Char> format(const S& format_str, Args&&... args) {
   return internal::vformat(
       to_string_view(format_str),
-      {internal::make_args_checked<Args...>(format_str, args...)});
+      internal::make_args_checked<Args...>(format_str, args...));
 }
 
 FMT_API void vprint(string_view, format_args);

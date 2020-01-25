@@ -85,6 +85,19 @@ Compatibility
 .. doxygentypedef:: fmt::string_view
 .. doxygentypedef:: fmt::wstring_view
 
+Locale
+------
+
+All formatting is locale-independent by default. Use the ``'n'`` format
+specifier to insert the appropriate number separator characters from the
+locale::
+
+  #include <fmt/core.h>
+  #include <locale>
+
+  std::locale::global(std::locale("en_US.UTF-8"));
+  auto s = fmt::format("{:n}", 1000000);  // s == "1,000,000"
+
 .. _format-api:
 
 Format API

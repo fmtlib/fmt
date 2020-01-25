@@ -815,6 +815,9 @@ TEST(FormatterTest, Fill) {
   EXPECT_EQ("**0xface", format("{0:*>8}", reinterpret_cast<void*>(0xface)));
   EXPECT_EQ("foo=", format("{:}=", "foo"));
   EXPECT_EQ(std::string("\0\0\0*", 4), format(string_view("{:\0>4}", 6), '*'));
+  EXPECT_EQ("жж42", format("{0:ж>4}", 42));
+  EXPECT_THROW_MSG(format("{:\x80\x80\x80\x80\x80>}", 0), format_error,
+                   "invalid fill");
 }
 
 TEST(FormatterTest, PlusSign) {
@@ -2173,7 +2176,7 @@ struct test_format_specs_handler {
         type(other.type) {}
 
   FMT_CONSTEXPR void on_align(fmt::align_t a) { align = a; }
-  FMT_CONSTEXPR void on_fill(char f) { fill = f; }
+  FMT_CONSTEXPR void on_fill(fmt::string_view f) { fill = f[0]; }
   FMT_CONSTEXPR void on_plus() { res = PLUS; }
   FMT_CONSTEXPR void on_minus() { res = MINUS; }
   FMT_CONSTEXPR void on_space() { res = SPACE; }
