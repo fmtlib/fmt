@@ -495,12 +495,12 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
       handler.on_text(ptr - 1, ptr);
       break;
     case 'n': {
-      const Char newline[]{'\n', 0};
+      const Char newline[] = {'\n'};
       handler.on_text(newline, newline + 1);
       break;
     }
     case 't': {
-      const Char tab[]{'\t', 0};
+      const Char tab[] = {'\t'};
       handler.on_text(tab, tab + 1);
       break;
     }
@@ -761,10 +761,10 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 
 template <typename Char, typename Rep, typename OutputIt>
 OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
-  const Char pr_f[]{'{', ':', '.', '{', '}', 'f', '}', 0};
+  const Char pr_f[] = {'{', ':', '.', '{', '}', 'f', '}', 0};
   if (precision >= 0) return format_to(out, pr_f, val, precision);
-  const Char fp_f[]{'{', ':', 'g', '}', 0};
-  const Char format[]{'{', '}', 0};
+  const Char fp_f[] = {'{', ':', 'g', '}', 0};
+  const Char format[] = {'{', '}', 0};
   return format_to(out, std::is_floating_point<Rep>::value ? fp_f : format,
                    val);
 }
@@ -779,9 +779,9 @@ OutputIt format_duration_unit(OutputIt out) {
     }
     return std::copy(s.begin(), s.end(), out);
   }
-  const Char num_f[]{'[', '{', '}', ']', 's', 0};
+  const Char num_f[] = {'[', '{', '}', ']', 's', 0};
   if (Period::den == 1) return format_to(out, num_f, Period::num);
-  const Char num_def_f[]{'[', '{', '}', '/', '{', '}', ']', 's', 0};
+  const Char num_def_f[] = {'[', '{', '}', '/', '{', '}', ']', 's', 0};
   return format_to(out, num_def_f, Period::num, Period::den);
 }
 
