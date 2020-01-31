@@ -33,7 +33,7 @@ Features
 * Safe `printf implementation
   <https://fmt.dev/latest/api.html#printf-formatting>`_ including
   the POSIX extension for positional arguments.
-* Implementation of `C++20 std::format <https://fmt.dev/Text%20Formatting.html>`__.
+* Implementation of `C++20 std::format <https://en.cppreference.com/w/cpp/utility/format>`__.
 * Support for user-defined types.
 * High performance: faster than common standard library implementations of
   `printf <https://en.cppreference.com/w/cpp/io/c/fprintf>`_ and
