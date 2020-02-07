@@ -402,8 +402,12 @@ TEST(ArgTest, VisitInvalidArg) {
   fmt::visit_format_arg(visitor, arg);
 }
 
+TEST(StringViewTest, ValueType) {
+  static_assert(std::is_same<string_view::value_type, char>::value, "");
+}
+
 TEST(StringViewTest, Length) {
-  // Test that StringRef::size() returns string length, not buffer size.
+  // Test that string_view::size() returns string length, not buffer size.
   char str[100] = "some string";
   EXPECT_EQ(std::strlen(str), string_view(str).size());
   EXPECT_LT(std::strlen(str), sizeof(str));

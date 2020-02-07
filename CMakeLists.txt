@@ -176,17 +176,17 @@ target_include_directories(fmt PUBLIC
   
 set(FMT_DEBUG_POSTFIX d)
 
+set(FMT_DEBUG_POSTFIX d)
+
 set_target_properties(fmt PROPERTIES
-  OUTPUT_NAME fmt
-  VERSION ${FMT_VERSION}
-  SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
+  VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
   DEBUG_POSTFIX ${FMT_DEBUG_POSTFIX})
 
-# Configure pkg-config fmt.pc properly
+# Set FMT_LIB_NAME for pkg-config fmt.pc.
 get_target_property(FMT_LIB_NAME fmt OUTPUT_NAME)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(FMT_LIB_NAME ${FMT_LIB_NAME}${FMT_DEBUG_POSTFIX})
-endif()
+endif ()
 
 if (BUILD_SHARED_LIBS)
   if (UNIX AND NOT APPLE AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")

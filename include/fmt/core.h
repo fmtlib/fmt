@@ -185,10 +185,19 @@
 #  define FMT_CLASS_API
 #endif
 #ifndef FMT_API
-#  define FMT_API
+#  if FMT_GCC_VERSION || FMT_CLANG_VERSION
+#    define FMT_API __attribute__((visibility("default")))
+#    define FMT_EXTERN_TEMPLATE_API FMT_API
+#    define FMT_INSTANTIATION_DEF_API
+#  else
+#    define FMT_API
+#  endif
 #endif
 #ifndef FMT_EXTERN_TEMPLATE_API
 #  define FMT_EXTERN_TEMPLATE_API
+#endif
+#ifndef FMT_INSTANTIATION_DEF_API
+#  define FMT_INSTANTIATION_DEF_API FMT_API
 #endif
 
 #ifndef FMT_HEADER_ONLY
@@ -304,7 +313,8 @@ template <typename Char> class basic_string_view {
   size_t size_;
 
  public:
-  using char_type = Char;
+  using char_type FMT_DEPRECATED_ALIAS = Char;
+  using value_type = Char;
   using iterator = const Char*;
 
   FMT_CONSTEXPR basic_string_view() FMT_NOEXCEPT : data_(nullptr), size_(0) {}
@@ -462,7 +472,7 @@ struct is_string : std::is_class<decltype(to_string_view(std::declval<S>()))> {
 template <typename S, typename = void> struct char_t_impl {};
 template <typename S> struct char_t_impl<S, enable_if_t<is_string<S>::value>> {
   using result = decltype(to_string_view(std::declval<S>()));
-  using type = typename result::char_type;
+  using type = typename result::value_type;
 };
 
 struct error_handler {
