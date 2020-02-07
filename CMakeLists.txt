@@ -176,8 +176,6 @@ target_include_directories(fmt PUBLIC
   
 set(FMT_DEBUG_POSTFIX d)
 
-set(FMT_DEBUG_POSTFIX d)
-
 set_target_properties(fmt PROPERTIES
   VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
   DEBUG_POSTFIX ${FMT_DEBUG_POSTFIX})
