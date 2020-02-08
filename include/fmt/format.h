@@ -312,7 +312,7 @@ template <typename It> class is_output_iterator {
   using type = decltype(test<It>(typename iterator_category<It>::type{}));
 
  public:
-  static const bool value = !std::is_const<remove_reference_t<type>>::value;
+  enum { value = !std::is_const<remove_reference_t<type>>::value };
 };
 
 // A workaround for std::string not having mutable data() until C++17.
