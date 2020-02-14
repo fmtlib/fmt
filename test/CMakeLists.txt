@@ -171,18 +171,6 @@ if (FMT_PEDANTIC)
   target_compile_definitions(
     nolocale-test PRIVATE FMT_STATIC_THOUSANDS_SEPARATOR=1)
 
-  # Test that the library compiles without windows.h.
-  if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    add_library(no-windows-h-test ../src/format.cc)
-    target_include_directories(
-      no-windows-h-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
-    target_compile_definitions(no-windows-h-test PRIVATE FMT_USE_WINDOWS_H=0)
-    if (FMT_PEDANTIC)
-      target_compile_options(no-windows-h-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
-    endif ()
-    target_include_directories(no-windows-h-test SYSTEM PUBLIC gtest gmock)
-  endif ()
-
   add_test(compile-error-test ${CMAKE_CTEST_COMMAND}
     --build-and-test
     "${CMAKE_CURRENT_SOURCE_DIR}/compile-error-test"

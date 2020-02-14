@@ -44,7 +44,7 @@
 #  endif  // _WIN32
 #endif    // FMT_USE_FCNTL
 
-#if FMT_USE_WINDOWS_H
+#ifdef _WIN32
 #  include <windows.h>
 #endif
 
@@ -72,7 +72,7 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 
 FMT_BEGIN_NAMESPACE
 
-#if FMT_USE_WINDOWS_H
+#ifdef _WIN32
 internal::utf16_to_utf8::utf16_to_utf8(wstring_view s) {
   if (int error_code = convert(s)) {
     FMT_THROW(windows_error(error_code,
@@ -145,7 +145,7 @@ void report_windows_error(int error_code,
                           fmt::string_view message) FMT_NOEXCEPT {
   report_error(internal::format_windows_error, error_code, message);
 }
-#endif  // FMT_USE_WINDOWS_H
+#endif  // _WIN32
 
 buffered_file::~buffered_file() FMT_NOEXCEPT {
   if (file_ && FMT_SYSTEM(fclose(file_)) != 0)
