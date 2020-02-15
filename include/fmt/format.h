@@ -3238,7 +3238,6 @@ arg_join<internal::iterator_t<const Range>, wchar_t> join(const Range& range,
 /**
   \rst
   Converts *value* to ``std::string`` using the default format for type *T*.
-  It doesn't support user-defined types with custom formatters.
 
   **Example**::
 
