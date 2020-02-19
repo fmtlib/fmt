@@ -633,6 +633,9 @@ template <typename T> class buffer {
   T* begin() FMT_NOEXCEPT { return ptr_; }
   T* end() FMT_NOEXCEPT { return ptr_ + size_; }
 
+  const T* begin() const FMT_NOEXCEPT { return ptr_; }
+  const T* end() const FMT_NOEXCEPT { return ptr_ + size_; }
+
   /** Returns the size of this buffer. */
   std::size_t size() const FMT_NOEXCEPT { return size_; }
 
