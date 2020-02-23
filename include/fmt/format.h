@@ -2953,7 +2953,7 @@ struct formatter<T, Char,
   template <typename Char>                                                    \
   struct formatter<Type, Char> : formatter<Base, Char> {                      \
     template <typename FormatContext>                                         \
-    auto format(const Type& val, FormatContext& ctx) -> decltype(ctx.out()) { \
+    auto format(Type const& val, FormatContext& ctx) -> decltype(ctx.out()) { \
       return formatter<Base, Char>::format(val, ctx);                         \
     }                                                                         \
   }
