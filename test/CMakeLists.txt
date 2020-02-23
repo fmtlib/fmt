@@ -24,7 +24,7 @@ endif ()
 if (MSVC)
   # Workaround a bug in implementation of variadic templates in MSVC11.
   target_compile_definitions(gmock PUBLIC _VARIADIC_MAX=10)
-  
+
   # Disable MSVC warnings of _CRT_INSECURE_DEPRECATE functions.
   target_compile_definitions(gmock PRIVATE _CRT_SECURE_NO_WARNINGS)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -103,6 +103,7 @@ endif ()
 if (NOT (MSVC AND BUILD_SHARED_LIBS))
   add_fmt_test(format-impl-test)
 endif ()
+add_fmt_test(iterator-test)
 add_fmt_test(locale-test)
 add_fmt_test(ostream-test)
 add_fmt_test(compile-test)
