@@ -43,12 +43,6 @@
 
 #include "core.h"
 
-#ifdef __clang__
-#  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
-#else
-#  define FMT_CLANG_VERSION 0
-#endif
-
 #ifdef __INTEL_COMPILER
 #  define FMT_ICC_VERSION __INTEL_COMPILER
 #elif defined(__ICL)
