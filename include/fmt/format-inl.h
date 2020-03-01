@@ -578,7 +578,7 @@ class bigint {
   }
 
   void assign(uint64_t n) {
-    int num_bigits = 0;
+    size_t num_bigits = 0;
     do {
       bigits_[num_bigits++] = n & ~bigit(0);
       n >>= bigit_bits;
