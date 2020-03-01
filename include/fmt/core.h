@@ -1460,7 +1460,7 @@ make_args_checked(const S& format_str,
       all_true<(!std::is_base_of<view, remove_reference_t<Args>>::value ||
                 !std::is_reference<Args>::value)...>::value,
       "passing views as lvalues is disallowed");
-  check_format_string<remove_const_t<remove_reference_t<Args>>...>(format_str);
+  check_format_string<Args...>(format_str);
   return {args...};
 }
 

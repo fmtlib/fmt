@@ -1859,6 +1859,8 @@ TEST(FormatTest, CustomFormatCompileTimeString) {
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), Answer()));
   Answer answer;
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), answer));
+  char buf[10] = {};
+  fmt::format_to(buf, FMT_STRING("{}"), answer);
   const Answer const_answer = Answer();
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), const_answer));
 }

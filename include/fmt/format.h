@@ -2641,10 +2641,9 @@ FMT_CONSTEXPR bool do_check_format_string(basic_string_view<Char> s,
 template <typename... Args, typename S,
           enable_if_t<(is_compile_string<S>::value), int>>
 void check_format_string(S format_str) {
-  FMT_CONSTEXPR_DECL bool invalid_format =
-      internal::do_check_format_string<typename S::char_type,
-                                       internal::error_handler, Args...>(
-          to_string_view(format_str));
+  FMT_CONSTEXPR_DECL bool invalid_format = internal::do_check_format_string<
+      typename S::char_type, internal::error_handler,
+      remove_const_t<remove_reference_t<Args>>...>(to_string_view(format_str));
   (void)invalid_format;
 }
 
