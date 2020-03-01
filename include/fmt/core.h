@@ -36,6 +36,12 @@
 #  define FMT_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
+#ifdef __clang__
+#  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
+#else
+#  define FMT_CLANG_VERSION 0
+#endif
+
 #if defined(__GNUC__) && !defined(__clang__)
 #  define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #else
