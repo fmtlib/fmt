@@ -526,7 +526,7 @@ class bigint {
     FMT_ASSERT(compare(*this, other) >= 0, "");
     bigit borrow = 0;
     int i = other.exp_ - exp_;
-    for (int j = 0, n = static_cast<int>(other.bigits_.size()); j != n;
+    for (size_t j = 0, n = other.bigits_.size(); j != n;
          ++i, ++j) {
       subtract_bigits(i, other.bigits_[j], borrow);
     }
@@ -578,7 +578,7 @@ class bigint {
   }
 
   void assign(uint64_t n) {
-    int num_bigits = 0;
+    size_t num_bigits = 0;
     do {
       bigits_[num_bigits++] = n & ~bigit(0);
       n >>= bigit_bits;
