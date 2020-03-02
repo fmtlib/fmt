@@ -1004,7 +1004,7 @@ void fallback_format(Double d, buffer<char>& buf, int& exp10) {
   if (!upper) upper = &lower;
   // Invariant: value == (numerator / denominator) * pow(10, exp10).
   bool even = (value.f & 1) == 0;
-  int num_digits = 0;
+  size_t num_digits = 0;
   char* data = buf.data();
   for (;;) {
     int digit = numerator.divmod_assign(denominator);
