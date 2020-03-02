@@ -36,6 +36,12 @@
 #  define FMT_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
+#define FMT_HAS_CPP14_ATTRIBUTE(attribute) \
+  (__cplusplus >= 201402L && FMT_HAS_CPP_ATTRIBUTE(attribute))
+
+#define FMT_HAS_CPP17_ATTRIBUTE(attribute) \
+  (__cplusplus >= 201703L && FMT_HAS_CPP_ATTRIBUTE(attribute))
+
 #ifdef __clang__
 #  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 #else
@@ -132,9 +138,16 @@
 #  define FMT_NORETURN
 #endif
 
+#ifndef FMT_MAYBE_UNUSED
+#  if FMT_HAS_CPP17_ATTRIBUTE(maybe_unused)
+#    define FMT_MAYBE_UNUSED [[maybe_unused]]
+#  else
+#    define FMT_MAYBE_UNUSED
+#  endif
+#endif
+
 #ifndef FMT_DEPRECATED
-#  if (FMT_HAS_CPP_ATTRIBUTE(deprecated) && __cplusplus >= 201402L) || \
-      FMT_MSC_VER >= 1900
+#  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VER >= 1900
 #    define FMT_DEPRECATED [[deprecated]]
 #  else
 #    if defined(__GNUC__) || defined(__clang__)
