@@ -515,9 +515,12 @@ class bigint {
   }
 
   void remove_leading_zeros() {
-    int num_bigits = static_cast<int>(bigits_.size()) - 1;
-    while (num_bigits > 0 && bigits_[num_bigits] == 0) --num_bigits;
-    bigits_.resize(num_bigits + 1);
+    size_t old_bigits = bigits_.size();
+    size_t new_bigits = old_bigits;
+    while (new_bigits > 1 && bigits_[new_bigits-1] == 0) --new_bigits;
+    if (new_bigits != old_bigits) {
+      bigits_.resize(new_bigits);
+    }
   }
 
   // Computes *this -= other assuming aligned bigints and *this >= other.
