@@ -3547,7 +3547,7 @@ FMT_END_NAMESPACE
 #define FMT_STRING_IMPL(s, ...)                              \
   [] {                                                       \
     /* Use a macro-like name to avoid shadowing warnings. */ \
-    struct FMT_STRING : fmt::compile_string {                \
+    struct FMT_COMPILE_STRING : fmt::compile_string {        \
       using char_type = fmt::remove_cvref_t<decltype(*s)>;   \
       __VA_ARGS__ FMT_CONSTEXPR                              \
       operator fmt::basic_string_view<char_type>() const {   \
@@ -3555,7 +3555,7 @@ FMT_END_NAMESPACE
         return fmt::internal::literal_to_view(s);            \
       }                                                      \
     };                                                       \
-    return FMT_STRING();                                     \
+    return FMT_COMPILE_STRING();                             \
   }()
 
 /**
