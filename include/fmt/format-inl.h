@@ -86,6 +86,7 @@ FMT_FUNC int safe_strerror(int error_code, char*& buffer,
     }
 
     // Handle the result of GNU-specific version of strerror_r.
+    FMT_MAYBE_UNUSED
     int handle(char* message) {
       // If the buffer is full then the message is probably truncated.
       if (message == buffer_ && strlen(buffer_) == buffer_size_ - 1)
@@ -95,11 +96,13 @@ FMT_FUNC int safe_strerror(int error_code, char*& buffer,
     }
 
     // Handle the case when strerror_r is not available.
+    FMT_MAYBE_UNUSED
     int handle(internal::null<>) {
       return fallback(strerror_s(buffer_, buffer_size_, error_code_));
     }
 
     // Fallback to strerror_s when strerror_r is not available.
+    FMT_MAYBE_UNUSED
     int fallback(int result) {
       // If the buffer is full then the message is probably truncated.
       return result == 0 && strlen(buffer_) == buffer_size_ - 1 ? ERANGE

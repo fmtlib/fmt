@@ -71,7 +71,7 @@
 #  else
 #    define FMT_FALLTHROUGH
 #  endif
-#elif (FMT_HAS_CPP_ATTRIBUTE(fallthrough) && (__cplusplus >= 201703)) || \
+#elif FMT_HAS_CPP17_ATTRIBUTE(fallthrough) || \
     (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #  define FMT_FALLTHROUGH [[fallthrough]]
 #else
@@ -3549,7 +3549,7 @@ FMT_END_NAMESPACE
     /* Use a macro-like name to avoid shadowing warnings. */ \
     struct FMT_COMPILE_STRING : fmt::compile_string {        \
       using char_type = fmt::remove_cvref_t<decltype(*s)>;   \
-      __VA_ARGS__ FMT_CONSTEXPR                              \
+      FMT_MAYBE_UNUSED __VA_ARGS__ FMT_CONSTEXPR             \
       operator fmt::basic_string_view<char_type>() const {   \
         /* FMT_STRING only accepts string literals. */       \
         return fmt::internal::literal_to_view(s);            \
