@@ -508,7 +508,7 @@ class bigint {
 
   friend struct formatter<bigint>;
 
-  void subtract_bigits(int index, bigit other, bigit& borrow) {
+  void subtract_bigits(size_t index, bigit other, bigit& borrow) {
     auto result = static_cast<double_bigit>(bigits_[index]) - other - borrow;
     bigits_[index] = static_cast<bigit>(result);
     borrow = static_cast<bigit>(result >> (bigit_bits * 2 - 1));
@@ -525,7 +525,7 @@ class bigint {
     FMT_ASSERT(other.exp_ >= exp_, "unaligned bigints");
     FMT_ASSERT(compare(*this, other) >= 0, "");
     bigit borrow = 0;
-    int i = other.exp_ - exp_;
+    size_t i = size_t(other.exp_ - exp_);
     for (size_t j = 0, n = other.bigits_.size(); j != n;
          ++i, ++j) {
       subtract_bigits(i, other.bigits_[j], borrow);
