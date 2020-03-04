@@ -526,8 +526,7 @@ class bigint {
     FMT_ASSERT(compare(*this, other) >= 0, "");
     bigit borrow = 0;
     int i = other.exp_ - exp_;
-    for (size_t j = 0, n = other.bigits_.size(); j != n;
-         ++i, ++j) {
+    for (size_t j = 0, n = other.bigits_.size(); j != n; ++i, ++j) {
       subtract_bigits(i, other.bigits_[j], borrow);
     }
     while (borrow > 0) subtract_bigits(i, 0, borrow);
