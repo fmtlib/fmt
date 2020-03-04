@@ -756,7 +756,7 @@ enum result {
 }
 
 // A version of count_digits optimized for grisu_gen_digits.
-inline unsigned grisu_count_digits(uint32_t n) {
+inline int grisu_count_digits(uint32_t n) {
   if (n < 10) return 1;
   if (n < 100) return 2;
   if (n < 1000) return 3;
