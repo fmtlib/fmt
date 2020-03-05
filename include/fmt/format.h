@@ -566,7 +566,8 @@ class FMT_DEPRECATED u8string_view : public basic_string_view<char8_t> {
 
 #if FMT_USE_USER_DEFINED_LITERALS
 inline namespace literals {
-inline basic_string_view<char8_t> operator"" _u(const char* s, std::size_t n) {
+FMT_DEPRECATED inline basic_string_view<char8_t> operator"" _u(const char* s,
+                                                               std::size_t n) {
   return {reinterpret_cast<const char8_t*>(s), n};
 }
 }  // namespace literals
