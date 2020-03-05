@@ -3544,18 +3544,18 @@ FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 FMT_END_NAMESPACE
 
-#define FMT_STRING_IMPL(s, ...)                              \
-  [] {                                                       \
-    /* Use a macro-like name to avoid shadowing warnings. */ \
-    struct FMT_COMPILE_STRING : fmt::compile_string {        \
-      using char_type = fmt::remove_cvref_t<decltype(*s)>;   \
-      __VA_ARGS__ FMT_CONSTEXPR                              \
-      operator fmt::basic_string_view<char_type>() const {   \
-        /* FMT_STRING only accepts string literals. */       \
-        return fmt::internal::literal_to_view(s);            \
-      }                                                      \
-    };                                                       \
-    return FMT_COMPILE_STRING();                             \
+#define FMT_STRING_IMPL(s, ...)                                       \
+  []() -> fmt::basic_string_view<fmt::remove_cvref_t<decltype(*s)>> { \
+    /* Use a macro-like name to avoid shadowing warnings. */          \
+    struct FMT_COMPILE_STRING : fmt::compile_string {                 \
+      using char_type = fmt::remove_cvref_t<decltype(*s)>;            \
+      __VA_ARGS__ FMT_CONSTEXPR                                       \
+      operator fmt::basic_string_view<char_type>() const {            \
+        /* FMT_STRING only accepts string literals. */                \
+        return fmt::internal::literal_to_view(s);                     \
+      }                                                               \
+    };                                                                \
+    return FMT_COMPILE_STRING();                                      \
   }()
 
 /**

@@ -2570,3 +2570,13 @@ TEST(FormatTest, FormatUTF8Precision) {
   EXPECT_EQ(result.size(), 5);
   EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
 }
+
+TEST(FormatTest, Issue1455) {
+#if (__cplusplus >= 201703L)
+  if constexpr(true) {
+    EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), "foo"));
+  } else {
+    EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), "foo"));
+  }
+#endif
+}
