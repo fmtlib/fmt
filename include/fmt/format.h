@@ -473,13 +473,18 @@ inline size_t count_code_points(basic_string_view<Char> s) {
 }
 
 // Counts the number of code points in a UTF-8 string.
-inline size_t count_code_points(basic_string_view<char8_t> s) {
-  const char8_t* data = s.data();
+inline size_t count_code_points(basic_string_view<char> s) {
+  const char* data = s.data();
   size_t num_code_points = 0;
   for (size_t i = 0, size = s.size(); i != size; ++i) {
     if ((data[i] & 0xc0) != 0x80) ++num_code_points;
   }
   return num_code_points;
+}
+
+inline size_t count_code_points(basic_string_view<char8_t> s) {
+  return count_code_points(basic_string_view<char>(
+      reinterpret_cast<const char*>(s.data()), s.size()));
 }
 
 template <typename Char>
@@ -1603,6 +1608,18 @@ template <typename Range> class basic_writer {
     }
   };
 
+  struct bytes_writer {
+    string_view bytes;
+
+    size_t size() const { return bytes.size(); }
+    size_t width() const { return bytes.size(); }
+
+    template <typename It> void operator()(It&& it) const {
+      const char* data = bytes.data();
+      it = copy_str<char>(data, data + size(), it);
+    }
+  };
+
   template <typename UIntPtr> struct pointer_writer {
     UIntPtr value;
     int num_digits;
@@ -1759,6 +1776,10 @@ template <typename Range> class basic_writer {
     if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
       size = code_point_index(s, to_unsigned(specs.precision));
     write(data, size, specs);
+  }
+
+  void write_bytes(string_view bytes, const format_specs& specs) {
+    write_padded(specs, bytes_writer{bytes});
   }
 
   template <typename UIntPtr>
@@ -3150,11 +3171,32 @@ class bytes {
   explicit bytes(string_view data) : data_(data) {}
 };
 
-template <> struct formatter<bytes> : formatter<string_view> {
+template <> struct formatter<bytes> {
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    using handler_type = internal::dynamic_specs_handler<ParseContext>;
+    internal::specs_checker<handler_type> handler(handler_type(specs_, ctx),
+                                                  internal::type::string_type);
+    auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
+    internal::check_string_type_spec(specs_.type, ctx.error_handler());
+    return it;
+  }
+
   template <typename FormatContext>
   auto format(bytes b, FormatContext& ctx) -> decltype(ctx.out()) {
-    return formatter<string_view>::format(b.data_, ctx);
+    internal::handle_dynamic_spec<internal::width_checker>(
+        specs_.width, specs_.width_ref, ctx);
+    internal::handle_dynamic_spec<internal::precision_checker>(
+        specs_.precision, specs_.precision_ref, ctx);
+    using range_type =
+        internal::output_range<typename FormatContext::iterator, char>;
+    internal::basic_writer<range_type> writer(range_type(ctx.out()));
+    writer.write_bytes(b.data_, specs_);
+    return writer.out();
   }
+
+ private:
+  internal::dynamic_format_specs<char> specs_;
 };
 
 template <typename It, typename Char> struct arg_join : internal::view {

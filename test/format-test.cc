@@ -6,6 +6,7 @@
 // For the license information refer to format.h.
 
 #include <stdint.h>
+
 #include <cctype>
 #include <cfloat>
 #include <climits>
@@ -987,7 +988,9 @@ TEST(FormatterTest, Width) {
   EXPECT_EQ("    0xcafe", format("{0:10}", reinterpret_cast<void*>(0xcafe)));
   EXPECT_EQ("x          ", format("{0:11}", 'x'));
   EXPECT_EQ("str         ", format("{0:12}", "str"));
+  EXPECT_EQ(fmt::format("{:*^5}", "🤡"), "**🤡**");
 }
+
 template <typename T> inline T const_check(T value) { return value; }
 
 TEST(FormatterTest, RuntimeWidth) {
