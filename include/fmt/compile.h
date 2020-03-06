@@ -351,7 +351,7 @@ template <int N, typename... Args> struct get_type_impl<N, type_list<Args...>> {
 template <int N, typename T>
 using get_type = typename get_type_impl<N, T>::type;
 
-template <typename T> struct is_static_compiled_format : std::false_type {};
+template <typename T> struct is_compiled_format : std::false_type {};
 
 template <typename Char> struct text {
   basic_string_view<Char> data;
@@ -365,7 +365,7 @@ template <typename Char> struct text {
 };
 
 template <typename Char>
-struct is_static_compiled_format<text<Char>> : std::true_type {};
+struct is_compiled_format<text<Char>> : std::true_type {};
 
 template <typename Char>
 constexpr text<Char> make_text(basic_string_view<Char> s, size_t pos,
@@ -413,7 +413,7 @@ template <typename Char, typename T, int N> struct field {
 };
 
 template <typename Char, typename T, int N>
-struct is_static_compiled_format<field<Char, T, N>> : std::true_type {};
+struct is_compiled_format<field<Char, T, N>> : std::true_type {};
 
 template <typename L, typename R> struct concat {
   L lhs;
@@ -428,7 +428,7 @@ template <typename L, typename R> struct concat {
 };
 
 template <typename L, typename R>
-struct is_static_compiled_format<concat<L, R>> : std::true_type {};
+struct is_compiled_format<concat<L, R>> : std::true_type {};
 
 template <typename L, typename R>
 constexpr concat<L, R> make_concat(L lhs, R rhs) {
@@ -518,19 +518,17 @@ constexpr auto compile(S format_str) {
   }
 }
 
-template <
-    typename CompiledFormat, typename... Args,
-    typename Char = typename CompiledFormat::char_type,
-    FMT_ENABLE_IF(internal::is_static_compiled_format<CompiledFormat>::value)>
+template <typename CompiledFormat, typename... Args,
+          typename Char = typename CompiledFormat::char_type,
+          FMT_ENABLE_IF(internal::is_compiled_format<CompiledFormat>::value)>
 std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   basic_memory_buffer<Char> buffer;
   cf.format(std::back_inserter(buffer), args...);
   return to_string(buffer);
 }
 
-template <
-    typename OutputIt, typename CompiledFormat, typename... Args,
-    FMT_ENABLE_IF(internal::is_static_compiled_format<CompiledFormat>::value)>
+template <typename OutputIt, typename CompiledFormat, typename... Args,
+          FMT_ENABLE_IF(internal::is_compiled_format<CompiledFormat>::value)>
 OutputIt format_to(OutputIt out, const CompiledFormat& cf,
                    const Args&... args) {
   return cf.format(out, args...);
