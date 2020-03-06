@@ -3544,7 +3544,7 @@ FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 FMT_END_NAMESPACE
 
-#if FMT_GCC_VERSION >= 900
+#if FMT_GCC_VERSION >= 800
 #  define FMT_STRING_RESULT(s)   ()->fmt::basic_string_view<fmt::remove_cvref_t<decltype(*s)>>
 #else
 #  define FMT_STRING_RESULT(s)
