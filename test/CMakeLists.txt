@@ -17,9 +17,7 @@ else ()
   target_compile_definitions(gmock PUBLIC GTEST_HAS_PTHREAD=0)
 endif ()
 
-if (NOT SUPPORTS_VARIADIC_TEMPLATES)
-  target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
-endif ()
+target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
 
 if (MSVC)
   # Workaround a bug in implementation of variadic templates in MSVC11.
