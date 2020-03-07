@@ -24,13 +24,24 @@ function(join result_var)
   set(${result_var} "${result}" PARENT_SCOPE)
 endfunction()
 
+# Sets a cache variable with a docstring joined from multiple arguments:
+#   set(<variable> <value>... CACHE <type> <docstring>...)
+# This allows splitting a long docstring for readability.
+function(set_doc)
+  cmake_parse_arguments(SET_DOC "" "" "CACHE" ${ARGN})
+  list(GET SET_DOC_CACHE 0 type)
+  list(REMOVE_AT SET_DOC_CACHE 0)
+  join(doc ${SET_DOC_CACHE})
+  set(${SET_DOC_UNPARSED_ARGUMENTS} CACHE ${type} ${doc})
+endfunction()
+
 # Set the default CMAKE_BUILD_TYPE to Release.
 # This should be done before the project command since the latter can set
 # CMAKE_BUILD_TYPE itself (it does so for nmake).
 if (MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
-  join(doc "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or "
-           "CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
-  set(CMAKE_BUILD_TYPE Release CACHE STRING ${doc})
+  set_doc(CMAKE_BUILD_TYPE Release CACHE STRING
+          "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or "
+          "CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif ()
 
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
@@ -131,7 +142,9 @@ if (MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
     set(MSBUILD_SETUP "call \"${WINSDK_SETENV}\"")
   endif ()
   # Set FrameworkPathOverride to get rid of MSB3644 warnings.
-  set(netfxpath "C:\\Program Files\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v4.0")
+  join(netfxpath
+       "C:\\Program Files\\Reference Assemblies\\Microsoft\\Framework\\"
+       ".NETFramework\\v4.0")
   file(WRITE run-msbuild.bat "
     ${MSBUILD_SETUP}
     ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"${netfxpath}\" %*")
@@ -210,7 +223,6 @@ add_library(fmt-header-only INTERFACE)
 add_library(fmt::fmt-header-only ALIAS fmt-header-only)
 
 target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
-
 target_compile_features(fmt-header-only INTERFACE ${FMT_REQUIRED_FEATURES})
 
 target_include_directories(fmt-header-only INTERFACE
@@ -221,8 +233,9 @@ target_include_directories(fmt-header-only INTERFACE
 if (FMT_INSTALL)
   include(GNUInstallDirs)
   include(CMakePackageConfigHelpers)
-  set(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
-      "Installation directory for cmake files, relative to ${CMAKE_INSTALL_PREFIX}.")
+  set_doc(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
+          "Installation directory for cmake files, relative to "
+          "${CMAKE_INSTALL_PREFIX}.")
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
   set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
@@ -233,14 +246,17 @@ if (FMT_INSTALL)
     set(INSTALL_TARGETS ${INSTALL_TARGETS} fmt-header-only)
   endif ()
 
-  set(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
-      "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
+  set_doc(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
+          "Installation directory for libraries, relative to "
+          "${CMAKE_INSTALL_PREFIX}.")
 
-  set(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRING
-      "Installation directory for include files, relative to ${CMAKE_INSTALL_PREFIX}.")
+  set_doc(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRINGS
+          "Installation directory for include files, relative to "
+          "${CMAKE_INSTALL_PREFIX}.")
 
-  set(FMT_PKGCONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig CACHE PATH
-      "Installation directory for pkgconfig (.pc) files, relative to ${CMAKE_INSTALL_PREFIX}.")
+  set_doc(FMT_PKGCONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig CACHE PATH
+          "Installation directory for pkgconfig (.pc) files, relative to "
+          "${CMAKE_INSTALL_PREFIX}.")
 
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
@@ -297,7 +313,7 @@ set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)
 if (MASTER_PROJECT AND EXISTS ${gitignore})
   # Get the list of ignored files from .gitignore.
   file (STRINGS ${gitignore} lines)
-  LIST(REMOVE_ITEM lines /doc/html)
+  list(REMOVE_ITEM lines /doc/html)
   foreach (line ${lines})
     string(REPLACE "." "[.]" line "${line}")
     string(REPLACE "*" ".*" line "${line}")
