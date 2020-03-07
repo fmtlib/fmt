@@ -542,12 +542,19 @@ constexpr auto compile(S format_str) -> internal::compiled_format<S, Args...> {
 #  endif  // __cpp_if_constexpr
 #endif    // FMT_USE_CONSTEXPR
 
-// Compiles the format string which must be a string literal.
+// Compiles the format string which must be a string literal or view.
 template <typename... Args, typename Char, size_t N>
 auto compile(const Char (&format_str)[N])
     -> internal::compiled_format<const Char*, Args...> {
   return internal::compiled_format<const Char*, Args...>(
       basic_string_view<Char>(format_str, N - 1));
+}
+
+template <typename Char>
+auto compile(const basic_string_view<Char>& format_str)
+    -> internal::compiled_format<const Char*> {
+  return internal::compiled_format<const Char*>(
+      format_str);
 }
 
 template <typename CompiledFormat, typename... Args,
