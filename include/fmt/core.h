@@ -147,8 +147,8 @@
 #  endif
 #endif
 
-// Workaround broken [[deprecated]] in the Intel compiler and NVCC.
-#if defined(__INTEL_COMPILER) || FMT_NVCC
+// Workaround broken [[deprecated]] in the Intel, PGI and NVCC compiler
+#if defined(__INTEL_COMPILER) || defined(__PGI) || FMT_NVCC
 #  define FMT_DEPRECATED_ALIAS
 #else
 #  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
@@ -259,7 +259,8 @@ namespace internal {
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
 template <typename... Ts> struct void_t_impl { using type = void; };
 
-FMT_NORETURN FMT_API void assert_fail(const char* file, int line, const char* message);
+FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
+                                      const char* message);
 
 #ifndef FMT_ASSERT
 #  ifdef NDEBUG
