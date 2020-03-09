@@ -147,7 +147,7 @@
 #  endif
 #endif
 
-// Workaround broken [[deprecated]] in the Intel, PGI and NVCC compiler
+// Workaround broken [[deprecated]] in the Intel, PGI and NVCC compilers.
 #if defined(__INTEL_COMPILER) || defined(__PGI) || FMT_NVCC
 #  define FMT_DEPRECATED_ALIAS
 #else
