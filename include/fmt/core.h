@@ -1005,6 +1005,10 @@ template <typename Context> class basic_format_arg {
   friend FMT_CONSTEXPR basic_format_arg<ContextType> internal::make_arg(
       const T& value);
 
+  template <typename ContextType>
+  friend FMT_CONSTEXPR basic_format_arg<ContextType> internal::make_arg(
+      const named_arg_base<typename ContextType::char_type>& value);
+
   template <typename Visitor, typename Ctx>
   friend FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
                                              const basic_format_arg<Ctx>& arg)
@@ -1177,6 +1181,15 @@ template <bool IS_PACKED, typename Context, typename T,
 inline basic_format_arg<Context> make_arg(const T& value) {
   return make_arg<Context>(value);
 }
+
+template <typename Context>
+FMT_CONSTEXPR basic_format_arg<Context> make_arg(
+        const named_arg_base<typename Context::char_type>& value) {
+  basic_format_arg<Context> arg;
+  arg.type_ = type::named_arg_type;
+  arg.value_ = value;
+  return arg;
+}
 }  // namespace internal
 
 // Formatting context.
@@ -1286,6 +1299,8 @@ inline format_arg_store<Context, Args...> make_format_args(
   return {args...};
 }
 
+template <typename Context, typename... Args> class dynamic_format_arg_store;
+
 /**
   \rst
   A view of a collection of formatting arguments. To avoid lifetime issues it
@@ -1355,6 +1370,17 @@ template <typename Context> class basic_format_args {
   basic_format_args(const format_arg_store<Context, Args...>& store)
       : types_(store.types) {
     set_data(store.data_);
+  }
+
+  /**
+   \rst
+   Constructs a `dynamic_basic_format_args` object from `~fmt::format_arg_store`.
+   \endrst
+   */
+  template <typename... Args>
+  basic_format_args(const dynamic_format_arg_store<Context, Args...>& store)
+      : types_(store.get_types()) {
+    set_data(store.data_.data());
   }
 
   /**
