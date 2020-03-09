@@ -26,7 +26,7 @@ TEST(FormatDynArgsTest, StringsAndRefs) {
   char str[]{"1234567890"};
   store.push_back(str);
   store.push_back(std::cref(str));
-  store.push_back(std::string_view{str});
+  store.push_back(fmt::string_view{str});
   str[0] = 'X';
 
   std::string result = fmt::vformat(
@@ -76,7 +76,8 @@ TEST(FormatDynArgsTest, CustomFormat) {
 TEST(FormatDynArgsTest, NamedArgByRef) {
   fmt::dynamic_format_arg_store<fmt::format_context> store;
   auto a1 = fmt::arg("a1_", 42);
-  store.push_back(std::cref(a1));
+  auto ref = std::cref(a1);
+  store.push_back(ref);
 
   std::string result = fmt::vformat(
       "{a1_}", // and {} and {}",
@@ -106,6 +107,8 @@ TEST(FormatDynArgsTest, NamedStrings) {
   EXPECT_EQ("1234567890 and X234567890", result);
 }
 
+#ifdef FMT_HAS_VARIANT
+
 TEST(FormatDynArgsTest, NamedCustomFormat) {
   fmt::dynamic_format_arg_store<fmt::format_context, Custom> store;
   Custom c{};
@@ -122,3 +125,5 @@ TEST(FormatDynArgsTest, NamedCustomFormat) {
 
   EXPECT_EQ("cust=0 and cust=1 and cust=3", result);
 }
+
+#endif // FMT_HAS_VARIANT

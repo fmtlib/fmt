@@ -1007,7 +1007,7 @@ template <typename Context> class basic_format_arg {
 
   template <typename ContextType>
   friend FMT_CONSTEXPR basic_format_arg<ContextType> internal::make_arg(
-      const named_arg_base<typename ContextType::char_type>& value);
+      const internal::named_arg_base<typename ContextType::char_type>& value);
 
   template <typename Visitor, typename Ctx>
   friend FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,

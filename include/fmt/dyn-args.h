@@ -36,7 +36,7 @@ struct is_string_view<std::basic_string_view<Char, Traits>, Char>
 
 #ifdef FMT_USE_EXPERIMENTAL_STRING_VIEW
 template<typename Traits, typename Char>
-struct is_string_view<std::expeimental::basic_string_view<Char, Traits>, Char>
+struct is_string_view<std::experimental::basic_string_view<Char, Traits>, Char>
 : std::true_type{};
 #endif
 
