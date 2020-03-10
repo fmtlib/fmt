@@ -969,6 +969,11 @@ template <typename Context> struct arg_mapper {
     return val;
   }
 
+  FMT_CONSTEXPR const named_arg_base<char_type>& map(
+      const named_arg_base<char_type>& val){
+    return val;
+  }
+
   int map(...) {
     constexpr bool formattable = sizeof(Context) == 0;
     static_assert(
@@ -1004,10 +1009,6 @@ template <typename Context> class basic_format_arg {
   template <typename ContextType, typename T>
   friend FMT_CONSTEXPR basic_format_arg<ContextType> internal::make_arg(
       const T& value);
-
-  template <typename ContextType>
-  friend FMT_CONSTEXPR basic_format_arg<ContextType> internal::make_arg(
-      const internal::named_arg_base<typename ContextType::char_type>& value);
 
   template <typename Visitor, typename Ctx>
   friend FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
@@ -1180,15 +1181,6 @@ template <bool IS_PACKED, typename Context, typename T,
           FMT_ENABLE_IF(!IS_PACKED)>
 inline basic_format_arg<Context> make_arg(const T& value) {
   return make_arg<Context>(value);
-}
-
-template <typename Context>
-FMT_CONSTEXPR basic_format_arg<Context> make_arg(
-        const named_arg_base<typename Context::char_type>& value) {
-  basic_format_arg<Context> arg;
-  arg.type_ = type::named_arg_type;
-  arg.value_ = value;
-  return arg;
 }
 }  // namespace internal
 

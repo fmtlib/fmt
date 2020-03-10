@@ -191,6 +191,8 @@ class dynamic_format_arg_store
     internal::arg_mapper<Context>().map(named_with_stored_parts);
     named_args_.push_front(named_with_stored_parts);
     data_.emplace_back(internal::make_arg<Context>(named_args_.front()));
+//    data_.emplace_back(internal::make_arg_from_serialized_named<Context>(
+//            named_args_.front()));
   }
 };
 
