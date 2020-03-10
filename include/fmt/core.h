@@ -296,6 +296,18 @@ struct int128_t {};
 struct uint128_t {};
 #endif
 
+#ifndef FMT_USE_FLOAT
+#  define FMT_USE_FLOAT 1
+#endif
+
+#ifndef FMT_USE_DOUBLE
+#  define FMT_USE_DOUBLE 1
+#endif
+
+#ifndef FMT_USE_LONG_DOUBLE
+#  define FMT_USE_LONG_DOUBLE 1
+#endif
+
 // Casts a nonnegative integer to unsigned.
 template <typename Int>
 FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
@@ -1083,11 +1095,23 @@ FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
   case internal::type::char_type:
     return vis(arg.value_.char_value);
   case internal::type::float_type:
+#if FMT_USE_FLOAT
     return vis(arg.value_.float_value);
+#else
+    break;
+#endif
   case internal::type::double_type:
+#if FMT_USE_DOUBLE
     return vis(arg.value_.double_value);
+#else
+    break;
+#endif
   case internal::type::long_double_type:
+#if FMT_USE_LONG_DOUBLE
     return vis(arg.value_.long_double_value);
+#else
+    break;
+#endif
   case internal::type::cstring_type:
     return vis(arg.value_.string.data);
   case internal::type::string_type:

@@ -1685,8 +1685,9 @@ template <typename Range> class basic_writer {
     handle_int_type_spec(spec.type, int_writer<T, Spec>(*this, value, spec));
   }
 
+#if FMT_USE_FLOAT || FMT_USE_DOUBLE || FMT_USE_LONG_DOUBLE
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-  void write(T value, format_specs specs = {}) {
+  void write_float(T value, format_specs specs = {}) {
     float_specs fspecs = parse_float_type_spec(specs);
     fspecs.sign = specs.sign;
     if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
@@ -1743,6 +1744,17 @@ template <typename Range> class basic_writer {
                                                 static_cast<int>(buffer.size()),
                                                 exp, fspecs, point));
   }
+#endif
+
+#if FMT_USE_FLOAT
+  void write(float value, format_specs specs = {}) { write_float(value, specs); }
+#endif
+#if FMT_USE_DOUBLE
+  void write(double value, format_specs specs = {}) { write_float(value, specs); }
+#endif
+#if FMT_USE_LONG_DOUBLE
+  void write(long double value, format_specs specs = {}) { write_float(value, specs); }
+#endif
 
   void write(char value) {
     auto&& it = reserve(1);
@@ -2925,9 +2937,25 @@ struct formatter<T, Char,
           &specs_, internal::char_specs_checker<decltype(eh)>(specs_.type, eh));
       break;
     case internal::type::float_type:
-    case internal::type::double_type:
-    case internal::type::long_double_type:
+#if FMT_USE_FLOAT
       internal::parse_float_type_spec(specs_, eh);
+#else
+      FMT_ASSERT(false, "float support disabled");
+#endif
+      break;
+    case internal::type::double_type:
+#if FMT_USE_DOUBLE
+      internal::parse_float_type_spec(specs_, eh);
+#else
+      FMT_ASSERT(false, "double support disabled");
+#endif
+      break;
+    case internal::type::long_double_type:
+#if FMT_USE_LONG_DOUBLE
+      internal::parse_float_type_spec(specs_, eh);
+#else
+      FMT_ASSERT(false, "long double support disabled");
+#endif
       break;
     case internal::type::cstring_type:
       internal::handle_cstring_type_spec(
