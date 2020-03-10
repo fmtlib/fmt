@@ -4,9 +4,9 @@
 #ifndef FMT_DYN_ARGS_H_
 #define FMT_DYN_ARGS_H_
 
-#include <vector>
 #include <forward_list>
 #include <functional>
+#include <vector>
 
 #include "core.h"
 
@@ -21,53 +21,46 @@ FMT_BEGIN_NAMESPACE
 
 namespace internal {
 
-template<typename T, typename Char>
-struct is_string_view : std::false_type{};
+template <typename T, typename Char> struct is_string_view : std::false_type {};
 
-template<typename Char>
-struct is_string_view<basic_string_view<Char>, Char>
-: std::true_type{};
+template <typename Char>
+struct is_string_view<basic_string_view<Char>, Char> : std::true_type {};
 
 #ifdef FMT_USE_STRING_VIEW
-template<typename Traits, typename Char>
+template <typename Traits, typename Char>
 struct is_string_view<std::basic_string_view<Char, Traits>, Char>
-: std::true_type{};
+    : std::true_type {};
 #endif
 
 #ifdef FMT_USE_EXPERIMENTAL_STRING_VIEW
-template<typename Traits, typename Char>
+template <typename Traits, typename Char>
 struct is_string_view<std::experimental::basic_string_view<Char, Traits>, Char>
-: std::true_type{};
+    : std::true_type {};
 #endif
 
-template<typename T>
-struct is_ref_wrapper : std::false_type{};
+template <typename T> struct is_ref_wrapper : std::false_type {};
 
-template<typename T>
-struct is_ref_wrapper<std::reference_wrapper<T>> : std::true_type{};
+template <typename T>
+struct is_ref_wrapper<std::reference_wrapper<T>> : std::true_type {};
 
-template<typename T, typename Context>
-struct need_dyn_copy{
+template <typename T, typename Context> struct need_dyn_copy {
   using mapped_type = mapped_type_constant<T, Context>;
   static_assert(mapped_type::value != internal::type::named_arg_type,
-    "Bug indicator. Named arguments must be processed separately");
+                "Bug indicator. Named arguments must be processed separately");
 
-  using type = std::integral_constant<bool,!(
-      is_ref_wrapper<T>::value ||
-      is_string_view<T, typename Context::char_type>::value ||
-      (
-        mapped_type::value != internal::type::cstring_type &&
-        mapped_type::value != internal::type::custom_type &&
-        mapped_type::value != internal::type::string_type
-      )
-  )>;
+  using type = std::integral_constant<
+      bool, !(is_ref_wrapper<T>::value ||
+              is_string_view<T, typename Context::char_type>::value ||
+              (mapped_type::value != internal::type::cstring_type &&
+               mapped_type::value != internal::type::custom_type &&
+               mapped_type::value != internal::type::string_type))>;
 };
 
-template<typename T, typename Context> using need_dyn_copy_t =
-    typename need_dyn_copy<T, Context>::type;
+template <typename T, typename Context>
+using need_dyn_copy_t = typename need_dyn_copy<T, Context>::type;
 
-template<typename T, typename StorageValue>
-const T& get(const StorageValue& v){
+template <typename T, typename StorageValue>
+const T& get(const StorageValue& v) {
   return v;
 }
 
@@ -98,18 +91,18 @@ class dynamic_format_arg_store
   using string_type = std::basic_string<char_type>;
 #ifdef FMT_HAS_VARIANT
   using storage_item_type =
-      conditional_t<has_custom_args,
-                    std::variant<string_type, Args...>,
+      conditional_t<has_custom_args, std::variant<string_type, Args...>,
                     string_type>;
 #else
-  static_assert(!has_custom_args, "std::variant<> is required to support "
-      "custom types in dynamic_format_arg_store");
+  static_assert(!has_custom_args,
+                "std::variant<> is required to support "
+                "custom types in dynamic_format_arg_store");
   using storage_item_type = string_type;
 #endif
   using value_type = basic_format_arg<Context>;
   using named_value_type = internal::named_arg_base<char_type>;
 
-  template<typename T>
+  template <typename T>
   using storaged_type =
       conditional_t<internal::is_string<T>::value, string_type, T>;
 
@@ -128,8 +121,7 @@ class dynamic_format_arg_store
 
   friend class basic_format_args<Context>;
 
-  template<typename T>
-  const T& get_last_pushed() const{
+  template <typename T> const T& get_last_pushed() const {
     using internal::get;
     return get<T>(storage_.front());
   }
@@ -138,23 +130,23 @@ class dynamic_format_arg_store
     return internal::is_unpacked_bit | data_.size();
   }
 
-  template<typename T> const T& stored_value(const T& arg, std::false_type) {
+  template <typename T> const T& stored_value(const T& arg, std::false_type) {
     return arg;
   }
 
-  template<typename T> const T& stored_value(
-      const std::reference_wrapper<T>& arg, std::false_type) {
+  template <typename T>
+  const T& stored_value(const std::reference_wrapper<T>& arg, std::false_type) {
     return arg.get();
   }
 
-  template<typename T> const storaged_type<T>& stored_value(const T& arg,
-                                                            std::true_type) {
+  template <typename T>
+  const storaged_type<T>& stored_value(const T& arg, std::true_type) {
     using type = storaged_type<T>;
     storage_.emplace_front(type{arg});
     return get_last_pushed<type>();
   }
 
-  template<typename T> void emplace_arg(const T& arg) {
+  template <typename T> void emplace_arg(const T& arg) {
     data_.emplace_back(internal::make_arg<Context>(arg));
   }
 
@@ -176,23 +168,23 @@ class dynamic_format_arg_store
     emplace_arg(arg.get());
   }
 
-  template <typename T> void push_back(
-      const internal::named_arg<T, char_type>& arg) {
+  template <typename T>
+  void push_back(const internal::named_arg<T, char_type>& arg) {
     // Named argument is tricky. It's returned by value from fmt::arg()
     // and then pointer to it is stored in basic_format_arg<>.
     // So after end of expression the pointer becomes dangling.
     storage_.emplace_front(string_type{arg.name.data(), arg.name.size()});
     basic_string_view<char_type> name = get_last_pushed<string_type>();
-    const auto& val = stored_value(
-        arg.value, internal::need_dyn_copy_t<T, Context>{});
+    const auto& val =
+        stored_value(arg.value, internal::need_dyn_copy_t<T, Context>{});
 
     auto named_with_stored_parts = fmt::arg(name, val);
     // Serialize value into base
     internal::arg_mapper<Context>().map(named_with_stored_parts);
     named_args_.push_front(named_with_stored_parts);
     data_.emplace_back(internal::make_arg<Context>(named_args_.front()));
-//    data_.emplace_back(internal::make_arg_from_serialized_named<Context>(
-//            named_args_.front()));
+    //    data_.emplace_back(internal::make_arg_from_serialized_named<Context>(
+    //            named_args_.front()));
   }
 };
 

@@ -259,7 +259,8 @@ namespace internal {
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
 template <typename... Ts> struct void_t_impl { using type = void; };
 
-FMT_NORETURN FMT_API void assert_fail(const char* file, int line, const char* message);
+FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
+                                      const char* message);
 
 #ifndef FMT_ASSERT
 #  ifdef NDEBUG
@@ -970,7 +971,7 @@ template <typename Context> struct arg_mapper {
   }
 
   FMT_CONSTEXPR const named_arg_base<char_type>& map(
-      const named_arg_base<char_type>& val){
+      const named_arg_base<char_type>& val) {
     return val;
   }
 
@@ -1366,8 +1367,8 @@ template <typename Context> class basic_format_args {
 
   /**
    \rst
-   Constructs a `dynamic_basic_format_args` object from `~fmt::format_arg_store`.
-   \endrst
+   Constructs a `dynamic_basic_format_args` object from
+   `~fmt::format_arg_store`. \endrst
    */
   template <typename... Args>
   basic_format_args(const dynamic_format_arg_store<Context, Args...>& store)
