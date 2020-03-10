@@ -159,8 +159,8 @@ class dynamic_format_arg_store
   }
 
  public:
-  dynamic_format_arg_store() FMT_NOEXCEPT = default;
-  ~dynamic_format_arg_store() FMT_NOEXCEPT = default;
+  dynamic_format_arg_store() = default;
+  ~dynamic_format_arg_store() = default;
 
   dynamic_format_arg_store(const dynamic_format_arg_store&) = delete;
   dynamic_format_arg_store& operator=(const dynamic_format_arg_store&) = delete;

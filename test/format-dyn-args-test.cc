@@ -37,20 +37,25 @@ TEST(FormatDynArgsTest, StringsAndRefs) {
 }
 
 struct Custom{ int i{0}; };
+FMT_BEGIN_NAMESPACE
+
 template <>
-struct fmt::formatter<Custom> {
-  constexpr auto parse(format_parse_context& ctx) {
+struct formatter<Custom> {
+  auto parse(format_parse_context& ctx) const -> decltype(ctx.begin())
+  {
     return ctx.begin();
   }
 
   template <typename FormatContext>
-    auto format(const Custom& p, FormatContext& ctx) {
-      // ctx.out() is an output iterator to write to.
-      return format_to(
+    auto format(const Custom& p, FormatContext& ctx) ->
+      decltype(format_to(ctx.out(),
+               std::declval<typename FormatContext::char_type const*>())) {
+    return format_to(
           ctx.out(),
           "cust={}", p.i);
     }
 };
+FMT_END_NAMESPACE
 
 #ifdef FMT_HAS_VARIANT
 
@@ -75,9 +80,19 @@ TEST(FormatDynArgsTest, CustomFormat) {
 
 TEST(FormatDynArgsTest, NamedArgByRef) {
   fmt::dynamic_format_arg_store<fmt::format_context> store;
-  auto a1 = fmt::arg("a1_", 42);
-  auto ref = std::cref(a1);
-  store.push_back(ref);
+
+  // Note: fmt::arg() constructs an object which holds a reference
+  // to its value. It's not an aggregate, so it doesn't extend the
+  // reference lifetime. As a result, it's a very bad idea passing temporary
+  // as a named argument value. Only GCC with optimization level >0
+  // complains about this.
+  //
+  // A real life usecase is when you have both name and value alive
+  // guarantee their lifetime and thus don't want them to be copied into 
+  // storages.
+  int a1_val{42};
+  auto a1 = fmt::arg("a1_", a1_val);
+  store.push_back(std::cref(a1));
 
   std::string result = fmt::vformat(
       "{a1_}", // and {} and {}",
