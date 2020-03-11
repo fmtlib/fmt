@@ -303,6 +303,8 @@ class printf_arg_formatter : public internal::arg_formatter_base<Range> {
 };
 
 template <typename T> struct printf_formatter {
+  printf_formatter() = delete;
+
   template <typename ParseContext>
   auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
@@ -320,6 +322,7 @@ template <typename OutputIt, typename Char> class basic_printf_context {
  public:
   /** The character type for the output. */
   using char_type = Char;
+  using iterator = OutputIt;
   using format_arg = basic_format_arg<basic_printf_context>;
   template <typename T> using formatter_type = printf_formatter<T>;
 
@@ -354,6 +357,8 @@ template <typename OutputIt, typename Char> class basic_printf_context {
 
   OutputIt out() { return out_; }
   void advance_to(OutputIt it) { out_ = it; }
+
+  internal::locale_ref locale() { return {}; }
 
   format_arg arg(int id) const { return args_.get(id); }
 
