@@ -971,11 +971,6 @@ template <typename Context> struct arg_mapper {
     return val;
   }
 
-  FMT_CONSTEXPR const named_arg_base<char_type>& map(
-      const named_arg_base<char_type>& val) {
-    return val;
-  }
-
   int map(...) {
     constexpr bool formattable = sizeof(Context) == 0;
     static_assert(
@@ -1368,8 +1363,9 @@ template <typename Context> class basic_format_args {
 
   /**
    \rst
-   Constructs a `dynamic_basic_format_args` object from
-   `~fmt::format_arg_store`. \endrst
+   Constructs a `basic_format_args` object from
+   `~fmt::dynamic_format_arg_store`.
+   \endrst
    */
   template <typename... Args>
   basic_format_args(const dynamic_format_arg_store<Context, Args...>& store)

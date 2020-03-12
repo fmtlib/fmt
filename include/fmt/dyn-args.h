@@ -85,7 +85,6 @@ class dynamic_format_arg_store
 {
  private:
   using char_type = typename Context::char_type;
-  static const bool is_packed = false;
 
   static const bool has_custom_args = (sizeof...(Args) > 0);
   using string_type = std::basic_string<char_type>;
@@ -114,10 +113,6 @@ class dynamic_format_arg_store
   // without relocation because items in data_ refer to it.
 
   std::forward_list<storage_item_type> storage_;
-
-  // Storage of serialized name_args. Must grow without relocation
-  // because items in data_ refer to it.
-  std::forward_list<named_value_type> named_args_;
 
   friend class basic_format_args<Context>;
 
@@ -166,25 +161,6 @@ class dynamic_format_arg_store
 
   template <typename T> void push_back(std::reference_wrapper<T> arg) {
     emplace_arg(arg.get());
-  }
-
-  template <typename T>
-  void push_back(const internal::named_arg<T, char_type>& arg) {
-    // Named argument is tricky. It's returned by value from fmt::arg()
-    // and then pointer to it is stored in basic_format_arg<>.
-    // So after end of expression the pointer becomes dangling.
-    storage_.emplace_front(string_type{arg.name.data(), arg.name.size()});
-    basic_string_view<char_type> name = get_last_pushed<string_type>();
-    const auto& val =
-        stored_value(arg.value, internal::need_dyn_copy_t<T, Context>{});
-
-    auto named_with_stored_parts = fmt::arg(name, val);
-    // Serialize value into base
-    internal::arg_mapper<Context>().map(named_with_stored_parts);
-    named_args_.push_front(named_with_stored_parts);
-    data_.emplace_back(internal::make_arg<Context>(named_args_.front()));
-    //    data_.emplace_back(internal::make_arg_from_serialized_named<Context>(
-    //            named_args_.front()));
   }
 };
 
