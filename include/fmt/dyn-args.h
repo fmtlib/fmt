@@ -6,6 +6,7 @@
 
 #include <forward_list>
 #include <functional>
+#include <memory>
 #include <vector>
 
 #include "core.h"
@@ -59,10 +60,37 @@ template <typename T, typename Context> struct need_dyn_copy {
 template <typename T, typename Context>
 using need_dyn_copy_t = typename need_dyn_copy<T, Context>::type;
 
-template <typename T, typename StorageValue>
-const T& get(const StorageValue& v) {
-  return v;
-}
+class dyn_arg_storage {
+  struct dyn_arg_node_base {
+    virtual ~dyn_arg_node_base() = default;
+    std::unique_ptr<dyn_arg_node_base> next_;
+  };
+
+  template<typename T>
+  struct dyn_arg_node : dyn_arg_node_base {
+    T value_;
+    FMT_CONSTEXPR explicit dyn_arg_node(T&& arg) : value_{arg}{}
+  };
+
+  std::unique_ptr<dyn_arg_node_base> head_{nullptr};
+
+public:
+  FMT_CONSTEXPR dyn_arg_storage() = default;
+  dyn_arg_storage(const dyn_arg_storage&) = delete;
+  FMT_CONSTEXPR dyn_arg_storage(dyn_arg_storage&&) = default;
+
+  dyn_arg_storage& operator=(const dyn_arg_storage&) = delete;
+  FMT_CONSTEXPR dyn_arg_storage& operator=(dyn_arg_storage&&) = default;
+
+  template<typename T>
+  const T& emplace_front(T&& val) {
+    auto node{new dyn_arg_node<T>{std::forward<T>(val)}};
+    std::unique_ptr<dyn_arg_node_base> ptr{node};
+    swap(ptr, head_);
+    head_->next_ = std::move(ptr);
+    return node->value_;
+  }
+};
 
 }  // namespace internal
 
@@ -76,7 +104,7 @@ const T& get(const StorageValue& v) {
   into type-erased formatting functions such as `~fmt::vformat`.
   \endrst
  */
-template <typename Context, typename... Args>
+template <typename Context>
 class dynamic_format_arg_store
 #if FMT_GCC_VERSION < 409
     // Workaround a GCC template argument substitution bug.
@@ -85,21 +113,8 @@ class dynamic_format_arg_store
 {
  private:
   using char_type = typename Context::char_type;
-
-  static const bool has_custom_args = (sizeof...(Args) > 0);
   using string_type = std::basic_string<char_type>;
-#ifdef FMT_HAS_VARIANT
-  using storage_item_type =
-      conditional_t<has_custom_args, std::variant<string_type, Args...>,
-                    string_type>;
-#else
-  static_assert(!has_custom_args,
-                "std::variant<> is required to support "
-                "custom types in dynamic_format_arg_store");
-  using storage_item_type = string_type;
-#endif
   using value_type = basic_format_arg<Context>;
-  using named_value_type = internal::named_arg_base<char_type>;
 
   template <typename T>
   using storaged_type =
@@ -112,14 +127,9 @@ class dynamic_format_arg_store
   // Storage of arguments not fitting into basic_format_arg must grow
   // without relocation because items in data_ refer to it.
 
-  std::forward_list<storage_item_type> storage_;
+  internal::dyn_arg_storage storage_;
 
   friend class basic_format_args<Context>;
-
-  template <typename T> const T& get_last_pushed() const {
-    using internal::get;
-    return get<T>(storage_.front());
-  }
 
   unsigned long long get_types() const {
     return internal::is_unpacked_bit | data_.size();
@@ -136,9 +146,7 @@ class dynamic_format_arg_store
 
   template <typename T>
   const storaged_type<T>& stored_value(const T& arg, std::true_type) {
-    using type = storaged_type<T>;
-    storage_.emplace_front(type{arg});
-    return get_last_pushed<type>();
+    return storage_.emplace_front(storaged_type<T>{arg});
   }
 
   template <typename T> void emplace_arg(const T& arg) {

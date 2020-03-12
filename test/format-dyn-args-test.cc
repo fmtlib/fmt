@@ -49,10 +49,8 @@ template <> struct formatter<Custom> {
 };
 FMT_END_NAMESPACE
 
-#ifdef FMT_HAS_VARIANT
-
 TEST(FormatDynArgsTest, CustomFormat) {
-  fmt::dynamic_format_arg_store<fmt::format_context, Custom> store;
+  fmt::dynamic_format_arg_store<fmt::format_context> store;
   Custom c{};
   store.push_back(c);
   ++c.i;
@@ -65,8 +63,6 @@ TEST(FormatDynArgsTest, CustomFormat) {
 
   EXPECT_EQ("cust=0 and cust=1 and cust=3", result);
 }
-
-#endif  // FMT_HAS_VARIANT
 
 TEST(FormatDynArgsTest, NamedArgByRef) {
   fmt::dynamic_format_arg_store<fmt::format_context> store;

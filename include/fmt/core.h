@@ -1288,7 +1288,7 @@ inline format_arg_store<Context, Args...> make_format_args(
   return {args...};
 }
 
-template <typename Context, typename... Args> class dynamic_format_arg_store;
+template <typename Context> class dynamic_format_arg_store;
 
 /**
   \rst
@@ -1367,8 +1367,7 @@ template <typename Context> class basic_format_args {
    `~fmt::dynamic_format_arg_store`.
    \endrst
    */
-  template <typename... Args>
-  basic_format_args(const dynamic_format_arg_store<Context, Args...>& store)
+  basic_format_args(const dynamic_format_arg_store<Context>& store)
       : types_(store.get_types()) {
     set_data(store.data_.data());
   }
