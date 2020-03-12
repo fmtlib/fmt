@@ -371,6 +371,9 @@ template <typename Char> class basic_string_view {
     the size with ``std::char_traits<Char>::length``.
     \endrst
    */
+#if __cplusplus >= 201703L  // C++17's char_traits::length() is constexpr.
+  FMT_CONSTEXPR
+#endif
   basic_string_view(const Char* s)
       : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
@@ -381,11 +384,12 @@ template <typename Char> class basic_string_view {
       : data_(s.data()),
         size_(s.size()) {}
 
-  template <
-      typename S,
-      FMT_ENABLE_IF(std::is_same<S, internal::std_string_view<Char>>::value)>
-  FMT_CONSTEXPR basic_string_view(S s) FMT_NOEXCEPT : data_(s.data()),
-                                                      size_(s.size()) {}
+#if __cplusplus >= 201703L  // C++17's std::string_view::size() is constexpr.
+  FMT_CONSTEXPR
+#endif
+  basic_string_view(internal::std_string_view<Char> s)
+      FMT_NOEXCEPT : data_(s.data()),
+                     size_(s.size()) {}
 
   /** Returns a pointer to the string data. */
   FMT_CONSTEXPR const Char* data() const { return data_; }
