@@ -75,12 +75,12 @@ class dyn_arg_storage {
   std::unique_ptr<dyn_arg_node_base> head_{nullptr};
 
 public:
-  FMT_CONSTEXPR dyn_arg_storage() = default;
+  dyn_arg_storage() = default;
   dyn_arg_storage(const dyn_arg_storage&) = delete;
-  FMT_CONSTEXPR dyn_arg_storage(dyn_arg_storage&&) = default;
+  dyn_arg_storage(dyn_arg_storage&&) = default;
 
   dyn_arg_storage& operator=(const dyn_arg_storage&) = delete;
-  FMT_CONSTEXPR dyn_arg_storage& operator=(dyn_arg_storage&&) = default;
+  dyn_arg_storage& operator=(dyn_arg_storage&&) = default;
 
   template<typename T>
   const T& emplace_front(T&& val) {
