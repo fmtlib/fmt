@@ -31,18 +31,18 @@ TEST(FormatDynArgsTest, StringsAndRefs) {
   EXPECT_EQ("1234567890 and X234567890 and X234567890", result);
 }
 
-struct Custom {
+struct custom_type {
   int i{0};
 };
 FMT_BEGIN_NAMESPACE
 
-template <> struct formatter<Custom> {
+template <> struct formatter<custom_type> {
   auto parse(format_parse_context& ctx) const -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
   template <typename FormatContext>
-  auto format(const Custom& p, FormatContext& ctx) -> decltype(format_to(
+  auto format(const custom_type& p, FormatContext& ctx) -> decltype(format_to(
       ctx.out(), std::declval<typename FormatContext::char_type const*>())) {
     return format_to(ctx.out(), "cust={}", p.i);
   }
@@ -50,8 +50,13 @@ template <> struct formatter<Custom> {
 FMT_END_NAMESPACE
 
 TEST(FormatDynArgsTest, CustomFormat) {
+  using context = fmt::format_context;
   fmt::dynamic_format_arg_store<fmt::format_context> store;
-  Custom c{};
+  static_assert(fmt::internal::need_dyn_copy_t<custom_type, context>::value, "");
+  static_assert(
+    fmt::internal::mapped_type_constant<custom_type, context>::value ==
+            fmt::internal::type::custom_type, "");
+  custom_type c{};
   store.push_back(c);
   ++c.i;
   store.push_back(c);

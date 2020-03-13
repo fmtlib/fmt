@@ -11,13 +11,6 @@
 
 #include "core.h"
 
-#if (defined(FMT_HAS_VARIANT) || __cplusplus >= 201703L)
-#  include <variant>
-#  ifndef FMT_HAS_VARIANT
-#    define FMT_HAS_VARIANT
-#  endif
-#endif
-
 FMT_BEGIN_NAMESPACE
 
 namespace internal {
@@ -61,18 +54,23 @@ template <typename T, typename Context>
 using need_dyn_copy_t = typename need_dyn_copy<T, Context>::type;
 
 class dyn_arg_storage {
+  // Workaround clang's -Wweak-vtables. For templates (unlike regular classes
+  // doesn't complain about inability to deduce translation unit to place vtable
+  // So dyn_arg_node_base is made a fake template
+
+  template<typename = void>
   struct dyn_arg_node_base {
     virtual ~dyn_arg_node_base() = default;
     std::unique_ptr<dyn_arg_node_base> next_;
   };
 
   template<typename T>
-  struct dyn_arg_node : dyn_arg_node_base {
+  struct dyn_arg_node : dyn_arg_node_base<> {
     T value_;
     FMT_CONSTEXPR explicit dyn_arg_node(T&& arg) : value_{arg}{}
   };
 
-  std::unique_ptr<dyn_arg_node_base> head_{nullptr};
+  std::unique_ptr<dyn_arg_node_base<>> head_{nullptr};
 
 public:
   dyn_arg_storage() = default;
@@ -84,8 +82,8 @@ public:
 
   template<typename T>
   const T& emplace_front(T&& val) {
-    auto node{new dyn_arg_node<T>{std::forward<T>(val)}};
-    std::unique_ptr<dyn_arg_node_base> ptr{node};
+    auto node = new dyn_arg_node<T>{std::forward<T>(val)};
+    std::unique_ptr<dyn_arg_node_base<>> ptr{node};
     swap(ptr, head_);
     head_->next_ = std::move(ptr);
     return node->value_;
