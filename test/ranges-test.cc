@@ -70,6 +70,12 @@ TEST(RangesTest, JoinTuple) {
   EXPECT_EQ("4.0", fmt::format("{}", fmt::join(t4, "/")));
 }
 
+TEST(RangesTest, JoinInitializerList) {
+  EXPECT_EQ("1, 2, 3", fmt::format("{}", fmt::join({1, 2, 3}, ", ")));
+  EXPECT_EQ("fmt rocks !",
+            fmt::format("{}", fmt::join({"fmt", "rocks", "!"}, " ")));
+}
+
 struct my_struct {
   int32_t i;
   std::string str;  // can throw
