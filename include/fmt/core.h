@@ -1637,16 +1637,8 @@ template <typename T, typename Char> struct is_string_view : std::false_type {};
 template <typename Char>
 struct is_string_view<basic_string_view<Char>, Char> : std::true_type {};
 
-#ifdef FMT_USE_STRING_VIEW
 template <typename Char>
-struct is_string_view<std::basic_string_view<Char>, Char> : std::true_type {};
-#endif
-
-#ifdef FMT_USE_EXPERIMENTAL_STRING_VIEW
-template <typename Char>
-struct is_string_view<std::experimental::basic_string_view<Char>, Char>
-    : std::true_type {};
-#endif
+struct is_string_view<std_string_view<Char>, Char> : std::true_type {};
 
 template <typename T> struct is_ref_wrapper : std::false_type {};
 
