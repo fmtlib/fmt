@@ -10,6 +10,7 @@
 // {fmt} support for ranges, containers and types tuple interface.
 
 #include "fmt/ranges.h"
+
 #include "gtest.h"
 
 // Check if  'if constexpr' is supported.
@@ -44,9 +45,10 @@ TEST(RangesTest, FormatPair) {
 }
 
 TEST(RangesTest, FormatTuple) {
-  std::tuple<int64_t, float, std::string, char> tu1{42, 1.5f, "this is tuple",
-                                                    'i'};
-  EXPECT_EQ("(42, 1.5, \"this is tuple\", 'i')", fmt::format("{}", tu1));
+  std::tuple<int64_t, float, std::string, char> t{42, 1.5f, "this is tuple",
+                                                  'i'};
+  EXPECT_EQ("(42, 1.5, \"this is tuple\", 'i')", fmt::format("{}", t));
+  EXPECT_EQ("()", fmt::format("{}", std::tuple<>()));
 }
 
 TEST(RangesTest, JoinTuple) {
