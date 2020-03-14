@@ -250,7 +250,7 @@ if (FMT_INSTALL)
               "Installation directory for libraries, relative to "
               "${CMAKE_INSTALL_PREFIX}.")
 
-  set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRINGS
+  set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRING
               "Installation directory for include files, relative to "
               "${CMAKE_INSTALL_PREFIX}.")
 
