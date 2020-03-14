@@ -482,7 +482,7 @@ inline size_t count_code_points(basic_string_view<char> s) {
   return num_code_points;
 }
 
-inline size_t count_code_points(basic_string_view<char8_t> s) {
+inline size_t count_code_points(basic_string_view<char8_type> s) {
   return count_code_points(basic_string_view<char>(
       reinterpret_cast<const char*>(s.data()), s.size()));
 }
@@ -494,8 +494,8 @@ inline size_t code_point_index(basic_string_view<Char> s, size_t n) {
 }
 
 // Calculates the index of the nth code point in a UTF-8 string.
-inline size_t code_point_index(basic_string_view<char8_t> s, size_t n) {
-  const char8_t* data = s.data();
+inline size_t code_point_index(basic_string_view<char8_type> s, size_t n) {
+  const char8_type* data = s.data();
   size_t num_code_points = 0;
   for (size_t i = 0, size = s.size(); i != size; ++i) {
     if ((data[i] & 0xc0) != 0x80 && ++num_code_points > n) {
@@ -505,13 +505,13 @@ inline size_t code_point_index(basic_string_view<char8_t> s, size_t n) {
   return s.size();
 }
 
-inline char8_t to_char8_t(char c) { return static_cast<char8_t>(c); }
+inline char8_type to_char8_t(char c) { return static_cast<char8_type>(c); }
 
 template <typename InputIt, typename OutChar>
 using needs_conversion = bool_constant<
     std::is_same<typename std::iterator_traits<InputIt>::value_type,
                  char>::value &&
-    std::is_same<OutChar, char8_t>::value>;
+    std::is_same<OutChar, char8_type>::value>;
 
 template <typename OutChar, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
@@ -555,20 +555,22 @@ class buffer_range : public internal::output_range<
       : internal::output_range<iterator, T>(std::back_inserter(buf)) {}
 };
 
-class FMT_DEPRECATED u8string_view : public basic_string_view<char8_t> {
+class FMT_DEPRECATED u8string_view
+    : public basic_string_view<internal::char8_type> {
  public:
   u8string_view(const char* s)
-      : basic_string_view<char8_t>(reinterpret_cast<const char8_t*>(s)) {}
+      : basic_string_view<internal::char8_type>(
+            reinterpret_cast<const internal::char8_type*>(s)) {}
   u8string_view(const char* s, size_t count) FMT_NOEXCEPT
-      : basic_string_view<char8_t>(reinterpret_cast<const char8_t*>(s), count) {
-  }
+      : basic_string_view<internal::char8_type>(
+            reinterpret_cast<const internal::char8_type*>(s), count) {}
 };
 
 #if FMT_USE_USER_DEFINED_LITERALS
 inline namespace literals {
-FMT_DEPRECATED inline basic_string_view<char8_t> operator"" _u(const char* s,
-                                                               std::size_t n) {
-  return {reinterpret_cast<const char8_t*>(s), n};
+FMT_DEPRECATED inline basic_string_view<internal::char8_type> operator"" _u(
+    const char* s, std::size_t n) {
+  return {reinterpret_cast<const internal::char8_type*>(s), n};
 }
 }  // namespace literals
 #endif

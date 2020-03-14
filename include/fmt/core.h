@@ -315,6 +315,12 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   FMT_ASSERT(value >= 0, "negative value");
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
+
+#ifdef __cpp_char8_t
+using char8_type = char8_t;
+#else
+enum char8_type : unsigned char {};
+#endif
 }  // namespace internal
 
 template <typename... Ts>
@@ -415,15 +421,15 @@ using string_view = basic_string_view<char>;
 using wstring_view = basic_string_view<wchar_t>;
 
 #ifndef __cpp_char8_t
-// A UTF-8 code unit type.
-enum char8_t : unsigned char {};
+// char8_t is deprecated; use char instead.
+using char8_t FMT_DEPRECATED_ALIAS = internal::char8_type;
 #endif
 
 /** Specifies if ``T`` is a character type. Can be specialized by users. */
 template <typename T> struct is_char : std::false_type {};
 template <> struct is_char<char> : std::true_type {};
 template <> struct is_char<wchar_t> : std::true_type {};
-template <> struct is_char<char8_t> : std::true_type {};
+template <> struct is_char<internal::char8_type> : std::true_type {};
 template <> struct is_char<char16_t> : std::true_type {};
 template <> struct is_char<char32_t> : std::true_type {};
 
