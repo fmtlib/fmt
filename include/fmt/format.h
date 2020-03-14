@@ -1953,10 +1953,6 @@ template <typename Char, typename ErrorHandler>
 FMT_CONSTEXPR int parse_nonnegative_int(const Char*& begin, const Char* end,
                                         ErrorHandler&& eh) {
   FMT_ASSERT(begin != end && '0' <= *begin && *begin <= '9', "");
-  if (*begin == '0') {
-    ++begin;
-    return 0;
-  }
   unsigned value = 0;
   // Convert to unsigned to prevent a warning.
   constexpr unsigned max_int = max_value<int>();
@@ -2311,7 +2307,11 @@ FMT_CONSTEXPR const Char* parse_arg_id(const Char* begin, const Char* end,
     return begin;
   }
   if (c >= '0' && c <= '9') {
-    int index = parse_nonnegative_int(begin, end, handler);
+    int index = 0;
+    if (c != '0')
+      index = parse_nonnegative_int(begin, end, handler);
+    else
+      ++begin;
     if (begin == end || (*begin != '}' && *begin != ':'))
       handler.on_error("invalid format string");
     else

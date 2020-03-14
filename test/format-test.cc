@@ -1124,6 +1124,7 @@ TEST(FormatterTest, Precision) {
       "000000000000000000000000000000000000000000000000000P+127",
       format("{:.838A}", -2.14001164E+38));
   EXPECT_EQ("123.", format("{:#.0f}", 123.0));
+  EXPECT_EQ("1.23", format("{:.02f}", 1.234));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
                    format_error,
