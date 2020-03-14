@@ -1638,14 +1638,13 @@ template <typename Char>
 struct is_string_view<basic_string_view<Char>, Char> : std::true_type {};
 
 #ifdef FMT_USE_STRING_VIEW
-template <typename Traits, typename Char>
-struct is_string_view<std::basic_string_view<Char, Traits>, Char>
-    : std::true_type {};
+template <typename Char>
+struct is_string_view<std::basic_string_view<Char>, Char> : std::true_type {};
 #endif
 
 #ifdef FMT_USE_EXPERIMENTAL_STRING_VIEW
-template <typename Traits, typename Char>
-struct is_string_view<std::experimental::basic_string_view<Char, Traits>, Char>
+template <typename Char>
+struct is_string_view<std::experimental::basic_string_view<Char>, Char>
     : std::true_type {};
 #endif
 
@@ -1655,25 +1654,22 @@ template <typename T>
 struct is_ref_wrapper<std::reference_wrapper<T>> : std::true_type {};
 
 template <typename T, typename Context> struct need_dyn_copy {
-  using mapped_type = mapped_type_constant<T, Context>;
-  static_assert(mapped_type::value != internal::type::named_arg_type,
+  static constexpr auto mapped_type = mapped_type_constant<T, Context>::value;
+  static_assert(mapped_type != internal::type::named_arg_type,
                 "Bug indicator. Named arguments must be processed separately");
 
   using type = std::integral_constant<
       bool, !(is_ref_wrapper<T>::value ||
               is_string_view<T, typename Context::char_type>::value ||
-              (mapped_type::value != internal::type::cstring_type &&
-               mapped_type::value != internal::type::custom_type &&
-               mapped_type::value != internal::type::string_type))>;
+              (mapped_type != internal::type::cstring_type &&
+               mapped_type != internal::type::custom_type &&
+               mapped_type != internal::type::string_type))>;
 };
-
-template <typename T, typename Context>
-using need_dyn_copy_t = typename need_dyn_copy<T, Context>::type;
 
 class dyn_arg_storage {
   // Workaround clang's -Wweak-vtables. For templates (unlike regular classes
   // doesn't complain about inability to deduce translation unit to place vtable
-  // So dyn_arg_node_base is made a fake template
+  // So storage_node_base is made a fake template.
 
   template <typename = void> struct storage_node_base {
     using owning_ptr = std::unique_ptr<storage_node_base<>>;
@@ -1730,16 +1726,14 @@ class dynamic_format_arg_store
 {
  private:
   using char_type = typename Context::char_type;
-  using string_type = std::basic_string<char_type>;
-  using value_type = basic_format_arg<Context>;
 
   template <typename T>
-  using stored_type =
-      conditional_t<internal::is_string<T>::value, string_type, T>;
+  using stored_type = conditional_t<internal::is_string<T>::value,
+                                    std::basic_string<char_type>, T>;
 
   // Storage of basic_format_arg must be contiguous
-  // Required by basic_format_args::args_ which is just a pointer
-  std::vector<value_type> data_;
+  // Required by basic_format_args::args_ which is just a pointer.
+  std::vector<basic_format_arg<Context>> data_;
 
   // Storage of arguments not fitting into basic_format_arg must grow
   // without relocation because items in data_ refer to it.
@@ -1802,7 +1796,8 @@ class dynamic_format_arg_store
     static_assert(
         !std::is_base_of<internal::named_arg_base<char_type>, T>::value,
         "Named arguments are not supported yet");
-    emplace_arg(stored_value(arg, internal::need_dyn_copy_t<T, Context>{}));
+    emplace_arg(stored_value(
+        arg, typename internal::need_dyn_copy<T, Context>::type{}));
   }
 
   /**
