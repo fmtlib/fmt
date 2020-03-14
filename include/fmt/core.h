@@ -1646,7 +1646,8 @@ template <typename T>
 struct is_ref_wrapper<std::reference_wrapper<T>> : std::true_type {};
 
 template <typename T, typename Context> struct need_dyn_copy {
-  static constexpr auto mapped_type = mapped_type_constant<T, Context>::value;
+  static constexpr internal::type mapped_type =
+      mapped_type_constant<T, Context>::value;
   static_assert(mapped_type != internal::type::named_arg_type,
                 "Bug indicator. Named arguments must be processed separately");
 
