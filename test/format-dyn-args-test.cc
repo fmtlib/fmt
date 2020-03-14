@@ -52,10 +52,6 @@ FMT_END_NAMESPACE
 TEST(FormatDynArgsTest, CustomFormat) {
   using context = fmt::format_context;
   fmt::dynamic_format_arg_store<fmt::format_context> store;
-  static_assert(fmt::internal::need_dyn_copy_t<custom_type, context>::value, "");
-  static_assert(
-    fmt::internal::mapped_type_constant<custom_type, context>::value ==
-            fmt::internal::type::custom_type, "");
   custom_type c{};
   store.push_back(c);
   ++c.i;

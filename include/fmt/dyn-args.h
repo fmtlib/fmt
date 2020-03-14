@@ -58,21 +58,26 @@ class dyn_arg_storage {
   // doesn't complain about inability to deduce translation unit to place vtable
   // So dyn_arg_node_base is made a fake template
 
-  template<typename = void>
-  struct dyn_arg_node_base {
-    virtual ~dyn_arg_node_base() = default;
-    std::unique_ptr<dyn_arg_node_base> next_;
+  template <typename = void> struct storage_node_base {
+    using owning_ptr = std::unique_ptr<storage_node_base<>>;
+    virtual ~storage_node_base() = default;
+    owning_ptr next_;
   };
 
-  template<typename T>
-  struct dyn_arg_node : dyn_arg_node_base<> {
+  using owning_ptr = storage_node_base<>::owning_ptr;
+
+  template <typename T> struct storage_node : storage_node_base<> {
     T value_;
-    FMT_CONSTEXPR explicit dyn_arg_node(T&& arg) : value_{arg}{}
+    FMT_CONSTEXPR explicit storage_node(const T& arg, owning_ptr&& next)
+        : value_{arg} {
+      // Must be initialised after value_
+      next_ = std::move(next);
+    }
   };
 
-  std::unique_ptr<dyn_arg_node_base<>> head_{nullptr};
+  owning_ptr head_{nullptr};
 
-public:
+ public:
   dyn_arg_storage() = default;
   dyn_arg_storage(const dyn_arg_storage&) = delete;
   dyn_arg_storage(dyn_arg_storage&&) = default;
@@ -80,12 +85,9 @@ public:
   dyn_arg_storage& operator=(const dyn_arg_storage&) = delete;
   dyn_arg_storage& operator=(dyn_arg_storage&&) = default;
 
-  template<typename T>
-  const T& emplace_front(T&& val) {
-    auto node = new dyn_arg_node<T>{std::forward<T>(val)};
-    std::unique_ptr<dyn_arg_node_base<>> ptr{node};
-    swap(ptr, head_);
-    head_->next_ = std::move(ptr);
+  template <typename T, typename Arg> const T& push(const Arg& arg) {
+    auto node = new storage_node<T>{arg, std::move(head_)};
+    head_.reset(node);
     return node->value_;
   }
 };
@@ -115,7 +117,7 @@ class dynamic_format_arg_store
   using value_type = basic_format_arg<Context>;
 
   template <typename T>
-  using storaged_type =
+  using stored_type =
       conditional_t<internal::is_string<T>::value, string_type, T>;
 
   // Storage of basic_format_arg must be contiguous
@@ -143,8 +145,8 @@ class dynamic_format_arg_store
   }
 
   template <typename T>
-  const storaged_type<T>& stored_value(const T& arg, std::true_type) {
-    return storage_.emplace_front(storaged_type<T>{arg});
+  const stored_type<T>& stored_value(const T& arg, std::true_type) {
+    return storage_.push<stored_type<T>>(arg);
   }
 
   template <typename T> void emplace_arg(const T& arg) {
@@ -162,6 +164,9 @@ class dynamic_format_arg_store
   dynamic_format_arg_store& operator=(dynamic_format_arg_store&&) = default;
 
   template <typename T> void push_back(const T& arg) {
+    static_assert(
+        !std::is_base_of<internal::named_arg_base<char_type>, T>::value,
+        "Named arguments are not supported yet");
     emplace_arg(stored_value(arg, internal::need_dyn_copy_t<T, Context>{}));
   }
 
