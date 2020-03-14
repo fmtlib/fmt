@@ -50,7 +50,6 @@ template <> struct formatter<custom_type> {
 FMT_END_NAMESPACE
 
 TEST(FormatDynArgsTest, CustomFormat) {
-  using context = fmt::format_context;
   fmt::dynamic_format_arg_store<fmt::format_context> store;
   custom_type c{};
   store.push_back(c);
