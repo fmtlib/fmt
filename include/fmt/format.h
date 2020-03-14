@@ -213,10 +213,6 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
-// A helper function to suppress bogus "conditional expression is constant"
-// warnings.
-template <typename T> FMT_CONSTEXPR T const_check(T value) { return value; }
-
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
 // undefined behavior (e.g. due to type aliasing).
 // Example: uint64_t d = bit_cast<uint64_t>(2.718);

@@ -272,6 +272,10 @@ struct monostate {};
 
 namespace internal {
 
+// A helper function to suppress bogus "conditional expression is constant"
+// warnings.
+template <typename T> FMT_CONSTEXPR T const_check(T value) { return value; }
+
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
 template <typename... Ts> struct void_t_impl { using type = void; };
 
@@ -1674,8 +1678,17 @@ class dyn_arg_storage {
 
   template <typename T> struct storage_node : storage_node_base<> {
     T value_;
-    FMT_CONSTEXPR explicit storage_node(const T& arg, owning_ptr&& next)
+    template <typename Arg>
+    FMT_CONSTEXPR storage_node(const Arg& arg, owning_ptr&& next)
         : value_{arg} {
+      // Must be initialised after value_
+      next_ = std::move(next);
+    }
+
+    template <typename Char>
+    FMT_CONSTEXPR storage_node(const basic_string_view<Char>& arg,
+                               owning_ptr&& next)
+        : value_{arg.data(), arg.size()} {
       // Must be initialised after value_
       next_ = std::move(next);
     }
@@ -1739,20 +1752,6 @@ class dynamic_format_arg_store
     return internal::is_unpacked_bit | data_.size();
   }
 
-  template <typename T> const T& stored_value(const T& arg, std::false_type) {
-    return arg;
-  }
-
-  template <typename T>
-  const T& stored_value(const std::reference_wrapper<T>& arg, std::false_type) {
-    return arg.get();
-  }
-
-  template <typename T>
-  const stored_type<T>& stored_value(const T& arg, std::true_type) {
-    return storage_.push<stored_type<T>>(arg);
-  }
-
   template <typename T> void emplace_arg(const T& arg) {
     data_.emplace_back(internal::make_arg<Context>(arg));
   }
@@ -1789,8 +1788,11 @@ class dynamic_format_arg_store
     static_assert(
         !std::is_base_of<internal::named_arg_base<char_type>, T>::value,
         "Named arguments are not supported yet");
-    emplace_arg(stored_value(
-        arg, typename internal::need_dyn_copy<T, Context>::type{}));
+    using need_copy_t = typename internal::need_dyn_copy<T, Context>::type;
+    if (internal::const_check(need_copy_t::value))
+      emplace_arg(storage_.push<stored_type<T>>(arg));
+    else
+      emplace_arg(arg);
   }
 
   /**
