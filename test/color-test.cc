@@ -54,62 +54,32 @@ TEST(ColorsTest, Format) {
             L"\x1b[38;2;255;020;030mrgb(255,20,30) wide\x1b[0m");
   EXPECT_EQ(fmt::format(fg(fmt::color::blue), "blue"),
             "\x1b[38;2;000;000;255mblue\x1b[0m");
-  EXPECT_EQ(fmt::format(fg(fmt::color::blue), L"blue wide"),
-            L"\x1b[38;2;000;000;255mblue wide\x1b[0m");
   EXPECT_EQ(
       fmt::format(fg(fmt::color::blue) | bg(fmt::color::red), "two color"),
       "\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m");
-  EXPECT_EQ(
-      fmt::format(fg(fmt::color::blue) | bg(fmt::color::red), L"two color wide"),
-      L"\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color wide\x1b[0m");
   EXPECT_EQ(fmt::format(fmt::emphasis::bold, "bold"), "\x1b[1mbold\x1b[0m");
-  EXPECT_EQ(fmt::format(fmt::emphasis::bold, L"bold wide"), L"\x1b[1mbold wide\x1b[0m");
   EXPECT_EQ(fmt::format(fmt::emphasis::italic, "italic"),
             "\x1b[3mitalic\x1b[0m");
-  EXPECT_EQ(fmt::format(fmt::emphasis::italic, L"italic wide"),
-            L"\x1b[3mitalic wide\x1b[0m");
   EXPECT_EQ(fmt::format(fmt::emphasis::underline, "underline"),
             "\x1b[4munderline\x1b[0m");
-  EXPECT_EQ(fmt::format(fmt::emphasis::underline, L"underline wide"),
-            L"\x1b[4munderline wide\x1b[0m");
   EXPECT_EQ(fmt::format(fmt::emphasis::strikethrough, "strikethrough"),
             "\x1b[9mstrikethrough\x1b[0m");
-  EXPECT_EQ(fmt::format(fmt::emphasis::strikethrough, L"strikethrough wide"),
-            L"\x1b[9mstrikethrough wide\x1b[0m");
   EXPECT_EQ(
       fmt::format(fg(fmt::color::blue) | fmt::emphasis::bold, "blue/bold"),
       "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m");
-  EXPECT_EQ(
-      fmt::format(fg(fmt::color::blue) | fmt::emphasis::bold, L"blue/bold wide"),
-      L"\x1b[1m\x1b[38;2;000;000;255mblue/bold wide\x1b[0m");
   EXPECT_EQ(fmt::format(fmt::emphasis::bold, "bold error"),
             "\x1b[1mbold error\x1b[0m");
-  EXPECT_EQ(fmt::format(fmt::emphasis::bold, L"bold error wide"),
-            L"\x1b[1mbold error wide\x1b[0m");
   EXPECT_EQ(fmt::format(fg(fmt::color::blue), "blue log"),
             "\x1b[38;2;000;000;255mblue log\x1b[0m");
-  EXPECT_EQ(fmt::format(fg(fmt::color::blue), L"blue log wide"),
-            L"\x1b[38;2;000;000;255mblue log wide\x1b[0m");
   EXPECT_EQ(fmt::format(fmt::text_style(), "hi"), "hi");
-  EXPECT_EQ(fmt::format(fmt::text_style(), L"hi wide"), L"hi wide");
   EXPECT_EQ(fmt::format(fg(fmt::terminal_color::red), "tred"),
             "\x1b[31mtred\x1b[0m");
-  EXPECT_EQ(fmt::format(fg(fmt::terminal_color::red), L"tred wide"),
-            L"\x1b[31mtred wide\x1b[0m");
   EXPECT_EQ(fmt::format(bg(fmt::terminal_color::cyan), "tcyan"),
             "\x1b[46mtcyan\x1b[0m");
-  EXPECT_EQ(fmt::format(bg(fmt::terminal_color::cyan), L"tcyan wide"),
-            L"\x1b[46mtcyan wide\x1b[0m");
   EXPECT_EQ(fmt::format(fg(fmt::terminal_color::bright_green), "tbgreen"),
             "\x1b[92mtbgreen\x1b[0m");
-  EXPECT_EQ(fmt::format(fg(fmt::terminal_color::bright_green), L"tbgreen wide"),
-            L"\x1b[92mtbgreen wide\x1b[0m");
   EXPECT_EQ(fmt::format(bg(fmt::terminal_color::bright_magenta), "tbmagenta"),
             "\x1b[105mtbmagenta\x1b[0m");
-  EXPECT_EQ(fmt::format(bg(fmt::terminal_color::bright_magenta), L"tbmagenta wide"),
-            L"\x1b[105mtbmagenta wide\x1b[0m");
   EXPECT_EQ(fmt::format(fg(fmt::terminal_color::red), "{}", "foo"),
             "\x1b[31mfoo\x1b[0m");
-  EXPECT_EQ(fmt::format(fg(fmt::terminal_color::red), L"{}", L"foo wide"),
-            L"\x1b[31mfoo wide\x1b[0m");
 }
