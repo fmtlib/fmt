@@ -1206,14 +1206,6 @@ inline basic_format_arg<Context> make_arg(const T& value) {
   return make_arg<Context>(value);
 }
 
-template <typename T, typename Char> struct is_string_view : std::false_type {};
-
-template <typename Char>
-struct is_string_view<basic_string_view<Char>, Char> : std::true_type {};
-
-template <typename Char>
-struct is_string_view<std_string_view<Char>, Char> : std::true_type {};
-
 template <typename T> struct is_reference_wrapper : std::false_type {};
 
 template <typename T>
@@ -1233,31 +1225,21 @@ class dyn_arg_storage {
     T value;
 
     template <typename Arg>
-    FMT_CONSTEXPR storage_node(const Arg& arg, owning_ptr&& next) : value(arg) {
-      this->next = std::move(next);  // Must be initialised after value.
-    }
+    FMT_CONSTEXPR storage_node(const Arg& arg) : value(arg) {}
 
     template <typename Char>
-    FMT_CONSTEXPR storage_node(const basic_string_view<Char>& arg,
-                               owning_ptr&& next)
-        : value(arg.data(), arg.size()) {
-      this->next = std::move(next);  // Must be initialised after value.
-    }
+    FMT_CONSTEXPR storage_node(const basic_string_view<Char>& arg)
+        : value(arg.data(), arg.size()) {}
   };
 
-  storage_node_base<>::owning_ptr head_{nullptr};
+  storage_node_base<>::owning_ptr head_;
 
  public:
-  dyn_arg_storage() = default;
-  dyn_arg_storage(const dyn_arg_storage&) = delete;
-  dyn_arg_storage(dyn_arg_storage&&) = default;
-
-  dyn_arg_storage& operator=(const dyn_arg_storage&) = delete;
-  dyn_arg_storage& operator=(dyn_arg_storage&&) = default;
-
   template <typename T, typename Arg> const T& push(const Arg& arg) {
-    auto node = new storage_node<T>(arg, std::move(head_));
+    auto next = std::move(head_);
+    auto node = new storage_node<T>(arg);
     head_.reset(node);
+    head_->next = std::move(next);
     return node->value;
   }
 };
@@ -1396,7 +1378,8 @@ class dynamic_format_arg_store
 
     using type = std::integral_constant<
         bool, !(internal::is_reference_wrapper<T>::value ||
-                internal::is_string_view<T, char_type>::value ||
+                std::is_same<T, basic_string_view<char_type>>::value ||
+                std::is_same<T, internal::std_string_view<char_type>>::value ||
                 (mapped_type != internal::type::cstring_type &&
                  mapped_type != internal::type::string_type &&
                  mapped_type != internal::type::custom_type &&
