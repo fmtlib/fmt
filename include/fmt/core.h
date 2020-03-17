@@ -1211,33 +1211,32 @@ template <typename T> struct is_reference_wrapper : std::false_type {};
 template <typename T>
 struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
 
-class dyn_arg_storage {
+class dynamic_arg_list {
   // Workaround for clang's -Wweak-vtables. Unlike for regular classes, for
   // templates it doesn't complain about inability to deduce single translation
   // unit for placing vtable. So storage_node_base is made a fake template.
-  template <typename = void> struct storage_node_base {
-    using owning_ptr = std::unique_ptr<storage_node_base<>>;
-    virtual ~storage_node_base() = default;
-    owning_ptr next;
+  template <typename = void> struct node {
+    virtual ~node() = default;
+    std::unique_ptr<node<>> next;
   };
 
-  template <typename T> struct storage_node : storage_node_base<> {
+  template <typename T> struct typed_node : node<> {
     T value;
 
     template <typename Arg>
-    FMT_CONSTEXPR storage_node(const Arg& arg) : value(arg) {}
+    FMT_CONSTEXPR typed_node(const Arg& arg) : value(arg) {}
 
     template <typename Char>
-    FMT_CONSTEXPR storage_node(const basic_string_view<Char>& arg)
+    FMT_CONSTEXPR typed_node(const basic_string_view<Char>& arg)
         : value(arg.data(), arg.size()) {}
   };
 
-  storage_node_base<>::owning_ptr head_;
+  std::unique_ptr<node<>> head_;
 
  public:
   template <typename T, typename Arg> const T& push(const Arg& arg) {
     auto next = std::move(head_);
-    auto node = new storage_node<T>(arg);
+    auto node = new typed_node<T>(arg);
     head_.reset(node);
     head_->next = std::move(next);
     return node->value;
@@ -1372,18 +1371,19 @@ class dynamic_format_arg_store
  private:
   using char_type = typename Context::char_type;
 
-  template <typename T> struct need_dyn_copy {
+  template <typename T> struct need_copy {
     static constexpr internal::type mapped_type =
         internal::mapped_type_constant<T, Context>::value;
 
-    using type = std::integral_constant<
-        bool, !(internal::is_reference_wrapper<T>::value ||
+    enum {
+      value = !(internal::is_reference_wrapper<T>::value ||
                 std::is_same<T, basic_string_view<char_type>>::value ||
                 std::is_same<T, internal::std_string_view<char_type>>::value ||
                 (mapped_type != internal::type::cstring_type &&
                  mapped_type != internal::type::string_type &&
                  mapped_type != internal::type::custom_type &&
-                 mapped_type != internal::type::named_arg_type))>;
+                 mapped_type != internal::type::named_arg_type))
+    };
   };
 
   template <typename T>
@@ -1395,7 +1395,7 @@ class dynamic_format_arg_store
 
   // Storage of arguments not fitting into basic_format_arg must grow
   // without relocation because items in data_ refer to it.
-  internal::dyn_arg_storage storage_;
+  internal::dynamic_arg_list dynamic_args_;
 
   friend class basic_format_args<Context>;
 
@@ -1408,15 +1408,6 @@ class dynamic_format_arg_store
   }
 
  public:
-  dynamic_format_arg_store() = default;
-  ~dynamic_format_arg_store() = default;
-
-  dynamic_format_arg_store(const dynamic_format_arg_store&) = delete;
-  dynamic_format_arg_store& operator=(const dynamic_format_arg_store&) = delete;
-
-  dynamic_format_arg_store(dynamic_format_arg_store&&) = default;
-  dynamic_format_arg_store& operator=(dynamic_format_arg_store&&) = default;
-
   /**
     \rst
     Adds an argument into the dynamic store for later passing to a formating
@@ -1438,8 +1429,8 @@ class dynamic_format_arg_store
     static_assert(
         !std::is_base_of<internal::named_arg_base<char_type>, T>::value,
         "named arguments are not supported yet");
-    if (internal::const_check(need_dyn_copy<T>::type::value))
-      emplace_arg(storage_.push<stored_type<T>>(arg));
+    if (internal::const_check(need_copy<T>::value))
+      emplace_arg(dynamic_args_.push<stored_type<T>>(arg));
     else
       emplace_arg(arg);
   }
@@ -1450,7 +1441,7 @@ class dynamic_format_arg_store
   */
   template <typename T> void push_back(std::reference_wrapper<T> arg) {
     static_assert(
-        need_dyn_copy<T>::type::value,
+        need_copy<T>::value,
         "objects of built-in types and string views are always copied");
     emplace_arg(arg.get());
   }
