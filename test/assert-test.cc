@@ -8,17 +8,12 @@
 #include "fmt/core.h"
 #include "gtest.h"
 
-#if GTEST_HAS_DEATH_TEST
-#  define EXPECT_DEBUG_DEATH_IF_SUPPORTED(statement, regex) \
-    EXPECT_DEBUG_DEATH(statement, regex)
-#else
-#  define EXPECT_DEBUG_DEATH_IF_SUPPORTED(statement, regex) \
-    GTEST_UNSUPPORTED_DEATH_TEST_(statement, regex, )
-#endif
-
 TEST(AssertTest, Fail) {
-  EXPECT_DEBUG_DEATH_IF_SUPPORTED(FMT_ASSERT(false, "don't panic!"),
-                                  "don't panic!");
+#if GTEST_HAS_DEATH_TEST
+  EXPECT_DEBUG_DEATH(FMT_ASSERT(false, "don't panic!"), "don't panic!");
+#else
+  fmt::print("warning: death tests are not supported\n");
+#endif
 }
 
 bool test_condition = false;

@@ -10,6 +10,7 @@
 // {fmt} support for ranges, containers and types tuple interface.
 
 #include "fmt/ranges.h"
+
 #include "gtest.h"
 
 // Check if  'if constexpr' is supported.
@@ -44,9 +45,10 @@ TEST(RangesTest, FormatPair) {
 }
 
 TEST(RangesTest, FormatTuple) {
-  std::tuple<int64_t, float, std::string, char> tu1{42, 1.5f, "this is tuple",
-                                                    'i'};
-  EXPECT_EQ("(42, 1.5, \"this is tuple\", 'i')", fmt::format("{}", tu1));
+  std::tuple<int64_t, float, std::string, char> t{42, 1.5f, "this is tuple",
+                                                  'i'};
+  EXPECT_EQ("(42, 1.5, \"this is tuple\", 'i')", fmt::format("{}", t));
+  EXPECT_EQ("()", fmt::format("{}", std::tuple<>()));
 }
 
 TEST(RangesTest, JoinTuple) {
@@ -66,6 +68,12 @@ TEST(RangesTest, JoinTuple) {
   // Single element tuple
   std::tuple<float> t4{4.0f};
   EXPECT_EQ("4.0", fmt::format("{}", fmt::join(t4, "/")));
+}
+
+TEST(RangesTest, JoinInitializerList) {
+  EXPECT_EQ("1, 2, 3", fmt::format("{}", fmt::join({1, 2, 3}, ", ")));
+  EXPECT_EQ("fmt rocks !",
+            fmt::format("{}", fmt::join({"fmt", "rocks", "!"}, " ")));
 }
 
 struct my_struct {

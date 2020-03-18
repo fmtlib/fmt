@@ -6,6 +6,7 @@
 // For the license information refer to format.h.
 
 #include <stdint.h>
+
 #include <cctype>
 #include <cfloat>
 #include <climits>
@@ -987,7 +988,9 @@ TEST(FormatterTest, Width) {
   EXPECT_EQ("    0xcafe", format("{0:10}", reinterpret_cast<void*>(0xcafe)));
   EXPECT_EQ("x          ", format("{0:11}", 'x'));
   EXPECT_EQ("str         ", format("{0:12}", "str"));
+  EXPECT_EQ(fmt::format("{:*^5}", "🤡"), "**🤡**");
 }
+
 template <typename T> inline T const_check(T value) { return value; }
 
 TEST(FormatterTest, RuntimeWidth) {
@@ -1121,6 +1124,7 @@ TEST(FormatterTest, Precision) {
       "000000000000000000000000000000000000000000000000000P+127",
       format("{:.838A}", -2.14001164E+38));
   EXPECT_EQ("123.", format("{:#.0f}", 123.0));
+  EXPECT_EQ("1.23", format("{:.02f}", 1.234));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
                    format_error,
@@ -1859,6 +1863,8 @@ TEST(FormatTest, CustomFormatCompileTimeString) {
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), Answer()));
   Answer answer;
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), answer));
+  char buf[10] = {};
+  fmt::format_to(buf, FMT_STRING("{}"), answer);
   const Answer const_answer = Answer();
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), const_answer));
 }
@@ -2499,37 +2505,6 @@ TEST(FormatTest, FmtStringInTemplate) {
 
 #endif  // FMT_USE_CONSTEXPR
 
-// C++20 feature test, since r346892 Clang considers char8_t a fundamental
-// type in this mode. If this is the case __cpp_char8_t will be defined.
-#ifndef __cpp_char8_t
-// Locally provide type char8_t defined in format.h
-using fmt::char8_t;
-#endif
-
-// Convert 'char8_t' character sequences to 'char' sequences
-// Otherwise GTest will insist on inserting 'char8_t' NTBS into a 'char' stream,
-// but basic_ostream<char>::operator<< overloads taking 'char8_t' arguments
-// are defined as deleted by P1423.
-// Handling individual 'char8_t's is done inline.
-std::string from_u8str(const std::basic_string<char8_t>& str) {
-  return std::string(str.begin(), str.end());
-}
-std::string from_u8str(const fmt::basic_string_view<char8_t>& str) {
-  return std::string(str.begin(), str.end());
-}
-
-#if FMT_USE_USER_DEFINED_LITERALS
-TEST(FormatTest, U8StringViewLiteral) {
-  using namespace fmt::literals;
-  fmt::basic_string_view<char8_t> s = "ab"_u;
-  EXPECT_EQ(s.size(), 2u);
-  const char8_t* data = s.data();
-  EXPECT_EQ(char(data[0]), 'a');
-  EXPECT_EQ(char(data[1]), 'b');
-  EXPECT_EQ(from_u8str(format("{:*^5}"_u, "🤡"_u)), from_u8str("**🤡**"_u));
-}
-#endif
-
 TEST(FormatTest, EmphasisNonHeaderOnly) {
   // Ensure this compiles even if FMT_HEADER_ONLY is not defined.
   EXPECT_EQ(fmt::format(fmt::emphasis::bold, "bold error"),
@@ -2568,10 +2543,18 @@ TEST(FormatTest, FormatCustomChar) {
   EXPECT_EQ(result[0], mychar('x'));
 }
 
+// Convert a char8_t string to std::string. Otherwise GTest will insist on
+// inserting `char8_t` NTBS into a `char` stream which is disabled by P1423.
+template <typename S> std::string from_u8str(const S& str) {
+  return std::string(str.begin(), str.end());
+}
+
 TEST(FormatTest, FormatUTF8Precision) {
-  using str_type = std::basic_string<char8_t>;
-  str_type format(reinterpret_cast<const char8_t*>(u8"{:.4}"));
-  str_type str(reinterpret_cast<const char8_t*>(u8"caf\u00e9s"));  // cafés
+  using str_type = std::basic_string<fmt::internal::char8_type>;
+  str_type format(
+      reinterpret_cast<const fmt::internal::char8_type*>(u8"{:.4}"));
+  str_type str(reinterpret_cast<const fmt::internal::char8_type*>(
+      u8"caf\u00e9s"));  // cafés
   auto result = fmt::format(format, str);
   EXPECT_EQ(fmt::internal::count_code_points(result), 4);
   EXPECT_EQ(result.size(), 5);

@@ -48,17 +48,6 @@ endif ()
 
 set(CMAKE_REQUIRED_FLAGS ${CXX_STANDARD_FLAG})
 
-# Check if variadic templates are working and not affected by GCC bug 39653:
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=39653
-# Can be removed once gcc 4.4 support is dropped.
-check_cxx_source_compiles("
-  template <class T, class ...Types>
-  struct S { typedef typename S<Types...>::type type; };
-  int main() {}" SUPPORTS_VARIADIC_TEMPLATES)
-if (NOT SUPPORTS_VARIADIC_TEMPLATES)
-  set (SUPPORTS_VARIADIC_TEMPLATES OFF)
-endif ()
-
 # Check if user-defined literals are available
 check_cxx_source_compiles("
   void operator\"\" _udl(long double);

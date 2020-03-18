@@ -412,7 +412,7 @@ template <typename Char> struct ansi_color_escape {
 
   FMT_CONSTEXPR const Char* begin() const FMT_NOEXCEPT { return buffer; }
   FMT_CONSTEXPR const Char* end() const FMT_NOEXCEPT {
-    return buffer + std::strlen(buffer);
+    return buffer + std::char_traits<Char>::length(buffer);
   }
 
  private:
