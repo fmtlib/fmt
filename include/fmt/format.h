@@ -726,6 +726,13 @@ FMT_CONSTEXPR bool is_negative(T) {
   return false;
 }
 
+template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
+FMT_CONSTEXPR bool is_supported_floating_point(T) {
+  return (std::is_same<T, float>::value && FMT_USE_FLOAT) ||
+         (std::is_same<T, double>::value && FMT_USE_DOUBLE) ||
+         (std::is_same<T, long double>::value && FMT_USE_LONG_DOUBLE);
+}
+
 // Smallest of uint32_t, uint64_t, uint128_t that is large enough to
 // represent all values of T.
 template <typename T>
@@ -1687,10 +1694,7 @@ template <typename Range> class basic_writer {
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
   void write(T value, format_specs specs = {}) {
-    if (const_check(
-            (std::is_same<T, float>::value && !FMT_USE_FLOAT) ||
-            (std::is_same<T, double>::value && !FMT_USE_DOUBLE) ||
-            (std::is_same<T, long double>::value && !FMT_USE_LONG_DOUBLE))) {
+    if (const_check(!is_supported_floating_point(value))) {
       return;
     }
     float_specs fspecs = parse_float_type_spec(specs);
@@ -1891,11 +1895,8 @@ class arg_formatter_base {
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
   iterator operator()(T value) {
-    if (const_check(
-            (std::is_same<T, float>::value && !FMT_USE_FLOAT) ||
-            (std::is_same<T, double>::value && !FMT_USE_DOUBLE) ||
-            (std::is_same<T, long double>::value && !FMT_USE_LONG_DOUBLE))) {
-      FMT_ASSERT(false, "unsupported float argument");
+    if (const_check(!is_supported_floating_point(value))) {
+      FMT_ASSERT(false, "unsupported float argument type");
       return out();
     }
     writer_.write(value, specs_ ? *specs_ : format_specs());
