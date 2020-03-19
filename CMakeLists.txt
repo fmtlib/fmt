@@ -198,6 +198,7 @@ target_include_directories(fmt PUBLIC
 set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
 
 set_target_properties(fmt PROPERTIES
+  OUTPUT_NAME "fmt"
   VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
   DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
 
