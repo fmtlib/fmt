@@ -1685,9 +1685,14 @@ template <typename Range> class basic_writer {
     handle_int_type_spec(spec.type, int_writer<T, Spec>(*this, value, spec));
   }
 
-#if FMT_USE_FLOAT || FMT_USE_DOUBLE || FMT_USE_LONG_DOUBLE
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-  void write_float(T value, format_specs specs = {}) {
+  void write(T value, format_specs specs = {}) {
+    if (const_check(
+            (std::is_same<T, float>::value && !FMT_USE_FLOAT) ||
+            (std::is_same<T, double>::value && !FMT_USE_DOUBLE) ||
+            (std::is_same<T, long double>::value && !FMT_USE_LONG_DOUBLE))) {
+      return;
+    }
     float_specs fspecs = parse_float_type_spec(specs);
     fspecs.sign = specs.sign;
     if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
@@ -1744,17 +1749,6 @@ template <typename Range> class basic_writer {
                                                 static_cast<int>(buffer.size()),
                                                 exp, fspecs, point));
   }
-#endif
-
-#if FMT_USE_FLOAT
-  void write(float value, format_specs specs = {}) { write_float(value, specs); }
-#endif
-#if FMT_USE_DOUBLE
-  void write(double value, format_specs specs = {}) { write_float(value, specs); }
-#endif
-#if FMT_USE_LONG_DOUBLE
-  void write(long double value, format_specs specs = {}) { write_float(value, specs); }
-#endif
 
   void write(char value) {
     auto&& it = reserve(1);
@@ -1897,6 +1891,13 @@ class arg_formatter_base {
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
   iterator operator()(T value) {
+    if (const_check(
+            (std::is_same<T, float>::value && !FMT_USE_FLOAT) ||
+            (std::is_same<T, double>::value && !FMT_USE_DOUBLE) ||
+            (std::is_same<T, long double>::value && !FMT_USE_LONG_DOUBLE))) {
+      FMT_ASSERT(false, "unsupported float argument");
+      return out();
+    }
     writer_.write(value, specs_ ? *specs_ : format_specs());
     return out();
   }
@@ -2937,25 +2938,22 @@ struct formatter<T, Char,
           &specs_, internal::char_specs_checker<decltype(eh)>(specs_.type, eh));
       break;
     case internal::type::float_type:
-#if FMT_USE_FLOAT
-      internal::parse_float_type_spec(specs_, eh);
-#else
-      FMT_ASSERT(false, "float support disabled");
-#endif
+      if (internal::const_check(FMT_USE_FLOAT))
+        internal::parse_float_type_spec(specs_, eh);
+      else
+        FMT_ASSERT(false, "float support disabled");
       break;
     case internal::type::double_type:
-#if FMT_USE_DOUBLE
-      internal::parse_float_type_spec(specs_, eh);
-#else
-      FMT_ASSERT(false, "double support disabled");
-#endif
+      if (internal::const_check(FMT_USE_DOUBLE))
+        internal::parse_float_type_spec(specs_, eh);
+      else
+        FMT_ASSERT(false, "double support disabled");
       break;
     case internal::type::long_double_type:
-#if FMT_USE_LONG_DOUBLE
-      internal::parse_float_type_spec(specs_, eh);
-#else
-      FMT_ASSERT(false, "long double support disabled");
-#endif
+      if (internal::const_check(FMT_USE_LONG_DOUBLE))
+        internal::parse_float_type_spec(specs_, eh);
+      else
+        FMT_ASSERT(false, "long double support disabled");
       break;
     case internal::type::cstring_type:
       internal::handle_cstring_type_spec(

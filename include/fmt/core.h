@@ -1095,23 +1095,11 @@ FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
   case internal::type::char_type:
     return vis(arg.value_.char_value);
   case internal::type::float_type:
-#if FMT_USE_FLOAT
     return vis(arg.value_.float_value);
-#else
-    break;
-#endif
   case internal::type::double_type:
-#if FMT_USE_DOUBLE
     return vis(arg.value_.double_value);
-#else
-    break;
-#endif
   case internal::type::long_double_type:
-#if FMT_USE_LONG_DOUBLE
     return vis(arg.value_.long_double_value);
-#else
-    break;
-#endif
   case internal::type::cstring_type:
     return vis(arg.value_.string.data);
   case internal::type::string_type:
