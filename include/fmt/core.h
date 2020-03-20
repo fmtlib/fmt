@@ -316,6 +316,18 @@ struct int128_t {};
 struct uint128_t {};
 #endif
 
+#ifndef FMT_USE_FLOAT
+#  define FMT_USE_FLOAT 1
+#endif
+
+#ifndef FMT_USE_DOUBLE
+#  define FMT_USE_DOUBLE 1
+#endif
+
+#ifndef FMT_USE_LONG_DOUBLE
+#  define FMT_USE_LONG_DOUBLE 1
+#endif
+
 // Casts a nonnegative integer to unsigned.
 template <typename Int>
 FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
