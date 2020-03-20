@@ -138,6 +138,18 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
+#ifndef FMT_USE_FLOAT
+#  define FMT_USE_FLOAT 1
+#endif
+
+#ifndef FMT_USE_DOUBLE
+#  define FMT_USE_DOUBLE 1
+#endif
+
+#ifndef FMT_USE_LONG_DOUBLE
+#  define FMT_USE_LONG_DOUBLE 1
+#endif
+
 // __builtin_clz is broken in clang with Microsoft CodeGen:
 // https://github.com/fmtlib/fmt/issues/519
 #if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clz)) && !FMT_MSC_VER
@@ -1893,11 +1905,10 @@ class arg_formatter_base {
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
   iterator operator()(T value) {
-    if (const_check(!is_supported_floating_point(value))) {
+    if (const_check(is_supported_floating_point(value)))
+      writer_.write(value, specs_ ? *specs_ : format_specs());
+    else
       FMT_ASSERT(false, "unsupported float argument type");
-      return out();
-    }
-    writer_.write(value, specs_ ? *specs_ : format_specs());
     return out();
   }
 

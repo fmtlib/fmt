@@ -284,7 +284,8 @@ FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
 
 #ifndef FMT_ASSERT
 #  ifdef NDEBUG
-#    define FMT_ASSERT(condition, message)
+     // FMT_ASSERT is not empty to avoid -Werror=empty-body.
+#    define FMT_ASSERT(condition, message) ((void)0)
 #  else
 #    define FMT_ASSERT(condition, message)                                    \
       ((condition) /* void() fails with -Winvalid-constexpr on clang 4.0.1 */ \
@@ -314,18 +315,6 @@ using uint128_t = __uint128_t;
 #if !FMT_USE_INT128
 struct int128_t {};
 struct uint128_t {};
-#endif
-
-#ifndef FMT_USE_FLOAT
-#  define FMT_USE_FLOAT 1
-#endif
-
-#ifndef FMT_USE_DOUBLE
-#  define FMT_USE_DOUBLE 1
-#endif
-
-#ifndef FMT_USE_LONG_DOUBLE
-#  define FMT_USE_LONG_DOUBLE 1
 #endif
 
 // Casts a nonnegative integer to unsigned.
