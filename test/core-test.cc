@@ -435,8 +435,7 @@ template <> struct formatter<custom_type> {
   }
 
   template <typename FormatContext>
-  auto format(const custom_type& p, FormatContext& ctx) -> decltype(format_to(
-      ctx.out(), std::declval<typename FormatContext::char_type const*>())) {
+  auto format(const custom_type& p, FormatContext& ctx) -> decltype(ctx.out()) {
     return format_to(ctx.out(), "cust={}", p.i);
   }
 };
@@ -476,6 +475,32 @@ TEST(FormatDynArgsTest, NamedArgByRef) {
                                     store);
 
   EXPECT_EQ("42", result);
+}
+
+struct copy_throwable {
+  copy_throwable() {}
+  copy_throwable(const copy_throwable&) { throw "deal with it"; }
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<copy_throwable> {
+  auto parse(format_parse_context& ctx) const -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+  auto format(copy_throwable, format_context& ctx) -> decltype(ctx.out()) {
+    return ctx.out();
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(FormatDynArgsTest, ThrowOnCopy) {
+  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  store.push_back(std::string("foo"));
+  try {
+    store.push_back(copy_throwable());
+  } catch (...) {
+  }
+  EXPECT_EQ(fmt::vformat("{}", store), "foo");
 }
 
 TEST(StringViewTest, ValueType) {
