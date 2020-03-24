@@ -1152,9 +1152,11 @@ template <typename Char> class float_writer {
       // 1234e-6 -> 0.001234
       *it++ = static_cast<Char>('0');
       int num_zeros = -full_exp;
-      if (specs_.precision >= 0 && specs_.precision < num_zeros)
-        num_zeros = specs_.precision;
       int num_digits = num_digits_;
+      if (num_digits == 0 && specs_.precision >= 0 &&
+          specs_.precision < num_zeros) {
+        num_zeros = specs_.precision;
+      }
       // Remove trailing zeros.
       if (!specs_.showpoint)
         while (num_digits > 0 && digits_[num_digits - 1] == '0') --num_digits;
