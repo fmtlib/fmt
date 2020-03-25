@@ -507,20 +507,23 @@ class bigint {
   basic_memory_buffer<bigit, bigits_capacity> bigits_;
   int exp_;
 
+  bigit operator[](int index) const { return bigits_[to_unsigned(index)]; }
+  bigit& operator[](int index) { return bigits_[to_unsigned(index)]; }
+
   static FMT_CONSTEXPR_DECL const int bigit_bits = bits<bigit>::value;
 
   friend struct formatter<bigint>;
 
   void subtract_bigits(int index, bigit other, bigit& borrow) {
-    auto result = static_cast<double_bigit>(bigits_[index]) - other - borrow;
-    bigits_[index] = static_cast<bigit>(result);
+    auto result = static_cast<double_bigit>((*this)[index]) - other - borrow;
+    (*this)[index] = static_cast<bigit>(result);
     borrow = static_cast<bigit>(result >> (bigit_bits * 2 - 1));
   }
 
   void remove_leading_zeros() {
     int num_bigits = static_cast<int>(bigits_.size()) - 1;
-    while (num_bigits > 0 && bigits_[num_bigits] == 0) --num_bigits;
-    bigits_.resize(num_bigits + 1);
+    while (num_bigits > 0 && (*this)[num_bigits] == 0) --num_bigits;
+    bigits_.resize(to_unsigned(num_bigits + 1));
   }
 
   // Computes *this -= other assuming aligned bigints and *this >= other.
@@ -621,7 +624,7 @@ class bigint {
     int end = i - j;
     if (end < 0) end = 0;
     for (; i >= end; --i, --j) {
-      bigit lhs_bigit = lhs.bigits_[i], rhs_bigit = rhs.bigits_[j];
+      bigit lhs_bigit = lhs[i], rhs_bigit = rhs[j];
       if (lhs_bigit != rhs_bigit) return lhs_bigit > rhs_bigit ? 1 : -1;
     }
     if (i != j) return i > j ? 1 : -1;
@@ -636,7 +639,7 @@ class bigint {
     if (max_lhs_bigits + 1 < num_rhs_bigits) return -1;
     if (max_lhs_bigits > num_rhs_bigits) return 1;
     auto get_bigit = [](const bigint& n, int i) -> bigit {
-      return i >= n.exp_ && i < n.num_bigits() ? n.bigits_[i - n.exp_] : 0;
+      return i >= n.exp_ && i < n.num_bigits() ? n[i - n.exp_] : 0;
     };
     double_bigit borrow = 0;
     int min_exp = (std::min)((std::min)(lhs1.exp_, lhs2.exp_), rhs.exp_);
@@ -676,7 +679,7 @@ class bigint {
     basic_memory_buffer<bigit, bigits_capacity> n(std::move(bigits_));
     int num_bigits = static_cast<int>(bigits_.size());
     int num_result_bigits = 2 * num_bigits;
-    bigits_.resize(num_result_bigits);
+    bigits_.resize(to_unsigned(num_result_bigits));
     using accumulator_t = conditional_t<FMT_USE_INT128, uint128_t, accumulator>;
     auto sum = accumulator_t();
     for (int bigit_index = 0; bigit_index < num_bigits; ++bigit_index) {
@@ -686,7 +689,7 @@ class bigint {
         // Most terms are multiplied twice which can be optimized in the future.
         sum += static_cast<double_bigit>(n[i]) * n[j];
       }
-      bigits_[bigit_index] = static_cast<bigit>(sum);
+      (*this)[bigit_index] = static_cast<bigit>(sum);
       sum >>= bits<bigit>::value;  // Compute the carry.
     }
     // Do the same for the top half.
@@ -694,7 +697,7 @@ class bigint {
          ++bigit_index) {
       for (int j = num_bigits - 1, i = bigit_index - j; i < num_bigits;)
         sum += static_cast<double_bigit>(n[i++]) * n[j--];
-      bigits_[bigit_index] = static_cast<bigit>(sum);
+      (*this)[bigit_index] = static_cast<bigit>(sum);
       sum >>= bits<bigit>::value;
     }
     --num_result_bigits;
@@ -708,11 +711,11 @@ class bigint {
     FMT_ASSERT(this != &divisor, "");
     if (compare(*this, divisor) < 0) return 0;
     int num_bigits = static_cast<int>(bigits_.size());
-    FMT_ASSERT(divisor.bigits_[divisor.bigits_.size() - 1] != 0, "");
+    FMT_ASSERT(divisor.bigits_[divisor.bigits_.size() - 1u] != 0, "");
     int exp_difference = exp_ - divisor.exp_;
     if (exp_difference > 0) {
       // Align bigints by adding trailing zeros to simplify subtraction.
-      bigits_.resize(num_bigits + exp_difference);
+      bigits_.resize(to_unsigned(num_bigits + exp_difference));
       for (int i = num_bigits - 1, j = i + exp_difference; i >= 0; --i, --j)
         bigits_[j] = bigits_[i];
       std::uninitialized_fill_n(bigits_.data(), exp_difference, 0);
@@ -1023,7 +1026,7 @@ void fallback_format(Double d, buffer<char>& buf, int& exp10) {
         if (result > 0 || (result == 0 && (digit % 2) != 0))
           ++data[num_digits - 1];
       }
-      buf.resize(num_digits);
+      buf.resize(to_unsigned(num_digits));
       exp10 -= num_digits - 1;
       return;
     }
@@ -1157,10 +1160,11 @@ int snprintf_float(T value, int precision, float_specs specs,
       buf.reserve(buf.capacity() + 1);  // The buffer will grow exponentially.
       continue;
     }
-    unsigned size = to_unsigned(result);
+    auto size = to_unsigned(result);
     // Size equal to capacity means that the last character was truncated.
     if (size >= capacity) {
-      buf.reserve(size + offset + 1);  // Add 1 for the terminating '\0'.
+      // Add 1 for the terminating '\0'.
+      buf.reserve(size + offset + 1);
       continue;
     }
     auto is_digit = [](char c) { return c >= '0' && c <= '9'; };
@@ -1175,7 +1179,7 @@ int snprintf_float(T value, int precision, float_specs specs,
         --p;
       } while (is_digit(*p));
       int fraction_size = static_cast<int>(end - p - 1);
-      std::memmove(p, p + 1, fraction_size);
+      std::memmove(p, p + 1, to_unsigned(fraction_size));
       buf.resize(size - 1);
       return -fraction_size;
     }
@@ -1204,9 +1208,9 @@ int snprintf_float(T value, int precision, float_specs specs,
       while (*fraction_end == '0') --fraction_end;
       // Move the fractional part left to get rid of the decimal point.
       fraction_size = static_cast<int>(fraction_end - begin - 1);
-      std::memmove(begin + 1, begin + 2, fraction_size);
+      std::memmove(begin + 1, begin + 2, to_unsigned(fraction_size));
     }
-    buf.resize(fraction_size + offset + 1);
+    buf.resize(to_unsigned(fraction_size) + offset + 1);
     return exp - fraction_size;
   }
 }
@@ -1277,7 +1281,7 @@ template <> struct formatter<internal::bigint> {
     auto out = ctx.out();
     bool first = true;
     for (auto i = n.bigits_.size(); i > 0; --i) {
-      auto value = n.bigits_[i - 1];
+      auto value = n.bigits_[i - 1u];
       if (first) {
         out = format_to(out, "{:x}", value);
         first = false;
@@ -1313,7 +1317,7 @@ FMT_FUNC internal::utf8_to_utf16::utf8_to_utf16(string_view s) {
   }
   if (auto num_chars_left = s.data() + s.size() - p) {
     char buf[2 * block_size - 1] = {};
-    memcpy(buf, p, num_chars_left);
+    memcpy(buf, p, to_unsigned(num_chars_left));
     p = buf;
     do {
       p = transcode(p);

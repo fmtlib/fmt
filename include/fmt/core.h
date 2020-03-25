@@ -716,8 +716,10 @@ template <typename T> class buffer {
   /** Appends data to the end of the buffer. */
   template <typename U> void append(const U* begin, const U* end);
 
-  T& operator[](std::size_t index) { return ptr_[index]; }
-  const T& operator[](std::size_t index) const { return ptr_[index]; }
+  template <typename I> T& operator[](I index) { return ptr_[index]; }
+  template <typename I> const T& operator[](I index) const {
+    return ptr_[index];
+  }
 };
 
 // A container-backed buffer.
