@@ -1371,7 +1371,7 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
     if (!WriteConsoleW(reinterpret_cast<HANDLE>(_get_osfhandle(fd)),
                        u16.c_str(), static_cast<DWORD>(u16.size()), &written,
                        nullptr)) {
-      throw format_error("failed to write to console");
+      FMT_THROW(format_error("failed to write to console"));
     }
     return;
   }
