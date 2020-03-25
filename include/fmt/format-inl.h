@@ -1163,8 +1163,7 @@ int snprintf_float(T value, int precision, float_specs specs,
     auto size = to_unsigned(result);
     // Size equal to capacity means that the last character was truncated.
     if (size >= capacity) {
-      // Add 1 for the terminating '\0'.
-      buf.reserve(size + offset + 1);
+      buf.reserve(size + offset + 1);  // Add 1 for the terminating '\0'.
       continue;
     }
     auto is_digit = [](char c) { return c >= '0' && c <= '9'; };
