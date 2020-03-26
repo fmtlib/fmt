@@ -43,6 +43,10 @@
 
 #include "core.h"
 
+#ifdef FMT_DEPRECATED_INCLUDE_OS
+# include "os.h"
+#endif
+
 #ifdef __INTEL_COMPILER
 #  define FMT_ICC_VERSION __INTEL_COMPILER
 #elif defined(__ICL)

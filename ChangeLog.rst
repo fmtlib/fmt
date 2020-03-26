@@ -1,3 +1,54 @@
+6.2.0 - TBD
+-----------
+
+* Moved OS-specific APIs such as ``windows_error`` from ``fmt/format.h`` to
+  ``fmt/os.h``. You can define ``FMT_DEPRECATED_INCLUDE_OS`` to automatically
+  include ``fmt/os.h`` from ``fmt/format.h`` for compatibility but this will be
+  disabled in the new major release.
+
+* Improved error reporting when trying to format an object of a non-formattable
+  type:
+
+  .. code:: c++
+
+     fmt::format("{}", S());
+
+  now gives::
+
+    include/fmt/core.h:1015:5: error: static_assert failed due to requirement
+    'formattable' "Cannot format argument. To make type T formattable provide a
+    formatter<T> specialization:
+    https://fmt.dev/latest/api.html#formatting-user-defined-types"
+        static_assert(
+        ^
+    ...
+    note: in instantiation of function template specialization
+    'fmt::v6::format<char [3], S, char>' requested here
+      fmt::format("{}", S());
+           ^
+
+  if ``S`` is not formattable.
+
+* Added precision overflow detection in floating-point formatting.
+
+* Switched links to HTTPS in README
+  (`#1481 <https://github.com/fmtlib/fmt/pull/1481>`_).
+  Thanks `@imba-tjd (谭九鼎) <https://github.com/imba-tjd>`_.
+
+* Improved detection of the ``fallthrough`` attribute
+  (`#1469 <https://github.com/fmtlib/fmt/pull/1469>`_,
+  `#1475 <https://github.com/fmtlib/fmt/pull/1475>`_).
+  Thanks `@federico-busato (Federico) <https://github.com/federico-busato>`_,
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
+
+* Fixed various warnings and compilation issues
+  (`#1433 <https://github.com/fmtlib/fmt/pull/1433>`_,
+  `#1470 <https://github.com/fmtlib/fmt/pull/1470>`_,
+  `#1480 <https://github.com/fmtlib/fmt/pull/1480>`_).
+  Thanks `@marti4d (Chris Martin) <https://github.com/marti4d>`_,
+  `@iPherian <https://github.com/iPherian>`_,
+  `@parkertomatoes <https://github.com/parkertomatoes>`_.
+
 6.1.2 - 2019-12-11
 ------------------
 
