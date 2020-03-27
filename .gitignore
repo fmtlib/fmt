@@ -33,3 +33,9 @@ FMT.build
 Makefile
 run-msbuild.bat
 fmt.pc
+/Debug/
+/fmt.dir/
+/x64/
+*.vcxproj.filters
+*.vcxproj
+*.sln
