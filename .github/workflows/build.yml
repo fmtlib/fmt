@@ -28,11 +28,11 @@ jobs:
       run: cmake .
 
     - name: Build Release
-      working-directory: ./build
+      working-directory: .
       run: msbuild /m /p:Configuration=Release FMT.sln
       
     - name: Build Debug
-      working-directory: ./build
+      working-directory: .
       run: msbuild /m /p:Configuration=Debug FMT.sln
 
     - name: Nuget Pack
