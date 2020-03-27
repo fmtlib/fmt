@@ -37,8 +37,8 @@ jobs:
 
     - name: Nuget Pack
       working-directory: .
-      run: nuget pack fmtlib.nuspec -version 6.1.2 -OutputFileNamesWithoutVersion -OutputDirectory dist
+      run: nuget pack fmtlib.nuspec -version 6.1.2-rc1 -OutputFileNamesWithoutVersion -OutputDirectory dist
       
     - name: Nuget Push
       working-directory: .
-      run: nuget push dist\fmtlib.nupkg
+      run: nuget push dist\fmtlib.nupkg -ApiKey {{secrets.nuget_api_key}}
