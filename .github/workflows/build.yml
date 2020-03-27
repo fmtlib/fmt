@@ -41,4 +41,4 @@ jobs:
       
     - name: Nuget Push
       working-directory: .
-      run: nuget push dist\fmtlib.nupkg -ApiKey ${{secrets.nuget_api_key}}
+      run: nuget push dist\fmtlib.nupkg -ApiKey ${{secrets.nuget_api_key}} -Source https://api.nuget.org/v3/index.json
