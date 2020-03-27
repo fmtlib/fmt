@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>wuganhao.fmtlib</id>
+    <version>$version$</version>
+    <title>{fmt} lib nuget package</title>
+    <authors>Wu, Ganhao&lt;wuganhao@hotmail.com&gt;</authors>
+    <owners>Wu, Ganhao&lt;wuganhao@hotmail.com&gt;</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>fmtlib</description>
+    <releaseNotes>Create fmtlib for VS 2019</releaseNotes>
+    <tags>fmtlib std::format</tags>
+  </metadata>
+  <files>
+    <file src="Debug\fmtd.lib" target="lib\native\x64\Debug\" />
+    <file src="Debug\fmtd.lib" target="lib\native\x64\Debug\" />
+    <file src="include\fmt\*.h" target="build\include\fmt\" />
+  </files>
+</package>
