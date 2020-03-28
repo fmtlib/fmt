@@ -1757,6 +1757,8 @@ TEST(FormatTest, Print) {
   EXPECT_WRITE(stderr, fmt::print(stderr, "Don't {}!", "panic"),
                "Don't panic!");
 #endif
+  // Check that the wide print overload compiles.
+  if (fmt::internal::const_check(false)) fmt::print(L"test");
 }
 
 TEST(FormatTest, Variadic) {
