@@ -4,7 +4,7 @@
 * Moved OS-specific APIs such as ``windows_error`` from ``fmt/format.h`` to
   ``fmt/os.h``. You can define ``FMT_DEPRECATED_INCLUDE_OS`` to automatically
   include ``fmt/os.h`` from ``fmt/format.h`` for compatibility but this will be
-  disabled in the new major release.
+  disabled in the next major release.
 
 * Improved error reporting when trying to format an object of a non-formattable
   type:
@@ -29,7 +29,19 @@
 
   if ``S`` is not formattable.
 
+* Always print decimal point if ``#`` is specified
+  (`#1476 <https://github.com/fmtlib/fmt/issues/1476>`_,
+  `#1498 <https://github.com/fmtlib/fmt/issues/1498>`_).:
+
+  .. code:: c++
+
+     fmt::print("{:#.0f}", 42.0);
+
+  now prints ``42.``.
+
 * Added precision overflow detection in floating-point formatting.
+
+* Improved UTF-8 handling.
 
 * Switched links to HTTPS in README
   (`#1481 <https://github.com/fmtlib/fmt/pull/1481>`_).
@@ -44,10 +56,14 @@
 * Fixed various warnings and compilation issues
   (`#1433 <https://github.com/fmtlib/fmt/pull/1433>`_,
   `#1470 <https://github.com/fmtlib/fmt/pull/1470>`_,
-  `#1480 <https://github.com/fmtlib/fmt/pull/1480>`_).
+  `#1480 <https://github.com/fmtlib/fmt/pull/1480>`_,
+  `#1485 <https://github.com/fmtlib/fmt/pull/1485>`_,
+  `#1492 <https://github.com/fmtlib/fmt/pull/1492>`_).
   Thanks `@marti4d (Chris Martin) <https://github.com/marti4d>`_,
   `@iPherian <https://github.com/iPherian>`_,
-  `@parkertomatoes <https://github.com/parkertomatoes>`_.
+  `@parkertomatoes <https://github.com/parkertomatoes>`_,
+  `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
 
 6.1.2 - 2019-12-11
 ------------------
