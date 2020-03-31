@@ -44,7 +44,7 @@
 #include "core.h"
 
 #ifdef FMT_DEPRECATED_INCLUDE_OS
-# include "os.h"
+#  include "os.h"
 #endif
 
 #ifdef __INTEL_COMPILER
@@ -65,6 +65,12 @@
 #  define FMT_HAS_BUILTIN(x) __has_builtin(x)
 #else
 #  define FMT_HAS_BUILTIN(x) 0
+#endif
+
+#if FMT_GCC_VERSION || FMT_CLANG_VERSION
+#  define FMT_NOINLINE __attribute__((noinline))
+#else
+#  define FMT_NOINLINE
 #endif
 
 #if __cplusplus == 201103L || __cplusplus == 201402L
@@ -1392,7 +1398,7 @@ template <typename Char> struct nonfinite_writer {
 };
 
 template <typename OutputIt, typename Char>
-OutputIt fill(OutputIt it, size_t n, const fill_t<Char>& fill) {
+FMT_NOINLINE OutputIt fill(OutputIt it, size_t n, const fill_t<Char>& fill) {
   auto fill_size = fill.size();
   if (fill_size == 1) return std::fill_n(it, n, fill[0]);
   for (size_t i = 0; i < n; ++i) it = std::copy_n(fill.data(), fill_size, it);
