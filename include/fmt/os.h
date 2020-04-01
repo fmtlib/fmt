@@ -15,10 +15,9 @@
 
 #include <cerrno>
 #include <clocale>  // for locale_t
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>  // for strtod_l
-
-#include <cstddef>
 
 #if defined __APPLE__ || defined(__FreeBSD__)
 #  include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
@@ -351,12 +350,6 @@ class Locale {
 #  ifdef _WIN32
   using locale_t = _locale_t;
 
-  enum { LC_NUMERIC_MASK = LC_NUMERIC };
-
-  static locale_t newlocale(int category_mask, const char* locale, locale_t) {
-    return _create_locale(category_mask, locale);
-  }
-
   static void freelocale(locale_t locale) { _free_locale(locale); }
 
   static double strtod_l(const char* nptr, char** endptr, _locale_t locale) {
@@ -371,7 +364,12 @@ class Locale {
   Locale(const Locale&) = delete;
   void operator=(const Locale&) = delete;
 
-  Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", nullptr)) {
+  Locale() {
+#  ifndef _WIN32
+    locale_ = FMT_SYSTEM(newlocale(LC_NUMERIC_MASK, "C", nullptr));
+#  else
+    locale_ = _create_locale(LC_NUMERIC, "C");
+#  endif
     if (!locale_) FMT_THROW(system_error(errno, "cannot create locale"));
   }
   ~Locale() { freelocale(locale_); }

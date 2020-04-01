@@ -9,7 +9,11 @@
 #define FMT_POSIX_TEST_H
 
 #include <errno.h>
+#include <locale.h>
 #include <stdio.h>
+#ifdef __APPLE__
+#  include <xlocale.h>
+#endif
 
 #ifdef _WIN32
 #  include <windows.h>
@@ -62,6 +66,10 @@ int pipe(int* pfds, unsigned psize, int textmode);
 FILE* fopen(const char* filename, const char* mode);
 int fclose(FILE* stream);
 int(fileno)(FILE* stream);
+
+#if defined(FMT_LOCALE) && !defined(_WIN32)
+locale_t newlocale(int category_mask, const char* locale, locale_t base);
+#endif
 }  // namespace test
 
 #define FMT_SYSTEM(call) test::call
