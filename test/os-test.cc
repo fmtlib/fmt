@@ -489,9 +489,9 @@ TEST(FileTest, Fdopen) {
 
 #  ifdef FMT_LOCALE
 TEST(LocaleTest, Strtod) {
-  fmt::Locale locale;
+  fmt::locale loc;
   const char *start = "4.2", *ptr = start;
-  EXPECT_EQ(4.2, locale.strtod(ptr));
+  EXPECT_EQ(4.2, loc.strtod(ptr));
   EXPECT_EQ(start + 3, ptr);
 }
 #  endif

@@ -345,15 +345,15 @@ long getpagesize();
 
 #ifdef FMT_LOCALE
 // A "C" numeric locale.
-class Locale {
+class locale {
  private:
 #  ifdef _WIN32
   using locale_t = _locale_t;
 
-  static void freelocale(locale_t locale) { _free_locale(locale); }
+  static void freelocale(locale_t loc) { _free_locale(loc); }
 
-  static double strtod_l(const char* nptr, char** endptr, _locale_t locale) {
-    return _strtod_l(nptr, endptr, locale);
+  static double strtod_l(const char* nptr, char** endptr, _locale_t loc) {
+    return _strtod_l(nptr, endptr, loc);
   }
 #  endif
 
@@ -361,10 +361,10 @@ class Locale {
 
  public:
   using type = locale_t;
-  Locale(const Locale&) = delete;
-  void operator=(const Locale&) = delete;
+  locale(const locale&) = delete;
+  void operator=(const locale&) = delete;
 
-  Locale() {
+  locale() {
 #  ifndef _WIN32
     locale_ = FMT_SYSTEM(newlocale(LC_NUMERIC_MASK, "C", nullptr));
 #  else
@@ -372,7 +372,7 @@ class Locale {
 #  endif
     if (!locale_) FMT_THROW(system_error(errno, "cannot create locale"));
   }
-  ~Locale() { freelocale(locale_); }
+  ~locale() { freelocale(locale_); }
 
   type get() const { return locale_; }
 
@@ -385,6 +385,7 @@ class Locale {
     return result;
   }
 };
+using Locale FMT_DEPRECATED_ALIAS = locale;
 #endif  // FMT_LOCALE
 FMT_END_NAMESPACE
 
