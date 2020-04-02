@@ -1256,7 +1256,7 @@ TEST(FormatterTest, FormatShort) {
 TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(format("{0:v", 42), format_error,
                    "missing '}' in format string");
-  check_unknown_types(42, "bBdoxXn", "integer");
+  check_unknown_types(42, "bBdoxXnL", "integer");
 }
 
 TEST(FormatterTest, FormatBin) {
@@ -1397,6 +1397,7 @@ TEST(FormatterTest, FormatOct) {
 
 TEST(FormatterTest, FormatIntLocale) {
   EXPECT_EQ("1234", format("{:n}", 1234));
+  EXPECT_EQ("1234", format("{:L}", 1234));
 }
 
 struct ConvertibleToLongLong {
@@ -1491,7 +1492,7 @@ TEST(FormatterTest, FormatLongDouble) {
 }
 
 TEST(FormatterTest, FormatChar) {
-  const char types[] = "cbBdoxXn";
+  const char types[] = "cbBdoxXnL";
   check_unknown_types('a', types, "char");
   EXPECT_EQ("a", format("{0}", 'a'));
   EXPECT_EQ("z", format("{0:c}", 'z'));

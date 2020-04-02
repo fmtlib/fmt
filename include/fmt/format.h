@@ -1236,6 +1236,7 @@ FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
     handler.on_oct();
     break;
   case 'n':
+  case 'L':
     handler.on_num();
     break;
   default:
