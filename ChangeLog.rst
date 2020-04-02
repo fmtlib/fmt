@@ -49,7 +49,7 @@
 
 * Implemented detection of invalid use of ``fmt::arg``.
 
-* Used ``type_identity`` to block unnecessary template argument deduction
+* Used ``type_identity`` to block unnecessary template argument deduction.
   Thanks Tim Song.
 
 * Improved UTF-8 handling
@@ -69,22 +69,75 @@
 
   on systems that support Unicode.
 
+* Implemented dynamic argument storage
+  (`#1170 <https://github.com/fmtlib/fmt/issues/1170>`_,
+  `#1584 <https://github.com/fmtlib/fmt/pull/1584>`_):
+
+  .. code:: c++
+
+     fmt::dynamic_format_arg_store<fmt::format_context> store;
+     store.push_back("answer");
+     store.push_back(42);
+     fmt::vprint("The {} is {}.\n", store);
+  
+  prints::
+
+     The answer is 42.
+
+  Thanks `vsolontsov-ll (Vladimir Solontsov)
+  <https://github.com/vsolontsov-ll>`_.
+
+* Made ``fmt::join`` accept ``initializer_list``
+  (`#1591 <https://github.com/fmtlib/fmt/pull/1591>`_).
+  Thanks `Rapotkinnik (Nikolay Rapotkin) <https://github.com/Rapotkinnik>`_.
+
+* Fixed handling of empty tuples
+  (`#1588 <https://github.com/fmtlib/fmt/issues/1588>`_).
+
 * Fixed handling of output iterators in ``format_to_n``
   (`#1506 <https://github.com/fmtlib/fmt/issues/1506>`_).
+
+* Fixed formatting of ``std::chrono::duration`` types to wide output
+  (`#1533 <https://github.com/fmtlib/fmt/pull/1533>`_).
+  Thanks `zeffy (pilao) <https://github.com/zeffy>`_.
+
+* Added const ``begin`` and ``end`` overload to buffers
+  (`#1553 <https://github.com/fmtlib/fmt/pull/1553>`_).
+  Thanks `dominicpoeschko <https://github.com/dominicpoeschko>`_.
+
+* Implemented a minor optimization in the format string parser
+  (`#1560 <https://github.com/fmtlib/fmt/pull/1560>`_).
+  Thanks `IkarusDeveloper <https://github.com/IkarusDeveloper>`_.
 
 * Switched links to HTTPS in README
   (`#1481 <https://github.com/fmtlib/fmt/pull/1481>`_).
   Thanks `@imba-tjd (谭九鼎) <https://github.com/imba-tjd>`_.
 
-* Improved detection of the ``fallthrough`` attribute
+* Improved attribute detection
   (`#1469 <https://github.com/fmtlib/fmt/pull/1469>`_,
-  `#1475 <https://github.com/fmtlib/fmt/pull/1475>`_).
+  `#1475 <https://github.com/fmtlib/fmt/pull/1475>`_,
+  `#1576 <https://github.com/fmtlib/fmt/pull/1576>`_).
   Thanks `@federico-busato (Federico) <https://github.com/federico-busato>`_,
-  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
+  `@refnum <https://github.com/refnum>`_.
 
 * Improved documentation
   (`#1523 <https://github.com/fmtlib/fmt/pull/1523>`_).
   Thanks `@JackBoosY (Jack·Boos·Yu) <https://github.com/JackBoosY>`_.
+
+* Fixed symbol visibility on Linux when compiling with ``-fvisibility=hidden``
+  (`#1535 <https://github.com/fmtlib/fmt/pull/1535>`_).
+  Thanks `@milianw (Milian Wolff) <https://github.com/milianw>`_.
+
+* Implemented various build configuration fixes and improvements
+  (`#1264 <https://github.com/fmtlib/fmt/issues/1264>`_,
+  `#1534 <https://github.com/fmtlib/fmt/pull/1534>`_,
+  `#1546 <https://github.com/fmtlib/fmt/pull/1546>`_,
+  `#1566 <https://github.com/fmtlib/fmt/issues/1566>`_,
+  `#1582 <https://github.com/fmtlib/fmt/pull/1582>`_).
+  Thanks `@ambitslix (Attila M. Szilagyi) <https://github.com/ambitslix>`_,
+  `@jwillikers (Jordan Williams) <https://github.com/jwillikers>`_,
+  `@stac47 (Laurent Stacul) <https://github.com/stac47>`_.
 
 * Fixed various warnings and compilation issues
   (`#1433 <https://github.com/fmtlib/fmt/pull/1433>`_,
@@ -101,7 +154,19 @@
   `#1520 <https://github.com/fmtlib/fmt/pull/1520>`_,
   `#1521 <https://github.com/fmtlib/fmt/pull/1521>`_,
   `#1521 <https://github.com/fmtlib/fmt/pull/1522>`_,
-  `#1530 <https://github.com/fmtlib/fmt/pull/1530>`_).
+  `#1530 <https://github.com/fmtlib/fmt/pull/1530>`_,
+  `#1531 <https://github.com/fmtlib/fmt/issues/1531>`_,
+  `#1532 <https://github.com/fmtlib/fmt/pull/1532>`_,
+  `#1539 <https://github.com/fmtlib/fmt/issues/1539>`_,
+  `#1548 <https://github.com/fmtlib/fmt/issues/1548>`_,
+  `#1554 <https://github.com/fmtlib/fmt/pull/1554>`_,
+  `#1568 <https://github.com/fmtlib/fmt/pull/1568>`_,
+  `#1569 <https://github.com/fmtlib/fmt/pull/1569>`_,
+  `#1571 <https://github.com/fmtlib/fmt/pull/1571>`_,
+  `#1573 <https://github.com/fmtlib/fmt/pull/1573>`_,
+  `#1575 <https://github.com/fmtlib/fmt/pull/1575>`_,
+  `#1581 <https://github.com/fmtlib/fmt/pull/1581>`_,
+  `#1583 <https://github.com/fmtlib/fmt/issues/1583>`_).
   Thanks `@marti4d (Chris Martin) <https://github.com/marti4d>`_,
   `@iPherian <https://github.com/iPherian>`_,
   `@parkertomatoes <https://github.com/parkertomatoes>`_,
@@ -110,7 +175,11 @@
   `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
   `@torsten48 <https://github.com/torsten48>`_,
   `@tohammer (Tobias Hammer) <https://github.com/tohammer>`_,
-  `@lefticus (Jason Turner) <https://github.com/lefticus>`_.
+  `@lefticus (Jason Turner) <https://github.com/lefticus>`_,
+  `@ryusakki (Haise) <https://github.com/ryusakki>`_,
+  `@fghzxm <https://github.com/fghzxm>`_,
+  `@refnum <https://github.com/refnum>`_,
+  `@pramodk (Pramod Kumbhar) <https://github.com/pramodk>`_.
 
 6.1.2 - 2019-12-11
 ------------------
