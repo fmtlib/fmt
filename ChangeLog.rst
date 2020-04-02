@@ -1,11 +1,6 @@
 6.2.0 - TBD
 -----------
 
-* Moved OS-specific APIs such as ``windows_error`` from ``fmt/format.h`` to
-  ``fmt/os.h``. You can define ``FMT_DEPRECATED_INCLUDE_OS`` to automatically
-  include ``fmt/os.h`` from ``fmt/format.h`` for compatibility but this will be
-  disabled in the next major release.
-
 * Improved error reporting when trying to format an object of a non-formattable
   type:
 
@@ -29,6 +24,8 @@
 
   if ``S`` is not formattable.
 
+* Reduced library size by ~10%.
+
 * Always print decimal point if ``#`` is specified
   (`#1476 <https://github.com/fmtlib/fmt/issues/1476>`_,
   `#1498 <https://github.com/fmtlib/fmt/issues/1498>`_).:
@@ -39,9 +36,41 @@
 
   now prints ``42.``.
 
+* Implemented the ``'L'`` specifier for locale-specific numeric formatting to
+  improve compatibility with ``std::format``. The ``'n'`` specifier is now
+  deprecated and will be removed in the next major release.
+
+* Moved OS-specific APIs such as ``windows_error`` from ``fmt/format.h`` to
+  ``fmt/os.h``. You can define ``FMT_DEPRECATED_INCLUDE_OS`` to automatically
+  include ``fmt/os.h`` from ``fmt/format.h`` for compatibility but this will be
+  disabled in the next major release.
+
 * Added precision overflow detection in floating-point formatting.
 
-* Improved UTF-8 handling.
+* Implemented detection of invalid use of ``fmt::arg``.
+
+* Used ``type_identity`` to block unnecessary template argument deduction
+  Thanks Tim Song.
+
+* Improved UTF-8 handling
+  (`#1109 <https://github.com/fmtlib/fmt/issues/1109>`_):
+
+  .. code:: c++
+
+     fmt::print("┌{0:─^{2}}┐\n"
+                "│{1: ^{2}}│\n"
+                "└{0:─^{2}}┘\n", "", "Привет, мир!", 20);
+
+  now prints::
+
+     ┌────────────────────┐
+     │    Привет, мир!    │
+     └────────────────────┘
+
+  on systems that support Unicode.
+
+* Fixed handling of output iterators in ``format_to_n``
+  (`#1506 <https://github.com/fmtlib/fmt/issues/1506>`_).
 
 * Switched links to HTTPS in README
   (`#1481 <https://github.com/fmtlib/fmt/pull/1481>`_).
@@ -53,17 +82,35 @@
   Thanks `@federico-busato (Federico) <https://github.com/federico-busato>`_,
   `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
 
+* Improved documentation
+  (`#1523 <https://github.com/fmtlib/fmt/pull/1523>`_).
+  Thanks `@JackBoosY (Jack·Boos·Yu) <https://github.com/JackBoosY>`_.
+
 * Fixed various warnings and compilation issues
   (`#1433 <https://github.com/fmtlib/fmt/pull/1433>`_,
   `#1470 <https://github.com/fmtlib/fmt/pull/1470>`_,
   `#1480 <https://github.com/fmtlib/fmt/pull/1480>`_,
   `#1485 <https://github.com/fmtlib/fmt/pull/1485>`_,
-  `#1492 <https://github.com/fmtlib/fmt/pull/1492>`_).
+  `#1492 <https://github.com/fmtlib/fmt/pull/1492>`_,
+  `#1505 <https://github.com/fmtlib/fmt/pull/1505>`_,
+  `#1512 <https://github.com/fmtlib/fmt/pull/1512>`_,
+  `#1515 <https://github.com/fmtlib/fmt/issues/1515>`_,
+  `#1516 <https://github.com/fmtlib/fmt/pull/1516>`_,
+  `#1518 <https://github.com/fmtlib/fmt/pull/1518>`_,
+  `#1519 <https://github.com/fmtlib/fmt/pull/1519>`_,
+  `#1520 <https://github.com/fmtlib/fmt/pull/1520>`_,
+  `#1521 <https://github.com/fmtlib/fmt/pull/1521>`_,
+  `#1521 <https://github.com/fmtlib/fmt/pull/1522>`_,
+  `#1530 <https://github.com/fmtlib/fmt/pull/1530>`_).
   Thanks `@marti4d (Chris Martin) <https://github.com/marti4d>`_,
   `@iPherian <https://github.com/iPherian>`_,
   `@parkertomatoes <https://github.com/parkertomatoes>`_,
   `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
-  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_.
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
+  `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
+  `@torsten48 <https://github.com/torsten48>`_,
+  `@tohammer (Tobias Hammer) <https://github.com/tohammer>`_,
+  `@lefticus (Jason Turner) <https://github.com/lefticus>`_.
 
 6.1.2 - 2019-12-11
 ------------------
