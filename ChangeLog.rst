@@ -109,7 +109,7 @@
   ``FMT_USE_DOUBLE`` and ``FMT_USE_LONG_DOUBLE`` macros for extremely
   memory-constrained embedded system
   (`#1590 <https://github.com/fmtlib/fmt/pull/1590>`_).
-  Thanks `@albaguirre (Alberto Aguirre) <https://github.com/albaguirre >`_.
+  Thanks `@albaguirre (Alberto Aguirre) <https://github.com/albaguirre>`_.
 
 * Made ``FMT_STRING`` work with ``constexpr`` ``string_view``
   (`#1589 <https://github.com/fmtlib/fmt/pull/1589>`_).
