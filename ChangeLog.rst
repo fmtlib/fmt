@@ -28,7 +28,7 @@
 
 * Always print decimal point if ``#`` is specified
   (`#1476 <https://github.com/fmtlib/fmt/issues/1476>`_,
-  `#1498 <https://github.com/fmtlib/fmt/issues/1498>`_).:
+  `#1498 <https://github.com/fmtlib/fmt/issues/1498>`_):
 
   .. code:: c++
 
