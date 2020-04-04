@@ -1319,7 +1319,7 @@ using wformat_context = buffer_context<wchar_t>;
  */
 template <typename Context, typename... Args>
 class format_arg_store
-#if FMT_GCC_VERSION < 409
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
     // Workaround a GCC template argument substitution bug.
     : public basic_format_args<Context>
 #endif
@@ -1343,7 +1343,7 @@ class format_arg_store
 
   format_arg_store(const Args&... args)
       :
-#if FMT_GCC_VERSION < 409
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
         basic_format_args<Context>(*this),
 #endif
         data_{internal::make_arg<is_packed, Context>(args)...} {
@@ -1376,7 +1376,7 @@ inline format_arg_store<Context, Args...> make_format_args(
  */
 template <typename Context>
 class dynamic_format_arg_store
-#if FMT_GCC_VERSION < 409
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
     // Workaround a GCC template argument substitution bug.
     : public basic_format_args<Context>
 #endif
