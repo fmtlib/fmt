@@ -34,7 +34,7 @@
 
      fmt::print("{:#.0f}", 42.0);
 
-  now prints ``42.``.
+  now prints ``42.``
 
 * Implemented the ``'L'`` specifier for locale-specific numeric formatting to
   improve compatibility with ``std::format``. The ``'n'`` specifier is now
