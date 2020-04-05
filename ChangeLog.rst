@@ -1,5 +1,5 @@
-6.2.0 - TBD
------------
+6.2.0 - 2020-04-05
+------------------
 
 * Improved error reporting when trying to format an object of a non-formattable
   type:
