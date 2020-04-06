@@ -43,7 +43,7 @@ participate in an overload resolution if the latter is not a string.
 .. _format:
 
 .. doxygenfunction:: format(const S&, Args&&...)
-.. doxygenfunction:: vformat(const S&, basic_format_args<buffer_context<Char>>)
+.. doxygenfunction:: vformat(const S&, basic_format_args<buffer_context<type_identity_t<Char>>>)
 
 .. _print:
 
