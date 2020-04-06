@@ -22,8 +22,14 @@
 #endif
 
 #ifdef _WIN32
+#  if defined(NOMINMAX)
+#    include <windows.h>
+#  else
+#    define NOMINMAX
+#    include <windows.h>
+#    undef NOMINMAX
+#  endif
 #  include <io.h>
-#  include <windows.h>
 #endif
 
 #ifdef _MSC_VER
