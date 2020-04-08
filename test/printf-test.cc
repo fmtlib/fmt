@@ -447,6 +447,12 @@ TEST(PrintfTest, String) {
   EXPECT_PRINTF(L"    (null)", L"%10s", null_wstr);
 }
 
+TEST(PrintfTest, UCharString) {
+  unsigned char str[] = "test";
+  unsigned char* pstr = str;
+  EXPECT_EQ("test", fmt::sprintf("%s", pstr));
+}
+
 TEST(PrintfTest, Pointer) {
   int n;
   void* p = &n;

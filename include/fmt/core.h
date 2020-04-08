@@ -972,6 +972,14 @@ template <typename Context> struct arg_mapper {
     static_assert(std::is_same<char_type, char>::value, "invalid string type");
     return reinterpret_cast<const char*>(val);
   }
+  FMT_CONSTEXPR const char* map(signed char* val) {
+    const auto* const_val = val;
+    return map(const_val);
+  }
+  FMT_CONSTEXPR const char* map(unsigned char* val) {
+    const auto* const_val = val;
+    return map(const_val);
+  }
 
   FMT_CONSTEXPR const void* map(void* val) { return val; }
   FMT_CONSTEXPR const void* map(const void* val) { return val; }
