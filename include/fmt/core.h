@@ -198,6 +198,7 @@
 #  define FMT_CLASS_API FMT_NO_W4275
 #  ifdef FMT_EXPORT
 #    define FMT_API __declspec(dllexport)
+#    define FMT_EXTERN_TEMPLATE_API FMT_API
 #  elif defined(FMT_SHARED)
 #    define FMT_API __declspec(dllimport)
 #    define FMT_EXTERN_TEMPLATE_API FMT_API
