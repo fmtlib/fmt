@@ -29,7 +29,7 @@ struct sprintf_specs {
   bool alt : 1;
 
   template <typename Char>
-  constexpr sprintf_specs(basic_format_specs<Char> specs)
+  constexpr explicit sprintf_specs(basic_format_specs<Char> specs)
       : precision(specs.precision), type(specs.type), alt(specs.alt) {}
 
   constexpr bool has_precision() const { return precision >= 0; }
