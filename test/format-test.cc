@@ -1413,7 +1413,7 @@ TEST(FormatterTest, FormatFloat) {
 }
 
 TEST(FormatterTest, FormatDouble) {
-  check_unknown_types(1.2, "eEfFgGaAn%", "double");
+  check_unknown_types(1.2, "eEfFgGaAnL%", "double");
   EXPECT_EQ("0.0", format("{:}", 0.0));
   EXPECT_EQ("0.000000", format("{:f}", 0.0));
   EXPECT_EQ("0", format("{:g}", 0.0));
@@ -1422,6 +1422,7 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ("392.65", format("{:G}", 392.65));
   EXPECT_EQ("392.650000", format("{:f}", 392.65));
   EXPECT_EQ("392.650000", format("{:F}", 392.65));
+  EXPECT_EQ("42", format("{:L}", 42.0));
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%e", 392.65);
   EXPECT_EQ(buffer, format("{0:e}", 392.65));

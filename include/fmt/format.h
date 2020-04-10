@@ -1287,6 +1287,7 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
     result.format = float_format::hex;
     break;
   case 'n':
+  case 'L':
     result.locale = true;
     break;
   default:
