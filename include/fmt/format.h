@@ -189,7 +189,7 @@ inline uint32_t clz(uint32_t x) {
   // Static analysis complains about using uninitialized data
   // "r", but the only way that can happen is if "x" is 0,
   // which the callers guarantee to not happen.
-#  pragma warning(suppress : 6102)
+  FMT_SUPPRESS_MSC_WARNING(6102)
   return 31 - r;
 }
 #  define FMT_BUILTIN_CLZ(n) internal::clz(n)
@@ -214,7 +214,7 @@ inline uint32_t clzll(uint64_t x) {
   // Static analysis complains about using uninitialized data
   // "r", but the only way that can happen is if "x" is 0,
   // which the callers guarantee to not happen.
-#  pragma warning(suppress : 6102)
+  FMT_SUPPRESS_MSC_WARNING(6102)
   return 63 - r;
 }
 #  define FMT_BUILTIN_CLZLL(n) internal::clzll(n)
