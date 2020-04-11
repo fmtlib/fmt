@@ -1331,7 +1331,7 @@ class format_arg_store
 {
  private:
   static const size_t num_args = sizeof...(Args);
-  static const bool is_packed = num_args < internal::max_packed_args;
+  static const bool is_packed = num_args <= internal::max_packed_args;
 
   using value_type = conditional_t<is_packed, internal::value<Context>,
                                    basic_format_arg<Context>>;
@@ -1481,25 +1481,27 @@ template <typename Context> class basic_format_args {
   using format_arg = basic_format_arg<Context>;
 
  private:
-  // To reduce compiled code size per formatting function call, types of first
-  // max_packed_args arguments are passed in the types_ field.
-  unsigned long long types_;
+  // A descriptor that contains information about formatting arguments.
+  // If the number of arguments is less or equal to max_packed_args then
+  // argument types are passed in the descriptor. This reduces binary code size
+  // per formatting function call.
+  unsigned long long desc_;
   union {
-    // If the number of arguments is less than max_packed_args, the argument
-    // values are stored in values_, otherwise they are stored in args_.
-    // This is done to reduce compiled code size as storing larger objects
+    // If is_packed() returns true then argument values are stored in values_;
+    // otherwise they are stored in args_. This is done to improve cache
+    // locality and reduce compiled code size since storing larger objects
     // may require more code (at least on x86-64) even if the same amount of
     // data is actually copied to stack. It saves ~10% on the bloat test.
     const internal::value<Context>* values_;
     const format_arg* args_;
   };
 
-  bool is_packed() const { return (types_ & internal::is_unpacked_bit) == 0; }
+  bool is_packed() const { return (desc_ & internal::is_unpacked_bit) == 0; }
 
   internal::type type(int index) const {
     int shift = index * internal::packed_arg_bits;
     unsigned int mask = (1 << internal::packed_arg_bits) - 1;
-    return static_cast<internal::type>((types_ >> shift) & mask);
+    return static_cast<internal::type>((desc_ >> shift) & mask);
   }
 
   friend class internal::arg_map<Context>;
@@ -1523,7 +1525,7 @@ template <typename Context> class basic_format_args {
   }
 
  public:
-  basic_format_args() : types_(0) {}
+  basic_format_args() : desc_(0) {}
 
   /**
    \rst
@@ -1532,7 +1534,7 @@ template <typename Context> class basic_format_args {
    */
   template <typename... Args>
   basic_format_args(const format_arg_store<Context, Args...>& store)
-      : types_(store.types) {
+      : desc_(store.types) {
     set_data(store.data_);
   }
 
@@ -1543,7 +1545,7 @@ template <typename Context> class basic_format_args {
    \endrst
    */
   basic_format_args(const dynamic_format_arg_store<Context>& store)
-      : types_(store.get_types()) {
+      : desc_(store.get_types()) {
     set_data(store.data_.data());
   }
 
@@ -1553,7 +1555,7 @@ template <typename Context> class basic_format_args {
    \endrst
    */
   basic_format_args(const format_arg* args, int count)
-      : types_(internal::is_unpacked_bit | internal::to_unsigned(count)) {
+      : desc_(internal::is_unpacked_bit | internal::to_unsigned(count)) {
     set_data(args);
   }
 
@@ -1568,7 +1570,7 @@ template <typename Context> class basic_format_args {
   int max_size() const {
     unsigned long long max_packed = internal::max_packed_args;
     return static_cast<int>(is_packed() ? max_packed
-                                        : types_ & ~internal::is_unpacked_bit);
+                                        : desc_ & ~internal::is_unpacked_bit);
   }
 };
 
