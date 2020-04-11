@@ -2139,12 +2139,18 @@ template <typename ErrorHandler> class numeric_specs_checker {
 // A format specifier handler that checks if specifiers are consistent with the
 // argument type.
 template <typename Handler> class specs_checker : public Handler {
+ private:
+  numeric_specs_checker<Handler> checker_;
+
+  // Suppress an MSVC warning about using this in initializer list.
+  FMT_CONSTEXPR Handler& error_handler() { return *this; }
+
  public:
   FMT_CONSTEXPR specs_checker(const Handler& handler, internal::type arg_type)
-      : Handler(handler), checker_(*this, arg_type) {}
+      : Handler(handler), checker_(error_handler(), arg_type) {}
 
   FMT_CONSTEXPR specs_checker(const specs_checker& other)
-      : Handler(other), checker_(*this, other.arg_type_) {}
+      : Handler(other), checker_(error_handler(), other.arg_type_) {}
 
   FMT_CONSTEXPR void on_align(align_t align) {
     if (align == align::numeric) checker_.require_numeric_argument();
@@ -2177,9 +2183,6 @@ template <typename Handler> class specs_checker : public Handler {
   }
 
   FMT_CONSTEXPR void end_precision() { checker_.check_precision(); }
-
- private:
-  numeric_specs_checker<Handler> checker_;
 };
 
 template <template <typename> class Handler, typename FormatArg,
