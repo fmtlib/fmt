@@ -760,6 +760,62 @@ using has_fallback_formatter =
 template <typename Char> struct named_arg_base;
 template <typename T, typename Char> struct named_arg;
 
+template <typename Char> struct named_arg_info {
+  const Char* name;
+  int arg_id;
+};
+
+template <typename T, typename Char, size_t NUM_ARGS, size_t NUM_NAMED_ARGS>
+struct arg_data {
+  T args[NUM_ARGS != 0 ? NUM_ARGS : 1];
+  named_arg_info<Char> named_args[NUM_NAMED_ARGS];
+  template <typename... U> arg_data(const U&... init) : args{init...} {}
+};
+
+template <typename T, typename Char, size_t NUM_ARGS>
+struct arg_data<T, Char, NUM_ARGS, 0> {
+  T args[NUM_ARGS != 0 ? NUM_ARGS : 1];
+  static constexpr std::nullptr_t named_args = nullptr;
+  template <typename... U> arg_data(const U&... init) : args{init...} {}
+};
+
+template <typename T, typename Char, size_t NUM_ARGS>
+constexpr std::nullptr_t arg_data<T, Char, NUM_ARGS, 0>::named_args;
+
+template <typename Char>
+inline void init_named_args(named_arg_info<Char>*, int, int) {}
+
+template <typename Char, typename T, typename... Tail>
+void init_named_args(named_arg_info<Char>* named_args, int arg_count,
+                     int named_arg_count, const T&, const Tail&... args) {
+  init_named_args(named_args, arg_count + 1, named_arg_count, args...);
+}
+
+template <typename Char, typename T, typename... Tail>
+void init_named_args(named_arg_info<Char>* named_args, int arg_count,
+                     int named_arg_count, const named_arg<T, Char>& arg,
+                     const Tail&... args) {
+  named_args[named_arg_count++] = {arg.name.data(), arg_count};
+  init_named_args(named_args, arg_count + 1, named_arg_count, args...);
+}
+
+template <typename... Args>
+void init_named_args(std::nullptr_t, int, int, const Args&...) {}
+
+template <typename T> struct is_named_arg : std::false_type {};
+
+template <typename T, typename Char>
+struct is_named_arg<named_arg<T, Char>> : std::true_type {};
+
+template <bool B = false> constexpr size_t count() { return B ? 1 : 0; }
+template <bool B1, bool B2, bool... Tail> constexpr size_t count() {
+  return (B1 ? 1 : 0) + count<B2, Tail...>();
+}
+
+template <typename... Args> constexpr size_t count_named_args() {
+  return count<is_named_arg<Args>::value...>();
+}
+
 enum class type {
   none_type,
   named_arg_type,
@@ -1338,15 +1394,18 @@ class format_arg_store
   using value_type = conditional_t<is_packed, internal::value<Context>,
                                    basic_format_arg<Context>>;
 
-  // If the arguments are not packed, add one more element to mark the end.
-  value_type data_[num_args + (num_args == 0 ? 1 : 0)];
+  internal::arg_data<value_type, typename Context::char_type, num_args,
+                     internal::count_named_args<Args...>()>
+      data_;
 
   friend class basic_format_args<Context>;
 
- public:
-  static constexpr unsigned long long types =
+  static constexpr unsigned long long desc =
       is_packed ? internal::encode_types<Context, Args...>()
                 : internal::is_unpacked_bit | num_args;
+
+ public:
+  FMT_DEPRECATED static constexpr unsigned long long types = desc;
 
   format_arg_store(const Args&... args)
       :
@@ -1354,6 +1413,7 @@ class format_arg_store
         basic_format_args<Context>(*this),
 #endif
         data_{internal::make_arg<is_packed, Context>(args)...} {
+    internal::init_named_args(data_.named_args, 0, 0, args...);
   }
 };
 
@@ -1536,8 +1596,8 @@ template <typename Context> class basic_format_args {
    */
   template <typename... Args>
   basic_format_args(const format_arg_store<Context, Args...>& store)
-      : desc_(store.types) {
-    set_data(store.data_);
+      : desc_(store.desc) {
+    set_data(store.data_.args);
   }
 
   /**
