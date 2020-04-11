@@ -172,20 +172,20 @@ template <typename Char> class printf_width_handler {
 };
 
 template <typename Char, typename Context>
-void printf(buffer<Char>& buf, basic_string_view<Char> format,
-            basic_format_args<Context> args) {
+void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
+             basic_format_args<Context> args) {
   Context(std::back_inserter(buf), format, args).format();
-}
-
-template <typename OutputIt, typename Char, typename Context>
-internal::truncating_iterator<OutputIt> printf(
-    internal::truncating_iterator<OutputIt> it, basic_string_view<Char> format,
-    basic_format_args<Context> args) {
-  return Context(it, format, args).format();
 }
 }  // namespace internal
 
-using internal::printf;  // For printing into memory_buffer.
+// For printing into memory_buffer.
+template <typename Char, typename Context>
+FMT_DEPRECATED void printf(internal::buffer<Char>& buf,
+                           basic_string_view<Char> format,
+                           basic_format_args<Context> args) {
+  return internal::vprintf(buf, format, args);
+}
+using internal::vprintf;
 
 template <typename Range> class printf_arg_formatter;
 
@@ -605,7 +605,7 @@ inline std::basic_string<Char> vsprintf(
     const S& format,
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
-  printf(buffer, to_string_view(format), args);
+  vprintf(buffer, to_string_view(format), args);
   return to_string(buffer);
 }
 
@@ -630,7 +630,7 @@ inline int vfprintf(
     std::FILE* f, const S& format,
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
-  printf(buffer, to_string_view(format), args);
+  vprintf(buffer, to_string_view(format), args);
   std::size_t size = buffer.size();
   return std::fwrite(buffer.data(), sizeof(Char), size, f) < size
              ? -1
@@ -683,7 +683,7 @@ inline int vfprintf(
     std::basic_ostream<Char>& os, const S& format,
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
-  printf(buffer, to_string_view(format), args);
+  vprintf(buffer, to_string_view(format), args);
   internal::write(os, buffer);
   return static_cast<int>(buffer.size());
 }
