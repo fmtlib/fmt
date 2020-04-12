@@ -81,8 +81,8 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
       unsigned n = internal::to_unsigned(result);
       if (n < buf.capacity()) {
         // Find the decimal point.
-        auto p = buf.data();
-        auto end = p + n;
+        auto* p = buf.data();
+        auto* end = p + n;
         if (*p == '+' || *p == '-') ++p;
         if (specs.type != 'a' && specs.type != 'A') {
           while (p < end && *p >= '0' && *p <= '9') ++p;
