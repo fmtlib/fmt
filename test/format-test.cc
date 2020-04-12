@@ -2259,8 +2259,9 @@ struct test_parse_context {
 };
 
 struct test_context {
-  typedef char char_type;
-  typedef fmt::basic_format_arg<test_context> format_arg;
+  using char_type = char;
+  using format_arg = fmt::basic_format_arg<test_context>;
+  using parse_context_type = fmt::format_parse_context;
 
   template <typename T> struct formatter_type {
     typedef fmt::formatter<T, char_type> type;

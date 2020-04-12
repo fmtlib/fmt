@@ -210,7 +210,8 @@ TEST(ArgTest, FormatArgs) {
 }
 
 struct custom_context {
-  typedef char char_type;
+  using char_type = char;
+  using parse_context_type = fmt::format_parse_context;
 
   template <typename T> struct formatter_type {
     template <typename ParseContext>

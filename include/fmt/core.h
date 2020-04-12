@@ -830,7 +830,8 @@ template <typename Char> struct string_value {
 template <typename Context> struct custom_value {
   using parse_context = basic_format_parse_context<typename Context::char_type>;
   const void* value;
-  void (*format)(const void* arg, parse_context& parse_ctx, Context& ctx);
+  void (*format)(const void* arg,
+                 typename Context::parse_context_type& parse_ctx, Context& ctx);
 };
 
 // A formatting argument value.
@@ -890,9 +891,9 @@ template <typename Context> class value {
  private:
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T, typename Formatter>
-  static void format_custom_arg(
-      const void* arg, basic_format_parse_context<char_type>& parse_ctx,
-      Context& ctx) {
+  static void format_custom_arg(const void* arg,
+                                typename Context::parse_context_type& parse_ctx,
+                                Context& ctx) {
     Formatter f;
     parse_ctx.advance_to(f.parse(parse_ctx));
     ctx.advance_to(f.format(*static_cast<const T*>(arg), ctx));
@@ -1061,7 +1062,7 @@ template <typename Context> class basic_format_arg {
    public:
     explicit handle(internal::custom_value<Context> custom) : custom_(custom) {}
 
-    void format(basic_format_parse_context<char_type>& parse_ctx,
+    void format(typename Context::parse_context_type& parse_ctx,
                 Context& ctx) const {
       custom_.format(custom_.value, parse_ctx, ctx);
     }
@@ -1272,6 +1273,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
  public:
   using iterator = OutputIt;
   using format_arg = basic_format_arg<basic_format_context>;
+  using parse_context_type = basic_format_parse_context<Char>;
   template <typename T> using formatter_type = formatter<T, char_type>;
 
   basic_format_context(const basic_format_context&) = delete;

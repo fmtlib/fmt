@@ -502,9 +502,7 @@ TEST(PrintfTest, PrintfError) {
 TEST(PrintfTest, WideString) { EXPECT_EQ(L"abc", fmt::sprintf(L"%s", L"abc")); }
 
 TEST(PrintfTest, PrintfCustom) {
-  // The test is disabled for now because it requires decoupling
-  // fallback_formatter::format from format_context.
-  //EXPECT_EQ("abc", test_sprintf("%s", TestString("abc")));
+  EXPECT_EQ("abc", test_sprintf("%s", TestString("abc")));
 }
 
 TEST(PrintfTest, OStream) {
