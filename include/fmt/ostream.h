@@ -14,7 +14,7 @@
 
 FMT_BEGIN_NAMESPACE
 
-template <typename CHar> class basic_printf_parse_context;
+template <typename Char> class basic_printf_parse_context;
 template <typename OutputIt, typename Char> class basic_printf_context;
 
 namespace internal {
