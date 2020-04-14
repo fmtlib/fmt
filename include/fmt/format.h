@@ -1367,24 +1367,6 @@ class cstring_type_checker : public ErrorHandler {
   FMT_CONSTEXPR void on_pointer() {}
 };
 
-template <typename Context>
-void arg_map<Context>::init(const basic_format_args<Context>& args) {
-  if (map_) return;
-  map_ = new entry[internal::to_unsigned(args.max_size())];
-  if (args.is_packed()) {
-    for (int i = 0;; ++i) {
-      internal::type arg_type = args.type(i);
-      if (arg_type == internal::type::none_type) return;
-      if (arg_type == internal::type::named_arg_type)
-        push_back(args.values_[i]);
-    }
-  }
-  for (int i = 0, n = args.max_size(); i < n; ++i) {
-    auto type = args.args_[i].type_;
-    if (type == internal::type::named_arg_type) push_back(args.args_[i].value_);
-  }
-}
-
 template <typename Char> struct nonfinite_writer {
   sign_t sign;
   const char* str;
@@ -2195,10 +2177,10 @@ FMT_CONSTEXPR int get_dynamic_spec(FormatArg arg, ErrorHandler eh) {
 
 struct auto_id {};
 
-template <typename Context>
-FMT_CONSTEXPR typename Context::format_arg get_arg(Context& ctx, int id) {
+template <typename Context, typename ID>
+FMT_CONSTEXPR typename Context::format_arg get_arg(Context& ctx, ID id) {
   auto arg = ctx.arg(id);
-  if (!arg) ctx.on_error("argument index out of range");
+  if (!arg) ctx.on_error("argument not found");
   return arg;
 }
 
@@ -2241,7 +2223,7 @@ class specs_handler : public specs_setter<typename Context::char_type> {
 
   FMT_CONSTEXPR format_arg get_arg(basic_string_view<char_type> arg_id) {
     parse_context_.check_arg_id(arg_id);
-    return context_.arg(arg_id);
+    return internal::get_arg(context_, arg_id);
   }
 
   ParseContext& parse_context_;
@@ -2682,7 +2664,7 @@ class format_string_checker {
   enum { num_args = sizeof...(Args) };
 
   FMT_CONSTEXPR void check_arg_id() {
-    if (arg_id_ >= num_args) context_.on_error("argument index out of range");
+    if (arg_id_ >= num_args) context_.on_error("argument not found");
   }
 
   // Format specifier parsing function.
@@ -3127,16 +3109,6 @@ template <typename Char = char> class dynamic_formatter {
   const Char* format_str_;
 };
 
-template <typename Range, typename Char>
-typename basic_format_context<Range, Char>::format_arg
-basic_format_context<Range, Char>::arg(basic_string_view<char_type> name) {
-  map_.init(args_);
-  format_arg arg = map_.find(name);
-  if (arg.type() == internal::type::none_type)
-    this->on_error("argument not found");
-  return arg;
-}
-
 template <typename Char, typename ErrorHandler>
 FMT_CONSTEXPR void advance_to(
     basic_format_parse_context<Char, ErrorHandler>& ctx, const Char* p) {
@@ -3160,14 +3132,16 @@ struct format_handler : internal::error_handler {
     context.advance_to(out);
   }
 
-  void get_arg(int id) { arg = internal::get_arg(context, id); }
+  template <typename ID> void get_arg(ID id) {
+    arg = internal::get_arg(context, id);
+  }
 
   void on_arg_id() { get_arg(parse_context.next_arg_id()); }
   void on_arg_id(int id) {
     parse_context.check_arg_id(id);
     get_arg(id);
   }
-  void on_arg_id(basic_string_view<Char> id) { arg = context.arg(id); }
+  void on_arg_id(basic_string_view<Char> id) { get_arg(id); }
 
   void on_replacement_field(const Char* p) {
     advance_to(parse_context, p);

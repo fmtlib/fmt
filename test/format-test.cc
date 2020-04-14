@@ -640,7 +640,7 @@ TEST(FormatterTest, ArgErrors) {
   EXPECT_THROW_MSG(format("{"), format_error, "invalid format string");
   EXPECT_THROW_MSG(format("{?}"), format_error, "invalid format string");
   EXPECT_THROW_MSG(format("{0"), format_error, "invalid format string");
-  EXPECT_THROW_MSG(format("{0}"), format_error, "argument index out of range");
+  EXPECT_THROW_MSG(format("{0}"), format_error, "argument not found");
   EXPECT_THROW_MSG(format("{00}", 42), format_error, "invalid format string");
 
   char format_str[BUFFER_SIZE];
@@ -648,7 +648,7 @@ TEST(FormatterTest, ArgErrors) {
   EXPECT_THROW_MSG(format(format_str), format_error, "invalid format string");
   safe_sprintf(format_str, "{%u}", INT_MAX);
   EXPECT_THROW_MSG(format(format_str), format_error,
-                   "argument index out of range");
+                   "argument not found");
 
   safe_sprintf(format_str, "{%u", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str), format_error, "number is too big");
@@ -673,13 +673,13 @@ template <> struct TestFormat<0> {
 TEST(FormatterTest, ManyArgs) {
   EXPECT_EQ("19", TestFormat<20>::format("{19}"));
   EXPECT_THROW_MSG(TestFormat<20>::format("{20}"), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(TestFormat<21>::format("{21}"), format_error,
-                   "argument index out of range");
+                   "argument not found");
   enum { max_packed_args = fmt::internal::max_packed_args };
   std::string format_str = fmt::format("{{{}}}", max_packed_args + 1);
   EXPECT_THROW_MSG(TestFormat<max_packed_args>::format(format_str),
-                   format_error, "argument index out of range");
+                   format_error, "argument not found");
 }
 
 TEST(FormatterTest, NamedArg) {
@@ -708,7 +708,7 @@ TEST(FormatterTest, AutoArgIndex) {
                    "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{:.{0}}", 1.2345, 2), format_error,
                    "cannot switch from automatic to manual argument indexing");
-  EXPECT_THROW_MSG(format("{}"), format_error, "argument index out of range");
+  EXPECT_THROW_MSG(format("{}"), format_error, "argument not found");
 }
 
 TEST(FormatterTest, EmptySpecs) { EXPECT_EQ("42", format("{0:}", 42)); }
@@ -1012,7 +1012,7 @@ TEST(FormatterTest, RuntimeWidth) {
                    "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{0:{?}}", 0), format_error, "invalid format string");
   EXPECT_THROW_MSG(format("{0:{1}}", 0), format_error,
-                   "argument index out of range");
+                   "argument not found");
 
   EXPECT_THROW_MSG(format("{0:{0:}}", 0), format_error,
                    "invalid format string");
@@ -1161,7 +1161,7 @@ TEST(FormatterTest, RuntimePrecision) {
   EXPECT_THROW_MSG(format("{0:.{1}", 0, 0), format_error,
                    "precision not allowed for this argument type");
   EXPECT_THROW_MSG(format("{0:.{1}}", 0), format_error,
-                   "argument index out of range");
+                   "argument not found");
 
   EXPECT_THROW_MSG(format("{0:.{0:}}", 0), format_error,
                    "invalid format string");
@@ -2441,7 +2441,7 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:{<}", "invalid fill character '{'", int);
   EXPECT_ERROR("{:10000000000}", "number is too big", int);
   EXPECT_ERROR("{:.10000000000}", "number is too big", int);
-  EXPECT_ERROR_NOARGS("{:x}", "argument index out of range");
+  EXPECT_ERROR_NOARGS("{:x}", "argument not found");
 #    if FMT_NUMERIC_ALIGN
   EXPECT_ERROR("{0:=5", "unknown format specifier", int);
   EXPECT_ERROR("{:=}", "format specifier requires numeric argument",
@@ -2482,8 +2482,8 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:.{0x}}", "invalid format string", int);
   EXPECT_ERROR("{:.{-}}", "invalid format string", int);
   EXPECT_ERROR("{:.x}", "missing precision specifier", int);
-  EXPECT_ERROR_NOARGS("{}", "argument index out of range");
-  EXPECT_ERROR("{1}", "argument index out of range", int);
+  EXPECT_ERROR_NOARGS("{}", "argument not found");
+  EXPECT_ERROR("{1}", "argument not found", int);
   EXPECT_ERROR("{1}{}",
                "cannot switch from manual to automatic argument indexing", int,
                int);

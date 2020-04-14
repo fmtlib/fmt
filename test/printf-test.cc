@@ -113,14 +113,14 @@ TEST(PrintfTest, SwitchArgIndexing) {
 
 TEST(PrintfTest, InvalidArgIndex) {
   EXPECT_THROW_MSG(test_sprintf("%0$d", 42), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%2$d", 42), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", INT_MAX), 42), format_error,
-                   "argument index out of range");
+                   "argument not found");
 
   EXPECT_THROW_MSG(test_sprintf("%2$", 42), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", BIG_NUM), 42), format_error,
                    "number is too big");
 }
@@ -223,7 +223,7 @@ TEST(PrintfTest, DynamicWidth) {
   EXPECT_THROW_MSG(test_sprintf("%*d", 5.0, 42), format_error,
                    "width is not integer");
   EXPECT_THROW_MSG(test_sprintf("%*d"), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%*d", BIG_NUM, 42), format_error,
                    "number is too big");
 }
@@ -269,7 +269,7 @@ TEST(PrintfTest, DynamicPrecision) {
   EXPECT_THROW_MSG(test_sprintf("%.*d", 5.0, 42), format_error,
                    "precision is not integer");
   EXPECT_THROW_MSG(test_sprintf("%.*d"), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%.*d", BIG_NUM, 42), format_error,
                    "number is too big");
   if (sizeof(long long) != sizeof(int)) {

@@ -762,25 +762,30 @@ template <typename T, typename Char> struct named_arg;
 
 template <typename Char> struct named_arg_info {
   const Char* name;
-  int arg_id;
+  int id;
 };
 
 template <typename T, typename Char, size_t NUM_ARGS, size_t NUM_NAMED_ARGS>
 struct arg_data {
-  T args[NUM_ARGS != 0 ? NUM_ARGS : 1];
-  named_arg_info<Char> named_args[NUM_NAMED_ARGS];
-  template <typename... U> arg_data(const U&... init) : args{init...} {}
+  // args_[0] points to named_args_ to avoid bloating format_args.
+  T args_[1 + (NUM_ARGS != 0 ? NUM_ARGS : 1)];
+  named_arg_info<Char> named_args_[NUM_NAMED_ARGS];
+
+  template <typename... U>
+  arg_data(const U&... init) : args_{T(named_args_, NUM_NAMED_ARGS), init...} {}
+  arg_data(const arg_data& other) = delete;
+  const T* args() const { return args_ + 1; }
+  named_arg_info<Char>* named_args() { return named_args_; }
 };
 
 template <typename T, typename Char, size_t NUM_ARGS>
 struct arg_data<T, Char, NUM_ARGS, 0> {
-  T args[NUM_ARGS != 0 ? NUM_ARGS : 1];
-  static constexpr std::nullptr_t named_args = nullptr;
-  template <typename... U> arg_data(const U&... init) : args{init...} {}
-};
+  T args_[NUM_ARGS != 0 ? NUM_ARGS : 1];
 
-template <typename T, typename Char, size_t NUM_ARGS>
-constexpr std::nullptr_t arg_data<T, Char, NUM_ARGS, 0>::named_args;
+  template <typename... U> arg_data(const U&... init) : args_{init...} {}
+  const T* args() const { return args_; }
+  std::nullptr_t named_args() { return nullptr; }
+};
 
 template <typename Char>
 inline void init_named_args(named_arg_info<Char>*, int, int) {}
@@ -880,6 +885,11 @@ template <typename Char> struct string_value {
   std::size_t size;
 };
 
+template <typename Char> struct named_arg_value {
+  const named_arg_info<Char>* data;
+  std::size_t size;
+};
+
 template <typename Context> struct custom_value {
   using parse_context = basic_format_parse_context<typename Context::char_type>;
   const void* value;
@@ -907,7 +917,8 @@ template <typename Context> class value {
     const void* pointer;
     string_value<char_type> string;
     custom_value<Context> custom;
-    const named_arg_base<char_type>* named_arg;
+    const named_arg_base<char_type>* named_arg;  // DEPRECATED
+    named_arg_value<char_type> named_args;
   };
 
   FMT_CONSTEXPR value(int val = 0) : int_value(val) {}
@@ -927,6 +938,8 @@ template <typename Context> class value {
     string.size = val.size();
   }
   value(const void* val) : pointer(val) {}
+  value(const named_arg_info<char_type>* args, size_t size)
+      : named_args{args, size} {}
 
   template <typename T> value(const T& val) {
     custom.value = &val;
@@ -1065,11 +1078,9 @@ template <typename Context> struct arg_mapper {
   }
 
   template <typename T>
-  FMT_CONSTEXPR const named_arg_base<char_type>& map(
-      const named_arg<T, char_type>& val) {
-    auto arg = make_arg<Context>(val.value);
-    std::memcpy(val.data, &arg, sizeof(arg));
-    return val;
+  FMT_CONSTEXPR auto map(const named_arg<T, char_type>& val)
+      -> decltype(std::declval<arg_mapper>().map(val.value)) {
+    return map(val.value);
   }
 
   int map(...) {
@@ -1091,8 +1102,9 @@ using mapped_type_constant =
 
 enum { packed_arg_bits = 5 };
 // Maximum number of arguments with packed types.
-enum { max_packed_args = 63 / packed_arg_bits };
+enum { max_packed_args = 62 / packed_arg_bits };
 enum : unsigned long long { is_unpacked_bit = 1ULL << 63 };
+enum : unsigned long long { has_named_args_bit = 1ULL << 62 };
 
 template <typename Context> class arg_map;
 }  // namespace internal
@@ -1117,6 +1129,12 @@ template <typename Context> class basic_format_arg {
   friend class internal::arg_map<Context>;
 
   using char_type = typename Context::char_type;
+
+  template <typename T, typename Char, size_t NUM_ARGS, size_t NUM_NAMED_ARGS>
+  friend struct internal::arg_data;
+
+  basic_format_arg(const internal::named_arg_info<char_type>* args, size_t size)
+      : value_(args, size) {}
 
  public:
   class handle {
@@ -1204,13 +1222,11 @@ FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
 }
 
 namespace internal {
-// A map from argument names to their values for named arguments.
+// DEPRECATED.
 template <typename Context> class arg_map {
  private:
-  using char_type = typename Context::char_type;
-
   struct entry {
-    basic_string_view<char_type> name;
+    basic_string_view<typename Context::char_type> name;
     basic_format_arg<Context> arg;
   };
 
@@ -1224,19 +1240,7 @@ template <typename Context> class arg_map {
   }
 
  public:
-  arg_map(const arg_map&) = delete;
-  void operator=(const arg_map&) = delete;
-  arg_map() : map_(nullptr), size_(0) {}
   void init(const basic_format_args<Context>& args);
-  ~arg_map() { delete[] map_; }
-
-  basic_format_arg<Context> find(basic_string_view<char_type> name) const {
-    // The list is unsorted, so just return the first matching name.
-    for (entry *it = map_, *end = map_ + size_; it != end; ++it) {
-      if (it->name == name) return it->arg;
-    }
-    return {};
-  }
 };
 
 // A type-erased reference to an std::locale to avoid heavy <locale> include.
@@ -1328,7 +1332,6 @@ template <typename OutputIt, typename Char> class basic_format_context {
  private:
   OutputIt out_;
   basic_format_args<basic_format_context> args_;
-  internal::arg_map<basic_format_context> map_;
   internal::locale_ref loc_;
 
  public:
@@ -1352,7 +1355,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
 
   // Checks if manual indexing is used and returns the argument with the
   // specified name.
-  format_arg arg(basic_string_view<char_type> name);
+  format_arg arg(basic_string_view<char_type> name) { return args_.get(name); }
 
   internal::error_handler error_handler() { return {}; }
   void on_error(const char* message) { error_handler().on_error(message); }
@@ -1389,20 +1392,24 @@ class format_arg_store
 {
  private:
   static const size_t num_args = sizeof...(Args);
+  static const size_t num_named_args = internal::count_named_args<Args...>();
   static const bool is_packed = num_args <= internal::max_packed_args;
 
   using value_type = conditional_t<is_packed, internal::value<Context>,
                                    basic_format_arg<Context>>;
 
   internal::arg_data<value_type, typename Context::char_type, num_args,
-                     internal::count_named_args<Args...>()>
+                     num_named_args>
       data_;
 
   friend class basic_format_args<Context>;
 
   static constexpr unsigned long long desc =
-      is_packed ? internal::encode_types<Context, Args...>()
-                : internal::is_unpacked_bit | num_args;
+      (is_packed ? internal::encode_types<Context, Args...>()
+                 : internal::is_unpacked_bit | num_args) |
+      (num_named_args != 0
+           ? static_cast<unsigned long long>(internal::has_named_args_bit)
+           : 0);
 
  public:
   FMT_DEPRECATED static constexpr unsigned long long types = desc;
@@ -1413,7 +1420,7 @@ class format_arg_store
         basic_format_args<Context>(*this),
 #endif
         data_{internal::make_arg<is_packed, Context>(args)...} {
-    internal::init_named_args(data_.named_args, 0, 0, args...);
+    internal::init_named_args(data_.named_args(), 0, 0, args...);
   }
 };
 
@@ -1559,6 +1566,9 @@ template <typename Context> class basic_format_args {
   };
 
   bool is_packed() const { return (desc_ & internal::is_unpacked_bit) == 0; }
+  bool has_named_args() const {
+    return (desc_ & internal::has_named_args_bit) != 0;
+  }
 
   internal::type type(int index) const {
     int shift = index * internal::packed_arg_bits;
@@ -1597,7 +1607,7 @@ template <typename Context> class basic_format_args {
   template <typename... Args>
   basic_format_args(const format_arg_store<Context, Args...>& store)
       : desc_(store.desc) {
-    set_data(store.data_.args);
+    set_data(store.data_.args());
   }
 
   /**
@@ -1621,12 +1631,22 @@ template <typename Context> class basic_format_args {
     set_data(args);
   }
 
-  /** Returns the argument at specified index. */
-  format_arg get(int index) const {
-    format_arg arg = do_get(index);
+  /** Returns the argument with the specified id. */
+  format_arg get(int id) const {
+    format_arg arg = do_get(id);
     if (arg.type_ == internal::type::named_arg_type)
       arg = arg.value_.named_arg->template deserialize<Context>();
     return arg;
+  }
+
+  template <typename Char> format_arg get(basic_string_view<Char> name) const {
+    if (!has_named_args()) return {};
+    const auto& named_args =
+        (is_packed() ? values_[-1] : args_[-1].value_).named_args;
+    for (size_t i = 0; i < named_args.size; ++i) {
+      if (named_args.data[i].name == name) return get(named_args.data[i].id);
+    }
+    return {};
   }
 
   int max_size() const {

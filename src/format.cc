@@ -114,6 +114,25 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
   }
   return decimal_point_pos;
 }
+
+// This is deprecated and is kept only to preserve ABI compatibility.
+template <typename Context>
+void arg_map<Context>::init(const basic_format_args<Context>& args) {
+  if (map_) return;
+  map_ = new entry[internal::to_unsigned(args.max_size())];
+  if (args.is_packed()) {
+    for (int i = 0;; ++i) {
+      internal::type arg_type = args.type(i);
+      if (arg_type == internal::type::none_type) return;
+      if (arg_type == internal::type::named_arg_type)
+        push_back(args.values_[i]);
+    }
+  }
+  for (int i = 0, n = args.max_size(); i < n; ++i) {
+    auto type = args.args_[i].type_;
+    if (type == internal::type::named_arg_type) push_back(args.args_[i].value_);
+  }
+}
 }  // namespace internal
 
 template FMT_API char* internal::sprintf_format(double, internal::buffer<char>&,
