@@ -767,7 +767,7 @@ template <typename Char> struct named_arg_info {
 
 template <typename T, typename Char, size_t NUM_ARGS, size_t NUM_NAMED_ARGS>
 struct arg_data {
-  // args_[0] points to named_args_ to avoid bloating format_args.
+  // args_[0].named_args points to named_args_ to avoid bloating format_args.
   T args_[1 + (NUM_ARGS != 0 ? NUM_ARGS : 1)];
   named_arg_info<Char> named_args_[NUM_NAMED_ARGS];
 
@@ -823,7 +823,7 @@ template <typename... Args> constexpr size_t count_named_args() {
 
 enum class type {
   none_type,
-  named_arg_type,
+  named_arg_type, // DEPRECATED
   // Integer types should go first,
   int_type,
   uint_type,
@@ -854,7 +854,6 @@ struct type_constant : std::integral_constant<type, type::custom_type> {};
   struct type_constant<Type, Char>        \
       : std::integral_constant<type, type::constant> {}
 
-FMT_TYPE_CONSTANT(const named_arg_base<Char>&, named_arg_type);
 FMT_TYPE_CONSTANT(int, int_type);
 FMT_TYPE_CONSTANT(unsigned, uint_type);
 FMT_TYPE_CONSTANT(long long, long_long_type);
@@ -871,12 +870,10 @@ FMT_TYPE_CONSTANT(basic_string_view<Char>, string_type);
 FMT_TYPE_CONSTANT(const void*, pointer_type);
 
 FMT_CONSTEXPR bool is_integral_type(type t) {
-  FMT_ASSERT(t != type::named_arg_type, "invalid argument type");
   return t > type::none_type && t <= type::last_integer_type;
 }
 
 FMT_CONSTEXPR bool is_arithmetic_type(type t) {
-  FMT_ASSERT(t != type::named_arg_type, "invalid argument type");
   return t > type::none_type && t <= type::last_numeric_type;
 }
 
@@ -951,8 +948,6 @@ template <typename Context> class value {
                          typename Context::template formatter_type<T>,
                          fallback_formatter<T, char_type>>>;
   }
-
-  value(const named_arg_base<char_type>& val) { named_arg = &val; }
 
  private:
   // Formats an argument of a custom type, such as a user-defined class.
@@ -1222,27 +1217,6 @@ FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
 }
 
 namespace internal {
-// DEPRECATED.
-template <typename Context> class arg_map {
- private:
-  struct entry {
-    basic_string_view<typename Context::char_type> name;
-    basic_format_arg<Context> arg;
-  };
-
-  entry* map_;
-  unsigned size_;
-
-  void push_back(value<Context> val) {
-    const auto& named = *val.named_arg;
-    map_[size_] = {named.name, named.template deserialize<Context>()};
-    ++size_;
-  }
-
- public:
-  void init(const basic_format_args<Context>& args);
-};
-
 // A type-erased reference to an std::locale to avoid heavy <locale> include.
 class locale_ref {
  private:

@@ -115,6 +115,27 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
   return decimal_point_pos;
 }
 
+// DEPRECATED.
+template <typename Context> class arg_map {
+ private:
+  struct entry {
+    basic_string_view<typename Context::char_type> name;
+    basic_format_arg<Context> arg;
+  };
+
+  entry* map_;
+  unsigned size_;
+
+  void push_back(value<Context> val) {
+    const auto& named = *val.named_arg;
+    map_[size_] = {named.name, named.template deserialize<Context>()};
+    ++size_;
+  }
+
+ public:
+  void init(const basic_format_args<Context>& args);
+};
+
 // This is deprecated and is kept only to preserve ABI compatibility.
 template <typename Context>
 void arg_map<Context>::init(const basic_format_args<Context>& args) {
