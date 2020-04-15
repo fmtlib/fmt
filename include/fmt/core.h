@@ -823,7 +823,7 @@ template <typename... Args> constexpr size_t count_named_args() {
 
 enum class type {
   none_type,
-  named_arg_type, // DEPRECATED
+  named_arg_type,  // DEPRECATED
   // Integer types should go first,
   int_type,
   uint_type,
@@ -1558,15 +1558,13 @@ template <typename Context> class basic_format_args {
   format_arg do_get(int index) const {
     format_arg arg;
     if (!is_packed()) {
-      auto num_args = max_size();
-      if (index < num_args) arg = args_[index];
+      if (index < max_size()) arg = args_[index];
       return arg;
     }
     if (index > internal::max_packed_args) return arg;
     arg.type_ = type(index);
     if (arg.type_ == internal::type::none_type) return arg;
-    internal::value<Context>& val = arg.value_;
-    val = values_[index];
+    arg.value_ = values_[index];
     return arg;
   }
 
@@ -1744,13 +1742,9 @@ inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
  */
 template <typename S, typename T, typename Char = char_t<S>>
 inline internal::named_arg<T, Char> arg(const S& name, const T& arg) {
-  static_assert(internal::is_string<S>::value, "");
+  static_assert(internal::is_string<S>() && !internal::is_named_arg<T>(), "");
   return {name, arg};
 }
-
-// Disable nested named arguments, e.g. ``arg("a", arg("b", 42))``.
-template <typename S, typename T, typename Char>
-void arg(S, internal::named_arg<T, Char>) = delete;
 
 /** Formats a string and writes the output to ``out``. */
 // GCC 8 and earlier cannot handle std::back_insert_iterator<Container> with
@@ -1798,9 +1792,8 @@ inline std::basic_string<Char> vformat(
 // std::basic_string<char_t<S>> to reduce the symbol size.
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline std::basic_string<Char> format(const S& format_str, Args&&... args) {
-  return internal::vformat(
-      to_string_view(format_str),
-      internal::make_args_checked<Args...>(format_str, args...));
+  const auto& vargs = internal::make_args_checked<Args...>(format_str, args...);
+  return internal::vformat(to_string_view(format_str), vargs);
 }
 
 FMT_API void vprint(string_view, format_args);
@@ -1819,12 +1812,10 @@ FMT_API void vprint(std::FILE*, string_view, format_args);
  */
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline void print(std::FILE* f, const S& format_str, Args&&... args) {
+  const auto& vargs = internal::make_args_checked<Args...>(format_str, args...);
   return internal::is_unicode<Char>()
-             ? vprint(f, to_string_view(format_str),
-                      internal::make_args_checked<Args...>(format_str, args...))
-             : internal::vprint_mojibake(
-                   f, to_string_view(format_str),
-                   internal::make_args_checked<Args...>(format_str, args...));
+             ? vprint(f, to_string_view(format_str), vargs)
+             : internal::vprint_mojibake(f, to_string_view(format_str), vargs);
 }
 
 /**
@@ -1840,12 +1831,11 @@ inline void print(std::FILE* f, const S& format_str, Args&&... args) {
  */
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline void print(const S& format_str, Args&&... args) {
+  const auto& vargs = internal::make_args_checked<Args...>(format_str, args...);
   return internal::is_unicode<Char>()
-             ? vprint(to_string_view(format_str),
-                      internal::make_args_checked<Args...>(format_str, args...))
+             ? vprint(to_string_view(format_str), vargs)
              : internal::vprint_mojibake(
-                   stdout, to_string_view(format_str),
-                   internal::make_args_checked<Args...>(format_str, args...));
+                   stdout, to_string_view(format_str), vargs);
 }
 FMT_END_NAMESPACE
 
