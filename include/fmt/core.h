@@ -20,31 +20,6 @@
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 60201
 
-#ifdef __has_feature
-#  define FMT_HAS_FEATURE(x) __has_feature(x)
-#else
-#  define FMT_HAS_FEATURE(x) 0
-#endif
-
-#if defined(__has_include) && !defined(__INTELLISENSE__) && \
-    !(defined(__INTEL_COMPILER) && __INTEL_COMPILER < 1600)
-#  define FMT_HAS_INCLUDE(x) __has_include(x)
-#else
-#  define FMT_HAS_INCLUDE(x) 0
-#endif
-
-#ifdef __has_cpp_attribute
-#  define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
-#else
-#  define FMT_HAS_CPP_ATTRIBUTE(x) 0
-#endif
-
-#define FMT_HAS_CPP14_ATTRIBUTE(attribute) \
-  (__cplusplus >= 201402L && FMT_HAS_CPP_ATTRIBUTE(attribute))
-
-#define FMT_HAS_CPP17_ATTRIBUTE(attribute) \
-  (__cplusplus >= 201703L && FMT_HAS_CPP_ATTRIBUTE(attribute))
-
 #ifdef __clang__
 #  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 #else
@@ -55,6 +30,12 @@
 #  define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #else
 #  define FMT_GCC_VERSION 0
+#endif
+
+#if defined(__INTEL_COMPILER)
+#  define FMT_ICC_VERSION __INTEL_COMPILER
+#else
+#  define FMT_ICC_VERSION 0
 #endif
 
 #if __cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__)
@@ -76,6 +57,30 @@
 #  define FMT_MSC_VER 0
 #  define FMT_SUPPRESS_MSC_WARNING(n)
 #endif
+#ifdef __has_feature
+#  define FMT_HAS_FEATURE(x) __has_feature(x)
+#else
+#  define FMT_HAS_FEATURE(x) 0
+#endif
+
+#if defined(__has_include) && !defined(__INTELLISENSE__) && \
+    !(FMT_ICC_VERSION && FMT_ICC_VERSION < 1600)
+#  define FMT_HAS_INCLUDE(x) __has_include(x)
+#else
+#  define FMT_HAS_INCLUDE(x) 0
+#endif
+
+#ifdef __has_cpp_attribute
+#  define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
+#else
+#  define FMT_HAS_CPP_ATTRIBUTE(x) 0
+#endif
+
+#define FMT_HAS_CPP14_ATTRIBUTE(attribute) \
+  (__cplusplus >= 201402L && FMT_HAS_CPP_ATTRIBUTE(attribute))
+
+#define FMT_HAS_CPP17_ATTRIBUTE(attribute) \
+  (__cplusplus >= 201703L && FMT_HAS_CPP_ATTRIBUTE(attribute))
 
 // Check if relaxed C++14 constexpr is supported.
 // GCC doesn't allow throw in constexpr until version 6 (bug 67371).
@@ -83,7 +88,7 @@
 #  define FMT_USE_CONSTEXPR                                           \
     (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VER >= 1910 || \
      (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L)) &&           \
-        !FMT_NVCC
+        !FMT_NVCC && !FMT_ICC_VERSION
 #endif
 #if FMT_USE_CONSTEXPR
 #  define FMT_CONSTEXPR constexpr
@@ -166,7 +171,7 @@
 #endif
 
 // Workaround broken [[deprecated]] in the Intel, PGI and NVCC compilers.
-#if defined(__INTEL_COMPILER) || defined(__PGI) || FMT_NVCC
+#if FMT_ICC_VERSION || defined(__PGI) || FMT_NVCC
 #  define FMT_DEPRECATED_ALIAS
 #else
 #  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
