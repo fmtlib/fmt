@@ -139,8 +139,7 @@ FMT_END_NAMESPACE
 // support UDL templates and GCC >= 9 warns about them.
 #  if FMT_USE_USER_DEFINED_LITERALS && FMT_ICC_VERSION == 0 && \
       FMT_CUDA_VERSION == 0 &&                                 \
-      ((FMT_GCC_VERSION >= 604 && FMT_GCC_VERSION <= 900 &&    \
-        __cplusplus >= 201402L) ||                             \
+      ((FMT_GCC_VERSION >= 604 && __cplusplus >= 201402L) ||   \
        FMT_CLANG_VERSION >= 304)
 #    define FMT_USE_UDL_TEMPLATE 1
 #  else
@@ -3536,6 +3535,7 @@ FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
 inline namespace literals {
 #  if FMT_USE_UDL_TEMPLATE
 #    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wpedantic"
 #    if FMT_CLANG_VERSION
 #      pragma GCC diagnostic ignored "-Wgnu-string-literal-operator-template"
 #    endif
