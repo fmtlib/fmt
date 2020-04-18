@@ -3507,7 +3507,7 @@ template <typename Char> struct udl_formatter {
 #  endif  // FMT_USE_UDL_TEMPLATE
 
 template <typename Char> struct udl_arg {
-  basic_string_view<Char> str;
+  const Char* str;
 
   template <typename T> named_arg<T, Char> operator=(T&& value) const {
     return {str, std::forward<T>(value)};
@@ -3576,12 +3576,12 @@ FMT_CONSTEXPR internal::udl_formatter<wchar_t> operator"" _format(
   \endrst
  */
 FMT_CONSTEXPR internal::udl_arg<char> operator"" _a(const char* s,
-                                                    std::size_t n) {
-  return {{s, n}};
+                                                    std::size_t) {
+  return {s};
 }
 FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
-                                                       std::size_t n) {
-  return {{s, n}};
+                                                       std::size_t) {
+  return {s};
 }
 }  // namespace literals
 #endif  // FMT_USE_USER_DEFINED_LITERALS

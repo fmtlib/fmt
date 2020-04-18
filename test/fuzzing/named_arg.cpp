@@ -29,11 +29,11 @@ void invoke_fmt(const uint8_t* Data, std::size_t Size, unsigned int argsize) {
   // allocating buffers separately is slower, but increases chances
   // of detecting memory errors
 #if FMT_FUZZ_SEPARATE_ALLOCATION
-  std::vector<char> argnamebuffer(argsize);
+  std::vector<char> argnamebuffer(argsize + 1);
   std::memcpy(argnamebuffer.data(), Data, argsize);
-  auto argname = fmt::string_view(argnamebuffer.data(), argsize);
+  auto argname = argnamebuffer.data();
 #else
-  auto argname = fmt::string_view(fmt_fuzzer::as_chars(Data), argsize);
+  auto argname = fmt_fuzzer::as_chars(Data);
 #endif
   Data += argsize;
   Size -= argsize;

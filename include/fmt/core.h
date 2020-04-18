@@ -805,7 +805,7 @@ template <typename Char, typename T, typename... Tail>
 void init_named_args(named_arg_info<Char>* named_args, int arg_count,
                      int named_arg_count, const named_arg<T, Char>& arg,
                      const Tail&... args) {
-  named_args[named_arg_count++] = {arg.name.data(), arg_count};
+  named_args[named_arg_count++] = {arg.name, arg_count};
   init_named_args(named_args, arg_count + 1, named_arg_count, args...);
 }
 
@@ -1663,12 +1663,12 @@ struct is_contiguous_back_insert_iterator<std::back_insert_iterator<Container>>
     : is_contiguous<Container> {};
 
 template <typename Char> struct named_arg_base {
-  basic_string_view<Char> name;
+  const Char* name;
 
   // Serialized value<context>.
   mutable char data[sizeof(basic_format_arg<buffer_context<Char>>)];
 
-  named_arg_base(basic_string_view<Char> nm) : name(nm) {}
+  named_arg_base(const Char* nm) : name(nm) {}
 
   template <typename Context> basic_format_arg<Context> deserialize() const {
     basic_format_arg<Context> arg;
@@ -1683,7 +1683,7 @@ template <typename T, typename Char>
 struct named_arg : view, named_arg_base<Char> {
   const T& value;
 
-  named_arg(basic_string_view<Char> name, const T& val)
+  named_arg(const Char* name, const T& val)
       : named_arg_base<Char>(name), value(val) {}
 };
 
@@ -1745,9 +1745,9 @@ inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
     fmt::print("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23));
   \endrst
  */
-template <typename S, typename T, typename Char = char_t<S>>
-inline internal::named_arg<T, Char> arg(const S& name, const T& arg) {
-  static_assert(internal::is_string<S>() && !internal::is_named_arg<T>(), "");
+template <typename Char, typename T>
+inline internal::named_arg<T, Char> arg(const Char* name, const T& arg) {
+  static_assert(!internal::is_named_arg<T>(), "");
   return {name, arg};
 }
 
@@ -1839,8 +1839,8 @@ inline void print(const S& format_str, Args&&... args) {
   const auto& vargs = internal::make_args_checked<Args...>(format_str, args...);
   return internal::is_unicode<Char>()
              ? vprint(to_string_view(format_str), vargs)
-             : internal::vprint_mojibake(
-                   stdout, to_string_view(format_str), vargs);
+             : internal::vprint_mojibake(stdout, to_string_view(format_str),
+                                         vargs);
 }
 FMT_END_NAMESPACE
 
