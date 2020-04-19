@@ -1645,14 +1645,10 @@ template <typename Context> class basic_format_args {
 /** An alias to ``basic_format_args<context>``. */
 // It is a separate type rather than an alias to make symbols readable.
 struct format_args : basic_format_args<format_context> {
-  template <typename... Args>
-  format_args(Args&&... args)
-      : basic_format_args<format_context>(static_cast<Args&&>(args)...) {}
+  using basic_format_args::basic_format_args;
 };
 struct wformat_args : basic_format_args<wformat_context> {
-  template <typename... Args>
-  wformat_args(Args&&... args)
-      : basic_format_args<wformat_context>(static_cast<Args&&>(args)...) {}
+  using basic_format_args::basic_format_args;
 };
 
 template <typename Container> struct is_contiguous : std::false_type {};
