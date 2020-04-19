@@ -1689,7 +1689,7 @@ struct named_arg : view, named_arg_base<Char> {
 
 template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
 inline void check_format_string(const S&) {
-#if defined(FMT_ENFORCE_COMPILE_STRING)
+#ifdef FMT_ENFORCE_COMPILE_STRING
   static_assert(is_compile_string<S>::value,
                 "FMT_ENFORCE_COMPILE_STRING requires all format strings to "
                 "utilize FMT_STRING() or fmt().");
@@ -1698,19 +1698,13 @@ inline void check_format_string(const S&) {
 template <typename..., typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S);
 
-template <bool...> struct bool_pack;
-template <bool... Args>
-using all_true =
-    std::is_same<bool_pack<Args..., true>, bool_pack<true, Args...>>;
-
 template <typename... Args, typename S, typename Char = char_t<S>>
 inline format_arg_store<buffer_context<Char>, remove_reference_t<Args>...>
 make_args_checked(const S& format_str,
                   const remove_reference_t<Args>&... args) {
-  static_assert(
-      all_true<(!std::is_base_of<view, remove_reference_t<Args>>::value ||
-                !std::is_reference<Args>::value)...>::value,
-      "passing views as lvalues is disallowed");
+  static_assert(count<(std::is_base_of<view, remove_reference_t<Args>>::value &&
+                       std::is_reference<Args>::value)...>() == 0,
+                "passing views as lvalues is disallowed");
   check_format_string<Args...>(format_str);
   return {args...};
 }
