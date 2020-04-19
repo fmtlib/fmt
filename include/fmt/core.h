@@ -172,7 +172,7 @@
 
 #ifndef FMT_INLINE
 #  if FMT_GCC_VERSION
-#    define FMT_INLINE __attribute__((always_inline))
+#    define FMT_INLINE inline __attribute__((always_inline))
 #  else
 #    define FMT_INLINE
 #  endif
@@ -795,9 +795,10 @@ template <typename T, typename Char, size_t NUM_ARGS>
 struct arg_data<T, Char, NUM_ARGS, 0> {
   T args_[NUM_ARGS != 0 ? NUM_ARGS : 1];
 
-  template <typename... U> arg_data(const U&... init) : args_{init...} {}
-  const T* args() const { return args_; }
-  std::nullptr_t named_args() { return nullptr; }
+  template <typename... U>
+  FMT_INLINE arg_data(const U&... init) : args_{init...} {}
+  FMT_INLINE const T* args() const { return args_; }
+  FMT_INLINE std::nullptr_t named_args() { return nullptr; }
 };
 
 template <typename Char>
@@ -818,7 +819,7 @@ void init_named_args(named_arg_info<Char>* named_args, int arg_count,
 }
 
 template <typename... Args>
-void init_named_args(std::nullptr_t, int, int, const Args&...) {}
+FMT_INLINE void init_named_args(std::nullptr_t, int, int, const Args&...) {}
 
 template <typename T> struct is_named_arg : std::false_type {};
 
