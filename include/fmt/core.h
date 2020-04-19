@@ -170,6 +170,14 @@
 #  endif
 #endif
 
+#ifndef FMT_INLINE
+#  if FMT_GCC_VERSION
+#    define FMT_INLINE __attribute__((always_inline))
+#  else
+#    define FMT_INLINE
+#  endif
+#endif
+
 // Workaround broken [[deprecated]] in the Intel, PGI and NVCC compilers.
 #if FMT_ICC_VERSION || defined(__PGI) || FMT_NVCC
 #  define FMT_DEPRECATED_ALIAS
@@ -923,27 +931,27 @@ template <typename Context> class value {
     named_arg_value<char_type> named_args;
   };
 
-  FMT_CONSTEXPR value(int val = 0) : int_value(val) {}
-  FMT_CONSTEXPR value(unsigned val) : uint_value(val) {}
-  value(long long val) : long_long_value(val) {}
-  value(unsigned long long val) : ulong_long_value(val) {}
-  value(int128_t val) : int128_value(val) {}
-  value(uint128_t val) : uint128_value(val) {}
-  value(float val) : float_value(val) {}
-  value(double val) : double_value(val) {}
-  value(long double val) : long_double_value(val) {}
-  value(bool val) : bool_value(val) {}
-  value(char_type val) : char_value(val) {}
-  value(const char_type* val) { string.data = val; }
-  value(basic_string_view<char_type> val) {
+  FMT_CONSTEXPR FMT_INLINE value(int val = 0) : int_value(val) {}
+  FMT_CONSTEXPR FMT_INLINE value(unsigned val) : uint_value(val) {}
+  FMT_INLINE value(long long val) : long_long_value(val) {}
+  FMT_INLINE value(unsigned long long val) : ulong_long_value(val) {}
+  FMT_INLINE value(int128_t val) : int128_value(val) {}
+  FMT_INLINE value(uint128_t val) : uint128_value(val) {}
+  FMT_INLINE value(float val) : float_value(val) {}
+  FMT_INLINE value(double val) : double_value(val) {}
+  FMT_INLINE value(long double val) : long_double_value(val) {}
+  FMT_INLINE value(bool val) : bool_value(val) {}
+  FMT_INLINE value(char_type val) : char_value(val) {}
+  FMT_INLINE value(const char_type* val) { string.data = val; }
+  FMT_INLINE value(basic_string_view<char_type> val) {
     string.data = val.data();
     string.size = val.size();
   }
-  value(const void* val) : pointer(val) {}
-  value(const named_arg_info<char_type>* args, size_t size)
+  FMT_INLINE value(const void* val) : pointer(val) {}
+  FMT_INLINE value(const named_arg_info<char_type>* args, size_t size)
       : named_args{args, size} {}
 
-  template <typename T> value(const T& val) {
+  template <typename T> FMT_INLINE value(const T& val) {
     custom.value = &val;
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
@@ -1741,7 +1749,7 @@ inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
  */
 template <typename Char, typename T>
 inline internal::named_arg<T, Char> arg(const Char* name, const T& arg) {
-  static_assert(!internal::is_named_arg<T>(), "");
+  static_assert(!internal::is_named_arg<T>(), "nested named arguments");
   return {name, arg};
 }
 
