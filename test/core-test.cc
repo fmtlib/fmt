@@ -600,23 +600,6 @@ inline fmt::basic_string_view<Char> to_string_view(const my_string<Char>& s)
 struct non_string {};
 }  // namespace my_ns
 
-namespace FakeQt {
-class QString {
- public:
-  QString(const wchar_t* s) : s_(std::make_shared<std::wstring>(s)) {}
-  const wchar_t* utf16() const FMT_NOEXCEPT { return s_->data(); }
-  int size() const FMT_NOEXCEPT { return static_cast<int>(s_->size()); }
-
- private:
-  std::shared_ptr<std::wstring> s_;
-};
-
-inline fmt::basic_string_view<wchar_t> to_string_view(const QString& s)
-    FMT_NOEXCEPT {
-  return {s.utf16(), static_cast<std::size_t>(s.size())};
-}
-}  // namespace FakeQt
-
 template <typename T> class IsStringTest : public testing::Test {};
 
 typedef ::testing::Types<char, wchar_t, char16_t, char32_t> StringCharTypes;
@@ -642,7 +625,6 @@ TYPED_TEST(IsStringTest, IsString) {
               fmt::internal::is_string<string_view>::value);
   EXPECT_TRUE(fmt::internal::is_string<my_ns::my_string<TypeParam>>::value);
   EXPECT_FALSE(fmt::internal::is_string<my_ns::non_string>::value);
-  EXPECT_TRUE(fmt::internal::is_string<FakeQt::QString>::value);
 }
 
 TEST(CoreTest, Format) {
@@ -665,33 +647,16 @@ TEST(CoreTest, FormatTo) {
 
 TEST(CoreTest, ToStringViewForeignStrings) {
   using namespace my_ns;
-  using namespace FakeQt;
   EXPECT_EQ(to_string_view(my_string<char>("42")), "42");
-  EXPECT_EQ(to_string_view(my_string<wchar_t>(L"42")), L"42");
-  EXPECT_EQ(to_string_view(QString(L"42")), L"42");
   fmt::internal::type type =
       fmt::internal::mapped_type_constant<my_string<char>,
                                           fmt::format_context>::value;
   EXPECT_EQ(type, fmt::internal::type::string_type);
-  type = fmt::internal::mapped_type_constant<my_string<wchar_t>,
-                                             fmt::wformat_context>::value;
-  EXPECT_EQ(type, fmt::internal::type::string_type);
-  type =
-      fmt::internal::mapped_type_constant<QString, fmt::wformat_context>::value;
-  EXPECT_EQ(type, fmt::internal::type::string_type);
-  // Does not compile: only wide format contexts are compatible with QString!
-  // type = fmt::internal::mapped_type_constant<QString,
-  // fmt::format_context>::value;
 }
 
 TEST(CoreTest, FormatForeignStrings) {
   using namespace my_ns;
-  using namespace FakeQt;
   EXPECT_EQ(fmt::format(my_string<char>("{}"), 42), "42");
-  EXPECT_EQ(fmt::format(my_string<wchar_t>(L"{}"), 42), L"42");
-  EXPECT_EQ(fmt::format(QString(L"{}"), 42), L"42");
-  EXPECT_EQ(fmt::format(QString(L"{}"), my_string<wchar_t>(L"42")), L"42");
-  EXPECT_EQ(fmt::format(my_string<wchar_t>(L"{}"), QString(L"42")), L"42");
 }
 
 struct implicitly_convertible_to_string {
@@ -726,15 +691,6 @@ TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringView) {
             fmt::format("{}", explicitly_convertible_to_std_string_view()));
 }
 #  endif
-
-struct explicitly_convertible_to_wstring_view {
-  explicit operator fmt::wstring_view() const { return L"foo"; }
-};
-
-TEST(FormatterTest, FormatExplicitlyConvertibleToWStringView) {
-  EXPECT_EQ(L"foo",
-            fmt::format(L"{}", explicitly_convertible_to_wstring_view()));
-}
 #endif
 
 struct disabled_rvalue_conversion {

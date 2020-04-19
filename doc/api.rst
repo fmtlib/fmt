@@ -9,7 +9,8 @@ The {fmt} library API consists of the following parts:
 * :ref:`fmt/core.h <core-api>`: the core API providing argument handling
   facilities and a lightweight subset of formatting functions
 * :ref:`fmt/format.h <format-api>`: the full format API providing compile-time
-  format string checks, output iterator and user-defined type support
+  format string checks, wide string, output iterator and user-defined type
+  support
 * :ref:`fmt/ranges.h <ranges-api>`: additional formatting support for ranges
   and tuples
 * :ref:`fmt/chrono.h <chrono-api>`: date and time formatting
@@ -104,7 +105,7 @@ Format API
 ==========
 
 ``fmt/format.h`` defines the full format API providing compile-time format
-string checks, output iterator and user-defined type support.
+string checks, wide string, output iterator and user-defined type support.
 
 Compile-time Format String Checks
 ---------------------------------

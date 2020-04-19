@@ -1609,6 +1609,40 @@ TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringView) {
 }
 #endif
 
+// std::is_constructible is broken in MSVC until version 2015.
+#if !FMT_MSC_VER || FMT_MSC_VER >= 1900
+struct explicitly_convertible_to_wstring_view {
+  explicit operator fmt::wstring_view() const { return L"foo"; }
+};
+
+TEST(FormatTest, FormatExplicitlyConvertibleToWStringView) {
+  EXPECT_EQ(L"foo",
+            fmt::format(L"{}", explicitly_convertible_to_wstring_view()));
+}
+#endif
+
+namespace fake_qt {
+class QString {
+ public:
+  QString(const wchar_t* s) : s_(std::make_shared<std::wstring>(s)) {}
+  const wchar_t* utf16() const FMT_NOEXCEPT { return s_->data(); }
+  int size() const FMT_NOEXCEPT { return static_cast<int>(s_->size()); }
+
+ private:
+  std::shared_ptr<std::wstring> s_;
+};
+
+fmt::basic_string_view<wchar_t> to_string_view(const QString& s) FMT_NOEXCEPT {
+  return {s.utf16(), static_cast<std::size_t>(s.size())};
+}
+}  // namespace fake_qt
+
+TEST(FormatTest, FormatForeignStrings) {
+  using fake_qt::QString;
+  EXPECT_EQ(fmt::format(QString(L"{}"), 42), L"42");
+  EXPECT_EQ(fmt::format(QString(L"{}"), QString(L"42")), L"42");
+}
+
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<Date> {
   template <typename ParseContext>

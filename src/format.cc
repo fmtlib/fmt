@@ -211,7 +211,4 @@ template FMT_API wchar_t internal::decimal_point_impl(locale_ref);
 
 template FMT_API void internal::buffer<wchar_t>::append(const wchar_t*,
                                                         const wchar_t*);
-
-template FMT_API std::wstring internal::vformat<wchar_t>(
-    wstring_view, basic_format_args<wformat_context>);
 FMT_END_NAMESPACE
