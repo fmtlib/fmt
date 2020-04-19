@@ -627,14 +627,17 @@ enum { inline_buffer_size = 500 };
  */
 template <typename T, std::size_t SIZE = inline_buffer_size,
           typename Allocator = std::allocator<T>>
-class basic_memory_buffer : private Allocator, public internal::buffer<T> {
+class basic_memory_buffer : public internal::buffer<T> {
  private:
   T store_[SIZE];
+
+  // Don't inherit from Allocator avoid generating type_info for it.
+  Allocator alloc_;
 
   // Deallocate memory allocated by the buffer.
   void deallocate() {
     T* data = this->data();
-    if (data != store_) Allocator::deallocate(data, this->capacity());
+    if (data != store_) alloc_.deallocate(data, this->capacity());
   }
 
  protected:
@@ -645,7 +648,7 @@ class basic_memory_buffer : private Allocator, public internal::buffer<T> {
   using const_reference = const T&;
 
   explicit basic_memory_buffer(const Allocator& alloc = Allocator())
-      : Allocator(alloc) {
+      : alloc_(alloc) {
     this->set(store_, SIZE);
   }
   ~basic_memory_buffer() FMT_OVERRIDE { deallocate(); }
@@ -653,8 +656,7 @@ class basic_memory_buffer : private Allocator, public internal::buffer<T> {
  private:
   // Move data from other to this buffer.
   void move(basic_memory_buffer& other) {
-    Allocator &this_alloc = *this, &other_alloc = other;
-    this_alloc = std::move(other_alloc);
+    alloc_ = std::move(other.alloc_);
     T* data = other.data();
     std::size_t size = other.size(), capacity = other.capacity();
     if (data == other.store_) {
@@ -692,7 +694,7 @@ class basic_memory_buffer : private Allocator, public internal::buffer<T> {
   }
 
   // Returns a copy of the allocator associated with this buffer.
-  Allocator get_allocator() const { return *this; }
+  Allocator get_allocator() const { return alloc_; }
 };
 
 template <typename T, std::size_t SIZE, typename Allocator>
@@ -704,7 +706,8 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
   std::size_t new_capacity = old_capacity + old_capacity / 2;
   if (size > new_capacity) new_capacity = size;
   T* old_data = this->data();
-  T* new_data = std::allocator_traits<Allocator>::allocate(*this, new_capacity);
+  T* new_data =
+      std::allocator_traits<Allocator>::allocate(alloc_, new_capacity);
   // The following code doesn't throw, so the raw pointer above doesn't leak.
   std::uninitialized_copy(old_data, old_data + this->size(),
                           internal::make_checked(new_data, new_capacity));
@@ -712,7 +715,7 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
   // deallocate must not throw according to the standard, but even if it does,
   // the buffer already uses the new storage and will deallocate it in
   // destructor.
-  if (old_data != store_) Allocator::deallocate(old_data, old_capacity);
+  if (old_data != store_) alloc_.deallocate(old_data, old_capacity);
 }
 
 using memory_buffer = basic_memory_buffer<char>;
