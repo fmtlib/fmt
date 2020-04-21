@@ -344,6 +344,9 @@ Projects using this library
 * `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: Open-source
   MMORPG framework
 
+* `Windows Terminal <https://github.com/microsoft/terminal>`_: The new Windows
+  Terminal
+
 `More... <https://github.com/search?q=fmtlib&type=Code>`_
 
 If you are aware of other projects using this library, please let me know
