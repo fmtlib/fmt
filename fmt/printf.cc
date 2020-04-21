@@ -25,7 +25,9 @@ FMT_FUNC int fprintf(std::FILE *f, CStringRef format, ArgList args) {
 #ifndef FMT_HEADER_ONLY
 
 template void PrintfFormatter<char>::format(CStringRef format);
+#ifdef FMT_HAS_WCHAR_T
 template void PrintfFormatter<wchar_t>::format(WCStringRef format);
+#endif
 
 #endif  // FMT_HEADER_ONLY
 

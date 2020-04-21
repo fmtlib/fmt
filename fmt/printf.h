@@ -524,10 +524,12 @@ inline void printf(Writer &w, CStringRef format, ArgList args) {
 }
 FMT_VARIADIC(void, printf, Writer &, CStringRef)
 
+#ifdef FMT_HAS_WCHAR_T
 inline void printf(WWriter &w, WCStringRef format, ArgList args) {
   PrintfFormatter<wchar_t>(args, w).format(format);
 }
 FMT_VARIADIC(void, printf, WWriter &, WCStringRef)
+#endif
 
 /**
   \rst

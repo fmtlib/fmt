@@ -109,6 +109,9 @@ typedef __int64          intmax_t;
 #ifdef __GNUC__
 # define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 # define FMT_GCC_EXTENSION __extension__
+# ifndef _GLIBCXX_USE_WCHAR_T
+#  define FMT_DISABLE_WCHAR_T_SUPPORT
+# endif
 # if FMT_GCC_VERSION >= 406
 #  pragma GCC diagnostic push
 // Disable the warning about "long long" which is sometimes reported even
@@ -146,6 +149,10 @@ typedef __int64          intmax_t;
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
 # pragma clang diagnostic ignored "-Wpadded"
+#endif
+
+#ifndef FMT_DISABLE_WCHAR_T_SUPPORT
+#define FMT_HAS_WCHAR_T 1
 #endif
 
 #ifdef __GNUC_LIBSTD__
@@ -508,7 +515,9 @@ template <typename Char>
 class BasicWriter;
 
 typedef BasicWriter<char> Writer;
+#ifdef FMT_HAS_WCHAR_T
 typedef BasicWriter<wchar_t> WWriter;
+#endif
 
 template <typename Char>
 class ArgFormatter;
@@ -661,7 +670,9 @@ class BasicStringRef {
 };
 
 typedef BasicStringRef<char> StringRef;
+#ifdef FMT_HAS_WCHAR_T
 typedef BasicStringRef<wchar_t> WStringRef;
+#endif
 
 /**
   \rst
@@ -712,7 +723,9 @@ class BasicCStringRef {
 };
 
 typedef BasicCStringRef<char> CStringRef;
+#ifdef FMT_HAS_WCHAR_T
 typedef BasicCStringRef<wchar_t> WCStringRef;
+#endif
 
 /** A formatting error such as invalid format string. */
 class FMT_API FormatError : public std::runtime_error {
@@ -977,6 +990,7 @@ extern template int CharTraits<char>::format_float<long double>
          const char* format, unsigned width, int precision, long double value);
 #endif
 
+#ifdef FMT_HAS_WCHAR_T
 template <>
 class CharTraits<wchar_t> : public BasicCharTraits<wchar_t> {
  public:
@@ -995,6 +1009,7 @@ extern template int CharTraits<wchar_t>::format_float<double>
 extern template int CharTraits<wchar_t>::format_float<long double>
         (wchar_t *buffer, std::size_t size,
          const wchar_t* format, unsigned width, int precision, long double value);
+#endif
 #endif
 
 // Checks if a number is negative - used to avoid warnings.
@@ -1219,7 +1234,9 @@ struct Value {
     StringValue<char> string;
     StringValue<signed char> sstring;
     StringValue<unsigned char> ustring;
+#ifdef FMT_HAS_WCHAR_T
     StringValue<wchar_t> wstring;
+#endif
     CustomValue custom;
   };
 
@@ -1255,11 +1272,13 @@ struct WCharHelper {
   typedef T Unsupported;
 };
 
+#ifdef FMT_HAS_WCHAR_T
 template <typename T>
 struct WCharHelper<T, wchar_t> {
   typedef T Supported;
   typedef Null<T> Unsupported;
 };
+#endif
 
 typedef char Yes[1];
 typedef char No[2];
@@ -1392,6 +1411,7 @@ class MakeValue : public Arg {
   template <typename T>
   MakeValue(T *value);
 
+#ifdef FMT_HAS_WCHAR_T
   // The following methods are private to disallow formatting of wide
   // characters and strings into narrow strings as in
   //   fmt::format("{}", L"test");
@@ -1409,16 +1429,19 @@ class MakeValue : public Arg {
   MakeValue(typename WCharHelper<const std::experimental::wstring_view &, Char>::Unsupported);
 #endif
   MakeValue(typename WCharHelper<WStringRef, Char>::Unsupported);
+#endif
 
   void set_string(StringRef str) {
     string.value = str.data();
     string.size = str.size();
   }
 
+#ifdef FMT_HAS_WCHAR_T
   void set_string(WStringRef str) {
     wstring.value = str.data();
     wstring.size = str.size();
   }
+#endif
 
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T>
@@ -1491,11 +1514,13 @@ class MakeValue : public Arg {
   static uint64_t type(T) { return Arg::INT; }
 #endif
 
+#ifdef HAS_WCHAR_T
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
   MakeValue(typename WCharHelper<wchar_t, Char>::Supported value) {
     int_value = value;
   }
   static uint64_t type(wchar_t) { return Arg::CHAR; }
+#endif
 #endif
 
 #define FMT_MAKE_STR_VALUE(Type, TYPE) \
@@ -1523,17 +1548,18 @@ class MakeValue : public Arg {
     set_string(value); \
   } \
   static uint64_t type(Type) { return Arg::TYPE; }
-
+#ifdef FMT_HAS_WCHAR_T
   FMT_MAKE_WSTR_VALUE(wchar_t *, WSTRING)
   FMT_MAKE_WSTR_VALUE(const wchar_t *, WSTRING)
   FMT_MAKE_WSTR_VALUE(const std::wstring &, WSTRING)
-#if FMT_HAS_STRING_VIEW
+#ifdef FMT_HAS_STRING_VIEW
   FMT_MAKE_WSTR_VALUE(const std::wstring_view &, WSTRING)
 #endif
 #if FMT_HAS_EXPERIMENTAL_STRING_VIEW
   FMT_MAKE_WSTR_VALUE(const std::experimental::wstring_view &, WSTRING)
 #endif
   FMT_MAKE_WSTR_VALUE(WStringRef, WSTRING)
+#endif
 
   FMT_MAKE_VALUE(void *, pointer, POINTER)
   FMT_MAKE_VALUE(const void *, pointer, POINTER)
@@ -1776,10 +1802,12 @@ class ArgVisitor {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
 
+#ifdef FMT_HAS_WCHAR_T
   /** Visits a wide string argument. **/
   Result visit_wstring(Arg::StringValue<wchar_t>) {
     return FMT_DISPATCH(visit_unhandled_arg());
   }
+#endif
 
   /** Visits a pointer argument. **/
   Result visit_pointer(const void *) {
@@ -1825,8 +1853,10 @@ class ArgVisitor {
       return FMT_DISPATCH(visit_cstring(arg.string.value));
     case Arg::STRING:
       return FMT_DISPATCH(visit_string(arg.string));
+#ifdef FMT_HAS_WCHAR_T
     case Arg::WSTRING:
       return FMT_DISPATCH(visit_wstring(arg.wstring));
+#endif
     case Arg::POINTER:
       return FMT_DISPATCH(visit_pointer(arg.pointer));
     case Arg::CUSTOM:
@@ -2055,10 +2085,12 @@ inline StrFormatSpec<Char> pad(
   return StrFormatSpec<Char>(str, width, fill);
 }
 
+#ifdef FMT_HAS_WCHAR_T
 inline StrFormatSpec<wchar_t> pad(
     const wchar_t *str, unsigned width, char fill = ' ') {
   return StrFormatSpec<wchar_t>(str, width, fill);
 }
+#endif
 
 namespace internal {
 
@@ -2224,11 +2256,13 @@ class ArgFormatterBase : public ArgVisitor<Impl, void> {
     writer_.write_str(value, spec_);
   }
 
+#ifdef FMT_HAS_WCHAR_T
   using ArgVisitor<Impl, void>::visit_wstring;
 
   void visit_wstring(internal::Arg::StringValue<Char> value) {
     writer_.write_str(value, spec_);
   }
+#endif
 
   void visit_pointer(const void *value) {
     if (spec_.type_ && spec_.type_ != 'p')
@@ -3517,11 +3551,13 @@ inline std::string format(CStringRef format_str, ArgList args) {
   return w.str();
 }
 
+#ifdef FMT_HAS_WCHAR_T
 inline std::wstring format(WCStringRef format_str, ArgList args) {
   WMemoryWriter w;
   w.write(format_str, args);
   return w.str();
 }
+#endif
 
 /**
   \rst
@@ -3665,17 +3701,21 @@ inline internal::NamedArgWithType<char, T> arg(StringRef name, const T &arg) {
   return internal::NamedArgWithType<char, T>(name, arg);
 }
 
+#ifdef FMT_HAS_WCHAR_T
 template <typename T>
 inline internal::NamedArgWithType<wchar_t, T> arg(WStringRef name, const T &arg) {
   return internal::NamedArgWithType<wchar_t, T>(name, arg);
 }
+#endif
 
 // The following two functions are deleted intentionally to disable
 // nested named arguments as in ``format("{}", arg("a", arg("b", 42)))``.
 template <typename Char>
 void arg(StringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
+#ifdef FMT_HAS_WCHAR_T
 template <typename Char>
 void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
+#endif
 }
 
 #if FMT_GCC_VERSION
@@ -3812,7 +3852,9 @@ void arg(WStringRef, const internal::NamedArg<Char>&) FMT_DELETED_OR_UNDEFINED;
 
 namespace fmt {
 FMT_VARIADIC(std::string, format, CStringRef)
+#ifdef FMT_HAS_WCHAR_T
 FMT_VARIADIC_W(std::wstring, format, WCStringRef)
+#endif
 FMT_VARIADIC(void, print, CStringRef)
 FMT_VARIADIC(void, print, std::FILE *, CStringRef)
 FMT_VARIADIC(void, print_colored, Color, CStringRef)
@@ -4118,10 +4160,12 @@ ArgJoin<char, It> join(It first, It last, const BasicCStringRef<char>& sep) {
   return ArgJoin<char, It>(first, last, sep);
 }
 
+#ifdef FMT_HAS_WCHAR_T
 template <typename It>
 ArgJoin<wchar_t, It> join(It first, It last, const BasicCStringRef<wchar_t>& sep) {
   return ArgJoin<wchar_t, It>(first, last, sep);
 }
+#endif
 
 #if FMT_HAS_GXX_CXX11 && \
     (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 405 || __clang__)
@@ -4131,11 +4175,13 @@ auto join(const Range& range, const BasicCStringRef<char>& sep)
   return join(std::begin(range), std::end(range), sep);
 }
 
+#ifdef FMT_HAS_WCHAR_T
 template <typename Range>
 auto join(const Range& range, const BasicCStringRef<wchar_t>& sep)
     -> ArgJoin<wchar_t, decltype(std::begin(range))> {
   return join(std::begin(range), std::end(range), sep);
 }
+#endif
 #endif
 
 template <typename ArgFormatter, typename Char, typename It>
@@ -4208,8 +4254,10 @@ inline namespace literals {
  */
 inline internal::UdlFormat<char>
 operator"" _format(const char *s, std::size_t) { return {s}; }
+#ifdef FMT_HAS_WCHAR_T
 inline internal::UdlFormat<wchar_t>
 operator"" _format(const wchar_t *s, std::size_t) { return {s}; }
+#endif
 
 /**
   \rst
@@ -4223,8 +4271,10 @@ operator"" _format(const wchar_t *s, std::size_t) { return {s}; }
  */
 inline internal::UdlArg<char>
 operator"" _a(const char *s, std::size_t) { return {s}; }
+#ifdef FMT_HAS_WCHAR_T
 inline internal::UdlArg<wchar_t>
 operator"" _a(const wchar_t *s, std::size_t) { return {s}; }
+#endif
 
 } // inline namespace literals
 } // namespace fmt

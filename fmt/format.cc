@@ -249,6 +249,7 @@ int CharTraits<char>::format_float(
       FMT_SNPRINTF(buffer, size, format, width, precision, value);
 }
 
+#ifdef FMT_HAS_WCHAR_T
 template <typename T>
 int CharTraits<wchar_t>::format_float(
     wchar_t *buffer, std::size_t size, const wchar_t *format,
@@ -262,6 +263,7 @@ int CharTraits<wchar_t>::format_float(
       FMT_SWPRINTF(buffer, size, format, width, value) :
       FMT_SWPRINTF(buffer, size, format, width, precision, value);
 }
+#endif
 
 template <typename T>
 const char BasicData<T>::DIGITS[] =
