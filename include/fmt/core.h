@@ -1566,8 +1566,11 @@ template <typename Context> class basic_format_args {
 
   friend class internal::arg_map<Context>;
 
-  void set_data(const internal::value<Context>* values) { values_ = values; }
-  void set_data(const format_arg* args) { args_ = args; }
+  basic_format_args(unsigned long long desc,
+                    const internal::value<Context>* values)
+      : desc_(desc), values_(values) {}
+  basic_format_args(unsigned long long desc, const format_arg* args)
+      : desc_(desc), args_(args) {}
 
   format_arg do_get(int index) const {
     format_arg arg;
@@ -1591,10 +1594,8 @@ template <typename Context> class basic_format_args {
    \endrst
    */
   template <typename... Args>
-  basic_format_args(const format_arg_store<Context, Args...>& store)
-      : desc_(store.desc) {
-    set_data(store.data_.args());
-  }
+  FMT_INLINE basic_format_args(const format_arg_store<Context, Args...>& store)
+      : basic_format_args(store.desc, store.data_.args()) {}
 
   /**
    \rst
@@ -1602,10 +1603,8 @@ template <typename Context> class basic_format_args {
    `~fmt::dynamic_format_arg_store`.
    \endrst
    */
-  basic_format_args(const dynamic_format_arg_store<Context>& store)
-      : desc_(store.get_types()) {
-    set_data(store.data_.data());
-  }
+  FMT_INLINE basic_format_args(const dynamic_format_arg_store<Context>& store)
+      : basic_format_args(store.get_types(), store.data_.data()) {}
 
   /**
    \rst
@@ -1613,9 +1612,8 @@ template <typename Context> class basic_format_args {
    \endrst
    */
   basic_format_args(const format_arg* args, int count)
-      : desc_(internal::is_unpacked_bit | internal::to_unsigned(count)) {
-    set_data(args);
-  }
+      : basic_format_args(
+            internal::is_unpacked_bit | internal::to_unsigned(count), args) {}
 
   /** Returns the argument with the specified id. */
   format_arg get(int id) const {
@@ -1645,7 +1643,8 @@ template <typename Context> class basic_format_args {
 /** An alias to ``basic_format_args<context>``. */
 // It is a separate type rather than an alias to make symbols readable.
 struct format_args : basic_format_args<format_context> {
-  using basic_format_args::basic_format_args;
+  template <typename... Args>
+  FMT_INLINE format_args(const Args&... args) : basic_format_args(args...) {}
 };
 struct wformat_args : basic_format_args<wformat_context> {
   using basic_format_args::basic_format_args;
@@ -1693,7 +1692,7 @@ struct named_arg : view, named_arg_base<Char> {
 };
 
 template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
-inline void check_format_string(const S&) {
+FMT_INLINE void check_format_string(const S&) {
 #ifdef FMT_ENFORCE_COMPILE_STRING
   static_assert(is_compile_string<S>::value,
                 "FMT_ENFORCE_COMPILE_STRING requires all format strings to "
