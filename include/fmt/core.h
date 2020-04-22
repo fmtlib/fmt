@@ -1578,7 +1578,7 @@ template <typename Context> class basic_format_args {
       if (index < max_size()) arg = args_[index];
       return arg;
     }
-    if (index > internal::max_packed_args) return arg;
+    if (index >= internal::max_packed_args) return arg;
     arg.type_ = type(index);
     if (arg.type_ == internal::type::none_type) return arg;
     arg.value_ = values_[index];
