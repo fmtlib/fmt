@@ -1640,7 +1640,7 @@ template <typename Range> class basic_writer {
     UIntPtr value;
     int num_digits;
 
-    size_t size() const { return to_unsigned(num_digits) + 2; }
+    size_t size() const { return to_unsigned(num_digits) + size_t(2); }
     size_t width() const { return size(); }
 
     template <typename It> void operator()(It&& it) const {

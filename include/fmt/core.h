@@ -660,6 +660,7 @@ template <typename T> class buffer {
 
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
+  FMT_SUPPRESS_MSC_WARNING(26495)
   buffer(std::size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
 
   buffer(T* p = nullptr, std::size_t sz = 0, std::size_t cap = 0) FMT_NOEXCEPT
