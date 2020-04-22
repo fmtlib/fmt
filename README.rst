@@ -290,6 +290,8 @@ Projects using this library
 
 * `FiveM <https://fivem.net/>`_: a modification framework for GTA V
 
+* `Folly <https://github.com/facebook/folly>`_: Facebook open-source library
+
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
 
