@@ -264,8 +264,8 @@ or the bloat test::
 Projects using this library
 ---------------------------
 
-* `0 A.D. <https://play0ad.com/>`_: A free, open-source, cross-platform real-time
-  strategy game
+* `0 A.D. <https://play0ad.com/>`_: A free, open-source, cross-platform
+  real-time strategy game
 
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   An open-source library for mathematical programming
@@ -281,6 +281,14 @@ Projects using this library
 
 * `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater
   vehicle
+
+* `Drake <https://drake.mit.edu/>`_: A planning, control, and analysis toolbox
+  for nonlinear dynamical systems (MIT)
+
+* `Envoy <https://lyft.github.io/envoy/>`_: C++ L7 proxy and communication bus
+  (Lyft)
+
+* `FiveM <https://fivem.net/>`_: a modification framework for GTA V
 
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
@@ -298,8 +306,8 @@ Projects using this library
 * `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to
   generate randomized datasets
 
-* `OpenSpace <https://openspaceproject.com/>`_: An open-source astrovisualization
-  framework
+* `OpenSpace <https://openspaceproject.com/>`_: An open-source
+  astrovisualization framework
 
 * `PenUltima Online (POL) <https://www.polserver.com/>`_:
   An MMO server, compatible with most Ultima Online clients
@@ -321,7 +329,8 @@ Projects using this library
 * `Saddy <https://github.com/mamontov-cpp/saddy-graphics-engine-2d>`_:
   Small crossplatform 2D graphic engine
 
-* `Salesforce Analytics Cloud <https://www.salesforce.com/analytics-cloud/overview/>`_:
+* `Salesforce Analytics Cloud
+  <https://www.salesforce.com/analytics-cloud/overview/>`_:
   Business intelligence software
 
 * `Scylla <https://www.scylladb.com/>`_: A Cassandra-compatible NoSQL data store
