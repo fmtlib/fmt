@@ -264,6 +264,9 @@ or the bloat test::
 Projects using this library
 ---------------------------
 
+* `redpanda <https://vectorized.io/redpanda>`_: A Kafka® replacement for
+  mission critical systems written in C++; 10x faster.
+
 * `0 A.D. <https://play0ad.com/>`_: A free, open-source, cross-platform real-time
   strategy game
 
