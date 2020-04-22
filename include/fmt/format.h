@@ -2677,6 +2677,52 @@ class format_string_checker {
   parse_func parse_funcs_[num_args > 0 ? num_args : 1];
 };
 
+// Converts string literals to basic_string_view.
+template <typename Char, size_t N>
+FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
+    const Char (&s)[N]) {
+  // Remove trailing null character if needed. Won't be present if this is used
+  // with raw character array (i.e. not defined as a string).
+  return {s,
+          N - ((std::char_traits<Char>::to_int_type(s[N - 1]) == 0) ? 1 : 0)};
+}
+
+// Converts string_view to basic_string_view.
+template <typename Char>
+FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
+    const std_string_view<Char>& s) {
+  return {s.data(), s.size()};
+}
+
+#define FMT_STRING_IMPL(s, ...)                                     \
+  [] {                                                              \
+    /* Use a macro-like name to avoid shadowing warnings. */        \
+    struct FMT_COMPILE_STRING : fmt::compile_string {               \
+      using char_type = fmt::remove_cvref_t<decltype(s[0])>;        \
+      FMT_MAYBE_UNUSED __VA_ARGS__ FMT_CONSTEXPR                    \
+      operator fmt::basic_string_view<char_type>() const {          \
+        return fmt::internal::compile_string_to_view<char_type>(s); \
+      }                                                             \
+    };                                                              \
+    return FMT_COMPILE_STRING();                                    \
+  }()
+
+/**
+  \rst
+  Constructs a compile-time format string from a string literal *s*.
+
+  **Example**::
+
+    // A compile-time error because 'd' is an invalid specifier for strings.
+    std::string s = format(FMT_STRING("{:d}"), "foo");
+  \endrst
+ */
+#define FMT_STRING(s) FMT_STRING_IMPL(s, )
+
+#if defined(FMT_STRING_ALIAS) && FMT_STRING_ALIAS
+#  define fmt(s) FMT_STRING_IMPL(s, [[deprecated]])
+#endif
+
 template <typename Char, typename ErrorHandler, typename... Args>
 FMT_CONSTEXPR bool do_check_format_string(basic_string_view<Char> s,
                                           ErrorHandler eh = ErrorHandler()) {
@@ -3490,11 +3536,8 @@ template <typename Char, Char... CHARS> class udl_formatter {
  public:
   template <typename... Args>
   std::basic_string<Char> operator()(Args&&... args) const {
-    FMT_CONSTEXPR_DECL Char s[] = {CHARS..., '\0'};
-    FMT_CONSTEXPR_DECL bool invalid_format =
-        do_check_format_string<Char, error_handler, remove_cvref_t<Args>...>(
-            basic_string_view<Char>(s, sizeof...(CHARS)));
-    (void)invalid_format;
+    static FMT_CONSTEXPR_DECL Char s[] = {CHARS..., '\0'};
+    check_format_string<remove_cvref_t<Args>...>(FMT_STRING(s));
     return format(s, std::forward<Args>(args)...);
   }
 };
@@ -3516,23 +3559,6 @@ template <typename Char> struct udl_arg {
     return {str, std::forward<T>(value)};
   }
 };
-
-// Converts string literals to basic_string_view.
-template <typename Char, size_t N>
-FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
-    const Char (&s)[N]) {
-  // Remove trailing null character if needed. Won't be present if this is used
-  // with raw character array (i.e. not defined as a string).
-  return {s,
-          N - ((std::char_traits<Char>::to_int_type(s[N - 1]) == 0) ? 1 : 0)};
-}
-
-// Converts string_view to basic_string_view.
-template <typename Char>
-FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
-    const std_string_view<Char>& s) {
-  return {s.data(), s.size()};
-}
 }  // namespace internal
 
 inline namespace literals {
@@ -3589,35 +3615,6 @@ FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
 }  // namespace literals
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 FMT_END_NAMESPACE
-
-#define FMT_STRING_IMPL(s, ...)                                     \
-  [] {                                                              \
-    /* Use a macro-like name to avoid shadowing warnings. */        \
-    struct FMT_COMPILE_STRING : fmt::compile_string {               \
-      using char_type = fmt::remove_cvref_t<decltype(s[0])>;        \
-      FMT_MAYBE_UNUSED __VA_ARGS__ FMT_CONSTEXPR                    \
-      operator fmt::basic_string_view<char_type>() const {          \
-        return fmt::internal::compile_string_to_view<char_type>(s); \
-      }                                                             \
-    };                                                              \
-    return FMT_COMPILE_STRING();                                    \
-  }()
-
-/**
-  \rst
-  Constructs a compile-time format string from a string literal *s*.
-
-  **Example**::
-
-    // A compile-time error because 'd' is an invalid specifier for strings.
-    std::string s = format(FMT_STRING("{:d}"), "foo");
-  \endrst
- */
-#define FMT_STRING(s) FMT_STRING_IMPL(s, )
-
-#if defined(FMT_STRING_ALIAS) && FMT_STRING_ALIAS
-#  define fmt(s) FMT_STRING_IMPL(s, [[deprecated]])
-#endif
 
 #ifdef FMT_HEADER_ONLY
 #  define FMT_FUNC inline
