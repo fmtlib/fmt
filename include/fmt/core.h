@@ -1692,6 +1692,7 @@ struct named_arg : view, named_arg_base<Char> {
       : named_arg_base<Char>(name), value(val) {}
 };
 
+// Reports a compile-time error if S is not a valid format string.
 template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
 FMT_INLINE void check_format_string(const S&) {
 #ifdef FMT_ENFORCE_COMPILE_STRING
