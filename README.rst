@@ -320,8 +320,8 @@ Projects using this library
 * `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: A Redis cluster
   proxy
 
-* `redpanda <https://vectorized.io/redpanda>`_: A Kafka® replacement for
-  mission critical systems written in C++; 10x faster.
+* `redpanda <https://vectorized.io/redpanda>`_: A 10x faster Kafka® replacement
+  for mission critical systems written in C++
 
 * `rpclib <http://rpclib.net/>`_: A modern C++ msgpack-RPC server and client
   library
