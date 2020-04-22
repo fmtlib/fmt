@@ -647,8 +647,7 @@ TEST(FormatterTest, ArgErrors) {
   safe_sprintf(format_str, "{%u", INT_MAX);
   EXPECT_THROW_MSG(format(format_str), format_error, "invalid format string");
   safe_sprintf(format_str, "{%u}", INT_MAX);
-  EXPECT_THROW_MSG(format(format_str), format_error,
-                   "argument not found");
+  EXPECT_THROW_MSG(format(format_str), format_error, "argument not found");
 
   safe_sprintf(format_str, "{%u", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str), format_error, "number is too big");
@@ -1011,8 +1010,7 @@ TEST(FormatterTest, RuntimeWidth) {
   EXPECT_THROW_MSG(format("{0:{}", 0), format_error,
                    "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{0:{?}}", 0), format_error, "invalid format string");
-  EXPECT_THROW_MSG(format("{0:{1}}", 0), format_error,
-                   "argument not found");
+  EXPECT_THROW_MSG(format("{0:{1}}", 0), format_error, "argument not found");
 
   EXPECT_THROW_MSG(format("{0:{0:}}", 0), format_error,
                    "invalid format string");
@@ -1160,8 +1158,7 @@ TEST(FormatterTest, RuntimePrecision) {
                    "invalid format string");
   EXPECT_THROW_MSG(format("{0:.{1}", 0, 0), format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG(format("{0:.{1}}", 0), format_error,
-                   "argument not found");
+  EXPECT_THROW_MSG(format("{0:.{1}}", 0), format_error, "argument not found");
 
   EXPECT_THROW_MSG(format("{0:.{0:}}", 0), format_error,
                    "invalid format string");
@@ -2456,8 +2453,10 @@ FMT_CONSTEXPR bool equal(const char* s1, const char* s2) {
 template <typename... Args>
 FMT_CONSTEXPR bool test_error(const char* fmt, const char* expected_error) {
   const char* actual_error = nullptr;
-  fmt::internal::do_check_format_string<char, test_error_handler, Args...>(
-      string_view(fmt, len(fmt)), test_error_handler(actual_error));
+  string_view s(fmt, len(fmt));
+  fmt::internal::format_string_checker<char, test_error_handler, Args...>
+      checker(s, test_error_handler(actual_error));
+  fmt::internal::parse_format_string<true>(s, checker);
   return equal(actual_error, expected_error);
 }
 

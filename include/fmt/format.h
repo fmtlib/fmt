@@ -2723,20 +2723,14 @@ FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
 #  define fmt(s) FMT_STRING_IMPL(s, [[deprecated]])
 #endif
 
-template <typename Char, typename ErrorHandler, typename... Args>
-FMT_CONSTEXPR bool do_check_format_string(basic_string_view<Char> s,
-                                          ErrorHandler eh = ErrorHandler()) {
-  format_string_checker<Char, ErrorHandler, Args...> checker(s, eh);
-  parse_format_string<true>(s, checker);
-  return true;
-}
-
 template <typename... Args, typename S,
           enable_if_t<(is_compile_string<S>::value), int>>
 void check_format_string(S format_str) {
-  FMT_CONSTEXPR_DECL bool invalid_format = internal::do_check_format_string<
-      typename S::char_type, internal::error_handler,
-      remove_const_t<remove_reference_t<Args>>...>(to_string_view(format_str));
+  FMT_CONSTEXPR_DECL auto s = to_string_view(format_str);
+  using checker = format_string_checker<typename S::char_type, error_handler,
+                                        remove_cvref_t<Args>...>;
+  FMT_CONSTEXPR_DECL bool invalid_format =
+      (parse_format_string<true>(s, checker(s, {})), true);
   (void)invalid_format;
 }
 
