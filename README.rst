@@ -293,14 +293,6 @@ Projects using this library
 
 * `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
 
-* `Drake <https://drake.mit.edu/>`_: A planning, control, and analysis toolbox
-  for nonlinear dynamical systems (MIT)
-
-* `Envoy <https://lyft.github.io/envoy/>`_: C++ L7 proxy and communication bus
-  (Lyft)
-
-* `FiveM <https://fivem.net/>`_: a modification framework for GTA V
-
 * `MongoDB <https://mongodb.com/>`_: Distributed document database
 
 * `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to
@@ -319,6 +311,9 @@ Projects using this library
 
 * `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: A Redis cluster
   proxy
+
+* `redpanda <https://vectorized.io/redpanda>`_: A Kafka® replacement for
+  mission critical systems written in C++; 10x faster.
 
 * `rpclib <http://rpclib.net/>`_: A modern C++ msgpack-RPC server and client
   library
