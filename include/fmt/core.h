@@ -568,7 +568,7 @@ class basic_format_parse_context : private ErrorHandler {
   using iterator = typename basic_string_view<Char>::iterator;
 
   explicit FMT_CONSTEXPR basic_format_parse_context(
-      basic_string_view<Char> format_str, ErrorHandler eh = ErrorHandler())
+      basic_string_view<Char> format_str, ErrorHandler eh = {})
       : ErrorHandler(eh), format_str_(format_str), next_arg_id_(0) {}
 
   /**
