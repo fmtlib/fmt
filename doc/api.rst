@@ -179,8 +179,7 @@ example::
 
   enum class color {red, green, blue};
 
-  template <>
-  struct fmt::formatter<color>: formatter<string_view> {
+  template <> struct fmt::formatter<color>: formatter<string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
     auto format(color c, FormatContext& ctx) {
@@ -193,6 +192,15 @@ example::
       return formatter<string_view>::format(name, ctx);
     }
   };
+
+Since `parse` is inherited from `formatter<string_view>` it will recognize all
+string format specifications, for example
+
+.. code-block:: c++
+
+   fmt::format("{:>10}", color::blue)
+
+will return "      blue".
 
 You can also write a formatter for a hierarchy of classes::
 
