@@ -2632,19 +2632,17 @@ class format_string_checker {
   explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
       : arg_id_(-1),
-        context_(format_str, eh),
+        context_(format_str, num_args, eh),
         parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
 
   FMT_CONSTEXPR void on_arg_id() {
     arg_id_ = context_.next_arg_id();
-    check_arg_id();
   }
   FMT_CONSTEXPR void on_arg_id(int id) {
     arg_id_ = id;
     context_.check_arg_id(id);
-    check_arg_id();
   }
   FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) {
     on_error("compile-time checks don't support named arguments");
@@ -2664,10 +2662,6 @@ class format_string_checker {
  private:
   using parse_context_type = basic_format_parse_context<Char, ErrorHandler>;
   enum { num_args = sizeof...(Args) };
-
-  FMT_CONSTEXPR void check_arg_id() {
-    if (arg_id_ >= num_args) context_.on_error("argument not found");
-  }
 
   // Format specifier parsing function.
   using parse_func = const Char* (*)(parse_context_type&);
