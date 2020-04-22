@@ -193,14 +193,14 @@ example::
     }
   };
 
-Since `parse` is inherited from `formatter<string_view>` it will recognize all
-string format specifications, for example
+Since ``parse`` is inherited from ``formatter<string_view>`` it will recognize
+all string format specifications, for example
 
 .. code-block:: c++
 
    fmt::format("{:>10}", color::blue)
 
-will return "      blue".
+will return ``"      blue"``.
 
 You can also write a formatter for a hierarchy of classes::
 
