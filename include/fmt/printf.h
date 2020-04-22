@@ -141,6 +141,13 @@ template <typename Context> class char_converter {
   void operator()(T) {}  // No conversion needed for non-integral types.
 };
 
+// An argument visitor that return a pointer to a C string if argument is a
+// string or null otherwise.
+template <typename Char> struct get_cstring {
+  template <typename T> const Char* operator()(T) { return nullptr; }
+  const Char* operator()(const Char* s) { return s; }
+};
+
 // Checks if an argument is a valid printf width specifier and sets
 // left alignment if it is negative.
 template <typename Char> class printf_width_handler {
@@ -495,6 +502,13 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     }
 
     format_arg arg = get_arg(arg_index);
+    if (specs.precision >= 0 && arg.type() == internal::type::cstring_type) {
+      auto str = visit_format_arg(internal::get_cstring<Char>(), arg);
+      auto end = str + specs.precision;
+      auto nul = std::find(str, end, Char());
+      arg = internal::make_arg<basic_printf_context>(basic_string_view<Char>(
+          str, nul != end ? nul - str : specs.precision));
+    }
     if (specs.alt && visit_format_arg(internal::is_zero_int(), arg))
       specs.alt = false;
     if (specs.fill[0] == '0') {

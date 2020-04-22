@@ -259,6 +259,11 @@ TEST(PrintfTest, FloatPrecision) {
   EXPECT_PRINTF(buffer, "%.3a", 1234.5678);
 }
 
+TEST(PrintfTest, StringPrecision) {
+  char test[] = {'H', 'e', 'l', 'l', 'o'};
+  EXPECT_EQ(fmt::sprintf("%.4s", test), "Hell");
+}
+
 TEST(PrintfTest, IgnorePrecisionForNonNumericArg) {
   EXPECT_PRINTF("abc", "%.5s", "abc");
 }
