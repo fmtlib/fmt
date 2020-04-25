@@ -594,6 +594,8 @@ class basic_format_parse_context : private ErrorHandler {
     the next argument index and switches to the automatic indexing.
    */
   FMT_CONSTEXPR int next_arg_id() {
+    // Don't check if the argument id is valid to avoid overhead and because it
+    // will be checked during formatting anyway.
     if (next_arg_id_ >= 0) return next_arg_id_++;
     on_error("cannot switch from manual to automatic argument indexing");
     return 0;
