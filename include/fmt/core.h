@@ -8,7 +8,6 @@
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
-#include <climits>
 #include <cstdio>  // std::FILE
 #include <cstring>
 #include <functional>
@@ -563,24 +562,14 @@ class basic_format_parse_context : private ErrorHandler {
  private:
   basic_string_view<Char> format_str_;
   int next_arg_id_;
-  int num_args_;
-
-  FMT_CONSTEXPR int do_check_arg_id(int id) {
-    if (id >= num_args_) on_error("argument not found");
-    return id;
-  }
 
  public:
   using char_type = Char;
   using iterator = typename basic_string_view<Char>::iterator;
 
   explicit FMT_CONSTEXPR basic_format_parse_context(
-      basic_string_view<Char> format_str, int num_args = INT_MAX,
-      ErrorHandler eh = {})
-      : ErrorHandler(eh),
-        format_str_(format_str),
-        next_arg_id_(0),
-        num_args_(num_args) {}
+      basic_string_view<Char> format_str, ErrorHandler eh = ErrorHandler())
+      : ErrorHandler(eh), format_str_(format_str), next_arg_id_(0) {}
 
   /**
     Returns an iterator to the beginning of the format string range being
@@ -605,7 +594,7 @@ class basic_format_parse_context : private ErrorHandler {
     the next argument index and switches to the automatic indexing.
    */
   FMT_CONSTEXPR int next_arg_id() {
-    if (next_arg_id_ >= 0) return do_check_arg_id(next_arg_id_++);
+    if (next_arg_id_ >= 0) return next_arg_id_++;
     on_error("cannot switch from manual to automatic argument indexing");
     return 0;
   }
@@ -614,13 +603,11 @@ class basic_format_parse_context : private ErrorHandler {
     Reports an error if using the automatic argument indexing; otherwise
     switches to the manual indexing.
    */
-  FMT_CONSTEXPR void check_arg_id(int id) {
-    if (next_arg_id_ > 0) {
+  FMT_CONSTEXPR void check_arg_id(int) {
+    if (next_arg_id_ > 0)
       on_error("cannot switch from automatic to manual argument indexing");
-      return;
-    }
-    do_check_arg_id(id);
-    next_arg_id_ = -1;
+    else
+      next_arg_id_ = -1;
   }
 
   FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {}
