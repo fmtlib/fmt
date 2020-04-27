@@ -9,7 +9,7 @@ resource exhaustion:
 ```cpp
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 if(spec.precision>100000) {
-  throw std::runtime_error("fuzz mode - avoiding large precision");
+  FMT_THROW(std::runtime_error("fuzz mode - avoiding large precision"));
 }
 #endif
 ```
