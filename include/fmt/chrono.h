@@ -774,6 +774,8 @@ OutputIt format_duration_unit(OutputIt out) {
   if (const char* unit = get_units<Period>()) {
     string_view s(unit);
     if (const_check(std::is_same<Char, wchar_t>())) {
+      // This works when wchar_t is UTF-32 because units only contain code
+      // points that have the same values in UTF-16 and UTF-32.
       utf8_to_utf16 u(s);
       return std::copy(u.c_str(), u.c_str() + u.size(), out);
     }
