@@ -1666,20 +1666,16 @@ template <typename Range> class basic_writer {
     size_t num_code_points = width != 0 ? f.width() : size;
     if (width <= num_code_points) return f(reserve(size));
     size_t padding = width - num_code_points;
-    size_t fill_size = specs.fill.size();
-    auto&& it = reserve(size + padding * fill_size);
-    if (specs.align == align::right) {
-      it = fill(it, padding, specs.fill);
-      f(it);
-    } else if (specs.align == align::center) {
-      std::size_t left_padding = padding / 2;
-      it = fill(it, left_padding, specs.fill);
-      f(it);
-      it = fill(it, padding - left_padding, specs.fill);
-    } else {
-      f(it);
-      it = fill(it, padding, specs.fill);
-    }
+    size_t left_padding = 0;
+    if (specs.align == align::right)
+      left_padding = padding;
+    else if (specs.align == align::center)
+      left_padding = padding / 2;
+    auto&& it = reserve(size + padding * specs.fill.size());
+    it = fill(it, left_padding, specs.fill);
+    // Dummy check to workaround a bug in MSVC2017.
+    if (const_check(true)) f(it);
+    it = fill(it, padding - left_padding, specs.fill);
   }
 
   void write(int value) { write_decimal(value); }
