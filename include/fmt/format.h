@@ -1664,8 +1664,7 @@ template <typename Range> class basic_writer {
     unsigned width = to_unsigned(specs.width);
     size_t size = f.size();  // The number of code units.
     size_t num_code_points = width != 0 ? f.width() : size;
-    if (width <= num_code_points) return f(reserve(size));
-    size_t padding = width - num_code_points;
+    size_t padding = width > num_code_points ? width - num_code_points : 0;
     size_t left_padding = 0;
     if (specs.align == align::right)
       left_padding = padding;
