@@ -1151,10 +1151,10 @@ int snprintf_float(T value, int precision, float_specs specs,
   for (;;) {
     auto begin = buf.data() + offset;
     auto capacity = buf.capacity() - offset;
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#ifdef FUZZ_MODE
     if (precision > 100000)
-      FMT_THROW(std::runtime_error(
-          "fuzz mode - avoid large allocation inside snprintf"));
+      throw std::runtime_error(
+          "fuzz mode - avoid large allocation inside snprintf");
 #endif
     // Suppress the warning about a nonliteral format string.
     // Cannot use auto becase of a bug in MinGW (#1532).
