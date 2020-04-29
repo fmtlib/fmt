@@ -699,7 +699,7 @@ class basic_memory_buffer : public internal::buffer<T> {
 
 template <typename T, std::size_t SIZE, typename Allocator>
 void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#ifdef FMT_FUZZ
   if (size > 1000) throw std::runtime_error("fuzz mode - won't grow that much");
 #endif
   std::size_t old_capacity = this->capacity();
@@ -1136,7 +1136,7 @@ template <typename Char> class float_writer {
             *it++ = static_cast<Char>('0');
           return it;
         }
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#ifdef FMT_FUZZ
         if (num_zeros > 1000)
           throw std::runtime_error("fuzz mode - avoiding excessive cpu use");
 #endif

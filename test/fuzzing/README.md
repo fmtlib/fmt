@@ -7,14 +7,19 @@ in fmt. It is a part of the continous fuzzing at
 The source code is modified to make the fuzzing possible without locking up on
 resource exhaustion:
 ```cpp
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#ifdef FMT_FUZZ
 if(spec.precision>100000) {
   throw std::runtime_error("fuzz mode - avoiding large precision");
 }
 #endif
-```
-This macro is the defacto standard for making fuzzing practically possible, see
-[the libFuzzer documentation](https://llvm.org/docs/LibFuzzer.html#fuzzer-friendly-build-mode).
+``` 
+This macro `FMT_FUZZ` is enabled on OSS-Fuzz builds and makes fuzzing
+practically possible. It is used in fmt code to prevent resource exhaustion in
+fuzzing mode.  
+The macro `FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION` is the
+defacto standard for making fuzzing practically possible to disable certain
+fuzzing-unfriendly features (for example, randomness), see [the libFuzzer
+documentation](https://llvm.org/docs/LibFuzzer.html#fuzzer-friendly-build-mode).
 
 ## Running the fuzzers locally
 

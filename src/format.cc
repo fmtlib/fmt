@@ -13,7 +13,7 @@ namespace internal {
 template <typename T>
 int format_float(char* buf, std::size_t size, const char* format, int precision,
                  T value) {
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#ifdef FMT_FUZZ
   if (precision > 100000)
     throw std::runtime_error(
         "fuzz mode - avoid large allocation inside snprintf");
