@@ -7,7 +7,7 @@ in fmt. It is a part of the continous fuzzing at
 The source code is modified to make the fuzzing possible without locking up on
 resource exhaustion:
 ```cpp
-#ifdef FMT_FUZZ
+#if FMT_FUZZ
 if(spec.precision>100000) {
   throw std::runtime_error("fuzz mode - avoiding large precision");
 }
