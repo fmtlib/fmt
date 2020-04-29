@@ -1151,7 +1151,7 @@ int snprintf_float(T value, int precision, float_specs specs,
   for (;;) {
     auto begin = buf.data() + offset;
     auto capacity = buf.capacity() - offset;
-#ifdef FUZZ_MODE
+#ifdef FMT_FUZZ
     if (precision > 100000)
       throw std::runtime_error(
           "fuzz mode - avoid large allocation inside snprintf");
