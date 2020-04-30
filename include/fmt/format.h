@@ -776,6 +776,7 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const char reset_color[5];
   static const wchar_t wreset_color[5];
   static const char signs[];
+  static const char padding_shifts[5];
 };
 
 FMT_EXTERN template struct basic_data<void>;
@@ -1598,15 +1599,9 @@ template <typename Range> class basic_writer {
   template <typename F>
   void write_padded(const format_specs& specs, size_t size, size_t width,
                     const F& f) {
-    size_t padding = 0;
-    size_t left_padding = 0;
-    if (unsigned spec_width = to_unsigned(specs.width)) {
-      padding = spec_width > width ? spec_width - width : 0;
-      if (specs.align == align::right)
-        left_padding = padding;
-      else if (specs.align == align::center)
-        left_padding = padding / 2;
-    }
+    unsigned spec_width = to_unsigned(specs.width);
+    size_t padding = spec_width > width ? spec_width - width : 0;
+    size_t left_padding = padding >> data::padding_shifts[specs.align];
     auto&& it = reserve(size + padding * specs.fill.size());
     it = fill(it, left_padding, specs.fill);
     // Dummy check to workaround a bug in MSVC2017.
@@ -1639,9 +1634,7 @@ template <typename Range> class basic_writer {
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
   void write(T value, format_specs specs = {}) {
-    if (const_check(!is_supported_floating_point(value))) {
-      return;
-    }
+    if (const_check(!is_supported_floating_point(value))) return;
     float_specs fspecs = parse_float_type_spec(specs);
     fspecs.sign = specs.sign;
     if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
@@ -1876,7 +1869,7 @@ class arg_formatter_base {
 
     void on_int() {
       if (formatter.specs_)
-        formatter.writer_.write_int(value, *formatter.specs_);
+        formatter.writer_.write_int(static_cast<int>(value), *formatter.specs_);
       else
         formatter.writer_.write(value);
     }
