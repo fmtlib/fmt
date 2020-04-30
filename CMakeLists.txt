@@ -54,7 +54,7 @@ option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
 option(FMT_FUZZ "Generate the fuzz target." OFF)
 option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
-
+option(FMT_OS "Include core requiring OS (Windows/Posix) " ON)
 project(FMT CXX)
 
 # Get version from core.h
@@ -173,7 +173,11 @@ endfunction()
 # Define the fmt library, its includes and the needed defines.
 add_headers(FMT_HEADERS chrono.h color.h compile.h core.h format.h format-inl.h
                         locale.h os.h ostream.h posix.h printf.h ranges.h)
-set(FMT_SOURCES src/format.cc src/os.cc)
+if (FMT_OS)
+  set(FMT_SOURCES src/format.cc src/os.cc)
+else()
+  set(FMT_SOURCES src/format.cc)
+endif ()
 
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
 add_library(fmt::fmt ALIAS fmt)
