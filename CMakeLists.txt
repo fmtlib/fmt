@@ -81,6 +81,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 
 include(cxx14)
 include(CheckCXXCompilerFlag)
+include(JoinPaths)
 
 list(FIND CMAKE_CXX_COMPILE_FEATURES "cxx_variadic_templates" index)
 if (${index} GREATER -1)
@@ -239,8 +240,8 @@ if (FMT_INSTALL)
   include(GNUInstallDirs)
   include(CMakePackageConfigHelpers)
   set_verbose(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
-              "Installation directory for cmake files, relative to "
-              "${CMAKE_INSTALL_PREFIX}.")
+              "Installation directory for cmake files, a relative path "
+              "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
   set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
@@ -252,22 +253,26 @@ if (FMT_INSTALL)
   endif ()
 
   set_verbose(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
-              "Installation directory for libraries, relative to "
-              "${CMAKE_INSTALL_PREFIX}.")
+              "Installation directory for libraries, a relative path "
+              "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
 
   set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRING
-              "Installation directory for include files, relative to "
-              "${CMAKE_INSTALL_PREFIX}.")
+              "Installation directory for include files, a relative path "
+              "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
 
   set_verbose(FMT_PKGCONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig CACHE PATH
-              "Installation directory for pkgconfig (.pc) files, relative to "
-              "${CMAKE_INSTALL_PREFIX}.")
+              "Installation directory for pkgconfig (.pc) files, a relative path "
+              "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
 
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
     ${version_config}
     VERSION ${FMT_VERSION}
     COMPATIBILITY AnyNewerVersion)
+
+  join_paths(libdir_for_pc_file "\${exec_prefix}" "${CMAKE_INSTALL_LIBDIR}")
+  join_paths(includedir_for_pc_file "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
+
   configure_file(
     "${PROJECT_SOURCE_DIR}/support/cmake/fmt.pc.in"
     "${pkgconfig}"
