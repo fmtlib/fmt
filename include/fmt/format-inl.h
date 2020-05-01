@@ -602,7 +602,7 @@ class bigint {
 
   int num_bigits() const { return static_cast<int>(bigits_.size()) + exp_; }
 
-  bigint& operator<<=(int shift) {
+  FMT_NOINLINE bigint& operator<<=(int shift) {
     assert(shift >= 0);
     exp_ += shift / bigit_bits;
     shift %= bigit_bits;

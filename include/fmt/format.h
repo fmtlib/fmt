@@ -1413,31 +1413,47 @@ inline OutputIt write_padded(OutputIt out,
   return write_padded(out, specs, size, size, f);
 }
 
-template <typename Char> struct write_int_params {
+// Data for write_int that doesn't depend on output iterator type. It is used to
+// avoid template code bloat.
+template <typename Char> struct write_int_data {
   std::size_t size;
   std::size_t padding;
   Char fill;
+
+  write_int_data(int num_digits, string_view prefix,
+                 basic_format_specs<Char>& specs)
+      : size(prefix.size() + to_unsigned(num_digits)),
+        padding(0),
+        fill(specs.fill[0]) {
+    if (specs.align == align::numeric) {
+      auto width = to_unsigned(specs.width);
+      if (width > size) {
+        padding = width - size;
+        size = width;
+      }
+    } else if (specs.precision > num_digits) {
+      size = prefix.size() + to_unsigned(specs.precision);
+      padding = to_unsigned(specs.precision - num_digits);
+      fill = static_cast<Char>('0');
+    }
+    if (specs.align == align::none) specs.align = align::right;
+  }
 };
 
-template <typename Char>
-write_int_params<Char> make_write_int_params(int num_digits, string_view prefix,
-                                             basic_format_specs<Char>& specs) {
-  std::size_t size = prefix.size() + to_unsigned(num_digits);
-  Char fill = specs.fill[0];
-  std::size_t padding = 0;
-  if (specs.align == align::numeric) {
-    auto width = to_unsigned(specs.width);
-    if (width > size) {
-      padding = width - size;
-      size = width;
-    }
-  } else if (specs.precision > num_digits) {
-    size = prefix.size() + to_unsigned(specs.precision);
-    padding = to_unsigned(specs.precision - num_digits);
-    fill = static_cast<Char>('0');
-  }
-  if (specs.align == align::none) specs.align = align::right;
-  return {size, padding, fill};
+// Writes an integer in the format
+//   <left-padding><prefix><numeric-padding><digits><right-padding>
+// where <digits> are written by f(it).
+template <typename OutputIt, typename Char, typename F>
+OutputIt write_int(OutputIt out, int num_digits, string_view prefix,
+                   basic_format_specs<Char> specs, F f) {
+  auto data = write_int_data<Char>(num_digits, prefix, specs);
+  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
+  return write_padded(out, specs, data.size, [=](iterator it) {
+    if (prefix.size() != 0)
+      it = copy_str<Char>(prefix.begin(), prefix.end(), it);
+    it = std::fill_n(it, data.padding, data.fill);
+    return f(it);
+  });
 }
 
 // This template provides operations for formatting and writing data into a
@@ -1458,21 +1474,6 @@ template <typename Range> class basic_writer {
     return internal::reserve(out_, n);
   }
 
-  // Writes an integer in the format
-  //   <left-padding><prefix><numeric-padding><digits><right-padding>
-  // where <digits> are written by f(it).
-  template <typename F>
-  void write_int(int num_digits, string_view prefix, format_specs specs, F f) {
-    auto params = make_write_int_params(num_digits, prefix, specs);
-    out_ = write_padded(out_, specs, params.size, [=](reserve_iterator it) {
-      if (prefix.size() != 0)
-        it = copy_str<char_type>(prefix.begin(), prefix.end(), it);
-      it = std::fill_n(it, params.padding, params.fill);
-      f(it);
-      return it;
-    });
-  }
-
   // Writes a decimal integer.
   template <typename Int> void write_decimal(Int value) {
     auto abs_value = static_cast<uint32_or_64_or_128_t<Int>>(value);
@@ -1486,22 +1487,23 @@ template <typename Range> class basic_writer {
   }
 
   // The handle_int_type_spec handler that writes an integer.
-  template <typename Int, typename Specs> struct int_writer {
-    using unsigned_type = uint32_or_64_or_128_t<Int>;
-
+  template <typename UInt> struct int_writer {
     basic_writer<Range>& writer;
-    const Specs& specs;
-    unsigned_type abs_value;
+    const basic_format_specs<char_type>& specs;
+    UInt abs_value;
     char prefix[4];
     unsigned prefix_size;
 
     string_view get_prefix() const { return string_view(prefix, prefix_size); }
 
-    int_writer(basic_writer<Range>& w, Int value, const Specs& s)
+    template <typename Int>
+    int_writer(basic_writer<Range>& w, Int value,
+               const basic_format_specs<char_type>& s)
         : writer(w),
           specs(s),
-          abs_value(static_cast<unsigned_type>(value)),
+          abs_value(static_cast<UInt>(value)),
           prefix_size(0) {
+      static_assert(std::is_same<uint32_or_64_or_128_t<Int>, UInt>::value, "");
       if (is_negative(value)) {
         prefix[0] = '-';
         ++prefix_size;
@@ -1512,30 +1514,14 @@ template <typename Range> class basic_writer {
       }
     }
 
-    struct dec_writer {
-      unsigned_type abs_value;
-      int num_digits;
-
-      template <typename It> void operator()(It&& it) const {
-        it = internal::format_decimal<char_type>(it, abs_value, num_digits);
-      }
-    };
-
     void on_dec() {
-      int num_digits = count_digits(abs_value);
-      writer.write_int(num_digits, get_prefix(), specs,
-                       dec_writer{abs_value, num_digits});
+      auto num_digits = count_digits(abs_value);
+      writer.out_ = internal::write_int(writer.out_, num_digits, get_prefix(),
+                                        specs, [=](reserve_iterator it) {
+                                          return format_decimal<char_type>(
+                                              it, abs_value, num_digits);
+                                        });
     }
-
-    struct hex_writer {
-      int_writer& self;
-      int num_digits;
-
-      template <typename It> void operator()(It&& it) const {
-        it = format_uint<4, char_type>(it, self.abs_value, num_digits,
-                                       self.specs.type != 'x');
-      }
-    };
 
     void on_hex() {
       if (specs.alt) {
@@ -1543,18 +1529,13 @@ template <typename Range> class basic_writer {
         prefix[prefix_size++] = specs.type;
       }
       int num_digits = count_digits<4>(abs_value);
-      writer.write_int(num_digits, get_prefix(), specs,
-                       hex_writer{*this, num_digits});
+      writer.out_ = internal::write_int(writer.out_, num_digits, get_prefix(),
+                                        specs, [=](reserve_iterator it) {
+                                          return format_uint<4, char_type>(
+                                              it, abs_value, num_digits,
+                                              specs.type != 'x');
+                                        });
     }
-
-    template <int BITS> struct bin_writer {
-      unsigned_type abs_value;
-      int num_digits;
-
-      template <typename It> void operator()(It&& it) const {
-        it = format_uint<BITS, char_type>(it, abs_value, num_digits);
-      }
-    };
 
     void on_bin() {
       if (specs.alt) {
@@ -1562,8 +1543,11 @@ template <typename Range> class basic_writer {
         prefix[prefix_size++] = static_cast<char>(specs.type);
       }
       int num_digits = count_digits<1>(abs_value);
-      writer.write_int(num_digits, get_prefix(), specs,
-                       bin_writer<1>{abs_value, num_digits});
+      writer.out_ = internal::write_int(writer.out_, num_digits, get_prefix(),
+                                        specs, [=](reserve_iterator it) {
+                                          return format_uint<1, char_type>(
+                                              it, abs_value, num_digits);
+                                        });
     }
 
     void on_oct() {
@@ -1573,25 +1557,28 @@ template <typename Range> class basic_writer {
         // is not greater than the number of digits.
         prefix[prefix_size++] = '0';
       }
-      writer.write_int(num_digits, get_prefix(), specs,
-                       bin_writer<3>{abs_value, num_digits});
+      writer.out_ = internal::write_int(writer.out_, num_digits, get_prefix(),
+                                        specs, [=](reserve_iterator it) {
+                                          return format_uint<3, char_type>(
+                                              it, abs_value, num_digits);
+                                        });
     }
 
     enum { sep_size = 1 };
 
     struct num_writer {
-      unsigned_type abs_value;
+      UInt abs_value;
       int size;
       const std::string& groups;
       char_type sep;
 
-      template <typename It> void operator()(It&& it) const {
+      template <typename It> It operator()(It it) const {
         basic_string_view<char_type> s(&sep, sep_size);
         // Index of a decimal digit with the least significant digit having
         // index 0.
         int digit_index = 0;
         std::string::const_iterator group = groups.cbegin();
-        it = format_decimal<char_type>(
+        return format_decimal<char_type>(
             it, abs_value, size,
             [this, s, &group, &digit_index](char_type*& buffer) {
               if (*group <= 0 || ++digit_index % *group != 0 ||
@@ -1624,8 +1611,9 @@ template <typename Range> class basic_writer {
       }
       if (group == groups.cend())
         size += sep_size * ((num_digits - 1) / groups.back());
-      writer.write_int(size, get_prefix(), specs,
-                       num_writer{abs_value, size, groups, sep});
+      writer.out_ =
+          internal::write_int(writer.out_, size, get_prefix(), specs,
+                              num_writer{abs_value, size, groups, sep});
     }
 
     FMT_NORETURN void on_error() {
@@ -1655,9 +1643,9 @@ template <typename Range> class basic_writer {
   void write(uint128_t value) { write_decimal(value); }
 #endif
 
-  template <typename T, typename Spec>
-  void write_int(T value, const Spec& spec) {
-    handle_int_type_spec(spec.type, int_writer<T, Spec>(*this, value, spec));
+  template <typename T> void write_int(T value, const format_specs& spec) {
+    using uint_type = uint32_or_64_or_128_t<T>;
+    handle_int_type_spec(spec.type, int_writer<uint_type>(*this, value, spec));
   }
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
