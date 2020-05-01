@@ -504,10 +504,10 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     format_arg arg = get_arg(arg_index);
     if (specs.precision >= 0 && arg.type() == internal::type::cstring_type) {
       auto str = visit_format_arg(internal::get_cstring<Char>(), arg);
-      auto end = str + specs.precision;
-      auto nul = std::find(str, end, Char());
+      auto str_end = str + specs.precision;
+      auto nul = std::find(str, str_end, Char());
       arg = internal::make_arg<basic_printf_context>(basic_string_view<Char>(
-          str, nul != end ? nul - str : specs.precision));
+          str, nul != str_end ? nul - str : specs.precision));
     }
     if (specs.alt && visit_format_arg(internal::is_zero_int(), arg))
       specs.alt = false;
