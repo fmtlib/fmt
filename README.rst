@@ -314,7 +314,7 @@ Projects using this library
 * `PenUltima Online (POL) <https://www.polserver.com/>`_:
   An MMO server, compatible with most Ultima Online clients
 
-* `PyTorch <https://github.com/pytorch/pytorch>`_: an open-source machine
+* `PyTorch <https://github.com/pytorch/pytorch>`_: An open-source machine
   learning library
 
 * `quasardb <https://www.quasardb.net/>`_: A distributed, high-performance,
