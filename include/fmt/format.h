@@ -348,7 +348,7 @@ template <typename T> inline T* make_checked(T* p, std::size_t) { return p; }
 
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
 inline checked_ptr<typename Container::value_type> reserve(
-    std::back_insert_iterator<Container>& it, std::size_t n) {
+    std::back_insert_iterator<Container> it, std::size_t n) {
   Container& c = get_container(it);
   std::size_t size = c.size();
   c.resize(size + n);
@@ -357,6 +357,18 @@ inline checked_ptr<typename Container::value_type> reserve(
 
 template <typename Iterator>
 inline Iterator& reserve(Iterator& it, std::size_t) {
+  return it;
+}
+
+template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
+inline std::back_insert_iterator<Container> base_iterator(
+    std::back_insert_iterator<Container>& it,
+    checked_ptr<typename Container::value_type>) {
+  return it;
+}
+
+template <typename Iterator>
+inline Iterator base_iterator(Iterator, Iterator it) {
   return it;
 }
 
@@ -1381,21 +1393,24 @@ FMT_NOINLINE OutputIt fill(OutputIt it, size_t n, const fill_t<Char>& fill) {
 // size: output size in code units.
 // width: output display width in (terminal) column positions.
 template <typename OutputIt, typename Char, typename F>
-inline void write_padded(OutputIt& out, const basic_format_specs<Char>& specs,
-                         size_t size, size_t width, const F& f) {
+inline OutputIt write_padded(OutputIt out,
+                             const basic_format_specs<Char>& specs, size_t size,
+                             size_t width, const F& f) {
   unsigned spec_width = to_unsigned(specs.width);
   size_t padding = spec_width > width ? spec_width - width : 0;
   size_t left_padding = padding >> data::padding_shifts[specs.align];
-  auto&& it = reserve(out, size + padding * specs.fill.size());
+  auto it = reserve(out, size + padding * specs.fill.size());
   it = fill(it, left_padding, specs.fill);
   it = f(it);
   it = fill(it, padding - left_padding, specs.fill);
+  return base_iterator(out, it);
 }
 
 template <typename OutputIt, typename Char, typename F>
-inline void write_padded(OutputIt& out, const basic_format_specs<Char>& specs,
-                         size_t size, const F& f) {
-  write_padded(out, specs, size, size, f);
+inline OutputIt write_padded(OutputIt out,
+                             const basic_format_specs<Char>& specs, size_t size,
+                             const F& f) {
+  return write_padded(out, specs, size, size, f);
 }
 
 // This template provides operations for formatting and writing data into a
@@ -1436,7 +1451,7 @@ template <typename Range> class basic_writer {
       fill = static_cast<char_type>('0');
     }
     if (specs.align == align::none) specs.align = align::right;
-    write_padded(out_, specs, size, [=](reserve_iterator it) {
+    out_ = write_padded(out_, specs, size, [=](reserve_iterator it) {
       if (prefix.size() != 0)
         it = copy_str<char_type>(prefix.begin(), prefix.end(), it);
       it = std::fill_n(it, padding, fill);
@@ -1650,7 +1665,7 @@ template <typename Range> class basic_writer {
       constexpr size_t str_size = 3;
       auto sign = fspecs.sign;
       auto size = str_size + (sign ? 1 : 0);
-      write_padded(out_, specs, size, [=](reserve_iterator it) {
+      out_ = write_padded(out_, specs, size, [=](reserve_iterator it) {
         if (sign) *it++ = static_cast<char_type>(data::signs[sign]);
         return copy_str<char_type>(str, str + str_size, it);
       });
@@ -1695,7 +1710,7 @@ template <typename Range> class basic_writer {
                                     : static_cast<char_type>('.');
     float_writer<char_type> w(buffer.data(), static_cast<int>(buffer.size()),
                               exp, fspecs, point);
-    write_padded(out_, specs, w.size(), w);
+    out_ = write_padded(out_, specs, w.size(), w);
   }
 
   void write(char value) {
@@ -1724,7 +1739,7 @@ template <typename Range> class basic_writer {
     auto width = specs.width != 0
                      ? count_code_points(basic_string_view<Char>(s, size))
                      : 0;
-    write_padded(out_, specs, size, width, [=](reserve_iterator it) {
+    out_ = write_padded(out_, specs, size, width, [=](reserve_iterator it) {
       return copy_str<char_type>(s, s + size, it);
     });
   }
@@ -1739,10 +1754,11 @@ template <typename Range> class basic_writer {
   }
 
   void write_bytes(string_view bytes, const format_specs& specs) {
-    write_padded(out_, specs, bytes.size(), [bytes](reserve_iterator it) {
-      const char* data = bytes.data();
-      return copy_str<char_type>(data, data + bytes.size(), it);
-    });
+    out_ =
+        write_padded(out_, specs, bytes.size(), [bytes](reserve_iterator it) {
+          const char* data = bytes.data();
+          return copy_str<char_type>(data, data + bytes.size(), it);
+        });
   }
 
   template <typename UIntPtr>
@@ -1757,7 +1773,7 @@ template <typename Range> class basic_writer {
     if (!specs) return void(write(reserve(size)));
     format_specs specs_copy = *specs;
     if (specs_copy.align == align::none) specs_copy.align = align::right;
-    write_padded(out_, specs_copy, size, write);
+    out_ = write_padded(out_, specs_copy, size, write);
   }
 };
 
@@ -1792,7 +1808,8 @@ class arg_formatter_base {
 
   void write_char(char_type value) {
     if (specs_)
-      write_padded(writer_.out(), *specs_, 1, char_writer{value});
+      writer_.out() =
+          write_padded(writer_.out(), *specs_, 1, char_writer{value});
     else
       writer_.write(value);
   }
